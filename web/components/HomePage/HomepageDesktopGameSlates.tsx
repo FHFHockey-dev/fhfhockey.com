@@ -186,6 +186,22 @@ function LightGameCard({
       aria-label={presentation.matchupLabel}
       style={style}
     >
+      <span className={styles.homepageGameArtwork} aria-hidden="true">
+        <span
+          className={styles.homepageGameLogo}
+          data-side="away"
+          data-team={presentation.awayTeam.abbrev}
+        >
+          <TeamLogo abbreviation={presentation.awayTeam.abbrev} size={42} />
+        </span>
+        <span
+          className={styles.homepageGameLogo}
+          data-side="home"
+          data-team={presentation.homeTeam.abbrev}
+        >
+          <TeamLogo abbreviation={presentation.homeTeam.abbrev} size={42} />
+        </span>
+      </span>
       <span className={styles.desktopCardMeta}>
         <span className={styles.desktopStateLabel}>
           <i aria-hidden="true" />
@@ -206,7 +222,6 @@ function LightGameCard({
 
       <span className={styles.desktopLightMatchup}>
         <span className={styles.desktopLightTeam}>
-          <TeamLogo abbreviation={presentation.awayTeam.abbrev} size={42} />
           <strong>{presentation.awayTeam.abbrev}</strong>
           {showScore && presentation.awayTeam.score != null ? (
             <b data-team-score="away">{presentation.awayTeam.score}</b>
@@ -215,14 +230,11 @@ function LightGameCard({
         <span className={styles.desktopLightDivider}>
           {presentation.group === "scheduled" ? "AT" : "–"}
         </span>
-        <span
-          className={`${styles.desktopLightTeam} ${styles.desktopLightHomeTeam}`}
-        >
+        <span className={styles.desktopLightTeam}>
           {showScore && presentation.homeTeam.score != null ? (
             <b data-team-score="home">{presentation.homeTeam.score}</b>
           ) : null}
           <strong>{presentation.homeTeam.abbrev}</strong>
-          <TeamLogo abbreviation={presentation.homeTeam.abbrev} size={42} />
         </span>
       </span>
 
@@ -272,6 +284,22 @@ function MediumLiveCard({
       aria-label={presentation.matchupLabel}
       style={style}
     >
+      <span className={styles.homepageGameArtwork} aria-hidden="true">
+        <span
+          className={styles.homepageGameLogo}
+          data-side="away"
+          data-team={presentation.awayTeam.abbrev}
+        >
+          <TeamLogo abbreviation={presentation.awayTeam.abbrev} size={34} />
+        </span>
+        <span
+          className={styles.homepageGameLogo}
+          data-side="home"
+          data-team={presentation.homeTeam.abbrev}
+        >
+          <TeamLogo abbreviation={presentation.homeTeam.abbrev} size={34} />
+        </span>
+      </span>
       <span className={styles.desktopCardMeta}>
         <span className={styles.desktopStateLabel}>
           <i aria-hidden="true" /> Live
@@ -288,7 +316,6 @@ function MediumLiveCard({
       </span>
       <span className={styles.desktopMediumMatchup}>
         <span className={styles.desktopMediumTeam}>
-          <TeamLogo abbreviation={presentation.awayTeam.abbrev} size={34} />
           <strong>{presentation.awayTeam.abbrev}</strong>
           {presentation.awayTeam.score != null ? (
             <b data-team-score="away">{presentation.awayTeam.score}</b>
@@ -302,7 +329,6 @@ function MediumLiveCard({
             <b data-team-score="home">{presentation.homeTeam.score}</b>
           ) : null}
           <strong>{presentation.homeTeam.abbrev}</strong>
-          <TeamLogo abbreviation={presentation.homeTeam.abbrev} size={34} />
         </span>
       </span>
       {metrics.length > 0 ? (
@@ -337,6 +363,22 @@ function HeavyLiveScoreboard({
       aria-label={presentation.matchupLabel}
       style={style}
     >
+      <span className={styles.homepageGameArtwork} aria-hidden="true">
+        <span
+          className={styles.homepageGameLogo}
+          data-side="away"
+          data-team={presentation.awayTeam.abbrev}
+        >
+          <TeamLogo abbreviation={presentation.awayTeam.abbrev} size={24} />
+        </span>
+        <span
+          className={styles.homepageGameLogo}
+          data-side="home"
+          data-team={presentation.homeTeam.abbrev}
+        >
+          <TeamLogo abbreviation={presentation.homeTeam.abbrev} size={24} />
+        </span>
+      </span>
       <span className={styles.desktopHeavyMeta}>
         <span>
           <i aria-hidden="true" /> {gameTime(presentation)}
@@ -346,14 +388,12 @@ function HeavyLiveScoreboard({
         </span>
       </span>
       <span className={styles.desktopHeavyTeamRow} data-scoreboard-team-row="away">
-        <TeamLogo abbreviation={presentation.awayTeam.abbrev} size={24} />
         <strong>{presentation.awayTeam.abbrev}</strong>
         {presentation.awayTeam.score != null ? (
           <b data-team-score="away">{presentation.awayTeam.score}</b>
         ) : null}
       </span>
       <span className={styles.desktopHeavyTeamRow} data-scoreboard-team-row="home">
-        <TeamLogo abbreviation={presentation.homeTeam.abbrev} size={24} />
         <strong>{presentation.homeTeam.abbrev}</strong>
         {presentation.homeTeam.score != null ? (
           <b data-team-score="home">{presentation.homeTeam.score}</b>

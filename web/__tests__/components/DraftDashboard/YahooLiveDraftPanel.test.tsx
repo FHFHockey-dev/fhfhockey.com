@@ -185,14 +185,17 @@ describe("YahooLiveDraftPanel", () => {
 
   it.each([
     ["signed out", { authenticated: false, draftProEligible: false, liveSyncEnabled: false }, "Sign in required", "Sign in"],
-    ["free", { authenticated: true, draftProEligible: false, liveSyncEnabled: false }, "Draft Pro required", "Explore Draft Pro"],
+    ["free", { authenticated: true, draftProEligible: false, liveSyncEnabled: false }, "Premium access required", "View premium access"],
     ["paid and preparing", { authenticated: true, draftProEligible: true, liveSyncEnabled: false, requestState: "loading" as const }, "Preparing", null],
     ["paid but unavailable", { authenticated: true, draftProEligible: true, liveSyncEnabled: false, requestState: "ready" as const }, "Unavailable", null],
     ["paid and ready", { authenticated: true, draftProEligible: true, liveSyncEnabled: true }, "Ready to connect", null],
   ])("keeps the Yahoo setup visible for %s", (_name, state, status, linkName) => {
     render(<YahooLiveDraftPanel {...baseProps} {...state} />);
     expect(screen.getByText(status)).toBeTruthy();
-    if (linkName) expect(screen.getByRole("link", { name: linkName })).toBeTruthy();
+    if (linkName) {
+      expect(screen.getByRole("link", { name: linkName })).toBeTruthy();
+      expect(screen.getByRole("link", { name: linkName }).getAttribute("href")).toBe(state.authenticated ? "/account?section=in-season" : "/auth?mode=sign-in");
+    }
     expect(screen.getByRole("heading", { name: "Yahoo Fantasy Draft Sync" })).toBeTruthy();
     if (state.liveSyncEnabled) expect(screen.getByText("Connect your Yahoo draft")).toBeTruthy();
     expect(screen.queryByText(/did not provide an explicit snake or straight draft order/)).toBeNull();

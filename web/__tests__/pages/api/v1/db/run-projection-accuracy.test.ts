@@ -103,7 +103,9 @@ async function runAccuracyWithTables(tables: Record<string, unknown[]>) {
                   table === "forge_runs"
                     ? {
                         metrics: {
-                          input_provenance: buildForgeInputProvenance()
+                          input_provenance: buildForgeInputProvenance({
+                            externalFantasyInputsExcluded: true
+                          })
                         }
                       }
                     : null,

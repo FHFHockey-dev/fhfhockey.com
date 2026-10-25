@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import * as cheerio from "cheerio";
 import { fetchNstTextByUrl } from "lib/nst/client";
+import adminOnly from "utils/adminOnlyMiddleware";
 
 // Compatibility route only.
 // Canonical production ownership for `teamtable.php` now lives in:
@@ -80,7 +81,7 @@ async function fetchHtml(url: string, timeoutMs = 10000): Promise<string> {
   return text;
 }
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse<FetchResult | { error: string; debug?: any }>
 ) {
@@ -152,3 +153,5 @@ export default async function handler(
     return res.status(500).json({ error: "Fetch failed", debug });
   }
 }
+
+export default adminOnly(handler);

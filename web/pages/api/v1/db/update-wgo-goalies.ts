@@ -13,9 +13,9 @@
  *   `/api/v1/db/update-wgo-goalies?runMode=forward&startDate=2026-01-15&overwrite=true`
  * - Notes:
  *   - `incremental` behaves like a resumable forward run. If `startDate` is
- *     omitted, the handler starts from the day after the latest
+ *     omitted, the handler starts from the latest
  *     `wgo_goalie_stats` date, or the current season start when the table is
- *     empty.
+ *     empty. Replaying that date recovers partial writes using idempotent upserts.
  *   - `forward` walks forward from `startDate` through today.
  *   - `reverse` walks backward from `startDate` to the earliest season start in
  *     the `seasons` table.
@@ -40,7 +40,8 @@
  *   - `overwrite=true` acquires and persists the complete replacement first,
  *     then prunes only stale goalie IDs; acquisition or write failure retains
  *     the prior rows, and prune failure retains a safe superset.
- *   - `overwrite=false` skips dates that already exist in `wgo_goalie_stats`.
+ *   - `overwrite=false` skips existing dates except in `incremental` mode,
+ *     which replays them with upserts and does not prune prior rows.
  *   - Default behavior matches the NST endpoints: `incremental` defaults to
  *     `false`; `forward` and `reverse` default to `true`.
  *
@@ -49,7 +50,7 @@
  * - Description: Selects a bulk update mode.
  * - Example: `/api/v1/db/update-wgo-goalies?action=all`
  * - Notes:
- *   - `action=all` performs an incremental refresh from the day after the most
+ *   - `action=all` performs an incremental refresh from the most
  *     recent `wgo_goalie_stats` record up to yesterday.
  *   - `action=fullRefresh` performs a historical rebuild. When paired with
  *     `season`, it refreshes only that season. Without `season`, it refreshes
@@ -1046,7 +1047,7 @@ async function updateAllHistoricalGoalieStats(): Promise<{
 }
 
 /**
- * Updates goalie stats incrementally from the day after the most recent
+ * Updates goalie stats incrementally from the most recent
  * record in the database up to yesterday.
  */
 async function updateRecentGoalieStats(): Promise<{
@@ -1084,7 +1085,8 @@ async function updateRecentGoalieStats(): Promise<{
   // 2. Determine the start date for fetching
   let startDateToProcess: Date;
   if (latestEntry?.date) {
-    startDateToProcess = addDays(parseISO(latestEntry.date), 1); // Day after the last record
+    // A row proves only partial persistence, not completion of the date.
+    startDateToProcess = parseISO(latestEntry.date);
     console.log(
       `Last record found on: ${latestEntry.date}. Starting update from: ${format(startDateToProcess, "yyyy-MM-dd")}`,
     );
@@ -1237,10 +1239,7 @@ async function runGoalieStatsDateRange(options: {
     }
 
     if (latestEntry?.date) {
-      resolvedStartDate = format(
-        addDays(parseISO(latestEntry.date), 1),
-        "yyyy-MM-dd",
-      );
+      resolvedStartDate = latestEntry.date;
     } else {
       const currentSeasonInfo = await getSeasonFromDate(today);
       if (currentSeasonInfo?.startDate) {
@@ -1315,7 +1314,7 @@ async function runGoalieStatsDateRange(options: {
     try {
       const hasExistingData =
         await hasExistingGoalieStatsForDate(formattedDate);
-      if (hasExistingData && !overwrite) {
+      if (hasExistingData && !overwrite && runMode !== "incremental") {
         skippedDates++;
       } else {
         const dailyResult = await updateGoalieStats(formattedDate, {

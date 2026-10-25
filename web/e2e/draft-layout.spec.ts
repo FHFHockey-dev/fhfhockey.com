@@ -478,16 +478,14 @@ test("homepage promotion works on desktop and mobile", async ({ page }, testInfo
     await page.setViewportSize({ width, height: 900 });
     await banner.scrollIntoViewIfNeeded();
     await expect(banner.getByRole("link", { name: "Open Draft Dashboard", exact: true })).toHaveAttribute("href", "/draft-dashboard");
-    const premium = banner.getByRole("link", { name: "Explore Draft Pro", exact: true });
-    await expect(premium).toHaveAttribute("href", "/account?section=draft-pro");
-    expect(await premium.evaluate(el => ({ foreground: getComputedStyle(el).color, background: getComputedStyle(el).backgroundColor }))).toEqual({ foreground: "rgb(13, 15, 17)", background: "rgb(255, 200, 87)" });
+    await expect(banner.getByRole("link", { name: /Draft Pro/ })).toHaveCount(0);
     await expect.poll(() => banner.locator("img").evaluate(img => (img as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
     expect(await banner.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
     await banner.screenshot({ path: testInfo.outputPath(`homepage-banner-${width}.png`) });
   }
 });
 
-test("Draft Pro account controls use accessible marigold styling", async ({ page }, testInfo) => {
+test("Draft Pro new sales remain closed with stale availability", async ({ page }, testInfo) => {
   await openFixture(page);
   await page.route("**/api/v1/account/draft-pro", route => route.fulfill({ json: { data: {
     access: { ...access, eligible: false, grantingSources: [], capabilities: [] },
@@ -497,11 +495,9 @@ test("Draft Pro account controls use accessible marigold styling", async ({ page
     purchases: [], refundRequests: [], savedDrafts: [], privateImports: [],
   } } }));
   await page.goto("/account?section=draft-pro", { waitUntil: "domcontentloaded" });
-  const purchase = page.getByRole("button", { name: /Get Draft Pro/ });
-  await expect(purchase).toBeVisible();
-  expect(await purchase.evaluate(el => [getComputedStyle(el).color, getComputedStyle(el).backgroundColor])).toEqual(["rgb(13, 15, 17)", "rgb(255, 200, 87)"]);
-  await purchase.focus();
-  expect(await purchase.evaluate(el => getComputedStyle(el).outlineStyle)).toBe("solid");
+  await expect(page.getByText(/New Draft Pro purchases are closed/)).toBeVisible();
+  await expect(page.getByRole("button", { name: /Get Draft Pro/ })).toHaveCount(0);
+  await expect(page.getByLabel("Draft Pro access code")).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("draft-pro-account.png"), fullPage: true });
 });
 

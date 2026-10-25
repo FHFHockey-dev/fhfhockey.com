@@ -5,7 +5,7 @@ import { z } from "zod";
 import supabase from "lib/supabase/server";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import { getQueryStringParam } from "lib/projections/apiHelpers";
-import { LEDGER_SCORING_LIMITATIONS, scoreLedger, scorePairedLedger, type LedgerRow } from "lib/player-forecasts/servedForecastLedger";
+import { LEDGER_MARKET_ENABLED, LEDGER_SCORING_LIMITATIONS, scoreLedger, scoreMarketLedger, scorePairedLedger, type LedgerRow } from "lib/player-forecasts/servedForecastLedger";
 import { pages } from "lib/rosterScheduleData/planningInputs";
 
 /** Served-forecast scoreboard: dressed-only descriptive scores and player-game paired comparisons.
@@ -40,7 +40,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const db = supabase as unknown as SupabaseClient<any>;
     const raw = await pages(() => {
-      const query = db.from("forge_served_forecast_ledger").select(COLUMNS, { count: "exact" }).gte("served_date", startDate).lte("served_date", endDate)
+      // market_lines exists only once the task 6.3 migration is applied.
+      const query = db.from("forge_served_forecast_ledger").select(COLUMNS + (LEDGER_MARKET_ENABLED ? ",market_lines" : ""), { count: "exact" }).gte("served_date", startDate).lte("served_date", endDate)
         .not("settled_at", "is", null);
       return (scope === "all" ? query : query.eq("player_class", scope)).order("served_date").order("game_id").order("player_id").order("source");
     }, Date.now() + 45000, MAX_ROWS, row => [row.served_date, row.player_id, row.game_id, row.source]);
@@ -56,7 +57,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const dates = [...new Set(rows.map(row => row.served_date))].sort();
     const daily = dates.map(served_date => {
       const dayRows = rows.filter(row => row.served_date === served_date);
-      return { served_date, scores: scoreLedger(dayRows), paired: scorePairedLedger(dayRows) };
+      return { served_date, scores: scoreLedger(dayRows), paired: scorePairedLedger(dayRows), ...(LEDGER_MARKET_ENABLED ? { market: scoreMarketLedger(dayRows) } : {}) };
     });
     res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=900");
     return res.status(200).json({
@@ -67,6 +68,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       data: daily,
       pooled: rows.length ? scoreLedger(rows) : [],
       pooledPaired: scorePairedLedger(rows),
+      marketStatus: LEDGER_MARKET_ENABLED ? "enabled" : "disabled_pending_migration",
+      ...(LEDGER_MARKET_ENABLED ? { pooledMarket: scoreMarketLedger(rows) } : {}),
       ...(rows.length ? {} : { empty: true })
     });
   } catch (e) {

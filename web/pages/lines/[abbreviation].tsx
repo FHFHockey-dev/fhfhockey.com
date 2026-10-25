@@ -396,7 +396,7 @@ type HeaderProps = {
   onTeamLogoClick: () => void;
 };
 
-function Header({
+export function Header({
   teamName,
   teamAbbreviation,
   lastUpdated,
@@ -426,8 +426,13 @@ function Header({
           </a>
         </div>
       </div>
-      <div className={styles.right} onClick={onTeamLogoClick}>
-        <div className={styles.large}>
+      <button
+        type="button"
+        className={styles.right}
+        onClick={onTeamLogoClick}
+        aria-label={`Download ${teamName} line combinations image`}
+      >
+        <span className={styles.large}>
           <img
             alt={teamName}
             src={getTeamLogo(teamAbbreviation)}
@@ -437,9 +442,9 @@ function Header({
               objectFit: "contain"
             }}
           />
-        </div>
+        </span>
 
-        <div className={styles.small}>
+        <span className={styles.small}>
           <img
             alt={teamName}
             src={getTeamLogo(teamAbbreviation)}
@@ -449,8 +454,8 @@ function Header({
               objectFit: "contain"
             }}
           />
-        </div>
-      </div>
+        </span>
+      </button>
     </div>
   );
 }

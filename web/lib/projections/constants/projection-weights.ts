@@ -117,6 +117,7 @@ export const SKATER_ASSIST_SHARE_PRIORS = {
 export const SKATER_ASSIST_SHARE_MIN = 0.02;
 export const SKATER_ASSIST_SHARE_MAX = 0.9;
 /** League assists per goal by strength over the same seasons; team assists are scaled to these. */
+export const SKATER_TEAM_ASSISTS_PER_GOAL = { es: 1.65, pp: 1.91 } as const;
 // Goals per shot and shots per 60 by position and strength over the same game logs (task 4). k is
 // the shots (conversion) or hours (shot rate) that weigh as much as the prior, from split halves.
 export const SKATER_GOAL_CONVERSION_PRIORS = {
@@ -127,7 +128,6 @@ export const SKATER_SHOT_RATE_PRIORS = {
   F: { es: { per60: 6.62, kHours: 8.4 }, pp: { per60: 11.23, kHours: 10.3 } },
   D: { es: { per60: 4.11, kHours: 12.3 }, pp: { per60: 8.39, kHours: 5 } },
 } as const;
-export const SKATER_TEAM_ASSISTS_PER_GOAL = { es: 1.65, pp: 1.91 } as const;
 export const SKATER_TEAMMATE_ASSIST_ES_MIN_MULTIPLIER = 0.82;
 export const SKATER_TEAMMATE_ASSIST_ES_MAX_MULTIPLIER = 1.2;
 export const SKATER_TEAMMATE_ASSIST_PP_MIN_MULTIPLIER = 0.8;

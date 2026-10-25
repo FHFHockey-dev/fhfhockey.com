@@ -1,0 +1,116 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+import type Stripe from "stripe";
+import { IN_SEASON_SANDBOX_CATALOG as catalog, getInSeasonSandboxMonthlyMinimum } from "./billingConfig";
+import { buildSettledMonthlyPlan, monthlyMetadata, type MonthlyBinding } from "./monthlyLifecycle";
+import { verifiedMonthlyAdjustment, verifiedMonthlyFailure, verifiedMonthlyPayment, verifyMonthlyInvoice, verifyMonthlySubscription } from "./monthlyStripe";
+
+function fixture() {
+  const verifiedMinimum = { accountId: catalog.accountId, chargeCurrency: "usd", settlementCurrency: "usd", minimumChargeCents: 50, verificationReference: "fixture-only" };
+  const identity = { userId: "u1", customerId: "cus_1", attemptId: "a1" };
+  const plan = buildSettledMonthlyPlan({ ...identity, startsAt: new Date("2026-10-21T12:00Z"), verifiedMinimum });
+  const binding: MonthlyBinding = { ...identity, subscriptionId: "sub_1", verifiedMinimum, periods: plan.periods };
+  const period = binding.periods[0];
+  const metadata = monthlyMetadata(binding);
+  const price = { id: catalog.monthlyPriceId, product: catalog.productId, livemode: false, type: "recurring", unit_amount: 499, currency: "usd", recurring: { interval: "month", interval_count: 1 } } as Stripe.Price;
+  const subscription = { id: "sub_1", customer: "cus_1", livemode: false, metadata, items: { has_more: false, data: [{ quantity: 1, price }] }, status: "active", cancel_at: plan.requiredSubscriptionCreationFields.cancel_at } as unknown as Stripe.Subscription;
+  const line = { period: { start: Date.parse(period.from) / 1000, end: Date.parse(period.to) / 1000 }, quantity: 1, currency: "usd", amount: 177, subscription: "sub_1", pricing: { price_details: { price: catalog.monthlyPriceId, product: catalog.productId } } } as Stripe.InvoiceLineItem;
+  const invoice = { id: "in_1", livemode: false, customer: "cus_1", parent: { subscription_details: { subscription: "sub_1", metadata } }, lines: { has_more: false, data: [line] }, currency: "usd", total: 177, status: "paid", amount_paid: 177, amount_remaining: 0, attempt_count: 1, status_transitions: { paid_at: Date.parse(period.from) / 1000 } } as unknown as Stripe.Invoice;
+  const charge = { id: "ch_1", livemode: false, payment_intent: "pi_1", customer: "cus_1", paid: true, captured: true, amount: 177, currency: "usd" } as Stripe.Charge;
+  const intent = { id: "pi_1", livemode: false, customer: "cus_1", status: "succeeded", amount: 177, amount_received: 177, currency: "usd", latest_charge: charge } as Stripe.PaymentIntent;
+  const payment = { id: "inpay_1", livemode: false, invoice: "in_1", status: "paid", amount_paid: 177, currency: "usd", payment: { type: "payment_intent", payment_intent: "pi_1" } } as Stripe.InvoicePayment;
+  const input = { eventId: "evt_paid", binding, price, subscription, invoice, payment, intent };
+  const refund = { id: "re_1", amount: 177, charge: "ch_1", payment_intent: "pi_1", currency: "usd", status: "succeeded" } as Stripe.Refund;
+  const dispute = { id: "dp_1", livemode: false, charge: "ch_1", payment_intent: "pi_1", currency: "usd", status: "needs_response", created: Date.parse("2026-10-22T12:00Z") / 1000 } as Stripe.Dispute;
+  return { ...input, input, line, charge, refund, dispute };
+}
+
+describe("monthly provider fact verification", () => {
+  it("accepts the exact bound prorated payment and capped subscription", () => {
+    const f = fixture();
+    expect(verifiedMonthlyPayment(f.input)).toEqual({ kind: "paid", eventId: "evt_paid", userId: "u1", subscriptionId: "sub_1", invoiceId: "in_1", period: 0, paymentIntentId: "pi_1", paidAt: "2026-10-21T12:00:00.000Z" });
+  });
+  it("accepts expanded provider identities", () => {
+    const f = fixture(); f.invoice.customer = { id: "cus_1" } as Stripe.Customer; f.line.subscription = f.subscription;
+    expect(verifyMonthlyInvoice(f.binding, f.invoice)).toBe(0);
+  });
+  it.each([
+    ["live subscription", (f: ReturnType<typeof fixture>) => { f.subscription.livemode = true; }],
+    ["missing cutoff", (f: ReturnType<typeof fixture>) => { f.subscription.cancel_at = null; }],
+    ["late cutoff", (f: ReturnType<typeof fixture>) => { f.subscription.cancel_at! += 3600; }],
+    ["foreign customer", (f: ReturnType<typeof fixture>) => { f.subscription.customer = "cus_foreign"; }],
+    ["forged user metadata", (f: ReturnType<typeof fixture>) => { f.subscription.metadata.in_season_user_id = "other"; }],
+    ["legacy price", (f: ReturnType<typeof fixture>) => { f.price.id = "price_legacy"; }],
+    ["annual recurrence", (f: ReturnType<typeof fixture>) => { f.price.recurring!.interval = "year"; }],
+    ["different charge", (f: ReturnType<typeof fixture>) => { f.charge.payment_intent = "pi_other"; }],
+    ["foreign charge customer", (f: ReturnType<typeof fixture>) => { f.charge.customer = "cus_other"; }],
+    ["unexpanded charge", (f: ReturnType<typeof fixture>) => { f.intent.latest_charge = "ch_1"; }],
+    ["foreign allocation", (f: ReturnType<typeof fixture>) => { f.payment.invoice = "in_other"; }],
+    ["unsettled allocation", (f: ReturnType<typeof fixture>) => { f.payment.status = "open"; }],
+    ["changed invoice owner", (f: ReturnType<typeof fixture>) => { f.invoice.customer = "cus_other"; }],
+    ["changed invoice subscription", (f: ReturnType<typeof fixture>) => { f.invoice.parent!.subscription_details!.subscription = "sub_other"; }],
+    ["wrong line price", (f: ReturnType<typeof fixture>) => { f.line.pricing!.price_details!.price = "price_other"; }],
+    ["extra line", (f: ReturnType<typeof fixture>) => { f.invoice.lines.has_more = true; }],
+    ["changed term", (f: ReturnType<typeof fixture>) => { f.line.period.end += 3600; }],
+    ["overcharged first invoice", (f: ReturnType<typeof fixture>) => { f.invoice.total = 499; }],
+    ["unknown payment", (f: ReturnType<typeof fixture>) => { f.intent.status = "processing"; }],
+    ["short payment", (f: ReturnType<typeof fixture>) => { f.intent.amount_received = 100; }],
+  ])("rejects %s", (_name, mutate) => { const f = fixture(); mutate(f); expect(() => verifiedMonthlyPayment(f.input)).toThrow(); });
+  it("allows a verified earlier cancellation, but rejects one after the fixed boundary", () => {
+    const f = fixture(); f.subscription.status = "canceled"; f.subscription.cancel_at = null; f.subscription.canceled_at = Date.parse("2026-10-25T12:00Z") / 1000; f.subscription.ended_at = f.subscription.canceled_at;
+    expect(() => verifyMonthlySubscription(f.binding, f.subscription, f.price)).not.toThrow();
+    f.subscription.canceled_at = Date.parse("2027-07-02T04:00Z") / 1000;
+    expect(() => verifyMonthlySubscription(f.binding, f.subscription, f.price)).toThrow();
+  });
+  it.each([null, Date.parse("2027-07-02T04:00Z") / 1000])("rejects an unverified or late actual end even when cancellation was requested in season", (endedAt) => {
+    const f = fixture(); Object.assign(f.subscription, { status: "canceled", canceled_at: Date.parse("2027-06-01T04:00Z") / 1000, ended_at: endedAt });
+    expect(() => verifyMonthlySubscription(f.binding, f.subscription, f.price)).toThrow();
+  });
+  it("cannot invent a new grace window from later failure attempts", () => {
+    const f = fixture(); f.invoice.status = "open";
+    const event = { id: "evt_failed", type: "invoice.payment_failed", livemode: false, created: Date.parse("2026-10-21T12:00Z") / 1000, data: { object: f.invoice } } as Stripe.Event;
+    expect(verifiedMonthlyFailure(f.binding, event)).toMatchObject({ firstFailureAt: "2026-10-21T12:00:00.000Z", failureId: "invoice:in_1:initial" });
+    f.invoice.attempt_count = 2; event.created += 86400;
+    expect(verifiedMonthlyFailure(f.binding, event)).toMatchObject({ firstFailureAt: null, failureId: "invoice:in_1:initial" });
+    expect(verifiedMonthlyFailure(f.binding, event)).not.toHaveProperty("failedAttempts");
+    event.livemode = true;
+    expect(() => verifiedMonthlyFailure(f.binding, event)).toThrow();
+  });
+});
+
+describe("verified payment adjustments", () => {
+  it.each([["pending", "pending"], ["requires_action", "pending"], ["failed", "failed"], ["canceled", "failed"], ["succeeded", "succeeded"]])("maps refund %s without issuing a refund", (provider, status) => {
+    const f = fixture(); f.refund.status = provider;
+    expect(verifiedMonthlyAdjustment({ ...f.input, kind: "refund", adjustment: f.refund, observedAt: new Date("2026-10-22T12:00Z") })).toMatchObject({ kind: "refund", invoiceId: "in_1", paymentIntentId: "pi_1", amountCents: 177, status });
+  });
+  it("rejects a refund bound to another payment or charge", () => {
+    const f = fixture(); f.refund.payment_intent = "pi_other";
+    expect(() => verifiedMonthlyAdjustment({ ...f.input, kind: "refund", adjustment: f.refund, observedAt: new Date() })).toThrow();
+    f.refund.payment_intent = "pi_1"; f.refund.charge = "ch_other";
+    expect(() => verifiedMonthlyAdjustment({ ...f.input, kind: "refund", adjustment: f.refund, observedAt: new Date() })).toThrow();
+  });
+  it.each([["needs_response", "open"], ["under_review", "open"], ["won", "won"], ["lost", "lost"]] as const)("maps a verified dispute %s", (provider, status) => {
+    const f = fixture(); f.dispute.status = provider;
+    expect(verifiedMonthlyAdjustment({ ...f.input, kind: "dispute", adjustment: f.dispute })).toMatchObject({ kind: "dispute", disputeId: "dp_1", status, paymentIntentId: "pi_1" });
+  });
+  it("does not equate an unknown or warning status with a won dispute", () => {
+    const f = fixture(); f.dispute.status = "warning_closed";
+    expect(() => verifiedMonthlyAdjustment({ ...f.input, kind: "dispute", adjustment: f.dispute })).toThrow();
+  });
+});
+
+describe("explicit applicable minimum configuration", () => {
+  afterEach(() => vi.unstubAllEnvs());
+  it("has no default and validates account, currency and verification evidence", () => {
+    for (const key of ["IN_SEASON_STRIPE_MINIMUM_CHARGE_CENTS", "IN_SEASON_STRIPE_MINIMUM_ACCOUNT_ID", "IN_SEASON_STRIPE_SETTLEMENT_CURRENCY", "IN_SEASON_STRIPE_MINIMUM_VERIFICATION_REFERENCE"]) vi.stubEnv(key, "");
+    expect(getInSeasonSandboxMonthlyMinimum()).toBeNull();
+    vi.stubEnv("IN_SEASON_STRIPE_MINIMUM_CHARGE_CENTS", "50");
+    vi.stubEnv("IN_SEASON_STRIPE_MINIMUM_ACCOUNT_ID", catalog.accountId);
+    vi.stubEnv("IN_SEASON_STRIPE_SETTLEMENT_CURRENCY", "usd");
+    vi.stubEnv("IN_SEASON_STRIPE_MINIMUM_VERIFICATION_REFERENCE", "fixture-only");
+    expect(getInSeasonSandboxMonthlyMinimum()).toMatchObject({ minimumChargeCents: 50, settlementCurrency: "usd", accountId: catalog.accountId });
+    vi.stubEnv("IN_SEASON_STRIPE_MINIMUM_ACCOUNT_ID", "acct_wrong"); expect(getInSeasonSandboxMonthlyMinimum()).toBeNull();
+    vi.stubEnv("IN_SEASON_STRIPE_MINIMUM_ACCOUNT_ID", catalog.accountId);
+    vi.stubEnv("IN_SEASON_STRIPE_MINIMUM_CHARGE_CENTS", "0.5"); expect(getInSeasonSandboxMonthlyMinimum()).toBeNull();
+    vi.stubEnv("IN_SEASON_STRIPE_MINIMUM_CHARGE_CENTS", "50"); vi.stubEnv("IN_SEASON_STRIPE_SETTLEMENT_CURRENCY", ""); expect(getInSeasonSandboxMonthlyMinimum()).toBeNull();
+  });
+});

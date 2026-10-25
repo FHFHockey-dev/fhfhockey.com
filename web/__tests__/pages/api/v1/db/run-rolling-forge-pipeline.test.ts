@@ -223,6 +223,7 @@ vi.mock("../../../../../pages/api/v1/db/run-projection-accuracy", () => ({
 }));
 
 import handler, { __testables } from "../../../../../pages/api/v1/db/run-rolling-forge-pipeline";
+import { readRollingForgeRunState, readRollingForgeStageKills, recordRollingForgeStageKill } from "lib/rollingForgePipelineRunState";
 
 function createMockRes() {
   const res: any = {
@@ -603,6 +604,24 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
     });
   });
 
+  it("keeps an explicit NST window bounded and holds uncertain writes even when stopOnFailure is false", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-19T10:05:00.000Z"));
+    updateNstGamelogMock.mockImplementationOnce(async (_req: any, res: any) => {
+      res.status(500).json({ success: false, error: "write acknowledgement lost", writePersistence: "not_confirmed" });
+    });
+    const res = createMockRes();
+    await handler({ method: "GET", query: { mode: "daily_incremental", startDate: "2026-10-16", endDate: "2026-10-17", stopOnFailure: "false" }, headers: {} } as any, res);
+    expect(updateNstGamelogMock.mock.calls[0][0].query).toEqual({
+      runMode: "incremental", startDate: "2026-10-16", endDate: "2026-10-17",
+      deadlineAt: String(Date.parse("2026-10-19T10:05:00.000Z") + 190_000)
+    });
+    expect(res.body.termination).toMatchObject({ state: "stopped_on_blocking_failure", resumeRequired: false, reason: "manual_review_required" });
+    expect(res.body.failureSummary.terminalStop).toEqual({ code: "nst_persistence_unconfirmed", stageId: "upstream_skater_sources" });
+    expect(updateWgoSkatersMock).not.toHaveBeenCalled();
+    expect(updateRollingPlayerAveragesMock).not.toHaveBeenCalled();
+  });
+
   it("does not include retired support-only WGO routes in the upstream stage", async () => {
     const req: any = {
       method: "GET",
@@ -822,23 +841,20 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
       expect(runProjectionV2Mock.mock.calls[0]?.[0]?.query?.date).toBe("2026-10-19");
     });
 
-    describe("NST step resume (agreed contract; inactive until Codex ships it)", () => {
+    describe("NST step resume (production-default producer contract)", () => {
       const continuation = (cursor: string, overrides: Record<string, string> = {}) =>
         async (req: any, res: any) => {
           res.status(207).json({
             success: false,
             operationStatus: "continuation_required",
-            resume: { required: true, request: { query: { ...req.query, cursor, deadlineAt: "1", ...overrides } } }
+            nstProgress: { auditPersistence: "confirmed" },
+            resume: { required: true, request: { query: { ...req.query, cursor, ...overrides } } }
           });
         };
-      const reply = (status: number, body: Record<string, unknown>) => async (_req: any, res: any) => {
+      const reply = (status: number, body: unknown) => async (_req: any, res: any) => {
         res.status(status).json(body);
       };
-      beforeEach(() => {
-        __testables.nstStepResume.enabled = true;
-      });
       afterEach(() => {
-        __testables.nstStepResume.enabled = false;
         updateNstGamelogMock.mockReset();
       });
 
@@ -857,13 +873,13 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
         expect(stageStatus(first, "contextual_builders").status).toBe("pending");
         expect(updateWgoSkatersMock).not.toHaveBeenCalled();
         expect(updateWgoTotalsMock).not.toHaveBeenCalled();
-        expect(nstStageRow()).toMatchObject({ status: "running", cursor_game_id: 7 });
+        expect(nstStageRow()).toMatchObject({ status: "failed", last_error: "stage_handoff", cursor_game_id: 7 });
 
         const second = await invokeScheduled("2026-10-19T10:10:00.000Z");
         expect(updateNstGamelogMock.mock.calls[1]?.[0]?.query).toEqual(nstQuery("2026-10-19T10:10:00.000Z", { cursor: "7" }));
         expect(second.body.termination).toMatchObject({ reason: "stage_partial", nextStageId: "upstream_skater_sources" });
         expect(updateWgoSkatersMock).not.toHaveBeenCalled();
-        expect(nstStageRow()).toMatchObject({ status: "running", cursor_game_id: 15 });
+        expect(nstStageRow()).toMatchObject({ status: "failed", last_error: "stage_handoff", cursor_game_id: 15 });
 
         const third = await invokeScheduled("2026-10-19T10:15:00.000Z");
         expect(updateNstGamelogMock.mock.calls[2]?.[0]?.query).toEqual(nstQuery("2026-10-19T10:15:00.000Z", { cursor: "15" }));
@@ -874,6 +890,28 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
         expect(nstStageRow()).toMatchObject({ status: "complete" });
         expect(third.statusCode).toBe(200);
         expect(third.body.termination).toMatchObject({ state: "completed" });
+        const fourth = await invokeScheduled("2026-10-19T10:20:00.000Z");
+        expect(fourth.body.termination.state).toBe("completed");
+        expect(updateNstGamelogMock).toHaveBeenCalledTimes(3);
+        expect(updateWgoSkatersMock).toHaveBeenCalledTimes(1);
+        expect([...pipelineStateRows.values()].filter(row => row.operation_key.startsWith("upstream_skater_sources:kill:"))).toHaveLength(0);
+      });
+
+      it("keeps a resumed source-down result explicitly degraded and allows WGO once", async () => {
+        updateNstGamelogMock.mockImplementationOnce(continuation("7"))
+          .mockImplementationOnce(reply(503, { success: false, operationStatus: "source_down",
+            nstProgress: { auditPersistence: "confirmed", sourceOutcomes: { unresolvedCount: 1 } } }));
+        await invokeScheduled("2026-10-19T10:05:00.000Z");
+        const second = await invokeScheduled("2026-10-19T10:10:00.000Z");
+        expect(updateNstGamelogMock.mock.calls[1][0].query).toMatchObject({ cursor: "7" });
+        expect(second.body.failureSummary.degradedSteps).toEqual([
+          { stageId: "upstream_skater_sources", stepId: "update-nst-gamelog", code: "nst_source_unavailable", reason: expect.stringContaining("Backfill the date") }
+        ]);
+        expect(nstStageRow()).toMatchObject({ status: "complete", cursor_game_id: 7 });
+        expect(updateWgoSkatersMock).toHaveBeenCalledTimes(1);
+        await invokeScheduled("2026-10-19T10:15:00.000Z");
+        expect(updateNstGamelogMock).toHaveBeenCalledTimes(2);
+        expect(updateWgoSkatersMock).toHaveBeenCalledTimes(1);
       });
 
       it("advances to WGO on the expected no-completed-games skip", async () => {
@@ -888,11 +926,20 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
       });
 
       it.each([
+        ["a missing success acknowledgement", reply(200, {})],
+        ["a null success body", reply(200, null)],
+        ["a non-boolean success acknowledgement", reply(200, { success: "true" })],
+        ["a contradictory successful continuation", reply(200, { success: true, operationStatus: "continuation_required", resume: { required: true } })],
         ["a provider failure (>= 400)", reply(503, { success: false, classification: "rate_limited" })],
         ["incomplete work (200, success false)", reply(200, { success: false, message: "Incomplete NST work; inspect source outcomes and deferred URLs." })],
         ["a 207 that is not a continuation", reply(207, { success: false, operationStatus: "partial" })],
         ["a cursor that is not positive", continuation("0")],
         ["a non-integer cursor", continuation("7.5")],
+        ["a changed deadline", continuation("7", { deadlineAt: "1" })],
+        ["an unacknowledged continuation", async (req: any, res: any) => {
+          res.status(207).json({ success: false, operationStatus: "continuation_required",
+            resume: { required: true, request: { query: { ...req.query, cursor: "7" } } } });
+        }],
         ["a missing cursor", async (req: any, res: any) => {
           res.status(207).json({ success: false, operationStatus: "continuation_required",
             resume: { required: true, request: { query: { ...req.query } } } });
@@ -919,7 +966,7 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
           .mockImplementationOnce(continuation("7"));
 
         await invokeScheduled("2026-10-19T10:05:00.000Z");
-        expect(nstStageRow()).toMatchObject({ status: "running", cursor_game_id: 7 });
+        expect(nstStageRow()).toMatchObject({ status: "failed", last_error: "stage_handoff", cursor_game_id: 7 });
         const second = await invokeScheduled("2026-10-19T10:10:00.000Z");
 
         expect(updateNstGamelogMock.mock.calls[1]?.[0]?.query).toMatchObject({ cursor: "7" });
@@ -931,7 +978,23 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
         expect(nstStageRow()).toMatchObject({ status: "failed", cursor_game_id: 7 });
       });
 
-      it("does not advance when the cursor cannot be stored: the next invocation repeats from the last stored cursor", async () => {
+      it.each(["auditPersistence", "writePersistence"])("holds %s uncertainty for review across invocations without rerunning NST", async (field) => {
+        updateNstGamelogMock
+          .mockImplementationOnce(continuation("7"))
+          .mockImplementationOnce(reply(500, { success: false, error: "acknowledgement lost", [field]: "not_confirmed" }));
+        await invokeScheduled("2026-10-19T10:05:00.000Z");
+        const failed = await invokeScheduled("2026-10-19T10:10:00.000Z");
+        expect(failed.body.termination).toMatchObject({ state: "stopped_on_blocking_failure", resumeRequired: false, reason: "manual_review_required" });
+        expect(nstStageRow()).toMatchObject({ status: "failed", last_error: "nst_persistence_unconfirmed", cursor_game_id: 7 });
+        const held = await invokeScheduled("2026-10-19T10:15:00.000Z");
+        expect(held.body.termination).toMatchObject({ state: "stopped_on_blocking_failure", resumeRequired: false, reason: "manual_review_required" });
+        expect(held.body.failureSummary.terminalStop).toEqual({ code: "nst_persistence_unconfirmed", stageId: "upstream_skater_sources" });
+        expect(updateNstGamelogMock).toHaveBeenCalledTimes(2);
+        expect(updateWgoSkatersMock).not.toHaveBeenCalled();
+        expect(updateRollingPlayerAveragesMock).not.toHaveBeenCalled();
+      });
+
+      it("does not advance when the cursor cannot be stored and holds the abandoned NST call for review", async () => {
         const original = pipelineStateRpc.getMockImplementation()!;
         let failedAdvance = false;
         pipelineStateRpc.mockImplementation(async (name: string, a: any) => {
@@ -948,10 +1011,12 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
           expect(updateWgoSkatersMock).not.toHaveBeenCalled();
           expect(nstStageRow()).toMatchObject({ status: "running", cursor_game_id: null });
 
-          // After the lease frees, NST repeats from the stored (empty) cursor.
-          await invokeScheduled("2026-10-19T10:15:00.000Z");
-          expect(updateNstGamelogMock.mock.calls[1]?.[0]?.query).toEqual(nstQuery("2026-10-19T10:15:00.000Z"));
-          expect(updateWgoSkatersMock).toHaveBeenCalledTimes(1);
+          // An acknowledged producer response does not prove why a later
+          // running row was abandoned. Recovery requires receipt review.
+          const held = await invokeScheduled("2026-10-19T10:15:00.000Z");
+          expect(held.body.termination).toMatchObject({ resumeRequired: false, reason: "manual_review_required" });
+          expect(updateNstGamelogMock).toHaveBeenCalledTimes(1);
+          expect(updateWgoSkatersMock).not.toHaveBeenCalled();
         } finally {
           pipelineStateRpc.mockImplementation(original);
         }
@@ -966,11 +1031,9 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
           counts: { rows_persisted: 0, fetch_or_write_failed: 1 } } } };
       afterEach(() => {
         updateNstGamelogMock.mockReset();
-        __testables.nstStepResume.enabled = false;
       });
 
-      it.each([false, true])("with NST step resume %s: WGO and the later stages run, and the response names the degraded step", async (resumeEnabled) => {
-        __testables.nstStepResume.enabled = resumeEnabled;
+      it("runs WGO and the later stages, and names the degraded step", async () => {
         updateNstGamelogMock.mockImplementationOnce(async (_req: any, res: any) => { res.status(200).json(outage); });
 
         const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
@@ -1025,28 +1088,6 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
         expect(stageStatus(res, "upstream_skater_sources").status).toBe("failed");
         expect(res.body.termination).toMatchObject({ state: "stopped_on_blocking_failure" });
         expect(res.body.failureSummary.degradedSteps).toEqual([]);
-      });
-    });
-
-    describe("while NST step resume is inactive, today's NST responses behave as before", () => {
-      afterEach(() => updateNstGamelogMock.mockReset());
-
-      it.each([
-        ["success", 200, { success: true, message: "Done" }, "success"],
-        ["incomplete work", 200, { success: false, message: "Incomplete NST work; inspect source outcomes and deferred URLs." }, "failed"],
-        ["an error", 500, { success: false, error: "boom" }, "failed"],
-        ["a continuation", 207, { success: false, operationStatus: "continuation_required",
-          resume: { required: true, request: { query: { runMode: "incremental", startDate: "2026-10-18", endDate: "2026-10-18", cursor: "7" } } } }, "failed"],
-      ])("%s: WGO still runs and nothing is stored", async (_label, status, body, stepStatus) => {
-        updateNstGamelogMock.mockImplementationOnce(async (_req: any, res: any) => { res.status(status).json(body); });
-
-        const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
-
-        expect(stageStatus(res, "upstream_skater_sources").steps.map((step: any) => [step.id, step.status])).toEqual([
-          ["update-nst-gamelog", stepStatus], ["update-wgo-skaters", "success"], ["update-wgo-totals", "success"],
-        ]);
-        expect(updateNstGamelogMock.mock.calls[0]?.[0]?.query).not.toHaveProperty("cursor");
-        expect(nstStageRow()?.cursor_game_id ?? null).toBeNull();
       });
     });
 
@@ -1139,7 +1180,7 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
         const projectionState = pipelineStateRows.get(
           "rolling_forge_pipeline|daily_incremental:2026-10-19|projection_execution"
         );
-        expect(projectionState).toMatchObject({ status: "running", last_error: null });
+        expect(projectionState).toMatchObject({ status: "failed", last_error: "stage_handoff" });
       }
       // Each call gets the time left in its invocation, after the earlier stages.
       for (const call of runProjectionV2Mock.mock.calls) {
@@ -1303,16 +1344,21 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
       expect(stageStatus(first, "rolling_player_recompute").status).toBe("partial");
       expect(updateRollingPlayerAveragesMock).toHaveBeenCalledTimes(2);
 
+      expect(pipelineStateRows.get(stageKey("rolling_player_recompute"))).toMatchObject({
+        status: "failed", last_error: "stage_handoff", lease_owner: null, lease_expires_at: null
+      });
+
       const second = await invokeScheduled("2026-10-19T10:10:00.000Z");
 
       expect(second.statusCode).toBe(200);
+      expect([...pipelineStateRows.values()].filter(row => row.operation_key.startsWith("rolling_player_recompute:kill:"))).toHaveLength(0);
       expect(updateRollingPlayerAveragesMock.mock.calls[2]?.[0]?.query).toMatchObject({
         resumeFrom: "8478500",
         maxPlayers: "16"
       });
     });
 
-    it("takes over a stage whose invocation died, from its stored cursor, and stops after repeated deaths", async () => {
+    it("counts a death after a late checkpoint once per lease owner, preserving its cursor and the kill cap", async () => {
       for (const stageId of ["core_entity_freshness", "upstream_skater_sources", "contextual_builders"]) {
         seedStageRow(stageId, {});
       }
@@ -1321,7 +1367,8 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
         status: "running",
         cursor_game_id: 8478402,
         lease_owner: "dead-invocation",
-        lease_expires_at: "2026-10-19T10:09:30.000Z"
+        lease_expires_at: "2026-10-19T10:09:30.000Z",
+        updated_at: "2026-10-19T10:08:35.000Z"
       };
       seedStageRow("rolling_player_recompute", deadLease);
 
@@ -1331,11 +1378,12 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
       expect(updateRollingPlayerAveragesMock.mock.calls[0]?.[0]?.query).toMatchObject({
         resumeFrom: "8478402"
       });
-      expect(pipelineStateRows.get(stageKey("rolling_player_recompute:kills"))).toMatchObject({
-        status: "failed",
-        cursor_game_id: 1,
-        last_error: "stage_killed:attempt-1"
-      });
+      const db = { from: pipelineStateFrom, rpc: pipelineStateRpc } as any;
+      const args = { supabase: db, scopeKey: "daily_incremental:2026-10-19", stageId: "rolling_player_recompute" as const,
+        runDate: "2026-10-19", expiredLeaseOwner: "dead-invocation" };
+      expect(readRollingForgeStageKills(await readRollingForgeRunState(args), args.stageId)).toBe(1);
+      // Replayed/stale observers of the same death do not spend another retry.
+      expect(await Promise.all([recordRollingForgeStageKill(args), recordRollingForgeStageKill(args)])).toEqual([1, 1]);
 
       // The third death closes the stage; later invocations stop without work.
       seedStageRow("rolling_player_recompute", deadLease);
@@ -1380,7 +1428,20 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
       });
       expect(fourth.body.failureSummary.firstFailure).toMatchObject({ stepId: null, code: "stage_killed" });
       expect(updateRollingPlayerAveragesMock).not.toHaveBeenCalled();
-      expect(pipelineStateRows.get(stageKey("rolling_player_recompute:kills"))?.cursor_game_id).toBe(3);
+      expect(readRollingForgeStageKills(await readRollingForgeRunState(args), args.stageId)).toBe(3);
+    });
+
+    it("counts a kill receipt once across concurrent recorders and a recorder interrupted after acquisition", async () => {
+      const args = { supabase: { from: pipelineStateFrom, rpc: pipelineStateRpc } as any, scopeKey: "daily_incremental:2026-10-19",
+        stageId: "rolling_player_recompute" as const, runDate: "2026-10-19", expiredLeaseOwner: "one-dead-owner" };
+      const results = await Promise.allSettled([recordRollingForgeStageKill(args), recordRollingForgeStageKill(args)]);
+      expect(results.some(result => result.status === "fulfilled" && result.value === 1)).toBe(true);
+      expect(readRollingForgeStageKills(await readRollingForgeRunState(args), args.stageId)).toBe(1);
+      // An unfinished recorder receipt is already durable accounting, not another dead stage.
+      const receipt = [...pipelineStateRows.values()].find(row => row.operation_key.includes(":kill:"));
+      Object.assign(receipt, { status: "running", lease_owner: "interrupted-recorder", lease_expires_at: "2026-10-19T10:00:00Z" });
+      expect(await recordRollingForgeStageKill(args)).toBe(1);
+      expect(readRollingForgeStageKills(await readRollingForgeRunState(args), args.stageId)).toBe(1);
     });
 
     it("projects the next day after the run date, remembering finished dates across invocations", async () => {
@@ -1412,7 +1473,7 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
       expect(updateGoalieProjectionsV2Mock.mock.calls[0][0].query).toEqual({ limit: "7", endDate: "2026-10-20" });
       expect(runProjectionV2Mock.mock.calls.map((call: any[]) => call[0].query.date)).toEqual(["2026-10-19", "2026-10-20"]);
       expect(Number(runProjectionV2Mock.mock.calls[1][0].query.maxDurationMs)).toBe(160_000);
-      expect(pipelineStateRows.get(stageKey("projection_execution"))).toMatchObject({ status: "running", cursor_game_id: 1 });
+      expect(pipelineStateRows.get(stageKey("projection_execution"))).toMatchObject({ status: "failed", last_error: "stage_handoff", cursor_game_id: 1 });
 
       const second = await invokeScheduled("2026-10-19T10:10:00.000Z");
 
@@ -1593,4 +1654,114 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
     expect(Number(query.deadlineAt)).toBeGreaterThan(Date.now() + 180_000);
     expect(Number(query.deadlineAt)).toBeLessThanOrEqual(Date.now() + 190_000);
   });
+});
+
+// Appended to the unchanged owner's test harness prefix in an isolated test file.
+// Existing candidate source/tests stay byte-identical. All providers are mocked.
+import serverClient from "lib/supabase/server";
+
+describe("NST acquisition and uncertain-persistence regressions", () => {
+  const stageKey = (id: string) => `rolling_forge_pipeline|daily_incremental:2026-10-19|${id}`;
+  const stageRow = () => pipelineStateRows.get(stageKey("upstream_skater_sources"));
+  const originalRpc = pipelineStateRpc.getMockImplementation()!;
+  const originalFrom = vi.mocked(serverClient.from).getMockImplementation()!;
+  const success = async (_req: any, res: any) => res.status(200).json({ success: true });
+  const signal = () => {
+    let resolve!: () => void;
+    const promise = new Promise<void>(done => { resolve = done; });
+    return { promise, resolve };
+  };
+  const invoke = async (query: Record<string, string> = {}) => {
+    const res = createMockRes();
+    await handler({ method: "GET", headers: {}, query: { mode: "daily_incremental", includeAccuracy: "false", ...query } } as any, res);
+    return res;
+  };
+  const seed = (id: string, extras: Record<string, unknown> = {}) => pipelineStateRows.set(stageKey(id), {
+    pipeline_key: "rolling_forge_pipeline", scope_key: "daily_incremental:2026-10-19", operation_key: id,
+    revision: 1, status: "complete", cursor_game_id: null, cursor_date: "2026-10-19",
+    range_start_date: "2026-10-19", range_end_date: "2026-10-19", lease_owner: null,
+    lease_expires_at: null, last_error: null, updated_at: "2026-10-19T10:04:00.000Z", ...extras
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-19T10:05:00.000Z"));
+    pipelineStateRows.clear();
+    pipelineStateRpc.mockImplementation(originalRpc);
+    vi.mocked(serverClient.from).mockImplementation(originalFrom);
+    process.env.CRON_SECRET = "test-secret";
+    for (const mock of [updateGamesMock, updateTeamsMock, updatePlayersMock, updateNstGamelogMock,
+      updateWgoSkatersMock, updateWgoTotalsMock, updateWgoAveragesMock, updateLineCombinationsMock,
+      updatePowerPlayCombinationsMock, updateRollingPlayerAveragesMock, ingestProjectionInputsMock,
+      shiftChartsMock, buildProjectionDerivedMock, updateGoalieProjectionsV2Mock, runProjectionV2Mock, runProjectionAccuracyMock]) {
+      mock.mockReset().mockImplementation(success);
+    }
+    seed("core_entity_freshness");
+    seed("upstream_skater_sources", { status: "failed", last_error: "stage_handoff", cursor_game_id: 7 });
+  });
+  afterEach(() => {
+    pipelineStateRpc.mockImplementation(originalRpc);
+    vi.mocked(serverClient.from).mockImplementation(originalFrom);
+    vi.useRealTimers();
+  });
+
+  it("must preserve a durable manual-review hold when another same-version invocation read state before the hold", async () => {
+    const enteredNst = signal(), releaseNst = signal(), readSnapshot = signal(), releaseSnapshot = signal();
+    updateNstGamelogMock.mockImplementationOnce(async (_req: any, res: any) => {
+      enteredNst.resolve();
+      await releaseNst.promise;
+      res.status(500).json({ success: false, error: "audit acknowledgement lost", auditPersistence: "not_confirmed" });
+    });
+    const firstPromise = invoke();
+    await enteredNst.promise;
+    let intercept = true;
+    vi.mocked(serverClient.from).mockImplementation(((table: string) => {
+      const query = originalFrom(table as any);
+      if (table === "projection_pipeline_state" && intercept) {
+        intercept = false;
+        const originalThen = (query as any).then;
+        (query as any).then = (resolve: any, reject: any) => originalThen(async (snapshot: any) => {
+          readSnapshot.resolve();
+          await releaseSnapshot.promise;
+          return resolve(snapshot);
+        }, reject);
+      }
+      return query;
+    }) as any);
+    const observerPromise = invoke();
+    await readSnapshot.promise;
+    releaseNst.resolve();
+    const first = await firstPromise;
+    expect(first.body.termination.reason).toBe("manual_review_required");
+    expect(stageRow().last_error).toBe("nst_persistence_unconfirmed");
+    releaseSnapshot.resolve();
+    const observer = await observerPromise;
+    console.log("REVIEW_RACE_OBSERVED", JSON.stringify({ nstCalls: updateNstGamelogMock.mock.calls.length,
+      observerTermination: observer.body.termination, finalStage: stageRow() }));
+    expect.soft(updateNstGamelogMock).toHaveBeenCalledTimes(1);
+    expect.soft(observer.body.termination.reason).toBe("manual_review_required");
+    expect.soft(stageRow().last_error).toBe("nst_persistence_unconfirmed");
+  });
+
+  it("must not advertise retry when a manual-review hold cannot be saved", async () => {
+    pipelineStateRpc.mockImplementation(async (name: string, args: any) => {
+      if (args.p_transition === "fail" && args.p_last_error === "nst_persistence_unconfirmed") {
+        return { data: null, error: { message: "synthetic hold persistence failure" } };
+      }
+      return originalRpc(name, args);
+    });
+    updateNstGamelogMock.mockImplementationOnce(async (_req: any, res: any) =>
+      res.status(500).json({ success: false, error: "write acknowledgement lost", writePersistence: "not_confirmed" }));
+    const first = await invoke();
+    console.log("REVIEW_FAILED_HOLD_FIRST", JSON.stringify({ termination: first.body.termination, row: stageRow() }));
+    expect.soft(first.body.termination).toMatchObject({ resumeRequired: false, reason: "manual_review_required" });
+    vi.setSystemTime(new Date("2026-10-19T10:15:00.000Z"));
+    const next = await invoke();
+    console.log("REVIEW_FAILED_HOLD_NEXT", JSON.stringify({ nstCalls: updateNstGamelogMock.mock.calls.length,
+      termination: next.body.termination, row: stageRow() }));
+    expect.soft(updateNstGamelogMock).toHaveBeenCalledTimes(1);
+    expect.soft(updateWgoSkatersMock).not.toHaveBeenCalled();
+  });
+
 });

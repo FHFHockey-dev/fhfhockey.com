@@ -1,5 +1,44 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
+const { supabaseTables } = vi.hoisted(() => ({
+  supabaseTables: {} as Record<string, Array<Record<string, unknown>>>
+}));
+
+vi.mock("lib/supabase/server", () => ({
+  default: {
+    from(table: string) {
+      const filters: Array<(row: Record<string, unknown>) => boolean> = [];
+      const query: Record<string, unknown> = {
+        select: () => query,
+        order: () => query,
+        eq(column: string, value: unknown) {
+          filters.push((row) => row[column] === value);
+          return query;
+        },
+        gte(column: string, value: string) {
+          filters.push((row) => String(row[column]) >= value);
+          return query;
+        },
+        lte(column: string, value: string) {
+          filters.push((row) => String(row[column]) <= value);
+          return query;
+        },
+        then(
+          resolve: (value: { data: unknown[]; error: null }) => unknown,
+          reject?: (reason: unknown) => unknown
+        ) {
+          const data = (supabaseTables[table] ?? []).filter((row) =>
+            filters.every((filter) => filter(row))
+          );
+          return Promise.resolve({ data, error: null }).then(resolve, reject);
+        }
+      };
+      return query;
+    }
+  }
+}));
+
+import { splitRollingUpsertRowForDurableStorage } from "./fetchRollingPlayerAverages";
 import { __testables } from "./rollingPlayerValidationPayload";
 
 describe("rollingPlayerValidationPayload metadata builders", () => {
@@ -1098,5 +1137,144 @@ describe("rollingPlayerValidationPayload metadata builders", () => {
         "PP share latest game is covered, but the selected window is still missing share coverage: 2025030901"
       ])
     );
+  });
+});
+
+describe("rollingPlayerValidationPayload stored rows", () => {
+  beforeEach(() => {
+    for (const table of Object.keys(supabaseTables)) delete supabaseTables[table];
+  });
+
+  it("restores writer-pruned windows from the support sidecar before comparing", async () => {
+    const recomputedRows = [
+      {
+        player_id: 8478402,
+        game_id: 2025020100,
+        game_date: "2025-11-01",
+        season: 20252026,
+        strength_state: "all",
+        team_id: 22,
+        goals_avg_last5: 0.6,
+        goals_avg_career: 0.48,
+        shots_avg_last3: 3.333333,
+        shooting_pct_career: 12.5,
+        points_avg_season: 1.2
+      },
+      {
+        player_id: 8478402,
+        game_id: 2025020115,
+        game_date: "2025-11-03",
+        season: 20252026,
+        strength_state: "all",
+        team_id: 22,
+        goals_avg_last5: 0.8,
+        goals_avg_career: 0.49,
+        shots_avg_last3: 4,
+        shooting_pct_career: 12.7,
+        points_avg_season: 1.25
+      }
+    ];
+    const splits = recomputedRows.map((row) => splitRollingUpsertRowForDurableStorage(row));
+    // The writer keeps ranking fields wide and nulls the historical windows.
+    expect(splits[0].rankingRow).toMatchObject({
+      points_avg_season: 1.2,
+      goals_avg_last5: null,
+      shooting_pct_career: null
+    });
+    supabaseTables.rolling_player_game_metrics = splits.map((split) => split.rankingRow);
+    supabaseTables.rolling_player_metric_support_payloads = splits.map(
+      (split) => split.supportRow as unknown as Record<string, unknown>
+    );
+
+    const storedRows = await __testables.fetchStoredRows({
+      playerId: 8478402,
+      season: 20252026,
+      strength: "all"
+    });
+
+    expect(storedRows).toEqual(recomputedRows);
+    expect(
+      __testables.buildFamilyComparisonSummary({
+        storedRows,
+        recomputedRows,
+        selectedMetricFamily: null
+      })?.mismatchFieldCount
+    ).toBe(0);
+  });
+
+  it.each(["all", "ev", "pp", "pk", "5v5"] as const)(
+    "retains compacted %s rows through hydration, filtering and comparison",
+    async (strength) => {
+      const row = {
+        player_id: 8478402,
+        game_id: 2025020100,
+        game_date: "2025-11-01",
+        season: 20252026,
+        strength_state: strength,
+        goals_avg_last5: 0.6
+      };
+      const { rankingRow, supportRow } = splitRollingUpsertRowForDurableStorage(row);
+      expect(rankingRow.goals_avg_last5).toBeNull();
+      supabaseTables.rolling_player_game_metrics = [rankingRow];
+      supabaseTables.rolling_player_metric_support_payloads = [
+        supportRow as unknown as Record<string, unknown>
+      ];
+      const request = { playerId: row.player_id, season: row.season, strength };
+      const hydratedRows = await __testables.fetchStoredRows(request);
+      expect(hydratedRows).toEqual([row]);
+      const storedRows = __testables.filterRowsForRequest(hydratedRows, request);
+      const recomputedRows = __testables.filterRowsForRequest(
+        [{ ...row, goals_avg_last5: 0.8 }],
+        request
+      );
+      expect(storedRows).toEqual([row]);
+      expect(recomputedRows).toHaveLength(1);
+      expect(
+        __testables.filterRowsForRequest(
+          [{ ...row, strength_state: "4v4" }],
+          request
+        )
+      ).toEqual([]);
+      expect(
+        __testables.buildFamilyComparisonSummary({
+          storedRows,
+          recomputedRows,
+          selectedMetricFamily: null
+        })
+      ).toMatchObject({
+        rowCountCompared: 1,
+        mismatchRowCount: 1,
+        mismatchFieldCount: 1,
+        metrics: expect.arrayContaining([
+          expect.objectContaining({
+            field: "goals_avg_last5",
+            comparedRows: 1,
+            latestStoredValue: 0.6,
+            latestRecomputedValue: 0.8,
+            valuesMatch: false
+          })
+        ])
+      });
+    }
+  );
+
+  it("leaves a pruned field empty when no sidecar row exists", async () => {
+    const { rankingRow } = splitRollingUpsertRowForDurableStorage({
+      player_id: 8478402,
+      game_id: 2025020100,
+      game_date: "2025-11-01",
+      season: 20252026,
+      strength_state: "all",
+      goals_avg_last5: 0.6
+    });
+    supabaseTables.rolling_player_game_metrics = [rankingRow];
+
+    const [storedRow] = await __testables.fetchStoredRows({
+      playerId: 8478402,
+      season: 20252026,
+      strength: "all"
+    });
+
+    expect(storedRow).toMatchObject({ goals_avg_last5: null });
   });
 });

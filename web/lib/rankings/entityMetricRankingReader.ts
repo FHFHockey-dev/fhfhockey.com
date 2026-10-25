@@ -536,29 +536,59 @@ export async function buildEntityMetricRankingSurfaces(
     if (metricRows) metricRows.push(row);
   }
 
-  const playerIds = allRows.map((row) => row.entity_id);
-  const teamIds = allRows
-    .map((row) => row.team_id)
-    .filter((id): id is number => typeof id === "number");
+  const buildEntries = (
+    playersById: Map<number, PlayerMeta>,
+    teamsById: Map<number, TeamMeta>,
+  ) =>
+    uniqueMetricKeys.map((metricKey) => {
+      const metricRequest = { ...request, metric: metricKey };
+      return [
+        metricKey,
+        buildEntityMetricRankingSurfaceFromRows({
+          request: metricRequest,
+          rows: rowsByMetric.get(metricKey) ?? [],
+          playersById,
+          teamsById,
+          generatedAt,
+          snapshotDate: snapshotDateByMetric.get(metricKey) ?? null,
+        }),
+      ] as const;
+    });
+
+  // Ranking needs the full cohort, but display metadata does not. Ranks and
+  // sort order never read metadata, so select the returned rows first and
+  // hydrate only those players and teams.
+  const unhydrated = buildEntries(new Map(), new Map());
+  if (!hydrateMetadata) return new Map(unhydrated);
+  const returnedRows = unhydrated.flatMap(([, surface]) => surface.rankings);
   const [playersById, teamsById] = await Promise.all([
-    hydrateMetadata ? fetchPlayerMeta(playerIds) : new Map<number, PlayerMeta>(),
-    hydrateMetadata ? fetchTeamMeta(teamIds) : new Map<number, TeamMeta>(),
+    fetchPlayerMeta(returnedRows.map((row) => row.entity.id)),
+    fetchTeamMeta(
+      returnedRows
+        .map((row) => row.team.id)
+        .filter((id): id is number => typeof id === "number"),
+    ),
   ]);
 
-  const entries = uniqueMetricKeys.map((metricKey) => {
-    const metricRequest = { ...request, metric: metricKey };
-    return [
-      metricKey,
-      buildEntityMetricRankingSurfaceFromRows({
-        request: metricRequest,
-        rows: rowsByMetric.get(metricKey) ?? [],
-        playersById,
-        teamsById,
-        generatedAt,
-        snapshotDate: snapshotDateByMetric.get(metricKey) ?? null,
-      }),
-    ] as const;
-  });
-
-  return new Map(entries);
+  return new Map(unhydrated.map(([metricKey, surface]) => [metricKey, {
+    ...surface,
+    rankings: surface.rankings.map((row) => {
+      const player = playersById.get(row.entity.id);
+      const team = row.team.id == null ? null : teamsById.get(row.team.id);
+      return {
+        ...row,
+        entity: {
+          ...row.entity,
+          name: player?.fullName ?? null,
+          position: player?.position ?? null,
+          imageUrl: player?.image_url ?? null,
+        },
+        team: {
+          ...row.team,
+          abbreviation: team?.abbreviation ?? null,
+          name: team?.name ?? null,
+        },
+      };
+    }),
+  }]));
 }

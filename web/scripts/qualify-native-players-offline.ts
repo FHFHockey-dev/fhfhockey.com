@@ -389,6 +389,9 @@ export async function qualifyNativePlayersOffline(inputs: OfflinePlayerInputs, a
           payload: { players: rows("forge_player_projections"), teams: rows("forge_team_projections"), goalies: rows("forge_goalie_projections"),
             inputCutoff: asOf, calculatedAt: createdAt, evidence, codeVersion: captured.snapshot.codeVersion,
             inputProvenance: { rolling_player_history_contract: captured.snapshot.inputProvenance!.rolling_player_history_contract,
+              // Carry the captured exclusion label as-is; admission rejects a revision without it.
+              ...(captured.snapshot.inputProvenance!.external_fantasy_input_contract !== undefined
+                ? { external_fantasy_input_contract: captured.snapshot.inputProvenance!.external_fantasy_input_contract } : {}),
               issuedContexts: contexts, capturedReads: capturedReadReceipt(captured.snapshot.reads) } } }],
           players, games, new Date(createdAt), context.game.seasonId, exclusionCounts, exclusions);
       }

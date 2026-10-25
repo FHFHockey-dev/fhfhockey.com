@@ -22,7 +22,10 @@ import {
   getTeamInfoById,
   teamsInfo
 } from "lib/teamsInfo";
-import { getTeams } from "lib/NHL/server";
+import {
+  getCurrentSeason as getServerCurrentSeason,
+  getTeams
+} from "lib/NHL/server";
 
 interface TeamListItem {
   team_id: number;
@@ -634,10 +637,19 @@ export default function StatsPage({
 }
 
 export async function getServerSideProps() {
-  const data = await fetchStatsData();
+  // Resolve the season once, then load leaderboards and teams together.
+  const season = await getServerCurrentSeason();
+  const [data, teamsResult] = await Promise.all([
+    fetchStatsData(season),
+    getTeams(season.seasonId, { mode: "current-canonical" }).then(
+      (teams) => ({ teams, error: null as unknown }),
+      (error: unknown) => ({ teams: null, error })
+    )
+  ]);
 
   try {
-    const teams = await getTeams();
+    if (teamsResult.error) throw teamsResult.error;
+    const teams = teamsResult.teams ?? [];
     const formattedTeams = teams.map((team) => ({
       team_id: team.id,
       name: team.name,

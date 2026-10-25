@@ -14,6 +14,7 @@ import {
   predictWithSerializedCalibrator,
   type SerializedCalibrationModel
 } from "./calibration";
+import { findForbiddenBaselineFeatureKeys } from "./baselineDataset";
 
 const EPSILON = 1e-9;
 const DEFAULT_SHOT_FEATURE_UPSERT_BATCH_SIZE = 100;
@@ -78,6 +79,7 @@ export type XgArtifactFeatureContractIssue = {
     | "duplicate_selected_feature"
     | "empty_categorical_levels"
     | "feature_coverage_blocking_reason"
+    | "forbidden_feature"
     | "feature_null_rate_drift"
     | "feature_key_count_mismatch"
     | "model_feature_count_mismatch"
@@ -274,6 +276,25 @@ export function auditXgArtifactFeatureContract(args: {
   const encodedFeatureCount = resolveEncodedFeatureCount(artifact);
   const selectedFeatureEntries = getSelectedFeatureEntries(artifact);
   const seenFeatures = new Map<string, SelectedFeatureGroup>();
+
+  for (const entry of selectedFeatureEntries) {
+    if (findForbiddenBaselineFeatureKeys([entry.feature]).length === 0) continue;
+    pushIssue({
+      code: "forbidden_feature",
+      feature: entry.feature,
+      featureGroup: entry.featureGroup,
+      message: `Artifact selects forbidden post-event feature "${entry.feature}".`
+    });
+  }
+  const forbiddenFeatureKeys = findForbiddenBaselineFeatureKeys(artifact.featureKeys).filter(
+    (featureKey) => !selectedFeatureEntries.some((entry) => entry.feature === featureKey)
+  );
+  if (forbiddenFeatureKeys.length > 0) {
+    pushIssue({
+      code: "forbidden_feature",
+      message: `Artifact encodes forbidden post-event feature keys: ${forbiddenFeatureKeys.join(", ")}.`
+    });
+  }
 
   for (const reason of artifact.featureCoverage?.blockingReasons ?? []) {
     pushIssue({

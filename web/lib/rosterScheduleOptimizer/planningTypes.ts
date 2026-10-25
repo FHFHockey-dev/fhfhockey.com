@@ -1,4 +1,6 @@
 import type { ContributionAllowedUses, ContributionExclusion, ContributionParticipation, ContributionSource, ForecastCalendarPolicy, ResolvedContribution } from "../player-forecasts/contributions";
+import type { RsoTargetUseBinding, RsoUsePolicyManifest } from "../player-forecasts/rsoUsePolicy";
+import type { GameExpectationPowerPlayRole } from "../player-forecasts/gameExpectations";
 export type ForecastExclusionReason = ContributionExclusion | "canary_excluded" | "discovery_timeout"
   | "discovery_failed" | "incomplete_refresh" | "eligibility_unverified" | "game_mismatch"
   | "invalid_cutoff" | "no_usable_target" | "conflicting_forecast";
@@ -45,7 +47,11 @@ export type PlanningPlayer = {
   form?: { label: string; games: number; points: number; includedInForecast: boolean | null };
   /** Provider injury designation (e.g. Yahoo IR, IR-LT, O, DTD); absent when healthy or unknown. */
   injury?: { status: string; label: string; note: string | null } | null;
+  /** Yahoo's daily goalie designation from today's roster read; null when Yahoo has not set one, absent when unread. */
+  startingStatus?: ProviderStartingStatus | null;
 };
+/** Yahoo's "Starting" / "Not Starting" mark for one date, and when the roster carrying it was read. */
+export type ProviderStartingStatus = { source: "yahoo"; date: string; isStarting: boolean; observedAt: string };
 export type RosterEntry = {
   playerId: string;
   position: "active" | "bench" | "IR" | "IR+" | "NA";
@@ -83,13 +89,15 @@ export type GameForecast = {
   /** Opaque fingerprint of retained source reads; not a substitute for their cutoff timestamps. */
   sourceWatermark?: string;
   allowedUses?: ContributionAllowedUses;
+  targetAllowedUses?: Record<string, ContributionAllowedUses>;
+  rsoTargetBindings?: Record<string, RsoTargetUseBinding>;
   assignmentStats?: StatLine;
   sourceKind?: "detailed" | "baseline" | "blended";
   conditionalStats?: StatLine;
   tieBreakStats?: StatLine;
   appearanceProbability?: number | null;
   /** Explicit unknown deployment; PPP production does not establish a PP unit. Optional for older snapshots. */
-  powerPlayRole?: { value: null; status: "unavailable" | "not_applicable"; reason: "current_role_evidence_unavailable" | "not_applicable"; source: null };
+  powerPlayRole?: GameExpectationPowerPlayRole;
   /** Separately admitted modeled start metadata; never weights appearance-conditioned means. */
   startParticipation?: ContributionParticipation;
   contributions?: Record<string, ResolvedContribution>;
@@ -325,6 +333,7 @@ export type PlanningData = {
 };
 export type ForecastManifest = {
   version: "planning-forecasts-v1";
+  rsoUsePolicy?: RsoUsePolicyManifest;
   /** Omitted only for retained legacy snapshots. */
   calendarPolicy?: ForecastCalendarPolicy;
   /** Opaque accepted-event receipt hash; null means no verified receipt set. */

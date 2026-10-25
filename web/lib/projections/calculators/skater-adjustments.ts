@@ -1,4 +1,6 @@
+import { readAlignedCountSupport } from "lib/rollingPlayerCountSupport";
 import { resolveNullableCompatibilityValue } from "lib/rollingPlayerMetricCompatibility";
+import type { LeaguePhysicalTotals, RollingRow } from "../types/run-forge-projections.types";
 import {
   GOALIE_GSAA_PRIOR_MAX_ABS,
   SKATER_IXG_PER_SHOT_BASELINE,
@@ -23,6 +25,7 @@ import {
   SKATER_ASSIST_SHARE_PRIORS,
   SKATER_ASSIST_SHARE_MIN,
   SKATER_ASSIST_SHARE_MAX,
+  SKATER_TEAM_ASSISTS_PER_GOAL,
   SKATER_GOAL_CONVERSION_PRIORS,
   SKATER_SHOT_RATE_PRIORS,
   SKATER_PHYSICAL_RECENT_SHRINK_MINUTES,
@@ -56,9 +59,7 @@ import {
   TEAM_XG_BASELINE_PER_GAME
 } from "../constants/projection-weights";
 import type {
-  LeaguePhysicalTotals,
   OpponentGoalieContext,
-  RollingRow,
   SkaterOnIceContextProfile,
   SkaterRestScheduleAdjustment,
   SkaterSampleShrinkageAdjustment,
@@ -354,6 +355,8 @@ export function computeSkaterRestScheduleAdjustments(args: {
   teamRestDays: number | null;
   opponentRestDays: number | null;
   isHome: boolean;
+  /** "legacy" reproduces the pre-Q8 buckets (B2B read as 0) for offline backtests only. */
+  buckets?: "legacy";
 }): SkaterRestScheduleAdjustment {
   const teamRestDays = Number.isFinite(args.teamRestDays) && args.teamRestDays != null ? Math.max(0, Number(args.teamRestDays)) : null;
   const opponentRestDays = Number.isFinite(args.opponentRestDays) && args.opponentRestDays != null ? Math.max(0, Number(args.opponentRestDays)) : null;
@@ -371,12 +374,17 @@ export function computeSkaterRestScheduleAdjustments(args: {
     };
   }
 
-  const teamRest = teamRestDays ?? 1;
-  const oppRest = opponentRestDays ?? 1;
+  // Rest days are days since the previous game (fetchTeamRestDays), so a back-to-back is 1,
+  // as in the goalie stage: 1 = heavy fatigue, 2 = mild, 3 = small boost, 4+ = full recovery.
+  // Legacy buckets read every tier one day lower; restDelta is shift-invariant, and a missing
+  // side keeps its former neutral default (old 1 = new 2) in both modes.
+  const shift = args.buckets === "legacy" ? 1 : 0;
+  const teamRest = teamRestDays == null ? 2 : teamRestDays + shift;
+  const oppRest = opponentRestDays == null ? 2 : opponentRestDays + shift;
   const restDelta = clamp((teamRest - oppRest) / 3, -1, 1);
-  const teamFatiguePenalty = teamRest <= 0 ? 0.11 : teamRest === 1 ? 0.035 : 0;
-  const teamRecoveryBoost = teamRest >= 3 ? 0.03 : teamRest === 2 ? 0.012 : 0;
-  const opponentFatigueBoost = oppRest <= 0 ? 0.055 : oppRest === 1 ? 0.018 : 0;
+  const teamFatiguePenalty = teamRest <= 1 ? 0.11 : teamRest === 2 ? 0.035 : 0;
+  const teamRecoveryBoost = teamRest >= 4 ? 0.03 : teamRest === 3 ? 0.012 : 0;
+  const opponentFatigueBoost = oppRest <= 1 ? 0.055 : oppRest === 2 ? 0.018 : 0;
   const homeIceEdge = args.isHome ? 0.012 : -0.004;
 
   const toiMultiplier = clamp(
@@ -538,21 +546,37 @@ export function computeSkaterPhysicalEventRates(args: {
   };
 }
 
-// Assist-rate conventions: ES assists are fitted per player goal; PP assists stay on the former
-// per-two-goals scale (denominator goals x 2) pending the power-play over-prediction. The ES
-// pseudo-counts are half the former per-two-goals ones (blendOnlineRate adds priorStrength to the
-// denominator), so ES shrinkage is unchanged while the rate is exactly twice the former value.
-const SKATER_ES_ASSIST_PER_GOAL = {
-  baseStrength: 11,
-  evidenceScale: 18,
-  minStrength: 4,
-  maxStrength: 20,
-  fallback: 1.44,
-  minRawRate: 0.4,
-  maxRawRate: 2.9,
-  minRate: 0.4,
-  maxRate: 3.4
+/**
+ * Assist rates are assists per player goal. "per_two_goals" is the former halved scale (denominator
+ * goals x 2), kept with its exact constants so stored rows can be recomputed offline. "per_goal"
+ * halves every pseudo-count (priorStrength is added to the denominator in blendOnlineRate and sets
+ * the recent weight), so shrinkage is identical and every rate is exactly twice the legacy one.
+ */
+export type SkaterAssistDenominator = "per_goal" | "per_two_goals";
+const SKATER_ASSIST_SCALE = {
+  per_two_goals: {
+    goalsPerDenominator: 2,
+    ev: { baseStrength: 22, evidenceScale: 36, minStrength: 8, maxStrength: 40, fallback: 0.72, raw: [0.2, 1.45], out: [0.2, 1.7] },
+    pp: { baseStrength: 16, evidenceScale: 24, minStrength: 6, maxStrength: 30, fallback: 0.95, raw: [0.3, 1.8], out: [0.3, 2] },
+  },
+  per_goal: {
+    goalsPerDenominator: 1,
+    ev: { baseStrength: 11, evidenceScale: 18, minStrength: 4, maxStrength: 20, fallback: 1.44, raw: [0.4, 2.9], out: [0.4, 3.4] },
+    pp: { baseStrength: 8, evidenceScale: 12, minStrength: 3, maxStrength: 15, fallback: 1.9, raw: [0.6, 3.6], out: [0.6, 4] },
+  },
 } as const;
+export type SkaterAssistDenominators = { es: SkaterAssistDenominator; pp: SkaterAssistDenominator };
+/** A single string applies to both strengths. */
+export type SkaterAssistDenominatorOption = SkaterAssistDenominator | SkaterAssistDenominators;
+/** Held candidate: ES assists per goal, PP assists still per two goals. */
+export const SKATER_ASSIST_DENOMINATOR_DEFAULT: SkaterAssistDenominators = { es: "per_goal", pp: "per_two_goals" };
+export function resolveAssistDenominators(
+  option: SkaterAssistDenominatorOption | undefined,
+  fallback: SkaterAssistDenominators = SKATER_ASSIST_DENOMINATOR_DEFAULT,
+): SkaterAssistDenominators {
+  if (option == null) return { ...fallback };
+  return typeof option === "string" ? { es: option, pp: option } : { es: option.es, pp: option.pp };
+}
 
 /**
  * The share of a skater's on-ice goals he assists, shrunk to the F/D prior for that strength.
@@ -578,6 +602,28 @@ export function computeSkaterAssistShare(args: {
   }
   const share = (assisted + prior.k * prior.share) / (onIceGoals + prior.k);
   return { share: clamp(share, SKATER_ASSIST_SHARE_MIN, SKATER_ASSIST_SHARE_MAX), onIceGoalsHistory: onIceGoals };
+}
+
+/**
+ * Assists come from the goals scored while a skater is on the ice: team goals at each strength
+ * x his share of the five skater slots x his assist share, scaled so the team's assists per goal
+ * match the league's at that strength. Returns per-player ES and PP assists in input order.
+ */
+export function allocateTeamAssists(players: ReadonlyArray<{
+  toiEs: number; toiPp: number; goalsEs: number; goalsPp: number; assistShareEs: number; assistSharePp: number;
+}>): Array<{ assistsEs: number; assistsPp: number }> {
+  const sum = (pick: (p: (typeof players)[number]) => number) => players.reduce((total, p) => total + pick(p), 0);
+  const team = { goalsEs: sum(p => p.goalsEs), goalsPp: sum(p => p.goalsPp), toiEs: sum(p => p.toiEs), toiPp: sum(p => p.toiPp) };
+  const onIceEs = (toi: number) => (team.toiEs > 0 ? (team.goalsEs * 5 * toi) / team.toiEs : 0);
+  const onIcePp = (toi: number) => (team.toiPp > 0 ? (team.goalsPp * 5 * toi) / team.toiPp : 0);
+  const rawEs = sum(p => onIceEs(p.toiEs) * p.assistShareEs);
+  const rawPp = sum(p => onIcePp(p.toiPp) * p.assistSharePp);
+  const scaleEs = rawEs > 0 ? (SKATER_TEAM_ASSISTS_PER_GOAL.es * team.goalsEs) / rawEs : 0;
+  const scalePp = rawPp > 0 ? (SKATER_TEAM_ASSISTS_PER_GOAL.pp * team.goalsPp) / rawPp : 0;
+  return players.map(p => ({
+    assistsEs: onIceEs(p.toiEs) * p.assistShareEs * scaleEs,
+    assistsPp: onIcePp(p.toiPp) * p.assistSharePp * scalePp,
+  }));
 }
 
 /**
@@ -619,6 +665,7 @@ export function computeStrengthSplitConversionRates(args: {
   ppAssistsAll: number;
   goalRateMultiplier: number;
   assistRateMultiplier: number;
+  assistDenominator?: SkaterAssistDenominatorOption;
   /** With a position, goals per shot shrink to the F/D prior by its measured shots (task 4). */
   position?: string | null;
 }): {
@@ -656,19 +703,23 @@ export function computeStrengthSplitConversionRates(args: {
     minStrength: 9,
     maxStrength: 54
   });
+  const denominators = resolveAssistDenominators(args.assistDenominator);
+  const evScale = SKATER_ASSIST_SCALE[denominators.es], ppScale = SKATER_ASSIST_SCALE[denominators.pp];
+  const evPerDenominator = evScale.goalsPerDenominator, ppPerDenominator = ppScale.goalsPerDenominator;
+  const evAssist = evScale.ev, ppAssist = ppScale.pp;
   const evAssistPriorStrength = adaptivePriorStrength({
-    baseStrength: SKATER_ES_ASSIST_PER_GOAL.baseStrength,
-    evidenceDenom: Math.max(0, args.evGoalsAll) + Math.max(0, args.evGoalsRecent),
-    evidenceScale: SKATER_ES_ASSIST_PER_GOAL.evidenceScale,
-    minStrength: SKATER_ES_ASSIST_PER_GOAL.minStrength,
-    maxStrength: SKATER_ES_ASSIST_PER_GOAL.maxStrength
+    baseStrength: evAssist.baseStrength,
+    evidenceDenom: Math.max(0, args.evGoalsAll * evPerDenominator) + Math.max(0, args.evGoalsRecent * evPerDenominator),
+    evidenceScale: evAssist.evidenceScale,
+    minStrength: evAssist.minStrength,
+    maxStrength: evAssist.maxStrength
   });
   const ppAssistPriorStrength = adaptivePriorStrength({
-    baseStrength: 16,
-    evidenceDenom: Math.max(0, args.ppGoalsAll * 2) + Math.max(0, args.ppGoalsRecent * 2),
-    evidenceScale: 24,
-    minStrength: 6,
-    maxStrength: 30
+    baseStrength: ppAssist.baseStrength,
+    evidenceDenom: Math.max(0, args.ppGoalsAll * ppPerDenominator) + Math.max(0, args.ppGoalsRecent * ppPerDenominator),
+    evidenceScale: ppAssist.evidenceScale,
+    minStrength: ppAssist.minStrength,
+    maxStrength: ppAssist.maxStrength
   });
 
   const goalRateEsRaw = blendOnlineRate({
@@ -693,33 +744,164 @@ export function computeStrengthSplitConversionRates(args: {
   });
   const assistRateEsRaw = blendOnlineRate({
     recentNumerator: args.evAssistsRecent,
-    recentDenom: args.evGoalsRecent,
+    recentDenom: args.evGoalsRecent * evPerDenominator,
     baseNumerator: args.evAssistsAll,
-    baseDenom: args.evGoalsAll,
-    fallback: SKATER_ES_ASSIST_PER_GOAL.fallback,
+    baseDenom: args.evGoalsAll * evPerDenominator,
+    fallback: evAssist.fallback,
     priorStrength: evAssistPriorStrength,
-    minRate: SKATER_ES_ASSIST_PER_GOAL.minRawRate,
-    maxRate: SKATER_ES_ASSIST_PER_GOAL.maxRawRate
+    minRate: evAssist.raw[0],
+    maxRate: evAssist.raw[1]
   });
   const assistRatePpRaw = blendOnlineRate({
     recentNumerator: args.ppAssistsRecent,
-    recentDenom: args.ppGoalsRecent * 2,
+    recentDenom: args.ppGoalsRecent * ppPerDenominator,
     baseNumerator: args.ppAssistsAll,
-    baseDenom: args.ppGoalsAll * 2,
-    fallback: 0.95,
+    baseDenom: args.ppGoalsAll * ppPerDenominator,
+    fallback: ppAssist.fallback,
     priorStrength: ppAssistPriorStrength,
-    minRate: 0.3,
-    maxRate: 1.8
+    minRate: ppAssist.raw[0],
+    maxRate: ppAssist.raw[1]
   });
 
   return {
     goalRateEs: clamp(goalRateEsRaw * args.goalRateMultiplier, 0.02, 0.3),
     goalRatePp: clamp(goalRatePpRaw * args.goalRateMultiplier, 0.03, 0.45),
-    assistRateEs: clamp(
-      assistRateEsRaw * args.assistRateMultiplier,
-      SKATER_ES_ASSIST_PER_GOAL.minRate,
-      SKATER_ES_ASSIST_PER_GOAL.maxRate
-    ),
-    assistRatePp: clamp(assistRatePpRaw * args.assistRateMultiplier, 0.3, 2)
+    assistRateEs: clamp(assistRateEsRaw * args.assistRateMultiplier, evAssist.out[0], evAssist.out[1]),
+    assistRatePp: clamp(assistRatePpRaw * args.assistRateMultiplier, ppAssist.out[0], ppAssist.out[1])
+  };
+}
+
+export const skaterConversionPriorsAndBounds = (denominators: SkaterAssistDenominators) => {
+  const ev = SKATER_ASSIST_SCALE[denominators.es].ev, pp = SKATER_ASSIST_SCALE[denominators.pp].pp;
+  return {
+    priors: { goalRateEs: 0.095, goalRatePp: 0.145, assistRateEs: ev.fallback, assistRatePp: pp.fallback },
+    bounds: { goalRateEs: [0.025, 0.3], goalRatePp: [0.04, 0.45], assistRateEs: ev.out, assistRatePp: pp.out },
+  } as const;
+};
+
+/**
+ * Supported split rates are already shrunk toward an adaptive prior, so they are used directly
+ * (clamped). Only an unsupported head falls back to the fixed prior via the small-sample blend,
+ * which reduces to the prior. `conversionShrink` keeps the pre-shrink Bayes rate and the value
+ * the former second shrink would have produced, so a backtest can score both from stored rows.
+ */
+export function resolveSkaterConversionRates(args: {
+  splitRates: { goalRateEs: number | null; goalRatePp: number | null; assistRateEs: number | null; assistRatePp: number | null };
+  sampleWeight: number;
+  assistDenominator?: SkaterAssistDenominatorOption;
+  /**
+   * With a position (task 4), goal heads use the F/D prior and keep the small-sample shrink toward
+   * it: it also damps the context goal multipliers, which compound to about 1.3 for some skaters
+   * until task 9 sizes them (dropping it raised forward goals per shot to 0.154 in the 10-13 pilot).
+   */
+  position?: string | null;
+}) {
+  const { priors: fixedPriors, bounds } = skaterConversionPriorsAndBounds(resolveAssistDenominators(args.assistDenominator));
+  const positionPriors = args.position === undefined ? null
+    : SKATER_GOAL_CONVERSION_PRIORS[args.position === "D" ? "D" : "F"];
+  const priors = positionPriors
+    ? { ...fixedPriors, goalRateEs: positionPriors.es.perShot, goalRatePp: positionPriors.pp.perShot } : fixedPriors;
+  const resolve = (key: keyof typeof priors) => {
+    const prior = priors[key];
+    const [min, max] = bounds[key];
+    const bayes = args.splitRates[key];
+    const legacy = clamp((bayes ?? prior) * args.sampleWeight + (1 - args.sampleWeight) * prior, min, max);
+    const keepsShrink = positionPriors != null && (key === "goalRateEs" || key === "goalRatePp");
+    return { value: bayes == null || keepsShrink ? legacy : clamp(bayes, min, max),
+      shrink: { bayes, legacy, sample_weight: args.sampleWeight } };
+  };
+  const goalEs = resolve("goalRateEs"), goalPp = resolve("goalRatePp");
+  const assistEs = resolve("assistRateEs"), assistPp = resolve("assistRatePp");
+  return {
+    goalRateEs: goalEs.value, goalRatePp: goalPp.value, assistRateEs: assistEs.value, assistRatePp: assistPp.value,
+    conversionShrink: { goal_es: goalEs.shrink, goal_pp: goalPp.shrink, assist_es: assistEs.shrink, assist_pp: assistPp.shrink },
+  };
+}
+
+/** Conversion learning consumes paired observations, never legacy independent scalar windows. */
+export function computeSupportedStrengthSplitConversionRates(args: {
+  ev: RollingRow | undefined;
+  pp: RollingRow | undefined;
+  goalRateMultiplier: number;
+  assistRateMultiplier: number;
+  assistDenominator?: SkaterAssistDenominatorOption;
+  position?: string | null;
+}) {
+  const support = (row: RollingRow | undefined, strengthState: "ev" | "pp") => row
+    ? readAlignedCountSupport(row.aligned_count_support, {
+        playerId: row.player_id, strengthState,
+        anchor: { gameId: row.game_id, gameDate: row.game_date, seasonId: row.season },
+      }) : null;
+  const ev = support(args.ev, "ev"), pp = support(args.pp, "pp");
+  // Each call uses its own pair's common frame. Zero placeholders belong only
+  // to unused calculations; absent pairs are withheld below, never observations.
+  const calculate = (name: "goalPerShot" | "assistPerGoal") => {
+    const e = ev?.pairs[name], p = pp?.pairs[name];
+    return computeStrengthSplitConversionRates({
+      evGoalsRecent: name === "goalPerShot" ? e?.last5.numerator ?? 0 : e?.last5.denominator ?? 0,
+      evGoalsAll: name === "goalPerShot" ? e?.all.numerator ?? 0 : e?.all.denominator ?? 0,
+      evShotsRecent: name === "goalPerShot" ? e?.last5.denominator ?? 0 : 0,
+      evShotsAll: name === "goalPerShot" ? e?.all.denominator ?? 0 : 0,
+      evAssistsRecent: name === "assistPerGoal" ? e?.last5.numerator ?? 0 : 0,
+      evAssistsAll: name === "assistPerGoal" ? e?.all.numerator ?? 0 : 0,
+      ppGoalsRecent: name === "goalPerShot" ? p?.last5.numerator ?? 0 : p?.last5.denominator ?? 0,
+      ppGoalsAll: name === "goalPerShot" ? p?.all.numerator ?? 0 : p?.all.denominator ?? 0,
+      ppShotsRecent: name === "goalPerShot" ? p?.last5.denominator ?? 0 : 0,
+      ppShotsAll: name === "goalPerShot" ? p?.all.denominator ?? 0 : 0,
+      ppAssistsRecent: name === "assistPerGoal" ? p?.last5.numerator ?? 0 : 0,
+      ppAssistsAll: name === "assistPerGoal" ? p?.all.numerator ?? 0 : 0,
+      goalRateMultiplier: args.goalRateMultiplier, assistRateMultiplier: args.assistRateMultiplier,
+      assistDenominator: args.assistDenominator, position: args.position,
+    });
+  };
+  const goals = calculate("goalPerShot"), assists = calculate("assistPerGoal");
+  return {
+    goalRateEs: ev?.pairs.goalPerShot && ev.pairs.goalPerShot.all.denominator > 0 ? goals.goalRateEs : null,
+    goalRatePp: pp?.pairs.goalPerShot && pp.pairs.goalPerShot.all.denominator > 0 ? goals.goalRatePp : null,
+    assistRateEs: ev?.pairs.assistPerGoal && ev.pairs.assistPerGoal.all.denominator > 0 ? assists.assistRateEs : null,
+    assistRatePp: pp?.pairs.assistPerGoal && pp.pairs.assistPerGoal.all.denominator > 0 ? assists.assistRatePp : null,
+    support: { ev, pp },
+  };
+}
+
+/** Withhold unsupported learned heads and their derived bands/scenarios together. */
+export function applySupportedSkaterConversionHeads<T extends {
+  proj_goals_es: number | null; proj_goals_pp: number | null;
+  proj_assists_es: number | null; proj_assists_pp: number | null; uncertainty: unknown;
+}>(row: T, rates: ReturnType<typeof computeSupportedStrengthSplitConversionRates>) {
+  const available = {
+    goals_es: rates.goalRateEs !== null, goals_pp: rates.goalRatePp !== null,
+    assists_es: rates.goalRateEs !== null && rates.assistRateEs !== null,
+    assists_pp: rates.goalRatePp !== null && rates.assistRatePp !== null,
+  };
+  const uncertainty = structuredClone(row.uncertainty) as Record<string, unknown>;
+  const record = (value: unknown): Record<string, unknown> | null =>
+    value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
+  const mask = (target: Record<string, unknown> | null) => {
+    if (!target) return;
+    for (const [key, usable] of Object.entries(available)) if (!usable && key in target) target[key] = null;
+  };
+  mask(uncertainty);
+  for (const [key, usable] of Object.entries({
+    g: available.goals_es && available.goals_pp, a: available.assists_es && available.assists_pp,
+    pts: Object.values(available).every(Boolean), ppp: available.goals_pp && available.assists_pp,
+  })) if (!usable && key in uncertainty) uncertainty[key] = null;
+  const model = record(uncertainty.model), selection = record(model?.skater_selection);
+  if (selection) {
+    selection.conversion_count_support = { policy: "aligned_observations_required", ...rates.support };
+    const conversion = record(selection.conversion_rates);
+    if (conversion) for (const [key, value] of Object.entries({
+      goal_rate_es: rates.goalRateEs, goal_rate_pp: rates.goalRatePp,
+      assist_rate_es: rates.assistRateEs, assist_rate_pp: rates.assistRatePp,
+    })) if (value === null) conversion[key] = null;
+    const scenarios = record(selection.role_scenarios)?.scenario_stat_lines;
+    if (Array.isArray(scenarios)) for (const scenario of scenarios) mask(record(scenario));
+  }
+  mask(record(record(model?.holdout_baselines)?.current_baseline));
+  return { ...row, uncertainty,
+    proj_goals_es: available.goals_es ? row.proj_goals_es : null,
+    proj_goals_pp: available.goals_pp ? row.proj_goals_pp : null,
+    proj_assists_es: available.assists_es ? row.proj_assists_es : null,
+    proj_assists_pp: available.assists_pp ? row.proj_assists_pp : null,
   };
 }

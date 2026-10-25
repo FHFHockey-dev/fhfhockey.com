@@ -224,7 +224,7 @@ export function buildTweetNewsInferenceSources(
 }
 
 export function buildTweetNewsInferencePlayerCandidates(args: {
-  row: TweetNewsAutomationReviewRow;
+  row: Pick<TweetNewsAutomationReviewRow, "team_id">;
   players: TweetNewsAutomationPlayer[];
   sources: TweetNewsInferenceSource[];
 }): TweetNewsAutomationPlayer[] {

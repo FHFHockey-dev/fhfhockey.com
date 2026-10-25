@@ -74,3 +74,10 @@ robots.txt
 
 # MCP json
 .mcp.json
+
+# Raw local verification output; retain source, fixtures, receipts and PRDs.
+/tasks/artifacts/**/*.log
+/tasks/artifacts/**/*.tap
+/tasks/artifacts/**/*.stdout
+/tasks/artifacts/**/*.stderr
+/tasks/artifacts/**/test-results/

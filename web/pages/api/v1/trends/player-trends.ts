@@ -413,9 +413,10 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
     });
     return res.status(200).json(response);
   } catch (error: any) {
+    console.error("player-trends rebuild API error", error);
     return res.status(500).json({
       success: false,
-      message: error.message ?? "Failed to rebuild player trends",
+      message: "Failed to rebuild player trends",
     });
   }
 }

@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import ts from "typescript";
+import { createHash } from "node:crypto";
 
 import { parseCronInventoryFromMarkdown } from "lib/cron/cronInventory";
 
@@ -546,20 +547,28 @@ export function classifyVercelCronSource(source: string, routePath: string) {
   // returned delegate cannot qualify this source contract.
   const patreonHandler = routePath === "/api/internal/patreon-reconcile" && admin && current && ts.isArrowFunction(current)
     ? current : undefined;
+  // C5 r2: pin the complete reviewed Yahoo AST, including both audit bodies,
+  // admission order, idle-state helper, preview keys and 12:00 UTC predicate.
+  // Comments/formatting may vary; any semantic change needs a new review/pin.
+  const yahooIdleAudit = routePath === "/api/internal/yahoo-live-draft" && bespoke &&
+    imported("withCronJobAudit", "lib/cron/withCronJobAudit") &&
+    createHash("sha256").update(sourceSignature(source)).digest("hex") ===
+      "24a6f790f51d2835b6ec914a831c39890e738fbc5038d6f5f230f878c15a1f48";
   const delegatedAudit = ((routePath === "/api/internal/espn-sync" || routePath === "/api/internal/fantrax-sync") &&
       bespoke && returnsAuditDelegate(defaultHandler, 4)) ||
     (patreonHandler != null && prefixMatches(`if (req.method !== "GET") {
       res.setHeader("Allow", "GET");
       return res.status(405).json({ error: "Method Not Allowed" });
     }`, 1, patreonHandler) && returnsAuditDelegate(patreonHandler, 1));
-  audited = audited || delegatedAudit;
+  audited = audited || delegatedAudit || yahooIdleAudit;
   return {
     authMode: admin ? "admin-or-cron" as const : bespoke ? "cron-secret-only" as const : "unqualified" as const,
     auditMode: audited ? "shared-wrapper" as const : "unqualified" as const,
     authReason: admin ? "Reviewed adminOnly import occurs in the exported wrapper chain." : bespoke
       ? "Reviewed route-specific nonempty-secret rejection and exact bearer guard precede work."
       : "No supported reviewed authorization source contract matched.",
-    auditReason: delegatedAudit ? "Reviewed withCronJobAudit delegate is returned immediately after the exact admission/method prefix."
+    auditReason: yahooIdleAudit ? "Reviewed polling audit plus a 12:00 UTC idle heartbeat; other disabled/suspended exits intentionally write no row."
+      : delegatedAudit ? "Reviewed withCronJobAudit delegate is returned immediately after the exact admission/method prefix."
       : audited ? "Reviewed withCronJobAudit import occurs in the exported wrapper chain."
       : "No direct reviewed audit wrapper; manual/helper-owned auditing remains unqualified (not an exemption).",
   };

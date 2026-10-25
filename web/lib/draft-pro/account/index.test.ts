@@ -86,8 +86,8 @@ describe("Draft Pro checkout availability", () => {
   const afterExpiry = new Date("2027-07-01T04:00:00.000Z");
   const configured = { checkoutEnabled: true, stripeConfigured: true, siteUrlConfigured: true };
 
-  it("is available only when flag, configuration, site URL, and time allow it", () => {
-    expect(getDraftProCheckoutAvailability({ ...configured, now: beforeExpiry, eligible: false })).toEqual({ available: true, reason: "available" });
+  it("keeps new sales closed even when the legacy configuration permits them", () => {
+    expect(getDraftProCheckoutAvailability({ ...configured, now: beforeExpiry, eligible: false })).toEqual({ available: false, reason: "sales_closed" });
   });
 
   it.each([
@@ -97,6 +97,6 @@ describe("Draft Pro checkout availability", () => {
     ["already entitled", { eligible: true }, "already_eligible"],
     ["pass expired", {}, "pass_expired"],
   ])("returns a stable reason for %s", (_label, overrides, reason) => {
-    expect(getDraftProCheckoutAvailability({ ...configured, now: reason === "pass_expired" ? afterExpiry : beforeExpiry, eligible: false, ...overrides })).toEqual({ available: false, reason });
+    expect(getDraftProCheckoutAvailability({ ...configured, now: reason === "pass_expired" ? afterExpiry : beforeExpiry, eligible: false, ...overrides })).toEqual({ available: false, reason: reason === "already_eligible" ? reason : "sales_closed" });
   });
 });

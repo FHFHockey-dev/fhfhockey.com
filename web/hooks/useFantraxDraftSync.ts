@@ -10,7 +10,7 @@ function restoredSessionId() {
   return window.sessionStorage.getItem(SESSION_KEY);
 }
 
-export function useFantraxDraftSync(authenticated: boolean, authLoading = false) {
+export function useFantraxDraftSync(authenticated: boolean, authLoading = false, canSync = false) {
   const [enabled, setEnabled] = useState(false);
   const [eligible, setEligible] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(restoredSessionId);
@@ -66,6 +66,7 @@ export function useFantraxDraftSync(authenticated: boolean, authLoading = false)
   }, [authenticated, sessionId]);
 
   const start = useCallback(async (externalLeagueId: string, externalTeamId: string) => {
+    if (!canSync) return null;
     setIsLoading(true);
     setError(null);
     try {
@@ -84,10 +85,10 @@ export function useFantraxDraftSync(authenticated: boolean, authLoading = false)
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [canSync]);
 
   const poll = useCallback(async () => {
-    if (!sessionId || inFlight.current || Date.now() < retryAt) return;
+    if (!canSync || !sessionId || inFlight.current || Date.now() < retryAt) return;
     inFlight.current = true;
     setIsPolling(true);
     try {
@@ -110,15 +111,15 @@ export function useFantraxDraftSync(authenticated: boolean, authLoading = false)
       inFlight.current = false;
       setIsPolling(false);
     }
-  }, [retryAt, sessionId]);
+  }, [canSync, retryAt, sessionId]);
 
   useEffect(() => {
-    if (!eligible || draftState?.session.status !== "active" || !sessionId) return;
+    if (!canSync || !eligible || draftState?.session.status !== "active" || !sessionId) return;
     const timer = window.setInterval(() => {
       if (document.visibilityState === "visible") void poll();
     }, 30_000);
     return () => window.clearInterval(timer);
-  }, [draftState?.session.status, eligible, poll, sessionId]);
+  }, [canSync, draftState?.session.status, eligible, poll, sessionId]);
 
   const stop = useCallback(async () => {
     if (sessionId) {

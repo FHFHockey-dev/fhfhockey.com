@@ -43,6 +43,8 @@ import { resolveSeasonRosterConsensus } from "./rosterIntegrity";
 import {
   applyPersistentPlayerAssumptions,
   buildRuntimeNewcomerPrior,
+  prepareForecastCadence,
+  type ForecastCadenceInput,
 } from "./seasonJobs";
 import {
   captureOfficialNhlTransactionAudit,
@@ -51,6 +53,71 @@ import {
   parseOfficialNhlArticleCapture,
 } from "./transactionAudit";
 import { playerForecastEditorConfiguration } from "../../utils/playerForecastSeasonEditorOnlyMiddleware";
+
+describe("approved forecast cadence preparation", () => {
+  const fixture = (date = "2026-10-15", now = `${date}T12:00:00Z`): ForecastCadenceInput => ({
+    date, now: new Date(now), requiredSources: ["overnight_results", "roster_schedule"],
+    sources: ["overnight_results", "roster_schedule"].map(key => ({ key, date, status: "complete",
+      revision: `${key}-r1`, completedAt: `${date}T11:30:00Z`, expectedItems: 12, completedItems: 12 })),
+    games: [{ gameId: 2026020001, startsAt: `${date}T23:00:00Z` }], previous: [],
+  });
+
+  it.each([["2026-03-07", "13"], ["2026-03-08", "12"], ["2026-10-31", "12"], ["2026-11-01", "13"]])(
+    "keeps morning issuance at 08:00 New York across DST on %s", (date, hour) => {
+      const result = prepareForecastCadence(fixture(date, `${date}T${hour}:00:00Z`));
+      expect(result.slots[0].dueAt).toBe(`${date}T${hour}:00:00.000Z`);
+      expect(result.slots[0].action).toBe("enqueue");
+      expect(result.activationApproved).toBe(false);
+    });
+
+  it("holds incomplete overnight sources even when their timestamps are fresh", () => {
+    const input = fixture();
+    input.sources[0].status = "partial";
+    let morning = prepareForecastCadence(input).slots[0];
+    expect(morning.action).toBe("hold");
+    expect(morning.reasons).toContain("source_incomplete:overnight_results");
+    input.sources[0].status = "complete";
+    input.sources[0].expectedItems = null;
+    expect(prepareForecastCadence(input).slots[0].action).toBe("hold");
+    input.sources[0].expectedItems = 13;
+    expect(prepareForecastCadence(input).slots[0].action).toBe("hold");
+    input.sources[0].expectedItems = 12;
+    input.now = new Date("2026-10-15T12:05:00Z");
+    morning = prepareForecastCadence(input).slots[0];
+    expect(morning.action).toBe("enqueue");
+    expect(morning.late).toBe(true);
+    expect(morning.dueAt).toBe("2026-10-15T12:00:00.000Z");
+    expect(morning.decisionAsOf).toBe("2026-10-15T12:05:00.000Z");
+  });
+
+  it("plans the separate 18:45 revision for 19:00 puck drop and deduplicates successful baselines", () => {
+    const input = fixture("2026-10-15", "2026-10-15T22:44:59Z");
+    input.previous = [{ key: "morning:2026-10-15", status: "succeeded", attempts: 1 }];
+    const before = prepareForecastCadence(input);
+    expect(before.slots[0].reasons).toContain("slot_succeeded");
+    expect(before.slots[1].dueAt).toBe("2026-10-15T22:45:00.000Z");
+    expect(before.slots[1].reasons).toContain("not_due");
+    input.now = new Date("2026-10-15T22:45:00Z");
+    const revision = prepareForecastCadence(input).slots[1];
+    expect(revision.action).toBe("enqueue");
+    expect(revision.kind).toBe("news_revision");
+    expect(revision.key).not.toBe(before.slots[0].key);
+    input.now = new Date("2026-10-15T23:00:00Z");
+    expect(prepareForecastCadence(input).slots[1].reasons).toContain("game_started");
+  });
+
+  it("recovers only failed slots within the finite attempt budget and holds unknown commits", () => {
+    const input = fixture();
+    input.previous = [{ key: "morning:2026-10-15", status: "failed", attempts: 2 }];
+    expect(prepareForecastCadence(input).slots[0].action).toBe("recover_failed");
+    input.previous[0].attempts = 3;
+    expect(prepareForecastCadence(input).slots[0].reasons).toContain("recovery_exhausted");
+    for (const status of ["pending", "running", "succeeded", "unknown"] as const) {
+      input.previous[0] = { ...input.previous[0], status, attempts: 1 };
+      expect(prepareForecastCadence(input).slots[0].action).toBe("hold");
+    }
+  });
+});
 
 describe("fantasy projection contracts", () => {
   it("reserves the opening release for an editor", () => {

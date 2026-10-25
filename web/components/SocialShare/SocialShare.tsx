@@ -42,8 +42,8 @@ const knownGraphic = (format: SocialShareFormat, value: unknown): value is strin
 const editionMemory = new Map<string, SocialShareSnapshot>();
 const editionKey = (userId: string, format: SocialShareFormat, week: string) => JSON.stringify([userId, format, week]);
 const queryText = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value) ?? "";
-/** A real calendar date: well formed, finite, and no rollover (2026-02-30 is not March 2) (C7 SS1-15-F1). */
-const isCalendarDate = (value: string) => /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(`${value}T12:00:00Z`)) && new Date(`${value}T12:00:00Z`).toISOString().slice(0, 10) === value;
+/** A supported calendar date: years below 1000 cannot round-trip through the local calendar formatter. No rollover (C7 SS1-15-F1). */
+const isCalendarDate = (value: string) => /^[1-9]\d{3}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(`${value}T12:00:00Z`)) && new Date(`${value}T12:00:00Z`).toISOString().slice(0, 10) === value;
 function initialSelection(format: SocialShareFormat, asOf: string, query: Record<string, string | string[] | undefined>) {
   const week = isCalendarDate(queryText(query.week)) ? calendarWeekStart(`${queryText(query.week)}T16:00:00Z`) : calendarWeekStart(asOf);
   const days = weekDates(week), raw = query.dates === undefined ? null : queryText(query.dates).split(",").filter(Boolean);

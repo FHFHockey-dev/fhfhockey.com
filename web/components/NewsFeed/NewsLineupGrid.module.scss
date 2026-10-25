@@ -1,0 +1,136 @@
+@use "styles/vars" as v;
+
+.preview {
+  min-width: 0;
+  container: news-lineup / inline-size;
+}
+
+.context,
+.notice {
+  margin: 0 0 6px;
+  color: v.$text-secondary;
+  font-size: 0.74rem;
+  line-height: 1.4;
+}
+
+.viewport {
+  min-width: 0;
+  overflow: auto;
+  scrollbar-width: thin;
+
+  &:focus-visible {
+    outline: 2px solid v.$primary-color;
+    outline-offset: 2px;
+  }
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  align-items: start;
+  gap: 8px;
+}
+
+.group {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  grid-column: 1 / -1;
+
+  &[data-role="forward"] { grid-column: 1; grid-row: span 2; }
+  &[data-role="defense"],
+  &[data-role="goalie"] { grid-column: 2; }
+
+  h3 {
+    margin: 0;
+    color: v.$text-secondary;
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+}
+
+.unit { min-width: 0; }
+.groupLabel { color: v.$text-secondary; font-size: 0.72rem; }
+
+.players {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+
+  &[data-role="defense"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  &[data-role="goalie"] { grid-template-columns: minmax(0, 1fr); }
+  &[data-role="pp"],
+  &[data-role="pk"] { grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); }
+}
+
+.slot {
+  display: grid;
+  align-content: center;
+  min-width: 0;
+  gap: 3px;
+  padding: 7px;
+  border: 1px solid color-mix(in srgb, var(--lineup-team-secondary) 45%, #59616b);
+  border-radius: 6px;
+  // At most 28% team pigment keeps white text readable even for white/gold teams.
+  background: color-mix(in srgb, var(--lineup-team-primary) 28%, #10161e);
+  color: #fff;
+  font: inherit;
+  text-align: left;
+
+  &[data-missing] { background: #20262e; }
+}
+
+button.slot {
+  min-height: 44px;
+  cursor: pointer;
+
+  &:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+}
+
+.goalieActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  button {
+    min-height: 44px;
+    border: 1px solid v.$border-soft;
+    border-radius: v.$radius-control;
+    background: v.$background-dark;
+    color: v.$text-primary;
+    cursor: pointer;
+  }
+}
+
+.role {
+  color: #e2e7ed;
+  font-size: 0.6rem;
+  font-weight: 600;
+}
+
+.name {
+  overflow-wrap: anywhere;
+  font-size: 0.85rem;
+  line-height: 1.25;
+  font-weight: 600;
+}
+
+.mini {
+  .viewport { max-height: 180px; overscroll-behavior: contain; }
+  .grid { gap: 5px; }
+  .group,
+  .players { gap: 3px; }
+  .name {
+    overflow: hidden;
+    font-size: 0.68rem;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .slot { gap: 0; padding: 3px 4px; border-radius: 4px; }
+}
+
+@container news-lineup (max-width: 450px) {
+  .grid { grid-template-columns: minmax(0, 1fr); }
+  .group[data-role] { grid-column: 1; grid-row: auto; }
+}

@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { requireApiUser } from "lib/api/requireApiUser";
+import { DraftProRequestError } from "lib/draft-pro/requestError";
 import serviceRoleClient from "lib/supabase/server";
 import { getDraftProFeatureFlags } from "lib/draft-pro/features";
 import { loadDraftProAccess, requireDraftProServerCapability } from "lib/draft-pro/server";
@@ -21,8 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!data) return fail(res, 404, "report_not_found", "Report not found.");
     return res.status(200).json({ data });
   } catch (cause) {
-    const error = cause as { statusCode?: number; code?: string; message?: string };
-    if (error.statusCode) return fail(res, error.statusCode, error.code ?? "draft_pro_required", error.message ?? "Draft Pro access is required.");
+    if (cause instanceof DraftProRequestError) return fail(res, cause.statusCode, cause.code ?? "draft_pro_required", cause.message ?? "Draft Pro access is required.");
     return fail(res, 500, "reports_unavailable", "Reports are unavailable.");
   }
 }

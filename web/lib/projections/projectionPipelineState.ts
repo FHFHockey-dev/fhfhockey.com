@@ -324,6 +324,8 @@ export async function acquireProjectionPipelineLease(args: {
   initialCursorDate: string;
   leaseMs?: number;
   now?: Date;
+  /** Guard the same revision used by the acquire CAS; a rejection must not mutate it. */
+  assertResumable?: (current: Readonly<ProjectionPipelineLease>) => void;
 }): Promise<ProjectionPipelineLease> {
   const client = args.supabase as unknown as StateClient;
   const pipelineKey = requirePipelineOrOperationKey(
@@ -370,6 +372,7 @@ export async function acquireProjectionPipelineLease(args: {
     }
     return current;
   }
+  if (current) args.assertResumable?.(current);
   const shouldResume =
     current?.status === "failed" || current?.status === "running";
   const leaseOwner = randomUUID();

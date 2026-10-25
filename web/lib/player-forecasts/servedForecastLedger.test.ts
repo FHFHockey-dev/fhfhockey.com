@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { GameForecast } from "lib/rosterScheduleOptimizer/planningTypes";
-import { buildLedgerRows, scoreLedger, scorePairedLedger, settleLedgerRows, settleLedgerUniverse, type BuildLedgerInput, type LedgerRow } from "./servedForecastLedger";
+import { devigTwoWayAmerican, devigYesOnly } from "lib/projections/utils/devig";
+import { getModelLineProbabilities } from "lib/projections/utils/market-output-builders";
+import { buildLedgerRows, buildMarketLedgerRows, impliedMeanFromMarket, scoreLedger, scoreMarketLedger, scorePairedLedger, settleLedgerRows, settleLedgerUniverse,
+  type BuildLedgerInput, type LedgerMarketQuote, type LedgerRow } from "./servedForecastLedger";
 
 const NOW = new Date("2026-10-21T12:30:00Z");
 const forecast = (playerId: string, gameId: string, runId: string, stats: Record<string, number | null>, startProbability: number | null = null): GameForecast => ({
@@ -260,5 +263,83 @@ describe("paired served-forecast scoring", () => {
       row(2, "naive_last5", 0, 0, { player_class: "goalie", start_probability: 1, started: false, settled_at: null })];
     expect(comparison(rows).binary.start).toMatchObject({ source: { n: 1, brier: 0, reliability: [{ bin: 9, predicted: 1, observed: 1 }] },
       reference: { n: 1, brier: 1, reliability: [{ bin: 0, predicted: 0, observed: 1 }] } });
+  });
+});
+
+describe("market source (task 6.3)", () => {
+  const built = buildLedgerRows(input()).rows;
+  const quote = (player_id: number | null, market_type: string, sportsbook_key: string, outcome_key: string, line_value: number | null, price_american: number,
+    source_observed_at = "2026-10-21T11:00:00Z"): LedgerMarketQuote => ({ game_id: 100, player_id, market_type, sportsbook_key, outcome_key, line_value, price_american, source_observed_at });
+  const propQuotes = [quote(11, "player_shots_on_goal", "a", "over", 2.5, -120), quote(11, "player_shots_on_goal", "a", "under", 2.5, 100),
+    quote(11, "player_shots_on_goal", "b", "over", 2.5, -115), quote(11, "player_shots_on_goal", "b", "under", 2.5, -105),
+    // Decimal odds stored as American, a post-puck-drop price and a price newer than the snapshot never reach a probability.
+    quote(11, "player_shots_on_goal", "veikkaus", "over", 2.5, 2), quote(11, "player_shots_on_goal", "veikkaus", "under", 2.5, 1),
+    quote(11, "player_shots_on_goal", "live", "over", 2.5, 300, "2026-10-21T23:30:00Z"), quote(11, "player_shots_on_goal", "live", "under", 2.5, -400, "2026-10-21T23:30:00Z"),
+    quote(11, "player_shots_on_goal", "late", "over", 2.5, 150, "2026-10-21T12:45:00Z"), quote(11, "player_shots_on_goal", "late", "under", 2.5, -180, "2026-10-21T12:45:00Z"),
+    quote(11, "player_goal_scorer_anytime", "a", "yes", null, 250), quote(22, "player_assists", "a", "over", 0.5, 2)];
+  const gameQuotes = [quote(null, "h2h", "a", "team:AAA", null, -150), quote(null, "h2h", "a", "team:BBB", null, 130),
+    quote(null, "h2h", "tipsport", "team:AAA", null, 1), quote(null, "h2h", "tipsport", "team:BBB", null, 3)];
+  const market = buildMarketLedgerRows({ date: "2026-10-21", now: NOW, rows: built, propQuotes, gameQuotes,
+    teamAbbreviations: new Map([["100:1", "AAA"], ["100:2", "BBB"]]), teamWin: new Map([["100:1", 0.6]]) });
+  const skater = market.find(row => row.player_id === 11)!, goalie = market.find(row => row.player_id === 31)!;
+  const fairShots = (devigTwoWayAmerican(-120, 100)!.fairA + devigTwoWayAmerican(-115, -105)!.fairA) / 2;
+
+  it("records the de-vigged market probability, its implied mean and each served source's probability at the market line", () => {
+    expect(market.map(row => row.player_id)).toEqual([11, 31]);
+    expect(built.some(row => "market_lines" in row)).toBe(false);
+    expect(skater).toMatchObject({ source: "market", method_version: "served-ledger-market-v1", issued_at: "2026-10-21T11:00:00.000Z", run_id: null,
+      exp_hits: null, exp_fantasy_points: null });
+    const shots = skater.market_lines!.props.shots;
+    expect(shots).toMatchObject({ market_type: "player_shots_on_goal", line: 2.5, books: 2, two_way_books: 2, yes_only_books: 0, devig_method: "shin" });
+    expect(shots.market_p_over).toBeCloseTo(fairShots, 4);
+    expect(getModelLineProbabilities({ marketType: "player_shots_on_goal", mean: shots.implied_mean!, line: 2.5 })!.overGivenNoPush).toBeCloseTo(fairShots, 3);
+    expect(skater.exp_shots).toBe(shots.implied_mean);
+    expect(Object.keys(shots.model_p_over).sort()).toEqual(["bridge_exact", "naive_last5", "naive_season"]);
+    expect(shots.model_p_over.bridge_exact).toBeCloseTo(1 - Math.exp(-3) * 8.5, 4);
+    expect(skater.market_lines!.props.goals).toMatchObject({ market_type: "player_goal_scorer_anytime", line: 0.5, books: 1, yes_only_books: 1 });
+    expect(skater.market_lines!.props.goals.market_p_over).toBeCloseTo(devigYesOnly(250)!.probability, 4);
+    // Skater 22's only price is decimal odds: no market row.
+    expect(market.some(row => row.player_id === 22)).toBe(false);
+  });
+
+  it("keeps the moneyline as a conditional team win beside the bridge team-xG chance, not as exp_win_prob", () => {
+    expect(goalie.market_lines).toMatchObject({ props: {}, team_win: { books: 1, model_p_win: { bridge_team_xg: 0.6 } } });
+    expect(goalie.market_lines!.team_win!.market_p_win).toBeCloseTo(devigTwoWayAmerican(-150, 130)!.fairA, 4);
+    expect(goalie.exp_win_prob).toBeNull();
+  });
+
+  it("inverts a market probability to a mean under the scoring distribution", () => {
+    const p = getModelLineProbabilities({ marketType: "player_points", mean: 1.3, line: 0.5 })!.overGivenNoPush;
+    expect(impliedMeanFromMarket("player_points", 0.5, p)).toBeCloseTo(1.3, 3);
+    expect(impliedMeanFromMarket("player_points", 0.5, 1)).toBeNull();
+  });
+
+  it("settles market rows like any source and scores model versus market Brier/log loss on the same events", () => {
+    const settled = settleLedgerRows([...built, ...market], { skaters: [{ game_id: 100, player_id: 11, goals: 0, assists: 1, pp_points: 0, shots: 4, hits: 0, blocked_shots: 1 }],
+      goalies: [{ game_id: 100, player_id: 31, saves: 30, goals_against: 1, shots_against: 31, wins: 1, shutouts: 0, games_started: 1 }] }, "2026-10-22T11:00:00Z");
+    const settledSkater = settled.find(row => row.player_id === 11 && row.source === "market")!;
+    expect(settledSkater).toMatchObject({ act_shots: 4, act_goals: 0, dressed: true, market_lines: skater.market_lines });
+    const scored = scoreMarketLedger(settled);
+    const shots = scored.comparisons.find(row => row.event === "shots" && row.model === "bridge_exact")!;
+    const pModel = skater.market_lines!.props.shots.model_p_over.bridge_exact!, pMarket = skater.market_lines!.props.shots.market_p_over;
+    expect(shots).toMatchObject({ player_class: "skater", n: 1 });
+    expect(shots.market.brier).toBeCloseTo((pMarket - 1) ** 2, 4);
+    expect(shots.source.brier).toBeCloseTo((pModel - 1) ** 2, 4);
+    expect(shots.source.logLoss).toBeCloseTo(-Math.log(pModel), 4);
+    expect(shots.brierSkill).toBeCloseTo(1 - (pModel - 1) ** 2 / (pMarket - 1) ** 2, 4);
+    const goals = scored.comparisons.find(row => row.event === "goals" && row.model === "bridge_exact")!;
+    expect(goals.market.brier).toBeCloseTo(skater.market_lines!.props.goals.market_p_over ** 2, 4);
+    expect(scored.comparisons.find(row => row.event === "team_win")).toMatchObject({ player_class: "goalie", model: "bridge_team_xg", n: 1, source: { brier: 0.16 } });
+    // Paired mean errors: the served sources against the market's implied mean on the same player-game.
+    const paired = scorePairedLedger(settled).comparisons.find(row => row.source === "bridge_exact" && row.reference === "market" && row.player_class === "skater")!;
+    expect(paired.heads.shots).toMatchObject({ status: "scored", source: { n: 1, bias: -1 } });
+    expect(paired.heads.hits).toMatchObject({ status: "no_valid_pairs", exclusions: { missingPrediction: 1 } });
+  });
+
+  it("excludes pushes, DNP voids and non-starts from market events", () => {
+    const base = { ...skater, settled_at: "s", dressed: true, market_lines: { props: { shots: { ...skater.market_lines!.props.shots, line: 3 } }, team_win: null } };
+    const scored = scoreMarketLedger([{ ...base, act_shots: 3 }, { ...base, player_id: 12, dressed: false, act_shots: 0 },
+      { ...goalie, settled_at: "s", dressed: true, started: false, act_win: 0 }]);
+    expect(scored).toMatchObject({ pushes: 1, missingOutcome: 1, notStarted: 1, comparisons: [] });
   });
 });

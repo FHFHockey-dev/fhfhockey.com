@@ -46,9 +46,9 @@ import {
   toGoalieRestSplitBucket,
   type StarterContextForTest
 } from "./run-forge-projections";
-import { computeTeamPpShare } from "./stages/skater-stage";
-import { computeSkaterPhysicalEventRates } from "./calculators/skater-adjustments";
+import { allocateTeamAssists, computeSkaterAssistShare, computeSkaterPhysicalEventRates, computeSkaterShotRatePer60, resolveSkaterConversionRates, resolveAssistDenominators, SKATER_ASSIST_DENOMINATOR_DEFAULT } from "./calculators/skater-adjustments";
 import { SKATER_PHYSICAL_RATE_PRIORS } from "./constants/projection-weights";
+import { computeTeamPpShare } from "./stages/skater-stage";
 import type { RollingRow } from "./types/run-forge-projections.types";
 
 function buildContext(
@@ -307,7 +307,7 @@ describe("issued FORGE context", () => {
     expect(context.schedule).toHaveLength(2);
     expect(context.schedule[0]).toMatchObject({ teamId: 3, opponentTeamId: 4,
       sourceUpdatedAt: null, fetchedAt: "2026-09-28T12:00:00Z",
-      revision: playerForecastSourcePayloadHash({ id: String(game.id), start: game.startTime,
+      revision: playerForecastSourcePayloadHash({ id: String(game.id), start: new Date(game.startTime).toISOString(),
         team: "NYR", opponent: "PHI", status: "FUT", schedule: "OK" }) });
     expect(context.roster).toEqual([{ canonicalId: 7, nhlId: 100, seasonId: 20262027, teamId: 3,
       membershipCreatedAt: ["2026-09-01T00:00:00Z"], identityUpdatedAt: "2026-09-27T00:00:00Z",
@@ -735,8 +735,8 @@ describe("skater rest/schedule adjustments", () => {
 
   it("penalizes on second leg of back-to-back against rested opponent", () => {
     const result = computeSkaterRestScheduleAdjustments({
-      teamRestDays: 0,
-      opponentRestDays: 2,
+      teamRestDays: 1,
+      opponentRestDays: 3,
       isHome: false
     });
     expect(result.sampleWeight).toBe(1);
@@ -748,14 +748,37 @@ describe("skater rest/schedule adjustments", () => {
 
   it("boosts rested home team versus opponent on back-to-back", () => {
     const result = computeSkaterRestScheduleAdjustments({
-      teamRestDays: 2,
-      opponentRestDays: 0,
+      teamRestDays: 3,
+      opponentRestDays: 1,
       isHome: true
     });
     expect(result.toiMultiplier).toBeGreaterThan(1);
     expect(result.shotRateMultiplier).toBeGreaterThan(1);
     expect(result.goalRateMultiplier).toBeGreaterThan(1);
     expect(result.assistRateMultiplier).toBeGreaterThan(1);
+  });
+
+  it("reads rest days as days since the previous game, so a back-to-back (1) is the heavy tier", () => {
+    const rest = (teamRestDays: number, opponentRestDays: number, buckets?: "legacy") =>
+      computeSkaterRestScheduleAdjustments({ teamRestDays, opponentRestDays, isHome: false, buckets });
+    expect(rest(1, 1).toiMultiplier).toBe(0.8876);
+    expect(rest(2, 2).toiMultiplier).toBe(0.9626);
+    expect(rest(3, 3).toiMultiplier).toBe(1.0096);
+    expect(rest(4, 4).toiMultiplier).toBe(1.0276);
+    expect(rest(1, 1).toiMultiplier).toBeLessThan(rest(2, 2).toiMultiplier);
+    // Every tier moved up one day with unchanged magnitudes.
+    for (const [team, opp] of [[1, 2], [2, 1], [3, 1], [4, 2], [2, 5]]) {
+      expect(rest(team, opp)).toMatchObject({
+        toiMultiplier: rest(team - 1, opp - 1, "legacy").toiMultiplier,
+        shotRateMultiplier: rest(team - 1, opp - 1, "legacy").shotRateMultiplier,
+        goalRateMultiplier: rest(team - 1, opp - 1, "legacy").goalRateMultiplier,
+        assistRateMultiplier: rest(team - 1, opp - 1, "legacy").assistRateMultiplier
+      });
+    }
+    expect(rest(1, 1, "legacy").toiMultiplier).toBe(0.9626);
+    const missingOpponent = { teamRestDays: 2, opponentRestDays: null, isHome: true };
+    expect(computeSkaterRestScheduleAdjustments(missingOpponent)).toEqual({
+      ...computeSkaterRestScheduleAdjustments({ ...missingOpponent, teamRestDays: 1, buckets: "legacy" }), teamRestDays: 2 });
   });
 });
 
@@ -782,6 +805,103 @@ describe("skater small-sample shrinkage adjustments", () => {
     expect(result.sampleWeight).toBeGreaterThan(0.6);
     expect(result.isLowSample).toBe(false);
     expect(result.usedCallupFallback).toBe(false);
+  });
+});
+
+describe("skater assist share of on-ice goals", () => {
+  it("uses the F/D prior for its strength without IPP history", () => {
+    for (const ipp of [null, undefined, 0, Number.NaN]) {
+      const prior = computeSkaterAssistShare({ goalsAll: 10, assistsAll: 20, ippAllPct: ipp, position: "C", strength: "es" });
+      expect(prior.onIceGoalsHistory).toBe(0);
+      expect(prior.share).toBeCloseTo(0.3747, 12);
+    }
+    expect(computeSkaterAssistShare({ goalsAll: null, assistsAll: 5, ippAllPct: 50, position: "D", strength: "pp" }).share).toBeCloseTo(0.4838, 12);
+  });
+
+  it("shrinks the observed share toward the prior by on-ice goals", () => {
+    // Release C: 10 G + 20 A at 60% IPP = 50 on-ice goals; (20 + 258 x 0.3747) / (50 + 258).
+    const es = computeSkaterAssistShare({ goalsAll: 10, assistsAll: 20, ippAllPct: 60, position: "L", strength: "es" });
+    expect(es.onIceGoalsHistory).toBeCloseTo(50, 10);
+    expect(es.share).toBeCloseTo((20 + 258 * 0.3747) / 308, 10);
+    // Defence PP: 2 G + 18 A at 50% IPP = 40 on-ice goals; (18 + 84 x 0.4838) / (40 + 84).
+    expect(computeSkaterAssistShare({ goalsAll: 2, assistsAll: 18, ippAllPct: 50, position: "D", strength: "pp" }).share)
+      .toBeCloseTo((18 + 84 * 0.4838) / 124, 10);
+  });
+
+  it("never credits more assists than on-ice goals and stays within bounds", () => {
+    // IPP above 100% is inconsistent source data: assists cap at the implied on-ice goals.
+    const capped = computeSkaterAssistShare({ goalsAll: 0, assistsAll: 30, ippAllPct: 150, position: "C", strength: "pp" });
+    expect(capped.onIceGoalsHistory).toBeCloseTo(20, 10);
+    expect(capped.share).toBeCloseTo((20 + 58 * 0.3554) / 78, 10);
+    expect(computeSkaterAssistShare({ goalsAll: 0, assistsAll: 1e6, ippAllPct: 100, position: "C", strength: "es" }).share).toBe(0.9);
+  });
+});
+
+describe("skater shot rate prior", () => {
+  it("returns the F/D prior without exposure", () => {
+    expect(computeSkaterShotRatePer60({ position: "C", strength: "es", shotsAll: null, ratePer60All: null, shotsRecent: null, toiRecentSeconds: null })).toBe(6.62);
+    expect(computeSkaterShotRatePer60({ position: "D", strength: "pp", shotsAll: 0, ratePer60All: 0, shotsRecent: 0, toiRecentSeconds: 0 })).toBe(8.39);
+  });
+
+  it("shrinks the all-window rate by its hours, then blends the last five by theirs", () => {
+    // 100 shots at 10/60 = 10 h; base = (100 + 8.4 x 6.62) / 18.4. Last five: 5 shots in 1 h.
+    const base = (100 + 8.4 * 6.62) / 18.4;
+    expect(computeSkaterShotRatePer60({ position: "R", strength: "es", shotsAll: 100, ratePer60All: 10, shotsRecent: null, toiRecentSeconds: null }))
+      .toBeCloseTo(base, 10);
+    expect(computeSkaterShotRatePer60({ position: "R", strength: "es", shotsAll: 100, ratePer60All: 10, shotsRecent: 5, toiRecentSeconds: 3600 }))
+      .toBeCloseTo(base + (1 / 9.4) * (5 - base), 10);
+  });
+});
+
+describe("position goal-conversion priors", () => {
+  const counts = { evGoalsRecent: 0, evShotsRecent: 0, evGoalsAll: 0, evShotsAll: 0, evAssistsRecent: 0, evAssistsAll: 0,
+    ppGoalsRecent: 0, ppShotsRecent: 0, ppGoalsAll: 0, ppShotsAll: 0, ppAssistsRecent: 0, ppAssistsAll: 0,
+    goalRateMultiplier: 1, assistRateMultiplier: 1 };
+
+  it("falls back to the F/D prior and weighs history against its measured shots", () => {
+    const d = computeStrengthSplitConversionRates({ ...counts, position: "D" });
+    expect(d.goalRateEs).toBeCloseTo(0.0537, 10);
+    expect(d.goalRatePp).toBeCloseTo(0.0862, 10);
+    // A forward's 30 goals on 200 ES shots against 423 prior shots.
+    const f = computeStrengthSplitConversionRates({ ...counts, evGoalsAll: 30, evShotsAll: 200, position: "C" });
+    expect(f.goalRateEs).toBeCloseTo((30 + 423 * 0.1181) / 623, 10);
+    // Without a position the former position-blind prior remains.
+    expect(computeStrengthSplitConversionRates(counts).goalRateEs).toBeCloseTo(0.095, 10);
+  });
+
+  it("keeps the small-sample goal shrink toward the position prior", () => {
+    const rates = { goalRateEs: 0.2, goalRatePp: null, assistRateEs: null, assistRatePp: null };
+    const resolved = resolveSkaterConversionRates({ splitRates: rates, sampleWeight: 0.5, position: "D" });
+    expect(resolved.goalRateEs).toBeCloseTo(0.5 * 0.2 + 0.5 * 0.0537, 10);
+    expect(resolved.goalRatePp).toBeCloseTo(0.0862, 10);
+    // Without a position a supported head is used as fitted.
+    expect(resolveSkaterConversionRates({ splitRates: rates, sampleWeight: 0.5 }).goalRateEs).toBeCloseTo(0.2, 10);
+  });
+});
+
+describe("team assist allocation", () => {
+  const skater = (toiEs: number, toiPp: number, goalsEs: number, goalsPp: number, assistShareEs = 0.35, assistSharePp = 0.35) =>
+    ({ toiEs, toiPp, goalsEs, goalsPp, assistShareEs, assistSharePp });
+
+  it("reconciles team assists to league assists per goal at each strength", () => {
+    const team = [skater(1200, 200, 0.4, 0.2), skater(1100, 180, 0.3, 0.1, 0.4, 0.5), skater(900, 0, 0.1, 0, 0.25),
+      skater(1300, 120, 0.05, 0.02, 0.3, 0.45), skater(1000, 60, 0.15, 0)];
+    const assists = allocateTeamAssists(team);
+    const total = (key: "assistsEs" | "assistsPp") => assists.reduce((sum, row) => sum + row[key], 0);
+    expect(total("assistsEs")).toBeCloseTo(1.65 * 1.0, 10);
+    expect(total("assistsPp")).toBeCloseTo(1.91 * 0.32, 10);
+    // A skater with no PP minutes is on the ice for no PP goals.
+    expect(assists[2].assistsPp).toBe(0);
+  });
+
+  it("splits by on-ice time and assist share, not by the skater's own goals", () => {
+    const [scorer, setup] = allocateTeamAssists([skater(1000, 0, 0.6, 0, 0.2), skater(1000, 0, 0, 0, 0.6)]);
+    expect(setup.assistsEs / scorer.assistsEs).toBeCloseTo(3, 10);
+  });
+
+  it("assigns no assists without team goals or ice time", () => {
+    expect(allocateTeamAssists([skater(0, 0, 0, 0), skater(0, 0, 0, 0)])).toEqual([{ assistsEs: 0, assistsPp: 0 }, { assistsEs: 0, assistsPp: 0 }]);
+    expect(allocateTeamAssists([])).toEqual([]);
   });
 });
 
@@ -832,6 +952,32 @@ describe("skater physical event rates", () => {
     const unscaled = computeSkaterPhysicalEventRates({ all: row, position: "D", esPpToiSeconds: 1200, currentSeasonId: 20262027 });
     expect(unscaled.hitsLeagueScale).toBe(1);
     expect(rates.hitsPer60).toBeLessThan(unscaled.hitsPer60);
+  });
+
+  it.each([
+    ["C", "hits", 4.9, 50], ["D", "hits", 3.2, 50],
+    ["C", "blocks", 2.1, 300], ["D", "blocks", 4.4, 300],
+  ] as const)("keeps partial current-season %s %s count/exposure pairs unknown", (position, metric, prior, priorMinutes) => {
+    const row = allRow({
+      [`${metric}_per_60_last5`]: null, [`${metric}_per_60_${metric}_3ya`]: 200,
+      [`${metric}_per_60_toi_seconds_3ya`]: 240000,
+    });
+    const rate = (events: number | null | undefined, seconds: number | null | undefined) => computeSkaterPhysicalEventRates({
+      all: { ...row, [`${metric}_per_60_${metric}_season`]: events, [`${metric}_per_60_toi_seconds_season`]: seconds },
+      position, esPpToiSeconds: 1200, currentSeasonId: 20262027, league: null,
+    })[`${metric}Per60`];
+    const unsplit = (0.5 * 200 * 60 + priorMinutes * prior) / (0.5 * 4000 + priorMinutes);
+    for (const missing of [null, undefined]) {
+      // Either missing member invalidates the split, without inventing its partner.
+      expect(rate(missing, 120000)).toBeCloseTo(unsplit, 12);
+      expect(rate(40, missing)).toBeCloseTo(unsplit, 12);
+      expect(rate(0, missing)).toBeCloseTo(unsplit, 12);
+      expect(rate(missing, 0)).toBeCloseTo(unsplit, 12);
+    }
+    const observedZero = (0.5 * 200 * 60 + priorMinutes * prior) / (2000 + 0.5 * 2000 + priorMinutes);
+    expect(rate(0, 120000)).toBeCloseTo(observedZero, 12);
+    expect(rate(null, 120000)).not.toBe(rate(0, 120000));
+    expect(rate(40, 120000)).toBeCloseTo(((40 + 0.5 * 160) * 60 + priorMinutes * prior) / (3000 + priorMinutes), 12);
   });
 
   it("treats a row from an earlier season as all prior history", () => {
@@ -1010,59 +1156,44 @@ describe("strength-split conversion rates", () => {
     expect(lowSample.goalRateEs).toBeLessThan(established.goalRateEs);
     expect(lowSample.goalRatePp).toBeLessThan(established.goalRatePp);
   });
+});
 
-  const leagueAverageSupport = {
-    evGoalsRecent: 4,
-    evShotsRecent: 42,
-    evGoalsAll: 20,
-    evShotsAll: 210,
-    evAssistsRecent: 7,
-    evAssistsAll: 34,
-    ppGoalsRecent: 1,
-    ppShotsRecent: 8,
-    ppGoalsAll: 6,
-    ppShotsAll: 45,
-    ppAssistsRecent: 2,
-    ppAssistsAll: 10,
-    goalRateMultiplier: 1,
-    assistRateMultiplier: 1
+describe("assist rate scale", () => {
+  const leagueAverage = {
+    evGoalsRecent: 4, evShotsRecent: 0, evGoalsAll: 20, evShotsAll: 0, evAssistsRecent: 7, evAssistsAll: 34,
+    ppGoalsRecent: 4, ppShotsRecent: 0, ppGoalsAll: 20, ppShotsAll: 0, ppAssistsRecent: 7, ppAssistsAll: 34,
+    goalRateMultiplier: 1, assistRateMultiplier: 1
   };
-
-  it("fits ES assists per goal (twice the former per-two-goals rate) and keeps PP per two goals", () => {
-    const result = computeStrengthSplitConversionRates(leagueAverageSupport);
-    // Former per-two-goals ES value for this input was 0.8254544590565118.
-    expect(result.assistRateEs).toBeCloseTo(2 * 0.8254544590565118, 10);
-    expect(result.assistRateEs).toBeCloseTo(1.65, 2);
-    expect(result.assistRatePp).toBeCloseTo(0.9141154141032594, 10);
+  it("fits assists per goal, pulled modestly from the 1.7 raw rate toward the 1.44 prior", () => {
+    const perGoal = computeStrengthSplitConversionRates({ ...leagueAverage, assistDenominator: "per_goal" });
+    // Prior strength 11*(0.35+1.35*18/42) ~ 10.2 pseudo-goals: base (34+1.44*10.2)/30.2 ~ 1.61, recent 7/4 at weight ~0.28.
+    expect(perGoal.assistRateEs).toBeCloseTo(1.651, 3);
+    const legacy = computeStrengthSplitConversionRates({ ...leagueAverage, assistDenominator: "per_two_goals" });
+    expect(legacy.assistRateEs).toBeCloseTo(0.8255, 3);
+    expect(perGoal.assistRateEs).toBeCloseTo(legacy.assistRateEs * 2, 10);
+    expect(perGoal.assistRatePp).toBeCloseTo(legacy.assistRatePp * 2, 10);
+    expect(legacy.goalRateEs).toBe(perGoal.goalRateEs);
   });
-
-  it("leaves goal rates unchanged by the assist refit", () => {
-    const result = computeStrengthSplitConversionRates(leagueAverageSupport);
-    expect(result.goalRateEs).toBeCloseTo(0.09522746586507684, 12);
-    expect(result.goalRatePp).toBeCloseTo(0.13432867161139336, 12);
+  it("keeps the legacy per-two-goals numbers exactly", () => {
+    const legacy = computeStrengthSplitConversionRates({ ...leagueAverage, evGoalsAll: 0, evGoalsRecent: 0, evAssistsAll: 0,
+      evAssistsRecent: 0, ppGoalsAll: 1, ppGoalsRecent: 0, ppAssistsAll: 3, ppAssistsRecent: 0, assistDenominator: "per_two_goals" });
+    expect(legacy.assistRateEs).toBe(0.72);
+    // (3 + 0.95 * s) / (2 + s), s = clamp(16 * (0.35 + 1.35 * 24 / 26), 6, 30)
+    const s = 16 * (0.35 + 1.35 * 24 / 26);
+    expect(legacy.assistRatePp).toBeCloseTo((3 + 0.95 * s) / (2 + s), 12);
   });
-
-  it("falls back to 1.44 ES and 0.95 PP assists per goal without support", () => {
-    const result = computeStrengthSplitConversionRates({
-      evGoalsRecent: 0,
-      evShotsRecent: 0,
-      evGoalsAll: 0,
-      evShotsAll: 0,
-      evAssistsRecent: 0,
-      evAssistsAll: 0,
-      ppGoalsRecent: 0,
-      ppShotsRecent: 0,
-      ppGoalsAll: 0,
-      ppShotsAll: 0,
-      ppAssistsRecent: 0,
-      ppAssistsAll: 0,
-      goalRateMultiplier: 1,
-      assistRateMultiplier: 1
-    });
-    expect(result.assistRateEs).toBeCloseTo(1.44, 10);
-    expect(result.assistRatePp).toBeCloseTo(0.95, 10);
-    expect(result.goalRateEs).toBeCloseTo(0.095, 10);
-    expect(result.goalRatePp).toBeCloseTo(0.145, 10);
+  it("refits ES assists per goal and keeps PP on the per-two-goals scale by default", () => {
+    const legacy = computeStrengthSplitConversionRates({ ...leagueAverage, assistDenominator: "per_two_goals" });
+    const esOnly = computeStrengthSplitConversionRates({ ...leagueAverage,
+      assistDenominator: { es: "per_goal", pp: "per_two_goals" } });
+    expect(esOnly.assistRateEs).toBeCloseTo(legacy.assistRateEs * 2, 10);
+    expect(esOnly.assistRatePp).toBe(legacy.assistRatePp);
+    expect(esOnly.goalRateEs).toBe(legacy.goalRateEs);
+    expect(computeStrengthSplitConversionRates(leagueAverage)).toEqual(esOnly);
+    expect(SKATER_ASSIST_DENOMINATOR_DEFAULT).toEqual({ es: "per_goal", pp: "per_two_goals" });
+    expect(resolveAssistDenominators("per_goal")).toEqual({ es: "per_goal", pp: "per_goal" });
+    expect(resolveAssistDenominators(undefined)).toEqual(SKATER_ASSIST_DENOMINATOR_DEFAULT);
+    expect(resolveAssistDenominators(undefined, { es: "per_two_goals", pp: "per_goal" })).toEqual({ es: "per_two_goals", pp: "per_goal" });
   });
 });
 

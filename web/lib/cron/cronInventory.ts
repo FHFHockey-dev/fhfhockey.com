@@ -42,6 +42,7 @@ export function getCronScheduleCandidates(
 }
 
 const JSON_JOB_ROUTE_ALIASES: Record<string, string> = {
+  "refresh-roster-optimizer-schedule": "/api/v1/db/refresh-roster-optimizer-schedule",
   "update-games-job": "/api/v1/db/update-games",
   "update-roster-optimizer-schedule":
     "/api/v1/db/update-roster-optimizer-schedule",

@@ -1,3 +1,4 @@
+import { PROVIDER_SYNC_ACCESS_HREF, PROVIDER_SYNC_UPSELL } from "lib/integrations/providerSyncAccess";
 import React from "react";
 import { createPortal } from "react-dom";
 
@@ -23,6 +24,7 @@ interface YahooLiveDraftPanelProps {
   mode: DraftDashboardMode;
   authenticated?: boolean;
   draftProEligible?: boolean;
+  syncAccessStatus?: string;
   liveSyncEnabled?: boolean;
   requestState?: "idle" | "loading" | "ready" | "error";
   leagues: YahooDraftLeague[];
@@ -76,7 +78,7 @@ function setupLabel(args: {
   requestState: "idle" | "loading" | "ready" | "error";
 }): string {
   if (!args.authenticated) return "Sign in required";
-  if (!args.draftProEligible) return "Draft Pro required";
+  if (!args.draftProEligible) return "Premium access required";
   if (args.liveSyncEnabled) return args.hasLeague ? "Yahoo linked · Live Sync off" : "Ready to connect";
   if (args.requestState === "idle" || args.requestState === "loading") {
     return "Preparing";
@@ -181,6 +183,7 @@ const YahooLiveDraftPanel: React.FC<YahooLiveDraftPanelProps> = ({
   mode,
   authenticated = false,
   draftProEligible = false,
+  syncAccessStatus = "ready",
   liveSyncEnabled = false,
   requestState = "ready",
   leagues,
@@ -250,7 +253,7 @@ const YahooLiveDraftPanel: React.FC<YahooLiveDraftPanelProps> = ({
   const syncErrorMessage = error || draftState?.session.lastErrorMessage;
   const setupSteps = [
     { label: "FHFH account", complete: authenticated, href: "/auth?mode=sign-in", help: "Sign in to FHFH." },
-    { label: "Draft Pro", complete: draftProEligible, href: "/account?section=draft-pro", help: "Activate Draft Pro." },
+    { label: "Premium sync", complete: draftProEligible, href: PROVIDER_SYNC_ACCESS_HREF, help: "Review premium sync access." },
     { label: "Yahoo leagues", complete: leagues.length > 0, action: onConnect,
       available: liveSyncReady && !isLoading, help: "Connect Yahoo and load your leagues. Use Refresh leagues if you already connected." },
     { label: "Choose league", complete: Boolean(selectedLeague && selectedLeague.supported !== false),
@@ -330,10 +333,10 @@ const YahooLiveDraftPanel: React.FC<YahooLiveDraftPanelProps> = ({
           <a href="/auth?mode=sign-in">Sign in</a>
         </div>
       )}
-      {authenticated && !draftProEligible && (
+      {authenticated && !draftProEligible && syncAccessStatus === "ready" && (
         <div className={styles.setupNotice} role="status">
-          Yahoo Live Sync is included with Draft Pro{" "}
-          <a href="/account?section=draft-pro">Explore Draft Pro</a>
+          {PROVIDER_SYNC_UPSELL}{" "}
+          <a href={PROVIDER_SYNC_ACCESS_HREF}>View premium access</a>
         </div>
       )}
       {authenticated && draftProEligible && !liveSyncEnabled && !error && (

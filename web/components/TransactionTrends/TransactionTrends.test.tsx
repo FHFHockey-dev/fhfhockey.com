@@ -41,6 +41,7 @@ const makeResponse = (
   count = 10,
   options: {
     generatedAt?: string;
+    sourceDate?: string | null;
     metric?: "ownership" | "adp";
     totalRisers?: number;
     totalFallers?: number;
@@ -50,6 +51,7 @@ const makeResponse = (
   metric: options.metric ?? "ownership",
   windowDays: 3,
   generatedAt: options.generatedAt ?? new Date().toISOString(),
+  sourceDate: options.sourceDate,
   page: 1,
   pageSize: 10,
   offset: 0,
@@ -328,6 +330,68 @@ describe("TransactionTrends", () => {
     expect(message.getAttribute("role")).toBe("status");
     expect(screen.getByRole("table", { name: "Top Risers" })).toBeTruthy();
   });
+
+  it.each(["ownership", "adp"] as const)(
+    "uses today's sourceDate for %s even when generatedAt is later today",
+    async (metric) => {
+      vi.spyOn(Date, "now").mockReturnValue(
+        Date.parse("2026-10-19T13:04:00.000Z"),
+      );
+      vi.stubGlobal(
+        "fetch",
+        mockResponse(makeResponse(1, {
+          sourceDate: "2026-10-19",
+          generatedAt: "2026-10-19T23:59:59.999Z",
+        })),
+      );
+      render(<TransactionTrends defaultMetric={metric} />);
+
+      await screen.findByRole("table", { name: "Top Risers" });
+      expect(screen.queryByText(/movement may be stale\./)).toBeNull();
+    },
+  );
+
+  it.each(["ownership", "adp"] as const)(
+    "preserves the %s warning for an old sourceDate even with recent generatedAt",
+    async (metric) => {
+      vi.spyOn(Date, "now").mockReturnValue(
+        Date.parse("2026-10-19T13:04:00.000Z"),
+      );
+      vi.stubGlobal(
+        "fetch",
+        mockResponse(makeResponse(1, {
+          sourceDate: "2026-10-17",
+          generatedAt: "2026-10-19T13:00:00.000Z",
+        })),
+      );
+      render(<TransactionTrends defaultMetric={metric} />);
+
+      const message = await screen.findByText(
+        `${metric === "adp" ? "ADP" : "Ownership"} movement may be stale.`,
+      );
+      expect(message.getAttribute("role")).toBe("status");
+      expect(screen.getByRole("table", { name: "Top Risers" })).toBeTruthy();
+    },
+  );
+
+  it.each([
+    { sourceDate: undefined, generatedAt: "2026-10-19T13:00:00.000Z", stale: false },
+    { sourceDate: null, generatedAt: "2026-10-19T13:00:00.000Z", stale: false },
+    { sourceDate: undefined, generatedAt: "2026-10-17T23:59:59.999Z", stale: true },
+    { sourceDate: null, generatedAt: "2026-10-17T23:59:59.999Z", stale: true },
+  ])(
+    "falls back to generatedAt $generatedAt when sourceDate is $sourceDate",
+    async ({ sourceDate, generatedAt, stale }) => {
+      vi.spyOn(Date, "now").mockReturnValue(
+        Date.parse("2026-10-19T13:04:00.000Z"),
+      );
+      vi.stubGlobal("fetch", mockResponse(makeResponse(1, { sourceDate, generatedAt })));
+      renderOwnershipTrends();
+
+      await screen.findByRole("table", { name: "Top Risers" });
+      expect(Boolean(screen.queryByText("Ownership movement may be stale."))).toBe(stale);
+    },
+  );
 
   it("preserves controls and a deliberate no-data state", async () => {
     vi.stubGlobal("fetch", mockResponse(makeResponse(0)));

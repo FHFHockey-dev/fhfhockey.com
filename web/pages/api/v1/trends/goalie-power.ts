@@ -107,7 +107,9 @@ interface GoalieTrendResponse {
   >;
 }
 
-const PAGE_SIZE = 2000;
+// Keep pages at or below the PostgREST max-rows cap (supabase/config.toml), so
+// a capped page is never mistaken for the final short page.
+const PAGE_SIZE = 1000;
 const RESPONSE_TTL_MS = 60_000;
 const RECENT_FALLBACK_MAX_DAYS = 3;
 const BLOCKED_FALLBACK_MIN_DAYS = 14;
@@ -613,16 +615,24 @@ export default async function handler(
     })();
 
     inFlight.set(cacheKey, loadPromise);
-    const response = await loadPromise;
-    inFlight.delete(cacheKey);
+    let response: GoalieTrendResponse;
+    try {
+      response = await loadPromise;
+    } finally {
+      // A failed load must not stay in flight, or every later request for
+      // this key would replay the same rejection.
+      inFlight.delete(cacheKey);
+    }
 
     res.setHeader("Cache-Control", "s-maxage=900, stale-while-revalidate=60");
     return res.status(200).json(response);
   } catch (error: any) {
     const limit = parseLimit(req.query.limit);
     const windowSize = parseWindowSize(req.query.window);
+    console.error("goalie-power API error", error);
     return res.status(500).json({
-      message: error?.message ?? "Failed to load goalie trend data",
+      message: "Failed to load goalie trend data.",
+      error: "GOALIE_TRENDS_UNAVAILABLE",
       limit,
       windowSize
     });

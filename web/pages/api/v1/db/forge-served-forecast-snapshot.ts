@@ -5,14 +5,16 @@ import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import supabase from "lib/supabase/server";
 import adminOnly from "utils/adminOnlyMiddleware";
 import { forecastCalendarPolicy } from "lib/player-forecasts/contributions";
-import { buildLedgerRows, LEDGER_SOURCES, type LedgerGame, type LedgerPlayer } from "lib/player-forecasts/servedForecastLedger";
+import { buildLedgerRows, buildMarketLedgerRows, LEDGER_MARKET_ENABLED, LEDGER_SOURCES, type LedgerGame, type LedgerMarketQuote, type LedgerPlayer } from "lib/player-forecasts/servedForecastLedger";
 import { loadForgeDailyBridgeForecasts, teamStrengthPriors, teamWinProbability } from "lib/rosterScheduleData/forgeDailyBridge";
 import { loadPlanningInputs, pages } from "lib/rosterScheduleData/planningInputs";
 
 /** S-B1: snapshots what the RSO bridge serves for one ET date (plus naive controls) into forge_served_forecast_ledger.
- * Writes only that table (upsert on its PK); games already started are refused and counted. */
+ * Writes only that table (upsert on its PK); games already started are refused and counted.
+ * Task 6.3 (LEDGER_MARKET_ENABLED): adds `market` rows from the day's pre-game prices, upserted after the other sources. */
 export const LEDGER_TABLE = "forge_served_forecast_ledger";
 const UPSERT_BATCH = 500, ID_CHUNK = 200, DAY_MS = 86400000;
+const QUOTE_COLUMNS = "game_id,market_type,sportsbook_key,outcome_key,line_value,price_american,source_observed_at";
 type Row = Record<string, any>;
 
 function todayEtDateOnly(now: Date) {
@@ -66,10 +68,11 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       pages(() => db.from("nst_team_stats").select("team_abbreviation,season,situation,gp,xga,xgf", { count: "exact" }).eq("season", previousSeason).eq("situation", "all")
         .order("team_abbreviation"), deadline, 200, row => [row.team_abbreviation, row.season]).catch(() => []),
     ]);
-    const priors = teamStrengthPriors(teamPriors, lastSeasonTeams), teamWin = new Map<string, number>();
+    const priors = teamStrengthPriors(teamPriors, lastSeasonTeams), teamWin = new Map<string, number>(), teamAbbreviations = new Map<string, string>();
     for (const game of games) {
       const side = sides.get(String(game.gameId)) ?? [], home = side.find(row => row.home)?.teamAbbreviation, away = side.find(row => !row.home)?.teamAbbreviation;
       if (!home || !away) continue;
+      teamAbbreviations.set(`${game.gameId}:${game.homeTeamId}`, home.toUpperCase()).set(`${game.gameId}:${game.awayTeamId}`, away.toUpperCase());
       teamWin.set(`${game.gameId}:${game.homeTeamId}`, teamWinProbability(priors.get(home.toUpperCase()), priors.get(away.toUpperCase()), true));
       teamWin.set(`${game.gameId}:${game.awayTeamId}`, teamWinProbability(priors.get(away.toUpperCase()), priors.get(home.toUpperCase()), false));
     }
@@ -81,7 +84,30 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       if (error) return res.status(rowsUpserted ? 207 : 500).json({ success: false, date, rowsUpserted, error: error.message, skippedGames: skippedGameIds });
       rowsUpserted += batch.length;
     }
-    const countsBySource = Object.fromEntries(LEDGER_SOURCES.map(source => [source, rows.filter(row => row.source === source).length]));
+    // Market rows go last and alone: a market read or write failure never blocks the served forecasts above.
+    let marketRows: typeof rows = [], marketError: string | null = null;
+    if (LEDGER_MARKET_ENABLED) try {
+      const gameIds = games.map(game => game.gameId);
+      const [propQuotes, gameQuotes] = await Promise.all([
+        pages(() => db.from("prop_market_prices_daily").select(`${QUOTE_COLUMNS},player_id`, { count: "exact" }).eq("snapshot_date", date).in("game_id", gameIds)
+          .order("game_id").order("player_id").order("market_type").order("sportsbook_key").order("outcome_key"), deadline, 50000,
+        row => [row.game_id, row.player_id, row.market_type, row.sportsbook_key, row.outcome_key]),
+        pages(() => db.from("market_prices_daily").select(QUOTE_COLUMNS, { count: "exact" }).eq("snapshot_date", date).in("game_id", gameIds).eq("market_type", "h2h")
+          .order("game_id").order("sportsbook_key").order("outcome_key"), deadline, 2000, row => [row.game_id, row.sportsbook_key, row.outcome_key]),
+      ]);
+      const positions = new Map(identified.map(player => [player.nhlId!, player.eligiblePositions[0]]));
+      marketRows = buildMarketLedgerRows({ date, now, rows, propQuotes: propQuotes as LedgerMarketQuote[], gameQuotes: gameQuotes as LedgerMarketQuote[],
+        positions, teamAbbreviations, teamWin });
+      for (const batch of chunks(marketRows, UPSERT_BATCH)) {
+        const { error } = await db.from(LEDGER_TABLE).upsert(batch, { onConflict: "served_date,player_id,game_id,source" });
+        if (error) throw new Error(error.message);
+        rowsUpserted += batch.length;
+      }
+    } catch (error: any) {
+      marketError = error?.message ?? String(error);
+    }
+    const countsBySource = Object.fromEntries(LEDGER_SOURCES.map(source => [source, [...rows, ...marketRows].filter(row => row.source === source).length]));
+    if (marketError) return res.status(207).json({ success: false, date, rowsUpserted, countsBySource, marketError, skippedGames: skippedGameIds });
     return res.status(200).json({ success: true, date, seasonId, games: games.length, players: players.length, rowsUpserted, countsBySource,
       identifiedPlayerGames: universe.length, coverageStatus: "unavailable_independent_universe_not_persisted",
       skippedGames: skippedGameIds, bridgeLimitations: bridge.limitations });
@@ -91,4 +117,4 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 };
 
-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)));
+export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler as any)));

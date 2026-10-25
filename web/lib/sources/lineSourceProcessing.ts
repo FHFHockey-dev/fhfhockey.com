@@ -4,6 +4,7 @@ import { fetchRegisteredPlayerIdentities } from "./playerIdentity";
 import { requiresRelativeGameDateReview, tweetPipelineFlags, type TweetInterpretation } from "./tweetInterpretation";
 import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import type { RosterNameEntry } from "lib/sources/lineupSourceIngestion";
+import { findAliasReviewOccurrences, getAliasReviewOccurrence } from "./playerAliasReview";
 import {
   buildUnresolvedPlayerNameDedupeKey,
   mergePlayerNameAliasesIntoRoster,
@@ -300,24 +301,17 @@ function expandNameWithContextAliases(args: {
   contextText: string | null;
 }) {
   const rawName = args.rawName.trim();
-  if (!rawName || !args.contextText || rawName.includes(" ")) {
+  if (!rawName || !args.contextText) {
     return [{ rawName, contextAlias: rawName }];
   }
-
-  const escapedName = rawName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const pattern = new RegExp(`\\b([A-Z]\\.\\s*${escapedName})\\b`, "g");
-  const matches = Array.from(args.contextText.matchAll(pattern))
-    .map((match) => match[1]?.replace(/\s+/g, " ").trim())
-    .filter((value): value is string => Boolean(value));
-  const uniqueMatches = Array.from(new Set(matches));
-
-  if (uniqueMatches.length === 0) {
+  const matches = findAliasReviewOccurrences(rawName, args.contextText);
+  if (matches.length === 0) {
     return [{ rawName, contextAlias: rawName }];
   }
-
-  return uniqueMatches.map((contextAlias) => ({
-    rawName: contextAlias,
-    contextAlias,
+  return matches.map((occurrence) => ({
+    rawName: occurrence.text,
+    contextAlias: occurrence.text,
+    evidence: { start: occurrence.start, end: occurrence.end, text: occurrence.text, origin: "unique_token" as const },
   }));
 }
 
@@ -344,20 +338,25 @@ export function collectUnresolvedNamesFromLineRows(
       if (!isReviewablePlayerName(rawName) && !(metadata.evidence && /^[A-Z]{2,6}$/.test(rawName ?? ""))) return;
       const trimmedName = rawName?.trim();
       if (!trimmedName) return;
-      const normalizedName = normalizePlayerNameAlias(trimmedName);
+      const occurrence = getAliasReviewOccurrence({ raw_name: trimmedName, context_text: contextText, team_id: row.team_id, metadata: { reason, ...metadata } });
+      const reviewName = occurrence?.text ?? trimmedName;
+      const evidence = occurrence ? { start: occurrence.start, end: occurrence.end, text: occurrence.text, origin: occurrence.basis === "offset" ? "parser" : occurrence.basis } : metadata.evidence as { start: number; end: number; text?: string } | undefined;
+      const normalizedName = normalizePlayerNameAlias(reviewName);
       if (!normalizedName) return;
-      const dedupeKey = buildUnresolvedPlayerNameDedupeKey({
+      const nameKey = buildUnresolvedPlayerNameDedupeKey({
         source: row.source,
         tweetId: row.tweet_id,
         teamId: row.team_id,
         normalizedName,
       });
+      const dedupeKey = evidence && Number.isSafeInteger(evidence.start) && Number.isSafeInteger(evidence.end)
+        ? `${nameKey}:occurrence:${evidence.start}:${evidence.end}` : nameKey;
       pending.set(dedupeKey, {
         dedupe_key: dedupeKey,
         source: row.source,
         source_url: row.source_url,
         tweet_id: row.tweet_id,
-        raw_name: trimmedName,
+        raw_name: reviewName,
         normalized_name: normalizedName,
         team_id: row.team_id,
         team_abbreviation: row.team_abbreviation,
@@ -375,6 +374,7 @@ export function collectUnresolvedNamesFromLineRows(
             row.source_account ??
             (row.source === "lines_ccc" ? "CcCMiddleton" : null),
           ...metadata,
+          ...(evidence ? { evidence } : {}),
         },
         updated_at: new Date().toISOString(),
       });
@@ -383,7 +383,7 @@ export function collectUnresolvedNamesFromLineRows(
     const interpretation = row.metadata?.interpretation as TweetInterpretation | undefined;
     if (interpretation) {
       for (const issue of interpretation.unresolved) {
-        addName(issue.text, issue.reason, { evidence: { start: issue.start, end: issue.end }, sourceOrdinal: issue.number ?? null, situation: issue.situation ?? null, candidates: issue.candidates ?? [], reviewKind: issue.reason === "ambiguous" ? "ambiguous_identity" : issue.reason === "invalid_extraction" ? "invalid_extraction" : "missing_membership" });
+        addName(issue.text, issue.reason, { evidence: { start: issue.start, end: issue.end, text: issue.text }, sourcePublishedAt: interpretation.identityContext?.sourcePublishedAt ?? null, sourceOrdinal: issue.number ?? null, situation: issue.situation ?? null, candidates: issue.candidates ?? [], reviewKind: issue.reason === "ambiguous" ? "ambiguous_identity" : issue.reason === "invalid_extraction" ? "invalid_extraction" : "missing_membership" });
       }
       continue;
     }
@@ -395,6 +395,7 @@ export function collectUnresolvedNamesFromLineRows(
       })) {
         addName(expanded.rawName, "unmatched_names", {
           contextAlias: expanded.contextAlias,
+          ...("evidence" in expanded ? { evidence: expanded.evidence } : {}),
         });
       }
     }

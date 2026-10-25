@@ -99,6 +99,9 @@ exports[`/api/v1/forge/goalies > returns stable response shape with model/scenar
       "runId": "run-123",
       "runMetrics": {
         "goalie_rows": 32,
+        "input_provenance": {
+          "external_fantasy_input_contract": "excluded_from_native_inputs_v1",
+        },
       },
       "runStatus": "succeeded",
       "scheduledGamesOnDate": 8,
@@ -110,6 +113,9 @@ exports[`/api/v1/forge/goalies > returns stable response shape with model/scenar
       "runId": "run-123",
       "runMetrics": {
         "goalie_rows": 32,
+        "input_provenance": {
+          "external_fantasy_input_contract": "excluded_from_native_inputs_v1",
+        },
       },
       "runStatus": "succeeded",
       "scheduledGamesOnDate": 8,
@@ -118,6 +124,9 @@ exports[`/api/v1/forge/goalies > returns stable response shape with model/scenar
     "runCreatedAt": "2026-02-07T10:05:00.000Z",
     "runMetrics": {
       "goalie_rows": 32,
+      "input_provenance": {
+        "external_fantasy_input_contract": "excluded_from_native_inputs_v1",
+      },
     },
     "runStatus": "succeeded",
     "scheduledGamesOnDate": 8,

@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { z } from "zod";
 
 import { requireApiUser } from "lib/api/requireApiUser";
+import { DraftProRequestError } from "lib/draft-pro/requestError";
 import { getDraftProFeatureFlags } from "lib/draft-pro/features";
 import { commitSavedDraft, mutateSavedDraft, readSavedDraft } from "lib/draft-pro/savedDraftsServer";
 import { saveDraftProDraftSchema } from "lib/draft-pro/contracts";
@@ -37,8 +38,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const result = await mutateSavedDraft({ userId: user.id, draftId: id, action: input.action, name: input.name, expectedVersion: input.expectedVersion });
     return result.conflict ? res.status(409).json({ data: { current: result.current } }) : res.status(200).json({ data: result.draft });
   } catch (cause) {
-    const error = cause as { statusCode?: number; code?: string; message?: string };
-    if (error.statusCode) return fail(res, error.statusCode, error.code ?? "draft_pro_required", error.message ?? "Draft Pro access is required.");
+    if (cause instanceof DraftProRequestError) return fail(res, cause.statusCode, cause.code ?? "draft_pro_required", cause.message ?? "Draft Pro access is required.");
     if (cause instanceof z.ZodError) return fail(res, 400, "invalid_request", cause.issues[0]?.message ?? "Invalid saved draft request.");
     return fail(res, 500, "saved_drafts_unavailable", "Saved Drafts are unavailable. Your local draft is unchanged.");
   }

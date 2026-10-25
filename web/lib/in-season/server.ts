@@ -39,11 +39,13 @@ export async function loadInSeasonAccess(userId: string, options: { now?: Date; 
     const verified = Date.parse(metadataString(row.metadata, "verified_at") ?? "");
     return !Number.isFinite(verified) || verified > now.getTime() || verified < now.getTime() - 60 * 60 * 1000;
   });
+  let patreonVerificationFailed = false;
   if (stale) {
     try {
       await refreshPatreonAccount({ userId, client, triggerSource: "access_reverify" });
       patreonRows = await readPatreon();
     } catch {
+      patreonVerificationFailed = true;
       patreonRows = [];
     }
   }
@@ -57,6 +59,7 @@ export async function loadInSeasonAccess(userId: string, options: { now?: Date; 
   if (!access.eligible) {
     if (grantResult.status === "rejected") throw grantResult.reason;
     if (patreonResult.status === "rejected") throw patreonResult.reason;
+    if (patreonVerificationFailed) return { ...access, reason: "verification_unavailable" };
   }
   return access;
 }

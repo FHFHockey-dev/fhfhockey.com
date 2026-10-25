@@ -665,7 +665,10 @@ function normalizeLegacyScoreRow(args: {
     score: Number(args.row.s_100),
     expectationState: deriveLegacyExpectationState(Number(args.row.s_raw)),
     components: parseJsonObject(args.row.components),
-    provenance: {},
+    provenance: {
+      score_semantics: "process_support_index",
+      performance_state_note: "The canonical process support index does not measure observed performance against an expectation."
+    },
     computedAt: args.row.computed_at
   };
 }

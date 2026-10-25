@@ -3,7 +3,7 @@ const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://fhfhockey.com").r
 
 const NOINDEX_PATHS = [
   "/404", "/500", "/_error", "/account", "/auth", "/db", "/studio",
-  "/privacy", "/draft-pro/policies", "/player-forecasts",
+  "/privacy", "/draft-pro/policies", "/player-forecasts", "/social-share",
   "/cssTestingGrounds", "/trendsDebug", "/trendsTestingGrounds",
   "/trendsSandbox", "/trends/placeholder", "/statsPlaceholder",
   "/skoCharts", "/underlying-stats/xg/operations",

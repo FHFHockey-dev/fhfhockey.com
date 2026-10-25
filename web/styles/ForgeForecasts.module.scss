@@ -1,0 +1,32 @@
+@use "styles/vars" as v;
+
+.page {
+  width: min(1400px, calc(100% - 2rem));
+  margin: 1.5rem auto;
+  color: v.$text-primary;
+
+  h1 { margin: 1.2rem 0 0.5rem; }
+  h2 { font-size: 1rem; margin-top: 1rem; }
+  p { line-height: 1.5; max-width: 90ch; }
+  a { color: v.$primary-color; }
+  small { display: block; margin-top: 0.3rem; overflow-wrap: anywhere; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  caption { text-align: left; font-weight: 600; padding: 0.75rem 0; }
+  th, td { padding: 0.7rem; text-align: left; vertical-align: top; border-bottom: 1px solid v.$border-secondary; }
+  summary { cursor: pointer; padding: 0.8rem 0; }
+  :focus-visible { outline: 2px solid v.$primary-color; outline-offset: 3px; }
+}
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  align-items: end;
+  margin: 1.2rem 0;
+
+  label { display: grid; gap: 0.35rem; max-width: 100%; }
+  input, select, button { min-height: 44px; padding: 0.5rem; color: inherit; background: v.$background-dark; border: 1px solid v.$border-secondary; border-radius: 4px; max-width: 100%; }
+  button { cursor: pointer; }
+  button:disabled { opacity: 0.65; cursor: wait; }
+}
+.tableScroll { overflow-x: auto; margin: 1rem 0; }
+.player { margin: 0.8rem 0; padding: 0 0.8rem; border: 1px solid v.$border-secondary; border-radius: 6px; }

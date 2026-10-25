@@ -1,3 +1,4 @@
+import { ProviderSyncAccessError, requireProviderSyncAccess } from "lib/integrations/providerSyncAccessServer";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 import serviceRoleClient from "lib/supabase/server";
@@ -108,6 +109,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       );
     }
 
+    await requireProviderSyncAccess(transaction.userId);
     const tokenResponse = await exchangeYahooAuthorizationCode({
       code,
       codeVerifier: transaction.pkceCodeVerifier,
@@ -152,7 +154,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       buildYahooAccountRedirect(
         next,
         "error",
-        "Yahoo connection could not be completed. Please try again.",
+        error instanceof ProviderSyncAccessError ? error.message : "Yahoo connection could not be completed. Please try again.",
       ),
     );
   }

@@ -33,7 +33,7 @@ describe("social-share locked page", () => {
     expect(screen.getByText("Protected studio")).toBeTruthy();
   });
 
-  it("serves only a locked shell during initial auth and role revalidation", () => {
+  it("serves only a locked shell during initial auth and the first unresolved role check", () => {
     auth.value = { isLoading: true, isRoleLoading: true, user: null };
     const html = renderToString(<SocialSharePage format="game-grid" asOf="2026-10-24T19:00:00Z" />);
     expect(html).toContain("Checking share studio access");
@@ -65,6 +65,74 @@ describe("social-share locked page", () => {
     view.rerender(<SocialShareAccessGate><Workspace /></SocialShareAccessGate>);
     expect(screen.getByRole("link", { name: "Sign in" })).toBeTruthy();
     expect(unmounted).toHaveBeenCalledTimes(2);
+  });
+
+  it("preserves mounted state only after the same user has completed a successful role check", () => {
+    const mounted = vi.fn(), unmounted = vi.fn();
+    function Workspace() {
+      const [value, setValue] = useState("Fresh edition");
+      useEffect(() => { mounted(); return () => { unmounted(); }; }, []);
+      return <input aria-label="Draft edition" value={value} onChange={event => setValue(event.target.value)} />;
+    }
+    state("social_editor"); auth.value.isRoleLoading = true;
+    const view = render(<SocialShareAccessGate><Workspace /></SocialShareAccessGate>);
+    expect(screen.queryByRole("textbox")).toBeNull();
+    expect(mounted).not.toHaveBeenCalled();
+    state("social_editor");
+    view.rerender(<SocialShareAccessGate><Workspace /></SocialShareAccessGate>);
+    const input = screen.getByRole("textbox");
+    fireEvent.change(input, { target: { value: "Unsaved studio selection" } });
+    for (const pending of [true, false, true, false]) {
+      auth.value.isRoleLoading = pending;
+      view.rerender(<SocialShareAccessGate><Workspace /></SocialShareAccessGate>);
+      expect(screen.getByRole("textbox")).toBe(input);
+      expect((input as HTMLInputElement).value).toBe("Unsaved studio selection");
+      expect(mounted).toHaveBeenCalledTimes(1);
+      expect(unmounted).not.toHaveBeenCalled();
+    }
+  });
+
+  it.each(["basic", null, undefined])("closes a preserved studio on revoked role, lookup failure or sign-out (%j)", role => {
+    const unmounted = vi.fn();
+    function Workspace() {
+      useEffect(() => () => { unmounted(); }, []);
+      return <p>Authorized child</p>;
+    }
+    state("admin");
+    const view = render(<SocialShareAccessGate><Workspace /></SocialShareAccessGate>);
+    auth.value.isRoleLoading = true;
+    view.rerender(<SocialShareAccessGate><Workspace /></SocialShareAccessGate>);
+    expect(screen.getByText("Authorized child")).toBeTruthy();
+    // The provider maps both rejected and error-returning role reads to null.
+    state(role);
+    view.rerender(<SocialShareAccessGate><Workspace /></SocialShareAccessGate>);
+    expect(screen.queryByText("Authorized child")).toBeNull();
+    expect(screen.getByRole("alert")).toBeTruthy();
+    expect(unmounted).toHaveBeenCalledTimes(1);
+    state("admin"); auth.value.isRoleLoading = true;
+    view.rerender(<SocialShareAccessGate><Workspace /></SocialShareAccessGate>);
+    expect(screen.queryByText("Authorized child")).toBeNull();
+    expect(screen.getByRole("status")).toBeTruthy();
+  });
+
+  it("does not carry a previous grant or workspace through another user's pending check", () => {
+    const unmounted = vi.fn();
+    function Workspace() {
+      const [value, setValue] = useState("Fresh edition");
+      useEffect(() => () => { unmounted(); }, []);
+      return <button onClick={() => setValue("Private draft")}>{value}</button>;
+    }
+    state("social_editor");
+    const view = render(<SocialShareAccessGate><Workspace /></SocialShareAccessGate>);
+    fireEvent.click(screen.getByRole("button"));
+    state("social_editor", "two"); auth.value.isRoleLoading = true;
+    view.rerender(<SocialShareAccessGate><Workspace /></SocialShareAccessGate>);
+    expect(screen.queryByRole("button")).toBeNull();
+    expect(unmounted).toHaveBeenCalledTimes(1);
+    state("social_editor", "two");
+    view.rerender(<SocialShareAccessGate><Workspace /></SocialShareAccessGate>);
+    expect(screen.getByText("Fresh edition")).toBeTruthy();
+    expect(screen.queryByText("Private draft")).toBeNull();
   });
 
   it("keeps valid and unknown page responses private, with only generic page props", async () => {

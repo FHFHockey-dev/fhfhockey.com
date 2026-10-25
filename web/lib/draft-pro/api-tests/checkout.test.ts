@@ -10,4 +10,11 @@ const res=()=>{const s:any={statusCode:0};return Object.assign(s,{status(n:numbe
 describe("checkout route guards",()=>{beforeEach(()=>{vi.clearAllMocks();auth.mockResolvedValue({id:"u1"});flags.mockReturnValue({checkout:true});access.mockResolvedValue({eligible:false});});
 it("does not create without authentication",async()=>{auth.mockResolvedValue(null);await handler({method:"POST",headers:{}} as any,res());expect(create).not.toHaveBeenCalled()});
 it("does not create while checkout is disabled",async()=>{flags.mockReturnValue({checkout:false});const r=res();await handler({method:"POST",headers:{}} as any,r);expect(r.statusCode).toBe(403);expect(create).not.toHaveBeenCalled()});
-it("does not create for an already eligible account",async()=>{access.mockResolvedValue({eligible:true});const r=res();await handler({method:"POST",headers:{}} as any,r);expect(r.statusCode).toBe(409);expect(create).not.toHaveBeenCalled()});});
+it("does not create for an already eligible account",async()=>{access.mockResolvedValue({eligible:true});const r=res();await handler({method:"POST",headers:{}} as any,r);expect(r.statusCode).toBe(403);expect(create).not.toHaveBeenCalled()});});
+
+it.each([false, true])("rejects stale/direct checkout even when the old flag says %s", async enabled => {
+  vi.clearAllMocks(); auth.mockResolvedValue({ id: "owner" }); flags.mockReturnValue({ checkout: enabled });
+  const r=res(); await handler({method:"POST",headers:{},body:{userId:"other"}} as any,r);
+  expect(r.statusCode).toBe(403); expect(r.body.code).toBe("draft_pro_sales_closed");
+  expect(create).not.toHaveBeenCalled(); expect(access).not.toHaveBeenCalled();
+});

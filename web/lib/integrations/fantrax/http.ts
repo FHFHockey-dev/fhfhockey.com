@@ -1,3 +1,4 @@
+import { ProviderSyncAccessError } from "lib/integrations/providerSyncAccessServer";
 import type { NextApiResponse } from "next";
 
 import { FantraxIntegrationError } from "./server";
@@ -7,6 +8,7 @@ export function respondWithFantraxError(
   error: unknown,
   fallbackMessage = "Fantrax integration failed.",
 ) {
+  if (error instanceof ProviderSyncAccessError) return res.status(error.statusCode).json({ error: error.message, code: error.code });
   if (error instanceof FantraxIntegrationError) {
     if (error.retryAfterSeconds != null) {
       res.setHeader("Retry-After", String(error.retryAfterSeconds));

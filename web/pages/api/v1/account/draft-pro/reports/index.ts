@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { z } from "zod";
 import { requireApiUser } from "lib/api/requireApiUser";
+import { DraftProRequestError } from "lib/draft-pro/requestError";
 import { getDraftProFeatureFlags } from "lib/draft-pro/features";
 import { loadDraftProAccess, requireDraftProServerCapability } from "lib/draft-pro/server";
 import { assertReportSnapshotMatch, buildDraftProReport, buildScenarioReportInput, reportInputSchema, type DraftProReportType, type ReportInput } from "lib/draft-pro/reports";
@@ -54,8 +55,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (error) throw error;
     return res.status(201).json({ data });
   } catch (cause) {
-    const error = cause as { statusCode?: number; code?: string; message?: string };
-    if (error.statusCode) return fail(res, error.statusCode, error.code ?? "draft_pro_required", error.message ?? "Draft Pro access is required.");
+    if (cause instanceof DraftProRequestError) return fail(res, cause.statusCode, cause.code ?? "draft_pro_required", cause.message ?? "Draft Pro access is required.");
     if (cause instanceof z.ZodError) return fail(res, 400, "invalid_request", cause.issues[0]?.message ?? "Invalid report request.");
     return fail(res, 500, "reports_unavailable", "Reports are unavailable. Your draft is unchanged.");
   }

@@ -1,3 +1,5 @@
+import { DraftProRequestError } from "./requestError";
+
 export type DustScheduleSeasonMetadata = {
   id?: number;
   game_key: string;
@@ -12,14 +14,12 @@ export type DustScheduleSeasonResolution = {
   sourceSeasonId: number;
 };
 
-export class DustScheduleSeasonUnavailableError extends Error {
-  statusCode = 503;
-  code = "schedule_season_unavailable";
+export class DustScheduleSeasonUnavailableError extends DraftProRequestError {
+  constructor(message: string) { super(503, message, "schedule_season_unavailable"); }
 }
 
-export class DustProjectionSeasonMismatchError extends Error {
-  statusCode = 400;
-  code = "projection_season_mismatch";
+export class DustProjectionSeasonMismatchError extends DraftProRequestError {
+  constructor(message: string) { super(400, message, "projection_season_mismatch"); }
 }
 
 function unavailable(message: string): never {

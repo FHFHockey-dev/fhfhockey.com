@@ -1,4 +1,4 @@
-import { cleanup, renderHook, waitFor } from "@testing-library/react";
+import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const fantraxAccountRequest = vi.hoisted(() => vi.fn());
@@ -28,7 +28,7 @@ describe("useFantraxDraftSync resume", () => {
   it("keeps the saved live session while sign-in resolves, then resumes it", async () => {
     window.sessionStorage.setItem(sessionKey, "session-1");
     const { result, rerender } = renderHook(
-      ({ authenticated, authLoading }) => useFantraxDraftSync(authenticated, authLoading),
+      ({ authenticated, authLoading }) => useFantraxDraftSync(authenticated, authLoading, true),
       { initialProps: { authenticated: false, authLoading: true } },
     );
     expect(window.sessionStorage.getItem(sessionKey)).toBe("session-1");
@@ -53,9 +53,20 @@ describe("useFantraxDraftSync resume", () => {
       if (path.endsWith("/session-1")) throw new Error("Network unavailable");
       return { enabled: true, eligible: true };
     });
-    const { result } = renderHook(() => useFantraxDraftSync(true));
+    const { result } = renderHook(() => useFantraxDraftSync(true, false, true));
     await waitFor(() => expect(result.current.error).toBe("Network unavailable"));
     expect(window.sessionStorage.getItem(sessionKey)).toBe("session-1");
     expect(result.current.draftState).toBeNull();
   });
+  it("retains the saved draft while blocking start and poll after access loss", async () => {
+    window.sessionStorage.setItem(sessionKey, "session-1");
+    const { result, rerender } = renderHook(({ canSync }) => useFantraxDraftSync(true, false, canSync), { initialProps: { canSync: true } });
+    await waitFor(() => expect(result.current.draftState?.session.id).toBe("session-1"));
+    rerender({ canSync: false }); fantraxAccountRequest.mockClear();
+    await act(async () => { expect(await result.current.start("league", "team")).toBeNull(); await result.current.poll(); });
+    expect(fantraxAccountRequest).not.toHaveBeenCalled();
+    expect(result.current.draftState?.session.id).toBe("session-1");
+    expect(window.sessionStorage.getItem(sessionKey)).toBe("session-1");
+  });
+
 });

@@ -10,6 +10,7 @@ const external = vi.hoisted(() => ({
   players: null as any[] | null,
   filledSlots: {} as Record<string, number>,
   proEnabled: false,
+  providerSyncEnabled: false,
   fantraxPlayers: [] as import("../../../lib/draftDashboard/fantraxPlayerSources").FantraxPlayerRow[],
   tablePlayers: [] as any[],
   tierPositions: [] as import("../../../lib/draftDashboard/positionalTiers").PositionTiers[],
@@ -83,6 +84,7 @@ import DraftDashboard from "../../../components/DraftDashboard/DraftDashboard";
 
 vi.mock("hooks/useFantraxConnections", () => ({ fantraxAccountRequest: vi.fn(async () => ({ players: external.fantraxPlayers, hasLeagueEligibility: true })) }));
 vi.mock("hooks/useFantraxDraftSync", () => ({ useFantraxDraftSync: () => ({ eligible: false, enabled: false, draftState: null }) }));
+vi.mock("hooks/useProviderSyncAccess", () => ({ useProviderSyncAccess: () => ({ status: "ready", access: { eligible: external.providerSyncEnabled, reason: external.providerSyncEnabled ? "rollout_free" : "authentication_required" } }) }));
 vi.mock("hooks/useDraftProAccess", () => ({ useDraftProAccess: () => ({ access: external.proEnabled ? { eligible: true, capabilities: ["recommendations"] } : null }) }));
 vi.mock("hooks/useDraftProDust", () => ({ useDraftProDust: () => ({ data: null, error: null, isLoading: false }) }));
 vi.mock("hooks/useDraftSchedule", () => ({ useDraftSchedule: () => ({ playerMetrics: new Map(), weeks: [], selectedWeeks: [], weeksError: null, periodLabel: "Season" }) }));
@@ -126,7 +128,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup(); sessionStorage.clear(); localStorage.clear(); vi.restoreAllMocks(); vi.unstubAllGlobals();
   external.showRoster = false; external.players = null; external.filledSlots = {};
-  external.proEnabled = false; external.fantraxPlayers = []; external.tablePlayers = []; external.tierPositions = []; external.tierAdpSource = "";
+  external.proEnabled = false; external.providerSyncEnabled = false; external.fantraxPlayers = []; external.tablePlayers = []; external.tierPositions = []; external.tierAdpSource = "";
   external.user = null; external.espnState = null; external.loadSettings.mockReset(); external.loadSettings.mockResolvedValue({ data: null, error: null });
 });
 
@@ -436,6 +438,8 @@ it.each([
   ["fantrax", "fantrax", 70, "RW"],
 ] as const)("uses selected %s ADP and %s eligibility for positional tier advice", async (adpSource, positionSource, adp, position) => {
   external.proEnabled = true;
+  external.providerSyncEnabled = true;
+  external.user = { id: "provider-fixture" };
   external.players = [{ ...player, combinedStats: {
     GOALS: { projected: 10 }, ASSISTS: { projected: 0 }, PP_POINTS: { projected: 0 },
     SHOTS_ON_GOAL: { projected: 0 }, HITS: { projected: 0 }, BLOCKED_SHOTS: { projected: 0 },

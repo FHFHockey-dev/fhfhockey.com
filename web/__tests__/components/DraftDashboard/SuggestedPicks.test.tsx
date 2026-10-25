@@ -309,7 +309,7 @@ describe("Suggested Picks tier view", () => {
     const picks = screen.getByRole("tab", { name: "Picks" });
     fireEvent.keyDown(picks, { key: "ArrowRight" });
     expect(screen.getByRole("tab", { name: "Tiers · Pro" }).getAttribute("aria-selected")).toBe("true");
-    expect(screen.getByRole("link", { name: "Explore Draft Pro" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "View existing Draft Pro access" })).toBeTruthy();
     expect(screen.queryByRole("combobox", { name: "Sort suggested picks" })).toBeNull();
     fireEvent.click(picks);
     expect(screen.getAllByRole("listitem")).toHaveLength(6);

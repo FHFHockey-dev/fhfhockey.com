@@ -7,6 +7,8 @@ import type { PlanEvaluation, PlanIntent, PlanningPlayer, PlanningSnapshot } fro
 import type { ActiveSlotType } from "./types";
 
 export type LineupGap = { date: string; slot: ActiveSlotType; open: number };
+/** Why the no-move lineup's projected points are unknown: the responsible player (null for a lineup-wide cause) and a plain reason. */
+export type ProjectionBlocker = { playerId: string | null; reason: string };
 export type GapAdd = { playerId: string; plan: CandidatePlan; fills: Array<{ date: string; slot: ActiveSlotType }>; dropsBest: boolean };
 export type LineupGapReport = {
   /** Active slots the no-move lineup leaves empty on dates with games still to play. */
@@ -14,9 +16,12 @@ export type LineupGapReport = {
   openSlots: number;
   /** The lowest known contributor among droppable players; null when none has a known contribution. */
   bestDrop: { playerId: string; projectedPoints: number | null; activeGames: number | null; frees: LineupGap[]; caution: RetentionCaution } | null;
-  /** Droppable players with no projection (in points leagues, those missing a forecast; else every unknown
-   * contribution): flagged, never suggested. */
+  /** Droppable players with no projection of their own (in points leagues, those missing a forecast or named as a
+   * blocker; else every unknown contribution): flagged, never suggested. */
   unprojectedDrops: string[];
+  /** Why contributions are unknown: an illegal no-move lineup (any mode), or in points leagues the players and games
+   * leaving projected points unknown; `playerId` is null for a lineup-wide cause. */
+  projectionBlockers: ProjectionBlocker[];
   adds: GapAdd[];
 };
 
@@ -53,12 +58,37 @@ export function lineupGapReport(snapshot: PlanningSnapshot, intent: PlanIntent, 
   const eligible = snapshot.roster.map(row => players.get(row.playerId))
     .filter((player): player is PlanningPlayer => !!player && dropEligible(player, intent, reserved));
   const { player: drop, unprojected: unknown } = suggestedDrop(eligible, player => dropContribution(snapshot.rules.scoring.mode, ledger.get(player.id)));
-  // In points leagues one player without a forecast makes the whole lineup's value unknown, so every contribution
-  // reads unknown. Name the players actually missing a forecast for a game still to play; otherwise all unknowns.
+  // In points leagues one unresolved game (any roster member's, droppable or not) makes the whole lineup's value
+  // unknown, so every contribution reads unknown. Name the players and games actually responsible, with the reason;
+  // a droppable player with complete forecasts is not "unprojected" just because someone else's game is unknown.
   const lacksForecast = (player: PlanningPlayer) => snapshot.games.some(game => game.teamAbbreviation === player.teamAbbreviation
     && playable.has(game.date) && !snapshot.forecasts.some(forecast => forecast.playerId === player.id && forecast.gameId === game.id));
-  const missingForecasts = points ? unknown.filter(lacksForecast) : [];
-  const unprojected = missingForecasts.length ? missingForecasts : unknown;
+  // Per player: each kind of gap with the dates it covers, e.g. "no FORGE projection issued for 2026-10-22, 2026-10-24".
+  const blocking = new Map<string, Map<string, Set<string>>>();
+  if (points && baseline.projectedValue === null) for (const issue of baseline.recommendation?.unresolved ?? []) {
+    const player = players.get(issue.playerId);
+    const why = (issue.reasons ?? []).filter(reason => reason !== "no_issued_revision").map(reason => reason.replaceAll("_", " "));
+    const kind = player?.eligibilityVerified !== true ? "league positions not verified"
+      : !snapshot.forecasts.some(forecast => forecast.playerId === issue.playerId && forecast.gameId === issue.gameId)
+        ? issue.reasons?.includes("no_issued_revision") || !why.length ? "no FORGE projection issued" : `no projection (${why.join(", ")})`
+        : `no usable ${issue.missingTargets.length ? issue.missingTargets.join(", ") : "projection"}${why.length ? ` (${why.join(", ")})` : ""}`;
+    const kinds = blocking.get(issue.playerId) ?? new Map<string, Set<string>>();
+    blocking.set(issue.playerId, kinds.set(kind, (kinds.get(kind) ?? new Set()).add(issue.date)));
+  }
+  const projectionBlockers: ProjectionBlocker[] = [...blocking].map(([playerId, kinds]) => ({ playerId,
+    reason: `has unknown projected points: ${[...kinds].map(([kind, dates]) => kind === "league positions not verified" ? kind
+      : `${kind} for ${[...dates].sort().join(", ")}`).join("; ")}` }));
+  // An illegal no-move lineup leaves every contribution unknown in any scoring mode; otherwise an unknown total with
+  // no responsible game (schedule, team membership, approved totals) is lineup-wide. Say which, never "unprojected".
+  // The usual illegal case: a reserve spot held by a player without verified eligibility for it (e.g. a healthy IR player).
+  const reserveIssues = snapshot.roster.filter(entry => ["IR", "IR+", "NA"].includes(entry.position)
+    && !(players.get(entry.playerId)?.reserveEligibility ?? []).some(value => value === entry.position));
+  if (!baseline.legal) projectionBlockers.splice(0, projectionBlockers.length, ...(reserveIssues.length
+    ? reserveIssues.map(entry => ({ playerId: entry.playerId, reason: `in ${entry.position} without verified ${entry.position} eligibility, so the lineup fails a rule check; move him to an active or bench spot, or refresh league data` }))
+    : [{ playerId: null, reason: `the no-move lineup fails a rule check${baseline.limitations.length ? ` (${baseline.limitations.slice(0, 3).join(" ")})` : ""}` }]));
+  else if (points && baseline.projectedValue === null && !projectionBlockers.length) projectionBlockers.push({ playerId: null,
+    reason: `projected points are unknown${baseline.limitations.length ? ` (${baseline.limitations.slice(0, 3).join(" ")})` : ""}` });
+  const unprojected = points ? unknown.filter(player => lacksForecast(player) || blocking.has(player.id)) : unknown;
   const dropRow = drop ? ledger.get(drop.id) : undefined;
   const bestDrop = drop ? { playerId: drop.id, projectedPoints: dropRow?.projectedPoints ?? null,
     activeGames: dropRow?.activeGames ?? null,
@@ -84,5 +114,5 @@ export function lineupGapReport(snapshot: PlanningSnapshot, intent: PlanIntent, 
   }
   adds.sort((a, b) => (points ? descending(a.plan.netPoints, b.plan.netPoints) : 0) || descending(a.plan.netAGP, b.plan.netAGP)
     || descending(a.plan.netPoints, b.plan.netPoints) || b.fills.length - a.fills.length || a.playerId.localeCompare(b.playerId));
-  return { gaps, openSlots: open.length, bestDrop, unprojectedDrops: unprojected.map(player => player.id), adds: adds.slice(0, limit) };
+  return { gaps, openSlots: open.length, bestDrop, unprojectedDrops: unprojected.map(player => player.id), projectionBlockers, adds: adds.slice(0, limit) };
 }

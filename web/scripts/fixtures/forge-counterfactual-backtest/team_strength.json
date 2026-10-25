@@ -1,0 +1,156 @@
+[
+ {
+  "team_id": 1,
+  "game_id": 899,
+  "game_date": "2026-10-05",
+  "toi_es_seconds": 18000,
+  "toi_pp_seconds": 1800,
+  "toi_pk_seconds": 600,
+  "shots_es": 25,
+  "shots_pp": 5,
+  "game_type": 1
+ },
+ {
+  "team_id": 2,
+  "game_id": 899,
+  "game_date": "2026-10-05",
+  "toi_es_seconds": 18000,
+  "toi_pp_seconds": 1800,
+  "toi_pk_seconds": 600,
+  "shots_es": 25,
+  "shots_pp": 5,
+  "game_type": 1
+ },
+ {
+  "team_id": 1,
+  "game_id": 901,
+  "game_date": "2026-10-08",
+  "toi_es_seconds": 18000,
+  "toi_pp_seconds": 450,
+  "toi_pk_seconds": 600,
+  "shots_es": 25,
+  "shots_pp": 5,
+  "game_type": 2
+ },
+ {
+  "team_id": 2,
+  "game_id": 901,
+  "game_date": "2026-10-08",
+  "toi_es_seconds": 18000,
+  "toi_pp_seconds": 450,
+  "toi_pk_seconds": 600,
+  "shots_es": 25,
+  "shots_pp": 5,
+  "game_type": 2
+ },
+ {
+  "team_id": 3,
+  "game_id": 903,
+  "game_date": "2026-10-09",
+  "toi_es_seconds": 18000,
+  "toi_pp_seconds": 300,
+  "toi_pk_seconds": 600,
+  "shots_es": 25,
+  "shots_pp": 5,
+  "game_type": 2
+ },
+ {
+  "team_id": 1,
+  "game_id": 903,
+  "game_date": "2026-10-09",
+  "toi_es_seconds": 18000,
+  "toi_pp_seconds": 420,
+  "toi_pk_seconds": 600,
+  "shots_es": 25,
+  "shots_pp": 5,
+  "game_type": 2
+ },
+ {
+  "team_id": 1,
+  "game_id": 905,
+  "game_date": "2026-10-10",
+  "toi_es_seconds": 18000,
+  "toi_pp_seconds": 480,
+  "toi_pk_seconds": 600,
+  "shots_es": 25,
+  "shots_pp": 5,
+  "game_type": 2
+ },
+ {
+  "team_id": 3,
+  "game_id": 905,
+  "game_date": "2026-10-10",
+  "toi_es_seconds": 18000,
+  "toi_pp_seconds": 360,
+  "toi_pk_seconds": 600,
+  "shots_es": 25,
+  "shots_pp": 5,
+  "game_type": 2
+ },
+ {
+  "team_id": 2,
+  "game_id": 906,
+  "game_date": "2026-10-11",
+  "toi_es_seconds": 18000,
+  "toi_pp_seconds": 420,
+  "toi_pk_seconds": 600,
+  "shots_es": 25,
+  "shots_pp": 5,
+  "game_type": 2
+ },
+ {
+  "team_id": 3,
+  "game_id": 906,
+  "game_date": "2026-10-11",
+  "toi_es_seconds": 18000,
+  "toi_pp_seconds": 300,
+  "toi_pk_seconds": 600,
+  "shots_es": 25,
+  "shots_pp": 5,
+  "game_type": 2
+ },
+ {
+  "team_id": 1,
+  "game_id": 1001,
+  "game_date": "2026-10-13",
+  "toi_es_seconds": 18000,
+  "toi_pp_seconds": 480,
+  "toi_pk_seconds": 600,
+  "shots_es": 25,
+  "shots_pp": 5,
+  "game_type": 2
+ },
+ {
+  "team_id": 2,
+  "game_id": 1001,
+  "game_date": "2026-10-13",
+  "toi_es_seconds": 18000,
+  "toi_pp_seconds": 480,
+  "toi_pk_seconds": 600,
+  "shots_es": 25,
+  "shots_pp": 5,
+  "game_type": 2
+ },
+ {
+  "team_id": 3,
+  "game_id": 1002,
+  "game_date": "2026-10-14",
+  "toi_es_seconds": 18000,
+  "toi_pp_seconds": 480,
+  "toi_pk_seconds": 600,
+  "shots_es": 25,
+  "shots_pp": 5,
+  "game_type": 2
+ },
+ {
+  "team_id": 2,
+  "game_id": 1002,
+  "game_date": "2026-10-14",
+  "toi_es_seconds": 18000,
+  "toi_pp_seconds": 420,
+  "toi_pk_seconds": 600,
+  "shots_es": 25,
+  "shots_pp": 5,
+  "game_type": 2
+ }
+]

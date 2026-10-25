@@ -8,11 +8,25 @@ import PlayerSearchBar from "components/StatsPage/PlayerSearchBar";
 const fetcher = async (url: string) => {
   const res = await fetch(url);
   const data = await res.json();
-  if (!res.ok || data?.error) {
-    throw new Error(data?.error || `Request failed with status ${res.status}`);
+  if (!res.ok || data?.error || data?.success === false) {
+    throw new Error(data?.error || data?.message || `Request failed with status ${res.status}`);
   }
   return data;
 };
+
+const isGameId = (value: unknown): value is string =>
+  typeof value === "string" && /^[1-9]\d{9}$/.test(value);
+
+const isCompleted = (state: unknown) =>
+  state === "OFF" || state === "OVER" || state === "FINAL";
+
+function gameStatus(state: unknown) {
+  if (isCompleted(state)) return "Final";
+  if (state === "FUT") return "Scheduled";
+  if (state === "PRE") return "Pregame";
+  if (state === "LIVE" || state === "CRIT") return "Live";
+  return "Status unavailable";
+}
 
 const TEAM_STAT_LABELS: Record<string, string> = {
   sog: "Shots on Goal",
@@ -89,7 +103,9 @@ function getTeamStatValue(stat: any, side: "away" | "home") {
   return value ?? "-";
 }
 
-function getBarWidths(awayVal: number, homeVal: number) {
+function getBarWidths(awayVal: unknown, homeVal: unknown) {
+  if (typeof awayVal !== "number" || !Number.isFinite(awayVal) || awayVal < 0 ||
+      typeof homeVal !== "number" || !Number.isFinite(homeVal) || homeVal < 0) return null;
   const total = awayVal + homeVal;
   if (total === 0) return { away: 50, home: 50 };
   return {
@@ -99,18 +115,19 @@ function getBarWidths(awayVal: number, homeVal: number) {
 }
 
 // Helper to convert American/Decimal odds to implied probability
-function getImpliedProb(oddsStr?: string): number {
-  if (!oddsStr) return 50;
+function getImpliedProb(oddsStr?: string): number | null {
+  if (typeof oddsStr !== "string" || !/^[+-]?\d+(\.\d+)?$/.test(oddsStr)) return null;
   
   // Handle decimal odds
   if (!oddsStr.startsWith("+") && !oddsStr.startsWith("-")) {
     const decimal = parseFloat(oddsStr);
-    if (!isNaN(decimal) && decimal > 0) return (1 / decimal) * 100;
+    return Number.isFinite(decimal) && decimal > 1 ? (1 / decimal) * 100 : null;
   }
   
   // Handle American odds
-  const odds = parseInt(oddsStr.replace("+", ""), 10);
-  if (isNaN(odds)) return 50;
+  if (!/^[+-]\d+$/.test(oddsStr)) return null;
+  const odds = Number(oddsStr);
+  if (!Number.isFinite(odds) || odds === 0) return null;
   if (odds > 0) {
     return (100 / (odds + 100)) * 100;
   } else {
@@ -120,22 +137,25 @@ function getImpliedProb(oddsStr?: string): number {
 
 export default function GameStatsPage() {
   const router = useRouter();
-  const { gameId } = router.query;
+  const gameId = isGameId(router.query.gameId) ? router.query.gameId : null;
+  const invalidGameId = router.isReady && !gameId;
 
-  const { data: rightRail, error: rrError } = useSWR(
+  const { data: rightRail, error: rrError, isLoading: railLoading } = useSWR(
     gameId ? `/api/v1/game/${gameId}/right-rail` : null,
     fetcher
   );
 
-  const { data: boxscoreResponse, error: boxscoreError } = useSWR(
+  const { data: boxscoreResponse, error: boxscoreError, isLoading: boxscoreLoading } = useSWR(
     gameId ? `/api/v1/game/${gameId}/boxscore` : null,
     fetcher
   );
-  const boxscore = boxscoreResponse?.data;
+  const boxscore = boxscoreResponse?.success === true && boxscoreResponse.data?.id === Number(gameId)
+    ? boxscoreResponse.data : null;
+  const seasonSeries = Array.isArray(rightRail?.seasonSeries) ? rightRail.seasonSeries : [];
 
-  const currentGame = rightRail?.seasonSeries?.find(
+  const currentGame = boxscore?.awayTeam && boxscore?.homeTeam ? boxscore : seasonSeries.find(
     (g: any) => g.id === Number(gameId)
-  ) || boxscore;
+  );
   
   const gameDate = currentGame?.gameDate || boxscore?.gameDate;
 
@@ -144,8 +164,8 @@ export default function GameStatsPage() {
     fetcher
   );
 
-  const isLoading = (!rightRail && !rrError) || (!boxscoreResponse && !boxscoreError);
   const hasGameData = Boolean(currentGame?.awayTeam && currentGame?.homeTeam);
+  const isLoading = !router.isReady || Boolean(gameId && !hasGameData && (railLoading || boxscoreLoading));
 
   // Find game in daily schedule to get odds
   const gameOdds = scheduleData?.gameWeek?.[0]?.games?.find(
@@ -154,7 +174,7 @@ export default function GameStatsPage() {
 
   // DraftKings is usually providerId 9, fallback to 8 (Sportradar) or first available
   const findOdds = (teamOdds: any[]) => {
-    if (!teamOdds || !teamOdds.length) return undefined;
+    if (!Array.isArray(teamOdds) || !teamOdds.length) return undefined;
     return teamOdds.find(o => o.providerId === 9)?.value || 
            teamOdds.find(o => o.providerId === 8)?.value || 
            teamOdds[0]?.value;
@@ -165,26 +185,21 @@ export default function GameStatsPage() {
 
   const rawAwayProb = getImpliedProb(awayMoneylineStr);
   const rawHomeProb = getImpliedProb(homeMoneylineStr);
-  const totalProb = rawAwayProb + rawHomeProb;
+  const totalProb = (rawAwayProb ?? 0) + (rawHomeProb ?? 0);
   
   // Normalize probabilities (removing the vig)
-  const hasMarketOdds = Boolean(awayMoneylineStr && homeMoneylineStr);
-  const scoreTotal =
-    toNumber(currentGame?.awayTeam?.score) + toNumber(currentGame?.homeTeam?.score);
-  const awayScoreShare = scoreTotal
-    ? Math.round((toNumber(currentGame?.awayTeam?.score) / scoreTotal) * 100)
-    : null;
+  const hasMarketOdds = rawAwayProb != null && rawHomeProb != null;
   const awayProb =
-    hasMarketOdds && totalProb
+    rawAwayProb != null && hasMarketOdds && totalProb > 0
       ? Math.round((rawAwayProb / totalProb) * 100)
-      : awayScoreShare ?? 50;
-  const homeProb = 100 - awayProb;
+      : null;
+  const homeProb = awayProb == null ? null : 100 - awayProb;
 
   // Team Context
   const awayTeam = currentGame?.awayTeam || boxscore?.awayTeam || { abbrev: "Away", score: null };
   const homeTeam = currentGame?.homeTeam || boxscore?.homeTeam || { abbrev: "Home", score: null };
   
-  const teamGameStats = rightRail?.teamGameStats || [];
+  const teamGameStats = Array.isArray(rightRail?.teamGameStats) ? rightRail.teamGameStats : [];
   const sogStat = teamGameStats.find((stat: any) => stat.category === "sog");
   const powerPlayPctStat = teamGameStats.find(
     (stat: any) => stat.category === "powerPlayPctg"
@@ -192,18 +207,18 @@ export default function GameStatsPage() {
   const faceoffStat = teamGameStats.find(
     (stat: any) => stat.category === "faceoffWinningPctg"
   );
-  const shotsBars = getBarWidths(toNumber(sogStat?.awayValue), toNumber(sogStat?.homeValue));
+  const shotsBars = getBarWidths(sogStat?.awayValue, sogStat?.homeValue);
   const powerPlayBars = getBarWidths(
-    toNumber(powerPlayPctStat?.awayValue),
-    toNumber(powerPlayPctStat?.homeValue)
+    powerPlayPctStat?.awayValue,
+    powerPlayPctStat?.homeValue
   );
   const faceoffBars = getBarWidths(
-    toNumber(faceoffStat?.awayValue),
-    toNumber(faceoffStat?.homeValue)
+    faceoffStat?.awayValue,
+    faceoffStat?.homeValue
   );
   
-  const last10Away = rightRail?.last10Record?.awayTeam || { record: "0-0-0", streak: 0, streakType: "W" };
-  const last10Home = rightRail?.last10Record?.homeTeam || { record: "0-0-0", streak: 0, streakType: "W" };
+  const last10Away = rightRail?.last10Record?.awayTeam || { record: "Unavailable", streak: 0 };
+  const last10Home = rightRail?.last10Record?.homeTeam || { record: "Unavailable", streak: 0 };
 
   const awayStarter = getStarter(boxscore?.playerByGameStats?.awayTeam?.goalies);
   const homeStarter = getStarter(boxscore?.playerByGameStats?.homeTeam?.goalies);
@@ -241,9 +256,7 @@ export default function GameStatsPage() {
                     ? "Loading..."
                     : !hasGameData
                       ? "Unavailable"
-                      : currentGame?.gameState === "FUT"
-                        ? "Scheduled"
-                        : "Live/Final"}
+                      : gameStatus(currentGame?.gameState)}
                 </div>
                 <div className={styles.gameTime}>
                   {gameOdds
@@ -267,11 +280,15 @@ export default function GameStatsPage() {
             <div className={styles.dataPanel}>
               <div className={styles.panelBody}>
                 <div className={styles.placeholderText}>
-                  Game data is unavailable for this id.
+                  {invalidGameId ? "Invalid game ID."
+                    : rrError || boxscoreError ? "Game data could not be loaded."
+                    : "Game data is unavailable for this id."}
                 </div>
               </div>
             </div>
           )}
+          {boxscoreError && <p role="status">Boxscore could not be loaded.</p>}
+          {rrError && <p role="status">Team game context could not be loaded.</p>}
 
           {/* Bento Grid */}
           {hasGameData && <div className={styles.bentoGrid}>
@@ -285,16 +302,16 @@ export default function GameStatsPage() {
                 <div className={styles.probabilityHero}>
                   <div className={styles.probScale}>
                     <div className={styles.probLabels}>
-                      <span className={styles.probAway}>{awayTeam.abbrev} {awayProb}%</span>
-                      <span className={styles.probHome}>{homeTeam.abbrev} {homeProb}%</span>
+                      <span className={styles.probAway}>{awayTeam.abbrev} {awayProb == null ? "-" : `${awayProb}%`}</span>
+                      <span className={styles.probHome}>{homeTeam.abbrev} {homeProb == null ? "-" : `${homeProb}%`}</span>
                     </div>
-                    <div className={styles.probBar}>
+                    {hasMarketOdds ? <div className={styles.probBar}>
                       <div className={styles.probFillAway} style={{ width: `${awayProb}%` }}></div>
                       <div className={styles.probFillHome} style={{ width: `${homeProb}%` }}></div>
-                    </div>
+                    </div> : <p>Market odds unavailable.</p>}
                     <div className={styles.probLabels} style={{ color: "rgba(255,255,255,0.5)", marginTop: "0.25rem" }}>
-                      <span>{hasMarketOdds ? "Market" : "Score"}: {awayTeam.score ?? "-"}</span>
-                      <span>{hasMarketOdds ? "Market" : "Score"}: {homeTeam.score ?? "-"}</span>
+                      <span>Score: {awayTeam.score ?? "-"}</span>
+                      <span>Score: {homeTeam.score ?? "-"}</span>
                     </div>
                   </div>
                 </div>
@@ -372,10 +389,10 @@ export default function GameStatsPage() {
                     <span>Shots on Goal</span>
                     <span className={styles.strengthValueHome}>{sogStat?.homeValue ?? "-"}</span>
                   </div>
-                  <div className={styles.strengthBarWrap}>
+                  {shotsBars && <div className={styles.strengthBarWrap}>
                     <div className={styles.strengthFillAway} style={{ width: `${shotsBars.away}%` }}></div>
                     <div className={styles.strengthFillHome} style={{ width: `${shotsBars.home}%` }}></div>
-                  </div>
+                  </div>}
                 </div>
                 <div className={styles.strengthRow}>
                   <div className={styles.strengthLabels}>
@@ -383,10 +400,10 @@ export default function GameStatsPage() {
                     <span>Power Play</span>
                     <span className={styles.strengthValueHome}>{formatPct(powerPlayPctStat?.homeValue)}</span>
                   </div>
-                  <div className={styles.strengthBarWrap}>
+                  {powerPlayBars && <div className={styles.strengthBarWrap}>
                     <div className={styles.strengthFillAway} style={{ width: `${powerPlayBars.away}%` }}></div>
                     <div className={styles.strengthFillHome} style={{ width: `${powerPlayBars.home}%` }}></div>
-                  </div>
+                  </div>}
                 </div>
                 <div className={styles.strengthRow}>
                   <div className={styles.strengthLabels}>
@@ -394,10 +411,10 @@ export default function GameStatsPage() {
                     <span>Faceoff Win %</span>
                     <span className={styles.strengthValueHome}>{formatPct(faceoffStat?.homeValue)}</span>
                   </div>
-                  <div className={styles.strengthBarWrap}>
+                  {faceoffBars && <div className={styles.strengthBarWrap}>
                     <div className={styles.strengthFillAway} style={{ width: `${faceoffBars.away}%` }}></div>
                     <div className={styles.strengthFillHome} style={{ width: `${faceoffBars.home}%` }}></div>
-                  </div>
+                  </div>}
                 </div>
               </div>
             </section>
@@ -444,7 +461,7 @@ export default function GameStatsPage() {
                           <span className={styles.playerName}>{getName(player.name)}</span>
                         </div>
                         <div className={styles.playerTrend}>
-                          {player.points ?? 0}P / {player.sog ?? 0} SOG
+                          {player.points ?? "-"}P / {player.sog ?? "-"} SOG
                         </div>
                       </div>
                     ))
@@ -464,14 +481,16 @@ export default function GameStatsPage() {
               </div>
               <div className={styles.panelBody}>
                 <div className={styles.h2hList}>
-                  {rightRail?.seasonSeries?.map((game: any) => {
-                    const isCompleted = game.gameState === "OFF" || game.gameState === "FINAL";
-                    if (!isCompleted) return null;
+                  {seasonSeries.map((game: any) => {
+                    if (!isCompleted(game.gameState) || !game.awayTeam || !game.homeTeam) return null;
                     
                     const aTeam = game.awayTeam;
                     const hTeam = game.homeTeam;
-                    const winner = aTeam.score > hTeam.score ? aTeam : hTeam;
-                    const isHomeWin = winner.id === hTeam.id;
+                    const scoresKnown = typeof aTeam.score === "number" && Number.isFinite(aTeam.score) && aTeam.score >= 0 &&
+                      typeof hTeam.score === "number" && Number.isFinite(hTeam.score) && hTeam.score >= 0;
+                    const winner = scoresKnown && aTeam.score !== hTeam.score
+                      ? (aTeam.score > hTeam.score ? aTeam : hTeam) : null;
+                    const isHomeWin = winner?.id === hTeam.id;
 
                     return (
                       <div className={styles.h2hCard} key={game.id}>
@@ -479,17 +498,17 @@ export default function GameStatsPage() {
                           {new Date(game.gameDate).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
                         </div>
                         <div className={styles.h2hScore}>
-                          {aTeam.abbrev} {aTeam.score} - {hTeam.score} {hTeam.abbrev}
+                          {aTeam.abbrev} {aTeam.score ?? "-"} - {hTeam.score ?? "-"} {hTeam.abbrev}
                         </div>
                         <div className={isHomeWin ? styles.h2hWinnerHome : styles.h2hWinnerAway}>
-                          {winner.abbrev} Win
+                          {winner ? `${winner.abbrev} Win` : "Result unavailable"}
                         </div>
                       </div>
                     );
                   })}
-                  {(!rightRail?.seasonSeries || !rightRail.seasonSeries.some((g: any) => g.gameState === "OFF" || g.gameState === "FINAL")) && (
+                  {!seasonSeries.some((g: any) => isCompleted(g.gameState) && g.awayTeam && g.homeTeam) && (
                     <div className={styles.placeholderText} style={{ padding: "0.5rem", width: "100%" }}>
-                      First meeting of the season.
+                      {Array.isArray(rightRail?.seasonSeries) ? "No completed meetings available." : "Head-to-head results are unavailable."}
                     </div>
                   )}
                 </div>
@@ -503,6 +522,5 @@ export default function GameStatsPage() {
   );
 }
 
-export const getServerSideProps: GetServerSideProps = async () => ({
-  props: {}
-});
+export const getServerSideProps: GetServerSideProps = async ({ params }) =>
+  isGameId(params?.gameId) ? { props: {} } : { notFound: true };

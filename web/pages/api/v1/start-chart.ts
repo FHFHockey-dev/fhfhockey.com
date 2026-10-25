@@ -3,6 +3,8 @@ import { starterBoardCanaryGameIds, starterBoardFlags } from "lib/projections/st
 import { loadPlanningInputs } from "lib/rosterScheduleData/planningInputs";
 import { admitConsumerGameRevisions, type AdmittedConsumerSource } from "lib/projections/consumerRevisionAdmission";
 import { forecastCalendarPolicy } from "lib/player-forecasts/contributions";
+import { loadGameExpectations } from "lib/player-forecasts/gameExpectationReader";
+import { forecastSourceSummary, selectForecastServingSource } from "lib/player-forecasts/forecastServingSource";
 import type { ForecastDiscoveryExclusion, ForecastExclusionReason, GameForecast } from "lib/rosterScheduleOptimizer/planningTypes";
 import type { NextApiRequest, NextApiResponse } from "next";
 
@@ -23,6 +25,8 @@ import { excludeOffReleaseRuns, isOffReleaseGitSha, restrictRunsToHorizon } from
 import { boardSkaterForecast, admittedBoardGoalieForecast, parseBoardScoringRequest, scoreStarterBoardPayload, type BoardScoringRequest } from "lib/projections/starterBoardScoring";
 import {
   normalizeStartChartResponse,
+  startChartFromGameExpectations,
+  scoreStartChartPayload,
   type StartChartPlayerContext,
   type StartChartSourceStatus,
 } from "lib/projections/startChartContract";
@@ -196,6 +200,8 @@ type ForgeRunWithProjectionsRow = ForgeRunRow & {
 };
 
 const RESPONSE_TTL_MS = 15_000;
+// Same envelope bound as the FORGE view and RSO transport, below the hosted response ceiling.
+export const START_CHART_RESPONSE_MAX_BYTES = 4_000_000;
 const MAX_RESPONSE_CACHE_ENTRIES = 64;
 const YAHOO_RPC_MISSING_RETRY_MS = 5 * 60_000;
 const YAHOO_HISTORY_PAGE_SIZE = 1000;
@@ -898,6 +904,8 @@ async function fetchSlate(
     ? null
     : ((runResponse.data as unknown as ForgeRunWithProjectionsRow | null) ??
       null);
+  // As in production, an unlabelled (externally blended) run is still served;
+  // provenance eligibility below flags its rows unverified_projection_provenance.
   const forgeRun = selectedRun && isOffReleaseGitSha(selectedRun.git_sha) ? null : selectedRun;
   let projections = (forgeRun?.forge_player_projections ?? []).filter(
     (row) =>
@@ -1067,7 +1075,8 @@ async function fetchCtpiRows(
   return rows;
 }
 
-function cachePayload(key: string, payload: unknown): void {
+/** The entry never outlives the board's own receipts or the selected native catalog. */
+function cachePayload(key: string, payload: any): void {
   const now = Date.now();
   for (const [cachedKey, entry] of responseCache) {
     if (entry.expiresAt <= now) responseCache.delete(cachedKey);
@@ -1077,7 +1086,9 @@ function cachePayload(key: string, payload: unknown): void {
     if (typeof oldest !== "string") break;
     responseCache.delete(oldest);
   }
-  responseCache.set(key, { payload, expiresAt: now + RESPONSE_TTL_MS });
+  const expiries = [payload.gameExpectations?.expiresAt, payload.forecastSource?.expiresAt]
+    .map((value) => Date.parse(value ?? "")).filter(Number.isFinite);
+  responseCache.set(key, { payload, expiresAt: Math.min(now + RESPONSE_TTL_MS, ...expiries) });
 }
 
 export function clearStartChartCache(): void {
@@ -1118,8 +1129,17 @@ export default async function handler(
   const sendPayload = (payload: any) => {
     // Cache the shared hockey forecast only. Account/league weights never enter
     // the shared cache and POST responses cannot be stored by a CDN.
-    res.setHeader("Cache-Control", scoring ? "private, no-store" : "s-maxage=15, stale-while-revalidate=0");
-    return res.status(200).json(scoring ? scoreStarterBoardPayload(payload, scoring) : payload);
+    const expiry = Math.min(...[payload.gameExpectations?.expiresAt, payload.forecastSource?.expiresAt]
+      .map((value) => Date.parse(value ?? "")).filter(Number.isFinite));
+    const maxAge = Number.isFinite(expiry) ? Math.max(0, Math.min(15, Math.floor((expiry - Date.now()) / 1000))) : 15;
+    const body = scoring ? scoreStartChartPayload(payload, scoring) : payload;
+    if (Buffer.byteLength(JSON.stringify(body)) > START_CHART_RESPONSE_MAX_BYTES) {
+      res.setHeader("Cache-Control", "no-store");
+      return res.status(503).json({ error: { code: "start_chart_too_large",
+        message: "This Start Chart slate is too large to display. Try again later." } });
+    }
+    res.setHeader("Cache-Control", scoring ? "private, no-store" : `s-maxage=${maxAge}, stale-while-revalidate=0`);
+    return res.status(200).json(body);
   };
 
   const parsedRequest = parseStartChartRequest(req.query, easternDate());
@@ -1129,10 +1149,29 @@ export default async function handler(
   }
 
   const request = parsedRequest.value;
+  // Still accepted for pages cached before the server chose the source, but it
+  // never selects one: every Start Chart consumer gets the same server decision.
+  if (req.query.forecast_source !== undefined && req.query.forecast_source !== "game_expectations") {
+    return res.status(400).json({ error: { code: "invalid_parameter", field: "forecast_source",
+      message: "forecast_source must be game_expectations when provided" } });
+  }
   const today = easternDate();
   const requestedDate = request.date < today ? today : request.date;
+  const now = new Date();
+  let seasonLookup: Promise<number> | undefined;
+  const requestedSeasonId = () => seasonLookup ??= getLatestStartedSeasonForDate(requestedDate, supabase).then((season) => {
+    const seasonId = Number(season?.id);
+    if (!Number.isSafeInteger(seasonId) || seasonId <= 0) throw new Error("Unable to resolve Start Chart season");
+    return seasonId;
+  });
+  // Pre-activation (no head env) this makes no lookups and selects legacy. It
+  // never throws: an unusable head selects the configured fallback instead.
+  const source = await selectForecastServingSource(supabase, requestedSeasonId, now);
+  const sourceSummary = forecastSourceSummary(source);
   const cacheKey = [
     `date:${requestedDate}`,
+    `forecast:${source.kind}`,
+    `head:${sourceSummary.headRevision ?? "none"}`,
     `revisions:${starterBoardFlags().serving}`,
     `canary:${starterBoardFlags().serving ? process.env.STARTER_BOARD_CANARY_GAME_IDS ?? "all" : "off"}`,
     `position:${request.position ?? "all"}`,
@@ -1155,6 +1194,25 @@ export default async function handler(
     }
 
     const loadPromise = (async () => {
+      if (source.kind === "native" || source.kind === "empty") {
+        const seasonId = await requestedSeasonId();
+        // `empty` reads with blank pins only so the slate's scheduled games stay visible.
+        const response = await loadGameExpectations(supabase, { seasonId, startDate: requestedDate, endDate: requestedDate,
+          timeZone: "America/New_York", mode: "calendar", games: 1 }, now, { source });
+        const board = scoreStartChartPayload(startChartFromGameExpectations(response), parseBoardScoringRequest({}));
+        if (source.kind === "empty") return { ...board, forecastSource: sourceSummary, players: [],
+          games: board.games.map((game) => ({ ...game, homeGoalies: [], awayGoalies: [] })),
+          serving: { ...board.serving, mode: board.games.length ? "partial" : "no_games", reason: source.reason,
+            message: source.reason === "native_catalog_expired"
+              ? "Today's FORGE forecasts have expired. New forecasts appear after the next daily issuance."
+              : "FORGE forecasts are unavailable right now, so no projections are shown." },
+          sourceStatus: { ...board.sourceStatus, projection: { ...board.sourceStatus.projection, state: "missing" } },
+          coverage: { ...board.coverage, projectionRows: 0, renderedRows: 0 } };
+        const eligible = board.players.filter(player => !request.position || player.positions.includes(request.position));
+        return { ...board, forecastSource: sourceSummary, players: request.paginationRequested
+          ? eligible.slice((request.page - 1) * request.pageSize, request.page * request.pageSize) : eligible };
+      }
+      const nativeFallback = source.kind === "legacy_flagged";
       const requestedSlate = await fetchSlate(requestedDate);
       let slate = requestedSlate;
       let resolvedDate = requestedDate;
@@ -1527,6 +1585,7 @@ export default async function handler(
         if (!provenanceEligibility.eligible) {
           context.flags.push("unverified_projection_provenance");
         }
+        if (nativeFallback) context.flags.push("native_unavailable_legacy_fallback");
         if (
           projectedToiMinutes == null &&
           [
@@ -1623,6 +1682,7 @@ export default async function handler(
         if (ambiguousYahooMappings.has(goalie.player_id)) {
           context.flags.push("ambiguous_yahoo_mapping");
         }
+        if (nativeFallback) context.flags.push("native_unavailable_legacy_fallback");
         const candidate = slate.admittedGoalieCandidates?.get(`${goalie.game_id}:${goalie.player_id}`);
         const admitted = slate.admittedForecasts?.get(`${goalie.game_id}:${goalie.player_id}`);
         players.push({
@@ -2059,6 +2119,7 @@ export default async function handler(
         requestedDate,
         fallbackApplied,
         serving,
+        forecastSource: sourceSummary,
         compatibilityInventory: buildStartChartCompatibility(),
         skaterSourceDate: resolvedDate,
         projectionRunId: slate.runId,

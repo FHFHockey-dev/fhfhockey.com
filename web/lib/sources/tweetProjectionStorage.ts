@@ -6,6 +6,7 @@ import { easternReportDate, explicitPracticeSession, publicProjectionReport, sel
 import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import { classifyInjuryEvent } from "./tweetPlayerEvents";
 import { capturePlayerForecastSourceRows, type ForecastLineSourceRow } from "lib/player-forecasts/sourceObservations";
+import { persistTweetClaimSources } from "./tweetClaimRegistry";
 
 export function projectedSetsToForecastRows(sets: ProjectedUnitSet[]): ForecastLineSourceRow[] {
   const groups = new Map<string, ProjectedUnitSet[]>();
@@ -202,6 +203,10 @@ export function projectionReportFromSource(source: ParsedLinesCccSource): Projec
 }
 
 export async function persistTweetProjectionReports(supabase: any, sources: ParsedLinesCccSource[]) {
+  if (process.env.TWEET_CLAIMS_MODE === "shadow") {
+    await persistTweetClaimSources(supabase, sources);
+    return;
+  }
   if (!tweetPipelineFlags().publishing) return;
   const reports = sources.map(projectionReportFromSource).filter((report): report is ProjectionReport => report != null);
   if (!reports.length) return;
@@ -239,8 +244,11 @@ export async function persistTweetProjectionReports(supabase: any, sources: Pars
         return [{ ...base, capture_key: `${report.key}:${kind}`, source_group: "tweet_projection", source_key: "validated_events", source_account: null,
           observed_at: report.receivedAt, tweet_posted_at: report.publishedAt,
           source_url: report.originalUrl, classification: kind === "goalie" ? "goalie_start" : "injury",
-          goalie_1_player_id: typedEvents[0]?.playerId ?? null, goalie_1_name: typedEvents[0]?.playerName ?? null,
-          goalie_2_player_id: typedEvents[1]?.playerId ?? null, goalie_2_name: typedEvents[1]?.playerName ?? null,
+          // Injury events keep the source's goalie fields; only goalie claims may replace them.
+          ...(kind === "goalie" ? {
+            goalie_1_player_id: typedEvents[0]?.playerId ?? null, goalie_1_name: typedEvents[0]?.playerName ?? null,
+            goalie_2_player_id: typedEvents[1]?.playerId ?? null, goalie_2_name: typedEvents[1]?.playerName ?? null,
+          } : {}),
           metadata: { projectionReports: [report], interpretation: { ...report.interpretation, units: [], events: typedEvents } },
         } as ForecastLineSourceRow];
       });

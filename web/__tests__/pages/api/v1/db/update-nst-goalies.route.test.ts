@@ -109,11 +109,12 @@ function createMockRes() {
 
 describe("/api/v1/db/update-nst-goalies", () => {
   beforeEach(() => {
+    vi.useFakeTimers();
     vi.stubEnv("CRON_SECRET", "unit-test-cron-secret");
     vi.clearAllMocks();
   });
 
-  afterEach(() => vi.unstubAllEnvs());
+  afterEach(() => { vi.useRealTimers(); vi.unstubAllEnvs(); });
 
   it("preserves representative playerteams goalie upsert shape through the migrated NST client", async () => {
     fetchCurrentSeasonMock.mockResolvedValue({
@@ -151,7 +152,9 @@ describe("/api/v1/db/update-nst-goalies", () => {
     };
     const res = createMockRes();
 
-    await handler(req, res);
+    const pending = handler(req, res);
+    await vi.runAllTimersAsync();
+    await pending;
 
     expect(fetchNstTextByUrlMock).toHaveBeenCalledTimes(1);
     expect(upsertMock).toHaveBeenCalledWith(
@@ -179,6 +182,7 @@ describe("/api/v1/db/update-nst-goalies", () => {
       datesQueued: 1,
       stoppedEarly: true
     });
+    expect(res.body.nstRequestPlan).toMatchObject({ burstAllowed: true, requestIntervalMs: 0 });
   });
 
   it("fails fast on missing NST configuration instead of retrying it", async () => {
@@ -194,7 +198,7 @@ describe("/api/v1/db/update-nst-goalies", () => {
     );
 
     const res = createMockRes();
-    await handler(
+    const pending = handler(
       {
         method: "GET",
         headers: { host: "localhost", authorization: "Bearer unit-test-cron-secret" },
@@ -206,6 +210,8 @@ describe("/api/v1/db/update-nst-goalies", () => {
       } as any,
       res
     );
+    await vi.runAllTimersAsync();
+    await pending;
 
     expect(fetchNstTextByUrlMock).toHaveBeenCalledTimes(1);
     expect(res.statusCode).toBe(500);

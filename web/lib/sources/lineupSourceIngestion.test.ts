@@ -19,8 +19,10 @@ import {
   selectBestGoalieStartSource,
   selectBestPregameLineupSource,
   toHistoricalLineSourceRow,
-  validateLineupNames
+  validateLineupNames,
+  type RosterNameEntry
 } from "./lineupSourceIngestion";
+import { edmontonSectionRoster, edmontonSectionText, seattleSectionRoster, seattleSectionText } from "../../__tests__/fixtures/lineupSectionFixtures";
 
 const teams = buildTeamDirectory([
   {
@@ -46,7 +48,7 @@ const tampaRoster = [
   { playerId: 6, fullName: "Jake Guentzel", lastName: "Guentzel" },
   { playerId: 7, fullName: "Andrei Vasilevskiy", lastName: "Vasilevskiy" },
   { playerId: 8, fullName: "Jonas Johansson", lastName: "Johansson" }
-];
+].map((player) => ({ ...player, teamId: 14, position: [7, 8].includes(player.playerId) ? "G" : "F" }));
 const bruinsRoster = [
   { playerId: 201, fullName: "Elias Lindholm", lastName: "Lindholm" },
   { playerId: 202, fullName: "Hampus Lindholm", lastName: "Lindholm" },
@@ -75,9 +77,28 @@ const wildRoster = [
   { playerId: 118, fullName: "Jake Middleton", lastName: "Middleton" },
   { playerId: 119, fullName: "Zach Bogosian", lastName: "Bogosian" },
   { playerId: 120, fullName: "Jesper Wallstedt", lastName: "Wallstedt" }
-];
+].map((player) => ({ ...player, teamId: 30, position: player.playerId === 120 ? "G" : player.playerId >= 114 ? "D" : "F" }));
 
 describe("lineupSourceIngestion", () => {
+  it("extracts typed section roles before cardinality caps and ignores header words", () => {
+    const result = extractStructuredPlayerGroupsFromText(edmontonSectionText, edmontonSectionRoster);
+    expect(result.defensePairs).toEqual([["Fixture Ekholm", "Fixture Bouchard"], ["Fixture Shea", "Fixture Murphy"], ["Fixture Mukhamadullin", "Fixture Emberson"]]);
+    expect(result.goalies).toEqual(["Levi", "Jarry"]);
+    expect(result.goalies).not.toContain("Walman");
+    expect(classifyGameDayTweet(edmontonSectionText)).toBe("practice_lines");
+    expect(extractStructuredPlayerGroupsFromText(edmontonSectionText).goalies).not.toEqual(expect.arrayContaining(["The", "EdmontonOilers"]));
+  });
+  it("does not admit explicit slash extras as structural defense or goalie groups", () => {
+    const result = extractStructuredPlayerGroupsFromText(seattleSectionText, seattleSectionRoster);
+    expect(result.forwards).toHaveLength(4); expect(result.defensePairs).toHaveLength(3); expect(result.goalies).toEqual([]);
+  });
+  it("does not turn unstructured ordered surname hits into a GDT lineup", () => {
+    const [team] = buildTeamDirectory([{ id: 22, name: "Edmonton Oilers", abbreviation: "EDM", logo: "" }]);
+    const source = buildGameDayTweetsLineupSourceFromTweet({ team, rosterEntries: edmontonSectionRoster, sourceUrl: "https://example.invalid/fixture", tweet: {
+      text: "Podkolzin, McDavid, Draisaitl, Hallander, Dickinson, Kapanen were mentioned before practice.", classification: "practice_lines",
+    } as any });
+    expect(source?.forwards).toEqual([]); expect(source?.defensePairs).toEqual([]); expect(source?.goalies).toEqual([]);
+  });
   it("parses NHL.com projected lineups into normalized team records", () => {
     const parsed = parseNhlLineupProjectionsPage({
       html: `
@@ -529,7 +550,7 @@ Fowler`;
         </body>
       `,
       teams,
-      rosterByTeam: new Map([
+      rosterByTeam: new Map<number, RosterNameEntry[]>([
         [
           8,
           [
@@ -712,7 +733,7 @@ Fowler`;
         </body>
       `,
       teams,
-      rosterByTeam: new Map([
+      rosterByTeam: new Map<number, RosterNameEntry[]>([
         [8, [{ playerId: 20, fullName: "Jakub Dobes", lastName: "Dobes" }]],
         [14, tampaRoster]
       ]),
@@ -776,7 +797,7 @@ Fowler`;
         </body>
       `,
       teams,
-      rosterByTeam: new Map([
+      rosterByTeam: new Map<number, RosterNameEntry[]>([
         [8, [{ playerId: 20, fullName: "Jakub Dobes", lastName: "Dobes" }]],
         [14, tampaRoster]
       ]),

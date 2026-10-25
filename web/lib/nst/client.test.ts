@@ -42,7 +42,7 @@ describe("nst client", () => {
     vi.restoreAllMocks();
   });
 
-  it("aborts a stalled response body within the request timeout when request control is supplied", async () => {
+  it("aborts a stalled response body within the request timeout", async () => {
     vi.useFakeTimers();
     vi.stubEnv("NST_KEY", "body-timeout-key");
     const fetchMock = vi.fn(async (_url, init: RequestInit) => new Response(new ReadableStream({
@@ -51,14 +51,12 @@ describe("nst client", () => {
       }
     })));
     vi.stubGlobal("fetch", fetchMock);
-    const requestControl = { deadlineAt: Date.now() + 60_000, maxAttempts: 1, attemptsStarted: 0, minIntervalMs: 0 };
-    const pending = fetchNstTextByUrl(`${NST_BASE_URL}/playerteams.php?body-timeout=1`, { retries: 0, timeoutMs: 50, requestControl })
+    const pending = fetchNstTextByUrl(`${NST_BASE_URL}/playerteams.php?body-timeout=1`, { retries: 0, timeoutMs: 50 })
       .catch((error) => error);
     await vi.runAllTimersAsync();
     expect(await pending).toBeInstanceOf(Error);
     expect(fetchMock.mock.calls[0][1].signal!.aborted).toBe(true);
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(admission).toHaveBeenCalledTimes(1);
   });
 
   it("builds NST urls on the data subdomain", () => {
@@ -221,8 +219,11 @@ describe("nst client", () => {
     });
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    // Callers that omit requestControl keep the unbudgeted dispatch path.
-    expect(admission).not.toHaveBeenCalled();
+    expect(admission).toHaveBeenCalledTimes(2);
+    expect(admission.mock.calls[0][1]).toBe(admission.mock.calls[1][1]);
+    expect(admission.mock.calls[1][1].attemptsStarted).toBe(2);
+    expect(admission.mock.calls[1][1].minIntervalMs).toBe(21_000);
+    expect(admission.mock.calls[1][1].plannedRequestCount).toBeUndefined();
     expect(result.text).toBe("<html>ok</html>");
     expect(result.response.status).toBe(200);
     expect(result.redactedUrl).toContain("key=%5BREDACTED%5D");

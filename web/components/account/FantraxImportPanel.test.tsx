@@ -9,6 +9,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import FantraxImportPanel from "./FantraxImportPanel";
 
+const syncAccess = vi.hoisted(() => ({ status: "ready", access: { eligible: true }, refresh: vi.fn() }));
+vi.mock("hooks/useProviderSyncAccess", () => ({ useProviderSyncAccess: () => syncAccess }));
 const authGetSession = vi.hoisted(() => vi.fn());
 
 vi.mock("lib/supabase/client", () => ({
@@ -118,6 +120,7 @@ function response(body: unknown, ok = true) {
 
 describe("FantraxImportPanel", () => {
   beforeEach(() => {
+    syncAccess.status = "ready"; syncAccess.access.eligible = true;
     authGetSession.mockResolvedValue({
       data: { session: { access_token: "access-token" } },
     });
@@ -289,7 +292,8 @@ describe("FantraxImportPanel", () => {
     });
   });
 
-  it("keeps CSV/JSON import under Advanced and requires an account target", async () => {
+  it("keeps free CSV/JSON import under Advanced and requires an account target", async () => {
+    syncAccess.access.eligible = false;
     const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
       const path = String(input);
       if (path.endsWith("/connections")) return response(connectionState);
@@ -322,4 +326,20 @@ describe("FantraxImportPanel", () => {
       targetConnectedAccountId: "account-1",
     });
   });
+  it.each(["ready", "loading", "error"])("blocks provider actions for %s denied access while retaining disconnect", async (status) => {
+    syncAccess.status = status; syncAccess.access.eligible = false;
+    const fetchMock = vi.fn((input: RequestInfo | URL) => String(input).endsWith("/connections") ? response(connectionState) : response(manualState));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<FantraxImportPanel />);
+    await screen.findByRole("button", { name: "Disconnect" });
+    for (const name of ["Discover NHL leagues", "Manage leagues", "Reconnect", "Refresh", "Refresh league", "Apply as account default"]) {
+      const button = screen.getByRole("button", { name }) as HTMLButtonElement;
+      expect(button.disabled).toBe(true); fireEvent.click(button);
+    }
+    expect((screen.getByRole("button", { name: "Disconnect" }) as HTMLButtonElement).disabled).toBe(false);
+    expect(fetchMock.mock.calls.every(([path]) => /\/(connections|import)$/.test(String(path)))).toBe(true);
+    if (status === "error") expect(screen.getByText(/could not be verified/)).toBeTruthy();
+    if (status === "ready") expect(screen.getByText(/season pass ending July 1, 2027/)).toBeTruthy();
+  });
+
 });

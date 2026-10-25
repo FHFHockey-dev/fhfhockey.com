@@ -128,9 +128,12 @@ describe("FORGE player detail page", () => {
 
   afterEach(() => {
     cleanup();
+    vi.restoreAllMocks();
   });
 
   it("renders projection, ownership, and drill-in context for top-add cards", async () => {
+    // Ownership freshness uses wall-clock time; keep this dated scenario current.
+    vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-03-14T12:00:00Z"));
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url.includes("/api/v1/forge/players")) {
@@ -159,7 +162,8 @@ describe("FORGE player detail page", () => {
       }
       if (url.includes("/api/v1/transactions/ownership-snapshots")) {
         return jsonResponse({
-          players: [{ playerId: 88, ownership: 42 }],
+          success: true,
+          players: [{ playerId: 88, ownership: 42, observedOn: "2026-03-14" }],
         });
       }
       if (url.includes("/api/v1/transactions/ownership-trends")) {

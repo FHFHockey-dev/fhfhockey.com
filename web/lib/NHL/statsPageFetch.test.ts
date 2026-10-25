@@ -123,6 +123,7 @@ vi.mock("lib/NHL/server", () => ({
   })),
 }));
 
+import { getCurrentSeason } from "lib/NHL/server";
 import { fetchStatsData } from "./statsPageFetch";
 
 beforeEach(() => {
@@ -196,6 +197,51 @@ beforeEach(() => {
 });
 
 describe("fetchStatsData", () => {
+  it("P02: missing goalie ratios never enter numerical rankings; observed zero remains", async () => {
+    database.tables.wgo_goalie_stats_totals = [
+      { goalie_id: 991, goalie_name: "Missing", season_id: 20252026, games_played: 10, wins: 3,
+        goals_against_avg: null, save_pct: null, quality_starts_pct: null },
+      { goalie_id: 992, goalie_name: "Observed", season_id: 20252026, games_played: 10, wins: 2,
+        goals_against_avg: 2, save_pct: 0.92, quality_starts_pct: 0.5 },
+      { goalie_id: 993, goalie_name: "Zero", season_id: 20252026, games_played: 1, wins: 0,
+        goals_against_avg: 0, save_pct: 0, quality_starts_pct: 0 }
+    ];
+    const result = await fetchStatsData();
+    expect(result.goalieLeadersGAA.map((goalie) => goalie.goalie_id)).toEqual([993, 992]);
+    expect(result.goalieLeadersSavePct.map((goalie) => goalie.goalie_id)).toEqual([992, 993]);
+    expect(result.goalieLeadersQS.map((goalie) => goalie.goalie_id)).toEqual([992, 993]);
+    expect(result.goalieLeadersWins.find((goalie) => goalie.goalie_id === 991)).toMatchObject({
+      goals_against_avg: null, save_pct: null, quality_starts_pct: null
+    });
+  });
+
+  it.each([undefined, "", " ", false, NaN, Infinity, -1])(
+    "P02: invalid goalie ratio %s is unavailable rather than zero",
+    async (invalid) => {
+      database.tables.wgo_goalie_stats_totals = [{
+        goalie_id: 991, goalie_name: "Invalid", season_id: 20252026, games_played: 10,
+        wins: 1, goals_against_avg: invalid, save_pct: invalid, quality_starts_pct: invalid
+      }];
+      const result = await fetchStatsData();
+      expect(result.goalieLeadersGAA).toEqual([]);
+      expect(result.goalieLeadersSavePct).toEqual([]);
+      expect(result.goalieLeadersQS).toEqual([]);
+    }
+  );
+
+  it("P02: ratio rankings require played games and fractions no larger than one", async () => {
+    database.tables.wgo_goalie_stats_totals = [
+      { goalie_id: 991, goalie_name: "No exposure", season_id: 20252026, games_played: 0,
+        goals_against_avg: 0, save_pct: 0, quality_starts_pct: 0 },
+      { goalie_id: 992, goalie_name: "Invalid fraction", season_id: 20252026, games_played: 10,
+        goals_against_avg: 2, save_pct: 1.1, quality_starts_pct: 1.1 }
+    ];
+    const result = await fetchStatsData();
+    expect(result.goalieLeadersGAA.map((goalie) => goalie.goalie_id)).toEqual([992]);
+    expect(result.goalieLeadersSavePct).toEqual([]);
+    expect(result.goalieLeadersQS).toEqual([]);
+  });
+
   it("ranks the full season within each position before taking five, including NHL wing codes", async () => {
     database.tables.wgo_skater_stats_totals = database.tables.wgo_skater_stats_totals.map((row) => ({
       ...row,
@@ -214,6 +260,13 @@ describe("fetchStatsData", () => {
       expect(result.skaterLeadersByPosition.RW?.[metric].map((player) => player.player_id)).toEqual([10, 9]);
       expect(result.skaterLeadersByPosition.C?.[metric]).toHaveLength(5);
     }
+  });
+
+  it("uses a season supplied by the caller instead of looking it up again", async () => {
+    vi.mocked(getCurrentSeason).mockClear();
+    const result = await fetchStatsData({ seasonId: 20252026 } as any);
+    expect(getCurrentSeason).not.toHaveBeenCalled();
+    expect(result.pointsLeaders[0]?.player_id).toBe(1_001);
   });
 
   it("leaves missing positions empty instead of reusing the overall leaders", async () => {

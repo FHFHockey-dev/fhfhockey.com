@@ -1,3 +1,4 @@
+import { DraftProRequestError } from "lib/draft-pro/requestError";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ auth: vi.fn(), access: vi.fn(), capability: vi.fn(), consume: vi.fn(), from: vi.fn(), dust: vi.fn(), references: vi.fn(), saved: vi.fn() }));
 vi.mock("lib/api/requireApiUser", () => ({ requireApiUser: mocks.auth })); vi.mock("lib/draft-pro/server", () => ({ loadDraftProAccess: mocks.access, requireDraftProServerCapability: mocks.capability })); vi.mock("lib/draft-pro/features", () => ({ getDraftProFeatureFlags: () => ({ reports: true }) })); vi.mock("lib/draft-pro/recommendationsRateLimit", () => ({ consumeRecommendationRequest: mocks.consume })); vi.mock("lib/draft-pro/scenariosServer", () => ({ evaluateRosterDust: mocks.dust, validateAnalysisReferences: mocks.references })); vi.mock("lib/supabase/server", () => ({ default: { from: mocks.from } }));
@@ -14,10 +15,36 @@ function query(data: unknown = null) { const value: any = { data, error: null };
 describe("Draft Pro reports API", () => {
   beforeEach(() => { vi.resetAllMocks(); mocks.auth.mockResolvedValue({ id: "owner" }); mocks.access.mockResolvedValue({}); mocks.consume.mockReturnValue(true); mocks.references.mockResolvedValue(null); mocks.dust.mockResolvedValue({ state: "empty_roster", freshness: { oldestFetchedAt: null, latestFetchedAt: null }, window: { startWeek: 1, endWeek: 1, startDate: null, endDate: null }, baseline: null, diagnostics: [] }); mocks.from.mockReturnValue(query([])); });
   it("lists only owned retained names without capability work", async () => { mocks.from.mockReturnValue(query([{ id: "r", report_type: "draft_summary", created_at: "2026-09-07", source_fingerprint: "f" }])); const res = response(); await handler({ method: "GET" } as any, res); expect(res.statusCode).toBe(200); expect(mocks.access).not.toHaveBeenCalled(); expect(mocks.from().eq).toHaveBeenCalledWith("user_id", "owner"); });
-  it("blocks inactive access before report calculation", async () => { mocks.capability.mockImplementation(() => { throw Object.assign(new Error("No access"), { statusCode: 403, code: "expired" }); }); const res = response(); await handler({ method: "POST", body: { reportType: "draft_summary", input, snapshot: { settings: {}, picks: [], keepers: [], team: {}, sourceWeights: {} } } } as any, res); expect(res.statusCode).toBe(403); expect(mocks.dust).not.toHaveBeenCalled(); });
+  it("blocks inactive access before report calculation", async () => { mocks.capability.mockImplementation(() => { throw new DraftProRequestError(403, "No access", "expired"); }); const res = response(); await handler({ method: "POST", body: { reportType: "draft_summary", input, snapshot: { settings: {}, picks: [], keepers: [], team: {}, sourceWeights: {} } } } as any, res); expect(res.statusCode).toBe(403); expect(mocks.dust).not.toHaveBeenCalled(); });
   it("returns a stable validation response for an incomplete current snapshot", async () => { const res = response(); await handler({ method: "POST", body: { reportType: "draft_summary", input, snapshot: { ...complete, picks: [] } } } as any, res); expect(res.statusCode).toBe(409); expect(mocks.dust).not.toHaveBeenCalled(); });
   it("creates a current completed report from the validated snapshot", async () => { const stored = query({ id: "r", report_type: "draft_summary", source_fingerprint: "f", created_at: "2026-09-07", payload: {} }); mocks.from.mockReturnValue(stored); const res = response(); await handler({ method: "POST", body: { reportType: "draft_summary", input, snapshot: complete } } as any, res); expect(res.statusCode).toBe(201); expect(mocks.dust).toHaveBeenCalled(); expect(stored.insert).toHaveBeenCalledWith(expect.objectContaining({ user_id: "owner", payload: expect.objectContaining({ analyticalInput: expect.objectContaining({ season: "20262027" }) }) })); });
   it("creates an owned saved-draft report without requiring draft completion", async () => { mocks.saved.mockResolvedValue({ snapshot: { ...complete, picks: [], keepers: [{ playerId: "p", teamId: "mine" }] } }); const stored = query({ id: "r", payload: {} }); mocks.from.mockReturnValue(stored); const res = response(); await handler({ method: "POST", body: { draftId: "00000000-0000-4000-8000-000000000001", reportType: "draft_summary", input } } as any, res); expect(res.statusCode).toBe(201); expect(mocks.saved).toHaveBeenCalledWith("owner", "00000000-0000-4000-8000-000000000001"); });
   it("rejects an invalid report ID before access or a report query", async () => { const res = response(); await itemHandler({ method: "GET", query: { id: "not-a-uuid" } } as any, res); expect(res.statusCode).toBe(400); expect(res.body).toEqual({ error: { code: "invalid_request", message: "A valid report ID is required." } }); expect(mocks.access).not.toHaveBeenCalled(); expect(mocks.from).not.toHaveBeenCalled(); });
   it("does not expose a foreign report payload", async () => { const stored = query(null); mocks.from.mockReturnValue(stored); const res = response(); await itemHandler({ method: "GET", query: { id: "00000000-0000-4000-8000-000000000099" } } as any, res); expect(res.statusCode).toBe(404); expect(stored.eq).toHaveBeenCalledWith("user_id", "owner"); });
+
+  it.each([403, 503])("sanitizes backend status %s on report list and detail", async (statusCode) => {
+    const dependencyError = Object.assign(new Error("synthetic-private-report-detail"), { statusCode, code: "synthetic-backend-code" });
+    for (const route of [handler, itemHandler]) {
+      const stored = query();
+      stored.error = dependencyError;
+      stored.maybeSingle.mockResolvedValue({ data: null, error: dependencyError });
+      mocks.from.mockReturnValue(stored);
+      const res = response();
+      await route({ method: "GET", query: { id: "00000000-0000-4000-8000-000000000001" } } as any, res);
+      expect(res.statusCode).toBe(500);
+      expect(res.body.error.code).toBe("reports_unavailable");
+      expect(res.body.error.message).toBe(route === handler ? "Reports are unavailable. Your draft is unchanged." : "Reports are unavailable.");
+      expect(JSON.stringify(res.body)).not.toContain("synthetic-private");
+      expect(JSON.stringify(res.body)).not.toContain("synthetic-backend");
+    }
+  });
+
+  it("preserves caller-owned snapshot mismatch status, code and message", async () => {
+    const res = response();
+    await handler({ method: "POST", body: { reportType: "draft_summary", input, snapshot: { ...complete, picks: [] } } } as any, res);
+    expect(res.statusCode).toBe(409);
+    expect(res.body).toEqual({ error: { code: "saved_input_mismatch", message: "The analytical roster does not exactly match the selected draft team." } });
+    expect(mocks.dust).not.toHaveBeenCalled();
+  });
+
 });

@@ -69,13 +69,27 @@ describe("SocialShare edition loading", () => {
     expect(options).toMatchObject({ shallow: true, scroll: false });
   });
 
-  it.each(["2026-13-01", "2026-00-10", "2026-10-32", "2026-02-30", "2026-1-05", "not-a-date"])("falls back to the default week for an impossible ?week=%s instead of crashing (C7 SS1-15-F1)", async week => {
+  it.each(["2026-13-01", "2026-00-10", "2026-10-32", "2026-02-30", "2026-1-05", "not-a-date", "0000-01-03", "0001-01-01", "0099-01-05", "0999-01-07"])("falls back to the default week for an impossible ?week=%s instead of crashing (C7 SS1-15-F1)", async week => {
     router.query = { format: "tuesday-trends", week, dates: "2026-02-30,2026-10-99", card: "bogus" };
     expect(() => render(<SocialShare format="tuesday-trends" asOf="2026-10-24T19:00:00Z" />)).not.toThrow();
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
     // Default week, no day selection from the bad dates, default card.
     expect(String(fetchMock.mock.calls[0][0])).toBe("/api/v1/social-share/tuesday-trends?weekStart=2026-10-19");
     expect((screen.getByRole("combobox", { name: /^Graphic/ }) as HTMLSelectElement).value).toBe("hot");
+  });
+  it.each([
+    ["1000-01-01", "0999-12-30", "1000-01-01"],
+    ["1000-01-06", "1000-01-06", "1000-01-07"],
+    ["2026-10-24", "2026-10-19", "2026-10-24"],
+  ])("normalizes valid ?week=%s and preserves selected dates at the supported year boundary", async (week, monday, selected) => {
+    router.query = { format: "tuesday-trends", week, dates: selected, card: "rates" };
+    render(<SocialShare format="tuesday-trends" asOf="2026-10-24T19:00:00Z" />);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    const apiCalls = fetchMock.mock.calls.filter(([url]) => String(url).startsWith("/api/v1/social-share/"));
+    expect(apiCalls).toHaveLength(1);
+    expect(String(apiCalls[0][0])).toBe(`/api/v1/social-share/tuesday-trends?weekStart=${monday}&selectedDates=${selected}`);
+    expect((screen.getByLabelText(/^Week of/) as HTMLInputElement).value).toBe(monday);
+    expect((screen.getByRole("combobox", { name: /^Graphic/ }) as HTMLSelectElement).value).toBe("rates");
   });
 });
 

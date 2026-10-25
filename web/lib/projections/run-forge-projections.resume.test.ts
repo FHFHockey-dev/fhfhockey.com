@@ -323,7 +323,7 @@ function seedPausedRun(args: {
     metrics: {
       games: args.completed.length, player_rows: 2 * args.completed.length, team_rows: 2 * args.completed.length,
       goalie_rows: 2 * args.completed.length, warnings: [], data_quality: {},
-      input_provenance: buildForgeInputProvenance(),
+      input_provenance: buildForgeInputProvenance({ externalFantasyInputsExcluded: true }),
       resume: {
         version: RUN_RESUME_VERSION, scope_key: "h1:full", lease_owner: args.owner,
         lease_expires_at: args.leaseExpiresAt, completed_game_ids: args.completed, invocations: 1,
@@ -361,7 +361,7 @@ describe("resumable FORGE projection run", () => {
   it("stops at the deadline, then a later call finishes the same run_id; readers keep the last succeeded run until then", async () => {
     seedRun({
       run_id: "earlier-succeeded", status: "succeeded", created_at: "2026-10-20T06:00:00.000Z",
-      metrics: { input_provenance: buildForgeInputProvenance() },
+      metrics: { input_provenance: buildForgeInputProvenance({ externalFantasyInputsExcluded: true }) },
     });
     // Game 3 starts in time but runs slow, so it is cut off partway and leaves
     // a row its next pass will not write.
@@ -396,9 +396,11 @@ describe("resumable FORGE projection run", () => {
       games: 4, player_rows: 8, timed_out: false,
       // forge/players ranks full-slate runs first by this scope.
       execution_scope: { mode: "full_slate", requested_game_ids: [] },
+      // Release C remains a legacy producer; it cannot claim native exclusion provenance.
       input_provenance: buildForgeInputProvenance(),
       resume: { completed_game_ids: [1, 2, 3, 4], invocations: 2 },
     });
+    expect(run.metrics.input_provenance).not.toHaveProperty("external_fantasy_input_contract");
     // One row per game and player; game 3's stray row from the cut-off pass is gone.
     expect(playerRows(first.runId)).toEqual(["1:1", "1:2", "2:1", "2:2", "3:1", "3:2", "4:1", "4:2"]);
     expect(await requireLatestSucceededRunId(date)).toBe(first.runId);
@@ -421,7 +423,7 @@ describe("resumable FORGE projection run", () => {
     for (const key of ["FORGE_CODE_VERSION", "VERCEL_GIT_COMMIT_SHA", "GIT_SHA"]) vi.stubEnv(key, sha);
     seedRun({
       run_id: "released-succeeded", status: "succeeded", created_at: "2026-10-20T06:00:00.000Z",
-      metrics: { input_provenance: buildForgeInputProvenance() },
+      metrics: { input_provenance: buildForgeInputProvenance({ externalFantasyInputsExcluded: true }) },
     });
     const result = await runProjectionV2ForDate(date, { deadlineMs: Date.now() + 200_000 });
     expect(runs().find((row) => row.run_id === result.runId)).toMatchObject({ status: "succeeded", git_sha: "local:unknown" });

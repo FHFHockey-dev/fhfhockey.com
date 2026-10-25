@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { parsePlayerForecastGameStart, regularSeasonForDate, type PlayerForecastScheduleGame } from "./schedule";
 import { planningScheduleStatus } from "../rosterScheduleData/normalize";
 import { forgeScheduleRevision } from "../projections/issuedContext";
+import { PLAYER_FORECAST_MAX_HORIZON } from "./contracts";
 
 type ScheduleRejectionReason = "incomplete_read" | "read_deadline" | "out_of_scope" | "season_mismatch" | "type_mismatch"
   | "date_mismatch" | "identity_conflict" | "invalid_start" | "start_time_mismatch" | "invalid_receipt"
@@ -11,7 +12,7 @@ export type ForecastScheduleRejection = {
   readStatus: "complete" | "incomplete";
   validationStatus: "rejected";
   stage: "canonical_games" | "team_game_status" | "reconciliation";
-  scope: { fromDate: string; throughDate: string | null; teamId: number | null };
+  scope: { fromDate: string; throughDate: string | null; teamId: number | null; mode?: "next_ten_team_games" };
   discoveredGames: number | null;
   checkedGames: number;
   unreadGames: number | null;
@@ -73,17 +74,21 @@ export async function readForecastScopeRows<T extends Record<string, any>>(args:
 
 /** Shared discovery for calendar windows and the distinct next-ten-team-games contract. */
 export async function readForecastSchedule(args: {
-  db: SupabaseClient<any>; now: Date; throughDate?: string; teamId?: number;
+  db: SupabaseClient<any>; now: Date; throughDate?: string; teamId?: number; mode?: "next_ten_team_games";
 }): Promise<PlayerForecastScheduleGame[]> {
   if (!Number.isFinite(args.now.getTime()) || args.teamId !== undefined
     && (!Number.isSafeInteger(args.teamId) || args.teamId <= 0)) throw new Error("Invalid forecast schedule scope");
+  if (args.mode !== undefined && (args.mode !== "next_ten_team_games" || args.teamId === undefined || args.throughDate !== undefined)) {
+    throw new Error("Next-ten schedule scope requires one team and no calendar end date");
+  }
   const firstDate = new Date(Date.parse(`${args.now.toISOString().slice(0, 10)}T00:00:00Z`) - 86400000).toISOString().slice(0, 10);
   if (args.throughDate !== undefined && (!/^\d{4}-\d{2}-\d{2}$/.test(args.throughDate)
     || args.throughDate < firstDate || new Date(`${args.throughDate}T00:00:00Z`).toISOString().slice(0, 10) !== args.throughDate)) {
     throw new Error("Invalid forecast schedule end date");
   }
   const deadlineMs = Date.now() + 8000;
-  const scope = { fromDate: firstDate, throughDate: args.throughDate ?? null, teamId: args.teamId ?? null };
+  const scope = { fromDate: firstDate, throughDate: args.throughDate ?? null, teamId: args.teamId ?? null,
+    ...(args.mode ? { mode: args.mode } : {}) };
   const rejection: ForecastScheduleRejection = { readStatus: "incomplete", validationStatus: "rejected",
     stage: "canonical_games", scope, discoveredGames: null, checkedGames: 0, unreadGames: null,
     reasons: [], rejectedGames: [] };
@@ -109,10 +114,18 @@ export async function readForecastSchedule(args: {
     throw new ForecastScheduleError({ ...rejection, reasons: ["out_of_scope"], rejectedGames: outOfScope.map(row => ({
       gameId: Number.isSafeInteger(row.id) && row.id > 0 ? row.id : null, reasons: ["out_of_scope"] })) });
   }
+  // Discovery remains complete. Only reconciliation is limited to the prefix
+  // needed to establish this team's next ten scheduled games.
+  const candidates = args.mode ? rows.filter(game => {
+    const start = parsePlayerForecastGameStart(game.startTime, game.date);
+    return !start || Date.parse(start) > args.now.getTime();
+  }).sort((left, right) => (parsePlayerForecastGameStart(left.startTime, left.date) ?? `${left.date}T00:00:00.000Z`)
+    .localeCompare(parsePlayerForecastGameStart(right.startTime, right.date) ?? `${right.date}T00:00:00.000Z`) || left.id - right.id) : rows;
   const verified: PlayerForecastScheduleGame[] = [];
-  let scheduleRowCount = 0;
-  for (let index = 0; index < rows.length; index += 100) {
-    const games = rows.slice(index, index + 100), ids = games.map(game => game.id);
+  let scheduleRowCount = 0, eligibleGames = 0;
+  for (let index = 0; index < candidates.length;) {
+    const batchSize = args.mode ? PLAYER_FORECAST_MAX_HORIZON - eligibleGames : 100;
+    const games = candidates.slice(index, index + batchSize), ids = games.map(game => game.id);
     let schedule: Record<string, any>[];
     try { schedule = await readForecastScopeRows<Record<string, any>>({ key: "id",
       maximum: 20000 - scheduleRowCount, deadlineMs,
@@ -166,7 +179,10 @@ export async function readForecastSchedule(args: {
         fetchedAt: selected.map(row => row.fetched_at).sort((a, b) => Date.parse(a) - Date.parse(b))[0],
         teams: selected.map(row => ({ teamId: row.team_id, abbreviation: row.team_abbreviation,
           revision: forgeScheduleRevision(row as any) })) } });
+      if (status === "scheduled") eligibleGames++;
     }
+    index += games.length;
+    if (args.mode && (rejection.rejectedGames.length || eligibleGames === PLAYER_FORECAST_MAX_HORIZON)) break;
   }
   if (rejection.rejectedGames.length) throw new ForecastScheduleError({ ...rejection,
     stage: "reconciliation", readStatus: "complete", reasons: [...new Set(rejection.rejectedGames.flatMap(game => game.reasons))].sort() });

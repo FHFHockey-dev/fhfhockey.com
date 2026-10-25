@@ -1,7 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { getDraftProFeatureFlags } from "lib/draft-pro/features";
-import { loadDraftProAccess } from "lib/draft-pro/server";
+import { loadProviderSyncAccess } from "lib/integrations/providerSyncAccessServer";
 import type { Database, Json } from "lib/supabase/database-generated.types";
 import serviceRoleClient from "lib/supabase/server";
 
@@ -42,18 +41,15 @@ export function isFantraxLiveDraftEnabled(env: Readonly<Record<string, string | 
 
 export async function requireFantraxDraftAccess(
   userId: string,
-  options: { enabled?: boolean; loadAccess?: typeof loadDraftProAccess } = {},
+  options: { enabled?: boolean; loadAccess?: typeof loadProviderSyncAccess } = {},
 ) {
   if (!(options.enabled ?? (isFantraxLiveDraftEnabled() && isFantraxApiEnabled(userId)))) {
     throw new FantraxIntegrationError("Fantrax live draft sync is unavailable.", 503, "FANTRAX_LIVE_DRAFT_DISABLED");
   }
-  const access = await (options.loadAccess ?? loadDraftProAccess)(userId, {
-    now: new Date(),
-    flags: getDraftProFeatureFlags(),
-    patreonVerificationAvailable: true,
-  });
+  const access = await (options.loadAccess ?? loadProviderSyncAccess)(userId);
   if (!access.eligible) {
-    throw new FantraxIntegrationError("Draft Pro access is required for Fantrax live sync.", 403, "FANTRAX_DRAFT_PRO_REQUIRED");
+    if (access.reason === "verification_unavailable") throw new FantraxIntegrationError("Premium access could not be verified. Try again.", 503, "FANTRAX_ACCESS_UNAVAILABLE");
+    throw new FantraxIntegrationError("Premium access is required for Fantrax live sync.", 403, "FANTRAX_DRAFT_PRO_REQUIRED");
   }
 }
 
@@ -296,7 +292,8 @@ export async function pollFantraxDraftSession(args: { userId: string; sessionId:
   if (session.status !== "active") return response(client, session);
   try {
     await requireFantraxDraftAccess(args.userId);
-  } catch {
+  } catch (error) {
+    if (!(error instanceof FantraxIntegrationError) || error.statusCode !== 403) throw error;
     const { data } = await client.from("fantrax_draft_sessions").update({ status: "stopped", last_error_code: "FANTRAX_DRAFT_ACCESS_LOST" })
       .eq("id", session.id).eq("user_id", args.userId).select("*").single();
     return response(client, data ?? { ...session, status: "stopped", last_error_code: "FANTRAX_DRAFT_ACCESS_LOST" });

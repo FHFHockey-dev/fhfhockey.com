@@ -299,6 +299,11 @@ function getRemainingNstWaitMs(): number {
     : 0;
 }
 
+function teamTableCallerSecret() {
+  const secret = (process.env.NST_TEAM_TABLE_SECRET ?? "").trim();
+  return /^[\x21-\x7e]+$/.test(secret) ? secret : null;
+}
+
 async function fetchTeamTable(
   params: URLSearchParams,
   context: {
@@ -313,6 +318,10 @@ async function fetchTeamTable(
     fetchDurationMs: number;
   }
 > {
+  const callerSecret = teamTableCallerSecret();
+  if (!callerSecret) {
+    throw new Error('Team table caller authentication unavailable: {"code":"caller_auth_unavailable"}');
+  }
   const requestSequence = ++nstRequestSequence;
   const waitMs = getRemainingNstWaitMs();
   logNst(
@@ -333,7 +342,10 @@ async function fetchTeamTable(
   const fetchStartedAt = Date.now();
 
   try {
-    const response = await fetch(fullUrl, { signal: controller.signal });
+    const response = await fetch(fullUrl, {
+      signal: controller.signal,
+      headers: { Authorization: `Bearer ${callerSecret}` },
+    });
     const responseText = await response.text();
     lastNstRequestCompletedAt = Date.now();
 
@@ -554,7 +566,7 @@ function hasBudgetForRequests(startedAt: number, requestCount: number) {
   return remainingBudget >= requestCount * MIN_REQUEST_BUDGET_MS;
 }
 
-const handler = withNhlOffSeasonSkip(async (req: any, res: NextApiResponse) => {
+const workHandler = withNhlOffSeasonSkip(async (req: any, res: NextApiResponse) => {
   const scriptStartTime = Date.now();
   const { supabase } = req;
   lastNstRequestCompletedAt = 0;
@@ -1123,5 +1135,17 @@ const handler = withNhlOffSeasonSkip(async (req: any, res: NextApiResponse) => {
     });
   }
 });
+
+async function handler(req: any, res: NextApiResponse) {
+  // Check before the off-season wrapper can perform season/database lookups.
+  if (!teamTableCallerSecret()) {
+    return res.status(503).json({
+      success: false,
+      code: "caller_auth_unavailable",
+      message: "Team table caller authentication is not configured.",
+    });
+  }
+  return workHandler(req, res);
+}
 
 export default adminOnly(withCronJobAudit(handler));

@@ -1,4 +1,6 @@
 import { calendarLeadDay, catalogParticipation, forecastCalendarPolicy, validForecastCalendarPolicy, resolveContribution, type ContributionGame, type ContributionParticipation, type ContributionSource } from "./contributions";
+import { currentRsoUsePolicy, restrictRsoForecast, type RsoUsePolicy } from "./rsoUsePolicy";
+import { currentPlanningTime } from "../rosterScheduleOptimizer/currentPlanningRead";
 import { applyModeledStartMetadata, forecastFromContributions, revalidateResolvedForecast } from "./resolvedPlanningForecast";
 import type { ContributionPlanningSnapshot, ForecastExclusionReason, GameForecast, PlanningSnapshot, StatLine } from "../rosterScheduleOptimizer/planningTypes";
 
@@ -34,11 +36,18 @@ function unusableDetailed(forecast: GameForecast,
 /** Apply immutable shared rates only to actual requested schedule opportunities.
  * No model generation, database reads, league scoring, or cache writes occur here. */
 export function resolvePlanningContributions(snapshot: PlanningSnapshot,
-  options?: { playerIds?: ReadonlySet<string> }): PlanningSnapshot;
+  options?: { playerIds?: ReadonlySet<string>; consumer?: "rso" | "start_chart"; usePolicy?: RsoUsePolicy }): PlanningSnapshot;
 export function resolvePlanningContributions(snapshot: ContributionPlanningSnapshot,
-  options?: { playerIds?: ReadonlySet<string> }): ContributionPlanningSnapshot;
+  options?: { playerIds?: ReadonlySet<string>; consumer?: "rso" | "start_chart"; usePolicy?: RsoUsePolicy }): ContributionPlanningSnapshot;
 export function resolvePlanningContributions(snapshot: ContributionPlanningSnapshot,
-  options: { playerIds?: ReadonlySet<string> } = {}): ContributionPlanningSnapshot {
+  options: { playerIds?: ReadonlySet<string>; consumer?: "rso" | "start_chart"; usePolicy?: RsoUsePolicy } = {}): ContributionPlanningSnapshot {
+  if (options.consumer === "rso") {
+    const policy = options.usePolicy ?? currentRsoUsePolicy();
+    // Review expiry is current permission, not the historical valuation clock.
+    const policyNow = new Date(currentPlanningTime()).toISOString();
+    snapshot = { ...snapshot, forecasts: snapshot.forecasts.map(row => restrictRsoForecast(
+      row, snapshot.forecastManifest, policyNow, policy)) };
+  }
   const calendarPolicy = snapshot.forecastManifest?.calendarPolicy ?? forecastCalendarPolicy();
   const exclusions = [...(snapshot.forecastInputExclusions ?? [])];
   const exclude = (gameId: string, playerId: string, reason: ForecastExclusionReason) => {
@@ -184,7 +193,7 @@ export function resolvePlanningContributions(snapshot: ContributionPlanningSnaps
           && (original.stats[targetKey] != null || original.conditionalStats?.[targetKey] != null)) {
           const conditional = original.conditionalStats?.[targetKey];
           detailed = { ...issuedIdentity, kind: "detailed", sourceId: original.revisionId, policyVersion: original.modelVersion ?? "FORGE",
-            released: true, allowedUses: original.allowedUses,
+            released: true, allowedUses: original.targetAllowedUses?.[targetKey] ?? original.allowedUses,
             targetKey, unit: targetKey.includes("MINUTES") || targetKey === "TIME_ON_ICE_PER_GAME" ? "minutes" : "count",
             basis: conditional != null ? player.playerClass === "goalie" ? "per_start" : "per_appearance" : "unconditional_game",
             mean: conditional ?? original.stats[targetKey]!, participationIntegrated: conditional == null,
@@ -192,25 +201,25 @@ export function resolvePlanningContributions(snapshot: ContributionPlanningSnaps
             sourceWatermark: original.sourceWatermark!, limitations: original.limitations };
           const probability = player.playerClass === "goalie" ? effectiveStartProbability : original.appearanceProbability;
           if (probability != null) participation = { ...issuedIdentity, released: true,
-            allowedUses: original.allowedUses, issuedAt: original.issuedAt,
+            allowedUses: original.targetAllowedUses?.[targetKey] ?? original.allowedUses, issuedAt: original.issuedAt,
             basis: player.playerClass === "goalie" ? "start" : "appearance", probability,
             revisionId: `${original.revisionId}:participation`, cutoffAt: original.cutoffAt, expiresAt: original.expiresAt };
         }
         if (!participation && originalFresh && player.playerClass === "skater"
           && baseline?.basis === "per_appearance" && original?.appearanceProbability != null) {
-          participation = { ...identity, released: true, basis: "appearance", allowedUses: original.allowedUses, issuedAt: original.issuedAt,
+          participation = { ...identity, released: true, basis: "appearance", allowedUses: original.targetAllowedUses?.[targetKey] ?? original.allowedUses, issuedAt: original.issuedAt,
             probability: original.appearanceProbability,
             revisionId: `${original.revisionId}:appearance`, cutoffAt: original.cutoffAt!, expiresAt: original.expiresAt! };
         }
         if (!participation && originalFresh && player.playerClass === "goalie"
           && baseline?.basis === "per_appearance" && original?.appearanceProbability != null) {
-          participation = { ...identity, released: true, basis: "appearance", allowedUses: original.allowedUses, issuedAt: original.issuedAt,
+          participation = { ...identity, released: true, basis: "appearance", allowedUses: original.targetAllowedUses?.[targetKey] ?? original.allowedUses, issuedAt: original.issuedAt,
             probability: original.appearanceProbability,
             revisionId: `${original.revisionId}:appearance`, cutoffAt: original.cutoffAt!, expiresAt: original.expiresAt! };
         }
         if (!participation && goalieStartUsable && baseline?.basis === "per_start"
           && effectiveStartProbability != null) {
-          participation = { ...identity, released: true, basis: "start", allowedUses: original!.allowedUses, issuedAt: original!.issuedAt,
+          participation = { ...identity, released: true, basis: "start", allowedUses: original!.targetAllowedUses?.[targetKey] ?? original!.allowedUses, issuedAt: original!.issuedAt,
             probability: effectiveStartProbability,
             revisionId: `${original.revisionId}:start`, cutoffAt: original.cutoffAt!, expiresAt: original.expiresAt! };
         }

@@ -1,3 +1,4 @@
+import { loadProviderSyncAccess } from "lib/integrations/providerSyncAccessServer";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { requireApiUser } from "lib/api/requireApiUser";
 import { loadInSeasonAccess } from "lib/in-season/server";
@@ -8,7 +9,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const user = await requireApiUser(req, res, { onUnauthorized: (message) => res.status(401).json({ error: { code: "authentication_required", message } }) });
   if (!user) return;
   try {
-    return res.status(200).json({ data: await loadInSeasonAccess(user.id) });
+    const access = await loadInSeasonAccess(user.id).catch(() => null);
+    const sync = await loadProviderSyncAccess(user.id, access ? { inSeason: access } : {});
+    if (sync.reason === "verification_unavailable") throw new Error("Access unavailable");
+    return res.status(200).json({ data: access?.eligible ? access : {
+      ...sync, capabilities: sync.eligible ? ["rso_sync"] : [], grantingSources: [],
+    } });
   } catch {
     return res.status(503).json({ error: { code: "access_unavailable", message: "In-season access is temporarily unavailable." } });
   }

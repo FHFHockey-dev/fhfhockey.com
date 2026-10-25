@@ -118,6 +118,7 @@ function draftStateUrl(sessionId: string): string {
 
 export function useYahooDraftSync(
   authenticated = true,
+  canSync = false,
 ): UseYahooDraftSyncResult {
   const [enabled, setEnabled] = useState(false);
   const [leagues, setLeagues] = useState<YahooDraftLeague[]>([]);
@@ -235,6 +236,7 @@ export function useYahooDraftSync(
   }, [authenticated, loadList]);
 
   const connect = useCallback(async () => {
+    if (!canSync) return;
     setError(null);
     try {
       const { response, body } = await requestJson(
@@ -262,9 +264,10 @@ export function useYahooDraftSync(
           : "Yahoo connection could not start.",
       );
     }
-  }, []);
+  }, [canSync]);
 
   const refreshAccount = useCallback(async () => {
+    if (!canSync) return;
     setRequestState("loading");
     setError(null);
     try {
@@ -286,10 +289,11 @@ export function useYahooDraftSync(
       );
       setRequestState("error");
     }
-  }, [loadList, loadSessionState, sessionId]);
+  }, [canSync, loadList, loadSessionState, sessionId]);
 
   const start = useCallback(
     async (externalLeagueId = selectedLeagueId) => {
+      if (!canSync) return false;
       if (!externalLeagueId) {
         setError("Choose a Yahoo league before starting live sync.");
         return false;
@@ -355,10 +359,11 @@ export function useYahooDraftSync(
         return false;
       }
     },
-    [leagues, ranking?.id, selectedLeagueId],
+    [canSync, leagues, ranking?.id, selectedLeagueId],
   );
 
   const refreshDraft = useCallback(async () => {
+    if (!canSync) return;
     if (!sessionId) return;
     if (pollRequestRef.current) return pollRequestRef.current;
     setIsPolling(true);
@@ -391,7 +396,7 @@ export function useYahooDraftSync(
     })();
     pollRequestRef.current = request;
     return request;
-  }, [loadSessionState, sessionId]);
+  }, [canSync, loadSessionState, sessionId]);
 
   const stop = useCallback(async () => {
     if (!sessionId) return null;

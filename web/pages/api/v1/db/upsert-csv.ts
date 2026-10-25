@@ -570,5 +570,4 @@ export default adminOnly(withCronJobAudit(
         message: error.message || "An unexpected error occurred."
       });
     }
-  }
-));
+  }));

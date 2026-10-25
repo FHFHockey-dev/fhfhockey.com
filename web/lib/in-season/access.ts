@@ -14,6 +14,7 @@ export type InSeasonAccess = {
   capabilities: InSeasonCapability[];
   grantingSources: InSeasonGrantSource[];
   expiresAt: string | null;
+  nextVerificationAt?: string | null;
   reason: "eligible" | "no_active_grant" | "expired" | "verification_unavailable";
 };
 
@@ -39,12 +40,14 @@ export function resolveInSeasonAccess(grants: InSeasonGrant[], now: Date): InSea
     return true;
   });
   const expiries = valid.map((grant) => grant.effectiveTo === null ? null : timestamp(grant.effectiveTo));
+  const verificationDeadlines = valid.filter((grant) => grant.source === "patreon").map((grant) => timestamp(grant.verifiedAt)! + 60 * 60 * 1000);
   const stalePatreon = grants.some((grant) => grant.source === "patreon" && grant.status === "active" && timestamp(grant.effectiveFrom) !== null && timestamp(grant.effectiveFrom)! <= current && (!timestamp(grant.verifiedAt) || timestamp(grant.verifiedAt)! < current - 60 * 60 * 1000));
   return {
     eligible: valid.length > 0,
     capabilities: valid.length ? [...IN_SEASON_CAPABILITIES] : [],
     grantingSources: [...new Set(valid.map((grant) => grant.source))],
     expiresAt: valid.length && expiries.every((expiry) => expiry !== null) ? new Date(Math.max(...expiries as number[])).toISOString() : null,
+    ...(verificationDeadlines.length ? { nextVerificationAt: new Date(Math.min(...verificationDeadlines)).toISOString() } : {}),
     reason: valid.length ? "eligible" : stalePatreon ? "verification_unavailable" : grants.some((grant) => grant.status !== "active" || (timestamp(grant.effectiveTo) ?? Infinity) <= current) ? "expired" : "no_active_grant",
   };
 }

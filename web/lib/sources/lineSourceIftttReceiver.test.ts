@@ -11,7 +11,11 @@ const { fromMock, insertMock, upsertMock, rpcMock, dispatchMock } = vi.hoisted((
 vi.mock("lib/supabase/server", () => ({
   default: {
     from: fromMock,
-    rpc: rpcMock,
+    rpc: (...args: unknown[]) => {
+      const query = { abortSignal: (_signal: AbortSignal) => query,
+        then: (resolve: any, reject: any) => Promise.resolve(rpcMock(...args)).then(resolve, reject) };
+      return query;
+    },
   },
 }));
 vi.mock("lib/projections/starterBoardQueue", () => ({ dispatchStarterBoardJobs: dispatchMock }));
@@ -60,8 +64,48 @@ function createMockRes() {
   return res;
 }
 
+const fixturePolicy = { version: "ifttt-intake-v1", id: "local-nearest", startsAt: "2026-10-16T00:00:00Z", endsAt: "2026-10-17T00:00:00Z", maxAttempts: 5, maxReceipts: 3,
+  scopes: [{ table: "line_source_ifttt_events", sourceGroup: "gdl_suite", sourceKey: "gamedaygoalies", sourceAccount: "gamedaygoalies" }] };
+const enableIntake = () => {
+  vi.stubEnv("IFTTT_RECEIPT_VARIANTS_ENABLED", "true");
+  vi.stubEnv("IFTTT_INTAKE_POLICY", JSON.stringify(fixturePolicy));
+  vi.stubEnv("TWEET_CLAIMS_MODE", "shadow");
+  vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+};
 describe("createLineSourceIftttReceiver", () => {
   afterEach(() => vi.unstubAllEnvs());
+  it("retains a same-post variant with the explicit flag and does not request another processing action", async () => {
+    enableIntake();
+    const request = vi.fn(); vi.stubGlobal("fetch", request);
+    rpcMock.mockImplementation(async (_name, { p_scope, p_row }) => {
+      const { updated_at: _clock, processing_status: _status, ...inputRow } = p_row;
+      return { error: null, data: { version: "ifttt-intake-v1", policyId: fixturePolicy.id, status: "retained", receipt: { version: "ifttt-receipt-v1", table: p_scope.table,
+        eventId: "00000000-0000-4000-8000-000000000001", receiptId: "00000000-0000-4000-8000-000000000002",
+        baselineId: "00000000-0000-4000-8000-000000000003", classification: "same_post_variant",
+        outcome: "retained", requiresReview: true, receivedAt: new Date().toISOString(), inputRow } } };
+    });
+    const handler = createLineSourceIftttReceiver({ sourceGroup: "gdl_suite", sourceKey: "gamedaygoalies",
+      sourceAccount: "GameDayGoalies", secretEnvVar: "IFTTT_GAMEDAYGOALIES_WEBHOOK_SECRET", processorPath: "/api/v1/db/update-line-sources" });
+    const res = createMockRes(); await handler(createMockReq({ query: { process: "true" } }), res);
+    expect(res.statusCode).toBe(200); expect(res.body.receipt).toMatchObject({ classification: "same_post_variant", requiresReview: true });
+    expect(res.body.processingStatus).toBe("held_for_review");
+    expect(rpcMock).toHaveBeenCalledOnce(); expect(fromMock).not.toHaveBeenCalled(); expect(request).not.toHaveBeenCalled();
+  });
+  it("does not fall back to the lossy upsert after an uncertain receipt RPC", async () => {
+    enableIntake();
+    rpcMock.mockRejectedValue(new Error("synthetic receipt reply lost"));
+    const handler = createLineSourceIftttReceiver({ sourceGroup: "gdl_suite", sourceKey: "gamedaygoalies",
+      sourceAccount: "GameDayGoalies", secretEnvVar: "IFTTT_GAMEDAYGOALIES_WEBHOOK_SECRET" });
+    const res = createMockRes(); await handler(createMockReq(), res);
+    expect(res.statusCode).toBe(500); expect(res.body.outcome).toBe("unknown"); expect(rpcMock).toHaveBeenCalledTimes(2); expect(fromMock).not.toHaveBeenCalled();
+  });
+  it("rejects missing post IDs without a legacy write in controlled intake", async () => {
+    enableIntake();
+    const handler = createLineSourceIftttReceiver({ sourceGroup: "gdl_suite", sourceKey: "gamedaygoalies",
+      sourceAccount: "GameDayGoalies", secretEnvVar: "IFTTT_GAMEDAYGOALIES_WEBHOOK_SECRET" });
+    const res = createMockRes(); await handler(createMockReq({ body: { text: "unidentified original" } }), res);
+    expect(res.statusCode).toBe(400); expect(insertMock).not.toHaveBeenCalled(); expect(rpcMock).not.toHaveBeenCalled();
+  });
   it("processes automatically with capture enabled, respects explicit deferral, and never trusts Host", async () => {
     vi.stubEnv("STARTER_BOARD_CAPTURE_ENABLED", "true");
     vi.stubEnv("STARTER_BOARD_WORKER_ORIGIN", "https://trusted.example");
@@ -107,6 +151,9 @@ describe("createLineSourceIftttReceiver", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.unstubAllGlobals();
+    vi.stubEnv("IFTTT_RECEIPT_VARIANTS_ENABLED", "false");
+    vi.stubEnv("IFTTT_INTAKE_POLICY", undefined);
+    vi.stubEnv("IFTTT_INTAKE_STOP", undefined);
     rpcMock.mockResolvedValue({ data: 0, error: null });
     dispatchMock.mockResolvedValue({ dispatched: 16, failed: 0, results: [] });
     process.env.IFTTT_GAMEDAYGOALIES_WEBHOOK_SECRET = "test-secret";
@@ -117,6 +164,21 @@ describe("createLineSourceIftttReceiver", () => {
       insert: insertMock,
       upsert: upsertMock,
     });
+  });
+
+  it.each([["a controlled pilot", enableIntake], ["a stop-only pilot", () => vi.stubEnv("IFTTT_INTAKE_STOP", "true")]] as const)(
+    "keeps %s retain-only: scheduled capture retries request no processor", async (_label, configure) => {
+    configure();
+    vi.stubEnv("STARTER_BOARD_CAPTURE_ENABLED", "true");
+    vi.stubEnv("STARTER_BOARD_COMPUTE_ENABLED", "false");
+    vi.stubEnv("STARTER_BOARD_SCHEDULER_ENABLED", "true");
+    vi.stubEnv("STARTER_BOARD_WORKER_ORIGIN", "https://trusted.example");
+    vi.stubEnv("CRON_SECRET", "scheduler-test");
+    const request = vi.fn(); vi.stubGlobal("fetch", request);
+    const res = createMockRes();
+    await scheduler(createMockReq({ method: "GET", headers: { authorization: "Bearer scheduler-test" } }), res);
+    expect(res.statusCode).toBe(200); expect((res.body as any).capture).toMatchObject({ attempted: 0, skipped: "controlled_intake" });
+    expect(request).not.toHaveBeenCalled(); expect(rpcMock).not.toHaveBeenCalled(); expect(dispatchMock).not.toHaveBeenCalled();
   });
 
   it.each([false, true])("runs bounded source retries independently of computation enabled=%s", async (compute) => {
@@ -131,20 +193,31 @@ describe("createLineSourceIftttReceiver", () => {
     const res = createMockRes();
     const pending = scheduler(createMockReq({ method: "GET", headers: { authorization: "Bearer scheduler-test" } }), res);
     await vi.waitFor(() => {
-      expect(request).toHaveBeenCalledTimes(4);
+      expect(request).toHaveBeenCalledTimes(6);
       if (compute) expect(dispatchMock).toHaveBeenCalledOnce();
     });
-    // Accepted work dispatches while all four source calls are still pending.
+    // Accepted work dispatches while all six source calls are still pending.
     if (!compute) { expect(dispatchMock).not.toHaveBeenCalled(); expect(rpcMock).not.toHaveBeenCalled(); }
     for (const [url] of request.mock.calls as unknown as Array<[URL]>) {
       expect(url.searchParams.get("currentDayOnly")).toBe("true");
       expect(url.searchParams.get("limit")).toBe("5");
       expect(url.searchParams.has("reprocess")).toBe(false);
     }
+    expect((request.mock.calls as unknown as Array<[URL]>).map(([rawUrl]) => {
+      const url = new URL(rawUrl);
+      return [url.pathname, url.searchParams.get("sourceGroup"), url.searchParams.get("sourceKey")];
+    })).toEqual([
+      ["/api/v1/db/update-line-sources", "gdl_suite", "gamedaylines"],
+      ["/api/v1/db/update-line-sources", "gdl_suite", "gamedaygoalies"],
+      ["/api/v1/db/update-line-sources", "gdl_suite", "gamedaynewsnhl"],
+      ["/api/v1/db/update-lines-ccc", "ccc", "cccmiddleton"],
+      ["/api/v1/db/update-line-sources", "dfo", "dfofantasy"],
+      ["/api/v1/db/update-line-sources", "nhl_rosters", "nhl_rosters"],
+    ]);
     releases.forEach((release) => release());
     await pending;
     expect(res.statusCode).toBe(200);
-    expect(res.body).toMatchObject({ dispatched: compute ? 16 : 0, capture: { attempted: 4, failed: 0 } });
+    expect(res.body).toMatchObject({ dispatched: compute ? 16 : 0, capture: { attempted: 6, failed: 0 } });
   });
 
   it("routes a GameDayGoalies event into the generic queue with source metadata", async () => {

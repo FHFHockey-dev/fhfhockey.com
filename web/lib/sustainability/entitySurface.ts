@@ -20,7 +20,8 @@ export type SandboxEntityConfig = {
 export type SandboxExpectationState =
   | "overperforming"
   | "stable"
-  | "underperforming";
+  | "underperforming"
+  | "unavailable";
 
 export type SandboxScoreRow = {
   entityType: SandboxEntityType;
@@ -260,11 +261,11 @@ export function getSandboxMetricLabel(
 }
 
 export function deriveLegacyExpectationState(
-  rawScore: number
+  _rawScore: number | null | undefined
 ): SandboxExpectationState {
-  if (rawScore >= 0.75) return "overperforming";
-  if (rawScore <= -0.75) return "underperforming";
-  return "stable";
+  // Canonical process support cannot establish over/underperformance, including
+  // for a neutral, missing, or nonfinite score.
+  return "unavailable";
 }
 
 function toFiniteNumber(value: unknown): number | null {

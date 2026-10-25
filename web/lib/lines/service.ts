@@ -34,7 +34,18 @@ export async function hydrateLineGameStates(supabase: any, games: LineGame[], no
 
 function publicClaim(claim: LineClaim): LineClaim {
   const sanitize = sanitizePublicNewsText;
-  return { ...claim, provenance: undefined, text: claim.text.split("\n").map(sanitize).join("\n"), sourceUrl: verifiedOriginalTweetUrl(claim.sourceUrl),
+  const candidate = verifiedOriginalTweetUrl(claim.sourceUrl);
+  const handle = candidate ? new URL(candidate).pathname.split("/")[1]! : null;
+  const id = candidate?.match(/\/status\/(\d+)$/)?.[1];
+  const identity = verifiedOriginalTweetUrl(claim.originalIdentity);
+  const consistent = candidate && handle && !/^(?:i|null|undefined|unknown|none|n_?a|source_account)$/i.test(handle)
+    && claim.author?.replace(/^@/, "").toLowerCase() === handle.toLowerCase()
+    && (!claim.provenance || claim.provenance.attributionStatus === "resolved" && claim.provenance.originalTweetId === id)
+    && (claim.originalIdentity === id || identity?.toLowerCase() === candidate.toLowerCase());
+  const originalUrl = consistent ? candidate : null;
+  return { ...claim, provenance: undefined, text: claim.text.split("\n").map(sanitize).join("\n"), sourceUrl: originalUrl,
+    author: originalUrl ? new URL(originalUrl).pathname.split("/")[1]! : "Original source pending",
+    originalIdentity: originalUrl,
     unit: claim.unit ? { ...claim.unit, evidence: claim.unit.evidence.map((span) => ({ ...span, text: sanitize(span.text) })) } : null,
     relationship: claim.relationship ? { ...claim.relationship, evidence: { ...claim.relationship.evidence, text: sanitize(claim.relationship.evidence.text) } } : null };
 }

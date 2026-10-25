@@ -3,6 +3,7 @@ import type { NextPage } from "next";
 import Head from "next/head";
 
 import type { NhlProspectIdentity } from "lib/sources/nhlProspectIdentity";
+import { aliasReviewRole, findAliasReviewOccurrences, getAliasReviewOccurrence, type AliasReviewPlayer } from "lib/sources/playerAliasReview";
 import AdminPageGate from "components/Admin/AdminPageGate";
 import supabase from "lib/supabase";
 import styles from "./player-aliases.module.scss";
@@ -18,11 +19,31 @@ type UnresolvedName = {
   tweet_id: string | null;
   context_text: string | null;
   status: "pending" | "resolved" | "ignored";
+  resolved_player_id?: number | null;
+  resolved_alias_id?: string | null;
   metadata: {
     contextAlias?: string | null;
     reason?: string | null;
     reviewKind?: string | null;
+    identityResolved?: boolean;
+    savedAlias?: string | null;
+    splitPlayerIds?: number[];
+    splitAliases?: string[];
+    resolutionScope?: string;
+    evidence?: { start: number; end: number; text?: string; origin?: "parser" | "unique_token" | "contextual_row" };
+    situation?: string | null;
+    sourceOrdinal?: number | null;
+    candidates?: number[];
   } | null;
+  review?: {
+    sourceDate: string | null;
+    seasonId: number | null;
+    candidates: AliasReviewPlayer[];
+    preferredPlayerId: number | null;
+    preferenceReason: string;
+    ambiguousSurname: boolean;
+    scopeMessage: string;
+  };
   created_at: string;
 };
 
@@ -80,10 +101,6 @@ async function postWithOptionalAuth(url: string, body: Record<string, unknown>) 
   return payload;
 }
 
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
 function getReviewSlotLabel(reason: string | null | undefined): string | null {
   if (!reason) return null;
   const lineMatch = reason.match(/^line_(\d+)_null_id$/);
@@ -98,76 +115,18 @@ function getReviewSlotLabel(reason: string | null | undefined): string | null {
   return null;
 }
 
-function parseReviewSlot(reason: string | null | undefined): {
-  group: "line" | "pair" | null;
-  index: number | null;
-} {
-  const lineMatch = reason?.match(/^line_(\d+)_null_id$/);
-  if (lineMatch?.[1]) return { group: "line", index: Number(lineMatch[1]) };
-  const pairMatch = reason?.match(/^pair_(\d+)_null_id$/);
-  if (pairMatch?.[1]) return { group: "pair", index: Number(pairMatch[1]) };
-  return { group: null, index: null };
-}
-
-function isStructuredContextLine(line: string): boolean {
-  return /[-–—/\\•]/.test(line) && !/^https?:\/\//i.test(line.trim());
-}
-
-function countMatches(text: string, pattern: RegExp): number {
-  pattern.lastIndex = 0;
-  return Array.from(text.matchAll(pattern)).length;
+function getReviewTargetLabel(row: UnresolvedName): string {
+  const role = aliasReviewRole(row);
+  const slot = getReviewSlotLabel(row.metadata?.reason) ?? (role ? `${role === "es_forward" ? "forward line" : "defense pair"}${row.metadata?.sourceOrdinal ? ` ${row.metadata.sourceOrdinal}` : ""}` : null);
+  const occurrence = getAliasReviewOccurrence(row);
+  return [slot, occurrence ? `text line ${occurrence.line}` : null].filter(Boolean).join(" · ");
 }
 
 function renderHighlightedContext(selectedUnresolved: UnresolvedName) {
   const text = selectedUnresolved.context_text ?? "No context text.";
-  const rawName = selectedUnresolved.raw_name.trim();
-  const contextAlias = selectedUnresolved.metadata?.contextAlias?.trim();
-  const reason = selectedUnresolved.metadata?.reason;
-  const slot = parseReviewSlot(reason);
-  let structuredLineNumber = 0;
-  const exactName = contextAlias || rawName;
-  const exactPattern = exactName
-    ? new RegExp(`\\b(${escapeRegExp(exactName)})\\b`, "gi")
-    : null;
-  const namePattern =
-    exactPattern && (contextAlias || countMatches(text, exactPattern) === 1)
-      ? exactPattern
-      : null;
-
-  return text.split(/(\n)/).map((part, index) => {
-    if (part === "\n") return part;
-
-    const isStructured = isStructuredContextLine(part);
-    if (isStructured) structuredLineNumber += 1;
-    const shouldHighlightLine =
-      slot.index != null &&
-      isStructured &&
-      ((slot.group === "line" && structuredLineNumber === slot.index) ||
-        (slot.group === "pair" && structuredLineNumber === slot.index + 4));
-
-    if (!namePattern) {
-      return (
-        <span key={index} style={shouldHighlightLine ? { background: "#513d05" } : undefined}>
-          {part}
-        </span>
-      );
-    }
-
-    const pieces = part.split(namePattern);
-    return (
-      <span key={index} style={shouldHighlightLine ? { background: "#513d05" } : undefined}>
-        {pieces.map((piece, pieceIndex) =>
-          piece.toLowerCase() === exactName.toLowerCase() ? (
-            <mark key={pieceIndex} style={{ background: "#ffd54a", color: "#111", padding: "0 2px" }}>
-              {piece}
-            </mark>
-          ) : (
-            piece
-          )
-        )}
-      </span>
-    );
-  });
+  const occurrence = getAliasReviewOccurrence(selectedUnresolved);
+  if (!occurrence) return text;
+  return <>{text.slice(0, occurrence.start)}<mark aria-label="Selected unresolved occurrence" style={{ background: "#ffd54a", color: "#111", padding: "0 2px" }}>{text.slice(occurrence.start, occurrence.end)}</mark>{text.slice(occurrence.end)}</>;
 }
 
 const PlayerAliasesReview = () => {
@@ -176,6 +135,8 @@ const PlayerAliasesReview = () => {
   const [selectedUnresolvedId, setSelectedUnresolvedId] = useState<string>("");
   const [selectedPlayerId, setSelectedPlayerId] = useState<string>("");
   const [splitPlayerIds, setSplitPlayerIds] = useState<[string, string]>(["", ""]);
+  const [splitAliases, setSplitAliases] = useState<[string, string]>(["", ""]);
+  const [splitMode, setSplitMode] = useState(false);
   const [lookup, setLookup] = useState<NhlProspectIdentity | null>(null);
   const [lookupBusy, setLookupBusy] = useState(false);
   const [unlinkedProspects, setUnlinkedProspects] = useState<Array<{ id: number; canonical_name: string }>>([]);
@@ -186,7 +147,21 @@ const PlayerAliasesReview = () => {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  async function loadData() {
+  function selectName(name?: UnresolvedName) {
+    const savedIds = name?.metadata?.splitPlayerIds;
+    const savedAliases = name?.metadata?.splitAliases;
+    const savedSplit = savedIds?.length === 2 && savedAliases?.length === 2;
+    setSelectedUnresolvedId(name?.id ?? "");
+    setAlias(name?.metadata?.savedAlias ?? (name ? getAliasReviewOccurrence(name)?.text : null) ?? name?.raw_name ?? "");
+    setSelectedPlayerId(savedSplit ? "" : name?.resolved_player_id ? String(name.resolved_player_id) : "");
+    setSplitMode(Boolean(savedSplit));
+    setSplitPlayerIds(savedSplit ? [String(savedIds[0]), String(savedIds[1])] : ["", ""]);
+    setSplitAliases(savedSplit ? [savedAliases[0], savedAliases[1]] : ["", ""]);
+    setMembershipSourceUrl("");
+    setLookup(null);
+  }
+
+  async function loadData(preferredId?: string) {
     setIsLoading(true);
     const params = new URLSearchParams(window.location.search);
     const unresolvedId = params.get("unresolvedId");
@@ -201,14 +176,10 @@ const PlayerAliasesReview = () => {
     setUnresolvedNames(payload.unresolvedNames);
     setPlayers(payload.players);
     setUnlinkedProspects(payload.unlinkedProspects ?? []);
-    setLookup(null);
     setMembershipReviewEnabled(payload.membershipReviewEnabled ?? false);
-    setMembershipSourceUrl("");
-    const first = payload.unresolvedNames.find((name) => name.status === "pending") ?? payload.unresolvedNames[0];
-    setSelectedUnresolvedId(first?.id ?? "");
-    setAlias(first?.raw_name ?? "");
-    setSelectedPlayerId("");
-    setSplitPlayerIds(["", ""]);
+    const first = payload.unresolvedNames.find((name) => name.id === preferredId && name.status === "pending")
+      ?? payload.unresolvedNames.find((name) => name.status === "pending") ?? payload.unresolvedNames[0];
+    selectName(first);
     setIsLoading(false);
   }
 
@@ -222,14 +193,22 @@ const PlayerAliasesReview = () => {
   const selectedUnresolved = unresolvedNames.find(
     (name) => name.id === selectedUnresolvedId
   );
-  const selectedReviewSlot = getReviewSlotLabel(selectedUnresolved?.metadata?.reason);
+  const selectedReviewSlot = selectedUnresolved ? getReviewTargetLabel(selectedUnresolved) : "";
+  const selectedOccurrence = selectedUnresolved ? getAliasReviewOccurrence(selectedUnresolved) : null;
+  const possibleOccurrences = selectedUnresolved ? findAliasReviewOccurrences(selectedUnresolved.metadata?.contextAlias || selectedUnresolved.raw_name, selectedUnresolved.context_text ?? "") : [];
+  const occurrenceMode = selectedUnresolved?.review?.ambiguousSurname || ((selectedUnresolved?.metadata?.candidates?.length ?? 0) > 1 && !/[.\s]/.test(selectedUnresolved?.raw_name ?? ""));
+  const savedPlayerIds = selectedUnresolved?.metadata?.splitPlayerIds
+    ?? (selectedUnresolved?.resolved_player_id ? [selectedUnresolved.resolved_player_id] : []);
+  const savedPlayerNames = savedPlayerIds.map((id) => players.find((player) => player.id === id)?.fullName ?? `NHL ${id}`).join(" and ");
   const pendingNames = unresolvedNames.filter((name) => name.status === "pending");
   const resolvedNames = unresolvedNames.filter((name) => name.status === "resolved");
   const filteredPlayers = useMemo(() => {
     const search = playerSearch.trim().toLowerCase();
-    return players.filter((player) => !search || player.fullName.toLowerCase().includes(search) || String(player.id) === search)
-      .sort((a, b) => Number(b.team_id === selectedUnresolved?.team_id) - Number(a.team_id === selectedUnresolved?.team_id));
-  }, [players, playerSearch, selectedUnresolved?.team_id]);
+    const rank = (player: PlayerOption) => selectedUnresolved?.review
+      ? player.id === selectedUnresolved.review.preferredPlayerId ? 2 : Number(selectedUnresolved.review.candidates.some((candidate) => candidate.id === player.id))
+      : Number(player.team_id === selectedUnresolved?.team_id);
+    return players.filter((player) => !search || player.fullName.toLowerCase().includes(search) || String(player.id) === search).sort((a, b) => rank(b) - rank(a));
+  }, [players, playerSearch, selectedUnresolved]);
 
   function playerOptionsFor(selectedId: string): PlayerOption[] {
     const selected = players.find((player) => String(player.id) === selectedId);
@@ -258,7 +237,7 @@ const PlayerAliasesReview = () => {
     finally { setLookupBusy(false); }
   }
 
-  async function resolveName() {
+  async function resolveName(assignOnly = occurrenceMode) {
     if (!selectedUnresolved || !selectedPlayerId) return;
     const reviewToken = new URLSearchParams(window.location.search).get("reviewToken");
     const payload = await postWithOptionalAuth("/api/v1/db/player-name-aliases", {
@@ -267,10 +246,11 @@ const PlayerAliasesReview = () => {
       importNhlIdentity: lookup?.nhlId === Number(selectedPlayerId),
       membershipSourceUrl: membershipSourceUrl.trim() || undefined,
       alias: alias || selectedUnresolved.raw_name,
+      ...(assignOnly ? { action: "assign_occurrence" } : {}),
       ...(reviewToken ? { reviewToken } : {}),
     });
     setStatusMessage(payload.message ?? "Alias saved.");
-    await loadData();
+    await loadData(selectedUnresolved.id);
   }
 
   async function ignoreName() {
@@ -286,11 +266,15 @@ const PlayerAliasesReview = () => {
   }
 
   async function splitName() {
-    if (!selectedUnresolved || splitPlayerIds.some((id) => !id)) return;
-    const parts = selectedUnresolved.raw_name.split("-").map((part) => part.trim());
-    const payload = await postWithOptionalAuth("/api/v1/db/player-name-aliases", { unresolvedId: selectedUnresolved.id, action: "split", parts: parts.map((part, index) => ({ alias: part, playerId: Number(splitPlayerIds[index]) })) });
+    if (!selectedUnresolved || splitPlayerIds.some((id) => !id) || splitPlayerIds[0] === splitPlayerIds[1] || splitAliases.some((value) => !value.trim())) return;
+    const reviewToken = new URLSearchParams(window.location.search).get("reviewToken");
+    const payload = await postWithOptionalAuth("/api/v1/db/player-name-aliases", {
+      unresolvedId: selectedUnresolved.id, action: "split",
+      parts: splitAliases.map((part, index) => ({ alias: part.trim(), playerId: Number(splitPlayerIds[index]) })),
+      ...(reviewToken ? { reviewToken } : {}),
+    });
     setStatusMessage(payload.message ?? "Name split and resolved.");
-    await loadData();
+    await loadData(selectedUnresolved.id);
   }
 
   return (
@@ -321,7 +305,7 @@ const PlayerAliasesReview = () => {
                 <div><p className={styles.eyebrow}>Work queue</p><h2>{pendingNames.length} names to review</h2></div>
               </div>
               <ol className={styles.queueList}>
-                {pendingNames.map((name) => <li key={name.id} className={name.id === selectedUnresolvedId ? styles.current : undefined}><button type="button" onClick={() => { setSelectedUnresolvedId(name.id); setAlias(name.raw_name); setSelectedPlayerId(""); setSplitPlayerIds(["", ""]); setMembershipSourceUrl(""); }}>{name.raw_name}{name.team_abbreviation ? <span>{name.team_abbreviation}</span> : null}</button></li>)}
+                {pendingNames.map((name) => <li key={name.id} className={name.id === selectedUnresolvedId ? styles.current : undefined}><button type="button" onClick={() => selectName(name)}>{name.raw_name}<span>{name.team_abbreviation}{getReviewTargetLabel(name) ? ` · ${getReviewTargetLabel(name)}` : ""}{name.metadata?.identityResolved ? " · identity saved" : ""}</span></button></li>)}
               </ol>
               {resolvedNames.length ? <p className={styles.resolvedSummary}>✓ {resolvedNames.length} resolved in this queue</p> : null}
             </aside>
@@ -329,39 +313,40 @@ const PlayerAliasesReview = () => {
             {selectedUnresolved.status !== "pending" ? (
               <p className={styles.resolvedNotice}>✓ This name is already {selectedUnresolved.status}. Select a pending name from the queue to continue.</p>
             ) : null}
+            {savedPlayerNames && <p className={styles.resolvedNotice}>
+              {selectedUnresolved.metadata?.resolutionScope === "occurrence" ? "Identity assigned" : savedPlayerIds.length === 2 ? "Aliases saved" : "Alias saved"} for {savedPlayerNames}.
+              {selectedUnresolved.status === "pending" && selectedUnresolved.metadata?.reviewKind === "missing_membership" ? " Membership still needs review; you do not need to assign these identities again." : ""}
+            </p>}
             <label className={styles.field}>
               Pending name
               <select
                 value={selectedUnresolvedId}
                 onChange={(event) => {
                   const next = unresolvedNames.find((name) => name.id === event.target.value);
-                  setSelectedUnresolvedId(event.target.value);
-                  setAlias(next?.raw_name ?? "");
-                  setSelectedPlayerId(""); setSplitPlayerIds(["", ""]);
-                  setMembershipSourceUrl("");
+                  selectName(next);
                 }}
               >
                 {unresolvedNames.map((name) => (
                   <option key={name.id} value={name.id}>
-                    {name.raw_name} {name.team_abbreviation ? `(${name.team_abbreviation})` : ""}
+                    {name.raw_name} {name.team_abbreviation ? `(${name.team_abbreviation})` : ""} {getReviewTargetLabel(name) ? `· ${getReviewTargetLabel(name)}` : ""}
                   </option>
                 ))}
               </select>
             </label>
 
-            <label className={styles.field}>
+            {!splitMode && !occurrenceMode && <label className={styles.field}>
               Alias to save
               <input
                 value={alias}
                 onChange={(event) => setAlias(event.target.value)}
               />
-            </label>
+            </label>}
 
             <label className={styles.field}>
               Search all players by name or NHL ID
               <input value={playerSearch} onChange={(event) => setPlayerSearch(event.target.value)} />
             </label>
-            {membershipReviewEnabled && <button disabled={lookupBusy || !/^\d{7}$/.test(playerSearch.trim())} onClick={() => void lookupNhlPlayer()}>
+            {!splitMode && !occurrenceMode && membershipReviewEnabled && <button disabled={lookupBusy || !/^\d{7}$/.test(playerSearch.trim())} onClick={() => void lookupNhlPlayer()}>
               {lookupBusy ? "Checking NHL…" : "Look up NHL ID"}
             </button>}
             {lookup && <p>{lookup.fullName} · NHL {lookup.nhlId} · <a href={lookup.sourceUrl} target="_blank" rel="noreferrer">Verified NHL profile</a>.
@@ -370,10 +355,11 @@ const PlayerAliasesReview = () => {
             {playerSearch.trim() && unlinkedProspects.filter((player) => player.canonical_name.toLowerCase().includes(playerSearch.trim().toLowerCase())).slice(0, 20).map((player) => (
               <p key={player.id}>{player.canonical_name} — verified prospect; NHL ID is not linked yet. Enter an NHL ID above to verify the link.</p>
             ))}
-            <p>Team matches appear first. Choosing a player from another team saves an identity alias; it does not change roster membership.</p>
+            {selectedUnresolved.review ? <p>Source date: {selectedUnresolved.review.sourceDate ?? "unknown"} · season: {selectedUnresolved.review.seasonId ?? "unknown"} · recorded team: {selectedUnresolved.team_abbreviation ?? selectedUnresolved.team_id ?? "unknown"}. {selectedUnresolved.review.scopeMessage} {selectedUnresolved.review.preferenceReason}</p> : <p>Current team labels are shown for reference; they do not establish membership at the source date.</p>}
+            {occurrenceMode && !splitMode && <p>This surname has multiple identities. Assign this occurrence only; no blanket surname alias will be learned.</p>}
             {selectedUnresolved.metadata?.reviewKind && <p>Review reason: {selectedUnresolved.metadata.reviewKind.replace(/_/g, " ")}.</p>}
             {selectedUnresolved.metadata?.reviewKind === "invalid_extraction" && <p>This may contain several players or non-player text. <a href="/db/tweet-pattern-review">Review tweet parsing</a> before creating an alias.</p>}
-            <label className={styles.field}>
+            {!splitMode && <label className={styles.field}>
               Match player
               <select
                 aria-label="Match player"
@@ -381,27 +367,31 @@ const PlayerAliasesReview = () => {
                 onChange={(event) => setSelectedPlayerId(event.target.value)}
               >
                 <option value="">Choose a player...</option>
-                {playerOptionsFor(selectedPlayerId).map((player) => (
+                {playerOptionsFor(selectedPlayerId).map((player) => {
+                  const dated = selectedUnresolved.review?.candidates.find((candidate) => candidate.id === player.id);
+                  return (
                   <option key={player.id} value={player.id}>
-                    {player.fullName} · {player.id} {player.position ? `- ${player.position}` : ""} {player.team_id === selectedUnresolved.team_id ? "· team match" : "· verify membership"}
+                    {dated?.fullName ?? player.fullName} · {player.id} {dated ? dated.position ? `- captured position ${dated.position}` : "· captured position unknown" : player.position ? `· current position ${player.position}` : ""} {player.id === selectedUnresolved.review?.preferredPlayerId ? "· source evidence preference" : dated ? "· dated team candidate" : "· verify membership"}
                   </option>
-                ))}
+                  );
+                })}
               </select>
-            </label>
+            </label>}
 
-            {membershipReviewEnabled && <label>
+            {!splitMode && !occurrenceMode && membershipReviewEnabled && <label>
               Verified NHL camp roster URL (optional)
               <input type="url" value={membershipSourceUrl} onChange={(event) => setMembershipSourceUrl(event.target.value)} />
               <span>Supply an NHL.com source only after verifying this player belongs to the reported team’s camp. Saving records camp membership for 30 days and preserves historical rosters.</span>
             </label>}
 
             <div style={{ display: "flex", gap: 12 }}>
-              <button
-                disabled={selectedUnresolved.status !== "pending" || !selectedPlayerId}
+              {!splitMode && <button
+                disabled={selectedUnresolved.status !== "pending" || !selectedPlayerId || Boolean(occurrenceMode && !selectedOccurrence)}
                 onClick={() => void resolveName().catch((error) => setStatusMessage(error.message))}
               >
-                {lookup?.nhlId === Number(selectedPlayerId) ? "Import NHL player and save alias" : membershipSourceUrl.trim() ? "Save alias and camp membership" : "Save alias"}
-              </button>
+                {occurrenceMode ? "Assign this occurrence" : lookup?.nhlId === Number(selectedPlayerId) ? "Import NHL player and save alias" : membershipSourceUrl.trim() ? "Save alias and camp membership" : "Save alias"}
+              </button>}
+              {!splitMode && !occurrenceMode && !lookup && <button disabled={selectedUnresolved.status !== "pending" || !selectedPlayerId || !selectedOccurrence} onClick={() => void resolveName(true).catch((error) => setStatusMessage(error.message))}>Assign this occurrence only</button>}
               <button
                 disabled={selectedUnresolved.status !== "pending"}
                 onClick={() => void ignoreName()}
@@ -409,14 +399,21 @@ const PlayerAliasesReview = () => {
                 Ignore
               </button>
             </div>
-            {selectedUnresolved.status === "pending" && /^\S+-\S+$/.test(selectedUnresolved.raw_name) ? (
+            {selectedUnresolved.status === "pending" && <button type="button" aria-pressed={splitMode} onClick={() => setSplitMode((previous) => !previous)}>
+              {splitMode ? "Assign one player" : "Assign two players"}
+            </button>}
+            {splitMode ? (
               <div className={styles.splitPanel}>
-                <strong>Is this two players?</strong>
-                <p>Choose one player for each side of the hyphen. A split saves both aliases separately.</p>
+                <strong>Assign two separate identities</strong>
+                <p>Enter each player&apos;s alias and choose two different players. Keep compound surnames intact. This saves identity aliases; it does not confirm a lineup or defense pairing. Missing membership remains pending.</p>
                 <div className={styles.splitGrid}>
-                  {selectedUnresolved.raw_name.split("-").map((part, index) => <label className={styles.field} key={part}><span>{part.trim()}</span><select value={splitPlayerIds[index]} onChange={(event) => setSplitPlayerIds((previous) => { const next = [...previous] as [string, string]; next[index] = event.target.value; return next; })}><option value="">Choose player…</option>{playerOptionsFor(splitPlayerIds[index] ?? "").map((player) => <option key={player.id} value={player.id}>{player.fullName} · {player.id}</option>)}</select></label>)}
+                  {[0, 1].map((index) => <div key={index}>
+                    <label className={styles.field}>Alias {index + 1}<input value={splitAliases[index]} onChange={(event) => setSplitAliases((previous) => { const next = [...previous] as [string, string]; next[index] = event.target.value; return next; })} /></label>
+                    <label className={styles.field}>Player {index + 1}<select value={splitPlayerIds[index]} onChange={(event) => setSplitPlayerIds((previous) => { const next = [...previous] as [string, string]; next[index] = event.target.value; return next; })}><option value="">Choose player…</option>{playerOptionsFor(splitPlayerIds[index]).map((player) => <option key={player.id} value={player.id}>{player.fullName} · {player.id}</option>)}</select></label>
+                  </div>)}
                 </div>
-                <button type="button" disabled={splitPlayerIds.some((id) => !id)} onClick={() => void splitName().catch((error) => setStatusMessage(error.message))}>Save as two players</button>
+                {splitPlayerIds[0] && splitPlayerIds[0] === splitPlayerIds[1] && <p role="alert">Choose two different players.</p>}
+                <button type="button" disabled={selectedUnresolved.status !== "pending" || splitPlayerIds.some((id) => !id) || splitPlayerIds[0] === splitPlayerIds[1] || splitAliases.some((value) => !value.trim())} onClick={() => void splitName().catch((error) => setStatusMessage(error.message))}>Save as two players</button>
               </div>
             ) : null}
 
@@ -427,6 +424,8 @@ const PlayerAliasesReview = () => {
                 {selectedUnresolved.tweet_id ?? "No tweet id"}
               </p>
               {selectedReviewSlot ? <p>Review target: {selectedReviewSlot}</p> : null}
+              {selectedOccurrence ? <p>Review occurrence: text line {selectedOccurrence.line}, “{selectedOccurrence.text}”. {selectedOccurrence.basis === "offset" ? "Recorded parser offsets." : selectedOccurrence.basis === "contextual_row" ? "Contextual row fallback; original offsets are unavailable or do not match." : "Unique text match; original offsets are unavailable or do not match."}</p> : <p>No exact occurrence can be selected from this record. {possibleOccurrences.length > 1 ? "Several matching occurrences remain ambiguous; none is highlighted." : "The recorded token or offsets do not match the retained context."}</p>}
+              {!selectedOccurrence && possibleOccurrences.length > 1 && <ul aria-label="Possible unresolved occurrences">{possibleOccurrences.map((occurrence) => <li key={occurrence.start}>Text line {occurrence.line}: {occurrence.row}</li>)}</ul>}
               {selectedUnresolved.source_url ? (
                 <p>
                   <a href={selectedUnresolved.source_url}>Open source tweet</a>

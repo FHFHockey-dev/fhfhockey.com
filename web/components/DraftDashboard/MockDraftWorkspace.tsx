@@ -421,8 +421,8 @@ export default function MockDraftWorkspace({
                   )}
                 </div>
                 <p>
-                  Pro adds scarcity, turn planning, and specialist strategies.{" "}
-                  <a href="/account?section=draft-pro">Explore Draft Pro</a>
+                  Existing Draft Pro accounts include scarcity, turn planning, and specialist strategies. New purchases are closed.{" "}
+                  <a href="/account?section=draft-pro">View existing Draft Pro access</a>
                 </p>
               </section>
             </div>

@@ -10,8 +10,20 @@
 // save % is the pre-change model evaluated on the same pre-game evidence; projected shots and
 // expected goals are pre-game trailing-10 team inputs shared by both models.
 //
+// Two win populations are scored separately (Codex review 7.2): the team win probability against
+// game outcomes (one row per team-game, paired per game), and the goalie's credited W against
+// credited wins, among starts (P(team wins | starts) x decision share) and, from a candidate
+// fixture, among all candidate goalies (unconditional W = P(start) x that + relief share).
+//
+// Candidate fixture (--candidates <file>): one row per candidate goalie per team-game, fields
+//   gameKey, isHome, goalieKey, startProbability x1e4, started, win, evidenceShots, evidenceGoals,
+//   restFlag, projectedShotsAgainst x10, lambdaFor x100, lambdaAgainst x100, leagueSavePct x1e4,
+//   teamWon
+// startProbability is a pre-game value (the fixture says which prior); win is the credited W
+// (a starter's or a reliever's).
+//
 // Usage: NODE_PATH=. npx ts-node --transpile-only --compiler-options '{"module":"commonjs","moduleResolution":"node"}' \
-//   scripts/forge-goalie-backtest.ts <fixture-file> [more fixture files]
+//   scripts/forge-goalie-backtest.ts [<fixture-file> ...] [--candidates <candidate-fixture-file>]
 import fs from "fs";
 
 import {
@@ -19,6 +31,7 @@ import {
   STARTER_DECISION_SHARE,
   goalieConditionalWinProbability,
   goalieRestSavePctAdjustment,
+  goalieWinPopulations,
   posteriorSavePct,
   shutoutProbability,
   teamWinProbability,
@@ -47,7 +60,9 @@ export type GoalieLinePrediction = {
   savePct: number;
   goalsAgainst: number;
   saves: number;
+  /** Goalie population: P(credited with the win | starts). */
   winProbability: number;
+  /** Team population: P(team wins the game); null for the legacy model, which has none. */
   teamWinProbability: number | null;
   shutoutProbability: number;
 };
@@ -215,6 +230,145 @@ export function clusteredBootstrapDiff(rows: BacktestRow[], rowDiff: (row: Backt
   return { point, lo: means[Math.floor(0.025 * reps)], hi: means[Math.floor(0.975 * reps)] };
 }
 
+function rest(flag: number) {
+  return { backToBack: (flag & 1) === 1, startsLast14Days: flag & 4 ? 6 : flag & 2 ? 5 : 0 };
+}
+
+export type CandidateRow = {
+  gameKey: number;
+  isHome: boolean;
+  goalieKey: number;
+  startProbability: number;
+  started: number;
+  win: number;
+  evidenceShots: number;
+  evidenceGoals: number;
+  backToBack: boolean;
+  startsLast14Days: number;
+  projectedShotsAgainst: number;
+  lambdaFor: number;
+  lambdaAgainst: number;
+  leagueSavePct: number;
+  teamWon: number;
+};
+
+export function parseCandidateFixture(text: string): CandidateRow[] {
+  return text
+    .split(";")
+    .map((chunk) => chunk.trim())
+    .filter(Boolean)
+    .map((chunk) => {
+      const f = chunk.split(",").map(Number);
+      if (f.length !== 14 || f.some((v) => !Number.isFinite(v))) {
+        throw new Error(`Malformed candidate fixture row: ${chunk}`);
+      }
+      return {
+        gameKey: f[0],
+        isHome: f[1] === 1,
+        goalieKey: f[2],
+        startProbability: f[3] / 1e4,
+        started: f[4],
+        win: f[5],
+        evidenceShots: f[6],
+        evidenceGoals: f[7],
+        ...rest(f[8]),
+        projectedShotsAgainst: f[9] / 10,
+        lambdaFor: f[10] / 100,
+        lambdaAgainst: f[11] / 100,
+        leagueSavePct: f[12] / 1e4,
+        teamWon: f[13],
+      };
+    });
+}
+
+function probabilitySummary(probabilities: number[], outcomes: number[], bins = 5) {
+  return {
+    n: probabilities.length,
+    brier: brierScore(probabilities, outcomes),
+    logLoss: logLoss(probabilities, outcomes),
+    meanPredicted: probabilities.reduce((s, p) => s + p, 0) / (probabilities.length || 1),
+    observed: outcomes.reduce((s, y) => s + y, 0) / (outcomes.length || 1),
+    reliability: reliabilityBins(probabilities, outcomes, bins),
+  };
+}
+
+/**
+ * Score each win population against its own denominator from a candidate fixture, with the
+ * production composition: P(team wins | starts) moves the team value by the goalie's goals per
+ * shot relative to the team's start-weighted expectation, and goalieWinPopulations adds relief.
+ */
+export function scoreWinPopulations(rows: CandidateRow[], options: NewModelOptions = {}) {
+  const teamGames = new Map<string, CandidateRow[]>();
+  for (const row of rows) {
+    const key = `${row.gameKey}:${row.isHome ? 1 : 0}`;
+    teamGames.set(key, [...(teamGames.get(key) ?? []), row]);
+  }
+  const team = { p: [] as number[], y: [] as number[] };
+  const pairs = new Map<number, number[]>();
+  const starts = { p: [] as number[], y: [] as number[] };
+  const candidates = { p: [] as number[], y: [] as number[] };
+  const startProb = { p: [] as number[], y: [] as number[] };
+  // The misuse the review warns about: a team-level value scored as a candidate's W.
+  const teamValueAsCandidateW = { p: [] as number[], y: [] as number[] };
+  const creditedSums: number[] = [];
+  const creditedOutcomes: number[] = [];
+  let teamGamesWithoutStarterCandidate = 0;
+  for (const group of teamGames.values()) {
+    const first = group[0];
+    const teamWin = teamWinProbability(first.lambdaFor, first.lambdaAgainst, { spreadShrink: options.spreadShrink });
+    team.p.push(teamWin);
+    team.y.push(first.teamWon);
+    pairs.set(first.gameKey, [...(pairs.get(first.gameKey) ?? []), teamWin]);
+    const savePcts = group.map((row) => Math.min(0.94, Math.max(0.85,
+      posteriorSavePct({ shots: row.evidenceShots, goals: row.evidenceGoals, priorMean: row.leagueSavePct,
+        priorShots: options.priorShots ?? GOALIE_SAVE_PCT_PRIOR_SHOTS }) +
+      goalieRestSavePctAdjustment({ isGoalieBackToBack: row.backToBack, startsLast14Days: row.startsLast14Days }))));
+    const mass = group.reduce((s, row) => s + Math.max(0, row.startProbability), 0);
+    const referenceGoalsPerShot = mass > 0
+      ? group.reduce((s, row, i) => s + Math.max(0, row.startProbability) * (1 - savePcts[i]), 0) / mass
+      : 1 - first.leagueSavePct;
+    const populations = goalieWinPopulations(group.map((row, i) => ({
+      goalieId: row.goalieKey,
+      startProbability: row.startProbability,
+      teamWinIfStarts: goalieConditionalWinProbability({ teamWinProbability: teamWin, lambdaFor: row.lambdaFor,
+        lambdaAgainst: row.lambdaAgainst, goalsAgainstRatio: (1 - savePcts[i]) / referenceGoalsPerShot }),
+    })));
+    if (!group.some((row) => row.started === 1)) teamGamesWithoutStarterCandidate += 1;
+    group.forEach((row, i) => {
+      const g = populations.goalies[i];
+      if (row.started === 1) {
+        starts.p.push(g.creditedWinIfStarts);
+        starts.y.push(row.win);
+      }
+      candidates.p.push(g.unconditionalWin);
+      candidates.y.push(row.win);
+      startProb.p.push(Math.min(1, Math.max(0, row.startProbability)));
+      startProb.y.push(row.started);
+      teamValueAsCandidateW.p.push(teamWin);
+      teamValueAsCandidateW.y.push(row.win);
+    });
+    creditedSums.push(populations.goalies.reduce((s, g) => s + g.unconditionalWin, 0));
+    creditedOutcomes.push(Math.min(1, group.reduce((s, row) => s + row.win, 0)));
+  }
+  const sums = [...pairs.values()].filter((v) => v.length === 2).map(([a, b]) => a + b);
+  return {
+    teamWinVsGameOutcome: {
+      population: "team_game",
+      ...probabilitySummary(team.p, team.y),
+      pairedSums: { games: sums.length, min: Math.min(...sums), max: Math.max(...sums) },
+    },
+    goalieWinAmongStarts: { population: "starts", ...probabilitySummary(starts.p, starts.y) },
+    goalieWinAmongCandidates: { population: "candidate_goalie_games", ...probabilitySummary(candidates.p, candidates.y) },
+    startProbability: { population: "candidate_goalie_games", ...probabilitySummary(startProb.p, startProb.y) },
+    teamValueScoredAsCandidateW: { population: "candidate_goalie_games (mismatched)",
+      ...probabilitySummary(teamValueAsCandidateW.p, teamValueAsCandidateW.y) },
+    creditedWinPerTeamGame: { population: "team_game (candidates' credited W summed)",
+      ...probabilitySummary(creditedSums.map((v) => Math.min(1, v)), creditedOutcomes) },
+    teamGames: teamGames.size,
+    teamGamesWithoutStarterCandidate,
+  };
+}
+
 export function scoreModels(rows: BacktestRow[], options: NewModelOptions = {}) {
   const legacy = rows.map(predictLegacy);
   const next = rows.map((row) => predictNew(row, options));
@@ -227,6 +381,8 @@ export function scoreModels(rows: BacktestRow[], options: NewModelOptions = {}) 
     saves: biasRmse(preds.map((p) => p.saves), sv),
     // Save % error on the actual shots isolates the save % model from the shots projection.
     goalsAgainstOnActualShots: biasRmse(preds.map((p, i) => rows[i].shotsAgainst * (1 - p.savePct)), ga),
+    // Goalie population among starts: P(credited W | starts) vs the credited win.
+    winPopulation: "starts",
     winBrier: brierScore(preds.map((p) => p.winProbability), w),
     winLogLoss: logLoss(preds.map((p) => p.winProbability), w),
     winMean: preds.reduce((s, p) => s + p.winProbability, 0) / preds.length,
@@ -240,7 +396,9 @@ export function scoreModels(rows: BacktestRow[], options: NewModelOptions = {}) 
     observed: { winRate: w.reduce((s, v) => s + v, 0) / rows.length, shutoutRate: so.reduce((s, v) => s + v, 0) / rows.length,
       goalsAgainst: ga.reduce((s, v) => s + v, 0) / rows.length },
     legacy: { ...summarize(legacy), pairedWinSums: pairedWinSums(rows, (r) => predictLegacy(r).winProbability) },
-    next: { ...summarize(next), pairedTeamWinSums: pairedWinSums(rows, (r) => predictNew(r, options).teamWinProbability!) },
+    next: { ...summarize(next), pairedTeamWinSums: pairedWinSums(rows, (r) => predictNew(r, options).teamWinProbability!),
+      // Team population: one starter row per team-game, so the denominator is team-games.
+      teamWinVsGameOutcome: probabilitySummary(next.map((p) => p.teamWinProbability!), rows.map((r) => r.teamWon)) },
     deltas: {
       winBrier: clusteredBootstrapDiff(rows, (r) =>
         (predictNew(r, options).winProbability - r.win) ** 2 - (predictLegacy(r).winProbability - r.win) ** 2),
@@ -252,10 +410,18 @@ export function scoreModels(rows: BacktestRow[], options: NewModelOptions = {}) 
   };
 }
 
-function main(paths: string[]) {
+function main(argv: string[]) {
+  const round = (_key: string, value: unknown) => (typeof value === "number" ? Number(value.toFixed(5)) : value);
+  const flag = argv.indexOf("--candidates");
+  const paths = flag >= 0 ? argv.filter((_, i) => i !== flag && i !== flag + 1) : argv;
+  if (flag >= 0) {
+    if (!argv[flag + 1]) throw new Error("--candidates needs a file");
+    const candidates = parseCandidateFixture(fs.readFileSync(argv[flag + 1], "utf8"));
+    console.log(JSON.stringify({ populations: scoreWinPopulations(candidates) }, round, 2));
+    if (!paths.length) return;
+  }
   if (!paths.length) throw new Error("Pass one or more fixture files");
   const rows = paths.flatMap((p) => parseFixture(fs.readFileSync(p, "utf8")));
-  const round = (_key: string, value: unknown) => (typeof value === "number" ? Number(value.toFixed(5)) : value);
   console.log(JSON.stringify({ production: scoreModels(rows) }, round, 2));
   const variants: Record<string, NewModelOptions> = {
     k3400: { priorShots: 3400 }, k11000: { priorShots: 11000 },

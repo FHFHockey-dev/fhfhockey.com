@@ -183,7 +183,36 @@ Wave-A parents 3.1–3.5 remain open. Imported parity is unchanged at
 `5,104/5,176` with 72 open. No runtime, database, provider, deployment, push,
 build, writer, repair, backfill, credential, analytics, or Yahoo state changed.
 
-## Current completion roll-up (authoritative 2026-08-04)
+## Current completion roll-up (authoritative 2026-10-17)
+
+This section supersedes the 2026-08-04 roll-up below. It follows the read-only 2026-10-17 completion audit ([`AUDIT-REPORT.md`](../../artifacts/super-goal-audit-2026-10-17/AUDIT-REPORT.md), worker files `findings/G1…G8`) and the documentation reconciliation recorded in the [master task list](tasks-prd-fhfh-comprehensive-completion-audit-optimization.md) overlay and diary Entry 0998. Older sections remain append-only evidence.
+
+### Repository totals (2026-10-17)
+
+| Ledger | Checked | Total | Open | Evidence |
+| --- | ---: | ---: | ---: | --- |
+| Imported raw source claims | 5,009 | 5,135 | 126 | 76 source sections; `ledger_parity.py` reports 0 state mismatches and 0 source-only rows |
+| Imported actionable claims | 5,009 | 5,129 | 120 | Six fenced rule examples excluded; adds 27 open mirrored October rows and 44 open audit NEW rows to the prior 49 |
+| Mechanical master control plane | 5,117 | 5,302 | 185 | Direct recount of every checkbox in the master task list |
+
+The 185 open master rows are the 120 imported actionable rows plus 65 others: the six template examples, 58 master control rows (18 previously open plus 40 reopened) and NEW-028. NEW-029 (control-plane drift) is closed by this reconciliation. No denominator was reduced.
+
+### What changed
+
+| Change | Detail |
+| --- | --- |
+| Audit findings | 46 contradicted and 44 regressed verdicts became 44 open source NEW rows (7 P1, 24 P2, 13 P3) plus master NEW-028 (P2 security matrix). Superseded historical rows stay checked with a `Superseded by 2026-10-17 audit row …` note. |
+| P1 rows | cron failed-jobs NEW 6.0 (baselines partial writes unreported), cron-NST NEW 73.0 (job 374 order), rolling pass-two NEW 7.0 (Trends reads compacted-null fields), projection-model NEW 6.0 and Start Chart NEW 18.0 (native-input label gate, octoberBranch release risk), Sustainability Barometer NEW 17.0 (score chain covers players 0-249) and DRM NEW 86.0 (same-name Yahoo collision fails `update-shift-charts`). |
+| Mirrored rows | 58 Start Chart (10 open), 19 projection-model OCT11/OCT14 (15 open), 1 NST (open), 1 prediction-engine (open) and the indentation-hidden cleanup C0137 row; 58 rewritten plus 3 drifted rows re-synced. |
+| Reopened master rows (40) | 3.7, 3.9, 3.14, 3.15, 4.2, 4.5, 4.6, 4.7, 4.10, 4.11, 4.15, 5.1, 5.1.1, 5.1.2, 5.1.3, 5.2, 5.2.2, 5.2.3, 5.2.6, 5.2.7, 5.3, 5.3.2, 5.3.4, 5.4, 5.4.1, 5.4.3, 5.4.6, 5.7.4, 5.7.6, 5.7.9, 5.7.12, 5.7.19, 5.7.20, 5.7.21, 5.7.23, 5.7.24, 5.7.26, 5.7.27, 6.2, 6.3. |
+| Corrected counts | 3.11 → 83/83; 3.14 → 231/231 before the new rows; 3.15 → 171/171; 3.16 → 48/48; 4.9 → 65/72; 4.13 → 99/111 (now 99/112), 210-second coordinator budget and 55 + 27 cron inventory; 5.1/5.1.1 live cron 58 active vs inventory 55 and 27 Vercel crons; 5.4/5.4.2 runner 1,054 lines. 6.5 and 7.1 evidence marked stale. |
+| Not tracked here | Native FORGE daily pipeline, catalog head, walk-forward closure, RSO acceptance and the Start Chart consumer: see `tasks/master-reconciliation-2026-10-17/REGISTER.md` and `tasks/prd-forge-daily-pipeline.md`. |
+
+### Wave-B roll-up (2026-10-17)
+
+B-CRON-NST 75/78, B-SUST-BAR 95/97, B-SUST-AUD 51/58, B-GAMEGRID 38/38, B-SKO 70/71, B-START 103/116, B-FORGE-COMBO 39/40, B-XG-EX 16/16, B-YAHOO 65/72, B-DRAFT-STYLE 56/57, B-CLEAN 158/159, B-DEAD 44/44, B-DRM 99/112, B-SKO-BURN 6/6, B-TRENDS 53/54.
+
+## Completion roll-up (historical 2026-08-04; superseded by the 2026-10-17 roll-up above)
 
 This section is the current summary for the active control plane. Older initiative and checkpoint sections below remain append-only evidence and are not used as current totals.
 
@@ -953,7 +982,7 @@ All charter questions remain open until source/master synchronization, Wave A/B 
 
 ### Current migration source authority (2026-08-29)
 
-Current canonical migration authority: [`migration-authority.json`](../repository-audit-remediation/migration-authority.json) (72 source-authorized records; 51 applied by exact Production-ledger receipt; 19 deployment state unknown). Two migrations remain pending: mock-draft ADP behind disabled rollout flags (2026-09-17), and the local FORGE execution fence under its existing hosted-apply and forecast-release gates.
+Current canonical migration authority: [`migration-authority.json`](../repository-audit-remediation/migration-authority.json) (99 source-authorized records; 66 applied by exact Production-ledger receipt; 28 deployment state unknown). On 2026-10-21, by explicit approval, the unused support-payload GIN index drop (order 91, ledger version 20261021145154) was recorded after the same drop had been run directly to unblock the rolling pipeline, and the projection-results source-run fence (order 92, ledger version 20261021165413) was applied after release R15, aligning the accuracy RPC's latest-run check with the readers' release and horizon-1 fence. The same day, also by explicit approval, the rolling-table autovacuum tuning (order 93, ledger version 20261021172444, after a one-time ANALYZE) and the duplicate idx_rpgm_player_date drop (order 94, ledger version 20261021172445) were applied. Also by explicit approval that day, the read-only FORGE latest-rolling-row function forge_latest_rolling_rows (order 95, ledger version 20261021182129) was applied; the reader falls back to its legacy window scan where the function is absent. After release R17 shipped the writer that omits them, the 491 unread rolling_player_game_metrics columns were dropped (order 96, ledger version 20261021185034), by explicit approval. The S-B served-forecast ledger table and its scoreboard view (order 97, ledger version 20261021230025) were applied by explicit approval before release R19. On 2026-10-22, also by explicit approval, the route runner queue tables (order 98, ledger version 20261022133743) were applied before release R21, and the served-forecast ledger market source (order 99, ledger version 20261022181002, FORGE task 6.3) was applied before its LEDGER_MARKET_ENABLED release. Five migrations remain pending: mock-draft ADP behind disabled rollout flags (2026-09-17), the local FORGE execution fence under its existing hosted-apply and forecast-release gates, the 2026-10-20 read-only FORGE league skater physical totals function (order 88), and the two 2026-10-20 D4 Data API grant migrations (order 89 revokes the replayed future-object default privileges; order 90 narrows the reviewed objects to caller-traced least-privilege grants), each awaiting a separate hosted-apply approval. The 2026-10-19 opponent skater-allowed-by-position materialized view (order 87, ledger version 20261019211444) was applied by explicit approval, with its 09:42 UTC refresh cron registered. On 2026-10-19, by explicit approval, the raw shift-occurrence preservation (file 20261011115124, ledger version 20261019172738) and the projection HTML shift-report capture widening (order 86, ledger version 20261019172842) were applied in that order. The two drafted on 2026-10-18 were applied on 2026-10-19 by explicit approval: the provider-linkage browser-write revocation (ledger version 20261019052934) and the private token-vault restore for fresh replays (ledger version 20261019053348, re-stating definitions identical to hosted). The native FORGE catalog head was applied on 2026-10-17 (ledger version 20261017183611) without any head selection or activation. The 2026-10-12 repository reconciliation records ten already-retained source migrations without claiming hosted application or authorizing migration execution.
 
 That hash-and-order ledger is the sole current authority for active
 `supabase/migrations/*.sql` files. “Source-authorized” means reviewed repository

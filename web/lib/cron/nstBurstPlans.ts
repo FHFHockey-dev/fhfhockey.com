@@ -165,10 +165,11 @@ export function resolveNstGamelogRequestPlan(options: {
   queuedDates: number;
   requestCount: number;
 }) {
-  return resolveSharedSmallDateBurstPlan({
-    jobName: "update-nst-gamelog",
-    queuedDates: options.queuedDates,
-    requestCount: options.requestCount,
-    safeIntervalMs: NST_SAFE_INTERVAL_MS
-  });
+  // requestCount covers the complete job; dispatch enforces shared headroom.
+  const burstAllowed = canBurstNstRequests(options.requestCount);
+  return {
+    ...options,
+    burstAllowed,
+    requestIntervalMs: burstAllowed ? 0 : NST_SAFE_INTERVAL_MS
+  };
 }

@@ -146,6 +146,7 @@ describe("/api/v1/db/update-wgo-goalies", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.useRealTimers();
   });
 
   it("returns and audits a structured error when bulk and row retry writes both fail", async () => {
@@ -622,6 +623,88 @@ describe("/api/v1/db/update-wgo-goalies", () => {
       },
     });
   });
+
+  it.each(["all", "incremental"])(
+    "recovers a partial date on a second %s invocation without duplicate goalie games",
+    async (mode) => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date(2026, 0, 2, 12));
+      seasonMaybeSingleMock.mockResolvedValue({
+        data: { id: 20252026, startDate: "2026-01-01", endDate: "2026-06-30" },
+        error: null,
+      });
+      // Model the existing DB primary key, not an append-only write receipt.
+      const storedRows = new Map<string, any>();
+      const originalFrom = fromMock.getMockImplementation()!;
+      fromMock.mockImplementation((table: string) => {
+        if (table !== "wgo_goalie_stats") return originalFrom(table);
+        return {
+          upsert: wgoUpsertMock,
+          delete: () => ({ eq: wgoDeleteEqMock }),
+          select: () => ({
+            eq: (_column: string, date: string) => ({
+              limit: async () => ({
+                data: [...storedRows.values()].filter((row) => row.date === date),
+                error: null,
+              }),
+            }),
+            order: () => ({
+              limit: () => ({
+                maybeSingle: async () => ({
+                  data: [...storedRows.values()]
+                    .sort((a, b) => b.date.localeCompare(a.date))[0] ?? null,
+                  error: null,
+                }),
+              }),
+            }),
+          }),
+        };
+      });
+      let failSecondGame = true;
+      wgoUpsertMock.mockImplementation(async (input: any | any[]) => {
+        const rows = Array.isArray(input) ? input : [input];
+        if (failSecondGame && rows.some((row) => row.goalie_id === 8478403)) {
+          return { data: null, error: { code: "fixture", message: "second game write failed" } };
+        }
+        for (const row of rows) storedRows.set(`${row.goalie_id}:${row.date}`, row);
+        return { data: null, error: null };
+      });
+      fetchMock.mockImplementation(async (url: string) => ({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          data: url.includes("/goalie/summary?") && url.includes("2026-01-01")
+            ? [
+                { playerId: 8478402, goalieFullName: "First Game", gameId: 2025020001 },
+                { playerId: 8478403, goalieFullName: "Second Game", gameId: 2025020002 },
+              ]
+            : [],
+        }),
+      }));
+      const query = mode === "all" ? { action: "all" } : { runMode: "incremental" };
+      const req = { method: "GET", query, url: "/api/v1/db/update-wgo-goalies" } as any;
+      const firstRes = createMockRes();
+      await handler(req, firstRes);
+      expect(firstRes.statusCode).toBe(500);
+      expect(firstRes.body).toMatchObject({ persistedRows: 1, failedRows: 1 });
+      expect([...storedRows.values()].map((row) => row.game_id)).toEqual([2025020001]);
+
+      failSecondGame = false;
+      const secondRes = createMockRes();
+      await handler(req, secondRes);
+      expect(secondRes.statusCode).toBe(200);
+      expect(secondRes.body).toMatchObject({
+        success: true,
+        data: { startDate: "2026-01-01", totalUpdates: 2 },
+      });
+      expect(storedRows.size).toBe(2);
+      expect([...storedRows.values()].map((row) => row.game_id)).toEqual([2025020001, 2025020002]);
+      expect(wgoUpsertMock).toHaveBeenCalledTimes(4);
+      expect(wgoDeleteEqMock).not.toHaveBeenCalled();
+      expect(auditInsertMock.mock.calls[0][0][0]).toMatchObject({ status: "error", rows_affected: 1 });
+      expect(auditInsertMock.mock.calls[1][0][0]).toMatchObject({ status: "success", rows_affected: 2 });
+    },
+  );
 
   it("fails a later required source page without writing an accumulated partial batch", async () => {
     const firstSummaryPage = Array.from({ length: 100 }, (_, index) => ({

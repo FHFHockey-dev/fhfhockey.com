@@ -469,3 +469,19 @@ $page-max-width: 1600px;
     flex-direction: column;
   }
 }
+
+// Team explorer messages sit on the dark section panel; these tokens keep them
+// at readable contrast there (the former #8a1c1c/#8a5a00/#555 measured ~2:1).
+.explorerAlert {
+  color: v.$danger-color;
+}
+
+.explorerNotice {
+  margin-bottom: 8px;
+  color: v.$warning-color;
+}
+
+.explorerSummary {
+  margin-bottom: 16px;
+  color: v.$text-secondary;
+}

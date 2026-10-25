@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { createHash } from "node:crypto";
 
 import {
   acquireProjectionPipelineLease,
@@ -29,14 +30,16 @@ export type RollingForgeStageState = {
   cursorGameId: number | null;
   lastError: string | null;
   leaseExpiresAt: string | null;
+  leaseOwner?: string | null;
   updatedAt: string | null;
 };
 
-// A stage handed over at the end of an invocation (partial) keeps a lease
-// this short; a lease still longer than this when it expires belonged to an
-// invocation that died.
+// A partial stage releases its lease with an explicit resumable marker.
 export const ROLLING_FORGE_HANDOFF_LEASE_MS = 30_000;
-const DEAD_LEASE_MIN_SPAN_MS = 2 * ROLLING_FORGE_HANDOFF_LEASE_MS;
+const HANDOFF_CODE = "stage_handoff";
+export const NST_PERSISTENCE_UNCONFIRMED = "nst_persistence_unconfirmed";
+export class RollingForgeStageReviewRequiredError extends Error {}
+
 
 const FAILURE_ATTEMPT_PATTERN = /^stage_failed:attempt-(\d+)$/;
 
@@ -60,14 +63,14 @@ export function readRollingForgeStageFailedAttempts(
   state: RollingForgeStageState | undefined
 ) {
   if (state?.status !== "failed") return 0;
+  if (state.lastError === HANDOFF_CODE) return 0;
   const match = FAILURE_ATTEMPT_PATTERN.exec(state.lastError ?? "");
   return match ? Number(match[1]) : 1;
 }
 
 /**
- * True when the row is `running`, its lease has expired, and that lease was
- * not the short hand-off lease of a partial stage: the invocation holding it
- * died.
+ * Checkpoints do not change ownership. Any expired running lease is dead;
+ * deliberate handoffs are explicitly marked failed/resumable instead.
  */
 export function isRollingForgeStageLeaseDead(
   state: RollingForgeStageState | undefined,
@@ -76,15 +79,12 @@ export function isRollingForgeStageLeaseDead(
   if (state?.status !== "running" || !state.leaseExpiresAt) return false;
   const expiresAt = Date.parse(state.leaseExpiresAt);
   if (!Number.isFinite(expiresAt) || expiresAt > nowMs) return false;
-  const updatedAt = state.updatedAt ? Date.parse(state.updatedAt) : NaN;
-  return !Number.isFinite(updatedAt) || expiresAt - updatedAt > DEAD_LEASE_MIN_SPAN_MS;
+  return true;
 }
 
 /**
- * Invocations that died holding a stage are counted on a companion row,
- * `<stage id>:kills`, because taking the stage again clears its last_error.
- * The count lives in the companion's forward-only cursor_game_id; its
- * last_error carries the same number for operators.
+ * Preserve the legacy aggregate count. New kills have one durable receipt
+ * per lease owner, so racing/replayed observers cannot count a death twice.
  */
 function buildRollingForgeStageKillsKey(stageId: RollingForgePipelineStageId) {
   return `${stageId}:kills`;
@@ -94,44 +94,40 @@ export function readRollingForgeStageKills(
   states: Map<string, RollingForgeStageState>,
   stageId: RollingForgePipelineStageId
 ) {
-  return states.get(buildRollingForgeStageKillsKey(stageId))?.cursorGameId ?? 0;
+  const legacy = states.get(buildRollingForgeStageKillsKey(stageId))?.cursorGameId ?? 0;
+  const prefix = `${stageId}:kill:`;
+  return legacy + [...states.keys()].filter(key => key.startsWith(prefix) && /^[a-f0-9]{24}$/.test(key.slice(prefix.length))).length;
 }
 
-/** Records one more dead invocation for the stage; returns the new count. */
+/** Creating the owner-keyed receipt is the accounting commit. Completion is housekeeping;
+ * even a recorder killed immediately after acquisition leaves exactly one counted receipt. */
 export async function recordRollingForgeStageKill(args: {
   supabase: SupabaseClient<Database>;
   scopeKey: string;
   stageId: RollingForgePipelineStageId;
   runDate: string;
+  expiredLeaseOwner: string | null;
 }): Promise<number> {
+  if (!args.expiredLeaseOwner) throw new Error("Expired stage lease has no owner identity");
   const now = new Date();
+  const ownerKey = createHash("sha256").update(args.expiredLeaseOwner).digest("hex").slice(0, 24);
   const lease = await acquireProjectionPipelineLease({
     supabase: args.supabase,
     pipelineKey: ROLLING_FORGE_RUN_PIPELINE_KEY,
     scopeKey: args.scopeKey,
-    operationKey: buildRollingForgeStageKillsKey(args.stageId),
+    operationKey: `${args.stageId}:kill:${ownerKey}`,
     rangeStartDate: args.runDate,
     rangeEndDate: args.runDate,
     initialCursorDate: args.runDate,
     leaseMs: 30_000,
     now
   });
-  const kills = (lease.cursorGameId ?? 0) + 1;
-  const advanced = await advanceProjectionPipelineLease({
+  if (lease.status === "running") await finishProjectionPipelineLease({
     supabase: args.supabase,
     lease,
-    nextCursorDate: lease.cursorDate ?? args.runDate,
-    nextCursorGameId: kills,
-    leaseMs: 30_000,
-    now
+    outcome: "complete"
   });
-  await finishProjectionPipelineLease({
-    supabase: args.supabase,
-    lease: advanced,
-    outcome: "failed",
-    failureCode: buildRollingForgeStageKilledCode(kills)
-  });
-  return kills;
+  return readRollingForgeStageKills(await readRollingForgeRunState(args), args.stageId);
 }
 
 export async function readRollingForgeRunState(args: {
@@ -140,7 +136,7 @@ export async function readRollingForgeRunState(args: {
 }): Promise<Map<string, RollingForgeStageState>> {
   const { data, error } = await args.supabase
     .from("projection_pipeline_state")
-    .select("operation_key,status,cursor_game_id,last_error,lease_expires_at,updated_at")
+    .select("operation_key,status,cursor_game_id,last_error,lease_owner,lease_expires_at,updated_at")
     .eq("pipeline_key", ROLLING_FORGE_RUN_PIPELINE_KEY)
     .eq("scope_key", args.scopeKey);
   if (error) {
@@ -161,6 +157,7 @@ export async function readRollingForgeRunState(args: {
       cursorGameId:
         row.cursor_game_id == null ? null : Number(row.cursor_game_id),
       lastError: typeof row.last_error === "string" ? row.last_error : null,
+      leaseOwner: typeof row.lease_owner === "string" ? row.lease_owner : null,
       leaseExpiresAt:
         typeof row.lease_expires_at === "string" ? row.lease_expires_at : null,
       updatedAt: typeof row.updated_at === "string" ? row.updated_at : null
@@ -186,23 +183,38 @@ export function acquireRollingForgeStage(args: {
     rangeEndDate: args.runDate,
     initialCursorDate: args.runDate,
     leaseMs: Math.max(30_000, args.leaseExpiresAtMs - now.getTime()),
-    now
+    now,
+    assertResumable: args.stageId === "upstream_skater_sources" ? (current) => {
+      if (current.status === "failed" && current.lastError === NST_PERSISTENCE_UNCONFIRMED) {
+        throw new RollingForgeStageReviewRequiredError("NST persistence is unconfirmed; the durable review hold cannot be reacquired.");
+      }
+      // A running row is durable pre-call intent. Without an acknowledged
+      // handoff, even an expired owner may have written data or lost its hold.
+      // Refuse all running takeovers, including expiry between this read and CAS.
+      if (current.status === "running") {
+        const expiresAt = Date.parse(current.leaseExpiresAt ?? "");
+        if (Number.isFinite(expiresAt) && expiresAt > now.getTime()) {
+          throw new Error("PROJECTION_PIPELINE_LEASE_HELD");
+        }
+        throw new RollingForgeStageReviewRequiredError("NST invocation ended without an acknowledged handoff; inspect persistence before retrying.");
+      }
+    } : undefined
   });
 }
 
 /**
  * Stores a stage's cursor. Without `leaseExpiresAtMs` this is the hand-off
- * of a partial stage: the lease is released shortly after. With it, the
+ * of a partial stage: the lease is explicitly released. With it, the
  * invocation keeps the stage (a chunk finished mid-stage).
  */
-export function advanceRollingForgeStage(args: {
+export async function advanceRollingForgeStage(args: {
   supabase: SupabaseClient<Database>;
   lease: ProjectionPipelineLease;
   cursorGameId: number | null;
   leaseExpiresAtMs?: number;
 }) {
   const now = new Date();
-  return advanceProjectionPipelineLease({
+  const advanced = await advanceProjectionPipelineLease({
     supabase: args.supabase,
     lease: args.lease,
     nextCursorDate: args.lease.cursorDate ?? args.lease.rangeStartDate,
@@ -213,6 +225,9 @@ export function advanceRollingForgeStage(args: {
         : Math.max(ROLLING_FORGE_HANDOFF_LEASE_MS, args.leaseExpiresAtMs - now.getTime()),
     now
   });
+  return args.leaseExpiresAtMs == null
+    ? finishProjectionPipelineLease({ supabase: args.supabase, lease: advanced, outcome: "failed", failureCode: HANDOFF_CODE })
+    : advanced;
 }
 
 export function finishRollingForgeStage(args: {
@@ -220,6 +235,7 @@ export function finishRollingForgeStage(args: {
   lease: ProjectionPipelineLease;
   outcome: "complete" | "failed";
   attempt?: number;
+  failureCode?: string;
 }) {
   return finishProjectionPipelineLease({
     supabase: args.supabase,
@@ -227,7 +243,7 @@ export function finishRollingForgeStage(args: {
     outcome: args.outcome,
     failureCode:
       args.outcome === "failed"
-        ? buildRollingForgeStageFailureCode(args.attempt ?? 1)
+        ? args.failureCode ?? buildRollingForgeStageFailureCode(args.attempt ?? 1)
         : undefined
   });
 }

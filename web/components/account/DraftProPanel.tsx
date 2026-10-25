@@ -66,10 +66,6 @@ function formatEasternDate(value: string | null) {
   return Number.isNaN(date.getTime()) ? "Unavailable" : date.toLocaleDateString("en-US", { timeZone: "America/New_York", month: "long", day: "numeric", year: "numeric" });
 }
 
-function checkoutUnavailableReason(reason: string) {
-  return ({ checkout_disabled: "Checkout is not available right now.", stripe_not_configured: "Checkout is not configured yet.", site_url_not_configured: "Checkout is not configured yet.", pass_expired: "This Draft Pro pass is no longer available.", already_eligible: "Draft Pro is already active for this account." } as Record<string, string>)[reason] ?? "Checkout is unavailable right now.";
-}
-
 // Server, browser and parser error text can carry configuration, database or
 // identity details, so the panel shows only its own authored copy.
 class PanelMessage extends Error {}
@@ -108,7 +104,6 @@ export default function DraftProPanel() {
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [patreonAction, setPatreonAction] = useState<"refresh" | "connect" | null>(null);
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutState, setCheckoutState] = useState<"idle" | "waiting" | "confirming" | "confirmed" | "ineligible" | "cancelled">("idle");
   const [checkoutRetryAvailable, setCheckoutRetryAvailable] = useState(false);
   const [accessCode, setAccessCode] = useState("");
@@ -168,7 +163,6 @@ export default function DraftProPanel() {
       setCheckoutRetryAvailable(false);
       setSubmitting(false);
       setPatreonAction(null);
-      setCheckoutLoading(false);
       setAccount(null);
       setPurchaseId("");
       setReason("other");
@@ -322,55 +316,6 @@ export default function DraftProPanel() {
     }
   }
 
-  async function startCheckout() {
-    const accountEpoch = accountEpochRef.current;
-    cancelCheckoutVerification();
-    setCheckoutLoading(true);
-    setFeedback(null);
-    try {
-      const session = (await supabase.auth.getSession()).data.session;
-      if (!session?.access_token) throw new PanelMessage("Sign in before purchasing Draft Pro.");
-      const identity = session.user?.id ?? null;
-      if (!checkoutMountedRef.current || accountEpoch !== accountEpochRef.current || identity !== accountIdentityRef.current) return;
-      const response = await fetch("/api/v1/account/draft-pro/checkout", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      });
-      const body = await response.json().catch(() => ({}));
-      if (!checkoutMountedRef.current || accountEpoch !== accountEpochRef.current || identity !== accountIdentityRef.current) return;
-      if (!response.ok) {
-        throw new PanelMessage(response.status === 401
-          ? "Sign in before purchasing Draft Pro."
-          : response.status === 429
-            ? "Too many checkout attempts. Wait a minute, then try again."
-            : checkoutFailed);
-      }
-      if (typeof body.url === "string") {
-        window.location.assign(body.url);
-        return;
-      }
-      if (body.state === "waiting" || body.state === "confirming") {
-        setCheckoutState(body.state);
-        setCheckoutRetryAvailable(true);
-        setFeedback("Checkout is still open or confirming. Refresh your account access after completing payment.");
-        setCheckoutLoading(false);
-        return;
-      }
-      if (body.alreadyPurchased) {
-        await loadAccount();
-        if (!checkoutMountedRef.current || accountEpoch !== accountEpochRef.current || identity !== accountIdentityRef.current) return;
-        setCheckoutLoading(false);
-        return;
-      }
-      throw new Error("Checkout could not be started.");
-    } catch (checkoutError) {
-      if (checkoutMountedRef.current && accountEpoch === accountEpochRef.current) {
-        setFeedback(panelMessage(checkoutError, checkoutFailed));
-        setCheckoutLoading(false);
-      }
-    }
-  }
-
   const verifyCheckout = useCallback(async (sessionId: string, attempt = 0, epoch = checkoutEpochRef.current) => {
     const isCurrent = () => checkoutMountedRef.current && epoch === checkoutEpochRef.current;
     if (!isCurrent()) return;
@@ -433,17 +378,16 @@ export default function DraftProPanel() {
 
   const openRefundPurchaseIds = new Set(account.refundRequests.filter((request) => ["open", "reviewing"].includes(request.status)).map((request) => request.purchaseId));
   const canRequest = Boolean(selectedPurchase?.refundEligibility.eligible && !openRefundPurchaseIds.has(selectedPurchase.id));
-  const checkoutAvailability = account.checkoutAvailability ?? { available: false, reason: "checkout_disabled" };
-  const passInfo = account.passInfo ?? { priceCents: 599, expiresAt: "2027-07-01T04:00:00.000Z", renewal: "none" as const };
   return <section className={styles.panel} aria-labelledby="draft-pro-panel-title">
     <div className={styles.heading}><div><p className={styles.eyebrow}>Account access</p><h2 id="draft-pro-panel-title">Draft Pro</h2></div><span className={account.access.eligible ? styles.active : styles.inactive}>{account.access.eligible ? "Active" : "Inactive"}</span></div>
     <p className={styles.summary}>{account.access.eligible ? `Access from ${account.access.grantingSources.join(" and ")}.` : "Your retained Draft Pro work is locked while access is inactive."} No automatic renewal.</p>
     {account.access.capabilities?.includes("god_view") ? <p>God View — upcoming picks and team roster openings — is included in your season pass.</p> : null}
     {accessCodeState === "success" && accessCodeMessage ? <p className={styles.successNotice} role="status">{accessCodeMessage}</p> : null}
     {checkoutState !== "idle" ? <div className={styles.notice} role="status"><p>{checkoutState === "waiting" ? "Checking payment status…" : checkoutState === "confirming" ? "Payment is confirming with Stripe." : checkoutState === "confirmed" ? "Draft Pro access is confirmed." : checkoutState === "cancelled" ? "Checkout was cancelled. Your free draft remains available." : "Your purchase could not be confirmed yet. Try refreshing this page or contact support if payment was completed."}</p>{checkoutRetryAvailable ? <div className={styles.actions}><button type="button" onClick={() => { const sessionId = checkoutVerificationRef.current; if (sessionId) { cancelCheckoutVerification(); void verifyCheckout(sessionId, 0, checkoutEpochRef.current); } else void loadAccount(); }}>Check purchase status again</button></div> : null}</div> : null}
-    {!account.access.eligible ? <><div className={styles.actions}>{checkoutAvailability.available ? <button type="button" className={styles.premiumButton} onClick={() => void startCheckout()} disabled={checkoutLoading}>{checkoutLoading ? "Opening checkout…" : `Get Draft Pro — $${(passInfo.priceCents / 100).toFixed(2)} one-time`}</button> : <span className={styles.notice}>{checkoutUnavailableReason(checkoutAvailability.reason)}</span>}<span className={styles.notice}>One-time access through {formatEasternDate(passInfo.expiresAt)} (Eastern). No automatic renewal.</span></div><form className={styles.accessCodeForm} onSubmit={redeemAccessCode} aria-labelledby="draft-pro-access-code-title"><h3 id="draft-pro-access-code-title">Have an access code?</h3><p>Enter your purchase recovery code or a complimentary code. Codes work only with the account they belong to.</p><label htmlFor="draft-pro-access-code">Draft Pro access code</label><div className={styles.accessCodeRow}><input id="draft-pro-access-code" name="code" type="text" autoComplete="off" inputMode="text" minLength={20} maxLength={200} value={accessCode} onChange={(event) => setAccessCode(event.target.value)} disabled={accessCodeState === "submitting"} /><button type="submit" disabled={accessCodeState === "submitting"}>{accessCodeState === "submitting" ? "Redeeming…" : "Redeem code"}</button></div>{accessCodeState === "error" && accessCodeMessage ? <p className={styles.errorNotice} role="alert">{accessCodeMessage}</p> : null}</form></> : null}
-    <p className={styles.muted}>Pass price excludes applicable tax. <a href="/draft-pro/policies#terms">Terms</a> · <a href="/draft-pro/policies#privacy">Privacy</a> · <a href="/draft-pro/policies#refunds">Refund requests</a> · <a href="mailto:tim@fhfhockey.com">Support</a></p>
-    <div><h3>Available with Draft Pro</h3>{account.availableFeatures?.some((feature) => featureLabels[feature]) ? <ul>{account.availableFeatures.filter((feature) => featureLabels[feature]).map((feature) => <li key={feature}>{featureLabels[feature]}</li>)}</ul> : <p>No premium capabilities are currently available. Free manual drafting remains available.</p>}<p className={styles.muted}>Yahoo sync is planned, with no guaranteed launch date. Features released before this pass expires are included.</p></div>
+    <p className={styles.notice}>New Draft Pro purchases are closed. Existing access, saved work and purchase recovery remain available.</p>
+    {!account.access.eligible ? <><form className={styles.accessCodeForm} onSubmit={redeemAccessCode} aria-labelledby="draft-pro-access-code-title"><h3 id="draft-pro-access-code-title">Have an access code?</h3><p>Enter your purchase recovery code or a complimentary code. Codes work only with the account they belong to.</p><label htmlFor="draft-pro-access-code">Draft Pro access code</label><div className={styles.accessCodeRow}><input id="draft-pro-access-code" name="code" type="text" autoComplete="off" inputMode="text" minLength={20} maxLength={200} value={accessCode} onChange={(event) => setAccessCode(event.target.value)} disabled={accessCodeState === "submitting"} /><button type="submit" disabled={accessCodeState === "submitting"}>{accessCodeState === "submitting" ? "Redeeming…" : "Redeem code"}</button></div>{accessCodeState === "error" && accessCodeMessage ? <p className={styles.errorNotice} role="alert">{accessCodeMessage}</p> : null}</form></> : null}
+    <p className={styles.muted}><a href="/draft-pro/policies#terms">Terms</a> · <a href="/draft-pro/policies#privacy">Privacy</a> · <a href="/draft-pro/policies#refunds">Refund requests</a> · <a href="mailto:tim@fhfhockey.com">Support</a></p>
+    <div><h3>Available with Draft Pro</h3>{account.availableFeatures?.some((feature) => featureLabels[feature]) ? <ul>{account.availableFeatures.filter((feature) => featureLabels[feature]).map((feature) => <li key={feature}>{featureLabels[feature]}</li>)}</ul> : <p>No premium capabilities are currently available. Free manual drafting remains available.</p>}<p className={styles.muted}>Existing Draft Pro access continues under its original terms.</p></div>
     <dl className={styles.details}><div><dt>Access expires</dt><dd>{formatEasternDate(account.access.expiresAt)} (Eastern)</dd></div><div><dt>Verified</dt><dd>{formatDate(account.access.verifiedAt)}</dd></div><div><dt>Patreon status</dt><dd>{account.access.grantingSources.includes("patreon") ? "Granting access" : "Not granting access"}</dd></div></dl>
     <div className={styles.actions}><button type="button" onClick={() => void patreonActionRequest("refresh")} disabled={Boolean(patreonAction)}>{patreonAction === "refresh" ? "Refreshing…" : "Refresh Patreon"}</button><button type="button" onClick={() => void patreonActionRequest("connect")} disabled={Boolean(patreonAction)}>{patreonAction === "connect" ? "Opening…" : "Connect Patreon"}</button></div>
     {copyStatus ? <p role="status">{copyStatus}</p> : null}

@@ -7,6 +7,7 @@ import {
   SKATER_WINDOW_AGGREGATION_REFRESH_SURFACES,
   type RollingPlayerGameMetricRow,
 } from "./skaterWindowAggregation";
+import { ROLLING_RANKING_SELECT_FIELDS } from "./rollingRankingSelectFields";
 
 function rollingRow(
   overrides: Partial<RollingPlayerGameMetricRow> = {},
@@ -121,6 +122,34 @@ describe("skaterWindowAggregation", () => {
       toiSeconds: 1200,
       sourceFields: ["pp_points_total_last5", "pp_toi_seconds_total_last5"],
     });
+  });
+
+  it("keeps every PP-points input inside the ranking select list", () => {
+    const ppInputs = [
+      "pp_points_avg_season",
+      "pp_toi_seconds_avg_season",
+      ...(["last5", "last10", "last20"] as const).flatMap((window) => [
+        `pp_points_total_${window}`,
+        `pp_toi_seconds_total_${window}`,
+      ]),
+    ];
+    expect(ROLLING_RANKING_SELECT_FIELDS).toEqual(expect.arrayContaining(ppInputs));
+
+    // Drift guard: record every row field the aggregator reads for any
+    // window/strength and require the ranking reader to select it.
+    const read = new Set<string>();
+    for (const strength_state of ["all", "5v5", "ev", "pp", "pk"]) {
+      const row = new Proxy(rollingRow({ strength_state }), {
+        get(target, key, receiver) {
+          if (typeof key === "string") read.add(key);
+          return Reflect.get(target, key, receiver);
+        },
+      });
+      buildSkaterWindowAggregatesFromRollingRow(row);
+    }
+    expect(read).toContain("pp_points_total_last20");
+    const selected = new Set<string>(ROLLING_RANKING_SELECT_FIELDS);
+    expect([...read].filter((field) => !selected.has(field))).toEqual([]);
   });
 
   it("derives season PP points per 60 from PP average fields", () => {

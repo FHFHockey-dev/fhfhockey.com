@@ -21,12 +21,20 @@ type ResponseBody =
       error: string;
     };
 
+const STRENGTHS: ReadonlyArray<RollingPlayerValidationRequest["strength"]> = [
+  "all",
+  "5v5",
+  "ev",
+  "pp",
+  "pk"
+];
+
 function parseStrength(
   param: string | string[] | undefined
-): RollingPlayerValidationRequest["strength"] {
+): RollingPlayerValidationRequest["strength"] | null {
   const value = parseQueryString(param);
-  if (value === "ev" || value === "pp" || value === "pk") return value;
-  return "all";
+  if (!value) return "all";
+  return STRENGTHS.find((strength) => strength === value) ?? null;
 }
 
 function parseRequest(
@@ -40,11 +48,15 @@ function parseRequest(
   if (!season) {
     return { error: "Missing required query param: season" };
   }
+  const strength = parseStrength(req.query.strength);
+  if (!strength) {
+    return { error: `Unsupported strength; expected one of ${STRENGTHS.join(", ")}` };
+  }
 
   return {
     playerId,
     season,
-    strength: parseStrength(req.query.strength),
+    strength,
     teamId: parseQueryNumber(req.query.teamId),
     gameId: parseQueryNumber(req.query.gameId),
     gameDate: parseQueryString(req.query.gameDate),

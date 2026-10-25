@@ -142,4 +142,28 @@ describe("ImportCsvModal", () => {
     expect(screen.getByText(/Too few fields/)).toBeTruthy();
     expect(screen.getByText(/Missing required:/)).toBeTruthy();
   });
+
+  it("keeps Confirm disabled for unresolved rows while full mapping is required, even after an override", async () => {
+    render(<ImportCsvModal open onClose={vi.fn()} onImported={vi.fn()} />);
+
+    await act(async () => {
+      csvModalMocks.onDrop?.([
+        new File(["unresolved"], "unresolved.csv", { type: "text/csv" }),
+      ]);
+    });
+
+    const confirm = screen.getByRole("button", { name: "Confirm Import" }) as HTMLButtonElement;
+    expect(screen.getByText("Low ID match rate.")).toBeTruthy();
+    expect(confirm.disabled).toBe(true);
+
+    fireEvent.click(screen.getByRole("button", { name: "Enable anyway" }));
+    expect(confirm.disabled).toBe(false);
+
+    fireEvent.click(screen.getByRole("checkbox", { name: /Require full mapping/ }));
+    // Requiring full mapping withdraws the override and keeps the import blocked.
+    expect(screen.getByText("Low ID match rate.")).toBeTruthy();
+    expect(confirm.disabled).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "Enable anyway" }));
+    expect(confirm.disabled).toBe(true);
+  });
 });

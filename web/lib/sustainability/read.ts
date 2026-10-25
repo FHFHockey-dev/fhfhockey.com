@@ -20,15 +20,10 @@ function asRecord(value: Json | null): Record<string, unknown> {
     : {};
 }
 
-function buildFlags(score: number | null) {
-  if (score == null) {
-    return { overperforming: false, underperforming: false, state: "unavailable" as const };
-  }
-  return {
-    overperforming: score >= 60,
-    underperforming: score <= 40,
-    state: score >= 60 ? ("overperforming" as const) : score <= 40 ? ("underperforming" as const) : ("stable" as const)
-  };
+function buildFlags() {
+  // The canonical index blends process and conversion signals; it is not an
+  // observed-versus-expected performance measurement at either end of the scale.
+  return { overperforming: false, underperforming: false, state: "unavailable" as const };
 }
 
 function buildExplanations(components: Record<string, unknown>) {
@@ -83,12 +78,14 @@ export function shapePlayerSustainabilityPayload(args: {
       ci_lower: row.ci_lower,
       ci_upper: row.ci_upper
     })),
-    flags: buildFlags(args.score?.s_100 ?? null),
+    flags: buildFlags(),
     explanations: buildExplanations(scoreComponents),
     metadata: {
       position_group: args.score?.position_group ?? null,
       season_id: args.score?.season_id ?? null,
       score_components: scoreComponents,
+      score_semantics: "process_support_index",
+      performance_state_note: "The canonical process support index does not measure observed performance against an expectation.",
       probability_note: "Calibrated Hot/Normal/Cold probabilities remain unavailable until the backtest/calibration gate passes."
     }
   };

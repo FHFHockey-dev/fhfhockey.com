@@ -139,7 +139,6 @@ describe("Vercel cron static source coverage", () => {
   const findings = inspectVercelCronCoverage({ crons, webRoot });
   const unresolvedAuditRoutes = [
     "/api/internal/starter-board",
-    "/api/internal/yahoo-live-draft",
     "/api/v1/db/replay-player-aliases",
   ];
 
@@ -165,7 +164,7 @@ describe("Vercel cron static source coverage", () => {
   it("keeps every unresolved audit owner explicit rather than granting an exemption", () => {
     const routes = [...new Set(findings.filter((finding) => finding.auditMode === "unqualified").map((finding) => finding.routePath))].sort();
     expect(routes).toEqual(unresolvedAuditRoutes);
-    expect(new Set(findings.filter((finding) => finding.auditMode === "shared-wrapper").map((finding) => finding.routePath)).size).toBe(18);
+    expect(new Set(findings.filter((finding) => finding.auditMode === "shared-wrapper").map((finding) => finding.routePath)).size).toBe(19);
     for (const finding of findings.filter((finding) => finding.auditMode === "unqualified")) {
       expect(finding.auditReason).toContain("manual/helper-owned auditing remains unqualified (not an exemption)");
     }
@@ -178,17 +177,38 @@ describe("Vercel cron static source coverage", () => {
     expect(classifyVercelCronSource(source.replace("adminOnly(withCronJobAudit(", "adminOnly(("), route).auditMode).toBe("unqualified");
   });
 
-  // 2026-10-24 (C5): yahoo-live-draft returns a withCronJobAudit delegate after
-  // its exact secret prefix (plus a daily idle-heartbeat delegate), but the shared
-  // classifier reviews delegates only for espn/fantrax/patreon. It stays
-  // unqualified until that owner adds a reviewed yahoo form; no exemption.
-  it("keeps yahoo-live-draft's runtime audit delegate statically unqualified", () => {
+  it("qualifies the reviewed Yahoo poll and bounded idle heartbeat without implying every idle exit is audited", () => {
     const route = "/api/internal/yahoo-live-draft";
     const source = fs.readFileSync(path.resolve(webRoot, `pages${route}.ts`), "utf8");
-    expect(source).toContain("const auditedPoll = withCronJobAudit(");
-    expect(source).toContain("const auditedIdle = withCronJobAudit(");
-    expect(source).toContain("  return auditedPoll(req, res);\n}");
-    expect(classifyVercelCronSource(source, route)).toMatchObject({ authMode: "cron-secret-only", auditMode: "unqualified" });
+    expect(classifyVercelCronSource(source, route)).toMatchObject({
+      authMode: "cron-secret-only",
+      auditMode: "shared-wrapper",
+      auditReason: expect.stringContaining("other disabled/suspended exits intentionally write no row"),
+    });
+    expect(classifyVercelCronSource(`// formatting is not a contract change\n${source}\n`, route).auditMode).toBe("shared-wrapper");
+    expect(classifyVercelCronSource(source, "/api/internal/unreviewed").auditMode).toBe("unqualified");
+  });
+
+  it.each([
+    ["missing-secret rejection", "if (!secret?.trim())", "if (false)"],
+    ["bearer rejection", 'req.headers.authorization !== `Bearer ${secret}`', "false"],
+    ["work before admission", 'const secret = process.env.CRON_SECRET;', 'await doWork(); const secret = process.env.CRON_SECRET;'],
+    ["idle bypass", "if (idle) return isIdleHeartbeatMinute()", "if (idle) return true"],
+    ["heartbeat hour", "now.getUTCHours() === 12", "now.getUTCHours() === 11"],
+    ["heartbeat minute", "now.getUTCMinutes() === 0", "now.getUTCMinutes() >= 0"],
+    ["idle helper work", "function idleState() {", "function idleState() { doWork();"],
+    ["idle audit wrapper", "const auditedIdle = withCronJobAudit(", "const auditedIdle = unaudited("],
+    ["poll audit wrapper", "const auditedPoll = withCronJobAudit(", "const auditedPoll = unaudited("],
+    ["poll bypass", "return auditedPoll(req, res);", "return unauditedPoll(req, res);"],
+    ["idle preview", '["disabled", "suspended", "resumesAt"]', '["privateData"]'],
+    ["audit identity", 'jobName: "/api/internal/yahoo-live-draft"', 'jobName: "/api/internal/other"'],
+    ["audit import", '"lib/cron/withCronJobAudit"', '"unreviewed/audit"'],
+    ["extra handler work", "  return auditedPoll(req, res);", "  await doWork(); return auditedPoll(req, res);"],
+  ])("rejects Yahoo source drift: %s", (_label, before, after) => {
+    const route = "/api/internal/yahoo-live-draft";
+    const source = fs.readFileSync(path.resolve(webRoot, `pages${route}.ts`), "utf8");
+    expect(source).toContain(before);
+    expect(classifyVercelCronSource(source.replace(before, after), route).auditMode).toBe("unqualified");
   });
 
   it.each(["starter-board", "yahoo-live-draft", "fantrax-sync", "espn-sync"])(

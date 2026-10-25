@@ -1,3 +1,5 @@
+import { useProviderSyncAccess } from "hooks/useProviderSyncAccess";
+import ProviderSyncNotice from "components/account/ProviderSyncNotice";
 import ProjectionSourceSettings from "./ProjectionSourceSettings";
 import controls from "styles/Controls.module.scss";
 import { buildDashboardTiers } from "lib/draftDashboard/tierDashboardAdapter";
@@ -457,9 +459,11 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
   const [mockOpen, setMockOpen] = useState(false);
   const { user, isLoading: authLoading } = useAuth();
   const draftRanking = useDraftRanking(user?.id || null);
-  const yahooDraftSync = useYahooDraftSync(Boolean(user?.id));
+  const providerSync = useProviderSyncAccess();
+  const canProviderSync = providerSync.status === "ready" && Boolean(providerSync.access?.eligible);
+  const yahooDraftSync = useYahooDraftSync(Boolean(user?.id), canProviderSync);
   const espnDraftSync = useEspnDraftSync(Boolean(user?.id));
-  const fantraxDraftSync = useFantraxDraftSync(Boolean(user?.id), authLoading);
+  const fantraxDraftSync = useFantraxDraftSync(Boolean(user?.id), authLoading, canProviderSync);
   const {
     enabled: yahooFeatureEnabled,
     selectedLeagueId: yahooSelectedLeagueId,
@@ -830,7 +834,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
   const [fantraxDisplayError, setFantraxDisplayError] = useState<string | null>(null);
   const [fantraxEligibilityLoaded, setFantraxEligibilityLoaded] = useState(true);
   const selectedFantraxLeagueId = fantraxLeagueOverride?.externalLeagueId ?? null;
-  const fantraxDisplayAuthenticated = Boolean(user);
+  const fantraxDisplayAuthenticated = Boolean(user) && canProviderSync;
   const activeFantraxDisplayPlayers = fantraxDisplayLeagueId === fantraxLeagueOverride?.externalLeagueId
     ? fantraxDisplayPlayers : null;
   useEffect(() => {
@@ -1715,7 +1719,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
   const needsFantraxPlayerData = adpSource === "fantrax" || positionSource === "fantrax";
   const fantraxRequestKey = positionSource === "fantrax" ? `league:${fantraxLeagueOverride?.externalLeagueId ?? "default"}` : "public";
   useEffect(() => {
-    if (!needsFantraxPlayerData || fantraxPlayerData?.key === fantraxRequestKey) return;
+    if (!canProviderSync || !needsFantraxPlayerData || fantraxPlayerData?.key === fantraxRequestKey) return;
     let active = true;
     const query = positionSource === "fantrax"
       ? `?includeLeaguePositions=1${fantraxLeagueOverride?.externalLeagueId ? `&leagueId=${encodeURIComponent(fantraxLeagueOverride.externalLeagueId)}` : ""}`
@@ -1724,7 +1728,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
       .then((result) => { if (active) { setFantraxPlayerData({ ...result, key: fantraxRequestKey }); setFantraxPlayerError(null); } })
       .catch(() => { if (active) setFantraxPlayerError({ key: fantraxRequestKey, message: "Fantrax player data is unavailable; Yahoo data is shown." }); });
     return () => { active = false; };
-  }, [needsFantraxPlayerData, fantraxPlayerData, fantraxRequestKey, positionSource, fantraxLeagueOverride?.externalLeagueId]);
+  }, [canProviderSync, needsFantraxPlayerData, fantraxPlayerData, fantraxRequestKey, positionSource, fantraxLeagueOverride?.externalLeagueId]);
   const currentFantraxPlayerData = fantraxPlayerData?.key === fantraxRequestKey ? fantraxPlayerData : null;
   const fantraxPlayerDataLoaded = Boolean(currentFantraxPlayerData);
   const fantraxLeagueEligibilityAvailable = Boolean(currentFantraxPlayerData?.hasLeagueEligibility);
@@ -3782,7 +3786,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
       <YahooDraftOrderReminder
         state={draftMode === "yahoo" ? yahooDraftSync.draftState : null}
         league={yahooDraftSync.leagues.find((league) => league.externalLeagueId === yahooDraftSync.selectedLeagueId)}
-        enabled={draftProEligible && yahooDraftSync.enabled && !espnLiveActive}
+        enabled={canProviderSync && yahooDraftSync.enabled && !espnLiveActive}
         onReview={() => { openSettings("integrations"); void yahooDraftSync.refreshAccount(); }}
       />
       <DraftSettingsShell
@@ -3967,7 +3971,9 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
       <div hidden={settingsSection !== "integrations"}>
       {!user && <p className={styles.warningBanner}>Sign in to connect a Yahoo, ESPN, or Fantrax league and start Live Sync. Manual drafting is available now.</p>}
       {manualDraftingEnabled && (hasNonFantraxDraftWork || keepers.length > 0 || pickTrades.length > 0) && <p className={styles.warningBanner}>This draft has picks, keepers, or trades. Export a bookmark, then use Quick Settings → Reset Draft before replacing its league settings.</p>}
+      <ProviderSyncNotice {...providerSync} />
       <FantraxLeagueSettingsPanel
+        canSync={canProviderSync}
         enabled={Boolean(user?.id)}
         disabled={!manualDraftingEnabled || hasOrdinaryManualPick || keepers.length > 0 || pickTrades.length > 0}
         lockReason={fantraxLiveActive ? "fantrax" : espnLiveActive ? "espn" : draftMode === "yahoo" ? "yahoo" : hasNonFantraxDraftWork || keepers.length > 0 || pickTrades.length > 0 ? "draft-work" : hasOrdinaryManualPick ? "fantrax-picks" : null}
@@ -3981,7 +3987,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
         onRestoreLiveSession={applyFantraxDraftTeams}
         liveSync={{
           enabled: fantraxDraftSync.enabled,
-          eligible: fantraxDraftSync.eligible,
+          eligible: canProviderSync && fantraxDraftSync.eligible,
           state: fantraxDraftSync.draftState,
           error: fantraxDraftSync.error,
           isLoading: fantraxDraftSync.isLoading,
@@ -4023,7 +4029,8 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
         ))}
           mode={displayedDraftMode}
           authenticated={Boolean(user?.id)}
-          draftProEligible={draftProEligible}
+          draftProEligible={canProviderSync}
+          syncAccessStatus={providerSync.status}
           liveSyncEnabled={yahooDraftSync.enabled}
           requestState={yahooDraftSync.requestState}
           leagues={yahooDraftSync.leagues}

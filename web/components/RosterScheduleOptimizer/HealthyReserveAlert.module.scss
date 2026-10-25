@@ -1,0 +1,13 @@
+@use "styles/vars" as v;
+
+// Healthy players left in IR/IR+: a warning callout above the roster, left accent bar per the state-banner rules.
+.alert { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 4px; margin: 0 0 6px; padding: 6px 10px; border: v.$border-subtle; border-left: 4px solid v.$warning-color; border-radius: v.$radius-control; background: v.$draft-surface; color: v.$text-primary; font-size: 12px; line-height: 1.4; }
+.alert h3 { margin: 0; color: v.$warning-color; font: 700 11px v.$font-family-primary; letter-spacing: .08em; text-transform: uppercase; }
+.alert ul { display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.alert p { margin: 0; }
+.alert .name { min-height: 0; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; color: v.$color-white; font: inherit; font-weight: 700; }
+.alert button.name { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 2px; }
+.alert button.name:hover, .alert button.name:focus-visible { color: v.$primary-color; }
+.action { color: v.$text-secondary; }
+.gain { color: v.$text-secondary; font-weight: 400; white-space: nowrap; }
+.gain[data-known="true"] { color: v.$success-color; font-family: v.$font-family-numbers; font-size: 11px; font-weight: 700; }

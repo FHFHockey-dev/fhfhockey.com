@@ -1,11 +1,22 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { fetchNstTextByUrlMock } = vi.hoisted(() => ({
-  fetchNstTextByUrlMock: vi.fn()
+const { fetchNstTextByUrlMock, getUserMock, roleMock, serviceFromMock } = vi.hoisted(() => ({
+  fetchNstTextByUrlMock: vi.fn(),
+  getUserMock: vi.fn(),
+  roleMock: vi.fn(),
+  serviceFromMock: vi.fn(),
 }));
 
 vi.mock("lib/nst/client", () => ({
   fetchNstTextByUrl: fetchNstTextByUrlMock
+}));
+
+vi.mock("lib/supabase/server", () => ({ default: { from: serviceFromMock } }));
+vi.mock("lib/supabase", () => ({
+  createClientWithToken: vi.fn(() => ({
+    auth: { getUser: getUserMock },
+    from: () => ({ select: () => ({ eq: () => ({ maybeSingle: roleMock }) }) }),
+  })),
 }));
 
 import handler from "../../../pages/api/fetch_team_table";
@@ -14,6 +25,7 @@ function createMockRes() {
   return {
     statusCode: 200,
     body: null as any,
+    headers: {} as Record<string, unknown>,
     status(code: number) {
       this.statusCode = code;
       return this;
@@ -22,7 +34,8 @@ function createMockRes() {
       this.body = payload;
       return this;
     },
-    setHeader() {
+    setHeader(name: string, value: unknown) {
+      this.headers[name] = value;
       return this;
     }
   } as any;
@@ -31,9 +44,20 @@ function createMockRes() {
 describe("/api/fetch_team_table", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubEnv("NODE_ENV", "test");
+    vi.stubEnv("CRON_SECRET", "synthetic-cron-secret");
+    vi.stubGlobal("fetch", vi.fn(() => { throw new Error("Network forbidden in operator test"); }));
+    getUserMock.mockResolvedValue({ data: { user: { id: "synthetic-admin" } }, error: null });
+    roleMock.mockResolvedValue({ data: { role: "admin" } });
+    serviceFromMock.mockImplementation(() => { throw new Error("Unexpected privileged database operation"); });
   });
 
-  it("preserves representative NST teamtable row parsing through the migrated client", async () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
+
+  it.each(["Bearer synthetic-cron-secret", "Bearer admin-token"])("preserves representative NST teamtable row parsing for %s", async (authorization) => {
     fetchNstTextByUrlMock.mockResolvedValue({
       text: `
         <html>
@@ -72,6 +96,7 @@ describe("/api/fetch_team_table", () => {
 
     const req: any = {
       method: "GET",
+      headers: { authorization },
       query: {
         from_season: "20242025",
         thru_season: "20242025",
@@ -105,4 +130,30 @@ describe("/api/fetch_team_table", () => {
       }
     ]);
   });
+
+  it.each([
+    { authorization: undefined, status: 401 },
+    { authorization: "Bearer invalid-token", status: 401 },
+    { authorization: "Bearer member-token", status: 403 },
+  ])("denies $authorization before provider/database work", async ({ authorization, status }) => {
+    if (status === 401) getUserMock.mockResolvedValue({ data: { user: null }, error: new Error("invalid token") });
+    else roleMock.mockResolvedValue({ data: { role: "member" } });
+    const res = createMockRes();
+    await handler({ method: "GET", headers: { authorization }, query: {} } as any, res);
+    expect(res.statusCode).toBe(status);
+    expect(res.body).toEqual({ success: false, message: status === 401 ? "Unauthorized." : "You are not an Admin." });
+    expect(fetchNstTextByUrlMock).not.toHaveBeenCalled();
+    expect(serviceFromMock).not.toHaveBeenCalled();
+  });
+
+  it("keeps admitted GET-only method behavior without fetching", async () => {
+    const res = createMockRes();
+    await handler({ method: "POST", headers: { authorization: "Bearer synthetic-cron-secret" }, query: {} } as any, res);
+    expect(res.statusCode).toBe(405);
+    expect(res.headers.Allow).toBe("GET");
+    expect(res.body).toEqual({ error: "Method not allowed" });
+    expect(fetchNstTextByUrlMock).not.toHaveBeenCalled();
+    expect(serviceFromMock).not.toHaveBeenCalled();
+  });
+
 });

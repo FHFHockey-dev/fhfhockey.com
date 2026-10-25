@@ -1,0 +1,164 @@
+// Fresh disposable PostgreSQL queue verification. No Stripe/provider clients.
+const fs = require('node:fs');
+const path = require('node:path');
+const assert = require('node:assert/strict');
+const { createHash } = require('node:crypto');
+const repo = path.resolve(__dirname, '../../../..');
+const hash = file => createHash('sha256').update(fs.readFileSync(path.join(repo, file))).digest('hex');
+const relocationPath = path.relative(repo, path.join(__dirname, 'SOURCE-RELOCATION.v1.json'));
+const relocationDigest = '54b33decfb7dbf1173bb67c154665ff9c154982961be754c0eb7000b0e96efb2';
+assert.equal(hash(relocationPath), relocationDigest, 'versioned relocation manifest changed');
+const relocation = JSON.parse(fs.readFileSync(path.join(repo, relocationPath), 'utf8'));
+assert.equal(relocation.schemaVersion, 1);
+assert.equal(hash(relocation.historicalManifest), relocation.historicalManifestSha256, 'historical manifest changed');
+assert.equal(hash(relocation.relocationReceipt), relocation.relocationReceiptSha256, 'accepted relocation receipt changed');
+const historicalHashes = JSON.parse(fs.readFileSync(path.join(repo, relocation.historicalManifest), 'utf8'));
+const hashes = { ...historicalHashes };
+for (const entry of relocation.entries) {
+  assert.equal(hashes[entry.from], entry.beforeSha256, entry.from);
+  if (entry.from !== entry.to) {
+    assert.equal(entry.beforeSha256, entry.afterSha256, 'relocated SQL bytes must stay unchanged');
+    assert.equal(hashes[entry.to], undefined, 'relocation must not replace another frozen input');
+  }
+  delete hashes[entry.from];
+  hashes[entry.to] = entry.afterSha256;
+}
+assert.equal(Object.keys(hashes).length, Object.keys(historicalHashes).length);
+function verifySourceHashes() {
+  assert.equal(hash(relocationPath), relocationDigest, 'versioned relocation manifest changed');
+  assert.equal(hash(relocation.historicalManifest), relocation.historicalManifestSha256, 'historical manifest changed');
+  assert.equal(hash(relocation.relocationReceipt), relocation.relocationReceiptSha256, 'accepted relocation receipt changed');
+  for (const [file, digest] of Object.entries(hashes)) assert.equal(hash(file), digest, file);
+}
+verifySourceHashes();
+assert.ok(process.argv.length === 2 || (process.argv.length === 3 && process.argv[2] === '--preflight'), 'only --preflight is supported');
+if (process.argv[2] === '--preflight') {
+  console.log(JSON.stringify({ success: true, mode: 'offline-preflight', sourceCount: Object.keys(hashes).length,
+    sourceHashes: hashes, historicalManifestSha256: relocation.historicalManifestSha256,
+    relocationManifestSha256: relocationDigest, databaseAccess: false }, null, 2));
+  process.exit(0);
+}
+// Keep historical SQL receipts immutable; a new execution needs unused versioned result files.
+const resultPath = path.join(__dirname, 'RESULTS.relocation-v1.json');
+const failurePath = path.join(__dirname, 'FAILED-RESULT.relocation-v1.json');
+assert.ok(!fs.existsSync(resultPath) && !fs.existsSync(failurePath), 'preserve existing execution receipts');
+const { Client } = require(path.join(repo, 'web/node_modules/pg'));
+const target = JSON.parse(fs.readFileSync(path.join(__dirname, 'TARGET.json'), 'utf8'));
+assert.match(target.root, /^\/tmp\/fhfh-queue-sql-[a-z0-9_]+$/);
+assert.equal(target.host, '127.0.0.1'); assert.equal(target.port, 65447);
+assert.equal(target.database, 'fhfh_queue_check'); assert.equal(target.user, 'queue_owner');
+const config = { host: target.host, port: target.port, user: target.user, password: 'unused-local-trust', ssl: false,
+  application_name: 'fhfh-frozen-queue-verification', connectionTimeoutMillis: 3000 };
+const clients = []; const checks = []; const batches = [];
+const pass = (name, details) => { checks.push({ name, ...(details ? { details } : {}) }); console.log(`PASS ${name}`); };
+async function connect(database) { const c = new Client({ ...config, database }); await c.connect(); clients.push(c); return c; }
+async function guard(c, database = target.database) {
+  const row = (await c.query('select host(inet_server_addr()) as host,inet_server_port() as port,current_database() as database')).rows[0];
+  assert.deepEqual(row, { host: target.host, port: target.port, database });
+}
+async function query(c, sql, values = []) { await guard(c); return c.query(sql, values); }
+async function rpc(c, name, values = []) {
+  assert.match(name, /^[a-z_]+$/);
+  return (await query(c, `select public.${name}(${values.map((_, i) => `$${i + 1}`).join(',')}) as value`, values)).rows[0].value;
+}
+const listName = 'list_in_season_sandbox_monthly_jobs';
+const claimName = 'claim_in_season_sandbox_monthly_job';
+const snapshotName = 'snapshot_in_season_sandbox_monthly_job';
+const finishName = 'finish_in_season_sandbox_monthly_job';
+let owner; let service;
+(async () => {
+  const bootstrap = await connect('postgres'); await guard(bootstrap, 'postgres');
+  const dataDir = (await bootstrap.query('show data_directory')).rows[0].data_directory;
+  assert.equal(fs.realpathSync(dataDir), fs.realpathSync(path.join(target.root, 'data')));
+  assert.equal((await bootstrap.query('show listen_addresses')).rows[0].listen_addresses, '127.0.0.1');
+  assert.equal((await bootstrap.query("select count(*)::int n from pg_tables where schemaname='public'")).rows[0].n, 0);
+  assert.equal((await bootstrap.query('select count(*)::int n from pg_database where datname=$1', [target.database])).rows[0].n, 0);
+  const version = (await bootstrap.query('select version() as version')).rows[0].version;
+  pass('fresh private cluster and loopback binding verified before database creation', { version, dataDirectory: dataDir });
+  await guard(bootstrap, 'postgres'); await bootstrap.query('create database fhfh_queue_check');
+  owner = await connect(target.database); await guard(owner);
+  assert.equal((await query(owner, "select count(*)::int n from pg_tables where schemaname='public'")).rows[0].n, 0);
+  pass('new disposable database has empty public schema');
+  await query(owner, `create role anon nologin; create role authenticated nologin; create role service_role nologin bypassrls;
+    create schema auth; create table auth.users(id uuid primary key,email text unique not null);
+    create function auth.role() returns text language sql stable as $$select nullif(current_setting('request.jwt.claim.role',true),'')$$;
+    create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
+    create function public.update_updated_at_column() returns trigger language plpgsql as $$begin new.updated_at=now();return new;end$$;
+    grant usage on schema public,auth to anon,authenticated,service_role;`);
+  const migrations = ['supabase/migrations/20260927104934_in_season_access_workspace.sql', 'tasks/artifacts/in-season-billing-2026-10-21/drafts/20261021210000_in_season_sandbox_billing.sql'];
+  for (const file of migrations) await query(owner, fs.readFileSync(path.join(repo, file), 'utf8'));
+  pass('unchanged prerequisite and complete frozen billing migration applied only to new database', migrations.map(file => ({ file, sha256: hash(file) })));
+  service = await connect(target.database);
+  await query(service, "set role service_role; set request.jwt.claim.role='service_role'");
+  assert.deepEqual(await rpc(service, listName, [20]), []); pass('empty queue returns an empty bounded result');
+  const users = ['00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000002'];
+  await query(owner, "insert into auth.users values($1,'queue-a@example.test'),($2,'queue-b@example.test')", users);
+  await query(owner, `insert into public.in_season_sandbox_monthly(user_id,subscription_id,minimum,closed)
+    select $1::uuid,'sub_retry_'||i,'{}'::jsonb,true from generate_series(1,25) i`, [users[0]]);
+  await query(owner, `insert into public.in_season_sandbox_monthly_jobs(id,subscription_id,user_id,kind,due_at,invoice_id,attempt)
+    select 'retry-'||lpad(i::text,2,'0'),'sub_retry_'||i,$1::uuid,'retry',clock_timestamp()-interval '30 days','in_fixture_'||i,2 from generate_series(1,25) i`, [users[0]]);
+  const unknown = await rpc(service, claimName, ['retry-01']); assert.ok(unknown?.token);
+  await rpc(service, snapshotName, ['retry-01', unknown.token, { operation: 'retry', invoiceId: 'in_fixture_1', attempt: 2, idempotencyKey: 'retry-01', outcome: 'synthetic-unknown' }]);
+  let unknownRow = (await query(owner, "select status,accounting_snapshots from public.in_season_sandbox_monthly_jobs where id='retry-01'")).rows[0];
+  assert.equal(unknownRow.status, 'running'); assert.equal(unknownRow.accounting_snapshots.length, 1);
+  assert.equal(await rpc(service, claimName, ['retry-01']), null);
+  pass('unresolved retry remains running with durable history; active lease cannot be reclaimed');
+  // Fixture-only fast-forward of lease expiry; function clocks and due dates are unchanged.
+  await query(owner, "update public.in_season_sandbox_monthly_jobs set lease_until=lease_until-interval '61 seconds' where id='retry-01'");
+  await query(owner, `insert into public.in_season_sandbox_monthly(user_id,subscription_id,minimum,closed)
+    select $1::uuid,'sub_stop_'||i,'{}'::jsonb,true from generate_series(1,6) i`, [users[1]]);
+  await query(owner, `insert into public.in_season_sandbox_monthly(user_id,subscription_id,minimum,closed) values($1,'sub_cutoff','{}',true),($1,'sub_controls','{}',true)`, [users[1]]);
+  await query(owner, `insert into public.in_season_sandbox_monthly_jobs(id,subscription_id,user_id,kind,due_at)
+    select 'stop-'||lpad(i::text,2,'0'),'sub_stop_'||i,$1::uuid,'stop',clock_timestamp()-interval '5 days' from generate_series(1,6) i`, [users[1]]);
+  await query(owner, `insert into public.in_season_sandbox_monthly_jobs(id,subscription_id,user_id,kind,due_at,status,lease_until) values
+    ('cutoff','sub_cutoff',$1,'cutoff',clock_timestamp()-interval '1 hour','pending',null),
+    ('future','sub_controls',$1,'cutoff',clock_timestamp()+interval '1 day','pending',null),
+    ('leased','sub_controls',$1,'stop',clock_timestamp()-interval '10 days','running',clock_timestamp()+interval '1 hour'),
+    ('done','sub_controls',$1,'stop',clock_timestamp()-interval '10 days','done',null),
+    ('cancelled','sub_controls',$1,'stop',clock_timestamp()-interval '10 days','cancelled',null)`, [users[1]]);
+  const originalDue = (await query(owner, 'select id,due_at::text from public.in_season_sandbox_monthly_jobs order by id')).rows;
+  const full = await rpc(service, listName, [20]); assert.equal(full.length, 20);
+  assert.ok(full.slice(0, 7).every(row => ['stop', 'cutoff'].includes(row.kind)));
+  assert.ok(full.slice(7).every(row => row.kind === 'retry'));
+  assert.equal((await rpc(service, listName, [1])).length, 1);
+  assert.ok(!full.some(row => ['future', 'leased', 'done', 'cancelled'].includes(row.id)));
+  pass('limits one/twenty enforced; urgent work precedes older retries; noneligible jobs excluded');
+  for (const limit of [0, 21]) await assert.rejects(rpc(service, listName, [limit]), /Job limit invalid/);
+  pass('out-of-range limits rejected');
+  const expected = [['stop-01', 'stop-02'], ['stop-03', 'stop-04'], ['stop-05', 'stop-06'], ['cutoff', 'stop-01']];
+  for (let round = 0; round < expected.length; round++) {
+    const rows = await rpc(service, listName, [2]); assert.deepEqual(rows.map(row => row.id), expected[round]);
+    batches.push(rows.map(row => row.id)); const failed = [];
+    for (const row of rows) {
+      const claim = await rpc(service, claimName, [row.id]); assert.ok(claim?.token);
+      const lease = (await query(owner, 'select lease_until>clock_timestamp() as active from public.in_season_sandbox_monthly_jobs where id=$1', [row.id])).rows[0];
+      assert.equal(lease.active, true);
+      if (row.kind === 'cutoff') {
+        await rpc(service, snapshotName, [row.id, claim.token, { operation: 'stop', source: 'synthetic-queue-check' }]);
+        await assert.rejects(rpc(service, finishName, [row.id, '00000000-0000-4000-8000-000000000099']), /Job lease unavailable/);
+        await rpc(service, finishName, [row.id, claim.token]);
+      } else {
+        await rpc(service, snapshotName, [row.id, claim.token, { operation: 'stop', outcome: 'synthetic-failure' }]); failed.push(row.id);
+      }
+    }
+    const whileLeased = await rpc(service, listName, [20]); assert.ok(!whileLeased.some(row => failed.includes(row.id)));
+    await query(owner, "update public.in_season_sandbox_monthly_jobs set lease_until=lease_until-interval '61 seconds' where id=any($1::text[])", [failed]);
+    pass(`bounded batch ${round + 1} rotates failed stops and preserves active lease exclusion`, batches.at(-1));
+  }
+  const state = (await query(owner, "select id,status,accounting_snapshots from public.in_season_sandbox_monthly_jobs where id='cutoff' or id like 'stop-%' or id='retry-01' order by id")).rows;
+  assert.equal(state.find(row => row.id === 'cutoff').status, 'done');
+  assert.ok(state.filter(row => row.id !== 'cutoff').every(row => row.status === 'running'));
+  assert.equal(state.find(row => row.id === 'retry-01').accounting_snapshots.length, 1);
+  assert.ok(!(await rpc(service, listName, [20])).some(row => row.id === 'cutoff'));
+  assert.deepEqual((await query(owner, 'select id,due_at::text from public.in_season_sandbox_monthly_jobs order by id')).rows, originalDue);
+  pass('cutoff reaches completion behind failed backlog; failures/unknown retry are not marked successful and due dates remain unchanged');
+  await query(service, "reset role; set role anon; set request.jwt.claim.role='anon'");
+  await assert.rejects(rpc(service, listName, [2]), /permission denied/);
+  pass('anonymous queue access remains denied');
+  verifySourceHashes();
+  pass('all seven inputs match the frozen hashes and accepted relocation manifest');
+  fs.writeFileSync(resultPath, JSON.stringify({ success: true, checks, batches, isolation: { host: target.host, port: target.port, database: target.database, dataDirectory: dataDir, version }, fixtureLeaseExpiry: 'Only synthetic lease_until values shifted back 61 seconds; no server clock, due_at or function modifications.', externalCalls: 0, sourceHashes: hashes, historicalSourceHashes: historicalHashes, relocationManifestSha256: relocationDigest }, null, 2) + '\n', { flag: 'wx' });
+})().catch(error => {
+  fs.writeFileSync(failurePath, JSON.stringify({ success: false, checks, batches, error: String(error.message) }, null, 2) + '\n', { flag: 'wx' });
+  console.error(error.message); process.exitCode = 1;
+}).finally(async () => { await Promise.all(clients.map(c => c.end().catch(() => {}))); });

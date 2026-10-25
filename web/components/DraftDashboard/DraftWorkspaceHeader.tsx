@@ -35,7 +35,7 @@ export default function DraftWorkspaceHeader({
       >
         <span aria-hidden="true">●</span> {healthLabel}
       </button>
-      <a className={styles.draftProLink} href="/account?section=draft-pro" aria-label={draftProEligible ? "Manage Draft Pro" : "Explore Draft Pro"}>
+      <a className={styles.draftProLink} href="/account?section=draft-pro" aria-label={draftProEligible ? "Manage Draft Pro" : "View existing Draft Pro access"}>
         <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="m3 6 5 4 4-7 4 7 5-4-2 12H5L3 6Zm2 15h14" /></svg> Draft Pro
       </a>
       <span className={styles.toolbarDivider} aria-hidden="true" />

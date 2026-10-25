@@ -67,6 +67,7 @@ async function handler(req: NextApiRequest & { supabase?: any }, res: NextApiRes
 export default adminOnly(
   withCronJobAudit(handler, {
     jobName: "route-runner-tick",
-    recordRowMetrics: false
+    recordRowMetrics: false,
+    responsePreviewKeys: ["success", "action", "jobId", "step", "statusCode", "outcome", "expired", "error"]
   })
 );

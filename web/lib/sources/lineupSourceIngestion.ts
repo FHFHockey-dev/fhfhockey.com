@@ -1,6 +1,6 @@
 import * as cheerio from "cheerio";
 import { resolvePlayerIdentity } from "./playerIdentity";
-import { identityMentionPresent } from "./tweetInterpretation";
+import { identityMentionPresent, playerPositionRole } from "./tweetInterpretation";
 
 import type { Team } from "lib/NHL/types";
 import { teamHashtagsByAbbreviation, teamsInfo } from "lib/teamsInfo";
@@ -616,7 +616,10 @@ export function extractStructuredPlayerGroupsFromText(
     .filter(Boolean);
 
   const parsedGroups: string[][] = [];
-  for (const line of lines) {
+  for (const rawLine of lines) {
+    const line = rawLine.replace(/^RT\s+@[^:]+:\s*/i, "");
+    if (/^https?:|^(?:the|a|an|morning skate)\s*:?$/i.test(line) || /^[#@]/.test(line) && !/[-–—/][\p{L}]/u.test(line)
+      || /\b(?:are|is)\s+(?:the\s+)?extras?\b/i.test(line) || /^(?:extras?|scratches?|injur(?:ed|ies))\s*:/i.test(line)) continue;
     const rosterLinkedGroups = extractRosterLinkedPlayerGroupsFromLine(
       line,
       rosterEntries
@@ -640,6 +643,20 @@ export function extractStructuredPlayerGroupsFromText(
     }
   }
 
+  if (rosterEntries.some((entry) => playerPositionRole(entry))) {
+    const roleFor = (group: string[]) => {
+      const players = group.map((name) => resolveTweetNameToRosterEntry(name, rosterEntries));
+      const role = players[0] ? playerPositionRole(players[0]) : null;
+      return role && players.every((player) => player && playerPositionRole(player) === role) ? role : null;
+    };
+    return {
+      forwards: parsedGroups.filter((group) => group.length === 3 && roleFor(group) === "es_forward").slice(0, 4),
+      defensePairs: parsedGroups.filter((group) => group.length === 2 && roleFor(group) === "es_defense").slice(0, 3),
+      goalies: parsedGroups.filter((group) => roleFor(group) === "goalie").flat().slice(0, 2),
+    };
+  }
+  // Without an identity directory these are classification candidates only.
+  // The IFTTT source builder separately requires positive position evidence.
   return {
     forwards: parsedGroups.filter((group) => group.length === 3).slice(0, 4),
     defensePairs: parsedGroups.filter((group) => group.length === 2).slice(0, 3),
@@ -705,6 +722,13 @@ export function resolveTweetNameToRosterEntry(
     aliases: [...(entry.aliases ?? []), ...(GDT_ALIAS_OVERRIDES[normalizeTeamLabel(entry.fullName)] ?? [])],
   })));
   return result.status === "matched" ? result.player : null;
+}
+
+export function rosterNamesHaveRole(names: string[], rosterEntries: RosterNameEntry[], role: "es_forward" | "es_defense" | "goalie"): boolean {
+  const players = names.map((name) => resolveTweetNameToRosterEntry(name, rosterEntries));
+  const teams = new Set(players.map((player) => player?.teamId).filter((team) => team != null));
+  return names.length > 0 && teams.size <= 1 && new Set(players.map((player) => player?.playerId)).size === names.length
+    && players.every((player) => player && Number.isSafeInteger(player.playerId) && player.playerId > 0 && playerPositionRole(player) === role);
 }
 
 export function validateLineupNames(
@@ -1031,7 +1055,7 @@ export function classifyGameDayTweet(text: string): GameDayTweetsClassification 
     return "power_play";
   }
   if (/\bhave switched spots\b/i.test(text)) return "lineup";
-  if (GDT_PRACTICE_KEYWORDS.some((keyword) => normalized.includes(keyword))) {
+  if (GDT_PRACTICE_KEYWORDS.some((keyword) => normalized.includes(keyword)) || /\bmorning skate\b/i.test(text) && hasAnyStructuredLine) {
     return "practice_lines";
   }
   if (hasLineupBlock) {
@@ -1187,30 +1211,15 @@ export function buildGameDayTweetsLineupSourceFromTweet(args: {
     .map((line) =>
       line.map((name) => resolveTweetNameToRosterEntry(name, rosterEntries)?.fullName ?? name)
     )
-    .filter((line) => line.length === 3);
+    .filter((line) => line.length === 3 && rosterNamesHaveRole(line, rosterEntries, "es_forward"));
   let defensePairs = structured.defensePairs
     .map((pair) =>
       pair.map((name) => resolveTweetNameToRosterEntry(name, rosterEntries)?.fullName ?? name)
     )
-    .filter((pair) => pair.length === 2);
+    .filter((pair) => pair.length === 2 && rosterNamesHaveRole(pair, rosterEntries, "es_defense"));
   let goalies = structured.goalies
     .map((name) => resolveTweetNameToRosterEntry(name, rosterEntries)?.fullName ?? null)
-    .filter((name): name is string => Boolean(name));
-
-  if (forwards.length === 0 && defensePairs.length === 0) {
-    const orderedRosterHits = extractOrderedRosterHitsFromTweet(text, rosterEntries);
-    forwards = Array.from(
-      { length: Math.floor(Math.min(orderedRosterHits.length, 12) / 3) },
-      (_, index) => orderedRosterHits.slice(index * 3, index * 3 + 3)
-    ).filter((line) => line.length === 3);
-    const defenseStartIndex = forwards.length * 3;
-    const defenseHits = orderedRosterHits.slice(defenseStartIndex, defenseStartIndex + 6);
-    defensePairs = Array.from(
-      { length: Math.floor(defenseHits.length / 2) },
-      (_, index) => defenseHits.slice(index * 2, index * 2 + 2)
-    ).filter((pair) => pair.length === 2);
-    goalies = orderedRosterHits.slice(forwards.length * 3 + defensePairs.length * 2).slice(0, 2);
-  }
+    .filter((name): name is string => Boolean(name) && rosterNamesHaveRole([name!], rosterEntries, "goalie"));
 
   return buildSourceRecord({
     team: args.team,

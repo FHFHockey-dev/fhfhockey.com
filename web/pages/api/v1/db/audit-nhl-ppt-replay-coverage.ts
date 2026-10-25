@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import adminOnly from "utils/adminOnlyMiddleware";
 
 import supabase from "lib/supabase/server";
 import {
@@ -203,4 +204,4 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 }
 
-export default handler;
+export default adminOnly(handler);

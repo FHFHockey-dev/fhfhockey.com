@@ -35,6 +35,7 @@ interface ApiResponse {
   metric?: TrendMetric;
   windowDays: number;
   generatedAt?: string;
+  sourceDate?: string | null;
   page?: number;
   pageSize?: number;
   offset?: number;
@@ -340,7 +341,7 @@ export default function TransactionTrends({
       Array.isArray(data?.risers) &&
       Array.isArray(data?.fallers) &&
       data.risers.length + data.fallers.length === 0,
-    timestamp: data?.generatedAt ?? null,
+    timestamp: data?.sourceDate ?? data?.generatedAt ?? null,
     maxAgeHours: 18,
     loadingMessage: `Loading ${movementName}...`,
     emptyMessage: `No ${movementName} is available right now.`,

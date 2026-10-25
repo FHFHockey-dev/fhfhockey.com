@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { generatePregamePredictionsForWindowMock } = vi.hoisted(() => ({
+const { generatePregamePredictionsForWindowMock, auditInsertMock } = vi.hoisted(() => ({
   generatePregamePredictionsForWindowMock: vi.fn(),
+  auditInsertMock: vi.fn(),
 }));
 
 vi.mock("lib/cron/withCronJobAudit", () => ({
@@ -12,8 +13,13 @@ vi.mock("utils/adminOnlyMiddleware", () => ({
   default: (handler: any) => handler,
 }));
 
-vi.mock("lib/game-predictions/workflow", () => ({
+vi.mock("lib/game-predictions/workflow", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("lib/game-predictions/workflow")>()),
   generatePregamePredictionsForWindow: generatePregamePredictionsForWindowMock,
+}));
+
+vi.mock("lib/supabase/server", () => ({
+  default: { from: vi.fn(() => ({ insert: auditInsertMock })) },
 }));
 
 import handler from "../../../../../pages/api/v1/game-predictions/forecast";
@@ -121,5 +127,104 @@ describe("/api/v1/game-predictions/forecast", () => {
     expect(res.statusCode).toBe(405);
     expect(generatePregamePredictionsForWindowMock).not.toHaveBeenCalled();
     expect(res.headers.Allow).toBe("GET, POST");
+  });
+
+  function windowResult(
+    results: Array<{
+      gameId: number;
+      predictionId?: string | null;
+      skippedReason?: string | null;
+    }>,
+  ) {
+    const rows = results.map((row) => ({
+      featureSnapshotId: row.predictionId ? "snapshot" : null,
+      homeWinProbability: null,
+      awayWinProbability: null,
+      dryRun: false,
+      predictionId: null,
+      skippedReason: null,
+      ...row,
+    }));
+    const processedGames = rows.filter((row) => !row.skippedReason).length;
+    return {
+      fromDate: "2026-10-18",
+      toDate: "2026-10-18",
+      sourceAsOfDate: "2026-10-18",
+      requestedGames: rows.length,
+      processedGames,
+      skippedGames: rows.length - processedGames,
+      stoppedForDeadline: false,
+      dryRun: false,
+      results: rows,
+    };
+  }
+
+  async function runThroughCronAudit(result: ReturnType<typeof windowResult>) {
+    generatePregamePredictionsForWindowMock.mockResolvedValue(result);
+    const { withCronJobAudit } = await vi.importActual<
+      typeof import("lib/cron/withCronJobAudit")
+    >("lib/cron/withCronJobAudit");
+    auditInsertMock.mockResolvedValue({ error: null });
+    const { req, res } = createMockApiContext({ method: "GET" });
+    await withCronJobAudit(handler as any, { jobName: "game-predictions-forecast" })(
+      { ...req, url: "/api/v1/game-predictions/forecast" } as any,
+      res as any,
+    );
+    return { body: res.body as any, audit: auditInsertMock.mock.calls.at(-1)?.[0] };
+  }
+
+  it("reports a no-production-model run as a healthy no-op that wrote nothing", async () => {
+    const { body, audit } = await runThroughCronAudit(
+      windowResult([
+        { gameId: 1, skippedReason: "no_production_model_version" },
+        { gameId: 2, skippedReason: "no_production_model_version" },
+      ]),
+    );
+
+    expect(body).toMatchObject({
+      success: true,
+      status: "no_production_model",
+      persistedPredictions: 0,
+      skippedGames: 2,
+      noProductionModelGames: 2,
+      failedGames: 0,
+    });
+    expect(audit).toMatchObject({ job_name: "game-predictions-forecast", status: "success" });
+  });
+
+  it("fails the cron audit when a game errors instead of hiding it behind success", async () => {
+    const { body, audit } = await runThroughCronAudit(
+      windowResult([
+        { gameId: 1, predictionId: "prediction-1" },
+        { gameId: 2, skippedReason: "Missing team game rows for game 2" },
+      ]),
+    );
+
+    expect(body).toMatchObject({
+      success: false,
+      status: "failed",
+      persistedPredictions: 1,
+      skippedGames: 1,
+      failedGames: 1,
+    });
+    expect(audit).toMatchObject({ status: "failure" });
+  });
+
+  it("reports persisted predictions when the window writes", async () => {
+    const { body, audit } = await runThroughCronAudit(
+      windowResult([
+        { gameId: 1, predictionId: "prediction-1" },
+        { gameId: 2, skippedReason: "prediction_cutoff_at_or_after_puck_drop" },
+      ]),
+    );
+
+    expect(body).toMatchObject({
+      success: true,
+      status: "persisted",
+      persistedPredictions: 1,
+      skippedGames: 1,
+      failedGames: 0,
+    });
+    expect(audit).toMatchObject({ status: "success" });
   });
 });

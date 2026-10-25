@@ -152,9 +152,7 @@ export function ModuleState<T>({
       <>
         {module.status !== "ready" ? (
           <p className={styles.moduleStateWarning}>
-            {module.message ??
-              module.error ??
-              `${module.contract.label} is ${module.status}.`}
+            {module.message ?? `${module.contract.label} is ${module.status}.`}
           </p>
         ) : null}
         {children}
@@ -168,11 +166,14 @@ export function ModuleState<T>({
         {STATUS_LABELS[module.status]}
       </StatusChip>
       <p>
-        {module.error ??
-          module.message ??
-          (module.status === "loading"
-            ? `Loading ${module.contract.label.toLowerCase()}...`
-            : module.contract.emptyStateRule)}
+        {/* Raw module errors can carry request URLs and statuses, so the UI
+            shows a fixed per-module message instead. */}
+        {module.status === "error"
+          ? `${module.contract.label} is unavailable right now.`
+          : (module.message ??
+            (module.status === "loading"
+              ? `Loading ${module.contract.label.toLowerCase()}...`
+              : module.contract.emptyStateRule))}
       </p>
     </div>
   );

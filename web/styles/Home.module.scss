@@ -2,6 +2,118 @@
 @use "styles/_panel" as panel;
 @use "sass:color";
 
+@mixin homepage-jersey-stripes {
+  isolation: isolate;
+
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    z-index: -2;
+    inset-block: 0;
+    width: var(--jersey-stripe-width, min(24%, 86px));
+    background: linear-gradient(
+      65deg,
+      var(--stripe-primary) 0% 28%,
+      rgba(v.$color-white, 0.72) 30% 34%,
+      var(--stripe-secondary) 36% 52%,
+      rgba(v.$color-black, 0.8) 54% 58%,
+      var(--stripe-primary) 60% 100%
+    );
+    -webkit-mask-image: radial-gradient(ellipse 100% 85% at 0% 50%, #000 28%, rgba(0, 0, 0, 0.9) 45%, rgba(0, 0, 0, 0.5) 64%, rgba(0, 0, 0, 0.12) 80%, transparent 96%);
+    mask-image: radial-gradient(ellipse 100% 85% at 0% 50%, #000 28%, rgba(0, 0, 0, 0.9) 45%, rgba(0, 0, 0, 0.5) 64%, rgba(0, 0, 0, 0.12) 80%, transparent 96%);
+    pointer-events: none;
+  }
+
+  &::before {
+    left: 0;
+    --stripe-primary: var(--away-primary-color);
+    --stripe-secondary: var(--away-secondary-color);
+  }
+
+  &::after {
+    right: 0;
+    transform: scaleX(-1);
+    --stripe-primary: var(--home-primary-color);
+    --stripe-secondary: var(--home-secondary-color);
+  }
+}
+
+@mixin homepage-edge-logo {
+  position: absolute;
+  z-index: -1;
+  top: 50%;
+  left: calc(var(--game-logo-offset, -76px) + var(--logo-optical-offset, 0px));
+  width: calc(var(--game-logo-size, 280px) * var(--logo-optical-scale, 1));
+  height: calc(var(--game-logo-size, 280px) * var(--logo-optical-scale, 1));
+  object-fit: contain;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+@mixin homepage-home-edge-logo {
+  right: calc(var(--game-logo-offset, -76px) + var(--logo-optical-offset, 0px));
+  left: auto;
+}
+
+@mixin homepage-logo-fade($angle, $direction) {
+  -webkit-mask-image:
+    linear-gradient($angle, #000 50%, rgba(0, 0, 0, 0.98) 68%, rgba(0, 0, 0, 0.8) 82%, rgba(0, 0, 0, 0.4) 92%, transparent 100%),
+    linear-gradient(to $direction, #000 70%, transparent 100%);
+  mask-image:
+    linear-gradient($angle, #000 50%, rgba(0, 0, 0, 0.98) 68%, rgba(0, 0, 0, 0.8) 82%, rgba(0, 0, 0, 0.4) 92%, transparent 100%),
+    linear-gradient(to $direction, #000 70%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
+
+.homepageGameArtwork {
+  @include homepage-jersey-stripes;
+  --jersey-stripe-width: min(48%, 190px);
+  position: absolute;
+  z-index: -1;
+  // Follow the content tracks so metadata and records never receive artwork.
+  grid-column: 1 / -1;
+  grid-row: 2 / 3;
+  inset-block: 0;
+  inset-inline: calc(-1 * var(--game-card-padding, 12px));
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.homepageGameLogo {
+  @include homepage-logo-fade(65deg, right);
+  position: absolute;
+  z-index: -1;
+  inset-block: 0;
+  left: 0;
+  width: 47%;
+
+  &[data-team="TOR"] {
+    --logo-optical-scale: 0.9;
+    --logo-optical-offset: 12px;
+  }
+
+  &[data-team="UTA"] {
+    --logo-optical-scale: 0.88;
+    --logo-optical-offset: 20px;
+  }
+
+  > img {
+    @include homepage-edge-logo;
+  }
+
+  &[data-side="home"] {
+    @include homepage-logo-fade(-65deg, left);
+    right: 0;
+    left: auto;
+
+    > img {
+      @include homepage-home-edge-logo;
+    }
+  }
+}
+
 .homeContainer {
   padding-bottom: 0 !important;
 }
@@ -561,15 +673,19 @@
 }
 
 .combinedGameCard {
+  @include homepage-jersey-stripes;
+  --jersey-stripe-width: 30%;
+  --game-logo-size: 132px;
+  --game-logo-offset: -44px;
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: v.$space-xs;
-  min-height: 96px;
-  padding: v.$space-md v.$space-xs v.$space-xs;
+  min-height: 144px;
+  padding: calc(v.$space-md - 1px) v.$space-xs calc(v.$space-xs - 1px);
   overflow: hidden;
-  border: 1px solid rgba(v.$border-secondary, 0.78);
+  border: 2px solid color.mix(v.$primary-color, v.$color-grey-medium, 16%);
   border-radius: v.$radius-card;
   background:
     linear-gradient(
@@ -587,20 +703,9 @@
     transform v.$transition-duration v.$transition-easing,
     border-color v.$transition-duration v.$transition-easing;
 
-  &::before {
-    content: "";
-    position: absolute;
-    inset: 0 50% auto 0;
-    height: 2px;
-    background: var(--away-primary-light-color);
-  }
-
+  &::before,
   &::after {
-    content: "";
-    position: absolute;
-    inset: 0 0 auto 50%;
-    height: 2px;
-    background: var(--home-primary-light-color);
+    inset-block: 18px 44px;
   }
 }
 
@@ -637,20 +742,28 @@
   justify-items: center;
   gap: 2px;
   min-width: 0;
+  align-self: end;
 }
 
 .leftImage,
 .rightImage {
-  width: 38px;
-  height: 38px;
-  object-fit: contain;
+  @include homepage-edge-logo;
+  top: calc(50% - 13px);
+  -webkit-mask-image: linear-gradient(65deg, #000 40%, rgba(0, 0, 0, 0.55) 65%, transparent 85%);
+  mask-image: linear-gradient(65deg, #000 40%, rgba(0, 0, 0, 0.55) 65%, transparent 85%);
   filter: drop-shadow(0 4px 8px rgba(v.$color-black, 0.42));
+}
+
+.rightImage {
+  @include homepage-home-edge-logo;
+  -webkit-mask-image: linear-gradient(-65deg, #000 40%, rgba(0, 0, 0, 0.55) 65%, transparent 85%);
+  mask-image: linear-gradient(-65deg, #000 40%, rgba(0, 0, 0, 0.55) 65%, transparent 85%);
 }
 
 .teamAbbreviation {
   color: v.$color-white;
-  font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
-  font-size: v.$font-size-sm;
+  font-family: v.$font-family-primary;
+  font-size: 1rem;
   letter-spacing: 0.06em;
 }
 
@@ -852,52 +965,18 @@
   }
 
   .mobileGameLink {
+    @include homepage-jersey-stripes;
+    --jersey-stripe-width: min(18%, 58px);
     position: relative;
     display: grid;
     align-items: center;
     min-width: 0;
     overflow: hidden;
-    border: 1px solid rgba(v.$color-white, 0.085);
+    border: 2px solid color.mix(v.$primary-color, v.$color-grey-medium, 16%);
     border-radius: 5px;
-    background:
-      linear-gradient(
-        90deg,
-        color-mix(in srgb, var(--away-primary-color) 5%, transparent),
-        transparent 36%
-      ),
-      linear-gradient(
-        270deg,
-        color-mix(in srgb, var(--home-primary-color) 5%, transparent),
-        transparent 36%
-      ),
-      rgba(v.$color-white, 0.012);
+    background: v.$surface-1;
     color: v.$text-primary;
     text-decoration: none;
-
-    &::before,
-    &::after {
-      content: "";
-      position: absolute;
-      top: 0;
-      width: 50%;
-      height: 1px;
-      opacity: 0.72;
-    }
-
-    &::before {
-      left: 0;
-      background: var(--away-primary-light-color);
-    }
-
-    &::after {
-      right: 0;
-      background: var(--home-primary-light-color);
-    }
-
-    &[data-game-state="live"] {
-      border-color: rgba(v.$success-color, 0.48);
-      border-left: 3px solid rgba(v.$success-color, 0.8);
-    }
 
     &:hover {
       border-color: rgba(v.$primary-color, 0.58);
@@ -1547,33 +1626,15 @@
   .desktopLightCard,
   .desktopMediumLiveCard,
   .desktopHeavyLiveCard {
+    isolation: isolate;
     position: relative;
     min-width: 0;
-    border: 1px solid rgba(v.$color-white, 0.12);
+    overflow: hidden;
+    border: 2px solid color.mix(v.$primary-color, v.$color-grey-medium, 16%);
     border-radius: 7px;
-    background:
-      linear-gradient(
-        90deg,
-        color-mix(in srgb, var(--away-primary-color) 8%, transparent),
-        transparent 43%
-      ),
-      linear-gradient(
-        270deg,
-        color-mix(in srgb, var(--home-primary-color) 8%, transparent),
-        transparent 43%
-      ),
-      rgba(v.$color-white, 0.015);
+    background: v.$surface-1;
     color: v.$color-brand-white;
     text-decoration: none;
-
-    &[data-game-state="live"] {
-      border-color: rgba(v.$success-color, 0.55);
-      border-left: 3px solid rgba(v.$success-color, 0.78);
-    }
-
-    &[data-game-state="scheduled"] {
-      border-color: rgba(v.$primary-color, 0.32);
-    }
 
     &:hover {
       border-color: rgba(v.$primary-color, 0.72);
@@ -1588,10 +1649,10 @@
 
   .desktopLightCard {
     display: grid;
-    grid-template-rows: 20px minmax(64px, 1fr) auto 24px;
-    gap: 5px;
-    min-height: 176px;
-    padding: 7px 12px 8px;
+    grid-template-rows: 20px minmax(148px, 1fr) auto 22px;
+    gap: 0;
+    min-height: 205px;
+    padding: 5px 12px 6px;
   }
 
   .desktopCardMeta {
@@ -1653,30 +1714,29 @@
 
   .desktopLightMatchup {
     display: grid;
-    grid-template-columns: minmax(108px, 1fr) 28px minmax(108px, 1fr);
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto 20px auto;
+    align-content: center;
     align-items: center;
     min-width: 0;
   }
 
   .desktopLightTeam {
-    display: grid;
-    grid-template-columns: 42px minmax(0, auto) minmax(20px, 1fr);
+    display: flex;
+    justify-content: center;
     align-items: center;
     gap: 8px;
     min-width: 0;
-
-    img {
-      width: 42px;
-      height: 42px;
-      object-fit: contain;
-    }
+    line-height: 1;
+    text-shadow: 0 1px 3px rgba(v.$color-black, 0.85);
 
     strong {
       min-width: 0;
       overflow: hidden;
-      font-family: v.$font-family-accent;
-      font-size: 0.94rem;
-      letter-spacing: 0.055em;
+      font-family: v.$font-family-primary;
+      font-size: 1.5rem;
+      font-weight: v.$font-weight-medium;
+      letter-spacing: 0.025em;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
@@ -1690,22 +1750,10 @@
     }
   }
 
-  .desktopLightHomeTeam {
-    grid-template-columns: minmax(20px, 1fr) minmax(0, auto) 42px;
-
-    b {
-      justify-self: start;
-    }
-
-    img {
-      justify-self: end;
-    }
-  }
-
   .desktopLightDivider {
     color: v.$text-secondary;
     font-family: v.$font-family-numbers;
-    font-size: 0.58rem;
+    font-size: 0.68rem;
     text-align: center;
   }
 
@@ -1717,6 +1765,7 @@
     min-height: 34px;
     border-block: 1px solid rgba(v.$color-white, 0.07);
     font-family: v.$font-family-numbers;
+    background: rgba(v.$surface-1, 0.96);
 
     > span {
       display: grid;
@@ -1755,6 +1804,7 @@
     align-items: center;
     gap: 8px;
     min-width: 0;
+    border-top: 1px solid rgba(v.$primary-color, 0.16);
     color: v.$text-secondary;
     font-family: v.$font-family-numbers;
     font-size: 0.56rem;
@@ -1814,16 +1864,23 @@
   }
 
   .desktopMediumLiveCard {
+    --game-card-padding: 8px;
+    --game-logo-size: 175px;
+    --game-logo-offset: -52px;
     display: grid;
     grid-template-areas:
       "meta meta chevron"
       "matchup matchup chevron"
       "analytics analytics chevron";
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 10px;
-    grid-template-rows: 21px minmax(52px, 1fr) 22px;
+    grid-template-rows: 21px minmax(76px, 1fr) 22px;
     gap: 2px 7px;
     min-height: 105px;
     padding: 5px 8px;
+
+    .homepageGameArtwork {
+      grid-row: 2 / 3;
+    }
 
     .desktopCardMeta {
       grid-area: meta;
@@ -1833,7 +1890,8 @@
   .desktopMediumMatchup {
     display: grid;
     grid-area: matchup;
-    grid-template-columns: minmax(112px, 1fr) 30px minmax(112px, 1fr);
+    grid-template-columns: max-content 30px max-content;
+    justify-content: center;
     align-items: center;
     min-width: 0;
 
@@ -1847,22 +1905,16 @@
 
   .desktopMediumTeam {
     display: grid;
-    grid-template-columns: 34px minmax(0, auto) minmax(24px, 1fr);
+    grid-template-columns: auto auto;
     align-items: center;
     gap: 7px;
     min-width: 0;
 
-    img {
-      width: 34px;
-      height: 34px;
-      object-fit: contain;
-    }
-
     strong {
       min-width: 0;
       overflow: hidden;
-      font-family: v.$font-family-accent;
-      font-size: 0.86rem;
+      font-family: v.$font-family-primary;
+      font-size: 1.1rem;
       letter-spacing: 0.05em;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -1877,14 +1929,8 @@
   }
 
   .desktopMediumHomeTeam {
-    grid-template-columns: minmax(24px, 1fr) minmax(0, auto) 34px;
-
     b {
       justify-self: start;
-    }
-
-    img {
-      justify-self: end;
     }
   }
 
@@ -1924,11 +1970,18 @@
   }
 
   .desktopHeavyLiveCard {
+    --game-card-padding: 8px;
+    --game-logo-size: 145px;
+    --game-logo-offset: -42px;
     display: grid;
-    grid-template-rows: 18px repeat(2, minmax(28px, 1fr));
+    grid-template-rows: 18px repeat(2, minmax(38px, 1fr));
     gap: 1px;
     min-height: 91px;
     padding: 5px 8px 6px;
+
+    .homepageGameArtwork {
+      grid-row: 2 / -1;
+    }
   }
 
   .desktopHeavyMeta {
@@ -1967,22 +2020,17 @@
 
   .desktopHeavyTeamRow {
     display: grid;
-    grid-template-columns: 24px minmax(0, 1fr) 28px;
+    grid-template-columns: auto 28px;
+    justify-content: center;
     align-items: center;
     gap: 6px;
     min-width: 0;
 
-    img {
-      width: 24px;
-      height: 24px;
-      object-fit: contain;
-    }
-
     strong {
       min-width: 0;
       overflow: hidden;
-      font-family: v.$font-family-accent;
-      font-size: 0.72rem;
+      font-family: v.$font-family-primary;
+      font-size: 1rem;
       letter-spacing: 0.055em;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -2654,6 +2702,14 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .combinedGameCard {
+    transition: none;
+  }
+
+  .gameLink:hover .combinedGameCard {
+    transform: none;
+  }
+
   .homepagePulseSeries {
     transition: none;
   }
@@ -3463,11 +3519,12 @@
 
 .compactNewsList {
   display: grid;
-  grid-auto-rows: minmax(82px, 1fr);
-  align-content: stretch;
+  grid-auto-rows: max-content;
+  align-content: start;
   gap: v.$space-xs;
   min-height: 0;
   min-width: 0;
+  max-height: 840px;
   overflow-y: auto;
   padding: v.$space-xs;
   @include v.custom-scrollbar(v.$primary-color, v.$background-dark, 4px);
@@ -5366,52 +5423,18 @@
   }
 
   .mobileGameLink {
+    @include homepage-jersey-stripes;
+    --jersey-stripe-width: min(18%, 58px);
     position: relative;
     display: grid;
     align-items: center;
     min-width: 0;
     overflow: hidden;
-    border: 1px solid rgba(v.$color-white, 0.085);
+    border: 2px solid color.mix(v.$primary-color, v.$color-grey-medium, 16%);
     border-radius: 5px;
-    background:
-      linear-gradient(
-        90deg,
-        color-mix(in srgb, var(--away-primary-color) 5%, transparent),
-        transparent 36%
-      ),
-      linear-gradient(
-        270deg,
-        color-mix(in srgb, var(--home-primary-color) 5%, transparent),
-        transparent 36%
-      ),
-      rgba(v.$color-white, 0.012);
+    background: v.$surface-1;
     color: v.$text-primary;
     text-decoration: none;
-
-    &::before,
-    &::after {
-      content: "";
-      position: absolute;
-      top: 0;
-      width: 50%;
-      height: 1px;
-      opacity: 0.72;
-    }
-
-    &::before {
-      left: 0;
-      background: var(--away-primary-light-color);
-    }
-
-    &::after {
-      right: 0;
-      background: var(--home-primary-light-color);
-    }
-
-    &[data-game-state="live"] {
-      border-color: rgba(v.$success-color, 0.48);
-      border-left: 3px solid rgba(v.$success-color, 0.8);
-    }
 
     &:hover {
       border-color: rgba(v.$primary-color, 0.58);
@@ -5679,23 +5702,33 @@
         "starters starters chevron"
         "records records records";
       grid-template-columns: minmax(78px, 1fr) minmax(72px, auto) minmax(58px, 1fr);
-      grid-template-rows: 20px 48px auto auto auto;
+      grid-template-rows: 20px minmax(var(--game-matchup-height, 140px), 1fr) auto auto auto;
       column-gap: 7px;
       row-gap: 3px;
       min-height: 90px;
-      padding: 3px 8px 5px;
+      padding: 2px 8px 4px;
+      --game-logo-size: 270px;
+      --game-logo-offset: -78px;
+      --game-card-padding: 8px;
+
+      &::before,
+      &::after {
+        content: none;
+      }
     }
 
     .mobileTeam {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      justify-self: center;
       gap: 7px;
-
-      img {
-        width: 34px;
-        height: 34px;
-      }
+      line-height: 1;
+      text-shadow: 0 1px 3px rgba(v.$color-black, 0.85);
 
       strong {
-        font-size: 0.82rem;
+        font-family: v.$font-family-primary;
+        font-size: 1.35rem;
+        font-weight: v.$font-weight-medium;
       }
 
       b {
@@ -5703,8 +5736,32 @@
       }
     }
 
+    .mobileAwayTeam {
+      align-self: center;
+      transform: translateY(-23px);
+    }
+
+    .mobileHomeTeam {
+      align-self: center;
+      transform: translateY(23px);
+    }
+
+    .mobileGameChevron {
+      grid-area: records;
+      justify-self: end;
+    }
+
+    .mobileGameRecords {
+      padding-right: 14px;
+    }
+
     .mobileGameTime {
       font-size: 0.65rem;
+    }
+
+    .mobileWinProbability {
+      border-radius: 2px;
+      background: rgba(v.$surface-1, 0.86);
     }
 
     .mobileGameLink[data-has-probabilities="true"] {
@@ -5719,19 +5776,10 @@
         z-index: 1;
         justify-self: end;
       }
-
-      .mobileAwayTeam {
-        width: 100%;
-        padding-left: 30px;
-      }
-
-      .mobileHomeTeam {
-        width: 100%;
-        padding-right: 30px;
-      }
     }
 
     .mobileAnalytics {
+      background: rgba(v.$surface-1, 0.96);
       min-height: 19px;
       padding-block: 3px;
       border-block: 1px solid rgba(v.$color-white, 0.055);
@@ -6046,6 +6094,7 @@
   .compactNewsList {
     grid-auto-rows: auto;
     align-content: start;
+    max-height: none;
     gap: 0;
     margin: 0 v.$space-sm;
     padding: 0;
@@ -6110,7 +6159,7 @@
   }
 
   .mobileGamesSlate[data-slate-mode="light"] .mobileGameLink[data-game-state="scheduled"] {
-    grid-template-rows: minmax(20px, auto) minmax(48px, 1fr) auto auto auto;
+    grid-template-rows: minmax(20px, auto) minmax(var(--game-matchup-height, 140px), 1fr) auto auto auto;
   }
 
   .mobileGamesSlate[data-slate-mode="medium"],
@@ -6132,6 +6181,12 @@
 }
 
 @media (max-width: 360px) {
+  .mobileGamesSlate[data-slate-mode="light"] .mobileGameLink {
+    --game-matchup-height: 124px;
+    --game-logo-size: 245px;
+    --game-logo-offset: -73px;
+  }
+
   .gamesHeaderTitle h2 {
     font-size: 0.63rem;
     letter-spacing: 0.055em;

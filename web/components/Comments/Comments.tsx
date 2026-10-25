@@ -1,4 +1,5 @@
-import { useQuery, gql, NetworkStatus } from "@apollo/client";
+import { ApolloProvider, useQuery, gql, NetworkStatus } from "@apollo/client";
+import client from "lib/apollo-client";
 import Spinner from "components/Spinner";
 import { forwardRef, useImperativeHandle } from "react";
 
@@ -61,7 +62,7 @@ function Comments({ slug }: { slug: string }, ref: any) {
         Comments
       </h2>
       <ul className={styles.list} aria-labelledby="comments-heading">
-        {loading && <Spinner center />}
+        {loading && <Spinner center label="Loading comments" />}
         {data?.comments.map((comment: CommentData) => (
           <Comment key={comment.id} {...comment} />
         ))}
@@ -73,4 +74,16 @@ function Comments({ slug }: { slug: string }, ref: any) {
   );
 }
 
-export default forwardRef(Comments);
+const CommentsList = forwardRef(Comments);
+
+// Comments is the app's only Apollo consumer, so it owns the provider.
+function CommentsWithClient({ slug }: { slug: string }, ref: any) {
+  const list = <CommentsList ref={ref} slug={slug} />;
+  return process.env.NEXT_PUBLIC_SANITY_GRAPHQL_URI ? (
+    <ApolloProvider client={client}>{list}</ApolloProvider>
+  ) : (
+    list
+  );
+}
+
+export default forwardRef(CommentsWithClient);

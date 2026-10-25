@@ -29,7 +29,7 @@ export const buildFourWeekDetailCells = (
 
   return weekNumbers.map((weekNumber) => {
     const week = byWeek.get(weekNumber);
-    const complete = !!week && (!week.scheduleCoverage || week.scheduleCoverage.known === week.scheduleCoverage.expected);
+    const complete = !!week && (week.scheduleCoverage != null && week.scheduleCoverage.known === week.scheduleCoverage.expected);
     return {
       weekNumber,
       gamesPlayed: complete ? week.gamesPlayed : null,
@@ -53,7 +53,7 @@ export const buildFourWeekDetailAverages = (
         const week = team.weeks.find(
           (candidate) => candidate.weekNumber === weekNumber,
         );
-        if (week && (!week.scheduleCoverage || week.scheduleCoverage.known === week.scheduleCoverage.expected)) {
+        if (week && (week.scheduleCoverage != null && week.scheduleCoverage.known === week.scheduleCoverage.expected)) {
           acc.gamesPlayed += week.gamesPlayed;
           acc.offNights += week.offNights;
           acc.known++;

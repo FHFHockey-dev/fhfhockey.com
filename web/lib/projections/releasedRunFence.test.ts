@@ -74,8 +74,10 @@ import { requireLatestSucceededRunId } from "./apiHelpers";
 import { createRun } from "./queries/run-lifecycle-queries";
 import { isOffReleaseGitSha, LOCAL_UNKNOWN_GIT_SHA, runHorizonFilter } from "./releasedRunFence";
 
+// Satisfies the octoberBranch label gate; master ignores metrics.
+const metrics = { input_provenance: { external_fantasy_input_contract: "excluded_from_native_inputs_v1" } };
 const run = (run_id: string, created_at: string, git_sha: string | null) =>
-  ({ run_id, as_of_date: "2026-10-18", status: "succeeded", created_at, git_sha });
+  ({ run_id, as_of_date: "2026-10-18", status: "succeeded", created_at, git_sha, metrics });
 
 describe("off-release run fence", () => {
   beforeEach(() => { db.rows = []; db.inserted = []; });
@@ -101,9 +103,6 @@ describe("off-release run fence", () => {
     await expect(requireLatestSucceededRunId("2026-10-18")).rejects.toMatchObject({ statusCode: 404 });
   });
 });
-
-// Master runs carry no input-provenance contract, so the fence tests add only horizon metrics.
-const metrics: Record<string, unknown> = {};
 
 describe("run horizon fence", () => {
   beforeEach(() => { db.rows = []; db.inserted = []; });

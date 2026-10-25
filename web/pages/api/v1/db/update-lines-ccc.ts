@@ -1,5 +1,7 @@
 import { claimTweetEvents, finishTweetEvents, failTweetEvents } from "lib/sources/tweetProcessingJobs";
 import { persistTweetProjectionReports, enrichTweetInjuryHistory } from "lib/sources/tweetProjectionStorage";
+import { admitTweetClaimEvaluationIntake, tweetClaimEvaluationIntakeWindow } from "lib/sources/tweetClaimEvaluationIntake";
+import { processTweetClaimShadowBatch } from "lib/sources/tweetClaimRegistry";
 import { rosterSeasonForDate } from "lib/sources/playerIdentity";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { getCurrentSeason, getTeams } from "lib/NHL/server";
@@ -52,22 +54,24 @@ async function fetchPendingIftttEvents(args: {
       "id, source, source_account, username, text, link_to_tweet, tweet_id, tweet_created_at, created_at_label, raw_payload, received_at",
     );
 
+  const cohort = tweetClaimEvaluationIntakeWindow();
+  if (cohort) query = query.eq("processing_status","pending").gte("received_at",cohort.startsAt).lt("received_at",cohort.endsAt);
   if (args.tweetId) {
     query = query.eq("tweet_id", args.tweetId);
-  } else if (args.reprocess) {
+  } else if (!cohort && args.reprocess) {
     query = query.in("processing_status", [
       "pending",
       "processed",
       "rejected",
       "failed",
     ]);
-  } else {
+  } else if (!cohort) {
     query = query.eq("processing_status", "pending");
   }
 
   const { data, error } = await query
     .order("received_at", { ascending: true })
-    .limit(args.limit);
+    .limit(cohort ? Math.min(args.limit,25) : args.limit);
 
   if (error) throw error;
 
@@ -204,12 +208,16 @@ export default withCronJobAudit(
     const reprocess = parseBooleanFlag(req.query.reprocess);
     const requestedTweetId = parseStringQueryValue(req.query.tweetId);
     const requestedDate = parseRequestedDate(req.query.date);
-    const eventRows = await fetchPendingIftttEvents({
+    let eventRows = await fetchPendingIftttEvents({
       supabase: req.supabase,
       limit: batchSize,
       reprocess,
       tweetId: requestedTweetId,
     });
+    const intake = await admitTweetClaimEvaluationIntake(req.supabase,"lines_ccc_ifttt_events",eventRows);
+    if (intake.active && !intake.events.length) return res.json({ success: true,mode: "claim_shadow_stopped",reason: intake.reason,
+      delivery: "not_requested",summary: { eventsLoaded: 0,eventsProcessed: 0 } });
+    eventRows = intake.events;
     if (!eventRows.length) {
       return res.json({ success: true, route: "/api/v1/db/update-lines-ccc", date: requestedDate,
         batchSize, summary: { eventsLoaded: 0, eventsProcessed: 0, eventsRejected: 0, rowsUpserted: 0 },
@@ -505,6 +513,13 @@ export default withCronJobAudit(
     parsedEvents.splice(0, parsedEvents.length, ...claimSources.map(({ event }) => event));
 
     reviewTweetApplicability(parsedCandidates, requestedDate);
+
+    if (process.env.TWEET_CLAIMS_MODE === "shadow") {
+      processingStage = "claim_shadow";
+      const shadow = await processTweetClaimShadowBatch({ supabase: req.supabase, table: "lines_ccc_ifttt_events",
+        sources: parsedCandidates, events: parsedEvents, pendingEvents, deferredUpdates: deferredEventUpdates });
+      return res.json({ success: true, route: "/api/v1/db/update-lines-ccc", date: requestedDate, ...shadow });
+    }
 
     processingStage = "injury_history";
     await enrichTweetInjuryHistory(req.supabase, parsedCandidates);

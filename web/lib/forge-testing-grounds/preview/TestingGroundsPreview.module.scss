@@ -1,0 +1,95 @@
+@use "../../../styles/vars" as v;
+
+.preview {
+  background: v.$background-dark;
+  color: v.$text-primary;
+  font-family: v.$font-family-primary;
+  font-size: 16px;
+  line-height: 1.5;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  *, *::before, *::after { box-sizing: border-box; }
+  h1, h2, h3, p { margin: 0; }
+  h1, h2, h3 { color: v.$color-white; text-wrap: balance; }
+  h1 { font-size: clamp(2rem, 5vw, 2.8rem); letter-spacing: -0.025em; line-height: 1.15; }
+  h2 { font-size: 1.35rem; line-height: 1.3; }
+  h3 { font-size: 1.05rem; line-height: 1.35; }
+  p { text-wrap: pretty; }
+  button, select, textarea { font: inherit; }
+  button, select, summary { min-height: 44px; }
+  button:focus-visible, select:focus-visible, summary:focus-visible, textarea:focus-visible, pre:focus-visible {
+    outline: 3px solid v.$secondary-color; outline-offset: 3px;
+  }
+  code { font-size: 0.88em; overflow-wrap: anywhere; }
+}
+.container { width: min(1320px, 100%); padding: 2rem; margin: 0 auto; display: grid; gap: 1.25rem; }
+.header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.eyebrow { color: #67d6fb; text-transform: uppercase; letter-spacing: 0.13em; font-size: 0.72rem; font-weight: 700; margin-bottom: 0.4rem !important; }
+.subtitle { color: v.$text-secondary; margin-top: 0.65rem !important; }
+.badge, .previewBadge { border: 1px solid rgba(v.$primary-color, 0.55); border-radius: 999px; padding: 0.3rem 0.7rem; color: #9ae5ff; font-size: 0.8rem; font-weight: 600; white-space: nowrap; }
+.previewBadge { margin-top: 0.35rem; }
+.previewBar { display: flex; align-items: center; gap: 1.5rem; padding: 1rem 1.2rem; border: 1px dashed rgba(v.$primary-color, 0.65); border-radius: v.$border-radius-md; background: rgba(v.$primary-color, 0.045); }
+.previewBar > div { flex: 0 1 340px; display: grid; gap: 0.3rem; min-width: 0; }
+.previewBar label { font-weight: 600; }
+.previewBar select { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid v.$border-secondary; border-radius: 4px; background: v.$background-medium; color: v.$color-white; }
+.previewBar p { flex: 1; color: v.$text-secondary; font-size: 0.9rem; max-width: 65ch; }
+.runSummary { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 310px); gap: 2rem; align-items: center; padding: 1.4rem; border-radius: v.$border-radius-lg; background: v.$background-medium; border: 1px solid v.$border-secondary; }
+.runSummary p:not(.eyebrow) { color: v.$text-secondary; font-size: 0.88rem; margin-top: 0.5rem; max-width: 75ch; }
+.launch { display: grid; gap: 0.3rem; }
+.launch button { background: #2c343a; border: 1px solid #52616b; border-radius: 6px; color: #c3cbd1; cursor: not-allowed; padding: 0.65rem 1rem; font-weight: 600; }
+.launch p { font-size: 0.78rem !important; }
+.grid { display: grid; grid-template-columns: minmax(0, 1.18fr) minmax(0, 1fr); gap: 1.25rem; align-items: start; }
+.panel { min-width: 0; background: v.$background-medium; border-radius: v.$border-radius-lg; padding: 1.3rem; border: 1px solid v.$border-secondary; display: grid; gap: 1rem; }
+.panelHeading { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.muted { color: v.$text-secondary; font-size: 0.9rem; }
+.small { color: v.$text-secondary; font-size: 0.78rem; }
+.notice { background: rgba(v.$warning-color, 0.06); border-left: 3px solid v.$warning-color; border-radius: 3px; padding: 0.8rem 0.9rem; color: #e6d7ae; font-size: 0.85rem; }
+.notice p { margin-top: 0.3rem; }
+.stages { padding: 0; margin: 0; list-style: none; display: grid; gap: 1.3rem; }
+.stage { display: grid; gap: 0.65rem; padding-bottom: 1.2rem; border-bottom: 1px solid rgba(v.$border-secondary, 0.65); min-width: 0; }
+.stage:last-child { padding-bottom: 0; border-bottom: 0; }
+.stageHeading { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+.stepNumber { width: 1.5rem; height: 1.5rem; display: inline-grid; place-items: center; background: rgba(v.$primary-color, 0.12); border-radius: 50%; color: #9ae5ff; font-size: 0.8rem; }
+.stageStatus { margin-left: auto; color: v.$text-secondary; font-size: 0.78rem; }
+.measure { display: flex; justify-content: space-between; align-items: baseline; gap: 0.6rem; flex-wrap: wrap; font-variant-numeric: tabular-nums; }
+.measure strong { font-size: 1.15rem; color: v.$color-white; }
+.measure strong span, .measure > span { color: v.$text-secondary; font-weight: 400; font-size: 0.8rem; }
+.stage progress { width: 100%; height: 6px; appearance: none; border: 0; border-radius: 4px; overflow: hidden; background: #35414b; }
+.stage progress::-webkit-progress-bar { background: #35414b; }
+.stage progress::-webkit-progress-value { background: v.$primary-color; }
+.stage progress::-moz-progress-bar { background: v.$primary-color; }
+.counters, .healthCounts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.65rem; margin: 0; font-variant-numeric: tabular-nums; }
+.counters dt, .healthCounts dt { font-size: 0.72rem; color: v.$text-secondary; }
+.counters dd, .healthCounts dd { margin: 0.1rem 0 0; color: v.$color-white; font-size: 1rem; }
+.healthCounts { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; padding: 0.9rem; border-radius: 6px; background: rgba(v.$color-white, 0.025); }
+.healthCounts dd { font-size: 1.4rem; }
+.fitMessage { padding: 0.6rem 0; font-size: 0.9rem; }
+.stageMeta { display: flex; justify-content: space-between; gap: 0.4rem; flex-wrap: wrap; font-size: 0.74rem; color: v.$text-secondary; font-variant-numeric: tabular-nums; }
+.details { border-top: 1px solid v.$border-secondary; padding-top: 0.5rem; }
+.details summary { cursor: pointer; display: list-item; align-content: center; color: #9ae5ff; font-size: 0.85rem; }
+.details pre { padding: 1rem; background: v.$background-dark; border-radius: 6px; overflow: auto; max-height: 320px; font-size: 0.75rem; }
+.issues { display: grid; gap: 0.5rem; }
+.issue { border: 1px solid v.$border-secondary; border-radius: 6px; padding: 0 0.75rem; }
+.issue summary { cursor: pointer; align-content: center; font-size: 0.88rem; padding: 0.65rem 0; }
+.issueCount { display: inline-block; color: v.$text-secondary; font-size: 0.74rem; margin-left: 0.5rem; }
+.issue p { font-size: 0.82rem; margin: 0.4rem 0 0.75rem; }
+.issue label { display: block; color: v.$text-secondary; font-size: 0.75rem; padding: 0.25rem 0 0.75rem; }
+.issue textarea { display: block; width: 100%; resize: vertical; min-height: 44px; margin-top: 0.4rem; background: v.$background-dark; border: 1px solid v.$border-secondary; border-radius: 4px; padding: 0.5rem; color: v.$text-primary; font-size: 0.8rem; }
+.manual { display: grid; gap: 0.5rem; padding-top: 1rem; border-top: 1px solid v.$border-secondary; font-size: 0.85rem; }
+.sealed { grid-template-columns: minmax(160px, 0.6fr) minmax(0, 1.4fr); align-items: center; }
+.sealed > p { color: v.$text-secondary; font-size: 0.9rem; }
+.footer { text-align: center; font-size: 0.75rem; color: v.$text-secondary; padding: 0.3rem 0 1rem; }
+@media (max-width: 900px) {
+  .container { padding: 1.25rem; }
+  .grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 600px) {
+  .container { padding: 1rem 0.75rem; gap: 1rem; }
+  .header { flex-direction: column; gap: 0.5rem; }
+  .previewBar { flex-direction: column; align-items: stretch; gap: 0.65rem; }
+  .previewBar > div { flex-basis: auto; }
+  .runSummary, .sealed { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+  .panel, .runSummary { padding: 1rem; }
+  .badge { white-space: normal; }
+  .stageStatus { margin-left: 0; }
+}

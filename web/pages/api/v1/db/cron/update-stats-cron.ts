@@ -179,6 +179,12 @@ export default adminOnly(withCronJobAudit(
       const staleCutoff = new Date();
       staleCutoff.setUTCHours(0, 0, 0, 0);
       staleCutoff.setUTCDate(staleCutoff.getUTCDate() - 30);
+      // A game still being played (e.g. gameState CRIT late on game night) is
+      // not a failure yet; the next run picks it up once it is final.
+      const inProgressCutoff = new Date();
+      inProgressCutoff.setUTCHours(0, 0, 0, 0);
+      inProgressCutoff.setUTCDate(inProgressCutoff.getUTCDate() - 1);
+      let deferredGameIds: number[] = [];
       let quarantinedGameIds: number[] = [];
       let statusAdvancementFailure: StatsStatusAdvancementFailureDetails | null =
         null;
@@ -201,12 +207,21 @@ export default adminOnly(withCronJobAudit(
         if (failedGameMetaError) {
           throw failedGameMetaError;
         }
-        const quarantineCandidateMatches = (
-          (failedGameMeta ?? []) as Array<{
-            id: number;
-            date: string | null;
-          }>
-        )
+        const failedGameRows = (failedGameMeta ?? []) as Array<{
+          id: number;
+          date: string | null;
+        }>;
+        deferredGameIds = failedGameRows
+          .filter((game) => {
+            if (!game?.date) return false;
+            const gameTime = Date.parse(`${game.date}T00:00:00.000Z`);
+            return (
+              Number.isFinite(gameTime) &&
+              gameTime >= inProgressCutoff.getTime()
+            );
+          })
+          .map((game) => game.id);
+        const quarantineCandidateMatches = failedGameRows
           .filter((game) => {
             if (!game?.date) return false;
             const gameTime = Date.parse(`${game.date}T00:00:00.000Z`);
@@ -247,14 +262,20 @@ export default adminOnly(withCronJobAudit(
         }
       }
       const pendingRetryGameIds = failedGameIds.filter(
-        (gameId) => !quarantinedGameIds.includes(gameId),
+        (gameId) =>
+          !quarantinedGameIds.includes(gameId) &&
+          !deferredGameIds.includes(gameId),
       );
-      const failedRows = failures.reduce(
-        (total, failure) =>
-          total +
-          (failure.kind === "stats_update_failure" ? 1 : failure.requestedRows),
-        0,
-      );
+      const failedRows = failures
+        .filter((failure) => !deferredGameIds.includes(failure.gameId))
+        .reduce(
+          (total, failure) =>
+            total +
+            (failure.kind === "stats_update_failure"
+              ? 1
+              : failure.requestedRows),
+          0,
+        );
       let operationStatus: "success" | "warning" | "failure" = "success";
       let message = "Processed stats backlog successfully.";
       if (pendingRetryGameIds.length > 0) {
@@ -265,6 +286,8 @@ export default adminOnly(withCronJobAudit(
         operationStatus = "warning";
         message =
           "Processed stats backlog; some stale games were quarantined from automatic retry.";
+      } else if (deferredGameIds.length > 0 && updatedGameIds.length === 0) {
+        message = "No finished games to process; in-progress games deferred.";
       } else if (nonRealizedGameIds.length > 0) {
         operationStatus = "warning";
         message =
@@ -280,6 +303,7 @@ export default adminOnly(withCronJobAudit(
         nonRealizedGameIds,
         failedGameIds,
         quarantinedGameIds,
+        deferredGameIds,
         pendingRetryGameIds,
         rowsUpserted: updatedGameIds.length,
         failedRows,

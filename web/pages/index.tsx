@@ -7,7 +7,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { NextSeo } from "next-seo";
 import moment from "moment";
-import "moment-timezone"; // Import moment-timezone
 
 import Container from "components/Layout/Container";
 import ClientOnly from "components/ClientOnly";
@@ -188,13 +187,12 @@ const Home: NextPage = ({
               <p>Compare projections, track every pick, and build your roster.</p>
               <div className={styles.draftBannerActions}>
                 <Link href="/draft-dashboard">Open Draft Dashboard</Link>
-                <Link href="/account?section=draft-pro" className={styles.draftProPromotion}>Explore Draft Pro</Link>
               </div>
             </div>
           </section>
         ) : null}
         <ClientOnly>
-          {draftRankerHomepageEnabled ? (
+          {draftRankerHomepageEnabled && isOffseason ? (
             <div className={styles.homepageToolSwitcher}>
               <div
                 className={styles.homepageToolTabs}

@@ -388,6 +388,11 @@ function mapApiDataToDbRecord(
     allowedGameTypes: [expectedGameType],
     source: "skater summary",
   });
+  const seasonStartYear = Math.trunc(gameIdentity.seasonId / 10_000);
+  const requestedYear = Number(formattedDate.slice(0, 4));
+  if (requestedYear < seasonStartYear || requestedYear > seasonStartYear + 1) {
+    throw new Error(`WGO date ${formattedDate} is outside season ${gameIdentity.seasonId}.`);
+  }
   const playerGameKey = wgoPlayerGameKey(stat, "skater summary");
   const bioStats = allData.bioMap.get(stat.playerId);
   const miscStats = allData.miscMap.get(playerGameKey);

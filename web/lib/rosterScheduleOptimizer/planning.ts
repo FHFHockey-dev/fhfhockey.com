@@ -82,7 +82,7 @@ function opponentStats(snapshot: PlanningSnapshot): StatLine | null {
   return stats;
 }
 type Applicability = Record<"skater" | "goalie", Set<string>>;
-const GOALIE_STATS = new Set(["SAVES_GOALIE", "GOALS_AGAINST_GOALIE", "WINS_GOALIE", "SHUTOUTS_GOALIE", "SHOTS_AGAINST_GOALIE", "GOALIE_MINUTES", "SAVES", "GOALSAGAINST", "SHOTSAGAINST", "WINS", "SHUTOUTS", "GAA", "SV%", "SAVE_PERCENTAGE"]);
+const GOALIE_STATS = new Set(["SAVES_GOALIE", "GOALS_AGAINST_GOALIE", "WINS_GOALIE", "LOSSES_GOALIE", "SHUTOUTS_GOALIE", "SHOTS_AGAINST_GOALIE", "GAMES_STARTED", "GOALIE_MINUTES", "SAVES", "GOALSAGAINST", "SHOTSAGAINST", "WINS", "SHUTOUTS", "GAA", "SV%", "SAVE_PERCENTAGE"]);
 function statApplicability(snapshot: PlanningSnapshot): Applicability {
   const playerClass = new Map(snapshot.players.map(player => [player.id, player.playerClass]));
   const result: Applicability = { skater: new Set(), goalie: new Set() };
@@ -98,10 +98,41 @@ function applies(key: string, kind: "skater" | "goalie", applicability: Applicab
 }
 export function forecastAllows(forecast: GameForecast | null, key: string, use: "assignment" | "totals" | "comparison" | "conditionalTieBreak"): boolean {
   if (use !== "conditionalTieBreak" && forecast?.conditioning !== "unconditional") return false;
-  return (forecast?.contributions ? forecast.contributions[key]?.allowedUses[use] : forecast?.allowedUses?.[use]) === true;
+  return (forecast?.contributions ? forecast.contributions[key]?.allowedUses[use] : (forecast?.targetAllowedUses?.[key] ?? forecast?.allowedUses)?.[use]) === true;
 }
 export function assignmentStats(forecast: GameForecast): StatLine {
   return forecast.assignmentStats ?? forecast.stats;
+}
+export type GameForecastPoints = { expected: number | null; ifStarts: number | null };
+/** Readback of an already admitted forecast. This does not resolve or approve sources. */
+export function gameForecastPoints(snapshot: PlanningSnapshot, forecast: GameForecast): GameForecastPoints {
+  const unavailable: GameForecastPoints = { expected: null, ifStarts: null };
+  const player = snapshot.players.find(row => row.id === forecast.playerId);
+  if (!player || snapshot.rules.scoring.mode !== "points") return unavailable;
+  const applicability = statApplicability(snapshot);
+  const weights = Object.entries(snapshot.rules.scoring.weights)
+    .filter(([key, weight]) => weight !== 0 && applies(key, player.playerClass, applicability));
+  if (!weights.length || weights.some(([, weight]) => !finite(weight))) return unavailable;
+  const sum = (valueFor: (key: string) => number | null | undefined): number | null => {
+    let total = 0;
+    for (const [key, weight] of weights) {
+      if (!forecastAllows(forecast, key, "totals")) return null;
+      const value = valueFor(key);
+      if (!finite(value)) return null;
+      total += value * weight;
+    }
+    return finite(total) ? total : null;
+  };
+  return {
+    // stats already includes participation; multiplying or dividing by start probability changes its meaning.
+    expected: sum(key => forecast.stats[key]),
+    ifStarts: player.playerClass === "goalie" ? sum(key => {
+      const contribution = forecast.contributions?.[key];
+      // Resolved forecasts replace raw conditionalStats. A per-appearance mean is not a per-start mean.
+      if (forecast.contributions) return contribution?.basis === "per_start" ? contribution.conditionalMean : null;
+      return forecast.conditionalStats?.[key];
+    }) : null,
+  };
 }
 /** Supported remaining points on a player's selected assignments, excluding banked results. */
 export function playerAssignedPoints(snapshot: PlanningSnapshot, evaluation: PlanEvaluation, playerId: string): number | null {
@@ -194,7 +225,7 @@ export function swapCategoryBreakdown(snapshot: PlanningSnapshot, baseline: Plan
 /** Candidate horizon totals are separate from incremental active-game capacity.
  * Use the same source validation, stat applicability and permissions as plans. */
 export function candidateHorizonPoints(input: PlanningSnapshot): Map<string, number | null> {
-  const snapshot = sanitizeForecastInputs(resolvePlanningContributions(sanitizeForecastInputs(input)));
+  const snapshot = sanitizeForecastInputs(resolvePlanningContributions(sanitizeForecastInputs(input), { consumer: "rso" }));
   const applicability = statApplicability(snapshot);
   const forecasts = new Map(snapshot.forecasts.map(row => [`${row.playerId}:${row.gameId}`, row]));
   const points = new Map<string, number | null>();
@@ -578,7 +609,7 @@ export function scheduleAdmissionProblem(snapshot: PlanningSnapshot): string | n
   return `Schedule evidence observed ${iso(observed)} expired ${iso(observed + SCHEDULE_WITNESS_TTL_MS)}; planning time is ${iso(planning)}. Reload the schedule; a forecast refresh does not renew it.`;
 }
 function prepareEvaluation(snapshot: PlanningSnapshot, playerIds?: ReadonlySet<string>) {
-  snapshot = resolvePlanningContributions(sanitizeForecastInputs(snapshot), playerIds ? { playerIds } : undefined);
+  snapshot = resolvePlanningContributions(sanitizeForecastInputs(snapshot), { consumer: "rso", playerIds });
   const players = new Map(snapshot.players.map(player => [player.id, player]));
   const forecasts = new Map(snapshot.forecasts.filter(forecast => !forecast.expiresAt || Date.parse(forecast.expiresAt) > time(snapshot.context.asOf)).map(forecast => [`${forecast.playerId}:${forecast.gameId}`, forecast]));
   const applicability = statApplicability({ ...snapshot, forecasts: [...forecasts.values()] });
@@ -1219,7 +1250,7 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
   snapshot = sanitizeForecastInputs(snapshot);
   const sourceSnapshot = snapshot;
   const relevantPlayerIds = new Set([...snapshot.roster.map(row => row.playerId), ...intent.steps.flatMap(step => [step.playerId, ...(step.dropPlayerId ? [step.dropPlayerId] : [])])]);
-  snapshot = resolvePlanningContributions(snapshot, { playerIds: relevantPlayerIds });
+  snapshot = resolvePlanningContributions(snapshot, { playerIds: relevantPlayerIds, consumer: "rso" });
   const maxEvaluations = Math.max(3, options.maxEvaluations ?? defaultWorkQuotas(snapshot).evaluations);
   const beamWidth = Math.max(2, options.beamWidth ?? 8);
   const maxCandidates = Math.max(1, options.maxCandidates ?? 40);
@@ -1259,7 +1290,7 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
     // No-move starts counted so far, a known lower bound even while the lineup is not yet legal.
     player => noMoveAgp.assignments.filter(row => row.playerId === player.id).length);
   candidates.forEach(player => relevantPlayerIds.add(player.id));
-  snapshot = resolvePlanningContributions(sourceSnapshot, { playerIds: relevantPlayerIds });
+  snapshot = resolvePlanningContributions(sourceSnapshot, { playerIds: relevantPlayerIds, consumer: "rso" });
   const limitations = new Set<string>();
   if (intent.objective === "outcome" && !outcomeEligible) limitations.add("Best projected points needs projections for your whole lineup; planning for most starts until then.");
   if (fitResult.timeLimitReached) limitations.add("Schedule-fit analysis reached its time budget; additional team/position targets remain unevaluated.");

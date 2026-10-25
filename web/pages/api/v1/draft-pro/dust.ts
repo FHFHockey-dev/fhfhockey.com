@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { z } from "zod";
 
 import { requireApiUser } from "lib/api/requireApiUser";
+import { DraftProRequestError } from "lib/draft-pro/requestError";
 import { evaluateDraftProDust, type DraftProDustInput } from "lib/draft-pro/dust";
 import { enforceDraftProDustRateLimit } from "lib/draft-pro/dustRateLimit";
 import { assertDustScheduleRowsMatchResolution, DustScheduleSeasonUnavailableError, normalizeDustProjectionSeason, resolveDustScheduleSeason, type DustScheduleSeasonMetadata } from "lib/draft-pro/dustSeason";
@@ -144,8 +145,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.setHeader("X-RateLimit-Remaining", String(rate.remainingPoints));
     return res.status(200).json({ success: true, data: result });
   } catch (error) {
-    const status = Number((error as { statusCode?: number }).statusCode);
-    if (status) return failure(res, status, String((error as { code?: string }).code ?? "draft_pro_unavailable"), error instanceof Error ? error.message : "DUST is unavailable.", Number((error as { retryAfterSeconds?: number }).retryAfterSeconds) || undefined);
+    if (error instanceof DraftProRequestError) return failure(res, error.statusCode, error.code ?? "draft_pro_unavailable", error.message, Number((error as { retryAfterSeconds?: number }).retryAfterSeconds) || undefined);
     if (error instanceof z.ZodError) return failure(res, 400, "invalid_input", error.issues[0]?.message ?? "Invalid DUST input.");
     return failure(res, 500, "dust_calculation_failed", "DUST could not be calculated.");
   }

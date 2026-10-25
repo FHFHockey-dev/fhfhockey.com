@@ -177,6 +177,41 @@ describe("PlayerRadarChart", () => {
     ]);
   });
 
+  it("starts every stat's league read before any of them returns", async () => {
+    let releaseGoals!: () => void;
+    const goalsResult = new Promise<QueryResult>((resolve) => {
+      releaseGoals = () =>
+        resolve({ data: [{ goals: 0.2 }, { goals: 0.5 }], error: null });
+    });
+    installQueryMock({
+      playerRow: { player_id: 8478402, points: 1.1, goals: 0.5, assists: 0.6 },
+      cohortRows: [{ points: 0.8, assists: 0.4 }],
+      cohortResults: { goals: goalsResult },
+    });
+
+    render(
+      <PlayerRadarChart
+        player={{ id: 8478402, fullName: "Skater", position: "C" }}
+        gameLog={[{ date: "2026-01-01", games_played: 1, points: 1 }]}
+        selectedStats={["points", "goals", "assists"]}
+        isGoalie={false}
+        seasonId={20252026}
+      />,
+    );
+
+    // The player row plus all three stat reads are issued while goals is
+    // still pending, so the stat reads run in parallel.
+    await waitFor(() => expect(queryTraces).toHaveLength(4));
+    expect(
+      queryTraces.slice(1).map((trace) => trace.calls[0]?.[1]),
+    ).toEqual(["points", "goals", "assists"]);
+
+    releaseGoals();
+    await waitFor(() =>
+      expect(screen.queryByText("Calculating rankings...")).toBeNull(),
+    );
+  });
+
   it("uses the goalie view with goalie_id and numeric season_id only", async () => {
     installQueryMock({
       playerRow: { goalie_id: 8478048, save_pct: 0.915 },

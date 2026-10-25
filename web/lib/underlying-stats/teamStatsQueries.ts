@@ -18,6 +18,7 @@ import {
   type TeamStatsLandingApiError,
   type TeamStatsLandingApiResponse,
   type TeamStatsLandingApiRow,
+  type TeamStatsLandingCoverage,
 } from "./teamStatsLandingApi";
 
 type TeamStatsSupabaseClient = SupabaseClient<Database>;
@@ -488,7 +489,9 @@ async function fetchOfficialTeamMetricsSnapshot(args: {
   };
 }
 
-function applyOfficialRowOverrides(args: {
+// Official NHL totals only replace native values when both cover the same
+// games; otherwise totals and native TOI/goals would describe different sets.
+export function applyOfficialRowOverrides(args: {
   row: TeamStatsLandingApiRow;
   state: TeamStatsLandingFilterState;
   official: OfficialTeamMetricsSnapshot;
@@ -499,7 +502,11 @@ function applyOfficialRowOverrides(args: {
 
   let nextRow: TeamStatsLandingApiRow = { ...row };
 
-  if (state.primary.strength === "allStrengths" && seasonSummary != null) {
+  if (
+    state.primary.strength === "allStrengths" &&
+    seasonSummary != null &&
+    seasonSummary.gamesPlayed === row.gamesPlayed
+  ) {
     const shotType = official.shotTypeByTeamId.get(row.teamId);
     const gamesPlayed = seasonSummary.gamesPlayed ?? nextRow.gamesPlayed;
     const toiPerGameSeconds = gamesPlayed > 0 ? nextRow.toiSeconds / gamesPlayed : nextRow.toiPerGameSeconds;
@@ -544,7 +551,11 @@ function applyOfficialRowOverrides(args: {
     };
   }
 
-  if (state.primary.strength === "fiveOnFive" && fiveOnFive != null) {
+  if (
+    state.primary.strength === "fiveOnFive" &&
+    fiveOnFive != null &&
+    fiveOnFive.gamesPlayed === row.gamesPlayed
+  ) {
     const gamesPlayed = fiveOnFive.gamesPlayed ?? nextRow.gamesPlayed;
     const toiPerGameSeconds = gamesPlayed > 0 ? nextRow.toiSeconds / gamesPlayed : nextRow.toiPerGameSeconds;
     const cf = fiveOnFive.satFor ?? nextRow.cf;
@@ -825,7 +836,8 @@ async function fetchSummaryRows(args: {
       .eq("strength", args.state.primary.strength)
       .eq("score_state", args.state.primary.scoreState)
       .order("game_date", { ascending: false })
-      .order("game_id", { ascending: false });
+      .order("game_id", { ascending: false })
+      .order("team_id", { ascending: true });
 
     if (args.state.expandable.teamId != null) {
       query = query.eq("team_id", args.state.expandable.teamId);
@@ -929,18 +941,61 @@ export function parseTeamLandingApiRequest(
   };
 }
 
+async function fetchSeasonCoverage(args: {
+  state: TeamStatsLandingFilterState;
+  supabase: TeamStatsSupabaseClient;
+}): Promise<TeamStatsLandingCoverage | null> {
+  const { fromSeasonId, throughSeasonId } = args.state.primary.seasonRange;
+  if (fromSeasonId == null || fromSeasonId !== throughSeasonId) {
+    return null;
+  }
+
+  const gameType = resolveSeasonGameType(args.state.primary.seasonType);
+  const today = new Date().toISOString().slice(0, 10);
+  try {
+    const [games, summaries] = await Promise.all([
+      args.supabase
+        .from("games")
+        .select("id", { count: "exact", head: true })
+        .eq("seasonId", fromSeasonId)
+        .eq("type", gameType)
+        .lt("date", today),
+      // One all-situations row per team per game: two rows per summarized game.
+      args.supabase
+        .from(TEAM_STATS_SUMMARY_TABLE)
+        .select("game_id", { count: "exact", head: true })
+        .eq("season_id", fromSeasonId)
+        .eq("game_type", gameType)
+        .eq("strength", "allStrengths")
+        .eq("score_state", "allScores"),
+    ]);
+    if (games.error || summaries.error || games.count == null || summaries.count == null) {
+      return null;
+    }
+    return {
+      completedGames: games.count,
+      summarizedGames: Math.ceil(summaries.count / 2),
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function queryTeamStatsLanding(args: {
   state: TeamStatsLandingFilterState;
   supabase?: TeamStatsSupabaseClient;
 }): Promise<TeamStatsLandingApiResponse> {
   const supabase = args.supabase ?? serverReadonlyClient;
-  const summaryRows = applyScopedRowWindow(
-    args.state,
-    await fetchSummaryRows({ state: args.state, supabase })
-  ).filter(hasSampledTeamSummaryRow);
+  const [fetchedRows, coverage] = await Promise.all([
+    fetchSummaryRows({ state: args.state, supabase }),
+    fetchSeasonCoverage({ state: args.state, supabase }),
+  ]);
+  const summaryRows = applyScopedRowWindow(args.state, fetchedRows).filter(
+    hasSampledTeamSummaryRow
+  );
 
   if (summaryRows.length === 0) {
-    return createEmptyTeamStatsLandingResponse(args.state);
+    return { ...createEmptyTeamStatsLandingResponse(args.state), coverage };
   }
 
   const teamIds = [...new Set(summaryRows.map((row) => row.team_id))];
@@ -988,5 +1043,6 @@ export async function queryTeamStatsLanding(args: {
     },
     placeholder: false,
     generatedAt: new Date().toISOString(),
+    coverage,
   };
 }

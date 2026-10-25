@@ -11,11 +11,25 @@
 ## Delegation and Review
 
 - For substantial work that can be divided into independent, bounded tasks, follow [mise-en-place.md](mise-en-place.md). The lead agent (Chef) owns scope, staffing, integration, verification, and the final decision to deliver. Verify actual model and reasoning settings before delegation; Chef's reasoning effort must be higher than every worker's. Do not delegate a small or inseparable task merely to create parallel work.
+- The optional [SPRINT-MODE.md](SPRINT-MODE.md) protocol applies only after the user issues `SPRINT MODE` as a command; `STOP SPRINT` stops it. Documentation, quotations, and discussion do not activate it. Normal pacing remains the default, and all existing repository rules and permissions remain in force.
+
+## Context Diaries
+
+- Every agent, session, and chat keeps a lightweight context diary alongside its work. Update it while the work happens: at the start, at each meaningful checkpoint or decision, and before pausing or handing off. Do not reconstruct it at the end.
+- Use one file per task: `tasks/diaries/<YYYY-MM-DD>-<platform>-<task-slug>.md`; create the folder if needed. Keep it short. Cover:
+  - scope;
+  - where: branch, commit SHAs, files, artifacts;
+  - current state and checks run;
+  - the next step;
+  - blockers and pending approvals;
+  - insights or gotchas.
+- Never put secrets, credentials, or private league/account data in a diary. Diaries are working notes, not deliverables: leave them out of release candidates, and do not treat them as approval or acceptance evidence.
+- Retire (delete) a diary only when its job or task is done and the outcome is recorded where it belongs: commit, register, handoff, or task list. A paused, blocked, unfinished, or handed-off task keeps its diary so the next agent can resume.
 
 ## Branch Naming
 
-- Use `octoberBranch` for ongoing implementation. `master` is the release branch: reconcile accepted work into it, then sync `octoberBranch` from the released commit before continuing.
-- Use an isolated `chef/` branch only when concurrent ownership or review requires it. Reconcile accepted changes back into the October workflow and preserve unfinished work before cleanup.
+- Use `/Users/tim/Code/fhfhockey.com` on `octoberBranch` as the sole local FHFH editing checkout and branch. Preserve `fhfhockey-october` and other historical worktrees without further edits. `master` is the release branch: reconcile accepted work into it, then sync `octoberBranch` from the released commit before continuing.
+- Coordinate concurrent work through exact file ownership in the canonical checkout. Do not start another editing branch or worktree unless the user explicitly changes the sole-checkout instruction; preserve existing divergent history and unfinished work.
 - Name new agent-created branches `chef/<descriptive-name>`, not `codex/`. Keep `master` and `octoberBranch` as the long-lived branches.
 - Before deleting a branch, check for unmerged commits and unfinished work; preserve unique work before cleanup.
 
@@ -88,7 +102,7 @@ Do not invent root-wide build, lint, format, or test commands. No repository for
 - Before triggering or retrying a deployment, inspect the existing deployment and build status for that exact SHA and environment. Reuse a suitable successful deployment and wait for an in-progress one. Do not launch duplicate CLI, dashboard, or Git builds. Inspect the failure first; retry only after a relevant correction or evidence of a transient failure, within the authorized scope.
 - Keep documentation-only and instruction-only work build-free. Use an already-approved, verified no-build workflow when publishing it; otherwise keep the change local and explain the blocker. Do not silently change Git integration, ignored-build rules, project settings, credentials, or deployment configuration to suppress builds.
 - Prefer bounded, read-only observability for production diagnosis: inspect existing logs, deployment metadata, usage records, and job status before making application requests. A GET request or a dry-run option is not proof that an endpoint is cheap or read-only; inspect its behavior first.
-- Do not invoke cron, ETL, ingestion, refresh, rebuild, recompute, sync, or publishing endpoints merely for QA, and do not repeatedly run them to poll progress. Use fixtures locally and existing job records remotely. Any necessary production execution must have explicit authorization and known bounds for dates, records, batches, concurrency, runtime, writes, and downstream fan-out. Keep NST requests at least 21 seconds apart across participating jobs; do not reduce spacing or enable bursts as a cost optimization.
+- Do not invoke cron, ETL, ingestion, refresh, rebuild, recompute, sync, or publishing endpoints merely for QA, and do not repeatedly run them to poll progress. Use fixtures locally and existing job records remotely. Any necessary production execution must have explicit authorization and known bounds for dates, records, batches, concurrency, runtime, writes, and downstream fan-out. NST enforces four rolling limits on unique URL requests, all of which must hold across participating jobs: 40 per minute, 80 per 5 minutes, 100 per 15 minutes and 180 per hour. A job needing fewer than 40 requests in total may burst; otherwise pace to honour every window (even spacing of at least 21 seconds satisfies all four). Never exceed a window or route around it with parallel keys or processes.
 - For an authorized production smoke test, default to at most five sequential read-only application requests (concurrency one), with exact routes and a stopping condition stated before execution; explain and obtain approval for a larger budget; reuse warm/cached read paths where they answer the question. Stop once the check is conclusive. No heavy production load tests, repeated full browser crawls, cache-busting loops, or unbounded polling without separate explicit authorization.
 - Preserve essential cron coverage, data freshness, and health/reporting jobs. Do not blanket-disable schedules to reduce a bill. Propose targeted changes only after checking per-route usage, invocation frequency, duration, overlapping runs, and required freshness; explain the operational tradeoff and obtain approval before changing production schedules or settings.
 - Before expensive remote validation, summarize why narrower checks are insufficient, the expected resource usage and limits, and any unknown cost. Report actual builds/deployments and bounded production requests performed, with unresolved cost attribution clearly labeled. Do not claim savings or blame a route without supporting usage evidence.

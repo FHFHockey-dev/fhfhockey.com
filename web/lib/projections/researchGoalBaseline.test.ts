@@ -11,6 +11,24 @@ import { RESEARCH_GOAL_CELLS, estimateResearchPlayerGoals, evaluateRetainedResea
 import { runResearchGoalBaseline } from "../../scripts/evaluate-research-goal-baseline";
 import { reconcileResearchGoalAppearanceManifest } from "./researchGoalAppearanceManifest";
 
+// Copied-source CLI controls can use preserved source revision metadata only.
+// Fixture dirty/tree labels are synthetic; receipts are mechanics, not acceptance.
+vi.mock("node:child_process", async importOriginal => {
+  const actual = await importOriginal<typeof import("node:child_process")>();
+  return { ...actual, execFileSync: (...args: unknown[]) => {
+    const root = process.env.FHFH_TEST_SOURCE_GIT_ROOT;
+    if (args[0] === "git" && root) {
+      const command = (args[1] as string[]).join(" ");
+      if (command === "rev-parse HEAD") return actual.execFileSync("git", ["-C", root, "rev-parse", "HEAD"], args[2] as object);
+      if (command === "status --porcelain") return "?? synthetic-gitless-fixture\n";
+      if (command === "ls-tree -r HEAD web") return "synthetic-gitless-fixture-tree\n";
+      throw new Error("Only read-only source revision metadata is allowed by this test adapter.");
+    }
+    return Reflect.apply(actual.execFileSync, undefined, args);
+  } };
+});
+
+
 const cutoff = "2026-10-08T22:00:00Z";
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value));
 const digest = (value: string) => createHash("sha256").update(value).digest("hex");
