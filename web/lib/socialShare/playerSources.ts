@@ -27,6 +27,9 @@ type CountedPage<T> = PromiseLike<{ data: T[] | null; error: unknown; count: num
 async function bounded<T>(what: string, limit: number, page: (from: number, to: number) => CountedPage<T>): Promise<T[]> {
   let expected: number | null = null;
   const rows = await fetchAllSupabasePages<T>(async ({ from, to }) => {
+    // A result that is an exact multiple of the page size would otherwise request a page past the end, which
+    // PostgREST answers with 416 (PGRST103) and the read would fail closed (SS1-20). The exact count is known.
+    if (expected != null && from >= expected) return { data: [], error: null };
     const { data, error, count } = await page(from, to);
     if (!error) {
       if (count == null || !Number.isFinite(count) || count < 0 || (expected != null && count !== expected)) throw new Error(`${what} completeness changed or is unavailable.`);

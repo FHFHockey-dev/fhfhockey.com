@@ -17,6 +17,8 @@ vi.mock("lib/supabase/public-client", () => ({
           call.range = [from, to]; source.calls.push(call);
           if (source.errors[table]) return { data: null, error: source.errors[table], count: null };
           const all = table === "yahoo_nhl_player_map_read" ? (source.rows[table] ?? []).filter(row => (call.filters.find(item => item[0] === "in")![2] as string[]).includes(row.yahoo_player_id as string)) : source.rows[table] ?? [];
+          // Like PostgREST: a range that starts past the last row is 416 Range Not Satisfiable (PGRST103).
+          if (from > 0 && from >= all.length) return { data: null, error: { code: "PGRST103", message: "Requested range not satisfiable" }, count: null };
           return { data: all.slice(from, to + 1), error: null, count: source.count[table] === undefined ? all.length : source.count[table] };
         },
       };
@@ -100,6 +102,24 @@ describe("live player source loader (mocked client)", () => {
     source.errors = { rolling_player_game_metrics: { code: "42703", message: "column rolling_player_game_metrics.x does not exist" } };
     source.rows.wgo_goalie_stats = [{ goalie_id: 2 }];
     expect(await loadSharePlayerRecent(20262027, [1], [2], "2026-10-04")).toEqual({ rolling: null, goalieGames: [{ goalie_id: 2 }] });
+    warn.mockRestore();
+  });
+
+  it("reads a result of exactly one full page without requesting a page past the end (SS1-20)", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    // 1,000 rows (an exact multiple of the 1,000-row page) for a 50-skater pool: before SS1-20 the second request
+    // asked for rows 1000+ and PostgREST's 416 failed the whole skater read.
+    const ids = Array.from({ length: 50 }, (_, i) => i + 1);
+    source.rows = { rolling_player_game_metrics: Array.from({ length: 1000 }, (_, i) => ({ player_id: ids[i % 50], game_date: `2026-10-${String(4 + (i % 20)).padStart(2, "0")}` })), wgo_goalie_stats: [] };
+    const recent = await loadSharePlayerRecent(20262027, ids, [], "2026-10-04");
+    expect(recent.rolling).toHaveLength(1000);
+    expect(source.calls.filter(call => call.table === "rolling_player_game_metrics").map(call => call.range)).toEqual([[0, 999]]);
+    expect(warn).not.toHaveBeenCalled();
+    // One row more pages normally into a second request.
+    source.calls = [];
+    source.rows.rolling_player_game_metrics.push({ player_id: 1, game_date: "2026-10-24" });
+    expect((await loadSharePlayerRecent(20262027, ids, [], "2026-10-04")).rolling).toHaveLength(1001);
+    expect(source.calls.filter(call => call.table === "rolling_player_game_metrics").map(call => call.range)).toEqual([[0, 999], [1000, 1099]]);
     warn.mockRestore();
   });
 
