@@ -193,48 +193,54 @@ function retargetGoalieLine(line: StatLine, from: Context, to: Context, venue: {
  * team xG priors for a game FORGE has not projected yet. */
 export type BridgeTeamWin = { gameId: string; team: string; probability: number; source: "forge" | "forge_paired" | "forge_model" };
 export type ForgeDailyBridgeResult = { forecasts: GameForecast[]; limitations: string[]; teamWins: BridgeTeamWin[] };
-type SeasonRates = Record<string, number> & { gwgShare: number };
+type SeasonRates = Record<string, number | null> & { gwgShare: number | null };
 
-/** Per-game rates for the stats FORGE does not project, blended over this season and half of last, pulled toward the league rate. */
+/** Per-game rates for the stats FORGE does not project, blended over this season and half of last, pulled toward the league rate.
+ * Only rows that record a stat count toward it, so a stat no row records is unknown (null), never 0. Players with no
+ * rows get no entry: their rates are unknown too, not the league's. */
 export function seasonRates(rows: Row[], seasonId: number): Map<number, SeasonRates> {
   const previous = String((Math.floor(seasonId / 10000) - 1) * 10001 + 1);
-  const weighted = new Map<number, Record<string, number>>();
+  const weighted = new Map<number, Record<string, { games: number; total: number }>>();
   for (const row of rows) {
     const weight = String(row.season) === String(seasonId) ? 1 : String(row.season) === previous ? LAST_SEASON_WEIGHT : 0;
     if (!weight || !finite(row.player_id) || !finite(row.games_played) || row.games_played <= 0) continue;
-    const sum = weighted.get(row.player_id) ?? { games: 0, goals: 0, gwg: 0 };
-    sum.games += weight * row.games_played;
-    sum.goals += weight * (finite(row.goals) ? row.goals : 0); sum.gwg += weight * (finite(row.gw_goals) ? row.gw_goals : 0);
-    for (const [key, column] of Object.entries(TOTAL_COLUMNS)) sum[key] = (sum[key] ?? 0) + weight * (finite(row[column]) ? row[column] : 0);
-    weighted.set(row.player_id, sum);
+    const sums = weighted.get(row.player_id) ?? {};
+    const add = (key: string, value: unknown) => {
+      if (!finite(value)) return;
+      const sum = sums[key] ??= { games: 0, total: 0 };
+      sum.games += weight * row.games_played; sum.total += weight * value;
+    };
+    for (const [key, column] of Object.entries(TOTAL_COLUMNS)) add(key, row[column]);
+    if (finite(row.goals) && finite(row.gw_goals)) { add("goals", row.goals); add("gwg", row.gw_goals); }
+    weighted.set(row.player_id, sums);
   }
   const league: Record<string, number> = {};
-  const games = [...weighted.values()].reduce((total, sum) => total + sum.games, 0);
-  for (const key of Object.keys(TOTAL_COLUMNS)) league[key] = key === "PLUS_MINUS" || !games ? 0
-    : [...weighted.values()].reduce((total, sum) => total + sum[key], 0) / games;
+  for (const key of Object.keys(TOTAL_COLUMNS)) {
+    const sums = [...weighted.values()].flatMap(player => player[key] ? [player[key]] : []);
+    const games = sums.reduce((total, sum) => total + sum.games, 0);
+    league[key] = key === "PLUS_MINUS" || !games ? 0 : sums.reduce((total, sum) => total + sum.total, 0) / games;
+  }
   const result = new Map<number, SeasonRates>();
-  for (const [playerId, sum] of weighted) {
-    const rates = { gwgShare: (sum.gwg + GWG_SHARE_PRIOR * GWG_SHRINK_GOALS) / (sum.goals + GWG_SHRINK_GOALS) } as SeasonRates;
-    for (const key of Object.keys(TOTAL_COLUMNS)) rates[key] = (sum[key] + SHRINK_GAMES[key] * league[key]) / (sum.games + SHRINK_GAMES[key]);
+  for (const [playerId, sums] of weighted) {
+    const rates = { gwgShare: sums.goals ? (sums.gwg.total + GWG_SHARE_PRIOR * GWG_SHRINK_GOALS) / (sums.goals.total + GWG_SHRINK_GOALS) : null } as SeasonRates;
+    for (const key of Object.keys(TOTAL_COLUMNS)) rates[key] = sums[key]
+      ? (sums[key].total + SHRINK_GAMES[key] * league[key]) / (sums[key].games + SHRINK_GAMES[key]) : null;
     result.set(playerId, rates);
   }
-  result.set(0, { ...Object.fromEntries(Object.keys(TOTAL_COLUMNS).map(key => [key, SHRINK_GAMES[key] ? league[key] : 0])), gwgShare: GWG_SHARE_PRIOR } as SeasonRates);
   return result;
 }
 
-const SPECIAL_TEAMS_COLUMNS = ["proj_goals_pp", "proj_assists_pp", "proj_shots_pp", "proj_toi_pp_seconds",
-  "proj_goals_pk", "proj_assists_pk", "proj_shots_pk", "proj_toi_pk_seconds"];
+const POWER_PLAY_HEADS = ["proj_goals_pp", "proj_assists_pp", "proj_shots_pp"];
 /** Up to this much projected power-play time per game counts as none. */
 const NO_POWER_PLAY_SECONDS = 6;
-/** FORGE leaves power-play and penalty-kill heads blank for a skater with no such history. With (about) no projected
- * power-play time that is no production, not unknown; with real power-play time the blanks stay unknown. */
-function withSpecialTeamsZeros(row: Row): { row: Row; filled: boolean; unknown: boolean } {
-  if (![row.proj_goals_es, row.proj_assists_es, row.proj_shots_es].every(finite)) return { row, filled: false, unknown: false };
-  const blanks = SPECIAL_TEAMS_COLUMNS.filter(key => !finite(row[key]));
-  const powerPlayBlank = blanks.some(key => key.includes("_pp"));
-  if (powerPlayBlank && finite(row.proj_toi_pp_seconds) && row.proj_toi_pp_seconds > NO_POWER_PLAY_SECONDS) return { row, filled: false, unknown: true };
-  return blanks.length ? { row: { ...row, ...Object.fromEntries(blanks.map(key => [key, 0])) }, filled: powerPlayBlank, unknown: false }
-    : { row, filled: false, unknown: false };
+/** Declared modeled-zero policy: FORGE leaves power-play heads blank for a skater with no power-play role. When it also
+ * stores (about) no power-play time, the blanks are no production and count 0. Blank heads beside real or unrecorded
+ * power-play time are absent evidence and stay unknown. Penalty-kill heads are not modeled (see modeledHeadTotals). */
+function withPowerPlayZeros(row: Row): { row: Row; filled: boolean; unknown: boolean } {
+  const blanks = POWER_PLAY_HEADS.filter(key => !finite(row[key]));
+  if (!blanks.length || ![row.proj_goals_es, row.proj_assists_es, row.proj_shots_es].every(finite)) return { row, filled: false, unknown: false };
+  if (!finite(row.proj_toi_pp_seconds) || row.proj_toi_pp_seconds > NO_POWER_PLAY_SECONDS) return { row, filled: false, unknown: true };
+  return { row: { ...row, ...Object.fromEntries(blanks.map(key => [key, 0])) }, filled: true, unknown: false };
 }
 
 function skaterStats(row: Row, rates: SeasonRates | null): StatLine | null {
@@ -247,8 +253,10 @@ function skaterStats(row: Row, rates: SeasonRates | null): StatLine | null {
     PP_POINTS: heads.ppPoints, SHOTS_ON_GOAL: heads.shots,
     HITS: finite(row.proj_hits) ? row.proj_hits : null, BLOCKED_SHOTS: finite(row.proj_blocks) ? row.proj_blocks : null,
     TIME_ON_ICE_PER_GAME: toi };
-  // FORGE values win where the writers store them; season rates (or 0 when unreadable) fill the rest.
-  for (const key of FORGE_DAILY_BRIDGE_SEASON_RATED) stats[key] = key === "GAME_WINNING_GOALS" ? heads.goals * (rates?.gwgShare ?? 0) : rates?.[key] ?? 0;
+  // FORGE values win where the writers store them; season rates fill the rest, and an unreadable or missing rate stays unknown.
+  const gwgShare = rates?.gwgShare;
+  for (const key of FORGE_DAILY_BRIDGE_SEASON_RATED) stats[key] = key === "GAME_WINNING_GOALS"
+    ? finite(gwgShare) ? heads.goals * gwgShare : null : rates?.[key] ?? null;
   if (finite(row.proj_pim)) stats.PENALTY_MINUTES = row.proj_pim;
   if (finite(row.proj_plus_minus)) stats.PLUS_MINUS = row.proj_plus_minus;
   return Object.fromEntries(Object.entries(stats).map(([key, value]) => [key, round(value)]));
@@ -287,12 +295,21 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
   for (const row of skaterRows) if ((teamLatestDate.get(row.team_id) ?? "") < row.as_of_date) teamLatestDate.set(row.team_id, row.as_of_date);
   const goalieLatest = latest(goalieRows, row => row.goalie_id), teamGoalieLatest = latest(goalieRows, row => row.team_id);
   const exactGoalie = latest(goalieRows, row => `${row.game_id}:${row.team_id}`);
-  const shares = new Map<number, number>();
+  // A start share counts only from a row for the goalie's current team this season (the season is the game id's first
+  // four digits): a row from before a trade, or from another season, describes another role, so it is ignored.
+  const goalieTeams = new Map(players.filter(player => player.playerClass === "goalie" && player.nhlId !== null && finite(player.nhlTeamId))
+    .map(player => [player.nhlId!, player.nhlTeamId!]));
+  const seasonStartYear = Math.floor(seasonId / 10000);
+  const latestShares = new Map<number, number>(), exactShares = new Map<string, number>(), unboundShares = new Set<number>();
   const shareOrder = new Map<number, string>();
   for (const row of inputs.goalieShares) {
     const value = share(row.l10_start_pct) ?? share(row.season_start_pct), key = `${row.game_date}|${row.updated_at ?? ""}`;
-    if (value === null || !finite(row.player_id) || (shareOrder.get(row.player_id) ?? "") >= key) continue;
-    shares.set(row.player_id, value); shareOrder.set(row.player_id, key);
+    if (value === null || !finite(row.player_id)) continue;
+    if (!finite(row.team_id) || row.team_id !== goalieTeams.get(row.player_id) || !finite(row.game_id)
+      || Math.floor(row.game_id / 1000000) !== seasonStartYear) { unboundShares.add(row.player_id); continue; }
+    exactShares.set(`${row.game_id}:${row.player_id}`, value);
+    if ((shareOrder.get(row.player_id) ?? "") >= key) continue;
+    latestShares.set(row.player_id, value); shareOrder.set(row.player_id, key);
   }
   const rates = inputs.seasonTotals ? seasonRates(inputs.seasonTotals, seasonId) : null;
   const priors = teamStrengthPriors(inputs.teamPriors ?? [], inputs.lastSeasonTeams ?? []);
@@ -358,18 +375,20 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
   };
   const identified = players.filter(player => player.nhlId !== null && finite(player.nhlTeamId) && player.rosterRevision && player.teamAbbreviation);
   let staleSkaters = 0, teamMismatch = 0, noPowerPlay = 0, unknownPowerPlay = 0;
-  const unknownHeads = new Set<number>(), unsharedGoalies = new Set<number>();
+  const unknownHeads = new Set<number>(), unsharedGoalies = new Set<number>(), unratedSkaters = new Set<number>();
   for (const player of identified.filter(row => row.playerClass === "skater")) {
     const latestRow = skaterLatest.get(player.nhlId);
     if (!latestRow) continue;
     if (latestRow.team_id !== player.nhlTeamId) { teamMismatch++; continue; }
     // Missing from his team's latest run (scratched, injured or reassigned since): only lines issued for a game itself stand.
     const stale = latestRow.as_of_date !== teamLatestDate.get(latestRow.team_id), emitted = forecasts.length;
+    const playerRates = rates?.get(player.nhlId!) ?? null;
     const lineFor = (row: Row) => {
-      const special = withSpecialTeamsZeros(row);
+      const special = withPowerPlayZeros(row);
       if (special.filled) noPowerPlay++;
       if (special.unknown) unknownPowerPlay++;
-      const line = skaterStats(special.row, rates ? rates.get(player.nhlId!) ?? rates.get(0)! : null);
+      const line = skaterStats(special.row, playerRates);
+      if (line && rates && !playerRates) unratedSkaters.add(player.nhlId!);
       if (!line && !special.unknown) unknownHeads.add(player.nhlId!);
       return line;
     };
@@ -430,6 +449,11 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
   for (const player of identified.filter(row => row.playerClass === "goalie")) goaliesByTeam.set(player.nhlTeamId!, [...(goaliesByTeam.get(player.nhlTeamId!) ?? []), player]);
   for (const [teamId, goalies] of goaliesByTeam) for (const game of upcoming(goalies[0].teamAbbreviation!)) {
     const exact = exactGoalie.get(`${game.id}:${teamId}`), exactProbability = exact ? share(exact.starter_probability) : null;
+    // This game's own start-share row first, else the goalie's latest bound row.
+    const shares = new Map(goalies.flatMap(goalie => {
+      const value = exactShares.get(`${game.id}:${goalie.nhlId}`) ?? latestShares.get(goalie.nhlId!);
+      return value === undefined ? [] : [[goalie.nhlId!, value] as const];
+    }));
     const probability = new Map<string, number>();
     if (exact && exactProbability !== null && goalies.some(goalie => goalie.nhlId === exact.goalie_id)) {
       const others = goalies.filter(goalie => goalie.nhlId !== exact.goalie_id && shares.has(goalie.nhlId!));
@@ -493,19 +517,22 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
   const coveredTeams = new Set(forecasts.map(row => row.issuedContext!.teamId)).size;
   const teamCount = new Set(identified.map(player => player.nhlTeamId)).size;
   const dates = [...runs.values()].map(run => run.asOfDate).sort();
+  const staleShareGoalies = [...unboundShares].filter(id => goalieTeams.has(id) && !latestShares.has(id)).length;
   const limitations = [
     `Interim FORGE projections until native forecasts go live: each player's latest FORGE v2 daily line (runs ${dates[0]} to ${dates.at(-1)}) stands in for his remaining games; ${coveredTeams} of ${teamCount} teams covered.`,
     rates ? "Penalty minutes, plus-minus, shorthanded points, game-winning goals and faceoffs are season per-game rates (this season plus half of last, pulled toward league rates), not FORGE projections."
-      : "Season rates could not be read, so penalty minutes, plus-minus, shorthanded points, game-winning goals and faceoffs count as 0.",
+      : "Season rates could not be read, so penalty minutes, plus-minus, shorthanded points, game-winning goals and faceoffs are unknown; totals that score them are withheld.",
+    ...(unratedSkaters.size ? [`${unratedSkaters.size} skaters have no season totals this season or last, so their penalty minutes, plus-minus, shorthanded points, game-winning goals and faceoffs are unknown.`] : []),
     priors.size ? `Future games move each FORGE line to that game's opponent with FORGE's team-strength adjustment (team xG for and against, ${priors.size} teams${inputs.lastSeasonTeams?.length ? `, last season blended in as ${LAST_SEASON_PRIOR_GAMES} games` : ""})${scheduleById.size ? ", plus FORGE's home-ice and rest model (back-to-backs included); a goalie's start chance drops on the second night of a back-to-back" : ""}${tilts.size ? ", and each opponent's tilt toward forwards or defencemen (points and shots allowed by position vs league, shrunk)" : ""}.`
       : "Team strength could not be read, so future games reuse each FORGE line without an opponent adjustment.",
     ...(teamWins.size ? [`Goalie wins: FORGE's per-game team win probability (both teams sum to 1) × ${STARTER_DECISION_SHARE} starter decision share, times his start chance; games FORGE has not projected yet use FORGE's same win model on team xG.`] : []),
     ...(unknownWins ? [`${unknownWins} goalie-games have no team win probability (FORGE left it blank, or a team-strength prior is missing), so their wins are unknown.`] : []),
-    "Goalie starts use each goalie's last-10 start share (season share when missing), or FORGE's own starter probability for an already projected game. Per-start lines come from his latest FORGE line, or his team's when he has none.",
+    "Goalie starts use each goalie's last-10 start share (season share when missing) from start rows for his current team this season: the row for that game when one exists, otherwise his latest. FORGE's own starter probability applies to an already projected game. Per-start lines come from his latest FORGE line, or his team's when he has none.",
+    ...(staleShareGoalies ? [`${staleShareGoalies} goalies have start shares only from another team or season; those are ignored, so their start chance is unknown.`] : []),
     inputs.goalieNews ? `Goalie news (IFTTT, accepted automatically): ${news.confirmed} confirmed, ${news.speculative} likely or projected (start chance at least ${FORGE_DAILY_BRIDGE_GOALIE_NEWS_FLOORS.likely * 100}% / ${FORGE_DAILY_BRIDGE_GOALIE_NEWS_FLOORS.projected * 100}%), ${news.ruledOut} ruled out${news.disputed ? `, ${news.disputed} disputed and ignored` : ""}.`
       : "Goalie news could not be read; start chances use start shares only.",
-    ...(noPowerPlay ? [`${noPowerPlay} skaters with no FORGE power-play line or time count 0 power-play production.`] : []),
-    ...(unknownPowerPlay ? [`${unknownPowerPlay} skaters have projected power-play time but no FORGE power-play line, so they get no forecast.`] : []),
+    ...(noPowerPlay ? [`${noPowerPlay} skaters with no FORGE power-play line and at most ${NO_POWER_PLAY_SECONDS} s of projected power-play time count 0 power-play production.`] : []),
+    ...(unknownPowerPlay ? [`${unknownPowerPlay} skaters have no FORGE power-play line and real or unrecorded power-play time, so they get no forecast.`] : []),
     ...(unknownHeads.size ? [`${unknownHeads.size} skaters have a FORGE line with blank even-strength goals, assists or shots; such lines give no forecast.`] : []),
     ...(staleSkaters ? [`${staleSkaters} skaters missing from their team's latest FORGE run get no forecast (likely scratched, injured or moved).`] : []),
     ...(teamMismatch ? [`${teamMismatch} skaters whose latest FORGE line is for a different team than their current one get no forecast.`] : []),
@@ -541,7 +568,7 @@ export async function loadForgeDailyBridgeForecasts(db: SupabaseClient<any>, pla
       .order("run_id").order("game_id").order("player_id"), readDeadline, 15000, row => [row.run_id, row.game_id, row.player_id]),
     pages(() => db.from("forge_goalie_projections").select(GOALIE_COLUMNS, { count: "exact" }).in("run_id", runIds).eq("horizon_games", 1)
       .order("run_id").order("game_id").order("goalie_id"), readDeadline, 2000, row => [row.run_id, row.game_id, row.goalie_id]),
-    pages(() => db.from("goalie_start_projections").select("player_id,game_id,game_date,l10_start_pct,season_start_pct,updated_at", { count: "exact" })
+    pages(() => db.from("goalie_start_projections").select("player_id,team_id,game_id,game_date,l10_start_pct,season_start_pct,updated_at", { count: "exact" })
       .gte("game_date", from).lte("game_date", to).order("game_date", { ascending: false }).order("game_id").order("player_id"),
     readDeadline, 5000, row => [row.game_id, row.player_id]),
     // Optional inputs: a failed read keeps the projections and says so in the evidence.
