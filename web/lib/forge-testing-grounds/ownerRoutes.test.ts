@@ -179,7 +179,9 @@ describe("validated run-store read adapter over the synthetic memory reference",
     expect(progress.body.stages.map((stage: RunProgress["stages"][number]) => stage.percent)).toEqual([100, 100]);
     expect(JSON.stringify(progress.body)).not.toContain("syntheticStep");
     for (const operation of ["results", "logs", "export"]) expect(await call(memory, runId, operation)).toEqual(sealed);
-    for (const operation of ["health", "manifest"]) expect(await call(memory, runId, operation)).toEqual(unavailable);
+    expect(await call(memory, runId, "health")).toEqual(unavailable);
+    const manifest = await call(memory, runId, "manifest");
+    expect(manifest).toEqual({ status: 200, body: { runId, planHash: progress.body.planHash, plan: plan() } });
     expect(await memory.reveal(ownerId, runId, 2_000)).toBe(true);
     const results = await call(memory, runId, "results");
     expect(results.status).toBe(200);
@@ -220,6 +222,18 @@ describe("validated run-store read adapter over the synthetic memory reference",
       expect(reply).toEqual(unavailable);
       expect(JSON.stringify(reply)).not.toContain("SYNTHETIC_OUTCOME");
     }
+  });
+  it.each<[string, (plan: ExperimentPlan) => unknown]>([
+    ["a different plan", value => ({ ...value, candidate: { ...value.candidate, contentHash: "9".repeat(64) } })],
+    ["an unknown field", value => ({ ...value, unsafeMarker: "SYNTHETIC_OUTCOME" })],
+  ])("refuses a manifest with %s", async (_label, poison) => {
+    const { memory, runId } = await accepted();
+    const store = Object.assign(Object.create(memory), {
+      manifest: async (owner: string, id: string) => poison(await memory.manifest(owner, id)),
+    }) as ExperimentRunStore;
+    const reply = await call(store, runId, "manifest");
+    expect(reply).toEqual(unavailable);
+    expect(JSON.stringify(reply)).not.toContain("SYNTHETIC_OUTCOME");
   });
   it("refuses a per-run projection for another run and a listing that repeats a run", async () => {
     const { memory, runId } = await accepted();
