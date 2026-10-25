@@ -103,7 +103,8 @@ export function buildGoalieShareByTeam(rows: readonly GoalieGameRow[], span: Spa
       const timeOnIce = completeSum(row => row.timeOnIce);
       return {
         playerId, goalieFullName: goalieRows[goalieRows.length - 1].goalieFullName,
-        gamesPlayed: sum(row => row.gamesPlayed),
+        // Each unique per-game row is one appearance; only an explicit 0 is not.
+        gamesPlayed: sum(row => (row.gamesPlayed === 0 ? 0 : 1)),
         gamesStarted: startsComplete ? sum(row => row.gamesStarted ?? 0) : null, timeOnIce,
         wins: sum(row => row.wins), losses: sum(row => row.losses), otLosses: sum(row => row.otLosses),
         savePct: shotsAgainst !== null && shotsAgainst > 0 && saves !== null && saves <= shotsAgainst ? saves / shotsAgainst : null,

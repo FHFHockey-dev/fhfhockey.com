@@ -143,4 +143,19 @@ describe("buildGoalieShareByTeam", () => {
     expect(stats.goalies.map(goalie => goalie.gamesStarted)).toEqual([null, null]);
     expect(stats.goalies.map(goalie => goalie.gamesPlayed)).toEqual([2, 1]);
   });
+
+  it("counts each per-game row as one appearance when gamesPlayed is missing or malformed", () => {
+    const stats = buildGoalieShareByTeam([
+      row({ gameId: 1, gamesPlayed: null as unknown as number }),
+      row({ gameId: 2 }),
+      row({ gameId: 3, gamesPlayed: 3 }),
+      row({ gameId: 3, playerId: 2, goalieFullName: "Backup Two", gamesPlayed: 0 })
+    ], "Season").PHI;
+    expect(stats.totalGames).toBe(3);
+    expect(stats.goalies.map(goalie => [goalie.goalieFullName, goalie.gamesPlayed])).toEqual([
+      ["Starter One", 3],
+      ["Backup Two", 0]
+    ]);
+    expect(stats.totalAppearances).toBe(3);
+  });
 });
