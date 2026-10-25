@@ -16,6 +16,7 @@ import { countTiers } from "../lib/socialShare/mondayGrid";
 import { streamingTiers, trimEditionPlayers } from "../lib/socialShare/tiers";
 import { SCORE_FORMULA, SPECIALIST_FORMULA } from "../lib/socialShare/score";
 import { streakOf, type StreakContext } from "../lib/socialShare/streak";
+import { targetPicks } from "../lib/socialShare/targets";
 
 const evidence = process.env.SOCIAL_SHARE_EVIDENCE_DIR || "/tmp/fhf-social-card-readiness-evidence-20261008";
 const upcomingWeek = calendarWeekStart(new Date(Date.now() + 7 * 86400000).toISOString());
@@ -100,7 +101,7 @@ async function signIn(page: Page, access: Access) {
 
 async function install(page: Page, access: Access = { role: "social_editor", signedIn: true, roleReads: 0, writes: [] }) {
   await signIn(page, access);
-  const controller = { requests: 0, fail: false, mode: "ready" as Mode, longName: false, pinnedAt: undefined as string | undefined, rates: "ready" as Rates, players: "ready" as PlayerMode, trends: "ready" as Rates, recentRead: "ready" as RecentRead, liveTrim: false, liveTuesday: false, latest: null as SocialShareSnapshot | null };
+  const controller = { requests: 0, fail: false, mode: "ready" as Mode, longName: false, pinnedAt: undefined as string | undefined, rates: "ready" as Rates, players: "ready" as PlayerMode, trends: "ready" as Rates, recentRead: "ready" as RecentRead, liveTrim: false, longPlayer: false, liveTuesday: false, latest: null as SocialShareSnapshot | null };
   await page.context().route("**/*", route => ["127.0.0.1", "localhost"].includes(new URL(route.request().url()).hostname) ? route.continue() : route.abort());
   await page.route("**/api/v1/social-share/**", async route => {
     controller.requests++;
@@ -119,6 +120,11 @@ async function install(page: Page, access: Access = { role: "social_editor", sig
     if (controller.longName) {
       for (const row of next.rows) if (row.team.id === 1) row.team.name = "New Jersey Extremely Long Fantasy Hockey Team Name";
       for (const team of next.teams) if (team.id === 1) team.name = "New Jersey Extremely Long Fantasy Hockey Team Name";
+    }
+    // longPlayer: every night's first target gets a long real-world-style name (ticket 22 no-overflow check).
+    if (controller.longPlayer && next.players) {
+      const ids = new Set(streamingNights(next, true).flatMap(night => targetPicks(next, night, true).slice(0, 1).map(pick => pick.player.nhlId)));
+      next = { ...next, players: { ...next.players, players: next.players.players.map(player => ids.has(player.nhlId) ? { ...player, name: "Jean-Gabriel Ekman-Larsson" } : player) } };
     }
     // liveTrim replays the live server's trim: only the cards' players leave, with tier counts.
     if (controller.liveTrim && next.players) next = { ...next, players: trimEditionPlayers(next, next.players) };
@@ -479,15 +485,52 @@ test("Easiest schedules and streaming matchup cards rank by Game Grid opponent D
   await expect(square).toHaveAttribute("aria-label", new RegExp(`^FHFH Easiest schedules.*1\\. ${expected[0].team.name}: opponent defense ${Math.round(expected[0].def)}`));
   await downloadedPng(page, "monday-easiest-schedules");
   await page.getByRole("combobox", { name: /^Graphic/ }).selectOption("stream");
-  await expect(square).toContainText("STREAMING MATCHUPS");
+  await expect(square).toContainText("TARGETED MATCHUPS");
+  await expect(square).toContainText("Cherry-picked games");
+  await expect(square).not.toContainText("STREAMING MATCHUPS");
+  await expect(square).not.toContainText("Most signals first");
   const nights = streamingNights(source.latest!, true);
   expect(nights.length).toBeGreaterThan(0);
   const tiles = square.locator("[data-team]");
   await expect(tiles).toHaveCount(nights.length);
   expect(await tiles.evaluateAll(nodes => nodes.map(node => node.getAttribute("data-team")))).toEqual(nights.map(night => night.team.abbreviation));
+  // Ticket 22: up to 3 target mini-cards per night, from the tilt team only, exactly the library's picks and roles.
+  const targetView = () => tiles.evaluateAll(nodes => nodes.map(node => Array.from(node.querySelectorAll("[data-target]")).map(card => `${card.getAttribute("data-target")}:${card.getAttribute("data-roles")}`)));
+  const expectedTargets = nights.map(night => targetPicks(source.latest!, night, true).map(pick => `${pick.player.nhlId}:${pick.roles.join("|")}`));
+  expect(await targetView()).toEqual(expectedTargets);
+  expect(expectedTargets.flat().length).toBeGreaterThan(0);
+  // TJ: fieldset cards with the role as a notched legend; the full name, position and value fit, nothing clipped.
+  const cardText = () => square.locator("[data-target]").evaluateAll(nodes => nodes.map(node => {
+    const box = node.getBoundingClientRect(), parts = ["legend", "strong", "small", "em"].map(tag => node.querySelector(tag) as HTMLElement);
+    return { tag: node.tagName, legend: parts[0].textContent, name: parts[1].textContent, pos: parts[2].textContent, value: parts[3].textContent,
+      inside: parts.every(part => { const r = part.getBoundingClientRect(); return r.left >= box.left - 1 && r.right <= box.right + 1 && r.top >= box.top - 1 && r.bottom <= box.bottom + 1; }),
+      unclipped: parts.every(part => part.scrollWidth <= part.clientWidth + 1) };
+  }));
+  const checkCards = async () => {
+    const cards = await cardText(), picks = nights.flatMap(night => targetPicks(source.latest!, night, true));
+    expect(cards.map(card => [card.tag, card.legend, card.name, card.pos, card.value])).toEqual(picks.map(pick => ["FIELDSET", pick.roles.map(role => ({ scorer: "Scorer", shooter: "Shooter", blocker: "Blocker" })[role]).join(" + "), pick.player.name, pick.player.positions, pick.stat]));
+    expect(cards.every(card => card.inside && card.unclipped)).toBe(true);
+  };
+  await checkCards();
+  await expect(square).toContainText("Picks = rostered <50% (Yahoo), season rates");
+  for (const night of nights) for (const pick of targetPicks(source.latest!, night, true)) expect(pick.player.team).toBe(night.team.abbreviation);
   expect(await matchupGeometry(page)).toEqual({ fits: true, rowsInside: true, brokenImages: 0 });
   await expect(download).toBeEnabled();
   await downloadedPng(page, "monday-streaming-matchups");
+  // A long name wraps inside its card instead of clipping, and the tiles still fit the square.
+  source.longPlayer = true;
+  await page.getByRole("button", { name: "Refresh schedule", exact: true }).click();
+  await expect(square).toContainText("Jean-Gabriel Ekman-Larsson");
+  await checkCards();
+  expect(await matchupGeometry(page)).toEqual({ fits: true, rowsInside: true, brokenImages: 0 });
+  source.longPlayer = false;
+  await page.getByRole("button", { name: "Refresh schedule", exact: true }).click();
+  await expect(square).not.toContainText("Jean-Gabriel Ekman-Larsson");
+  // Live-shaped edition: the server trim keeps the picks, so the card shows the same targets.
+  source.liveTrim = true;
+  await page.getByRole("button", { name: "Refresh schedule", exact: true }).click();
+  await expect(tiles).toHaveCount(nights.length);
+  await expect.poll(targetView).toEqual(expectedTargets);
   expect(errors).toEqual([]);
 });
 

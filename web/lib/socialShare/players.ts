@@ -10,7 +10,7 @@ type Tables = Database["public"]["Tables"];
 type Views = Database["public"]["Views"];
 /** Read-only source shapes; only these columns are ever consumed. */
 export type ShareMapRow = Pick<Views["yahoo_nhl_player_map_read"]["Row"], "yahoo_player_id" | "nhl_player_id">;
-export type ShareSkaterRow = Pick<Tables["wgo_skater_stats_totals"]["Row"], "player_id" | "player_name" | "season" | "games_played" | "points_per_game" | "shots" | "hits" | "blocked_shots" | "current_team_abbreviation" | "updated_at">;
+export type ShareSkaterRow = Pick<Tables["wgo_skater_stats_totals"]["Row"], "player_id" | "player_name" | "season" | "games_played" | "points_per_game" | "goals" | "shots" | "hits" | "blocked_shots" | "current_team_abbreviation" | "updated_at">;
 export type ShareGoalieRow = Pick<Tables["wgo_goalie_stats_totals"]["Row"], "goalie_id" | "goalie_name" | "season_id" | "games_played" | "games_started" | "quality_starts_pct" | "save_pct" | "current_team_abbreviation" | "updated_at">;
 export type SharePlayerSources = { yahoo: PickupOwnershipRow[]; map: ShareMapRow[]; skaters: ShareSkaterRow[]; goalies: ShareGoalieRow[] };
 
@@ -95,7 +95,7 @@ export function buildPlayerLayer(sources: SharePlayerSources | null, input: { se
       const stats = skaters.get(nhlId);
       if (stats && count(stats.games_played) && stats.games_played >= MIN_SKATER_GAMES && stats.player_name && stats.current_team_abbreviation && count(stats.points_per_game) && count(stats.hits) && count(stats.shots) && count(stats.blocked_shots)) {
         player = { nhlId, name: stats.player_name, team: stats.current_team_abbreviation, group: position.group, positions: position.positions, ownership: owned.ownership, gamesPlayed: stats.games_played,
-          pointsPerGame: stats.points_per_game, hits: stats.hits, shots: stats.shots, blocks: stats.blocked_shots, gamesStarted: null, qualityStartPct: null, savePct: null };
+          pointsPerGame: stats.points_per_game, goals: count(stats.goals) ? stats.goals : null, hits: stats.hits, shots: stats.shots, blocks: stats.blocked_shots, gamesStarted: null, qualityStartPct: null, savePct: null };
         updated = stats.updated_at;
       }
     }

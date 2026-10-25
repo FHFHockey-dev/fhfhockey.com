@@ -17,6 +17,7 @@ import { TeamBanner, teamBannerStyle } from "./TeamBanner";
 import { streamingTiers, tierPlayersAvailable, type TierMode } from "lib/socialShare/tiers";
 import { playerScore, SCORE_FORMULA, SPECIALIST_FORMULA } from "lib/socialShare/score";
 import { streakOf, type Streak, type StreakContext } from "lib/socialShare/streak";
+import { ROLE_LABELS, targetPicks } from "lib/socialShare/targets";
 
 const labels: Record<SocialShareFormat, string> = {
   "game-grid": "Weekly schedule", "remaining-week": "Remaining week",
@@ -67,7 +68,7 @@ function coveredDays(snapshot: SocialShareSnapshot) {
   return !indexes.length ? "No days" : indexes.length === 1 ? label(indexes[0]) : contiguous ? `${label(indexes[0])}–${label(indexes[indexes.length - 1])}` : indexes.map(label).join(", ");
 }
 type MatchupKind = "easiest" | "stream";
-const matchupTitles: Record<MatchupKind, string> = { easiest: "EASIEST SCHEDULES", stream: "STREAMING MATCHUPS" };
+const matchupTitles: Record<MatchupKind, string> = { easiest: "EASIEST SCHEDULES", stream: "TARGETED MATCHUPS" };
 const softness = (def: number | null) => def === null ? null : def <= SOFT_DEFENSE_MAX ? "soft" : def >= 100 - SOFT_DEFENSE_MAX ? "strong" : "average";
 
 function futureItinerary(snapshot: SocialShareSnapshot, row: ShareTeamRow) {
@@ -185,7 +186,7 @@ function matchupAltText(kind: MatchupKind, snapshot: SocialShareSnapshot, truste
     return `${head} Ranked by Game Grid opponent defense rating, 0 to 100, lower is easier, among teams with ${floor} or more games left. ${rows.map(row => `${row.rank}. ${row.team.name}: opponent defense ${Math.round(row.def)}, ${row.remainingGames} games (${row.games.map(game => `${dayLabel(game.date)} ${game.home ? "vs" : "@"} ${game.opponent.abbreviation}`).join(", ")}), number ${row.weekRank} Week Score`).join("; ") || "No qualifying teams"}. ${tail}`;
   }
   const nights = streamingNights(snapshot, true);
-  return `${head} Top-${STREAM_TEAM_RANK_MAX} Week Score teams against a soft defense (opponent defense ${SOFT_DEFENSE_MAX} or lower) or a perfect-storm pairing, most signals first, one night per team. ${nights.map(night => `${dayLabel(night.date)} ${dateLabel(night.date)}: ${night.team.name} ${night.home ? "vs" : "@"} ${night.opponent.name}, tilted toward ${night.team.abbreviation}${night.evidence.flags.length ? ` (${night.evidence.flags.map(flag => flagLabels[flag].toLowerCase()).join(", ")})` : ""}, opponent defense ${night.oppDef === null ? "unknown" : Math.round(night.oppDef)}, ${night.offNight ? "off-night" : "busy night"} (${night.leagueGames} games), number ${night.weekRank} Week Score`).join("; ") || "No soft-defense nights on the selected dates"}. ${tail}`;
+  return `${head} Top-${STREAM_TEAM_RANK_MAX} Week Score teams against a soft defense (opponent defense ${SOFT_DEFENSE_MAX} or lower) or a perfect-storm pairing, most signals first, one night per team. ${nights.map(night => `${dayLabel(night.date)} ${dateLabel(night.date)}: ${night.team.name} ${night.home ? "vs" : "@"} ${night.opponent.name}, tilted toward ${night.team.abbreviation}${night.evidence.flags.length ? ` (${night.evidence.flags.map(flag => flagLabels[flag].toLowerCase()).join(", ")})` : ""}, opponent defense ${night.oppDef === null ? "unknown" : Math.round(night.oppDef)}, ${night.offNight ? "off-night" : "busy night"} (${night.leagueGames} games), number ${night.weekRank} Week Score${targetPicks(snapshot, night, true).length ? `; targets ${targetPicks(snapshot, night, true).map(pick => `${pick.player.name} (${pick.player.positions}, ${pick.roles.map(role => ROLE_LABELS[role].toLowerCase()).join(" and ")}, ${pick.stat})`).join(", ")}` : ""}`).join("; ") || "No soft-defense nights on the selected dates"}. ${tail}`;
 }
 
 function OpponentChip({ game, logos, snapshot }: { game: MatchupGame; logos: Record<string, string | null>; snapshot: SocialShareSnapshot }) {
@@ -198,10 +199,11 @@ function OpponentChip({ game, logos, snapshot }: { game: MatchupGame; logos: Rec
 
 const ordinal = (value: number) => `${value}${value % 100 >= 11 && value % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][value % 10] ?? "th"}`;
 const rateText = (rate: RankedRate | null, digits: number, ranking: string) => rate ? `${rate.perGame.toFixed(digits)} (${ordinal(rate.rank)} ${ranking})` : "—";
-const flagLabels = { goals: "GOAL STORM", shots: "SHOT STORM", tired: "TIRED OPPONENT" } as const;
+const flagLabels = { goals: "GOAL STORM", shots: "SHOT STORM", blocks: "SA STORM", tired: "TIRED OPPONENT" } as const;
 
 /** One cherry-picked team-night with the evidence that tilts it toward the streaming team. */
-function StreamTile({ night, snapshot, logos }: { night: StreamNight; snapshot: SocialShareSnapshot; logos: Record<string, string | null> }) {
+function StreamTile({ night, snapshot, logos, trusted }: { night: StreamNight; snapshot: SocialShareSnapshot; logos: Record<string, string | null>; trusted: boolean }) {
+  const picks = targetPicks(snapshot, night, trusted);
   const { goals, shots, rest, flags } = night.evidence, day = snapshot.days.find(item => item.date === night.date)!;
   const restText = rest.opponentSecondNight === null ? "Back-to-back unknown (week's first day)" : rest.opponentSecondNight && !rest.teamSecondNight ? `${night.opponent.abbreviation} on the 2nd night of a back-to-back; ${night.team.abbreviation} rested`
     : rest.opponentSecondNight && rest.teamSecondNight ? "Both teams on a back-to-back" : rest.teamSecondNight ? `${night.team.abbreviation} on a back-to-back` : "Both teams rested";
@@ -216,6 +218,12 @@ function StreamTile({ night, snapshot, logos }: { night: StreamNight; snapshot: 
         <dt>Rest</dt><dd className={cx(flags.includes("tired") && styles.storm)}>{restText}</dd>
         <dt>Defense</dt><dd>{night.opponent.abbreviation} OPP DEF {night.oppDef === null ? "—" : Math.round(night.oppDef)} (lower = softer) · #{night.weekRank} Week Score, <Count value={night.remainingGames} tier={countsFor(snapshot, true).gp(night.remainingGames)} /> GP</dd>
       </dl>
+      {picks.length > 0 && <div className={styles.targetRow}>{picks.map(pick => <fieldset key={pick.player.nhlId} className={styles.targetCard} data-target={pick.player.nhlId} data-roles={pick.roles.join("|")}>
+        {/* TJ (ticket 22): the role is a legend notched into the top border; the body holds name, position and value, never clipped. */}
+        <legend>{pick.roles.map(role => ROLE_LABELS[role]).join(" + ")}</legend>
+        <strong>{pick.player.name}</strong>
+        <p><small>{pick.player.positions}</small><em>{pick.stat}</em></p>
+      </fieldset>)}</div>}
     </div>
   </div>;
 }
@@ -237,10 +245,10 @@ function MatchupCard({ kind, snapshot, trusted, logos, brandLogo }: { kind: Matc
           <span className={styles.defMeter}><strong>{Math.round(row.def)}</strong><i><b style={{ width: `${Math.max(4, Math.round(row.def))}%` }} /></i></span>
         </div>) : <p className={styles.matchupNone}>No teams with {easiest.floor}+ games on the selected dates</p>}
       </div>
-      : <div className={styles.streamGrid}>{nights.length ? nights.map(night => <StreamTile key={night.id} night={night} snapshot={snapshot} logos={logos} />) : <p className={styles.matchupNone}>No soft-defense or perfect-storm nights on the selected dates</p>}</div>}
+      : <div className={styles.streamGrid}>{nights.length ? nights.map(night => <StreamTile key={night.id} night={night} snapshot={snapshot} logos={logos} trusted={trusted} />) : <p className={styles.matchupNone}>No soft-defense or perfect-storm nights on the selected dates</p>}</div>}
     <footer className={styles.gridFooter}>
       {kind === "easiest" ? <div className={styles.legend}><span><i className={styles.legendSoft} />Soft defense (≤{SOFT_DEFENSE_MAX})</span><span><i className={styles.legendAverage} />Average</span><span><i className={styles.legendStrong} />Strong (≥{100 - SOFT_DEFENSE_MAX})</span><span><i className={styles.legendAway}>@</i>Away</span>{ready && <CountLegend />}</div>
-        : <div className={styles.legend}><span><b>Storm</b> = both sides in the league&apos;s top third</span><span><b>Tired</b> = opponent&apos;s 2nd night of a back-to-back</span></div>}
+        : <div className={styles.legend}><span><b>Storm</b> = both sides in the league&apos;s top third</span><span><b>Picks</b> = rostered &lt;50% (Yahoo), season rates</span><span><b>Tired</b> = opponent&apos;s 2nd night of a back-to-back</span></div>}
       <p><span>OPP DEF = Game Grid opponent defense: 100 − percentile of opponents’ xGA/GP (NST, all situations), lower = easier · NST updated {timeLabel(snapshot.opponents?.updatedAt ?? null)} · Schedule checked {timeLabel(snapshot.source.fetchedAt)}</span><strong className={styles.gridWatermark}>{ready ? "SCHEDULE + TEAM RATES" : "PREVIEW ONLY · REFRESH / CHECK SOURCE"}</strong></p>
     </footer>
   </>;

@@ -98,12 +98,14 @@ export function easiestSchedules(snapshot: SocialShareSnapshot, trusted: boolean
 
 /** One per-game team rate with its league rank (1 = most per game among teams with data). */
 export type RankedRate = { perGame: number; rank: number; of: number };
-export type StormFlag = "goals" | "shots" | "tired";
+export type StormFlag = "goals" | "shots" | "blocks" | "tired";
 export type StreamEvidence = {
   /** Streaming team's GF/GP vs the opponent's GA/GP. */
   goals: { team: RankedRate | null; opponent: RankedRate | null; storm: boolean };
   /** Streaming team's SF/GP vs the opponent's SA/GP. */
   shots: { team: RankedRate | null; opponent: RankedRate | null; storm: boolean };
+  /** Shots-against tilt (ticket 22, TJ): the streaming team's SA/GP vs the opponent's SF/GP; storm → blockers. */
+  blocks: { team: RankedRate | null; opponent: RankedRate | null; storm: boolean };
   /** Back-to-back on this date (played the day before); null when the day before is outside the week. */
   rest: { opponentSecondNight: boolean | null; teamSecondNight: boolean | null };
   flags: StormFlag[];
@@ -131,11 +133,13 @@ export function streamEvidence(snapshot: SocialShareSnapshot, team: ShareTeam, o
   goals.storm = topThird(goals.team) && topThird(goals.opponent);
   const shots = { team: sf.get(team.abbreviation) ?? null, opponent: sa.get(opponent.abbreviation) ?? null, storm: false };
   shots.storm = topThird(shots.team) && topThird(shots.opponent);
+  const blocks = { team: sa.get(team.abbreviation) ?? null, opponent: sf.get(opponent.abbreviation) ?? null, storm: false };
+  blocks.storm = topThird(blocks.team) && topThird(blocks.opponent);
   const before = previousDay(date), known = before >= snapshot.weekStart;
   const played = (id: number) => snapshot.games.some(game => game.date === before && game.gameType === 2 && !["postponed", "cancelled"].includes(game.status) && (game.homeTeam.id === id || game.awayTeam.id === id));
   const rest = { opponentSecondNight: known ? played(opponent.id) : null, teamSecondNight: known ? played(team.id) : null };
-  const flags: StormFlag[] = [...(goals.storm ? ["goals" as const] : []), ...(shots.storm ? ["shots" as const] : []), ...(rest.opponentSecondNight && !rest.teamSecondNight ? ["tired" as const] : [])];
-  return { goals, shots, rest, flags };
+  const flags: StormFlag[] = [...(goals.storm ? ["goals" as const] : []), ...(shots.storm ? ["shots" as const] : []), ...(blocks.storm ? ["blocks" as const] : []), ...(rest.opponentSecondNight && !rest.teamSecondNight ? ["tired" as const] : [])];
+  return { goals, shots, blocks, rest, flags };
 }
 
 /**
@@ -143,13 +147,15 @@ export function streamEvidence(snapshot: SocialShareSnapshot, team: ShareTeam, o
  * or with at least one perfect-storm signal. Most signals first, then off-nights, the softest
  * opponent and the better schedule. One night per team; six tiles.
  */
+const selectionFlags = (night: { evidence: StreamEvidence }) => night.evidence.flags.filter(flag => flag !== "blocks").length;
 export function streamingNights(snapshot: SocialShareSnapshot, trusted: boolean): StreamNight[] {
   if (!trusted || !opponentsReady(snapshot)) return [];
   const defense = opponentDefense(snapshot);
   return snapshot.rows.filter(row => row.remainingGames > 0 && row.rank <= STREAM_TEAM_RANK_MAX)
     .flatMap(row => countedGames(snapshot, row.team, defense).map(game => ({ ...game, team: row.team, weekRank: row.rank, remainingGames: row.remainingGames, evidence: streamEvidence(snapshot, row.team, game.opponent, game.date) }))
-      .filter(night => (night.oppDef !== null && night.oppDef <= SOFT_DEFENSE_MAX) || night.evidence.flags.some(flag => flag !== "tired")))
-    .sort((a, b) => b.evidence.flags.length - a.evidence.flags.length || Number(b.offNight) - Number(a.offNight) || (a.oppDef ?? 100) - (b.oppDef ?? 100) || a.weekRank - b.weekRank || a.date.localeCompare(b.date) || a.id - b.id)
+      .filter(night => (night.oppDef !== null && night.oppDef <= SOFT_DEFENSE_MAX) || night.evidence.flags.some(flag => flag === "goals" || flag === "shots")))
+    // The shots-against tilt (ticket 22) only drives player picks; it never changes which nights are chosen.
+    .sort((a, b) => selectionFlags(b) - selectionFlags(a) || Number(b.offNight) - Number(a.offNight) || (a.oppDef ?? 100) - (b.oppDef ?? 100) || a.weekRank - b.weekRank || a.date.localeCompare(b.date) || a.id - b.id)
     .filter((night, index, nights) => nights.findIndex(item => item.team.id === night.team.id) === index)
     .slice(0, STREAM_LIMIT);
 }

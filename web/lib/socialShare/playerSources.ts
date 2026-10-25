@@ -18,7 +18,7 @@ export const PLAYER_SOURCE_LIMITS = { yahoo: 2000, mapChunk: 150, skaters: 1500,
 const RECENT_LOOKBACK_DAYS = 21;
 export const RECENT_LIMITS = { lookbackDays: RECENT_LOOKBACK_DAYS, skaterRowsPerPlayer: RECENT_LOOKBACK_DAYS + 1, goalieRowsPerPlayer: RECENT_LOOKBACK_DAYS + 1 } as const;
 const YAHOO_COLUMNS = "player_key,player_id,editorial_team_abbreviation,display_position,eligible_positions,percent_ownership,status,season,last_updated";
-const SKATER_COLUMNS = "player_id,player_name,season,games_played,points_per_game,shots,hits,blocked_shots,current_team_abbreviation,updated_at";
+const SKATER_COLUMNS = "player_id,player_name,season,games_played,points_per_game,goals,shots,hits,blocked_shots,current_team_abbreviation,updated_at";
 const GOALIE_COLUMNS = "goalie_id,goalie_name,season_id,games_played,games_started,quality_starts_pct,save_pct,current_team_abbreviation,updated_at";
 const NHL_TO_YAHOO = Object.fromEntries(Object.entries(PICKUP_YAHOO_TEAM_ALIASES).map(([yahoo, nhl]) => [nhl, yahoo]));
 

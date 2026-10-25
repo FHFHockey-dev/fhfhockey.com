@@ -97,6 +97,8 @@ export type SharePlayer = {
   gamesPlayed: number;
   /** Skaters: existing WGO season totals; goalies leave these null. */
   pointsPerGame: number | null;
+  /** Skaters: season goals (ticket 22 scorer picks); null when the source has none. */
+  goals?: number | null;
   hits: number | null;
   shots: number | null;
   blocks: number | null;
@@ -128,6 +130,11 @@ export type SharePlayerLayer = {
    * tier list can split its rows and say "+N more" without the unshown players leaving the server.
    */
   tierCounts?: { strict: number[]; widened: number[] } | null;
+  /**
+   * Trimmed live layers (SS1-22): each Targeted Matchups night's picks (key `TEAM:gameId`) with their tilt roles,
+   * recorded by the server from the full candidate set so the client never re-derives them from fewer players.
+   */
+  targets?: Record<string, { id: number; roles: ("scorer" | "shooter" | "blocker")[] }[]> | null;
   /**
    * Last-five-games read outcome (C7 SS1-10-F1): "ready" when the source answered, even with no rows
    * (a player's `recent: null` then means no game in two weeks); "unavailable" when the read failed or

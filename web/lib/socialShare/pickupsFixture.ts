@@ -59,7 +59,7 @@ export function fictionalPlayerSources(season: number, observedOn: string, stats
   const random = () => ((state = Math.imul(state ^ (state >>> 15), 2246822519) + 0x7f4a7c15 >>> 0) / 4294967296);
   const yahooSeason = Math.floor(season / 10000), round = (value: number, places = 2) => Math.round(value * 10 ** places) / 10 ** places;
   const yahoo: PickupOwnershipRow[] = [], map: { yahoo_player_id: string | null; nhl_player_id: string | null }[] = [];
-  const skaters: { player_id: number; player_name: string | null; season: string; games_played: number | null; points_per_game: number | null; shots: number | null; hits: number | null; blocked_shots: number | null; current_team_abbreviation: string | null; updated_at: string | null }[] = [];
+  const skaters: { player_id: number; player_name: string | null; season: string; games_played: number | null; points_per_game: number | null; goals: number | null; shots: number | null; hits: number | null; blocked_shots: number | null; current_team_abbreviation: string | null; updated_at: string | null }[] = [];
   const goalies: { goalie_id: number; goalie_name: string | null; season_id: number; games_played: number | null; games_started: number | null; quality_starts_pct: number | null; save_pct: number | null; current_team_abbreviation: string | null; updated_at: string | null }[] = [];
   [...activeTeamAbbreviations].forEach((abbrev, teamIndex) => {
     const team = String(abbrev);
@@ -84,10 +84,11 @@ export function fictionalPlayerSources(season: number, observedOn: string, stats
           quality_starts_pct: round(0.3 + random() * 0.4, 3), save_pct: round(0.88 + random() * 0.045, 3), current_team_abbreviation: team, updated_at: statsUpdatedAt });
       } else {
         const defense = positions[0] === "D", games = 6 + Math.floor(random() * 6);
-        skaters.push({ player_id: nhlId, player_name: name, season: String(season), games_played: games,
-          points_per_game: round((defense ? 0.15 : 0.25) + random() * (defense ? 0.6 : 0.9)), shots: Math.round(games * (1 + random() * 3)),
-          hits: Math.round(games * (0.3 + random() * (defense ? 2.5 : 3.2))), blocked_shots: Math.round(games * (defense ? 0.8 + random() * 2.2 : 0.1 + random() * 0.8)),
-          current_team_abbreviation: team, updated_at: statsUpdatedAt });
+        // Same random() order as before ticket 22; goals derive from points without drawing (fixture values stay put).
+        const ppg = round((defense ? 0.15 : 0.25) + random() * (defense ? 0.6 : 0.9)), shots = Math.round(games * (1 + random() * 3));
+        const hits = Math.round(games * (0.3 + random() * (defense ? 2.5 : 3.2))), blocked = Math.round(games * (defense ? 0.8 + random() * 2.2 : 0.1 + random() * 0.8));
+        skaters.push({ player_id: nhlId, player_name: name, season: String(season), games_played: games, points_per_game: ppg, goals: Math.round(games * ppg * (defense ? 0.25 : 0.45)), shots,
+          hits, blocked_shots: blocked, current_team_abbreviation: team, updated_at: statsUpdatedAt });
       }
     });
   });

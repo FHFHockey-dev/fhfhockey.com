@@ -24,6 +24,8 @@ import { fictionalLeagueWeek, fictionalTeamStats } from "./fixtures";
 import { fictionalPlayerSources } from "./pickupsFixture";
 import { buildPlayerLayer, pickupTiers, specialists } from "./players";
 import { RANK_POOL_MAX, streamingTiers, TRIMMED_PLAYERS_MAX } from "./tiers";
+import { streamingNights } from "./matchups";
+import { targetPicks } from "./targets";
 import { shareCacheControl, SHARE_CACHE_EXPIRY_MARGIN_SECONDS } from "./server";
 import handler from "pages/api/v1/social-share/[format]";
 import type { NextApiRequest, NextApiResponse } from "next";
@@ -341,7 +343,10 @@ describe("social editor schedule API", () => {
     expect(ok.body.players).toMatchObject({ state: "ready", selectedDates: dates });
     // Only the players the cards show leave the server: pickups, specialists and both tier-list modes (SS1-14).
     const tierShown = (["strict", "widened"] as const).flatMap(mode => streamingTiers(ok.body, true, mode).flatMap(tier => tier.shown));
-    const shown = new Set([...pickupTiers(ok.body, true).flatMap(tier => Object.values(tier.groups).flat()), ...Object.values(specialists(ok.body, true)).flat(), ...tierShown].map(player => player.nhlId));
+    // Targeted Matchups picks (ticket 22) are shown players too.
+    const targetShown = streamingNights(ok.body, true).flatMap(night => targetPicks(ok.body, night, true).map(pick => pick.player));
+    expect(targetShown.length).toBeGreaterThan(0);
+    const shown = new Set([...pickupTiers(ok.body, true).flatMap(tier => Object.values(tier.groups).flat()), ...Object.values(specialists(ok.body, true)).flat(), ...tierShown, ...targetShown].map(player => player.nhlId));
     expect(new Set(ok.body.players.players.map((player: { nhlId: number }) => player.nhlId))).toEqual(shown);
     expect(ok.body.players.players.length).toBeLessThanOrEqual(TRIMMED_PLAYERS_MAX);
     // The live tier list matches the one built from the untrimmed layer, including "+N more".
