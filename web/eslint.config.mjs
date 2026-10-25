@@ -137,6 +137,22 @@ export default [
           ],
         },
       ],
+      // no-restricted-imports misses dynamic import(), require() and test-runner loaders.
+      "no-restricted-syntax": [
+        "error",
+        ...[
+          "ImportExpression[source.value=/(^|[^\\w$])evidenceBundle(\\.\\w+)?$/]",
+          "ImportExpression[source.type='TemplateLiteral'] > TemplateLiteral > TemplateElement[value.raw=/evidenceBundle/]",
+          "CallExpression[callee.name='require'][arguments.0.value=/(^|[^\\w$])evidenceBundle(\\.\\w+)?$/]",
+          "CallExpression[callee.name='require'] > TemplateLiteral > TemplateElement[value.raw=/evidenceBundle/]",
+          "CallExpression[callee.property.name=/^(importActual|requireActual|importMock|requireMock)$/][arguments.0.value=/(^|[^\\w$])evidenceBundle(\\.\\w+)?$/]",
+          "TSExternalModuleReference[expression.value=/(^|[^\\w$])evidenceBundle(\\.\\w+)?$/]",
+        ].map(selector => ({
+          selector,
+          message:
+            "Load player-card evidence only through player-cards/evidenceLoader; dynamic or require() access to evidenceBundle bypasses the trusted loader.",
+        })),
+      ],
     },
   },
 ];
