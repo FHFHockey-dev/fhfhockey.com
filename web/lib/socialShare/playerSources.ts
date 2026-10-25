@@ -48,27 +48,52 @@ async function bounded<T>(what: string, limit: number, page: (from: number, to: 
  * ownership timelines; the existing yahoo_nhl_player_map_read view maps Yahoo ids to NHL ids.
  */
 /**
- * Last-five-games evidence for the ranking pool: strength-all rolling rows (skaters) and per-game WGO goalie
- * rows (goalies) within the lookback window, each with an explicit, fail-closed limit. The two sources are
- * isolated (SS1-17): a failed source comes back null on its own, so goalie trouble can never blank the
- * skaters' recent form or the reverse. The failure reason is logged server-side (no ids or values).
+ * Recent reads go out in chunks of player ids (SS1-24): the single pool-wide `IN` statement hit the anon role's
+ * statement timeout in production (57014). Each chunk is its own exact-count, fail-closed read ordered by
+ * (player id asc, date desc), matching idx_rpgm_player_date / the goalie primary key; at most
+ * RECENT_CHUNK_CONCURRENCY chunks run at once.
  */
-export async function loadSharePlayerRecent(season: number, skaterIds: number[], goalieIds: number[], since: string): Promise<{ rolling: ShareRecentRollingRow[] | null; goalieGames: ShareGoalieGameRow[] | null }> {
-  const [rolling, goalieGames] = await Promise.allSettled([
-    skaterIds.length ? bounded<ShareRecentRollingRow>("Skater recent games", skaterIds.length * RECENT_LIMITS.skaterRowsPerPlayer, (from, to) => publicSupabase.from("rolling_player_game_metrics")
-      .select(RECENT_SKATER_COLUMNS, { count: "exact" }).eq("season", season).eq("strength_state", "all").in("player_id", skaterIds).gte("game_date", since)
-      // Unique tiebreak after the date (C7 SS1-15-F2): OFFSET pages must not duplicate or skip rows.
-      .order("game_date", { ascending: false }).order("player_id", { ascending: true }).range(from, to) as unknown as CountedPage<ShareRecentRollingRow>) : Promise.resolve([]),
-    goalieIds.length ? bounded<ShareGoalieGameRow>("Goalie recent games", goalieIds.length * RECENT_LIMITS.goalieRowsPerPlayer, (from, to) => publicSupabase.from("wgo_goalie_stats")
-      .select(RECENT_GOALIE_COLUMNS, { count: "exact" }).eq("season_id", season).in("goalie_id", goalieIds).gte("date", since)
-      .order("date", { ascending: false }).order("goalie_id", { ascending: true }).range(from, to) as unknown as CountedPage<ShareGoalieGameRow>) : Promise.resolve([]),
+export const RECENT_ID_CHUNK = 20;
+export const RECENT_CHUNK_CONCURRENCY = 2;
+export type ChunkedRows<T> = { rows: T[] | null; failedIds: number[] };
+
+/**
+ * Read ids in ascending chunks; a failed chunk logs its reason and only its players lose recent form. Rows merge
+ * in chunk order (ids ascending), so the result is stable whatever order the chunks finish in. All chunks failing
+ * means the whole source is unavailable (null).
+ */
+async function chunkedRead<T>(what: string, ids: number[], read: (chunk: number[]) => Promise<T[]>): Promise<ChunkedRows<T>> {
+  const sorted = [...new Set(ids)].sort((a, b) => a - b), chunks: number[][] = [];
+  for (let i = 0; i < sorted.length; i += RECENT_ID_CHUNK) chunks.push(sorted.slice(i, i + RECENT_ID_CHUNK));
+  const results: (T[] | null)[] = new Array(chunks.length).fill(null);
+  let next = 0;
+  await Promise.all(Array.from({ length: Math.min(RECENT_CHUNK_CONCURRENCY, chunks.length) }, async () => {
+    while (next < chunks.length) {
+      const index = next++;
+      try { results[index] = await read(chunks[index]); }
+      catch (reason) { console.warn(`[social-share] ${what} unavailable for ${chunks[index].length} players (chunk ${index + 1} of ${chunks.length}): ${failureReason(reason)}`); }
+    }
+  }));
+  const failedIds = chunks.flatMap((chunk, index) => (results[index] === null ? chunk : []));
+  return { rows: chunks.length && failedIds.length === sorted.length ? null : results.flatMap(rows => rows ?? []), failedIds };
+}
+
+/**
+ * Last-five-games evidence for the ranking pool: strength-all rolling rows (skaters) and per-game WGO goalie
+ * rows (goalies) within the lookback window, each chunk with an explicit, fail-closed limit. Skaters and goalies
+ * stay isolated (SS1-17), and so do chunks (SS1-24): `failedIds` lists only the players whose chunk failed.
+ */
+export async function loadSharePlayerRecent(season: number, skaterIds: number[], goalieIds: number[], since: string): Promise<{ rolling: ShareRecentRollingRow[] | null; goalieGames: ShareGoalieGameRow[] | null; failedIds: number[] }> {
+  const [rolling, goalieGames] = await Promise.all([
+    chunkedRead<ShareRecentRollingRow>("Skater recent games", skaterIds, chunk => bounded<ShareRecentRollingRow>("Skater recent games", chunk.length * RECENT_LIMITS.skaterRowsPerPlayer, (from, to) => publicSupabase.from("rolling_player_game_metrics")
+      .select(RECENT_SKATER_COLUMNS, { count: "exact" }).eq("season", season).eq("strength_state", "all").in("player_id", chunk).gte("game_date", since)
+      // Unique order (C7 SS1-15-F2) in index order: player id, then newest game first.
+      .order("player_id", { ascending: true }).order("game_date", { ascending: false }).range(from, to) as unknown as CountedPage<ShareRecentRollingRow>)),
+    chunkedRead<ShareGoalieGameRow>("Goalie recent games", goalieIds, chunk => bounded<ShareGoalieGameRow>("Goalie recent games", chunk.length * RECENT_LIMITS.goalieRowsPerPlayer, (from, to) => publicSupabase.from("wgo_goalie_stats")
+      .select(RECENT_GOALIE_COLUMNS, { count: "exact" }).eq("season_id", season).in("goalie_id", chunk).gte("date", since)
+      .order("goalie_id", { ascending: true }).order("date", { ascending: false }).range(from, to) as unknown as CountedPage<ShareGoalieGameRow>)),
   ]);
-  const settled = <T>(what: string, result: PromiseSettledResult<T[]>) => {
-    if (result.status === "fulfilled") return result.value;
-    console.warn(`[social-share] ${what} unavailable: ${failureReason(result.reason)}`);
-    return null;
-  };
-  return { rolling: settled("Skater recent games", rolling), goalieGames: settled("Goalie recent games", goalieGames) };
+  return { rolling: rolling.rows, goalieGames: goalieGames.rows, failedIds: [...rolling.failedIds, ...goalieGames.failedIds] };
 }
 /** A loggable reason for a failed read: the message and PostgREST code only, never rows or ids. */
 function failureReason(reason: unknown) {
