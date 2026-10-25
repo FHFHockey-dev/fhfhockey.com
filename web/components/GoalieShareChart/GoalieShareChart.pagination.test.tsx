@@ -113,6 +113,26 @@ describe("GoalieShareChart complete page sets", () => {
     expect(screen.getByRole("alert")).toBeTruthy();
   });
 
+  it("withholds equal-sized pages with duplicate appearance identities", async () => {
+    mockPages((start) => start === 100
+      ? response({ total: rows.length, data: rows.slice(0, 100) })
+      : completePage(start));
+    render(<GoalieShareChart />);
+    await finishRequests();
+    expect(screen.queryAllByTestId("chart")).toHaveLength(0);
+    expect(screen.getByRole("alert")).toBeTruthy();
+  });
+
+  it("labels appearance share and counts relief once in team GP", async () => {
+    mockPages(() => response({ total: 2, data: [rows[0], { ...rows[0], playerId: 2 }] }));
+    render(<GoalieShareChart />);
+    await finishRequests();
+    const chart = JSON.parse(screen.getByTestId("chart").textContent!);
+    expect(chart.labels).toEqual(["One (50.0%)", "One (50.0%)"]);
+    expect(screen.getByText("Team GP:").nextSibling?.textContent).toBe("1");
+    expect(screen.getByText(/Share of recorded goalie appearances, including relief/)).toBeTruthy();
+  });
+
   it("recovers within the retry budget and re-slices complete data without fetching", async () => {
     let attempts = 0;
     mockPages((start) => start === 100 && attempts++ === 0
@@ -158,5 +178,55 @@ describe("GoalieShareChart complete page sets", () => {
     expect(maximum).toBe(8);
     expect(mocks.fetch).toHaveBeenCalledTimes(11);
     expect(screen.getAllByTestId("chart")).toHaveLength(1);
+  });
+});
+
+describe("GoalieShareChart recovery and selected team", () => {
+  it("retries a withheld season on request and stays withheld until complete", async () => {
+    let failing = true;
+    mockPages((start) => failing && start === 100 ? response({}, 429) : completePage(start));
+    render(<GoalieShareChart />);
+    await finishRequests();
+    expect(screen.queryAllByTestId("chart")).toHaveLength(0);
+    const firstRunCalls = mocks.fetch.mock.calls.length;
+
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    expect(screen.getByText("Loading goalie data...")).toBeTruthy();
+    await finishRequests();
+    expect(screen.getByRole("alert")).toBeTruthy();
+    expect(screen.queryAllByTestId("chart")).toHaveLength(0);
+    // Each retry keeps the two-attempt budget for the failing page.
+    const retryCalls = mocks.fetch.mock.calls.slice(firstRunCalls);
+    expect(retryCalls.filter(([url]) => new URL(url).searchParams.get("start") === "100")).toHaveLength(2);
+
+    failing = false;
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    await finishRequests();
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(JSON.parse(screen.getByTestId("chart").textContent!).datasets[0].data).toEqual([200, 50]);
+  });
+
+  describe("on a narrow screen", () => {
+    const desktopWidth = window.innerWidth;
+    beforeEach(() => { window.innerWidth = 390; });
+    afterEach(() => { window.innerWidth = desktopWidth; });
+
+    it("shows the first team with data when the default team has none", async () => {
+      mockPages(completePage); // PHI only; the alphabetical default is ANA.
+      render(<GoalieShareChart />);
+      expect(screen.queryByRole("combobox")).toBeNull();
+      await finishRequests();
+      const select = screen.getByRole("combobox") as HTMLSelectElement;
+      expect(select.value).toBe("PHI");
+      expect(screen.getAllByTestId("chart")).toHaveLength(1);
+    });
+
+    it("hides the team selector when the season is withheld", async () => {
+      mockPages((start) => start === 0 ? response({}, 429) : completePage(start));
+      render(<GoalieShareChart />);
+      await finishRequests();
+      expect(screen.getByRole("alert")).toBeTruthy();
+      expect(screen.queryByRole("combobox")).toBeNull();
+    });
   });
 });

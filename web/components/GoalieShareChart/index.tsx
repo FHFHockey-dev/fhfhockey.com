@@ -4,132 +4,17 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend, Title } from "chart.js";
 import { teamsInfo } from "../../lib/teamsInfo";
 import Fetch from "../../lib/cors-fetch";
 import styles from "./GoalieShareChart.module.scss";
+import { assertUniqueGoalieGameRows, buildGoalieShareByTeam, type GoalieGameRow, type SpanType } from "../../lib/goalieWorkload";
 
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend, Title);
 
-interface GoalieData {
-  playerId: number;
-  goalieFullName: string;
-  gamesPlayed: number;
-  timeOnIce: number;
-  wins: number;
-  losses: number;
-  otLosses: number;
-  savePct: number;
-  goalsAgainstAverage: number;
-}
-
-interface TeamGoalieStats {
-  [teamAbbrev: string]: {
-    goalies: GoalieData[];
-    totalGames: number;
-  };
-}
-
-/** One goalie appearance from the NHL stats API (isGame=true, isAggregate=false). */
-export interface GoalieGameRow {
-  gameId: number;
-  gameDate: string;
-  teamAbbrev: string;
-  playerId: number;
-  goalieFullName: string;
-  gamesPlayed: number;
-  wins: number;
-  losses: number;
-  otLosses: number;
-  saves: number;
-  shotsAgainst: number;
-  goalsAgainst: number;
-  timeOnIce: number;
-}
-
-type SpanType = "L10" | "L20" | "L30" | "Season";
+// Preserve the component's existing helper/type import surface.
+export { buildGoalieShareByTeam, type GoalieGameRow } from "../../lib/goalieWorkload";
 
 // The CORS proxy accepts at most 100 rows per stats request.
 const GOALIE_GAME_PAGE_SIZE = 100;
 const GOALIE_GAME_PAGE_CONCURRENCY = 8;
-
-const SPAN_GAMES: Record<SpanType, number | null> = {
-  L10: 10,
-  L20: 20,
-  L30: 30,
-  Season: null
-};
-
-/**
- * Per-team goalie workload over each team's last N completed games (or the
- * season). A team's games are the distinct games its goalies appeared in, so
- * the window never reaches into unplayed games. Rates use summed saves, shots
- * and time on ice.
- */
-export function buildGoalieShareByTeam(
-  rows: readonly GoalieGameRow[],
-  span: SpanType
-): TeamGoalieStats {
-  const rowsByTeam = new Map<string, GoalieGameRow[]>();
-  rows.forEach((row) => {
-    if (!row.teamAbbrev) return;
-    const teamRows = rowsByTeam.get(row.teamAbbrev) ?? [];
-    teamRows.push(row);
-    rowsByTeam.set(row.teamAbbrev, teamRows);
-  });
-
-  const result: TeamGoalieStats = {};
-  Object.keys(teamsInfo)
-    .sort()
-    .forEach((teamAbbrev) => {
-      const teamRows = rowsByTeam.get(teamAbbrev);
-      if (!teamRows?.length) return;
-
-      const gameDates = new Map<number, string>();
-      teamRows.forEach((row) => gameDates.set(row.gameId, row.gameDate));
-      const games = Array.from(gameDates).sort(
-        ([idA, dateA], [idB, dateB]) =>
-          dateA.localeCompare(dateB) || idA - idB
-      );
-      const limit = SPAN_GAMES[span];
-      const windowGames = new Set(
-        (limit === null ? games : games.slice(-limit)).map(([gameId]) => gameId)
-      );
-
-      const byGoalie = new Map<number, GoalieGameRow[]>();
-      teamRows
-        .filter((row) => windowGames.has(row.gameId))
-        .forEach((row) => {
-          const goalieRows = byGoalie.get(row.playerId) ?? [];
-          goalieRows.push(row);
-          byGoalie.set(row.playerId, goalieRows);
-        });
-
-      const goalies: GoalieData[] = Array.from(byGoalie, ([playerId, goalieRows]) => {
-        const sum = (read: (row: GoalieGameRow) => number) =>
-          goalieRows.reduce((total, row) => total + (read(row) || 0), 0);
-        const shotsAgainst = sum((row) => row.shotsAgainst);
-        const timeOnIce = sum((row) => row.timeOnIce);
-        return {
-          playerId,
-          goalieFullName: goalieRows[goalieRows.length - 1].goalieFullName,
-          gamesPlayed: sum((row) => row.gamesPlayed),
-          timeOnIce,
-          wins: sum((row) => row.wins),
-          losses: sum((row) => row.losses),
-          otLosses: sum((row) => row.otLosses),
-          savePct: shotsAgainst > 0 ? sum((row) => row.saves) / shotsAgainst : 0,
-          goalsAgainstAverage:
-            timeOnIce > 0 ? (sum((row) => row.goalsAgainst) * 3600) / timeOnIce : 0
-        };
-      }).sort((a, b) => b.gamesPlayed - a.gamesPlayed);
-
-      if (goalies.length > 0) {
-        result[teamAbbrev] = {
-          goalies,
-          totalGames: goalies.reduce((total, goalie) => total + goalie.gamesPlayed, 0)
-        };
-      }
-    });
-  return result;
-}
 
 function inferCurrentSeasonId(): number {
   const now = new Date();
@@ -282,6 +167,7 @@ const GoalieShareChart: React.FC = () => {
         rows.push(...page.rows);
       });
     }
+    assertUniqueGoalieGameRows(rows);
     setGoalieGames(rows);
   }, [fetchJsonWithRetry]);
 
@@ -289,11 +175,11 @@ const GoalieShareChart: React.FC = () => {
     setSelectedSpan(span);
   };
 
-  useEffect(() => {
-    if (hasInitialized.current) return;
-    hasInitialized.current = true;
-
-    const loadGoalieGames = async () => {
+  // Each run (initial or "Try again") keeps the same bounded per-request
+  // attempts and withholds every window unless the season is complete.
+  const loadGoalieGames = useCallback(async () => {
+      setLoading(true);
+      setLoadError(null);
       let seasonId = inferCurrentSeasonId();
       try {
         const seasonParams = new URLSearchParams({
@@ -325,15 +211,22 @@ const GoalieShareChart: React.FC = () => {
       } finally {
         setLoading(false);
       }
-    };
-
-    loadGoalieGames();
   }, [fetchGoalieGames, fetchJsonWithRetry]);
+
+  useEffect(() => {
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
+    loadGoalieGames();
+  }, [loadGoalieGames]);
 
   const goalieStats = useMemo(
     () => buildGoalieShareByTeam(goalieGames, selectedSpan),
     [goalieGames, selectedSpan]
   );
+  const teamsWithData = Object.keys(goalieStats);
+  // The narrow view shows one team; fall back to the first team with data
+  // when the chosen (or default) team has no appearances in this window.
+  const shownTeam = goalieStats[selectedTeam] ? selectedTeam : teamsWithData[0];
 
   const generateChartData = (teamAbbrev: string) => {
     const teamStats = goalieStats[teamAbbrev];
@@ -353,13 +246,13 @@ const GoalieShareChart: React.FC = () => {
       : ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF"];
 
     const goalies = teamStats.goalies.slice(0, 5); // Limit to top 5 goalies
-    const totalGames = teamStats.totalGames;
+    const totalAppearances = teamStats.totalAppearances;
 
     return {
       labels: goalies.map((goalie) => {
         const percentage =
-          totalGames > 0
-            ? ((goalie.gamesPlayed / totalGames) * 100).toFixed(1)
+          totalAppearances > 0
+            ? ((goalie.gamesPlayed / totalAppearances) * 100).toFixed(1)
             : "0.0";
         // Safe handling of goalie names
         const lastName = goalie.goalieFullName
@@ -411,12 +304,12 @@ const GoalieShareChart: React.FC = () => {
               const goalieDisplayName =
                 goalie.goalieFullName || "Unknown Goalie";
               return [
-                `${goalieDisplayName}: ${context.parsed} games`,
-                `Save %: ${(goalie.savePct * 100).toFixed(1)}%`,
-                `GAA: ${goalie.goalsAgainstAverage.toFixed(2)}`
+                `${goalieDisplayName}: ${context.parsed} appearances`,
+                `Save %: ${goalie.savePct === null ? "Unavailable" : `${(goalie.savePct * 100).toFixed(1)}%`}`,
+                `GAA: ${goalie.goalsAgainstAverage === null ? "Unavailable" : goalie.goalsAgainstAverage.toFixed(2)}`
               ];
             }
-            return `${context.label}: ${context.parsed} games`;
+            return `${context.label}: ${context.parsed} appearances`;
           }
         }
       }
@@ -429,7 +322,7 @@ const GoalieShareChart: React.FC = () => {
 
     // For mobile, show only selected team
     if (isMobile) {
-      const teamsToShow = teams.filter((team) => team === selectedTeam);
+      const teamsToShow = teams.filter((team) => team === shownTeam);
       if (teamsToShow.length === 0) return null;
 
       return (
@@ -473,7 +366,7 @@ const GoalieShareChart: React.FC = () => {
                               {teamInfo?.shortName || teamAbbrev}
                             </h4>
                             <div className={styles.teamStats}>
-                              <span className={styles.statsLabel}>GP:</span>
+                              <span className={styles.statsLabel}>Team GP:</span>
                               <span className={styles.statsValue}>
                                 {totalGames}
                               </span>
@@ -547,7 +440,7 @@ const GoalieShareChart: React.FC = () => {
                               {teamInfo?.shortName || teamAbbrev}
                             </h4>
                             <div className={styles.teamStats}>
-                              <span className={styles.statsLabel}>GP:</span>
+                              <span className={styles.statsLabel}>Team GP:</span>
                               <span className={styles.statsValue}>
                                 {totalGames}
                               </span>
@@ -583,6 +476,7 @@ const GoalieShareChart: React.FC = () => {
 
   return (
     <div className={styles.goalieShareChart}>
+      <p>Share of recorded goalie appearances, including relief. L10, L20 and L30 use team games. These are past workload shares, not future start probabilities.</p>
       <div className={styles.buttonContainer}>
         <button
           className={`${styles.spanButton} ${selectedSpan === "L10" ? styles.active : ""}`}
@@ -611,14 +505,15 @@ const GoalieShareChart: React.FC = () => {
       </div>
 
       {/* Team selector dropdown for mobile view */}
-      {isMobile && (
+      {isMobile && !loading && !loadError && shownTeam && (
         <div className={styles.teamSelectorContainer}>
           <select
-            value={selectedTeam}
+            value={shownTeam}
             onChange={handleTeamChange}
             className={styles.teamSelector}
+            aria-label="Team"
           >
-            {Object.keys(goalieStats).map((teamAbbrev) => (
+            {teamsWithData.map((teamAbbrev) => (
               <option key={teamAbbrev} value={teamAbbrev}>
                 {teamsInfo[teamAbbrev as keyof typeof teamsInfo]?.shortName ||
                   teamAbbrev}
@@ -631,7 +526,16 @@ const GoalieShareChart: React.FC = () => {
       {loading ? (
         <div className={styles.loadingMessage}>Loading goalie data...</div>
       ) : loadError ? (
-        <div className={styles.noDataMessage} role="alert">{loadError}</div>
+        <div className={styles.noDataMessage} role="alert">
+          {loadError}
+          <button
+            type="button"
+            className={styles.retryButton}
+            onClick={() => loadGoalieGames()}
+          >
+            Try again
+          </button>
+        </div>
       ) : (
         <>
           {Object.keys(goalieStats).length > 0 ? (

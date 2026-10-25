@@ -1,8 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
-
-vi.mock("react-chartjs-2", () => ({ Doughnut: () => null }));
-
-import { buildGoalieShareByTeam, type GoalieGameRow } from "./index";
+import { describe, expect, it } from "vitest";
+import { buildGoalieShareByTeam, type GoalieGameRow } from "../../lib/goalieWorkload";
 
 function row(overrides: Partial<GoalieGameRow>): GoalieGameRow {
   return {
@@ -70,5 +67,32 @@ describe("buildGoalieShareByTeam", () => {
     const stats = buildGoalieShareByTeam(rows, "Season");
     expect(stats.PHI.goalies[0].gamesPlayed).toBe(1);
     expect(stats.BOS.goalies[0].gamesPlayed).toBe(1);
+  });
+
+  it("counts one team game and two appearances when a goalie relieves", () => {
+    const stats = buildGoalieShareByTeam([row({}), row({ playerId: 2 })], "L10").PHI;
+    expect(stats.totalGames).toBe(1);
+    expect(stats.totalAppearances).toBe(2);
+    expect(stats.goalies.map(goalie => goalie.gamesPlayed / stats.totalAppearances)).toEqual([0.5, 0.5]);
+  });
+
+  it("windows by distinct team games even when one game has relief", () => {
+    const stats = buildGoalieShareByTeam([...phiGames, row({ ...phiGames[11], playerId: 3 })], "L10").PHI;
+    expect(stats.totalGames).toBe(10);
+    expect(stats.totalAppearances).toBe(11);
+  });
+
+  it("preserves missing exposure and distinguishes undefined rates from measured zero", () => {
+    const missing = buildGoalieShareByTeam([row({ timeOnIce: null }), row({ gameId: 2, saves: null })], "Season").PHI.goalies[0];
+    expect(missing.timeOnIce).toBeNull();
+    expect(missing.goalsAgainstAverage).toBeNull();
+    expect(missing.savePct).toBeNull();
+    const noSaves = buildGoalieShareByTeam([row({ saves: 0, goalsAgainst: 30 })], "Season").PHI.goalies[0];
+    expect(noSaves.savePct).toBe(0);
+    const noGoals = buildGoalieShareByTeam([row({ saves: 30, goalsAgainst: 0 })], "Season").PHI.goalies[0];
+    expect(noGoals.goalsAgainstAverage).toBe(0);
+    const noExposure = buildGoalieShareByTeam([row({ shotsAgainst: 0, saves: 0, timeOnIce: 0 })], "Season").PHI.goalies[0];
+    expect(noExposure.savePct).toBeNull();
+    expect(noExposure.goalsAgainstAverage).toBeNull();
   });
 });
