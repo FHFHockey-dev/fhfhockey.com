@@ -1,0 +1,67 @@
+{
+  "at": "2026-10-25T16:32:28.072974+00:00",
+  "mailbox_entry": "CODEX-20261025-086",
+  "historical_claim": "CODEX-063/reclaim inactive; queued low-year ticket released, no Codex writer found",
+  "changed_exact_lease_statuses": [
+    "CODEX-TG-SLICE04-20261024",
+    "CODEX-TG-S03-R1-20261024",
+    "CODEX-TG-SLICE05-20261024",
+    "CODEX-PLAYER-CARDS-S01-20261024",
+    "CODEX-PLAYER-CARDS-S02-20261024",
+    "CODEX-TG-S05-R1-20261024",
+    "CODEX-PLAYER-CARDS-S03-20261024",
+    "CODEX-PLAYER-CARDS-S02-R1-20261024",
+    "CODEX-PLAYER-CARDS-S03-R1-20261024",
+    "CODEX-PLAYER-CARDS-VISUAL01-20261024",
+    "CODEX-SOCIAL-EDITOR-ACCESS-20261024",
+    "CODEX-PLAYER-CARDS-HERO-SHARE-20261025",
+    "CODEX-PLAYER-CARDS-NST-CAPTURE-20261025",
+    "CODEX-PLAYER-CARDS-PORTRAIT-TREATMENTS-20261025",
+    "CODEX-PLAYER-CARDS-TEAM-COLORS-DEFAULT-20261025"
+  ],
+  "source_package_counts": {
+    "wigo": 63,
+    "social_declared_current": 35,
+    "goalie_share": 6,
+    "player_card": 38,
+    "testing_grounds": 25
+  },
+  "codex_only_active_lane": "BLSH",
+  "claude_local_commits": true,
+  "each_push_requires_TJ_approval": true,
+  "real_unresolved_overlap": "No active Codex writer identified. Shared auth/access/forecast policy seams remain read-only coordination boundaries, not a blanket product/schedule hold. Existing Claude overlapping card C1 lease must be preserved when issuing a fresh whole-card lease.",
+  "claude_register_unchanged_by_this_task": true,
+  "preserved_paths_and_artifacts": "Manifest snapshots and original archived/current receipts preserved; no applications or patches applied",
+  "operations": {
+    "git": 0,
+    "app_edits": 0,
+    "tests": 0,
+    "database_or_provider": 0,
+    "process_or_runtime_actions": 0,
+    "worker_dispatch": 0,
+    "uploads_or_deploys": 0,
+    "communication": "Authorized established mailbox only"
+  },
+  "before_after": [
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-LEASES.json",
+      "before_sha256": "34c9878993e4fd27c10b2311f758a2bf0c48086a1ce16200bcee005e13e11011",
+      "after_sha256": "d394680d846236be1bbb7ead6970d9122c609f0f9d3388186e90cabc215e6f67"
+    },
+    {
+      "path": "tasks/today-plan-2026-10-25.md",
+      "before_sha256": "6cd410cd4f0c7cf478048383134d75536606ea40c22fcb821eb7f07f33e544f1",
+      "after_sha256": "3c3c0fe3a33931e034eb0cb1b00db2b8b41fc7572abf176e2f0fb261a0ace95c"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/TODAY-PROPOSALS-2026-10-25.md",
+      "before_sha256": "71660259e641dbd6e917075190a9367514fcaf5e7d1ff5b3d013502e4483ea7a",
+      "after_sha256": "d822e77af992d94b1bd303b96cb96efeb058e73de44239a41c3249354b000b70"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-TO-CLAUDE.md",
+      "before_sha256": "4ba65deef5fccf15ad428324fbe7e541322ae3927c8f6dfc9ec8c83a4ba744f3",
+      "after_sha256": "493d54a1ae4c0d918ff59e2dd8de87cd5f641cac3a7593e5198aa5037627cdef"
+    }
+  ]
+}

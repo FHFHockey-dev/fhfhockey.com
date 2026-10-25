@@ -8048,7 +8048,12 @@
       "proposed_owner": "Future forecast application implementer UNASSIGNED; current LEDGER trace complete; retained policy decision required",
       "source_inputs": [
         "CR-SITE-06"
-      ]
+      ],
+      "priority": "P1 — alongside RSO/FORGE, player cards and social share",
+      "priority_receipt": {
+        "path": "tasks/artifacts/blsh-p1-registration-2026-10-25/OWNER-REGISTRATION.md",
+        "sha256": "3cce020d8dc8f888cae07ab19d5616a39bd3d91c27a7517b5c82ed274f6dd6e1"
+      }
     },
     {
       "taskID": "BLSH-3.1",
@@ -8090,7 +8095,12 @@
       "proposed_owner": "Future forecast application implementer UNASSIGNED; current LEDGER trace complete; retained policy decision required",
       "source_inputs": [
         "CR-SITE-06"
-      ]
+      ],
+      "priority": "P1 — alongside RSO/FORGE, player cards and social share",
+      "priority_receipt": {
+        "path": "tasks/artifacts/blsh-p1-registration-2026-10-25/OWNER-REGISTRATION.md",
+        "sha256": "3cce020d8dc8f888cae07ab19d5616a39bd3d91c27a7517b5c82ed274f6dd6e1"
+      }
     },
     {
       "taskID": "BLSH-3.4",
@@ -8132,7 +8142,12 @@
       "proposed_owner": "Future forecast application implementer UNASSIGNED; current LEDGER trace complete; retained policy decision required",
       "source_inputs": [
         "CR-SITE-06"
-      ]
+      ],
+      "priority": "P1 — alongside RSO/FORGE, player cards and social share",
+      "priority_receipt": {
+        "path": "tasks/artifacts/blsh-p1-registration-2026-10-25/OWNER-REGISTRATION.md",
+        "sha256": "3cce020d8dc8f888cae07ab19d5616a39bd3d91c27a7517b5c82ed274f6dd6e1"
+      }
     },
     {
       "taskID": "BLSH-4.1",
@@ -8165,7 +8180,12 @@
       "evidence_provenance": "retained task lists and receipts",
       "dispatch_class": "proposed staged packet; parent dispatch pending",
       "proposed_packet": "P07",
-      "proposed_owner": "Future forecast application implementer UNASSIGNED; current LEDGER trace complete; retained policy decision required"
+      "proposed_owner": "Future forecast application implementer UNASSIGNED; current LEDGER trace complete; retained policy decision required",
+      "priority": "P1 — alongside RSO/FORGE, player cards and social share",
+      "priority_receipt": {
+        "path": "tasks/artifacts/blsh-p1-registration-2026-10-25/OWNER-REGISTRATION.md",
+        "sha256": "3cce020d8dc8f888cae07ab19d5616a39bd3d91c27a7517b5c82ed274f6dd6e1"
+      }
     },
     {
       "taskID": "BLSH-4.2",
@@ -8198,7 +8218,12 @@
       "evidence_provenance": "retained task lists and receipts",
       "dispatch_class": "proposed staged packet; parent dispatch pending",
       "proposed_packet": "P07",
-      "proposed_owner": "Future forecast application implementer UNASSIGNED; current LEDGER trace complete; retained policy decision required"
+      "proposed_owner": "Future forecast application implementer UNASSIGNED; current LEDGER trace complete; retained policy decision required",
+      "priority": "P1 — alongside RSO/FORGE, player cards and social share",
+      "priority_receipt": {
+        "path": "tasks/artifacts/blsh-p1-registration-2026-10-25/OWNER-REGISTRATION.md",
+        "sha256": "3cce020d8dc8f888cae07ab19d5616a39bd3d91c27a7517b5c82ed274f6dd6e1"
+      }
     },
     {
       "taskID": "BLSH-4.3",
@@ -8240,7 +8265,12 @@
       "proposed_owner": "Future forecast application implementer UNASSIGNED; current LEDGER trace complete; retained policy decision required",
       "source_inputs": [
         "CR-SITE-06"
-      ]
+      ],
+      "priority": "P1 — alongside RSO/FORGE, player cards and social share",
+      "priority_receipt": {
+        "path": "tasks/artifacts/blsh-p1-registration-2026-10-25/OWNER-REGISTRATION.md",
+        "sha256": "3cce020d8dc8f888cae07ab19d5616a39bd3d91c27a7517b5c82ed274f6dd6e1"
+      }
     },
     {
       "taskID": "BLSH-4.4",
@@ -8273,7 +8303,12 @@
       "evidence_provenance": "retained task lists and receipts",
       "dispatch_class": "proposed staged packet; parent dispatch pending",
       "proposed_packet": "P07",
-      "proposed_owner": "Future forecast application implementer UNASSIGNED; current LEDGER trace complete; retained policy decision required"
+      "proposed_owner": "Future forecast application implementer UNASSIGNED; current LEDGER trace complete; retained policy decision required",
+      "priority": "P1 — alongside RSO/FORGE, player cards and social share",
+      "priority_receipt": {
+        "path": "tasks/artifacts/blsh-p1-registration-2026-10-25/OWNER-REGISTRATION.md",
+        "sha256": "3cce020d8dc8f888cae07ab19d5616a39bd3d91c27a7517b5c82ed274f6dd6e1"
+      }
     },
     {
       "taskID": "BLSH-5.1",
@@ -8304,7 +8339,12 @@
       "evidence_level": "inventoried only",
       "evidence_scope": "Task and receipt reconciliation only; no claim this whole area or all referenced source files were vetted.",
       "evidence_provenance": "retained task lists and receipts",
-      "dispatch_class": "parked research/product evidence; RESEARCH custody"
+      "dispatch_class": "parked research/product evidence; RESEARCH custody",
+      "priority": "P1 — alongside RSO/FORGE, player cards and social share",
+      "priority_receipt": {
+        "path": "tasks/artifacts/blsh-p1-registration-2026-10-25/OWNER-REGISTRATION.md",
+        "sha256": "3cce020d8dc8f888cae07ab19d5616a39bd3d91c27a7517b5c82ed274f6dd6e1"
+      }
     },
     {
       "taskID": "BLSH-5.2",
@@ -8335,13 +8375,18 @@
       "evidence_level": "inventoried only",
       "evidence_scope": "Task and receipt reconciliation only; no claim this whole area or all referenced source files were vetted.",
       "evidence_provenance": "retained task lists and receipts",
-      "dispatch_class": "parked research/product evidence; RESEARCH custody"
+      "dispatch_class": "parked research/product evidence; RESEARCH custody",
+      "priority": "P1 — alongside RSO/FORGE, player cards and social share",
+      "priority_receipt": {
+        "path": "tasks/artifacts/blsh-p1-registration-2026-10-25/OWNER-REGISTRATION.md",
+        "sha256": "3cce020d8dc8f888cae07ab19d5616a39bd3d91c27a7517b5c82ed274f6dd6e1"
+      }
     },
     {
       "taskID": "BLSH-5.3",
       "group": "Research products",
       "scope": "Predeclare decision-value evaluation and false-alert analysis before promoting stronger buy/sell or duration claims. Use the existing exposure register and preserve closed evaluation data.",
-      "implementation": "Partial groundwork/fixture evidence in current authority; unchecked requirement remains",
+      "implementation": "Existing groundwork retained. Owner-promoted P1 research is at R0 protocol/fixture preparation and actual WiGO Game Score tracing by existing read-only research task01a173a7-7cba-7738-b7df-d5a64513d0c6. No real empirical analysis or training is claimed running.",
       "acceptance": "open; exact current acceptance not established",
       "release": "fixture/local scope; no new release",
       "owner": "RESEARCH",
@@ -8349,7 +8394,7 @@
       "dependencies": "MASTER-S1/F11/R7/R8 and canonical task dependencies",
       "verification": "Readiness maps current code to existing task IDs; no empirical/user-demand inference.",
       "acceptance_release_gate": "Canonical item acceptance plus qualified shared adapter/input identity and independent UX/statistical review; optional5.x remains separately scoped.",
-      "next_action": "RESEARCH owner inventories/frames bounded contract/fixture work; application implementer UNASSIGNED unless parent reserves it.",
+      "next_action": "Receive and review the existing researcher R0 protocol/fixtures against FHFH Standard/skater-first approval; vet actual WiGO Game Score and primitive coverage. Keep R1–R5 proposed and input/holdout/implementation/activation-gated. Preserve completed work and optional market/roster decisions.",
       "evidence": [
         {
           "path": "tasks/tasks-prd-buy-low-sell-high.md",
@@ -8360,13 +8405,156 @@
           "path": "tasks/artifacts/research-backlog-readiness-2026-10-22/REPORT.md",
           "line": 63,
           "sha256": "0f3824828da442f93dc59f3ac62ce3f58e84cde58f1e46715a938ad99b1dc7c1"
+        },
+        {
+          "path": "tasks/artifacts/blsh-p1-registration-2026-10-25/OWNER-REGISTRATION.md",
+          "line": 5,
+          "sha256": "3cce020d8dc8f888cae07ab19d5616a39bd3d91c27a7517b5c82ed274f6dd6e1",
+          "observed_at": "2026-10-25T16:07:32.727059+00:00",
+          "review_scope": "Trusted owner request and existing researcher scope; documentary registration only. No empirical execution or application/data acceptance."
+        },
+        {
+          "path": "/Users/tim/Documents/Codex/2026-10-25/task-2/BLSH-research-plan.md",
+          "sha256": "759deaa82c90bce238e070c45aad267b3ae5e6f94efe74bcd8bc9ebf04a795ff",
+          "line": 17,
+          "observed_at": "2026-10-25T16:07:32.727059+00:00",
+          "review_scope": "Bounded synthesis/source crosswalk; existing proposal/evidence, not authority for execution. Later explicit owner scoring/skater/Game Score steer prevails."
+        },
+        {
+          "path": "/Users/tim/Documents/Codex/2026-10-25/task-2/BLSH-source-inventory.md",
+          "sha256": "b0ae9b59a348e9955f7d24e370a21ce511d9c3cd0b6216240b420b678eb654c5",
+          "line": 5,
+          "observed_at": "2026-10-25T16:07:32.727059+00:00",
+          "review_scope": "Bounded synthesis/source crosswalk; existing proposal/evidence, not authority for execution. Later explicit owner scoring/skater/Game Score steer prevails."
         }
       ],
       "as_of": "2026-10-22T12:42:23+00:00",
       "evidence_level": "inventoried only",
       "evidence_scope": "Task and receipt reconciliation only; no claim this whole area or all referenced source files were vetted.",
       "evidence_provenance": "retained task lists and receipts",
-      "dispatch_class": "parked research/product evidence; RESEARCH custody"
+      "dispatch_class": "parked research/product evidence; RESEARCH custody",
+      "priority": "P1 — alongside RSO/FORGE, player cards and social share",
+      "priority_receipt": {
+        "path": "tasks/artifacts/blsh-p1-registration-2026-10-25/OWNER-REGISTRATION.md",
+        "sha256": "3cce020d8dc8f888cae07ab19d5616a39bd3d91c27a7517b5c82ed274f6dd6e1"
+      },
+      "research_program": {
+        "priority": "P1 — alongside RSO/FORGE, player cards and social share",
+        "owner_thread": "01a173a7-7cba-7738-b7df-d5a64513d0c6",
+        "current_scope": "R0 protocol/fixtures and actual WiGO Game Score trace in researcher workspace; repository read-only",
+        "outcomes": "FHFH Standard Fantasy Points, Raw Points and vetted WiGO Game Score separately; proposed weighted aggregate; skaters first, goalies defined separately",
+        "empirical_status": "No real empirical analysis/training claimed running",
+        "unapproved": "Numerical thresholds/weights, data-access clearance, holdout exposure, model activation and production integration",
+        "previous_implementation": "Partial groundwork/fixture evidence in current authority; unchecked requirement remains",
+        "previous_next_action": "RESEARCH owner inventories/frames bounded contract/fixture work; application implementer UNASSIGNED unless parent reserves it.",
+        "source_pins": [
+          {
+            "path": "/Users/tim/Documents/Codex/2026-10-25/task-2/BLSH-research-plan.md",
+            "sha256": "759deaa82c90bce238e070c45aad267b3ae5e6f94efe74bcd8bc9ebf04a795ff"
+          },
+          {
+            "path": "/Users/tim/Documents/Codex/2026-10-25/task-2/BLSH-source-inventory.md",
+            "sha256": "b0ae9b59a348e9955f7d24e370a21ce511d9c3cd0b6216240b420b678eb654c5"
+          }
+        ],
+        "as_of": "2026-10-25T16:07:32.727059+00:00"
+      },
+      "children": [
+        {
+          "child_id": "BLSH-5.3/R0-definitions-contracts",
+          "title": "R0 — Freeze definitions and contracts",
+          "status": "In progress: existing researcher protocol/fixtures and actual WiGO Game Score trace only",
+          "owner": "01a173a7-7cba-7738-b7df-d5a64513d0c6",
+          "next_action": "Freeze FHFH Standard profile/version, skater-first outcome contracts and separate goalie brief; consolidate existing Sustainability/sKO/VuDu meanings. Establish separate Fantasy Points, Raw Points and vetted actual WiGO Game Score baseline/episode definitions, chronology, missingness, proposed aggregate and evaluation-exposure rules. No threshold or weight is accepted merely by writing the protocol.",
+          "depends_on": [],
+          "approval_gate": "Existing R0 protocol/fixture scope only. Later data access, empirical execution, numerical policy, model activation, application writes and publication require their separate evidence and authority.",
+          "source": {
+            "path": "tasks/artifacts/blsh-p1-registration-2026-10-25/OWNER-REGISTRATION.md",
+            "line": 13
+          },
+          "existing_work_credit": "Preserve original BLSH scopes, fixture groundwork, accepted narrower work and held model/evaluation decisions."
+        },
+        {
+          "child_id": "BLSH-5.3/R1-episode-library",
+          "title": "R1 — Build the entering/during/exiting episode library",
+          "status": "Proposed; not empirically running",
+          "owner": "UNASSIGNED",
+          "next_action": "After R0 acceptance and separately cleared input manifest, construct reproducible player-game episodes and controls for the three separate outcomes and proposed weighted aggregate. Distinguish retrospective boundaries from real-time flags, retain missing/ineligible cases and report coverage. Do not imply original data vintage from a retrospective reconstruction.",
+          "depends_on": [
+            "BLSH-5.3/R0-definitions-contracts"
+          ],
+          "approval_gate": "Existing R0 protocol/fixture scope only. Later data access, empirical execution, numerical policy, model activation, application writes and publication require their separate evidence and authority.",
+          "source": {
+            "path": "tasks/artifacts/blsh-p1-registration-2026-10-25/OWNER-REGISTRATION.md",
+            "line": 13
+          },
+          "existing_work_credit": "Preserve original BLSH scopes, fixture groundwork, accepted narrower work and held model/evaluation decisions."
+        },
+        {
+          "child_id": "BLSH-5.3/R2-association-rankings",
+          "title": "R2 — Produce comprehensive empirical association rankings",
+          "status": "Proposed; no data access or empirical run authorized here",
+          "owner": "UNASSIGNED",
+          "next_action": "After qualified episodes and separately cleared data, report full signed/absolute associations, weak/null/implausible findings, lags, phase patterns, overlap/redundancy, sample sizes, uncertainty and multiplicity/stability checks. Separate contemporaneous associations from predictive influence and record confounding/availability limits.",
+          "depends_on": [
+            "BLSH-5.3/R1-episode-library"
+          ],
+          "approval_gate": "Existing R0 protocol/fixture scope only. Later data access, empirical execution, numerical policy, model activation, application writes and publication require their separate evidence and authority.",
+          "source": {
+            "path": "tasks/artifacts/blsh-p1-registration-2026-10-25/OWNER-REGISTRATION.md",
+            "line": 13
+          },
+          "existing_work_credit": "Preserve original BLSH scopes, fixture groundwork, accepted narrower work and held model/evaluation decisions."
+        },
+        {
+          "child_id": "BLSH-5.3/R3-bayesian-transitions",
+          "title": "R3 — Evaluate shrunk predictive influence and hierarchical Bayesian onset/exit",
+          "status": "Proposed; held-out/model gates remain",
+          "owner": "UNASSIGNED",
+          "next_action": "Use accepted R0–R2 definitions and authorized chronological development/holdout boundaries for shrunk predictive contributions and partially pooled Bayesian onset/continuation/exit/duration comparisons. Predeclare leakage, overlapping-label, calibration, baseline, false-alert and decision-value checks. No training, reserved-holdout exposure or model promotion is authorized by this registration.",
+          "depends_on": [
+            "BLSH-5.3/R2-association-rankings"
+          ],
+          "approval_gate": "Existing R0 protocol/fixture scope only. Later data access, empirical execution, numerical policy, model activation, application writes and publication require their separate evidence and authority.",
+          "source": {
+            "path": "tasks/artifacts/blsh-p1-registration-2026-10-25/OWNER-REGISTRATION.md",
+            "line": 13
+          },
+          "existing_work_credit": "Preserve original BLSH scopes, fixture groundwork, accepted narrower work and held model/evaluation decisions."
+        },
+        {
+          "child_id": "BLSH-5.3/R4-unified-score-comparison",
+          "title": "R4 — Compare and qualify a unified score and weighted aggregate",
+          "status": "Proposed; no weights or thresholds approved",
+          "owner": "UNASSIGNED",
+          "next_action": "Compare separate Fantasy Points, Raw Points and vetted Game Score tracks and the proposed learned/shrunk weighted aggregate against simple and existing Sustainability/sKO/VuDu comparators. Preserve scale/sign/unit meanings, account for overlap/covariance and retain negative results. Freeze weights only through later accepted development/held-out evidence; do not naively average incompatible legacy scores.",
+          "depends_on": [
+            "BLSH-5.3/R3-bayesian-transitions"
+          ],
+          "approval_gate": "Existing R0 protocol/fixture scope only. Later data access, empirical execution, numerical policy, model activation, application writes and publication require their separate evidence and authority.",
+          "source": {
+            "path": "tasks/artifacts/blsh-p1-registration-2026-10-25/OWNER-REGISTRATION.md",
+            "line": 13
+          },
+          "existing_work_credit": "Preserve original BLSH scopes, fixture groundwork, accepted narrower work and held model/evaluation decisions."
+        },
+        {
+          "child_id": "BLSH-5.3/R5-qualified-integration",
+          "title": "R5 — Integrate only qualified shared BLSH scope",
+          "status": "Proposed; depends on accepted research and separate implementation/release custody",
+          "owner": "UNASSIGNED",
+          "next_action": "After qualified evidence and independent review, map one accepted record into existing shared BLSH/Sko Element consumers using BLSH-4.1–4.4 for genuine traces, parity, limitations and release. Skater-first is not goalie completion; goalie definitions and adapters remain separate. Strong buy/sell, probability and duration claims require their own qualification; optional market/roster-aware scope retains its gates.",
+          "depends_on": [
+            "BLSH-5.3/R4-unified-score-comparison"
+          ],
+          "approval_gate": "Existing R0 protocol/fixture scope only. Later data access, empirical execution, numerical policy, model activation, application writes and publication require their separate evidence and authority.",
+          "source": {
+            "path": "tasks/artifacts/blsh-p1-registration-2026-10-25/OWNER-REGISTRATION.md",
+            "line": 13
+          },
+          "existing_work_credit": "Preserve original BLSH scopes, fixture groundwork, accepted narrower work and held model/evaluation decisions."
+        }
+      ]
     },
     {
       "taskID": "PIPE-CTPI279",

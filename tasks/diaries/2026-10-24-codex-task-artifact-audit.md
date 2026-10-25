@@ -321,3 +321,25 @@ Retained closure: release0619f912live per saved receipts, completed image prepar
 ### 2026-10-25T13:39:45.350157+00:00 — workspace prerequisite and final planning handback
 
 Added parent-reported09:36ET Sync abort to plan/shared proposals and mailbox CODEX-20261025-078 (after077). Coordinator01a16e23 owns read-only preservation/reconciliation; no Git mutation authorized. Source-writing proposals wait for safe base/path handback and refreshed leases; read-only inputs and separately dispatched artifact-only C3 are not held indefinitely. No blind pull/reset/stash/commit-all/delete/new checkout. Both mailbox entries append-only verified; evidence hashes updated. No engineering/tests/production/Git/upload actions or active lease changes. Planning deliverable complete; awaiting parent handoff/dispatch, not auto-resuming the broader audit.
+
+
+### 2026-10-25T16:05:28.431285+00:00 — bounded BLSH P1 registration start
+
+Parent explicitly resumes task registration only. Read current root instructions, Codex/Claude lease documents and exact external BLSH synthesis; canonical custody still this audit thread with no pending canonical operation. Preserve synced/concurrent work without Git commands. Register BLSH as co-topP1 and FHFHStandard/skater-first research under existing IDs, R0activeprotocol/fixtures only, R1–R5proposed/gated. Current researcher01a173a7-7cba-7738-b7df-d5a64513d0c6 repo-read-only; no empirical-run claim, data clearance, weights/thresholds or activation. Only canonical documentary edits, own registration receipt and diary; no application/tests/DB/Git/dispatch/Claude communication or upload.
+
+
+### 2026-10-25T16:07:32.727059+00:00 — BLSH P1 registration complete/frozen
+
+Changed only ten existingBLSHrows: added co-topP1 metadata; BLSH-5.3 records currentR0scope/owner and sixR0–R5children. FHFHStandard/skater-first approved; actualWiGOGamescore tovet, separateoutcomes and proposedaggregate. R1–R5proposed/gated; no numericalpolicy/data/modelactivation or empiricalrunclaim.219IDs preserved; all209nonBLSHrows and prior scopes/evidence/legacy text unchanged. Three canonical hashes and exact diff in tasks/artifacts/blsh-p1-registration-2026-10-25/CHANGELOG.json andREGISTER.patch; OWNER-REGISTRATION.md contains trusted steers/sourcehashes. No Git/app/tests/DB/dispatch/Claudecommunication/upload. Task-list edits now frozen for parent/coordinator commit custody; no pending/uncertain operation.
+
+
+### 2026-10-25T16:26:55.018765+00:00 — bounded WiGO/social custody correction start
+
+Owner directs WiGO/social implementation toClaude andBLSHas onlyactiveCodexresearch/implementation. Read actualcurrentCodex/Claudeleases and mailbox tails: CODEX063rootreleasecomplete but C4/SS1lanestatuses and low-yearqueuedticketstale; no activeCodexapplicationworkers; reviewerfrozen andsourceunapplied. Claudecurrent16:24registerhasWiGO63app paths plusartifactroot, activeSS1canonicalinstallandschedulepatch, auth/accessread-only. Parentconfirmscoordinatorcleanup/push2f2b432handback andBLSHresearcherrepo-read-only. No Git/app/tests/production/workerdispatch. Next: releasehistoricalCodexproductclaims, preserveauth/forecastseams, appendexplicitmailboxdecision/currentdivision, updateplanproposalsminimallyandfreeze.
+
+
+### 2026-10-25T16:32:28.072974+00:00 — finite custody handoff complete/frozen
+
+Mailbox CODEX-20261025-086 explicitlyreturnsWiGO/socialtoClaude and closes063historicalreclaim/queuedlowyearticket. ActualClaudeWIGO/SS1leasesread;63WIGOapp paths+artifactroot, auth/accessreadonly. No competingCodexschedulewriter: onlyunqueuedoldticket, activeapplicationworkers[], reviewerfrozen/cleanupcomplete. VerifiedTGthread01a16e4b-590b-72f9-9ced-5684a8c9e030IDLE/latestturncompleted viaread_thread; parentconfirmedall3knownownerscompleted. Goalie/cards/TGexactcurrenthashes, recordedcommits, original/archiveartifacts/tests/gates in TRANSFER-MANIFEST.json. No credentials read/copied, no runtime/PIDaction, nofreshAuthbudgetclaim.
+
+Currentownerdivision: BLSH ONLYactiveCodexresearch/implementation. Claude agreedimplementationinclfrozenhandoffs withfreshleases; localcommitsClaude, EACHpushneedsTJapproval; oldCodexGitownershipsuperseded. UpdatedonlyCodexlease statuses/currentoverride, authorizedmailbox, plan/proposalcurrentheader, ownreceipts/diary. AllClaudeleases/outboxes/sourcepatches preserved; no Git/app/tests/DB/dispatch/deploy/upload. ExistingC2notownerapprovedstaysclosed. MasterBLSHregistrationunchanged. ExactfrozendocsforClaudecommit listedin DOCS-FOR-CLAUDE.json. Finitecoordinationdone; STOPfurtherwrites, parent/Claudehandoffnext.

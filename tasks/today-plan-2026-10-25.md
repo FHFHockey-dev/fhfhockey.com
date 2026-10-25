@@ -1,5 +1,8 @@
 # October 25 plan — PROPOSED Claude and Codex lanes
 
+> CURRENT OWNER DIVISION 2026-10-25T16:32:28.072974+00:00: BLSH is Codex’s ONLY active implementation/research lane. Earlier D1/D2/D3 and card/social Codex proposals below are historical, not dispatch authority. Goalie-share, player cards and Testing Grounds are frozen/completed handoffs to Claude with fresh exact leases and all activation gates retained; WiGO/social implementation stays with Claude. Claude owns LOCAL commits; EACH push needs TJ’s separate approval. No Codex Git mutations or competing commit process. See the current mailbox custody decision and tasks/artifacts/claude-custody-transfer-2026-10-25/TRANSFER-MANIFEST.json.
+
+
 Prepared from local registers, final handoffs/diaries and narrowly inspected source on October 25 around 09:30 Eastern. This resumes planning/documentation only. TJ brings this plan to Claude; no worker has been dispatched by this document. All prior sprint workers remain stopped except the explicitly resumed Codex goalie-share task `01a1733c-05e7-74ef-8d82-929fc77040eb`.
 
 ## Time and priorities

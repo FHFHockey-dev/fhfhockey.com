@@ -2342,6 +2342,7 @@ Historical [EVIDENCE.json](EVIDENCE.json) and [initial fence](EVIDENCE-20261022T
 
 ### BLSH-2.2 — Implement 5/10/20 scheduled-team-game selection, actual date-span labels and expected appearances. Require explicit common-date inputs for date-aligned comparisons.
 
+- **Priority:** P1 — alongside RSO/FORGE, player cards and social share. Project priority does not dispatch optional market/roster work or remove existing acceptance gates. Receipt: `tasks/artifacts/blsh-p1-registration-2026-10-25/OWNER-REGISTRATION.md`.
 - **Implementation:** Partial groundwork/fixture evidence in current authority; unchecked requirement remains. **Acceptance:** open; exact current acceptance not established. **Release:** fixture/local scope; no new release.
 - **Owner:** RESEARCH; **reviewer:** UNASSIGNED. **Dependencies:** MASTER-S1/F11/R7/R8 and canonical task dependencies.
 - **Evidence level:** inventoried only. **Scope:** Task and receipt reconciliation only; no claim this whole area or all referenced source files were vetted. **Provenance:** retained task lists and receipts.
@@ -2353,6 +2354,7 @@ Historical [EVIDENCE.json](EVIDENCE.json) and [initial fence](EVIDENCE-20261022T
 
 ### BLSH-3.1 — Build compact filters, Rebound/Cooling views, sortable candidate rows and a detail panel with opportunity, volatility, confidence and observed duration.
 
+- **Priority:** P1 — alongside RSO/FORGE, player cards and social share. Project priority does not dispatch optional market/roster work or remove existing acceptance gates. Receipt: `tasks/artifacts/blsh-p1-registration-2026-10-25/OWNER-REGISTRATION.md`.
 - **Implementation:** Partial groundwork/fixture evidence in current authority; unchecked requirement remains. **Acceptance:** open; exact current acceptance not established. **Release:** fixture/local scope; no new release.
 - **Owner:** RESEARCH; **reviewer:** UNASSIGNED. **Dependencies:** MASTER-S1/F11/R7/R8 and canonical task dependencies.
 - **Evidence level:** inventoried only. **Scope:** Task and receipt reconciliation only; no claim this whole area or all referenced source files were vetted. **Provenance:** retained task lists and receipts.
@@ -2364,6 +2366,7 @@ Historical [EVIDENCE.json](EVIDENCE.json) and [initial fence](EVIDENCE-20261022T
 
 ### BLSH-3.4 — Create mobile list/detail/trade layouts, keyboard/touch-accessible explanation controls and visible essential limitations. Capture desktop/mobile fixture screenshots for owner review.
 
+- **Priority:** P1 — alongside RSO/FORGE, player cards and social share. Project priority does not dispatch optional market/roster work or remove existing acceptance gates. Receipt: `tasks/artifacts/blsh-p1-registration-2026-10-25/OWNER-REGISTRATION.md`.
 - **Implementation:** Partial groundwork/fixture evidence in current authority; unchecked requirement remains. **Acceptance:** open; exact current acceptance not established. **Release:** fixture/local scope; no new release.
 - **Owner:** RESEARCH; **reviewer:** UNASSIGNED. **Dependencies:** MASTER-S1/F11/R7/R8 and canonical task dependencies.
 - **Evidence level:** inventoried only. **Scope:** Task and receipt reconciliation only; no claim this whole area or all referenced source files were vetted. **Provenance:** retained task lists and receipts.
@@ -2375,6 +2378,7 @@ Historical [EVIDENCE.json](EVIDENCE.json) and [initial fence](EVIDENCE-20261022T
 
 ### BLSH-4.1 — After shared serving is ready, replace fixture inputs with the existing batched reader. Preserve as-of/model/source identity, allowed uses, freshness and missingness; avoid per-player external fetches.
 
+- **Priority:** P1 — alongside RSO/FORGE, player cards and social share. Project priority does not dispatch optional market/roster work or remove existing acceptance gates. Receipt: `tasks/artifacts/blsh-p1-registration-2026-10-25/OWNER-REGISTRATION.md`.
 - **Implementation:** Partial groundwork/fixture evidence in current authority; unchecked requirement remains. **Acceptance:** open; exact current acceptance not established. **Release:** fixture/local scope; no new release.
 - **Owner:** RESEARCH; **reviewer:** UNASSIGNED. **Dependencies:** MASTER-S1/F11/R7/R8 and canonical task dependencies.
 - **Evidence level:** inventoried only. **Scope:** Task and receipt reconciliation only; no claim this whole area or all referenced source files were vetted. **Provenance:** retained task lists and receipts.
@@ -2386,6 +2390,7 @@ Historical [EVIDENCE.json](EVIDENCE.json) and [initial fence](EVIDENCE-20261022T
 
 ### BLSH-4.2 — Verify one genuine supported skater and goalie trace and both-page parity. Report unsupported coverage separately rather than marking the whole feature complete.
 
+- **Priority:** P1 — alongside RSO/FORGE, player cards and social share. Project priority does not dispatch optional market/roster work or remove existing acceptance gates. Receipt: `tasks/artifacts/blsh-p1-registration-2026-10-25/OWNER-REGISTRATION.md`.
 - **Implementation:** Partial groundwork/fixture evidence in current authority; unchecked requirement remains. **Acceptance:** open; exact current acceptance not established. **Release:** fixture/local scope; no new release.
 - **Owner:** RESEARCH; **reviewer:** UNASSIGNED. **Dependencies:** MASTER-S1/F11/R7/R8 and canonical task dependencies.
 - **Evidence level:** inventoried only. **Scope:** Task and receipt reconciliation only; no claim this whole area or all referenced source files were vetted. **Provenance:** retained task lists and receipts.
@@ -2397,6 +2402,7 @@ Historical [EVIDENCE.json](EVIDENCE.json) and [initial fence](EVIDENCE-20261022T
 
 ### BLSH-4.3 — Verify loading, stale/partial, invalid-offer and persistence-isolation behavior with focused tests and actual browser screenshots. Have an independent reviewer check statistical semantics and UX.
 
+- **Priority:** P1 — alongside RSO/FORGE, player cards and social share. Project priority does not dispatch optional market/roster work or remove existing acceptance gates. Receipt: `tasks/artifacts/blsh-p1-registration-2026-10-25/OWNER-REGISTRATION.md`.
 - **Implementation:** Partial groundwork/fixture evidence in current authority; unchecked requirement remains. **Acceptance:** open; exact current acceptance not established. **Release:** fixture/local scope; no new release.
 - **Owner:** RESEARCH; **reviewer:** UNASSIGNED. **Dependencies:** MASTER-S1/F11/R7/R8 and canonical task dependencies.
 - **Evidence level:** inventoried only. **Scope:** Task and receipt reconciliation only; no claim this whole area or all referenced source files were vetted. **Provenance:** retained task lists and receipts.
@@ -2408,6 +2414,7 @@ Historical [EVIDENCE.json](EVIDENCE.json) and [initial fence](EVIDENCE-20261022T
 
 ### BLSH-4.4 — Deliver the exact diff, checks, limitations, route decision and release proposal. Deployment remains a separate authorized action.
 
+- **Priority:** P1 — alongside RSO/FORGE, player cards and social share. Project priority does not dispatch optional market/roster work or remove existing acceptance gates. Receipt: `tasks/artifacts/blsh-p1-registration-2026-10-25/OWNER-REGISTRATION.md`.
 - **Implementation:** Partial groundwork/fixture evidence in current authority; unchecked requirement remains. **Acceptance:** open; exact current acceptance not established. **Release:** fixture/local scope; no new release.
 - **Owner:** RESEARCH; **reviewer:** UNASSIGNED. **Dependencies:** MASTER-S1/F11/R7/R8 and canonical task dependencies.
 - **Evidence level:** inventoried only. **Scope:** Task and receipt reconciliation only; no claim this whole area or all referenced source files were vetted. **Provenance:** retained task lists and receipts.
@@ -2419,6 +2426,7 @@ Historical [EVIDENCE.json](EVIDENCE.json) and [initial fence](EVIDENCE-20261022T
 
 ### BLSH-5.1 — Propose a rights-reviewed, timestamped market reference only if useful; define comparability and stale-source behavior before integration.
 
+- **Priority:** P1 — alongside RSO/FORGE, player cards and social share. Project priority does not dispatch optional market/roster work or remove existing acceptance gates. Receipt: `tasks/artifacts/blsh-p1-registration-2026-10-25/OWNER-REGISTRATION.md`.
 - **Implementation:** Partial groundwork/fixture evidence in current authority; unchecked requirement remains. **Acceptance:** open; exact current acceptance not established. **Release:** fixture/local scope; no new release.
 - **Owner:** RESEARCH; **reviewer:** UNASSIGNED. **Dependencies:** MASTER-S1/F11/R7/R8 and canonical task dependencies.
 - **Evidence level:** inventoried only. **Scope:** Task and receipt reconciliation only; no claim this whole area or all referenced source files were vetted. **Provenance:** retained task lists and receipts.
@@ -2429,6 +2437,7 @@ Historical [EVIDENCE.json](EVIDENCE.json) and [initial fence](EVIDENCE-20261022T
 
 ### BLSH-5.2 — Specify optional RSO net-startable trade evaluation with complete roster/rules/schedule inputs and replacement consequences. Do not label raw production totals as this result.
 
+- **Priority:** P1 — alongside RSO/FORGE, player cards and social share. Project priority does not dispatch optional market/roster work or remove existing acceptance gates. Receipt: `tasks/artifacts/blsh-p1-registration-2026-10-25/OWNER-REGISTRATION.md`.
 - **Implementation:** Partial groundwork/fixture evidence in current authority; unchecked requirement remains. **Acceptance:** open; exact current acceptance not established. **Release:** fixture/local scope; no new release.
 - **Owner:** RESEARCH; **reviewer:** UNASSIGNED. **Dependencies:** MASTER-S1/F11/R7/R8 and canonical task dependencies.
 - **Evidence level:** inventoried only. **Scope:** Task and receipt reconciliation only; no claim this whole area or all referenced source files were vetted. **Provenance:** retained task lists and receipts.
@@ -2439,6 +2448,7 @@ Historical [EVIDENCE.json](EVIDENCE.json) and [initial fence](EVIDENCE-20261022T
 
 ### BLSH-5.3 — Predeclare decision-value evaluation and false-alert analysis before promoting stronger buy/sell or duration claims. Use the existing exposure register and preserve closed evaluation data.
 
+- **Priority:** P1 — alongside RSO/FORGE, player cards and social share. Project priority does not dispatch optional market/roster work or remove existing acceptance gates. Receipt: `tasks/artifacts/blsh-p1-registration-2026-10-25/OWNER-REGISTRATION.md`.
 - **Implementation:** Partial groundwork/fixture evidence in current authority; unchecked requirement remains. **Acceptance:** open; exact current acceptance not established. **Release:** fixture/local scope; no new release.
 - **Owner:** RESEARCH; **reviewer:** UNASSIGNED. **Dependencies:** MASTER-S1/F11/R7/R8 and canonical task dependencies.
 - **Evidence level:** inventoried only. **Scope:** Task and receipt reconciliation only; no claim this whole area or all referenced source files were vetted. **Provenance:** retained task lists and receipts.
@@ -2446,6 +2456,19 @@ Historical [EVIDENCE.json](EVIDENCE.json) and [initial fence](EVIDENCE-20261022T
 - **Acceptance/release gate:** Canonical item acceptance plus qualified shared adapter/input identity and independent UX/statistical review; optional5.x remains separately scoped.
 - **Next:** RESEARCH owner inventories/frames bounded contract/fixture work; application implementer UNASSIGNED unless parent reserves it.
 - **Evidence:** [tasks-prd-buy-low-sell-high.md:45](</Users/tim/Code/fhfhockey.com/tasks/tasks-prd-buy-low-sell-high.md:45>); [REPORT.md:63](</Users/tim/Code/fhfhockey.com/tasks/artifacts/research-backlog-readiness-2026-10-22/REPORT.md:63>)
+
+**Owner-authorized BLSH research milestones (existing BLSH-5.3 parent):**
+
+- **Current research owner/scope:** `01a173a7-7cba-7738-b7df-d5a64513d0c6`; R0 protocol/fixtures in its workspace, repo read-only, tracing actual WiGO Game Score. No real empirical analysis/training claimed running.
+- **Approved first-pass framing:** FHFH Standard and skaters first; Fantasy Points, Raw Points and vetted WiGO Game Score separately, followed by proposed weighted aggregate; goalies defined separately. No weights, thresholds, data clearance or model activation approved.
+- [ ] **BLSH-5.3/R0-definitions-contracts — R0 — Freeze definitions and contracts.** In progress: existing researcher protocol/fixtures and actual WiGO Game Score trace only. Next: Freeze FHFH Standard profile/version, skater-first outcome contracts and separate goalie brief; consolidate existing Sustainability/sKO/VuDu meanings. Establish separate Fantasy Points, Raw Points and vetted actual WiGO Game Score baseline/episode definitions, chronology, missingness, proposed aggregate and evaluation-exposure rules. No threshold or weight is accepted merely by writing the protocol.
+- [ ] **BLSH-5.3/R1-episode-library — R1 — Build the entering/during/exiting episode library.** Proposed; not empirically running. Next: After R0 acceptance and separately cleared input manifest, construct reproducible player-game episodes and controls for the three separate outcomes and proposed weighted aggregate. Distinguish retrospective boundaries from real-time flags, retain missing/ineligible cases and report coverage. Do not imply original data vintage from a retrospective reconstruction.
+- [ ] **BLSH-5.3/R2-association-rankings — R2 — Produce comprehensive empirical association rankings.** Proposed; no data access or empirical run authorized here. Next: After qualified episodes and separately cleared data, report full signed/absolute associations, weak/null/implausible findings, lags, phase patterns, overlap/redundancy, sample sizes, uncertainty and multiplicity/stability checks. Separate contemporaneous associations from predictive influence and record confounding/availability limits.
+- [ ] **BLSH-5.3/R3-bayesian-transitions — R3 — Evaluate shrunk predictive influence and hierarchical Bayesian onset/exit.** Proposed; held-out/model gates remain. Next: Use accepted R0–R2 definitions and authorized chronological development/holdout boundaries for shrunk predictive contributions and partially pooled Bayesian onset/continuation/exit/duration comparisons. Predeclare leakage, overlapping-label, calibration, baseline, false-alert and decision-value checks. No training, reserved-holdout exposure or model promotion is authorized by this registration.
+- [ ] **BLSH-5.3/R4-unified-score-comparison — R4 — Compare and qualify a unified score and weighted aggregate.** Proposed; no weights or thresholds approved. Next: Compare separate Fantasy Points, Raw Points and vetted Game Score tracks and the proposed learned/shrunk weighted aggregate against simple and existing Sustainability/sKO/VuDu comparators. Preserve scale/sign/unit meanings, account for overlap/covariance and retain negative results. Freeze weights only through later accepted development/held-out evidence; do not naively average incompatible legacy scores.
+- [ ] **BLSH-5.3/R5-qualified-integration — R5 — Integrate only qualified shared BLSH scope.** Proposed; depends on accepted research and separate implementation/release custody. Next: After qualified evidence and independent review, map one accepted record into existing shared BLSH/Sko Element consumers using BLSH-4.1–4.4 for genuine traces, parity, limitations and release. Skater-first is not goalie completion; goalie definitions and adapters remain separate. Strong buy/sell, probability and duration claims require their own qualification; optional market/roster-aware scope retains its gates.
+- **Research next:** Receive and review the existing researcher R0 protocol/fixtures against FHFH Standard/skater-first approval; vet actual WiGO Game Score and primitive coverage. Keep R1–R5 proposed and input/holdout/implementation/activation-gated. Preserve completed work and optional market/roster decisions.
+- **Registration evidence:** `tasks/artifacts/blsh-p1-registration-2026-10-25/OWNER-REGISTRATION.md:5` SHA256 `3cce020d8dc8f888cae07ab19d5616a39bd3d91c27a7517b5c82ed274f6dd6e1`; exact synthesis paths/hashes in LEDGER.json.
 
 ## October22 FORGE projection improvement sprint
 

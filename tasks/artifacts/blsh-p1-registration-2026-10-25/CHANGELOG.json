@@ -1,0 +1,72 @@
+{
+  "at_utc": "2026-10-25T16:07:32.727059+00:00",
+  "scope": "Bounded owner-authorized BLSH P1 registration only",
+  "changed_ids": [
+    "BLSH-2.2",
+    "BLSH-3.1",
+    "BLSH-3.4",
+    "BLSH-4.1",
+    "BLSH-4.2",
+    "BLSH-4.3",
+    "BLSH-4.4",
+    "BLSH-5.1",
+    "BLSH-5.2",
+    "BLSH-5.3"
+  ],
+  "research_parent": "BLSH-5.3",
+  "added_children": [
+    "BLSH-5.3/R0-definitions-contracts",
+    "BLSH-5.3/R1-episode-library",
+    "BLSH-5.3/R2-association-rankings",
+    "BLSH-5.3/R3-bayesian-transitions",
+    "BLSH-5.3/R4-unified-score-comparison",
+    "BLSH-5.3/R5-qualified-integration"
+  ],
+  "counts": {
+    "ids_before": 219,
+    "ids_after": 219,
+    "children_before": 80,
+    "children_after": 86,
+    "evidence_before": 1281,
+    "evidence_after": 1284
+  },
+  "canonical": [
+    {
+      "path": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "before_sha256": "e1fccc34c8bd9a5f81f93fa0141417f8f07e7f5fb9da222688fae756234f17d4",
+      "after_sha256": "67da59ad42eab4c40a5ebb6d6654ca1bc8734b322421fe55f44f48132d8e795a"
+    },
+    {
+      "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "before_sha256": "d8789e96ce0dd1d81f216e7b3d7b486526fefd773de2a074b1f4019216dc4725",
+      "after_sha256": "2364d2ebccb0a232e12eadaf829799ee8b3e3069bb769e545d13fbb38a1a959f"
+    },
+    {
+      "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json",
+      "before_sha256": "9f2dda051d5e3566764deb36f16cd511f1f96f1af5bdff3228aad5d9a9c02747",
+      "after_sha256": "e0214b21c7726603f929a8aa055afd7bc18019219b7eb15c7a5156ed5bb69443"
+    }
+  ],
+  "preservation": {
+    "all_original_ids_scopes_and_evidence": true,
+    "all_209_non_blsh_rows_unchanged": true,
+    "existing_other_P1_priorities_unchanged": true,
+    "existing_BLSH_acceptance_release_and_optional_gates_retained": true,
+    "markdown_insertions_only": true,
+    "no_completed_work_reopened": true
+  },
+  "custody_guard": {
+    "owner": "01a16e4f-a250-727a-aeb5-2e42da87500f",
+    "lease_sha256": "34c9878993e4fd27c10b2311f758a2bf0c48086a1ce16200bcee005e13e11011",
+    "pending_operation_at_check": null
+  },
+  "operations": {
+    "git": 0,
+    "app_edits": 0,
+    "application_tests": 0,
+    "db_or_provider_reads": 0,
+    "worker_dispatch": 0,
+    "external_communication": 0,
+    "uploads_or_deploys": 0
+  }
+}
