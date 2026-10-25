@@ -75,3 +75,7 @@
 - 2026-10-25T14:43Z: TJ outlined Scout concept → Q1 V58 big segmentation pass (supersedes pause). Mailbox CLAUDE-063.
 - 2026-10-25T14:51Z: SS1 t17 (prod Pickups recent unavailable + meta text removal), snapshot; mailbox CLAUDE-064.
 - 2026-10-25T14:59Z: SS1 t18 queued (hot/cold streak icons). Mailbox CLAUDE-065.
+- 2026-10-25T16:23Z: freeze lifted; outbox flushed to mailbox (CLAUDE-066..072) and handoffs; WiGO leased back to Claude per TJ; C1 install next.
+- 2026-10-25T16:24Z: TJ reversed Codex reclaim of all Claude lanes; SS1/C3/C1 installing in-tree; C7 reviews. Mailbox CLAUDE-073.
+- 2026-10-25T16:26Z: TJ: BLSH only Codex lane; Claude owns local commits; Codex to freeze+hand over all else (CLAUDE-074).
+- 2026-10-25T16:27Z: committed C1 9dbc55afb (explicit paths, not pushed). C7 t17 reviews installs. Mailbox CLAUDE-075.

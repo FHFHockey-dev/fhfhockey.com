@@ -1,8 +1,8 @@
 {
   "owner": "Claude orchestrator",
-  "as_of_utc": "2026-10-25T14:51Z",
-  "base_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
-  "status": "Oct 25 lanes T1-C1/T2-C2/T3-C3 active (snapshot/artifact-only until handback) 2026-10-25T14:12Z",
+  "as_of_utc": "2026-10-25T16:42Z",
+  "base_head": "2f2b432306b048f16bf48c2e274f21e55a7514d4",
+  "status": "Claude lanes reclaimed per TJ 2026-10-25T16:24Z",
   "shared_resources": {
     "note": "none held by Claude"
   },
@@ -336,7 +336,7 @@
         "Git"
       ],
       "owner": "Claude orchestrator session (this thread) \u2192 lane session",
-      "status": "RELEASED 2026-10-25T04:07Z \u2014 TJ reclaimed all lanes for Codex handoff (CLAUDE-058)",
+      "status": "ACTIVE 2026-10-25T16:24Z \u2014 independent review of in-tree installs (read-only)",
       "start_utc": "2026-10-24T14:22:50Z",
       "base_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
       "session": "local_f9ee2dca-cbf5-4df7-9274-66687e6ea435 (c7-luna-review)"
@@ -432,19 +432,160 @@
       ],
       "owner": "Claude orchestrator \u2192 lane session",
       "session": "local_4542f7f4-e6a6-4e51-83eb-74e26e54ff0f (ss1-gamegrid-share)",
-      "status": "RE-ACTIVATED 2026-10-25T14:51Z ticket 17 (live Pickups 'Recent form unavailable' + meta-text removal); snapshot /private/tmp/fhfh-ss1-t17 only; patch to Codex for integration/push; :3140",
+      "status": "ACTIVE canonical 2026-10-25T16:24Z \u2014 install SS1-17+18 combined + REL-SS1-LOW-YEAR-R1",
       "start_utc": "2026-10-24T15:34Z",
       "base_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
       "spec": "CLAUDE-20261024-009/-010",
       "approved_production_reads": "TJ pop-up 2026-10-24T19:25Z: \u22645 sequential local GETs on :3110; read-only yahoo_players(<50%, current season), wgo_skater_stats_totals, wgo_goalie_stats_totals, NHL schedule; no writes",
       "read_only_security_paths": [
-        "web/contexts/AuthProviderContext/index.tsx",
-        "web/__tests__/contexts/AuthProviderContext.test.tsx (merged canonical test pending per CODEX-056; never replace)",
-        "web/lib/socialShare/access.ts",
-        "web/lib/socialShare/access.test.ts",
-        "web/components/SocialShare/SocialShareAccessGate.tsx",
         "web/components/SocialShare/SocialShareAccessGate.test.tsx",
-        "auth lines of web/pages/social-share/[format].tsx and web/pages/api/v1/social-share/[format].ts"
+        "web/components/SocialShare/SocialShareAccessGate.tsx",
+        "web/lib/socialShare/access.test.ts",
+        "web/lib/socialShare/access.ts",
+        "auth lines in social-share page/API"
+      ],
+      "authority": "TJ direct 2026-10-25T16:24Z: 'nor should they have reclaimed anything\u2026 most tasks should live here' \u2014 Claude lanes reclaimed from CODEX-RECLAIM-WEB-20261025",
+      "canonical_write_paths": [
+        {
+          "path": "web/components/SocialShare/SocialShare.module.scss",
+          "baseline_sha256": "2c5190a761330c728b4447cad259078f241843d03d69e9795bcf69b4c190ae93"
+        },
+        {
+          "path": "web/components/SocialShare/SocialShare.test.tsx",
+          "baseline_sha256": "5a4e3b240d69d076d5763409a56873f39a915ebc054973efd516e7eb1c0d8e80"
+        },
+        {
+          "path": "web/components/SocialShare/SocialShare.tsx",
+          "baseline_sha256": "c4a52fbd8685cd8f3fe5a6435e880f6b6b3f3acfac7909eab880db6dbbf5ffaa"
+        },
+        {
+          "path": "web/components/SocialShare/TeamBanner.tsx",
+          "baseline_sha256": "f0aff1ab3d0139742c834d65893445ae18fb477600dc13dcfecb54901730867f"
+        },
+        {
+          "path": "web/e2e/social-share.spec.ts",
+          "baseline_sha256": "bffae5468fa727c1b543bffa3d57765985e84e714307f1b69690d82c5c8d92fb"
+        },
+        {
+          "path": "web/lib/socialShare/edition.ts",
+          "baseline_sha256": "dc9a225a0d942946e47ff0549ec602f12f8210acf8fe48931bae6716842a45a0"
+        },
+        {
+          "path": "web/lib/socialShare/editionFetch.test.ts",
+          "baseline_sha256": "94f0d9cbbeba2755fe027ec517b84722107eabf64b4e4c52bc69ed94aa479236"
+        },
+        {
+          "path": "web/lib/socialShare/editionFetch.ts",
+          "baseline_sha256": "f09e756cda24dd32d0b8ac6144fb241bf90b8788d3e6bbfc6d6e5bf308b05cd3"
+        },
+        {
+          "path": "web/lib/socialShare/export.ts",
+          "baseline_sha256": "8dc961de8b11c6c79dc34b78c991fc51ce38eaf2cc2bbdd1a073a72bc034cabd"
+        },
+        {
+          "path": "web/lib/socialShare/fixtures.ts",
+          "baseline_sha256": "865e699e39f7d0895b3f1059327221111d7d2bc14a43e96c749ccffeb29944df"
+        },
+        {
+          "path": "web/lib/socialShare/matchups.test.ts",
+          "baseline_sha256": "3f01ea8f7acb5fe6fe276503809b154cbe6786c03c8acd1f271b4f118061246f"
+        },
+        {
+          "path": "web/lib/socialShare/matchups.ts",
+          "baseline_sha256": "d41d5b906a71b75e1eafa4718aea781eb112eb6e99656b5dc65afd50a1075bba"
+        },
+        {
+          "path": "web/lib/socialShare/mondayGrid.test.ts",
+          "baseline_sha256": "95fbb3ec80b05ebd2162c6b1d4c86a7f7da4b0585bc0507d0b6b642e8ea576eb"
+        },
+        {
+          "path": "web/lib/socialShare/mondayGrid.ts",
+          "baseline_sha256": "bc822677df3df6713d6f978eadb4c80261c78afb7dc3d82ed5d15a6b57a2f960"
+        },
+        {
+          "path": "web/lib/socialShare/pickupsFixture.ts",
+          "baseline_sha256": "7aca611c24aca68bb936cc54217b7e9e5b174cdd687a303ae47bdc24597c80e9"
+        },
+        {
+          "path": "web/lib/socialShare/playerSources.test.ts",
+          "baseline_sha256": "44c1b6810a2cb121fff079f29243c8eaed378d02c70903eec41d877524697818"
+        },
+        {
+          "path": "web/lib/socialShare/playerSources.ts",
+          "baseline_sha256": "3fb96ad69c5d71cdb5a0b784a2574c72d16d76155575cf21214c283c3756d994"
+        },
+        {
+          "path": "web/lib/socialShare/players.test.ts",
+          "baseline_sha256": "e9447b5cc007dbd4b9af549af380a84599612c6a8a495d73d609502369728fea"
+        },
+        {
+          "path": "web/lib/socialShare/players.ts",
+          "baseline_sha256": "a27accd1f3a9ddad8bc25bac0454e7c37d71c2be4174740007a880616ef0117d"
+        },
+        {
+          "path": "web/lib/socialShare/schedule.test.ts",
+          "baseline_sha256": "1871a473280115576de43396e448f5a84ccfb3fa078c1d43a99420e4eafffaf0"
+        },
+        {
+          "path": "web/lib/socialShare/schedule.ts",
+          "baseline_sha256": "b96f23685d276e194c4f9899dc4fb9c44e5335acb46fefd81833fca5c4356e73"
+        },
+        {
+          "path": "web/lib/socialShare/score.test.ts",
+          "baseline_sha256": "261810a0165cfc5022d95f63f54d7f6b3190044fa1e6f70135f3ad1fa994ddea"
+        },
+        {
+          "path": "web/lib/socialShare/score.ts",
+          "baseline_sha256": "c5ebea322dc770e71ae31630711f076754a4e3bca2d5bf5973e9ea29c3f6820f"
+        },
+        {
+          "path": "web/lib/socialShare/server.ts",
+          "baseline_sha256": "8bdd7975839c01e9cd33ccdb880cddee6cb8595049c3425d4daea780ca4afaf5"
+        },
+        {
+          "path": "web/lib/socialShare/teamRates.test.ts",
+          "baseline_sha256": "dcfdefa521aa64e9424da65ad9619dcc62ef41b53a048f684a2c3966b81b2913"
+        },
+        {
+          "path": "web/lib/socialShare/teamRates.ts",
+          "baseline_sha256": "b30ffcb491fc60213fc476b2cc67f41a3330a5be9e4a89d8599d446fb0f96a32"
+        },
+        {
+          "path": "web/lib/socialShare/tiers.test.ts",
+          "baseline_sha256": "f850e2657ec3dde749ccf7e2b4dcf18516ca1b1f4c001beb9c8ff6db08f10f8d"
+        },
+        {
+          "path": "web/lib/socialShare/tiers.ts",
+          "baseline_sha256": "9bbb92a2c70b8e0efa2daa7c2a79b45b0a3343b3980e05da3160de8a1ad52d84"
+        },
+        {
+          "path": "web/lib/socialShare/trends.test.ts",
+          "baseline_sha256": "2c8f535b243a7af5fba4c28480c505242399249b163853c5106722636ddb7028"
+        },
+        {
+          "path": "web/lib/socialShare/trends.ts",
+          "baseline_sha256": "03ffc190244f6657069dcaa402b5fddfe462d80029fba5e9fe0285bc6b71f943"
+        },
+        {
+          "path": "web/lib/socialShare/trendsFixture.ts",
+          "baseline_sha256": "c431b1c687e3dfc844510a1f74b848b9bedf62638d2344cf323dcd4702839101"
+        },
+        {
+          "path": "web/lib/socialShare/types.ts",
+          "baseline_sha256": "1f73d4957e8f0cd5df46882d452adfacd25c65538fd770630fe1d5550fe6d754"
+        },
+        {
+          "path": "web/pages/api/v1/social-share/[format].ts",
+          "baseline_sha256": "68a09aa87f7a0333217199bd6668e8ba2fe444c07e009fce7a28459ef230b0ab"
+        },
+        {
+          "path": "web/pages/social-share/[format].tsx",
+          "baseline_sha256": "70ffbcceef51f4ad101b6226066aa99ae1393108c73fcad4197d494a95a76fc7"
+        },
+        {
+          "path": "web/pages/social-share/player-cards.tsx",
+          "baseline_sha256": "fac7acb9dd79e6812ff3d60da5b575861baede0fbd3ee66b9f56742426f92043"
+        }
       ]
     },
     {
@@ -614,7 +755,7 @@
         "web/lib/player-cards/** (all existing files)",
         "web/components/player-cards/**"
       ],
-      "status": "active 2026-10-25T14:12Z",
+      "status": "ACTIVE canonical 2026-10-25T16:24Z \u2014 installing granted patch (CODEX-080)",
       "base_head": "9d4996033c978fb1570c85e3ca226627872fdf30",
       "session": "local_003887f5-f8cd-4290-8920-3d8fa95cf1b2 (c1-evidence-bundle)"
     },
@@ -654,7 +795,7 @@
       "resources": [
         "snapshot server :3140 only (:3125 = Codex card worker)"
       ],
-      "status": "active 2026-10-25T14:12Z",
+      "status": "CLOSED 2026-10-25T16:24Z \u2014 not approved by TJ; nothing installed",
       "base_head": "9d4996033c978fb1570c85e3ca226627872fdf30",
       "session": "local_1bef5915-33f7-48c0-baa4-2a4f0ca452f2 (c2-card-readability)"
     },
@@ -698,9 +839,687 @@
         "lock clearing, backfill, schedule change",
         "goalie-share files (Codex D1)"
       ],
-      "status": "active 2026-10-25T14:12Z",
+      "status": "ACTIVE canonical 2026-10-25T16:24Z \u2014 install C3a + C3b v2; C3d stays Codex (FORGE file)",
       "base_head": "9d4996033c978fb1570c85e3ca226627872fdf30",
-      "session": "local_dd2e025f-d067-400a-9479-7e3dce2e1bf8 (c3-cron-repro)"
+      "session": "local_dd2e025f-d067-400a-9479-7e3dce2e1bf8 (c3-cron-repro)",
+      "authority": "TJ direct 2026-10-25T16:24Z: 'nor should they have reclaimed anything\u2026 most tasks should live here' \u2014 Claude lanes reclaimed from CODEX-RECLAIM-WEB-20261025",
+      "canonical_write_paths": [
+        {
+          "path": "web/__tests__/pages/api/v1/db/calculate-wigo-stats.test.ts",
+          "baseline_sha256": "a065e5ea2a93f2fc93efd93ae90a6e2c72b733566e74597135ef94010815c198"
+        },
+        {
+          "path": "web/lib/underlying-stats/playerStatsRefreshWindow.ts",
+          "baseline_sha256": "d6a291b2371deab1f260ff5fe575069c4aaf42fe97a0dd87a81dcc952b820fb1"
+        },
+        {
+          "path": "web/pages/api/v1/db/calculate-wigo-stats.ts",
+          "baseline_sha256": "f438eb129e1f70dd0691151916e78a8ea2225412ec63847ce93e334bc9ee9fa6"
+        },
+        {
+          "path": "web/pages/api/v1/db/forge-served-forecast-snapshot.ts",
+          "baseline_sha256": "968c894ab0ece10b7e897278310f89b9c1f2b36ec8d2111e9296cf1029139a72",
+          "note": "C3d diagnostic only; FORGE now unowned by Codex (BLSH-only)"
+        }
+      ]
+    },
+    {
+      "lane": "WIGO",
+      "ids": [
+        "SITE-WIGO"
+      ],
+      "session": "local_ec8a69cc-dc02-4a39-9df0-1fedcbae16f4 (wigo-charts-full-audit)",
+      "scope": "WiGO full audit + one-page dashboard redesign",
+      "authority": "TJ direct 2026-10-25T16:23Z: 'codex should not have reclaimed wigocharts' \u2014 supersedes CODEX-RECLAIM-WEB-20261025 for these paths",
+      "write_paths": [
+        {
+          "path": "web/__tests__/pages/wigoCharts.test.tsx",
+          "baseline_sha256": "6ca27777fe011e1ee44d7b390fab62da882e2202446bdc5107bca1e1c81bd01b"
+        },
+        {
+          "path": "web/components/WiGO/ConsistencyChart.test.tsx",
+          "baseline_sha256": "48b2bcb7815e197995f0254e31ca0e481f911b9f76e69fca7effc9bfb6aa75e5"
+        },
+        {
+          "path": "web/components/WiGO/ConsistencyChart.tsx",
+          "baseline_sha256": "2cec71cf162d898e245ae6a4b3b255df40977df0801adc1f23169f8be40977aa"
+        },
+        {
+          "path": "web/components/WiGO/GameScoreLineChart/RollingAverageChart.tsx",
+          "baseline_sha256": "7f47e6f28468561d13318c4b4a84213116c7796e5e70db5f1b9877b34fc8571d"
+        },
+        {
+          "path": "web/components/WiGO/GameScoreLineChart/index.test.tsx",
+          "baseline_sha256": "c224a7465b22ca7d12be7dea66e203956ff4bd1fe5f707056bf59c0768cdd61e"
+        },
+        {
+          "path": "web/components/WiGO/GameScoreLineChart/index.tsx",
+          "baseline_sha256": "affef99576d5cb1f6fbfe9e93fe00e5d4dd19c1244debfa5e1d8ab8931293f90"
+        },
+        {
+          "path": "web/components/WiGO/GameScoreSection.tsx",
+          "baseline_sha256": "9a1402ee5f3955c11eb463541052d44c0f55b27cc64873b1b6895b9bdf516548"
+        },
+        {
+          "path": "web/components/WiGO/NameSearchBar.module.scss",
+          "baseline_sha256": "00406ae39c9c991d5bb4cc1b1193930bfb725423eda6fb210629d45681be298f"
+        },
+        {
+          "path": "web/components/WiGO/NameSearchBar.test.tsx",
+          "baseline_sha256": "b5a36e507770bcbd9e2e6acf6688afe6e717b506479f32845fdb5ef4a0afbf19"
+        },
+        {
+          "path": "web/components/WiGO/NameSearchBar.tsx",
+          "baseline_sha256": "b824a9a6aa65230e12c7b7c654708134e763f22cbd9b97081a4fea2edc32346b"
+        },
+        {
+          "path": "web/components/WiGO/OpponentGameLog.module.scss",
+          "baseline_sha256": "87cd20ec26f3bb25a5524b94d3b9a1c16498d6e1559cd6a2c30d6217ecfa1815"
+        },
+        {
+          "path": "web/components/WiGO/OpponentGamelog.test.tsx",
+          "baseline_sha256": "437b3dfaac2051a646f789c525a276fef9f682e835ff349e16f83465f00b8de0"
+        },
+        {
+          "path": "web/components/WiGO/OpponentGamelog.tsx",
+          "baseline_sha256": "e37389337526cf43c2e111d24c597d8860abe5afec775bc8dab1a7028379dbed"
+        },
+        {
+          "path": "web/components/WiGO/PerGameStatsTable.module.scss",
+          "baseline_sha256": "4221439d550f705f373159131f4058efb291efb5a34d60b007f75177139cd3c9"
+        },
+        {
+          "path": "web/components/WiGO/PerGameStatsTable.test.tsx",
+          "baseline_sha256": "4e6f34a0226317d5cf0808ab50db30cbc818563572849e3dd55bca063ee0cdd7"
+        },
+        {
+          "path": "web/components/WiGO/PerGameStatsTable.tsx",
+          "baseline_sha256": "70e99a5095c0d888dcbd7d4305e19f1787551aee15d0d3234ec22c43de79d577"
+        },
+        {
+          "path": "web/components/WiGO/PlayerHeader.test.tsx",
+          "baseline_sha256": "1c544e51a7183a08890e2b63f60901d2870d44310ebe1ee28370d383d9914d64"
+        },
+        {
+          "path": "web/components/WiGO/PlayerHeader.tsx",
+          "baseline_sha256": "74736551d087fe52a9190ac11e1b4d336e89b040d629a9fd7ce24c9765bfe938"
+        },
+        {
+          "path": "web/components/WiGO/PlayerRatingsDisplay.module.scss",
+          "baseline_sha256": "cafffcec4c08d7b4c7a303f4bfc859d4d85f00777b339e2ce78de63c823f85a7"
+        },
+        {
+          "path": "web/components/WiGO/PlayerRatingsDisplay.test.tsx",
+          "baseline_sha256": "8645945d5ead8eec0284fe3cc4d7b50a5ac4adea8ead3cea1fec32c1e819ee80"
+        },
+        {
+          "path": "web/components/WiGO/PlayerRatingsDisplay.tsx",
+          "baseline_sha256": "eaf260d96ef479df5db5879157643258b571a7e3fac75bcd6ed8ffa099e553ff"
+        },
+        {
+          "path": "web/components/WiGO/PpgLineChart.tsx",
+          "baseline_sha256": "41891513f184cc5fb84bae94809f6e0c162d0d7634db91c7ba93ae937f58eeb2"
+        },
+        {
+          "path": "web/components/WiGO/RateStatPercentiles.test.tsx",
+          "baseline_sha256": "3a71c8331bb7b532bda9421fd9c6b2ec75b870c90caf582dc38b0db4b1b87eb6"
+        },
+        {
+          "path": "web/components/WiGO/RateStatPercentiles.tsx",
+          "baseline_sha256": "a580e10fc5cfb4da416eae12879c7680c2cac3ba0f28dcf22fe090b81df4e41b"
+        },
+        {
+          "path": "web/components/WiGO/StatsTable.test.tsx",
+          "baseline_sha256": "8ac9ca365d7242a3c0723be54b17ffb729085300953785b89cd81ae835f57646"
+        },
+        {
+          "path": "web/components/WiGO/StatsTable.tsx",
+          "baseline_sha256": "52c12e88f5cbaae90a1a3e169f163c4829453a6f095c53e42c0fb32c3a8b8738"
+        },
+        {
+          "path": "web/components/WiGO/StatsTableRowChart.test.tsx",
+          "baseline_sha256": "107ac9a850205cc51bf681d1fb33588eca93ab69cbf09b3d895e26001d3fdf0b"
+        },
+        {
+          "path": "web/components/WiGO/StatsTableRowChart.tsx",
+          "baseline_sha256": "5f52f7ef0ed1da4241e63c75ce6947003a6254f7e8a7937699691204519b27e3"
+        },
+        {
+          "path": "web/components/WiGO/TeamPerformanceDrivers.module.scss",
+          "baseline_sha256": "6b11b2eba882f8f767ab268098cedc3835f468f4f6e16c9a29f4040a00e5b5f0"
+        },
+        {
+          "path": "web/components/WiGO/TeamPerformanceDrivers.tsx",
+          "baseline_sha256": "3d6f9f03ad223c47991ae0ef1990396b9e98d2b2134b3d23ba636a6c752959ed"
+        },
+        {
+          "path": "web/components/WiGO/TimeframeComparison.module.scss",
+          "baseline_sha256": "3b9596233a86bbb111d491849619adcfd1d989a37d55d70cdf4ed6117b7674e0"
+        },
+        {
+          "path": "web/components/WiGO/TimeframeComparison.tsx",
+          "baseline_sha256": "a814e19eb056eaaf4997a3572a104135cb4805fb2201755b0ca52d3b76eeb765"
+        },
+        {
+          "path": "web/components/WiGO/ToiLineChart.tsx",
+          "baseline_sha256": "3887e6c3262eeeb76773d139b280764e0da4aeaf88b68946e3685fc981a49299"
+        },
+        {
+          "path": "web/components/WiGO/WigoComparisonMatrix.tsx",
+          "baseline_sha256": "be4317f504f9e0ee7624370e8a3f35f910287d172bd30f5b87c7e65f6d9fdd9e"
+        },
+        {
+          "path": "web/components/WiGO/WigoDashboardSections.tsx",
+          "baseline_sha256": "0749adeb960eea2be39f20a3d0a876c6d0c7d8b52a51c6d090c315a50a183920"
+        },
+        {
+          "path": "web/components/WiGO/WigoSectionCard.tsx",
+          "baseline_sha256": "63baf86644cd43d622b811823012678c1c0ed374d6f9eb9f281bf556bdf5e13a"
+        },
+        {
+          "path": "web/components/WiGO/errorMessages.ts",
+          "baseline_sha256": "95757b696cff820f479a0bd575b67d5eb4c9e9bf8a7572df9cc266da8f338a1c"
+        },
+        {
+          "path": "web/components/WiGO/fetchTeamDriverSnapshots.test.ts",
+          "baseline_sha256": "aaea69b62d6e4f3ccc4d4c524da468623792859de9419030a67db1b1700ea031"
+        },
+        {
+          "path": "web/components/WiGO/fetchTeamDriverSnapshots.ts",
+          "baseline_sha256": "f678d52fd3d5618b1b1c0b39542987a5f95a20007f92d5cad925b0aa477c9a6c"
+        },
+        {
+          "path": "web/components/WiGO/playerBiography.test.ts",
+          "baseline_sha256": "fe1b48736a0408bf30f6125b3139c985aa09b3233b0b2970045ed8ed121760f1"
+        },
+        {
+          "path": "web/components/WiGO/playerBiography.ts",
+          "baseline_sha256": "3401976f091c05e62beb96585a449dbff96d868fcb5e7bcbb95c290e761710df"
+        },
+        {
+          "path": "web/components/WiGO/ratingWeights.ts",
+          "baseline_sha256": "85b954bbf5dd8ebed467a6c707161f712895b99936de20b81f1c977acbdb691a"
+        },
+        {
+          "path": "web/components/WiGO/statMetadata.test.ts",
+          "baseline_sha256": "befb6f3731bd9125324d0c8b05609de7effb85e4c11799ca57c1c45a1c7ce06a"
+        },
+        {
+          "path": "web/components/WiGO/statMetadata.ts",
+          "baseline_sha256": "8ef22249e8066164e3bf1ce13fe4693f3e37fba9d907cc881c1af8c9c2b435d3"
+        },
+        {
+          "path": "web/components/WiGO/tableUtils.test.ts",
+          "baseline_sha256": "fdd11e4db397b0849497b4fd181bb3cc8245d59ae6c6cb42dc422a99c4c520d7"
+        },
+        {
+          "path": "web/components/WiGO/tableUtils.ts",
+          "baseline_sha256": "4ebfd69a30fc21792cb6916fbc0c92e2b1dd501498f24712db667e80ef4f86f5"
+        },
+        {
+          "path": "web/components/WiGO/teamPerformanceDriverModel.ts",
+          "baseline_sha256": "df23754c9d1362ad40088cda142f165fd61d7849d10128f9fa7903091aeaec97"
+        },
+        {
+          "path": "web/components/WiGO/teamPerformanceDrivers.test.ts",
+          "baseline_sha256": "2c98e24e6d04518b631660db952cd9432aac063e132c05bccdb83e55d36a89d0"
+        },
+        {
+          "path": "web/components/WiGO/types.ts",
+          "baseline_sha256": "42a5f4d80eee7f2ebb35d82a154f24734b0768dea89b542f31394918e53aabf4"
+        },
+        {
+          "path": "web/components/WiGO/wigoCharts.module.scss",
+          "baseline_sha256": "891294f0dd491122d63313fe1f1a76813adf5474d15c7a14081d16b6eaaeb001"
+        },
+        {
+          "path": "web/hooks/useWigoPlayerDashboard.test.tsx",
+          "baseline_sha256": "35b42a08be20c90d6f76b6888685e8d073ea929ab3cfe1a6194bb9b3f9649446"
+        },
+        {
+          "path": "web/hooks/useWigoPlayerDashboard.ts",
+          "baseline_sha256": "1438e51a5be91d85ce2c2fbd9ec589df05291a62fb75148625e34e772a49cc5f"
+        },
+        {
+          "path": "web/pages/wigoCharts.tsx",
+          "baseline_sha256": "7ee8ff5779ac2f686b3fa45e7f1415dcafa25879422938b7a8e0f69cd1833151"
+        },
+        {
+          "path": "web/styles/wigoCharts.module.scss",
+          "baseline_sha256": "f5048029d7d7b09e98a1936dcce3222d7e5591117c5c3e5967194ce64151480e"
+        },
+        {
+          "path": "web/styles/wigoColors.ts",
+          "baseline_sha256": "6d4539cd1d81344e08749c00fadbfa009d04a6675a18f61dbafe931bee668662"
+        },
+        {
+          "path": "web/utils/calculateWigoRatings.test.ts",
+          "baseline_sha256": "a28827aa75523665c23c09a9291901f4cee7b3b451ef9c2844a7a19401c2cbf5"
+        },
+        {
+          "path": "web/utils/calculateWigoRatings.ts",
+          "baseline_sha256": "fc8cfd7f1081b242237eef32e308476deeb60031f56fc2220e3990017997427f"
+        },
+        {
+          "path": "web/utils/fetchWigoPercentiles.test.ts",
+          "baseline_sha256": "4da118d336b2aeaccedc89a2f437068724c235be6902b0d37c272c5c7af74e32"
+        },
+        {
+          "path": "web/utils/fetchWigoPercentiles.ts",
+          "baseline_sha256": "a0218435c570dc4fdf28c2823c6ccf2d16d999cd51c4fdaaceaf2b7a409b9ef9"
+        },
+        {
+          "path": "web/utils/fetchWigoPlayerStats.test.ts",
+          "baseline_sha256": "ed73a729821cac9579c5bcb877988c048496d7b3e39b6bec6ee6c63fc06d24e1"
+        },
+        {
+          "path": "web/utils/fetchWigoPlayerStats.ts",
+          "baseline_sha256": "7a253deedaa1c30593e944afbd84679087df235dd7fa16204810f2379b60414f"
+        },
+        {
+          "path": "web/utils/fetchWigoRatingStats.test.ts",
+          "baseline_sha256": "94e37adda0e5eccf1b14b4429545afe335f52709cad9a1aa23bbfda948d9aea6"
+        },
+        {
+          "path": "web/utils/fetchWigoRatingStats.ts",
+          "baseline_sha256": "82ed538a65bba9add4b4f75c3b2b793130b389de8ff8a894f1efc648f550b032"
+        },
+        {
+          "path": "tasks/artifacts/wigo-redesign-2026-10-25/"
+        },
+        {
+          "path": "web/e2e/wigo-one-page.spec.ts",
+          "note": "new"
+        },
+        {
+          "path": "web/e2e/fixtures/wigo/wigoFixtures.ts",
+          "note": "new"
+        },
+        {
+          "path": "web/e2e/fixtures/wigo/schema.json",
+          "note": "new"
+        },
+        {
+          "path": "web/e2e/wigo-single-viewport.spec.ts",
+          "note": "DELETE approved 2026-10-25T16:40Z: retired layout + live Supabase reads"
+        }
+      ],
+      "forbidden": [
+        "shared nav/layout/global CSS",
+        "web/lib/navigation/siteSurfaceLinks.ts",
+        "production reads without TJ pop-up",
+        "Git"
+      ],
+      "must_preserve": [
+        "released WiGO reader fix in web/utils/fetchWigoPlayerStats.ts (+test) from production release"
+      ],
+      "resources": [
+        "dev server :3150 from canonical with PLAYWRIGHT_ISOLATED_NEXT=1 only if :3110 slot free; else snapshot"
+      ],
+      "status": "active 2026-10-25T16:23Z",
+      "base_head": "2f2b432306b048f16bf48c2e274f21e55a7514d4"
+    },
+    {
+      "lane": "GS",
+      "scope": "Goalie-share/FORGE workload (6 handed files)",
+      "authority": "TJ 16:22\u201316:27 + CODEX-20261025-086 handover",
+      "write_paths": [
+        {
+          "path": "web/components/GoalieShareChart/index.tsx",
+          "baseline_sha256": "1f3d4cdb91b1dddd1dc272d82ec1fa368200ce9b585f163eecea8ec8c1944b05"
+        },
+        {
+          "path": "web/components/GoalieShareChart/GoalieShareChart.test.ts",
+          "baseline_sha256": "7010f8de122e0a2ea000aca650d890ff79d4ca15916d2bf54085dbb218e68aff"
+        },
+        {
+          "path": "web/components/GoalieShareChart/GoalieShareChart.pagination.test.tsx",
+          "baseline_sha256": "90b0c79ab18d68cd649e31ec5421cbc6dc768869eb75e89ae90ac4b7d00dda06"
+        },
+        {
+          "path": "web/lib/goalieWorkload.ts",
+          "baseline_sha256": "d4cbf44ffdc0a25bf020b3ed7062fe7097dfeb7d39ecd6e8ca0399cbe01b7f6f"
+        },
+        {
+          "path": "web/lib/projections/goalie/workloadEvidence.ts",
+          "baseline_sha256": "8d9ae620a65f7f4a528f766cd4629eeb0bf422cac57844ede384e7e4bb07fa43"
+        },
+        {
+          "path": "web/lib/projections/goalie/workloadEvidence.test.ts",
+          "baseline_sha256": "fcd8305829c5f0871bde6c86fb54aec8179934e9afa782c7e373c88ba5e9c167"
+        },
+        {
+          "path": "tasks/artifacts/claude-lanes-2026-10-25/GS/"
+        }
+      ],
+      "forbidden": [
+        "general FORGE namespace beyond these 6 files",
+        "model/predictive activation",
+        "live reads"
+      ],
+      "status": "active 2026-10-25T16:39Z",
+      "base_head": "ac98431aa0714573f4f89691f3b9502fe4e375ec",
+      "session": "local_a8559739-12dc-451c-bb15-fe8f035ed862 (gs-goalie-share)"
+    },
+    {
+      "lane": "PC",
+      "scope": "Player cards (38 handed files)",
+      "authority": "TJ 16:22\u201316:27 + CODEX-20261025-086 handover",
+      "write_paths": [
+        {
+          "path": "web/components/player-cards/HeroPlayerCard.tsx",
+          "baseline_sha256": "4305ed15a9113022df9c8e4402d6ba2db1019871d6adfba580a7aa33c8c2e166"
+        },
+        {
+          "path": "web/components/player-cards/InteractiveCard.tsx",
+          "baseline_sha256": "70b6edce10ffe219817c64f2c4763a8e58091b9c59f9b77fb2a68aa2b7d33271"
+        },
+        {
+          "path": "web/components/player-cards/PlayerCard.module.scss",
+          "baseline_sha256": "cec892e73d5642253435108e81c91ab0f6fb6b9bedacee849ffd10808e792b77"
+        },
+        {
+          "path": "web/components/player-cards/PlayerCard.tsx",
+          "baseline_sha256": "917edf84256f3153459bc02302ff9a804a3847838eaaf8192bd000fb21f9cdfc"
+        },
+        {
+          "path": "web/components/player-cards/PlayerCardFlow.module.scss",
+          "baseline_sha256": "4e49342c3f99b62201e8bc2dcf76c60faee6a565ff924894c00e40c374512c43"
+        },
+        {
+          "path": "web/components/player-cards/PlayerCardFlow.test.tsx",
+          "baseline_sha256": "0ce3fb52c6f19fcea4d5f0755924faab1472cda1b4e1fa704396e1b4176c8579"
+        },
+        {
+          "path": "web/components/player-cards/PlayerCardFlow.tsx",
+          "baseline_sha256": "036c44fb865ac729e2ddfba06bf0d6205d983bf9f89133c88f20918869302e30"
+        },
+        {
+          "path": "web/components/player-cards/PlayerCardPreview.test.tsx",
+          "baseline_sha256": "5309f794268f88a670c19efe98939ca008b2439fd07c700c223bc832799b7e8f"
+        },
+        {
+          "path": "web/components/player-cards/PlayerCardPreview.tsx",
+          "baseline_sha256": "f58bdd545fa121be6ca79ffab03f52aeff8ca9d18a74e3e608b4addf7ae1a4b6"
+        },
+        {
+          "path": "web/components/player-cards/PlayerCardShareStudio.module.scss",
+          "baseline_sha256": "0bcab0a01648ff20a2d083dea3ec7e3d9c7fa0ca644eba48fa5d1b976db50db3"
+        },
+        {
+          "path": "web/components/player-cards/PlayerCardShareStudio.test.tsx",
+          "baseline_sha256": "2fcd04e379852ba7104c03f4ee5df5462ebe3a1de659cf5f2a98d7eaad1afd78"
+        },
+        {
+          "path": "web/components/player-cards/PlayerCardShareStudio.tsx",
+          "baseline_sha256": "c96629b6cc07ec8be06aab2804e0e6f3793650b0e3ed71f692591f5cd9969ad9"
+        },
+        {
+          "path": "web/lib/player-cards/adapter.ts",
+          "baseline_sha256": "095368ab27e9a207a62b0309f0ff45f7a401e2735c609ed6481199846883c81f"
+        },
+        {
+          "path": "web/lib/player-cards/aggregation.r1.test.ts",
+          "baseline_sha256": "54df67e6ff24264a685db97bfbba2a54803ef9214d2132941ffa580f522cf348"
+        },
+        {
+          "path": "web/lib/player-cards/aggregation.ts",
+          "baseline_sha256": "4ffe0ed5cbdea97ecb15b153543aace6b2d349cac10b0ff3e6de7484768b410a"
+        },
+        {
+          "path": "web/lib/player-cards/contracts.ts",
+          "baseline_sha256": "5bc0b00708a6dd9f3638f801701d3bf56dfe9a0dfcdd1484fd34d806ff8c283d"
+        },
+        {
+          "path": "web/lib/player-cards/domain.test.ts",
+          "baseline_sha256": "da0e7e3bcc4b923acc7e4229e63236efe4e7210877092f063e4bb3c96bac46b1"
+        },
+        {
+          "path": "web/lib/player-cards/evidenceBundle.test.ts",
+          "baseline_sha256": "d4c674cb41deadcb05941d3c2bbb0312495894393cce6faa675c4895711d23b3"
+        },
+        {
+          "path": "web/lib/player-cards/evidenceBundle.ts",
+          "baseline_sha256": "2899407e81b88dec5c78548cd9c9eff524c7592a3c67f5d6253c2181a3424084"
+        },
+        {
+          "path": "web/lib/player-cards/fixtures.ts",
+          "baseline_sha256": "00ac0c5bc1194427c2aecb7981c0f228b22b51fef16b343a72ec0f47a4405f65"
+        },
+        {
+          "path": "web/lib/player-cards/interactionFixtures.ts",
+          "baseline_sha256": "803cf3b41962b3125a0cd78c886700c58d2a37fd61206562545919767d04774e"
+        },
+        {
+          "path": "web/lib/player-cards/interactionSnapshot.ts",
+          "baseline_sha256": "53ce89f2495a7b832a20302d070c9f6b87d1dc099f1e460600e7471eb4aa3759"
+        },
+        {
+          "path": "web/lib/player-cards/nstCapture.test.ts",
+          "baseline_sha256": "7c88e4a14687c325858eb4ca7b4c297368179dfedfc6d1a1837539a5829914ed"
+        },
+        {
+          "path": "web/lib/player-cards/nstCapture.ts",
+          "baseline_sha256": "8febc82875c998d9b89c9e8d70194ddf25f204b6fcca8ef08b32d338c16bebb5"
+        },
+        {
+          "path": "web/lib/player-cards/portraitTreatment.test.ts",
+          "baseline_sha256": "921177c59ca88558260fc95b0f4dee62938b49b429f1bf9f6a548747ead78116"
+        },
+        {
+          "path": "web/lib/player-cards/portraitTreatment.ts",
+          "baseline_sha256": "12826051100dc134e0c39838909ef5ca49f18376ae3f849c99ebe21eb2b3299f"
+        },
+        {
+          "path": "web/lib/player-cards/ranking.test.ts",
+          "baseline_sha256": "b6177f53c26acde7f03e9afcdc5a3bbe4cdf2be071aea5a6e8be455e7375c027"
+        },
+        {
+          "path": "web/lib/player-cards/ranking.ts",
+          "baseline_sha256": "813a18860ac97ce19bceeb01f014541644b9a4d002c34ac7a0d95c09ef6b5338"
+        },
+        {
+          "path": "web/lib/player-cards/registry.ts",
+          "baseline_sha256": "f9c6a55ef5ee37a4e9de4cb1321ee971af5da0e3008dfdd86dfcec260c25cd29"
+        },
+        {
+          "path": "web/lib/player-cards/reviewedHeroSamples.ts",
+          "baseline_sha256": "1e8fe079c5a29b5d4355b7dfa729acabacb6ff8164a0c52c6ef93b7e2e16af18"
+        },
+        {
+          "path": "web/lib/player-cards/shareExport.test.ts",
+          "baseline_sha256": "446b53b6571db6770dabfc5b762863d15850f3f0b2d0aff749c6a71b7148397e"
+        },
+        {
+          "path": "web/lib/player-cards/shareExport.ts",
+          "baseline_sha256": "fd5d5081e35522cea8b33e5c8d697b0a304fe666de461f0e30967fe2eac4f435"
+        },
+        {
+          "path": "web/lib/player-cards/windows.ts",
+          "baseline_sha256": "b7e989c211b8a9f5a1a91af157c69fc28cd29a409442f89365e57c662d10adb2"
+        },
+        {
+          "path": "web/pages/social-share/player-cards.tsx",
+          "baseline_sha256": "fac7acb9dd79e6812ff3d60da5b575861baede0fbd3ee66b9f56742426f92043"
+        },
+        {
+          "path": "web/public/player-cards/hero-samples/8478864.png",
+          "baseline_sha256": "4199308c2f56a9ac0244697e7162f42283f1a5c247b656fb7c9278597b3ee18c"
+        },
+        {
+          "path": "web/public/player-cards/hero-samples/8479318.png",
+          "baseline_sha256": "713a4923cf4742cefbbc09a647a249f98c095edea8eb92f7bda028929e0db065"
+        },
+        {
+          "path": "tasks/artifacts/claude-lanes-2026-10-25/PC/"
+        }
+      ],
+      "forbidden": [
+        "C2 candidate replay",
+        "live data/ranks",
+        "portrait reprocessing",
+        "premium/live activation"
+      ],
+      "status": "active 2026-10-25T16:39Z",
+      "base_head": "ac98431aa0714573f4f89691f3b9502fe4e375ec",
+      "session": "local_bd4b0f5c-a517-4d89-98f8-cdb2e7b9b5d7 (pc-player-cards)"
+    },
+    {
+      "lane": "TG",
+      "scope": "Testing Grounds namespace (25 handed files)",
+      "authority": "TJ 16:22\u201316:27 + CODEX-20261025-086 handover",
+      "write_paths": [
+        {
+          "path": "web/lib/forge-testing-grounds/TestingGroundsOwnerGate.test.tsx",
+          "baseline_sha256": "ad376e0cb335723bed1a741a24a418e2d88012f539260405a48b8848f34c4eee"
+        },
+        {
+          "path": "web/lib/forge-testing-grounds/TestingGroundsOwnerGate.tsx",
+          "baseline_sha256": "3bcd1c56aae644f7ea7f0caaaf7053d38feb03a33d5ed4412dc54592b8dc5f4c"
+        },
+        {
+          "path": "web/lib/forge-testing-grounds/boundedWorker.test.ts",
+          "baseline_sha256": "7a4cd4194686bb16823542d35e9a49f4c6d459480ec2a1d76a0d9a91b39833eb"
+        },
+        {
+          "path": "web/lib/forge-testing-grounds/boundedWorker.ts",
+          "baseline_sha256": "9395c902111a38f2eae4723cb4b9401f4fba53f989d17a041552f9dd9b4e85ac"
+        },
+        {
+          "path": "web/lib/forge-testing-grounds/dataHealth.test.ts",
+          "baseline_sha256": "c806bcf60ccf4c19958e9bc735213481f0239749abc2ef358d063fcb821691d3"
+        },
+        {
+          "path": "web/lib/forge-testing-grounds/dataHealth.ts",
+          "baseline_sha256": "0205a7bfd011305e4fc109de9f81f1958b9b623f8a56f79808515ddb6d24e982"
+        },
+        {
+          "path": "web/lib/forge-testing-grounds/memoryRunStore.ts",
+          "baseline_sha256": "085abad213e05d0d2a973d54197896cd54a2d72c2d218ede70b3f95d5ccb9fdc"
+        },
+        {
+          "path": "web/lib/forge-testing-grounds/operationalProgress.test.ts",
+          "baseline_sha256": "886d74890917da528fe1c787889d274f7cf004b3061606d406d5edfa973a33fd"
+        },
+        {
+          "path": "web/lib/forge-testing-grounds/operationalProgress.ts",
+          "baseline_sha256": "60fdf02b9c1480b1c3a3066e5ebf4f22254bc9c7902c154300ce77015939b5c7"
+        },
+        {
+          "path": "web/lib/forge-testing-grounds/ownerPolicy.test.ts",
+          "baseline_sha256": "9d715c4577c2e98d28f641b96c7e46c3a08d1234db62e8bf7059a89f18fc776d"
+        },
+        {
+          "path": "web/lib/forge-testing-grounds/ownerPolicy.ts",
+          "baseline_sha256": "b0de88d27e731856e37470aee46cde57cf50af351fa6cc8ebeacb070842748c5"
+        },
+        {
+          "path": "web/lib/forge-testing-grounds/ownerRoutes.test.ts",
+          "baseline_sha256": "54476cd5db0cb4505544ea91d1e0559164845cb08951a6a690588ddec6c0dad3"
+        },
+        {
+          "path": "web/lib/forge-testing-grounds/ownerRoutes.ts",
+          "baseline_sha256": "33c185c9c693e42872b61b9e003dbade8471e2a8f9f73abede6debf7437cb249"
+        },
+        {
+          "path": "web/lib/forge-testing-grounds/preview/TestingGroundsPreview.module.scss",
+          "baseline_sha256": "d810009a51f0385837c270f59cbb7d2861050f9f59b836b608fca9847ed6cf74"
+        },
+        {
+          "path": "web/lib/forge-testing-grounds/preview/TestingGroundsPreview.test.tsx",
+          "baseline_sha256": "b7eaba367791e360d4f7d1fa67f1a992fb77e7433d15da214e51fe66c384cae1"
+        },
+        {
+          "path": "web/lib/forge-testing-grounds/preview/TestingGroundsPreview.tsx",
+          "baseline_sha256": "0ba7e33fbddf0eb846811f1be0e9062f2980ce78316c68f60c7174d890f3be4d"
+        },
+        {
+          "path": "web/lib/forge-testing-grounds/preview/previewFixtures.ts",
+          "baseline_sha256": "78a34b4eb07a588b95b0f6876152f1cd3fa4527bf35a6edcec5fc63cb551ddea"
+        },
+        {
+          "path": "web/lib/forge-testing-grounds/runStore.ts",
+          "baseline_sha256": "07f197bf59d44187a8d93c98488b711e0e28edd6ba7db80f12962a6c5628fa8c"
+        },
+        {
+          "path": "web/lib/forge-testing-grounds/runnerContracts.ts",
+          "baseline_sha256": "eaefa7e188004b89fc305f886f9673316e1650107179795d0994caea81777eeb"
+        },
+        {
+          "path": "web/lib/forge-testing-grounds/serverOwnerBoundary.test.ts",
+          "baseline_sha256": "ec88815502d2bfbfd71d5cd14f8c5626fb319a4ea70a83b7d0dcc36974db3cb8"
+        },
+        {
+          "path": "web/lib/forge-testing-grounds/serverOwnerBoundary.ts",
+          "baseline_sha256": "5bdd35c403441dd6c04f34908ea0bb3f91a7de4fb7690d63e884cf642bc09fde"
+        },
+        {
+          "path": "web/pages/api/v1/forge/testing-grounds/access.ts",
+          "baseline_sha256": "abcb5af6c8a9cb97822b6bfad8f8bf217ab305b4e2e76e9c8d5671f9eb737b25"
+        },
+        {
+          "path": "web/pages/api/v1/forge/testing-grounds/runs/[runId]/[operation].ts",
+          "baseline_sha256": "6f0bbf14d718075a6d1b38c614bc132510f4550af2f7a395a72f64ab3d5c8962"
+        },
+        {
+          "path": "web/pages/api/v1/forge/testing-grounds/runs/index.ts",
+          "baseline_sha256": "94469027fcb99205b3b6337e2228f978a697ba4f499aafb10b6e3b28ef4ed836"
+        },
+        {
+          "path": "web/pages/forge/testing-grounds.tsx",
+          "baseline_sha256": "69860a37f7df17830b5c09645d774d51c31ec3bb6b1c531bf9f87dcc693daba2"
+        },
+        {
+          "path": "tasks/artifacts/claude-lanes-2026-10-25/TG/"
+        }
+      ],
+      "forbidden": [
+        "runner activation, real captures, storage/cost/retention",
+        "auth/credential/env values",
+        "shared FORGE/auth"
+      ],
+      "status": "active 2026-10-25T16:39Z",
+      "base_head": "ac98431aa0714573f4f89691f3b9502fe4e375ec",
+      "session": "local_481d91a5-8d30-4e4c-b98b-728f3a9b1b36 (tg-testing-grounds)"
+    },
+    {
+      "lane": "HIR",
+      "scope": "RSO healthy-reserve completion (D2)",
+      "authority": "TJ 16:22\u201316:27 + CODEX-20261025-086 handover",
+      "write_paths": [
+        {
+          "path": "web/lib/rosterScheduleOptimizer/healthyReserves.ts",
+          "baseline_sha256": "e1a203d3fa557398d60a94a2fd9dcbffbeec2890fbfca7f8ec9a83466439b5c4"
+        },
+        {
+          "path": "web/lib/rosterScheduleOptimizer/healthyReserves.test.ts",
+          "baseline_sha256": "394fc6deca5cbf0433c74205e9b0b8dc3959c440a13e086727b38006499d1ddf"
+        },
+        {
+          "path": "web/components/RosterScheduleOptimizer/HealthyReserveAlert.tsx",
+          "baseline_sha256": "793e2d277551cba192d2f6595d4e91393d48c775794502e8e5e5e3e4c79f70b3"
+        },
+        {
+          "path": "web/components/RosterScheduleOptimizer/HealthyReserveAlert.test.tsx",
+          "baseline_sha256": "159e3b49a6ae7f258a492ee2b2b782adb1667304729a93eadbfd1e08e065946f"
+        },
+        {
+          "path": "tasks/artifacts/claude-lanes-2026-10-25/HIR/"
+        },
+        {
+          "path": "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+          "baseline_sha256": "3d7e8ac4c48fe6decde41ef48ec8606af6ce58030586fea9e0ab50f4d277e803",
+          "note": "granted 2026-10-25T16:42Z: drop-notice seam only (~3 lines)"
+        }
+      ],
+      "forbidden": [
+        "RosterScheduleOptimizer.tsx parent (separate request)",
+        "goalie/planning/forecast/provider/auth files",
+        "Yahoo rule invention"
+      ],
+      "status": "active 2026-10-25T16:39Z",
+      "base_head": "ac98431aa0714573f4f89691f3b9502fe4e375ec",
+      "session": "local_5e1f0f8d-c5d4-43e8-9c0f-51f744687daa (hir-healthy-reserves)"
     }
   ],
   "held_or_blocked": [],

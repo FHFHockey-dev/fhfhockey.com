@@ -19,6 +19,15 @@ SITE-PLAYER-CARDS P1, package C1 of `tasks/today-plan-2026-10-25.md`. New `evide
 - Codex: grant the 2 canonical paths + agree the retained-receipt boundary; then re-check pins and apply source.patch. Second pass = review fixes only.
 
 ## Blockers
-- Canonical install pending grant + coordinator safe-base handback.
+- ~~Canonical install pending grant + coordinator safe-base handback.~~ Resolved 16:24Z (installed, see below). Remaining: Codex commit.
 
 ## Gotchas
+
+## Install (2026-10-25T16:24Z)
+- Grant CODEX-20261025-080 (lease CODEX-CLAUDE-C1-EVIDENCE-BUNDLE-20261025); orchestrator relayed cleanup handback. HEAD 2f2b43230 = origin, 0/0; web/ unchanged vs 1ee5127dc.
+- Pre-checks: both paths absent, patch sha d859293b… matches accepted, dry-run clean, 9 dependency pins MATCH.
+- Applied exactly source.patch; installed hashes = accepted (2899407e… / d4c674cb…). Only these 2 untracked files under web/.
+- Canonical checks: vitest lib/player-cards 76/76; scoped tsc (C1/install/tsconfig.json) exit 0; eslint exit 0.
+- INSTALL-RECEIPT.md written, with findings F1–F3 (self-label trust depends on loader; no type brand on `retained`; "retained" wording). Not changed.
+- Gotcha: shell is zsh, so use $pipestatus, not PIPESTATUS.
+- Next: Codex reviews and commits; F1–F3 decide whether a follow-up naming/brand patch is wanted. Diary kept until Codex commits.

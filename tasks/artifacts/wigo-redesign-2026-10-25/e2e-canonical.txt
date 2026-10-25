@@ -1,0 +1,8 @@
+  ✓  1 [chromium] › e2e/wigo-one-page.spec.ts:78:7 › every WiGO component fits one 1280×800 screen (3.8s)
+  ✓  2 [chromium] › e2e/wigo-one-page.spec.ts:78:7 › every WiGO component fits one 1440×900 screen (2.1s)
+  ✓  3 [chromium] › e2e/wigo-one-page.spec.ts:78:7 › every WiGO component fits one 1920×1080 screen (2.2s)
+  ✓  4 [chromium] › e2e/wigo-one-page.spec.ts:95:5 › the comparison matrix shows all 36 metrics in two transposed halves and drives the game log (2.3s)
+  ✓  5 [chromium] › e2e/wigo-one-page.spec.ts:128:5 › a long name and the no-player state stay on one 1280×800 screen (2.3s)
+  ✓  6 [chromium] › e2e/wigo-one-page.spec.ts:148:7 › 1024×768 flows every panel without clipping instead of fitting one screen (2.0s)
+  ✓  7 [chromium] › e2e/wigo-one-page.spec.ts:148:7 › 1280×700 flows every panel without clipping instead of fitting one screen (2.2s)
+  7 passed (17.5s)

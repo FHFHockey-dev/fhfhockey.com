@@ -1,0 +1,104 @@
+{
+  "K1genuine": {
+    "state": "incomplete",
+    "firstCode": "appearance-history-missing"
+  },
+  "K1": {
+    "proxy": "rejected:untrusted-evidence:true",
+    "objectCreate": "rejected:untrusted-evidence:true",
+    "clone": "rejected:untrusted-evidence:true",
+    "spread": "rejected:untrusted-evidence:true"
+  },
+  "K2": {
+    "receipts": 5,
+    "issues": [],
+    "bad": 0,
+    "sample": {
+      "kind": "game-finality",
+      "receiptId": "player-cards-2026-10-25/completion-read-01/RESULT.json#game-2026020095",
+      "sha256": "6ee7b37d6f6d075557d9987599043ba09320ca9d66e9c9a6bbdf75bf5dd5dae2",
+      "retainedPath": "player-cards-2026-10-25/completion-read-01/RESULT.json",
+      "origin": "local-observed",
+      "capturedAt": "2026-10-25T06:10:23.344Z",
+      "subject": {
+        "gameId": 2026020095,
+        "season": 20262027,
+        "date": "2026-10-13",
+        "endedAt": "2026-10-14T02:00:03.965Z",
+        "sourceClass": "ingestion-completion"
+      }
+    }
+  },
+  "K3": {
+    "syntheticWithCodexAuthority": {
+      "receipts": 0,
+      "codes": [
+        "admission-authority"
+      ]
+    },
+    "observedWithSyntheticAuthority": {
+      "receipts": 0,
+      "codes": [
+        "retained-file-missing",
+        "retained-file-missing",
+        "retained-file-missing",
+        "retained-file-missing",
+        "retained-file-missing",
+        "admission-authority"
+      ]
+    },
+    "malformedAuthority": {
+      "receipts": 0,
+      "codes": [
+        "retained-file-missing",
+        "retained-file-missing",
+        "retained-file-missing",
+        "retained-file-missing",
+        "retained-file-missing",
+        "admission-authority"
+      ]
+    },
+    "traversal": {
+      "receipts": 0,
+      "codes": [
+        "admission-path"
+      ]
+    },
+    "duplicate": {
+      "receipts": 0,
+      "codes": [
+        "admission-duplicate"
+      ]
+    },
+    "good": {
+      "receipts": 1,
+      "codes": []
+    }
+  },
+  "K4": {
+    "admitted": [
+      [
+        "f-up",
+        "ingestion-completion"
+      ]
+    ],
+    "issues": [
+      [
+        "f-up",
+        "self-label-unverified"
+      ],
+      [
+        "f-down",
+        "self-label-conflict"
+      ],
+      [
+        "f-x",
+        "retained-schema"
+      ],
+      [
+        "f-t",
+        "retained-bytes-mismatch"
+      ]
+    ]
+  }
+}

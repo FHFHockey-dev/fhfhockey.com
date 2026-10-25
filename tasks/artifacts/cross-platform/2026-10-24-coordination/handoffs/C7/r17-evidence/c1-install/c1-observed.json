@@ -1,0 +1,89 @@
+{
+  "A0": {
+    "state": "eligible",
+    "ranks": 12,
+    "codes": []
+  },
+  "A1": {
+    "state": "incomplete",
+    "ranks": 0,
+    "codes": [
+      "receipt-not-retained"
+    ]
+  },
+  "A2": {
+    "state": "incomplete",
+    "ranks": 0,
+    "codes": [
+      "receipt-not-retained"
+    ]
+  },
+  "A3": {
+    "state": "incomplete",
+    "ranks": 0,
+    "codes": [
+      "receipt-not-retained"
+    ]
+  },
+  "A4": {
+    "state": "incomplete",
+    "ranks": 0,
+    "codes": [
+      "history-not-complete"
+    ]
+  },
+  "A5": {
+    "state": "incomplete",
+    "ranks": 0,
+    "codes": [
+      "finality-not-actual-end"
+    ]
+  },
+  "A6": {
+    "state": "incomplete",
+    "ranks": 0,
+    "codes": [
+      "population-source"
+    ]
+  },
+  "A7": {
+    "state": "rejected",
+    "ranks": 0,
+    "codes": [
+      "receipt-ambiguous"
+    ]
+  },
+  "A8": {
+    "state": "rejected",
+    "ranks": 0,
+    "codes": [
+      "history-identity"
+    ]
+  },
+  "A9": {
+    "state": "incomplete",
+    "ranks": 11,
+    "codes": [
+      "metric-definition-missing"
+    ]
+  },
+  "A10": {
+    "state": "incomplete",
+    "ranks": 11,
+    "codes": [
+      "zero-semantics"
+    ]
+  },
+  "A11": {
+    "state": "eligible",
+    "ranks": 12,
+    "codes": []
+  },
+  "A12": {
+    "state": "rejected",
+    "ranks": 0,
+    "codes": [
+      "history-time"
+    ]
+  }
+}

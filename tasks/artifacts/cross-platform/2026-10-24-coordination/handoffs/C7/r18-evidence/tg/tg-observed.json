@@ -1,0 +1,40 @@
+{
+  "valid": {
+    "ok": {
+      "status": "revealed",
+      "outputs": [
+        {
+          "unitId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "payload": {
+            "v": 1
+          }
+        }
+      ]
+    }
+  },
+  "extraField": {
+    "error": "invalid_projection"
+  },
+  "otherRunProgress": {
+    "error": "invalid_projection"
+  },
+  "resultsWithoutRunBinding": {
+    "ok": {
+      "status": "revealed",
+      "outputs": [
+        {
+          "unitId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "payload": {
+            "fromRun": "22222222-2222-4222-8222-222222222222"
+          }
+        }
+      ]
+    }
+  },
+  "sealedResults": {
+    "error": "results_sealed"
+  },
+  "notRevealedState": {
+    "error": "results_sealed"
+  }
+}
