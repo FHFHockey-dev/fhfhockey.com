@@ -68,4 +68,15 @@ describe("Healthy reserve alert", () => {
     rerender(<HealthyReserveAlert nameOf={nameOf} reserves={[]} dtd={[]} />);
     expect(screen.queryByRole("note")).toBeNull();
   });
+
+  // TJ 2026-10-25 policy 3: a locked weekly lineup shows no this-week gain.
+  it("says a locked weekly lineup counts from next week instead of showing a this-week gain", () => {
+    const { rerender } = render(<HealthyReserveAlert nameOf={nameOf} reserves={[{ playerId: "d", position: "IR", slotEligible: false,
+      activation: { swapPlayerId: null, projectedPoints: 0, activeGames: 0, nextWindow: true } }]} />);
+    expect(screen.getByText("Weekly lineup is locked — activating him counts from next week").dataset.known).toBe("false");
+    expect(screen.queryByText(/this week/)).toBeNull();
+    rerender(<HealthyReserveAlert nameOf={nameOf} reserves={[{ playerId: "d", position: "IR", slotEligible: false,
+      activation: { swapPlayerId: null, projectedPoints: 3, activeGames: 1, nextWindow: true } }]} />);
+    expect(screen.getByText("Weekly lineup is locked; from next week: +3 projected pts · +1 active game").dataset.known).toBe("true");
+  });
 });

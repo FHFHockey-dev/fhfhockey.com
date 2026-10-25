@@ -1,7 +1,7 @@
 import { evaluatePlan } from "./planning";
-import { localDate } from "./planningDates";
+import { lineupPeriodAtDate, localDate } from "./planningDates";
 import { expandActiveSlots } from "./slots";
-import type { PlanEvaluation, PlanIntent, PlanningPlayer, PlanningSnapshot, RosterEntry } from "./planningTypes";
+import type { LockedAssignment, PlanEvaluation, PlanIntent, PlanningPlayer, PlanningSnapshot, RosterEntry } from "./planningTypes";
 
 /** A rostered player Yahoo lists with no injury who still sits in an IR or IR+ slot. */
 export type HealthyReserve = {
@@ -14,7 +14,8 @@ export type HealthyReserve = {
    * lineup; null when the planner can't price both lineups (points gain is points leagues only). */
   activation: Activation | null;
 };
-type Activation = { swapPlayerId: string | null; projectedPoints: number | null; activeGames: number | null };
+/** `nextWindow`: the current weekly lineup has locked, so the gain counts only from the next weekly window. */
+type Activation = { swapPlayerId: string | null; projectedPoints: number | null; activeGames: number | null; nextWindow?: true };
 type Reserved = RosterEntry & { position: "IR" | "IR+" };
 
 const RESERVE_POSITIONS = new Set(["IR", "IR+", "NA"]);
@@ -58,7 +59,16 @@ export function healthyReserves(snapshot: PlanningSnapshot, intent: PlanIntent):
   // Counterfactual: no flagged player plays, as if each were still legally reserved.
   const base = snapshot.roster.filter(entry => !flagged.has(entry.playerId));
   const points = snapshot.rules.scoring.mode === "points";
-  const run = (roster: RosterEntry[]) => evaluatePlan({ ...snapshot, roster }, { ...intent, steps: [] }, points ? "outcome" : "agp", [], false);
+  const run = (roster: RosterEntry[], locks: LockedAssignment[] = []) => evaluatePlan({ ...snapshot, roster,
+    lockedAssignments: [...snapshot.lockedAssignments, ...locks] }, { ...intent, steps: [] }, points ? "outcome" : "agp", [], false);
+  // TJ 2026-10-25 (policy 3, option A): the planner's weekly rule seats only players rostered outside reserve at the
+  // window's lock, so once the current weekly window has locked an activated player sits on the bench until the next
+  // window. Weekly leagues only; the same `asOf > lockAt` test the planner uses for a locked window.
+  const zone = snapshot.context.timeZone, today = localDate(snapshot.context.asOf, zone);
+  const window = snapshot.rules.lineupMode === "weekly" ? lineupPeriodAtDate(today, snapshot.rules.lineupPeriods, zone) : undefined;
+  const lockedDates = window?.lockAt && Date.parse(snapshot.context.asOf) > Date.parse(window.lockAt)
+    ? [...new Set(snapshot.games.map(game => game.date))].filter(date => date >= today
+      && lineupPeriodAtDate(date, snapshot.rules.lineupPeriods, zone)?.id === window.id).sort() : [];
   const expanded = expandActiveSlots(snapshot.rules.rosterSlots);
   const openSpots = expanded.activeSlots.length + expanded.benchCapacity - base.filter(entry => !RESERVE_POSITIONS.has(entry.position)).length;
   let without: PlanEvaluation | undefined;
@@ -72,7 +82,8 @@ export function healthyReserves(snapshot: PlanningSnapshot, intent: PlanIntent):
   const activate = (entry: Reserved, swapPlayerId: string | null): Activation => {
     const roster = [...base.map(row => row.playerId === swapPlayerId ? { ...row, position: entry.position } : row),
       { playerId: entry.playerId, position: "bench" as const }];
-    return { swapPlayerId, ...gain(run(roster)) };
+    if (!lockedDates.length) return { swapPlayerId, ...gain(run(roster)) };
+    return { swapPlayerId, ...gain(run(roster, lockedDates.map(date => ({ date, playerId: entry.playerId, slotId: null })))), nextWindow: true };
   };
   // Each player's options: an open spot (when any), then each swap partner Yahoo lists for his slot, best gain first.
   const options = healthy.map(entry => [...(openSpots > 0 ? [activate(entry, null)] : []),

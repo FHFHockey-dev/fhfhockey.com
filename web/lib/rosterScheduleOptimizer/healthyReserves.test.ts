@@ -202,4 +202,49 @@ describe("healthy reserve players", () => {
     data.roster = [...data.roster.filter(row => row.playerId !== "d"), { playerId: "d", position: "IR" }];
     expect(healthyReserves(data, intent).map(row => [row.playerId, row.activation?.projectedPoints ?? null])).toEqual([["f", 6], ["d", null]]);
   });
+
+  // TJ 2026-10-25 policy 3 (option A): once the current weekly window has locked, activation counts from the next window.
+  const weekly = (data: PlanningSnapshot, asOf: string) => {
+    data.rules = { ...data.rules, lineupMode: "weekly", lineupPeriods: [{ id: "w", start: "2026-10-05T00:00:00Z", end: "2026-10-12T00:00:00Z", lockAt: "2026-10-05T00:00:00Z" }] };
+    data.context = { ...data.context, asOf };
+    data.evidence.schedule = { ...data.evidence.schedule!, asOf };
+    if (asOf > "2026-10-05T00:00:00Z") data.lockedAssignments = ["2026-10-05", "2026-10-06"].flatMap(date => [
+      { date, playerId: "a", slotId: "C#1" }, { date, playerId: "b", slotId: null }]);
+    return data;
+  };
+
+  it("prices no this-week gain once the weekly lineup has locked, and flags the next window", () => {
+    expect(healthyReserves(weekly(snapshot(), "2026-10-05T12:00:00Z"), intent)[0].activation)
+      .toEqual({ swapPlayerId: null, projectedPoints: 0, activeGames: 0, nextWindow: true });
+    // A later window in the horizon still counts: d's 10-13 game.
+    const later = weekly(snapshot(), "2026-10-05T12:00:00Z");
+    later.rules = { ...later.rules, lineupPeriods: [...later.rules.lineupPeriods!, { id: "w2", start: "2026-10-12T00:00:00Z", end: "2026-10-19T00:00:00Z", lockAt: "2026-10-12T00:00:00Z" }],
+      periods: later.rules.periods.map(period => ({ ...period, end: "2026-10-19T00:00:00Z" })) };
+    later.context = { ...later.context, endDate: "2026-10-13" };
+    const game = { ...later.games.find(row => row.id === "D-2026-10-05")!, id: "D-2026-10-13", date: "2026-10-13", startsAt: "2026-10-13T23:00:00Z", scheduleRevision: "schedule-D-2026-10-13" };
+    const source = later.forecasts.find(row => row.playerId === "d" && row.gameId === "D-2026-10-05")!;
+    later.games = [...later.games, game];
+    later.forecasts = [...later.forecasts, { ...source, gameId: game.id, expiresAt: game.startsAt,
+      issuedContext: { ...source.issuedContext!, gameId: game.id, scheduledAt: game.startsAt, scheduleRevision: game.scheduleRevision } }];
+    expect(healthyReserves(later, intent)[0].activation).toEqual({ swapPlayerId: null, projectedPoints: 3, activeGames: 1, nextWindow: true });
+  });
+
+  it("leaves an unlocked weekly window and daily leagues unchanged", () => {
+    expect(healthyReserves(weekly(snapshot(), "2026-10-04T12:00:00Z"), intent)[0].activation).toStrictEqual({ swapPlayerId: null, projectedPoints: 6, activeGames: 2 });
+    const daily = weekly(snapshot(), "2026-10-05T12:00:00Z");
+    daily.rules = { ...daily.rules, lineupMode: "daily" };
+    daily.lockedAssignments = [];
+    expect(healthyReserves(daily, intent)[0].activation).toStrictEqual({ swapPlayerId: null, projectedPoints: 6, activeGames: 2 });
+  });
+
+  it("ranks locked-window activations by their (zero) this-week gain, so ties keep roster order", () => {
+    const open = weekly(snapshot(), "2026-10-04T12:00:00Z");
+    withF(open, "IR+");
+    expect(healthyReserves(open, intent).map(row => [row.playerId, row.activation?.projectedPoints ?? null])).toEqual([["f", 10], ["d", null]]);
+    const locked = weekly(snapshot(), "2026-10-05T12:00:00Z");
+    withF(locked, "IR+");
+    expect(healthyReserves(locked, intent)).toEqual([
+      { playerId: "d", position: "IR", slotEligible: false, activation: { swapPlayerId: null, projectedPoints: 0, activeGames: 0, nextWindow: true } },
+      { playerId: "f", position: "IR+", slotEligible: false, activation: null }]);
+  });
 });

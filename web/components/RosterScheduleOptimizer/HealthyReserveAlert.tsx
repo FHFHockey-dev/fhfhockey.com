@@ -4,14 +4,17 @@ import styles from "./HealthyReserveAlert.module.scss";
 const signed = (value: number) => `${value > 0 ? "+" : ""}${Number.isInteger(value) ? value : value.toFixed(1)}`;
 
 /** The planner's gain from activating him, or why there is none to show. */
-function gainText({ projectedPoints, activeGames }: NonNullable<HealthyReserve["activation"]>) {
+function gainText({ projectedPoints, activeGames, nextWindow }: NonNullable<HealthyReserve["activation"]>) {
+  const positive = (projectedPoints ?? 0) > 0 || (activeGames ?? 0) > 0;
+  // A locked weekly lineup: no gain this week; any known gain comes from later weekly windows.
+  if (nextWindow && !positive) return { known: false, text: "Weekly lineup is locked — activating him counts from next week" };
   // Both null only when a lineup fails the rule check; unknown points with no added games may still gain points.
   if (projectedPoints === null && activeGames === null) return { known: false, text: "Gain unknown until the lineup passes the rule check" };
   if (projectedPoints === null && (activeGames ?? 0) <= 0) return { known: false, text: "No added active games this week" };
-  if ((projectedPoints ?? 0) <= 0 && (activeGames ?? 0) <= 0) return { known: false, text: "No projected gain this week" };
+  if (!positive) return { known: false, text: "No projected gain this week" };
   const parts = [...(projectedPoints !== null ? [`${signed(projectedPoints)} projected pts`] : []),
     ...(activeGames !== null ? [`${signed(activeGames)} active game${Math.abs(activeGames) === 1 ? "" : "s"}`] : [])];
-  return { known: true, text: `${parts.join(" · ")} this week` };
+  return { known: true, text: nextWindow ? `Weekly lineup is locked; from next week: ${parts.join(" · ")}` : `${parts.join(" · ")} this week` };
 }
 
 /** "Only k can be activated" when the open spots and swap partners run out before the flagged players do; the helper
