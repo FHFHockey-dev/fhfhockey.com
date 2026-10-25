@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useId } from "react";
 import * as d3 from "d3";
 import { format, isAfter } from "date-fns";
 import PanelStatus from "components/common/PanelStatus";
@@ -117,6 +117,7 @@ const CONFERENCE_LABELS: Record<string, string> = {
 };
 
 const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
+  const controlsId = useId();
   const season = useCurrentSeason();
   const seasonGameCount = season?.numberOfGames;
   const [data, setData] = useState<Map<string, TeamData[]>>(new Map());
@@ -845,9 +846,6 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
     return divisions;
   }, [data, selectedConference, selectedDivision]);
 
-  const leftDivisions = ["Atlantic", "Central"];
-  const rightDivisions = ["Metropolitan", "Pacific"];
-
   const selectAllTeams = () => {
     const allTeams: string[] = [];
     Object.values(teamsByDivision).forEach((arr) => allTeams.push(...arr));
@@ -932,16 +930,29 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
       {modulePresentation.state === "empty" ||
       modulePresentation.state === "error" ? null : (
         <div className={styles.chartAndToggles}>
-          <div className={styles.leftColumn}>
+          <div ref={containerRef} className={styles.chartContainer}>
+            <svg
+              ref={svgRef}
+              className={styles.chartSvg}
+              aria-label="Team standings by games played"
+              width={Math.max(chartWidth, 0)}
+              height={chartHeight}
+            />
+          </div>
+          <aside className={styles.chartControls} aria-label="League separation controls">
+            <div className={styles.toggleButtons}>
+              <button type="button" onClick={clearAllTeams}>Clear all</button>
+              <button type="button" onClick={selectAllTeams}>Select all</button>
+            </div>
             <div className={styles.filters}>
               <div className={styles.filterField}>
-                <label>Conference:</label>
+                <label htmlFor={`${controlsId}-conference`}>Conference</label>
                 <select
-                  aria-label="Conference"
+                  id={`${controlsId}-conference`}
                   value={selectedConference}
                   onChange={(e) => setSelectedConference(e.target.value)}
                 >
-                  <option value="All">All</option>
+                  <option value="All">All conferences</option>
                   {conferenceOptions.map((conference) => (
                     <option key={conference} value={conference}>
                       {CONFERENCE_LABELS[conference] ?? conference}
@@ -950,13 +961,13 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
                 </select>
               </div>
               <div className={styles.filterField}>
-                <label>Division:</label>
+                <label htmlFor={`${controlsId}-division`}>Division</label>
                 <select
-                  aria-label="Division"
+                  id={`${controlsId}-division`}
                   value={selectedDivision}
                   onChange={(e) => setSelectedDivision(e.target.value)}
                 >
-                  <option value="All">All</option>
+                  <option value="All">All divisions</option>
                   {divisionOptions.map((division) => (
                     <option key={division} value={division}>
                       {division}
@@ -965,9 +976,9 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
                 </select>
               </div>
               <div className={styles.filterField}>
-                <label>Metric:</label>
+                <label htmlFor={`${controlsId}-metric`}>Metric</label>
                 <select
-                  aria-label="Metric"
+                  id={`${controlsId}-metric`}
                   value={metric}
                   onChange={(e) => {
                     setMetric(e.target.value as NumericMetric);
@@ -1025,32 +1036,17 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
               )}
             </div>
 
-            <div ref={containerRef} className={styles.chartContainer}>
-              <svg
-                ref={svgRef}
-                className={styles.chartSvg}
-                width={Math.max(chartWidth, 0)}
-                height={chartHeight}
-              />
-            </div>
-          </div>
-
-          <details
-            className={styles.teamToggleDetails}
-            open={teamTogglesOpen}
-            onToggle={(event) =>
-              setTeamTogglesOpen(event.currentTarget.open)
-            }
-          >
-            <summary>Teams ({selectedTeamCount})</summary>
-            <div className={styles.teamToggles}>
-              <div className={styles.toggleButtons}>
-                <button onClick={selectAllTeams}>Select All</button>
-                <button onClick={clearAllTeams}>Clear All</button>
-              </div>
-              <div className={styles.toggleList}>
-                <div className={styles.toggleColumn}>
-                  {leftDivisions.map((div) => (
+            <details
+              className={styles.teamToggleDetails}
+              open={teamTogglesOpen}
+              onToggle={(event) =>
+                setTeamTogglesOpen(event.currentTarget.open)
+              }
+            >
+              <summary>Teams ({selectedTeamCount})</summary>
+              <div className={styles.teamToggles}>
+                <div className={styles.toggleList}>
+                  {DIVISION_ORDER.filter((div) => teamsByDivision[div]?.length).map((div) => (
                     <div key={div} className={styles.divisionGroup}>
                       <strong>{div}</strong>
                       <div className={styles.divisionTeams}>
@@ -1083,43 +1079,9 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
                     </div>
                   ))}
                 </div>
-                <div className={styles.toggleColumn}>
-                  {rightDivisions.map((div) => (
-                    <div key={div} className={styles.divisionGroup}>
-                      <strong>{div === "Metropolitan" ? "Metro" : div}</strong>
-                      <div className={styles.divisionTeams}>
-                        {teamsByDivision[div]?.map((abbr) => (
-                          <label key={abbr} className={styles.teamToggle}>
-                            <input
-                              type="checkbox"
-                              checked={selectedTeams.includes(abbr)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setSelectedTeams((prev) => [...prev, abbr]);
-                                } else {
-                                  setSelectedTeams((prev) =>
-                                    prev.filter((t) => t !== abbr),
-                                  );
-                                }
-                              }}
-                            />
-                            <OptimizedImage
-                              src={getLocalTeamLogoPath(abbr)}
-                              alt={abbr}
-                              width={26}
-                              height={26}
-                              fallbackSrc={fallbackTeamLogo}
-                              className={styles.toggleLogo}
-                            />
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
               </div>
-            </div>
-          </details>
+            </details>
+          </aside>
         </div>
       )}
 

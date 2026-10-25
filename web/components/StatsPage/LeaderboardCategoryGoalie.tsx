@@ -32,15 +32,15 @@ const LeaderboardCategoryGoalie: React.FC<LeaderboardCategoryGoalieProps> = ({
             : styles.leaderRow;
         let statValue = goalie[statKey];
         if (statKey === "save_pct") {
-          statValue = goalie.save_pct
+          statValue = goalie.save_pct != null
             ? goalie.save_pct.toFixed(3).replace(/^0/, "")
             : "-";
         } else if (statKey === "goals_against_avg") {
-          statValue = goalie.goals_against_avg
+          statValue = goalie.goals_against_avg != null
             ? goalie.goals_against_avg.toFixed(2)
             : "-";
         } else if (statKey === "quality_starts_pct") {
-          statValue = goalie.quality_starts_pct
+          statValue = goalie.quality_starts_pct != null
             ? (goalie.quality_starts_pct * 100).toFixed(1)
             : "-";
         }
