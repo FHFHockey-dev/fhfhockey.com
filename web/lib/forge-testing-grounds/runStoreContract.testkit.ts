@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ExperimentPlan, JsonValue } from "./runnerContracts";
+import { contentHash, type ExperimentPlan, type JsonValue } from "./runnerContracts";
 import { MAX_LISTED_RUNS, runProgressSchema, type ExperimentRunStore } from "./runStore";
 
 const OWNER = "40000000-0000-4000-8000-000000000001";
@@ -67,6 +67,16 @@ export function describeRunStoreContract(name: string, createStore: () => Experi
         store.results(OTHER, runId), store.reveal(OTHER, runId, 5_000)]) await expect(attempt).rejects.toThrow("run_not_found");
       expect(await store.list(OTHER)).toEqual([]);
       expect((await store.list(OWNER)).map(run => run.runId)).toEqual([runId]);
+    });
+
+    it("returns the accepted plan as the hash-bound, owner-scoped manifest", async () => {
+      const { store, runId } = await accepted();
+      const plan = await store.manifest(OWNER, runId);
+      expect(plan).toEqual(contractPlan());
+      expect(contentHash(plan)).toBe((await valid(store, runId)).planHash);
+      await complete(store, runId);
+      expect(await store.manifest(OWNER, runId)).toEqual(contractPlan());
+      await expect(store.manifest(OTHER, runId)).rejects.toThrow("run_not_found");
     });
 
     it("lists newest first as strict projections, capped at MAX_LISTED_RUNS", async () => {

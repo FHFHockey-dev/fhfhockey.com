@@ -3464,7 +3464,8 @@ describe("stored Yahoo eligibility while provider verification is pending", () =
     let evaluated: PlanningSnapshot | null = null;
     planningState.evaluate = (snapshot, intent) => { evaluated = snapshot; return planRoster(snapshot, intent); };
     render(<RosterScheduleOptimizer />);
-    await waitFor(() => expect(releaseProvider).toBeTypeOf("function"));
+    // The stored-eligibility read waits on the /data generation, so it can be issued after the provider request.
+    await waitFor(() => { expect(releaseProvider).toBeTypeOf("function"); expect(releaseCache).toBeTypeOf("function"); });
     expect(screen.queryByText(/Reading stored Yahoo positions/)).toBeNull();
     await act(async () => releaseCache(response({ success: true, receipt: { seasonId: 20262027, source: "yahoo_players", scope: "Yahoo default positions", status: "ready", expiresAt: "2026-10-14T08:40:00.000Z", players: [{ playerId: "8157", nhlId: 8473512, providerId: "477.p.4002", positions: ["C", "LW", "RW"], playerClass: "skater", asOf: "2026-10-13T08:40:16.374Z" }], limitations: ["Current league roster, rules and locks are still unverified."] } })));
     await waitFor(() => expect(evaluated!.players[0].eligibilityVerified).toBe(true));

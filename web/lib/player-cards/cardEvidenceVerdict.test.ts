@@ -2,8 +2,11 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import type { GetServerSidePropsContext } from "next";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
-import { getServerSideProps } from "../../pages/social-share/player-cards";
+import PlayerCardsSharePage, { getServerSideProps } from "../../pages/social-share/player-cards";
+import { evidenceStatusCopy } from "./evidenceVerdictCopy";
 import type { LocalCardInput } from "./adapter";
 import { cardEvidenceVerdict, unclaimedBundle } from "./cardEvidenceVerdict";
 import type { EvidenceBundle } from "./evidenceBundle";
@@ -83,15 +86,43 @@ describe("page props carry no free text, receipt ids or bundle internals", () =>
     for (const secret of [...reasons, bundle.id, FILE, "internal/", "#player-1", "8475000", "6ee7b37d"]) expect(json).not.toContain(secret);
     expect(json).not.toMatch(/"(reasons?|receiptId|bundleId|card|readings|rank|value|sha256|retainedPath)"/);
   });
-  it("ships the page's getServerSideProps with the same narrowed shape", async () => {
+  it("ships exactly { evidence: { state } } from the page's getServerSideProps", async () => {
     const setHeader = vi.fn();
     const result = await getServerSideProps({ res: { setHeader } } as unknown as GetServerSidePropsContext);
     expect(setHeader).toHaveBeenCalledWith("X-Robots-Tag", "noindex, nofollow");
-    const props = (result as { props: { evidence: Record<string, unknown> } }).props;
-    expect(Object.keys(props)).toEqual(["evidence"]);
-    expect(Object.keys(props.evidence).sort()).toEqual(["issueCodes", "liveActivation", "metrics", "premiumActivation", "state"]);
-    const json = JSON.stringify(props);
-    expect(json).not.toMatch(/"(reasons?|receiptId|bundleId|card|readings|rank|value|sha256|retainedPath)"|studio-preview/);
-    expect(JSON.parse(json)).toEqual(props);
+    expect(JSON.parse(JSON.stringify(result))).toStrictEqual({ props: { evidence: { state: "incomplete" } } });
+  });
+});
+
+vi.mock("components/SocialShare/SocialShareAccessGate", () => ({ default: ({ children }: { children: unknown }) => children }));
+vi.mock("components/player-cards/PlayerCardShareStudio", () => ({ default: () => null }));
+
+describe("studio evidence status line", () => {
+  it("renders fixed copy selected by state only, never codes", async () => {
+    const result = await getServerSideProps({ res: { setHeader: vi.fn() } } as unknown as GetServerSidePropsContext);
+    const { evidence } = (result as { props: { evidence: Parameters<typeof PlayerCardsSharePage>[0]["evidence"] } }).props;
+    const html = renderToStaticMarkup(createElement(PlayerCardsSharePage, { evidence }));
+    expect(html).toContain('role="status" data-evidence-state="incomplete"');
+    expect(html).toContain("Evidence check: incomplete");
+    expect(html).toContain("Fabricated preview, no admitted evidence. Ranks are illustrative.");
+    const input = buildInteractionFixture(flowSettings(INITIAL_FLOW), INITIAL_FLOW.scenario, INITIAL_FLOW.playerId);
+    const { issueCodes } = await cardEvidenceVerdict(input, unclaimedBundle(input, INITIAL_FLOW.playerId, "studio-preview"));
+    expect(issueCodes.length).toBeGreaterThan(0);
+    for (const code of issueCodes) expect(html).not.toContain(code);
+  });
+  it("has copy for every verdict state and context, and falls back to rejected", () => {
+    const states = ["eligible", "incomplete", "rejected"] as const;
+    for (const context of ["fabricated-preview", "evidence-bundle"] as const) {
+      expect(states.map(state => evidenceStatusCopy({ state }, context).title)).toEqual(["Evidence check: admitted evidence matches", "Evidence check: incomplete", "Evidence check: rejected"]);
+      expect(evidenceStatusCopy({ state: "unknown" as "eligible" }, context).title).toBe("Evidence check: rejected");
+    }
+  });
+  it("never calls a real evidence bundle a fabricated preview", () => {
+    const states = ["eligible", "incomplete", "rejected", "unknown"] as const;
+    for (const context of ["evidence-bundle", "unknown-context"] as const) {
+      for (const state of states) expect(evidenceStatusCopy({ state: state as "eligible" }, context as "evidence-bundle").detail).not.toMatch(/fabricated|illustrative/i);
+    }
+    expect(evidenceStatusCopy({ state: "incomplete" }, "evidence-bundle").detail).toBe("Not all evidence is admitted. Ranks without admitted evidence are withheld.");
+    expect(evidenceStatusCopy({ state: "incomplete" }, "fabricated-preview").detail).toBe("Fabricated preview, no admitted evidence. Ranks are illustrative.");
   });
 });

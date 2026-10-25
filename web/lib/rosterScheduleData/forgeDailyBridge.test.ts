@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 import { forecastCalendarPolicy } from "lib/player-forecasts/contributions";
-import { candidateHorizonPoints } from "lib/rosterScheduleOptimizer/planning";
+import { candidateHorizonPoints, gameForecastPoints } from "lib/rosterScheduleOptimizer/planning";
 import { withCurrentPlanningRead } from "lib/rosterScheduleOptimizer/currentPlanningRead";
 import { currentRsoUsePolicy } from "lib/player-forecasts/rsoUsePolicy";
 import type { PlanningData, PlanningGame, PlanningPlayer, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
 import { runHorizonFilter } from "lib/projections/releasedRunFence";
 import { STARTER_DECISION_SHARE, teamWinProbability } from "lib/projections/goalie/goalieOutcomes";
-import { buildForgeDailyBridgeForecasts, FORGE_DAILY_BRIDGE_VERSION, loadForgeDailyBridgeForecasts, opponentTilts, teamStrengthPriors, teamWinProbability as ledgerTeamWin, type ForgeDailyBridgeInputs } from "./forgeDailyBridge";
+import { buildForgeDailyBridgeForecasts, FORGE_DAILY_BRIDGE_SEASON_RATED, FORGE_DAILY_BRIDGE_VERSION, loadForgeDailyBridgeForecasts, opponentTilts, teamStrengthPriors, teamWinProbability as ledgerTeamWin, type ForgeDailyBridgeInputs } from "./forgeDailyBridge";
 import { compactBridgeForecasts, expandBridgeForecasts, fitBridgeWire, packPlanningSnapshots, unpackPlanningSnapshots, type BridgeForecastWire } from "./bridgeForecastWire";
 import { preservationJson } from "lib/rosterScheduleOptimizer/workspace";
 import { resolveDailyBoardEvidence, type BoardGoalieEvidence } from "lib/projections/dailyBoardEvidence";
@@ -34,9 +34,13 @@ const inputs = () => ({
     skater("r2", "2026-10-19", 9, 103, 9)],
   goalies: [{ run_id: "r2", as_of_date: "2026-10-19", horizon_games: 1, game_id: 1, goalie_id: 201, team_id: 10, starter_probability: 0.8,
     proj_saves: 25, proj_goals_allowed: 2.5, proj_shots_against: 27.5, proj_win_prob: 0.55, proj_shutout_prob: 0.05 }],
-  goalieShares: [{ player_id: 201, game_id: 1, game_date: "2026-10-19", l10_start_pct: 0.7, season_start_pct: 0.6, updated_at: "2026-10-19T10:00:00Z" },
-    { player_id: 202, game_id: 1, game_date: "2026-10-19", l10_start_pct: 0.3, season_start_pct: 0.4, updated_at: "2026-10-19T10:00:00Z" }],
+  // Start-share rows carry the goalie's team and a real NHL game id, whose first four digits name the season.
+  goalieShares: [{ player_id: 201, team_id: 10, game_id: 2026020001, game_date: "2026-10-19", l10_start_pct: 0.7, season_start_pct: 0.6, updated_at: "2026-10-19T10:00:00Z" },
+    { player_id: 202, team_id: 10, game_id: 2026020001, game_date: "2026-10-19", l10_start_pct: 0.3, season_start_pct: 0.4, updated_at: "2026-10-19T10:00:00Z" }],
 });
+type ShareRow = ReturnType<typeof inputs>["goalieShares"][number];
+const shareRow = (player_id: number, team_id: number, game_id: number, game_date: string, l10_start_pct: number): ShareRow =>
+  ({ player_id, team_id, game_id, game_date, l10_start_pct, season_start_pct: l10_start_pct, updated_at: `${game_date}T10:00:00Z` });
 
 describe("FORGE daily bridge", () => {
   it("reuses each skater's latest line for his team's upcoming games only", () => {
@@ -46,7 +50,7 @@ describe("FORGE daily bridge", () => {
     expect(s1[0]).toMatchObject({ revisionId: `${FORGE_DAILY_BRIDGE_VERSION}:r2`, sourceKind: "detailed", conditioning: "unconditional",
       issuedAt: "2026-10-19T12:00:00.000Z", expiresAt: "2026-10-19T23:00:00.000Z",
       stats: { GOALS: 0.35, ASSISTS: 0.45, POINTS: 0.8, PP_POINTS: 0.25, SHOTS_ON_GOAL: 3.1, HITS: 1.2, BLOCKED_SHOTS: 0.5,
-        TIME_ON_ICE_PER_GAME: 18, PENALTY_MINUTES: 0, PLUS_MINUS: 0, FACEOFFS_WON: 0 } });
+        TIME_ON_ICE_PER_GAME: 18, PENALTY_MINUTES: null, PLUS_MINUS: null, FACEOFFS_WON: null } });
     expect(s1[0].issuedContext).toMatchObject({ playerId: "s1", gameId: "1", nhlPlayerId: 101, teamId: 10, scheduleRevision: "schedule-1-TOR", rosterRevision: "roster-s1" });
     // Scratched from the latest run, or moved teams: no forecast.
     expect(forecasts.some(row => row.playerId === "s2" || row.playerId === "s3")).toBe(false);
@@ -192,22 +196,40 @@ describe("FORGE daily bridge", () => {
     expect(capped.limitations.at(-1)).toMatch(/trimmed to the first \d+ of 6 player-games/);
   });
 
-  it("keeps a skater FORGE gives no power-play line, at zero power-play production", () => {
-    const base = inputs();
-    base.skaters = base.skaters.map(row => row.player_id === 101 && row.run_id === "r2"
-      ? { ...row, proj_goals_pp: null, proj_assists_pp: null, proj_shots_pp: null, proj_toi_pp_seconds: null } as unknown as typeof row : row);
-    const { forecasts, limitations } = buildForgeDailyBridgeForecasts(base, players, games, now, 20262027, policy);
-    const s1 = forecasts.filter(row => row.playerId === "s1");
-    expect(s1.map(row => row.gameId)).toEqual(["1", "2"]);
-    expect(s1[0].stats).toMatchObject({ GOALS: 0.25, ASSISTS: 0.3, PP_GOALS: 0, PP_ASSISTS: 0, PP_POINTS: 0, SHOTS_ON_GOAL: 2.5, TIME_ON_ICE_PER_GAME: 15 });
-    expect(limitations).toContain("1 skaters with no FORGE power-play line or time count 0 power-play production.");
-    // Real projected power-play time without a power-play line stays unknown, as does a blank even-strength line.
-    base.skaters = base.skaters.map(row => row.player_id === 101 && row.run_id === "r2" ? { ...row, proj_toi_pp_seconds: 120 } as unknown as typeof row : row);
-    const timed = buildForgeDailyBridgeForecasts(base, players, games, now, 20262027, policy);
-    expect(timed.forecasts.some(row => row.playerId === "s1")).toBe(false);
-    expect(timed.limitations).toContain("1 skaters have projected power-play time but no FORGE power-play line, so they get no forecast.");
-    base.skaters = base.skaters.map(row => row.player_id === 101 && row.run_id === "r2" ? { ...row, proj_goals_es: null } as unknown as typeof row : row);
-    expect(buildForgeDailyBridgeForecasts(base, players, games, now, 20262027, policy).forecasts.some(row => row.playerId === "s1")).toBe(false);
+  describe("blank power-play heads", () => {
+    const withPowerPlay = (patch: Record<string, unknown>) => {
+      const base = inputs();
+      base.skaters = base.skaters.map(row => row.player_id === 101 && row.run_id === "r2" ? { ...row, ...patch } as unknown as typeof row : row);
+      return buildForgeDailyBridgeForecasts(base, players, games, now, 20262027, policy);
+    };
+    const blankLine = { proj_goals_pp: null, proj_assists_pp: null, proj_shots_pp: null };
+
+    it.each([0, 6])("count as zero production by declared policy when FORGE stores %i s of power-play time", seconds => {
+      const { forecasts, limitations } = withPowerPlay({ ...blankLine, proj_toi_pp_seconds: seconds });
+      const s1 = forecasts.filter(row => row.playerId === "s1");
+      expect(s1.map(row => row.gameId)).toEqual(["1", "2"]);
+      expect(s1[0].stats).toMatchObject({ GOALS: 0.25, ASSISTS: 0.3, PP_GOALS: 0, PP_ASSISTS: 0, PP_POINTS: 0, SHOTS_ON_GOAL: 2.5,
+        TIME_ON_ICE_PER_GAME: (900 + seconds) / 60 });
+      expect(limitations).toContain("1 skaters with no FORGE power-play line and at most 6 s of projected power-play time count 0 power-play production.");
+    });
+
+    // Real (over 6 s) or unrecorded (null) power-play time.
+    it.each([7, 120, null])("stay unknown with %s s of power-play time", seconds => {
+      const { forecasts, limitations } = withPowerPlay({ ...blankLine, proj_toi_pp_seconds: seconds });
+      expect(forecasts.some(row => row.playerId === "s1")).toBe(false);
+      expect(limitations).toContain("1 skaters have no FORGE power-play line and real or unrecorded power-play time, so they get no forecast.");
+      expect(limitations.some(line => line.includes("count 0 power-play production"))).toBe(false);
+    });
+
+    it("leave a known power-play line standing when only its time is unrecorded, with time on ice unknown", () => {
+      const { forecasts, limitations } = withPowerPlay({ proj_toi_pp_seconds: null });
+      expect(forecasts.find(row => row.playerId === "s1")!.stats).toMatchObject({ PP_GOALS: 0.1, PP_ASSISTS: 0.15, PP_POINTS: 0.25, TIME_ON_ICE_PER_GAME: null });
+      expect(limitations.some(line => line.includes("power-play"))).toBe(false);
+    });
+
+    it("never rescue a blank even-strength line", () => {
+      expect(withPowerPlay({ ...blankLine, proj_toi_pp_seconds: 0, proj_goals_es: null }).forecasts.some(row => row.playerId === "s1")).toBe(false);
+    });
   });
 
   it("fills the stats FORGE does not project from blended season rates", () => {
@@ -223,6 +245,188 @@ describe("FORGE daily bridge", () => {
     expect(stats.GAME_WINNING_GOALS).toBeCloseTo(0.35 * 5.6 / 24, 4);
     expect(stats.PENALTY_MINUTES).toBeGreaterThan(30 / 50);
     expect(limitations).toContain("Penalty minutes, plus-minus, shorthanded points, game-winning goals and faceoffs are season per-game rates (this season plus half of last, pulled toward league rates), not FORGE projections.");
+  });
+
+  describe("season-rate supplements", () => {
+    const totals = (player_id: number, season: string, patch: Record<string, number | null> = {}) => ({ player_id, season, games_played: 10,
+      penalty_minutes: 5, plus_minus: 0, sh_goals: 0, sh_assists: 0, sh_points: 0, total_fow: 0, total_fol: 0, goals: 2, gw_goals: 0, ...patch });
+    const s1Stats = (data: ForgeDailyBridgeInputs) => {
+      const result = buildForgeDailyBridgeForecasts(data, players, games, now, 20262027, policy);
+      return { stats: result.forecasts.find(row => row.playerId === "s1")!.stats, limitations: result.limitations };
+    };
+
+    it("are unknown, never 0, when season totals cannot be read", () => {
+      const { stats, limitations } = s1Stats(inputs());
+      for (const key of FORGE_DAILY_BRIDGE_SEASON_RATED) expect(stats[key]).toBeNull();
+      expect(limitations).toContain("Season rates could not be read, so penalty minutes, plus-minus, shorthanded points, game-winning goals and faceoffs are unknown; totals that score them are withheld.");
+      expect(limitations.some(line => line.includes("count as 0"))).toBe(false);
+      // FORGE's own penalty minutes and plus-minus still stand where its writers store them, a stored 0 included.
+      const data = inputs();
+      data.skaters = data.skaters.map(row => ({ ...row, proj_pim: 0.4, proj_plus_minus: 0 }) as unknown as typeof row);
+      expect(s1Stats(data).stats).toMatchObject({ PENALTY_MINUTES: 0.4, PLUS_MINUS: 0, FACEOFFS_WON: null, GAME_WINNING_GOALS: null });
+    });
+
+    it("are unknown for a skater with no season totals, while a rate read as zero stays 0", () => {
+      const missing = s1Stats({ ...inputs(), seasonTotals: [totals(102, "20262027")] });
+      for (const key of FORGE_DAILY_BRIDGE_SEASON_RATED) expect(missing.stats[key]).toBeNull();
+      expect(missing.limitations).toContain("1 skaters have no season totals this season or last, so their penalty minutes, plus-minus, shorthanded points, game-winning goals and faceoffs are unknown.");
+      const read = s1Stats({ ...inputs(), seasonTotals: [totals(101, "20262027")] });
+      expect(read.stats).toMatchObject({ PLUS_MINUS: 0, SH_GOALS: 0, SH_ASSISTS: 0, SH_POINTS: 0, FACEOFFS_WON: 0, FACEOFFS_LOST: 0, PENALTY_MINUTES: 0.5 });
+      // No game-winners in 2 goals, pulled toward the 0.16 share: 0.35 × 1.6 / 12.
+      expect(read.stats.GAME_WINNING_GOALS).toBeCloseTo(0.35 * 1.6 / 12, 4);
+      expect(read.limitations.some(line => line.includes("no season totals"))).toBe(false);
+    });
+
+    it("count only the rows that record a stat, leaving it unknown when none do", () => {
+      // This season left faceoffs unrecorded; last season's 600 in 80 games (half weight) is all that is known of them.
+      const seasonTotals = [totals(101, "20262027", { total_fow: null, total_fol: null, gw_goals: null }),
+        totals(101, "20252026", { games_played: 80, total_fow: 600, total_fol: null, gw_goals: null })];
+      const { stats } = s1Stats({ ...inputs(), seasonTotals });
+      expect(stats.FACEOFFS_WON).toBe(7.5);
+      expect(stats.FACEOFFS_LOST).toBeNull();
+      expect(stats.GAME_WINNING_GOALS).toBeNull();
+      // Penalty minutes were recorded both seasons: (5 + 0.5 × 5) / (10 + 0.5 × 80), the league rate being his own.
+      expect(stats.PENALTY_MINUTES).toBe(0.15);
+    });
+
+    it("withhold a points total that weights an unknown supplement instead of scoring it 0", () => {
+      const { forecasts } = buildForgeDailyBridgeForecasts(inputs(), players, games, now, 20262027, policy);
+      const row = forecasts.find(item => item.playerId === "s1")!;
+      const score = (weights: Record<string, number>) => gameForecastPoints({ id: "snap", players, games, forecasts, roster: [], lockedAssignments: [],
+        realized: {}, opponent: null, evidence: {}, context: { provider: "manual", seasonId: 20262027, leagueId: "l", teamId: "t",
+          startDate: "2026-10-19", endDate: "2026-10-25", timeZone: "UTC", asOf: now.toISOString() },
+        rules: { lineupMode: "daily", rosterSlots: { C: 1, BN: 1 }, acquisitionTiming: "next_day", acquisitionCost: 1, periods: [],
+          scoring: { mode: "points", weights, categories: [] }, goalieMinimum: { required: null, credited: null, counts: "unknown", penalty: "none" }, unsupported: [] } }, row);
+      expect(score({ GOALS: 3 }).expected).toBeCloseTo(1.05);
+      expect(score({ GOALS: 3, FACEOFFS_WON: 0.1 }).expected).toBeNull();
+    });
+  });
+
+  describe("goalie start shares", () => {
+    // Real NHL game ids for TOR tonight, tomorrow and the day after; FORGE projected none of them.
+    const tor = [game("2026020101", "TOR", "2026-10-19T23:00:00Z"), game("2026020102", "TOR", "2026-10-20T23:00:00Z"),
+      game("2026020103", "TOR", "2026-10-21T23:00:00Z")];
+    const starts = (goalieShares: ShareRow[]) => {
+      const { forecasts, limitations } = buildForgeDailyBridgeForecasts({ ...inputs(), goalieShares }, players, tor, now, 20262027, policy);
+      const chance = (id: string, gameId: string) => forecasts.find(row => row.playerId === id && row.gameId === gameId)?.startProbability ?? null;
+      return { chances: (gameId: string) => [chance("g1", gameId), chance("g2", gameId)], limitations };
+    };
+
+    it("use rows for the goalie's current team this season", () => {
+      const { chances, limitations } = starts([shareRow(201, 10, 2026020090, "2026-10-17", 0.7), shareRow(202, 10, 2026020090, "2026-10-17", 0.3)]);
+      for (const { id } of tor) expect(chances(id)).toEqual([0.7, 0.3]);
+      expect(limitations.some(line => line.includes("another team or season"))).toBe(false);
+    });
+
+    it("ignore a traded goalie's rows from his old team, even newer ones", () => {
+      // g2 came over from MTL (8): his newest row is MTL's, where he started 90%.
+      const { chances, limitations } = starts([shareRow(201, 10, 2026020090, "2026-10-17", 0.7), shareRow(202, 10, 2026020090, "2026-10-17", 0.3),
+        shareRow(202, 8, 2026020095, "2026-10-19", 0.9)]);
+      for (const { id } of tor) expect(chances(id)).toEqual([0.7, 0.3]);
+      expect(limitations.some(line => line.includes("another team or season"))).toBe(false);
+    });
+
+    it("ignore rows from another season", () => {
+      const { chances } = starts([shareRow(201, 10, 2026020090, "2026-10-17", 0.7), shareRow(202, 10, 2026020090, "2026-10-17", 0.3),
+        shareRow(201, 10, 2025030417, "2026-10-19", 0.2)]);
+      for (const { id } of tor) expect(chances(id)).toEqual([0.7, 0.3]);
+    });
+
+    it("leave a goalie with no current-team, current-season row unknown", () => {
+      const { chances, limitations } = starts([shareRow(201, 10, 2026020090, "2026-10-17", 0.7),
+        shareRow(202, 8, 2026020095, "2026-10-19", 0.9), shareRow(202, 10, 2025021300, "2026-10-18", 0.4)]);
+      for (const { id } of tor) expect(chances(id)[1]).toBeNull();
+      expect(limitations).toContain("1 goalies have start shares only from another team or season; those are ignored, so their start chance is unknown.");
+      expect(limitations).toContain("1 goalies with no start share get no forecast for games FORGE has not projected for them.");
+    });
+
+    it("prefer the row for the game itself, falling back to the latest row for games without one", () => {
+      const { chances, limitations } = starts([shareRow(201, 10, 2026020101, "2026-10-19", 0.6), shareRow(202, 10, 2026020101, "2026-10-19", 0.4),
+        shareRow(201, 10, 2026020102, "2026-10-20", 0.9), shareRow(202, 10, 2026020102, "2026-10-20", 0.1)]);
+      expect(chances("2026020101")).toEqual([0.6, 0.4]);
+      expect(chances("2026020102")).toEqual([0.9, 0.1]);
+      expect(chances("2026020103")).toEqual([0.9, 0.1]);
+      expect(limitations).toContain("Goalie starts use each goalie's last-10 start share (season share when missing) from start rows for his current team this season: the row for that game when one exists, otherwise his latest. FORGE's own starter probability applies to an already projected game. Per-start lines come from his latest FORGE line, or his team's when he has none.");
+    });
+
+    describe("never scaled up past a teammate whose share is unknown", () => {
+      const g3 = member("g3", 203, "TOR", 10, "goalie");
+      const run = (goalieShares: ShareRow[], roster: PlanningPlayer[], extra: Partial<ForgeDailyBridgeInputs> = {}) => {
+        const { forecasts, limitations } = buildForgeDailyBridgeForecasts({ ...inputs(), goalieShares, ...extra }, roster, tor, now, 20262027, policy);
+        const chance = (id: string, gameId = "2026020102") => forecasts.find(row => row.playerId === id && row.gameId === gameId)?.startProbability ?? null;
+        return { chance, limitations };
+      };
+      const known = (...values: [number, number][]) => values.map(([id, value]) => shareRow(id, 10, 2026020090, "2026-10-17", value));
+      const openLine = "3 team-games have a goalie with no start share; the others keep their own shares, never scaled up, so start chances there sum to less than 1.";
+
+      it("renormalise when every goalie's share is known", () => {
+        const { chance, limitations } = run(known([201, 0.4], [202, 0.2]), players);
+        expect(chance("g1")).toBeCloseTo(2 / 3, 3);
+        expect(chance("g2")).toBeCloseTo(1 / 3, 3);
+        expect(limitations.some(line => line.includes("never scaled up"))).toBe(false);
+      });
+
+      it("keep a known share as read beside an unknown teammate, scaling down only past 1", () => {
+        const pair = run(known([201, 0.7]), players);
+        expect([pair.chance("g1"), pair.chance("g2")]).toEqual([0.7, null]);
+        expect(pair.limitations).toContain(openLine);
+        const trio = run(known([201, 0.6], [202, 0.3]), [...players, g3]);
+        expect([trio.chance("g1"), trio.chance("g2"), trio.chance("g3")]).toEqual([0.6, 0.3, null]);
+        const over = run(known([201, 0.8], [202, 0.5]), [...players, g3]);
+        expect(over.chance("g1")! + over.chance("g2")!).toBeCloseTo(1, 3);
+        expect(over.chance("g1")).toBeCloseTo(0.8 / 1.3, 3);
+      });
+
+      it("leave every start chance unknown when no share is known", () => {
+        const { chance } = run([], players);
+        for (const { id } of tor) expect([chance("g1", id), chance("g2", id)]).toEqual([null, null]);
+      });
+
+      it("split what FORGE's starter leaves without scaling the others up", () => {
+        const goalies = [{ ...inputs().goalies[0], game_id: 2026020102 }];
+        expect(run(known([202, 0.15]), players, { goalies }).chance("g2")).toBeCloseTo(0.2);
+        const { chance } = run(known([202, 0.15]), [...players, g3], { goalies });
+        expect([chance("g1"), chance("g2"), chance("g3")]).toEqual([0.8, 0.15, null]);
+      });
+
+      it("hand a ruled-out goalie's chance to known teammates only when none is unknown", () => {
+        const goalieNews = { conflicts: [], assertions: [{ gameId: 2026020102, teamId: 10, playerId: 201, dimension: "goalie" as const, value: "ruled_out",
+          evidenceId: "e", sourceKey: "gamedaygoalies", sourceUrl: null, publishedAt: "2026-10-19T15:00:00Z", receivedAt: "2026-10-19T15:00:01Z", confirmed: false }] };
+        expect(run(known([201, 0.6], [202, 0.3]), players, { goalieNews }).chance("g2")).toBe(1);
+        const { chance } = run(known([201, 0.6], [202, 0.3]), [...players, g3], { goalieNews });
+        expect([chance("g1"), chance("g2"), chance("g3")]).toEqual([0, 0.3, null]);
+      });
+
+      it("thin the starter on a back-to-back without handing his chance to known teammates past an unknown one", () => {
+        const teamGames = [{ id: 2026020101, date: "2026-10-19", homeTeamId: 10, awayTeamId: 8 }, { id: 2026020102, date: "2026-10-20", homeTeamId: 10, awayTeamId: 8 }];
+        const all = run(known([201, 0.6], [202, 0.4]), players, { teamGames });
+        expect([all.chance("g1"), all.chance("g2")]).toEqual([0.33, 0.67]);
+        const { chance } = run(known([201, 0.6], [202, 0.3]), [...players, g3], { teamGames });
+        expect([chance("g1"), chance("g2"), chance("g3")]).toEqual([0.33, 0.3, null]);
+      });
+
+      it("count a goalie with no current NHL team, who keeps the team his latest row names from being scaled up", () => {
+        const { nhlTeamId: _team, rosterRevision: _roster, ...rest } = member("g2", 202, "TOR", 10, "goalie");
+        const teamless: PlanningPlayer = { ...rest, teamAbbreviation: null };
+        const { chance, limitations } = run(known([201, 0.7], [202, 0.3]), [players[0], players[1], players[2], players[3], teamless]);
+        expect(chance("g1")).toBe(0.7);
+        expect(limitations).toContain("1 goalies have no current NHL team, so their start chances are unknown; the team their latest start row or FORGE line names keeps its other goalies' shares unscaled.");
+      });
+    });
+
+    it("are read with their team, so the bridge can bind them", async () => {
+      const selects = new Map<string, string>();
+      // Every query chain resolves to its table's rows: one released run, nothing else.
+      const db = { from: (table: string) => {
+        const rows = table === "forge_runs" ? [{ run_id: "r", as_of_date: "2026-10-19", created_at: "2026-10-19T12:00:00Z", git_sha: "abc", metrics: { horizon_games: 1 } }] : [];
+        const chain: any = new Proxy({}, { get: (_target, property) => property === "then"
+          ? (resolve: (value: unknown) => unknown) => Promise.resolve(resolve({ data: rows, count: rows.length, error: null }))
+          : property === "select" ? (columns: string) => { selects.set(table, columns); return chain; } : () => chain });
+        return chain;
+      } };
+      await loadForgeDailyBridgeForecasts(db as never, players, games, now, 20262027, Date.now() + 5000, policy);
+      expect(selects.get("goalie_start_projections")?.split(",")).toEqual(expect.arrayContaining(["player_id", "team_id", "game_id", "game_date"]));
+    });
   });
 
   it("applies accepted IFTTT goalie news over start shares", () => {
@@ -381,7 +585,7 @@ describe("FORGE daily bridge", () => {
     const base: ForgeDailyBridgeInputs = inputs();
     base.goalies = [{ ...base.goalies[0], run_id: "r1", as_of_date: "2026-10-18", game_id: 0, opponent_team_id: 8 },
       { ...base.goalies[0], goalie_id: 203, team_id: 8, opponent_team_id: 10, proj_win_prob: 0.4 }];
-    base.goalieShares = [...base.goalieShares, { player_id: 203, game_id: 5, game_date: "2026-10-23", l10_start_pct: 1, season_start_pct: 1, updated_at: "2026-10-19T10:00:00Z" }];
+    base.goalieShares = [...base.goalieShares, { player_id: 203, team_id: 8, game_id: 2026020005, game_date: "2026-10-23", l10_start_pct: 1, season_start_pct: 1, updated_at: "2026-10-19T10:00:00Z" }];
     const { teamWins, forecasts } = buildForgeDailyBridgeForecasts({ ...base, teamPriors }, [...players, g3], paired, now, 20262027, policy);
     const win = (gameId: string, team: string) => teamWins.find(row => row.gameId === gameId && row.team === team);
     expect(win("1", "TOR")).toEqual({ gameId: "1", team: "TOR", probability: 1 - 0.4 / STARTER_DECISION_SHARE, source: "forge_paired" });
