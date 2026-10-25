@@ -5,7 +5,9 @@ const signed = (value: number) => `${value > 0 ? "+" : ""}${Number.isInteger(val
 
 /** The planner's gain from activating him, or why there is none to show. */
 function gainText({ projectedPoints, activeGames }: NonNullable<HealthyReserve["activation"]>) {
-  if (projectedPoints === null && activeGames === null) return { known: false, text: "Gain unknown until projections cover the lineup" };
+  // Both null only when a lineup fails the rule check; unknown points with no added games may still gain points.
+  if (projectedPoints === null && activeGames === null) return { known: false, text: "Gain unknown until the lineup passes the rule check" };
+  if (projectedPoints === null && (activeGames ?? 0) <= 0) return { known: false, text: "No added active games this week" };
   if ((projectedPoints ?? 0) <= 0 && (activeGames ?? 0) <= 0) return { known: false, text: "No projected gain this week" };
   const parts = [...(projectedPoints !== null ? [`${signed(projectedPoints)} projected pts`] : []),
     ...(activeGames !== null ? [`${signed(activeGames)} active game${Math.abs(activeGames) === 1 ? "" : "s"}`] : [])];

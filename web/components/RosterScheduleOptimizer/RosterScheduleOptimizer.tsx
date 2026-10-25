@@ -26,6 +26,7 @@ import OptimizeLineup from "./OptimizeLineup";
 import BenchDays from "./BenchDays";
 import SlotWeekGrid from "./SlotWeekGrid";
 import { lineupGapReport } from "lib/rosterScheduleOptimizer/lineupGaps";
+import { withoutHealthyReserves } from "lib/rosterScheduleOptimizer/healthyReserves";
 import { ownershipLabel } from "lib/rosterScheduleOptimizer/retention";
 import AcquisitionPeriodTimes from "./AcquisitionPeriodTimes";
 import CategoryGains from "./CategoryGains";
@@ -840,6 +841,8 @@ export default function RosterScheduleOptimizer() {
   const activeSlots = slotExpansion.activeSlots;
   // A readback of the no-move lineup (open slots, weakest droppable player); it runs no search of its own.
   const gapReport = useMemo(() => snapshot && result ? lineupGapReport(snapshot, workspace.intent, result.baseline) : null, [snapshot, result, workspace.intent]);
+  // The healthy-reserve alert already names those players and the move; the drop notice keeps every other blocker.
+  const dropBlockers = gapReport ? withoutHealthyReserves(gapReport.projectionBlockers, healthyReserves) : [];
   const pointsFor = useMemo(() => {
     if (rules.scoring.mode !== "points" || !displaySnapshot || !result) return undefined;
     const byGame = new Map((result.selected.forecastInputs ?? []).map(row =>
@@ -1039,7 +1042,7 @@ export default function RosterScheduleOptimizer() {
 
         {result && <HealthyReserveAlert reserves={healthyReserves} nameOf={nameOf} onSelect={selectPlayer} />}
         <div className={styles.rosterColumns} aria-hidden="true"><span>Player · range</span><div><span>GP</span><span>AGP</span><span>DUST</span><span>Pts</span></div><span>Protect</span><span>More</span></div>
-        {gapReport && !gapReport.bestDrop && gapReport.projectionBlockers.length > 0 && <p className={styles.dropNotice} role="status">No drop suggested: {gapReport.projectionBlockers.map(row => row.playerId ? `${nameOf(row.playerId)} ${row.reason}` : row.reason).join(" · ")}.</p>}
+        {gapReport && !gapReport.bestDrop && dropBlockers.length > 0 && <p className={styles.dropNotice} role="status">No drop suggested: {dropBlockers.map(row => row.playerId ? `${nameOf(row.playerId)} ${row.reason}` : row.reason).join(" · ")}.</p>}
         {gapReport && !gapReport.bestDrop && !gapReport.projectionBlockers.length && gapReport.unprojectedDrops.length > 0 && <p className={styles.dropNotice} role="status">No drop suggested: {gapReport.unprojectedDrops.length} {gapReport.unprojectedDrops.length === 1 ? "player" : "players"} unprojected ({gapReport.unprojectedDrops.map(nameOf).join(", ")}).</p>}
         {roster.map((entry) => { const player = players.find((item) => item.id === entry.playerId); if (!player) return <div key={entry.playerId} className={styles.rosterRow}>Unmatched ID {entry.playerId}<RosterContribution name={entry.playerId} contribution={contributions.get(entry.playerId)} nameOf={nameOf} /></div>; const protectedPlayer = workspace.intent.protectedPlayerIds.includes(player.id); return <RosterPlayerRow key={player.id}
           player={player} entry={entry} contribution={contributions.get(player.id)} nameOf={nameOf}

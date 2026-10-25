@@ -25,6 +25,13 @@ export function isHealthyReserve(snapshot: PlanningSnapshot, entry: RosterEntry,
     && snapshot.context.provider === "yahoo" && snapshot.evidence.roster?.completeness === "complete";
 }
 
+/** Lineup-gap blockers minus those naming a flagged healthy reserve: his alert already says the lineup is illegal and
+ * how to move him. Injured-ineligible and lineup-wide blockers stay. */
+export function withoutHealthyReserves<T extends { playerId: string | null }>(blockers: T[], reserves: HealthyReserve[]): T[] {
+  const flagged = new Set(reserves.map(reserve => reserve.playerId));
+  return blockers.filter(blocker => blocker.playerId === null || !flagged.has(blocker.playerId));
+}
+
 /** Flags healthy reserve players and prices activating each one with the no-move lineup. Runs inside the current
  * planning read (forecast authority), at most one evaluation per option. */
 export function healthyReserves(snapshot: PlanningSnapshot, intent: PlanIntent): HealthyReserve[] {

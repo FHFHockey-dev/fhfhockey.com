@@ -26,10 +26,14 @@ describe("Healthy reserve alert", () => {
       activation: { swapPlayerId: "e", projectedPoints: null, activeGames: null } }]} />);
     expect(screen.getByRole("alert").textContent).toContain("Swap him with Hurt Wing (Yahoo lists Hurt Wing for IR+).");
     expect(screen.getByRole("alert").textContent).not.toContain("illegal");
-    expect(screen.getByText("Gain unknown until projections cover the lineup").dataset.known).toBe("false");
+    expect(screen.getByText("Gain unknown until the lineup passes the rule check").dataset.known).toBe("false");
+    rerender(<HealthyReserveAlert nameOf={nameOf} reserves={[{ playerId: "d", position: "IR", slotEligible: false,
+      activation: { swapPlayerId: null, projectedPoints: null, activeGames: 0 } }]} />);
+    expect(screen.getByText("No added active games this week").dataset.known).toBe("false");
+    expect(screen.queryByText(/No projected gain/)).toBeNull();
     rerender(<HealthyReserveAlert nameOf={nameOf} reserves={[{ playerId: "d", position: "IR", slotEligible: false, activation: null }]} />);
     expect(screen.getByRole("alert").textContent).toContain("No roster spot is open: drop a player or move an injured one to IR to activate him.");
-    expect(screen.queryByText(/projected pts|Gain unknown/)).toBeNull();
+    expect(screen.queryByText(/projected pts|Gain unknown|active games/)).toBeNull();
     rerender(<HealthyReserveAlert nameOf={nameOf} reserves={[]} />);
     expect(screen.queryByRole("alert")).toBeNull();
   });

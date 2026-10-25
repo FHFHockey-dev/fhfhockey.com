@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as rsoPolicy from "../player-forecasts/rsoUsePolicy";
 import { fixtureRsoBindings, fixtureRsoPolicy } from "../player-forecasts/rsoUsePolicy.fixtures";
-import { healthyReserves } from "./healthyReserves";
+import { healthyReserves, withoutHealthyReserves } from "./healthyReserves";
+import { lineupGapReport } from "./lineupGaps";
 import { evaluatePlan } from "./planning";
 import type { GameForecast, PlanIntent, PlanningPlayer, PlanningSnapshot } from "./planningTypes";
 
@@ -92,5 +93,38 @@ describe("healthy reserve players", () => {
     const data = snapshot();
     data.roster = [...data.roster, { playerId: "e", position: "active" }];
     expect(healthyReserves(data, intent)).toEqual([{ playerId: "d", position: "IR", slotEligible: false, activation: null }]);
+  });
+
+  it("prices only the games left after today's started games, and stays unknown while a weekly window is unverified", () => {
+    const started = snapshot();
+    started.context = { ...started.context, asOf: "2026-10-05T23:30:00Z" };
+    started.evidence.schedule = { ...started.evidence.schedule!, asOf: started.context.asOf };
+    expect(healthyReserves(started, intent)[0].activation).toEqual({ swapPlayerId: null, projectedPoints: 3, activeGames: 1 });
+    const weekly = snapshot();
+    weekly.rules = { ...weekly.rules, lineupMode: "weekly", lineupPeriods: [] };
+    expect(healthyReserves(weekly, intent)[0].activation).toEqual({ swapPlayerId: null, projectedPoints: null, activeGames: null });
+  });
+
+  it("leaves points unknown, not zero, when he adds no active games but may outscore the starter", () => {
+    const data = snapshot();
+    data.rules = { ...data.rules, rosterSlots: { ...data.rules.rosterSlots, BN: 2 } };
+    data.roster = [...data.roster, { playerId: "e", position: "active" }];
+    data.forecasts = data.forecasts.filter(forecast => !(forecast.playerId === "d" && forecast.gameId === "D-2026-10-05"));
+    expect(healthyReserves(data, intent)[0].activation).toEqual({ swapPlayerId: null, projectedPoints: null, activeGames: 0 });
+  });
+
+  // CR-RSO-01: the drop notice repeated the alert's illegal-lineup message for the same player.
+  it("drops only the lineup-gap blocker that repeats a flagged player's alert", () => {
+    const data = snapshot();
+    data.players = [...data.players, member("f", "D", ["D"])];
+    data.roster = [...data.roster, { playerId: "f", position: "IR+" }];
+    injured(data, "f", "DTD", []);
+    const blockers = lineupGapReport(data, intent, evaluatePlan(data, intent, "outcome", [], false)).projectionBlockers;
+    expect(blockers.map(row => row.playerId)).toEqual(["d", "f"]);
+    expect(withoutHealthyReserves(blockers, healthyReserves(data, intent))).toEqual([blockers[1]]);
+    const lineupWide = [{ playerId: null, reason: "projected points are unknown" }];
+    expect(withoutHealthyReserves(lineupWide, healthyReserves(data, intent))).toEqual(lineupWide);
+    const manual = { ...data, context: { ...data.context, provider: "manual" as const } };
+    expect(withoutHealthyReserves(blockers, healthyReserves(manual, intent))).toEqual(blockers);
   });
 });
