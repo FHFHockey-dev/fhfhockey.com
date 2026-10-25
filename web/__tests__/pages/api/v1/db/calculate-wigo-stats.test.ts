@@ -341,6 +341,37 @@ describe("/api/v1/db/calculate-wigo-stats route", () => {
     expect(writes.wigo_career.map(row => row.player_id)).toEqual([8478402]);
   });
 
+  it("fails the run when an in-loop 200-player batch upsert is rejected, while later batches still write", async () => {
+    getCurrentSeasonMock.mockResolvedValue({ seasonId: 20262027, lastSeasonId: 20252026 });
+    const ids = Array.from({ length: 250 }, (_, index) => 8470001 + index);
+    const written: number[] = [];
+    let recentUpserts = 0;
+    fromMock.mockImplementation((table: string) => {
+      let playerId: number | null = null;
+      const query: any = {
+        select: () => query, neq: () => query, in: () => query, limit: () => query, order: () => query, range: () => query,
+        eq: (key: string, value: any) => { if (key === "player_id") playerId = value; return query; },
+        upsert: (rows: any[]) => {
+          if (table !== "wigo_recent") return Promise.resolve({ error: null });
+          if (recentUpserts++ === 0) return Promise.resolve({ error: { message: "synthetic batch failure" } });
+          written.push(...rows.map(row => row.player_id));
+          return Promise.resolve({ error: null });
+        },
+        then: (resolve: (value: unknown) => unknown) => {
+          const data = table === "players" ? ids.map(id => ({ id }))
+            : table === "wgo_skater_stats" ? [{ ...recentGame("2026-10-23"), player_id: playerId }] : [];
+          return Promise.resolve({ data, error: null, count: data.length }).then(resolve);
+        },
+      };
+      return query;
+    });
+    const res = await runRecentFixture();
+    expect(res.statusCode).toBe(500);
+    expect(res.body.writeErrors).toEqual(["wigo_recent: synthetic batch failure"]);
+    expect(recentUpserts).toBe(2);
+    expect(written).toEqual(ids.slice(200));
+  });
+
   it("pages the player list in a stable order so no skater is skipped across pages", async () => {
     getCurrentSeasonMock.mockResolvedValue({ seasonId: 20262027, lastSeasonId: 20252026 });
     const ids = Array.from({ length: 1500 }, (_, index) => 8470001 + index);

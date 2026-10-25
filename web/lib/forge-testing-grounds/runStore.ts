@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { jsonValue, RunnerError, type ExperimentPlan, type JsonValue, type RunState, type StepResult } from "./runnerContracts";
+import { contentHash, jsonValue, parsePlan, RunnerError, type ExperimentPlan, type JsonValue, type RunState, type StepResult } from "./runnerContracts";
 import { MAX_LISTED_RUNS, runProgressSchema, type RunEvent } from "./runProjection";
 import type { OwnerReadStore } from "./ownerRoutes";
 
@@ -44,6 +44,8 @@ export interface ExperimentRunStore {
   /** Newest first, at most MAX_LISTED_RUNS, operational projections only. */
   list(ownerUserId: string): Promise<ReadonlyArray<RunProgress>>;
   reveal(ownerUserId: string, runId: string, nowMs: number): Promise<boolean>;
+  /** The immutable accepted plan: configuration references only, never outputs or outcomes. */
+  manifest(ownerUserId: string, runId: string): Promise<ExperimentPlan>;
   results(ownerUserId: string, runId: string): Promise<{ status: "sealed" } | { status: "revealed"; outputs: ReadonlyArray<{ unitId: string; payload: JsonValue }> }>;
 }
 
@@ -57,8 +59,8 @@ const revealedResultsSchema = z.object({
  * Validating OwnerReadStore over a run store. Operational reads return only the
  * strict progress projection; any other store output is refused, never reflected.
  * Sealed reads need the store's own results channel to agree with a
- * completed_revealed projection. Health, manifest, logs and export have no store
- * source yet and fail closed. Not installed in the exported route wrappers.
+ * completed_revealed projection. The manifest is the revalidated, hash-bound plan.
+ * Health, logs and export have no store source yet and fail closed. Not installed in the exported route wrappers.
  */
 export function createRunStoreReadAdapter(store: ExperimentRunStore): OwnerReadStore {
   const projection = (value: unknown, runId?: string) => {
@@ -85,7 +87,16 @@ export function createRunStoreReadAdapter(store: ExperimentRunStore): OwnerReadS
       }
       return { ownerUserId: ownerId, runId };
     },
-    readOperational: async (ownerId, runId, operation) => operation === "progress" ? current(ownerId, runId) : unsupported(),
+    readOperational: async (ownerId, runId, operation) => {
+      if (operation === "progress") return current(ownerId, runId);
+      if (operation !== "manifest") return unsupported();
+      // Revalidate and bind to the run's own plan hash; a mismatched plan is refused.
+      const { planHash } = await current(ownerId, runId);
+      let plan: ExperimentPlan;
+      try { plan = parsePlan(await store.manifest(ownerId, runId)); } catch { throw new RunnerError("invalid_projection"); }
+      if (contentHash(plan) !== planHash) throw new RunnerError("invalid_projection");
+      return { runId, planHash, plan };
+    },
     authorizeSealedRead: async (ownerId, runId) => (await current(ownerId, runId)).state === "completed_revealed"
       && revealedResultsSchema.safeParse(await store.results(ownerId, runId)).success,
     readSealed: async (ownerId, runId, operation) => {

@@ -189,6 +189,9 @@ export class MemoryExperimentRunStore implements ExperimentRunStore {
     if (run.state !== "completed_awaiting_reveal" || nowMs < run.plan.reveal.notBeforeMs) return false;
     run.state = "completed_revealed"; this.change(run, nowMs, "planned_reveal"); return true;
   }
+  async manifest(ownerUserId: string, runId: string): Promise<ExperimentPlan> {
+    return this.owned(ownerUserId, runId).plan; // Frozen at acceptance.
+  }
   async results(ownerUserId: string, runId: string) {
     const run = this.owned(ownerUserId, runId);
     if (run.state !== "completed_revealed") return { status: "sealed" as const };

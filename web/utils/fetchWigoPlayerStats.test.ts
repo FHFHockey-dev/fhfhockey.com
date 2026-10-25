@@ -20,6 +20,7 @@ import type { WigoCareerRow, WigoRecentRow } from "./fetchWigoPlayerStats";
 import {
   buildPlayerAggregatedStats,
   fetchPaginatedData,
+  fetchPlayerAggregatedStats,
   fetchPlayerGameLogForStat,
   fetchPlayerGameLogConsistencyData,
   fetchPlayerPerGameTotals
@@ -368,6 +369,15 @@ describe("fetchPlayerGameLogForStat units (selected-stat chart)", () => {
         ["order", "date", { ascending: true }]
       ]
     });
+  });
+});
+
+describe("fetchPlayerAggregatedStats sources", () => {
+  it("reads wigo_career, wigo_recent and season totals but never the writerless wigo_rates table", async () => {
+    installGameLogQueryMock([{ player_id: 1, std_gp: 10, std_g: 4, season: "20252026" }]);
+    const rows = await fetchPlayerAggregatedStats(1, 20252026);
+    expect(queryTraces.map(trace => trace.table)).toEqual(["wigo_career", "wigo_recent", "wgo_skater_stats_totals"]);
+    expect(rows.find(row => row.label === "Goals")?.STD).toBe(4);
   });
 });
 

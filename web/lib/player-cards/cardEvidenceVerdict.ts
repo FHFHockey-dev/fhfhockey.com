@@ -14,6 +14,10 @@ export type EvidenceVerdict = {
   liveActivation: false; premiumActivation: false;
 };
 
+/** What a page may ship to the client: the verdict state alone. Codes and per-metric states stay server-side. */
+export type ClientEvidence = Pick<EvidenceVerdict, "state">;
+export const clientEvidence = (verdict: EvidenceVerdict): ClientEvidence => ({ state: verdict.state });
+
 /** Issue codes are code-defined kebab-case constants; anything else is dropped rather than shipped. */
 const CODE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 

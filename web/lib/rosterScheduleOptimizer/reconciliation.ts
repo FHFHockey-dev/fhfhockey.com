@@ -1,4 +1,5 @@
-import type { PlanIntent, PlanningSnapshot, RevisionProposal } from "./planningTypes";
+import { acquisitionEffectiveAt, buildTimeline } from "./planningTimeline";
+import type { PlanIntent, PlanStep, PlanningSnapshot, RevisionProposal } from "./planningTypes";
 
 /** Recheck selected intent against new authoritative inputs; repairs require explicit acceptance. */
 export function reconcileIntent(snapshot: PlanningSnapshot, intent: PlanIntent, previous?: PlanningSnapshot | null): RevisionProposal {
@@ -44,8 +45,14 @@ export function reconcileIntent(snapshot: PlanningSnapshot, intent: PlanIntent, 
       }
       const period = snapshot.rules.periods.find((candidate) => actionAt >= Date.parse(candidate.start) && actionAt < Date.parse(candidate.end));
       if (!period) warn(step.id, "No current acquisition period covers this selected add.", true);
+      // Same earliest effective time the timeline enforces (next-day timing, waiver clearance).
+      const earliest = acquisitionEffectiveAt(snapshot, player, step.at);
+      if (snapshot.rules.acquisitionTiming === "unknown") warn(step.id, `Acquisition timing is unknown; ${player.name}'s effective time cannot be verified.`, true);
+      else if (!earliest) warn(step.id, `Cannot verify waiver clearance for ${player.name}.`, true);
+      else if (Date.parse(step.effectiveAt) < Date.parse(earliest)) warn(step.id, `${player.name} cannot take effect at the selected time under current league timing or waiver clearance.`, true);
     }
     if (step.type === "drop" && (player.canDrop === false || intent.protectedPlayerIds.includes(player.id))) warn(step.id, `${player.name} cannot be dropped.`, true);
+    if (step.type === "reserve" && (!step.reservePosition || !player.reserveEligibility.includes(step.reservePosition))) warn(step.id, `${player.name} is no longer verified for ${step.reservePosition ?? "a reserve slot"}.`, true);
   }
   invalidateDependents();
   // At the same action time, charge an explicit prerequisite before its dependent move.
@@ -66,13 +73,25 @@ export function reconcileIntent(snapshot: PlanningSnapshot, intent: PlanIntent, 
     earlier.type === "add" && earlier.playerId === playerId && !invalid.has(earlier.id)
     && Date.parse(earlier.effectiveAt) <= Date.parse(step.at)
     && (Date.parse(earlier.at) < Date.parse(step.at) || step.dependsOn.includes(earlier.id)));
+  const reserveHolders = new Map<string, string>(snapshot.roster.filter(entry => ["IR", "IR+", "NA"].includes(entry.position)).map(entry => [entry.playerId, entry.position]));
   for (const step of ordered) {
     if (invalid.has(step.id)) continue;
+    if (step.type === "reserve") {
+      if (!roster.has(step.playerId) && !hasRetainedAdd(step.playerId, step)) {
+        warn(step.id, `${players.get(step.playerId)!.name} is no longer on the actual or planned roster.`, true);
+        invalidateDependents();
+      } else if ([...reserveHolders].filter(([id, position]) => id !== step.playerId && position === step.reservePosition).length
+        >= (snapshot.rules.rosterSlots[step.reservePosition!] ?? 0)) {
+        warn(step.id, `Selected moves exceed ${step.reservePosition} capacity.`, true);
+        invalidateDependents();
+      } else reserveHolders.set(step.playerId, step.reservePosition!);
+      continue;
+    }
     if (step.type === "drop") {
       if (!roster.has(step.playerId) && !hasRetainedAdd(step.playerId, step)) {
         warn(step.id, `${players.get(step.playerId)!.name} is no longer on the actual or planned roster.`, true);
         invalidateDependents();
-      }
+      } else reserveHolders.delete(step.playerId);
       continue;
     }
     if (step.type !== "add") continue;
@@ -90,6 +109,25 @@ export function reconcileIntent(snapshot: PlanningSnapshot, intent: PlanIntent, 
         invalidateDependents();
       } else spent.set(period.id, next);
     }
+    if (!invalid.has(step.id) && step.dropPlayerId) reserveHolders.delete(step.dropPlayerId);
+  }
+  // Never stay silent on moves the timeline rejects: it applies steps in effective-time order, which the action-order
+  // passes above can miss. Flag the first retained step (with its prerequisites) that makes the timeline illegal.
+  const timelineLegal = (steps: PlanStep[]) => { const timeline = buildTimeline(snapshot, intent, steps); timeline.at("9999-12-31T23:59:59Z"); return timeline; };
+  const byId = new Map(intent.steps.map(step => [step.id, step]));
+  const withPrerequisites = (steps: PlanStep[]) => {
+    const included = new Set<string>(), visit = (step: PlanStep) => { if (included.has(step.id)) return; included.add(step.id); step.dependsOn.forEach(id => byId.has(id) && visit(byId.get(id)!)); };
+    steps.forEach(visit);
+    return intent.steps.filter(step => included.has(step.id));
+  };
+  if (!timelineLegal([]).legal) warn(null, "The refreshed roster or reserve placements are not legal before any selected move; review the roster.");
+  else for (let retained = intent.steps.filter(step => !invalid.has(step.id)); retained.length && !timelineLegal(retained).legal; retained = intent.steps.filter(step => !invalid.has(step.id))) {
+    const order = [...retained].sort((a, b) => Date.parse(a.effectiveAt) - Date.parse(b.effectiveAt) || Date.parse(a.at) - Date.parse(b.at) || a.id.localeCompare(b.id));
+    const offender = order.find((step, index) => !timelineLegal(withPrerequisites(order.slice(0, index + 1))).legal) ?? order[order.length - 1];
+    const before = new Set(timelineLegal(withPrerequisites(order.slice(0, order.indexOf(offender)))).limitations);
+    const reasons = timelineLegal(withPrerequisites(order.slice(0, order.indexOf(offender) + 1))).limitations.filter(text => !before.has(text));
+    warn(offender.id, `Selected moves are not legal on the refreshed timeline${reasons.length ? `: ${reasons.join(" ")}` : "."}`, true);
+    invalidateDependents();
   }
   return { snapshotId: snapshot.id, intentRevision: intent.revision, issues, suggestedSteps: invalid.size ? intent.steps.filter((step) => !invalid.has(step.id)) : null };
 }

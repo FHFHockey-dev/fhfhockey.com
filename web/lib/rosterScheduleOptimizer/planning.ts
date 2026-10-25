@@ -892,7 +892,7 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
   const hasMinimum = finite(minimum.required) && minimum.required > 0;
   const minimumWindowVerified = goalieMinimumWindowVerified(snapshot);
   if (hasMinimum && !minimumWindowVerified) limitations.add("Goalie minimum progress applies to an unverified or narrower period; coverage cannot be confirmed for this range.");
-  let projected = minimum.credited, confirmed = 0, startsKnown = true;
+  let projected = minimum.credited, confirmed = 0, startsKnown = true, partialStarts = false;
   const minimumAlreadyMet = minimum.required === 0 || minimum.required !== null && finite(minimum.credited) && minimum.credited >= minimum.required;
   const goalieByTeamGame = new Map<string, number>();
   for (const play of chosen.values()) if (play.player.playerClass === "goalie") {
@@ -906,9 +906,11 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
   if (minimum.counts === "appearances" && hasMinimum) {
     if (!minimumAlreadyMet) { projected = null; limitations.add("Appearance probabilities are unavailable; starter probabilities cannot verify this goalie minimum."); }
   } else if (hasMinimum && minimum.counts === "unknown" && !minimumAlreadyMet) projected = null;
-  else if (finite(projected)) projected += [...goalieByTeamGame.values()].reduce((sum, value) => sum + value, 0);
+  else if (finite(projected)) { projected += [...goalieByTeamGame.values()].reduce((sum, value) => sum + value, 0); partialStarts = !startsKnown; }
   if (!minimumWindowVerified && hasMinimum) projected = null;
   const risk = hasMinimum && (projected === null || projected < (minimum.required ?? 0));
+  // A met minimum is not at risk, but an unknown upcoming start keeps the projected readout unknown, never a partial sum.
+  if (partialStarts) projected = null;
   if (risk && intent.goalieCoverage === "cover") limitations.add("Goalie minimum coverage is not verified.");
   if (hasMinimum && intent.goalieCoverage === "cover" && intent.goalieWindow !== "any") {
     const available = games.some(game => preferredGoalieDate(game.date, intent) && snapshot.players.some(player => player.playerClass === "goalie" && player.teamAbbreviation === game.teamAbbreviation &&
