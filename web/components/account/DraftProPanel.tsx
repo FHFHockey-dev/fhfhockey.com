@@ -70,6 +70,30 @@ function checkoutUnavailableReason(reason: string) {
   return ({ checkout_disabled: "Checkout is not available right now.", stripe_not_configured: "Checkout is not configured yet.", site_url_not_configured: "Checkout is not configured yet.", pass_expired: "This Draft Pro pass is no longer available.", already_eligible: "Draft Pro is already active for this account." } as Record<string, string>)[reason] ?? "Checkout is unavailable right now.";
 }
 
+// Server, browser and parser error text can carry configuration, database or
+// identity details, so the panel shows only its own authored copy.
+class PanelMessage extends Error {}
+function panelMessage(error: unknown, fallback: string) {
+  return error instanceof PanelMessage ? error.message : fallback;
+}
+const accountUnavailable = "Draft Pro account details are unavailable. Refresh the page to try again, or contact support if it keeps happening.";
+const redeemFailed = "That code couldn't be redeemed. Check it and try again, or contact support if you completed payment.";
+const checkoutUnchecked = "Your purchase status couldn't be checked. Check purchase status again, or contact support if you completed payment.";
+const checkoutFailed = "Checkout could not be started. Try again later, or contact support if it keeps happening.";
+const patreonConnectFailed = "Patreon connection couldn't be started. Try again later, or contact support if it keeps happening.";
+
+// A specific refund claim needs both its status and its known code; anything
+// else gets copy that claims only what the client knows.
+function refundFailureMessage(status: number | null, code: unknown) {
+  if (status === 401) return "Your sign-in has expired. Sign in again, then submit your refund request.";
+  if (status === 400 && code === "validation_error") return "Check your refund request: choose a purchase and reason, and write an explanation of 10 to 2,000 characters.";
+  if (status === 409 && code === "refund_request_exists") return "This purchase already has an open refund request. We'll review it case by case.";
+  if (status === 422 && code === "refund_window_closed") return "The 7-day refund request window for this purchase has closed. Contact support if you need help.";
+  if (status === 404 && code === "purchase_not_found") return "This purchase isn't eligible for an account refund request. Contact support if you think this is wrong.";
+  if (status === null) return "We couldn't reach FHFH, so your refund request wasn't confirmed. Check your connection and try again, or contact support.";
+  return "Your refund request couldn't be confirmed right now. Try again in a few minutes, or contact support if it keeps happening.";
+}
+
 export default function DraftProPanel() {
   const router = useRouter();
   const [account, setAccount] = useState<AccountData | null>(null);
@@ -103,13 +127,13 @@ export default function DraftProPanel() {
   );
   const loadAccount = useCallback(async (epoch = accountEpochRef.current): Promise<AccountData | null> => {
     const session = (await supabase.auth.getSession()).data.session;
-    if (!session) throw new Error("Authentication required.");
+    if (!session) throw new PanelMessage("Authentication required.");
     const identity = session.user?.id ?? null;
     if (accountIdentityRef.current === undefined) accountIdentityRef.current = identity;
     if (!checkoutMountedRef.current || epoch !== accountEpochRef.current || identity !== accountIdentityRef.current) return null;
     const response = await fetch("/api/v1/account/draft-pro", { headers: { Authorization: `Bearer ${session.access_token}` } });
     const body = await response.json();
-    if (!response.ok) throw new Error(body.error?.message ?? "Draft Pro account details are unavailable.");
+    if (!response.ok) throw new PanelMessage(response.status === 401 ? "Your sign-in has expired. Sign in again to view Draft Pro." : accountUnavailable);
     if (!checkoutMountedRef.current || epoch !== accountEpochRef.current || identity !== accountIdentityRef.current) return null;
     setAccount(body.data);
     setPurchaseId((current) => current || body.data.purchases[0]?.id || "");
@@ -164,7 +188,7 @@ export default function DraftProPanel() {
       setLoading(true);
       const epoch = accountEpochRef.current;
       void loadAccount(epoch).catch((loadError) => {
-        if (checkoutMountedRef.current && epoch === accountEpochRef.current && identity === accountIdentityRef.current) setError(loadError instanceof Error ? loadError.message : "Draft Pro account details are unavailable.");
+        if (checkoutMountedRef.current && epoch === accountEpochRef.current && identity === accountIdentityRef.current) setError(panelMessage(loadError, accountUnavailable));
       }).finally(() => {
         if (checkoutMountedRef.current && epoch === accountEpochRef.current && identity === accountIdentityRef.current) setLoading(false);
       });
@@ -175,7 +199,7 @@ export default function DraftProPanel() {
     let cancelled = false;
     const epoch = accountEpochRef.current;
     void loadAccount(epoch).catch((loadError) => {
-      if (!cancelled && checkoutMountedRef.current && epoch === accountEpochRef.current) setError(loadError instanceof Error ? loadError.message : "Draft Pro account details are unavailable.");
+      if (!cancelled && checkoutMountedRef.current && epoch === accountEpochRef.current) setError(panelMessage(loadError, accountUnavailable));
     }).finally(() => {
       if (!cancelled && checkoutMountedRef.current && epoch === accountEpochRef.current) setLoading(false);
     });
@@ -187,9 +211,10 @@ export default function DraftProPanel() {
     const epoch = accountEpochRef.current;
     setSubmitting(true);
     setFeedback(null);
+    let failure: { status: number | null; code?: unknown } = { status: null };
     try {
       const session = (await supabase.auth.getSession()).data.session;
-      if (!session) throw new Error("Authentication required.");
+      if (!session) { failure = { status: 401 }; throw new Error("Authentication required."); }
       const identity = session.user?.id ?? null;
       if (!checkoutMountedRef.current || epoch !== accountEpochRef.current || identity !== accountIdentityRef.current) return;
       const response = await fetch("/api/v1/account/draft-pro/refund-requests", {
@@ -197,15 +222,16 @@ export default function DraftProPanel() {
         headers: { Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" },
         body: JSON.stringify({ purchaseId: selectedPurchase?.id, reason, explanation, improvementNotes: improvementNotes || undefined, usedDuringLiveDraft: usedDuringLiveDraft === "" ? undefined : usedDuringLiveDraft === "yes" }),
       });
+      failure = { status: response.status };
       const body = await response.json();
       if (!checkoutMountedRef.current || epoch !== accountEpochRef.current || identity !== accountIdentityRef.current) return;
-      if (!response.ok) throw new Error(body.error?.message ?? "Refund request could not be submitted.");
+      if (!response.ok || !body?.data) { failure = { status: response.ok ? 500 : response.status, code: body?.error?.code }; throw new Error("Refund request failed."); }
       setFeedback("Your request was submitted for case-by-case review. It does not automatically refund or revoke access.");
       setExplanation("");
       setImprovementNotes("");
       setAccount((current) => current ? { ...current, refundRequests: [...current.refundRequests, { ...body.data, purchaseId: selectedPurchase?.id ?? "" }] } : current);
-    } catch (submitError) {
-      if (checkoutMountedRef.current && epoch === accountEpochRef.current) setFeedback(submitError instanceof Error ? submitError.message : "Refund request could not be submitted.");
+    } catch {
+      if (checkoutMountedRef.current && epoch === accountEpochRef.current) setFeedback(refundFailureMessage(failure.status, failure.code));
     } finally {
       if (checkoutMountedRef.current && epoch === accountEpochRef.current) setSubmitting(false);
     }
@@ -225,7 +251,7 @@ export default function DraftProPanel() {
     setAccessCodeMessage(null);
     try {
       const session = (await supabase.auth.getSession()).data.session;
-      if (!session?.access_token) throw new Error("Authentication required.");
+      if (!session?.access_token) throw new PanelMessage("Your sign-in has expired. Sign in again, then redeem your code.");
       const identity = session.user?.id ?? null;
       if (!checkoutMountedRef.current || epoch !== accountEpochRef.current || identity !== accountIdentityRef.current) return;
       const response = await fetch(recoveringPurchase ? "/api/v1/account/draft-pro/checkout/verify" : "/api/v1/account/draft-pro/access-codes/redeem", {
@@ -235,8 +261,8 @@ export default function DraftProPanel() {
       });
       const body = await response.json().catch(() => ({}));
       if (!checkoutMountedRef.current || epoch !== accountEpochRef.current || identity !== accountIdentityRef.current) return;
-      if (!response.ok) throw new Error(body.error?.message ?? body.error ?? "That access code could not be redeemed.");
-      if (recoveringPurchase ? !["confirmed", "confirming"].includes(body.state) : body.redeemed !== true) throw new Error("That code could not activate Draft Pro. Contact support if you completed payment.");
+      if (!response.ok) throw new PanelMessage(response.status === 401 ? "Your sign-in has expired. Sign in again, then redeem your code." : response.status === 429 ? "Too many attempts. Wait a minute, then try your code again." : redeemFailed);
+      if (recoveringPurchase ? !["confirmed", "confirming"].includes(body.state) : body.redeemed !== true) throw new PanelMessage("That code could not activate Draft Pro. Contact support if you completed payment.");
       let refreshedAccount: AccountData | null = null;
       let refreshError: unknown = null;
       for (const delay of [0, 250, 500, 1_000]) {
@@ -252,7 +278,7 @@ export default function DraftProPanel() {
         if (refreshedAccount?.access.eligible && (recoveringPurchase || refreshedAccount.access.grantingSources.includes("complimentary"))) break;
       }
       if (!checkoutMountedRef.current || epoch !== accountEpochRef.current || identity !== accountIdentityRef.current) return;
-      if (refreshError && !refreshedAccount) throw refreshError;
+      if (refreshError && !refreshedAccount) throw new PanelMessage("Your code was accepted, but your access couldn't be refreshed. Refresh this page to check again.");
       if (!refreshedAccount) return;
       const complimentaryAccessActive = refreshedAccount.access.eligible && (recoveringPurchase || refreshedAccount.access.grantingSources.includes("complimentary"));
       setAccessCode("");
@@ -261,7 +287,7 @@ export default function DraftProPanel() {
     } catch (redeemError) {
       if (checkoutMountedRef.current && epoch === accountEpochRef.current) {
         setAccessCodeState("error");
-        setAccessCodeMessage(redeemError instanceof Error ? redeemError.message : "That access code could not be redeemed.");
+        setAccessCodeMessage(panelMessage(redeemError, "We couldn't reach FHFH, so your code wasn't confirmed. Check your connection and try again."));
       }
     }
   }
@@ -272,7 +298,7 @@ export default function DraftProPanel() {
     setFeedback(null);
     try {
       const session = (await supabase.auth.getSession()).data.session;
-      if (!session) throw new Error("Authentication required.");
+      if (!session) throw new PanelMessage("Your sign-in has expired. Sign in again, then connect Patreon.");
       const identity = session.user?.id ?? null;
       if (!checkoutMountedRef.current || epoch !== accountEpochRef.current || identity !== accountIdentityRef.current) return;
       const response = await fetch(action === "refresh" ? "/api/v1/account/patreon/refresh" : "/api/v1/account/patreon/connect", {
@@ -282,7 +308,7 @@ export default function DraftProPanel() {
       });
       const body = await response.json();
       if (!checkoutMountedRef.current || epoch !== accountEpochRef.current || identity !== accountIdentityRef.current) return;
-      if (!response.ok) throw new Error(body.error ?? "Patreon action failed.");
+      if (!response.ok) throw new PanelMessage(response.status === 401 ? "Your sign-in has expired. Sign in again, then connect Patreon." : patreonConnectFailed);
       if (action === "connect" && typeof body.authorizationUrl === "string") window.location.assign(body.authorizationUrl);
       else {
         await loadAccount();
@@ -290,7 +316,7 @@ export default function DraftProPanel() {
         setFeedback("Patreon membership refreshed.");
       }
     } catch (actionError) {
-      if (checkoutMountedRef.current && epoch === accountEpochRef.current) setFeedback(action === "refresh" ? "Patreon verification is unavailable. Try again later." : actionError instanceof Error ? actionError.message : "Patreon action failed.");
+      if (checkoutMountedRef.current && epoch === accountEpochRef.current) setFeedback(action === "refresh" ? "Patreon verification is unavailable. Try again later." : panelMessage(actionError, patreonConnectFailed));
     } finally {
       if (checkoutMountedRef.current && epoch === accountEpochRef.current) setPatreonAction(null);
     }
@@ -303,7 +329,7 @@ export default function DraftProPanel() {
     setFeedback(null);
     try {
       const session = (await supabase.auth.getSession()).data.session;
-      if (!session?.access_token) throw new Error("Sign in before purchasing Draft Pro.");
+      if (!session?.access_token) throw new PanelMessage("Sign in before purchasing Draft Pro.");
       const identity = session.user?.id ?? null;
       if (!checkoutMountedRef.current || accountEpoch !== accountEpochRef.current || identity !== accountIdentityRef.current) return;
       const response = await fetch("/api/v1/account/draft-pro/checkout", {
@@ -313,7 +339,11 @@ export default function DraftProPanel() {
       const body = await response.json().catch(() => ({}));
       if (!checkoutMountedRef.current || accountEpoch !== accountEpochRef.current || identity !== accountIdentityRef.current) return;
       if (!response.ok) {
-        throw new Error(body.error?.message ?? body.error ?? "Checkout could not be started.");
+        throw new PanelMessage(response.status === 401
+          ? "Sign in before purchasing Draft Pro."
+          : response.status === 429
+            ? "Too many checkout attempts. Wait a minute, then try again."
+            : checkoutFailed);
       }
       if (typeof body.url === "string") {
         window.location.assign(body.url);
@@ -335,7 +365,7 @@ export default function DraftProPanel() {
       throw new Error("Checkout could not be started.");
     } catch (checkoutError) {
       if (checkoutMountedRef.current && accountEpoch === accountEpochRef.current) {
-        setFeedback(checkoutError instanceof Error ? checkoutError.message : "Checkout could not be started.");
+        setFeedback(panelMessage(checkoutError, checkoutFailed));
         setCheckoutLoading(false);
       }
     }
@@ -349,7 +379,7 @@ export default function DraftProPanel() {
     try {
       const session = (await supabase.auth.getSession()).data.session;
       if (!isCurrent()) return;
-      if (!session?.access_token) throw new Error("Sign in to confirm your Draft Pro purchase.");
+      if (!session?.access_token) throw new PanelMessage("Sign in to confirm your Draft Pro purchase.");
       const response = await fetch("/api/v1/account/draft-pro/checkout/verify", {
         method: "POST",
         headers: { Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" },
@@ -357,7 +387,7 @@ export default function DraftProPanel() {
       });
       const body = await response.json().catch(() => ({}));
       if (!isCurrent()) return;
-      if (!response.ok) throw new Error(body.error ?? "Checkout verification failed.");
+      if (!response.ok) throw new PanelMessage(response.status === 401 ? "Sign in to confirm your Draft Pro purchase." : response.status === 429 ? "Please wait a minute before checking again." : checkoutUnchecked);
       if (body.state === "confirmed") {
         setCheckoutState("confirmed");
         await loadAccount();
@@ -374,7 +404,7 @@ export default function DraftProPanel() {
       if (!isCurrent()) return;
       setCheckoutState("confirming");
       setCheckoutRetryAvailable(true);
-      setFeedback(error instanceof Error ? error.message : "Checkout verification failed. Check purchase status again.");
+      setFeedback(panelMessage(error, checkoutUnchecked));
     }
   }, [loadAccount]);
 
@@ -420,7 +450,7 @@ export default function DraftProPanel() {
     {account.purchases.length > 0 ? <div className={styles.purchaseList}><h3>Purchases</h3><p>Draft Pro activates on this account after payment. Keep your recovery code if automatic activation needs to be retried; it cannot transfer access or override a refund.</p>{account.purchases.map((purchase) => { const request = account.refundRequests.find((item) => item.purchaseId === purchase.id); return <div className={styles.purchase} key={purchase.id}><div><strong>${(purchase.amountCents / 100).toFixed(2)} pass base price</strong><span>{purchase.status} · activated {formatDate(purchase.activatedAt)}{request ? ` · refund request ${request.status}` : ""}</span></div><div className={styles.recoveryCode}><label>Purchase recovery code<input aria-label={`Recovery code for purchase ${purchase.id}`} readOnly value={`DPRO-${purchase.id}`} /></label><button type="button" onClick={async () => { try { await navigator.clipboard.writeText(`DPRO-${purchase.id}`); setCopyStatus("Recovery code copied. Keep it with your receipt and use the same account to recover access."); } catch { setCopyStatus("Select the recovery code and copy it manually."); } }}>Copy recovery code</button></div>{purchase.receiptUrl ? <a href={purchase.receiptUrl} target="_blank" rel="noreferrer">Receipt</a> : <span className={styles.muted}>Receipt unavailable</span>}</div>; })}</div> : null}
     {account.savedDrafts.length > 0 ? <div className={styles.savedItems}><h3>Saved work</h3>{account.savedDrafts.map((draft) => <div key={draft.id}><span>{draft.name}</span><span>{draft.status}</span></div>)}</div> : null}
     <p>For purchases sold through Link, Stripe may issue refunds within 60 days. Our seven-day account form does not limit that policy. <a href="https://support.link.com/questions/sold-through-link-refunds">Get refund help from Link</a>.</p>
-    {selectedPurchase ? <div className={styles.refundSection}><label>Purchase<select value={purchaseId} onChange={(event) => setPurchaseId(event.target.value)}>{account.purchases.map((purchase) => <option key={purchase.id} value={purchase.id}>${(purchase.amountCents / 100).toFixed(2)} · {formatDate(purchase.activatedAt)} · {purchase.refundEligibility.reason}</option>)}</select></label>{canRequest ? <form className={styles.form} onSubmit={submitRefund}><h3>Request a refund review</h3><p>Requests are reviewed case by case. Submit within 7 days of activation; sending a request does not automatically refund or revoke access.</p><label>Reason<select value={reason} onChange={(event) => setReason(event.target.value as typeof reason)}>{reasons.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label>Explanation <span>(10–2000 characters)</span><textarea minLength={10} maxLength={2000} required value={explanation} onChange={(event) => setExplanation(event.target.value)} /></label><label>What could improve this? <span>(optional)</span><textarea maxLength={2000} value={improvementNotes} onChange={(event) => setImprovementNotes(event.target.value)} /></label><label>Used during a live draft? <select value={usedDuringLiveDraft} onChange={(event) => setUsedDuringLiveDraft(event.target.value)}><option value="">Prefer not to say</option><option value="yes">Yes</option><option value="no">No</option></select></label><button type="submit" disabled={submitting}>{submitting ? "Submitting…" : "Submit request"}</button>{feedback ? <p role="status">{feedback}</p> : null}</form> : <p className={styles.notice}>Refund eligibility: {selectedPurchase.refundEligibility.reason}. {selectedPurchase.refundEligibility.deadline ? `The request window ended ${formatEasternDate(selectedPurchase.refundEligibility.deadline)} Eastern.` : "Patreon refunds are handled by Patreon."}</p>}</div> : null}
+    {selectedPurchase ? <div className={styles.refundSection}><label>Purchase<select value={purchaseId} onChange={(event) => setPurchaseId(event.target.value)}>{account.purchases.map((purchase) => <option key={purchase.id} value={purchase.id}>${(purchase.amountCents / 100).toFixed(2)} · {formatDate(purchase.activatedAt)} · {purchase.refundEligibility.reason}</option>)}</select></label>{canRequest ? <form className={styles.form} onSubmit={submitRefund}><h3>Request a refund review</h3><p>Requests are reviewed case by case. Submit within 7 days of activation; sending a request does not automatically refund or revoke access.</p><label>Reason<select value={reason} onChange={(event) => setReason(event.target.value as typeof reason)}>{reasons.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label>Explanation <span>(10–2000 characters)</span><textarea minLength={10} maxLength={2000} required value={explanation} onChange={(event) => setExplanation(event.target.value)} /></label><label>What could improve this? <span>(optional)</span><textarea maxLength={2000} value={improvementNotes} onChange={(event) => setImprovementNotes(event.target.value)} /></label><label>Used during a live draft? <select value={usedDuringLiveDraft} onChange={(event) => setUsedDuringLiveDraft(event.target.value)}><option value="">Prefer not to say</option><option value="yes">Yes</option><option value="no">No</option></select></label><button type="submit" disabled={submitting}>{submitting ? "Submitting…" : "Submit request"}</button>{feedback ? <p role="status">{feedback}</p> : null}</form> : <p className={styles.notice}>Refund eligibility: {selectedPurchase.refundEligibility.reason}. {selectedPurchase.refundEligibility.deadline ? `The request window ${Date.parse(selectedPurchase.refundEligibility.deadline) > Date.now() ? "ends" : "ended"} ${formatEasternDate(selectedPurchase.refundEligibility.deadline)} Eastern.` : "Patreon refunds are handled by Patreon."}</p>}</div> : null}
     {feedback && !canRequest ? <p role="status">{feedback}</p> : null}
   </section>;
 }
