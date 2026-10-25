@@ -54,16 +54,11 @@ export async function fetchTeamDriverSnapshots(seasonId: number) {
   }
   const regularRows = teamGames.filter(row => row.team_id != null && row.game_id != null &&
     expected.get(row.team_id)?.has(row.game_id)) as TeamSpecialTeamsGame[];
-  const observed = new Map<number, Set<number>>();
-  for (const row of regularRows) {
-    const ids = observed.get(row.team_id) ?? new Set<number>();
-    ids.add(row.game_id);
-    observed.set(row.team_id, ids);
-  }
-  // Partial seasons must not masquerade as complete team percentages.
-  const completeRows = regularRows.filter(row => observed.get(row.team_id)?.size === expected.get(row.team_id)?.size);
+  // Partial seasons below the coverage threshold stay incomplete; above it the snapshot carries
+  // covered/expected games so the card can say so.
+  const expectedGameCounts = new Map([...expected.entries()].map(([team, ids]) => [team, ids.size]));
   return {
     fiveOnFiveRows: aggregateTeamFiveOnFive(fiveOnFiveDailyRows, expectedDates),
-    specialTeamsRows: aggregateTeamSpecialTeams(completeRows)
+    specialTeamsRows: aggregateTeamSpecialTeams(regularRows, expectedGameCounts)
   };
 }

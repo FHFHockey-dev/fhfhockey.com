@@ -1,4 +1,12 @@
 export const TEAM_DRIVER_MIN_LEAGUE_SAMPLE = 24;
+// TJ 2026-10-25: a team with at least 90% of its games before the cutoff is shown with an
+// "N of M games" label; below that it stays incomplete. Rates use only the covered games.
+export const TEAM_DRIVER_MIN_COVERAGE = 0.9;
+
+export interface TeamDriverCoverage {
+  coveredGames: number;
+  expectedGames: number;
+}
 
 export interface TeamFiveOnFiveSnapshot {
   team_abbreviation: string;
@@ -7,7 +15,12 @@ export interface TeamFiveOnFiveSnapshot {
   xgf: number | null;
   xga: number | null;
   gf: number | null;
+  coveredGames?: number;
+  expectedGames?: number;
 }
+
+const meetsCoverage = (coveredGames: number, expectedGames: number) =>
+  expectedGames > 0 && coveredGames / expectedGames >= TEAM_DRIVER_MIN_COVERAGE;
 
 export function aggregateTeamFiveOnFive(
   rows: TeamFiveOnFiveSnapshot[],
@@ -26,18 +39,23 @@ export function aggregateTeamFiveOnFive(
   }
   return [...teams.entries()].flatMap(([team_abbreviation, dates]) => {
     const expected = expectedDates.get(team_abbreviation)!;
-    const games = [...dates.values()];
-    if (dates.size !== expected.size || games.some(row =>
-      row.gp !== expected.get(row.date) ||
-      [row.xgf, row.xga, row.gf].some(value => value == null || !Number.isFinite(value) || value < 0)
-    )) return [];
+    // Rows whose games or metrics don't check out count as missing, never as zeros.
+    const games = [...dates.values()].filter(row =>
+      row.gp === expected.get(row.date) &&
+      [row.xgf, row.xga, row.gf].every(value => value != null && Number.isFinite(value) && value >= 0)
+    );
+    const expectedGames = [...expected.values()].reduce((sum, count) => sum + count, 0);
+    const coveredGames = games.reduce((sum, row) => sum + row.gp!, 0);
+    if (!meetsCoverage(coveredGames, expectedGames)) return [];
     return [{
       team_abbreviation,
       date: games.reduce((last, row) => row.date > last ? row.date : last, ""),
-      gp: games.reduce((sum, row) => sum + row.gp!, 0),
+      gp: coveredGames,
       xgf: games.reduce((sum, row) => sum + row.xgf!, 0),
       xga: games.reduce((sum, row) => sum + row.xga!, 0),
-      gf: games.reduce((sum, row) => sum + row.gf!, 0)
+      gf: games.reduce((sum, row) => sum + row.gf!, 0),
+      coveredGames,
+      expectedGames
     }];
   });
 }
@@ -47,6 +65,8 @@ export interface TeamSpecialTeamsSnapshot {
   date: string;
   power_play_pct: number | null;
   penalty_kill_pct: number | null;
+  coveredGames?: number;
+  expectedGames?: number;
 }
 
 export interface TeamSpecialTeamsGame {
@@ -59,8 +79,12 @@ export interface TeamSpecialTeamsGame {
   pp_goals_against: number | null;
 }
 
-// Percentages at this boundary are percentage points, never fractions.
-export function aggregateTeamSpecialTeams(rows: TeamSpecialTeamsGame[]): TeamSpecialTeamsSnapshot[] {
+// Percentages at this boundary are percentage points, never fractions. expectedGames maps each
+// team to its regular-season games before the cutoff; without it, the rows supplied are the expectation.
+export function aggregateTeamSpecialTeams(
+  rows: TeamSpecialTeamsGame[],
+  expectedGames?: Map<number, number>
+): TeamSpecialTeamsSnapshot[] {
   const teams = new Map<number, Map<number, TeamSpecialTeamsGame>>();
   for (const row of rows) {
     const games = teams.get(row.team_id) ?? new Map<number, TeamSpecialTeamsGame>();
@@ -69,21 +93,25 @@ export function aggregateTeamSpecialTeams(rows: TeamSpecialTeamsGame[]): TeamSpe
     games.set(row.game_id, row);
     teams.set(row.team_id, games);
   }
-  return [...teams.entries()].map(([team_id, games]) => {
-    const values = [...games.values()];
+  return [...teams.entries()].flatMap(([team_id, games]) => {
     // A major can yield several PP goals from one opportunity, so goals may exceed opportunities in a game.
-    const valid = values.every(row =>
+    // Rows with unusable counts are treated as missing games, never as zeros.
+    const values = [...games.values()].filter(row =>
       [row.pp_opportunities, row.power_play_goals_for, row.times_shorthanded, row.pp_goals_against]
         .every(value => value != null && Number.isInteger(value) && value >= 0)
     );
-    const ppOpp = values.reduce((sum, row) => sum + (row.pp_opportunities ?? 0), 0);
-    const pkOpp = values.reduce((sum, row) => sum + (row.times_shorthanded ?? 0), 0);
-    return {
+    const expected = expectedGames?.get(team_id) ?? games.size;
+    if (!meetsCoverage(values.length, expected)) return [];
+    const ppOpp = values.reduce((sum, row) => sum + row.pp_opportunities!, 0);
+    const pkOpp = values.reduce((sum, row) => sum + row.times_shorthanded!, 0);
+    return [{
       team_id,
       date: values.reduce((latest, row) => row.date > latest ? row.date : latest, ""),
-      power_play_pct: valid && ppOpp > 0 ? 100 * values.reduce((sum, row) => sum + row.power_play_goals_for!, 0) / ppOpp : null,
-      penalty_kill_pct: valid && pkOpp > 0 ? 100 * (1 - values.reduce((sum, row) => sum + row.pp_goals_against!, 0) / pkOpp) : null
-    };
+      power_play_pct: ppOpp > 0 ? 100 * values.reduce((sum, row) => sum + row.power_play_goals_for!, 0) / ppOpp : null,
+      penalty_kill_pct: pkOpp > 0 ? 100 * (1 - values.reduce((sum, row) => sum + row.pp_goals_against!, 0) / pkOpp) : null,
+      coveredGames: values.length,
+      expectedGames: expected
+    }];
   });
 }
 
@@ -116,6 +144,9 @@ export interface TeamPerformanceDriver {
 
 export interface TeamPerformanceDriverResult {
   drivers: TeamPerformanceDriver[];
+  // Present only when the selected team's rows cover fewer games than were played before the cutoff.
+  fiveOnFiveCoverage: TeamDriverCoverage | null;
+  specialTeamsCoverage: TeamDriverCoverage | null;
   fiveOnFiveDate: string;
   fiveOnFiveOldestDate: string;
   specialTeamsDate: string;
@@ -267,7 +298,14 @@ export const buildTeamPerformanceDrivers = ({
     explanation,
   });
 
+  const partialCoverage = (row: { coveredGames?: number; expectedGames?: number }) =>
+    row.coveredGames != null && row.expectedGames != null && row.coveredGames < row.expectedGames
+      ? { coveredGames: row.coveredGames, expectedGames: row.expectedGames }
+      : null;
+
   return {
+    fiveOnFiveCoverage: partialCoverage(teamFiveOnFive),
+    specialTeamsCoverage: partialCoverage(teamSpecialTeams),
     fiveOnFiveDate: teamFiveOnFive.date,
     fiveOnFiveOldestDate: Array.from(uniqueFiveOnFive.values()).reduce(
       (oldest, row) => (row.date < oldest ? row.date : oldest),

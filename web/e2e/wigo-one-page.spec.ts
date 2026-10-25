@@ -9,9 +9,9 @@ import { installWigoFixtures, WIGO_FIXTURE_PLAYER_ID, type FixtureLogEntry } fro
 const COVERAGE = Array.from({ length: 19 }, (_, index) => `C${String(index + 1).padStart(2, "0")}`);
 const PERIODS = ["STD", "LY", "CA", "3YA", "L5", "L10", "L20"];
 
-async function open(page: Page, { player = true, longName = false } = {}) {
+async function open(page: Page, { player = true, longName = false, teamGameGaps = 0 } = {}) {
   const log: FixtureLogEntry[] = [];
-  await installWigoFixtures(page, { longName, log: (entry) => log.push(entry) });
+  await installWigoFixtures(page, { longName, teamGameGaps, log: (entry) => log.push(entry) });
   await page.goto(player ? `/wigoCharts?playerId=${WIGO_FIXTURE_PLAYER_ID}` : "/wigoCharts");
   if (player) {
     await expect(page.locator('[data-coverage="C19"] meter')).toHaveCount(16, { timeout: 60_000 });
@@ -139,6 +139,20 @@ test("a long name and the no-player state stay on one 1280×800 screen", async (
   // Clear refocuses search; its transient status line floats over the page like the results list.
   await expect(page.locator('[data-coverage="C01"]').getByText("Loading...", { exact: true })).toHaveCount(0);
   result = await measure(page);
+  expect(result.document).toEqual([1280, 800]);
+  expect(result.outside).toEqual([]);
+  expect(result.overflowing).toEqual([]);
+});
+
+test("a team-driver card at 95% coverage shows its N-of-M label and still fits 1280×800", async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await open(page, { teamGameGaps: 4 });
+  const drivers = page.locator('[data-coverage="C08 C09 C10 C11"]');
+  await expect(drivers).toContainText("5v5: 78 of 82 games to");
+  await expect(drivers).toContainText("Special teams: 78 of 82 games to");
+  await expect(drivers).toContainText("Partial coverage: rates use covered games only.");
+  const result = await measure(page);
   expect(result.document).toEqual([1280, 800]);
   expect(result.outside).toEqual([]);
   expect(result.overflowing).toEqual([]);

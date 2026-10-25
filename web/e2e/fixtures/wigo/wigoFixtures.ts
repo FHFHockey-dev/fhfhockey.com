@@ -92,7 +92,14 @@ function value(table: string, column: string, type: string, row: Row): unknown {
   return Math.round(r * 3 * window);
 }
 
-function baseRows(table: string, filters: Filter[], people: Array<[number, string, string, string]>): Row[] {
+function baseRows(
+  table: string,
+  filters: Filter[],
+  people: Array<[number, string, string, string]>,
+  teamGameGaps = 0
+): Row[] {
+  // The fixture team (VAN) can be missing its first N team-game rows, to exercise partial coverage.
+  const missing = (teamId: number, day: number) => teamId === TEAM_ID && day < teamGameGaps;
   const names = Object.keys(schema[table] ?? {});
   const eq = Object.fromEntries(filters.filter((f) => f.op === "eq").map((f) => [f.column, f.value]));
   const entityColumn = ENTITY_COLUMNS.find((column) => column in eq && names.includes(column));
@@ -116,6 +123,7 @@ function baseRows(table: string, filters: Filter[], people: Array<[number, strin
   if (table === "nst_team_5v5") {
     for (const g of LEAGUE_GAMES)
       for (const [id, abbrev] of [g.home, g.away]) {
+        if (missing(id, g.d)) continue;
         const r = (k: string) => hash(`${k}${g.id}${id}`);
         push({ __entity: id, __team: id, team_abbreviation: abbrev, date: dateFor(g.d), gp: 1, xgf: Number((1.6 + r("xgf") * 1.6).toFixed(2)), xga: Number((1.6 + r("xga") * 1.6).toFixed(2)), gf: Math.floor(r("gf") * 4) });
       }
@@ -124,6 +132,7 @@ function baseRows(table: string, filters: Filter[], people: Array<[number, strin
   if (table === "wgo_team_stats") {
     for (const g of LEAGUE_GAMES)
       for (const [id] of [g.home, g.away]) {
+        if (missing(id, g.d)) continue;
         const r = (k: string) => hash(`${k}${g.id}${id}`);
         const opp = 1 + Math.floor(r("o") * 4);
         const sh = 1 + Math.floor(r("s") * 4);
@@ -220,7 +229,11 @@ const teamSchedule = () => ({
 
 export async function installWigoFixtures(
   page: Page,
-  { longName = false, log = () => {} }: { longName?: boolean; log?: (entry: FixtureLogEntry) => void } = {}
+  {
+    longName = false,
+    teamGameGaps = 0,
+    log = () => {}
+  }: { longName?: boolean; teamGameGaps?: number; log?: (entry: FixtureLogEntry) => void } = {}
 ) {
   const people: Array<[number, string, string, string]> = [
     longName ? [WIGO_FIXTURE_PLAYER_ID, "Jean-Christophe", "Beauvillier-Johnson", "D"] : [WIGO_FIXTURE_PLAYER_ID, "Alex", "Fictional", "C"],
@@ -244,7 +257,7 @@ export async function installWigoFixtures(
         return route.fulfill({ status: 200, headers: { "content-type": "application/json", "access-control-allow-origin": "*" }, body: JSON.stringify(body) });
       }
       const filters = parseFilters([...url.searchParams.entries()]);
-      let rows = applyFilters(target, baseRows(target, filters, people), filters);
+      let rows = applyFilters(target, baseRows(target, filters, people, teamGameGaps), filters);
       const order = url.searchParams.get("order");
       if (order) {
         const [column, direction] = order.split(",")[0].split(".");
