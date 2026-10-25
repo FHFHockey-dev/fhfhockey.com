@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import type Stripe from "stripe";
 vi.mock("lib/supabase/server", () => ({ default: {} }));
 import { IN_SEASON_SANDBOX_CATALOG as catalog } from "./billingConfig";
@@ -362,7 +363,7 @@ describe("bounded monthly execution", () => {
     expect(f.stripe.invoices.pay).not.toHaveBeenCalled();
   });
   it("keeps urgent cleanup reachable beyond one batch of failed stop jobs and an older retry backlog", async () => {
-    const sql = readFileSync("../supabase/migrations/20261021210000_in_season_sandbox_billing.sql", "utf8")
+    const sql = readFileSync(join(__dirname, "__fixtures__", "monthly-sandbox.sql"), "utf8")
       .split("create function public.list_in_season_sandbox_monthly_jobs")[1].split("end $$;")[0].replace(/\s+/g, " ");
     expect(sql).toContain("order by case when kind in ('stop','cutoff') then 0 else 1 end,lease_until asc nulls first,due_at,id limit p_limit");
     // Model this SQL selection/claim contract with advancing time; no SQL is applied.

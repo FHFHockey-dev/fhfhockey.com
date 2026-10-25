@@ -279,7 +279,7 @@ describe("local FORGE scope and transport", () => {
       else if (request.url?.startsWith("/rest/v1/forge_game_revisions?")) response.end(JSON.stringify(evidence.revisions));
       else { response.statusCode = 500; response.end("{}"); }
     });
-    await new Promise<void>(resolveListen => server.listen(0, resolveListen));
+    await new Promise<void>(resolveListen => server.listen(0, "127.0.0.1", resolveListen));
     try {
       const address = server.address(); if (!address || typeof address === "string") throw new Error("Expected local port");
       const fixture = executionFixture({ origin: `http://localhost:${address.port}` }), first = await failedCalendarParent(fixture);
@@ -1114,7 +1114,7 @@ describe("local FORGE scope and transport", () => {
       response.setHeader("content-type", "application/json"); response.setHeader("content-range", "0-0/1");
       response.end(JSON.stringify([{ id: "historical-only", game_id: 30, published_at: "2026-09-28T12:00:00Z" }]));
     });
-    await new Promise<void>(resolve => server.listen(0, resolve));
+    await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
     try {
       const address = server.address(); if (!address || typeof address === "string") throw new Error("Expected local port");
       for (const mutation of [false, true]) {
@@ -1382,7 +1382,7 @@ describe("local FORGE scope and transport", () => {
       ]));
       else { response.statusCode = 404; response.end("[]"); }
     });
-    await new Promise<void>((resolve) => server.listen(0, resolve));
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
     try {
       const address = server.address();
       if (!address || typeof address === "string") throw new Error("Expected local port");
@@ -1433,7 +1433,7 @@ describe("local FORGE scope and transport", () => {
       } else if (request.url?.startsWith("/rest/v1/forge_game_revisions?")) response.end(JSON.stringify([revision]));
       else { response.statusCode = 400; response.end("{}"); }
     });
-    await new Promise<void>(resolve => server.listen(0, resolve));
+    await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
     try {
       const address = server.address(); if (!address || typeof address === "string") throw new Error("Expected local port");
       owner = acquireForgeLocalOwnership({ origin: `http://localhost:${address.port}`, gameId: 2026020001,
@@ -1526,7 +1526,7 @@ describe("local FORGE scope and transport", () => {
         id: failure === "wrong_snapshot" ? "other-snapshot" : "snapshot-1", payload: captured, payload_hash: projectionInputHash(captured) }));
       else { response.statusCode = 400; response.end(JSON.stringify({ message: "post-publication verification failed" })); }
     });
-    await new Promise<void>(resolve => server.listen(0, resolve));
+    await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
     try {
       const address = server.address();
       if (!address || typeof address === "string") throw new Error("Expected local port");

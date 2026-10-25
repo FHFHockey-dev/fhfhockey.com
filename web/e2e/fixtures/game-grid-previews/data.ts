@@ -15,6 +15,10 @@ export const teams: Record<number, Team> = real32
   }));
 export const useTeamsMap = () => teams;
 export const useCurrentSeason = () => ({ seasonId: 20262027 });
+export function useCurrentSeasonQuery() {
+  const ready = useFixtureDelay("season");
+  return { data: ready ? { seasonId: 20262027 } : undefined, isPending: !ready, isError: false };
+}
 const summaries = Object.keys(teams).map((id) => ({ teamId: Number(id), gamesPlayed: 2, pointPct: .5 }));
 export const useTeamSummary = () => ({ teamSummaries: summaries, loading: false, error: null });
 export const useMatchupWeek = () => ({ weekNumber: 1 });
@@ -27,6 +31,21 @@ export function Link({ href, children, ...props }: React.AnchorHTMLAttributes<HT
 export function Image({ src, alt, width, height }: { src: string; alt: string; width?: number; height?: number }) {
   return createElement('img', { src, alt, width: width ?? 32, height: height ?? 32 });
 }
+const params = typeof location === 'undefined' ? new URLSearchParams() : new URLSearchParams(location.search);
+const readyReads = new Set<string>();
+const timeline: { name: string; at: number }[] = [];
+(window as any).__fixtureTimeline = timeline;
+function useFixtureDelay(key: string, enabled = true) {
+  const ms = Number(params.get(`${key}-delay`) ?? 0);
+  const [ready, setReady] = useState(() => !ms || readyReads.has(key));
+  useEffect(() => {
+    if (!enabled || ready) return;
+    timeline.push({ name: `${key}-start`, at: performance.now() });
+    const timer = setTimeout(() => { readyReads.add(key); setReady(true); timeline.push({ name: `${key}-ready`, at: performance.now() }); }, ms);
+    return () => clearTimeout(timer);
+  }, [enabled, key, ms, ready]);
+  return ready;
+}
 let state = 'ready';
 const listeners = new Set<() => void>();
 export function setFixtureState(next: string) { state = next; listeners.forEach((listener) => listener()); }
@@ -34,6 +53,9 @@ const subscribe = (listener: () => void) => { listeners.add(listener); return ()
 const snapshots = new Map();
 export function useSchedule(start: string, extended: boolean) {
   const status = useSyncExternalStore(subscribe, () => state);
+  const ready = useFixtureDelay("schedule");
+  const [failOnce] = useState(() => params.has('schedule-error-once') && !sessionStorage.getItem('fixture-schedule-retried'));
+  useEffect(() => { if (failOnce) sessionStorage.setItem('fixture-schedule-retried', '1'); }, [failOnce]);
   const key = `${start}/${extended}/${status}`;
   if (!snapshots.has(key)) {
     const dates = Array.from({ length: extended ? 10 : 7 }, (_, index) => format(addDays(parseISO(start), index), 'yyyy-MM-dd'));
@@ -51,6 +73,8 @@ export function useSchedule(start: string, extended: boolean) {
     const retrievedAt = status === 'stale' ? '2026-09-30T12:00:00Z' : '2026-10-07T15:59:00Z';
     snapshots.set(key, [rows, DAYS.map(() => 0), false, { coveredDates, coverage: { known: coveredDates.length, expected: dates.length }, error: null, retrievedAtByDate: Object.fromEntries(dates.map(date => [date, retrievedAt])) }]);
   }
+  if (!ready) return [[], [], true, { coveredDates: [], coverage: { known: 0, expected: extended ? 10 : 7 }, error: null }];
+  if ((params.has('schedule-error') || failOnce) && status !== 'recovered') return [[], [], false, { coveredDates: [], coverage: { known: 0, expected: extended ? 10 : 7 }, error: 'Fixture schedule error' }];
   return snapshots.get(key);
 }
 /** Real matchups on the fixture week; `postponed` marks S.J vs CAR (Thursday) PPD. */
@@ -74,13 +98,15 @@ function realWeekRows(dates: string[], status: string) {
 const completeCalendar = typeof location !== 'undefined' && new URLSearchParams(location.search).has('complete-schedule');
 const fourWeekSnapshots = new Map();
 export function useFourWeekSchedule(start: string) {
+  const delayedReady = useFixtureDelay("four-week");
   const [waiting, setWaiting] = useState(() => new URLSearchParams(location.search).has('slow-four-week'));
   useEffect(() => {
     if (!waiting) return;
     const timer = setTimeout(() => setWaiting(false), 4000);
     return () => clearTimeout(timer);
   }, [waiting]);
-  const window = useSchedule(start, false);
+  const selectedWindow = useSchedule(start, false);
+  const window = snapshots.get(`${start}/false/${state}`) ?? selectedWindow;
   const key = `${start}/${state}`;
   if (!fourWeekSnapshots.has(key)) {
     const opportunityFixture = new URLSearchParams(location.search).has('opportunity');
@@ -99,16 +125,19 @@ export function useFourWeekSchedule(start: string) {
     fourWeekSnapshots.set(key, [rows, [], false, { start, end: format(addDays(parseISO(start), 27), 'yyyy-MM-dd'), knownDays: covered ? 28 : 0, expectedDays: 28, error: null }]);
   }
   // Deliberately return fresh empty rows, exercising the clock's loading guard.
-  if (waiting) return [[], [], true, { start, end: format(addDays(parseISO(start), 27), 'yyyy-MM-dd'), knownDays: 0, expectedDays: 28, error: null }];
+  if (waiting || !delayedReady) return [[], [], true, { start, end: format(addDays(parseISO(start), 27), 'yyyy-MM-dd'), knownDays: 0, expectedDays: 28, error: null }];
+  if (params.has('four-week-error')) return [[], [], false, { start, end: format(addDays(parseISO(start), 27), 'yyyy-MM-dd'), knownDays: 0, expectedDays: 28, error: 'Fixture four-week error' }];
   return fourWeekSnapshots.get(key);
 }
 export function useOpponentMetricsData(teamData: any[]) {
+  const ready = useFixtureDelay("nst");
+  const error = params.has("nst-error");
   const statsByAbbreviation = Object.fromEntries(Object.values(teams).map((team) => [team.abbreviation, { gp: 4, xgf: team.id, xga: 33 - team.id }]));
   const keys = ['avgXgf', 'avgXga', 'avgGoalFor', 'avgGoalAgainst', 'avgSf', 'avgSa', 'avgWinPct'];
   const labels = ['xGF', 'xGA', 'GF', 'GA', 'SF', 'SA', 'PTS%'];
   const entries = teamData.map((team) => ({ team,
     averages: Object.fromEntries(keys.map((key, index) => [key, team.totals.gamesPlayed ? index === 6 ? .5 : index === 0 ? team.teamId / 4 : (33 - team.teamId) / 4 : null])),
     coverage: Object.fromEntries(keys.map((key) => [key, { known: team.totals.gamesPlayed, expected: team.totals.gamesPlayed }])) }));
-  return { entries, statsByAbbreviation, metricsByTeamId: Object.fromEntries(entries.map((e) => [e.team.teamId, e.averages])), coverageByTeamId: Object.fromEntries(entries.map((e) => [e.team.teamId, e.coverage])),
-    leagueAverages: {}, leagueCoverage: {}, metricColumns: keys.map((key, index) => ({ key, label: labels[index] })), statsLoading: false, statsError: null, sourceLabel: 'Fixture: provisional observations; freshness unknown.' };
+  return { entries: ready && !error ? entries : [], statsByAbbreviation: ready && !error ? statsByAbbreviation : {}, metricsByTeamId: Object.fromEntries(entries.map((e) => [e.team.teamId, e.averages])), coverageByTeamId: Object.fromEntries(entries.map((e) => [e.team.teamId, e.coverage])),
+    leagueAverages: {}, leagueCoverage: {}, metricColumns: keys.map((key, index) => ({ key, label: labels[index] })), statsLoading: !ready, statsError: ready && error ? "Fixture opponent error" : null, sourceLabel: 'Fixture: provisional observations; freshness unknown.' };
 }

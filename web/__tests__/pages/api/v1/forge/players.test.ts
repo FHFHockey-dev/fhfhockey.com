@@ -125,7 +125,7 @@ function createMockRes() {
 let projectionSelectQueries: string[] = [];
 
 describe("/api/v1/forge/players", () => {
-  it.each([undefined, "external_inputs_allowed"])("rejects fallback candidates with exclusion contract %s before reading their rows", async contract => {
+  it.each([undefined, "external_inputs_allowed"])("preserves released legacy fallback rows without native-only contract %s", async contract => {
     requireLatestSucceededRunIdMock.mockRejectedValueOnce(Object.assign(new Error("missing"), { statusCode: 404 }));
     const prior = fromMock.getMockImplementation()!;
     fromMock.mockImplementation((table: string) => table === "forge_runs" ? createQueryBuilder(() => ({
@@ -134,9 +134,10 @@ describe("/api/v1/forge/players", () => {
     })) : prior(table));
     const res = createMockRes();
     await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
-    expect(res.statusCode).toBe(404);
-    expect(res.body.data).toBeUndefined();
-    expect(fromMock.mock.calls.some(([table]) => table === "forge_player_projections")).toBe(false);
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({ runId: "fallback-external", asOfDate: "2026-02-06", fallbackApplied: true });
+    expect(res.body.data.length).toBeGreaterThan(0);
+    expect(fromMock.mock.calls.some(([table]) => table === "forge_player_projections")).toBe(true);
   });
   beforeEach(() => {
     vi.clearAllMocks();

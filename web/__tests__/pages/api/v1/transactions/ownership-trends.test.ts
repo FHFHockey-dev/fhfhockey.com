@@ -9,6 +9,8 @@ vi.mock("@supabase/supabase-js", () => ({
 }));
 
 import ownershipSnapshotsHandler from "../../../../../pages/api/v1/transactions/ownership-snapshots";
+import { fetchOwnershipContextMap } from "lib/dashboard/playerOwnership";
+import { clearClientFetchCache } from "lib/dashboard/clientFetchCache";
 import ownershipTrendsHandler, {
   buildAdpTimelines,
   calculateTrendMovement,
@@ -287,7 +289,7 @@ describe("ownership snapshot provenance", () => {
       ] });
     const response = createMockRes();
     await ownershipSnapshotsHandler(request("12"), response);
-    expect(response.body.players).toEqual([{ playerId: 12, ownership: null, observedOn: null }]);
+    expect(response.body.players).toEqual([{ playerId: 12, ownership: null, observedOn: null, unavailableReason: "ambiguous_identity" }]);
   });
 
   it("fails closed on a truncated ownership response", async () => {
@@ -332,5 +334,37 @@ describe("ownership snapshot provenance", () => {
     expect(response.body.players).toHaveLength(500);
     expect(reads).toHaveLength(2);
     expect(response.body.players.every((row: any) => row.ownership === 0 && row.observedOn === "2026-10-21")).toBe(true);
+  });
+
+  it.each([true, false])("keeps identity authority through both real handlers and the client (ambiguous=%s)", async ambiguous => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-22T12:00:00Z"));
+    clearClientFetchCache();
+    database({ yahoo_nhl_player_map_read: [{ nhl_player_id: 12, yahoo_player_id: 112 },
+      ...(ambiguous ? [{ nhl_player_id: 12, yahoo_player_id: 113 }] : [])],
+      yahoo_players_with_normalized_history: [
+        { player_key: "477.p.112", player_id: "112", season: 2026, ownership_timeline: [{ date: "2026-10-17", value: 50 }, { date: "2026-10-22", value: 60 }] },
+        { player_key: "477.p.113", player_id: "113", season: 2026, ownership_timeline: [{ date: "2026-10-22", value: 20 }] }
+      ] });
+    const responses: Record<string, any> = {};
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = new URL(String(input), "https://fixture.invalid");
+      const response = createMockRes();
+      const handler = url.pathname.endsWith("ownership-snapshots") ? ownershipSnapshotsHandler : ownershipTrendsHandler;
+      await handler({ method: "GET", query: Object.fromEntries(url.searchParams) } as any, response);
+      responses[url.pathname] = response.body;
+      return { ok: response.statusCode === 200, status: response.statusCode, json: async () => response.body } as Response;
+    }));
+    try {
+      const context = await fetchOwnershipContextMap([12], "2026-10-22");
+      expect(responses["/api/v1/transactions/ownership-trends"].selectedPlayers).toHaveLength(1);
+      expect(responses["/api/v1/transactions/ownership-trends"].selectedPlayers[0]).toMatchObject({ playerId: 12, latest: 60, delta: 10 });
+      expect(responses["/api/v1/transactions/ownership-snapshots"].players[0].ownership).toBe(ambiguous ? null : 60);
+      expect(context[12].ownership).toBe(ambiguous ? null : 60);
+      expect(context[12].delta).toBe(ambiguous ? null : 10);
+      if (ambiguous) expect(context[12]).toMatchObject({ ownershipEvidence: null, unavailableReason: "ambiguous_identity", sparkline: [] });
+    } finally {
+      vi.useRealTimers(); vi.unstubAllGlobals(); clearClientFetchCache();
+    }
   });
 });

@@ -1,0 +1,274 @@
+-- LOCAL DRAFT ONLY: do not apply to production. Billing code requires isolated
+-- loopback storage and the approved Stripe sandbox. No existing grant is changed.
+begin;
+
+create table public.in_season_sandbox_checkouts (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  status text not null default 'pending' check (status in ('pending','paid','expired')),
+  checkout_session_id text unique,
+  payment_intent_id text unique,
+  paid_at timestamptz,
+  reconciliation_token uuid,
+  reconciliation_event_id text,
+  reconciliation_expires_at timestamptz
+);
+create unique index in_season_sandbox_open_checkout on public.in_season_sandbox_checkouts(user_id) where status='pending';
+create table public.in_season_sandbox_events (
+  event_id text primary key,
+  checkout_id uuid not null references public.in_season_sandbox_checkouts(id),
+  received_at timestamptz not null default now(),
+  accounting_snapshot jsonb
+);
+alter table public.in_season_sandbox_checkouts enable row level security;
+alter table public.in_season_sandbox_events enable row level security;
+revoke all on public.in_season_sandbox_checkouts, public.in_season_sandbox_events from public, anon, authenticated, service_role;
+
+create function public.begin_in_season_sandbox_checkout(p_user_id uuid)
+returns setof public.in_season_sandbox_checkouts language plpgsql security definer set search_path = pg_catalog, public as $$
+declare purchase public.in_season_sandbox_checkouts;
+begin
+  if auth.role() is distinct from 'service_role' then raise exception 'Service role required'; end if;
+  if now() >= timestamptz '2027-07-01 04:00:00+00' then raise exception 'Season ended'; end if;
+  perform pg_advisory_xact_lock(hashtextextended(p_user_id::text, 84279));
+  select c.* into purchase from public.in_season_sandbox_checkouts c where c.user_id=p_user_id and
+    (c.status='pending' or (c.status='paid' and exists(select 1 from public.in_season_grants g where g.user_id=p_user_id and g.source='purchase'
+      and g.source_reference='stripe:sandbox:'||c.payment_intent_id and g.status='active' and g.effective_from<=now() and g.effective_to>now()))) order by c.created_at desc limit 1;
+  if not found then insert into public.in_season_sandbox_checkouts(user_id) values(p_user_id) returning * into purchase; end if;
+  return next purchase;
+end $$;
+
+create function public.get_in_season_sandbox_checkout(p_id uuid)
+returns setof public.in_season_sandbox_checkouts language plpgsql security definer set search_path = pg_catalog, public as $$
+begin
+  if auth.role() is distinct from 'service_role' then raise exception 'Service role required'; end if;
+  return query select * from public.in_season_sandbox_checkouts where id=p_id;
+end $$;
+
+create function public.attach_in_season_sandbox_checkout(p_id uuid, p_session_id text)
+returns void language plpgsql security definer set search_path = pg_catalog, public as $$
+begin
+  if auth.role() is distinct from 'service_role' then raise exception 'Service role required'; end if;
+  if p_session_id is null or p_session_id not like 'cs_test_%' then raise exception 'Test checkout required'; end if;
+  update public.in_season_sandbox_checkouts set checkout_session_id=p_session_id
+    where id=p_id and status in ('pending','paid') and (checkout_session_id is null or checkout_session_id=p_session_id);
+  if not found then raise exception 'Checkout binding mismatch'; end if;
+end $$;
+
+create function public.expire_in_season_sandbox_checkout(p_id uuid, p_session_id text)
+returns void language plpgsql security definer set search_path = pg_catalog, public as $$
+begin
+  if auth.role() is distinct from 'service_role' then raise exception 'Service role required'; end if;
+  update public.in_season_sandbox_checkouts set status='expired' where id=p_id and checkout_session_id=p_session_id and status='pending';
+  if not found then raise exception 'Checkout state mismatch'; end if;
+end $$;
+
+create function public.claim_in_season_sandbox_reconciliation(p_id uuid, p_event_id text)
+returns jsonb language plpgsql security definer set search_path = pg_catalog, public as $$
+declare purchase public.in_season_sandbox_checkouts; event_owner uuid; token uuid;
+begin
+  if auth.role() is distinct from 'service_role' then raise exception 'Service role required'; end if;
+  if p_event_id is null or p_event_id not like 'evt_%' then raise exception 'Invalid event'; end if;
+  select * into purchase from public.in_season_sandbox_checkouts where id=p_id for update;
+  if not found then raise exception 'Unknown purchase'; end if;
+  select checkout_id into event_owner from public.in_season_sandbox_events where event_id=p_event_id;
+  if found then
+    if event_owner<>p_id then raise exception 'Event ownership mismatch'; end if;
+    return jsonb_build_object('duplicate',true);
+  end if;
+  if purchase.reconciliation_expires_at>clock_timestamp() then raise exception 'Reconciliation busy'; end if;
+  token:=gen_random_uuid();
+  update public.in_season_sandbox_checkouts set reconciliation_token=token,reconciliation_event_id=p_event_id,reconciliation_expires_at=clock_timestamp()+interval '60 seconds' where id=p_id;
+  return jsonb_build_object('token',token);
+end $$;
+
+create function public.reconcile_in_season_sandbox_payment(p_id uuid, p_user_id uuid, p_event_id text, p_token uuid, p_session_id text, p_payment_intent_id text, p_paid_at timestamptz, p_active boolean, p_snapshot jsonb)
+returns void language plpgsql security definer set search_path = pg_catalog, public as $$
+declare purchase public.in_season_sandbox_checkouts; original_paid_at timestamptz;
+begin
+  if auth.role() is distinct from 'service_role' then raise exception 'Service role required'; end if;
+  if p_event_id is null or p_event_id not like 'evt_%' or p_session_id is null or p_session_id not like 'cs_test_%'
+    or p_payment_intent_id is null or p_payment_intent_id not like 'pi_%' or length(p_payment_intent_id)>160
+    or p_active is null or p_snapshot is null or jsonb_typeof(p_snapshot)<>'object' then raise exception 'Invalid payment facts'; end if;
+  select * into purchase from public.in_season_sandbox_checkouts where id=p_id for update;
+  if not found or purchase.user_id is distinct from p_user_id or purchase.status not in ('pending','paid')
+    or p_token is null or purchase.reconciliation_token is distinct from p_token or purchase.reconciliation_event_id is distinct from p_event_id
+    or purchase.reconciliation_expires_at is null or purchase.reconciliation_expires_at<=clock_timestamp()
+    or (purchase.checkout_session_id is not null and purchase.checkout_session_id<>p_session_id)
+    or (purchase.payment_intent_id is not null and purchase.payment_intent_id<>p_payment_intent_id) then raise exception 'Purchase binding or reconciliation lease mismatch'; end if;
+  if p_paid_at is null or p_paid_at<date_trunc('second',purchase.created_at) or p_paid_at>clock_timestamp() then raise exception 'Invalid payment time'; end if;
+  original_paid_at:=coalesce(purchase.paid_at,p_paid_at);
+  -- A later event or duplicate completion can never extend original coverage.
+  if purchase.paid_at is not null and p_paid_at<>purchase.paid_at then raise exception 'Original payment time changed'; end if;
+  insert into public.in_season_sandbox_events(event_id,checkout_id,accounting_snapshot) values(p_event_id,p_id,p_snapshot);
+  if original_paid_at<timestamptz '2027-07-01 04:00:00+00' then
+    insert into public.in_season_grants(user_id,source,source_reference,status,effective_from,effective_to)
+      values(p_user_id,'purchase','stripe:sandbox:'||p_payment_intent_id,case when p_active then 'active' else 'revoked' end,original_paid_at,timestamptz '2027-07-01 04:00:00+00')
+      on conflict(source,source_reference) do update set status=excluded.status
+      where in_season_grants.user_id=excluded.user_id and in_season_grants.effective_from=excluded.effective_from and in_season_grants.effective_to=excluded.effective_to;
+    if not found then raise exception 'Existing grant ownership or coverage mismatch'; end if;
+  end if;
+  update public.in_season_sandbox_checkouts set status='paid',checkout_session_id=p_session_id,payment_intent_id=p_payment_intent_id,paid_at=original_paid_at,reconciliation_token=null,reconciliation_event_id=null,reconciliation_expires_at=null where id=p_id;
+end $$;
+
+revoke all on function public.begin_in_season_sandbox_checkout(uuid), public.get_in_season_sandbox_checkout(uuid), public.attach_in_season_sandbox_checkout(uuid,text), public.expire_in_season_sandbox_checkout(uuid,text), public.claim_in_season_sandbox_reconciliation(uuid,text), public.reconcile_in_season_sandbox_payment(uuid,uuid,text,uuid,text,text,timestamptz,boolean,jsonb) from public, anon, authenticated;
+grant execute on function public.begin_in_season_sandbox_checkout(uuid), public.get_in_season_sandbox_checkout(uuid), public.attach_in_season_sandbox_checkout(uuid,text), public.expire_in_season_sandbox_checkout(uuid,text), public.claim_in_season_sandbox_reconciliation(uuid,text), public.reconcile_in_season_sandbox_payment(uuid,uuid,text,uuid,text,text,timestamptz,boolean,jsonb) to service_role;
+-- Monthly ledger and bounded outbox: service-only, no browser writes.
+create table public.in_season_sandbox_monthly (
+  id uuid primary key default gen_random_uuid(), user_id uuid not null references auth.users(id),
+  created_at timestamptz not null default now(), minimum jsonb not null,
+  customer_id text unique, subscription_id text unique, schedule_id text unique,
+  state jsonb, closed boolean not null default false,
+  lease_token uuid, lease_event text, lease_until timestamptz
+);
+create unique index in_season_sandbox_monthly_open on public.in_season_sandbox_monthly(user_id) where not closed;
+create table public.in_season_sandbox_monthly_events (
+  event_id text primary key, monthly_id uuid not null references public.in_season_sandbox_monthly(id),
+  received_at timestamptz not null default now(), state_version integer not null
+);
+create table public.in_season_sandbox_monthly_payments (
+  invoice_id text primary key, monthly_id uuid not null references public.in_season_sandbox_monthly(id), payment_intent_id text unique
+);
+create table public.in_season_sandbox_monthly_jobs (
+  id text primary key, subscription_id text not null references public.in_season_sandbox_monthly(subscription_id), user_id uuid not null references auth.users(id),
+  kind text not null check(kind in ('retry','stop','cutoff')), due_at timestamptz not null,
+  invoice_id text, attempt integer check(attempt in (2,3)), created_at timestamptz not null default now(),
+  status text not null default 'pending' check(status in ('pending','running','done','cancelled')),
+  token uuid, lease_until timestamptz, accounting_snapshots jsonb not null default '[]'
+);
+alter table public.in_season_sandbox_monthly enable row level security;
+alter table public.in_season_sandbox_monthly_events enable row level security;
+alter table public.in_season_sandbox_monthly_payments enable row level security;
+alter table public.in_season_sandbox_monthly_jobs enable row level security;
+revoke all on public.in_season_sandbox_monthly,public.in_season_sandbox_monthly_events,public.in_season_sandbox_monthly_payments,public.in_season_sandbox_monthly_jobs from public,anon,authenticated,service_role;
+
+create function public.begin_in_season_sandbox_monthly(p_user_id uuid,p_minimum jsonb) returns jsonb language plpgsql security definer set search_path=pg_catalog,public as $$
+declare result public.in_season_sandbox_monthly;
+begin
+  if auth.role() is distinct from 'service_role' then raise exception 'Service role required'; end if;
+  if now()>=timestamptz '2027-07-01 04:00:00+00' or jsonb_typeof(p_minimum) is distinct from 'object' then raise exception 'Monthly signup unavailable'; end if;
+  perform pg_advisory_xact_lock(hashtextextended(p_user_id::text,84280));
+  select * into result from public.in_season_sandbox_monthly where user_id=p_user_id and not closed;
+  if not found then insert into public.in_season_sandbox_monthly(user_id,minimum) values(p_user_id,p_minimum) returning * into result; end if;
+  return to_jsonb(result);
+end $$;
+create function public.bind_in_season_sandbox_monthly_customer(p_id uuid,p_customer_id text) returns void language plpgsql security definer set search_path=pg_catalog,public as $$
+begin
+  if auth.role() is distinct from 'service_role' then raise exception 'Service role required'; end if;
+  if p_customer_id is null or p_customer_id not like 'cus_%' then raise exception 'Invalid customer'; end if;
+  update public.in_season_sandbox_monthly set customer_id=p_customer_id where id=p_id and not closed and (customer_id is null or customer_id=p_customer_id);
+  if not found then raise exception 'Customer binding mismatch'; end if;
+end $$;
+create function public.attach_in_season_sandbox_monthly(p_id uuid,p_state jsonb) returns void language plpgsql security definer set search_path=pg_catalog,public as $$
+declare row public.in_season_sandbox_monthly; binding jsonb;
+begin
+  if auth.role() is distinct from 'service_role' then raise exception 'Service role required'; end if;
+  select * into row from public.in_season_sandbox_monthly where id=p_id for update; binding:=p_state->'binding';
+  if not found or row.closed or binding->>'userId' is distinct from row.user_id::text or binding->>'attemptId' is distinct from p_id::text
+    or binding->>'customerId' is distinct from row.customer_id or binding->'verifiedMinimum' is distinct from row.minimum
+    or binding->>'subscriptionId' not like 'sub_%' or binding->>'scheduleId' not like 'sub_sched_%'
+    or (p_state->>'version')::integer<>0 or p_state->'invoices'<>'{}'::jsonb or p_state->'events'<>'{}'::jsonb then raise exception 'Monthly binding mismatch'; end if;
+  if row.state is not null then
+    if row.state->'binding'<>binding then raise exception 'Existing binding changed'; end if; return;
+  end if;
+  update public.in_season_sandbox_monthly set subscription_id=binding->>'subscriptionId',schedule_id=binding->>'scheduleId',state=p_state where id=p_id;
+  insert into public.in_season_sandbox_monthly_jobs(id,subscription_id,user_id,kind,due_at)
+    values('monthly-cutoff:'||(binding->>'subscriptionId'),binding->>'subscriptionId',row.user_id,'cutoff',timestamptz '2027-07-01 04:00:00+00');
+end $$;
+create function public.get_in_season_sandbox_monthly(p_subscription_id text) returns jsonb language plpgsql security definer set search_path=pg_catalog,public as $$
+begin
+  if auth.role() is distinct from 'service_role' then raise exception 'Service role required'; end if;
+  return (select state from public.in_season_sandbox_monthly where subscription_id=p_subscription_id);
+end $$;
+create function public.claim_in_season_sandbox_monthly(p_subscription_id text,p_event_id text) returns jsonb language plpgsql security definer set search_path=pg_catalog,public as $$
+declare row public.in_season_sandbox_monthly; owner_id uuid; token uuid;
+begin
+  if auth.role() is distinct from 'service_role' then raise exception 'Service role required'; end if;
+  if p_event_id is null or length(p_event_id)=0 then raise exception 'Missing event'; end if;
+  select * into row from public.in_season_sandbox_monthly where subscription_id=p_subscription_id for update;
+  if not found or row.state is null then raise exception 'Monthly binding unavailable'; end if;
+  select monthly_id into owner_id from public.in_season_sandbox_monthly_events where event_id=p_event_id;
+  if found then if owner_id<>row.id then raise exception 'Event ownership mismatch'; end if; return jsonb_build_object('duplicate',true); end if;
+  if row.lease_until>clock_timestamp() then raise exception 'Monthly reconciliation busy'; end if;
+  token:=gen_random_uuid(); update public.in_season_sandbox_monthly set lease_token=token,lease_event=p_event_id,lease_until=clock_timestamp()+interval '60 seconds' where id=row.id;
+  return jsonb_build_object('token',token,'state',row.state);
+end $$;
+create function public.commit_in_season_sandbox_monthly(p_subscription_id text,p_event_id text,p_token uuid,p_state jsonb,p_grants jsonb,p_retries jsonb,p_stop boolean) returns void language plpgsql security definer set search_path=pg_catalog,public as $$
+declare row public.in_season_sandbox_monthly; invoice record; grant_row jsonb; retry jsonb; reference text; payment_id text;
+begin
+  if auth.role() is distinct from 'service_role' then raise exception 'Service role required'; end if;
+  select * into row from public.in_season_sandbox_monthly where subscription_id=p_subscription_id for update;
+  if not found or p_token is null or row.lease_token is distinct from p_token or row.lease_event is distinct from p_event_id or row.lease_until is null or row.lease_until<=clock_timestamp()
+    or p_state->'binding' is distinct from row.state->'binding' or (p_state->>'version')::integer<=(row.state->>'version')::integer
+    or p_stop is null or jsonb_typeof(p_grants) is distinct from 'array' or jsonb_typeof(p_retries) is distinct from 'array' then raise exception 'Monthly commit binding or lease mismatch'; end if;
+  if exists(select 1 from jsonb_object_keys(row.state->'invoices') as existing(key) where not (p_state->'invoices' ? key)) then raise exception 'Invoice history removed'; end if;
+  if exists(select 1 from jsonb_each(row.state->'events') old where p_state->'events'->old.key is distinct from old.value) then raise exception 'Event history changed'; end if;
+  for invoice in select * from jsonb_each(p_state->'invoices') loop
+    payment_id:=invoice.value->>'paymentIntentId';
+    insert into public.in_season_sandbox_monthly_payments(invoice_id,monthly_id,payment_intent_id) values(invoice.key,row.id,payment_id)
+      on conflict(invoice_id) do update set payment_intent_id=coalesce(in_season_sandbox_monthly_payments.payment_intent_id,excluded.payment_intent_id)
+      where in_season_sandbox_monthly_payments.monthly_id=excluded.monthly_id and (in_season_sandbox_monthly_payments.payment_intent_id is null or excluded.payment_intent_id is null or in_season_sandbox_monthly_payments.payment_intent_id=excluded.payment_intent_id);
+    if not found then raise exception 'Invoice/payment ownership mismatch'; end if;
+    reference:='stripe:sandbox:monthly:'||invoice.key;
+    select value into grant_row from jsonb_array_elements(p_grants) where value->>'reference'=reference;
+    if found then
+      if grant_row->>'source'<>'purchase' or grant_row->>'status'<>'active' or (grant_row->>'effectiveFrom')::timestamptz>=(grant_row->>'effectiveTo')::timestamptz
+        or (grant_row->>'effectiveTo')::timestamptz>timestamptz '2027-07-01 04:00:00+00' then raise exception 'Invalid monthly grant'; end if;
+      insert into public.in_season_grants(user_id,source,source_reference,status,effective_from,effective_to)
+        values(row.user_id,'purchase',reference,'active',(grant_row->>'effectiveFrom')::timestamptz,(grant_row->>'effectiveTo')::timestamptz)
+        on conflict(source,source_reference) do update set status=excluded.status,effective_from=excluded.effective_from,effective_to=excluded.effective_to where in_season_grants.user_id=excluded.user_id;
+      if not found then raise exception 'Grant ownership mismatch'; end if;
+    else
+      update public.in_season_grants set status='revoked' where user_id=row.user_id and source='purchase' and source_reference=reference;
+    end if;
+  end loop;
+  insert into public.in_season_sandbox_monthly_events(event_id,monthly_id,state_version) values(p_event_id,row.id,(p_state->>'version')::integer);
+  update public.in_season_sandbox_monthly set state=p_state,closed=closed or p_state->>'cancelledAt' is not null or p_state->>'billingStoppedAt' is not null,lease_token=null,lease_event=null,lease_until=null where id=row.id;
+  update public.in_season_sandbox_monthly_jobs set status='cancelled' where subscription_id=p_subscription_id and kind='retry' and status='pending'
+    and (p_stop or p_state->'invoices'->invoice_id->>'paidAt' is not null);
+  for retry in select * from jsonb_array_elements(p_retries) loop
+    if retry->>'userId' is distinct from row.user_id::text or retry->>'subscriptionId' is distinct from p_subscription_id
+      or (retry->>'at')::timestamptz>=timestamptz '2027-07-01 04:00:00+00' or not (p_state->'invoices' ? (retry->>'invoiceId')) then raise exception 'Retry binding mismatch'; end if;
+    insert into public.in_season_sandbox_monthly_jobs(id,subscription_id,user_id,kind,due_at,invoice_id,attempt)
+      values(retry->>'idempotencyKey',p_subscription_id,row.user_id,'retry',(retry->>'at')::timestamptz,retry->>'invoiceId',(retry->>'attempt')::integer) on conflict(id) do nothing;
+  end loop;
+  if p_stop then insert into public.in_season_sandbox_monthly_jobs(id,subscription_id,user_id,kind,due_at)
+    values('monthly-stop:'||p_subscription_id,p_subscription_id,row.user_id,'stop',clock_timestamp()) on conflict(id) do nothing; end if;
+end $$;
+create function public.list_in_season_sandbox_monthly_jobs(p_limit integer) returns jsonb language plpgsql security definer set search_path=pg_catalog,public as $$
+begin
+  if auth.role() is distinct from 'service_role' then raise exception 'Service role required'; end if;
+  if p_limit<1 or p_limit>20 then raise exception 'Job limit invalid'; end if;
+  -- Urgent work precedes retries; never-attempted then least-recently leased
+  -- jobs rotate failures through the bounded batch without changing due_at.
+  return coalesce((select jsonb_agg(to_jsonb(j)) from (select * from public.in_season_sandbox_monthly_jobs where due_at<=clock_timestamp() and (status='pending' or (status='running' and lease_until<=clock_timestamp()))
+    order by case when kind in ('stop','cutoff') then 0 else 1 end,lease_until asc nulls first,due_at,id limit p_limit) j),'[]'::jsonb);
+end $$;
+create function public.claim_in_season_sandbox_monthly_job(p_id text) returns jsonb language plpgsql security definer set search_path=pg_catalog,public as $$
+declare job public.in_season_sandbox_monthly_jobs; claim_token uuid;
+begin
+  if auth.role() is distinct from 'service_role' then raise exception 'Service role required'; end if;
+  select * into job from public.in_season_sandbox_monthly_jobs where id=p_id for update;
+  if not found or job.status in ('done','cancelled') or job.due_at>clock_timestamp() or job.lease_until>clock_timestamp() then return null; end if;
+  claim_token:=gen_random_uuid(); update public.in_season_sandbox_monthly_jobs set status='running',token=claim_token,lease_until=clock_timestamp()+interval '60 seconds' where id=p_id;
+  return jsonb_build_object('token',claim_token,'job',to_jsonb(job));
+end $$;
+create function public.snapshot_in_season_sandbox_monthly_job(p_id text,p_token uuid,p_snapshot jsonb) returns void language plpgsql security definer set search_path=pg_catalog,public as $$
+begin
+  if auth.role() is distinct from 'service_role' then raise exception 'Service role required'; end if;
+  update public.in_season_sandbox_monthly_jobs set accounting_snapshots=accounting_snapshots||jsonb_build_array(p_snapshot)
+    where id=p_id and p_token is not null and token=p_token and status='running' and lease_until>clock_timestamp();
+  if not found then raise exception 'Job lease unavailable'; end if;
+end $$;
+create function public.finish_in_season_sandbox_monthly_job(p_id text,p_token uuid) returns void language plpgsql security definer set search_path=pg_catalog,public as $$
+begin
+  if auth.role() is distinct from 'service_role' then raise exception 'Service role required'; end if;
+  update public.in_season_sandbox_monthly_jobs set status='done',token=null,lease_until=null where id=p_id and p_token is not null and token=p_token and status='running' and lease_until>clock_timestamp();
+  if not found then raise exception 'Job lease unavailable'; end if;
+end $$;
+
+revoke all on function public.begin_in_season_sandbox_monthly(uuid,jsonb),public.bind_in_season_sandbox_monthly_customer(uuid,text),public.attach_in_season_sandbox_monthly(uuid,jsonb),public.get_in_season_sandbox_monthly(text),public.claim_in_season_sandbox_monthly(text,text),public.commit_in_season_sandbox_monthly(text,text,uuid,jsonb,jsonb,jsonb,boolean),public.list_in_season_sandbox_monthly_jobs(integer),public.claim_in_season_sandbox_monthly_job(text),public.snapshot_in_season_sandbox_monthly_job(text,uuid,jsonb),public.finish_in_season_sandbox_monthly_job(text,uuid) from public,anon,authenticated;
+grant execute on function public.begin_in_season_sandbox_monthly(uuid,jsonb),public.bind_in_season_sandbox_monthly_customer(uuid,text),public.attach_in_season_sandbox_monthly(uuid,jsonb),public.get_in_season_sandbox_monthly(text),public.claim_in_season_sandbox_monthly(text,text),public.commit_in_season_sandbox_monthly(text,text,uuid,jsonb,jsonb,jsonb,boolean),public.list_in_season_sandbox_monthly_jobs(integer),public.claim_in_season_sandbox_monthly_job(text),public.snapshot_in_season_sandbox_monthly_job(text,uuid,jsonb),public.finish_in_season_sandbox_monthly_job(text,uuid) to service_role;
+
+commit;

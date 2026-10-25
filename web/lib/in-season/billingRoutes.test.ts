@@ -48,7 +48,7 @@ describe("checkout route", () => {
   it.each([{ plan: "season_pass", userId: "victim" }, { plan: "annual" }, { plan: "season_pass", priceId: "price_599" }, null])("rejects forged or invalid body %j", async (body) => { const res = response(); await checkout(request(body), res); expect(res.status).toHaveBeenCalledWith(400); expect(mocks.create).not.toHaveBeenCalled(); });
   it("blocks monthly without creating an uncapped subscription", async () => { const res = response(); await checkout(request({ plan: "monthly" }), res); expect(res.status).toHaveBeenCalledWith(409); expect(mocks.stripe).not.toHaveBeenCalled(); });
   it.each(["paid monthly", "season pass", "supporter", "retained Draft Pro", "applicable grace"])("does not sell a duplicate to an eligible %s account", async () => { const res = response(); mocks.access.mockResolvedValue({ eligible: true, reason: "eligible" }); await checkout(request(), res); expect(res.status).toHaveBeenCalledWith(409); expect(mocks.create).not.toHaveBeenCalled(); });
-  it.each(["no_active_grant", "expired"])("uses the authenticated principal for %s accounts", async (reason) => { const res = response(); mocks.access.mockResolvedValue({ eligible: false, reason }); await checkout(request(), res); expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({ userId: "verified-user", plan: "season_pass" })); expect(res.status).toHaveBeenCalledWith(200); });
+  it.each(["no_active_grant", "expired"])("uses the authenticated principal for %s accounts", async (reason) => { const res = response(); mocks.access.mockResolvedValue({ eligible: false, reason }); await checkout(request(), res); expect(mocks.access).toHaveBeenCalledWith("verified-user", { entitlementOnly: true }); expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({ userId: "verified-user", plan: "season_pass" })); expect(res.status).toHaveBeenCalledWith(200); });
   it("treats unknown entitlement state as a transient failure", async () => { const res = response(); mocks.access.mockResolvedValue({ eligible: false, reason: "verification_unavailable" }); await checkout(request(), res); expect(res.status).toHaveBeenCalledWith(503); expect(mocks.create).not.toHaveBeenCalled(); });
   it("fails closed if entitlement loading throws", async () => { const res = response(); mocks.access.mockRejectedValue(new Error("offline")); await checkout(request(), res); expect(res.status).toHaveBeenCalledWith(503); expect(mocks.create).not.toHaveBeenCalled(); });
   it("does not treat malformed access as a free account", async () => { const res = response(); mocks.access.mockResolvedValue({ reason: "no_active_grant" }); await checkout(request(), res); expect(res.status).toHaveBeenCalledWith(503); expect(mocks.create).not.toHaveBeenCalled(); });
@@ -106,6 +106,26 @@ describe("separate sandbox webhook", () => {
 
 describe("monthly cancellation route", () => {
   const body = { subscriptionId: "sub_test", requestId: "00000000-0000-4000-8000-000000000000" };
+  it.each([
+    "-".repeat(36),
+    "11111111-2222-1333-8444-555555555555",
+    "aaaaaaaa-bbbb-4ccc-cddd-eeeeeeeeeeee",
+    "AAAAAAAA-BBBB-4CCC-8DDD-EEEEEEEEEEEE",
+    "a".repeat(36),
+    "00000000-0000-4000-8000-000000000000 ",
+  ])("rejects invalid cancellation request ID %s before storage", async requestId => {
+    const res = response(); await cancel(request({ ...body, requestId }), res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: "Invalid cancellation request." });
+    expect(res.setHeader).toHaveBeenCalledWith("Cache-Control", "private, no-store");
+    expect(mocks.store).not.toHaveBeenCalled(); expect(mocks.cancel).not.toHaveBeenCalled();
+  });
+  it("accepts an actual generated lowercase v4 request ID unchanged", async () => {
+    const requestId = crypto.randomUUID(); const res = response();
+    await cancel(request({ ...body, requestId }), res);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(mocks.cancel).toHaveBeenCalledWith(expect.anything(), "verified-user", body.subscriptionId, requestId);
+  });
   it("uses the authenticated owner and requires no premium entitlement to cancel", async () => { const res = response(); await cancel(request(body), res); expect(res.status).toHaveBeenCalledWith(200); expect(mocks.cancel).toHaveBeenCalledWith(expect.anything(), "verified-user", body.subscriptionId, body.requestId); expect(mocks.access).not.toHaveBeenCalled(); expect(mocks.stripe).not.toHaveBeenCalled(); });
   it.each([null, { binding: { userId: "other" } }])("rejects missing and cross-account subscriptions identically", async (state) => { mocks.load.mockResolvedValue(state); const res = response(); await cancel(request(body), res); expect(res.status).toHaveBeenCalledWith(404); expect(mocks.cancel).not.toHaveBeenCalled(); });
   it("rejects forged owner fields and anonymous requests", async () => { const res = response(); await cancel(request({ ...body, userId: "victim" }), res); expect(res.status).toHaveBeenCalledWith(400); const req = request(body); req.headers = {}; await cancel(req, res); expect(res.status).toHaveBeenCalledWith(401); expect(mocks.cancel).not.toHaveBeenCalled(); });

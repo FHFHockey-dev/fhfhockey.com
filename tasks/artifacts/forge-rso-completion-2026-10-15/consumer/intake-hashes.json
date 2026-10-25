@@ -1,8 +1,0 @@
-{
-  "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx": "260806450b10cbf0bb6140692e524551dff7d1b17bbdb020deb8d7f275cb804d",
-  "web/components/RosterScheduleOptimizer/CandidateCard.tsx": "ddb6f575958a4050455c3e7ee18b145d139fbb94b1e5ce4c180ee3359be31b37",
-  "web/components/RosterScheduleOptimizer/CandidateCard.test.tsx": "f91460fbabc9a8cef64224176250823a234c37b733c56bbfe11f26ab65d30008",
-  "web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx": "b278e5cc5b91598217b8f10f36f5658e90394dfc71a377216260bc1f4a0504f8",
-  "web/pages/forge/forecasts.tsx": "5e94ca3c7f515666022de64310ded76bc2e5f4d246f87cf4cb8fa37616007157",
-  "web/__tests__/pages/forge/forecasts.test.tsx": "7dabc6fd2e42c1e14fec5a17ba986b934258bc67ed1dc193fb252f078597ee11"
-}

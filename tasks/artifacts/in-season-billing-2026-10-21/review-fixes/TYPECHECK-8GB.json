@@ -1,1 +1,0 @@
-{"command": "NODE_OPTIONS=--max-old-space-size=8192 npx tsc --noEmit --incremental false", "exitCode": 0}

@@ -139,7 +139,9 @@ export type TeamStatsLandingApiResponse = {
 };
 
 export type TeamStatsLandingCoverage = {
+  /** Scheduled games dated before today (UTC); completion is not tracked here. */
   completedGames: number;
+  /** Approximate game equivalents: all-situations team rows divided by two. */
   summarizedGames: number;
 };
 

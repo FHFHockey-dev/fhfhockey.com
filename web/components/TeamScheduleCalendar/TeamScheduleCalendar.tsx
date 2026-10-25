@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import {
   format,
+  parseISO,
   startOfDay,
   startOfMonth,
   endOfMonth,
@@ -274,7 +275,7 @@ export function TeamScheduleCalendar({
 
   // Enhanced game result determination with WGO stats integration
   const getGameResult = useCallback((game: ScheduleGame): GameResult => {
-    const gameDate = new Date(game.gameDate);
+    const gameDate = parseISO(game.gameDate);
     const isGameInFuture = gameDate > today;
 
     if (isGameInFuture) {
@@ -282,7 +283,7 @@ export function TeamScheduleCalendar({
     }
 
     // Primary: Use wgo_team_stats for accurate game-by-game results
-    const gameDate_YYYY_MM_DD = format(gameDate, "yyyy-MM-dd");
+    const gameDate_YYYY_MM_DD = game.gameDate;
     const gameDayWGOStat = wgoStats.find(
       (stat) => stat.date === gameDate_YYYY_MM_DD
     );
@@ -457,7 +458,7 @@ export function TeamScheduleCalendar({
         opponent.abbrev ||
         `T${opponent.id}`;
 
-      const gameDate = format(new Date(game.gameDate), "yyyy-MM-dd");
+      const gameDate = game.gameDate;
       const gameDayWGOStat = wgoStats.find((stat) => stat.date === gameDate);
       const opponentStrength = calculateOpponentStrength(opponentAbbr, gameDate);
 
@@ -497,8 +498,8 @@ export function TeamScheduleCalendar({
       .filter(({ result }) => result && result !== "future")
       .sort(
         (a, b) =>
-          new Date(a.game.gameDate).getTime() -
-          new Date(b.game.gameDate).getTime()
+          parseISO(a.game.gameDate).getTime() -
+          parseISO(b.game.gameDate).getTime()
       );
 
     // Find all streaks of 3+ consecutive wins or losses
@@ -607,7 +608,7 @@ export function TeamScheduleCalendar({
     }
 
     const gamesDates = gamesWithResults.map(
-      ({ game }) => new Date(game.gameDate)
+      ({ game }) => parseISO(game.gameDate)
     );
     const minDate = new Date(Math.min(...gamesDates.map((d) => d.getTime())));
     const maxDate = new Date(Math.max(...gamesDates.map((d) => d.getTime())));
@@ -647,7 +648,7 @@ export function TeamScheduleCalendar({
         const dateKey = format(day, "yyyy-MM-dd");
         const gameForDay = gamesWithResults.find(
           ({ game }) =>
-            format(new Date(game.gameDate), "yyyy-MM-dd") === dateKey
+            game.gameDate === dateKey
         );
 
         return {
@@ -1034,8 +1035,8 @@ export function TeamScheduleCalendar({
       .map((day) => day.game!)
       .sort(
         (a, b) =>
-          new Date(a.game.gameDate).getTime() -
-          new Date(b.game.gameDate).getTime()
+          parseISO(a.game.gameDate).getTime() -
+          parseISO(b.game.gameDate).getTime()
       );
 
     if (monthGames.length === 0) return overlays;
@@ -1168,7 +1169,7 @@ export function TeamScheduleCalendar({
         }}
       >
         <div className={styles.tooltipHeader}>
-          <strong>{format(new Date(game.gameDate), "MMM d, yyyy")}</strong>
+          <strong>{format(parseISO(game.gameDate), "MMM d, yyyy")}</strong>
           {isPlayoff && <span className={styles.playoffLabel}>PLAYOFF</span>}
           <span
             className={`${styles.resultLabel} ${styles[result || "unknown"]}`}
@@ -1288,8 +1289,8 @@ export function TeamScheduleCalendar({
       .filter(({ result }) => result && result !== "future")
       .sort(
         (a, b) =>
-          new Date(b.game.gameDate).getTime() -
-          new Date(a.game.gameDate).getTime()
+          parseISO(b.game.gameDate).getTime() -
+          parseISO(a.game.gameDate).getTime()
       );
 
     if (completedGames.length === 0) {
@@ -2076,7 +2077,16 @@ const EnhancedGameStatsSidebar = ({
 }) => {
   const isHomeTeam = game.homeTeam.id.toString() === teamId.toString();
   const opponent = isHomeTeam ? game.awayTeam : game.homeTeam;
-  const gameDate = new Date(game.gameDate);
+  const gameDate = parseISO(game.gameDate);
+  const startTime = new Date(game.startTimeUTC);
+  const startTimeLabel = Number.isNaN(startTime.getTime())
+    ? "Start time unavailable"
+    : new Intl.DateTimeFormat("en-US", {
+        timeZone: "America/New_York",
+        hour: "numeric",
+        minute: "2-digit",
+        timeZoneName: "short"
+      }).format(startTime);
   const isFuture = gameDate > new Date();
 
   return (
@@ -2120,7 +2130,7 @@ const EnhancedGameStatsSidebar = ({
         <div className={styles.gameDate}>
           {format(gameDate, "EEEE, MMMM d, yyyy")}
           <br />
-          <small>{format(gameDate, "h:mm a")}</small>
+          <small>{startTimeLabel}</small>
         </div>
 
         {game.gameType === 3 && (

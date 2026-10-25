@@ -2,8 +2,8 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { z } from "zod";
 
 import supabase from "lib/supabase/server";
-import { FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } from "lib/projections/calibrationEligibility";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
+import { evaluateForgeCalibrationEligibility, FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } from "lib/projections/calibrationEligibility";
 import {
   buildProjectionApiErrorResponse,
   dateSchema,
@@ -58,23 +58,18 @@ export default async function handler(
     applyDeprecationHeaders(res);
     if (!supabase) throw new Error("Supabase server client not available");
     const q = parseQuery(req);
-    const runId = q.runId ?? (await requireLatestSucceededRunId(q.date));
+    // An explicit identity must not bypass the native provenance boundary.
+    // Default latest resolution retains its separate released-legacy contract.
     if (q.runId) {
-      const { data: run, error: runError } = await supabase.from("forge_runs")
-        .select("metrics").eq("run_id", q.runId).maybeSingle();
+      const { data: selectedRun, error: runError } = await supabase
+        .from("forge_runs").select("metrics").eq("run_id", q.runId).maybeSingle();
       if (runError) throw runError;
-      if (!run) {
-        const error = new Error(`No projection run found for runId=${q.runId}`);
-        (error as any).statusCode = 404;
-        throw error;
-      }
-      if ((run as any).metrics?.input_provenance?.external_fantasy_input_contract
-        !== FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT) {
-        const error = new Error("Selected projection run lacks external fantasy exclusion provenance.");
-        (error as any).statusCode = 422;
-        throw error;
+      if (!selectedRun) throw Object.assign(new Error("Selected projection run was not found."), { statusCode: 404 });
+      if (evaluateForgeCalibrationEligibility(selectedRun.metrics).observedExternalFantasyContract !== FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT) {
+        throw Object.assign(new Error("Selected projection run lacks external fantasy exclusion provenance."), { statusCode: 422 });
       }
     }
+    const runId = q.runId ?? (await requireLatestSucceededRunId(q.date));
 
     let query = supabase
       .from("forge_player_projections")

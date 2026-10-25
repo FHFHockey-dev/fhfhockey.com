@@ -1,1 +1,0 @@
-{"typescript":"5.7.3","roots":["lib/NHL/corsProxy.ts","lib/NHL/corsProxy.test.ts","pages/api/cors/index.ts","__tests__/pages/api/cors.test.ts","utils/adminOnlyMiddleware.ts","__tests__/utils/adminOnlyMiddleware.test.ts","next-bootstrap.d.ts","next-env.d.ts","yahoo-fantasy.d.ts"],"sourceFiles":787,"diagnostics":0}

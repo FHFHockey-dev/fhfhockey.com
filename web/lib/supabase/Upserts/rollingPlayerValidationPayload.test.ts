@@ -1202,6 +1202,62 @@ describe("rollingPlayerValidationPayload stored rows", () => {
     ).toBe(0);
   });
 
+  it.each(["all", "ev", "pp", "pk", "5v5"] as const)(
+    "retains compacted %s rows through hydration, filtering and comparison",
+    async (strength) => {
+      const row = {
+        player_id: 8478402,
+        game_id: 2025020100,
+        game_date: "2025-11-01",
+        season: 20252026,
+        strength_state: strength,
+        goals_avg_last5: 0.6
+      };
+      const { rankingRow, supportRow } = splitRollingUpsertRowForDurableStorage(row);
+      expect(rankingRow.goals_avg_last5).toBeNull();
+      supabaseTables.rolling_player_game_metrics = [rankingRow];
+      supabaseTables.rolling_player_metric_support_payloads = [
+        supportRow as unknown as Record<string, unknown>
+      ];
+      const request = { playerId: row.player_id, season: row.season, strength };
+      const hydratedRows = await __testables.fetchStoredRows(request);
+      expect(hydratedRows).toEqual([row]);
+      const storedRows = __testables.filterRowsForRequest(hydratedRows, request);
+      const recomputedRows = __testables.filterRowsForRequest(
+        [{ ...row, goals_avg_last5: 0.8 }],
+        request
+      );
+      expect(storedRows).toEqual([row]);
+      expect(recomputedRows).toHaveLength(1);
+      expect(
+        __testables.filterRowsForRequest(
+          [{ ...row, strength_state: "4v4" }],
+          request
+        )
+      ).toEqual([]);
+      expect(
+        __testables.buildFamilyComparisonSummary({
+          storedRows,
+          recomputedRows,
+          selectedMetricFamily: null
+        })
+      ).toMatchObject({
+        rowCountCompared: 1,
+        mismatchRowCount: 1,
+        mismatchFieldCount: 1,
+        metrics: expect.arrayContaining([
+          expect.objectContaining({
+            field: "goals_avg_last5",
+            comparedRows: 1,
+            latestStoredValue: 0.6,
+            latestRecomputedValue: 0.8,
+            valuesMatch: false
+          })
+        ])
+      });
+    }
+  );
+
   it("leaves a pruned field empty when no sidecar row exists", async () => {
     const { rankingRow } = splitRollingUpsertRowForDurableStorage({
       player_id: 8478402,

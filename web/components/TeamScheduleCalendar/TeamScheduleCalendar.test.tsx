@@ -1,7 +1,9 @@
 import React from "react";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ScheduleGame, TeamStandingsDetails } from "hooks/useTeamSchedule";
+
+const { wgoStatsMock } = vi.hoisted(() => ({ wgoStatsMock: vi.fn() }));
 
 vi.mock("lib/supabase", () => ({
   default: {
@@ -18,10 +20,14 @@ vi.mock("lib/supabase", () => ({
 }));
 
 vi.mock("hooks/useTeamScheduleWgoStats", () => ({
-  useTeamScheduleWgoStats: () => ({ stats: [], loading: false, error: null }),
+  useTeamScheduleWgoStats: wgoStatsMock,
 }));
 
 import { TeamScheduleCalendar } from "./TeamScheduleCalendar";
+
+beforeEach(() => {
+  wgoStatsMock.mockReturnValue({ stats: [], loading: false, error: null });
+});
 
 function game(index: number, overrides: Partial<ScheduleGame> = {}): ScheduleGame {
   return {
@@ -154,5 +160,77 @@ describe("TeamScheduleCalendar season standings", () => {
     expect(card("Season Record").getByText("0 pts")).toBeTruthy();
     expect(card("Season Record").queryByText("0.0%")).toBeNull();
     expect(card("Season Overview").getByText("0")).toBeTruthy();
+  });
+});
+
+describe("TeamScheduleCalendar date identity", () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-22T12:00:00Z"));
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.useRealTimers();
+  });
+
+  function renderDatedGame(overrides: Partial<ScheduleGame> = {}) {
+    render(
+      <TeamScheduleCalendar
+        games={[game(0, {
+          season: 20262027,
+          gameDate: "2026-10-19",
+          startTimeUTC: "2026-10-19T23:00:00Z",
+          ...overrides,
+        })]}
+        teamId={22}
+        teamAbbreviation="EDM"
+        seasonId="20262027"
+      />,
+    );
+    return screen.getByText("vs BOS").parentElement!.parentElement!;
+  }
+
+  it("keeps a date-only game on the 19th in both the grid and tooltip", () => {
+    const day = renderDatedGame();
+    expect(within(day).getByText("19")).toBeTruthy();
+    fireEvent.mouseEnter(day);
+    expect(screen.getByText("Oct 19, 2026")).toBeTruthy();
+  });
+
+  it("uses the supplied game date for the WGO join without shifting to yesterday", () => {
+    // Synthetic cumulative rows isolate date selection; they do not certify stored WGO grain.
+    wgoStatsMock.mockReturnValue({ stats: [
+      { date: "2026-10-18", points: 0, games_played: 1, goals_for: 1, goals_against: 2 },
+      { date: "2026-10-19", points: 2, games_played: 2, goals_for: 4, goals_against: 3 },
+    ] });
+    const day = renderDatedGame({ homeTeamScore: 1, awayTeamScore: 2 });
+    fireEvent.mouseEnter(day);
+    const header = screen.getByText(/Oct (18|19), 2026/).parentElement!;
+    expect(within(header).getByText("Win", { exact: true })).toBeTruthy();
+  });
+
+  it("keeps tomorrow's date-only game scheduled near the UTC date boundary", () => {
+    vi.setSystemTime(new Date("2026-10-19T12:00:00Z"));
+    const day = renderDatedGame({
+      gameDate: "2026-10-20", gameState: "FUT",
+      homeTeamScore: undefined, awayTeamScore: undefined,
+    });
+    fireEvent.mouseEnter(day);
+    const header = screen.getByText(/Oct (19|20), 2026/).parentElement!;
+    expect(within(header).getByText("Scheduled", { exact: true })).toBeTruthy();
+  });
+
+  it("shows the schedule date and actual start timestamp with an explicit time zone", () => {
+    const day = renderDatedGame();
+    fireEvent.click(day);
+    expect(screen.getByText("Monday, October 19, 2026")).toBeTruthy();
+    expect(screen.getByText("7:00 PM EDT")).toBeTruthy();
+  });
+
+  it.each(["", "not-a-timestamp"])("does not invent a midnight start time from the date when start time is %j", (startTimeUTC) => {
+    const day = renderDatedGame({ startTimeUTC });
+    fireEvent.click(day);
+    expect(screen.getByText("Start time unavailable")).toBeTruthy();
   });
 });

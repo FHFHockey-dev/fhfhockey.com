@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { tables, upsertMock, bridgeMock, planningMock, flags } = vi.hoisted(() => ({
+const { tables, fromMock, upsertMock, bridgeMock, planningMock, flags } = vi.hoisted(() => ({
   flags: { market: false },
+  fromMock: vi.fn(),
   tables: {} as Record<string, Record<string, any>[]>,
   upsertMock: vi.fn(async (..._args: any[]) => ({ error: null as null | { message: string } })),
   bridgeMock: vi.fn(),
@@ -20,6 +21,7 @@ vi.mock("lib/player-forecasts/servedForecastLedger", async importOriginal => {
 vi.mock("lib/supabase/server", () => ({
   default: {
     from: (table: string) => {
+      fromMock(table);
       const filters: Array<(row: any) => boolean> = [];
       const builder: any = {
         select: () => builder, order: () => builder, range: () => builder,
@@ -126,6 +128,29 @@ describe("forge-served-forecast-snapshot", () => {
     await handler({ method: "PUT", query: {} } as any, put);
     expect(put.statusCode).toBe(405);
     expect(planningMock).not.toHaveBeenCalled();
+  });
+
+  it("denies an unauthorized caller before actual audit storage or business work", async () => {
+    // The ordinary business fixtures bypass wrappers. This control imports the
+    // actual exported route with both real wrappers to verify their order.
+    vi.resetModules();
+    vi.doUnmock("lib/cron/withCronJobAudit");
+    vi.doUnmock("utils/adminOnlyMiddleware");
+    try {
+      const { default: protectedHandler } = await import("pages/api/v1/db/forge-served-forecast-snapshot");
+      const out = res();
+      await protectedHandler({ method: "POST", query: { date: "2026-10-21" }, headers: {},
+        url: "/api/v1/db/forge-served-forecast-snapshot", socket: { remoteAddress: "203.0.113.1" } } as any, out);
+      expect(out.statusCode).toBe(401);
+      expect(fromMock).not.toHaveBeenCalled();
+      expect(planningMock).not.toHaveBeenCalled();
+      expect(bridgeMock).not.toHaveBeenCalled();
+      expect(upsertMock).not.toHaveBeenCalled();
+    } finally {
+      vi.doMock("lib/cron/withCronJobAudit", () => ({ withCronJobAudit: (handler: any) => handler }));
+      vi.doMock("utils/adminOnlyMiddleware", () => ({ default: (handler: any) => handler }));
+      vi.resetModules();
+    }
   });
 
   it("reports a failed write", async () => {

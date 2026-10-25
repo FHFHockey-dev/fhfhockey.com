@@ -119,6 +119,7 @@ type LinesCccReviewSourceRow = {
   primary_text_source: string | null;
   tweet_posted_label: string | null;
   status: string | null;
+  interpretation: unknown;
 };
 
 type LineSourceSnapshotReviewSourceRow = {
@@ -153,6 +154,7 @@ type LineSourceSnapshotReviewSourceRow = {
   primary_text_source: string | null;
   tweet_posted_label: string | null;
   status: string | null;
+  interpretation: unknown;
 };
 
 type LinesCccEventReviewSourceRow = {
@@ -290,11 +292,11 @@ function parseHandleFromTweetUrl(value: string | null | undefined): string | nul
   try {
     const url = new URL(value);
     const hostname = url.hostname.toLowerCase();
-    if (!hostname.includes("twitter.com") && !hostname.includes("x.com")) {
-      return null;
-    }
-    const handle = url.pathname.split("/").filter(Boolean)[0] ?? null;
-    return handle?.trim() || null;
+    if (!["https:", "http:"].includes(url.protocol) || url.username || url.password ||
+      !/^(?:(?:www|mobile)\.)?(?:twitter|x)\.com$/i.test(hostname)) return null;
+    const handle = url.pathname.match(/^\/([A-Za-z0-9_]{1,15})\/(?:status|statuses)\/\d+(?:\/|$)/i)?.[1];
+    // /i/web/status identifies a post, never an author.
+    return handle && !/^i$/i.test(handle) ? handle : null;
   } catch {
     return null;
   }
@@ -475,7 +477,9 @@ function buildLinesCccCandidate(row: LinesCccReviewSourceRow): SyncCandidate {
       quotedAuthorName: row.quoted_author_name,
       quotedAuthorHandle: row.quoted_author_handle,
       quotedTweetId: row.quoted_tweet_id,
-      quotedTweetUrl: row.quoted_tweet_url
+      quotedTweetUrl: row.quoted_tweet_url,
+      // Preserved for review only; the public DTO never carries this key (no claim authority).
+      retainedInterpretation: row.interpretation ?? null
     },
     reviewed_at: null,
     source_priority: 4
@@ -568,7 +572,9 @@ function buildLineSourceSnapshotCandidate(row: LineSourceSnapshotReviewSourceRow
       quotedAuthorName: row.quoted_author_name,
       quotedAuthorHandle: row.quoted_author_handle,
       quotedTweetId: row.quoted_tweet_id,
-      quotedTweetUrl: row.quoted_tweet_url
+      quotedTweetUrl: row.quoted_tweet_url,
+      // Preserved for review only; the public DTO never carries this key (no claim authority).
+      retainedInterpretation: row.interpretation ?? null
     },
     reviewed_at: null,
     source_priority: 4
@@ -717,14 +723,14 @@ export async function syncTweetPatternReviewItems(args: {
       args.supabase
         .from("lines_ccc" as any)
         .select(
-          "capture_key, source, source_label, source_handle, author_name, snapshot_date, observed_at, tweet_id, tweet_url, source_url, quoted_tweet_id, quoted_tweet_url, quoted_author_handle, quoted_author_name, team_id, team_abbreviation, classification, nhl_filter_status, nhl_filter_reason, keyword_hits, raw_text, enriched_text, quoted_raw_text, quoted_enriched_text, raw_payload, primary_text_source, tweet_posted_label, status"
+          "capture_key, source, source_label, source_handle, author_name, snapshot_date, observed_at, tweet_id, tweet_url, source_url, quoted_tweet_id, quoted_tweet_url, quoted_author_handle, quoted_author_name, team_id, team_abbreviation, classification, nhl_filter_status, nhl_filter_reason, keyword_hits, raw_text, enriched_text, quoted_raw_text, quoted_enriched_text, raw_payload, primary_text_source, tweet_posted_label, status, interpretation:metadata->interpretation"
         )
         .order("observed_at", { ascending: false })
         .limit(args.perSourceLimit),
       args.supabase
         .from("line_source_snapshots" as any)
         .select(
-          "capture_key, source_group, source_key, source_account, source, source_label, source_handle, author_name, snapshot_date, observed_at, tweet_id, tweet_url, source_url, quoted_tweet_id, quoted_tweet_url, quoted_author_handle, quoted_author_name, team_id, team_abbreviation, classification, nhl_filter_status, nhl_filter_reason, keyword_hits, raw_text, enriched_text, quoted_raw_text, quoted_enriched_text, raw_payload, primary_text_source, tweet_posted_label, status"
+          "capture_key, source_group, source_key, source_account, source, source_label, source_handle, author_name, snapshot_date, observed_at, tweet_id, tweet_url, source_url, quoted_tweet_id, quoted_tweet_url, quoted_author_handle, quoted_author_name, team_id, team_abbreviation, classification, nhl_filter_status, nhl_filter_reason, keyword_hits, raw_text, enriched_text, quoted_raw_text, quoted_enriched_text, raw_payload, primary_text_source, tweet_posted_label, status, interpretation:metadata->interpretation"
         )
         .order("observed_at", { ascending: false })
         .limit(args.perSourceLimit),

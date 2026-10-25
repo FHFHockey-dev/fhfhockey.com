@@ -39,3 +39,8 @@ describe("Draft Pro feature flags", () => {
     }).private_imports).toBe(true);
   });
 });
+
+
+it("cannot reopen new sales through legacy checkout configuration", () => {
+  expect(getDraftProFeatureFlags({ DRAFT_PRO_CHECKOUT_ENABLED: "true", DRAFT_PRO_SAVED_DRAFTS_ENABLED: "true" })).toMatchObject({ checkout: false, saved_drafts: true });
+});

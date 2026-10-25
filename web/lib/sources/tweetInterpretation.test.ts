@@ -245,7 +245,7 @@ describe("BOS standard lineup identity regression", () => {
 const names = ["Ryan McLeod", "Josh Norris", "Konsta Helenius", "Zach Aston-Reese", "Pierre Olivier-Joseph", "Noah Dower Nilsson", "Dylan Guenther", "Logan Cooley", "Nick Schmaltz", "Clayton Keller", "Mikhail Sergachev", "Anders Lee", "Vincent Trocheck", "Kailer Yamamoto", "Barrett Hayton", "John Marino"];
 const roster = names.map((fullName, index) => ({ playerId: index + 1, fullName, lastName: fullName.slice(fullName.indexOf(" ") + 1), position: "C" }));
 
-const audited = JSON.parse(readFileSync(resolve(process.cwd(), "../tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-seeds.json"), "utf8"));
+const audited = JSON.parse(readFileSync(resolve(__dirname, "./fixtures/tweetClassificationSeeds.json"), "utf8"));
 const seed = (id: string): string => audited.events.find((event: any) => event.tweet_id === id).text;
 const seedRoster = (id: string) => {
   const revision = audited.snapshots.find((snapshot: any) => snapshot.tweet_id === id).metadata.interpretation?.rosterRevision ?? "";
@@ -258,7 +258,7 @@ const seedRoster = (id: string) => {
 describe("structured tweet interpretation", () => {
   afterEach(() => vi.unstubAllEnvs());
   it("checks frozen source hashes and reports bounded semantic holdout classifications", () => {
-    const labels = JSON.parse(readFileSync(resolve(process.cwd(), "../tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-labels.json"), "utf8"));
+    const labels = JSON.parse(readFileSync(resolve(__dirname, "./fixtures/tweetClassificationLabels.json"), "utf8"));
     const counts: Record<string, { truePositive: number; predicted: number; labeled: number }> = {};
     let matched = 0, denominator = 0;
     for (const label of labels.records) {

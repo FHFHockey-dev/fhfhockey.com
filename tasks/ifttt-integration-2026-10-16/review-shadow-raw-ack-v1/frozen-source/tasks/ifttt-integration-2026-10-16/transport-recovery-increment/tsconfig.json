@@ -1,4 +1,0 @@
-{
-  "extends": "../parent-recovery-increment/tsconfig.json",
-  "include": ["../../../web/next-bootstrap.d.ts", "../../../web/yahoo-fantasy.d.ts", "./transport-protocol.test.ts"]
-}

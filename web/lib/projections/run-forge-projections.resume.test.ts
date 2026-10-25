@@ -396,9 +396,11 @@ describe("resumable FORGE projection run", () => {
       games: 4, player_rows: 8, timed_out: false,
       // forge/players ranks full-slate runs first by this scope.
       execution_scope: { mode: "full_slate", requested_game_ids: [] },
-      input_provenance: buildForgeInputProvenance({ externalFantasyInputsExcluded: true }),
+      // Release C remains a legacy producer; it cannot claim native exclusion provenance.
+      input_provenance: buildForgeInputProvenance(),
       resume: { completed_game_ids: [1, 2, 3, 4], invocations: 2 },
     });
+    expect(run.metrics.input_provenance).not.toHaveProperty("external_fantasy_input_contract");
     // One row per game and player; game 3's stray row from the cut-off pass is gone.
     expect(playerRows(first.runId)).toEqual(["1:1", "1:2", "2:1", "2:2", "3:1", "3:2", "4:1", "4:2"]);
     expect(await requireLatestSucceededRunId(date)).toBe(first.runId);

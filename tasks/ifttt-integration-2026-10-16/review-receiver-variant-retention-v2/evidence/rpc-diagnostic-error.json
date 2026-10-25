@@ -1,5 +1,0 @@
-{
-  "message": "canceling statement due to lock timeout",
-  "code": "55P03",
-  "where": "SQL statement \"SELECT pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(\n    'ifttt-raw-receipt-v1:'||p_table||':'||case when p_table='line_source_ifttt_events' then p_row->>'source_key' else '' end||':'||(p_row->>'tweet_id'),0))\"\nPL/pgSQL function public.retain_ifttt_raw_receipt(text,jsonb) line 30 at PERFORM"
-}

@@ -10,7 +10,7 @@ const web = path.resolve(root, '../../..');
 const data = path.join(root, 'data.ts');
 const mocks = {
   'hooks/useTeams': 'export { useTeamsMap }',
-  'hooks/useCurrentSeason': 'export { useCurrentSeason as default }',
+  'hooks/useCurrentSeason': 'export { useCurrentSeason as default, useCurrentSeasonQuery }',
   'hooks/useTeamSummary': 'export { useTeamSummary as default }',
   'hooks/useYahooCurrentMatchupWeek': 'export { useMatchupWeek as default }',
   'next/router': 'export { useRouter }',
@@ -33,6 +33,11 @@ const server = await createServer({
     },
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
+        if (req.url?.startsWith('/teamLogos/')) {
+          res.setHeader('Content-Type', 'image/svg+xml');
+          res.end('<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><rect width="32" height="32" rx="8" fill="#2d9cdb"/></svg>');
+          return;
+        }
         if (!req.url?.startsWith('/api/v1/projections/teams?')) return next();
         res.setHeader('Content-Type', 'application/json');
         res.end(JSON.stringify({ runId: 'legacy-fixture-run', asOfDate: '2026-10-07', horizonGames: 1,

@@ -177,19 +177,19 @@ export const getWigoSurfaceLinks = (
     href: "/trends",
     label: "Trends Dashboard",
     description:
-      "Compare the player and team explanation with recent-form movement.",
+      "Open league-wide recent-form movement.",
   },
   {
     href: GAME_GRID_HREF,
     label: "Game Grid",
     description:
-      "Apply the team-driver read to weekly volume and opponent planning.",
+      "Open the default schedule range to compare weekly volume and opponents.",
   },
   {
     href: "/start-chart",
     label: "Starter Board",
     description:
-      "Carry the player and team context into start-or-sit decisions.",
+      "Open the league-wide starter slate for matchup decisions.",
   },
 ];
 

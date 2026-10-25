@@ -1,8 +1,0 @@
-{
-  "modeledSkaterParticipation.ts": "5fdbf8f1ca3b8c698eb4f3a53f1180710f2eb9b0bccf0b5693f226abec326c95",
-  "modeledSkaterParticipation.test.ts": "1f4c715552f04295ad1cb45047b974424d606eb6cc1f7d24582d0cd2319c50a2",
-  "modeledSkaterParticipationStore.ts": "cbba10970a1296d45b2b0994620390fa4c72260387776427850171ef3069b4a6",
-  "modeledGoalieParticipation.ts": "75a7d809f39a7f51c88e1f2506a480f97b6778ecaa359a91e7b874a9f6473c5d",
-  "modeledGoalieParticipation.test.ts": "2ccf32ab66ded808896b0e80821693fe1d7f095d55489b771b7a85848137d877",
-  "modeledGoalieParticipationStore.ts": "be7917bad5cb95adbcc16739c5baf8c83893577a99968babbc547d67ffa7ef76"
-}

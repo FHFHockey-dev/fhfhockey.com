@@ -11,10 +11,18 @@ export class ProviderSyncAccessError extends Error {
   }
 }
 
-/** Both existing grant systems remain authoritative; this never creates a grant. */
-export async function loadProviderSyncAccess(userId: string | null, options: { inSeason?: InSeasonAccess } = {}): Promise<ProviderSyncAccess> {
+/** Server-only activation: leave unset until the approved checkout is working. */
+export function isProviderSyncPremiumEnforced(env: Readonly<Record<string, string | undefined>> = process.env) {
+  return env.PROVIDER_SYNC_PREMIUM_ENFORCEMENT_ENABLED === "true";
+}
+
+/** Sync permission is separate from a paid grant; billing callers request entitlementOnly. */
+export async function loadProviderSyncAccess(userId: string | null, options: { inSeason?: InSeasonAccess; entitlementOnly?: boolean } = {}): Promise<ProviderSyncAccess> {
   const denied = (reason: ProviderSyncAccess["reason"]): ProviderSyncAccess => ({ eligible: false, expiresAt: null, nextVerificationAt: null, reason });
   if (!userId) return denied("authentication_required");
+  if (!options.entitlementOnly && !isProviderSyncPremiumEnforced()) {
+    return { eligible: true, expiresAt: null, nextVerificationAt: null, reason: "rollout_free" };
+  }
   let unavailable = false;
   let expired = false;
   try {

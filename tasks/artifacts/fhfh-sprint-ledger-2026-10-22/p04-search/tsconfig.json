@@ -1,9 +1,0 @@
-{
-  "extends": "../../../../web/tsconfig.json",
-  "files": [
-    "../../../../web/next-bootstrap.d.ts",
-    "../../../../web/components/StatsPage/PlayerSearchBar.tsx",
-    "../../../../web/components/StatsPage/PlayerSearchBar.test.tsx"
-  ],
-  "include": []
-}

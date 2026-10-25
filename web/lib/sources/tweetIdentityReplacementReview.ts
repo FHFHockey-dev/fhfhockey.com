@@ -24,7 +24,7 @@ export function prepareTweetIdentityReplacementReview(args: {
     if (!incoming || !outgoing || incoming === outgoing || incoming.status !== "matched" || outgoing.status !== "matched"
       || incoming.canonicalId === outgoing.canonicalId) throw new Error("two_distinct_bound_subjects_required");
     if (!exactIdentitySpan(source.text, clause.evidence) || incoming.evidence.start !== clause.evidence.start
-      || incoming.evidence.end >= outgoing.evidence.start || outgoing.evidence.end > clause.evidence.end) {
+      || outgoing.evidence.start !== incoming.evidence.end + " will take ".length || outgoing.evidence.end > clause.evidence.end) {
       throw new Error("replacement_subject_span_mismatch");
     }
     const unit = clause.unitEvidence;

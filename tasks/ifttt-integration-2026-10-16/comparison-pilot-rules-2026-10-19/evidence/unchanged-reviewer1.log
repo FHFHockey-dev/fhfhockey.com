@@ -1,6 +1,0 @@
-test_mixed_gradability_does_not_penalize_ungradable_predictions (test_independent.IndependentMasks.test_mixed_gradability_does_not_penalize_ungradable_predictions) ... ok
-
-----------------------------------------------------------------------
-Ran 1 test in 0.001s
-
-OK

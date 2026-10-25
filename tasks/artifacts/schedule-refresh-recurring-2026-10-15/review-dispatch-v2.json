@@ -1,9 +1,0 @@
-{
-  "reviewerThreadId": "01a135cf-dda8-7599-896b-ca48cede00da",
-  "manifest": "FROZEN-V2.json",
-  "manifestSha256": "2515e4b9e1391484656cf6a0a81d8f74c3ed6589d6309532df95edee2e8ebc41",
-  "messageDeliveryConfirmed": true,
-  "reviewVerdict": "pending",
-  "databaseExecutionAuthorized": false,
-  "recurringActivationAuthorized": false
-}

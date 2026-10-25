@@ -9,11 +9,13 @@ vi.mock("next-seo", () => ({ NextSeo: () => null }));
 afterEach(cleanup);
 
 describe("Game Grid page", () => {
-  it("mounts the Keep exploring workflow links below the grid", () => {
+  it("mounts the grid without the Keep exploring workflow section", () => {
     render(<GameGridPage initialMode="7-Day-Forecast" />);
     expect(screen.getByTestId("game-grid")).toBeTruthy();
-    expect(screen.getByText("Keep exploring")).toBeTruthy();
-    expect(screen.getAllByRole("link").map((link) => link.getAttribute("href")))
-      .toEqual(["/start-chart", "/trends", "/lines", "/variance/goalies"]);
+    expect(screen.queryByText("Keep exploring")).toBeNull();
+    const links = screen.queryAllByRole("link").map((link) => link.getAttribute("href"));
+    for (const href of ["/start-chart", "/trends", "/lines", "/variance/goalies"]) {
+      expect(links).not.toContain(href);
+    }
   });
 });

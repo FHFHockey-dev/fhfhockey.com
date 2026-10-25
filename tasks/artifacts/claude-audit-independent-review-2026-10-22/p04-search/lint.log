@@ -1,6 +1,0 @@
-
-/private/tmp/fhfh-queue-check-mx4zwpjs/isolation/snapshot/web/components/StatsPage/PlayerSearchBar.tsx
-  184:19  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-✖ 1 problem (0 errors, 1 warning)
-

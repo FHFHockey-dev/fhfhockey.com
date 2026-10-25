@@ -1,7 +1,0 @@
-+ First Load JS shared by all                                               209 kB
-  ├ chunks/framework-b9fd9bcc3ecde907.js                                   44.8 kB
-  ├ chunks/main-0fc186b9d9b7e706.js                                        39.7 kB
-  ├ chunks/pages/_app-19a89c8fcbfadb10.js                                  92.6 kB
-  ├ css/13d7c20152a9de79.css                                               28.9 kB
-  └ other shared chunks (total)                                            2.68 kB
-

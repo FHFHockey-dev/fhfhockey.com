@@ -95,7 +95,7 @@ test("13 picks paginate and mobile remains scrollable", async ({ page }) => {
 test("free open preference stays locked across reload and drafting remains usable", async ({ page }) => {
   await setup(page, 2, false);
   const region = page.getByRole("region", { name: "God View", exact: true });
-  await expect(region.getByRole("link", { name: "Explore Draft Pro" })).toHaveAttribute("href", "/account?section=draft-pro");
+  await expect(region.getByRole("link", { name: "View existing Draft Pro access" })).toHaveAttribute("href", "/account?section=draft-pro");
   await expect(region.getByRole("button", { name: /^View .* roster, pick/ })).toHaveCount(0);
   await page.reload();
   await expect(region.getByRole("button", { name: /God View · Pro/ })).toHaveAttribute("aria-expanded", "true");
@@ -116,7 +116,7 @@ test("queue returns to the clock after a pick and entitlement loss removes cards
   expect(await region.getByLabel("Upcoming pick cards", { exact: true }).evaluate(el => el.scrollLeft)).toBe(0);
   expire();
   await page.evaluate(() => window.dispatchEvent(new Event("focus")));
-  await expect(region.getByRole("link", { name: "Explore Draft Pro" })).toBeVisible();
+  await expect(region.getByRole("link", { name: "View existing Draft Pro access" })).toBeVisible();
   await expect(region.getByRole("button", { name: /^View .* roster, pick/ })).toHaveCount(0);
   expect(await page.evaluate(() => JSON.parse(sessionStorage.getItem("draft.snapshot.v2") || "{}").draftedPlayers.length)).toBe(1);
 });

@@ -23,7 +23,7 @@ afterEach(() => vi.useRealTimers());
 describe("read-only public game expectations", () => {
   it("uses one shared loader, returns a versioned view and never invents missing forecasts", async () => {
     const res = await request(); expect(res.code).toBe(200); expect(res.headers["Cache-Control"]).toBe("s-maxage=15, stale-while-revalidate=0");
-    expect(mocks.load).toHaveBeenCalledExactlyOnceWith(mocks.db, { ...query, seasonId: 20262027, games: 2, timeZone: "UTC" }, { now: new Date(), skipOwnership: true, skipRecentForm: true,
+    expect(mocks.load).toHaveBeenCalledExactlyOnceWith(mocks.db, { ...query, seasonId: 20262027, games: 2, timeZone: "UTC" }, { now: new Date(), skipOwnership: true, skipRecentForm: true, consumer: "start_chart",
       source: expect.objectContaining({ kind: "legacy", reason: "native_not_activated" }) });
     expect(res.body.forecastSource).toEqual({ kind: "legacy", headRevision: null, expiresAt: null, reason: "native_not_activated" });
     expect(res.body.data.version).toBe(GAME_EXPECTATION_VIEW_VERSION);

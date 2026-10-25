@@ -26,6 +26,10 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  typescript: {
+    // Keep production entrypoints checked without loading the test-only program.
+    tsconfigPath: isProd ? "tsconfig.build.json" : "tsconfig.json",
+  },
   transpilePackages: ["@portabletext/react", "@portabletext/toolkit"],
   images: {
     // If the image optimizer is failing in dev (common when sharp/libvips mismatches),

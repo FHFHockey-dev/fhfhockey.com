@@ -1,2 +1,0 @@
-../tasks/ifttt-integration-2026-10-16/review-sidecar-recovery-2026-10-19/storage.test.ts(162,73): error TS7006: Parameter 'r' implicitly has an 'any' type.
-../tasks/ifttt-integration-2026-10-16/review-sidecar-recovery-2026-10-19/storage.test.ts(177,97): error TS7006: Parameter 'r' implicitly has an 'any' type.

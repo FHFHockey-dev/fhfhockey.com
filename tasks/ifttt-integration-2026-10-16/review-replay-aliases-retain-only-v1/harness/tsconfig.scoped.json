@@ -1,5 +1,0 @@
-{
- "extends": "../../../../web/tsconfig.json",
- "include": ["../../../../web/next-bootstrap.d.ts", "../../../../web/yahoo-fantasy.d.ts",
-  "../../../../web/pages/api/v1/db/replay-player-aliases.ts", "../../../../web/__tests__/pages/api/v1/db/replay-player-aliases.test.ts"]
-}

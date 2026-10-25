@@ -198,6 +198,10 @@ export default function CompactSchedule({ admittedSnapshot, snapshot, roster, ru
   const benchOpen = controlledBenchOpen ?? localBenchOpen;
   const toggleBench = () => { setLocalBenchOpen(!benchOpen); onBenchChange?.(!benchOpen); };
   const scrollElement = useRef<HTMLDivElement>(null);
+  const dateControlsElement = useRef<HTMLDetailsElement>(null);
+  const syncHorizontalScroll = (source: HTMLElement | null, target: HTMLElement | null) => {
+    if (source && target && source.scrollLeft !== target.scrollLeft) target.scrollLeft = source.scrollLeft;
+  };
   const navigationReasonId = useId();
   const week = scheduleWeek(date);
   const included = week.map((day, index) => dates.includes(day) ? index : -1).filter(index => index >= 0);
@@ -281,7 +285,10 @@ export default function CompactSchedule({ admittedSnapshot, snapshot, roster, ru
       <div title="Individual players in the local planning roster with a scheduled, live or completed NHL game on this date; not fantasy starts"><span>Roster games</span><strong>{knownCount(daySummary.rosterGames, daySummary.scheduleComplete && daySummary.rosterComplete)}</strong></div>
       <div title="Distinct league-wide NHL games on this date; not roster-player games or goalie starts"><span>NHL games</span><strong>{knownCount(daySummary.nhlGames, daySummary.scheduleComplete)}</strong></div>
     </section></details>
-      <details className={styles.scheduleControlDisclosure}><summary>Date controls</summary><div className={styles.dayControls}>
+      <details ref={dateControlsElement} className={styles.scheduleControlDisclosure}
+        onScroll={event => { if (event.currentTarget.open) syncHorizontalScroll(event.currentTarget, scrollElement.current); }}
+        onToggle={event => { if (event.currentTarget.open) syncHorizontalScroll(scrollElement.current, event.currentTarget); }}>
+        <summary>Date controls</summary><div className={styles.dayControls}>
         <div className={styles.dayNavigation}>
           <button aria-label="Previous schedule week" aria-describedby={previousWeekDisabled ? `${navigationReasonId}-previous` : undefined} disabled={previousWeekDisabled} onClick={() => moveWeek(-7)}>‹</button>
           <output aria-live="polite">{dateLabel(date)}</output>
@@ -310,7 +317,8 @@ export default function CompactSchedule({ admittedSnapshot, snapshot, roster, ru
         <span className={styles.scheduleSrOnly}>Local simulated Bench, not Yahoo placement. {benchCapacityNote}</span>
       </span>}
     </div>
-    <div ref={scrollElement} className={styles.compactScroll} tabIndex={0} role="region" aria-label="Player weekly schedule scroll area">
+    <div ref={scrollElement} className={styles.compactScroll} tabIndex={0} role="region" aria-label="Player weekly schedule scroll area"
+      onScroll={event => { if (dateControlsElement.current?.open) syncHorizontalScroll(event.currentTarget, dateControlsElement.current); }}>
       <table className={styles.compactTable} aria-label="Individual player weekly schedule">
         <thead><tr><th scope="col">Slot / player</th>{week.map(day => <th scope="col" key={day} className={`${day === date ? styles.chosenDay : ""} ${day < today ? styles.elapsedDay : ""}`}>
           <button aria-label={`Select ${dateLabel(day)}`} aria-pressed={day === date} aria-describedby={!dates.includes(day) ? `${navigationReasonId}-dates` : undefined} disabled={!dates.includes(day)} onClick={() => selectDate(day)}>

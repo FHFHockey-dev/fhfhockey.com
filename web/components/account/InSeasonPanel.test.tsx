@@ -8,7 +8,7 @@ import InSeasonPanel from "./InSeasonPanel";
 import ProviderSyncNotice from "./ProviderSyncNotice";
 
 beforeEach(() => {
-  vi.resetAllMocks();
+  vi.resetAllMocks(); sessionStorage.clear();
   mocks.auth.mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } });
   mocks.session.mockResolvedValue({ data: { session: { access_token: "fixture", user: { id: "owner-a" } } } });
   mocks.access.mockReturnValue({ status: "ready", access: { eligible: false }, refresh: mocks.refresh });
@@ -17,6 +17,8 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 it("shows the agreed price, Eastern cutoff and monthly unavailability without legacy checkout", () => {
   render(<InSeasonPanel />);
+  expect(mocks.access).toHaveBeenCalledWith({ entitlementOnly: true });
+  expect(mocks.access).toHaveBeenCalledWith();
   expect(screen.getByRole("heading", { name: "Season pass · $24.99" })).toBeTruthy();
   expect(screen.getByText(/midnight New York time/)).toBeTruthy();
   expect(screen.getByRole("button", { name: /Buy season pass/ }).hasAttribute("disabled")).toBe(true);
@@ -192,4 +194,86 @@ it.each(["owner_change", "owner_change_without_event", "sign_out_then_same_owner
   // never carry an earlier owner's unresolved request into a new session owner.
   expect(JSON.parse(calls[1][1]!.body as string).requestId).not.toBe(JSON.parse(calls[0][1]!.body as string).requestId);
   expect(calls[1][1]!.headers).toEqual({ Authorization: "Bearer next-fixture", "Content-Type": "application/json" });
+});
+const storedCancellation = "fhfh:in-season-cancellation:v1";
+const sentCancellationIds = () => vi.mocked(fetch).mock.calls.filter(([url]) => url === "/api/v1/account/in-season/cancel").map(([, init]) => JSON.parse(init!.body as string).requestId as string);
+async function attemptCancellation(error = "Cancellation response lost") {
+  fireEvent.click(await screen.findByRole("button", { name: "Cancel monthly access" }));
+  fireEvent.click(screen.getByRole("button", { name: "Confirm cancellation" })); await screen.findByText(error);
+}
+function loseCancellationResponses() {
+  fixtureApi({ management: true }); const implementation = vi.mocked(fetch).getMockImplementation()!;
+  vi.mocked(fetch).mockImplementation((input, init) => input === "/api/v1/account/in-season/cancel" ? Promise.reject(new Error("Cancellation response lost")) : implementation(input, init));
+}
+const signIn = (id: string, token = `${id}-fixture`) => { const session = { access_token: token, user: { id } }; mocks.session.mockResolvedValue({ data: { session } }); return session; };
+it.each(["without_callback", "INITIAL_SESSION", "TOKEN_REFRESHED"])("reuses the same owner's unresolved cancellation ID after a browser reload %s", async event => {
+  loseCancellationResponses(); render(<InSeasonPanel />); await attemptCancellation();
+  cleanup(); render(<InSeasonPanel />);
+  if (event !== "without_callback") act(() => mocks.auth.mock.lastCall![0](event, signIn("owner-a", "reloaded-fixture")));
+  await attemptCancellation();
+  const ids = sentCancellationIds(); expect(ids).toHaveLength(2); expect(ids[1]).toBe(ids[0]);
+  expect(screen.queryByText(/Cancellation saved/)).toBeNull();
+  // Only the owner, subscription, request ID and save time persist; never a token.
+  expect(JSON.parse(sessionStorage.getItem(storedCancellation)!)).toEqual({ ownerId: "owner-a", requests: { sub_fixture: { requestId: ids[0], savedAt: expect.any(Number) } } });
+});
+it.each(["foreign_owner_without_callback", "foreign_owner_callback", "signed_out_then_same_owner", "anonymous_reload_then_same_owner"])("never recovers an unresolved cancellation ID after reload on %s", async transition => {
+  loseCancellationResponses(); render(<InSeasonPanel />); await attemptCancellation();
+  cleanup(); render(<InSeasonPanel />); const listener = mocks.auth.mock.lastCall![0];
+  if (transition === "foreign_owner_without_callback") signIn("owner-b");
+  if (transition === "foreign_owner_callback") act(() => listener("INITIAL_SESSION", signIn("owner-b")));
+  if (transition === "signed_out_then_same_owner") { mocks.session.mockResolvedValue({ data: { session: null } }); act(() => listener("SIGNED_OUT", null)); }
+  if (transition === "anonymous_reload_then_same_owner") { mocks.session.mockResolvedValue({ data: { session: null } }); act(() => listener("INITIAL_SESSION", null)); }
+  if (transition !== "foreign_owner_without_callback" && transition !== "foreign_owner_callback") {
+    expect(sessionStorage.getItem(storedCancellation)).toBeNull(); act(() => listener("SIGNED_IN", signIn("owner-a")));
+  }
+  await attemptCancellation();
+  const ids = sentCancellationIds(); expect(ids).toHaveLength(2); expect(ids[1]).not.toBe(ids[0]); expect(ids[1]).toMatch(/^[a-f0-9-]{36}$/);
+  const owner = transition.startsWith("foreign") ? "owner-b" : "owner-a";
+  expect(JSON.parse(sessionStorage.getItem(storedCancellation)!)).toEqual({ ownerId: owner, requests: { sub_fixture: { requestId: ids[1], savedAt: expect.any(Number) } } });
+});
+const seededId = "11111111-2222-4333-8444-555555555555";
+it.each([
+  ["corrupt JSON", () => "{not json"],
+  ["another owner", () => JSON.stringify({ ownerId: "owner-b", requests: { sub_fixture: { requestId: seededId, savedAt: Date.now() } } })],
+  ["expired entry", () => JSON.stringify({ ownerId: "owner-a", requests: { sub_fixture: { requestId: seededId, savedAt: Date.now() - 25 * 60 * 60 * 1000 } } })],
+  ["future entry", () => JSON.stringify({ ownerId: "owner-a", requests: { sub_fixture: { requestId: seededId, savedAt: Date.now() + 60 * 60 * 1000 } } })],
+  ["malformed request ID", () => JSON.stringify({ ownerId: "owner-a", requests: { sub_fixture: { requestId: "../../not-a-request", savedAt: Date.now() } } })],
+  ["36-character non-UUID request ID", () => JSON.stringify({ ownerId: "owner-a", requests: { sub_fixture: { requestId: "-".repeat(36), savedAt: Date.now() } } })],
+  ["non-v4 UUID request ID", () => JSON.stringify({ ownerId: "owner-a", requests: { sub_fixture: { requestId: "11111111-2222-1333-8444-555555555555", savedAt: Date.now() } } })],
+  ["uppercase request ID the route would reject", () => JSON.stringify({ ownerId: "owner-a", requests: { sub_fixture: { requestId: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee".toUpperCase(), savedAt: Date.now() } } })],
+  ["wrong shape", () => JSON.stringify({ ownerId: "owner-a", requests: ["sub_fixture", seededId] })],
+])("fails safe on %s stored cancellation state", async (_, stored) => {
+  const seeded = stored(); sessionStorage.setItem(storedCancellation, seeded);
+  loseCancellationResponses(); render(<InSeasonPanel />); await attemptCancellation();
+  const [id] = sentCancellationIds(); expect(seeded.toLowerCase()).not.toContain(id); expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+  expect(JSON.parse(sessionStorage.getItem(storedCancellation)!)).toEqual({ ownerId: "owner-a", requests: { sub_fixture: { requestId: id, savedAt: expect.any(Number) } } });
+});
+it("restores a real generated request ID after reload", async () => {
+  const generated = crypto.randomUUID();
+  sessionStorage.setItem(storedCancellation, JSON.stringify({ ownerId: "owner-a", requests: { sub_fixture: { requestId: generated, savedAt: Date.now() - 1000 } } }));
+  loseCancellationResponses(); render(<InSeasonPanel />); await attemptCancellation();
+  expect(sentCancellationIds()).toEqual([generated]);
+});
+it("recovers a valid same-owner stored ID without disturbing other subscriptions' entries", async () => {
+  const other = { requestId: "99999999-8888-4777-8666-555555555555", savedAt: Date.now() - 1000 };
+  sessionStorage.setItem(storedCancellation, JSON.stringify({ ownerId: "owner-a", requests: { sub_fixture: { requestId: seededId, savedAt: Date.now() - 1000 }, sub_other: other } }));
+  loseCancellationResponses(); render(<InSeasonPanel />); await attemptCancellation();
+  expect(sentCancellationIds()).toEqual([seededId]);
+  expect(JSON.parse(sessionStorage.getItem(storedCancellation)!).requests.sub_other).toEqual(other);
+});
+it("drops the stored ID once cancellation is accepted", async () => {
+  loseCancellationResponses(); render(<InSeasonPanel />); await attemptCancellation();
+  fixtureApi({ management: true }); fireEvent.click(screen.getByRole("button", { name: "Confirm cancellation" }));
+  await screen.findByText(/Cancellation saved/);
+  const ids = sentCancellationIds(); expect(ids[1]).toBe(ids[0]); expect(sessionStorage.getItem(storedCancellation)).toBeNull();
+});
+it("keeps mounted retry continuity when browser storage is unavailable", async () => {
+  const blocked = () => { throw new Error("storage blocked"); };
+  vi.spyOn(Storage.prototype, "getItem").mockImplementation(blocked); vi.spyOn(Storage.prototype, "setItem").mockImplementation(blocked); vi.spyOn(Storage.prototype, "removeItem").mockImplementation(blocked);
+  try {
+    loseCancellationResponses(); render(<InSeasonPanel />); await attemptCancellation();
+    fireEvent.click(screen.getByRole("button", { name: "Confirm cancellation" }));
+    await waitFor(() => expect(sentCancellationIds()).toHaveLength(2));
+    const ids = sentCancellationIds(); expect(ids[1]).toBe(ids[0]);
+  } finally { vi.restoreAllMocks(); }
 });

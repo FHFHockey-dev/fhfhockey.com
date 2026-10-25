@@ -1,7 +1,0 @@
-{
-  "functionSetting": "20ms",
-  "topLevelSetting": "0/default fixture connection",
-  "elapsed": 113.2347090000003,
-  "status": "retained",
-  "conclusion": "A function proconfig value alone is not an already-running direct PG statement timer; actual PostgREST hoisting remains a deployed proof gate"
-}

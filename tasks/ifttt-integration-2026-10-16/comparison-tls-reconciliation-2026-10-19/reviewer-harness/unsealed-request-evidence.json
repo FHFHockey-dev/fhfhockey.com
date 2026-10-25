@@ -1,9 +1,0 @@
-{
-  "syntheticControl": true,
-  "approvedBindingAndPolicyHashesUnchanged": true,
-  "clearanceOutputReservation": 1024,
-  "changedRequestOutputLimit": 128000,
-  "keyLoaderCalls": 0,
-  "sent": [],
-  "actualProviderCalls": 0
-}

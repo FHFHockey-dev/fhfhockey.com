@@ -37,6 +37,15 @@ const stats = (overrides: Partial<TeamStats> = {}): TeamStats => ({
 });
 
 describe("current-season source identity and completeness", () => {
+  it("starts the season read before schedule rows and reuses it when opponents arrive", async () => {
+    const { result, rerender } = renderHook(({ teams }) => useOpponentMetricsData(teams, 20262027), { initialProps: { teams: [] as TeamDataWithTotals[] } });
+    await waitFor(() => expect(result.current.statsLoading).toBe(false));
+    expect(source.read).toHaveBeenCalledTimes(1);
+    expect(result.current.entries).toEqual([]);
+    rerender({ teams: [team(["B"])] });
+    expect(result.current.entries[0].averages.avgXgf).toBe(5);
+    expect(source.read).toHaveBeenCalledTimes(1);
+  });
   it("reports the oldest database update without claiming provider observation freshness", async () => {
     sourceRows = [stats({ updated_at: "2026-10-10T01:31:00Z" }), stats({ team_abbreviation: "C", updated_at: "2026-10-10T01:30:08Z" })];
     const { result } = renderHook(() => useOpponentMetricsData([team(["B"])], 20262027));
@@ -103,7 +112,7 @@ describe("current-season source identity and completeness", () => {
     await waitFor(() => expect(result.current.statsError).toContain("unavailable"));
     expect(result.current.entries[0].averages.avgXgf).toBeNull();
   });
-  it("ignores a late response for a previous season and disables empty schedules", async () => {
+  it("ignores a late response for a previous season and keeps empty schedule entries empty", async () => {
     let resolveOld!: (value: { data: TeamStats[]; count: number; error: null }) => void;
     source.read.mockImplementation(async (_from, _to, season) => season === 20262027
       ? new Promise((resolve) => { resolveOld = resolve; })

@@ -650,7 +650,7 @@ function getRowGameDate(row: Record<string, unknown>): string | null {
 
 function getRowStrength(row: Record<string, unknown>): StrengthState | null {
   const value = row.strength_state ?? row.strength;
-  return value === "all" || value === "ev" || value === "pp" || value === "pk"
+  return value === "all" || value === "ev" || value === "pp" || value === "pk" || value === "5v5"
     ? value
     : null;
 }

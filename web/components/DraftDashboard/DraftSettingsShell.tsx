@@ -163,7 +163,7 @@ export default function DraftSettingsShell({
         <h2 id="draft-settings-title">Draft Settings</h2>
         <span className={styles.settingsContext}>{settings.teamCount} teams · {validation.spots} spots · {settings.leagueType === "categories" ? "Categories" : "Points"}</span>
         <a className={styles.draftProLink} href="/account?section=draft-pro">
-          {draftProEligible ? "Manage Draft Pro" : "Explore Draft Pro"}
+          {draftProEligible ? "Manage Draft Pro" : "View existing Draft Pro access"}
         </a>
         <button type="button" className={styles.closeSettings} onClick={dismiss} aria-label="Close settings">×</button>
       </div>

@@ -84,11 +84,17 @@ export default function useSchedule(
   useEffect(() => {
     let ignore = false;
     setLoading(true);
+    const controller = new AbortController();
     (async () => {
-      // Fetch schedule for the selected week
-      const schedule = await getSchedule(start);
-      // Fetch season-active teams (prevents padding with retired teams like ARI)
-      const seasonTeams = await getTeams();
+      const nextMon = format(addDays(parseISO(start), 7), "yyyy-MM-dd");
+      // Register both odds-bearing windows before fixture-only subscribers start.
+      // Two is the maximum concurrency; team metadata shares its own season-keyed read.
+      const [schedule, nextWeekSchedule, seasonTeams] = await Promise.all([
+        getSchedule(start, { signal: controller.signal }),
+        extended ? getSchedule(nextMon, { signal: controller.signal }) : Promise.resolve(null),
+        getTeams(undefined, { signal: controller.signal }),
+      ]);
+      if (ignore) return;
       // Safety: if API/DB has duplicate franchise entries with same abbreviation,
       // keep the higher teamId (e.g., prefer UTA 68 over legacy 59)
       const preferredByAbbr = new Map<string, number>();
@@ -96,8 +102,6 @@ export default function useSchedule(
         const prev = preferredByAbbr.get(t.abbreviation);
         if (prev === undefined || t.id > prev) preferredByAbbr.set(t.abbreviation, t.id);
       });
-      const nextMon = format(addDays(parseISO(start), 7), "yyyy-MM-dd");
-      const nextWeekSchedule = extended ? await getSchedule(nextMon) : null;
 
       if (!ignore) {
         if (
@@ -175,8 +179,9 @@ export default function useSchedule(
         setLoading(false);
       }
     })().catch((error) => {
-      console.error("Error fetching schedule:", error);
       if (!ignore) {
+        controller.abort();
+        console.error("Error fetching schedule:", error);
         setScheduleArray([]);
         setNumGamesPerDay([]);
         setCalendar({ coveredDates: [], coverage: { known: 0, expected: extended ? 10 : 7 }, error: error instanceof Error ? error.message : "Schedule unavailable." });
@@ -187,6 +192,7 @@ export default function useSchedule(
 
     return () => {
       ignore = true;
+      controller.abort();
     };
   }, [start, extended, key]);
 

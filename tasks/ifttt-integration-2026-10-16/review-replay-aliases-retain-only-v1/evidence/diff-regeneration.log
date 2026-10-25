@@ -1,5 +1,0 @@
-# Diff regeneration — 2026-10-17 17:28:24 EDT
-command: diff -u --label a/<path> --label b/<path> <owner before/> <live>  (test: /dev/null vs live)
-BYTE-IDENTICAL replay-player-aliases.ts.diff  677fed2e07f442369449e5af7f22c6073946e6cadc467844f60215348a8ff0c1
-BYTE-IDENTICAL replay-player-aliases.test.ts.diff  888291b0ce020a72b0f7c259fbba2512c4a4d5d434f4f38a10414d65b5c0c266
-git diff HEAD numstat (route): 3	1	web/pages/api/v1/db/replay-player-aliases.ts

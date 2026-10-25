@@ -52,10 +52,10 @@ describe.runIf(Boolean(process.env.IFTTT_POSTGRES_BIN))("durable qualified IFTTT
     return {...f,claims,source,game};
   };
   const installFixtureSchema=async()=>{
-    const task = join(__dirname, "../../../tasks/ifttt-integration-2026-10-16");
-    await sql(readFileSync(join(task, "migrations/20261016024711_tweet_claim_registry.sql"), "utf8"), [], false);
-    await sql(readFileSync(join(task, "next-increment/20261016073000_tweet_claim_qualification.sql"), "utf8"), [], false);
-    await sql(readFileSync(join(task, "durable-occurrence-increment/20261016044953_tweet_claim_occurrence_identity.sql"), "utf8"), [], false);
+    const task = join(__dirname, "./fixtures/postgres");
+    await sql(readFileSync(join(task, "20261016024711_tweet_claim_registry.sql"), "utf8"), [], false);
+    await sql(readFileSync(join(task, "20261016073000_tweet_claim_qualification.sql"), "utf8"), [], false);
+    await sql(readFileSync(join(task, "20261016044953_tweet_claim_occurrence_identity.sql"), "utf8"), [], false);
     for (const table of TWEET_LEGACY_SINKS) await sql(`create table public.${table}(game_id bigint,team_id bigint,player_id bigint,published_at timestamptz,payload jsonb,report_key text,event_key text,tweet_id text,quoted_tweet_id text,capture_key text,source_capture_key text,original_identity text,capture_id text,id text,snapshot_id text,claim_id text,source_tweet_id text,original_tweet_id text); grant select on public.${table} to service_role`, [], false);
     await sql(`create table public.nhl_api_game_roster_spots(game_id bigint,game_date date,team_id bigint,player_id bigint,first_name text,last_name text,position_code text,updated_at timestamptz,source_play_by_play_hash text);
       create table public.nhl_api_game_normalization_status(game_id bigint,status text,completed_at timestamptz,pbp_raw_payload_id bigint,pbp_raw_payload_hash text,normalization_fingerprint text);
@@ -371,7 +371,7 @@ describe.runIf(Boolean(process.env.IFTTT_POSTGRES_BIN))("durable qualified IFTTT
     expect(await sql("select * from public.tweet_claim_occurrence_component_links where kind='original' and key='10067'")).toEqual([]);
     expect(await sql("select * from public.tweet_claim_outbox where scope_key=$1",[f.claims[0]!.scopeKey])).toEqual([]);
   });
-  const gameFixtures=JSON.parse(readFileSync(join(__dirname,"../../../tasks/ifttt-integration-2026-10-16/game-scope-fixtures-v2/cases.json"),"utf8"));
+  const gameFixtures=JSON.parse(readFileSync(join(__dirname,"./fixtures/tweetClaimGameScopeCases.json"),"utf8"));
   for(const c of gameFixtures.positiveCases as any[])it(`persists ${c.id} with explicit date evidence and two independent held actions`,async()=>{
     await sql("drop schema public cascade;create schema public;grant usage on schema public to service_role",[],false);
     await installFixtureSchema();

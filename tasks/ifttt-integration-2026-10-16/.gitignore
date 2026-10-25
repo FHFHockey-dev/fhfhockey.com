@@ -1,4 +1,0 @@
-# Retain the verified bundle locally without committing its inherited source tree.
-handoff/extracted-reviewed/
-handoff/*.zip
-next-increment/frozen-checkpoint-v1/

@@ -10,6 +10,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import NewsCard from "./NewsCard";
 import { teamsInfo } from "lib/teamsInfo";
+import { getPublicNewsSourceAttribution, sanitizePublicNewsFeedItem } from "lib/newsFeed";
+import receipt from "lib/sources/fixtures/homepageNewsReceipt.json";
+
+const UNVERIFIED = "We couldn't verify the player details in this report.";
 
 vi.mock("next/legacy/image", () => ({
   default: ({ alt, src }: { alt: string; src: string }) => (
@@ -339,7 +343,8 @@ describe("NewsCard", () => {
     expect(screen.queryByText("Kevin He")).toBeNull();
     expect(screen.queryByText("Kevin He injury update")).toBeNull();
     expect(screen.getByText(/Mathew Barzal is with/)).toBeTruthy();
-    expect(screen.getByText("Subject-to-claim evidence unavailable")).toBeTruthy();
+    expect(screen.getByText(UNVERIFIED)).toBeTruthy();
+    expect(screen.queryByText(/subject-to-claim/i)).toBeNull();
   });
 
   it("does not add disclosure controls to unrelated NewsCard variants", () => {
@@ -355,6 +360,42 @@ describe("NewsCard", () => {
       screen.getByRole("heading", { name: "Source report" }),
     ).toBeTruthy();
   });
+  // Retained sanitized receipt rows: the reader cannot say which check failed, so one plain state is shown.
+  it.each(receipt.pageProps.recentInjuryNews.matches.map(r => [r.id, r] as const))("shows plain unverified-details copy for retained card %s", (_id, row) => {
+    const item = sanitizePublicNewsFeedItem({ ...row, blurb: row.blurb_prefix, source_label: null, source_account: null,
+      metadata: { automation: { source: "tweet_news_phrase_dictionary", autoPublish: false, primaryRuleId: "manual-review" } },
+      players: row.players.map(p => ({ ...p, player_name: p.name })), card_status: "published" } as any);
+    const { container } = render(<NewsCard item={item} />);
+    expect(screen.getByRole("heading", { name: "Source report" })).toBeTruthy();
+    expect(screen.getAllByText(UNVERIFIED)).toHaveLength(1);
+    expect(container.textContent).not.toMatch(/subject-to-claim|claim evidence/i);
+    expect(container.textContent).toContain(item.blurb.replace(/^RT @\w+:\s*/, "").slice(0, 20));
+    for (const p of row.players) expect(screen.queryByText(new RegExp(`${p.name} ·`))).toBeNull();
+    const url = getPublicNewsSourceAttribution({ item }).url;
+    const link = screen.queryByRole("link", { name: /view original post/i });
+    expect(link?.getAttribute("href") ?? null).toBe(url);
+  });
+
+  it("keeps a valid original-post link beside the unverified-details copy", () => {
+    render(<NewsCard item={makeItem()} />);
+    expect(screen.getByText(UNVERIFIED)).toBeTruthy();
+    expect(screen.getByRole("link", { name: /view original post/i }).getAttribute("href")).toBe("https://x.com/FriedgeHNIC/status/2073877758803935434");
+  });
+
+  it("shows no unverified-details copy when the reader verifies a claim", () => {
+    const text = "Victor Hedman will not play tonight.";
+    render(<NewsCard item={makeItem({ category: "INJURY", subcategory: "OUT", headline: "ignored", blurb: text, metadata: { interpretation: {
+      version: "2026-10-13.1", units: [], unresolved: [], events: [{ playerId: 8475167, playerName: "Victor Hedman", kind: "injury", state: "unknown",
+        availability: "out", modality: "affirmative", evidence: { text, start: 0, end: text.length } }] } } })} />);
+    expect(screen.getByText(/Victor Hedman · Unknown report/)).toBeTruthy();
+    expect(screen.queryByText(UNVERIFIED)).toBeNull();
+  });
+
+  it("keeps lineup cards free of the unverified-details copy", () => {
+    render(<NewsCard item={makeItem({ category: "LINE COMBINATION", subcategory: "PRACTICE LINES", metadata: { lineupCard: { forwards: [["A", "B", "C"]] } } })} />);
+    expect(screen.queryByText(UNVERIFIED)).toBeNull();
+  });
+
 
   it.each(["NYR", "TOR", "ZZZ"])("uses %s's palette for the shared full and mini snapshot grids", (abbreviation) => {
     const item = makeItem({ team_abbreviation: abbreviation, category: "LINE COMBINATION", subcategory: "PRACTICE LINES",

@@ -2,13 +2,15 @@ import { decodePlanningDataTransport } from "../rosterScheduleData/planningDataT
 import { expandBridgeForecasts, jsonUtf8Bytes, PLANNING_RESPONSE_BYTE_BUDGET } from "../rosterScheduleData/bridgeForecastWire";
 import type { GameForecast, PlanningData, PlanningSnapshot, StatLine } from "./planningTypes";
 import { cachedYahooPlayer, type YahooEligibilityReceipt } from "./yahooEligibility";
-import { applyProviderGoalieStarts } from "./providerGoalieStarts";
+import { readPrivatePlanning } from "./privatePlanningRead";
 
 export type CurrentPlanningOptions = { allowRead?: boolean; publicContext?: boolean; refreshKey?: string;
-  yahooEligibility?: YahooEligibilityReceipt | null };
+  yahooEligibility?: YahooEligibilityReceipt | null; yahooPrincipalId?: string | null };
 type BridgeScope = { rows: ReadonlyMap<StatLine, string>; policyRevision: string; expiresAt: number };
 let activeBridgeScope: BridgeScope | null = null;
 let activeClock: (() => number) | null = null;
+let activePrivateDeadline: number | null = null;
+export const currentPrivatePlanningDeadline = () => activePrivateDeadline;
 /** Comparable across a window and its workers, unaffected by wall-clock edits. */
 export const planningMonotonicNow = () => performance.timeOrigin + performance.now();
 /** Only a current GET can establish the runtime server clock; never serialized. */
@@ -17,8 +19,8 @@ const fingerprint = (row: GameForecast) => JSON.stringify(row, (key, value) => k
   : value && typeof value === "object" && !Array.isArray(value)
     ? Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b))) : value);
 
-/** A synchronous, realm-local read capability. Neither JSON nor a worker message
- * can mint it. Copies must retain the immutable current stats object and lineage. */
+/** A synchronous, realm-local read capability. Saved/request JSON cannot mint
+ * it. Copies must retain the immutable current stats object and lineage. */
 export function currentBridgeIsAuthorized(row: GameForecast, policyRevision: string): boolean {
   return activeBridgeScope !== null && activeBridgeScope.policyRevision === policyRevision
     && currentPlanningTime() < activeBridgeScope.expiresAt
@@ -53,11 +55,13 @@ export function forecastInputExpiry(snapshot: Pick<PlanningSnapshot, "forecasts"
 /** The only authority constructor owns the actual same-origin GET. `run` must be
  * synchronous; authority ends before any result crosses JSON/worker transport. */
 export async function withCurrentPlanningRead<T>(snapshot: PlanningSnapshot, options: CurrentPlanningOptions,
-  expectedPolicyRevision: string, signal: AbortSignal, run: (input: PlanningSnapshot, data: PlanningData | null, readError: string | null) => T): Promise<T> {
+  expectedPolicyRevision: string, signal: AbortSignal, run: (input: PlanningSnapshot, data: PlanningData | null, readError: string | null) => T,
+  privatePort?: MessagePort): Promise<T> {
   let data: PlanningData | null = null;
   let readError: string | null = null;
   let input = capacityPlanningSnapshot(snapshot);
   let serverClock: (() => number) | null = null;
+  let privateDeadline: number | null = null;
   const controller = new AbortController();
   const abort = () => controller.abort();
   signal.addEventListener("abort", abort, { once: true });
@@ -74,11 +78,16 @@ export async function withCurrentPlanningRead<T>(snapshot: PlanningSnapshot, opt
     // A forward wall jump is conservatively elapsed time (including sleep on
     // platforms whose performance clock pauses). A backward jump cannot extend authority.
     const elapsed = () => Math.max(0, planningMonotonicNow() - startedAt, Date.now() - startedWall);
-    const response = await fetch(`/api/v1/roster-schedule-optimizer/data?${params}`, {
-      method: "GET", cache: "no-store", credentials: "same-origin", signal: controller.signal,
-      headers: { "X-RSO-Read-Nonce": nonce },
-    });
-    const body = await response.json();
+    const privateRead = snapshot.context.provider === "yahoo" && !!options.yahooPrincipalId;
+    if (privateRead && !privatePort) throw new Error("Current Yahoo read requires its authenticated runtime channel.");
+    const response = privateRead ? await readPrivatePlanning(privatePort!, nonce, controller.signal) : await (async () => {
+      const fetched = await fetch(`/api/v1/roster-schedule-optimizer/data?${params}`, {
+        method: "GET", cache: "no-store", credentials: "same-origin", signal: controller.signal,
+        headers: { "X-RSO-Read-Nonce": nonce },
+      });
+      return { ok: fetched.ok, body: await fetched.json() };
+    })();
+    const body = response.body;
     if (controller.signal.aborted || jsonUtf8Bytes(body) > PLANNING_RESPONSE_BYTE_BUDGET) throw new Error("Current read unavailable.");
     if (!response.ok || body.success !== true) throw new Error(typeof body.error === "string" ? body.error
       : typeof body.error?.message === "string" ? body.error.message : "Current read unavailable.");
@@ -92,12 +101,20 @@ export async function withCurrentPlanningRead<T>(snapshot: PlanningSnapshot, opt
     // The full request round trip is a conservative upper bound on time since
     // server evaluation. Device/server clock offsets never enter the comparison.
     serverClock = () => evaluatedAt + elapsed();
+    if (privateRead) {
+      const scope = { principalId: options.yahooPrincipalId, teamId: snapshot.context.teamId, leagueId: snapshot.context.leagueId,
+        seasonId, startDate, endDate, timeZone };
+      if (Object.entries(scope).some(([key, value]) => body.read?.[key] !== value)) throw new Error("Current Yahoo read scope changed.");
+      if (body.read.expiresAt !== null) {
+        privateDeadline = Date.parse(body.read.expiresAt ?? "");
+        if (!Number.isFinite(privateDeadline) || privateDeadline <= serverClock() || privateDeadline > serverClock() + 120000)
+          throw new Error("Current Yahoo confirmation expired.");
+      }
+    }
     const forecasts = [...decoded.forecasts, ...expandBridgeForecasts(body.bridgeForecasts, decoded)];
-    // Yahoo's goalie marks come from the private roster read, so they shape the rows here, before the scope below
-    // fingerprints them; a public workspace or retained roster carries no marks.
-    data = { ...decoded, forecasts: snapshot.context.provider === "yahoo" && !options.publicContext
-      ? applyProviderGoalieStarts(forecasts, { marked: snapshot.players, catalog: decoded.players, games: decoded.games,
-        bridgeRevisionIds: new Set(policy.bridgeRevisionIds), now: evaluatedAt }) : forecasts };
+    // Saved/provider snapshots can carry Yahoo labels, but serialized marks are
+    // not current server evidence and cannot change rows before authority is minted.
+    data = { ...decoded, forecasts };
     // Private/provider identities and schedule are never restamped to match a
     // forecast. Only an explicit current public workspace bootstraps those inputs.
     const publicPlayers = new Map(data.players.map(row => [row.id, row]));
@@ -124,19 +141,21 @@ export async function withCurrentPlanningRead<T>(snapshot: PlanningSnapshot, opt
     freeze(data);
   } catch (error) {
     readError = error instanceof Error ? error.message : "Current read unavailable.";
-    data = null; serverClock = null; input = capacityPlanningSnapshot(snapshot, readError);
+    data = null; serverClock = null; privateDeadline = null; input = capacityPlanningSnapshot(snapshot, readError);
   } finally {
     clearTimeout(timer); signal.removeEventListener("abort", abort);
   }
   if (signal.aborted) throw new DOMException("Obsolete planning generation", "AbortError");
   const previous = activeBridgeScope;
   const previousClock = activeClock;
+  const previousDeadline = activePrivateDeadline;
   activeClock = serverClock;
+  activePrivateDeadline = privateDeadline;
   const bridgeIds = new Set(data?.forecastManifest?.rsoUsePolicy?.bridgeRevisionIds ?? []);
   activeBridgeScope = data ? { policyRevision: expectedPolicyRevision,
-    expiresAt: forecastInputExpiry(input) ?? currentPlanningTime(),
+    expiresAt: Math.min(forecastInputExpiry(input) ?? currentPlanningTime(), privateDeadline ?? Infinity),
     rows: new Map(data.forecasts.filter(row => !row.rsoTargetBindings && bridgeIds.has(row.revisionId))
       .map(row => [row.stats, fingerprint(row)])) } : null;
   try { return run(input, data, readError); }
-  finally { activeBridgeScope = previous; activeClock = previousClock; }
+  finally { activeBridgeScope = previous; activeClock = previousClock; activePrivateDeadline = previousDeadline; }
 }

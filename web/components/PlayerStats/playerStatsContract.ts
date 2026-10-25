@@ -182,20 +182,78 @@ const finite = (value: unknown): number | null => {
   return Number.isFinite(n) ? n : null;
 };
 
+// Goalie primitives come from numeric WGO fields. Do not infer missing counts
+// or parse a formatted clock as elapsed seconds.
+const goalieNumber = (value: unknown): number | null =>
+  typeof value === "number" && Number.isFinite(value) && value >= 0
+    ? value
+    : null;
+
+export function summarizeQualityStarts(log: DatedRow[]): {
+  starts: number;
+  classifiedStarts: number;
+  unknownStarts: number;
+  rate: number | null;
+} {
+  let starts = 0;
+  let classifiedStarts = 0;
+  let qualityStarts = 0;
+  let unknownStarts = 0;
+  for (const row of log) {
+    const played = goalieNumber(row.games_played);
+    if (played === 0) continue;
+    const started = goalieNumber(row.games_started);
+    if (played === null || (started !== 0 && started !== 1)) {
+      unknownStarts += 1;
+      continue;
+    }
+    if (started === 0) continue;
+    starts += 1;
+    const classification = goalieNumber(row.quality_start);
+    if (classification === 0 || classification === 1) {
+      classifiedStarts += 1;
+      qualityStarts += classification;
+    }
+  }
+  return {
+    starts,
+    classifiedStarts,
+    unknownStarts,
+    rate: unknownStarts === 0 && starts > 0 && classifiedStarts === starts
+      ? qualityStarts / starts
+      : null
+  };
+}
+
 // Ratios rebuilt from summed components rather than averaged per game.
 const RATIO_COMPONENTS: Record<string, [string, string]> = {
-  shooting_percentage: ["goals", "shots"],
-  save_pct: ["saves", "shots_against"]
+  shooting_percentage: ["goals", "shots"]
 };
 
 /**
  * Aggregate one stat over a log. Missing values are skipped, never counted as
  * zero; a stat with no usable values (or a zero denominator) is null.
+ * Goalie ratios require complete paired primitives across the supplied log.
  */
 export function aggregateSummaryStat(
   log: DatedRow[],
   stat: string
 ): number | null {
+  if (stat === "save_pct" || stat === "goals_against_avg") {
+    let numerator = 0;
+    let denominator = 0;
+    for (const row of log) {
+      const top = goalieNumber(row[stat === "save_pct" ? "saves" : "goals_against"]);
+      const bottom = goalieNumber(row[stat === "save_pct" ? "shots_against" : "time_on_ice"]);
+      if (top === null || bottom === null || !Number.isInteger(top)) return null;
+      if (stat === "save_pct" && (!Number.isInteger(bottom) || top > bottom)) return null;
+      if (bottom === 0 && top > 0) return null;
+      numerator += top;
+      denominator += bottom;
+    }
+    // WGO time_on_ice is numeric seconds; never infer 60 minutes per appearance.
+    return denominator > 0 ? numerator * (stat === "save_pct" ? 1 : 3600) / denominator : null;
+  }
   const ratio = RATIO_COMPONENTS[stat];
   if (ratio) {
     let numerator = 0;

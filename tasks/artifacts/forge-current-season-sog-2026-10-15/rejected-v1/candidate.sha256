@@ -1,4 +1,0 @@
-9d1b79b8aab5d50d8b68253f17f8fd6708df733bd1581784e4d63353780e1107  web/lib/player-forecasts/currentSeasonSogBaseline.ts
-c98d51e7a7fa8a0b3f89ac72494332e8cfd8bcb7f8bc3f49c07507372d39c5fe  web/lib/player-forecasts/currentSeasonSogBaseline.test.ts
-be122c0f6f6dff32e483cca566bffb0d44421b63ce2388d4ba51ab96403d0dd2  web/scripts/capture-current-season-sog-baseline.ts
-1bde29d9799f649f6bfa4f9b936def1131632c8ddb70ea26d5f1fcd8e4ff7f13  web/scripts/capture-current-season-sog-baseline.test.ts

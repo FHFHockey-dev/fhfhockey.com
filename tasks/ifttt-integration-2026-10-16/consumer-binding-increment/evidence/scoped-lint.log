@@ -1,6 +1,0 @@
-
-> web@0.1.0 lint
-> eslint --report-unused-disable-directives-severity warn . --file lib/sources/tweetClaimForecastDelivery.ts
-
-Invalid option '--file' - perhaps you meant '--rule'?
-You're using eslint.config.js, some command line flags are no longer available. Please see https://eslint.org/docs/latest/use/command-line-interface for details.

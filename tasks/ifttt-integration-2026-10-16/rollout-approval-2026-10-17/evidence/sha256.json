@@ -1,9 +1,0 @@
-{
- "rollout-approval-2026-10-17/ROLLOUT-APPROVAL.md": "f2949718515c7d053eac239cd9b47f1d0bc44fe31df92fd889f517bd44201e6d",
- "rollout-approval-2026-10-17/evidence/pilot-window-readback-fixture.json": "19a243777e1980911b8b60e04b82aa619636103a73dafb0b0cef24bc6ab435d0",
- "rollout-approval-2026-10-17/evidence/r22-scoped-tsc.log": "28d3b9e880a77975493dc7e359144c0295a4f694cfe0af4f928c22307bc5c320",
- "rollout-approval-2026-10-17/evidence/readback-fixture-after.json": "10bb27af43930c98bf8899c8daa8cdfe1b5a7e32bf448a2c649903b78eb91153",
- "rollout-approval-2026-10-17/evidence/readback-fixture-before.json": "1e6b73ae0fa02be7f5ac9a121f80dc18136e3c04a6739f08373e028a67595d6a",
- "rollout-approval-2026-10-17/pilot-window-readback.sql": "3fe4e005d8d3d2cf3dc042b601b5fd6308d71df250a23c2577f1752284fc5440",
- "rollout-approval-2026-10-17/receiver-chain-readback.sql": "1e46f34fcdfbc207f483cfd013815748a6bc12a4be7babda876289e647b7d651"
-}

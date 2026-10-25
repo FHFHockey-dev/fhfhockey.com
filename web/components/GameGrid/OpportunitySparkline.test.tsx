@@ -27,7 +27,7 @@ describe("OpportunitySparkline", () => {
       week(3, "2026-11-02", 3, 2, "harder"), week(4, "2026-11-09", 4, 0, "average"),
     ]);
     const { container } = render(<OpportunitySparkline value={value} scale={5} team="BOS" />);
-    const trigger = screen.getByRole("button", { name: /^BOS 4-week value 11\.8, rising; weekly games 1, 3, 3, 4$/ });
+    const trigger = screen.getByRole("button", { name: /^BOS 4-week opportunity 11\.8, rising; weekly games 1, 3, 3, 4$/ });
     expect([...container.querySelectorAll("stop")].map((stop) => stop.getAttribute("data-matchup"))).toEqual(["easier", "average", "harder", "average"]);
     expect(container.querySelector("svg")?.getAttribute("data-shared-scale")).toBe("5");
 
@@ -49,7 +49,7 @@ describe("OpportunitySparkline", () => {
       week(3, "2026-11-02", 3, 1, "easier"), week(4, "2026-11-09", 2, 0, "harder"),
     ]);
     const { container } = render(<OpportunitySparkline value={value} scale={5} team="F1" />);
-    const trigger = screen.getByRole("button", { name: /^F1 4-week value —/ });
+    const trigger = screen.getByRole("button", { name: /^F1 4-week opportunity —/ });
     const line = container.querySelector("path[stroke]:not([filter])")!.getAttribute("d")!;
     expect(line.match(/M/g)).toHaveLength(2);
     expect(container.querySelectorAll("circle")).toHaveLength(3);

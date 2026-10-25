@@ -1,6 +1,0 @@
-pages/api/v1/internal/in-season-billing.ts(19,24): error TS2345: Argument of type 'Buffer' is not assignable to parameter of type 'ArrayBufferView'.
-  Type 'Buffer' is not assignable to type 'Uint8Array<ArrayBufferLike> | DataView<ArrayBufferLike>'.
-    Type 'Buffer' is not assignable to type 'Uint8Array<ArrayBufferLike>'.
-      The types of 'slice(...).buffer' are incompatible between these types.
-        Type 'ArrayBufferLike' is not assignable to type 'ArrayBuffer'.
-          Type 'SharedArrayBuffer' is missing the following properties from type 'ArrayBuffer': resizable, resize, detached, transfer, transferToFixedLength

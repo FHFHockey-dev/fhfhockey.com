@@ -4,14 +4,49 @@ const path = require('node:path');
 const assert = require('node:assert/strict');
 const { createHash } = require('node:crypto');
 const repo = path.resolve(__dirname, '../../../..');
+const hash = file => createHash('sha256').update(fs.readFileSync(path.join(repo, file))).digest('hex');
+const relocationPath = path.relative(repo, path.join(__dirname, 'SOURCE-RELOCATION.v1.json'));
+const relocationDigest = '54b33decfb7dbf1173bb67c154665ff9c154982961be754c0eb7000b0e96efb2';
+assert.equal(hash(relocationPath), relocationDigest, 'versioned relocation manifest changed');
+const relocation = JSON.parse(fs.readFileSync(path.join(repo, relocationPath), 'utf8'));
+assert.equal(relocation.schemaVersion, 1);
+assert.equal(hash(relocation.historicalManifest), relocation.historicalManifestSha256, 'historical manifest changed');
+assert.equal(hash(relocation.relocationReceipt), relocation.relocationReceiptSha256, 'accepted relocation receipt changed');
+const historicalHashes = JSON.parse(fs.readFileSync(path.join(repo, relocation.historicalManifest), 'utf8'));
+const hashes = { ...historicalHashes };
+for (const entry of relocation.entries) {
+  assert.equal(hashes[entry.from], entry.beforeSha256, entry.from);
+  if (entry.from !== entry.to) {
+    assert.equal(entry.beforeSha256, entry.afterSha256, 'relocated SQL bytes must stay unchanged');
+    assert.equal(hashes[entry.to], undefined, 'relocation must not replace another frozen input');
+  }
+  delete hashes[entry.from];
+  hashes[entry.to] = entry.afterSha256;
+}
+assert.equal(Object.keys(hashes).length, Object.keys(historicalHashes).length);
+function verifySourceHashes() {
+  assert.equal(hash(relocationPath), relocationDigest, 'versioned relocation manifest changed');
+  assert.equal(hash(relocation.historicalManifest), relocation.historicalManifestSha256, 'historical manifest changed');
+  assert.equal(hash(relocation.relocationReceipt), relocation.relocationReceiptSha256, 'accepted relocation receipt changed');
+  for (const [file, digest] of Object.entries(hashes)) assert.equal(hash(file), digest, file);
+}
+verifySourceHashes();
+assert.ok(process.argv.length === 2 || (process.argv.length === 3 && process.argv[2] === '--preflight'), 'only --preflight is supported');
+if (process.argv[2] === '--preflight') {
+  console.log(JSON.stringify({ success: true, mode: 'offline-preflight', sourceCount: Object.keys(hashes).length,
+    sourceHashes: hashes, historicalManifestSha256: relocation.historicalManifestSha256,
+    relocationManifestSha256: relocationDigest, databaseAccess: false }, null, 2));
+  process.exit(0);
+}
+// Keep historical SQL receipts immutable; a new execution needs unused versioned result files.
+const resultPath = path.join(__dirname, 'RESULTS.relocation-v1.json');
+const failurePath = path.join(__dirname, 'FAILED-RESULT.relocation-v1.json');
+assert.ok(!fs.existsSync(resultPath) && !fs.existsSync(failurePath), 'preserve existing execution receipts');
 const { Client } = require(path.join(repo, 'web/node_modules/pg'));
 const target = JSON.parse(fs.readFileSync(path.join(__dirname, 'TARGET.json'), 'utf8'));
 assert.match(target.root, /^\/tmp\/fhfh-queue-sql-[a-z0-9_]+$/);
 assert.equal(target.host, '127.0.0.1'); assert.equal(target.port, 65447);
 assert.equal(target.database, 'fhfh_queue_check'); assert.equal(target.user, 'queue_owner');
-const hashes = JSON.parse(fs.readFileSync(path.join(__dirname, 'SOURCE-HASHES-BEFORE.json'), 'utf8'));
-const hash = file => createHash('sha256').update(fs.readFileSync(path.join(repo, file))).digest('hex');
-for (const [file, digest] of Object.entries(hashes)) assert.equal(hash(file), digest, file);
 const config = { host: target.host, port: target.port, user: target.user, password: 'unused-local-trust', ssl: false,
   application_name: 'fhfh-frozen-queue-verification', connectionTimeoutMillis: 3000 };
 const clients = []; const checks = []; const batches = [];
@@ -50,7 +85,7 @@ let owner; let service;
     create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
     create function public.update_updated_at_column() returns trigger language plpgsql as $$begin new.updated_at=now();return new;end$$;
     grant usage on schema public,auth to anon,authenticated,service_role;`);
-  const migrations = ['supabase/migrations/20260927104934_in_season_access_workspace.sql', 'supabase/migrations/20261021210000_in_season_sandbox_billing.sql'];
+  const migrations = ['supabase/migrations/20260927104934_in_season_access_workspace.sql', 'tasks/artifacts/in-season-billing-2026-10-21/drafts/20261021210000_in_season_sandbox_billing.sql'];
   for (const file of migrations) await query(owner, fs.readFileSync(path.join(repo, file), 'utf8'));
   pass('unchanged prerequisite and complete frozen billing migration applied only to new database', migrations.map(file => ({ file, sha256: hash(file) })));
   service = await connect(target.database);
@@ -120,10 +155,10 @@ let owner; let service;
   await query(service, "reset role; set role anon; set request.jwt.claim.role='anon'");
   await assert.rejects(rpc(service, listName, [2]), /permission denied/);
   pass('anonymous queue access remains denied');
-  for (const [file, digest] of Object.entries(hashes)) assert.equal(hash(file), digest, file);
-  pass('all seven frozen correction source hashes unchanged');
-  fs.writeFileSync(path.join(__dirname, 'RESULTS.json'), JSON.stringify({ success: true, checks, batches, isolation: { host: target.host, port: target.port, database: target.database, dataDirectory: dataDir, version }, fixtureLeaseExpiry: 'Only synthetic lease_until values shifted back 61 seconds; no server clock, due_at or function modifications.', externalCalls: 0, sourceHashes: hashes }, null, 2) + '\n');
+  verifySourceHashes();
+  pass('all seven inputs match the frozen hashes and accepted relocation manifest');
+  fs.writeFileSync(resultPath, JSON.stringify({ success: true, checks, batches, isolation: { host: target.host, port: target.port, database: target.database, dataDirectory: dataDir, version }, fixtureLeaseExpiry: 'Only synthetic lease_until values shifted back 61 seconds; no server clock, due_at or function modifications.', externalCalls: 0, sourceHashes: hashes, historicalSourceHashes: historicalHashes, relocationManifestSha256: relocationDigest }, null, 2) + '\n', { flag: 'wx' });
 })().catch(error => {
-  fs.writeFileSync(path.join(__dirname, 'FAILED-RESULT.json'), JSON.stringify({ success: false, checks, batches, error: String(error.message) }, null, 2) + '\n');
+  fs.writeFileSync(failurePath, JSON.stringify({ success: false, checks, batches, error: String(error.message) }, null, 2) + '\n', { flag: 'wx' });
   console.error(error.message); process.exitCode = 1;
 }).finally(async () => { await Promise.all(clients.map(c => c.end().catch(() => {}))); });

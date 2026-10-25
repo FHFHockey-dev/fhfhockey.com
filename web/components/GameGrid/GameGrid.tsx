@@ -28,6 +28,7 @@ import useFourWeekSchedule from "./utils/useFourWeekSchedule"; // New import
 import TransposedGrid from "./TransposedGrid";
 import OpponentMetricsTable from "./OpponentMetricsTable";
 import DesktopMasterTable from "./DesktopMasterTable";
+import { LoadingRows } from "./LoadingCells";
 import useOpponentMetricsData from "./utils/useOpponentMetricsData";
 
 import styles from "./GameGrid.module.scss";
@@ -50,7 +51,7 @@ import {
 } from "lib/NHL/types";
 
 import { useTeamsMap } from "hooks/useTeams"; // Import useTeamsMap
-import useCurrentSeason from "hooks/useCurrentSeason";
+import { useCurrentSeasonQuery } from "hooks/useCurrentSeason";
 import useTeamSummary from "hooks/useTeamSummary";
 import useYahooCurrentMatchupWeek from "hooks/useYahooCurrentMatchupWeek";
 
@@ -146,7 +147,7 @@ function GameGridInternal({
 
   // [startDate, endDate]
   const [dates, setDates] = useState<[string, string]>(() =>
-    startAndEndOfWeek()
+    parseGameGridDateRange(router.query.startDate, router.query.endDate) ?? startAndEndOfWeek()
   );
 
   const [currentSortKey, setCurrentSortKey] = useState<SortKey | null>(null);
@@ -172,7 +173,7 @@ function GameGridInternal({
     return next;
   });
 
-  const season = useCurrentSeason();
+  const { data: season, isPending: seasonLoading, isError: seasonError } = useCurrentSeasonQuery();
   const currentSeasonId = season?.seasonId ?? null;
   const currentSeasonYear = useMemo(() => {
     if (!currentSeasonId) return null;
@@ -310,13 +311,6 @@ function GameGridInternal({
     </p>}
     </>;
   };
-  const selectedScheduleStatus = (
-    <p className={styles.sourceStatus} role="status">
-      {currentLoading ? "Loading selected schedule…" : selectedCalendar.error
-        ? `Selected schedule unavailable: ${selectedCalendar.error}`
-        : `Selected schedule incomplete: ${selectedCalendar.coverage.known}/${selectedCalendar.coverage.expected} days covered. Totals and rankings are unavailable.`}
-    </p>
-  );
 
   // Detect if this week contains any preseason games
   const hasPreseason = useMemo(() => {
@@ -462,7 +456,7 @@ function GameGridInternal({
   useEffect(() => {
     if (!router.isReady) return;
     const range = parseGameGridDateRange(router.query.startDate, router.query.endDate);
-    if (range) setDates(range);
+    if (range) setDates(previous => previous[0] === range[0] && previous[1] === range[1] ? previous : range);
     else if (router.query.startDate === undefined && router.query.endDate === undefined) {
       setDates(startAndEndOfWeek());
     }
@@ -512,6 +506,7 @@ function GameGridInternal({
   })), [selectedPeriodTeamData]);
 
   const opponentMetricsData = useOpponentMetricsData(selectedPeriodTeamData, currentSeasonId);
+  const opponentLoading = seasonLoading || opponentMetricsData.statsLoading;
   const opponentRatings = useMemo(() => buildOpponentRatings(opponentMetricsData.entries, opponentMetricsData.statsByAbbreviation), [opponentMetricsData.entries, opponentMetricsData.statsByAbbreviation]);
   const calculatedAt = useOpportunityClock(fourWeekSchedule);
   const opportunityTeams = useMemo(() => {
@@ -537,6 +532,19 @@ function GameGridInternal({
       offNights: value.opportunity == null ? null : team.totals.offNights, avgOpponentPointPct: team.avgOpponentPointPct,
       score: value.opportunity, scheduleCoverage: team.totals.scheduleCoverage, opponentCoverage: team.opponentCoverage }];
   })), [opportunityByTeamId]);
+
+  const loadingStatus = <div className={styles.loadingStatus} role="status" aria-live="polite" data-grid-loading-status>
+    {currentLoading ? "Loading selected schedule…" : selectedCalendar.error ? "Selected schedule unavailable."
+      : !selectedScheduleReady ? `Selected schedule incomplete: ${selectedCalendar.coverage.known}/${selectedCalendar.coverage.expected} days covered. Totals and rankings are unavailable.`
+      : fourWeekLoading ? "Schedule ready. Loading four-week value…"
+      : opponentLoading ? "Schedule ready. Loading opponent ratings…"
+      : fourWeekCalendar.error ? "Four-week schedule unavailable. Selected schedule remains available."
+      : opponentMetricsData.statsError || seasonError || (!seasonLoading && !season) ? "Opponent ratings unavailable. Schedule remains available."
+      : summaryLoading ? "Schedule ready. Loading standings…"
+      : summaryError ? "Standings unavailable. Schedule remains available." : <span className={styles.srOnly}>Schedule ready.</span>}
+    {!currentLoading && (selectedCalendar.error || !selectedScheduleReady || fourWeekCalendar.error || opponentMetricsData.statsError || seasonError || (!seasonLoading && !season) || summaryError) &&
+      <button type="button" onClick={() => window.location.reload()}>Reload to retry</button>}
+  </div>;
 
   const isMobile = useIsMobile();
   const [showMobileTips, setShowMobileTips] = useState(false);
@@ -759,7 +767,7 @@ function GameGridInternal({
           </li>
         </ul>
       </div>
-      {gridLayout === "master" && selectedScheduleReady && (
+      {gridLayout === "master" && (
         <div className={styles.legendMetricInfo} ref={setMetricInfoTarget} />
       )}
     </div>
@@ -892,13 +900,16 @@ function GameGridInternal({
             {/* Schedule Grid section MOVED directly inside navAndGrid */}
             {/* Note: Removed the wrapping gameGridSection div as it might be redundant here */}
             <div className={styles.scheduleGridContainer}>
-              {!selectedScheduleReady ? selectedScheduleStatus : <div className={styles.tableScrollWrapper}>
+              {loadingStatus}
+              <div className={styles.tableScrollWrapper}>
                 <table
                   className={`${styles.scheduleGrid} ${styles.mobileCompactTable}`}
+                  aria-busy={currentLoading}
+                  data-schedule-state={currentLoading ? "loading" : selectedScheduleReady ? "ready" : "unavailable"}
                 >
                   <colgroup>
                     <col className={styles.gridColFirst} />
-                    <col span={7} className={styles.gridColMiddle} />
+                    <col span={scheduleDays.length} className={styles.gridColMiddle} />
                     <col span={3} className={styles.gridColEnd} />
                   </colgroup>
                   <Header
@@ -915,6 +926,7 @@ function GameGridInternal({
                     setHidePreseason={setHidePreseason}
                   />
                   <tbody>
+                    {!selectedScheduleReady ? <LoadingRows columns={1 + scheduleDays.length + 3} waiting={currentLoading} rowHeight={34} /> : <>
                     <TotalGamesPerDayRow
                       games={regularNumGamesPerDay}
                       excludedDays={excludedDays}
@@ -942,9 +954,10 @@ function GameGridInternal({
                         />
                       );
                     })}
+                    </>}
                   </tbody>
                 </table>
-              </div>}
+              </div>
             </div>{" "}
           </div>{" "}
           {/* End navAndGrid */}
@@ -955,6 +968,8 @@ function GameGridInternal({
               <OpponentMetricsTable
                 teamData={selectedPeriodTeamData}
                 metricsData={opponentMetricsData}
+                scheduleLoading={currentLoading}
+                sourceLoading={opponentLoading}
               />
             </div>
 
@@ -965,7 +980,7 @@ function GameGridInternal({
 
             {/* FourWeekGrid section */}
             <div className={styles.fourWeekSection}>
-              <FourWeekGrid opportunityByTeamId={opportunityByTeamId} sharedScale={sharedOpportunityScale} teamDataArray={teamDataWithAverages} calendar={fourWeekCalendar} warningTarget={metricWarningTarget} />
+              <FourWeekGrid loading={fourWeekLoading} opportunityByTeamId={opportunityByTeamId} sharedScale={sharedOpportunityScale} teamDataArray={teamDataWithAverages} calendar={fourWeekCalendar} warningTarget={metricWarningTarget} />
             </div>
           </div>{" "}
           {/* End mobileContainer */}
@@ -1122,16 +1137,6 @@ function GameGridInternal({
           </div>
         )}
         {/* Loading and error overlays remain outside */}
-        {(summaryLoading || fourWeekLoading) && (
-          <div className={styles.overlaySpinner}>
-            <Spinner />
-          </div>
-        )}
-        {summaryError && (
-          <div className={styles.error}>
-            <p>Error loading team summaries. Please try again later.</p>
-          </div>
-        )}
         {isDateRangeOpen && (
           <div
             className={styles.dateRangeOverlay}
@@ -1397,17 +1402,16 @@ function GameGridInternal({
           <div className={styles.controlsBarFooter} ref={setMetricWarningTarget} data-game-grid-warning-footer />
         </div>
 
+        {loadingStatus}
         {/* New 3-Column Dashboard Layout */}
         <div className={styles.dashboardLayout} data-grid-layout={gridLayout}>
-          {!selectedScheduleReady ? (
-            <div className={styles.desktopMasterSection}>
-              {selectedScheduleStatus}
-              <FourWeekGrid opportunityByTeamId={opportunityByTeamId} sharedScale={sharedOpportunityScale} teamDataArray={teamDataWithAverages} calendar={fourWeekCalendar} warningTarget={metricWarningTarget} />
-            </div>
-          ) : gridLayout === "master" ? (
+          {gridLayout === "master" ? (
             <div className={styles.desktopMasterSection}>
               <div className={styles.scheduleGridContainer}>
                 <DesktopMasterTable
+                  scheduleReady={selectedScheduleReady}
+                  scheduleLoading={currentLoading}
+                  fourWeekLoading={fourWeekLoading}
                   metricInfoTarget={metricInfoTarget}
                   warningTarget={metricWarningTarget}
                   start={dates[0]}
@@ -1423,7 +1427,7 @@ function GameGridInternal({
                   opponentMetricsByTeamId={opponentMetricsData.metricsByTeamId}
                   opponentMetricColumns={opponentMetricsData.metricColumns}
                   opponentLeagueAverages={opponentMetricsData.leagueAverages}
-                  opponentMetricsLoading={opponentMetricsData.statsLoading}
+                  opponentMetricsLoading={opponentLoading}
                   opponentMetricsError={opponentMetricsData.statsError}
                   opponentCoverageByTeamId={opponentMetricsData.coverageByTeamId}
                   opponentLeagueCoverage={opponentMetricsData.leagueCoverage}
@@ -1445,6 +1449,8 @@ function GameGridInternal({
                   <OpponentMetricsTable
                     teamData={selectedPeriodTeamData}
                     metricsData={opponentMetricsData}
+                    scheduleLoading={currentLoading}
+                    sourceLoading={opponentLoading}
                   />
                 </div>
               </div>
@@ -1454,6 +1460,8 @@ function GameGridInternal({
                 <div className={styles.scheduleGridContainer}>
                     {orientation === "vertical" ? (
                     <TransposedGrid
+                      scheduleReady={selectedScheduleReady}
+                      scheduleLoading={currentLoading}
                       sortedTeams={sortedTeams}
                       games={regularNumGamesPerDay}
                       excludedDays={excludedDays}
@@ -1471,11 +1479,12 @@ function GameGridInternal({
                     <div className={styles.gridScrollOuter}>
                       <table
                         className={`${styles.scheduleGrid} ${styles.condensed} ${styles.teamPreviewGrid}`}
+                        aria-busy={currentLoading}
                         aria-describedby="weekScoreDesc"
                       >
                         <colgroup>
                           <col className={styles.gridColFirst} />
-                          <col span={7} className={styles.gridColMiddle} />
+                          <col span={scheduleDays.length} className={styles.gridColMiddle} />
                           <col span={3} className={styles.gridColEnd} />
                         </colgroup>
                         <Header
@@ -1495,6 +1504,7 @@ function GameGridInternal({
                           key={dates[0]}
                           className={styles.fadeEnterActive}
                         >
+                          {!selectedScheduleReady ? <LoadingRows columns={1 + scheduleDays.length + 3} waiting={currentLoading} rowHeight={44} /> : <>
                           <TotalGamesPerDayRow
                             games={regularNumGamesPerDay}
                             excludedDays={excludedDays}
@@ -1525,6 +1535,7 @@ function GameGridInternal({
                               />
                             );
                           })}
+                          </>}
                         </tbody>
                       </table>
                     </div>
@@ -1535,7 +1546,7 @@ function GameGridInternal({
               {/* Right Rail: Four Week Grid */}
               <div className={styles.rightRail}>
                 <div className={styles.fourWeekGridContainerAll}>
-                  <FourWeekGrid opportunityByTeamId={opportunityByTeamId} sharedScale={sharedOpportunityScale} teamDataArray={teamDataWithAverages} calendar={fourWeekCalendar} warningTarget={metricWarningTarget} />
+                  <FourWeekGrid loading={fourWeekLoading} opportunityByTeamId={opportunityByTeamId} sharedScale={sharedOpportunityScale} teamDataArray={teamDataWithAverages} calendar={fourWeekCalendar} warningTarget={metricWarningTarget} />
                 </div>
               </div>
             </>
@@ -1583,11 +1594,6 @@ function GameGridInternal({
       </section>
 
       {/* Loading and error states */}
-      {(summaryLoading || fourWeekLoading) && (
-        <div className={styles.overlaySpinner}>
-          <Spinner />
-        </div>
-      )}
 
       <p id="weekScoreDesc" className={styles.srOnly}>
         Week Score = (Adjusted Team Games × 6) + (Off-Night Games × 4) +
@@ -1604,11 +1610,6 @@ function GameGridInternal({
         or opponent-only scoring difficulty rating. Higher odds add a small
         edge when schedules match. Teams with no games display a dash.
       </p>
-      {summaryError && (
-        <div className={styles.error}>
-          <p>Error loading team summaries. Please try again later.</p>
-        </div>
-      )}
 
       {isDateRangeOpen && (
         <div

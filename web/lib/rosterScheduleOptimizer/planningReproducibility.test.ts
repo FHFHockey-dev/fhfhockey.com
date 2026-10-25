@@ -3,6 +3,7 @@ import * as rsoPolicy from "../player-forecasts/rsoUsePolicy";
 import { bindFixtureForecast, fixtureRsoPolicy } from "../player-forecasts/rsoUsePolicy.fixtures";
 
 import { planRoster, scheduleFits, evaluatePlan } from "./planning";
+import { resolvePlanningContributions } from "../player-forecasts/planningContributions";
 import type { PlanIntent, PlanningPlayer, PlanningSnapshot } from "./planningTypes";
 import { forecastCalendarPolicy, type ContributionSource } from "../player-forecasts/contributions";
 
@@ -173,10 +174,74 @@ describe("planning search reproducibility", () => {
     }
   };
   it.each(["detailed", "blended"] as const)("reproduces admitted %s quality decisions across scoring profiles and input order", reproducesAdmittedQuality);
-  // Known P07 defect, unchanged assertions: the first resolution admits a baseline rate that borrows the issued row's
-  // reviewed participation, but the rebuilt row reports the rate's model version, so re-restriction no longer matches
-  // the binding and denies it (fail-closed). Fixing it needs the participation receipt to carry the issued code version.
-  it.fails("reproduces admitted baseline quality decisions across scoring profiles and input order", () => reproducesAdmittedQuality("baseline"));
+  it("reproduces admitted baseline quality decisions across scoring profiles and input order", () => reproducesAdmittedQuality("baseline"));
+
+  it.each(["points", "goalie"] as const)("keeps issued participation identity when %s baseline rates have a newer cutoff", profile => {
+    const snapshot = qualityFixture("baseline", profile);
+    snapshot.baselineSources = snapshot.baselineSources!.map(source => ({ ...source,
+      cutoffAt: "2026-10-03T02:00:00Z", issuedAt: "2026-10-03T03:00:00Z" }));
+    const target = profile === "goalie" ? "SAVES_GOALIE" : "GOALS";
+    const resolved = resolvePlanningContributions(snapshot, { consumer: "rso" });
+    const row = resolved.forecasts[0];
+    expect(row.stats[target]).not.toBeNull();
+    expect(row.contributions?.[target].sourceKind).toBe("baseline");
+    expect(row.contributions?.[target].inputs?.baseline?.policyVersion).toBe("fixture-rate-v1");
+    expect(row.modelVersion).toBe("fixture-forge-v1");
+    expect(row.cutoffAt).toBe("2026-10-03T02:00:00Z");
+    expect(row.contributions?.[target].inputs?.participation?.cutoffAt).toBe("2026-10-03T00:00:00Z");
+    const saved = JSON.parse(JSON.stringify(resolved));
+    expect(resolvePlanningContributions(saved, { consumer: "rso" }).forecasts).toEqual(resolved.forecasts);
+  });
+
+  it.each(["missing_review", "rate_review_only", "revoked_review", "expired_review", "missing_binding",
+    "changed_model", "changed_cutoff", "changed_artifact", "participation_identity", "expired_participation", "revoked_revision"])
+  ("withholds borrowed baseline participation after %s on replay", kind => {
+    const policy = fixtureRsoPolicy(["fixture-forge-v1"], ["GOALS", "ASSISTS"]);
+    const resolved = resolvePlanningContributions(qualityFixture("baseline"), { consumer: "rso", usePolicy: policy });
+    expect(resolved.forecasts[0].stats.GOALS).toBe(0.5);
+    const saved: PlanningSnapshot = JSON.parse(JSON.stringify(resolved));
+    const current = structuredClone(policy);
+    if (kind === "missing_review") current.reviews = [];
+    if (kind === "rate_review_only") current.reviews = fixtureRsoPolicy(["fixture-rate-v1"], ["GOALS", "ASSISTS"]).reviews;
+    if (kind === "revoked_review") current.revokedReviewIds = policy.reviews.map(review => review.id);
+    if (kind === "expired_review") current.reviews = current.reviews.map(review => ({ ...review, expiresAt: "2020-01-01T00:00:00Z" }));
+    if (kind === "revoked_revision") saved.forecastManifest!.issuedRevisionIds = [];
+    for (const row of saved.forecasts) {
+      if (kind === "missing_binding") row.rsoTargetBindings = undefined;
+      if (kind === "changed_model") row.modelVersion = "unreviewed-model";
+      for (const binding of Object.values(row.rsoTargetBindings ?? {})) {
+        if (kind === "changed_artifact") binding.artifactHash = "c".repeat(64);
+      }
+      for (const contribution of Object.values(row.contributions!)) {
+        const participation = contribution.inputs!.participation!;
+        if (kind === "changed_cutoff") participation.cutoffAt = "2026-10-02T12:00:00Z";
+        if (kind === "participation_identity") participation.nhlPlayerId++;
+        if (kind === "expired_participation") participation.expiresAt = saved.context.asOf;
+      }
+    }
+    const replayed = resolvePlanningContributions(saved, { consumer: "rso", usePolicy: current });
+    for (const row of replayed.forecasts) {
+      expect(row.stats).toMatchObject({ GOALS: null, ASSISTS: null });
+      expect(row.assignmentStats).toMatchObject({ GOALS: null, ASSISTS: null });
+      expect(row.contributions?.GOALS.allowedUses.comparison).toBe(false);
+    }
+  });
+
+  it("keeps borrowed baseline participation permissions specific to each target and use", () => {
+    const snapshot = qualityFixture("baseline");
+    snapshot.baselineSources = snapshot.baselineSources!.map(source => source.targetKey === "ASSISTS" ? { ...source, mean: 0 } : source);
+    const policy = fixtureRsoPolicy(["fixture-forge-v1"], ["GOALS", "ASSISTS"]);
+    policy.reviews = policy.reviews.map(review => ({ ...review, allowedUses: {
+      assignment: review.binding.targetKey === "GOALS", totals: review.binding.targetKey === "ASSISTS",
+      comparison: false, conditionalTieBreak: false,
+    } }));
+    const resolved = resolvePlanningContributions(snapshot, { consumer: "rso", usePolicy: policy });
+    expect(resolved.forecasts[0].stats).toMatchObject({ GOALS: null, ASSISTS: 0 });
+    expect(resolved.forecasts[0].assignmentStats).toMatchObject({ GOALS: 0.5, ASSISTS: null });
+    expect(resolved.forecasts[0].contributions?.GOALS.allowedUses.comparison).toBe(false);
+    expect(resolvePlanningContributions(JSON.parse(JSON.stringify(resolved)), { consumer: "rso", usePolicy: policy }).forecasts)
+      .toEqual(resolved.forecasts);
+  });
 
   it.each(["daily", "weekly"] as const)("replays admitted quality forecasts with %s locks and realized results", lineupMode => {
     const snapshot = qualityFixture("blended");

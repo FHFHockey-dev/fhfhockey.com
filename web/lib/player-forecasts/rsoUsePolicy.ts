@@ -102,9 +102,13 @@ export function restrictRsoForecast(forecast: GameForecast, manifest: Pick<Forec
   const contributions = forecast.contributions && { ...forecast.contributions };
   for (const target of targets) {
     const binding = forecast.rsoTargetBindings?.[target];
-    const source = forecast.contributions?.[target]?.inputs?.detailed;
+    const inputs = forecast.contributions?.[target]?.inputs;
+    const source = inputs?.detailed;
+    // A baseline-only row may still depend on reviewed issued participation.
+    // Its aggregate cutoff can be newer than that participation's own cutoff.
+    const participation = inputs?.participation && !inputs.participation.model ? inputs.participation : undefined;
     const bound = binding?.targetKey === target && binding.codeVersion === (source?.policyVersion ?? forecast.modelVersion)
-      && binding.cutoffAt === (source?.cutoffAt ?? forecast.cutoffAt);
+      && binding.cutoffAt === (source?.cutoffAt ?? participation?.cutoffAt ?? forecast.cutoffAt);
     const decision = resolveRsoTargetUse(compatible && bound ? binding : undefined, now, policy);
     targetUses[target] = intersectRsoUses(forecast.targetAllowedUses?.[target] ?? forecast.allowedUses, decision.allowedUses);
     const row = contributions?.[target];

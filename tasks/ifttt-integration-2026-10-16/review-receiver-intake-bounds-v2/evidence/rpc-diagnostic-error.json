@@ -1,5 +1,0 @@
-{
-  "message": "Intake admissions already exceed cap",
-  "code": "P0001",
-  "where": "PL/pgSQL function public.retain_bounded_ifttt_raw_receipt(jsonb,jsonb,jsonb) line 38 at RAISE"
-}

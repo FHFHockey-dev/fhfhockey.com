@@ -1,3 +1,0 @@
-# cwd web/ — 2026-10-17 17:28:32 EDT
-$ npx eslint pages/api/v1/db/replay-player-aliases.ts __tests__/pages/api/v1/db/replay-player-aliases.test.ts
-eslint exit 0

@@ -94,9 +94,9 @@ describe.runIf(Boolean(process.env.IFTTT_POSTGRES_BIN))("disposable Postgres cla
     await exec(join(bin, "pg_ctl"), ["-D", join(root, "data"), "-l", join(root, "server.log"), "-w", "-t", "10", "-o",
       `-c listen_addresses='' -c unix_socket_directories='${socket}' -p 65437`, "start"], { env }); started = true;
     await sql("create role service_role bypassrls; create role anon; create role authenticated; create table fixture_sink(action_key text primary key)");
-    await sql(readFileSync(join(__dirname, "../../../tasks/ifttt-integration-2026-10-16/migrations/20261016024711_tweet_claim_registry.sql"), "utf8"));
-    await sql(readFileSync(join(__dirname, "../../../tasks/ifttt-integration-2026-10-16/next-increment/20261016073000_tweet_claim_qualification.sql"), "utf8"));
-    await sql(readFileSync(join(__dirname, "../../../tasks/ifttt-integration-2026-10-16/durable-occurrence-increment/20261016044953_tweet_claim_occurrence_identity.sql"), "utf8"));
+    await sql(readFileSync(join(__dirname, "./fixtures/postgres/20261016024711_tweet_claim_registry.sql"), "utf8"));
+    await sql(readFileSync(join(__dirname, "./fixtures/postgres/20261016073000_tweet_claim_qualification.sql"), "utf8"));
+    await sql(readFileSync(join(__dirname, "./fixtures/postgres/20261016044953_tweet_claim_occurrence_identity.sql"), "utf8"));
   }, 20000);
   afterEach(() => { vi.unstubAllEnvs(); fault.commitAck = false; fault.settleAck = false; sends = 0; reconciles = 0; });
   afterAll(async () => {

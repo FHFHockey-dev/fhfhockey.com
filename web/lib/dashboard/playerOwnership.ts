@@ -4,6 +4,7 @@ type OwnershipSnapshotApiRow = {
   playerId: number;
   ownership: number | null;
   observedOn?: string | null;
+  unavailableReason?: "ambiguous_identity";
 };
 
 type OwnershipTrendApiPoint = {
@@ -30,6 +31,7 @@ type OwnershipTrendApiResponse = {
 
 type PlayerOwnershipSnapshot = {
   ownership: number | null;
+  unavailableReason?: "ambiguous_identity";
   ownershipEvidence: {
     value: number;
     observedOn: string | null;
@@ -102,7 +104,9 @@ const fetchOwnershipSnapshots = async (
   const seen = new Set<number>();
   for (const row of response.players) {
     if (!uniqueIds.includes(row?.playerId)) continue;
-    result[row.playerId] = seen.has(row.playerId) ? ownershipSnapshot(null, null) : ownershipSnapshot(row.ownership, row.observedOn);
+    result[row.playerId] = seen.has(row.playerId) || row.unavailableReason === "ambiguous_identity"
+      ? { ...ownershipSnapshot(null, null), unavailableReason: "ambiguous_identity" }
+      : ownershipSnapshot(row.ownership, row.observedOn);
     seen.add(row.playerId);
   }
   return result;
@@ -183,6 +187,10 @@ export const fetchOwnershipContextMap = async (
   return uniqueIds.reduce<Record<number, PlayerOwnershipContext>>((acc, playerId) => {
     const snapshot = snapshotMap[playerId];
     const trend = trendMap[playerId];
+    if (snapshot?.unavailableReason === "ambiguous_identity") {
+      acc[playerId] = { ...snapshot, delta: null, sparkline: [] };
+      return acc;
+    }
     const snapshotEvidence = snapshot?.ownershipEvidence, trendEvidence = trend?.ownershipEvidence;
     const useTrend = trendEvidence && (!snapshotEvidence || (trendEvidence.status !== "unknown"
       && (snapshotEvidence.status === "unknown" || trendEvidence.observedOn! > snapshotEvidence.observedOn!

@@ -2,6 +2,8 @@ import React from "react";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { PlayerContextualStats } from "./PlayerContextualStats";
+import { PlayerSummaryStrip } from "./PlayerSummaryStrip";
+import type { GoalieGameLogEntry } from "./types";
 
 vi.mock("hooks/useMissedGames", () => ({ useMissedGames: () => ({ missedGames: null }) }));
 afterEach(cleanup);
@@ -56,5 +58,22 @@ describe("P02 goalie contextual support", () => {
     renderGoalie([row(), row({ saves: 10, shots_against: 10, games_started: 0 }),
       row({ games_played: 0, games_started: 0, saves: null, shots_against: null })]);
     expect(card("Save Percentage").getByText("0.925")).toBeTruthy();
+  });
+
+  it.each([null, undefined, -1, NaN])("withholds ratios when participation is unknown: %s", (games_played) => {
+    renderGoalie([row(), row({ games_played })]);
+    expect(card("Save Percentage").getByText("-")).toBeTruthy();
+    expect(card("Quality Start Rate").getByText("-")).toBeTruthy();
+  });
+
+  it("renders unavailable headline GAA when the current page omitted time exposure", () => {
+    const game: GoalieGameLogEntry = {
+      ...row(), losses: null, ot_losses: null, save_pct: 0.9, goals_against: 3,
+      goals_against_avg: 3, shutouts: 0, time_on_ice: null,
+      goals_saved_above_average: null, high_danger_save_pct: null, medium_danger_save_pct: null
+    };
+    render(<PlayerSummaryStrip gameLog={[game]}
+      isGoalie windowLabel="Selected games" />);
+    expect(within(screen.getByText("GAA").closest("article")!).getByText("-")).toBeTruthy();
   });
 });

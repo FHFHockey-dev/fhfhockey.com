@@ -2,7 +2,7 @@ export type ProviderSyncAccess = {
   eligible: boolean;
   expiresAt: string | null;
   nextVerificationAt: string | null;
-  reason: "eligible" | "authentication_required" | "no_active_grant" | "expired" | "verification_unavailable";
+  reason: "eligible" | "rollout_free" | "authentication_required" | "no_active_grant" | "expired" | "verification_unavailable";
 };
 
 export const PROVIDER_SYNC_ACCESS_HREF = "/account?section=in-season";

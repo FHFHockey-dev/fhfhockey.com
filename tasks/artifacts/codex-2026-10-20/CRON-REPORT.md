@@ -1,7 +1,0 @@
-# Cron reporting local candidate
-
-- `CronAuditEmail` preserves `continued`, displays `CONTINUED / IN PROGRESS`, and keeps the job visible among exceptions. The route no longer maps continued to success. Existing207 semantics remain.
-- The report derives game-data route eligibility from canonical `details.cronClassification`. Explicit null means non-game-data; older unclassified receipts can inherit a classified peer's route, with a frozen2026-10-20 compatibility snapshot preserving historical alert coverage. New routes need no hand-maintained list entry. The snapshot is not a registry for future additions.
-- Claude-owned `nhlOffSeason.ts` and `withCronJobAudit.ts` metadata changes appeared concurrently. Codex consumed their exports and did not edit either file. Their compatible metadata slice must accompany this report candidate; do not port whole development wrappers to master for this change.
-
-Verification: final report78/78; email13/13 before later route-only metadata integration; shared off-season/audit wrapper tests38/38. All used Node22.11.0 and the outbound-network guard. Cases cover a new route absent from the compatibility snapshot, its older receipt, explicit null overriding legacy membership, and preserved continuation/day-boundary handling. Full typecheck found the report's `RunDigest` status constraint and a Claude-owned test annotation; Codex widened only the scheduled briefing's status constraint. Final typecheck status is in REGISTER.md. No hosted email, cron or deployment call.

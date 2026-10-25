@@ -187,7 +187,6 @@ const Home: NextPage = ({
               <p>Compare projections, track every pick, and build your roster.</p>
               <div className={styles.draftBannerActions}>
                 <Link href="/draft-dashboard">Open Draft Dashboard</Link>
-                <Link href="/account?section=draft-pro" className={styles.draftProPromotion}>Explore Draft Pro</Link>
               </div>
             </div>
           </section>

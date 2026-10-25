@@ -295,7 +295,8 @@ async function getPlayerIdByFullName(
   }
 }
 
-export default adminOnly(withCronJobAudit(async (
+export default adminOnly(withCronJobAudit(
+  async (
     req: NextApiRequest & { supabase: SupabaseClient },
     res: NextApiResponse
   ) => {

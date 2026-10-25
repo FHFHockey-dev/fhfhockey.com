@@ -158,8 +158,8 @@ describe("HomepageStandingsInjuriesSection", () => {
         "aria-selected",
       ),
     ).toBe("true");
-    expect(screen.getByText("Source report")).toBeTruthy();
-    expect(screen.getByText("Source report").closest("tr")?.className).not.toContain(styles.injuredRow);
+    expect(screen.getByText("Contract report")).toBeTruthy();
+    expect(screen.getByText("Contract report").closest("tr")?.className).not.toContain(styles.injuredRow);
     expect(
       screen.getByRole("table", { name: /recent nhl transactions and injury updates/i }),
     ).toBeTruthy();
@@ -250,15 +250,15 @@ describe("HomepageStandingsInjuriesSection", () => {
       />,
     );
 
-    expect(screen.getByText("Source report")).toBeTruthy();
-    expect(screen.getByText("Claim unavailable")).toBeTruthy();
+    expect(screen.getByText("—")).toBeTruthy();
+    expect(screen.getByText("Injury report")).toBeTruthy();
     expect(
       screen.getAllByText("A lower-body injury has been reported."),
     ).toHaveLength(2);
     expect(
       screen
         .getByRole("link", {
-          name: "View original post for Source report",
+          name: "View original post for —",
         })
         .getAttribute("href"),
     ).toBe("https://x.com/Reporter/status/1");
@@ -295,7 +295,7 @@ describe("HomepageStandingsInjuriesSection", () => {
       name: /recent nhl transactions/i,
     });
     expect(within(transactionTable).getByText("7/14/26")).toBeTruthy();
-    expect(screen.getByText("Source report")).toBeTruthy();
+    expect(screen.getByText("Contract report")).toBeTruthy();
     expect(
       screen.getAllByText(
         "Mason McTavish and Anaheim are making progress on a contract extension.",
@@ -316,7 +316,7 @@ describe("HomepageStandingsInjuriesSection", () => {
       blurb: 'RT @AGrossNewsday: Mathew Barzal is with #Isles on trip, Pete DeBoer said he is attending all the meetings. Not on the ice yet but said to be "around the corner." So he won\'t play in the season opener tomorrow in Toronto.',
       metadata: null, players: [{ player_id: 8484864, player_name: "Kevin He" }], published_at: "2026-09-29T17:00:11.412Z",
     } as any] });
-    expect(rows[0]).toMatchObject({ player: { id: null, displayName: "Source report" }, status: "Claim unavailable", statusState: "unknown" });
+    expect(rows[0]).toMatchObject({ player: { id: null, displayName: "—" }, status: "Availability report", statusState: "unknown" });
     expect(rows[0].description).toContain("Mathew Barzal");
   });
 

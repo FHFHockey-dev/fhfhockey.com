@@ -1,9 +1,0 @@
-{
-  "authority": "direct human user reply to exact payload/destination approval prompt",
-  "approved": true,
-  "scope": "Retained Lindgren post, source URL/author, publication/receipt times, retained player context and derived proposals to api.openai.com/v1/responses and /v1/decisions for one-family pilot",
-  "aggregateCapUsd": "0.26",
-  "previousAttempt": "Rejected before process creation; no key load, request, run directory or budget state",
-  "retry": "One retry of the same reviewed command after materially new explicit payload/destination authorization",
-  "codeAndInputDrift": false
-}

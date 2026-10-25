@@ -32,7 +32,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     ? "Monthly signup is unavailable because the first charge is below the verified payment minimum. No amount will be rounded up or carried forward."
     : monthly.reason === "season_ended" ? "Monthly signup has closed for the season." : MONTHLY_CHECKOUT_BLOCKER });
   try {
-    const access = await loadProviderSyncAccess(user.id);
+    const access = await loadProviderSyncAccess(user.id, { entitlementOnly: true });
     if (typeof access.eligible !== "boolean" || access.reason === "verification_unavailable") return res.status(503).json({ error: "Existing access could not be checked. Please try again." });
     if (access.eligible) return res.status(409).json({ error: "Premium sync is already active for this account." });
     const data = monthly && monthly.minimum

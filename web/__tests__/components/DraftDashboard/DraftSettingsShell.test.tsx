@@ -25,6 +25,8 @@ it("separates quick-settings expansion from the full settings dialog", () => {
   const onSettings = vi.fn();
   const onFullSettings = vi.fn();
   render(<DraftWorkspaceHeader health="healthy" healthLabel="Draft sources ready" draftProEligible={false} settingsExpanded onSettings={onSettings} onFullSettings={onFullSettings} onHealth={vi.fn()} />);
+  expect(screen.getByRole("link", { name: "View existing Draft Pro access" })).toBeTruthy();
+  expect(screen.queryByRole("link", { name: "Explore Draft Pro" })).toBeNull();
   const toggle = screen.getByRole("button", { name: "Toggle quick settings" });
   expect(toggle.getAttribute("aria-expanded")).toBe("true");
   fireEvent.click(toggle);

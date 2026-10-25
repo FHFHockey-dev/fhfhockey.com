@@ -202,7 +202,7 @@ describe("TeamUnderlyingStatsLandingRoute", () => {
     teamCoverage = { completedGames: 120, summarizedGames: 65 };
     const { unmount } = render(<TeamUnderlyingStatsLandingRoute />);
 
-    const partialNotice = await screen.findByText(/team data covers 65 of\s+120 completed games/);
+    const partialNotice = await screen.findByText(/team data covers approximately 65 of\s+120 scheduled games before today/);
     // Messages on the dark panel use readable token classes, not inline dark colors.
     expect(partialNotice.style.color).toBe("");
     unmount();
@@ -212,7 +212,7 @@ describe("TeamUnderlyingStatsLandingRoute", () => {
     const second = render(<TeamUnderlyingStatsLandingRoute />);
 
     expect(
-      await screen.findByText(/0 of 120 completed games have been processed/)
+      await screen.findByText(/0 of 120 scheduled games before today have been processed/)
     ).toBeTruthy();
     expect(screen.queryByText("No team results matched the current team filters.")).toBeNull();
     second.unmount();

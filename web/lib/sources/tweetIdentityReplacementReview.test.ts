@@ -2,11 +2,11 @@
 import { describe, expect, it } from "vitest";
 import observations from "./fixtures/iftttComparisonObservations.json";
 import saved from "./fixtures/tweetIdentitySavedEvidence.json";
-import { projectSavedPlayerIdentityEvidence } from "./playerIdentitySnapshotEvidence";
+import { projectSavedPlayerIdentityEvidence, type SavedPlayerIdentityEvidence } from "./playerIdentitySnapshotEvidence";
 import { prepareTweetIdentityReplacementReview, type IdentityReplacementClause } from "./tweetIdentityReplacementReview";
 import { identityDigest, indexPlayerIdentitySnapshot } from "./playerIdentitySnapshot";
 import { prepareFixtureIdentityRequest, type FixtureIdentitySource } from "./tweetIdentityProposal";
-import { offlineIdentityMention, offlineIdentityReply } from "./fixtures/tweetIdentityOfflineFixture";
+import { offlineIdentityMention, offlineIdentityReply, offlineIdentitySource } from "./fixtures/tweetIdentityOfflineFixture";
 
 const retained = observations.records.find(row => row.id === "S06")!;
 function fixture() {
@@ -116,5 +116,54 @@ describe('review-only two-subject replacement contract', () => {
     a.clause.evidence.text = a.clause.evidence.text.replace('will take', 'could get');
     a.request.hash = identityDigest(a.request.content); a.proposal.requestHash = a.request.hash;
     expect(prepareTweetIdentityReplacementReview(a)).toMatchObject({ status: 'held', reason: 'unsupported_or_misbound_replacement_clause' });
+  });
+});
+
+// Original independent R1 setup and two failing controls retained verbatim.
+describe('R1 repeated-word grammatical slots', () => {
+const at = '2026-09-29T16:28:31.000001Z';
+const asOf = '2026-10-22T00:00:00Z';
+const prior = '2026-09-01T00:00:00Z';
+const causal = { asOf, evaluation: { mode: 'causal_as_of' as const, sourcePublishedAt: at } };
+const retro = { asOf, evaluation: { mode: 'retrospective' as const, sourcePublishedAt: at, reviewedAt: asOf } };
+const interval = () => ({ startsAt: prior, endsAt: null, basis: 'independently_evidenced_effective_interval' as const, provenance: 'synthetic only' });
+function evidence(): SavedPlayerIdentityEvidence {
+  return { version: 'saved-public-player-evidence-v1', cohort: 'independent synthetic review',
+    players: [
+      { nhlId: 1001, registryId: 1, fullName: 'Milo North', lastName: 'North', position: 'C', provenance: 'synthetic', knownAt: prior },
+      { nhlId: 1002, registryId: 2, fullName: 'Riley Spot', lastName: 'Spot', position: 'D', provenance: 'synthetic', knownAt: prior },
+    ], aliases: [], memberships: [], truncated: false,
+    completeness: { status: 'partial', scope: 'two synthetic people', omittedRecords: null } };
+}
+function fixture(text = "Milo North will take spot's spot", outgoingStart = text.indexOf('spot'), e = evidence(), prefix = '') {
+  const source = offlineIdentitySource(prefix + text, at);
+  const outName = e.players[1]!.lastName.toLowerCase();
+  const mentions = [offlineIdentityMention(source.text, 'Milo North'), offlineIdentityMention(source.text, outName, 'name', prefix.length + outgoingStart)];
+  const projection = projectSavedPlayerIdentityEvidence(e, causal);
+  const prepared = prepareFixtureIdentityRequest({ enabled: true, source, index: indexPlayerIdentitySnapshot(projection.snapshot), mentions });
+  if (prepared.status !== 'prepared') throw Error(prepared.reason);
+  const proposal = offlineIdentityReply(prepared.request, (_, i) => ({ status: 'matched', canonicalId: `nhl:${1001+i}` }));
+  return { enabled: true, request: prepared.request, proposal,
+    clause: { incomingOccurrenceId: mentions[0]!.id, outgoingOccurrenceId: mentions[1]!.id,
+      evidence: { start: prefix.length, end: source.text.length, text }, unitEvidence: null } };
+}
+  it.each(['noun','predicate'] as const)('requires the outgoing occurrence to occupy the grammatical slot, not the repeated %s', kind => {
+    const e=evidence();
+    const text=kind==='noun' ? "Milo North will take spot's spot" : "Milo North will take will's spot";
+    if(kind==='predicate'){e.players[1]!.fullName='Riley Will';e.players[1]!.lastName='Will';}
+    const wrong=kind==='noun' ? text.lastIndexOf('spot') : text.indexOf('will');
+    const result=prepareTweetIdentityReplacementReview(fixture(text,wrong,e));
+    expect(result.status).toBe('held');
+  });
+
+  it.each(['noun','predicate'] as const)('accepts the correct outgoing grammatical slot with repeated %s', kind => {
+    const e=evidence();
+    const text=kind==='noun' ? "Milo North will take spot's spot" : "Milo North will take will's spot";
+    if(kind==='predicate'){e.players[1]!.fullName='Riley Will';e.players[1]!.lastName='Will';}
+    const outgoingStart='Milo North'.length + ' will take '.length;
+    const result=prepareTweetIdentityReplacementReview(fixture(text,outgoingStart,e));
+    expect(result.status).toBe('reviewable_held');
+    expect(result.packet?.outgoing.evidence).toMatchObject({start:outgoingStart,end:outgoingStart+4});
+    expect(result).toMatchObject({canPublish:false,canWriteAliases:false,canChangeStatus:false,canExecuteReplacement:false,providerDispatchEnabled:false});
   });
 });

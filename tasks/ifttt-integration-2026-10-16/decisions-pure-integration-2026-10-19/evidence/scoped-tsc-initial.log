@@ -1,8 +1,0 @@
-lib/sources/tweetDecisionReview.test.ts(96,115): error TS2345: Argument of type '(ids: number | undefined) => void' is not assignable to parameter of type '(...args: [] | [number, number]) => Awaitable<void>'.
-  Types of parameters 'ids' and 'args' are incompatible.
-    Type '[] | [number, number]' is not assignable to type '[ids: number | undefined]'.
-      Type '[]' is not assignable to type '[ids: number | undefined]'.
-        Source has 0 element(s) but target requires 1.
-lib/sources/tweetDecisionReview.test.ts(97,26): error TS2322: Type 'number | undefined' is not assignable to type 'number[]'.
-  Type 'undefined' is not assignable to type 'number[]'.
-lib/sources/tweetDecisionReview.test.ts(128,61): error TS2540: Cannot assign to 'start' because it is a read-only property.

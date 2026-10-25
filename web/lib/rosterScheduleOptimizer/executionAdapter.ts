@@ -2,20 +2,20 @@ import { currentRsoUsePolicy, resolveRsoTargetUse } from "../player-forecasts/rs
 import { resolvePlanningContributions } from "../player-forecasts/planningContributions";
 import { candidatePlanMetrics, type CandidatePlanOptions } from "./candidatePlanMetrics";
 import { forecastAllows, planRoster, sanitizeForecastInputs } from "./planning";
-import { capacityPlanningSnapshot, currentPlanningTime, forecastInputExpiry, planningMonotonicNow, withCurrentPlanningRead, type CurrentPlanningOptions } from "./currentPlanningRead";
+import { capacityPlanningSnapshot, currentPlanningTime, currentPrivatePlanningDeadline, forecastInputExpiry, planningMonotonicNow, withCurrentPlanningRead, type CurrentPlanningOptions } from "./currentPlanningRead";
 import { healthyReserves } from "./healthyReserves";
 import type { PlanIntent, PlanningSnapshot } from "./planningTypes";
 
 /** One current read feeds the plan, bounded candidate search and display view. */
 export async function executeRosterPlanning(snapshot: PlanningSnapshot, intent: PlanIntent,
-  options: CurrentPlanningOptions = {}, candidateOptions: CandidatePlanOptions = {}, signal = new AbortController().signal) {
+  options: CurrentPlanningOptions = {}, candidateOptions: CandidatePlanOptions = {}, signal = new AbortController().signal, privatePort?: MessagePort) {
   return withCurrentPlanningRead(snapshot, options, currentRsoUsePolicy().revision, signal, (input, data, readError) => {
     const policy = currentRsoUsePolicy(), startedAt = new Date(currentPlanningTime()).toISOString();
     const reviewIds = new Set(input.forecasts.flatMap(row => Object.values(row.rsoTargetBindings ?? {})
       .map(binding => resolveRsoTargetUse(binding, startedAt, policy).reviewId)).filter(Boolean));
     // Capture applicable deadlines before computation. An expired deadline must
     // invalidate the result, not disappear from a future-only list afterward.
-    const deadlines = [forecastInputExpiry(input), ...policy.reviews.filter(review => reviewIds.has(review.id))
+    const deadlines = [forecastInputExpiry(input), currentPrivatePlanningDeadline(), ...policy.reviews.filter(review => reviewIds.has(review.id))
       .map(review => Date.parse(review.expiresAt))].filter((value): value is number => value !== null && Number.isFinite(value));
     const deadline = deadlines.length ? Math.min(...deadlines) : null;
     const evaluate = (current: PlanningSnapshot) => {
@@ -42,6 +42,6 @@ export async function executeRosterPlanning(snapshot: PlanningSnapshot, intent: 
     return { ...evaluated, data, readError,
       expiresAt: remaining === null ? null : Date.now() + remaining,
       expiresAtMonotonic: remaining === null ? null : publishedMonotonic + remaining };
-  });
+  }, privatePort);
 }
 export type RosterPlanningExecution = Awaited<ReturnType<typeof executeRosterPlanning>>;

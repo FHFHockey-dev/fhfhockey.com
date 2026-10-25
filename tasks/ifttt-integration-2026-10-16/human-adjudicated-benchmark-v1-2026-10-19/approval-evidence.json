@@ -1,8 +1,0 @@
-{
-  "parent_thread_id": "01a15411-3560-7632-8d31-1dd2447ba00e",
-  "assistant_message_id": "Sentinel_7dd4babe4f0c8191aed1034811af4af5",
-  "assistant_text": "That completes the ten groups. Two distinctions matter before we freeze the grading:\n\n- S08: the one-hour cutoff is a proposed product rule, not proof of confirmation. I recommend timing alone never promotes “projected” to “confirmed”; require an explicit starter report or qualifying warmup evidence. Ordered lineup columns can map to positions, but that is a parsing convention, not verified player eligibility.\n- S09: “first off the ice” supports a projected start. Vegas and “next game” need roster/schedule context because neither appears in the text.\n\nFor S10, no regular-PP change is the right outcome. But we should retain the correction and retract any proposal created from post A, rather than discard the whole exchange.\n\nMay I finalize the benchmark with those distinctions, keep Sanderson’s 1–2-game estimate as analyst inference, and apply the duration/season wording corrections from the previous batch?",
-  "owner_message_id": "Sentinel_784ced1e3bdc819187f41adb00ce063c",
-  "owner_text": "Yes, I like it.",
-  "scope": "Finalize source-fidelity benchmark and these distinctions; not authorization for a paid run, implementation, publication or production change."
-}

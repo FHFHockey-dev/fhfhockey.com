@@ -214,6 +214,23 @@ describe("buildPlayerAggregatedStats", () => {
     }
   });
 
+  it.each([null, undefined, NaN, 0, 999])("keeps supported recent rates authoritative over legacy fields (%s)", (legacy) => {
+    const recent = { player_id: 1 } as any;
+    const rates: Record<string, number | null> = { pts_per_60_ly: 4 };
+    for (const n of [5, 10, 20]) {
+      Object.assign(recent, { [`l${n}_gp`]: 5, [`l${n}_atoi`]: 20, [`l${n}_pptoi`]: 120,
+        [`l${n}_pts_per_60`]: 6, [`l${n}_g_per_60`]: 0, [`l${n}_ppp_per_60`]: 12 });
+      if (legacy !== undefined) Object.assign(rates, { [`pts_per_60_l${n}`]: legacy, [`g_per_60_l${n}`]: legacy, [`ppp_per_60_l${n}`]: legacy });
+    }
+    const rows = buildPlayerAggregatedStats({ careerData: null, recentData: recent, ratesData: rates, totalsData: null });
+    for (const column of ["L5", "L10", "L20"] as const) {
+      expect(rows.find(row => row.label === "PTS/60")?.[column]).toBe(6);
+      expect(rows.find(row => row.label === "G/60")?.[column]).toBe(0);
+      expect(rows.find(row => row.label === "PPP/60")?.[column]).toBe(12);
+    }
+    expect(rows.find(row => row.label === "PTS/60")?.LY).toBe(4);
+  });
+
   it("uses totals fallback for missing standard count values", () => {
     const careerData = {
       player_id: 1,

@@ -1814,7 +1814,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) 
   });
 }
 
-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)), {
+export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler as any), {
   jobName: "run-rolling-forge-pipeline",
   includeFinalAuditReceipt: true
-});
+}));

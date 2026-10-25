@@ -9,6 +9,7 @@ import { STARTER_DECISION_SHARE, teamWinProbability } from "lib/projections/goal
 import { buildForgeDailyBridgeForecasts, FORGE_DAILY_BRIDGE_VERSION, loadForgeDailyBridgeForecasts, opponentTilts, teamStrengthPriors, teamWinProbability as ledgerTeamWin, type ForgeDailyBridgeInputs } from "./forgeDailyBridge";
 import { compactBridgeForecasts, expandBridgeForecasts, fitBridgeWire, packPlanningSnapshots, unpackPlanningSnapshots, type BridgeForecastWire } from "./bridgeForecastWire";
 import { preservationJson } from "lib/rosterScheduleOptimizer/workspace";
+import { resolveDailyBoardEvidence, type BoardGoalieEvidence } from "lib/projections/dailyBoardEvidence";
 
 const now = new Date("2026-10-19T18:00:00Z");
 const policy = forecastCalendarPolicy(14);
@@ -240,6 +241,33 @@ describe("FORGE daily bridge", () => {
     expect(disputed.forecasts.find(row => row.playerId === "g1" && row.gameId === "1")!.startProbability).toBe(0.8);
   });
 
+  it.each([
+    ["confirmed", {}, 1],
+    ["ruled_out", {}, 0],
+    ["likely", {}, 0.8],
+    ["projected", {}, 0.65],
+    ["unknown", {}, 0.2],
+    ["confirmed", { accepted: false }, 0.2],
+    ["confirmed", { expires_at: now.toISOString() }, 0.2],
+    ["confirmed", { available_at: "2026-10-19T19:00:00Z" }, 0.2],
+    ["confirmed", { game_id: 99 }, 0.2],
+    ["confirmed", { team_id: 8 }, 0.2],
+    ["confirmed", { player_id: 999 }, 0.2],
+  ] as const)("scopes trusted %s evidence %j and scales participation only", (status, overrides, expected) => {
+    const observation: BoardGoalieEvidence = { id: "server-observation", game_id: 1, team_id: 10, player_id: 202,
+      observed_at: "2026-10-19T15:00:00Z", available_at: "2026-10-19T15:00:01Z", created_at: "2026-10-19T15:00:02Z",
+      expires_at: "2026-10-19T23:00:00Z", accepted: true, source_key: "accepted-server-feed", observation_status: status, ...overrides };
+    const goalieNews = resolveDailyBoardEvidence({ cutoff: now.toISOString(), goalies: [observation], lineups: [], conflicts: [] });
+    const { forecasts } = buildForgeDailyBridgeForecasts({ ...inputs(), goalieNews }, players, games, now, 20262027, policy);
+    const row = forecasts.find(row => row.playerId === "g2" && row.gameId === "1")!;
+    expect(row.startProbability).toBeCloseTo(expected);
+    expect(row.confirmedStart).toBe(expected === 1);
+    expect(row.conditionalStats).toMatchObject({ SAVES_GOALIE: 25, GOALS_AGAINST_GOALIE: 2.5 });
+    expect(row.stats.SAVES_GOALIE).toBeCloseTo(25 * expected);
+    expect(row.stats.GOALS_AGAINST_GOALIE).toBeCloseTo(2.5 * expected);
+    expect(forecasts.find(row => row.playerId === "g1" && row.gameId === "1")!.startProbability).toBeCloseTo(1 - expected);
+  });
+
   it("moves future games to their opponent with FORGE's team-strength adjustment", () => {
     const base = inputs();
     // FORGE projected s1's 10-19 game against MTL; game 2 (10-21) is against a leakier defence.
@@ -419,7 +447,7 @@ describe("FORGE daily bridge", () => {
     } finally { vi.useRealTimers(); vi.unstubAllGlobals(); }
   });
 
-  it("applies a Yahoo goalie's Not Starting mark to that night's bridge rows inside the current read", async () => {
+  it("preserves current bridge values when a Yahoo snapshot carries a Not Starting label", async () => {
     const { forecasts } = buildForgeDailyBridgeForecasts(inputs(), players, games, now, 20262027, policy);
     const upcoming = games.filter(row => row.date >= "2026-10-19");
     const { wire } = compactBridgeForecasts(forecasts, { players, games: upcoming }, 20262027);
@@ -449,14 +477,14 @@ describe("FORGE daily bridge", () => {
     try {
       const [yahoo, plain] = [await read(snapshot), await read({ ...snapshot, players })];
       const row = (rows: typeof forecasts, id: string, gameId: string) => rows.find(item => item.playerId === id && item.gameId === gameId)!;
-      expect(row(yahoo.rows, "g1", "1")).toMatchObject({ startProbability: 0, confirmedStart: false, stats: { SAVES_GOALIE: 0 } });
-      expect(row(yahoo.rows, "g2", "1").startProbability).toBe(1);
+      expect(row(yahoo.rows, "g1", "1")).toMatchObject({ startProbability: 0.8, confirmedStart: false, stats: { SAVES_GOALIE: 20 } });
+      expect(row(yahoo.rows, "g2", "1").startProbability).toBe(0.2);
       expect(row(yahoo.rows, "g1", "2").startProbability).toBe(0.7);
-      // The changed rows keep current-read authority: their points are known, not withheld.
+      // Only the unchanged current server rows receive authority; serialized labels cannot change either goalie.
       expect(plain.points.get("g1")).toBeCloseTo(0.8 * 25 * 0.2 + 0.7 * 25 * 0.2);
-      expect(yahoo.points.get("g1")).toBeCloseTo(0.7 * 25 * 0.2);
+      expect(yahoo.points.get("g1")).toBeCloseTo(plain.points.get("g1")!);
       expect(plain.points.get("g2")).toBeCloseTo(0.2 * 25 * 0.2 + 0.3 * 25 * 0.2);
-      expect(yahoo.points.get("g2")).toBeCloseTo(25 * 0.2 + 0.3 * 25 * 0.2);
+      expect(yahoo.points.get("g2")).toBeCloseTo(plain.points.get("g2")!);
     } finally { vi.useRealTimers(); vi.unstubAllGlobals(); }
   });
 

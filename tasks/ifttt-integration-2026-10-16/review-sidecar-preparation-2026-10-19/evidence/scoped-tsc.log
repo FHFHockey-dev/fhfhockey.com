@@ -1,5 +1,0 @@
-../tasks/ifttt-integration-2026-10-16/review-sidecar-preparation-2026-10-19/storage.test.ts(15,67): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ LC_ALL: string; NODE_ENV: "development" | "production" | "test"; TZ?: string | undefined; }'.
-  No index signature with a parameter of type 'string' was found on type '{ LC_ALL: string; NODE_ENV: "development" | "production" | "test"; TZ?: string | undefined; }'.
-../tasks/ifttt-integration-2026-10-16/review-sidecar-preparation-2026-10-19/storage.test.ts(91,34): error TS1320: Type of 'await' operand must either be a valid promise or must not contain a callable 'then' member.
-lib/sources/tweetReviewSidecar.test.ts(47,57): error TS2540: Cannot assign to 'end' because it is a read-only property.
-lib/sources/tweetReviewSidecar.test.ts(63,65): error TS2540: Cannot assign to 'tweetId' because it is a read-only property.

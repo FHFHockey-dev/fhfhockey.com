@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ user: vi.fn(), season: vi.fn(), draft: vi.fn(), from: vi.fn(), rpc: vi.fn(), oauth: vi.fn() }));
 vi.mock("lib/api/requireApiUser", () => ({ requireApiUser: mocks.user }));
 vi.mock("lib/in-season/server", () => ({ loadInSeasonAccess: mocks.season }));
@@ -31,7 +31,7 @@ const routes = [
 ] as const;
 const response = () => { const res: any = { statusCode: 200, body: null, setHeader: vi.fn(), end: vi.fn(), status(code: number) { this.statusCode = code; return this; }, json(body: unknown) { this.body = body; return this; } }; return res; };
 const request = (method: string) => ({ method, headers: {}, query: { accountId: "foreign-account", externalLeagueId: "foreign-league", userId: "foreign-user" }, body: { selectedLeagueKeys: ["foreign-league"], userId: "foreign-user", externalTeamId: "foreign-team", accountId: "foreign-account", provider: "yahoo", teamId: "foreign-team", startDate: "2026-10-21", endDate: "2026-10-28" } }) as any;
-beforeEach(() => { vi.resetAllMocks(); mocks.user.mockResolvedValue({ id: "authenticated-user" }); mocks.season.mockResolvedValue({ eligible: false, capabilities: [], reason: "no_active_grant" }); mocks.draft.mockResolvedValue({ eligible: false, reason: "no_active_grant" }); });
+beforeEach(() => { vi.stubEnv("PROVIDER_SYNC_PREMIUM_ENFORCEMENT_ENABLED", "true"); vi.resetAllMocks(); mocks.user.mockResolvedValue({ id: "authenticated-user" }); mocks.season.mockResolvedValue({ eligible: false, capabilities: [], reason: "no_active_grant" }); mocks.draft.mockResolvedValue({ eligible: false, reason: "no_active_grant" }); });
 describe.each(routes)("%s API paywall", (_name, handler, method) => {
   it("blocks unauthenticated direct calls", async () => {
     mocks.user.mockImplementation(async (_req, res) => { res.status(401).json({ error: "Sign in" }); return null; });
@@ -94,3 +94,5 @@ describe.each([["provider sync", syncStatus], ["RSO", rsoAccess]] as const)("%s 
     if (handler === rsoAccess) expect(res.body.data.capabilities).toEqual(["rso_sync"]);
   });
 });
+
+afterEach(() => vi.unstubAllEnvs());

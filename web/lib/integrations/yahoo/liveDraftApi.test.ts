@@ -78,6 +78,7 @@ describe("Yahoo live draft API safeguards", () => {
     expect(good.statusCode).toBe(200);
   });
   beforeEach(() => {
+    vi.stubEnv("PROVIDER_SYNC_PREMIUM_ENFORCEMENT_ENABLED", "true");
     vi.clearAllMocks();
     requireYahooLiveDraftServerAccess.mockResolvedValue({});
     delete process.env.YAHOO_LIVE_DRAFT_ENABLED;
@@ -88,6 +89,7 @@ describe("Yahoo live draft API safeguards", () => {
   });
 
   afterEach(() => {
+    vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
 

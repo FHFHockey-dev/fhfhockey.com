@@ -1,1 +1,0 @@
-lib/projections/startChartContract.ts(377,38): error TS18048: 'player.boardScore' is possibly 'undefined'.

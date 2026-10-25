@@ -5,7 +5,6 @@ import { buildEndpointScanSummary } from "lib/api/scanSummary";
 import { buildResolvedDataServingContract } from "lib/dashboard/freshness";
 import { buildGoalieReaderCompatibility } from "lib/projections/compatibilityInventory";
 import supabase from "lib/supabase/server";
-import { FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } from "lib/projections/calibrationEligibility";
 import { excludeOffReleaseRuns, isOffReleaseGitSha } from "lib/projections/releasedRunFence";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import {
@@ -477,7 +476,7 @@ export default async function handler(
       calibrationHints,
     ] = await Promise.all([
       requestedRunId ? fetchRunSummary(requestedRunId) : Promise.resolve(null),
-      requestedRunId === resolvedRunId
+      !requestedRunId || requestedRunId === resolvedRunId
         ? Promise.resolve(null)
         : fetchRunSummary(resolvedRunId),
       fetchGamesScheduledCount(requestedDate),
@@ -489,12 +488,6 @@ export default async function handler(
     const runSummary = resolvedRunSummaryMaybe ?? requestedRunSummary;
     if (q.runId && requestedRunSummary && isOffReleaseGitSha(requestedRunSummary.git_sha)) {
       const error = new Error(`Projection run ${q.runId} was made off the release path (null or local git_sha) and is not served.`);
-      (error as any).statusCode = 422;
-      throw error;
-    }
-    if (runSummary?.run_id !== resolvedRunId || runSummary?.status !== "succeeded"
-      || runSummary?.metrics?.input_provenance?.external_fantasy_input_contract !== FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT) {
-      const error = new Error("Selected goalie run lacks external fantasy exclusion provenance.");
       (error as any).statusCode = 422;
       throw error;
     }

@@ -848,9 +848,9 @@ export async function ingestProjectionInputsHandler(
   return res.status(200).json(withTiming(result));
 }
 
-export default withCronJobAudit(
-  adminOnly(withNhlOffSeasonSkip(ingestProjectionInputsHandler as any)),
+export default adminOnly(withCronJobAudit(
+  withNhlOffSeasonSkip(ingestProjectionInputsHandler as any),
   {
     jobName: "ingest-projection-inputs",
   },
-);
+));

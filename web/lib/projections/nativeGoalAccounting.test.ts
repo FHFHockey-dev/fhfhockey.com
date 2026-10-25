@@ -326,8 +326,8 @@ describe("native skater-stage accounting integration", () => {
       expectedPpp: 0.313, rawRoundedPpp: 0.312, teamPp: 2.016, teamGoals: 8.01, playerGoals: 0.445 },
     { label: "serialized zero PP heads with supported conversion counts", goalsPp: 0, assistsPp: 0, ppHead: 0, assistHead: 0,
       expectedPpp: 0, rawRoundedPpp: 0, teamPp: 0, teamGoals: 5.994, playerGoals: 0.333 },
-    { label: "unavailable conversion heads", goalsPp: 0.1114, assistsPp: 0.2004, ppHead: null, assistHead: null,
-      expectedPpp: null, rawRoundedPpp: 0.312, teamPp: null, teamGoals: null, playerGoals: null, countsAvailable: false },
+    { label: "missing history retains unqualified bootstrap diagnostic heads", goalsPp: 0.1114, assistsPp: 0.2004, ppHead: 0.111, assistHead: 0.2,
+      expectedPpp: 0.311, rawRoundedPpp: 0.312, teamPp: 1.998, teamGoals: 7.992, playerGoals: 0.444, countsAvailable: false },
     { label: "missing physical totals RPC uses unscaled F/D priors", goalsPp: 0.1114, assistsPp: 0.2004, ppHead: 0.111, assistHead: 0.2,
       expectedPpp: 0.311, rawRoundedPpp: 0.312, teamPp: 1.998, teamGoals: 7.992, playerGoals: 0.444, leagueMissing: true },
   ])("writes reconciled serialized goals and PPP for $label without qualifying full-game means", async fixture => {
@@ -383,7 +383,7 @@ describe("native skater-stage accounting integration", () => {
     expect(producer.playerWrites).toHaveBeenCalledTimes(2);
     const added = producer.playerWrites.mock.calls[0][0].find((row: any) => row.player_id === 1018) as any;
     expect(added.uncertainty.model.skater_selection).toMatchObject({ participation_probability: 1, participation_reason: null });
-    expect(added.uncertainty.native_goal_accounting).toMatchObject({ participationProbabilityGivenGamePlayed: 1, expectedEsPpMeanGivenGamePlayed: fixture.playerGoals });
+    expect(added.uncertainty.native_goal_accounting).toMatchObject({ participationProbabilityGivenGamePlayed: 1, expectedEsPpMeanGivenGamePlayed: fixture.playerGoals, fullGameEligible: false, unconditionalMean: null });
     for (let index = 0; index < 2; index++) {
       const rows = producer.playerWrites.mock.calls[index][0] as Array<NativeSkaterGoalRow & { uncertainty: { native_goal_accounting: unknown } }>;
       const written = producer.teamWrites.mock.calls[index][0] as Record<string, any>;

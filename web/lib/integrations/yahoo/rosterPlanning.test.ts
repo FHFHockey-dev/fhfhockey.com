@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { evaluatePlan } from "lib/rosterScheduleOptimizer/planning";
 import { acquisitionEffectiveAt } from "lib/rosterScheduleOptimizer/planningTimeline";
 import { supplementProviderRules } from "lib/rosterScheduleOptimizer/providerRules";
@@ -28,6 +28,8 @@ function req(method: string, body: unknown = {}) { return { method, body, header
 function res() { return { statusCode: 200, body: null as any, status(code: number) { this.statusCode = code; return this; }, json(body: unknown) { this.body = body; return this; }, end() { return this; }, setHeader() {} } as any; }
 
 beforeEach(() => {
+  // These route controls exercise enforced premium access; default rollout remains free.
+  vi.stubEnv("PROVIDER_SYNC_PREMIUM_ENFORCEMENT_ENABLED", "true");
   mocks.allowed = false;
   mocks.requireUser.mockReset().mockResolvedValue(mocks.user);
   mocks.access.mockReset().mockImplementation(async () => ({ eligible: mocks.allowed, capabilities: mocks.allowed ? ["rso_sync"] : [],
@@ -37,6 +39,8 @@ beforeEach(() => {
   mocks.snapshot.mockReset().mockResolvedValue({ snapshot: { id: "verified" }, capabilities: { roster: true } });
   mocks.planningData.mockReset(); mocks.settings.mockReset(); mocks.draftResource.mockReset(); mocks.boardResource.mockReset(); mocks.planningResource.mockReset();
 });
+
+afterEach(() => vi.unstubAllEnvs());
 
 describe("Yahoo planning parsers", () => {
   function acquisitionInputs() {

@@ -6,6 +6,7 @@ import clsx from "clsx";
 import PanelStatus from "components/common/PanelStatus";
 import MetricInfoDisclosure from "./MetricInfoDisclosure";
 import RatingMeter from "./RatingMeter";
+import { LoadingRows } from "./LoadingCells";
 import toggleStyles from "./DetailToggle.module.scss";
 import { buildOpponentRatings, RATING_INFO } from "./utils/scheduleOpportunity";
 import OptimizedImage from "components/common/OptimizedImage";
@@ -37,12 +38,16 @@ function useIsMobile() {
 }
 
 type OpponentMetricsTableProps = {
+  scheduleLoading?: boolean;
+  sourceLoading?: boolean;
   teamData: TeamDataWithTotals[];
   metricsData: UseOpponentMetricsDataResult;
 };
 
 export default function OpponentMetricsTable({
   teamData,
+  scheduleLoading = false,
+  sourceLoading = false,
   metricsData
 }: OpponentMetricsTableProps) {
   const isMobile = useIsMobile();
@@ -67,7 +72,7 @@ export default function OpponentMetricsTable({
 
   const ratings = useMemo(() => buildOpponentRatings(entries, metricsData.statsByAbbreviation), [entries, metricsData.statsByAbbreviation]);
   const teamsAverages = useMemo(() => entries.map((e) => ({ ...e, averages: { ...e.averages, atk: ratings[e.team.teamId]?.atk ?? null, def: ratings[e.team.teamId]?.def ?? null } })), [entries, ratings]);
-  const metricColumns: { label: string; key: keyof OpponentMetricAverages | "atk" | "def" }[] = [{ label: "ATK", key: "atk" }, { label: "DEF", key: "def" }, ...(expanded ? sourceColumns : [])];
+  const metricColumns: { label: string; key: keyof OpponentMetricAverages | "atk" | "def" }[] = [{ label: "Attack", key: "atk" }, { label: "Defense", key: "def" }, ...(expanded ? sourceColumns : [])];
   const toggleMobileMinimize = () => {
     if (isMobile) {
       setIsMobileMinimized((prev) => !prev);
@@ -174,6 +179,7 @@ export default function OpponentMetricsTable({
 
   const handleTitleClick = isMobile ? toggleMobileMinimize : undefined;
   const hasData = sortedTeamsAverages.length > 0;
+  const pending = statsLoading || scheduleLoading || sourceLoading;
 
   return (
     <div
@@ -193,7 +199,7 @@ export default function OpponentMetricsTable({
         data-interactive={isMobile ? true : undefined}
       >
         <span className={styles.titleText}>
-          Opponent <span className={styles.spanColorBlue}>Ratings</span>
+          Opponent <span className={styles.spanColorBlue}>Strength</span> <small>↑ stronger</small>
         </span>
         {isMobile && (
           <span
@@ -218,21 +224,9 @@ export default function OpponentMetricsTable({
         <button type="button" className={toggleStyles.detailToggle} aria-expanded={expanded} aria-label={expanded ? "Collapse opponent details" : "Expand opponent details"} onClick={() => setExpanded((v) => !v)}>
           {expanded ? "Hide source stats" : "Show source stats"} <span aria-hidden="true">{expanded ? "▴" : "▾"}</span>
         </button>
-        {statsLoading ? (
-          <PanelStatus state="loading" message="Loading opponent stats..." />
-        ) : statsError ? (
-          <PanelStatus state="error" message="Opponent stats could not load. Reload to retry." />
-        ) : !hasData ? (
-          <PanelStatus
-            state="empty"
-            message={
-              teamData.length === 0
-                ? "Opponent metrics will appear when schedule data is available."
-                : "No opponent data available."
-            }
-          />
-        ) : (
-          <table className={styles.table}>
+        {statsError && <PanelStatus state="error" message="Opponent stats could not load. Reload to retry." />}
+        {!pending && !statsError && !hasData && <PanelStatus state="empty" message="Opponent metrics will appear when schedule data is available." />}
+          <table className={styles.table} aria-busy={pending} data-opponent-state={pending ? "loading" : "ready"}>
             <thead>
               <tr>
                 <th>
@@ -262,7 +256,7 @@ export default function OpponentMetricsTable({
                       type="button"
                       onClick={() => handleSort(metric.key)}
                       className={styles.sortButton}
-                      aria-label={`Sort by ${metric.label} ${
+                      aria-label={`Sort by ${metric.key === "atk" ? "opponent attack strength" : metric.key === "def" ? "opponent defense strength" : metric.label} ${
                         sortConfig?.key === metric.key &&
                         sortConfig.direction === "descending"
                           ? "ascending"
@@ -278,6 +272,7 @@ export default function OpponentMetricsTable({
               </tr>
             </thead>
             <tbody>
+              {pending || !hasData ? <LoadingRows columns={metricColumns.length + 1} waiting={pending} rowHeight={30} /> : <>
               <tr className={styles.averagesRow}>
                 <td>AVG:</td>
                 {metricColumns.map((metric) => {
@@ -325,9 +320,9 @@ export default function OpponentMetricsTable({
                   })}
                 </tr>
               ))}
+              </>}
             </tbody>
           </table>
-        )}
       </div>
     </div>
   );

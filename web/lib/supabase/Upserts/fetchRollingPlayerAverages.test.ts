@@ -2422,7 +2422,7 @@ describe("fetchRollingPlayerAverages upsertRollingPlayerMetricsBatch", () => {
       readFileSync(
         path.resolve(
           __dirname,
-          "../../../../tasks/artifacts/forge-projection-audit-2026-10-21/rolling-column-inventory.json"
+          "./fixtures/rollingColumnInventory.json"
         ),
         "utf8"
       )

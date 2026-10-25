@@ -1,7 +1,0 @@
-{
-  "observedAt": "2026-10-15T18:59:54.352616+00:00",
-  "files": {
-    "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx": "c803039a159e8bd35a23e1638a878fd1cc569f6194764a00821c09cf54c13b91",
-    "web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx": "a791d16bd2ed863891cc260569e28f6bc7c426d8f16dc12953022046a7b8bea3"
-  }
-}

@@ -551,6 +551,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
   });
 }
 
-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)), {
+export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler as any), {
   jobName: "build-projection-derived-v2",
-});
+}));

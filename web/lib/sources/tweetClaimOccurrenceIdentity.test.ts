@@ -12,7 +12,7 @@ const verified=(id="b"):OccurrenceIdentityInput=>({...input(id),original:{tweetI
 const bind=(prior:ReturnType<typeof planOccurrenceIdentity>,next=verified()):OccurrenceIdentityProof=>({kind:"unique_retained_occurrence",
   occurrenceId:prior.occurrenceId!,priorAnchor:prior.nextState.occurrences[0]!.anchors[0]!,nextAnchor:occurrenceIdentityAnchor(next),
   original:next.original!,knownAt:"2026-10-15T17:00:00Z",basis:"explicit isolated exact receipt/lexical proof"});
-const cases=JSON.parse(readFileSync(join(__dirname,"../../../tasks/ifttt-integration-2026-10-16/handoff/extracted-reviewed/ifttt-claim-replay-tests-2026-10-15/acceptance-cases.json"),"utf8")).cases;
+const cases=JSON.parse(readFileSync(join(__dirname,"./fixtures/tweetClaimReplayAcceptanceCases.json"),"utf8")).cases;
 
 describe("new pure occurrence identity compatibility candidate",()=>{
   it("preserves the provisional token under exact proof and never changes the earlier derivation",()=>{

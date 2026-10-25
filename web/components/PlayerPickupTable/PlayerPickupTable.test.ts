@@ -1,5 +1,5 @@
 import React from "react";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import PlayerPickupTable from "./PlayerPickupTable";
 
@@ -37,9 +37,9 @@ describe("pickup eligibility normalization", () => {
 });
 
 
-const state = vi.hoisted(() => ({ pro: false, fail: false, from: vi.fn(), access: { eligible: true } }));
+const state = vi.hoisted(() => ({ pro: false, fail: false, from: vi.fn(), access: { eligible: true }, rows: [] as Record<string, unknown>[] }));
 vi.mock("hooks/useCurrentSeason", () => ({ useCurrentSeasonQuery: () => ({ data: { seasonId: 20262027 }, isLoading: false, isError: false, refetch: vi.fn() }) }));
-vi.mock("hooks/useDraftProAccess", () => ({ useDraftProAccess: () => ({ status: "ready", access: state.pro ? state.access : null }) }));
+vi.mock("hooks/useProviderSyncAccess", () => ({ useProviderSyncAccess: () => ({ status: "ready", access: state.pro ? state.access : null, refresh: vi.fn() }) }));
 vi.mock("lib/supabase/client", () => ({ default: { auth: { getSession: async () => ({ data: { session: { access_token: "test" } } }) } } }));
 vi.mock("lib/supabase/public-client", () => ({ default: { from: state.from } }));
 const rows = [
@@ -49,19 +49,22 @@ const rows = [
 ];
 beforeEach(() => {
   state.pro = false; state.fail = false;
+  state.rows = rows.map(row => ({ ...row, ownership_timeline: [{ date: "2026-10-22", value: row.percent_ownership }] }));
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-10-22T12:00:00Z"));
   state.from.mockImplementation((table: string) => {
-    const data = table === "yahoo_players" ? rows.map((row) => ({ player_key: row.yahoo_player_id, player_id: row.nhl_player_id, percent_ownership: row.percent_ownership }))
-      : table === "yahoo_nhl_player_map_read" ? rows : [];
+    const data = table === "yahoo_players" ? state.rows.map((row) => ({ player_key: row.yahoo_player_id, player_id: row.nhl_player_id, percent_ownership: row.percent_ownership }))
+      : table === "yahoo_nhl_player_map_read" ? state.rows : [];
     const result = { data, error: state.fail && table === "yahoo_players" ? { message: "Unavailable" } : null };
     const builder: any = { then: (resolve: any) => Promise.resolve(result).then(resolve) };
     for (const method of ["select", "eq", "range", "order", "in", "not", "limit", "gte", "lte", "maybeSingle"]) builder[method] = () => builder;
     return builder;
   });
 });
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks(); vi.useRealTimers(); });
 
 describe("Player pickup interactions", () => {
-  it("loads current ownership without history and filters zero-owned players by team", async () => {
+  it("loads dated ownership from existing player rows and filters zero-owned players by team", async () => {
     render(React.createElement(PlayerPickupTable));
     expect(screen.getByRole("heading", { name: /^Best Players Available$/ }).textContent)
       .toBe("Best Players Available");
@@ -98,6 +101,7 @@ describe("Player pickup interactions", () => {
       expect(screen.queryByText(/Invalid Date/)).toBeNull();
     }
     expect(screen.getByRole("button", { name: "Non-rostered in my league" })).toBeTruthy();
+    expect((screen.getByRole("checkbox", { name: "Include unknown ownership" }) as HTMLInputElement).disabled).toBe(true);
     expect(screen.getByText(/Waiver status and immediate addability are unknown/)).toBeTruthy();
     await waitFor(() => expect(screen.getByText("F. Agent")).toBeTruthy());
     expect(screen.queryByText("O. Player")).toBeNull();
@@ -121,5 +125,109 @@ describe("Player pickup interactions", () => {
     await screen.findByRole("button", { name: "Non-rostered in my league" });
     expect(screen.queryByText("Yahoo sync is unavailable.")).toBeNull();
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("pickup ownership evidence", () => {
+  it.each([null, undefined, "", "   ", false, "0x10", -1])("does not coerce missing or malformed season/row ownership into zero (%j)", async value => {
+    state.rows = [{ ...rows[0], percent_ownership: value }];
+    render(React.createElement(PlayerPickupTable));
+    const name = await screen.findByText("F. Agent");
+    const row = within(name.closest("tr")!);
+    expect(row.getByText("Unknown")).toBeTruthy();
+    expect(row.queryByRole("cell", { name: /^0%$/ })).toBeNull();
+  });
+
+  it.each([0, "0"])("preserves undated zero as last-known evidence, never a fresh measured zero (%j)", async value => {
+    state.rows = [{ ...rows[0], percent_ownership: value }];
+    render(React.createElement(PlayerPickupTable));
+    const name = await screen.findByText("F. Agent");
+    expect(within(name.closest("tr")!).getByText("Last known 0% · date unknown")).toBeTruthy();
+  });
+
+  it.each([1024, 390])("labels dated stale values and filters unknown separately at viewport %s", async width => {
+    vi.stubGlobal("innerWidth", width);
+    state.rows = [
+      { ...rows[0], percent_ownership: 0, ownership_timeline: [{ date: "2026-10-22", value: "0" }] },
+      { ...rows[2], percent_ownership: 20, ownership_timeline: JSON.stringify([{ date: "2026-10-18", value: 0 }, { date: "2026-10-22", value: "" }]) },
+    ];
+    render(React.createElement(PlayerPickupTable));
+    const freshName = "F. Agent";
+    const staleName = "O. Player";
+    const name = await screen.findByText(freshName);
+    expect(within(name.closest("tr")!).getByRole("cell", { name: /^0%$/ })).toBeTruthy();
+    expect(screen.getByText("Last known 0% · 2026-10-18 (stale)")).toBeTruthy();
+    const includeUnknown = screen.getByRole("checkbox", { name: "Include unknown ownership" }) as HTMLInputElement;
+    expect(includeUnknown.checked).toBe(true);
+    fireEvent.change(screen.getByRole("slider"), { target: { value: "0" } });
+    expect(screen.getByText(staleName)).toBeTruthy();
+    fireEvent.click(includeUnknown);
+    expect(screen.queryByText(staleName)).toBeNull();
+    expect(screen.getByText(freshName)).toBeTruthy();
+    fireEvent.click(includeUnknown);
+    expect(screen.getByText(staleName)).toBeTruthy();
+  });
+});
+
+describe("mounted pickup ownership freshness", () => {
+  const staleLabel = "Last known 0% · 2026-10-19 (stale)";
+
+  async function mountBeforeExpiry(width = 1024) {
+    const visibility = vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+    vi.useRealTimers();
+    vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout"] });
+    vi.setSystemTime(new Date("2026-10-21T23:59:59Z"));
+    vi.stubGlobal("innerWidth", width);
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    state.rows = [{ ...rows[0], percent_ownership: 0, ownership_timeline: [{ date: "2026-10-19", value: 0 }] }];
+    await act(async () => { render(React.createElement(PlayerPickupTable)); });
+    const name = screen.getByText("F. Agent");
+    expect(within(name.closest("tr")!).getByRole("cell", { name: /^0%$/ })).toBeTruthy();
+    return { reads: state.from.mock.calls.length, fetchMock, visibility };
+  }
+
+  it.each([1024, 390])("expires a mounted zero at the existing three-day boundary without fetching (viewport %s)", async width => {
+    const { reads, fetchMock } = await mountBeforeExpiry(width);
+    await act(async () => { vi.advanceTimersByTime(1000); });
+    expect(screen.queryByText(staleLabel)).toBeNull();
+    await act(async () => { vi.advanceTimersByTime(1); });
+    expect(screen.getByText(staleLabel)).toBeTruthy();
+    const includeUnknown = screen.getByRole("checkbox", { name: "Include unknown ownership" });
+    fireEvent.click(includeUnknown);
+    expect(screen.queryByText("F. Agent")).toBeNull();
+    fireEvent.click(includeUnknown);
+    expect(screen.getByText(staleLabel)).toBeTruthy();
+    expect(state.from.mock.calls.length).toBe(reads);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it.each(["visibilitychange", "focus", "pageshow"])("rechecks retained evidence after hidden clock suspension on %s", async resumeEvent => {
+    const { reads, fetchMock, visibility } = await mountBeforeExpiry();
+    const includeUnknown = screen.getByRole("checkbox", { name: "Include unknown ownership" });
+    fireEvent.click(includeUnknown);
+    visibility.mockReturnValue("hidden");
+    fireEvent(document, new Event("visibilitychange"));
+    // A suspended tab can miss its timeout; the resume event must use the current clock.
+    vi.setSystemTime(new Date("2026-10-22T00:00:01Z"));
+    visibility.mockReturnValue("visible");
+    fireEvent(resumeEvent === "visibilitychange" ? document : window, new Event(resumeEvent));
+    expect(screen.queryByText("F. Agent")).toBeNull();
+    fireEvent.click(includeUnknown);
+    expect(screen.getByText(staleLabel)).toBeTruthy();
+    expect(state.from.mock.calls.length).toBe(reads);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("rechecks ownership during a filter interaction even when the expiry timeout has not run", async () => {
+    const { reads, fetchMock } = await mountBeforeExpiry();
+    vi.setSystemTime(new Date("2026-10-22T00:00:01Z"));
+    const includeUnknown = screen.getByRole("checkbox", { name: "Include unknown ownership" });
+    fireEvent.click(includeUnknown);
+    expect(screen.queryByText("F. Agent")).toBeNull();
+    fireEvent.click(includeUnknown);
+    expect(screen.getByText(staleLabel)).toBeTruthy();
+    expect(state.from.mock.calls.length).toBe(reads);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

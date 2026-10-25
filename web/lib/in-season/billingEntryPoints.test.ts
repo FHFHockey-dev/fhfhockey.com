@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { NextApiRequest, NextApiResponse } from "next";
 
@@ -80,7 +81,7 @@ describe("owner-only billing summaries", () => {
     mocks.rpc.mockResolvedValue({ data: null, error: new Error("not installed") }); const res = response(); await subscriptions(request(), res); expect(res.status).toHaveBeenCalledWith(503);
   });
   it("keeps the separate SQL draft read-only, owner-filtered and service-only", () => {
-    const sql = readFileSync("../tasks/artifacts/in-season-billing-2026-10-21/inactive-entrypoints-2026-10-22/DRAFT-OWNER-LOOKUP.sql", "utf8");
+    const sql = readFileSync(join(__dirname, "__fixtures__", "owner-lookup.sql"), "utf8");
     expect(sql).toContain("where user_id=p_user_id"); expect(sql).toContain("limit 20");
     expect(sql).toContain("from public,anon,authenticated"); expect(sql).toContain("to service_role");
     expect(sql).not.toMatch(/\b(insert|update|delete|alter table)\b/i);

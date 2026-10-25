@@ -1,8 +1,0 @@
- it('independent legal oversized receipt cannot starve a later valid receipt across bounded passes',async()=>{
-  const large='x'.repeat(30000);const first=await ingest({text:large,raw_payload:{text:large}});const second=await ingest({tweet_id:'6101',link_to_tweet:'https://x.com/Reporter/status/6101',text:'Later valid retained post.',raw_payload:{text:'Later valid retained post.'}});
-  const seen:string[]=[];const mapping=(receipt:TweetReviewReceipt)=>{seen.push(receipt.id);return context(receipt);};
-  const firstListed=(await sql('select public.list_ifttt_review_receipts($1,1) r',[policy.id]))[0].r;const packetBytes=Buffer.byteLength(JSON.stringify(prepareTweetReviewPacket({receipt:firstListed,...context(firstListed)})));expect(packetBytes).toBeGreaterThan(81920);
-  const results=[await run({limit:1,resolveRetainedContext:mapping}),await run({limit:1,resolveRetainedContext:mapping})];
-  const retained=await jobs();writeFileSync(join(__dirname,'evidence/oldest-unresolved-starvation.json'),JSON.stringify({validIntakeButOversizedReviewPacket:true,packetBytes,firstId:first.receipt.receiptId,secondId:second.receipt.receiptId,seen,results,jobs:retained,retained:await all()},null,2)+'\n');
-  expect(retained.some(j=>j.row.payload.receiptId===second.receipt.receiptId),'A permanently unresolved first receipt needs a durable hold/backoff or cursor so later valid receipts remain reachable without widening the batch').toBe(true);
- });

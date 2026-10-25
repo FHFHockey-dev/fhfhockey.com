@@ -49,6 +49,12 @@ function formatSeasonLabel(seasonId: number | string | null | undefined) {
   return `${season.slice(0, 4)}-${season.slice(6, 8)}`;
 }
 
+function goalieRatio(value: unknown, maximum = Infinity): number | null {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= maximum
+    ? value
+    : null;
+}
+
 function buildSkaterLeaderboards(skaters: SkaterStat[]): SkaterLeaderboards {
   return {
     pointsLeaders: [...skaters].sort((a, b) => b.points - a.points).slice(0, 5),
@@ -313,9 +319,9 @@ export async function fetchStatsData(season?: Season): Promise<StatsProps> {
       current_team_abbreviation:
         row.team_abbrevs || row.current_team_abbreviation || "",
       wins: row.wins || 0,
-      save_pct: row.save_pct || 0,
-      goals_against_avg: row.goals_against_avg || 0,
-      quality_starts_pct: row.quality_starts_pct || 0,
+      save_pct: goalieRatio(row.save_pct, 1),
+      goals_against_avg: goalieRatio(row.goals_against_avg),
+      quality_starts_pct: goalieRatio(row.quality_starts_pct, 1),
       games_played: row.games_played || 0,
       image_url: goaliePlayersMap.get(row.goalie_id)?.image_url || "",
       sweater_number:
@@ -330,13 +336,16 @@ export async function fetchStatsData(season?: Season): Promise<StatsProps> {
     .sort((a, b) => b.wins - a.wins)
     .slice(0, 5);
   const goalieLeadersSavePct = [...goalieStats]
-    .sort((a, b) => b.save_pct - a.save_pct)
+    .filter((goalie) => goalie.games_played > 0 && goalie.save_pct !== null)
+    .sort((a, b) => b.save_pct! - a.save_pct!)
     .slice(0, 5);
   const goalieLeadersGAA = [...goalieStats]
-    .sort((a, b) => a.goals_against_avg - b.goals_against_avg)
+    .filter((goalie) => goalie.games_played > 0 && goalie.goals_against_avg !== null)
+    .sort((a, b) => a.goals_against_avg! - b.goals_against_avg!)
     .slice(0, 5);
   const goalieLeadersQS = [...goalieStats]
-    .sort((a, b) => b.quality_starts_pct - a.quality_starts_pct)
+    .filter((goalie) => goalie.games_played > 0 && goalie.quality_starts_pct !== null)
+    .sort((a, b) => b.quality_starts_pct! - a.quality_starts_pct!)
     .slice(0, 5);
 
   return {

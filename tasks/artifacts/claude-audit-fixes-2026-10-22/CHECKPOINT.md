@@ -1,1 +1,0 @@
-Implementation handoff complete for A1–A4/A6; see REPORT.md, CHANGED-FILES.json and FIXED-SNAPSHOT.json. Parent retains A5/A10 and A7–A9. No child dispatch. A4 storage and A1 model requalification remain held.

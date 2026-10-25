@@ -411,7 +411,7 @@ describe("Game Grid sortable column headers", () => {
       .map((label) => label.replace(/ (ascending|descending)$/, ""));
 
     expect(sortLabels).toEqual([
-      "Sort by ATK", "Sort by DEF", "Sort by Team", "Sort by GP", "Sort by OFF", "Sort by Score", "Sort by 4WK Value",
+      "Sort by opponent attack strength", "Sort by opponent defense strength", "Sort by Team", "Sort by GP", "Sort by OFF", "Sort by Score", "Sort by four-week opportunity",
     ]);
     fireEvent.click(screen.getByRole("button", { name: "Expand opponent details" }));
     fireEvent.click(screen.getByRole("button", { name: "Expand four-week columns" }));
@@ -516,7 +516,7 @@ describe("Game Grid sortable column headers", () => {
     );
     expect(screen.queryByText("provider detail must not render")).toBeNull();
     expect(screen.getByRole("link", { name: "Open Team HQ" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: /^Sort by 4WK Value/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /^Sort by four-week opportunity/ })).toBeTruthy();
   });
 });
 
@@ -559,8 +559,8 @@ describe("public opponent and four-week cells", () => {
     expect(cells(1)[3].className).toContain("masterMetricGoodStrong");
     expect(cells(4)[3].className).toContain("masterMetricBadStrong");
     expect(cells(5).map((cell) => cell.textContent)).toEqual(["-", "-", "-", "-", ""]);
-    fireEvent.click(screen.getByRole("button", { name: "Sort by 4WK Value descending" }));
-    fireEvent.click(screen.getByRole("button", { name: "Sort by 4WK Value ascending" }));
+    fireEvent.click(screen.getByRole("button", { name: "Sort by four-week opportunity descending" }));
+    fireEvent.click(screen.getByRole("button", { name: "Sort by four-week opportunity ascending" }));
     expect(bands(1)).toEqual(["high", "high", "high"]);
     const info = container.querySelector("details")!;
     expect(info).toBeTruthy();

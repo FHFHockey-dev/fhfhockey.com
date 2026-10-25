@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
 import { buildWatchlists, compareMarketReference, type MarketReference, type WatchTarget } from "lib/buyLowSellHigh/market";
 import { emptyBlshState, loadBlshState, resetBlshState, saveBlshState, type BlshLocalState } from "lib/buyLowSellHigh/storage";
@@ -7,6 +7,8 @@ import { DEFAULT_HORIZON, HORIZON_OPTIONS, SKATER_TARGETS, TARGET_LABELS, type H
 import { FIXTURE_AS_OF, FIXTURE_DISCLAIMER, fixtureRecords } from "lib/skoElement/fixtures";
 import { DIRECTION_TEXT, formatMeasured, reasonText } from "components/skoElement/format";
 import styles from "components/skoElement/SkoElement.module.scss";
+import BlshPlayerDetail from "./BlshPlayerDetail";
+import detailStyles from "./BlshPlayerDetail.module.scss";
 
 /** Illustrative fixture league. PPP is an intentional bonus on top of goals and assists. */
 export const FIXTURE_LEAGUE: Extract<TradeScoring, { mode: "points" }> = {
@@ -19,6 +21,7 @@ const CATEGORIES = ["GOALS", "ASSISTS", "POINTS", "PP_POINTS", "SHOTS_ON_GOAL", 
 const MARKET_MAX_AGE_HOURS = 72;
 
 type ListName = "rebound" | "cooling";
+const DETAIL_ID = "blsh-player-detail";
 
 function defaultStorage(): Storage | null {
   try { return typeof window === "undefined" ? null : window.localStorage; } catch { return null; }
@@ -33,6 +36,8 @@ export default function BuyLowSellHighPreview({ storage }: { storage?: Storage |
   const [loaded, setLoaded] = useState<{ ready: boolean; recovered: boolean }>({ ready: false, recovered: false });
   const [giveChoice, setGiveChoice] = useState("");
   const [receiveChoice, setReceiveChoice] = useState("");
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const toggles = useRef(new Map<string, HTMLButtonElement>());
   const [refDraft, setRefDraft] = useState({ playerId: "", source: "", value: "", capturedAt: "", horizon: String(DEFAULT_HORIZON) });
   const store = storage === undefined ? defaultStorage() : storage;
 
@@ -50,6 +55,19 @@ export default function BuyLowSellHighPreview({ storage }: { storage?: Storage |
   const scoring: TradeScoring = scoringMode === "points" ? FIXTURE_LEAGUE : { mode: "categories", categories: CATEGORIES };
   const tradeResult = compareTrade({ ...local.draft, scoring }, records);
   const allRows = [...lists.rebound, ...lists.cooling, ...lists.level, ...lists.unranked];
+
+  const detailRecord = detailId ? byId.get(detailId) ?? null : null;
+  const closeDetail = () => {
+    const id = detailId;
+    setDetailId(null);
+    if (id) toggles.current.get(id)?.focus();
+  };
+
+  const detailToggle = (row: { playerId: string; name: string }) => (
+    <button type="button" ref={node => { if (node) toggles.current.set(row.playerId, node); else toggles.current.delete(row.playerId); }}
+      className={`${styles.rowButton} ${detailStyles.touchButton}`} aria-expanded={detailId === row.playerId} aria-controls={detailId === row.playerId ? DETAIL_ID : undefined}
+      onClick={() => (detailId === row.playerId ? closeDetail() : setDetailId(row.playerId))}>
+      {detailId === row.playerId ? "Hide details" : "Details"}<span className={styles.visuallyHidden}> for {row.name}</span></button>);
 
   const update = (patch: Partial<BlshLocalState>) => setLocal(current => ({ ...current, ...patch }));
   const watched = (playerId: string) => local.watchlist.some(entry => entry.playerId === playerId && entry.target === target && entry.horizon === horizon);
@@ -95,7 +113,7 @@ export default function BuyLowSellHighPreview({ storage }: { storage?: Storage |
       </nav>
       <p className={styles.muted}>Included by the sign of the shared gap only; alert magnitude, duration and hysteresis are undecided. A watchlist row is not a buy or sell recommendation.</p>
 
-      <div className={styles.tableWrap}>
+      <div className={`${styles.tableWrap} ${detailStyles.scrollContainer}`}>
         <table className={styles.table} aria-label={list === "rebound" ? "Rebound watch" : "Cooling watch"}>
           <thead><tr><th>Player</th><th>Recent per team game</th><th>Expected per team game</th><th>Gap</th><th>Opportunity</th><th>Evidence</th><th>Market reference</th><th>Watch</th></tr></thead>
           <tbody>{rows.map(row => {
@@ -105,7 +123,7 @@ export default function BuyLowSellHighPreview({ storage }: { storage?: Storage |
               local.marketReferences[row.playerId], { asOf: FIXTURE_AS_OF, maxAgeHours: MARKET_MAX_AGE_HOURS });
             return (
               <tr key={row.playerId}>
-                <th scope="row">{row.name}<br /><span className={styles.muted}>{row.team} · {row.modelClass}</span></th>
+                <th scope="row">{row.name}<br /><span className={styles.muted}>{row.team} · {row.modelClass}</span><br />{detailToggle(row)}</th>
                 <td className={styles.num}>{formatMeasured(row.observed)}</td>
                 <td className={styles.num}>{formatMeasured(row.expected)}</td>
                 <td className={`${styles.num} ${styles[row.direction]}`}>{formatMeasured(row.gap, 2, true)}<br /><span>{DIRECTION_TEXT[row.direction]}</span></td>
@@ -119,11 +137,14 @@ export default function BuyLowSellHighPreview({ storage }: { storage?: Storage |
         </table>
       </div>
       {!rows.length ? <p className={styles.muted}>No players in this list for these settings.</p> : null}
+      {detailRecord ? (
+        <BlshPlayerDetail id={DETAIL_ID} record={detailRecord} row={allRows.find(row => row.playerId === detailRecord.identity.playerId) ?? null}
+          target={target} inCurrentList={rows.some(row => row.playerId === detailRecord.identity.playerId)} onClose={closeDetail} />) : null}
       <details>
         <summary>Unranked ({lists.unranked.length}) and level ({lists.level.length}) players</summary>
         <ul className={styles.list}>
-          {lists.unranked.map(row => <li key={row.playerId}>{row.name}: gap unavailable ({reasonText(row.reason)})</li>)}
-          {lists.level.map(row => <li key={row.playerId}>{row.name}: {DIRECTION_TEXT.level}</li>)}
+          {lists.unranked.map(row => <li key={row.playerId}>{row.name}: gap unavailable ({reasonText(row.reason)}) {detailToggle(row)}</li>)}
+          {lists.level.map(row => <li key={row.playerId}>{row.name}: {DIRECTION_TEXT.level} {detailToggle(row)}</li>)}
         </ul>
       </details>
 

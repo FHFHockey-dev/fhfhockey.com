@@ -1,9 +1,0 @@
-{
-  "exitCode": 0,
-  "durationMs": 133,
-  "cases": 11,
-  "scope": "unchanged pilot; synthetic transports/keys; disposable SQLite; read connections explicitly closed",
-  "realKeyRead": false,
-  "providerCalls": 0,
-  "repeatReason": "first run passed but emitted disposable readback connection ResourceWarnings; cleanup corrected, original log preserved"
-}

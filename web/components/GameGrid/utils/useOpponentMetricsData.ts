@@ -179,7 +179,7 @@ export default function useOpponentMetricsData(
   const [statsLoading, setStatsLoading] = useState(true);
   const [statsError, setStatsError] = useState<string | null>(null);
   const [loadedSourceKey, setLoadedSourceKey] = useState("");
-  const enabled = teamData.length > 0 && seasonId != null && Number.isFinite(seasonId) && seasonId > 0;
+  const enabled = seasonId != null && Number.isFinite(seasonId) && seasonId > 0;
   const sourceKey = `${seasonId}/${refreshKey}`;
   const sourceReady = loadedSourceKey === sourceKey;
 

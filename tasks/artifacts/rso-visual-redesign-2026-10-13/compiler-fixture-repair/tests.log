@@ -1,9 +1,0 @@
-
-> web@0.1.0 test
-> vitest --run components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx components/RosterScheduleOptimizer/CandidateCard.test.tsx --reporter=json --outputFile=../tasks/artifacts/rso-visual-redesign-2026-10-13/compiler-fixture-repair/tests.json
-
-(node:26307) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-(node:26308) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-JSON report written to /Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-visual-redesign-2026-10-13/compiler-fixture-repair/tests.json

@@ -10,6 +10,29 @@ const REFUND_FROM = "draft-pro@fhfhockey.com";
 // Resend honors this key for 24 hours. Durable email state prevents routine
 // duplicate retries; attempts after that provider window are not exactly-once.
 
+const PUBLIC_REFUND_FAILURES = {
+  purchase_not_found: { statusCode: 404, message: "This Draft Pro purchase is not eligible for a refund request." },
+  refund_window_closed: { statusCode: 422, message: "Refund requests must be submitted within 168 hours of activation." },
+  refund_request_exists: { statusCode: 409, message: "There is already an open refund request for this purchase." },
+} as const;
+
+type RefundFailureCode = keyof typeof PUBLIC_REFUND_FAILURES;
+
+export class DraftProRefundError extends Error {
+  constructor(public readonly code: RefundFailureCode) {
+    super(PUBLIC_REFUND_FAILURES[code].message);
+    this.name = "DraftProRefundError";
+  }
+
+  get statusCode() { return PUBLIC_REFUND_FAILURES[this.code].statusCode; }
+}
+
+export function getPublicDraftProRefundFailure(error: unknown) {
+  if (!(error instanceof DraftProRefundError) || !Object.prototype.hasOwnProperty.call(PUBLIC_REFUND_FAILURES, error.code)) return null;
+  const failure = PUBLIC_REFUND_FAILURES[error.code];
+  return { statusCode: failure.statusCode, code: error.code, message: failure.message };
+}
+
 type RefundClient = Pick<typeof serviceRoleClient, "from">;
 type RefundMailer = (message: {
   subject: string;
@@ -100,14 +123,10 @@ export async function createDraftProRefundRequest({
   if (purchaseQuery.error) throw purchaseQuery.error;
   const purchase = purchaseQuery.data as { id: string; user_id: string; status: string; activated_at: string | null } | null;
   if (!purchase || purchase.user_id !== userId || !purchase.activated_at || ["pending", "failed", "expired", "refunded"].includes(purchase.status)) {
-    const error = new Error("This Draft Pro purchase is not eligible for a refund request.");
-    Object.assign(error, { statusCode: 404, code: "purchase_not_found" });
-    throw error;
+    throw new DraftProRefundError("purchase_not_found");
   }
   if (!isWithinRefundWindow(purchase.activated_at, now)) {
-    const error = new Error("Refund requests must be submitted within 168 hours of activation.");
-    Object.assign(error, { statusCode: 422, code: "refund_window_closed" });
-    throw error;
+    throw new DraftProRefundError("refund_window_closed");
   }
 
   const inserted = await client.from("draft_pro_refund_requests").insert({
@@ -130,9 +149,7 @@ export async function createDraftProRefundRequest({
         const request = existing.data as { id: string; status: string; email_status: string };
         return { ...request, emailStatus: request.email_status, duplicate: true };
       }
-      const error = new Error("There is already an open refund request for this purchase.");
-      Object.assign(error, { statusCode: 409, code: "refund_request_exists" });
-      throw error;
+      throw existing.error ?? inserted.error;
     }
     throw inserted.error;
   }

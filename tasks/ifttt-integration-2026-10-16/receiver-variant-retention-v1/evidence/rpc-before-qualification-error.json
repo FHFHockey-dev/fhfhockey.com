@@ -1,5 +1,0 @@
-{
-  "message": "missing FROM-clause entry for table \"retain_ifttt_raw_receipt\"",
-  "code": "42P01",
-  "where": "PL/pgSQL function public.retain_ifttt_raw_receipt(text,jsonb) line 55 at SQL statement"
-}

@@ -1,5 +1,0 @@
-{
-  "message": "Raw receipt key raced; retry with the retained carrier",
-  "code": "P0001",
-  "where": "PL/pgSQL function public.retain_ifttt_raw_receipt(text,jsonb) line 60 at RAISE"
-}

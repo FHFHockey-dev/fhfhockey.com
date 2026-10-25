@@ -46,7 +46,7 @@ const ok = result => { if (result.error) throw Error(result.error.code ?? result
     revoke all on public.user_entitlements from anon,authenticated;
     grant select,insert,update,delete on public.user_entitlements to service_role;`);
   // Legacy table above is an empty, minimal read-contract fixture; no provider is connected.
-  for (const file of ['20260927104934_in_season_access_workspace.sql', '20261021210000_in_season_sandbox_billing.sql']) await query(fs.readFileSync(path.join(repo, 'supabase/migrations', file), 'utf8'));
+  for (const file of ['supabase/migrations/20260927104934_in_season_access_workspace.sql', 'tasks/artifacts/in-season-billing-2026-10-21/drafts/20261021210000_in_season_sandbox_billing.sql']) await query(fs.readFileSync(path.join(repo, file), 'utf8'));
   await query("notify pgrst,'reload schema'");
   pass('required billing SQL applied only to the fresh disposable Supabase database');
   const users = [];

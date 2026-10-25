@@ -1,5 +1,0 @@
-bfaa5025e56435d28f16f9759ef7355030273b14ce2aba00c7c70cac03171b1d  tasks/codex-sprint-2026-10-19/sustainability/RECEIPTS-PLAN.md
-01f9e2d035b5beff8ff25db4d9facc1970a852d27af9caa7a69a2d5fb5213904  tasks/codex-sprint-2026-10-19/sustainability/P7-HANDOFF.md
-c487e0810733d10c2cafa090d90217e5988184fed200bc644b7674212f4735e8  tasks/codex-sprint-2026-10-19/sustainability/FOCUSED-TESTS.log
-c71ab446e10ce738adf3289cf49c5820fc440054a7e8f498eeb091d83099f783  tasks/codex-sprint-2026-10-19/sustainability/HISTORY-GATE-TEST.log
-bc4f86ecd4554d4f135c260c7be8d93b1886c0f6ac3062f9f6110e408c462eec  tasks/codex-sprint-2026-10-19/sustainability/INPUT-HASHES.txt

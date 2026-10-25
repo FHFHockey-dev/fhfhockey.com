@@ -1,5 +1,0 @@
-{
-  "message": "Stored canonical receipt mismatch",
-  "code": "P0001",
-  "where": "PL/pgSQL function public.retain_ifttt_raw_receipt(text,jsonb) line 49 at RAISE"
-}

@@ -1,5 +1,0 @@
-lib/sources/tweetClaimRegistry.ts(89,45): error TS2322: Type '{ tweetId: string | null | undefined; rawPayload: Record<string, unknown> | undefined; observationIds: string[]; }[]' is not assignable to type '{ tweetId: string | null; rawPayload: unknown; observationIds: string[]; }[]'.
-  Type '{ tweetId: string | null | undefined; rawPayload: Record<string, unknown> | undefined; observationIds: string[]; }' is not assignable to type '{ tweetId: string | null; rawPayload: unknown; observationIds: string[]; }'.
-    Types of property 'tweetId' are incompatible.
-      Type 'string | null | undefined' is not assignable to type 'string | null'.
-        Type 'undefined' is not assignable to type 'string | null'.

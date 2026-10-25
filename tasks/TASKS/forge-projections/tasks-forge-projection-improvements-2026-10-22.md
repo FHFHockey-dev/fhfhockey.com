@@ -67,12 +67,13 @@
 ## Tasks
 
 - [ ] 1.0 Make the served-forecast ledger the standing gate (research P1; FP audit F10). **Waits on the Codex P08 lease** for the ledger and scoreboard files.
-  - [ ] 1.1 Pair the scoreboard by player-game across sources (bridge exact and re-aimed, naive last-5 and season), instead of comparing unpaired samples.
-  - [ ] 1.2 Report dressed-only FP and per-head bias, Σactual/Σpredicted by **expected-FP** decile × position (F/D/G) × head, RMSE skill versus naive, the Mincer–Zarnowitz slope, and an opportunity-versus-rate split (TOI and PP TOI versus per-60).
-  - [ ] 1.3 Add Brier/reliability bins for goalie start, win and shutout.
+  - [x] 1.1 Pair the scoreboard by player-game across sources (bridge exact and re-aimed, naive last-5 and season), instead of comparing unpaired samples. Released in release A (master `9d789c372`, 10-22 18:54Z).
+  - [ ] 1.2 Report dressed-only FP and per-head bias, Σactual/Σpredicted by **expected-FP** decile × position (F/D/G) × head, RMSE skill versus naive, the Mincer–Zarnowitz slope, and an opportunity-versus-rate split (TOI and PP TOI versus per-60). Partly released in release A: dressed-only FP, per-head bias and expected-FP deciles are live. The F/D slices and the TOI/PP-TOI opportunity split report as unavailable until the ledger stores historical position and TOI.
+  - [x] 1.3 Add Brier/reliability bins for goalie start, win and shutout. Released in release A.
   - [ ] 1.4 Run FP audit Q3/Q4 once about a week of settled games exists (around 2026-10-29), each with TJ's approval. Record the R23 baseline that tasks 2–5 are gated against.
 
 - [ ] 2.0 Ship history hydration together with the F/D-prior hits/blocks model (research P0; FP audit F3). It needs `skater-queries.ts` (**Codex P08 lease**) and `skater-stage.ts`.
+  - Released 10-22 in release B, master `40b17b572` (19:51Z). Variant c, the full S-F reader and the 721486d0f repair are in; migration 88 stays off. Deployment `dpl_AcigmB8dqZQZLEcyd6imHxpscd6P` READY; the other 3 projects CANCELED; smoke 5/5. Gate: tsc and ESLint clean; Vitest 9967 passed, with 1 failure (master's `supportedBaselineMigration` baseline). octoberBranch synced as `45839f872` with TJ, and no builds started. Follow-ups: a week of dressed-only ledger checks, then FP audit Q5/Q6; HIT over-prediction (+10.9%).
   - [ ] 2.1 Resume the audit session's export "c": master plus hydration `6767073ea`, plus the F3/F4 hits/blocks hunks (`b8fe1072e` FORGE parts and `34a5588db`), on current master (R23).
   - [ ] 2.2 Decide with TJ whether to apply migration 88 (league skater physical totals) first. Without it F4 runs without the league rescale.
   - [ ] 2.3 Rerun the 62-game reconstruction backtest for variant "c" on post-R19 inputs. Clear the release only if FP, HIT and SOG bias and the top-decile ratios are back within ±10%.
@@ -81,6 +82,7 @@
   - [ ] 2.6 Release with TJ's approval, then rerun FP audit Q5/Q6 to confirm zero hit/block projections stay below 10%.
 
 - [ ] 3.0 Rebuild assists and PPP on on-ice goals × point share (research P0; FP audit F2 and F4). Waits for task 2 because of the `skater-stage.ts` lease.
+  - Tasks 3 (`23adcf713`) and 4 (`7dee3cbed`) released together on 10-22 as release C, master `d4c2632d3` (22:24Z). Deployment `dpl_G2REeofNhSMFgHLSDczeD1MS9vMb` READY; the other 3 projects CANCELED; smoke 5/5. Gate: tsc and ESLint clean; Vitest 9967 passed, with 1 failure (the master baseline). Model-lane gate vs release B: FP bias −10.7% → −1.0%; A −26% → −3%; D goals +46% → +2%. PPP is +17% (D +43%), and task 9 follows that up. octoberBranch synced as `782805fee`, with no builds.
   - [ ] 3.1 Measure in-house IPP baselines (ES and PP, F and D) from `nst_gamelog_*_oi` on-ice goals versus individual points for 2023-24 onward, and shrinkage k by split-half. Read-only, run once with TJ's approval.
   - [ ] 3.2 Model assists as team on-ice goals (by strength) × the player's assist share, shrunk to F/D priors. Remove the 0.4–3.4 assist-per-goal clamp and the per-two-goals PP scale.
   - [ ] 3.3 Reconcile Σ team assists / Σ team goals to the observed ES and PP ratios (~1.8 PP A per PP G).
@@ -97,6 +99,7 @@
   - [ ] 5.2 Backtest G/A bias for PK-heavy players. Release with the next model batch.
 
 - [ ] 6.0 Market probabilities instead of mean-versus-line flags (research P1). Owns `market-output-builders.ts`, which Codex hasn't pinned.
+  - 6.1/6.2 and the review fix `6f0c58471` released 10-22 in release B (`40b17b572`).
   - [x] 6.1 Compute P(over line) from the model distribution, using task 8's distributions when ready and Poisson until then.
     - Done 10-22 (sprint, local): `compareModelWithMarket` with an injectable P(over); the stages use `forgePropOverProbability(position)` (task 8's fitted NB for SOG/BLK/SV, Poisson for G/A/points/PPP) and fill `player_prediction_outputs.probability_over`.
   - [x] 6.2 De-vig the stored prices (Shin, or equal-margin for "Yes"-only markets) and flag edges in probability space.
@@ -105,6 +108,7 @@
   - [ ] 6.4 Separate follow-up for TJ to decide: blend team goals with de-vigged implied team totals (research P1 team reconciliation, size L).
 
 - [ ] 7.0 Goalie model: save %, wins and shutouts (research P2; FP audit F6). Owns `goalieModel.ts` and `goalie-stage.ts`. Retiring the bridge win model waits on the Codex P08 lease.
+  - 7.1/7.2/7.4, the per-run save % cache, nullable GF/W, the review fix `d65812dc2` and the 7.3 bridge released 10-22 in release B (`40b17b572`).
   - [x] 7.1 Model save % as one beta-binomial over all evidence, with k fitted (expect 3,000–11,000 shots) toward the season-current league or tier mean. Drop the 300-shot recency layer. B2B −0.005 to −0.010.
   - [x] 7.2 Make wins three-outcome and normalized per game: both teams' win probabilities sum to about 1. Use the de-vigged moneyline when present; otherwise a calibrated model × P(start) × P(not pulled).
   - [ ] 7.3 Retire the bridge's separate Poisson-xG win model, so one win model serves.
@@ -112,6 +116,7 @@
     - 7.1/7.2/7.4 done 10-22 (sprint, local). k = 6,000 shots toward the season-current league mean; B2B −0.003; heavy workload −0.002; decision share 0.984; Poisson-race wins with tie inflation 1.33 and spread shrink 0.75 (fitted 0.5; TJ's call); NB shots-against shutouts × full-game 0.927. 2025-26 holdout (879 starts): W Brier 0.2560 → 0.2493 [−0.0114, −0.0019]; per-game W sum exactly 1 (was 0.70–1.41); SO and GA changes within noise. Moneyline de-vig wired (only 4 games have stored h2h odds). Port: depends on octoberBranch-only nullable GF/W code.
 
 - [ ] 8.0 Count distributions (research P2). Owns `uncertainty.ts`.
+  - 8.1/8.2 (NB counts) released 10-22 in release B (`40b17b572`).
   - [x] 8.1 Fit negative-binomial dispersion α per stat × position for shots, hits, blocks and saves, compounded with TOI uncertainty.
   - [x] 8.2 Serve the mean, P(≥k) and quantiles. Score RPS, log score and PIT against the current Poisson.
     - Done 10-22 (sprint, local): `dispersion.ts` with alpha(mu) = a + b/mu per stat × F/D (goalie NB2), G/A Poisson; both stages opt in. 2025-26 holdout: NB beats Poisson on every count stat (e.g. saves log 3.605 → 3.421, PIT TV 0.152 → 0.033). Found: `wgo_skater_stats` season 20242025 holds ~250k rows dated 1959–2024.
@@ -130,6 +135,7 @@
   - [x] 11.1 `run-projection-v2` overran its 210 s budget during finalization (504 at about 3¾ min). This stranded a run until the lease expiry plus the 2-minute takeover grace. Measure post-game finalization time, and make the budget cover finalization or checkpoint before it.
   - [x] 11.2 Add `run-projection-v2` (single date) to the route runner allowlist with a resume contract: 207 replays the same query, and `run_in_progress_elsewhere` waits about 2.5 min. Then production reruns never need the console.
   - [x] 11.3 Route runner: surface rolling HTTP 422 freshness blocks as "blocked" with a one-click re-queue that adds `bypassFreshnessBlockers=true` and `resumeFrom`, instead of a plain failure.
+    - Explicit, recorded bypass approval (`857428050`) released 10-22 in release A, master `9d789c372` (parent `27751818b`). The release also carries task 1 and its 10-22 sync ledger prerequisite: missing players settle as unknown, not DNP. Gate: tsc and ESLint clean, CSS pure OK; Vitest 9850 passed, with 13 failures only in master's 6 baseline files. `dpl_J8nEZopFmW7s3XTYGK4SP9uktzQn` READY; the other 3 projects CANCELED; smoke 5/5. octoberBranch synced as `67deb1e07` with TJ, and no builds started. P07 R2, task 10 and the fixtures wait for release B because they need unreleased model code.
     - 11.1–11.3 released 10-22 16:40Z as master `d45a287f0` (deployment `dpl_zoy4XJgxGDj9ujRpSP5NvLPFV5Qz` READY; smoke 5/5); the goalie moneyline wiring hunk was held back with the model changes. 11.1–11.3 done 10-22 (sprint). Root cause: the last game stalled ~2 min on one await; the route answers by min(budget + 15 s, 225 s) (budget cap 210 s), and games start only if the slowest so far still fits. Runner: `projection_resume` contract (207 runtime_budget replays; run_in_progress_elsewhere waits 150 s; stall guard counts games), and 422 freshness → "Re-queue with bypass".
   - [x] 11.4 Hand to Codex (already in the job 79 note):
     - release the job 79 constant and `cron-schedule.md` records with the advisory burst clearance (`e89dfdde5`);

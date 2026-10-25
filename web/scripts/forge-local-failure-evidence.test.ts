@@ -220,7 +220,7 @@ describe("failed committed snapshot ownership disposition", () => {
       else data = f.evidence.attemptObservation;
       response.end(JSON.stringify(data));
     });
-    await new Promise<void>((resolve, reject) => { server.once("error", reject); server.listen(0, "localhost", resolve); });
+    await new Promise<void>((resolve, reject) => { server.once("error", reject); server.listen(0, "127.0.0.1", resolve); });
     try {
       const address = server.address() as { port: number }; f = await fixture(`http://localhost:${address.port}`);
       const out = join(f.root, "cli");

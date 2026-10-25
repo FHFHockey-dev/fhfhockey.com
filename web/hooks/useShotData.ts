@@ -45,6 +45,20 @@ export interface ShotDataFilters {
   gameTypes?: string[];
 }
 
+// Unparseable coordinates are dropped rather than plotted at center ice.
+function toPlottedShot(shot: any): ShotData | null {
+  const x = parseFloat(shot.xcoord as unknown as string);
+  const y = parseFloat(shot.ycoord as unknown as string);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+  return {
+    xcoord: x,
+    ycoord: y,
+    typedesckey: shot.typedesckey as string,
+    hometeamdefendingside: shot.hometeamdefendingside,
+    eventownerteamid: shot.eventownerteamid
+  };
+}
+
 export function useShotData(
   teamId: number,
   season?: string | null,
@@ -82,6 +96,18 @@ export function useShotData(
       return;
     }
 
+    // An explicitly empty selection means nothing to show, not "every event".
+    if (
+      requestFilters.eventTypes?.length === 0 ||
+      requestFilters.gameTypes?.length === 0
+    ) {
+      setShotData([]);
+      setOpponentShotData([]);
+      loadedKey.current = requestKey;
+      setIsLoading(false);
+      return;
+    }
+
     async function fetchTeamShotData() {
       try {
         setIsLoading(true);
@@ -89,13 +115,6 @@ export function useShotData(
         // First get all games for this team and season using pagination
         let allGames: { id: number; hometeamid: number; awayteamid: number }[] =
           [];
-
-        // Initialize game type filter condition
-        const gameTypeFilters =
-          requestFilters.gameTypes?.map((gameType) => {
-            const seasonStart = season!.substring(0, 4);
-            return `id.like.${seasonStart}${gameType}%`;
-          }) || [];
 
         const games = await fetchAllSupabasePages<any>(({ from, to }) => {
           if (!active) return Promise.resolve({ data: [], error: null });
@@ -114,9 +133,14 @@ export function useShotData(
 
         console.log("Fetched games for team", teamId, ":", games.length);
 
+        // NHL game IDs carry the game type in digits 5-6 (e.g. 2025020001).
+        const gameTypes = requestFilters.gameTypes;
         // Only keep games with non-null hometeamid and awayteamid, and cast to number
         allGames = games
           .filter((g) => g.hometeamid !== null && g.awayteamid !== null)
+          .filter(
+            (g) => !gameTypes || gameTypes.includes(String(g.id).slice(4, 6))
+          )
           .map((g) => ({
             id: g.id,
             hometeamid: g.hometeamid as number,
@@ -188,23 +212,8 @@ export function useShotData(
                     shot.xcoord !== null &&
                     shot.ycoord !== null
                 )
-                .map((shot) => {
-                  // Normalize coordinates if needed
-                  let x = parseFloat(shot.xcoord as unknown as string);
-                  let y = parseFloat(shot.ycoord as unknown as string);
-
-                  // Ensure coordinates are valid numbers
-                  if (isNaN(x)) x = 0;
-                  if (isNaN(y)) y = 0;
-
-                  return {
-                    xcoord: x,
-                    ycoord: y,
-                    typedesckey: shot.typedesckey as string,
-                    hometeamdefendingside: shot.hometeamdefendingside,
-                    eventownerteamid: shot.eventownerteamid
-                  };
-                });
+                .map(toPlottedShot)
+                .filter((shot): shot is ShotData => shot !== null);
 
               const validOpponentShots: ShotData[] = events
                 .filter(
@@ -215,23 +224,8 @@ export function useShotData(
                     shot.xcoord !== null &&
                     shot.ycoord !== null
                 )
-                .map((shot) => {
-                  // Normalize coordinates if needed
-                  let x = parseFloat(shot.xcoord as unknown as string);
-                  let y = parseFloat(shot.ycoord as unknown as string);
-
-                  // Ensure coordinates are valid numbers
-                  if (isNaN(x)) x = 0;
-                  if (isNaN(y)) y = 0;
-
-                  return {
-                    xcoord: x,
-                    ycoord: y,
-                    typedesckey: shot.typedesckey as string,
-                    hometeamdefendingside: shot.hometeamdefendingside,
-                    eventownerteamid: shot.eventownerteamid
-                  };
-                });
+                .map(toPlottedShot)
+                .filter((shot): shot is ShotData => shot !== null);
 
               allShots = allShots.concat(validTeamShots);
               allOpponentShots = allOpponentShots.concat(validOpponentShots);

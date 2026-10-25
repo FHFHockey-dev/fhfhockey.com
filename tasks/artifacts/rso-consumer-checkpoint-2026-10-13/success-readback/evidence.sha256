@@ -1,9 +1,0 @@
-d3583831257f8923eb4bebccfeb139c87a9330fd2f228145ff31e2c45ba6f90d  tasks/artifacts/rso-consumer-checkpoint-2026-10-13/success-readback/database-readback.json
-0a1aba6362a2ae3b3a858da9e876d27b8ba030fc8455154da71decdcb906ae98  tasks/artifacts/rso-consumer-checkpoint-2026-10-13/success-readback/database-readback.sql
-c026d564048978b871ca9af5c15aee250ee4b534d1a4cabb518d287a339aeea7  tasks/artifacts/rso-consumer-checkpoint-2026-10-13/success-readback/verification.json
-a7662171c0c28217005b2d05ae2795ea984044a845a9344509a0a3c8c4f114f3  tasks/artifacts/rso-consumer-checkpoint-2026-10-13/success-readback/verify.ts
-2217016f28edf9fdf7ab14a6ff6ff5e7d71739c491defcd45fdcd24b92786ea1  tasks/artifacts/rso-consumer-checkpoint-2026-10-13/success-readback/verify.cjs
-48442c84a58e26a123ee4cc4cb4c2bda9ba36ff69cd29fc148644ddf45526c96  tasks/artifacts/rso-consumer-checkpoint-2026-10-13/success-readback/user-receipt.json
-e811629d3a9cd18fd294e1f209ca9c40f697efcb2221600536a55bc23137646f  web/lib/rosterScheduleData/planningInputs.ts
-b8f2deb7fa8dcc0bf49f1a16aeb0c541efeabcd1f5494b3b64a6d51ba0a274ba  web/lib/rosterScheduleData/normalize.ts
-07c365162ab5969ec6bdf30eeab094d976528d74bed8a749e491ecf08f966229  web/lib/player-forecasts/sourceSnapshot.ts

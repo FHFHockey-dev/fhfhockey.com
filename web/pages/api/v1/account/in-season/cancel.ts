@@ -12,7 +12,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const user = await requireApiUser(req, res); if (!user) return;
   if (!req.body || Object.keys(req.body).some((key) => !["subscriptionId", "requestId"].includes(key))
     || typeof req.body.subscriptionId !== "string" || !/^sub_[a-zA-Z0-9]{1,150}$/.test(req.body.subscriptionId)
-    || typeof req.body.requestId !== "string" || !/^[a-f0-9-]{36}$/.test(req.body.requestId)) return res.status(400).json({ error: "Invalid cancellation request." });
+    || typeof req.body.requestId !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(req.body.requestId)) return res.status(400).json({ error: "Invalid cancellation request." });
   try {
     const store = monthlyBillingStore(); const state = await store.load(req.body.subscriptionId);
     if (!state || state.binding.userId !== user.id) return res.status(404).json({ error: "Subscription not found." });
