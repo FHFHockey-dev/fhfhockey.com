@@ -136,6 +136,18 @@ describe("GoalieShareChart complete page sets", () => {
     expect(screen.getByText(/Share of recorded goalie appearances, including relief/)).toBeTruthy();
   });
 
+  it("gives every goalie a distinct slice colour when the team palette repeats one", async () => {
+    // PHI's palette lists white twice; four goalies used to share it on slices 2 and 4.
+    mockPages(() => response({ total: 4, data: [1, 2, 3, 4].map((playerId) =>
+      ({ ...rows[0], gameId: playerId, playerId })) }));
+    render(<GoalieShareChart />);
+    await finishRequests();
+    const { backgroundColor } = JSON.parse(screen.getByTestId("chart").textContent!).datasets[0];
+    expect(backgroundColor).toHaveLength(4);
+    expect(new Set(backgroundColor.map((color: string) => color.toLowerCase())).size).toBe(4);
+    expect(backgroundColor[0]).toBe("#cf3308");
+  });
+
   it("adds official starts per team game to the tooltip, and withholds unlabeled starts", async () => {
     const tooltipLines = (dataIndex: number) =>
       mocks.options.plugins.tooltip.callbacks.label({ dataIndex, parsed: 1, label: "" });

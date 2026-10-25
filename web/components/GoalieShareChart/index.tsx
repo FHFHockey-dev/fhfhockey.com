@@ -235,15 +235,22 @@ const GoalieShareChart: React.FC = () => {
     }
 
     const teamColors = teamsInfo[teamAbbrev as keyof typeof teamsInfo];
-    const colors = teamColors
-      ? [
-          teamColors.primaryColor,
-          teamColors.secondaryColor,
-          teamColors.jersey,
-          teamColors.accent,
-          teamColors.alt
-        ]
-      : ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF"];
+    // Some team palettes repeat a colour (e.g. white twice), so drop repeats
+    // and top up from the fallback set to keep up to five slices distinct.
+    const colors = [
+      ...(teamColors
+        ? [
+            teamColors.primaryColor,
+            teamColors.secondaryColor,
+            teamColors.jersey,
+            teamColors.accent,
+            teamColors.alt
+          ]
+        : []),
+      "#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF"
+    ].filter((color, index, all): color is string =>
+      Boolean(color) && all.findIndex((other) => other?.toLowerCase() === color?.toLowerCase()) === index
+    );
 
     const goalies = teamStats.goalies.slice(0, 5); // Limit to top 5 goalies
     const totalAppearances = teamStats.totalAppearances;
