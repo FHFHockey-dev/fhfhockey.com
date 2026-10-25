@@ -27,7 +27,7 @@ test.beforeEach(({ page }) => page.setDefaultTimeout(10000));
 type Rates = "ready" | "stale" | "missing";
 type PlayerMode = Rates | "thin";
 /** Last-five-games read outcome: rows, an answered-but-empty read, or a failed read. */
-type RecentRead = "ready" | "empty" | "failed" | "goalies-failed";
+type RecentRead = "ready" | "empty" | "failed" | "goalies-failed" | "chunk-failed";
 function fixture(format: SocialShareFormat, weekStart: string, mode: Mode, pinnedAt?: string, rates: Rates = "ready", players: PlayerMode = "ready", trends: Rates = "ready", recentRead: RecentRead = "ready"): SocialShareSnapshot {
   const dates = weekDates(weekStart), generatedAt = pinnedAt ?? new Date().toISOString();
   const year = Number(weekStart.slice(0, 4)) - (Number(weekStart.slice(5, 7)) < 8 ? 1 : 0);
@@ -44,7 +44,9 @@ function fixture(format: SocialShareFormat, weekStart: string, mode: Mode, pinne
     snapshot.players = buildPlayerLayer(sources, { season, teams: snapshot.teams.map(team => team.abbreviation), fetchedAt: generatedAt, generatedAt });
     // Fictional last-five-games evidence for every joined player, as the live server attaches for shown ones.
     const recent = fictionalPlayerRecent(snapshot.players.players, season, localDate(generatedAt, "America/New_York"));
-    snapshot.players = attachRecent(snapshot.players, recentRead === "failed" ? null : recentRead === "empty" ? { rolling: [], goalieGames: [] } : { rolling: recent.rolling as ShareRecentRollingRow[], goalieGames: recentRead === "goalies-failed" ? null : recent.goalieGames as ShareGoalieGameRow[] }, generatedAt);
+    snapshot.players = attachRecent(snapshot.players, recentRead === "failed" ? null : recentRead === "empty" ? { rolling: [], goalieGames: [] } : { rolling: recent.rolling as ShareRecentRollingRow[], goalieGames: recentRead === "goalies-failed" ? null : recent.goalieGames as ShareGoalieGameRow[],
+      // chunk-failed (SS1-24): every other skater's id chunk timed out; only those players lose recent form.
+      ...(recentRead === "chunk-failed" ? { failedIds: snapshot.players.players.filter((player, index) => player.group !== "G" && index % 2 === 0).map(player => player.nhlId) } : {}) }, generatedAt);
     // Fictional rolling metrics (4 h old, or 80 h when stale) and seven-day ownership timelines.
     const trendSources = trends === "missing" ? null : fictionalTrendSources(season, localDate(generatedAt, "America/New_York"), new Date(Date.parse(generatedAt) - (trends === "stale" ? 80 : 4) * 3600000).toISOString());
     snapshot.trends = buildTrendLayer(trendSources, { season, teams: snapshot.teams, fetchedAt: generatedAt, generatedAt });
@@ -904,6 +906,16 @@ test("player tiles never claim 'no recent game' when the last-five-games read fa
   await expect(tiles).toHaveCount(9);
   for (let i = 0; i < 6; i++) { await expect(tiles.nth(i)).not.toContainText("Recent form unavailable"); await expect(tiles.nth(i)).toContainText("SOG"); }
   for (let i = 6; i < 9; i++) await expect(tiles.nth(i)).toContainText("Recent form unavailable");
+  // SS1-24: one failed id chunk costs only its own players; each tile matches its own player's state.
+  source.recentRead = "chunk-failed";
+  await page.getByRole("button", { name: "Refresh schedule", exact: true }).click();
+  await expect(tiles).toHaveCount(9);
+  await expect.poll(() => source.latest?.players?.recentUnavailableIds?.length ?? 0).toBeGreaterThan(0);
+  const failedIds = new Set(source.latest!.players!.recentUnavailableIds!.map(String));
+  const states = await tiles.evaluateAll(nodes => nodes.map(node => [node.getAttribute("data-player"), node.textContent?.includes("Recent form unavailable") ?? false] as const));
+  expect(states.some(([, unavailable]) => unavailable)).toBe(true);
+  expect(states.some(([, unavailable]) => !unavailable)).toBe(true);
+  for (const [id, unavailable] of states) expect([id, unavailable]).toEqual([id, failedIds.has(id!)]);
 });
 
 test("GP and off-night counts are coloured per column on Monday and Wednesday editions", async ({ page }) => {

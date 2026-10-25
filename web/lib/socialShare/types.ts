@@ -143,6 +143,8 @@ export type SharePlayerLayer = {
   recentState?: "ready" | "partial" | "unavailable";
   /** With "partial" (SS1-17): the source that failed, so only its players say "Recent form unavailable". */
   recentUnavailable?: ("skaters" | "goalies")[];
+  /** With "partial" (SS1-24): players whose id chunk failed; only they say "Recent form unavailable". Shown players only. */
+  recentUnavailableIds?: number[];
 };
 
 /** One skater's last-5 vs season windows from rolling_player_game_metrics (strength "all"). */

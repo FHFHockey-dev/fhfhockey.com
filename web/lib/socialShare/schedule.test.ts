@@ -445,6 +445,20 @@ describe("social editor schedule API", () => {
     expect(players.filter(player => player.group !== "G").every(player => player.recent !== null)).toBe(true);
     expect(players.filter(player => player.group === "G").every(player => player.recent === null)).toBe(true);
     expect(players.some(player => player.group === "G")).toBe(true);
+    // SS1-24: one failed skater chunk marks only its players, and only shown players' ids leave the server.
+    playerSource.loadSharePlayerRecent.mockImplementationOnce(async (...args: unknown[]) => {
+      const skaters = [...(args[1] as number[])].sort((a, b) => a - b);
+      return { rolling: rows(skaters.slice(20)), goalieGames: [], failedIds: skaters.slice(0, 20) };
+    });
+    const chunked = await request({ format: "game-grid", weekStart });
+    const shownIds = new Set((chunked.body.players.players as { nhlId: number }[]).map(player => player.nhlId));
+    expect(chunked.body.players).toMatchObject({ state: "ready", recentState: "partial" });
+    expect(chunked.body.players.recentUnavailableIds.length).toBeGreaterThan(0);
+    expect(chunked.body.players.recentUnavailableIds.every((id: number) => shownIds.has(id))).toBe(true);
+    for (const player of chunked.body.players.players as { nhlId: number; group: string; recent: unknown }[]) {
+      if (player.group === "G") continue;
+      expect(player.recent === null).toBe(chunked.body.players.recentUnavailableIds.includes(player.nhlId));
+    }
   });
   it("never reads players after a failed or partial schedule", async () => {
     upstream.getSchedule.mockReset(); playerSource.loadSharePlayerSources.mockReset();

@@ -163,6 +163,11 @@ describe("last five games", () => {
     expect(partial.players.find(player => player.nhlId === skater.nhlId)!.recent).toMatchObject({ kind: "skater", goals: 3 });
     expect(partial.players.find(player => player.nhlId === goalie.nhlId)!.recent).toBeNull();
     expect(attachRecent(layer, { rolling: null, goalieGames: null }, now)).toMatchObject({ recentState: "unavailable" });
+    // SS1-24: a failed id chunk marks only its players; everyone else keeps recent form.
+    const chunk = attachRecent(layer, { rolling, goalieGames, failedIds: [skater.nhlId, 999999] }, now);
+    expect(chunk).toMatchObject({ recentState: "partial", recentUnavailable: [], recentUnavailableIds: [skater.nhlId] });
+    expect(chunk.players.find(player => player.nhlId === skater.nhlId)!.recent).toBeNull();
+    expect(chunk.players.find(player => player.nhlId === goalie.nhlId)!.recent).toMatchObject({ kind: "goalie" });
     const old = attachRecent(layer, { rolling: rolling.map(row => ({ ...row, game_date: "2026-10-01" })), goalieGames: [] }, now);
     expect(old.players.find(player => player.nhlId === skater.nhlId)!.recent).toBeNull();
   });

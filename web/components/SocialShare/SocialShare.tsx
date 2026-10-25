@@ -322,7 +322,7 @@ function recentLine(player: RankedPlayer, focus: RecentFocus, layer: SharePlayer
   const recent = player.recent;
   // Only claim "no recent game" when the recent-form source actually answered (C7 SS1-10-F1).
   // A source that failed (all, or just skaters or goalies, SS1-17) never reads as "no recent game".
-  const failed = layer?.recentUnavailable?.includes(player.group === "G" ? "goalies" : "skaters");
+  const failed = layer?.recentUnavailable?.includes(player.group === "G" ? "goalies" : "skaters") || layer?.recentUnavailableIds?.includes(player.nhlId);
   if (!recent) return (layer?.recentState === "ready" || layer?.recentState === "partial") && !failed ? "No game in the last two weeks" : "Recent form unavailable";
   if (recent.kind === "goalie") {
     const pct = recent.shotsAgainst > 0 ? (recent.saves / recent.shotsAgainst).toFixed(3).replace(/^0/, "") : "—";
