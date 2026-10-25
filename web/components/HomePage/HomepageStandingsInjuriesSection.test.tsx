@@ -26,7 +26,7 @@ describe("HomepageStandingsInjuriesSection", () => {
       source_account: "SOURCE_ACCOUNT", source_url: "not a URL", tweet_url: null,
     }]} />);
     fireEvent.click(screen.getByRole("button", { name: "Expand update for Transaction source report" }));
-    expect(screen.getByText("Published unavailable · Observed Jul 14, 2:19 PM · Source unavailable")).toBeTruthy();
+    expect(screen.getByText("Published unavailable · Observed Jul 14, 2:19 PM · Original source pending")).toBeTruthy();
     expect(screen.queryByRole("link", { name: /View original post/ })).toBeNull();
   });
   afterEach(() => {

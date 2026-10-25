@@ -1,5 +1,6 @@
 import { getTeamLogoSvg, fallbackNHLLogo } from "lib/images";
 import { teamsInfo } from "lib/teamsInfo";
+import { getTeamMetaByAbbr } from "lib/dashboard/teamMetadata";
 import type { TweetPlayerEvent } from "lib/sources/tweetPlayerEvents";
 
 export type NewsFeedItemPlayer = {
@@ -35,6 +36,7 @@ export type NewsFeedItemRow = {
 
 export type NewsFeedItem = NewsFeedItemRow & {
   players: NewsFeedItemPlayer[];
+  source_attribution?: PublicNewsSourceDecision;
 };
 
 export function getPublicNewsClaimPresentation(item: Pick<NewsFeedItem, "headline" | "blurb" | "metadata">) {
@@ -71,6 +73,23 @@ export function getPublicNewsClaimPresentation(item: Pick<NewsFeedItem, "headlin
   };
 }
 
+/** Labels what the passage discusses, not whether an event happened or a player is resolved. */
+export function getPublicNewsReportTopic(item: Pick<NewsFeedItem, "blurb">): string {
+  const text = sanitizePublicNewsText(item.blurb)
+    .replace(/^RT\s+@[A-Za-z0-9_]+:\s*/i, "")
+    .replace(/https?:\/\/\S+|@[A-Za-z0-9_]+/gi, "");
+  const topics = [
+    ["Trade", /\btrad(?:e|ed|es|ing)\b/i],
+    ["Contract", /\b(?:contract|extension|re-sign(?:ed|ing)?|get (?:him|her|them) signed|signed (?:a|an|with|for)|completed a signing)\b/i],
+    ["Transaction", /\b(?:waivers?|(?:was |been |being )recalled|(?:re)?assigned to|released from (?:his|her|the) contract|transaction)\b/i],
+    ["Injury", /\b(?:injur(?:y|ies|ed)|concussion|surgery|upper[- ]body|lower[- ]body|day[- ]to[- ]day)\b/i],
+    ["Lineup", /\b(?:lineup|line combinations?|defen[sc]e pairs?|starts? in (?:net|goal)|starting (?:goalie|goaltender)|power[- ]play|practice lines?)\b/i],
+    ["Availability", /\b(?:out tonight|won['’]t play|will not play|scratched|unavailable|available tonight)\b/i],
+  ] as const;
+  const labels = topics.filter(([, pattern]) => pattern.test(text)).map(([label]) => label);
+  return labels.length ? `${labels.join(" / ")} report` : "Report";
+}
+
 export type NewsFeedSourceProvenance = {
   source_handle?: string | null;
   author_name?: string | null;
@@ -84,6 +103,13 @@ export type PublicNewsSourceAttribution = {
   displayName: string | null;
   account: string | null;
   url: string | null;
+};
+
+// Public display transport only; this is never claim or publication authority.
+export type PublicNewsSourceDecision = PublicNewsSourceAttribution & {
+  version: "public-news-source-v1";
+  state: "resolved" | "unavailable" | "conflict";
+  basis: "quote" | "text" | "post" | null;
 };
 
 export type NewsFeedKeywordPhrase = {
@@ -149,10 +175,13 @@ const NEWS_RELAY_HANDLES = new Set([
   "gamedaylines",
   "gamedaynewsnhl",
   "gamedaystatsnhl",
+  "dfofantasy",
+  "nhl_rosters",
+  "gdl", "gdg", "gdnnhl", "ccc", "gdl_suite", "ifttt", "source_account",
 ]);
 
 const NEWS_RELAY_MENTION_PATTERN =
-  /@?(?:CcC\s*Middleton|Lines\s*CcC\s*Middleton|Game\s*Day\s*Goalies|Game\s*Day\s*Lines|Game\s*Day\s*News\s*NHL|NHL\s*Game\s*Day\s*News|Game\s*Day\s*Stats\s*NHL)/gi;
+  /@?(?:CcC\s*Middleton|Lines\s*CcC\s*Middleton|Game\s*Day\s*Goalies|Game\s*Day\s*Lines|Game\s*Day\s*News\s*NHL|NHL\s*Game\s*Day\s*News|Game\s*Day\s*Stats\s*NHL|DFOFantasy|NHL_Rosters)/gi;
 
 const NEWS_RELAY_BYLINE_PATTERN =
   /\s*[—–-]\s*(?:CcC\s*Middleton|Lines\s*CcC\s*Middleton|Game\s*Day\s*Goalies|Game\s*Day\s*Lines|Game\s*Day\s*News\s*NHL|NHL\s*Game\s*Day\s*News|Game\s*Day\s*Stats\s*NHL)(?:\s*\([^)]*\))?(?:\s+[A-Z][a-z]{2}\s+\d{1,2},\s+\d{4})?\s*$/gi;
@@ -172,6 +201,7 @@ export function isNewsRelayAccount(
 export function sanitizePublicNewsText(
   value: string | null | undefined,
 ): string {
+  if (isNewsRelayAccount(value)) return "";
   return normalizeWhitespace(
     String(value ?? "")
       .replace(NEWS_RELAY_BYLINE_PATTERN, "")
@@ -227,10 +257,13 @@ function parseTweetUrl(value: string | null | undefined): {
   if (!value) return { handle: null, tweetId: null };
   try {
     const url = new URL(value);
-    if (!/(?:^|\.)(?:x|twitter)\.com$/i.test(url.hostname)) {
+    if (!["https:", "http:"].includes(url.protocol) || url.username || url.password ||
+      !/^(?:(?:www|mobile)\.)?(?:x|twitter)\.com$/i.test(url.hostname)) {
       return { handle: null, tweetId: null };
     }
-    const match = url.pathname.match(/^\/([^/]+)\/(?:status|statuses)\/(\d+)/i);
+    const identityOnly = url.pathname.match(/^\/i\/web\/status\/(\d+)(?:\/|$)/i);
+    if (identityOnly) return { handle: null, tweetId: identityOnly[1] };
+    const match = url.pathname.match(/^\/([A-Za-z0-9_]{1,15})\/(?:status|statuses)\/(\d+)(?:\/|$)/i);
     const handle = match?.[1] && match[1].toLowerCase() !== "i" ? match[1] : null;
     return { handle, tweetId: match?.[2] ?? null };
   } catch {
@@ -287,7 +320,30 @@ function safeOriginalSourceUrl(
   return value;
 }
 
-export function getPublicNewsSourceAttribution(args: {
+function unresolvedPublicNewsSource(state: "unavailable" | "conflict" = "unavailable"): PublicNewsSourceDecision {
+  return { version: "public-news-source-v1", state, basis: null, displayName: "Original source pending", account: null, url: null };
+}
+
+function readPublicNewsSourceDecision(value: unknown): PublicNewsSourceDecision {
+  const pending = unresolvedPublicNewsSource();
+  if (!value || typeof value !== "object") return pending;
+  const decision = value as Partial<PublicNewsSourceDecision>;
+  if (decision.version !== "public-news-source-v1") return pending;
+  if (decision.state === "conflict") return unresolvedPublicNewsSource("conflict");
+  if (decision.state !== "resolved" || !["quote", "text", "post"].includes(decision.basis ?? "")) return pending;
+  const handle = firstOriginalHandle([typeof decision.account === "string" ? decision.account : null]);
+  if (!handle || (decision.displayName !== null && typeof decision.displayName !== "string") ||
+    (decision.url !== null && typeof decision.url !== "string")) return pending;
+  const post = parseTweetUrl(decision.url);
+  if (decision.url && (!post.tweetId || post.handle?.toLowerCase() !== handle.toLowerCase() ||
+    safeOriginalSourceUrl(decision.url, handle) !== decision.url)) return pending;
+  return {
+    version: "public-news-source-v1", state: "resolved", basis: decision.basis as "quote" | "text" | "post",
+    displayName: sanitizePublicNewsText(decision.displayName) || null, account: `@${handle}`, url: decision.url,
+  };
+}
+
+type PublicNewsSourceInput = {
   item: Pick<
     NewsFeedItemRow,
     | "source_label"
@@ -295,47 +351,96 @@ export function getPublicNewsSourceAttribution(args: {
     | "source_url"
     | "tweet_url"
     | "metadata"
-  >;
+  > & { blurb?: string | null; source_attribution?: PublicNewsSourceDecision };
   provenance?: NewsFeedSourceProvenance | null;
-}): PublicNewsSourceAttribution {
-  const metadata = args.item.metadata ?? args.provenance?.metadata ?? null;
+};
+
+export function getPublicNewsSourceAttribution(args: PublicNewsSourceInput): PublicNewsSourceAttribution {
+  const { displayName, account, url } = resolvePublicNewsSourceDecision(args);
+  return { displayName, account, url };
+}
+
+function resolvePublicNewsSourceDecision(args: PublicNewsSourceInput): PublicNewsSourceDecision {
+  // Subsequent display passes preserve the loader's decision, including rejection.
+  // Fresh loader records explicitly discard this transport field before resolution.
+  if (args.provenance == null && args.item.source_attribution !== undefined) {
+    return readPublicNewsSourceDecision(args.item.source_attribution);
+  }
+  const metadata = { ...args.provenance?.metadata, ...args.item.metadata };
   const quotedTweetUrl =
     args.provenance?.quoted_tweet_url ??
     readMetadataString(metadata, "quotedTweetUrl");
-  const originalHandle = firstOriginalHandle([
-    readMetadataString(metadata, "quotedAuthorHandle"),
-    parseTweetUrl(quotedTweetUrl).handle,
-    args.provenance?.source_handle,
-    parseTweetUrl(args.provenance?.source_url).handle,
-    parseTweetUrl(args.item.source_url).handle,
-    args.item.source_account,
-  ]);
-  const originalName = [
-    readMetadataString(metadata, "quotedAuthorName"),
-    args.provenance?.author_name,
-  ].find(
-    (value) =>
-      Boolean(value?.trim()) &&
-      !isNewsRelayAccount(value) &&
-      sanitizePublicNewsText(value) !== "",
-  );
-  const urlCandidates = [
-    quotedTweetUrl,
-    args.provenance?.source_url,
-    args.item.source_url,
-    args.provenance?.tweet_url,
-    args.item.tweet_url,
-  ];
-  const url =
-    urlCandidates
-      .map((candidate) => safeOriginalSourceUrl(candidate, originalHandle, Boolean(quotedTweetUrl && candidate === quotedTweetUrl)))
-      .find(Boolean) ?? null;
+  const usesQuote = readMetadataString(metadata, "primaryTextSource") === "quoted_oembed";
+  const selectedUrl = usesQuote ? quotedTweetUrl : args.provenance?.source_url ?? args.item.source_url ?? args.item.tweet_url;
+  const selectedPost = parseTweetUrl(selectedUrl);
+  const selectedHandle = selectedPost.handle;
+  const claimedHandle = usesQuote ? readMetadataString(metadata, "quotedAuthorHandle")
+    : args.provenance?.source_handle ?? args.item.source_account;
+  const pending = unresolvedPublicNewsSource();
+  const conflict = unresolvedPublicNewsSource("conflict");
+  const originalHandle = firstOriginalHandle([selectedHandle]);
+  const quotedHandle = firstOriginalHandle([claimedHandle]);
+  const inconsistentPost = usesQuote && [args.provenance?.metadata, args.item.metadata].some(retained => {
+    const id = readMetadataString(retained, "quotedTweetId");
+    const url = readMetadataString(retained, "quotedTweetUrl");
+    return Boolean(id && selectedPost.tweetId && id !== selectedPost.tweetId) ||
+      Boolean(url && parseTweetUrl(url).tweetId !== selectedPost.tweetId);
+  });
+  if (usesQuote) {
+    // Compare retained evidence before the item metadata can override provenance.
+    const retainedAuthors = [
+      originalHandle,
+      ...[args.provenance?.metadata, args.item.metadata].flatMap(retained => [
+        firstOriginalHandle([readMetadataString(retained, "quotedAuthorHandle")]),
+        firstOriginalHandle([parseTweetUrl(readMetadataString(retained, "quotedTweetUrl")).handle]),
+      ]),
+    ].filter((handle): handle is string => Boolean(handle));
+    const inconsistentAuthor = new Set(retainedAuthors.map(handle => handle.toLowerCase())).size > 1;
+    if (inconsistentAuthor || inconsistentPost) return conflict;
+    if (!quotedHandle || (selectedUrl && !selectedPost.tweetId)) return pending;
+    return {
+      version: "public-news-source-v1", state: "resolved", basis: "quote",
+      displayName: sanitizePublicNewsText(readMetadataString(metadata, "quotedAuthorName")) || null,
+      account: `@${quotedHandle}`,
+      url: safeOriginalSourceUrl(selectedUrl, quotedHandle, true),
+    };
+  }
 
-  return {
+  // Only grammatical attribution counts. An arbitrary @mention is not a byline.
+  const text = args.item.blurb ?? "";
+  const textAuthors = [
+    text.match(/^\s*RT\s+@([A-Za-z0-9_]{1,15}):/i)?.[1],
+    text.match(/^\s*(?:per|via|according to)\s+@([A-Za-z0-9_]{1,15})[:,]\s/i)?.[1],
+    text.match(/\b(?:per|via)\s+@([A-Za-z0-9_]{1,15})\)?[.!]?\s*$/i)?.[1],
+  ].map(handle => firstOriginalHandle([handle])).filter((handle): handle is string => Boolean(handle));
+  if (new Set(textAuthors.map(handle => handle.toLowerCase())).size > 1) return conflict;
+  const textAuthor = textAuthors[0];
+  if (textAuthor) {
+    if (originalHandle && originalHandle.toLowerCase() !== textAuthor.toLowerCase()) return conflict;
+    const originalLinks = [selectedUrl, ...(text.match(/https?:\/\/[^\s<>]+/gi) ?? [])]
+      .filter((value): value is string => typeof value === "string")
+      .map(value => value.replace(/[),.!?;]+$/, ""))
+      .filter(value => parseTweetUrl(value).handle?.toLowerCase() === textAuthor.toLowerCase());
+    const originalIds = new Set(originalLinks.map(value => parseTweetUrl(value).tweetId));
+    return {
+      version: "public-news-source-v1", state: "resolved", basis: "text",
+      displayName: null,
+      account: `@${textAuthor}`,
+      // A wrapper or identity-only URL is not proof of the original post ID.
+      url: originalIds.size === 1 ? safeOriginalSourceUrl(originalLinks[0], textAuthor) : null,
+    };
+  }
+  if (!originalHandle || !selectedPost.tweetId) return pending;
+  if (claimedHandle && claimedHandle.replace(/^@/, "").toLowerCase() !== originalHandle.toLowerCase()) return conflict;
+  const originalName = [args.provenance?.author_name, args.item.source_label].find(value =>
+    Boolean(value?.trim()) && !isNewsRelayAccount(value) && sanitizePublicNewsText(value) !== "");
+  const url = safeOriginalSourceUrl(selectedUrl, originalHandle);
+  return url ? {
+    version: "public-news-source-v1", state: "resolved", basis: "post",
     displayName: originalName ? sanitizePublicNewsText(originalName) : null,
-    account: originalHandle ? `@${originalHandle}` : null,
+    account: `@${originalHandle}`,
     url,
-  };
+  } : pending;
 }
 
 function sanitizePublicMetadataValue(value: unknown): unknown {
@@ -368,16 +473,23 @@ export function sanitizePublicNewsFeedItem(
   item: NewsFeedItem,
   provenance?: NewsFeedSourceProvenance | null,
 ): NewsFeedItem {
-  const source = getPublicNewsSourceAttribution({ item, provenance });
+  const source = resolvePublicNewsSourceDecision({ item, provenance });
   return {
     ...item,
+    source_attribution: source,
     headline: sanitizePublicNewsText(item.headline),
     blurb: sanitizePublicNewsText(item.blurb),
     source_label: source.displayName,
     source_account: source.account,
     source_url: source.url,
     tweet_url: source.url,
-    metadata: sanitizePublicMetadataValue(item.metadata) as Record<
+    // Raw ingest lineage remains in storage, never in the public display DTO.
+    metadata: sanitizePublicMetadataValue(item.metadata ? {
+      interpretation: item.metadata.interpretation,
+      lineupCard: item.metadata.lineupCard,
+      automation: item.metadata.automation && typeof item.metadata.automation === "object"
+        ? { summary: (item.metadata.automation as Record<string, unknown>).summary } : undefined,
+    } : null) as Record<
       string,
       unknown
     > | null,
@@ -491,8 +603,12 @@ export function buildNewsFeedHeadline(args: {
 }
 
 export function getNewsItemTeamColors(teamAbbreviation: string | null | undefined) {
-  const team = teamAbbreviation ? teamsInfo[teamAbbreviation as keyof typeof teamsInfo] : null;
+  const identity = getTeamMetaByAbbr(teamAbbreviation?.trim() ?? "");
+  const team = identity ? teamsInfo[identity.abbr] : null;
   return {
+    abbreviation: identity?.abbr ?? null,
+    lineupPrimary: team?.primaryColor ?? "#56606c",
+    lineupSecondary: team?.jersey ?? "#88939e",
     primary: team?.primaryColor ?? "#14a2d2",
     secondary: team?.secondaryColor ?? "#24282e",
     accent: team?.accent ?? "#14a2d2",
@@ -575,6 +691,8 @@ export async function fetchNewsFeedItems(args: {
     sanitizePublicNewsFeedItem(
       {
         ...item,
+        // Stored/client display markers cannot override fresh retained source evidence.
+        source_attribution: undefined,
         players: playersByItemId.get(item.id) ?? [],
       },
       item.source_review_item_id

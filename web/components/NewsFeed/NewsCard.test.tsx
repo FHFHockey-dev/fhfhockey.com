@@ -52,7 +52,7 @@ describe("NewsCard", () => {
     render(<NewsCard item={makeItem({ published_at: null, observed_at: "2026-07-14T18:19:20.000Z", source_label: null, source_account: "SOURCE_ACCOUNT", source_url: "not a URL", metadata: null })} />);
     expect(screen.getAllByText("Published Unavailable")).toHaveLength(2);
     expect(screen.getByText("Observed Jul 14, 2:19 PM")).toBeTruthy();
-    expect(screen.getByText("Source unavailable")).toBeTruthy();
+    expect(screen.getByText("Original source pending")).toBeTruthy();
     expect(screen.queryByRole("link", { name: /View original post/ })).toBeNull();
   });
 
