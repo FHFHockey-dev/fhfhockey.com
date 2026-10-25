@@ -349,6 +349,71 @@ describe("FORGE daily bridge", () => {
       expect(limitations).toContain("Goalie starts use each goalie's last-10 start share (season share when missing) from start rows for his current team this season: the row for that game when one exists, otherwise his latest. FORGE's own starter probability applies to an already projected game. Per-start lines come from his latest FORGE line, or his team's when he has none.");
     });
 
+    describe("never scaled up past a teammate whose share is unknown", () => {
+      const g3 = member("g3", 203, "TOR", 10, "goalie");
+      const run = (goalieShares: ShareRow[], roster: PlanningPlayer[], extra: Partial<ForgeDailyBridgeInputs> = {}) => {
+        const { forecasts, limitations } = buildForgeDailyBridgeForecasts({ ...inputs(), goalieShares, ...extra }, roster, tor, now, 20262027, policy);
+        const chance = (id: string, gameId = "2026020102") => forecasts.find(row => row.playerId === id && row.gameId === gameId)?.startProbability ?? null;
+        return { chance, limitations };
+      };
+      const known = (...values: [number, number][]) => values.map(([id, value]) => shareRow(id, 10, 2026020090, "2026-10-17", value));
+      const openLine = "3 team-games have a goalie with no start share; the others keep their own shares, never scaled up, so start chances there sum to less than 1.";
+
+      it("renormalise when every goalie's share is known", () => {
+        const { chance, limitations } = run(known([201, 0.4], [202, 0.2]), players);
+        expect(chance("g1")).toBeCloseTo(2 / 3, 3);
+        expect(chance("g2")).toBeCloseTo(1 / 3, 3);
+        expect(limitations.some(line => line.includes("never scaled up"))).toBe(false);
+      });
+
+      it("keep a known share as read beside an unknown teammate, scaling down only past 1", () => {
+        const pair = run(known([201, 0.7]), players);
+        expect([pair.chance("g1"), pair.chance("g2")]).toEqual([0.7, null]);
+        expect(pair.limitations).toContain(openLine);
+        const trio = run(known([201, 0.6], [202, 0.3]), [...players, g3]);
+        expect([trio.chance("g1"), trio.chance("g2"), trio.chance("g3")]).toEqual([0.6, 0.3, null]);
+        const over = run(known([201, 0.8], [202, 0.5]), [...players, g3]);
+        expect(over.chance("g1")! + over.chance("g2")!).toBeCloseTo(1, 3);
+        expect(over.chance("g1")).toBeCloseTo(0.8 / 1.3, 3);
+      });
+
+      it("leave every start chance unknown when no share is known", () => {
+        const { chance } = run([], players);
+        for (const { id } of tor) expect([chance("g1", id), chance("g2", id)]).toEqual([null, null]);
+      });
+
+      it("split what FORGE's starter leaves without scaling the others up", () => {
+        const goalies = [{ ...inputs().goalies[0], game_id: 2026020102 }];
+        expect(run(known([202, 0.15]), players, { goalies }).chance("g2")).toBeCloseTo(0.2);
+        const { chance } = run(known([202, 0.15]), [...players, g3], { goalies });
+        expect([chance("g1"), chance("g2"), chance("g3")]).toEqual([0.8, 0.15, null]);
+      });
+
+      it("hand a ruled-out goalie's chance to known teammates only when none is unknown", () => {
+        const goalieNews = { conflicts: [], assertions: [{ gameId: 2026020102, teamId: 10, playerId: 201, dimension: "goalie" as const, value: "ruled_out",
+          evidenceId: "e", sourceKey: "gamedaygoalies", sourceUrl: null, publishedAt: "2026-10-19T15:00:00Z", receivedAt: "2026-10-19T15:00:01Z", confirmed: false }] };
+        expect(run(known([201, 0.6], [202, 0.3]), players, { goalieNews }).chance("g2")).toBe(1);
+        const { chance } = run(known([201, 0.6], [202, 0.3]), [...players, g3], { goalieNews });
+        expect([chance("g1"), chance("g2"), chance("g3")]).toEqual([0, 0.3, null]);
+      });
+
+      it("thin the starter on a back-to-back without handing his chance to known teammates past an unknown one", () => {
+        const teamGames = [{ id: 2026020101, date: "2026-10-19", homeTeamId: 10, awayTeamId: 8 }, { id: 2026020102, date: "2026-10-20", homeTeamId: 10, awayTeamId: 8 }];
+        const all = run(known([201, 0.6], [202, 0.4]), players, { teamGames });
+        expect([all.chance("g1"), all.chance("g2")]).toEqual([0.33, 0.67]);
+        const { chance } = run(known([201, 0.6], [202, 0.3]), [...players, g3], { teamGames });
+        expect([chance("g1"), chance("g2"), chance("g3")]).toEqual([0.33, 0.3, null]);
+      });
+
+      it("count a goalie with no current NHL team, who keeps the team his latest row names from being scaled up", () => {
+        const { nhlTeamId: _team, rosterRevision: _roster, ...rest } = member("g2", 202, "TOR", 10, "goalie");
+        const teamless: PlanningPlayer = { ...rest, teamAbbreviation: null };
+        const { chance, limitations } = run(known([201, 0.7], [202, 0.3]), [players[0], players[1], players[2], players[3], teamless]);
+        expect(chance("g1")).toBe(0.7);
+        expect(limitations).toContain("1 goalies have no current NHL team, so their start chances are unknown; the team their latest start row or FORGE line names keeps its other goalies' shares unscaled.");
+      });
+    });
+
     it("are read with their team, so the bridge can bind them", async () => {
       const selects = new Map<string, string>();
       // Every query chain resolves to its table's rows: one released run, nothing else.

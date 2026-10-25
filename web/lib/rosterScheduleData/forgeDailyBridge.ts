@@ -447,6 +447,18 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
   let unknownWins = 0;
   const goaliesByTeam = new Map<number, PlanningPlayer[]>();
   for (const player of identified.filter(row => row.playerClass === "goalie")) goaliesByTeam.set(player.nhlTeamId!, [...(goaliesByTeam.get(player.nhlTeamId!) ?? []), player]);
+  // Every goalie on a team's current roster counts toward whether its shares are complete, identified or not. A goalie
+  // with no current team counts at the team his latest current-season start row (else FORGE line) names.
+  const rosterGoalies = new Map<number, number[]>();
+  for (const [id, team] of goalieTeams) rosterGoalies.set(team, [...(rosterGoalies.get(team) ?? []), id]);
+  const teamless = players.filter(player => player.playerClass === "goalie" && player.nhlId !== null && !finite(player.nhlTeamId));
+  const teamlessTeams = new Set(teamless.flatMap(goalie => {
+    const rows = inputs.goalieShares.filter(row => row.player_id === goalie.nhlId && finite(row.team_id) && finite(row.game_id)
+      && Math.floor(row.game_id / 1000000) === seasonStartYear).sort((a, b) => `${b.game_date}|${b.updated_at ?? ""}`.localeCompare(`${a.game_date}|${a.updated_at ?? ""}`));
+    const team = rows[0]?.team_id ?? goalieLatest.get(goalie.nhlId)?.team_id;
+    return finite(team) ? [team] : [];
+  }));
+  let openTeamGames = 0;
   for (const [teamId, goalies] of goaliesByTeam) for (const game of upcoming(goalies[0].teamAbbreviation!)) {
     const exact = exactGoalie.get(`${game.id}:${teamId}`), exactProbability = exact ? share(exact.starter_probability) : null;
     // This game's own start-share row first, else the goalie's latest bound row.
@@ -455,23 +467,27 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
       return value === undefined ? [] : [[goalie.nhlId!, value] as const];
     }));
     const probability = new Map<string, number>();
+    // Never scale chances up past a goalie whose chance is unknown: the known ones keep their shares as read (scaled down
+    // only to fit), so the team's start chances may sum to less than 1. With every goalie known they sum to 1 as before.
+    const open = () => teamlessTeams.has(teamId) || (rosterGoalies.get(teamId) ?? []).some(id => !probability.has(String(id)));
+    const rescale = (except: string | null, mass: number) => {
+      const others = [...probability].filter(([id]) => id !== except), total = others.reduce((sum, [, value]) => sum + value, 0);
+      const factor = total > 0 ? open() ? Math.min(1, mass / total) : mass / total : 0;
+      for (const [id, value] of others) probability.set(id, value * factor);
+    };
+    for (const goalie of goalies) if (shares.has(goalie.nhlId!)) probability.set(String(goalie.nhlId), shares.get(goalie.nhlId!)!);
     if (exact && exactProbability !== null && goalies.some(goalie => goalie.nhlId === exact.goalie_id)) {
-      const others = goalies.filter(goalie => goalie.nhlId !== exact.goalie_id && shares.has(goalie.nhlId!));
-      const mass = others.reduce((sum, goalie) => sum + shares.get(goalie.nhlId!)!, 0);
       probability.set(String(exact.goalie_id), exactProbability);
-      for (const goalie of others) probability.set(String(goalie.nhlId), mass > 0 ? (1 - exactProbability) * shares.get(goalie.nhlId!)! / mass : 0);
-    } else {
-      const known = goalies.filter(goalie => shares.has(goalie.nhlId!));
-      const mass = known.reduce((sum, goalie) => sum + shares.get(goalie.nhlId!)!, 0);
-      for (const goalie of known) probability.set(String(goalie.nhlId), shares.get(goalie.nhlId!)! / (mass || 1));
-    }
-    // Second night of a back-to-back: the usual starter rarely starts both, so part of his chance moves to the others.
+      rescale(String(exact.goalie_id), 1 - exactProbability);
+    } else rescale(null, 1);
+    // Second night of a back-to-back: the usual starter rarely starts both, so part of his chance moves to the others
+    // (and stays unassigned when one of them is unknown).
     if (!exact && gameContext(game.id, teamId)?.teamRestDays === 1 && probability.size > 1) {
       const [starter, share] = [...probability].sort((a, b) => b[1] - a[1])[0];
       const moved = share * (1 - BACK_TO_BACK_STARTER_SHARE), others = [...probability].filter(([id]) => id !== starter);
       const total = others.reduce((sum, [, value]) => sum + value, 0);
       probability.set(starter, share - moved);
-      for (const [id, value] of others) probability.set(id, value + (total > 0 ? moved * value / total : moved / others.length));
+      if (!open()) for (const [id, value] of others) probability.set(id, value + (total > 0 ? moved * value / total : moved / others.length));
     }
     // Accepted IFTTT goalie news overrides start shares: confirmed and ruled out outright, likely/projected as floors.
     const disputed = inputs.goalieNews?.conflicts.some(row => row.dimension === "goalie" && row.gameId === Number(game.id) && row.teamId === teamId);
@@ -481,14 +497,11 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
     let confirmedId: string | null = null;
     if (signal) {
       const named = String(signal.playerId), floor = FORGE_DAILY_BRIDGE_GOALIE_NEWS_FLOORS[signal.value];
-      const rescale = (mass: number) => {
-        const others = [...probability].filter(([id]) => id !== named), total = others.reduce((sum, [, value]) => sum + value, 0);
-        for (const [id, value] of others) probability.set(id, total > 0 ? mass * value / total : 0);
-      };
-      if (signal.value === "confirmed") { rescale(0); probability.set(named, 1); confirmedId = named; news.confirmed++; }
-      else if (signal.value === "ruled_out") { probability.set(named, 0); rescale(1); news.ruledOut++; }
-      else if (floor !== undefined) { const p = Math.max(probability.get(named) ?? 0, floor); probability.set(named, p); rescale(1 - p); news.speculative++; }
+      if (signal.value === "confirmed") { rescale(named, 0); probability.set(named, 1); confirmedId = named; news.confirmed++; }
+      else if (signal.value === "ruled_out") { probability.set(named, 0); rescale(named, 1); news.ruledOut++; }
+      else if (floor !== undefined) { const p = Math.max(probability.get(named) ?? 0, floor); probability.set(named, p); rescale(named, 1 - p); news.speculative++; }
     }
+    if (probability.size && open() && [...probability.values()].reduce((sum, value) => sum + value, 0) < 1 - 1e-9) openTeamGames++;
     for (const goalie of goalies) {
       const p = probability.get(String(goalie.nhlId));
       const own = goalieLatest.get(goalie.nhlId);
@@ -528,6 +541,8 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
     ...(teamWins.size ? [`Goalie wins: FORGE's per-game team win probability (both teams sum to 1) × ${STARTER_DECISION_SHARE} starter decision share, times his start chance; games FORGE has not projected yet use FORGE's same win model on team xG.`] : []),
     ...(unknownWins ? [`${unknownWins} goalie-games have no team win probability (FORGE left it blank, or a team-strength prior is missing), so their wins are unknown.`] : []),
     "Goalie starts use each goalie's last-10 start share (season share when missing) from start rows for his current team this season: the row for that game when one exists, otherwise his latest. FORGE's own starter probability applies to an already projected game. Per-start lines come from his latest FORGE line, or his team's when he has none.",
+    ...(openTeamGames ? [`${openTeamGames} team-games have a goalie with no start share; the others keep their own shares, never scaled up, so start chances there sum to less than 1.`] : []),
+    ...(teamless.length ? [`${teamless.length} goalies have no current NHL team, so their start chances are unknown; the team their latest start row or FORGE line names keeps its other goalies' shares unscaled.`] : []),
     ...(staleShareGoalies ? [`${staleShareGoalies} goalies have start shares only from another team or season; those are ignored, so their start chance is unknown.`] : []),
     inputs.goalieNews ? `Goalie news (IFTTT, accepted automatically): ${news.confirmed} confirmed, ${news.speculative} likely or projected (start chance at least ${FORGE_DAILY_BRIDGE_GOALIE_NEWS_FLOORS.likely * 100}% / ${FORGE_DAILY_BRIDGE_GOALIE_NEWS_FLOORS.projected * 100}%), ${news.ruledOut} ruled out${news.disputed ? `, ${news.disputed} disputed and ignored` : ""}.`
       : "Goalie news could not be read; start chances use start shares only.",
