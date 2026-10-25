@@ -1,0 +1,15 @@
+@use "styles/vars" as v;
+
+// Deliberately static: readable under reduced motion, with no shimmer or moving gradient.
+.cell {
+  display: inline-block;
+  vertical-align: middle;
+  width: 62%;
+  max-width: 42px;
+  height: 0.65rem;
+  border-radius: 3px;
+  background: rgba(v.$text-secondary, 0.17);
+  &[data-shape="team"] { width: 28px; height: 28px; border-radius: 6px; }
+  &[data-shape="trend"] { width: 72px; max-width: 90%; height: 24px; }
+}
+.placeholderCell { min-width: 0 !important; padding-inline: 2px !important; text-align: center; }

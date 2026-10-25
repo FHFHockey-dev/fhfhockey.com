@@ -203,6 +203,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<CatchUpResponse
   }
 }
 
-export default withCronJobAudit(adminOnly(handler), {
+export default adminOnly(withCronJobAudit(handler, {
   jobName: "/api/v1/db/catch-up-player-underlying",
-});
+}));

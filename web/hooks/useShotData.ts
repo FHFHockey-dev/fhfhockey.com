@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import supabase from "lib/supabase";
 import { fetchAllSupabasePages } from "lib/supabase/pagination";
 
@@ -45,22 +45,65 @@ export interface ShotDataFilters {
   gameTypes?: string[];
 }
 
+// Unparseable coordinates are dropped rather than plotted at center ice.
+function toPlottedShot(shot: any): ShotData | null {
+  const x = parseFloat(shot.xcoord as unknown as string);
+  const y = parseFloat(shot.ycoord as unknown as string);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+  return {
+    xcoord: x,
+    ycoord: y,
+    typedesckey: shot.typedesckey as string,
+    hometeamdefendingside: shot.hometeamdefendingside,
+    eventownerteamid: shot.eventownerteamid
+  };
+}
+
 export function useShotData(
   teamId: number,
   season?: string | null,
   filters: ShotDataFilters = {
     eventTypes: ["goal", "shot-on-goal"],
     gameTypes: [GAME_TYPES.REGULAR_SEASON]
-  }
+  },
+  // Defer the play-by-play reads until the Shot Map is actually shown.
+  enabled = true
 ) {
   const [shotData, setShotData] = useState<ShotData[]>([]);
   const [opponentShotData, setOpponentShotData] = useState<ShotData[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
+  const loadedKey = useRef<string | null>(null);
+  const filterKey = JSON.stringify({
+    eventTypes: filters.eventTypes,
+    gameTypes: filters.gameTypes
+  });
+  const requestKey = JSON.stringify([teamId, season, filterKey]);
 
   useEffect(() => {
+    let active = true;
+    const requestFilters: ShotDataFilters = JSON.parse(filterKey);
+    setError(null);
+    // Keep already-loaded data when the tab is hidden and shown again.
+    if (!enabled || loadedKey.current === requestKey) {
+      setIsLoading(false);
+      return;
+    }
+
     console.log("useShotData called with teamId:", teamId, "season:", season);
     if (!teamId || !season) {
+      setIsLoading(false);
+      return;
+    }
+
+    // An explicitly empty selection means nothing to show, not "every event".
+    if (
+      requestFilters.eventTypes?.length === 0 ||
+      requestFilters.gameTypes?.length === 0
+    ) {
+      setShotData([]);
+      setOpponentShotData([]);
+      loadedKey.current = requestKey;
       setIsLoading(false);
       return;
     }
@@ -73,14 +116,8 @@ export function useShotData(
         let allGames: { id: number; hometeamid: number; awayteamid: number }[] =
           [];
 
-        // Initialize game type filter condition
-        const gameTypeFilters =
-          filters.gameTypes?.map((gameType) => {
-            const seasonStart = season!.substring(0, 4);
-            return `id.like.${seasonStart}${gameType}%`;
-          }) || [];
-
         const games = await fetchAllSupabasePages<any>(({ from, to }) => {
+          if (!active) return Promise.resolve({ data: [], error: null });
           let gamesQuery = supabase
             .from("pbp_games")
             .select("id, hometeamid, awayteamid")
@@ -92,12 +129,18 @@ export function useShotData(
 
           return gamesQuery.range(from, to) as any;
         }, { pageSize: PAGE_SIZE });
+        if (!active) return;
 
         console.log("Fetched games for team", teamId, ":", games.length);
 
+        // NHL game IDs carry the game type in digits 5-6 (e.g. 2025020001).
+        const gameTypes = requestFilters.gameTypes;
         // Only keep games with non-null hometeamid and awayteamid, and cast to number
         allGames = games
           .filter((g) => g.hometeamid !== null && g.awayteamid !== null)
+          .filter(
+            (g) => !gameTypes || gameTypes.includes(String(g.id).slice(4, 6))
+          )
           .map((g) => ({
             id: g.id,
             hometeamid: g.hometeamid as number,
@@ -107,6 +150,7 @@ export function useShotData(
         if (allGames.length === 0) {
           setShotData([]);
           setOpponentShotData([]);
+          loadedKey.current = requestKey;
           setIsLoading(false);
           return;
         }
@@ -137,6 +181,7 @@ export function useShotData(
         // Process each chunk of game IDs
         for (const gameIdChunk of gameIdChunks) {
           const events = await fetchAllSupabasePages<any>(({ from, to }) => {
+            if (!active) return Promise.resolve({ data: [], error: null });
             let eventsQuery = supabase
               .from("pbp_plays")
               .select(
@@ -147,12 +192,13 @@ export function useShotData(
             // Don't filter out shots without coordinates initially
             // We'll normalize them later in the processing step
 
-            if (filters.eventTypes && filters.eventTypes.length > 0) {
-              eventsQuery = eventsQuery.in("typedesckey", filters.eventTypes);
+            if (requestFilters.eventTypes && requestFilters.eventTypes.length > 0) {
+              eventsQuery = eventsQuery.in("typedesckey", requestFilters.eventTypes);
             }
 
             return eventsQuery.range(from, to) as any;
           }, { pageSize: PAGE_SIZE });
+          if (!active) return;
 
           if (events.length > 0) {
             console.log("All events count:", events.length);
@@ -166,23 +212,8 @@ export function useShotData(
                     shot.xcoord !== null &&
                     shot.ycoord !== null
                 )
-                .map((shot) => {
-                  // Normalize coordinates if needed
-                  let x = parseFloat(shot.xcoord as unknown as string);
-                  let y = parseFloat(shot.ycoord as unknown as string);
-
-                  // Ensure coordinates are valid numbers
-                  if (isNaN(x)) x = 0;
-                  if (isNaN(y)) y = 0;
-
-                  return {
-                    xcoord: x,
-                    ycoord: y,
-                    typedesckey: shot.typedesckey as string,
-                    hometeamdefendingside: shot.hometeamdefendingside,
-                    eventownerteamid: shot.eventownerteamid
-                  };
-                });
+                .map(toPlottedShot)
+                .filter((shot): shot is ShotData => shot !== null);
 
               const validOpponentShots: ShotData[] = events
                 .filter(
@@ -193,23 +224,8 @@ export function useShotData(
                     shot.xcoord !== null &&
                     shot.ycoord !== null
                 )
-                .map((shot) => {
-                  // Normalize coordinates if needed
-                  let x = parseFloat(shot.xcoord as unknown as string);
-                  let y = parseFloat(shot.ycoord as unknown as string);
-
-                  // Ensure coordinates are valid numbers
-                  if (isNaN(x)) x = 0;
-                  if (isNaN(y)) y = 0;
-
-                  return {
-                    xcoord: x,
-                    ycoord: y,
-                    typedesckey: shot.typedesckey as string,
-                    hometeamdefendingside: shot.hometeamdefendingside,
-                    eventownerteamid: shot.eventownerteamid
-                  };
-                });
+                .map(toPlottedShot)
+                .filter((shot): shot is ShotData => shot !== null);
 
               allShots = allShots.concat(validTeamShots);
               allOpponentShots = allOpponentShots.concat(validOpponentShots);
@@ -235,16 +251,24 @@ export function useShotData(
 
         setShotData(allShots);
         setOpponentShotData(allOpponentShots);
+        loadedKey.current = requestKey;
       } catch (err) {
+        if (!active) return;
         setError(err instanceof Error ? err : new Error(String(err)));
         console.error("Error fetching shot data:", err);
       } finally {
-        setIsLoading(false);
+        if (active) setIsLoading(false);
       }
     }
 
     fetchTeamShotData();
-  }, [teamId, season, filters.eventTypes, filters.gameTypes]);
+    return () => { active = false; };
+  }, [teamId, season, filterKey, requestKey, enabled]);
 
-  return { shotData, opponentShotData, isLoading, error };
+  return {
+    shotData: loadedKey.current === requestKey ? shotData : [],
+    opponentShotData: loadedKey.current === requestKey ? opponentShotData : [],
+    isLoading,
+    error
+  };
 }

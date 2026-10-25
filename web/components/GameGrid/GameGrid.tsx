@@ -4,6 +4,7 @@
 // Change Home/Away to use Home/Away Icons
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/router";
 import Link from "next/link";
 
@@ -17,14 +18,17 @@ import PlayerPickupTable from "components/PlayerPickupTable/PlayerPickupTable";
 
 import { parseGameGridDateRange, startAndEndOfWeek } from "./utils/date-func";
 import { getRegularGamesPerDay } from "./utils/helper";
-import { getSelectedOpponentIds, getTeamScheduleSummary, getOpponentPointPct, getFourWeekAverages, getFourWeekScore } from "./utils/scheduleSummary";
+import { getSelectedOpponentIds, getTeamScheduleSummary, getFourWeekAverages } from "./utils/scheduleSummary";
 
 import useSchedule from "./utils/useSchedule";
+import useOpportunityClock from "./utils/useOpportunityClock";
+import { buildOpponentRatings, buildScheduleOpportunity, opportunityScale } from "./utils/scheduleOpportunity";
 import useFourWeekSchedule from "./utils/useFourWeekSchedule"; // New import
 
 import TransposedGrid from "./TransposedGrid";
 import OpponentMetricsTable from "./OpponentMetricsTable";
 import DesktopMasterTable from "./DesktopMasterTable";
+import { LoadingRows } from "./LoadingCells";
 import useOpponentMetricsData from "./utils/useOpponentMetricsData";
 
 import styles from "./GameGrid.module.scss";
@@ -43,14 +47,11 @@ import {
   DAYS,
   EXTENDED_DAYS,
   EXTENDED_DAY_ABBREVIATION,
-  ExtendedWeekData,
-  WeekData,
-  TeamDataWithTotals,
-  FourWeekTotals
-} from "lib/NHL/types"; // Ensure ExtendedWeekData and Totals are imported
+  WeekData
+} from "lib/NHL/types";
 
 import { useTeamsMap } from "hooks/useTeams"; // Import useTeamsMap
-import useCurrentSeason from "hooks/useCurrentSeason";
+import { useCurrentSeasonQuery } from "hooks/useCurrentSeason";
 import useTeamSummary from "hooks/useTeamSummary";
 import useYahooCurrentMatchupWeek from "hooks/useYahooCurrentMatchupWeek";
 
@@ -146,7 +147,7 @@ function GameGridInternal({
 
   // [startDate, endDate]
   const [dates, setDates] = useState<[string, string]>(() =>
-    startAndEndOfWeek()
+    parseGameGridDateRange(router.query.startDate, router.query.endDate) ?? startAndEndOfWeek()
   );
 
   const [currentSortKey, setCurrentSortKey] = useState<SortKey | null>(null);
@@ -172,7 +173,7 @@ function GameGridInternal({
     return next;
   });
 
-  const season = useCurrentSeason();
+  const { data: season, isPending: seasonLoading, isError: seasonError } = useCurrentSeasonQuery();
   const currentSeasonId = season?.seasonId ?? null;
   const currentSeasonYear = useMemo(() => {
     if (!currentSeasonId) return null;
@@ -310,13 +311,6 @@ function GameGridInternal({
     </p>}
     </>;
   };
-  const selectedScheduleStatus = (
-    <p className={styles.sourceStatus} role="status">
-      {currentLoading ? "Loading selected schedule…" : selectedCalendar.error
-        ? `Selected schedule unavailable: ${selectedCalendar.error}`
-        : `Selected schedule incomplete: ${selectedCalendar.coverage.known}/${selectedCalendar.coverage.expected} days covered. Totals and rankings are unavailable.`}
-    </p>
-  );
 
   // Detect if this week contains any preseason games
   const hasPreseason = useMemo(() => {
@@ -462,7 +456,7 @@ function GameGridInternal({
   useEffect(() => {
     if (!router.isReady) return;
     const range = parseGameGridDateRange(router.query.startDate, router.query.endDate);
-    if (range) setDates(range);
+    if (range) setDates(previous => previous[0] === range[0] && previous[1] === range[1] ? previous : range);
     else if (router.query.startDate === undefined && router.query.endDate === undefined) {
       setDates(startAndEndOfWeek());
     }
@@ -484,160 +478,6 @@ function GameGridInternal({
     }
   }, [dates]);
 
-  // *** BEGIN: Console Log weekData ***
-  useEffect(() => {
-    if (!fourWeekLoading && fourWeekSchedule.length > 0) {
-      // Group data by team
-      const teamMap: Record<number, TeamDataWithTotals> = {};
-
-      fourWeekSchedule.forEach((teamData) => {
-        const team = teams[teamData.teamId];
-        if (!team) {
-          console.warn(`Team data not found for teamId: ${teamData.teamId}`);
-        }
-        const teamAbbreviation = team?.abbreviation ?? String(teamData.teamId);
-        const canonicalTeamId = team?.id ?? teamData.teamId;
-
-        if (!teamMap[teamData.teamId]) {
-          teamMap[teamData.teamId] = {
-            teamAbbreviation,
-            teamId: canonicalTeamId,
-            weeks: [],
-            totals: {
-              opponents: [],
-              gamesPlayed: 0,
-              offNights: 0
-            },
-            avgOpponentPointPct: 0 // Initialize with a default value
-          };
-        }
-
-        // Collect opponents for the week
-        const opponents: { abbreviation: string; teamId: number }[] = [];
-
-        DAYS.forEach((day) => {
-          const matchUp = teamData[day];
-          if (matchUp) {
-            const opponentTeam =
-              matchUp.homeTeam.id === teamData.teamId
-                ? matchUp.awayTeam
-                : matchUp.homeTeam;
-
-            const opponent = teams[opponentTeam.id];
-            opponents.push({
-              abbreviation: opponent?.abbreviation ?? String(opponentTeam.id),
-              teamId: opponentTeam.id
-            });
-          }
-        });
-
-        teamMap[teamData.teamId].weeks.push({
-          weekNumber: teamData.weekNumber,
-          opponents: opponents,
-          gamesPlayed: teamData.totalGamesPlayed,
-          offNights: teamData.totalOffNights
-        });
-
-        // **Aggregate Totals**
-        teamMap[teamData.teamId].totals.opponents.push(...opponents);
-        teamMap[teamData.teamId].totals.gamesPlayed +=
-          teamData.totalGamesPlayed;
-        teamMap[teamData.teamId].totals.offNights += teamData.totalOffNights;
-      });
-
-      // Convert teamMap to an array
-      const weekDataArray: TeamDataWithTotals[] = Object.values(teamMap);
-
-      // Log the JSON object only in development to avoid cluttering production logs
-      if (process.env.NODE_ENV === "development") {
-        console.log(JSON.stringify({ weekData: weekDataArray }, null, 2));
-      }
-    }
-  }, [fourWeekSchedule, teams, fourWeekLoading]);
-  // *** END: Console Log weekData ***
-
-  // Prepare data for FourWeekGrid
-  const teamDataWithTotals: TeamDataWithTotals[] = useMemo(() => {
-    const teamMap: Record<number, TeamDataWithTotals> = {};
-
-    fourWeekSchedule.forEach((teamData) => {
-      const team = teams[teamData.teamId];
-      if (!team) {
-        console.warn(`Team data not found for teamId: ${teamData.teamId}`);
-      }
-      const teamAbbreviation = team?.abbreviation ?? String(teamData.teamId);
-      const canonicalTeamId = team?.id ?? teamData.teamId;
-
-      if (!teamMap[teamData.teamId]) {
-        teamMap[teamData.teamId] = {
-          teamAbbreviation,
-          teamId: canonicalTeamId,
-          weeks: [],
-          totals: {
-            opponents: [],
-            gamesPlayed: 0,
-            offNights: 0
-          },
-          avgOpponentPointPct: null
-        };
-      }
-
-      // Collect opponents for the week
-      const opponents: { abbreviation: string; teamId: number }[] = [];
-
-      getSelectedOpponentIds(teamData).forEach((opponentId) => {
-        const opponent = teams[opponentId];
-        opponents.push({
-          abbreviation: opponent?.abbreviation ?? String(opponentId),
-          teamId: opponentId
-        });
-      });
-
-      teamMap[teamData.teamId].weeks.push({
-        weekNumber: teamData.weekNumber,
-        opponents: opponents,
-        gamesPlayed: teamData.totalGamesPlayed,
-        offNights: teamData.totalOffNights,
-        scheduleCoverage: teamData.scheduleCoverage
-      });
-
-      // **Aggregate Totals**
-      teamMap[teamData.teamId].totals.opponents.push(...opponents);
-      teamMap[teamData.teamId].totals.gamesPlayed += teamData.totalGamesPlayed;
-      teamMap[teamData.teamId].totals.offNights += teamData.totalOffNights;
-      const coverage = teamMap[teamData.teamId].totals.scheduleCoverage ?? { known: 0, expected: 0 };
-      coverage.known += teamData.scheduleCoverage?.known ?? 7;
-      coverage.expected += teamData.scheduleCoverage?.expected ?? 7;
-      teamMap[teamData.teamId].totals.scheduleCoverage = coverage;
-    });
-
-    // Convert teamMap to an array and calculate avgOpponentPointPct
-    return Object.values(teamMap).map((team) => {
-      const opponentMetric = getOpponentPointPct(team.totals.opponents, teamPointPctMap);
-      const completeSchedule = !team.totals.scheduleCoverage || team.totals.scheduleCoverage.known === team.totals.scheduleCoverage.expected;
-      return {
-        ...team,
-        avgOpponentPointPct: completeSchedule ? opponentMetric.value : null,
-        opponentCoverage: opponentMetric.coverage
-      };
-    });
-  }, [fourWeekSchedule, teams, teamPointPctMap]);
-
-  const teamDataWithAverages: TeamDataWithTotals[] = useMemo(() => {
-    // Create a map of teamId -> index from sortedTeams
-    const sortMap = new Map<number, number>();
-    sortedTeams.forEach((team, index) => {
-      sortMap.set(team.teamId, index);
-    });
-
-    // Sort teamDataWithTotals based on the map
-    return [...teamDataWithTotals].sort((a, b) => {
-      const indexA = sortMap.get(a.teamId) ?? 999;
-      const indexB = sortMap.get(b.teamId) ?? 999;
-      return indexA - indexB;
-    });
-  }, [teamDataWithTotals, sortedTeams]);
-
   // Weekly opponent/pickup context follows exactly the selected scoring period.
   // Four-week calendar totals remain independent of these day switches.
   const selectedPeriodTeamData = useMemo(() => filteredColumns.map((row) => {
@@ -645,7 +485,7 @@ function GameGridInternal({
       .map((teamId) => ({ abbreviation: teams[teamId]?.abbreviation ?? String(teamId), teamId }));
     const pointPcts = opponents.map((opponent) => teamPointPctMap[opponent.teamId])
       .filter((pct) => pct !== undefined);
-    const totals = { opponents, gamesPlayed: row.totalGamesPlayed, offNights: row.totalOffNights };
+    const totals = { opponents, gamesPlayed: row.totalGamesPlayed, offNights: row.totalOffNights, scheduleCoverage: selectedCalendar.coverage };
     return {
       teamId: row.teamId,
       teamAbbreviation: teams[row.teamId]?.abbreviation ?? String(row.teamId),
@@ -655,7 +495,7 @@ function GameGridInternal({
         ? pointPcts.reduce((a, b) => a + b, 0) / pointPcts.length : 0,
       weekScore: row.weekScore
     };
-  }), [filteredColumns, scheduleDays, excludedDays, teams, teamPointPctMap]);
+  }), [filteredColumns, scheduleDays, excludedDays, teams, teamPointPctMap, selectedCalendar.coverage]);
 
   const playerPickupWeekData = useMemo(() => selectedPeriodTeamData.map((team) => ({
     teamAbbreviation: team.teamAbbreviation,
@@ -665,47 +505,46 @@ function GameGridInternal({
     weekScore: team.weekScore
   })), [selectedPeriodTeamData]);
 
-  const fourWeekAverages = useMemo(() => getFourWeekAverages(teamDataWithAverages), [teamDataWithAverages]);
-
-  const fourWeekSummaryByTeamId = useMemo(() => {
-    return teamDataWithAverages.reduce<
-      Record<
-        number,
-        {
-          gamesPlayed: number | null;
-          offNights: number | null;
-          avgOpponentPointPct: number | null;
-          score: number | null;
-          opponentCoverage?: { known: number; expected: number };
-          scheduleCoverage?: { known: number; expected: number };
-        }
-      >
-    >((acc, team) => {
-      const completeSchedule = !team.totals.scheduleCoverage || team.totals.scheduleCoverage.known === team.totals.scheduleCoverage.expected;
-      const gamesPlayed = completeSchedule ? team.totals.gamesPlayed : null;
-      const offNights = completeSchedule ? team.totals.offNights : null;
-      const avgOpponentPointPct = team.avgOpponentPointPct ?? null;
-
-      acc[team.teamId] = {
-        gamesPlayed,
-        offNights,
-        avgOpponentPointPct,
-        score: getFourWeekScore(team, fourWeekAverages),
-        opponentCoverage: team.opponentCoverage,
-        scheduleCoverage: team.totals.scheduleCoverage
-      };
-      return acc;
-    }, {});
-  }, [fourWeekAverages, teamDataWithAverages]);
-
   const opponentMetricsData = useOpponentMetricsData(selectedPeriodTeamData, currentSeasonId);
+  const opponentLoading = seasonLoading || opponentMetricsData.statsLoading;
+  const opponentRatings = useMemo(() => buildOpponentRatings(opponentMetricsData.entries, opponentMetricsData.statsByAbbreviation), [opponentMetricsData.entries, opponentMetricsData.statsByAbbreviation]);
+  const calculatedAt = useOpportunityClock(fourWeekSchedule);
+  const opportunityTeams = useMemo(() => {
+    const ids = [...new Set([...currentSchedule, ...fourWeekSchedule].map((row) => row.teamId))];
+    const byAbbreviation = new Map<string, { id: number; abbreviation: string }>();
+    ids.forEach((id) => {
+      const abbreviation = teams[id]?.abbreviation ?? String(id);
+      if (!byAbbreviation.has(abbreviation) || byAbbreviation.get(abbreviation)!.id < id) byAbbreviation.set(abbreviation, { id, abbreviation });
+    });
+    return [...byAbbreviation.values()];
+  }, [currentSchedule, fourWeekSchedule, teams]);
+  const opportunityByTeamId = useMemo(() => buildScheduleOpportunity(fourWeekSchedule, opportunityTeams,
+    format(new Date(dates[0]), "yyyy-MM-dd"), calculatedAt, opponentMetricsData.statsByAbbreviation, teamPointPctMap),
+    [fourWeekSchedule, opportunityTeams, dates, calculatedAt, opponentMetricsData.statsByAbbreviation, teamPointPctMap]);
+  const sharedOpportunityScale = useMemo(() => opportunityScale(opportunityByTeamId), [opportunityByTeamId]);
+  const teamDataWithAverages = useMemo(() => Object.values(opportunityByTeamId).map((value) => value.teamData), [opportunityByTeamId]);
+  const fourWeekAverages = useMemo(() => ({ ...getFourWeekAverages(teamDataWithAverages),
+    score: (() => { const values = Object.values(opportunityByTeamId).flatMap((v) => v.opportunity == null ? [] : [v.opportunity]); return values.length ? values.reduce((a, b) => a + b, 0) / values.length : null; })()
+  }), [teamDataWithAverages, opportunityByTeamId]);
+  const fourWeekSummaryByTeamId = useMemo(() => Object.fromEntries(Object.values(opportunityByTeamId).map((value) => {
+    const team = value.teamData;
+    return [team.teamId, { gamesPlayed: value.opportunity == null ? null : team.totals.gamesPlayed,
+      offNights: value.opportunity == null ? null : team.totals.offNights, avgOpponentPointPct: team.avgOpponentPointPct,
+      score: value.opportunity, scheduleCoverage: team.totals.scheduleCoverage, opponentCoverage: team.opponentCoverage }];
+  })), [opportunityByTeamId]);
 
-  // Debugging: Log teamDataWithAverages
-  useEffect(() => {
-    if (!fourWeekLoading && process.env.NODE_ENV === "development") {
-      console.log("Team Data with Averages:", teamDataWithAverages);
-    }
-  }, [fourWeekLoading, teamDataWithAverages]);
+  const loadingStatus = <div className={styles.loadingStatus} role="status" aria-live="polite" data-grid-loading-status>
+    {currentLoading ? "Loading selected schedule…" : selectedCalendar.error ? "Selected schedule unavailable."
+      : !selectedScheduleReady ? `Selected schedule incomplete: ${selectedCalendar.coverage.known}/${selectedCalendar.coverage.expected} days covered. Totals and rankings are unavailable.`
+      : fourWeekLoading ? "Schedule ready. Loading four-week value…"
+      : opponentLoading ? "Schedule ready. Loading opponent ratings…"
+      : fourWeekCalendar.error ? "Four-week schedule unavailable. Selected schedule remains available."
+      : opponentMetricsData.statsError || seasonError || (!seasonLoading && !season) ? "Opponent ratings unavailable. Schedule remains available."
+      : summaryLoading ? "Schedule ready. Loading standings…"
+      : summaryError ? "Standings unavailable. Schedule remains available." : <span className={styles.srOnly}>Schedule ready.</span>}
+    {!currentLoading && (selectedCalendar.error || !selectedScheduleReady || fourWeekCalendar.error || opponentMetricsData.statsError || seasonError || (!seasonLoading && !season) || summaryError) &&
+      <button type="button" onClick={() => window.location.reload()}>Reload to retry</button>}
+  </div>;
 
   const isMobile = useIsMobile();
   const [showMobileTips, setShowMobileTips] = useState(false);
@@ -713,6 +552,11 @@ function GameGridInternal({
   const [isBottomDrawerOpen, setIsBottomDrawerOpen] = useState(false);
   const [isDateRangeOpen, setIsDateRangeOpen] = useState(false);
   const weekScoreHelpRef = useRef<HTMLDivElement | null>(null);
+  const weekScoreHelpTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const weekScoreHelpContentRef = useRef<HTMLDivElement | null>(null);
+  const [weekScoreHelpPosition, setWeekScoreHelpPosition] = useState<{ left: number; top: number } | null>(null);
+  const [metricInfoTarget, setMetricInfoTarget] = useState<HTMLDivElement | null>(null);
+  const [metricWarningTarget, setMetricWarningTarget] = useState<HTMLDivElement | null>(null);
   const [controlsOpen, setControlsOpen] = useState(false);
   const controlsMenuRef = useRef<HTMLDivElement | null>(null);
   const controlsTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -798,34 +642,73 @@ function GameGridInternal({
   }, [isDateRangeOpen]);
 
   useEffect(() => {
-    function onPointerDown(e: MouseEvent) {
-      if (
-        showWeekScoreHelp &&
-        weekScoreHelpRef.current &&
-        !weekScoreHelpRef.current.contains(e.target as Node)
-      ) {
-        setShowWeekScoreHelp(false);
-      }
-    }
-
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        setShowWeekScoreHelp(false);
-      }
-    }
-
-    if (!showWeekScoreHelp) {
+    if (!showWeekScoreHelp || isMobile) {
+      if (isMobile) setShowWeekScoreHelp(false);
+      setWeekScoreHelpPosition(null);
       return;
     }
 
-    document.addEventListener("mousedown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-
-    return () => {
-      document.removeEventListener("mousedown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
+    const containsHelp = (target: EventTarget | null) => target instanceof Node &&
+      (weekScoreHelpRef.current?.contains(target) || weekScoreHelpContentRef.current?.contains(target));
+    const place = () => {
+      const trigger = weekScoreHelpTriggerRef.current;
+      const content = weekScoreHelpContentRef.current;
+      if (!trigger || !content) return;
+      const anchor = trigger.getBoundingClientRect();
+      // Keep the popover below the site navbar, above the table's sticky layer.
+      const topEdge = Math.max(8, ...Array.from(document.querySelectorAll<HTMLElement>("[data-site-header]"))
+        .map((header) => header.getBoundingClientRect())
+        .filter((box) => box.top <= 0 && box.bottom > 0)
+        .map((box) => box.bottom + 8));
+      const drawer = document.getElementById("gg-bottom-drawer")?.getBoundingClientRect();
+      const bottomEdge = drawer && drawer.height > 0
+        ? Math.min(window.innerHeight - 8, drawer.top - 8) : window.innerHeight - 8;
+      if (anchor.bottom <= topEdge || anchor.top >= bottomEdge ||
+          anchor.right <= 0 || anchor.left >= window.innerWidth) {
+        setShowWeekScoreHelp(false);
+        return;
+      }
+      content.style.maxHeight = `${Math.max(0, bottomEdge - topEdge)}px`;
+      const box = content.getBoundingClientRect();
+      const left = Math.max(8, Math.min(anchor.right - box.width, window.innerWidth - box.width - 8));
+      const preferredTop = anchor.bottom + 10 + box.height <= bottomEdge
+        ? anchor.bottom + 10 : anchor.top - box.height - 10;
+      const top = Math.max(topEdge, Math.min(preferredTop, bottomEdge - box.height));
+      setWeekScoreHelpPosition({ left, top });
     };
-  }, [showWeekScoreHelp]);
+    const dismissOutside = (event: PointerEvent | FocusEvent) => {
+      if (!containsHelp(event.target)) setShowWeekScoreHelp(false);
+    };
+    const dismissOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setShowWeekScoreHelp(false);
+        weekScoreHelpTriggerRef.current?.focus();
+      }
+    };
+    place();
+    window.addEventListener("resize", place);
+    window.addEventListener("scroll", place, true);
+    document.addEventListener("pointerdown", dismissOutside);
+    document.addEventListener("focusin", dismissOutside);
+    document.addEventListener("keydown", dismissOnEscape);
+    const observer = new ResizeObserver(place);
+    document.querySelectorAll<HTMLElement>("[data-site-header], #gg-bottom-drawer").forEach((element) => observer.observe(element));
+    return () => {
+      window.removeEventListener("resize", place);
+      window.removeEventListener("scroll", place, true);
+      document.removeEventListener("pointerdown", dismissOutside);
+      document.removeEventListener("focusin", dismissOutside);
+      document.removeEventListener("keydown", dismissOnEscape);
+      observer.disconnect();
+    };
+  }, [showWeekScoreHelp, isMobile]);
+
+  const weekScoreHelpPlaced = weekScoreHelpPosition !== null;
+  useEffect(() => {
+    if (showWeekScoreHelp && weekScoreHelpPlaced) {
+      weekScoreHelpContentRef.current?.focus({ preventScroll: true });
+    }
+  }, [showWeekScoreHelp, weekScoreHelpPlaced]);
 
   const openDateRange = () => {
     setDateRangeError(null);
@@ -855,7 +738,7 @@ function GameGridInternal({
   };
 
   const legendBar = (
-    <div className={styles.legendBar}>
+    <div className={styles.legendBar} role="group" aria-label="Game Grid legend">
       <div className={styles.legendMeta}>
         <ul>
           <li>
@@ -884,8 +767,9 @@ function GameGridInternal({
           </li>
         </ul>
       </div>
-
-
+      {gridLayout === "master" && (
+        <div className={styles.legendMetricInfo} ref={setMetricInfoTarget} />
+      )}
     </div>
   );
 
@@ -893,6 +777,7 @@ function GameGridInternal({
       <div className={styles.legendBarEnd} ref={weekScoreHelpRef}>
         <button
           type="button"
+          ref={weekScoreHelpTriggerRef}
           className={styles.weekScoreHelpPill}
           aria-expanded={showWeekScoreHelp}
           aria-controls="gg-week-score-help"
@@ -900,10 +785,13 @@ function GameGridInternal({
         >
           Week Score <span className={styles.weekScoreHelpIcon}>i</span>
         </button>
-        {showWeekScoreHelp && (
+        {showWeekScoreHelp && createPortal(
           <div
             id="gg-week-score-help"
+            ref={weekScoreHelpContentRef}
             className={styles.weekScoreHelpPopover}
+            style={{ ...weekScoreHelpPosition, visibility: weekScoreHelpPosition ? "visible" : "hidden" }}
+            tabIndex={-1}
             role="dialog"
             aria-label="Week score formula"
           >
@@ -936,7 +824,7 @@ function GameGridInternal({
               Adjusted Team Games = Team Games – League Average Games. Teams
               with no games in the selected period display a dash.
             </p>
-          </div>
+          </div>, document.body
         )}
       </div>
   );
@@ -1006,18 +894,22 @@ function GameGridInternal({
                   </span>
                 )}
               </div>
+              <div className={styles.controlsBarFooter} ref={setMetricWarningTarget} data-game-grid-warning-footer />
             </div>{" "}
             {/* End mobileHeaderActions */}
             {/* Schedule Grid section MOVED directly inside navAndGrid */}
             {/* Note: Removed the wrapping gameGridSection div as it might be redundant here */}
             <div className={styles.scheduleGridContainer}>
-              {!selectedScheduleReady ? selectedScheduleStatus : <div className={styles.tableScrollWrapper}>
+              {loadingStatus}
+              <div className={styles.tableScrollWrapper}>
                 <table
                   className={`${styles.scheduleGrid} ${styles.mobileCompactTable}`}
+                  aria-busy={currentLoading}
+                  data-schedule-state={currentLoading ? "loading" : selectedScheduleReady ? "ready" : "unavailable"}
                 >
                   <colgroup>
                     <col className={styles.gridColFirst} />
-                    <col span={7} className={styles.gridColMiddle} />
+                    <col span={scheduleDays.length} className={styles.gridColMiddle} />
                     <col span={3} className={styles.gridColEnd} />
                   </colgroup>
                   <Header
@@ -1034,6 +926,7 @@ function GameGridInternal({
                     setHidePreseason={setHidePreseason}
                   />
                   <tbody>
+                    {!selectedScheduleReady ? <LoadingRows columns={1 + scheduleDays.length + 3} waiting={currentLoading} rowHeight={34} /> : <>
                     <TotalGamesPerDayRow
                       games={regularNumGamesPerDay}
                       excludedDays={excludedDays}
@@ -1061,9 +954,10 @@ function GameGridInternal({
                         />
                       );
                     })}
+                    </>}
                   </tbody>
                 </table>
-              </div>}
+              </div>
             </div>{" "}
           </div>{" "}
           {/* End navAndGrid */}
@@ -1074,6 +968,8 @@ function GameGridInternal({
               <OpponentMetricsTable
                 teamData={selectedPeriodTeamData}
                 metricsData={opponentMetricsData}
+                scheduleLoading={currentLoading}
+                sourceLoading={opponentLoading}
               />
             </div>
 
@@ -1084,7 +980,7 @@ function GameGridInternal({
 
             {/* FourWeekGrid section */}
             <div className={styles.fourWeekSection}>
-              <FourWeekGrid teamDataArray={teamDataWithAverages} calendar={fourWeekCalendar} />
+              <FourWeekGrid loading={fourWeekLoading} opportunityByTeamId={opportunityByTeamId} sharedScale={sharedOpportunityScale} teamDataArray={teamDataWithAverages} calendar={fourWeekCalendar} warningTarget={metricWarningTarget} />
             </div>
           </div>{" "}
           {/* End mobileContainer */}
@@ -1241,16 +1137,6 @@ function GameGridInternal({
           </div>
         )}
         {/* Loading and error overlays remain outside */}
-        {(summaryLoading || fourWeekLoading) && (
-          <div className={styles.overlaySpinner}>
-            <Spinner />
-          </div>
-        )}
-        {summaryError && (
-          <div className={styles.error}>
-            <p>Error loading team summaries. Please try again later.</p>
-          </div>
-        )}
         {isDateRangeOpen && (
           <div
             className={styles.dateRangeOverlay}
@@ -1513,19 +1399,21 @@ function GameGridInternal({
             </div>
             {legendBar}
           </div>
+          <div className={styles.controlsBarFooter} ref={setMetricWarningTarget} data-game-grid-warning-footer />
         </div>
 
+        {loadingStatus}
         {/* New 3-Column Dashboard Layout */}
         <div className={styles.dashboardLayout} data-grid-layout={gridLayout}>
-          {!selectedScheduleReady ? (
-            <div className={styles.desktopMasterSection}>
-              {selectedScheduleStatus}
-              <FourWeekGrid teamDataArray={teamDataWithAverages} calendar={fourWeekCalendar} />
-            </div>
-          ) : gridLayout === "master" ? (
+          {gridLayout === "master" ? (
             <div className={styles.desktopMasterSection}>
               <div className={styles.scheduleGridContainer}>
                 <DesktopMasterTable
+                  scheduleReady={selectedScheduleReady}
+                  scheduleLoading={currentLoading}
+                  fourWeekLoading={fourWeekLoading}
+                  metricInfoTarget={metricInfoTarget}
+                  warningTarget={metricWarningTarget}
                   start={dates[0]}
                   extended={mode === "10-Day-Forecast"}
                   scheduleRows={filteredColumns}
@@ -1533,10 +1421,13 @@ function GameGridInternal({
                   excludedDays={excludedDays}
                   setExcludedDays={setExcludedDays}
                   hidePreseason={hidePreseason}
+                  opponentRatings={opponentRatings}
+                  opportunityByTeamId={opportunityByTeamId}
+                  sharedOpportunityScale={sharedOpportunityScale}
                   opponentMetricsByTeamId={opponentMetricsData.metricsByTeamId}
                   opponentMetricColumns={opponentMetricsData.metricColumns}
                   opponentLeagueAverages={opponentMetricsData.leagueAverages}
-                  opponentMetricsLoading={opponentMetricsData.statsLoading}
+                  opponentMetricsLoading={opponentLoading}
                   opponentMetricsError={opponentMetricsData.statsError}
                   opponentCoverageByTeamId={opponentMetricsData.coverageByTeamId}
                   opponentLeagueCoverage={opponentMetricsData.leagueCoverage}
@@ -1558,6 +1449,8 @@ function GameGridInternal({
                   <OpponentMetricsTable
                     teamData={selectedPeriodTeamData}
                     metricsData={opponentMetricsData}
+                    scheduleLoading={currentLoading}
+                    sourceLoading={opponentLoading}
                   />
                 </div>
               </div>
@@ -1567,6 +1460,8 @@ function GameGridInternal({
                 <div className={styles.scheduleGridContainer}>
                     {orientation === "vertical" ? (
                     <TransposedGrid
+                      scheduleReady={selectedScheduleReady}
+                      scheduleLoading={currentLoading}
                       sortedTeams={sortedTeams}
                       games={regularNumGamesPerDay}
                       excludedDays={excludedDays}
@@ -1584,11 +1479,12 @@ function GameGridInternal({
                     <div className={styles.gridScrollOuter}>
                       <table
                         className={`${styles.scheduleGrid} ${styles.condensed} ${styles.teamPreviewGrid}`}
+                        aria-busy={currentLoading}
                         aria-describedby="weekScoreDesc"
                       >
                         <colgroup>
                           <col className={styles.gridColFirst} />
-                          <col span={7} className={styles.gridColMiddle} />
+                          <col span={scheduleDays.length} className={styles.gridColMiddle} />
                           <col span={3} className={styles.gridColEnd} />
                         </colgroup>
                         <Header
@@ -1608,6 +1504,7 @@ function GameGridInternal({
                           key={dates[0]}
                           className={styles.fadeEnterActive}
                         >
+                          {!selectedScheduleReady ? <LoadingRows columns={1 + scheduleDays.length + 3} waiting={currentLoading} rowHeight={44} /> : <>
                           <TotalGamesPerDayRow
                             games={regularNumGamesPerDay}
                             excludedDays={excludedDays}
@@ -1638,6 +1535,7 @@ function GameGridInternal({
                               />
                             );
                           })}
+                          </>}
                         </tbody>
                       </table>
                     </div>
@@ -1648,7 +1546,7 @@ function GameGridInternal({
               {/* Right Rail: Four Week Grid */}
               <div className={styles.rightRail}>
                 <div className={styles.fourWeekGridContainerAll}>
-                  <FourWeekGrid teamDataArray={teamDataWithAverages} calendar={fourWeekCalendar} />
+                  <FourWeekGrid loading={fourWeekLoading} opportunityByTeamId={opportunityByTeamId} sharedScale={sharedOpportunityScale} teamDataArray={teamDataWithAverages} calendar={fourWeekCalendar} warningTarget={metricWarningTarget} />
                 </div>
               </div>
             </>
@@ -1696,11 +1594,6 @@ function GameGridInternal({
       </section>
 
       {/* Loading and error states */}
-      {(summaryLoading || fourWeekLoading) && (
-        <div className={styles.overlaySpinner}>
-          <Spinner />
-        </div>
-      )}
 
       <p id="weekScoreDesc" className={styles.srOnly}>
         Week Score = (Adjusted Team Games × 6) + (Off-Night Games × 4) +
@@ -1717,11 +1610,6 @@ function GameGridInternal({
         or opponent-only scoring difficulty rating. Higher odds add a small
         edge when schedules match. Teams with no games display a dash.
       </p>
-      {summaryError && (
-        <div className={styles.error}>
-          <p>Error loading team summaries. Please try again later.</p>
-        </div>
-      )}
 
       {isDateRangeOpen && (
         <div

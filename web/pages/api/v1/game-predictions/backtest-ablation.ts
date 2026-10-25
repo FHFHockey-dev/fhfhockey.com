@@ -136,6 +136,6 @@ async function handler(req: RequestWithSupabase, res: NextApiResponse) {
   });
 }
 
-export default withCronJobAudit(adminOnly(handler as any), {
+export default adminOnly(withCronJobAudit(handler as any, {
   jobName: "game-predictions-backtest-ablation",
-});
+}));

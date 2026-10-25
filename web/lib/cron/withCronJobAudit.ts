@@ -5,6 +5,7 @@ import {
   withCronJobTiming,
 } from "lib/cron/timingContract";
 import supabase from "lib/supabase/server";
+import type { CronClassification } from "lib/cron/nhlOffSeason";
 
 // "continued" marks a planned partial run: the route stopped at its runtime
 // budget and handed back a cursor for the next call. It is not a failure.
@@ -29,6 +30,56 @@ function safeJson(value: unknown, maxLen: number): string | null {
   } catch {
     return null;
   }
+}
+
+function outcomeFields(value: unknown, keys: readonly string[], maxLen = 300) {
+  const result: Record<string, string | number | boolean | null> = {};
+  if (!value || typeof value !== "object" || Array.isArray(value)) return result;
+  const record = value as Record<string, unknown>;
+  for (const key of keys) {
+    const field = record[key];
+    if (typeof field === "string") result[key] = truncateString(field, maxLen);
+    else if (field === null || typeof field === "boolean" ||
+      (typeof field === "number" && Number.isFinite(field))) result[key] = field;
+  }
+  return result;
+}
+
+/** Keep outcome facts queryable even when the legacy response preview is cut. */
+function responseOutcome(body: unknown) {
+  if (!body || typeof body !== "object" || Array.isArray(body)) return null;
+  const record = body as Record<string, unknown>;
+  const outcome: Record<string, unknown> = outcomeFields(record, [
+    "success", "status", "error", "asOfDate", "nextGameId", "nextStartDate",
+    "lastCompletedGameId", "rowsUpserted", "rowsVerified", "rowsPruned",
+  ], 2000);
+  if (Array.isArray(record.errors)) {
+    outcome.errors = {
+      count: record.errors.length,
+      sample: record.errors.slice(0, 3).map((error) =>
+        typeof error === "string" ? { message: truncateString(error, 2000) }
+          : outcomeFields(error, ["gameId", "date", "stage", "message"], 2000)),
+    };
+  }
+  if (record.termination && typeof record.termination === "object") {
+    outcome.termination = outcomeFields(record.termination, [
+      "state", "resumeRequired", "nextStartDate",
+    ]);
+  }
+  if (record.preflight && typeof record.preflight === "object") {
+    const preflight = record.preflight as Record<string, unknown>;
+    const gates = Array.isArray(preflight.gates) ? preflight.gates : null;
+    const failedGates = gates?.filter((gate) =>
+      gate && typeof gate === "object" && gate.status === "FAIL");
+    outcome.preflight = {
+      ...outcomeFields(preflight, ["status", "asOfDate"]),
+      gateCount: gates?.length ?? null,
+      failedGateCount: failedGates?.length ?? null,
+      failedGates: failedGates?.slice(0, 10).map((gate) =>
+        outcomeFields(gate, ["gate_key", "status", "detail"])) ?? null,
+    };
+  }
+  return outcome;
 }
 
 function inferRowsAffected(body: unknown): number | null {
@@ -169,6 +220,35 @@ function isPlannedContinuation(statusCode: number, body: unknown): boolean {
   return (inferFailedRows(body) ?? 0) === 0;
 }
 
+// The registered symbol withNhlOffSeasonSkip stamps on the response. It is read
+// through the global registry rather than imported, so route tests that mock
+// lib/cron/nhlOffSeason still run this wrapper unchanged.
+const CRON_CLASSIFICATION_KEY = Symbol.for("fhfh.cron.classification");
+const SEASONAL_GAME_DATA: CronClassification = "nhl_seasonal_game_data";
+
+function knownClassification(value: unknown): CronClassification | null {
+  return value === SEASONAL_GAME_DATA ? SEASONAL_GAME_DATA : null;
+}
+
+/** The classification the off-season gate stamped on this response, if any. */
+export function cronClassificationOf(res: object): CronClassification | null {
+  return knownClassification((res as Record<symbol, unknown>)[CRON_CLASSIFICATION_KEY]);
+}
+
+/**
+ * Reads `details.cronClassification` from a cron_job_audit row. New rows carry
+ * the classification or null (not seasonal game data); undefined means the row
+ * predates the field (or holds an unrecognised value), so callers must fall back.
+ */
+export function cronClassificationFromAuditDetails(
+  details: unknown,
+): CronClassification | null | undefined {
+  if (!details || typeof details !== "object" || Array.isArray(details)) return undefined;
+  const value = (details as Record<string, unknown>).cronClassification;
+  if (value === null) return null;
+  return knownClassification(value) ?? undefined;
+}
+
 function defaultJobName(req: NextApiRequest): string {
   const url = req.url ?? "";
   const pathOnly = url.split("?")[0]?.trim();
@@ -181,6 +261,9 @@ export function withCronJobAudit(
     jobName?: string;
     includeFinalAuditReceipt?: boolean;
     recordRowMetrics?: boolean;
+    // Limit persisted response data to safe primitive summary fields. The API
+    // response and outcome inference still use the complete handler result.
+    responsePreviewKeys?: readonly string[];
   }
 ): (req: any, res: any) => Promise<void> {
   return async (req: NextApiRequest, res: NextApiResponse) => {
@@ -278,6 +361,12 @@ export function withCronJobAudit(
 
     let finalAuditStatus: "persisted" | "failed" = "persisted";
 
+    const auditBody = opts?.responsePreviewKeys == null
+      ? capturedBody
+      : outcomeFields(capturedBody, opts.responsePreviewKeys.filter((key) =>
+          Object.prototype.hasOwnProperty.call(capturedBody ?? {}, key)));
+    const responsePreview = safeJson(auditBody, 4000);
+
     const row: CronAuditRow = {
       job_name: jobName,
       status: plannedContinuation
@@ -302,9 +391,14 @@ export function withCronJobAudit(
           : null,
         error:
           thrown != null
-            ? ((thrown as any)?.message ?? safeJson(thrown, 2000))
+            ? opts?.responsePreviewKeys != null
+              ? "Handler failed."
+              : ((thrown as any)?.message ?? safeJson(thrown, 2000))
             : null,
-        response: safeJson(capturedBody, 4000),
+        response: responsePreview,
+        responseTruncated: responsePreview?.endsWith("…") ?? false,
+        responseOutcome: responseOutcome(auditBody),
+        cronClassification: cronClassificationOf(res),
       },
     };
 

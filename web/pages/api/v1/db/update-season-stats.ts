@@ -1098,4 +1098,4 @@ function getPlayersGameStats(
   };
 }
 
-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler)));
+export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler)));

@@ -61,6 +61,6 @@ async function handler(req: RequestWithSupabase, res: NextApiResponse) {
   });
 }
 
-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)), {
+export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler as any), {
   jobName: "game-predictions-score",
-});
+}));

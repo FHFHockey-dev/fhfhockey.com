@@ -4,7 +4,7 @@ import { differenceInYears } from "date-fns";
 import { get } from "lib/NHL/base";
 import adminOnly from "utils/adminOnlyMiddleware";
 
-export default withCronJobAudit(adminOnly(async (req, res) => {
+export default adminOnly(withCronJobAudit(async (req, res) => {
   const { supabase } = req;
   const playerId = Number(req.query.playerId);
   try {

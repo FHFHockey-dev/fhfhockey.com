@@ -16,10 +16,34 @@ import * as d3 from "d3";
 import { hexbin as d3Hexbin, HexbinBin } from "d3-hexbin";
 import { teamsInfo } from "lib/teamsInfo";
 
+const DEFAULT_EVENT_TYPES = ["goal", "shot-on-goal"];
+const DEFAULT_GAME_TYPES = [GAME_TYPES.REGULAR_SEASON];
+
+const sameSelection = (a: string[], b: string[]) =>
+  a.length === b.length && a.every((value) => b.includes(value));
+
+// Play-by-play records goals apart from "shot-on-goal" (saved) events, so
+// shots on goal are both together. Without saved shots a percentage is unknown.
+function shotSummary(shotData: ShotData[]) {
+  const goalCount = shotData.filter((d) => d.typedesckey === "goal").length;
+  const savedCount = shotData.filter(
+    (d) => d.typedesckey === "shot-on-goal"
+  ).length;
+  const shotCount = goalCount + savedCount;
+  return {
+    eventCount: shotData.length,
+    goalCount,
+    shotCount: savedCount > 0 ? shotCount : null,
+    shootingPct:
+      savedCount > 0 ? ((goalCount / shotCount) * 100).toFixed(1) : null
+  };
+}
+
 interface ShotVisualizationProps {
   shotData: ShotData[];
   opponentShotData?: ShotData[];
   isLoading: boolean;
+  error?: Error | null;
   onFilterChange?: (filters: ShotDataFilters) => void;
   filters?: ShotDataFilters;
   teamAbbreviation?: string;
@@ -34,10 +58,11 @@ export function ShotVisualization({
   shotData,
   opponentShotData = [],
   isLoading,
+  error,
   onFilterChange,
   filters = {
-    eventTypes: ["goal", "shot-on-goal"],
-    gameTypes: [GAME_TYPES.REGULAR_SEASON]
+    eventTypes: DEFAULT_EVENT_TYPES,
+    gameTypes: DEFAULT_GAME_TYPES
   },
   teamAbbreviation,
   alwaysShowOpponentLegend = false
@@ -59,10 +84,10 @@ export function ShotVisualization({
 
   // Track selected event types and game types
   const [selectedEventTypes, setSelectedEventTypes] = useState<string[]>(
-    filters.eventTypes || ["goal", "shot-on-goal"]
+    filters.eventTypes || DEFAULT_EVENT_TYPES
   );
   const [selectedGameTypes, setSelectedGameTypes] = useState<string[]>(
-    filters.gameTypes || [GAME_TYPES.REGULAR_SEASON]
+    filters.gameTypes || DEFAULT_GAME_TYPES
   );
 
   // Reset legends state when key changes
@@ -146,94 +171,117 @@ export function ShotVisualization({
     }
   };
 
-  if (isLoading) {
-    return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100%",
-          minHeight: "300px"
-        }}
-      >
-        Loading shot data...
-      </div>
-    );
-  }
+  const handleReset = () => {
+    setSelectedEventTypes(DEFAULT_EVENT_TYPES);
+    setSelectedGameTypes(DEFAULT_GAME_TYPES);
+    onFilterChange?.({
+      ...filters,
+      eventTypes: DEFAULT_EVENT_TYPES,
+      gameTypes: DEFAULT_GAME_TYPES
+    });
+  };
+  const isDefaultSelection =
+    sameSelection(selectedEventTypes, DEFAULT_EVENT_TYPES) &&
+    sameSelection(selectedGameTypes, DEFAULT_GAME_TYPES);
+
+  // Filters stay mounted through loading, empty and error states so a
+  // selection can always be changed or reset.
+  const statusMessage = isLoading
+    ? "Loading shot data..."
+    : error
+      ? `Unable to load event data: ${error.message}`
+      : selectedEventTypes.length === 0 || selectedGameTypes.length === 0
+        ? "Select at least one event type and one game type."
+        : shotData.length === 0 && opponentShotData.length === 0
+          ? "No event data available for the selected filters"
+          : null;
 
   return (
     <div className={styles.shotVisualizationContainer}>
-      {shotData.length === 0 ? (
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            height: "100%",
-            width: "100%",
-            minHeight: "300px"
-          }}
-        >
-          No event data available for the selected filters
+      {/* Left side: Control panel */}
+      <div className={styles.controlPanel}>
+        {/* Filter controls */}
+        <div className={styles.filterControls}>
+          <div className={styles.filterGroup}>
+            <label htmlFor="eventTypeFilter">Event Types:</label>
+            <select
+              id="eventTypeFilter"
+              multiple
+              value={selectedEventTypes}
+              onChange={handleEventTypeChange}
+              className={styles.filterSelect}
+            >
+              {EVENT_TYPES.map((eventType) => (
+                <option key={eventType} value={eventType}>
+                  {eventTypeLabels[eventType] || eventType}
+                </option>
+              ))}
+            </select>
+            <small>Hold Ctrl/Cmd to select multiple</small>
+          </div>
+
+          <div className={styles.filterGroup}>
+            <label htmlFor="gameTypeFilter">Game Types:</label>
+            <select
+              id="gameTypeFilter"
+              multiple
+              value={selectedGameTypes}
+              onChange={handleGameTypeChange}
+              className={styles.filterSelect}
+            >
+              {Object.entries(GAME_TYPES).map(([key, value]) => (
+                <option key={value} value={value}>
+                  {gameTypeLabels[value] || key}
+                </option>
+              ))}
+            </select>
+            <small>Hold Ctrl/Cmd to select multiple</small>
+          </div>
+
+          <button
+            type="button"
+            className={styles.showMoreSeasonsButton}
+            onClick={handleReset}
+            disabled={isDefaultSelection}
+          >
+            Reset filters
+          </button>
+        </div>
+
+        {/* InnerShotVisualizationControls will receive and render the legends and stats */}
+        {!statusMessage && (
+          <InnerShotVisualizationControls
+            key={`controls-${key}`}
+            shotData={shotData}
+            opponentShotData={opponentShotData}
+            scaleValues={{
+              team: teamScaleValues,
+              opponent: { min: 0, mid: 0, max: 0 }
+            }}
+            legendsReady={legendsReady}
+            alwaysShowLegend={alwaysShowOpponentLegend}
+          />
+        )}
+      </div>
+
+      {statusMessage ? (
+        <div className={styles.rinksSideBySide}>
+          <div
+            role={error && !isLoading ? "alert" : "status"}
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              height: "100%",
+              width: "100%",
+              minHeight: "300px"
+            }}
+          >
+            {statusMessage}
+          </div>
         </div>
       ) : (
         <>
-          {/* Left side: Control panel */}
-          <div className={styles.controlPanel}>
-            {/* Filter controls */}
-            <div className={styles.filterControls}>
-              <div className={styles.filterGroup}>
-                <label htmlFor="eventTypeFilter">Event Types:</label>
-                <select
-                  id="eventTypeFilter"
-                  multiple
-                  value={selectedEventTypes}
-                  onChange={handleEventTypeChange}
-                  className={styles.filterSelect}
-                >
-                  {EVENT_TYPES.map((eventType) => (
-                    <option key={eventType} value={eventType}>
-                      {eventTypeLabels[eventType] || eventType}
-                    </option>
-                  ))}
-                </select>
-                <small>Hold Ctrl/Cmd to select multiple</small>
-              </div>
-
-              <div className={styles.filterGroup}>
-                <label htmlFor="gameTypeFilter">Game Types:</label>
-                <select
-                  id="gameTypeFilter"
-                  multiple
-                  value={selectedGameTypes}
-                  onChange={handleGameTypeChange}
-                  className={styles.filterSelect}
-                >
-                  {Object.entries(GAME_TYPES).map(([key, value]) => (
-                    <option key={value} value={value}>
-                      {gameTypeLabels[value] || key}
-                    </option>
-                  ))}
-                </select>
-                <small>Hold Ctrl/Cmd to select multiple</small>
-              </div>
-            </div>
-
-            {/* InnerShotVisualizationControls will receive and render the legends and stats */}
-            <InnerShotVisualizationControls
-              key={`controls-${key}`}
-              shotData={shotData}
-              opponentShotData={opponentShotData}
-              scaleValues={{
-                team: teamScaleValues,
-                opponent: { min: 0, mid: 0, max: 0 }
-              }}
-              legendsReady={legendsReady}
-              alwaysShowLegend={alwaysShowOpponentLegend}
-            />
-          </div>
-
           {/* Right side: Rink visualization */}
           <div className={styles.rinksSideBySide}>
             {/* My Team Half Rink */}
@@ -293,11 +341,7 @@ function InnerShotVisualization({
   side: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [stats, setStats] = useState({
-    eventCount: 0,
-    goalCount: 0,
-    shootingPct: "0.0"
-  });
+  const [stats, setStats] = useState(() => shotSummary([]));
 
   // Store bin maps and max values for sharing with control panel
   const [binMap, setBinMap] = useState<Map<string, number>>(new Map());
@@ -341,18 +385,7 @@ function InnerShotVisualization({
     const rinkWidth = 85;
 
     // Calculate event statistics
-    const goals = shotData.filter((d) => d.typedesckey === "goal");
-    const shots = shotData.filter((d) => d.typedesckey === "shot-on-goal");
-
-    const goalCount = goals.length;
-    const shotCount = shots.length;
-    const eventCount = shotData.length;
-
-    // Calculate shooting percentage if we have both shots and goals
-    const shootingPct =
-      shotCount > 0 ? ((goalCount / shotCount) * 100).toFixed(1) : "0.0";
-
-    setStats({ eventCount, goalCount, shootingPct });
+    setStats(shotSummary(shotData));
 
     // For vertical orientation, we swap x and y coordinates and transform accordingly
     // For half-rink, we want all shots attacking toward the bottom (offensive zone at the bottom)
@@ -494,14 +527,14 @@ function InnerShotVisualization({
           Total Events: {stats.eventCount}
         </p>
         {stats.goalCount > 0 && (
-          <>
-            <p style={{ margin: "5px 0", fontWeight: "bold" }}>
-              Goals: {stats.goalCount}
-            </p>
-            <p style={{ margin: "5px 0", fontWeight: "bold" }}>
-              Shooting %: {stats.shootingPct}%
-            </p>
-          </>
+          <p style={{ margin: "5px 0", fontWeight: "bold" }}>
+            Goals: {stats.goalCount}
+          </p>
+        )}
+        {stats.shootingPct !== null && (
+          <p style={{ margin: "5px 0", fontWeight: "bold" }}>
+            Shooting %: {stats.shootingPct}%
+          </p>
         )}
       </div>
     </div>
@@ -527,12 +560,7 @@ function InnerShotVisualizationControls({
   legendsReady: boolean;
   alwaysShowLegend?: boolean;
 }) {
-  const [stats, setStats] = useState({
-    eventCount: 0,
-    goalCount: 0,
-    shotCount: 0,
-    shootingPct: "0.0"
-  });
+  const [stats, setStats] = useState(() => shotSummary([]));
 
   // Container refs for the legends
   const teamLegendRef = useRef<HTMLDivElement>(null);
@@ -540,21 +568,7 @@ function InnerShotVisualizationControls({
 
   // Calculate statistics once on mount
   useEffect(() => {
-    const goals = shotData.filter((d) => d.typedesckey === "goal");
-    const shots = shotData.filter((d) => d.typedesckey === "shot-on-goal");
-
-    const goalCount = goals.length;
-    const shotCount = shots.length;
-    const eventCount = shotData.length;
-    const shootingPct =
-      shotCount > 0 ? ((goalCount / shotCount) * 100).toFixed(1) : "0.0";
-
-    setStats({
-      eventCount,
-      goalCount,
-      shotCount,
-      shootingPct
-    });
+    setStats(shotSummary(shotData));
   }, [shotData]);
 
   // Create team legend using the scale values from the rink visualization
@@ -773,12 +787,10 @@ function InnerShotVisualizationControls({
       {/* Statistics panel */}
       <div className={styles.statsPanel}>
         <p>Total Events: {stats.eventCount}</p>
-        <p>Shots on Goal: {stats.shotCount}</p>
-        {stats.goalCount > 0 && (
-          <>
-            <p>Goals: {stats.goalCount}</p>
-            <p>Shooting %: {stats.shootingPct}%</p>
-          </>
+        {stats.shotCount !== null && <p>Shots on Goal: {stats.shotCount}</p>}
+        {stats.goalCount > 0 && <p>Goals: {stats.goalCount}</p>}
+        {stats.shootingPct !== null && (
+          <p>Shooting %: {stats.shootingPct}%</p>
         )}
       </div>
 

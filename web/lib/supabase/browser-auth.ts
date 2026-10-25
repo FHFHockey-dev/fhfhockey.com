@@ -5,6 +5,7 @@ const SUPABASE_STORAGE_KEY_PATTERNS = [
   /^sb-.*code-verifier/i,
   /^fhfh-public-readonly-supabase$/i,
   /^fhfh:post-password-reset-next$/i,
+  /^fhfh:in-season-cancellation:v1$/i,
 ];
 
 function clearMatchingStorage(storage: Storage | undefined) {

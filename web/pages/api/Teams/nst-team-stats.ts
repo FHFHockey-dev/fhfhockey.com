@@ -554,7 +554,7 @@ function hasBudgetForRequests(startedAt: number, requestCount: number) {
   return remainingBudget >= requestCount * MIN_REQUEST_BUDGET_MS;
 }
 
-const handler = adminOnly(withNhlOffSeasonSkip(async (req: any, res: NextApiResponse) => {
+const handler = withNhlOffSeasonSkip(async (req: any, res: NextApiResponse) => {
   const scriptStartTime = Date.now();
   const { supabase } = req;
   lastNstRequestCompletedAt = 0;
@@ -1122,6 +1122,6 @@ const handler = adminOnly(withNhlOffSeasonSkip(async (req: any, res: NextApiResp
       success: false,
     });
   }
-}));
+});
 
-export default withCronJobAudit(handler);
+export default adminOnly(withCronJobAudit(handler));

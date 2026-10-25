@@ -323,6 +323,6 @@ async function handler(
   }
 }
 
-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler)), {
+export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler), {
   jobName: "/api/v1/db/update-player-underlying-stats",
-});
+}));

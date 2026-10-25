@@ -36,4 +36,4 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   });
 }
 
-export default withCronJobAudit(adminOnly(handler));
+export default adminOnly(withCronJobAudit(handler));

@@ -1,14 +1,18 @@
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { fromMock, headerHookMock, shotHookMock, tabPropsMock } = vi.hoisted(
-  () => ({
+const { fromMock, headerHookMock, shotHookMock, tabPropsMock, routerQuery } =
+  vi.hoisted(() => ({
     fromMock: vi.fn(),
     headerHookMock: vi.fn(),
     shotHookMock: vi.fn(),
     tabPropsMock: vi.fn(),
-  }),
-);
+    routerQuery: { current: {} as Record<string, string> },
+  }));
+
+vi.mock("next/router", () => ({
+  useRouter: () => ({ query: routerQuery.current }),
+}));
 
 vi.mock("lib/supabase", () => ({ default: { from: fromMock } }));
 vi.mock("hooks/useTeamStatsHeaderData", () => ({
@@ -59,7 +63,10 @@ describe("TeamStatsPage", () => {
     });
   });
 
-  afterEach(() => cleanup());
+  afterEach(() => {
+    cleanup();
+    routerQuery.current = {};
+  });
 
   it("rejects inherited route keys before any database query", async () => {
     const result = await getServerSideProps({
@@ -101,10 +108,12 @@ describe("TeamStatsPage", () => {
 
     expect(screen.getByText("2024-25 Season")).toBeTruthy();
     expect(headerHookMock).toHaveBeenCalledWith(22, "EDM", 20242025);
+    // Shot data stays unread until the Shot Map tab is open.
     expect(shotHookMock).toHaveBeenCalledWith(
       22,
       "20242025",
       expect.any(Object),
+      false,
     );
     await waitFor(() =>
       expect(tabPropsMock).toHaveBeenCalledWith(
@@ -115,6 +124,32 @@ describe("TeamStatsPage", () => {
           currentSeason: { seasonId: 20242025 },
         }),
       ),
+    );
+  });
+
+  it("reads shot data only when the Shot Map tab is open", () => {
+    routerQuery.current = { tab: "visualization" };
+    render(
+      <TeamStatsPage
+        teamName="Edmonton Oilers"
+        teamAbbreviation="EDM"
+        teamColors={null}
+        teams={[]}
+        summaries={[
+          {
+            season_id: 20242025,
+            team_id: 22,
+            team_full_name: "Edmonton Oilers",
+          } as any,
+        ]}
+      />,
+    );
+
+    expect(shotHookMock).toHaveBeenLastCalledWith(
+      22,
+      "20242025",
+      expect.any(Object),
+      true,
     );
   });
 });

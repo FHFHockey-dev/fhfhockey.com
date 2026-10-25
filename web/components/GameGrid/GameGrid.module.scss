@@ -733,13 +733,14 @@
 }
 
 .controlsBar {
+  --controls-padding-inline: clamp(14px, 1.8vw, 24px);
   display: grid;
-  grid-template-columns: minmax(40px, 1fr) minmax(0, auto) minmax(0, 1fr);
-  align-items: start;
+  grid-template-columns: minmax(0, 1fr) max-content minmax(0, 1fr);
+  align-items: center;
   gap: v.$space-sm;
   width: 95%;
   margin: -18px auto;
-  padding: 12px clamp(14px, 1.8vw, 24px);
+  padding: 12px var(--controls-padding-inline);
   background: v.$surface-1;
   border: 1px solid rgba(v.$color-white, 0.08);
   box-shadow: 0 18px 36px rgba(v.$color-black, 0.28), inset 0 1px 0 rgba(v.$color-white, 0.04);
@@ -748,6 +749,12 @@
   border-bottom-left-radius: 24px;
   border-bottom-right-radius: 24px;
   margin-bottom: 0;
+
+  > .controlsBarFooter {
+    margin: 0 calc(-1 * var(--controls-padding-inline)) -12px;
+    border-bottom-left-radius: inherit;
+    border-bottom-right-radius: inherit;
+  }
 
   .dateNav { width: max-content; position: relative; }
   .dateButtonPrev, .dateButtonNext { width: auto; flex-shrink: 0; }
@@ -760,7 +767,7 @@
   }
 
   @media (max-width: 1100px) {
-    padding-inline: 10px;
+    --controls-padding-inline: 10px;
     .weekRange { padding-inline: 4px; font-size: 0.75rem; }
     .dateNav { gap: 4px; }
     .dateButtonPrev, .dateButtonNext { padding-inline: 6px; }
@@ -769,10 +776,27 @@
   }
 
   @media (max-width: 900px) {
-    grid-template-columns: 40px minmax(0, 1fr);
+    grid-template-columns: minmax(40px, 1fr) max-content minmax(40px, 1fr);
     row-gap: v.$space-md;
     .badgeAndWeekNav { grid-column: 2; }
     .rightControls { grid-column: 1 / -1; }
+  }
+}
+
+.controlsBarFooter {
+  grid-column: 1 / -1;
+  min-width: 0;
+  overflow: hidden;
+
+  &:empty { display: none; }
+
+  > [role="status"]:not(:empty) {
+    margin: 0;
+    padding: 8px var(--controls-padding-inline, 12px);
+    border: 0;
+    border-top: 2px solid v.$schedule-yellow;
+    background: rgba(v.$schedule-yellow, 0.08);
+    overflow-wrap: anywhere;
   }
 }
 
@@ -1128,7 +1152,19 @@
 }
 
 // Legend bar
+.legendMetricInfo {
+  flex: 0 0 auto;
+  min-width: 0;
+  max-width: 50%;
+  padding-left: 8px;
+  border-left: 1px solid v.$border-secondary;
+
+  details { margin: 0; }
+  details > div { overflow-wrap: anywhere; }
+}
+
 .legendBar {
+  flex-wrap: nowrap;
   width: 100%;
   display: flex;
   align-items: center;
@@ -1140,7 +1176,7 @@
 
 .legendMeta {
   min-width: 0;
-  width: 100%;
+  flex: 1 1 0;
 
   ul {
     list-style: none;
@@ -1198,10 +1234,13 @@
 }
 
 .weekScoreHelpPopover {
-  position: absolute;
-  top: calc(100% + 10px);
-  right: 0;
-  width: min(320px, 92vw);
+  // Portaled to body to escape the controls bar's z-index: 4 stacking context.
+  position: fixed;
+  box-sizing: border-box;
+  width: min(320px, calc(100vw - 16px));
+  max-height: calc(100dvh - 16px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 12px 14px;
   border: 1px solid rgba(v.$secondary-color, 0.22);
   background: #1d2127;
@@ -1209,7 +1248,7 @@
   box-shadow:
     0 14px 28px rgba(v.$color-black, 0.34),
     inset 0 1px 0 rgba(v.$color-white, 0.04);
-  z-index: 20;
+  z-index: v.$mobile-z-index-modal;
 
   p {
     margin: 0;
@@ -1252,7 +1291,7 @@
 
 @media (min-width: v.$breakpoint-desktop) {
   .desktopMasterSection .scheduleGridContainer {
-    background: v.$surface-1;
+    background: transparent;
     overflow: visible;
     border-radius: 24px;
   }
@@ -1296,6 +1335,8 @@
   max-width: 100%;
   border-radius: 0;
   @include v.custom-scrollbar(v.$secondary-color, v.$background-medium);
+
+  > .masterTable { margin-inline: auto; }
 }
 
 .masterStickyHeaderOverlay {
@@ -1432,6 +1473,12 @@
     var(--master-table-sticky-top) + var(--master-group-row-height)
   ) !important;
   z-index: 9 !important;
+}
+
+// Sticky-left headers must stay above day headers when the grid scrolls sideways.
+.masterHeaderMetricRow th.masterStickyMetric,
+.masterHeaderMetricRow th.masterStickyCol {
+  z-index: 11 !important;
 }
 
 .masterStickyMetricGroup {
@@ -1842,27 +1889,6 @@
   border-left: 1px solid rgba(v.$color-blue-300, 0.18);
 }
 
-.masterFourWeekHeaderActions {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 22px;
-  min-height: 56px;
-}
-
-.masterFourWeekCollapseControl {
-  border: 0;
-  border-left: 1px solid rgba(v.$color-blue-300, 0.18);
-  background: transparent;
-  color: v.$color-blue-300;
-  cursor: pointer;
-
-  &:hover,
-  &:focus-visible {
-    outline: none;
-    background: rgba(v.$primary-color, 0.12);
-    box-shadow: inset 0 0 0 1px rgba(v.$primary-color, 0.26);
-  }
-}
-
 .masterFourWeekLead {
   border-left: 2px solid rgba(v.$secondary-color, 0.55);
 }
@@ -1900,6 +1926,62 @@
 .masterFourWeekCell,
 .masterFourWeekLeadCell {
   @include opponentPalette.four-week-bands;
+}
+
+// 4WK Value shares the opponent-metric rank palette (top/bottom 5 strong, 6–10 soft).
+.masterFourWeekValueCell {
+  background: #1c2530 !important;
+  font-family: v.$font-family-numbers;
+  font-weight: 700;
+  text-align: center;
+  box-shadow:
+    inset 0 0 0 1px rgba(v.$color-white, 0.05),
+    inset -1px 0 0 rgba(v.$color-white, 0.03);
+}
+
+.masterFourWeekValueCell.masterMetricGoodStrong {
+  background: rgba(v.$schedule-green, 0.16) !important;
+}
+
+.masterFourWeekValueCell.masterMetricGoodSoft {
+  background: rgba(v.$schedule-yellow, 0.15) !important;
+}
+
+.masterFourWeekValueCell.masterMetricBadSoft {
+  background: rgba(v.$color-orange-400, 0.15) !important;
+}
+
+.masterFourWeekValueCell.masterMetricBadStrong {
+  background: rgba(v.$schedule-red, 0.15) !important;
+}
+
+.masterTrendCell {
+  padding: 3px 6px !important;
+}
+
+// Fitted side-group columns run narrow: tighter cell padding, two-line headers.
+.masterTable {
+  tbody td.masterMetricCell,
+  tbody td.masterFourWeekCell,
+  tbody td.masterFourWeekLeadCell,
+  tbody td.masterFourWeekValueCell {
+    min-width: 0;
+    padding-inline: 2px;
+  }
+
+  .masterMetricHeader .masterSortButton,
+  .masterFourWeekHeader .masterSortButton {
+    padding-inline: 2px;
+    white-space: normal;
+  }
+}
+
+.masterTrendLabel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 56px;
+  padding: 6px 4px;
 }
 
 .masterRowBest .masterTeamCell {
@@ -4760,3 +4842,104 @@
     border-right: 2px solid rgba(v.$secondary-color, 0.55) !important;
   }
 }
+
+// Group-banner disclosures share .masterSectionLabel type with a chevron chip.
+.masterGroupDisclosure {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: var(--master-group-row-height);
+  padding: 0 10px;
+  border: 0;
+  background: transparent;
+  color: rgba(v.$color-blue-100, 0.9);
+  font: inherit;
+  font-size: 0.54rem;
+  line-height: 1;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+
+  &:hover,
+  &:focus-visible {
+    outline: none;
+    color: v.$color-white;
+    background: rgba(v.$primary-color, 0.12);
+    box-shadow: inset 0 0 0 1px rgba(v.$primary-color, 0.26);
+
+    .masterGroupChevron {
+      border-color: v.$primary-color;
+      box-shadow: 0 0 8px rgba(v.$primary-color, 0.55);
+    }
+  }
+}
+
+.masterGroupChevron {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(v.$primary-color, 0.55);
+  border-radius: 4px;
+  color: v.$primary-color;
+  font-size: 0.6rem;
+  letter-spacing: 0;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+
+.loadingStatus {
+  box-sizing: border-box;
+  width: 95%;
+  min-height: 28px;
+  margin: 8px auto;
+  color: v.$text-secondary;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  button { margin-inline-start: 8px; border: 1px solid currentColor; border-radius: 4px; padding: 2px 8px; color: inherit; background: transparent; }
+}
+
+
+// Keep the workspace bounded; the cells themselves provide the table's exact background footprint.
+.mainGridContainer {
+  width: 90%;
+  padding: 14px 0 72px;
+  gap: 0;
+  background: transparent;
+  .dashboardLayout, .gameGridHeaderContent, .controlsBar { width: 100%; }
+  // Restore the former 24px gap minus the controls' 18px overlap, without spacing every section.
+  .controlsBar { margin-top: 6px; }
+  .loadingStatus { width: 100%; min-height: 20px; margin: 2px 0; font-size: .75rem; }
+
+  @media (min-width: v.$breakpoint-desktop) {
+    // Equal intrinsic header rows grow with their contents, not the viewport height.
+    display: grid;
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "title" "." "controls" "status" "tables";
+    grid-template-rows: 1fr 6px 1fr auto auto;
+    .dashboardHeader { grid-area: title; }
+    .gameGridHeaderContent { height: 100%; justify-content: center; }
+    .controlsBar { grid-area: controls; margin-top: 0; }
+    .loadingStatus { grid-area: status; }
+    .dashboardLayout { grid-area: tables; }
+    .legendMetricInfo summary { min-height: 24px; }
+  }
+}
+.masterTrendLabel { flex-direction: column; gap: 2px; }
+.masterTrendLabel small { display: block; font-size: .52rem; line-height: 1.4; color: rgba(v.$color-blue-100, .92); }
+.matchupKey {
+  display: flex; align-items: center; justify-content: center; gap: 3px;
+  margin-top: 4px; font-size: .52rem; letter-spacing: 0; text-transform: none;
+  i { width: 4px; height: 4px; border-radius: 50%; background: #00f5a0; }
+  i:last-child { background: #ff557c; }
+}
+.masterMetricHeader .masterSortButton { padding-inline: 2px; font-size: .75rem; }
+.masterMetricHeader .masterMetricEyebrow { font-size: .52rem; letter-spacing: 0; }
+
+.masterGroupDisclosure { padding-inline: 6px; gap: 6px; letter-spacing: .1em; }

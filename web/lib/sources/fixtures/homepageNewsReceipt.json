@@ -1,0 +1,419 @@
+{
+  "provenance": "Redacted public homepage receipt libfile_ba9de4259e448191b89ab6599bd0b775; prefixes only, not reconstructed source text",
+  "pageProps": {
+    "recentInjuryNews": {
+      "matches": [
+        {
+          "list": "recentInjuryNews",
+          "index": 1,
+          "family": "marner",
+          "id": "5503ce72-f550-4226-b094-dab6c866c34d",
+          "source_review_item_id": "98618b48-578b-4353-974b-c3c1dafeccc1",
+          "source_tweet_id": "2113412864375669050",
+          "source_url": "https://twitter.com/i/web/status/2113412864375669050",
+          "tweet_url": "https://twitter.com/i/web/status/2113412864375669050",
+          "category": "INJURY",
+          "subcategory": "OUT",
+          "team_abbreviation": "VGK",
+          "team_id": 54,
+          "published_at": "2026-10-23T00:00:11.568+00:00",
+          "observed_at": "2026-10-22T23:33:15.591725+00:00",
+          "created_at": "2026-10-23T00:00:11.568+00:00",
+          "tweetPostedLabel": "October 22, 2026 at 07:31PM",
+          "headline": "Mitch Marner injury update",
+          "blurb_prefix": "RT @DannyWebster21: Mitch Marner is out tonight. His wife is…",
+          "players": [
+            {
+              "player_id": 8478483,
+              "name": "Mitch Marner",
+              "role": "subject",
+              "team_id": 54
+            }
+          ],
+          "metadata_keys": [
+            "automation",
+            "sourceRowStatus",
+            "tweetPostedLabel",
+            "primaryTextSource",
+            "wrapperAuthorHandle",
+            "originalPrimaryTextSource",
+            "preferredQuotedAttribution"
+          ],
+          "primaryTextSource": "ifttt_text",
+          "wrapperAuthorHandle": "i",
+          "phraseMatches": 2
+        },
+        {
+          "list": "recentInjuryNews",
+          "index": 2,
+          "family": "marner",
+          "id": "027192e0-e45c-4427-b9a7-25a073587e8c",
+          "source_review_item_id": "98522e80-0437-4d8d-aa52-6ce7b1a98793",
+          "source_tweet_id": null,
+          "source_url": null,
+          "tweet_url": null,
+          "category": "INJURY",
+          "subcategory": "OUT",
+          "team_abbreviation": "VGK",
+          "team_id": 54,
+          "published_at": "2026-10-23T00:00:11.568+00:00",
+          "observed_at": "2026-10-22T23:39:10.508911+00:00",
+          "created_at": "2026-10-23T00:00:11.568+00:00",
+          "tweetPostedLabel": "October 22, 2026 at 07:30PM",
+          "headline": "Mitch Marner injury update",
+          "blurb_prefix": "RT @DannyWebster21: Mitch Marner is out tonight. His wife is…",
+          "players": [
+            {
+              "player_id": 8478483,
+              "name": "Mitch Marner",
+              "role": "subject",
+              "team_id": 54
+            }
+          ],
+          "metadata_keys": [
+            "automation",
+            "sourceRowStatus",
+            "tweetPostedLabel",
+            "preferredQuotedAttribution"
+          ],
+          "phraseMatches": 2
+        },
+        {
+          "list": "recentInjuryNews",
+          "index": 3,
+          "family": "marner",
+          "id": "c441dd2d-4ab1-4973-99eb-9c6169ed6343",
+          "source_review_item_id": "500f4504-34b2-425c-b810-d825459b3cc8",
+          "source_tweet_id": null,
+          "source_url": null,
+          "tweet_url": null,
+          "category": "INJURY",
+          "subcategory": "OUT",
+          "team_abbreviation": "VGK",
+          "team_id": 54,
+          "published_at": "2026-10-23T00:00:11.568+00:00",
+          "observed_at": "2026-10-22T23:33:15.591725+00:00",
+          "created_at": "2026-10-23T00:00:11.568+00:00",
+          "tweetPostedLabel": "October 22, 2026 at 07:31PM",
+          "headline": "Mitch Marner injury update",
+          "blurb_prefix": "RT @DannyWebster21: Mitch Marner is out tonight. His wife is…",
+          "players": [
+            {
+              "player_id": 8478483,
+              "name": "Mitch Marner",
+              "role": "subject",
+              "team_id": 54
+            }
+          ],
+          "metadata_keys": [
+            "automation",
+            "sourceRowStatus",
+            "tweetPostedLabel",
+            "preferredQuotedAttribution"
+          ],
+          "phraseMatches": 2
+        },
+        {
+          "list": "recentInjuryNews",
+          "index": 4,
+          "family": "marner",
+          "id": "d9c5a5c7-ea2b-4fa0-9ef1-60f093169425",
+          "source_review_item_id": "26b9882a-356e-4541-aa6a-465c20d729a6",
+          "source_tweet_id": "2113412804753670533",
+          "source_url": "https://twitter.com/i/web/status/2113412804753670533",
+          "tweet_url": "https://twitter.com/i/web/status/2113412804753670533",
+          "category": "INJURY",
+          "subcategory": "OUT",
+          "team_abbreviation": "VGK",
+          "team_id": 54,
+          "published_at": "2026-10-23T00:00:11.568+00:00",
+          "observed_at": "2026-10-22T23:39:10.508911+00:00",
+          "created_at": "2026-10-23T00:00:11.568+00:00",
+          "tweetPostedLabel": "October 22, 2026 at 07:30PM",
+          "headline": "Mitch Marner injury update",
+          "blurb_prefix": "RT @DannyWebster21: Mitch Marner is out tonight. His wife is…",
+          "players": [
+            {
+              "player_id": 8478483,
+              "name": "Mitch Marner",
+              "role": "subject",
+              "team_id": 54
+            }
+          ],
+          "metadata_keys": [
+            "automation",
+            "sourceRowStatus",
+            "tweetPostedLabel",
+            "primaryTextSource",
+            "wrapperAuthorHandle",
+            "originalPrimaryTextSource",
+            "preferredQuotedAttribution"
+          ],
+          "primaryTextSource": "ifttt_text",
+          "wrapperAuthorHandle": "i",
+          "phraseMatches": 2
+        },
+        {
+          "list": "recentInjuryNews",
+          "index": 5,
+          "family": "pittsburgh",
+          "id": "bc104992-f916-48eb-b523-5df8518118f1",
+          "source_review_item_id": "be189822-46c7-40c6-895d-5cd5b6ef1128",
+          "source_tweet_id": "2113405947968471259",
+          "source_url": "https://twitter.com/i/web/status/2113405947968471259",
+          "tweet_url": "https://twitter.com/i/web/status/2113405947968471259",
+          "category": "INJURY",
+          "subcategory": "DAY TO DAY",
+          "team_abbreviation": "PIT",
+          "team_id": 5,
+          "published_at": "2026-10-22T23:30:11.174+00:00",
+          "observed_at": "2026-10-22T23:08:36.746594+00:00",
+          "created_at": "2026-10-22T23:30:11.174+00:00",
+          "tweetPostedLabel": "October 22, 2026 at 07:03PM",
+          "headline": "Egor Chinakhov injury update",
+          "blurb_prefix": "RT @king_jemison: Penguins say Chinakhov is day to day with …",
+          "players": [
+            {
+              "player_id": 8482475,
+              "name": "Egor Chinakhov",
+              "role": "subject",
+              "team_id": 5
+            }
+          ],
+          "metadata_keys": [
+            "automation",
+            "sourceRowStatus",
+            "tweetPostedLabel",
+            "primaryTextSource",
+            "wrapperAuthorHandle",
+            "originalPrimaryTextSource",
+            "preferredQuotedAttribution"
+          ],
+          "primaryTextSource": "ifttt_text",
+          "wrapperAuthorHandle": "i",
+          "phraseMatches": 2
+        },
+        {
+          "list": "recentInjuryNews",
+          "index": 7,
+          "family": "edmonton",
+          "id": "529ce2fc-5cf3-4ce1-b287-26a1cf5177b3",
+          "source_review_item_id": "5864bbca-973f-4983-acd5-a1da19911bc1",
+          "source_tweet_id": null,
+          "source_url": null,
+          "tweet_url": null,
+          "category": "RETURN",
+          "subcategory": "RETURNING",
+          "team_abbreviation": "EDM",
+          "team_id": 22,
+          "published_at": "2026-10-22T17:00:11.398+00:00",
+          "observed_at": "2026-10-22T16:57:27.1585+00:00",
+          "created_at": "2026-10-22T17:00:11.398+00:00",
+          "tweetPostedLabel": "October 22, 2026 at 12:49PM",
+          "headline": "Ryan Nugent-Hopkins return update",
+          "blurb_prefix": "RT @EdmontonJack: Levi starts in net vs Carolina, RNH centre…",
+          "players": [
+            {
+              "player_id": 8476454,
+              "name": "Ryan Nugent-Hopkins",
+              "role": "subject",
+              "team_id": 22
+            }
+          ],
+          "metadata_keys": [
+            "automation",
+            "sourceRowStatus",
+            "tweetPostedLabel",
+            "preferredQuotedAttribution"
+          ],
+          "phraseMatches": 3
+        },
+        {
+          "list": "recentInjuryNews",
+          "index": 8,
+          "family": "edmonton",
+          "id": "ee1bc90a-927f-48cc-9265-9bd3c3869624",
+          "source_review_item_id": "c123e231-2b80-49fa-8965-6fdabd18c9b2",
+          "source_tweet_id": null,
+          "source_url": null,
+          "tweet_url": null,
+          "category": "RETURN",
+          "subcategory": "RETURNING",
+          "team_abbreviation": "EDM",
+          "team_id": 22,
+          "published_at": "2026-10-22T17:00:11.398+00:00",
+          "observed_at": "2026-10-22T16:57:27.1585+00:00",
+          "created_at": "2026-10-22T17:00:11.398+00:00",
+          "tweetPostedLabel": "October 22, 2026 at 12:49PM",
+          "headline": "Ryan Nugent-Hopkins return update",
+          "blurb_prefix": "RT @EdmontonJack: Levi starts in net vs Carolina, RNH centre…",
+          "players": [
+            {
+              "player_id": 8476454,
+              "name": "Ryan Nugent-Hopkins",
+              "role": "subject",
+              "team_id": 22
+            }
+          ],
+          "metadata_keys": [
+            "automation",
+            "sourceRowStatus",
+            "tweetPostedLabel",
+            "preferredQuotedAttribution"
+          ],
+          "phraseMatches": 3
+        },
+        {
+          "list": "recentInjuryNews",
+          "index": 9,
+          "family": "edmonton",
+          "id": "8f8e78dd-64b5-400c-b3e2-2d8c1d011b49",
+          "source_review_item_id": "46d2f804-f758-4f5f-890c-1350ee910aaf",
+          "source_tweet_id": "2113311716893463008",
+          "source_url": "https://twitter.com/i/web/status/2113311716893463008",
+          "tweet_url": "https://twitter.com/i/web/status/2113311716893463008",
+          "category": "RETURN",
+          "subcategory": "RETURNING",
+          "team_abbreviation": "EDM",
+          "team_id": 22,
+          "published_at": "2026-10-22T17:00:11.398+00:00",
+          "observed_at": "2026-10-22T16:57:27.1585+00:00",
+          "created_at": "2026-10-22T17:00:11.398+00:00",
+          "tweetPostedLabel": "October 22, 2026 at 12:49PM",
+          "headline": "Ryan Nugent-Hopkins return update",
+          "blurb_prefix": "RT @EdmontonJack: Levi starts in net vs Carolina, RNH centre…",
+          "players": [
+            {
+              "player_id": 8476454,
+              "name": "Ryan Nugent-Hopkins",
+              "role": "subject",
+              "team_id": 22
+            }
+          ],
+          "metadata_keys": [
+            "automation",
+            "sourceRowStatus",
+            "tweetPostedLabel",
+            "primaryTextSource",
+            "wrapperAuthorHandle",
+            "originalPrimaryTextSource",
+            "preferredQuotedAttribution"
+          ],
+          "primaryTextSource": "ifttt_text",
+          "wrapperAuthorHandle": "i",
+          "phraseMatches": 3
+        },
+        {
+          "list": "recentInjuryNews",
+          "index": 10,
+          "family": "pittsburgh",
+          "id": "6f0fccdb-0eed-48e2-ae0c-a6aca4bfdecc",
+          "source_review_item_id": "ca34aec2-01d0-4d51-892e-aeec322817a8",
+          "source_tweet_id": null,
+          "source_url": null,
+          "tweet_url": null,
+          "category": "INJURY",
+          "subcategory": "INJURY TYPE",
+          "team_abbreviation": "PIT",
+          "team_id": 5,
+          "published_at": "2026-10-22T16:00:11.249+00:00",
+          "observed_at": "2026-10-22T15:53:24.216048+00:00",
+          "created_at": "2026-10-22T16:00:11.249+00:00",
+          "tweetPostedLabel": "October 22, 2026 at 11:49AM",
+          "headline": "Bryan Rust injury update",
+          "blurb_prefix": "RT @PensInsideScoop: Updates from Dan Muse: ▪️Bryan Rust’s i…",
+          "players": [
+            {
+              "player_id": 8475810,
+              "name": "Bryan Rust",
+              "role": "subject",
+              "team_id": 5
+            }
+          ],
+          "metadata_keys": [
+            "automation",
+            "sourceRowStatus",
+            "tweetPostedLabel",
+            "preferredQuotedAttribution"
+          ],
+          "phraseMatches": 2
+        },
+        {
+          "list": "recentInjuryNews",
+          "index": 12,
+          "family": "pittsburgh",
+          "id": "22338dbf-9f85-43e3-bd7c-5bea679aa8a3",
+          "source_review_item_id": "760d7cd8-b787-4cf5-a964-9c6d1e215fd6",
+          "source_tweet_id": "2113296624651006438",
+          "source_url": "https://twitter.com/i/web/status/2113296624651006438",
+          "tweet_url": "https://twitter.com/i/web/status/2113296624651006438",
+          "category": "INJURY",
+          "subcategory": "INJURY TYPE",
+          "team_abbreviation": "PIT",
+          "team_id": 5,
+          "published_at": "2026-10-22T16:00:11.249+00:00",
+          "observed_at": "2026-10-22T15:53:24.216048+00:00",
+          "created_at": "2026-10-22T16:00:11.249+00:00",
+          "tweetPostedLabel": "October 22, 2026 at 11:49AM",
+          "headline": "Bryan Rust injury update",
+          "blurb_prefix": "RT @PensInsideScoop: Updates from Dan Muse: ▪️Bryan Rust’s i…",
+          "players": [
+            {
+              "player_id": 8475810,
+              "name": "Bryan Rust",
+              "role": "subject",
+              "team_id": 5
+            }
+          ],
+          "metadata_keys": [
+            "automation",
+            "sourceRowStatus",
+            "tweetPostedLabel",
+            "primaryTextSource",
+            "wrapperAuthorHandle",
+            "originalPrimaryTextSource",
+            "preferredQuotedAttribution"
+          ],
+          "primaryTextSource": "ifttt_text",
+          "wrapperAuthorHandle": "i",
+          "phraseMatches": 2
+        },
+        {
+          "list": "recentInjuryNews",
+          "index": 13,
+          "family": "pittsburgh",
+          "id": "994e2726-bf46-4b15-b78c-2a6d3136aee4",
+          "source_review_item_id": "885f1d89-9178-4ec9-bf86-40c7fc89cc43",
+          "source_tweet_id": null,
+          "source_url": null,
+          "tweet_url": null,
+          "category": "INJURY",
+          "subcategory": "INJURY TYPE",
+          "team_abbreviation": "PIT",
+          "team_id": 5,
+          "published_at": "2026-10-22T16:00:11.249+00:00",
+          "observed_at": "2026-10-22T15:53:24.216048+00:00",
+          "created_at": "2026-10-22T16:00:11.249+00:00",
+          "tweetPostedLabel": "October 22, 2026 at 11:49AM",
+          "headline": "Bryan Rust injury update",
+          "blurb_prefix": "RT @PensInsideScoop: Updates from Dan Muse: ▪️Bryan Rust’s i…",
+          "players": [
+            {
+              "player_id": 8475810,
+              "name": "Bryan Rust",
+              "role": "subject",
+              "team_id": 5
+            }
+          ],
+          "metadata_keys": [
+            "automation",
+            "sourceRowStatus",
+            "tweetPostedLabel",
+            "preferredQuotedAttribution"
+          ],
+          "phraseMatches": 2
+        }
+      ]
+    }
+  }
+}

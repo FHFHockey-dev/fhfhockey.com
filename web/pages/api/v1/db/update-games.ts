@@ -121,7 +121,7 @@ async function getScheduleSeasonId(): Promise<number> {
   return data[0].id;
 }
 
-export default withCronJobAudit(adminOnly(async (req, res) => {
+export default adminOnly(withCronJobAudit(async (req, res) => {
   if (req.query.mode !== undefined || req.body?.date !== undefined || req.body?.gameIds !== undefined || req.body?.dryRun !== undefined) {
     if (req.query.mode !== "bounded_slate") return res.status(400).json({ success: false, message: "Unknown schedule ingestion mode" });
     return updateBoundedSchedule(req, res);

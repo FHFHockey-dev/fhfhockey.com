@@ -10,7 +10,15 @@ vi.mock("lib/supabase/server", () => ({
   },
 }));
 
-import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import {
+  cronClassificationFromAuditDetails,
+  withCronJobAudit,
+} from "lib/cron/withCronJobAudit";
+import {
+  NHL_SEASONAL_GAME_DATA,
+  withNhlOffSeasonSkip,
+  type NhlSeasonWindow,
+} from "lib/cron/nhlOffSeason";
 import { withCronJobTiming } from "lib/cron/timingContract";
 
 function createMockReq(overrides: Record<string, unknown> = {}) {
@@ -209,6 +217,7 @@ describe("withCronJobAudit", () => {
     await rolling(createMockReq(), createMockRes());
 
     expect(insertMock.mock.calls.map((call) => call[0].status)).toEqual(["continued", "continued"]);
+    expect(insertMock.mock.calls[0][0].details.responseOutcome.termination.state).toBe("continuation_required");
   });
 
   it("keeps a 207 continuation that lists failures or errors as a failure", async () => {
@@ -307,6 +316,57 @@ describe("withCronJobAudit", () => {
     expect(row.details.failedRows).toBeNull();
   });
 
+  it("limits opted-in audit previews to own primitive fields without changing the API or status inference", async () => {
+    const body = Object.assign(Object.create({ inherited: "private-inherited-value" }), {
+      success: false,
+      attempted: 2,
+      failed: 1,
+      results: [{ userId: "private-user-id", error: "private-provider-error" }],
+      unavailableCount: Number.NaN,
+    });
+    const wrapped = withCronJobAudit(
+      async (_req, res) => res.json(body),
+      {
+        jobName: "bounded-provider-summary",
+        recordRowMetrics: false,
+        responsePreviewKeys: ["attempted", "failed", "results", "inherited", "unavailableCount"],
+      }
+    );
+    const res = createMockRes();
+
+    await wrapped(createMockReq(), res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toBe(body);
+    expect(insertMock).toHaveBeenCalledTimes(1);
+    const row = insertMock.mock.calls[0][0];
+    expect(row.status).toBe("failure");
+    expect(row.rows_affected).toBeNull();
+    expect(JSON.parse(row.details.response)).toEqual({ attempted: 2, failed: 1 });
+    expect(row.details.responseOutcome).toEqual({});
+    expect(JSON.stringify(row)).not.toContain("private-");
+  });
+
+  it("uses a fixed audit error for opted-in previews while preserving thrown-response behavior", async () => {
+    const wrapped = withCronJobAudit(
+      async () => { throw new Error("private-provider-error"); },
+      { jobName: "bounded-provider-throw", responsePreviewKeys: ["success"] }
+    );
+    const res = createMockRes();
+
+    await wrapped(createMockReq(), res);
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body.error).toBe("private-provider-error");
+    expect(insertMock).toHaveBeenCalledTimes(1);
+    const row = insertMock.mock.calls[0][0];
+    expect(row.status).toBe("failure");
+    expect(row.details.error).toBe("Handler failed.");
+    expect(JSON.parse(row.details.response)).toEqual({ success: false });
+    expect(row.details.responseOutcome).toEqual({ success: false });
+    expect(JSON.stringify(row)).not.toContain("private-provider-error");
+  });
+
   it("surfaces a resolved Supabase audit insert error", async () => {
     const consoleErrorSpy = vi
       .spyOn(console, "error")
@@ -396,6 +456,74 @@ describe("withCronJobAudit", () => {
     );
   });
 
+  it("retains structured preflight outcomes when the legacy response preview is truncated", async () => {
+    const response = {
+      success: false,
+      asOfDate: "2026-10-11",
+      error: "Preflight freshness checks failed",
+      preflight: {
+        status: "FAIL",
+        asOfDate: "2026-10-11",
+        gates: [
+          { gate_key: "core_roster_schedule", status: "PASS", detail: "ready" },
+          { gate_key: "projection_derived_v2", status: "FAIL", detail: "player_latest=none, team_latest=none, goalie_latest=none" },
+          { gate_key: "stale_goalie_game_rows", status: "FAIL", detail: "teams_missing_recent_goalie_rows=5" },
+        ],
+      },
+      termination: { state: "blocked", resumeRequired: true, nextStartDate: "2026-10-11" },
+      pipeline: { description: "x".repeat(5000), arbitrary: "not a receipt field" },
+    };
+    const wrapped = withCronJobAudit(async (_req, res) => res.status(422).json(response));
+    const res = createMockRes();
+
+    await wrapped(createMockReq(), res);
+
+    const row = insertMock.mock.calls[0][0];
+    expect(row.status).toBe("failure");
+    expect(row.details.response).toHaveLength(4000);
+    expect(() => JSON.parse(row.details.response)).toThrow();
+    expect(row.details.responseTruncated).toBe(true);
+    expect(row.details.responseOutcome).toEqual({
+      success: false,
+      error: "Preflight freshness checks failed",
+      asOfDate: "2026-10-11",
+      termination: response.termination,
+      preflight: {
+        status: "FAIL", asOfDate: "2026-10-11", gateCount: 3, failedGateCount: 2,
+        failedGates: response.preflight.gates.slice(1),
+      },
+    });
+    expect(res.statusCode).toBe(422);
+    expect(res.body).toEqual(response);
+  });
+
+  it("bounds game failure witnesses and failed gates without losing their total counts", async () => {
+    const errors = Array.from({ length: 5 }, (_, index) => ({
+      gameId: 2026010056 + index, date: "2026-09-26", stage: "capture_raw_sources",
+      message: "INVALID_PROJECTION_RAW_SHIFT_ROWS " + "x".repeat(3000), arbitrary: "excluded",
+    }));
+    const gates = Array.from({ length: 12 }, (_, index) => ({
+      gate_key: `gate_${index}`, status: "FAIL", detail: "x".repeat(1000), arbitrary: "excluded",
+    }));
+    const wrapped = withCronJobAudit(async (_req, res) => res.json({
+      success: false, nextGameId: 2026010056, rowsUpserted: null, errors,
+      preflight: { status: "FAIL", gates }, arbitrary: "excluded",
+    }));
+
+    await wrapped(createMockReq(), createMockRes());
+
+    const outcome = insertMock.mock.calls[0][0].details.responseOutcome;
+    expect(outcome).toMatchObject({ success: false, nextGameId: 2026010056, rowsUpserted: null });
+    expect(outcome.errors).toMatchObject({ count: 5 });
+    expect(outcome.errors.sample).toHaveLength(3);
+    expect(outcome.errors.sample[0]).toMatchObject({ gameId: 2026010056, date: "2026-09-26", stage: "capture_raw_sources" });
+    expect(outcome.errors.sample[0].message).toHaveLength(2000);
+    expect(outcome.preflight).toMatchObject({ gateCount: 12, failedGateCount: 12 });
+    expect(outcome.preflight.failedGates).toHaveLength(10);
+    expect(outcome.preflight.failedGates[0].detail).toHaveLength(300);
+    expect(JSON.stringify(outcome)).not.toContain("arbitrary");
+  });
+
   it("reports a failed final-audit receipt when persistence returns an error", async () => {
     const consoleErrorSpy = vi
       .spyOn(console, "error")
@@ -427,5 +555,128 @@ describe("withCronJobAudit", () => {
       "cron_job_audit insert failed",
       "audit insert unavailable"
     );
+  });
+});
+
+describe("withCronJobAudit seasonal game-data classification", () => {
+  const inSeason: NhlSeasonWindow = {
+    state: "in_season",
+    today: "2026-10-20",
+    seasonId: 20262027,
+    activeFrom: "2026-09-19",
+    activeUntil: "2027-06-13",
+  };
+  const offSeason: NhlSeasonWindow = {
+    state: "off_season",
+    today: "2026-08-01",
+    lastSeasonId: 20252026,
+    lastActiveUntil: "2026-06-18",
+    nextSeasonId: null,
+    resumesOn: null,
+  };
+  const gate = (handler: (req: any, res: any) => unknown, window: NhlSeasonWindow = inSeason) =>
+    withNhlOffSeasonSkip(handler, { loadWindow: async () => window });
+  const insertedDetails = () => insertMock.mock.calls.at(-1)?.[0].details;
+
+  it("exports the canonical classification value", () => {
+    expect(NHL_SEASONAL_GAME_DATA).toBe("nhl_seasonal_game_data");
+  });
+
+  beforeEach(() => {
+    insertMock.mockReset();
+    insertMock.mockResolvedValue({});
+  });
+
+  it("stamps the classification from the actual wrapper chain, whatever the route is called", async () => {
+    const wrapped = withCronJobAudit(gate(async (_req, res) => res.status(200).json({ success: true, rowsUpserted: 0 })));
+
+    await wrapped(createMockReq({ url: "/api/v1/db/not-a-listed-route", query: {} }), createMockRes());
+
+    expect(insertedDetails().cronClassification).toBe("nhl_seasonal_game_data");
+    expect(cronClassificationFromAuditDetails(insertedDetails())).toBe("nhl_seasonal_game_data");
+  });
+
+  it("stamps a gate nested inside the audited handler and a gate outside the audit wrapper", async () => {
+    const work = gate(async (_req, res) => res.status(200).json({ success: true }));
+    const nested = withCronJobAudit(async (req, res) => work(req, res));
+    const outer = gate(withCronJobAudit(async (_req, res) => res.status(200).json({ success: true })));
+
+    await nested(createMockReq({ query: {} }), createMockRes());
+    expect(insertedDetails().cronClassification).toBe("nhl_seasonal_game_data");
+    await outer(createMockReq({ query: {} }), createMockRes());
+    expect(insertedDetails().cronClassification).toBe("nhl_seasonal_game_data");
+  });
+
+  it("records null for a non-wrapped control, even on a route the legacy list names", async () => {
+    const wrapped = withCronJobAudit(async (_req, res) => res.status(200).json({ success: true, rowsUpserted: 0 }));
+
+    await wrapped(createMockReq({ url: "/api/v1/db/update-PbP" }), createMockRes());
+
+    expect(insertedDetails()).toHaveProperty("cronClassification", null);
+    expect(cronClassificationFromAuditDetails(insertedDetails())).toBeNull();
+  });
+
+  it("ignores an unused import and a comment or string naming the gate", async () => {
+    // withNhlOffSeasonSkip is imported by this file but never wraps this handler.
+    const unusedImport = withCronJobAudit(async (_req, res) => {
+      // withNhlOffSeasonSkip(handler) — a comment is not a wrapper.
+      const note = "withNhlOffSeasonSkip lib/cron/nhlOffSeason nhl_seasonal_game_data";
+      return res.status(200).json({ success: true, note, cronClassification: NHL_SEASONAL_GAME_DATA });
+    });
+    void withNhlOffSeasonSkip;
+
+    await unusedImport(createMockReq({ query: {} }), createMockRes());
+
+    expect(insertedDetails().cronClassification).toBeNull();
+  });
+
+  it("stamps success, failure, thrown, off-season skip and ignoreOffSeason runs", async () => {
+    const cases: Array<[(req: any, res: any) => unknown, NhlSeasonWindow, Record<string, unknown>, string]> = [
+      [async (_req, res) => res.status(200).json({ success: true }), inSeason, {}, "success"],
+      [async (_req, res) => res.status(500).json({ success: false, error: "boom" }), inSeason, {}, "failure"],
+      [async () => { throw new Error("thrown"); }, inSeason, {}, "failure"],
+      [async (_req, res) => res.status(200).json({ success: true }), offSeason, {}, "success"],
+      [async (_req, res) => res.status(200).json({ success: true }), offSeason, { ignoreOffSeason: "true" }, "success"],
+    ];
+    for (const [handler, window, query, status] of cases) {
+      await withCronJobAudit(gate(handler, window))(createMockReq({ query }), createMockRes());
+      expect(insertMock.mock.calls.at(-1)?.[0].status).toBe(status);
+      expect(insertedDetails().cronClassification).toBe("nhl_seasonal_game_data");
+    }
+    expect(insertMock.mock.calls[3][0].details.responseOutcome.success).toBe(true);
+  });
+
+  it("keeps the classification when the response preview is truncated", async () => {
+    const wrapped = withCronJobAudit(gate(async (_req, res) =>
+      res.status(200).json({ success: true, payload: "x".repeat(5000) })));
+
+    await wrapped(createMockReq({ query: {} }), createMockRes());
+
+    expect(insertedDetails().responseTruncated).toBe(true);
+    expect(insertedDetails().cronClassification).toBe("nhl_seasonal_game_data");
+  });
+
+  it("keeps the classification and continued status on a planned 207 continuation", async () => {
+    const wrapped = withCronJobAudit(gate(async (_req, res) => res.status(207).json({
+      success: false,
+      termination: { state: "continuation_required", resumeRequired: true },
+      payload: "x".repeat(5000),
+    })));
+
+    await wrapped(createMockReq({ query: {} }), createMockRes());
+
+    expect(insertMock.mock.calls[0][0].status).toBe("continued");
+    expect(insertedDetails().responseTruncated).toBe(true);
+    expect(insertedDetails().cronClassification).toBe("nhl_seasonal_game_data");
+  });
+
+  it("reports a historical row without the field as unknown, not as unclassified", () => {
+    const historical = { statusCode: 200, rowsUpserted: 0, response: "{}" };
+
+    expect(cronClassificationFromAuditDetails(historical)).toBeUndefined();
+    expect(cronClassificationFromAuditDetails(null)).toBeUndefined();
+    expect(cronClassificationFromAuditDetails("not-an-object")).toBeUndefined();
+    expect(cronClassificationFromAuditDetails({ cronClassification: "something_else" })).toBeUndefined();
+    expect(cronClassificationFromAuditDetails({ cronClassification: null })).toBeNull();
   });
 });

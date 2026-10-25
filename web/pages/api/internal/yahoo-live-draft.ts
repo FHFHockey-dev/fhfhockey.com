@@ -4,23 +4,11 @@ import { isYahooLiveDraftEnabled } from "lib/integrations/yahoo/liveDraftApi";
 import { getYahooLiveDraftSeasonConfig } from "lib/integrations/yahoo/config";
 import { runYahooDraftPollCoordinator } from "lib/integrations/yahoo/pollCoordinator";
 import { isYahooDraftBackgroundPollingSuspended, YAHOO_DRAFT_BACKGROUND_RESUMES_AT } from "lib/integrations/yahoo/pollPolicy";
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  res.setHeader("Cache-Control", "no-store");
-  if (req.method !== "GET") {
-    res.setHeader("Allow", "GET");
-    return res.status(405).json({ error: "Method Not Allowed" });
-  }
-  const secret = process.env.CRON_SECRET;
-  if (!secret?.trim()) return res.status(503).json({ error: "Scheduler not configured" });
-  if (req.headers.authorization !== `Bearer ${secret}`) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-  if (!isYahooLiveDraftEnabled()) return res.status(200).json({ disabled: true });
-  if (isYahooDraftBackgroundPollingSuspended()) {
-    return res.status(200).json({ suspended: true, resumesAt: YAHOO_DRAFT_BACKGROUND_RESUMES_AT });
-  }
-
+// One audit row per admitted, enabled, unsuspended run. The coordinator owns
+// its own errors, so persist only the fixed counters, never provider detail.
+const auditedPoll = withCronJobAudit(async (_req: NextApiRequest, res: NextApiResponse) => {
   try {
     getYahooLiveDraftSeasonConfig();
     const { data, error } = await serviceRoleClient.from("yahoo_draft_sessions")
@@ -47,4 +35,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } catch {
     return res.status(503).json({ error: "Yahoo polling coordinator unavailable" });
   }
+}, { jobName: "/api/internal/yahoo-live-draft", recordRowMetrics: false,
+  responsePreviewKeys: ["cycles", "attempted", "succeeded", "failed", "error"] });
+
+// Disabled and off-season exits do no work, so most of them write no row. The
+// invocation in one fixed UTC minute records a heartbeat instead: about one row
+// a day showing the schedule still fires and which idle state it is in.
+function idleState() {
+  if (!isYahooLiveDraftEnabled()) return { disabled: true };
+  if (isYahooDraftBackgroundPollingSuspended()) {
+    return { suspended: true, resumesAt: YAHOO_DRAFT_BACKGROUND_RESUMES_AT };
+  }
+  return null;
+}
+
+const isIdleHeartbeatMinute = (now = new Date()) => now.getUTCHours() === 12 && now.getUTCMinutes() === 0;
+
+const auditedIdle = withCronJobAudit(async (_req: NextApiRequest, res: NextApiResponse) =>
+  res.status(200).json(idleState()), { jobName: "/api/internal/yahoo-live-draft", recordRowMetrics: false,
+  responsePreviewKeys: ["disabled", "suspended", "resumesAt"] });
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  res.setHeader("Cache-Control", "no-store");
+  if (req.method !== "GET") {
+    res.setHeader("Allow", "GET");
+    return res.status(405).json({ error: "Method Not Allowed" });
+  }
+  const secret = process.env.CRON_SECRET;
+  if (!secret?.trim()) return res.status(503).json({ error: "Scheduler not configured" });
+  if (req.headers.authorization !== `Bearer ${secret}`) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  const idle = idleState();
+  if (idle) return isIdleHeartbeatMinute() ? auditedIdle(req, res) : res.status(200).json(idle);
+  return auditedPoll(req, res);
 }

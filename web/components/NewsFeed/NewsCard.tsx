@@ -20,6 +20,9 @@ import {
   type NewsLineupCardData,
 } from "lib/newsLineupCard";
 
+// The reader's unresolved reason is an internal contract label and cannot say which check failed.
+const UNVERIFIED_DETAILS_COPY = "We couldn't verify the player details in this report.";
+
 type NewsCardProps = {
   item: Pick<
     NewsFeedItem,
@@ -423,7 +426,7 @@ export default function NewsCard({
         ) : null}
 
         {!lineup ? <p className={styles.blurb}>{details}</p> : null}
-        {!lineup && presentation.unresolvedReason ? <p>{presentation.unresolvedReason}</p> : null}
+        {!lineup && presentation.unresolvedReason ? <p>{UNVERIFIED_DETAILS_COPY}</p> : null}
 
         {hasDisclosure ? (
           railDetail ? (

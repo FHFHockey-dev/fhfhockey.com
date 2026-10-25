@@ -7,6 +7,6 @@ const handler = createNhlRawGamecenterRoute({
   routeAlias: "play-by-play",
 });
 
-export default withCronJobAudit(adminOnly(handler), {
+export default adminOnly(withCronJobAudit(handler, {
   jobName: "/api/v1/db/update-nhl-play-by-play",
-});
+}));

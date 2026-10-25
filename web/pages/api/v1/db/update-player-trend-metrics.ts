@@ -49,6 +49,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 }
 
-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)), {
+export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler as any), {
   jobName: "update-player-trend-metrics",
-});
+}));

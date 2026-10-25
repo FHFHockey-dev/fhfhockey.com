@@ -171,9 +171,9 @@ export async function processRecomputeQueueHandler(
   }
 }
 
-export default withCronJobAudit(
-  adminOnly(processRecomputeQueueHandler as any),
+export default adminOnly(withCronJobAudit(
+  processRecomputeQueueHandler as any,
   {
     jobName: "process-sustainability-recompute-queue",
   },
-);
+));

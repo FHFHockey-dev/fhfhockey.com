@@ -264,9 +264,11 @@
     margin-bottom: v.$mobile-space-lg;
   }
 
-  // Desktop: Return to 3-column layout
+  // Desktop: 3-column layout. Proportional tracks keep the middle column
+  // usable at 1024px (fixed 400px sidebars left it ~144px) and still give
+  // ~390/580/390 at 1440px.
   @media (min-width: v.$breakpoint-desktop) {
-    grid-template-columns: 400px 1fr 400px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) minmax(0, 1fr);
     gap: v.$space-lg;
     margin-bottom: v.$space-lg;
   }

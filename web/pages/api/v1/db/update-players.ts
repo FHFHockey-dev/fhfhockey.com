@@ -4,7 +4,7 @@ import { rosterSeasonForDate } from "lib/sources/playerIdentity";
 import adminOnly from "utils/adminOnlyMiddleware";
 import { fetchNhlRosterPreview, type Player } from "lib/sources/nhlRosterPreview";
 
-export default withCronJobAudit(adminOnly(async function handler(req, res) {
+export default adminOnly(withCronJobAudit(async function handler(req, res) {
   try {
     const { supabase } = req;
     const seasonId = req.query.seasonId == null ? rosterSeasonForDate() : Number(req.query.seasonId);

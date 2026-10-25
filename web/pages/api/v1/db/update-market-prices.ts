@@ -177,8 +177,8 @@ function dedupeProvenanceRows(rows: SourceProvenanceSnapshotRow[]): SourceProven
   return Array.from(map.values());
 }
 
-export default withCronJobAudit(
-  adminOnly(async (req, res) => {
+export default adminOnly(withCronJobAudit(
+  async (req, res) => {
     try {
       const snapshotDate = parseRequestedDate(req.query.date);
       const scheduledGames = await fetchScheduledGamesForDate({
@@ -379,8 +379,8 @@ export default withCronJobAudit(
         error: error?.message ?? "Unknown error"
       });
     }
-  }),
+  },
   {
     jobName: "/api/v1/db/update-market-prices"
   }
-);
+));

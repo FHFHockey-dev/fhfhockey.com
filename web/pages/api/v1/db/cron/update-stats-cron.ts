@@ -71,8 +71,8 @@ export function parseStatsCronCount(
     : null;
 }
 
-export default withCronJobAudit(
-  adminOnly(async (req, res) => {
+export default adminOnly(withCronJobAudit(
+  async (req, res) => {
     const { supabase } = req;
     const count = parseStatsCronCount(req.query.count);
     if (count === null) {
@@ -302,5 +302,5 @@ export default withCronJobAudit(
         dependencyError,
       });
     }
-  }),
-);
+  },
+));

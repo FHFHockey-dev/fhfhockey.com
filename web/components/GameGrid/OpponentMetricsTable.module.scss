@@ -104,6 +104,11 @@
   @include v.custom-scrollbar(v.$secondary-color, v.$background-medium);
 }
 
+.table th[data-uncolored] {
+  text-decoration: underline dotted rgba(v.$color-white, 0.35);
+  text-underline-offset: 3px;
+}
+
 /* --- Base Table Styling --- */
 .table {
   margin: 0 auto;
@@ -322,3 +327,5 @@
     }
   }
 }
+
+.titleText small { font-size: .62rem; white-space: nowrap; text-transform: none; letter-spacing: 0; }

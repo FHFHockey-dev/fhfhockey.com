@@ -1,5 +1,6 @@
 import { parseISO } from "date-fns";
 import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import Link from "next/link";
 import clsx from "clsx";
@@ -15,10 +16,15 @@ import { addDays, formatDate, getDayStr } from "./utils/date-func";
 import styles from "./GameGrid.module.scss";
 import detailStyles from "./TeamDetails.module.scss";
 import MetricInfoDisclosure from "./MetricInfoDisclosure";
+import OpportunitySparkline from "./OpportunitySparkline";
+import RatingMeter from "./RatingMeter";
+import { LoadingCell, LoadingRows } from "./LoadingCells";
+import { RATING_INFO, OPPORTUNITY_INFO, formatOpportunity, type OpponentRating, type TeamOpportunity } from "./utils/scheduleOpportunity";
 
 import { DAYS, EXTENDED_DAY_ABBREVIATION, EXTENDED_DAYS, WeekData } from "lib/NHL/types";
 import { useTeamsMap } from "hooks/useTeams";
 import { TeamNumeric, toRankMaps } from "./utils/metricRanks";
+import { getOpponentViewDirections, OpponentRole } from "./utils/opponentCategoryEffects";
 import { FOUR_WEEK_COLOR_LEGEND, toFourWeekMetricBands } from "./utils/fourWeekMetricBands";
 import type { FourWeekCalendar } from "./utils/useFourWeekSchedule";
 import {
@@ -44,6 +50,14 @@ type FourWeekSummary = {
 };
 
 type DesktopMasterTableProps = {
+  scheduleReady?: boolean;
+  scheduleLoading?: boolean;
+  fourWeekLoading?: boolean;
+  opponentRatings?: Record<number, OpponentRating>;
+  opportunityByTeamId?: Record<number, TeamOpportunity>;
+  sharedOpportunityScale?: number;
+  metricInfoTarget?: HTMLElement | null;
+  warningTarget?: HTMLElement | null;
   start: string;
   extended: boolean;
   scheduleRows: TeamScheduleRow[];
@@ -72,6 +86,7 @@ type SortKey =
   | "totalGamesPlayed"
   | "totalOffNights"
   | "weekScore"
+  | "atk" | "def"
   | keyof OpponentMetricAverages
   | "fourWeekGamesPlayed"
   | "fourWeekOffNights"
@@ -87,7 +102,7 @@ type MasterRow = TeamScheduleRow & {
   teamName: string;
   teamAbbreviation: string;
   logo: string;
-  opponentMetrics: OpponentMetricAverages;
+  opponentMetrics: OpponentMetricAverages & { atk: number | null; def: number | null };
   fourWeekGamesPlayed: number | null;
   fourWeekOffNights: number | null;
   fourWeekOpponentPointPct: number | null;
@@ -95,14 +110,20 @@ type MasterRow = TeamScheduleRow & {
 };
 
 const DESKTOP_STICKY_BREAKPOINT = 1024;
-const MASTER_METRIC_COL_BASE_WIDTH = 50;
-const MASTER_PERCENT_METRIC_COL_BASE_WIDTH = 80;
-const MASTER_TEAM_COL_BASE_WIDTH = 72;
-const MASTER_DAY_COL_BASE_WIDTH = 80;
-const MASTER_FOUR_WEEK_COL_BASE_WIDTH = 72;
-const MASTER_FOUR_WEEK_COLLAPSED_BASE_WIDTH = 36;
-const MASTER_SUMMARY_COL_BASE_WIDTH = 72;
-const MASTER_SCORE_COL_BASE_WIDTH = 104;
+// Side and summary columns scale with the pinned Game Grid; minimums are the narrowest legible cell.
+export type MasterColumnSpec = { base: number; min: number };
+export const MASTER_COLUMNS = {
+  rating: { base: 72, min: 60 },
+  metric: { base: 50, min: 40 },
+  percent: { base: 64, min: 50 },
+  team: { base: 72, min: 56 },
+  day: { base: 80, min: 50 },
+  summary: { base: 72, min: 40 },
+  score: { base: 104, min: 56 },
+  fourWeek: { base: 64, min: 48 },
+  fourWeekValue: { base: 72, min: 56 },
+  trend: { base: 104, min: 78 },
+} satisfies Record<string, MasterColumnSpec>;
 
 type StickyHeaderState = {
   active: boolean;
@@ -158,7 +179,9 @@ function formatMetricValue(
     return `${(value * 100).toFixed(1)}%`;
   }
 
-  if (key === "weekScore" || key === "fourWeekScore") {
+  if (key === "atk" || key === "def") return String(Math.round(value));
+  if (key === "fourWeekScore") return formatOpportunity(value);
+  if (key === "weekScore") {
     return value.toFixed(1);
   }
 
@@ -225,7 +248,53 @@ export function distributeMasterTableWidths(
   return widths;
 }
 
+// The pre-redesign table (7 source metrics, team, days, summary, four 72px four-week columns)
+// fixes the Game Grid geometry, so team and day columns never change with side-group state.
+const ORIGINAL_SIDE_METRIC_WIDTHS = [50, 50, 50, 50, 50, 50, 80];
+const ORIGINAL_FOUR_WEEK_WIDTHS = [72, 72, 72, 72];
+
+/**
+ * Team and day columns keep the pre-redesign widths. The side groups and Week
+ * Summary scale with them, then shrink toward their minimums so everything fits;
+ * the table scrolls only when even the minimums do not fit.
+ */
+export function sizeMasterTableColumns({ metricColumns, dayCount, fourWeekCollapsed, containerWidth }: {
+  metricColumns: MasterColumnSpec[]; dayCount: number; fourWeekCollapsed: boolean; containerWidth: number;
+}) {
+  const { team, day, summary, score, fourWeek, percent, fourWeekValue, trend } = MASTER_COLUMNS;
+  const sum = (widths: number[]) => widths.reduce((total, width) => total + width, 0);
+  const original = [...ORIGINAL_SIDE_METRIC_WIDTHS, team.base, ...Array(dayCount).fill(day.base),
+    summary.base, summary.base, score.base, ...ORIGINAL_FOUR_WEEK_WIDTHS];
+  const reference = distributeMasterTableWidths(original, containerWidth);
+  const scale = sum(reference) / sum(original);
+  const grid = reference.slice(ORIGINAL_SIDE_METRIC_WIDTHS.length, ORIGINAL_SIDE_METRIC_WIDTHS.length + 1 + dayCount);
+
+  const fourWeekColumns = fourWeekCollapsed ? [fourWeekValue, trend] : [fourWeek, fourWeek, percent, fourWeekValue, trend];
+  const flex = [...metricColumns, summary, summary, score, ...fourWeekColumns];
+  const widths = flex.map((spec) => spec.base * scale);
+  const available = containerWidth - sum(grid);
+  const excess = sum(widths) - available;
+  const room = sum(flex.map((spec, index) => widths[index] - spec.min));
+  if (containerWidth > 0 && excess > 0 && room > 0) {
+    const share = Math.min(excess, room) / room;
+    flex.forEach((spec, index) => { widths[index] -= (widths[index] - spec.min) * share; });
+  }
+
+  // Round down, then hand the leftover pixels to the largest fractions so the total is exact.
+  const rounded = widths.map(Math.floor);
+  widths.map((width, index) => ({ index, fraction: width - Math.floor(width) }))
+    .sort((a, b) => b.fraction - a.fraction)
+    .slice(0, Math.round(sum(widths)) - sum(rounded))
+    .forEach(({ index }) => { rounded[index] += 1; });
+
+  const metricCount = metricColumns.length;
+  return [...rounded.slice(0, metricCount), ...grid, ...rounded.slice(metricCount)];
+}
+
 export default function DesktopMasterTable({
+  opponentRatings = {}, opportunityByTeamId = {}, sharedOpportunityScale = 1,
+  metricInfoTarget,
+  warningTarget,
   start,
   extended,
   scheduleRows,
@@ -246,6 +315,9 @@ export default function DesktopMasterTable({
   expandedTeamIds = new Set(),
   onToggleTeam,
   renderTeamDetails,
+  scheduleReady = true,
+  scheduleLoading = false,
+  fourWeekLoading = false,
 }: DesktopMasterTableProps) {
   const teamsMap = useTeamsMap();
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -255,7 +327,13 @@ export default function DesktopMasterTable({
     key: "teamName",
     direction: "ascending",
   });
-  const [isFourWeekCollapsed, setIsFourWeekCollapsed] = useState(false);
+  const [isFourWeekCollapsed, setIsFourWeekCollapsed] = useState(true);
+  const [opponentExpanded, setOpponentExpanded] = useState(false);
+  const visibleMetricColumns = useMemo<{ label: string; key: keyof OpponentMetricAverages | "atk" | "def" }[]>(() => [
+    { label: "Attack", key: "atk" }, { label: "Defense", key: "def" }, ...(opponentExpanded ? opponentMetricColumns : [])
+  ], [opponentExpanded, opponentMetricColumns]);
+  // The perspective control is hidden; retain the existing default and scoring semantics.
+  const opponentRole: OpponentRole = "skater";
   const [containerWidth, setContainerWidth] = useState(0);
   const [stickyHeader, setStickyHeader] = useState<StickyHeaderState>({
     active: false,
@@ -284,7 +362,7 @@ export default function DesktopMasterTable({
         teamName: team?.name ?? "",
         teamAbbreviation: team?.abbreviation ?? String(row.teamId),
         logo: team?.logo ?? `/teamLogos/${row.teamId}.png`,
-        opponentMetrics: opponentMetricsByTeamId[row.teamId] ?? {
+        opponentMetrics: { ...(opponentMetricsByTeamId[row.teamId] ?? {
           avgXgf: null,
           avgXga: null,
           avgSf: null,
@@ -292,7 +370,7 @@ export default function DesktopMasterTable({
           avgGoalFor: null,
           avgGoalAgainst: null,
           avgWinPct: null,
-        },
+        }), atk: opponentRatings[row.teamId]?.atk ?? null, def: opponentRatings[row.teamId]?.def ?? null },
         fourWeekGamesPlayed: fourWeek?.gamesPlayed ?? null,
         fourWeekOffNights: fourWeek?.offNights ?? null,
         fourWeekOpponentPointPct: fourWeek?.avgOpponentPointPct ?? null,
@@ -302,9 +380,12 @@ export default function DesktopMasterTable({
   }, [
     fourWeekSummaryByTeamId,
     opponentMetricsByTeamId,
+    opponentRatings,
     scheduleRows,
     teamsMap,
   ]);
+
+  const renderFourWeekValue = (key: SortKey, value: number | null, average = false) => fourWeekLoading ? <LoadingCell /> : formatMetricValue(key, value, average);
 
   const totalLeagueGames = calcTotalGP(gamesPerDay, excludedDays, days);
   const totalLeagueOffNights = calcTotalOffNights(gamesPerDay, excludedDays, days);
@@ -377,15 +458,7 @@ export default function DesktopMasterTable({
   );
 
   const opponentMetricRankMaps = useMemo(() => {
-    const directions: Record<keyof OpponentMetricAverages, "asc" | "desc"> = {
-      avgXgf: "asc",
-      avgXga: "desc",
-      avgSf: "asc",
-      avgSa: "desc",
-      avgGoalFor: "asc",
-      avgGoalAgainst: "desc",
-      avgWinPct: "asc",
-    };
+    const directions = getOpponentViewDirections(opponentRole);
 
     return opponentMetricColumns.reduce<
       Record<
@@ -403,7 +476,10 @@ export default function DesktopMasterTable({
           }
         });
 
-        acc[key] = toRankMaps(entries, directions[key]);
+        const direction = directions[key];
+        acc[key] = direction
+          ? toRankMaps(entries, direction)
+          : { best: new Map(), worst: new Map() };
         return acc;
       },
       {} as Record<
@@ -411,20 +487,33 @@ export default function DesktopMasterTable({
         { best: Map<number, number>; worst: Map<number, number> }
       >,
     );
-  }, [opponentMetricColumns, rows]);
+  }, [opponentMetricColumns, opponentRole, rows]);
 
   const fourWeekBands = useMemo(() => ({
     gamesPlayed: toFourWeekMetricBands(rows.map((row) => ({ teamId: row.teamId, value: row.fourWeekGamesPlayed })), "desc"),
     offNights: toFourWeekMetricBands(rows.map((row) => ({ teamId: row.teamId, value: row.fourWeekOffNights })), "desc"),
     opponentPointPct: toFourWeekMetricBands(rows.map((row) => ({ teamId: row.teamId, value: row.fourWeekOpponentPointPct })), "asc"),
-    score: toFourWeekMetricBands(rows.map((row) => ({ teamId: row.teamId, value: row.fourWeekScore })), "desc"),
   }), [rows]);
 
+  // 4WK Value uses the opponent-metric palette: top/bottom 5 strong, 6–10 soft.
+  const fourWeekValueRanks = useMemo(() => toRankMaps(
+    rows.flatMap((row) => typeof row.fourWeekScore === "number" ? [{ teamId: row.teamId, value: row.fourWeekScore }] : []),
+    "desc",
+  ), [rows]);
+  const getFourWeekValueStateClass = (teamId: number) => {
+    const best = fourWeekValueRanks.best.get(teamId);
+    if (best != null) return best <= 5 ? styles.masterMetricGoodStrong : styles.masterMetricGoodSoft;
+    const worst = fourWeekValueRanks.worst.get(teamId);
+    if (worst != null) return worst <= 5 ? styles.masterMetricBadStrong : styles.masterMetricBadSoft;
+    return undefined;
+  };
+
   const getOpponentMetricStateClass = (
-    key: keyof OpponentMetricAverages,
+    key: keyof OpponentMetricAverages | "atk" | "def",
     teamId: number,
     value: number | null,
   ) => {
+    if (key === "atk" || key === "def") return undefined;
     if (opponentMetricsError || typeof value !== "number") return undefined;
 
     const bestRank = opponentMetricRankMaps[key]?.best.get(teamId);
@@ -473,39 +562,12 @@ export default function DesktopMasterTable({
     });
   };
 
-  const fourWeekColumnSpan = isFourWeekCollapsed ? 1 : 4;
-  const baseColumnWidths = useMemo(() => {
-    const widths = [
-      ...opponentMetricColumns.map(({ key }) =>
-        key === "avgWinPct"
-          ? MASTER_PERCENT_METRIC_COL_BASE_WIDTH
-          : MASTER_METRIC_COL_BASE_WIDTH,
-      ),
-      MASTER_TEAM_COL_BASE_WIDTH,
-      ...Array(dayKeys.length).fill(MASTER_DAY_COL_BASE_WIDTH),
-      MASTER_SUMMARY_COL_BASE_WIDTH,
-      MASTER_SUMMARY_COL_BASE_WIDTH,
-      MASTER_SCORE_COL_BASE_WIDTH,
-    ];
-
-    if (isFourWeekCollapsed) {
-      widths.push(MASTER_FOUR_WEEK_COLLAPSED_BASE_WIDTH);
-    } else {
-      widths.push(
-        MASTER_FOUR_WEEK_COL_BASE_WIDTH,
-        MASTER_FOUR_WEEK_COL_BASE_WIDTH,
-        MASTER_FOUR_WEEK_COL_BASE_WIDTH,
-        MASTER_FOUR_WEEK_COL_BASE_WIDTH,
-      );
-    }
-
-    return widths;
-  }, [dayKeys.length, isFourWeekCollapsed, opponentMetricColumns]);
-
-  const columnWidths = useMemo(
-    () => distributeMasterTableWidths(baseColumnWidths, containerWidth),
-    [baseColumnWidths, containerWidth],
-  );
+  const fourWeekColumnSpan = isFourWeekCollapsed ? 2 : 5;
+  const columnWidths = useMemo(() => sizeMasterTableColumns({
+    metricColumns: visibleMetricColumns.map(({ key }) =>
+      key === "atk" || key === "def" ? MASTER_COLUMNS.rating : key === "avgWinPct" ? MASTER_COLUMNS.percent : MASTER_COLUMNS.metric),
+    dayCount: dayKeys.length, fourWeekCollapsed: isFourWeekCollapsed, containerWidth,
+  }), [visibleMetricColumns, dayKeys.length, isFourWeekCollapsed, containerWidth]);
 
   const tableWidth = useMemo(
     () => columnWidths.reduce((sum, width) => sum + width, 0),
@@ -515,20 +577,20 @@ export default function DesktopMasterTable({
   const stickyMetricOffsets = useMemo(() => {
     let offset = 0;
 
-    return Array.from({ length: opponentMetricColumns.length }, (_, index) => {
+    return Array.from({ length: visibleMetricColumns.length }, (_, index) => {
       const currentOffset = offset;
       offset += columnWidths[index] ?? 0;
       return currentOffset;
     });
-  }, [columnWidths, opponentMetricColumns.length]);
+  }, [columnWidths, visibleMetricColumns.length]);
 
   const stickyTeamOffset = useMemo(
     () =>
       stickyMetricOffsets[stickyMetricOffsets.length - 1] != null
         ? stickyMetricOffsets[stickyMetricOffsets.length - 1] +
-          (columnWidths[opponentMetricColumns.length - 1] ?? 0)
+          (columnWidths[visibleMetricColumns.length - 1] ?? 0)
         : 0,
-    [columnWidths, opponentMetricColumns.length, stickyMetricOffsets],
+    [columnWidths, visibleMetricColumns.length, stickyMetricOffsets],
   );
 
   const renderSortableHeader = (
@@ -537,6 +599,7 @@ export default function DesktopMasterTable({
     className?: string,
     stickyLeft?: number,
     headerKey?: string,
+    eyebrow?: string,
   ) => {
     const isSorted = sortConfig.key === key;
     const nextDirection = isSorted
@@ -560,9 +623,16 @@ export default function DesktopMasterTable({
           type="button"
           className={styles.masterSortButton}
           onClick={() => handleSort(key)}
-          aria-label={`Sort by ${label} ${nextDirection}`}
+          aria-label={`Sort by ${key === "atk" ? "opponent attack strength" : key === "def" ? "opponent defense strength" : key === "fourWeekScore" ? "four-week opportunity" : label} ${nextDirection}`}
         >
-          <span>{label}</span>
+          {eyebrow ? (
+            <span className={styles.masterSortLabelStack}>
+              <span className={styles.masterMetricEyebrow}>{eyebrow}</span>
+              <span>{label}</span>
+            </span>
+          ) : (
+            <span>{label}</span>
+          )}
           {isSorted && (
             <span
               className={clsx(
@@ -597,7 +667,7 @@ export default function DesktopMasterTable({
     <thead ref={keyPrefix ? undefined : theadRef}>
       <tr className={styles.masterHeaderGroupRow}>
         <th
-          colSpan={opponentMetricColumns.length}
+          colSpan={visibleMetricColumns.length}
           className={clsx(
             styles.masterSectionBanner,
             styles.masterSectionBannerMetrics,
@@ -605,7 +675,16 @@ export default function DesktopMasterTable({
             styles.masterSectionBannerStart,
           )}
         >
-          <span className={styles.masterSectionLabel}>Opponent Metrics</span>
+          <button
+            type="button"
+            className={styles.masterGroupDisclosure}
+            onClick={() => setOpponentExpanded((v) => !v)}
+            aria-expanded={opponentExpanded}
+            aria-label={opponentExpanded ? "Collapse opponent details" : "Expand opponent details"}
+          >
+            <span>Opponent strength</span>
+            <span className={styles.masterGroupChevron} aria-hidden="true">{opponentExpanded ? "◂" : "▸"}</span>
+          </button>
         </th>
         <th colSpan={1 + dayKeys.length} className={styles.masterSectionBanner}>
           <span className={styles.masterSectionLabel}>Game Grid</span>
@@ -624,28 +703,35 @@ export default function DesktopMasterTable({
           className={clsx(
             styles.masterSectionBanner,
             styles.masterSectionBannerFourWeek,
-            isFourWeekCollapsed && styles.masterSectionBannerCollapsed,
             styles.masterSectionBannerEnd,
           )}
         >
-          <span className={styles.masterSectionLabel}>
-            {isFourWeekCollapsed ? "4WK" : "Four Week Forecast"}
-          </span>
+          <button
+            type="button"
+            className={styles.masterGroupDisclosure}
+            onClick={() => setIsFourWeekCollapsed((v) => !v)}
+            aria-expanded={!isFourWeekCollapsed}
+            aria-label={isFourWeekCollapsed ? "Expand four-week columns" : "Collapse four-week columns"}
+          >
+            <span>4-Week Opportunity</span>
+            <span className={styles.masterGroupChevron} aria-hidden="true">{isFourWeekCollapsed ? "▸" : "◂"}</span>
+          </button>
         </th>
       </tr>
       <tr className={styles.masterHeaderMetricRow}>
-        {opponentMetricColumns.map((column, index) =>
+        {visibleMetricColumns.map((column, index) =>
           renderSortableHeader(
             column.label,
             column.key,
             clsx(
               styles.masterMetricHeader,
               index === 0 && styles.masterMetricHeaderLead,
-              index === opponentMetricColumns.length - 1 &&
+              index === visibleMetricColumns.length - 1 &&
                 styles.masterGroupEdge,
             ),
             stickyMetricOffsets[index],
             `${keyPrefix}${column.key}`,
+            column.key === "atk" || column.key === "def" ? "↑ Stronger" : undefined,
           ),
         )}
         <th
@@ -693,7 +779,7 @@ export default function DesktopMasterTable({
             <th
               key={`${keyPrefix}${day}`}
               className={clsx(isExcluded && styles.masterDayHeaderExcluded)}
-              data-intensity={getGamesPerDayIntensity(gamesPerDay[index] ?? 0)}
+              data-intensity={scheduleReady ? getGamesPerDayIntensity(gamesPerDay[index] ?? 0) : undefined}
             >
               <div className={styles.masterDayHeader}>
                 <div className={styles.masterDayHeaderLabel}>
@@ -743,51 +829,13 @@ export default function DesktopMasterTable({
         )}
         {!isFourWeekCollapsed && (
           <>
-            <th
-              key={`${keyPrefix}fourWeekGamesPlayed`}
-              className={clsx(
-                styles.masterFourWeekHeader,
-                styles.masterFourWeekLead,
-                styles.masterFourWeekColumn,
-              )}
-            >
-              <div className={styles.masterFourWeekHeaderActions}>
-                <button
-                  type="button"
-                  className={styles.masterSortButton}
-                  onClick={() => handleSort("fourWeekGamesPlayed")}
-                  aria-label={`Sort by 4WK GP ${
-                    sortConfig.key === "fourWeekGamesPlayed"
-                      ? sortConfig.direction === "ascending"
-                        ? "descending"
-                        : "ascending"
-                      : getDefaultDirection("fourWeekGamesPlayed")
-                  }`}
-                >
-                  <span>4WK GP</span>
-                  {sortConfig.key === "fourWeekGamesPlayed" && (
-                    <span
-                      className={clsx(
-                        styles.masterSortGlyph,
-                        styles.masterSortGlyphActive,
-                      )}
-                      aria-hidden="true"
-                    >
-                      {sortConfig.direction === "ascending" ? "▲" : "▼"}
-                    </span>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  className={styles.masterFourWeekCollapseControl}
-                  onClick={() => setIsFourWeekCollapsed(true)}
-                  aria-expanded={true}
-                  aria-label="Collapse four-week columns"
-                >
-                  <span aria-hidden="true">◂</span>
-                </button>
-              </div>
-            </th>
+            {renderSortableHeader(
+              "4WK GP",
+              "fourWeekGamesPlayed",
+              clsx(styles.masterFourWeekHeader, styles.masterFourWeekLead),
+              undefined,
+              `${keyPrefix}fourWeekGamesPlayed`,
+            )}
             {renderSortableHeader(
               "4WK OFF",
               "fourWeekOffNights",
@@ -798,44 +846,27 @@ export default function DesktopMasterTable({
             {renderSortableHeader(
               "Opp %",
               "fourWeekOpponentPointPct",
-              clsx(styles.masterFourWeekHeader, styles.masterGroupEdge),
+              styles.masterFourWeekHeader,
               undefined,
               `${keyPrefix}fourWeekOpponentPointPct`,
             )}
-            {renderSortableHeader(
-              "4WK Score",
-              "fourWeekScore",
-              clsx(styles.masterFourWeekHeader, styles.masterGroupEdge),
-              undefined,
-              `${keyPrefix}fourWeekScore`,
-            )}
           </>
         )}
-        {isFourWeekCollapsed && (
-          <th
-            key={`${keyPrefix}fourWeekCollapsed`}
-            className={clsx(
-              styles.masterFourWeekHeader,
-              styles.masterFourWeekColumn,
-              styles.masterFourWeekCollapsedHeader,
-              styles.masterGroupEdge,
-            )}
-          >
-            <button
-              type="button"
-              className={clsx(
-                styles.masterCollapseButton,
-                styles.masterFourWeekCollapsedButton,
-              )}
-              onClick={() => setIsFourWeekCollapsed((value) => !value)}
-              aria-expanded={!isFourWeekCollapsed}
-              aria-label="Expand four-week columns"
-            >
-              <span className={styles.masterCollapseLabel}>4WK</span>
-              <span aria-hidden="true">◂|▸</span>
-            </button>
-          </th>
+        {renderSortableHeader(
+          "Total",
+          "fourWeekScore",
+          clsx(styles.masterFourWeekHeader, isFourWeekCollapsed && styles.masterFourWeekLead),
+          undefined,
+          `${keyPrefix}fourWeekScore`,
+          "↑ More",
         )}
+        <th
+          key={`${keyPrefix}fourWeekTrend`}
+          className={clsx(styles.masterFourWeekHeader, styles.masterGroupEdge)}
+        >
+          <span className={styles.masterTrendLabel}>Weekly <small>↑ More</small></span>
+          <span className={styles.matchupKey} aria-label="Line color: easier to harder skater matchups"><i /> Easy → Hard <i /></span>
+        </th>
       </tr>
     </thead>
   );
@@ -870,8 +901,8 @@ export default function DesktopMasterTable({
           tableRect.top <= top &&
           tableRect.bottom - headerHeight > top,
         top,
-        left: scrollRect.left,
-        width: scrollEl.clientWidth,
+        left: scrollRect.left + Math.max(0, (scrollEl.clientWidth - tableEl.offsetWidth) / 2),
+        width: Math.min(scrollEl.clientWidth, tableEl.offsetWidth),
         scrollLeft: scrollEl.scrollLeft,
         tableWidth: tableEl.offsetWidth,
       };
@@ -923,7 +954,7 @@ export default function DesktopMasterTable({
       scrollEl?.removeEventListener("scroll", scheduleUpdate);
       resizeObserver.disconnect();
     };
-  }, [dayKeys.length, isFourWeekCollapsed, opponentMetricColumns.length]);
+  }, [dayKeys.length, isFourWeekCollapsed, visibleMetricColumns.length]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -966,8 +997,32 @@ export default function DesktopMasterTable({
     };
   }, []);
 
+  const metricInfo = (
+    <MetricInfoDisclosure label="Game Grid metrics" warningTarget={warningTarget} warnings={[
+        ...(opponentMetricsError ? ["Opponent stats unavailable. Reload to retry."]
+          : !opponentMetricsLoading && Object.values(opponentCoverageByTeamId ?? {}).some((coverage) => Object.values(coverage).some(({ known, expected }) => known < expected))
+            ? ["Some opponent averages are unavailable. Check back after the next stats update."] : []),
+        ...(fourWeekLoading ? [] : fourWeekCalendar?.error ? ["Schedule unavailable. Reload to retry."]
+          : Object.values(opportunityByTeamId).some((v) => v.weeks.some((w) => w.unknown > 0))
+            ? ["Some fixture starts or states are unresolved. Affected opportunity totals are unavailable."]
+          : (fourWeekCalendar && fourWeekCalendar.knownDays < fourWeekCalendar.expectedDays) || Object.values(fourWeekSummaryByTeamId).some((summary) => summary.scheduleCoverage && summary.scheduleCoverage.known < summary.scheduleCoverage.expected)
+            ? ["Schedule incomplete. Affected totals are unavailable; check back after schedule updates."]
+            : Object.values(fourWeekSummaryByTeamId).some((summary) => summary.opponentCoverage && summary.opponentCoverage.known < summary.opponentCoverage.expected)
+              ? ["Some opponent strength values are unavailable. Check back after standings update."] : []),
+      ]}>
+        {opponentSourceLabel && <p>Opponent stats (Natural Stat Trick): {opponentSourceLabel}</p>}
+        <p>Metrics per game; PTS% = points / (2 × GP). Missing or incomplete opponent averages show “-”.</p>
+        <p>xG = expected goals; GF/GA = goals for/against; SF/SA = shots for/against.</p>
+        <p>{RATING_INFO}</p>
+        <p>{OPPORTUNITY_INFO}</p>
+        {fourWeekCalendar && <p>Four weeks: {fourWeekCalendar.start}–{fourWeekCalendar.end}, selected Monday–Sunday week plus three weeks. {fourWeekLoading ? "Loading schedule…" : fourWeekCalendar.error ?? (fourWeekCalendar.knownDays === fourWeekCalendar.expectedDays ? "Schedule complete." : "Schedule incomplete; affected totals are unavailable.")}</p>}
+        <p>GP = games played; OFF = games on nights with eight or fewer NHL games. OPP% uses current-season NHL regular-season team points percentages.</p>
+        <p>{FOUR_WEEK_COLOR_LEGEND.replace("score", "Opportunity")}</p>
+      </MetricInfoDisclosure>
+  );
+
   return (
-    <div className={styles.masterTableShell}>
+    <div className={styles.masterTableShell} data-schedule-state={scheduleLoading ? "loading" : scheduleReady ? "ready" : "unavailable"}>
       {stickyHeader.active && (
         <div
           className={styles.masterStickyHeaderOverlay}
@@ -996,26 +1051,11 @@ export default function DesktopMasterTable({
           </div>
         </div>
       )}
-      <MetricInfoDisclosure label="Game Grid metrics" warnings={[
-        ...(opponentMetricsError ? ["Opponent stats unavailable. Reload to retry."]
-          : !opponentMetricsLoading && Object.values(opponentCoverageByTeamId ?? {}).some((coverage) => Object.values(coverage).some(({ known, expected }) => known < expected))
-            ? ["Some opponent averages are unavailable. Check back after the next stats update."] : []),
-        ...(fourWeekCalendar?.error ? ["Schedule unavailable. Reload to retry."]
-          : (fourWeekCalendar && fourWeekCalendar.knownDays < fourWeekCalendar.expectedDays) || Object.values(fourWeekSummaryByTeamId).some((summary) => summary.scheduleCoverage && summary.scheduleCoverage.known < summary.scheduleCoverage.expected)
-            ? ["Schedule incomplete. Affected totals are unavailable; check back after schedule updates."]
-            : Object.values(fourWeekSummaryByTeamId).some((summary) => summary.opponentCoverage && summary.opponentCoverage.known < summary.opponentCoverage.expected)
-              ? ["Some opponent strength values are unavailable. Check back after standings update."] : []),
-      ]}>
-        {opponentSourceLabel && <p>Opponent stats (Natural Stat Trick): {opponentSourceLabel}</p>}
-        <p>Metrics per game; PTS% = points / (2 × GP). Missing or incomplete opponent averages show “-”.</p>
-        <p>xG = expected goals; GF/GA = goals for/against; SF/SA = shots for/against. Lower xGF, GF, SF and PTS% are favorable; higher xGA, GA and SA are favorable.</p>
-        {fourWeekCalendar && <p>Four weeks: {fourWeekCalendar.start}–{fourWeekCalendar.end}, selected Monday–Sunday week plus three weeks. {fourWeekCalendar.error ?? (fourWeekCalendar.knownDays === fourWeekCalendar.expectedDays ? "Schedule complete." : "Schedule incomplete; affected totals are unavailable.")}</p>}
-        <p>GP = games played; OFF = games on nights with eight or fewer NHL games. OPP% uses current-season NHL regular-season team points percentages.</p>
-        <p>{FOUR_WEEK_COLOR_LEGEND}</p>
-      </MetricInfoDisclosure>
+      {metricInfoTarget ? createPortal(metricInfo, metricInfoTarget) : metricInfo}
       <div ref={scrollRef} className={styles.masterTableScroll}>
         <table
           ref={tableRef}
+          aria-busy={scheduleLoading}
           className={styles.masterTable}
           aria-describedby="weekScoreDesc"
           style={
@@ -1027,25 +1067,26 @@ export default function DesktopMasterTable({
           {renderColGroup()}
           {renderTableHeader()}
           <tbody>
+            {!scheduleReady ? <LoadingRows columns={visibleMetricColumns.length + 1 + dayKeys.length + 3 + fourWeekColumnSpan} teamColumn={visibleMetricColumns.length} waiting={scheduleLoading} /> : <>
             <tr className={styles.masterTotalsRow}>
-              {opponentMetricColumns.map((column, index) => (
+              {visibleMetricColumns.map((column, index) => (
                 <td
                   key={column.key}
                   className={clsx(
                     styles.masterMetricCell,
                     styles.masterStickyMetric,
-                    index === opponentMetricColumns.length - 1 &&
+                    index === visibleMetricColumns.length - 1 &&
                       styles.masterGroupEdge,
                   )}
                   style={{ left: `${stickyMetricOffsets[index] ?? 0}px` }}
                 >
                   {opponentMetricsLoading
-                    ? "..."
+                    ? <LoadingCell />
                     : opponentMetricsError
                       ? "-"
                     : formatMetricValue(
                         column.key,
-                        opponentLeagueAverages[column.key],
+                        column.key === "atk" || column.key === "def" ? null : opponentLeagueAverages[column.key],
                       )}
                 </td>
               ))}
@@ -1093,41 +1134,31 @@ export default function DesktopMasterTable({
               {!isFourWeekCollapsed && (
                 <>
                   <td className={styles.masterFourWeekLeadCell}>
-                    {formatMetricValue(
+                    {renderFourWeekValue(
                       "fourWeekGamesPlayed",
                       fourWeekAverages.gamesPlayed,
                       true,
                     )}
                   </td>
                   <td className={styles.masterFourWeekCell}>
-                    {formatMetricValue(
+                    {renderFourWeekValue(
                       "fourWeekOffNights",
                       fourWeekAverages.offNights,
                       true,
                     )}
                   </td>
                   <td className={styles.masterFourWeekCell}>
-                    {formatMetricValue(
+                    {renderFourWeekValue(
                       "fourWeekOpponentPointPct",
                       fourWeekAverages.avgOpponentPointPct,
                     )}
                   </td>
-                  <td
-                    className={clsx(
-                      styles.masterFourWeekCell,
-                      styles.masterGroupEdge,
-                    )}
-                  >
-                    {formatMetricValue(
-                      "fourWeekScore",
-                      fourWeekAverages.score,
-                    )}
-                  </td>
                 </>
               )}
-              {isFourWeekCollapsed && (
-                <td className={styles.masterCollapseSpacer}></td>
-              )}
+              <td className={isFourWeekCollapsed ? styles.masterFourWeekLeadCell : styles.masterFourWeekCell}>
+                {renderFourWeekValue("fourWeekScore", fourWeekAverages.score)}
+              </td>
+              <td className={clsx(styles.masterFourWeekCell, styles.masterGroupEdge)} />
             </tr>
             {sortedRows.map((row) => {
               const isTopTen = topTenTeams.has(row.teamId);
@@ -1141,7 +1172,7 @@ export default function DesktopMasterTable({
               return (
                 <Fragment key={row.teamId}>
                 <tr className={rowHighlightClass}>
-                  {opponentMetricColumns.map((column, index) => (
+                  {visibleMetricColumns.map((column, index) => (
                     <td
                       key={`${row.teamId}-${column.key}`}
                       className={clsx(
@@ -1152,15 +1183,17 @@ export default function DesktopMasterTable({
                           row.teamId,
                           row.opponentMetrics[column.key],
                         ),
-                        index === opponentMetricColumns.length - 1 &&
+                        index === visibleMetricColumns.length - 1 &&
                           styles.masterGroupEdge,
                       )}
                       style={{ left: `${stickyMetricOffsets[index] ?? 0}px` }}
                     >
                       {opponentMetricsLoading
-                        ? "..."
+                        ? <LoadingCell />
                         : opponentMetricsError
                           ? "-"
+                        : column.key === "atk" || column.key === "def"
+                          ? <RatingMeter kind={column.key} value={row.opponentMetrics[column.key]} />
                         : formatMetricValue(
                             column.key,
                             row.opponentMetrics[column.key],
@@ -1270,44 +1303,41 @@ export default function DesktopMasterTable({
                   {!isFourWeekCollapsed && (
                     <>
                       <td className={styles.masterFourWeekLeadCell} data-favorability={fourWeekBands.gamesPlayed.get(row.teamId)}>
-                        {formatMetricValue(
+                        {renderFourWeekValue(
                           "fourWeekGamesPlayed",
                           row.fourWeekGamesPlayed,
                         )}
                       </td>
                       <td className={styles.masterFourWeekCell} data-favorability={fourWeekBands.offNights.get(row.teamId)}>
-                        {formatMetricValue(
+                        {renderFourWeekValue(
                           "fourWeekOffNights",
                           row.fourWeekOffNights,
                         )}
                       </td>
                       <td className={styles.masterFourWeekCell} data-favorability={fourWeekBands.opponentPointPct.get(row.teamId)}>
-                        {formatMetricValue(
+                        {renderFourWeekValue(
                           "fourWeekOpponentPointPct",
                           row.fourWeekOpponentPointPct,
                         )}
                       </td>
-                      <td
-                        className={clsx(
-                          styles.masterFourWeekCell,
-                          styles.masterGroupEdge,
-                        )}
-                        data-favorability={fourWeekBands.score.get(row.teamId)}
-                      >
-                        {formatMetricValue(
-                          "fourWeekScore",
-                          row.fourWeekScore,
-                        )}
-                      </td>
                     </>
                   )}
-                  {isFourWeekCollapsed && (
-                    <td className={styles.masterCollapseSpacer}></td>
-                  )}
+                  <td
+                    className={clsx(
+                      styles.masterFourWeekValueCell,
+                      isFourWeekCollapsed && styles.masterFourWeekLead,
+                      getFourWeekValueStateClass(row.teamId),
+                    )}
+                  >
+                    {renderFourWeekValue("fourWeekScore", row.fourWeekScore)}
+                  </td>
+                  <td className={clsx(styles.masterFourWeekCell, styles.masterTrendCell, styles.masterGroupEdge)}>
+                    {fourWeekLoading ? <LoadingCell shape="trend" /> : <OpportunitySparkline value={opportunityByTeamId[row.teamId]} scale={sharedOpportunityScale} team={row.teamAbbreviation} />}
+                  </td>
                 </tr>
                 {expandedTeamIds.has(row.teamId) && renderTeamDetails && (
                   <tr className={detailStyles.detailRow}>
-                    <td colSpan={opponentMetricColumns.length + 1 + dayKeys.length + 3 + fourWeekColumnSpan} className={detailStyles.detailCell}>
+                    <td colSpan={visibleMetricColumns.length + 1 + dayKeys.length + 3 + fourWeekColumnSpan} className={detailStyles.detailCell}>
                       <div id={`game-grid-team-details-${row.teamId}`}>
                         <div className={detailStyles.detailControls}>
                           <Link href={`/stats/team/${row.teamAbbreviation}`} className={detailStyles.teamHqLink}>Team HQ</Link>
@@ -1324,6 +1354,7 @@ export default function DesktopMasterTable({
                 </Fragment>
               );
             })}
+            </>}
           </tbody>
         </table>
       </div>

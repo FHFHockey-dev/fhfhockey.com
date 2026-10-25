@@ -144,6 +144,6 @@ export async function rebuildPriorsHandler(
   }
 }
 
-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(rebuildPriorsHandler as any)), {
+export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(rebuildPriorsHandler as any), {
   jobName: "rebuild-sustainability-priors"
-});
+}));
