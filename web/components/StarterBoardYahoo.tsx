@@ -29,6 +29,7 @@ function YahooTeam() {
     const controller = new AbortController();
     active.current = controller;
     setBusy(true); setError(null);
+    let denied = false;
     try {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) throw new Error("Sign in to load your Yahoo team.");
@@ -38,12 +39,14 @@ function YahooTeam() {
         body: JSON.stringify({ ...(teamId ? { teamId } : {}), ...(category ? { category } : {}) }),
       });
       const payload = await response.json();
+      denied = response.status === 401 || response.status === 403;
       if (!response.ok) throw new Error(typeof payload.error === "string" ? payload.error : "Unable to load Yahoo recommendations.");
       if (controller.signal.aborted) return;
       setData(payload.data);
       if (payload.data.teamId) setTeamId(payload.data.teamId);
     } catch (cause) {
-      if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : "Yahoo is unavailable.");
+      // An expired connection or lost access hides the private lineup; other failures keep the last comparison.
+      if (!controller.signal.aborted) { if (denied) setData(null); setError(cause instanceof Error ? cause.message : "Yahoo is unavailable."); }
     } finally { if (!controller.signal.aborted) setBusy(false); }
   }
   const names = new Map(data?.roster?.map((player) => [player.id, player.name]) ?? []);

@@ -552,6 +552,9 @@ test.describe("/start-chart", () => {
         if (fictionalSession) localStorage.setItem(key, fictionalSession);
       }, storageKey);
       await installFixture(page);
+      // The panel is gated on premium provider-sync access (fd58ba245), no longer on Draft Pro account access.
+      await page.route("**/api/v1/account/provider-sync**", route => route.fulfill({ json: { data: { access: {
+        eligible: true, expiresAt: null, nextVerificationAt: null, reason: "eligible" } } } }));
       let responseMode: "ready" | "denied" | "expired" | "pending" = "ready";
       const requests: Array<{ teamId?: string; category?: string }> = [];
       let releasePending!: () => void;
@@ -574,7 +577,8 @@ test.describe("/start-chart", () => {
         }
       });
       await page.goto("/start-chart?date=2026-02-07&position=C");
-      const summary = page.getByText("My Yahoo team · Today · Draft Pro", { exact: true });
+      // Product copy renamed the access tier label to "Premium sync" (fd58ba245); the panel is otherwise unchanged.
+      const summary = page.getByText("My Yahoo team · Today · Premium sync", { exact: true });
       await expect(summary).toBeVisible();
       await summary.click();
       const panel = page.locator("details").filter({ has: summary });
@@ -606,15 +610,17 @@ test.describe("/start-chart", () => {
       await refresh.click();
       await expect.poll(() => requests.length).toBe(before + 1);
       await page.evaluate(() => window.scrollTo(0, 0));
+      // Sign Out is a plain button in the account menu, and on mobile sits inside the account disclosure.
       if (width === 1440) {
         await page.getByRole("button", { name: "Open account menu" }).click();
-        await page.getByRole("menuitem", { name: "Sign Out" }).click();
+        await page.getByRole("button", { name: "Sign Out", exact: true }).click();
       } else {
         await page.getByRole("button", { name: "Open menu", exact: true }).click();
+        await page.getByRole("dialog", { name: "Site menu" }).locator("summary").filter({ hasText: "Account & league settings" }).click();
         await page.getByRole("button", { name: "Sign Out", exact: true }).click();
       }
       releasePending();
-      await expect(page.getByRole("link", { name: "Sign in and connect Yahoo" })).toBeVisible();
+      await expect(page.getByRole("link", { name: "Sign in to check premium sync access" })).toBeVisible();
       await expect(summary).toHaveCount(0);
       await expect(page.getByText(/C: Private Center/)).toHaveCount(0);
       await expect(page.getByText(/Tomorrow Goalie/)).toHaveCount(0);
