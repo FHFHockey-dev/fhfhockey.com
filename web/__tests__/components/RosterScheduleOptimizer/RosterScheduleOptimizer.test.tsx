@@ -525,6 +525,51 @@ describe("active provider refresh scheduling", () => {
     state.visibility.mockReturnValue("hidden"); fireEvent(document, new Event("visibilitychange")); await advance();
     expect(window.localStorage.getItem(leaseKey)).toBeNull();
   });
+  describe("Yahoo diet upkeep lease (F6)", () => {
+    const leaseKey = "fhfh:rso:upkeep:v1:fixture-refresh-manager:fixture-league";
+    const diet = async (snapshot: PlanningSnapshot) => ({ ok: true, status: 200, json: async () => ({ success: true, snapshot, yahooDiet: true,
+      capabilities: { roster: true, availability: true, limitations: [] } }) });
+    const leaseReads = () => vi.mocked(Storage.prototype.getItem).mock.calls.filter(([key]) => key === leaseKey).length;
+    it("backs a lease-denied tab off to a bounded retry instead of spinning, and never fetches Yahoo while another tab holds it", async () => {
+      const state = setup(diet);
+      await advance(); expect(state.reads()).toBe(1);
+      window.localStorage.setItem(leaseKey, JSON.stringify({ tabId: "other-tab", until: Date.now() + 2 * 60 * 60_000 }));
+      vi.spyOn(Storage.prototype, "getItem");
+      // 30 minutes of denied upkeep: at most one lease check per retry interval, and no provider reads.
+      await advance(30 * 60_000);
+      expect(state.reads()).toBe(1);
+      expect(leaseReads()).toBeGreaterThan(0);
+      expect(leaseReads()).toBeLessThanOrEqual(2 * 26);
+      const before = leaseReads();
+      await advance(0); await advance(0); await advance(0);
+      expect(leaseReads()).toBe(before);
+    });
+    it("takes over within a bounded delay once the holder's lease lapses", async () => {
+      const state = setup(diet);
+      await advance(); expect(state.reads()).toBe(1);
+      window.localStorage.setItem(leaseKey, JSON.stringify({ tabId: "other-tab", until: Date.now() + 7 * 60_000 }));
+      await advance(6 * 60_000 + 30_000); expect(state.reads()).toBe(1);
+      // The lease lapses at 7 minutes; the next bounded retry (within a minute) takes over.
+      await advance(2 * 60_000); expect(state.reads()).toBe(2);
+      expect(JSON.parse(window.localStorage.getItem(leaseKey)!).tabId).not.toBe("other-tab");
+    });
+    it("takes over after the clock jumps past the holder's lease (sleep or clock change)", async () => {
+      const state = setup(diet);
+      await advance(); window.localStorage.setItem(leaseKey, JSON.stringify({ tabId: "other-tab", until: Date.now() + 60 * 60_000 }));
+      await advance(6 * 60_000); expect(state.reads()).toBe(1);
+      vi.setSystemTime(Date.now() + 2 * 60 * 60_000);
+      await advance(60_000); expect(state.reads()).toBe(2);
+    });
+    it("stops retrying after unmount and releases a held lease", async () => {
+      const state = setup(diet);
+      await advance(); window.localStorage.setItem(leaseKey, JSON.stringify({ tabId: "other-tab", until: Date.now() + 60 * 60_000 }));
+      await advance(6 * 60_000);
+      state.unmount();
+      vi.spyOn(Storage.prototype, "getItem");
+      await advance(30 * 60_000);
+      expect(leaseReads()).toBe(0); expect(state.reads()).toBe(1);
+    });
+  });
   it("pauses automatic permission retries and resumes polling after an explicit successful retry", async () => {
     const state = setup(async (snapshot, read) => read === 1 ? { ok: false, status: 403,
       json: async () => ({ success: false, code: "yahoo_access_denied", error: "Reconnect Yahoo and verify league access." }) } : success(snapshot));

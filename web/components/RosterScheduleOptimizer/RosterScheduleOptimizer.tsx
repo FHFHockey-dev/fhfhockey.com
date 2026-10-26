@@ -43,6 +43,8 @@ type Access = { eligible: boolean; capabilities: string[]; expiresAt?: string | 
 type RequestFeedback = NonNullable<PreservationProvider["refresh"]>;
 const PROVIDER_REFRESH_INTERVAL = 5 * 60_000;
 const ACCESS_CHECK_TIMEOUT = 15_000;
+/** A tab denied the upkeep lease checks again after this long; never immediately (Astra F6). */
+const UPKEEP_LEASE_RETRY_MS = 60_000;
 const OFFLINE_TEXT = "You are offline. Reconnect to refresh provider inputs; your selected plan is preserved.";
 /** A request that never reached the server. Browsers can misreport navigator.onLine, so only this means offline. */
 class NetworkFailure extends Error { constructor() { super(OFFLINE_TEXT); this.name = "NetworkFailure"; } }
@@ -581,7 +583,11 @@ export default function RosterScheduleOptimizer() {
       if (schedule.blocked) return;
       if (Date.now() < Math.max(schedule.nextAutoAt, schedule.cooldownUntil)) { scheduleNext(); return; }
       // With the diet flag on, another visible tab holding the lease does the timed upkeep for this league.
-      if (!initial && yahooDietUpkeep.current && !claimRsoUpkeepLease(leaseStorage(), leaseKey, upkeepTabId.current)) { scheduleNext(); return; }
+      if (!initial && yahooDietUpkeep.current && !claimRsoUpkeepLease(leaseStorage(), leaseKey, upkeepTabId.current)) {
+        // Rescheduling at the same due time would spin; wait a bounded interval before checking the lease again.
+        schedule.nextAutoAt = Math.max(schedule.nextAutoAt, Date.now() + UPKEEP_LEASE_RETRY_MS);
+        scheduleNext(); return;
+      }
       refreshing = true;
       await refreshProvider(controller.signal);
       refreshing = false;
