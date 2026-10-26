@@ -74,7 +74,8 @@ import {
   fetchTeamStrengthPrior,
 } from "../queries/team-context-queries";
 import type { MarketTypeSummary } from "../queries/market-queries";
-import { persistForgeGoalieProjection } from "./persistence-stage";
+import { persistForgeGoalieProjection, persistForgeReserveProjectionRows } from "./persistence-stage";
+import { buildReserveGoalieRow, forgeReservePassEnabled } from "../reserveProjections";
 import type {
   GameRow,
   GoalieRestSplitProfile,
@@ -100,6 +101,8 @@ export type GoalieStageCandidate = {
   seasonStartPctByGoalieId: Map<number, number>;
   seasonGamesPlayedByGoalieId: Map<number, number>;
   override: { goalieId: number; starterProb: number } | null;
+  /** The team's current goalies: each one other than the selected starter gets a reserve "if he starts" line. */
+  rosterGoalieIds?: number[];
 };
 
 export type SelectedGoalieProjection = {
@@ -823,6 +826,30 @@ export async function runPerGameGoalieStage(args: {
     };
 
     goalieRowsUpserted += await persistForgeGoalieProjection(goalieUpsert);
+
+    // Reserve pass: every other current goalie's own line if he starts, in its own table with no start chance; the
+    // team's goalie row above (and its wins) is unchanged.
+    const reserveGoalieRows = [];
+    for (const goalieId of forgeReservePassEnabled() ? c.rosterGoalieIds ?? [] : []) {
+      if (goalieId === selectedGoalieId) continue;
+      const inputs = scenarioInputs.get(goalieId) ?? await loadGoalieInputs(goalieId);
+      const model = computeGoalieProjectionModel({
+        projectedShotsAgainst: shotsAgainst,
+        starterProbability: 1,
+        projectedGoalsFor: adjustedTeamGoalsFor,
+        evidence: inputs.evidence,
+        leagueSavePct,
+        savePctAdjustment: inputs.savePctAdjustment,
+        teamWinProbabilityIfStarts: winIfStarts(inputs.modeledSavePct),
+      });
+      reserveGoalieRows.push(buildReserveGoalieRow({
+        runId, asOfDate, horizonGames, gameId: game.id, playerId: goalieId, teamId: c.teamId,
+        opponentTeamId: c.opponentTeamId, reason: "backup_goalie", horizonScalar: goalieHorizonTotalScalar,
+        model: { shotsAgainst, projectedSaves: model.projectedSaves, projectedGoalsAllowed: model.projectedGoalsAllowed,
+          shutoutProbability: model.shutoutProbability, modeledSavePct: model.modeledSavePct },
+      }));
+    }
+    if (reserveGoalieRows.length) await persistForgeReserveProjectionRows(reserveGoalieRows);
 
     selectedGoalieByTeamId.set(c.teamId, {
       goalieId: selectedGoalieId,

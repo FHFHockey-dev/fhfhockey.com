@@ -1,13 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 import { forecastCalendarPolicy } from "lib/player-forecasts/contributions";
-import { candidateHorizonPoints, gameForecastPoints } from "lib/rosterScheduleOptimizer/planning";
+import { candidateActivePoints, candidateHorizonPoints, gameForecastPoints } from "lib/rosterScheduleOptimizer/planning";
 import { withCurrentPlanningRead } from "lib/rosterScheduleOptimizer/currentPlanningRead";
 import { currentRsoUsePolicy } from "lib/player-forecasts/rsoUsePolicy";
 import type { PlanningData, PlanningGame, PlanningPlayer, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
 import { runHorizonFilter } from "lib/projections/releasedRunFence";
 import { STARTER_DECISION_SHARE, teamWinProbability } from "lib/projections/goalie/goalieOutcomes";
 import { buildForgeDailyBridgeForecasts, FORGE_DAILY_BRIDGE_SEASON_RATED, FORGE_DAILY_BRIDGE_VERSION, loadForgeDailyBridgeForecasts, opponentTilts, teamStrengthPriors, teamWinProbability as ledgerTeamWin, type ForgeDailyBridgeInputs } from "./forgeDailyBridge";
-import { compactBridgeForecasts, expandBridgeForecasts, fitBridgeWire, packPlanningSnapshots, unpackPlanningSnapshots, type BridgeForecastWire } from "./bridgeForecastWire";
+import { compactBridgeForecasts, expandBridgeForecasts, fitBridgeWire, jsonUtf8Bytes, packPlanningSnapshots, RESERVE_FORECAST_NOTES, reserveCodeOf, unpackPlanningSnapshots, type BridgeForecastWire } from "./bridgeForecastWire";
 import { preservationJson } from "lib/rosterScheduleOptimizer/workspace";
 import { resolveDailyBoardEvidence, type BoardGoalieEvidence } from "lib/projections/dailyBoardEvidence";
 import { provenSnapshotRow, unprovenSnapshotRow } from "lib/projections/externalInputProof.fixtures";
@@ -883,5 +883,165 @@ describe("FORGE daily bridge", () => {
       expect(fitBridgeWire(wire, envelope, bare - 1)).toBeNull();
       expect(fitBridgeWire(null, envelope, bare - 1)).toBeNull();
     });
+  });
+});
+
+describe("FORGE reserve lines in the bridge", () => {
+  const reserveSkater = (run: string, asOf: string, gameId: number, playerId: number, teamId: number, reason = "not_in_lineup") => {
+    const { proj_goals_pk, proj_assists_pk, proj_shots_pk, proj_toi_pk_seconds, proj_pim, proj_plus_minus, ...row } = skater(run, asOf, gameId, playerId, teamId);
+    return { ...row, player_class: "skater", conditioning: "if_dressed", reserve_reason: reason, proj_goals_es: 0.1, proj_assists_es: 0.12 };
+  };
+  const reserveGoalie = (run: string, asOf: string, gameId: number, playerId: number, teamId: number) => ({ run_id: run, as_of_date: asOf,
+    horizon_games: 1, game_id: gameId, player_id: playerId, team_id: teamId, player_class: "goalie", conditioning: "if_starts",
+    reserve_reason: "backup_goalie", proj_saves: 22, proj_goals_allowed: 3.1, proj_shots_against: 25.1, proj_shutout_prob: 0.03 });
+  const lineupNews = (gameId: number, playerId: number, dimension: "ev" | "availability", value: string, confirmed: boolean) => ({
+    gameId, teamId: 10, playerId, dimension, value, evidenceId: `e-${gameId}-${playerId}`, sourceKey: "fixture", sourceUrl: null,
+    publishedAt: "2026-10-19T15:00:00Z", receivedAt: "2026-10-19T15:00:00Z", confirmed });
+  const g3 = member("g3", 203, "TOR", 10, "goalie");
+  const reserveInputs = (extra: Partial<ForgeDailyBridgeInputs> = {}): ForgeDailyBridgeInputs => ({ ...inputs(),
+    goalieNews: { assertions: [], conflicts: [] },
+    // s2 is out of r2's lineup and in its reserve; s1 is in r2's lineup, so a reserve row for him must never be used;
+    // r1's reserve row for s2 is from an older run than his team's latest.
+    reserves: [reserveSkater("r2", "2026-10-19", 1, 102, 10), reserveSkater("r2", "2026-10-19", 1, 101, 10),
+      { ...reserveSkater("r1", "2026-10-18", 0, 102, 10), proj_goals_es: 9 }, reserveGoalie("r2", "2026-10-19", 1, 202, 10), reserveGoalie("r2", "2026-10-19", 1, 203, 10)],
+    ...extra });
+  const note = (forecast: { limitations: string[] }) => forecast.limitations.at(-1);
+  const points = (stats: Record<string, number | null>) => stats.POINTS;
+
+  it("gives a player outside the lineup his conditional line, counting 0 with a labelled unknown participation", () => {
+    const { forecasts, limitations } = buildForgeDailyBridgeForecasts(reserveInputs(), players, games, now, 20262027, policy);
+    const s2 = forecasts.filter(row => row.playerId === "s2");
+    expect(s2.map(row => row.gameId)).toEqual(["1", "2"]);
+    for (const row of s2) {
+      expect(row.conditionalStats).toMatchObject({ GOALS: 0.2, ASSISTS: 0.27, POINTS: 0.47 });
+      expect(Object.values(row.stats).every(value => value === null || value === 0)).toBe(true);
+      expect(row.appearanceProbability).toBeNull();
+      expect(row.startProbability).toBeNull();
+      expect(note(row)).toBe(RESERVE_FORECAST_NOTES["skater:no_lineup_evidence"]);
+      expect(row.revisionId).toBe(`${FORGE_DAILY_BRIDGE_VERSION}:r2`);
+    }
+    // The lineup line wins for s1: no reserve label and his own expectation.
+    const s1 = forecasts.filter(row => row.playerId === "s1");
+    expect(s1.every(row => reserveCodeOf(row) === null && points(row.stats)! > 0)).toBe(true);
+    expect(limitations.some(text => text.startsWith("FORGE reserve lines: 1 skaters"))).toBe(true);
+  });
+
+  it("settles dressing only on confirmed news for that game, and names every other state", () => {
+    const state = (news: ReturnType<typeof lineupNews>[], extra: Partial<ForgeDailyBridgeInputs> = {}) => {
+      const { forecasts } = buildForgeDailyBridgeForecasts(reserveInputs({ goalieNews: { assertions: news, conflicts: [] }, ...extra }), players, games, now, 20262027, policy);
+      const row = forecasts.find(item => item.playerId === "s2" && item.gameId === "1")!;
+      return { code: reserveCodeOf(row), appearance: row.appearanceProbability, points: points(row.stats) };
+    };
+    expect(state([lineupNews(1, 102, "ev", "L4", true)])).toEqual({ code: "skater:confirmed_lineup", appearance: 1, points: 0.47 });
+    expect(state([lineupNews(1, 102, "ev", "L4", false)])).toEqual({ code: "skater:projected_lineup", appearance: null, points: 0 });
+    expect(state([lineupNews(1, 102, "availability", "out", true)])).toEqual({ code: "skater:confirmed_out", appearance: 0, points: 0 });
+    expect(state([lineupNews(1, 102, "availability", "out", false)])).toEqual({ code: "skater:projected_scratch", appearance: null, points: 0 });
+    expect(state([lineupNews(1, 102, "availability", "return", true)])).toEqual({ code: "skater:return_reported", appearance: null, points: 0 });
+    expect(state([lineupNews(1, 102, "availability", "uncertain", false)])).toEqual({ code: "skater:uncertain", appearance: null, points: 0 });
+    // News for another game does not carry over.
+    expect(state([lineupNews(2, 102, "ev", "L4", true)]).code).toBe("skater:no_lineup_evidence");
+    expect(state([], { goalieNews: undefined }).code).toBe("skater:evidence_unavailable");
+    const conflicts = [{ gameId: 1, teamId: 10, playerId: 102, dimension: "ev", evidenceIds: ["a", "b"] }];
+    const { forecasts } = buildForgeDailyBridgeForecasts(reserveInputs({ goalieNews: { assertions: [lineupNews(1, 102, "ev", "L4", true)], conflicts } }), players, games, now, 20262027, policy);
+    expect(reserveCodeOf(forecasts.find(item => item.playerId === "s2" && item.gameId === "1")!)).toBe("skater:disputed");
+    const ruledOut = buildForgeDailyBridgeForecasts(reserveInputs({ reserves: [reserveSkater("r2", "2026-10-19", 1, 102, 10, "ruled_out")] }), players, games, now, 20262027, policy);
+    expect(reserveCodeOf(ruledOut.forecasts.find(item => item.playerId === "s2")!)).toBe("skater:ruled_out_at_run");
+  });
+
+  it("uses each goalie's own reserve line; an unknown start chance stays unknown and counts 0 starts", () => {
+    const { forecasts } = buildForgeDailyBridgeForecasts(reserveInputs(), [...players, g3], games, now, 20262027, policy);
+    const g2 = forecasts.find(row => row.playerId === "g2" && row.gameId === "1")!, g3Row = forecasts.find(row => row.playerId === "g3" && row.gameId === "1")!;
+    expect(g2.conditionalStats).toMatchObject({ SAVES_GOALIE: 22, GOALS_AGAINST_GOALIE: 3.1 });
+    expect(g2.startProbability).toBeGreaterThan(0);
+    expect(reserveCodeOf(g2)).toBeNull();
+    expect(g3Row).toMatchObject({ startProbability: null, confirmedStart: false, conditionalStats: { SAVES_GOALIE: 22, GAMES_STARTED: 1 },
+      stats: { SAVES_GOALIE: 0, GAMES_STARTED: 0 } });
+    expect(g3Row.appearanceProbability).toBeUndefined();
+    expect(note(g3Row)).toBe(RESERVE_FORECAST_NOTES["goalie:start_unknown"]);
+    // The pass off: the goalie with no share still gets nothing, as before.
+    const legacy = buildForgeDailyBridgeForecasts({ ...reserveInputs(), reserves: undefined }, [...players, g3], games, now, 20262027, policy);
+    expect(legacy.forecasts.some(row => row.playerId === "g3" || row.playerId === "s2")).toBe(false);
+  });
+
+  it("says so when the reserve rows could not be read", () => {
+    const { forecasts, limitations } = buildForgeDailyBridgeForecasts(reserveInputs({ reserves: null }), players, games, now, 20262027, policy);
+    expect(forecasts.some(row => row.playerId === "s2")).toBe(false);
+    expect(limitations).toContain("FORGE reserve lines could not be read, so players outside FORGE's projected lineups have no \"if he dresses\" line.");
+  });
+
+  it("keeps a strong reserve pickup among candidates with its conditional line, never adding that line to compared totals", async () => {
+    // s2 is a reserve with a strong "if he dresses" line (2 goals, 1 assist a game); s1, a lineup skater, is rostered
+    // with an open second C slot, so an added s2 would play every game.
+    const strong = { ...reserveSkater("r2", "2026-10-19", 1, 102, 10), proj_goals_es: 2, proj_goals_pp: 0, proj_assists_es: 1, proj_assists_pp: 0 };
+    const intent = { revision: 1, steps: [], protectedPlayerIds: [], excludedPlayerIds: [], goalieCoverage: "accept_risk" as const,
+      goalieWindow: "any" as const, goalieSplit: "mon_wed" as const, alternativeCount: 5 as const, objective: "outcome" as const };
+    const plan = async (news: ReturnType<typeof lineupNews>[]) => {
+      const { forecasts } = buildForgeDailyBridgeForecasts(reserveInputs({ reserves: [strong], goalieNews: { assertions: news, conflicts: [] } }),
+        players, games, now, 20262027, policy);
+      const upcoming = games.filter(row => row.date >= "2026-10-19");
+      const { wire } = compactBridgeForecasts(forecasts, { players, games: upcoming }, 20262027);
+      const revisions = [...new Set(forecasts.map(row => row.revisionId))].sort();
+      const data: PlanningData = { players, games: upcoming, forecasts: [], baselineSources: [], participationSources: [],
+        evidence: { schedule: { source: "fixture", asOf: now.toISOString(), seasonId: 20262027, completeness: "complete", limitations: [] } },
+        forecastManifest: { version: "planning-forecasts-v1", id: "current-read", seasonId: 20262027, asOf: now.toISOString(),
+          scheduleRevision: "schedule", rosterRevision: "roster", issuedRevisionIds: revisions, baselineChecksum: null,
+          requiredOpportunities: forecasts.length, forecastedOpportunities: forecasts.length, exclusionCounts: {},
+          rsoUsePolicy: { version: "rso-target-use-v1", revision: currentRsoUsePolicy().revision, bridgeRevisionIds: revisions } } };
+      const snapshot: PlanningSnapshot = { id: "snap", context: { provider: "manual", seasonId: 20262027, leagueId: "l", teamId: "t",
+        startDate: "2026-10-19", endDate: "2026-10-25", timeZone: "UTC", asOf: now.toISOString() },
+        players, games: upcoming, forecasts: [], roster: [{ playerId: "s1", position: "active" }], lockedAssignments: [], realized: {}, opponent: null,
+        rules: { lineupMode: "daily", rosterSlots: { C: 2, BN: 1 }, acquisitionTiming: "next_day", acquisitionCost: 1, periods: [],
+          scoring: { mode: "points", weights: { GOALS: 3, ASSISTS: 2 }, categories: [] },
+          goalieMinimum: { required: null, credited: null, counts: "unknown", penalty: "none" }, unsupported: [] },
+        evidence: { schedule: { source: "fixture", asOf: now.toISOString(), seasonId: 20262027, completeness: "complete", limitations: [] } } };
+      vi.useFakeTimers(); vi.setSystemTime(now);
+      vi.stubGlobal("fetch", vi.fn(async (_url: string, init: RequestInit) => ({ ok: true, json: async () => JSON.parse(JSON.stringify({
+        success: true, data, bridgeForecasts: wire, read: {
+          nonce: (init.headers as Record<string, string>)["X-RSO-Read-Nonce"], evaluatedAt: now.toISOString() } })) }) as Response));
+      try {
+        return await withCurrentPlanningRead(snapshot, {}, currentRsoUsePolicy().revision, new AbortController().signal,
+          (current, _data, readError) => { expect(readError).toBeNull();
+            const horizon = candidateHorizonPoints(current);
+            return { horizon, active: candidateActivePoints(current, intent, horizon), rows: current.forecasts }; });
+      } finally { vi.useRealTimers(); vi.unstubAllGlobals(); }
+    };
+    const unknown = await plan([]);
+    // A candidate with a known value (never "—"), and that value is the labelled 0, not his 2-goal line.
+    expect(unknown.horizon.get("s2")).toBe(0);
+    expect(unknown.active.get("s2")).toBe(0);
+    expect(unknown.horizon.get("s1")).toBeCloseTo(2 * (0.35 * 3 + 0.45 * 2));
+    // The conditional line and its label reach the planner intact for the candidate card.
+    const rows = unknown.rows.filter(row => row.playerId === "s2");
+    expect(rows.map(row => row.gameId)).toEqual(["1", "2"]);
+    for (const row of rows) {
+      expect(row.conditionalStats).toMatchObject({ GOALS: 2, ASSISTS: 1, POINTS: 3 });
+      expect(row.appearanceProbability).toBeNull();
+      expect(reserveCodeOf(row)).toBe("skater:no_lineup_evidence");
+    }
+    // Control: once accepted news confirms him in both lineups, the same open slot credits his full line (2 x 8 points).
+    const confirmed = await plan([lineupNews(1, 102, "ev", "L4", true), lineupNews(2, 102, "ev", "L4", true)]);
+    expect(confirmed.horizon.get("s2")).toBeCloseTo(16);
+    expect(confirmed.active.get("s2")).toBeCloseTo(16);
+  });
+
+  it("round-trips reserve rows through the compact wire exactly, and withholds all of them together when they do not fit", () => {
+    const built = buildForgeDailyBridgeForecasts(reserveInputs(), [...players, g3], games, now, 20262027, policy);
+    const { forecasts: left, wire } = compactBridgeForecasts(built.forecasts, { players: [...players, g3], games }, 20262027);
+    expect(left).toEqual([]);
+    expect(wire!.rows.filter(row => row.length === 9).length).toBe(built.forecasts.filter(row => reserveCodeOf(row)).length);
+    expect(expandBridgeForecasts(wire, { players: [...players, g3], games })).toEqual(built.forecasts);
+    // A response budget that fits the lineup rows but not the reserves drops every reserve row, not the late games.
+    const envelope = (value: BridgeForecastWire | null) => ({ bridgeForecasts: value });
+    const lineupOnly = { ...wire!, rows: wire!.rows.filter(row => row.length !== 9) };
+    const fitted = fitBridgeWire(wire, envelope, JSON.stringify(envelope(lineupOnly)).length + 400)!;
+    expect(fitted.bridgeForecasts!.rows).toEqual(lineupOnly.rows);
+    expect(fitted.bridgeForecasts!.limitations.at(-1)).toMatch(/^FORGE reserve lines for \d+ player-games were withheld/);
+    // The same rule in the bridge's own transport budget.
+    const full = built.forecasts.reduce((sum, row) => sum + jsonUtf8Bytes(row) + 1, 0);
+    const lineupBytes = built.forecasts.filter(row => !reserveCodeOf(row)).reduce((sum, row) => sum + jsonUtf8Bytes(row) + 1, 0);
+    const tight = buildForgeDailyBridgeForecasts(reserveInputs(), [...players, g3], games, now, 20262027, policy, undefined, Math.floor((full + lineupBytes) / 2));
+    expect(tight.forecasts.some(row => reserveCodeOf(row))).toBe(false);
+    expect(tight.forecasts.length).toBe(built.forecasts.filter(row => !reserveCodeOf(row)).length);
+    expect(tight.limitations.some(text => /^FORGE reserve lines for \d+ player-games were withheld/.test(text))).toBe(true);
   });
 });

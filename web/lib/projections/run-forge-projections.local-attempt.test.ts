@@ -21,10 +21,14 @@ const outputTables = ["forge_player_projections", "forge_team_projections", "for
 const analyticsTables = ["player_prediction_outputs", "game_prediction_outputs", "model_market_flags_daily"];
 
 /** Only HTTP is simulated: queries, SDK, capture, stages and persistence are real. */
-function fixture(failure?: "player" | "snapshot" | "publication") {
-  const players = [6, 9].flatMap(team => Array.from({ length: 19 }, (_, index) => ({
+function fixture(failure?: "player" | "snapshot" | "publication", options: { reserves?: boolean } = {}) {
+  const lineup = [6, 9].flatMap(team => Array.from({ length: 19 }, (_, index) => ({
     id: team * 100 + index + 1, team_id: team, position: index === 18 ? "G" : index < 12 ? "C" : "D",
   })));
+  // Reserves: two rostered skaters outside the line combination and a third goalie per club.
+  const players = [...lineup, ...(options.reserves ? [6, 9].flatMap(team => [
+    { id: team * 100 + 20, team_id: team, position: "C" }, { id: team * 100 + 21, team_id: team, position: "D" },
+    { id: team * 100 + 22, team_id: team, position: "G" }]) : [])];
   const historyDate = "2026-10-03";
   const tables: Record<string, Row[]> = {
     rolling_player_metric_support_payloads: [],
@@ -43,8 +47,8 @@ function fixture(failure?: "player" | "snapshot" | "publication") {
       team_abbreviation: team === 6 ? "BOS" : "OTT", opponent_abbreviation: team === 6 ? "OTT" : "BOS",
       start_time: `${date}T23:30:00.000Z`, game_status: "FUT", schedule_status: "OK", fetched_at: now, source_updated_at: now })),
     lineCombinations: [6, 9].map(team => ({ gameId: historyId, teamId: team,
-      forwards: players.filter(p => p.team_id === team && p.position === "C").map(p => p.id),
-      defensemen: players.filter(p => p.team_id === team && p.position === "D").map(p => p.id), goalies: [team * 100 + 19] })),
+      forwards: lineup.filter(p => p.team_id === team && p.position === "C").map(p => p.id),
+      defensemen: lineup.filter(p => p.team_id === team && p.position === "D").map(p => p.id), goalies: [team * 100 + 19] })),
     rolling_player_game_metrics: players.filter(p => p.position !== "G").flatMap(p => ["ev", "pp"].map(state => ({
       player_id: p.id, game_id: historyId, season: 20262027, strength_state: state, game_date: historyDate,
       toi_seconds_avg_last5: state === "ev" ? 800 : 100, toi_seconds_avg_all: state === "ev" ? 800 : 100,
@@ -62,7 +66,7 @@ function fixture(failure?: "player" | "snapshot" | "publication") {
     "player_forecast_lineup_assignments", "player_forecast_conflict_resolutions", "wgo_skater_stats", "player_stats_unified",
     "sustainability_trend_bands", "nhl_xg_team_rolling_aggregates", "nhl_team_data", "wgo_team_stats", "nst_team_all",
     "nst_team_stats", "wgo_goalie_stats", "goalie_start_projections", ...outputTables, ...analyticsTables,
-    "forge_runs", "player_forecast_source_observations"]) tables[table] = [];
+    "forge_runs", "player_forecast_source_observations", "forge_reserve_projections"]) tables[table] = [];
   const calls: Call[] = [];
   let published = 0;
   let snapshot: ForgeInputSnapshot | null = null;
@@ -220,6 +224,37 @@ describe("actual FORGE producer through fenced local transport", () => {
     expect(backend.snapshot!.inputProvenance!.issuedContexts![0].roster).toHaveLength(38);
     expect(backend.snapshot!.reads.length).toBeGreaterThan(20);
     expect(backend.published).toBe(1);
+  });
+
+  it("writes reserve lines only to their own table: lineup rows, team totals, goalie rows and the output hash are unchanged", async () => {
+    const strip = (rows: Row[]) => rows.map(({ updated_at, created_at, ...row }) => row);
+    const off = fixture(undefined, { reserves: true });
+    await run(true, off);
+    vi.resetModules();
+    vi.stubEnv("FORGE_RESERVE_PASS_ENABLED", "true");
+    const on = fixture(undefined, { reserves: true });
+    await run(true, on);
+    for (const table of outputTables) expect(strip(on.tables[table])).toEqual(strip(off.tables[table]));
+    expect(on.snapshot!.outputHash).toBe(off.snapshot!.outputHash);
+    expect(on.published).toBe(1);
+    const { readsExcludeExternalFantasy } = await import("./run-forge-projections");
+    expect(readsExcludeExternalFantasy(on.snapshot!.reads)).toBe(true);
+    expect(off.tables.forge_reserve_projections).toEqual([]);
+    const reserves = on.tables.forge_reserve_projections;
+    expect(reserves.map(row => [row.team_id, row.player_id, row.player_class, row.conditioning]).sort()).toEqual([
+      [6, 620, "skater", "if_dressed"], [6, 621, "skater", "if_dressed"], [6, 622, "goalie", "if_starts"],
+      [9, 920, "skater", "if_dressed"], [9, 921, "skater", "if_dressed"], [9, 922, "goalie", "if_starts"]]);
+    for (const row of reserves) {
+      expect(row).toMatchObject({ run_id: runId, game_id: gameId, horizon_games: 1, model_version: "forge-reserve-v1" });
+      expect(row.uncertainty).toMatchObject({ excluded_from_team_totals: true });
+      expect(row.uncertainty[row.player_class === "skater" ? "participation_probability" : "start_probability"]).toBeNull();
+    }
+    expect(reserves.filter(row => row.player_class === "skater").every(row => row.proj_goals_es > 0 && row.proj_toi_es_seconds > 0)).toBe(true);
+    expect(reserves.filter(row => row.player_class === "goalie").every(row => row.proj_saves > 0)).toBe(true);
+    // No reserve ever lands in a lineup table.
+    const reserveIds = new Set(reserves.map(row => row.player_id));
+    expect(on.tables.forge_player_projections.some(row => reserveIds.has(row.player_id))).toBe(false);
+    expect(on.tables.forge_goalie_projections.some(row => reserveIds.has(row.goalie_id))).toBe(false);
   });
 
   it("keeps the normal scheduled analytics replacement enabled", async () => {

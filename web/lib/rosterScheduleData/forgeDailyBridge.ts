@@ -4,6 +4,7 @@ import { loadDailyBoardEvidence, type DailyBoardEvidence } from "lib/projections
 import { buildSkaterModeledHeadTotals } from "lib/projections/modeledHeadTotals";
 import { excludeOffReleaseRuns, restrictRunsToHorizon } from "lib/projections/releasedRunFence";
 import { loadExternalInputProof } from "lib/projections/externalInputProof";
+import { forgeReservePassEnabled } from "lib/projections/reserveProjections";
 import { computeTeamStrengthContextAdjustment } from "lib/projections/calculators/team-context-adjustments";
 import { computeSkaterRestScheduleAdjustments } from "lib/projections/calculators/skater-adjustments";
 import { STARTER_DECISION_SHARE, teamWinProbability as forgeTeamWinProbability } from "lib/projections/goalie/goalieOutcomes";
@@ -11,7 +12,7 @@ import { DEFENSE_B2B_FATIGUE_BOOST, OPPONENT_AWAY_PENALTY, OPPONENT_B2B_PENALTY,
 import type { TeamStrengthPrior } from "lib/projections/types/run-forge-projections.types";
 import type { GameForecast, PlanningGame, PlanningPlayer, StatLine } from "lib/rosterScheduleOptimizer/planningTypes";
 import { pages, withinDeadline } from "./planningInputs";
-import { bridgeWireRowBytes, FORGE_DAILY_BRIDGE_VERSION, jsonUtf8Bytes } from "./bridgeForecastWire";
+import { bridgeWireRowBytes, FORGE_DAILY_BRIDGE_VERSION, jsonUtf8Bytes, RESERVE_FORECAST_NOTES, reserveAppearanceProbability, reserveCodeOf, type ReserveCode } from "./bridgeForecastWire";
 
 type Row = Record<string, any>;
 type Run = { runId: string; asOfDate: string; issuedAt: string; gitSha: string | null };
@@ -25,6 +26,10 @@ export const FORGE_DAILY_BRIDGE_BYTE_BUDGET = 2_500_000;
 /** Bytes the projections may take once the client rebuilds them: one snapshot plus players and games stays well
  * inside the 10 MB save check and, packed, inside every 4.5 MB request, response and browser-storage limit. */
 export const FORGE_DAILY_BRIDGE_EXPANDED_BYTE_BUDGET = 4_000_000;
+/** The same budget with the FORGE reserve pass on (reserve rows passed in), measured for full reserve coverage of a
+ * production-shaped week in forgeReservePayload.test.ts. The stored snapshot is unpacked, so this plus players and games
+ * must stay under the tightest unpacked check, the 8 MiB preservation backup, with room for workspace copies. */
+export const FORGE_RESERVE_EXPANDED_BYTE_BUDGET = 6_000_000;
 /** Yahoo skater stats FORGE does not project: per-game season rates stand in, and the evidence says so. */
 export const FORGE_DAILY_BRIDGE_SEASON_RATED = ["PENALTY_MINUTES", "PLUS_MINUS", "SH_GOALS", "SH_ASSISTS", "SH_POINTS", "GAME_WINNING_GOALS", "FACEOFFS_WON", "FACEOFFS_LOST"] as const;
 /** Start-chance floors for speculative goalie news (TJ may tune these). Confirmed is 1 and ruled out is 0. */
@@ -39,6 +44,7 @@ const DAY_MS = 86400000;
 const VALID_DAYS = 8;
 const FORECAST_LIMITATION = "Interim FORGE projection: the player's latest FORGE game line, reused for this game.";
 const SKATER_COLUMNS = "run_id,as_of_date,horizon_games,game_id,player_id,team_id,opponent_team_id,proj_goals_es,proj_goals_pp,proj_goals_pk,proj_assists_es,proj_assists_pp,proj_assists_pk,proj_shots_es,proj_shots_pp,proj_shots_pk,proj_toi_es_seconds,proj_toi_pp_seconds,proj_toi_pk_seconds,proj_hits,proj_blocks,proj_pim,proj_plus_minus";
+const RESERVE_COLUMNS = "run_id,as_of_date,horizon_games,game_id,player_id,team_id,opponent_team_id,player_class,conditioning,reserve_reason,proj_goals_es,proj_goals_pp,proj_assists_es,proj_assists_pp,proj_shots_es,proj_shots_pp,proj_toi_es_seconds,proj_toi_pp_seconds,proj_hits,proj_blocks,proj_saves,proj_goals_allowed,proj_shots_against,proj_shutout_prob";
 const GOALIE_COLUMNS = "run_id,as_of_date,horizon_games,game_id,goalie_id,team_id,opponent_team_id,starter_probability,proj_saves,proj_goals_allowed,proj_shots_against,proj_win_prob,proj_shutout_prob";
 
 const finite = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value);
@@ -60,7 +66,10 @@ export type ForgeDailyBridgeInputs = {
   /** `games` rows (id, date, homeTeamId, awayTeamId) around the window, for home ice and rest days. */
   teamGames?: Row[];
   /** `opponent_skater_allowed_by_position` rows (this season and last); absent until that view exists. */
-  positionAllowed?: Row[] };
+  positionAllowed?: Row[];
+  /** `forge_reserve_projections` rows (FORGE reserve pass) for the selected runs. Absent: the reserve pass is off and
+   * every path behaves as before. Null: it is on but the rows could not be read. */
+  reserves?: Row[] | null };
 /** An opponent's tilt toward forwards or defencemen: weight of last season and shrinkage, in games; clamp. */
 const TILT_LAST_SEASON_GAMES = 20, TILT_SHRINK_GAMES = 30, TILT_LIMIT = 0.15;
 type Tilt = { points: number; shots: number };
@@ -278,7 +287,7 @@ function goalieLine(row: Row): StatLine {
 /** Pure: no reads. Rows from runs not in `inputs.runs`, or from runs without external-input exclusion proof, are ignored. */
 export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, players: PlanningPlayer[], games: PlanningGame[],
   now: Date, seasonId: number, calendarPolicy: ForecastCalendarPolicy, byteBudget = FORGE_DAILY_BRIDGE_BYTE_BUDGET,
-  expandedByteBudget = FORGE_DAILY_BRIDGE_EXPANDED_BYTE_BUDGET): ForgeDailyBridgeResult {
+  expandedByteBudget = inputs.reserves === undefined ? FORGE_DAILY_BRIDGE_EXPANDED_BYTE_BUDGET : FORGE_RESERVE_EXPANDED_BYTE_BUDGET): ForgeDailyBridgeResult {
   const runs = new Map<string, Run>();
   let withheldRuns = 0;
   for (const row of inputs.runs) if (typeof row.run_id === "string" && /^\d{4}-\d{2}-\d{2}$/.test(row.as_of_date)
@@ -370,7 +379,8 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
     && game.scheduleRevision && Date.parse(game.startsAt) > now.getTime() && validForecastCalendarPolicy(calendarPolicy)
     && calendarLeadDay(game.startsAt, nowIso) < calendarPolicy.calendarDays);
   const forecasts: GameForecast[] = [];
-  const emit = (player: PlanningPlayer, game: PlanningGame, run: Run, stats: StatLine, startProbability: number | null, conditionalStats?: StatLine, confirmedStart = false) => {
+  const emit = (player: PlanningPlayer, game: PlanningGame, run: Run, stats: StatLine, startProbability: number | null, conditionalStats?: StatLine, confirmedStart = false, reserve?: ReserveCode) => {
+    const appearance = reserve ? reserveAppearanceProbability(reserve) : undefined;
     const expiresAt = new Date(Math.min(Date.parse(game.startsAt!), Date.parse(run.issuedAt) + VALID_DAYS * DAY_MS)).toISOString();
     if (Date.parse(expiresAt) <= now.getTime()) return;
     forecasts.push({ sourceKind: "detailed", cutoffAt: run.issuedAt, expiresAt, sourceWatermark: `${FORGE_DAILY_BRIDGE_VERSION}:${run.runId}`,
@@ -378,16 +388,77 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
         teamId: player.nhlTeamId!, scheduledAt: game.startsAt!, scheduleRevision: game.scheduleRevision!, rosterRevision: player.rosterRevision!,
         observedAt: run.issuedAt, scheduleSourceUpdatedAt: null, scheduleFetchedAt: null, identityUpdatedAt: null, membershipCreatedAt: [] },
       allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: false },
-      ...(conditionalStats ? { conditionalStats } : {}),
+      ...(conditionalStats ? { conditionalStats } : {}), ...(appearance !== undefined ? { appearanceProbability: appearance } : {}),
       playerId: player.id, gameId: game.id, stats, conditioning: "unconditional", startProbability, confirmedStart,
       revisionId: `${FORGE_DAILY_BRIDGE_VERSION}:${run.runId}`, issuedAt: run.issuedAt,
-      modelVersion: `${FORGE_DAILY_BRIDGE_VERSION}:${run.gitSha ?? "unknown"}`, limitations: [FORECAST_LIMITATION] });
+      modelVersion: `${FORGE_DAILY_BRIDGE_VERSION}:${run.gitSha ?? "unknown"}`,
+      limitations: reserve ? [FORECAST_LIMITATION, RESERVE_FORECAST_NOTES[reserve]] : [FORECAST_LIMITATION] });
   };
   const identified = players.filter(player => player.nhlId !== null && finite(player.nhlTeamId) && player.rosterRevision && player.teamAbbreviation);
-  let staleSkaters = 0, teamMismatch = 0, noPowerPlay = 0, unknownPowerPlay = 0;
+  let staleSkaters = 0, teamMismatch = 0, noPowerPlay = 0, unknownPowerPlay = 0, reserveSkaterGames = 0, reserveGoalieGames = 0;
   const unknownHeads = new Set<number>(), unsharedGoalies = new Set<number>(), unratedSkaters = new Set<number>();
+  const reserveSkaters = new Set<number>();
+  // Reserve rows count only from the team's latest lineup run, so a player is either in that run's lineup or its reserve,
+  // never both; a lineup line always wins.
+  const reserveRows = (inputs.reserves ?? []).filter(row => runs.has(row.run_id) && row.horizon_games === 1 && finite(row.player_id)
+    && finite(row.team_id) && row.as_of_date === teamLatestDate.get(row.team_id)
+    && (row.player_class === "skater" && row.conditioning === "if_dressed" || row.player_class === "goalie" && row.conditioning === "if_starts"));
+  const reserveLatest = latest(reserveRows, row => `${row.player_class}:${row.player_id}`);
+  const exactReserve = latest(reserveRows, row => `${row.player_class}:${row.game_id}:${row.player_id}`);
+  /** What the accepted news for this game says about a reserve skater dressing. Only confirmed news settles it. */
+  const skaterState = (game: PlanningGame, player: PlanningPlayer, reason: unknown): ReserveCode => {
+    if (!inputs.goalieNews) return "skater:evidence_unavailable";
+    const scope = (row: { gameId: number; teamId: number; playerId: number | null }) => row.gameId === Number(game.id)
+      && row.teamId === player.nhlTeamId && row.playerId === player.nhlId;
+    if (inputs.goalieNews.conflicts.some(row => scope(row) && (row.dimension === "availability" || row.dimension === "ev"))) return "skater:disputed";
+    const news = inputs.goalieNews.assertions.filter(scope);
+    const availability = news.find(row => row.dimension === "availability"), lineup = news.find(row => row.dimension === "ev");
+    if (availability?.value === "out") return availability.confirmed ? "skater:confirmed_out" : "skater:projected_scratch";
+    if (lineup) return lineup.confirmed ? "skater:confirmed_lineup" : "skater:projected_lineup";
+    if (availability?.value === "return") return "skater:return_reported";
+    if (availability) return "skater:uncertain";
+    return reason === "ruled_out" ? "skater:ruled_out_at_run" : "skater:no_lineup_evidence";
+  };
+  const zeroed = (line: StatLine): StatLine => Object.fromEntries(Object.entries(line).map(([key, value]) => [key, value === null ? null : 0]));
+  const emitReserve = (player: PlanningPlayer, game: PlanningGame, run: Run, line: StatLine, code: ReserveCode, startProbability: number | null = null) => {
+    // Confirmed in the lineup: the conditional line is his expectation. Otherwise plans count the labelled zero.
+    emit(player, game, run, code === "skater:confirmed_lineup" ? line : zeroed(line), startProbability, line, false, code);
+  };
   for (const player of identified.filter(row => row.playerClass === "skater")) {
     const latestRow = skaterLatest.get(player.nhlId);
+    const lineupCurrent = !!latestRow && latestRow.team_id === player.nhlTeamId && latestRow.as_of_date === teamLatestDate.get(latestRow.team_id);
+    const reserve = lineupCurrent ? undefined : reserveLatest.get(`skater:${player.nhlId}`);
+    if (reserve && reserve.team_id === player.nhlTeamId) {
+      const playerRates = rates?.get(player.nhlId!) ?? null;
+      const reserveLine = (row: Row) => skaterStats(withPowerPlayZeros(row).row, playerRates);
+      const baseLine = reserveLine(reserve);
+      const projectedAgainst = context(player.teamAbbreviation, opponentAbbreviation(reserve.opponent_team_id));
+      const emitted = forecasts.length;
+      for (const game of upcoming(player.teamAbbreviation!)) {
+        // A lineup line issued for this game itself (a later run that dressed him) wins over any reserve line.
+        const own = exactSkater.get(`${game.id}:${player.nhlId}`);
+        if (own && own.team_id === player.nhlTeamId) {
+          const special = withPowerPlayZeros(own), ownStats = skaterStats(special.row, playerRates);
+          if (ownStats) { emit(player, game, runs.get(own.run_id)!, ownStats, null); continue; }
+        }
+        const exact = exactReserve.get(`skater:${game.id}:${player.nhlId}`);
+        if (exact) {
+          const line = reserveLine(exact);
+          if (line) emitReserve(player, game, runs.get(exact.run_id)!, line, skaterState(game, player, exact.reserve_reason));
+          continue;
+        }
+        if (!baseLine) continue;
+        const facing = context(player.teamAbbreviation, game.opponent);
+        const scale = projectedAgainst && facing ? (1 + facing.goalsFor) / (1 + projectedAgainst.goalsFor) : 1;
+        const rest = restScale(gameContext(reserve.game_id, reserve.team_id), gameContext(game.id, reserve.team_id));
+        const tilt = tiltBetween(player, abbreviationById.get(reserve.opponent_team_id), game.opponent);
+        emitReserve(player, game, runs.get(reserve.run_id)!, scale === 1 && !rest && !tilt ? baseLine : retargetSkater(baseLine, scale, rest, tilt),
+          skaterState(game, player, reserve.reserve_reason));
+      }
+      if (forecasts.length > emitted) { reserveSkaters.add(player.nhlId!); reserveSkaterGames += forecasts.length - emitted; }
+      if (!baseLine && rates && !playerRates) unratedSkaters.add(player.nhlId!);
+      continue;
+    }
     if (!latestRow) continue;
     if (latestRow.team_id !== player.nhlTeamId) { teamMismatch++; continue; }
     // Missing from his team's latest run (scratched, injured or reassigned since): only lines issued for a game itself stand.
@@ -515,9 +586,14 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
     for (const goalie of goalies) {
       const p = probability.get(String(goalie.nhlId));
       const own = goalieLatest.get(goalie.nhlId);
-      const source = exact && exact.goalie_id === goalie.nhlId ? exact : own && own.team_id === teamId ? own : teamGoalieLatest.get(teamId);
+      // His own line first: this game's starter row, then his reserve line from the team's latest run, then his latest
+      // starter row; the team's starter line only when FORGE has none of his own.
+      const reserve = exactReserve.get(`goalie:${game.id}:${goalie.nhlId}`) ?? reserveLatest.get(`goalie:${goalie.nhlId}`);
+      const source = exact && exact.goalie_id === goalie.nhlId ? exact : reserve && reserve.team_id === teamId ? reserve
+        : own && own.team_id === teamId ? own : teamGoalieLatest.get(teamId);
       if (p === undefined) unsharedGoalies.add(goalie.nhlId!);
-      if (p === undefined || !source) continue;
+      // With the reserve pass off, a goalie with no start share gets nothing, as before.
+      if (!source || p === undefined && inputs.reserves === undefined) continue;
       const from = String(source.game_id) === game.id ? null : context(goalies[0].teamAbbreviation, opponentAbbreviation(source.opponent_team_id));
       const to = from ? context(goalies[0].teamAbbreviation, game.opponent) : null;
       const fromGame = String(source.game_id) === game.id ? null : gameContext(source.game_id, teamId), toGame = fromGame ? gameContext(game.id, teamId) : null;
@@ -527,11 +603,20 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
       const win = teamWin(game, teamId), startWin = win === null ? null : win.probability * STARTER_DECISION_SHARE;
       if (win === null) unknownWins++;
       const line = { ...forgeLine, WINS_GOALIE: round(startWin), LOSSES_GOALIE: startWin === null ? null : round(1 - startWin) };
+      // Unknown start chance: the "if he starts" line stays visible and plans count 0 starts, labelled as such.
+      if (p === undefined) { emitReserve(goalie, game, runs.get(source.run_id)!, line, "goalie:start_unknown"); reserveGoalieGames++; continue; }
       emit(goalie, game, runs.get(source.run_id)!, Object.fromEntries(Object.entries(line).map(([key, value]) => [key, value === null ? null : round(value * p)])),
         round(p), line, confirmedId === String(goalie.nhlId));
     }
   }
   forecasts.sort((a, b) => (a.issuedContext!.scheduledAt).localeCompare(b.issuedContext!.scheduledAt) || a.playerId.localeCompare(b.playerId) || a.gameId.localeCompare(b.gameId));
+  const size = (rows: GameForecast[]) => rows.reduce((total, row) => ({ wire: total.wire + bridgeWireRowBytes(row),
+    expanded: total.expanded + jsonUtf8Bytes(row) + 1 }), { wire: 0, expanded: 0 });
+  // Reserve lines are all or nothing: when the full set does not fit, every one is withheld (never the late games
+  // only) and the limitations say so, before lineup lines are trimmed as before.
+  const total = size(forecasts), reservesFit = total.wire <= byteBudget && total.expanded <= expandedByteBudget;
+  const reservesWithheld = reservesFit ? 0 : forecasts.filter(row => reserveCodeOf(row)).length;
+  if (reservesWithheld) forecasts.splice(0, forecasts.length, ...forecasts.filter(row => !reserveCodeOf(row)));
   let bytes = 0, expandedBytes = 0, kept = forecasts.length;
   for (const [index, forecast] of forecasts.entries()) {
     bytes += bridgeWireRowBytes(forecast); expandedBytes += jsonUtf8Bytes(forecast) + 1;
@@ -562,8 +647,12 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
     ...(unknownHeads.size ? [`${unknownHeads.size} skaters have a FORGE line with blank even-strength goals, assists or shots; such lines give no forecast.`] : []),
     ...(staleSkaters ? [`${staleSkaters} skaters missing from their team's latest FORGE run get no forecast (likely scratched, injured or moved).`] : []),
     ...(teamMismatch ? [`${teamMismatch} skaters whose latest FORGE line is for a different team than their current one get no forecast.`] : []),
-    ...(unsharedGoalies.size ? [`${unsharedGoalies.size} goalies with no start share get no forecast for games FORGE has not projected for them.`] : []),
+    ...(unsharedGoalies.size ? [inputs.reserves === undefined ? `${unsharedGoalies.size} goalies with no start share get no forecast for games FORGE has not projected for them.`
+      : `${unsharedGoalies.size} goalies have no start share; their start chance is unknown, so plans count 0 starts for them (a conservative assumption, not a zero chance) beside FORGE's "if he starts" line.`] : []),
+    ...(inputs.reserves === undefined ? [] : inputs.reserves ? [`FORGE reserve lines: ${reserveSkaters.size} skaters outside FORGE's projected lineup carry an "if he dresses" line (${reserveSkaterGames} player-games); dressing counts only when accepted news confirms it, otherwise plans count 0 and say why.${reserveGoalieGames ? ` ${reserveGoalieGames} goalie-games use an "if he starts" line with an unknown start chance.` : ""}`]
+      : ["FORGE reserve lines could not be read, so players outside FORGE's projected lineups have no \"if he dresses\" line."]),
     ...(priors.size && missingPriors.size ? [`${missingPriors.size} opponents have no team-strength prior, so lines projected against or moved to them skip the opponent adjustment.`] : []),
+    ...(reservesWithheld ? [`FORGE reserve lines for ${reservesWithheld} player-games were withheld because full coverage exceeds the planning transport budget, so players outside FORGE's projected lineups are not covered and a pickup search here is not complete.`] : []),
     ...(kept < forecasts.length ? [`Interim projections were trimmed to the first ${kept} of ${forecasts.length} player-games to fit the planning transport; later games stay schedule-only.`] : []),
   ];
   const servedTeams = new Set(forecasts.slice(0, kept).map(row => `${row.gameId}:${row.issuedContext!.teamId}`));
@@ -596,7 +685,7 @@ export async function loadForgeDailyBridgeForecasts(db: SupabaseClient<any>, pla
     .map(game => Number(game.id)).filter(Number.isSafeInteger))].slice(0, 500);
   const windowEnd = games.map(game => game.date).sort().at(-1) ?? to;
   const scheduleFrom = new Date(Date.parse(`${from}T12:00:00Z`) - 7 * DAY_MS).toISOString().slice(0, 10);
-  const [skaters, goalies, goalieShares, seasonTotals, goalieNews, teamPriors, lastSeasonTeams, teamGames, positionAllowed] = await Promise.all([
+  const [skaters, goalies, goalieShares, seasonTotals, goalieNews, teamPriors, lastSeasonTeams, teamGames, positionAllowed, reserves] = await Promise.all([
     pages(() => db.from("forge_player_projections").select(SKATER_COLUMNS, { count: "exact" }).in("run_id", runIds).eq("horizon_games", 1)
       .order("run_id").order("game_id").order("player_id"), readDeadline, 15000, row => [row.run_id, row.game_id, row.player_id]),
     pages(() => db.from("forge_goalie_projections").select(GOALIE_COLUMNS, { count: "exact" }).in("run_id", runIds).eq("horizon_games", 1)
@@ -619,6 +708,9 @@ export async function loadForgeDailyBridgeForecasts(db: SupabaseClient<any>, pla
     pages(() => db.from("opponent_skater_allowed_by_position").select("season_id,opponent,position_group,games,points,shots", { count: "exact" })
       .in("season_id", [seasonId, Number(previousSeason)]).order("season_id").order("opponent").order("position_group"),
     readDeadline, 400, row => [row.season_id, row.opponent, row.position_group]).catch(() => undefined),
+    // Read only with the reserve pass on; a failed read leaves reserves without a line and says so.
+    forgeReservePassEnabled() ? pages(() => db.from("forge_reserve_projections").select(RESERVE_COLUMNS, { count: "exact" }).in("run_id", runIds).eq("horizon_games", 1)
+      .order("run_id").order("game_id").order("player_id"), readDeadline, 15000, row => [row.run_id, row.game_id, row.player_id]).catch(() => null) : Promise.resolve(undefined),
   ]);
-  return buildForgeDailyBridgeForecasts({ runs: [...runs, ...withheld], skaters, goalies, goalieShares, seasonTotals, goalieNews, teamPriors, lastSeasonTeams, teamGames, positionAllowed }, players, games, now, seasonId, calendarPolicy);
+  return buildForgeDailyBridgeForecasts({ runs: [...runs, ...withheld], skaters, goalies, goalieShares, seasonTotals, goalieNews, teamPriors, lastSeasonTeams, teamGames, positionAllowed, reserves }, players, games, now, seasonId, calendarPolicy);
 }
