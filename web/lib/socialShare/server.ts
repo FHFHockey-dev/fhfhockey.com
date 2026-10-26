@@ -5,7 +5,7 @@ import { loadShareTeamRates } from "./teamRates";
 import { loadSharePlayerRecent, loadSharePlayerSources, RECENT_LIMITS } from "./playerSources";
 import { attachRecent, buildPlayerLayer } from "./players";
 import { buildTrendLayer } from "./trends";
-import { loadTrendLayer } from "./trendSources";
+import { loadTrendLayer, sparklineReadsEnabled } from "./trendSources";
 import { rankingPool, tierCountsOf, trimEditionPlayers } from "./tiers";
 import { localDate } from "lib/rosterScheduleOptimizer/planningDates";
 import { isSocialShareFormat, OPPONENT_RATE_FORMATS, SHARE_TIME_ZONE, UPSTREAM_READ_FORMATS, type SocialShareFormat, type SocialShareSnapshot } from "./types";
@@ -66,7 +66,7 @@ async function loadTuesdaySnapshot(start: string, selectedDates?: string[]) {
   } catch { throw new SocialShareRequestError("NHL schedule is unavailable. Refresh to retry.", 503); }
   const context = { season: currentSeason(start), fetchedAt: new Date().toISOString(), generatedAt: snapshot.generatedAt };
   snapshot.trends = snapshot.state === "ready" && snapshot.source.state === "ready"
-    ? await loadTrendLayer(context).catch(() => buildTrendLayer(null, context, "Trend sources could not be read."))
+    ? await loadTrendLayer(context, undefined, { sparklines: sparklineReadsEnabled() }).catch(() => buildTrendLayer(null, context, "Trend sources could not be read."))
     : buildTrendLayer(null, context, "Trend sources were not read because the schedule edition is not ready.");
   return snapshot;
 }

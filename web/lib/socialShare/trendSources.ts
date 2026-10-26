@@ -2,8 +2,8 @@ import publicSupabase from "lib/supabase/public-client";
 import { DEFAULT_SUPABASE_PAGE_SIZE, fetchAllSupabasePages } from "lib/supabase/pagination";
 import { localDate } from "lib/rosterScheduleOptimizer/planningDates";
 import type { ShareMapRow } from "./players";
-import { buildTrendLayer, deploymentShownIds, EV_COLUMNS, MOVER_WINDOW_DAYS, NAME_COLUMNS, OWNERSHIP_COLUMNS, PPC_COLUMNS, ROLLING_COLUMNS, shiftDate, shortlistIds, TREND_MAX_GAME_AGE_DAYS, trendShortlists,
-  type ShareEvRow, type ShareOwnershipRow, type SharePlayerNameRow, type SharePpcRow, type ShareRollingRow, type ShareTrendSources, type SourceRead, type TrendContext } from "./trends";
+import { buildTrendLayer, deploymentShownIds, EV_COLUMNS, MOVER_WINDOW_DAYS, moverShownKeys, NAME_COLUMNS, OWNERSHIP_COLUMNS, OWNERSHIP_SERIES_MAX_DAYS, ownershipSeriesDates, PPC_COLUMNS, ROLLING_COLUMNS, SERIES_COLUMNS, SERIES_LOOKBACK_DAYS, seriesShownIds, shiftDate, shortlistIds, TREND_MAX_GAME_AGE_DAYS, trendShortlists,
+  type ShareEvRow, type ShareSeriesRow, type ShareOwnershipRow, type SharePlayerNameRow, type SharePpcRow, type ShareRollingRow, type ShareTrendSources, type SourceRead, type TrendContext } from "./trends";
 import { SHARE_TIME_ZONE, type ShareTrendLayer } from "./types";
 
 /**
@@ -19,6 +19,8 @@ export const TREND_LIMITS = {
   mapChunk: 150,
   namesChunk: 100,
   evChunk: 20, evRowsPerPlayer: TREND_MAX_GAME_AGE_DAYS + 1,
+  /** Sparklines (TT-4, READ-PLAN v2 S1/M2): one row per player per date, so a 35-day read holds at most 36 rows per player. */
+  seriesChunk: 20, seriesRowsPerPlayer: SERIES_LOOKBACK_DAYS + 1, ownershipSeriesRowsPerKey: OWNERSHIP_SERIES_MAX_DAYS + 1,
   /** Statements in flight at once, across every stream (TJ's approved ceiling, READ-APPROVAL.md). */
   concurrency: 2,
 } as const;
@@ -97,7 +99,13 @@ async function readOwnership(client: TrendReadClient): Promise<ShareOwnershipRow
  * the shortlisted players; then EV rows for the shown deployment players. Each failed source becomes its sections'
  * "missing" state with the reason; only listed players leave the server.
  */
-export async function loadTrendLayer(context: TrendContext, client: TrendReadClient = publicSupabase): Promise<ShareTrendLayer> {
+/**
+ * Sparkline reads (READ-PLAN v2 S1/M2), approved by TJ for editor page loads (READ-APPROVAL addendum 2, TT-6): on by
+ * default. SOCIAL_SHARE_TUESDAY_SPARKLINES=0 on the server is the kill switch (no extra statement, no sparklines),
+ * so no Vercel setting has to change to ship them.
+ */
+export const sparklineReadsEnabled = (env: Record<string, string | undefined> = process.env) => env.SOCIAL_SHARE_TUESDAY_SPARKLINES !== "0";
+export async function loadTrendLayer(context: TrendContext, client: TrendReadClient = publicSupabase, options: { sparklines?: boolean } = {}): Promise<ShareTrendLayer> {
   const since = shiftDate(localDate(context.generatedAt, SHARE_TIME_ZONE), -TREND_MAX_GAME_AGE_DAYS);
   const [rolling, ownership] = await Promise.all([
     settle("Rolling game metrics", () => bounded<ShareRollingRow>("Rolling game metrics", TREND_LIMITS.rolling, (from, to) => client.from("rolling_player_game_metrics")
@@ -123,6 +131,16 @@ export async function loadTrendLayer(context: TrendContext, client: TrendReadCli
   const ev = await settle("Even-strength rolling rows", () => chunked(evIds, TREND_LIMITS.evChunk, chunk => bounded<ShareEvRow>("Even-strength rolling rows", chunk.length * TREND_LIMITS.evRowsPerPlayer, (from, to) => client.from("rolling_player_game_metrics")
     .select(EV_COLUMNS.join(","), { count: "exact" }).eq("season", context.season).eq("strength_state", "ev").in("player_id", chunk).gte("game_date", since)
     .order("player_id", { ascending: true }).order("game_date", { ascending: false }).range(from, to))));
-  const sources: ShareTrendSources = { rolling, ev, ppc, ownership, map, players };
+  if (!options.sparklines) return buildTrendLayer({ rolling, ev, ppc, ownership, map, players }, context);
+  // Sparklines (TT-4, flagged): the listed skaters' season rows for 35 days (S1), then the listed movers' daily rows P..D (M2).
+  const today = localDate(context.generatedAt, SHARE_TIME_ZONE), seriesIds = "rows" in players ? seriesShownIds(lists, players.rows) : [];
+  const series = await settle("Sparkline game rows", () => chunked(seriesIds, TREND_LIMITS.seriesChunk, chunk => bounded<ShareSeriesRow>("Sparkline game rows", chunk.length * TREND_LIMITS.seriesRowsPerPlayer, (from, to) => client.from("rolling_player_game_metrics")
+    .select(SERIES_COLUMNS.join(","), { count: "exact" }).eq("season", context.season).eq("strength_state", "all").in("player_id", chunk).gte("game_date", shiftDate(today, -SERIES_LOOKBACK_DAYS))
+    .order("player_id", { ascending: true }).order("game_date", { ascending: false }).range(from, to))));
+  const dates = ownershipSeriesDates(lists.previousDate, lists.latestDate), keys = "rows" in players && dates ? moverShownKeys(lists, players.rows) : [];
+  const ownershipSeries: SourceRead<ShareOwnershipRow> = !keys.length ? { rows: [] } : await settle("Ownership sparkline rows", () => bounded<ShareOwnershipRow>("Ownership sparkline rows", keys.length * TREND_LIMITS.ownershipSeriesRowsPerKey, (from, to) => client.from("yahoo_player_ownership_history")
+    .select(OWNERSHIP_COLUMNS.join(","), { count: "exact" }).in("player_key", keys).gte("ownership_date", dates![0]).lte("ownership_date", dates![dates!.length - 1])
+    .order("player_key", { ascending: true }).order("ownership_date", { ascending: true }).range(from, to)));
+  const sources: ShareTrendSources = { rolling, ev, ppc, ownership, map, players, series, ownershipSeries };
   return buildTrendLayer(sources, context);
 }
