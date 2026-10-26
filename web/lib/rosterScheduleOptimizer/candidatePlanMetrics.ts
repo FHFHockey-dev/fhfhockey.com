@@ -77,8 +77,9 @@ export function candidatePlanMetrics(snapshot: PlanningSnapshot, intent: PlanInt
   const originalIntent = { ...intent, steps: [] };
   const agpBaseline = evaluatePlan(snapshot, originalIntent, "agp", [], false);
   const outcomeBaseline = evaluatePlan(snapshot, originalIntent, "outcome", [], false);
-  const baseline = snapshot.rules.scoring.mode === "points" && outcomeBaseline.comparisonEligible
-    ? outcomeBaseline : agpBaseline;
+  // A capacity-chosen outcome lineup is the AGP lineup; only a quality-chosen one is a distinct outcome baseline.
+  const outcomeComparable = outcomeBaseline.comparisonEligible && outcomeBaseline.selectionMethod !== "schedule_capacity";
+  const baseline = snapshot.rules.scoring.mode === "points" && outcomeComparable ? outcomeBaseline : agpBaseline;
   const baselineLedger = contributionLedger(snapshot, baseline, originalIntent);
   // Only a league goalie minimum that the original roster may miss boosts goalie candidates.
   // Unknown progress counts as zero credited starts; leagues without a minimum get no boost.
@@ -145,7 +146,7 @@ export function candidatePlanMetrics(snapshot: PlanningSnapshot, intent: PlanInt
   const proposals = selected.map(() => 0);
   const finished = selected.map(() => false);
   let evaluated = 2;
-  const objectives = outcomeBaseline.comparisonEligible ? ["agp", "outcome"] as const : ["agp"] as const;
+  const objectives = outcomeComparable ? ["agp", "outcome"] as const : ["agp"] as const;
   const rosterCoverageKnown = snapshot.roster.every(row => snapshot.players.some(player => player.id === row.playerId && player.teamAbbreviation));
   // Same schedule admission as the planner: an expired witness gives no net games, even after a forecast refresh.
   const scheduleProblem = scheduleAdmissionProblem(snapshot);

@@ -9,6 +9,8 @@ import { loadPlanningData, normalizePlanningGames, parsePlanningDataQuery, publi
 import type { ContributionPlanningSnapshot, ForecastDiscoveryExclusion, PlanningPlayer } from "lib/rosterScheduleOptimizer/planningTypes";
 import { resolvePlanningContributions } from "lib/player-forecasts/planningContributions";
 import { forecastAllows } from "lib/rosterScheduleOptimizer/planning";
+import * as rsoPolicyModule from "lib/player-forecasts/rsoUsePolicy";
+import { ISSUED_PARTICIPATION_METHOD, issuedParticipationLineage } from "lib/player-forecasts/rsoUsePolicy";
 import { buildGoalieParticipationReceipt, buildFrozenWindowGoalieParticipationReceipt, buildFrozenWindowGoalieStartReceipt, type GoalieParticipationInput, buildRosterObservationGoalieParticipationReceipt, buildRosterObservationGoalieStartReceipt } from "lib/player-forecasts/modeledGoalieParticipation";
 import { GOALIE_PARTICIPATION_DATASET, FROZEN_WINDOW_GOALIE_PARTICIPATION_DATASET, FROZEN_WINDOW_GOALIE_START_DATASET, type GoalieParticipationBundle, ROSTER_OBSERVATION_GOALIE_PARTICIPATION_DATASET, ROSTER_OBSERVATION_GOALIE_START_DATASET } from "lib/player-forecasts/modeledGoalieParticipationStore";
 import { buildSkaterParticipationReceipt, buildFrozenWindowSkaterParticipationReceipt, type SkaterParticipationInput, buildRosterObservationSkaterParticipationReceipt } from "lib/player-forecasts/modeledSkaterParticipation";
@@ -31,6 +33,7 @@ import { ROLLING_WINDOW_GOALIE_PARTICIPATION_DATASET, ROLLING_WINDOW_GOALIE_STAR
 import { ROLLING_WINDOW_SKATER_PARTICIPATION_DATASET } from "lib/player-forecasts/modeledSkaterParticipationStore";
 import { fetchBoundedNhlSchedule } from "./source";
 import { normalizeNhlGameToTeamRows } from "./normalize";
+import { provenSnapshotRow, unprovenSnapshotRow } from "lib/projections/externalInputProof.fixtures";
 
 vi.mock("lib/supabase/server", () => ({ default: {} }));
 
@@ -189,10 +192,10 @@ describe("public RSO data boundary", () => {
 
   describe("FORGE model identity (D3)", () => {
     const environment = { FORGE_SKATER_MODEL_MODE: "baseline", NHL_XG_MODEL_VERSION: null };
-    const rsoRead = async (modelIdentity?: unknown) => {
+    const rsoRead = async (modelIdentity?: unknown, revisionId = "issued-1") => {
       const { db, tables } = newsDb([]);
       tables.fhfh_player_identities = [{ id: 7, nhl_player_id: 847001, canonical_name: "Skater", canonical_position: "L" }];
-      const issued = revision([]);
+      const issued = { ...revision([]), id: revisionId };
       issued.payload.goalies = []; issued.payload.modelMode = "baseline"; issued.payload.codeVersion = "sha-1";
       issued.payload.players = [{ game_id: 2026020001, team_id: 1, player_id: 847001, horizon_games: 1,
         as_of_date: "2026-10-10", run_id: "run-1", proj_hits: 3,
@@ -222,6 +225,32 @@ describe("public RSO data boundary", () => {
       expect(forecast.rsoTargetBindings?.HITS).toMatchObject({ codeVersion: "sha-1", modelMode: "baseline",
         configurationHash: identity.configurationHash, artifactHash: identity.artifactHash, targetKey: "HITS", horizonGames: 1 });
       for (const use of ["assignment", "totals", "comparison", "conditionalTieBreak"] as const) expect(forecastAllows(forecast, "HITS", use)).toBe(false);
+    });
+
+    it("binds review to the stable participation method, so the next revision of that method is admitted (Astra F3)", async () => {
+      const identity = forgeModelIdentity("sha-1", environment);
+      const first = await rsoRead(identity);
+      const binding = first.rsoTargetBindings!.HITS;
+      expect(binding.participationLineage).toBe(issuedParticipationLineage("skater", first.revisionId));
+      const { cutoffAt: _cutoff, ...scope } = binding;
+      const spy = vi.spyOn(rsoPolicyModule, "currentRsoUsePolicy").mockReturnValue({ version: "rso-target-use-v1", revision: "fictional-method-reviews",
+        revokedReviewIds: [], reviews: [{ id: "fictional-method-review", binding: { ...scope, participationLineage: `${ISSUED_PARTICIPATION_METHOD}:skater` },
+          reviewedAt: "2026-01-01T00:00:00Z", expiresAt: "2100-01-01T00:00:00Z", inputCutoffFrom: "2026-01-01T00:00:00Z", inputCutoffUntil: "2100-01-01T00:00:00Z",
+          allowedUses: { assignment: false, totals: true, comparison: true, conditionalTieBreak: false },
+          prospectiveEvidenceRef: "fictional-evidence", ownerApprovalRef: "fictional-approval" }] });
+      try {
+        for (const revisionId of ["issued-1", "issued-2"]) {
+          const row = await rsoRead(identity, revisionId);
+          expect(row.revisionId).toBe(revisionId);
+          expect(row.rsoTargetBindings?.HITS.participationLineage).toBe(issuedParticipationLineage("skater", revisionId));
+          expect(forecastAllows(row, "HITS", "totals")).toBe(true);
+          expect(forecastAllows(row, "HITS", "comparison")).toBe(true);
+          expect(forecastAllows(row, "HITS", "assignment")).toBe(false);
+        }
+        // A changed method (another model configuration) is not covered by the review.
+        const changed = await rsoRead(forgeModelIdentity("sha-1", { ...environment, NHL_XG_MODEL_VERSION: "v2" }), "issued-3");
+        expect(forecastAllows(changed, "HITS", "totals")).toBe(false);
+      } finally { spy.mockRestore(); }
     });
 
     it.each([
@@ -263,7 +292,7 @@ describe("public RSO data boundary", () => {
       forge_player_projections: [{ run_id: "run-b", as_of_date: "2026-10-09", horizon_games: 1, game_id: 2026020000, player_id: 847001, team_id: 1,
         proj_goals_es: 0.3, proj_goals_pp: 0.1, proj_assists_es: 0.4, proj_assists_pp: 0.1, proj_shots_es: 2, proj_shots_pp: 0.5,
         proj_toi_es_seconds: 900, proj_toi_pp_seconds: 120, proj_hits: 1, proj_blocks: 0.4 }],
-      forge_goalie_projections: [], goalie_start_projections: [] });
+      forge_goalie_projections: [], goalie_start_projections: [], player_forecast_source_observations: [provenSnapshotRow("run-b")] });
     const bridged = await loadPlanningData(db as never, publicQuery, { ...publicOptions, forgeDailyBridge: true, consumer: "rso" });
     expect(bridged.forecasts).toEqual([expect.objectContaining({ playerId: "7", gameId: "2026020001",
       revisionId: "forge-daily-bridge-v1:run-b", stats: expect.objectContaining({ GOALS: 0.4, POINTS: 0.9 }) })]);
@@ -279,6 +308,23 @@ describe("public RSO data boundary", () => {
       source: { kind: "empty", reason: "native_catalog_expired", environment: {} } })).forecasts).toEqual([]);
     vi.stubEnv("RSO_FORGE_DAILY_BRIDGE", "off");
     expect((await loadPlanningData(db as never, publicQuery, { ...publicOptions, forgeDailyBridge: true })).forecasts).toEqual([]);
+  });
+
+  it("keeps RSO schedule-only when the interim bridge's only run cannot prove it excluded third-party fantasy inputs", async () => {
+    const { db, tables, calls } = formDb([], []);
+    Object.assign(tables, {
+      forge_runs: [{ run_id: "run-b", as_of_date: "2026-10-09", created_at: "2026-10-09T15:00:00Z", git_sha: "abc" }],
+      forge_player_projections: [{ run_id: "run-b", as_of_date: "2026-10-09", horizon_games: 1, game_id: 2026020000, player_id: 847001, team_id: 1,
+        proj_goals_es: 0.3, proj_goals_pp: 0.1, proj_assists_es: 0.4, proj_assists_pp: 0.1, proj_shots_es: 2, proj_shots_pp: 0.5,
+        proj_toi_es_seconds: 900, proj_toi_pp_seconds: 120, proj_hits: 1, proj_blocks: 0.4 }],
+      forge_goalie_projections: [], goalie_start_projections: [], player_forecast_source_observations: [unprovenSnapshotRow("run-b")] });
+    const planning = await loadPlanningData(db as never, publicQuery, { ...publicOptions, forgeDailyBridge: true, consumer: "rso" });
+    expect(planning.forecasts).toEqual([]);
+    expect(planning.forecastManifest?.rsoUsePolicy?.bridgeRevisionIds).toEqual([]);
+    expect(planning.forecastManifest?.exclusionCounts.serving_disabled).toBeGreaterThan(0);
+    expect(planning.evidence.forecasts.limitations).toEqual(expect.arrayContaining([
+      "Interim FORGE projections: no FORGE run in the last week can prove it excluded third-party fantasy projections (1 withheld), so planning is schedule-only."]));
+    expect(calls.some(call => call.table === "forge_player_projections")).toBe(false);
   });
 
   it.each(["frozen", "roster observation", "rolling"].flatMap(family => ["skater", "goalie", "start"].map(kind => ({ family, kind }))))

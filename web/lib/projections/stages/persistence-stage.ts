@@ -43,6 +43,21 @@ export async function persistForgeGoalieProjection(
   return 1;
 }
 
+/** Reserve "if he dresses / if he starts" lines (reserveProjections.ts); never the lineup tables. */
+export async function persistForgeReserveProjectionRows(
+  rows: Array<Record<string, unknown>>,
+): Promise<number> {
+  if (rows.length === 0) return 0;
+  assertRunWriteAllowed();
+  const { error } = await supabase
+    .from("forge_reserve_projections" as any)
+    .upsert(rows as any, {
+      onConflict: "run_id,game_id,player_id,horizon_games",
+    });
+  if (error) throw error;
+  return rows.length;
+}
+
 export async function persistPerGameAnalyticsOutputs(args: {
   asOfDate: string;
   gameId: number;

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { deniedRsoUses, resolveRsoTargetUse, RSO_USE_POLICY, type RsoTargetUseBinding, type RsoUsePolicy } from "./rsoUsePolicy";
+import { deniedRsoUses, ISSUED_PARTICIPATION_METHOD, issuedParticipationLineage, resolveRsoTargetUse, restrictRsoForecast, RSO_USE_POLICY, type RsoTargetUseBinding, type RsoUsePolicy } from "./rsoUsePolicy";
+import type { GameForecast } from "../rosterScheduleOptimizer/planningTypes";
 
 const now = "2026-10-22T12:00:00Z";
 const binding: RsoTargetUseBinding = { component: "fictional-skater", modelMode: "baseline", codeVersion: "synthetic-code",
@@ -52,5 +53,61 @@ describe("RSO target/use reviews", () => {
     if (kind === "late_cutoff") review.inputCutoffUntil = binding.cutoffAt;
     if (kind === "duplicate") candidate.reviews = [review, { ...review, id: "another-review" }];
     expect(resolveRsoTargetUse(binding, now, candidate).allowedUses).toEqual(deniedRsoUses());
+  });
+});
+
+// Astra F3: a review approves a stable participation method; each issued row keeps its own lineage checks.
+describe("stable method approval with per-issuance lineage", () => {
+  const method = `${ISSUED_PARTICIPATION_METHOD}:skater`;
+  const methodPolicy: RsoUsePolicy = { ...policy, reviews: [{ ...policy.reviews[0], binding: { ...scope, participationLineage: method },
+    allowedUses: { assignment: false, totals: true, comparison: true, conditionalTieBreak: false } }] };
+  const issued = (revisionId: string) => ({ ...binding, participationLineage: issuedParticipationLineage("skater", revisionId) });
+  function row(revisionId: string, extra: Partial<GameForecast> = {}, lineageRevision = revisionId): GameForecast {
+    return { playerId: "p1", gameId: "g1", stats: { HITS: 2 }, conditioning: "unconditional", startProbability: null, confirmedStart: false,
+      revisionId, issuedAt: "2026-10-22T10:00:00Z", cutoffAt: binding.cutoffAt, expiresAt: "2026-10-22T23:00:00Z", modelVersion: binding.codeVersion,
+      limitations: [], allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: true },
+      issuedContext: { version: "forge-issued-context-v1", playerId: "p1", gameId: "g1", nhlPlayerId: 1, seasonId: 20262027, teamId: 1,
+        scheduledAt: "2026-10-22T23:00:00Z", scheduleRevision: "s", rosterRevision: "r", observedAt: "2026-10-22T10:00:00Z",
+        scheduleSourceUpdatedAt: null, scheduleFetchedAt: null, identityUpdatedAt: null, membershipCreatedAt: [] },
+      rsoTargetBindings: { HITS: issued(lineageRevision) }, ...extra };
+  }
+  const uses = (forecast: GameForecast, policyInUse = methodPolicy) => restrictRsoForecast(forecast, undefined, now, policyInUse).targetAllowedUses?.HITS;
+
+  it("admits every new revision issued under the reviewed method", () => {
+    for (const revision of ["rev-1", "rev-2"]) {
+      expect(resolveRsoTargetUse(issued(revision), now, methodPolicy)).toMatchObject({ reviewId: "fictional-review", allowedUses: { totals: true, comparison: true, assignment: false } });
+      expect(uses(row(revision))).toEqual({ assignment: false, totals: true, comparison: true, conditionalTieBreak: false });
+    }
+  });
+
+  it.each([
+    ["another participation method", { ...binding, participationLineage: `${ISSUED_PARTICIPATION_METHOD}:goalie@rev-2` }],
+    ["a newer method contract", { ...binding, participationLineage: "forge-issued-participation-v2:skater@rev-2" }],
+    ["another model configuration", { ...issued("rev-2"), configurationHash: "c".repeat(64) }],
+    ["an empty issuance", { ...binding, participationLineage: `${method}@` }],
+  ])("denies %s", (_label, changed) => {
+    expect(resolveRsoTargetUse(changed, now, methodPolicy).allowedUses).toEqual(deniedRsoUses());
+  });
+
+  it.each([
+    ["a binding from an earlier issuance", row("rev-2", {}, "rev-1")],
+    ["a foreign issued context", row("rev-2", { issuedContext: { ...row("rev-2").issuedContext!, playerId: "p2" } })],
+    ["no issued context", row("rev-2", { issuedContext: undefined })],
+    ["an expired issuance", row("rev-2", { expiresAt: now })],
+    ["an issuance from the future", row("rev-2", { issuedAt: "2026-10-22T13:00:00Z" })],
+    ["another producer's code version", row("rev-2", { modelVersion: "other-code" })],
+  ] as const)("still denies %s on each issued row", (_label, forecast) => {
+    expect(uses(forecast)).toEqual(deniedRsoUses());
+  });
+
+  it("still honours revocation and the empty production catalog", () => {
+    expect(uses(row("rev-2"), { ...methodPolicy, revokedReviewIds: ["fictional-review"] })).toEqual(deniedRsoUses());
+    expect(uses(row("rev-2"), RSO_USE_POLICY)).toEqual(deniedRsoUses());
+  });
+
+  it("keeps a whole-string lineage revision-bound (audit reproduction of the old format)", () => {
+    const old = { ...policy, reviews: [{ ...policy.reviews[0], binding: { ...scope, participationLineage: "revision-one:participation" } }] };
+    expect(resolveRsoTargetUse({ ...binding, participationLineage: "revision-one:participation" }, now, old).reviewId).toBe("fictional-review");
+    expect(resolveRsoTargetUse({ ...binding, participationLineage: "revision-two:participation" }, now, old).allowedUses).toEqual(deniedRsoUses());
   });
 });

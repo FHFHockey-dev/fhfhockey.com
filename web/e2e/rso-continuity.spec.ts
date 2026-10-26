@@ -60,8 +60,9 @@ test("1. a nonzero selected-move refresh, Undo and reopen keep moves, locks, rev
 
   // A second edit leaves Undo history to carry across the reopen.
   await page.getByRole("combobox", { name: "Window" }).selectOption({ index: 1 });
+  // Local persistence is asynchronous; wait for the edit to land before reading it.
+  await expect.poll(async () => (await savedWorkspace(page, RSO_FIXTURE_PRINCIPAL)).intent.goalieWindow).not.toBe("any");
   const edited = (await savedWorkspace(page, RSO_FIXTURE_PRINCIPAL)).intent.goalieWindow;
-  expect(edited).not.toBe("any");
   await page.reload();
   await expect.poll(provider.reads).toBe(3);
   const reopened = await savedWorkspace(page, RSO_FIXTURE_PRINCIPAL);
@@ -300,4 +301,32 @@ test("6c. an edit during a running plan supersedes it: one shared read, latest i
   await expect(page.getByRole("status").filter({ hasText: /obsolete|Planning failed|Current read unavailable/ })).toHaveCount(0);
   // Bounded: the superseded generation may re-read once, never once per edit.
   expect(reads).toBeLessThanOrEqual(2); expect(failed).toEqual([]);
+});
+
+test("7. a browser that misreports offline still checks access, reads and refreshes", async ({ page }, testInfo) => {
+  await installPlanningClock(page, { time: new Date("2026-10-11T12:00:00Z") });
+  await signIn(page);
+  // Chrome can report navigator.onLine === false while requests work (e.g. stuck DevTools network emulation).
+  await page.addInitScript(() => Object.defineProperty(Navigator.prototype, "onLine", { configurable: true, get: () => false }));
+  const players = roster();
+  const workspace = connectedWorkspace(players);
+  await seedWorkspace(page, workspace, RSO_FIXTURE_PRINCIPAL);
+  const provider = await connect(page, players);
+  const accessReads: string[] = [];
+  page.on("request", request => { if (request.url().endsWith("/api/v1/roster-schedule-optimizer/access")) accessReads.push(request.url()); });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/roster-schedule-optimizer");
+  await expect.poll(() => accessReads.length).toBeGreaterThan(0);
+  await expect.poll(provider.reads).toBe(1);
+  await expect(page.getByText("Provider inputs refreshed. Selected moves were kept.")).toBeVisible();
+  await expect(page.getByText("Checking access for provider synchronization…")).toHaveCount(0);
+  await expect(page.getByText(/You are offline/)).toHaveCount(0);
+  await expect(page.getByText("Loading schedule and forecasts…")).toHaveCount(0);
+  expect(await page.evaluate(() => navigator.onLine)).toBe(false);
+  await openPlanningSetup(page);
+  const refresh = page.getByRole("button", { name: "Refresh provider" });
+  await expect(refresh).toBeEnabled();
+  await refresh.click();
+  await expect.poll(provider.reads).toBe(2);
+  await page.screenshot({ path: testInfo.outputPath("case7-misreported-offline.png") });
 });

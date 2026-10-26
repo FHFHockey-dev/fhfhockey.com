@@ -277,6 +277,8 @@ export type PlanEvaluation = {
       comparisonEligibleCount: number; exclusions: ForecastOpportunityExclusion[] };
     explanationStatus?: "complete" | "partial";
   };
+  /** How the lineup was chosen: quality values under assignment permission, or schedule capacity without them. */
+  selectionMethod?: "quality" | "schedule_capacity";
   objective: PlanningObjective;
   steps: PlanStep[];
   legal: boolean;

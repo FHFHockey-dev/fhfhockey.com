@@ -82,7 +82,8 @@ test("connected refresh fixtures preserve nonzero intent through offline, cooldo
   await openPlanningSetup(page); await page.getByRole("combobox", { name: "Goalie choice" }).selectOption("cover"); const p2 = (await saved()).intent;
   await visibility("hidden"); await visibility("visible"); expect(reads).toBe(1);
   await page.getByRole("button", { name: "Refresh provider" }).click(); await expect(page.getByText(/Provider inputs partly refreshed/)).toBeVisible(); expect(reads).toBe(2); expect((await saved()).intent).toEqual(p2);
-  await network(false); await page.clock.fastForward(5 * 60_000); await expect(page.getByRole("button", { name: "Refresh provider" })).toBeDisabled(); expect(reads).toBe(2);
+  // A false navigator.onLine pauses timed polling but never blocks an explicit refresh (the flag can be wrong).
+  await network(false); await page.clock.fastForward(5 * 60_000); await expect(page.getByRole("button", { name: "Refresh provider" })).toBeEnabled(); expect(reads).toBe(2);
   await network(true); await visibility("hidden"); await visibility("visible"); await page.getByRole("button", { name: "Refresh provider" }).click(); await expect(page.getByText(/Provider refresh is paused until/)).toBeVisible(); expect(reads).toBe(2);
   await page.clock.fastForward(15 * 60_000 + 1000); await expect.poll(() => reads).toBe(3);
   await page.getByRole("button", { name: "Undo" }).click(); await expect.poll(async () => (await saved()).intent.goalieCoverage).toBe(workspace.intent.goalieCoverage); expect((await saved()).intent).toMatchObject({ steps: workspace.intent.steps, protectedPlayerIds: workspace.intent.protectedPlayerIds, goalieCoverage: workspace.intent.goalieCoverage });

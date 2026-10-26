@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { provenSnapshotRow, unprovenSnapshotRow } from "lib/projections/externalInputProof.fixtures";
 
 const { tables, fromMock, upsertMock, bridgeMock, planningMock, flags } = vi.hoisted(() => ({
   flags: { market: false },
@@ -34,6 +35,7 @@ vi.mock("lib/supabase/server", () => ({
           const data = (tables[table] ?? []).filter(row => filters.every(filter => filter(row)));
           return { data, count: data.length, error: null };
         },
+        then: (resolve: (value: unknown) => unknown) => builder.abortSignal().then(resolve),
         upsert: (rows: any[], options: any) => upsertMock(table, rows, options),
       };
       return builder;
@@ -62,6 +64,7 @@ describe("forge-served-forecast-snapshot", () => {
         { id: 101, date: "2026-10-21", seasonId: 20262027, startTime: "2026-10-21T12:00:00Z", homeTeamId: 4, awayTeamId: 3 },
         { id: 90, date: "2026-10-20", seasonId: 20262027, homeTeamId: 1, awayTeamId: 5 }],
       forge_runs: [{ run_id: "run-today", as_of_date: "2026-10-21" }],
+      player_forecast_source_observations: [provenSnapshotRow("run-today")],
       wgo_skater_stats: [{ player_id: 11, date: "2026-10-20", game_id: 90, season_id: 20262027, goals: 1, assists: 0, pp_points: 0, shots: 2, hits: 1, blocked_shots: 0 }],
       wgo_goalie_stats: [], nhl_team_data: [], nst_team_stats: [],
       prop_market_prices_daily: [["over", -120], ["under", 100]].map(([outcome_key, price_american]) => ({ snapshot_date: "2026-10-21", game_id: 100, player_id: 11,
@@ -90,6 +93,28 @@ describe("forge-served-forecast-snapshot", () => {
     expect(table).toBe("forge_served_forecast_ledger");
     expect(options).toEqual({ onConflict: "served_date,player_id,game_id,source" });
     expect(rows.find((row: any) => row.source === "bridge_exact")).toMatchObject({ player_id: 11, game_id: 100, team_rest_days: 1, run_id: "run-today" });
+    expect(out.body.bridgeRunProofs).toEqual([{ runId: "run-today", basis: "captured_snapshot", releaseSha: null, closureSha256: null }]);
+  });
+
+  it("writes no bridge row from a run whose snapshot lacks external-input exclusion proof", async () => {
+    tables.player_forecast_source_observations = [unprovenSnapshotRow("run-today")];
+    const out = res();
+    await handler({ method: "POST", query: { date: "2026-10-21" } } as any, out);
+    expect(out.statusCode).toBe(200);
+    expect(out.body).toMatchObject({ rowsUpserted: 2, countsBySource: { bridge_exact: 0, bridge_reaimed: 0, naive_last5: 1, naive_season: 1 } });
+    expect(upsertMock.mock.calls[0][1].some((row: any) => row.source.startsWith("bridge") || row.run_id === "run-today")).toBe(false);
+    expect(out.body.bridgeLimitations).toEqual([expect.stringContaining("1 interim FORGE player-games")]);
+  });
+
+  it("writes nothing when the proof read fails", async () => {
+    fromMock.mockImplementation((table: string) => { if (table === "player_forecast_source_observations") throw new Error("proof read failed"); });
+    const out = res();
+    try {
+      await handler({ method: "POST", query: { date: "2026-10-21" } } as any, out);
+    } finally { fromMock.mockReset(); }
+    expect(out.statusCode).toBe(500);
+    expect(out.body).toMatchObject({ success: false, stage: "forge_bridge_proof" });
+    expect(upsertMock).not.toHaveBeenCalled();
   });
 
   it("writes no market rows while the market source is off", async () => {
