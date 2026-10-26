@@ -37,10 +37,17 @@ import HealthyReserveAlert from "./HealthyReserveAlert";
 import InfoTooltip from "./InfoTooltip";
 import TeamScheduleContext from "./TeamScheduleContext";
 import { useCanonicalSchedule } from "./canonicalSchedule";
+import { claimRsoUpkeepLease, releaseRsoUpkeepLease, rsoUpkeepLeaseKey } from "lib/rosterScheduleOptimizer/upkeepLease";
 
 type Access = { eligible: boolean; capabilities: string[]; expiresAt?: string | null; grantingSources?: string[] };
 type RequestFeedback = NonNullable<PreservationProvider["refresh"]>;
 const PROVIDER_REFRESH_INTERVAL = 5 * 60_000;
+const ACCESS_CHECK_TIMEOUT = 15_000;
+/** A tab denied the upkeep lease checks again after this long; never immediately (Astra F6). */
+const UPKEEP_LEASE_RETRY_MS = 60_000;
+const OFFLINE_TEXT = "You are offline. Reconnect to refresh provider inputs; your selected plan is preserved.";
+/** A request that never reached the server. Browsers can misreport navigator.onLine, so only this means offline. */
+class NetworkFailure extends Error { constructor() { super(OFFLINE_TEXT); this.name = "NetworkFailure"; } }
 type ProviderRefreshSchedule = NonNullable<PreservationProvider["schedule"]>;
 type AccountRecord = { workspace: PlanningWorkspace; snapshot: PlanningSnapshot | null; version: number; updatedAt: string };
 type Tab = "itinerary" | "roster" | "candidates" | "matchup";
@@ -142,7 +149,7 @@ export default function RosterScheduleOptimizer() {
   }, []);
   const [providerRefresh, setProviderRefresh] = useState<RequestFeedback | null>(null);
   const [settledProviderRefresh, setSettledProviderRefresh] = useState(0);
-  const [online, setOnline] = useState(() => typeof navigator === "undefined" || navigator.onLine !== false);
+  const [networkFailed, setNetworkFailed] = useState(false);
   const [accountSave, setAccountSave] = useState<RequestFeedback | null>(null);
   const [actionFeedback, setActionFeedback] = useState<{ key: string; userId: string | undefined; text: string; intentRevision?: number } | null>(null);
   const [loadingData, setLoadingData] = useState(false);
@@ -194,25 +201,27 @@ export default function RosterScheduleOptimizer() {
     if (preservationRef.current.phase !== "idle" && preservationRef.current.phase !== "testing") return Promise.reject(new Error("Preservation has suspended application requests."));
     const request = fetch(url, options);
     pendingRequests.current.add(request);
-    void request.then(() => pendingRequests.current.delete(request), () => {
+    void request.then(() => { pendingRequests.current.delete(request); setNetworkFailed(false); }, () => {
       pendingRequests.current.delete(request);
       if (options?.method === "PUT" || url.endsWith("/access") || url.endsWith("/provider")) uncertainRequest.current = true;
     });
-    return request;
+    // fetch rejects with a TypeError only when the request could not be made at all.
+    return request.catch((error: unknown) => {
+      if (error instanceof TypeError) { setNetworkFailed(true); throw new NetworkFailure(); }
+      throw error;
+    });
   }, []);
   const history = useRef<PlanningWorkspace[]>([]);
   const workspaceElement = useRef<HTMLDivElement>(null);
   const providerAbort = useRef<AbortController | null>(null);
   const providerPending = useRef<{ key: string; userId: string; promise: Promise<boolean> } | null>(null);
+  // Set when the server reports the RSO Yahoo diet flag; only then does timed upkeep need the single-tab lease.
+  const yahooDietUpkeep = useRef(false);
+  const upkeepTabId = useRef(typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : String(Math.random()));
   const providerSchedule = useRef<ProviderRefreshSchedule | null>(null);
   const scheduleFor = useCallback((key: string, userId: string | undefined) => {
     if (providerSchedule.current?.key !== key || providerSchedule.current.userId !== userId) providerSchedule.current = { key, userId, nextAutoAt: 0, cooldownUntil: 0, delay: PROVIDER_REFRESH_INTERVAL, blocked: false };
     return providerSchedule.current;
-  }, []);
-  useEffect(() => {
-    const update = () => setOnline(navigator.onLine !== false);
-    window.addEventListener("online", update); window.addEventListener("offline", update);
-    return () => { window.removeEventListener("online", update); window.removeEventListener("offline", update); };
   }, []);
   const accountSaveRequest = useRef<{ key: string; userId: string } | null>(null);
   const reachInput = (view: Tab, selector: string) => {
@@ -393,8 +402,8 @@ export default function RosterScheduleOptimizer() {
   const refreshFeedback = providerRefresh?.key === accountKey && providerRefresh.userId === user?.id ? providerRefresh : null;
   const refreshUnavailable = viewingSaved ? "Saved inputs are read-only. Continue manually to work with this saved plan."
     : !user?.id ? "Sign in to check access for provider synchronization."
-      : !canSync ? checkingAccess ? "Checking access for provider synchronization…" : accessError ? "Provider refresh is disabled until access can be verified. Try again shortly." : PROVIDER_SYNC_UPSELL + " Your account connection is unchanged."
-        : !online ? "You are offline. Reconnect to refresh provider inputs; your selected plan is preserved."
+      : planHeld ? "Provider refresh is paused while preservation holds this plan."
+        : !canSync ? checkingAccess ? "Checking access for provider synchronization…" : networkFailed ? OFFLINE_TEXT : accessError ? "Provider refresh is disabled until access can be verified. Try again shortly." : PROVIDER_SYNC_UPSELL + " Your account connection is unchanged."
           : !workspace.context.teamId.trim() || workspace.context.teamId === "manual" ? "Select an owned team before refreshing provider inputs." : null;
   const refreshBusy = !refreshUnavailable && refreshFeedback?.state === "busy";
   const saveFeedback = accountSave?.key === accountKey && accountSave.userId === user?.id ? accountSave : null;
@@ -410,22 +419,30 @@ export default function RosterScheduleOptimizer() {
     let requestGeneration = 0;
     setAccess(null); setAccessError(null); setCheckingAccess(true);
     const load = async () => {
-      if (navigator.onLine === false || preservationRef.current.phase !== "idle") return;
+      // Always attempt the check (navigator.onLine can be wrong) and always settle it: never leave "checking" up.
+      if (preservationRef.current.phase !== "idle") { setCheckingAccess(false); return; }
+      setCheckingAccess(true);
       const generation = ++requestGeneration;
       const current = () => !controller.signal.aborted && generation === requestGeneration;
+      const attempt = new AbortController();
+      const stop = () => attempt.abort();
+      controller.signal.addEventListener("abort", stop, { once: true });
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const deadline = new Promise<never>((_, reject) => { timer = setTimeout(() => { attempt.abort(); reject(new Error("Access check timed out.")); }, ACCESS_CHECK_TIMEOUT); });
       try {
-        const headers = await authHeaders(); if (!current()) return;
-        const response = await trackedFetch("/api/v1/roster-schedule-optimizer/access", { signal: controller.signal, headers });
-        const body = response.ok ? await response.json() : null;
+        const headers = await Promise.race([authHeaders(), deadline]); if (!current()) return;
+        const response = await Promise.race([trackedFetch("/api/v1/roster-schedule-optimizer/access", { signal: attempt.signal, headers }), deadline]);
+        const body = response.ok ? await Promise.race([response.json(), deadline]) : null;
         if (current()) {
           setCheckingAccess(false);
           setAccess((body?.data ?? null) as Access | null);
           setAccessError(!response.ok && user?.id ? "Provider synchronization is unavailable because in-season access could not be verified. Your account connection is unchanged; try again shortly." : null);
         }
       } catch { if (current()) { setCheckingAccess(false); setAccess(null); setAccessError(user?.id ? "Provider synchronization is unavailable because access could not be checked. Your account connection is unchanged; try again shortly." : null); } }
+      finally { clearTimeout(timer); controller.signal.removeEventListener("abort", stop); }
     };
     void load();
-    const visible = () => { if (document.visibilityState === "visible" && navigator.onLine !== false) void load(); };
+    const visible = () => { if (document.visibilityState === "visible") void load(); };
     document.addEventListener("visibilitychange", visible);
     window.addEventListener("online", visible);
     const timer = setInterval(visible, 5 * 60_000);
@@ -469,7 +486,7 @@ export default function RosterScheduleOptimizer() {
   workspaceRef.current = workspace;
   const refreshProvider = useCallback((signal?: AbortSignal): Promise<boolean> => {
     const { context, userId } = providerRef.current;
-    if (!["idle", "testing"].includes(preservationRef.current.phase) || viewingSaved || context.provider === "manual" || !canSync || !userId || !context.teamId.trim() || context.teamId === "manual" || signal?.aborted || navigator.onLine === false) return Promise.resolve(false);
+    if (!["idle", "testing"].includes(preservationRef.current.phase) || viewingSaved || context.provider === "manual" || !canSync || !userId || !context.teamId.trim() || context.teamId === "manual" || signal?.aborted) return Promise.resolve(false);
     const requestKey = workspaceContextKey(context);
     if (providerAbort.current && !providerAbort.current.signal.aborted && providerPending.current?.key === requestKey && providerPending.current.userId === userId) return providerPending.current.promise;
     const schedule = scheduleFor(requestKey, userId);
@@ -488,8 +505,9 @@ export default function RosterScheduleOptimizer() {
     providerAuthorityRef.current.refresh = busy; setProviderRefresh(busy);
     const pending = (async () => { try {
       const headers = await authHeaders(); if (controller.signal.aborted || userId !== providerRef.current.userId) return false;
-      const response = await trackedFetch("/api/v1/roster-schedule-optimizer/provider", { method: "POST", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify({ provider: context.provider, teamId: context.teamId, startDate: context.startDate, endDate: context.endDate, timeZone: context.timeZone }), signal: controller.signal });
+      const response = await trackedFetch("/api/v1/roster-schedule-optimizer/provider", { method: "POST", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify({ provider: context.provider, teamId: context.teamId, startDate: context.startDate, endDate: context.endDate, timeZone: context.timeZone, refresh: signal ? "auto" : "manual" }), signal: controller.signal });
       const body = await response.json(); if (!currentRequest()) return false;
+      yahooDietUpkeep.current = body.yahooDiet === true;
       if (typeof body.retryAfterSeconds === "number" && Number.isFinite(body.retryAfterSeconds) && body.retryAfterSeconds >= 0) schedule.cooldownUntil = Math.max(schedule.cooldownUntil, Date.now() + body.retryAfterSeconds * 1000);
       else if (response.status === 429 || body.code === "yahoo_rate_limited") schedule.cooldownUntil = Math.max(schedule.cooldownUntil, Date.now() + PROVIDER_REFRESH_INTERVAL);
       schedule.blocked = response.status === 401 || response.status === 403 || body.code === "yahoo_reauth_required" || body.code === "yahoo_access_denied";
@@ -555,23 +573,42 @@ export default function RosterScheduleOptimizer() {
       if (!canAutoUpkeep || schedule.blocked || document.visibilityState !== "visible" || navigator.onLine === false) return;
       timer = setTimeout(() => void refresh(), Math.min(2_147_483_647, Math.max(0, Math.max(schedule.nextAutoAt, schedule.cooldownUntil) - Date.now())));
     };
-    const refresh = async () => {
+    const leaseKey = rsoUpkeepLeaseKey(user.id, workspace.context.leagueId);
+    const leaseStorage = () => { try { return window.localStorage; } catch { return null; } };
+    // Timed and event-driven upkeep stays conservative offline; the first load always attempts (onLine can be wrong).
+    const refresh = async (initial = false) => {
       clearTimer();
-      if (controller.signal.aborted || document.visibilityState !== "visible" || navigator.onLine === false || refreshing) return;
+      if (controller.signal.aborted || document.visibilityState !== "visible" || (!initial && navigator.onLine === false) || refreshing) return;
       const schedule = scheduleFor(accountKey, providerRef.current.userId);
       if (schedule.blocked) return;
       if (Date.now() < Math.max(schedule.nextAutoAt, schedule.cooldownUntil)) { scheduleNext(); return; }
+      // With the diet flag on, another visible tab holding the lease does the timed upkeep for this league.
+      if (!initial && yahooDietUpkeep.current && !claimRsoUpkeepLease(leaseStorage(), leaseKey, upkeepTabId.current)) {
+        // Rescheduling at the same due time would spin; wait a bounded interval before checking the lease again.
+        schedule.nextAutoAt = Math.max(schedule.nextAutoAt, Date.now() + UPKEEP_LEASE_RETRY_MS);
+        scheduleNext(); return;
+      }
       refreshing = true;
       await refreshProvider(controller.signal);
       refreshing = false;
       scheduleNext();
     };
-    void refresh();
-    const availability = () => { clearTimer(); if (document.visibilityState === "visible" && navigator.onLine !== false) void refresh(); };
+    void refresh(true);
+    const availability = () => {
+      clearTimer();
+      if (document.visibilityState === "visible" && navigator.onLine !== false) void refresh();
+      else releaseRsoUpkeepLease(leaseStorage(), leaseKey, upkeepTabId.current);
+    };
     document.addEventListener("visibilitychange", availability);
     window.addEventListener("online", availability); window.addEventListener("offline", availability);
     return () => { controller.abort(); providerAbort.current?.abort(); clearTimer(); document.removeEventListener("visibilitychange", availability); window.removeEventListener("online", availability); window.removeEventListener("offline", availability); };
-  }, [accountKey, user?.id, workspace.context.provider, workspace.context.teamId, canSync, canAutoUpkeep, viewingSaved, refreshProvider, scheduleFor, settledProviderRefresh, networkSuspended]);
+  }, [accountKey, user?.id, workspace.context.provider, workspace.context.teamId, workspace.context.leagueId, canSync, canAutoUpkeep, viewingSaved, refreshProvider, scheduleFor, settledProviderRefresh, networkSuspended]);
+  // The upkeep lease outlives refreshes (the effect above re-runs on each one); give it up on leaving this league or page.
+  useEffect(() => {
+    if (!user?.id) return;
+    const leaseKey = rsoUpkeepLeaseKey(user.id, workspace.context.leagueId), tabId = upkeepTabId.current;
+    return () => { try { releaseRsoUpkeepLease(window.localStorage, leaseKey, tabId); } catch { /* storage unavailable */ } };
+  }, [user?.id, workspace.context.leagueId]);
   useEffect(() => {
     const current = connected?.context;
     const connectedKey = current ? workspaceContextKey(current) : null;
@@ -620,7 +657,7 @@ export default function RosterScheduleOptimizer() {
       lockedAssignments: workspace.lockedAssignments ?? [], realized: workspace.realized, opponent: workspace.opponent, evidence: {} };
   }, [hydrated, workspace, supplemented, viewingSaved, account, yahooEligibility.receipt]);
   const executionOptions: CurrentPlanningOptions = {
-    allowRead: !networkSuspended && online && !planHeld,
+    allowRead: !networkSuspended && !planHeld,
     publicContext: !viewingSaved && (workspace.context.provider === "manual" || !supplemented),
     yahooEligibility: usingRetainedRoster ? yahooEligibility.receipt : null,
     yahooPrincipalId: workspace.context.provider === "yahoo" ? user?.id ?? null : null,

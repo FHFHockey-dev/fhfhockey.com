@@ -10,9 +10,10 @@ import { buildResolvedDataServingContract } from "lib/dashboard/freshness";
 import { buildCanonicalReaderCompatibility } from "lib/projections/compatibilityInventory";
 import { buildSkaterModeledHeadTotals } from "lib/projections/modeledHeadTotals";
 import * as forgeSkaterContext from "lib/projections/forgeSkaterContext";
+import { loadExternalInputProof, requireLatestExternalInputProvenRun, runProofDiagnostics,
+  type ExternalInputProof } from "lib/projections/externalInputProof";
 import {
   buildProjectionApiErrorResponse,
-  requireLatestSucceededRunId,
 } from "lib/projections/apiHelpers";
 
 type LineComboRecencyClass = "FRESH" | "SOFT_STALE" | "HARD_STALE" | "MISSING";
@@ -149,7 +150,7 @@ function isScopedRun(metrics: unknown): boolean {
 async function fetchFallbackRunWithPlayerData(
   targetDate: string,
   horizonGames: number,
-): Promise<{ runId: string; asOfDate: string } | null> {
+): Promise<{ runId: string; asOfDate: string; proof: ExternalInputProof } | null> {
   if (!supabase) throw new Error("Supabase server client not available");
   const oldestAllowedDate = shiftDateOnly(targetDate, -FALLBACK_MAX_AGE_DAYS);
   if (!oldestAllowedDate) return null;
@@ -189,7 +190,11 @@ async function fetchFallbackRunWithPlayerData(
             : 0) || a.index - b.index,
       )
       .map(({ row }) => row);
-    for (const row of rows) {
+    // A run without external-input exclusion proof is never a fallback.
+    const proof = rows.length
+      ? await loadExternalInputProof(supabase, rows.map((row) => row.run_id))
+      : new Map();
+    for (const row of rows.filter((candidate) => proof.has(candidate.run_id))) {
       const { count, error } = await supabase
         .from("forge_player_projections")
         .select("player_id", { count: "exact", head: true })
@@ -197,7 +202,7 @@ async function fetchFallbackRunWithPlayerData(
         .eq("horizon_games", horizonGames);
       if (error) throw error;
       if ((count ?? 0) > 0) {
-        return { runId: row.run_id, asOfDate: row.as_of_date };
+        return { runId: row.run_id, asOfDate: row.as_of_date, proof: proof.get(row.run_id) };
       }
     }
     return null;
@@ -242,13 +247,14 @@ export default async function handler(
     const horizonGames = parseHorizonGames(req.query.horizon);
     let resolvedDate = targetDate;
     let runId: string | null = null;
+    let runProof: ExternalInputProof | null = null;
     let fallbackApplied = false;
     let projectionsRaw: any[] = [];
     let missingRequestedHorizon = false;
 
-    // 1. Try to find a run for the requested date
+    // 1. Try to find a run for the requested date (only one proven free of external fantasy inputs)
     try {
-      runId = await requireLatestSucceededRunId(targetDate);
+      ({ runId, proof: runProof } = await requireLatestExternalInputProvenRun(targetDate));
     } catch (e) {
       if ((e as any)?.statusCode !== 404) throw e;
     }
@@ -303,6 +309,7 @@ export default async function handler(
         // Optimization check: if fallback points to same run (unlikely if today has 0 rows), don't fetch again
         if (fallback.runId !== runId) {
           runId = fallback.runId;
+          runProof = fallback.proof;
           resolvedDate = fallback.asOfDate;
           fallbackApplied = resolvedDate !== targetDate;
 
@@ -483,6 +490,8 @@ export default async function handler(
         missingRequestedHorizon,
         message: missingHorizonMessage ?? (servingBlocked ? serving.message : null),
         degradedProjectionSummary,
+        // What admitted the served run: captured snapshot, verified producer closure or verified legacy release.
+        runProof: runId ? runProofDiagnostics(runId, runProof) : null,
       },
       modelMetadata,
       intervalDefinitions: SKATER_INTERVAL_DEFINITIONS,

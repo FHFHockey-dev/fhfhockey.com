@@ -1001,6 +1001,26 @@
       "migrationClass": "feature",
       "rolloutGate": "FORGE improvements task 6.3 (TJ approved 2026-10-22 in Ledger lane session, Chef local_08a0bf1c: apply migration 99, then turn LEDGER_MARKET_ENABLED on for the next release): widens forge_served_forecast_ledger's source check to add 'market' and adds the nullable jsonb column market_lines. Readers/writers: forge-served-forecast-snapshot (market rows, upserted after the other sources) and /api/v1/forge/scoreboard (select of market_lines), both behind LEDGER_MARKET_ENABLED (lib/player-forecasts/servedForecastLedger.ts). Grants are table-level from migration 97; the scoreboard view is unaffected. Rollback: delete market rows, drop market_lines, restore the five-source check.",
       "stateEvidence": "Production ledger version 20261022181002 name forge_served_forecast_ledger_market_source (applied 2026-10-22 by explicit TJ approval). Pre-check: check constraint forge_served_forecast_ledger_source_check held the five sources; market_lines absent; 1,596 rows. Readback: six-source check including 'market'; market_lines jsonb nullable; 1,596 rows; grants service_role INSERT/SELECT/UPDATE only, no anon or authenticated."
+    },
+    {
+      "order": 100,
+      "path": "supabase/migrations/20261026200000_rso_yahoo_past_lineups.sql",
+      "sha256": "bec40282d7b923960d859160ebf079c848d19a8ab860968361ef936b650c1603",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "pending",
+      "migrationClass": "feature",
+      "rolloutGate": "RSO Yahoo diet decision D4 (TJ pop-up 2026-10-26, commit 3795abb43): a private table for Yahoo past lineups, read only behind RSO_YAHOO_DIET (off). Hosted apply needs TJ's separate explicit approval; no migration command was run.",
+      "stateEvidence": "Local source only; no hosted ledger or apply receipt. Lane receipt: tasks/artifacts/rso-yahoo-diet-2026-10-26/."
+    },
+    {
+      "order": 101,
+      "path": "supabase/migrations/20261027090000_forge_reserve_projections.sql",
+      "sha256": "1ca5816e835da899833499cc95d345a9253227ea176898c1ca2ba382fdd55da8",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "pending",
+      "migrationClass": "feature",
+      "rolloutGate": "FORGE reserve pass (TJ pop-up 2026-10-26: separate table; commits 074694095, a02159b64): creates forge_reserve_projections, with RLS public read, SELECT only for anon/authenticated after revoke all, and service_role read/write. Written and read only behind forgeReservePassEnabled() (off). Apply before turning the flag on (C7 R43 N1). Hosted apply needs TJ's separate explicit approval; no migration command was run.",
+      "stateEvidence": "Local source only; no hosted ledger or apply receipt. Receipt: tasks/artifacts/forge-week-coverage-2026-10-26/RESERVE-PASS-RECEIPT.md; review C7 R43."
     }
   ],
   "sourceExtensionApproval": {

@@ -6,7 +6,36 @@ export const BRIDGE_FORECAST_WIRE_VERSION = "forge-daily-bridge-wire-v1" as cons
 /** Run fields every row of one FORGE run shares: revisionId, sourceWatermark, modelVersion, issuedAt, cutoffAt. */
 type WireRun = [revisionId: string, sourceWatermark: string, modelVersion: string, issuedAt: string, cutoffAt: string];
 type WireRow = [playerId: string, gameId: string, run: number, expiresAt: string, stats: StatLine,
-  startProbability: number | null, confirmedStart: boolean, conditionalStats: StatLine | null];
+  startProbability: number | null, confirmedStart: boolean, conditionalStats: StatLine | null, reserve?: ReserveCode];
+
+const COUNTS_ZERO = "plans count 0 (a conservative assumption, not a zero chance); the conditional line is kept separately";
+/** FORGE reserve-pass rows: a skater outside the projected lineup ("if he dresses") or a goalie with no start chance
+ * ("if he starts"). Each state says what the evidence for that game shows; only confirmed news settles participation. */
+export const RESERVE_FORECAST_NOTES = {
+  "skater:confirmed_lineup": "FORGE reserve line: accepted news confirms him in this game's lineup, so his 'if he dresses' line counts in full.",
+  "skater:confirmed_out": "FORGE reserve line: accepted news confirms him out of this game, so it counts 0; his 'if he dresses' line is kept separately.",
+  "skater:projected_lineup": `FORGE reserve line: unconfirmed news names him in this game's lineup; dressing is unknown, so ${COUNTS_ZERO}.`,
+  "skater:projected_scratch": `FORGE reserve line: unconfirmed news lists him as a scratch for this game; dressing is unknown, so ${COUNTS_ZERO}.`,
+  "skater:return_reported": `FORGE reserve line: a return was reported, which does not guarantee he dresses; dressing is unknown, so ${COUNTS_ZERO}.`,
+  "skater:uncertain": `FORGE reserve line: availability news for this game is uncertain; dressing is unknown, so ${COUNTS_ZERO}.`,
+  "skater:disputed": `FORGE reserve line: lineup news for this game conflicts; dressing is unknown, so ${COUNTS_ZERO}.`,
+  "skater:ruled_out_at_run": `FORGE reserve line: ruled out when FORGE ran, with no news for this game; dressing is unknown, so ${COUNTS_ZERO}.`,
+  "skater:no_lineup_evidence": `FORGE reserve line: not in FORGE's projected lineup and no lineup news for this game; dressing is unknown, so ${COUNTS_ZERO}.`,
+  "skater:evidence_unavailable": `FORGE reserve line: lineup news could not be read; dressing is unknown, so ${COUNTS_ZERO}.`,
+  "goalie:start_unknown": `FORGE goalie line: no start share or news for this game, so his start chance is unknown and ${COUNTS_ZERO}.`,
+} as const;
+export type ReserveCode = keyof typeof RESERVE_FORECAST_NOTES;
+const RESERVE_CODE_BY_NOTE = new Map(Object.entries(RESERVE_FORECAST_NOTES).map(([code, note]) => [note as string, code as ReserveCode]));
+const isReserveCode = (value: unknown): value is ReserveCode => typeof value === "string" && value in RESERVE_FORECAST_NOTES;
+/** A reserve skater's chance to dress as the evidence states it: 1 or 0 only when accepted news confirms it. Goalies
+ * carry no appearance field (their start chance is the forecast's own startProbability). */
+export function reserveAppearanceProbability(code: ReserveCode): number | null | undefined {
+  return code.startsWith("goalie:") ? undefined : code === "skater:confirmed_lineup" ? 1 : code === "skater:confirmed_out" ? 0 : null;
+}
+/** The reserve code a forecast carries in its last limitation, if any. */
+export function reserveCodeOf(forecast: Pick<GameForecast, "limitations">): ReserveCode | null {
+  return RESERVE_CODE_BY_NOTE.get(forecast.limitations.at(-1) ?? "") ?? null;
+}
 /**
  * Interim bridge projections repeat the same provenance on every player-game: the issued context is the player's and
  * game's own identity, and the run fields are shared. The wire keeps only what differs per row and the client
@@ -32,15 +61,17 @@ function lookup({ players, games }: Inputs) {
 }
 
 function expandRow(row: WireRow, run: WireRun, limitations: string[], seasonId: number, player: PlanningPlayer, game: PlanningGame): GameForecast {
-  const [playerId, gameId, , expiresAt, stats, startProbability, confirmedStart, conditionalStats] = row;
+  const [playerId, gameId, , expiresAt, stats, startProbability, confirmedStart, conditionalStats, reserve] = row;
+  const appearance = reserve ? reserveAppearanceProbability(reserve) : undefined;
   const [revisionId, sourceWatermark, modelVersion, issuedAt, cutoffAt] = run;
   return { sourceKind: "detailed", cutoffAt, expiresAt, sourceWatermark,
     issuedContext: { version: "forge-issued-context-v1", playerId, gameId, nhlPlayerId: player.nhlId!, seasonId,
       teamId: player.nhlTeamId!, scheduledAt: game.startsAt!, scheduleRevision: game.scheduleRevision!, rosterRevision: player.rosterRevision!,
       observedAt: issuedAt, scheduleSourceUpdatedAt: null, scheduleFetchedAt: null, identityUpdatedAt: null, membershipCreatedAt: [] },
     allowedUses: { ...ALLOWED_USES }, ...(conditionalStats ? { conditionalStats } : {}),
+    ...(appearance !== undefined ? { appearanceProbability: appearance } : {}),
     playerId, gameId, stats, conditioning: "unconditional", startProbability, confirmedStart,
-    revisionId, issuedAt, modelVersion, limitations: [...limitations] };
+    revisionId, issuedAt, modelVersion, limitations: reserve ? [...limitations, RESERVE_FORECAST_NOTES[reserve]] : [...limitations] };
 }
 
 /** Moves bridge rows the client can rebuild exactly into the wire; every other forecast stays as it is. */
@@ -50,12 +81,15 @@ export function compactBridgeForecasts(forecasts: GameForecast[], inputs: Inputs
   let limitations: string[] | null = null;
   for (const forecast of forecasts) {
     const match = forecast.revisionId?.startsWith(`${FORGE_DAILY_BRIDGE_VERSION}:`) ? find(forecast.playerId, forecast.gameId) : null;
-    limitations ??= match ? forecast.limitations : null;
+    // A reserve row's own note is its last limitation; the shared limitations are the rest.
+    const reserve = match ? reserveCodeOf(forecast) : null;
+    limitations ??= match ? reserve ? forecast.limitations.slice(0, -1) : forecast.limitations : null;
     if (!match || !forecast.expiresAt || !forecast.sourceWatermark || !forecast.modelVersion || !forecast.cutoffAt || !limitations) { kept.push(forecast); continue; }
     const run: WireRun = [forecast.revisionId, forecast.sourceWatermark, forecast.modelVersion, forecast.issuedAt, forecast.cutoffAt];
     const index = runIndex.get(canonical(run)) ?? runs.length;
     const row: WireRow = [forecast.playerId, forecast.gameId, index, forecast.expiresAt, forecast.stats,
       forecast.startProbability, forecast.confirmedStart, forecast.conditionalStats ?? null];
+    if (reserve) row.push(reserve);
     // Only rows the client rebuilds exactly leave the forecast list, so the wire is lossless.
     if (canonical(expandRow(row, run, limitations, seasonId, match.player, match.game)) !== canonical(forecast)) { kept.push(forecast); continue; }
     if (index === runs.length) { runs.push(run); runIndex.set(canonical(run), index); }
@@ -77,8 +111,9 @@ export function expandBridgeForecasts(wire: unknown, inputs: Inputs): GameForeca
     || !runs.every(run => Array.isArray(run) && run.length === 5 && run.every(isText))) return [];
   const find = lookup(inputs), result: GameForecast[] = [];
   for (const row of rows) {
-    if (!Array.isArray(row) || row.length !== 8) continue;
-    const [playerId, gameId, run, expiresAt, stats, startProbability, confirmedStart, conditionalStats] = row;
+    if (!Array.isArray(row) || row.length !== 8 && row.length !== 9) continue;
+    const [playerId, gameId, run, expiresAt, stats, startProbability, confirmedStart, conditionalStats, reserve] = row;
+    if (row.length === 9 && !isReserveCode(reserve)) continue;
     if (!isText(playerId) || !isText(gameId) || !Number.isSafeInteger(run) || !runs[run] || !isText(expiresAt) || !isStatLine(stats)
       || !(startProbability === null || typeof startProbability === "number" && startProbability >= 0 && startProbability <= 1)
       || typeof confirmedStart !== "boolean" || !(conditionalStats === null || isStatLine(conditionalStats))) continue;
@@ -95,12 +130,15 @@ export function jsonUtf8Bytes(value: unknown): number {
 
 /** Wire size of one forecast as the bridge budget counts it. */
 export function bridgeWireRowBytes(forecast: GameForecast): number {
+  const reserve = reserveCodeOf(forecast);
   return jsonUtf8Bytes([forecast.playerId, forecast.gameId, 0, forecast.expiresAt, forecast.stats, forecast.startProbability,
-    forecast.confirmedStart, forecast.conditionalStats ?? null]) + 1;
+    forecast.confirmedStart, forecast.conditionalStats ?? null, ...(reserve ? [reserve] : [])]) + 1;
 }
 
 /** Whole planning response body, bridge wire included: inside Vercel's 4.5 MB response limit with room for headers. */
 export const PLANNING_RESPONSE_BYTE_BUDGET = 4_000_000;
+const reservesWithheldNote = (count: number) =>
+  `FORGE reserve lines for ${count} player-games were withheld to fit the planning response, so players outside FORGE's projected lineups are not covered and a pickup search here is not complete.`;
 const trimmedNote = (kept: number, total: number) =>
   `Interim projections were trimmed to the first ${kept} of ${total} player-games to fit the planning response; later games stay schedule-only.`;
 
@@ -112,6 +150,10 @@ const trimmedNote = (kept: number, total: number) =>
 export function fitBridgeWire<T>(wire: BridgeForecastWire | null, envelope: (wire: BridgeForecastWire | null) => T, budget: number): T | null {
   const full = envelope(wire);
   if (jsonUtf8Bytes(full) <= budget) return full;
+  // Reserve rows go first and all together, so a trim never keeps reserves for early games only.
+  const reserves = wire ? wire.rows.filter(row => row.length === 9).length : 0;
+  if (wire && reserves) return fitBridgeWire({ ...wire, limitations: [...wire.limitations, reservesWithheldNote(reserves)],
+    rows: wire.rows.filter(row => row.length !== 9) }, envelope, budget);
   if (wire && wire.rows.length > 1) {
     const total = wire.rows.length, prefix = [0];
     for (const row of wire.rows) prefix.push(prefix[prefix.length - 1] + jsonUtf8Bytes(row));

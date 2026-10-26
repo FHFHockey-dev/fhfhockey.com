@@ -1,4 +1,6 @@
 const path = require("path");
+const { execFileSync } = require("child_process");
+const { PHASE_PRODUCTION_BUILD } = require("next/constants");
 
 const CMS_URL = process.env.CMS_URL;
 const isProd = process.env.NODE_ENV === "production";
@@ -119,4 +121,40 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+/**
+ * FORGE producer identity (TJ/Astra F1, 2026-10-26): the sha256 of the FORGE producer import closure of the source being
+ * built (scripts/forge-producer-closure.ts, the same scan the release verifier uses). A production build defines it as
+ * the bundler constant `__FORGE_PRODUCER_CLOSURE_SHA256__` in server bundles, so each run stamps the closure that
+ * executed it (lib/projections/forgeProducerIdentity.ts). It is never an env var, so no env label or unbuilt code can
+ * supply it (C7 R40 V2). A failure defines it empty: such runs stamp an unknown closure and readers withhold them.
+ */
+function forgeProducerClosureSha256() {
+  try {
+    const hash = execFileSync(process.execPath, [require.resolve("ts-node/dist/bin.js"), "--transpile-only",
+      "--compiler-options", JSON.stringify({ module: "commonjs", moduleResolution: "node" }),
+      path.join(__dirname, "scripts/forge-producer-closure.ts"), "--print"],
+    { cwd: __dirname, encoding: "utf8", stdio: ["ignore", "pipe", "inherit"] }).trim();
+    if (/^[0-9a-f]{64}$/.test(hash)) return hash;
+    console.warn("FORGE producer closure hash was not a sha256; runs from this build stay unadmitted.");
+  } catch (error) {
+    console.warn(`FORGE producer closure hash failed (${error.message}); runs from this build stay unadmitted.`);
+  }
+  return "";
+}
+
+module.exports = (phase) => {
+  if (phase !== PHASE_PRODUCTION_BUILD) return nextConfig;
+  const closureSha256 = forgeProducerClosureSha256();
+  return {
+    ...nextConfig,
+    webpack(config, options) {
+      const configured = nextConfig.webpack(config, options);
+      if (options.isServer) {
+        configured.plugins.push(new options.webpack.DefinePlugin({
+          __FORGE_PRODUCER_CLOSURE_SHA256__: JSON.stringify(closureSha256),
+        }));
+      }
+      return configured;
+    },
+  };
+};

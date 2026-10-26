@@ -1,7 +1,6 @@
 import { randomUUID } from "node:crypto";
 
 import serviceRoleClient from "lib/supabase/server";
-import { PROJECTION_SOURCES_CONFIG } from "lib/projectionsConfig/projectionSourcesConfig";
 
 import { DRAFT_RANKER_TARGET_SEASON_ID } from "./contracts";
 import {
@@ -94,11 +93,6 @@ function previousNhlSeason(targetSeasonId: number): number {
   return start * 10000 + start + 1;
 }
 
-function sourceSeasonFromProjectionTable(tableName: string): number | null {
-  const match = tableName.match(/PROJECTIONS_(\d{8})/u);
-  return match ? Number(match[1]) : null;
-}
-
 function parseTimeline(value: unknown) {
   if (!Array.isArray(value)) return [];
   return value.flatMap((point) => {
@@ -126,14 +120,6 @@ function latestTimelineDate(rows: YahooPlayerRow[]): string | null {
 function expiryFromDate(sourceDate: string, days: number): string {
   const timestamp = Date.parse(`${sourceDate}T23:59:59.999Z`);
   return new Date(timestamp + days * 86_400_000).toISOString();
-}
-
-async function exactCount(client: QueryClient, table: string): Promise<number> {
-  const { count, error } = await client
-    .from(table)
-    .select("player_id", { count: "exact", head: true });
-  if (error) throw error;
-  return count ?? 0;
 }
 
 async function loadYahooEvidence(args: {
@@ -232,45 +218,6 @@ async function loadYahooEvidence(args: {
     },
   };
   return { health, ownership, priorAdp, yahooRows };
-}
-
-async function loadProjectionHealth(args: {
-  client: QueryClient;
-  targetSeasonId: number;
-}) {
-  return Promise.all(
-    PROJECTION_SOURCES_CONFIG.map(async (source) => {
-      const sourceSeasonId = sourceSeasonFromProjectionTable(source.tableName);
-      let rowCount = 0;
-      const warningCodes: string[] = [];
-      try {
-        rowCount = await exactCount(args.client, source.tableName);
-      } catch {
-        warningCodes.push("projection_table_unreadable");
-      }
-      const seasonMatches = sourceSeasonId === args.targetSeasonId;
-      if (!seasonMatches) warningCodes.push("projection_season_mismatch");
-      if (seasonMatches) warningCodes.push("projection_observed_at_missing");
-      return {
-        source_key: `projection:${source.id}`,
-        health_state: seasonMatches ? "unavailable" : "season_mismatch",
-        source_season_id: sourceSeasonId,
-        source_date: null,
-        source_observed_at: null,
-        expires_at: null,
-        row_count: rowCount,
-        mapped_player_count: 0,
-        eligible_player_count: 0,
-        warning_codes: warningCodes,
-        metadata: {
-          tableName: source.tableName,
-          displayName: source.displayName,
-          playerType: source.playerType,
-          observedAtField: null,
-        },
-      } satisfies DiscoverySourceHealth;
-    }),
-  );
 }
 
 async function latestHealthRow(args: {
@@ -533,14 +480,14 @@ export async function buildDraftRankerDiscoverySnapshot(
   const asOfDate = dateOnly(asOf);
   const offseason = asOfDate < season.startDate || asOfDate > season.endDate;
 
-  const [yahoo, projectionHealth, opportunity] = await Promise.all([
+  const [yahoo, opportunity] = await Promise.all([
     loadYahooEvidence({ client, asOf, offseason, targetSeasonId }),
-    loadProjectionHealth({ client, targetSeasonId }),
     loadOpportunityEvidence({ client, asOf, targetSeasonId }),
   ]);
 
-  // Current projection tables fail the season/observed-at contract, so the
-  // normalized observation list is empty until a source can prove both.
+  // TJ, 2026-10-26: discovery never reads the draft dashboard's pundit
+  // projection tables, so the consensus stays empty and no projection-backed
+  // signal can be emitted. The empty array keeps the snapshot shape stable.
   const projectionConsensus = buildProjectionConsensus({
     observations: [],
     asOf,
@@ -566,11 +513,9 @@ export async function buildDraftRankerDiscoverySnapshot(
       right.score - left.score ||
       left.fhfh_player_id - right.fhfh_player_id,
   );
-  const sourceHealth = [
-    yahoo.health,
-    ...projectionHealth,
-    ...opportunity.health,
-  ].sort((left, right) => left.source_key.localeCompare(right.source_key));
+  const sourceHealth = [yahoo.health, ...opportunity.health].sort(
+    (left, right) => left.source_key.localeCompare(right.source_key),
+  );
   const groupCounts = signals.reduce<Record<string, number>>(
     (counts, signal) => {
       counts[signal.signal_type] = (counts[signal.signal_type] ?? 0) + 1;
@@ -598,6 +543,7 @@ export async function buildDraftRankerDiscoverySnapshot(
     ).length,
     yahooRows: yahoo.yahooRows.length,
     projectionConsensusPlayers: projectionConsensus.length,
+    projectionSources: "not_used",
     opportunityCandidates: opportunity.candidates.length,
   };
   const sourceFingerprint = stableDiscoveryHash({

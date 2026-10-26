@@ -416,7 +416,7 @@ export const FORGE_AUDITED_INPUT_SOURCES: ReadonlySet<string> = new Set([
   "forge_roster_events", "forge_board_news_events", "player_forecast_lineup_snapshots", "player_forecast_goalie_start_observations",
   "player_forecast_observation_conflicts", "player_forecast_lineup_assignments", "player_forecast_conflict_resolutions",
   "market_prices_daily", "prop_market_prices_daily",
-  "forge_runs", "forge_player_projections", "forge_team_projections", "forge_goalie_projections",
+  "forge_runs", "forge_player_projections", "forge_team_projections", "forge_goalie_projections", "forge_reserve_projections",
   "player_forecast_source_observations", "read_forge_game_revisions",
 ]);
 /** A third-party fantasy projection table: every configured source is a `PROJECTIONS_<season>_<source>` table, and so is

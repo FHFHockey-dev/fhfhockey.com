@@ -20,6 +20,7 @@ import type { ContributionSource } from "lib/player-forecasts/contributions";
 import type { PlanningData } from "lib/rosterScheduleOptimizer/planningTypes";
 import * as rsoPolicy from "lib/player-forecasts/rsoUsePolicy";
 import { bindFixtureForecast, fixtureRsoPolicy } from "lib/player-forecasts/rsoUsePolicy.fixtures";
+import { provenSnapshotRow } from "lib/projections/externalInputProof.fixtures";
 
 const {
   fromMock,
@@ -138,6 +139,15 @@ function createMockRes() {
     },
   };
   return res;
+}
+
+// Runs whose captured snapshot carries no exclusion claim (legacy, possibly blended); every other run is proven.
+let unprovenRunIds = new Set<string>();
+function snapshotBuilder() {
+  const builder = createQueryBuilder(() => ({ error: null,
+    data: (builder.ids ?? []).filter((id: string) => !unprovenRunIds.has(id)).map(provenSnapshotRow) }));
+  builder.in = (_column: string, ids: string[]) => { builder.ids = ids; return builder; };
+  return builder;
 }
 
 const trustedTeamFormColumns = {
@@ -484,6 +494,7 @@ describe("/api/v1/start-chart", () => {
     vi.setSystemTime(new Date("2026-02-07T17:00:00Z"));
     vi.unstubAllEnvs();
     vi.clearAllMocks();
+    unprovenRunIds = new Set();
     // The real selector: with no head env it selects legacy without a lookup.
     selectSourceMock.mockImplementation((await actualServingSource()).selectForecastServingSource);
     rpcMock.mockResolvedValue({
@@ -645,6 +656,7 @@ describe("/api/v1/start-chart", () => {
       if (table === "yahoo_player_ownership_history") {
         return createQueryBuilder(() => ({ data: [], error: null }));
       }
+      if (table === "player_forecast_source_observations") return snapshotBuilder();
       if (table === "team_ctpi_daily") {
         return createQueryBuilder(() => ({
           data: [
@@ -1000,15 +1012,20 @@ describe("/api/v1/start-chart", () => {
           expect(url.searchParams.get("or")).toBe(`(${runHorizonFilter(1)})`);
           expect(url.searchParams.getAll("git_sha")).toEqual(["not.is.null", "not.like.local:*"]);
           expect(url.searchParams.get("status")).toBe("eq.succeeded");
-          expect(url.searchParams.get("limit")).toBe("1");
           const rows = [
             { run_id: "private-success", git_sha: privateSha },
             { run_id: "normal-success", git_sha: "a".repeat(40) },
-          ].filter((row) => row.git_sha !== null && !row.git_sha.startsWith("local:")).slice(0, 1);
-          return new Response(JSON.stringify({ ...rows[0], as_of_date: "2026-02-07",
+          ].filter((row) => row.git_sha !== null && !row.git_sha.startsWith("local:"));
+          // First the candidate ids, then the proven run with its rows.
+          if (url.searchParams.get("select") === "run_id") {
+            expect(url.searchParams.get("limit")).toBe("20");
+            return Response.json(rows.map(({ run_id }) => ({ run_id })));
+          }
+          expect(url.searchParams.get("limit")).toBe("1");
+          const selected = rows.find((row) => `eq.${row.run_id}` === url.searchParams.get("run_id"))!;
+          return Response.json({ ...selected, as_of_date: "2026-02-07",
             created_at: "2026-02-07T12:00:00Z", metrics: { input_provenance: {
-              external_fantasy_input_contract: FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } }, forge_player_projections: [defaultProjection] }),
-            { status: 200, headers: { "Content-Type": "application/json" } });
+              external_fantasy_input_contract: FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } }, forge_player_projections: [defaultProjection] });
         },
       } });
       const prior = fromMock.getMockImplementation()!;
@@ -1017,7 +1034,7 @@ describe("/api/v1/start-chart", () => {
       const handler = (await import("../../../../pages/api/v1/start-chart")).default;
       const res = createMockRes();
       await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
-      expect(requests).toHaveLength(1);
+      expect(requests).toHaveLength(2);
       expect(res.statusCode).toBe(200);
       expect(res.body.projectionRunId).toBe("normal-success");
       expect(res.body.players.find((row: any) => row.player_id === defaultProjection.player_id).proj_fantasy_points).toBeGreaterThan(0);
@@ -1037,12 +1054,12 @@ describe("/api/v1/start-chart", () => {
           { run_id: "h5-run", created_at: "2026-02-07T15:12:00Z", horizon_games: 5 },
           { run_id: "h1-run", created_at: "2026-02-07T14:15:00Z", horizon_games: 1 },
         ].filter((run) => url.searchParams.get("or") !== `(${runHorizonFilter(1)})` || run.horizon_games === 1);
-        const run = runs[0];
-        return new Response(JSON.stringify({ run_id: run.run_id, as_of_date: "2026-02-07", git_sha: "a".repeat(40),
+        if (url.searchParams.get("select") === "run_id") return Response.json(runs.map(({ run_id }) => ({ run_id })));
+        const run = runs.find((row) => `eq.${row.run_id}` === url.searchParams.get("run_id"))!;
+        return Response.json({ run_id: run.run_id, as_of_date: "2026-02-07", git_sha: "a".repeat(40),
           created_at: run.created_at, metrics: { horizon_games: run.horizon_games, input_provenance: {
             external_fantasy_input_contract: FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } },
-          forge_player_projections: run.horizon_games === 1 ? [defaultProjection] : [] }),
-        { status: 200, headers: { "Content-Type": "application/json" } });
+          forge_player_projections: run.horizon_games === 1 ? [defaultProjection] : [] });
       },
     } });
     const prior = fromMock.getMockImplementation()!;
@@ -1051,7 +1068,7 @@ describe("/api/v1/start-chart", () => {
     const handler = (await import("../../../../pages/api/v1/start-chart")).default;
     const res = createMockRes();
     await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
-    expect(requests).toHaveLength(1);
+    expect(requests).toHaveLength(2);
     expect(res.statusCode).toBe(200);
     expect(res.body.projectionRunId).toBe("h1-run");
     expect(res.body.players.find((row: any) => row.player_id === defaultProjection.player_id).proj_fantasy_points).toBeGreaterThan(0);
@@ -1184,31 +1201,72 @@ describe("/api/v1/start-chart", () => {
     expect(row(masked.player_id).proj_shots).toBeCloseTo(3.5, 6);
   });
 
-  it("serves an unlabelled raw run flagged unverified while a labelled run stays verified", async () => {
-    vi.stubEnv("STARTER_BOARD_SERVING_ENABLED", "false");
-    const prior = fromMock.getMockImplementation()!;
-    const read = async (metrics: unknown) => {
-      fromMock.mockImplementation((table: string) => table === "forge_runs" ? createQueryBuilder(() => ({
-        data: [{ run_id: "external-run", as_of_date: "2026-02-07", git_sha: "a".repeat(40), metrics,
-          forge_player_projections: [defaultProjection] }], error: null,
-      })) : prior(table));
+  describe("legacy run external-input exclusion proof", () => {
+    // forge_runs rows newest first; a run_id filter, when the reader sends one, selects that run.
+    const install = (runs: Array<Record<string, unknown>>) => {
+      const prior = fromMock.getMockImplementation()!;
+      fromMock.mockImplementation((table: string) => {
+        if (table !== "forge_runs") return prior(table);
+        let runId: unknown;
+        const builder = createQueryBuilder(() => ({ data: runs.filter(run => runId === undefined || run.run_id === runId), error: null }));
+        const eq = builder.eq;
+        builder.eq = (column: string, value: unknown) => { if (column === "run_id") runId = value; return eq(column, value); };
+        return builder;
+      });
+    };
+    const run = (run_id: string, metrics: unknown = null) => ({ run_id, as_of_date: "2026-02-07", git_sha: "a".repeat(40), metrics,
+      forge_player_projections: [{ ...defaultProjection, run_id }] });
+    const read = async () => {
       vi.resetModules();
       const handler = (await import("../../../../pages/api/v1/start-chart")).default;
       const res = createMockRes();
       await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
       expect(res.statusCode).toBe(200);
-      return { body: res.body, row: res.body.players.find((row: any) => row.player_id === defaultProjection.player_id) };
+      return { body: res.body, skater: res.body.players.find((row: any) => row.player_id === defaultProjection.player_id) };
     };
-    // Production 457435eb behaviour: an externally blended run is served, but never labelled native.
-    const unlabelled = await read(null);
-    expect(unlabelled.body.projectionRunId).toBe("external-run");
-    expect(unlabelled.row.context.flags).toContain("unverified_projection_provenance");
-    expect(unlabelled.body.sourceStatus.projection.state).toBe("partial");
-    expect(unlabelled.body.sourceStatus.degradedReasons).toContain("quarantined_or_missing_provenance");
-    const labelled = await read({ input_provenance: buildForgeInputProvenance({ externalFantasyInputsExcluded: true }) });
-    expect(labelled.body.projectionRunId).toBe("external-run");
-    expect(labelled.row.context.flags).not.toContain("unverified_projection_provenance");
-    expect(labelled.body.sourceStatus.projection.state).toBe("ready");
+    beforeEach(() => vi.stubEnv("STARTER_BOARD_SERVING_ENABLED", "false"));
+
+    it("excludes an unproven legacy run: nothing is scored, and the projection is unavailable, provenance unproven", async () => {
+      unprovenRunIds = new Set(["external-run"]);
+      install([run("external-run")]);
+      const { body, skater } = await read();
+      expect(skater).toBeUndefined();
+      expect(body.players.every((row: any) => row.positions.includes("G"))).toBe(true);
+      expect(body.projectionRunId).toBeNull();
+      expect(body.projectionRun).toBeNull();
+      expect(body.sourceStatus.projection).toMatchObject({ state: "missing",
+        message: "Unavailable: provenance unproven. No FORGE run for this slate can prove it excluded third-party fantasy projections, so none are scored." });
+      expect(body.sourceStatus.degradedReasons).toContain("unproven_external_input_provenance");
+    });
+
+    it("serves a clean run proven by its snapshot as verified, although run-start metrics carry no claim", async () => {
+      install([run("clean-run", { input_provenance: buildForgeInputProvenance() })]);
+      const { body, skater } = await read();
+      expect(body.projectionRunId).toBe("clean-run");
+      expect(skater.proj_fantasy_points).toBeGreaterThan(0);
+      expect(skater.context.flags).not.toContain("unverified_projection_provenance");
+      expect(body.sourceStatus.projection.state).toBe("ready");
+      expect(body.projectionRun).toMatchObject({ runId: "clean-run", provenanceEligible: true,
+        proof: { runId: "clean-run", basis: "captured_snapshot", releaseSha: null, closureSha256: null } });
+    });
+
+    it("passes over newer unproven runs of the slate for its latest proven run", async () => {
+      unprovenRunIds = new Set(["uncaptured-run", "legacy-run"]);
+      install([run("uncaptured-run"), run("legacy-run"), run("clean-run")]);
+      const { body, skater } = await read();
+      expect(body.projectionRunId).toBe("clean-run");
+      expect(skater.row_key).toContain("clean-run");
+    });
+
+    it("fails closed when the proof cannot be read", async () => {
+      install([run("clean-run")]);
+      const prior = fromMock.getMockImplementation()!;
+      fromMock.mockImplementation((table: string) => table === "player_forecast_source_observations"
+        ? createQueryBuilder(() => ({ data: null, error: { message: "denied" } })) : prior(table));
+      const { body, skater } = await read();
+      expect(skater).toBeUndefined();
+      expect(body.sourceStatus.projection.state).toBe("error");
+    });
   });
 
   it("C-3: forecast_source cannot force native while the server selects legacy", async () => {
@@ -1231,8 +1289,9 @@ describe("/api/v1/start-chart", () => {
     expect(fromMock.mock.calls.map(([table]) => table)).not.toContain("native_forecast_catalog_heads");
   });
 
-  it("legacy_flagged serves the legacy board with every row flagged and unlabelled runs still provenance-flagged", async () => {
+  it("legacy_flagged serves the legacy board with every row flagged and withholds an unproven run's skaters", async () => {
     selectSourceMock.mockResolvedValue({ kind: "legacy_flagged", reason: "native_catalog_head_unavailable_or_invalid", environment: {} });
+    unprovenRunIds = new Set(["external-run"]);
     const prior = fromMock.getMockImplementation()!;
     fromMock.mockImplementation((table: string) => table === "forge_runs" ? createQueryBuilder(() => ({
       data: [{ run_id: "external-run", as_of_date: "2026-02-07", git_sha: "a".repeat(40), metrics: null,
@@ -1246,11 +1305,11 @@ describe("/api/v1/start-chart", () => {
     expect(loadGameExpectationsMock).not.toHaveBeenCalled();
     expect(res.body.forecastSource).toEqual({ kind: "legacy_flagged", headRevision: null, expiresAt: null,
       reason: "native_catalog_head_unavailable_or_invalid" });
-    expect(res.body.projectionRunId).toBe("external-run");
-    expect(res.body.players.length).toBeGreaterThan(1);
+    expect(res.body.projectionRunId).toBeNull();
+    expect(res.body.players.length).toBeGreaterThan(0);
     expect(res.body.players.every((row: any) => row.context.flags.includes("native_unavailable_legacy_fallback"))).toBe(true);
-    const skater = res.body.players.find((row: any) => row.player_id === defaultProjection.player_id);
-    expect(skater.context.flags).toContain("unverified_projection_provenance");
+    expect(res.body.players.find((row: any) => row.player_id === defaultProjection.player_id)).toBeUndefined();
+    expect(res.body.sourceStatus.degradedReasons).toContain("unproven_external_input_provenance");
   });
 
   it("empty keeps the slate's games but serves no players, with the native reason", async () => {
@@ -2079,7 +2138,8 @@ describe("/api/v1/start-chart", () => {
     expect(skater.proj_shots).toBeCloseTo(3.5, 6);
     expect(skater.proj_fantasy_points).toBeCloseTo(4.22, 6);
     expect(skater.position_ranks).toEqual({ C: 1 });
-    expect(skater.context.flags).toContain("unverified_projection_provenance");
+    // Eligibility comes from the run's snapshot proof (both contracts), not its run-start metrics.
+    expect(skater.context.flags).not.toContain("unverified_projection_provenance");
     const goalie = res.body.players.find(
       (player: any) => player.player_id === 9001,
     );

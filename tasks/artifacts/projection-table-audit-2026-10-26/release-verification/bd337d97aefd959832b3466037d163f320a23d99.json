@@ -1,0 +1,563 @@
+{
+  "version": "forge-release-sha-verifier-v1",
+  "sha": "bd337d97aefd959832b3466037d163f320a23d99",
+  "verified": false,
+  "producerIdentity": {
+    "version": "forge-producer-closure-v1",
+    "closureSha256": "1c3c91ac379e004aaaa3324aefd91a903503109c59990c89fe7fcdcf1b5ca258"
+  },
+  "commit": {
+    "subject": "Release RSO wave 1 and late October 25 lanes (#384)",
+    "committedAt": "2026-10-25T19:45:50-04:00",
+    "tree": "ab2dbd82dd3537388149872407045be843f25c23"
+  },
+  "verifierSha256": "2da61a46b89df70669c454f08fbefd3a0803655a92226f0c8020aad9b9d3c456",
+  "closureWalkerSha256": "e33ccacb21dca88ef2d163dab5f16ec0c50bb817373b9ab000c2ac8e29df5bad",
+  "roots": [
+    "lib/projections/run-forge-projections.ts",
+    "lib/projections/starterBoardQueue.ts",
+    "pages/api/v1/db/run-projection-v2.ts",
+    "pages/api/v1/db/run-rolling-forge-pipeline.ts",
+    "pages/api/v1/db/drain-starter-board.ts",
+    "pages/api/internal/starter-board.ts"
+  ],
+  "requiredModules": [
+    "lib/projections/seasonBootstrap.ts",
+    "lib/projections/stages/skater-stage.ts",
+    "lib/projections/stages/goalie-stage.ts",
+    "lib/projections/stages/persistence-stage.ts",
+    "lib/projections/queries/skater-queries.ts",
+    "lib/projections/queries/run-lifecycle-queries.ts",
+    "lib/projections/dailyBoardEvidence.ts"
+  ],
+  "reviewedDynamicSites": [
+    {
+      "file": "pages/api/v1/db/update-nst-gamelog.ts",
+      "argument": "table",
+      "source": "getLatestDateSupabase args.tables: NST_TABLE_NAMES or getTableName() values, all literal nst_gamelog_* names"
+    },
+    {
+      "file": "pages/api/v1/db/update-nst-gamelog.ts",
+      "argument": "tableName",
+      "source": "getTableName(datasetType): a literal nst_gamelog_* mapping, rejected unless listed in NST_TABLE_NAMES"
+    },
+    {
+      "file": "pages/api/v1/db/update-line-combinations/index.ts",
+      "argument": "args.table",
+      "source": "typed \"teamGameStats\" | \"lineCombinations\"; both callers pass those literals"
+    },
+    {
+      "file": "lib/sources/lineSourceIftttReceiver.ts",
+      "argument": "table",
+      "source": "config.eventTable (typed \"lines_ccc_ifttt_events\" | \"line_source_ifttt_events\") or that default"
+    },
+    {
+      "file": "lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
+      "argument": "tableName",
+      "source": "fetchCounts/fetchRates/fetchCountsOi receive config.*Table from STRENGTH_CONFIGS, literal nst_gamelog_* names"
+    },
+    {
+      "file": "lib/supabase/Upserts/nhlRawGamecenter.mjs",
+      "argument": "table",
+      "source": "upsertInBatches(table): a write helper with no caller in web/ at 538100d41"
+    },
+    {
+      "file": "lib/sources/iftttRpcDeadline.ts",
+      "argument": "name",
+      "source": "boundedIftttRpc(name): callers pass literal IFTTT receipt RPC names"
+    }
+  ],
+  "closure": {
+    "moduleCount": 195,
+    "modulesSha256": "1c3c91ac379e004aaaa3324aefd91a903503109c59990c89fe7fcdcf1b5ca258",
+    "modules": [
+      "components/LinemateMatrix/index.tsx",
+      "components/LinemateMatrix/utilities.ts",
+      "components/Options/Options.tsx",
+      "components/Select/Select.tsx",
+      "components/Select/index.ts",
+      "components/Tooltip/Tooltip.tsx",
+      "components/Tooltip/index.ts",
+      "hooks/useGoals.tsx",
+      "hooks/useResizeObserver.ts",
+      "lib/NHL/base.ts",
+      "lib/NHL/playoffs.ts",
+      "lib/NHL/server/index.ts",
+      "lib/NHL/types.ts",
+      "lib/api/queryParams.ts",
+      "lib/api/scanSummary.ts",
+      "lib/cors-fetch.ts",
+      "lib/cron/formatDuration.ts",
+      "lib/cron/nhlOffSeason.ts",
+      "lib/cron/normalizeDependencyError.ts",
+      "lib/cron/nstBurstPlans.ts",
+      "lib/cron/nstClassification.ts",
+      "lib/cron/nstCoordination.ts",
+      "lib/cron/nstRateLimitPolicy.ts",
+      "lib/cron/statsUpdateSafety.ts",
+      "lib/cron/timingContract.ts",
+      "lib/cron/wgoDateOutcome.ts",
+      "lib/cron/wgoIngestion.ts",
+      "lib/cron/withCronJobAudit.ts",
+      "lib/dashboard/forgeLinks.ts",
+      "lib/fantasy-projections/admin.ts",
+      "lib/fantasy-projections/contracts.ts",
+      "lib/fantasy-projections/evaluator.ts",
+      "lib/fantasy-projections/seasonJobs.ts",
+      "lib/fantasy-projections/validation.ts",
+      "lib/formatDurationMmSs.ts",
+      "lib/nst/client.ts",
+      "lib/nst/gamelogProgress.ts",
+      "lib/nst/requestBudget.ts",
+      "lib/player-forecasts/contributions.ts",
+      "lib/player-forecasts/gameExpectations.ts",
+      "lib/player-forecasts/planningContributions.ts",
+      "lib/player-forecasts/resolvedPlanningForecast.ts",
+      "lib/player-forecasts/rsoUsePolicy.ts",
+      "lib/player-forecasts/sourceSnapshot.ts",
+      "lib/predictions/rollingWindows.ts",
+      "lib/projections/acceptedNews.ts",
+      "lib/projections/accuracy/fantasyPoints.ts",
+      "lib/projections/apiHelpers.ts",
+      "lib/projections/calculators/goalie-save-pct-context.ts",
+      "lib/projections/calculators/goalie-starter.ts",
+      "lib/projections/calculators/scenario-blending.ts",
+      "lib/projections/calculators/skater-adjustments.ts",
+      "lib/projections/calculators/team-context-adjustments.ts",
+      "lib/projections/calibrationEligibility.ts",
+      "lib/projections/compatibilityInventory.ts",
+      "lib/projections/constants/projection-weights.ts",
+      "lib/projections/dailyBoardEvidence.ts",
+      "lib/projections/derived/buildGoalieGameV2.ts",
+      "lib/projections/derived/buildStrengthTablesV2.ts",
+      "lib/projections/derived/projectionDerivedPersistence.ts",
+      "lib/projections/derived/projectionDerivedQueue.ts",
+      "lib/projections/derived/situation.ts",
+      "lib/projections/dispersion.ts",
+      "lib/projections/evidenceTime.ts",
+      "lib/projections/gameLength.ts",
+      "lib/projections/gameRevisions.ts",
+      "lib/projections/goalie/goalieOutcomes.ts",
+      "lib/projections/goalie/leagueSavePct.ts",
+      "lib/projections/goalieModel.ts",
+      "lib/projections/goaliePipeline.ts",
+      "lib/projections/ingest/nhleFetch.ts",
+      "lib/projections/ingest/pbp.ts",
+      "lib/projections/ingest/projectionInputPersistence.ts",
+      "lib/projections/ingest/rawSnapshotPersistence.ts",
+      "lib/projections/ingest/shifts.ts",
+      "lib/projections/ingest/time.ts",
+      "lib/projections/inputCapture.ts",
+      "lib/projections/issuedContext.ts",
+      "lib/projections/materializationFingerprint.ts",
+      "lib/projections/modeledHeadTotals.ts",
+      "lib/projections/nativeGoalAccounting.ts",
+      "lib/projections/pbpCompletenessServer.ts",
+      "lib/projections/projectionPipelineState.ts",
+      "lib/projections/promotionGates.ts",
+      "lib/projections/queries/goalie-queries.ts",
+      "lib/projections/queries/line-combo-queries.ts",
+      "lib/projections/queries/market-queries.ts",
+      "lib/projections/queries/run-lifecycle-queries.ts",
+      "lib/projections/queries/skater-queries.ts",
+      "lib/projections/queries/team-context-queries.ts",
+      "lib/projections/queryCaptureHook.ts",
+      "lib/projections/reconcile.ts",
+      "lib/projections/relationshipMaterialization.ts",
+      "lib/projections/relationshipPlayerPosition.ts",
+      "lib/projections/releasedRunFence.ts",
+      "lib/projections/run-forge-projections.ts",
+      "lib/projections/seasonBootstrap.ts",
+      "lib/projections/shiftChartCompleteness.ts",
+      "lib/projections/shiftChartCompletenessServer.ts",
+      "lib/projections/shiftChartRelationshipPayload.ts",
+      "lib/projections/skaterRollout.ts",
+      "lib/projections/stages/goalie-stage.ts",
+      "lib/projections/stages/metrics-finalization-stage.ts",
+      "lib/projections/stages/persistence-stage.ts",
+      "lib/projections/stages/preflight-stage.ts",
+      "lib/projections/stages/skater-stage.ts",
+      "lib/projections/startChartFantasyScoring.ts",
+      "lib/projections/starterBoardFlags.ts",
+      "lib/projections/starterBoardQueue.ts",
+      "lib/projections/starterBoardScoring.ts",
+      "lib/projections/types/run-forge-projections.types.ts",
+      "lib/projections/uncertainty.ts",
+      "lib/projections/utils/collection-utils.ts",
+      "lib/projections/utils/date-utils.ts",
+      "lib/projections/utils/devig.ts",
+      "lib/projections/utils/market-output-builders.ts",
+      "lib/projections/utils/number-utils.ts",
+      "lib/projections/utils/projection-metadata-builders.ts",
+      "lib/projections/utils/season-recency.ts",
+      "lib/projections/utils/trend-adjustments.ts",
+      "lib/projectionsConfig/fantasyPointsConfig.ts",
+      "lib/projectionsConfig/formatToMMSS.ts",
+      "lib/projectionsConfig/projectionSourcesConfig.ts",
+      "lib/projectionsConfig/statsMasterList.ts",
+      "lib/rankings/rollingRankingSelectFields.ts",
+      "lib/rollingForgePipeline.ts",
+      "lib/rollingForgePipelineRunState.ts",
+      "lib/rollingPlayerCountSupport.ts",
+      "lib/rollingPlayerDailyResume.ts",
+      "lib/rollingPlayerMetricCompatibility.ts",
+      "lib/rollingPlayerOperationalPolicy.ts",
+      "lib/rosterScheduleData/bridgeForecastWire.ts",
+      "lib/rosterScheduleData/planningDataTransport.ts",
+      "lib/rosterScheduleOptimizer/currentPlanningRead.ts",
+      "lib/rosterScheduleOptimizer/eligibility.ts",
+      "lib/rosterScheduleOptimizer/planningTypes.ts",
+      "lib/rosterScheduleOptimizer/privatePlanningRead.ts",
+      "lib/rosterScheduleOptimizer/types.ts",
+      "lib/rosterScheduleOptimizer/yahooEligibility.ts",
+      "lib/sources/currentOrganizationSync.ts",
+      "lib/sources/iftttIntakePolicy.ts",
+      "lib/sources/iftttReceiptRetention.ts",
+      "lib/sources/iftttRpcDeadline.ts",
+      "lib/sources/lineSourceIftttReceiver.ts",
+      "lib/sources/nhlRosterPreview.ts",
+      "lib/sources/playerIdentity.ts",
+      "lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
+      "lib/supabase/Upserts/nhlRawGamecenter.mjs",
+      "lib/supabase/Upserts/powerPlayCombinationMetrics.ts",
+      "lib/supabase/Upserts/rollingDroppedColumns.ts",
+      "lib/supabase/Upserts/rollingHistoricalAverages.ts",
+      "lib/supabase/Upserts/rollingMetricAggregation.ts",
+      "lib/supabase/Upserts/rollingMetricScaleContract.ts",
+      "lib/supabase/Upserts/rollingPlayerAvailabilityContract.ts",
+      "lib/supabase/Upserts/rollingPlayerLineContextContract.ts",
+      "lib/supabase/Upserts/rollingPlayerMetricMath.ts",
+      "lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.ts",
+      "lib/supabase/Upserts/rollingPlayerPpShareContract.ts",
+      "lib/supabase/Upserts/rollingPlayerPpUnitContract.ts",
+      "lib/supabase/Upserts/rollingPlayerSourceSelection.ts",
+      "lib/supabase/Upserts/rollingPlayerSupportPayload.ts",
+      "lib/supabase/Upserts/rollingPlayerToiContract.ts",
+      "lib/supabase/Upserts/rollingWindowContract.ts",
+      "lib/supabase/client.ts",
+      "lib/supabase/database-generated.types.ts",
+      "lib/supabase/index.ts",
+      "lib/supabase/pagination.ts",
+      "lib/supabase/public-client.ts",
+      "lib/supabase/server.ts",
+      "lib/teamsInfo.ts",
+      "pages/api/internal/starter-board.ts",
+      "pages/api/v1/db/build-projection-derived-v2.ts",
+      "pages/api/v1/db/drain-starter-board.ts",
+      "pages/api/v1/db/ingest-projection-inputs.ts",
+      "pages/api/v1/db/run-projection-accuracy.ts",
+      "pages/api/v1/db/run-projection-v2.ts",
+      "pages/api/v1/db/run-rolling-forge-pipeline.ts",
+      "pages/api/v1/db/shift-charts.ts",
+      "pages/api/v1/db/update-games.ts",
+      "pages/api/v1/db/update-goalie-projections-v2.ts",
+      "pages/api/v1/db/update-line-combinations/[id].ts",
+      "pages/api/v1/db/update-line-combinations/index.ts",
+      "pages/api/v1/db/update-nst-gamelog.ts",
+      "pages/api/v1/db/update-players.ts",
+      "pages/api/v1/db/update-power-play-combinations/[gameId].ts",
+      "pages/api/v1/db/update-power-play-combinations/index.ts",
+      "pages/api/v1/db/update-rolling-player-averages.ts",
+      "pages/api/v1/db/update-teams.ts",
+      "pages/api/v1/db/update-wgo-skaters.ts",
+      "pages/api/v1/db/update-wgo-totals.ts",
+      "utils/adminOnlyMiddleware.ts",
+      "utils/fetchCurrentSeason.ts",
+      "utils/getPowerPlayBlocks.ts",
+      "utils/groupBy.ts",
+      "utils/setDifference.ts"
+    ]
+  },
+  "findings": [
+    {
+      "file": "lib/projections/seasonBootstrap.ts",
+      "line": 2,
+      "kind": "provider_config_import",
+      "text": "lib/projectionsConfig/projectionSourcesConfig"
+    },
+    {
+      "file": "lib/projections/seasonBootstrap.ts",
+      "line": 2,
+      "kind": "provider_config_import",
+      "text": "lib/projectionsConfig/projectionSourcesConfig"
+    },
+    {
+      "file": "lib/projections/seasonBootstrap.ts",
+      "line": 2,
+      "kind": "provider_config_identifier",
+      "text": "PROJECTION_SOURCES_CONFIG"
+    },
+    {
+      "file": "lib/projections/seasonBootstrap.ts",
+      "line": 31,
+      "kind": "provider_config_identifier",
+      "text": "PROJECTION_SOURCES_CONFIG"
+    },
+    {
+      "file": "lib/projections/seasonBootstrap.ts",
+      "line": 173,
+      "kind": "provider_config_identifier",
+      "text": "PROJECTION_SOURCES_CONFIG"
+    },
+    {
+      "file": "lib/projections/seasonBootstrap.ts",
+      "line": 190,
+      "kind": "unreviewed_dynamic_from",
+      "text": "source.tableName"
+    },
+    {
+      "file": "lib/projectionsConfig/projectionSourcesConfig.ts",
+      "line": 65,
+      "kind": "provider_config_identifier",
+      "text": "PROJECTION_SOURCES_CONFIG"
+    },
+    {
+      "file": "lib/projectionsConfig/projectionSourcesConfig.ts",
+      "line": 69,
+      "kind": "pundit_table_text",
+      "text": "PROJECTIONS_20262027_AG_SKATERS"
+    },
+    {
+      "file": "lib/projectionsConfig/projectionSourcesConfig.ts",
+      "line": 81,
+      "kind": "pundit_table_text",
+      "text": "PROJECTIONS_20262027_BLAKE_AG_SKATERS"
+    },
+    {
+      "file": "lib/projectionsConfig/projectionSourcesConfig.ts",
+      "line": 94,
+      "kind": "pundit_table_text",
+      "text": "PROJECTIONS_20262027_NATE_AG_SKATERS"
+    },
+    {
+      "file": "lib/projectionsConfig/projectionSourcesConfig.ts",
+      "line": 107,
+      "kind": "pundit_table_text",
+      "text": "PROJECTIONS_20262027_CULLEN_SKATERS"
+    },
+    {
+      "file": "lib/projectionsConfig/projectionSourcesConfig.ts",
+      "line": 119,
+      "kind": "pundit_table_text",
+      "text": "PROJECTIONS_20262027_CULLEN_GOALIES"
+    },
+    {
+      "file": "lib/projectionsConfig/projectionSourcesConfig.ts",
+      "line": 131,
+      "kind": "pundit_table_text",
+      "text": "PROJECTIONS_20262027_DTZ_SKATERS"
+    },
+    {
+      "file": "lib/projectionsConfig/projectionSourcesConfig.ts",
+      "line": 143,
+      "kind": "pundit_table_text",
+      "text": "PROJECTIONS_20262027_DTZ_GOALIES"
+    },
+    {
+      "file": "lib/projectionsConfig/projectionSourcesConfig.ts",
+      "line": 155,
+      "kind": "pundit_table_text",
+      "text": "PROJECTIONS_20262027_5V5_SKATERS"
+    },
+    {
+      "file": "lib/projectionsConfig/projectionSourcesConfig.ts",
+      "line": 167,
+      "kind": "pundit_table_text",
+      "text": "PROJECTIONS_20262027_5V5_GOALIES"
+    }
+  ],
+  "dynamicSites": [
+    {
+      "file": "lib/projections/queries/skater-queries.ts",
+      "line": 270,
+      "kind": "dynamic_rpc",
+      "text": "LATEST_ROLLING_ROWS_RPC",
+      "values": [
+        "forge_latest_rolling_rows"
+      ]
+    },
+    {
+      "file": "lib/projections/queries/skater-queries.ts",
+      "line": 414,
+      "kind": "dynamic_from",
+      "text": "ROLLING_PLAYER_SUPPORT_PAYLOAD_TABLE",
+      "values": [
+        "rolling_player_metric_support_payloads"
+      ]
+    },
+    {
+      "file": "lib/projections/queries/run-lifecycle-queries.ts",
+      "line": 503,
+      "kind": "dynamic_from",
+      "text": "table",
+      "values": [
+        "forge_goalie_projections",
+        "forge_player_projections",
+        "forge_team_projections"
+      ]
+    },
+    {
+      "file": "lib/projections/dailyBoardEvidence.ts",
+      "line": 156,
+      "kind": "dynamic_from",
+      "text": "table",
+      "values": [
+        "player_forecast_conflict_resolutions",
+        "player_forecast_goalie_start_observations",
+        "player_forecast_lineup_assignments",
+        "player_forecast_lineup_snapshots",
+        "player_forecast_observation_conflicts"
+      ]
+    },
+    {
+      "file": "lib/fantasy-projections/seasonJobs.ts",
+      "line": 79,
+      "kind": "dynamic_from",
+      "text": "table",
+      "values": [
+        "player_forecast_season_outcome_revisions",
+        "player_forecast_season_overrides",
+        "player_forecast_season_player_aggregates",
+        "player_forecast_season_roster_members",
+        "player_forecast_season_schedule_games",
+        "player_forecast_season_team_aggregates"
+      ]
+    },
+    {
+      "file": "lib/fantasy-projections/seasonJobs.ts",
+      "line": 89,
+      "kind": "dynamic_from",
+      "text": "table",
+      "values": [
+        "player_forecast_season_game_outputs",
+        "player_forecast_season_player_aggregates",
+        "player_forecast_season_team_aggregates"
+      ]
+    },
+    {
+      "file": "pages/api/v1/db/update-nst-gamelog.ts",
+      "line": 797,
+      "kind": "dynamic_from",
+      "text": "table"
+    },
+    {
+      "file": "pages/api/v1/db/update-nst-gamelog.ts",
+      "line": 1162,
+      "kind": "dynamic_from",
+      "text": "tableName"
+    },
+    {
+      "file": "pages/api/v1/db/update-nst-gamelog.ts",
+      "line": 1187,
+      "kind": "dynamic_from",
+      "text": "tableName"
+    },
+    {
+      "file": "pages/api/v1/db/update-nst-gamelog.ts",
+      "line": 1998,
+      "kind": "dynamic_from",
+      "text": "primaryTable",
+      "values": [
+        "nst_gamelog_as_counts"
+      ]
+    },
+    {
+      "file": "pages/api/v1/db/update-wgo-totals.ts",
+      "line": 279,
+      "kind": "dynamic_from",
+      "text": "tableName",
+      "values": [
+        "wgo_skater_stats_totals",
+        "wgo_skater_stats_totals_playoffs"
+      ]
+    },
+    {
+      "file": "pages/api/v1/db/update-line-combinations/index.ts",
+      "line": 121,
+      "kind": "dynamic_from",
+      "text": "args.table"
+    },
+    {
+      "file": "lib/sources/lineSourceIftttReceiver.ts",
+      "line": 316,
+      "kind": "dynamic_from",
+      "text": "table"
+    },
+    {
+      "file": "lib/projections/seasonBootstrap.ts",
+      "line": 177,
+      "kind": "dynamic_from",
+      "text": "population === \"skater\" ? \"skatersGameStats\" : \"goaliesGameStats\"",
+      "values": [
+        "goaliesGameStats",
+        "skatersGameStats"
+      ]
+    },
+    {
+      "file": "lib/projections/seasonBootstrap.ts",
+      "line": 190,
+      "kind": "dynamic_from",
+      "text": "source.tableName"
+    },
+    {
+      "file": "lib/fantasy-projections/admin.ts",
+      "line": 138,
+      "kind": "dynamic_from",
+      "text": "table",
+      "values": [
+        "fhfh_player_identities",
+        "player_forecast_season_completeness_waivers",
+        "player_forecast_season_overrides",
+        "player_forecast_season_player_aggregates",
+        "player_forecast_season_player_pool_review",
+        "player_forecast_season_queue",
+        "player_forecast_season_roster_conflict_members",
+        "player_forecast_season_roster_observations",
+        "player_forecast_season_schedule_games",
+        "player_forecast_season_team_aggregates",
+        "teams"
+      ]
+    },
+    {
+      "file": "lib/fantasy-projections/admin.ts",
+      "line": 819,
+      "kind": "dynamic_from",
+      "text": "targetTable",
+      "values": [
+        "player_forecast_season_player_aggregates",
+        "player_forecast_season_team_aggregates"
+      ]
+    },
+    {
+      "file": "lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
+      "line": 3174,
+      "kind": "dynamic_from",
+      "text": "tableName"
+    },
+    {
+      "file": "lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
+      "line": 3211,
+      "kind": "dynamic_from",
+      "text": "tableName"
+    },
+    {
+      "file": "lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
+      "line": 3246,
+      "kind": "dynamic_from",
+      "text": "tableName"
+    },
+    {
+      "file": "lib/supabase/Upserts/nhlRawGamecenter.mjs",
+      "line": 623,
+      "kind": "dynamic_from",
+      "text": "table"
+    },
+    {
+      "file": "lib/sources/iftttRpcDeadline.ts",
+      "line": 22,
+      "kind": "dynamic_rpc",
+      "text": "name"
+    }
+  ],
+  "guardRegexes": []
+}

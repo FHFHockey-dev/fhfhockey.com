@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   PREGAME_PREDICTION_REFRESH_POLICY,
@@ -11,6 +11,7 @@ import {
   decidePromotion,
   ensureGamePredictionModelVersionForScoring,
   evaluatePersistedModelVersionPromotionGate,
+  existingFeatureSnapshotId,
   generatePregamePredictionsForWindow,
   historicalPregamePredictionCutoffAt,
   isPregamePredictionCutoff,
@@ -25,6 +26,7 @@ import {
   BASELINE_MODEL_VERSION,
 } from "./baselineModel";
 import { GAME_PREDICTION_FEATURE_SET_VERSION } from "./featureSources";
+import { provenSnapshotRow, unprovenSnapshotRow } from "lib/projections/externalInputProof.fixtures";
 
 const promotionMigrationSql = readFileSync(
   resolve(
@@ -989,4 +991,43 @@ describe("game prediction workflow", () => {
       "metric_degradation",
     ]);
   });
+
+  describe("stored feature snapshot reuse re-checks FORGE provenance now (Astra F4)", () => {
+    // A snapshot whose home side used FORGE run `runId`; proof rows decide that run's standing.
+    function client(runId: string | null, snapshots: Array<Record<string, unknown>>, failProof = false) {
+      return { from: (table: string) => {
+        const chain: any = { select: () => chain, eq: () => chain, limit: async () => ({ error: null,
+          data: [{ feature_snapshot_id: "snap-1", home_forge_run_id: runId, away_forge_run_id: null }] }),
+          in: async (_column: string, ids: string[]) => failProof ? { data: null, error: { message: "denied" } }
+            : { error: null, data: table === "player_forecast_source_observations" ? snapshots.filter(row => ids.includes(row.entity_key as string)) : [] } };
+        return chain;
+      } } as never;
+    }
+    const reuse = (db: never) => existingFeatureSnapshotId({ client: db, gameId: 1, predictionCutoffAt: "2026-01-10T00:00:00Z",
+      modelName: "m", modelVersion: "v1", featureSetVersion: "f1" });
+    afterEach(() => vi.unstubAllEnvs());
+
+    it("reuses a snapshot whose FORGE run is proven, unproven (by default) or absent", async () => {
+      expect(await reuse(client("run", [provenSnapshotRow("run")]))).toBe("snap-1");
+      expect(await reuse(client("run", []))).toBe("snap-1");
+      expect(await reuse(client(null, []))).toBe("snap-1");
+    });
+
+    it("does not reuse a snapshot whose FORGE run cannot be classified now (C7 R42 A2)", async () => {
+      expect(await reuse(client("run", [], true))).toBeNull();
+      expect(await reuse(client(null, [], true))).toBe("snap-1");
+    });
+
+    it("rebuilds a snapshot whose FORGE run is contradicted", async () => {
+      const contradicted = { ...unprovenSnapshotRow("run"), snapshot_code_version: "538100d41ee87e721d2764b694f7bac8c2f2bb34" };
+      expect(await reuse(client("run", [contradicted]))).toBeNull();
+    });
+
+    it("rebuilds an unproven snapshot only with the proof flag on", async () => {
+      vi.stubEnv("GAME_PREDICTIONS_REQUIRE_FORGE_PROOF", "true");
+      expect(await reuse(client("run", []))).toBeNull();
+      expect(await reuse(client("run", [provenSnapshotRow("run")]))).toBe("snap-1");
+    });
+  });
 });
+

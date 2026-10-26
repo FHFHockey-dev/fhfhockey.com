@@ -1,6 +1,6 @@
 import { loadPlanningInputs, pages, withinDeadline, PlanningReadDeadlineError, type PlanningDataQuery } from "./planningInputs";
 import { admitConsumerGameRevisions } from "lib/projections/consumerRevisionAdmission";
-import { currentRsoUsePolicy, restrictRsoForecast, type RsoUsePolicyManifest } from "lib/player-forecasts/rsoUsePolicy";
+import { currentRsoUsePolicy, issuedParticipationLineage, restrictRsoForecast, type RsoUsePolicyManifest } from "lib/player-forecasts/rsoUsePolicy";
 import { loadForgeDailyBridgeForecasts } from "./forgeDailyBridge";
 export { normalizePlanningGames } from "./planningInputs";
 export { publicPlanningForecasts } from "lib/projections/consumerRevisionAdmission";
@@ -224,7 +224,8 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
         // artifact; issuance or captured-read hashes never stand in for it.
         ...revisionModelIdentity(admitted?.revision.payload), targetKey, horizonGames: 1,
         conditioning: admitted?.source.kind === "goalie" ? "start_only_zero_relief" : "conditional_playing",
-        participationLineage: `${forecast.revisionId}:participation`, cutoffAt: forecast.cutoffAt ?? "",
+        // Stable participation method for review; the issued revision is checked per row (Astra F3).
+        participationLineage: issuedParticipationLineage(admitted?.source.kind ?? "unknown", forecast.revisionId), cutoffAt: forecast.cutoffAt ?? "",
       }]));
       const restricted = restrictRsoForecast({ ...forecast, rsoTargetBindings }, { rsoUsePolicy }, now.toISOString(), policy);
       for (const [targetKey, uses] of Object.entries(restricted.targetAllowedUses ?? {})) {

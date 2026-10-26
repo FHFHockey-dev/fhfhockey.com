@@ -14,6 +14,7 @@ import { classifyStoredShiftChartStrengthGame } from "lib/projections/shiftChart
 // lib/projections/compatibilityInventory.ts so surviving compatibility surfaces
 // stay explicit while transitional routes are retired.
 import { reconcileTeamToPlayers } from "lib/projections/reconcile";
+import { buildReserveSkaterLine, buildReserveSkaterRow, forgeReservePassEnabled, selectReserveSkaters } from "lib/projections/reserveProjections";
 import {
   buildGoalieUncertainty,
   buildPlayerUncertainty,
@@ -302,6 +303,7 @@ import {
 import {
   persistForgeGoalieProjection,
   persistForgePlayerProjectionRows,
+  persistForgeReserveProjectionRows,
   persistForgeTeamProjection,
   persistPerGameAnalyticsOutputs,
 } from "../stages/persistence-stage";
@@ -3430,6 +3432,76 @@ export async function runPerGameSkaterStage(args: {
     if (teamGoalAccounting.reportedEsPpMean === null) teamGoalsByTeamId.delete(teamId);
     else teamGoalsByTeamId.set(teamId, teamGoalAccounting.reportedEsPpMean);
 
+    // Reserve pass: every other current-roster skater gets an "if he dresses" line in its own table, after the team
+    // row is written, so the lineup's TOI, goals and team totals above are untouched.
+    const reserveCandidates = !forgeReservePassEnabled() ? [] : selectReserveSkaters({
+      teamId,
+      rosterPlayerIds: activeRosterSkaterIds,
+      lineupPlayerIds: playerUpserts.map((row) => row.player_id),
+      goalieIds: currentTeamGoalieIdsCache.get(teamDateKey(teamId))!,
+      metaById: await fetchPlayerMetaByIds(
+        activeRosterSkaterIds.filter((id) => !projected.has(id)),
+      ),
+      ruledOutIds: [...playerAvailabilityMultiplier]
+        .filter(([, multiplier]) => multiplier <= 0)
+        .map(([id]) => id),
+      hardStaleIds: activeSkaterFilter.excludedSkaterIdsByReason.hardStale,
+      missingMetricIds:
+        activeSkaterFilter.excludedSkaterIdsByReason.missingRecentMetrics,
+    });
+    if (reserveCandidates.length > 0) {
+      const reserveIds = reserveCandidates.map((c) => c.playerId);
+      const [reserveEv, reservePp, reserveAll] = await Promise.all(
+        (["ev", "pp", "all"] as const).map(async (strength) =>
+          pickLatestByPlayer(
+            await fetchRollingRows(reserveIds, strength, asOfDate),
+          ),
+        ),
+      );
+      const reserveRows = reserveCandidates.flatMap((candidate) => {
+        const line = buildReserveSkaterLine({
+          position: candidate.position,
+          ev: reserveEv.get(candidate.playerId),
+          pp: reservePp.get(candidate.playerId),
+          all: reserveAll.get(candidate.playerId),
+          currentSeasonId,
+          league: leaguePhysicalTotals,
+          context: {
+            toiMultiplier: restScheduleAdjustment.toiMultiplier,
+            shotRateMultiplier:
+              teamLevelContextAdjustment.shotRateMultiplier *
+              restScheduleAdjustment.shotRateMultiplier,
+            goalRateMultiplier:
+              teamLevelContextAdjustment.goalRateMultiplier *
+              opponentGoalieContextAdjustment.goalRateMultiplier *
+              restScheduleAdjustment.goalRateMultiplier,
+            assistRateMultiplier:
+              teamLevelContextAdjustment.assistRateMultiplier *
+              opponentGoalieContextAdjustment.assistRateMultiplier *
+              restScheduleAdjustment.assistRateMultiplier,
+          },
+          team: { ...assistTeam, assistScaleEs, assistScalePp },
+        });
+        if (!line) return [];
+        const latest = [reserveEv.get(candidate.playerId)?.game_date, reservePp.get(candidate.playerId)?.game_date]
+          .filter((date): date is string => typeof date === "string").sort().at(-1) ?? null;
+        return [buildReserveSkaterRow({
+          runId, asOfDate, horizonGames, gameId: game.id, playerId: candidate.playerId, teamId, opponentTeamId,
+          reason: candidate.reason, line, horizonScalar: teamHorizonTotalScalar,
+          evidence: {
+            availabilityEventId: availabilityEventByPlayer.get(candidate.playerId)?.event_id ?? null,
+            latestMetricDate: latest,
+          },
+        })];
+      });
+      metrics.data_quality.reserve_skaters_projected =
+        (metrics.data_quality.reserve_skaters_projected ?? 0) + reserveRows.length;
+      metrics.data_quality.reserve_skaters_without_metrics =
+        (metrics.data_quality.reserve_skaters_without_metrics ?? 0) +
+        reserveCandidates.length - reserveRows.length;
+      await persistForgeReserveProjectionRows(reserveRows);
+    }
+
     // Goalie: pick the highest probability starter from goalie_start_projections if available.
     const goalieOverride = goalieOverrideByTeamId.get(teamId);
     const { data: goalieStarts, error: gsErr } = await supabase
@@ -3555,6 +3627,7 @@ export async function runPerGameSkaterStage(args: {
         seasonStartPctByGoalieId,
         seasonGamesPlayedByGoalieId,
         override: goalieOverride ?? null,
+        rosterGoalieIds: [...currentTeamGoalieIds].sort((a, b) => a - b),
       });
     }
   }
