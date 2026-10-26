@@ -1,9 +1,11 @@
 import { getSchedule } from "lib/NHL/server";
-import { TUESDAY_NOT_CONNECTED, assertCalendarDate, buildBlockedSnapshot, buildScheduleSnapshot, calendarWeekStart, currentSeason, weekDates } from "./schedule";
+import { assertCalendarDate, buildBlockedSnapshot, buildScheduleSnapshot, calendarWeekStart, currentSeason, weekDates } from "./schedule";
 import { buildOpponentLayer } from "./matchups";
 import { loadShareTeamRates } from "./teamRates";
 import { loadSharePlayerRecent, loadSharePlayerSources, RECENT_LIMITS } from "./playerSources";
 import { attachRecent, buildPlayerLayer } from "./players";
+import { buildTrendLayer } from "./trends";
+import { loadTrendLayer } from "./trendSources";
 import { rankingPool, tierCountsOf, trimEditionPlayers } from "./tiers";
 import { localDate } from "lib/rosterScheduleOptimizer/planningDates";
 import { isSocialShareFormat, OPPONENT_RATE_FORMATS, SHARE_TIME_ZONE, UPSTREAM_READ_FORMATS, type SocialShareFormat, type SocialShareSnapshot } from "./types";
@@ -20,8 +22,7 @@ export async function loadScheduleShareSnapshot(format: SocialShareFormat, weekS
     assertSupportedSeason(start, requestedAt);
     if (selectedDates && (new Set(selectedDates).size !== selectedDates.length || selectedDates.some(date => !dates.includes(assertCalendarDate(date))))) throw new Error("Selected dates must be unique dates within the selected week.");
   } catch (error) { throw new SocialShareRequestError(error instanceof Error ? error.message : "Invalid date selection.", 400); }
-  // Tuesday trends has no live trend source yet, so it makes no read at all (SS1-6-O1).
-  if (format === "tuesday-trends") return buildBlockedSnapshot({ format, weekStart: start, selectedDates, generatedAt: requestedAt, ...TUESDAY_NOT_CONNECTED });
+  if (format === "tuesday-trends") return loadTuesdaySnapshot(start, selectedDates);
   if (!UPSTREAM_READ_FORMATS.includes(format)) return buildBlockedSnapshot({ format, weekStart: start, selectedDates, generatedAt: requestedAt,
     sourceReason: "No upstream schedule read was made for this unsupported format.", reason: "This format requires ownership or player evidence that is not available in this schedule-only edition." });
   let snapshot: SocialShareSnapshot;
@@ -49,6 +50,24 @@ export async function loadScheduleShareSnapshot(format: SocialShareFormat, weekS
   const since = new Date(Date.parse(`${localDate(snapshot.generatedAt, SHARE_TIME_ZONE)}T00:00:00Z`) - RECENT_LIMITS.lookbackDays * 86400000).toISOString().slice(0, 10);
   const recent = await loadSharePlayerRecent(season, pool.players.filter(player => player.group !== "G").map(player => player.nhlId), pool.players.filter(player => player.group === "G").map(player => player.nhlId), since).catch(() => null);
   snapshot.players = trimEditionPlayers(snapshot, attachRecent(pool, recent, snapshot.generatedAt), tierCountsOf(snapshot, layer));
+  return snapshot;
+}
+
+/**
+ * Tuesday edition (lane TT): the schedule for week games, then the trend layer from native sources only after the
+ * schedule is ready. Runs after auth and parameter validation; a failed trend source becomes its sections'
+ * "missing" state, never a fixture value, and only listed players leave the server.
+ */
+async function loadTuesdaySnapshot(start: string, selectedDates?: string[]) {
+  let snapshot: SocialShareSnapshot;
+  try {
+    const schedule = await getSchedule(start, { includeOdds: false });
+    snapshot = buildScheduleSnapshot({ format: "tuesday-trends", weekStart: start, selectedDates, generatedAt: new Date().toISOString(), schedule });
+  } catch { throw new SocialShareRequestError("NHL schedule is unavailable. Refresh to retry.", 503); }
+  const context = { season: currentSeason(start), fetchedAt: new Date().toISOString(), generatedAt: snapshot.generatedAt };
+  snapshot.trends = snapshot.state === "ready" && snapshot.source.state === "ready"
+    ? await loadTrendLayer(context).catch(() => buildTrendLayer(null, context, "Trend sources could not be read."))
+    : buildTrendLayer(null, context, "Trend sources were not read because the schedule edition is not ready.");
   return snapshot;
 }
 
