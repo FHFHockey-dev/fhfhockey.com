@@ -1,4 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { readFileSync, readdirSync } from "node:fs";
+import path from "node:path";
+import ts from "typescript";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("lib/supabase/server", () => ({ default: {} }));
 
 import {
   buildOpportunityChangeSignals,
@@ -9,6 +14,7 @@ import {
   stableDiscoveryHash,
   type ProjectionRankObservation,
 } from "./discovery";
+import { buildDraftRankerDiscoverySnapshot } from "./discoveryServer";
 
 const AS_OF = "2026-09-01T12:00:00.000Z";
 const EXPIRES = "2026-09-03T12:00:00.000Z";
@@ -207,5 +213,137 @@ describe("Draft Ranker discovery algorithms", () => {
     expect(stableDiscoveryHash({ a: 1, b: { c: 2 } })).toBe(
       stableDiscoveryHash({ b: { c: 2 }, a: 1 }),
     );
+  });
+});
+
+describe("Draft Rankings discovery pundit-projection boundary", () => {
+  const root = path.resolve(process.cwd(), "lib/draft-ranker");
+  function sourceFile(file: string) {
+    return ts.createSourceFile(
+      file,
+      readFileSync(path.join(root, file), "utf8"),
+      ts.ScriptTarget.Latest,
+      true,
+    );
+  }
+  function visit(node: ts.Node, check: (node: ts.Node) => void) {
+    check(node);
+    ts.forEachChild(node, (child) => visit(child, check));
+  }
+
+  it("keeps every draft-ranker module free of the pundit projection config and tables", () => {
+    // TJ, 2026-10-26: only /projections and /draft-dashboard may read PROJECTIONS_*.
+    const files = (function list(dir: string): string[] {
+      return readdirSync(path.join(root, dir), { withFileTypes: true }).flatMap(
+        (entry) =>
+          entry.isDirectory()
+            ? list(path.join(dir, entry.name))
+            : /\.tsx?$/.test(entry.name) && !/\.test\.tsx?$/.test(entry.name)
+              ? [path.join(dir, entry.name)]
+              : [],
+      );
+    })(".");
+    const offenders: string[] = [];
+    for (const file of files) {
+      visit(sourceFile(file), (node) => {
+        if (
+          (ts.isStringLiteralLike(node) ||
+            ts.isTemplateLiteralToken(node) ||
+            ts.isRegularExpressionLiteral(node)) &&
+          /projectionsConfig\/projectionSourcesConfig|PROJECTIONS_/i.test(
+            node.text,
+          )
+        )
+          offenders.push(`${file}: ${node.text}`);
+        if (
+          ts.isIdentifier(node) &&
+          ["PROJECTION_SOURCES_CONFIG", "useProcessedProjectionsData"].includes(
+            node.text,
+          )
+        )
+          offenders.push(`${file}: ${node.text}`);
+      });
+    }
+    expect(files.length).toBeGreaterThan(10);
+    expect(offenders).toEqual([]);
+  });
+
+  it("builds a snapshot without touching projection tables and with no projection-backed signals", async () => {
+    const allowed = new Set([
+      "seasons",
+      "yahoo_players_with_normalized_history",
+      "fhfh_player_external_identities",
+      "nhl_api_game_roster_spots",
+      "player_lineup_deployment_tallies",
+      "nhl_player_contracts",
+      "forge_roster_events",
+      "fhfh_player_identities",
+    ]);
+    const tables: string[] = [];
+    const client = {
+      from(table: string) {
+        tables.push(table);
+        if (!allowed.has(table)) {
+          throw new Error(`Discovery read is outside its boundary: ${table}`);
+        }
+        const result = { data: [], count: 0, error: null };
+        const query: any = new Proxy(
+          {},
+          {
+            get(_target, property) {
+              if (property === "then") {
+                return (resolve: (value: unknown) => unknown) =>
+                  resolve(result);
+              }
+              if (property === "maybeSingle") {
+                return async () => ({
+                  data: {
+                    id: 20262027,
+                    startDate: "2026-10-06",
+                    regularSeasonEndDate: "2027-04-15",
+                    endDate: "2027-06-20",
+                  },
+                  error: null,
+                });
+              }
+              return () => query;
+            },
+          },
+        );
+        return query;
+      },
+      rpc() {
+        throw new Error("Discovery build must not write.");
+      },
+    };
+
+    const snapshot = await buildDraftRankerDiscoverySnapshot({
+      client,
+      asOf: AS_OF,
+      targetSeasonId: 20262027,
+    });
+
+    expect(tables.some((table) => /projection/i.test(table))).toBe(false);
+    expect(snapshot.projectionConsensus).toEqual([]);
+    expect(snapshot.sourceSummary.projectionSources).toBe("not_used");
+    expect(snapshot.sourceHealth.map((source) => source.source_key)).toEqual([
+      "forge_roster_events",
+      "nhl_api_game_roster_spots",
+      "nhl_player_contracts",
+      "player_lineup_deployment_tallies",
+      "yahoo_players",
+    ]);
+    expect(
+      snapshot.warningCodes.some((code) => code.startsWith("projection_")),
+    ).toBe(false);
+    expect(
+      snapshot.signals.filter((signal) =>
+        [
+          "projection_gap",
+          "previously_undrafted",
+          "cutoff_challenger",
+        ].includes(signal.signal_type),
+      ),
+    ).toEqual([]);
   });
 });
