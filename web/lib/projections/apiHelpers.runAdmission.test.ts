@@ -6,7 +6,7 @@ const lookup = vi.hoisted(() => ({
 vi.mock("lib/supabase/server", () => ({ default: { from: lookup.from } }));
 
 import { requireLatestExternalInputProvenRunId, requireLatestSucceededRunId } from "./apiHelpers";
-import { provenSnapshotRow, unprovenSnapshotRow } from "./externalInputProof.fixtures";
+import { provenSnapshotRow, unprovenSnapshotRow, verifiedReleaseRunRow } from "./externalInputProof.fixtures";
 import {
   FORGE_ROLLING_HISTORY_INPUT_CONTRACT,
   FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT,
@@ -73,13 +73,16 @@ describe("released legacy FORGE run lookup (separate from native admission)", ()
 describe("latest FORGE run with external-input exclusion proof", () => {
   let runs: string[] = [];
   let snapshots: Array<Record<string, unknown>> = [];
-  const runQuery = { select: vi.fn(), eq: vi.fn(), not: vi.fn(), or: vi.fn(), order: vi.fn(), limit: vi.fn() };
+  let attribution: Array<Record<string, unknown>> = [];
+  const runQuery = { select: vi.fn(), eq: vi.fn(), not: vi.fn(), or: vi.fn(), order: vi.fn(), limit: vi.fn(), in: vi.fn() };
   const snapshotIds: string[][] = [];
   beforeEach(() => {
     lookup.from.mockReset();
     snapshotIds.length = 0;
     for (const mock of Object.values(runQuery)) mock.mockReset().mockReturnValue(runQuery);
+    attribution = [];
     runQuery.limit.mockImplementation(async () => ({ data: runs.map(run_id => ({ run_id })), error: null }));
+    runQuery.in.mockImplementation(async (_column: string, ids: string[]) => ({ data: attribution.filter(row => ids.includes(row.run_id as string)), error: null }));
     lookup.from.mockImplementation((table: string) => {
       if (table === "forge_runs") return runQuery;
       const chain: any = { select: () => chain, eq: () => chain, in: async (_column: string, ids: string[]) => {
@@ -109,6 +112,13 @@ describe("latest FORGE run with external-input exclusion proof", () => {
   it("skips newer unproven runs for an older proven run of the same date", async () => {
     runs = ["legacy-run", "uncaptured-run", "clean-run"]; snapshots = [unprovenSnapshotRow("legacy-run"), provenSnapshotRow("clean-run")];
     expect(await requireLatestExternalInputProvenRunId("2026-10-26")).toBe("clean-run");
+  });
+
+  it("accepts a snapshot-less run of the verified release only when one invocation did all its work", async () => {
+    runs = ["resumed-run", "single-run"]; snapshots = [];
+    attribution = [verifiedReleaseRunRow("resumed-run", { invocations: "3" }), verifiedReleaseRunRow("single-run")];
+    expect(await requireLatestExternalInputProvenRunId("2026-10-26")).toBe("single-run");
+    expect(runQuery.in).toHaveBeenCalledWith("run_id", ["resumed-run", "single-run"]);
   });
 
   it("keeps 404 for a date with no run, without a proof read", async () => {

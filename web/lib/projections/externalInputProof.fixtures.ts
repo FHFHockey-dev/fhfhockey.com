@@ -15,17 +15,26 @@ export function unprovenSnapshotRow(runId: string) {
   return { ...provenSnapshotRow(runId), external_fantasy_input_contract: null };
 }
 
-/** A client whose `player_forecast_source_observations` reads return `rows` matching the requested run ids. */
-export function proofDb(rows: Array<Record<string, unknown>>) {
+/** A snapshot-less run's attribution row, selected as loadExternalInputProof selects it: by default a single-invocation
+ * succeeded run of the verified production release 538100d41. */
+export function verifiedReleaseRunRow(runId: string, overrides: Record<string, unknown> = {}) {
+  return { run_id: runId, git_sha: "538100d41ee87e721d2764b694f7bac8c2f2bb34", status: "succeeded", invocations: "1",
+    rolling_player_history_contract: FORGE_ROLLING_HISTORY_INPUT_CONTRACT, ...overrides };
+}
+
+/** A client whose snapshot reads return `rows`, and whose `forge_runs` attribution reads return `runRows`, matching the
+ * requested run ids. */
+export function proofDb(rows: Array<Record<string, unknown>>, runRows: Array<Record<string, unknown>> = []) {
   const reads: Array<{ table: string; columns: string; eq: unknown[][]; ids: string[] }> = [];
   const db = { from(table: string) {
     const read = { table, columns: "", eq: [] as unknown[][], ids: [] as string[] };
     const chain: any = {
       select(columns: string) { read.columns = columns; return chain; },
       eq(...args: unknown[]) { read.eq.push(args); return chain; },
-      in(_column: string, ids: string[]) {
+      in(column: string, ids: string[]) {
         read.ids = ids; reads.push(read);
-        return Promise.resolve({ data: rows.filter(row => ids.includes(row.entity_key as string)), error: null });
+        const source = table === "forge_runs" ? runRows : rows;
+        return Promise.resolve({ data: source.filter(row => ids.includes(row[column] as string)), error: null });
       },
     };
     return chain;

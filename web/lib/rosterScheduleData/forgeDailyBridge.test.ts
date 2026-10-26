@@ -161,14 +161,14 @@ describe("FORGE daily bridge", () => {
 
     // forge_runs rows newest first; each run's snapshot (or none) decides whether it is proven.
     function proofDb(runRows: Record<string, any>[], snapshots: Record<string, any>[], skaterRows: Record<string, any>[] = []) {
-      const runIdReads: unknown[] = [], proofReads: unknown[] = [];
+      const runIdReads: unknown[] = [], proofReads: unknown[] = [], attributionReads: unknown[] = [];
       const db = { from: (table: string) => {
         let rows: Record<string, any>[] = table === "forge_runs" ? [...runRows] : table === "forge_player_projections" ? [...skaterRows]
           : table === "player_forecast_source_observations" ? [...snapshots] : [];
         const builder: any = new Proxy({}, { get: (_target, property) => {
           if (property === "then") return (resolve: (value: unknown) => unknown) => Promise.resolve(resolve({ data: rows, count: rows.length, error: null }));
           if (property === "in") return (column: string, values: unknown[]) => {
-            if (column === "run_id") runIdReads.push(values);
+            if (column === "run_id") (table === "forge_runs" ? attributionReads : runIdReads).push(values);
             if (column === "entity_key") proofReads.push(values);
             rows = rows.filter(row => values.includes(row[column]));
             return builder;
@@ -177,7 +177,7 @@ describe("FORGE daily bridge", () => {
         } });
         return builder;
       } };
-      return { db, runIdReads, proofReads };
+      return { db, runIdReads, proofReads, attributionReads };
     }
 
     it("selects, per date, the latest proven run and reads no row of a newer unproven one", async () => {
@@ -187,13 +187,27 @@ describe("FORGE daily bridge", () => {
         { run_id: "clean", as_of_date: "2026-10-19", created_at: "2026-10-19T12:00:00Z", git_sha: "abc" },
         { run_id: "legacy-old", as_of_date: "2026-10-18", created_at: "2026-10-18T12:00:00Z", git_sha: "abc" },
       ];
-      const { db, runIdReads, proofReads } = proofDb(runRows, [unprovenSnapshotRow("legacy"), provenSnapshotRow("clean"), unprovenSnapshotRow("legacy-old")],
+      const { db, runIdReads, proofReads, attributionReads } = proofDb(runRows, [unprovenSnapshotRow("legacy"), provenSnapshotRow("clean"), unprovenSnapshotRow("legacy-old")],
         [skater("clean", "2026-10-19", 1, 101, 10), skater("legacy", "2026-10-19", 1, 101, 10), skater("legacy-old", "2026-10-18", 0, 102, 10)]);
       const result = await loadForgeDailyBridgeForecasts(db as never, players, games, now, 20262027, Date.now() + 5000, policy);
       expect(proofReads).toEqual([["uncaptured", "legacy", "clean", "legacy-old"]]);
+      // Only the snapshot-less run's attribution is read; its "abc" SHA is no verified release.
+      expect(attributionReads).toEqual([["uncaptured"]]);
       expect(runIdReads).toEqual([["clean"], ["clean"]]);
       expect(new Set(result.forecasts.map(row => row.revisionId))).toEqual(new Set([`${FORGE_DAILY_BRIDGE_VERSION}:clean`]));
       expect(result.limitations).toContain("3 FORGE runs in the last week cannot prove they excluded third-party fantasy projections, so they are withheld; players covered only by them get no forecast.");
+    });
+
+    it("serves an uncaptured run of the verified release, single invocation only, and never a resumed one", async () => {
+      const release = "538100d41ee87e721d2764b694f7bac8c2f2bb34";
+      const runRows = [
+        { run_id: "resumed", as_of_date: "2026-10-19", created_at: "2026-10-19T14:00:00Z", git_sha: release, status: "succeeded", invocations: "2" },
+        { run_id: "single", as_of_date: "2026-10-19", created_at: "2026-10-19T12:00:00Z", git_sha: release, status: "succeeded", invocations: "1" },
+      ];
+      const { db, runIdReads } = proofDb(runRows, [], [skater("resumed", "2026-10-19", 1, 101, 10), skater("single", "2026-10-19", 1, 101, 10)]);
+      const result = await loadForgeDailyBridgeForecasts(db as never, players, games, now, 20262027, Date.now() + 5000, policy);
+      expect(runIdReads).toEqual([["single"], ["single"]]);
+      expect(new Set(result.forecasts.map(row => row.revisionId))).toEqual(new Set([`${FORGE_DAILY_BRIDGE_VERSION}:single`]));
     });
 
     it("serves a clean run proven by its snapshot, and fails closed when proof cannot be read", async () => {
