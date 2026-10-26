@@ -10,7 +10,7 @@ import { editionCountTiers, mondayGridRows, type CountTier } from "lib/socialSha
 import { fetchEdition } from "lib/socialShare/editionFetch";
 import { editionLabel } from "lib/socialShare/edition";
 import { easiestSchedules, opponentsReady, SOFT_DEFENSE_MAX, STREAM_TEAM_RANK_MAX, streamingNights, type MatchupGame, type RankedRate, type StreamNight } from "lib/socialShare/matchups";
-import { deploymentChanges, hotCold, ownershipMovers, RATE_DIGITS, RATE_METRICS, rateStandouts, DEPLOYMENT_LIST, MIN_DEPLOYMENT_TOI_DELTA_SECONDS, RATE_LIST, TREND_LIST, RECENT_FORM_GAMES, TREND_MAX_GAME_AGE_DAYS, TREND_WINDOW_GAMES, trendDefinitions, trendExportToken, trendSectionReady, type RateMetric } from "lib/socialShare/trends";
+import { deploymentChanges, hotCold, ownershipMovers, RATE_DIGITS, RATE_METRICS, rateStandouts, DEPLOYMENT_LIST, PP_UNITS, MIN_DEPLOYMENT_TOI_DELTA_SECONDS, RATE_LIST, TREND_LIST, RECENT_FORM_GAMES, TREND_MAX_GAME_AGE_DAYS, TREND_WINDOW_GAMES, trendDefinitions, trendExportToken, trendSectionReady, type RateMetric } from "lib/socialShare/trends";
 import { MIN_GOALIE_STARTS, MIN_SKATER_GAMES, PICKUP_BANDS, PLAYER_TEAM_RANK_MAX, pickupTiers, playersMatchSelection, playersReady, specialists, type RankedPlayer, type SpecialistCategory } from "lib/socialShare/players";
 import styles from "./SocialShare.module.scss";
 import { TeamBanner, teamBannerStyle } from "./TeamBanner";
@@ -292,13 +292,13 @@ type RecentFocus = "pickup" | SpecialistCategory;
 const streakContext = (focus: RecentFocus): StreakContext => focus === "pickup" ? "pickup" : "specialist";
 /** The player's last five games, focused on the stat that justifies the pick. */
 const LINE_TONES: Record<string, string> = { L1: "green", L2: "yellow", L3: "orange", L4: "red", P1: "green", P2: "yellow", P3: "red" };
-/** Latest-game role chips (ticket 15): line or pair, and PP1 / PP2 / PP3. Nothing when deployment is unknown. */
+/** Latest-game role chips (ticket 15): line or pair, and PP1 / PP2. Nothing when deployment is unknown. */
 export function roleChipList(recent: SharePlayerRecent | null | undefined): { role: string; tone: string }[] {
   if (!recent || recent.kind !== "skater") return [];
-  // PP1 green, PP2 yellow, PP3 orange (the third step, as L3 is). A null unit can mean "no PP data", so it gets
-  // no PP chip rather than a "NO PP" claim (C7 SS1-15-F4).
-  const pp = recent.ppUnit === "PP1" || recent.ppUnit === "PP2" || recent.ppUnit === "PP3" ? recent.ppUnit : null;
-  return [...(recent.line ? [{ role: recent.line, tone: LINE_TONES[recent.line] }] : []), ...(pp ? [{ role: pp, tone: pp === "PP1" ? "green" : pp === "PP2" ? "yellow" : "orange" }] : [])];
+  // PP1 green, PP2 yellow. There are only two PP units (TJ, TT-4): the writer's "unit 3" is incidental PP time, so it
+  // gets no chip. A null unit can mean "no PP data", so it gets no PP chip rather than a "NO PP" claim (C7 SS1-15-F4).
+  const pp = recent.ppUnit === "PP1" || recent.ppUnit === "PP2" ? recent.ppUnit : null;
+  return [...(recent.line ? [{ role: recent.line, tone: LINE_TONES[recent.line] }] : []), ...(pp ? [{ role: pp, tone: pp === "PP1" ? "green" : "yellow" }] : [])];
 }
 function RoleChips({ player }: { player: RankedPlayer }) {
   const chips = roleChipList(player.recent);
@@ -382,15 +382,18 @@ const signed = (value: number, digits: number) => `${value > 0 ? "+" : value < 0
 const clock = (seconds: number) => `${Math.floor(Math.abs(seconds) / 60)}:${String(Math.round(Math.abs(seconds) % 60)).padStart(2, "0")}`;
 const signedClock = (seconds: number) => `${seconds > 0 ? "+" : seconds < 0 ? "−" : "±"}${clock(seconds)}`;
 const clockOrDash = (seconds: number | null) => seconds === null ? "—" : clock(seconds);
-/** PP chip text: a unit, "off PP" only when the game's PP rows prove it, and "PP ?" when unknown (never "no PP"). */
-export const ppChip = (state: SharePpState) => state === null ? "PP ?" : state === "none" ? "off PP" : `PP${state}`;
+/**
+ * PP chip text: PP1/PP2, "off PP" only when the game's PP rows prove it, and "PP ?" when unknown (never "no PP").
+ * There are only two PP units (TT-4): a stored unit 3 (the writer's incidental PP time) also reads "off PP".
+ */
+export const ppChip = (state: SharePpState) => state === null ? "PP ?" : state === "none" || state > PP_UNITS ? "off PP" : `PP${state}`;
 /** Deployment badges (lane TT): line/pair and PP changes from contiguous games; unknown stays unknown. */
 export function deploymentBadges(row: ShareDeploymentRow): { text: string; tone: "up" | "down" | "flat" }[] {
   const badges: { text: string; tone: "up" | "down" | "flat" }[] = [];
   if (row.teamChange) badges.push({ text: "NEW TEAM", tone: "flat" });
   if (row.lineChange) badges.push({ text: `${row.lineChange > 0 ? "▲" : "▼"} ${row.line.before} → ${row.line.now}`, tone: row.lineChange > 0 ? "up" : "down" });
   else if (row.line.now) badges.push({ text: row.line.now, tone: "flat" });
-  if (row.ppChange) badges.push({ text: `${row.ppChange > 0 ? "▲" : "▼"} ${ppChip(row.ppUnit.before)} → ${ppChip(row.ppUnit.now)}`, tone: row.ppChange > 0 ? "up" : "down" });
+  if (row.ppChange && ppChip(row.ppUnit.before) !== ppChip(row.ppUnit.now)) badges.push({ text: `${row.ppChange > 0 ? "▲" : "▼"} ${ppChip(row.ppUnit.before)} → ${ppChip(row.ppUnit.now)}`, tone: row.ppChange > 0 ? "up" : "down" });
   else badges.push({ text: ppChip(row.ppUnit.now), tone: "flat" });
   return badges;
 }
@@ -440,7 +443,7 @@ function TrendBadge({ text, tone }: { text: string; tone: Tone }) {
   return <span className={styles.trendBadge} data-tone={tone}>{tone !== "flat" && <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d={TREND_ARROWS[tone]} /></svg>}<em>{text}</em></span>;
 }
 /** Monday role-chip colours for deployment chips: green/red for a change, the line/unit's own tone otherwise. */
-const chipTone = (chip: { text: string; tone: Tone }) => chip.tone === "up" ? "green" : chip.tone === "down" ? "red" : LINE_TONES[chip.text] ?? (chip.text === "PP1" ? "green" : chip.text === "PP2" ? "yellow" : chip.text === "PP3" ? "orange" : undefined);
+const chipTone = (chip: { text: string; tone: Tone }) => chip.tone === "up" ? "green" : chip.tone === "down" ? "red" : LINE_TONES[chip.text] ?? (chip.text === "PP1" ? "green" : chip.text === "PP2" ? "yellow" : undefined);
 
 function trendUnreadyReason(kind: TrendKind, snapshot: SocialShareSnapshot, trusted: boolean) {
   // An edition without a trend layer is "not connected", never a schedule fault.

@@ -142,7 +142,12 @@ export function activeSkaters(rows: ShareRollingRow[], context: TrendContext) {
   return { active: state === "stale" ? new Map<number, Active>() : active, state, reasons, through, updatedAt: newestUpdate, today };
 }
 
-/** PP evidence per game: unit when listed, "none" when the game has PP rows without the player, else unknown. */
+/**
+ * PP evidence per game: PP1 or PP2 when listed; "none" when the game has PP rows and the player is not on PP1/PP2;
+ * otherwise unknown. There are only two PP units (TJ, TT-4): the writer (update-power-play-combinations/[gameId].ts)
+ * ranks skaters by PP TOI, top 5 → 1, next 5 → 2, everyone else with PP time → 3, so unit 3 is incidental PP time.
+ */
+export const PP_UNITS = 2;
 function ppEvidence(ppc: SharePpcRow[]) {
   const games = new Map<number, Map<number, number>>();
   for (const row of ppc) {
@@ -153,10 +158,11 @@ function ppEvidence(ppc: SharePpcRow[]) {
   }
   return (row: ShareRollingRow): SharePpState => {
     const units = row.game_id === null ? undefined : games.get(row.game_id);
-    if (units?.has(row.player_id)) return units.get(row.player_id)! > 0 ? units.get(row.player_id)! : "none";
+    if (units?.has(row.player_id)) { const unit = units.get(row.player_id)!; return unit >= 1 && unit <= PP_UNITS ? unit : "none"; }
     if (units) return "none";
-    // No PP rows for the game: only the rolling row's own unit is evidence; a null there stays unknown.
-    return num(row.pp_unit) && row.pp_unit > 0 ? row.pp_unit : null;
+    // No PP rows for the game: only the rolling row's own PP1/PP2 is evidence. Anything else (null, or a unit 3 that
+    // the game's rows cannot confirm) stays unknown.
+    return num(row.pp_unit) && row.pp_unit >= 1 && row.pp_unit <= PP_UNITS ? row.pp_unit : null;
   };
 }
 const ppRank = (state: SharePpState) => state === "none" ? 9 : state;

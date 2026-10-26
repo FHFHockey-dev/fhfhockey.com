@@ -134,10 +134,10 @@ describe("week input (REL-SS1-LOW-YEAR-R1)", () => {
 describe("role chips (C7 SS1-15-F4)", () => {
   const skater = (line: string | null, ppUnit: string | null) => ({ kind: "skater" as const, games: 5, through: "2026-10-24", goals: 0, assists: 0, points: 0, shots: 0, hitsPerGame: 0, blocksPerGame: 0, toiSeconds: 900, ppPoints: 0,
     line: line as "L1" | null, ppUnit: ppUnit as "PP1" | null, toiSeasonSeconds: 900 });
-  it("shows PP3 as PP3 (orange), and no PP chip when the unit is unknown", () => {
+  it("shows PP1/PP2 only: the writer's unit 3 (incidental PP time) and an unknown unit get no PP chip (TT-4)", () => {
     expect(roleChipList(skater("L1", "PP1"))).toEqual([{ role: "L1", tone: "green" }, { role: "PP1", tone: "green" }]);
     expect(roleChipList(skater("L3", "PP2"))).toEqual([{ role: "L3", tone: "orange" }, { role: "PP2", tone: "yellow" }]);
-    expect(roleChipList(skater("L4", "PP3"))).toEqual([{ role: "L4", tone: "red" }, { role: "PP3", tone: "orange" }]);
+    expect(roleChipList(skater("L4", "PP3"))).toEqual([{ role: "L4", tone: "red" }]);
     expect(roleChipList(skater("P1", null))).toEqual([{ role: "P1", tone: "green" }]);
     expect(roleChipList(skater(null, null))).toEqual([]);
     expect(roleChipList(null)).toEqual([]);
@@ -220,6 +220,10 @@ describe("Tuesday trend edition (lane TT)", () => {
     expect(deploymentBadges(row({ line: { now: "L1", before: "L3" }, lineChange: 1, ppUnit: { now: "none", before: 1 }, ppChange: -1 }))).toEqual([{ text: "▲ L3 → L1", tone: "up" }, { text: "▼ PP1 → off PP", tone: "down" }]);
     expect(deploymentBadges(row({ teamChange: true, line: { now: "L1", before: null } })).map(badge => badge.text)).toEqual(["NEW TEAM", "L1", "PP ?"]);
     for (const state of [null, "none", 1, 2, 3] as const) expect(ppChip(state)).not.toMatch(/no PP/i);
+    // Two PP units only (TT-4): a stored unit 3 reads "off PP", and a 3 ↔ off PP "change" shows no change chip.
+    expect(ppChip(3)).toBe("off PP");
+    expect(deploymentBadges(row({ ppUnit: { now: "none", before: 3 }, ppChange: -1 }))).toEqual([{ text: "L2", tone: "flat" }, { text: "off PP", tone: "flat" }]);
+    expect(deploymentBadges(row({ ppUnit: { now: 3, before: 1 }, ppChange: -1 })).at(-1)).toEqual({ text: "▼ PP1 → off PP", tone: "down" });
     // Role-only heroes name the role direction, never a TOI number (TT-3).
     expect(roleHero(row({ lineChange: 1 }))).toBe("▲ LINE");
     expect(roleHero(row({ lineChange: -1, ppChange: -1 }))).toBe("▼ LINE + PP");

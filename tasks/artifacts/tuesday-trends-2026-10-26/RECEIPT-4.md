@@ -55,37 +55,57 @@ The sparklines need **two new read-only statements** on already-approved tables:
 
 | Check | Result |
 |---|---|
-| Vitest `lib/socialShare` + `components/SocialShare` | 228/228 (new: sparkline differences, gaps, dropped inconsistent series, game 1, mover series endpoints and gaps, tone = hero sign, SVG gap rendering) |
+| Vitest `lib/socialShare` + `components/SocialShare` | 229/229 (incl. PP add-on); 228/228 before it (new: sparkline differences, gaps, dropped inconsistent series, game 1, mover series endpoints and gaps, tone = hero sign, SVG gap rendering) |
 | E2E full spec, :3110, pins, genuine render | **33 passed** |
 | Monday (9) / Wednesday (9) PNG pins | byte-identical (committed `OTT.png` served, as before) |
 | Tuesday pins | changed by design: `tuesday-cards: 9c37e172b75b7d1c3630af19d13d928f9a1055816074f5fab5b435881414e286,c71f7f0256850f414eee9c56bbe12d9b2169d73936d28d833bc095f84b1e9507,cf0bec88b5bb23e3a5212e5475ed894566109bb61d97a2b54c972ed9540b82ee,48dde0201ee1c9908ad72e5d9e92a6e04ee0b0c3b96acd63d11b4f890a13bb3a` |
 | Loader test | fixture equality holds; S1 ≤ 2 statements with `strength_state=eq.all` and a 35-day window; M2 is 1 statement; most listed rows carry series |
 | ESLint / CSS pure / full `tsc --noEmit` | exit 0 / PURE OK / exit 0 |
 
+## Add-on: only two PP units (TJ, direct, relayed by the chef)
+
+- **Cause, confirmed:** `pages/api/v1/db/update-power-play-combinations/[gameId].ts:129-131` slices skaters by PP TOI: top 5 → unit 1, next 5 → unit 2, and **everyone else with PP time → unit 3**. Unit 3 is incidental PP time, not a unit. The writer and the data are unchanged; only display and change detection change.
+- **Tuesday** (`trends.ts` `ppEvidence`, `PP_UNITS = 2`):
+  - **Off PP:** a game row with unit ≥ 3, or a game with PP rows that doesn't list the player → **off PP**.
+  - **No PP rows:** the rolling row's `pp_unit` counts only when it is 1 or 2; anything else stays **PP ?**.
+  - **Change order:** PP1 < PP2 < off PP. So PP2 → 3 is "▼ PP2 → off PP", and 3 → absent / absent → 3 is **no change**, so it is dropped (Vitest).
+  - **Display:** `ppChip(≥ 3)` reads "off PP" and `deploymentBadges` skips a change whose two sides read the same. This guards stored layers computed earlier, such as the TT-3 run-2 capture used for the genuine render.
+- **Monday** (lease extension, `roleChipList` and its test only):
+  - **Chips:** PP1 and PP2 chips only; the writer's unit 3 gets no chip.
+  - **Unchanged:** `score.ts` stays as it was (PP3 was already ×1.0).
+- **Other "PP3" places checked** across `lib/socialShare` and `components/SocialShare`: `roleChipList`, `chipTone` (PP3 orange removed) and `ppChip`/`deploymentBadges`, all fixed. `score.ts` `OPPORTUNITY.pp` has only PP1/PP2 (neutral for PP3, unchanged). `players.ts` `normalizePpDeploymentBucket` still stores "PP3" in `recent.ppUnit` (data, not rendered after the chip fix). Outside the lease: `lib/rankings/skaterDeploymentAggregation.ts` defines the PP3 bucket and is used beyond social-share; not changed, reported only.
+- **Pins:** **all 9 Monday and all 9 Wednesday pins are byte-identical**. Each was compared card by card against SS1 t24 run-a in a pin-free run, then asserted in the final run. No pinned fixture edition contains a unit-3 skater (the pickups fixture uses units 1/2), so no pin changed. The Monday change is covered by the updated `roleChipList` Vitest. The Tuesday pins are also byte-identical to TT-4: the Tuesday fixture has no unit 3.
+- **Genuine render** (`tt4/after/genuine-run2`): re-rendered. Carrier, Liljegren and W. Carrier now show a plain "off PP" chip instead of "▼ PP3 → off PP", and Frost shows "▼ PP1 → off PP". Their columns are unchanged, because all of them are driven by a TOI change of 1:00 or more.
+- **Checks after the add-on:**
+  - Vitest 229/229.
+  - E2E 33/33 with every Monday, Wednesday and Tuesday pin asserted.
+  - tsc 0, eslint 0, CSS pure OK.
+
 ## Files and sha256
 
 | File | sha256 |
 |---|---|
-| `web/lib/socialShare/trends.ts` | `b66e12aeb18b0daa852699340c918bceb1a5750c44ce5ca04338308577b4e335` |
-| `web/lib/socialShare/trends.test.ts` | `8e74a57cf30ac1e5669ebeea9d29108218cddb077a7842463763e900aa248df8` |
+| `web/lib/socialShare/trends.ts` | `a591fd14eee08d59f63cef381d4dafe9d5084c8f892c8a70e58f89f2894fb61a` |
+| `web/lib/socialShare/trends.test.ts` | `4cc6450911cd012104a45886bfee19c2db058504c606f8e380b238fb29c35989` |
 | `web/lib/socialShare/trendsFixture.ts` | `38155ae610cebf6e9f82ef1bd52cdae9bac0733bc8f3959208177c9b2341965a` |
 | `web/lib/socialShare/trendSources.ts` | `ec402e7f6401845ef7313e0f57fb0a5cd99fbb5f5701f997c8e89e4c0839dd02` |
 | `web/lib/socialShare/trendSources.test.ts` | `7f1fd574a57328a991e368c0fb920920bd0ca2084b1c73a88d05ab8659ba0069` |
 | `web/lib/socialShare/types.ts` | `a9235f1d8592229803d13870fd4d31045be98cb602e323b5eaf76c702b27874c` |
-| `web/components/SocialShare/SocialShare.tsx` | `662f87c90897e76becbf3ac2c78c45fafdd0034847d80bd94f5e2fd5237c8053` |
+| `web/components/SocialShare/SocialShare.tsx` | `91268731d855e2673069e156b0e5bb0de9ad6eab69bfa90e9f80c37a5b28bff0` |
 | `web/components/SocialShare/SocialShare.module.scss` | `ebc98097abb8b8fc4c22570ddc6e3fbd7a96235f7a6c1792c3a76fcb5598a0c5` |
-| `web/components/SocialShare/SocialShare.test.tsx` | `024c535a2e985e123c9aa15ae3e84d0db079ae096ad3045b6fcb3134c3d95361` |
+| `web/components/SocialShare/SocialShare.test.tsx` | `135e1d41434d0f17d4de3ced5c7742c0b255406ad2c83094881d01a548a0c2fd` |
 | `web/e2e/social-share.spec.ts` | `53e16ec087f6ad0d13983c835dd78e8aeaeb9c9eac1d6ff7330b3e4541264aa7` |
 | `tasks/diaries/2026-10-26-claude-tuesday-trends-worker.md` | `118dfffb6fd0eb7e12d331635155eef83f08d13eb85d54d3498c2aea303f38f2` |
-| `tasks/artifacts/tuesday-trends-2026-10-26/CONTRACT.md` | `5c213d9a6e6bc113d29a45f0a26be688ec66ba70e4808e19b6423dd97e39dbc8` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/CONTRACT.md` | `544b3742997851e4978e331e29f426ec637b013814aaed5a92f4a24b27015949` |
 | `tasks/artifacts/tuesday-trends-2026-10-26/READ-PLAN.md` | `29530526600004f33d68521f72687ae7b28ec30b68cf4ac9ea19419c1872480a` |
 | `tasks/artifacts/tuesday-trends-2026-10-26/run/tuesday-pins.txt` | `c043dcdc71a724b8b4997c8c968f332bded71977e14dfc47919fb4066339710b` |
-| `tasks/artifacts/tuesday-trends-2026-10-26/run/e2e-final-4.log` | `c9ef34d4eba537d8befa9ec27198dda75a1146502f8f098549515d62fd8c8de9` |
-| `tasks/artifacts/tuesday-trends-2026-10-26/run/vitest.log` | `bd862782f1b754040362b8ce658aea097fd17cb50b137204c9b1b0c59fd61e1d` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/run/e2e-final-5.log` | `6c2d011946b8b2249ab5a688afe0e7feeced665af22bf1a41429039a858d6aa1` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/run/vitest.log` | `5f4f73b32924f3accfabc9df78b885f39febbe3afb1552de46faa327937761ff` |
 | `tasks/artifacts/tuesday-trends-2026-10-26/run/tsc.log` | `cbf7de6a7ab22aa8f3b63eed31368677222a5389d4a0bcaa112a952910051cec` |
 | `tasks/artifacts/tuesday-trends-2026-10-26/run/eslint.log` | `a6b49f7a0b519016701eccb4efc2de2d77010ed919b35fdad1e3abacbe9dcfd8` |
 | `tasks/artifacts/tuesday-trends-2026-10-26/run/css-pure-check.log` | `ab07584f78f4fac2d4a8900ac0b2819c04d9716b0690443fabcb581819bfc129` |
 | `tasks/artifacts/tuesday-trends-2026-10-26/run/node-network-4.jsonl` | `164e107959eb80e55252d2233b9bd5d873be5a0ac7c160305fd126c3822c49c9` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/run/node-network-5.jsonl` | `a109b4efb29a14cdaa58692942c825d330b2bd23600ac5c9bb8fe06c2dd624c2` |
 | `tasks/artifacts/tuesday-trends-2026-10-26/tt4/after/fixture/AFTER-OFFLINE-FIXTURE-phone-deployment.png` | `7db7c217304fd49cb6d949a82aa877e3187b0945eafe55fd2de0f79bb1e8d610` |
 | `tasks/artifacts/tuesday-trends-2026-10-26/tt4/after/fixture/AFTER-OFFLINE-FIXTURE-phone-hot.png` | `5b7d51ae28007765f474f4fec8784aa9e5ff984cfc510028029c6cdd0382711d` |
 | `tasks/artifacts/tuesday-trends-2026-10-26/tt4/after/fixture/AFTER-OFFLINE-FIXTURE-phone-movers.png` | `7ab9f22f46531f9de5fe0a27c0a6e2ab2cd819c9e0241909ad5dae35c6f2864a` |
@@ -94,16 +114,16 @@ The sparklines need **two new read-only statements** on already-approved tables:
 | `tasks/artifacts/tuesday-trends-2026-10-26/tt4/after/fixture/AFTER-OFFLINE-FIXTURE-png-hot.png` | `1bbd59cd1f53e727d1f1f5af214aa434f62db09f78aeccf229c6a17b4d705928` |
 | `tasks/artifacts/tuesday-trends-2026-10-26/tt4/after/fixture/AFTER-OFFLINE-FIXTURE-png-movers.png` | `e860ddba069d628b1c75fa51d8459f5a39f64f335daba458d247358cd5946a37` |
 | `tasks/artifacts/tuesday-trends-2026-10-26/tt4/after/fixture/AFTER-OFFLINE-FIXTURE-png-rates.png` | `6e7fa920026cbee8f0533dad74542399fd6d3010984306be3fccda533be74585` |
-| `tasks/artifacts/tuesday-trends-2026-10-26/tt4/after/genuine-run2/AFTER-GENUINE-DATA-desktop-deployment.png` | `2ff624f08d3c698632c31f56928ae2ca836b66dfe7451a49c79bf8eeeb02be61` |
-| `tasks/artifacts/tuesday-trends-2026-10-26/tt4/after/genuine-run2/AFTER-GENUINE-DATA-desktop-hot.png` | `3d8930b906ed7350ce4edbc8044f5943cd53a32b9774427422a4c393557c86f7` |
-| `tasks/artifacts/tuesday-trends-2026-10-26/tt4/after/genuine-run2/AFTER-GENUINE-DATA-desktop-movers.png` | `b7931dee9894752ee9ffe694239a1719bb8e5dab965beb4b8e77bbdba18dcaf4` |
-| `tasks/artifacts/tuesday-trends-2026-10-26/tt4/after/genuine-run2/AFTER-GENUINE-DATA-desktop-rates.png` | `d3741e34938d3688f03c228c37f76eb23294641a72e6c3e007eeae4ec88e40b7` |
-| `tasks/artifacts/tuesday-trends-2026-10-26/tt4/after/genuine-run2/AFTER-GENUINE-DATA-export-tokens.json` | `991503bba8ed7921ab60575f1a51619994822c8687663da87dd4847747e8a72f` |
-| `tasks/artifacts/tuesday-trends-2026-10-26/tt4/after/genuine-run2/AFTER-GENUINE-DATA-phone-deployment.png` | `9e4716c00e95e751c9824371d25d8291d3500e7f439ba35f51a3da94b88847e2` |
-| `tasks/artifacts/tuesday-trends-2026-10-26/tt4/after/genuine-run2/AFTER-GENUINE-DATA-phone-hot.png` | `33ddf7fa64a7d599baf46c8e31f374719943a0df195f3ae5307083109a443c59` |
-| `tasks/artifacts/tuesday-trends-2026-10-26/tt4/after/genuine-run2/AFTER-GENUINE-DATA-phone-movers.png` | `25404f71a0e118c927a604eddc00d5d6b91f5e2ea20681ccad858de89c9106f0` |
-| `tasks/artifacts/tuesday-trends-2026-10-26/tt4/after/genuine-run2/AFTER-GENUINE-DATA-phone-rates.png` | `965da4b9df4887f32b5c67133c3e817ceb5478f48d756d0db472c800886a92f1` |
-| `tasks/artifacts/tuesday-trends-2026-10-26/tt4/after/genuine-run2/AFTER-GENUINE-DATA-png-deployment.png` | `aa01d9d915f81c86558456fdc0c64283b73435f2a64fcd92ac010bd68b57dccb` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt4/after/genuine-run2/AFTER-GENUINE-DATA-desktop-deployment.png` | `455d988d222dc2776b9f1a76f095b2939713d5468cb94505d0b0b99d909467ba` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt4/after/genuine-run2/AFTER-GENUINE-DATA-desktop-hot.png` | `e7a6e4b2fc4d64479a62f6bb60aa55189b199cbb018427841feda8799a2dc8e2` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt4/after/genuine-run2/AFTER-GENUINE-DATA-desktop-movers.png` | `9f51cb120a23956c73833ebff3a8bc63c78451f2984a241c434d93626a2d373b` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt4/after/genuine-run2/AFTER-GENUINE-DATA-desktop-rates.png` | `d8617b3c6905870331d657706b76881962d80b83c90b6365a5934ecc9225ccbc` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt4/after/genuine-run2/AFTER-GENUINE-DATA-export-tokens.json` | `e14684049ef358d5ad7875307efd5a4906bd03af4228eb1d227a96eed930a5b1` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt4/after/genuine-run2/AFTER-GENUINE-DATA-phone-deployment.png` | `413951416bdfcf6af9e0abf20eb082664e8380a5864e7525299ebb3558b74ec6` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt4/after/genuine-run2/AFTER-GENUINE-DATA-phone-hot.png` | `7fe7b4c3edb229f04613b440da4ebd3d9aae5fa6cd03fca670ef398d6780409d` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt4/after/genuine-run2/AFTER-GENUINE-DATA-phone-movers.png` | `52b22fe97c0fb6346f44cfec5c81cc3f575d23d37aa167549a7222160c14ee51` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt4/after/genuine-run2/AFTER-GENUINE-DATA-phone-rates.png` | `70d4513dc1c216e1e53eedd3cb4eff2322fb413b9a554771026fb7158b783cd1` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt4/after/genuine-run2/AFTER-GENUINE-DATA-png-deployment.png` | `5b0f125aaa328c97cf404acc679e7b99df028ccca0ccf8be43fa9e6abcd81900` |
 | `tasks/artifacts/tuesday-trends-2026-10-26/tt4/after/genuine-run2/AFTER-GENUINE-DATA-png-hot.png` | `b417f827810b03ef16b9bc30028756a93060069605faa88251ee81afbeb3fbfe` |
 | `tasks/artifacts/tuesday-trends-2026-10-26/tt4/after/genuine-run2/AFTER-GENUINE-DATA-png-movers.png` | `7c1920377db657def4a92448b7ecb1ee343e68b79a1b63d2161c81c970f08225` |
 | `tasks/artifacts/tuesday-trends-2026-10-26/tt4/after/genuine-run2/AFTER-GENUINE-DATA-png-rates.png` | `bbbe2dc463626650969be93b5adaac60e6e541c41870faa86909a589d308bbcd` |

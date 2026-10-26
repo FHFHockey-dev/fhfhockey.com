@@ -92,6 +92,20 @@ describe("deployment", () => {
     expect([...layer.sections.deployment.up, ...layer.sections.deployment.down].map(row => row.nhlId)).not.toContain(7);
   });
 
+  it("there are two PP units: the writer's unit 3 is off PP, so PP2→3 is a demotion and 3↔off is no change (TT-4)", () => {
+    // Games 9000 (latest) and 9001 have PP rows. 50: PP2 → unit 3. 51: unit 3 → absent. 52: absent → unit 3. 53: unit 3 with no game rows.
+    const ppc = [{ gameId: 9001, playerId: 50, unit: 2 }, { gameId: 9000, playerId: 50, unit: 3 }, { gameId: 9001, playerId: 51, unit: 3 }, { gameId: 9000, playerId: 99, unit: 1 },
+      { gameId: 9000, playerId: 52, unit: 3 }, { gameId: 9001, playerId: 99, unit: 1 }];
+    const unknown = skater(53, [{ game_id: 9100, pp_unit: 3, line_combo_slot: 1 }, { game_id: 9101, pp_unit: 3, line_combo_slot: 3 }]);
+    const layer = buildTrendLayer(sources([...skater(50, [{}, {}]), ...skater(51, [{}, {}]), ...skater(52, [{}, {}]), ...unknown], { ppc: { rows: ppc } }), context);
+    const all = [...layer.sections.deployment.up, ...layer.sections.deployment.down];
+    expect(layer.sections.deployment.down).toEqual([expect.objectContaining({ nhlId: 50, ppUnit: { now: "none", before: 2 }, ppChange: -1 })]);
+    expect(all.map(row => row.nhlId)).not.toContain(51);
+    expect(all.map(row => row.nhlId)).not.toContain(52);
+    // A unit 3 the game's rows cannot confirm stays unknown ("PP ?"), never off PP.
+    expect(all.find(row => row.nhlId === 53)).toMatchObject({ ppUnit: { now: null, before: null }, ppChange: 0, lineChange: 1 });
+  });
+
   it("does not compare lines across a team change, and needs contiguous games", () => {
     const traded = skater(8, [{ line_combo_slot: 1 }, { line_combo_slot: 3, team_id: MTL }]);
     const gap = skater(9, [{ line_combo_slot: 1 }, { line_combo_slot: 3, season_games_played: 17 }]);

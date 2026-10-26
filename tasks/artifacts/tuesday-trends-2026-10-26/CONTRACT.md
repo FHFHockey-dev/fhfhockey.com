@@ -55,8 +55,8 @@ Native sources only. Tuesday never reads `PROJECTIONS_20262027_*`, `PROJECTIONS_
 | TOI/GP | All situations `toi_seconds_avg_last5` vs `toi_seconds_avg_season`. EV: the `ev` row's same columns for the latest game. PP: the all row's `pp_toi_seconds_total_last5 ÷ 5` vs `pp_toi_seconds_avg_season`. Shown as L5 / season; unknown shows "—" |
 | Delta | L5 − season TOI/GP in seconds (shown as ±m:ss, "TOI/GP VS SEASON") |
 | Line | `line_combo_group/slot` → L1–L4 / P1–P3, latest game vs previous contiguous game, same group. Lower slot = promotion (▲), higher = demotion (▼) |
-| PP unit per game | `powerPlayCombinations` row (gameId, playerId) → its unit. If the game has PP rows but not the player → **none** ("off PP"). If the game has no PP rows → the rolling row's `pp_unit` if positive, else **unknown** ("PP ?"). "no PP" is never shown |
-| PP change | Only when both games are known. Unit order PP1 < PP2 < PP3 < none |
+| PP unit per game | **There are only two PP units (TJ, TT-4).** The writer (`update-power-play-combinations/[gameId].ts`) ranks skaters by PP TOI: top 5 → 1, next 5 → 2, everyone else with PP time → 3, so its "unit 3" is incidental PP time, not a unit. A `powerPlayCombinations` row with unit 1 or 2 → **PP1/PP2**. Unit ≥ 3, or the game has PP rows but not the player → **none** ("off PP"). The game has no PP rows → the rolling row's `pp_unit` only when it is 1 or 2, else **unknown** ("PP ?"). "no PP" and "PP3" are never shown |
+| PP change | Only when both games are known. Order PP1 < PP2 < off PP. So PP2 → unit 3 is "▼ PP2 → off PP", while unit 3 ↔ off PP is no change |
 | Team change | If the previous game's `team_id` differs, there is no line/PP comparison and the row shows "NEW TEAM" |
 | Inclusion | Any line or PP change (**even with flat TOI**), or abs(TOI delta) ≥ 60 s (`MIN_DEPLOYMENT_TOI_DELTA_SECONDS`); ≥ 10 season GP |
 | Column (TT-3) | **abs(TOI change) ≥ 1:00 → column by the TOI sign** (USAGE UP if more ice), and the hero is the TOI change. The role chips keep their own arrows, e.g. "more ice, lost PP1". **Role-only rows** (abs(TOI change) < 1:00) → column by the role direction (line step + PP step), and the hero is the role ("▲ LINE", "▼ LINE + PP"). **Mixed-direction role-only rows** (line up while PP down, or the reverse) are **left out**. The hero and its column never contradict (Vitest and E2E) |
@@ -91,4 +91,5 @@ Native sources only. Tuesday never reads `PROJECTIONS_20262027_*`, `PROJECTIONS_
   - **Data rules:** values are observed only. A gap is drawn as a hollow tick, and nothing is interpolated.
   - **When there is no line:** with no series (not read, failed or inconsistent), the tile shows no line.
   - **Reads:** see READ-PLAN v2.
+- **Monday/Wednesday role chips (TT-4 add-on):** `roleChipList` shows PP1 and PP2 chips only. The writer's unit 3 gets no chip, as an unknown unit does. `score.ts` is unchanged: PP3 was already neutral (×1.0).
 
