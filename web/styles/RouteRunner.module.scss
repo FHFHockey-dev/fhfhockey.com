@@ -790,6 +790,12 @@
   gap: v.$space-sm;
 }
 
+.terminalTools {
+  display: flex;
+  align-items: center;
+  gap: v.$space-sm;
+}
+
 .terminal {
   height: 340px;
   overflow: auto;

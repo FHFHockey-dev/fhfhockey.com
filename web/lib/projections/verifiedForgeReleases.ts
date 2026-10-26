@@ -70,6 +70,14 @@ export const VERIFIED_FORGE_PRODUCER_CLOSURES: readonly VerifiedForgeProducerClo
     verifierVersion: "forge-release-sha-verifier-v1",
     note: "Release candidate: week-ahead pipeline projection (08e583311), commit 5aa9ba5e0: 194-module closure, 0 findings.",
   },
+  {
+    closureSha256: "5644e3fdb1e230e0a063a27b52519cc8e70b88272e92f27ca5aadc8f53d1dea4",
+    commit: "02153acbaf1ed02c0c294ba14a75e8af195354f3",
+    receipt: "tasks/artifacts/projection-table-audit-2026-10-26/release-verification/02153acbaf1ed02c0c294ba14a75e8af195354f3.json",
+    receiptSha256: "e46edefba9d4bddfe4804257f7f9788694dd39c9f859a21d8ecdcdc9da8dcfaf",
+    verifierVersion: "forge-release-sha-verifier-v1",
+    note: "Release candidate: days-ahead preflight anchoring, commit 02153acba: 194-module closure, 0 findings.",
+  },
 ];
 
 const FULL_SHA = /^[0-9a-f]{40}$/, SHA256 = /^[0-9a-f]{64}$/;
