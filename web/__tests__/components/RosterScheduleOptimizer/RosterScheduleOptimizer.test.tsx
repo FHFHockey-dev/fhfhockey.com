@@ -3,7 +3,7 @@ import { Blob as NodeBlob } from "node:buffer";
 import { StrictMode } from "react";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { BenchDecision, GameForecast, PlanEvaluation, PlanIntent, PlanStep, PlanningData, PlanningPlayer, PlanningResult, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
+import type { BenchDecision, GameForecast, PlanEvaluation, PlanIntent, PlanStep, PlanningData, PlanningPlayer, PlanningResult, PlanningSnapshot, PlanningWorkspace } from "lib/rosterScheduleOptimizer/planningTypes";
 import { WORKSPACE_PRESERVATION_JOURNAL, workspaceStorageKey, defaultWorkspace, preservationChecksum, readWorkspaceHistory, writeWorkspace, type WorkspacePreservation } from "lib/rosterScheduleOptimizer/workspace";
 import { planRoster, sanitizeForecastInputs } from "lib/rosterScheduleOptimizer/planning";
 import { resolvePlanningContributions } from "lib/player-forecasts/planningContributions";
@@ -835,6 +835,78 @@ describe("RosterScheduleOptimizer workspace", () => {
       await waitFor(() => expect(points.getAttribute("aria-pressed")).toBe("true"));
     }
   });
+  describe("category summary metric (C7 R46 C1) and opponent remaining hint (U1)", () => {
+    const categoryWorkspace = (opponent: PlanningWorkspace["opponent"]) => {
+      const workspace = defaultWorkspace();
+      workspace.roster = [{ playerId: player.id, position: "active" }];
+      workspace.manualPlayers = [{ ...player, eligibilityVerified: true }];
+      workspace.rules.scoring = { mode: "categories", weights: {}, categories: [{ key: "GOALS", direction: "higher" },
+        { key: "SV_PCT", direction: "higher", numerator: "SAVES", denominator: "SHOTS_AGAINST" }] };
+      workspace.opponent = opponent;
+      window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
+      return workspace;
+    };
+    const card = async () => {
+      const summary = screen.getByLabelText("Plan summary");
+      return waitFor(() => { const article = within(summary).getByText("Category outcomes").closest("article")!; expect(article.querySelector("strong")!.textContent).not.toBe("—"); return article; });
+    };
+    const withResults = (results: PlanEvaluation["categoryResults"]) => {
+      planningState.evaluate = (snapshot, intent) => {
+        const result = planRoster(snapshot, intent);
+        result.selected = { ...result.selected, projectedValue: null, categoryResults: results };
+        return result;
+      };
+    };
+    it("counts won, lost, tied and unknown categories instead of a blended score", async () => {
+      categoryWorkspace({ roster: [], realized: { GOALS: 10 }, remaining: { GOALS: 5 } });
+      withResults([
+        { key: "GOALS", own: 12, opponent: 10, result: "win" }, { key: "ASSISTS", own: 8, opponent: 11, result: "loss" },
+        { key: "HITS", own: 20, opponent: 20, result: "tie" }, { key: "SV_PCT", own: null, opponent: null, result: "unknown" },
+        { key: "PIM", own: 4, opponent: 9, result: "loss" }]);
+      vi.stubGlobal("fetch", fetchMock);
+      render(<RosterScheduleOptimizer />);
+      const article = await card();
+      expect(article.querySelector("strong")!.textContent).toBe("1 W · 2 L · 1 T · 1 unknown");
+      expect(article.querySelector("small")!.textContent).toBe("Categories projected won · lost · tied (a count, not a score)");
+    });
+    it.each([
+      { opponent: null, reason: "Add opponent totals under Manual matchup totals to compare categories." },
+      { opponent: { roster: [], realized: { GOALS: 10 }, remaining: {} }, reason: "Opponent remaining totals are missing; enter 0 where nothing remains." },
+    ])("shows Unknown with the reason when every category is unknown ($reason)", async ({ opponent, reason }) => {
+      categoryWorkspace(opponent);
+      withResults([{ key: "GOALS", own: null, opponent: null, result: "unknown" }, { key: "SV_PCT", own: null, opponent: null, result: "unknown" }]);
+      vi.stubGlobal("fetch", fetchMock);
+      render(<RosterScheduleOptimizer />);
+      const article = await card();
+      expect(article.querySelector("strong")!.textContent).toBe("Unknown");
+      expect(article.querySelector("small")!.textContent).toBe(reason);
+    });
+    it("keeps the points-mode metric exactly as before", async () => {
+      const workspace = defaultWorkspace();
+      workspace.roster = [{ playerId: player.id, position: "active" }];
+      workspace.manualPlayers = [{ ...player, eligibilityVerified: true }];
+      window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
+      planningState.evaluate = (snapshot, intent) => { const result = planRoster(snapshot, intent); result.selected = { ...result.selected, projectedValue: 7.5, selectionMethod: "quality" }; return result; };
+      vi.stubGlobal("fetch", fetchMock);
+      render(<RosterScheduleOptimizer />);
+      const summary = screen.getByLabelText("Plan summary");
+      const article = await waitFor(() => { const found = within(summary).getByText("Projected points").closest("article")!; expect(found.querySelector("strong")!.textContent).toBe("7.5"); return found; });
+      expect(article.querySelector("small")!.textContent).toBe("League scoring, active games only");
+      expect(within(summary).queryByText("Category outcomes")).toBeNull();
+    });
+    it("explains that opponent remaining totals need values and fills explicit zeros for no games remaining", async () => {
+      categoryWorkspace({ roster: [], realized: { GOALS: 10, ASSISTS: 14 }, remaining: { GOALS: 3 } });
+      vi.stubGlobal("fetch", fetchMock);
+      render(<RosterScheduleOptimizer />);
+      fireEvent.click(screen.getByText("Manual matchup totals"));
+      expect(screen.getByText("Enter every opponent remaining total, using 0 when nothing remains. A missing remaining total leaves that category unknown.")).toBeTruthy();
+      fireEvent.click(screen.getByRole("button", { name: "No games remaining" }));
+      await waitFor(() => expect(JSON.parse(window.localStorage.getItem(activeKey())!).opponent.remaining)
+        .toEqual({ GOALS: 0, ASSISTS: 0, SAVES: 0, SHOTS_AGAINST: 0 }));
+      expect(JSON.parse(window.localStorage.getItem(activeKey())!).opponent.realized).toEqual({ GOALS: 10, ASSISTS: 14 });
+    });
+  });
+
   it.each([
     { method: "schedule_capacity" as const, projected: 12.5, note: "Lineup by schedule capacity; totals priced from approved projections" },
     { method: "schedule_capacity" as const, projected: null, note: "Lineup by schedule capacity" },
