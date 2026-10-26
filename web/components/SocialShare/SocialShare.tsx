@@ -410,10 +410,11 @@ type Spark = { values: (number | null)[] | null | undefined; split?: number; ref
 /** Neon sign colours by tone (styles/vars: $success-color, $color-pink-red, $color-blue-300). */
 export const NEON: Record<Tone, string> = { up: "#00ff99", down: "#ff6b6b", flat: "#63d2f5" };
 /**
- * Teams whose traced outline is too busy to read at tile size (TT-5 contact sheets): their tiles use the home-page
- * game-card treatment instead (cropped full-colour logo over the team's diagonal stripes). Switch per team here.
+ * Teams whose traced outline is too busy to read at tile size: their tiles show the full-colour logo over the stripes
+ * instead of the neon outline. Empty since the v2 trace (TT-7), which reads for all 32 teams; switch per team here.
+ * A missing outline also falls back.
  */
-export const OUTLINE_FALLBACK_TEAMS: ReadonlySet<string> = new Set(["NYR", "NYI", "WSH", "DET"]);
+export const OUTLINE_FALLBACK_TEAMS: ReadonlySet<string> = new Set([]);
 /**
  * Movers sparkline (TT-5): Transaction Trends' filled area + line, fed only a complete daily series. That component
  * joins its line across missing points, so any gap means no sparkline here, never a line drawn across it.
@@ -532,7 +533,7 @@ function trendAltText(kind: TrendKind, snapshot: SocialShareSnapshot, trusted: b
  * Transaction Trends' OwnershipSparkline, unchanged, in the tile's tone. html-to-image does not carry class styles onto
  * SVG children, so after render the same fill and stroke are also written as presentation attributes for the PNG.
  */
-function NeonOwnershipSparkline({ points, tone, what }: { points: OwnershipSparkPoint[]; tone: Tone; what: string }) {
+function NeonOwnershipSparkline({ points, tone, what, width, height }: { points: OwnershipSparkPoint[]; tone: Tone; what: string; width: number; height: number }) {
   const ref = useRef<HTMLSpanElement>(null), color = NEON[tone];
   useEffect(() => {
     const node = ref.current;
@@ -540,8 +541,8 @@ function NeonOwnershipSparkline({ points, tone, what }: { points: OwnershipSpark
     for (const area of node.querySelectorAll("polygon")) { area.setAttribute("fill", color); area.setAttribute("fill-opacity", "0.2"); }
     for (const line of node.querySelectorAll("path")) for (const [name, value] of [["fill", "none"], ["stroke", color], ["stroke-width", "2.2"], ["stroke-linecap", "round"], ["stroke-linejoin", "round"]]) line.setAttribute(name, value);
   }, [points, color]);
-  return <span ref={ref} className={styles.trendOwnSpark} data-tone={tone} data-sparkline={points.map(point => point.value).join(",")} role="img" aria-label={what}>
-    <OwnershipSparkline points={points} variant={tone === "down" ? "fall" : "rise"} width={150} height={38} svgClassName={styles.trendOwnSvg} areaClassName={styles.trendOwnArea} pathClassName={styles.trendOwnPath} riseClassName={styles.trendRise} fallClassName={styles.trendFall} />
+  return <span ref={ref} className={styles.trendOwnSpark} style={{ width, height }} data-tone={tone} data-sparkline={points.map(point => point.value).join(",")} role="img" aria-label={what}>
+    <OwnershipSparkline points={points} variant={tone === "down" ? "fall" : "rise"} width={width} height={height} svgClassName={styles.trendOwnSvg} areaClassName={styles.trendOwnArea} pathClassName={styles.trendOwnPath} riseClassName={styles.trendRise} fallClassName={styles.trendFall} />
   </span>;
 }
 
@@ -549,8 +550,11 @@ function NeonOwnershipSparkline({ points, tone, what }: { points: OwnershipSpark
 function TrendArt({ team, tone, logo, outlines }: { team: string | null; tone: Tone; logo: string | null | undefined; outlines: Record<string, Partial<Record<Tone, string | null>>> }) {
   if (!team) return null;
   const neon = OUTLINE_FALLBACK_TEAMS.has(team) ? null : outlines[team]?.[tone];
-  if (neon) return <span className={styles.trendNeon} data-art="neon" data-tone={tone}><img src={neon} alt="" width="56" height="56" /></span>;
-  return <span className={styles.trendArtCard} data-art="card" style={teamBannerStyle(team)}>{logo && <img src={logo} alt="" width="84" height="84" />}</span>;
+  // Home-page light game card (TT-7): the team's 65° jersey stripes, faded into the dark body, with a large logo cropped
+  // at the tile edge: the neon outline in the tile's tone, or the full-colour logo when no outline is available.
+  return <span className={styles.trendTileArt} data-art={neon ? "neon" : "card"} data-tone={tone} style={teamBannerStyle(team)} aria-hidden="true">
+    {neon ? <img src={neon} alt="" /> : logo && <img src={logo} alt="" />}
+  </span>;
 }
 
 function TrendCard({ kind, snapshot, trusted, logos, outlines, brandLogo }: { kind: TrendKind; snapshot: SocialShareSnapshot; trusted: boolean; logos: Record<string, string | null>; outlines: Record<string, Partial<Record<Tone, string | null>>>; brandLogo: string | null }) {
@@ -564,21 +568,26 @@ function TrendCard({ kind, snapshot, trusted, logos, outlines, brandLogo }: { ki
         <h3>{column.title}</h3>
         {column.rows.map(row => {
           const stacked = columns.length > 2;
+          const [sparkWidth, sparkHeight] = stacked ? [92, 26] : [104, 24];
+          const spark = kind === "movers" ? (() => {
+            const points = moverSparkPoints(row.spark?.values, row.spark?.dates);
+            return points && <NeonOwnershipSparkline points={points} tone={row.hero.tone} what={row.spark!.what} width={sparkWidth} height={sparkHeight} />;
+          })() : row.spark && <Sparkline {...row.spark} width={sparkWidth} height={sparkHeight} />;
+          // TT-7 layout (home-page light game card): art on the left, everything else right-aligned on the dark body.
           return <div key={row.key} data-player={row.key} data-team={row.team ?? ""} data-tone={row.hero.tone} className={cx(styles.trendTile, stacked && styles.trendTileStacked)}>
-            <TeamBanner team={{ abbreviation: row.team ?? "—" }} logo={row.team ? logos[row.team] : null} title={row.name} subtitle={row.meta} size="sm"
-              right={<span className={styles.playerOwn}><strong>{row.right.value}</strong><small>{row.right.label}</small></span>} />
-            <div className={styles.trendTileBody}>
-              <TrendArt team={row.team} tone={row.hero.tone} logo={row.team ? logos[row.team] : null} outlines={outlines} />
-              <span className={styles.trendHero} data-tone={row.hero.tone} data-role={/^[▲▼]/.test(row.hero.value) || undefined}><strong>{row.hero.value}</strong><small>{row.hero.label}</small></span>
-              {kind === "movers" ? (() => {
-                const points = moverSparkPoints(row.spark?.values, row.spark?.dates);
-                return points && <NeonOwnershipSparkline points={points} tone={row.hero.tone} what={row.spark!.what} />;
-              })() : row.spark && <Sparkline {...row.spark} width={stacked ? 270 : 150} height={stacked ? 46 : 38} />}
-              <span className={styles.trendTileInfo}>
+            <TrendArt team={row.team} tone={row.hero.tone} logo={row.team ? logos[row.team] : null} outlines={outlines} />
+            <small className={styles.trendTileMeta}>{row.meta}</small>
+            <div className={styles.trendTileText}>
+              <strong className={styles.trendTileName} data-tone={row.hero.tone}>{row.name}</strong>
+              <span className={styles.trendTileHeroRow}>
+                <span className={styles.trendHero} data-tone={row.hero.tone} data-role={/^[▲▼]/.test(row.hero.value) || undefined}><strong>{row.hero.value}</strong></span>
+                <span className={styles.trendTileAbsolute}><strong>{row.right.value}</strong><small>{row.right.label}</small></span>
+              </span>
+              <span className={styles.trendTileKindRow}>{spark}<small className={styles.trendTileKind}>{row.hero.label}</small></span>
+              {[row.detail].flat().map((line, index, lines) => <small key={line} className={styles.trendTileDetail}>{line}{index === lines.length - 1 && row.weekGames != null && <> · <Count value={row.weekGames} tier={countsFor(snapshot, true).gp(row.weekGames)} /> GP this week</>}</small>)}
+              <span className={cx(styles.trendTileChips, styles.roleChips)}>
                 {row.badge && <TrendBadge {...row.badge} />}
-                {row.chips.length > 0 && <span className={styles.roleChips}>{row.chips.map(chip => <i key={chip.text} data-badge={chip.text} data-tone={chipTone(chip)}>{chip.text}</i>)}</span>}
-                {[row.detail].flat().map(line => <small key={line}>{line}</small>)}
-                {row.weekGames != null && <small><Count value={row.weekGames} tier={countsFor(snapshot, true).gp(row.weekGames)} /> GP this week</small>}
+                {row.chips.map(chip => <i key={chip.text} data-badge={chip.text} data-tone={chipTone(chip)}>{chip.text}</i>)}
               </span>
             </div>
           </div>;
