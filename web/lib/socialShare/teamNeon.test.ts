@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { activeTeamAbbreviations, teamsInfo } from "lib/teamsInfo";
-import { contrast, NEON_CARD, NEON_MIN_CONTRAST, NEON_MULTICOLOUR, NEON_OVERRIDES, NEON_SPREADS, teamNeon, withNeonFloor } from "./teamNeon";
+import { contrast, NEON_CARD, NEON_MIN_CONTRAST, NEON_MULTICOLOUR, NEON_OVERRIDES, NEON_SINGLE_COLOUR, NEON_SPREADS, teamNeon, withNeonFloor } from "./teamNeon";
 
 describe("team neon colours (TT-11)", () => {
   const teams = [...activeTeamAbbreviations].map(String);
@@ -34,7 +34,7 @@ describe("team neon colours (TT-11)", () => {
     expect(teamNeon("XXX")).toBeNull();
   });
 
-  it("applies TJ's TT-12 choices: VGK gold, accent halos, DAL jersey, dimmer and distinct spreads, nine baked teams", () => {
+  it("applies TJ's TT-12 choices: VGK gold, accent halos, DAL jersey, dimmer and distinct spreads, every team baked", () => {
     expect(teamNeon("VGK")!.stroke).toBe("#b4975a");
     expect([teamNeon("CHI")!.halo, teamNeon("NYI")!.halo, teamNeon("SJS")!.halo]).toEqual([withNeonFloor("#CC8A00"), "#ffffff", withNeonFloor("#EA7200")]);
     expect(teamNeon("DAL")).toMatchObject({ strokeFrom: "jersey", stroke: withNeonFloor("#006847"), spread: "soft" });
@@ -49,7 +49,10 @@ describe("team neon colours (TT-11)", () => {
     expect(NEON_SPREADS.soft.haloAlpha).toBeLessThan(NEON_SPREADS.normal.haloAlpha);
     expect(NEON_SPREADS.distinct.haloPx).toBeLessThanOrEqual(NEON_SPREADS.normal.haloPx);
     expect(NEON_SPREADS.distinct.glowAlpha).toBeLessThan(NEON_SPREADS.normal.glowAlpha);
-    expect([...NEON_MULTICOLOUR].sort()).toEqual(["ANA", "CHI", "DET", "EDM", "FLA", "NYI", "NYR", "TOR", "WSH"]);
+    // Add-on (TJ): every team is baked multi-colour except the recorded single-colour fallbacks.
+    expect(Object.keys(NEON_SINGLE_COLOUR)).toEqual(["TBL"]);
+    expect(NEON_MULTICOLOUR.size).toBe(31);
+    for (const team of teams) expect(NEON_MULTICOLOUR.has(team), team).toBe(!(team in NEON_SINGLE_COLOUR));
     for (const team of teams) expect(teamNeon(team)!.multicolour, team).toBe(NEON_MULTICOLOUR.has(team));
   });
 });

@@ -4,44 +4,142 @@
   "window": 6,
   "minVotes": 4,
   "teams": {
-    "NYR": [
-      {
-        "original": "#0069aa",
-        "neon": "#0086d8",
-        "logoShare": 0.466,
-        "outlineShare": 0.838
-      },
+    "ANA": [
       {
         "original": "#ffffff",
         "neon": "#ffffff",
-        "logoShare": 0.428,
-        "outlineShare": 0.106
+        "logoShare": 0.399,
+        "outlineShare": 0.754
       },
       {
-        "original": "#d31245",
-        "neon": "#ee3667",
-        "logoShare": 0.105,
-        "outlineShare": 0.056
+        "original": "#010101",
+        "neon": "#818181",
+        "logoShare": 0.481,
+        "outlineShare": 0.001
+      },
+      {
+        "original": "#cf4520",
+        "neon": "#df522d",
+        "logoShare": 0.054,
+        "outlineShare": 0.169
+      },
+      {
+        "original": "#89734c",
+        "neon": "#967e53",
+        "logoShare": 0.066,
+        "outlineShare": 0.076
       }
     ],
-    "NYI": [
+    "BOS": [
+      {
+        "original": "#fcb514",
+        "neon": "#fcb514",
+        "logoShare": 0.182,
+        "outlineShare": 0.728
+      },
+      {
+        "original": "#111111",
+        "neon": "#818181",
+        "logoShare": 0.547,
+        "outlineShare": 0
+      },
       {
         "original": "#ffffff",
         "neon": "#ffffff",
-        "logoShare": 0.347,
-        "outlineShare": 0.162
+        "logoShare": 0.271,
+        "outlineShare": 0.272
+      }
+    ],
+    "BUF": [
+      {
+        "original": "#002654",
+        "neon": "#117dff",
+        "logoShare": 0.551,
+        "outlineShare": 0.466
       },
       {
-        "original": "#00539b",
-        "neon": "#0081f0",
-        "logoShare": 0.354,
-        "outlineShare": 0.135
+        "original": "#fcb514",
+        "neon": "#fcb514",
+        "logoShare": 0.171,
+        "outlineShare": 0.275
       },
       {
-        "original": "#f47d30",
-        "neon": "#f47d30",
-        "logoShare": 0.299,
-        "outlineShare": 0.704
+        "original": "#ffffff",
+        "neon": "#ffffff",
+        "logoShare": 0.269,
+        "outlineShare": 0.259
+      }
+    ],
+    "CAR": [
+      {
+        "original": "#a4a9ad",
+        "neon": "#a4a9ad",
+        "logoShare": 0.064,
+        "outlineShare": 0.254
+      },
+      {
+        "original": "#111111",
+        "neon": "#818181",
+        "logoShare": 0.291,
+        "outlineShare": 0.356
+      },
+      {
+        "original": "#ce1126",
+        "neon": "#ef394d",
+        "logoShare": 0.3,
+        "outlineShare": 0.362
+      },
+      {
+        "original": "#ffffff",
+        "neon": "#ffffff",
+        "logoShare": 0.345,
+        "outlineShare": 0.029
+      }
+    ],
+    "CBJ": [
+      {
+        "original": "#a4a9ad",
+        "neon": "#a4a9ad",
+        "logoShare": 0.197,
+        "outlineShare": 0.247
+      },
+      {
+        "original": "#002654",
+        "neon": "#117dff",
+        "logoShare": 0.463,
+        "outlineShare": 0.414
+      },
+      {
+        "original": "#ce1126",
+        "neon": "#ef394d",
+        "logoShare": 0.192,
+        "outlineShare": 0.339
+      },
+      {
+        "original": "#ffffff",
+        "neon": "#ffffff",
+        "logoShare": 0.148,
+        "outlineShare": 0
+      }
+    ],
+    "CGY": [
+      {
+        "original": "#111111",
+        "neon": "#818181",
+        "logoShare": 0.052,
+        "outlineShare": 0.321
+      },
+      {
+        "original": "#f3bc52",
+        "neon": "#f3bc52",
+        "logoShare": 0.22,
+        "outlineShare": 0.323
+      },
+      {
+        "original": "#ce1126",
+        "neon": "#ef394d",
+        "logoShare": 0.727,
+        "outlineShare": 0.356
       }
     ],
     "CHI": [
@@ -70,30 +168,96 @@
         "outlineShare": 0.493
       }
     ],
-    "ANA": [
+    "COL": [
+      {
+        "original": "#236192",
+        "neon": "#3086c9",
+        "logoShare": 0.311,
+        "outlineShare": 0.894
+      },
       {
         "original": "#ffffff",
         "neon": "#ffffff",
-        "logoShare": 0.399,
-        "outlineShare": 0.754
+        "logoShare": 0.333,
+        "outlineShare": 0.02
       },
       {
-        "original": "#010101",
+        "original": "#111111",
         "neon": "#818181",
-        "logoShare": 0.481,
-        "outlineShare": 0.001
+        "logoShare": 0.034,
+        "outlineShare": 0.056
       },
       {
-        "original": "#cf4520",
-        "neon": "#df522d",
-        "logoShare": 0.054,
-        "outlineShare": 0.169
+        "original": "#a2aaad",
+        "neon": "#a2aaad",
+        "logoShare": 0.061,
+        "outlineShare": 0
       },
       {
-        "original": "#89734c",
-        "neon": "#967e53",
-        "logoShare": 0.066,
-        "outlineShare": 0.076
+        "original": "#6f263d",
+        "neon": "#c85e7f",
+        "logoShare": 0.261,
+        "outlineShare": 0.03
+      }
+    ],
+    "DAL": [
+      {
+        "original": "#006847",
+        "neon": "#009365",
+        "logoShare": 0.175,
+        "outlineShare": 0.731
+      },
+      {
+        "original": "#ffffff",
+        "neon": "#ffffff",
+        "logoShare": 0.197,
+        "outlineShare": 0.259
+      },
+      {
+        "original": "#8f8f8c",
+        "neon": "#8f8f8c",
+        "logoShare": 0.201,
+        "outlineShare": 0.002
+      },
+      {
+        "original": "#111111",
+        "neon": "#818181",
+        "logoShare": 0.427,
+        "outlineShare": 0.008
+      }
+    ],
+    "DET": [
+      {
+        "original": "#ce1126",
+        "neon": "#ef394d",
+        "logoShare": 0.566,
+        "outlineShare": 0.996
+      },
+      {
+        "original": "#ffffff",
+        "neon": "#ffffff",
+        "logoShare": 0.434,
+        "outlineShare": 0.004
+      }
+    ],
+    "EDM": [
+      {
+        "original": "#ffffff",
+        "neon": "#ffffff",
+        "logoShare": 0.427,
+        "outlineShare": 0.17
+      },
+      {
+        "original": "#031d40",
+        "neon": "#257ef5",
+        "logoShare": 0.539,
+        "outlineShare": 0.801
+      },
+      {
+        "original": "#ff4c00",
+        "neon": "#ff4c00",
+        "logoShare": 0.034,
+        "outlineShare": 0.028
       }
     ],
     "FLA": [
@@ -122,18 +286,296 @@
         "outlineShare": 0.151
       }
     ],
-    "DET": [
+    "LAK": [
       {
-        "original": "#ce1126",
-        "neon": "#ef394d",
-        "logoShare": 0.566,
-        "outlineShare": 0.996
+        "original": "#101010",
+        "neon": "#818181",
+        "logoShare": 0.59,
+        "outlineShare": 0.264
       },
       {
         "original": "#ffffff",
         "neon": "#ffffff",
-        "logoShare": 0.434,
-        "outlineShare": 0.004
+        "logoShare": 0.222,
+        "outlineShare": 0.314
+      },
+      {
+        "original": "#acaea9",
+        "neon": "#acaea9",
+        "logoShare": 0.187,
+        "outlineShare": 0.422
+      }
+    ],
+    "MIN": [
+      {
+        "original": "#e2d6b5",
+        "neon": "#e2d6b5",
+        "logoShare": 0.131,
+        "outlineShare": 0.314
+      },
+      {
+        "original": "#024930",
+        "neon": "#049461",
+        "logoShare": 0.606,
+        "outlineShare": 0.402
+      },
+      {
+        "original": "#edaa00",
+        "neon": "#edaa00",
+        "logoShare": 0.042,
+        "outlineShare": 0.092
+      },
+      {
+        "original": "#af1e24",
+        "neon": "#e14d53",
+        "logoShare": 0.217,
+        "outlineShare": 0.193
+      }
+    ],
+    "MTL": [
+      {
+        "original": "#ffffff",
+        "neon": "#ffffff",
+        "logoShare": 0.343,
+        "outlineShare": 0.197
+      },
+      {
+        "original": "#171f66",
+        "neon": "#6c78de",
+        "logoShare": 0.24,
+        "outlineShare": 0.556
+      },
+      {
+        "original": "#af1e2d",
+        "neon": "#e04d5c",
+        "logoShare": 0.416,
+        "outlineShare": 0.246
+      }
+    ],
+    "NJD": [
+      {
+        "original": "#ffffff",
+        "neon": "#ffffff",
+        "logoShare": 0.313,
+        "outlineShare": 0.234
+      },
+      {
+        "original": "#000000",
+        "neon": "#818181",
+        "logoShare": 0.216,
+        "outlineShare": 0.47
+      },
+      {
+        "original": "#ce1126",
+        "neon": "#ef394d",
+        "logoShare": 0.471,
+        "outlineShare": 0.296
+      }
+    ],
+    "NSH": [
+      {
+        "original": "#ffffff",
+        "neon": "#ffffff",
+        "logoShare": 0.444,
+        "outlineShare": 0.207
+      },
+      {
+        "original": "#041e42",
+        "neon": "#297ef2",
+        "logoShare": 0.368,
+        "outlineShare": 0.316
+      },
+      {
+        "original": "#ffb81c",
+        "neon": "#ffb81c",
+        "logoShare": 0.188,
+        "outlineShare": 0.476
+      }
+    ],
+    "NYI": [
+      {
+        "original": "#ffffff",
+        "neon": "#ffffff",
+        "logoShare": 0.347,
+        "outlineShare": 0.162
+      },
+      {
+        "original": "#00539b",
+        "neon": "#0081f0",
+        "logoShare": 0.354,
+        "outlineShare": 0.135
+      },
+      {
+        "original": "#f47d30",
+        "neon": "#f47d30",
+        "logoShare": 0.299,
+        "outlineShare": 0.704
+      }
+    ],
+    "NYR": [
+      {
+        "original": "#0069aa",
+        "neon": "#0086d8",
+        "logoShare": 0.466,
+        "outlineShare": 0.838
+      },
+      {
+        "original": "#ffffff",
+        "neon": "#ffffff",
+        "logoShare": 0.428,
+        "outlineShare": 0.106
+      },
+      {
+        "original": "#d31245",
+        "neon": "#ee3667",
+        "logoShare": 0.105,
+        "outlineShare": 0.056
+      }
+    ],
+    "OTT": [
+      {
+        "original": "#ffffff",
+        "neon": "#ffffff",
+        "logoShare": 0.097,
+        "outlineShare": 0.377
+      },
+      {
+        "original": "#000000",
+        "neon": "#818181",
+        "logoShare": 0.338,
+        "outlineShare": 0
+      },
+      {
+        "original": "#b79257",
+        "neon": "#b79257",
+        "logoShare": 0.252,
+        "outlineShare": 0.492
+      },
+      {
+        "original": "#da1a32",
+        "neon": "#e94257",
+        "logoShare": 0.314,
+        "outlineShare": 0.131
+      }
+    ],
+    "PHI": [
+      {
+        "original": "#000000",
+        "neon": "#818181",
+        "logoShare": 0.769,
+        "outlineShare": 0.272
+      },
+      {
+        "original": "#ffffff",
+        "neon": "#ffffff",
+        "logoShare": 0.194,
+        "outlineShare": 0.689
+      },
+      {
+        "original": "#f74902",
+        "neon": "#f74902",
+        "logoShare": 0.037,
+        "outlineShare": 0.039
+      }
+    ],
+    "PIT": [
+      {
+        "original": "#ffffff",
+        "neon": "#ffffff",
+        "logoShare": 0.377,
+        "outlineShare": 0.808
+      },
+      {
+        "original": "#000000",
+        "neon": "#818181",
+        "logoShare": 0.395,
+        "outlineShare": 0.006
+      },
+      {
+        "original": "#f5b113",
+        "neon": "#f5b113",
+        "logoShare": 0.228,
+        "outlineShare": 0.186
+      }
+    ],
+    "SEA": [
+      {
+        "original": "#001628",
+        "neon": "#0082eb",
+        "logoShare": 0.505,
+        "outlineShare": 0.509
+      },
+      {
+        "original": "#96d8d8",
+        "neon": "#96d8d8",
+        "logoShare": 0.239,
+        "outlineShare": 0.328
+      },
+      {
+        "original": "#639fb6",
+        "neon": "#639fb6",
+        "logoShare": 0.249,
+        "outlineShare": 0.162
+      }
+    ],
+    "SJS": [
+      {
+        "original": "#ffffff",
+        "neon": "#ffffff",
+        "logoShare": 0.137,
+        "outlineShare": 0.732
+      },
+      {
+        "original": "#000000",
+        "neon": "#818181",
+        "logoShare": 0.635,
+        "outlineShare": 0.022
+      },
+      {
+        "original": "#ea7200",
+        "neon": "#ea7200",
+        "logoShare": 0.026,
+        "outlineShare": 0.125
+      },
+      {
+        "original": "#006d75",
+        "neon": "#008f99",
+        "logoShare": 0.202,
+        "outlineShare": 0.122
+      }
+    ],
+    "STL": [
+      {
+        "original": "#002654",
+        "neon": "#117dff",
+        "logoShare": 0.101,
+        "outlineShare": 0.432
+      },
+      {
+        "original": "#fffefe",
+        "neon": "#fffefe",
+        "logoShare": 0.05,
+        "outlineShare": 0.001
+      },
+      {
+        "original": "#fbb514",
+        "neon": "#fbb514",
+        "logoShare": 0.07,
+        "outlineShare": 0.567
+      },
+      {
+        "original": "#002f87",
+        "neon": "#327aff",
+        "logoShare": 0.779,
+        "outlineShare": 0
+      }
+    ],
+    "TBL": [
+      {
+        "original": "#0041a9",
+        "neon": "#287bff",
+        "logoShare": 1,
+        "outlineShare": 1
       }
     ],
     "TOR": [
@@ -148,6 +590,116 @@
         "neon": "#317aff",
         "logoShare": 0.915,
         "outlineShare": 0.933
+      }
+    ],
+    "UTA": [
+      {
+        "original": "#6cade5",
+        "neon": "#6cade5",
+        "logoShare": 0.229,
+        "outlineShare": 0.764
+      },
+      {
+        "original": "#010101",
+        "neon": "#818181",
+        "logoShare": 0.549,
+        "outlineShare": 0.018
+      },
+      {
+        "original": "#feffff",
+        "neon": "#feffff",
+        "logoShare": 0.221,
+        "outlineShare": 0.219
+      }
+    ],
+    "VAN": [
+      {
+        "original": "#97999b",
+        "neon": "#97999b",
+        "logoShare": 0.253,
+        "outlineShare": 0.221
+      },
+      {
+        "original": "#041c2c",
+        "neon": "#1386d2",
+        "logoShare": 0.309,
+        "outlineShare": 0.126
+      },
+      {
+        "original": "#ffffff",
+        "neon": "#ffffff",
+        "logoShare": 0.035,
+        "outlineShare": 0.004
+      },
+      {
+        "original": "#142f61",
+        "neon": "#4d7fda",
+        "logoShare": 0.404,
+        "outlineShare": 0.649
+      }
+    ],
+    "VGK": [
+      {
+        "original": "#ffffff",
+        "neon": "#ffffff",
+        "logoShare": 0.058,
+        "outlineShare": 0.351
+      },
+      {
+        "original": "#000000",
+        "neon": "#818181",
+        "logoShare": 0.444,
+        "outlineShare": 0.001
+      },
+      {
+        "original": "#b4975a",
+        "neon": "#b4975a",
+        "logoShare": 0.378,
+        "outlineShare": 0.648
+      },
+      {
+        "original": "#333f42",
+        "neon": "#6c858b",
+        "logoShare": 0.12,
+        "outlineShare": 0
+      }
+    ],
+    "WPG": [
+      {
+        "original": "#8e9090",
+        "neon": "#8e9090",
+        "logoShare": 0.165,
+        "outlineShare": 0.403
+      },
+      {
+        "original": "#ffffff",
+        "neon": "#ffffff",
+        "logoShare": 0.304,
+        "outlineShare": 0.001
+      },
+      {
+        "original": "#041e41",
+        "neon": "#297ef2",
+        "logoShare": 0.4,
+        "outlineShare": 0.259
+      },
+      {
+        "original": "#aa172d",
+        "neon": "#e6455d",
+        "logoShare": 0.024,
+        "outlineShare": 0.111
+      },
+      {
+        "original": "#56565a",
+        "neon": "#818186",
+        "logoShare": 0.072,
+        "outlineShare": 0.098
+      },
+      {
+        "original": "#7c303e",
+        "neon": "#c36375",
+        "logoShare": 0.035,
+        "outlineShare": 0.128
       }
     ],
     "WSH": [
@@ -168,26 +720,6 @@
         "neon": "#f52d4f",
         "logoShare": 0.039,
         "outlineShare": 0.204
-      }
-    ],
-    "EDM": [
-      {
-        "original": "#ffffff",
-        "neon": "#ffffff",
-        "logoShare": 0.427,
-        "outlineShare": 0.17
-      },
-      {
-        "original": "#031d40",
-        "neon": "#257ef5",
-        "logoShare": 0.539,
-        "outlineShare": 0.801
-      },
-      {
-        "original": "#ff4c00",
-        "neon": "#ff4c00",
-        "logoShare": 0.034,
-        "outlineShare": 0.028
       }
     ]
   }

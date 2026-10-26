@@ -1,4 +1,4 @@
-import { teamsInfo } from "lib/teamsInfo";
+import { activeTeamAbbreviations, teamsInfo } from "lib/teamsInfo";
 
 /** Tuesday tile body colour (`.trendTileArt` fade target), the background every neon logo must glow against. */
 export const NEON_CARD = "#15191f";
@@ -50,8 +50,14 @@ export const NEON_SPREADS: Record<NeonSpread, { glowPx: number; glowAlpha: numbe
   soft: { glowPx: 2, glowAlpha: 0.3, haloPx: 1.5, haloAlpha: 0.35 },
   distinct: { glowPx: 2, glowAlpha: 0.3, haloPx: 2, haloAlpha: 0.85 },
 };
-/** TT-12: outlines baked offline in the logo's own colours (public/teamLogos/outline/color), not tinted at runtime. */
-export const NEON_MULTICOLOUR: ReadonlySet<string> = new Set(["NYR", "NYI", "CHI", "ANA", "FLA", "DET", "TOR", "WSH", "EDM"]);
+/**
+ * TT-12: outlines baked offline in the logo's own colours (public/teamLogos/outline/color), not tinted at runtime.
+ * The add-on (TJ) extends this to every team; NEON_SINGLE_COLOUR lists the ones that keep their tuned single colour.
+ */
+export const NEON_SINGLE_COLOUR: Readonly<Record<string, string>> = {
+  TBL: "the logo is one blue, so a multi-colour bake is the same single colour; the tuned tint (distinct halo) stays",
+};
+export const NEON_MULTICOLOUR: ReadonlySet<string> = new Set([...activeTeamAbbreviations].map(String).filter(team => !(team in NEON_SINGLE_COLOUR)));
 /**
  * TJ's per-team choices from the TT-11 contact sheet (TT-12). Unlisted teams keep TT-11: lightColor stroke,
  * secondaryColor halo, normal spread.

@@ -168,7 +168,7 @@ Native sources only. Tuesday never reads `PROJECTIONS_20262027_*`, `PROJECTIONS_
   - `normal`: TT-7's glow.
   - `soft` (BUF, CBJ, CHI, DAL, DET, MTL, NYR, OTT): a smaller, dimmer glow and halo.
   - `distinct` (COL, EDM, FLA, LAK, MIN, STL, TBL, TOR, WSH): the white glow is dimmed so the halo colour shows; the halo is no wider.
-- **Multi-colour** (ANA, CHI, DET, EDM, FLA, NYI, NYR, TOR, WSH):
+- **Multi-colour:** first ANA, CHI, DET, EDM, FLA, NYI, NYR, TOR and WSH. TJ's add-on extends it to every team except TBL, whose logo is a single blue, so it keeps its tuned tint (`NEON_SINGLE_COLOUR`). DAL's neon-green regions are baked in its jersey green.
   - The outlines are baked offline into `public/teamLogos/outline/color/` in the logo's own floored colours and drawn untinted.
   - If a baked file is missing, the tile falls back to the single-colour tint.
 - **Unchanged:** the tile's green/red elements. No reads.

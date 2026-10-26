@@ -119,3 +119,115 @@ The script is `tt12/bake-multicolour-outlines.mjs`; the palettes are in `tt12/pa
 | `tasks/artifacts/tuesday-trends-2026-10-26/tt12/neon-lib.mjs` | `279bd90c993575b4b219721e44c3f27445706844649cf580f519aa8313ab24ac` |
 | `tasks/artifacts/tuesday-trends-2026-10-26/tt12/palettes.json` | `bb3db2ecb8a0acdd29b52b126853881e4d365ba6185f9a11b60943633b52dcf4` |
 | `tasks/artifacts/tuesday-trends-2026-10-26/tt12/sheets.mjs` | `dfd887d26c70db710b3a3c1369d84b1505bcc6ca730700ef96ec19cdeae17ca9` |
+
+
+## Add-on: every team in its original colours
+
+TJ asked to put every team through the "just like the original logo" filter.
+
+**What changed**
+- **Bake:** `tt12/bake-multicolour-outlines.mjs` now bakes all 32 teams with the same method as the first nine: palette from flat pixels, two-tone lines, most-colourful skeleton pick, every colour floored at 4.5:1. The palettes are in `tt12/palettes.json`.
+- **DAL:** any logo colour near its neon-green `secondaryColor` is remapped to its jersey green `#006847` (floored `#009365`) before the floor. The star outline is now about 73% jersey green, not the abrasive neon.
+- **Multi-colour set:** `NEON_MULTICOLOUR` is every active team except those in `NEON_SINGLE_COLOUR`.
+- **Fallback, TBL:** the logo is one blue, so a multi-colour bake gives the same single colour. TBL keeps its tuned tint with the distinct white halo. Its baked file exists but isn't used.
+- **The other TT-12 choices still apply:**
+  - per-team halos (CHI, NYI and SJS accents; MIN and LAK jersey colours);
+  - the soft and distinct spreads;
+  - VGK gold and the DAL jersey stroke for the single-colour fallback path. VGK's bake is gold-dominant on its own.
+
+**Readability flags.** Every team is legible, so none falls back. These read differently from TT-11; TJ to judge.
+- **PHI, CAR, NJD, PIT, ANA, LAK, SJS, UTA:** these committed logos are mostly black or white. Black becomes grey `#818181` under the floor, so their outlines read mostly white or grey with the team colour as an accent. PHI is 77% black in the committed file, so its orange shows only in the centre. Proposed: if TJ wants these vivid, remap black to the team colour, as with DAL.
+- **COL and WPG:** the thin navy and burgundy lines read faintest behind the stripes on real tiles. Proposed: the normal spread instead of distinct, or the TT-11 single colour.
+- **DAL:** the jersey green is calm but dark on red tiles. Proposed: use the TT-11 tuned single colour if it reads too faint.
+
+**Evidence**
+- `tt12/contact-sheet-tt11-vs-tt12.png`: per team, the original, TT-11 on green and red frames, and TT-12 on green and red frames, at 120 px.
+- `tt12/closeups-multicolour.png`: the first nine at 240 px.
+- `tt12/fixture` and `tt12/genuine-run2`: re-rendered. Genuine export tokens match.
+
+| Check | Result |
+|---|---|
+| E2E full spec, :3110, deny preload, v2 pins (two passes) | **34 passed** (33 + 1); collision guard passed; logo assertion: `multi` for 31 teams, the TBL tint otherwise |
+| Monday (9) / Wednesday (9) PNG pins | **byte-identical to v2** |
+| Tuesday pins | changed by design: 0e95ff4cff55628e756000f718abcd463bea433696b04fa2581684fa4fa557cc, e0f283d53aba3aa2384d9271a700804b42fcba3c97c2823a853ce9a0199f1d09, d9749935043999fb273af82b7577dfa9e013815b3a941cd5a7e1e37c7a3ce24e, f1051d67d8c0d69ac4168ec6d83f4bfa39f73fb2bd7cc97d9fcb8cdee9c88ec0 |
+| Vitest / ESLint / full tsc / CSS pure | 240/240 / 0 / 0 / PURE OK |
+| Network | denied Next.js version check only; no reads |
+
+### Add-on files and sha256
+
+| File | sha256 |
+|---|---|
+| `web/lib/socialShare/teamNeon.ts` | `fbffec1cc32bdd3eb742b531f747b864d24b6daf194cc2f9a4e695ae65523f90` |
+| `web/lib/socialShare/teamNeon.test.ts` | `9cc4326f16a18b5421037501ea205d16e8db9ef1e6eaa1f744c76810bc392935` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/CONTRACT.md` | `6c29eae02c7237a65f518e92d084859a52077e23c038f60cee8b81045c3d38af` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/run/e2e-final-26a.log` | `8fd5f982a568e1c674cd5d8a08389d1f70431cb4a116e840fc6e64604c69b81e` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/run/e2e-final-26b.log` | `8bd665c9b15b17504a6cba343d3132e232cdf02b380b83ab0f256424adddeea0` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/run/vitest.log` | `43e5af2137145571442338d1586755801ed211c27e8ec3bfdf94296cc877024a` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/run/tsc.log` | `cbf7de6a7ab22aa8f3b63eed31368677222a5389d4a0bcaa112a952910051cec` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/run/eslint.log` | `a6b49f7a0b519016701eccb4efc2de2d77010ed919b35fdad1e3abacbe9dcfd8` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/run/css-pure-check.log` | `a30d5400826f09d082ae448bf0ade4127a1371c6a82a7d0859d115f3c089d3f4` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/run/node-network-26.jsonl` | `39fe74e93fc0fd9af1f180bcd6fb0a4d6f4a5d36e805b3919957cd0c30721950` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/run/evidence-26/tuesday-cards-pinned.sha256` | `ef1ae1ab23af3520eb0145778b3b591cb291687ee99f77dcf12a9e4c408ebefb` |
+| `web/public/teamLogos/outline/color/ANA.png` | `c406f60d4cdabb21a52f9ac50e6cf2c46d372dcf90a77be2b1a2e82160320c9a` |
+| `web/public/teamLogos/outline/color/BOS.png` | `b0980421a039912dc9aefb11a0382e4f435a4ae24b43c6cbf402b19b0209a0c3` |
+| `web/public/teamLogos/outline/color/BUF.png` | `ec9333341778c280eb1cc5dd37a34f15a49621f7314986a5451a23538d02efde` |
+| `web/public/teamLogos/outline/color/CAR.png` | `0436dfac31bdb90c3fd807d5190f0c8df6eb788d60563a606d51c977d9cba9a7` |
+| `web/public/teamLogos/outline/color/CBJ.png` | `9892dafbfe19db25b684daeb1db0fa9a6e5705d7a7d4ff36b7c4ac9e309f5ea4` |
+| `web/public/teamLogos/outline/color/CGY.png` | `89c40e72dae86370ea09d94e5ed60acb1ac6b098750da5aa49083c585f0a2b1c` |
+| `web/public/teamLogos/outline/color/CHI.png` | `1dd4ea0a7994262e147bd1795feb0a1a90292f56f47fd1d2b71c4f159a41b9dd` |
+| `web/public/teamLogos/outline/color/COL.png` | `f41ee91fc3501c5f8caf82d5060c37bdbbc4d12be0731569ec902883dbe2b8f9` |
+| `web/public/teamLogos/outline/color/DAL.png` | `94543f235107c646f08e62ad76be319f11a2a303cb70f679240640ca652c1084` |
+| `web/public/teamLogos/outline/color/DET.png` | `0e8388d66e82fa6678e13da1af127f0c87bbae6948e296b4f24d3f4e9fb25336` |
+| `web/public/teamLogos/outline/color/EDM.png` | `5b9e92c84c256c1be06f77c76d54a3af4bd1446aad5aa7b7f615915117c6a5a9` |
+| `web/public/teamLogos/outline/color/FLA.png` | `455de1a974494eb6f3aa9a402a9b2bfd80f129d5f64e1c8bfc223a41af41a947` |
+| `web/public/teamLogos/outline/color/LAK.png` | `8341e78e703a0e7776cb3a18ce5b4e1b11bab949e0990661f5b754de884e4668` |
+| `web/public/teamLogos/outline/color/MIN.png` | `ac64340af3f5d770871e9cdd99dc4c6946504db553e80018f0a2f0d9c393fae3` |
+| `web/public/teamLogos/outline/color/MTL.png` | `8dff5f9b327d06bec2f8f8d491a48656abd2a0b3dd58b8e55ccd7d8f6361dd6e` |
+| `web/public/teamLogos/outline/color/NJD.png` | `e592bf71d201557e4b4f21abb8b3381dab25b97fa810656ad5a747b8a40ee42a` |
+| `web/public/teamLogos/outline/color/NSH.png` | `38b7444db3b6fde5e9dc1dc0410854f462ae9a7157921173198ef4c188a32c03` |
+| `web/public/teamLogos/outline/color/NYI.png` | `2f6599b6a86a39788d47f6f1abc2a7148ec7f83437da1fb715d32eed6e8336e4` |
+| `web/public/teamLogos/outline/color/NYR.png` | `c0d43c438e5a485d3793a1f0c0956d3e41d28c64ad0d3746e8db2afc352d7113` |
+| `web/public/teamLogos/outline/color/OTT.png` | `584a01abc07a38b27f13f377fd58d55b6aa35f39114def04d069a93c6d1e879c` |
+| `web/public/teamLogos/outline/color/PHI.png` | `cf7d695758a37d59f3ec31ba98b0cdd19228b4874c79bcb0c388464926902fdb` |
+| `web/public/teamLogos/outline/color/PIT.png` | `5caf6525d672afa9790feeabd943597d5cdaf67ed39b2652dfbe9b94d85e9d15` |
+| `web/public/teamLogos/outline/color/SEA.png` | `3f0cbdc61f19fc92031ab35b6747ab06fa1b876944c878c4c77655bf7c198ced` |
+| `web/public/teamLogos/outline/color/SJS.png` | `07adec7394270d61f3e8c6c04347e7f013b49160cf77a2364c511ad15b2b3dd9` |
+| `web/public/teamLogos/outline/color/STL.png` | `2f459d4f28a0232dfbb143d4b4c29049f05a5facfb4531b25337fc380993b777` |
+| `web/public/teamLogos/outline/color/TBL.png` | `83103ff5c3430753d78d42598cf67545bbdb8cb823925b650086992c435a9d32` |
+| `web/public/teamLogos/outline/color/TOR.png` | `8e1e0a149fd102d59e5824256a788ea8f8c6170f2ac83346c33059105285d45f` |
+| `web/public/teamLogos/outline/color/UTA.png` | `f787cd938757b25a03c6a631d42e00d8e662a7cba4a2881101059465b9de1809` |
+| `web/public/teamLogos/outline/color/VAN.png` | `cbaf246a4ec01f4ad6eb071e46e19001754c32c24dff8560f872e2f21b9add75` |
+| `web/public/teamLogos/outline/color/VGK.png` | `75ccc09ca657fe12eb9d047dd516207b9659bd3ac6e64fef9ad4cff2ea13c935` |
+| `web/public/teamLogos/outline/color/WPG.png` | `89c02072e8cceb37ccc005e0019a3d6c124f1b3387965fc82bc5b26d2fac8e06` |
+| `web/public/teamLogos/outline/color/WSH.png` | `0ebf2c4dab60b1742cbcef52b92553fe178507324c4e9a0c850afea650290fd0` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt12/bake-multicolour-outlines.mjs` | `f4634db76b4d1544fe59afd24612175a5f5a78cc789a2ec976c010e1d684d657` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt12/closeups-multicolour.png` | `ea2f1887bf0ba2ded320e3c4720dc3c4aa738b641f3d244dcc64e665a72de06f` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt12/contact-sheet-tt11-vs-tt12.png` | `cfe1a623140ca5db83b6080bcb25850261e17566760ebf392e279a3dacc18706` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt12/fixture/TT12-OFFLINE-FIXTURE-desktop-deployment.png` | `6ca2b0d070bf015cc0ef90ec954405b9f3fa1e252f7630b3e2f249c765e87edf` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt12/fixture/TT12-OFFLINE-FIXTURE-desktop-hot.png` | `551c7db1bbd9e26d2d0cc714e3858bc28c0db84ee52fe04471ccd4f234ba0015` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt12/fixture/TT12-OFFLINE-FIXTURE-desktop-movers.png` | `b26beea225bc14f54cf20a8e644ada9d2b0dc99962652a62262cff1bcd0984ed` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt12/fixture/TT12-OFFLINE-FIXTURE-desktop-rates.png` | `430cd16577f931e5b0105d3e71a935c21c373c0bf0c88ace61a1d23af03c54d5` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt12/fixture/TT12-OFFLINE-FIXTURE-phone-deployment.png` | `250fb14ef98918e1e8ed4db2ad208d1b9f935fc905fad10db1f1346a01ccf7dc` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt12/fixture/TT12-OFFLINE-FIXTURE-phone-hot.png` | `16f67a6b1ee6407beab5519b035427b218d121fc9b478e3e9b4e599ba92f9aa0` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt12/fixture/TT12-OFFLINE-FIXTURE-phone-movers.png` | `d54dd2eb27658e86fd3ba7788bbbb2420aeb486c06456394c208640e0dd3e161` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt12/fixture/TT12-OFFLINE-FIXTURE-phone-rates.png` | `4529c5a587a2a2557869757012f35b8416f2ed4328d02ca2077bfd06c8987356` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt12/fixture/TT12-OFFLINE-FIXTURE-png-deployment.png` | `12f10da7071f009268d7b06df61052dc7fe9cfd29c1ac28dbda3272ade3a25b3` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt12/fixture/TT12-OFFLINE-FIXTURE-png-hot.png` | `373ae912720b4a3f4af5f417c57f2c96c9b6926c53d1cd6e187378c56909b91a` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt12/fixture/TT12-OFFLINE-FIXTURE-png-movers.png` | `96f322dbb5cb10802dc7413e01159439c3f531c7c48a0c8ef8c530e117f9ed53` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt12/fixture/TT12-OFFLINE-FIXTURE-png-rates.png` | `f47e929c1d119e3129431aabc889eaeb67780010834a6f8ee009c320abb6ce5b` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt12/genuine-run2/TT12-GENUINE-DATA-desktop-deployment.png` | `d26f9a979fb282891c47497df420ced3843f507093387481dd75dccd41d645d6` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt12/genuine-run2/TT12-GENUINE-DATA-desktop-hot.png` | `e0ddf1b203f45a4d260a2030df2b76f340408fe377821ce8d3ad9b9e62ec4e74` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt12/genuine-run2/TT12-GENUINE-DATA-desktop-movers.png` | `860a0293c785e05103176cb455b50c1c973d29bfdb8dd2070d5fca80399ab3a6` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt12/genuine-run2/TT12-GENUINE-DATA-desktop-rates.png` | `9001f431e3bd59c74f37071bc36c1af9355ca88e3f03e99119968ef4a801d039` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt12/genuine-run2/TT12-GENUINE-DATA-export-tokens.json` | `11e15c3e446f2aaca7d2af7c797409c1348cd42ec9a453532fb4d0987fbe13b4` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt12/genuine-run2/TT12-GENUINE-DATA-phone-deployment.png` | `1a6d8cb24f24ed1c705cb432756c5e87563b980f14891002d94224ddc97021c6` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt12/genuine-run2/TT12-GENUINE-DATA-phone-hot.png` | `02c23ec3f3a1669c529e96296cf85f15328432cd696581d979ced0fa12726607` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt12/genuine-run2/TT12-GENUINE-DATA-phone-movers.png` | `7b3f2ce7860f636bbc363c11e975d24b010ddda8410feb2157f7d453d5282260` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt12/genuine-run2/TT12-GENUINE-DATA-phone-rates.png` | `9bd9ee836bf282c49cd4a29f376b968aaac000e66f84e0629e524710fc86131d` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt12/genuine-run2/TT12-GENUINE-DATA-png-deployment.png` | `6c641b7f89ab0c3a1ca2eeae6dfd6591da300a5844f9f7838b1a4f202b5f0ae8` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt12/genuine-run2/TT12-GENUINE-DATA-png-hot.png` | `83e8e2d52964daf29c9a33d4512f249d5218b3d076f3d89a1ef4c14decdb095a` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt12/genuine-run2/TT12-GENUINE-DATA-png-movers.png` | `65c4a2be691ceb1d2fc8ada616e4260aedee5592397c53dcaa1a34fa8cc6f0a8` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt12/genuine-run2/TT12-GENUINE-DATA-png-rates.png` | `c2adabca6677eb40478b98418cbbc2478e1ac8469edd2454bce84fab7022c5f3` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt12/neon-lib.mjs` | `279bd90c993575b4b219721e44c3f27445706844649cf580f519aa8313ab24ac` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt12/palettes.json` | `7d22d0cf6b9c9b848d1e289888a640bab24044d631ec8e6cd1ce60faa2a325e8` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt12/sheets.mjs` | `dbf45bf6e4dea8aaa11d167eee4831d4a621228e99f41c96eff9d9aea8e3bb60` |

@@ -78,3 +78,4 @@ Make `/social-share/tuesday-trends` a truthful, data-backed edition from native 
 - M3 approved by TJ (READ-APPROVAL addendum 3, 22:41:20Z, runtime page loads only); READ-PLAN v3 and CONTRACT now reference it.
 - TT-11: team-colour neon logos (teamNeon.ts floor 4.5:1, per-team tint, --neon-halo); contact sheet tt11/; E2E 34 (v2 pins), Vitest 239, eslint 0, tsc 0, CSS pure OK; renders tt11/fixture + genuine-run2. Committing; colour flags in RECEIPT-11.
 - TT-12: overrides/spreads in teamNeon, 9 baked multi-colour outlines (tt12/bake-multicolour-outlines.mjs), sheets in tt12/; E2E 34 (v2 pins), Vitest 240, eslint 0, tsc 0, CSS pure OK. Committing.
+- TT-12 add-on: all 32 baked (DAL green -> jersey), multi-colour for 31 (TBL single: one-colour logo); sheet original/TT-11/TT-12; E2E 34 (v2 pins), Vitest 240, eslint 0, tsc 0, CSS pure OK. Committing.

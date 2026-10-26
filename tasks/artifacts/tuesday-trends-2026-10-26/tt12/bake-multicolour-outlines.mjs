@@ -1,4 +1,4 @@
-// TT-12 offline bake: multi-colour neon outlines for NEON_MULTICOLOUR teams. Run:
+// TT-12 offline bake: multi-colour neon outlines for all 32 teams (the add-on; NEON_MULTICOLOUR picks which are used). Run:
 // `node tasks/artifacts/tuesday-trends-2026-10-26/tt12/bake-multicolour-outlines.mjs`.
 // Same trace as TT-7 v2 (silhouette always, interior edges only when strong and part of a long stroke), then each
 // outline segment takes the colour of the logo region it borders: the original's opaque pixels are quantized to the
@@ -7,8 +7,13 @@
 // is lifted to the TT-11 contrast floor. Writes web/public/teamLogos/outline/color/X.png and tt12/palettes.json.
 import { mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { here, neonLib, original, repo, sharp } from "./neon-lib.mjs";
+import { TEAMS, here, neonLib, original, repo, sharp } from "./neon-lib.mjs";
 
+/**
+ * TT-12 add-on (TJ): palette colours swapped before the floor. DAL's neon-green field (secondaryColor #44D62C) reads
+ * abrasive, so any logo colour near it becomes the jersey green (teamsInfo DAL.jersey #006847).
+ */
+const REMAP = { DAL: [{ near: [0x44, 0xd6, 0x2c], within: 90, to: "#006847" }] };
 const TRACE = 768, OUT = 384, BLUR = 1.4, ALPHA_T = 0.2, COLOR_T = 0.3, MIN_STROKE = Math.round(TRACE * 0.06), STROKE = 3, WINDOW = 6, MIN_VOTES = 4;
 
 function sobel(plane, size, x, y) {
@@ -108,7 +113,8 @@ const toHex = c => `#${c.map(v => v.toString(16).padStart(2, "0")).join("")}`;
 
 async function bake(team) {
   const png = original(team), lines = await skeleton(png), data = await raw(png, 0), flat = flatMask(data), pal = palette(data, flat), n = TRACE * TRACE;
-  const neon = pal.map(c => neonLib.withNeonFloor(toHex(c.rgb))), neonRgb = neon.map(h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)));
+  const swap = c => (REMAP[team] ?? []).find(r => dist2(r.near, c.rgb) < r.within ** 2)?.to ?? toHex(c.rgb);
+  const neon = pal.map(c => neonLib.withNeonFloor(swap(c))), neonRgb = neon.map(h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)));
   const index = new Int8Array(n).fill(-1);
   for (let i = 0; i < n; i++) if (flat[i]) { const p = [data[i * 4], data[i * 4 + 1], data[i * 4 + 2]]; index[i] = pal.reduce((b, c, j) => dist2(c.rgb, p) < dist2(pal[b].rgb, p) ? j : b, 0); }
   const colorOf = new Int8Array(n).fill(-1), used = pal.map(() => 0);
@@ -148,7 +154,8 @@ async function bake(team) {
 const outDir = resolve(repo, "web/public/teamLogos/outline/color");
 mkdirSync(outDir, { recursive: true });
 const report = {};
-for (const team of [...neonLib.NEON_MULTICOLOUR]) {
+// TT-12 add-on: every team is baked; teamNeon decides which ones the tiles use (NEON_MULTICOLOUR).
+for (const team of TEAMS) {
   const { out, palette: pal } = await bake(team);
   writeFileSync(resolve(outDir, `${team}.png`), out);
   report[team] = pal;
