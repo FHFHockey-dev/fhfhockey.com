@@ -459,22 +459,26 @@ describe("active provider refresh scheduling", () => {
     const state = setup(undefined, false, true);
     await advance();
     expect(screen.queryByRole("button", { name: "Reload schedule data" })).toBeNull();
+    const before = state.reads();
     fireEvent.click(screen.getByRole("button", { name: "View account save" }));
     await advance();
     expect(screen.queryByRole("button", { name: "Reload schedule data" })).toBeNull();
-    expect(state.reads()).toBe(0);
+    expect(state.reads()).toBe(before);
     expect(state.saved().intent).toEqual(state.workspace.intent);
   });
 
-  it("makes no offline provider calls, pauses hidden polling and refreshes only a stale return", async () => {
-    const state = setup(undefined, false); await advance(); expect(state.reads()).toBe(0);
+  it("attempts the first load despite a misreported offline flag, keeps timed polling conservative and refreshes only a stale return", async () => {
+    const state = setup(undefined, false); await advance(); expect(state.reads()).toBe(1);
     state.network.mockReturnValue(true); fireEvent(window, new Event("online")); await advance(); expect(state.reads()).toBe(1);
     await returned(); await returned(); expect(state.reads()).toBe(1);
     state.visibility.mockReturnValue("hidden"); await returned(); await advance(60 * 60_000); expect(state.reads()).toBe(1);
     state.visibility.mockReturnValue("visible"); await returned(); expect(state.reads()).toBe(2);
     state.network.mockReturnValue(false); fireEvent(window, new Event("offline")); await advance(10 * 60_000); expect(state.reads()).toBe(2);
-    expect((screen.getByRole("button", { name: "Refresh provider" }) as HTMLButtonElement).disabled).toBe(true);
-    expect(screen.getByText(/You are offline/)).toBeTruthy();
+    // The flag alone neither claims offline nor blocks an explicit refresh.
+    const refresh = screen.getByRole("button", { name: "Refresh provider" }) as HTMLButtonElement;
+    expect(refresh.disabled).toBe(false);
+    expect(screen.queryByText(/You are offline/)).toBeNull();
+    fireEvent.click(refresh); await advance(); expect(state.reads()).toBe(3);
     state.network.mockReturnValue(true); fireEvent(window, new Event("online")); await advance();
     expect(state.reads()).toBe(3); expect(state.saved().intent).toEqual(state.workspace.intent);
   });
@@ -1996,6 +2000,50 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect(saved()).toMatchObject({ context: unchanged.context, roster: workspace.roster, intent: workspace.intent });
   });
 
+  describe("access and reads when navigator.onLine is wrong", () => {
+    const connected = () => {
+      authState.user = { id: "manager" };
+      const workspace = defaultWorkspace();
+      workspace.context = { ...workspace.context, provider: "yahoo", leagueId: "league", teamId: "team" };
+      workspace.roster = [{ playerId: player.id, position: "active" }]; workspace.manualPlayers = [player];
+      window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
+      return workspace;
+    };
+    const reason = () => document.getElementById("rso-provider-refresh-status")?.textContent;
+    it("loads access and planning data while the browser misreports offline", async () => {
+      vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);
+      connected();
+      const requests = vi.fn((url: string) => Promise.resolve({ ok: true, json: async () => url.endsWith("/access")
+        ? { data: { eligible: true, capabilities: ["rso_sync"] } } : url.includes("/data?") ? { success: true, data } : { data: null } }));
+      vi.stubGlobal("fetch", requests);
+      render(<RosterScheduleOptimizer />);
+      await waitFor(() => expect(requests.mock.calls.some(([url]) => url.endsWith("/access"))).toBe(true));
+      await waitFor(() => expect(requests.mock.calls.some(([url]) => url.includes("/data?"))).toBe(true));
+      await waitFor(() => expect(requests.mock.calls.some(([url]) => url.endsWith("/provider"))).toBe(true));
+      expect(screen.queryByText("Checking access for provider synchronization…")).toBeNull();
+      expect(screen.queryByText(/You are offline/)).toBeNull();
+    });
+    it("shows offline only after a request actually fails to reach the network", async () => {
+      connected();
+      vi.stubGlobal("fetch", vi.fn((url: string) => url.endsWith("/access") ? Promise.reject(new TypeError("Failed to fetch"))
+        : Promise.resolve({ ok: true, json: async () => url.includes("/data?") ? { success: true, data } : { data: null } })));
+      render(<RosterScheduleOptimizer />);
+      await waitFor(() => expect(reason()).toBe("You are offline. Reconnect to refresh provider inputs; your selected plan is preserved."));
+      expect(screen.queryByText("Checking access for provider synchronization…")).toBeNull();
+    });
+    it("never leaves Checking access up when the check hangs", async () => {
+      vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval"] });
+      connected();
+      vi.stubGlobal("fetch", vi.fn((url: string) => url.endsWith("/access") ? new Promise(() => undefined)
+        : Promise.resolve({ ok: true, json: async () => url.includes("/data?") ? { success: true, data } : { data: null } })));
+      render(<RosterScheduleOptimizer />);
+      await act(async () => { await vi.advanceTimersByTimeAsync(1_000); });
+      expect(reason()).toBe("Checking access for provider synchronization…");
+      await act(async () => { await vi.advanceTimersByTimeAsync(15_000); });
+      expect(reason()).toBe("Provider refresh is disabled until access can be verified. Try again shortly.");
+    });
+  });
+
   it.each([
     { user: null, sync: false, teamId: "team", reason: "Sign in to check access for provider synchronization." },
     { user: { id: "manager" }, sync: false, teamId: "team", reason: "Yahoo and Fantrax sync require premium access: $4.99 monthly or a $24.99 season pass ending July 1, 2027. Your account connection is unchanged." },
@@ -3179,6 +3227,9 @@ describe("owner plan preservation", () => {
     expect(screen.getByText(/Finishing dispatched requests/)).not.toBeNull();
     expect(fixture.requests.some(request => request.url.includes("preservation=read"))).toBe(false);
     fixture.resolveSave(); await screen.findByText(/Complete backup sealed/);
+    await act(async () => { document.dispatchEvent(new Event("visibilitychange")); });
+    expect(document.getElementById("rso-provider-refresh-status")?.textContent).toBe("Provider refresh is paused while preservation holds this plan.");
+    expect(screen.queryByText("Checking access for provider synchronization…")).toBeNull();
     const backup = await fixture.exportBackup(); expect(backup.remote.row!.lock_version).toBe(3); expect(backup.history).toHaveLength(1); expect(backup.workspace.intent.steps).toHaveLength(1);
     fireEvent.click(screen.getByRole("checkbox", { name: "Backup saved and other writers independently excluded" }));
     fireEvent.click(screen.getByRole("button", { name: "Use backup for approved test" }));
