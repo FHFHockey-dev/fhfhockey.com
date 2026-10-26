@@ -4,9 +4,16 @@ import type { PlanningDataQuery } from "lib/rosterScheduleData/planning";
 import { applyProviderGoalieStarts } from "lib/rosterScheduleOptimizer/providerGoalieStarts";
 import { assertYahooLeagueGameContext, resolveYahooGameContext } from "./gameContext";
 import { YahooLiveDraftError } from "./liveDraft";
+import { cacheKey, currentTodayRoster, todayRosterCache } from "./planningCache";
 import { fetchYahooBoardResource } from "./providerClient";
 import { yahooPlanningPlayers, yahooStartingStatus } from "./rosterPlanning";
 import { yahooFields, yahooValue } from "./starterBoard";
+import { loadVerifiedYahooIdentitiesForKeys, rsoYahooDietEnabled } from "./yahooIdentity";
+
+/** A roster read this recent can still say that no rostered goalie plays today (TJ D5); it never supplies a mark. */
+const GOALIE_SKIP_WINDOW_MS = 15 * 60_000;
+const isGoalieRow = (row: Record<string, any>) => row.position_type === "G" || row.display_position === "G"
+  || JSON.stringify(row.eligible_positions ?? null).includes('"G"');
 
 const unavailable = () => new YahooLiveDraftError("Current Yahoo goalie confirmations could not be verified.", 503, "yahoo_confirmations_unavailable");
 const teamAbbreviation = (value: unknown) => {
@@ -35,7 +42,19 @@ export async function loadYahooPlanningConfirmations(args: {
   if (context.targetSeasonId !== query.seasonId) throw unavailable();
   const date = new Intl.DateTimeFormat("en-CA", { timeZone: query.timeZone ?? "UTC" }).format(now);
   if (date < query.startDate || date > query.endDate) return { data, expiresAt: null };
-  const response = await fetchYahooBoardResource({ client: db, userId, connectedAccountId: team.connected_account_id,
+  // RSO Yahoo diet (flag RSO_YAHOO_DIET): share the snapshot's current today-roster read, and skip Yahoo when a
+  // recent read shows no rostered goalie whose team plays today (absent marks stay unknown, as when Yahoo omits them).
+  const diet = rsoYahooDietEnabled(), rosterKey = cacheKey(userId, team.external_team_key, date);
+  if (diet) {
+    const recent = todayRosterCache.get(rosterKey, GOALIE_SKIP_WINDOW_MS, Date.now());
+    const playing = new Set(data.games.filter(game => game.date === date).map(game => game.teamAbbreviation));
+    let recentRows: Record<string, any>[] | null = null;
+    try { recentRows = recent ? yahooPlanningPlayers(recent.value.payload) : null; } catch { recentRows = null; }
+    if (recentRows && !recentRows.some(row => isGoalieRow(row) && playing.has(teamAbbreviation(row.editorial_team_abbr))))
+      return { data, expiresAt: null };
+  }
+  const cached = diet ? currentTodayRoster(rosterKey, Date.now()) : null;
+  const response = cached ?? await fetchYahooBoardResource({ client: db, userId, connectedAccountId: team.connected_account_id,
     context, leagueKey: league.external_league_key, format: "standard_json", now,
     resource: { type: "roster", teamKey: team.external_team_key, date } });
   const roster = yahooFields(yahooValue(response.payload, "roster"));
@@ -50,10 +69,27 @@ export async function loadYahooPlanningConfirmations(args: {
   const expires = observed + 120000 - (age ?? 0) * 1000;
   if (expires <= completed) throw unavailable();
   const rows = yahooPlanningPlayers(response.payload);
+  if (diet && !cached) todayRosterCache.set(rosterKey, response, observed);
   if (rows.length > 100) throw unavailable();
   const keys = rows.map(row => String(row.player_key ?? ""));
   if (new Set(keys).size !== keys.length || keys.some(key => !new RegExp(`^${context.gameKey}\\.p\\.\\d+$`).test(key))) throw unavailable();
   if (!keys.length) return { data, expiresAt: new Date(expires).toISOString() };
+  if (diet) {
+    // D8: two-way unique through verified fhfh_player_external_identities, straight to the catalog player id.
+    const identities = await loadVerifiedYahooIdentitiesForKeys(db, context, keys);
+    if (!identities) throw unavailable();
+    const verifiedMarks: PlanningPlayer[] = [];
+    for (const row of rows) {
+      const id = identities.get(String(row.player_key)), catalog = id === undefined ? [] : data.players.filter(player => player.id === id);
+      const player = catalog.length === 1 ? catalog[0] : undefined, status = yahooStartingStatus(row, date, response.transport.responseDate);
+      const games = player && data.games.filter(game => game.date === date && game.teamAbbreviation === player.teamAbbreviation);
+      if (!player || player.playerClass !== "goalie" || !status || teamAbbreviation(row.editorial_team_abbr) !== player.teamAbbreviation || games?.length !== 1) continue;
+      verifiedMarks.push({ ...player, startingStatus: status });
+    }
+    const forecasts = applyProviderGoalieStarts(data.forecasts, { marked: verifiedMarks, catalog: data.players, games: data.games,
+      bridgeRevisionIds: new Set(data.forecastManifest?.rsoUsePolicy?.bridgeRevisionIds ?? []), now: completed });
+    return { data: { ...data, forecasts }, expiresAt: new Date(expires).toISOString() };
+  }
   // Two bounded identity reads check both directions. A second Yahoo ID for the
   // same NHL identity is ambiguous even if that other ID is absent from the roster.
   const first = await db.from("yahoo_nhl_player_map_read").select("nhl_player_id,yahoo_player_id")

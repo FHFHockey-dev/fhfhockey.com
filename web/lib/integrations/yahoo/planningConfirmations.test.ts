@@ -115,3 +115,42 @@ describe("owned current Yahoo confirmations", () => {
     expect(mocks.roster).not.toHaveBeenCalled();
   });
 });
+
+describe("RSO Yahoo diet confirmations (D5, D8)", () => {
+  beforeEach(async () => { vi.stubEnv("RSO_YAHOO_DIET", "1"); (await import("./planningCache")).clearYahooReadCaches(); });
+  afterEach(() => vi.unstubAllEnvs());
+  const verified = (f: ReturnType<typeof fixture>) => { f.tables.fhfh_player_external_identities = [{ external_player_id: "453.p.1", fhfh_player_id: 1 }]; };
+
+  it("marks through verified identities and shares one current roster read", async () => {
+    const f = fixture(); verified(f); f.providerRow.position_type = "G";
+    const first = await loadYahooPlanningConfirmations(f.args);
+    expect(first.expiresAt).toBe("2026-10-23T12:02:00.000Z");
+    expect(first.data.forecasts).not.toEqual(f.data.forecasts);
+    expect(f.from.mock.calls.map(([table]) => table)).toContain("fhfh_player_external_identities");
+    expect(f.from.mock.calls.map(([table]) => table)).not.toContain("yahoo_nhl_player_map_read");
+    vi.setSystemTime(now.getTime() + 60_000);
+    const second = await loadYahooPlanningConfirmations(f.args);
+    expect(second.data.forecasts).toEqual(first.data.forecasts);
+    expect(mocks.roster).toHaveBeenCalledTimes(1);
+    vi.setSystemTime(now.getTime() + 121_000);
+    f.response.transport.responseDate = new Date(now.getTime() + 121_000).toISOString();
+    await loadYahooPlanningConfirmations(f.args);
+    expect(mocks.roster).toHaveBeenCalledTimes(2);
+  });
+
+  it("skips Yahoo when a recent roster has no goalie whose team plays today", async () => {
+    const f = fixture(); verified(f); f.providerRow.position_type = "P"; f.providerRow.eligible_positions = [{ position: "C" }];
+    await loadYahooPlanningConfirmations(f.args);
+    vi.setSystemTime(now.getTime() + 5 * 60_000);
+    const skipped = await loadYahooPlanningConfirmations(f.args);
+    expect(skipped).toEqual({ data: f.data, expiresAt: null });
+    expect(mocks.roster).toHaveBeenCalledTimes(1);
+  });
+
+  it("leaves a goalie unmarked when the verified identity is ambiguous", async () => {
+    const f = fixture(); f.providerRow.position_type = "G";
+    f.tables.fhfh_player_external_identities = [{ external_player_id: "453.p.1", fhfh_player_id: 1 }, { external_player_id: "453.p.7", fhfh_player_id: 1 }];
+    const result = await loadYahooPlanningConfirmations(f.args);
+    expect(result.data.forecasts).toEqual(f.data.forecasts);
+  });
+});

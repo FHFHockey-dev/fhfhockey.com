@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { loadPlanningData, parsePlanningDataQuery } from "lib/rosterScheduleData/planning";
+import { INFERRED_ACQUISITION_TIMING_KEY, INFERRED_ACQUISITION_TIMING_SOURCE } from "lib/rosterScheduleOptimizer/providerRules";
 import { expandActiveSlots } from "lib/rosterScheduleOptimizer/slots";
 import { normalizeEligibility } from "lib/rosterScheduleOptimizer/eligibility";
 import { nextLocalMidnight, zonedMidnight } from "lib/rosterScheduleOptimizer/planningDates";
@@ -7,7 +8,9 @@ import type { AcquisitionEvidence, LeagueRules, PastLineup, PlanningData, Planni
 import { assertYahooLeagueGameContext, resolveYahooGameContext } from "./gameContext";
 import { parseYahooBoardSettings, YAHOO_STAT_KEY_BY_ID, YahooLiveDraftError } from "./liveDraft";
 import { fetchYahooBoardResource, fetchYahooDraftResource, fetchYahooPlanningResource, type YahooProviderJsonResult } from "./providerClient";
-import { yahooBoardPlayers, yahooFields, yahooValue } from "./starterBoard";
+import { yahooBoardPlayers, yahooFields, yahooInferredAcquisitionTiming, yahooValue } from "./starterBoard";
+import { cacheKey, currentTodayRoster, todayRosterCache, YAHOO_DISCOVERY_TTL_MS, YAHOO_LEAGUE_FACTS_TTL_MS, YAHOO_SETTINGS_TTL_MS, yahooOwnershipSignature, yahooReadCache, yahooSettingsCache } from "./planningCache";
+import { legacyYahooIdentities, loadVerifiedYahooIdentityMap, rsoYahooDietEnabled } from "./yahooIdentity";
 
 type Row = Record<string, any>;
 const text = (value: unknown): string | null => typeof value === "string" || typeof value === "number" ? String(value) : null;
@@ -17,6 +20,13 @@ const no = (value: unknown) => value === false || value === 0 || value === "0";
 /** A recorded lineup for an elapsed day never changes, so a warm instance reuses it instead of asking Yahoo again. */
 const pastRosterCache = new Map<string, Row[]>();
 const PAST_ROSTER_CACHE_LIMIT = 500;
+/** RSO Yahoo diet caches (flag RSO_YAHOO_DIET): keyed by principal, judged for freshness at their own read time. */
+const leagueFactsCache = yahooReadCache<{ result: YahooProviderJsonResult; signature: string | null }>();
+type DiscoveryScan = { rows: Row[]; pagesAttempted: number; pagesChecked: number; pagesAccepted: number; rowsAccepted: number;
+  repeatedRows: number; elapsed: number; stop: string; complete: boolean; limitations: string[]; signature: string };
+const discoveryCache = yahooReadCache<DiscoveryScan>();
+/** Private elapsed-day lineups (D4 migration, not yet applied): player keys and slots only. */
+const PAST_LINEUP_TABLE = "rso_yahoo_past_lineups";
 
 /** The per-game WGO column behind each points-league stat Yahoo scores per game; ratio stats can't be scored per game. */
 const SKATER_POINT_COLUMNS: Readonly<Record<string, string>> = { GOALS: "goals", ASSISTS: "assists", POINTS: "points",
@@ -220,7 +230,7 @@ function providerFresh(result: YahooProviderJsonResult, now: Date) {
 export function yahooPlanningAcquisitions(args: {
   settings: YahooProviderJsonResult; league: YahooProviderJsonResult | null; team: YahooProviderJsonResult | null;
   weeks: PlanningData["matchupWeeks"]; gameKey: string; leagueKey: string; teamKey: string;
-  startDate: string; endDate: string; now: Date;
+  startDate: string; endDate: string; now: Date; leagueReadAt?: Date; teamReadAt?: Date;
 }): AcquisitionEvidence {
   const league = yahooFields(yahooValue(args.league?.payload, "league") ?? args.league?.payload);
   const teams = args.team ? yahooPlanningTeams(args.team.payload) : [];
@@ -242,7 +252,7 @@ export function yahooPlanningAcquisitions(args: {
   const containsHorizon = Boolean(datesValid && args.startDate >= period!.startDate && args.endDate <= period!.endDate
     && args.startDate <= args.endDate && validDate(args.startDate) && validDate(args.endDate));
   const limitations: string[] = [];
-  const fresh = args.league && args.team && providerFresh(args.league, args.now) && providerFresh(args.team, args.now);
+  const fresh = args.league && args.team && providerFresh(args.league, args.leagueReadAt ?? args.now) && providerFresh(args.team, args.teamReadAt ?? args.now);
   const scope = league.league_key === args.leagueKey && team.team_key === args.teamKey && yes(team.is_owned_by_current_login);
   const counterValid = fresh && scope && counter.coverage_type === "week" && week !== null && week === coverageWeek && containsHorizon;
   const used = counterValid ? integer(counter.value) : null;
@@ -275,7 +285,9 @@ export async function readRequiredPlanningResource<T>(read: () => Promise<T>): P
 
 export async function loadYahooPlanningSnapshot(args: {
   db: SupabaseClient<any>; userId: string; teamId: string; startDate: string; endDate: string; timeZone?: string; now?: Date;
-}): Promise<{ snapshot: PlanningSnapshot; capabilities: ProviderCapabilities; code?: string; retryAfterSeconds?: number | null }> {
+  /** "manual" (Refresh provider) bypasses every diet cache; timed upkeep is "auto". */
+  refresh?: "auto" | "manual";
+}): Promise<{ snapshot: PlanningSnapshot; capabilities: ProviderCapabilities; code?: string; retryAfterSeconds?: number | null; yahooDiet?: true }> {
   const { db, userId } = args;
   const now = args.now ?? new Date();
   const { data: team, error: teamError } = await db.from("external_teams").select("*")
@@ -288,6 +300,9 @@ export async function loadYahooPlanningSnapshot(args: {
   assertYahooLeagueGameContext(league.external_league_key, gameContext);
   const query = parsePlanningDataQuery({ seasonId: gameContext.targetSeasonId, startDate: args.startDate, endDate: args.endDate });
   const provider = { client: db, userId, connectedAccountId: team.connected_account_id, context: gameContext, leagueKey: league.external_league_key, format: "standard_json" as const, now };
+  const diet = rsoYahooDietEnabled(), reuse = diet && args.refresh !== "manual";
+  let yahooReads = 0;
+  const counted = <T>(read: () => Promise<T>) => () => { yahooReads++; return read(); };
   let refreshError: YahooLiveDraftError | undefined;
   let retryAfterSeconds: number | null = null;
   const optionalFailure = (error: unknown) => {
@@ -299,8 +314,12 @@ export async function loadYahooPlanningSnapshot(args: {
     }
     return null;
   };
-  const settingsResponse = await readRequiredPlanningResource(() => fetchYahooDraftResource({ ...provider, resource: "settings" }));
+  const settingsKey = cacheKey(userId, league.external_league_key);
+  const cachedSettings = reuse ? yahooSettingsCache.get(settingsKey, YAHOO_SETTINGS_TTL_MS, now.getTime()) : null;
+  const settingsResponse = cachedSettings?.value ?? await readRequiredPlanningResource(counted(() => fetchYahooDraftResource({ ...provider, resource: "settings" })));
+  const settingsReadAt = cachedSettings ? new Date(cachedSettings.readAt) : now;
   if (text(yahooValue(settingsResponse.payload, "league_key")) !== league.external_league_key) throw new Error("Yahoo settings league mismatch");
+  if (diet && !cachedSettings) yahooSettingsCache.set(settingsKey, settingsResponse, now.getTime());
   const providerTimeZone = text(yahooValue(settingsResponse.payload, "time_zone"));
   const timeZone = providerTimeZone ?? args.timeZone ?? "UTC";
   try { new Intl.DateTimeFormat("en", { timeZone }).format(now); } catch { throw new YahooLiveDraftError("Choose a valid league time zone.", 400, "invalid_time_zone"); }
@@ -312,73 +331,110 @@ export async function loadYahooPlanningSnapshot(args: {
     if (day >= today || day > query.endDate) break;
     pastDates.push(day);
   }
+  // D4: stored elapsed-day lineups are read before Yahoo; a missing table or failed read just falls back to Yahoo.
+  const storedPast = new Map<string, Row[]>();
+  if (diet && pastDates.length) {
+    const stored = await db.from(PAST_LINEUP_TABLE).select("lineup_date,entries").eq("user_id", userId).eq("external_team_id", team.id)
+      .eq("season_id", query.seasonId).in("lineup_date", pastDates).then(value => value, () => ({ data: null, error: true }));
+    if (!stored.error) for (const row of (stored.data ?? []) as Row[]) {
+      const entries = Array.isArray(row.entries) ? row.entries : [];
+      if (entries.every((entry: Row) => typeof entry?.player_key === "string" && typeof entry?.position === "string"))
+        storedPast.set(String(row.lineup_date), entries.map((entry: Row) => ({ player_key: entry.player_key, selected_position: { position: entry.position } })));
+    }
+  }
   const pastRosterReads = Promise.all(pastDates.map(async date => {
     const key = `${userId}|${team.external_team_key}|${date}`;
-    const cached = pastRosterCache.get(key);
+    const cached = pastRosterCache.get(key) ?? storedPast.get(date);
     if (cached) return { date, rows: cached };
     try {
-      const response = await fetchYahooBoardResource({ ...provider, resource: { type: "roster", teamKey: team.external_team_key, date } });
+      const response = await counted(() => fetchYahooBoardResource({ ...provider, resource: { type: "roster", teamKey: team.external_team_key, date } }))();
       const payload = yahooFields(yahooValue(response.payload, "roster"));
       if (text(yahooValue(response.payload, "team_key")) !== team.external_team_key || text(payload.date) !== date
         || text(payload.coverage_type) !== "date" || !yes(yahooValue(response.payload, "is_owned_by_current_login"))) return { date, rows: null };
       const rows = yahooPlanningPlayers(response.payload);
       if (pastRosterCache.size >= PAST_ROSTER_CACHE_LIMIT) pastRosterCache.delete(pastRosterCache.keys().next().value!);
       pastRosterCache.set(key, rows);
+      if (diet) await db.from(PAST_LINEUP_TABLE).upsert({ user_id: userId, external_team_id: team.id, season_id: query.seasonId, lineup_date: date,
+        entries: rows.map(row => ({ player_key: String(row.player_key), position: text(yahooFields(row.selected_position).position) ?? "BN" })) },
+      { onConflict: "user_id,external_team_id,lineup_date" }).then(() => undefined, () => undefined);
       return { date, rows };
     } catch (error) { optionalFailure(error); return { date, rows: null }; }
   }));
-  const [data, rosterResponse, scoreboardResult, leagueRosterResult, leagueResult, teamResult] = await Promise.all([
+  const rosterKey = cacheKey(userId, team.external_team_key, today);
+  const cachedRoster = reuse ? currentTodayRoster(rosterKey, now.getTime()) : null;
+  const factKey = (resource: string) => cacheKey(userId, league.external_league_key, team.external_team_key, resource);
+  const cachedFact = (resource: string) => reuse ? leagueFactsCache.get(factKey(resource), YAHOO_LEAGUE_FACTS_TTL_MS, now.getTime()) : null;
+  const [cachedScoreboard, cachedLeague, cachedTeam] = ["scoreboard", "league", "team"].map(cachedFact);
+  const [data, rosterResponse, scoreboardResult, leagueRosterResult, leagueFetched, teamFetched] = await Promise.all([
     loadPlanningData(db, { ...query, timeZone }, { now, forgeDailyBridge: true, consumer: "rso" }),
-    readRequiredPlanningResource(() => fetchYahooBoardResource({ ...provider, resource: { type: "roster", teamKey: team.external_team_key, date: today } })),
-    fetchYahooPlanningResource({ ...provider, resource: { type: "scoreboard" } }).then(value => value, optionalFailure),
-    fetchYahooBoardResource({ ...provider, resource: { type: "league_rosters" } }).then(value => value, optionalFailure),
-    fetchYahooPlanningResource({ ...provider, resource: { type: "league" } }).then(value => value, optionalFailure),
-    fetchYahooPlanningResource({ ...provider, resource: { type: "team", teamKey: team.external_team_key } }).then(value => value, optionalFailure),
+    cachedRoster ?? readRequiredPlanningResource(counted(() => fetchYahooBoardResource({ ...provider, resource: { type: "roster", teamKey: team.external_team_key, date: today } }))),
+    cachedScoreboard?.value.result ?? counted(() => fetchYahooPlanningResource({ ...provider, resource: { type: "scoreboard" } }))().then(value => value, optionalFailure),
+    counted(() => fetchYahooBoardResource({ ...provider, resource: { type: "league_rosters" } }))().then(value => value, optionalFailure),
+    cachedLeague?.value.result ?? counted(() => fetchYahooPlanningResource({ ...provider, resource: { type: "league" } }))().then(value => value, optionalFailure),
+    cachedTeam ? null : counted(() => fetchYahooPlanningResource({ ...provider, resource: { type: "team", teamKey: team.external_team_key } }))().then(value => value, optionalFailure),
   ]);
+  const scoreboardReadAt = cachedScoreboard ? new Date(cachedScoreboard.readAt) : now;
+  const leagueResult = leagueFetched, leagueReadAt = cachedLeague ? new Date(cachedLeague.readAt) : now;
+  // Who owns whom, from this read. Any change re-reads the weekly counter and rescans availability.
+  let ownershipSignature: string | null = null;
+  if (diet && leagueRosterResult && providerFresh(leagueRosterResult, now)
+    && text(yahooValue(leagueRosterResult.payload, "league_key")) === league.external_league_key) {
+    try { ownershipSignature = yahooOwnershipSignature(yahooPlanningTeams(leagueRosterResult.payload)
+      .map(row => ({ teamKey: String(row.team_key), playerKeys: yahooBoardPlayers(row).map(player => String(player.player_key)) }))); }
+    catch { ownershipSignature = null; }
+  }
+  const cachedTeamCurrent = cachedTeam && ownershipSignature !== null && cachedTeam.value.signature === ownershipSignature ? cachedTeam : null;
+  const teamResult = cachedTeamCurrent ? cachedTeamCurrent.value.result : cachedTeam
+    ? await counted(() => fetchYahooPlanningResource({ ...provider, resource: { type: "team", teamKey: team.external_team_key } }))().then(value => value, optionalFailure)
+    : teamFetched;
+  const teamReadAt = cachedTeamCurrent ? new Date(cachedTeamCurrent.readAt) : now;
+  if (diet) {
+    if (!cachedScoreboard && scoreboardResult && providerFresh(scoreboardResult, now)) leagueFactsCache.set(factKey("scoreboard"), { result: scoreboardResult, signature: null }, now.getTime());
+    if (!cachedLeague && leagueResult && providerFresh(leagueResult, now)) leagueFactsCache.set(factKey("league"), { result: leagueResult, signature: null }, now.getTime());
+    if (!cachedTeamCurrent && teamResult && ownershipSignature !== null && providerFresh(teamResult, now)) leagueFactsCache.set(factKey("team"), { result: teamResult, signature: ownershipSignature }, now.getTime());
+  }
   const acquisitionEvidence = yahooPlanningAcquisitions({ settings: settingsResponse, league: leagueResult, team: teamResult,
     weeks: data.matchupWeeks, gameKey: gameContext.gameKey, leagueKey: league.external_league_key, teamKey: team.external_team_key,
-    startDate: query.startDate, endDate: query.endDate, now });
+    startDate: query.startDate, endDate: query.endDate, now, leagueReadAt, teamReadAt });
   const rosterPayload = yahooFields(yahooValue(rosterResponse.payload, "roster"));
   if (text(yahooValue(rosterResponse.payload, "team_key")) !== team.external_team_key
     || text(rosterPayload.date) !== today || text(rosterPayload.coverage_type) !== "date"
     || !yes(yahooValue(rosterResponse.payload, "is_owned_by_current_login"))) throw new Error("Yahoo did not verify roster date, scope and ownership");
   const ownRows = yahooPlanningPlayers(rosterResponse.payload);
+  if (diet && !cachedRoster) todayRosterCache.set(rosterKey, rosterResponse, now.getTime());
   if (!ownRows.length) throw new YahooLiveDraftError(
     text(yahooValue(settingsResponse.payload, "draft_status")) === "predraft"
       ? "Yahoo reports this league is still pre-draft. Select your drafted league from My team; league names are shown beside each team."
       : "Yahoo returned an empty roster for this team today. Check the selected league and team, then refresh after Yahoo makes the roster available.",
     409, "yahoo_roster_empty",
   );
-  const fresh = providerFresh(settingsResponse, now) && providerFresh(rosterResponse, now);
+  const fresh = providerFresh(settingsResponse, settingsReadAt) && providerFresh(rosterResponse, now);
   const limitations: string[] = [];
   limitations.push(...acquisitionEvidence.limitations);
+  if (cachedSettings) limitations.push(`League settings were read from Yahoo at ${settingsReadAt.toISOString()} and are reused for up to 6 hours; Refresh provider reads them again.`);
+  if (cachedTeamCurrent || cachedLeague) limitations.push(`Yahoo's weekly add counter and current week were read at ${(cachedTeamCurrent ? teamReadAt : leagueReadAt).toISOString()}; they refresh every 30 minutes, when league rosters change, or on Refresh provider.`);
   if (!fresh) limitations.push("Yahoo roster/settings freshness could not be verified; affected lock and availability claims remain unknown.");
   // Yahoo league settings carry no time zone; the client reviews a supplied zone with the manager.
   if (!providerTimeZone && !args.timeZone) limitations.push("League time zone is unknown; UTC is a display fallback and timing requires verification.");
-  const mapping: Row[] = [];
-  for (let offset = 0; ; offset += 1000) {
-    const page = await db.from("yahoo_nhl_player_map_read").select("nhl_player_id,yahoo_player_id")
-      .order("yahoo_player_id").order("nhl_player_id").range(offset, offset + 999);
-    if (page.error) throw page.error;
-    mapping.push(...page.data ?? []);
-    if ((page.data?.length ?? 0) < 1000) break;
+  // D8: the flag resolves identities through verified fhfh_player_external_identities; otherwise the legacy map.
+  let identities: Map<string, string>;
+  if (diet) identities = await loadVerifiedYahooIdentityMap(db, gameContext);
+  else {
+    const mapping: Row[] = [];
+    for (let offset = 0; ; offset += 1000) {
+      const page = await db.from("yahoo_nhl_player_map_read").select("nhl_player_id,yahoo_player_id")
+        .order("yahoo_player_id").order("nhl_player_id").range(offset, offset + 999);
+      if (page.error) throw page.error;
+      mapping.push(...page.data ?? []);
+      if ((page.data?.length ?? 0) < 1000) break;
+    }
+    // The mapping view contains full keys from multiple Yahoo seasons; only this game's unique pairs resolve.
+    identities = legacyYahooIdentities(mapping, gameContext.gameKey, data.players);
   }
-  const byNhl = new Map(data.players.map(player => [player.nhlId, player]));
-  const byYahoo = new Map<string, Set<number>>(), reverse = new Map<number, Set<string>>();
-  for (const row of mapping) {
-    const nhl = Number(row.nhl_player_id), rawYahoo = String(row.yahoo_player_id ?? "");
-    const yahoo = /^\d+$/.test(rawYahoo) ? `${gameContext.gameKey}.p.${rawYahoo}` : rawYahoo;
-    // The mapping view contains full keys from multiple Yahoo seasons.
-    if (!Number.isSafeInteger(nhl) || !/^\d+\.p\.\d+$/.test(yahoo) || !yahoo.startsWith(`${gameContext.gameKey}.p.`)) continue;
-    byYahoo.set(yahoo, new Set([...(byYahoo.get(yahoo) ?? []), nhl]));
-    reverse.set(nhl, new Set([...(reverse.get(nhl) ?? []), yahoo]));
-  }
+  const byId = new Map(data.players.map(player => [player.id, player]));
   const resolve = (row: Row) => {
-    const key = String(row.player_key ?? "");
-    if (!key.startsWith(`${gameContext.gameKey}.p.`)) return undefined;
-    const matches = byYahoo.get(key);
-    const nhl = matches?.size === 1 ? [...matches][0] : null;
-    return nhl !== null && reverse.get(nhl)?.size === 1 ? byNhl.get(nhl) : undefined;
+    const id = identities.get(String(row.player_key ?? ""));
+    return id === undefined ? undefined : byId.get(id);
   };
   const roster: RosterEntry[] = [];
   const positions = new Map<string, string>();
@@ -428,11 +484,13 @@ export async function loadYahooPlanningSnapshot(args: {
     periodEnd: new Date(Date.parse(`${week.endDate}T12:00:00Z`) + 86400000).toISOString().slice(0, 10) } : { periodStart: null, periodEnd: null };
   const reserveSlots = Object.fromEntries(Object.entries(settings.excludedInjurySlots ?? {})
     .filter(([slot]) => ["IR", "IR+", "NA"].includes(slot.trim().toUpperCase())));
+  // D6: same-day or next-day adds inferred from Yahoo's weekly deadline (as Start Chart does); the manager can override.
+  const inferredTiming = diet && fresh ? yahooInferredAcquisitionTiming(settings) : null;
   const rules: LeagueRules = {
     // Restore supported reserve capacities that the draft parser excludes.
     lineupMode: mode, rosterSlots: { ...settings.rosterConfig, ...reserveSlots },
-    // A lineup deadline does not establish when a transaction becomes effective.
-    acquisitionTiming: "unknown",
+    // Without the diet flag, a lineup deadline does not establish when a transaction becomes effective.
+    acquisitionTiming: inferredTiming ?? "unknown",
     acquisitionCost: periods.length ? 1 : null, periods, scoring: { mode: settings.leagueType, weights: { ...settings.scoringCategories }, categories: yahooPlanningCategories(Object.keys(settings.categoryWeights)) },
     goalieMinimum: { required: settings.minimumGoalieStarts, credited: null, counts: "unknown", penalty: "unknown", ...goaliePeriod }, unsupported,
   };
@@ -469,7 +527,9 @@ export async function loadYahooPlanningSnapshot(args: {
     ...(rules.goalieMinimum.required === 0 || rules.goalieMinimum.credited !== null ? [] : ["goalie minimum progress"])];
   if (unverifiedRules.length) limitations.push(`Verify ${unverifiedRules.join(" and ")}; these are not inferred from season transaction totals.`);
   // capabilities.rules stays false: name every rule fact the planner still treats as unknown.
-  const unreportedRules = ["when an add takes effect (same-day or next-day)", "waiver mode and FAAB budget",
+  const inferredTimingNote = inferredTiming && `Add timing is inferred from Yahoo's weekly deadline (${inferredTiming === "same_day" ? "same-day" : "next-day"}); change it in League rules if your league differs.`;
+  if (inferredTimingNote) limitations.push(inferredTimingNote);
+  const unreportedRules = [inferredTiming ? "whether the add timing inferred from Yahoo's weekly deadline is right" : "when an add takes effect (same-day or next-day)", "waiver mode and FAAB budget",
     ...(periods.length ? ["the exact weekly add reset time (league-local midnight is assumed)"] : []),
     ...(rules.goalieMinimum.required === null ? ["whether the league has a goalie minimum"]
       : rules.goalieMinimum.required > 0 ? ["how the goalie minimum counts (starts or appearances) and its penalty"] : [])];
@@ -477,18 +537,31 @@ export async function loadYahooPlanningSnapshot(args: {
   let pagesChecked = 0, availabilityComplete = false;
   let pagesAttempted = 0, pagesAccepted = 0, rowsAccepted = 0, repeatedRows = 0;
   let availabilityStop = "page limit";
-  const candidates = new Map<string, Row>();
+  let candidates = new Map<string, Row>();
   const availabilityStarted = Date.now();
+  let availabilityElapsed = 0, availabilityAsOf = now.toISOString();
   let repeatedPageIdentity = false;
+  // D2: a complete scan is reused for 15 minutes unless league rosters changed; Refresh provider always rescans.
+  const scanKey = cacheKey(userId, league.external_league_key);
+  const cachedScan = reuse && ownershipSignature !== null ? discoveryCache.get(scanKey, YAHOO_DISCOVERY_TTL_MS, now.getTime()) : null;
+  const scan = cachedScan && cachedScan.value.signature === ownershipSignature ? cachedScan : null;
+  const scanLimitations: string[] = [];
+  if (scan) {
+    ({ pagesAttempted, pagesChecked, pagesAccepted, rowsAccepted, repeatedRows, complete: availabilityComplete, stop: availabilityStop } = scan.value);
+    availabilityElapsed = scan.value.elapsed; availabilityAsOf = new Date(scan.readAt).toISOString();
+    candidates = new Map(scan.value.rows.map(row => [String(row.player_key), row]));
+    scanLimitations.push(...scan.value.limitations,
+      `League availability was scanned at ${availabilityAsOf}; it rescans every 15 minutes, when league rosters change, or on Refresh provider.`);
+  } else {
   // Read all pages within a disclosed bound, independent of forecast availability. The first
   // page is read alone to surface limits or scope problems; later pages are fetched three at a
   // time but accepted strictly in order, so a failure or the end of the list stops at that page.
   read: for (let start = 0; start <= 2000;) {
     if ((retryAfterSeconds ?? 0) > 0 || refreshError?.code === "yahoo_rate_limited" || refreshError?.code === "yahoo_reauth_required" || refreshError?.code === "yahoo_access_denied") { availabilityStop = "provider backoff or access restriction"; break; }
-    if (Date.now() - availabilityStarted >= 8000) { availabilityStop = "time budget"; limitations.push("Availability discovery reached its time budget; remaining players are unknown."); break; }
+    if (Date.now() - availabilityStarted >= 8000) { availabilityStop = "time budget"; scanLimitations.push("Availability discovery reached its time budget; remaining players are unknown."); break; }
     const batch = (start ? [start, start + 25, start + 50] : [0]).filter(page => page <= 2000);
     pagesAttempted += batch.length;
-    const settled = await Promise.allSettled(batch.map(page => fetchYahooPlanningResource({ ...provider, resource: { type: "available_page", start: page } })));
+    const settled = await Promise.allSettled(batch.map(page => counted(() => fetchYahooPlanningResource({ ...provider, resource: { type: "available_page", start: page } }))()));
     pagesChecked += settled.filter(outcome => outcome.status === "fulfilled").length;
     start = batch[batch.length - 1] + 25;
     for (const outcome of settled) {
@@ -506,14 +579,18 @@ export async function loadYahooPlanningSnapshot(args: {
         if (rows.length > 25) throw new Error("Incomplete availability page");
         pagesAccepted++; rowsAccepted += rows.length;
         for (const row of rows) {
-          if (candidates.has(row.player_key)) { repeatedRows++; repeatedPageIdentity = true; candidates.set(row.player_key, { ...row, ownership: null }); limitations.push("Availability pages changed while reading; repeated identities remain unknown."); }
+          if (candidates.has(row.player_key)) { repeatedRows++; repeatedPageIdentity = true; candidates.set(row.player_key, { ...row, ownership: null }); scanLimitations.push("Availability pages changed while reading; repeated identities remain unknown."); }
           else candidates.set(row.player_key, row);
         }
         if (rows.length < 25) { availabilityComplete = !repeatedPageIdentity; availabilityStop = repeatedPageIdentity ? "end of list with repeated identities" : "end of list"; break read; }
-      } catch (error) { availabilityStop = pageFailure; optionalFailure(error); limitations.push("Availability coverage is partial; unverified players remain unknown."); break read; }
+      } catch (error) { availabilityStop = pageFailure; optionalFailure(error); scanLimitations.push("Availability coverage is partial; unverified players remain unknown."); break read; }
     }
   }
-  const availabilityElapsed = Math.max(0, Date.now() - availabilityStarted);
+  availabilityElapsed = Math.max(0, Date.now() - availabilityStarted);
+  if (diet && availabilityComplete && ownershipSignature !== null) discoveryCache.set(scanKey, { rows: [...candidates.values()], pagesAttempted, pagesChecked,
+    pagesAccepted, rowsAccepted, repeatedRows, elapsed: availabilityElapsed, stop: availabilityStop, complete: true, limitations: [...scanLimitations], signature: ownershipSignature }, now.getTime());
+  }
+  limitations.push(...scanLimitations);
   if (!availabilityComplete) limitations.push("Available-player discovery did not reach the end of the provider list.");
   let catalogMatches = 0, rosteredMatches = 0;
   for (const row of candidates.values()) {
@@ -544,13 +621,13 @@ export async function loadYahooPlanningSnapshot(args: {
     else if (available) availabilityOnly++;
     else neitherKnown++;
   }
-  const discoverySummary = [
+  const discoverySummary = [...(diet ? [`Yahoo reads this snapshot: ${yahooReads} (RSO_YAHOO_DIET on; ${scan ? "availability scan reused" : "availability scanned"}).`] : []),
     `Yahoo availability read: ${pagesAttempted} pages attempted, ${pagesChecked} returned, ${pagesAccepted} accepted; ${rowsAccepted} accepted rows, ${candidates.size} unique, ${repeatedRows} repeats. ${availabilityElapsed} ms elapsed; 8000 ms budget checked between page batches. Stopped: ${availabilityStop}.`,
     `Yahoo availability matches: ${catalogMatches} unique catalog matches, ${candidates.size - catalogMatches} unmatched; ${rosteredMatches} rostered/excluded, ${catalogMatches - rosteredMatches} candidate matches.`,
     `Yahoo provider catalog before search: ${bothKnown + eligibilityOnly + availabilityOnly + neitherKnown} candidates; ${bothKnown} both known, ${eligibilityOnly} eligibility only, ${availabilityOnly} availability only, ${neitherKnown} neither known. Eligibility means usable verified positions; availability means free agent or waivers. Discovery ${availabilityComplete ? "complete" : "partial"}; unseen players remain unknown.`,
   ];
   let realized: StatLine = {}, opponent: PlanningSnapshot["opponent"] = null;
-  if (scoreboardResult && providerFresh(scoreboardResult, now)
+  if (scoreboardResult && providerFresh(scoreboardResult, scoreboardReadAt)
     && text(yahooValue(scoreboardResult.payload, "league_key")) === league.external_league_key) {
     const scoreboardTeams = yahooPlanningTeams(scoreboardResult.payload);
     const ours = scoreboardTeams.find(row => row.team_key === team.external_team_key);
@@ -575,10 +652,12 @@ export async function loadYahooPlanningSnapshot(args: {
     id: `yahoo:${team.id}:${now.toISOString()}`, context: { provider: "yahoo", seasonId: query.seasonId, leagueId: league.id, teamId: team.id, startDate: query.startDate, endDate: query.endDate, timeZone, asOf: now.toISOString() },
     ...data, roster, rules, lockedAssignments, pastLineups: scoredPastLineups, realized, opponent, acquisitionEvidence,
     evidence: { ...data.evidence,
+      ...(inferredTimingNote ? { [INFERRED_ACQUISITION_TIMING_KEY]: { source: INFERRED_ACQUISITION_TIMING_SOURCE, asOf: settingsReadAt.toISOString(),
+        seasonId: query.seasonId, completeness: "partial" as const, limitations: [inferredTimingNote] } } : {}),
       roster: { source: "Yahoo authorized current roster", asOf: observedAt, seasonId: query.seasonId, completeness: fresh && roster.length === ownRows.length && roster.length > 0 ? "complete" : "partial", limitations },
-      availability: { source: `Yahoo league ownership (${pagesChecked} pages)`, asOf: now.toISOString(), seasonId: query.seasonId, completeness: availabilityComplete ? "complete" : "partial", limitations: availabilityComplete ? [] : ["Only individually verified availability may be actionable."] },
+      availability: { source: `Yahoo league ownership (${pagesChecked} pages)`, asOf: availabilityAsOf, seasonId: query.seasonId, completeness: availabilityComplete ? "complete" : "partial", limitations: availabilityComplete ? [] : ["Only individually verified availability may be actionable."] },
     },
   };
   return { snapshot, capabilities: { roster: fresh && ownRows.length === roster.length && roster.length > 0, availability: availabilityComplete, rules: false, matchup: opponent !== null, acquisitions: periods.length > 0, limitations, diagnostics: discoverySummary },
-    ...(refreshError ? { code: refreshError.code, retryAfterSeconds } : {}) };
+    ...(refreshError ? { code: refreshError.code, retryAfterSeconds } : {}), ...(diet ? { yahooDiet: true as const } : {}) };
 }

@@ -16,7 +16,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const body = req.body ?? {};
     if (body.provider === "fantrax") return res.status(409).json({ success: false, error: "Fantrax settings and identity imports remain available in account settings. This adapter has not verified authoritative in-season roster or availability feeds; use reviewed manual inputs.", capabilities: { roster: false, availability: false, rules: false, matchup: false, acquisitions: false, limitations: ["Draft results are not current rosters."] } });
     if (body.provider !== "yahoo" || typeof body.teamId !== "string" || typeof body.startDate !== "string" || typeof body.endDate !== "string") return res.status(400).json({ success: false, error: "Select a Yahoo team and planning dates." });
-    const result = await loadYahooPlanningSnapshot({ db: serviceRoleClient, userId: user.id, teamId: body.teamId, startDate: body.startDate, endDate: body.endDate, timeZone: typeof body.timeZone === "string" ? body.timeZone : undefined });
+    const result = await loadYahooPlanningSnapshot({ db: serviceRoleClient, userId: user.id, teamId: body.teamId, startDate: body.startDate, endDate: body.endDate, timeZone: typeof body.timeZone === "string" ? body.timeZone : undefined,
+      // Only an explicit Refresh provider bypasses the RSO Yahoo diet caches; anything else is timed upkeep.
+      refresh: body.refresh === "manual" ? "manual" : "auto" });
     // Interim bridge projections travel compactly beside the snapshot; the client rebuilds them.
     const snapshot = result.snapshot;
     const bridge = snapshot && Array.isArray(snapshot.forecasts) && Array.isArray(snapshot.players) && Array.isArray(snapshot.games)

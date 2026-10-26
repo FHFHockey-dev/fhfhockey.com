@@ -7,6 +7,8 @@ import { optimizeToday, rankTodayStreams, type TodayPlayer, type TodayStream } f
 import { assertYahooLeagueGameContext, resolveYahooGameContext } from "./gameContext";
 import { parseYahooBoardSettings, YahooLiveDraftError } from "./liveDraft";
 import { fetchYahooBoardResource, fetchYahooDraftResource } from "./providerClient";
+import { cacheKey, currentTodayRoster, todayRosterCache, YAHOO_SETTINGS_TTL_MS, yahooSettingsCache } from "./planningCache";
+import { loadVerifiedYahooIdentitiesForKeys, rsoYahooDietEnabled } from "./yahooIdentity";
 
 type Row = Record<string, any>;
 const object = (value: unknown): Row => value && typeof value === "object" && !Array.isArray(value) ? value as Row : {};
@@ -39,6 +41,15 @@ export function yahooBoardPlayers(payload: unknown): Row[] {
   return result;
 }
 const text = (value: unknown) => typeof value === "string" || typeof value === "number" ? String(value) : null;
+/** Yahoo NHL can omit roster_type; explicit Daily-Today/Daily-Tomorrow transaction settings still establish daily editing. */
+export const yahooDailyLineupEdits = (settings: { rosterType: string | null; weeklyDeadline: string | null }) =>
+  settings.rosterType === "date" || (settings.rosterType === null && ["intraday", "tomorrow"].includes(settings.weeklyDeadline ?? ""));
+/** Add timing inferred from a daily league's weekly deadline (https://help.yahoo.com/kb/fantasy-hockey/sln6775.html);
+ * null when absent or ambiguous. Shared by Start Chart and RSO (TJ D6). */
+export function yahooInferredAcquisitionTiming(settings: { rosterType: string | null; weeklyDeadline: string | null }): "same_day" | "next_day" | null {
+  if (!yahooDailyLineupEdits(settings)) return null;
+  return settings.weeklyDeadline === "intraday" ? "same_day" : settings.weeklyDeadline === "tomorrow" ? "next_day" : null;
+}
 const truth = (value: unknown) => value === true || value === 1 || value === "1";
 const falsity = (value: unknown) => value === false || value === 0 || value === "0";
 const teamAbbreviation = (value: unknown) => {
@@ -87,12 +98,18 @@ export async function loadYahooStarterBoard(args: { userId: string; teamId?: str
   assertYahooLeagueGameContext(league.external_league_key, context);
   const provider = { client: db, userId: args.userId, connectedAccountId: selected.connected_account_id,
     context, leagueKey: league.external_league_key, now };
+  // RSO Yahoo diet (flag RSO_YAHOO_DIET): reuse a current today-roster read and the six-hour settings read for this principal.
+  const diet = rsoYahooDietEnabled();
+  const rosterKey = cacheKey(args.userId, selected.external_team_key, date), settingsKey = cacheKey(args.userId, league.external_league_key);
+  const cachedRoster = diet ? currentTodayRoster(rosterKey, now.getTime()) : null;
+  const cachedSettings = diet ? yahooSettingsCache.get(settingsKey, YAHOO_SETTINGS_TTL_MS, now.getTime()) : null;
   const [rosterResult, leagueResult, revisions, schedule] = await Promise.all([
-    fetchYahooBoardResource({ ...provider, resource: { type: "roster", teamKey: selected.external_team_key, date } }),
-    fetchYahooDraftResource({ ...provider, resource: "settings" }),
+    cachedRoster ?? fetchYahooBoardResource({ ...provider, resource: { type: "roster", teamKey: selected.external_team_key, date } }),
+    cachedSettings?.value ?? fetchYahooDraftResource({ ...provider, resource: "settings" }),
     loadForgeGameRevisions(date),
     readTodaySchedule(date),
   ]);
+  const settingsReadAt = cachedSettings ? new Date(cachedSettings.readAt) : now;
   const rosterPayload = yahooFields(yahooValue(rosterResult.payload, "roster"));
   if (text(rosterPayload.date) !== date || text(rosterPayload.coverage_type) !== "date"
     || text(yahooValue(rosterResult.payload, "team_key")) !== selected.external_team_key) throw new Error("Yahoo roster date or team did not match");
@@ -104,12 +121,11 @@ export async function loadYahooStarterBoard(args: { userId: string; teamId?: str
   if (rosterRows.some((row) => !new RegExp(`^${context.gameKey}\\.p\\.\\d+$`).test(row.player_key))) throw new Error("Yahoo roster player scope did not match");
   const rosterCount = Number(yahooFields(rosterPayload.players).count);
   if (!Number.isInteger(rosterCount) || rosterCount > 100 || rosterCount !== rosterRows.length) throw new Error("Incomplete Yahoo roster response");
+  if (diet && !cachedRoster) todayRosterCache.set(rosterKey, rosterResult, now.getTime());
+  if (diet && !cachedSettings) yahooSettingsCache.set(settingsKey, leagueResult, now.getTime());
   const settings = parseYahooBoardSettings(leagueResult.payload);
-  // Yahoo NHL can omit roster_type. Explicit Daily-Today/Daily-Tomorrow
-  // transaction settings still establish daily lineup editing, but neither
-  // missing settings nor an explicit weekly roster establishes that permission.
-  const dailyLineupEdits = settings.rosterType === "date" || (settings.rosterType === null
-    && ["intraday", "tomorrow"].includes(settings.weeklyDeadline ?? ""));
+  // Neither missing settings nor an explicit weekly roster establishes daily lineup editing.
+  const dailyLineupEdits = yahooDailyLineupEdits(settings);
   const limitations: string[] = [];
   const mode = settings.leagueType;
   const weights = settings.scoringCategories;
@@ -120,12 +136,12 @@ export async function loadYahooStarterBoard(args: { userId: string; teamId?: str
   if (mode === "points" && scoringKeys.some((key) => !(BOARD_CATEGORIES as readonly string[]).includes(key))) limitations.push("The league uses scoring categories absent from these projections.");
   if (mode === "categories" && (!category || !scoringKeys.includes(category) || !(BOARD_CATEGORIES as readonly string[]).includes(category))) limitations.push("Select a supported individual league category.");
   if ((settings.minimumGoalieStarts ?? 0) > 0) limitations.push("Weekly minimum goalie starts are not included in this today-only calculation.");
-  const fresh = [rosterResult, leagueResult].every((result) => providerFresh(result, now));
+  const fresh = providerFresh(rosterResult, now) && providerFresh(leagueResult, settingsReadAt);
+  if (cachedSettings) limitations.push(`League settings were read from Yahoo at ${settingsReadAt.toISOString()} and are reused for up to 6 hours.`);
   if (!fresh) limitations.push("Yahoo roster or settings freshness could not be verified.");
   // Current Yahoo help distinguishes acquisition timing from lineup locks.
   // https://help.yahoo.com/kb/fantasy-hockey/sln6775.html
-  const acquisitionTiming = fresh && dailyLineupEdits && settings.weeklyDeadline === "intraday" ? "same_day"
-    : fresh && dailyLineupEdits && settings.weeklyDeadline === "tomorrow" ? "next_day" : "unverified";
+  const acquisitionTiming = (fresh ? yahooInferredAcquisitionTiming(settings) : null) ?? "unverified";
   const acquisitionLimitations = [acquisitionTiming === "next_day"
     ? "This league applies new acquisitions on the following day; they cannot improve today's lineup."
     : acquisitionTiming === "same_day"
@@ -157,34 +173,60 @@ export async function loadYahooStarterBoard(args: { userId: string; teamId?: str
     }
   }
   // Resolve both directions uniquely; never substitute a name match for an ID.
-  const ids = [...forecasts.keys()];
-  const rosterYahooIds = rosterRows.map((row) => String(row.player_key).split(".p.")[1]);
-  const mappingResults = await Promise.all([
-    ids.length ? db.from("yahoo_nhl_player_map_read").select("nhl_player_id,yahoo_player_id").in("nhl_player_id", ids.map(String)) : { data: [], error: null },
-    rosterYahooIds.length ? db.from("yahoo_nhl_player_map_read").select("nhl_player_id,yahoo_player_id").in("yahoo_player_id", rosterYahooIds) : { data: [], error: null },
-  ]);
-  if (mappingResults.some((result) => result.error)) throw new Error("Yahoo player identities unavailable");
-  const mappingRows = mappingResults.flatMap((result) => result.data ?? []);
-  const forecastIds = new Set(ids.map(String));
-  const reverseIds = [...new Set(mappingRows.map((row) => row.nhl_player_id)
-    .filter((id): id is string => id !== null && !forecastIds.has(id)))];
-  if (reverseIds.length) {
-    const reverse = await db.from("yahoo_nhl_player_map_read").select("nhl_player_id,yahoo_player_id").in("nhl_player_id", reverseIds);
-    if (reverse.error) throw new Error("Yahoo player identities unavailable");
-    mappingRows.push(...(reverse.data ?? []));
+  // D8 (flag RSO_YAHOO_DIET): verified fhfh_player_external_identities, then the verified canonical NHL id.
+  const verifiedNhlIds = async (keys: string[]) => {
+    const identities = await loadVerifiedYahooIdentitiesForKeys(db as any, context, keys);
+    if (!identities) throw new Error("Yahoo player identities unavailable");
+    const fhfhIds = [...new Set(identities.values())];
+    const canonical = fhfhIds.length ? await db.from("fhfh_player_identities").select("id,nhl_player_id").eq("verification_status", "verified")
+      .is("merged_into_id", null).in("id", fhfhIds.map(Number)).limit(fhfhIds.length + 1) : { data: [], error: null };
+    if (canonical.error || (canonical.data?.length ?? 0) > fhfhIds.length) throw new Error("Yahoo player identities unavailable");
+    const nhlById = new Map<string, Set<number>>(), idsByNhl = new Map<number, Set<string>>();
+    for (const row of (canonical.data ?? []) as Row[]) {
+      const id = String(row.id), nhl = Number(row.nhl_player_id);
+      if (!Number.isSafeInteger(nhl) || nhl <= 0) continue;
+      nhlById.set(id, new Set([...(nhlById.get(id) ?? []), nhl]));
+      idsByNhl.set(nhl, new Set([...(idsByNhl.get(nhl) ?? []), id]));
+    }
+    return new Map([...identities].flatMap(([key, id]) => {
+      const nhl = nhlById.get(id);
+      if (nhl?.size !== 1) return [];
+      const [value] = nhl;
+      return idsByNhl.get(value)?.size === 1 ? [[key, value] as const] : [];
+    }));
+  };
+  let unique: Map<string, number>;
+  if (diet) unique = await verifiedNhlIds(rosterRows.map((row) => String(row.player_key)));
+  else {
+    const ids = [...forecasts.keys()];
+    const rosterYahooIds = rosterRows.map((row) => String(row.player_key).split(".p.")[1]);
+    const mappingResults = await Promise.all([
+      ids.length ? db.from("yahoo_nhl_player_map_read").select("nhl_player_id,yahoo_player_id").in("nhl_player_id", ids.map(String)) : { data: [], error: null },
+      rosterYahooIds.length ? db.from("yahoo_nhl_player_map_read").select("nhl_player_id,yahoo_player_id").in("yahoo_player_id", rosterYahooIds) : { data: [], error: null },
+    ]);
+    if (mappingResults.some((result) => result.error)) throw new Error("Yahoo player identities unavailable");
+    const mappingRows = mappingResults.flatMap((result) => result.data ?? []);
+    const forecastIds = new Set(ids.map(String));
+    const reverseIds = [...new Set(mappingRows.map((row) => row.nhl_player_id)
+      .filter((id): id is string => id !== null && !forecastIds.has(id)))];
+    if (reverseIds.length) {
+      const reverse = await db.from("yahoo_nhl_player_map_read").select("nhl_player_id,yahoo_player_id").in("nhl_player_id", reverseIds);
+      if (reverse.error) throw new Error("Yahoo player identities unavailable");
+      mappingRows.push(...(reverse.data ?? []));
+    }
+    const yahooToNhl = new Map<string, Set<number>>(), nhlToYahoo = new Map<number, Set<string>>();
+    for (const row of mappingRows) {
+      const nhl = Number(row.nhl_player_id), yahoo = text(row.yahoo_player_id);
+      if (!Number.isSafeInteger(nhl) || !yahoo || !/^\d+$/.test(yahoo)) continue;
+      const key = `${context.gameKey}.p.${yahoo}`;
+      yahooToNhl.set(key, new Set([...(yahooToNhl.get(key) ?? []), nhl]));
+      nhlToYahoo.set(nhl, new Set([...(nhlToYahoo.get(nhl) ?? []), key]));
+    }
+    unique = new Map([...yahooToNhl].flatMap(([key, values]) => {
+      const [nhl] = values;
+      return values.size === 1 && nhlToYahoo.get(nhl)?.size === 1 ? [[key, nhl] as const] : [];
+    }));
   }
-  const yahooToNhl = new Map<string, Set<number>>(), nhlToYahoo = new Map<number, Set<string>>();
-  for (const row of mappingRows) {
-    const nhl = Number(row.nhl_player_id), yahoo = text(row.yahoo_player_id);
-    if (!Number.isSafeInteger(nhl) || !yahoo || !/^\d+$/.test(yahoo)) continue;
-    const key = `${context.gameKey}.p.${yahoo}`;
-    yahooToNhl.set(key, new Set([...(yahooToNhl.get(key) ?? []), nhl]));
-    nhlToYahoo.set(nhl, new Set([...(nhlToYahoo.get(nhl) ?? []), key]));
-  }
-  const unique = new Map([...yahooToNhl].flatMap(([key, values]) => {
-    const [nhl] = values;
-    return values.size === 1 && nhlToYahoo.get(nhl)?.size === 1 ? [[key, nhl] as const] : [];
-  }));
   const valueFor = (key: string) => {
     const prediction = forecasts.get(unique.get(key) ?? -1);
     const stats = prediction?.forecast.expected;
@@ -271,6 +313,10 @@ export async function loadYahooStarterBoard(args: { userId: string; teamId?: str
         }
       }
     } catch { streamingLimitations.push("League availability could not be refreshed."); }
+  }
+  if (diet) {
+    const unresolved = [...availableRows.keys()].filter((key) => !unique.has(key));
+    if (unresolved.length) for (const [key, nhl] of await verifiedNhlIds(unresolved)) unique.set(key, nhl);
   }
   if (duplicateKeys.size) streamingLimitations.push("Yahoo's available-player list changed between pages; repeated players have unknown availability.");
   if (capReached) streamingLimitations.push("Only the first 100 Yahoo-ranked available players were checked; other streaming options may exist.");

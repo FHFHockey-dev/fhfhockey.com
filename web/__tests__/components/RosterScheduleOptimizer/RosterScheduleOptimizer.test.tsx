@@ -508,6 +508,23 @@ describe("active provider refresh scheduling", () => {
     await advance(); await advance(5 * 60_000); await returned(); expect(state.reads()).toBe(1);
     await advance(5 * 60_000); expect(state.reads()).toBe(2);
   });
+  it("with the Yahoo diet flag, leaves timed upkeep to the tab holding the lease and marks manual refreshes", async () => {
+    const leaseKey = "fhfh:rso:upkeep:v1:fixture-refresh-manager:fixture-league";
+    const state = setup(async snapshot => ({ ok: true, status: 200, json: async () => ({ success: true, snapshot, yahooDiet: true,
+      capabilities: { roster: true, availability: true, limitations: [] } }) }));
+    await advance(); expect(state.reads()).toBe(1);
+    const bodies = () => vi.mocked(fetch).mock.calls.filter(([url]) => String(url).endsWith("/provider")).map(([, init]) => JSON.parse(String(init?.body)).refresh);
+    expect(bodies()).toEqual(["auto"]);
+    window.localStorage.setItem(leaseKey, JSON.stringify({ tabId: "other-tab", until: Date.now() + 60 * 60_000 }));
+    await advance(5 * 60_000); expect(state.reads()).toBe(1);
+    fireEvent.click(screen.getByRole("button", { name: "Refresh provider" })); await advance();
+    expect(state.reads()).toBe(2); expect(bodies()).toEqual(["auto", "manual"]);
+    window.localStorage.removeItem(leaseKey);
+    await advance(5 * 60_000); expect(state.reads()).toBe(3);
+    expect(JSON.parse(window.localStorage.getItem(leaseKey)!).tabId).not.toBe("other-tab");
+    state.visibility.mockReturnValue("hidden"); fireEvent(document, new Event("visibilitychange")); await advance();
+    expect(window.localStorage.getItem(leaseKey)).toBeNull();
+  });
   it("pauses automatic permission retries and resumes polling after an explicit successful retry", async () => {
     const state = setup(async (snapshot, read) => read === 1 ? { ok: false, status: 403,
       json: async () => ({ success: false, code: "yahoo_access_denied", error: "Reconnect Yahoo and verify league access." }) } : success(snapshot));

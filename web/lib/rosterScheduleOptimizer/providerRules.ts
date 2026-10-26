@@ -3,6 +3,11 @@ import type { LeagueRules, LockedAssignment, ManagerRuleOverrides, PlanningSnaps
 
 const missing = (value: unknown) => value === null || value === undefined || value === "unknown" || value === "unsupported" || (Array.isArray(value) && value.length === 0) || (typeof value === "object" && value !== null && !Array.isArray(value) && Object.keys(value).length === 0);
 
+/** Evidence entry the Yahoo adapter attaches when acquisition timing is inferred from the league's weekly deadline
+ * rather than reported. Only an inferred timing yields to a manager override (TJ D6); reported facts keep precedence. */
+export const INFERRED_ACQUISITION_TIMING_KEY = "acquisitionTiming";
+export const INFERRED_ACQUISITION_TIMING_SOURCE = "Inferred from Yahoo weekly deadline";
+
 const missingWeeklyWindows = "Supply verified weekly lineup windows; the roster response alone does not establish their exact locks.";
 function completeWeeklyWindows(context: PlanningSnapshot["context"], periods: LeagueRules["lineupPeriods"]): boolean {
   if (!periods?.length || periods.length > 100) return false;
@@ -35,7 +40,9 @@ export function supplementProviderRules(snapshot: PlanningSnapshot, overrides: M
     else if (JSON.stringify(provider) !== JSON.stringify(manager)) conflicts.push(`${label} differs from the manager input; provider setting retained.`);
   };
   apply("Lineup mode", rules.lineupMode, overrides.lineupMode, () => { rules.lineupMode = overrides.lineupMode!; });
-  apply("Acquisition timing", rules.acquisitionTiming, overrides.acquisitionTiming, () => { rules.acquisitionTiming = overrides.acquisitionTiming!; });
+  const inferredTiming = snapshot.evidence?.[INFERRED_ACQUISITION_TIMING_KEY]?.source === INFERRED_ACQUISITION_TIMING_SOURCE;
+  const timingOverridden = inferredTiming && overrides.acquisitionTiming !== undefined;
+  apply("Acquisition timing", timingOverridden ? null : rules.acquisitionTiming, overrides.acquisitionTiming, () => { rules.acquisitionTiming = overrides.acquisitionTiming!; });
   apply("Acquisition cost", rules.acquisitionCost, overrides.acquisitionCost, () => { rules.acquisitionCost = overrides.acquisitionCost!; });
   apply("Acquisition periods", rules.periods, overrides.periods, () => { rules.periods = overrides.periods!; });
   let managerWindowsApplied = false;
@@ -88,6 +95,8 @@ export function supplementProviderRules(snapshot: PlanningSnapshot, overrides: M
     }
   }
   const evidence = { ...snapshot.evidence };
+  // The manager's timing replaced the inference, so the inferred label no longer describes the rule in use.
+  if (timingOverridden) delete evidence[INFERRED_ACQUISITION_TIMING_KEY];
   if (JSON.stringify(rules) !== JSON.stringify(snapshot.rules)) evidence.managerRules = { source: "manager-supplied", asOf: snapshot.context.asOf, completeness: "partial", seasonId: snapshot.context.seasonId, limitations: ["Manager-entered rules fill missing provider settings; verify before acting."] };
   if (managerLocks.length) evidence["Manager-selected lineup locks"] = {
     source: "manager-simulation", asOf: null, completeness: "partial", seasonId: snapshot.context.seasonId,

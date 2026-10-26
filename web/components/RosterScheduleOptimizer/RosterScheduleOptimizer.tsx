@@ -37,6 +37,7 @@ import HealthyReserveAlert from "./HealthyReserveAlert";
 import InfoTooltip from "./InfoTooltip";
 import TeamScheduleContext from "./TeamScheduleContext";
 import { useCanonicalSchedule } from "./canonicalSchedule";
+import { claimRsoUpkeepLease, releaseRsoUpkeepLease, rsoUpkeepLeaseKey } from "lib/rosterScheduleOptimizer/upkeepLease";
 
 type Access = { eligible: boolean; capabilities: string[]; expiresAt?: string | null; grantingSources?: string[] };
 type RequestFeedback = NonNullable<PreservationProvider["refresh"]>;
@@ -212,6 +213,9 @@ export default function RosterScheduleOptimizer() {
   const workspaceElement = useRef<HTMLDivElement>(null);
   const providerAbort = useRef<AbortController | null>(null);
   const providerPending = useRef<{ key: string; userId: string; promise: Promise<boolean> } | null>(null);
+  // Set when the server reports the RSO Yahoo diet flag; only then does timed upkeep need the single-tab lease.
+  const yahooDietUpkeep = useRef(false);
+  const upkeepTabId = useRef(typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : String(Math.random()));
   const providerSchedule = useRef<ProviderRefreshSchedule | null>(null);
   const scheduleFor = useCallback((key: string, userId: string | undefined) => {
     if (providerSchedule.current?.key !== key || providerSchedule.current.userId !== userId) providerSchedule.current = { key, userId, nextAutoAt: 0, cooldownUntil: 0, delay: PROVIDER_REFRESH_INTERVAL, blocked: false };
@@ -499,8 +503,9 @@ export default function RosterScheduleOptimizer() {
     providerAuthorityRef.current.refresh = busy; setProviderRefresh(busy);
     const pending = (async () => { try {
       const headers = await authHeaders(); if (controller.signal.aborted || userId !== providerRef.current.userId) return false;
-      const response = await trackedFetch("/api/v1/roster-schedule-optimizer/provider", { method: "POST", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify({ provider: context.provider, teamId: context.teamId, startDate: context.startDate, endDate: context.endDate, timeZone: context.timeZone }), signal: controller.signal });
+      const response = await trackedFetch("/api/v1/roster-schedule-optimizer/provider", { method: "POST", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify({ provider: context.provider, teamId: context.teamId, startDate: context.startDate, endDate: context.endDate, timeZone: context.timeZone, refresh: signal ? "auto" : "manual" }), signal: controller.signal });
       const body = await response.json(); if (!currentRequest()) return false;
+      yahooDietUpkeep.current = body.yahooDiet === true;
       if (typeof body.retryAfterSeconds === "number" && Number.isFinite(body.retryAfterSeconds) && body.retryAfterSeconds >= 0) schedule.cooldownUntil = Math.max(schedule.cooldownUntil, Date.now() + body.retryAfterSeconds * 1000);
       else if (response.status === 429 || body.code === "yahoo_rate_limited") schedule.cooldownUntil = Math.max(schedule.cooldownUntil, Date.now() + PROVIDER_REFRESH_INTERVAL);
       schedule.blocked = response.status === 401 || response.status === 403 || body.code === "yahoo_reauth_required" || body.code === "yahoo_access_denied";
@@ -566,6 +571,8 @@ export default function RosterScheduleOptimizer() {
       if (!canAutoUpkeep || schedule.blocked || document.visibilityState !== "visible" || navigator.onLine === false) return;
       timer = setTimeout(() => void refresh(), Math.min(2_147_483_647, Math.max(0, Math.max(schedule.nextAutoAt, schedule.cooldownUntil) - Date.now())));
     };
+    const leaseKey = rsoUpkeepLeaseKey(user.id, workspace.context.leagueId);
+    const leaseStorage = () => { try { return window.localStorage; } catch { return null; } };
     // Timed and event-driven upkeep stays conservative offline; the first load always attempts (onLine can be wrong).
     const refresh = async (initial = false) => {
       clearTimer();
@@ -573,17 +580,29 @@ export default function RosterScheduleOptimizer() {
       const schedule = scheduleFor(accountKey, providerRef.current.userId);
       if (schedule.blocked) return;
       if (Date.now() < Math.max(schedule.nextAutoAt, schedule.cooldownUntil)) { scheduleNext(); return; }
+      // With the diet flag on, another visible tab holding the lease does the timed upkeep for this league.
+      if (!initial && yahooDietUpkeep.current && !claimRsoUpkeepLease(leaseStorage(), leaseKey, upkeepTabId.current)) { scheduleNext(); return; }
       refreshing = true;
       await refreshProvider(controller.signal);
       refreshing = false;
       scheduleNext();
     };
     void refresh(true);
-    const availability = () => { clearTimer(); if (document.visibilityState === "visible" && navigator.onLine !== false) void refresh(); };
+    const availability = () => {
+      clearTimer();
+      if (document.visibilityState === "visible" && navigator.onLine !== false) void refresh();
+      else releaseRsoUpkeepLease(leaseStorage(), leaseKey, upkeepTabId.current);
+    };
     document.addEventListener("visibilitychange", availability);
     window.addEventListener("online", availability); window.addEventListener("offline", availability);
     return () => { controller.abort(); providerAbort.current?.abort(); clearTimer(); document.removeEventListener("visibilitychange", availability); window.removeEventListener("online", availability); window.removeEventListener("offline", availability); };
-  }, [accountKey, user?.id, workspace.context.provider, workspace.context.teamId, canSync, canAutoUpkeep, viewingSaved, refreshProvider, scheduleFor, settledProviderRefresh, networkSuspended]);
+  }, [accountKey, user?.id, workspace.context.provider, workspace.context.teamId, workspace.context.leagueId, canSync, canAutoUpkeep, viewingSaved, refreshProvider, scheduleFor, settledProviderRefresh, networkSuspended]);
+  // The upkeep lease outlives refreshes (the effect above re-runs on each one); give it up on leaving this league or page.
+  useEffect(() => {
+    if (!user?.id) return;
+    const leaseKey = rsoUpkeepLeaseKey(user.id, workspace.context.leagueId), tabId = upkeepTabId.current;
+    return () => { try { releaseRsoUpkeepLease(window.localStorage, leaseKey, tabId); } catch { /* storage unavailable */ } };
+  }, [user?.id, workspace.context.leagueId]);
   useEffect(() => {
     const current = connected?.context;
     const connectedKey = current ? workspaceContextKey(current) : null;

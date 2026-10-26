@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { supplementProviderRules } from "./providerRules";
+import { INFERRED_ACQUISITION_TIMING_KEY, INFERRED_ACQUISITION_TIMING_SOURCE, supplementProviderRules } from "./providerRules";
 import { defaultWorkspace } from "./workspace";
 import { evaluatePlan } from "./planning";
 import { candidatePlanMetrics } from "./candidatePlanMetrics";
@@ -193,5 +193,43 @@ describe("manager-supplied weekly windows", () => {
     const conflicting = supplementProviderRules(snapshot, { lineupPeriods: weeklyWindows });
     expect(conflicting.snapshot.rules.lineupPeriods).toEqual(snapshot.rules.lineupPeriods);
     expect(conflicting.conflicts).toContain("Lineup periods differs from the manager input; provider setting retained.");
+  });
+});
+
+describe("acquisition timing inferred from Yahoo's weekly deadline (TJ D6)", () => {
+  const inferred = (timing: "same_day" | "next_day") => {
+    const snapshot = providerSnapshot();
+    snapshot.rules.acquisitionTiming = timing;
+    snapshot.evidence[INFERRED_ACQUISITION_TIMING_KEY] = { source: INFERRED_ACQUISITION_TIMING_SOURCE, asOf: "2026-10-01T12:00:00.000Z",
+      completeness: "partial", seasonId: 20262027, limitations: ["Add timing is inferred from Yahoo's weekly deadline (same-day); change it in League rules if your league differs."] };
+    return snapshot;
+  };
+  it("lets a manager override replace an inferred timing and drops the inferred label", () => {
+    const result = supplementProviderRules(inferred("same_day"), { acquisitionTiming: "next_day" });
+    expect(result.snapshot.rules.acquisitionTiming).toBe("next_day");
+    expect(result.conflicts).toEqual([]);
+    expect(result.snapshot.evidence[INFERRED_ACQUISITION_TIMING_KEY]).toBeUndefined();
+    expect(result.snapshot.evidence.managerRules?.source).toBe("manager-supplied");
+  });
+  it("keeps the inferred timing, labelled, without an override", () => {
+    const snapshot = inferred("next_day");
+    const result = supplementProviderRules(snapshot, {});
+    expect(result.snapshot).toBe(snapshot);
+    expect(result.snapshot.rules.acquisitionTiming).toBe("next_day");
+    expect(result.snapshot.evidence[INFERRED_ACQUISITION_TIMING_KEY]?.source).toBe(INFERRED_ACQUISITION_TIMING_SOURCE);
+  });
+  it("keeps an explicit provider timing over the manager, as before", () => {
+    const snapshot = providerSnapshot();
+    snapshot.rules.acquisitionTiming = "same_day";
+    snapshot.evidence.acquisitionTiming = { source: "Yahoo league settings", asOf: null, completeness: "complete", seasonId: 20262027, limitations: [] };
+    const result = supplementProviderRules(snapshot, { acquisitionTiming: "next_day" });
+    expect(result.snapshot.rules.acquisitionTiming).toBe("same_day");
+    expect(result.conflicts).toEqual(["Acquisition timing differs from the manager input; provider setting retained."]);
+  });
+  it("leaves timing unknown, and fillable by the manager, when no weekly deadline was inferred", () => {
+    const snapshot = providerSnapshot();
+    snapshot.rules.acquisitionTiming = "unknown";
+    expect(supplementProviderRules(snapshot, {}).snapshot.rules.acquisitionTiming).toBe("unknown");
+    expect(supplementProviderRules(snapshot, { acquisitionTiming: "same_day" }).snapshot.rules.acquisitionTiming).toBe("same_day");
   });
 });
