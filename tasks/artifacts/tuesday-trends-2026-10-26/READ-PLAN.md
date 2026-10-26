@@ -94,7 +94,7 @@ Until this is decided, the capture must not run.
   - (b) A statement log: table, filters, row count, duration and error code. No row contents beyond (a).
 - **Then:** render the four cards offline from (a). No retries. No writes. No other routes.
 
-## v2 — TT-4 sparkline reads (PROPOSED; need TJ approval before deploy; NOT executed)
+## v2 — TT-4 sparkline reads (APPROVED by TJ 2026-10-26T19:08:43Z for editor page loads, READ-APPROVAL addendum 2; on by default; `SOCIAL_SHARE_TUESDAY_SPARKLINES=0` is the kill switch; not executed by Claude)
 
 Two more read-only statements, issued after N1 (names), for the **listed** players only. They are sequenced so no more than 2 statements are ever in flight (`TREND_LIMITS.concurrency`).
 

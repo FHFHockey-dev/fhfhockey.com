@@ -89,9 +89,11 @@ describe("Tuesday live loader", () => {
     expect(flight.max).toBe(TREND_LIMITS.concurrency);
   });
 
-  it("sparkline reads are off by default: no S1/M2 statement and no sparklines (TT-5, not yet approved)", async () => {
-    expect(sparklineReadsEnabled({})).toBe(false);
+  it("sparkline reads are on by default; SOCIAL_SHARE_TUESDAY_SPARKLINES=0 turns them off with no S1/M2 statement (TT-6)", async () => {
+    expect(sparklineReadsEnabled({})).toBe(true);
     expect(sparklineReadsEnabled({ SOCIAL_SHARE_TUESDAY_SPARKLINES: "1" })).toBe(true);
+    expect(sparklineReadsEnabled({ SOCIAL_SHARE_TUESDAY_SPARKLINES: "0" })).toBe(false);
+    // The loader itself reads S1/M2 only when the server passes sparklines: true (the kill-switch path below).
     const sources = fictionalTrendSources(season, "2026-10-27", "2026-10-27T08:00:00Z"), { client, statements } = fakeClient(tablesOf(sources));
     const layer = await loadTrendLayer(context, client);
     expect(statements.filter(statement => statement.columns.includes("sog_per_60_shots_season") || statement.filters.some(filter => filter.startsWith("player_key=")))).toEqual([]);

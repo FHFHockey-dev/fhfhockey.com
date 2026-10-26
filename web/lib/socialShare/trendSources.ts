@@ -100,10 +100,11 @@ async function readOwnership(client: TrendReadClient): Promise<ShareOwnershipRow
  * "missing" state with the reason; only listed players leave the server.
  */
 /**
- * Sparkline reads (READ-PLAN v2 S1/M2) are not approved by TJ yet (TT-5): they run only with
- * SOCIAL_SHARE_TUESDAY_SPARKLINES=1 on the server. Off (the default) means no extra statement and no sparklines.
+ * Sparkline reads (READ-PLAN v2 S1/M2), approved by TJ for editor page loads (READ-APPROVAL addendum 2, TT-6): on by
+ * default. SOCIAL_SHARE_TUESDAY_SPARKLINES=0 on the server is the kill switch (no extra statement, no sparklines),
+ * so no Vercel setting has to change to ship them.
  */
-export const sparklineReadsEnabled = (env: Record<string, string | undefined> = process.env) => env.SOCIAL_SHARE_TUESDAY_SPARKLINES === "1";
+export const sparklineReadsEnabled = (env: Record<string, string | undefined> = process.env) => env.SOCIAL_SHARE_TUESDAY_SPARKLINES !== "0";
 export async function loadTrendLayer(context: TrendContext, client: TrendReadClient = publicSupabase, options: { sparklines?: boolean } = {}): Promise<ShareTrendLayer> {
   const since = shiftDate(localDate(context.generatedAt, SHARE_TIME_ZONE), -TREND_MAX_GAME_AGE_DAYS);
   const [rolling, ownership] = await Promise.all([

@@ -96,7 +96,7 @@ Native sources only. Tuesday never reads `PROJECTIONS_20262027_*`, `PROJECTIONS_
 
 ## TT-5 visual layer
 
-- **Sparkline reads are flagged off.** READ-PLAN v2's S1/M2 run only with `SOCIAL_SHARE_TUESDAY_SPARKLINES=1` on the server. TJ has not approved them, so the default is off: no extra statement and no sparklines (`sparklineReadsEnabled`, `loadTrendLayer(…, { sparklines })`).
+- **Sparkline reads: approved, on by default, with a kill switch (TT-6).** TJ approved READ-PLAN v2's S1/M2 for editor page loads (READ-APPROVAL addendum 2). They run by default; `SOCIAL_SHARE_TUESDAY_SPARKLINES=0` on the server turns them off, giving no extra statement and no sparklines (`sparklineReadsEnabled`, `loadTrendLayer(…, { sparklines })`). No Vercel setting needs to change.
 - **Movers sparkline:** Transaction Trends' `OwnershipSparkline` (filled area and line), imported read-only. It is fed `{ date, value }` points for P..D only when every day has an observation. That component joins its line across missing points, so any gap means **no sparkline**, never a line drawn across the gap. It is green for a rise and red for a fall, from the hero sign. Its fill and stroke are also written as SVG presentation attributes, because html-to-image drops class styles on SVG children.
 - **Neon logos:** `tasks/artifacts/…/tt5/trace-logo-outlines.mjs` edge-traces each **committed** logo offline into `web/public/teamLogos/outline/X.png`.
   - **Tracing method:** Sobel on alpha and premultiplied RGB, then a threshold, Zhang–Suen thinning, a 3 px disc stroke, and 256 px white on transparent.

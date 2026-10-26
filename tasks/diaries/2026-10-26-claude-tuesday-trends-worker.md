@@ -61,3 +61,4 @@ Make `/social-share/tuesday-trends` a truthful, data-backed edition from native 
 - Neon outlines: offline tracer from committed logos → public/teamLogos/outline/*.png (32). The canvas tint is inlined as a data URL. Fallback (home-page card art): NYR, NYI, WSH, OTT, DET.
 - Checks: E2E 33 with all Monday/Wednesday pins, Vitest 231, tsc 0.
 - Ottawa add-on: new OTT committed by the chef (e6e5798bf); outline re-traced; OTT back to neon. Pins changed: monday-grid, monday-easiest, monday-tiers-wide, wednesday-grid (Ottawa cells only); 14 others identical. E2E 33 (two passes due to a dev /404 loop).
+- TT-6: flag default ON (=0 kill switch) per READ-APPROVAL addendum 2; E2E 33 against the v2 pins (Tuesday pins unchanged); Vitest 231; tsc 0.
