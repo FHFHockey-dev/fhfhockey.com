@@ -9,6 +9,7 @@ import { forecastCalendarPolicy } from "../lib/player-forecasts/contributions";
 import { currentRsoUsePolicy } from "../lib/player-forecasts/rsoUsePolicy";
 import { applyProviderGoalieStarts } from "../lib/rosterScheduleOptimizer/providerGoalieStarts";
 import { compactBridgeForecasts } from "../lib/rosterScheduleData/bridgeForecastWire";
+import { workspaceStorageKey } from "../lib/rosterScheduleOptimizer/workspace";
 
 const player = { id: "fhfh:1", nhlId: 1, name: "Alpha Center", teamAbbreviation: "CAR", eligiblePositions: ["C"], playerClass: "skater" as const, availability: "unknown" as const, ownership: null, canDrop: null, holdValue: null, reserveEligibility: [] };
 const date = (day: number) => `2026-10-0${day}`;
@@ -27,8 +28,9 @@ const fixtureRules: LeagueRules = { lineupMode: "daily", rosterSlots: { C: 1 }, 
 function fixtureWorkspace(players: PlanningPlayer[], rules: LeagueRules = fixtureRules): PlanningWorkspace {
   return { version: 1, context: { provider: "manual", seasonId: 20262027, leagueId: "manual", teamId: "manual", startDate: date(5), endDate: date(7), timeZone: "UTC", asOf: "2026-09-26T00:00:00Z" }, rules, managerRuleOverrides: {}, roster: [{ playerId: players[0].id, position: "active" }], lockedAssignments: [], intent: { revision: 1, steps: [], protectedPlayerIds: [], excludedPlayerIds: [], goalieCoverage: "accept_risk", goalieWindow: "any", goalieSplit: "mon_thu", alternativeCount: 10 }, manualPlayers: players, unresolvedNames: [], realized: {}, opponent: null };
 }
-async function seedWorkspace(page: import("@playwright/test").Page, workspace: PlanningWorkspace) {
-  await page.addInitScript((value) => { if (!localStorage.getItem("fhfh:rso:workspace:v1")) localStorage.setItem("fhfh:rso:workspace:v1", JSON.stringify(value)); }, workspace);
+/** Seeds the local slot of `principal` (default: the anonymous manual slot). */
+async function seedWorkspace(page: import("@playwright/test").Page, workspace: PlanningWorkspace, principal: string | null = null) {
+  await page.addInitScript(({ key, value }) => { if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify(value)); }, { key: workspaceStorageKey(principal), value: workspace });
 }
 async function openPlanDetails(page: import("@playwright/test").Page) {
   await showScheduleView(page, "details");
@@ -63,7 +65,7 @@ test("connected refresh fixtures preserve nonzero intent through offline, cooldo
   const workspace = fixtureWorkspace(players, { ...fixtureRules, rosterSlots: { C: 1, BN: 2 }, periods: [{ id: "fixture-week", start: "2026-10-11T00:00:00Z", end: "2026-10-19T00:00:00Z", remaining: 2, source: "manager" }] });
   workspace.context = { ...workspace.context, provider: "yahoo", leagueId: "fixture-league", teamId: "fixture-team", startDate: "2026-10-12", endDate: "2026-10-18", asOf: "2026-10-11T12:00:00Z" };
   workspace.intent.steps = [{ id: "fixture-add", type: "add", playerId: players[1].id, at: "2026-10-12T12:00:00Z", effectiveAt: "2026-10-12T12:00:00Z", conditional: false, dependsOn: [] }]; workspace.intent.protectedPlayerIds = [players[0].id];
-  await seedWorkspace(page, workspace);
+  await seedWorkspace(page, workspace, RSO_FIXTURE_PRINCIPAL);
   await page.route("**/api/v1/roster-schedule-optimizer/access", route => route.fulfill({ json: { data: { eligible: true, capabilities: ["rso_sync", "rso_auto_upkeep"] } } }));
   await routeCurrentPlanning(page, route => route.fulfill({ json: { success: true, data: { players, games: [], forecasts: [], evidence: {} } } }));
   let reads = 0;
@@ -72,7 +74,7 @@ test("connected refresh fixtures preserve nonzero intent through offline, cooldo
     const snapshot: PlanningSnapshot = { id: `fixture-refresh-${read}`, context: { ...workspace.context, asOf: read === 1 ? "2026-10-11T12:00:00Z" : "2026-10-11T12:01:00Z" }, players, roster: workspace.roster, rules: workspace.rules, lockedAssignments: [], games: [], forecasts: [], realized: {}, opponent: null, evidence: {} };
     return route.fulfill({ json: { success: true, snapshot, capabilities: { roster: true, availability: read !== 2, limitations: [] }, ...(read === 2 ? { code: "yahoo_rate_limited", retryAfterSeconds: 1200 } : {}) } });
   });
-  const saved = () => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!) as PlanningWorkspace);
+  const saved = () => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1:principal:00000000-0000-4000-8000-000000000001")!) as PlanningWorkspace);
   const visibility = (value: "visible" | "hidden") => page.evaluate(value => { Object.defineProperty(document, "visibilityState", { configurable: true, get: () => value }); document.dispatchEvent(new Event("visibilitychange")); }, value);
   const network = (value: boolean) => page.evaluate(value => { Object.defineProperty(navigator, "onLine", { configurable: true, get: () => value }); window.dispatchEvent(new Event(value ? "online" : "offline")); }, value);
   await page.setViewportSize({ width: 1440, height: 900 }); await page.goto("/roster-schedule-optimizer");
@@ -83,7 +85,7 @@ test("connected refresh fixtures preserve nonzero intent through offline, cooldo
   await network(false); await page.clock.fastForward(5 * 60_000); await expect(page.getByRole("button", { name: "Refresh provider" })).toBeDisabled(); expect(reads).toBe(2);
   await network(true); await visibility("hidden"); await visibility("visible"); await page.getByRole("button", { name: "Refresh provider" }).click(); await expect(page.getByText(/Provider refresh is paused until/)).toBeVisible(); expect(reads).toBe(2);
   await page.clock.fastForward(15 * 60_000 + 1000); await expect.poll(() => reads).toBe(3);
-  await page.getByRole("button", { name: "Undo" }).click(); expect((await saved()).intent).toMatchObject({ steps: workspace.intent.steps, protectedPlayerIds: workspace.intent.protectedPlayerIds, goalieCoverage: workspace.intent.goalieCoverage });
+  await page.getByRole("button", { name: "Undo" }).click(); await expect.poll(async () => (await saved()).intent.goalieCoverage).toBe(workspace.intent.goalieCoverage); expect((await saved()).intent).toMatchObject({ steps: workspace.intent.steps, protectedPlayerIds: workspace.intent.protectedPlayerIds, goalieCoverage: workspace.intent.goalieCoverage });
   await page.reload(); await expect.poll(() => reads).toBe(4); expect((await saved()).intent.steps).toEqual(workspace.intent.steps); expect((await saved()).context.asOf).toBe("2026-10-11T12:01:00Z");
   await page.screenshot({ path: testInfo.outputPath("rso-refresh-fixture.png") });
   await writeFile(testInfo.outputPath("refresh-fixture-receipt.json"), JSON.stringify({ reads, scope: "Fictional intercepted session/provider and local storage; controlled online/visibility/time. Authentic isolation and account saves not accepted.", nonzeroP2: p2 }, null, 2));
@@ -422,7 +424,7 @@ test("provider refresh proposes repairs while keeping a selected move", async ({
   retained.context = { ...retained.context, provider: "yahoo", leagueId: "league", teamId: "team" };
   retained.lockedAssignments = [{ date: date(6), playerId: lockedPlayer.id, slotId: "C#1" }];
   retained.intent.protectedPlayerIds = [player.id];
-  await seedWorkspace(page, retained);
+  await seedWorkspace(page, retained, RSO_FIXTURE_PRINCIPAL);
   await installDraftProAuthenticatedFixtures(page, () => ({ access: { eligible: false, grantingSources: [], expiresAt: null, verifiedAt: null, nextVerificationAt: null, reason: "no_active_grant", capabilities: [], providerReadiness: { stripe: false, patreon: false, yahoo: false } } }));
   const storageKey = `sb-${new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || "https://fyhftlxokyjtpndbkfse.supabase.co").hostname.split(".")[0]}-auth-token`;
   await page.addInitScript((key) => { const session = localStorage.getItem("sb-127-auth-token"); if (session) localStorage.setItem(key, session); }, storageKey);
@@ -477,32 +479,34 @@ test("provider refresh proposes repairs while keeping a selected move", async ({
   await page.getByRole("button", { name: "All players", exact: true }).click();
   await page.getByRole("button", { name: "Select add" }).click();
   await expect(page.getByText("ADD Alpha Center", { exact: true })).toBeVisible();
-  const selected = await page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!).intent);
+  // Local persistence is asynchronous; capture the intent once the selected add is stored.
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1:principal:00000000-0000-4000-8000-000000000001")!).intent.steps.length)).toBe(1);
+  const selected = await page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1:principal:00000000-0000-4000-8000-000000000001")!).intent);
   await openPlanningSetup(page);
   holdRefresh = true;
   await page.getByRole("button", { name: "Refresh provider" }).click();
   await expect(page.getByRole("button", { name: "Refresh provider" })).toBeDisabled();
   await expect(page.locator("#rso-provider-refresh-status")).toHaveText("Refreshing provider inputs…");
   await expect.poll(() => reads).toBe(2);
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!).intent)).toEqual(selected);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1:principal:00000000-0000-4000-8000-000000000001")!).intent)).toEqual(selected);
   await expectDesktopFrameVisible(page);
   await page.screenshot({ path: testInfo.outputPath("provider-refresh-pending-desktop.png"), fullPage: true });
   holdRefresh = false; releaseRefresh();
   await expect(page.getByText(/appears on the actual roster; review whether this selected add is complete/)).toBeVisible();
   await expect(page.locator("#rso-provider-refresh-status")).toHaveText("Provider inputs refreshed. Selected moves were kept.");
   await expect(page.getByText("ADD Alpha Center", { exact: true })).toBeVisible();
-  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!))).toMatchObject({
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1:principal:00000000-0000-4000-8000-000000000001")!))).toMatchObject({
     intent: selected, lockedAssignments: retained.lockedAssignments,
     manualPlayers: expect.arrayContaining([expect.objectContaining({ id: lockedPlayer.id, name: "Locked Player", availability: "unknown" })]),
   });
   await page.getByRole("button", { name: "Refresh provider" }).click();
   await expect(page.locator("#rso-provider-refresh-status")).toHaveText("Provider refresh completed. Inputs are unchanged; selected moves were kept.");
-  const beforeFailure = await page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!));
+  const beforeFailure = await page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1:principal:00000000-0000-4000-8000-000000000001")!));
   failRefresh = true;
   await page.getByRole("button", { name: "Refresh provider" }).click();
   await expect(page.getByRole("alert").filter({ hasText: "Provider temporarily unavailable." })).toBeVisible();
   await expect(page.getByRole("button", { name: "Refresh provider" })).toBeEnabled();
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!))).toEqual(beforeFailure);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1:principal:00000000-0000-4000-8000-000000000001")!))).toEqual(beforeFailure);
   await page.getByRole("button", { name: "Refresh provider" }).click();
   await expect(page.locator("#rso-provider-refresh-status")).toHaveText("Provider refresh completed. Inputs are unchanged; selected moves were kept.");
   expect(reads).toBe(5);
@@ -513,7 +517,7 @@ test("provider refresh proposes repairs while keeping a selected move", async ({
   await expect(page.getByRole("button", { name: /Save to account|Saving/ })).toBeDisabled();
   await expect(page.getByRole("status").filter({ hasText: /Saving/ })).toBeVisible();
   await expect.poll(() => saves).toBe(1);
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!).intent)).toEqual(selected);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1:principal:00000000-0000-4000-8000-000000000001")!).intent)).toEqual(selected);
   releaseSave();
   await expect(page.getByText("Saved to account.")).toBeVisible();
   await page.getByRole("button", { name: "View account save" }).click();
@@ -522,7 +526,7 @@ test("provider refresh proposes repairs while keeping a selected move", async ({
   await page.locator('[class*="navStatus"]').hover();
   await page.getByRole("button", { name: "Continue manually" }).click();
   await expect(confirm).toBeEnabled();
-  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!))).toMatchObject({
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1:principal:00000000-0000-4000-8000-000000000001")!))).toMatchObject({
     context: { provider: "manual" }, intent: selected, lockedAssignments: retained.lockedAssignments,
   });
   expect(reads).toBeGreaterThanOrEqual(2);
@@ -537,7 +541,7 @@ test("connected manager bench locks constrain the worker and preserve provider a
   workspace.roster = members.map(member => ({ playerId: member.id, position: "active" }));
   workspace.lockedAssignments = [{ date: date(6), playerId: members[0].id, slotId: null }];
   workspace.intent.protectedPlayerIds = [members[0].id];
-  await seedWorkspace(page, workspace);
+  await seedWorkspace(page, workspace, RSO_FIXTURE_PRINCIPAL);
   await installDraftProAuthenticatedFixtures(page, () => ({ access: { eligible: false, grantingSources: [], expiresAt: null, verifiedAt: null, nextVerificationAt: null, reason: "no_active_grant", capabilities: [], providerReadiness: { stripe: false, patreon: false, yahoo: false } } }));
   await page.route("**/api/v1/roster-schedule-optimizer/access", route => route.fulfill({ json: { data: { eligible: true, capabilities: ["rso_sync", "rso_account_save"], grantingSources: ["test"], expiresAt: null, reason: null } } }));
   let accountSnapshot: PlanningSnapshot | null = null;
@@ -582,7 +586,7 @@ test("connected manager bench locks constrain the worker and preserve provider a
   await page.reload();
   await expect(outcome).toHaveText("8");
   await expect(page.getByText(/provider lock retained and manager choice kept for review/)).toBeVisible();
-  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!))).toMatchObject({
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1:principal:00000000-0000-4000-8000-000000000001")!))).toMatchObject({
     lockedAssignments: workspace.lockedAssignments, intent: { protectedPlayerIds: workspace.intent.protectedPlayerIds, goalieCoverage: "accept_risk" },
   });
 });
@@ -595,7 +599,7 @@ test("provider refresh adopts the authoritative league timezone and keeps the se
   retained.intent.excludedPlayerIds = ["fhfh:excluded"];
   retained.intent.steps = [{ id: "selected-add", type: "add", playerId: player.id,
     at: `${date(6)}T00:00:00Z`, effectiveAt: `${date(6)}T00:00:00Z`, conditional: true, dependsOn: [] }];
-  await seedWorkspace(page, retained);
+  await seedWorkspace(page, retained, RSO_FIXTURE_PRINCIPAL);
   await installDraftProAuthenticatedFixtures(page, () => ({ access: { eligible: false, grantingSources: [], expiresAt: null, verifiedAt: null, nextVerificationAt: null, reason: "no_active_grant", capabilities: [], providerReadiness: { stripe: false, patreon: false, yahoo: false } } }));
   await page.route("**/api/v1/roster-schedule-optimizer/workspace**", route => route.fulfill({ json: { data: null } }));
   await page.route("**/api/v1/roster-schedule-optimizer/access", route => route.fulfill({ json: { data: { eligible: true, capabilities: ["rso_sync"], grantingSources: ["test"], expiresAt: null, reason: null } } }));
@@ -616,7 +620,7 @@ test("provider refresh adopts the authoritative league timezone and keeps the se
   });
   await page.goto("/roster-schedule-optimizer");
   await openPlanDetails(page);
-  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!))).toMatchObject({
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1:principal:00000000-0000-4000-8000-000000000001")!))).toMatchObject({
     context, roster: snapshot.roster, rules: snapshot.rules, intent: retained.intent,
   });
   await expect(page.getByLabel("Time zone", { exact: true })).toHaveValue("America/New_York");
@@ -627,7 +631,7 @@ test("provider refresh adopts the authoritative league timezone and keeps the se
   await openPlanDetails(page);
   await expect(page.getByLabel("Time zone", { exact: true })).toHaveValue("America/New_York");
   await expect(page.getByText("ADD Alpha Center", { exact: true })).toBeVisible();
-  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!))).toMatchObject({
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1:principal:00000000-0000-4000-8000-000000000001")!))).toMatchObject({
     context, intent: retained.intent,
   });
 });
@@ -703,7 +707,7 @@ test("Yahoo timeout retains schedule analysis and matchup-week navigation withou
   const players = [fixturePlayer(1, "Alpha Center", "CAR"), fixturePlayer(2, "Bravo Center", "NJD")];
   const workspace = fixtureWorkspace(players, { ...fixtureRules, rosterSlots: { C: 2 }, acquisitionTiming: "unknown", acquisitionCost: null, periods: [] });
   workspace.context = { ...workspace.context, provider: "yahoo", teamId: "team", leagueId: "league", startDate: "2026-10-05", endDate: "2026-10-11" };
-  await seedWorkspace(page, workspace);
+  await seedWorkspace(page, workspace, RSO_FIXTURE_PRINCIPAL);
   await page.route("**/api/v1/roster-schedule-optimizer/access", route => route.fulfill({ json: { data: { eligible: true, capabilities: ["rso_sync"], grantingSources: ["test"] } } }));
   await page.route("**/api/v1/roster-schedule-optimizer/provider", route => route.fulfill({ status: 502, json: { success: false, error: "Yahoo roster/settings reads timed out after retrying." } }));
   await routeCurrentPlanning(page, route => {
@@ -989,7 +993,7 @@ test("connected refresh and account save preserve forecast permissions and exclu
   const requestUser = (authorization: string | undefined) => authorization
     ? JSON.parse(Buffer.from(authorization.split(".")[1], "base64url").toString()).sub as string : null;
   let saved: import("../lib/rosterScheduleOptimizer/planningTypes").PlanningSnapshot | null = null;
-  await seedWorkspace(page, workspace);
+  await seedWorkspace(page, workspace, RSO_FIXTURE_PRINCIPAL);
   await page.route("**/api/v1/roster-schedule-optimizer/access", async route => {
     const nextAccount = requestUser(route.request().headers().authorization) === secondUser;
     if (nextAccount) await heldAccess;
@@ -1039,7 +1043,7 @@ test("connected refresh and account save preserve forecast permissions and exclu
     { gameId: "alpha", reasons: ["use_not_approved"] }, { gameId: "bravo", reasons: ["use_not_approved"] }] },
     forecasts: [{ allowedUses: { assignment: false, totals: true, comparison: false } },
       { allowedUses: { assignment: false, totals: true, comparison: false } }] });
-  const beforeSwitch = await page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!));
+  const beforeSwitch = await page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1:principal:00000000-0000-4000-8000-000000000001")!));
   switching = true;
   const providerRequest = page.waitForRequest("**/api/v1/roster-schedule-optimizer/provider");
   await openPlanningSetup(page);
@@ -1061,7 +1065,8 @@ test("connected refresh and account save preserve forecast permissions and exclu
     channel.close();
   }, { key: storageKey, userId: secondUser });
   await expect.poll(() => accountReads.includes(secondUser)).toBe(true);
-  await expect(page.getByRole("button", { name: "Refresh provider" })).toBeDisabled();
+  // The second account opens its own local slot (empty here), never the first account's retained inputs.
+  await expect(page.getByRole("button", { name: "Refresh provider" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Save to account" })).toHaveCount(0);
   expect((await canceledProvider).failure()?.errorText).toContain("ERR_ABORTED");
   const completedSave = page.waitForResponse(response => response.request() === pendingSaveRequest);
@@ -1071,34 +1076,20 @@ test("connected refresh and account save preserve forecast permissions and exclu
   await expect(page.getByText("Saved to account.")).toHaveCount(0);
   await expect(page.getByText(/Late First Account/)).toHaveCount(0);
   await expect.poll(async () => page.evaluate(() => {
-    const value = JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!);
+    const value = JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1:principal:00000000-0000-4000-8000-000000000001")!);
     return { intent: value.intent, roster: value.roster, lockedAssignments: value.lockedAssignments };
   })).toEqual({ intent: beforeSwitch.intent, roster: beforeSwitch.roster, lockedAssignments: beforeSwitch.lockedAssignments });
-  const setup = page.locator('fieldset[aria-label="Planning setup"]');
-  const rosterPanel = page.locator("#rso-roster-edit");
-  await expect(setup).toHaveAttribute("disabled", "");
-  await expect(setup.getByRole("combobox", { name: "Source", exact: true })).toBeDisabled();
-  await expect.poll(() => rosterPanel.evaluate(panel => (panel as HTMLElement).inert)).toBe(true);
   releaseAccess();
-  await page.screenshot({ path: testInfo.outputPath("rso-switched-account.png") });
-  // The released status rail discloses all notices on pointer hover or keyboard focus.
-  await page.locator('[class*="navStatus"]').hover();
-  await page.getByRole("button", { name: "Continue manually" }).click();
-  await expect(setup).not.toHaveAttribute("disabled", "");
-  await expect(setup.getByRole("combobox", { name: "Source", exact: true })).toBeEnabled();
-  await expect(rosterPanel).not.toHaveAttribute("inert", "true");
-  await expect.poll(async () => page.evaluate(() => {
-    const value = JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!);
-    return { provider: value.context.provider, intent: value.intent, roster: value.roster, lockedAssignments: value.lockedAssignments };
-  })).toEqual({ provider: "manual", intent: beforeSwitch.intent, roster: beforeSwitch.roster, lockedAssignments: beforeSwitch.lockedAssignments });
-  await rosterPanel.getByRole("checkbox", { name: `Protect ${players[0].name}`, exact: true }).check();
-  await expect.poll(async () => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!).intent.protectedPlayerIds)).toEqual([players[0].id]);
+  await expect(page.getByText("0 players", { exact: true })).toBeVisible();
+  await expect(page.locator("#rso-roster-edit").getByRole("checkbox", { name: `Protect ${players[0].name}`, exact: true })).toHaveCount(0);
+  const second = await page.evaluate(key => JSON.parse(localStorage.getItem(key) ?? "null") as PlanningWorkspace | null, workspaceStorageKey(secondUser));
+  expect(second?.context.provider ?? "manual").toBe("manual");
+  expect({ steps: second?.intent.steps ?? [], roster: second?.roster ?? [], manualPlayers: second?.manualPlayers ?? [] }).toEqual({ steps: [], roster: [], manualPlayers: [] });
   expect(pageErrors).toEqual([]);
-  await page.screenshot({ path: testInfo.outputPath("rso-manual-fork-editing.png") });
+  await page.screenshot({ path: testInfo.outputPath("rso-switched-account.png") });
   await writeFile(testInfo.outputPath("rso-account-switch-browser.json"), JSON.stringify({ viewport: { width: 1180, height: 757 },
-    accountReads, providerCanceled: true, staleSaveHidden: true, staleProviderHidden: true, localIntentPreserved: true,
-    retainedInputsReadOnly: true, manualForkPreserved: true, manualEditingAvailable: true,
-    pageErrors, inputs: "Fictional sessions and intercepted provider/workspace/access responses; SDK BroadcastChannel session switch", liveAccountParity: "not verified" }, null, 2));
+    accountReads, providerCanceled: true, staleSaveHidden: true, staleProviderHidden: true, firstAccountSlotPreserved: true,
+    secondAccountStartsEmpty: true, pageErrors, inputs: "Fictional sessions and intercepted provider/workspace/access responses; SDK BroadcastChannel session switch", liveAccountParity: "not verified" }, null, 2));
 });
 test("conflicting forecasts keep capacity planning and show the affected target", async ({ page }, testInfo) => {
   const players = [fixturePlayer(1, "Alpha Center", "CAR"), fixturePlayer(2, "Bravo Center", "NJD")];
@@ -1235,7 +1226,7 @@ test(`unapproved retained inputs stay denied across worker reload, account save 
     });
   }
 
-  await seedWorkspace(page, workspace);
+  await seedWorkspace(page, workspace, mode === "connected" ? RSO_FIXTURE_PRINCIPAL : null);
   await routeCurrentPlanning(page, route => route.fulfill({ json: { success: true,
     data: { players, games, forecasts: retained.forecasts, baselineSources: refreshedRates, forecastManifest, evidence: {} } } }));
   const errors: string[] = [];
@@ -2369,7 +2360,7 @@ test("alerts on a healthy player left in IR and shows what activating him gains"
   const workspace = fixtureWorkspace(members, { ...fixtureRules, rosterSlots: { C: 1, D: 1, BN: 1, IR: 1 } });
   workspace.context = { ...workspace.context, provider: "yahoo", leagueId: "league", teamId: "team", endDate: date(6) };
   workspace.roster = [{ playerId: members[0].id, position: "active" }, { playerId: members[1].id, position: "IR" }];
-  await seedWorkspace(page, workspace);
+  await seedWorkspace(page, workspace, RSO_FIXTURE_PRINCIPAL);
   await installDraftProAuthenticatedFixtures(page, () => ({ access: { eligible: false, grantingSources: [], expiresAt: null, verifiedAt: null, nextVerificationAt: null, reason: "no_active_grant", capabilities: [], providerReadiness: { stripe: false, patreon: false, yahoo: false } } }));
   const storageKey = `sb-${new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || "https://fyhftlxokyjtpndbkfse.supabase.co").hostname.split(".")[0]}-auth-token`;
   await page.addInitScript(key => { const session = localStorage.getItem("sb-127-auth-token"); if (session) localStorage.setItem(key, session); }, storageKey);
@@ -2409,7 +2400,7 @@ test("plans tonight's goalie from Yahoo's Starting and Not Starting marks and sh
   workspace.context = { ...workspace.context, provider: "yahoo", leagueId: "league", teamId: "team", endDate: date(6), asOf: evaluatedAt };
   // FORGE's prior makes the sitting goalie (0.7) look likelier than the starter (0.6); Yahoo's marks reverse that tonight.
   workspace.roster = [{ playerId: members[1].id, position: "active" }, { playerId: members[0].id, position: "bench" }];
-  await seedWorkspace(page, workspace);
+  await seedWorkspace(page, workspace, RSO_FIXTURE_PRINCIPAL);
   await installDraftProAuthenticatedFixtures(page, () => ({ access: { eligible: false, grantingSources: [], expiresAt: null, verifiedAt: null, nextVerificationAt: null, reason: "no_active_grant", capabilities: [], providerReadiness: { stripe: false, patreon: false, yahoo: false } } }));
   const storageKey = `sb-${new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || "https://fyhftlxokyjtpndbkfse.supabase.co").hostname.split(".")[0]}-auth-token`;
   await page.addInitScript(key => { const session = localStorage.getItem("sb-127-auth-token"); if (session) localStorage.setItem(key, session); }, storageKey);
