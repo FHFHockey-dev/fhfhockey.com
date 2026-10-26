@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { BridgeRunProof } from "lib/rosterScheduleData/bridgeForecastWire";
 import { loadPlanningData, parsePlanningDataQuery } from "lib/rosterScheduleData/planning";
 import { INFERRED_ACQUISITION_TIMING_KEY, INFERRED_ACQUISITION_TIMING_SOURCE } from "lib/rosterScheduleOptimizer/providerRules";
 import { expandActiveSlots } from "lib/rosterScheduleOptimizer/slots";
@@ -274,6 +275,45 @@ export function yahooPlanningAcquisitions(args: {
     remaining, limitations };
 }
 
+export type YahooReportedRule = { rule: string; field: string; present: boolean; reportedValue: string | number | boolean | null; verified: boolean };
+
+/**
+ * League rules Yahoo reports in league settings and the owned team's metadata, each as present / reportedValue /
+ * verified (like the weekly add limit). Only an exact, recognised value from a fresh, scoped read is verified;
+ * anything else stays unknown and is never assumed. `uses_faab` sets the waiver mode; the owned team's
+ * `faab_balance` sets the remaining budget. `waiver_type` and `waiver_rule` are shown as reported but not
+ * interpreted. Yahoo reports nothing about when an add takes effect, the weekly reset instant, or how the goalie
+ * minimum counts and is penalised.
+ */
+export function yahooPlanningReportedRules(args: {
+  settings: YahooProviderJsonResult; settingsReadAt: Date; team: YahooProviderJsonResult | null; teamReadAt: Date; teamKey: string;
+}): { waivers?: NonNullable<LeagueRules["waivers"]>; facts: YahooReportedRule[] } {
+  const settings = yahooFields(yahooValue(args.settings.payload, "settings") ?? args.settings.payload);
+  const teams = args.team ? yahooPlanningTeams(args.team.payload) : [];
+  const team = teams.length === 1 ? teams[0] : {};
+  const settingsFresh = providerFresh(args.settings, args.settingsReadAt);
+  const teamVerified = Boolean(args.team && providerFresh(args.team, args.teamReadAt) && team.team_key === args.teamKey && yes(team.is_owned_by_current_login));
+  const scalar = (value: unknown): string | number | boolean | null => typeof value === "string" ? value.slice(0, 40)
+    : typeof value === "number" && Number.isFinite(value) || typeof value === "boolean" ? value as number | boolean : null;
+  const integer = (value: unknown, max: number): number | null => (typeof value === "number" || typeof value === "string" && /^\d+$/.test(value.trim()))
+    && Number.isSafeInteger(Number(value)) && Number(value) >= 0 && Number(value) <= max ? Number(value) : null;
+  const fact = (rule: string, field: string, source: Record<string, unknown>, verified: (value: unknown) => boolean, fresh: boolean): YahooReportedRule => {
+    const present = Object.prototype.hasOwnProperty.call(source, field);
+    return { rule, field, present, reportedValue: scalar(source[field]), verified: present && fresh && verified(source[field]) };
+  };
+  const faab = fact("waiver mode", "uses_faab", settings, value => yes(value) || no(value), settingsFresh);
+  const budgetMode = faab.verified && yes(settings.uses_faab);
+  const balance = fact("FAAB budget remaining", "faab_balance", team, value => budgetMode && integer(value, 100000) !== null, teamVerified);
+  const facts = [faab, balance,
+    fact("waiver period (days)", "waiver_time", settings, value => integer(value, 30) !== null, settingsFresh),
+    fact("waiver type", "waiver_type", settings, () => false, settingsFresh),
+    fact("waiver rule", "waiver_rule", settings, () => false, settingsFresh),
+    fact("lineup change deadline", "weekly_deadline", settings, value => value === "intraday" || value === "tomorrow", settingsFresh),
+    fact("goalie minimum (games)", "min_games_played", settings, value => integer(value, 50) !== null, settingsFresh)];
+  return { ...(faab.verified ? { waivers: { mode: budgetMode ? "budget" as const : "priority" as const,
+    remainingBudget: budgetMode && balance.verified ? integer(team.faab_balance, 100000) : null } } : {}), facts };
+}
+
 /** Retry one timed-out required read; rate limits and access errors are never retried. */
 export async function readRequiredPlanningResource<T>(read: () => Promise<T>): Promise<T> {
   try { return await read(); }
@@ -287,6 +327,8 @@ export async function loadYahooPlanningSnapshot(args: {
   db: SupabaseClient<any>; userId: string; teamId: string; startDate: string; endDate: string; timeZone?: string; now?: Date;
   /** "manual" (Refresh provider) bypasses every diet cache; timed upkeep is "auto". */
   refresh?: "auto" | "manual";
+  /** Receives the served bridge runs' proofs for the response wire (as data.ts does); never stored on the snapshot. */
+  onBridgeRunProofs?: (proofs: BridgeRunProof[]) => void;
 }): Promise<{ snapshot: PlanningSnapshot; capabilities: ProviderCapabilities; code?: string; retryAfterSeconds?: number | null; yahooDiet?: true }> {
   const { db, userId } = args;
   const now = args.now ?? new Date();
@@ -369,7 +411,8 @@ export async function loadYahooPlanningSnapshot(args: {
   const cachedFact = (resource: string) => reuse ? leagueFactsCache.get(factKey(resource), YAHOO_LEAGUE_FACTS_TTL_MS, now.getTime()) : null;
   const [cachedScoreboard, cachedLeague, cachedTeam] = ["scoreboard", "league", "team"].map(cachedFact);
   const [data, rosterResponse, scoreboardResult, leagueRosterResult, leagueFetched, teamFetched] = await Promise.all([
-    loadPlanningData(db, { ...query, timeZone }, { now, forgeDailyBridge: true, consumer: "rso" }),
+    loadPlanningData(db, { ...query, timeZone }, { now, forgeDailyBridge: true, consumer: "rso",
+      ...(args.onBridgeRunProofs ? { onBridgeRunProofs: args.onBridgeRunProofs } : {}) }),
     cachedRoster ?? readRequiredPlanningResource(counted(() => fetchYahooBoardResource({ ...provider, resource: { type: "roster", teamKey: team.external_team_key, date: today } }))),
     cachedScoreboard?.value.result ?? counted(() => fetchYahooPlanningResource({ ...provider, resource: { type: "scoreboard" } }))().then(value => value, optionalFailure),
     counted(() => fetchYahooBoardResource({ ...provider, resource: { type: "league_rosters" } }))().then(value => value, optionalFailure),
@@ -489,6 +532,7 @@ export async function loadYahooPlanningSnapshot(args: {
     .filter(([slot]) => ["IR", "IR+", "NA"].includes(slot.trim().toUpperCase())));
   // D6: same-day or next-day adds inferred from Yahoo's weekly deadline (as Start Chart does); the manager can override.
   const inferredTiming = diet && fresh ? yahooInferredAcquisitionTiming(settings) : null;
+  const reportedRules = yahooPlanningReportedRules({ settings: settingsResponse, settingsReadAt, team: teamResult, teamReadAt, teamKey: team.external_team_key });
   const rules: LeagueRules = {
     // Restore supported reserve capacities that the draft parser excludes.
     lineupMode: mode, rosterSlots: { ...settings.rosterConfig, ...reserveSlots },
@@ -496,6 +540,7 @@ export async function loadYahooPlanningSnapshot(args: {
     acquisitionTiming: inferredTiming ?? "unknown",
     acquisitionCost: periods.length ? 1 : null, periods, scoring: { mode: settings.leagueType, weights: { ...settings.scoringCategories }, categories: yahooPlanningCategories(Object.keys(settings.categoryWeights)) },
     goalieMinimum: { required: settings.minimumGoalieStarts, credited: null, counts: "unknown", penalty: "unknown", ...goaliePeriod }, unsupported,
+    ...(reportedRules.waivers ? { waivers: reportedRules.waivers } : {}),
   };
   const slots = expandActiveSlots(rules.rosterSlots).activeSlots;
   const usedSlots = new Set<string>();
@@ -532,7 +577,9 @@ export async function loadYahooPlanningSnapshot(args: {
   // capabilities.rules stays false: name every rule fact the planner still treats as unknown.
   const inferredTimingNote = inferredTiming && `Add timing is inferred from Yahoo's weekly deadline (${inferredTiming === "same_day" ? "same-day" : "next-day"}); change it in League rules if your league differs.`;
   if (inferredTimingNote) limitations.push(inferredTimingNote);
-  const unreportedRules = [inferredTiming ? "whether the add timing inferred from Yahoo's weekly deadline is right" : "when an add takes effect (same-day or next-day)", "waiver mode and FAAB budget",
+  const waivers = rules.waivers;
+  const unreportedRules = [inferredTiming ? "whether the add timing inferred from Yahoo's weekly deadline is right" : "when an add takes effect (same-day or next-day)",
+    ...(!waivers ? ["waiver mode and FAAB budget"] : waivers.mode === "budget" && waivers.remainingBudget === null ? ["the remaining FAAB budget"] : []),
     ...(periods.length ? ["the exact weekly add reset time (league-local midnight is assumed)"] : []),
     ...(rules.goalieMinimum.required === null ? ["whether the league has a goalie minimum"]
       : rules.goalieMinimum.required > 0 ? ["how the goalie minimum counts (starts or appearances) and its penalty"] : [])];
@@ -661,6 +708,11 @@ export async function loadYahooPlanningSnapshot(args: {
     id: `yahoo:${team.id}:${now.toISOString()}`, context: { provider: "yahoo", seasonId: query.seasonId, leagueId: league.id, teamId: team.id, startDate: query.startDate, endDate: query.endDate, timeZone, asOf: now.toISOString() },
     ...data, roster, rules, lockedAssignments, pastLineups: scoredPastLineups, realized, opponent, acquisitionEvidence,
     evidence: { ...data.evidence,
+      yahooLeagueRules: { source: "Yahoo league settings and owned team metadata", asOf: settingsReadAt.toISOString(), seasonId: query.seasonId,
+        // Complete once the waiver mode (and, in a FAAB league, the remaining budget) is verified; other facts are context.
+        completeness: reportedRules.waivers && (reportedRules.waivers.mode === "priority" || reportedRules.waivers.remainingBudget !== null) ? "complete" : "partial",
+        limitations: reportedRules.facts.map(item => `${item.rule} (${item.field}): ${!item.present ? "not reported"
+          : `reported ${JSON.stringify(item.reportedValue)}, ${item.verified ? "verified" : item.field === "waiver_type" || item.field === "waiver_rule" ? "shown, not interpreted" : "not verified"}`}`) },
       ...(inferredTimingNote ? { [INFERRED_ACQUISITION_TIMING_KEY]: { source: INFERRED_ACQUISITION_TIMING_SOURCE, asOf: settingsReadAt.toISOString(),
         seasonId: query.seasonId, completeness: "partial" as const, limitations: [inferredTimingNote] } } : {}),
       roster: { source: "Yahoo authorized current roster", asOf: observedAt, seasonId: query.seasonId, completeness: fresh && roster.length === ownRows.length && roster.length > 0 ? "complete" : "partial", limitations },
