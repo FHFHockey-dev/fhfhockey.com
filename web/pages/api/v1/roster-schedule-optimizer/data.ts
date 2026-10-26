@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { encodePlanningDataTransport, PlanningDataTransportLimitError } from "lib/rosterScheduleData/planningDataTransport";
-import { compactBridgeForecasts, fitBridgeWire, PLANNING_RESPONSE_BYTE_BUDGET } from "lib/rosterScheduleData/bridgeForecastWire";
+import { compactBridgeForecasts, fitBridgeWire, PLANNING_RESPONSE_BYTE_BUDGET, type BridgeRunProof } from "lib/rosterScheduleData/bridgeForecastWire";
 import serviceRoleClient from "lib/supabase/server";
 import { loadPlanningData, parsePlanningDataQuery } from "lib/rosterScheduleData/planning";
 import { forecastSourceSummary, selectForecastServingSource } from "lib/player-forecasts/forecastServingSource";
@@ -19,13 +19,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const now = new Date();
     // One server-side source per request; RSO has no legacy forecasts, so every fallback serves none.
     const source = await selectForecastServingSource(serviceRoleClient, query.seasonId, now);
-    const data = await loadPlanningData(serviceRoleClient, query, { now, source, forgeDailyBridge: true, consumer: "rso" });
+    let proofs: BridgeRunProof[] = [];
+    const data = await loadPlanningData(serviceRoleClient, query, { now, source, forgeDailyBridge: true, consumer: "rso", onBridgeRunProofs: served => { proofs = served; } });
     // A shared copy of native forecasts never outlives the selected catalog.
     const nativeMaxAge = source.kind === "native" ? Math.max(0, Math.min(300, Math.floor((Date.parse(source.expiresAt) - Date.now()) / 1000))) : null;
     res.setHeader("Cache-Control", nonce || data.forecastManifest?.rsoUsePolicy ? "private, no-store"
       : nativeMaxAge === null ? "public, s-maxage=300, stale-while-revalidate=300" : `public, s-maxage=${nativeMaxAge}, stale-while-revalidate=0`);
     // Interim bridge projections travel compactly beside `data`; clients rebuild them, so the strict transport is unchanged.
-    const bridge = compactBridgeForecasts(data.forecasts, data, query.seasonId);
+    const bridge = compactBridgeForecasts(data.forecasts, data, query.seasonId, proofs);
     const transport = encodePlanningDataTransport({ ...data, forecasts: bridge.forecasts }), forecastSource = forecastSourceSummary(source);
     // The whole body, bridge wire included, must fit the platform response limit; the latest bridge rows give way first.
     const body = fitBridgeWire(bridge.wire, wire => ({ success: true, data: transport, ...(wire ? { bridgeForecasts: wire } : {}), forecastSource,

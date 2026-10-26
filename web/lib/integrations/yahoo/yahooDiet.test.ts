@@ -299,6 +299,54 @@ describe("provider snapshot cadence with RSO_YAHOO_DIET=1 (D2, D3, D5, D6, D8)",
     } finally { vi.useRealTimers(); }
   });
 
+  it.each(["1", ""])("forwards bridge run proofs to the caller only when asked, never onto the snapshot (flag %j)", async (flag) => {
+    vi.stubEnv("RSO_YAHOO_DIET", flag);
+    const proof = { runId: "run-a", basis: "verified_release", releaseSha: "a".repeat(40), closureSha256: null };
+    const load = mocks.planningData.getMockImplementation()!;
+    mocks.planningData.mockImplementation(async (db: unknown, query: unknown, options: any) => { options.onBridgeRunProofs?.([proof]); return load(db, query, options); });
+    const received: unknown[] = [];
+    const result = await loadYahooPlanningSnapshot({ db, userId: "owner-a", teamId: "team-a", startDate: "2026-10-01", endDate: "2026-10-03",
+      now: new Date(clock), onBridgeRunProofs: proofs => received.push(proofs) });
+    expect(received).toEqual([[proof]]);
+    expect(JSON.stringify(result)).not.toContain("releaseSha");
+    clock = t0 + 1;
+    await loadYahooPlanningSnapshot({ db, userId: "owner-a", teamId: "team-a", startDate: "2026-10-01", endDate: "2026-10-03", now: new Date(clock), refresh: "manual" });
+    expect(mocks.planningData.mock.calls.at(-1)?.[2]).not.toHaveProperty("onBridgeRunProofs");
+  });
+
+  it.each(["1", ""])("imports Yahoo-reported waiver rules into the snapshot and names only what stays unreported (flag %j)", async (flag) => {
+    vi.stubEnv("RSO_YAHOO_DIET", flag);
+    const settings = mocks.draftResource.getMockImplementation()!, plan = mocks.planningResource.getMockImplementation()!;
+    const withSettings = (extra: Record<string, unknown>) => mocks.draftResource.mockImplementation(async (args: any) => {
+      const base: any = await settings(args); return { ...base, payload: { ...base.payload, ...extra } }; });
+    mocks.planningResource.mockImplementation(async (args: any) => {
+      const base: any = await plan(args);
+      return args.resource.type === "team" ? { ...base, payload: { team: [...base.payload.team, { faab_balance: "87" }] } } : base;
+    });
+    withSettings({ uses_faab: "1", waiver_time: "2" });
+    const faab = await run("manual");
+    expect(faab.snapshot.rules.waivers).toEqual({ mode: "budget", remainingBudget: 87 });
+    expect(faab.snapshot.evidence.yahooLeagueRules).toMatchObject({ completeness: "complete" });
+    expect(faab.snapshot.evidence.yahooLeagueRules?.limitations).toContain('waiver mode (uses_faab): reported "1", verified');
+    const text = faab.capabilities.limitations.find(item => item.startsWith("Yahoo does not report these league rules"))!;
+    expect(text).not.toMatch(/waiver mode|FAAB/);
+    expect(text).toContain(flag === "1" ? "whether the add timing inferred from Yahoo's weekly deadline is right" : "when an add takes effect (same-day or next-day)");
+    clock += 1000; withSettings({ uses_faab: "0" });
+    const priority = await run("manual");
+    expect(priority.snapshot.rules.waivers).toEqual({ mode: "priority", remainingBudget: null });
+    expect(priority.capabilities.limitations.join(" ")).not.toMatch(/waiver mode|FAAB/);
+    clock += 1000; mocks.planningResource.mockImplementation(plan); withSettings({ uses_faab: "1" });
+    const noBalance = await run("manual");
+    expect(noBalance.snapshot.rules.waivers).toEqual({ mode: "budget", remainingBudget: null });
+    expect(noBalance.capabilities.limitations.join(" ")).toContain("the remaining FAAB budget");
+    expect(noBalance.snapshot.evidence.yahooLeagueRules?.completeness).toBe("partial");
+    clock += 1000; withSettings({});
+    const absent = await run("manual");
+    expect(absent.snapshot.rules.waivers).toBeUndefined();
+    expect(absent.capabilities.limitations.join(" ")).toContain("waiver mode and FAAB budget");
+    expect(absent.snapshot.evidence.yahooLeagueRules?.limitations).toContain("waiver mode (uses_faab): not reported");
+  });
+
   it("keeps acquisition timing unknown and reads everything when the flag is off", async () => {
     vi.stubEnv("RSO_YAHOO_DIET", "");
     const result = await run();

@@ -54,6 +54,7 @@ describe("verified FORGE releases", () => {
     expect(VERIFIED_FORGE_PRODUCER_CLOSURES.map(closure => [closure.closureSha256, closure.commit])).toEqual([
       ["4c06fd9e2b5a5d880f594cb2668b81eaa0c54553de525a73f477d4eebf909993", "595ab13d9773808057b49cc3ed91d9eaca8ed317"],
       ["c1f0129aca9b2520cbd922cf81c292661b1499fa50b024f76ca6283d362cc4aa", "6fb1812c19ecd182e895b3708296018bc842fcf0"],
+      ["87edd78f5dfa96eded8a32927ef184d9266995edf52f395cf5ac6b8565c64f97", "5aa9ba5e0e9e86abf515fd7a30db441f6f5b1592"],
     ]);
   });
 

@@ -62,9 +62,10 @@ it("shows per-category gains and losses from a manager-selected startable lineup
   const evaluations = evaluated(data);
   evaluations.plan = evaluatePlan({ ...data, lockedAssignments: [...data.lockedAssignments,
     { date: "2026-10-07", playerId: "3", slotId: "C#1", source: "manager" }] }, intent, "outcome", intent.steps, false);
+  // Category mode reports no scalar score (FR9-D2); the per-category comparison stays eligible.
   expect(evaluations.plan).toMatchObject({ legal: true, budgetVerified: true, comparisonEligible: true,
-    projectedValue: 0, acquisitions: { "Before reset": 1 }, steps: intent.steps });
-  expect(evaluations.baseline.projectedValue).toBe(0);
+    projectedValue: null, acquisitions: { "Before reset": 1 }, steps: intent.steps });
+  expect(evaluations.baseline).toMatchObject({ projectedValue: null, comparisonEligible: true });
   expect(evaluations.plan.assignments.map(row => [row.date, row.playerId])).toEqual([["2026-10-06", "1"], ["2026-10-07", "3"]]);
   expect(evaluations.plan.forecastInputs?.find(row => row.playerId === "3")?.revisionId).toBe("fixture-forge-5");
   expect(JSON.stringify(intent)).toBe(original);
@@ -160,7 +161,9 @@ it("uses whole-lineup goalie ratios and keeps projected starts separate from cre
   data.rules.scoring.categories = [{ key: "SV%", direction: "higher", numerator: "SAVES_GOALIE", denominator: "SHOTS_AGAINST_GOALIE" },
     { key: "GAA", direction: "lower", numerator: "GOALS_AGAINST_GOALIE", denominator: "GOALIE_MINUTES", multiplier: 60 }];
   data.realized = { SAVES_GOALIE: 0, SHOTS_AGAINST_GOALIE: 0, GOALS_AGAINST_GOALIE: 0, GOALIE_MINUTES: 0 };
-  data.opponent = { roster: [], realized: { SAVES_GOALIE: 90, SHOTS_AGAINST_GOALIE: 100, GOALS_AGAINST_GOALIE: 3, GOALIE_MINUTES: 60 }, remaining: {} };
+  // Nothing remaining for the opponent is an explicit zero per component; a missing one is unknown (FR9-D1).
+  data.opponent = { roster: [], realized: { SAVES_GOALIE: 90, SHOTS_AGAINST_GOALIE: 100, GOALS_AGAINST_GOALIE: 3, GOALIE_MINUTES: 60 },
+    remaining: { SAVES_GOALIE: 0, SHOTS_AGAINST_GOALIE: 0, GOALS_AGAINST_GOALIE: 0, GOALIE_MINUTES: 0 } };
   data.forecasts.forEach(row => { row.startProbability = 0.5;
     row.stats = row.playerId === "1" ? { SAVES_GOALIE: 18, SHOTS_AGAINST_GOALIE: 20, GOALS_AGAINST_GOALIE: 2, GOALIE_MINUTES: 30 }
       : { SAVES_GOALIE: 9.5, SHOTS_AGAINST_GOALIE: 10, GOALS_AGAINST_GOALIE: 0.5, GOALIE_MINUTES: 30 }; });

@@ -293,7 +293,12 @@ describe("public RSO data boundary", () => {
         proj_goals_es: 0.3, proj_goals_pp: 0.1, proj_assists_es: 0.4, proj_assists_pp: 0.1, proj_shots_es: 2, proj_shots_pp: 0.5,
         proj_toi_es_seconds: 900, proj_toi_pp_seconds: 120, proj_hits: 1, proj_blocks: 0.4 }],
       forge_goalie_projections: [], goalie_start_projections: [], player_forecast_source_observations: [provenSnapshotRow("run-b")] });
-    const bridged = await loadPlanningData(db as never, publicQuery, { ...publicOptions, forgeDailyBridge: true, consumer: "rso" });
+    const runProofs: unknown[][] = [];
+    const bridged = await loadPlanningData(db as never, publicQuery, { ...publicOptions, forgeDailyBridge: true, consumer: "rso",
+      onBridgeRunProofs: proofs => { runProofs.push(proofs); } });
+    // The served run's proof leaves only through the side channel, never on the planning data itself.
+    expect(runProofs).toEqual([[{ runId: "run-b", basis: "captured_snapshot", releaseSha: null, closureSha256: null }]]);
+    expect(JSON.stringify(bridged)).not.toContain("captured_snapshot");
     expect(bridged.forecasts).toEqual([expect.objectContaining({ playerId: "7", gameId: "2026020001",
       revisionId: "forge-daily-bridge-v1:run-b", stats: expect.objectContaining({ GOALS: 0.4, POINTS: 0.9 }) })]);
     expect(bridged.evidence.forecasts.source).toBe("Interim FORGE daily projections");

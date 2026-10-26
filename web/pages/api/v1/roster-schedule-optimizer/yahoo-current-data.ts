@@ -3,7 +3,7 @@ import { requireApiUser } from "lib/api/requireApiUser";
 import { requireProviderSyncAccess } from "lib/integrations/providerSyncAccessServer";
 import { loadYahooPlanningConfirmations } from "lib/integrations/yahoo/planningConfirmations";
 import { loadPlanningData, parsePlanningDataQuery } from "lib/rosterScheduleData/planning";
-import { compactBridgeForecasts, fitBridgeWire, PLANNING_RESPONSE_BYTE_BUDGET } from "lib/rosterScheduleData/bridgeForecastWire";
+import { compactBridgeForecasts, fitBridgeWire, PLANNING_RESPONSE_BYTE_BUDGET, type BridgeRunProof } from "lib/rosterScheduleData/bridgeForecastWire";
 import { encodePlanningDataTransport, PlanningDataTransportLimitError } from "lib/rosterScheduleData/planningDataTransport";
 import serviceRoleClient from "lib/supabase/server";
 
@@ -23,9 +23,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     await requireProviderSyncAccess(user.id);
     const now = new Date();
-    const current = await loadPlanningData(serviceRoleClient, query, { now, forgeDailyBridge: true, consumer: "rso" });
+    let proofs: BridgeRunProof[] = [];
+    const current = await loadPlanningData(serviceRoleClient, query, { now, forgeDailyBridge: true, consumer: "rso", onBridgeRunProofs: served => { proofs = served; } });
     const { data, expiresAt } = await loadYahooPlanningConfirmations({ db: serviceRoleClient, userId: user.id, teamId, leagueId, query, data: current, now });
-    const bridge = compactBridgeForecasts(data.forecasts, data, query.seasonId);
+    const bridge = compactBridgeForecasts(data.forecasts, data, query.seasonId, proofs);
     const transport = encodePlanningDataTransport({ ...data, forecasts: bridge.forecasts });
     const body = fitBridgeWire(bridge.wire, wire => ({ success: true, data: transport, ...(wire ? { bridgeForecasts: wire } : {}),
       read: { nonce, evaluatedAt: now.toISOString(), expiresAt, principalId: user.id, teamId, leagueId,

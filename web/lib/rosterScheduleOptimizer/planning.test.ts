@@ -1368,7 +1368,10 @@ describe("planning engine", () => {
     const result = evaluatePlan(data, intent, "agp");
     // The met minimum stays satisfied, but the unknown start keeps projected starts unknown, never credited + 0.
     expect(result.goalie).toMatchObject({ credited: 1, projected: null, expectedStarts: null, minimumSatisfied: true, risk: false });
-    expect(result.projectedValue).toBe(1);
+    // No forfeiture: the matchup stays known and comparable; category mode reports no scalar score (FR9-D2).
+    expect(result.categoryResults.map(row => row.result)).toEqual(["win"]);
+    expect(result.comparisonEligible).toBe(true);
+    expect(result.projectedValue).toBeNull();
     data.forecasts[0].startProbability = 0.4;
     expect(evaluatePlan(data, intent, "agp").goalie).toMatchObject({ credited: 1, projected: 1.4, expectedStarts: 0.4, risk: false });
     data.forecasts[0].startProbability = null;
@@ -1558,7 +1561,7 @@ describe("planning engine", () => {
     expect(unknownLocked.assignments.map(row => row.playerId)).toEqual(["b"]);
     expect(unknownLocked.recommendation?.eligible).toBe(true);
     data.rules.scoring = { mode: "categories", weights: {}, categories: [{ key: "GOALS_AGAINST_GOALIE", direction: "lower" }] };
-    data.opponent = { roster: [], realized: { GOALS_AGAINST_GOALIE: 10 }, remaining: {} };
+    data.opponent = { roster: [], realized: { GOALS_AGAINST_GOALIE: 10 }, remaining: { GOALS_AGAINST_GOALIE: 0 } };
     const category = evaluatePlan(data, cover, "outcome");
     expect(category.assignments.map(row => row.playerId)).toEqual(["a"]);
     expect(category.recommendation?.eligible).toBe(false);

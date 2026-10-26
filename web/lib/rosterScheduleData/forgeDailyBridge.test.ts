@@ -6,8 +6,9 @@ import { currentRsoUsePolicy } from "lib/player-forecasts/rsoUsePolicy";
 import type { PlanningData, PlanningGame, PlanningPlayer, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
 import { runHorizonFilter } from "lib/projections/releasedRunFence";
 import { STARTER_DECISION_SHARE, teamWinProbability } from "lib/projections/goalie/goalieOutcomes";
-import { buildForgeDailyBridgeForecasts, FORGE_DAILY_BRIDGE_SEASON_RATED, FORGE_DAILY_BRIDGE_VERSION, loadForgeDailyBridgeForecasts, opponentTilts, teamStrengthPriors, teamWinProbability as ledgerTeamWin, type ForgeDailyBridgeInputs } from "./forgeDailyBridge";
-import { compactBridgeForecasts, expandBridgeForecasts, fitBridgeWire, jsonUtf8Bytes, packPlanningSnapshots, RESERVE_FORECAST_NOTES, reserveCodeOf, unpackPlanningSnapshots, type BridgeForecastWire } from "./bridgeForecastWire";
+import { buildForgeDailyBridgeForecasts, FORGE_DAILY_BRIDGE_BYTE_BUDGET, FORGE_DAILY_BRIDGE_EXPANDED_BYTE_BUDGET, FORGE_DAILY_BRIDGE_SEASON_RATED, FORGE_DAILY_BRIDGE_VERSION, FORGE_RESERVE_EXPANDED_BYTE_BUDGET, loadForgeDailyBridgeForecasts, opponentTilts, teamStrengthPriors, teamWinProbability as ledgerTeamWin, type ForgeDailyBridgeInputs } from "./forgeDailyBridge";
+import { league, now as weekNow, seasonId as weekSeasonId, type Shape } from "./forgeReservePayload.fixture";
+import { bridgeRunProofs, compactBridgeForecasts, expandBridgeForecasts, fitBridgeWire, jsonUtf8Bytes, packPlanningSnapshots, RESERVE_FORECAST_NOTES, reserveCodeOf, unpackPlanningSnapshots, type BridgeForecastWire } from "./bridgeForecastWire";
 import { preservationJson } from "lib/rosterScheduleOptimizer/workspace";
 import { resolveDailyBoardEvidence, type BoardGoalieEvidence } from "lib/projections/dailyBoardEvidence";
 import { provenSnapshotRow, unprovenSnapshotRow } from "lib/projections/externalInputProof.fixtures";
@@ -155,7 +156,7 @@ describe("FORGE daily bridge", () => {
     it.each([[false], [undefined]])("is schedule-only, saying why, when no run is proven (flag %s)", flag => {
       const data = inputs();
       for (const run of data.runs) (run as Record<string, unknown>).external_input_proven = flag;
-      expect(buildForgeDailyBridgeForecasts(data, players, games, now, 20262027, policy)).toEqual({ forecasts: [], teamWins: [],
+      expect(buildForgeDailyBridgeForecasts(data, players, games, now, 20262027, policy)).toEqual({ forecasts: [], teamWins: [], runProofs: [],
         limitations: ["Interim FORGE projections: no FORGE run in the last week can prove it excluded third-party fantasy projections (2 withheld), so planning is schedule-only."] });
     });
 
@@ -179,6 +180,65 @@ describe("FORGE daily bridge", () => {
       } };
       return { db, runIdReads, proofReads, attributionReads };
     }
+
+    it("reads runs dated through seven days ahead, and lets a later run of a date supersede an earlier one", async () => {
+      // Two proven runs of 10-21 (game 2): the one written later wins for that game.
+      const runRows = [
+        { run_id: "r-new", as_of_date: "2026-10-21", created_at: "2026-10-19T17:00:00Z", git_sha: "abc" },
+        { run_id: "r-old", as_of_date: "2026-10-21", created_at: "2026-10-18T11:00:00Z", git_sha: "abc" },
+      ];
+      const { db, runIdReads } = proofDb(runRows, [provenSnapshotRow("r-new"), provenSnapshotRow("r-old")],
+        [{ ...skater("r-new", "2026-10-21", 2, 101, 10), proj_goals_es: 0.5 }, { ...skater("r-old", "2026-10-21", 2, 101, 10), proj_goals_es: 0.1 }]);
+      const windows: unknown[][] = [];
+      const from = db.from;
+      db.from = (table: string) => {
+        const builder = from(table);
+        if (table !== "forge_runs") return builder;
+        const record: any = new Proxy(builder, { get: (target, property) => property === "gte" || property === "lte"
+          ? (...args: unknown[]) => { windows.push([property, ...args]); return record; }
+          : typeof target[property] === "function" ? (...args: unknown[]) => { const out = target[property](...args); return out === target ? record : out; }
+          : target[property] });
+        return record;
+      };
+      const result = await loadForgeDailyBridgeForecasts(db as never, players, games, now, 20262027, Date.now() + 5000, policy);
+      expect(windows).toEqual(expect.arrayContaining([["gte", "as_of_date", "2026-10-12"], ["lte", "as_of_date", "2026-10-26"]]));
+      expect(runIdReads).toEqual([["r-new"], ["r-new"]]);
+      const s1 = result.forecasts.find(row => row.playerId === "s1" && row.gameId === "2");
+      expect(s1).toMatchObject({ revisionId: `${FORGE_DAILY_BRIDGE_VERSION}:r-new`, stats: expect.objectContaining({ GOALS: 0.6 }) });
+    });
+
+    it("withholds an unproven future run: an older proven run of that date stands, and with none the date has no line", async () => {
+      const runRows = [
+        { run_id: "future-legacy", as_of_date: "2026-10-21", created_at: "2026-10-19T17:00:00Z", git_sha: "abc" },
+        { run_id: "future-clean", as_of_date: "2026-10-21", created_at: "2026-10-18T11:00:00Z", git_sha: "abc" },
+      ];
+      const rows = [{ ...skater("future-legacy", "2026-10-21", 2, 101, 10), proj_goals_es: 0.9 }, skater("future-clean", "2026-10-21", 2, 101, 10)];
+      const withProof = proofDb(runRows, [unprovenSnapshotRow("future-legacy"), provenSnapshotRow("future-clean")], rows);
+      const served = await loadForgeDailyBridgeForecasts(withProof.db as never, players, games, now, 20262027, Date.now() + 5000, policy);
+      expect(withProof.runIdReads).toEqual([["future-clean"], ["future-clean"]]);
+      expect(new Set(served.forecasts.map(row => row.revisionId))).toEqual(new Set([`${FORGE_DAILY_BRIDGE_VERSION}:future-clean`]));
+      const none = proofDb(runRows, [unprovenSnapshotRow("future-legacy"), unprovenSnapshotRow("future-clean")], rows);
+      const empty = await loadForgeDailyBridgeForecasts(none.db as never, players, games, now, 20262027, Date.now() + 5000, policy);
+      expect(empty.forecasts).toEqual([]);
+      expect(empty.limitations[0]).toContain("no FORGE run in the last week can prove it excluded third-party fantasy projections (2 withheld)");
+    });
+
+    it("lets the day-of run supersede one written days ahead, before its lineups existed: the early lines never win", async () => {
+      // Written on 10-16 for 10-21 (s2 then expected to dress); the day-of run of 10-21 has s1 only (s2 scratched).
+      const runRows = [
+        { run_id: "day-of", as_of_date: "2026-10-21", created_at: "2026-10-19T17:30:00Z", git_sha: "abc" },
+        { run_id: "early", as_of_date: "2026-10-21", created_at: "2026-10-16T10:00:00Z", git_sha: "abc" },
+      ];
+      const { db, runIdReads } = proofDb(runRows, [provenSnapshotRow("day-of"), provenSnapshotRow("early")], [
+        { ...skater("day-of", "2026-10-21", 2, 101, 10), proj_goals_es: 0.45 },
+        { ...skater("early", "2026-10-21", 2, 101, 10), proj_goals_es: 0.05 }, skater("early", "2026-10-21", 2, 102, 10)]);
+      const result = await loadForgeDailyBridgeForecasts(db as never, players, games, now, 20262027, Date.now() + 5000, policy);
+      // Only the day-of run is read at all.
+      expect(runIdReads).toEqual([["day-of"], ["day-of"]]);
+      expect(result.forecasts.find(row => row.playerId === "s1" && row.gameId === "2")).toMatchObject({
+        revisionId: `${FORGE_DAILY_BRIDGE_VERSION}:day-of`, stats: expect.objectContaining({ GOALS: 0.55 }) });
+      expect(result.forecasts.some(row => row.playerId === "s2")).toBe(false);
+    });
 
     it("selects, per date, the latest proven run and reads no row of a newer unproven one", async () => {
       const runRows = [
@@ -215,6 +275,8 @@ describe("FORGE daily bridge", () => {
       const proven = proofDb(runRows, [provenSnapshotRow("clean")], [skater("clean", "2026-10-19", 1, 101, 10)]);
       const served = await loadForgeDailyBridgeForecasts(proven.db as never, players, games, now, 20262027, Date.now() + 5000, policy);
       expect(served.forecasts.filter(row => row.playerId === "s1").map(row => row.gameId)).toEqual(["1", "2"]);
+      // The run's proof (as externalInputProof's runProofDiagnostics reports it) travels with the result for the wire.
+      expect(served.runProofs).toEqual([{ runId: "clean", basis: "captured_snapshot", releaseSha: null, closureSha256: null }]);
       const failing = proofDb(runRows, []);
       const from = failing.db.from;
       failing.db.from = (table: string) => table === "player_forecast_source_observations"
@@ -225,7 +287,7 @@ describe("FORGE daily bridge", () => {
 
   it("is empty with a plain reason when no run exists, and trims to the byte budget", () => {
     expect(buildForgeDailyBridgeForecasts({ runs: [], skaters: [], goalies: [], goalieShares: [] }, players, games, now, 20262027, policy))
-      .toEqual({ forecasts: [], teamWins: [], limitations: [expect.stringContaining("no successful FORGE run")] });
+      .toEqual({ forecasts: [], teamWins: [], runProofs: [], limitations: [expect.stringContaining("no successful FORGE run")] });
     // The budget counts compact wire bytes, the size the projections actually travel at.
     const trimmed = buildForgeDailyBridgeForecasts(inputs(), players, games, now, 20262027, policy, 1000);
     expect(trimmed.forecasts.length).toBeGreaterThan(0);
@@ -886,6 +948,49 @@ describe("FORGE daily bridge", () => {
   });
 });
 
+describe("FORGE run proofs on the bridge wire", () => {
+  const proofOf = (runId: string) => ({ runId, basis: "verified_release" as const, releaseSha: "f".repeat(40), closureSha256: null });
+  const withProofs = () => ({ ...inputs(), runs: inputs().runs.map(row => ({ ...row, proof: proofOf(row.run_id) })) });
+
+  it("returns each served run's proof and carries it on the wire only for the runs the wire carries", () => {
+    const result = buildForgeDailyBridgeForecasts(withProofs(), players, games, now, 20262027, policy);
+    const served = new Set(result.forecasts.map(row => row.revisionId.split(":")[1]));
+    expect(result.runProofs.map(proof => proof.runId).sort()).toEqual([...served].sort());
+    const { wire } = compactBridgeForecasts(result.forecasts, { players, games }, 20262027, [...result.runProofs, proofOf("not-served")]);
+    expect(bridgeRunProofs(JSON.parse(JSON.stringify(wire)))).toEqual(result.runProofs);
+    // A malformed or missing list yields none and never touches the forecasts.
+    expect(bridgeRunProofs({ ...wire, proofs: [{ runId: "", basis: "x" }, null, "x"] })).toEqual([]);
+    expect(bridgeRunProofs(null)).toEqual([]);
+    expect(expandBridgeForecasts(wire, { players, games })).toEqual(result.forecasts);
+  });
+
+  it("leaves everything else byte-identical: forecasts, limitations and wire apart from the proofs field", () => {
+    const plain = buildForgeDailyBridgeForecasts(inputs(), players, games, now, 20262027, policy);
+    const proven = buildForgeDailyBridgeForecasts(withProofs(), players, games, now, 20262027, policy);
+    expect(plain.runProofs).toEqual([]);
+    expect(JSON.stringify({ ...proven, runProofs: [] })).toBe(JSON.stringify(plain));
+    const before = compactBridgeForecasts(plain.forecasts, { players, games }, 20262027);
+    const after = compactBridgeForecasts(proven.forecasts, { players, games }, 20262027, proven.runProofs);
+    const { proofs, ...rest } = after.wire!;
+    expect(proofs).toHaveLength(proven.runProofs.length);
+    expect(JSON.stringify(rest)).toBe(JSON.stringify(before.wire));
+  });
+
+  it("never lets a proof enter a workspace save", () => {
+    const result = buildForgeDailyBridgeForecasts(withProofs(), players, games, now, 20262027, policy);
+    const upcoming = games.filter(row => row.date >= "2026-10-19");
+    const { wire } = compactBridgeForecasts(result.forecasts, { players, games: upcoming }, 20262027, result.runProofs);
+    // The client rebuilds from the response wire, then saves its snapshot packed, as the workspace route does.
+    const forecasts = expandBridgeForecasts(JSON.parse(JSON.stringify(wire)), { players, games: upcoming });
+    const snapshot = { id: "snap", context: { seasonId: 20262027 }, players, games: upcoming, forecasts, roster: [], lockedAssignments: [], realized: {} };
+    const saved = JSON.stringify(packPlanningSnapshots({ workspace: { version: 1 }, snapshot }));
+    expect(saved).not.toContain("proofs");
+    expect(saved).not.toContain("verified_release");
+    expect(JSON.stringify(unpackPlanningSnapshots(JSON.parse(saved)))).not.toContain("verified_release");
+    expect(JSON.stringify(forecasts)).not.toContain("verified_release");
+  });
+});
+
 describe("FORGE reserve lines in the bridge", () => {
   const reserveSkater = (run: string, asOf: string, gameId: number, playerId: number, teamId: number, reason = "not_in_lineup") => {
     const { proj_goals_pk, proj_assists_pk, proj_shots_pk, proj_toi_pk_seconds, proj_pim, proj_plus_minus, ...row } = skater(run, asOf, gameId, playerId, teamId);
@@ -946,6 +1051,55 @@ describe("FORGE reserve lines in the bridge", () => {
     expect(reserveCodeOf(forecasts.find(item => item.playerId === "s2" && item.gameId === "1")!)).toBe("skater:disputed");
     const ruledOut = buildForgeDailyBridgeForecasts(reserveInputs({ reserves: [reserveSkater("r2", "2026-10-19", 1, 102, 10, "ruled_out")] }), players, games, now, 20262027, policy);
     expect(reserveCodeOf(ruledOut.forecasts.find(item => item.playerId === "s2")!)).toBe("skater:ruled_out_at_run");
+  });
+
+  it("lets confirmed lineup news outrank an unconfirmed scratch report, in either order; a confirmed out still counts 0 (N2)", () => {
+    const state = (news: ReturnType<typeof lineupNews>[]) => {
+      const { forecasts } = buildForgeDailyBridgeForecasts(reserveInputs({ goalieNews: { assertions: news, conflicts: [] } }), players, games, now, 20262027, policy);
+      const row = forecasts.find(item => item.playerId === "s2" && item.gameId === "1")!;
+      return { code: reserveCodeOf(row), appearance: row.appearanceProbability, points: points(row.stats) };
+    };
+    const confirmedIn = lineupNews(1, 102, "ev", "L4", true), maybeIn = lineupNews(1, 102, "ev", "L4", false);
+    const maybeOut = lineupNews(1, 102, "availability", "out", false), out = lineupNews(1, 102, "availability", "out", true);
+    for (const news of [[maybeOut, confirmedIn], [confirmedIn, maybeOut]])
+      expect(state(news)).toEqual({ code: "skater:confirmed_lineup", appearance: 1, points: 0.47 });
+    for (const news of [[out, confirmedIn], [confirmedIn, out]])
+      expect(state(news)).toEqual({ code: "skater:confirmed_out", appearance: 0, points: 0 });
+    for (const news of [[maybeOut, maybeIn], [maybeIn, maybeOut]]) expect(state(news).code).toBe("skater:projected_scratch");
+    // Of two availability reports, the confirmed one speaks: a confirmed return beside an unconfirmed out.
+    const back = lineupNews(1, 102, "availability", "return", true);
+    for (const news of [[maybeOut, back], [back, maybeOut]]) expect(state(news).code).toBe("skater:return_reported");
+  });
+
+  it("says when a goalie's \"if he starts\" line is his team starter's, never withholding a known start for it (N4)", () => {
+    // g2 (start share 0.3) and g3 (no share) have no line of their own: only g1's starter row exists.
+    const noOwn = reserveInputs({ reserves: [reserveSkater("r2", "2026-10-19", 1, 102, 10)] });
+    const { forecasts } = buildForgeDailyBridgeForecasts(noOwn, [...players, g3], games, now, 20262027, policy);
+    const g2 = forecasts.find(row => row.playerId === "g2" && row.gameId === "1")!, g3Row = forecasts.find(row => row.playerId === "g3" && row.gameId === "1")!;
+    expect(reserveCodeOf(g2)).toBe("goalie:team_line");
+    expect(note(g2)).toMatch(/team starter's/);
+    expect(g2.conditionalStats).toMatchObject({ SAVES_GOALIE: 25 });
+    expect(g2.startProbability).toBeGreaterThan(0);
+    expect(g2.stats.SAVES_GOALIE).toBeCloseTo(25 * g2.startProbability!, 3);
+    expect(reserveCodeOf(g3Row)).toBe("goalie:start_unknown_team_line");
+    expect(note(g3Row)).toMatch(/team starter's/);
+    expect(g3Row).toMatchObject({ startProbability: null, conditionalStats: { SAVES_GOALIE: 25 }, stats: { SAVES_GOALIE: 0 } });
+    // g1's own line carries no label.
+    expect(reserveCodeOf(forecasts.find(row => row.playerId === "g1" && row.gameId === "1")!)).toBeNull();
+    // A label is not a reserve line: a budget that withholds reserves keeps g2's labelled forecast.
+    const expanded = forecasts.reduce((sum, row) => sum + jsonUtf8Bytes(row) + 1, 0);
+    const tight = buildForgeDailyBridgeForecasts(noOwn, [...players, g3], games, now, 20262027, policy, undefined, expanded - 1);
+    expect(tight.forecasts.some(row => row.playerId === "g2" && reserveCodeOf(row) === "goalie:team_line")).toBe(true);
+    expect(tight.forecasts.some(row => row.playerId === "g3" || row.playerId === "s2")).toBe(false);
+    // Round trip keeps the label; the response trim withholds only reserve lines.
+    const { wire } = compactBridgeForecasts(forecasts, { players: [...players, g3], games }, 20262027);
+    expect(expandBridgeForecasts(wire, { players: [...players, g3], games })).toEqual(forecasts);
+    const envelope = (value: BridgeForecastWire | null) => ({ bridgeForecasts: value });
+    const fitted = fitBridgeWire(wire, envelope, JSON.stringify(envelope(wire)).length - 1)!;
+    expect(fitted.bridgeForecasts!.rows.some(row => row[0] === "g2" && row[8] === "goalie:team_line")).toBe(true);
+    // The reserve pass off: no label, as before.
+    const legacy = buildForgeDailyBridgeForecasts({ ...noOwn, reserves: undefined }, [...players, g3], games, now, 20262027, policy);
+    expect(legacy.forecasts.filter(row => row.playerId === "g2").every(row => reserveCodeOf(row) === null)).toBe(true);
   });
 
   it("uses each goalie's own reserve line; an unknown start chance stays unknown and counts 0 starts", () => {
@@ -1044,4 +1198,59 @@ describe("FORGE reserve lines in the bridge", () => {
     expect(tight.forecasts.length).toBe(built.forecasts.filter(row => !reserveCodeOf(row)).length);
     expect(tight.limitations.some(text => /^FORGE reserve lines for \d+ player-games were withheld/.test(text))).toBe(true);
   });
+
+  describe("a week of runs, one per date (FORGE_PROJECTION_DAYS_AHEAD = 6)", () => {
+    // The production-shaped league fixture, but with one FORGE run per game day projecting that day's games: every
+    // forecast is an exact line from its own date's run instead of a re-aimed one.
+    function weekOfRuns(days: number, shape: Shape, withReserves: boolean) {
+      const { players: weekPlayers, games: weekGames, inputs } = league(days, shape);
+      const runOf = (date: string) => ({ run_id: `run-${date}`, as_of_date: date, created_at: "2026-10-26T10:00:00Z", git_sha: "a".repeat(40),
+        external_input_proven: true });
+      const dates = [...new Set(weekGames.map(game => game.date))].sort();
+      const teamGames = new Map<number, PlanningGame[]>();
+      for (const game of weekGames) {
+        const team = weekPlayers.find(player => player.teamAbbreviation === game.teamAbbreviation)?.nhlTeamId;
+        if (team) teamGames.set(team, [...(teamGames.get(team) ?? []), game]);
+      }
+      const perGame = (rows: Record<string, any>[], idKey: "player_id" | "goalie_id" | "game_id" = "player_id") => rows.flatMap(row =>
+        (teamGames.get(row.team_id) ?? []).map(game => ({ ...row, run_id: `run-${game.date}`, as_of_date: game.date, game_id: Number(game.id),
+          ...(idKey === "game_id" ? { game_date: game.date } : {}) })));
+      const week: ForgeDailyBridgeInputs = { ...inputs, runs: dates.map(runOf), skaters: perGame(inputs.skaters), goalies: perGame(inputs.goalies),
+        goalieShares: perGame(inputs.goalieShares, "game_id"), reserves: withReserves ? perGame(inputs.reserves ?? []) : undefined };
+      const result = buildForgeDailyBridgeForecasts(week, weekPlayers, weekGames, weekNow, weekSeasonId, forecastCalendarPolicy(days + 1));
+      const opportunities = (withReserves ? weekPlayers.filter(player => player.teamAbbreviation)
+        : weekPlayers.filter(player => player.teamAbbreviation && week.skaters.concat(week.goalies, week.goalieShares)
+          .some(row => (row.player_id ?? row.goalie_id) === player.nhlId)))
+        .reduce((sum, player) => sum + weekGames.filter(game => game.teamAbbreviation === player.teamAbbreviation).length, 0);
+      return { result, dates, opportunities, weekPlayers, weekGames,
+        bytes: { wire: jsonUtf8Bytes(compactBridgeForecasts(result.forecasts, { players: weekPlayers, games: weekGames }, weekSeasonId).wire),
+          expanded: result.forecasts.reduce((sum, row) => sum + jsonUtf8Bytes(row) + 1, 0) } };
+    }
+
+    it.each([["typical", false], ["typical", true], ["maximal", false], ["maximal", true]] as const)(
+      "fits a %s week (reserve pass %s) inside the existing budgets with every game's exact line, no lineup line trimmed", (shape, withReserves) => {
+        const week = weekOfRuns(7, shape, withReserves);
+        expect(week.dates).toHaveLength(7);
+        // Lineup skaters and each game's projected starter get the exact line from their own date's run. Reserve lines
+        // (team's latest run) and goalies without a starter row of their own for the game (their latest line, else the
+        // team's) follow the bridge's existing rules: always the newest run, never an older one.
+        const lineup = week.result.forecasts.filter(row => !reserveCodeOf(row) && (week.weekPlayers.find(player => player.id === row.playerId)?.playerClass === "skater"
+          || row.issuedContext!.nhlPlayerId % 100 === 30));
+        expect(lineup.length).toBeGreaterThan(0);
+        for (const row of lineup) expect(row.revisionId).toBe(`${FORGE_DAILY_BRIDGE_VERSION}:run-${row.issuedContext!.scheduledAt.slice(0, 10)}`);
+        for (const row of week.result.forecasts) expect(row.revisionId >= `${FORGE_DAILY_BRIDGE_VERSION}:run-${row.issuedContext!.scheduledAt.slice(0, 10)}`).toBe(true);
+        // No lineup line is ever trimmed. Reserve lines are all or nothing (the existing rule): a maximal week with the
+        // pass on withholds all of them together, never the late games only.
+        expect(week.result.limitations.some(text => /trimmed/.test(text))).toBe(false);
+        const reservesWithheld = week.result.limitations.some(text => /^FORGE reserve lines for \d+ player-games were withheld/.test(text));
+        expect(reservesWithheld).toBe(withReserves && shape === "maximal");
+        if (reservesWithheld) expect(week.result.forecasts.some(row => reserveCodeOf(row))).toBe(false);
+        const byDate = new Map<string, number>();
+        for (const row of week.result.forecasts) byDate.set(row.issuedContext!.scheduledAt.slice(0, 10), (byDate.get(row.issuedContext!.scheduledAt.slice(0, 10)) ?? 0) + 1);
+        expect([...byDate.keys()].sort()).toEqual(week.dates);
+        expect(week.bytes.wire).toBeLessThanOrEqual(FORGE_DAILY_BRIDGE_BYTE_BUDGET);
+        expect(week.bytes.expanded).toBeLessThanOrEqual(withReserves ? FORGE_RESERVE_EXPANDED_BYTE_BUDGET : FORGE_DAILY_BRIDGE_EXPANDED_BYTE_BUDGET);
+      });
+  });
 });
+
