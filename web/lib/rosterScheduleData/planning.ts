@@ -43,6 +43,18 @@ const ownershipPct = (value: unknown) => {
   const parsed = typeof value === "string" && /^\d+(\.\d+)?$/.test(value) ? Number(value) : numberOrNull(value);
   return parsed !== null && parsed >= 0 && parsed <= 100 ? parsed : null;
 };
+/** A revision's declared FORGE model identity (TJ D3; written by `forgeModelIdentity` in run-forge-projections), taken whole or
+ * not at all: an older revision without one, or an artifact hash that does not bind its own code version, stays unknown. */
+function revisionModelIdentity(payload: ForgeGameRevision["payload"] | undefined): { configurationHash: string | null; artifactHash: string | null } {
+  const identity = (payload?.inputProvenance as { modelIdentity?: Record<string, unknown> } | undefined)?.modelIdentity;
+  const hex = (value: unknown): value is string => typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
+  if (!identity || identity.version !== "forge-model-identity-v1" || identity.artifact !== "no_fitted_artifact"
+    || !hex(identity.configurationHash) || !hex(identity.artifactHash) || typeof payload?.codeVersion !== "string"
+    || identity.artifactHash !== playerForecastSourcePayloadHash({ codeVersion: payload.codeVersion, configurationHash: identity.configurationHash })) {
+    return { configurationHash: null, artifactHash: null };
+  }
+  return { configurationHash: identity.configurationHash, artifactHash: identity.artifactHash };
+}
 function evidence(source: string, asOf: string | null, seasonId: number | null, limitations: string[] = []): SourceEvidence {
   return { source, asOf, seasonId, completeness: limitations.length ? "partial" : "complete", limitations };
 }
@@ -208,9 +220,9 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
       const rsoTargetBindings = Object.fromEntries(Object.keys(forecast.stats).map(targetKey => [targetKey, {
         component: `forge-detailed-${admitted?.source.kind ?? "unknown"}`,
         modelMode: admitted?.revision.payload.modelMode ?? "unknown", codeVersion: forecast.modelVersion ?? "unknown",
-        // Issuance/captured-read hashes do not establish reviewed configuration
-        // or model artifact identity. Missing producer evidence stays unknown.
-        configurationHash: null, artifactHash: null, targetKey, horizonGames: 1,
+        // Only the revision's own declared model identity binds configuration and
+        // artifact; issuance or captured-read hashes never stand in for it.
+        ...revisionModelIdentity(admitted?.revision.payload), targetKey, horizonGames: 1,
         conditioning: admitted?.source.kind === "goalie" ? "start_only_zero_relief" : "conditional_playing",
         participationLineage: `${forecast.revisionId}:participation`, cutoffAt: forecast.cutoffAt ?? "",
       }]));

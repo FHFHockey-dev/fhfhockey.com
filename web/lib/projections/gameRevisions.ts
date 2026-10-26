@@ -92,7 +92,9 @@ export type ForgeInputSnapshot = {
   modelEnvironment?: Record<string, string | null>;
   seasonBootstrapApplied?: boolean;
   inputProvenance?: { rolling_player_history_contract: string; external_fantasy_input_contract?: string; issuedContexts?: ForgeIssuedContextV1[];
-    capturedReads?: ForgeCapturedReadReceipt; issuedTargets?: ForgeIssuedTargetManifest };
+    capturedReads?: ForgeCapturedReadReceipt; issuedTargets?: ForgeIssuedTargetManifest;
+    /** FORGE D3 model identity (`forgeModelIdentity` in run-forge-projections); absent on earlier revisions. */
+    modelIdentity?: { version: string; artifact: string; configurationHash: string; artifactHash: string } };
   deterministicSeed?: number;
   dailyBoardEvidence?: import("./dailyBoardEvidence").DailyBoardEvidence;
   horizonGames: number;

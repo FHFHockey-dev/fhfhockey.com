@@ -353,6 +353,9 @@ describe("Yahoo snapshot evidence", () => {
     expect(result.snapshot.baselineSources).toEqual([{ sourceId: "shared-rate" }]);
     expect(result.snapshot.forecastManifest).toEqual({ id: "shared-manifest" });
     expect(result.snapshot.rules.acquisitionTiming).toBe("unknown");
+    // Rules are never reported complete; the unverified facts are named (no verified weekly counter, no goalie minimum read).
+    expect(result.capabilities.rules).toBe(false);
+    expect(result.capabilities.limitations).toContain("Yahoo does not report these league rules; confirm them in League rules: when an add takes effect (same-day or next-day); waiver mode and FAAB budget; whether the league has a goalie minimum.");
     expect(result.snapshot.lockedAssignments).toEqual([{ date: "2026-10-01", playerId: "canonical", slotId: "C#1" }]);
     expect(result.capabilities.availability).toBe(true);
     expect(result.snapshot.pastLineups).toEqual([]);

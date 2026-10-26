@@ -16,7 +16,7 @@ import { acquisitionEffectiveAt } from "lib/rosterScheduleOptimizer/planningTime
 import { reconcileIntent } from "lib/rosterScheduleOptimizer/reconciliation";
 import { supplementProviderRules } from "lib/rosterScheduleOptimizer/providerRules";
 import type { LeagueRules, LockedAssignment, ManagerRuleOverrides, PlanEvaluation, PlanIntent, PlanStep, PlanningAssignment, PlanningData, PlanningGame, PlanningPlayer, PlanningSnapshot, PlanningWorkspace, ProviderCapabilities, RevisionProposal } from "lib/rosterScheduleOptimizer/planningTypes";
-import { acquirePreservationWriter, assertPreservedKeys, capturePreservation, preservationChecksum, preservationJson, preservationKeys, readPreservedKeys, restorePreservedKeys, validatePreservation, withWorkspaceWriter, WORKSPACE_PRESERVATION_JOURNAL, type PreservedKey, type PreservationProvider, type WorkspacePreservation, currentPlanningRange, currentProviderPeriod, defaultWorkspace, readWorkspace, readWorkspaceHistory, resolveImportedNames, retainedScheduleSnapshot, retainProviderInputs, workspaceContextKey, writeWorkspace, WORKSPACE_HISTORY_LIMIT } from "lib/rosterScheduleOptimizer/workspace";
+import { acquirePreservationWriter, assertPreservedKeys, capturePreservation, preservationChecksum, preservationJson, preservationKeys, readPreservedKeys, restorePreservedKeys, validatePreservation, withWorkspaceWriter, WORKSPACE_PRESERVATION_JOURNAL, type PreservedKey, type PreservationProvider, type WorkspacePreservation, currentPlanningRange, currentProviderPeriod, anonymousWorkspace, defaultWorkspace, migrateLegacyWorkspace, readWorkspace, readWorkspaceHistory, resolveImportedNames, retainedScheduleSnapshot, retainProviderInputs, workspaceContextKey, writeWorkspace, WORKSPACE_HISTORY_LIMIT } from "lib/rosterScheduleOptimizer/workspace";
 import supabase from "lib/supabase/client";
 import styles from "./RosterScheduleOptimizer.module.scss";
 import ForecastEvidence, { forecastSummary } from "./ForecastEvidence";
@@ -116,10 +116,14 @@ function datesBetween(start: string, end: string) {
 }
 
 export default function RosterScheduleOptimizer() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [workspace, setWorkspace] = useState<PlanningWorkspace>(() => defaultWorkspace());
   const dateRangeOrigin = useRef<"default" | "restored" | "custom" | "current">("default");
   const [hydrated, setHydrated] = useState(false);
+  // The principal whose local slot holds `workspace` (null: the anonymous manual slot); set with it.
+  const [loadedScope, setLoadedScope] = useState<string | null | undefined>(undefined);
+  const loadedScopeRef = useRef(loadedScope);
+  loadedScopeRef.current = loadedScope;
   const [loadedData, setLoadedData] = useState<{ contextKey: string; data: PlanningData } | null>(null);
   const [access, setAccess] = useState<Access | null>(null);
   const [accessError, setAccessError] = useState<string | null>(null);
@@ -227,11 +231,23 @@ export default function RosterScheduleOptimizer() {
   const readOnlyInert = readOnlySaved ? { inert: "true" as unknown as boolean } : {};
 
   useEffect(() => {
-    if (savedJournal.raw !== null) return;
-    const saved = readWorkspace(window.localStorage);
-    if (saved) { dateRangeOrigin.current = "restored"; history.current = readWorkspaceHistory(window.localStorage, saved); setWorkspace(saved); }
+    if (savedJournal.raw !== null || authLoading) return;
+    const scope = user?.id ?? null;
+    if (loadedScopeRef.current === scope) return;
+    // Show only this principal's own workspace (or an empty one), never another principal's.
+    migrateLegacyWorkspace(window.localStorage);
+    const stored = readWorkspace(window.localStorage, undefined, scope);
+    // Signed out, only the manual slot exists: provider data never reaches an anonymous visitor.
+    const saved = stored && !scope ? anonymousWorkspace(stored) : stored;
+    const switched = loadedScopeRef.current !== undefined;
+    history.current = saved ? saved === stored ? readWorkspaceHistory(window.localStorage, saved, scope) : [] : switched ? [] : history.current;
+    if (saved) { dateRangeOrigin.current = "restored"; setWorkspace(saved); }
+    // Edits made while auth was resolving belong to this visitor; only an account change starts empty.
+    else if (switched) { dateRangeOrigin.current = "default"; setWorkspace(defaultWorkspace()); }
+    if (switched) setViewingSaved(false);
+    setLoadedScope(scope);
     setHydrated(true);
-  }, [savedJournal]);
+  }, [savedJournal, user?.id, authLoading]);
   useEffect(() => {
     if (savedJournal.raw === null || !user?.id) return;
     let cancelled = false;
@@ -247,7 +263,7 @@ export default function RosterScheduleOptimizer() {
       // Show the validated original backup while recovery is held; never adopt fresh storage as this writer's state.
       history.current = journal.backup.history;
       dateRangeOrigin.current = "restored";
-      setWorkspace(journal.backup.workspace);
+      setWorkspace(journal.backup.workspace); setLoadedScope(user.id);
       setSelectedDate(journal.backup.view.selectedDate); setSelectedPlayer(journal.backup.view.selectedPlayer); setTab(journal.backup.view.tab as Tab);
       setHydrated(true);
       setPreservation({ phase: "invalid", text: "Saved preservation session found. Original backup shown; normal writers are paused. Restore with the original account and context." });
@@ -297,8 +313,8 @@ export default function RosterScheduleOptimizer() {
   }, []);
   useEffect(() => {
     if (workspace === skipRestoredPersist.current) { skipRestoredPersist.current = null; return; }
-    if (hydrated) void persistLocal(() => workspaceRef.current === workspace ? writeWorkspace(window.localStorage, workspace, history.current) : null);
-  }, [hydrated, workspace, persistLocal]);
+    if (hydrated && loadedScope !== undefined) void persistLocal(() => workspaceRef.current === workspace ? writeWorkspace(window.localStorage, workspace, history.current, loadedScope) : null);
+  }, [hydrated, workspace, loadedScope, persistLocal]);
   useEffect(() => {
     const held = preservationRef.current;
     // Development effect replay retires this same ref before setting it up again.
@@ -330,17 +346,20 @@ export default function RosterScheduleOptimizer() {
     }
     const changedContext = workspaceContextKey(next.context) !== workspaceContextKey(current.context);
     let restoredContext = false;
+    const scope = loadedScopeRef.current ?? null;
     if (changedContext) {
-      const saved = readWorkspace(window.localStorage, next.context);
+      const stored = readWorkspace(window.localStorage, next.context, scope);
+      const saved = stored && !scope && stored.context.provider !== "manual" ? null : stored;
       if (saved) { next = saved; restoredContext = true; dateRangeOrigin.current = "restored"; }
-      else if (next.context.provider !== current.context.provider || next.context.leagueId !== current.context.leagueId || next.context.teamId !== current.context.teamId || next.context.seasonId !== current.context.seasonId) next = { ...next, managerRuleOverrides: {}, ...(next.context.provider !== "manual" ? { roster: [], manualPlayers: [], lockedAssignments: [] } : {}) };
+      // Selected moves and protections belong to their league context, like its roster and locks.
+      else if (next.context.provider !== current.context.provider || next.context.leagueId !== current.context.leagueId || next.context.teamId !== current.context.teamId || next.context.seasonId !== current.context.seasonId) next = { ...next, managerRuleOverrides: {}, intent: { ...next.intent, steps: [], protectedPlayerIds: [], excludedPlayerIds: [] }, ...(next.context.provider !== "manual" ? { roster: [], manualPlayers: [], lockedAssignments: [] } : {}) };
     }
     if (next !== current) {
       if (!restoredContext) {
         if (next.context.startDate !== current.context.startDate || next.context.endDate !== current.context.endDate || next.context.timeZone !== current.context.timeZone)
           dateRangeOrigin.current = rangeOrigin;
       }
-      history.current = changedContext ? readWorkspaceHistory(window.localStorage, next) : [...history.current.slice(-(WORKSPACE_HISTORY_LIMIT - 1)), current];
+      history.current = changedContext ? readWorkspaceHistory(window.localStorage, next, scope) : [...history.current.slice(-(WORKSPACE_HISTORY_LIMIT - 1)), current];
       if (next.context.provider === "manual") next = { ...next, context: { ...next.context, asOf: new Date().toISOString() } };
     }
     return next;

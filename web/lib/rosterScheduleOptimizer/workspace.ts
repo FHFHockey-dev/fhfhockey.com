@@ -9,8 +9,16 @@ export function workspaceContextKey(context: PlanningContext): string {
   return JSON.stringify([context.provider, context.seasonId, context.leagueId, context.teamId, context.startDate, context.endDate, context.timeZone]);
 }
 
-function contextStorageKey(context: PlanningContext): string {
-  return `${WORKSPACE_KEY}:context:${encodeURIComponent(workspaceContextKey(context))}`;
+/** The signed-out slot. The bare WORKSPACE_KEY layout predates per-account scoping and is only migrated. */
+export const ANONYMOUS_WORKSPACE_KEY = `${WORKSPACE_KEY}:anonymous`;
+
+/** Each signed-in principal has its own namespace; signed-out visitors share the one anonymous manual slot. */
+export function workspaceStorageKey(principalId: string | null = null): string {
+  return principalId ? `${WORKSPACE_KEY}:principal:${encodeURIComponent(principalId)}` : ANONYMOUS_WORKSPACE_KEY;
+}
+
+function contextStorageKey(context: PlanningContext, principalId: string | null = null): string {
+  return `${workspaceStorageKey(principalId)}:context:${encodeURIComponent(workspaceContextKey(context))}`;
 }
 
 export const WORKSPACE_WRITER_LOCK = `${WORKSPACE_KEY}:writer`;
@@ -31,9 +39,9 @@ export type WorkspacePreservation = {
 };
 
 export function preservationKeys(principalId: string, context: PlanningContext): string[] {
-  const key = contextStorageKey(context);
+  const key = contextStorageKey(context, principalId);
   const view = JSON.stringify([principalId, workspaceContextKey(context)]);
-  return [WORKSPACE_KEY, key, `${key}:undo`, `fhfh:rso:view-date:v1:${encodeURIComponent(view)}`];
+  return [workspaceStorageKey(principalId), key, `${key}:undo`, `fhfh:rso:view-date:v1:${encodeURIComponent(view)}`];
 }
 
 export function readPreservedKeys(storage: Pick<Storage, "getItem">, keys: readonly string[]): PreservedKey[] {
@@ -189,9 +197,34 @@ export function defaultWorkspace(now = new Date()): PlanningWorkspace {
   return { version: 1, context: defaultContext(now), rules: defaultRules(), managerRuleOverrides: {}, roster: [], lockedAssignments: [], intent: defaultIntent(), manualPlayers: [], unresolvedNames: [], realized: {}, opponent: null };
 }
 
-export function readWorkspace(storage: Pick<Storage, "getItem">, context?: PlanningContext): PlanningWorkspace | null {
+/** Keep only the season, dates and time zone; nothing that could belong to an account. */
+function ownerlessWorkspace(workspace: PlanningWorkspace): PlanningWorkspace {
+  const { seasonId, startDate, endDate, timeZone, asOf } = workspace.context;
+  return { ...defaultWorkspace(), context: { provider: "manual", seasonId, leagueId: "manual", teamId: "manual", startDate, endDate, timeZone, asOf } };
+}
+
+/** The anonymous slot never shows provider data. */
+export function anonymousWorkspace(workspace: PlanningWorkspace): PlanningWorkspace {
+  return workspace.context.provider === "manual" ? workspace : ownerlessWorkspace(workspace);
+}
+
+/** One-time move off the device-global layout. Its entries have no known owner (a manual one may hold a
+ * "Continue manually" copy of an account's Yahoo roster and plan), so only the dates carry over. */
+export function migrateLegacyWorkspace(storage: Pick<Storage, "getItem" | "setItem" | "removeItem" | "key" | "length">): void {
+  const legacyKeys = Array.from({ length: storage.length }, (_, index) => storage.key(index))
+    .filter((key): key is string => key === WORKSPACE_KEY || key?.startsWith(`${WORKSPACE_KEY}:context:`) === true);
   try {
-    const raw = (context ? storage.getItem(contextStorageKey(context)) : null) ?? storage.getItem(WORKSPACE_KEY);
+    const raw = storage.getItem(WORKSPACE_KEY);
+    const legacy = raw ? workspaceSchema.safeParse(JSON.parse(raw)) : null;
+    if (legacy?.success && storage.getItem(ANONYMOUS_WORKSPACE_KEY) === null) storage.setItem(ANONYMOUS_WORKSPACE_KEY, JSON.stringify(ownerlessWorkspace(legacy.data)));
+  } catch { /* An unreadable legacy pointer carries nothing over. */ }
+  // Each key on its own, so one failure cannot leave later legacy entries behind.
+  for (const key of legacyKeys) try { storage.removeItem(key); } catch { /* Retried on the next load. */ }
+}
+
+export function readWorkspace(storage: Pick<Storage, "getItem">, context?: PlanningContext, principalId: string | null = null): PlanningWorkspace | null {
+  try {
+    const raw = (context ? storage.getItem(contextStorageKey(context, principalId)) : null) ?? storage.getItem(workspaceStorageKey(principalId));
     if (!raw) return null;
     const value: unknown = JSON.parse(raw);
     const parsed = workspaceSchema.safeParse(value);
@@ -199,9 +232,9 @@ export function readWorkspace(storage: Pick<Storage, "getItem">, context?: Plann
   } catch { return null; }
 }
 
-export function readWorkspaceHistory(storage: Pick<Storage, "getItem">, workspace: PlanningWorkspace): PlanningWorkspace[] {
+export function readWorkspaceHistory(storage: Pick<Storage, "getItem">, workspace: PlanningWorkspace, principalId: string | null = null): PlanningWorkspace[] {
   try {
-    const raw = storage.getItem(`${contextStorageKey(workspace.context)}:undo`);
+    const raw = storage.getItem(`${contextStorageKey(workspace.context, principalId)}:undo`);
     if (!raw) return [];
     const saved = JSON.parse(raw);
     if (saved.version !== 1 || !Array.isArray(saved.entries) || saved.entries.length > WORKSPACE_HISTORY_LIMIT) return [];
@@ -218,12 +251,12 @@ export function readWorkspaceHistory(storage: Pick<Storage, "getItem">, workspac
   } catch { return []; }
 }
 
-export function writeWorkspace(storage: Pick<Storage, "setItem">, workspace: PlanningWorkspace, history: readonly PlanningWorkspace[] = []): string | null {
+export function writeWorkspace(storage: Pick<Storage, "setItem">, workspace: PlanningWorkspace, history: readonly PlanningWorkspace[] = [], principalId: string | null = null): string | null {
   try {
     const value = JSON.stringify(workspace);
-    storage.setItem(contextStorageKey(workspace.context), value);
-    storage.setItem(WORKSPACE_KEY, value);
-    storage.setItem(`${contextStorageKey(workspace.context)}:undo`, JSON.stringify({ version: 1, current: workspace,
+    storage.setItem(contextStorageKey(workspace.context, principalId), value);
+    storage.setItem(workspaceStorageKey(principalId), value);
+    storage.setItem(`${contextStorageKey(workspace.context, principalId)}:undo`, JSON.stringify({ version: 1, current: workspace,
       entries: history.filter(entry => workspaceContextKey(entry.context) === workspaceContextKey(workspace.context)).slice(-WORKSPACE_HISTORY_LIMIT) }));
     return null;
   }

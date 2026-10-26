@@ -876,6 +876,7 @@ describe("P07 detailed target permissions through retained resolution", () => {
         reviewedAt: "2026-09-27T00:00:00Z", expiresAt: "2026-09-30T00:00:00Z",
         inputCutoffFrom: "2026-09-27T00:00:00Z", inputCutoffUntil: "2026-09-30T00:00:00Z",
         allowedUses: { ...deniedRsoUses(), [binding.targetKey === "GOALS" ? "assignment" : "totals"]: true },
+        prospectiveEvidenceRef: "fictional-evidence", ownerApprovalRef: "fictional-approval",
       })) };
     const data = fixture([{ ...rate, mean: 2 }, { ...rate, targetKey: "ASSISTS", mean: 0 }], [detailed({
       stats: { GOALS: 1, ASSISTS: 0 }, conditionalStats: { GOALS: 2, ASSISTS: 0 }, rsoTargetBindings: bindings,

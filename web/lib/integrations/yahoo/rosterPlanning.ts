@@ -468,6 +468,12 @@ export async function loadYahooPlanningSnapshot(args: {
   const unverifiedRules = [...(periods.length ? [] : ["remaining acquisitions, reset periods and counting rules"]),
     ...(rules.goalieMinimum.required === 0 || rules.goalieMinimum.credited !== null ? [] : ["goalie minimum progress"])];
   if (unverifiedRules.length) limitations.push(`Verify ${unverifiedRules.join(" and ")}; these are not inferred from season transaction totals.`);
+  // capabilities.rules stays false: name every rule fact the planner still treats as unknown.
+  const unreportedRules = ["when an add takes effect (same-day or next-day)", "waiver mode and FAAB budget",
+    ...(periods.length ? ["the exact weekly add reset time (league-local midnight is assumed)"] : []),
+    ...(rules.goalieMinimum.required === null ? ["whether the league has a goalie minimum"]
+      : rules.goalieMinimum.required > 0 ? ["how the goalie minimum counts (starts or appearances) and its penalty"] : [])];
+  limitations.push(`Yahoo does not report these league rules; confirm them in League rules: ${unreportedRules.join("; ")}.`);
   let pagesChecked = 0, availabilityComplete = false;
   let pagesAttempted = 0, pagesAccepted = 0, rowsAccepted = 0, repeatedRows = 0;
   let availabilityStop = "page limit";

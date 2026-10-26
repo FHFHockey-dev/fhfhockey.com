@@ -23,6 +23,10 @@ export type RsoTargetUseReview = {
   inputCutoffUntil: string;
   expiresAt: string;
   allowedUses: ContributionAllowedUses;
+  /** The prospective evidence a review rests on (the predeclared scope hash and its final checker report), and the
+   * owner's approval, as the native contribution store requires (TJ D5). A review missing either is not a review. */
+  prospectiveEvidenceRef: string;
+  ownerApprovalRef: string;
 };
 export type RsoUsePolicy = {
   version: typeof RSO_USE_POLICY_VERSION;
@@ -64,7 +68,9 @@ export function resolveRsoTargetUse(binding: RsoTargetUseBinding | undefined, no
     || !/^[a-f0-9]{64}$/.test(binding.artifactHash ?? "")
     || !Number.isSafeInteger(binding.horizonGames) || binding.horizonGames < 1) return denied;
   const { cutoffAt: _, ...scope } = binding;
+  const nonempty = (value: unknown) => typeof value === "string" && value.trim().length > 0;
   const candidates = policy.reviews.filter(review => review.id && !policy.revokedReviewIds.includes(review.id)
+    && nonempty(review.prospectiveEvidenceRef) && nonempty(review.ownerApprovalRef)
     && Object.keys(scope).every(key => scope[key as keyof typeof scope] === review.binding[key as keyof typeof scope])
     && Number.isFinite(Date.parse(review.reviewedAt)) && Date.parse(review.reviewedAt) <= clock
     && Number.isFinite(Date.parse(review.expiresAt)) && Date.parse(review.expiresAt) > clock
