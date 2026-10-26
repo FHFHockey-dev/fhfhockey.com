@@ -3,14 +3,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { useAuth } from "contexts/AuthProviderContext";
-import { SCHEDULE_FORMATS, type SharePlayerLayer, type SharePlayerRecent, type SocialShareFormat, type SocialShareSnapshot, type ShareTeam, type ShareTeamRow } from "lib/socialShare/types";
+import { SCHEDULE_FORMATS, type ShareDeploymentRow, type SharePlayerLayer, type SharePlayerRecent, type SharePpState, type ShareTrendKind, type ShareTrendWho, type SocialShareFormat, type SocialShareSnapshot, type ShareTeam, type ShareTeamRow } from "lib/socialShare/types";
 import { calendarWeekStart, selectScheduleDates, weekDates } from "lib/socialShare/schedule";
 import { bounded, downloadSharePng, readyShareFonts, SHARE_SIZE, teamLogoDataUrl } from "lib/socialShare/export";
 import { editionCountTiers, mondayGridRows, type CountTier } from "lib/socialShare/mondayGrid";
 import { fetchEdition } from "lib/socialShare/editionFetch";
 import { editionLabel } from "lib/socialShare/edition";
 import { easiestSchedules, opponentsReady, SOFT_DEFENSE_MAX, STREAM_TEAM_RANK_MAX, streamingNights, type MatchupGame, type RankedRate, type StreamNight } from "lib/socialShare/matchups";
-import { deploymentChanges, hotCold, MIN_RATE_TOI_SECONDS_LAST5, MIN_TREND_SEASON_GAMES, moversReady, ownershipMovers, rateStandouts, TREND_WINDOW_GAMES, trendsReady, type RateMetric, type TrendPick } from "lib/socialShare/trends";
+import { deploymentChanges, hotCold, ownershipMovers, RATE_DIGITS, RATE_METRICS, rateStandouts, TREND_WINDOW_GAMES, trendDefinitions, trendExportToken, trendSectionReady, type RateMetric } from "lib/socialShare/trends";
 import { MIN_GOALIE_STARTS, MIN_SKATER_GAMES, PICKUP_BANDS, PLAYER_TEAM_RANK_MAX, pickupTiers, playersMatchSelection, playersReady, specialists, type RankedPlayer, type SpecialistCategory } from "lib/socialShare/players";
 import styles from "./SocialShare.module.scss";
 import { TeamBanner, teamBannerStyle } from "./TeamBanner";
@@ -374,82 +374,89 @@ function PlayerCard({ card, snapshot, trusted, logos, brandLogo }: { card: Playe
   </>;
 }
 
-type TrendKind = "hot" | "deployment" | "rates" | "movers";
+type TrendKind = ShareTrendKind;
 const TREND_KINDS: readonly TrendKind[] = ["hot", "deployment", "rates", "movers"];
 const trendTitles: Record<TrendKind, string> = { hot: "HOT & COLD", deployment: "DEPLOYMENT CHANGES", rates: "RATE STANDOUTS", movers: "OWNERSHIP MOVERS" };
 const rateTitles: Record<RateMetric, string> = { sogPer60: "SOG/60", icfPer60: "iCF/60", ixgPer60: "ixG/60" };
 const signed = (value: number, digits: number) => `${value > 0 ? "+" : value < 0 ? "−" : ""}${Math.abs(value).toFixed(digits)}`;
 const clock = (seconds: number) => `${Math.floor(Math.abs(seconds) / 60)}:${String(Math.round(Math.abs(seconds) % 60)).padStart(2, "0")}`;
-const signedClock = (seconds: number) => `${seconds > 0 ? "+" : seconds < 0 ? "−" : ""}${clock(seconds)}`;
-const lineName = (slot: number | null, group: string | null) => slot === null ? null : `${group === "defense" ? "D" : "L"}${slot}`;
-const unitName = (unit: number | null) => unit === null ? "no PP" : `PP${unit}`;
+const signedClock = (seconds: number) => `${seconds > 0 ? "+" : seconds < 0 ? "−" : "±"}${clock(seconds)}`;
+const clockOrDash = (seconds: number | null) => seconds === null ? "—" : clock(seconds);
+/** PP chip text: a unit, "off PP" only when the game's PP rows prove it, and "PP ?" when unknown (never "no PP"). */
+export const ppChip = (state: SharePpState) => state === null ? "PP ?" : state === "none" ? "off PP" : `PP${state}`;
+/** Deployment badges (lane TT): line/pair and PP changes from contiguous games; unknown stays unknown. */
+export function deploymentBadges(row: ShareDeploymentRow): { text: string; tone: "up" | "down" | "flat" }[] {
+  const badges: { text: string; tone: "up" | "down" | "flat" }[] = [];
+  if (row.teamChange) badges.push({ text: "NEW TEAM", tone: "flat" });
+  if (row.lineChange) badges.push({ text: `${row.lineChange > 0 ? "▲" : "▼"} ${row.line.before} → ${row.line.now}`, tone: row.lineChange > 0 ? "up" : "down" });
+  else if (row.line.now) badges.push({ text: row.line.now, tone: "flat" });
+  if (row.ppChange) badges.push({ text: `${row.ppChange > 0 ? "▲" : "▼"} ${ppChip(row.ppUnit.before)} → ${ppChip(row.ppUnit.now)}`, tone: row.ppChange > 0 ? "up" : "down" });
+  else badges.push({ text: ppChip(row.ppUnit.now), tone: "flat" });
+  return badges;
+}
+const moverPct = (value: number) => `${value.toFixed(1)}%`;
 
-type TrendRowData = { key: string; team: string | null; name: string; meta: string; weekGames?: number | null; detail: string; value: string; label: string; tone: "up" | "down"; badges: string[] };
+type TrendRowData = { key: string; team: string | null; name: string; meta: string; weekGames?: number | null; detail: string | string[]; value: string; label: string; second?: { value: string; label: string }; tone: "up" | "down"; badges: { text: string; tone: "up" | "down" | "flat" }[] };
 type TrendColumn = { key: string; title: string; rows: TrendRowData[] };
 
 function trendUnreadyReason(kind: TrendKind, snapshot: SocialShareSnapshot, trusted: boolean) {
-  // An edition without a trend layer is "not connected" (the live API makes no read), never a schedule fault.
+  // An edition without a trend layer is "not connected", never a schedule fault.
   const trends = snapshot.trends;
-  if (!trends) return "rolling game metrics and ownership are not connected";
+  if (trends?.version !== 2) return "rolling game metrics and ownership are not connected";
   if (!trusted) return scheduleReason(snapshot);
-  const [state, reasons] = kind === "movers" ? [trends.moversState, trends.moversReasons] : [trends.state, trends.reasons];
-  return `${kind === "movers" ? "ownership" : "rolling metrics"} are ${state}${reasons.length ? ` (${reasons[0].replace(/\.$/, "")})` : ""}`;
+  const section = trends.sections[kind];
+  return `${kind === "movers" ? "ownership" : "rolling metrics"} are ${section.state}${section.reasons.length ? ` (${section.reasons[0].replace(/\.$/, "")})` : ""}`;
 }
-const trendReady = (kind: TrendKind, snapshot: SocialShareSnapshot, trusted: boolean) => trusted && (kind === "movers" ? moversReady(snapshot) : trendsReady(snapshot));
+const trendReady = (kind: TrendKind, snapshot: SocialShareSnapshot, trusted: boolean) => trusted && trendSectionReady(snapshot, kind);
 
 function trendColumns(kind: TrendKind, snapshot: SocialShareSnapshot): TrendColumn[] {
-  const meta = (pick: TrendPick) => `${pick.team} · ${pick.position}`;
+  const meta = (row: ShareTrendWho) => `${row.team} · ${row.position}`;
   if (kind === "hot") {
     const { hot, cold } = hotCold(snapshot, true);
-    const row = (pick: TrendPick): TrendRowData => ({ key: String(pick.nhlId), team: pick.team, name: pick.name, meta: meta(pick), weekGames: pick.weekGames, detail: `L${TREND_WINDOW_GAMES} ${pick.last5.toFixed(2)} · season ${pick.season.toFixed(2)} P/GP`, value: signed(pick.delta, 2), label: "P/GP", tone: pick.delta > 0 ? "up" : "down", badges: [] });
+    const row = (pick: (typeof hot)[number]): TrendRowData => ({ key: String(pick.nhlId), team: pick.team, name: pick.name, meta: meta(pick), weekGames: pick.weekGames,
+      detail: `Prior ${pick.prior.toFixed(2)} P/GP over ${pick.priorGames} GP`, value: pick.l5.toFixed(2), label: `P/GP L${TREND_WINDOW_GAMES}`, second: { value: signed(pick.delta, 2), label: "VS PRIOR" }, tone: pick.delta > 0 ? "up" : "down", badges: [] });
     return [{ key: "hot", title: "HOT", rows: hot.map(row) }, { key: "cold", title: "COLD", rows: cold.map(row) }];
   }
   if (kind === "deployment") {
     const { up, down } = deploymentChanges(snapshot, true);
-    const row = (pick: TrendPick): TrendRowData => {
-      const lineNow = lineName(pick.line.now, pick.line.group), lineBefore = lineName(pick.line.before, pick.line.group);
-      const badges = [
-        ...(lineNow && lineBefore && lineNow !== lineBefore ? [`${pick.line.now! < pick.line.before! ? "▲" : "▼"} ${lineBefore} → ${lineNow}`] : lineNow ? [lineNow] : []),
-        ...(pick.ppUnit.now !== pick.ppUnit.before && pick.ppUnit.before !== undefined ? [`${unitName(pick.ppUnit.before)} → ${unitName(pick.ppUnit.now)}`] : [unitName(pick.ppUnit.now)]),
-        ...(pick.ppSharePct.last5 !== null && pick.ppSharePct.season !== null ? [`PP share ${Math.round(pick.ppSharePct.season)}% → ${Math.round(pick.ppSharePct.last5)}%`] : []),
-      ];
-      return { key: String(pick.nhlId), team: pick.team, name: pick.name, meta: meta(pick), weekGames: pick.weekGames, detail: `L${TREND_WINDOW_GAMES} ${clock(pick.last5)} · season ${clock(pick.season)} TOI/GP`, value: signedClock(pick.delta), label: "TOI/GP", tone: pick.delta > 0 ? "up" : "down", badges };
-    };
-    return [{ key: "up", title: "ICE TIME UP", rows: up.map(row) }, { key: "down", title: "ICE TIME DOWN", rows: down.map(row) }];
+    const row = (pick: (typeof up)[number]): TrendRowData => ({ key: String(pick.nhlId), team: pick.team, name: pick.name, meta: meta(pick), weekGames: pick.weekGames,
+      // L5 / season per game; the column follows the role change, the value's colour its own TOI sign.
+      detail: [`TOI ${clock(pick.toi.l5)} / ${clock(pick.toi.season)} · EV ${clockOrDash(pick.ev.l5)} / ${clockOrDash(pick.ev.season)}`, `PP ${clockOrDash(pick.pp.l5)} / ${clockOrDash(pick.pp.season)} · L5 / season`],
+      value: signedClock(pick.delta), label: "TOI/GP VS SEASON", tone: pick.delta >= 0 ? "up" : "down", badges: deploymentBadges(pick) });
+    return [{ key: "up", title: "USAGE UP", rows: up.map(row) }, { key: "down", title: "USAGE DOWN", rows: down.map(row) }];
   }
   if (kind === "rates") {
     const board = rateStandouts(snapshot, true);
-    return (Object.keys(rateTitles) as RateMetric[]).map(metric => ({ key: metric, title: rateTitles[metric], rows: board[metric].map(pick => ({
+    return RATE_METRICS.map(metric => ({ key: metric, title: rateTitles[metric], rows: board[metric].map(pick => ({
       key: String(pick.nhlId), team: pick.team, name: pick.name, meta: meta(pick), weekGames: pick.weekGames,
-      detail: `L${TREND_WINDOW_GAMES} ${pick.last5.toFixed(metric === "ixgPer60" ? 2 : 1)} · season ${pick.season.toFixed(metric === "ixgPer60" ? 2 : 1)} · ${Math.round((pick.toiSecondsLast5 ?? 0) / 60)} L${TREND_WINDOW_GAMES} min`,
-      value: signed(pick.delta, metric === "ixgPer60" ? 2 : 1), label: rateTitles[metric], tone: "up" as const, badges: [] })) }));
+      detail: `Season ${pick.season.toFixed(RATE_DIGITS[metric])} · ${pick.l5Minutes} L${TREND_WINDOW_GAMES} min`,
+      value: pick.l5.toFixed(RATE_DIGITS[metric]), label: `L${TREND_WINDOW_GAMES}`, second: { value: signed(pick.delta, RATE_DIGITS[metric]), label: "Δ/60" }, tone: "up" as const, badges: [] })) }));
   }
-  const { risers, fallers } = ownershipMovers(snapshot, true);
-  const row = (mover: (typeof risers)[number]): TrendRowData => ({ key: mover.key, team: mover.team, name: mover.name, meta: `${mover.team ?? "—"} · ${mover.positions}`,
-    detail: `${Math.floor(mover.previous)}% → ${Math.floor(mover.latest)}% since ${dateLabel(mover.previousDate)}`, value: signed(mover.delta, 0), label: "ROSTERED %", tone: mover.delta > 0 ? "up" : "down", badges: [] });
+  const { risers, fallers } = ownershipMovers(snapshot, true), trends = snapshot.trends!;
+  const row = (mover: (typeof risers)[number]): TrendRowData => ({ key: String(mover.nhlId), team: mover.team, name: mover.name, meta: meta(mover), weekGames: mover.weekGames,
+    detail: `${moverPct(mover.previous)} ${dateLabel(trends.ownershipPreviousDate!)} → ${moverPct(mover.latest)} ${dateLabel(trends.ownershipLatestDate!)}`, value: `${signed(mover.delta, 1)}`, label: "PTS ROSTERED %", tone: mover.delta > 0 ? "up" : "down", badges: [] });
   return [{ key: "risers", title: "RISING", rows: risers.map(row) }, { key: "fallers", title: "FALLING", rows: fallers.map(row) }];
 }
 
-function trendAltText(kind: TrendKind, snapshot: SocialShareSnapshot, trusted: boolean) {
-  const trends = snapshot.trends;
-  const head = `FHFH Tuesday trends, ${trendTitles[kind].toLowerCase()}, week of ${yearDateLabel(snapshot.weekStart)}.`;
-  const tail = kind === "movers" ? `Yahoo ownership as of ${dayDate(trends?.ownershipAsOf ?? null)}; add and drop counts are not in FHFH's sources.` : `FHFH rolling game metrics, all situations, through ${dayDate(trends?.metricsThrough ?? null)}, updated ${timeLabel(trends?.metricsUpdatedAt ?? null)}. Observed rates, not projections.`;
-  if (!trendReady(kind, snapshot, trusted)) return `${head} Unranked preview; ranking unavailable because ${trendUnreadyReason(kind, snapshot, trusted)}. ${tail}`;
-  return `${head} ${trendColumns(kind, snapshot).map(column => `${column.title}: ${column.rows.map(row => `${row.name} (${row.meta}${row.weekGames != null ? ` · ${row.weekGames} GP this week` : ""}), ${row.value} ${row.label}, ${row.detail}${row.badges.length ? `, ${row.badges.join(", ")}` : ""}`).join("; ") || "none"}`).join(". ")}. ${tail}`;
+/** The compact source and freshness line shared by the card footer and the alt text. */
+export function trendSourceLine(kind: TrendKind, snapshot: SocialShareSnapshot) {
+  const trends = snapshot.trends?.version === 2 ? snapshot.trends : null;
+  if (kind === "movers") return `Yahoo rostered % · ${trends?.ownershipPreviousDate ? dateLabel(trends.ownershipPreviousDate) : "—"} → ${trends?.ownershipLatestDate ? dateLabel(trends.ownershipLatestDate) : "—"} · not adds/drops`;
+  return `FHFH rolling metrics · games thru ${dayDate(trends?.metricsThrough ?? null)} · updated ${timeLabel(trends?.metricsUpdatedAt ?? null)} · not projections`;
 }
 
-const trendLegends: Record<TrendKind, string[]> = {
-  hot: [`Window: last ${TREND_WINDOW_GAMES} games played vs season to date`, "Points per game", `Skaters with ${MIN_TREND_SEASON_GAMES}+ season games`],
-  deployment: [`TOI/GP: last ${TREND_WINDOW_GAMES} vs season`, `Line and PP unit: latest game vs ${TREND_WINDOW_GAMES} games earlier`, "PP share: season → last 5"],
-  rates: [`Per-60 rates: last ${TREND_WINDOW_GAMES} vs season`, `Min ${MIN_RATE_TOI_SECONDS_LAST5 / 60} last-${TREND_WINDOW_GAMES} minutes`, "iCF = all individual shot attempts"],
-  movers: ["Yahoo rostered %: latest vs on or before 5 days earlier", "Add/drop counts are not in FHFH's sources"],
-};
+function trendAltText(kind: TrendKind, snapshot: SocialShareSnapshot, trusted: boolean) {
+  const head = `FHFH Tuesday trends, ${trendTitles[kind].toLowerCase()}, week of ${yearDateLabel(snapshot.weekStart)}.`;
+  const tail = `${trendDefinitions[kind].join(". ")}. Source: ${trendSourceLine(kind, snapshot)}.`;
+  if (!trendReady(kind, snapshot, trusted)) return `${head} Unranked preview; ranking unavailable because ${trendUnreadyReason(kind, snapshot, trusted)}. ${tail}`;
+  return `${head} ${trendColumns(kind, snapshot).map(column => `${column.title}: ${column.rows.map(row => `${row.name} (${row.meta}${row.weekGames != null ? ` · ${row.weekGames} GP this week` : ""}), ${row.value} ${row.label}${row.second ? `, ${row.second.value} ${row.second.label}` : ""}, ${[row.detail].flat().join(", ")}${row.badges.length ? `, ${row.badges.map(badge => badge.text).join(", ")}` : ""}`).join("; ") || "none"}`).join(". ")}. ${tail}`;
+}
 
 function TrendCard({ kind, snapshot, trusted, logos, brandLogo }: { kind: TrendKind; snapshot: SocialShareSnapshot; trusted: boolean; logos: Record<string, string | null>; brandLogo: string | null }) {
-  const ready = trendReady(kind, snapshot, trusted), trends = snapshot.trends;
+  const ready = trendReady(kind, snapshot, trusted);
   const columns = ready ? trendColumns(kind, snapshot) : [];
   return <>
-    <CardHeader snapshot={snapshot} brandLogo={brandLogo} eyebrow={ready ? `${editionDay(snapshot)} · ${kind === "movers" ? "Rostered % movers" : "Last 5 games vs season"}` : "Unranked preview"} title={trendTitles[kind]} compact />
+    <CardHeader snapshot={snapshot} brandLogo={brandLogo} eyebrow={ready ? `${editionDay(snapshot)} · ${kind === "movers" ? "Rostered % movers" : kind === "hot" ? "Tuesday form" : `Last ${TREND_WINDOW_GAMES} games vs season`}` : "Unranked preview"} title={trendTitles[kind]} compact />
     {!ready ? <div className={styles.matchupEmpty}><strong>Ranking unavailable</strong><p>Trend cards need a ready schedule and current {kind === "movers" ? "Yahoo ownership" : "rolling game metrics"}; {trendUnreadyReason(kind, snapshot, trusted)}.</p></div>
       : <div className={styles.trendColumns} style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(0, 1fr))` }}>{columns.map(column => <div key={column.key} className={styles.trendColumn}>
         <h3>{column.title}</h3>
@@ -457,15 +464,15 @@ function TrendCard({ kind, snapshot, trusted, logos, brandLogo }: { kind: TrendK
           const team = snapshot.teams.find(item => item.abbreviation === row.team) ?? { id: 0, abbreviation: row.team ?? "—", name: row.team ?? "Unknown team" };
           return <div key={row.key} data-player={row.key} data-team={row.team ?? ""} className={cx(styles.trendRow, columns.length > 2 && styles.trendRowStacked)}>
             <TeamMark team={team} logo={row.team ? logos[row.team] : null} size={44} />
-            <span className={styles.trendWho}><strong>{row.name}</strong><small>{row.meta}{row.weekGames != null && <> · <Count value={row.weekGames} tier={countsFor(snapshot, true).gp(row.weekGames)} /> GP this week</>}</small><small>{row.detail}</small>{row.badges.length > 0 && <span className={styles.trendBadges}>{row.badges.map(badge => <i key={badge}>{badge}</i>)}</span>}</span>
-            <span className={cx(styles.trendValue, row.tone === "down" && styles.trendDown)}><strong>{row.value}</strong><small>{row.label}</small></span>
+            <span className={styles.trendWho}><strong>{row.name}</strong><small>{row.meta}{row.weekGames != null && <> · <Count value={row.weekGames} tier={countsFor(snapshot, true).gp(row.weekGames)} /> GP this week</>}</small>{[row.detail].flat().map(line => <small key={line}>{line}</small>)}{row.badges.length > 0 && <span className={styles.trendBadges}>{row.badges.map(badge => <i key={badge.text} data-badge={badge.text} data-tone={badge.tone}>{badge.text}</i>)}</span>}</span>
+            <span className={cx(styles.trendValue, row.tone === "down" && styles.trendDown)}><strong>{row.value}</strong><small>{row.label}</small>{row.second && <em data-second={row.second.label}>{row.second.value} <small>{row.second.label}</small></em>}</span>
           </div>;
         })}
         {!column.rows.length && <p className={styles.playerShort}>None qualify</p>}
       </div>)}</div>}
     <footer className={styles.gridFooter}>
-      <div className={styles.legend}>{trendLegends[kind].map(item => <span key={item}>{item}</span>)}</div>
-      <p><span>{kind === "movers" ? `Source: Yahoo ownership timelines · as of ${dayDate(trends?.ownershipAsOf ?? null)} · this card shows rostered-% movers, not adds or drops` : `Source: FHFH rolling game metrics (all situations) through ${dayDate(trends?.metricsThrough ?? null)} · updated ${timeLabel(trends?.metricsUpdatedAt ?? null)} · Observed rates, not projections`}</span><strong className={styles.gridWatermark}>{ready ? (kind === "movers" ? "YAHOO OWNERSHIP" : "LAST 5 VS SEASON") : "PREVIEW ONLY · REFRESH / CHECK SOURCE"}</strong></p>
+      <div className={styles.legend}>{trendDefinitions[kind].map(item => <span key={item}>{item}</span>)}</div>
+      <p><span className={styles.trendSource} data-trend-source>{trendSourceLine(kind, snapshot)}</span><strong className={styles.gridWatermark}>{ready ? (kind === "movers" ? "YAHOO ROSTERED %" : "OBSERVED · NOT PROJECTIONS") : "PREVIEW ONLY · REFRESH / CHECK SOURCE"}</strong></p>
     </footer>
   </>;
 }
@@ -689,7 +696,7 @@ export default function SocialShare({ format, asOf }: { format: SocialShareForma
         <section className={styles.panel} aria-label="Graphic preview">
           <div className={styles.panelHeader}><h2>1080 × 1080 preview</h2><span>{!trusted ? "Unranked context" : gridCard ? "Best schedules grid" : matchupKind === "easiest" ? "Easiest schedules" : matchupKind === "stream" ? "Streaming matchups" : playerCard ? (playerCard.kind === "pickups" ? `Pickups ${bandLabel(playerCard.max).toLowerCase()}` : "Category specialists") : trendKind ? trendTitles[trendKind].toLowerCase() : tierMode ? `Streaming options (${tierMode})` : focusTeam ? "Team focus" : "Schedule leaders"}</span></div>
           <div className={styles.previewFrame} ref={frame} style={{ height: scale * SHARE_SIZE }}>
-            {snapshot && squareReady && <div ref={preview} className={cx(styles.square, styles.gridSquare)} style={{ transform: `scale(${scale})` }} data-testid="share-square" role="img" aria-label={squareAlt(snapshot)}>
+            {snapshot && squareReady && <div ref={preview} className={cx(styles.square, styles.gridSquare)} style={{ transform: `scale(${scale})` }} data-testid="share-square" role="img" aria-label={squareAlt(snapshot)} {...(trendKind ? { "data-export-token": trendExportToken(snapshot, graphic) } : {})}>
               {gridCard ? <MondayGrid snapshot={snapshot} trusted={trusted} logos={teamLogos} brandLogo={logo} /> : matchupKind ? <MatchupCard kind={matchupKind} snapshot={snapshot} trusted={trusted} logos={teamLogos} brandLogo={logo} /> : playerCard ? <PlayerCard card={playerCard} snapshot={snapshot} trusted={trusted} logos={teamLogos} brandLogo={logo} /> : trendKind ? <TrendCard kind={trendKind} snapshot={snapshot} trusted={trusted} logos={teamLogos} brandLogo={logo} /> : tierMode ? <TierListCard mode={tierMode} snapshot={snapshot} trusted={trusted} logos={teamLogos} brandLogo={logo} /> : <>
               <CardHeader snapshot={snapshot} brandLogo={logo} compact eyebrow={trusted ? `${editionDay(snapshot)} · ${focusTeam ? "Team schedule" : "Schedule leaders"}` : "Unranked preview · Ranking unavailable"} title={!trusted ? "KNOWN SCHEDULES" : focusTeam ? "YOUR TEAM’S WEEK" : "TOP 3 SCHEDULES"} />
               <div className={styles.leaders}>{rows.length ? rows.map(row => {
@@ -723,7 +730,7 @@ export default function SocialShare({ format, asOf }: { format: SocialShareForma
           </div>
           <div className={styles.actions}><button type="button" disabled={!canExport || exporting} onClick={async () => {
             if (!preview.current || !snapshot) return; setExporting(true); setFeedback("");
-            try { await downloadSharePng(preview.current, snapshot, matchupKind ? { opponents: true, card: matchupKind } : playerCard || tierMode ? { players: true, card: graphic } : trendKind ? { [trendKind === "movers" ? "movers" : "trends"]: true, card: trendKind } : {}); setFeedback("PNG downloaded: 1080 × 1080."); }
+            try { await downloadSharePng(preview.current, snapshot, matchupKind ? { opponents: true, card: matchupKind } : playerCard || tierMode ? { players: true, card: graphic } : trendKind ? { trend: trendKind, card: trendKind, token: trendExportToken(snapshot, graphic) } : {}); setFeedback("PNG downloaded: 1080 × 1080."); }
             catch (cause) { setFeedback(cause instanceof Error ? cause.message : "Download failed. Retry the same edition."); }
             finally { setExporting(false); }
           }}>{exporting ? "Creating PNG…" : "Download PNG"}</button>

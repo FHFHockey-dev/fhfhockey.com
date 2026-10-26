@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
-import { TUESDAY_NOT_CONNECTED, buildBlockedSnapshot, buildScheduleSnapshot, calendarWeekStart, selectScheduleDates, weekDates } from "../lib/socialShare/schedule";
+import { buildScheduleSnapshot, calendarWeekStart, selectScheduleDates, weekDates } from "../lib/socialShare/schedule";
 import type { SocialScheduleGame as GameData } from "../lib/socialShare/types";
 import type { SocialShareFormat, SocialShareSnapshot } from "../lib/socialShare/types";
 import { fictionalLeagueWeek, fictionalTeamStats } from "../lib/socialShare/fixtures";
@@ -9,7 +9,7 @@ import { buildOpponentLayer, easiestSchedules, streamingNights } from "../lib/so
 import { attachRecent, buildPlayerLayer, pickupTiers, specialists, type ShareGoalieGameRow, type ShareRecentRollingRow } from "../lib/socialShare/players";
 import { fictionalPlayerRecent, fictionalPlayerSources } from "../lib/socialShare/pickupsFixture";
 import { localDate } from "../lib/rosterScheduleOptimizer/planningDates";
-import { buildTrendLayer, deploymentChanges, hotCold, ownershipMovers, rateStandouts } from "../lib/socialShare/trends";
+import { buildTrendLayer, deploymentChanges, hotCold, ownershipMovers, rateStandouts, trendDefinitions } from "../lib/socialShare/trends";
 import { fictionalTrendSources } from "../lib/socialShare/trendsFixture";
 import { editionLabel } from "../lib/socialShare/edition";
 import { countTiers } from "../lib/socialShare/mondayGrid";
@@ -28,7 +28,7 @@ type Rates = "ready" | "stale" | "missing";
 type PlayerMode = Rates | "thin";
 /** Last-five-games read outcome: rows, an answered-but-empty read, or a failed read. */
 type RecentRead = "ready" | "empty" | "failed" | "goalies-failed" | "chunk-failed";
-function fixture(format: SocialShareFormat, weekStart: string, mode: Mode, pinnedAt?: string, rates: Rates = "ready", players: PlayerMode = "ready", trends: Rates = "ready", recentRead: RecentRead = "ready"): SocialShareSnapshot {
+function fixture(format: SocialShareFormat, weekStart: string, mode: Mode, pinnedAt?: string, rates: Rates = "ready", players: PlayerMode = "ready", trends: Rates = "ready", recentRead: RecentRead = "ready", ownershipStale = false): SocialShareSnapshot {
   const dates = weekDates(weekStart), generatedAt = pinnedAt ?? new Date().toISOString();
   const year = Number(weekStart.slice(0, 4)) - (Number(weekStart.slice(5, 7)) < 8 ? 1 : 0);
   const pairs = [[0, 1, 2], [0, 10, 8], [1, 3, 1], [2, 2, 4], [3, 1, 2], [4, 1, 3], [6, 2, 3]];
@@ -47,9 +47,11 @@ function fixture(format: SocialShareFormat, weekStart: string, mode: Mode, pinne
     snapshot.players = attachRecent(snapshot.players, recentRead === "failed" ? null : recentRead === "empty" ? { rolling: [], goalieGames: [] } : { rolling: recent.rolling as ShareRecentRollingRow[], goalieGames: recentRead === "goalies-failed" ? null : recent.goalieGames as ShareGoalieGameRow[],
       // chunk-failed (SS1-24): every other skater's id chunk timed out; only those players lose recent form.
       ...(recentRead === "chunk-failed" ? { failedIds: snapshot.players.players.filter((player, index) => player.group !== "G" && index % 2 === 0).map(player => player.nhlId) } : {}) }, generatedAt);
-    // Fictional rolling metrics (4 h old, or 80 h when stale) and seven-day ownership timelines.
-    const trendSources = trends === "missing" ? null : fictionalTrendSources(season, localDate(generatedAt, "America/New_York"), new Date(Date.parse(generatedAt) - (trends === "stale" ? 80 : 4) * 3600000).toISOString());
-    snapshot.trends = buildTrendLayer(trendSources, { season, teams: snapshot.teams, fetchedAt: generatedAt, generatedAt });
+    // Fictional Tuesday source rows (lane TT): rolling rows 4 h old (80 h when stale), PP rows, Yahoo ownership history
+    // (through today, or three days old when ownership is stale). "missing" replays the live server's loader failure.
+    const trendContext = { season, fetchedAt: generatedAt, generatedAt }, today = localDate(generatedAt, "America/New_York");
+    snapshot.trends = trends === "missing" ? buildTrendLayer(null, trendContext, "Trend sources could not be read.")
+      : buildTrendLayer(fictionalTrendSources(season, today, new Date(Date.parse(generatedAt) - (trends === "stale" ? 80 : 4) * 3600000).toISOString(), { ownershipThrough: ownershipStale ? new Date(Date.parse(`${today}T12:00:00Z`) - 3 * 86400000).toISOString().slice(0, 10) : today }), trendContext);
     // "thin": one goalie under 20% rostered on a top-10 team, so the column renders "Only 1 qualifies".
     if (players === "thin") {
       const top = new Set(snapshot.rows.filter(row => row.rank <= 10).map(row => row.team.abbreviation));
@@ -103,21 +105,22 @@ async function signIn(page: Page, access: Access) {
 
 async function install(page: Page, access: Access = { role: "social_editor", signedIn: true, roleReads: 0, writes: [] }) {
   await signIn(page, access);
-  const controller = { requests: 0, fail: false, mode: "ready" as Mode, longName: false, pinnedAt: undefined as string | undefined, rates: "ready" as Rates, players: "ready" as PlayerMode, trends: "ready" as Rates, recentRead: "ready" as RecentRead, liveTrim: false, longPlayer: false, widestLegend: false, liveTuesday: false, latest: null as SocialShareSnapshot | null };
+  const controller = { requests: 0, fail: false, mode: "ready" as Mode, longName: false, pinnedAt: undefined as string | undefined, rates: "ready" as Rates, players: "ready" as PlayerMode, trends: "ready" as Rates, recentRead: "ready" as RecentRead, liveTrim: false, longPlayer: false, widestLegend: false, ownershipStale: false, latest: null as SocialShareSnapshot | null };
   await page.context().route("**/*", route => ["127.0.0.1", "localhost"].includes(new URL(route.request().url()).hostname) ? route.continue() : route.abort());
+  // Evidence harness only (lane TT): serve committed logo bytes from a folder, so PNG pins can be checked while a
+  // working-tree logo is modified by someone else. Unset in normal runs.
+  const logoOverride = process.env.SOCIAL_SHARE_LOGO_OVERRIDE_DIR;
+  if (logoOverride) await page.route("**/teamLogos/*.png", async route => {
+    const file = `${logoOverride}/${new URL(route.request().url()).pathname.split("/").pop()}`;
+    try { return route.fulfill({ body: await readFile(file), contentType: "image/png" }); } catch { return route.continue(); }
+  });
   await page.route("**/api/v1/social-share/**", async route => {
     controller.requests++;
     // The edition API needs the fictional editor's bearer, as the real handler needs a session.
     if (route.request().headers().authorization !== `Bearer ${editorToken}`) return route.fulfill({ status: 401, json: { error: "Sign in to use the share studio." } });
     if (controller.fail) return route.fulfill({ status: 503, json: { error: "NHL schedule is unavailable. Refresh to retry." } });
     const url = new URL(route.request().url());
-    // liveTuesday replays exactly what the real API returns for Tuesday today: blocked, no read.
-    if (controller.liveTuesday && url.pathname.endsWith("/tuesday-trends")) {
-      const selected = url.searchParams.get("selectedDates");
-      controller.latest = buildBlockedSnapshot({ format: "tuesday-trends", weekStart: url.searchParams.get("weekStart")!, generatedAt: new Date().toISOString(), selectedDates: selected === null ? undefined : selected.split(",").filter(Boolean), ...TUESDAY_NOT_CONNECTED });
-      return route.fulfill({ json: controller.latest, headers: { "Cache-Control": "no-store" } });
-    }
-    let next = fixture(url.pathname.split("/").pop() as SocialShareFormat, url.searchParams.get("weekStart")!, controller.mode, controller.pinnedAt, controller.rates, controller.players, controller.trends, controller.recentRead);
+    let next = fixture(url.pathname.split("/").pop() as SocialShareFormat, url.searchParams.get("weekStart")!, controller.mode, controller.pinnedAt, controller.rates, controller.players, controller.trends, controller.recentRead, controller.ownershipStale);
     if (url.searchParams.has("selectedDates")) next = selectScheduleDates(next, url.searchParams.get("selectedDates")?.split(",").filter(Boolean) || []);
     if (controller.longName) {
       for (const row of next.rows) if (row.team.id === 1) row.team.name = "New Jersey Extremely Long Fantasy Hockey Team Name";
@@ -736,7 +739,18 @@ test("Wednesday edition recomputes every card for Thursday to Sunday and names t
   expect(errors).toEqual([]);
 });
 
-test("Tuesday trend cards rank real rolling windows and ownership movers and export", async ({ page }) => {
+/** Tuesday card evidence (lane TT): listed player ids per card, from the edition the page received. */
+function tuesdayCards(edition: SocialShareSnapshot): [string, string, string[]][] {
+  const ids = (list: { nhlId: number }[]) => list.map(item => String(item.nhlId));
+  return [
+    ["hot", "HOT & COLD", [...ids(hotCold(edition, true).hot), ...ids(hotCold(edition, true).cold)]],
+    ["deployment", "DEPLOYMENT CHANGES", [...ids(deploymentChanges(edition, true).up), ...ids(deploymentChanges(edition, true).down)]],
+    ["rates", "RATE STANDOUTS", Object.values(rateStandouts(edition, true)).flatMap(ids)],
+    ["movers", "OWNERSHIP MOVERS", [...ids(ownershipMovers(edition, true).risers), ...ids(ownershipMovers(edition, true).fallers)]],
+  ];
+}
+
+test("Tuesday trend cards list the server's sections with definitions and a source line, and export", async ({ page }) => {
   const source = await install(page), errors: string[] = [];
   source.mode = "league";
   page.on("pageerror", error => errors.push(error.message));
@@ -744,65 +758,110 @@ test("Tuesday trend cards rank real rolling windows and ownership movers and exp
   const graphic = page.getByRole("combobox", { name: /^Graphic/ }), square = page.getByTestId("share-square"), download = page.getByRole("button", { name: "Download PNG", exact: true });
   await expect(graphic).toHaveValue("hot");
   await expect(download).toBeEnabled();
-  const edition = source.latest!, keys = (list: { nhlId: number }[]) => list.map(item => String(item.nhlId));
-  const cards: [string, string, string[], string][] = [
-    ["hot", "HOT & COLD", [...keys(hotCold(edition, true).hot), ...keys(hotCold(edition, true).cold)], "Window: last 5 games played vs season to date"],
-    ["deployment", "DEPLOYMENT CHANGES", [...keys(deploymentChanges(edition, true).up), ...keys(deploymentChanges(edition, true).down)], "Line and PP unit: latest game vs 5 games earlier"],
-    ["rates", "RATE STANDOUTS", Object.values(rateStandouts(edition, true)).flatMap(keys), "Min 50 last-5 minutes"],
-    ["movers", "OWNERSHIP MOVERS", [...ownershipMovers(edition, true).risers, ...ownershipMovers(edition, true).fallers].map(mover => mover.key), "Add/drop counts are not in FHFH's sources"],
-  ];
-  for (const [card, title, expected, legend] of cards) {
+  const edition = source.latest!;
+  for (const [card, title, expected] of tuesdayCards(edition)) {
     await graphic.selectOption(card);
     await expect(square).toContainText(title);
-    await expect(square).toContainText(legend);
-    await expect(square).toContainText(card === "movers" ? "Source: Yahoo ownership timelines" : "Source: FHFH rolling game metrics (all situations) through");
+    for (const definition of trendDefinitions[card as "hot"]) await expect(square).toContainText(definition);
+    // Compact source + freshness line: dates the reader can check on a phone.
+    await expect(square.locator("[data-trend-source]")).toHaveText(card === "movers" ? /^Yahoo rostered % · [A-Z][a-z]{2} \d{1,2} → [A-Z][a-z]{2} \d{1,2} · not adds\/drops$/ : /^FHFH rolling metrics · games thru [A-Z][a-z]{2} \d{1,2} · updated [A-Z][a-z]{2} \d{1,2}, \d{1,2}:\d{2} [AP]M E[DS]T · not projections$/);
+    await expect(square).toHaveAttribute("data-export-token", `${edition.id}|${card}|${edition.selectedDates.join(",")}`);
     expect(expected.length).toBeGreaterThanOrEqual(8);
     expect(await square.locator("[data-player]").evaluateAll(nodes => nodes.map(node => node.getAttribute("data-player")))).toEqual(expected);
     expect(await matchupGeometry(page)).toEqual({ fits: true, rowsInside: true, brokenImages: 0 });
     await expect(download).toBeEnabled();
     await downloadedPng(page, `tuesday-${card}`);
   }
-  await expect(square).toHaveAttribute("aria-label", /^FHFH Tuesday trends, ownership movers.*add and drop counts are not in FHFH's sources\.$/);
+  // Movers are in percentage points of rostered %, never adds or drops.
+  await expect(square).toContainText("PTS ROSTERED %");
+  await expect(square).toHaveAttribute("aria-label", /^FHFH Tuesday trends, ownership movers.*pts = percentage-point change in Yahoo rostered %.*not adds\/drops\.$/);
+  await graphic.selectOption("deployment");
+  // Unknown PP is "PP ?", never "no PP".
+  await expect(square.locator("[data-badge]").filter({ hasText: /no PP/i })).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 
-test("Tuesday cards never rank stale or missing sources, and stale metrics do not block movers", async ({ page }) => {
+test("Tuesday cards never rank stale or failed sources, and say why with the as-of date", async ({ page }) => {
   const source = await install(page);
   source.mode = "league"; source.trends = "stale";
   await open(page, "tuesday-trends");
   const graphic = page.getByRole("combobox", { name: /^Graphic/ }), square = page.getByTestId("share-square"), download = page.getByRole("button", { name: "Download PNG", exact: true });
-  for (const card of ["hot", "deployment", "rates"]) {
-    await graphic.selectOption(card);
-    await expect(square).toContainText("Ranking unavailable");
-    await expect(square).toContainText("Most rolling metric rows are stale");
-    await expect(square.locator("[data-player]")).toHaveCount(0);
-    await expect(download).toBeDisabled();
-  }
-  await graphic.selectOption("movers");
-  await expect(download).toBeEnabled();
-  source.trends = "missing";
-  await page.getByRole("button", { name: "Refresh schedule", exact: true }).click();
-  await expect(square).toContainText("not connected");
-  await expect(download).toBeDisabled();
-  await downloadedPreview(page, "tuesday-movers-unavailable-preview");
-});
-
-test("live Tuesday answer is an honest not-connected edition with Download disabled", async ({ page }) => {
-  const source = await install(page);
-  source.liveTuesday = true;
-  await open(page, "tuesday-trends");
-  const graphic = page.getByRole("combobox", { name: /^Graphic/ }), square = page.getByTestId("share-square"), download = page.getByRole("button", { name: "Download PNG", exact: true });
-  await expect(page.getByText("Schedule blocked: Rolling game metrics and ownership are not connected.")).toBeVisible();
-  expect(source.latest).toMatchObject({ state: "blocked", source: { fetchedAt: null, state: "blocked" } });
   for (const card of ["hot", "deployment", "rates", "movers"]) {
     await graphic.selectOption(card);
     await expect(square).toContainText("Ranking unavailable");
-    await expect(square).toContainText("rolling game metrics and ownership are not connected");
-    await expect(square).not.toContainText("schedule edition is not ready");
+    await expect(square).toContainText(card === "movers" ? "Team identity needs current rolling rows: Rolling metrics are stale: last updated" : "Rolling metrics are stale: last updated");
     await expect(square.locator("[data-player]")).toHaveCount(0);
     await expect(download).toBeDisabled();
   }
-  await downloadedPreview(page, "tuesday-live-not-connected-preview");
+  // Stale ownership blocks only the movers card.
+  source.trends = "ready"; source.ownershipStale = true;
+  await page.getByRole("button", { name: "Refresh schedule", exact: true }).click();
+  await graphic.selectOption("movers");
+  await expect(square).toContainText("Yahoo ownership is stale: last observed");
+  await expect(download).toBeDisabled();
+  await downloadedPreview(page, "tuesday-movers-stale-preview");
+  await graphic.selectOption("rates");
+  await expect(download).toBeEnabled();
+  // A failed live read: every section unavailable with the server's reason, never fixture values.
+  source.ownershipStale = false; source.trends = "missing";
+  await page.getByRole("button", { name: "Refresh schedule", exact: true }).click();
+  for (const card of ["hot", "deployment", "rates", "movers"]) {
+    await graphic.selectOption(card);
+    await expect(square).toContainText("Trend sources could not be read");
+    await expect(square.locator("[data-player]")).toHaveCount(0);
+    await expect(download).toBeDisabled();
+  }
+  await downloadedPreview(page, "tuesday-sources-unavailable-preview");
+});
+
+test("a Tuesday PNG is refused when the preview changes between click and capture", async ({ page }) => {
+  const source = await install(page);
+  source.mode = "league";
+  await open(page, "tuesday-trends");
+  const square = page.getByTestId("share-square"), download = page.getByRole("button", { name: "Download PNG", exact: true });
+  await expect(download).toBeEnabled();
+  // Hold the export's font embedding, swap the preview's token, then let the capture continue.
+  let release!: () => void;
+  const held = new Promise<void>(resolve => { release = resolve; });
+  await page.route("**/fonts/social-share/**", async route => { await held; await route.continue(); });
+  const downloads: string[] = [];
+  page.on("download", item => downloads.push(item.suggestedFilename()));
+  await download.click();
+  await expect(page.getByRole("button", { name: "Creating PNG…", exact: true })).toBeVisible();
+  await square.evaluate(node => node.setAttribute("data-export-token", "another-edition|hot|"));
+  release();
+  await expect(page.getByRole("status")).toHaveText("The preview changed after Download was clicked. Download again.");
+  expect(downloads).toEqual([]);
+});
+
+test("Tuesday OFFLINE FIXTURE evidence: desktop, phone and 1080 PNG per card", async ({ page }) => {
+  const source = await install(page), shots = process.env.TUESDAY_EVIDENCE_DIR || evidence;
+  source.mode = "league";
+  await mkdir(shots, { recursive: true });
+  const label = () => page.evaluate(() => {
+    if (document.querySelector("[data-offline-fixture]")) return;
+    const banner = document.createElement("div");
+    banner.setAttribute("data-offline-fixture", "");
+    banner.textContent = "OFFLINE FIXTURE · fictional rows shaped like the real columns · not production data";
+    Object.assign(banner.style, { position: "fixed", top: "0", left: "0", right: "0", zIndex: "9999", padding: "6px 12px", font: "700 14px sans-serif", background: "#ffcc00", color: "#000", textAlign: "center" });
+    document.body.appendChild(banner);
+  });
+  for (const [viewport, name] of [[{ width: 1440, height: 1100 }, "desktop"], [{ width: 390, height: 844 }, "phone"]] as const) {
+    await page.setViewportSize(viewport);
+    await open(page, "tuesday-trends");
+    for (const card of ["hot", "deployment", "rates", "movers"]) {
+      await page.getByRole("combobox", { name: /^Graphic/ }).selectOption(card);
+      await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeEnabled();
+      await page.getByTestId("share-square").scrollIntoViewIfNeeded();
+      await label();
+      await page.screenshot({ path: `${shots}/OFFLINE-FIXTURE-${name}-${card}.png`, fullPage: name === "phone" ? false : true });
+      if (name === "desktop") {
+        const pending = page.waitForEvent("download");
+        await page.getByRole("button", { name: "Download PNG", exact: true }).click();
+        await (await pending).saveAs(`${shots}/OFFLINE-FIXTURE-png-${card}.png`);
+      }
+    }
+  }
 });
 
 test("a page load makes exactly one edition API call even under the dev strict-mode double mount", async ({ page }) => {

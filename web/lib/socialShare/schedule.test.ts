@@ -20,12 +20,18 @@ const playerSource = vi.hoisted(() => ({
   RECENT_LIMITS: { lookbackDays: 21, skaterRowsPerPlayer: 14, goalieRowsPerPlayer: 14 },
 }));
 vi.mock("lib/socialShare/playerSources", () => playerSource);
+// Tuesday trend sources come only from this mock (lane TT: no Supabase read in unit tests).
+const trendSource = vi.hoisted(() => ({ loadTrendLayer: vi.fn((..._args: unknown[]) => Promise.reject(new Error("offline")) as Promise<unknown>) }));
+vi.mock("lib/socialShare/trendSources", () => trendSource);
 import { fictionalLeagueWeek, fictionalTeamStats } from "./fixtures";
 import { fictionalPlayerSources } from "./pickupsFixture";
 import { buildPlayerLayer, pickupTiers, specialists } from "./players";
 import { RANK_POOL_MAX, streamingTiers, TRIMMED_PLAYERS_MAX } from "./tiers";
 import { streamingNights } from "./matchups";
 import { targetPicks } from "./targets";
+import { buildTrendLayer, type TrendContext } from "./trends";
+import { fictionalTrendSources } from "./trendsFixture";
+import { localDate } from "lib/rosterScheduleOptimizer/planningDates";
 import { shareCacheControl, SHARE_CACHE_EXPIRY_MARGIN_SECONDS } from "./server";
 import handler from "pages/api/v1/social-share/[format]";
 import type { NextApiRequest, NextApiResponse } from "next";
@@ -281,21 +287,38 @@ describe("social editor schedule API", () => {
       expect(JSON.stringify(partial.body.opponents)).not.toContain("private-name");
     } finally { vi.useRealTimers(); }
   });
-  it("keeps Tuesday trends blocked with zero upstream reads until a live trend source is approved", async () => {
-    upstream.getSchedule.mockReset(); opponentSource.loadShareTeamRates.mockClear(); playerSource.loadSharePlayerSources.mockClear();
-    for (const query of [{ format: "tuesday-trends", weekStart }, { format: "tuesday-trends" }, { format: "tuesday-trends", weekStart, selectedDates: dates.slice(1).join(",") }]) {
-      const result = await request(query);
-      expect(result.code).toBe(200);
-      expect(result.body).toMatchObject({ format: "tuesday-trends", state: "blocked", expiresAt: null, reasons: ["Rolling game metrics and ownership are not connected."] });
-      expect(result.body.source).toMatchObject({ state: "blocked", fetchedAt: null, coveredDates: [], reasons: ["No upstream read is made until a live trend source is approved."] });
-      expect(result.body.trends ?? null).toBeNull(); expect(result.body.opponents ?? null).toBeNull();
-      expect(result.headers["Cache-Control"]).toBe(SOCIAL_SHARE_CACHE_CONTROL);
-    }
-    expect(upstream.getSchedule).not.toHaveBeenCalled();
-    expect(opponentSource.loadShareTeamRates).not.toHaveBeenCalled();
-    expect(playerSource.loadSharePlayerSources).not.toHaveBeenCalled();
+  it("Tuesday reads trend sources only after auth, validation and a ready schedule, and keeps the response private", async () => {
+    upstream.getSchedule.mockReset(); trendSource.loadTrendLayer.mockReset(); opponentSource.loadShareTeamRates.mockClear(); playerSource.loadSharePlayerSources.mockClear();
+    // Validation and auth come first: no schedule or trend read for a bad query or a missing bearer.
     expect((await request({ format: "tuesday-trends", weekStart: "2099-01-05" })).code).toBe(400);
-    expect(upstream.getSchedule).not.toHaveBeenCalled();
+    expect((await request({ format: "tuesday-trends", weekStart, playerId: "1" })).code).toBe(400);
+    const anonymous = { code: 0, body: null as unknown, headers: {} as Record<string, string>, setHeader(key: string, value: string) { this.headers[key] = value; }, status(code: number) { this.code = code; return this; }, json(body: unknown) { this.body = body; return this; } };
+    await handler({ method: "GET", query: { format: "tuesday-trends", weekStart }, headers: {} } as unknown as NextApiRequest, anonymous as unknown as NextApiResponse);
+    expect(anonymous.code).toBe(401);
+    expect(upstream.getSchedule).not.toHaveBeenCalled(); expect(trendSource.loadTrendLayer).not.toHaveBeenCalled();
+    // Ready schedule: one trend load with the edition's season and frozen time; no Monday sources are read.
+    upstream.getSchedule.mockImplementation(async (week: string) => fictionalLeagueWeek(week, new Date().toISOString()));
+    trendSource.loadTrendLayer.mockImplementation(async (...args: unknown[]) => { const context = args[0] as TrendContext; return buildTrendLayer(fictionalTrendSources(context.season, localDate(context.generatedAt, "America/New_York"), new Date(Date.now() - 3600000).toISOString()), context); });
+    const ready = await request({ format: "tuesday-trends", weekStart });
+    expect(ready.code).toBe(200); expect(ready.headers["Cache-Control"]).toBe(SOCIAL_SHARE_CACHE_CONTROL);
+    expect(ready.body).toMatchObject({ format: "tuesday-trends", state: "ready", trends: { version: 2, sections: { hot: { state: "ready" }, deployment: { state: "ready" }, rates: { state: "ready" }, movers: { state: "ready" } } } });
+    expect(trendSource.loadTrendLayer).toHaveBeenCalledTimes(1);
+    expect(trendSource.loadTrendLayer.mock.calls[0][0]).toMatchObject({ season: ready.body.games[0].season, generatedAt: ready.body.generatedAt });
+    expect(opponentSource.loadShareTeamRates).not.toHaveBeenCalled(); expect(playerSource.loadSharePlayerSources).not.toHaveBeenCalled();
+    expect(JSON.stringify(ready.body)).not.toMatch(/465\.p\.|player_key|ownership_timeline/);
+    // A loader failure is an honest "missing" layer, never fixture values; the schedule edition still answers.
+    trendSource.loadTrendLayer.mockRejectedValueOnce(new Error("offline"));
+    const failed = await request({ format: "tuesday-trends", weekStart });
+    expect(failed.code).toBe(200);
+    expect(failed.body.trends.sections.hot).toEqual({ state: "missing", reasons: ["Trend sources could not be read."], hot: [], cold: [] });
+    // An unready schedule makes no trend read; a failed schedule is a 503 with no trend read.
+    trendSource.loadTrendLayer.mockClear();
+    upstream.getSchedule.mockImplementation(async (week: string) => ({ ...fictionalLeagueWeek(week, new Date().toISOString()), coveredDates: weekDates(week).slice(1) }));
+    const partial = await request({ format: "tuesday-trends", weekStart });
+    expect(partial.body.trends.sections.movers.reasons).toEqual(["Trend sources were not read because the schedule edition is not ready."]);
+    upstream.getSchedule.mockRejectedValue(new Error("down"));
+    expect((await request({ format: "tuesday-trends", weekStart })).code).toBe(503);
+    expect(trendSource.loadTrendLayer).not.toHaveBeenCalled();
   });
   it("reads opponent rates only after the schedule read succeeds", async () => {
     upstream.getSchedule.mockReset(); opponentSource.loadShareTeamRates.mockClear();

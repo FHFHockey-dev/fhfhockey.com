@@ -1,16 +1,22 @@
 import { StrictMode } from "react";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import SocialShare, { roleChipList } from "./SocialShare";
+import SocialShare, { deploymentBadges, ppChip, roleChipList } from "./SocialShare";
 import { TUESDAY_NOT_CONNECTED, buildBlockedSnapshot, buildScheduleSnapshot, calendarWeekStart, selectScheduleDates, weekDates } from "lib/socialShare/schedule";
 import { fictionalLeagueWeek } from "lib/socialShare/fixtures";
+import { buildTrendLayer, trendDefinitions, trendExportToken } from "lib/socialShare/trends";
+import { assertToken } from "lib/socialShare/export";
+import { fictionalTrendSources } from "lib/socialShare/trendsFixture";
+import { localDate } from "lib/rosterScheduleOptimizer/planningDates";
+import type { ShareDeploymentRow, SocialShareSnapshot } from "lib/socialShare/types";
 vi.mock("lib/supabase/client", () => ({ default: { auth: {
   getSession: vi.fn(async () => ({ data: { session: { user: { id: "social-editor" }, access_token: "synthetic-token" } }, error: null })),
 } } }));
 // Ticket 15: the studio keeps its selection in the URL and remembers the edition for the signed-in user.
 const router = vi.hoisted(() => ({ query: {} as Record<string, string>, pathname: "/social-share/[format]", isReady: true, replace: (() => Promise.resolve(true)) as (...args: unknown[]) => Promise<boolean> }));
 vi.mock("next/router", () => ({ useRouter: () => router }));
-vi.mock("contexts/AuthProviderContext", () => ({ useAuth: () => ({ user: { id: "social-editor" } }) }));
+const auth = vi.hoisted(() => ({ user: { id: "social-editor" } }));
+vi.mock("contexts/AuthProviderContext", () => ({ useAuth: () => auth }));
 
 // A strict-mode double mount must still make exactly one edition API call (SS1-8 correction).
 describe("SocialShare edition loading", () => {
@@ -135,5 +141,84 @@ describe("role chips (C7 SS1-15-F4)", () => {
     expect(roleChipList(skater("P1", null))).toEqual([{ role: "P1", tone: "green" }]);
     expect(roleChipList(skater(null, null))).toEqual([]);
     expect(roleChipList(null)).toEqual([]);
+  });
+});
+
+/** A live-shaped Tuesday edition: fictional schedule plus a trend layer built from fixture rows (OFFLINE FIXTURE). */
+function tuesdayEdition(weekStart: string, selected?: string[]): SocialShareSnapshot {
+  const generatedAt = new Date().toISOString(), snapshot = buildScheduleSnapshot({ format: "tuesday-trends", weekStart, selectedDates: selected, generatedAt, schedule: fictionalLeagueWeek(weekStart, generatedAt) });
+  const season = snapshot.games[0].season, today = localDate(generatedAt, "America/New_York");
+  return { ...snapshot, trends: buildTrendLayer(fictionalTrendSources(season, today, new Date(Date.now() - 4 * 3600000).toISOString()), { season, fetchedAt: generatedAt, generatedAt }) };
+}
+
+describe("Tuesday trend edition (lane TT)", () => {
+  const fetchMock = vi.fn(), week = calendarWeekStart(new Date(Date.now() + 7 * 86400000).toISOString()), days = weekDates(week).slice(1, 4);
+  const apiCalls = () => fetchMock.mock.calls.filter(([url]) => String(url).startsWith("/api/v1/social-share/"));
+  beforeEach(() => {
+    fetchMock.mockReset(); auth.user = { id: "social-editor" };
+    fetchMock.mockImplementation(async (url: string) => {
+      const query = new URL(url, "http://localhost").searchParams, selected = query.get("selectedDates");
+      return { ok: true, status: 200, json: async () => tuesdayEdition(query.get("weekStart")!, selected === null ? undefined : selected.split(",")) } as unknown as Response;
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} });
+    Object.defineProperty(document, "fonts", { configurable: true, value: { load: async () => [{}], check: () => true } });
+    router.query = { format: "tuesday-trends", week, dates: days.join(","), card: "deployment" }; router.replace = vi.fn(async () => true);
+  });
+  afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+
+  it("keeps week, days and card in the URL, restores them on remount without a refetch, and refetches for another account", async () => {
+    const first = render(<SocialShare format="tuesday-trends" asOf={new Date().toISOString()} />);
+    await waitFor(() => expect(screen.getByTestId("share-square").textContent).toContain("DEPLOYMENT CHANGES"));
+    expect(String(apiCalls()[0][0])).toBe(`/api/v1/social-share/tuesday-trends?weekStart=${week}&selectedDates=${encodeURIComponent(days.join(","))}`);
+    for (const [target] of (router.replace as ReturnType<typeof vi.fn>).mock.calls) expect((target as { query: Record<string, string> }).query).toMatchObject({ week, dates: days.join(","), card: "deployment" });
+    first.unmount();
+    const second = render(<SocialShare format="tuesday-trends" asOf={new Date().toISOString()} />);
+    expect((screen.getByRole("combobox", { name: /^Graphic/ }) as HTMLSelectElement).value).toBe("deployment");
+    expect(apiCalls()).toHaveLength(1);
+    second.unmount();
+    // Another signed-in account never sees the first account's remembered edition.
+    auth.user = { id: "other-editor" };
+    render(<SocialShare format="tuesday-trends" asOf={new Date().toISOString()} />);
+    await waitFor(() => expect(apiCalls()).toHaveLength(2));
+  });
+
+  it("stamps the square with the snapshot/card/days token the PNG export checks", async () => {
+    render(<SocialShare format="tuesday-trends" asOf={new Date().toISOString()} />);
+    const square = await screen.findByTestId("share-square");
+    await waitFor(() => expect(square.textContent).toContain("USAGE UP"));
+    const token = square.getAttribute("data-export-token")!;
+    expect(token.split("|")).toEqual([expect.any(String), "deployment", days.join(",")]);
+    fireEvent.change(screen.getByRole("combobox", { name: /^Graphic/ }), { target: { value: "movers" } });
+    await waitFor(() => expect(screen.getByTestId("share-square").getAttribute("data-export-token")).toBe(token.replace("|deployment|", "|movers|")));
+    expect(screen.getByTestId("share-square").textContent).toContain("pts = percentage-point change in Yahoo rostered %");
+    // The only add/drop wording is the disclaimer that this card is not add/drop counts.
+    expect(screen.getByTestId("share-square").textContent!.replace("not add/drop counts", "").replace("not adds/drops", "")).not.toMatch(/add|drop/i);
+  });
+
+  it("labels every section with its definition and the movers card in points, never adds or drops", () => {
+    expect(trendDefinitions.hot.join(" ")).toMatch(/prior GP \(season minus L5\).*Min 10 prior GP · last game ≤ 7 days/);
+    expect(trendDefinitions.rates.join(" ")).toMatch(/Min 50 L5 min/);
+    expect(trendDefinitions.movers.join(" ")).toMatch(/^pts = percentage-point change.*No observation ≠ 0% · not add\/drop counts$/);
+    const snapshot = tuesdayEdition(week);
+    expect(trendExportToken(snapshot, "hot")).toBe(`${snapshot.id}|hot|${snapshot.selectedDates.join(",")}`);
+  });
+
+  it("refuses a capture whose preview token no longer matches the clicked edition; untokened (Monday) exports are unchanged", () => {
+    const node = document.createElement("div");
+    node.setAttribute("data-export-token", "edition-1|hot|2026-11-03");
+    expect(() => assertToken(node, { token: "edition-1|hot|2026-11-03" })).not.toThrow();
+    expect(() => assertToken(node, { token: "edition-2|hot|2026-11-03" })).toThrow("The preview changed after Download was clicked. Download again.");
+    expect(() => assertToken(node, {})).not.toThrow();
+  });
+
+  it("shows PP ? for an unknown unit and off PP only with game evidence, never no PP", () => {
+    expect([ppChip(null), ppChip("none"), ppChip(2)]).toEqual(["PP ?", "off PP", "PP2"]);
+    const row = (change: Partial<ShareDeploymentRow>): ShareDeploymentRow => ({ nhlId: 1, name: "A", team: "TOR", position: "C", lastGame: "2026-10-26", toi: { l5: 1000, season: 1000 }, ev: { l5: null, season: null }, pp: { l5: null, season: null },
+      delta: 0, line: { now: "L2", before: "L2" }, ppUnit: { now: null, before: 1 }, teamChange: false, lineChange: 0, ppChange: 0, ...change });
+    expect(deploymentBadges(row({}))).toEqual([{ text: "L2", tone: "flat" }, { text: "PP ?", tone: "flat" }]);
+    expect(deploymentBadges(row({ line: { now: "L1", before: "L3" }, lineChange: 1, ppUnit: { now: "none", before: 1 }, ppChange: -1 }))).toEqual([{ text: "▲ L3 → L1", tone: "up" }, { text: "▼ PP1 → off PP", tone: "down" }]);
+    expect(deploymentBadges(row({ teamChange: true, line: { now: "L1", before: null } })).map(badge => badge.text)).toEqual(["NEW TEAM", "L1", "PP ?"]);
+    for (const state of [null, "none", 1, 2, 3] as const) expect(ppChip(state)).not.toMatch(/no PP/i);
   });
 });

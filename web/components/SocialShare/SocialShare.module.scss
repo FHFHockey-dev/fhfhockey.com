@@ -318,12 +318,19 @@ $trend-row: 140px;
 }
 .trendBadges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 2px;
   i { font-style: normal; font-size: 12px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: rgba(v.$color-blue-300, 0.14); color: v.$color-blue-300; }
+  i[data-tone="up"] { background: rgba(v.$success-color, 0.16); color: v.$success-color; }
+  i[data-tone="down"] { background: rgba(v.$color-pink-red, 0.16); color: v.$color-pink-red; }
 }
 .trendValue { display: grid; justify-items: end; line-height: 1;
   strong { font: 600 34px "Share Martian Mono", monospace; color: v.$success-color; }
   small { font-size: 11px; font-weight: 700; letter-spacing: 0.05em; color: v.$text-secondary; margin-top: 4px; }
 }
+.trendValue em { font: 600 18px "Share Martian Mono", monospace; font-style: normal; color: v.$color-white; margin-top: 6px; white-space: nowrap;
+  small { font: 700 11px "Share Roboto Condensed", sans-serif; letter-spacing: 0.05em; color: v.$text-secondary; }
+}
 .trendDown strong { color: v.$color-pink-red; }
+// Source and freshness line: one line, legible in the 1080 PNG and on a phone preview.
+.trendSource { font-size: 20px; font-weight: 700; color: v.$color-white; }
 @media (max-width: v.$breakpoint-tablet) {
   .page { padding: v.$space-xs; }
   .workspace { grid-template-columns: minmax(0, 1fr); }

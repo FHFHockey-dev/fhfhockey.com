@@ -1,5 +1,5 @@
 import { toBlob } from "html-to-image";
-import type { SocialShareSnapshot } from "./types";
+import type { ShareTrendKind, SocialShareSnapshot } from "./types";
 
 export const SHARE_SIZE = 1080;
 const fonts = [
@@ -41,7 +41,8 @@ export async function teamLogoDataUrl(abbreviation: string, size = 96): Promise<
   return canvas.toDataURL("image/png");
 }
 
-export type ShareExportOptions = { opponents?: boolean; players?: boolean; trends?: boolean; movers?: boolean; card?: string };
+/** `trend` gates one Tuesday section; `token` must still match the node's data-export-token at capture (lane TT). */
+export type ShareExportOptions = { opponents?: boolean; players?: boolean; trend?: ShareTrendKind; card?: string; token?: string };
 
 export function assertExportable(snapshot: SocialShareSnapshot, options: ShareExportOptions = {}) {
   if (snapshot.state !== "ready" || snapshot.source.state !== "ready") throw new Error("A complete, fresh schedule is required to download.");
@@ -49,8 +50,12 @@ export function assertExportable(snapshot: SocialShareSnapshot, options: ShareEx
   if (!snapshot.selectedDates.length || !snapshot.rows.some(row => row.remainingGames > 0)) throw new Error("Select dates with remaining games before downloading.");
   if (options.opponents && snapshot.opponents?.state !== "ready") throw new Error("Current, complete opponent team ratings are required to download this card.");
   if (options.players && snapshot.players?.state !== "ready") throw new Error("Current player ownership and season totals are required to download this card.");
-  if (options.trends && snapshot.trends?.state !== "ready") throw new Error("Current rolling game metrics are required to download this card.");
-  if (options.movers && snapshot.trends?.moversState !== "ready") throw new Error("Current Yahoo ownership is required to download this card.");
+  if (options.trend && (snapshot.trends?.version !== 2 || snapshot.trends.sections[options.trend].state !== "ready")) throw new Error(options.trend === "movers" ? "Current Yahoo ownership is required to download this card." : "Current rolling game metrics are required to download this card.");
+}
+
+/** The preview must still show the edition and card that were clicked (no swap between click and capture). */
+export function assertToken(node: HTMLElement, options: ShareExportOptions) {
+  if (options.token !== undefined && node.getAttribute("data-export-token") !== options.token) throw new Error("The preview changed after Download was clicked. Download again.");
 }
 
 async function embeddedFonts() {
@@ -70,6 +75,7 @@ async function embeddedFonts() {
 
 export async function downloadSharePng(node: HTMLElement, snapshot: SocialShareSnapshot, options: ShareExportOptions = {}) {
   assertExportable(snapshot, options);
+  assertToken(node, options);
   await readyShareFonts();
   await Promise.all(Array.from(node.querySelectorAll("img")).map(async image => {
     await bounded(image.decode(), "Brand image could not be decoded. Retry preview preparation.");
@@ -77,12 +83,14 @@ export async function downloadSharePng(node: HTMLElement, snapshot: SocialShareS
   }));
   const fontEmbedCSS = await bounded(embeddedFonts(), "Font embedding timed out.");
   assertExportable(snapshot, options);
+  assertToken(node, options);
   const blob = await bounded(toBlob(node, {
     width: SHARE_SIZE, height: SHARE_SIZE, canvasWidth: SHARE_SIZE, canvasHeight: SHARE_SIZE,
     pixelRatio: 1, fontEmbedCSS, style: { transform: "none", transformOrigin: "top left" },
   }), "PNG creation timed out. Retry with the same edition.", 20000);
   if (!blob) throw new Error("PNG could not be created.");
   assertExportable(snapshot, options);
+  assertToken(node, options);
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
