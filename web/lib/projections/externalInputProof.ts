@@ -6,12 +6,12 @@
 // `forge_runs.metrics.input_provenance` never carries the claim, so it is not evidence either way.
 //
 // A run with no snapshot at all (production capture is off, TJ 2026-10-26) is proven instead when its code is, and only
-// when it is a succeeded, released (full-SHA) run finished in exactly one invocation (`metrics.resume.invocations = 1`):
-// the resumable writer (run-lifecycle-queries.ts) stamps `git_sha` once, at creation, and a later invocation, possibly of
-// another release, may resume the run without restamping it.
+// when it is a succeeded, released (full-SHA) run whose every invocation is attributable: the resumable writer
+// (run-lifecycle-queries.ts) stamps `git_sha` once, at creation, and a later invocation, possibly of another release,
+// may resume the run without restamping it, so the SHA alone covers only a single-invocation run.
 //   - Stamped runs: `metrics.producer_identity` (forgeProducerIdentity.ts) records each invocation's producer closure
 //     hash, defined only by a production build of the deployed source (never an env var, so unbuilt or local code
-//     stamps null). It must hold exactly one invocation, with no `local:` code version, whose hash is in
+//     stamps null). It needs one entry per invocation, all the same hash, no `local:` code version, and that hash in
 //     VERIFIED_FORGE_PRODUCER_CLOSURES. The SHA never stands in for the stamp, so a next release with an unchanged
 //     closure is admitted and a changed or unverified closure is not.
 //   - Unstamped runs predate stamping: their exact SHA must be in VERIFIED_FORGE_RELEASES (538100d41 only). Any other
@@ -72,21 +72,28 @@ export function snapshotProvesExternalInputExclusion(row: Row): boolean {
 type RunAttribution = { basis: "verified_producer_closure" | "verified_release"; releaseSha: string; closureSha256?: string };
 
 /** One `forge_runs` row (selected with RUN_ATTRIBUTION_COLUMNS) attributed, as a whole, to verified producer code:
- * succeeded, released, one invocation, and either one verified stamped closure or (unstamped) a verified exact SHA. */
+ * succeeded, released, and either
+ *   - stamped: one stamp entry per invocation (the count equals `metrics.resume.invocations`), every entry the same
+ *     verified closure (none null or unknown) and no `local:` code version; a resumed run whose invocations all ran the
+ *     same verified closure is one producer, so it is admitted too; or
+ *   - unstamped (predates stamping): a single invocation of a verified exact SHA, since it has no per-invocation proof. */
 export function verifiedRunAttribution(row: Row): RunAttribution | null {
-  if (typeof row?.run_id !== "string" || row.status !== "succeeded" || row.invocations !== "1"
+  if (typeof row?.run_id !== "string" || row.status !== "succeeded"
     || typeof row.git_sha !== "string" || !FULL_SHA.test(row.git_sha)) return null;
   if (row.producer_identity !== null && row.producer_identity !== undefined) {
     // Closure admission needs the V2 stamp shape: one that predates `code_versions` (5a19f1def's env-based writer,
     // never deployed) cannot show it was not a local runner, so it denies (C7 R42 A4).
     if (!Array.isArray((row.producer_identity as { code_versions?: unknown }).code_versions)) return null;
-    const stamp = parseProducerIdentity(row.producer_identity), closure = stamp?.invocations.length === 1 ? stamp.invocations[0] : null;
-    // A `local:` code version marks a local runner, whatever SHA or closure the row also claims (C7 R40 V2).
-    if (stamp?.code_versions.some(version => version?.startsWith("local:"))) return null;
-    return closure && verifiedForgeProducerClosure(closure)
+    const stamp = parseProducerIdentity(row.producer_identity);
+    if (!stamp || String(stamp.invocations.length) !== row.invocations) return null;
+    // A `local:` code version marks a local runner, whatever SHA or closure the row also claims (C7 R40 V2). A null
+    // version is the deployed writer's normal value (only the local runner sets FORGE_CODE_VERSION).
+    if (stamp.code_versions.some(version => version?.startsWith("local:"))) return null;
+    const closure = stamp.invocations[0];
+    return closure !== null && stamp.invocations.every(entry => entry === closure) && verifiedForgeProducerClosure(closure)
       ? { basis: "verified_producer_closure", releaseSha: row.git_sha, closureSha256: closure } : null;
   }
-  const release = verifiedForgeRelease(row.git_sha);
+  const release = row.invocations === "1" ? verifiedForgeRelease(row.git_sha) : null;
   return release ? { basis: "verified_release", releaseSha: release.sha } : null;
 }
 

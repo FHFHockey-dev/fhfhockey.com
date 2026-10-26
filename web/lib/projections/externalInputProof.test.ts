@@ -118,13 +118,46 @@ describe("FORGE external-input exclusion proof", () => {
       ["a changed (unverified) closure", [CHANGED], {}],
       ["an unknown closure (built without one)", [null], {}],
       ["a mixed resume", [VERIFIED, CHANGED], { invocations: "2" }],
-      ["a resume of the same closure (each invocation may be another release)", [VERIFIED, VERIFIED], { invocations: "2" }],
       ["a two-invocation stamp on a one-invocation run", [VERIFIED, CHANGED], {}],
       ["a resume that began before stamping", [null, VERIFIED], { invocations: "2" }],
       ["a failed run", [VERIFIED], { status: "failed" }],
       ["a local run", [VERIFIED], { git_sha: "local:unknown" }],
     ])("denies %s", async (_label, closures, overrides) => {
       expect(await admitted(stampedRunRow("run", closures as Array<string | null>, overrides))).toBeUndefined();
+    });
+
+    describe("resumed runs: every invocation must be the same verified closure", () => {
+      it.each([["2", 2], ["3", 3]])("admits %s invocations that all stamped the verified closure", async (invocations, count) => {
+        const closures = Array.from({ length: count }, () => VERIFIED);
+        expect(await admitted(stampedRunRow("run", closures, { invocations }))).toMatchObject({
+          basis: "verified_producer_closure", closureSha256: VERIFIED });
+      });
+
+      it.each([
+        ["verified then unverified", [VERIFIED, CHANGED, VERIFIED], "3"],
+        ["unverified then verified", [CHANGED, VERIFIED], "2"],
+        ["a null (unknown) entry", [VERIFIED, null, VERIFIED], "3"],
+        ["more stamps than invocations", [VERIFIED, VERIFIED, VERIFIED], "2"],
+        ["fewer stamps than invocations", [VERIFIED, VERIFIED], "3"],
+        ["no invocation count", [VERIFIED, VERIFIED], null],
+      ])("denies %s", async (_label, closures, invocations) => {
+        expect(await admitted(stampedRunRow("run", closures as Array<string | null>, { invocations }))).toBeUndefined();
+      });
+
+      it("denies a resume with a local code version on any invocation", async () => {
+        expect(await admitted(stampedRunRow("run", [VERIFIED, VERIFIED], { invocations: "2", producer_identity: {
+          version: "forge-producer-closure-v1", invocations: [VERIFIED, VERIFIED], code_versions: [null, "local:abc"] } }))).toBeUndefined();
+      });
+
+      it("denies a code_versions list of another length", async () => {
+        expect(await admitted(stampedRunRow("run", [VERIFIED, VERIFIED], { invocations: "2", producer_identity: {
+          version: "forge-producer-closure-v1", invocations: [VERIFIED, VERIFIED], code_versions: [null] } }))).toBeUndefined();
+      });
+
+      it("still denies a resumed legacy (unstamped, exact-SHA) run", async () => {
+        expect(await admitted(verifiedReleaseRunRow("run", { invocations: "2" }))).toBeUndefined();
+        expect(await admitted(verifiedReleaseRunRow("run"))).toMatchObject({ basis: "verified_release" });
+      });
     });
 
     it.each([
