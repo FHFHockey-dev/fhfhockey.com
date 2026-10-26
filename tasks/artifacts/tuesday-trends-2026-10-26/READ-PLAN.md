@@ -114,3 +114,21 @@ Two more read-only statements, issued after N1 (names), for the **listed** playe
 - **Gaps:** a missing row or value is a gap marker, never interpolated.
 - **Consistency checks:** a series that disagrees with the row's own L5/L10 window (points sum, TOI average within 2 s, rate within 2%) is dropped.
 - **Failure:** a failed S1/M2 read drops sparklines only. It never blocks a section ("Sparklines unavailable: …" is added to that section's reasons).
+
+## v3: TT-10 rostered % on every tile (M3; PENDING TJ approval via the chef; no RC is built before it; not executed by Claude)
+
+One more read-only statement, issued after N1 (names) and E1, before S1/M2, so no more than 2 statements are ever in flight.
+
+| # | Table / filters / order | Columns | Cap and chunking | Expected |
+|---|---|---|---|---|
+| M3 | `yahoo_nhl_player_map_read`<br>`nhl_player_id in (≤ 27 ids)`<br>order `nhl_player_id asc, yahoo_player_id asc` | `yahoo_player_id, nhl_player_id` | ids × 4 ≤ **108**, exact count; 100 ids per chunk (`TREND_LIMITS.rosterChunk`) | the shown non-mover skaters (Hot/Cold ≤ 10, deployment ≤ 8, rates ≤ 9; ≤ 27 distinct ids) → **1 statement**, ≈ 27–54 rows |
+
+- **No new ownership read.** O3 already holds every Yahoo ownership row at the latest date D, so the rostered % is looked up there through the M3 map. Movers use their own D value.
+- **Chips need no read.** The line comes from the latest rolling row (R1). The PP unit comes from the `powerPlayCombinations` rows already read for that game (P).
+- **Skips:** M3 is skipped when the ownership read failed. The tiles then show "—". A failed M3 read also shows "—" on every non-mover tile, and it never blocks a section.
+- **Missing is never 0%.** A player with no single observation at D (no mapping, no row, a null value, or mapped ids that disagree) shows "—". When D is older than the ownership freshness limit, no tile shows a %, and the footer date is omitted.
+- **New totals per edition:**
+  - **Statements:** about 15 typical (v2's 14 plus M3) and about 22 worst case, under the 40 ceiling.
+  - **Rows per page:** ≤ 1,000.
+  - **Concurrency:** 2.
+- **Tables and columns:** no new table and no new column. `yahoo_nhl_player_map_read` (`yahoo_player_id, nhl_player_id`) is already approved and read by M1.

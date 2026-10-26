@@ -3,7 +3,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { buildScheduleSnapshot, calendarWeekStart, selectScheduleDates, weekDates } from "../lib/socialShare/schedule";
 import type { SocialScheduleGame as GameData } from "../lib/socialShare/types";
-import type { SocialShareFormat, SocialShareSnapshot } from "../lib/socialShare/types";
+import type { ShareTrendWho, SocialShareFormat, SocialShareSnapshot } from "../lib/socialShare/types";
 import { fictionalLeagueWeek, fictionalTeamStats } from "../lib/socialShare/fixtures";
 import { buildOpponentLayer, easiestSchedules, streamingNights } from "../lib/socialShare/matchups";
 import { attachRecent, buildPlayerLayer, pickupTiers, specialists, type ShareGoalieGameRow, type ShareRecentRollingRow } from "../lib/socialShare/players";
@@ -142,7 +142,8 @@ async function install(page: Page, access: Access = { role: "social_editor", sig
     // real-world names on the first tiles of every list, so the geometry check sees the tightest layouts.
     if (controller.layoutStress && next.trends) {
       const long = ["Charle-Edouard D'Astous", "Oliver Bjorkstrand", "Ryan Nugent-Hopkins"];
-      const rename = <T extends { name: string }>(list: T[], at = 0) => list.map((row, index) => index === 0 ? { ...row, name: long[at % long.length] } : row);
+      // TT-10: the widest tag ("100% ROST") and chip set (L4 · off PP) ride on the long-name tile; the second tile shows "—".
+      const rename = <T extends { name: string; rostered?: number | null; role?: ShareTrendWho["role"] }>(list: T[], at = 0) => list.map((row, index) => index === 0 ? { ...row, name: long[at % long.length], rostered: 100, role: { line: "L4", pp: "none" as const } } : index === 1 ? { ...row, rostered: null } : row);
       const whole = <T extends { latest: number; previous: number; delta: number }>(list: T[], deltas: number[]): T[] => list.map((row, index) => ({ ...row, previous: Math.round(row.previous), latest: Math.round(row.previous) + deltas[index % deltas.length], delta: deltas[index % deltas.length] }));
       const { hot, deployment, rates, movers } = next.trends.sections;
       next = { ...next, trends: { ...next.trends, sections: {
@@ -783,7 +784,14 @@ test("Tuesday trend cards list the server's sections with definitions and a sour
     await expect(square).toContainText(title);
     for (const definition of trendDefinitions[card as "hot"]) await expect(square).toContainText(definition);
     // Compact source + freshness line: dates the reader can check on a phone.
-    await expect(square.locator("[data-trend-source]")).toHaveText(card === "movers" ? /^Yahoo rostered % · [A-Z][a-z]{2} \d{1,2} → [A-Z][a-z]{2} \d{1,2} · not adds\/drops$/ : /^FHFH rolling metrics · games thru [A-Z][a-z]{2} \d{1,2} · updated [A-Z][a-z]{2} \d{1,2}, \d{1,2}:\d{2} [AP]M E[DS]T · not projections$/);
+    await expect(square.locator("[data-trend-source]")).toHaveText(card === "movers" ? /^Yahoo rostered % · [A-Z][a-z]{2} \d{1,2} → [A-Z][a-z]{2} \d{1,2} · not adds\/drops$/ : /^FHFH rolling metrics · games thru [A-Z][a-z]{2} \d{1,2} · updated [A-Z][a-z]{2} \d{1,2}, \d{1,2}:\d{2} [AP]M E[DS]T · Yahoo rostered % as of [A-Z][a-z]{2} \d{1,2} · not projections$/);
+    // TT-10: every tile's tag carries rostered % ("—" when missing, never 0%); Hot/Cold, Rates and Movers tiles carry the
+    // latest PP chip (and the line when known); Deployment keeps its change chips, which already name the current role.
+    const tiles = await square.locator("[data-player]").evaluateAll(nodes => nodes.map(node => [node.querySelector("[data-part='tag']")?.textContent ?? "", Array.from(node.querySelectorAll("[data-part='chips'] i[data-badge]")).map(chip => chip.textContent ?? "")] as const));
+    for (const [tag, chips] of tiles) {
+      expect(tag).toMatch(/ · (?:\d+(?:\.\d)?%|—) ROST$/);
+      if (card !== "deployment") expect(chips.filter(chip => /^(?:PP[12]|off PP|PP \?)$/.test(chip)), tag).toHaveLength(1);
+    }
     await expect(square).toHaveAttribute("data-export-token", `${edition.id}|${card}|${edition.selectedDates.join(",")}`);
     expect(expected.length).toBeGreaterThanOrEqual(8);
     expect(await square.locator("[data-player]").evaluateAll(nodes => nodes.map(node => node.getAttribute("data-player")))).toEqual(expected);

@@ -428,6 +428,8 @@ $trend-row: 140px;
   .trendTileKind { margin-top: -2px; }
 }
 .trendTileStacked .trendHero strong { font-size: 34px; }
+// TT-10: with rostered % the tag is wider, so on rates it sits top-left above the logo, clear of the centred meta line.
+.trendTileStacked .trendTileMeta { top: 6px; bottom: auto; }
 .trendRateLine { display: flex; align-items: center; gap: 6px; width: 100%; margin-top: 2px; }
 .trendRateSpark { flex: 1; min-width: 0; display: flex; justify-content: center; }
 .trendRateEnd { flex: none; display: grid; justify-items: center; line-height: 1;

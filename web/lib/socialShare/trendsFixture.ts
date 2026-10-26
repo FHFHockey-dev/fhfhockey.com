@@ -86,5 +86,5 @@ export function fictionalTrendSources(season: number, today: string, updatedAt: 
     for (let game = 0; game < GAMES; game++) if (game !== unknownPpGame) ppc.push({ gameId: gameId(game), playerId: 8499000 + teamIndex, unit: 2 });
   });
   return { rolling: { rows: rolling }, ev: { rows: ev }, ppc: { rows: ppc }, ownership: { rows: ownership }, map: { rows: map }, players: { rows: players },
-    series: { rows: rolling }, ownershipSeries: { rows: ownership } };
+    series: { rows: rolling }, ownershipSeries: { rows: ownership }, rosterMap: { rows: map } };
 }

@@ -401,6 +401,13 @@ export function deploymentBadges(row: ShareDeploymentRow): { text: string; tone:
 /** Yahoo rostered % is whole-number precision: show "+17", not "+17.0", unless a value carries decimals (TT-3). */
 export const moverDigits = (rows: { latest: number; previous: number }[]) => rows.every(row => Number.isInteger(row.latest) && Number.isInteger(row.previous)) ? 0 : 1;
 /** Role-only deployment hero: the role direction and what moved, never a TOI number that could contradict the column. */
+/**
+ * TT-10: every tile's latest-game role: the line/pair chip only when known, then PP1 / PP2, "off PP" (unit 3 or more,
+ * or the game's PP rows omit him) or "PP ?" (no PP rows for that game). Monday's tones; the PP states stay neutral.
+ */
+export const tileRoleChips = (who: ShareTrendWho): { text: string; tone: "flat" }[] => who.role ? [...(who.role.line ? [{ text: who.role.line, tone: "flat" as const }] : []), { text: ppChip(who.role.pp), tone: "flat" }] : [];
+/** TT-10: Yahoo rostered % on the team tag. Missing is "—", never 0%; a layer without the field (older captures) shows nothing. */
+export const rosteredTag = (who: ShareTrendWho) => who.rostered === undefined ? "" : ` · ${who.rostered === null ? "—" : `${who.rostered.toFixed(who.rostered < 10 && !Number.isInteger(who.rostered) ? 1 : 0)}%`} ROST`;
 export const roleHero = (row: ShareDeploymentRow) => `${row.lineChange + row.ppChange > 0 ? "▲" : "▼"} ${[row.lineChange ? "LINE" : null, row.ppChange ? "PP" : null].filter(Boolean).join(" + ")}`;
 
 type Tone = "up" | "down" | "flat";
@@ -481,14 +488,14 @@ function trendUnreadyReason(kind: TrendKind, snapshot: SocialShareSnapshot, trus
 const trendReady = (kind: TrendKind, snapshot: SocialShareSnapshot, trusted: boolean) => trusted && trendSectionReady(snapshot, kind);
 
 function trendColumns(kind: TrendKind, snapshot: SocialShareSnapshot): TrendColumn[] {
-  const meta = (row: ShareTrendWho) => `${row.team} · ${row.position}`;
+  const meta = (row: ShareTrendWho) => `${row.team} · ${row.position}${rosteredTag(row)}`;
   if (kind === "hot") {
     const { hot, cold } = hotCold(snapshot, true);
     // Descriptive only (recent-form-v1-early): the change is the hero; both windows' P/GP stay labelled.
     const row = (pick: (typeof hot)[number]): TrendRowData => ({ key: String(pick.nhlId), team: pick.team, name: pick.name, meta: meta(pick), weekGames: pick.weekGames,
       detail: `Prior ${TREND_WINDOW_GAMES}: ${pick.preceding.toFixed(2)} P/GP`, hero: { value: signed(pick.delta, 2), label: `P/GP VS PRIOR ${TREND_WINDOW_GAMES}`, tone: toneOf(pick.delta) },
       right: { value: pick.recent.toFixed(2), label: `P/GP LAST ${TREND_WINDOW_GAMES}` }, spark: { values: pick.series, split: 5, zero: true, fill: 0.5, what: "Points in each of the last 10 games" },
-      badge: { text: pick.delta > 0 ? "RISING" : "FALLING", tone: toneOf(pick.delta) }, chips: [] });
+      badge: { text: pick.delta > 0 ? "RISING" : "FALLING", tone: toneOf(pick.delta) }, chips: tileRoleChips(pick) });
     return [{ key: "hot", title: `UP VS PRIOR ${TREND_WINDOW_GAMES}`, label: { text: "HOT", tone: "up" }, rows: hot.map(row) }, { key: "cold", title: `DOWN VS PRIOR ${TREND_WINDOW_GAMES}`, label: { text: "COLD", tone: "down" }, rows: cold.map(row) }];
   }
   if (kind === "deployment") {
@@ -517,14 +524,14 @@ function trendColumns(kind: TrendKind, snapshot: SocialShareSnapshot): TrendColu
       detail: `${pick.l5Minutes} L${TREND_WINDOW_GAMES} min`,
       hero: { value: signed(pick.delta, RATE_DIGITS[metric]), label: `Δ/60 VS SEASON`, tone: toneOf(pick.delta) }, right: { value: pick.l5.toFixed(RATE_DIGITS[metric]), label: `L${TREND_WINDOW_GAMES} ${rateTitles[metric]}` },
       spark: { values: pick.series, split: 5, reference: pick.season, what: `${rateTitles[metric]} in each of the last 10 games (dashed: season)` },
-      badge: { text: "ABOVE SEASON", tone: toneOf(pick.delta) }, chips: [] })) }));
+      badge: { text: "ABOVE SEASON", tone: toneOf(pick.delta) }, chips: tileRoleChips(pick) })) }));
   }
   const { risers, fallers } = ownershipMovers(snapshot, true), trends = snapshot.trends!, digits = moverDigits([...risers, ...fallers]);
   const row = (mover: (typeof risers)[number]): TrendRowData => ({ key: String(mover.nhlId), team: mover.team, name: mover.name, meta: meta(mover), weekGames: mover.weekGames,
     detail: `${mover.previous.toFixed(digits)}% ${dateLabel(trends.ownershipPreviousDate!)} → ${mover.latest.toFixed(digits)}% ${dateLabel(trends.ownershipLatestDate!)}`,
     hero: { value: signed(mover.delta, digits), label: "PCT PTS ROSTERED", tone: toneOf(mover.delta) }, right: { value: `${mover.latest.toFixed(digits)}%`, label: "ROSTERED" },
     spark: { values: mover.series, dates: trends.ownershipSeriesDates, what: `Yahoo rostered % on each day ${trends.ownershipSeriesDates?.[0] ?? ""} to ${trends.ownershipSeriesDates?.at(-1) ?? ""}` },
-    badge: { text: mover.delta > 0 ? "RISING" : "FALLING", tone: toneOf(mover.delta) }, chips: [] });
+    badge: { text: mover.delta > 0 ? "RISING" : "FALLING", tone: toneOf(mover.delta) }, chips: tileRoleChips(mover) });
   return [{ key: "risers", title: "ROSTERED % UP", label: { text: "RISING", tone: "up" }, rows: risers.map(row) }, { key: "fallers", title: "ROSTERED % DOWN", label: { text: "FALLING", tone: "down" }, rows: fallers.map(row) }];
 }
 
@@ -532,7 +539,7 @@ function trendColumns(kind: TrendKind, snapshot: SocialShareSnapshot): TrendColu
 export function trendSourceLine(kind: TrendKind, snapshot: SocialShareSnapshot) {
   const trends = snapshot.trends?.version === 2 ? snapshot.trends : null;
   if (kind === "movers") return `Yahoo rostered % · ${trends?.ownershipPreviousDate ? dateLabel(trends.ownershipPreviousDate) : "—"} → ${trends?.ownershipLatestDate ? dateLabel(trends.ownershipLatestDate) : "—"} · not adds/drops`;
-  return `FHFH rolling metrics · games thru ${dayDate(trends?.metricsThrough ?? null)} · updated ${timeLabel(trends?.metricsUpdatedAt ?? null)} · not projections`;
+  return `FHFH rolling metrics · games thru ${dayDate(trends?.metricsThrough ?? null)} · updated ${timeLabel(trends?.metricsUpdatedAt ?? null)}${trends?.rosteredAsOf ? ` · Yahoo rostered % as of ${dateLabel(trends.rosteredAsOf)}` : ""} · not projections`;
 }
 
 function trendAltText(kind: TrendKind, snapshot: SocialShareSnapshot, trusted: boolean) {

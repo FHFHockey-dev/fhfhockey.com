@@ -129,3 +129,18 @@ Native sources only. Tuesday never reads `PROJECTIONS_20262027_*`, `PROJECTIONS_
   - **Stripes:** neon edge lines plus a subtle band fill at 18%.
   - **Logo:** a white drop shadow around it.
   - **Mirroring:** on 2-column cards the right column is mirrored, with art and stripes on the right, the angle inverted, text left-aligned, and the group label on the right edge. Rates are not mirrored.
+
+## TT-10 part 2: rostered % and role chips on every tile
+
+- **Rostered % (all four cards):** the team tag reads "TEAM · POS · 45% ROST".
+  - The value is Yahoo's rostered % at the latest ownership date D, through the M3 NHL → Yahoo map.
+  - Missing shows "— ROST", never 0%.
+  - A layer captured before TT-10 (genuine run-2) has no field, so its tags stay "TEAM · POS".
+  - On Rates the tag sits top-left, clear of the centred meta line.
+- **Footer (metric cards):** "… · Yahoo rostered % as of D · not projections", shown only when D is fresh. The movers footer already names its Yahoo dates.
+- **Role chips (Hot/Cold, Rates, Movers):** after the badge, from the latest game.
+  - **Line chip:** the line or pair, only when known.
+  - **PP chip:** PP1 or PP2 for units 1–2.
+  - **"off PP":** unit 3 or higher, or the game's PP rows don't list the player.
+  - **"PP ?":** the game has no PP rows.
+- **Deployment:** keeps its change chips (▲ L3 → L1). With no change they already show the current line and PP, so no extra assignment chip is added.
