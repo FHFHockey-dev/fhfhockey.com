@@ -116,3 +116,16 @@ Native sources only. Tuesday never reads `PROJECTIONS_20262027_*`, `PROJECTIONS_
   - **Stroke:** a 14 px diameter at 768 px, 1.82% of the logo width, the midpoint between v1 (2.73%) and v2 (0.91%).
   - **Interior edges:** use the Euclidean RGB gradient.
   - **Per-team overrides:** DAL, WPG, MIN, UTA: colour threshold 0.20; SEA: 0.15 with a 24 px minimum stroke.
+
+## TT-10 part 1 layout
+
+- **Hot/Cold:** the area under each observed sparkline run is filled at 50% in the tile's tone. Gaps stay unfilled.
+- **Deployment:**
+  - **Mini table:** L5 | label | Season rows for EV, PP and TOI per game, replacing the EV/PP detail lines and the "TOI/GP L5" / "TOI/GP VS SEASON" labels.
+  - **Hero row:** holds the change and the sparkline. The absolute L5 TOI is dropped because the table's TOI row carries it.
+  - **Games:** "N GP this week" sits under the name.
+- **Rates:** name and badge top right; the Δ/60 centred above a large sparkline, with the season rate at its left end and the L5 rate plus metric at its right end; "N L5 min · N GP this week" below.
+- **All cards:**
+  - **Stripes:** neon edge lines plus a subtle band fill at 18%.
+  - **Logo:** a white drop shadow around it.
+  - **Mirroring:** on 2-column cards the right column is mirrored, with art and stripes on the right, the angle inverted, text left-aligned, and the group label on the right edge. Rates are not mirrored.

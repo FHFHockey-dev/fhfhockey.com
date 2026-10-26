@@ -844,9 +844,11 @@ async function tileCollisions(page: Page) {
     const overlap = (a: DOMRect, b: DOMRect) => Math.min(a.right, b.right) - Math.max(a.left, b.left) > 0.5 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 0.5;
     for (const tile of Array.from(square.querySelectorAll<HTMLElement>("[data-player][data-tone]"))) {
       const id = tile.getAttribute("data-player"), box = tile.getBoundingClientRect(), find = (selector: string) => tile.querySelector<HTMLElement>(selector);
-      const name = find("[class*='trendTileName']")!, parts: [string, Element | null][] = [["name", name], ["hero", find("[class*='trendHero'] > strong")], ["absolute", find("[class*='trendTileAbsolute']")],
-        ["kind", find("[class*='trendTileKind']")], ...Array.from(tile.querySelectorAll("[class*='trendTileDetail']")).map((detail, index): [string, Element] => [`detail${index}`, detail]), ["chips", find("[class*='trendTileChips']")]];
-      const rects = parts.filter((part): part is [string, Element] => !!part[1]).map(([label, element]) => [label, element.getBoundingClientRect()] as const);
+      // Every tagged part (TT-10: data-part on name, hero, absolute, kind, details, table, chips, rate ends, sparkline).
+      const name = find("[data-part='name']")!, parts = Array.from(tile.querySelectorAll<HTMLElement>("[data-part]"));
+      const rects = parts.map(element => [element.getAttribute("data-part")!, element.getBoundingClientRect()] as const);
+      // Text cut off inside its own box (e.g. "GP this wee" at the tile edge) counts as a collision too.
+      for (const element of parts) if (element.clientWidth > 0 && element.scrollWidth > element.clientWidth + 1 && element !== name) problems.push(`${id}: ${element.getAttribute("data-part")} is clipped`);
       for (let i = 0; i < rects.length; i++) {
         const [label, rect] = rects[i];
         if (rect.left < box.left - 0.5 || rect.right > box.right + 0.5 || rect.top < box.top - 0.5 || rect.bottom > box.bottom + 0.5) problems.push(`${id}: ${label} outside the tile`);
