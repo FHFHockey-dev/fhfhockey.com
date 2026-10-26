@@ -1,15 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { activeTeamAbbreviations, teamsInfo } from "lib/teamsInfo";
-import { contrast, NEON_CARD, NEON_MIN_CONTRAST, teamNeon, withNeonFloor } from "./teamNeon";
+import { contrast, NEON_CARD, NEON_MIN_CONTRAST, NEON_MULTICOLOUR, NEON_OVERRIDES, NEON_SPREADS, teamNeon, withNeonFloor } from "./teamNeon";
 
 describe("team neon colours (TT-11)", () => {
   const teams = [...activeTeamAbbreviations].map(String);
 
-  it("strokes in lightColor and haloes in secondaryColor, both clearing 4.5:1 on the card", () => {
+  it("strokes in lightColor and haloes in secondaryColor unless TJ overrode a team (TT-12), all clearing 4.5:1 on the card", () => {
     expect(teams).toHaveLength(32);
     for (const team of teams) {
       const neon = teamNeon(team)!;
-      expect(neon.strokeFrom, team).toBe("lightColor");
+      expect(neon.strokeFrom, team).toBe(NEON_OVERRIDES[team]?.stroke ?? "lightColor");
+      expect(neon.haloFrom, team).toBe(NEON_OVERRIDES[team]?.halo ?? "secondaryColor");
       for (const color of [neon.stroke, neon.halo]) expect(contrast(color, NEON_CARD), `${team} ${color}`).toBeGreaterThanOrEqual(NEON_MIN_CONTRAST);
     }
   });
@@ -31,5 +32,24 @@ describe("team neon colours (TT-11)", () => {
       expect(teamNeon("TOR")).toMatchObject({ strokeFrom: "primaryColor", stroke: withNeonFloor("#00205B") });
     } finally { tor.lightColor = light; }
     expect(teamNeon("XXX")).toBeNull();
+  });
+
+  it("applies TJ's TT-12 choices: VGK gold, accent halos, DAL jersey, dimmer and distinct spreads, nine baked teams", () => {
+    expect(teamNeon("VGK")!.stroke).toBe("#b4975a");
+    expect([teamNeon("CHI")!.halo, teamNeon("NYI")!.halo, teamNeon("SJS")!.halo]).toEqual([withNeonFloor("#CC8A00"), "#ffffff", withNeonFloor("#EA7200")]);
+    expect(teamNeon("DAL")).toMatchObject({ strokeFrom: "jersey", stroke: withNeonFloor("#006847"), spread: "soft" });
+    for (const team of ["BUF", "CBJ", "CHI", "DAL", "DET", "MTL", "NYR", "OTT"]) expect(teamNeon(team)!.spread, team).toBe("soft");
+    for (const team of ["COL", "EDM", "FLA", "LAK", "MIN", "STL", "TBL", "TOR", "WSH"]) {
+      const neon = teamNeon(team)!;
+      expect(neon.spread, team).toBe("distinct");
+      expect(neon.halo, team).not.toBe(neon.stroke);
+    }
+    // Dimmer means a smaller, fainter glow; distinct keeps the halo no wider but lets its colour show.
+    expect(NEON_SPREADS.soft.glowPx).toBeLessThan(NEON_SPREADS.normal.glowPx);
+    expect(NEON_SPREADS.soft.haloAlpha).toBeLessThan(NEON_SPREADS.normal.haloAlpha);
+    expect(NEON_SPREADS.distinct.haloPx).toBeLessThanOrEqual(NEON_SPREADS.normal.haloPx);
+    expect(NEON_SPREADS.distinct.glowAlpha).toBeLessThan(NEON_SPREADS.normal.glowAlpha);
+    expect([...NEON_MULTICOLOUR].sort()).toEqual(["ANA", "CHI", "DET", "EDM", "FLA", "NYI", "NYR", "TOR", "WSH"]);
+    for (const team of teams) expect(teamNeon(team)!.multicolour, team).toBe(NEON_MULTICOLOUR.has(team));
   });
 });

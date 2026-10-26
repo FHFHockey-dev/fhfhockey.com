@@ -828,8 +828,10 @@ test("Tuesday trend cards list the server's sections with definitions and a sour
       await expect(art).toHaveCount(1);
       if (await art.getAttribute("data-art") === "neon") {
         const colors = teamNeon((await tile.getAttribute("data-team"))!)!;
-        await expect(art).toHaveAttribute("data-stroke", colors.stroke);
+        // TT-12: the nine multi-colour teams draw their baked outline; the others the team tint. Halo and spread per team.
+        await expect(art).toHaveAttribute("data-stroke", colors.multicolour ? "multi" : colors.stroke);
         await expect(art).toHaveAttribute("data-halo", colors.halo);
+        await expect(art).toHaveAttribute("data-spread", colors.spread);
         expect(await art.locator("img").getAttribute("src")).toMatch(/^data:image\/png;base64,/);
       }
     }

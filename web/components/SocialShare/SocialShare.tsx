@@ -6,7 +6,7 @@ import { useAuth } from "contexts/AuthProviderContext";
 import { SCHEDULE_FORMATS, type ShareDeploymentRow, type SharePlayerLayer, type SharePlayerRecent, type SharePpState, type ShareTrendKind, type ShareTrendWho, type SocialShareFormat, type SocialShareSnapshot, type ShareTeam, type ShareTeamRow } from "lib/socialShare/types";
 import { calendarWeekStart, selectScheduleDates, weekDates } from "lib/socialShare/schedule";
 import { bounded, downloadSharePng, readyShareFonts, SHARE_SIZE, teamLogoDataUrl, teamOutlineDataUrl } from "lib/socialShare/export";
-import { teamNeon } from "lib/socialShare/teamNeon";
+import { NEON_SPREADS, teamNeon } from "lib/socialShare/teamNeon";
 import { editionCountTiers, mondayGridRows, type CountTier } from "lib/socialShare/mondayGrid";
 import { fetchEdition } from "lib/socialShare/editionFetch";
 import { editionLabel } from "lib/socialShare/edition";
@@ -588,8 +588,10 @@ function TrendArt({ team, logo, outlines }: { team: string | null; logo: string 
   const neon = OUTLINE_FALLBACK_TEAMS.has(team) ? null : outlines[team], colors = teamNeon(team);
   // Home-page light game card (TT-7): the team's 65° jersey stripes, faded into the dark body, with a large logo cropped
   // at the tile edge: the neon outline, or the full-colour logo when no outline is available.
-  return <span className={styles.trendTileArt} data-art={neon ? "neon" : "card"} data-stroke={neon ? colors?.stroke : undefined} data-halo={neon ? colors?.halo : undefined}
-    style={{ ...teamBannerStyle(team), ...(neon && colors ? { "--neon-halo": `${colors.halo}8c` } : {}) } as CSSProperties} aria-hidden="true">
+  // TT-12: multi-colour teams draw their baked outline (data-stroke "multi"); the glow spread is per team (NEON_SPREADS).
+  const spread = colors && NEON_SPREADS[colors.spread], alpha = (value: number) => Math.round(value * 255).toString(16).padStart(2, "0");
+  return <span className={styles.trendTileArt} data-art={neon ? "neon" : "card"} data-stroke={neon ? colors?.multicolour ? "multi" : colors?.stroke : undefined} data-halo={neon ? colors?.halo : undefined} data-spread={neon ? colors?.spread : undefined}
+    style={{ ...teamBannerStyle(team), ...(neon && colors && spread ? { "--neon-halo": `${colors.halo}${alpha(spread.haloAlpha)}`, "--neon-halo-r": `${spread.haloPx}px`, "--neon-glow": `rgba(255, 255, 255, ${spread.glowAlpha})`, "--neon-glow-r": `${spread.glowPx}px` } : {}) } as CSSProperties} aria-hidden="true">
     {neon ? <img src={neon} alt="" /> : logo && <img src={logo} alt="" />}
   </span>;
 }
@@ -815,8 +817,14 @@ export default function SocialShare({ format, asOf }: { format: SocialShareForma
     const missing = snapshot?.teams.map(team => team.abbreviation).filter(abbreviation => !requestedOutlines.current.has(abbreviation)) ?? [];
     if (!missing.length) return;
     for (const abbreviation of missing) requestedOutlines.current.add(abbreviation);
-    // TT-11: one tint per team (its floored lightColor), not one per tone.
-    void Promise.all(missing.map(async abbreviation => { const colors = teamNeon(abbreviation); return [abbreviation, colors ? await teamOutlineDataUrl(abbreviation, colors.stroke).catch(() => null) : null] as const; }))
+    // TT-11: one tint per team (its floored stroke colour), not one per tone. TT-12: multi-colour teams load their baked
+    // outline untinted, falling back to the single-colour tint if it is missing.
+    void Promise.all(missing.map(async abbreviation => {
+      const colors = teamNeon(abbreviation);
+      if (!colors) return [abbreviation, null] as const;
+      const tint = () => teamOutlineDataUrl(abbreviation, colors.stroke).catch(() => null);
+      return [abbreviation, colors.multicolour ? await teamOutlineDataUrl(abbreviation, null).catch(tint) : await tint()] as const;
+    }))
       .then(entries => setTeamOutlines(current => ({ ...current, ...Object.fromEntries(entries) })));
   }, [snapshot, format]);
   useEffect(() => {

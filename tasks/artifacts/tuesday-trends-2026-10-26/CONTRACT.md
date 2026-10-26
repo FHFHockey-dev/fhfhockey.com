@@ -155,3 +155,20 @@ Native sources only. Tuesday never reads `PROJECTIONS_20262027_*`, `PROJECTIONS_
 - **Tint:** one canvas tint per team (inline data URL, PNG-safe), not one per tone.
 - **Green/red** stays on the tile border, hero, sparkline and fill, badge, vertical labels and chips. Neutral tiles also use team colours.
 - **Reads:** none. `teamsInfo` is static.
+
+## TT-12: TJ's per-team neon choices and multi-colour logos
+
+- **Overrides** (`NEON_OVERRIDES` in `lib/socialShare/teamNeon.ts`):
+  - VGK: gold stroke.
+  - CHI, NYI, SJS: `accent` halos.
+  - DAL: `jersey` stroke.
+  - MIN: `jersey` red halo. LAK: `jersey` white halo.
+  - Every colour is still floored at 4.5:1.
+- **Spreads** (`NEON_SPREADS`):
+  - `normal`: TT-7's glow.
+  - `soft` (BUF, CBJ, CHI, DAL, DET, MTL, NYR, OTT): a smaller, dimmer glow and halo.
+  - `distinct` (COL, EDM, FLA, LAK, MIN, STL, TBL, TOR, WSH): the white glow is dimmed so the halo colour shows; the halo is no wider.
+- **Multi-colour** (ANA, CHI, DET, EDM, FLA, NYI, NYR, TOR, WSH):
+  - The outlines are baked offline into `public/teamLogos/outline/color/` in the logo's own floored colours and drawn untinted.
+  - If a baked file is missing, the tile falls back to the single-colour tint.
+- **Unchanged:** the tile's green/red elements. No reads.

@@ -77,3 +77,4 @@ Make `/social-share/tuesday-trends` a truthful, data-backed edition from native 
 - TT-10 part 2 checks: E2E 34 (v2 pins), Vitest 236, eslint 0, CSS pure OK; full tsc exit 2 only from another lane's untracked player-cards test. RECEIPT-10 part 2 written; committing with explicit pathspecs. Next: report the SHA and the READ-PLAN v3 delta to the chef; M3 waits on TJ approval before any RC.
 - M3 approved by TJ (READ-APPROVAL addendum 3, 22:41:20Z, runtime page loads only); READ-PLAN v3 and CONTRACT now reference it.
 - TT-11: team-colour neon logos (teamNeon.ts floor 4.5:1, per-team tint, --neon-halo); contact sheet tt11/; E2E 34 (v2 pins), Vitest 239, eslint 0, tsc 0, CSS pure OK; renders tt11/fixture + genuine-run2. Committing; colour flags in RECEIPT-11.
+- TT-12: overrides/spreads in teamNeon, 9 baked multi-colour outlines (tt12/bake-multicolour-outlines.mjs), sheets in tt12/; E2E 34 (v2 pins), Vitest 240, eslint 0, tsc 0, CSS pure OK. Committing.

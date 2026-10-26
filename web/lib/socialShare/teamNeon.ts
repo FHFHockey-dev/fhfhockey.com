@@ -39,12 +39,46 @@ export function withNeonFloor(color: string) {
   return hex([h, s, hi]);
 }
 
+type ColorField = "lightColor" | "primaryColor" | "secondaryColor" | "accent" | "jersey";
 /**
- * TT-11: the logo's own neon colours. Stroke = lightColor (primaryColor when absent), halo = secondaryColor, each lifted
- * to the floor. The tile's green/red stays on its border, hero, sparkline, badge, labels and chips.
+ * Glow strength around the outline (TT-12, TJ): `normal` is TT-7's (white 3px at 50%, halo 2px at 55%); `soft` is smaller
+ * and dimmer; `distinct` dims the white glow so the halo's own colour shows, without a wider halo.
  */
-export function teamNeon(abbreviation: string): { stroke: string; halo: string; strokeFrom: "lightColor" | "primaryColor" } | null {
+export type NeonSpread = "normal" | "soft" | "distinct";
+export const NEON_SPREADS: Record<NeonSpread, { glowPx: number; glowAlpha: number; haloPx: number; haloAlpha: number }> = {
+  normal: { glowPx: 3, glowAlpha: 0.5, haloPx: 2, haloAlpha: 0.55 },
+  soft: { glowPx: 2, glowAlpha: 0.3, haloPx: 1.5, haloAlpha: 0.35 },
+  distinct: { glowPx: 2, glowAlpha: 0.3, haloPx: 2, haloAlpha: 0.85 },
+};
+/** TT-12: outlines baked offline in the logo's own colours (public/teamLogos/outline/color), not tinted at runtime. */
+export const NEON_MULTICOLOUR: ReadonlySet<string> = new Set(["NYR", "NYI", "CHI", "ANA", "FLA", "DET", "TOR", "WSH", "EDM"]);
+/**
+ * TJ's per-team choices from the TT-11 contact sheet (TT-12). Unlisted teams keep TT-11: lightColor stroke,
+ * secondaryColor halo, normal spread.
+ * - VGK: gold stroke. CHI / NYI / SJS: accent halo instead of a black secondary. DAL: jersey green (the neon green was abrasive).
+ * - soft: BUF, CBJ, CHI, DAL, DET, MTL, NYR, OTT (dimmer, smaller glow).
+ * - distinct: the "no difference" teams COL, EDM, FLA, LAK, MIN, STL, TBL, TOR, WSH. FLA, STL, TOR and WSH are on the
+ *   dimmer list too: distinct dims their white glow and keeps the 2px halo, so both asks hold.
+ * - MIN: jersey red halo against its green stroke; LAK: jersey white halo, the only colour apart from its silver.
+ */
+export const NEON_OVERRIDES: Record<string, { stroke?: ColorField; halo?: ColorField; spread?: NeonSpread }> = {
+  VGK: { stroke: "secondaryColor" }, CHI: { halo: "accent", spread: "soft" }, NYI: { halo: "accent" }, SJS: { halo: "accent" },
+  DAL: { stroke: "jersey", spread: "soft" },
+  BUF: { spread: "soft" }, CBJ: { spread: "soft" }, DET: { spread: "soft" }, MTL: { spread: "soft" }, NYR: { spread: "soft" }, OTT: { spread: "soft" },
+  COL: { spread: "distinct" }, EDM: { spread: "distinct" }, FLA: { spread: "distinct" }, LAK: { halo: "jersey", spread: "distinct" },
+  MIN: { halo: "jersey", spread: "distinct" }, STL: { spread: "distinct" }, TBL: { spread: "distinct" }, TOR: { spread: "distinct" }, WSH: { spread: "distinct" },
+};
+
+export type TeamNeon = { stroke: string; halo: string; strokeFrom: ColorField; haloFrom: ColorField; spread: NeonSpread; multicolour: boolean };
+/**
+ * TT-11/12: the logo's own neon colours, each lifted to the floor. The tile's green/red stays on its border, hero,
+ * sparkline, badge, labels and chips. Multi-colour teams still report their single stroke (the runtime fallback).
+ */
+export function teamNeon(abbreviation: string): TeamNeon | null {
   const info = teamsInfo[abbreviation];
   if (!info) return null;
-  return { stroke: withNeonFloor(info.lightColor ?? info.primaryColor), halo: withNeonFloor(info.secondaryColor), strokeFrom: info.lightColor ? "lightColor" : "primaryColor" };
+  const override = NEON_OVERRIDES[abbreviation] ?? {};
+  const strokeFrom: ColorField = override.stroke ?? (info.lightColor ? "lightColor" : "primaryColor"), haloFrom: ColorField = override.halo ?? "secondaryColor";
+  return { stroke: withNeonFloor(info[strokeFrom] ?? info.primaryColor), halo: withNeonFloor(info[haloFrom] ?? info.secondaryColor), strokeFrom, haloFrom,
+    spread: override.spread ?? "normal", multicolour: NEON_MULTICOLOUR.has(abbreviation) };
 }
