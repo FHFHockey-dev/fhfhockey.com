@@ -10,4 +10,7 @@
 - Gotcha: lock is a directory with OWNER file; c3-cron-repro held it ~16:42Z.
 - Checks done: vitest 47/47 (3 files), scoped tsc exit 0 (after a fixture type fix), eslint 0 errors / 2 pre-existing img warnings. Lock released.
 - Handoff: GS/RECEIPT.md lists 4 changed paths + hashes; task-only.patch saved. No commit (orchestrator commits). workloadEvidence.* unchanged.
+- Ticket 2 (after commit f951732dc): appearance count = one per unique row (explicit 0 only excluded); fixes null gamesPlayed undercount. 48 tests, scoped tsc and lint pass. GS/RECEIPT-2.md. Not committed.
+- Ticket 3 (after 5660dcdd0): de-duplicated slice colours in index.tsx (PHI/TOR/PIT/OTT palettes repeat a colour). 49 tests, scoped tsc and lint pass. GS/RECEIPT-3.md. Not committed.
+- Ticket 4: pins unchanged; no in-lease defect of real value left, so no edits (GS/RECEIPT-4.md lists the rejected candidates). GS lane can close.
 - Next (outside lease): null-safe prior transport in projection stages, team/trade clocks, authoritative FORGE starter contract, calibration.

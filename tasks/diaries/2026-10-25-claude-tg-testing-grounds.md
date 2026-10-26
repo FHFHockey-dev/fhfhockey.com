@@ -16,6 +16,15 @@
 
 - S06 implemented: runStore.ts, memoryRunStore.ts, runnerContracts.ts (export jsonValue), ownerRoutes.test.ts (+13). Namespace vitest 146/146, scoped tsc + eslint pass. Pins rechecked: 4 changed, 21 identical. RECEIPT.md written.
 
+- Follow-up: whole-project tsc (8 GB heap) showed 0 TG errors; C3's 8 were likely a mid-edit snapshot. Recorded in RECEIPT.md.
+- S07 contract kit: new runStoreContract.ts and runStoreContract.test.ts (8 contract tests on the memory store). Namespace 154/154; scoped and whole-project tsc exit 0; eslint clean. RECEIPT-2.md written. Nothing committed.
+- Ticket 3, building on 63654c308, which C7 accepted:
+  - T1: kit renamed to runStoreContract.testkit.ts. T2: added a cross-run results-binding contract test.
+  - Preview: RunHistoryPanel shows the saved-run listing, using the new browser-safe runProjection.ts (schema moved there and re-exported).
+  - Checks: 163/163 tests; scoped and whole-project tsc exit 0; eslint clean on 8 files. RECEIPT-3.md written. Nothing committed.
+- Ticket 4: hash-bound manifest read (store.manifest, adapter `manifest` op, 1 contract test, 2 route tests). Checks: 166/166; scoped and whole-project tsc exit 0; eslint clean. RECEIPT-4.md written. Nothing committed.
+- Gotcha: zsh doesn't word-split `$F`; use an array for file lists.
+
 ## Next
 - Orchestrator reviews and commits. Candidate next slices: a durable-store contract test kit (same schema against any adapter); the preview showing a list/reconnect state from validated projections.
 

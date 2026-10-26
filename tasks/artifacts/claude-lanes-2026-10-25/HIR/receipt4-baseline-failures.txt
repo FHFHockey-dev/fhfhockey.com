@@ -1,0 +1,8 @@
+   × Healthy reserve alert > says a locked weekly lineup counts from next week instead of showing a this-week gain 5ms
+     → Unable to find an element with the text: Weekly lineup is locked — activating him counts from next week. This could be because the text is broken up by multiple elements. In this case, you can provide a functi
+   × healthy reserve players > prices no this-week gain once the weekly lineup has locked, and flags the next window 7ms
+     → expected { swapPlayerId: null, …(2) } to deeply equal { swapPlayerId: null, …(3) }
+   × healthy reserve players > ranks locked-window activations by their (zero) this-week gain, so ties keep roster order 6ms
+     → expected [ { playerId: 'f', …(3) }, …(1) ] to deeply equal [ { playerId: 'd', …(3) }, …(1) ]
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  3 failed | 19 passed (22)

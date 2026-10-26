@@ -26,3 +26,19 @@ None.
 - zsh: `echo ====` errors (`=` expansion). Use `echo ---`.
 - windows.ts `instant()` accepts at most 3 fractional digits; Postgres timestamps have 6.
 - Gotcha: scoped tsc misses the whole-project Buffer/Uint8Array clash (@types/node 18 + TS 5.7). Run whole tsc with NODE_OPTIONS=--max-old-space-size=8192.
+
+## Ticket 2 (WIRING-1 draft, ~18:30Z)
+- Loader committed 4d37b51c9. WIRING-1.patch + WIRING-1.md in PC artifacts; not applied to web/. Snapshot /private/tmp/pc-wiring-1: 98/98 tests, scoped tsc and lint clean. Whole tsc not run (lock held by WIGO). Open: page-test path is outside the lease.
+- 18:29Z: whole-project tsc on the snapshot passed (after adding e2e/ to it). WIRING-1.md updated. Awaiting C7 review and the lease decision for the __tests__ path.
+
+## Ticket 3 (apply WIRING-1 + C7 L1 fix, ~18:50Z)
+- C7 R23 L1: the verdict is now states and coded enums only (no reasons, bundleId, receipt ids). L2: the guard catches import()/require(). L4: the __tests__ page test was dropped (not granted) and its check moved into cardEvidenceVerdict.test.ts.
+- Snapshot /private/tmp/pc-wiring-3: 100/100 tests, eslint clean; mutation (reasons back in props) fails 3 tests.
+- Applied 3 granted files to canonical (page pre-hash fac7acb9 verified; new files did not exist, cp -n). Canonical checks queued under the lock. Not committed.
+- 19:07Z: canonical checks passed: 100/100 tests, scoped and whole tsc, eslint (incl. C1 rules). RECEIPT-3.md written. Next: orchestrator commit; L3 (client bundle) waits for build authority.
+
+## Ticket 4 (status line, ~20:52Z)
+- TJ chose "Small status line" by pop-up. New evidenceVerdictCopy.ts; the page renders fixed copy by state; 2 tests. 102/102 tests, scoped and whole tsc, eslint clean. RECEIPT-4.md written. Not committed; the line is unstyled and not visually checked.
+
+## Ticket 5 (R28 P1/P2, ~21:07Z)
+- Page prop narrowed to { state } via clientEvidence(); copy takes an explicit context (preview vs bundle). 103/103 tests, scoped and whole tsc, eslint clean. RECEIPT-5.md written. Not committed.

@@ -1,0 +1,278 @@
+diff --git a/web/components/RosterScheduleOptimizer/HealthyReserveAlert.test.tsx b/web/components/RosterScheduleOptimizer/HealthyReserveAlert.test.tsx
+index e43f9fb64..96e3c86d1 100644
+--- a/web/components/RosterScheduleOptimizer/HealthyReserveAlert.test.tsx
++++ b/web/components/RosterScheduleOptimizer/HealthyReserveAlert.test.tsx
+@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
+ import HealthyReserveAlert from "./HealthyReserveAlert";
+ 
+ afterEach(cleanup);
+-const names: Record<string, string> = { d: "Back Healthy", e: "Hurt Wing" };
++const names: Record<string, string> = { d: "Back Healthy", e: "Hurt Wing", f: "Fresh Legs", g: "Third Man" };
+ const nameOf = (id: string) => names[id] ?? id;
+ 
+ describe("Healthy reserve alert", () => {
+@@ -37,4 +37,31 @@ describe("Healthy reserve alert", () => {
+     rerender(<HealthyReserveAlert nameOf={nameOf} reserves={[]} />);
+     expect(screen.queryByRole("alert")).toBeNull();
+   });
++
++  // TJ 2026-10-25: rank competing healthy reserves by projected gain and say how many fit.
++  it("says only the best can be activated when spots run out, and keeps unknown gains' own wording", () => {
++    const f = { playerId: "f", position: "IR+" as const, slotEligible: false, activation: { swapPlayerId: null, projectedPoints: 10, activeGames: 2 } };
++    const d = { playerId: "d", position: "IR" as const, slotEligible: false, activation: null };
++    const { rerender } = render(<HealthyReserveAlert nameOf={nameOf} reserves={[f, d]} />);
++    expect(screen.getByText("Only one can be activated: best is Fresh Legs (+10 pts).")).toBeTruthy();
++    const g = { playerId: "g", position: "IR" as const, slotEligible: true, activation: { swapPlayerId: "e", projectedPoints: null, activeGames: null } };
++    rerender(<HealthyReserveAlert nameOf={nameOf} reserves={[f, g, d]} />);
++    expect(screen.getByText("Only 2 can be activated: best are Fresh Legs (+10 pts) and Third Man.")).toBeTruthy();
++    expect(screen.getByText("Gain unknown until the lineup passes the rule check")).toBeTruthy();
++    rerender(<HealthyReserveAlert nameOf={nameOf} reserves={[f, g]} />);
++    expect(screen.queryByText(/can be activated/)).toBeNull();
++    rerender(<HealthyReserveAlert nameOf={nameOf} reserves={[d]} />);
++    expect(screen.queryByText(/can be activated/)).toBeNull();
++  });
++
++  it("adds a soft note, never a warning, for a DTD player in IR+ whose team plays today", () => {
++    const { rerender } = render(<HealthyReserveAlert nameOf={nameOf} reserves={[]} dtd={["e"]} />);
++    expect(screen.getByRole("note").textContent).toBe("Hurt Wing: DTD in IR+ — may play; consider activating if you have a spot.");
++    expect(screen.queryByRole("alert")).toBeNull();
++    rerender(<HealthyReserveAlert nameOf={nameOf} reserves={[{ playerId: "d", position: "IR", slotEligible: false, activation: null }]} dtd={["e"]} />);
++    expect(screen.getByRole("alert").textContent).not.toContain("DTD");
++    expect(screen.getByRole("note")).toBeTruthy();
++    rerender(<HealthyReserveAlert nameOf={nameOf} reserves={[]} dtd={[]} />);
++    expect(screen.queryByRole("note")).toBeNull();
++  });
+ });
+diff --git a/web/components/RosterScheduleOptimizer/HealthyReserveAlert.tsx b/web/components/RosterScheduleOptimizer/HealthyReserveAlert.tsx
+index d9abccc36..e1a5c9591 100644
+--- a/web/components/RosterScheduleOptimizer/HealthyReserveAlert.tsx
++++ b/web/components/RosterScheduleOptimizer/HealthyReserveAlert.tsx
+@@ -14,13 +14,27 @@ function gainText({ projectedPoints, activeGames }: NonNullable<HealthyReserve["
+   return { known: true, text: `${parts.join(" · ")} this week` };
+ }
+ 
+-/** Healthy players still in IR/IR+ (Yahoo lists no injury), with the gain from activating each. */
+-export default function HealthyReserveAlert({ reserves, nameOf, onSelect }: {
+-  reserves: HealthyReserve[]; nameOf: (id: string) => string; onSelect?: (playerId: string) => void;
++/** "Only k can be activated" when the open spots and swap partners run out before the flagged players do; the helper
++ * already ranks them by projected gain, unknown gains last. */
++function contestText(reserves: HealthyReserve[], nameOf: (id: string) => string) {
++  const activated = reserves.filter(reserve => reserve.activation);
++  if (!activated.length || activated.length === reserves.length) return null;
++  const best = activated.map(({ playerId, activation }) => `${nameOf(playerId)}${activation!.projectedPoints !== null ? ` (${signed(activation!.projectedPoints)} pts)`
++    : activation!.activeGames !== null ? ` (${signed(activation!.activeGames)} active games)` : ""}`);
++  const list = best.length === 1 ? best[0] : `${best.slice(0, -1).join(", ")} and ${best[best.length - 1]}`;
++  return `Only ${best.length === 1 ? "one" : best.length} can be activated: best ${best.length === 1 ? "is" : "are"} ${list}.`;
++}
++
++/** Healthy players still in IR/IR+ (Yahoo lists no injury), with the gain from activating each, then a soft note for
++ * each DTD player in IR+ whose team plays today. */
++export default function HealthyReserveAlert({ reserves, dtd = [], nameOf, onSelect }: {
++  reserves: HealthyReserve[]; dtd?: string[]; nameOf: (id: string) => string; onSelect?: (playerId: string) => void;
+ }) {
+-  if (!reserves.length) return null;
+-  return <section className={styles.alert} role="alert" aria-label="Healthy players in IR">
++  if (!reserves.length && !dtd.length) return null;
++  const contest = contestText(reserves, nameOf);
++  return <>{reserves.length > 0 && <section className={styles.alert} role="alert" aria-label="Healthy players in IR">
+     <h3>{reserves.length === 1 ? "Healthy player in IR" : `${reserves.length} healthy players in IR`}</h3>
++    {contest && <p className={styles.action}>{contest}</p>}
+     <ul>{reserves.map(reserve => {
+       const name = nameOf(reserve.playerId), activation = reserve.activation, gain = activation && gainText(activation);
+       return <li key={reserve.playerId}>
+@@ -33,5 +47,7 @@ export default function HealthyReserveAlert({ reserves, nameOf, onSelect }: {
+           {gain && <> <b className={styles.gain} data-known={gain.known}>{gain.text}</b></>}</p>
+       </li>;
+     })}</ul>
+-  </section>;
++  </section>}
++    {dtd.map(id => <p key={id} className={styles.action} role="note">{nameOf(id)}: DTD in IR+ — may play; consider activating if you have a spot.</p>)}
++  </>;
+ }
+diff --git a/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx b/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+index 78ebc5123..2e5db020f 100644
+--- a/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
++++ b/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+@@ -26,7 +26,7 @@ import OptimizeLineup from "./OptimizeLineup";
+ import BenchDays from "./BenchDays";
+ import SlotWeekGrid from "./SlotWeekGrid";
+ import { lineupGapReport } from "lib/rosterScheduleOptimizer/lineupGaps";
+-import { withoutHealthyReserves } from "lib/rosterScheduleOptimizer/healthyReserves";
++import { dtdReserves, withoutHealthyReserves } from "lib/rosterScheduleOptimizer/healthyReserves";
+ import { ownershipLabel } from "lib/rosterScheduleOptimizer/retention";
+ import AcquisitionPeriodTimes from "./AcquisitionPeriodTimes";
+ import CategoryGains from "./CategoryGains";
+@@ -1040,7 +1040,7 @@ export default function RosterScheduleOptimizer() {
+       <section className={`${styles.panel} ${styles.rosterPanel} ${tab === "roster" ? styles.mobileActive : ""}`} aria-label="Roster and setup"><div className={styles.panelHead}><h2 id="rso-roster-heading" tabIndex={-1}><span className={styles.panelNumber} aria-hidden="true">1</span>Current Roster</h2><span>{roster.length} players</span><InfoTooltip label="About roster metrics and protection">GP is remaining scheduled games while rostered. AGP is legal active-game assignments. DUST is evaluated bench games. Points exclude banked results; unavailable values are not zero. ? means unknown, — unavailable, and a number with + is a known subtotal with an unknown full total. Select the numbers for daily evidence. Protect keeps a player out of drop proposals. Manage opens roster position and evidence controls.</InfoTooltip></div><div id="rso-roster-edit" {...readOnlyInert} className={styles.panelBody}>
+         {workspace.context.provider === "manual" && <details className={styles.rosterEntryTools} open={roster.length === 0 || workspace.unresolvedNames.length > 0}><summary>Add or import roster</summary><label className={styles.field}>Find a player<input id="rso-roster-input" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Name or team" /></label>{query.length >= 2 && <ul className={styles.searchResults}>{matches.map((player) => <li key={player.id}><span>{player.name} · {player.teamAbbreviation ?? "—"} · {player.eligiblePositions.join("/")}</span><button onClick={() => addRoster(player, resolvingName)} disabled={rosterIds.has(player.id) && !resolvingName} aria-describedby={rosterIds.has(player.id) ? `rso-roster-add-${player.id}` : undefined}>{resolvingName ? "Resolve" : "Add"}</button>{rosterIds.has(player.id) && <small id={`rso-roster-add-${player.id}`}>Already in your roster.</small>}</li>)}</ul>}<label className={styles.field}>Paste roster names<textarea value={paste} onChange={(event) => setPaste(event.target.value)} placeholder="One name per line" /></label><button onClick={importRoster} disabled={!paste.trim()} aria-describedby={!paste.trim() ? "rso-paste-reason" : "rso-action-status"}>Review pasted names</button>{!paste.trim() && <small id="rso-paste-reason">Paste at least one roster name to review.</small>}{workspace.unresolvedNames.length > 0 && <div className={styles.unresolved}><strong>Unresolved — excluded from analysis</strong>{workspace.unresolvedNames.map((name) => <div key={name}>{name}<button onClick={() => setQuery(name)}>Find match</button><button onClick={() => edit((current) => ({ ...current, unresolvedNames: current.unresolvedNames.filter((item) => item !== name) }))}>Dismiss</button></div>)}</div>}</details>}
+ 
+-        {result && <HealthyReserveAlert reserves={healthyReserves} nameOf={nameOf} onSelect={selectPlayer} />}
++        {result && <HealthyReserveAlert reserves={healthyReserves} dtd={snapshot ? dtdReserves(snapshot) : []} nameOf={nameOf} onSelect={selectPlayer} />}
+         <div className={styles.rosterColumns} aria-hidden="true"><span>Player · range</span><div><span>GP</span><span>AGP</span><span>DUST</span><span>Pts</span></div><span>Protect</span><span>More</span></div>
+         {gapReport && !gapReport.bestDrop && dropBlockers.length > 0 && <p className={styles.dropNotice} role="status">No drop suggested: {dropBlockers.map(row => row.playerId ? `${nameOf(row.playerId)} ${row.reason}` : row.reason).join(" · ")}.</p>}
+         {gapReport && !gapReport.bestDrop && !gapReport.projectionBlockers.length && gapReport.unprojectedDrops.length > 0 && <p className={styles.dropNotice} role="status">No drop suggested: {gapReport.unprojectedDrops.length} {gapReport.unprojectedDrops.length === 1 ? "player" : "players"} unprojected ({gapReport.unprojectedDrops.map(nameOf).join(", ")}).</p>}
+diff --git a/web/lib/rosterScheduleOptimizer/healthyReserves.test.ts b/web/lib/rosterScheduleOptimizer/healthyReserves.test.ts
+index 00e375682..07a5011aa 100644
+--- a/web/lib/rosterScheduleOptimizer/healthyReserves.test.ts
++++ b/web/lib/rosterScheduleOptimizer/healthyReserves.test.ts
+@@ -1,7 +1,7 @@
+ import { beforeEach, describe, expect, it, vi } from "vitest";
+ import * as rsoPolicy from "../player-forecasts/rsoUsePolicy";
+ import { fixtureRsoBindings, fixtureRsoPolicy } from "../player-forecasts/rsoUsePolicy.fixtures";
+-import { healthyReserves, withoutHealthyReserves } from "./healthyReserves";
++import { dtdReserves, healthyReserves, withoutHealthyReserves } from "./healthyReserves";
+ import { lineupGapReport } from "./lineupGaps";
+ import { evaluatePlan } from "./planning";
+ import type { GameForecast, PlanIntent, PlanningPlayer, PlanningSnapshot } from "./planningTypes";
+@@ -39,6 +39,14 @@ function snapshot(): PlanningSnapshot {
+     allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: false }, startProbability: null, confirmedStart: false, limitations: [] })));
+   return data;
+ }
++// A second healthy D-man, f (5 per game), on d's team.
++const withF = (data: PlanningSnapshot, position: "IR" | "IR+") => {
++  const f = member("f", "D", ["D"]);
++  data.players = [...data.players, f];
++  data.roster = [...data.roster, { playerId: "f", position }];
++  data.forecasts = [...data.forecasts, ...data.forecasts.filter(row => row.playerId === "d").map(row => ({ ...row, playerId: "f", stats: { pts: 5 },
++    issuedContext: { ...row.issuedContext!, playerId: "f", nhlPlayerId: f.nhlId!, rosterRevision: f.rosterRevision! } }))];
++};
+ const injured = (data: PlanningSnapshot, id: string, status: string, reserve: PlanningPlayer["reserveEligibility"]) => {
+   data.players = data.players.map(row => row.id === id ? { ...row, injury: { status, label: status, note: null }, reserveEligibility: reserve } : row);
+ };
+@@ -127,4 +135,50 @@ describe("healthy reserve players", () => {
+     const manual = { ...data, context: { ...data.context, provider: "manual" as const } };
+     expect(withoutHealthyReserves(blockers, healthyReserves(manual, intent))).toEqual(blockers);
+   });
++
++  // TJ 2026-10-25: flagged players competing for too few spots or partners rank by projected gain, unknown gains last.
++  it("gives the open spot to the bigger gain, not roster order, and leaves the rest to a drop", () => {
++    const data = snapshot();
++    withF(data, "IR+");
++    expect(healthyReserves(data, intent)).toEqual([
++      { playerId: "f", position: "IR+", slotEligible: false, activation: { swapPlayerId: null, projectedPoints: 10, activeGames: 2 } },
++      { playerId: "d", position: "IR", slotEligible: false, activation: null }]);
++    data.forecasts = data.forecasts.filter(forecast => forecast.playerId !== "f");
++    expect(healthyReserves(data, intent).map(row => [row.playerId, row.activation?.projectedPoints])).toEqual([["d", 6], ["f", undefined]]);
++  });
++
++  it("gives a shared swap partner to the bigger gain only", () => {
++    const data = snapshot();
++    data.roster = [...data.roster, { playerId: "e", position: "active" }];
++    withF(data, "IR+");
++    injured(data, "e", "O", ["IR", "IR+"]);
++    expect(healthyReserves(data, intent)).toEqual([
++      { playerId: "f", position: "IR+", slotEligible: false, activation: { swapPlayerId: "e", projectedPoints: 10, activeGames: 2 } },
++      { playerId: "d", position: "IR", slotEligible: false, activation: null }]);
++  });
++
++  // TJ 2026-10-25: a DTD player in IR+ may play on his team's game days: a soft note, not a flag.
++  it("notes a DTD player in IR+ only when his team plays today", () => {
++    const data = snapshot();
++    data.roster = data.roster.map(row => row.playerId === "d" ? { ...row, position: "IR+" } : row);
++    injured(data, "d", "DTD", ["IR+"]);
++    data.context = { ...data.context, asOf: "2026-10-05T12:00:00Z" };
++    expect(dtdReserves(data)).toEqual(["d"]);
++    expect(healthyReserves(data, intent)).toEqual([]);
++    data.games = data.games.filter(game => !(game.teamAbbreviation === "D" && game.date === "2026-10-05"));
++    expect(dtdReserves(data)).toEqual([]);
++    const final = snapshot();
++    final.roster = final.roster.map(row => row.playerId === "d" ? { ...row, position: "IR+" } : row);
++    final.context = { ...final.context, asOf: "2026-10-05T12:00:00Z" };
++    for (const status of ["O", "IR"]) {
++      injured(final, "d", status, ["IR+"]);
++      expect(dtdReserves(final)).toEqual([]);
++    }
++    injured(final, "d", "DTD", ["IR+"]);
++    final.roster = final.roster.map(row => row.playerId === "d" ? { ...row, position: "IR" } : row);
++    expect(dtdReserves(final)).toEqual([]);
++    final.roster = final.roster.map(row => row.playerId === "d" ? { ...row, position: "IR+" } : row);
++    expect(dtdReserves({ ...final, context: { ...final.context, provider: "manual" } })).toEqual([]);
++    expect(dtdReserves(final)).toEqual(["d"]);
++  });
+ });
+diff --git a/web/lib/rosterScheduleOptimizer/healthyReserves.ts b/web/lib/rosterScheduleOptimizer/healthyReserves.ts
+index 0437d26df..79ca27902 100644
+--- a/web/lib/rosterScheduleOptimizer/healthyReserves.ts
++++ b/web/lib/rosterScheduleOptimizer/healthyReserves.ts
+@@ -1,4 +1,5 @@
+ import { evaluatePlan } from "./planning";
++import { localDate } from "./planningDates";
+ import { expandActiveSlots } from "./slots";
+ import type { PlanEvaluation, PlanIntent, PlanningPlayer, PlanningSnapshot, RosterEntry } from "./planningTypes";
+ 
+@@ -11,8 +12,10 @@ export type HealthyReserve = {
+   /** The no-other-move activation: onto an open bench spot, or swapped with a rostered player Yahoo lists for his
+    * reserve slot. Null when neither exists (a drop must make room). Gains compare against him staying out of the
+    * lineup; null when the planner can't price both lineups (points gain is points leagues only). */
+-  activation: { swapPlayerId: string | null; projectedPoints: number | null; activeGames: number | null } | null;
++  activation: Activation | null;
+ };
++type Activation = { swapPlayerId: string | null; projectedPoints: number | null; activeGames: number | null };
++type Reserved = RosterEntry & { position: "IR" | "IR+" };
+ 
+ const RESERVE_POSITIONS = new Set(["IR", "IR+", "NA"]);
+ const descending = (left: number | null, right: number | null) => left === right ? 0 : left === null ? 1 : right === null ? -1 : right - left;
+@@ -25,6 +28,19 @@ export function isHealthyReserve(snapshot: PlanningSnapshot, entry: RosterEntry,
+     && snapshot.context.provider === "yahoo" && snapshot.evidence.roster?.completeness === "complete";
+ }
+ 
++/** TJ 2026-10-25: DTD players in IR+ whose team has a game still to start today, from a live, complete Yahoo read. They
++ * may play, so the alert adds a soft note (never a warning); no note on days his team doesn't play. */
++export function dtdReserves(snapshot: PlanningSnapshot): string[] {
++  if (snapshot.context.provider !== "yahoo" || snapshot.evidence.roster?.completeness !== "complete") return [];
++  const today = localDate(snapshot.context.asOf, snapshot.context.timeZone);
++  const playing = new Set(snapshot.games.filter(game => game.date === today && game.status === "scheduled").map(game => game.teamAbbreviation));
++  const players = new Map(snapshot.players.map(player => [player.id, player]));
++  return snapshot.roster.filter(entry => {
++    const player = players.get(entry.playerId);
++    return entry.position === "IR+" && player?.injury?.status === "DTD" && !!player.teamAbbreviation && playing.has(player.teamAbbreviation);
++  }).map(entry => entry.playerId);
++}
++
+ /** Lineup-gap blockers minus those naming a flagged healthy reserve: his alert already says the lineup is illegal and
+  * how to move him. Injured-ineligible and lineup-wide blockers stay. */
+ export function withoutHealthyReserves<T extends { playerId: string | null }>(blockers: T[], reserves: HealthyReserve[]): T[] {
+@@ -52,19 +68,29 @@ export function healthyReserves(snapshot: PlanningSnapshot, intent: PlanIntent):
+     return { projectedPoints: priced && points && activated.projectedValue !== null && without.projectedValue !== null
+       ? activated.projectedValue - without.projectedValue : null, activeGames: priced ? activated.activeGames - without.activeGames : null };
+   };
+-  return healthy.map((entry, index) => {
+-    const activate = (swapPlayerId: string | null) => {
+-      const roster = [...base.map(row => row.playerId === swapPlayerId ? { ...row, position: entry.position } : row),
+-        { playerId: entry.playerId, position: "bench" as const }];
+-      return { swapPlayerId, ...gain(run(roster)) };
+-    };
+-    const reserve = { playerId: entry.playerId, position: entry.position,
+-      slotEligible: players.get(entry.playerId)!.reserveEligibility.includes(entry.position) };
+-    // Each open spot activates one flagged player directly; the rest need a swap or a drop.
+-    if (index < openSpots) return { ...reserve, activation: activate(null) };
+-    const swaps = base.filter(row => !RESERVE_POSITIONS.has(row.position) && players.get(row.playerId)?.reserveEligibility.includes(entry.position))
+-      .map(row => row.playerId).sort();
+-    const best = swaps.map(activate).sort((a, b) => descending(a.projectedPoints, b.projectedPoints) || descending(a.activeGames, b.activeGames))[0];
+-    return { ...reserve, activation: best ?? null };
++  const byGain = (a: Activation, b: Activation) => descending(a.projectedPoints, b.projectedPoints) || descending(a.activeGames, b.activeGames);
++  const activate = (entry: Reserved, swapPlayerId: string | null): Activation => {
++    const roster = [...base.map(row => row.playerId === swapPlayerId ? { ...row, position: entry.position } : row),
++      { playerId: entry.playerId, position: "bench" as const }];
++    return { swapPlayerId, ...gain(run(roster)) };
++  };
++  const swaps = new Map<string, Activation[]>();
++  const bestSwap = (entry: Reserved, taken: Set<string>) => {
++    if (!swaps.has(entry.playerId)) swaps.set(entry.playerId, base.filter(row => !RESERVE_POSITIONS.has(row.position)
++      && players.get(row.playerId)?.reserveEligibility.includes(entry.position)).map(row => row.playerId).sort()
++      .map(id => activate(entry, id)).sort(byGain));
++    return swaps.get(entry.playerId)!.find(option => !taken.has(option.swapPlayerId!)) ?? null;
++  };
++  // TJ 2026-10-25: flagged players compete for the open spots and swap partners, best projected gain first
++  // (unknown gains last); each spot or partner activates one player, the rest need a drop.
++  const ranked = healthy.map(entry => ({ entry, best: openSpots > 0 ? activate(entry, null) : bestSwap(entry, new Set()) }))
++    .sort((a, b) => !a.best || !b.best ? Number(!a.best) - Number(!b.best) : byGain(a.best, b.best));
++  let spots = openSpots;
++  const taken = new Set<string>();
++  return ranked.map(({ entry, best }) => {
++    const activation = spots-- > 0 ? best : bestSwap(entry, taken);
++    if (activation?.swapPlayerId) taken.add(activation.swapPlayerId);
++    return { playerId: entry.playerId, position: entry.position,
++      slotEligible: players.get(entry.playerId)!.reserveEligibility.includes(entry.position), activation };
+   });
+ }

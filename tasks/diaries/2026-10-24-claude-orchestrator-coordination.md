@@ -79,3 +79,82 @@
 - 2026-10-25T16:24Z: TJ reversed Codex reclaim of all Claude lanes; SS1/C3/C1 installing in-tree; C7 reviews. Mailbox CLAUDE-073.
 - 2026-10-25T16:26Z: TJ: BLSH only Codex lane; Claude owns local commits; Codex to freeze+hand over all else (CLAUDE-074).
 - 2026-10-25T16:27Z: committed C1 9dbc55afb (explicit paths, not pushed). C7 t17 reviews installs. Mailbox CLAUDE-075.
+
+## 2026-10-25 ~17:30Z final-quota push (41 min left)
+- TJ steers (direct pop-up): HIR P1 = soft DTD-in-IR+ game-day note; HIR P2 = rank competing flagged reserves, "Only one can be activated: best is X (+N pts)". P3 stays out of scope.
+- Dispatched: TG RECEIPT-2 durable-store contract kit; HIR RECEIPT-2 policy 1+2. Q1 V58 attempt 3 build running (PID 99415).
+- 33d99b377 kept as is (TJ). VS Code's 10k count was stale, from before Codex's 15:05Z archive.
+- Next: verify both receipts, commit each lane by explicit pathspec, and hold the push.
+
+## 2026-10-25 ~17:55Z resume point (quota reset at 21:00Z)
+- Committed locally, not pushed (13 ahead of origin/octoberBranch): 9dbc55afb C1, ac98431aa docs, 80425a4a9 C3a/b, 27ea7fc36 SS1, 4436789f1 WiGO, f951732dc GS, 9e861bfdc HIR, cee5d6a1f C3d, 664345ce5 TG, 4d37b51c9 PC, 33d99b377 records, 63654c308 TG kit, 48809914a HIR policy.
+- Push: TJ said hold. Before any push, re-check the 4 Vercel projects' preview settings with TJ and get direct pop-up approval.
+- Open: Q1 V58 attempt 3 (build → verify → renders, background) then a review sheet for TJ's keep/revert. HIR policy 3 (weekly IR lock) is unanswered. The PC wiring gate requires validateAdmittedEvidence. TG kit and HIR policy have no C7 review (Codex vets; mailbox 081). Social-share root cause waits on Vercel runtime logs after a deploy.
+- Never commit web/next-env.d.ts or the 663 untracked PNG/scratch files.
+- ~17:58Z TJ: "We need to continue work on what we can." Dispatched 10–12 min boxes: C7 R20 (review 63654c308 + 48809914a), GS RECEIPT-2, WiGO RECEIPT-2. All uncommitted; after the reset, verify the receipts and commit each lane by explicit pathspec.
+
+## 2026-10-25 14:50 EDT push + 2-hour window
+- Pushed octoberBranch 2f2b43230..86583ba6b (TJ, direct pop-up). No Vercel deployment, GitHub status, check-run or deployment appeared for the SHA, and all 4 linked projects still have previews disabled.
+- TJ: pop-ups always mark "(Recommended)" (memory updated). HIR policy 3 = Option A (follow the planner's weekly lock).
+- TJ wants meaningful usage, not burn. Dispatched: HIR-4 policy 3A; C3-4 route-runner pre-existing failure; C7-R23 PC WIRING-1 review; C1 dynamic-import lint gap; WiGO-4 audit items; Q2 v24 slices plus a review sheet. SS1 is doing ticket 21/22 (Targeted Matchups plus the legend steer). Q1 V58 attempt 4 is in the background. GS, TG and the read-only lanes stay idle (no high-value items left).
+
+## 2026-10-25 16:12 EDT release complete
+- Production: PR #382 squash-merged into master b84ff5b51 (tree = RC 8384a8563). The deploy dpl_4f7rvaZQ is READY; cms, functions and the empty-root project were canceled as usual. Smoke test, 5 GETs: 4×200, plus one 404 from my bad route (monday isn't a format).
+- octoberBranch is synced (ours-merge e74d6060e) and pushed; no builds.
+- Open: the social-share recent-form root cause (watch runtime logs when an editor opens Monday's edition); Q1 V58 attempt 7 still in progress.
+
+## 2026-10-26 checkpoint (TJ: pause for the Astra audit)
+- Finished the in-flight slice: cd73cbd69 (PROV-GUARD step 2). All implementation is paused; the guard expansion is not started.
+- Handoff: tasks/artifacts/astra-rso-handoff-2026-10-26/ (see README). Resume only on TJ's explicit instruction; follow CHECKPOINT.md §9.
+
+## 2026-10-26 15:50Z Astra audit resume
+- HEAD cd73cbd69 = the audited cut. F1–F6 confirmed (AMENDMENT-01 in astra-rso-handoff). Audit copied to tasks/artifacts/astra-audit-2026-10-26/.
+- Dispatched: prov-guard F1; rso-flake F6 + E2E packet; rso-manual F2→F3; C7 R40 on cd73cbd69. Leases pinned 15:46Z; mailbox 104.
+- Next: verify each receipt, commit by pathspec, C7 review, then F4 (prov-guard) and an integrated gate. Push/release only by TJ pop-up.
+
+## 2026-10-26 16:20Z slices 1–3 committed locally
+- Combined tree verified by me: tsc 0; 4,536/4,536 tests in UTC and New York (164 files); eslint 0 errors. Closure hash at HEAD = allowlisted 0e9876…4f8e4f.
+- Commits: 978134e22 (F2), 00d375839 (F6 + E2E packet), 5a19f1def (F1 + bd337d97a receipt for C7 R40 V1). Not pushed.
+- C7 R40: cd73cbd69 accepted with limits (V1 fixed; V2/V3 sent to prov-guard).
+- In flight: rso-manual F3; prov-guard V2/V3 + isolated build check + F4; rso-yahoo-diet cache-key account identity; C7 R41.
+- TJ-started forge-reserve-pass session: told the boundaries; it must request a lease before writing.
+
+## 2026-10-26 ~17:00Z F3 + Yahoo keys committed
+- 9e66c7e20 F3 (with F2F3 receipts); c0ebd63f7 Yahoo account-keyed caches. Verified on a clean HEAD overlay: tsc 0, eslint 0; the only test failures were export-only and pass in the checkout (5 files, 182 tests).
+- Closure at HEAD is now 4c06fd9e…; the allowlist holds 6613 (pre-F3). Re-verify once at the release candidate.
+- V2/V3 are interleaved with F4 in shared files, so they commit together after F4. FORGE-RESERVE: out-of-lease edits and a "count 0 for unknown dressing" rule were queried (TJ said null by default); waiting for its answer.
+
+## 2026-10-26 ~17:30Z paused (usage limit)
+- PROV-GUARD F4 + V2/V3 is done and uncommitted. All 35 files match tasks/artifacts/astra-rso-handoff-2026-10-26/slices/F4/RECEIPT.md; the list is in scratchpad p-f4.txt.
+- Next:
+  - run scratchpad/verify-f4.sh (clean HEAD overlay; rerun export-only failures in the checkout);
+  - commit by pathspec;
+  - C7 review of V2/V3 + F4.
+- Ask TJ by pop-up:
+  - GAME_PREDICTIONS_REQUIRE_FORGE_PROOF (default off);
+  - teams/goalies endpoints go unavailable while runs are unproven (GameGrid team forecasts, GoalieRiskCard, dashboards) until verified-closure runs exist after the release.
+- FORGE-RESERVE: lease extended; the count-0 rule is TJ's answer. Waiting for the final receipt and payload measurements, then a clean overlay check and commit.
+- Then: re-verify the final integrated closure hash and list it; full gate; release proposal pop-up.
+
+## 2026-10-26 ~18:00Z F4 committed
+- TJ pop-ups: GAME_PREDICTIONS_REQUIRE_FORGE_PROOF stays off; team/goalie guard accepted (mailbox 105).
+- 595ab13d9 = V2/V3 + F4 (36 files). Clean overlay: tsc 0, eslint 0, closure 4c06fd9e (allowlisted). The 6 overlay test-file failures are export-only and pass in the checkout (175 tests). C7 R42 requested.
+- FORGE-RESERVE: asked to keep the 4 MB budget when its flag is off (6 MB only with the flag on) and to add mobile decode/save measurement or record it as an activation gate. Then verify and commit.
+
+## 2026-10-26 ~18:50Z reserve + R42 committed
+- 074694095 reserve pass (flag off; 4 MB budget when off; migration local, not applied). 6fb1812c1 R42 fixes A1/A2/A4/A7 (A3 accepted as a residual).
+- Both verified on a clean HEAD overlay: tsc 0, eslint 0; the 7 export-only test files pass in the checkout.
+- Closure at HEAD: c1f0129a. prov-guard is listing it with a commit receipt (6fb1812c1). C7 R43 is reviewing both commits.
+- Next: commit the allowlist entry, full gate on HEAD, release-candidate proposal pop-up (push/deploy needs TJ).
+
+## 2026-10-26 ~19:30Z gate on HEAD
+- Full gate (export of 7b9770e4b): tsc 0; lint 0 errors / 69 warnings; CSS pure pass. Vitest: 47 export-only files rerun in the checkout, 46 pass. The one real failure (supportedBaselineMigration: unregistered D4 and reserve migrations, failing since 3795abb43) is fixed in ad079935e as pending records.
+- a02159b64: M1 migration revoke. The C7 R43 X1 closure is listed (7b9770e4b).
+- prov-guard: admit resumed runs whose stamps are all the same verified closure (availability). Then the RC proposal pop-up.
+- RC scope question for TJ: HEAD:web also carries the TT Tuesday Trends commits 82490cd45, c5829aa9e and 8e755dab8.
+
+## 2026-10-26 ~20:00Z RC built and gated
+- origin/master = 19890a8cb (Tuesday Trends #386, released by another session). RC efb36e908 (refs/rc/2026-10-26-web-5) = master tree with web from HEAD b9206fe31; 73 web files; tree 1ad87b0a.
+- RC gate: tsc 0; lint 0 errors / 69 warnings; CSS pure pass. 46 vitest files fail in the export, all export-only (pass in the checkout).
+- Vercel: all 4 projects previewDeploymentsDisabled=true, production branch master; last release had fhfhockey READY and the other 3 CANCELED.
+- TJ pop-up: ship after C7 accepts b9206fe31 (R44 requested). An earlier mismatched answer about moving evidence files was not treated as approval; re-asked.

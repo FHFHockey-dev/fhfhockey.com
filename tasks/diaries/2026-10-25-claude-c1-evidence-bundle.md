@@ -31,3 +31,15 @@ SITE-PLAYER-CARDS P1, package C1 of `tasks/today-plan-2026-10-25.md`. New `evide
 - INSTALL-RECEIPT.md written, with findings F1–F3 (self-label trust depends on loader; no type brand on `retained`; "retained" wording). Not changed.
 - Gotcha: shell is zsh, so use $pipestatus, not PIPESTATUS.
 - Next: Codex reviews and commits; F1–F3 decide whether a follow-up naming/brand patch is wanted. Diary kept until Codex commits.
+
+## X1 ticket: restricted import (2026-10-25T18:33Z)
+- Granted web/eslint.config.mjs only. Appended a no-restricted-imports block banning validateEvidenceBundle from **/evidenceBundle(.*), except in evidenceLoader.ts and evidenceBundle.test.ts. sha 47974c70… → 9522bca6….
+- Probes (in /private/tmp, since removed): 6 forbidden forms error, type-only/dynamic pass; negative control confirms the allow-list. lib/player-cards lint 0; full npm run lint exit 0 with 69 pre-existing warnings.
+- Gotcha: adding mts/cts to `files` made ESLint lint adapter.d.mts with espree, giving a parse error. Keep `files` within the already-linted extensions.
+- Receipt: tasks/artifacts/claude-lanes-2026-10-25/PC/C1-X1-RECEIPT.md. Not committed (Codex).
+
+## X1b ticket: dynamic import/require (2026-10-25T18:54Z)
+- Added no-restricted-syntax (6 selectors: ImportExpression literal/template, require literal/template, vi/jest importActual-style, TS import-equals) to the X1 block, with the same 2 exemptions. eslint.config.mjs sha 9522bca6… (= d5413c688) → 58cbf257….
+- Probes (/private/tmp, removed): 10/10 must-fail error, type-only/unrelated pass, allowed files pass; negative control confirms the allow-list. lib/player-cards lint 0; full lint exit 0, 0 errors, log byte-identical to the X1 run.
+- Gotcha: zsh doesn't word-split $VAR; use arrays or ${=VAR}.
+- Receipt: tasks/artifacts/claude-lanes-2026-10-25/PC/C1-X1b-RECEIPT.md. Not committed (Codex).

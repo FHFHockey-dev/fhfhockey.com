@@ -1,6 +1,6 @@
 {
   "owner": "Claude orchestrator",
-  "as_of_utc": "2026-10-25T16:42Z",
+  "as_of_utc": "2026-10-26T16:23:58Z",
   "base_head": "2f2b432306b048f16bf48c2e274f21e55a7514d4",
   "status": "Claude lanes reclaimed per TJ 2026-10-25T16:24Z",
   "shared_resources": {
@@ -432,7 +432,7 @@
       ],
       "owner": "Claude orchestrator \u2192 lane session",
       "session": "local_4542f7f4-e6a6-4e51-83eb-74e26e54ff0f (ss1-gamegrid-share)",
-      "status": "ACTIVE canonical 2026-10-25T16:24Z \u2014 install SS1-17+18 combined + REL-SS1-LOW-YEAR-R1",
+      "status": "RELEASED 2026-10-26T15:20:05Z \u2014 SS1 idle since 2026-10-25T20:39Z; SS1-24 committed 80fa80b5c. Monday files preserved as accepted; Tuesday files move to lane TT (CLAUDE-20261026-103).",
       "start_utc": "2026-10-24T15:34Z",
       "base_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
       "spec": "CLAUDE-20261024-009/-010",
@@ -755,7 +755,7 @@
         "web/lib/player-cards/** (all existing files)",
         "web/components/player-cards/**"
       ],
-      "status": "ACTIVE canonical 2026-10-25T16:24Z \u2014 installing granted patch (CODEX-080)",
+      "status": "RELEASED 2026-10-26T15:20:05Z \u2014 idle since 2026-10-25T18:54Z; C1-X1b eslint.config.mjs 58cbf257\u2026 matches tree; handed back with card paths (CLAUDE-20261026-103).",
       "base_head": "9d4996033c978fb1570c85e3ca226627872fdf30",
       "session": "local_003887f5-f8cd-4290-8920-3d8fa95cf1b2 (c1-evidence-bundle)"
     },
@@ -1360,7 +1360,7 @@
         "portrait reprocessing",
         "premium/live activation"
       ],
-      "status": "active 2026-10-25T16:39Z",
+      "status": "RELEASED 2026-10-26T15:20:05Z \u2014 card paths handed back to Codex (CODEX-20261026-001 / CLAUDE-20261026-103). Session idle since 2026-10-25T21:07Z; PC-5 committed 32f82b1ee; all 42 SOURCE-PINS match tree.",
       "base_head": "ac98431aa0714573f4f89691f3b9502fe4e375ec",
       "session": "local_bd4b0f5c-a517-4d89-98f8-cdb2e7b9b5d7 (pc-player-cards)"
     },
@@ -1517,9 +1517,459 @@
         "goalie/planning/forecast/provider/auth files",
         "Yahoo rule invention"
       ],
-      "status": "active 2026-10-25T16:39Z",
+      "status": "released",
       "base_head": "ac98431aa0714573f4f89691f3b9502fe4e375ec",
-      "session": "local_5e1f0f8d-c5d4-43e8-9c0f-51f744687daa (hir-healthy-reserves)"
+      "session": "local_5e1f0f8d-c5d4-43e8-9c0f-51f744687daa (hir-healthy-reserves)",
+      "released_note": "2026-10-26T15:47Z re-pin at Astra-audit resume: lane work already committed (checkpoint: no RSO/FORGE product code dirty); paths reassigned to active audit slices"
+    },
+    {
+      "lane": "RSO-BRIDGE",
+      "scope": "forgeDailyBridge P1: unknown-vs-zero season-rate supplements; goalie share team/season/trade binding",
+      "authority": "TJ direct pop-up 2026-10-25 ~23:20Z (RSO wave 1; beta = daily manual + Yahoo); RSO/FORGE custody per TJ ('BLSH only Codex lane') and RSO-CURRENT-STATUS 22:38Z. Supersedes CODEX-LEASES 16:32Z broad reservations for these exact paths only.",
+      "write_paths": [
+        {
+          "path": "web/lib/rosterScheduleData/forgeDailyBridge.ts",
+          "baseline_sha256": "651eff511275b93f6f598181f3c5402c9b4d1b57d3959eb772528842910855f5"
+        },
+        {
+          "path": "web/lib/rosterScheduleData/forgeDailyBridge.test.ts",
+          "baseline_sha256": "16c3d6f394be1a2a877b2a4ddaac9ef8d2100c577ff98ec3adb96aaf4342f9d1"
+        },
+        {
+          "path": "web/lib/rosterScheduleData/planningInputs.ts",
+          "baseline_sha256": "8193aa5d1bd22349b729e0a135f2060e847c5569312f83a84b23d2cbee498313"
+        }
+      ],
+      "status": "released",
+      "released_note": "2026-10-26T15:47Z re-pin at Astra-audit resume: lane work already committed (checkpoint: no RSO/FORGE product code dirty); paths reassigned to active audit slices"
+    },
+    {
+      "lane": "RSO-FLAKE",
+      "scope": "AUDIT F6 lease retry fix + slice 2 manual end-to-end acceptance packet on interim bridge (new test files; defects reported, not fixed outside lease)",
+      "authority": "TJ chat 2026-10-26 Astra-audit resume: ordinary local edits/offline tests within RSO/FORGE ownership; plan in astra-rso-handoff-2026-10-26/AMENDMENT-01-AUDIT-RECONCILIATION.md",
+      "write_paths": [
+        "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+        "web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx",
+        "web/lib/rosterScheduleOptimizer/dailyAcceptance.e2e.test.ts",
+        "web/e2e/rso-acceptance.spec.ts",
+        "web/e2e/fixtures/rso-acceptance/"
+      ],
+      "status": "idle",
+      "pinned_utc": "2026-10-26T15:46:11Z",
+      "artifact_dir": "tasks/artifacts/astra-rso-handoff-2026-10-26/slices/E2E/",
+      "note": "F6+E2E 00d375839 committed"
+    },
+    {
+      "lane": "RSO-MANUAL",
+      "scope": "AUDIT F2 (slice 3) then F3 (slice 4): separate legal selection from approved totals/comparison; stable method binding + per-issuance lineage. SOG assignment/tie-break stay denied",
+      "authority": "TJ chat 2026-10-26 Astra-audit resume: ordinary local edits/offline tests within RSO/FORGE ownership; plan in astra-rso-handoff-2026-10-26/AMENDMENT-01-AUDIT-RECONCILIATION.md",
+      "write_paths": [
+        "web/lib/rosterScheduleOptimizer/planning.ts",
+        "web/lib/rosterScheduleOptimizer/planning.test.ts",
+        "web/lib/rosterScheduleOptimizer/candidatePlanMetrics.ts",
+        "web/lib/rosterScheduleOptimizer/candidatePlanMetrics.test.ts",
+        "web/lib/rosterScheduleOptimizer/planningTypes.ts",
+        "web/lib/player-forecasts/rsoUsePolicy.ts",
+        "web/lib/player-forecasts/rsoUsePolicy.test.ts",
+        "web/lib/player-forecasts/rsoUsePolicy.fixtures.ts",
+        "web/lib/rosterScheduleData/planning.ts",
+        "web/lib/rosterScheduleData/planning.test.ts"
+      ],
+      "artifact_dir": "tasks/artifacts/astra-rso-handoff-2026-10-26/slices/F2F3/",
+      "status": "idle",
+      "pinned_utc": "2026-10-26T15:46:11Z",
+      "note": "F2 978134e22, F3 9e66c7e20 committed"
+    },
+    {
+      "lane": "RSO-RECON",
+      "scope": "Fix MANUAL D1 (reserve-step reconciliation + timing rechecks) and D2 (projected goalie starts unknown after minimum met)",
+      "authority": "TJ wave-1 approval; orchestrator dispatch of found defects",
+      "write_paths": [
+        {
+          "path": "web/lib/rosterScheduleOptimizer/reconciliation.ts",
+          "baseline_sha256": "f43c7f84cd408d95c7cc89fad545f05c41c8f69beae03f13f1188e2ed50ab69d"
+        },
+        {
+          "path": "web/lib/rosterScheduleOptimizer/reconciliation.test.ts",
+          "baseline_sha256": "7a83a334e68ca83b4b24b0fb8adab2d8a7f9cfbfb4e3f7a7b0a3fa5981784ec5"
+        },
+        {
+          "path": "web/lib/rosterScheduleOptimizer/planning.ts",
+          "baseline_sha256": "d1300a64ac98d97765b9daff8017f3fe8341aa8757984ff176a177fc3a2674f2"
+        },
+        {
+          "path": "web/lib/rosterScheduleOptimizer/planning.test.ts",
+          "baseline_sha256": "95b534df3ace78d45187dcc99f791b1a46d71f2c79f7b0b942786a79a45e27a9"
+        },
+        {
+          "path": "web/lib/rosterScheduleOptimizer/dailyAcceptance.manual.test.ts",
+          "baseline_sha256": "d5177d39a88d5bc1821ba8f070c5d9c60a3b130c551708a1385aeefd03658962"
+        }
+      ],
+      "status": "released",
+      "released_note": "2026-10-26T15:47Z re-pin at Astra-audit resume: lane work already committed (checkpoint: no RSO/FORGE product code dirty); paths reassigned to active audit slices"
+    },
+    {
+      "lane": "RSO-YAHOO",
+      "scope": "Offline Yahoo daily acceptance suite (new test file + artifacts; defects reported, not fixed)",
+      "authority": "TJ direct pop-up 2026-10-25 ~23:45Z (RSO wave 2: Yahoo acceptance, continuity E2E, forecast qualification plan, release wave 1)",
+      "write_paths": [
+        {
+          "path": "web/lib/rosterScheduleOptimizer/dailyAcceptance.yahoo.test.ts",
+          "baseline_sha256": "absent"
+        }
+      ],
+      "artifact_dir": "tasks/artifacts/rso-wave2-2026-10-25/YAHOO/",
+      "status": "released",
+      "released_note": "2026-10-26T15:47Z re-pin at Astra-audit resume: lane work already committed (checkpoint: no RSO/FORGE product code dirty); paths reassigned to active audit slices"
+    },
+    {
+      "lane": "RSO-E2E",
+      "scope": "Browser continuity acceptance spec on isolated dev server :3160 with mocks",
+      "authority": "TJ direct pop-up 2026-10-25 ~23:45Z (RSO wave 2: Yahoo acceptance, continuity E2E, forecast qualification plan, release wave 1)",
+      "write_paths": [
+        {
+          "path": "web/e2e/rso-continuity.spec.ts",
+          "baseline_sha256": "absent"
+        }
+      ],
+      "write_dirs": [
+        "web/e2e/fixtures/rso-continuity/"
+      ],
+      "resources": {
+        "port": 3160,
+        "distDir": ".next-playwright",
+        "env": "PLAYWRIGHT_ISOLATED_NEXT=1"
+      },
+      "artifact_dir": "tasks/artifacts/rso-wave2-2026-10-25/E2E/",
+      "status": "released",
+      "released_note": "2026-10-26T15:47Z re-pin at Astra-audit resume: lane work already committed (checkpoint: no RSO/FORGE product code dirty); paths reassigned to active audit slices"
+    },
+    {
+      "lane": "FORGE-QUAL",
+      "scope": "Read-only audit: FORGE writer -> admission -> RSO/Start Chart consumer qualification plan and draft readback tooling (artifacts only)",
+      "authority": "TJ direct pop-up 2026-10-25 ~23:45Z (RSO wave 2: Yahoo acceptance, continuity E2E, forecast qualification plan, release wave 1)",
+      "write_paths": [],
+      "artifact_dir": "tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/"
+    },
+    {
+      "lane": "RSO-PRIVACY",
+      "scope": "E2E D2 per-account local workspace + D1 context-switch intent reset; land rso-continuity spec green",
+      "authority": "TJ direct pop-ups 2026-10-26 ~00:10Z: workspace scope per account; FORGE first target skater SOG (Start Chart display + RSO totals/comparison); adopt FORGE-QUAL D1/D3/D4/D5; let native v2 stop after 10-27T04:00Z",
+      "write_paths": [
+        {
+          "path": "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+          "baseline_sha256": "cc1314372e277473a0e960e811144f0aa6367b64341392e9bf8fb791ab2f0935"
+        },
+        {
+          "path": "web/lib/rosterScheduleOptimizer/workspace.ts",
+          "baseline_sha256": "8a82c0f7c21f031402e0a3d6a480de12a8e780a9fe2f5097236bce64e00fcb3f"
+        },
+        {
+          "path": "web/lib/rosterScheduleOptimizer/workspace.test.ts",
+          "baseline_sha256": "4c5666efe9b30203ded0f4d20aa64eeb479a9af28acffa703ab541e41bbe6810"
+        },
+        {
+          "path": "web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx",
+          "baseline_sha256": "bede9e5ffefcc8e9c563b30ac01d3752baf674616fac059a443279730c84f32e"
+        },
+        {
+          "path": "web/e2e/rso-continuity.spec.ts",
+          "baseline_sha256": "24f7f6720c2d54aff646707123b7a31ad98c68a35660940467f91322ba196c2a"
+        }
+      ],
+      "write_dirs": [
+        "web/e2e/fixtures/rso-continuity/"
+      ],
+      "status": "released",
+      "released_note": "2026-10-26T15:47Z re-pin at Astra-audit resume: lane work already committed (checkpoint: no RSO/FORGE product code dirty); paths reassigned to active audit slices"
+    },
+    {
+      "lane": "RSO-Y1",
+      "scope": "Yahoo capabilities.rules:false must name unverified rule facts",
+      "authority": "TJ direct pop-ups 2026-10-26 ~00:10Z: workspace scope per account; FORGE first target skater SOG (Start Chart display + RSO totals/comparison); adopt FORGE-QUAL D1/D3/D4/D5; let native v2 stop after 10-27T04:00Z",
+      "write_paths": [
+        {
+          "path": "web/lib/integrations/yahoo/rosterPlanning.ts",
+          "baseline_sha256": "631ee6917cb67646695322d15ac280bf0b050e5a504e6cbb6d9dbf0d6e635e54"
+        },
+        {
+          "path": "web/lib/integrations/yahoo/rosterPlanning.test.ts",
+          "baseline_sha256": "08aab39c3f2f56ba96e221cf0c6c2c2a21d7641d4855c45a262c93c77a800636"
+        },
+        {
+          "path": "web/lib/rosterScheduleOptimizer/dailyAcceptance.yahoo.test.ts",
+          "baseline_sha256": "f81cb3fcde13e043e94ca7bd7d37a8ad40fedfcc191d8b564c9a374a7747def7"
+        }
+      ],
+      "status": "released",
+      "released_note": "2026-10-26T15:47Z re-pin at Astra-audit resume: lane work already committed (checkpoint: no RSO/FORGE product code dirty); paths reassigned to active audit slices"
+    },
+    {
+      "lane": "FORGE-PROV",
+      "scope": "D3 producer configuration/artifact hashes into revision payload and RSO binding; D5 RsoTargetUseReview evidence/approval refs (no review added); D4 scope.json draft",
+      "authority": "TJ direct pop-ups 2026-10-26 ~00:10Z: workspace scope per account; FORGE first target skater SOG (Start Chart display + RSO totals/comparison); adopt FORGE-QUAL D1/D3/D4/D5; let native v2 stop after 10-27T04:00Z",
+      "write_paths": [
+        {
+          "path": "web/lib/projections/run-forge-projections.ts",
+          "baseline_sha256": "cb4cdbc68045dba3521405c9a3f832f894420af94ddf7e60c4ae0548eb81416e"
+        },
+        {
+          "path": "web/lib/rosterScheduleData/planning.ts",
+          "baseline_sha256": "e945135114e21ff631a1f23b486490323e569db0c30d67b6c565deb2a87f5306"
+        },
+        {
+          "path": "web/lib/rosterScheduleData/planning.test.ts",
+          "baseline_sha256": "4ac0ced587c384e74068a712d9d0d9e13b7cdd12dd3e6d52ce42013d37963a3b"
+        },
+        {
+          "path": "web/lib/player-forecasts/rsoUsePolicy.ts",
+          "baseline_sha256": "3130a3cfb2bd028af42d0dc4a6bdaa72935a08823dc185aceaf830f330eb3215"
+        },
+        {
+          "path": "web/lib/player-forecasts/rsoUsePolicy.test.ts",
+          "baseline_sha256": "234ae88abcae41182a9673aa31e99aeea0db50bd39de4c4b1002de596e643e07"
+        },
+        {
+          "path": "web/lib/player-forecasts/rsoUsePolicy.fixtures.ts",
+          "baseline_sha256": "4e75f0e7e90576fa5e2b29b300e715d28a7620d169d85a07eabe975ad9b37811"
+        }
+      ],
+      "artifact_dir": "tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/",
+      "status": "released",
+      "released_note": "2026-10-26T15:47Z re-pin at Astra-audit resume: lane work already committed (checkpoint: no RSO/FORGE product code dirty); paths reassigned to active audit slices"
+    },
+    {
+      "lane": "FORGE-EXTIN",
+      "scope": "Audit live FORGE for external fantasy inputs; if none, writer claims the exclusion contract with an enforcing test; declare modelIdentity type | TJ 2026-10-26: remove draft-dashboard fantasy projection tables from FORGE entirely (skater bootstrap no longer reads them)",
+      "authority": "TJ direct pop-up 2026-10-26 ~00:25Z ('Audit, then claim')",
+      "write_paths": [
+        {
+          "path": "web/lib/projections/run-forge-projections.ts",
+          "baseline_sha256": "c7614e43248455020a107f715cd2d3b6aaa9f3f11a6648f8772c1fce86fc34ce"
+        },
+        {
+          "path": "web/lib/projections/gameRevisions.ts",
+          "baseline_sha256": "2b16ffb05973d007798e46329720579bf12b25c409daaf750d2cca8cf0841e95"
+        },
+        {
+          "path": "web/lib/projections/seasonBootstrap.ts",
+          "baseline_sha256": "3ff0c0f3bb7c2af79ce0419575349d46c1d87a5c113d25e82a7976c0630638db"
+        },
+        {
+          "path": "web/lib/projections/stages/skater-stage.ts",
+          "baseline_sha256": "6adc2f970899251775587c08c906a8121eb8f38ed3394549abf2bc9774086b56"
+        },
+        {
+          "path": "web/lib/projections/nativeInputEligibility.test.ts",
+          "baseline_sha256": "03f09ffba40fe9b671a68a4158f8f347d10b6d125983dccbb9decf630766a1c8"
+        }
+      ],
+      "test_files_allowed": "new or existing tests adjacent to these two files only",
+      "artifact_dir": "tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/",
+      "status": "released",
+      "released_note": "2026-10-26T15:47Z re-pin at Astra-audit resume: lane work already committed (checkpoint: no RSO/FORGE product code dirty); paths reassigned to active audit slices"
+    },
+    {
+      "lane": "SC-541-FIX",
+      "scope": "TJ 2026-10-26: hide private Yahoo lineup on 401/403 refresh failures only; keep through other failures; lapsed entitlement stays read-only with refresh disabled",
+      "authority": "TJ wave-2 scope; orchestrator fix of reported regression from fd58ba245",
+      "write_paths": [
+        {
+          "path": "web/components/StarterBoardYahoo.test.tsx",
+          "baseline_sha256": "68d574f291cb6b7fb596e575b60f03f5dc19e87576894f2c7c059d0f6b046025"
+        },
+        {
+          "path": "web/e2e/start-chart.spec.ts",
+          "baseline_sha256": "d2ce825496b91068dfee444f12cdea0025126595897177b17d044b06fb1ba6b7"
+        },
+        {
+          "path": "web/components/StarterBoardYahoo.tsx",
+          "baseline_sha256": "9bc215494dce959c0bdf02091f354659f531adced5ed637812c745b8822107fc"
+        }
+      ]
+    },
+    {
+      "lane": "RSO-ONLINE",
+      "scope": "TJ 2026-10-26: stop gating RSO access/planning/explicit loads on navigator.onLine; show offline only on real failure; never stick on 'Checking access'",
+      "authority": "TJ direct reply 2026-10-26",
+      "write_paths": [
+        {
+          "path": "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+          "baseline_sha256": "7917cbc69cdb993e4fa742610a14b2fa7881c49593d373a8184bb7100a4b025e"
+        },
+        {
+          "path": "web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx",
+          "baseline_sha256": "0453faa277dd38b598091dcae819de4f7900c50c4cc3df08488218703abfe601"
+        },
+        {
+          "path": "web/e2e/rso-continuity.spec.ts",
+          "baseline_sha256": "ea808b9a1738a61f68521fa24069dea5225d91ce5277404222072fae7307300a"
+        }
+      ],
+      "status": "released",
+      "released_note": "2026-10-26T15:47Z re-pin at Astra-audit resume: lane work already committed (checkpoint: no RSO/FORGE product code dirty); paths reassigned to active audit slices"
+    },
+    {
+      "lane": "RSO-YAHOO-DIET-P2",
+      "scope": "Implement TJ decisions D2,D3,D5,D6,D8 (+D4 migration file only, not applied) behind a server flag (D7); D1 full scan kept | 2026-10-26 16:20Z: add connected-account identity to process-local Yahoo cache keys (RSO-FLAKE F6 report)",
+      "authority": "TJ direct pop-ups 2026-10-26 (TJ-DECISIONS-RECORDED.md)",
+      "write_paths": [
+        "web/lib/integrations/yahoo/rosterPlanning.ts",
+        "web/lib/integrations/yahoo/rosterPlanning.test.ts",
+        "web/lib/integrations/yahoo/planningConfirmations.ts",
+        "web/lib/integrations/yahoo/planningConfirmations.test.ts",
+        "web/lib/integrations/yahoo/providerClient.ts",
+        "web/lib/rosterScheduleOptimizer/dailyAcceptance.yahoo.test.ts",
+        "web/lib/integrations/yahoo/starterBoard.ts",
+        "web/lib/rosterScheduleOptimizer/providerRules.ts",
+        "web/lib/rosterScheduleOptimizer/providerRules.test.ts",
+        "web/pages/api/v1/roster-schedule-optimizer/provider.ts"
+      ],
+      "new_files_allowed": "new shared identity resolver + caches + tests under web/lib/integrations/yahoo/ and web/lib/rosterScheduleOptimizer/; one new migration file (NOT applied)",
+      "artifact_dir": "tasks/artifacts/rso-yahoo-diet-2026-10-26/",
+      "status": "paused",
+      "note_keys": "account-keyed caches c0ebd63f7 committed; diet flag still off"
+    },
+    {
+      "lane": "PROV-GUARD",
+      "scope": "AUDIT F1 (slice 1): verified producer-closure identity admission; then F4 (slice 5) after C7 review | F4 lease added 2026-10-26",
+      "authority": "TJ chat 2026-10-26 Astra-audit resume: ordinary local edits/offline tests within RSO/FORGE ownership; plan in astra-rso-handoff-2026-10-26/AMENDMENT-01-AUDIT-RECONCILIATION.md",
+      "write_paths": [
+        "web/pages/api/v1/start-chart.ts",
+        "web/__tests__/pages/api/v1/start-chart.test.ts",
+        "web/lib/projections/apiHelpers.ts",
+        "web/pages/api/v1/forge/players.ts",
+        "web/pages/api/v1/projections/players.ts",
+        "web/pages/api/v1/db/forge-served-forecast-snapshot.ts",
+        "web/__tests__/pages/api/v1/db/forge-served-forecast-snapshot.test.ts",
+        "web/lib/projections/externalInputProof.ts",
+        "web/lib/projections/apiHelpers.runAdmission.test.ts",
+        "web/lib/projections/apiHelpers.test.ts",
+        "web/__tests__/pages/api/v1/forge/players.test.ts",
+        "web/__tests__/pages/api/v1/projections/players.test.ts",
+        "web/lib/projections/verifiedForgeReleases.ts",
+        "web/lib/projections/verifiedForgeReleases.test.ts",
+        "web/scripts/verify-forge-release-sha.ts",
+        "web/lib/projections/releasedRunFence.ts",
+        "web/lib/projections/releasedRunFence.test.ts",
+        "web/next.config.js",
+        "web/lib/projections/forgeProducerIdentity.ts",
+        "web/lib/projections/forgeProducerIdentity.test.ts",
+        "web/scripts/forge-producer-closure.ts",
+        "web/pages/api/v1/projections/teams.ts",
+        "web/pages/api/v1/projections/goalies.ts",
+        "web/pages/api/v1/forge/goalies.ts",
+        "web/lib/game-predictions/featureBuilder.ts",
+        "web/lib/game-predictions/workflow.ts",
+        "web/lib/game-predictions/publicPredictions.ts",
+        "web/__tests__/pages/api/v1/projections/goalies.test.ts",
+        "web/__tests__/pages/api/v1/forge/goalies.test.ts",
+        "web/lib/game-predictions/featureBuilder.test.ts",
+        "web/lib/game-predictions/workflow.test.ts",
+        "web/lib/game-predictions/publicPredictions.test.ts",
+        "web/__tests__/pages/api/v1/projections/explicitRunAdmission.test.ts"
+      ],
+      "status": "active",
+      "pinned_utc": "2026-10-26T15:46:11Z",
+      "artifact_dir": "tasks/artifacts/astra-rso-handoff-2026-10-26/slices/F1/"
+    },
+    {
+      "lane": "DISCOVERY-NOPUNDIT",
+      "scope": "F3: remove pundit-table count reads + health metadata from Draft Rankings discovery",
+      "authority": "TJ direct pop-ups 2026-10-26: fix audit F1+F2+F3; one bounded read (\u22643 read-only queries) before release",
+      "write_paths": [
+        {
+          "path": "web/lib/draft-ranker/discoveryServer.ts",
+          "baseline_sha256": "07ebade83d8aa3bcd60b7d94089a17f2a29c9aa005e409da1a134758f380488a"
+        },
+        {
+          "path": "web/lib/draft-ranker/discoveryReadServer.ts",
+          "baseline_sha256": "87f204566084834b4afeb7e081b84660f15c9c4aa452ea3c36731e17fc63b449"
+        },
+        {
+          "path": "web/pages/api/v1/db/refresh-draft-ranker-discovery.ts",
+          "baseline_sha256": "73b0eff48ab3841a2e61520c84d955379931eab0d5a55274a8fa5cd0988f05cc"
+        },
+        {
+          "path": "web/lib/draft-ranker/discovery.test.ts",
+          "baseline_sha256": "468720f5db889ba4e8251dd0f961321bdf182ad4a990199e2745830ac82fa1f6"
+        }
+      ]
+    },
+    {
+      "lane": "TT",
+      "ids": [
+        "SITE-SOCIAL-SHARE"
+      ],
+      "scope": "Tuesday Trends social-share edition: live native data, semantic fixes, four sections (hot/cold, ownership movers, deployment, rate standouts). No Monday redesign, no Player Cards/Thursday.",
+      "authority": "TJ 2026-10-26 direct (/orchestrator Tuesday Trends) + CODEX-20261026-001 relay",
+      "owner": "Claude Tuesday Trends chef (this session) \u2192 TT worker session",
+      "start_utc": "2026-10-26T15:20:05Z",
+      "base_head": "cd73cbd695347a04c0d217ca7535a87ca609f4fb",
+      "write_paths": [
+        "web/lib/socialShare/trends.ts",
+        "web/lib/socialShare/trends.test.ts",
+        "web/lib/socialShare/trendsFixture.ts",
+        "web/lib/socialShare/trendSources.ts (new)",
+        "web/lib/socialShare/trendSources.test.ts (new)",
+        "web/lib/socialShare/server.ts (Tuesday branch only)",
+        "web/lib/socialShare/schedule.ts (TUESDAY_NOT_CONNECTED only)",
+        "web/lib/socialShare/schedule.test.ts (Tuesday cases only)",
+        "web/lib/socialShare/types.ts (Tuesday trend types only)",
+        "web/lib/socialShare/export.ts (trend exportability only)",
+        "web/components/SocialShare/SocialShare.tsx (TrendCard/trend helpers only)",
+        "web/components/SocialShare/SocialShare.module.scss (.trend* only)",
+        "web/components/SocialShare/SocialShare.test.tsx (Tuesday cases)",
+        "web/e2e/social-share.spec.ts (Tuesday cases)",
+        "tasks/artifacts/tuesday-trends-2026-10-26/",
+        "tasks/diaries/2026-10-26-claude-tuesday-trends*.md"
+      ],
+      "shared_later": "types.ts format registry, SocialShare.tsx renderer, pages/social-share/[format].tsx and api [format].ts: Codex Thursday gets an exact lease after TT hands back",
+      "read_only": [
+        "web/lib/socialShare/access.ts(+test)",
+        "web/components/SocialShare/SocialShareAccessGate.tsx(+test)",
+        "AuthProvider",
+        "auth lines in page/API",
+        "web/lib/rosterScheduleOptimizer/planningDates.ts (Astra pin)",
+        "web/lib/rosterScheduleData/normalize.ts (Astra pin)",
+        "Monday code paths (Monday PNG pins must stay byte-identical)"
+      ],
+      "forbidden": [
+        "web/lib/player-cards/**",
+        "web/components/player-cards/**",
+        "web/pages/social-share/player-cards.tsx",
+        "Astra/RSO pinned files",
+        "PROJECTIONS_20262027_*/PROJECTIONS_20252026_* tables",
+        "production reads without a direct TJ pop-up",
+        "migrations, pushes, deploys",
+        "Git except explicit-pathspec commits by the TT worker"
+      ],
+      "status": "HANDED BACK 2026-10-26T16:23:58Z: implementation done (82490cd45, c5829aa9e, 8e755dab8; local only). Awaiting TJ acceptance/release. Shared renderer, format registry and routes are free for an exact Codex Thursday lease."
+    },
+    {
+      "lane": "FORGE-RESERVE",
+      "session": "local_23d80159-b2ab-48ee-beca-f0f030201073",
+      "status": "active",
+      "pinned_utc": "2026-10-26T16:10:00Z",
+      "scope": "FORGE reserve pass: project all rostered players into a separate reserve table (TJ pop-ups: separate table, measure payload before raising budget, participation null by default)",
+      "authority": "TJ-started session; TJ pop-up answers in that session; local edits/offline tests only; migration file local, NOT applied",
+      "write_paths": [
+        "web/lib/projections/stages/skater-stage.ts",
+        "web/lib/projections/stages/goalie-stage.ts",
+        "web/lib/projections/stages/persistence-stage.ts",
+        "web/lib/rosterScheduleData/forgeDailyBridge.ts",
+        "web/lib/rosterScheduleData/forgeDailyBridge.test.ts",
+        "web/lib/projections/reserveProjections.ts",
+        "web/lib/projections/reserveProjections.test.ts",
+        "web/lib/rosterScheduleData/forgeReservePayload.test.ts",
+        "supabase/migrations/2026102700xxxx_forge_reserve_projections.sql (one new file)",
+        "web/lib/projections/queries/run-lifecycle-queries.ts",
+        "web/lib/projections/run-forge-projections.ts",
+        "web/lib/rosterScheduleData/bridgeForecastWire.ts",
+        "web/lib/projections/run-forge-projections.local-attempt.test.ts"
+      ],
+      "note_1650Z": "Added the 3 out-of-lease files the lane claimed. run-lifecycle-queries.ts and run-forge-projections.resume.test.ts edits were reverted (empty diff). Count-0 for unsupported reserves = TJ pop-up answer verified in session transcript 7ef17b6e (labelled conservative assumption; conditional line kept)."
     }
   ],
   "held_or_blocked": [],
