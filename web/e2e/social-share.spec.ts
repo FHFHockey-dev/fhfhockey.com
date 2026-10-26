@@ -105,7 +105,7 @@ async function signIn(page: Page, access: Access) {
 
 async function install(page: Page, access: Access = { role: "social_editor", signedIn: true, roleReads: 0, writes: [] }) {
   await signIn(page, access);
-  const controller = { requests: 0, fail: false, mode: "ready" as Mode, longName: false, pinnedAt: undefined as string | undefined, rates: "ready" as Rates, players: "ready" as PlayerMode, trends: "ready" as Rates, recentRead: "ready" as RecentRead, liveTrim: false, longPlayer: false, widestLegend: false, ownershipStale: false, formEmpty: false, genuine: null as SocialShareSnapshot["trends"], latest: null as SocialShareSnapshot | null };
+  const controller = { requests: 0, fail: false, mode: "ready" as Mode, longName: false, pinnedAt: undefined as string | undefined, rates: "ready" as Rates, players: "ready" as PlayerMode, trends: "ready" as Rates, recentRead: "ready" as RecentRead, liveTrim: false, longPlayer: false, widestLegend: false, ownershipStale: false, formEmpty: false, layoutStress: false, genuine: null as SocialShareSnapshot["trends"], latest: null as SocialShareSnapshot | null };
   await page.context().route("**/*", route => ["127.0.0.1", "localhost"].includes(new URL(route.request().url()).hostname) ? route.continue() : route.abort());
   // Evidence harness only (lane TT): serve committed logo bytes from a folder, so PNG pins can be checked while a
   // working-tree logo is modified by someone else. Unset in normal runs.
@@ -137,6 +137,20 @@ async function install(page: Page, access: Access = { role: "social_editor", sig
     if (controller.widestLegend && next.players?.targets) {
       const first = streamingNights(next, true)[0], key = first && targetKey(first), list = key ? next.players.targets[key] : undefined;
       if (list?.length) next = { ...next, players: { ...next.players, targets: { ...next.players.targets, [key!]: [{ ...list[0], roles: ["scorer", "shooter", "blocker"] }, ...list.slice(1)] } } };
+    }
+    // layoutStress (TT-7b): whole-number movers (one-digit heroes, e.g. "−8" with 74% beside it) and the longest
+    // real-world names on the first tiles of every list, so the geometry check sees the tightest layouts.
+    if (controller.layoutStress && next.trends) {
+      const long = ["Charle-Edouard D'Astous", "Oliver Bjorkstrand", "Ryan Nugent-Hopkins"];
+      const rename = <T extends { name: string }>(list: T[], at = 0) => list.map((row, index) => index === 0 ? { ...row, name: long[at % long.length] } : row);
+      const whole = <T extends { latest: number; previous: number; delta: number }>(list: T[], deltas: number[]): T[] => list.map((row, index) => ({ ...row, previous: Math.round(row.previous), latest: Math.round(row.previous) + deltas[index % deltas.length], delta: deltas[index % deltas.length] }));
+      const { hot, deployment, rates, movers } = next.trends.sections;
+      next = { ...next, trends: { ...next.trends, sections: {
+        hot: { ...hot, hot: rename(hot.hot, 0), cold: rename(hot.cold, 1) },
+        deployment: { ...deployment, up: rename(deployment.up, 1), down: rename(deployment.down, 2) },
+        rates: { ...rates, sogPer60: rename(rates.sogPer60, 0), icfPer60: rename(rates.icfPer60, 1), ixgPer60: rename(rates.ixgPer60, 2) },
+        movers: { ...movers, risers: rename(whole(movers.risers, [9, 3, 2, 1, 1]), 0), fallers: rename(whole(movers.fallers, [-8, -3, -2, -1, -1]), 2).map((row, index) => index === 0 ? { ...row, previous: 82, latest: 74, delta: -8 } : row) },
+      } } };
     }
     // genuine (TT-2): a captured production trend layer on the offline fixture schedule. Schedule row abbreviations are
     // masked so no fixture "GP this week" chip sits beside a genuine player; logos still come from the edition's teams.
@@ -823,6 +837,59 @@ test("Tuesday trend cards list the server's sections with definitions and a sour
   expect(errors).toEqual([]);
 });
 
+/** TT-7b: per tile, the parts that must never collide, and whether the name stays in its column and off the logo. */
+async function tileCollisions(page: Page) {
+  return page.getByTestId("share-square").evaluate(square => {
+    const problems: string[] = [];
+    const overlap = (a: DOMRect, b: DOMRect) => Math.min(a.right, b.right) - Math.max(a.left, b.left) > 0.5 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 0.5;
+    for (const tile of Array.from(square.querySelectorAll<HTMLElement>("[data-player][data-tone]"))) {
+      const id = tile.getAttribute("data-player"), box = tile.getBoundingClientRect(), find = (selector: string) => tile.querySelector<HTMLElement>(selector);
+      const name = find("[class*='trendTileName']")!, parts: [string, Element | null][] = [["name", name], ["hero", find("[class*='trendHero'] > strong")], ["absolute", find("[class*='trendTileAbsolute']")],
+        ["kind", find("[class*='trendTileKind']")], ...Array.from(tile.querySelectorAll("[class*='trendTileDetail']")).map((detail, index): [string, Element] => [`detail${index}`, detail]), ["chips", find("[class*='trendTileChips']")]];
+      const rects = parts.filter((part): part is [string, Element] => !!part[1]).map(([label, element]) => [label, element.getBoundingClientRect()] as const);
+      for (let i = 0; i < rects.length; i++) {
+        const [label, rect] = rects[i];
+        if (rect.left < box.left - 0.5 || rect.right > box.right + 0.5 || rect.top < box.top - 0.5 || rect.bottom > box.bottom + 0.5) problems.push(`${id}: ${label} outside the tile`);
+        for (let j = i + 1; j < rects.length; j++) if (overlap(rect, rects[j][1])) problems.push(`${id}: ${label} overlaps ${rects[j][0]}`);
+      }
+      // The export (html-to-image) re-lays out a clone, where a wrapping hero row once dropped the absolute block onto
+      // the label (TT-7b): the row must be no-wrap, one line, with the absolute block level with the hero.
+      const heroRow = find("[class*='trendTileHeroRow']"), heroText = find("[class*='trendHero'] > strong"), absolute = find("[class*='trendTileAbsolute']");
+      if (heroRow && heroText && absolute) {
+        const row = heroRow.getBoundingClientRect(), heroBox = heroText.getBoundingClientRect(), absBox = absolute.getBoundingClientRect();
+        if (getComputedStyle(heroRow).flexWrap !== "nowrap") problems.push(`${id}: hero row may wrap`);
+        if (absBox.left < heroBox.right - 0.5 || absBox.top > heroBox.bottom || row.height > Math.max(heroBox.height, absBox.height) + 1) problems.push(`${id}: absolute value not beside the hero`);
+      }
+      const column = name.parentElement!.getBoundingClientRect(), nameBox = name.getBoundingClientRect(), logo = find("[data-art] img")?.getBoundingClientRect();
+      if (nameBox.left < column.left - 0.5 || nameBox.right > column.right + 0.5 || name.scrollWidth > name.clientWidth + 1) problems.push(`${id}: name leaves its column`);
+      if (logo) {
+        const visible = new DOMRect(Math.max(logo.left, box.left), Math.max(logo.top, box.top), Math.min(logo.right, box.right) - Math.max(logo.left, box.left), Math.min(logo.bottom, box.bottom) - Math.max(logo.top, box.top));
+        if (overlap(nameBox, visible)) problems.push(`${id}: name overlaps the logo`);
+      }
+    }
+    return problems;
+  });
+}
+
+test("Tuesday tiles never collide: hero, absolute, label, details and chips stay apart; names stay in their column (TT-7b)", async ({ page }) => {
+  const source = await install(page);
+  source.mode = "league"; source.layoutStress = true;
+  await open(page, "tuesday-trends");
+  const graphic = page.getByRole("combobox", { name: /^Graphic/ }), square = page.getByTestId("share-square");
+  await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeEnabled();
+  for (const card of ["hot", "deployment", "rates", "movers"]) {
+    await graphic.selectOption(card);
+    await expect(square.locator("[data-player][data-tone]").first()).toBeVisible();
+    expect(await tileCollisions(page), card).toEqual([]);
+  }
+  // The stress set reached the tight cases: a one-digit hero with its absolute beside it, and the longest names.
+  const heroes = await square.locator("[class*='trendHero'] > strong").allTextContents();
+  expect(heroes).toContain("−8");
+  await expect(square.locator("[data-player]").first()).toContainText("CHARLE-EDOUARD D'ASTOUS", { ignoreCase: true });
+  await graphic.selectOption("rates");
+  await expect(square).toContainText("Oliver Bjorkstrand", { ignoreCase: true });
+});
+
 test("an empty Recent Form shows an honest empty state and never blocks the other Tuesday exports (TT-3)", async ({ page }) => {
   const source = await install(page);
   source.mode = "league"; source.formEmpty = true;
@@ -1226,6 +1293,7 @@ test("Tuesday GENUINE DATA render: captured layer, offline, export token per car
       const square = page.getByTestId("share-square");
       await expect(square).toContainText(card === "hot" ? "RECENT FORM" : card === "deployment" ? "DEPLOYMENT CHANGES" : card === "rates" ? "RATE STANDOUTS" : "OWNERSHIP MOVERS");
       await expect(square).not.toContainText("GP this week");
+      expect(await tileCollisions(page), `genuine ${card}`).toEqual([]);
       await square.scrollIntoViewIfNeeded();
       await label();
       await page.screenshot({ path: `${shots}/GENUINE-DATA-${name}-${card}.png`, fullPage: name === "desktop" });

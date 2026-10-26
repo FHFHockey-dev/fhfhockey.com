@@ -546,6 +546,16 @@ function NeonOwnershipSparkline({ points, tone, what, width, height }: { points:
   </span>;
 }
 
+/**
+ * Tile name size (TT-7b): shrink to fit the right text column (never the logo zone), down to a floor; below the floor
+ * the name wraps to two lines and then ellipsizes (CSS line clamp). Uppercase condensed bold is at most ~0.58 em per
+ * character, so the estimate never overflows. Text-column widths: 2-column cards ~310 px, stacked rates tiles ~170 px.
+ */
+export function nameFontSize(name: string, stacked: boolean) {
+  const [column, base, floor] = stacked ? [168, 19, 15] : [308, 20, 16];
+  return `${Math.max(floor, Math.min(base, Math.floor(column / (0.58 * Math.max(1, name.length)))))}px`;
+}
+
 /** Tile art (TT-5): the team's neon outline in the tile's tone, or the home-page game-card treatment for fallback teams. */
 function TrendArt({ team, tone, logo, outlines }: { team: string | null; tone: Tone; logo: string | null | undefined; outlines: Record<string, Partial<Record<Tone, string | null>>> }) {
   if (!team) return null;
@@ -578,7 +588,7 @@ function TrendCard({ kind, snapshot, trusted, logos, outlines, brandLogo }: { ki
             <TrendArt team={row.team} tone={row.hero.tone} logo={row.team ? logos[row.team] : null} outlines={outlines} />
             <small className={styles.trendTileMeta}>{row.meta}</small>
             <div className={styles.trendTileText}>
-              <strong className={styles.trendTileName} data-tone={row.hero.tone}>{row.name}</strong>
+              <strong className={styles.trendTileName} data-tone={row.hero.tone} style={{ fontSize: nameFontSize(row.name, stacked) }}>{row.name}</strong>
               <span className={styles.trendTileHeroRow}>
                 <span className={styles.trendHero} data-tone={row.hero.tone} data-role={/^[▲▼]/.test(row.hero.value) || undefined}><strong>{row.hero.value}</strong></span>
                 <span className={styles.trendTileAbsolute}><strong>{row.right.value}</strong><small>{row.right.label}</small></span>

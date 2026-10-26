@@ -63,3 +63,4 @@ Make `/social-share/tuesday-trends` a truthful, data-backed edition from native 
 - Ottawa add-on: new OTT committed by the chef (e6e5798bf); outline re-traced; OTT back to neon. Pins changed: monday-grid, monday-easiest, monday-tiers-wide, wednesday-grid (Ottawa cells only); 14 others identical. E2E 33 (two passes due to a dev /404 loop).
 - TT-6: flag default ON (=0 kill switch) per READ-APPROVAL addendum 2; E2E 33 against the v2 pins (Tuesday pins unchanged); Vitest 231; tsc 0.
 - TT-7: tracer v2 (all 32 legible, fallback list empty), lighter halo, home-page light-card tile layout; E2E 33 with the v2 Monday/Wednesday pins; Vitest 231; tsc 0.
+- TT-7b: hero row no-wrap (the export clone wrapped it), stacked text column clears the logo, name shrink-to-fit/wrap/ellipsis; E2E collision guard (stress + genuine); E2E 34 with v2 pins; Vitest 231; tsc 0.
