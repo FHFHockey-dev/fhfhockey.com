@@ -155,6 +155,8 @@ type PreflightGate = {
 
 type PreflightSummary = {
   asOfDate: string;
+  /** Where the backward-looking freshness windows end (see preflightFreshnessAnchorDate). */
+  freshnessAnchorDate?: string;
   bypassed: boolean;
   status: "PASS" | "FAIL";
   gates: PreflightGate[];
@@ -464,6 +466,21 @@ function addDays(dateStr: string, delta: number): string {
   return isoDateOnly(d.toISOString());
 }
 
+/**
+ * The date the preflight's backward-looking freshness windows end at: the
+ * as-of date, or today (UTC, the route's default as-of date) when the as-of
+ * date is later. A days-ahead run can't read inputs newer than today's, so it
+ * checks the same windows today's run does instead of failing by
+ * construction. Today's and past runs are unchanged.
+ */
+export function preflightFreshnessAnchorDate(
+  asOfDate: string,
+  now: Date = new Date(),
+): string {
+  const today = isoDateOnly(now.toISOString());
+  return asOfDate < today ? asOfDate : today;
+}
+
 export function summarizeGoalieRosterAssignments(args: {
   latestGoaliesByTeam: Map<number, number[]>;
   goaliePlayers: GoaliePlayerRow[];
@@ -571,6 +588,9 @@ export async function runProjectionPreflightChecks(
     };
   }
 
+  // Scheduled games, teams and goalie start priors stay on asOfDate; only the
+  // backward-looking freshness windows end at the anchor.
+  const freshnessAnchorDate = preflightFreshnessAnchorDate(asOfDate);
   const { data: games, error: gamesErr } = await supabase
     .from("games")
     .select("id,homeTeamId,awayTeamId")
@@ -610,26 +630,27 @@ export async function runProjectionPreflightChecks(
     for (const teamId of scheduledTeamIds) {
       const rows = await fetchRecentTeamLineCombinations({
         teamId,
-        asOfDate,
+        asOfDate: freshnessAnchorDate,
         limit: 3,
       });
       recentLineCombosByTeam.set(teamId, rows);
     }
-    const derivedFreshnessStart = addDays(asOfDate, -7);
+    const derivedFreshnessStart = addDays(freshnessAnchorDate, -7);
     const derivedCounts = await Promise.all(
       scheduledTeamIds.map(async (teamId) => {
         const { count, error } = await supabase
           .from("forge_player_game_strength")
           .select("player_id", { count: "exact", head: true })
           .eq("team_id", teamId)
-          .lt("game_date", asOfDate)
+          .lt("game_date", freshnessAnchorDate)
           .gte("game_date", derivedFreshnessStart);
         if (error) throw error;
         return { teamId, count: count ?? 0 };
       }),
     );
     const freshness = summarizeSkaterFreshnessCoverage({
-      asOfDate,
+      // Line-combination age is measured from the anchor too.
+      asOfDate: freshnessAnchorDate,
       scheduledTeamIds,
       recentLineCombosByTeam,
       teamsWithRecentDerivedRows: new Set(
@@ -687,12 +708,12 @@ export async function runProjectionPreflightChecks(
     }
   }
 
-  const recentWindowStart = addDays(asOfDate, -14);
+  const recentWindowStart = addDays(freshnessAnchorDate, -14);
   const { data: recentGames, error: recentGamesErr } = await supabase
     .from("games")
     .select("id")
     .gte("date", recentWindowStart)
-    .lt("date", asOfDate);
+    .lt("date", freshnessAnchorDate);
   if (recentGamesErr) throw recentGamesErr;
   const recentGameIds = ((recentGames ?? []) as Array<{ id: number }>).map(
     (g) => g.id,
@@ -744,12 +765,12 @@ export async function runProjectionPreflightChecks(
       }),
     );
   } else {
-    const derivedFreshnessStart = addDays(asOfDate, -7);
+    const derivedFreshnessStart = addDays(freshnessAnchorDate, -7);
     const [playerDerived, teamDerived, goalieDerived] = await Promise.all([
       supabase
         .from("forge_player_game_strength")
         .select("game_date")
-        .lt("game_date", asOfDate)
+        .lt("game_date", freshnessAnchorDate)
         .gte("game_date", derivedFreshnessStart)
         .order("game_date", { ascending: false })
         .limit(1)
@@ -757,7 +778,7 @@ export async function runProjectionPreflightChecks(
       supabase
         .from("forge_team_game_strength")
         .select("game_date")
-        .lt("game_date", asOfDate)
+        .lt("game_date", freshnessAnchorDate)
         .gte("game_date", derivedFreshnessStart)
         .order("game_date", { ascending: false })
         .limit(1)
@@ -765,7 +786,7 @@ export async function runProjectionPreflightChecks(
       supabase
         .from("forge_goalie_game")
         .select("game_date")
-        .lt("game_date", asOfDate)
+        .lt("game_date", freshnessAnchorDate)
         .gte("game_date", derivedFreshnessStart)
         .order("game_date", { ascending: false })
         .limit(1)
@@ -814,13 +835,13 @@ export async function runProjectionPreflightChecks(
       asOfDate,
       supabase,
     );
-    const staleWindowStart = addDays(asOfDate, -30);
+    const staleWindowStart = addDays(freshnessAnchorDate, -30);
     const { data: recentGoalieRows, error: recentGoalieErr } = await supabase
       .from("forge_goalie_game")
       .select("team_id,game_date")
       .in("team_id", scheduledTeamIds)
       .gte("game_date", staleWindowStart)
-      .lt("game_date", asOfDate);
+      .lt("game_date", freshnessAnchorDate);
     if (recentGoalieErr) throw recentGoalieErr;
     const teamsWithRecentGoalieRows = new Set(
       ((recentGoalieRows ?? []) as Array<{ team_id: number | null }>)
@@ -916,6 +937,7 @@ export async function runProjectionPreflightChecks(
   const failed = gates.some((g) => g.status === "FAIL");
   return {
     asOfDate,
+    freshnessAnchorDate,
     bypassed: false,
     status: failed ? "FAIL" : "PASS",
     gates,

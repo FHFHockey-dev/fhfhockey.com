@@ -113,6 +113,62 @@ describe("/db/runner", () => {
     expect(screen.queryByRole("button", { name: "Re-queue with bypass" })).toBeNull();
   });
 
+  it("copies every terminal line as plain text and confirms it", async () => {
+    const failed = {
+      id: 3, job_id: job.id, at: "2026-10-22T10:05:00Z", level: "error", message: "Blocked by freshness checks.",
+      step: 2, status_code: 422, rows: null, progress: null, duration_ms: 1_500
+    };
+    fetchMock.mockImplementation((url: string) => {
+      if (url === "/api/v1/db/route-runner/jobs") {
+        return reply({ success: true, jobs: [job], serverTime: new Date().toISOString() });
+      }
+      if (url.startsWith(`/api/v1/db/route-runner/jobs/${job.id}`)) {
+        return reply({ success: true, job, events: url.endsWith("after=0") ? [...events, failed] : [], hasMore: false });
+      }
+      return reply({ success: false, error: "unexpected" }, 404);
+    });
+    const writeText = vi.fn(async () => {});
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    try {
+      render(<RouteRunnerPage />);
+      fireEvent.click(within(await screen.findByRole("list")).getByRole("button", { name: /NST skater gamelogs/ }));
+      await waitFor(() => expect(screen.getByRole("log").textContent).toContain("HTTP 422"));
+      fireEvent.click(screen.getByRole("button", { name: "Copy all" }));
+      expect(await screen.findByRole("button", { name: "Copied" })).toBeTruthy();
+      expect(writeText).toHaveBeenCalledWith(
+        [
+          "INFO 10:00:00  Queued",
+          "INFO 10:04:00  step 1  HTTP 207  continuation_required  +38 sources  40/400 urls  200.0s  NST continuation: cursor 40 of 400.",
+          "ERR  10:05:00  step 2  HTTP 422  1.5s  Blocked by freshness checks."
+        ].join("\n")
+      );
+    } finally {
+      Reflect.deleteProperty(navigator, "clipboard");
+    }
+  });
+
+  it("falls back to a plain-text copy when the clipboard API is unavailable", async () => {
+    let copied = "";
+    const execCommand = vi.fn(() => {
+      copied = document.querySelector("textarea")?.value ?? "";
+      return true;
+    });
+    Object.defineProperty(document, "execCommand", { value: execCommand, configurable: true });
+    try {
+      render(<RouteRunnerPage />);
+      fireEvent.click(within(await screen.findByRole("list")).getByRole("button", { name: /NST skater gamelogs/ }));
+      await waitFor(() => expect(screen.getByRole("log").textContent).toContain("continuation_required"));
+      fireEvent.click(screen.getByRole("button", { name: "Copy all" }));
+      expect(await screen.findByRole("button", { name: "Copied" })).toBeTruthy();
+      expect(execCommand).toHaveBeenCalledWith("copy");
+      expect(copied.split("\n")).toHaveLength(2);
+      expect(copied).toContain("INFO 10:00:00  Queued");
+      expect(document.querySelector("textarea")).toBeNull();
+    } finally {
+      Reflect.deleteProperty(document, "execCommand");
+    }
+  });
+
   it("re-queues a freshness-blocked rolling job with the bypass and its resumeFrom", async () => {
     const blocked = makeJob({
       route_path: "/api/v1/db/update-rolling-player-averages",

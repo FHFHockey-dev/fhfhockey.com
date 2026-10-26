@@ -444,6 +444,57 @@ function RunBuilder(props: {
   );
 }
 
+function terminalLine(event: RouteRunnerEventRow): string {
+  return `${LEVEL_TAGS[event.level] ?? LEVEL_TAGS.info} ${formatEventLine(event)}`;
+}
+
+// Plain text only: the clipboard API, then a hidden textarea for browsers without it.
+async function copyPlainText(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    const area = document.createElement("textarea");
+    area.value = text;
+    area.setAttribute("readonly", "");
+    area.style.position = "fixed";
+    area.style.opacity = "0";
+    document.body.appendChild(area);
+    area.select();
+    try {
+      return document.execCommand("copy");
+    } catch {
+      return false;
+    } finally {
+      area.remove();
+    }
+  }
+}
+
+function CopyTerminalButton({ events }: { events: RouteRunnerEventRow[] }) {
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
+  useEffect(() => {
+    if (state === "idle") return;
+    const timer = setTimeout(() => setState("idle"), 1_500);
+    return () => clearTimeout(timer);
+  }, [state]);
+  async function copyAll() {
+    const ok = await copyPlainText(events.map(terminalLine).join("\n"));
+    setState(ok ? "copied" : "failed");
+  }
+  return (
+    <button
+      type="button"
+      className={styles.buttonSecondary}
+      onClick={() => void copyAll()}
+      disabled={events.length === 0}
+      aria-live="polite"
+    >
+      {state === "copied" ? "Copied" : state === "failed" ? "Copy unavailable" : "Copy all"}
+    </button>
+  );
+}
+
 function Terminal({ events }: { events: RouteRunnerEventRow[] }) {
   const ref = useRef<HTMLDivElement | null>(null);
   const pinnedRef = useRef(true);
@@ -467,7 +518,7 @@ function Terminal({ events }: { events: RouteRunnerEventRow[] }) {
       ) : (
         events.map((event) => (
           <div key={event.id} className={styles.line} data-level={event.level}>
-            {`${LEVEL_TAGS[event.level] ?? LEVEL_TAGS.info} ${formatEventLine(event)}`}
+            {terminalLine(event)}
           </div>
         ))
       )}
@@ -632,7 +683,10 @@ function JobDetail(props: {
 
         <div className={styles.terminalHead}>
           <h3>Live terminal</h3>
-          <span className={styles.nextStep}>{events.length.toLocaleString()} lines</span>
+          <div className={styles.terminalTools}>
+            <span className={styles.nextStep}>{events.length.toLocaleString()} lines</span>
+            <CopyTerminalButton events={events} />
+          </div>
         </div>
         <Terminal events={events} />
 
