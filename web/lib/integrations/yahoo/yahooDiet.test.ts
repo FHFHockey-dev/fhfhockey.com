@@ -330,7 +330,7 @@ describe("provider snapshot cadence with RSO_YAHOO_DIET=1 (D2, D3, D5, D6, D8)",
     expect(faab.snapshot.evidence.yahooLeagueRules?.limitations).toContain('waiver mode (uses_faab): reported "1", verified');
     const text = faab.capabilities.limitations.find(item => item.startsWith("Yahoo does not report these league rules"))!;
     expect(text).not.toMatch(/waiver mode|FAAB/);
-    expect(text).toContain(flag === "1" ? "whether the add timing inferred from Yahoo's weekly deadline is right" : "when an add takes effect (same-day or next-day)");
+    expect(text).toContain("whether the add timing inferred from Yahoo's weekly deadline is right");
     clock += 1000; withSettings({ uses_faab: "0" });
     const priority = await run("manual");
     expect(priority.snapshot.rules.waivers).toEqual({ mode: "priority", remainingBudget: null });
@@ -347,10 +347,11 @@ describe("provider snapshot cadence with RSO_YAHOO_DIET=1 (D2, D3, D5, D6, D8)",
     expect(absent.snapshot.evidence.yahooLeagueRules?.limitations).toContain("waiver mode (uses_faab): not reported");
   });
 
-  it("keeps acquisition timing unknown and reads everything when the flag is off", async () => {
+  it("reads everything when the flag is off, and still infers add timing from the weekly deadline (D6)", async () => {
     vi.stubEnv("RSO_YAHOO_DIET", "");
     const result = await run();
-    expect(result.snapshot.rules.acquisitionTiming).toBe("unknown");
+    expect(result.snapshot.rules.acquisitionTiming).toBe("same_day");
+    expect(result.snapshot.evidence.acquisitionTiming?.source).toBe("Inferred from Yahoo weekly deadline");
     expect(result.yahooDiet).toBeUndefined();
     expect(tables).toContain("yahoo_nhl_player_map_read");
     clock = t0 + 60_000;
