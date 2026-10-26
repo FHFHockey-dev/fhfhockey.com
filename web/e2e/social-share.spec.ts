@@ -798,6 +798,12 @@ test("Tuesday trend cards list the server's sections with definitions and a sour
       await expect(tile).toHaveAttribute("data-tone", /^[+▲]/.test(hero) ? "up" : /^[−▼]/.test(hero) ? "down" : "flat");
     }
     expect(await square.locator("[data-sparkline]").count()).toBeGreaterThan(0);
+    // TT-5: every tile has art, inlined as a data URL (so the PNG carries it), neon in the tile's tone or the card fallback.
+    for (const tile of await tiles.all()) {
+      const art = tile.locator("[data-art]");
+      await expect(art).toHaveCount(1);
+      if (await art.getAttribute("data-art") === "neon") { await expect(art).toHaveAttribute("data-tone", (await tile.getAttribute("data-tone"))!); expect(await art.locator("img").getAttribute("src")).toMatch(/^data:image\/png;base64,/); }
+    }
   }
   const shown = new Map([...edition.trends!.sections.hot.hot, ...edition.trends!.sections.hot.cold].map(row => [String(row.nhlId), row.series]));
   await graphic.selectOption("hot");

@@ -335,7 +335,7 @@ $trend-row: 140px;
   background: rgba(v.$color-white, 0.05); border: 2px solid rgba(v.$color-white, 0.12); }
 .trendTile[data-tone="up"] { border-color: rgba(v.$success-color, 0.85); box-shadow: 0 0 14px rgba(v.$success-color, 0.3), inset 0 0 22px rgba(v.$success-color, 0.07); }
 .trendTile[data-tone="down"] { border-color: rgba(v.$color-pink-red, 0.85); box-shadow: 0 0 14px rgba(v.$color-pink-red, 0.3), inset 0 0 22px rgba(v.$color-pink-red, 0.07); }
-.trendTileBody { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-content: center; align-items: center; column-gap: 10px; row-gap: 3px; padding: 6px 12px 5px; }
+.trendTileBody { flex: 1; min-height: 0; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-content: center; align-items: center; column-gap: 10px; row-gap: 3px; padding: 6px 12px 5px; }
 .trendHero { display: flex; align-items: baseline; gap: 7px; min-width: 0; line-height: 1; color: v.$color-white;
   strong { font: 600 32px "Share Martian Mono", monospace; white-space: nowrap; }
   small { font-size: 11px; font-weight: 800; letter-spacing: 0.05em; line-height: 1.1; color: v.$text-secondary; max-width: 96px; }
@@ -353,6 +353,34 @@ $trend-row: 140px;
 // Role-only deployment heroes ("▲ LINE + PP") are words, not a number: smaller, with room for their label.
 .trendHero[data-role] strong { font-size: 24px; letter-spacing: 0.02em; }
 .trendHero[data-role] small { max-width: 160px; }
+// Tile art (TT-5): the team's traced outline as a neon sign in the tile's tone (green up, red down, blue neutral), or,
+// for teams in OUTLINE_FALLBACK_TEAMS, the home-page game-card treatment: a cropped full-colour logo over the team's
+// 65° jersey stripes. Both are plain images and gradients, so html-to-image draws them exactly.
+.trendNeon { display: grid; place-items: center; width: 56px; height: 56px; color: v.$color-blue-300;
+  img { display: block; width: 56px; height: 56px; filter: drop-shadow(0 0 3px currentColor) drop-shadow(0 0 8px currentColor); }
+}
+.trendNeon[data-tone="up"] { color: v.$success-color; }
+.trendNeon[data-tone="down"] { color: v.$color-pink-red; }
+.trendArtCard { position: relative; display: block; width: 56px; height: 56px; border-radius: 10px; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(v.$color-white, 0.18);
+  background: linear-gradient(65deg, var(--team-bg) 0% 28%, rgba(v.$color-white, 0.72) 30% 34%, var(--team-mid) 36% 52%, rgba(v.$color-black, 0.8) 54% 58%, var(--team-bg) 60% 100%);
+  img { position: absolute; left: -10px; top: -8px; width: 84px; height: 84px; filter: drop-shadow(0 2px 3px rgba(v.$color-black, 0.5)); }
+}
+.trendTileStacked .trendTileBody { grid-template-columns: auto minmax(0, 1fr); }
+.trendTileStacked .trendSpark { grid-column: 1 / -1; justify-self: stretch; }
+.trendTileStacked .trendNeon, .trendTileStacked .trendArtCard { width: 46px; height: 46px; }
+.trendTileStacked .trendNeon img { width: 46px; height: 46px; }
+.trendTileStacked .trendArtCard img { width: 70px; height: 70px; left: -8px; top: -6px; }
+// Movers sparkline (TT-5): Transaction Trends' area + line, green rise and red fall.
+.trendOwnSpark { display: block; justify-self: end; width: 150px; height: 38px; color: v.$color-blue-300; }
+.trendOwnSpark[data-tone="up"] { color: v.$success-color; }
+.trendOwnSpark[data-tone="down"] { color: v.$color-pink-red; }
+.trendOwnSvg { display: block; width: 150px; height: 38px; overflow: visible; filter: drop-shadow(0 0 3px currentColor); }
+.trendOwnPath { fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.trendOwnArea { fill-opacity: 0.2; }
+.trendOwnPath.trendRise { stroke: v.$success-color; }
+.trendOwnPath.trendFall { stroke: v.$color-pink-red; }
+.trendOwnArea.trendRise { fill: v.$success-color; }
+.trendOwnArea.trendFall { fill: v.$color-pink-red; }
 // Direction badge in Monday's flame-badge pattern (neon icon on a dark backing), green up and red down.
 .trendBadge { display: inline-flex; align-items: center; gap: 4px; flex: none; padding: 3px 7px 3px 5px; border-radius: 5px; border: 1.5px solid currentColor;
   font: 700 11.5px/1 "Share Roboto Condensed", sans-serif; letter-spacing: 0.05em; white-space: nowrap; color: v.$color-blue-300;

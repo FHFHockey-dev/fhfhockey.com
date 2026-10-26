@@ -99,7 +99,12 @@ async function readOwnership(client: TrendReadClient): Promise<ShareOwnershipRow
  * the shortlisted players; then EV rows for the shown deployment players. Each failed source becomes its sections'
  * "missing" state with the reason; only listed players leave the server.
  */
-export async function loadTrendLayer(context: TrendContext, client: TrendReadClient = publicSupabase): Promise<ShareTrendLayer> {
+/**
+ * Sparkline reads (READ-PLAN v2 S1/M2) are not approved by TJ yet (TT-5): they run only with
+ * SOCIAL_SHARE_TUESDAY_SPARKLINES=1 on the server. Off (the default) means no extra statement and no sparklines.
+ */
+export const sparklineReadsEnabled = (env: Record<string, string | undefined> = process.env) => env.SOCIAL_SHARE_TUESDAY_SPARKLINES === "1";
+export async function loadTrendLayer(context: TrendContext, client: TrendReadClient = publicSupabase, options: { sparklines?: boolean } = {}): Promise<ShareTrendLayer> {
   const since = shiftDate(localDate(context.generatedAt, SHARE_TIME_ZONE), -TREND_MAX_GAME_AGE_DAYS);
   const [rolling, ownership] = await Promise.all([
     settle("Rolling game metrics", () => bounded<ShareRollingRow>("Rolling game metrics", TREND_LIMITS.rolling, (from, to) => client.from("rolling_player_game_metrics")
@@ -125,7 +130,8 @@ export async function loadTrendLayer(context: TrendContext, client: TrendReadCli
   const ev = await settle("Even-strength rolling rows", () => chunked(evIds, TREND_LIMITS.evChunk, chunk => bounded<ShareEvRow>("Even-strength rolling rows", chunk.length * TREND_LIMITS.evRowsPerPlayer, (from, to) => client.from("rolling_player_game_metrics")
     .select(EV_COLUMNS.join(","), { count: "exact" }).eq("season", context.season).eq("strength_state", "ev").in("player_id", chunk).gte("game_date", since)
     .order("player_id", { ascending: true }).order("game_date", { ascending: false }).range(from, to))));
-  // Sparklines (TT-4): the listed skaters' season rows for 35 days (S1), then the listed movers' daily rows P..D (M2).
+  if (!options.sparklines) return buildTrendLayer({ rolling, ev, ppc, ownership, map, players }, context);
+  // Sparklines (TT-4, flagged): the listed skaters' season rows for 35 days (S1), then the listed movers' daily rows P..D (M2).
   const today = localDate(context.generatedAt, SHARE_TIME_ZONE), seriesIds = "rows" in players ? seriesShownIds(lists, players.rows) : [];
   const series = await settle("Sparkline game rows", () => chunked(seriesIds, TREND_LIMITS.seriesChunk, chunk => bounded<ShareSeriesRow>("Sparkline game rows", chunk.length * TREND_LIMITS.seriesRowsPerPlayer, (from, to) => client.from("rolling_player_game_metrics")
     .select(SERIES_COLUMNS.join(","), { count: "exact" }).eq("season", context.season).eq("strength_state", "all").in("player_id", chunk).gte("game_date", shiftDate(today, -SERIES_LOOKBACK_DAYS))

@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 vi.mock("lib/supabase/public-client", () => ({ default: { from: () => { throw new Error("The Tuesday loader test must never reach Supabase."); } } }));
 import { fictionalTrendSources } from "./trendsFixture";
 import { buildTrendLayer, type ShareTrendSources } from "./trends";
-import { loadTrendLayer, TREND_LIMITS, type TrendReadClient } from "./trendSources";
+import { loadTrendLayer, sparklineReadsEnabled, TREND_LIMITS, type TrendReadClient } from "./trendSources";
 
 const now = "2026-10-27T13:00:00Z", season = 20262027, context = { season, fetchedAt: now, generatedAt: now };
 type Row = Record<string, unknown>;
@@ -58,7 +58,7 @@ afterEach(() => vi.restoreAllMocks());
 describe("Tuesday live loader", () => {
   it("returns the same layer as the full fixture with bounded, exact-count, explicit-column reads", async () => {
     const sources = fictionalTrendSources(season, "2026-10-27", "2026-10-27T08:00:00Z"), { client, statements, flight } = fakeClient(tablesOf(sources));
-    const layer = await loadTrendLayer(context, client);
+    const layer = await loadTrendLayer(context, client, { sparklines: true });
     expect(layer).toEqual(buildTrendLayer(sources, context));
     expect(Object.values(layer.sections).every(section => section.state === "ready")).toBe(true);
     expect(new Set(statements.map(statement => statement.table))).toEqual(new Set(["rolling_player_game_metrics", "yahoo_player_ownership_history", "powerPlayCombinations", "yahoo_nhl_player_map_read", "players"]));
@@ -87,6 +87,19 @@ describe("Tuesday live loader", () => {
     // TJ's approved ceiling (READ-APPROVAL.md): ≤ 40 statements, ≤ 1,000 rows each, concurrency 2.
     expect(statements.length).toBeLessThanOrEqual(16);
     expect(flight.max).toBe(TREND_LIMITS.concurrency);
+  });
+
+  it("sparkline reads are off by default: no S1/M2 statement and no sparklines (TT-5, not yet approved)", async () => {
+    expect(sparklineReadsEnabled({})).toBe(false);
+    expect(sparklineReadsEnabled({ SOCIAL_SHARE_TUESDAY_SPARKLINES: "1" })).toBe(true);
+    const sources = fictionalTrendSources(season, "2026-10-27", "2026-10-27T08:00:00Z"), { client, statements } = fakeClient(tablesOf(sources));
+    const layer = await loadTrendLayer(context, client);
+    expect(statements.filter(statement => statement.columns.includes("sog_per_60_shots_season") || statement.filters.some(filter => filter.startsWith("player_key=")))).toEqual([]);
+    expect(statements.length).toBeLessThanOrEqual(12);
+    const listed = [...layer.sections.hot.hot, ...layer.sections.deployment.up, ...layer.sections.rates.sogPer60, ...layer.sections.movers.risers];
+    expect(listed.length).toBeGreaterThan(0);
+    expect(listed.every(row => row.series == null)).toBe(true);
+    expect(layer).toEqual(buildTrendLayer({ ...sources, series: undefined, ownershipSeries: undefined }, context));
   });
 
   it("a failed source makes only its sections unavailable, with the reason and no fixture values", async () => {

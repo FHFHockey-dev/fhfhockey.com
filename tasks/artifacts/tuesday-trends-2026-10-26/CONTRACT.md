@@ -93,3 +93,12 @@ Native sources only. Tuesday never reads `PROJECTIONS_20262027_*`, `PROJECTIONS_
   - **Reads:** see READ-PLAN v2.
 - **Monday/Wednesday role chips (TT-4 add-on):** `roleChipList` shows PP1 and PP2 chips only. The writer's unit 3 gets no chip, as an unknown unit does. `score.ts` is unchanged: PP3 was already neutral (×1.0).
 
+
+## TT-5 visual layer
+
+- **Sparkline reads are flagged off.** READ-PLAN v2's S1/M2 run only with `SOCIAL_SHARE_TUESDAY_SPARKLINES=1` on the server. TJ has not approved them, so the default is off: no extra statement and no sparklines (`sparklineReadsEnabled`, `loadTrendLayer(…, { sparklines })`).
+- **Movers sparkline:** Transaction Trends' `OwnershipSparkline` (filled area and line), imported read-only. It is fed `{ date, value }` points for P..D only when every day has an observation. That component joins its line across missing points, so any gap means **no sparkline**, never a line drawn across the gap. It is green for a rise and red for a fall, from the hero sign. Its fill and stroke are also written as SVG presentation attributes, because html-to-image drops class styles on SVG children.
+- **Neon logos:** `tasks/artifacts/…/tt5/trace-logo-outlines.mjs` edge-traces each **committed** logo offline into `web/public/teamLogos/outline/X.png`.
+  - **Tracing method:** Sobel on alpha and premultiplied RGB, then a threshold, Zhang–Suen thinning, a 3 px disc stroke, and 256 px white on transparent.
+  - **Render:** the tile draws the outline tinted green, red or neutral blue by the hero sign. The tint is applied on a canvas and inlined as a data URL, the same pipeline as team logos, and given a neon glow with CSS drop-shadow. The PNG export therefore carries it exactly.
+  - **Fallback teams:** `OUTLINE_FALLBACK_TEAMS` in `SocialShare.tsx` = NYR, NYI, WSH, OTT, DET. Their outlines are too dense to read at 56 px, so they use the home-page game-card treatment instead: a cropped full-colour logo over the team's 65° jersey stripes. A missing outline also falls back.

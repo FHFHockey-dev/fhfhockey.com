@@ -1,7 +1,7 @@
 import { StrictMode } from "react";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import SocialShare, { deploymentBadges, moverDigits, ppChip, roleChipList, roleHero, Sparkline, toneOf } from "./SocialShare";
+import SocialShare, { deploymentBadges, moverDigits, moverSparkPoints, NEON, OUTLINE_FALLBACK_TEAMS, ppChip, roleChipList, roleHero, Sparkline, toneOf } from "./SocialShare";
 import { TUESDAY_NOT_CONNECTED, buildBlockedSnapshot, buildScheduleSnapshot, calendarWeekStart, selectScheduleDates, weekDates } from "lib/socialShare/schedule";
 import { fictionalLeagueWeek } from "lib/socialShare/fixtures";
 import { buildTrendLayer, trendDefinitions, trendExportToken } from "lib/socialShare/trends";
@@ -246,6 +246,16 @@ describe("Tuesday trend edition (lane TT)", () => {
       const hero = tile.querySelector("span[data-tone] > strong")!.textContent!;
       expect(tile.getAttribute("data-tone")).toBe(/^[+▲]/.test(hero) ? "up" : /^[−▼]/.test(hero) ? "down" : "flat");
     }
+  });
+
+  it("movers use Transaction Trends' sparkline only for a complete daily series; a gap means no line (TT-5)", () => {
+    const dates = ["2026-10-21", "2026-10-22", "2026-10-23"];
+    expect(moverSparkPoints([10, 12, 15], dates)).toEqual([{ date: "2026-10-21", value: 10 }, { date: "2026-10-22", value: 12 }, { date: "2026-10-23", value: 15 }]);
+    expect(moverSparkPoints([10, null, 15], dates)).toBeNull();
+    expect(moverSparkPoints([10, 12], dates)).toBeNull();
+    expect(moverSparkPoints(null, dates)).toBeNull();
+    expect(NEON).toEqual({ up: "#00ff99", down: "#ff6b6b", flat: "#63d2f5" });
+    expect([...OUTLINE_FALLBACK_TEAMS].every(team => /^[A-Z]{3}$/.test(team))).toBe(true);
   });
 
   it("shows whole-number Yahoo rostered % without a decimal, and keeps one only when the source has decimals (TT-3)", () => {

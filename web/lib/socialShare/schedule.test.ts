@@ -21,7 +21,7 @@ const playerSource = vi.hoisted(() => ({
 }));
 vi.mock("lib/socialShare/playerSources", () => playerSource);
 // Tuesday trend sources come only from this mock (lane TT: no Supabase read in unit tests).
-const trendSource = vi.hoisted(() => ({ loadTrendLayer: vi.fn((..._args: unknown[]) => Promise.reject(new Error("offline")) as Promise<unknown>) }));
+const trendSource = vi.hoisted(() => ({ loadTrendLayer: vi.fn((..._args: unknown[]) => Promise.reject(new Error("offline")) as Promise<unknown>), sparklineReadsEnabled: vi.fn(() => false) }));
 vi.mock("lib/socialShare/trendSources", () => trendSource);
 import { fictionalLeagueWeek, fictionalTeamStats } from "./fixtures";
 import { fictionalPlayerSources } from "./pickupsFixture";
@@ -304,6 +304,8 @@ describe("social editor schedule API", () => {
     expect(ready.body).toMatchObject({ format: "tuesday-trends", state: "ready", trends: { version: 2, sections: { hot: { state: "ready" }, deployment: { state: "ready" }, rates: { state: "ready" }, movers: { state: "ready" } } } });
     expect(trendSource.loadTrendLayer).toHaveBeenCalledTimes(1);
     expect(trendSource.loadTrendLayer.mock.calls[0][0]).toMatchObject({ season: ready.body.games[0].season, generatedAt: ready.body.generatedAt });
+    // The unapproved sparkline reads (READ-PLAN v2) stay off unless the server flag is set (TT-5).
+    expect(trendSource.loadTrendLayer.mock.calls[0][2]).toEqual({ sparklines: false });
     expect(opponentSource.loadShareTeamRates).not.toHaveBeenCalled(); expect(playerSource.loadSharePlayerSources).not.toHaveBeenCalled();
     expect(JSON.stringify(ready.body)).not.toMatch(/465\.p\.|player_key|ownership_timeline/);
     // A loader failure is an honest "missing" layer, never fixture values; the schedule edition still answers.

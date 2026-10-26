@@ -54,3 +54,9 @@ Make `/social-share/tuesday-trends` a truthful, data-backed edition from native 
 - Captured run-2 has no series, so genuine after renders have no sparklines; fixture after renders have them.
 - Checks: Vitest 228, E2E 33 with pins, tsc 0, eslint 0, CSS pure OK.
 - TT-4 add-on: two PP units only (the writer's unit 3 = incidental PP time) → off PP on Tuesday; Monday roleChipList has no PP3 chip. All 18 Monday/Wednesday pins identical. Vitest 229, E2E 33, tsc 0.
+
+## Checkpoint 6 (TT-5)
+- S1/M2 sit behind SOCIAL_SHARE_TUESDAY_SPARKLINES (default off); with it off there are no extra statements and no sparklines.
+- Movers use OwnershipSparkline (read-only import), complete series only. Fill and stroke are stamped as attributes because html-to-image drops class styles on SVG children.
+- Neon outlines: offline tracer from committed logos → public/teamLogos/outline/*.png (32). The canvas tint is inlined as a data URL. Fallback (home-page card art): NYR, NYI, WSH, OTT, DET.
+- Checks: E2E 33 with all Monday/Wednesday pins, Vitest 231, tsc 0.
