@@ -26,7 +26,7 @@
 - **Render** (`teamOutlineDataUrl` in `export.ts`): the outline is tinted on a canvas to green (#00ff99), red (#ff6b6b) or neutral blue (#63d2f5) by the hero sign, and inlined as a **data URL**, like team logos. CSS drop-shadow adds the glow. E2E asserts that each neon art `img` is a `data:image/png` and that the tile's art tone equals the tile's tone. The PNGs show it survives export.
 - **Why not CSS mask-image:** the canvas tint is used instead because it rides the existing logo-inlining path and html-to-image already draws plain images exactly.
 - **Contact sheets:** `tt5/contact-sheet-green.png` and `tt5/contact-sheet-red.png`, all 32 teams with the original logo in each cell's corner. Coverage per team is in `tt5/outline-coverage.json`.
-- **Fallback** (per-team switch `OUTLINE_FALLBACK_TEAMS` in `SocialShare.tsx`): the home-page game-card treatment, a cropped full-colour logo over the team's 65° jersey stripes.
+- **Fallback** (per-team switch `OUTLINE_FALLBACK_TEAMS` in `SocialShare.tsx`; see the Ottawa add-on: OTT left the list): the home-page game-card treatment, a cropped full-colour logo over the team's 65° jersey stripes.
   - **Teams using it: NYR, NYI, WSH, OTT, DET.** NYR, NYI and WSH have wordmarks that clump; the OTT and DET outlines read as solid blobs at 56 px.
   - A missing outline also falls back.
   - The Ducks, Kings and Blackhawks remain neon (legible at tile size); TJ can move any team with a one-line change.
@@ -137,3 +137,44 @@
 | `web/public/teamLogos/outline/WSH.png` | `d39316ba1a3f41fac2cdbef51073098f83722bd42ad117139b9489e09b32614f` |
 
 Note: `*.log` files are gitignored; their hashes cover the local copies.
+
+## Add-on: new Ottawa logo committed (TJ, relayed by the chef)
+
+TJ confirmed that the working-tree `OTT.png` is the correct new Ottawa logo; the chef committed it as `e6e5798bf`, and the legacy mark is `OTT-2.png` (unused here).
+
+- **Re-traced:** the tracer reads HEAD, so `outline/OTT.png` now comes from the new logo. **The other 31 outlines re-traced byte-identically.** The new mark traces cleanly, unlike the old one, which came out as a blob, so **OTT moves back to neon**: `OUTLINE_FALLBACK_TEAMS` = **NYR, NYI, WSH, DET**. The contact sheets are regenerated.
+- **No more logo override:** `SOCIAL_SHARE_LOGO_OVERRIDE_DIR` is no longer used. Pins were compared card by card, pin-free, against SS1 t24 run-a.
+
+| Pin | Status | Changed regions (pixel diff) |
+|---|---|---|
+| monday-grid | **changed** | 5 regions, each ≤ 40×40 px = the OTT team-column logo and its opponent cells |
+| monday-easiest | **changed** | 1 region ≤ 50×49 px = the OTT banner logo |
+| monday-tiers-wide | **changed** (not predicted earlier: Ottawa sits in a widened tier bar) | 1 region ≤ 34×34 px = the OTT tier-bar logo |
+| wednesday-grid | **changed** | 5 regions, each ≤ 40×40 px = OTT cells |
+| the other 14 Monday/Wednesday pins | **byte-identical** | none |
+
+- **Proof the changes are Ottawa only:** old-vs-new crops of every changed region are in `tt5/ott-repin/*-old-vs-new-regions.png`. Each one is the old Ottawa mark replaced by the new one, with nothing else moved. The connected-component boxes are in `tt5/ott-repin/diff-regions.json`.
+- **New pins:** `tt5/ott-repin/pinned-env-v2.txt`, the same format as SS1's `pinned-env.txt`, with Tuesday added.
+- **Full E2E with every pin asserted against v2, no override: 33/33**, run in two passes. Pass A: 32 tests, everything except the unknown-format test. Pass B: that test alone.
+  - **Why two passes:** in this canonical checkout, with other lanes' uncommitted work in flight, the dev server falls into a Fast Refresh loop after compiling `/404`. Every later request then 404s, regardless of my change. This happened twice in single runs; logs are in `run/server-7*.log`. That test passes on its own.
+- **Other checks:** Vitest 231/231, tsc 0, eslint 0, CSS pure OK. The genuine and fixture after-renders are refreshed in `tt5/after/`.
+
+### Add-on files (sha256)
+
+| File | sha256 |
+|---|---|
+| `web/public/teamLogos/outline/OTT.png` | `50bcfd68517ec2790fa889c254ea2b03710f266b4f6ab90d815999c3993d4a0e` |
+| `web/components/SocialShare/SocialShare.tsx` | `21d83beaa45353d354cd4482a0ccc891228a0b9579cc1ee3c897ceaa722d17ba` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt5/contact-sheet-green.png` | `4b0dc7be754d067ba074f1e53c16b32a58736c14b0bb0431a479a839b3c7637b` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt5/contact-sheet-red.png` | `bc4b71fd16d885a19e85a628c88201c84793d8f7b485ba7ff08cf010eb44c618` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt5/outline-coverage.json` | `4b2c629ebd12e7ab52c234e2e42908e1c23b40457d1f2983c588dfb003063620` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt5/ott-repin/pinned-env-v2.txt` | `8e1e891affd22a85cfb3639c783bcee2dde11304d2d7574b819d611e7f3005fb` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt5/ott-repin/diff-regions.json` | `ae5447f928588c0eb0292ee781df8cb9d00027527c95594c9de5467ffa81ea81` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt5/ott-repin/monday-grid-old-vs-new-regions.png` | `85c746bfa6a5faa0abe2611c9e2827f724b226f209de95eb66eb57fa4e7e6ff6` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt5/ott-repin/monday-easiest-old-vs-new-regions.png` | `f0c79fedb17f1b9ec9794835229213cd6b4f04b86b5fbb2f2ea6037d301869b0` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt5/ott-repin/monday-tiers-wide-old-vs-new-regions.png` | `0090f59fb94b983edf85b228d98b2c9c29e34b2724a523e2f18077bec49a8756` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt5/ott-repin/wednesday-grid-old-vs-new-regions.png` | `022f5a4b898f498219952f2c4e0c7eef9c4a55d86df0b44f93cc0da1d1b6cb42` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/run/e2e-final-8a.log` | `0b95459b79089c3be8845dc177cc85d75add0152c8c3cbcbb9b296adbc6b1ef2` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/run/e2e-final-8b.log` | `71a531cb57f837ec4eeadd28ae6df4076edfd1b831525bd9a40a0b0acb791cfe` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/run/vitest.log` | `695fa0f7a9561909b6bf16e74c12ce1ef7ade2d768929b45d8be97c73b479c6c` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/run/tsc.log` | `cbf7de6a7ab22aa8f3b63eed31368677222a5389d4a0bcaa112a952910051cec` |

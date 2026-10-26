@@ -2,24 +2,24 @@
   "capturedAt": "2026-10-26T16:18:39.380Z",
   "tokens": {
     "hot": {
-      "token": "schedule-2e4d1fc6|hot|2026-10-26,2026-10-27,2026-10-28,2026-10-29,2026-10-30,2026-10-31,2026-11-01",
-      "expected": "schedule-2e4d1fc6|hot|2026-10-26,2026-10-27,2026-10-28,2026-10-29,2026-10-30,2026-10-31,2026-11-01",
-      "png": "fhfh-tuesday-trends-hot-2026-10-26-schedule-2e4d1fc6.png"
+      "token": "schedule-c5fe7d7e|hot|2026-10-26,2026-10-27,2026-10-28,2026-10-29,2026-10-30,2026-10-31,2026-11-01",
+      "expected": "schedule-c5fe7d7e|hot|2026-10-26,2026-10-27,2026-10-28,2026-10-29,2026-10-30,2026-10-31,2026-11-01",
+      "png": "fhfh-tuesday-trends-hot-2026-10-26-schedule-c5fe7d7e.png"
     },
     "deployment": {
-      "token": "schedule-2e4d1fc6|deployment|2026-10-26,2026-10-27,2026-10-28,2026-10-29,2026-10-30,2026-10-31,2026-11-01",
-      "expected": "schedule-2e4d1fc6|deployment|2026-10-26,2026-10-27,2026-10-28,2026-10-29,2026-10-30,2026-10-31,2026-11-01",
-      "png": "fhfh-tuesday-trends-deployment-2026-10-26-schedule-2e4d1fc6.png"
+      "token": "schedule-c5fe7d7e|deployment|2026-10-26,2026-10-27,2026-10-28,2026-10-29,2026-10-30,2026-10-31,2026-11-01",
+      "expected": "schedule-c5fe7d7e|deployment|2026-10-26,2026-10-27,2026-10-28,2026-10-29,2026-10-30,2026-10-31,2026-11-01",
+      "png": "fhfh-tuesday-trends-deployment-2026-10-26-schedule-c5fe7d7e.png"
     },
     "rates": {
-      "token": "schedule-2e4d1fc6|rates|2026-10-26,2026-10-27,2026-10-28,2026-10-29,2026-10-30,2026-10-31,2026-11-01",
-      "expected": "schedule-2e4d1fc6|rates|2026-10-26,2026-10-27,2026-10-28,2026-10-29,2026-10-30,2026-10-31,2026-11-01",
-      "png": "fhfh-tuesday-trends-rates-2026-10-26-schedule-2e4d1fc6.png"
+      "token": "schedule-c5fe7d7e|rates|2026-10-26,2026-10-27,2026-10-28,2026-10-29,2026-10-30,2026-10-31,2026-11-01",
+      "expected": "schedule-c5fe7d7e|rates|2026-10-26,2026-10-27,2026-10-28,2026-10-29,2026-10-30,2026-10-31,2026-11-01",
+      "png": "fhfh-tuesday-trends-rates-2026-10-26-schedule-c5fe7d7e.png"
     },
     "movers": {
-      "token": "schedule-2e4d1fc6|movers|2026-10-26,2026-10-27,2026-10-28,2026-10-29,2026-10-30,2026-10-31,2026-11-01",
-      "expected": "schedule-2e4d1fc6|movers|2026-10-26,2026-10-27,2026-10-28,2026-10-29,2026-10-30,2026-10-31,2026-11-01",
-      "png": "fhfh-tuesday-trends-movers-2026-10-26-schedule-2e4d1fc6.png"
+      "token": "schedule-c5fe7d7e|movers|2026-10-26,2026-10-27,2026-10-28,2026-10-29,2026-10-30,2026-10-31,2026-11-01",
+      "expected": "schedule-c5fe7d7e|movers|2026-10-26,2026-10-27,2026-10-28,2026-10-29,2026-10-30,2026-10-31,2026-11-01",
+      "png": "fhfh-tuesday-trends-movers-2026-10-26-schedule-c5fe7d7e.png"
     }
   }
 }

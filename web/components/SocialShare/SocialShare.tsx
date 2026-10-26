@@ -413,7 +413,7 @@ export const NEON: Record<Tone, string> = { up: "#00ff99", down: "#ff6b6b", flat
  * Teams whose traced outline is too busy to read at tile size (TT-5 contact sheets): their tiles use the home-page
  * game-card treatment instead (cropped full-colour logo over the team's diagonal stripes). Switch per team here.
  */
-export const OUTLINE_FALLBACK_TEAMS: ReadonlySet<string> = new Set(["NYR", "NYI", "WSH", "OTT", "DET"]);
+export const OUTLINE_FALLBACK_TEAMS: ReadonlySet<string> = new Set(["NYR", "NYI", "WSH", "DET"]);
 /**
  * Movers sparkline (TT-5): Transaction Trends' filled area + line, fed only a complete daily series. That component
  * joins its line across missing points, so any gap means no sparkline here, never a line drawn across it.
