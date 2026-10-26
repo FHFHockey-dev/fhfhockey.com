@@ -12,6 +12,7 @@ import { buildResolvedDataServingContract } from "lib/dashboard/freshness";
 import { getLatestStartedSeasonForDate } from "lib/NHL/server";
 import { teamsInfo } from "lib/teamsInfo";
 import { evaluateForgeCalibrationEligibility } from "lib/projections/calibrationEligibility";
+import { loadExternalInputProof, type ExternalInputProof } from "lib/projections/externalInputProof";
 import { buildStartChartCompatibility } from "lib/projections/compatibilityInventory";
 import {
   extractDegradedProjectionContext,
@@ -191,6 +192,9 @@ type SlateResult = {
   goalies: GoalieRow[];
   runId: string | null;
   forgeRun: ForgeRunRow | null;
+  /** The legacy run's external-input exclusion proof, and how many newer runs of the date lacked it (never served). */
+  legacyRunProof?: ExternalInputProof | null;
+  withheldUnprovenRuns?: number;
   projectionError: boolean;
   goalieError: boolean;
 };
@@ -200,6 +204,8 @@ type ForgeRunWithProjectionsRow = ForgeRunRow & {
 };
 
 const RESPONSE_TTL_MS = 15_000;
+/** Recent runs of a slate searched for one whose captured snapshot proves it excluded third-party fantasy inputs. */
+const LEGACY_RUN_CANDIDATES = 20;
 // Same envelope bound as the FORGE view and RSO transport, below the hosted response ceiling.
 export const START_CHART_RESPONSE_MAX_BYTES = 4_000_000;
 const MAX_RESPONSE_CACHE_ENTRIES = 64;
@@ -837,7 +843,7 @@ async function fetchSlate(
     .eq("game_date", targetDate)
     .lte("updated_at", endOfTargetDate);
 
-  let runQuery = supabase
+  const provenRunQuery = (runId: string) => restrictRunsToHorizon(excludeOffReleaseRuns(supabase
     .from("forge_runs")
     .select(
       `
@@ -875,22 +881,45 @@ async function fetchSlate(
           )
           `,
     )
-    .eq("status", "succeeded");
+    .eq("status", "succeeded")))
+    .eq("as_of_date", targetDate)
+    .eq("forge_player_projections.as_of_date", targetDate)
+    .eq("forge_player_projections.horizon_games", 1)
+    .eq("run_id", runId);
   // Off-release (null or local:) runs are private even after succeeding. Filter
   // before limit so a private run cannot replace the latest public legacy run.
   // The daily h5 run shares the date: pick the latest h1 run, not the latest run.
-  runQuery = restrictRunsToHorizon(excludeOffReleaseRuns(runQuery))
-    .eq("as_of_date", targetDate)
-    .eq("forge_player_projections.as_of_date", targetDate)
-    .eq("forge_player_projections.horizon_games", 1);
+  // Only a run whose captured snapshot proves it excluded third-party fantasy
+  // projections is served; newer unproven runs are skipped and counted, never scored.
+  let candidateQuery = restrictRunsToHorizon(excludeOffReleaseRuns(supabase
+    .from("forge_runs")
+    .select("run_id")
+    .eq("status", "succeeded")))
+    .eq("as_of_date", targetDate);
   if (exactRunId) {
-    runQuery = runQuery.eq("run_id", exactRunId);
+    candidateQuery = candidateQuery.eq("run_id", exactRunId);
   }
-  const runPromise = runQuery
-    .order("created_at", { ascending: false })
-    .order("run_id", { ascending: true })
-    .limit(1)
-    .maybeSingle();
+  const runPromise = (async () => {
+    const candidates = await candidateQuery
+      .order("created_at", { ascending: false })
+      .order("run_id", { ascending: true })
+      .limit(LEGACY_RUN_CANDIDATES);
+    if (candidates.error) return { data: null, error: candidates.error, proof: null, withheld: 0 };
+    const runIds = ((candidates.data ?? []) as Array<{ run_id?: unknown }>)
+      .map((row) => row.run_id)
+      .filter((id): id is string => typeof id === "string");
+    let proof: Map<string, ExternalInputProof>;
+    try {
+      proof = runIds.length ? await loadExternalInputProof(supabase, runIds) : new Map();
+    } catch (error) {
+      return { data: null, error, proof: null, withheld: 0 };
+    }
+    const provenRunId = runIds.find((id) => proof.has(id));
+    const withheld = provenRunId ? runIds.indexOf(provenRunId) : runIds.length;
+    if (!provenRunId) return { data: null, error: null, proof: null, withheld };
+    const response = await provenRunQuery(provenRunId).limit(1).maybeSingle();
+    return { data: response.data, error: response.error, proof: proof.get(provenRunId) ?? null, withheld };
+  })();
 
   const [gamesResponse, runResponse, goalieResponse] = await Promise.all([
     gamesPromise,
@@ -904,8 +933,6 @@ async function fetchSlate(
     ? null
     : ((runResponse.data as unknown as ForgeRunWithProjectionsRow | null) ??
       null);
-  // As in production, an unlabelled (externally blended) run is still served;
-  // provenance eligibility below flags its rows unverified_projection_provenance.
   const forgeRun = selectedRun && isOffReleaseGitSha(selectedRun.git_sha) ? null : selectedRun;
   let projections = (forgeRun?.forge_player_projections ?? []).filter(
     (row) =>
@@ -1031,6 +1058,8 @@ async function fetchSlate(
     runId: revisions.length ? (new Set(revisions.map((r) => r.run_id)).size === 1 ? revisions[0].run_id : null)
       : starterBoardFlags().serving ? null : forgeRun?.run_id ?? null,
     forgeRun: starterBoardFlags().serving ? null : forgeRun,
+    legacyRunProof: starterBoardFlags().serving || !forgeRun ? null : runResponse.proof,
+    withheldUnprovenRuns: starterBoardFlags().serving ? 0 : runResponse.withheld,
     projectionError: Boolean(runResponse.error),
     goalieError: Boolean(goalieResponse.error),
   };
@@ -1476,11 +1505,14 @@ export default async function handler(
       const firstModelVersion = slate.projections
         .map((row) => extractSkaterModelMetadata(row.uncertainty).modelVersion)
         .find((value): value is string => Boolean(value));
+      // A legacy run is served only with snapshot proof, so its eligibility is read from that proof (run-start metrics
+      // never carry the exclusion claim).
       const provenanceEligibility = evaluateForgeCalibrationEligibility(
         revisionMode && slate.revisions!.every((revision) => evaluateForgeCalibrationEligibility({ input_provenance: revision.payload.inputProvenance }).eligible)
           ? { input_provenance: slate.revisions![0].payload.inputProvenance }
-          : revisionMode ? null : forgeRun?.metrics,
+          : revisionMode || !slate.legacyRunProof ? null : { input_provenance: slate.legacyRunProof },
       );
+      const provenanceUnproven = !revisionMode && slate.projections.length === 0 && (slate.withheldUnprovenRuns ?? 0) > 0;
       const modelVersion =
         (typeof rollout.modelVersion === "string"
           ? rollout.modelVersion
@@ -1907,7 +1939,7 @@ export default async function handler(
           slate.projectionError
             ? "projection_query_error"
             : slate.projections.length === 0
-              ? "missing_projection"
+              ? provenanceUnproven ? "unproven_external_input_provenance" : "missing_projection"
               : "quarantined_or_missing_provenance",
         );
       }
@@ -2017,7 +2049,9 @@ export default async function handler(
             projectionState === "partial"
               ? "Player projections are shown, but their historical input checks are incomplete. Treat these rankings as provisional."
               : projectionState === "missing"
-                ? "No canonical one-game skater rows are available for this slate."
+                ? provenanceUnproven
+                  ? "Unavailable: provenance unproven. No FORGE run for this slate can prove it excluded third-party fantasy projections, so none are scored."
+                  : "No canonical one-game skater rows are available for this slate."
                 : projectionState === "error"
                   ? "The canonical projection query failed."
                   : null,

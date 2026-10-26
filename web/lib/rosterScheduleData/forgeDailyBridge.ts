@@ -3,6 +3,7 @@ import { calendarLeadDay, validForecastCalendarPolicy, type ForecastCalendarPoli
 import { loadDailyBoardEvidence, type DailyBoardEvidence } from "lib/projections/dailyBoardEvidence";
 import { buildSkaterModeledHeadTotals } from "lib/projections/modeledHeadTotals";
 import { excludeOffReleaseRuns, restrictRunsToHorizon } from "lib/projections/releasedRunFence";
+import { loadExternalInputProof } from "lib/projections/externalInputProof";
 import { computeTeamStrengthContextAdjustment } from "lib/projections/calculators/team-context-adjustments";
 import { computeSkaterRestScheduleAdjustments } from "lib/projections/calculators/skater-adjustments";
 import { STARTER_DECISION_SHARE, teamWinProbability as forgeTeamWinProbability } from "lib/projections/goalie/goalieOutcomes";
@@ -44,7 +45,10 @@ const finite = (value: unknown): value is number => typeof value === "number" &&
 const round = (value: number | null) => value === null ? null : Math.round(value * 10000) / 10000;
 const share = (value: unknown) => finite(value) && value >= 0 && value <= 1 ? value : null;
 
-export type ForgeDailyBridgeInputs = { runs: Row[]; skaters: Row[]; goalies: Row[]; goalieShares: Row[];
+export type ForgeDailyBridgeInputs = {
+  /** Selected runs; only those with `external_input_proven: true` (their captured snapshot proves third-party fantasy
+   * inputs were excluded) are used. Others are counted as withheld and their rows ignored. */
+  runs: Row[]; skaters: Row[]; goalies: Row[]; goalieShares: Row[];
   /** `wgo_skater_stats_totals` rows for this season and last; absent means the season rates could not be read. */
   seasonTotals?: Row[];
   /** Accepted IFTTT goalie news for the upcoming games; absent means it could not be read. */
@@ -271,15 +275,21 @@ function goalieLine(row: Row): StatLine {
   return Object.fromEntries(Object.entries(line).map(([key, value]) => [key, round(value)]));
 }
 
-/** Pure: no reads. Rows from runs not in `inputs.runs` are ignored. */
+/** Pure: no reads. Rows from runs not in `inputs.runs`, or from runs without external-input exclusion proof, are ignored. */
 export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, players: PlanningPlayer[], games: PlanningGame[],
   now: Date, seasonId: number, calendarPolicy: ForecastCalendarPolicy, byteBudget = FORGE_DAILY_BRIDGE_BYTE_BUDGET,
   expandedByteBudget = FORGE_DAILY_BRIDGE_EXPANDED_BYTE_BUDGET): ForgeDailyBridgeResult {
   const runs = new Map<string, Run>();
+  let withheldRuns = 0;
   for (const row of inputs.runs) if (typeof row.run_id === "string" && /^\d{4}-\d{2}-\d{2}$/.test(row.as_of_date)
-    && Date.parse(row.created_at) <= now.getTime()) runs.set(row.run_id, { runId: row.run_id, asOfDate: row.as_of_date,
-    issuedAt: new Date(row.created_at).toISOString(), gitSha: row.git_sha ?? null });
-  if (!runs.size) return { forecasts: [], teamWins: [], limitations: ["Interim FORGE projections: no successful FORGE run in the last week, so planning is schedule-only."] };
+    && Date.parse(row.created_at) <= now.getTime()) {
+    if (row.external_input_proven !== true) { withheldRuns++; continue; }
+    runs.set(row.run_id, { runId: row.run_id, asOfDate: row.as_of_date,
+      issuedAt: new Date(row.created_at).toISOString(), gitSha: row.git_sha ?? null });
+  }
+  if (!runs.size) return { forecasts: [], teamWins: [], limitations: [withheldRuns
+    ? `Interim FORGE projections: no FORGE run in the last week can prove it excluded third-party fantasy projections (${withheldRuns} withheld), so planning is schedule-only.`
+    : "Interim FORGE projections: no successful FORGE run in the last week, so planning is schedule-only."] };
   const order = (row: Row) => `${row.as_of_date}|${runs.get(row.run_id)!.issuedAt}`;
   const latest = <K>(rows: Row[], key: (row: Row) => K) => {
     const result = new Map<K, Row>();
@@ -533,6 +543,7 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
   const staleShareGoalies = [...unboundShares].filter(id => goalieTeams.has(id) && !latestShares.has(id)).length;
   const limitations = [
     `Interim FORGE projections until native forecasts go live: each player's latest FORGE v2 daily line (runs ${dates[0]} to ${dates.at(-1)}) stands in for his remaining games; ${coveredTeams} of ${teamCount} teams covered.`,
+    ...(withheldRuns ? [`${withheldRuns} FORGE runs in the last week cannot prove they excluded third-party fantasy projections, so they are withheld; players covered only by them get no forecast.`] : []),
     rates ? "Penalty minutes, plus-minus, shorthanded points, game-winning goals and faceoffs are season per-game rates (this season plus half of last, pulled toward league rates), not FORGE projections."
       : "Season rates could not be read, so penalty minutes, plus-minus, shorthanded points, game-winning goals and faceoffs are unknown; totals that score them are withheld.",
     ...(unratedSkaters.size ? [`${unratedSkaters.size} skaters have no season totals this season or last, so their penalty minutes, plus-minus, shorthanded points, game-winning goals and faceoffs are unknown.`] : []),
@@ -560,7 +571,8 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
     teamWins: [...teamWins].flatMap(([key, win]) => win && servedTeams.has(key) ? [win] : []) };
 }
 
-/** Read-only: the latest successful public h1 FORGE run per slate date in the lookback, as Start Chart serves it. */
+/** Read-only: the latest successful public h1 FORGE run per slate date in the lookback whose captured snapshot proves it
+ * excluded third-party fantasy inputs. Newer unproven runs of a date are passed on unread, only to be counted. */
 export async function loadForgeDailyBridgeForecasts(db: SupabaseClient<any>, players: PlanningPlayer[], games: PlanningGame[], now: Date,
   seasonId: number, deadline: number, calendarPolicy: ForecastCalendarPolicy): Promise<ForgeDailyBridgeResult> {
   const readDeadline = Math.min(deadline, Date.now() + 6000);
@@ -569,10 +581,16 @@ export async function loadForgeDailyBridgeForecasts(db: SupabaseClient<any>, pla
   const runRows = await pages(() => restrictRunsToHorizon(excludeOffReleaseRuns(db.from("forge_runs").select("run_id,as_of_date,created_at,git_sha", { count: "exact" })
     .eq("status", "succeeded"))).gte("as_of_date", from).lte("as_of_date", to)
     .order("as_of_date", { ascending: false }).order("created_at", { ascending: false }).order("run_id"), readDeadline, 500, row => row.run_id);
-  const latestByDate = new Map<string, Row>();
-  for (const row of runRows) if (!latestByDate.has(row.as_of_date) && Date.parse(row.created_at) <= now.getTime()) latestByDate.set(row.as_of_date, row);
+  const issued = runRows.filter(row => Date.parse(row.created_at) <= now.getTime());
+  const proof = issued.length ? await withinDeadline(readDeadline, () => loadExternalInputProof(db, issued.map(row => row.run_id))) : new Map();
+  const latestByDate = new Map<string, Row>(), withheld: Row[] = [];
+  for (const row of issued) {
+    if (latestByDate.has(row.as_of_date)) continue;
+    if (proof.has(row.run_id)) latestByDate.set(row.as_of_date, { ...row, external_input_proven: true });
+    else withheld.push({ ...row, external_input_proven: false });
+  }
   const runs = [...latestByDate.values()], runIds = runs.map(row => row.run_id);
-  if (!runIds.length) return buildForgeDailyBridgeForecasts({ runs: [], skaters: [], goalies: [], goalieShares: [] }, players, games, now, seasonId, calendarPolicy);
+  if (!runIds.length) return buildForgeDailyBridgeForecasts({ runs: withheld, skaters: [], goalies: [], goalieShares: [] }, players, games, now, seasonId, calendarPolicy);
   const previousSeason = String((Math.floor(seasonId / 10000) - 1) * 10001 + 1);
   const upcomingGameIds = [...new Set(games.filter(game => game.status === "scheduled" && game.startsAt && Date.parse(game.startsAt) > now.getTime())
     .map(game => Number(game.id)).filter(Number.isSafeInteger))].slice(0, 500);
@@ -602,5 +620,5 @@ export async function loadForgeDailyBridgeForecasts(db: SupabaseClient<any>, pla
       .in("season_id", [seasonId, Number(previousSeason)]).order("season_id").order("opponent").order("position_group"),
     readDeadline, 400, row => [row.season_id, row.opponent, row.position_group]).catch(() => undefined),
   ]);
-  return buildForgeDailyBridgeForecasts({ runs, skaters, goalies, goalieShares, seasonTotals, goalieNews, teamPriors, lastSeasonTeams, teamGames, positionAllowed }, players, games, now, seasonId, calendarPolicy);
+  return buildForgeDailyBridgeForecasts({ runs: [...runs, ...withheld], skaters, goalies, goalieShares, seasonTotals, goalieNews, teamPriors, lastSeasonTeams, teamGames, positionAllowed }, players, games, now, seasonId, calendarPolicy);
 }

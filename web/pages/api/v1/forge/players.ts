@@ -10,9 +10,10 @@ import { buildResolvedDataServingContract } from "lib/dashboard/freshness";
 import { buildCanonicalReaderCompatibility } from "lib/projections/compatibilityInventory";
 import { buildSkaterModeledHeadTotals } from "lib/projections/modeledHeadTotals";
 import * as forgeSkaterContext from "lib/projections/forgeSkaterContext";
+import { loadExternalInputProof } from "lib/projections/externalInputProof";
 import {
   buildProjectionApiErrorResponse,
-  requireLatestSucceededRunId,
+  requireLatestExternalInputProvenRunId,
 } from "lib/projections/apiHelpers";
 
 type LineComboRecencyClass = "FRESH" | "SOFT_STALE" | "HARD_STALE" | "MISSING";
@@ -189,7 +190,11 @@ async function fetchFallbackRunWithPlayerData(
             : 0) || a.index - b.index,
       )
       .map(({ row }) => row);
-    for (const row of rows) {
+    // A run without external-input exclusion proof is never a fallback.
+    const proof = rows.length
+      ? await loadExternalInputProof(supabase, rows.map((row) => row.run_id))
+      : new Map();
+    for (const row of rows.filter((candidate) => proof.has(candidate.run_id))) {
       const { count, error } = await supabase
         .from("forge_player_projections")
         .select("player_id", { count: "exact", head: true })
@@ -246,9 +251,9 @@ export default async function handler(
     let projectionsRaw: any[] = [];
     let missingRequestedHorizon = false;
 
-    // 1. Try to find a run for the requested date
+    // 1. Try to find a run for the requested date (only one proven free of external fantasy inputs)
     try {
-      runId = await requireLatestSucceededRunId(targetDate);
+      runId = await requireLatestExternalInputProvenRunId(targetDate);
     } catch (e) {
       if ((e as any)?.statusCode !== 404) throw e;
     }

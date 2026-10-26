@@ -31,6 +31,7 @@ import { ROLLING_WINDOW_GOALIE_PARTICIPATION_DATASET, ROLLING_WINDOW_GOALIE_STAR
 import { ROLLING_WINDOW_SKATER_PARTICIPATION_DATASET } from "lib/player-forecasts/modeledSkaterParticipationStore";
 import { fetchBoundedNhlSchedule } from "./source";
 import { normalizeNhlGameToTeamRows } from "./normalize";
+import { provenSnapshotRow, unprovenSnapshotRow } from "lib/projections/externalInputProof.fixtures";
 
 vi.mock("lib/supabase/server", () => ({ default: {} }));
 
@@ -263,7 +264,7 @@ describe("public RSO data boundary", () => {
       forge_player_projections: [{ run_id: "run-b", as_of_date: "2026-10-09", horizon_games: 1, game_id: 2026020000, player_id: 847001, team_id: 1,
         proj_goals_es: 0.3, proj_goals_pp: 0.1, proj_assists_es: 0.4, proj_assists_pp: 0.1, proj_shots_es: 2, proj_shots_pp: 0.5,
         proj_toi_es_seconds: 900, proj_toi_pp_seconds: 120, proj_hits: 1, proj_blocks: 0.4 }],
-      forge_goalie_projections: [], goalie_start_projections: [] });
+      forge_goalie_projections: [], goalie_start_projections: [], player_forecast_source_observations: [provenSnapshotRow("run-b")] });
     const bridged = await loadPlanningData(db as never, publicQuery, { ...publicOptions, forgeDailyBridge: true, consumer: "rso" });
     expect(bridged.forecasts).toEqual([expect.objectContaining({ playerId: "7", gameId: "2026020001",
       revisionId: "forge-daily-bridge-v1:run-b", stats: expect.objectContaining({ GOALS: 0.4, POINTS: 0.9 }) })]);
@@ -279,6 +280,23 @@ describe("public RSO data boundary", () => {
       source: { kind: "empty", reason: "native_catalog_expired", environment: {} } })).forecasts).toEqual([]);
     vi.stubEnv("RSO_FORGE_DAILY_BRIDGE", "off");
     expect((await loadPlanningData(db as never, publicQuery, { ...publicOptions, forgeDailyBridge: true })).forecasts).toEqual([]);
+  });
+
+  it("keeps RSO schedule-only when the interim bridge's only run cannot prove it excluded third-party fantasy inputs", async () => {
+    const { db, tables, calls } = formDb([], []);
+    Object.assign(tables, {
+      forge_runs: [{ run_id: "run-b", as_of_date: "2026-10-09", created_at: "2026-10-09T15:00:00Z", git_sha: "abc" }],
+      forge_player_projections: [{ run_id: "run-b", as_of_date: "2026-10-09", horizon_games: 1, game_id: 2026020000, player_id: 847001, team_id: 1,
+        proj_goals_es: 0.3, proj_goals_pp: 0.1, proj_assists_es: 0.4, proj_assists_pp: 0.1, proj_shots_es: 2, proj_shots_pp: 0.5,
+        proj_toi_es_seconds: 900, proj_toi_pp_seconds: 120, proj_hits: 1, proj_blocks: 0.4 }],
+      forge_goalie_projections: [], goalie_start_projections: [], player_forecast_source_observations: [unprovenSnapshotRow("run-b")] });
+    const planning = await loadPlanningData(db as never, publicQuery, { ...publicOptions, forgeDailyBridge: true, consumer: "rso" });
+    expect(planning.forecasts).toEqual([]);
+    expect(planning.forecastManifest?.rsoUsePolicy?.bridgeRevisionIds).toEqual([]);
+    expect(planning.forecastManifest?.exclusionCounts.serving_disabled).toBeGreaterThan(0);
+    expect(planning.evidence.forecasts.limitations).toEqual(expect.arrayContaining([
+      "Interim FORGE projections: no FORGE run in the last week can prove it excluded third-party fantasy projections (1 withheld), so planning is schedule-only."]));
+    expect(calls.some(call => call.table === "forge_player_projections")).toBe(false);
   });
 
   it.each(["frozen", "roster observation", "rolling"].flatMap(family => ["skater", "goalie", "start"].map(kind => ({ family, kind }))))

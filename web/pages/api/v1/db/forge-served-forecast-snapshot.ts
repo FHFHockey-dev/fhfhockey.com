@@ -8,6 +8,7 @@ import { forecastCalendarPolicy } from "lib/player-forecasts/contributions";
 import { buildLedgerRows, buildMarketLedgerRows, LEDGER_MARKET_ENABLED, LEDGER_SOURCES, type LedgerGame, type LedgerMarketQuote, type LedgerPlayer } from "lib/player-forecasts/servedForecastLedger";
 import { loadForgeDailyBridgeForecasts, teamStrengthPriors, teamWinProbability } from "lib/rosterScheduleData/forgeDailyBridge";
 import { loadPlanningInputs, pages } from "lib/rosterScheduleData/planningInputs";
+import { loadExternalInputProof } from "lib/projections/externalInputProof";
 
 /** S-B1: snapshots what the RSO bridge serves for one ET date (plus naive controls) into forge_served_forecast_ledger.
  * Writes only that table (upsert on its PK); games already started are refused and counted.
@@ -54,7 +55,15 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     const players: LedgerPlayer[] = identified.map(player => ({ nhlId: player.nhlId!, planningId: player.id, playerClass: player.playerClass, teamId: player.nhlTeamId! }));
     enter("forge_bridge");
     const bridge = await loadForgeDailyBridgeForecasts(db, identified, planning.games, now, seasonId, deadline, forecastCalendarPolicy());
-    const runIds = [...new Set(bridge.forecasts.map(row => row.revisionId.split(":").at(-1)!).filter(Boolean))];
+    const runOf = (row: { revisionId: string }) => row.revisionId.split(":").at(-1)!;
+    // The ledger is durable: re-check exclusion proof at the write boundary, so no row ever records an unproven run.
+    enter("forge_bridge_proof");
+    const proof = await loadExternalInputProof(db, [...new Set(bridge.forecasts.map(runOf).filter(Boolean))]);
+    const bridgeForecasts = bridge.forecasts.filter(row => proof.has(runOf(row)));
+    const withheld = bridge.forecasts.length - bridgeForecasts.length;
+    const bridgeLimitations = withheld ? [...bridge.limitations,
+      `${withheld} interim FORGE player-games were not recorded: their run cannot prove it excluded third-party fantasy projections.`] : bridge.limitations;
+    const runIds = [...new Set(bridgeForecasts.map(runOf))];
     const previousSeason = (Math.floor(seasonId / 10000) - 1) * 10001 + 1;
     const priorFrom = new Date(Date.parse(`${date}T12:00:00Z`) - 7 * DAY_MS).toISOString().slice(0, 10);
     const skaterIds = players.filter(row => row.playerClass === "skater").map(row => row.nhlId), goalieIds = players.filter(row => row.playerClass === "goalie").map(row => row.nhlId);
@@ -84,7 +93,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       teamWin.set(`${game.gameId}:${game.awayTeamId}`, teamWinProbability(priors.get(away.toUpperCase()), priors.get(home.toUpperCase()), false));
     }
     enter("ledger_build");
-    const { rows, universe, skippedGameIds } = buildLedgerRows({ date, seasonId, now, games, players, bridgeForecasts: bridge.forecasts,
+    const { rows, universe, skippedGameIds } = buildLedgerRows({ date, seasonId, now, games, players, bridgeForecasts,
       runDates: new Map(runs.map(row => [row.run_id, row.as_of_date])), scheduleGames, wgoGameRows, goalieGameRows, teamWin });
     enter("ledger_upsert");
     let rowsUpserted = 0;
@@ -120,7 +129,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     if (marketError) return res.status(207).json({ success: false, date, rowsUpserted, countsBySource, marketError, skippedGames: skippedGameIds });
     return res.status(200).json({ success: true, date, seasonId, games: games.length, players: players.length, rowsUpserted, countsBySource,
       identifiedPlayerGames: universe.length, coverageStatus: "unavailable_independent_universe_not_persisted",
-      skippedGames: skippedGameIds, bridgeLimitations: bridge.limitations });
+      skippedGames: skippedGameIds, bridgeLimitations });
   } catch (error: any) {
     stageMs[stage] = Date.now() - stageStart;
     console.error("forge-served-forecast-snapshot failed:", stage, stageMs, error);

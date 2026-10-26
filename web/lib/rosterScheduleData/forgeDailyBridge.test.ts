@@ -10,6 +10,7 @@ import { buildForgeDailyBridgeForecasts, FORGE_DAILY_BRIDGE_SEASON_RATED, FORGE_
 import { compactBridgeForecasts, expandBridgeForecasts, fitBridgeWire, packPlanningSnapshots, unpackPlanningSnapshots, type BridgeForecastWire } from "./bridgeForecastWire";
 import { preservationJson } from "lib/rosterScheduleOptimizer/workspace";
 import { resolveDailyBoardEvidence, type BoardGoalieEvidence } from "lib/projections/dailyBoardEvidence";
+import { provenSnapshotRow, unprovenSnapshotRow } from "lib/projections/externalInputProof.fixtures";
 
 const now = new Date("2026-10-19T18:00:00Z");
 const policy = forecastCalendarPolicy(14);
@@ -27,8 +28,9 @@ const skater = (run: string, asOf: string, gameId: number, playerId: number, tea
   proj_assists_pp: 0.15, proj_assists_pk: null, proj_shots_es: 2.5, proj_shots_pp: 0.6, proj_shots_pk: null, proj_toi_es_seconds: 900,
   proj_toi_pp_seconds: 180, proj_toi_pk_seconds: null, proj_hits: 1.2, proj_blocks: 0.5, proj_pim: null, proj_plus_minus: null });
 const inputs = () => ({
-  runs: [{ run_id: "r1", as_of_date: "2026-10-18", created_at: "2026-10-18T12:00:00Z", git_sha: "abc" },
-    { run_id: "r2", as_of_date: "2026-10-19", created_at: "2026-10-19T12:00:00Z", git_sha: "def" }],
+  // The loader marks each run whose captured snapshot proves external fantasy inputs were excluded.
+  runs: [{ run_id: "r1", as_of_date: "2026-10-18", created_at: "2026-10-18T12:00:00Z", git_sha: "abc", external_input_proven: true },
+    { run_id: "r2", as_of_date: "2026-10-19", created_at: "2026-10-19T12:00:00Z", git_sha: "def", external_input_proven: true }],
   // s1 is in both runs; s2 only in the older one; s3's row is for a different team.
   skaters: [skater("r1", "2026-10-18", 0, 101, 10), skater("r2", "2026-10-19", 1, 101, 10), skater("r1", "2026-10-18", 0, 102, 10),
     skater("r2", "2026-10-19", 9, 103, 9)],
@@ -59,7 +61,7 @@ describe("FORGE daily bridge", () => {
   it("prefers the line FORGE issued for the game itself over a re-aimed line from an earlier game", () => {
     // r3 (issued later) projects s1 for game 2 directly; game 1 still comes from r2's own row, re-aimed nowhere.
     const data = inputs();
-    data.runs.push({ run_id: "r3", as_of_date: "2026-10-21", created_at: "2026-10-19T18:00:00Z", git_sha: "ghi" });
+    data.runs.push({ run_id: "r3", as_of_date: "2026-10-21", created_at: "2026-10-19T18:00:00Z", git_sha: "ghi", external_input_proven: true });
     data.skaters.push({ ...skater("r3", "2026-10-21", 2, 101, 10), proj_goals_es: 0.5, proj_goals_pp: 0.2 });
     const { forecasts } = buildForgeDailyBridgeForecasts(data, players, games, now, 20262027, policy);
     const s1 = forecasts.filter(row => row.playerId === "s1");
@@ -71,7 +73,7 @@ describe("FORGE daily bridge", () => {
 
   it("keeps a complete exact-game forecast when the newer game's learned head is missing", () => {
     const data = inputs();
-    data.runs.push({ run_id: "r3", as_of_date: "2026-10-21", created_at: "2026-10-19T17:00:00Z", git_sha: "ghi" });
+    data.runs.push({ run_id: "r3", as_of_date: "2026-10-21", created_at: "2026-10-19T17:00:00Z", git_sha: "ghi", external_input_proven: true });
     data.skaters.push({ ...skater("r3", "2026-10-21", 2, 101, 10), proj_assists_es: null } as unknown as ReturnType<typeof skater>);
     const { forecasts } = buildForgeDailyBridgeForecasts(data, players, games, now, 20262027, policy);
     const rows = forecasts.filter(row => row.playerId === "s1");
@@ -82,7 +84,7 @@ describe("FORGE daily bridge", () => {
   it("keeps a skater's own-game line when his team's newer run omits him, withholding only re-aimed copies", () => {
     // r2 (day D) projects s1 and s2 for game 1; r3 (D+1) projects only s1, for game 2.
     const data = inputs();
-    data.runs.push({ run_id: "r3", as_of_date: "2026-10-20", created_at: "2026-10-19T15:00:00Z", git_sha: "ghi" });
+    data.runs.push({ run_id: "r3", as_of_date: "2026-10-20", created_at: "2026-10-19T15:00:00Z", git_sha: "ghi", external_input_proven: true });
     data.skaters.push(skater("r2", "2026-10-19", 1, 102, 10), skater("r3", "2026-10-20", 2, 101, 10));
     const { forecasts, limitations } = buildForgeDailyBridgeForecasts(data, players, games, now, 20262027, policy);
     const lines = (id: string) => forecasts.filter(row => row.playerId === id).map(row => [row.gameId, row.revisionId]);
@@ -135,6 +137,76 @@ describe("FORGE daily bridge", () => {
     expect(goalie("g2", "1").stats.SAVES_GOALIE).toBeCloseTo(5);
     expect(goalie("g1", "1").conditionalStats).toMatchObject({ SAVES_GOALIE: 25, WINS_GOALIE: 0.55, LOSSES_GOALIE: 0.45 });
     expect([goalie("g1", "2").startProbability, goalie("g2", "2").startProbability]).toEqual([0.7, 0.3]);
+  });
+
+  describe("external-input exclusion proof", () => {
+    it("never builds a forecast from an unproven run: its players are unavailable, with a limitation, never zero", () => {
+      const data = inputs();
+      data.runs[1].external_input_proven = false;
+      const { forecasts, limitations } = buildForgeDailyBridgeForecasts(data, players, games, now, 20262027, policy);
+      expect(forecasts.some(row => row.revisionId.endsWith(":r2"))).toBe(false);
+      // s1 falls back to r1's proven line; the goalies' only lines are r2's, so they get no forecast at all.
+      expect(forecasts.filter(row => row.playerId === "s1").map(row => row.revisionId)).toEqual([`${FORGE_DAILY_BRIDGE_VERSION}:r1`, `${FORGE_DAILY_BRIDGE_VERSION}:r1`]);
+      expect(forecasts.some(row => row.playerId === "g1" || row.playerId === "g2")).toBe(false);
+      expect(forecasts.every(row => Object.values(row.stats).some(value => value !== 0))).toBe(true);
+      expect(limitations).toContain("1 FORGE runs in the last week cannot prove they excluded third-party fantasy projections, so they are withheld; players covered only by them get no forecast.");
+    });
+
+    it.each([[false], [undefined]])("is schedule-only, saying why, when no run is proven (flag %s)", flag => {
+      const data = inputs();
+      for (const run of data.runs) (run as Record<string, unknown>).external_input_proven = flag;
+      expect(buildForgeDailyBridgeForecasts(data, players, games, now, 20262027, policy)).toEqual({ forecasts: [], teamWins: [],
+        limitations: ["Interim FORGE projections: no FORGE run in the last week can prove it excluded third-party fantasy projections (2 withheld), so planning is schedule-only."] });
+    });
+
+    // forge_runs rows newest first; each run's snapshot (or none) decides whether it is proven.
+    function proofDb(runRows: Record<string, any>[], snapshots: Record<string, any>[], skaterRows: Record<string, any>[] = []) {
+      const runIdReads: unknown[] = [], proofReads: unknown[] = [];
+      const db = { from: (table: string) => {
+        let rows: Record<string, any>[] = table === "forge_runs" ? [...runRows] : table === "forge_player_projections" ? [...skaterRows]
+          : table === "player_forecast_source_observations" ? [...snapshots] : [];
+        const builder: any = new Proxy({}, { get: (_target, property) => {
+          if (property === "then") return (resolve: (value: unknown) => unknown) => Promise.resolve(resolve({ data: rows, count: rows.length, error: null }));
+          if (property === "in") return (column: string, values: unknown[]) => {
+            if (column === "run_id") runIdReads.push(values);
+            if (column === "entity_key") proofReads.push(values);
+            rows = rows.filter(row => values.includes(row[column]));
+            return builder;
+          };
+          return () => builder;
+        } });
+        return builder;
+      } };
+      return { db, runIdReads, proofReads };
+    }
+
+    it("selects, per date, the latest proven run and reads no row of a newer unproven one", async () => {
+      const runRows = [
+        { run_id: "uncaptured", as_of_date: "2026-10-19", created_at: "2026-10-19T16:00:00Z", git_sha: "abc" },
+        { run_id: "legacy", as_of_date: "2026-10-19", created_at: "2026-10-19T14:00:00Z", git_sha: "abc" },
+        { run_id: "clean", as_of_date: "2026-10-19", created_at: "2026-10-19T12:00:00Z", git_sha: "abc" },
+        { run_id: "legacy-old", as_of_date: "2026-10-18", created_at: "2026-10-18T12:00:00Z", git_sha: "abc" },
+      ];
+      const { db, runIdReads, proofReads } = proofDb(runRows, [unprovenSnapshotRow("legacy"), provenSnapshotRow("clean"), unprovenSnapshotRow("legacy-old")],
+        [skater("clean", "2026-10-19", 1, 101, 10), skater("legacy", "2026-10-19", 1, 101, 10), skater("legacy-old", "2026-10-18", 0, 102, 10)]);
+      const result = await loadForgeDailyBridgeForecasts(db as never, players, games, now, 20262027, Date.now() + 5000, policy);
+      expect(proofReads).toEqual([["uncaptured", "legacy", "clean", "legacy-old"]]);
+      expect(runIdReads).toEqual([["clean"], ["clean"]]);
+      expect(new Set(result.forecasts.map(row => row.revisionId))).toEqual(new Set([`${FORGE_DAILY_BRIDGE_VERSION}:clean`]));
+      expect(result.limitations).toContain("3 FORGE runs in the last week cannot prove they excluded third-party fantasy projections, so they are withheld; players covered only by them get no forecast.");
+    });
+
+    it("serves a clean run proven by its snapshot, and fails closed when proof cannot be read", async () => {
+      const runRows = [{ run_id: "clean", as_of_date: "2026-10-19", created_at: "2026-10-19T12:00:00Z", git_sha: "abc" }];
+      const proven = proofDb(runRows, [provenSnapshotRow("clean")], [skater("clean", "2026-10-19", 1, 101, 10)]);
+      const served = await loadForgeDailyBridgeForecasts(proven.db as never, players, games, now, 20262027, Date.now() + 5000, policy);
+      expect(served.forecasts.filter(row => row.playerId === "s1").map(row => row.gameId)).toEqual(["1", "2"]);
+      const failing = proofDb(runRows, []);
+      const from = failing.db.from;
+      failing.db.from = (table: string) => table === "player_forecast_source_observations"
+        ? { select: () => ({ eq: () => ({ eq: () => ({ in: async () => ({ data: null, error: { message: "denied" } }) }) }) }) } as never : from(table);
+      await expect(loadForgeDailyBridgeForecasts(failing.db as never, players, games, now, 20262027, Date.now() + 5000, policy)).rejects.toEqual({ message: "denied" });
+    });
   });
 
   it("is empty with a plain reason when no run exists, and trims to the byte budget", () => {
@@ -418,7 +490,8 @@ describe("FORGE daily bridge", () => {
       const selects = new Map<string, string>();
       // Every query chain resolves to its table's rows: one released run, nothing else.
       const db = { from: (table: string) => {
-        const rows = table === "forge_runs" ? [{ run_id: "r", as_of_date: "2026-10-19", created_at: "2026-10-19T12:00:00Z", git_sha: "abc", metrics: { horizon_games: 1 } }] : [];
+        const rows = table === "forge_runs" ? [{ run_id: "r", as_of_date: "2026-10-19", created_at: "2026-10-19T12:00:00Z", git_sha: "abc", metrics: { horizon_games: 1 } }]
+          : table === "player_forecast_source_observations" ? [provenSnapshotRow("r")] : [];
         const chain: any = new Proxy({}, { get: (_target, property) => property === "then"
           ? (resolve: (value: unknown) => unknown) => Promise.resolve(resolve({ data: rows, count: rows.length, error: null }))
           : property === "select" ? (columns: string) => { selects.set(table, columns); return chain; } : () => chain });
@@ -708,7 +781,9 @@ describe("FORGE daily bridge", () => {
     const runIdReads: unknown[] = [];
     // Applies the forge_runs git_sha filters the reader sends; every other table is empty.
     const db = { from: (table: string) => {
-      let rows: Record<string, any>[] = table === "forge_runs" ? [...runRows] : [];
+      // Every run this test reads is proven; the fences under test are the run filters.
+      let rows: Record<string, any>[] = table === "forge_runs" ? [...runRows]
+        : table === "player_forecast_source_observations" ? runRows.map(row => provenSnapshotRow(row.run_id)) : [];
       const keep = (test: (sha: string | null) => boolean) => { rows = rows.filter(row => test(row.git_sha)); };
       const builder: any = {
         select: () => builder, eq: () => builder, gte: () => builder, lte: () => builder, abortSignal: () => builder,

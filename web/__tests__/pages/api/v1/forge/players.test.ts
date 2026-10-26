@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } from "lib/projections/calibrationEligibility";
+import { provenSnapshotRow, unprovenSnapshotRow } from "lib/projections/externalInputProof.fixtures";
 
 const {
   fromMock,
@@ -15,9 +16,11 @@ vi.mock("lib/projections/apiHelpers", async () => {
   const actual = await vi.importActual<any>(
     "lib/projections/apiHelpers",
   );
+  // One mock behind both lookups; the first argument names which one the route called.
   return {
     ...actual,
-    requireLatestSucceededRunId: requireLatestSucceededRunIdMock,
+    requireLatestSucceededRunId: (...args: unknown[]) => requireLatestSucceededRunIdMock("unguarded", ...args),
+    requireLatestExternalInputProvenRunId: (...args: unknown[]) => requireLatestSucceededRunIdMock("proven", ...args),
   };
 });
 
@@ -72,6 +75,9 @@ function createQueryBuilder(
     limit() {
       return builder;
     },
+    in() {
+      return builder;
+    },
     maybeSingle() {
       const out = resolver();
       const data = Array.isArray(out.data)
@@ -123,10 +129,19 @@ function createMockRes() {
 }
 
 let projectionSelectQueries: string[] = [];
+// Runs whose captured snapshot carries no exclusion claim; every other run's snapshot proves it.
+let unprovenRunIds = new Set<string>();
+function snapshotBuilder() {
+  const chain: any = { select: () => chain, eq: () => chain,
+    in: (_column: string, ids: string[]) => Promise.resolve({ error: null,
+      data: ids.map((id) => (unprovenRunIds.has(id) ? unprovenSnapshotRow(id) : provenSnapshotRow(id))) }) };
+  return chain;
+}
 
 describe("/api/v1/forge/players", () => {
-  it.each([undefined, "external_inputs_allowed"])("preserves released legacy fallback rows without native-only contract %s", async contract => {
+  it.each([undefined, "external_inputs_allowed"])("refuses a legacy fallback run whose snapshot lacks exclusion proof (metrics %s)", async contract => {
     requireLatestSucceededRunIdMock.mockRejectedValueOnce(Object.assign(new Error("missing"), { statusCode: 404 }));
+    unprovenRunIds = new Set(["fallback-external"]);
     const prior = fromMock.getMockImplementation()!;
     fromMock.mockImplementation((table: string) => table === "forge_runs" ? createQueryBuilder(() => ({
       data: [{ run_id: "fallback-external", as_of_date: "2026-02-06",
@@ -134,14 +149,77 @@ describe("/api/v1/forge/players", () => {
     })) : prior(table));
     const res = createMockRes();
     await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toMatchObject({ runId: "fallback-external", asOfDate: "2026-02-06", fallbackApplied: true });
-    expect(res.body.data.length).toBeGreaterThan(0);
-    expect(fromMock.mock.calls.some(([table]) => table === "forge_player_projections")).toBe(true);
+    expect(res.statusCode).toBe(404);
+    expect(res.body.data).toBeUndefined();
+    expect(fromMock.mock.calls.some(([table]) => table === "forge_player_projections")).toBe(false);
   });
+
+  describe("external-input exclusion proof", () => {
+    type ProofRun = { run_id: string; as_of_date: string; metrics: Record<string, unknown> };
+    // The real latest-run lookups, over forge_runs rows filtered by the date bounds the reader sends.
+    async function route(runs: ProofRun[]) {
+      const actual = await vi.importActual<typeof import("lib/projections/apiHelpers")>("lib/projections/apiHelpers");
+      requireLatestSucceededRunIdMock.mockImplementation((kind: string, ...args: any[]) =>
+        (kind === "proven" ? actual.requireLatestExternalInputProvenRunId : actual.requireLatestSucceededRunId)(args[0], args[1]));
+      const projectionRunIds: unknown[] = [];
+      const prior = fromMock.getMockImplementation()!;
+      fromMock.mockImplementation((table: string) => {
+        if (table === "forge_runs") {
+          const filters: Array<(row: ProofRun) => boolean> = [];
+          const builder = createQueryBuilder(() => ({ data: runs.filter((row) => filters.every((keep) => keep(row))), error: null }),
+            (column, value) => { if (column === "as_of_date") filters.push((row) => row.as_of_date === value); });
+          builder.gte = (column: string, value: string) => { filters.push((row: any) => row[column] >= value); return builder; };
+          builder.lte = (column: string, value: string) => { filters.push((row: any) => row[column] <= value); return builder; };
+          return builder;
+        }
+        if (table === "forge_player_projections") {
+          const builder = prior(table);
+          const eq = builder.eq;
+          builder.eq = (column: string, value: unknown) => {
+            if (column === "run_id") projectionRunIds.push(value);
+            return eq(column, value);
+          };
+          return builder;
+        }
+        return prior(table);
+      });
+      const res = createMockRes();
+      await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
+      return { res, projectionRunIds };
+    }
+
+    it("refuses an unproven legacy latest run, with no proven fallback, instead of serving its rows", async () => {
+      unprovenRunIds = new Set(["legacy-run"]);
+      const { res, projectionRunIds } = await route([{ run_id: "legacy-run", as_of_date: "2026-02-07", metrics: {} }]);
+      expect(res.statusCode).toBe(404);
+      expect(projectionRunIds).toEqual([]);
+    });
+
+    it("passes over unproven runs in a mixed window for the latest proven one", async () => {
+      unprovenRunIds = new Set(["legacy-today", "legacy-yesterday"]);
+      const { res, projectionRunIds } = await route([
+        { run_id: "legacy-today", as_of_date: "2026-02-07", metrics: {} },
+        { run_id: "legacy-yesterday", as_of_date: "2026-02-06", metrics: {} },
+        { run_id: "clean-yesterday", as_of_date: "2026-02-06", metrics: {} },
+      ]);
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toMatchObject({ runId: "clean-yesterday", asOfDate: "2026-02-06", fallbackApplied: true });
+      expect(projectionRunIds).not.toContain("legacy-today");
+      expect(projectionRunIds).not.toContain("legacy-yesterday");
+    });
+
+    it("serves a clean run proven by its snapshot although run-start metrics carry no claim", async () => {
+      const { res } = await route([{ run_id: "clean-run", as_of_date: "2026-02-07", metrics: {} }]);
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toMatchObject({ runId: "clean-run", asOfDate: "2026-02-07", fallbackApplied: false });
+      expect(res.body.data.length).toBeGreaterThan(0);
+    });
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     projectionSelectQueries = [];
+    unprovenRunIds = new Set();
     requireLatestSucceededRunIdMock.mockResolvedValue("run-123");
     resolveLatestStartedSeasonIdForDateMock.mockResolvedValue(20252026);
     fromMock.mockImplementation((table: string) => {
@@ -220,6 +298,7 @@ describe("/api/v1/forge/players", () => {
           error: null,
         }));
       }
+      if (table === "player_forecast_source_observations") return snapshotBuilder();
       return createQueryBuilder(() => ({ data: [], count: 0, error: null }));
     });
   });
@@ -443,6 +522,7 @@ describe("/api/v1/forge/players", () => {
             error: null,
           }));
         }
+        if (table === "player_forecast_source_observations") return snapshotBuilder();
         return createQueryBuilder(() => ({ data: [], count: 0, error: null }));
       });
 
@@ -514,6 +594,7 @@ describe("/api/v1/forge/players", () => {
           error: null,
         }));
       }
+      if (table === "player_forecast_source_observations") return snapshotBuilder();
       return createQueryBuilder(() => ({ data: [], count: 0, error: null }));
     });
 
@@ -622,6 +703,7 @@ describe("/api/v1/forge/players", () => {
           error: null,
         }));
       }
+      if (table === "player_forecast_source_observations") return snapshotBuilder();
       return createQueryBuilder(() => ({ data: [], count: 0, error: null }));
     });
 
@@ -786,6 +868,7 @@ describe("/api/v1/forge/players", () => {
           error: null,
         }));
       }
+      if (table === "player_forecast_source_observations") return snapshotBuilder();
       return createQueryBuilder(() => ({ data: [], count: 0, error: null }));
     });
     requireLatestSucceededRunIdMock.mockResolvedValue("daily-run");
@@ -839,6 +922,7 @@ describe("/api/v1/forge/players", () => {
       if (table === "rosters") {
         return createQueryBuilder(() => ({ data: [], error: null }));
       }
+      if (table === "player_forecast_source_observations") return snapshotBuilder();
       return createQueryBuilder(() => ({ data: [], count: 0, error: null }));
     });
     requireLatestSucceededRunIdMock.mockResolvedValue("daily-run");
