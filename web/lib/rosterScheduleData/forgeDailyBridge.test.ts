@@ -7,7 +7,7 @@ import type { PlanningData, PlanningGame, PlanningPlayer, PlanningSnapshot } fro
 import { runHorizonFilter } from "lib/projections/releasedRunFence";
 import { STARTER_DECISION_SHARE, teamWinProbability } from "lib/projections/goalie/goalieOutcomes";
 import { buildForgeDailyBridgeForecasts, FORGE_DAILY_BRIDGE_SEASON_RATED, FORGE_DAILY_BRIDGE_VERSION, loadForgeDailyBridgeForecasts, opponentTilts, teamStrengthPriors, teamWinProbability as ledgerTeamWin, type ForgeDailyBridgeInputs } from "./forgeDailyBridge";
-import { compactBridgeForecasts, expandBridgeForecasts, fitBridgeWire, jsonUtf8Bytes, packPlanningSnapshots, RESERVE_FORECAST_NOTES, reserveCodeOf, unpackPlanningSnapshots, type BridgeForecastWire } from "./bridgeForecastWire";
+import { bridgeRunProofs, compactBridgeForecasts, expandBridgeForecasts, fitBridgeWire, jsonUtf8Bytes, packPlanningSnapshots, RESERVE_FORECAST_NOTES, reserveCodeOf, unpackPlanningSnapshots, type BridgeForecastWire } from "./bridgeForecastWire";
 import { preservationJson } from "lib/rosterScheduleOptimizer/workspace";
 import { resolveDailyBoardEvidence, type BoardGoalieEvidence } from "lib/projections/dailyBoardEvidence";
 import { provenSnapshotRow, unprovenSnapshotRow } from "lib/projections/externalInputProof.fixtures";
@@ -155,7 +155,7 @@ describe("FORGE daily bridge", () => {
     it.each([[false], [undefined]])("is schedule-only, saying why, when no run is proven (flag %s)", flag => {
       const data = inputs();
       for (const run of data.runs) (run as Record<string, unknown>).external_input_proven = flag;
-      expect(buildForgeDailyBridgeForecasts(data, players, games, now, 20262027, policy)).toEqual({ forecasts: [], teamWins: [],
+      expect(buildForgeDailyBridgeForecasts(data, players, games, now, 20262027, policy)).toEqual({ forecasts: [], teamWins: [], runProofs: [],
         limitations: ["Interim FORGE projections: no FORGE run in the last week can prove it excluded third-party fantasy projections (2 withheld), so planning is schedule-only."] });
     });
 
@@ -215,6 +215,8 @@ describe("FORGE daily bridge", () => {
       const proven = proofDb(runRows, [provenSnapshotRow("clean")], [skater("clean", "2026-10-19", 1, 101, 10)]);
       const served = await loadForgeDailyBridgeForecasts(proven.db as never, players, games, now, 20262027, Date.now() + 5000, policy);
       expect(served.forecasts.filter(row => row.playerId === "s1").map(row => row.gameId)).toEqual(["1", "2"]);
+      // The run's proof (as externalInputProof's runProofDiagnostics reports it) travels with the result for the wire.
+      expect(served.runProofs).toEqual([{ runId: "clean", basis: "captured_snapshot", releaseSha: null, closureSha256: null }]);
       const failing = proofDb(runRows, []);
       const from = failing.db.from;
       failing.db.from = (table: string) => table === "player_forecast_source_observations"
@@ -225,7 +227,7 @@ describe("FORGE daily bridge", () => {
 
   it("is empty with a plain reason when no run exists, and trims to the byte budget", () => {
     expect(buildForgeDailyBridgeForecasts({ runs: [], skaters: [], goalies: [], goalieShares: [] }, players, games, now, 20262027, policy))
-      .toEqual({ forecasts: [], teamWins: [], limitations: [expect.stringContaining("no successful FORGE run")] });
+      .toEqual({ forecasts: [], teamWins: [], runProofs: [], limitations: [expect.stringContaining("no successful FORGE run")] });
     // The budget counts compact wire bytes, the size the projections actually travel at.
     const trimmed = buildForgeDailyBridgeForecasts(inputs(), players, games, now, 20262027, policy, 1000);
     expect(trimmed.forecasts.length).toBeGreaterThan(0);
@@ -886,6 +888,49 @@ describe("FORGE daily bridge", () => {
   });
 });
 
+describe("FORGE run proofs on the bridge wire", () => {
+  const proofOf = (runId: string) => ({ runId, basis: "verified_release" as const, releaseSha: "f".repeat(40), closureSha256: null });
+  const withProofs = () => ({ ...inputs(), runs: inputs().runs.map(row => ({ ...row, proof: proofOf(row.run_id) })) });
+
+  it("returns each served run's proof and carries it on the wire only for the runs the wire carries", () => {
+    const result = buildForgeDailyBridgeForecasts(withProofs(), players, games, now, 20262027, policy);
+    const served = new Set(result.forecasts.map(row => row.revisionId.split(":")[1]));
+    expect(result.runProofs.map(proof => proof.runId).sort()).toEqual([...served].sort());
+    const { wire } = compactBridgeForecasts(result.forecasts, { players, games }, 20262027, [...result.runProofs, proofOf("not-served")]);
+    expect(bridgeRunProofs(JSON.parse(JSON.stringify(wire)))).toEqual(result.runProofs);
+    // A malformed or missing list yields none and never touches the forecasts.
+    expect(bridgeRunProofs({ ...wire, proofs: [{ runId: "", basis: "x" }, null, "x"] })).toEqual([]);
+    expect(bridgeRunProofs(null)).toEqual([]);
+    expect(expandBridgeForecasts(wire, { players, games })).toEqual(result.forecasts);
+  });
+
+  it("leaves everything else byte-identical: forecasts, limitations and wire apart from the proofs field", () => {
+    const plain = buildForgeDailyBridgeForecasts(inputs(), players, games, now, 20262027, policy);
+    const proven = buildForgeDailyBridgeForecasts(withProofs(), players, games, now, 20262027, policy);
+    expect(plain.runProofs).toEqual([]);
+    expect(JSON.stringify({ ...proven, runProofs: [] })).toBe(JSON.stringify(plain));
+    const before = compactBridgeForecasts(plain.forecasts, { players, games }, 20262027);
+    const after = compactBridgeForecasts(proven.forecasts, { players, games }, 20262027, proven.runProofs);
+    const { proofs, ...rest } = after.wire!;
+    expect(proofs).toHaveLength(proven.runProofs.length);
+    expect(JSON.stringify(rest)).toBe(JSON.stringify(before.wire));
+  });
+
+  it("never lets a proof enter a workspace save", () => {
+    const result = buildForgeDailyBridgeForecasts(withProofs(), players, games, now, 20262027, policy);
+    const upcoming = games.filter(row => row.date >= "2026-10-19");
+    const { wire } = compactBridgeForecasts(result.forecasts, { players, games: upcoming }, 20262027, result.runProofs);
+    // The client rebuilds from the response wire, then saves its snapshot packed, as the workspace route does.
+    const forecasts = expandBridgeForecasts(JSON.parse(JSON.stringify(wire)), { players, games: upcoming });
+    const snapshot = { id: "snap", context: { seasonId: 20262027 }, players, games: upcoming, forecasts, roster: [], lockedAssignments: [], realized: {} };
+    const saved = JSON.stringify(packPlanningSnapshots({ workspace: { version: 1 }, snapshot }));
+    expect(saved).not.toContain("proofs");
+    expect(saved).not.toContain("verified_release");
+    expect(JSON.stringify(unpackPlanningSnapshots(JSON.parse(saved)))).not.toContain("verified_release");
+    expect(JSON.stringify(forecasts)).not.toContain("verified_release");
+  });
+});
+
 describe("FORGE reserve lines in the bridge", () => {
   const reserveSkater = (run: string, asOf: string, gameId: number, playerId: number, teamId: number, reason = "not_in_lineup") => {
     const { proj_goals_pk, proj_assists_pk, proj_shots_pk, proj_toi_pk_seconds, proj_pim, proj_plus_minus, ...row } = skater(run, asOf, gameId, playerId, teamId);
@@ -946,6 +991,55 @@ describe("FORGE reserve lines in the bridge", () => {
     expect(reserveCodeOf(forecasts.find(item => item.playerId === "s2" && item.gameId === "1")!)).toBe("skater:disputed");
     const ruledOut = buildForgeDailyBridgeForecasts(reserveInputs({ reserves: [reserveSkater("r2", "2026-10-19", 1, 102, 10, "ruled_out")] }), players, games, now, 20262027, policy);
     expect(reserveCodeOf(ruledOut.forecasts.find(item => item.playerId === "s2")!)).toBe("skater:ruled_out_at_run");
+  });
+
+  it("lets confirmed lineup news outrank an unconfirmed scratch report, in either order; a confirmed out still counts 0 (N2)", () => {
+    const state = (news: ReturnType<typeof lineupNews>[]) => {
+      const { forecasts } = buildForgeDailyBridgeForecasts(reserveInputs({ goalieNews: { assertions: news, conflicts: [] } }), players, games, now, 20262027, policy);
+      const row = forecasts.find(item => item.playerId === "s2" && item.gameId === "1")!;
+      return { code: reserveCodeOf(row), appearance: row.appearanceProbability, points: points(row.stats) };
+    };
+    const confirmedIn = lineupNews(1, 102, "ev", "L4", true), maybeIn = lineupNews(1, 102, "ev", "L4", false);
+    const maybeOut = lineupNews(1, 102, "availability", "out", false), out = lineupNews(1, 102, "availability", "out", true);
+    for (const news of [[maybeOut, confirmedIn], [confirmedIn, maybeOut]])
+      expect(state(news)).toEqual({ code: "skater:confirmed_lineup", appearance: 1, points: 0.47 });
+    for (const news of [[out, confirmedIn], [confirmedIn, out]])
+      expect(state(news)).toEqual({ code: "skater:confirmed_out", appearance: 0, points: 0 });
+    for (const news of [[maybeOut, maybeIn], [maybeIn, maybeOut]]) expect(state(news).code).toBe("skater:projected_scratch");
+    // Of two availability reports, the confirmed one speaks: a confirmed return beside an unconfirmed out.
+    const back = lineupNews(1, 102, "availability", "return", true);
+    for (const news of [[maybeOut, back], [back, maybeOut]]) expect(state(news).code).toBe("skater:return_reported");
+  });
+
+  it("says when a goalie's \"if he starts\" line is his team starter's, never withholding a known start for it (N4)", () => {
+    // g2 (start share 0.3) and g3 (no share) have no line of their own: only g1's starter row exists.
+    const noOwn = reserveInputs({ reserves: [reserveSkater("r2", "2026-10-19", 1, 102, 10)] });
+    const { forecasts } = buildForgeDailyBridgeForecasts(noOwn, [...players, g3], games, now, 20262027, policy);
+    const g2 = forecasts.find(row => row.playerId === "g2" && row.gameId === "1")!, g3Row = forecasts.find(row => row.playerId === "g3" && row.gameId === "1")!;
+    expect(reserveCodeOf(g2)).toBe("goalie:team_line");
+    expect(note(g2)).toMatch(/team starter's/);
+    expect(g2.conditionalStats).toMatchObject({ SAVES_GOALIE: 25 });
+    expect(g2.startProbability).toBeGreaterThan(0);
+    expect(g2.stats.SAVES_GOALIE).toBeCloseTo(25 * g2.startProbability!, 3);
+    expect(reserveCodeOf(g3Row)).toBe("goalie:start_unknown_team_line");
+    expect(note(g3Row)).toMatch(/team starter's/);
+    expect(g3Row).toMatchObject({ startProbability: null, conditionalStats: { SAVES_GOALIE: 25 }, stats: { SAVES_GOALIE: 0 } });
+    // g1's own line carries no label.
+    expect(reserveCodeOf(forecasts.find(row => row.playerId === "g1" && row.gameId === "1")!)).toBeNull();
+    // A label is not a reserve line: a budget that withholds reserves keeps g2's labelled forecast.
+    const expanded = forecasts.reduce((sum, row) => sum + jsonUtf8Bytes(row) + 1, 0);
+    const tight = buildForgeDailyBridgeForecasts(noOwn, [...players, g3], games, now, 20262027, policy, undefined, expanded - 1);
+    expect(tight.forecasts.some(row => row.playerId === "g2" && reserveCodeOf(row) === "goalie:team_line")).toBe(true);
+    expect(tight.forecasts.some(row => row.playerId === "g3" || row.playerId === "s2")).toBe(false);
+    // Round trip keeps the label; the response trim withholds only reserve lines.
+    const { wire } = compactBridgeForecasts(forecasts, { players: [...players, g3], games }, 20262027);
+    expect(expandBridgeForecasts(wire, { players: [...players, g3], games })).toEqual(forecasts);
+    const envelope = (value: BridgeForecastWire | null) => ({ bridgeForecasts: value });
+    const fitted = fitBridgeWire(wire, envelope, JSON.stringify(envelope(wire)).length - 1)!;
+    expect(fitted.bridgeForecasts!.rows.some(row => row[0] === "g2" && row[8] === "goalie:team_line")).toBe(true);
+    // The reserve pass off: no label, as before.
+    const legacy = buildForgeDailyBridgeForecasts({ ...noOwn, reserves: undefined }, [...players, g3], games, now, 20262027, policy);
+    expect(legacy.forecasts.filter(row => row.playerId === "g2").every(row => reserveCodeOf(row) === null)).toBe(true);
   });
 
   it("uses each goalie's own reserve line; an unknown start chance stays unknown and counts 0 starts", () => {

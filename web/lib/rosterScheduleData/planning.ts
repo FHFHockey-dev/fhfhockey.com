@@ -2,6 +2,7 @@ import { loadPlanningInputs, pages, withinDeadline, PlanningReadDeadlineError, t
 import { admitConsumerGameRevisions } from "lib/projections/consumerRevisionAdmission";
 import { currentRsoUsePolicy, issuedParticipationLineage, restrictRsoForecast, type RsoUsePolicyManifest } from "lib/player-forecasts/rsoUsePolicy";
 import { loadForgeDailyBridgeForecasts } from "./forgeDailyBridge";
+import type { BridgeRunProof } from "./bridgeForecastWire";
 export { normalizePlanningGames } from "./planningInputs";
 export { publicPlanningForecasts } from "lib/projections/consumerRevisionAdmission";
 export type { PlanningDataQuery } from "./planningInputs";
@@ -64,7 +65,9 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
   /** A source the caller already selected for this request; otherwise it is selected here. */
   source?: ForecastServingSource;
   /** RSO only: serve interim FORGE daily projections while native forecasts are not activated. */
-  forgeDailyBridge?: boolean } = {}): Promise<PlanningData> {
+  forgeDailyBridge?: boolean;
+  /** Receives the served bridge runs' proofs for the response wire; never stored on PlanningData or a snapshot. */
+  onBridgeRunProofs?: (proofs: BridgeRunProof[]) => void } = {}): Promise<PlanningData> {
   const now = options.now ?? new Date();
   const deadline = Math.min(options.deadlineMs ?? Infinity, Date.now() + 20000);
   const source = options.source ?? await withinDeadline(Math.min(deadline, Date.now() + 8000), signal => selectForecastServingSource(db, query.seasonId, now, process.env, signal))
@@ -199,6 +202,7 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
       forecastProblems.push(...bridge.limitations);
       if (bridge.forecasts.length) {
         forecasts = bridge.forecasts; bridged = true;
+        options.onBridgeRunProofs?.(bridge.runProofs);
         const covered = new Set(forecasts.map(row => row.gameId));
         delete exclusionCounts.serving_disabled;
         for (let index = exclusionRows.length - 1; index >= 0; index--) if (exclusionRows[index].reasons.includes("serving_disabled")) exclusionRows.splice(index, 1);

@@ -23,10 +23,18 @@ export const RESERVE_FORECAST_NOTES = {
   "skater:no_lineup_evidence": `FORGE reserve line: not in FORGE's projected lineup and no lineup news for this game; dressing is unknown, so ${COUNTS_ZERO}.`,
   "skater:evidence_unavailable": `FORGE reserve line: lineup news could not be read; dressing is unknown, so ${COUNTS_ZERO}.`,
   "goalie:start_unknown": `FORGE goalie line: no start share or news for this game, so his start chance is unknown and ${COUNTS_ZERO}.`,
+  "goalie:start_unknown_team_line": `FORGE goalie line: no start share or news for this game, so his start chance is unknown and ${COUNTS_ZERO}. FORGE has no line of his own: the "if he starts" line is his team starter's.`,
+  // A label, not a reserve line: a goalie with a known start chance whose per-start line is his team starter's.
+  "goalie:team_line": `FORGE goalie line: FORGE has no line of his own, so his "if he starts" line (and its share by his start chance) is his team starter's.`,
 } as const;
 export type ReserveCode = keyof typeof RESERVE_FORECAST_NOTES;
 const RESERVE_CODE_BY_NOTE = new Map(Object.entries(RESERVE_FORECAST_NOTES).map(([code, note]) => [note as string, code as ReserveCode]));
 const isReserveCode = (value: unknown): value is ReserveCode => typeof value === "string" && value in RESERVE_FORECAST_NOTES;
+/** Codes that mark a reserve line (withheld all together when they do not fit); "goalie:team_line" only labels a
+ * regular forecast and is never withheld. */
+export function isReserveLine(code: ReserveCode | null | undefined): boolean {
+  return !!code && code !== "goalie:team_line";
+}
 /** A reserve skater's chance to dress as the evidence states it: 1 or 0 only when accepted news confirms it. Goalies
  * carry no appearance field (their start chance is the forecast's own startProbability). */
 export function reserveAppearanceProbability(code: ReserveCode): number | null | undefined {
@@ -42,7 +50,12 @@ export function reserveCodeOf(forecast: Pick<GameForecast, "limitations">): Rese
  * rebuilds the identical forecast, so the planner and its checks see exactly what the server built.
  */
 export type BridgeForecastWire = { version: typeof BRIDGE_FORECAST_WIRE_VERSION; seasonId: number;
-  runs: WireRun[]; limitations: string[]; rows: WireRow[] };
+  runs: WireRun[]; limitations: string[]; rows: WireRow[];
+  /** Each run's external-input proof as the server admitted it (response only; never part of a saved snapshot). */
+  proofs?: BridgeRunProof[] };
+/** A bridge run's proof basis (the shape of externalInputProof's RunProofDiagnostics), so the UI can show it. */
+export type BridgeRunProof = { runId: string; basis: "captured_snapshot" | "verified_producer_closure" | "verified_release" | null;
+  releaseSha: string | null; closureSha256: string | null };
 type Inputs = { players: PlanningPlayer[]; games: PlanningGame[] };
 
 const ALLOWED_USES = { assignment: true, totals: true, comparison: true, conditionalTieBreak: false };
@@ -74,8 +87,10 @@ function expandRow(row: WireRow, run: WireRun, limitations: string[], seasonId: 
     revisionId, issuedAt, modelVersion, limitations: reserve ? [...limitations, RESERVE_FORECAST_NOTES[reserve]] : [...limitations] };
 }
 
-/** Moves bridge rows the client can rebuild exactly into the wire; every other forecast stays as it is. */
-export function compactBridgeForecasts(forecasts: GameForecast[], inputs: Inputs, seasonId: number): { forecasts: GameForecast[]; wire: BridgeForecastWire | null } {
+/** Moves bridge rows the client can rebuild exactly into the wire; every other forecast stays as it is. `proofs` (from
+ * loadPlanningData's side channel) ride along for the runs the wire carries; snapshots are packed without them. */
+export function compactBridgeForecasts(forecasts: GameForecast[], inputs: Inputs, seasonId: number,
+  proofs?: readonly BridgeRunProof[]): { forecasts: GameForecast[]; wire: BridgeForecastWire | null } {
   const find = lookup(inputs);
   const runs: WireRun[] = [], runIndex = new Map<string, number>(), rows: WireRow[] = [], kept: GameForecast[] = [];
   let limitations: string[] | null = null;
@@ -95,7 +110,9 @@ export function compactBridgeForecasts(forecasts: GameForecast[], inputs: Inputs
     if (index === runs.length) { runs.push(run); runIndex.set(canonical(run), index); }
     rows.push(row);
   }
-  return { forecasts: kept, wire: rows.length ? { version: BRIDGE_FORECAST_WIRE_VERSION, seasonId, runs, limitations: limitations ?? [], rows } : null };
+  const carried = proofs?.filter(proof => runs.some(run => run[0] === `${FORGE_DAILY_BRIDGE_VERSION}:${proof.runId}`)) ?? [];
+  return { forecasts: kept, wire: rows.length ? { version: BRIDGE_FORECAST_WIRE_VERSION, seasonId, runs, limitations: limitations ?? [], rows,
+    ...(carried.length ? { proofs: carried } : {}) } : null };
 }
 
 const isStatLine = (value: unknown): value is StatLine => !!value && typeof value === "object" && !Array.isArray(value)
@@ -121,6 +138,20 @@ export function expandBridgeForecasts(wire: unknown, inputs: Inputs): GameForeca
     if (match) result.push(expandRow(row, runs[run], limitations, seasonId!, match.player, match.game));
   }
   return result;
+}
+
+const PROOF_BASES = new Set(["captured_snapshot", "verified_producer_closure", "verified_release"]);
+const nullableText = (value: unknown) => value === null || isText(value);
+/** The run proofs a response wire carries; a missing or malformed list gives none. Display only: it grants nothing. */
+export function bridgeRunProofs(wire: unknown): BridgeRunProof[] {
+  const proofs = wire && typeof wire === "object" ? (wire as { proofs?: unknown }).proofs : undefined;
+  if (!Array.isArray(proofs)) return [];
+  return proofs.flatMap(item => {
+    const proof = item as Partial<BridgeRunProof> | null;
+    return proof && typeof proof === "object" && isText(proof.runId) && (proof.basis === null || PROOF_BASES.has(proof.basis as string))
+      && nullableText(proof.releaseSha) && nullableText(proof.closureSha256)
+      ? [{ runId: proof.runId!, basis: proof.basis!, releaseSha: proof.releaseSha!, closureSha256: proof.closureSha256! }] : [];
+  });
 }
 
 /** Exact UTF-8 bytes of a value's JSON, as it travels in a request or response body. */
@@ -151,9 +182,9 @@ export function fitBridgeWire<T>(wire: BridgeForecastWire | null, envelope: (wir
   const full = envelope(wire);
   if (jsonUtf8Bytes(full) <= budget) return full;
   // Reserve rows go first and all together, so a trim never keeps reserves for early games only.
-  const reserves = wire ? wire.rows.filter(row => row.length === 9).length : 0;
+  const reserves = wire ? wire.rows.filter(row => isReserveLine(row[8])).length : 0;
   if (wire && reserves) return fitBridgeWire({ ...wire, limitations: [...wire.limitations, reservesWithheldNote(reserves)],
-    rows: wire.rows.filter(row => row.length !== 9) }, envelope, budget);
+    rows: wire.rows.filter(row => !isReserveLine(row[8])) }, envelope, budget);
   if (wire && wire.rows.length > 1) {
     const total = wire.rows.length, prefix = [0];
     for (const row of wire.rows) prefix.push(prefix[prefix.length - 1] + jsonUtf8Bytes(row));

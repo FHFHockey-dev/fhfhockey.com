@@ -8,7 +8,7 @@ vi.mock("lib/player-forecasts/forecastServingSource", async importOriginal => ({
   ...await importOriginal<typeof import("lib/player-forecasts/forecastServingSource")>(), selectForecastServingSource: mocks.select,
 }));
 import { decodePlanningDataTransport } from "lib/rosterScheduleData/planningDataTransport";
-import { expandBridgeForecasts } from "lib/rosterScheduleData/bridgeForecastWire";
+import { bridgeRunProofs, expandBridgeForecasts } from "lib/rosterScheduleData/bridgeForecastWire";
 import handler from "pages/api/v1/roster-schedule-optimizer/data";
 
 const query = { seasonId: "20262027", startDate: "2026-10-15", endDate: "2026-10-21" };
@@ -40,7 +40,7 @@ describe("/api/v1/roster-schedule-optimizer/data", () => {
     const source = await mocks.select.mock.results[0].value;
     expect(source).toMatchObject({ kind: "legacy", reason: "native_not_activated" });
     expect(mocks.load).toHaveBeenCalledExactlyOnceWith(mocks.db, { seasonId: 20262027, startDate: query.startDate, endDate: query.endDate },
-      { now: new Date(), source, forgeDailyBridge: true, consumer: "rso" });
+      { now: new Date(), source, forgeDailyBridge: true, consumer: "rso", onBridgeRunProofs: expect.any(Function) });
     expect(res.headers["Cache-Control"]).toBe("public, s-maxage=300, stale-while-revalidate=300");
     expect(res.body.forecastSource).toEqual({ kind: "legacy", headRevision: null, expiresAt: null, reason: "native_not_activated" });
     expect(decodePlanningDataTransport(res.body.data)).toEqual(data);
@@ -50,7 +50,7 @@ describe("/api/v1/roster-schedule-optimizer/data", () => {
     mocks.select.mockResolvedValue(native);
     const res = await request();
     expect(mocks.select).toHaveBeenCalledTimes(1);
-    expect(mocks.load.mock.calls[0][2]).toEqual({ now: new Date(), source: native, forgeDailyBridge: true, consumer: "rso" });
+    expect(mocks.load.mock.calls[0][2]).toEqual({ now: new Date(), source: native, forgeDailyBridge: true, consumer: "rso", onBridgeRunProofs: expect.any(Function) });
     expect(res.headers["Cache-Control"]).toBe("public, s-maxage=60, stale-while-revalidate=0");
     expect(res.body.forecastSource).toEqual({ kind: "native", headRevision: 3, expiresAt: native.expiresAt, reason: null });
     expect(decodePlanningDataTransport(res.body.data)).toEqual(data);
@@ -60,7 +60,7 @@ describe("/api/v1/roster-schedule-optimizer/data", () => {
     const source = { kind, reason: "native_catalog_expired", environment: { PLAYER_FORECAST_BASELINE_RELEASE_IDS: "" } };
     mocks.select.mockResolvedValue(source);
     const res = await request();
-    expect(mocks.load.mock.calls[0][2]).toEqual({ now: new Date(), source, forgeDailyBridge: true, consumer: "rso" });
+    expect(mocks.load.mock.calls[0][2]).toEqual({ now: new Date(), source, forgeDailyBridge: true, consumer: "rso", onBridgeRunProofs: expect.any(Function) });
     expect(res.headers["Cache-Control"]).toBe("public, s-maxage=300, stale-while-revalidate=300");
     expect(res.body.forecastSource).toEqual({ kind, headRevision: null, expiresAt: null, reason: "native_catalog_expired" });
   });
@@ -107,6 +107,31 @@ describe("/api/v1/roster-schedule-optimizer/data", () => {
     expect(decoded.forecasts).toEqual([]);
     expect(sent.bridgeForecasts.rows).toHaveLength(1);
     expect(expandBridgeForecasts(sent.bridgeForecasts, decoded)).toEqual(forecasts);
+  });
+
+  it("carries each served bridge run's proof on the wire, only for runs it carries, and none without the side channel", async () => {
+    const players = [{ id: "7", nhlId: 8470001, nhlTeamId: 10, rosterRevision: "roster-7", name: "Skater", teamAbbreviation: "TOR",
+      eligiblePositions: ["C"], eligibilityVerified: true, playerClass: "skater", availability: "free_agent", ownership: null, canDrop: true,
+      holdValue: null, reserveEligibility: [] }];
+    const games = [{ id: "2026020101", scheduleRevision: "schedule-101", date: "2026-10-16", startsAt: "2026-10-16T23:00:00.000Z",
+      teamAbbreviation: "TOR", opponent: "MTL", home: true, status: "scheduled" }];
+    const wire = { version: "forge-daily-bridge-wire-v1", seasonId: 20262027, limitations: ["Interim FORGE projection."],
+      runs: [["forge-daily-bridge-v1:run-a", "forge-daily-bridge-v1:run-a", "forge-daily-bridge-v1:abc", "2026-10-15T11:00:00.000Z", "2026-10-15T11:00:00.000Z"]],
+      rows: [["7", "2026020101", 0, "2026-10-16T23:00:00.000Z", { GOALS: 0.3, ASSISTS: 0.4 }, null, false, null]] };
+    const forecasts = expandBridgeForecasts(wire, { players, games } as never);
+    const proof = { runId: "run-a", basis: "verified_producer_closure", releaseSha: null, closureSha256: "c".repeat(64) };
+    mocks.load.mockImplementation(async (_db, _query, options) => {
+      options.onBridgeRunProofs?.([proof, { ...proof, runId: "run-not-served" }]);
+      return { ...data, players, games, forecasts };
+    });
+    const sent = JSON.parse(JSON.stringify((await request()).body));
+    expect(sent.bridgeForecasts.proofs).toEqual([proof]);
+    expect(bridgeRunProofs(sent.bridgeForecasts)).toEqual([proof]);
+    // The proof is wire metadata only: the strict transport and the rebuilt forecasts never carry it.
+    expect(JSON.stringify(sent.data)).not.toContain("closureSha256");
+    expect(expandBridgeForecasts(sent.bridgeForecasts, decodePlanningDataTransport(sent.data))).toEqual(forecasts);
+    mocks.load.mockResolvedValue({ ...data, players, games, forecasts });
+    expect(JSON.parse(JSON.stringify((await request()).body)).bridgeForecasts).not.toHaveProperty("proofs");
   });
 
   it("fits the whole response, bridge siblings included, in exact UTF-8 bytes by trimming the latest bridge rows", async () => {
