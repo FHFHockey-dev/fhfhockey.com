@@ -14,6 +14,7 @@ import { GOALIE_PARTICIPATION_DATASET, FROZEN_WINDOW_GOALIE_PARTICIPATION_DATASE
 import { buildSkaterParticipationReceipt, buildFrozenWindowSkaterParticipationReceipt, type SkaterParticipationInput, buildRosterObservationSkaterParticipationReceipt } from "lib/player-forecasts/modeledSkaterParticipation";
 import { PARTICIPATION_DATASET, FROZEN_WINDOW_SKATER_PARTICIPATION_DATASET, type SkaterParticipationBundle, ROSTER_OBSERVATION_SKATER_PARTICIPATION_DATASET } from "lib/player-forecasts/modeledSkaterParticipationStore";
 import { playerForecastSourcePayloadHash } from "lib/player-forecasts/sourceSnapshot";
+import { forgeModelIdentity } from "lib/projections/run-forge-projections";
 import type { ForgeGameRevision } from "lib/projections/gameRevisions";
 import { forgeRosterRevision, forgeScheduleRevision, type ForgeIssuedContextV1 } from "lib/projections/issuedContext";
 import { admittedBoardGoalieForecast } from "lib/projections/starterBoardScoring";
@@ -184,6 +185,55 @@ describe("public RSO data boundary", () => {
     expect(roundTrip.forecastManifest).toEqual(restricted.forecastManifest);
     expect(roundTrip.forecasts).toEqual(restricted.forecasts);
     expect((await loadPlanningData(db as never, publicQuery, { ...options, consumer: "start_chart" })).forecasts).toEqual(shared.forecasts);
+  });
+
+  describe("FORGE model identity (D3)", () => {
+    const environment = { FORGE_SKATER_MODEL_MODE: "baseline", NHL_XG_MODEL_VERSION: null };
+    const rsoRead = async (modelIdentity?: unknown) => {
+      const { db, tables } = newsDb([]);
+      tables.fhfh_player_identities = [{ id: 7, nhl_player_id: 847001, canonical_name: "Skater", canonical_position: "L" }];
+      const issued = revision([]);
+      issued.payload.goalies = []; issued.payload.modelMode = "baseline"; issued.payload.codeVersion = "sha-1";
+      issued.payload.players = [{ game_id: 2026020001, team_id: 1, player_id: 847001, horizon_games: 1,
+        as_of_date: "2026-10-10", run_id: "run-1", proj_hits: 3,
+        uncertainty: { model: { skater_selection: scopedSkaterSelection(issued) } } }];
+      if (modelIdentity !== undefined) (issued.payload.inputProvenance as Record<string, unknown>).modelIdentity = modelIdentity;
+      db.rpc.mockReturnValue(rpcResponse({ data: [issued], error: null }));
+      const data = await loadPlanningData(db as never, publicQuery, { ...publicOptions, forecastsEnabled: true, forgeDailyBridge: true,
+        consumer: "rso", source: { kind: "legacy" as const, reason: "native_not_activated" as const, environment: {} } });
+      expect(data.forecasts).toHaveLength(1);
+      return data.forecasts[0];
+    };
+
+    it("hashes the run's model environment canonically, binding the artifact to its code version", () => {
+      const configurationHash = playerForecastSourcePayloadHash(environment);
+      const identity = forgeModelIdentity("sha-1", environment);
+      expect(identity).toEqual({ version: "forge-model-identity-v1", artifact: "no_fitted_artifact", configurationHash,
+        artifactHash: playerForecastSourcePayloadHash({ codeVersion: "sha-1", configurationHash }) });
+      expect(forgeModelIdentity("sha-1", { NHL_XG_MODEL_VERSION: null, FORGE_SKATER_MODEL_MODE: "baseline" })).toEqual(identity);
+      expect(forgeModelIdentity("sha-2", environment)).toMatchObject({ configurationHash });
+      expect(forgeModelIdentity("sha-2", environment).artifactHash).not.toBe(identity.artifactHash);
+      expect(forgeModelIdentity("sha-1", { ...environment, NHL_XG_MODEL_VERSION: "v2" }).configurationHash).not.toBe(configurationHash);
+    });
+
+    it("binds a revision's declared hashes, and no review still allows no use", async () => {
+      const identity = forgeModelIdentity("sha-1", environment);
+      const forecast = await rsoRead(identity);
+      expect(forecast.rsoTargetBindings?.HITS).toMatchObject({ codeVersion: "sha-1", modelMode: "baseline",
+        configurationHash: identity.configurationHash, artifactHash: identity.artifactHash, targetKey: "HITS", horizonGames: 1 });
+      for (const use of ["assignment", "totals", "comparison", "conditionalTieBreak"] as const) expect(forecastAllows(forecast, "HITS", use)).toBe(false);
+    });
+
+    it.each([
+      ["an older revision without one", undefined],
+      ["an artifact hash for another code version", forgeModelIdentity("sha-other", environment)],
+      ["another identity version", { ...forgeModelIdentity("sha-1", environment), version: "forge-model-identity-v0" }],
+      ["a fitted-artifact claim", { ...forgeModelIdentity("sha-1", environment), artifact: "fitted" }],
+      ["a malformed configuration hash", { ...forgeModelIdentity("sha-1", environment), configurationHash: "not-a-hash" }],
+    ])("leaves both hashes unknown for %s", async (_label, modelIdentity) => {
+      const forecast = await rsoRead(modelIdentity);
+      expect(forecast.rsoTargetBindings?.HITS).toMatchObject({ configurationHash: null, artifactHash: null });
+    });
   });
 
   it("keeps fresh ownership (0% included) as the value and a stale reading only as labelled last-known evidence (R7 W2)", async () => {

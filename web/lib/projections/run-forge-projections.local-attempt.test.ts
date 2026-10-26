@@ -1,6 +1,4 @@
 // @vitest-environment node
-import { readFileSync } from "node:fs";
-import path from "node:path";
 import ts from "typescript";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { guardedForgeFetch, type RequestCounts } from "../../scripts/run-forge-local";
@@ -193,31 +191,19 @@ async function run(local: boolean, backend: ReturnType<typeof fixture>, guarded 
 }
 
 /** True only when every season-bootstrap call in the stage passes a literal `false` external-fantasy flag. */
-function stageDisablesExternalFantasyInputs(file: string) {
-  const source = ts.createSourceFile(file, readFileSync(path.resolve(process.cwd(), "lib/projections", file), "utf8"),
-    ts.ScriptTarget.Latest, true);
-  const flags: ts.SyntaxKind[] = [];
-  const visit = (node: ts.Node): void => {
-    if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === "loadSeasonBootstrap") {
-      flags.push(node.arguments[4]?.kind ?? ts.SyntaxKind.Unknown);
-    }
-    ts.forEachChild(node, visit);
-  };
-  visit(source);
-  return flags.length > 0 && flags.every(kind => kind === ts.SyntaxKind.FalseKeyword);
-}
-
 describe("actual FORGE producer through fenced local transport", () => {
-  it("claims external fantasy exclusion only when both stages disable external fantasy inputs", async () => {
-    // On a master candidate the production stages still blend external fantasy priors, so the
-    // unchanged production pipeline must label neither its run nor its captured snapshot.
-    const excluded = ["stages/skater-stage.ts", "stages/goalie-stage.ts"].every(stageDisablesExternalFantasyInputs);
+  it("claims external fantasy exclusion from the run's own captured reads; the run-start metrics never claim", async () => {
+    // TJ option 1 (2026-10-26): the label follows the transcript. With the season bootstrap off this run reads no fantasy
+    // projection source, so the snapshot it publishes from claims; metrics are written before any read and stay unlabelled.
     const backend = fixture();
     await run(true, backend);
-    const label = excluded ? FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT : undefined;
-    expect(backend.tables.forge_runs[0].metrics.input_provenance.external_fantasy_input_contract).toBe(label);
-    expect(backend.snapshot!.inputProvenance!.external_fantasy_input_contract).toBe(label);
-    expect(evaluateForgeCalibrationEligibility(backend.tables.forge_runs[0].metrics).eligible).toBe(excluded);
+    const { isFantasyProjectionSource, readsExcludeExternalFantasy } = await import("./run-forge-projections");
+    expect(backend.snapshot!.reads.length).toBeGreaterThan(20);
+    expect(backend.snapshot!.reads.filter(read => isFantasyProjectionSource(String(read.request[0]?.args[0])))).toEqual([]);
+    expect(readsExcludeExternalFantasy(backend.snapshot!.reads)).toBe(true);
+    expect(backend.snapshot!.inputProvenance!.external_fantasy_input_contract).toBe(FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT);
+    expect(backend.tables.forge_runs[0].metrics.input_provenance.external_fantasy_input_contract).toBeUndefined();
+    expect(evaluateForgeCalibrationEligibility(backend.tables.forge_runs[0].metrics).eligible).toBe(false);
   });
 
   it("publishes both clubs with real persistence and captured output hash while explicitly omitting optional analytics", async () => {

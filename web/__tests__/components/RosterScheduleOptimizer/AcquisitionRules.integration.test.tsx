@@ -81,10 +81,10 @@ function fixture(provider: "manual" | "yahoo") {
       capabilities: { roster: true, availability: true, rules: false, acquisitions: false, limitations: [] } });
     throw new Error(`Unexpected synthetic request ${url}`);
   });
-  vi.stubGlobal("fetch", fetch); writeWorkspace(window.localStorage, workspace);
+  vi.stubGlobal("fetch", fetch); writeWorkspace(window.localStorage, workspace, [], auth.user?.id ?? null);
   return { workspace, snapshot, fetch };
 }
-function saved(context: PlanningWorkspace["context"]) { return readWorkspace(window.localStorage, context)!; }
+function saved(context: PlanningWorkspace["context"]) { return readWorkspace(window.localStorage, context, auth.user?.id ?? null)!; }
 function candidate() { return document.querySelector<HTMLElement>('[data-rso-candidate-id="c"]')!; }
 
 it.each(["manual", "yahoo"] as const)("collects only missing %s acquisition rules and automatically compares an empty plan after workspace reopen", async provider => {
@@ -132,7 +132,7 @@ it.each(["manual", "yahoo"] as const)("collects only missing %s acquisition rule
   ] });
   expect(persisted.rules.rosterSlots).toEqual(originalRules.rosterSlots); expect(persisted.rules.scoring).toEqual(originalRules.scoring);
   if (provider === "yahoo") expect(persisted.managerRuleOverrides).not.toHaveProperty("acquisitionCost");
-  expect(persisted.intent).toEqual(originalIntent); expect(readWorkspaceHistory(window.localStorage, persisted).length).toBeGreaterThan(0);
+  expect(persisted.intent).toEqual(originalIntent); expect(readWorkspaceHistory(window.localStorage, persisted, auth.user?.id ?? null).length).toBeGreaterThan(0);
   expect(LocalPlanningWorker.packets.length).toBeGreaterThan(initialEvaluations);
   expect(LocalPlanningWorker.packets.every(row => row.packet.intent.steps.length === 0)).toBe(true);
   expect(state.fetch.mock.calls.some(([, init]) => init?.method === "PUT")).toBe(false);
@@ -180,7 +180,7 @@ it.each(["manual", "yahoo"] as const)("saves and reopens explicit Monday 03:00 %
   expect(persisted.rules.acquisitionCost).toBe(provider === "yahoo" ? 2 : 1);
   if (provider === "yahoo") expect(persisted.managerRuleOverrides).not.toHaveProperty("acquisitionCost");
   expect(persisted.intent).toEqual(originalIntent);
-  expect(readWorkspaceHistory(window.localStorage, persisted).length).toBeGreaterThan(0);
+  expect(readWorkspaceHistory(window.localStorage, persisted, auth.user?.id ?? null).length).toBeGreaterThan(0);
   // Rule edits send nothing; each re-plan makes only its own current-read GET.
   expect(state.fetch.mock.calls.slice(initialRequests).every(([url, init]) => url.includes("/data?") && init?.method === "GET")).toBe(true);
   expect(state.fetch.mock.calls.some(([, init]) => init?.method === "PUT")).toBe(false);

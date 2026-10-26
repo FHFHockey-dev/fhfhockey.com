@@ -4,7 +4,7 @@ import { StrictMode } from "react";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { BenchDecision, GameForecast, PlanEvaluation, PlanIntent, PlanStep, PlanningData, PlanningPlayer, PlanningResult, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
-import { WORKSPACE_KEY, WORKSPACE_PRESERVATION_JOURNAL, defaultWorkspace, preservationChecksum, readWorkspaceHistory, writeWorkspace, type WorkspacePreservation } from "lib/rosterScheduleOptimizer/workspace";
+import { WORKSPACE_PRESERVATION_JOURNAL, workspaceStorageKey, defaultWorkspace, preservationChecksum, readWorkspaceHistory, writeWorkspace, type WorkspacePreservation } from "lib/rosterScheduleOptimizer/workspace";
 import { planRoster, sanitizeForecastInputs } from "lib/rosterScheduleOptimizer/planning";
 import { resolvePlanningContributions } from "lib/player-forecasts/planningContributions";
 import { resolveContribution } from "lib/player-forecasts/contributions";
@@ -79,6 +79,11 @@ function CompactSchedule(props: React.ComponentProps<typeof AdmittedCompactSched
 const player = { id: "fhfh:1", nhlId: 1, name: "Alpha Center", teamAbbreviation: "CAR", eligiblePositions: ["C"], playerClass: "skater" as const, availability: "unknown" as const, ownership: null, canDrop: null, holdValue: null, reserveEligibility: [] };
 const data: PlanningData = { players: [player], games: [], forecasts: [], evidence: {} };
 const fetchMock = vi.fn((url: string) => Promise.resolve({ ok: url.includes("/data?"), json: async () => ({ success: true, data }) }));
+// A Wednesday that is mid-week in UTC and America/*, for fixtures whose period runs "from now to this week's end".
+const MIDWEEK = new Date("2026-10-14T16:00:00Z");
+const pinMidweek = () => { vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(MIDWEEK); };
+// The local workspace slot of whoever is signed in (anonymous: the legacy device key).
+const activeKey = () => workspaceStorageKey(authState.user?.id ?? null);
 function planningTimeText(pattern: RegExp = /^(Updated|Saved) /) {
   const node = document.getElementById("rso-updated-at")!;
   expect(node.textContent).toMatch(pattern);
@@ -127,7 +132,7 @@ describe("active provider refresh scheduling", () => {
     workspace.intent.steps = emptyIntent ? [] : [{ id: "fixture-selected-add", type: "add", playerId: "fixture-candidate", at: `${workspace.context.startDate}T00:00:00Z`, effectiveAt: `${workspace.context.startDate}T00:00:00Z`, conditional: false, dependsOn: [] }];
     const snapshot: PlanningSnapshot = { id: "fixture-provider", context: workspace.context, players: [player], roster: workspace.roster,
       rules: workspace.rules, lockedAssignments: [], games: [], forecasts: [], realized: {}, opponent: null, evidence: {} };
-    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     let reads = 0, sharedReads = 0;
     vi.stubGlobal("fetch", vi.fn((url: string, init?: RequestInit) => {
       if (url.endsWith("/provider")) return reply(snapshot, ++reads);
@@ -141,7 +146,7 @@ describe("active provider refresh scheduling", () => {
     }));
     const view = render(<RosterScheduleOptimizer />);
     return { ...view, network, visibility, workspace, snapshot, reads: () => reads,
-      saved: () => JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!) };
+      saved: () => JSON.parse(window.localStorage.getItem(activeKey())!) };
   }
   const advance = (ms = 0) => act(async () => { await vi.advanceTimersByTimeAsync(ms); });
   const returned = async () => { fireEvent(document, new Event("visibilitychange")); await advance(); };
@@ -156,13 +161,13 @@ describe("active provider refresh scheduling", () => {
       sourceWatermark: "original", scheduleRevision: "original", rosterRevision: "original" };
     const view = setup(undefined, true, false, () => ({ ...data, baselineSources: [rate] }));
     await advance();
-    const saved = window.localStorage.getItem(WORKSPACE_KEY), calls = vi.mocked(fetch).mock.calls.length;
+    const saved = window.localStorage.getItem(activeKey()), calls = vi.mocked(fetch).mock.calls.length;
     expect(evaluated.at(-1)?.baselineSources).toEqual([rate]);
     await advance(1000);
     expect(evaluated.at(-1)?.context.asOf).toBe("2026-10-11T12:00:01.000Z");
     expect(evaluated.at(-1)?.baselineSources).toEqual([]);
     expect(view.snapshot.context.asOf).toBe("2026-10-11T12:00:00.000Z");
-    expect(window.localStorage.getItem(WORKSPACE_KEY)).toBe(saved);
+    expect(window.localStorage.getItem(activeKey())).toBe(saved);
     expect(vi.mocked(fetch).mock.calls).toHaveLength(calls + 1);
     expect(view.reads()).toBe(1);
   });
@@ -229,13 +234,13 @@ describe("active provider refresh scheduling", () => {
     const originalDates = [...latest()[0]], originalSources = JSON.stringify(state.snapshot.baselineSources);
     expect(originalDates.length).toBeGreaterThan(0);
     expect(latest()[5]).toBe(0);
-    const saved = window.localStorage.getItem(WORKSPACE_KEY), calls = vi.mocked(fetch).mock.calls.length;
+    const saved = window.localStorage.getItem(activeKey()), calls = vi.mocked(fetch).mock.calls.length;
     vi.setSystemTime(new Date("2026-10-12T12:00:00Z"));
     await advance(1000);
     expect(latest()[0]).toEqual(originalDates);
     expect(latest()[5]).toBe(0);
     expect(vi.mocked(fetch).mock.calls).toHaveLength(calls);
-    expect(window.localStorage.getItem(WORKSPACE_KEY)).toBe(saved);
+    expect(window.localStorage.getItem(activeKey())).toBe(saved);
     expect(JSON.stringify(state.snapshot.baselineSources)).toBe(originalSources);
     fireEvent.click(screen.getByRole("button", { name: "Reload shared forecasts" }));
     await advance();
@@ -392,7 +397,7 @@ describe("active provider refresh scheduling", () => {
   it("passes the shared participation catalog through manual evaluation and save validation", async () => {
     vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(new Date("2026-10-15T12:00:00Z"));
     const workspace = defaultWorkspace(new Date("2026-10-15T12:00:00Z"));
-    localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    localStorage.setItem(activeKey(), JSON.stringify(workspace));
     const catalog = [{ playerId: 1, nhlPlayerId: 1, seasonId: workspace.context.seasonId, gameId: 31, teamId: 6,
       basis: "appearance" as const, probability: 0.5, revisionId: "synthetic-participation", released: true,
       scheduleRevision: "synthetic-schedule", rosterRevision: "synthetic-roster", issuedAt: workspace.context.asOf,
@@ -405,7 +410,7 @@ describe("active provider refresh scheduling", () => {
       : url.endsWith("/access") ? { data: { eligible: false, capabilities: [] } } : { data: null } })));
     render(<RosterScheduleOptimizer />);
     await waitFor(() => expect(snapshots.at(-1)?.participationSources).toEqual(catalog));
-    const parsed = saveWorkspaceSchema.safeParse({ workspace: { ...JSON.parse(localStorage.getItem(WORKSPACE_KEY)!), context: snapshots.at(-1)!.context }, snapshot: snapshots.at(-1), expectedVersion: null });
+    const parsed = saveWorkspaceSchema.safeParse({ workspace: { ...JSON.parse(localStorage.getItem(activeKey())!), context: snapshots.at(-1)!.context }, snapshot: snapshots.at(-1), expectedVersion: null });
     expect(parsed.success).toBe(true);
     if (parsed.success) {
       expect(parsed.data.snapshot?.participationSources).toEqual(catalog);
@@ -524,6 +529,8 @@ describe("active provider refresh scheduling", () => {
     let release!: (response: unknown) => void;
     const state = setup(async (snapshot, read) => read === 1 ? new Promise(resolve => { release = resolve; }) : success(snapshot));
     await advance(); expect(state.reads()).toBe(1);
+    // The other manager has their own local workspace for the same team context.
+    window.localStorage.setItem(workspaceStorageKey("fixture-other-manager"), window.localStorage.getItem(activeKey())!);
     authState.user = { id: "fixture-other-manager" }; state.rerender(<RosterScheduleOptimizer />); await advance();
     expect(state.reads()).toBe(2);
     await act(async () => release({ ok: false, status: 429, json: async () => ({ success: false, code: "yahoo_rate_limited", retryAfterSeconds: 3600, error: "Old account response." }) }));
@@ -538,7 +545,7 @@ describe("active provider refresh scheduling", () => {
     expect(state.reads()).toBe(1);
     expect(vi.getTimerCount()).toBeLessThan(timers);
     expect(screen.getByText("Select an owned team before refreshing provider inputs.")).toBeTruthy();
-    expect(state.saved().intent).toEqual(state.workspace.intent);
+    expect(state.saved().intent).toEqual({ ...state.workspace.intent, steps: [], protectedPlayerIds: [], excludedPlayerIds: [] });
   });
   it.each([
     { status: 429, code: "yahoo_rate_limited", retryAfterSeconds: 3600 },
@@ -563,7 +570,7 @@ describe("active provider refresh scheduling", () => {
       expect(state.reads()).toBe(3);
     }
     expect(state.saved().context.teamId).toBe("fixture-next-team");
-    expect(state.saved().intent).toEqual(state.workspace.intent);
+    expect(state.saved().intent).toEqual({ ...state.workspace.intent, steps: [], protectedPlayerIds: [], excludedPlayerIds: [] });
   });
   it("does not refresh an account snapshot opened read-only even when sync access is active", async () => {
     const state = setup(undefined, true, true); await advance(); expect(state.reads()).toBe(1);
@@ -651,13 +658,13 @@ describe("RosterScheduleOptimizer workspace", () => {
   });
   it("keeps an existing preservation journal held during development effect replay", async () => {
     const original = JSON.stringify(defaultWorkspace());
-    localStorage.setItem(WORKSPACE_KEY, original);
+    localStorage.setItem(activeKey(), original);
     sessionStorage.setItem(WORKSPACE_PRESERVATION_JOURNAL, "unreadable journal");
     const requests = vi.fn(); vi.stubGlobal("fetch", requests);
     render(<StrictMode><RosterScheduleOptimizer /></StrictMode>);
     await screen.findByText(/Saved preservation session found/);
     expect(requests).not.toHaveBeenCalled();
-    expect(localStorage.getItem(WORKSPACE_KEY)).toBe(original);
+    expect(localStorage.getItem(activeKey())).toBe(original);
     expect(sessionStorage.getItem(WORKSPACE_PRESERVATION_JOURNAL)).toBe("unreadable journal");
   });
   const seedFutureDisplayWorkspace = () => {
@@ -673,7 +680,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     workspace.roster = [{ playerId: player.id, position: "active" }];
     workspace.intent.protectedPlayerIds = [player.id];
     workspace.lockedAssignments = [{ date: "2026-10-15", playerId: player.id, slotId: "C#1" }];
-    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     return workspace;
   };
   it.each(["owner", "league", "team", "horizon", "timezone"] as const)("resumes a display day without aliasing a different %s or rewriting the plan", async scope => {
@@ -681,14 +688,14 @@ describe("RosterScheduleOptimizer workspace", () => {
     let view = render(<RosterScheduleOptimizer />);
     const slider = () => visibleScheduleSlider();
     await waitFor(() => expect(slider().getAttribute("aria-valuetext")).toBe("Mon, Oct 12"));
-    const storedPlan = window.localStorage.getItem(WORKSPACE_KEY);
+    const storedPlan = window.localStorage.getItem(activeKey());
     fireEvent.click(screen.getByRole("button", { name: "Select Thu, Oct 15" }));
     expect(slider().getAttribute("aria-valuetext")).toBe("Thu, Oct 15");
-    expect(window.localStorage.getItem(WORKSPACE_KEY)).toBe(storedPlan);
+    expect(window.localStorage.getItem(activeKey())).toBe(storedPlan);
     view.unmount();
     view = render(<RosterScheduleOptimizer />);
     await waitFor(() => expect(slider().getAttribute("aria-valuetext")).toBe("Thu, Oct 15"));
-    expect(window.localStorage.getItem(WORKSPACE_KEY)).toBe(storedPlan);
+    expect(window.localStorage.getItem(activeKey())).toBe(storedPlan);
     view.unmount();
     const other = structuredClone(workspace);
     if (scope === "owner") authState.user = { id: "display-owner-b" };
@@ -696,13 +703,13 @@ describe("RosterScheduleOptimizer workspace", () => {
     if (scope === "team") other.context.teamId = "display-team-b";
     if (scope === "horizon") other.context.endDate = "2026-10-25";
     if (scope === "timezone") other.context.timeZone = "America/Los_Angeles";
-    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(other));
+    window.localStorage.setItem(activeKey(), JSON.stringify(other));
     view = render(<RosterScheduleOptimizer />);
     await waitFor(() => expect(slider().getAttribute("aria-valuetext")).toBe("Mon, Oct 12"));
     fireEvent.click(screen.getByRole("button", { name: "Select Fri, Oct 16" }));
     view.unmount();
     authState.user = { id: "display-owner-a" };
-    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     render(<RosterScheduleOptimizer />);
     await waitFor(() => expect(slider().getAttribute("aria-valuetext")).toBe("Thu, Oct 15"));
   });
@@ -711,7 +718,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     const view = render(<RosterScheduleOptimizer />);
     const slider = () => visibleScheduleSlider();
     await waitFor(() => expect(slider().getAttribute("aria-valuetext")).toBe("Mon, Oct 12"));
-    const storedPlan = window.localStorage.getItem(WORKSPACE_KEY);
+    const storedPlan = window.localStorage.getItem(activeKey());
     fireEvent.click(screen.getByRole("button", { name: "Select Thu, Oct 15" }));
     const key = Object.keys(window.localStorage).find(key => key.startsWith("fhfh:rso:view-date:v1:"))!;
     if (failure === "corrupt") window.localStorage.setItem(key, "not-a-date");
@@ -732,17 +739,17 @@ describe("RosterScheduleOptimizer workspace", () => {
       fireEvent.click(screen.getByRole("button", { name: "Select Fri, Oct 16" }));
       expect(slider().getAttribute("aria-valuetext")).toBe("Fri, Oct 16");
     }
-    expect(window.localStorage.getItem(WORKSPACE_KEY)).toBe(storedPlan);
+    expect(window.localStorage.getItem(activeKey())).toBe(storedPlan);
     view.unmount();
     render(<RosterScheduleOptimizer />);
     await waitFor(() => expect(slider().getAttribute("aria-valuetext")).toBe(failure === "write-failure" ? "Thu, Oct 15" : "Mon, Oct 12"));
-    expect(window.localStorage.getItem(WORKSPACE_KEY)).toBe(storedPlan);
+    expect(window.localStorage.getItem(activeKey())).toBe(storedPlan);
   });
   it("lets the manager pick the lineup goal and saves it with the plan", async () => {
     const workspace = defaultWorkspace();
     workspace.roster = [{ playerId: player.id, position: "active" }];
     workspace.manualPlayers = [{ ...player, eligibilityVerified: true }];
-    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     const schedule: PlanningData = { ...data, games: [{ id: "game", date: workspace.context.startDate, startsAt: null, teamAbbreviation: "CAR", opponent: "NYR", home: true, status: "scheduled" }],
       evidence: { schedule: { source: "fixture", asOf: workspace.context.asOf, seasonId: workspace.context.seasonId, completeness: "complete", limitations: [] } } };
     planningState.evaluate = (snapshot, intent) => planRoster(snapshot, intent);
@@ -753,12 +760,12 @@ describe("RosterScheduleOptimizer workspace", () => {
     const points = within(goal).getByRole("button", { name: "Best projected points" });
     await waitFor(() => expect(starts.hasAttribute("disabled")).toBe(false));
     fireEvent.click(starts);
-    await waitFor(() => expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).intent.objective).toBe("agp"));
+    await waitFor(() => expect(JSON.parse(window.localStorage.getItem(activeKey())!).intent.objective).toBe("agp"));
     await waitFor(() => expect(starts.getAttribute("aria-pressed")).toBe("true"));
     expect(points.getAttribute("aria-pressed")).toBe("false");
     if (!points.hasAttribute("disabled")) {
       fireEvent.click(points);
-      await waitFor(() => expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).intent.objective).toBe("outcome"));
+      await waitFor(() => expect(JSON.parse(window.localStorage.getItem(activeKey())!).intent.objective).toBe("outcome"));
       await waitFor(() => expect(points.getAttribute("aria-pressed")).toBe("true"));
     }
   });
@@ -766,7 +773,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     const workspace = defaultWorkspace();
     workspace.roster = [{ playerId: player.id, position: "active" }];
     workspace.manualPlayers = [{ ...player, eligibilityVerified: true }];
-    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     const schedule: PlanningData = { ...data, games: [{ id: "game", date: workspace.context.startDate, startsAt: null, teamAbbreviation: "CAR", opponent: "NYR", home: true, status: "scheduled" }], evidence: { schedule: { source: "fixture", asOf: workspace.context.asOf, seasonId: workspace.context.seasonId, completeness, limitations: [] } } };
     planningState.evaluate = (snapshot, intent) => {
       const result = planRoster(snapshot, intent);
@@ -815,7 +822,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     const workspace = defaultWorkspace();
     workspace.context = { ...workspace.context, startDate: "2026-10-10", endDate: "2026-10-10" };
     workspace.intent.protectedPlayerIds = [player.id];
-    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve({ ok: url.includes("/data?"), json: async () => ({ success: true, data: {
       ...data, games: [{ id: "near-game", date: "2026-10-10", startsAt: "2026-10-10T16:00:00Z", teamAbbreviation: "CAR", opponent: "NJD", home: true, status: "scheduled" }],
       evidence: { schedule: { source: "roster_optimizer_team_games", asOf: "2026-10-10T12:00:00Z", seasonId: 20262027, completeness: "complete", limitations: [] } },
@@ -828,7 +835,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect(screen.getByText(/provisional warning thresholds, not forecast rejection limits/).textContent).toContain("0–120 minutes");
     expect(screen.getByText(/Schedule cache receipt time is separate/).textContent).toContain("model-fit time");
     expect(summary.closest("details")!.open).toBe(false);
-    await waitFor(() => expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).intent).toEqual(workspace.intent));
+    await waitFor(() => expect(JSON.parse(window.localStorage.getItem(activeKey())!).intent).toEqual(workspace.intent));
   });
   it.each([
     { hours: 2, now: "2026-10-10T15:00:00Z", startsAt: "2026-10-10T16:00:00Z" },
@@ -840,7 +847,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     workspace.context = { ...workspace.context, startDate: "2026-10-10", endDate: "2026-10-10" };
     workspace.roster = [{ playerId: player.id, position: "active" }];
     workspace.intent.protectedPlayerIds = [player.id];
-    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     const currentData: PlanningData = { ...data,
       games: [{ id: "aging-game", date: "2026-10-10", startsAt, teamAbbreviation: "CAR", opponent: "NJD", home: true, status: "scheduled" }],
       evidence: { schedule: { source: "roster_optimizer_team_games", asOf: "2026-10-10T12:00:00Z", seasonId: 20262027, completeness: "complete", limitations: [] } },
@@ -859,7 +866,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect(read.mock.calls).toHaveLength(calls);
     expect(currentData.evidence.schedule.asOf).toBe("2026-10-10T12:00:00Z");
     expect(currentData.evidence.schedule.completeness).toBe("complete");
-    expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!)).toMatchObject({
+    expect(JSON.parse(window.localStorage.getItem(activeKey())!)).toMatchObject({
       context: { asOf: new Date(now).toISOString() }, intent: workspace.intent,
     });
   });
@@ -883,10 +890,11 @@ describe("RosterScheduleOptimizer workspace", () => {
   it.each([{ remaining: 0, source: "manager" as const, detail: "Week: 0 remaining (manager)" },
     { remaining: null, source: "provider" as const, detail: "Week: Allowance unknown" },
     { remaining: 0, source: "unknown" as const, detail: "Week: Allowance unknown" }])("separates planned adds from allowance $detail", async ({ remaining, source, detail }) => {
+    pinMidweek();
     const workspace = defaultWorkspace();
     workspace.rules.periods = [{ id: "Week", start: workspace.context.asOf, end: `${workspace.context.endDate}T23:59:59Z`, remaining, source }];
     workspace.intent.steps = [{ id: "add", type: "add", playerId: player.id, at: workspace.context.asOf, effectiveAt: workspace.context.asOf, conditional: true, dependsOn: [] }];
-    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     vi.stubGlobal("fetch", fetchMock);
     render(<RosterScheduleOptimizer />);
     const metric = await screen.findByLabelText("Planned adds");
@@ -1015,7 +1023,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     workspace.manualPlayers = [{ ...player, eligibilityVerified: true }];
     workspace.intent.protectedPlayerIds = [player.id];
     workspace.intent.excludedPlayerIds = [other.id];
-    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve({ ok: url.includes("/data?"), json: async () => ({ success: true, data: { ...data, players: [player, candidate, other] } }) })));
     render(<RosterScheduleOptimizer />);
     fireEvent.click(await screen.findByRole("button", { name: "All players" }));
@@ -1025,7 +1033,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect(within(excludedRow).getByRole("button", { name: "Mark available" })).toBeTruthy();
     const candidateButton = await screen.findByRole("button", { name: /David Pastrnak.*RW/ });
     fireEvent.click(within(candidateButton.closest("[data-rso-candidate-id]")!).getByRole("button", { name: "Mark available" }));
-    const stored = () => JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!);
+    const stored = () => JSON.parse(window.localStorage.getItem(activeKey())!);
     await waitFor(() => expect(stored().manualPlayers.find((row: PlanningPlayer) => row.id === candidate.id)).toMatchObject({ availability: "manager_available", eligibilityVerified: false }));
     fireEvent.click(within(candidateButton.closest("[data-rso-candidate-id]")!).getByRole("button", { name: "Select add" }));
     await waitFor(() => expect(stored().intent.steps).toHaveLength(1));
@@ -1071,12 +1079,13 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect(stored().intent.revision).toBeGreaterThan(selectedIntent.revision);
   });
   it("keeps the manager exclusion control read-only for retained connected inputs", async () => {
+    authState.user = { id: "manager" };
     const workspace = defaultWorkspace();
     workspace.context.provider = "yahoo";
     workspace.roster = [{ playerId: player.id, position: "bench" }];
     workspace.manualPlayers = [player];
     workspace.intent.excludedPlayerIds = [player.id];
-    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     vi.stubGlobal("fetch", fetchMock);
     render(<RosterScheduleOptimizer />);
     const rosterPanel = await screen.findByRole("region", { name: "Roster and setup" });
@@ -1086,7 +1095,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect(choice.checked).toBe(true);
     expect(choice.disabled).toBe(true);
     fireEvent.click(choice);
-    await waitFor(() => expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).intent).toEqual(workspace.intent));
+    await waitFor(() => expect(JSON.parse(window.localStorage.getItem(activeKey())!).intent).toEqual(workspace.intent));
   });
   it("preserves API warnings without converting structured errors to object text", () => {
     expect(requestErrorMessage({ code: "authentication_required", message: "Authentication required." }, "Request failed.")).toBe("Authentication required.");
@@ -1200,7 +1209,7 @@ describe("RosterScheduleOptimizer workspace", () => {
       scoring: { mode: "points", weights: { GOALS: 1 }, categories: [] } };
     workspace.intent.steps = [{ id: "add", type: "add", playerId: members[1].id, at: tomorrow,
       effectiveAt: tomorrow, conditional: true, dependsOn: [] }];
-    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     planningState.evaluate = (snapshot, intent) => {
       const result = planRoster(snapshot, intent, { maxSteps: 0 });
       // Exercise proposal presentation with an evaluated plan, independently of candidate search.
@@ -1236,13 +1245,13 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect(screen.queryByText(/Selected plan passes the current rule checks/)).toBeNull();
     expect(screen.getByText(/Acquisition legality, budget or scoring is unresolved/)).toBeTruthy();
     expect((select()?.hasAttribute("disabled") ?? true)).toBe(true);
-    expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).rules.scoring.weights).toEqual({});
+    expect(JSON.parse(window.localStorage.getItem(activeKey())!).rules.scoring.weights).toEqual({});
     fireEvent.click(screen.getByText("Add point weight", { selector: "button" }));
     fireEvent.change(screen.getByLabelText("Acquisition cost"), { target: { value: "" } });
     fireEvent.click(confirm);
     expect(screen.getByText(/Acquisition legality, budget or scoring is unresolved/)).toBeTruthy();
     expect((select()?.hasAttribute("disabled") ?? true)).toBe(true);
-    expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).rules.acquisitionCost).toBeNull();
+    expect(JSON.parse(window.localStorage.getItem(activeKey())!).rules.acquisitionCost).toBeNull();
   });
   it("uses eligible full-team evidence for goalie starts without capping conflicts or reviving legacy rows", () => {
     const workspace = defaultWorkspace(new Date("2026-10-01T12:00:00Z"));
@@ -1441,7 +1450,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     workspace.rules.scoring = { mode: "categories", weights: {}, categories: [{ key: "GOALS", direction: "higher" }] };
     workspace.realized = { GOALS: 0 };
     workspace.opponent = { roster: [], realized: { GOALS: 1 }, remaining: { GOALS: 0 } };
-    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     // Exercise the comparison/certification presentation contract separately from forecast admission.
     planningState.evaluate = (snapshot, intent) => {
       const result = planRoster(snapshot, intent, { maxSteps: 0 });
@@ -1490,7 +1499,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect(await screen.findByRole("option", { name: "Same team — Dummy League" })).toBeTruthy();
     expect(screen.getByRole("option", { name: "Same team — Drafted League" })).toBeTruthy();
     fireEvent.change(screen.getByRole("combobox", { name: "My team" }), { target: { value: "team-1" } });
-    expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).context).toMatchObject({ teamId: "team-1", leagueId: "league-1" });
+    expect(JSON.parse(window.localStorage.getItem(activeKey())!).context).toMatchObject({ teamId: "team-1", leagueId: "league-1" });
   });
   it("counts only acquired players' future games before their next drop", () => {
     const workspace = defaultWorkspace(new Date("2026-09-26T12:00:00Z"));
@@ -1510,11 +1519,11 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect(screen.getByText("Roster review complete: 1 added, 0 already rostered, 1 unresolved. Review player evidence before planning moves.").getAttribute("role")).toBe("status");
     await waitFor(() => expect(screen.getByText("Unmatched Skater")).toBeTruthy());
     expect(screen.getByRole("button", { name: "Remove Alpha Center" })).toBeTruthy();
-    const saved = JSON.parse(window.localStorage.getItem(WORKSPACE_KEY) ?? "null");
+    const saved = JSON.parse(window.localStorage.getItem(activeKey()) ?? "null");
     expect(saved.roster).toEqual([{ playerId: "fhfh:1", position: "bench" }]);
     expect(saved.manualPlayers).toEqual([player]);
     fireEvent.click(screen.getByLabelText("Manager confirms league positions"));
-    expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).manualPlayers[0].eligibilityVerified).toBe(true);
+    expect(JSON.parse(window.localStorage.getItem(activeKey())!).manualPlayers[0].eligibilityVerified).toBe(true);
     view.unmount(); render(<RosterScheduleOptimizer />);
     expect(await screen.findByRole("button", { name: "Remove Alpha Center" })).toBeTruthy();
     expect((screen.getByLabelText("Manager confirms league positions") as HTMLInputElement).checked).toBe(true);
@@ -1529,13 +1538,13 @@ describe("RosterScheduleOptimizer workspace", () => {
     workspace.unresolvedNames = ["Unmatched Skater"];
     workspace.intent.protectedPlayerIds = [player.id];
     workspace.intent.steps = [{ id: "retained-add", type: "add", playerId: "fhfh:2", at: `${workspace.context.endDate}T12:00:00Z`, effectiveAt: `${workspace.context.endDate}T12:00:00Z`, conditional: true, dependsOn: [] }];
-    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     render(<RosterScheduleOptimizer />);
     await screen.findByRole("button", { name: "Remove Alpha Center" });
     fireEvent.change(screen.getByRole("textbox", { name: "Paste roster names" }), { target: { value: "Alpha Center" } });
     fireEvent.click(screen.getByRole("button", { name: "Review pasted names" }));
     expect(screen.getByText("Roster review complete: 0 added, 1 already rostered, 0 unresolved. No new roster players were added.").getAttribute("role")).toBe("status");
-    const saved = JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!);
+    const saved = JSON.parse(window.localStorage.getItem(activeKey())!);
     expect(saved).toMatchObject({ roster: workspace.roster, intent: workspace.intent, unresolvedNames: workspace.unresolvedNames });
     expect(screen.getByRole("textbox", { name: "Paste roster names" })).toHaveProperty("value", "");
   });
@@ -1551,14 +1560,14 @@ describe("RosterScheduleOptimizer workspace", () => {
     workspace.unresolvedNames = ["center", "Center", "Unmatched Skater"];
     workspace.intent.protectedPlayerIds = [player.id];
     workspace.intent.steps = [{ id: "retained-add", type: "add", playerId: other.id, at: `${workspace.context.endDate}T12:00:00Z`, effectiveAt: `${workspace.context.endDate}T12:00:00Z`, conditional: true, dependsOn: [] }];
-    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve({ ok: url.includes("/data?"), json: async () => ({ success: true, data: { ...data, players: [player, other] } }) })));
     const view = render(<RosterScheduleOptimizer />);
     const unresolved = await screen.findByText("Center", { exact: true });
     fireEvent.click(within(unresolved).getByRole("button", { name: "Find match" }));
     const choice = (await screen.findByText(/^Alpha Center · CAR ·/)).closest("li")!;
     fireEvent.click(within(choice).getByRole("button", { name: "Resolve" }));
-    const stored = () => JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!);
+    const stored = () => JSON.parse(window.localStorage.getItem(activeKey())!);
     await waitFor(() => expect(stored().unresolvedNames).toEqual(["center", "Unmatched Skater"]));
     expect(stored().roster).toEqual([{ playerId: player.id, position: "bench" }]);
     expect(stored().manualPlayers).toEqual([rostered ? reviewed : player]);
@@ -1589,13 +1598,13 @@ describe("RosterScheduleOptimizer workspace", () => {
     workspace.manualPlayers = [player, candidate];
     workspace.roster = [{ playerId: player.id, position: "bench" }];
     workspace.intent.protectedPlayerIds = [player.id];
-    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve({ ok: url.includes("/data?"), json: async () => ({ success: true, data: { ...data, players: [player, candidate] } }) })));
     render(<RosterScheduleOptimizer />);
     await screen.findByRole("button", { name: "Remove Alpha Center" });
     await waitFor(() => expect(planningTimeText()).toBeTruthy());
     await act(async () => {});
-    const stored = window.localStorage.getItem(WORKSPACE_KEY);
+    const stored = window.localStorage.getItem(activeKey());
     if (source === "roster") {
       fireEvent.click(screen.getByRole("button", { name: "Roster" }));
       fireEvent.click(screen.getByRole("button", { name: /^Alpha Center/ }));
@@ -1614,7 +1623,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect(scroll).toHaveBeenCalledWith({ block: "nearest" });
     expect(screen.getByRole("region", { name: "Candidates and detail" }).className).toContain("mobileActive");
     expect(screen.getByRole("region", { name: "Candidates and detail" }).className).not.toContain("desktopHidden");
-    expect(window.localStorage.getItem(WORKSPACE_KEY)).toBe(stored);
+    expect(window.localStorage.getItem(activeKey())).toBe(stored);
   });
 
   it.each(["manual", "yahoo"] as const)("reloads shared schedule data for %s without changing the selected plan or refreshing a provider", async provider => {
@@ -1622,7 +1631,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     workspace.context.provider = provider;
     workspace.intent.steps = [{ id: "fixture-selected-add", type: "add", playerId: "fixture-candidate",
       at: "2026-10-15T18:00:00Z", effectiveAt: "2026-10-15T18:00:00Z", conditional: false, dependsOn: [] }];
-    localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    localStorage.setItem(activeKey(), JSON.stringify(workspace));
     const snapshots: PlanningSnapshot[] = [];
     planningState.evaluate = (snapshot, intent) => { snapshots.push(snapshot); return planRoster(snapshot, intent); };
     let reads = 0;
@@ -1647,7 +1656,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect(initialParams.has("readToken")).toBe(false);
     expect(reloadParams.has("readToken")).toBe(false);
     expect(reloadParams.toString()).toBe(initialParams.toString());
-    const saved = JSON.parse(localStorage.getItem(WORKSPACE_KEY)!);
+    const saved = JSON.parse(localStorage.getItem(activeKey())!);
     expect(saved.roster).toEqual(workspace.roster);
     expect(saved.intent).toEqual(workspace.intent);
     expect(saved.rules).toEqual(workspace.rules);
@@ -1691,7 +1700,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect((screen.getByRole("button", { name: "Undo" }) as HTMLButtonElement).disabled).toBe(false);
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));
     expect(screen.queryByRole("button", { name: "Remove Alpha Center" })).toBeNull();
-    expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).roster).toEqual([]);
+    expect(JSON.parse(window.localStorage.getItem(activeKey())!).roster).toEqual([]);
   });
 
   it("resumes each league's local working plan when switching contexts and reopening", async () => {
@@ -1699,9 +1708,9 @@ describe("RosterScheduleOptimizer workspace", () => {
     workspace.context.leagueId = "first";
     workspace.roster = [{ playerId: player.id, position: "bench" }];
     workspace.manualPlayers = [player];
-    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     vi.stubGlobal("fetch", fetchMock);
-    const saved = () => JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!);
+    const saved = () => JSON.parse(window.localStorage.getItem(activeKey())!);
     const view = render(<RosterScheduleOptimizer />);
     await screen.findByRole("button", { name: "Remove Alpha Center" });
     fireEvent.change(screen.getByRole("textbox", { name: "League ID" }), { target: { value: "second" } });
@@ -1722,7 +1731,7 @@ describe("RosterScheduleOptimizer workspace", () => {
   it("marks a future selected add conditional until the provider confirms it", async () => {
     const workspace = defaultWorkspace();
     workspace.rules.acquisitionTiming = "same_day";
-    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     vi.stubGlobal("fetch", fetchMock);
     render(<RosterScheduleOptimizer />);
     await screen.findByRole("searchbox", { name: "Find candidate" });
@@ -1730,7 +1739,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     fireEvent.change(screen.getByRole("searchbox", { name: "Find candidate" }), { target: { value: "Alpha" } });
     fireEvent.click(screen.getByRole("button", { name: "Mark available" }));
     fireEvent.click(screen.getByRole("button", { name: "Select add" }));
-    const saved = JSON.parse(window.localStorage.getItem(WORKSPACE_KEY) ?? "null");
+    const saved = JSON.parse(window.localStorage.getItem(activeKey()) ?? "null");
     expect(saved.intent.steps).toMatchObject([{ playerId: "fhfh:1", conditional: true }]);
   });
 
@@ -1745,14 +1754,14 @@ describe("RosterScheduleOptimizer workspace", () => {
       { id: "c", type: "add", playerId: charlie.id, dropPlayerId: bravo.id, at: workspace.context.asOf, effectiveAt: workspace.context.asOf, conditional: true, dependsOn: ["b"] },
     ];
     workspace.intent.steps.reverse();
-    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     vi.stubGlobal("fetch", fetchMock);
     render(<RosterScheduleOptimizer />);
     const row = (await screen.findByText("ADD Charlie Center")).closest("div")!;
     expect(within(row).getByText(`Acquisition cost: ${cost ?? "unknown"} · Drop: Bravo Center`)).toBeTruthy();
     expect(within(row).getByText("Requires: ADD Bravo Center")).toBeTruthy();
     expect(screen.getByText("Next selected action: ADD Bravo Center")).toBeTruthy();
-    expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).intent).toEqual(workspace.intent);
+    expect(JSON.parse(window.localStorage.getItem(activeKey())!).intent).toEqual(workspace.intent);
   });
 
   it.each([false, true])("identifies the next selected action without promoting an unresolved plan (mistimed prerequisite: %s)", async mistimedPrerequisite => {
@@ -1765,22 +1774,22 @@ describe("RosterScheduleOptimizer workspace", () => {
       { id: "later", type: "drop", playerId: player.id, at: "2026-10-12T12:00:00Z", effectiveAt: "2026-10-12T12:00:00Z", conditional: false, dependsOn: [] },
       { id: "earlier", type: "add", playerId: bravo.id, at: "2026-10-11T12:00:00Z", effectiveAt: "2026-10-13T12:00:00Z", conditional: true, dependsOn: mistimedPrerequisite ? ["later"] : [] },
     ];
-    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     vi.stubGlobal("fetch", fetchMock);
     render(<RosterScheduleOptimizer />);
     if (mistimedPrerequisite) {
       expect(await screen.findByText("Review action times and prerequisites to identify the next move.")).toBeTruthy();
       expect(screen.queryByText(/Next selected action:/)).toBeNull();
-      expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).intent).toEqual(workspace.intent);
+      expect(JSON.parse(window.localStorage.getItem(activeKey())!).intent).toEqual(workspace.intent);
       return;
     }
     const next = await screen.findByText("Next selected action: ADD Bravo Center");
     expect(next.parentElement?.textContent).toContain("Review inputs and rule checks before acting.");
-    expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).intent).toEqual(workspace.intent);
+    expect(JSON.parse(window.localStorage.getItem(activeKey())!).intent).toEqual(workspace.intent);
     vi.setSystemTime(new Date("2026-10-11T13:00:00Z"));
     fireEvent.click(screen.getByRole("button", { name: /^Candidates$/ }));
     expect(next.parentElement?.textContent).toContain("Selected action time has passed; review the plan before acting.");
-    expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).intent).toEqual(workspace.intent);
+    expect(JSON.parse(window.localStorage.getItem(activeKey())!).intent).toEqual(workspace.intent);
   });
 
   it("keeps the next selected action review-only after confirmation with unsupported rules", async () => {
@@ -1802,14 +1811,14 @@ describe("RosterScheduleOptimizer workspace", () => {
       expect(result.selected.budgetVerified).toBe(true);
       return result;
     };
-    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve({ ok: url.includes("/data?"), json: async () => ({ success: true, data: { ...data, players: [member] } }) })));
     render(<RosterScheduleOptimizer />);
     const next = await screen.findByText("Next selected action: DROP Alpha Center");
     fireEvent.click(screen.getByRole("button", { name: "Confirm planning inputs" }));
     expect(next.parentElement?.textContent).toContain("Review inputs and rule checks before acting.");
     expect(next.parentElement?.textContent).not.toContain("Confirm this selected move with your provider.");
-    expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).intent).toEqual(workspace.intent);
+    expect(JSON.parse(window.localStorage.getItem(activeKey())!).intent).toEqual(workspace.intent);
   });
 
   it.each([null, "C#1"].flatMap(slotId => [false, true].map(providerConflict => ({ slotId, providerConflict }))))("uses a saved manager $slotId lock through refresh, undo, save and reopen (provider conflict: $providerConflict)", async ({ slotId, providerConflict }) => {
@@ -1829,7 +1838,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     workspace.lockedAssignments = [{ date: workspace.context.endDate, playerId: members[slotId === null ? 0 : 1].id, slotId }];
     workspace.intent.protectedPlayerIds = [player.id];
     workspace.intent.excludedPlayerIds = ["fhfh:excluded"];
-    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     const games: PlanningSnapshot["games"] = [workspace.context.startDate, workspace.context.endDate].flatMap(date => members.map(member => ({
       id: `${member.id}:${date}`, date, startsAt: `${date}T23:00:00Z`, scheduleRevision: "schedule", teamAbbreviation: member.teamAbbreviation!, opponent: "NYR", home: true, status: "scheduled",
     })));
@@ -1891,12 +1900,12 @@ describe("RosterScheduleOptimizer workspace", () => {
     fireEvent.click(screen.getByRole("button", { name: "Save to account" }));
     await screen.findByText("Saved to account.");
     expect(savedSnapshot).toMatchObject({ lockedAssignments: latest().snapshot.lockedAssignments });
-    expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).lockedAssignments).toEqual(workspace.lockedAssignments);
+    expect(JSON.parse(window.localStorage.getItem(activeKey())!).lockedAssignments).toEqual(workspace.lockedAssignments);
     view.unmount(); render(<RosterScheduleOptimizer />);
     await waitFor(() => expect(reads).toBe(3));
     assertCalculation(true);
     expect(Date.parse(latest().snapshot.context.asOf)).toBe(Date.parse(refreshed.context.asOf));
-    expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).intent.protectedPlayerIds).toEqual(workspace.intent.protectedPlayerIds);
+    expect(JSON.parse(window.localStorage.getItem(activeKey())!).intent.protectedPlayerIds).toEqual(workspace.intent.protectedPlayerIds);
   });
 
   it.each([
@@ -1911,12 +1920,12 @@ describe("RosterScheduleOptimizer workspace", () => {
     workspace.rules.acquisitionCost = 1;
     workspace.rules.periods = [{ id: "Sunday submission", start: "2026-10-04T04:00:00Z", end: "2026-10-05T04:00:00Z", remaining: 1, source: "manager" }];
     workspace.manualPlayers = [{ ...player, availability, waiverClearsAt }];
-    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     vi.stubGlobal("fetch", fetchMock);
     render(<RosterScheduleOptimizer />);
     fireEvent.click(await screen.findByRole("button", { name: "All players" }));
     fireEvent.click(screen.getByRole("button", { name: "Select add" }));
-    const saved = JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!);
+    const saved = JSON.parse(window.localStorage.getItem(activeKey())!);
     expect(saved.intent.steps).toMatchObject([{ playerId: player.id, at: "2026-10-04T20:01:00.000Z", effectiveAt, conditional: true }]);
     expect(screen.getAllByText(/Sunday submission/).length).toBeGreaterThan(0);
   });
@@ -1928,12 +1937,12 @@ describe("RosterScheduleOptimizer workspace", () => {
     const workspace = defaultWorkspace();
     workspace.rules.acquisitionTiming = timing;
     workspace.manualPlayers = [{ ...player, availability }];
-    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     vi.stubGlobal("fetch", fetchMock);
     render(<RosterScheduleOptimizer />);
     fireEvent.click(await screen.findByRole("button", { name: "All players" }));
     fireEvent.click(screen.getByRole("button", { name: "Select add" }));
-    expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).intent.steps).toEqual([]);
+    expect(JSON.parse(window.localStorage.getItem(activeKey())!).intent.steps).toEqual([]);
     expect(screen.getByText(warning)).toBeTruthy();
   });
 
@@ -1947,7 +1956,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     const initial: PlanningSnapshot = { id: "provider-initial", context: { ...workspace.context, asOf: "2026-10-08T12:00:00Z" },
       players: [player], roster: workspace.roster, rules: workspace.rules, lockedAssignments: [],
       games: [], forecasts: [], realized: {}, opponent: null, evidence: {} };
-    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     let release!: (response: unknown) => void;
     let requestSignal: AbortSignal | null | undefined;
     let reads = 0;
@@ -1962,7 +1971,7 @@ describe("RosterScheduleOptimizer workspace", () => {
       return Promise.resolve({ ok: true, json: async () => url.includes("/data?") ? { success: true, data }
         : url.endsWith("/access") ? { data: { eligible: true, capabilities: ["rso_sync", "rso_auto_upkeep"] } } : { data: null } });
     }));
-    const saved = () => JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!);
+    const saved = () => JSON.parse(window.localStorage.getItem(activeKey())!);
     render(<RosterScheduleOptimizer />);
     await waitFor(() => expect(saved().context.asOf).toBe(initial.context.asOf));
     const refresh = screen.getByRole("button", { name: "Refresh provider" }) as HTMLButtonElement;
@@ -1996,11 +2005,13 @@ describe("RosterScheduleOptimizer workspace", () => {
     authState.user = user;
     const workspace = defaultWorkspace();
     workspace.context = { ...workspace.context, provider: "yahoo", leagueId: "league", teamId: teamId.trim() ? teamId : "manual" };
-    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    // Signed out, only the anonymous manual slot exists; choose Yahoo in the session instead of restoring it.
+    if (user) window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     const requests = vi.fn((url: string) => Promise.resolve({ ok: true, json: async () => url.includes("/data?") ? { success: true, data }
       : url.endsWith("/access") ? { data: { eligible: sync, capabilities: sync ? ["rso_sync"] : [] } } : { data: null } }));
     vi.stubGlobal("fetch", requests);
     render(<RosterScheduleOptimizer />);
+    if (!user) fireEvent.change(screen.getByLabelText("Source"), { target: { value: "yahoo" } });
     if (teamId !== workspace.context.teamId) fireEvent.change(screen.getByLabelText("Team ID"), { target: { value: teamId } });
     const refresh = screen.getByRole("button", { name: "Refresh provider" }) as HTMLButtonElement;
     await waitFor(() => expect(document.getElementById(refresh.getAttribute("aria-describedby")!)?.textContent).toBe(reason));
@@ -2008,7 +2019,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     fireEvent.click(refresh);
     await act(async () => {});
     expect(requests.mock.calls.some(([url]) => url.endsWith("/provider"))).toBe(false);
-    expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!)).toEqual({ ...workspace, context: { ...workspace.context, teamId } });
+    if (user) expect(JSON.parse(window.localStorage.getItem(activeKey())!)).toEqual({ ...workspace, context: { ...workspace.context, teamId } });
   });
 
   it.each([
@@ -2018,7 +2029,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     authState.user = { id: "manager" };
     const workspace = defaultWorkspace();
     workspace.context = { ...workspace.context, provider: "fantrax", leagueId: "league", teamId: "team" };
-    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve({ ok: url.endsWith("/provider") ? ok : true, json: async () => url.includes("/data?") ? { success: true, data }
       : url.endsWith("/access") ? { data: { eligible: true, capabilities: ["rso_sync"] } }
         : url.endsWith("/provider") ? body : { data: null } })));
@@ -2026,7 +2037,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect((await screen.findByRole("alert")).textContent).toContain(reason);
     expect(screen.queryByText(/Provider inputs refreshed|Provider refresh completed/)).toBeNull();
     expect((screen.getByRole("button", { name: "Refresh provider" }) as HTMLButtonElement).disabled).toBe(false);
-    expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!)).toEqual(workspace);
+    expect(JSON.parse(window.localStorage.getItem(activeKey())!)).toEqual(workspace);
   });
 
   it("renders an unknown range ledger without inventing zero contribution or a unique replacement", () => {
@@ -2066,7 +2077,7 @@ describe("RosterScheduleOptimizer workspace", () => {
   it("keeps unmatched roster contributions explicitly unknown without changing persistence", async () => {
     const workspace = defaultWorkspace();
     workspace.roster = [{ playerId: "unmatched", position: "bench" }];
-    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     vi.stubGlobal("fetch", fetchMock);
     planningState.evaluate = planRoster;
     render(<RosterScheduleOptimizer />);
@@ -2074,7 +2085,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     const ledger = screen.getByLabelText("unmatched range contribution");
     for (const label of ["Remaining GP: unknown", "AGP: unknown", "DUST/bench: unknown", "Active points: unavailable"])
       expect(within(ledger).getByLabelText(label)).toBeTruthy();
-    expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).roster).toEqual(workspace.roster);
+    expect(JSON.parse(window.localStorage.getItem(activeKey())!).roster).toEqual(workspace.roster);
   });
 
   it("reads back legal crowded-day assignments through nonzero plan refresh, Undo and reopen", async () => {
@@ -2118,7 +2129,7 @@ describe("RosterScheduleOptimizer workspace", () => {
       evaluated = { snapshot, result };
       return result;
     };
-    const saved = () => JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!);
+    const saved = () => JSON.parse(window.localStorage.getItem(activeKey())!);
     const assertReadback = async (assignments: [string, string][]) => {
       expect(evaluated.result.selected).toMatchObject({ legal: true, activeGames: assignments.length,
         projectedValue: null, comparisonEligible: false, recommendation: { eligible: false, mode: "schedule_capacity" } });
@@ -2131,7 +2142,7 @@ describe("RosterScheduleOptimizer workspace", () => {
       expect(screen.getByRole("button", { name: "Show lineup by player" }).getAttribute("aria-pressed")).toBe("true");
       expect(saved().intent.steps).toEqual(workspace.intent.steps);
     };
-    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     const view = render(<RosterScheduleOptimizer />);
     await waitFor(() => expect(providerReads).toBe(1));
     fireEvent.click(screen.getByRole("button", { name: "Show lineup by player" }));
@@ -2159,6 +2170,7 @@ describe("RosterScheduleOptimizer workspace", () => {
   });
 
   it("keeps refreshed provider authority through undo and reopen without replacing selected moves", async () => {
+    pinMidweek();
     authState.user = { id: "manager" };
     const workspace = defaultWorkspace();
     workspace.context = { ...workspace.context, provider: "yahoo", teamId: "team", leagueId: "league" };
@@ -2173,7 +2185,7 @@ describe("RosterScheduleOptimizer workspace", () => {
       at: `${workspace.context.endDate}T12:00:00Z`, effectiveAt: `${workspace.context.endDate}T12:00:00Z`, conditional: true, dependsOn: [] }];
     workspace.rules.acquisitionTiming = "same_day";
     workspace.rules.periods = [{ id: "Week", start: workspace.context.asOf, end: `${workspace.context.endDate}T23:59:59Z`, remaining: 2, source: "provider" }];
-    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     const initial: PlanningSnapshot = { id: "provider-old", context: { ...workspace.context, asOf: "2026-10-08T12:00:00Z" },
       players: [player, candidate], roster: workspace.roster, rules: workspace.rules, lockedAssignments: workspace.lockedAssignments,
       games: [], forecasts: [], realized: {}, opponent: null, evidence: {} };
@@ -2191,7 +2203,7 @@ describe("RosterScheduleOptimizer workspace", () => {
       return Promise.resolve({ ok: true, json: async () => url.includes("/data?") ? { success: true, data }
         : url.endsWith("/access") ? { data: { eligible: true, capabilities: ["rso_sync"] } } : { data: null } });
     }));
-    const saved = () => JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!);
+    const saved = () => JSON.parse(window.localStorage.getItem(activeKey())!);
     const view = render(<RosterScheduleOptimizer />);
     await waitFor(() => expect(saved().context.asOf).toBe(initial.context.asOf));
     fireEvent.change(screen.getByRole("combobox", { name: "Goalie choice" }), { target: { value: "cover" } });
@@ -2236,14 +2248,14 @@ describe("RosterScheduleOptimizer workspace", () => {
     authState.user = { id: "manager" };
     const workspace = defaultWorkspace();
     workspace.context = { ...workspace.context, provider: "yahoo", leagueId: "first-league", teamId: "team", timeZone: "UTC" };
-    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     const pending: { init?: RequestInit; resolve: (response: unknown) => void }[] = [];
     vi.stubGlobal("fetch", vi.fn((url: string, init?: RequestInit) => {
       if (url.endsWith("/provider")) return new Promise(resolve => pending.push({ init, resolve }));
       return Promise.resolve({ ok: true, json: async () => url.includes("/data?") ? { success: true, data }
         : url.endsWith("/access") ? { data: { eligible: true, capabilities: ["rso_sync"] } } : { data: null } });
     }));
-    const saved = () => JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!);
+    const saved = () => JSON.parse(window.localStorage.getItem(activeKey())!);
     render(<RosterScheduleOptimizer />);
     await waitFor(() => expect(pending).toHaveLength(1));
     expect(pending[0].init?.signal?.aborted).toBe(false);
@@ -2281,14 +2293,14 @@ describe("RosterScheduleOptimizer workspace", () => {
     const snapshot: PlanningSnapshot = { id: "provider-league-zone", context: { ...workspace.context, timeZone: "America/New_York" },
       players: [providerPlayer], roster: [{ playerId: player.id, position: "active" }], games: [], forecasts: [],
       rules: { ...workspace.rules, rosterSlots: { C: 1 } }, lockedAssignments: [], realized: {}, opponent: null, evidence: {} };
-    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     const requests = vi.fn((url: string, init?: RequestInit) => Promise.resolve({ ok: true, json: async () => url.includes("/data?") ? { success: true, data }
       : url.endsWith("/access") ? { data: { eligible: true, capabilities: ["rso_sync"] } }
         : url.endsWith("/provider") ? { success: true, snapshot,
           capabilities: { roster: true, settings: true, availability: true, waivers: false, acquisitions: false, limitations: [] } } : { data: null } }));
     vi.stubGlobal("fetch", requests);
     render(<RosterScheduleOptimizer />);
-    const saved = () => JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!);
+    const saved = () => JSON.parse(window.localStorage.getItem(activeKey())!);
     await waitFor(() => expect(saved().context).toEqual(snapshot.context));
     expect(saved()).toMatchObject({ roster: snapshot.roster, rules: snapshot.rules, intent: workspace.intent });
     expect(screen.queryByText(/Provider inputs do not match/)).toBeNull();
@@ -2302,13 +2314,13 @@ describe("RosterScheduleOptimizer workspace", () => {
     authState.user = { id: "manager" };
     const workspace = defaultWorkspace();
     workspace.context = { ...workspace.context, provider: "yahoo", leagueId: "selected-league", teamId: "team" };
-    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve({ ok: true, json: async () => url.includes("/data?") ? { success: true, data }
       : url.endsWith("/access") ? { data: { eligible: true, capabilities: ["rso_sync"] } }
         : url.endsWith("/provider") ? { success: true, snapshot: { context: { ...workspace.context, leagueId: "other-league" } } } : { data: null } })));
     render(<RosterScheduleOptimizer />);
     expect(await screen.findByText("Provider inputs do not match the selected league, team or timeframe. Review the context and refresh again.")).toBeTruthy();
-    expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!)).toMatchObject({ context: workspace.context, roster: [] });
+    expect(JSON.parse(window.localStorage.getItem(activeKey())!)).toMatchObject({ context: workspace.context, roster: [] });
   });
 
   it("uses the signed-in session for access and account reads, then refreshes after account switch", async () => {
@@ -2321,7 +2333,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     workspace.intent.protectedPlayerIds = [player.id];
     workspace.intent.steps = [{ id: "selected-add", type: "add", playerId: candidate.id, dropPlayerId: player.id,
       at: `${workspace.context.startDate}T12:00:00Z`, effectiveAt: `${workspace.context.startDate}T12:00:00Z`, conditional: true, dependsOn: [] }];
-    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    window.localStorage.setItem(workspaceStorageKey("first"), JSON.stringify(workspace));
     let releaseProvider!: (response: unknown) => void;
     let releaseSecondAccess!: (response: unknown) => void;
     const pendingProvider = new Promise(resolve => { releaseProvider = resolve; });
@@ -2351,7 +2363,8 @@ describe("RosterScheduleOptimizer workspace", () => {
     await waitFor(() => expect(authenticatedFetch.mock.calls.some(([url, init]) => url.endsWith("/access") && (init?.headers as Record<string, string>)?.Authorization === "Bearer token-second")).toBe(true));
     await waitFor(() => expect(authenticatedFetch.mock.calls.some(([url, init]) => url.includes("/workspace?") && (init?.headers as Record<string, string>)?.Authorization === "Bearer token-second")).toBe(true));
     expect(firstRequest?.signal?.aborted).toBe(true);
-    expect((screen.getByRole("button", { name: "Refresh provider" }) as HTMLButtonElement).disabled).toBe(true);
+    // The second account has no local workspace of its own, so it starts empty rather than inheriting the first's.
+    expect(screen.queryByRole("button", { name: "Refresh provider" })).toBeNull();
     expect(screen.queryByText("Refreshing provider inputs…")).toBeNull();
     await act(async () => { releaseProvider({ ok: true, json: async () => ({ success: true, snapshot: {
       id: "late-first-account", context: workspace.context, players: [{ ...player, name: "First Account Player" }],
@@ -2359,22 +2372,17 @@ describe("RosterScheduleOptimizer workspace", () => {
       lockedAssignments: [], realized: {}, opponent: null, evidence: {},
     }, capabilities: {} }) }); });
     expect(screen.queryByText("First Account Player")).toBeNull();
-    const retained = JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!);
-    expect(retained.intent).toEqual(workspace.intent);
-    expect(retained.roster).toEqual(workspace.roster);
-    expect(retained.manualPlayers).toEqual(workspace.manualPlayers);
+    const second = JSON.parse(window.localStorage.getItem(workspaceStorageKey("second"))!);
+    expect(second.context.provider).toBe("manual");
+    expect(second.intent.steps).toEqual([]); expect(second.intent.protectedPlayerIds).toEqual([]);
+    expect(second.roster).toEqual([]); expect(second.manualPlayers).toEqual([]); expect(second.lockedAssignments).toEqual([]);
     await act(async () => { releaseSecondAccess({ ok: true, json: async () => ({ data: { eligible: false, capabilities: [] } }) }); });
-    expect(screen.getByText("Saved inputs are read-only and may be stale.")).toBeTruthy();
-    fireEvent.click(screen.getByRole("checkbox", { name: /^Protect / }));
-    expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).intent).toEqual(workspace.intent);
-    fireEvent.click(screen.getByRole("button", { name: "Continue manually" }));
-    const forked = JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!);
-    expect(forked.context.provider).toBe("manual");
-    expect(forked.intent).toEqual(workspace.intent);
-    expect(forked.roster).toEqual(workspace.roster);
-    expect(forked.lockedAssignments).toEqual(workspace.lockedAssignments);
-    fireEvent.click(screen.getByRole("checkbox", { name: /^Protect / }));
-    expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).intent.protectedPlayerIds).toEqual([]);
+    expect(screen.queryByText("Saved inputs are read-only and may be stale.")).toBeNull();
+    expect(screen.queryByText(/ADD Bravo Center/)).toBeNull();
+    const first = JSON.parse(window.localStorage.getItem(workspaceStorageKey("first"))!);
+    expect(first.intent).toEqual(workspace.intent);
+    expect(first.roster).toEqual(workspace.roster);
+    expect(first.lockedAssignments).toEqual(workspace.lockedAssignments);
   });
 
   it.each([
@@ -2385,7 +2393,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     authState.user = { id: "manager" };
     const workspace = defaultWorkspace();
     workspace.context = { ...workspace.context, provider: "yahoo", leagueId: "league", teamId: "team" };
-    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     const pending: Array<{ resolve: (value: unknown) => void; reject: (reason: unknown) => void }> = [];
     vi.stubGlobal("fetch", vi.fn((url: string) => {
       if (url.endsWith("/access")) return new Promise((resolve, reject) => pending.push({ resolve, reject }));
@@ -2438,7 +2446,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect(screen.getByRole("alert").textContent).toContain("try Save to account again");
     const retry = screen.getByRole("button", { name: "Save to account" }) as HTMLButtonElement;
     expect(retry.disabled).toBe(false);
-    const submitted = JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!);
+    const submitted = JSON.parse(window.localStorage.getItem(activeKey())!);
     fireEvent.click(retry);
     expect(retry.disabled).toBe(true);
     await waitFor(() => expect(saves).toHaveLength(2));
@@ -2455,13 +2463,13 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect(screen.queryByRole("alert")).toBeNull();
     expect(retry.disabled).toBe(false);
     expect(saves).toHaveLength(2);
-    expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).intent.goalieCoverage).toBe("cover");
+    expect(JSON.parse(window.localStorage.getItem(activeKey())!).intent.goalieCoverage).toBe("cover");
   });
 
   it("reports checking access before explaining a missing provider team", async () => {
     authState.user = { id: "manager" };
     const workspace = defaultWorkspace(); workspace.context.provider = "yahoo";
-    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     let release!: (response: unknown) => void;
     vi.stubGlobal("fetch", vi.fn((url: string) => url.endsWith("/access") ? new Promise(resolve => { release = resolve; })
       : Promise.resolve({ ok: true, json: async () => url.includes("/data?") ? { success: true, data } : { data: null } })));
@@ -2509,8 +2517,9 @@ describe("RosterScheduleOptimizer workspace", () => {
   });
 
   it("explains empty manual continuation without enabling an unavailable action", async () => {
+    authState.user = { id: "manager" };
     const workspace = defaultWorkspace(); workspace.context.provider = "yahoo";
-    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve({ ok: true, json: async () => ({ success: true, data: null }) })));
     render(<RosterScheduleOptimizer />);
     const continuation = screen.getByRole("button", { name: "Continue manually" }) as HTMLButtonElement;
@@ -2522,7 +2531,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     const workspace = defaultWorkspace();
     const weeks = [{ gameKey: "season", week: 1, startDate: workspace.context.startDate, endDate: workspace.context.endDate },
       { gameKey: "season", week: 2, startDate: "2026-11-01", endDate: "2026-11-07" }];
-    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve({ ok: url.includes("/data?"), json: async () => ({ success: true, data: { ...data, matchupWeeks: weeks } }) })));
     render(<RosterScheduleOptimizer />);
     await screen.findByText("First matchup week; no previous week is available.");
@@ -2556,7 +2565,7 @@ describe("RosterScheduleOptimizer workspace", () => {
       const result = planRoster(snapshot, intent);
       return { ...result, alternatives: [{ ...result.selected, steps: alternativeSteps, legal: gate !== "legal", budgetVerified: gate !== "budget", recommendation: { ...result.selected.recommendation!, eligible: false, mode: "schedule_capacity" as const }, limitations: gate === "legal" ? ["Selected player is protected."] : [] }] };
     };
-    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     render(<RosterScheduleOptimizer />);
     const select = await screen.findByRole("button", { name: "Select plan" }) as HTMLButtonElement;
     if (gate !== "hold") expect(screen.getByText("Hypothetical schedule comparison only. Net fantasy points and drop cost are unknown; additional games do not establish a better roster.")).toBeTruthy();
@@ -2566,7 +2575,7 @@ describe("RosterScheduleOptimizer workspace", () => {
       expect(select.disabled).toBe(true);
       expect(document.getElementById(select.getAttribute("aria-describedby")!)?.textContent).toBe(reason);
       fireEvent.click(select);
-      expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).intent).toEqual(workspace.intent);
+      expect(JSON.parse(window.localStorage.getItem(activeKey())!).intent).toEqual(workspace.intent);
     } else {
       expect(select.disabled).toBe(false);
       const summary = screen.getByRole("region", { name: "Plan summary" }).textContent;
@@ -2574,7 +2583,7 @@ describe("RosterScheduleOptimizer workspace", () => {
       await act(async () => {});
       expect(screen.getByText("Alternative 1 selected. Confirm roster changes with your provider.").getAttribute("role")).toBe("status");
       expect(screen.getByRole("region", { name: "Plan summary" }).textContent).toBe(summary);
-      expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).intent.steps).toEqual(alternativeSteps);
+      expect(JSON.parse(window.localStorage.getItem(activeKey())!).intent.steps).toEqual(alternativeSteps);
     }
   });
 
@@ -2592,10 +2601,10 @@ describe("RosterScheduleOptimizer workspace", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Save to account" }));
     expect(await screen.findByText("Saved to account.")).toBeTruthy();
     fireEvent.change(screen.getByRole("combobox", { name: "Goalie choice" }), { target: { value: "cover" } });
-    const localPlan = JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!);
+    const localPlan = JSON.parse(window.localStorage.getItem(activeKey())!);
     fireEvent.click(screen.getByRole("button", { name: "Save to account" }));
     expect(await screen.findByText("Another device saved this workspace. Your local plan is intact; review the other version before saving again.")).toBeTruthy();
-    expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!)).toEqual(localPlan);
+    expect(JSON.parse(window.localStorage.getItem(activeKey())!)).toEqual(localPlan);
     fireEvent.click(screen.getByRole("button", { name: "Save to account" }));
     expect(screen.getByRole("button", { name: "Save to account" }).getAttribute("aria-busy")).toBe("true");
     expect(screen.getByText("Saving to account…").getAttribute("role")).toBe("status");
@@ -2622,7 +2631,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     fireEvent.change(screen.getByLabelText("Through"), { target: { value: "2026-11-10" } });
     await waitFor(() => expect(savingFetch.mock.calls.some(([url]) => url.includes("/workspace?") && url.includes("endDate=2026-11-10"))).toBe(true));
     await act(async () => releaseSave({ ok: true, status: 200, json: async () => ({ data: { version: 7 } }) }));
-    expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).context.endDate).toBe("2026-11-10");
+    expect(JSON.parse(window.localStorage.getItem(activeKey())!).context.endDate).toBe("2026-11-10");
     expect(screen.queryByText("Saved to account.")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Save to account" }));
     await waitFor(() => expect(savingFetch.mock.calls.filter(([url, init]) => url.endsWith("/workspace") && init?.method === "PUT")).toHaveLength(2));
@@ -2641,9 +2650,9 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect((screen.getByLabelText("Time zone") as HTMLInputElement).value).toBe(original);
     fireEvent.click(screen.getByText("Scoring, budgets, and lock windows"));
     fireEvent.click(screen.getByRole("button", { name: "Add acquisition period" }));
-    const previous = JSON.parse(window.localStorage.getItem(WORKSPACE_KEY) ?? "null").rules.periods[0].start;
+    const previous = JSON.parse(window.localStorage.getItem(activeKey()) ?? "null").rules.periods[0].start;
     fireEvent.change(screen.getByLabelText("Start"), { target: { value: "" } });
-    expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY) ?? "null").rules.periods[0].start).toBe(previous);
+    expect(JSON.parse(window.localStorage.getItem(activeKey()) ?? "null").rules.periods[0].start).toBe(previous);
   });
 
   it("opens a saved manual snapshot read-only until the manager explicitly forks it", async () => {
@@ -2675,7 +2684,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect(planningTimeText(/^Saved /).textContent).toContain("Sep 1");
     expect((screen.getByLabelText("Planning setup") as HTMLFieldSetElement).disabled).toBe(true);
     expect(screen.getByText("Confirm planning inputs", { selector: "button" }).hasAttribute("disabled")).toBe(true);
-    await waitFor(() => expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!)).toMatchObject({
+    await waitFor(() => expect(JSON.parse(window.localStorage.getItem(activeKey())!)).toMatchObject({
       intent: saved.intent, lockedAssignments: saved.lockedAssignments,
     }));
     const summary = (await screen.findByText("Shared schedule: complete")).closest("summary")!;
@@ -2685,13 +2694,13 @@ describe("RosterScheduleOptimizer workspace", () => {
     fireEvent.click(screen.getByRole("button", { name: /^Candidates$/ }));
     expect(summary.closest("details")!.textContent).toContain("Provisional 2-hour schedule warning.");
     expect(planningTimeText(/^Saved /).textContent).toBe(savedTime);
-    expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).context.asOf).toBe(saved.context.asOf);
+    expect(JSON.parse(window.localStorage.getItem(activeKey())!).context.asOf).toBe(saved.context.asOf);
     fireEvent.click(screen.getByRole("button", { name: "Continue manually" }));
     expect((screen.getByLabelText("Planning setup") as HTMLFieldSetElement).disabled).toBe(false);
     await waitFor(() => expect(screen.getByText("Confirm planning inputs", { selector: "button" }).hasAttribute("disabled")).toBe(false));
     expect(screen.getByText(/Review league rules, scoring, locked assignments and player availability/)).toBeTruthy();
     expect(screen.getByRole("button", { name: "Remove Alpha Center" })).toBeTruthy();
-    await waitFor(() => expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!)).toMatchObject({
+    await waitFor(() => expect(JSON.parse(window.localStorage.getItem(activeKey())!)).toMatchObject({
       intent: saved.intent, lockedAssignments: saved.lockedAssignments, roster: saved.roster,
     }));
   });
@@ -3105,8 +3114,8 @@ describe("owner plan preservation", () => {
     original.roster = [{ playerId: player.id, position: "active" }]; original.manualPlayers = [player, candidate];
     original.intent.steps = [{ id: "nonzero", type: "add", playerId: candidate.id, at: "2026-10-12T10:00:00Z", effectiveAt: "2026-10-12T10:00:00Z", conditional: true, dependsOn: [] }];
     const prior = { ...original, intent: { ...original.intent, protectedPlayerIds: [candidate.id] } };
-    writeWorkspace(localStorage, original, [prior]);
     authState.user = { id: "owner-a" };
+    writeWorkspace(localStorage, original, [prior], authState.user.id);
     authState.teams = [{ id: "team", external_league_id: "league", team_name: "Owner Team", provider: "yahoo", team_metadata: { is_owned: true }, external_leagues: { league_name: "Owner League" } }];
     const originalRow = absent ? null : { id: "remote", user_id: "owner-a", provider: "yahoo", season_id: 20262027, league_id: "league", team_id: "team", start_date: original.context.startDate, end_date: original.context.endDate, workspace: original, snapshot: null, lock_version: 2, updated_at: original.context.asOf };
     let row = originalRow ? JSON.parse(JSON.stringify(originalRow)) : null;
@@ -3156,7 +3165,7 @@ describe("owner plan preservation", () => {
     vi.stubGlobal("fetch", network);
     const mounted = render(<RosterScheduleOptimizer />);
     await waitFor(() => expect((screen.getByRole("button", { name: "Prepare plan backup" }) as HTMLButtonElement).disabled).toBe(false));
-    await waitFor(() => expect(JSON.parse(localStorage.getItem(WORKSPACE_KEY)!).intent.steps).toHaveLength(1));
+    await waitFor(() => expect(JSON.parse(localStorage.getItem(activeKey())!).intent.steps).toHaveLength(1));
     const prepare = async () => { fireEvent.click(screen.getByRole("button", { name: "Prepare plan backup" })); await screen.findByText(/Complete (local )?backup sealed/); };
     const exportBackup = async () => { fireEvent.click(screen.getByRole("button", { name: "Download complete backup" })); return JSON.parse(await exported!.text()) as WorkspacePreservation; };
     return { original, mounted, requests, prepare, exportBackup, network, row: () => row, resolveSave: () => delayed!(), changeProvider: () => { changedProvider = true; }, resolveAck: () => { delayedAck!(); }, rejectedLocalAcks: () => rejectedLocalAcks };
@@ -3180,10 +3189,10 @@ describe("owner plan preservation", () => {
     fireEvent.click(screen.getByRole("checkbox", { name: "Backup saved and other writers independently excluded" }));
     fireEvent.click(screen.getByRole("button", { name: "Use backup for approved test" })); await screen.findByText(/Protected planning active/);
     fireEvent.click(screen.getAllByRole("checkbox", { name: /^Protect / })[0]);
-    await waitFor(() => expect(JSON.parse(localStorage.getItem(WORKSPACE_KEY)!).intent.protectedPlayerIds).toContain(player.id));
+    await waitFor(() => expect(JSON.parse(localStorage.getItem(activeKey())!).intent.protectedPlayerIds).toContain(player.id));
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));
-    await waitFor(() => expect(JSON.parse(localStorage.getItem(WORKSPACE_KEY)!).intent.protectedPlayerIds).not.toContain(player.id));
-    expect(JSON.parse(localStorage.getItem(WORKSPACE_KEY)!).intent.steps).toHaveLength(1);
+    await waitFor(() => expect(JSON.parse(localStorage.getItem(activeKey())!).intent.protectedPlayerIds).not.toContain(player.id));
+    expect(JSON.parse(localStorage.getItem(activeKey())!).intent.steps).toHaveLength(1);
     fireEvent.click(screen.getByRole("button", { name: "Save to account" })); await screen.findByText("Saved to account.");
     fixture.mounted.unmount(); await Promise.resolve();
     render(<RosterScheduleOptimizer />);
@@ -3192,7 +3201,7 @@ describe("owner plan preservation", () => {
     fireEvent.change(screen.getByLabelText("Restore downloaded backup"), { target: { files: [{ text: async () => JSON.stringify(backup) }] } });
     await screen.findByText(/Original local key values and absence, plan and Undo restored/);
     expect(backup.local.map(entry => localStorage.getItem(entry.key))).toEqual(backup.local.map(entry => entry.value));
-    expect(readWorkspaceHistory(localStorage, backup.workspace)).toEqual(backup.history);
+    expect(readWorkspaceHistory(localStorage, backup.workspace, authState.user?.id ?? null)).toEqual(backup.history);
     expect(fixture.row().workspace).toEqual(fixture.original); expect(fixture.row().lock_version).toBe(4);
   });
   it.each([false, true])("restores original provider authority including absence without remount (absent=%s)", async initialProviderAbsent => {
@@ -3217,13 +3226,13 @@ describe("owner plan preservation", () => {
     fireEvent.click(screen.getByRole("button", { name: "Use backup for approved test" })); await screen.findByText(/Protected planning active/);
     fireEvent.click(screen.getByRole("button", { name: "Save to account" }));
     await waitFor(() => expect(fixture.requests.some(request => request.url.includes("preservation=ack"))).toBe(true));
-    const beforeEdit = localStorage.getItem(WORKSPACE_KEY);
+    const beforeEdit = localStorage.getItem(activeKey());
     fireEvent.click(screen.getAllByRole("checkbox", { name: /^Protect / })[0]);
     expect((screen.getAllByRole("checkbox", { name: /^Protect / })[0] as HTMLInputElement).checked).toBe(true);
-    expect(localStorage.getItem(WORKSPACE_KEY)).toBe(beforeEdit);
+    expect(localStorage.getItem(activeKey())).toBe(beforeEdit);
     expect(fixture.requests.some(request => request.url.includes("preservation=local_ack"))).toBe(false);
     fixture.resolveAck();
-    await waitFor(() => expect(JSON.parse(localStorage.getItem(WORKSPACE_KEY)!).intent.protectedPlayerIds).toContain(player.id));
+    await waitFor(() => expect(JSON.parse(localStorage.getItem(activeKey())!).intent.protectedPlayerIds).toContain(player.id));
     await waitFor(() => expect(fixture.requests.some(request => request.url.includes("preservation=local_ack"))).toBe(true));
     expect(fixture.rejectedLocalAcks()).toBe(0);
     fireEvent.click(screen.getByRole("button", { name: "Restore original plan and Undo" }));
@@ -3233,21 +3242,21 @@ describe("owner plan preservation", () => {
   });
   it("rejects a legacy storage writer instead of adopting its fresh values for restore", async () => {
     const fixture = await setup(); await fixture.prepare();
-    localStorage.setItem(WORKSPACE_KEY, "legacy writer"); window.dispatchEvent(new StorageEvent("storage", { key: WORKSPACE_KEY, newValue: "legacy writer" }));
+    localStorage.setItem(activeKey(), "legacy writer"); window.dispatchEvent(new StorageEvent("storage", { key: activeKey(), newValue: "legacy writer" }));
     await screen.findByText(/Another storage writer changed/);
     fireEvent.click(screen.getByRole("button", { name: "Restore original plan and Undo" }));
     await screen.findByText(/Workspace storage changed in another writer/);
-    expect(localStorage.getItem(WORKSPACE_KEY)).toBe("legacy writer"); expect(fixture.requests.some(request => request.url.includes("preservation=restore"))).toBe(false);
+    expect(localStorage.getItem(activeKey())).toBe("legacy writer"); expect(fixture.requests.some(request => request.url.includes("preservation=restore"))).toBe(false);
   });
   it("keeps rehydration and requests paused when another writer changed storage before reopen", async () => {
     const fixture = await setup(); await fixture.prepare();
     fixture.mounted.unmount(); await Promise.resolve();
     const foreign = JSON.stringify({ ...fixture.original, context: { ...fixture.original.context, teamId: "other-team" } });
-    localStorage.setItem(WORKSPACE_KEY, foreign);
+    localStorage.setItem(activeKey(), foreign);
     const requestCount = fixture.requests.length;
     render(<RosterScheduleOptimizer />);
     await screen.findByText(/Workspace storage changed in another writer/);
-    expect(localStorage.getItem(WORKSPACE_KEY)).toBe(foreign);
+    expect(localStorage.getItem(activeKey())).toBe(foreign);
     expect(fixture.requests).toHaveLength(requestCount);
     expect((screen.getByRole("button", { name: "Resume normal planning" }) as HTMLButtonElement).disabled).toBe(true);
   });
@@ -3256,8 +3265,8 @@ describe("owner plan preservation", () => {
     fixture.mounted.unmount(); await Promise.resolve();
     const journal = JSON.parse(sessionStorage.getItem(WORKSPACE_PRESERVATION_JOURNAL)!);
     const foreign = JSON.stringify({ ...fixture.original, unresolvedNames: ["Unowned edit"] });
-    journal.expected.find((entry: { key: string }) => entry.key === WORKSPACE_KEY).value = foreign;
-    localStorage.setItem(WORKSPACE_KEY, foreign);
+    journal.expected.find((entry: { key: string }) => entry.key === activeKey()).value = foreign;
+    localStorage.setItem(activeKey(), foreign);
     sessionStorage.setItem(WORKSPACE_PRESERVATION_JOURNAL, JSON.stringify(journal));
     const requestCount = fixture.requests.length;
     render(<RosterScheduleOptimizer />);
@@ -3265,7 +3274,7 @@ describe("owner plan preservation", () => {
     expect(fixture.requests).toHaveLength(requestCount);
     fireEvent.click(screen.getByRole("button", { name: "Restore original plan and Undo" }));
     await screen.findByText(/not bound to the admitted writer's acknowledged state/);
-    expect(localStorage.getItem(WORKSPACE_KEY)).toBe(foreign);
+    expect(localStorage.getItem(activeKey())).toBe(foreign);
     expect(fixture.requests.some(request => request.url.includes("preservation=restore"))).toBe(false);
   });
   it("rejects an outside journal change before dispatching restoration", async () => {
@@ -3307,7 +3316,7 @@ describe("current-week date controls", () => {
       workspace.context = { ...workspace.context, startDate: "2026-10-09", endDate: "2026-10-22", timeZone: "America/New_York" };
       workspace.unresolvedNames = ["Retained manager input"];
       workspace.intent.protectedPlayerIds = [player.id];
-      writeWorkspace(window.localStorage, workspace);
+      writeWorkspace(window.localStorage, workspace, [], authState.user?.id ?? null);
     }
     return render(<RosterScheduleOptimizer />);
   }
@@ -3325,8 +3334,8 @@ describe("current-week date controls", () => {
     expect(screen.getByText(/Saved range retained/)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Current week" }));
     expect(input("From").value).toBe("2026-10-12"); expect(input("Through").value).toBe("2026-10-18");
-    await waitFor(() => expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).intent.protectedPlayerIds).toEqual([player.id]));
-    expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).unresolvedNames).toEqual(["Retained manager input"]);
+    await waitFor(() => expect(JSON.parse(window.localStorage.getItem(activeKey())!).intent.protectedPlayerIds).toEqual([player.id]));
+    expect(JSON.parse(window.localStorage.getItem(activeKey())!).unresolvedNames).toEqual(["Retained manager input"]);
   });
   it("retains a custom date range across timezone edits and reopen", async () => {
     const view = setup(); await waitFor(() => expect(planningTimeText()).toBeTruthy());
@@ -3334,7 +3343,7 @@ describe("current-week date controls", () => {
     fireEvent.change(input("Through"), { target: { value: "2026-10-22" } });
     fireEvent.blur(input("Time zone"), { target: { value: "America/New_York" } });
     expect(input("From").value).toBe("2026-10-09"); expect(input("Through").value).toBe("2026-10-22");
-    await waitFor(() => expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).context.endDate).toBe("2026-10-22"));
+    await waitFor(() => expect(JSON.parse(window.localStorage.getItem(activeKey())!).context.endDate).toBe("2026-10-22"));
     view.unmount(); render(<RosterScheduleOptimizer />);
     await waitFor(() => expect(input("From").value).toBe("2026-10-09"));
     expect(input("Through").value).toBe("2026-10-22");
@@ -3364,7 +3373,7 @@ describe("stored Yahoo eligibility while provider verification is pending", () =
       "Yahoo availability matches: 1 unique catalog matches, 24 unmatched; 0 rostered/excluded, 1 candidate matches.",
       "Yahoo provider catalog before search: 2 candidates; 1 both known, 0 eligibility only, 0 availability only, 1 neither known. Eligibility means usable verified positions; availability means free agent or waivers. Discovery partial; unseen players remain unknown.",
     ];
-    writeWorkspace(window.localStorage, workspace);
+    writeWorkspace(window.localStorage, workspace, [], authState.user?.id ?? null);
     const reply = (body: unknown) => ({ ok: true, json: async () => body });
     const fetch = vi.fn((url: string) => Promise.resolve(reply(url.includes("/data?") ? { success: true, data: publicData }
       : url.endsWith("/access") ? { data: { eligible: true, capabilities: ["rso_sync"] } }
@@ -3412,7 +3421,7 @@ describe("stored Yahoo eligibility while provider verification is pending", () =
     const candidate = { ...owned, id: "19711", nhlId: 8480001, name: "Stored candidate", rosterRevision: "candidate-membership" };
     const candidates = [candidate, ...Array.from({ length: count - 1 }, (_, index) => ({ ...candidate, id: String(30000 + index), nhlId: 8500000 + index }))];
     workspace.roster = [{ playerId: owned.id, position: "bench" }]; workspace.manualPlayers = [owned];
-    writeWorkspace(window.localStorage, workspace);
+    writeWorkspace(window.localStorage, workspace, [], authState.user?.id ?? null);
     const reply = (body: unknown) => ({ ok: true, json: async () => body });
     const fetch = vi.fn((url: string) => {
       if (url.endsWith("/provider")) return new Promise(() => {});
@@ -3442,7 +3451,7 @@ describe("stored Yahoo eligibility while provider verification is pending", () =
     }
     expect(evaluated!.players.find(row => row.id === candidate.id)).toMatchObject({ eligiblePositions: ["C", "LW"], availability: "unknown", canDrop: null });
     expect(evaluated!.rules.acquisitionTiming).toBe("unknown");
-    expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).manualPlayers).toEqual(workspace.manualPlayers);
+    expect(JSON.parse(window.localStorage.getItem(activeKey())!).manualPlayers).toEqual(workspace.manualPlayers);
     expect(fetch.mock.calls.filter(([url]) => url.endsWith("/provider"))).toHaveLength(1);
   });
   it("recomputes provisional assignments from a fresh database receipt before Yahoo returns, then uses live league positions", async () => {
@@ -3453,7 +3462,7 @@ describe("stored Yahoo eligibility while provider verification is pending", () =
     workspace.roster = [{ playerId: cachedPlayer.id, position: "bench" }]; workspace.manualPlayers = [cachedPlayer]; workspace.rules.rosterSlots = { C: 1, LW: 1, RW: 1, BN: 1 };
     const schedule = { source: "Fixture schedule", asOf: workspace.context.asOf, seasonId: 20262027, completeness: "complete" as const, limitations: [] };
     const inputs: PlanningData = { players: [cachedPlayer], games: [{ id: "game", date: workspace.context.startDate, startsAt: "2026-10-13T20:00:00Z", status: "scheduled", teamAbbreviation: "OTT", opponent: "STL", home: true }], forecasts: [], evidence: { schedule } };
-    writeWorkspace(window.localStorage, workspace);
+    writeWorkspace(window.localStorage, workspace, [], authState.user?.id ?? null);
     let releaseCache!: (body: unknown) => void, releaseProvider!: (body: unknown) => void;
     const response = (body: unknown) => ({ ok: true, json: async () => body });
     const fetch = vi.fn((url: string) => url.endsWith("/provider") ? new Promise(resolve => { releaseProvider = resolve; })
@@ -3474,7 +3483,7 @@ describe("stored Yahoo eligibility while provider verification is pending", () =
     expect(evaluated!.players[0].availability).toBe("unknown"); expect(evaluated!.rules.acquisitionTiming).toBe("unknown");
     expect(screen.queryByText(/Yahoo default positions: 1\/1/)).toBeNull();
     expect(fetch.mock.calls.filter(([url]) => url.endsWith("/provider"))).toHaveLength(1);
-    expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).manualPlayers[0].eligibilityVerified).toBe(false);
+    expect(JSON.parse(window.localStorage.getItem(activeKey())!).manualPlayers[0].eligibilityVerified).toBe(false);
     const live = { ...evaluated!, id: "yahoo:live", players: [{ ...cachedPlayer, eligiblePositions: ["C"], eligibilityVerified: true, availability: "rostered" as const }], roster: workspace.roster };
     await act(async () => releaseProvider(response({ success: true, snapshot: live, capabilities: { roster: true, availability: true, limitations: [] } })));
     await waitFor(() => expect(evaluated!.id).toBe("yahoo:live"));

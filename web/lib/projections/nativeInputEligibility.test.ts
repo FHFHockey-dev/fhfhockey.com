@@ -34,22 +34,35 @@ function visit(node: ts.Node, check: (node: ts.Node) => void) {
 describe("FORGE native input boundary", () => {
   beforeEach(() => { database.history = []; database.tables = []; });
 
-  it.each([["stages/skater-stage.ts", ts.SyntaxKind.TrueKeyword], ["stages/goalie-stage.ts", ts.SyntaxKind.FalseKeyword]] as const)(
-    "%s preserves the selected Release C bootstrap policy",
-    (file, expectedPolicy) => {
+  it("keeps every FORGE module free of the draft dashboard's fantasy projection config and tables", () => {
+    // TJ, 2026-10-26: FORGE must not use the draft dashboard's fantasy projection tables at all.
+    const files = (function list(dir: string): string[] {
+      return readdirSync(path.join(root, dir), { withFileTypes: true }).flatMap(entry => entry.isDirectory()
+        ? list(path.join(dir, entry.name))
+        : /\.tsx?$/.test(entry.name) && !/\.test\.tsx?$/.test(entry.name) ? [path.join(dir, entry.name)] : []);
+    })(".");
+    const offenders: string[] = [];
+    for (const file of files) {
+      visit(sourceFile(file), node => {
+        if (ts.isStringLiteralLike(node) && /projectionsConfig\/projectionSourcesConfig|fantasy-projections\/contracts|draftDashboard\/|^PROJECTIONS_|^(?:ag|blake_ag|nate_ag|cullen|dtz|5v5)_(?:skaters|goalies)$/i.test(node.text))
+          offenders.push(`${file}: ${node.text}`);
+        if (ts.isIdentifier(node) && ["PROJECTION_SOURCES_CONFIG", "FANTASY_PROJECTION_SEASON_ID"].includes(node.text))
+          offenders.push(`${file}: ${node.text}`);
+      });
+    }
+    expect(files.length).toBeGreaterThan(50);
+    expect(offenders).toEqual([]);
+    // Both stages call the history-only prior: no fantasy switch argument remains.
+    for (const file of ["stages/skater-stage.ts", "stages/goalie-stage.ts"]) {
       let calls = 0;
       visit(sourceFile(file), node => {
-        if (!ts.isCallExpression(node) || !ts.isIdentifier(node.expression)
-          || node.expression.text !== "loadSeasonBootstrap") return;
+        if (!ts.isCallExpression(node) || !ts.isIdentifier(node.expression) || node.expression.text !== "loadSeasonBootstrap") return;
         calls += 1;
-        expect(node.arguments.length).toBe(5);
-        // Release C skaters retain legacy inputs and must not claim native exclusion.
-        // The actual producer-to-native-consumer rejection is checked by the offline qualification suite.
-        expect(node.arguments[4].kind).toBe(expectedPolicy);
+        expect(node.arguments).toHaveLength(4);
       });
       expect(calls).toBe(file.includes("skater") ? 2 : 1);
-    },
-  );
+    }
+  });
 
   it("keeps native inference, priors, calibration and model selection free of provider imports and table references", () => {
     // Bounded core: the shared seasonBootstrap bridge is tested dynamically below.
@@ -68,15 +81,18 @@ describe("FORGE native input boundary", () => {
   });
 
   it.each(["skater", "goalie"] as const)(
-    "loads only native %s appearance history in the configured fantasy season",
+    "loads only native %s appearance history, and no fantasy projection table, in the current season",
     async population => {
       database.history = [{ playerId: 7, gameId: 2025020001, goals: 1, assists: 2, shots: 4,
         hits: 3, blockedShots: 1, toi: "20:00", powerPlayToi: "02:00", powerPlayGoals: 1,
         powerPlayPoints: 1, saveShotsAgainst: "28/30", goalsAgainst: 2,
         games: { id: 2025020001, date: "2026-04-01", seasonId: 20252026, type: 2 } }];
-      const prior = (await loadSeasonBootstrap([7], 20262027, "2026-10-07", population, false)).get(7)!;
+      const prior = (await loadSeasonBootstrap([7], 20262027, "2026-10-07", population)).get(7)!;
       expect(database.tables).toEqual([population === "skater" ? "skatersGameStats" : "goaliesGameStats"]);
-      expect(prior).toMatchObject({ historyGames: 1, currentSeasonGames: 0, fantasy: {}, sourceIds: [], sourceRowIds: [] });
+      expect(database.tables.filter(table => /^projections_/i.test(table))).toEqual([]);
+      expect(prior).toMatchObject({ historyGames: 1, currentSeasonGames: 0 });
+      expect(Object.keys(prior).sort()).toEqual(["currentSeasonGames", "historyGames", "limitations", "previous"]);
+      expect(prior.limitations.join(" ")).not.toMatch(/fantasy|public projection/i);
       if (population === "skater") {
         expect(prior.previous).toMatchObject({ GOALS: 1, ASSISTS: 2, SHOTS_ON_GOAL: 4 });
         const line = bootstrapSkaterLine({ goalsEs: 0.3, goalsPp: 0.1, assistsEs: 0.5, assistsPp: 0.1,
@@ -91,8 +107,9 @@ describe("FORGE native input boundary", () => {
   );
 
   it("leaves missing history and categories missing instead of reading provider fallbacks or inventing priors", async () => {
-    const prior = (await loadSeasonBootstrap([7], 20262027, "2026-10-07", "skater", false)).get(7)!;
-    expect(prior).toMatchObject({ previous: {}, fantasy: {}, historyGames: 0, sourceIds: [], sourceRowIds: [] });
+    const prior = (await loadSeasonBootstrap([7], 20262027, "2026-10-07", "skater")).get(7)!;
+    expect(prior).toMatchObject({ previous: {}, historyGames: 0 });
+    expect(blendSeasonBootstrap({ GOALS: 0.4 }, prior).disclosure).toMatchObject({ fantasyWeight: 0, sourceIds: [] });
     expect(blendSeasonBootstrap({}, prior).stats).toEqual({});
     expect(blendSeasonBootstrap({ GOALS: 0.4, HITS: null }, prior).stats).toEqual({ GOALS: 0.4, HITS: null });
     expect(database.tables).toEqual(["skatersGameStats"]);

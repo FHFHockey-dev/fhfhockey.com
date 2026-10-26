@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { webcrypto } from "node:crypto";
-import { acquirePreservationWriter, capturePreservation, preservationChecksum, readPreservedKeys, restorePreservedKeys, validatePreservation, withWorkspaceWriter, currentPlanningRange, currentProviderPeriod, defaultContext, defaultWorkspace, readWorkspace, readWorkspaceHistory, resolveImportedNames, retainedScheduleSnapshot, retainProviderInputs, writeWorkspace, WORKSPACE_HISTORY_LIMIT } from "./workspace";
+import type { PlanningWorkspace } from "./planningTypes";
+import { acquirePreservationWriter, capturePreservation, preservationChecksum, readPreservedKeys, restorePreservedKeys, validatePreservation, withWorkspaceWriter, currentPlanningRange, currentProviderPeriod, defaultContext, defaultWorkspace, readWorkspace, readWorkspaceHistory, resolveImportedNames, retainedScheduleSnapshot, retainProviderInputs, writeWorkspace, WORKSPACE_HISTORY_LIMIT, WORKSPACE_KEY, ANONYMOUS_WORKSPACE_KEY, anonymousWorkspace, migrateLegacyWorkspace, workspaceContextKey, preservationKeys, workspaceStorageKey } from "./workspace";
 
 const player = { id: "fhfh:1", nhlId: 1, name: "Alpha Center", teamAbbreviation: "CAR", eligiblePositions: ["C"], playerClass: "skater" as const, availability: "unknown" as const, ownership: null, canDrop: null, holdValue: null, reserveEligibility: [] };
 describe("manual workspace", () => {
@@ -89,9 +90,104 @@ describe("manual workspace", () => {
       .toEqual({ [player.id]: false, candidate: true, locked: false });
     expect(retained.manualPlayers[0]).not.toHaveProperty("providerId");
     const storage = new Map<string, string>();
-    expect(writeWorkspace({ setItem: (key, value) => storage.set(key, value) }, retained)).toBeNull();
-    expect(readWorkspace({ getItem: (key) => storage.get(key) ?? null })?.manualPlayers).toEqual(retained.manualPlayers);
-    expect(readWorkspace({ getItem: (key) => storage.get(key) ?? null })).toMatchObject({ intent: workspace.intent, lockedAssignments: workspace.lockedAssignments });
+    expect(writeWorkspace({ setItem: (key, value) => storage.set(key, value) }, retained, [], "owner-a")).toBeNull();
+    expect(readWorkspace({ getItem: (key) => storage.get(key) ?? null }, undefined, "owner-a")?.manualPlayers).toEqual(retained.manualPlayers);
+    expect(readWorkspace({ getItem: (key) => storage.get(key) ?? null }, undefined, "owner-a")).toMatchObject({ intent: workspace.intent, lockedAssignments: workspace.lockedAssignments });
+  });
+});
+
+describe("principal-scoped local workspaces", () => {
+  const connected = () => {
+    const workspace = defaultWorkspace(new Date("2026-10-01T00:00:00Z"));
+    workspace.context = { ...workspace.context, provider: "yahoo", leagueId: "league", teamId: "team" };
+    workspace.roster = [{ playerId: player.id, position: "active" }]; workspace.manualPlayers = [player];
+    workspace.lockedAssignments = [{ date: workspace.context.startDate, playerId: player.id, slotId: "C#1" }];
+    workspace.intent.steps = [{ id: "add", type: "add", playerId: player.id, at: "2026-10-02T00:00:00Z", effectiveAt: "2026-10-02T00:00:00Z", conditional: true, dependsOn: [] }];
+    workspace.intent.protectedPlayerIds = [player.id];
+    return workspace;
+  };
+  const memory = () => {
+    const values = new Map<string, string>();
+    return { values, storage: { getItem: (key: string) => values.get(key) ?? null, setItem: (key: string, value: string) => { values.set(key, value); },
+      removeItem: (key: string) => { values.delete(key); }, key: (index: number) => [...values.keys()][index] ?? null, get length() { return values.size; } } };
+  };
+
+  it("never shows one principal's workspace or Undo history to another principal or to the anonymous slot", () => {
+    const { storage } = memory();
+    const workspace = connected(), previous = { ...workspace, intent: { ...workspace.intent, steps: [] } };
+    expect(writeWorkspace(storage, workspace, [previous], "owner-a")).toBeNull();
+    expect(readWorkspace(storage, undefined, "owner-a")).toEqual(workspace);
+    expect(readWorkspaceHistory(storage, workspace, "owner-a")).toEqual([previous]);
+    expect(readWorkspace(storage, undefined, "owner-b")).toBeNull();
+    expect(readWorkspace(storage, workspace.context, "owner-b")).toBeNull();
+    expect(readWorkspaceHistory(storage, workspace, "owner-b")).toEqual([]);
+    expect(readWorkspace(storage)).toBeNull();
+    expect(storage.getItem(WORKSPACE_KEY)).toBeNull(); expect(storage.getItem(ANONYMOUS_WORKSPACE_KEY)).toBeNull();
+    expect(workspaceStorageKey("owner-a")).not.toBe(workspaceStorageKey("owner-b"));
+    expect(preservationKeys("owner-a", workspace.context).slice(0, 3).every(key => key.startsWith(workspaceStorageKey("owner-a")))).toBe(true);
+  });
+
+  it("keeps anonymous reads unchanged and reduces a provider workspace to an empty manual one for signed-out display", () => {
+    const { storage, values } = memory();
+    const manual = defaultWorkspace(new Date("2026-10-01T00:00:00Z"));
+    manual.intent.steps = connected().intent.steps;
+    values.set(ANONYMOUS_WORKSPACE_KEY, JSON.stringify(manual));
+    expect(readWorkspace(storage)).toEqual(manual);
+    expect(anonymousWorkspace(manual)).toBe(manual);
+    const legacy = connected();
+    writeWorkspace(storage, legacy, [manual]);
+    // Callers without a principal keep the device-key API; the component strips before showing it signed out.
+    expect(readWorkspace(storage)).toEqual(legacy);
+    expect(readWorkspace(storage, undefined, "owner-a")).toBeNull();
+    const anonymous = anonymousWorkspace(legacy);
+    expect(anonymous.context).toMatchObject({ provider: "manual", leagueId: "manual", teamId: "manual", startDate: legacy.context.startDate, endDate: legacy.context.endDate, timeZone: legacy.context.timeZone });
+    expect(anonymous).toMatchObject({ roster: [], manualPlayers: [], lockedAssignments: [], intent: { steps: [], protectedPlayerIds: [] } });
+  });
+
+  it("migrates a pre-upgrade device as ownerless: only dates carry over and every legacy key is removed", () => {
+    const { storage, values } = memory();
+    const legacyContextKey = (context: PlanningWorkspace["context"]) => `${WORKSPACE_KEY}:context:${encodeURIComponent(workspaceContextKey(context))}`;
+    // A pre-upgrade "Continue manually" copy: manual context, but an account's Yahoo roster, players, plan and locks.
+    const yahoo = connected();
+    const snapshot = { ...yahoo, id: "provider", players: [{ ...player, name: "Prior Account Goalie", playerClass: "goalie" as const }], games: [], forecasts: [], evidence: {} } as any;
+    const retained = retainProviderInputs(yahoo, snapshot);
+    const continued: PlanningWorkspace = { ...retained, context: { ...retained.context, provider: "manual", leagueId: "manual", teamId: "manual" } };
+    const previous = { ...continued, intent: { ...continued.intent, steps: [] } };
+    values.set(`${WORKSPACE_KEY}:context:%E0%A4%A`, "undecodable");
+    values.set(WORKSPACE_KEY, JSON.stringify(continued));
+    values.set(legacyContextKey(continued.context), JSON.stringify(continued));
+    values.set(`${legacyContextKey(continued.context)}:undo`, JSON.stringify({ version: 1, current: continued, entries: [previous] }));
+    values.set(legacyContextKey(yahoo.context), JSON.stringify(yahoo));
+    values.set(`${legacyContextKey(yahoo.context)}:undo`, JSON.stringify({ version: 1, current: yahoo, entries: [] }));
+    writeWorkspace(storage, yahoo, [], "owner-a");
+    const owned = [...values.keys()].filter(key => key.startsWith(workspaceStorageKey("owner-a")));
+    values.set("unrelated", "keep");
+    expect(continued.manualPlayers.map(row => row.name)).toContain("Prior Account Goalie");
+
+    migrateLegacyWorkspace(storage);
+    expect([...values.keys()].filter(key => key === WORKSPACE_KEY || key.startsWith(`${WORKSPACE_KEY}:context:`))).toEqual([]);
+    const anonymous = readWorkspace(storage)!;
+    expect(anonymous.context).toMatchObject({ provider: "manual", leagueId: "manual", teamId: "manual", seasonId: continued.context.seasonId,
+      startDate: continued.context.startDate, endDate: continued.context.endDate, timeZone: continued.context.timeZone });
+    expect(anonymous).toMatchObject({ roster: [], manualPlayers: [], lockedAssignments: [], intent: { steps: [], protectedPlayerIds: [], excludedPlayerIds: [] } });
+    expect(JSON.stringify(anonymous)).not.toContain("Prior Account Goalie");
+    expect(readWorkspaceHistory(storage, anonymous)).toEqual([]);
+    expect(readWorkspace(storage, continued.context)).toMatchObject({ manualPlayers: [], roster: [], intent: { steps: [] } });
+    for (const key of owned) expect(values.has(key)).toBe(true);
+    expect(readWorkspace(storage, undefined, "owner-a")).toEqual(yahoo);
+    expect(values.get("unrelated")).toBe("keep");
+    const settled = new Map(values); migrateLegacyWorkspace(storage); expect(values).toEqual(settled);
+  });
+
+  it("never overwrites an existing anonymous workspace with migrated legacy dates", () => {
+    const { storage, values } = memory();
+    const current = defaultWorkspace(new Date("2026-10-01T00:00:00Z"));
+    current.manualPlayers = [player]; current.roster = [{ playerId: player.id, position: "active" }];
+    writeWorkspace(storage, current);
+    values.set(WORKSPACE_KEY, JSON.stringify(connected()));
+    migrateLegacyWorkspace(storage);
+    expect(readWorkspace(storage)).toEqual(current);
+    expect(values.has(WORKSPACE_KEY)).toBe(false);
   });
 });
 
@@ -162,7 +258,7 @@ describe("workspace preservation", () => {
     const previous = defaultWorkspace(new Date("2026-10-01T12:00:00Z"));
     const workspace = JSON.parse(JSON.stringify(previous));
     workspace.intent.steps = [{ id: "selected", type: "add", playerId: "candidate", at: "2026-10-02T12:00:00Z", effectiveAt: "2026-10-02T12:00:00Z", conditional: true, dependsOn: [] }];
-    writeWorkspace(storage, workspace, [previous]);
+    writeWorkspace(storage, workspace, [previous], "owner-a");
     values.set("unrelated", "keep");
     const backup = await capturePreservation(storage, "owner-a", workspace, [previous], { selectedDate: null, selectedPlayer: "candidate", tab: "itinerary" }, { receiptId: "server-receipt", row: null });
     return { storage, values, workspace, backup };
@@ -176,7 +272,7 @@ describe("workspace preservation", () => {
     const expected = readPreservedKeys(storage, backup.local.map(entry => entry.key));
     restorePreservedKeys(storage, backup.local, expected);
     expect(readPreservedKeys(storage, backup.local.map(entry => entry.key))).toEqual(backup.local);
-    expect(readWorkspaceHistory(storage, backup.workspace)).toEqual(backup.history);
+    expect(readWorkspaceHistory(storage, backup.workspace, "owner-a")).toEqual(backup.history);
     expect(values.get("unrelated")).toBe("keep");
   });
   it("pins provider authority independently and rejects another provider context", async () => {

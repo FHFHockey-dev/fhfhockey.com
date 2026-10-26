@@ -179,7 +179,7 @@ export async function runPerGameGoalieStage(args: {
   const seasonYear = Math.floor(game.id / 1_000_000);
   const bootstrap = args.seasonBootstrap ? await loadSeasonBootstrap(
     [...new Set(goalieCandidates.flatMap((candidate) => candidate.candidateGoalieIds))],
-    seasonYear * 10000 + seasonYear + 1, asOfDate, "goalie", false) : new Map<number, SeasonBootstrap>();
+    seasonYear * 10000 + seasonYear + 1, asOfDate, "goalie") : new Map<number, SeasonBootstrap>();
   const seasonLeague = await getSeasonLeagueSavePct(asOfDate, args.leagueSavePctCache);
   if (seasonLeague.warning) metrics.warnings.push(seasonLeague.warning);
   for (const c of goalieCandidates) {

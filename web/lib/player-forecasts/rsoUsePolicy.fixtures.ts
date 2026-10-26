@@ -23,5 +23,6 @@ export function fixtureRsoPolicy(codeVersions: readonly string[], targets: reado
     reviews: codeVersions.flatMap(codeVersion => targets.map(targetKey => ({ id: `fictional-${codeVersion}-${targetKey}`,
       binding: { ...scope, codeVersion, targetKey }, reviewedAt: "2026-01-01T00:00:00Z", expiresAt: "2100-01-01T00:00:00Z",
       inputCutoffFrom: "2026-01-01T00:00:00Z", inputCutoffUntil: "2100-01-01T00:00:00Z",
-      allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: true } }))) };
+      allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: true },
+      prospectiveEvidenceRef: "fictional-fixture-evidence", ownerApprovalRef: "fictional-fixture-approval" }))) };
 }
