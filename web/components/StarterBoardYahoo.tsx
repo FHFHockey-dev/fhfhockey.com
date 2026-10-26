@@ -38,9 +38,10 @@ function YahooTeam() {
         headers: { Authorization: `Bearer ${session.session.access_token}`, "Content-Type": "application/json" },
         body: JSON.stringify({ ...(teamId ? { teamId } : {}), ...(category ? { category } : {}) }),
       });
-      const payload = await response.json();
+      // Decide before parsing: a proxy or protection page can answer 401/403 with a non-JSON body.
       denied = response.status === 401 || response.status === 403;
-      if (!response.ok) throw new Error(typeof payload.error === "string" ? payload.error : "Unable to load Yahoo recommendations.");
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || !payload) throw new Error(typeof payload?.error === "string" ? payload.error : "Unable to load Yahoo recommendations.");
       if (controller.signal.aborted) return;
       setData(payload.data);
       if (payload.data.teamId) setTeamId(payload.data.teamId);

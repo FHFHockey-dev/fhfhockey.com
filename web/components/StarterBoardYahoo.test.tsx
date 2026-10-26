@@ -65,3 +65,10 @@ it("keeps the comparison read-only when entitlement lapses without a refresh", a
   expect(button.disabled).toBe(true); fireEvent.click(button);
   await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
 });
+it.each([401, 403])("hides the private lineup when a denied %s refresh has a non-JSON body", async status => {
+  // A proxy, firewall or deployment-protection page can answer 401/403 with HTML.
+  const { alert } = await loadThenRefresh(async () => ({ ok: false, status, json: async () => { throw new SyntaxError("Unexpected token < in JSON"); } }));
+  expect(alert.textContent).toContain("Unable to load Yahoo recommendations.");
+  expect(screen.queryByText(/Private Center/)).toBeNull();
+  expect(screen.queryByText("Saved evidence")).toBeNull();
+});
