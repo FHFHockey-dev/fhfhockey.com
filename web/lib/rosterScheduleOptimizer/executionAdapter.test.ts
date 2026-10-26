@@ -249,7 +249,8 @@ describe("fresh RSO execution authority", () => {
     const { cutoffAt: _, ...scope } = binding;
     const policy = { ...currentRsoUsePolicy(), reviews: [{ id: "synthetic-positive", binding: scope,
       reviewedAt: "2026-10-21T00:00:00Z", expiresAt: "2026-10-22T12:00:01Z", inputCutoffFrom: now,
-      inputCutoffUntil: "2026-10-23T00:00:00Z", allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: false } }] };
+      inputCutoffUntil: "2026-10-23T00:00:00Z", allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: false },
+      prospectiveEvidenceRef: "fictional-evidence", ownerApprovalRef: "fictional-approval" }] };
     vi.spyOn(policyModule, "currentRsoUsePolicy").mockReturnValue(policy);
     body.data.forecasts = [{ ...snapshot.forecasts[0], revisionId: "native", modelVersion: binding.codeVersion,
       rsoTargetBindings: { GOALS: binding } }];

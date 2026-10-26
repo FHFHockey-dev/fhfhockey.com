@@ -402,6 +402,16 @@ export const projectionModelEnvironment = () => Object.fromEntries([
   "START_CHART_GAME_REVISIONS", "STARTER_BOARD_COMPUTE_ENABLED", "STARTER_BOARD_SEASON_BOOTSTRAP_ENABLED",
 ].map((key) => [key, process.env[key] ?? null]));
 
+/** FORGE model identity (TJ D3, 2026-10-26): `configurationHash` is the canonical sha256 of the run's model environment.
+ * The heuristic has no fitted artifact, so `artifactHash` binds its code at `codeVersion` under that configuration.
+ * It travels in the snapshot's `inputProvenance`, which revision publishing copies into every revision payload. */
+export const FORGE_MODEL_IDENTITY_VERSION = "forge-model-identity-v1";
+export function forgeModelIdentity(codeVersion: string, modelEnvironment: Record<string, string | null>) {
+  const configurationHash = projectionInputHash(modelEnvironment);
+  return { version: FORGE_MODEL_IDENTITY_VERSION, artifact: "no_fitted_artifact" as const, configurationHash,
+    artifactHash: projectionInputHash({ codeVersion, configurationHash }) };
+}
+
 /**
  * `postRunFailure`: the run finalized `succeeded` with its rows written, then a
  * later step that its outputs do not depend on failed.
@@ -506,6 +516,8 @@ export async function runProjectionV2ForDate(
       return result;
     }, { deadlineMs: opts?.deadlineMs });
     if (capture.result.timedOut) return capture.result;
+    const modelEnvironment = projectionModelEnvironment();
+    const modelIdentity = { modelIdentity: forgeModelIdentity(codeVersion!, modelEnvironment) };
     const snapshot: ForgeInputSnapshot = {
       version: "forge-inputs-v1", runId, slateDate: asOfDate,
       inputCutoff: decisionAsOf,
@@ -513,9 +525,9 @@ export async function runProjectionV2ForDate(
       capturedAt: new Date().toISOString(),
       codeVersion: codeVersion!,
       modelMode: resolveSkaterRolloutConfig().mode,
-      modelEnvironment: projectionModelEnvironment(),
+      modelEnvironment,
       seasonBootstrapApplied: seasonBootstrap,
-      inputProvenance: { ...buildForgeInputProvenance(), capturedReads: capturedReadReceipt(capture.reads),
+      inputProvenance: { ...buildForgeInputProvenance(), ...modelIdentity, capturedReads: capturedReadReceipt(capture.reads),
         ...(issuedContexts ? { issuedContexts, issuedTargets: capturedIssuedTargets(issuedContexts, capture.writes) } : {}) },
       dailyBoardEvidence: capture.writes.filter((ops) => ops[0]?.args[0] === "forge_runs")
         .map((ops) => (ops.find((op) => op.method === "update")?.args[0] as any)?.metrics?.daily_board_evidence)

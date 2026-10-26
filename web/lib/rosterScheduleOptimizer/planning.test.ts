@@ -25,6 +25,7 @@ const fixturePolicy: rsoPolicy.RsoUsePolicy = { version: "rso-target-use-v1", re
     binding: fixtureBindings[targetKey], reviewedAt: "2026-09-01T00:00:00Z", expiresAt: "2100-01-01T00:00:00Z",
     inputCutoffFrom: "2026-09-01T00:00:00Z", inputCutoffUntil: "2026-11-01T00:00:00Z",
     allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: true },
+    prospectiveEvidenceRef: "fictional-evidence", ownerApprovalRef: "fictional-approval",
   })) };
 beforeEach(() => vi.spyOn(rsoPolicy, "currentRsoUsePolicy").mockReturnValue(fixturePolicy));
 

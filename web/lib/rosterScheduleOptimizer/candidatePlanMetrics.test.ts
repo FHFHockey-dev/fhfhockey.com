@@ -13,7 +13,8 @@ const fixtureScope = { component: "fictional-candidates", modelMode: "synthetic"
 const fixturePolicy: rsoPolicy.RsoUsePolicy = { version: "rso-target-use-v1", revision: "fictional-candidate-reviews",
   revokedReviewIds: [], reviews: [{ id: "fictional-GOALS", binding: fixtureScope, reviewedAt: "2026-09-01T00:00:00Z",
     expiresAt: "2100-01-01T00:00:00Z", inputCutoffFrom: "2026-09-01T00:00:00Z", inputCutoffUntil: "2100-01-01T00:00:00Z",
-    allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: false } }] };
+    allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: false },
+    prospectiveEvidenceRef: "fictional-evidence", ownerApprovalRef: "fictional-approval" }] };
 beforeEach(() => vi.spyOn(rsoPolicy, "currentRsoUsePolicy").mockReturnValue(fixturePolicy));
 
 function fixture(): PlanningSnapshot {

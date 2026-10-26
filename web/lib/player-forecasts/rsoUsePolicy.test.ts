@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deniedRsoUses, resolveRsoTargetUse, type RsoTargetUseBinding, type RsoUsePolicy } from "./rsoUsePolicy";
+import { deniedRsoUses, resolveRsoTargetUse, RSO_USE_POLICY, type RsoTargetUseBinding, type RsoUsePolicy } from "./rsoUsePolicy";
 
 const now = "2026-10-22T12:00:00Z";
 const binding: RsoTargetUseBinding = { component: "fictional-skater", modelMode: "baseline", codeVersion: "synthetic-code",
@@ -10,6 +10,7 @@ const policy: RsoUsePolicy = { version: "rso-target-use-v1", revision: "syntheti
   id: "fictional-review", binding: scope, reviewedAt: "2026-10-21T00:00:00Z", expiresAt: "2026-10-23T00:00:00Z",
   inputCutoffFrom: "2026-10-22T00:00:00Z", inputCutoffUntil: "2026-10-23T00:00:00Z",
   allowedUses: { assignment: true, totals: false, comparison: false, conditionalTieBreak: false },
+  prospectiveEvidenceRef: "fictional-scope-and-checker-report", ownerApprovalRef: "fictional-owner-approval",
 }] };
 
 describe("RSO target/use reviews", () => {
@@ -28,6 +29,18 @@ describe("RSO target/use reviews", () => {
   ("rejects a different %s without broadening the reviewed scope", key => {
     const changed = { ...binding, [key]: key === "horizonGames" ? 2 : key.endsWith("Hash") ? "c".repeat(64) : "different" };
     expect(resolveRsoTargetUse(changed, now, policy).allowedUses).toEqual(deniedRsoUses());
+  });
+  it("keeps the production catalog empty, so a binding with valid identity hashes is still denied", () => {
+    expect(RSO_USE_POLICY.reviews).toEqual([]);
+    expect(resolveRsoTargetUse(binding, now, RSO_USE_POLICY)).toEqual({ policyRevision: RSO_USE_POLICY.revision, reviewId: null, allowedUses: deniedRsoUses() });
+  });
+  it.each([["prospectiveEvidenceRef", ""], ["prospectiveEvidenceRef", "   "], ["prospectiveEvidenceRef", undefined],
+    ["ownerApprovalRef", ""], ["ownerApprovalRef", "   "], ["ownerApprovalRef", undefined]] as const)
+  ("counts a review only with both evidence references (%s = %j)", (field, value) => {
+    expect(resolveRsoTargetUse(binding, now, policy).reviewId).toBe("fictional-review");
+    const candidate = structuredClone(policy) as RsoUsePolicy & { reviews: Array<Record<string, unknown>> };
+    if (value === undefined) delete candidate.reviews[0][field]; else candidate.reviews[0][field] = value;
+    expect(resolveRsoTargetUse(binding, now, candidate).allowedUses).toEqual(deniedRsoUses());
   });
   it.each(["revoked", "expired", "future_review", "old_cutoff", "late_cutoff", "duplicate"])
   ("denies %s review evidence", kind => {
