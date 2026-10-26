@@ -165,7 +165,8 @@ describe("RSO daily beta: connected Yahoo acceptance packet", () => {
       expect(noMove.assignments.map(row => row.playerId).sort()).toEqual(["c1", "d1", "g1", "g2", "lw1"]);
     });
 
-    it("keeps transaction timing and goalie-minimum semantics unknown, and never marks rules complete", async () => {
+    it("keeps transaction timing unknown without a recognised weekly deadline, goalie-minimum semantics unknown, and never marks rules complete", async () => {
+      mocks.settings.mockReturnValue({ ...mocks.settings(), weeklyDeadline: null });
       const { snapshot, capabilities } = await load();
       expect(snapshot.rules.acquisitionTiming).toBe("unknown");
       expect(snapshot.rules.goalieMinimum).toMatchObject({ required: 3, credited: 0, counts: "unknown", penalty: "unknown", periodStart: TODAY, periodEnd: "2026-10-26" });
@@ -178,14 +179,43 @@ describe("RSO daily beta: connected Yahoo acceptance packet", () => {
       expect(evaluatePlan(snapshot, intent(), "agp", [add("x", "fa1")]).legal).toBe(false);
     });
 
+    // TJ D6, independent of RSO_YAHOO_DIET: a daily league's weekly deadline sets the add timing, labelled as inferred.
+    it.each([["intraday", "same_day", "same-day"], ["tomorrow", "next_day", "next-day"]] as const)(
+      "infers add timing from weekly_deadline %s with the diet flag off, labelled, and makes the bounded add legal", async (deadline, timing, label) => {
+        vi.stubEnv("RSO_YAHOO_DIET", "");
+        mocks.settings.mockReturnValue({ ...mocks.settings(), weeklyDeadline: deadline });
+        const { snapshot, capabilities } = await load();
+        expect(snapshot.rules.acquisitionTiming).toBe(timing);
+        expect(snapshot.evidence.acquisitionTiming).toMatchObject({ source: "Inferred from Yahoo weekly deadline" });
+        expect(capabilities.limitations).toContain(`Add timing is inferred from Yahoo's weekly deadline (${label}); change it in League rules if your league differs.`);
+        expect(capabilities.rules).toBe(false);
+        if (timing === "same_day") expect(evaluatePlan(snapshot, intent(), "agp", [add("x", "fa1")])).toMatchObject({ legal: true, acquisitions: { "yahoo-week-2": 1 } });
+        vi.unstubAllEnvs();
+      });
+    it.each(["1", "", null, "weekly"])("keeps add timing unknown for an unrecognised weekly deadline %j", async deadline => {
+      mocks.settings.mockReturnValue({ ...mocks.settings(), weeklyDeadline: deadline });
+      const { snapshot } = await load();
+      expect(snapshot.rules.acquisitionTiming).toBe("unknown");
+      expect(snapshot.evidence.acquisitionTiming).toBeUndefined();
+    });
+    it("lets the manager's explicit timing replace the inferred one", async () => {
+      mocks.settings.mockReturnValue({ ...mocks.settings(), weeklyDeadline: "intraday" });
+      const { snapshot } = await load();
+      const { snapshot: supplemented, conflicts } = supplementProviderRules(snapshot, { acquisitionTiming: "next_day" });
+      expect(supplemented.rules.acquisitionTiming).toBe("next_day");
+      expect(conflicts).toEqual([]);
+      expect(supplemented.evidence.acquisitionTiming).toBeUndefined();
+    });
+
     // Regression for YAHOO Y1: with every read verified, capabilities.rules stays false and the unverified rule facts are named.
     it("names the unverified rule facts whenever capabilities.rules is false", async () => {
       world.scoreboard = true;
       const { snapshot, capabilities } = await load();
       expect(snapshot.opponent).not.toBeNull();
       expect(capabilities).toMatchObject({ roster: true, availability: true, acquisitions: true, matchup: true, rules: false });
-      expect(snapshot.rules.acquisitionTiming).toBe("unknown");
-      expect(capabilities.limitations).toEqual(["Yahoo does not report these league rules; confirm them in League rules: when an add takes effect (same-day or next-day); "
+      expect(snapshot.rules.acquisitionTiming).toBe("same_day");
+      expect(capabilities.limitations).toEqual(["Add timing is inferred from Yahoo's weekly deadline (same-day); change it in League rules if your league differs.",
+        "Yahoo does not report these league rules; confirm them in League rules: whether the add timing inferred from Yahoo's weekly deadline is right; "
         + "waiver mode and FAAB budget; the exact weekly add reset time (league-local midnight is assumed); how the goalie minimum counts (starts or appearances) and its penalty."]);
       expect(snapshot.evidence.roster?.limitations).toEqual(capabilities.limitations);
       expect(snapshot.rules.waivers).toBeUndefined();
@@ -230,6 +260,7 @@ describe("RSO daily beta: connected Yahoo acceptance packet", () => {
 
   describe("(b) manager overrides fill gaps; conflicts are disclosed", () => {
     it("fills unknown timing and goalie semantics without overriding provider settings", async () => {
+      mocks.settings.mockReturnValue({ ...mocks.settings(), weeklyDeadline: null });
       const { snapshot } = await load();
       const { snapshot: supplemented, conflicts } = supplementProviderRules(snapshot, { acquisitionTiming: "same_day",
         scoring: { weights: { GOALS: 6 } }, goalieMinimum: { counts: "starts", penalty: "none", required: 2 }, rosterSlots: { BN: 5 } });

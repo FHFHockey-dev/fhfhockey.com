@@ -41,13 +41,34 @@ describe("RSO explanatory team schedule context", () => {
     show(fixture(), clipped);
     const aaa = screen.getByLabelText("AAA team schedule");
     expect(within(aaa).getByLabelText(/^GP 1 · OFF 1 · Score /)).toBeTruthy();
-    expect(within(aaa).getByLabelText("Oct 13: Away game · Off-night")).toBeTruthy();
+    expect(within(aaa).getByLabelText("Oct 13: Away at BBB · Off-night")).toBeTruthy();
     expect(within(aaa).getByLabelText("Oct 14: No game")).toBeTruthy();
     expect(screen.queryByLabelText(/Oct 12:/)).toBeNull();
     fireEvent.focus(screen.getByRole("button", { name: "About team schedule scores" }));
     expect(screen.getByText(/Missing matchup odds contribute neutrally/)).toBeTruthy();
     expect(screen.getByText(/not net roster fit or confirmed participation/)).toBeTruthy();
     expect(screen.getByText(/America\/New_York range/)).toBeTruthy();
+  });
+
+  it("shows each game as the opponent's logo, off-nights in green, the team band in team colours and GP/OFF beneath the score", () => {
+    const data = fixture();
+    data.teams[0] = { ...data.teams[0], abbreviation: "NJD" }; data.teams[1] = { ...data.teams[1], abbreviation: "BOS" };
+    show(data, dates.slice(1, 3));
+    const card = screen.getByLabelText("NJD team schedule");
+    const away = within(card).getByLabelText("Oct 13: Away at BOS · Off-night");
+    const cell = away.querySelector("b")!;
+    expect(cell.getAttribute("data-off-night")).toBe("true");
+    expect(cell.getAttribute("data-game")).toBe("away");
+    expect(cell.textContent).not.toMatch(/^[HA]$/);
+    expect(cell.querySelector("img")?.getAttribute("src")).toContain("BOS");
+    const band = card.querySelector("[data-team-band]") as HTMLElement;
+    expect(band.textContent).toBe("NJD");
+    // lib/teamsInfo NJD: primary black, secondary red, jersey white.
+    expect(band.style.background).toBe("rgb(0, 0, 0)");
+    expect(band.style.color).toBe("rgb(162, 6, 32)");
+    expect(band.style.boxShadow).toBe("inset 0 0 0 2px #FFFFFF");
+    const metrics = within(card).getByLabelText(/^GP 1 · OFF 1 · Score /);
+    expect([...metrics.querySelectorAll("small")].map(node => node.textContent)).toEqual(["Score", "GP", "OFF"]);
   });
 
   it.each(["partial", "conflicting rows"])("withholds ranks for %s", mode => {

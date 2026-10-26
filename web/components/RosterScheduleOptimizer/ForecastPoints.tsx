@@ -13,13 +13,13 @@ export default function ForecastPoints({ points, goalie, tier }: Props) {
         : goalie ? "Expected fantasy points for this game, including participation probability."
           : "Projected fantasy points for this game, using your league's scoring."}
       aria-label={`Expected fantasy points: ${expected === "—" ? "unavailable" : expected}`}>
-      {expected}{goalie && <small> expected</small>}
+      {expected}{goalie && <small> exp</small>}
     </span>
     {goalie && <span className={styles.conditionalPoints}
       title={ifStarts === "—" ? "Fantasy points if starts unavailable: complete approved per-start estimates are required."
         : "Fantasy points conditional on starting. Assumes a start; not a second expected contribution to add."}
       aria-label={`Fantasy points if starts: ${ifStarts === "—" ? "unavailable" : ifStarts}`}>
-      {ifStarts}<small> if starts</small>
+      {ifStarts}<small> if GS</small>
     </span>}
   </span>;
 }

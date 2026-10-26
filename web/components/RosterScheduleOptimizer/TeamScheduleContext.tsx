@@ -7,6 +7,7 @@ import styles from "./TeamScheduleContext.module.scss";
 import InfoTooltip from "./InfoTooltip";
 import Image from "next/image";
 import { getLocalTeamLogoPath, fallbackTeamLogo } from "lib/images";
+import { teamsInfo } from "lib/teamsInfo";
 
 type TeamContext = { abbreviation: string; games: Record<string, GameData>; teamId: number;
   summary: ReturnType<typeof getTeamScheduleSummary> };
@@ -46,23 +47,32 @@ export default function TeamScheduleContext({ dates, seasonId, timeZone, enabled
   return <details className={styles.context} open={expanded}>
     <summary>Top five team schedules <span>{context.reason ? "· unavailable" : `· ${labelDate(dates[0])}–${labelDate(dates.at(-1)!)}`}</span><span> · Team context</span></summary>
     {context.reason ? <p role="status">{context.reason}</p> : <>
-      <div className={styles.cards} role="group" aria-label="Top team schedule cards" tabIndex={0}>{context.teams.map(team => <article key={team.abbreviation} aria-label={`${team.abbreviation} team schedule`}>
-        <Image className={styles.teamLogo} src={getLocalTeamLogoPath(team.abbreviation)} alt="" width={46} height={46} onError={event => { event.currentTarget.src = fallbackTeamLogo; }} />
-        <div className={styles.cardHead}><strong>{team.abbreviation}</strong></div>
-        <div className={styles.teamMetrics} aria-label={`GP ${team.summary.totalGamesPlayed} · OFF ${team.summary.totalOffNights} · Score ${formatWeekScore(team.summary.weekScore)}`}>
-          <span><small>GP</small><b>{team.summary.totalGamesPlayed}</b></span>
-          <span><small>OFF</small><b>{team.summary.totalOffNights}</b></span>
-          <span><small>Score</small><b>{formatWeekScore(team.summary.weekScore)}</b></span>
-        </div>
+      <div className={styles.cards} role="group" aria-label="Top team schedule cards" tabIndex={0}>{context.teams.map(team => {
+        const colors = teamsInfo[team.abbreviation];
+        // Team band: primary colour, abbreviation in the secondary colour, inner outline in the jersey colour.
+        const band = colors ? { background: colors.primaryColor, color: colors.secondaryColor, boxShadow: `inset 0 0 0 2px ${colors.jersey}` } : undefined;
+        return <article key={team.abbreviation} aria-label={`${team.abbreviation} team schedule`}>
+        <div className={styles.teamBand} style={band} data-team-band={team.abbreviation}><strong>{team.abbreviation}</strong></div>
         <div className={styles.days} style={{ gridTemplateColumns: `repeat(${dates.length}, minmax(0, 1fr))` }}>{dates.map((date, index) => {
           const game = team.games[context.days[index]];
           const home = game?.homeTeam.id === team.teamId;
+          const opponentId = game ? home ? game.awayTeam.id : game.homeTeam.id : null;
+          const opponent = opponentId === null ? null : data?.teams.find(row => row.id === opponentId)?.abbreviation ?? null;
           const offNight = Boolean(game) && calcTotalOffNights(team.games, context.counts, context.days.filter((_, i) => i !== index), context.days) > 0;
-          return <span key={date} aria-label={`${labelDate(date)}: ${game ? home ? "Home game" : "Away game" : "No game"}${offNight ? " · Off-night" : ""}`}>
-            <small>{new Date(`${date}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" })}</small><b data-off-night={offNight}>{game ? home ? "H" : "A" : "—"}</b>
+          return <span key={date} aria-label={`${labelDate(date)}: ${game ? `${home ? "Home vs" : "Away at"} ${opponent ?? "unknown opponent"}` : "No game"}${offNight ? " · Off-night" : ""}`}>
+            <small>{new Date(`${date}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" })}</small>
+            <b data-off-night={offNight} data-game={game ? home ? "home" : "away" : undefined}>{!game ? "—" : opponent
+              ? <Image className={styles.opponentLogo} src={getLocalTeamLogoPath(opponent)} alt="" width={22} height={22} onError={event => { event.currentTarget.src = fallbackTeamLogo; }} />
+              : home ? "H" : "A"}</b>
           </span>;
         })}</div>
-      </article>)}</div>
+        <div className={styles.teamMetrics} aria-label={`GP ${team.summary.totalGamesPlayed} · OFF ${team.summary.totalOffNights} · Score ${formatWeekScore(team.summary.weekScore)}`}>
+          <span className={styles.weekScore}><small>Score</small><b>{formatWeekScore(team.summary.weekScore)}</b></span>
+          <span><small>GP</small><b>{team.summary.totalGamesPlayed}</b></span>
+          <span><small>OFF</small><b>{team.summary.totalOffNights}</b></span>
+        </div>
+      </article>;
+      })}</div>
       <div className={styles.contextToolbar}><InfoTooltip label="About team schedule scores">Verified schedule metadata and Game Grid schedule score for the displayed {timeZone} range. In the optimizer this is the remaining selected date range; earlier dates stay outside this context. OFF and underlined H/A mean games on league slates of eight or fewer. Missing matchup odds contribute neutrally. GP includes completed games on displayed dates; this is team schedule context, not net roster fit or confirmed participation.</InfoTooltip></div>
     </>}
   </details>;

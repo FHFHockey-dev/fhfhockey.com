@@ -69,6 +69,10 @@
 .candidatePanel { grid-column: 3; grid-row: 1; }
 .candidateViews, .candidateFilters { display: flex; flex-wrap: wrap; gap: v.$space-xs; }
 .candidateViews { margin-bottom: v.$space-sm; }
+// Current Roster: Players and Bench days are tabs; Players shows by default.
+.rosterViews { display: flex; gap: v.$space-xs; margin-bottom: v.$space-xs; }
+.rosterViews button { min-height: 32px; padding: 4px 12px; font-size: 13px; }
+.rosterViews button[aria-pressed="true"] { background: v.$primary-color; color: v.$background-dark; font-weight: 700; }
 .candidateViews button[aria-pressed="true"] { background: v.$primary-color; color: v.$background-dark; font-weight: 700; }
 .candidateFilters .field { flex: 1 1 90px; min-width: 0; }
 .candidateFilters .field:first-child { flex-basis: 100%; }
