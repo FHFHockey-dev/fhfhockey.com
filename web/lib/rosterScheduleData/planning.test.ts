@@ -9,6 +9,8 @@ import { loadPlanningData, normalizePlanningGames, parsePlanningDataQuery, publi
 import type { ContributionPlanningSnapshot, ForecastDiscoveryExclusion, PlanningPlayer } from "lib/rosterScheduleOptimizer/planningTypes";
 import { resolvePlanningContributions } from "lib/player-forecasts/planningContributions";
 import { forecastAllows } from "lib/rosterScheduleOptimizer/planning";
+import * as rsoPolicyModule from "lib/player-forecasts/rsoUsePolicy";
+import { ISSUED_PARTICIPATION_METHOD, issuedParticipationLineage } from "lib/player-forecasts/rsoUsePolicy";
 import { buildGoalieParticipationReceipt, buildFrozenWindowGoalieParticipationReceipt, buildFrozenWindowGoalieStartReceipt, type GoalieParticipationInput, buildRosterObservationGoalieParticipationReceipt, buildRosterObservationGoalieStartReceipt } from "lib/player-forecasts/modeledGoalieParticipation";
 import { GOALIE_PARTICIPATION_DATASET, FROZEN_WINDOW_GOALIE_PARTICIPATION_DATASET, FROZEN_WINDOW_GOALIE_START_DATASET, type GoalieParticipationBundle, ROSTER_OBSERVATION_GOALIE_PARTICIPATION_DATASET, ROSTER_OBSERVATION_GOALIE_START_DATASET } from "lib/player-forecasts/modeledGoalieParticipationStore";
 import { buildSkaterParticipationReceipt, buildFrozenWindowSkaterParticipationReceipt, type SkaterParticipationInput, buildRosterObservationSkaterParticipationReceipt } from "lib/player-forecasts/modeledSkaterParticipation";
@@ -190,10 +192,10 @@ describe("public RSO data boundary", () => {
 
   describe("FORGE model identity (D3)", () => {
     const environment = { FORGE_SKATER_MODEL_MODE: "baseline", NHL_XG_MODEL_VERSION: null };
-    const rsoRead = async (modelIdentity?: unknown) => {
+    const rsoRead = async (modelIdentity?: unknown, revisionId = "issued-1") => {
       const { db, tables } = newsDb([]);
       tables.fhfh_player_identities = [{ id: 7, nhl_player_id: 847001, canonical_name: "Skater", canonical_position: "L" }];
-      const issued = revision([]);
+      const issued = { ...revision([]), id: revisionId };
       issued.payload.goalies = []; issued.payload.modelMode = "baseline"; issued.payload.codeVersion = "sha-1";
       issued.payload.players = [{ game_id: 2026020001, team_id: 1, player_id: 847001, horizon_games: 1,
         as_of_date: "2026-10-10", run_id: "run-1", proj_hits: 3,
@@ -223,6 +225,32 @@ describe("public RSO data boundary", () => {
       expect(forecast.rsoTargetBindings?.HITS).toMatchObject({ codeVersion: "sha-1", modelMode: "baseline",
         configurationHash: identity.configurationHash, artifactHash: identity.artifactHash, targetKey: "HITS", horizonGames: 1 });
       for (const use of ["assignment", "totals", "comparison", "conditionalTieBreak"] as const) expect(forecastAllows(forecast, "HITS", use)).toBe(false);
+    });
+
+    it("binds review to the stable participation method, so the next revision of that method is admitted (Astra F3)", async () => {
+      const identity = forgeModelIdentity("sha-1", environment);
+      const first = await rsoRead(identity);
+      const binding = first.rsoTargetBindings!.HITS;
+      expect(binding.participationLineage).toBe(issuedParticipationLineage("skater", first.revisionId));
+      const { cutoffAt: _cutoff, ...scope } = binding;
+      const spy = vi.spyOn(rsoPolicyModule, "currentRsoUsePolicy").mockReturnValue({ version: "rso-target-use-v1", revision: "fictional-method-reviews",
+        revokedReviewIds: [], reviews: [{ id: "fictional-method-review", binding: { ...scope, participationLineage: `${ISSUED_PARTICIPATION_METHOD}:skater` },
+          reviewedAt: "2026-01-01T00:00:00Z", expiresAt: "2100-01-01T00:00:00Z", inputCutoffFrom: "2026-01-01T00:00:00Z", inputCutoffUntil: "2100-01-01T00:00:00Z",
+          allowedUses: { assignment: false, totals: true, comparison: true, conditionalTieBreak: false },
+          prospectiveEvidenceRef: "fictional-evidence", ownerApprovalRef: "fictional-approval" }] });
+      try {
+        for (const revisionId of ["issued-1", "issued-2"]) {
+          const row = await rsoRead(identity, revisionId);
+          expect(row.revisionId).toBe(revisionId);
+          expect(row.rsoTargetBindings?.HITS.participationLineage).toBe(issuedParticipationLineage("skater", revisionId));
+          expect(forecastAllows(row, "HITS", "totals")).toBe(true);
+          expect(forecastAllows(row, "HITS", "comparison")).toBe(true);
+          expect(forecastAllows(row, "HITS", "assignment")).toBe(false);
+        }
+        // A changed method (another model configuration) is not covered by the review.
+        const changed = await rsoRead(forgeModelIdentity("sha-1", { ...environment, NHL_XG_MODEL_VERSION: "v2" }), "issued-3");
+        expect(forecastAllows(changed, "HITS", "totals")).toBe(false);
+      } finally { spy.mockRestore(); }
     });
 
     it.each([
