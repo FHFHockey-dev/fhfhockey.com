@@ -132,6 +132,8 @@ Native sources only. Tuesday never reads `PROJECTIONS_20262027_*`, `PROJECTIONS_
 
 ## TT-10 part 2: rostered % and role chips on every tile
 
+- **Approval:** TJ approved the M3 map read (READ-PLAN v3) on 2026-10-26T22:41:20Z for runtime editor page loads only (READ-APPROVAL addendum 3). It covers no production read by Claude.
+
 - **Rostered % (all four cards):** the team tag reads "TEAM · POS · 45% ROST".
   - The value is Yahoo's rostered % at the latest ownership date D, through the M3 NHL → Yahoo map.
   - Missing shows "— ROST", never 0%.

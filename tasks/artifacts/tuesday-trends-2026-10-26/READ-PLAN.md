@@ -115,7 +115,7 @@ Two more read-only statements, issued after N1 (names), for the **listed** playe
 - **Consistency checks:** a series that disagrees with the row's own L5/L10 window (points sum, TOI average within 2 s, rate within 2%) is dropped.
 - **Failure:** a failed S1/M2 read drops sparklines only. It never blocks a section ("Sparklines unavailable: …" is added to that section's reasons).
 
-## v3: TT-10 rostered % on every tile (M3; PENDING TJ approval via the chef; no RC is built before it; not executed by Claude)
+## v3: TT-10 rostered % on every tile (M3; APPROVED by TJ 2026-10-26T22:41:20Z for runtime editor page loads, READ-APPROVAL addendum 3; not executed by Claude; covers no capture or other production read by Claude)
 
 One more read-only statement, issued after N1 (names) and E1, before S1/M2, so no more than 2 statements are ever in flight.
 
