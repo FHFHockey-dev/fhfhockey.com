@@ -494,11 +494,13 @@ function trendColumns(kind: TrendKind, snapshot: SocialShareSnapshot): TrendColu
         detail: [`EV ${clockOrDash(pick.ev.l5)} / ${clockOrDash(pick.ev.season)} · PP ${clockOrDash(pick.pp.l5)} / ${clockOrDash(pick.pp.season)}`, `L5 / season · season ${clock(pick.toi.season)}`],
         hero: pick.driver === "toi" ? { value: signedClock(pick.delta), label: "TOI/GP VS SEASON", tone } : { value: roleHero(pick), label: "ROLE · TOI FLAT", tone },
         right: { value: clock(pick.toi.l5), label: "TOI/GP L5" }, spark: { values: pick.series, split: 5, reference: pick.toi.season, what: "TOI in each of the last 10 games (dashed: season TOI/GP)" },
-        badge: { text: pick.driver === "toi" ? (pick.delta > 0 ? "MORE ICE" : "LESS ICE") : tone === "up" ? "PROMOTED" : "DEMOTED", tone }, chips: deploymentBadges(pick) };
+        // TT-9: the column label now says MORE / LESS ICE, so ice-time rows carry no badge; role-only rows keep PROMOTED /
+        // DEMOTED, which the column label does not say.
+        badge: pick.driver === "toi" ? undefined : { text: tone === "up" ? "PROMOTED" : "DEMOTED", tone }, chips: deploymentBadges(pick) };
     };
-    // Vertical labels (TJ, TT-8): PROMOTIONS / DEMOTIONS. The column rule is unchanged: a TOI change of 1:00 or more sets
+    // Vertical labels (TJ, TT-9): MORE ICE / LESS ICE, naming what decides the column. The column rule is unchanged: a TOI change of 1:00 or more sets
     // the column by its sign; only role-only rows follow the line/PP direction (CONTRACT.md).
-    return [{ key: "up", title: "USAGE UP", label: { text: "PROMOTIONS", tone: "up" }, rows: up.map(row) }, { key: "down", title: "USAGE DOWN", label: { text: "DEMOTIONS", tone: "down" }, rows: down.map(row) }];
+    return [{ key: "up", title: "USAGE UP", label: { text: "MORE ICE", tone: "up" }, rows: up.map(row) }, { key: "down", title: "USAGE DOWN", label: { text: "LESS ICE", tone: "down" }, rows: down.map(row) }];
   }
   if (kind === "rates") {
     const board = rateStandouts(snapshot, true);

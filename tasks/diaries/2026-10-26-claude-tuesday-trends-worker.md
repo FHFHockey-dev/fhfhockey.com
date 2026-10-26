@@ -65,3 +65,4 @@ Make `/social-share/tuesday-trends` a truthful, data-backed edition from native 
 - TT-7: tracer v2 (all 32 legible, fallback list empty), lighter halo, home-page light-card tile layout; E2E 33 with the v2 Monday/Wednesday pins; Vitest 231; tsc 0.
 - TT-7b: hero row no-wrap (the export clone wrapped it), stacked text column clears the logo, name shrink-to-fit/wrap/ellipsis; E2E collision guard (stress + genuine); E2E 34 with v2 pins; Vitest 231; tsc 0.
 - TT-8 (+add-on): Tomorrow font token/@font-face/export, neon stripes, vertical group labels, Hot/Cold rename, outlines v2.5 (midpoint stroke, Euclidean gradient, 5 per-team overrides, COL A restored); E2E 34; Vitest 231; tsc 0. Raised: PROMOTIONS/DEMOTIONS vs the TOI-first column.
+- TT-9: Deployment vertical labels MORE ICE / LESS ICE (TJ); ice-time tiles drop the redundant badge, role-only tiles keep PROMOTED/DEMOTED; E2E 34 with v2 pins; Vitest 231; tsc 0.

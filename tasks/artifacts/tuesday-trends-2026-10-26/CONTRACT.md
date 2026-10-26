@@ -85,7 +85,7 @@ Native sources only. Tuesday never reads `PROJECTIONS_20262027_*`, `PROJECTIONS_
 - **Tiles:** each listed player is a tile in Monday's style. The team-colour banner (`TeamBanner`, sm) carries the logo, name, team · position and, on the right, the **absolute** value ("P/GP LAST 5", "TOI/GP L5", "L5 SOG/60", "ROSTERED").
 - **Hero:** the big neon number is the **change** ("P/GP VS PRIOR 5", "TOI/GP VS SEASON" or the role hero, "Δ/60 VS SEASON", "PCT PTS ROSTERED"), so the label kinds stay distinct.
 - **Accent:** the tile border and glow, the hero, the sparkline and the badge are **green** when the hero is positive, **red** when negative, and neutral when zero or unknown (`toneOf`). The tone always follows the sign of the hero value.
-- **Badges:** they use Monday's flame-badge pattern (neon icon on a dark chip) with descriptive words only: RISING/FALLING, MORE ICE/LESS ICE, PROMOTED/DEMOTED, ABOVE SEASON. There is no streak or sustainability claim. Deployment chips use Monday's role-chip colours.
+- **Badges:** they use Monday's flame-badge pattern (neon icon on a dark chip) with descriptive words only: RISING/FALLING, MORE ICE/LESS ICE (dropped on deployment ice-time tiles in TT-9), PROMOTED/DEMOTED, ABOVE SEASON. There is no streak or sustainability claim. Deployment chips use Monday's role-chip colours.
 - **Sparklines:** inline SVG, rendered into the PNG.
   - **Series:** points per game over the last 10 appearances (Recent Form, divider before the last 5); TOI per game over the last 10 games, dashed season TOI/GP (deployment); the per-game rate over the last 10 games, dashed season rate (rates); daily Yahoo rostered % from P to D (movers).
   - **Data rules:** values are observed only. A gap is drawn as a hollow tick, and nothing is interpolated.
@@ -109,7 +109,7 @@ Native sources only. Tuesday never reads `PROJECTIONS_20262027_*`, `PROJECTIONS_
 - **Vertical group labels:** set in `$font-family-sporty` ("Tomorrow" SemiBold Italic, OFL; `web/public/fonts/social-share/Tomorrow-SemiBoldItalic.ttf`), green or red, with a light glow:
   - Hot/Cold: HOT / COLD.
   - Ownership Movers: RISING / FALLING; eyebrows "ROSTERED % UP" and "ROSTERED % DOWN".
-  - Deployment: PROMOTIONS / DEMOTIONS. **The deployment column still follows the TOI sign first** (abs(TOI change) ≥ 1:00); only role-only rows follow the line/PP direction. A TOI-driven tile can therefore sit under PROMOTIONS with ▼ role chips, or under DEMOTIONS with ▲ chips.
+  - Deployment: **MORE ICE / LESS ICE** (TJ, TT-9; it was PROMOTIONS / DEMOTIONS in TT-8). The labels name what decides the column: the TOI sign first (abs(TOI change) ≥ 1:00), with only role-only rows following the line/PP direction. The line and PP chips keep their own arrows, so a tile under MORE ICE can show ▼ P1 → P3. Ice-time tiles carry no badge, because the column label says it; role-only tiles keep a PROMOTED / DEMOTED badge.
   - Rates: no vertical labels.
 - **Neon stripes:** the home page's 65° stripe edges (28 · 30/33 · 35/52 · 60 %) are drawn as thin team-colour lines (a 1.5 px core plus a 5 px glow at 32%) over a transparent field. They are plain gradients, with no masks.
 - **Outlines v2.5** (`tt8/trace-logo-outlines-v2_5.mjs`, parameters in `tt8/outline-v2_5-params.json`):

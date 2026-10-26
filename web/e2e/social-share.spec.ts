@@ -883,7 +883,7 @@ test("Tuesday tiles never collide: hero, absolute, label, details and chips stay
     expect(await tileCollisions(page), card).toEqual([]);
   }
   // TT-8 vertical group labels: the right words and tones, and never on top of a tile.
-  const expectedLabels: Record<string, [string, string][]> = { hot: [["HOT", "up"], ["COLD", "down"]], deployment: [["PROMOTIONS", "up"], ["DEMOTIONS", "down"]], movers: [["RISING", "up"], ["FALLING", "down"]], rates: [] };
+  const expectedLabels: Record<string, [string, string][]> = { hot: [["HOT", "up"], ["COLD", "down"]], deployment: [["MORE ICE", "up"], ["LESS ICE", "down"]], movers: [["RISING", "up"], ["FALLING", "down"]], rates: [] };
   for (const [card, labels] of Object.entries(expectedLabels)) {
     await graphic.selectOption(card);
     const found = await square.locator("[data-group-label]").evaluateAll(nodes => nodes.map(node => [node.getAttribute("data-group-label"), node.getAttribute("data-tone")]));
@@ -894,6 +894,11 @@ test("Tuesday tiles never collide: hero, absolute, label, details and chips stay
     })), `${card} labels clear of tiles`).toEqual([]);
   }
   await expect.poll(() => page.evaluate(() => document.fonts.check('italic 600 26px "Tomorrow"'))).toBe(true);
+  // TT-9: deployment ice-time tiles carry no badge (the MORE / LESS ICE column says it); role-only tiles keep PROMOTED / DEMOTED.
+  await graphic.selectOption("deployment");
+  const badges = await square.locator("[data-player]").evaluateAll(tiles => tiles.map(tile => [tile.querySelector("[class*='trendHero'] > strong")!.textContent!, tile.querySelector("[class*='trendBadge'] em")?.textContent ?? null]));
+  expect(badges.length).toBeGreaterThan(0);
+  for (const [hero, badge] of badges) expect(badge).toBe(hero.startsWith("▲") ? "PROMOTED" : hero.startsWith("▼") ? "DEMOTED" : null);
   // The stress set reached the tight cases: a one-digit hero with its absolute beside it, and the longest names.
   await graphic.selectOption("movers");
   const heroes = await square.locator("[class*='trendHero'] > strong").allTextContents();
