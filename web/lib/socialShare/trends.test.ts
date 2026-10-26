@@ -4,7 +4,7 @@ import { buildScheduleSnapshot, weekDates } from "./schedule";
 import { fictionalLeagueWeek } from "./fixtures";
 import { fictionalTrendSources } from "./trendsFixture";
 import { buildTrendLayer, deploymentChanges, DEPLOYMENT_LIST, hotCold, RECENT_FORM_GAMES, MIN_RATE_TOI_SECONDS_LAST5, ownershipMovers, RATE_LIST, rateStandouts, TREND_LIST, TREND_MAX_GAME_AGE_DAYS, trendSectionReady,
-  type ShareRollingRow, type ShareTrendSources } from "./trends";
+  type ShareRollingRow, type ShareSeriesRow, type ShareTrendSources } from "./trends";
 import type { SocialShareSnapshot } from "./types";
 
 const weekStart = "2026-10-26", now = "2026-10-27T13:00:00Z", today = "2026-10-27", season = 20262027;
@@ -90,6 +90,20 @@ describe("deployment", () => {
     expect(layer.sections.deployment.down).toEqual([expect.objectContaining({ nhlId: 6, ppUnit: { now: "none", before: 1 }, ppChange: -1 })]);
     // Unknown never becomes a change: player 7 has no line/PP change and flat TOI, so he is not listed.
     expect([...layer.sections.deployment.up, ...layer.sections.deployment.down].map(row => row.nhlId)).not.toContain(7);
+  });
+
+  it("there are two PP units: the writer's unit 3 is off PP, so PP2→3 is a demotion and 3↔off is no change (TT-4)", () => {
+    // Games 9000 (latest) and 9001 have PP rows. 50: PP2 → unit 3. 51: unit 3 → absent. 52: absent → unit 3. 53: unit 3 with no game rows.
+    const ppc = [{ gameId: 9001, playerId: 50, unit: 2 }, { gameId: 9000, playerId: 50, unit: 3 }, { gameId: 9001, playerId: 51, unit: 3 }, { gameId: 9000, playerId: 99, unit: 1 },
+      { gameId: 9000, playerId: 52, unit: 3 }, { gameId: 9001, playerId: 99, unit: 1 }];
+    const unknown = skater(53, [{ game_id: 9100, pp_unit: 3, line_combo_slot: 1 }, { game_id: 9101, pp_unit: 3, line_combo_slot: 3 }]);
+    const layer = buildTrendLayer(sources([...skater(50, [{}, {}]), ...skater(51, [{}, {}]), ...skater(52, [{}, {}]), ...unknown], { ppc: { rows: ppc } }), context);
+    const all = [...layer.sections.deployment.up, ...layer.sections.deployment.down];
+    expect(layer.sections.deployment.down).toEqual([expect.objectContaining({ nhlId: 50, ppUnit: { now: "none", before: 2 }, ppChange: -1 })]);
+    expect(all.map(row => row.nhlId)).not.toContain(51);
+    expect(all.map(row => row.nhlId)).not.toContain(52);
+    // A unit 3 the game's rows cannot confirm stays unknown ("PP ?"), never off PP.
+    expect(all.find(row => row.nhlId === 53)).toMatchObject({ ppUnit: { now: null, before: null }, ppChange: 0, lineChange: 1 });
   });
 
   it("does not compare lines across a team change, and needs contiguous games", () => {
@@ -182,6 +196,56 @@ describe("ownership movers", () => {
     const stale = edition({ ...fixture(), ownership: fixture({ ownershipThrough: "2026-10-24" }).ownership }).trends!;
     expect(stale.sections.movers).toMatchObject({ state: "stale", reasons: ["Yahoo ownership is stale: last observed Oct 24."], risers: [] });
     expect(stale.sections.hot.state).toBe("ready");
+  });
+});
+
+describe("sparklines (TT-4)", () => {
+  // Season-to-date rows for player 40: games 11..20 (sgp), two days apart, 1 point and 1,100 s per game, 3 shots per game.
+  const seasonRows = (id: number, from: number, to: number, change: (sgp: number) => Partial<ShareSeriesRow> = () => ({})): ShareSeriesRow[] =>
+    Array.from({ length: to - from + 1 }, (_, i) => { const sgp = to - i; return { player_id: id, season, game_date: new Date(Date.parse("2026-10-26T00:00:00Z") - i * 2 * 86400000).toISOString().slice(0, 10), strength_state: "all", season_games_played: sgp,
+      points_avg_season: 1, toi_seconds_avg_season: 1100, sog_per_60_shots_season: 3 * sgp, sog_per_60_toi_seconds_season: 1100 * sgp, shot_attempts_per_60_shot_attempts_season: 5 * sgp,
+      shot_attempts_per_60_toi_seconds_season: 1100 * sgp, ixg_per_60_ixg_season: 0.25 * sgp, ixg_per_60_toi_seconds_season: 1100 * sgp, ...change(sgp) }; });
+  const layerWith = (rows: ShareSeriesRow[], rolling: Partial<ShareRollingRow> = {}) => buildTrendLayer({ ...sources(skater(40, [{ points_total_last5: 5, points_total_last10: 10, points_avg_season: 1, toi_seconds_avg_last5: 1100,
+    sog_per_60_last5: 9.82, sog_per_60_season: 8, ...rolling }])), series: { rows } }, context);
+
+  it("derives one value per game from contiguous season-to-date rows, oldest first", () => {
+    const layer = layerWith(seasonRows(40, 10, 20));
+    expect(layer.sections.hot.hot[0]).toBeUndefined();
+    const rate = layer.sections.rates.sogPer60[0];
+    expect(rate.series).toEqual(Array(10).fill(9.8));
+    expect(layer.sections.deployment.up.concat(layer.sections.deployment.down)).toEqual([]);
+  });
+
+  it("leaves a gap for a missing game and never interpolates", () => {
+    const rows = seasonRows(40, 10, 20).filter(row => row.season_games_played !== 15);
+    expect(layerWith(rows).sections.rates.sogPer60[0].series).toEqual([9.8, 9.8, 9.8, 9.8, null, null, 9.8, 9.8, 9.8, 9.8]);
+  });
+
+  it("drops a series that disagrees with the row's own L5 window", () => {
+    expect(layerWith(seasonRows(40, 10, 20), { sog_per_60_last5: 12 }).sections.rates.sogPer60[0].series).toBeNull();
+  });
+
+  it("game 1 is the row's own value; a skater without season rows has no sparkline", () => {
+    const early = seasonRows(40, 1, 10);
+    const layer = buildTrendLayer({ ...sources(skater(40, [{ season_games_played: 10, points_total_last5: 5, points_total_last10: 10, points_avg_season: 1, sog_per_60_last5: 9.82 }])), series: { rows: early } }, context);
+    expect(layer.sections.rates.sogPer60[0].series).toEqual(Array(10).fill(9.8));
+    expect(buildTrendLayer(sources(skater(40, [{ sog_per_60_last5: 12 }])), context).sections.rates.sogPer60[0].series).toBeNull();
+  });
+
+  it("movers' daily series keeps gaps and must end on the compared values", () => {
+    const base = sources(skater(12, [{}]));
+    const obs = (date: string, pct: number | null) => ({ player_key: "k12", player_id: null, ownership_date: date, ownership_pct: pct });
+    const make = (series: ReturnType<typeof obs>[]) => buildTrendLayer({ ...base, map: { rows: [{ yahoo_player_id: "k12", nhl_player_id: "12" }] }, ownership: { rows: [obs("2026-10-27", 40), obs("2026-10-22", 10)] }, ownershipSeries: { rows: series } }, context);
+    const ok = make([obs("2026-10-22", 10), obs("2026-10-23", 12), obs("2026-10-25", 30), obs("2026-10-26", 35), obs("2026-10-27", 40)]);
+    expect(ok.ownershipSeriesDates).toEqual(["2026-10-22", "2026-10-23", "2026-10-24", "2026-10-25", "2026-10-26", "2026-10-27"]);
+    expect(ok.sections.movers.risers[0].series).toEqual([10, 12, null, 30, 35, 40]);
+    expect(make([obs("2026-10-22", 11), obs("2026-10-27", 40)]).sections.movers.risers[0].series).toBeNull();
+  });
+
+  it("every fixture sparkline agrees with its row's own window", () => {
+    const layer = edition().trends!;
+    for (const row of [...layer.sections.hot.hot, ...layer.sections.hot.cold]) if (row.series?.every(value => value !== null)) expect(row.series.slice(-5).reduce((a, b) => a! + b!, 0)! / 5).toBeCloseTo(row.recent, 2);
+    expect([...layer.sections.hot.hot, ...layer.sections.deployment.up, ...layer.sections.rates.ixgPer60, ...layer.sections.movers.risers].every(row => row.series === null || row.series?.length)).toBe(true);
   });
 });
 

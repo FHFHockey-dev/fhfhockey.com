@@ -1,7 +1,7 @@
 import { StrictMode } from "react";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import SocialShare, { deploymentBadges, moverDigits, ppChip, roleChipList, roleHero } from "./SocialShare";
+import SocialShare, { deploymentBadges, moverDigits, moverSparkPoints, NEON, OUTLINE_FALLBACK_TEAMS, ppChip, roleChipList, roleHero, Sparkline, toneOf } from "./SocialShare";
 import { TUESDAY_NOT_CONNECTED, buildBlockedSnapshot, buildScheduleSnapshot, calendarWeekStart, selectScheduleDates, weekDates } from "lib/socialShare/schedule";
 import { fictionalLeagueWeek } from "lib/socialShare/fixtures";
 import { buildTrendLayer, trendDefinitions, trendExportToken } from "lib/socialShare/trends";
@@ -134,10 +134,10 @@ describe("week input (REL-SS1-LOW-YEAR-R1)", () => {
 describe("role chips (C7 SS1-15-F4)", () => {
   const skater = (line: string | null, ppUnit: string | null) => ({ kind: "skater" as const, games: 5, through: "2026-10-24", goals: 0, assists: 0, points: 0, shots: 0, hitsPerGame: 0, blocksPerGame: 0, toiSeconds: 900, ppPoints: 0,
     line: line as "L1" | null, ppUnit: ppUnit as "PP1" | null, toiSeasonSeconds: 900 });
-  it("shows PP3 as PP3 (orange), and no PP chip when the unit is unknown", () => {
+  it("shows PP1/PP2 only: the writer's unit 3 (incidental PP time) and an unknown unit get no PP chip (TT-4)", () => {
     expect(roleChipList(skater("L1", "PP1"))).toEqual([{ role: "L1", tone: "green" }, { role: "PP1", tone: "green" }]);
     expect(roleChipList(skater("L3", "PP2"))).toEqual([{ role: "L3", tone: "orange" }, { role: "PP2", tone: "yellow" }]);
-    expect(roleChipList(skater("L4", "PP3"))).toEqual([{ role: "L4", tone: "red" }, { role: "PP3", tone: "orange" }]);
+    expect(roleChipList(skater("L4", "PP3"))).toEqual([{ role: "L4", tone: "red" }]);
     expect(roleChipList(skater("P1", null))).toEqual([{ role: "P1", tone: "green" }]);
     expect(roleChipList(skater(null, null))).toEqual([]);
     expect(roleChipList(null)).toEqual([]);
@@ -197,7 +197,7 @@ describe("Tuesday trend edition (lane TT)", () => {
   });
 
   it("labels every section with its definition and the movers card in points, never adds or drops", () => {
-    expect(trendDefinitions.hot.join(" ")).toMatch(/^Recent Form \(recent-form-v1-early\): P\/GP last 5 appearances vs the 5 before.*All 10 this season · last game ≤ 7 days · Early season · small sample$/);
+    expect(trendDefinitions.hot.join(" ")).toMatch(/^Hot\/Cold \(recent-form-v1-early\): P\/GP last 5 appearances vs the 5 before.*All 10 this season · last game ≤ 7 days · Early season · small sample$/);
     expect(trendDefinitions.rates.join(" ")).toMatch(/Min 50 L5 min/);
     expect(trendDefinitions.movers.join(" ")).toMatch(/^pct pts = percentage-point change.*No observation ≠ 0% · not add\/drop counts$/);
     const snapshot = tuesdayEdition(week);
@@ -220,9 +220,42 @@ describe("Tuesday trend edition (lane TT)", () => {
     expect(deploymentBadges(row({ line: { now: "L1", before: "L3" }, lineChange: 1, ppUnit: { now: "none", before: 1 }, ppChange: -1 }))).toEqual([{ text: "▲ L3 → L1", tone: "up" }, { text: "▼ PP1 → off PP", tone: "down" }]);
     expect(deploymentBadges(row({ teamChange: true, line: { now: "L1", before: null } })).map(badge => badge.text)).toEqual(["NEW TEAM", "L1", "PP ?"]);
     for (const state of [null, "none", 1, 2, 3] as const) expect(ppChip(state)).not.toMatch(/no PP/i);
+    // Two PP units only (TT-4): a stored unit 3 reads "off PP", and a 3 ↔ off PP "change" shows no change chip.
+    expect(ppChip(3)).toBe("off PP");
+    expect(deploymentBadges(row({ ppUnit: { now: "none", before: 3 }, ppChange: -1 }))).toEqual([{ text: "L2", tone: "flat" }, { text: "off PP", tone: "flat" }]);
+    expect(deploymentBadges(row({ ppUnit: { now: 3, before: 1 }, ppChange: -1 })).at(-1)).toEqual({ text: "▼ PP1 → off PP", tone: "down" });
     // Role-only heroes name the role direction, never a TOI number (TT-3).
     expect(roleHero(row({ lineChange: 1 }))).toBe("▲ LINE");
     expect(roleHero(row({ lineChange: -1, ppChange: -1 }))).toBe("▼ LINE + PP");
+  });
+
+  it("tiles take the hero's sign as their accent and draw sparklines with gaps, never interpolated (TT-4)", async () => {
+    expect([toneOf(1.4), toneOf(-0.2), toneOf(0), toneOf(null)]).toEqual(["up", "down", "flat", "flat"]);
+    const { container } = render(<Sparkline values={[1, null, 3, 2, null]} split={3} what="test" width={100} height={30} />);
+    const svg = container.querySelector("svg")!;
+    expect(svg.getAttribute("data-sparkline")).toBe("1,gap,3,2,gap");
+    expect(svg.querySelectorAll("[data-gap]")).toHaveLength(2);
+    // Runs break at gaps: [1] alone has no line; [3,2] is one segment.
+    expect([...svg.querySelectorAll("path:not([data-gap])")].map(path => path.getAttribute("d")!.split("L").length)).toEqual([1, 2, 2]);
+    expect(render(<Sparkline values={[null, null]} what="none" width={100} height={30} />).container.querySelector("svg")).toBeNull();
+    expect(render(<Sparkline values={null} what="none" width={100} height={30} />).container.querySelector("svg")).toBeNull();
+    // A rendered Tuesday tile's tone is the sign of its hero.
+    render(<SocialShare format="tuesday-trends" asOf={new Date().toISOString()} />);
+    await waitFor(() => expect(document.querySelectorAll("[data-player][data-tone]").length).toBeGreaterThan(0));
+    for (const tile of document.querySelectorAll("[data-player][data-tone]")) {
+      const hero = tile.querySelector("span[data-tone] > strong")!.textContent!;
+      expect(tile.getAttribute("data-tone")).toBe(/^[+▲]/.test(hero) ? "up" : /^[−▼]/.test(hero) ? "down" : "flat");
+    }
+  });
+
+  it("movers use Transaction Trends' sparkline only for a complete daily series; a gap means no line (TT-5)", () => {
+    const dates = ["2026-10-21", "2026-10-22", "2026-10-23"];
+    expect(moverSparkPoints([10, 12, 15], dates)).toEqual([{ date: "2026-10-21", value: 10 }, { date: "2026-10-22", value: 12 }, { date: "2026-10-23", value: 15 }]);
+    expect(moverSparkPoints([10, null, 15], dates)).toBeNull();
+    expect(moverSparkPoints([10, 12], dates)).toBeNull();
+    expect(moverSparkPoints(null, dates)).toBeNull();
+    expect(NEON).toEqual({ up: "#00ff99", down: "#ff6b6b", flat: "#63d2f5" });
+    expect([...OUTLINE_FALLBACK_TEAMS].every(team => /^[A-Z]{3}$/.test(team))).toBe(true);
   });
 
   it("shows whole-number Yahoo rostered % without a decimal, and keeps one only when the source has decimals (TT-3)", () => {

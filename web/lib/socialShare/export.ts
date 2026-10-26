@@ -6,6 +6,8 @@ const fonts = [
   { family: "Share Roboto Condensed", file: "RobotoCondensed-Variable.ttf", weight: "100 900", sample: "700 48px" },
   { family: "Share Train One", file: "TrainOne-Regular.ttf", weight: "400", sample: "400 36px" },
   { family: "Share Martian Mono", file: "MartianMono-Variable.ttf", weight: "100 800", sample: "500 32px" },
+  // Tuesday group labels (TT-8): $font-family-sporty.
+  { family: "Tomorrow", file: "Tomorrow-SemiBoldItalic.ttf", weight: "600", style: "italic", sample: "italic 600 36px" },
 ];
 
 export function bounded<T>(promise: Promise<T>, message: string, ms = 10000): Promise<T> {
@@ -42,6 +44,28 @@ export async function teamLogoDataUrl(abbreviation: string, size = 96): Promise<
 }
 
 /** `trend` gates one Tuesday section; `token` must still match the node's data-export-token at capture (lane TT). */
+/**
+ * Neon outline (TT-5): the offline-traced white outline (public/teamLogos/outline, from committed logos) tinted to one
+ * colour on a canvas and returned as a data URL, the same way team logos are inlined, so html-to-image draws it as-is.
+ */
+export async function teamOutlineDataUrl(abbreviation: string, color: string, size = 112): Promise<string> {
+  if (!/^[A-Z]{3}$/.test(abbreviation) || !/^#[0-9a-f]{6}$/i.test(color)) throw new Error("Invalid outline request.");
+  const image = new Image();
+  image.src = `/teamLogos/outline/${abbreviation}.png`;
+  await bounded(image.decode(), "Team outline unavailable", 5000);
+  if (!image.naturalWidth || !image.naturalHeight) throw new Error("Team outline unavailable");
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = size;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Canvas unavailable");
+  context.imageSmoothingQuality = "high";
+  context.drawImage(image, 0, 0, size, size);
+  context.globalCompositeOperation = "source-in";
+  context.fillStyle = color;
+  context.fillRect(0, 0, size, size);
+  return canvas.toDataURL("image/png");
+}
+
 export type ShareExportOptions = { opponents?: boolean; players?: boolean; trend?: ShareTrendKind; card?: string; token?: string };
 
 export function assertExportable(snapshot: SocialShareSnapshot, options: ShareExportOptions = {}) {
@@ -69,7 +93,7 @@ async function embeddedFonts() {
       reader.onerror = () => reject(new Error("Unable to embed local font."));
       reader.readAsDataURL(blob);
     });
-    return `@font-face{font-family:'${font.family}';src:url('${data}') format('truetype');font-weight:${font.weight};font-style:normal;font-display:block;}`;
+    return `@font-face{font-family:'${font.family}';src:url('${data}') format('truetype');font-weight:${font.weight};font-style:${"style" in font ? font.style : "normal"};font-display:block;}`;
   }))).join("\n");
 }
 

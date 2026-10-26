@@ -105,7 +105,7 @@ async function signIn(page: Page, access: Access) {
 
 async function install(page: Page, access: Access = { role: "social_editor", signedIn: true, roleReads: 0, writes: [] }) {
   await signIn(page, access);
-  const controller = { requests: 0, fail: false, mode: "ready" as Mode, longName: false, pinnedAt: undefined as string | undefined, rates: "ready" as Rates, players: "ready" as PlayerMode, trends: "ready" as Rates, recentRead: "ready" as RecentRead, liveTrim: false, longPlayer: false, widestLegend: false, ownershipStale: false, formEmpty: false, genuine: null as SocialShareSnapshot["trends"], latest: null as SocialShareSnapshot | null };
+  const controller = { requests: 0, fail: false, mode: "ready" as Mode, longName: false, pinnedAt: undefined as string | undefined, rates: "ready" as Rates, players: "ready" as PlayerMode, trends: "ready" as Rates, recentRead: "ready" as RecentRead, liveTrim: false, longPlayer: false, widestLegend: false, ownershipStale: false, formEmpty: false, layoutStress: false, genuine: null as SocialShareSnapshot["trends"], latest: null as SocialShareSnapshot | null };
   await page.context().route("**/*", route => ["127.0.0.1", "localhost"].includes(new URL(route.request().url()).hostname) ? route.continue() : route.abort());
   // Evidence harness only (lane TT): serve committed logo bytes from a folder, so PNG pins can be checked while a
   // working-tree logo is modified by someone else. Unset in normal runs.
@@ -137,6 +137,20 @@ async function install(page: Page, access: Access = { role: "social_editor", sig
     if (controller.widestLegend && next.players?.targets) {
       const first = streamingNights(next, true)[0], key = first && targetKey(first), list = key ? next.players.targets[key] : undefined;
       if (list?.length) next = { ...next, players: { ...next.players, targets: { ...next.players.targets, [key!]: [{ ...list[0], roles: ["scorer", "shooter", "blocker"] }, ...list.slice(1)] } } };
+    }
+    // layoutStress (TT-7b): whole-number movers (one-digit heroes, e.g. "−8" with 74% beside it) and the longest
+    // real-world names on the first tiles of every list, so the geometry check sees the tightest layouts.
+    if (controller.layoutStress && next.trends) {
+      const long = ["Charle-Edouard D'Astous", "Oliver Bjorkstrand", "Ryan Nugent-Hopkins"];
+      const rename = <T extends { name: string }>(list: T[], at = 0) => list.map((row, index) => index === 0 ? { ...row, name: long[at % long.length] } : row);
+      const whole = <T extends { latest: number; previous: number; delta: number }>(list: T[], deltas: number[]): T[] => list.map((row, index) => ({ ...row, previous: Math.round(row.previous), latest: Math.round(row.previous) + deltas[index % deltas.length], delta: deltas[index % deltas.length] }));
+      const { hot, deployment, rates, movers } = next.trends.sections;
+      next = { ...next, trends: { ...next.trends, sections: {
+        hot: { ...hot, hot: rename(hot.hot, 0), cold: rename(hot.cold, 1) },
+        deployment: { ...deployment, up: rename(deployment.up, 1), down: rename(deployment.down, 2) },
+        rates: { ...rates, sogPer60: rename(rates.sogPer60, 0), icfPer60: rename(rates.icfPer60, 1), ixgPer60: rename(rates.ixgPer60, 2) },
+        movers: { ...movers, risers: rename(whole(movers.risers, [9, 3, 2, 1, 1]), 0), fallers: rename(whole(movers.fallers, [-8, -3, -2, -1, -1]), 2).map((row, index) => index === 0 ? { ...row, previous: 82, latest: 74, delta: -8 } : row) },
+      } } };
     }
     // genuine (TT-2): a captured production trend layer on the offline fixture schedule. Schedule row abbreviations are
     // masked so no fixture "GP this week" chip sits beside a genuine player; logos still come from the edition's teams.
@@ -748,7 +762,7 @@ test("Wednesday edition recomputes every card for Thursday to Sunday and names t
 function tuesdayCards(edition: SocialShareSnapshot): [string, string, string[]][] {
   const ids = (list: { nhlId: number }[]) => list.map(item => String(item.nhlId));
   return [
-    ["hot", "RECENT FORM", [...ids(hotCold(edition, true).hot), ...ids(hotCold(edition, true).cold)]],
+    ["hot", "HOT/COLD", [...ids(hotCold(edition, true).hot), ...ids(hotCold(edition, true).cold)]],
     ["deployment", "DEPLOYMENT CHANGES", [...ids(deploymentChanges(edition, true).up), ...ids(deploymentChanges(edition, true).down)]],
     ["rates", "RATE STANDOUTS", Object.values(rateStandouts(edition, true)).flatMap(ids)],
     ["movers", "OWNERSHIP MOVERS", [...ids(ownershipMovers(edition, true).risers), ...ids(ownershipMovers(edition, true).fallers)]],
@@ -784,20 +798,115 @@ test("Tuesday trend cards list the server's sections with definitions and a sour
   // Deployment: a hero never contradicts its column (TOI sign, or the role arrow for role-only rows).
   await graphic.selectOption("deployment");
   for (const column of ["up", "down"]) {
-    const heroes = await square.locator(`[data-column="${column}"] [data-player] [class*="trendValue"] > strong`).allTextContents();
+    const heroes = await square.locator(`[data-column="${column}"] [data-player] [class*="trendHero"] > strong`).allTextContents();
     expect(heroes.length).toBeGreaterThan(0);
     for (const hero of heroes) expect(hero.startsWith(column === "up" ? "+" : "−") || hero.startsWith(column === "up" ? "▲" : "▼")).toBe(true);
+  }
+  // TT-4: every tile's accent is the sign of its hero, and each sparkline shows the layer's observed values exactly.
+  for (const [card, , expected] of tuesdayCards(edition)) {
+    await graphic.selectOption(card);
+    const tiles = square.locator("[data-player][data-tone]");
+    await expect(tiles).toHaveCount(expected.length);
+    for (const tile of await tiles.all()) {
+      const hero = (await tile.locator("[class*='trendHero'] > strong").textContent())!;
+      await expect(tile).toHaveAttribute("data-tone", /^[+▲]/.test(hero) ? "up" : /^[−▼]/.test(hero) ? "down" : "flat");
+    }
+    expect(await square.locator("[data-sparkline]").count()).toBeGreaterThan(0);
+    // TT-5: every tile has art, inlined as a data URL (so the PNG carries it), neon in the tile's tone or the card fallback.
+    for (const tile of await tiles.all()) {
+      const art = tile.locator("[data-art]");
+      await expect(art).toHaveCount(1);
+      if (await art.getAttribute("data-art") === "neon") { await expect(art).toHaveAttribute("data-tone", (await tile.getAttribute("data-tone"))!); expect(await art.locator("img").getAttribute("src")).toMatch(/^data:image\/png;base64,/); }
+    }
+  }
+  const shown = new Map([...edition.trends!.sections.hot.hot, ...edition.trends!.sections.hot.cold].map(row => [String(row.nhlId), row.series]));
+  await graphic.selectOption("hot");
+  for (const tile of await square.locator("[data-player]").all()) {
+    const series = shown.get((await tile.getAttribute("data-player"))!), drawn = await tile.locator("[data-sparkline]").getAttribute("data-sparkline").catch(() => null);
+    expect(drawn).toBe(series?.length && series.some(value => value !== null) ? series.map(value => value ?? "gap").join(",") : null);
   }
   // Movers are in percentage points of rostered %, never adds or drops.
   await graphic.selectOption("movers");
   await expect(square).toContainText("PCT PTS ROSTERED");
   // Fixture ownership carries decimals, so the change keeps one; whole-number sources show "+17" (unit test).
-  expect(await square.locator("[data-player] [class*='trendValue'] strong").first().textContent()).toMatch(/^[+−]\d+\.\d$/);
+  expect(await square.locator("[data-player] [class*='trendHero'] strong").first().textContent()).toMatch(/^[+−]\d+\.\d$/);
   await expect(square).toHaveAttribute("aria-label", /^FHFH Tuesday trends, ownership movers.*PCT PTS ROSTERED.*pct pts = percentage-point change in Yahoo rostered %.*not adds\/drops\.$/);
   await graphic.selectOption("deployment");
   // Unknown PP is "PP ?", never "no PP".
   await expect(square.locator("[data-badge]").filter({ hasText: /no PP/i })).toHaveCount(0);
   expect(errors).toEqual([]);
+});
+
+/** TT-7b: per tile, the parts that must never collide, and whether the name stays in its column and off the logo. */
+async function tileCollisions(page: Page) {
+  return page.getByTestId("share-square").evaluate(square => {
+    const problems: string[] = [];
+    const overlap = (a: DOMRect, b: DOMRect) => Math.min(a.right, b.right) - Math.max(a.left, b.left) > 0.5 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 0.5;
+    for (const tile of Array.from(square.querySelectorAll<HTMLElement>("[data-player][data-tone]"))) {
+      const id = tile.getAttribute("data-player"), box = tile.getBoundingClientRect(), find = (selector: string) => tile.querySelector<HTMLElement>(selector);
+      const name = find("[class*='trendTileName']")!, parts: [string, Element | null][] = [["name", name], ["hero", find("[class*='trendHero'] > strong")], ["absolute", find("[class*='trendTileAbsolute']")],
+        ["kind", find("[class*='trendTileKind']")], ...Array.from(tile.querySelectorAll("[class*='trendTileDetail']")).map((detail, index): [string, Element] => [`detail${index}`, detail]), ["chips", find("[class*='trendTileChips']")]];
+      const rects = parts.filter((part): part is [string, Element] => !!part[1]).map(([label, element]) => [label, element.getBoundingClientRect()] as const);
+      for (let i = 0; i < rects.length; i++) {
+        const [label, rect] = rects[i];
+        if (rect.left < box.left - 0.5 || rect.right > box.right + 0.5 || rect.top < box.top - 0.5 || rect.bottom > box.bottom + 0.5) problems.push(`${id}: ${label} outside the tile`);
+        for (let j = i + 1; j < rects.length; j++) if (overlap(rect, rects[j][1])) problems.push(`${id}: ${label} overlaps ${rects[j][0]}`);
+      }
+      // The export (html-to-image) re-lays out a clone, where a wrapping hero row once dropped the absolute block onto
+      // the label (TT-7b): the row must be no-wrap, one line, with the absolute block level with the hero.
+      const heroRow = find("[class*='trendTileHeroRow']"), heroText = find("[class*='trendHero'] > strong"), absolute = find("[class*='trendTileAbsolute']");
+      if (heroRow && heroText && absolute) {
+        const row = heroRow.getBoundingClientRect(), heroBox = heroText.getBoundingClientRect(), absBox = absolute.getBoundingClientRect();
+        if (getComputedStyle(heroRow).flexWrap !== "nowrap") problems.push(`${id}: hero row may wrap`);
+        if (absBox.left < heroBox.right - 0.5 || absBox.top > heroBox.bottom || row.height > Math.max(heroBox.height, absBox.height) + 1) problems.push(`${id}: absolute value not beside the hero`);
+      }
+      const column = name.parentElement!.getBoundingClientRect(), nameBox = name.getBoundingClientRect(), logo = find("[data-art] img")?.getBoundingClientRect();
+      if (nameBox.left < column.left - 0.5 || nameBox.right > column.right + 0.5 || name.scrollWidth > name.clientWidth + 1) problems.push(`${id}: name leaves its column`);
+      if (logo) {
+        const visible = new DOMRect(Math.max(logo.left, box.left), Math.max(logo.top, box.top), Math.min(logo.right, box.right) - Math.max(logo.left, box.left), Math.min(logo.bottom, box.bottom) - Math.max(logo.top, box.top));
+        if (overlap(nameBox, visible)) problems.push(`${id}: name overlaps the logo`);
+      }
+    }
+    return problems;
+  });
+}
+
+test("Tuesday tiles never collide: hero, absolute, label, details and chips stay apart; names stay in their column (TT-7b)", async ({ page }) => {
+  const source = await install(page);
+  source.mode = "league"; source.layoutStress = true;
+  await open(page, "tuesday-trends");
+  const graphic = page.getByRole("combobox", { name: /^Graphic/ }), square = page.getByTestId("share-square");
+  await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeEnabled();
+  for (const card of ["hot", "deployment", "rates", "movers"]) {
+    await graphic.selectOption(card);
+    await expect(square.locator("[data-player][data-tone]").first()).toBeVisible();
+    expect(await tileCollisions(page), card).toEqual([]);
+  }
+  // TT-8 vertical group labels: the right words and tones, and never on top of a tile.
+  const expectedLabels: Record<string, [string, string][]> = { hot: [["HOT", "up"], ["COLD", "down"]], deployment: [["MORE ICE", "up"], ["LESS ICE", "down"]], movers: [["RISING", "up"], ["FALLING", "down"]], rates: [] };
+  for (const [card, labels] of Object.entries(expectedLabels)) {
+    await graphic.selectOption(card);
+    const found = await square.locator("[data-group-label]").evaluateAll(nodes => nodes.map(node => [node.getAttribute("data-group-label"), node.getAttribute("data-tone")]));
+    expect(found, card).toEqual(labels);
+    expect(await square.evaluate(node => Array.from(node.querySelectorAll("[data-group-label]")).flatMap(label => {
+      const box = label.getBoundingClientRect();
+      return Array.from(node.querySelectorAll("[data-player]")).filter(tile => { const t = tile.getBoundingClientRect(); return Math.min(box.right, t.right) - Math.max(box.left, t.left) > 0.5 && Math.min(box.bottom, t.bottom) - Math.max(box.top, t.top) > 0.5; }).map(tile => tile.getAttribute("data-player"));
+    })), `${card} labels clear of tiles`).toEqual([]);
+  }
+  await expect.poll(() => page.evaluate(() => document.fonts.check('italic 600 26px "Tomorrow"'))).toBe(true);
+  // TT-9: deployment ice-time tiles carry no badge (the MORE / LESS ICE column says it); role-only tiles keep PROMOTED / DEMOTED.
+  await graphic.selectOption("deployment");
+  const badges = await square.locator("[data-player]").evaluateAll(tiles => tiles.map((tile): [string, string | null] => [tile.querySelector("[class*='trendHero'] > strong")?.textContent ?? "", tile.querySelector("[class*='trendBadge'] em")?.textContent ?? null]));
+  expect(badges.length).toBeGreaterThan(0);
+  for (const [hero, badge] of badges) expect(badge).toBe(hero.startsWith("▲") ? "PROMOTED" : hero.startsWith("▼") ? "DEMOTED" : null);
+  // The stress set reached the tight cases: a one-digit hero with its absolute beside it, and the longest names.
+  await graphic.selectOption("movers");
+  const heroes = await square.locator("[class*='trendHero'] > strong").allTextContents();
+  expect(heroes).toContain("−8");
+  await graphic.selectOption("hot");
+  await expect(square.locator("[data-player]").first()).toContainText("CHARLE-EDOUARD D'ASTOUS", { ignoreCase: true });
+  await graphic.selectOption("rates");
+  await expect(square).toContainText("Oliver Bjorkstrand", { ignoreCase: true });
 });
 
 test("an empty Recent Form shows an honest empty state and never blocks the other Tuesday exports (TT-3)", async ({ page }) => {
@@ -1201,8 +1310,9 @@ test("Tuesday GENUINE DATA render: captured layer, offline, export token per car
     for (const card of ["hot", "deployment", "rates", "movers"]) {
       await page.getByRole("combobox", { name: /^Graphic/ }).selectOption(card);
       const square = page.getByTestId("share-square");
-      await expect(square).toContainText(card === "hot" ? "RECENT FORM" : card === "deployment" ? "DEPLOYMENT CHANGES" : card === "rates" ? "RATE STANDOUTS" : "OWNERSHIP MOVERS");
+      await expect(square).toContainText(card === "hot" ? "HOT/COLD" : card === "deployment" ? "DEPLOYMENT CHANGES" : card === "rates" ? "RATE STANDOUTS" : "OWNERSHIP MOVERS");
       await expect(square).not.toContainText("GP this week");
+      expect(await tileCollisions(page), `genuine ${card}`).toEqual([]);
       await square.scrollIntoViewIfNeeded();
       await label();
       await page.screenshot({ path: `${shots}/GENUINE-DATA-${name}-${card}.png`, fullPage: name === "desktop" });
