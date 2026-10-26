@@ -871,12 +871,24 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
   }
   for (const key of [...missing, ...conflictingTargets]) stats[key] = null;
   if (unresolved.length) limitations.add("Start/sit quality is unresolved because competing eligible players lack comparable scoring forecasts. This is a schedule-capacity assignment.");
+  // Assignment permission chooses slots; totals and comparison permissions only price a lineup. An opportunity whose
+  // only gap is assignment permission leaves the capacity-chosen lineup's approved totals known and comparable.
+  const playFor = new Map([...playsByDate.values()].flat().map(play => [`${play.player.id}:${play.game.id}`, play]));
+  const pricedOnly = (issue: CoverageIssue) => {
+    const play = playFor.get(`${issue.playerId}:${issue.gameId}`);
+    return !!play?.forecast && play.player.eligibilityVerified === true && play.forecast.conditioning === "unconditional"
+      && !issue.reasons?.includes("conflicting_forecast") && scoringTargets(snapshot, play, applicability).every(key =>
+        forecastAllows(play.forecast, key, "totals") && forecastAllows(play.forecast, key, "comparison") && finite(play.forecast!.stats[key]));
+  };
+  const totalsUnresolved = unresolved.filter(issue => !pricedOnly(issue));
+  const capacitySelected = unresolved.length > 0 && !totalsUnresolved.length;
+  if (capacitySelected) limitations.add("Lineup chosen by schedule capacity: approved totals and comparisons are computed on it, but no projection chose slots or broke ties.");
   if (scheduledGames > 0 && forecastedOpportunities === 0) limitations.add("No remaining opportunities have usable forecasts; projected outcome is unavailable.");
   const needed = snapshot.rules.scoring.mode === "points" ? Object.entries(snapshot.rules.scoring.weights).filter(([, weight]) => weight !== 0).map(([key]) => key) : snapshot.rules.scoring.categories.flatMap(category => [category.numerator ?? category.key, ...(category.denominator ? [category.denominator] : [])]);
   for (const key of needed) if (!finite(stats[key])) limitations.add(`Projected ${key} is incomplete.`);
   const opponent = opponentStats(snapshot);
   const categoryResults = snapshot.rules.scoring.categories.map(category => {
-    const own = unresolved.some(issue => issue.missingTargets.includes(category.numerator ?? category.key) || !!category.denominator && issue.missingTargets.includes(category.denominator)) ? null : categoryValue(stats, category), other = opponent ? categoryValue(opponent, category) : null;
+    const own = totalsUnresolved.some(issue => issue.missingTargets.includes(category.numerator ?? category.key) || !!category.denominator && issue.missingTargets.includes(category.denominator)) ? null : categoryValue(stats, category), other = opponent ? categoryValue(opponent, category) : null;
     const result = own === null || other === null ? "unknown" : own === other ? "tie" : ((own - other) * (category.direction === "higher" ? 1 : -1) > 0 ? "win" : "loss");
     return { key: category.key, own, opponent: other, result } as const;
   });
@@ -921,7 +933,7 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
   }
   if (hasMinimum && (minimum.counts === "unknown" || minimum.penalty === "unknown")) limitations.add("Goalie minimum semantics are incomplete.");
   if (risk && minimum.penalty === "lose_goalie_categories" && snapshot.rules.scoring.mode === "categories") { projectedValue = null; limitations.add("Goalie-category forfeiture risk makes the matchup projection incomplete."); }
-  if (unresolved.length || !opportunitiesComplete) projectedValue = null;
+  if (totalsUnresolved.length || !opportunitiesComplete) projectedValue = null;
   const legal = timeline.legal && !invalidLocks && !weeklyEvidenceMissing && snapshot.rules.lineupMode !== "unsupported" && (snapshot.rules.lineupMode !== "weekly" || dates.every(date => !!lineupPeriodForDate(date)?.lockAt)) && !slotDiagnostics.some(item => item.severity === "error");
   if ([...chosen.values()].some(play => ["baseline", "blended"].includes(play.forecast?.sourceKind ?? ""))) limitations.add("Includes provisional baseline estimates; no calibrated uncertainty.");
   if (conflictingTargets.size) projectedValue = null;
@@ -957,7 +969,10 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
                 : value !== null && value < 0 && competing.length < eligibleSlots.length ? "negative_value" : "whole_lineup_scoring";
     return { date, playerId: play.player.id, gameId: play.game.id, reason, value, competingPlayerIds: competing.map(row => row.playerId) };
   }));
-  const comparisonEligible = inputEligible && projectedValue !== null && [...playsByDate.values()].flat()
+  // A capacity-chosen lineup is comparable on approved totals; it is never a quality recommendation.
+  const comparisonInputs = legal && opportunitiesComplete && !totalsUnresolved.length && coverageKnown && (assignmentValue !== null || capacitySelected)
+    && !invalidLocks && !weeklyEvidenceMissing && !snapshot.rules.unsupported.length;
+  const comparisonEligible = comparisonInputs && projectedValue !== null && [...playsByDate.values()].flat()
     .filter(play => !snapshot.lockedAssignments.some(lock => lock.date === play.game.date && lock.playerId === play.player.id && lock.slotId === null))
     .every(play => scoringTargets(snapshot, play, applicability).every(key => forecastAllows(play.forecast, key, "comparison")));
   const plannedRows = assignments.filter(row => !heldKeys.has(`${row.playerId}:${row.gameId}`)
@@ -969,7 +984,7 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
     forecastInputs: [...chosen.values()].flatMap(play => play.forecast ? [{ ...play.forecast, stats: { ...play.forecast.stats } }] : []),
     recommendation: { eligible: recommendationEligible, mode: recommendationEligible ? "quality" : "schedule_capacity",
     reasons: recommendationEligible ? [] : [...limitations], exclusions, unresolved: unresolvedWithReasons, coverage },
-    objective, steps, legal, budgetVerified: timeline.budgetVerified,
+    selectionMethod: unresolved.length ? "schedule_capacity" : "quality", objective, steps, legal, budgetVerified: timeline.budgetVerified,
     assignments, scheduledGames, activeGames: plannedRows, benchGames: Math.max(0, scheduledGames - plannedRows), projectedValue, projectedStats: stats,
     categoryResults, goalie: { credited: minimum.credited, confirmed, projected, expectedStarts, required: minimum.required, risk, minimumSatisfied: minimum.required === null ? null : minimumAlreadyMet }, acquisitions: { ...timeline.acquisitions }, limitations: [...limitations] };
   if (!includeBenchEvidence) return evaluation;

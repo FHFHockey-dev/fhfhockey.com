@@ -478,3 +478,77 @@ function moveGame(snapshot: PlanningSnapshot, id: string, date: string) {
   const forecast = snapshot.forecasts.find(row => row.gameId === id)!;
   forecast.expiresAt = game.startsAt; forecast.issuedContext!.scheduledAt = game.startsAt;
 }
+
+// Astra audit F2: SOG approved for totals/comparison with assignment and conditional tie-break denied.
+// Port of tasks/artifacts/astra-audit-2026-10-26/reproduction.test.ts (control + denied case) as a regression.
+describe("approved totals/comparison without assignment permission", () => {
+  const uses = (assignment: boolean, totals = true, comparison = true) => {
+    vi.spyOn(rsoPolicy, "currentRsoUsePolicy").mockReturnValue({ ...fixturePolicy, reviews: [{ ...fixturePolicy.reviews[0],
+      binding: { ...fixtureScope, targetKey: "SHOTS_ON_GOAL" }, allowedUses: { assignment, totals, comparison, conditionalTieBreak: false } }] });
+  };
+  /** The audit's SOG-only league: a (10) and b (1) compete for the one C slot on Oct 6; c (2) is a free agent on Oct 5. */
+  function sogFixture(values: Record<string, number> = { a: 10, b: 1, c: 2 }): PlanningSnapshot {
+    const data = fixture();
+    data.rules.scoring = { mode: "points", weights: { SHOTS_ON_GOAL: 1 }, categories: [] };
+    data.forecasts = data.forecasts.map(row => ({ ...row, stats: { SHOTS_ON_GOAL: values[row.playerId] },
+      conditionalStats: { SHOTS_ON_GOAL: values[row.playerId] }, rsoTargetBindings: { SHOTS_ON_GOAL: { ...fixtureScope, targetKey: "SHOTS_ON_GOAL", cutoffAt: data.context.asOf } } }));
+    return data;
+  }
+  const started = (plan: ReturnType<typeof evaluatePlan>) => plan.assignments.map(row => row.playerId).sort();
+  const sum = (data: PlanningSnapshot, plan: ReturnType<typeof evaluatePlan>) => plan.assignments
+    .reduce((total, row) => total + data.forecasts.find(item => item.playerId === row.playerId && item.gameId === row.gameId)!.stats.SHOTS_ON_GOAL!, 0);
+
+  it("control: assignment granted chooses by quality and compares (audit control)", () => {
+    uses(true);
+    const data = sogFixture(), plan = evaluatePlan(data, defaultIntent(), "agp", [], false);
+    expect(plan).toMatchObject({ legal: true, comparisonEligible: true, projectedValue: 10, selectionMethod: "quality", recommendation: { eligible: true, mode: "quality" } });
+    // Quality decides between equally scheduled players: swapping their values swaps the starter.
+    expect(started(evaluatePlan(sogFixture({ a: 1, b: 10, c: 2 }), defaultIntent(), "agp", [], false))).toEqual(["b"]);
+  });
+
+  it("assignment denied: capacity-chosen legal lineup, approved SOG totals and a comparable plan (audit repro)", () => {
+    uses(false);
+    const data = sogFixture(), plan = evaluatePlan(data, defaultIntent(), "agp", [], false);
+    expect(plan).toMatchObject({ legal: true, activeGames: 1, comparisonEligible: true, selectionMethod: "schedule_capacity",
+      recommendation: { eligible: false, mode: "schedule_capacity" } });
+    expect(plan.projectedValue).toBe(sum(data, plan));
+    expect(plan.assignmentValue).toBeNull();
+    expect(plan.limitations).toContain("Lineup chosen by schedule capacity: approved totals and comparisons are computed on it, but no projection chose slots or broke ties.");
+    // SOG never chooses the slot: swapping the competing values leaves the same starter.
+    const swapped = sogFixture({ a: 1, b: 10, c: 2 });
+    expect(started(evaluatePlan(swapped, defaultIntent(), "agp", [], false))).toEqual(started(plan));
+    // The outcome objective cannot quality-optimize either; it is the same capacity lineup, never a recommendation.
+    const outcome = evaluatePlan(data, defaultIntent(), "outcome", [], false);
+    expect(started(outcome)).toEqual(started(plan));
+    expect(outcome.recommendation?.eligible).toBe(false);
+  });
+
+  it("assignment denied: candidate selection compares approved totals on the legal plan and keeps drop-loss accounting", () => {
+    uses(false);
+    const data = sogFixture();
+    const result = candidateMetrics(data, defaultIntent());
+    expect(result.baseline).toMatchObject({ objective: "agp", activeGames: 1 });
+    const baseline = evaluatePlan(data, { ...defaultIntent(), steps: [] }, "agp", [], false);
+    expect(result.baseline.projectedPoints).toBe(baseline.projectedValue);
+    const plans = result.candidates.find(row => row.playerId === "c")!.plans;
+    expect(plans.length).toBeGreaterThan(0);
+    expect(plans.every(plan => plan.objective === "agp")).toBe(true);
+    for (const plan of plans) {
+      const evaluation = evaluatePlan(data, { ...defaultIntent(), steps: plan.steps }, "agp", plan.steps, false);
+      expect(plan.netAGP).toBe(evaluation.activeGames - baseline.activeGames);
+      expect(plan.netPoints).toBe(evaluation.projectedValue! - baseline.projectedValue!);
+      for (const drop of plan.dropped) expect(drop.lostAGP).not.toBeNull();
+    }
+  });
+
+  it.each([
+    ["totals denied", false, true],
+    ["comparison denied", true, false],
+  ] as const)("assignment denied and %s: totals stay unknown, never zero, and nothing is comparable", (_label, totals, comparison) => {
+    uses(false, totals, comparison);
+    const data = sogFixture(), plan = evaluatePlan(data, defaultIntent(), "agp", [], false);
+    expect(plan).toMatchObject({ legal: true, activeGames: 1, comparisonEligible: false, projectedValue: null, selectionMethod: "schedule_capacity" });
+    const plans = candidateMetrics(data, defaultIntent()).candidates.find(row => row.playerId === "c")!.plans;
+    expect(plans.every(row => row.netPoints === null)).toBe(true);
+  });
+});
