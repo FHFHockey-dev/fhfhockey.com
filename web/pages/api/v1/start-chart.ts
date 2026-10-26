@@ -12,7 +12,7 @@ import { buildResolvedDataServingContract } from "lib/dashboard/freshness";
 import { getLatestStartedSeasonForDate } from "lib/NHL/server";
 import { teamsInfo } from "lib/teamsInfo";
 import { evaluateForgeCalibrationEligibility } from "lib/projections/calibrationEligibility";
-import { loadExternalInputProof, type ExternalInputProof } from "lib/projections/externalInputProof";
+import { loadExternalInputProof, runProofDiagnostics, type ExternalInputProof } from "lib/projections/externalInputProof";
 import { buildStartChartCompatibility } from "lib/projections/compatibilityInventory";
 import {
   extractDegradedProjectionContext,
@@ -2175,6 +2175,8 @@ export default async function handler(
               modelVersion,
               inputVersion: provenanceEligibility.observedContract,
               provenanceEligible: provenanceEligibility.eligible,
+              // What admitted this run: captured snapshot, verified producer closure or verified legacy release.
+              proof: runProofDiagnostics(forgeRun.run_id, slate.legacyRunProof),
             }
           : null,
         skaterSource: "forge_player_projections",

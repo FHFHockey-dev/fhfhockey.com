@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { buildForgeInputProvenance, FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT, FORGE_ROLLING_HISTORY_INPUT_CONTRACT } from "./calibrationEligibility";
 import { capturedReadReceipt } from "./inputCapture";
-import { externalInputProofByRun, loadExternalInputProof, snapshotProvesExternalInputExclusion, verifiedRunAttribution } from "./externalInputProof";
+import { classifyExternalInputProofRows, externalInputProofByRun, loadExternalInputProof, snapshotProvesExternalInputExclusion,
+  verifiedRunAttribution } from "./externalInputProof";
 import { provenSnapshotRow, proofDb, stampedRunRow, unprovenSnapshotRow, verifiedReleaseRunRow } from "./externalInputProof.fixtures";
 import { VERIFIED_FORGE_PRODUCER_CLOSURES } from "./verifiedForgeReleases";
 
@@ -141,6 +142,25 @@ describe("FORGE external-input exclusion proof", () => {
       expect(await admitted(verifiedReleaseRunRow("run", { producer_identity }))).toBeUndefined();
     });
 
+    it.each([
+      ["a stamped run with a local code version", stampedRunRow("run", ["VERIFIED"], {})],
+      ["a legacy-SHA run whose stamp records a local code version", verifiedReleaseRunRow("run", { producer_identity:
+        { version: "forge-producer-closure-v1", invocations: ["VERIFIED"], code_versions: ["local:0123"] } })],
+    ])("denies %s, whatever SHA or closure it claims (C7 R40 V2)", async (_label, row) => {
+      const stamp = (row.producer_identity as { invocations: string[]; code_versions?: string[] });
+      row.producer_identity = { ...stamp, invocations: [VERIFIED], code_versions: ["local:0123"] };
+      expect(await admitted(row)).toBeUndefined();
+    });
+
+    it("never admits what unbuilt code stamps, even with the verified closure in its env", async () => {
+      vi.stubEnv("FORGE_PRODUCER_CLOSURE_SHA256", VERIFIED);
+      const { producerIdentityStamp } = await import("./forgeProducerIdentity");
+      const row = stampedRunRow("run", [], { producer_identity: producerIdentityStamp() });
+      vi.unstubAllEnvs();
+      expect(row.producer_identity).toMatchObject({ invocations: [null] });
+      expect(await admitted(row)).toBeUndefined();
+    });
+
     it("denies a post-stamping release that carries no stamp", async () => {
       expect(await admitted(verifiedReleaseRunRow("run", { git_sha: "82490cd4591758f145cbcfeab6137719c84c57e9" }))).toBeUndefined();
     });
@@ -154,6 +174,21 @@ describe("FORGE external-input exclusion proof", () => {
       const db = { from: (table: string) => { const chain: any = { select: () => chain, eq: () => chain,
         in: async () => table === "forge_runs" ? { data: null, error } : { data: [], error: null } }; return chain; } };
       await expect(loadExternalInputProof(db as never, ["run"])).rejects.toBe(error);
+    });
+  });
+
+  describe("classification: proven, unproven or contradicted (Astra F4)", () => {
+    const VERIFIED = VERIFIED_FORGE_PRODUCER_CLOSURES[0].closureSha256, LEGACY = "538100d41ee87e721d2764b694f7bac8c2f2bb34";
+    it.each([
+      ["a run with a proving snapshot", [provenSnapshotRow("r")], [], "proven"],
+      ["an uncaptured run of a verified closure", [], [stampedRunRow("r", [VERIFIED])], "proven"],
+      ["a legacy snapshot that predates the claim (old code)", [{ ...unprovenSnapshotRow("r"), snapshot_code_version: "bd337d97aefd959832b3466037d163f320a23d99" }], [], "unproven"],
+      ["an uncaptured, unstamped run of an unlisted release", [], [verifiedReleaseRunRow("r", { git_sha: "1".repeat(40) })], "unproven"],
+      ["a run with no rows at all", [], [], "unproven"],
+      ["verified release code that captured the run and withheld the claim", [{ ...unprovenSnapshotRow("r"), snapshot_code_version: LEGACY }], [], "contradicted"],
+      ["a verified closure that captured the run and withheld the claim", [unprovenSnapshotRow("r")], [stampedRunRow("r", [VERIFIED])], "contradicted"],
+    ])("classifies %s", (_label, snapshots, runRows, status) => {
+      expect(classifyExternalInputProofRows(snapshots as never, ["r"], runRows as never).get("r")?.status).toBe(status);
     });
   });
 

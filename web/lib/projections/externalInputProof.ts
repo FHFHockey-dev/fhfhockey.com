@@ -10,7 +10,8 @@
 // the resumable writer (run-lifecycle-queries.ts) stamps `git_sha` once, at creation, and a later invocation, possibly of
 // another release, may resume the run without restamping it.
 //   - Stamped runs: `metrics.producer_identity` (forgeProducerIdentity.ts) records each invocation's producer closure
-//     hash, inlined at build time from the deployed source. It must hold exactly one invocation whose hash is in
+//     hash, defined only by a production build of the deployed source (never an env var, so unbuilt or local code
+//     stamps null). It must hold exactly one invocation, with no `local:` code version, whose hash is in
 //     VERIFIED_FORGE_PRODUCER_CLOSURES. The SHA never stands in for the stamp, so a next release with an unchanged
 //     closure is admitted and a changed or unverified closure is not.
 //   - Unstamped runs predate stamping: their exact SHA must be in VERIFIED_FORGE_RELEASES (538100d41 only). Any other
@@ -21,7 +22,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import supabase from "lib/supabase/server";
 import { acceptedNewsSupersedes } from "./acceptedNews";
 import { FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } from "./calibrationEligibility";
-import { excludeOffReleaseRuns, restrictRunsToHorizon } from "./releasedRunFence";
+import { excludeOffReleaseRuns, isOffReleaseGitSha, restrictRunsToHorizon } from "./releasedRunFence";
 import { parseProducerIdentity } from "./forgeProducerIdentity";
 import { verifiedForgeProducerClosure, verifiedForgeRelease } from "./verifiedForgeReleases";
 
@@ -37,7 +38,7 @@ const PROOF_READ_CHUNK = 100;
 const PROOF_COLUMNS = "entity_key,available_at,snapshot_version:payload->>version,snapshot_run_id:payload->>runId,"
   + "rolling_player_history_contract:payload->inputProvenance->>rolling_player_history_contract,"
   + "external_fantasy_input_contract:payload->inputProvenance->>external_fantasy_input_contract,"
-  + "captured_reads:payload->inputProvenance->capturedReads";
+  + "captured_reads:payload->inputProvenance->capturedReads,snapshot_code_version:payload->>codeVersion";
 /** What attributes a snapshot-less run to its code: never its metrics' (absent) exclusion claim. */
 const RUN_ATTRIBUTION_COLUMNS = "run_id,git_sha,status,invocations:metrics->resume->>invocations,"
   + "rolling_player_history_contract:metrics->input_provenance->>rolling_player_history_contract,"
@@ -77,6 +78,8 @@ export function verifiedRunAttribution(row: Row): RunAttribution | null {
     || typeof row.git_sha !== "string" || !FULL_SHA.test(row.git_sha)) return null;
   if (row.producer_identity !== null && row.producer_identity !== undefined) {
     const stamp = parseProducerIdentity(row.producer_identity), closure = stamp?.invocations.length === 1 ? stamp.invocations[0] : null;
+    // A `local:` code version marks a local runner, whatever SHA or closure the row also claims (C7 R40 V2).
+    if (stamp?.code_versions.some(version => version?.startsWith("local:"))) return null;
     return closure && verifiedForgeProducerClosure(closure)
       ? { basis: "verified_producer_closure", releaseSha: row.git_sha, closureSha256: closure } : null;
   }
@@ -119,6 +122,49 @@ const rowsOf = ({ data, error }: { data: unknown; error: unknown }, what: string
   return data as Row[];
 };
 
+/** A run's standing: `proven`; `contradicted` when verified-clean producer code captured the run and withheld the
+ * exclusion claim (it does so only when its own reads included a fantasy or unaudited source); else `unproven`, which
+ * means missing proof, not contamination (Astra F4). */
+export type ExternalInputProofStatus = "proven" | "unproven" | "contradicted";
+export type ClassifiedRunProof = { runId: string; status: ExternalInputProofStatus; proof: ExternalInputProof | null };
+
+/** Pure: classifies runs from their snapshots and attribution rows (all of them, captured or not). */
+export function classifyExternalInputProofRows(snapshots: Row[], runIds: readonly string[], runRows: Row[]): Map<string, ClassifiedRunProof> {
+  const captured = new Set(snapshots.map(row => row.entity_key));
+  const proven = externalInputProofByRun(snapshots, runIds, runRows.filter(row => !captured.has(row.run_id)));
+  const verifiedProducer = (runId: string) => snapshots.some(row => row.entity_key === runId && verifiedForgeRelease(row.snapshot_code_version))
+    || runRows.some(row => {
+      if (row.run_id !== runId) return false;
+      const stamp = parseProducerIdentity(row.producer_identity);
+      return stamp?.invocations.length === 1 && Boolean(verifiedForgeProducerClosure(stamp.invocations[0]));
+    });
+  const classified = new Map<string, ClassifiedRunProof>();
+  for (const runId of new Set(runIds)) {
+    const proof = proven.get(runId) ?? null;
+    classified.set(runId, { runId, proof, status: proof ? "proven"
+      : captured.has(runId) && verifiedProducer(runId) ? "contradicted" : "unproven" });
+  }
+  return classified;
+}
+
+/** Read-only: classifies `runIds` (two small reads). A failed read throws. */
+export async function classifyExternalInputProof(db: SupabaseClient<any>, runIds: readonly string[]): Promise<Map<string, ClassifiedRunProof>> {
+  const ids = [...new Set(runIds.filter(id => typeof id === "string" && id.length > 0))];
+  const snapshots = await inChunks(ids, async chunk => rowsOf(await (db as any).from("player_forecast_source_observations")
+    .select(PROOF_COLUMNS).eq("provider", FORGE_RUN_INPUT_SNAPSHOT.provider).eq("dataset_key", FORGE_RUN_INPUT_SNAPSHOT.datasetKey)
+    .in("entity_key", chunk), "FORGE run input snapshot"));
+  const runRows = await inChunks(ids, async chunk => rowsOf(await (db as any).from("forge_runs")
+    .select(RUN_ATTRIBUTION_COLUMNS).in("run_id", chunk), "FORGE run attribution"));
+  return classifyExternalInputProofRows(snapshots, ids, runRows);
+}
+
+/** What a served run's proof rests on, for response diagnostics (Astra F1 acceptance; C7 R40 V3). */
+export type RunProofDiagnostics = { runId: string; basis: ExternalInputProof["basis"] | null; releaseSha: string | null;
+  closureSha256: string | null };
+export function runProofDiagnostics(runId: string, proof: ExternalInputProof | null | undefined): RunProofDiagnostics {
+  return { runId, basis: proof?.basis ?? null, releaseSha: proof?.releaseSha ?? null, closureSha256: proof?.closureSha256 ?? null };
+}
+
 /** Read-only: the proven runs among `runIds`. Only runs with no snapshot have their attribution read. A failed read
  * throws; callers treat it as unproven, never as proven. */
 export async function loadExternalInputProof(db: SupabaseClient<any>, runIds: readonly string[]): Promise<Map<string, ExternalInputProof>> {
@@ -140,10 +186,36 @@ const PROVEN_RUN_CANDIDATES = 20;
 
 /** The latest succeeded released run of the date whose snapshot proves it excluded third-party fantasy inputs.
  * A newer unproven run is skipped, never served; with none proven the date has no run (404). */
-export async function requireLatestExternalInputProvenRunId(
+export async function requireLatestExternalInputProvenRunId(asOfDate: string, horizonGames = 1): Promise<string> {
+  return (await requireLatestExternalInputProvenRun(asOfDate, horizonGames)).runId;
+}
+
+/** An explicitly requested run, served only as a succeeded release with proof: 404 when there is no such run, 422 when
+ * it failed, is still running, was made off the release path, or is unproven. */
+export async function requireExternalInputProvenRun(runId: string): Promise<{ runId: string; proof: ExternalInputProof }> {
+  if (!supabase) throw new Error("Supabase server client not available");
+  const { data: selectedRun, error: runError } = await supabase
+    .from("forge_runs").select("run_id,status,git_sha").eq("run_id", runId).maybeSingle();
+  if (runError) throw runError;
+  if (!selectedRun) throw Object.assign(new Error("Selected projection run was not found."), { statusCode: 404 });
+  if ((selectedRun as { status?: unknown }).status !== "succeeded"
+    || isOffReleaseGitSha((selectedRun as { git_sha?: string | null }).git_sha)) {
+    throw Object.assign(new Error("Selected projection run is not a succeeded released run."), { statusCode: 422,
+      details: { reason: "run_not_succeeded_release" } });
+  }
+  const proof = (await loadExternalInputProof(supabase, [runId])).get(runId);
+  if (!proof) {
+    throw Object.assign(new Error("Selected projection run lacks external fantasy exclusion provenance."), { statusCode: 422,
+      details: { reason: "external_input_provenance_unproven" } });
+  }
+  return { runId, proof };
+}
+
+/** As requireLatestExternalInputProvenRunId, with the selected run's proof. */
+export async function requireLatestExternalInputProvenRun(
   asOfDate: string,
   horizonGames = 1,
-): Promise<string> {
+): Promise<{ runId: string; proof: ExternalInputProof }> {
   if (!supabase) throw new Error("Supabase server client not available");
   const { data, error } = await restrictRunsToHorizon(excludeOffReleaseRuns(supabase
     .from("forge_runs")
@@ -169,5 +241,5 @@ export async function requireLatestExternalInputProvenRunId(
     if (runIds.length) (err as any).details = { reason: "external_input_provenance_unproven", withheldRuns: runIds.length };
     throw err;
   }
-  return runId;
+  return { runId, proof: proof.get(runId)! };
 }

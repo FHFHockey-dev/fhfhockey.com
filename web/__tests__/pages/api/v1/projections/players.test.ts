@@ -97,7 +97,8 @@ describe("/api/v1/projections/players", () => {
         return builder;
       }
       if (table === "forge_runs") {
-        return createQueryBuilder(() => ({ data: runs.map(({ run_id }) => ({ run_id, metrics: {} })), error: null }));
+        return createQueryBuilder(() => ({ data: runs.map(({ run_id }) => ({ run_id, status: "succeeded", git_sha: "a".repeat(40),
+          metrics: {} })), error: null }));
       }
       if (table === "player_forecast_source_observations") {
         const builder = createQueryBuilder(() => ({
@@ -136,6 +137,7 @@ describe("/api/v1/projections/players", () => {
     const res = await read({});
     expect(res.statusCode).toBe(200);
     expect(res.body.runId).toBe("clean-run");
+    expect(res.body.runProof).toEqual({ runId: "clean-run", basis: "captured_snapshot", releaseSha: null, closureSha256: null });
     expect(projectionReads).toEqual(["clean-run"]);
   });
 

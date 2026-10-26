@@ -11,8 +11,9 @@ import {
   buildProjectionApiErrorResponse,
   dateSchema,
   getQueryStringParam,
-  requireLatestSucceededRunId,
 } from "lib/projections/apiHelpers";
+import { loadExternalInputProof, requireExternalInputProvenRun, requireLatestExternalInputProvenRun, runProofDiagnostics,
+  type ExternalInputProof } from "lib/projections/externalInputProof";
 
 const querySchema = z.object({
   date: dateSchema.optional(),
@@ -151,7 +152,7 @@ function normalizeLikelyStarterWinProbabilities<
   T extends {
     team_id: number;
     opponent_team_id: number;
-    starter_probability: number;
+    starter_probability: number | null;
     proj_win_prob: number | null;
   },
 >(rows: T[]): { rows: T[]; adjustedMatchups: number } {
@@ -288,37 +289,45 @@ async function fetchGamesScheduledCount(date: string): Promise<number> {
   return count ?? 0;
 }
 
+/** Recent released runs searched for a proven fallback with goalie rows. */
+const FALLBACK_RUN_CANDIDATES = 30;
+
 async function fetchFallbackRunWithGoalieData(
   targetDate: string,
   horizon: number,
-): Promise<{ runId: string; asOfDate: string } | null> {
+): Promise<{ runId: string; asOfDate: string; proof: ExternalInputProof } | null> {
   if (!supabase) throw new Error("Supabase server client not available");
 
   const findCandidate = async (includeFutureDates: boolean) => {
-    // Only succeeded released runs; failed, still-running or off-release
-    // (null or local:) runs' rows are not served.
+    // Only succeeded released runs with external-input exclusion proof (Astra F4): goalie lines use opponent shots
+    // derived from the same run's skater lines. Failed, running, off-release (null or local:) or unproven runs'
+    // rows are not served.
     let query = excludeOffReleaseRuns(supabase
-      .from("forge_goalie_projections")
-      .select("run_id,as_of_date,forge_runs!inner(status,git_sha)")
-      .eq("forge_runs.status", "succeeded"), "forge_runs.git_sha")
-      .eq("horizon_games", horizon)
+      .from("forge_runs")
+      .select("run_id,as_of_date")
+      .eq("status", "succeeded"))
       .order("as_of_date", { ascending: false })
-      .limit(1);
-
-    if (!includeFutureDates) {
-      query = query.lte("as_of_date", targetDate);
-    }
-
-    const { data, error } = await query.maybeSingle();
+      .order("created_at", { ascending: false })
+      .limit(FALLBACK_RUN_CANDIDATES);
+    if (!includeFutureDates) query = query.lte("as_of_date", targetDate);
+    const { data, error } = await query;
     if (error) throw error;
-    return data;
+    const rows = (data ?? []) as Array<{ run_id: string; as_of_date: string }>;
+    const proof = rows.length ? await loadExternalInputProof(supabase, rows.map((row) => row.run_id)) : new Map();
+    for (const row of rows.filter((candidate) => proof.has(candidate.run_id))) {
+      const { count, error: countError } = await supabase
+        .from("forge_goalie_projections")
+        .select("goalie_id", { count: "exact", head: true })
+        .eq("run_id", row.run_id)
+        .eq("as_of_date", row.as_of_date)
+        .eq("horizon_games", horizon);
+      if (countError) throw countError;
+      if ((count ?? 0) > 0) return { runId: row.run_id, asOfDate: row.as_of_date, proof: proof.get(row.run_id)! };
+    }
+    return null;
   };
 
-  const data = (await findCandidate(false)) ?? (await findCandidate(true));
-  const runId = (data as any)?.run_id as string | undefined;
-  const asOfDate = (data as any)?.as_of_date as string | undefined;
-  if (!runId || !asOfDate) return null;
-  return { runId, asOfDate };
+  return (await findCandidate(false)) ?? (await findCandidate(true));
 }
 
 export default async function handler(
@@ -336,9 +345,13 @@ export default async function handler(
     const q = parseQuery(req);
     const requestedDate = q.date ?? new Date().toISOString().slice(0, 10);
     let requestedRunId: string | null = q.runId ?? null;
-    if (!requestedRunId) {
+    let runProof: ExternalInputProof | null = null;
+    if (requestedRunId) {
+      // An explicit run is admitted before any of its rows are read: it must exist, be a succeeded release and carry proof.
+      runProof = (await requireExternalInputProvenRun(requestedRunId)).proof;
+    } else {
       try {
-        requestedRunId = await requireLatestSucceededRunId(requestedDate);
+        ({ runId: requestedRunId, proof: runProof } = await requireLatestExternalInputProvenRun(requestedDate));
       } catch (e) {
         const statusCode = (e as any)?.statusCode;
         if (statusCode !== 404 || !q.fallbackToLatestWithData) throw e;
@@ -414,6 +427,7 @@ export default async function handler(
           data = fallbackRows;
           resolvedRunId = fallback.runId;
           resolvedDate = fallback.asOfDate;
+          runProof = fallback.proof;
           fallbackApplied = true;
         }
       }
@@ -438,12 +452,13 @@ export default async function handler(
         opponent_team_id: row.opponent_team_id,
         opponent_team_name: row.opponent?.name ?? "",
         opponent_team_abbreviation: row.opponent?.abbreviation ?? "",
-        starter_probability: row.starter_probability ?? 0,
-        proj_shots_against: row.proj_shots_against ?? 0,
-        proj_saves: row.proj_saves ?? 0,
-        proj_goals_allowed: row.proj_goals_allowed ?? 0,
+        // Unknown stays unknown (Astra F4): a missing starter chance or line is null, never a projected zero.
+        starter_probability: row.starter_probability ?? null,
+        proj_shots_against: row.proj_shots_against ?? null,
+        proj_saves: row.proj_saves ?? null,
+        proj_goals_allowed: row.proj_goals_allowed ?? null,
         proj_win_prob: row.proj_win_prob ?? null,
-        proj_shutout_prob: row.proj_shutout_prob ?? 0,
+        proj_shutout_prob: row.proj_shutout_prob ?? null,
         modeled_save_pct: model.save_pct ?? null,
         volatility_index: model.volatility_index ?? null,
         blowup_risk: model.blowup_risk ?? null,
@@ -620,6 +635,8 @@ export default async function handler(
         runMetrics: runSummary?.metrics ?? null,
         scheduledGamesOnDate: scheduledGamesCount,
         rowCount: rows.length,
+        // What admitted the served run: captured snapshot, verified producer closure or verified legacy release.
+        runProof: runProofDiagnostics(resolvedRunId, runProof),
         notes,
       },
       data: rows,

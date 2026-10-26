@@ -1246,7 +1246,8 @@ describe("/api/v1/start-chart", () => {
       expect(skater.proj_fantasy_points).toBeGreaterThan(0);
       expect(skater.context.flags).not.toContain("unverified_projection_provenance");
       expect(body.sourceStatus.projection.state).toBe("ready");
-      expect(body.projectionRun).toMatchObject({ runId: "clean-run", provenanceEligible: true });
+      expect(body.projectionRun).toMatchObject({ runId: "clean-run", provenanceEligible: true,
+        proof: { runId: "clean-run", basis: "captured_snapshot", releaseSha: null, closureSha256: null } });
     });
 
     it("passes over newer unproven runs of the slate for its latest proven run", async () => {

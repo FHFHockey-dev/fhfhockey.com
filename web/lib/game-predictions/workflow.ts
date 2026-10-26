@@ -16,10 +16,12 @@ import {
   buildFeatureSnapshotInsert,
   buildGamePredictionFeatureSnapshotPayload,
   fetchGamePredictionFeatureInputs,
+  forgeProjectionAdmissible,
   persistGamePredictionFeatureSnapshot,
   type GameRow,
 } from "./featureBuilder";
 import { GAME_PREDICTION_FEATURE_SET_VERSION } from "./featureSources";
+import { classifyExternalInputProof, type ClassifiedRunProof } from "lib/projections/externalInputProof";
 import {
   attachOutcomesToPredictions,
   buildMetricInserts,
@@ -996,7 +998,8 @@ export async function generatePregamePredictionForGame(args: {
   };
 }
 
-async function existingFeatureSnapshotId(args: {
+/** The stored snapshot a backfill may reuse, or null to rebuild it (exported for its proof tests). */
+export async function existingFeatureSnapshotId(args: {
   client: SupabaseClient<Database>;
   gameId: number;
   predictionCutoffAt: string;
@@ -1006,7 +1009,7 @@ async function existingFeatureSnapshotId(args: {
 }): Promise<string | null> {
   const { data, error } = await args.client
     .from("game_prediction_feature_snapshots")
-    .select("feature_snapshot_id")
+    .select("feature_snapshot_id,home_forge_run_id:feature_payload->home->forgeProjection->>runId,away_forge_run_id:feature_payload->away->forgeProjection->>runId")
     .eq("game_id", args.gameId)
     .eq("prediction_scope", "pregame")
     .eq("prediction_cutoff_at", args.predictionCutoffAt)
@@ -1015,7 +1018,16 @@ async function existingFeatureSnapshotId(args: {
     .eq("feature_set_version", args.featureSetVersion)
     .limit(1);
   if (error) throw error;
-  return data?.[0]?.feature_snapshot_id ?? null;
+  const existing = data?.[0] as { feature_snapshot_id?: string; home_forge_run_id?: string | null; away_forge_run_id?: string | null } | undefined;
+  if (!existing?.feature_snapshot_id) return null;
+  // A stored snapshot is reused only while its FORGE team projections stay admissible now (Astra F4): a fixed writer
+  // does not requalify old features, so a contradicted (or, with the proof flag, unproven) run's snapshot is rebuilt.
+  const runIds = [existing.home_forge_run_id, existing.away_forge_run_id].filter((id): id is string => typeof id === "string" && id.length > 0);
+  if (runIds.length) {
+    const proof = await classifyExternalInputProof(args.client, runIds).catch(() => new Map<string, ClassifiedRunProof>());
+    if (runIds.some((runId) => !forgeProjectionAdmissible(proof.get(runId)?.status ?? "unproven"))) return null;
+  }
+  return existing.feature_snapshot_id;
 }
 
 export async function backfillGamePredictionFeatureSnapshotsForWindow(args: {

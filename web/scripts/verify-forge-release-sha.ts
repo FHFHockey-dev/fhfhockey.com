@@ -13,10 +13,11 @@
  * It writes a JSON receipt. No database, network, deployment or git mutation.
  *
  * The scan, the closure identity and the reviewed dynamic sites live in scripts/forge-producer-closure.ts, shared with the
- * build-time stamp. `--worktree` verifies the checked-out tree in place, naming its receipt by closure identity.
+ * build-time stamp. `--worktree` verifies the checked-out tree in place, and `--tree <web dir>` an exported one; both
+ * name their receipt by closure identity.
  *
  *   NODE_PATH=. npx ts-node --transpile-only --compiler-options '{"module":"commonjs","moduleResolution":"node"}' \
- *     scripts/verify-forge-release-sha.ts <full-sha> | --worktree [--receipt <path>]
+ *     scripts/verify-forge-release-sha.ts <full-sha> | --worktree | --tree <web dir> [--receipt <path>]
  */
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
@@ -37,10 +38,15 @@ function git(repoRoot: string, args: string[]) {
 }
 
 function main() {
-  const args = process.argv.slice(2), worktree = args[0] === "--worktree", sha = worktree ? "" : args[0] ?? "";
+  const args = process.argv.slice(2), tree = args[0] === "--tree" ? resolve(args[1] ?? "") : null;
+  const worktree = args[0] === "--worktree" || tree !== null, sha = worktree ? "" : args[0] ?? "";
   const repoRoot = resolve(__dirname, "../..");
   let webRoot: string, source: Record<string, unknown>;
-  if (worktree) {
+  if (tree) {
+    // An exported web/ tree (e.g. HEAD plus one lane's files), identified by its closure hash.
+    webRoot = tree;
+    source = { kind: "tree", path: tree, head: git(repoRoot, ["rev-parse", "HEAD"]) };
+  } else if (worktree) {
     // The checked-out tree as it stands, identified by its closure hash; uncommitted closure files are listed.
     webRoot = join(repoRoot, "web");
     source = { kind: "worktree", head: git(repoRoot, ["rev-parse", "HEAD"]) };
@@ -57,7 +63,7 @@ function main() {
       committedAt: git(repoRoot, ["log", "-1", "--format=%cI", sha]), tree: git(repoRoot, ["rev-parse", `${sha}^{tree}`]) };
   }
   const { scan, closureSha256 } = computeForgeProducerClosure(webRoot, FORGE_RUN_ROOTS);
-  if (worktree) source.uncommittedClosureFiles = git(repoRoot, ["status", "--porcelain", "--", ...scan.modules.map(file => `web/${file}`)])
+  if (worktree && !tree) source.uncommittedClosureFiles = git(repoRoot, ["status", "--porcelain", "--", ...scan.modules.map(file => `web/${file}`)])
     .split("\n").filter(Boolean);
   const verified = scan.findings.length === 0;
   const receiptArg = args.includes("--receipt") ? args[args.indexOf("--receipt") + 1] : undefined;
@@ -75,7 +81,7 @@ function main() {
   };
   mkdirSync(dirname(receiptPath), { recursive: true });
   writeFileSync(receiptPath, `${JSON.stringify(receipt, null, 2)}\n`);
-  console.log(`${verified ? "VERIFIED" : "NOT VERIFIED"} ${worktree ? "worktree" : sha} closure ${closureSha256}: ${scan.modules.length} modules, `
+  console.log(`${verified ? "VERIFIED" : "NOT VERIFIED"} ${tree ? "tree" : worktree ? "worktree" : sha} closure ${closureSha256}: ${scan.modules.length} modules, `
     + `${scan.findings.length} findings, ${scan.dynamicSites.length} dynamic table sites. Receipt ${receiptPath} sha256 ${sha256(readFileSync(receiptPath, "utf8"))}`);
   for (const finding of scan.findings.slice(0, 40)) console.log(`  ${finding.kind} ${finding.file}:${finding.line} ${finding.text}`);
   process.exitCode = verified ? 0 : 1;

@@ -162,16 +162,18 @@ describe("run writer provenance", () => {
     expect(db.inserted.map((row) => row.metrics.horizon_games)).toEqual([1, 5]);
   });
 
-  it("stamps the executing producer closure beside the SHA, and an unknown one when the build has none", async () => {
-    const closure = "e".repeat(64);
-    vi.stubEnv("FORGE_PRODUCER_CLOSURE_SHA256", closure);
+  it("stamps the build's producer closure beside the SHA, and an unknown one for unbuilt code whatever its env", async () => {
+    const closure = "e".repeat(64), global = globalThis as Record<string, unknown>;
+    global.__FORGE_PRODUCER_CLOSURE_SHA256__ = closure; // as a production build's DefinePlugin supplies it
     await createRun("2026-10-18");
-    vi.stubEnv("FORGE_PRODUCER_CLOSURE_SHA256", "not-a-hash");
+    delete global.__FORGE_PRODUCER_CLOSURE_SHA256__;
+    vi.stubEnv("FORGE_PRODUCER_CLOSURE_SHA256", closure);
+    vi.stubEnv("FORGE_CODE_VERSION", "local:deadbeef");
     await createRun("2026-10-18");
     vi.unstubAllEnvs();
     expect(db.inserted.map((row) => row.metrics.producer_identity)).toEqual([
-      { version: "forge-producer-closure-v1", invocations: [closure] },
-      { version: "forge-producer-closure-v1", invocations: [null] }]);
+      { version: "forge-producer-closure-v1", invocations: [closure], code_versions: [null] },
+      { version: "forge-producer-closure-v1", invocations: [null], code_versions: ["local:deadbeef"] }]);
   });
 
   it("stamps the deployment commit SHA when one is set", async () => {

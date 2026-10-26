@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   fetchRequestedTeamPowerHistory,
@@ -649,6 +649,34 @@ describe("game prediction feature builder", () => {
     }] }));
     expect(payload.home.forgeProjection).toMatchObject({ projectedGoals: goals, projectedShots: shots });
     expect(payload.matchup.homeMinusAwayForgeProjectedGoals).toBeNull();
+  });
+
+  describe("FORGE team projection provenance (Astra F4)", () => {
+    const row = (run_id: string, updated_at: string, goals: number) => ({ run_id, game_id: 2025020001, team_id: 1, horizon_games: 1,
+      proj_goals_es: goals, proj_goals_pp: 0, proj_shots_es: 25, proj_shots_pp: 3, updated_at });
+    const rows = [row("run-contradicted", "2026-01-10T16:00:00+00:00", 9), row("run-unproven", "2026-01-10T15:00:00+00:00", 3),
+      row("run-proven", "2026-01-10T14:00:00+00:00", 2)];
+    const proof = new Map([
+      ["run-contradicted", { runId: "run-contradicted", status: "contradicted" as const, proof: null }],
+      ["run-proven", { runId: "run-proven", status: "proven" as const, proof: { basis: "verified_producer_closure" } as any }],
+    ]);
+    afterEach(() => vi.unstubAllEnvs());
+
+    it("never uses a contradicted run, keeps an unproven one by default and records its status", () => {
+      const payload = buildGamePredictionFeatureSnapshotPayload(createInputs({ forgeTeamProjectionRows: rows, forgeTeamProjectionProof: proof }));
+      expect(payload.home.forgeProjection).toMatchObject({ runId: "run-unproven", projectedGoals: 3, proofStatus: "unproven", proofBasis: null });
+    });
+
+    it("uses only proven runs when the proof flag is on", () => {
+      vi.stubEnv("GAME_PREDICTIONS_REQUIRE_FORGE_PROOF", "true");
+      const payload = buildGamePredictionFeatureSnapshotPayload(createInputs({ forgeTeamProjectionRows: rows, forgeTeamProjectionProof: proof }));
+      expect(payload.home.forgeProjection).toMatchObject({ runId: "run-proven", proofStatus: "proven", proofBasis: "verified_producer_closure" });
+    });
+
+    it("treats a run with no recorded proof as unproven", () => {
+      const payload = buildGamePredictionFeatureSnapshotPayload(createInputs({ forgeTeamProjectionRows: [rows[1]] }));
+      expect(payload.home.forgeProjection?.proofStatus).toBe("unproven");
+    });
   });
 
   it("uses a granular games-played curve that retains roster context", () => {

@@ -3,12 +3,12 @@ import { z } from "zod";
 
 import supabase from "lib/supabase/server";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
-import { evaluateForgeCalibrationEligibility, FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } from "lib/projections/calibrationEligibility";
+import { requireExternalInputProvenRun, requireLatestExternalInputProvenRun,
+  runProofDiagnostics } from "lib/projections/externalInputProof";
 import {
   buildProjectionApiErrorResponse,
   dateSchema,
   getQueryStringParam,
-  requireLatestSucceededRunId,
 } from "lib/projections/apiHelpers";
 
 const querySchema = z.object({
@@ -58,18 +58,10 @@ export default async function handler(
     applyDeprecationHeaders(res);
     if (!supabase) throw new Error("Supabase server client not available");
     const q = parseQuery(req);
-    // An explicit identity must not bypass the native provenance boundary.
-    // Default latest resolution retains its separate released-legacy contract.
-    if (q.runId) {
-      const { data: selectedRun, error: runError } = await supabase
-        .from("forge_runs").select("metrics").eq("run_id", q.runId).maybeSingle();
-      if (runError) throw runError;
-      if (!selectedRun) throw Object.assign(new Error("Selected projection run was not found."), { statusCode: 404 });
-      if (evaluateForgeCalibrationEligibility(selectedRun.metrics).observedExternalFantasyContract !== FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT) {
-        throw Object.assign(new Error("Selected projection run lacks external fantasy exclusion provenance."), { statusCode: 422 });
-      }
-    }
-    const runId = q.runId ?? (await requireLatestSucceededRunId(q.date));
+    // Explicit and latest runs alike are served only with external-input exclusion proof (Astra F4): team totals sum
+    // skater heads, and goalie lines use opponent shots derived from them, so they share the skater runs' provenance.
+    const selected = q.runId ? await requireExternalInputProvenRun(q.runId) : await requireLatestExternalInputProvenRun(q.date);
+    const runId = selected.runId;
 
     let query = supabase
       .from("forge_goalie_projections")
@@ -90,6 +82,7 @@ export default async function handler(
       deprecated: true,
       canonicalRoute: "/api/v1/forge/goalies",
       runId,
+      runProof: runProofDiagnostics(runId, selected.proof),
       asOfDate: q.date,
       horizonGames: q.horizon,
       data: data ?? [],

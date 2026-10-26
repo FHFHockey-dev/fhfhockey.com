@@ -1,16 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { fromMock } = vi.hoisted(() => ({
-  fromMock: vi.fn()
+const { fromMock, latestMock } = vi.hoisted(() => ({
+  fromMock: vi.fn(),
+  latestMock: vi.fn()
 }));
 
-vi.mock("lib/projections/apiHelpers", async () => {
-  const actual = await vi.importActual<any>("lib/projections/apiHelpers");
-  return {
-    ...actual,
-    requireLatestSucceededRunId: vi.fn(async () => "run-123")
-  };
-});
+// Latest-run selection is the shared proof-aware lookup (Astra F4); its admission rules are tested with it.
+vi.mock("lib/projections/externalInputProof", async () => ({
+  ...await vi.importActual<any>("lib/projections/externalInputProof"),
+  requireLatestExternalInputProvenRun: latestMock
+}));
 
 type QueryResult = {
   data?: any;
@@ -64,6 +63,8 @@ function createMockRes() {
 describe("/api/v1/projections/goalies", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    latestMock.mockResolvedValue({ runId: "run-123", proof: { basis: "verified_producer_closure", releaseSha: "a".repeat(40),
+      closureSha256: "b".repeat(64) } });
     fromMock.mockImplementation((table: string) => {
       if (table === "forge_goalie_projections") {
         return createQueryBuilder(() => ({
@@ -96,5 +97,22 @@ describe("/api/v1/projections/goalies", () => {
       asOfDate: "2026-02-07"
     });
     expect(res.body.data).toEqual([{ goalie_id: 9001, run_id: "run-123" }]);
+  });
+
+  it("refuses, with a labelled 404, a date whose runs cannot prove they excluded external inputs", async () => {
+    latestMock.mockRejectedValue(Object.assign(new Error("No succeeded projection run with external-input exclusion proof found"),
+      { statusCode: 404, details: { reason: "external_input_provenance_unproven", withheldRuns: 1 } }));
+    const res = createMockRes();
+    await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
+    expect(res.statusCode).toBe(404);
+    expect(res.body.details).toEqual({ reason: "external_input_provenance_unproven", withheldRuns: 1 });
+    expect(fromMock).not.toHaveBeenCalledWith("forge_goalie_projections");
+  });
+
+  it("names what admitted the served run", async () => {
+    const res = createMockRes();
+    await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
+    expect(res.body.runProof).toEqual({ runId: "run-123", basis: "verified_producer_closure", releaseSha: "a".repeat(40),
+      closureSha256: "b".repeat(64) });
   });
 });

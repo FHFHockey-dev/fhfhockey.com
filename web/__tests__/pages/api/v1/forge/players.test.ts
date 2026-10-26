@@ -24,7 +24,10 @@ vi.mock("lib/projections/apiHelpers", async () => {
 });
 vi.mock("lib/projections/externalInputProof", async () => ({
   ...await vi.importActual<any>("lib/projections/externalInputProof"),
-  requireLatestExternalInputProvenRunId: (...args: unknown[]) => requireLatestSucceededRunIdMock("proven", ...args),
+  requireLatestExternalInputProvenRun: async (...args: unknown[]) => {
+    const out = await requireLatestSucceededRunIdMock("proven", ...args);
+    return typeof out === "string" ? { runId: out, proof: null } : out;
+  },
 }));
 
 vi.mock("lib/NHL/server", async () => {
@@ -164,7 +167,7 @@ describe("/api/v1/forge/players", () => {
       const actual = await vi.importActual<typeof import("lib/projections/apiHelpers")>("lib/projections/apiHelpers");
       const proof = await vi.importActual<typeof import("lib/projections/externalInputProof")>("lib/projections/externalInputProof");
       requireLatestSucceededRunIdMock.mockImplementation((kind: string, ...args: any[]) =>
-        (kind === "proven" ? proof.requireLatestExternalInputProvenRunId : actual.requireLatestSucceededRunId)(args[0], args[1]));
+        (kind === "proven" ? proof.requireLatestExternalInputProvenRun : actual.requireLatestSucceededRunId)(args[0], args[1]));
       const projectionRunIds: unknown[] = [];
       const prior = fromMock.getMockImplementation()!;
       fromMock.mockImplementation((table: string) => {
@@ -208,6 +211,7 @@ describe("/api/v1/forge/players", () => {
       ]);
       expect(res.statusCode).toBe(200);
       expect(res.body).toMatchObject({ runId: "clean-yesterday", asOfDate: "2026-02-06", fallbackApplied: true });
+      expect(res.body.diagnostics.runProof).toMatchObject({ runId: "clean-yesterday", basis: "captured_snapshot" });
       expect(projectionRunIds).not.toContain("legacy-today");
       expect(projectionRunIds).not.toContain("legacy-yesterday");
     });
@@ -217,6 +221,7 @@ describe("/api/v1/forge/players", () => {
       expect(res.statusCode).toBe(200);
       expect(res.body).toMatchObject({ runId: "clean-run", asOfDate: "2026-02-07", fallbackApplied: false });
       expect(res.body.data.length).toBeGreaterThan(0);
+      expect(res.body.diagnostics.runProof).toEqual({ runId: "clean-run", basis: "captured_snapshot", releaseSha: null, closureSha256: null });
     });
   });
 

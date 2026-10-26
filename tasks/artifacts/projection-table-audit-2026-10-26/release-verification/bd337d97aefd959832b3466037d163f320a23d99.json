@@ -11,7 +11,7 @@
     "committedAt": "2026-10-25T19:45:50-04:00",
     "tree": "ab2dbd82dd3537388149872407045be843f25c23"
   },
-  "verifierSha256": "14d7e4f92f707ec520d233d62f0adfd27a8caaaa3dfb759b3af3ccd7626d0f15",
+  "verifierSha256": "2da61a46b89df70669c454f08fbefd3a0803655a92226f0c8020aad9b9d3c456",
   "closureWalkerSha256": "e33ccacb21dca88ef2d163dab5f16ec0c50bb817373b9ab000c2ac8e29df5bad",
   "roots": [
     "lib/projections/run-forge-projections.ts",

@@ -123,9 +123,10 @@ const nextConfig = {
 
 /**
  * FORGE producer identity (TJ/Astra F1, 2026-10-26): the sha256 of the FORGE producer import closure of the source being
- * built (scripts/forge-producer-closure.ts, the same scan the release verifier uses). It is inlined as a literal, so
- * each run stamps the closure that executed it (lib/projections/forgeProducerIdentity.ts) and no runtime env var can
- * relabel it. A failure leaves it empty: such runs stamp an unknown closure and readers withhold them.
+ * built (scripts/forge-producer-closure.ts, the same scan the release verifier uses). A production build defines it as
+ * the bundler constant `__FORGE_PRODUCER_CLOSURE_SHA256__` in server bundles, so each run stamps the closure that
+ * executed it (lib/projections/forgeProducerIdentity.ts). It is never an env var, so no env label or unbuilt code can
+ * supply it (C7 R40 V2). A failure defines it empty: such runs stamp an unknown closure and readers withhold them.
  */
 function forgeProducerClosureSha256() {
   try {
@@ -141,6 +142,19 @@ function forgeProducerClosureSha256() {
   return "";
 }
 
-module.exports = (phase) => phase === PHASE_PRODUCTION_BUILD
-  ? { ...nextConfig, env: { ...nextConfig.env, FORGE_PRODUCER_CLOSURE_SHA256: forgeProducerClosureSha256() } }
-  : nextConfig;
+module.exports = (phase) => {
+  if (phase !== PHASE_PRODUCTION_BUILD) return nextConfig;
+  const closureSha256 = forgeProducerClosureSha256();
+  return {
+    ...nextConfig,
+    webpack(config, options) {
+      const configured = nextConfig.webpack(config, options);
+      if (options.isServer) {
+        configured.plugins.push(new options.webpack.DefinePlugin({
+          __FORGE_PRODUCER_CLOSURE_SHA256__: JSON.stringify(closureSha256),
+        }));
+      }
+      return configured;
+    },
+  };
+};

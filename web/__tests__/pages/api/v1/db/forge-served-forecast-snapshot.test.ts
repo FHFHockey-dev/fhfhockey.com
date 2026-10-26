@@ -93,6 +93,7 @@ describe("forge-served-forecast-snapshot", () => {
     expect(table).toBe("forge_served_forecast_ledger");
     expect(options).toEqual({ onConflict: "served_date,player_id,game_id,source" });
     expect(rows.find((row: any) => row.source === "bridge_exact")).toMatchObject({ player_id: 11, game_id: 100, team_rest_days: 1, run_id: "run-today" });
+    expect(out.body.bridgeRunProofs).toEqual([{ runId: "run-today", basis: "captured_snapshot", releaseSha: null, closureSha256: null }]);
   });
 
   it("writes no bridge row from a run whose snapshot lacks external-input exclusion proof", async () => {

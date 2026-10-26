@@ -128,6 +128,12 @@ exports[`/api/v1/forge/goalies > returns stable response shape with model/scenar
         "external_fantasy_input_contract": "excluded_from_native_inputs_v1",
       },
     },
+    "runProof": {
+      "basis": "captured_snapshot",
+      "closureSha256": null,
+      "releaseSha": null,
+      "runId": "run-123",
+    },
     "runStatus": "succeeded",
     "scheduledGamesOnDate": 8,
   },

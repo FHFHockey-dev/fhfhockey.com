@@ -432,4 +432,45 @@ describe("public game predictions payload", () => {
       }),
     ]);
   });
+
+  describe("FORGE input provenance (Astra F4)", () => {
+    const output = (game_id: number) => ({ game_id, snapshot_date: "2026-04-28", home_team_id: 10, away_team_id: 20,
+      home_win_probability: 0.6, away_win_probability: 0.4, model_name: "m", model_version: "v1", prediction_scope: "pregame",
+      computed_at: "2026-04-27T10:00:00.000Z", components: {}, metadata: { feature_set_version: "f1" }, provenance: {},
+      updated_at: "2026-04-27T10:01:00.000Z", away_expected_goals: null, home_expected_goals: null, spread_projection: null,
+      total_expected_goals: null });
+    const side = (runId: string | null) => ({ goalie: {}, ...(runId ? { forgeProjection: { runId, projectedGoals: 3, projectedShots: 30 } } : {}) });
+    // Game 1: proven; 2: unproven; 3: contradicted; 4: FORGE not used.
+    const runs = { 1: "run-proven", 2: "run-unproven", 3: "run-contradicted", 4: null } as Record<number, string | null>;
+    const build = (requireForgeProof?: boolean) => buildPublicGamePredictionsPayload({
+      outputs: [1, 2, 3, 4].map(output) as any,
+      histories: [1, 2, 3, 4].map(game_id => ({ game_id, model_name: "m", model_version: "v1", prediction_scope: "pregame",
+        computed_at: "2026-04-27T10:00:00.000Z", feature_snapshot_id: `snap-${game_id}`, feature_set_version: "f1", metadata: {} })) as any,
+      featureSnapshots: [1, 2, 3, 4].map(game_id => ({ feature_snapshot_id: `snap-${game_id}`, feature_payload: {
+        home: side(runs[game_id]), away: side(null), warnings: [], sourceCutoffs: [] } })) as any,
+      modelVersions: [{ model_name: "m", model_version: "v1", feature_set_version: "f1", status: "production" }] as any,
+      forgeRunProof: new Map([
+        ["run-proven", { runId: "run-proven", status: "proven" as const, proof: null }],
+        ["run-contradicted", { runId: "run-contradicted", status: "contradicted" as const, proof: null }],
+      ]),
+      requireForgeProof,
+    });
+
+    it("labels every prediction, keeps unproven ones visible by default, and withholds only a contradicted one", () => {
+      const payload = build();
+      expect(payload.predictions.map(row => [row.gameId, row.forgeInputProvenance?.status])).toEqual([
+        [1, "proven"], [2, "unproven"], [4, "not_used"]]);
+      expect(payload.predictions[1].forgeInputProvenance).toEqual({ status: "unproven", home: { runId: "run-unproven", status: "unproven" },
+        away: null });
+      expect(payload.withheldForForgeProvenance).toBe(1);
+      expect(payload.count).toBe(3);
+    });
+
+    it("withholds unproven predictions too only when TJ turns the proof flag on", () => {
+      const payload = build(true);
+      expect(payload.predictions.map(row => row.gameId)).toEqual([1, 4]);
+      expect(payload.withheldForForgeProvenance).toBe(2);
+    });
+  });
 });
+
