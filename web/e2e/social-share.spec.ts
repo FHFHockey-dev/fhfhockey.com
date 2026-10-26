@@ -896,7 +896,7 @@ test("Tuesday tiles never collide: hero, absolute, label, details and chips stay
   await expect.poll(() => page.evaluate(() => document.fonts.check('italic 600 26px "Tomorrow"'))).toBe(true);
   // TT-9: deployment ice-time tiles carry no badge (the MORE / LESS ICE column says it); role-only tiles keep PROMOTED / DEMOTED.
   await graphic.selectOption("deployment");
-  const badges = await square.locator("[data-player]").evaluateAll(tiles => tiles.map(tile => [tile.querySelector("[class*='trendHero'] > strong")!.textContent!, tile.querySelector("[class*='trendBadge'] em")?.textContent ?? null]));
+  const badges = await square.locator("[data-player]").evaluateAll(tiles => tiles.map((tile): [string, string | null] => [tile.querySelector("[class*='trendHero'] > strong")?.textContent ?? "", tile.querySelector("[class*='trendBadge'] em")?.textContent ?? null]));
   expect(badges.length).toBeGreaterThan(0);
   for (const [hero, badge] of badges) expect(badge).toBe(hero.startsWith("▲") ? "PROMOTED" : hero.startsWith("▼") ? "DEMOTED" : null);
   // The stress set reached the tight cases: a one-digit hero with its absolute beside it, and the longest names.
