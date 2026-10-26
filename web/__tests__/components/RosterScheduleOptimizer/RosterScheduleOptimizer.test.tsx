@@ -835,6 +835,30 @@ describe("RosterScheduleOptimizer workspace", () => {
       await waitFor(() => expect(points.getAttribute("aria-pressed")).toBe("true"));
     }
   });
+  it.each([
+    { method: "schedule_capacity" as const, projected: 12.5, note: "Lineup by schedule capacity; totals priced from approved projections" },
+    { method: "schedule_capacity" as const, projected: null, note: "Lineup by schedule capacity" },
+    { method: "quality" as const, projected: 12.5, note: null },
+  ])("labels the plan totals when the lineup was chosen by $method (projected $projected)", async ({ method, projected, note }) => {
+    const workspace = defaultWorkspace();
+    workspace.roster = [{ playerId: player.id, position: "active" }];
+    workspace.manualPlayers = [{ ...player, eligibilityVerified: true }];
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
+    planningState.evaluate = (snapshot, intent) => {
+      const result = planRoster(snapshot, intent);
+      result.selected = { ...result.selected, selectionMethod: method, projectedValue: projected };
+      return result;
+    };
+    vi.stubGlobal("fetch", fetchMock);
+    render(<RosterScheduleOptimizer />);
+    const summary = screen.getByLabelText("Plan summary");
+    const points = await waitFor(() => { const card = within(summary).getByText("Projected points").closest("article")!; expect(card.querySelector("strong")!.textContent).toBe(projected === null ? "—" : "12.5"); return card; });
+    // The existing detail text stays; the selection note is extra.
+    expect(points.querySelector("small")!.textContent).toBe(projected === null ? "Shows once projections cover your lineup" : "League scoring, active games only");
+    if (note) expect(points.querySelector("em")!.textContent).toBe(note);
+    else expect(points.querySelector("em")).toBeNull();
+    expect(summary.textContent!.includes("schedule capacity")).toBe(note !== null);
+  });
   it.each(["partial", "complete"] as const)("qualifies plan aggregate counters and ratios under %s schedule coverage", async completeness => {
     const workspace = defaultWorkspace();
     workspace.roster = [{ playerId: player.id, position: "active" }];

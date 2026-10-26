@@ -57,6 +57,7 @@
 .metrics strong { color: v.$color-white; font: 700 v.$font-size-xl v.$font-family-numbers; }
 .metrics small { color: v.$text-secondary; font-size: v.$font-size-xs; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .metrics article:first-child small { white-space: normal; overflow: visible; }
+.metricNote { color: v.$text-secondary; font-size: v.$font-size-xs; font-style: normal; line-height: 1.25; }
 .panels { min-height: 0; flex: 1; display: grid; grid-template-columns: minmax(225px, 22%) minmax(0, 1fr) minmax(245px, 24%); grid-template-rows: minmax(0, 1fr); gap: v.$space-sm; }
 .panel { min-width: 0; min-height: 0; display: flex; flex-direction: column; background: v.$draft-surface; border: 1px solid v.$draft-border; border-radius: v.$radius-card; overflow: clip; }
 .panelHead { display: flex; align-items: center; justify-content: space-between; gap: v.$space-sm; flex-shrink: 0; min-height: 42px; padding: v.$space-sm; background: v.$draft-surface-raised; border-bottom: 1px solid v.$draft-border; }
