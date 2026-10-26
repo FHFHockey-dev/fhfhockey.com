@@ -1,7 +1,7 @@
 import { StrictMode } from "react";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import SocialShare, { deploymentBadges, moverDigits, ppChip, roleChipList, roleHero } from "./SocialShare";
+import SocialShare, { deploymentBadges, moverDigits, ppChip, roleChipList, roleHero, Sparkline, toneOf } from "./SocialShare";
 import { TUESDAY_NOT_CONNECTED, buildBlockedSnapshot, buildScheduleSnapshot, calendarWeekStart, selectScheduleDates, weekDates } from "lib/socialShare/schedule";
 import { fictionalLeagueWeek } from "lib/socialShare/fixtures";
 import { buildTrendLayer, trendDefinitions, trendExportToken } from "lib/socialShare/trends";
@@ -223,6 +223,25 @@ describe("Tuesday trend edition (lane TT)", () => {
     // Role-only heroes name the role direction, never a TOI number (TT-3).
     expect(roleHero(row({ lineChange: 1 }))).toBe("▲ LINE");
     expect(roleHero(row({ lineChange: -1, ppChange: -1 }))).toBe("▼ LINE + PP");
+  });
+
+  it("tiles take the hero's sign as their accent and draw sparklines with gaps, never interpolated (TT-4)", async () => {
+    expect([toneOf(1.4), toneOf(-0.2), toneOf(0), toneOf(null)]).toEqual(["up", "down", "flat", "flat"]);
+    const { container } = render(<Sparkline values={[1, null, 3, 2, null]} split={3} what="test" width={100} height={30} />);
+    const svg = container.querySelector("svg")!;
+    expect(svg.getAttribute("data-sparkline")).toBe("1,gap,3,2,gap");
+    expect(svg.querySelectorAll("[data-gap]")).toHaveLength(2);
+    // Runs break at gaps: [1] alone has no line; [3,2] is one segment.
+    expect([...svg.querySelectorAll("path:not([data-gap])")].map(path => path.getAttribute("d")!.split("L").length)).toEqual([1, 2, 2]);
+    expect(render(<Sparkline values={[null, null]} what="none" width={100} height={30} />).container.querySelector("svg")).toBeNull();
+    expect(render(<Sparkline values={null} what="none" width={100} height={30} />).container.querySelector("svg")).toBeNull();
+    // A rendered Tuesday tile's tone is the sign of its hero.
+    render(<SocialShare format="tuesday-trends" asOf={new Date().toISOString()} />);
+    await waitFor(() => expect(document.querySelectorAll("[data-player][data-tone]").length).toBeGreaterThan(0));
+    for (const tile of document.querySelectorAll("[data-player][data-tone]")) {
+      const hero = tile.querySelector("span[data-tone] > strong")!.textContent!;
+      expect(tile.getAttribute("data-tone")).toBe(/^[+▲]/.test(hero) ? "up" : /^[−▼]/.test(hero) ? "down" : "flat");
+    }
   });
 
   it("shows whole-number Yahoo rostered % without a decimal, and keeps one only when the source has decimals (TT-3)", () => {

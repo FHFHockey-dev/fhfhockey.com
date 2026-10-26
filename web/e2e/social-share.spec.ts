@@ -784,15 +784,32 @@ test("Tuesday trend cards list the server's sections with definitions and a sour
   // Deployment: a hero never contradicts its column (TOI sign, or the role arrow for role-only rows).
   await graphic.selectOption("deployment");
   for (const column of ["up", "down"]) {
-    const heroes = await square.locator(`[data-column="${column}"] [data-player] [class*="trendValue"] > strong`).allTextContents();
+    const heroes = await square.locator(`[data-column="${column}"] [data-player] [class*="trendHero"] > strong`).allTextContents();
     expect(heroes.length).toBeGreaterThan(0);
     for (const hero of heroes) expect(hero.startsWith(column === "up" ? "+" : "−") || hero.startsWith(column === "up" ? "▲" : "▼")).toBe(true);
+  }
+  // TT-4: every tile's accent is the sign of its hero, and each sparkline shows the layer's observed values exactly.
+  for (const [card, , expected] of tuesdayCards(edition)) {
+    await graphic.selectOption(card);
+    const tiles = square.locator("[data-player][data-tone]");
+    await expect(tiles).toHaveCount(expected.length);
+    for (const tile of await tiles.all()) {
+      const hero = (await tile.locator("[class*='trendHero'] > strong").textContent())!;
+      await expect(tile).toHaveAttribute("data-tone", /^[+▲]/.test(hero) ? "up" : /^[−▼]/.test(hero) ? "down" : "flat");
+    }
+    expect(await square.locator("[data-sparkline]").count()).toBeGreaterThan(0);
+  }
+  const shown = new Map([...edition.trends!.sections.hot.hot, ...edition.trends!.sections.hot.cold].map(row => [String(row.nhlId), row.series]));
+  await graphic.selectOption("hot");
+  for (const tile of await square.locator("[data-player]").all()) {
+    const series = shown.get((await tile.getAttribute("data-player"))!), drawn = await tile.locator("[data-sparkline]").getAttribute("data-sparkline").catch(() => null);
+    expect(drawn).toBe(series?.length && series.some(value => value !== null) ? series.map(value => value ?? "gap").join(",") : null);
   }
   // Movers are in percentage points of rostered %, never adds or drops.
   await graphic.selectOption("movers");
   await expect(square).toContainText("PCT PTS ROSTERED");
   // Fixture ownership carries decimals, so the change keeps one; whole-number sources show "+17" (unit test).
-  expect(await square.locator("[data-player] [class*='trendValue'] strong").first().textContent()).toMatch(/^[+−]\d+\.\d$/);
+  expect(await square.locator("[data-player] [class*='trendHero'] strong").first().textContent()).toMatch(/^[+−]\d+\.\d$/);
   await expect(square).toHaveAttribute("aria-label", /^FHFH Tuesday trends, ownership movers.*PCT PTS ROSTERED.*pct pts = percentage-point change in Yahoo rostered %.*not adds\/drops\.$/);
   await graphic.selectOption("deployment");
   // Unknown PP is "PP ?", never "no PP".

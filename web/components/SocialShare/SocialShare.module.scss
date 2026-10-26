@@ -300,7 +300,7 @@ $player-tile: 236px;
 .playerShort { font-size: 18px; color: v.$text-secondary; text-align: center; align-self: center; }
 // Tuesday trend cards: two columns of up to five rows, or three columns of stacked tiles.
 $trend-row: 140px;
-.trendColumns { flex: 1; display: grid; gap: 24px; min-height: 0; }
+.trendColumns { flex: 1; display: grid; grid-template-rows: minmax(0, 1fr); gap: 24px; min-height: 0; }
 .trendColumn { display: grid; grid-template-rows: 32px; grid-auto-rows: $trend-row; row-gap: 10px; align-content: start; min-width: 0;
   h3 { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: 0.08em; color: v.$color-blue-300; border-bottom: 2px solid rgba(v.$color-blue-300, 0.4); }
 }
@@ -329,6 +329,39 @@ $trend-row: 140px;
   small { font: 700 11px "Share Roboto Condensed", sans-serif; letter-spacing: 0.05em; color: v.$text-secondary; }
 }
 .trendDown strong { color: v.$color-pink-red; }
+// Tuesday tiles (TT-4): Monday's team banner over a body with the neon hero, a sparkline and chips. The border,
+// glow, hero and sparkline follow the hero's sign: green up, red down, neutral when zero or unknown.
+.trendTile { display: flex; flex-direction: column; min-height: 0; min-width: 0; border-radius: 12px; overflow: hidden;
+  background: rgba(v.$color-white, 0.05); border: 2px solid rgba(v.$color-white, 0.12); }
+.trendTile[data-tone="up"] { border-color: rgba(v.$success-color, 0.85); box-shadow: 0 0 14px rgba(v.$success-color, 0.3), inset 0 0 22px rgba(v.$success-color, 0.07); }
+.trendTile[data-tone="down"] { border-color: rgba(v.$color-pink-red, 0.85); box-shadow: 0 0 14px rgba(v.$color-pink-red, 0.3), inset 0 0 22px rgba(v.$color-pink-red, 0.07); }
+.trendTileBody { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-content: center; align-items: center; column-gap: 10px; row-gap: 3px; padding: 6px 12px 5px; }
+.trendHero { display: flex; align-items: baseline; gap: 7px; min-width: 0; line-height: 1; color: v.$color-white;
+  strong { font: 600 32px "Share Martian Mono", monospace; white-space: nowrap; }
+  small { font-size: 11px; font-weight: 800; letter-spacing: 0.05em; line-height: 1.1; color: v.$text-secondary; max-width: 96px; }
+}
+.trendHero[data-tone="up"] strong { color: v.$success-color; text-shadow: 0 0 12px rgba(v.$success-color, 0.45); }
+.trendHero[data-tone="down"] strong { color: v.$color-pink-red; text-shadow: 0 0 12px rgba(v.$color-pink-red, 0.45); }
+.trendSpark { display: block; justify-self: end; overflow: visible; color: v.$color-blue-300; filter: drop-shadow(0 0 3px currentColor); }
+.trendTile[data-tone="up"] .trendSpark { color: v.$success-color; }
+.trendTile[data-tone="down"] .trendSpark { color: v.$color-pink-red; }
+.trendTileInfo { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-width: 0;
+  > small { font-size: 13px; font-weight: 600; color: v.$color-blue-300; white-space: nowrap; }
+  .roleChips { margin-left: 0; }
+}
+.trendTileStacked .trendHero strong { font-size: 30px; }
+// Role-only deployment heroes ("▲ LINE + PP") are words, not a number: smaller, with room for their label.
+.trendHero[data-role] strong { font-size: 24px; letter-spacing: 0.02em; }
+.trendHero[data-role] small { max-width: 160px; }
+// Direction badge in Monday's flame-badge pattern (neon icon on a dark backing), green up and red down.
+.trendBadge { display: inline-flex; align-items: center; gap: 4px; flex: none; padding: 3px 7px 3px 5px; border-radius: 5px; border: 1.5px solid currentColor;
+  font: 700 11.5px/1 "Share Roboto Condensed", sans-serif; letter-spacing: 0.05em; white-space: nowrap; color: v.$color-blue-300;
+  background: linear-gradient(rgba(v.$color-blue-300, 0.16), rgba(v.$color-blue-300, 0.16)), #101317;
+  svg { flex: none; width: 13px; height: 13px; filter: drop-shadow(0 0 3px currentColor); }
+  em { font-style: normal; font-weight: 900; }
+}
+.trendBadge[data-tone="up"] { color: v.$success-color; background: linear-gradient(rgba(v.$success-color, 0.16), rgba(v.$success-color, 0.16)), #101317; box-shadow: 0 0 8px rgba(v.$success-color, 0.35); }
+.trendBadge[data-tone="down"] { color: v.$color-pink-red; background: linear-gradient(rgba(v.$color-pink-red, 0.16), rgba(v.$color-pink-red, 0.16)), #101317; box-shadow: 0 0 8px rgba(v.$color-pink-red, 0.35); }
 // Source and freshness line: one line, legible in the 1080 PNG and on a phone preview.
 .trendSource { font-size: 20px; font-weight: 700; color: v.$color-white; }
 @media (max-width: v.$breakpoint-tablet) {

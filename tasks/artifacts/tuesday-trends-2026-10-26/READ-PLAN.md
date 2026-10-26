@@ -93,3 +93,24 @@ Until this is decided, the capture must not run.
   - (a) The `ShareTrendLayer` JSON: shown players only, already public names and teams.
   - (b) A statement log: table, filters, row count, duration and error code. No row contents beyond (a).
 - **Then:** render the four cards offline from (a). No retries. No writes. No other routes.
+
+## v2 — TT-4 sparkline reads (PROPOSED; need TJ approval before deploy; NOT executed)
+
+Two more read-only statements, issued after N1 (names), for the **listed** players only. They are sequenced so no more than 2 statements are ever in flight (`TREND_LIMITS.concurrency`).
+
+| # | Table / filters / order | Columns | Cap and chunking | Expected |
+|---|---|---|---|---|
+| S1 | `rolling_player_game_metrics`<br>`season = S`, `strength_state = 'all'`, `player_id in (≤ 20 ids)`, `game_date >= T − 35`<br>order `player_id asc, game_date desc` (`idx_rpgm_player_date`) | `player_id, season, game_date, strength_state, season_games_played, points_avg_season, toi_seconds_avg_season, sog_per_60_shots_season, sog_per_60_toi_seconds_season, shot_attempts_per_60_shot_attempts_season, shot_attempts_per_60_toi_seconds_season, ixg_per_60_ixg_season, ixg_per_60_toi_seconds_season` (13) | per chunk: ids × 36 (one row per player per date over 36 dates) ≤ **720**, exact count, pages ≤ 1,000; 20 ids per chunk, 2 chunks at a time | listed skaters: Recent Form ≤ 10, deployment ≤ 8, rates ≤ 9 → ≤ 27 ids → **1–2 statements**, ≈ 27 × 12–16 games ≈ 330–430 rows |
+| M2 | `yahoo_player_ownership_history`<br>`player_key in (≤ 10 keys)`, `ownership_date between P and D`<br>order `player_key asc, ownership_date asc` (PK) | `player_key, player_id, ownership_date, ownership_pct` | keys × 15 ≤ **150**, exact count | the 10 listed movers × 6 daily dates (P..D) ≈ **60 rows, 1 statement**. Skipped when D − P > 14 days |
+
+**New totals per edition:**
+- **Statements:** typical ≈ 14 (11 + S1 ×2 + M2), worst case ≈ 21, under the 40 ceiling.
+- **Rows per page:** ≤ 1,000.
+- **Concurrency:** 2.
+- **Tables:** no new table; both are already approved. **Columns:** S1 adds 9 rolling columns not read before (season-to-date averages and per-60 components). None is in `ROLLING_DROPPED_COLUMNS`, and each is checked by `satisfies` against `database-generated.types.ts`.
+
+**How sparklines are derived:**
+- **Per-game values:** each game's value is the difference between contiguous rows' season-to-date values, or the row itself on game 1. Points are `points_avg_season × GP` (whole), TOI is `toi_seconds_avg_season × GP`, and rates are the season numerator and TOI component differences.
+- **Gaps:** a missing row or value is a gap marker, never interpolated.
+- **Consistency checks:** a series that disagrees with the row's own L5/L10 window (points sum, TOI average within 2 s, rate within 2%) is dropped.
+- **Failure:** a failed S1/M2 read drops sparklines only. It never blocks a section ("Sparklines unavailable: …" is added to that section's reasons).

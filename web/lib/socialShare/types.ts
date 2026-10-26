@@ -153,7 +153,9 @@ export type ShareTrendWho = { nhlId: number; name: string; /** Team of the playe
 /** Edition rule for the form card. A different window needs a new id and a documented transition (CONTRACT.md). */
 export const RECENT_FORM_RULE = "recent-form-v1-early" as const;
 /** Recent Form (recent-form-v1-early): P/GP over the last 5 appearances vs the preceding 5, all in the current season. */
-export type ShareHotRow = ShareTrendWho & { lastGame: string; recent: number; preceding: number; delta: number };
+/** Sparkline values, oldest first: one per game (or per date for movers); null is a gap, never interpolated. Absent or null: no sparkline. */
+export type ShareSeries = (number | null)[] | null;
+export type ShareHotRow = ShareTrendWho & { lastGame: string; recent: number; preceding: number; delta: number; /** Points in each of the last 10 games. */ series?: ShareSeries };
 /** PP unit in one game: a unit number, "none" (the game has PP rows and the player is absent) or null (unknown). */
 export type SharePpState = number | "none" | null;
 export type ShareDeploymentRow = ShareTrendWho & {
@@ -166,10 +168,12 @@ export type ShareDeploymentRow = ShareTrendWho & {
   /** Line/pair and PP unit in the latest game vs the previous contiguous game (null when not provable). */
   line: { now: string | null; before: string | null }; ppUnit: { now: SharePpState; before: SharePpState };
   teamChange: boolean; lineChange: -1 | 0 | 1; ppChange: -1 | 0 | 1;
+  /** TOI (seconds) in each of the last 10 games. */
+  series?: ShareSeries;
 };
-export type ShareRateRow = ShareTrendWho & { l5: number; season: number; delta: number; l5Minutes: number };
+export type ShareRateRow = ShareTrendWho & { l5: number; season: number; delta: number; l5Minutes: number; /** The rate in each of the last 10 games. */ series?: ShareSeries };
 /** Percentage-point change in Yahoo rostered % between two dated observations; never adds or drops. */
-export type ShareMoverRow = ShareTrendWho & { latest: number; previous: number; delta: number };
+export type ShareMoverRow = ShareTrendWho & { latest: number; previous: number; delta: number; /** Rostered % on each of ownershipSeriesDates. */ series?: ShareSeries };
 export type ShareTrendSectionState = { state: ShareDataState; reasons: string[] };
 export type ShareTrendLayer = {
   name: "FHFH rolling game metrics + Yahoo ownership";
@@ -182,6 +186,8 @@ export type ShareTrendLayer = {
   /** The two Yahoo observation dates the movers compare (latest, and the latest on or before 5 days earlier). */
   ownershipLatestDate: string | null;
   ownershipPreviousDate: string | null;
+  /** The movers sparkline's dates (comparison date to latest, inclusive); absent or null when not available. */
+  ownershipSeriesDates?: string[] | null;
   /** Each section is gated on its own sources; only the players a card shows are present. */
   sections: {
     hot: ShareTrendSectionState & { rule: typeof RECENT_FORM_RULE; qualifiers: number; hot: ShareHotRow[]; cold: ShareHotRow[] };

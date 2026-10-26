@@ -46,3 +46,10 @@ Make `/social-share/tuesday-trends` a truthful, data-backed edition from native 
 - The one approved re-run is used: 11 statements, 0 errors, 439 Recent Form qualifiers, footer updated Oct 26 10:15 UTC. E2E 33/33 with pins. Vitest 221.
 - tsc: 3 errors, all in other lanes' dirty files (player-cards, rosterScheduleData); 0 in social-share.
 - No more approved reads remain. Any new capture needs a new TJ approval.
+
+## Checkpoint 5 (TT-4 visual pass, ~19:00Z)
+- Tuesday is live: master 19890a8cb (#386). octoberBranch was synced by the chef (42688ceae).
+- Tiles reuse Monday's TeamBanner, role chips, the flame-badge pattern and the neon hero. Green/red accent follows the hero sign.
+- Sparklines derive from season-to-date columns via contiguous-row differences, with consistency checks and gaps. They need READ-PLAN v2 S1/M2 (two new statements, approved tables): TJ approval is needed before deploy.
+- Captured run-2 has no series, so genuine after renders have no sparklines; fixture after renders have them.
+- Checks: Vitest 228, E2E 33 with pins, tsc 0, eslint 0, CSS pure OK.

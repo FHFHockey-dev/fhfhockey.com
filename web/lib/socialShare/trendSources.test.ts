@@ -73,7 +73,14 @@ describe("Tuesday live loader", () => {
     const tally = (table: string) => statements.filter(statement => statement.table === table).length;
     // Rolling: strength-all window (pages of 1,000) plus one EV chunk for the shown deployment players.
     expect(statements.filter(statement => statement.table === "rolling_player_game_metrics" && statement.filters.includes("strength_state=eq.ev"))).toHaveLength(1);
-    expect(tally("yahoo_player_ownership_history")).toBe(2 + 1);
+    // Two date probes, the two-date read, and the movers' sparkline read (M2).
+    expect(tally("yahoo_player_ownership_history")).toBe(2 + 1 + 1);
+    // Sparkline game rows (S1): the listed skaters only, chunked by 20, 35 days.
+    const s1 = statements.filter(statement => statement.table === "rolling_player_game_metrics" && statement.columns.includes("sog_per_60_shots_season"));
+    expect(s1.length).toBeGreaterThanOrEqual(1); expect(s1.length).toBeLessThanOrEqual(2);
+    for (const statement of s1) expect(statement.filters).toEqual(expect.arrayContaining(["strength_state=eq.all", "game_date=gte.2026-09-22"]));
+    const listed = [...layer.sections.hot.hot, ...layer.sections.deployment.up, ...layer.sections.rates.sogPer60, ...layer.sections.movers.risers];
+    expect(listed.filter(row => row.series?.length).length).toBeGreaterThan(listed.length / 2);
     expect(tally("players")).toBe(1);
     expect(tally("yahoo_nhl_player_map_read")).toBe(1);
     expect(tally("powerPlayCombinations")).toBeLessThanOrEqual(Math.ceil(32 * 4 / TREND_LIMITS.ppcGamesPerChunk));
