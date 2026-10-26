@@ -5,7 +5,7 @@ import { join, resolve as resolvePath } from "node:path";
 import { execFileSync } from "node:child_process";
 import { captureProjectionInputs, interceptProjectionQuery, projectionInputHash, replayProjectionInputs } from "./inputCapture";
 import { interceptProjectionQuery as interceptSharedQuery } from "./queryCaptureHook";
-import { fantasySourcePerGame, buildSeasonHistory, blendSeasonBootstrap, bootstrapSkaterLine, bootstrapGoalieLine,
+import { buildSeasonHistory, blendSeasonBootstrap, bootstrapSkaterLine, bootstrapGoalieLine,
   averageBootstrapStats, type SeasonBootstrap } from "./seasonBootstrap";
 import { capturedGoalieStarts, projectionWritesHash } from "./gameRevisions";
 import { applyDailyBoardEvidence, loadDailyBoardEvidence, resolveDailyBoardEvidence, type BoardAssertion, type DailyBoardEvidence, type BoardConflict, type BoardLineupEvidence } from "./dailyBoardEvidence";
@@ -343,13 +343,8 @@ function query(table: string, result: unknown, live = vi.fn()) {
 
 describe("Starter Board season-opening priors", () => {
   const prior: SeasonBootstrap = { previous: { GOALS: 0.5, ASSISTS: 0.7, PP_GOALS: 0.1, PP_POINTS: 0.3, SHOTS_ON_GOAL: 3 },
-    fantasy: { GOALS: 0.8, ASSISTS: 1, PP_GOALS: 0.2, PP_POINTS: 0.5, SHOTS_ON_GOAL: 4 },
-    currentSeasonGames: 0, historyGames: 20, sourceIds: ["ag_skaters"], sourceRowIds: ["source-row"], limitations: [] };
-  it("converts source totals using projected games and preserves per-game TOI and missing categories", () => {
-    expect(fantasySourcePerGame({ Games_Played: 60, Goals: 30, Assists: 48, Time_on_Ice_Per_Game: 20 }, "ag_skaters"))
-      .toMatchObject({ GOALS: 0.5, ASSISTS: 0.8, TIME_ON_ICE_PER_GAME: 20 });
-    expect(fantasySourcePerGame({ Games_Played: 0, Goals: 30 }, "ag_skaters")).toBeNull();
-    expect(fantasySourcePerGame({ Games_Played: 60, Goals: null }, "ag_skaters")?.GOALS).toBeUndefined();
+    currentSeasonGames: 0, historyGames: 20, limitations: [] };
+  it("averages history while keeping missing categories missing", () => {
     expect(averageBootstrapStats([{ GOALS: 0.4, HITS: null }, { GOALS: 0.8, HITS: 2 }]))
       .toEqual({ GOALS: expect.closeTo(0.6), HITS: 2 });
   });
@@ -372,15 +367,17 @@ describe("Starter Board season-opening priors", () => {
     ], 20262027, "2026-10-02", "goalie");
     expect(goalies).toMatchObject({ historyGames: 1, previous: { SAVES_GOALIE: 28, GOALS_AGAINST_GOALIE: 2, SHOTS_AGAINST_GOALIE: 30 } });
   });
-  it("uses a 60/40 game-one prior, fades with observed appearances, and reaches the organic forecast", () => {
+  it("fades the NHL-history prior with observed appearances, never blending a fantasy projection", () => {
     const organic = { GOALS: 0.4 };
-    expect(blendSeasonBootstrap(organic, prior).stats.GOALS).toBeCloseTo(0.68);
-    expect(blendSeasonBootstrap(organic, { ...prior, currentSeasonGames: 10 }).stats.GOALS).toBeCloseTo(0.54);
+    // Game one: only the history prior carries weight (its Release C share, 0.4 × (1 − progress)).
+    expect(blendSeasonBootstrap(organic, prior).stats.GOALS).toBeCloseTo(0.5);
+    expect(blendSeasonBootstrap(organic, prior).disclosure).toMatchObject({ fantasyWeight: 0, historyWeight: 0.4, sourceIds: [] });
+    // Ten games: organic 0.5, history 0.2 → (0.4 × 0.5 + 0.5 × 0.2) / 0.7.
+    expect(blendSeasonBootstrap(organic, { ...prior, currentSeasonGames: 10 }).stats.GOALS).toBeCloseTo(0.3 / 0.7);
     const settled = blendSeasonBootstrap(organic, { ...prior, currentSeasonGames: 20 });
     expect(settled.stats.GOALS).toBe(0.4);
     expect(settled.disclosure).toMatchObject({ fantasyWeight: 0, historyWeight: 0, validation: "unvalidated" });
-    expect(blendSeasonBootstrap(organic, { ...prior, previous: {}, historyGames: 0 }).stats.GOALS).toBeCloseTo(0.8);
-    expect(blendSeasonBootstrap(organic, { ...prior, previous: {}, fantasy: {}, historyGames: 0 }).stats.GOALS).toBe(0.4);
+    expect(blendSeasonBootstrap(organic, { ...prior, previous: {}, historyGames: 0 }).stats.GOALS).toBe(0.4);
   });
   it("keeps opponent context and current PP removal effective while preserving skater category accounting", () => {
     const organic = { goalsEs: 0.3, goalsPp: 0.1, assistsEs: 0.5, assistsPp: 0.1, shotsEs: 2, shotsPp: 1, hits: 1, blocks: 1 };
@@ -388,24 +385,21 @@ describe("Starter Board season-opening priors", () => {
     const removed = bootstrapSkaterLine({ ...organic, goalsPp: 0, assistsPp: 0, shotsPp: 0 }, prior,
       { goals: 1, assists: 1, shots: 1, ppUsage: 0 });
     const opponent = bootstrapSkaterLine(organic, prior, { goals: 0.9, assists: 0.9, shots: 0.9, ppUsage: 1 });
-    expect(normal.goalsEs + normal.goalsPp).toBeCloseTo(0.68);
+    expect(normal.goalsEs + normal.goalsPp).toBeCloseTo(0.5);
     expect(removed.goalsPp + removed.assistsPp).toBe(0);
     expect(removed.goalsEs).toBeLessThan(normal.goalsEs + normal.goalsPp);
     expect(opponent.goalsEs + opponent.goalsPp).toBeLessThan(normal.goalsEs + normal.goalsPp);
     expect(normal.goalsPp + normal.assistsPp).toBeLessThanOrEqual(normal.goalsEs + normal.goalsPp + normal.assistsEs + normal.assistsPp);
   });
-  it("integrates goalie starting probability once and requires projected starts for win priors", () => {
-    const fantasy = fantasySourcePerGame({ Games_Played: 50, Games_Started_Goalie: 40,
-      Saves_Goalie: 1400, Goals_Against_Goalie: 100, Wins_Goalie: 24, Shutouts_Goalie: 4 }, "cullen_goalies")!;
-    expect(fantasy).toMatchObject({ SAVES_GOALIE: 28, GOALS_AGAINST_GOALIE: 2, SHOTS_AGAINST_GOALIE: 30, WINS_GOALIE: 0.6, SHUTOUTS_GOALIE: 0.1 });
-    expect(fantasySourcePerGame({ Games_Played: 50, Wins_Goalie: 24 }, "cullen_goalies")).toBeNull();
-    const blended = blendSeasonBootstrap({}, { ...prior, previous: {}, fantasy });
+  it("integrates goalie starting probability once from the history-only performance prior", () => {
+    const history = { SAVES_GOALIE: 28, GOALS_AGAINST_GOALIE: 2, SHOTS_AGAINST_GOALIE: 30 };
+    const blended = blendSeasonBootstrap({}, { ...prior, previous: history });
     const board = boardGoalieForecast({ startingProbability: 0.5, conditional: blended.stats, seasonBootstrap: blended.disclosure })!;
     expect(board.expected).toMatchObject({ SAVES_GOALIE: expect.closeTo(14), GOALS_AGAINST_GOALIE: expect.closeTo(1),
-      SHOTS_AGAINST_GOALIE: expect.closeTo(15), WINS_GOALIE: expect.closeTo(0.3) });
-    expect(board.seasonBootstrap?.fantasyWeight).toBe(0.6);
-    const lowVolume = bootstrapGoalieLine({ SHOTS_AGAINST_GOALIE: 20 }, { ...prior, previous: {}, fantasy });
-    const highVolume = bootstrapGoalieLine({ SHOTS_AGAINST_GOALIE: 40 }, { ...prior, previous: {}, fantasy });
+      SHOTS_AGAINST_GOALIE: expect.closeTo(15) });
+    expect(board.seasonBootstrap?.fantasyWeight).toBe(0);
+    const lowVolume = bootstrapGoalieLine({ SHOTS_AGAINST_GOALIE: 20 }, { ...prior, previous: history });
+    const highVolume = bootstrapGoalieLine({ SHOTS_AGAINST_GOALIE: 40 }, { ...prior, previous: history });
     expect(highVolume.stats.SAVES_GOALIE).toBeCloseTo(lowVolume.stats.SAVES_GOALIE! * 2);
     expect(highVolume.stats.SAVES_GOALIE! + highVolume.stats.GOALS_AGAINST_GOALIE!).toBe(40);
   });

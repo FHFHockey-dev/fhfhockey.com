@@ -390,7 +390,7 @@ export {
 } from "./calculators/team-context-adjustments";
 
 export { buildSequentialHorizonScalarsFromDates } from "./utils/date-utils";
-import { captureProjectionInputs, replayProjectionInputs, projectionInputHash, capturedReadReceipt } from "./inputCapture";
+import { captureProjectionInputs, replayProjectionInputs, projectionInputHash, capturedReadReceipt, type ProjectionInputRead } from "./inputCapture";
 import { saveForgeInputSnapshot, publishForgeGameRevisions, projectionWritesHash, capturedGoalieStarts, capturedIssuedTargets, type ForgeInputSnapshot } from "./gameRevisions";
 import { captureForgeIssuedContexts, forgeIssuedContextsFingerprint, type ForgeIssuedContextV1 } from "./issuedContext";
 import { applyDailyBoardEvidence } from "./dailyBoardEvidence";
@@ -401,6 +401,42 @@ export const projectionModelEnvironment = () => Object.fromEntries([
   "NHL_XG_TEAM_AGGREGATE_WINDOW_GAMES", "NHL_XG_MODEL_VERSION",
   "START_CHART_GAME_REVISIONS", "STARTER_BOARD_COMPUTE_ENABLED", "STARTER_BOARD_SEASON_BOOTSTRAP_ENABLED",
 ].map((key) => [key, process.env[key] ?? null]));
+
+/** Every source the run may read, as audited on 2026-10-26 (tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/
+ * EXTERNAL-INPUT-AUDIT.md): NHL first-party data, FHFH-derived tables and models, NST analytics, admin roster events,
+ * relayed news and sportsbook prices (output flags only). None is a fantasy projection, ownership, rank or ADP source.
+ * run-forge-projections.external-inputs.test.ts fails when the run's code can reach a source not listed here. */
+export const FORGE_AUDITED_INPUT_SOURCES: ReadonlySet<string> = new Set([
+  "games", "teams", "players", "rosters", "seasons", "fhfh_player_identities", "roster_optimizer_team_games",
+  "skatersGameStats", "goaliesGameStats", "wgo_skater_stats", "wgo_goalie_stats", "wgo_team_stats",
+  "pbp_games", "pbp_plays", "shift_charts", "nhl_api_shift_rows", "lineCombinations", "expected_goals",
+  "forge_goalie_game", "forge_team_game_strength", "rolling_player_game_metrics", "rolling_player_metric_support_payloads",
+  "forge_latest_rolling_rows", "forge_league_skater_physical_totals", "player_stats_unified", "sustainability_trend_bands",
+  "nst_team_all", "nst_team_stats", "nhl_team_data", "nhl_xg_team_rolling_aggregates", "goalie_start_projections",
+  "forge_roster_events", "forge_board_news_events", "player_forecast_lineup_snapshots", "player_forecast_goalie_start_observations",
+  "player_forecast_observation_conflicts", "player_forecast_lineup_assignments", "player_forecast_conflict_resolutions",
+  "market_prices_daily", "prop_market_prices_daily",
+  "forge_runs", "forge_player_projections", "forge_team_projections", "forge_goalie_projections",
+  "player_forecast_source_observations", "read_forge_game_revisions",
+]);
+/** A third-party fantasy projection table: every configured source is a `PROJECTIONS_<season>_<source>` table, and so is
+ * a new season's or source's. Matched by name so the runner never imports the provider configuration. */
+export function isFantasyProjectionSource(name: string) {
+  return /^projections_/i.test(name);
+}
+/** True only when the run's own captured reads show no fantasy projection source and nothing unaudited. An attempted
+ * read counts, even a failed one: the run reached for the source. */
+export function readsExcludeExternalFantasy(reads: readonly ProjectionInputRead[]) {
+  return reads.length > 0 && reads.every(read => {
+    const operation = read.request[0], name = String(operation?.args[0] ?? "");
+    return (operation?.method === "from" || operation?.method === "rpc") && !isFantasyProjectionSource(name)
+      && FORGE_AUDITED_INPUT_SOURCES.has(name);
+  });
+}
+/** The exclusion label follows from the transcript, never from configuration such as the season-bootstrap flag. Only the
+ * live snapshot, which publishes revisions, claims it; reconstructions and the run-start metrics stay unlabelled. */
+const externalFantasyClaim = (reads: readonly ProjectionInputRead[]) =>
+  readsExcludeExternalFantasy(reads) ? { externalFantasyInputsExcluded: true as const } : {};
 
 /** FORGE model identity (TJ D3, 2026-10-26): `configurationHash` is the canonical sha256 of the run's model environment.
  * The heuristic has no fitted artifact, so `artifactHash` binds its code at `codeVersion` under that configuration.
@@ -517,7 +553,6 @@ export async function runProjectionV2ForDate(
     }, { deadlineMs: opts?.deadlineMs });
     if (capture.result.timedOut) return capture.result;
     const modelEnvironment = projectionModelEnvironment();
-    const modelIdentity = { modelIdentity: forgeModelIdentity(codeVersion!, modelEnvironment) };
     const snapshot: ForgeInputSnapshot = {
       version: "forge-inputs-v1", runId, slateDate: asOfDate,
       inputCutoff: decisionAsOf,
@@ -527,7 +562,8 @@ export async function runProjectionV2ForDate(
       modelMode: resolveSkaterRolloutConfig().mode,
       modelEnvironment,
       seasonBootstrapApplied: seasonBootstrap,
-      inputProvenance: { ...buildForgeInputProvenance(), ...modelIdentity, capturedReads: capturedReadReceipt(capture.reads),
+      inputProvenance: { ...buildForgeInputProvenance(externalFantasyClaim(capture.reads)),
+        modelIdentity: forgeModelIdentity(codeVersion!, modelEnvironment), capturedReads: capturedReadReceipt(capture.reads),
         ...(issuedContexts ? { issuedContexts, issuedTargets: capturedIssuedTargets(issuedContexts, capture.writes) } : {}) },
       dailyBoardEvidence: capture.writes.filter((ops) => ops[0]?.args[0] === "forge_runs")
         .map((ops) => (ops.find((op) => op.method === "update")?.args[0] as any)?.metrics?.daily_board_evidence)
