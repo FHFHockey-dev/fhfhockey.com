@@ -155,10 +155,19 @@ describe("sources and freshness", () => {
     expect(JSON.stringify(layer)).not.toMatch(/465\.p\.|player_key|updated_at|Fixture [A-Z]{3}-T13/);
   });
 
+  it("judges freshness by the writer's newest row, so a skater idle for four days stays current (TT-2 capture)", () => {
+    // Player 20 last played Oct 22; the daily writer never rewrites that row, so its updated_at is 5 days old.
+    const idle = skater(20, [{ game_date: "2026-10-22", updated_at: "2026-10-23T10:10:00Z", points_total_last5: 6 }]), busy = skater(21, [{ points_total_last5: 6 }]);
+    const layer = buildTrendLayer(sources([...idle, ...busy]), context);
+    expect(layer.sections.hot.hot.map(row => row.nhlId).sort()).toEqual([20, 21]);
+    expect(layer).toMatchObject({ metricsUpdatedAt: "2026-10-27T08:00:00.000Z", metricsThrough: "2026-10-26" });
+    expect(layer.sections.hot.reasons).toEqual([]);
+  });
+
   it("stale rolling rows block metric sections with the as-of date; a failed read names the source", () => {
     const stale = edition(fictionalTrendSources(season, today, "2026-10-20T00:00:00Z")).trends!;
     expect(stale.sections.hot).toMatchObject({ state: "stale", hot: [] });
-    expect(stale.sections.hot.reasons[0]).toMatch(/^Rolling metrics are stale: last updated Oct 20 \(\d+ of \d+ skaters older than 72 h\)\.$/);
+    expect(stale.sections.hot.reasons[0]).toBe("Rolling metrics are stale: last updated Oct 20 (newest row older than 72 h).");
     expect(stale.sections.movers.state).toBe("stale");
     const failed = edition({ ...fixture(), rolling: { failed: "Rolling game metrics read failed (PGRST000)" } }).trends!;
     for (const section of Object.values(failed.sections)) expect(section.state).toBe("missing");

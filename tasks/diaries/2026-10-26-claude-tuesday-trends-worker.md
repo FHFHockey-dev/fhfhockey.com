@@ -30,3 +30,11 @@ Make `/social-share/tuesday-trends` a truthful, data-backed edition from native 
 ## Gotchas
 - The dirty `web/public/teamLogos/OTT.png` (not ours) breaks the Monday grid/easiest and Wednesday grid pins. Use `SOCIAL_SHARE_LOGO_OVERRIDE_DIR` with `git show HEAD:web/public/teamLogos/OTT.png` to verify the pins.
 - The Playwright runner cannot import SocialShare.tsx (SCSS), so the shared strings live in trends.ts.
+
+## Checkpoint 3 (TT-2, ~16:20Z)
+- Committed 82490cd45 (offline build). TT-2 ticket: TJ approved N1 (`players`) via the chef pop-up; addendum in READ-APPROVAL.md.
+- Label fix: "PCT PTS ROSTERED" and "pct pts = …". Monday 9 and Wednesday 9 pins are byte-identical; the Tuesday movers pin changed.
+- One genuine capture at 16:00:00Z: 11 statements, max 2 in flight, max 1,000 rows, 0 errors. Facts are in RECEIPT-2. Re-run NOT used.
+- Found: the per-row freshness rule dropped 55 current skaters (the writer writes each row once). Fixed offline with a regression test. The captured layer predates the fix.
+- Found: hot/cold is empty on Oct 26 because nobody has ≥ 15 GP. That is a contract minimum, so the decision belongs to the chef/TJ.
+- Next: chef decides the hot/cold minimum and whether to spend the one re-run (with the freshness fix).

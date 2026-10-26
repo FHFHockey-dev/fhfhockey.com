@@ -191,7 +191,7 @@ describe("Tuesday trend edition (lane TT)", () => {
     expect(token.split("|")).toEqual([expect.any(String), "deployment", days.join(",")]);
     fireEvent.change(screen.getByRole("combobox", { name: /^Graphic/ }), { target: { value: "movers" } });
     await waitFor(() => expect(screen.getByTestId("share-square").getAttribute("data-export-token")).toBe(token.replace("|deployment|", "|movers|")));
-    expect(screen.getByTestId("share-square").textContent).toContain("pts = percentage-point change in Yahoo rostered %");
+    expect(screen.getByTestId("share-square").textContent).toContain("pct pts = percentage-point change in Yahoo rostered %");
     // The only add/drop wording is the disclaimer that this card is not add/drop counts.
     expect(screen.getByTestId("share-square").textContent!.replace("not add/drop counts", "").replace("not adds/drops", "")).not.toMatch(/add|drop/i);
   });
@@ -199,7 +199,7 @@ describe("Tuesday trend edition (lane TT)", () => {
   it("labels every section with its definition and the movers card in points, never adds or drops", () => {
     expect(trendDefinitions.hot.join(" ")).toMatch(/prior GP \(season minus L5\).*Min 10 prior GP · last game ≤ 7 days/);
     expect(trendDefinitions.rates.join(" ")).toMatch(/Min 50 L5 min/);
-    expect(trendDefinitions.movers.join(" ")).toMatch(/^pts = percentage-point change.*No observation ≠ 0% · not add\/drop counts$/);
+    expect(trendDefinitions.movers.join(" ")).toMatch(/^pct pts = percentage-point change.*No observation ≠ 0% · not add\/drop counts$/);
     const snapshot = tuesdayEdition(week);
     expect(trendExportToken(snapshot, "hot")).toBe(`${snapshot.id}|hot|${snapshot.selectedDates.join(",")}`);
   });

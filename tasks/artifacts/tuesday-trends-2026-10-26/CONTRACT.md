@@ -7,12 +7,12 @@ Native sources only. Tuesday never reads `PROJECTIONS_20262027_*`, `PROJECTIONS_
 ## Shared rules
 
 - **Edition time.** `today` is the New York date of the edition's `generatedAt`.
-- **Current skater.** The player has a strength-`all` `rolling_player_game_metrics` row for the edition's season with `game_date` in `[today − 7, today]` (`TREND_MAX_GAME_AGE_DAYS = 7`). His latest row's `updated_at` must be ≤ 72 h old (`PLAYER_STATS_MAX_AGE_MS`) and not in the future. His latest row's `team_id` must map to an active NHL team.
+- **Current skater.** The player has a strength-`all` `rolling_player_game_metrics` row for the edition's season with `game_date` in `[today − 7, today]` (`TREND_MAX_GAME_AGE_DAYS = 7`), not in the future. His latest row's `team_id` must map to an active NHL team.
 - **Team.** Always the `team_id` of the player's **latest game**, never a roster or Yahoo team.
 - **Previous game.** The player's next-newest row in the window, used only if `season_games_played` is exactly one lower (contiguous). Otherwise it is unknown.
 - **L5.** The rolling `*_last5` windows: the player's last 5 games played, as already used by the Monday/Wednesday cards. This is an assumption to confirm in the genuine capture.
 - **Freshness.**
-  - Rolling metrics: if more skaters are stale than current, every metric section is `stale` with "Rolling metrics are stale: last updated ‹date›". Movers are also blocked, because team identity needs current rolling rows.
+  - Rolling metrics: freshness is the writer's, not the row's. The daily pipeline writes each game row once, so an idle skater's latest row keeps an old `updated_at` (found in the TT-2 capture: 55 current skaters were wrongly dropped by a per-row rule). The source is `stale` when its **newest** row update is older than 72 h ("Rolling metrics are stale: last updated ‹date›"). Movers are then blocked too, because team identity needs current rolling rows. The footer's "updated" time is that newest update.
   - Ownership: stale when its latest observation date is before `today − 1` ("Yahoo ownership is stale: last observed ‹date›").
   - Stale sections are not ranked or exported. The reason with its as-of date is shown on the card.
 - **Failure.** A failed read becomes a `missing` state, naming the source and the PostgREST code/message, on every section that needs that source. No section ever shows fixture values or zeroes in place of a gap.
@@ -38,7 +38,7 @@ Native sources only. Tuesday never reads `PROJECTIONS_20262027_*`, `PROJECTIONS_
 | Source | `yahoo_player_ownership_history` (PK `player_key, ownership_date`) |
 | Dates | Latest observation date **D** in the table, and **P** = the latest date ≤ D − 5 (`MOVER_WINDOW_DAYS`). Both are shown on every row and in the footer |
 | Value | `ownership_pct` on D and on P, each rounded to 0.1 |
-| Change | `latest − previous` from the rounded values, in **percentage points**. The card says "pts" / "PTS ROSTERED %", and the definition reads "pts = percentage-point change in Yahoo rostered %". It never says adds or drops; the footer says "not add/drop counts" |
+| Change | `latest − previous` from the rounded values, in **percentage points**. The card says "PCT PTS ROSTERED" (not "PTS", which reads as fantasy points), and the definition reads "pct pts = percentage-point change in Yahoo rostered %". It never says adds or drops; the footer says "not add/drop counts" |
 | Missing | A player without a valid observation on D **and** P is not a mover. A missing observation is never 0% |
 | Minimum | abs(change) ≥ 1.0 pt (`MIN_MOVER_POINTS`) |
 | Identity | `yahoo_nhl_player_map_read` by `player_key` or Yahoo `player_id`. An id that maps to more than one NHL id is dropped. The NHL id must be a current skater (team from the latest game) |

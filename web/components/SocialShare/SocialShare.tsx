@@ -434,7 +434,7 @@ function trendColumns(kind: TrendKind, snapshot: SocialShareSnapshot): TrendColu
   }
   const { risers, fallers } = ownershipMovers(snapshot, true), trends = snapshot.trends!;
   const row = (mover: (typeof risers)[number]): TrendRowData => ({ key: String(mover.nhlId), team: mover.team, name: mover.name, meta: meta(mover), weekGames: mover.weekGames,
-    detail: `${moverPct(mover.previous)} ${dateLabel(trends.ownershipPreviousDate!)} → ${moverPct(mover.latest)} ${dateLabel(trends.ownershipLatestDate!)}`, value: `${signed(mover.delta, 1)}`, label: "PTS ROSTERED %", tone: mover.delta > 0 ? "up" : "down", badges: [] });
+    detail: `${moverPct(mover.previous)} ${dateLabel(trends.ownershipPreviousDate!)} → ${moverPct(mover.latest)} ${dateLabel(trends.ownershipLatestDate!)}`, value: `${signed(mover.delta, 1)}`, label: "PCT PTS ROSTERED", tone: mover.delta > 0 ? "up" : "down", badges: [] });
   return [{ key: "risers", title: "RISING", rows: risers.map(row) }, { key: "fallers", title: "FALLING", rows: fallers.map(row) }];
 }
 

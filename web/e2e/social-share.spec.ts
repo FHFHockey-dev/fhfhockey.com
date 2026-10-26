@@ -105,7 +105,7 @@ async function signIn(page: Page, access: Access) {
 
 async function install(page: Page, access: Access = { role: "social_editor", signedIn: true, roleReads: 0, writes: [] }) {
   await signIn(page, access);
-  const controller = { requests: 0, fail: false, mode: "ready" as Mode, longName: false, pinnedAt: undefined as string | undefined, rates: "ready" as Rates, players: "ready" as PlayerMode, trends: "ready" as Rates, recentRead: "ready" as RecentRead, liveTrim: false, longPlayer: false, widestLegend: false, ownershipStale: false, latest: null as SocialShareSnapshot | null };
+  const controller = { requests: 0, fail: false, mode: "ready" as Mode, longName: false, pinnedAt: undefined as string | undefined, rates: "ready" as Rates, players: "ready" as PlayerMode, trends: "ready" as Rates, recentRead: "ready" as RecentRead, liveTrim: false, longPlayer: false, widestLegend: false, ownershipStale: false, genuine: null as SocialShareSnapshot["trends"], latest: null as SocialShareSnapshot | null };
   await page.context().route("**/*", route => ["127.0.0.1", "localhost"].includes(new URL(route.request().url()).hostname) ? route.continue() : route.abort());
   // Evidence harness only (lane TT): serve committed logo bytes from a folder, so PNG pins can be checked while a
   // working-tree logo is modified by someone else. Unset in normal runs.
@@ -138,6 +138,9 @@ async function install(page: Page, access: Access = { role: "social_editor", sig
       const first = streamingNights(next, true)[0], key = first && targetKey(first), list = key ? next.players.targets[key] : undefined;
       if (list?.length) next = { ...next, players: { ...next.players, targets: { ...next.players.targets, [key!]: [{ ...list[0], roles: ["scorer", "shooter", "blocker"] }, ...list.slice(1)] } } };
     }
+    // genuine (TT-2): a captured production trend layer on the offline fixture schedule. Schedule row abbreviations are
+    // masked so no fixture "GP this week" chip sits beside a genuine player; logos still come from the edition's teams.
+    if (controller.genuine) next = { ...next, trends: controller.genuine, rows: next.rows.map(row => ({ ...row, team: { ...row.team, abbreviation: `x${row.team.abbreviation}` } })) };
     controller.latest = next;
     return route.fulfill({ json: next, headers: { "Cache-Control": "no-store" } });
   });
@@ -773,8 +776,8 @@ test("Tuesday trend cards list the server's sections with definitions and a sour
     await downloadedPng(page, `tuesday-${card}`);
   }
   // Movers are in percentage points of rostered %, never adds or drops.
-  await expect(square).toContainText("PTS ROSTERED %");
-  await expect(square).toHaveAttribute("aria-label", /^FHFH Tuesday trends, ownership movers.*pts = percentage-point change in Yahoo rostered %.*not adds\/drops\.$/);
+  await expect(square).toContainText("PCT PTS ROSTERED");
+  await expect(square).toHaveAttribute("aria-label", /^FHFH Tuesday trends, ownership movers.*PCT PTS ROSTERED.*pct pts = percentage-point change in Yahoo rostered %.*not adds\/drops\.$/);
   await graphic.selectOption("deployment");
   // Unknown PP is "PP ?", never "no PP".
   await expect(square.locator("[data-badge]").filter({ hasText: /no PP/i })).toHaveCount(0);
@@ -1141,3 +1144,47 @@ test("hot and cold streak badges sit beside the L5 line and match the streak rul
   await downloadedPng(page, "streaks-tiers-wide");
 });
 
+test("Tuesday GENUINE DATA render: captured layer, offline, export token per card", async ({ page }) => {
+  const file = process.env.TUESDAY_GENUINE_LAYER;
+  test.skip(!file, "Set TUESDAY_GENUINE_LAYER to a captured layer.json (TT-2).");
+  const capture = JSON.parse(await readFile(file!, "utf8")) as { capturedAt: string; layer: NonNullable<SocialShareSnapshot["trends"]> };
+  const source = await install(page), shots = process.env.TUESDAY_GENUINE_DIR || evidence;
+  source.mode = "league"; source.genuine = capture.layer;
+  await mkdir(shots, { recursive: true });
+  const label = () => page.evaluate(text => {
+    if (document.querySelector("[data-genuine]")) return;
+    const banner = document.createElement("div");
+    banner.setAttribute("data-genuine", "");
+    banner.textContent = text;
+    Object.assign(banner.style, { position: "fixed", top: "0", left: "0", right: "0", zIndex: "9999", padding: "6px 12px", font: "700 14px sans-serif", background: "#00c853", color: "#000", textAlign: "center" });
+    document.body.appendChild(banner);
+  }, `GENUINE DATA (captured ${capture.capturedAt}), rendered locally · schedule panel is the offline fixture`);
+  const tokens: Record<string, { token: string; expected: string; png: string }> = {};
+  for (const [viewport, name] of [[{ width: 1440, height: 1100 }, "desktop"], [{ width: 390, height: 844 }, "phone"]] as const) {
+    await page.setViewportSize(viewport);
+    await page.goto("/social-share/tuesday-trends");
+    await page.getByLabel("Week of (Monday)").fill("2026-10-26");
+    await expect(page.getByRole("button", { name: "Refresh schedule", exact: true })).toBeEnabled();
+    for (const card of ["hot", "deployment", "rates", "movers"]) {
+      await page.getByRole("combobox", { name: /^Graphic/ }).selectOption(card);
+      const square = page.getByTestId("share-square");
+      await expect(square).toContainText(card === "hot" ? "HOT & COLD" : card === "deployment" ? "DEPLOYMENT CHANGES" : card === "rates" ? "RATE STANDOUTS" : "OWNERSHIP MOVERS");
+      await expect(square).not.toContainText("GP this week");
+      await square.scrollIntoViewIfNeeded();
+      await label();
+      await page.screenshot({ path: `${shots}/GENUINE-DATA-${name}-${card}.png`, fullPage: name === "desktop" });
+      if (name !== "desktop") continue;
+      const edition = source.latest!, expected = `${edition.id}|${card}|${edition.selectedDates.join(",")}`, token = (await square.getAttribute("data-export-token"))!;
+      expect(token).toBe(expected);
+      const download = page.getByRole("button", { name: "Download PNG", exact: true });
+      if (await download.isDisabled()) { tokens[card] = { token, expected, png: "not exportable (no rows qualify)" }; await square.screenshot({ path: `${shots}/GENUINE-DATA-preview-${card}.png` }); continue; }
+      const pending = page.waitForEvent("download");
+      await download.click();
+      const saved = await pending, png = `${shots}/GENUINE-DATA-png-${card}.png`;
+      await saved.saveAs(png);
+      expect(saved.suggestedFilename()).toContain(edition.id.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 20));
+      tokens[card] = { token, expected, png: saved.suggestedFilename() };
+    }
+  }
+  await writeFile(`${shots}/GENUINE-DATA-export-tokens.json`, `${JSON.stringify({ capturedAt: capture.capturedAt, tokens }, null, 2)}\n`);
+});

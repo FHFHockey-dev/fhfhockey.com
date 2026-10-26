@@ -172,7 +172,7 @@ export type ShareTrendLayer = {
   version: 2;
   season: number;
   fetchedAt: string | null;
-  /** Newest game date among included skaters, and the oldest rolling-row update time among them. */
+  /** Newest game date among included skaters, and the newest rolling-row update time (the writer's last run). */
   metricsThrough: string | null;
   metricsUpdatedAt: string | null;
   /** The two Yahoo observation dates the movers compare (latest, and the latest on or before 5 days earlier). */

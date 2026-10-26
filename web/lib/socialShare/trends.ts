@@ -89,8 +89,11 @@ export type TrendContext = { season: number; fetchedAt: string; generatedAt: str
 type Active = { latest: ShareRollingRow; previous: ShareRollingRow | null; team: string };
 
 /**
- * Current skaters from the strength-all rows: latest game within the window, fresh (72 h), known team. The previous
- * row is kept only when it is provably the game before (season games played steps by exactly 1).
+ * Current skaters from the strength-all rows: latest game within the window and a known team. The previous row is
+ * kept only when it is provably the game before (season games played steps by exactly 1).
+ * Freshness is the writer's, not the row's (TT-2 capture): the daily pipeline writes each game row once, so a skater
+ * whose last game was four days ago carries a four-day-old `updated_at` while still current. The source is stale
+ * when its newest row update (the writer's last run) is older than 72 h.
  */
 export function activeSkaters(rows: ShareRollingRow[], context: TrendContext) {
   const today = localDate(context.generatedAt, SHARE_TIME_ZONE), oldest = shiftDate(today, -TREND_MAX_GAME_AGE_DAYS), generated = Date.parse(context.generatedAt);
@@ -100,27 +103,25 @@ export function activeSkaters(rows: ShareRollingRow[], context: TrendContext) {
     byPlayer.set(row.player_id, [...(byPlayer.get(row.player_id) ?? []), row]);
   }
   const active = new Map<number, Active>();
-  let stale = 0, future = 0, noTeam = 0, newestUpdate: string | null = null, oldestUpdate: string | null = null, through: string | null = null;
+  let future = 0, noTeam = 0, newestUpdate: string | null = null, through: string | null = null;
   for (const [id, list] of byPlayer) {
     list.sort((a, b) => b.game_date.localeCompare(a.game_date));
     const [latest, second] = list, updated = Date.parse(latest.updated_at);
     if (latest.game_date > today || !Number.isFinite(updated) || updated > generated) { future++; continue; }
     const iso = new Date(updated).toISOString();
     if (!newestUpdate || iso > newestUpdate) newestUpdate = iso;
-    if (generated - updated > PLAYER_STATS_MAX_AGE_MS) { stale++; continue; }
     const team = latest.team_id === null ? undefined : TEAM_BY_ID.get(latest.team_id);
     if (!team) { noTeam++; continue; }
     const contiguous = second && num(latest.season_games_played) && second.season_games_played === latest.season_games_played - 1 ? second : null;
     active.set(id, { latest, previous: contiguous, team });
-    if (!oldestUpdate || iso < oldestUpdate) oldestUpdate = iso;
     if (!through || latest.game_date > through) through = latest.game_date;
   }
   let state: ShareDataState = "ready";
   const reasons: string[] = [];
-  if (stale > active.size) { state = "stale"; reasons.push(`Rolling metrics are stale: last updated ${newestUpdate ? dayLabel(newestUpdate.slice(0, 10)) : "unknown"} (${stale} of ${stale + active.size} skaters older than 72 h).`); }
+  if (newestUpdate && generated - Date.parse(newestUpdate) > PLAYER_STATS_MAX_AGE_MS) { state = "stale"; reasons.push(`Rolling metrics are stale: last updated ${dayLabel(newestUpdate.slice(0, 10))} (newest row older than 72 h).`); }
   else if (!active.size) { state = future ? "missing" : "partial"; reasons.push(future ? "Rolling metric time is in the future." : `No skater has a rolling row from the last ${TREND_MAX_GAME_AGE_DAYS} days.`); }
-  else if (stale || future || noTeam) reasons.push(`Excluded ${stale} stale, ${future} future-dated and ${noTeam} team-unknown skaters.`);
-  return { active, state, reasons, through, updatedAt: oldestUpdate, today };
+  else if (future || noTeam) reasons.push(`Excluded ${future} future-dated and ${noTeam} team-unknown skaters.`);
+  return { active: state === "stale" ? new Map<number, Active>() : active, state, reasons, through, updatedAt: newestUpdate, today };
 }
 
 /** PP evidence per game: unit when listed, "none" when the game has PP rows without the player, else unknown. */
@@ -303,7 +304,7 @@ export const trendDefinitions: Record<ShareTrendKind, string[]> = {
   hot: [`Tuesday form: P/GP last ${TREND_WINDOW_GAMES} GP vs prior GP (season minus L${TREND_WINDOW_GAMES})`, `Min ${MIN_PRIOR_GAMES} prior GP · last game ≤ ${TREND_MAX_GAME_AGE_DAYS} days`],
   deployment: [`TOI/GP L${TREND_WINDOW_GAMES} / season: all · EV · PP`, "Line & PP unit: last game vs the game before", `Listed: any line/PP change or ±${MIN_DEPLOYMENT_TOI_DELTA_SECONDS / 60}:00 TOI · PP ? = unknown`],
   rates: [`Per-60: L${TREND_WINDOW_GAMES} rate and Δ vs season`, `Min ${MIN_RATE_TOI_SECONDS_LAST5 / 60} L${TREND_WINDOW_GAMES} min · ${MIN_TREND_SEASON_GAMES}+ GP`, "iCF = all individual shot attempts"],
-  movers: [`pts = percentage-point change in Yahoo rostered %, latest vs on/before ${MOVER_WINDOW_DAYS} days earlier`, "No observation ≠ 0% · not add/drop counts"],
+  movers: [`pct pts = percentage-point change in Yahoo rostered %, latest vs on/before ${MOVER_WINDOW_DAYS} days earlier`, "No observation ≠ 0% · not add/drop counts"],
 };
 
 /** Snapshot id + graphic + selected days: the PNG must capture exactly this verified edition and card (lane TT). */
