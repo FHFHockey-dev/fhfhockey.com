@@ -287,7 +287,7 @@ test.describe("/start-chart", () => {
         at: "2026-02-10T00:00:00Z", effectiveAt: "2026-02-10T00:00:00Z", conditional: true, dependsOn: [],
       }] };
       await page.addInitScript(workspace => {
-        if (!localStorage.getItem("fhfh:rso:workspace:v1")) localStorage.setItem("fhfh:rso:workspace:v1", JSON.stringify(workspace));
+        if (!localStorage.getItem("fhfh:rso:workspace:v1:anonymous")) localStorage.setItem("fhfh:rso:workspace:v1:anonymous", JSON.stringify(workspace));
       }, saved);
       const passage = "Alpha Center is out with a fixture injury.";
       const report = { id: "fixture-bound-report", headline: "Alpha Center fixture report", blurb: passage,
@@ -368,7 +368,7 @@ test.describe("/start-chart", () => {
       await expect(page).toHaveURL(/\/roster-schedule-optimizer$/);
       await expect(page.getByRole("heading", { name: "Roster Schedule Optimizer", exact: true })).toBeVisible();
       await expect.poll(async () => page.evaluate(() => {
-        const workspace = JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!);
+        const workspace = JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1:anonymous")!);
         return { intent: workspace.intent, roster: workspace.roster, rules: workspace.rules,
           startDate: workspace.context.startDate, endDate: workspace.context.endDate };
       })).toEqual({ intent: saved.intent, roster: saved.roster, rules: saved.rules, startDate: "2026-02-09", endDate: "2026-02-11" });

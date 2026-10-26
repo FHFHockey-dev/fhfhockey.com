@@ -9,9 +9,12 @@ export function workspaceContextKey(context: PlanningContext): string {
   return JSON.stringify([context.provider, context.seasonId, context.leagueId, context.teamId, context.startDate, context.endDate, context.timeZone]);
 }
 
-/** Each signed-in principal has its own namespace; the legacy device key is the one anonymous manual slot. */
+/** The signed-out slot. The bare WORKSPACE_KEY layout predates per-account scoping and is only migrated. */
+export const ANONYMOUS_WORKSPACE_KEY = `${WORKSPACE_KEY}:anonymous`;
+
+/** Each signed-in principal has its own namespace; signed-out visitors share the one anonymous manual slot. */
 export function workspaceStorageKey(principalId: string | null = null): string {
-  return principalId ? `${WORKSPACE_KEY}:principal:${encodeURIComponent(principalId)}` : WORKSPACE_KEY;
+  return principalId ? `${WORKSPACE_KEY}:principal:${encodeURIComponent(principalId)}` : ANONYMOUS_WORKSPACE_KEY;
 }
 
 function contextStorageKey(context: PlanningContext, principalId: string | null = null): string {
@@ -194,26 +197,29 @@ export function defaultWorkspace(now = new Date()): PlanningWorkspace {
   return { version: 1, context: defaultContext(now), rules: defaultRules(), managerRuleOverrides: {}, roster: [], lockedAssignments: [], intent: defaultIntent(), manualPlayers: [], unresolvedNames: [], realized: {}, opponent: null };
 }
 
-/** The anonymous slot never shows provider data: keep only the season, dates and time zone. */
-export function anonymousWorkspace(workspace: PlanningWorkspace): PlanningWorkspace {
-  if (workspace.context.provider === "manual") return workspace;
+/** Keep only the season, dates and time zone; nothing that could belong to an account. */
+function ownerlessWorkspace(workspace: PlanningWorkspace): PlanningWorkspace {
   const { seasonId, startDate, endDate, timeZone, asOf } = workspace.context;
   return { ...defaultWorkspace(), context: { provider: "manual", seasonId, leagueId: "manual", teamId: "manual", startDate, endDate, timeZone, asOf } };
 }
 
-/** One-time cleanup of the device-global layout, whose provider data has no known owner. */
+/** The anonymous slot never shows provider data. */
+export function anonymousWorkspace(workspace: PlanningWorkspace): PlanningWorkspace {
+  return workspace.context.provider === "manual" ? workspace : ownerlessWorkspace(workspace);
+}
+
+/** One-time move off the device-global layout. Its entries have no known owner (a manual one may hold a
+ * "Continue manually" copy of an account's Yahoo roster and plan), so only the dates carry over. */
 export function migrateLegacyWorkspace(storage: Pick<Storage, "getItem" | "setItem" | "removeItem" | "key" | "length">): void {
+  const legacyKeys = Array.from({ length: storage.length }, (_, index) => storage.key(index))
+    .filter((key): key is string => key === WORKSPACE_KEY || key?.startsWith(`${WORKSPACE_KEY}:context:`) === true);
   try {
     const raw = storage.getItem(WORKSPACE_KEY);
     const legacy = raw ? workspaceSchema.safeParse(JSON.parse(raw)) : null;
-    if (legacy?.success && legacy.data.context.provider !== "manual") storage.setItem(WORKSPACE_KEY, JSON.stringify(anonymousWorkspace(legacy.data)));
-    const prefix = `${WORKSPACE_KEY}:context:`;
-    const keys = Array.from({ length: storage.length }, (_, index) => storage.key(index)).filter((key): key is string => key?.startsWith(prefix) === true);
-    for (const key of keys) {
-      const context = JSON.parse(decodeURIComponent(key.slice(prefix.length).replace(/:undo$/, ""))) as unknown[];
-      if (context[0] !== "manual") storage.removeItem(key);
-    }
-  } catch { /* Unreadable legacy entries stay unread: anonymous reads strip provider data. */ }
+    if (legacy?.success && storage.getItem(ANONYMOUS_WORKSPACE_KEY) === null) storage.setItem(ANONYMOUS_WORKSPACE_KEY, JSON.stringify(ownerlessWorkspace(legacy.data)));
+  } catch { /* An unreadable legacy pointer carries nothing over. */ }
+  // Each key on its own, so one failure cannot leave later legacy entries behind.
+  for (const key of legacyKeys) try { storage.removeItem(key); } catch { /* Retried on the next load. */ }
 }
 
 export function readWorkspace(storage: Pick<Storage, "getItem">, context?: PlanningContext, principalId: string | null = null): PlanningWorkspace | null {

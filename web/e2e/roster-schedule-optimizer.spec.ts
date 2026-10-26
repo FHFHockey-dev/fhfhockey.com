@@ -136,7 +136,7 @@ test("manual workspace retains reviewed intent, protections and locks through re
     await page.getByRole("spinbutton", { name: "Weight", exact: true }).fill(String(weight));
     await expect(page.getByRole("spinbutton", { name: "Weight", exact: true })).toHaveValue(String(weight));
     await page.getByText("Scoring, budgets, and lock windows", { exact: true }).click();
-    await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!))).toMatchObject({
+    await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1:anonymous")!))).toMatchObject({
       intent: saved.intent, lockedAssignments: saved.lockedAssignments, roster: saved.roster,
       rules: { scoring: { weights: { GOALS: weight } } },
     });
@@ -148,7 +148,7 @@ test("manual workspace retains reviewed intent, protections and locks through re
     await page.getByText("League rules and scoring", { exact: true }).click();
     await expect(confirm).toBeEnabled();
     await page.getByText("League rules and scoring", { exact: true }).click();
-    await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!))).toMatchObject({
+    await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1:anonymous")!))).toMatchObject({
       intent: saved.intent, lockedAssignments: saved.lockedAssignments, roster: saved.roster,
       rules: { lineupMode: "weekly", scoring: { weights: { GOALS: weight } } },
     });
@@ -174,13 +174,13 @@ test("mobile tabs keep selection and expose the matchup and player details", asy
   await page.getByRole("textbox", { name: "Paste roster names" }).fill("Alpha Center");
   await page.getByRole("button", { name: "Review pasted names" }).click();
   await expect(page.locator("#rso-action-status")).toHaveText("Roster review complete: 0 added, 1 already rostered, 0 unresolved. No new roster players were added.");
-  const retained = await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"));
+  const retained = await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1:anonymous"));
   const detail = page.getByRole("region", { name: "Player details for Alpha Center", exact: true });
   await page.getByRole("region", { name: "Roster and setup" }).getByRole("button", { name: /^Alpha Center/ }).click();
   await expect(page.getByRole("region", { name: "Candidates and detail" })).toBeVisible();
   await expect(detail).toBeVisible();
   await expect(detail).toBeFocused();
-  expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"))).toBe(retained);
+  expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1:anonymous"))).toBe(retained);
   await page.screenshot({ path: testInfo.outputPath("player-detail-mobile.png") });
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.getByRole("button", { name: "Matchup", exact: true }).click();
@@ -193,7 +193,7 @@ test("mobile tabs keep selection and expose the matchup and player details", asy
   await expect(page.getByRole("region", { name: "Candidates and detail" })).toBeVisible();
   await expect(detail).toBeVisible();
   await expect(detail).toBeFocused();
-  expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"))).toBe(retained);
+  expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1:anonymous"))).toBe(retained);
   await expectDesktopFrameVisible(page);
   await page.screenshot({ path: testInfo.outputPath("player-detail-desktop.png") });
 });
@@ -255,7 +255,7 @@ test("readiness controls reach existing inputs across the required viewports", a
     await expect(page.getByText(/Rule checks passed/)).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
     await page.screenshot({ path: testInfo.outputPath(`input-review-${width}x${height}.png`) });
-    await page.evaluate(() => localStorage.removeItem("fhfh:rso:workspace:v1"));
+    await page.evaluate(() => localStorage.removeItem("fhfh:rso:workspace:v1:anonymous"));
   }
   expect(errors).toEqual([]);
 });
@@ -295,9 +295,9 @@ test("streams A to B to C through successive conditional acquisitions and keeps 
   await openPlanDetails(page);
   await expect(page.getByText("Recheck availability and clearance before this conditional move.", { exact: false })).toBeVisible();
   await page.evaluate(() => {
-    const retained = JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!);
+    const retained = JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1:anonymous")!);
     retained.rules.unsupported = ["Some league scoring or roster rules are unsupported."];
-    localStorage.setItem("fhfh:rso:workspace:v1", JSON.stringify(retained));
+    localStorage.setItem("fhfh:rso:workspace:v1:anonymous", JSON.stringify(retained));
   });
   await page.reload();
   await openPlanDetails(page);
@@ -318,7 +318,7 @@ test("streams A to B to C through successive conditional acquisitions and keeps 
   await nextAction.scrollIntoViewIfNeeded();
   await expect(nextAction).toBeInViewport();
   await expect(page.getByText("Review inputs and rule checks before acting.", { exact: false })).toBeVisible();
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!).intent)).toEqual(workspace.intent);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1:anonymous")!).intent)).toEqual(workspace.intent);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   await page.screenshot({ path: testInfo.outputPath("roster-optimizer-next-action-mobile.png"), fullPage: true });
 });
@@ -401,7 +401,7 @@ for (const { candidateShots, candidateLock, label } of [
     await expect(itinerary.getByRole("button", { name: "Show category lineup comparison" })).toHaveAttribute("aria-pressed", "true");
     await openPlanDetails(page);
     await expect(gains.getByText("Category gains unavailable. Review forecast coverage, opponent inputs, acquisition rules and goalie minimums.", { exact: true })).toHaveCount(0);
-    await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!))).toMatchObject({
+    await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1:anonymous")!))).toMatchObject({
       intent: workspace.intent, lockedAssignments: workspace.lockedAssignments,
     });
     if (width >= 1101) await expectDesktopFrameVisible(page);
@@ -885,7 +885,7 @@ test("manual league eligibility must be confirmed and survives a reload", async 
   await expect(page.getByRole("region", { name: "Itinerary" }).getByRole("table").first()).toContainText("Alpha Center");
   await page.reload();
   await expectQualityReadiness(page, true);
-  const retained = await page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!).manualPlayers);
+  const retained = await page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1:anonymous")!).manualPlayers);
   expect(retained.every((player: PlanningPlayer) => player.eligibilityVerified === true)).toBe(true);
   expect(errors).toEqual([]);
 });
@@ -1434,7 +1434,7 @@ test("candidate feedback views preserve eligibility, availability and planned-ad
   await page.keyboard.press("Enter");
   await expect(page.getByRole("region", { name: "Candidates and detail" }).getByText("Alpha Unknown", { exact: true }).first()).toBeVisible();
   await browser.getByRole("button", { name: "Mark available", exact: true }).click();
-  const stored = () => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!) as PlanningWorkspace);
+  const stored = () => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1:anonymous")!) as PlanningWorkspace);
   // Local persistence is asynchronous; wait for the marked availability before reading the rest.
   await expect.poll(async () => (await stored()).manualPlayers.find(member => member.id === low.id)?.availability).toBe("manager_available");
   expect((await stored()).manualPlayers.find(member => member.id === low.id)).toMatchObject({ availability: "manager_available", eligibilityVerified: false });
@@ -1473,7 +1473,7 @@ test("candidate feedback views preserve eligibility, availability and planned-ad
   await expect(browser.getByRole("searchbox", { name: "Find candidate" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   await page.screenshot({ path: testInfo.outputPath("rso-feedback-mobile.png"), fullPage: true });
-  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!));
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1:anonymous")!));
   expect(saved.manualPlayers.find((member: PlanningPlayer) => member.id === high.id).eligiblePositions).toEqual(["C", "Util"]);
   expect(saved.manualPlayers.find((member: PlanningPlayer) => member.id === missing.id).availability).toBe("unknown");
 });
@@ -1700,7 +1700,7 @@ test("Audit1 native candidate Worker finds complete swaps before any plan is sel
   await page.getByRole("button", { name: "Confirm planning inputs" }).click();
   await page.getByText("League rules and scoring", { exact: true }).click();
   await expect(card.getByRole("button", { name: /^Preview swap: add Strongest Last Candidate, drop Owned Weak$/ })).toBeEnabled();
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!).intent.steps)).toEqual([]);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1:anonymous")!).intent.steps)).toEqual([]);
   await writeFile(testInfo.outputPath("audit1-native-worker.json"), JSON.stringify({
     scope: "Native browser Worker and served local UI; intercepted synthetic inputs, not genuine feed acceptance", metrics,
   }, null, 2));
@@ -1951,7 +1951,7 @@ test("compact day and bench controls preserve saved intent and keyboard selectio
     workspace.lockedAssignments = (workspace.lockedAssignments ?? []).filter(lock => lock.slotId !== null);
   });
   const table = page.getByRole("table", { name: "Individual player weekly schedule" });
-  const stored = await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"));
+  const stored = await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1:anonymous"));
   const calls: string[] = [];
   page.on("request", request => { if (request.url().includes("/api/") && ["POST", "PUT", "PATCH", "DELETE"].includes(request.method())) calls.push(request.method() + " " + request.url()); });
   const slider = page.getByRole("slider", { name: "Selected planning day" });
@@ -2029,7 +2029,7 @@ test("compact day and bench controls preserve saved intent and keyboard selectio
   await bench.focus();
   await page.keyboard.press("Enter"); await expect(bench).toHaveAttribute("aria-expanded", "true");
   await expect(table.locator('tbody[data-position="BENCH"] tr[data-player-id]:visible')).toHaveCount(6);
-  expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"))).toBe(stored);
+  expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1:anonymous"))).toBe(stored);
   expect(calls).toEqual([]);
   await writeFile(testInfo.outputPath("compact-bench-viewport-metrics.json"), JSON.stringify(viewportMetrics, null, 2));
   await page.screenshot({ path: testInfo.outputPath("compact-keyboard-focus.png") });
@@ -2041,7 +2041,7 @@ test("compact day and bench controls preserve saved intent and keyboard selectio
   await expectCapacityAboveSchedule();
   await bench.focus(); await page.keyboard.press("Enter");
   await expect(bench).toHaveAttribute("aria-expanded", "false");
-  expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"))).toBe(stored);
+  expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1:anonymous"))).toBe(stored);
   await page.screenshot({ path: testInfo.outputPath("compact-bench-zero-capacity-mobile.png") });
 });
 
@@ -2143,7 +2143,7 @@ test.extend({ timezoneId: "Pacific/Kiritimati" })("compact future and partial we
   await openCompactControls(page);
   const slider = page.getByRole("slider", { name: "Selected planning day" });
   await expect(slider).toHaveAttribute("aria-valuetext", "Mon, Oct 5");
-  const savedBeforeRead = await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"));
+  const savedBeforeRead = await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1:anonymous"));
   await setPlanningTime(page, new Date("2026-10-07T01:00:00Z"));
   await page.reload();
   await openCompactControls(page);
@@ -2154,24 +2154,24 @@ test.extend({ timezoneId: "Pacific/Kiritimati" })("compact future and partial we
   await expect.poll(() => page.evaluate(() => (window as any).__currentReadContexts)).toContainEqual({
     asOf: "2026-10-07T01:00:00.000Z", manifestAsOf: "2026-10-07T01:00:00.000Z",
   });
-  expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"))).toBe(savedBeforeRead);
+  expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1:anonymous"))).toBe(savedBeforeRead);
   expect(JSON.parse(savedBeforeRead!).context.asOf).toBe(fixture.workspace.context.asOf);
   await writeFile(test.info().outputPath("current-read-preservation.json"), JSON.stringify({
     contexts: await page.evaluate(() => (window as any).__currentReadContexts), savedAsOf: JSON.parse(savedBeforeRead!).context.asOf,
   }, null, 2));
   await page.getByRole("button", { name: "Select Thu, Oct 8" }).click();
   await expect(slider).toHaveAttribute("aria-valuetext", "Thu, Oct 8");
-  const stored = await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"));
+  const stored = await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1:anonymous"));
   await page.getByRole("button", { name: "Next schedule week" }).click();
   await expect(slider).toHaveAttribute("aria-valuetext", "Thu, Oct 15");
   await expectDaySliderAligned(page);
   await page.getByRole("button", { name: "Previous schedule week" }).click();
   await expect(slider).toHaveAttribute("aria-valuetext", "Thu, Oct 8");
-  expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"))).toBe(stored);
+  expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1:anonymous"))).toBe(stored);
   await page.evaluate(() => {
-    const workspace = JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!);
+    const workspace = JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1:anonymous")!);
     workspace.context.startDate = "2026-10-07"; workspace.context.endDate = "2026-10-11";
-    localStorage.setItem("fhfh:rso:workspace:v1", JSON.stringify(workspace));
+    localStorage.setItem("fhfh:rso:workspace:v1:anonymous", JSON.stringify(workspace));
   });
   await page.reload();
   await openCompactControls(page);
@@ -2205,10 +2205,10 @@ test("compact initial future week defaults to Monday and preserves clipped horiz
   await expectDaySliderAligned(page);
   await page.screenshot({ path: testInfo.outputPath("future-initial-monday.png") });
   await page.evaluate(() => {
-    const workspace = JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!);
+    const workspace = JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1:anonymous")!);
     workspace.context.startDate = "2026-10-14";
     workspace.context.endDate = "2026-10-20";
-    localStorage.setItem("fhfh:rso:workspace:v1", JSON.stringify(workspace));
+    localStorage.setItem("fhfh:rso:workspace:v1:anonymous", JSON.stringify(workspace));
   });
   await page.reload();
   await openCompactControls(page);
@@ -2219,7 +2219,7 @@ test("compact initial future week defaults to Monday and preserves clipped horiz
   await expect(page.getByRole("button", { name: "Select Tue, Oct 13" })).toHaveAccessibleDescription(/Disabled dates are outside selected range/);
   await expect(page.getByText(/Disabled dates are outside selected range\./)).toBeVisible();
   await expectDesktopFrameVisible(page);
-  const stored = await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"));
+  const stored = await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1:anonymous"));
   await page.getByRole("button", { name: "Next schedule week" }).click();
   await expect(slider).toHaveAttribute("aria-valuetext", "Mon, Oct 19");
   await expect(page.getByRole("button", { name: "Next schedule week" })).toBeDisabled();
@@ -2227,18 +2227,18 @@ test("compact initial future week defaults to Monday and preserves clipped horiz
   await expect(page.getByText(/Disabled dates are outside selected range\./)).toBeVisible();
   await page.getByRole("button", { name: "Previous schedule week" }).click();
   await expect(slider).toHaveAttribute("aria-valuetext", "Wed, Oct 14");
-  expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"))).toBe(stored);
+  expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1:anonymous"))).toBe(stored);
   await page.getByRole("button", { name: "Select Sun, Oct 18" }).click();
   await page.reload();
   await openCompactControls(page);
   await expect(slider).toHaveAttribute("aria-valuetext", "Sun, Oct 18");
-  expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"))).toBe(stored);
+  expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1:anonymous"))).toBe(stored);
   await page.screenshot({ path: testInfo.outputPath("partial-future-resumed-sunday.png") });
   const preferenceKey = await page.evaluate(() => Object.keys(localStorage).find(key => key.startsWith("fhfh:rso:view-date:v1:") && localStorage.getItem(key) === "2026-10-18")!);
   const switchFixtureWorkspace = async (value: string, marker: string) => {
     await page.addInitScript(({ value, marker }) => {
       if (sessionStorage.getItem(marker)) return;
-      localStorage.setItem("fhfh:rso:workspace:v1", value);
+      localStorage.setItem("fhfh:rso:workspace:v1:anonymous", value);
       sessionStorage.setItem(marker, "applied");
     }, { value, marker });
     await page.reload();
@@ -2247,17 +2247,17 @@ test("compact initial future week defaults to Monday and preserves clipped horiz
   const other = JSON.parse(stored!);
   other.context.teamId = "other-manual-team";
   await switchFixtureWorkspace(JSON.stringify(other), "fixture-date-context-b");
-  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!).context.teamId)).toBe("other-manual-team");
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1:anonymous")!).context.teamId)).toBe("other-manual-team");
   await expect(slider).toHaveAttribute("aria-valuetext", "Wed, Oct 14");
   await switchFixtureWorkspace(stored!, "fixture-date-context-a");
-  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!).context)).toEqual(JSON.parse(stored!).context);
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1:anonymous")!).context)).toEqual(JSON.parse(stored!).context);
   await expect(slider).toHaveAttribute("aria-valuetext", "Sun, Oct 18");
   for (const value of ["not-a-date", "2026-10-21"]) {
     await page.evaluate(({ key, value }) => localStorage.setItem(key, value), { key: preferenceKey, value });
     await page.reload();
   await openCompactControls(page);
     await expect(slider).toHaveAttribute("aria-valuetext", "Wed, Oct 14");
-    expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"))).toBe(stored);
+    expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1:anonymous"))).toBe(stored);
   }
 });
 
@@ -2272,7 +2272,7 @@ test("compact vacancies and non-playing holds survive day changes and Bench coll
       ...fixture.workspace.roster.filter(row => row.position === "bench").map(row => ({ date: "2026-10-08", playerId: row.playerId, slotId: null })));
   });
   const table = page.getByRole("table", { name: "Individual player weekly schedule" });
-  const stored = await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"));
+  const stored = await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1:anonymous"));
   for (const date of ["Wed, Oct 7", "Thu, Oct 8", "Wed, Oct 7"]) {
     await page.getByRole("button", { name: `Select ${date}` }).click();
     await expect(table.locator('[data-player-id]')).toHaveCount(18);
@@ -2291,7 +2291,7 @@ test("compact vacancies and non-playing holds survive day changes and Bench coll
     await expect(table.getByRole("rowheader", { name: /Open D/ })).toHaveCount(2);
     await page.getByRole("button", { name: /Bench 6/ }).click();
   }
-  expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"))).toBe(stored);
+  expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1:anonymous"))).toBe(stored);
   await page.screenshot({ path: testInfo.outputPath("compact-two-vacancies-held-player.png") });
 });
 
@@ -2313,7 +2313,7 @@ test.extend({ hasTouch: true })("compact partial and unavailable evidence retain
   const table = page.getByRole("table", { name: "Individual player weekly schedule" });
   const summary = page.getByRole("region", { name: "Selected-day lineup summary" });
   const verifyMobileWorkspaces = async (state: "partial" | "unavailable") => {
-    const stored = await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"));
+    const stored = await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1:anonymous"));
     for (const width of [390, 320]) {
       await page.setViewportSize({ width, height: 844 });
       const tabs = page.getByRole("navigation", { name: "Workspace views" });
@@ -2337,7 +2337,7 @@ test.extend({ hasTouch: true })("compact partial and unavailable evidence retain
       }
       await page.screenshot({ path: testInfo.outputPath(`compact-${state}-${width}.png`) });
     }
-    expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"))).toBe(stored);
+    expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1:anonymous"))).toBe(stored);
     await page.setViewportSize({ width: 1440, height: 900 });
   };
   await expect(table.locator('[data-player-id]')).toHaveCount(20);

@@ -124,7 +124,7 @@ test("2. account and league switches never leak another principal's or context's
   await expect(rosterPanel.getByText("Alpha Private")).toHaveCount(0);
   await expect(main.getByText("ADD Bravo Private", { exact: true })).toHaveCount(0);
   await expect(page.getByText("0 players", { exact: true })).toBeVisible();
-  const anonymous = await page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1") ?? "null") as { context: { provider: string } } | null);
+  const anonymous = await page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1:anonymous") ?? "null") as { context: { provider: string } } | null);
   expect([null, "manual"]).toContain(anonymous?.context.provider ?? null);
 });
 
@@ -263,7 +263,7 @@ test("6b. missing and failed planning reads show their state instead of a plan",
 
   const players = roster();
   const workspace = fixtureWorkspace(players);
-  await page.evaluate(value => localStorage.setItem("fhfh:rso:workspace:v1", JSON.stringify(value)), workspace);
+  await page.evaluate(value => localStorage.setItem("fhfh:rso:workspace:v1:anonymous", JSON.stringify(value)), workspace);
   await routeCurrentPlanning(page, route => route.fulfill({ status: 503, json: { success: false, error: "Fixture: current read unavailable." } }));
   await page.reload();
   await expect(page.getByRole("status").filter({ hasText: "Fixture: current read unavailable." }).first()).toBeVisible();
