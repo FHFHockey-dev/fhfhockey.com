@@ -178,15 +178,18 @@ describe("RSO daily beta: connected Yahoo acceptance packet", () => {
       expect(evaluatePlan(snapshot, intent(), "agp", [add("x", "fa1")]).legal).toBe(false);
     });
 
-    // DEFECT Y1 (YAHOO/DEFECTS.md): with every read verified, capabilities.rules stays false but no limitation names the
-    // unverified rule facts, so the UI's limitation-driven health list can present the league as complete. Remove `.fails` once fixed.
-    it.fails("names the unverified rule facts whenever capabilities.rules is false", async () => {
+    // Regression for YAHOO Y1: with every read verified, capabilities.rules stays false and the unverified rule facts are named.
+    it("names the unverified rule facts whenever capabilities.rules is false", async () => {
       world.scoreboard = true;
       const { snapshot, capabilities } = await load();
       expect(snapshot.opponent).not.toBeNull();
       expect(capabilities).toMatchObject({ roster: true, availability: true, acquisitions: true, matchup: true, rules: false });
       expect(snapshot.rules.acquisitionTiming).toBe("unknown");
-      expect(capabilities.limitations.some(text => /acquisition timing|transaction timing|effective/i.test(text))).toBe(true);
+      expect(capabilities.limitations).toEqual(["Yahoo does not report these league rules; confirm them in League rules: when an add takes effect (same-day or next-day); "
+        + "waiver mode and FAAB budget; the exact weekly add reset time (league-local midnight is assumed); how the goalie minimum counts (starts or appearances) and its penalty."]);
+      expect(snapshot.evidence.roster?.limitations).toEqual(capabilities.limitations);
+      expect(snapshot.rules.waivers).toBeUndefined();
+      expect(snapshot.rules.goalieMinimum).toMatchObject({ counts: "unknown", penalty: "unknown" });
     });
 
     it("keeps a missing league time zone explicit instead of assuming one", async () => {
