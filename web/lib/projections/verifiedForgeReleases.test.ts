@@ -2,9 +2,13 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { VERIFIED_FORGE_RELEASES, verifiedForgeRelease } from "./verifiedForgeReleases";
+import { VERIFIED_FORGE_PRODUCER_CLOSURES, VERIFIED_FORGE_RELEASES, verifiedForgeProducerClosure, verifiedForgeRelease } from "./verifiedForgeReleases";
 
 const repoRoot = resolve(__dirname, "../../..");
+const fileSha256 = (path: string) => createHash("sha256").update(readFileSync(path, "utf8")).digest("hex");
+/** Made by the verifier as it stands: changing either script means re-verifying every listed entry. */
+const currentVerifier = () => ({ verifierSha256: fileSha256(resolve(__dirname, "../../scripts/verify-forge-release-sha.ts")),
+  closureWalkerSha256: fileSha256(resolve(__dirname, "../../scripts/forge-producer-closure.ts")) });
 
 describe("verified FORGE releases", () => {
   it("lists only the individually verified production release 538100d41, by its full SHA", () => {
@@ -19,12 +23,34 @@ describe("verified FORGE releases", () => {
       const receipt = JSON.parse(text);
       expect(receipt).toMatchObject({ version: release.verifierVersion, sha, verified: true, findings: [],
         closure: { modulesSha256: release.closureSha256 } });
-      // Made by the verifier as it stands: changing the script means re-verifying every listed release.
-      expect(receipt.verifierSha256).toBe(createHash("sha256").update(readFileSync(resolve(__dirname, "../../scripts/verify-forge-release-sha.ts"), "utf8")).digest("hex"));
+      expect(receipt).toMatchObject(currentVerifier());
       // The closure really is the FORGE run path, fallbacks and bootstrap included.
       expect(receipt.closure.modules).toEqual(expect.arrayContaining(["lib/projections/run-forge-projections.ts",
         "lib/projections/seasonBootstrap.ts", "lib/projections/stages/skater-stage.ts", "lib/projections/queries/skater-queries.ts"]));
     });
+
+  it.each(VERIFIED_FORGE_PRODUCER_CLOSURES.map(closure => [closure.closureSha256, closure] as const))(
+    "binds producer closure %s to its own passing verifier receipt", (closureSha256, closure) => {
+      expect(closureSha256).toMatch(/^[0-9a-f]{64}$/);
+      const text = readFileSync(resolve(repoRoot, closure.receipt), "utf8");
+      expect(createHash("sha256").update(text).digest("hex")).toBe(closure.receiptSha256);
+      const receipt = JSON.parse(text);
+      expect(receipt).toMatchObject({ version: closure.verifierVersion, verified: true, findings: [], ...currentVerifier(),
+        producerIdentity: { version: "forge-producer-closure-v1", closureSha256 }, closure: { modulesSha256: closureSha256 } });
+      expect(receipt.closure.modules).toEqual(expect.arrayContaining(["lib/projections/forgeProducerIdentity.ts",
+        "lib/projections/queries/run-lifecycle-queries.ts", "lib/projections/seasonBootstrap.ts"]));
+      // Admission stays outside what it admits.
+      expect(receipt.closure.modules).not.toContain("lib/projections/verifiedForgeReleases.ts");
+      expect(receipt.closure.modules).not.toContain("lib/projections/externalInputProof.ts");
+    });
+
+  it("matches only an exact closure hash", () => {
+    const closure = VERIFIED_FORGE_PRODUCER_CLOSURES[0].closureSha256;
+    expect(verifiedForgeProducerClosure(closure)?.closureSha256).toBe(closure);
+    for (const near of [closure.slice(0, 63), `${closure}0`, closure.toUpperCase(), "1".repeat(64), VERIFIED_FORGE_RELEASES[0].sha, null]) {
+      expect(verifiedForgeProducerClosure(near), String(near)).toBeNull();
+    }
+  });
 
   it("matches only the exact full SHA", () => {
     const sha = VERIFIED_FORGE_RELEASES[0].sha;

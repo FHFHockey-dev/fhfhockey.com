@@ -10,10 +10,9 @@ import { buildResolvedDataServingContract } from "lib/dashboard/freshness";
 import { buildCanonicalReaderCompatibility } from "lib/projections/compatibilityInventory";
 import { buildSkaterModeledHeadTotals } from "lib/projections/modeledHeadTotals";
 import * as forgeSkaterContext from "lib/projections/forgeSkaterContext";
-import { loadExternalInputProof } from "lib/projections/externalInputProof";
+import { loadExternalInputProof, requireLatestExternalInputProvenRunId } from "lib/projections/externalInputProof";
 import {
   buildProjectionApiErrorResponse,
-  requireLatestExternalInputProvenRunId,
 } from "lib/projections/apiHelpers";
 
 type LineComboRecencyClass = "FRESH" | "SOFT_STALE" | "HARD_STALE" | "MISSING";

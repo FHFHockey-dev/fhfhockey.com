@@ -5,7 +5,8 @@ const lookup = vi.hoisted(() => ({
 }));
 vi.mock("lib/supabase/server", () => ({ default: { from: lookup.from } }));
 
-import { requireLatestExternalInputProvenRunId, requireLatestSucceededRunId } from "./apiHelpers";
+import { requireLatestSucceededRunId } from "./apiHelpers";
+import { requireLatestExternalInputProvenRunId } from "./externalInputProof";
 import { provenSnapshotRow, unprovenSnapshotRow, verifiedReleaseRunRow } from "./externalInputProof.fixtures";
 import {
   FORGE_ROLLING_HISTORY_INPUT_CONTRACT,

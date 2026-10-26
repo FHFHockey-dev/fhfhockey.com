@@ -159,7 +159,19 @@ describe("run writer provenance", () => {
   it("stamps the run horizon at creation", async () => {
     await createRun("2026-10-18");
     await createRun("2026-10-18", 5);
-    expect(db.inserted.map((row) => row.metrics)).toEqual([{ horizon_games: 1 }, { horizon_games: 5 }]);
+    expect(db.inserted.map((row) => row.metrics.horizon_games)).toEqual([1, 5]);
+  });
+
+  it("stamps the executing producer closure beside the SHA, and an unknown one when the build has none", async () => {
+    const closure = "e".repeat(64);
+    vi.stubEnv("FORGE_PRODUCER_CLOSURE_SHA256", closure);
+    await createRun("2026-10-18");
+    vi.stubEnv("FORGE_PRODUCER_CLOSURE_SHA256", "not-a-hash");
+    await createRun("2026-10-18");
+    vi.unstubAllEnvs();
+    expect(db.inserted.map((row) => row.metrics.producer_identity)).toEqual([
+      { version: "forge-producer-closure-v1", invocations: [closure] },
+      { version: "forge-producer-closure-v1", invocations: [null] }]);
   });
 
   it("stamps the deployment commit SHA when one is set", async () => {

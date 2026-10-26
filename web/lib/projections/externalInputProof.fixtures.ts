@@ -19,7 +19,13 @@ export function unprovenSnapshotRow(runId: string) {
  * succeeded run of the verified production release 538100d41. */
 export function verifiedReleaseRunRow(runId: string, overrides: Record<string, unknown> = {}) {
   return { run_id: runId, git_sha: "538100d41ee87e721d2764b694f7bac8c2f2bb34", status: "succeeded", invocations: "1",
-    rolling_player_history_contract: FORGE_ROLLING_HISTORY_INPUT_CONTRACT, ...overrides };
+    rolling_player_history_contract: FORGE_ROLLING_HISTORY_INPUT_CONTRACT, producer_identity: null as unknown, ...overrides };
+}
+
+/** A stamped single-invocation run of a later, unlisted release SHA: admitted only by its stamped closure(s). */
+export function stampedRunRow(runId: string, closures: Array<string | null>, overrides: Record<string, unknown> = {}) {
+  return verifiedReleaseRunRow(runId, { git_sha: "82490cd4591758f145cbcfeab6137719c84c57e9",
+    producer_identity: { version: "forge-producer-closure-v1", invocations: closures }, ...overrides });
 }
 
 /** A client whose snapshot reads return `rows`, and whose `forge_runs` attribution reads return `runRows`, matching the

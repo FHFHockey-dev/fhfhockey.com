@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import supabase from "lib/supabase/server";
 import type { Json } from "lib/supabase/database-generated.types";
 import { isOffReleaseGitSha, LOCAL_UNKNOWN_GIT_SHA } from "lib/projections/releasedRunFence";
+import { producerIdentityStamp, type ForgeProducerIdentityStamp } from "lib/projections/forgeProducerIdentity";
 
 function assertSupabase() {
   if (!supabase) throw new Error("Supabase server client not available");
@@ -54,6 +55,8 @@ export type ForgeRunClaim = {
   invocations: number;
   completedGameIds: number[];
   priorMetrics: { [key: string]: Json | undefined };
+  /** Each invocation's producer closure, this one last (forgeProducerIdentity.ts); readers admit one invocation. */
+  producerIdentity?: ForgeProducerIdentityStamp;
 };
 
 type ForgeRunLifecycleRow = {
@@ -250,14 +253,16 @@ function currentRunGitSha() {
   return process.env.VERCEL_GIT_COMMIT_SHA || process.env.GIT_SHA || LOCAL_UNKNOWN_GIT_SHA;
 }
 
-async function insertRunningRun(asOfDate: string, metrics: JsonObject) {
+async function insertRunningRun(asOfDate: string, metrics: JsonObject,
+  producerIdentity: ForgeProducerIdentityStamp = producerIdentityStamp()) {
   const { data, error } = await supabase
     .from("forge_runs")
     .insert({
       as_of_date: asOfDate,
       status: "running",
       git_sha: currentRunGitSha(),
-      metrics
+      // Stamped beside git_sha: the closure that executed this invocation, which git_sha alone cannot prove.
+      metrics: { ...metrics, producer_identity: producerIdentity }
     })
     .select("run_id")
     .single<{ run_id: string }>();
@@ -335,10 +340,12 @@ export async function claimResumableRun(
       released_by: null
     };
     const priorMetrics = candidate.metrics as JsonObject;
+    // A resume appends this invocation's closure, so a run finished by another release never reads as one producer.
+    const producerIdentity = producerIdentityStamp(priorMetrics.producer_identity, true);
     const { data, error } = await supabase
       .from("forge_runs")
       .update({
-        metrics: { ...priorMetrics, resume },
+        metrics: { ...priorMetrics, resume, producer_identity: producerIdentity },
         updated_at: new Date(nowMs).toISOString()
       })
       .eq("run_id", candidate.run_id)
@@ -356,7 +363,8 @@ export async function claimResumableRun(
       resumed: true,
       invocations: resume.invocations,
       completedGameIds: previous.completed_game_ids,
-      priorMetrics
+      priorMetrics,
+      producerIdentity
     };
   }
 
@@ -369,18 +377,20 @@ export async function claimResumableRun(
     invocations: 1,
     released_by: null
   };
+  const producerIdentity = producerIdentityStamp();
   return {
     runId: await insertRunningRun(asOfDate, {
       horizon_games: Number(/^h(\d+):/.exec(args.scopeKey)?.[1] ?? 1),
       resume
-    }),
+    }, producerIdentity),
     scopeKey: args.scopeKey,
     leaseOwner,
     leaseExpiresAt: args.leaseExpiresAt,
     resumed: false,
     invocations: 1,
     completedGameIds: [],
-    priorMetrics: {}
+    priorMetrics: {},
+    producerIdentity
   };
 }
 
@@ -423,7 +433,8 @@ export async function writeClaimedRun(
     .from("forge_runs")
     .update({
       status: args.status,
-      metrics: { ...args.metrics, resume } as Json,
+      metrics: { ...args.metrics, resume, producer_identity: claim.producerIdentity
+        ?? producerIdentityStamp(claim.priorMetrics.producer_identity, claim.resumed) } as Json,
       updated_at: nowIso
     })
     .eq("run_id", claim.runId)
@@ -515,9 +526,11 @@ export async function finalizeRun(
   metrics: Json
 ) {
   assertSupabase();
+  // An unclaimed run is written by one invocation, which stamps its closure on the final metrics.
+  const stamped = isJsonObject(metrics) ? { ...metrics, producer_identity: producerIdentityStamp() } : metrics;
   const { error } = await supabase
     .from("forge_runs")
-    .update({ status, metrics, updated_at: new Date().toISOString() })
+    .update({ status, metrics: stamped as Json, updated_at: new Date().toISOString() })
     .eq("run_id", runId);
   if (error) throw error;
 }

@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import { buildForgeInputProvenance, FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT, FORGE_ROLLING_HISTORY_INPUT_CONTRACT } from "./calibrationEligibility";
 import { capturedReadReceipt } from "./inputCapture";
-import { externalInputProofByRun, loadExternalInputProof, runAttributedToVerifiedRelease, snapshotProvesExternalInputExclusion } from "./externalInputProof";
-import { provenSnapshotRow, proofDb, unprovenSnapshotRow, verifiedReleaseRunRow } from "./externalInputProof.fixtures";
+import { externalInputProofByRun, loadExternalInputProof, snapshotProvesExternalInputExclusion, verifiedRunAttribution } from "./externalInputProof";
+import { provenSnapshotRow, proofDb, stampedRunRow, unprovenSnapshotRow, verifiedReleaseRunRow } from "./externalInputProof.fixtures";
+import { VERIFIED_FORGE_PRODUCER_CLOSURES } from "./verifiedForgeReleases";
 
 const RELEASE = "538100d41ee87e721d2764b694f7bac8c2f2bb34";
 
@@ -53,7 +54,8 @@ describe("FORGE external-input exclusion proof", () => {
     expect(reads[0].columns.split(",")).not.toContain("payload");
     expect(reads[0].columns).not.toMatch(/payload->>?reads/);
     expect(reads[3].columns).toBe("run_id,git_sha,status,invocations:metrics->resume->>invocations,"
-      + "rolling_player_history_contract:metrics->input_provenance->>rolling_player_history_contract");
+      + "rolling_player_history_contract:metrics->input_provenance->>rolling_player_history_contract,"
+      + "producer_identity:metrics->producer_identity");
     expect(await loadExternalInputProof(db as never, [])).toEqual(new Map());
     expect(reads).toHaveLength(5);
   });
@@ -83,7 +85,7 @@ describe("FORGE external-input exclusion proof", () => {
     ])("rejects %s", async (_label, patch) => {
       const { db } = proofDb([], [verifiedReleaseRunRow("run", patch)]);
       expect((await loadExternalInputProof(db as never, ["run"])).has("run")).toBe(false);
-      expect(runAttributedToVerifiedRelease(verifiedReleaseRunRow("run", patch))).toBeNull();
+      expect(verifiedRunAttribution(verifiedReleaseRunRow("run", patch))).toBeNull();
     });
 
     it("never lets the release override a snapshot that does not prove exclusion, and still accepts captured proof", async () => {
@@ -97,6 +99,61 @@ describe("FORGE external-input exclusion proof", () => {
 
     it("rejects a run id that matches more than one attribution row", () => {
       expect(externalInputProofByRun([], ["run"], [verifiedReleaseRunRow("run"), verifiedReleaseRunRow("run")]).has("run")).toBe(false);
+    });
+  });
+
+  describe("stamped runs: the verified producer closure that executed them", () => {
+    const VERIFIED = VERIFIED_FORGE_PRODUCER_CLOSURES[0].closureSha256, CHANGED = "1".repeat(64);
+    const admitted = async (row: Record<string, unknown>, snapshots: Array<Record<string, unknown>> = []) =>
+      (await loadExternalInputProof(proofDb(snapshots, [row]).db as never, [row.run_id as string])).get(row.run_id as string);
+
+    it("admits the next release, an unlisted SHA, when it ships the unchanged verified closure", async () => {
+      expect(await admitted(stampedRunRow("next-release", [VERIFIED]))).toEqual({
+        rolling_player_history_contract: FORGE_ROLLING_HISTORY_INPUT_CONTRACT, external_fantasy_input_contract: FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT,
+        basis: "verified_producer_closure", releaseSha: "82490cd4591758f145cbcfeab6137719c84c57e9", closureSha256: VERIFIED });
+    });
+
+    it.each([
+      ["a changed (unverified) closure", [CHANGED], {}],
+      ["an unknown closure (built without one)", [null], {}],
+      ["a mixed resume", [VERIFIED, CHANGED], { invocations: "2" }],
+      ["a resume of the same closure (each invocation may be another release)", [VERIFIED, VERIFIED], { invocations: "2" }],
+      ["a two-invocation stamp on a one-invocation run", [VERIFIED, CHANGED], {}],
+      ["a resume that began before stamping", [null, VERIFIED], { invocations: "2" }],
+      ["a failed run", [VERIFIED], { status: "failed" }],
+      ["a local run", [VERIFIED], { git_sha: "local:unknown" }],
+    ])("denies %s", async (_label, closures, overrides) => {
+      expect(await admitted(stampedRunRow("run", closures as Array<string | null>, overrides))).toBeUndefined();
+    });
+
+    it.each([
+      ["an unlisted closure relabelled with the verified legacy SHA", { git_sha: "538100d41ee87e721d2764b694f7bac8c2f2bb34" }, [CHANGED]],
+      ["an unknown closure relabelled with the verified legacy SHA", { git_sha: "538100d41ee87e721d2764b694f7bac8c2f2bb34" }, [null]],
+    ])("never lets a SHA stand in for the stamp: %s", async (_label, overrides, closures) => {
+      expect(await admitted(stampedRunRow("run", closures, overrides))).toBeUndefined();
+    });
+
+    it.each([
+      ["a malformed stamp", { version: "forge-producer-closure-v1", invocations: ["not-a-hash"] }],
+      ["an unknown stamp version", { version: "forge-producer-closure-v0", invocations: ["0".repeat(64)] }],
+      ["a bare hash in place of the stamp", "0".repeat(64)],
+    ])("denies %s, even on the verified legacy SHA", async (_label, producer_identity) => {
+      expect(await admitted(verifiedReleaseRunRow("run", { producer_identity }))).toBeUndefined();
+    });
+
+    it("denies a post-stamping release that carries no stamp", async () => {
+      expect(await admitted(verifiedReleaseRunRow("run", { git_sha: "82490cd4591758f145cbcfeab6137719c84c57e9" }))).toBeUndefined();
+    });
+
+    it("denies contradictory capture even when the run is stamped with the verified closure", async () => {
+      expect(await admitted(stampedRunRow("captured", [VERIFIED]), [unprovenSnapshotRow("captured")])).toBeUndefined();
+    });
+
+    it("fails closed when the attribution read fails", async () => {
+      const error = { message: "permission denied" };
+      const db = { from: (table: string) => { const chain: any = { select: () => chain, eq: () => chain,
+        in: async () => table === "forge_runs" ? { data: null, error } : { data: [], error: null } }; return chain; } };
+      await expect(loadExternalInputProof(db as never, ["run"])).rejects.toBe(error);
     });
   });
 

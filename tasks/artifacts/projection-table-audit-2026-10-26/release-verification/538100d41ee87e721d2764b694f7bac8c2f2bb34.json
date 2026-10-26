@@ -2,12 +2,17 @@
   "version": "forge-release-sha-verifier-v1",
   "sha": "538100d41ee87e721d2764b694f7bac8c2f2bb34",
   "verified": true,
+  "producerIdentity": {
+    "version": "forge-producer-closure-v1",
+    "closureSha256": "4bf0fce7a4bf1e6ed7b5e8b28b8524836f4b6969adfe57e80ae373b2f847cbbb"
+  },
   "commit": {
     "subject": "Release RSO wave 2, FORGE fantasy-table removal, Start Chart privacy fix (#385)",
     "committedAt": "2026-10-25T22:12:22-04:00",
     "tree": "d694f5133d4bbd4d9477f194e3edba32e27fe19d"
   },
-  "verifierSha256": "a7fe43be9ef2668fbe2dd5f1c93f9b2b8696870277f463208af40b05dd5650f3",
+  "verifierSha256": "14d7e4f92f707ec520d233d62f0adfd27a8caaaa3dfb759b3af3ccd7626d0f15",
+  "closureWalkerSha256": "e33ccacb21dca88ef2d163dab5f16ec0c50bb817373b9ab000c2ac8e29df5bad",
   "roots": [
     "lib/projections/run-forge-projections.ts",
     "lib/projections/starterBoardQueue.ts",

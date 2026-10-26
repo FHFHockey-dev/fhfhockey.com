@@ -9,6 +9,9 @@ vi.mock("lib/supabase/server", () => ({ default: { from: db.from } }));
 vi.mock("lib/projections/apiHelpers", async importOriginal => ({
   ...await importOriginal<typeof import("lib/projections/apiHelpers")>(),
   requireLatestSucceededRunId: db.latest,
+}));
+vi.mock("lib/projections/externalInputProof", async importOriginal => ({
+  ...await importOriginal<typeof import("lib/projections/externalInputProof")>(),
   requireLatestExternalInputProvenRunId: db.latest,
 }));
 

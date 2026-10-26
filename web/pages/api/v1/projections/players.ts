@@ -3,12 +3,11 @@ import { z } from "zod";
 
 import supabase from "lib/supabase/server";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
-import { loadExternalInputProof } from "lib/projections/externalInputProof";
+import { loadExternalInputProof, requireLatestExternalInputProvenRunId } from "lib/projections/externalInputProof";
 import {
   buildProjectionApiErrorResponse,
   dateSchema,
   getQueryStringParam,
-  requireLatestExternalInputProvenRunId,
 } from "lib/projections/apiHelpers";
 
 const querySchema = z.object({

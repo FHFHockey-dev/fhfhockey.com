@@ -5,18 +5,25 @@
 // detailed revision path (consumerRevisionAdmission.ts) checks the same claim and receipt. Run-start
 // `forge_runs.metrics.input_provenance` never carries the claim, so it is not evidence either way.
 //
-// A run with no snapshot at all (production capture is off, TJ 2026-10-26) is proven instead when its code is: its
-// `forge_runs.git_sha` is an exact SHA in VERIFIED_FORGE_RELEASES and that SHA can be trusted to name the code that did
-// all of the run's work. The resumable writer (run-lifecycle-queries.ts `insertRunningRun`) stamps `git_sha` once, at
-// creation, from the executing deployment's `VERCEL_GIT_COMMIT_SHA` (then `GIT_SHA`, else `local:unknown`), and a later
-// invocation, possibly of another release, may resume the run without restamping it. So only a succeeded run finished
-// in exactly one invocation (`metrics.resume.invocations = 1`) is attributed by SHA. A run that has a snapshot is judged
-// by its snapshot alone: a verified release never overrides captured evidence.
+// A run with no snapshot at all (production capture is off, TJ 2026-10-26) is proven instead when its code is, and only
+// when it is a succeeded, released (full-SHA) run finished in exactly one invocation (`metrics.resume.invocations = 1`):
+// the resumable writer (run-lifecycle-queries.ts) stamps `git_sha` once, at creation, and a later invocation, possibly of
+// another release, may resume the run without restamping it.
+//   - Stamped runs: `metrics.producer_identity` (forgeProducerIdentity.ts) records each invocation's producer closure
+//     hash, inlined at build time from the deployed source. It must hold exactly one invocation whose hash is in
+//     VERIFIED_FORGE_PRODUCER_CLOSURES. The SHA never stands in for the stamp, so a next release with an unchanged
+//     closure is admitted and a changed or unverified closure is not.
+//   - Unstamped runs predate stamping: their exact SHA must be in VERIFIED_FORGE_RELEASES (538100d41 only). Any other
+//     SHA without a stamp, or a malformed stamp, is unproven.
+// A run that has a snapshot is judged by its snapshot alone: no verified release or closure overrides captured evidence.
 // Absent, malformed or contradictory proof means not proven; historical rows stay stored, only unserved.
 import type { SupabaseClient } from "@supabase/supabase-js";
+import supabase from "lib/supabase/server";
 import { acceptedNewsSupersedes } from "./acceptedNews";
 import { FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } from "./calibrationEligibility";
-import { verifiedForgeRelease } from "./verifiedForgeReleases";
+import { excludeOffReleaseRuns, restrictRunsToHorizon } from "./releasedRunFence";
+import { parseProducerIdentity } from "./forgeProducerIdentity";
+import { verifiedForgeProducerClosure, verifiedForgeRelease } from "./verifiedForgeReleases";
 
 type Row = Record<string, any>;
 
@@ -33,12 +40,14 @@ const PROOF_COLUMNS = "entity_key,available_at,snapshot_version:payload->>versio
   + "captured_reads:payload->inputProvenance->capturedReads";
 /** What attributes a snapshot-less run to its code: never its metrics' (absent) exclusion claim. */
 const RUN_ATTRIBUTION_COLUMNS = "run_id,git_sha,status,invocations:metrics->resume->>invocations,"
-  + "rolling_player_history_contract:metrics->input_provenance->>rolling_player_history_contract";
+  + "rolling_player_history_contract:metrics->input_provenance->>rolling_player_history_contract,"
+  + "producer_identity:metrics->producer_identity";
+const FULL_SHA = /^[0-9a-f]{40}$/;
 
 /** The proven contracts, shaped as `input_provenance` so evaluateForgeCalibrationEligibility reads them, and the basis. */
 export type ExternalInputProof = { rolling_player_history_contract: string | null;
   external_fantasy_input_contract: typeof FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT;
-  basis: "captured_snapshot" | "verified_release"; releaseSha?: string };
+  basis: "captured_snapshot" | "verified_producer_closure" | "verified_release"; releaseSha?: string; closureSha256?: string };
 
 /** The captured-read receipt as consumerRevisionAdmission requires it, issued no later than `notAfter`. */
 export function validCapturedReadReceipt(receipt: unknown, notAfter: string): boolean {
@@ -59,15 +68,24 @@ export function snapshotProvesExternalInputExclusion(row: Row): boolean {
     && validCapturedReadReceipt(row.captured_reads, row.available_at);
 }
 
-/** One `forge_runs` row (selected with RUN_ATTRIBUTION_COLUMNS) whose exact recorded SHA is a verified release and
- * names all of its work: succeeded, in a single invocation. */
-export function runAttributedToVerifiedRelease(row: Row): string | null {
-  const release = verifiedForgeRelease(row?.git_sha);
-  return release && typeof row.run_id === "string" && row.status === "succeeded" && row.invocations === "1" ? release.sha : null;
+type RunAttribution = { basis: "verified_producer_closure" | "verified_release"; releaseSha: string; closureSha256?: string };
+
+/** One `forge_runs` row (selected with RUN_ATTRIBUTION_COLUMNS) attributed, as a whole, to verified producer code:
+ * succeeded, released, one invocation, and either one verified stamped closure or (unstamped) a verified exact SHA. */
+export function verifiedRunAttribution(row: Row): RunAttribution | null {
+  if (typeof row?.run_id !== "string" || row.status !== "succeeded" || row.invocations !== "1"
+    || typeof row.git_sha !== "string" || !FULL_SHA.test(row.git_sha)) return null;
+  if (row.producer_identity !== null && row.producer_identity !== undefined) {
+    const stamp = parseProducerIdentity(row.producer_identity), closure = stamp?.invocations.length === 1 ? stamp.invocations[0] : null;
+    return closure && verifiedForgeProducerClosure(closure)
+      ? { basis: "verified_producer_closure", releaseSha: row.git_sha, closureSha256: closure } : null;
+  }
+  const release = verifiedForgeRelease(row.git_sha);
+  return release ? { basis: "verified_release", releaseSha: release.sha } : null;
 }
 
 /** Pure: a run with snapshots is proven only when every snapshot proves exclusion; a run with none, only when its
- * row is attributed to a verified release. */
+ * row is attributed to verified producer code (verifiedRunAttribution). */
 export function externalInputProofByRun(rows: Row[], runIds: readonly string[], runRows: Row[] = []): Map<string, ExternalInputProof> {
   const byRun = new Map<string, Row[]>();
   for (const row of rows) if (typeof row?.entity_key === "string") byRun.set(row.entity_key, [...(byRun.get(row.entity_key) ?? []), row]);
@@ -78,10 +96,10 @@ export function externalInputProofByRun(rows: Row[], runIds: readonly string[], 
     const snapshots = byRun.get(runId) ?? [];
     if (!snapshots.length) {
       const run = runsById.get(runId) ?? [];
-      const releaseSha = run.length === 1 ? runAttributedToVerifiedRelease(run[0]) : null;
-      if (releaseSha) proven.set(runId, { rolling_player_history_contract: typeof run[0].rolling_player_history_contract === "string"
+      const attribution = run.length === 1 ? verifiedRunAttribution(run[0]) : null;
+      if (attribution) proven.set(runId, { rolling_player_history_contract: typeof run[0].rolling_player_history_contract === "string"
         ? run[0].rolling_player_history_contract : null, external_fantasy_input_contract: FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT,
-      basis: "verified_release", releaseSha });
+      ...attribution });
       continue;
     }
     if (!snapshots.every(snapshotProvesExternalInputExclusion)) continue;
@@ -113,4 +131,43 @@ export async function loadExternalInputProof(db: SupabaseClient<any>, runIds: re
   const runRows = await inChunks(uncaptured, async chunk => rowsOf(await (db as any).from("forge_runs")
     .select(RUN_ATTRIBUTION_COLUMNS).in("run_id", chunk), "FORGE run attribution"));
   return externalInputProofByRun(snapshots, ids, runRows);
+}
+
+// Lives here, not in apiHelpers: run-projection-accuracy (inside the FORGE producer closure) imports apiHelpers, and
+// admission must stay outside that closure (scripts/forge-producer-closure.ts ADMISSION_MODULES).
+/** Recent runs of a date searched for one with external-input exclusion proof. */
+const PROVEN_RUN_CANDIDATES = 20;
+
+/** The latest succeeded released run of the date whose snapshot proves it excluded third-party fantasy inputs.
+ * A newer unproven run is skipped, never served; with none proven the date has no run (404). */
+export async function requireLatestExternalInputProvenRunId(
+  asOfDate: string,
+  horizonGames = 1,
+): Promise<string> {
+  if (!supabase) throw new Error("Supabase server client not available");
+  const { data, error } = await restrictRunsToHorizon(excludeOffReleaseRuns(supabase
+    .from("forge_runs")
+    .select("run_id")
+    .eq("as_of_date", asOfDate)
+    .eq("status", "succeeded")), horizonGames)
+    .order("created_at", { ascending: false })
+    .limit(PROVEN_RUN_CANDIDATES);
+
+  if (error) throw error;
+  const runIds = ((data ?? []) as Array<{ run_id?: unknown }>)
+    .map((row) => row.run_id)
+    .filter((id): id is string => typeof id === "string");
+  const proof = runIds.length ? await loadExternalInputProof(supabase, runIds) : new Map();
+  const runId = runIds.find((id) => proof.has(id));
+  if (!runId) {
+    const err = new Error(
+      runIds.length
+        ? `No succeeded projection run with external-input exclusion proof found for date=${asOfDate}`
+        : `No succeeded projection run found for date=${asOfDate}`,
+    );
+    (err as any).statusCode = 404;
+    if (runIds.length) (err as any).details = { reason: "external_input_provenance_unproven", withheldRuns: runIds.length };
+    throw err;
+  }
+  return runId;
 }

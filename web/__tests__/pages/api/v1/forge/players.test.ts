@@ -20,9 +20,12 @@ vi.mock("lib/projections/apiHelpers", async () => {
   return {
     ...actual,
     requireLatestSucceededRunId: (...args: unknown[]) => requireLatestSucceededRunIdMock("unguarded", ...args),
-    requireLatestExternalInputProvenRunId: (...args: unknown[]) => requireLatestSucceededRunIdMock("proven", ...args),
   };
 });
+vi.mock("lib/projections/externalInputProof", async () => ({
+  ...await vi.importActual<any>("lib/projections/externalInputProof"),
+  requireLatestExternalInputProvenRunId: (...args: unknown[]) => requireLatestSucceededRunIdMock("proven", ...args),
+}));
 
 vi.mock("lib/NHL/server", async () => {
   const actual = await vi.importActual<any>("lib/NHL/server");
@@ -159,8 +162,9 @@ describe("/api/v1/forge/players", () => {
     // The real latest-run lookups, over forge_runs rows filtered by the date bounds the reader sends.
     async function route(runs: ProofRun[]) {
       const actual = await vi.importActual<typeof import("lib/projections/apiHelpers")>("lib/projections/apiHelpers");
+      const proof = await vi.importActual<typeof import("lib/projections/externalInputProof")>("lib/projections/externalInputProof");
       requireLatestSucceededRunIdMock.mockImplementation((kind: string, ...args: any[]) =>
-        (kind === "proven" ? actual.requireLatestExternalInputProvenRunId : actual.requireLatestSucceededRunId)(args[0], args[1]));
+        (kind === "proven" ? proof.requireLatestExternalInputProvenRunId : actual.requireLatestSucceededRunId)(args[0], args[1]));
       const projectionRunIds: unknown[] = [];
       const prior = fromMock.getMockImplementation()!;
       fromMock.mockImplementation((table: string) => {
