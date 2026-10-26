@@ -4,6 +4,7 @@ import { acquisitionEffectiveAt } from "lib/rosterScheduleOptimizer/planningTime
 import { supplementProviderRules } from "lib/rosterScheduleOptimizer/providerRules";
 import { defaultIntent } from "lib/rosterScheduleOptimizer/workspace";
 import { candidatePlanMetrics } from "lib/rosterScheduleOptimizer/candidatePlanMetrics";
+import { bridgeRunProofs, expandBridgeForecasts } from "lib/rosterScheduleData/bridgeForecastWire";
 
 const mocks = vi.hoisted(() => ({ user: { id: "owner-a" }, allowed: false, requireUser: vi.fn(), access: vi.fn(), draftAccess: vi.fn(), from: vi.fn(), snapshot: vi.fn(), planningData: vi.fn(), settings: vi.fn(), draftResource: vi.fn(), boardResource: vi.fn(), planningResource: vi.fn() }));
 vi.mock("lib/api/requireApiUser", () => ({ requireApiUser: mocks.requireUser }));
@@ -19,6 +20,7 @@ vi.mock("lib/integrations/yahoo/rosterPlanning", async (original) => ({
   loadYahooPlanningSnapshot: mocks.snapshot,
 }));
 
+import { yahooPlanningReportedRules } from "./rosterPlanning";
 import { yahooCreditedGoalieAppearances, yahooInjury, yahooPastLineupPoints, yahooPlanningAcquisitions, yahooPlanningCategories, yahooPlanningEditable, yahooPlanningPlayers, yahooPlanningStats, yahooPlanningTeams, yahooStartingStatus } from "./rosterPlanning";
 import type { YahooProviderJsonResult } from "./providerClient";
 import { YahooLiveDraftError } from "./liveDraft";
@@ -590,6 +592,37 @@ describe("provider snapshot route", () => {
     expect(mocks.draftAccess).toHaveBeenCalledWith("owner-a", expect.any(Object));
     expect(mocks.snapshot).toHaveBeenCalledWith(expect.objectContaining({ userId: "owner-a", teamId: "selected" }));
   });
+  it("carries each served bridge run's proof on the provider wire, only for runs it carries, and never in the snapshot", async () => {
+    mocks.allowed = true;
+    const players = [{ id: "7", nhlId: 8470001, nhlTeamId: 10, rosterRevision: "roster-7", name: "Skater", teamAbbreviation: "TOR",
+      eligiblePositions: ["C"], eligibilityVerified: true, playerClass: "skater", availability: "free_agent", ownership: null, canDrop: true,
+      holdValue: null, reserveEligibility: [] }];
+    const games = [{ id: "2026020101", scheduleRevision: "schedule-101", date: "2026-10-16", startsAt: "2026-10-16T23:00:00.000Z",
+      teamAbbreviation: "TOR", opponent: "MTL", home: true, status: "scheduled" }];
+    const wire = { version: "forge-daily-bridge-wire-v1", seasonId: 20262027, limitations: ["Interim FORGE projection."],
+      runs: [["forge-daily-bridge-v1:run-a", "forge-daily-bridge-v1:run-a", "forge-daily-bridge-v1:abc", "2026-10-15T11:00:00.000Z", "2026-10-15T11:00:00.000Z"]],
+      rows: [["7", "2026020101", 0, "2026-10-16T23:00:00.000Z", { GOALS: 0.3, ASSISTS: 0.4 }, null, false, null]] };
+    const forecasts = expandBridgeForecasts(wire as never, { players, games } as never);
+    const snapshot = { id: "verified", context: { provider: "yahoo", seasonId: 20262027, leagueId: "league", teamId: "selected", startDate: "2026-10-16",
+      endDate: "2026-10-18", timeZone: "UTC", asOf: "2026-10-15T12:00:00.000Z" }, players, games, forecasts, roster: [], evidence: {} };
+    const proof = { runId: "run-a", basis: "verified_producer_closure", releaseSha: null, closureSha256: "c".repeat(64) };
+    mocks.snapshot.mockImplementation(async (args: any) => {
+      args.onBridgeRunProofs?.([proof, { ...proof, runId: "run-not-served" }]);
+      return { snapshot, capabilities: { roster: true } };
+    });
+    const response = res();
+    await providerHandler(req("POST", { provider: "yahoo", teamId: "selected", startDate: "2026-10-16", endDate: "2026-10-18" }), response);
+    const sent = JSON.parse(JSON.stringify(response.body));
+    expect(sent.bridgeForecasts.proofs).toEqual([proof]);
+    expect(bridgeRunProofs(sent.bridgeForecasts)).toEqual([proof]);
+    // Wire metadata only: the snapshot (what the client keeps and saves) and the rebuilt forecasts never carry it.
+    expect(JSON.stringify(sent.snapshot)).not.toContain("closureSha256");
+    expect(expandBridgeForecasts(sent.bridgeForecasts, sent.snapshot)).toEqual(forecasts);
+    mocks.snapshot.mockResolvedValue({ snapshot, capabilities: { roster: true } });
+    const without = res();
+    await providerHandler(req("POST", { provider: "yahoo", teamId: "selected", startDate: "2026-10-16", endDate: "2026-10-18" }), without);
+    expect(JSON.parse(JSON.stringify(without.body)).bridgeForecasts).not.toHaveProperty("proofs");
+  });
   it("passes only the authenticated user to the provider adapter", async () => {
     mocks.allowed = true;
     const response = res();
@@ -815,5 +848,61 @@ describe("Actual fantasy points on recorded past lineups", () => {
   });
   it("does not score a game that is not final", async () => {
     await expect(points({ games: [game("201", "DET", "live"), game("202", "DAL")] })).resolves.toMatchObject({ larkin: null, oettinger: 8 });
+  });
+});
+
+describe("league rules Yahoo reports (present / reportedValue / verified)", () => {
+  const now = new Date("2026-10-26T18:00:00Z");
+  const read = (payload: unknown, ageSeconds = 0) => ({ payload, transport: { responseDate: now.toISOString(), ageSeconds } }) as unknown as YahooProviderJsonResult;
+  const ownTeam = (fields: Record<string, unknown> = {}, owned: unknown = 1, key = "453.l.1.t.1") =>
+    read({ team: [{ team_key: key }, { is_owned_by_current_login: owned }, fields] });
+  const rules = (settings: Record<string, unknown>, team: YahooProviderJsonResult | null = ownTeam({ faab_balance: "87" }), settingsAge = 0) =>
+    yahooPlanningReportedRules({ settings: read({ league: [{ league_key: "453.l.1" }, { settings: [settings, { min_games_played: "3" }] }] }, settingsAge),
+      settingsReadAt: now, team, teamReadAt: now, teamKey: "453.l.1.t.1" });
+  const fact = (result: ReturnType<typeof rules>, field: string) => result.facts.find(item => item.field === field);
+
+  it("imports a FAAB league with the owned team's verified remaining budget", () => {
+    const result = rules({ uses_faab: "1", waiver_time: "2", waiver_type: "FR", waiver_rule: "all", weekly_deadline: "intraday" });
+    expect(result.waivers).toEqual({ mode: "budget", remainingBudget: 87 });
+    expect(fact(result, "uses_faab")).toEqual({ rule: "waiver mode", field: "uses_faab", present: true, reportedValue: "1", verified: true });
+    expect(fact(result, "faab_balance")).toMatchObject({ present: true, reportedValue: "87", verified: true });
+    expect(fact(result, "waiver_time")).toMatchObject({ reportedValue: "2", verified: true });
+    expect(fact(result, "waiver_type")).toMatchObject({ present: true, reportedValue: "FR", verified: false });
+    expect(fact(result, "waiver_rule")).toMatchObject({ present: true, reportedValue: "all", verified: false });
+    expect(fact(result, "weekly_deadline")).toMatchObject({ reportedValue: "intraday", verified: true });
+    expect(fact(result, "min_games_played")).toMatchObject({ reportedValue: "3", verified: true });
+  });
+  it("imports a priority (non-FAAB) league and never reads a budget into it", () => {
+    for (const value of ["0", 0, false]) expect(rules({ uses_faab: value }).waivers).toEqual({ mode: "priority", remainingBudget: null });
+    expect(fact(rules({ uses_faab: "0" }), "faab_balance")?.verified).toBe(false);
+  });
+  it.each([
+    ["a stale team read", read({ team: [{ team_key: "453.l.1.t.1" }, { is_owned_by_current_login: 1 }, { faab_balance: "87" }] }, 61)],
+    ["a team not owned", ownTeam({ faab_balance: "87" }, 0)],
+    ["another team", ownTeam({ faab_balance: "87" }, 1, "453.l.1.t.2")],
+    ["no team read", null],
+    ["a negative balance", ownTeam({ faab_balance: "-5" })],
+    ["a non-numeric balance", ownTeam({ faab_balance: "lots" })],
+    ["an absent balance", ownTeam({})],
+  ] as const)("keeps the FAAB budget unknown with %s", (_label, team) => {
+    expect(rules({ uses_faab: "1" }, team).waivers).toEqual({ mode: "budget", remainingBudget: null });
+  });
+  it.each([
+    [{}, "absent"], [{ uses_faab: "yes" }, "unrecognised"], [{ uses_faab: "" }, "empty"], [{ uses_faab: null }, "null"],
+  ])("leaves the waiver mode unknown when uses_faab is %j (%s)", (settings, _label) => {
+    const result = rules(settings as Record<string, unknown>);
+    expect(result.waivers).toBeUndefined();
+    expect(fact(result, "uses_faab")?.verified).toBe(false);
+  });
+  it("verifies nothing from a stale settings read", () => {
+    const result = rules({ uses_faab: "1", waiver_time: "2", weekly_deadline: "intraday" }, undefined, 61);
+    expect(result.waivers).toBeUndefined();
+    expect(result.facts.filter(item => item.field !== "faab_balance").every(item => !item.verified)).toBe(true);
+  });
+  it("keeps unrecognised waiver periods and deadlines unverified", () => {
+    expect(fact(rules({ waiver_time: "two" }), "waiver_time")?.verified).toBe(false);
+    expect(fact(rules({ waiver_time: "45" }), "waiver_time")?.verified).toBe(false);
+    expect(fact(rules({ weekly_deadline: "1" }), "weekly_deadline")).toMatchObject({ present: true, reportedValue: "1", verified: false });
+    expect(fact(rules({}), "waiver_time")).toMatchObject({ present: false, reportedValue: null, verified: false });
   });
 });

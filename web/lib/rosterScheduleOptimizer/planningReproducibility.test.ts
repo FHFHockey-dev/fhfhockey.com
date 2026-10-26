@@ -108,8 +108,10 @@ function qualityFixture(source: "detailed" | "baseline" | "blended", profile: "p
       { key: "GAA", direction: "lower", numerator: "GOALS_AGAINST_GOALIE", denominator: "GOALIE_MINUTES", multiplier: 60 },
       { key: "WINS_GOALIE", direction: "higher" },
     ] : [{ key: "GOALS", direction: "higher" }, { key: "ASSISTS", direction: "higher" }] };
-    snapshot.opponent = { roster: [], realized: goalie ? { SAVES_GOALIE: 91.8, SHOTS_AGAINST_GOALIE: 100,
-      GOALS_AGAINST_GOALIE: 3.2, GOALIE_MINUTES: 60, WINS_GOALIE: 0.15 } : { GOALS: 5, ASSISTS: 3 }, remaining: {} };
+    const realized: Record<string, number> = goalie ? { SAVES_GOALIE: 91.8, SHOTS_AGAINST_GOALIE: 100, GOALS_AGAINST_GOALIE: 3.2, GOALIE_MINUTES: 60, WINS_GOALIE: 0.15 }
+      : { GOALS: 5, ASSISTS: 3 };
+    // Nothing remaining is an explicit zero per component; a missing component is unknown (FR9-D1).
+    snapshot.opponent = { roster: [], realized, remaining: Object.fromEntries(Object.keys(realized).map(key => [key, 0])) };
   } else snapshot.rules.scoring = { mode: "points", weights: { GOALS: 2, ASSISTS: 1 }, categories: [] };
   if (goalie) snapshot.rules.goalieMinimum = { required: 2, credited: 0, counts: "starts", penalty: "none",
     periodStart: "2026-10-14T00:00:00Z", periodEnd: "2026-10-15T00:00:00Z" };
@@ -139,7 +141,9 @@ describe("planning search reproducibility", () => {
         expect(result.baseline.objective).toBe(profile === "points" ? "outcome" : "agp");
         expect(result.selected.recommendation?.eligible).toBe(profile === "points");
         expect(result.selected.comparisonEligible).toBe(true);
-        expect(result.baseline.projectedValue).not.toBeNull();
+        // Category mode reports no scalar score (FR9-D2); its comparison stays per category.
+        if (profile === "points") expect(result.baseline.projectedValue).not.toBeNull();
+        else expect(result.baseline).toMatchObject({ projectedValue: null, comparisonEligible: true });
         expect(result.baseline.recommendation?.coverage?.assignmentEligibleCount).toBeGreaterThan(0);
         if (profile === "points") {
           const improved = result.alternatives.filter(row => row.steps.length && row.objective === "outcome"
@@ -322,7 +326,9 @@ describe("planning search reproducibility", () => {
       expect(additionalBudget.search.benchEvidence?.evaluated).toBe(0);
       expect(additionalBudget.selected).toEqual(result.selected);
     }
-    expect(result.selected.projectedValue).not.toBeNull();
+    // Category mode reports no scalar score (FR9-D2).
+    if (profile === "points") expect(result.selected.projectedValue).not.toBeNull();
+    else expect(result.selected.projectedValue).toBeNull();
     expect(result.search.complete).toBe(false);
     const reversed = structuredClone(snapshot);
     reversed.players.reverse(); reversed.roster.reverse(); reversed.games.reverse(); reversed.forecasts.reverse();
