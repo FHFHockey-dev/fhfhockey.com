@@ -177,14 +177,21 @@ describe("RSO daily beta: category league acceptance (FR9, FR10)", () => {
       for (const plan of [own, other]) expect(plan.projectedValue).toBeNull();
     });
 
-    // DEFECT FR9-D1 (slices/FR9-FR10/RECEIPT.md): opponentStats (planning.ts:78) only adds keys present in
-    // opponent.remaining, so a missing remaining component keeps the banked value as the full total (remaining
-    // treated as zero). Here opponent SV% becomes 110 / 76 = 1.447. Remove `.fails` once fixed.
-    it.fails("keeps the opponent's ratio unknown when its remaining denominator is missing", () => {
+    // Regression for FR9-D1: a remaining component the opponent lacks is unknown, never banked-only (was SV% 110/76).
+    it("keeps the opponent's ratio unknown when its remaining denominator is missing", () => {
       const data = league();
       delete data.opponent!.remaining!.SHOTS_AGAINST_GOALIE;
       const plan = evaluatePlan(data, intent(), "agp", []);
       expect(row(plan, "SAVE_PERCENTAGE")).toMatchObject({ opponent: null, result: "unknown" });
+      expect(row(plan, "SAVE_PERCENTAGE").own).not.toBeNull();
+      // Categories whose components are all known stay known.
+      for (const key of ["GOALS", "ASSISTS", "SHOTS_ON_GOAL", "SHOOTING_PERCENTAGE", "WINS_GOALIE", "GOALS_AGAINST_AVERAGE"])
+        expect(row(plan, key).result, key).not.toBe("unknown");
+      expect(plan.comparisonEligible).toBe(false);
+      // An explicit zero is a known value.
+      const zero = league();
+      zero.opponent!.remaining!.SHOTS_AGAINST_GOALIE = 0;
+      expect(row(evaluatePlan(zero, intent(), "agp", []), "SAVE_PERCENTAGE").opponent).toBeCloseTo(110 / 76, 12);
     });
 
     it("never blends categories into one score: tradeoffs stay per-category and no points value is claimed", () => {
@@ -214,11 +221,8 @@ describe("RSO daily beta: category league acceptance (FR9, FR10)", () => {
     });
   });
 
-  // DEFECT FR9-D2 (slices/FR9-FR10/RECEIPT.md): in category mode PlanEvaluation.projectedValue is the sum of
-  // win = +1 / loss = −1 over category results (planning.ts, category branch of projectedValue), a fixed equal-weight
-  // scalar shown as "projected" in the Matchup panel. It does not rank plans (that stays a partial order), but FR9
-  // allows no scalar category blend. Remove `.fails` once category mode reports no scalar score.
-  it.fails("reports no scalar category score once every category result is known", () => {
+  // Regression for FR9-D2: category mode reports no scalar score (was wins − losses = −4); comparison stays per category.
+  it("reports no scalar category score once every category result is known", () => {
     const plan = evaluatePlan(league(), intent(), "agp", []);
     expect(plan.categoryResults.every(item => item.result !== "unknown")).toBe(true);
     expect(plan.comparisonEligible).toBe(true);
@@ -246,18 +250,19 @@ describe("RSO daily beta: category league acceptance (FR9, FR10)", () => {
       expect(covered.assignments.some(item => item.playerId === "gA")).toBe(true);
       expect(row(covered, "SAVE_PERCENTAGE").result).toBe("loss");
       expect(covered.goalie).toMatchObject({ credited: 2, confirmed: 1, projected: 3, risk: false });
-      expect(covered.projectedValue).not.toBeNull();
+      expect(covered.categoryResults.every(item => item.result !== "unknown")).toBe(true);
+      expect(covered.comparisonEligible).toBe(true);
       const accepted = evaluatePlan(data, intent({ goalieCoverage: "accept_risk" }), "outcome", []);
       expect(accepted.assignments.some(item => item.playerId === "gA")).toBe(false);
       expect(accepted.goalie).toMatchObject({ credited: 2, confirmed: 0, projected: 2, risk: true });
       expect(row(accepted, "SAVE_PERCENTAGE")).toMatchObject({ own: 52 / 55, result: "win" });
-      // Forfeiture path: an at-risk minimum with "lose goalie categories" leaves no matchup projection.
-      expect(accepted.projectedValue).toBeNull();
+      // Forfeiture path: an at-risk minimum with "lose goalie categories" leaves no comparable matchup projection.
+      expect(accepted.comparisonEligible).toBe(false);
       expect(accepted.limitations).toContain("Goalie-category forfeiture risk makes the matchup projection incomplete.");
       const noPenalty = evaluatePlan({ ...data, rules: { ...data.rules, goalieMinimum: { ...data.rules.goalieMinimum, penalty: "none" } } },
         intent({ goalieCoverage: "accept_risk" }), "outcome", []);
       expect(noPenalty.goalie.risk).toBe(true);
-      expect(noPenalty.projectedValue).not.toBeNull();
+      expect(noPenalty.comparisonEligible).toBe(true);
     });
 
     it.each([

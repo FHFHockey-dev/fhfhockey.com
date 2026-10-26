@@ -77,8 +77,13 @@ function categoryRelation(a: Array<number | null>, b: Array<number | null>, cate
 }
 function opponentStats(snapshot: PlanningSnapshot): StatLine | null {
   if (!snapshot.opponent || snapshot.opponent.remaining === null) return null;
-  const stats: StatLine = { ...snapshot.opponent.realized };
-  for (const [key, value] of Object.entries(snapshot.opponent.remaining ?? {})) stats[key] = finite(value) && finite(stats[key]) ? stats[key]! + value : null;
+  const { realized, remaining } = snapshot.opponent;
+  // A component missing on either side is unknown, never banked-only (FR9-D1).
+  const stats: StatLine = {};
+  for (const key of new Set([...Object.keys(realized), ...Object.keys(remaining)])) {
+    const banked = realized[key], rest = remaining[key];
+    stats[key] = finite(banked) && finite(rest) ? banked + rest : null;
+  }
   return stats;
 }
 type Applicability = Record<"skater" | "goalie", Set<string>>;
@@ -893,11 +898,13 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
     return { key: category.key, own, opponent: other, result } as const;
   });
   let projectedValue: number | null = null;
+  // Category mode reports no scalar score (no fixed category blend, FR9-D2); only whether every matchup result is known.
+  let matchupKnown = false;
   if (snapshot.rules.scoring.mode === "points") projectedValue = !missingSelectedForecast && (scheduledGames === 0 || forecastedOpportunities > 0) && needed.length && needed.every(key => finite(stats[key])) ? Object.entries(snapshot.rules.scoring.weights).filter(([, weight]) => weight !== 0).reduce((sum, [key, weight]) => sum + stats[key]! * weight, 0) : null;
   else {
     limitations.add("Category outcomes use provisional means; calibrated joint probabilities are unavailable.");
     if (!opponent) limitations.add("Opponent projection is unavailable; matchup strategy is unverified.");
-    projectedValue = !missingSelectedForecast && (scheduledGames === 0 || forecastedOpportunities > 0) && categoryResults.every(row => row.result !== "unknown") && categoryResults.length ? categoryResults.reduce((sum, row) => sum + (row.result === "win" ? 1 : row.result === "loss" ? -1 : 0), 0) : null;
+    matchupKnown = !missingSelectedForecast && (scheduledGames === 0 || forecastedOpportunities > 0) && categoryResults.every(row => row.result !== "unknown") && categoryResults.length > 0;
   }
   const minimum = snapshot.rules.goalieMinimum;
   // A zero requirement means the league has no goalie minimum, so its checks are bypassed.
@@ -932,11 +939,11 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
     else if (![...chosen.values()].some(play => play.player.playerClass === "goalie" && preferredGoalieDate(play.game.date, intent))) limitations.add("This plan does not cover the preferred goalie window.");
   }
   if (hasMinimum && (minimum.counts === "unknown" || minimum.penalty === "unknown")) limitations.add("Goalie minimum semantics are incomplete.");
-  if (risk && minimum.penalty === "lose_goalie_categories" && snapshot.rules.scoring.mode === "categories") { projectedValue = null; limitations.add("Goalie-category forfeiture risk makes the matchup projection incomplete."); }
-  if (totalsUnresolved.length || !opportunitiesComplete) projectedValue = null;
+  if (risk && minimum.penalty === "lose_goalie_categories" && snapshot.rules.scoring.mode === "categories") { matchupKnown = false; limitations.add("Goalie-category forfeiture risk makes the matchup projection incomplete."); }
+  if (totalsUnresolved.length || !opportunitiesComplete) { projectedValue = null; matchupKnown = false; }
   const legal = timeline.legal && !invalidLocks && !weeklyEvidenceMissing && snapshot.rules.lineupMode !== "unsupported" && (snapshot.rules.lineupMode !== "weekly" || dates.every(date => !!lineupPeriodForDate(date)?.lockAt)) && !slotDiagnostics.some(item => item.severity === "error");
   if ([...chosen.values()].some(play => ["baseline", "blended"].includes(play.forecast?.sourceKind ?? ""))) limitations.add("Includes provisional baseline estimates; no calibrated uncertainty.");
-  if (conflictingTargets.size) projectedValue = null;
+  if (conflictingTargets.size) { projectedValue = null; matchupKnown = false; }
   const assignmentValue = unresolved.length || (scheduledGames > 0 && forecastedOpportunities === 0) ? null
     : [...chosen.values()].reduce<number | null>((sum, play) => { const value = playValue(play, snapshot, opponent, applicability); return sum === null || value === null ? null : sum + value; }, 0);
   const inputEligible = legal && opportunitiesComplete && !unresolved.length && coverageKnown && assignmentValue !== null && !invalidLocks && !weeklyEvidenceMissing && !snapshot.rules.unsupported.length;
@@ -972,7 +979,8 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
   // A capacity-chosen lineup is comparable on approved totals; it is never a quality recommendation.
   const comparisonInputs = legal && opportunitiesComplete && !totalsUnresolved.length && coverageKnown && (assignmentValue !== null || capacitySelected)
     && !invalidLocks && !weeklyEvidenceMissing && !snapshot.rules.unsupported.length;
-  const comparisonEligible = comparisonInputs && projectedValue !== null && [...playsByDate.values()].flat()
+  const outcomeKnown = snapshot.rules.scoring.mode === "points" ? projectedValue !== null : matchupKnown;
+  const comparisonEligible = comparisonInputs && outcomeKnown && [...playsByDate.values()].flat()
     .filter(play => !snapshot.lockedAssignments.some(lock => lock.date === play.game.date && lock.playerId === play.player.id && lock.slotId === null))
     .every(play => scoringTargets(snapshot, play, applicability).every(key => forecastAllows(play.forecast, key, "comparison")));
   const plannedRows = assignments.filter(row => !heldKeys.has(`${row.playerId}:${row.gameId}`)
@@ -1314,7 +1322,7 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
   if (fitResult.workQuotaReached) limitations.add("Schedule-fit analysis reached its work quota; additional team/position targets remain unevaluated.");
   if (snapshot.rules.acquisitionTiming === "unknown") limitations.add("Add/drop plans need acquisition-effective timing. Review League rules and scoring.");
   if (snapshot.rules.acquisitionCost === null || !snapshot.rules.periods.length || snapshot.rules.periods.some(period => period.remaining === null)) limitations.add("Add/drop plans need acquisition cost and remaining allowance for every affected period. Review Scoring, budgets, and lock windows.");
-  if (baseline.projectedValue === null) limitations.add("Fantasy-point drop recommendations need game-level contribution forecasts. Legal hypothetical schedule comparisons may still be returned with net points and drop cost unknown; schedule-fit targets alone are not verified add/drop plans.");
+  if (categoryMode ? !baseline.comparisonEligible : baseline.projectedValue === null) limitations.add("Fantasy-point drop recommendations need game-level contribution forecasts. Legal hypothetical schedule comparisons may still be returned with net points and drop cost unknown; schedule-fit targets alone are not verified add/drop plans.");
   const availableCount = snapshot.players.filter(player => ["free_agent", "manager_available", "waivers"].includes(player.availability)).length;
   const coverageComplete = candidates.length >= availableCount;
   if (!coverageComplete) limitations.add(`Candidate shortlist contains ${candidates.length} of ${availableCount} available players.`);
