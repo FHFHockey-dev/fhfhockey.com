@@ -55,8 +55,13 @@ describe("FORGE daily bridge", () => {
       stats: { GOALS: 0.35, ASSISTS: 0.45, POINTS: 0.8, PP_POINTS: 0.25, SHOTS_ON_GOAL: 3.1, HITS: 1.2, BLOCKED_SHOTS: 0.5,
         TIME_ON_ICE_PER_GAME: 18, PENALTY_MINUTES: null, PLUS_MINUS: null, FACEOFFS_WON: null } });
     expect(s1[0].issuedContext).toMatchObject({ playerId: "s1", gameId: "1", nhlPlayerId: 101, teamId: 10, scheduleRevision: "schedule-1-TOR", rosterRevision: "roster-s1" });
-    // Scratched from the latest run, or moved teams: no forecast.
-    expect(forecasts.some(row => row.playerId === "s2" || row.playerId === "s3")).toBe(false);
+    // Scratched from the latest run: a labelled 0 under his team's latest run, his last line kept as "if he plays".
+    const s2 = forecasts.filter(row => row.playerId === "s2");
+    expect(s2.map(row => [row.gameId, reserveCodeOf(row), row.revisionId])).toEqual([["1", "skater:no_forge_line", `${FORGE_DAILY_BRIDGE_VERSION}:r2`],
+      ["2", "skater:no_forge_line", `${FORGE_DAILY_BRIDGE_VERSION}:r2`]]);
+    expect(s2.every(row => Object.values(row.stats).every(value => value === 0) && row.conditionalStats?.GOALS === 0.35)).toBe(true);
+    // Moved to a team with no proven FORGE run: still no forecast (nothing proves a 0 for his team).
+    expect(forecasts.some(row => row.playerId === "s3")).toBe(false);
   });
 
   it("prefers the line FORGE issued for the game itself over a re-aimed line from an earlier game", () => {
@@ -90,13 +95,15 @@ describe("FORGE daily bridge", () => {
     const { forecasts, limitations } = buildForgeDailyBridgeForecasts(data, players, games, now, 20262027, policy);
     const lines = (id: string) => forecasts.filter(row => row.playerId === id).map(row => [row.gameId, row.revisionId]);
     expect(lines("s1")).toEqual([["1", `${FORGE_DAILY_BRIDGE_VERSION}:r2`], ["2", `${FORGE_DAILY_BRIDGE_VERSION}:r3`]]);
-    expect(lines("s2")).toEqual([["1", `${FORGE_DAILY_BRIDGE_VERSION}:r2`]]);
+    expect(lines("s2")).toEqual([["1", `${FORGE_DAILY_BRIDGE_VERSION}:r2`], ["2", `${FORGE_DAILY_BRIDGE_VERSION}:r3`]]);
+    // Game 2: r3 left him out, so he counts the labelled 0 there, not a re-aimed copy of r2's line.
+    expect(reserveCodeOf(forecasts.find(row => row.playerId === "s2" && row.gameId === "2")!)).toBe("skater:no_forge_line");
     expect(limitations.some(line => line.includes("missing from their team's latest FORGE run"))).toBe(false);
     // s3's latest line is for another team.
-    expect(limitations).toContain("1 skaters whose latest FORGE line is for a different team than their current one get no forecast.");
+    expect(limitations).toContain("1 skaters whose latest FORGE line is for a different team than their current one have no current FORGE line.");
     // Without r3's line for game 1, s2 has nothing issued for an upcoming game and counts as stale.
     expect(buildForgeDailyBridgeForecasts(inputs(), players, games, now, 20262027, policy).limitations)
-      .toContain("1 skaters missing from their team's latest FORGE run get no forecast (likely scratched, injured or moved).");
+      .toContain("1 skaters missing from their team's latest FORGE run have no current FORGE line (likely scratched, injured or moved).");
   });
 
   it("names the coverage gaps: unknown heads, goalies with no start share, opponents with no team-strength prior", () => {
@@ -113,8 +120,8 @@ describe("FORGE daily bridge", () => {
     expect(forecasts.some(row => row.playerId === "s2")).toBe(false);
     expect(limitations).toContain("1 skaters have a FORGE line with blank even-strength goals, assists or shots; such lines give no forecast.");
     expect(limitations.some(line => line.includes("power-play"))).toBe(false);
-    expect(forecasts.some(row => row.playerId === "g2" && row.gameId === "2")).toBe(false);
-    expect(limitations).toContain("1 goalies with no start share get no forecast for games FORGE has not projected for them.");
+    expect(reserveCodeOf(forecasts.find(row => row.playerId === "g2" && row.gameId === "2")!)).toBe("goalie:start_unknown_team_line");
+    expect(limitations).toContain("1 goalies have no start share; their start chance is unknown, so plans count 0 starts for them (a conservative assumption, not a zero chance) beside FORGE's \"if he starts\" line.");
     expect(limitations).toContain("3 opponents have no team-strength prior, so lines projected against or moved to them skip the opponent adjustment.");
   });
 
@@ -237,7 +244,8 @@ describe("FORGE daily bridge", () => {
       expect(runIdReads).toEqual([["day-of"], ["day-of"]]);
       expect(result.forecasts.find(row => row.playerId === "s1" && row.gameId === "2")).toMatchObject({
         revisionId: `${FORGE_DAILY_BRIDGE_VERSION}:day-of`, stats: expect.objectContaining({ GOALS: 0.55 }) });
-      expect(result.forecasts.some(row => row.playerId === "s2")).toBe(false);
+      // s2 was only in the superseded early run: no current line, so a labelled 0 with no "if he plays" line.
+      expect(result.forecasts.filter(row => row.playerId === "s2").every(row => reserveCodeOf(row) === "skater:no_forge_line" && !row.conditionalStats)).toBe(true);
     });
 
     it("selects, per date, the latest proven run and reads no row of a newer unproven one", async () => {
@@ -485,7 +493,7 @@ describe("FORGE daily bridge", () => {
         shareRow(202, 8, 2026020095, "2026-10-19", 0.9), shareRow(202, 10, 2025021300, "2026-10-18", 0.4)]);
       for (const { id } of tor) expect(chances(id)[1]).toBeNull();
       expect(limitations).toContain("1 goalies have start shares only from another team or season; those are ignored, so their start chance is unknown.");
-      expect(limitations).toContain("1 goalies with no start share get no forecast for games FORGE has not projected for them.");
+      expect(limitations).toContain("1 goalies have no start share; their start chance is unknown, so plans count 0 starts for them (a conservative assumption, not a zero chance) beside FORGE's \"if he starts\" line.");
     });
 
     it("prefer the row for the game itself, falling back to the latest row for games without one", () => {
@@ -796,7 +804,8 @@ describe("FORGE daily bridge", () => {
         new AbortController().signal, (input, _data, readError) => { expect(readError).toBeNull(); return candidateHorizonPoints(input); });
       expect(points.get("s1")).toBeCloseTo(2 * (0.35 * 3 + 0.45 * 2 + 0.25 + 3.1 * 0.5 + 7 * 0.1));
       expect(points.get("g1")).toBeCloseTo(0.8 * (25 * 0.2 + 0.55 * 4) + 0.7 * (25 * 0.2 + gameTwoWin * 4), 3);
-      expect(points.get("s2")).toBeNull();
+      // No current FORGE line: a known 0, never "—" (TJ, option B).
+      expect(points.get("s2")).toBe(0);
     } finally { vi.useRealTimers(); vi.unstubAllGlobals(); }
   });
 
@@ -945,6 +954,53 @@ describe("FORGE daily bridge", () => {
       expect(fitBridgeWire(wire, envelope, bare - 1)).toBeNull();
       expect(fitBridgeWire(null, envelope, bare - 1)).toBeNull();
     });
+  });
+});
+
+describe("No FORGE line: the labelled conservative 0 (TJ, option B)", () => {
+  const withheldRun = { run_id: "r3", as_of_date: "2026-10-20", created_at: "2026-10-20T12:00:00Z", git_sha: "ghi", external_input_proven: false };
+  const s2Rows = (extra: Partial<ForgeDailyBridgeInputs> = {}) => buildForgeDailyBridgeForecasts({ ...inputs(), ...extra }, players, games, now, 20262027, policy);
+
+  it("keeps the last proven line as \"if he plays\", visible but never counted", () => {
+    const { forecasts, limitations } = s2Rows();
+    const rows = forecasts.filter(row => row.playerId === "s2");
+    expect(rows.map(row => reserveCodeOf(row))).toEqual(["skater:no_forge_line", "skater:no_forge_line"]);
+    for (const row of rows) {
+      expect(row.conditionalStats).toMatchObject({ GOALS: 0.35, ASSISTS: 0.45 });
+      // Every key a complete 0, season-rated ones included, so the plan counts 0 rather than unknown.
+      expect(Object.values(row.stats).every(value => value === 0)).toBe(true);
+      expect(row.appearanceProbability).toBeNull();
+      expect(row.startProbability).toBeNull();
+      expect(row.limitations.at(-1)).toBe(RESERVE_FORECAST_NOTES["skater:no_forge_line"]);
+    }
+    expect(limitations.some(text => text.startsWith("No FORGE line: 1 players (2 player-games)"))).toBe(true);
+  });
+
+  it("gives no 0 when a withheld run may hold his team's newer line, and says so", () => {
+    // r3 (unproven, dated after the team's latest proven run) might list him: no forecast, never a masking 0.
+    const withheld = s2Rows({ runs: [...inputs().runs, withheldRun] });
+    expect(withheld.forecasts.some(row => row.playerId === "s2")).toBe(false);
+    // s2, and s3 (whose new team has no proven run the withheld one might cover).
+    expect(withheld.limitations).toContain("2 players have no proven FORGE line because a newer run for their team cannot prove it excluded third-party fantasy projections; they get no forecast rather than a 0.");
+    // A real line is never affected.
+    expect(withheld.forecasts.filter(row => row.playerId === "s1").every(row => reserveCodeOf(row) === null)).toBe(true);
+    // When the schedule shows his team has no game on the withheld run's date, that run cannot hold his line: the 0 applies.
+    const teamGames = [{ id: "1", date: "2026-10-19", homeTeamId: 10, awayTeamId: 99 }, { id: "2", date: "2026-10-21", homeTeamId: 10, awayTeamId: 99 },
+      { id: "3", date: "2026-10-20", homeTeamId: 8, awayTeamId: 99 }];
+    const elsewhere = s2Rows({ runs: [...inputs().runs, withheldRun], teamGames });
+    expect(elsewhere.forecasts.filter(row => row.playerId === "s2").map(row => reserveCodeOf(row))).toEqual(["skater:no_forge_line", "skater:no_forge_line"]);
+    // Every run withheld: schedule-only, as before.
+    expect(s2Rows({ runs: inputs().runs.map(row => ({ ...row, external_input_proven: false })) }).forecasts).toEqual([]);
+  });
+
+  it("still counts a confirmed out as 0 and leaves players with real lines unchanged", () => {
+    const before = s2Rows();
+    const out = { gameId: 1, teamId: 10, playerId: 102, dimension: "availability" as const, value: "out", evidenceId: "e", sourceKey: "fixture",
+      sourceUrl: null, publishedAt: "2026-10-19T15:00:00Z", receivedAt: "2026-10-19T15:00:00Z", confirmed: true };
+    const after = s2Rows({ goalieNews: { assertions: [out], conflicts: [] } });
+    expect(after.forecasts.find(row => row.playerId === "s2" && row.gameId === "1")!.stats.GOALS).toBe(0);
+    const real = (rows: typeof before.forecasts) => JSON.stringify(rows.filter(row => !reserveCodeOf(row)));
+    expect(real(after.forecasts)).toBe(real(before.forecasts));
   });
 });
 
@@ -1112,14 +1168,16 @@ describe("FORGE reserve lines in the bridge", () => {
       stats: { SAVES_GOALIE: 0, GAMES_STARTED: 0 } });
     expect(g3Row.appearanceProbability).toBeUndefined();
     expect(note(g3Row)).toBe(RESERVE_FORECAST_NOTES["goalie:start_unknown"]);
-    // The pass off: the goalie with no share still gets nothing, as before.
+    // The pass off: no reserve rows are read, so g3 counts 0 starts on his team starter's line and s2 counts the "no
+    // FORGE line" 0 with his last line kept (TJ, option B).
     const legacy = buildForgeDailyBridgeForecasts({ ...reserveInputs(), reserves: undefined }, [...players, g3], games, now, 20262027, policy);
-    expect(legacy.forecasts.some(row => row.playerId === "g3" || row.playerId === "s2")).toBe(false);
+    expect(new Set(legacy.forecasts.filter(row => row.playerId === "g3").map(reserveCodeOf))).toEqual(new Set(["goalie:start_unknown_team_line"]));
+    expect(new Set(legacy.forecasts.filter(row => row.playerId === "s2").map(reserveCodeOf))).toEqual(new Set(["skater:no_forge_line"]));
   });
 
   it("says so when the reserve rows could not be read", () => {
     const { forecasts, limitations } = buildForgeDailyBridgeForecasts(reserveInputs({ reserves: null }), players, games, now, 20262027, policy);
-    expect(forecasts.some(row => row.playerId === "s2")).toBe(false);
+    expect(forecasts.filter(row => row.playerId === "s2").every(row => reserveCodeOf(row) === "skater:no_forge_line")).toBe(true);
     expect(limitations).toContain("FORGE reserve lines could not be read, so players outside FORGE's projected lineups have no \"if he dresses\" line.");
   });
 
@@ -1243,7 +1301,8 @@ describe("FORGE reserve lines in the bridge", () => {
         // pass on withholds all of them together, never the late games only.
         expect(week.result.limitations.some(text => /trimmed/.test(text))).toBe(false);
         const reservesWithheld = week.result.limitations.some(text => /^FORGE reserve lines for \d+ player-games were withheld/.test(text));
-        expect(reservesWithheld).toBe(withReserves && shape === "maximal");
+        // "No FORGE line" zeros join the same all-or-nothing group, so a maximal week withholds them with the pass off too.
+        expect(reservesWithheld).toBe(shape === "maximal");
         if (reservesWithheld) expect(week.result.forecasts.some(row => reserveCodeOf(row))).toBe(false);
         const byDate = new Map<string, number>();
         for (const row of week.result.forecasts) byDate.set(row.issuedContext!.scheduledAt.slice(0, 10), (byDate.get(row.issuedContext!.scheduledAt.slice(0, 10)) ?? 0) + 1);
