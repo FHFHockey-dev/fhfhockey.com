@@ -9,7 +9,7 @@ import { assertYahooLeagueGameContext, resolveYahooGameContext } from "./gameCon
 import { parseYahooBoardSettings, YAHOO_STAT_KEY_BY_ID, YahooLiveDraftError } from "./liveDraft";
 import { fetchYahooBoardResource, fetchYahooDraftResource, fetchYahooPlanningResource, type YahooProviderJsonResult } from "./providerClient";
 import { yahooBoardPlayers, yahooFields, yahooInferredAcquisitionTiming, yahooValue } from "./starterBoard";
-import { cacheKey, currentTodayRoster, todayRosterCache, YAHOO_DISCOVERY_TTL_MS, YAHOO_LEAGUE_FACTS_TTL_MS, YAHOO_SETTINGS_TTL_MS, yahooOwnershipSignature, yahooReadCache, yahooSettingsCache } from "./planningCache";
+import { cacheKey, currentTodayRoster, forgetYahooReadsFor, todayRosterCache, YAHOO_DISCOVERY_TTL_MS, YAHOO_LEAGUE_FACTS_TTL_MS, YAHOO_SETTINGS_TTL_MS, yahooAccessFailure, yahooCacheAccount, yahooOwnershipSignature, yahooReadCache, yahooSettingsCache } from "./planningCache";
 import { legacyYahooIdentities, loadVerifiedYahooIdentityMap, rsoYahooDietEnabled } from "./yahooIdentity";
 
 type Row = Record<string, any>;
@@ -20,7 +20,7 @@ const no = (value: unknown) => value === false || value === 0 || value === "0";
 /** A recorded lineup for an elapsed day never changes, so a warm instance reuses it instead of asking Yahoo again. */
 const pastRosterCache = new Map<string, Row[]>();
 const PAST_ROSTER_CACHE_LIMIT = 500;
-/** RSO Yahoo diet caches (flag RSO_YAHOO_DIET): keyed by principal, judged for freshness at their own read time. */
+/** RSO Yahoo diet caches (flag RSO_YAHOO_DIET): keyed by principal and connected-account generation, judged for freshness at their own read time. */
 const leagueFactsCache = yahooReadCache<{ result: YahooProviderJsonResult; signature: string | null }>();
 type DiscoveryScan = { rows: Row[]; pagesAttempted: number; pagesChecked: number; pagesAccepted: number; rowsAccepted: number;
   repeatedRows: number; elapsed: number; stop: string; complete: boolean; limitations: string[]; signature: string };
@@ -300,7 +300,10 @@ export async function loadYahooPlanningSnapshot(args: {
   assertYahooLeagueGameContext(league.external_league_key, gameContext);
   const query = parsePlanningDataQuery({ seasonId: gameContext.targetSeasonId, startDate: args.startDate, endDate: args.endDate });
   const provider = { client: db, userId, connectedAccountId: team.connected_account_id, context: gameContext, leagueKey: league.external_league_key, format: "standard_json" as const, now };
-  const diet = rsoYahooDietEnabled(), reuse = diet && args.refresh !== "manual";
+  const diet = rsoYahooDietEnabled();
+  // Every cache key carries the connected account generation; without a connected account nothing is cached or served.
+  const account = diet ? await yahooCacheAccount(db, userId, team.connected_account_id) : null;
+  const caching = account !== null, reuse = caching && args.refresh !== "manual";
   let yahooReads = 0;
   const counted = <T>(read: () => Promise<T>) => () => { yahooReads++; return read(); };
   let refreshError: YahooLiveDraftError | undefined;
@@ -314,12 +317,12 @@ export async function loadYahooPlanningSnapshot(args: {
     }
     return null;
   };
-  const settingsKey = cacheKey(userId, league.external_league_key);
+  const settingsKey = cacheKey(userId, account ?? "", league.external_league_key);
   const cachedSettings = reuse ? yahooSettingsCache.get(settingsKey, YAHOO_SETTINGS_TTL_MS, now.getTime()) : null;
   const settingsResponse = cachedSettings?.value ?? await readRequiredPlanningResource(counted(() => fetchYahooDraftResource({ ...provider, resource: "settings" })));
   const settingsReadAt = cachedSettings ? new Date(cachedSettings.readAt) : now;
   if (text(yahooValue(settingsResponse.payload, "league_key")) !== league.external_league_key) throw new Error("Yahoo settings league mismatch");
-  if (diet && !cachedSettings) yahooSettingsCache.set(settingsKey, settingsResponse, now.getTime());
+  if (caching && !cachedSettings) yahooSettingsCache.set(settingsKey, settingsResponse, now.getTime());
   const providerTimeZone = text(yahooValue(settingsResponse.payload, "time_zone"));
   const timeZone = providerTimeZone ?? args.timeZone ?? "UTC";
   try { new Intl.DateTimeFormat("en", { timeZone }).format(now); } catch { throw new YahooLiveDraftError("Choose a valid league time zone.", 400, "invalid_time_zone"); }
@@ -343,7 +346,7 @@ export async function loadYahooPlanningSnapshot(args: {
     }
   }
   const pastRosterReads = Promise.all(pastDates.map(async date => {
-    const key = `${userId}|${team.external_team_key}|${date}`;
+    const key = cacheKey(userId, account ?? team.connected_account_id, team.external_team_key, date);
     const cached = pastRosterCache.get(key) ?? storedPast.get(date);
     if (cached) return { date, rows: cached };
     try {
@@ -360,9 +363,9 @@ export async function loadYahooPlanningSnapshot(args: {
       return { date, rows };
     } catch (error) { optionalFailure(error); return { date, rows: null }; }
   }));
-  const rosterKey = cacheKey(userId, team.external_team_key, today);
+  const rosterKey = cacheKey(userId, account ?? "", team.external_team_key, today);
   const cachedRoster = reuse ? currentTodayRoster(rosterKey, now.getTime()) : null;
-  const factKey = (resource: string) => cacheKey(userId, league.external_league_key, team.external_team_key, resource);
+  const factKey = (resource: string) => cacheKey(userId, account ?? "", league.external_league_key, team.external_team_key, resource);
   const cachedFact = (resource: string) => reuse ? leagueFactsCache.get(factKey(resource), YAHOO_LEAGUE_FACTS_TTL_MS, now.getTime()) : null;
   const [cachedScoreboard, cachedLeague, cachedTeam] = ["scoreboard", "league", "team"].map(cachedFact);
   const [data, rosterResponse, scoreboardResult, leagueRosterResult, leagueFetched, teamFetched] = await Promise.all([
@@ -388,7 +391,7 @@ export async function loadYahooPlanningSnapshot(args: {
     ? await counted(() => fetchYahooPlanningResource({ ...provider, resource: { type: "team", teamKey: team.external_team_key } }))().then(value => value, optionalFailure)
     : teamFetched;
   const teamReadAt = cachedTeamCurrent ? new Date(cachedTeamCurrent.readAt) : now;
-  if (diet) {
+  if (caching) {
     if (!cachedScoreboard && scoreboardResult && providerFresh(scoreboardResult, now)) leagueFactsCache.set(factKey("scoreboard"), { result: scoreboardResult, signature: null }, now.getTime());
     if (!cachedLeague && leagueResult && providerFresh(leagueResult, now)) leagueFactsCache.set(factKey("league"), { result: leagueResult, signature: null }, now.getTime());
     if (!cachedTeamCurrent && teamResult && ownershipSignature !== null && providerFresh(teamResult, now)) leagueFactsCache.set(factKey("team"), { result: teamResult, signature: ownershipSignature }, now.getTime());
@@ -401,7 +404,7 @@ export async function loadYahooPlanningSnapshot(args: {
     || text(rosterPayload.date) !== today || text(rosterPayload.coverage_type) !== "date"
     || !yes(yahooValue(rosterResponse.payload, "is_owned_by_current_login"))) throw new Error("Yahoo did not verify roster date, scope and ownership");
   const ownRows = yahooPlanningPlayers(rosterResponse.payload);
-  if (diet && !cachedRoster) todayRosterCache.set(rosterKey, rosterResponse, now.getTime());
+  if (caching && !cachedRoster) todayRosterCache.set(rosterKey, rosterResponse, now.getTime());
   if (!ownRows.length) throw new YahooLiveDraftError(
     text(yahooValue(settingsResponse.payload, "draft_status")) === "predraft"
       ? "Yahoo reports this league is still pre-draft. Select your drafted league from My team; league names are shown beside each team."
@@ -542,7 +545,7 @@ export async function loadYahooPlanningSnapshot(args: {
   let availabilityElapsed = 0, availabilityAsOf = now.toISOString();
   let repeatedPageIdentity = false;
   // D2: a complete scan is reused for 15 minutes unless league rosters changed; Refresh provider always rescans.
-  const scanKey = cacheKey(userId, league.external_league_key);
+  const scanKey = cacheKey(userId, account ?? "", league.external_league_key);
   const cachedScan = reuse && ownershipSignature !== null ? discoveryCache.get(scanKey, YAHOO_DISCOVERY_TTL_MS, now.getTime()) : null;
   const scan = cachedScan && cachedScan.value.signature === ownershipSignature ? cachedScan : null;
   const scanLimitations: string[] = [];
@@ -587,7 +590,7 @@ export async function loadYahooPlanningSnapshot(args: {
     }
   }
   availabilityElapsed = Math.max(0, Date.now() - availabilityStarted);
-  if (diet && availabilityComplete && ownershipSignature !== null) discoveryCache.set(scanKey, { rows: [...candidates.values()], pagesAttempted, pagesChecked,
+  if (caching && availabilityComplete && ownershipSignature !== null) discoveryCache.set(scanKey, { rows: [...candidates.values()], pagesAttempted, pagesChecked,
     pagesAccepted, rowsAccepted, repeatedRows, elapsed: availabilityElapsed, stop: availabilityStop, complete: true, limitations: [...scanLimitations], signature: ownershipSignature }, now.getTime());
   }
   limitations.push(...scanLimitations);
@@ -647,6 +650,12 @@ export async function loadYahooPlanningSnapshot(args: {
       if (other) opponent = { roster: otherRoster ? yahooBoardPlayers(otherRoster).flatMap(row => { const player = resolve(row); return player ? [{ playerId: player.id, position: "active" as const }] : []; }) : [], realized: yahooPlanningStats(yahooValue(other, "team_stats")), remaining: null };
     } else limitations.push("Current scoreboard does not cover the exact selected matchup; historical totals were not mixed into this horizon.");
   } else limitations.push("Current matchup scoreboard is unavailable.");
+  // A live read that Yahoo refused for access purges this principal's caches; anything already taken from cache in
+  // this request is then withheld, so a failed access check is never answered from cache.
+  if (diet && yahooAccessFailure(refreshError?.code)) {
+    forgetYahooReadsFor(userId);
+    if (cachedSettings || cachedRoster || cachedScoreboard || cachedLeague || cachedTeamCurrent || scan) throw refreshError!;
+  }
   const observedAt = rosterResponse.transport.responseDate;
   const snapshot: PlanningSnapshot = {
     id: `yahoo:${team.id}:${now.toISOString()}`, context: { provider: "yahoo", seasonId: query.seasonId, leagueId: league.id, teamId: team.id, startDate: query.startDate, endDate: query.endDate, timeZone, asOf: now.toISOString() },

@@ -10,7 +10,8 @@ vi.mock("lib/integrations/yahoo/gameContext", async (original) => ({ ...await or
 vi.mock("lib/integrations/yahoo/liveDraft", async (original) => ({ ...await original<typeof import("./liveDraft")>(), parseYahooBoardSettings: mocks.settings }));
 vi.mock("lib/integrations/yahoo/providerClient", async (original) => ({ ...await original<typeof import("./providerClient")>(), fetchYahooDraftResource: mocks.draftResource, fetchYahooBoardResource: mocks.boardResource, fetchYahooPlanningResource: mocks.planningResource }));
 
-import { clearYahooReadCaches, currentTodayRoster, todayRosterCache, yahooOwnershipSignature, yahooReadCache, yahooRosterExpiresAt } from "./planningCache";
+import { clearYahooReadCaches, currentTodayRoster, todayRosterCache, yahooCacheAccount, yahooOwnershipSignature, yahooReadCache, yahooRosterExpiresAt } from "./planningCache";
+import { YahooLiveDraftError } from "./liveDraft";
 import { loadYahooPlanningSnapshot } from "./rosterPlanning";
 import providerHandler from "../../../pages/api/v1/roster-schedule-optimizer/provider";
 import { yahooInferredAcquisitionTiming } from "./starterBoard";
@@ -71,6 +72,18 @@ describe("Yahoo read caches (D2, D3, D5)", () => {
     expect(currentTodayRoster("intruder|453.l.1.t.1|2026-10-01", Date.parse("2026-10-01T12:00:10Z"))).toBeNull();
     expect(yahooRosterExpiresAt({ payload: {}, transport: { responseDate: "2026-10-01T12:00:00Z", ageSeconds: 61 } } as any)).toBeNull();
   });
+  it("keys caches by the connected account generation and refuses any account that is not connected", async () => {
+    const lookup = (row: Record<string, unknown> | null, error: unknown = null) => ({ from: () => {
+      const query: any = { select: () => query, eq: () => query, maybeSingle: async () => ({ data: row, error }) };
+      return query; } }) as any;
+    const connected = { id: "acct", user_id: "owner", provider: "yahoo", status: "connected", provider_user_id: "guid-a", last_synced_at: "2026-10-01T00:00:00Z" };
+    expect(await yahooCacheAccount(lookup(connected), "owner", "acct")).toBe("acct:guid-a:2026-10-01T00:00:00Z");
+    expect(await yahooCacheAccount(lookup({ ...connected, provider_user_id: "guid-b" }), "owner", "acct")).toBe("acct:guid-b:2026-10-01T00:00:00Z");
+    for (const status of ["reauth_required", "syncing", "error"]) expect(await yahooCacheAccount(lookup({ ...connected, status }), "owner", "acct")).toBeNull();
+    expect(await yahooCacheAccount(lookup(null), "owner", "acct")).toBeNull();
+    expect(await yahooCacheAccount(lookup(connected, { message: "down" }), "owner", "acct")).toBeNull();
+    expect(await yahooCacheAccount(lookup({ ...connected, user_id: "intruder" }), "owner", "acct")).toBeNull();
+  });
   it("signs ownership independent of team and player order", () => {
     expect(yahooOwnershipSignature([{ teamKey: "b", playerKeys: ["2", "1"] }, { teamKey: "a", playerKeys: ["3"] }]))
       .toBe(yahooOwnershipSignature([{ teamKey: "a", playerKeys: ["3"] }, { teamKey: "b", playerKeys: ["1", "2"] }]));
@@ -116,6 +129,7 @@ describe("add timing inferred from Yahoo's weekly deadline (D6)", () => {
 describe("provider snapshot cadence with RSO_YAHOO_DIET=1 (D2, D3, D5, D6, D8)", () => {
   const t0 = Date.parse("2026-10-01T12:00:00Z");
   let clock = t0, otherOwned = "453.p.9";
+  let account: Record<string, unknown> = {};
   const transport = () => ({ responseDate: new Date(clock).toISOString(), ageSeconds: 0 });
   const teamNode = (teamKey: string, keys: string[]) => ({ team: [[{ team_key: teamKey }], { roster: { players: { count: keys.length,
     ...Object.fromEntries(keys.map((key, index) => [index, { player: [{ player_key: key }] }])) } } }] });
@@ -123,7 +137,8 @@ describe("provider snapshot cadence with RSO_YAHOO_DIET=1 (D2, D3, D5, D6, D8)",
   const db = { from(table: string) {
     tables.push(table);
     const query: any = { select: () => query, order: () => query, eq: () => query, in: () => query, is: () => query,
-      async maybeSingle() { return { data: table === "external_teams"
+      async maybeSingle() { if (table === "connected_accounts") return { data: account, error: null };
+        return { data: table === "external_teams"
         ? { id: "team-a", team_metadata: { is_owned: true }, connected_account_id: "account-a", external_league_id: "league-a", external_team_key: "453.l.1.t.1" }
         : { id: "league-a", connected_account_id: "account-a", external_league_key: "453.l.1" }, error: null }; },
       async range() { return { data: table === "fhfh_player_external_identities"
@@ -137,6 +152,7 @@ describe("provider snapshot cadence with RSO_YAHOO_DIET=1 (D2, D3, D5, D6, D8)",
   beforeEach(() => {
     vi.stubEnv("RSO_YAHOO_DIET", "1");
     clock = t0; otherOwned = "453.p.9"; tables.length = 0;
+    account = { id: "account-a", user_id: "owner-a", provider: "yahoo", status: "connected", provider_user_id: "guid-a", last_synced_at: "2026-10-01T00:00:00Z" };
     mocks.planningData.mockImplementation(async () => ({ players: [1, 2, 3, 9].map(id => ({ id: String(id), nhlId: 100 + id, name: `Player ${id}`,
       teamAbbreviation: "TOR", eligiblePositions: ["C"], eligibilityVerified: false, playerClass: "skater", availability: "unknown",
       ownership: null, canDrop: null, holdValue: null, reserveEligibility: [] })), games: [], forecasts: [], evidence: {},
@@ -193,6 +209,35 @@ describe("provider snapshot cadence with RSO_YAHOO_DIET=1 (D2, D3, D5, D6, D8)",
     clock = t0 + 49 * 60_000; // 31 minutes after the manual read: league facts, roster and scan re-read; settings still cached
     expect(reads(await run())).toBe(6);
     expect(mocks.draftResource).toHaveBeenCalledTimes(2);
+  });
+
+  it("never serves one Yahoo account's cache to another, or after a reconnect or a lost connection", async () => {
+    expect(reads(await run())).toBe(7);
+    clock = t0 + 30_000; expect(reads(await run())).toBe(1); // same account: cached
+    account = { ...account, provider_user_id: "guid-b" }; // reconnected to another Yahoo user on the same account row
+    clock = t0 + 40_000; expect(reads(await run())).toBe(7);
+    clock = t0 + 50_000; expect(reads(await run())).toBe(1);
+    account = { ...account, last_synced_at: "2026-10-01T12:00:45Z" }; // reconnect or resync of the same Yahoo user
+    clock = t0 + 60_000; expect(reads(await run())).toBe(7);
+    account = { ...account, status: "reauth_required" }; // nothing cached is served or written without a connected account
+    clock = t0 + 70_000; expect(reads(await run())).toBe(7);
+    clock = t0 + 80_000; expect(reads(await run())).toBe(7);
+    account = null as unknown as Record<string, unknown>; // disconnected: the account row is gone
+    clock = t0 + 90_000; expect(reads(await run())).toBe(7);
+  });
+
+  it("never answers a refused live read from cache, and purges this principal's caches", async () => {
+    expect(reads(await run())).toBe(7);
+    const board = mocks.boardResource.getMockImplementation()!;
+    mocks.boardResource.mockImplementation(async (args: any) => {
+      if (args.resource.type === "league_rosters") throw new YahooLiveDraftError("Yahoo denied access to this league.", 403, "yahoo_access_denied");
+      return board(args);
+    });
+    clock = t0 + 30_000;
+    await expect(run()).rejects.toMatchObject({ code: "yahoo_access_denied" });
+    mocks.boardResource.mockImplementation(board);
+    clock = t0 + 40_000; expect(reads(await run())).toBe(7); // the purge left nothing to reuse
+    clock = t0 + 50_000; expect(reads(await run())).toBe(1);
   });
 
   it("reads a stored elapsed day instead of Yahoo and stores a newly read one (D4)", async () => {

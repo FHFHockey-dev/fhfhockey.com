@@ -7,7 +7,7 @@ import { optimizeToday, rankTodayStreams, type TodayPlayer, type TodayStream } f
 import { assertYahooLeagueGameContext, resolveYahooGameContext } from "./gameContext";
 import { parseYahooBoardSettings, YahooLiveDraftError } from "./liveDraft";
 import { fetchYahooBoardResource, fetchYahooDraftResource } from "./providerClient";
-import { cacheKey, currentTodayRoster, todayRosterCache, YAHOO_SETTINGS_TTL_MS, yahooSettingsCache } from "./planningCache";
+import { cacheKey, currentTodayRoster, forgetYahooReadsFor, todayRosterCache, YAHOO_SETTINGS_TTL_MS, yahooAccessFailure, yahooCacheAccount, yahooSettingsCache } from "./planningCache";
 import { loadVerifiedYahooIdentitiesForKeys, rsoYahooDietEnabled } from "./yahooIdentity";
 
 type Row = Record<string, any>;
@@ -98,11 +98,19 @@ export async function loadYahooStarterBoard(args: { userId: string; teamId?: str
   assertYahooLeagueGameContext(league.external_league_key, context);
   const provider = { client: db, userId: args.userId, connectedAccountId: selected.connected_account_id,
     context, leagueKey: league.external_league_key, now };
-  // RSO Yahoo diet (flag RSO_YAHOO_DIET): reuse a current today-roster read and the six-hour settings read for this principal.
+  // RSO Yahoo diet (flag RSO_YAHOO_DIET): reuse a current today-roster read and the six-hour settings read for this
+  // principal and connected-account generation, only while that account is connected.
   const diet = rsoYahooDietEnabled();
-  const rosterKey = cacheKey(args.userId, selected.external_team_key, date), settingsKey = cacheKey(args.userId, league.external_league_key);
-  const cachedRoster = diet ? currentTodayRoster(rosterKey, now.getTime()) : null;
-  const cachedSettings = diet ? yahooSettingsCache.get(settingsKey, YAHOO_SETTINGS_TTL_MS, now.getTime()) : null;
+  const account = diet ? await yahooCacheAccount(db as any, args.userId, selected.connected_account_id) : null;
+  const rosterKey = cacheKey(args.userId, account ?? "", selected.external_team_key, date), settingsKey = cacheKey(args.userId, account ?? "", league.external_league_key);
+  const cachedRoster = account ? currentTodayRoster(rosterKey, now.getTime()) : null;
+  const cachedSettings = account ? yahooSettingsCache.get(settingsKey, YAHOO_SETTINGS_TTL_MS, now.getTime()) : null;
+  /** A refused live read purges this principal's caches, and a board built on cached reads is withheld. */
+  const accessRefused = (error: unknown) => {
+    if (!diet || !(error instanceof YahooLiveDraftError) || !yahooAccessFailure(error.code)) return;
+    forgetYahooReadsFor(args.userId);
+    if (cachedRoster || cachedSettings) throw error;
+  };
   const [rosterResult, leagueResult, revisions, schedule] = await Promise.all([
     cachedRoster ?? fetchYahooBoardResource({ ...provider, resource: { type: "roster", teamKey: selected.external_team_key, date } }),
     cachedSettings?.value ?? fetchYahooDraftResource({ ...provider, resource: "settings" }),
@@ -121,8 +129,8 @@ export async function loadYahooStarterBoard(args: { userId: string; teamId?: str
   if (rosterRows.some((row) => !new RegExp(`^${context.gameKey}\\.p\\.\\d+$`).test(row.player_key))) throw new Error("Yahoo roster player scope did not match");
   const rosterCount = Number(yahooFields(rosterPayload.players).count);
   if (!Number.isInteger(rosterCount) || rosterCount > 100 || rosterCount !== rosterRows.length) throw new Error("Incomplete Yahoo roster response");
-  if (diet && !cachedRoster) todayRosterCache.set(rosterKey, rosterResult, now.getTime());
-  if (diet && !cachedSettings) yahooSettingsCache.set(settingsKey, leagueResult, now.getTime());
+  if (account && !cachedRoster) todayRosterCache.set(rosterKey, rosterResult, now.getTime());
+  if (account && !cachedSettings) yahooSettingsCache.set(settingsKey, leagueResult, now.getTime());
   const settings = parseYahooBoardSettings(leagueResult.payload);
   // Neither missing settings nor an explicit weekly roster establishes daily lineup editing.
   const dailyLineupEdits = yahooDailyLineupEdits(settings);
@@ -309,10 +317,10 @@ export async function loadYahooStarterBoard(args: { userId: string; teamId?: str
           if (page.status === "fulfilled") {
             acceptPage(page.value);
             if (page.value.start === 75 && page.value.rows.length === 25) capReached = true;
-          } else streamingLimitations.push("Part of Yahoo's available-player shortlist could not be refreshed.");
+          } else { accessRefused(page.reason); streamingLimitations.push("Part of Yahoo's available-player shortlist could not be refreshed."); }
         }
       }
-    } catch { streamingLimitations.push("League availability could not be refreshed."); }
+    } catch (error) { accessRefused(error); streamingLimitations.push("League availability could not be refreshed."); }
   }
   if (diet) {
     const unresolved = [...availableRows.keys()].filter((key) => !unique.has(key));

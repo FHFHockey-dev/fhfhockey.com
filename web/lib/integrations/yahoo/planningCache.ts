@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { YahooProviderJsonResult } from "./providerClient";
 
 /**
@@ -32,6 +33,29 @@ export function yahooReadCache<T>() {
     delete(key: string) { store.delete(key); },
   };
 }
+
+/** Forget every cached Yahoo read for one principal (all accounts, leagues and teams). */
+export function forgetYahooReadsFor(userId: string) {
+  for (const store of stores) for (const key of [...store.keys()]) if (key.startsWith(`${userId}|`)) store.delete(key);
+}
+
+/**
+ * The connected Yahoo account generation every cache key carries: account row, Yahoo user and last sync. A reconnect
+ * (callback → discovery) or resync rewrites `last_synced_at`, and a reconnect to another Yahoo user changes the GUID
+ * on the same row, so either one re-keys the caches. Null when the account is missing, disconnected, re-auth or
+ * mid-sync, or the lookup fails: then nothing may be served from or written to a cache.
+ */
+export async function yahooCacheAccount(db: SupabaseClient<any>, userId: string, connectedAccountId: string): Promise<string | null> {
+  try {
+    const { data, error } = await db.from("connected_accounts").select("id,user_id,provider,status,provider_user_id,last_synced_at")
+      .eq("id", connectedAccountId).eq("user_id", userId).eq("provider", "yahoo").maybeSingle();
+    if (error || !data || data.id !== connectedAccountId || data.user_id !== userId || data.status !== "connected") return null;
+    return `${data.id}:${data.provider_user_id ?? ""}:${data.last_synced_at ?? ""}`;
+  } catch { return null; }
+}
+
+/** Yahoo access failures that must never be answered from cache. */
+export const yahooAccessFailure = (code: string | undefined) => code === "yahoo_reauth_required" || code === "yahoo_access_denied";
 
 /** Test seam: forget every cached Yahoo read. */
 export function clearYahooReadCaches() { for (const store of stores) store.clear(); }

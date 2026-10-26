@@ -4,7 +4,7 @@ import type { PlanningDataQuery } from "lib/rosterScheduleData/planning";
 import { applyProviderGoalieStarts } from "lib/rosterScheduleOptimizer/providerGoalieStarts";
 import { assertYahooLeagueGameContext, resolveYahooGameContext } from "./gameContext";
 import { YahooLiveDraftError } from "./liveDraft";
-import { cacheKey, currentTodayRoster, todayRosterCache } from "./planningCache";
+import { cacheKey, currentTodayRoster, todayRosterCache, yahooCacheAccount } from "./planningCache";
 import { fetchYahooBoardResource } from "./providerClient";
 import { yahooPlanningPlayers, yahooStartingStatus } from "./rosterPlanning";
 import { yahooFields, yahooValue } from "./starterBoard";
@@ -44,8 +44,11 @@ export async function loadYahooPlanningConfirmations(args: {
   if (date < query.startDate || date > query.endDate) return { data, expiresAt: null };
   // RSO Yahoo diet (flag RSO_YAHOO_DIET): share the snapshot's current today-roster read, and skip Yahoo when a
   // recent read shows no rostered goalie whose team plays today (absent marks stay unknown, as when Yahoo omits them).
-  const diet = rsoYahooDietEnabled(), rosterKey = cacheKey(userId, team.external_team_key, date);
-  if (diet) {
+  const diet = rsoYahooDietEnabled();
+  // Cached reads are keyed by the connected account generation and used only while that account is connected.
+  const account = diet ? await yahooCacheAccount(db, userId, team.connected_account_id) : null;
+  const rosterKey = cacheKey(userId, account ?? "", team.external_team_key, date);
+  if (account) {
     const recent = todayRosterCache.get(rosterKey, GOALIE_SKIP_WINDOW_MS, Date.now());
     const playing = new Set(data.games.filter(game => game.date === date).map(game => game.teamAbbreviation));
     let recentRows: Record<string, any>[] | null = null;
@@ -53,7 +56,7 @@ export async function loadYahooPlanningConfirmations(args: {
     if (recentRows && !recentRows.some(row => isGoalieRow(row) && playing.has(teamAbbreviation(row.editorial_team_abbr))))
       return { data, expiresAt: null };
   }
-  const cached = diet ? currentTodayRoster(rosterKey, Date.now()) : null;
+  const cached = account ? currentTodayRoster(rosterKey, Date.now()) : null;
   const response = cached ?? await fetchYahooBoardResource({ client: db, userId, connectedAccountId: team.connected_account_id,
     context, leagueKey: league.external_league_key, format: "standard_json", now,
     resource: { type: "roster", teamKey: team.external_team_key, date } });
@@ -69,7 +72,7 @@ export async function loadYahooPlanningConfirmations(args: {
   const expires = observed + 120000 - (age ?? 0) * 1000;
   if (expires <= completed) throw unavailable();
   const rows = yahooPlanningPlayers(response.payload);
-  if (diet && !cached) todayRosterCache.set(rosterKey, response, observed);
+  if (account && !cached) todayRosterCache.set(rosterKey, response, observed);
   if (rows.length > 100) throw unavailable();
   const keys = rows.map(row => String(row.player_key ?? ""));
   if (new Set(keys).size !== keys.length || keys.some(key => !new RegExp(`^${context.gameKey}\\.p\\.\\d+$`).test(key))) throw unavailable();
