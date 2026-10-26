@@ -95,6 +95,13 @@ Not measured, and listed below as activation gates:
 - **Not applied anywhere.** No local or hosted database was touched, there was no `supabase db push`, and no MCP `apply_migration`. The generated types are unchanged; the writer and the reader use an untyped table name.
 
 ## Before activation (each needs TJ's approval)
+Fix-before-flag-on items from C7 R43 (`tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C7/RECEIPT-R43.md`), each to settle before `FORGE_RESERVE_PASS_ENABLED=true`:
+- **N1:** apply `20261027090000_forge_reserve_projections.sql` before the flag goes on. With the flag on and no table, `persistForgeReserveProjectionRows` throws and the run fails.
+- **N2:** an unconfirmed "out" outranks confirmed lineup news. In `skaterState` (forgeDailyBridge.ts), an unconfirmed availability "out" returns `projected_scratch` (count 0) before a confirmed lineup assertion is checked. So a confirmed-in skater with a stale, unconfirmed scratch report counts 0.
+- **N4:** the goalie stand-in line is the team starter's, but the label doesn't say so. A goalie with neither his own reserve row nor his own starter row falls back to `teamGoalieLatest` (the team starter's line) for his "if he starts" line, labelled only `goalie:start_unknown`.
+
+Fixed after R43 (M1): the migration now revokes all privileges from public, anon and authenticated before granting anon and authenticated SELECT only and service_role read/write, matching `forge_player_projections`. It is still local only and not applied. The migration is outside the producer closure: `verify-forge-release-sha --worktree` gives the same closure, `c1f0129a…`, VERIFIED with 0 findings. The tests that name the table (`reserveProjections.test.ts`, `run-forge-projections.local-attempt.test.ts`, 17 tests) pass in UTC and America/New_York.
+
 0. **Unmeasured gates:**
    - decode, memory and save/reopen on a physical phone (Safari or WebKit);
    - the full RSO page render and planner evaluation with full reserve coverage, on mobile and desktop;
@@ -118,7 +125,7 @@ The orchestrator's condition is "unknown, never 0". TJ's pop-up answer allowed a
 - Yahoo free agents with no NHL roster spot are still outside RSO's player set (diagnosis item 6).
 
 ## File hashes (sha256)
-- `supabase/migrations/20261027090000_forge_reserve_projections.sql` c30269fa9db05dcadac0b88863ad46e25edc73b517df181adadeb6595b96dd04
+- `supabase/migrations/20261027090000_forge_reserve_projections.sql` 1ca5816e835da899833499cc95d345a9253227ea176898c1ca2ba382fdd55da8
 - `web/lib/projections/reserveProjections.ts` bccbc958a18f038da03a514437fe1ca2a813e4c0d14d50e9fcf0c08ac4e44c5e
 - `web/lib/projections/reserveProjections.test.ts` 45d2d70f84940243b2ccb28c567e295f93241ebec70bdd9d85c6333597e2cf21
 - `web/lib/projections/stages/skater-stage.ts` b36f1e0057d00bd38187f6c959c061ae206f0637987a7659ddb191cd314a78e8

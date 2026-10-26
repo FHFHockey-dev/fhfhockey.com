@@ -51,8 +51,10 @@ create table if not exists public.forge_reserve_projections (
 create index if not exists idx_forge_reserve_projections_run on public.forge_reserve_projections (run_id, horizon_games);
 create index if not exists idx_forge_reserve_projections_player on public.forge_reserve_projections (player_id);
 
--- Same exposure as the FORGE projection tables it sits beside: public read, service-role write.
+-- Same exposure as the FORGE projection tables it sits beside: public read, service-role write. The baseline's default
+-- privileges grant anon and authenticated ALL on new public tables, so revoke first and grant back SELECT only.
 alter table public.forge_reserve_projections enable row level security;
 create policy public_read on public.forge_reserve_projections for select to anon, authenticated using (true);
+revoke all on table public.forge_reserve_projections from public, anon, authenticated;
 grant select on table public.forge_reserve_projections to anon, authenticated;
 grant select, insert, update, delete on table public.forge_reserve_projections to service_role;
