@@ -19,6 +19,8 @@ export const TREND_LIMITS = {
   mapChunk: 150,
   namesChunk: 100,
   evChunk: 20, evRowsPerPlayer: TREND_MAX_GAME_AGE_DAYS + 1,
+  /** Rostered % on every tile (TT-10, READ-PLAN v3 M3): NHL ids of the shown non-mover players; each can map to a few Yahoo ids. */
+  rosterChunk: 100, rosterRowsPerId: 4,
   /** Sparklines (TT-4, READ-PLAN v2 S1/M2): one row per player per date, so a 35-day read holds at most 36 rows per player. */
   seriesChunk: 20, seriesRowsPerPlayer: SERIES_LOOKBACK_DAYS + 1, ownershipSeriesRowsPerKey: OWNERSHIP_SERIES_MAX_DAYS + 1,
   /** Statements in flight at once, across every stream (TJ's approved ceiling, READ-APPROVAL.md). */
@@ -131,7 +133,13 @@ export async function loadTrendLayer(context: TrendContext, client: TrendReadCli
   const ev = await settle("Even-strength rolling rows", () => chunked(evIds, TREND_LIMITS.evChunk, chunk => bounded<ShareEvRow>("Even-strength rolling rows", chunk.length * TREND_LIMITS.evRowsPerPlayer, (from, to) => client.from("rolling_player_game_metrics")
     .select(EV_COLUMNS.join(","), { count: "exact" }).eq("season", context.season).eq("strength_state", "ev").in("player_id", chunk).gte("game_date", since)
     .order("player_id", { ascending: true }).order("game_date", { ascending: false }).range(from, to))));
-  if (!options.sparklines) return buildTrendLayer({ rolling, ev, ppc, ownership, map, players }, context);
+  // Rostered % (TT-10, M3): map the shown non-mover players' NHL ids to Yahoo ids; their values come from the O3 rows
+  // already read at the latest date, so no further ownership read.
+  const rosterIds = "rows" in players ? seriesShownIds(lists, players.rows).map(String) : [];
+  const rosterMap = "failed" in ownership ? { failed: "not read because Yahoo ownership is unavailable" } as SourceRead<ShareMapRow>
+    : await settle("Yahoo id map (shown players)", () => chunked(rosterIds, TREND_LIMITS.rosterChunk, chunk => bounded<ShareMapRow>("Yahoo id map (shown players)", chunk.length * TREND_LIMITS.rosterRowsPerId, (from, to) => client.from("yahoo_nhl_player_map_read")
+      .select("yahoo_player_id,nhl_player_id", { count: "exact" }).in("nhl_player_id", chunk).order("nhl_player_id", { ascending: true }).order("yahoo_player_id", { ascending: true }).range(from, to))));
+  if (!options.sparklines) return buildTrendLayer({ rolling, ev, ppc, ownership, map, players, rosterMap }, context);
   // Sparklines (TT-4, flagged): the listed skaters' season rows for 35 days (S1), then the listed movers' daily rows P..D (M2).
   const today = localDate(context.generatedAt, SHARE_TIME_ZONE), seriesIds = "rows" in players ? seriesShownIds(lists, players.rows) : [];
   const series = await settle("Sparkline game rows", () => chunked(seriesIds, TREND_LIMITS.seriesChunk, chunk => bounded<ShareSeriesRow>("Sparkline game rows", chunk.length * TREND_LIMITS.seriesRowsPerPlayer, (from, to) => client.from("rolling_player_game_metrics")
@@ -141,6 +149,6 @@ export async function loadTrendLayer(context: TrendContext, client: TrendReadCli
   const ownershipSeries: SourceRead<ShareOwnershipRow> = !keys.length ? { rows: [] } : await settle("Ownership sparkline rows", () => bounded<ShareOwnershipRow>("Ownership sparkline rows", keys.length * TREND_LIMITS.ownershipSeriesRowsPerKey, (from, to) => client.from("yahoo_player_ownership_history")
     .select(OWNERSHIP_COLUMNS.join(","), { count: "exact" }).in("player_key", keys).gte("ownership_date", dates![0]).lte("ownership_date", dates![dates!.length - 1])
     .order("player_key", { ascending: true }).order("ownership_date", { ascending: true }).range(from, to)));
-  const sources: ShareTrendSources = { rolling, ev, ppc, ownership, map, players, series, ownershipSeries };
+  const sources: ShareTrendSources = { rolling, ev, ppc, ownership, map, players, series, ownershipSeries, rosterMap };
   return buildTrendLayer(sources, context);
 }
