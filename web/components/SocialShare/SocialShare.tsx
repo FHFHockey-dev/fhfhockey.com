@@ -377,7 +377,7 @@ function PlayerCard({ card, snapshot, trusted, logos, brandLogo }: { card: Playe
 
 type TrendKind = ShareTrendKind;
 const TREND_KINDS: readonly TrendKind[] = ["hot", "deployment", "rates", "movers"];
-const trendTitles: Record<TrendKind, string> = { hot: "RECENT FORM", deployment: "DEPLOYMENT CHANGES", rates: "RATE STANDOUTS", movers: "OWNERSHIP MOVERS" };
+const trendTitles: Record<TrendKind, string> = { hot: "HOT/COLD", deployment: "DEPLOYMENT CHANGES", rates: "RATE STANDOUTS", movers: "OWNERSHIP MOVERS" };
 const rateTitles: Record<RateMetric, string> = { sogPer60: "SOG/60", icfPer60: "iCF/60", ixgPer60: "ixG/60" };
 const signed = (value: number, digits: number) => `${value > 0 ? "+" : value < 0 ? "−" : ""}${Math.abs(value).toFixed(digits)}`;
 const clock = (seconds: number) => `${Math.floor(Math.abs(seconds) / 60)}:${String(Math.round(Math.abs(seconds) % 60)).padStart(2, "0")}`;
@@ -425,7 +425,8 @@ export function moverSparkPoints(values: (number | null)[] | null | undefined, d
 }
 type TrendRowData = { key: string; team: string | null; name: string; meta: string; weekGames?: number | null; detail: string | string[];
   hero: { value: string; label: string; tone: Tone }; right: { value: string; label: string }; spark?: Spark; badge?: { text: string; tone: Tone }; chips: { text: string; tone: Tone }[] };
-type TrendColumn = { key: string; title: string; rows: TrendRowData[] };
+/** `label`: the vertical group label (TT-8) along the column's left edge, in the sporty face, green or red. */
+type TrendColumn = { key: string; title: string; rows: TrendRowData[]; label?: { text: string; tone: Tone } };
 
 /**
  * Inline SVG sparkline (TT-4), drawn into the 1080 PNG by html-to-image. Observed values only: a null is a gap with a
@@ -481,7 +482,7 @@ function trendColumns(kind: TrendKind, snapshot: SocialShareSnapshot): TrendColu
       detail: `Prior ${TREND_WINDOW_GAMES}: ${pick.preceding.toFixed(2)} P/GP`, hero: { value: signed(pick.delta, 2), label: `P/GP VS PRIOR ${TREND_WINDOW_GAMES}`, tone: toneOf(pick.delta) },
       right: { value: pick.recent.toFixed(2), label: `P/GP LAST ${TREND_WINDOW_GAMES}` }, spark: { values: pick.series, split: 5, zero: true, what: "Points in each of the last 10 games" },
       badge: { text: pick.delta > 0 ? "RISING" : "FALLING", tone: toneOf(pick.delta) }, chips: [] });
-    return [{ key: "hot", title: `UP VS PRIOR ${TREND_WINDOW_GAMES}`, rows: hot.map(row) }, { key: "cold", title: `DOWN VS PRIOR ${TREND_WINDOW_GAMES}`, rows: cold.map(row) }];
+    return [{ key: "hot", title: `UP VS PRIOR ${TREND_WINDOW_GAMES}`, label: { text: "HOT", tone: "up" }, rows: hot.map(row) }, { key: "cold", title: `DOWN VS PRIOR ${TREND_WINDOW_GAMES}`, label: { text: "COLD", tone: "down" }, rows: cold.map(row) }];
   }
   if (kind === "deployment") {
     const { up, down } = deploymentChanges(snapshot, true);
@@ -495,7 +496,9 @@ function trendColumns(kind: TrendKind, snapshot: SocialShareSnapshot): TrendColu
         right: { value: clock(pick.toi.l5), label: "TOI/GP L5" }, spark: { values: pick.series, split: 5, reference: pick.toi.season, what: "TOI in each of the last 10 games (dashed: season TOI/GP)" },
         badge: { text: pick.driver === "toi" ? (pick.delta > 0 ? "MORE ICE" : "LESS ICE") : tone === "up" ? "PROMOTED" : "DEMOTED", tone }, chips: deploymentBadges(pick) };
     };
-    return [{ key: "up", title: "USAGE UP", rows: up.map(row) }, { key: "down", title: "USAGE DOWN", rows: down.map(row) }];
+    // Vertical labels (TJ, TT-8): PROMOTIONS / DEMOTIONS. The column rule is unchanged: a TOI change of 1:00 or more sets
+    // the column by its sign; only role-only rows follow the line/PP direction (CONTRACT.md).
+    return [{ key: "up", title: "USAGE UP", label: { text: "PROMOTIONS", tone: "up" }, rows: up.map(row) }, { key: "down", title: "USAGE DOWN", label: { text: "DEMOTIONS", tone: "down" }, rows: down.map(row) }];
   }
   if (kind === "rates") {
     const board = rateStandouts(snapshot, true);
@@ -512,7 +515,7 @@ function trendColumns(kind: TrendKind, snapshot: SocialShareSnapshot): TrendColu
     hero: { value: signed(mover.delta, digits), label: "PCT PTS ROSTERED", tone: toneOf(mover.delta) }, right: { value: `${mover.latest.toFixed(digits)}%`, label: "ROSTERED" },
     spark: { values: mover.series, dates: trends.ownershipSeriesDates, what: `Yahoo rostered % on each day ${trends.ownershipSeriesDates?.[0] ?? ""} to ${trends.ownershipSeriesDates?.at(-1) ?? ""}` },
     badge: { text: mover.delta > 0 ? "RISING" : "FALLING", tone: toneOf(mover.delta) }, chips: [] });
-  return [{ key: "risers", title: "RISING", rows: risers.map(row) }, { key: "fallers", title: "FALLING", rows: fallers.map(row) }];
+  return [{ key: "risers", title: "ROSTERED % UP", label: { text: "RISING", tone: "up" }, rows: risers.map(row) }, { key: "fallers", title: "ROSTERED % DOWN", label: { text: "FALLING", tone: "down" }, rows: fallers.map(row) }];
 }
 
 /** The compact source and freshness line shared by the card footer and the alt text. */
@@ -549,10 +552,11 @@ function NeonOwnershipSparkline({ points, tone, what, width, height }: { points:
 /**
  * Tile name size (TT-7b): shrink to fit the right text column (never the logo zone), down to a floor; below the floor
  * the name wraps to two lines and then ellipsizes (CSS line clamp). Uppercase condensed bold is at most ~0.58 em per
- * character, so the estimate never overflows. Text-column widths: 2-column cards ~310 px, stacked rates tiles ~170 px.
+ * character, so the estimate never overflows. Text-column widths: 2-column cards ~290 px (beside the TT-8 group
+ * labels), stacked rates tiles ~170 px.
  */
 export function nameFontSize(name: string, stacked: boolean) {
-  const [column, base, floor] = stacked ? [168, 19, 15] : [308, 20, 16];
+  const [column, base, floor] = stacked ? [168, 19, 15] : [286, 20, 16];
   return `${Math.max(floor, Math.min(base, Math.floor(column / (0.58 * Math.max(1, name.length)))))}px`;
 }
 
@@ -573,9 +577,10 @@ function TrendCard({ kind, snapshot, trusted, logos, outlines, brandLogo }: { ki
   return <>
     <CardHeader snapshot={snapshot} brandLogo={brandLogo} eyebrow={ready ? `${editionDay(snapshot)} · ${kind === "movers" ? "Rostered % movers" : kind === "hot" ? "Early season · small sample" : `Last ${TREND_WINDOW_GAMES} games vs season`}` : "Unranked preview"} title={trendTitles[kind]} compact />
     {!ready ? <div className={styles.matchupEmpty}><strong>Ranking unavailable</strong><p>Trend cards need a ready schedule and current {kind === "movers" ? "Yahoo ownership" : "rolling game metrics"}; {trendUnreadyReason(kind, snapshot, trusted)}.</p></div>
-      : kind === "hot" && columns.every(column => !column.rows.length) ? <div className={styles.matchupEmpty} data-empty-form><strong>No qualifiers yet</strong><p>Recent Form needs {RECENT_FORM_GAMES} completed appearances this season with complete points, the last within {TREND_MAX_GAME_AGE_DAYS} days, and a change between the two windows. The other Tuesday cards are unaffected.</p></div>
-      : <div className={styles.trendColumns} style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(0, 1fr))` }}>{columns.map(column => <div key={column.key} data-column={column.key} className={styles.trendColumn} style={{ gridTemplateRows: `32px repeat(${kind === "deployment" ? DEPLOYMENT_LIST : kind === "rates" ? RATE_LIST : TREND_LIST}, minmax(0, 1fr))` }}>
+      : kind === "hot" && columns.every(column => !column.rows.length) ? <div className={styles.matchupEmpty} data-empty-form><strong>No qualifiers yet</strong><p>Hot/Cold needs {RECENT_FORM_GAMES} completed appearances this season with complete points, the last within {TREND_MAX_GAME_AGE_DAYS} days, and a change between the two windows. The other Tuesday cards are unaffected.</p></div>
+      : <div className={styles.trendColumns} style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(0, 1fr))` }}>{columns.map(column => <div key={column.key} data-column={column.key} data-labelled={column.label ? "" : undefined} className={styles.trendColumn} style={{ gridTemplateRows: `32px repeat(${kind === "deployment" ? DEPLOYMENT_LIST : kind === "rates" ? RATE_LIST : TREND_LIST}, minmax(0, 1fr))` }}>
         <h3>{column.title}</h3>
+        {column.label && <span className={styles.trendGroupLabel} data-tone={column.label.tone} data-group-label={column.label.text}>{column.label.text}</span>}
         {column.rows.map(row => {
           const stacked = columns.length > 2;
           const [sparkWidth, sparkHeight] = stacked ? [92, 26] : [104, 24];
@@ -801,7 +806,7 @@ export default function SocialShare({ format, asOf }: { format: SocialShareForma
           <button type="button" disabled={loading || exporting} onClick={() => void load(weekStart, selectedRef.current)}>Refresh schedule</button>
           <label>Graphic<select value={graphic} onChange={event => { setGraphic(event.target.value); setFeedback(""); }} disabled={!snapshot || loading || exporting}>
             {format === "tuesday-trends" ? <>
-            <option value="hot">Recent form · early season (Tuesday default)</option>
+            <option value="hot">Hot/Cold · early season (Tuesday default)</option>
             <option value="deployment">Deployment changes (TOI, line, PP)</option>
             <option value="rates">Rate standouts (SOG/60, iCF/60, ixG/60)</option>
             <option value="movers">Ownership movers (rostered %)</option>

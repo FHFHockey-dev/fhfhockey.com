@@ -102,3 +102,17 @@ Native sources only. Tuesday never reads `PROJECTIONS_20262027_*`, `PROJECTIONS_
   - **Tracing method:** Sobel on alpha and premultiplied RGB, then a threshold, Zhang–Suen thinning, a 3 px disc stroke, and 256 px white on transparent.
   - **Render:** the tile draws the outline tinted green, red or neutral blue by the hero sign. The tint is applied on a canvas and inlined as a data URL, the same pipeline as team logos, and given a neon glow with CSS drop-shadow. The PNG export therefore carries it exactly.
   - **Fallback teams:** `OUTLINE_FALLBACK_TEAMS` in `SocialShare.tsx` = NYR, NYI, WSH, OTT, DET. Their outlines are too dense to read at 56 px, so they use the home-page game-card treatment instead: a cropped full-colour logo over the team's 65° jersey stripes. A missing outline also falls back.
+
+## TT-8 presentation
+
+- **Hot/Cold.** "Recent Form" is renamed **Hot/Cold** (title, graphic name, footer definition). The rule id stays `recent-form-v1-early`, and the "Early season · small sample" label is unchanged. Group eyebrows read "UP VS PRIOR 5" and "DOWN VS PRIOR 5".
+- **Vertical group labels:** set in `$font-family-sporty` ("Tomorrow" SemiBold Italic, OFL; `web/public/fonts/social-share/Tomorrow-SemiBoldItalic.ttf`), green or red, with a light glow:
+  - Hot/Cold: HOT / COLD.
+  - Ownership Movers: RISING / FALLING; eyebrows "ROSTERED % UP" and "ROSTERED % DOWN".
+  - Deployment: PROMOTIONS / DEMOTIONS. **The deployment column still follows the TOI sign first** (abs(TOI change) ≥ 1:00); only role-only rows follow the line/PP direction. A TOI-driven tile can therefore sit under PROMOTIONS with ▼ role chips, or under DEMOTIONS with ▲ chips.
+  - Rates: no vertical labels.
+- **Neon stripes:** the home page's 65° stripe edges (28 · 30/33 · 35/52 · 60 %) are drawn as thin team-colour lines (a 1.5 px core plus a 5 px glow at 32%) over a transparent field. They are plain gradients, with no masks.
+- **Outlines v2.5** (`tt8/trace-logo-outlines-v2_5.mjs`, parameters in `tt8/outline-v2_5-params.json`):
+  - **Stroke:** a 14 px diameter at 768 px, 1.82% of the logo width, the midpoint between v1 (2.73%) and v2 (0.91%).
+  - **Interior edges:** use the Euclidean RGB gradient.
+  - **Per-team overrides:** DAL, WPG, MIN, UTA: colour threshold 0.20; SEA: 0.15 with a 24 px minimum stroke.

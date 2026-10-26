@@ -1,3 +1,4 @@
+@use "sass:list";
 @use "styles/vars" as v;
 @use "styles/panel" as p;
 
@@ -15,6 +16,8 @@ $share-rail-size: 8px;
 @font-face { font-family: "Share Roboto Condensed"; src: url("/fonts/social-share/RobotoCondensed-Variable.ttf") format("truetype"); font-weight: 100 900; font-display: block; }
 @font-face { font-family: "Share Train One"; src: url("/fonts/social-share/TrainOne-Regular.ttf") format("truetype"); font-weight: 400; font-display: block; }
 @font-face { font-family: "Share Martian Mono"; src: url("/fonts/social-share/MartianMono-Variable.ttf") format("truetype"); font-weight: 100 800; font-display: block; }
+// Tuesday group labels (TT-8): Tomorrow SemiBold Italic (OFL, tomorrow-OFL.txt), the $font-family-sporty token.
+@font-face { font-family: "Tomorrow"; src: url("/fonts/social-share/Tomorrow-SemiBoldItalic.ttf") format("truetype"); font-weight: 600; font-style: italic; font-display: block; }
 
 .page {
   width: 100%; min-width: 0; max-width: 1440px; margin: 0 auto;
@@ -304,6 +307,15 @@ $trend-row: 140px;
 .trendColumn { display: grid; grid-template-rows: 32px; grid-auto-rows: $trend-row; row-gap: 10px; align-content: start; min-width: 0;
   h3 { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: 0.08em; color: v.$color-blue-300; border-bottom: 2px solid rgba(v.$color-blue-300, 0.4); }
 }
+// Vertical group labels (TT-8): a narrow track left of the tiles, the label reading bottom to top in the sporty face.
+.trendColumn[data-labelled] { grid-template-columns: 30px minmax(0, 1fr); column-gap: 8px;
+  > * { grid-column: 2; }
+  > .trendGroupLabel { grid-column: 1; grid-row: 2 / -1; }
+}
+.trendGroupLabel { display: flex; align-items: center; justify-content: center; writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; overflow: hidden;
+  font: italic 600 26px/1 v.$font-family-sporty; letter-spacing: 0.14em; color: v.$color-blue-300; text-shadow: 0 0 6px rgba(v.$color-blue-300, 0.4); }
+.trendGroupLabel[data-tone="up"] { color: v.$success-color; text-shadow: 0 0 6px rgba(v.$success-color, 0.4); }
+.trendGroupLabel[data-tone="down"] { color: v.$color-pink-red; text-shadow: 0 0 6px rgba(v.$color-pink-red, 0.4); }
 .trendRow { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; column-gap: 12px; padding: 10px 14px; border-radius: 12px;
   background: rgba(v.$color-white, 0.05); border: 2px solid rgba(v.$color-white, 0.12); min-width: 0;
   img, > b { display: block; width: 44px; height: 44px; }
@@ -329,6 +341,20 @@ $trend-row: 140px;
   small { font: 700 11px "Share Roboto Condensed", sans-serif; letter-spacing: 0.05em; color: v.$text-secondary; }
 }
 .trendDown strong { color: v.$color-pink-red; }
+// Neon jersey stripes (TT-8): the home page's 65° stripe edges (28 · 30/33 · 35/52 · 60 %) drawn as thin lines in the
+// team colours over a transparent field, instead of solid bands. Called twice: a crisp core and a soft, wider glow.
+@function neon-stripes($half, $alpha: 100%) {
+  $edges: (28%: var(--team-bg), 30%: var(--team-light), 33%: var(--team-light), 35%: var(--team-mid), 52%: var(--team-mid), 60%: var(--team-bg));
+  $stops: ();
+  @each $at, $color in $edges {
+    $line: color-mix(in srgb, #{$color} #{$alpha}, transparent);
+    $stops: list.append($stops, transparent calc(#{$at} - #{$half}), comma);
+    $stops: list.append($stops, #{$line} calc(#{$at} - #{$half}), comma);
+    $stops: list.append($stops, #{$line} calc(#{$at} + #{$half}), comma);
+    $stops: list.append($stops, transparent calc(#{$at} + #{$half}), comma);
+  }
+  @return linear-gradient(65deg, $stops);
+}
 // Tuesday tiles (TT-7, home-page light game card): a dark body with a tone-coloured border and a faint glow; the
 // team's 65° jersey stripes and a large logo cropped at the left edge; everything else right-aligned. The tone
 // follows the hero's sign: green up, red down, neutral blue when zero or unknown.
@@ -339,10 +365,7 @@ $trend-row: 140px;
 // Art: stripes darkened so the outline reads, fading into the body; plain gradients and an image, so html-to-image
 // draws them exactly (no masks).
 .trendTileArt { position: absolute; z-index: -1; inset: 0 auto 0 0; width: 46%; overflow: hidden; color: v.$color-blue-300;
-  background:
-    linear-gradient(90deg, rgba(21, 25, 31, 0) 35%, #15191f 96%),
-    linear-gradient(rgba(16, 19, 23, 0.5), rgba(16, 19, 23, 0.5)),
-    linear-gradient(65deg, var(--team-bg) 0% 28%, rgba(v.$color-white, 0.55) 30% 33%, var(--team-mid) 35% 52%, rgba(v.$color-black, 0.8) 54% 58%, var(--team-bg) 60% 100%);
+  background: linear-gradient(90deg, rgba(21, 25, 31, 0) 35%, #15191f 96%), neon-stripes(0.75px), neon-stripes(2.5px, 32%);
   img { position: absolute; top: 50%; left: -16%; height: 118%; width: auto; aspect-ratio: 1; transform: translateY(-50%); }
 }
 // Neon outline: crisp strokes with a light halo (TJ, TT-7: a halo, not a fill), plus a thin dark edge for contrast.
@@ -384,10 +407,7 @@ $trend-row: 140px;
 .trendTile[data-tone="down"] .trendSpark { color: v.$color-pink-red; }
 // Stacked (rates, three narrow tall columns): a smaller logo in the upper left and a shorter fade, so text stays clear.
 .trendTileStacked .trendTileArt { width: 58%;
-  background:
-    linear-gradient(90deg, rgba(21, 25, 31, 0) 20%, #15191f 88%),
-    linear-gradient(rgba(16, 19, 23, 0.5), rgba(16, 19, 23, 0.5)),
-    linear-gradient(65deg, var(--team-bg) 0% 28%, rgba(v.$color-white, 0.55) 30% 33%, var(--team-mid) 35% 52%, rgba(v.$color-black, 0.8) 54% 58%, var(--team-bg) 60% 100%);
+  background: linear-gradient(90deg, rgba(21, 25, 31, 0) 20%, #15191f 88%), neon-stripes(0.75px), neon-stripes(2.5px, 32%);
   img { top: 34%; left: -18%; height: 62%; }
 }
 // The stacked text column starts right of the logo zone (logo right edge ~40% of the tile), so a long name never

@@ -197,7 +197,7 @@ describe("Tuesday trend edition (lane TT)", () => {
   });
 
   it("labels every section with its definition and the movers card in points, never adds or drops", () => {
-    expect(trendDefinitions.hot.join(" ")).toMatch(/^Recent Form \(recent-form-v1-early\): P\/GP last 5 appearances vs the 5 before.*All 10 this season · last game ≤ 7 days · Early season · small sample$/);
+    expect(trendDefinitions.hot.join(" ")).toMatch(/^Hot\/Cold \(recent-form-v1-early\): P\/GP last 5 appearances vs the 5 before.*All 10 this season · last game ≤ 7 days · Early season · small sample$/);
     expect(trendDefinitions.rates.join(" ")).toMatch(/Min 50 L5 min/);
     expect(trendDefinitions.movers.join(" ")).toMatch(/^pct pts = percentage-point change.*No observation ≠ 0% · not add\/drop counts$/);
     const snapshot = tuesdayEdition(week);

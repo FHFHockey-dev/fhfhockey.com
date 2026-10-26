@@ -762,7 +762,7 @@ test("Wednesday edition recomputes every card for Thursday to Sunday and names t
 function tuesdayCards(edition: SocialShareSnapshot): [string, string, string[]][] {
   const ids = (list: { nhlId: number }[]) => list.map(item => String(item.nhlId));
   return [
-    ["hot", "RECENT FORM", [...ids(hotCold(edition, true).hot), ...ids(hotCold(edition, true).cold)]],
+    ["hot", "HOT/COLD", [...ids(hotCold(edition, true).hot), ...ids(hotCold(edition, true).cold)]],
     ["deployment", "DEPLOYMENT CHANGES", [...ids(deploymentChanges(edition, true).up), ...ids(deploymentChanges(edition, true).down)]],
     ["rates", "RATE STANDOUTS", Object.values(rateStandouts(edition, true)).flatMap(ids)],
     ["movers", "OWNERSHIP MOVERS", [...ids(ownershipMovers(edition, true).risers), ...ids(ownershipMovers(edition, true).fallers)]],
@@ -882,9 +882,23 @@ test("Tuesday tiles never collide: hero, absolute, label, details and chips stay
     await expect(square.locator("[data-player][data-tone]").first()).toBeVisible();
     expect(await tileCollisions(page), card).toEqual([]);
   }
+  // TT-8 vertical group labels: the right words and tones, and never on top of a tile.
+  const expectedLabels: Record<string, [string, string][]> = { hot: [["HOT", "up"], ["COLD", "down"]], deployment: [["PROMOTIONS", "up"], ["DEMOTIONS", "down"]], movers: [["RISING", "up"], ["FALLING", "down"]], rates: [] };
+  for (const [card, labels] of Object.entries(expectedLabels)) {
+    await graphic.selectOption(card);
+    const found = await square.locator("[data-group-label]").evaluateAll(nodes => nodes.map(node => [node.getAttribute("data-group-label"), node.getAttribute("data-tone")]));
+    expect(found, card).toEqual(labels);
+    expect(await square.evaluate(node => Array.from(node.querySelectorAll("[data-group-label]")).flatMap(label => {
+      const box = label.getBoundingClientRect();
+      return Array.from(node.querySelectorAll("[data-player]")).filter(tile => { const t = tile.getBoundingClientRect(); return Math.min(box.right, t.right) - Math.max(box.left, t.left) > 0.5 && Math.min(box.bottom, t.bottom) - Math.max(box.top, t.top) > 0.5; }).map(tile => tile.getAttribute("data-player"));
+    })), `${card} labels clear of tiles`).toEqual([]);
+  }
+  await expect.poll(() => page.evaluate(() => document.fonts.check('italic 600 26px "Tomorrow"'))).toBe(true);
   // The stress set reached the tight cases: a one-digit hero with its absolute beside it, and the longest names.
+  await graphic.selectOption("movers");
   const heroes = await square.locator("[class*='trendHero'] > strong").allTextContents();
   expect(heroes).toContain("−8");
+  await graphic.selectOption("hot");
   await expect(square.locator("[data-player]").first()).toContainText("CHARLE-EDOUARD D'ASTOUS", { ignoreCase: true });
   await graphic.selectOption("rates");
   await expect(square).toContainText("Oliver Bjorkstrand", { ignoreCase: true });
@@ -1291,7 +1305,7 @@ test("Tuesday GENUINE DATA render: captured layer, offline, export token per car
     for (const card of ["hot", "deployment", "rates", "movers"]) {
       await page.getByRole("combobox", { name: /^Graphic/ }).selectOption(card);
       const square = page.getByTestId("share-square");
-      await expect(square).toContainText(card === "hot" ? "RECENT FORM" : card === "deployment" ? "DEPLOYMENT CHANGES" : card === "rates" ? "RATE STANDOUTS" : "OWNERSHIP MOVERS");
+      await expect(square).toContainText(card === "hot" ? "HOT/COLD" : card === "deployment" ? "DEPLOYMENT CHANGES" : card === "rates" ? "RATE STANDOUTS" : "OWNERSHIP MOVERS");
       await expect(square).not.toContainText("GP this week");
       expect(await tileCollisions(page), `genuine ${card}`).toEqual([]);
       await square.scrollIntoViewIfNeeded();

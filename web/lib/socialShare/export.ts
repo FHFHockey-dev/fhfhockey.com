@@ -6,6 +6,8 @@ const fonts = [
   { family: "Share Roboto Condensed", file: "RobotoCondensed-Variable.ttf", weight: "100 900", sample: "700 48px" },
   { family: "Share Train One", file: "TrainOne-Regular.ttf", weight: "400", sample: "400 36px" },
   { family: "Share Martian Mono", file: "MartianMono-Variable.ttf", weight: "100 800", sample: "500 32px" },
+  // Tuesday group labels (TT-8): $font-family-sporty.
+  { family: "Tomorrow", file: "Tomorrow-SemiBoldItalic.ttf", weight: "600", style: "italic", sample: "italic 600 36px" },
 ];
 
 export function bounded<T>(promise: Promise<T>, message: string, ms = 10000): Promise<T> {
@@ -91,7 +93,7 @@ async function embeddedFonts() {
       reader.onerror = () => reject(new Error("Unable to embed local font."));
       reader.readAsDataURL(blob);
     });
-    return `@font-face{font-family:'${font.family}';src:url('${data}') format('truetype');font-weight:${font.weight};font-style:normal;font-display:block;}`;
+    return `@font-face{font-family:'${font.family}';src:url('${data}') format('truetype');font-weight:${font.weight};font-style:${"style" in font ? font.style : "normal"};font-display:block;}`;
   }))).join("\n");
 }
 

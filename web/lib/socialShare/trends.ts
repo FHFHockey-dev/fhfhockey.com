@@ -407,7 +407,7 @@ export function buildTrendLayer(sources: ShareTrendSources | null, context: Tren
 
 /** Section definitions (CONTRACT.md), printed in each card footer. */
 export const trendDefinitions: Record<ShareTrendKind, string[]> = {
-  hot: [`Recent Form (${RECENT_FORM_RULE}): P/GP last ${TREND_WINDOW_GAMES} appearances vs the ${TREND_WINDOW_GAMES} before`, `All ${RECENT_FORM_GAMES} this season · last game ≤ ${TREND_MAX_GAME_AGE_DAYS} days · Early season · small sample`],
+  hot: [`Hot/Cold (${RECENT_FORM_RULE}): P/GP last ${TREND_WINDOW_GAMES} appearances vs the ${TREND_WINDOW_GAMES} before`, `All ${RECENT_FORM_GAMES} this season · last game ≤ ${TREND_MAX_GAME_AGE_DAYS} days · Early season · small sample`],
   deployment: [`TOI/GP L${TREND_WINDOW_GAMES} / season: all · EV · PP`, "Line & PP unit: last game vs the game before", `Column: TOI change ±${MIN_DEPLOYMENT_TOI_DELTA_SECONDS / 60}:00+ by its sign, else line/PP direction · PP ? = unknown`],
   rates: [`Per-60: L${TREND_WINDOW_GAMES} rate and Δ vs season`, `Min ${MIN_RATE_TOI_SECONDS_LAST5 / 60} L${TREND_WINDOW_GAMES} min · ${MIN_TREND_SEASON_GAMES}+ GP`, "iCF = all individual shot attempts"],
   movers: [`pct pts = percentage-point change in Yahoo rostered %, latest vs on/before ${MOVER_WINDOW_DAYS} days earlier`, "No observation ≠ 0% · not add/drop counts"],
