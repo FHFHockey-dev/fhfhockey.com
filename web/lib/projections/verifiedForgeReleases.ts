@@ -54,6 +54,14 @@ export const VERIFIED_FORGE_PRODUCER_CLOSURES: readonly VerifiedForgeProducerClo
     verifierVersion: "forge-release-sha-verifier-v1",
     note: "Build-only stamp (C7 R40 V2) and Astra F4, commit 595ab13d9: 193-module closure, 0 findings.",
   },
+  {
+    closureSha256: "c1f0129aca9b2520cbd922cf81c292661b1499fa50b024f76ca6283d362cc4aa",
+    commit: "6fb1812c19ecd182e895b3708296018bc842fcf0",
+    receipt: "tasks/artifacts/projection-table-audit-2026-10-26/release-verification/6fb1812c19ecd182e895b3708296018bc842fcf0.json",
+    receiptSha256: "0dc6763981cab4344a7cbd79c50cb0318cb67d5e20d1cdaf0d6846aa5699a1f9",
+    verifierVersion: "forge-release-sha-verifier-v1",
+    note: "Release candidate: reserve pass (074694095) and C7 R42 fixes, commit 6fb1812c1: 194-module closure, 0 findings.",
+  },
 ];
 
 const FULL_SHA = /^[0-9a-f]{40}$/, SHA256 = /^[0-9a-f]{64}$/;

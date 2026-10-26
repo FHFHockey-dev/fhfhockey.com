@@ -50,6 +50,13 @@ describe("verified FORGE releases", () => {
       expect(receipt.closure.modules).not.toContain("lib/projections/externalInputProof.ts");
     });
 
+  it("lists each commit-backed producer closure, the release candidate's included", () => {
+    expect(VERIFIED_FORGE_PRODUCER_CLOSURES.map(closure => [closure.closureSha256, closure.commit])).toEqual([
+      ["4c06fd9e2b5a5d880f594cb2668b81eaa0c54553de525a73f477d4eebf909993", "595ab13d9773808057b49cc3ed91d9eaca8ed317"],
+      ["c1f0129aca9b2520cbd922cf81c292661b1499fa50b024f76ca6283d362cc4aa", "6fb1812c19ecd182e895b3708296018bc842fcf0"],
+    ]);
+  });
+
   it("matches only an exact closure hash", () => {
     const closure = VERIFIED_FORGE_PRODUCER_CLOSURES[0].closureSha256;
     expect(verifiedForgeProducerClosure(closure)?.closureSha256).toBe(closure);
