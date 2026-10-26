@@ -79,6 +79,9 @@ function CompactSchedule(props: React.ComponentProps<typeof AdmittedCompactSched
 const player = { id: "fhfh:1", nhlId: 1, name: "Alpha Center", teamAbbreviation: "CAR", eligiblePositions: ["C"], playerClass: "skater" as const, availability: "unknown" as const, ownership: null, canDrop: null, holdValue: null, reserveEligibility: [] };
 const data: PlanningData = { players: [player], games: [], forecasts: [], evidence: {} };
 const fetchMock = vi.fn((url: string) => Promise.resolve({ ok: url.includes("/data?"), json: async () => ({ success: true, data }) }));
+// A Wednesday that is mid-week in UTC and America/*, for fixtures whose period runs "from now to this week's end".
+const MIDWEEK = new Date("2026-10-14T16:00:00Z");
+const pinMidweek = () => { vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(MIDWEEK); };
 // The local workspace slot of whoever is signed in (anonymous: the legacy device key).
 const activeKey = () => workspaceStorageKey(authState.user?.id ?? null);
 function planningTimeText(pattern: RegExp = /^(Updated|Saved) /) {
@@ -887,6 +890,7 @@ describe("RosterScheduleOptimizer workspace", () => {
   it.each([{ remaining: 0, source: "manager" as const, detail: "Week: 0 remaining (manager)" },
     { remaining: null, source: "provider" as const, detail: "Week: Allowance unknown" },
     { remaining: 0, source: "unknown" as const, detail: "Week: Allowance unknown" }])("separates planned adds from allowance $detail", async ({ remaining, source, detail }) => {
+    pinMidweek();
     const workspace = defaultWorkspace();
     workspace.rules.periods = [{ id: "Week", start: workspace.context.asOf, end: `${workspace.context.endDate}T23:59:59Z`, remaining, source }];
     workspace.intent.steps = [{ id: "add", type: "add", playerId: player.id, at: workspace.context.asOf, effectiveAt: workspace.context.asOf, conditional: true, dependsOn: [] }];
@@ -2166,6 +2170,7 @@ describe("RosterScheduleOptimizer workspace", () => {
   });
 
   it("keeps refreshed provider authority through undo and reopen without replacing selected moves", async () => {
+    pinMidweek();
     authState.user = { id: "manager" };
     const workspace = defaultWorkspace();
     workspace.context = { ...workspace.context, provider: "yahoo", teamId: "team", leagueId: "league" };

@@ -543,6 +543,9 @@ test("connected manager bench locks constrain the worker and preserve provider a
   workspace.intent.protectedPlayerIds = [members[0].id];
   await seedWorkspace(page, workspace, RSO_FIXTURE_PRINCIPAL);
   await installDraftProAuthenticatedFixtures(page, () => ({ access: { eligible: false, grantingSources: [], expiresAt: null, verifiedAt: null, nextVerificationAt: null, reason: "no_active_grant", capabilities: [], providerReadiness: { stripe: false, patreon: false, yahoo: false } } }));
+  // The app reads its session from the configured project's storage key; mirror the fixture session there.
+  const storageKey = `sb-${new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || "https://fyhftlxokyjtpndbkfse.supabase.co").hostname.split(".")[0]}-auth-token`;
+  await page.addInitScript(key => { const session = localStorage.getItem("sb-127-auth-token"); if (session) localStorage.setItem(key, session); }, storageKey);
   await page.route("**/api/v1/roster-schedule-optimizer/access", route => route.fulfill({ json: { data: { eligible: true, capabilities: ["rso_sync", "rso_account_save"], grantingSources: ["test"], expiresAt: null, reason: null } } }));
   let accountSnapshot: PlanningSnapshot | null = null;
   await page.route("**/api/v1/roster-schedule-optimizer/workspace**", route => {
@@ -601,6 +604,9 @@ test("provider refresh adopts the authoritative league timezone and keeps the se
     at: `${date(6)}T00:00:00Z`, effectiveAt: `${date(6)}T00:00:00Z`, conditional: true, dependsOn: [] }];
   await seedWorkspace(page, retained, RSO_FIXTURE_PRINCIPAL);
   await installDraftProAuthenticatedFixtures(page, () => ({ access: { eligible: false, grantingSources: [], expiresAt: null, verifiedAt: null, nextVerificationAt: null, reason: "no_active_grant", capabilities: [], providerReadiness: { stripe: false, patreon: false, yahoo: false } } }));
+  // The app reads its session from the configured project's storage key; mirror the fixture session there.
+  const storageKey = `sb-${new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || "https://fyhftlxokyjtpndbkfse.supabase.co").hostname.split(".")[0]}-auth-token`;
+  await page.addInitScript(key => { const session = localStorage.getItem("sb-127-auth-token"); if (session) localStorage.setItem(key, session); }, storageKey);
   await page.route("**/api/v1/roster-schedule-optimizer/workspace**", route => route.fulfill({ json: { data: null } }));
   await page.route("**/api/v1/roster-schedule-optimizer/access", route => route.fulfill({ json: { data: { eligible: true, capabilities: ["rso_sync"], grantingSources: ["test"], expiresAt: null, reason: null } } }));
   const context = { ...retained.context, timeZone: "America/New_York" };
@@ -645,12 +651,16 @@ test("shows sequential stream occupants with real games and retains workspace la
       { id: "g2", date: next(2), startsAt: `${next(2)}T23:00:00Z`, teamAbbreviation: "NJD", opponent: "CAR", home: false, status: "scheduled" },
     ];
     const beta = { ...player, id: "fhfh:2", nhlId: 2, name: "Bravo Center", teamAbbreviation: "NJD" };
-    const forecasts = [{ playerId: player.id, gameId: "g1" }, { playerId: beta.id, gameId: "g2" }].map((row) => ({ ...row, stats: { GOALS: 0.4 }, allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: false }, conditioning: "unconditional", startProbability: null, confirmedStart: false, revisionId: "revision", issuedAt: new Date().toISOString(), modelVersion: "test", limitations: [] }));
+    const forecasts = [{ playerId: player.id, gameId: "g1" }, { playerId: beta.id, gameId: "g2" }].map((row) => ({ ...row, stats: { GOALS: 0.4 }, allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: false }, conditioning: "unconditional", startProbability: null, confirmedStart: false, revisionId: "revision", issuedAt: "2026-09-20T00:00:00Z", modelVersion: "test", limitations: [] }));
     return route.fulfill({ json: { success: true, data: { players: [player, beta], games, forecasts, evidence: {} } } });
   });
-  await setPlanningTime(page, "2026-09-21T00:00:00Z");
+  // Forecasts are issued before the pinned planning time; the runner's real clock must not reach the fixture.
+  // Monday 16:00 UTC is the same Monday in UTC and America/*, so the current week starts on the 21st everywhere.
+  await setPlanningTime(page, "2026-09-21T16:00:00Z");
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/roster-schedule-optimizer");
+  // Pasted names resolve against the current read's catalog; review them only once it has loaded.
+  await expect(page.getByRole("region", { name: "Candidate browser" })).toContainText("Bravo Center");
   await openDisclosure(page, "Add or import roster");
   await page.getByRole("textbox", { name: "Paste roster names" }).fill("Alpha Center\nBravo Center");
   await page.getByRole("button", { name: "Review pasted names" }).click();
@@ -1425,8 +1435,11 @@ test("candidate feedback views preserve eligibility, availability and planned-ad
   await expect(page.getByRole("region", { name: "Candidates and detail" }).getByText("Alpha Unknown", { exact: true }).first()).toBeVisible();
   await browser.getByRole("button", { name: "Mark available", exact: true }).click();
   const stored = () => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!) as PlanningWorkspace);
+  // Local persistence is asynchronous; wait for the marked availability before reading the rest.
+  await expect.poll(async () => (await stored()).manualPlayers.find(member => member.id === low.id)?.availability).toBe("manager_available");
   expect((await stored()).manualPlayers.find(member => member.id === low.id)).toMatchObject({ availability: "manager_available", eligibilityVerified: false });
   await browser.getByRole("button", { name: "Select add", exact: true }).click();
+  await expect.poll(async () => (await stored()).intent.steps.length).toBe(1);
   const selectedIntent = (await stored()).intent;
   const detail = page.getByRole("region", { name: "Candidates and detail" });
   await detail.getByText("Review evidence", { exact: true }).click();
@@ -1729,6 +1742,12 @@ async function installCompactFixture(page: import("@playwright/test").Page, coun
 }
 const alignmentObservations = new WeakMap<import("@playwright/test").Page, unknown[]>();
 async function expectDaySliderAligned(page: import("@playwright/test").Page) {
+  // The thumb re-syncs on the scroll event after a programmatic scroll; retry until layout settles.
+  let delta = Infinity;
+  await expect.poll(async () => (delta = await measureDaySliderAlignment(page))).toBeLessThanOrEqual(1);
+  expect(delta).toBeLessThanOrEqual(1);
+}
+async function measureDaySliderAlignment(page: import("@playwright/test").Page) {
   const slider = page.getByRole("slider", { name: "Selected planning day" });
   const thumbCenter = await slider.evaluate(node => {
     const input = node as HTMLInputElement, box = input.getBoundingClientRect();
@@ -1751,7 +1770,7 @@ async function expectDaySliderAligned(page: import("@playwright/test").Page) {
     await writeFile(test.info().outputPath("slider-alignment-observations.json"), JSON.stringify(observations, null, 2));
     if (observation.delta > 1) await writeFile(test.info().outputPath("slider-alignment-failure.json"), JSON.stringify(observation, null, 2));
   }
-  expect(Math.abs(thumbCenter - headerCenter)).toBeLessThanOrEqual(1);
+  return Math.abs(thumbCenter - headerCenter);
 }
 
 for (const count of [19, 20, 29]) test(`compact layout accounts for ${count} slots with a maximum of 20 slot rows and internal labels`, async ({ page }, testInfo) => {
