@@ -21,6 +21,9 @@ type Run = { runId: string; asOfDate: string; issuedAt: string; gitSha: string |
  * latest FORGE v2 daily projection stands in for his remaining games in the planning window. */
 export { FORGE_DAILY_BRIDGE_VERSION };
 export const FORGE_DAILY_BRIDGE_LOOKBACK_DAYS = 7;
+/** Runs are read through this many days ahead: a run projects the games on its own date, so RSO's seven-day horizon
+ * needs the runs dated through today + 6 (written by FORGE_PROJECTION_DAYS_AHEAD or a manual range run). */
+export const FORGE_DAILY_BRIDGE_AHEAD_DAYS = 7;
 /** Compact wire bytes (see bridgeForecastWire) the projections may take beside players, games and evidence. */
 export const FORGE_DAILY_BRIDGE_BYTE_BUDGET = 2_500_000;
 /** Bytes the projections may take once the client rebuilds them: one snapshot plus players and games stays well
@@ -675,13 +678,14 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
     runProofs: [...runs.values()].flatMap(run => run.proof && servedRuns.has(`${FORGE_DAILY_BRIDGE_VERSION}:${run.runId}`) ? [run.proof] : []) };
 }
 
-/** Read-only: the latest successful public h1 FORGE run per slate date in the lookback whose captured snapshot proves it
- * excluded third-party fantasy inputs. Newer unproven runs of a date are passed on unread, only to be counted. */
+/** Read-only: the latest successful public h1 FORGE run per slate date, from the lookback through the days ahead, whose
+ * proof shows it excluded third-party fantasy inputs. Newer unproven runs of a date are passed on unread, only to be
+ * counted. A later run of a date supersedes an earlier one for that date's games. */
 export async function loadForgeDailyBridgeForecasts(db: SupabaseClient<any>, players: PlanningPlayer[], games: PlanningGame[], now: Date,
   seasonId: number, deadline: number, calendarPolicy: ForecastCalendarPolicy): Promise<ForgeDailyBridgeResult> {
   const readDeadline = Math.min(deadline, Date.now() + 6000);
   const from = new Date(now.getTime() - FORGE_DAILY_BRIDGE_LOOKBACK_DAYS * DAY_MS).toISOString().slice(0, 10);
-  const to = new Date(now.getTime() + DAY_MS).toISOString().slice(0, 10);
+  const to = new Date(now.getTime() + FORGE_DAILY_BRIDGE_AHEAD_DAYS * DAY_MS).toISOString().slice(0, 10);
   const runRows = await pages(() => restrictRunsToHorizon(excludeOffReleaseRuns(db.from("forge_runs").select("run_id,as_of_date,created_at,git_sha", { count: "exact" })
     .eq("status", "succeeded"))).gte("as_of_date", from).lte("as_of_date", to)
     .order("as_of_date", { ascending: false }).order("created_at", { ascending: false }).order("run_id"), readDeadline, 500, row => row.run_id);

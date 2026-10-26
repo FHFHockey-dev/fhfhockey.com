@@ -196,6 +196,19 @@ function todayEtDateOnly() {
   return `${year}-${month}-${day}`;
 }
 
+/** RSO plans seven days ahead, so it needs an admitted h1 line for every team's games through the run date + 6. */
+export const FORGE_PROJECTION_MAX_DAYS_AHEAD = 6;
+
+/** How many days past the run date the scheduled projection stage projects (env FORGE_PROJECTION_DAYS_AHEAD, a TJ
+ * decision). Unset or invalid keeps 1: the run date and tomorrow, as before. 6 covers the run date through six days
+ * ahead. Each date is its own run; a later run of a date supersedes an earlier one for its games. */
+export function forgeProjectionDaysAhead(env: Readonly<Record<string, string | undefined>> = process.env): number {
+  const raw = env.FORGE_PROJECTION_DAYS_AHEAD?.trim();
+  if (!raw || !/^\d+$/.test(raw)) return 1;
+  const days = Number(raw);
+  return days <= FORGE_PROJECTION_MAX_DAYS_AHEAD ? days : 1;
+}
+
 function addDays(date: string, delta: number) {
   const value = new Date(`${date}T00:00:00.000Z`);
   value.setUTCDate(value.getUTCDate() + delta);
@@ -635,11 +648,11 @@ async function runStage(args: {
   // by the resumable run, a one-shot run just warns.
   contextualFailedAttempts?: number;
   projectionDeadlineMs?: number;
-  // The scheduled run also projects the next day's games when budget remains,
-  // so every team has a line for its next game a day ahead. The stage cursor
-  // counts the dates finished; a re-entry skips them (a finished date would
-  // otherwise start a new run).
-  projectNextDay?: boolean;
+  // The scheduled run also projects the next days' games (forgeProjectionDaysAhead)
+  // when budget remains, so every team has a line for its games ahead. The stage
+  // cursor counts the dates finished; a re-entry skips them (a finished date
+  // would otherwise start a new run).
+  projectDaysAhead?: number;
   projectionDatesDone?: number;
   persistProjectionDatesDone?: (done: number) => Promise<void>;
   // The goalie step already succeeded in this run (stored by the resumable
@@ -981,8 +994,9 @@ async function runStage(args: {
           handler: updateGoalieProjectionsV2Handler,
           query: {
             limit: args.mode === "overnight" ? "30" : "7",
-            // The next day's projection gate needs its goalie start priors.
-            ...(args.projectNextDay ? { endDate: addDays(args.date, 1) } : {})
+            // The days-ahead projection gates need their goalie start priors
+            // (the route accepts up to a week ahead; limit 7 covers them).
+            ...(args.projectDaysAhead ? { endDate: addDays(args.date, args.projectDaysAhead) } : {})
           }
         });
         steps.push(goalieStep);
@@ -1008,9 +1022,7 @@ async function runStage(args: {
         break;
       }
       {
-        const dates = args.projectNextDay
-          ? [args.date, addDays(args.date, 1)]
-          : [args.date];
+        const dates = Array.from({ length: 1 + (args.projectDaysAhead ?? 0) }, (_, index) => addDays(args.date, index));
         const datesDone = args.projectionDatesDone ?? 0;
         for (let index = datesDone; index < dates.length; index += 1) {
           // Measured after the goalie step, which runs first. The first date of
@@ -1037,11 +1049,19 @@ async function runStage(args: {
           });
           steps.push(step);
           if (step.status === "failed" && index > 0) {
-            // The next day is best effort: its failure is recorded on the
-            // step and never blocks the run date's downstream stages.
+            // A date ahead is best effort: its failure is recorded on the step,
+            // never blocks the run date's downstream stages, and does not stop
+            // the dates after it.
             step.status = "skipped";
-            step.reason = `Next-day projection for ${dates[index]} failed (non-blocking): ${describeStepFailure(step)}`;
-            break;
+            step.reason = `Days-ahead projection for ${dates[index]} failed (non-blocking): ${describeStepFailure(step)}`;
+            if (args.persistProjectionDatesDone) {
+              try {
+                await args.persistProjectionDatesDone(index + 1);
+              } catch (error) {
+                step.reason += `; progress ${index + 1} not stored: ${errorMessage(error)}`;
+              }
+            }
+            continue;
           }
           if (step.status !== "success") break;
           if (args.persistProjectionDatesDone) {
@@ -1429,7 +1449,7 @@ async function runResumablePipeline(args: {
         ? {
             projectionDeadlineMs:
               args.startedAt + RESUMABLE_INVOCATION_BUDGET_MS,
-            projectNextDay: true,
+            projectDaysAhead: forgeProjectionDaysAhead(),
             projectionDatesDone: lease.cursorGameId ?? 0,
             goalieStepDone: states.get(GOALIE_STEP_DONE_KEY)?.status === "complete",
             persistGoalieStepDone: async () => {

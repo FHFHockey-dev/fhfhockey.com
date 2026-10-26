@@ -222,7 +222,7 @@ vi.mock("../../../../../pages/api/v1/db/run-projection-accuracy", () => ({
   default: runProjectionAccuracyMock
 }));
 
-import handler, { __testables } from "../../../../../pages/api/v1/db/run-rolling-forge-pipeline";
+import handler, { __testables, forgeProjectionDaysAhead } from "../../../../../pages/api/v1/db/run-rolling-forge-pipeline";
 import { readRollingForgeRunState, readRollingForgeStageKills, recordRollingForgeStageKill } from "lib/rollingForgePipelineRunState";
 
 function createMockRes() {
@@ -1561,9 +1561,56 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
       expect(stage.status).toBe("success");
       const projections = stage.steps.filter((step: any) => step.id === "run-projection-v2");
       expect(projections.map((step: any) => [step.query.date, step.status])).toEqual([["2026-10-19", "success"], ["2026-10-20", "skipped"]]);
-      expect(projections[1].reason).toContain("Next-day projection for 2026-10-20 failed (non-blocking): HTTP 422; failed gates goalie_start_priors_v2");
-      expect(pipelineStateRows.get(stageKey("projection_execution"))).toMatchObject({ status: "complete", cursor_game_id: 1 });
+      expect(projections[1].reason).toContain("Days-ahead projection for 2026-10-20 failed (non-blocking): HTTP 422; failed gates goalie_start_priors_v2");
+      // The skipped date counts as handled, so a re-entry does not retry it.
+      expect(pipelineStateRows.get(stageKey("projection_execution"))).toMatchObject({ status: "complete", cursor_game_id: 2 });
       expect(runProjectionAccuracyMock).not.toHaveBeenCalled();
+    });
+
+    describe("days ahead (FORGE_PROJECTION_DAYS_AHEAD)", () => {
+      afterEach(() => vi.unstubAllEnvs());
+
+      it.each([[undefined, 1], ["", 1], ["0", 0], ["1", 1], ["6", 6], ["7", 1], ["-1", 1], ["2.5", 1], ["six", 1]])(
+        "reads %j as %i day(s) ahead", (value, days) => {
+          expect(forgeProjectionDaysAhead(value === undefined ? {} : { FORGE_PROJECTION_DAYS_AHEAD: value })).toBe(days);
+        });
+
+      it("projects the run date through six days ahead, in date order, with goalie priors through the last date", async () => {
+        vi.stubEnv("FORGE_PROJECTION_DAYS_AHEAD", "6");
+        const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
+        expect(res.statusCode).toBe(200);
+        expect(updateGoalieProjectionsV2Mock.mock.calls[0][0].query).toEqual({ limit: "7", endDate: "2026-10-25" });
+        expect(runProjectionV2Mock.mock.calls.map((call: any[]) => call[0].query.date)).toEqual([
+          "2026-10-19", "2026-10-20", "2026-10-21", "2026-10-22", "2026-10-23", "2026-10-24", "2026-10-25"]);
+        expect(pipelineStateRows.get(stageKey("projection_execution"))).toMatchObject({ status: "complete", cursor_game_id: 7 });
+      });
+
+      it("keeps going past a failed date ahead, and resumes after the last handled date", async () => {
+        vi.stubEnv("FORGE_PROJECTION_DAYS_AHEAD", "3");
+        runProjectionV2Mock
+          .mockImplementationOnce(slowSuccess(10_000))
+          .mockImplementationOnce(async (_req: any, res: any) => {
+            res.status(422).json({ success: false, error: "Preflight failed", preflight: { status: "FAIL", gates: [{ gate_key: "goalie_start_priors_v2", status: "FAIL" }] } });
+          })
+          .mockImplementationOnce(slowSuccess(160_000));
+        const first = await invokeScheduled("2026-10-19T10:05:00.000Z");
+        // 10-21 used the rest of the budget; 10-22 waits for the next invocation.
+        expect(first.statusCode).toBe(207);
+        expect(runProjectionV2Mock.mock.calls.map((call: any[]) => call[0].query.date)).toEqual(["2026-10-19", "2026-10-20", "2026-10-21"]);
+        expect(pipelineStateRows.get(stageKey("projection_execution"))).toMatchObject({ cursor_game_id: 3 });
+
+        const second = await invokeScheduled("2026-10-19T10:10:00.000Z");
+        expect(second.statusCode).toBe(200);
+        expect(runProjectionV2Mock.mock.calls.slice(3).map((call: any[]) => call[0].query.date)).toEqual(["2026-10-22"]);
+        expect(pipelineStateRows.get(stageKey("projection_execution"))).toMatchObject({ status: "complete", cursor_game_id: 4 });
+      });
+
+      it("projects only the run date with 0 days ahead, and asks for goalie priors through today only", async () => {
+        vi.stubEnv("FORGE_PROJECTION_DAYS_AHEAD", "0");
+        await invokeScheduled("2026-10-19T10:05:00.000Z");
+        expect(updateGoalieProjectionsV2Mock.mock.calls[0][0].query).toEqual({ limit: "7" });
+        expect(runProjectionV2Mock.mock.calls.map((call: any[]) => call[0].query.date)).toEqual(["2026-10-19"]);
+      });
     });
 
     it("defers the next day's projection to the following invocation when the run date used the budget", async () => {
