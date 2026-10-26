@@ -1021,10 +1021,18 @@ export async function existingFeatureSnapshotId(args: {
   const existing = data?.[0] as { feature_snapshot_id?: string; home_forge_run_id?: string | null; away_forge_run_id?: string | null } | undefined;
   if (!existing?.feature_snapshot_id) return null;
   // A stored snapshot is reused only while its FORGE team projections stay admissible now (Astra F4): a fixed writer
-  // does not requalify old features, so a contradicted (or, with the proof flag, unproven) run's snapshot is rebuilt.
+  // does not requalify old features, so a contradicted (claim withheld or malformed capture) or, with the proof flag,
+  // unproven run's snapshot is rebuilt.
   const runIds = [existing.home_forge_run_id, existing.away_forge_run_id].filter((id): id is string => typeof id === "string" && id.length > 0);
   if (runIds.length) {
-    const proof = await classifyExternalInputProof(args.client, runIds).catch(() => new Map<string, ClassifiedRunProof>());
+    // Without a readable proof the snapshot is not reused (C7 R42 A2): it is rebuilt, and the rebuild leaves out FORGE
+    // team rows it cannot classify.
+    let proof: Map<string, ClassifiedRunProof>;
+    try {
+      proof = await classifyExternalInputProof(args.client, runIds);
+    } catch {
+      return null;
+    }
     if (runIds.some((runId) => !forgeProjectionAdmissible(proof.get(runId)?.status ?? "unproven"))) return null;
   }
   return existing.feature_snapshot_id;

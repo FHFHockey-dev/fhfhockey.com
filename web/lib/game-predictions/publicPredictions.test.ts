@@ -442,7 +442,7 @@ describe("public game predictions payload", () => {
     const side = (runId: string | null) => ({ goalie: {}, ...(runId ? { forgeProjection: { runId, projectedGoals: 3, projectedShots: 30 } } : {}) });
     // Game 1: proven; 2: unproven; 3: contradicted; 4: FORGE not used.
     const runs = { 1: "run-proven", 2: "run-unproven", 3: "run-contradicted", 4: null } as Record<number, string | null>;
-    const build = (requireForgeProof?: boolean) => buildPublicGamePredictionsPayload({
+    const buildArgs = (requireForgeProof?: boolean) => ({
       outputs: [1, 2, 3, 4].map(output) as any,
       histories: [1, 2, 3, 4].map(game_id => ({ game_id, model_name: "m", model_version: "v1", prediction_scope: "pregame",
         computed_at: "2026-04-27T10:00:00.000Z", feature_snapshot_id: `snap-${game_id}`, feature_set_version: "f1", metadata: {} })) as any,
@@ -451,10 +451,11 @@ describe("public game predictions payload", () => {
       modelVersions: [{ model_name: "m", model_version: "v1", feature_set_version: "f1", status: "production" }] as any,
       forgeRunProof: new Map([
         ["run-proven", { runId: "run-proven", status: "proven" as const, proof: null }],
-        ["run-contradicted", { runId: "run-contradicted", status: "contradicted" as const, proof: null }],
+        ["run-contradicted", { runId: "run-contradicted", status: "claim_withheld" as const, proof: null }],
       ]),
       requireForgeProof,
-    });
+    }) as Parameters<typeof buildPublicGamePredictionsPayload>[0];
+    const build = (requireForgeProof?: boolean) => buildPublicGamePredictionsPayload(buildArgs(requireForgeProof));
 
     it("labels every prediction, keeps unproven ones visible by default, and withholds only a contradicted one", () => {
       const payload = build();
@@ -464,6 +465,13 @@ describe("public game predictions payload", () => {
         away: null });
       expect(payload.withheldForForgeProvenance).toBe(1);
       expect(payload.count).toBe(3);
+    });
+
+    it("keeps stored predictions visible, labelled proof_unavailable, when the proof read failed (C7 R42 A2)", () => {
+      const payload = buildPublicGamePredictionsPayload({ ...buildArgs(), forgeRunProof: null });
+      expect(payload.predictions.map(row => [row.gameId, row.forgeInputProvenance?.status])).toEqual([
+        [1, "proof_unavailable"], [2, "proof_unavailable"], [3, "proof_unavailable"], [4, "not_used"]]);
+      expect(payload.withheldForForgeProvenance).toBe(0);
     });
 
     it("withholds unproven predictions too only when TJ turns the proof flag on", () => {

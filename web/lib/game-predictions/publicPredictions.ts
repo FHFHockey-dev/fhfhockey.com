@@ -97,10 +97,14 @@ export type PublicGamePrediction = {
   forgeInputProvenance?: PublicForgeInputProvenance;
 };
 
-export type PublicForgeInputSide = { runId: string; status: ExternalInputProofStatus } | null;
+/** `proof_unavailable`: the proof could not be read when serving, so the stored prediction stays visible unlabelled
+ * as unproven (C7 R42 A2). */
+export type PublicForgeInputStatus = ExternalInputProofStatus | "proof_unavailable";
+export type PublicForgeInputSide = { runId: string; status: PublicForgeInputStatus } | null;
 export type PublicForgeInputProvenance = {
-  /** The weaker side: contradicted, then unproven, then proven; `not_used` when neither side used FORGE. */
-  status: ExternalInputProofStatus | "not_used";
+  /** The weaker side: claim withheld or malformed capture, then proof unavailable, unproven, proven; `not_used` when
+   * neither side used FORGE. */
+  status: PublicForgeInputStatus | "not_used";
   home: PublicForgeInputSide;
   away: PublicForgeInputSide;
 };
@@ -124,17 +128,21 @@ export type PublicGamePredictionsPayload = {
   count: number;
   predictions: PublicGamePrediction[];
   performance: PublicPredictionPerformance;
-  /** Predictions left out because a FORGE input was contradicted (or, with the proof flag, unproven). Always set by
+  /** Predictions left out because a FORGE input was contradicted: claim withheld or malformed capture (or, with the
+   * proof flag, unproven). Always set by
    * buildPublicGamePredictionsPayload; optional only for payloads built before it existed. */
   withheldForForgeProvenance?: number;
 };
 
-const PROVENANCE_RANK: Record<ExternalInputProofStatus, number> = { contradicted: 0, unproven: 1, proven: 2 };
+const PROVENANCE_RANK: Record<PublicForgeInputStatus, number> = { claim_withheld: 0, malformed_capture: 0, proof_unavailable: 1,
+  unproven: 2, proven: 3 };
 
+/** `proof` null: the proof read failed. */
 function forgeInputProvenance(payload: GamePredictionFeatureSnapshotPayload | undefined,
-  proof: Map<string, ClassifiedRunProof>): PublicForgeInputProvenance {
+  proof: Map<string, ClassifiedRunProof> | null): PublicForgeInputProvenance {
   const side = (forgeProjection?: { runId?: string } | null): PublicForgeInputSide =>
-    forgeProjection?.runId ? { runId: forgeProjection.runId, status: proof.get(forgeProjection.runId)?.status ?? "unproven" } : null;
+    forgeProjection?.runId ? { runId: forgeProjection.runId,
+      status: proof === null ? "proof_unavailable" : proof.get(forgeProjection.runId)?.status ?? "unproven" } : null;
   const home = side(payload?.home.forgeProjection), away = side(payload?.away.forgeProjection);
   const used = [home, away].filter((entry): entry is NonNullable<PublicForgeInputSide> => entry !== null);
   return { status: used.length ? used.map(entry => entry.status).sort((a, b) => PROVENANCE_RANK[a] - PROVENANCE_RANK[b])[0] : "not_used",
@@ -396,11 +404,11 @@ export function buildPublicGamePredictionsPayload(args: {
   metrics?: MetricRow[];
   modelVersions?: ModelVersionRow[];
   generatedAt?: string;
-  /** Current proof of the FORGE runs the snapshots used; a run absent here is unproven. */
-  forgeRunProof?: Map<string, ClassifiedRunProof>;
+  /** Current proof of the FORGE runs the snapshots used; a run absent here is unproven. Null: the proof read failed. */
+  forgeRunProof?: Map<string, ClassifiedRunProof> | null;
   requireForgeProof?: boolean;
 }): PublicGamePredictionsPayload {
-  const forgeRunProof = args.forgeRunProof ?? new Map<string, ClassifiedRunProof>();
+  const forgeRunProof = args.forgeRunProof === undefined ? new Map<string, ClassifiedRunProof>() : args.forgeRunProof;
   const requireForgeProof = args.requireForgeProof ?? gamePredictionsRequireForgeProof();
   const teamsById = new Map((args.teams ?? []).map((team) => [team.id, team]));
   const gamesById = new Map((args.games ?? []).map((game) => [game.id, game]));
@@ -485,9 +493,10 @@ export function buildPublicGamePredictionsPayload(args: {
       forgeInputProvenance: forgeInputProvenance(payload, forgeRunProof),
     };
   });
-  // Withheld only when a FORGE input is contradicted; unproven ones stay visible unless the proof flag is on.
+  // Withheld only when a FORGE input is contradicted; unproven ones stay visible unless the proof flag is on, and stored
+  // predictions whose proof cannot be read now stay visible, labelled proof_unavailable.
   const predictions = candidates.filter(({ forgeInputProvenance: provenance }) => provenance.status === "not_used"
-    || forgeProjectionAdmissible(provenance.status, requireForgeProof));
+    || provenance.status === "proof_unavailable" || forgeProjectionAdmissible(provenance.status, requireForgeProof));
 
   const visiblePredictionMetricKeys = new Set(
     predictions.flatMap((prediction) =>
@@ -672,9 +681,10 @@ export async function fetchPublicGamePredictions(args: {
     return [payload?.home.forgeProjection?.runId, payload?.away.forgeProjection?.runId]
       .filter((runId): runId is string => typeof runId === "string" && runId.length > 0);
   }));
-  // Missing proof means unproven, not contaminated: a failed proof read leaves every run unproven.
+  // Missing proof means unproven, not contaminated; a failed proof read is reported as proof_unavailable, never as
+  // unproven (which would hide a contradicted run).
   const forgeRunProof = forgeRunIds.length
-    ? await classifyExternalInputProof(args.client, forgeRunIds).catch(() => new Map<string, ClassifiedRunProof>())
+    ? await classifyExternalInputProof(args.client, forgeRunIds).catch(() => null)
     : new Map<string, ClassifiedRunProof>();
 
   return buildPublicGamePredictionsPayload({

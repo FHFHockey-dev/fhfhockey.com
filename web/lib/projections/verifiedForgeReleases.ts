@@ -35,6 +35,8 @@ export const VERIFIED_FORGE_RELEASES: readonly VerifiedForgeRelease[] = [
 export type VerifiedForgeProducerClosure = {
   /** The producer closure hash (`producerIdentity.closureSha256` in the receipt). */
   closureSha256: string;
+  /** A commit whose tree reproduces this closure; the receipt verifies that commit (C7 R42 A1). */
+  commit: string;
   receipt: string;
   receiptSha256: string;
   verifierVersion: string;
@@ -43,22 +45,14 @@ export type VerifiedForgeProducerClosure = {
 
 export const VERIFIED_FORGE_PRODUCER_CLOSURES: readonly VerifiedForgeProducerClosure[] = [
   // Not listed: 0e9876…4f8e4f (F1, 5a19f1def): its writer read the hash from an env var, so unbuilt code could stamp it
-  // (C7 R40 V2); never deployed.
+  // (C7 R40 V2); never deployed. 6613c9…0616: an uncommitted export that no commit reproduces (C7 R42 A1).
   {
     closureSha256: "4c06fd9e2b5a5d880f594cb2668b81eaa0c54553de525a73f477d4eebf909993",
-    receipt: "tasks/artifacts/projection-table-audit-2026-10-26/release-verification/closure-4c06fd9e2b5a5d880f594cb2668b81eaa0c54553de525a73f477d4eebf909993.json",
-    receiptSha256: "75779f58cbd44549a7fc0bfbecc01b09a2cd10c4e06f0a5cca768a867fc697a5",
+    commit: "595ab13d9773808057b49cc3ed91d9eaca8ed317",
+    receipt: "tasks/artifacts/projection-table-audit-2026-10-26/release-verification/595ab13d9773808057b49cc3ed91d9eaca8ed317.json",
+    receiptSha256: "8b651750974bdd84b4bfe798580c6716dc4cf423efceca97eb44ba991c8b7f42",
     verifierVersion: "forge-release-sha-verifier-v1",
-    note: "Build-only stamp: HEAD c0ebd63f7 (with Astra F3's rsoUsePolicy) plus PROV-GUARD's files only, 193-module closure, "
-      + "0 findings. Re-verify the integrated commit if any closure module differs.",
-  },
-  {
-    closureSha256: "6613c9ef43129584230e5c6f70adc2691b3af501edcc8574d297d23b10920616",
-    receipt: "tasks/artifacts/projection-table-audit-2026-10-26/release-verification/closure-6613c9ef43129584230e5c6f70adc2691b3af501edcc8574d297d23b10920616.json",
-    receiptSha256: "367a4cc0493f545fe72f0c4da7b0e5f1857fe8c4073c15cf3ae824ed2426b8c6",
-    verifierVersion: "forge-release-sha-verifier-v1",
-    note: "Build-only stamp (C7 R40 V2): HEAD c5829aa9e plus PROV-GUARD's files only, 193-module closure, 0 findings; its "
-      + "production build inlines this hash into the run writer. Re-verify the integrated commit if any closure module differs.",
+    note: "Build-only stamp (C7 R40 V2) and Astra F4, commit 595ab13d9: 193-module closure, 0 findings.",
   },
 ];
 

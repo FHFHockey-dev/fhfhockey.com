@@ -657,7 +657,7 @@ describe("game prediction feature builder", () => {
     const rows = [row("run-contradicted", "2026-01-10T16:00:00+00:00", 9), row("run-unproven", "2026-01-10T15:00:00+00:00", 3),
       row("run-proven", "2026-01-10T14:00:00+00:00", 2)];
     const proof = new Map([
-      ["run-contradicted", { runId: "run-contradicted", status: "contradicted" as const, proof: null }],
+      ["run-contradicted", { runId: "run-contradicted", status: "claim_withheld" as const, proof: null }],
       ["run-proven", { runId: "run-proven", status: "proven" as const, proof: { basis: "verified_producer_closure" } as any }],
     ]);
     afterEach(() => vi.unstubAllEnvs());
@@ -671,6 +671,20 @@ describe("game prediction feature builder", () => {
       vi.stubEnv("GAME_PREDICTIONS_REQUIRE_FORGE_PROOF", "true");
       const payload = buildGamePredictionFeatureSnapshotPayload(createInputs({ forgeTeamProjectionRows: rows, forgeTeamProjectionProof: proof }));
       expect(payload.home.forgeProjection).toMatchObject({ runId: "run-proven", proofStatus: "proven", proofBasis: "verified_producer_closure" });
+    });
+
+    it("uses no FORGE team row, and says why, when the proof read failed (C7 R42 A2)", () => {
+      const payload = buildGamePredictionFeatureSnapshotPayload(createInputs({ forgeTeamProjectionRows: rows,
+        forgeTeamProjectionProofUnavailable: true }));
+      expect(payload.home.forgeProjection).toBeNull();
+      expect(payload.fallbackFlags).toMatchObject({ home_forge_projection_fallback: true, home_forge_projection_proof_unavailable: true });
+      expect(payload.warnings).toEqual(expect.arrayContaining([expect.objectContaining({ code: "forge_projection_proof_unavailable" })]));
+    });
+
+    it("never uses a malformed capture either", () => {
+      const malformed = new Map([["run-unproven", { runId: "run-unproven", status: "malformed_capture" as const, proof: null }]]);
+      const payload = buildGamePredictionFeatureSnapshotPayload(createInputs({ forgeTeamProjectionRows: [rows[1]], forgeTeamProjectionProof: malformed }));
+      expect(payload.home.forgeProjection).toBeNull();
     });
 
     it("treats a run with no recorded proof as unproven", () => {

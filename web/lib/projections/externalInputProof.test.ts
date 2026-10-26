@@ -161,6 +161,12 @@ describe("FORGE external-input exclusion proof", () => {
       expect(await admitted(row)).toBeUndefined();
     });
 
+    it("denies a closure stamp that predates code_versions (C7 R42 A4)", async () => {
+      expect(await admitted(stampedRunRow("run", [VERIFIED], { producer_identity: { version: "forge-producer-closure-v1", invocations: [VERIFIED] } })))
+        .toBeUndefined();
+      expect(await admitted(stampedRunRow("run", [VERIFIED]))).toMatchObject({ basis: "verified_producer_closure" });
+    });
+
     it("denies a post-stamping release that carries no stamp", async () => {
       expect(await admitted(verifiedReleaseRunRow("run", { git_sha: "82490cd4591758f145cbcfeab6137719c84c57e9" }))).toBeUndefined();
     });
@@ -185,8 +191,12 @@ describe("FORGE external-input exclusion proof", () => {
       ["a legacy snapshot that predates the claim (old code)", [{ ...unprovenSnapshotRow("r"), snapshot_code_version: "bd337d97aefd959832b3466037d163f320a23d99" }], [], "unproven"],
       ["an uncaptured, unstamped run of an unlisted release", [], [verifiedReleaseRunRow("r", { git_sha: "1".repeat(40) })], "unproven"],
       ["a run with no rows at all", [], [], "unproven"],
-      ["verified release code that captured the run and withheld the claim", [{ ...unprovenSnapshotRow("r"), snapshot_code_version: LEGACY }], [], "contradicted"],
-      ["a verified closure that captured the run and withheld the claim", [unprovenSnapshotRow("r")], [stampedRunRow("r", [VERIFIED])], "contradicted"],
+      ["verified release code that captured the run and withheld the claim", [{ ...unprovenSnapshotRow("r"), snapshot_code_version: LEGACY }], [], "claim_withheld"],
+      ["a verified closure that captured the run and withheld the claim", [unprovenSnapshotRow("r")], [stampedRunRow("r", [VERIFIED])], "claim_withheld"],
+      // C7 R42 A7: the claim is there but the capture is malformed; still withheld, labelled for what it is.
+      ["a verified capture that claims exclusion with an empty receipt",
+        [{ ...provenSnapshotRow("r"), snapshot_code_version: LEGACY, captured_reads: { ...provenSnapshotRow("r").captured_reads, readCount: 0 } }], [], "malformed_capture"],
+      ["a verified capture whose payload names another run", [{ ...provenSnapshotRow("r"), snapshot_run_id: "other" }], [stampedRunRow("r", [VERIFIED])], "malformed_capture"],
     ])("classifies %s", (_label, snapshots, runRows, status) => {
       expect(classifyExternalInputProofRows(snapshots as never, ["r"], runRows as never).get("r")?.status).toBe(status);
     });

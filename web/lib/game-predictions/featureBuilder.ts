@@ -1,7 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { sumModeledHeads } from "lib/projections/modeledHeadTotals";
-import { classifyExternalInputProof, type ClassifiedRunProof, type ExternalInputProofStatus } from "lib/projections/externalInputProof";
+import { classifyExternalInputProof, type ClassifiedRunProof,
+  type ExternalInputProofStatus } from "lib/projections/externalInputProof";
 import type { Database, Json } from "lib/supabase/database-generated.types";
 import {
   buildPredictionMetadataContract,
@@ -270,6 +271,8 @@ export type GamePredictionFeatureInputs = {
   forgeTeamProjectionRows?: ForgeTeamProjectionRow[];
   /** External-input proof of each FORGE run behind `forgeTeamProjectionRows`; a run absent here is unproven. */
   forgeTeamProjectionProof?: Map<string, ClassifiedRunProof>;
+  /** The proof read failed: no FORGE team row is classified, so none is used (C7 R42 A2). */
+  forgeTeamProjectionProofUnavailable?: boolean;
   marketOddsRows?: MarketOddsSnapshotRow[];
   currentRosterRows?: RosterPlayerRow[];
   skaterOffenseRatingRows?: PlayerImpactRatingInput[];
@@ -491,7 +494,8 @@ export function gamePredictionsRequireForgeProof(env: Readonly<Record<string, st
   return env.GAME_PREDICTIONS_REQUIRE_FORGE_PROOF === "true";
 }
 
-/** Whether a FORGE run's team projection may feed a prediction: never when contradicted; unproven only by default. */
+/** Whether a FORGE run's team projection may feed a prediction: never when contradicted (claim withheld or malformed
+ * capture); unproven only by default. */
 export function forgeProjectionAdmissible(status: ExternalInputProofStatus, requireProof = gamePredictionsRequireForgeProof()): boolean {
   return status === "proven" || status === "unproven" && !requireProof;
 }
@@ -1274,7 +1278,10 @@ function buildForgeTeamProjectionFeatures(
   gameId: number,
   teamId: number,
   proof: Map<string, ClassifiedRunProof> = new Map(),
+  proofUnavailable = false,
 ): ForgeTeamProjectionFeatures | null {
+  // Unclassified rows are never used: a contradicted run must not pass for unproven when its proof cannot be read.
+  if (proofUnavailable) return null;
   const statusOf = (runId: string) => proof.get(runId)?.status ?? "unproven";
   const row = (rows ?? [])
     .filter(
@@ -2138,6 +2145,7 @@ function buildTeamSideFeatures(args: {
     inputs.game.id,
     team.id,
     inputs.forgeTeamProjectionProof,
+    inputs.forgeTeamProjectionProofUnavailable,
   );
   const latestLineCombination = [...inputs.lineCombinationRows]
     .filter((row) => row.teamId === team.id)
@@ -2303,6 +2311,14 @@ function buildTeamSideFeatures(args: {
 
   if (!forgeProjection) {
     fallbackFlags[`${args.side}_forge_projection_fallback`] = true;
+  }
+  if (inputs.forgeTeamProjectionProofUnavailable && inputs.forgeTeamProjectionRows?.some((row) => row.team_id === team.id)) {
+    fallbackFlags[`${args.side}_forge_projection_proof_unavailable`] = true;
+    warnings.push({
+      code: "forge_projection_proof_unavailable",
+      source: "forge_team_projections",
+      message: `${args.side} FORGE team projections were left out: their external-input proof could not be read.`,
+    });
   }
   if (rosterImpact.source === "unavailable") {
     missingFeatures.push(`${args.side}.rosterImpact`);
@@ -2997,9 +3013,16 @@ export async function fetchGamePredictionFeatureInputs(
     if (result.error) throw result.error;
   }
   const forgeTeamProjectionRows = (forgeTeamProjectionResult.data ?? []) as ForgeTeamProjectionRow[];
-  // Missing proof means unproven, not contaminated: a failed proof read leaves every run unproven, never proven.
-  const forgeTeamProjectionProof = await classifyExternalInputProof(client,
-    [...new Set(forgeTeamProjectionRows.map((row) => row.run_id))]).catch(() => new Map<string, ClassifiedRunProof>());
+  // Missing proof means unproven, not contaminated; but a failed proof read classifies nothing, and then no FORGE team
+  // row is used (a contradicted run must not pass for unproven).
+  let forgeTeamProjectionProof = new Map<string, ClassifiedRunProof>(), forgeTeamProjectionProofUnavailable = false;
+  if (forgeTeamProjectionRows.length) {
+    try {
+      forgeTeamProjectionProof = await classifyExternalInputProof(client, [...new Set(forgeTeamProjectionRows.map((row) => row.run_id))]);
+    } catch {
+      forgeTeamProjectionProofUnavailable = true;
+    }
+  }
 
   return {
     game: typedGame,
@@ -3028,6 +3051,7 @@ export async function fetchGamePredictionFeatureInputs(
     wgoGoalieRows: (wgoGoalieResult.data ?? []) as WgoGoalieRow[],
     forgeTeamProjectionRows,
     forgeTeamProjectionProof,
+    forgeTeamProjectionProofUnavailable,
     marketOddsRows: (marketOddsResult.data ?? []) as MarketOddsSnapshotRow[],
     currentRosterRows: (currentRosterResult.data ?? []) as RosterPlayerRow[],
     skaterOffenseRatingRows,

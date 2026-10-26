@@ -25,7 +25,8 @@ export function verifiedReleaseRunRow(runId: string, overrides: Record<string, u
 /** A stamped single-invocation run of a later, unlisted release SHA: admitted only by its stamped closure(s). */
 export function stampedRunRow(runId: string, closures: Array<string | null>, overrides: Record<string, unknown> = {}) {
   return verifiedReleaseRunRow(runId, { git_sha: "82490cd4591758f145cbcfeab6137719c84c57e9",
-    producer_identity: { version: "forge-producer-closure-v1", invocations: closures }, ...overrides });
+    producer_identity: { version: "forge-producer-closure-v1", invocations: closures, code_versions: closures.map(() => null) },
+    ...overrides });
 }
 
 /** A client whose snapshot reads return `rows`, and whose `forge_runs` attribution reads return `runRows`, matching the

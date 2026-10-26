@@ -35,8 +35,14 @@ describe("verified FORGE releases", () => {
       const text = readFileSync(resolve(repoRoot, closure.receipt), "utf8");
       expect(createHash("sha256").update(text).digest("hex")).toBe(closure.receiptSha256);
       const receipt = JSON.parse(text);
-      expect(receipt).toMatchObject({ version: closure.verifierVersion, verified: true, findings: [], ...currentVerifier(),
-        producerIdentity: { version: "forge-producer-closure-v1", closureSha256 }, closure: { modulesSha256: closureSha256 } });
+      // Commit-backed: the receipt verifies an archived commit whose tree reproduces this closure, never an uncommitted
+      // worktree or export (C7 R42 A1).
+      expect(closure.commit).toMatch(/^[0-9a-f]{40}$/);
+      expect(receipt).toMatchObject({ version: closure.verifierVersion, sha: closure.commit, verified: true, findings: [],
+        ...currentVerifier(), producerIdentity: { version: "forge-producer-closure-v1", closureSha256 },
+        closure: { modulesSha256: closureSha256 } });
+      expect(receipt.source).toBeUndefined();
+      expect(receipt.commit).toMatchObject({ tree: expect.stringMatching(/^[0-9a-f]{40}$/) });
       expect(receipt.closure.modules).toEqual(expect.arrayContaining(["lib/projections/forgeProducerIdentity.ts",
         "lib/projections/queries/run-lifecycle-queries.ts", "lib/projections/seasonBootstrap.ts"]));
       // Admission stays outside what it admits.

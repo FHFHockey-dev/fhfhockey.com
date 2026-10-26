@@ -1011,7 +1011,11 @@ describe("game prediction workflow", () => {
       expect(await reuse(client("run", [provenSnapshotRow("run")]))).toBe("snap-1");
       expect(await reuse(client("run", []))).toBe("snap-1");
       expect(await reuse(client(null, []))).toBe("snap-1");
-      expect(await reuse(client("run", [], true))).toBe("snap-1");
+    });
+
+    it("does not reuse a snapshot whose FORGE run cannot be classified now (C7 R42 A2)", async () => {
+      expect(await reuse(client("run", [], true))).toBeNull();
+      expect(await reuse(client(null, [], true))).toBe("snap-1");
     });
 
     it("rebuilds a snapshot whose FORGE run is contradicted", async () => {

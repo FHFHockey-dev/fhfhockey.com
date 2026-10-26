@@ -77,6 +77,9 @@ export function verifiedRunAttribution(row: Row): RunAttribution | null {
   if (typeof row?.run_id !== "string" || row.status !== "succeeded" || row.invocations !== "1"
     || typeof row.git_sha !== "string" || !FULL_SHA.test(row.git_sha)) return null;
   if (row.producer_identity !== null && row.producer_identity !== undefined) {
+    // Closure admission needs the V2 stamp shape: one that predates `code_versions` (5a19f1def's env-based writer,
+    // never deployed) cannot show it was not a local runner, so it denies (C7 R42 A4).
+    if (!Array.isArray((row.producer_identity as { code_versions?: unknown }).code_versions)) return null;
     const stamp = parseProducerIdentity(row.producer_identity), closure = stamp?.invocations.length === 1 ? stamp.invocations[0] : null;
     // A `local:` code version marks a local runner, whatever SHA or closure the row also claims (C7 R40 V2).
     if (stamp?.code_versions.some(version => version?.startsWith("local:"))) return null;
@@ -122,10 +125,11 @@ const rowsOf = ({ data, error }: { data: unknown; error: unknown }, what: string
   return data as Row[];
 };
 
-/** A run's standing: `proven`; `contradicted` when verified-clean producer code captured the run and withheld the
- * exclusion claim (it does so only when its own reads included a fantasy or unaudited source); else `unproven`, which
- * means missing proof, not contamination (Astra F4). */
-export type ExternalInputProofStatus = "proven" | "unproven" | "contradicted";
+/** A run's standing (Astra F4; C7 R42 A7). `proven`. When verified-clean producer code captured the run but its
+ * snapshot does not prove exclusion: `claim_withheld` when the snapshot lacks the claim (that code withholds it only
+ * when its own reads included a fantasy or unaudited source), `malformed_capture` when it carries the claim but its
+ * receipt or identity is invalid. Both are withheld. Otherwise `unproven`: missing proof, not contamination. */
+export type ExternalInputProofStatus = "proven" | "unproven" | "claim_withheld" | "malformed_capture";
 export type ClassifiedRunProof = { runId: string; status: ExternalInputProofStatus; proof: ExternalInputProof | null };
 
 /** Pure: classifies runs from their snapshots and attribution rows (all of them, captured or not). */
@@ -141,8 +145,9 @@ export function classifyExternalInputProofRows(snapshots: Row[], runIds: readonl
   const classified = new Map<string, ClassifiedRunProof>();
   for (const runId of new Set(runIds)) {
     const proof = proven.get(runId) ?? null;
+    const claimWithheld = snapshots.some(row => row.entity_key === runId && row.external_fantasy_input_contract !== FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT);
     classified.set(runId, { runId, proof, status: proof ? "proven"
-      : captured.has(runId) && verifiedProducer(runId) ? "contradicted" : "unproven" });
+      : captured.has(runId) && verifiedProducer(runId) ? claimWithheld ? "claim_withheld" : "malformed_capture" : "unproven" });
   }
   return classified;
 }
