@@ -11,6 +11,7 @@ import { fictionalPlayerRecent, fictionalPlayerSources } from "../lib/socialShar
 import { localDate } from "../lib/rosterScheduleOptimizer/planningDates";
 import { buildTrendLayer, deploymentChanges, hotCold, ownershipMovers, rateStandouts, trendDefinitions } from "../lib/socialShare/trends";
 import { fictionalTrendSources } from "../lib/socialShare/trendsFixture";
+import { teamNeon } from "../lib/socialShare/teamNeon";
 import { editionLabel } from "../lib/socialShare/edition";
 import { countTiers } from "../lib/socialShare/mondayGrid";
 import { streamingTiers, trimEditionPlayers } from "../lib/socialShare/tiers";
@@ -820,11 +821,17 @@ test("Tuesday trend cards list the server's sections with definitions and a sour
       await expect(tile).toHaveAttribute("data-tone", /^[+▲]/.test(hero) ? "up" : /^[−▼]/.test(hero) ? "down" : "flat");
     }
     expect(await square.locator("[data-sparkline]").count()).toBeGreaterThan(0);
-    // TT-5: every tile has art, inlined as a data URL (so the PNG carries it), neon in the tile's tone or the card fallback.
+    // TT-5: every tile has art, inlined as a data URL (so the PNG carries it), neon or the card fallback. TT-11: the neon
+    // logo is in its team's colours (floored lightColor stroke, secondaryColor halo), whatever the tile's green/red tone.
     for (const tile of await tiles.all()) {
       const art = tile.locator("[data-art]");
       await expect(art).toHaveCount(1);
-      if (await art.getAttribute("data-art") === "neon") { await expect(art).toHaveAttribute("data-tone", (await tile.getAttribute("data-tone"))!); expect(await art.locator("img").getAttribute("src")).toMatch(/^data:image\/png;base64,/); }
+      if (await art.getAttribute("data-art") === "neon") {
+        const colors = teamNeon((await tile.getAttribute("data-team"))!)!;
+        await expect(art).toHaveAttribute("data-stroke", colors.stroke);
+        await expect(art).toHaveAttribute("data-halo", colors.halo);
+        expect(await art.locator("img").getAttribute("src")).toMatch(/^data:image\/png;base64,/);
+      }
     }
   }
   const shown = new Map([...edition.trends!.sections.hot.hot, ...edition.trends!.sections.hot.cold].map(row => [String(row.nhlId), row.series]));

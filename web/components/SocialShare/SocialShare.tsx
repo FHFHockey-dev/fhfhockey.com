@@ -1,11 +1,12 @@
 /* eslint-disable @next/next/no-img-element -- Native owned SVG is decoded and embedded by html-to-image for exact PNG exports. */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { useAuth } from "contexts/AuthProviderContext";
 import { SCHEDULE_FORMATS, type ShareDeploymentRow, type SharePlayerLayer, type SharePlayerRecent, type SharePpState, type ShareTrendKind, type ShareTrendWho, type SocialShareFormat, type SocialShareSnapshot, type ShareTeam, type ShareTeamRow } from "lib/socialShare/types";
 import { calendarWeekStart, selectScheduleDates, weekDates } from "lib/socialShare/schedule";
 import { bounded, downloadSharePng, readyShareFonts, SHARE_SIZE, teamLogoDataUrl, teamOutlineDataUrl } from "lib/socialShare/export";
+import { teamNeon } from "lib/socialShare/teamNeon";
 import { editionCountTiers, mondayGridRows, type CountTier } from "lib/socialShare/mondayGrid";
 import { fetchEdition } from "lib/socialShare/editionFetch";
 import { editionLabel } from "lib/socialShare/edition";
@@ -577,18 +578,23 @@ export function nameFontSize(name: string, stacked: boolean) {
   return `${Math.max(floor, Math.min(base, Math.floor(column / (0.58 * Math.max(1, name.length)))))}px`;
 }
 
-/** Tile art (TT-5): the team's neon outline in the tile's tone, or the home-page game-card treatment for fallback teams. */
-function TrendArt({ team, tone, logo, outlines }: { team: string | null; tone: Tone; logo: string | null | undefined; outlines: Record<string, Partial<Record<Tone, string | null>>> }) {
+/**
+ * Tile art (TT-5): the team's neon outline, or the home-page game-card treatment for fallback teams. TT-11: the outline
+ * is stroked in the team's lightColor and haloed in its secondaryColor (both lifted to the contrast floor, teamNeon);
+ * the tile's green/red stays on everything else.
+ */
+function TrendArt({ team, logo, outlines }: { team: string | null; logo: string | null | undefined; outlines: Record<string, string | null> }) {
   if (!team) return null;
-  const neon = OUTLINE_FALLBACK_TEAMS.has(team) ? null : outlines[team]?.[tone];
+  const neon = OUTLINE_FALLBACK_TEAMS.has(team) ? null : outlines[team], colors = teamNeon(team);
   // Home-page light game card (TT-7): the team's 65° jersey stripes, faded into the dark body, with a large logo cropped
-  // at the tile edge: the neon outline in the tile's tone, or the full-colour logo when no outline is available.
-  return <span className={styles.trendTileArt} data-art={neon ? "neon" : "card"} data-tone={tone} style={teamBannerStyle(team)} aria-hidden="true">
+  // at the tile edge: the neon outline, or the full-colour logo when no outline is available.
+  return <span className={styles.trendTileArt} data-art={neon ? "neon" : "card"} data-stroke={neon ? colors?.stroke : undefined} data-halo={neon ? colors?.halo : undefined}
+    style={{ ...teamBannerStyle(team), ...(neon && colors ? { "--neon-halo": `${colors.halo}8c` } : {}) } as CSSProperties} aria-hidden="true">
     {neon ? <img src={neon} alt="" /> : logo && <img src={logo} alt="" />}
   </span>;
 }
 
-function TrendCard({ kind, snapshot, trusted, logos, outlines, brandLogo }: { kind: TrendKind; snapshot: SocialShareSnapshot; trusted: boolean; logos: Record<string, string | null>; outlines: Record<string, Partial<Record<Tone, string | null>>>; brandLogo: string | null }) {
+function TrendCard({ kind, snapshot, trusted, logos, outlines, brandLogo }: { kind: TrendKind; snapshot: SocialShareSnapshot; trusted: boolean; logos: Record<string, string | null>; outlines: Record<string, string | null>; brandLogo: string | null }) {
   const ready = trendReady(kind, snapshot, trusted);
   const columns = ready ? trendColumns(kind, snapshot) : [];
   return <>
@@ -614,7 +620,7 @@ function TrendCard({ kind, snapshot, trusted, logos, outlines, brandLogo }: { ki
           const hero = <span className={styles.trendHero} data-tone={row.hero.tone} data-role={/^[▲▼]/.test(row.hero.value) || undefined} data-part="hero"><strong>{row.hero.value}</strong></span>;
           // TT-10: the right column of 2-column cards is mirrored (art right, text left); rates keep their own stacked layout.
           return <div key={row.key} data-player={row.key} data-team={row.team ?? ""} data-tone={row.hero.tone} data-mirror={mirror || undefined} className={cx(styles.trendTile, stacked && styles.trendTileStacked)}>
-            <TrendArt team={row.team} tone={row.hero.tone} logo={row.team ? logos[row.team] : null} outlines={outlines} />
+            <TrendArt team={row.team} logo={row.team ? logos[row.team] : null} outlines={outlines} />
             <small className={styles.trendTileMeta} data-part="tag">{row.meta}</small>
             {stacked ? <div className={styles.trendRateTile}>
               <div className={styles.trendTileText}>
@@ -726,7 +732,7 @@ export default function SocialShare({ format, asOf }: { format: SocialShareForma
   const [graphic, setGraphic] = useState(initial.card);
   const [teamLogos, setTeamLogos] = useState<Record<string, string | null>>({});
   // Tuesday only (TT-5): each team's neon outline in the three tones; Monday and Wednesday never load these.
-  const [teamOutlines, setTeamOutlines] = useState<Record<string, Partial<Record<Tone, string | null>>>>({});
+  const [teamOutlines, setTeamOutlines] = useState<Record<string, string | null>>({});
   const requestedOutlines = useRef(new Set<string>());
   const [exporting, setExporting] = useState(false);
   const [expired, setExpired] = useState(false);
@@ -809,7 +815,8 @@ export default function SocialShare({ format, asOf }: { format: SocialShareForma
     const missing = snapshot?.teams.map(team => team.abbreviation).filter(abbreviation => !requestedOutlines.current.has(abbreviation)) ?? [];
     if (!missing.length) return;
     for (const abbreviation of missing) requestedOutlines.current.add(abbreviation);
-    void Promise.all(missing.map(async abbreviation => [abbreviation, Object.fromEntries(await Promise.all((Object.keys(NEON) as Tone[]).map(async tone => [tone, await teamOutlineDataUrl(abbreviation, NEON[tone]).catch(() => null)] as const)))] as const))
+    // TT-11: one tint per team (its floored lightColor), not one per tone.
+    void Promise.all(missing.map(async abbreviation => { const colors = teamNeon(abbreviation); return [abbreviation, colors ? await teamOutlineDataUrl(abbreviation, colors.stroke).catch(() => null) : null] as const; }))
       .then(entries => setTeamOutlines(current => ({ ...current, ...Object.fromEntries(entries) })));
   }, [snapshot, format]);
   useEffect(() => {

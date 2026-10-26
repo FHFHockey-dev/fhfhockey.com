@@ -146,3 +146,12 @@ Native sources only. Tuesday never reads `PROJECTIONS_20262027_*`, `PROJECTIONS_
   - **"off PP":** unit 3 or higher, or the game's PP rows don't list the player.
   - **"PP ?":** the game has no PP rows.
 - **Deployment:** keeps its change chips (▲ L3 → L1). With no change they already show the current line and PP, so no extra assignment chip is added.
+
+## TT-11: neon logos in team colours
+
+- **Stroke:** the team's `lightColor` from `web/lib/teamsInfo.ts`, falling back to `primaryColor` when absent. All 32 teams have a `lightColor` today.
+- **Halo:** the team's `secondaryColor` at TT-7's strength (2 px at 55%).
+- **Floor:** both colours are lifted to WCAG 4.5:1 against the card body `#15191f`. Only the HSL lightness rises; hue and saturation are kept (`lib/socialShare/teamNeon.ts`). Black becomes a neutral grey.
+- **Tint:** one canvas tint per team (inline data URL, PNG-safe), not one per tone.
+- **Green/red** stays on the tile border, hero, sparkline and fill, badge, vertical labels and chips. Neutral tiles also use team colours.
+- **Reads:** none. `teamsInfo` is static.
