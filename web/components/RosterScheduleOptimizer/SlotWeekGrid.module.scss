@@ -97,10 +97,11 @@ td[data-pulse] .cellButton, td[data-pulse] .cellBody, td[data-pulse] .empty { an
 .forecastPoints .points { margin: 0; padding: 3px 4px; font-size: 15px; white-space: nowrap; }
 .forecastPoints small { font: 400 9px v.$font-family-primary; }
 .conditionalPoints { color: v.$text-secondary; font: 600 11px v.$font-family-numbers; white-space: nowrap; text-align: center; }
-.group[data-position="G"] { --cell-height: 64px; }
-.forecastPoints[data-goalie] { grid-column: 1 / -1; grid-row: 3; flex-direction: row; align-items: center; justify-content: space-between; }
-.forecastPoints[data-goalie] .points { padding: 2px 3px; font-size: 13px; line-height: 14px; text-align: center; }
-.forecastPoints[data-goalie] small { display: block; line-height: 10px; }
+// Goalie cells keep the shared cell height: "expected" and "if starts" stack in the same box as a skater's points.
+.forecastPoints[data-goalie] { grid-column: 2; grid-row: 1 / span 2; flex-direction: column; align-items: flex-end; justify-content: center; gap: 1px; }
+.forecastPoints[data-goalie] .points { padding: 0 3px; font-size: 12px; line-height: 14px; }
+.forecastPoints[data-goalie] .conditionalPoints { font-size: 10px; line-height: 12px; }
+.forecastPoints[data-goalie] small { display: inline; line-height: inherit; }
 
 // Injured players (provider IR/O/DTD): red border, red tint and the injured icon.
 .injuryIcon { flex: none; }

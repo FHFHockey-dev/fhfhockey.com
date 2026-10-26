@@ -15,9 +15,13 @@ export async function executeRosterPlanning(snapshot: PlanningSnapshot, intent: 
       .map(binding => resolveRsoTargetUse(binding, startedAt, policy).reviewId)).filter(Boolean));
     // Capture applicable deadlines before computation. An expired deadline must
     // invalidate the result, not disappear from a future-only list afterward.
-    const deadlines = [forecastInputExpiry(input), currentPrivatePlanningDeadline(), ...policy.reviews.filter(review => reviewIds.has(review.id))
+    const publicDeadlines = [forecastInputExpiry(input), ...policy.reviews.filter(review => reviewIds.has(review.id))
       .map(review => Date.parse(review.expiresAt))].filter((value): value is number => value !== null && Number.isFinite(value));
+    const privateDeadline = currentPrivatePlanningDeadline();
+    const deadlines = privateDeadline === null || !Number.isFinite(privateDeadline) ? publicDeadlines : [...publicDeadlines, privateDeadline];
     const deadline = deadlines.length ? Math.min(...deadlines) : null;
+    // The Yahoo confirmation window, not a public input, ends this plan: a public-only plan can stand in after it.
+    const privateLapsesFirst = deadline !== null && deadline === privateDeadline && !publicDeadlines.some(value => value <= deadline);
     const evaluate = (current: PlanningSnapshot) => {
       const resolved = resolvePlanningContributions(sanitizeForecastInputs(current), { consumer: "rso" });
       const displaySnapshot = { ...resolved, forecasts: resolved.forecasts.map(row => {
@@ -39,7 +43,7 @@ export async function executeRosterPlanning(snapshot: PlanningSnapshot, intent: 
     if (remaining !== null && remaining <= 0) {
       evaluated = evaluate(capacityPlanningSnapshot(input)); remaining = null;
     }
-    return { ...evaluated, data, readError,
+    return { ...evaluated, data, readError, privateLapsesFirst: remaining !== null && privateLapsesFirst,
       expiresAt: remaining === null ? null : Date.now() + remaining,
       expiresAtMonotonic: remaining === null ? null : publishedMonotonic + remaining };
   }, privatePort);
