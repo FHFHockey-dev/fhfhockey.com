@@ -3,7 +3,7 @@ import { localDate } from "lib/rosterScheduleOptimizer/planningDates";
 import { normalizeEvDeploymentBucket } from "lib/rankings/skaterDeploymentAggregation";
 import { activeTeamAbbreviations, teamsInfo } from "lib/teamsInfo";
 import { PLAYER_STATS_MAX_AGE_MS, type ShareMapRow } from "./players";
-import { SHARE_TIME_ZONE, type ShareDataState, type ShareDeploymentRow, type ShareHotRow, type ShareMoverRow, type SharePpState, type ShareRateRow, type ShareTrendKind, type ShareTrendLayer, type ShareTrendSectionState, type ShareTrendWho, type SocialShareSnapshot } from "./types";
+import { RECENT_FORM_RULE, SHARE_TIME_ZONE, type ShareDataState, type ShareDeploymentRow, type ShareHotRow, type ShareMoverRow, type SharePpState, type ShareRateRow, type ShareTrendKind, type ShareTrendLayer, type ShareTrendSectionState, type ShareTrendWho, type SocialShareSnapshot } from "./types";
 
 type Tables = Database["public"]["Tables"];
 type RollingRow = Tables["rolling_player_game_metrics"]["Row"];
@@ -13,7 +13,7 @@ type RollingRow = Tables["rolling_player_game_metrics"]["Row"];
  */
 export const ROLLING_COLUMNS = [
   "player_id", "team_id", "season", "game_id", "game_date", "strength_state", "updated_at", "season_games_played",
-  "points_avg_season", "points_total_last5", "toi_seconds_avg_last5", "toi_seconds_avg_season", "toi_seconds_total_last5",
+  "points_avg_season", "points_total_last5", "points_total_last10", "toi_seconds_avg_last5", "toi_seconds_avg_season", "toi_seconds_total_last5",
   "pp_toi_seconds_total_last5", "pp_toi_seconds_avg_season", "sog_per_60_last5", "sog_per_60_season",
   "shot_attempts_per_60_last5", "shot_attempts_per_60_season", "ixg_per_60_last5", "ixg_per_60_season",
   "line_combo_slot", "line_combo_group", "pp_unit",
@@ -46,8 +46,8 @@ export type ShareTrendSources = {
 };
 
 export const TREND_WINDOW_GAMES = 5;
-/** Tuesday form needs 10 games before the L5 window (15 season games). */
-export const MIN_PRIOR_GAMES = 10;
+/** Recent Form (recent-form-v1-early) compares two non-overlapping 5-appearance windows, all 10 in the current season. */
+export const RECENT_FORM_GAMES = 10;
 /** Deployment and rate baselines need 10 season games. */
 export const MIN_TREND_SEASON_GAMES = 10;
 /** Last-5 per-60 rates need at least 50 minutes of ice time behind them. */
@@ -145,21 +145,24 @@ const ppRank = (state: SharePpState) => state === "none" ? 9 : state;
 const step = (now: number | null, before: number | null): -1 | 0 | 1 => now === null || before === null || now === before ? 0 : now < before ? 1 : -1;
 
 type Ranked<T> = T & { nhlId: number };
-const hotOrder = (direction: 1 | -1) => (a: Omit<ShareHotRow, keyof ShareTrendWho> & { nhlId: number }, b: typeof a) => direction * (b.delta - a.delta) || b.l5 - a.l5 || a.nhlId - b.nhlId;
+const hotOrder = (direction: 1 | -1) => (a: Omit<ShareHotRow, keyof ShareTrendWho> & { nhlId: number }, b: typeof a) => direction * (b.delta - a.delta) || b.recent - a.recent || a.nhlId - b.nhlId;
 
 /** Ranked candidates per list, cut to list length + NAME_SLACK, before names and EV rows are known. */
 export function trendShortlists(sources: Pick<ShareTrendSources, "rolling" | "ppc" | "ownership" | "map">, context: TrendContext) {
   const rolling = rowsOf(sources.rolling), skaters = rolling ? activeSkaters(rolling, context) : null, active = skaters?.active ?? new Map<number, Active>();
   const cut = <T,>(list: T[], size: number) => list.slice(0, size + NAME_SLACK);
 
-  // Tuesday form: L5 P/GP vs the season baseline without those games: (season avg × GP − L5 points) ÷ (GP − 5).
+  // Recent Form (recent-form-v1-early): the writer's points windows hold the last N valid observations across seasons.
+  // With ≥ 10 season games and season points proven whole (season average × GP is an integer, so no in-season game
+  // lacks points), the last 10 observations are the last 10 appearances, all this season, and last10 − last5 is the
+  // preceding 5 with no overlap. Anything unproven is left out, never read as zero.
   const form = [...active].flatMap(([nhlId, { latest }]) => {
-    const gp = latest.season_games_played, priorGames = num(gp) ? gp - TREND_WINDOW_GAMES : 0;
-    if (priorGames < MIN_PRIOR_GAMES || !num(latest.points_avg_season) || !num(latest.points_total_last5)) return [];
-    const priorRaw = (latest.points_avg_season * gp! - latest.points_total_last5) / priorGames;
-    if (priorRaw < -0.01) return [];
-    const l5 = round(latest.points_total_last5 / TREND_WINDOW_GAMES, 2), prior = round(Math.max(0, priorRaw), 2);
-    return [{ nhlId, lastGame: latest.game_date, l5, prior, priorGames, delta: round(l5 - prior, 2) }];
+    const gp = latest.season_games_played, last5 = latest.points_total_last5, last10 = latest.points_total_last10;
+    if (!num(gp) || gp < RECENT_FORM_GAMES || !num(latest.points_avg_season) || !num(last5) || !num(last10) || last5 < 0 || last10 < last5) return [];
+    const seasonPoints = latest.points_avg_season * gp;
+    if (Math.abs(seasonPoints - Math.round(seasonPoints)) > 0.01 || last10 > Math.round(seasonPoints)) return [];
+    const recent = round(last5 / TREND_WINDOW_GAMES, 2), preceding = round((last10 - last5) / TREND_WINDOW_GAMES, 2);
+    return [{ nhlId, lastGame: latest.game_date, recent, preceding, delta: round(recent - preceding, 2) }];
   });
   const hot = cut(form.filter(row => row.delta > 0).sort(hotOrder(1)), TREND_LIST), cold = cut(form.filter(row => row.delta < 0).sort(hotOrder(-1)), TREND_LIST);
 
@@ -186,9 +189,13 @@ export function trendShortlists(sources: Pick<ShareTrendSources, "rolling" | "pp
     const ppNow = pp(latest), ppBefore = before ? pp(before) : null;
     const ppChange = ppNow === null || ppBefore === null ? 0 : step(ppRank(ppNow), ppRank(ppBefore));
     const toi = { l5: Math.round(latest.toi_seconds_avg_last5), season: Math.round(latest.toi_seconds_avg_season) }, delta = toi.l5 - toi.season;
-    if (!lineChange && !ppChange && Math.abs(delta) < MIN_DEPLOYMENT_TOI_DELTA_SECONDS) return [];
-    const role = lineChange + ppChange, up = role > 0 || (role === 0 && delta >= 0);
-    return [{ nhlId, up, changed: lineChange || ppChange ? 1 : 0, role, lastGame: latest.game_date, toi, delta, teamChange,
+    // Column (TT-3): a TOI change of 1:00 or more sets the column by its sign, so the hero number never contradicts
+    // it, while the role chips keep their own arrows. Role-only rows (smaller TOI change) follow the role direction;
+    // a mixed role (line up, PP down, or the reverse) has no direction and is left out.
+    const driver: "toi" | "role" = Math.abs(delta) >= MIN_DEPLOYMENT_TOI_DELTA_SECONDS ? "toi" : "role";
+    if (driver === "role" && (!(lineChange || ppChange) || lineChange * ppChange < 0)) return [];
+    const role = lineChange + ppChange, up = driver === "toi" ? delta > 0 : role > 0;
+    return [{ nhlId, up, driver, changed: lineChange || ppChange ? 1 : 0, role, lastGame: latest.game_date, toi, delta, teamChange,
       line: { now: lineNow, before: lineBefore }, ppUnit: { now: ppNow, before: ppBefore }, lineChange, ppChange,
       pp: { l5: num(latest.pp_toi_seconds_total_last5) ? Math.round(latest.pp_toi_seconds_total_last5 / TREND_WINDOW_GAMES) : null, season: num(latest.pp_toi_seconds_avg_season) ? Math.round(latest.pp_toi_seconds_avg_season) : null } }];
   }).sort((a, b) => b.changed - a.changed || Math.abs(b.role) - Math.abs(a.role) || Math.abs(b.delta) - Math.abs(a.delta) || a.nhlId - b.nhlId);
@@ -222,7 +229,7 @@ export function trendShortlists(sources: Pick<ShareTrendSources, "rolling" | "pp
   };
   const risers = cut(riserKeys.flatMap(identify), TREND_LIST), fallers = cut(fallerKeys.flatMap(identify), TREND_LIST);
   const today = skaters?.today ?? localDate(context.generatedAt, SHARE_TIME_ZONE);
-  return { skaters, active, hot, cold, rates, up, down, risers, fallers, latestDate, previousDate, today,
+  return { skaters, active, hot, cold, formQualifiers: form.length, rates, up, down, risers, fallers, latestDate, previousDate, today,
     moverKeys: [...riserKeys, ...fallerKeys].flatMap(move => [move.key, ...(move.yahooId === null ? [] : [String(move.yahooId)])]),
     gameIds: [...new Set([...active.values()].flatMap(({ latest, previous }) => [latest.game_id, previous?.game_id]).filter(num))].sort((a, b) => a - b) };
 }
@@ -254,7 +261,7 @@ export function buildTrendLayer(sources: ShareTrendSources | null, context: Tren
   if (!sources) {
     const empty = { state: "missing" as const, reasons: [notReadReason] };
     return { ...base, metricsThrough: null, metricsUpdatedAt: null, ownershipLatestDate: null, ownershipPreviousDate: null,
-      sections: { hot: { ...empty, hot: [], cold: [] }, deployment: { ...empty, up: [], down: [] }, rates: { ...empty, sogPer60: [], icfPer60: [], ixgPer60: [] }, movers: { ...empty, risers: [], fallers: [] } } };
+      sections: { hot: { ...empty, rule: RECENT_FORM_RULE, qualifiers: 0, hot: [], cold: [] }, deployment: { ...empty, up: [], down: [] }, rates: { ...empty, sogPer60: [], icfPer60: [], ixgPer60: [] }, movers: { ...empty, risers: [], fallers: [] } } };
   }
   const lists = trendShortlists(sources, context), names = skaterNames(rowsOf(sources.players) ?? []);
   const who = (nhlId: number): ShareTrendWho | null => {
@@ -266,7 +273,7 @@ export function buildTrendLayer(sources: ShareTrendSources | null, context: Tren
 
   const hotState = section([sources.rolling, sources.players], ["Rolling game metrics", "Player names"], metricsGate);
   const hotReady = hotState.state === "ready";
-  const hotRow = (row: TrendShortlists["hot"][number], person: ShareTrendWho): ShareHotRow => ({ ...person, lastGame: row.lastGame, l5: row.l5, prior: row.prior, priorGames: row.priorGames, delta: row.delta });
+  const hotRow = (row: TrendShortlists["hot"][number], person: ShareTrendWho): ShareHotRow => ({ ...person, lastGame: row.lastGame, recent: row.recent, preceding: row.preceding, delta: row.delta });
 
   const ratesState = section([sources.rolling, sources.players], ["Rolling game metrics", "Player names"], metricsGate), ratesReady = ratesState.state === "ready";
 
@@ -274,7 +281,7 @@ export function buildTrendLayer(sources: ShareTrendSources | null, context: Tren
   const deployReady = deployState.state === "ready", ev = new Map((rowsOf(sources.ev) ?? []).filter(row => row.season === context.season && row.strength_state === "ev").map(row => [`${row.player_id}|${row.game_date}`, row]));
   const deployRow = (row: TrendShortlists["up"][number], person: ShareTrendWho): ShareDeploymentRow => {
     const even = ev.get(`${row.nhlId}|${row.lastGame}`);
-    return { ...person, lastGame: row.lastGame, toi: row.toi, delta: row.delta, pp: row.pp, line: row.line, ppUnit: row.ppUnit, teamChange: row.teamChange, lineChange: row.lineChange, ppChange: row.ppChange,
+    return { ...person, lastGame: row.lastGame, toi: row.toi, delta: row.delta, driver: row.driver, pp: row.pp, line: row.line, ppUnit: row.ppUnit, teamChange: row.teamChange, lineChange: row.lineChange, ppChange: row.ppChange,
       ev: { l5: even && num(even.toi_seconds_avg_last5) ? Math.round(even.toi_seconds_avg_last5) : null, season: even && num(even.toi_seconds_avg_season) ? Math.round(even.toi_seconds_avg_season) : null } };
   };
 
@@ -292,7 +299,7 @@ export function buildTrendLayer(sources: ShareTrendSources | null, context: Tren
   return { ...base, metricsThrough: lists.skaters?.through ?? null, metricsUpdatedAt: lists.skaters?.updatedAt ?? null,
     ownershipLatestDate: lists.latestDate, ownershipPreviousDate: lists.previousDate,
     sections: {
-      hot: { ...hotState, hot: hotReady ? shown(lists.hot, TREND_LIST, hotRow) : [], cold: hotReady ? shown(lists.cold, TREND_LIST, hotRow) : [] },
+      hot: { ...hotState, rule: RECENT_FORM_RULE, qualifiers: hotReady ? lists.formQualifiers : 0, hot: hotReady ? shown(lists.hot, TREND_LIST, hotRow) : [], cold: hotReady ? shown(lists.cold, TREND_LIST, hotRow) : [] },
       deployment: { ...deployState, up: deployReady ? shown(lists.up, DEPLOYMENT_LIST, deployRow) : [], down: deployReady ? shown(lists.down, DEPLOYMENT_LIST, deployRow) : [] },
       rates: { ...ratesState, ...Object.fromEntries(RATE_METRICS.map(metric => [metric, ratesReady ? shown(lists.rates[metric], RATE_LIST, (row, person): ShareRateRow => ({ ...person, l5: row.l5, season: row.season, delta: row.delta, l5Minutes: row.l5Minutes })) : []])) as Record<RateMetric, ShareRateRow[]> },
       movers: { ...moversState, risers: moversReady ? shown(lists.risers, TREND_LIST, moverRow) : [], fallers: moversReady ? shown(lists.fallers, TREND_LIST, moverRow) : [] },
@@ -301,8 +308,8 @@ export function buildTrendLayer(sources: ShareTrendSources | null, context: Tren
 
 /** Section definitions (CONTRACT.md), printed in each card footer. */
 export const trendDefinitions: Record<ShareTrendKind, string[]> = {
-  hot: [`Tuesday form: P/GP last ${TREND_WINDOW_GAMES} GP vs prior GP (season minus L${TREND_WINDOW_GAMES})`, `Min ${MIN_PRIOR_GAMES} prior GP · last game ≤ ${TREND_MAX_GAME_AGE_DAYS} days`],
-  deployment: [`TOI/GP L${TREND_WINDOW_GAMES} / season: all · EV · PP`, "Line & PP unit: last game vs the game before", `Listed: any line/PP change or ±${MIN_DEPLOYMENT_TOI_DELTA_SECONDS / 60}:00 TOI · PP ? = unknown`],
+  hot: [`Recent Form (${RECENT_FORM_RULE}): P/GP last ${TREND_WINDOW_GAMES} appearances vs the ${TREND_WINDOW_GAMES} before`, `All ${RECENT_FORM_GAMES} this season · last game ≤ ${TREND_MAX_GAME_AGE_DAYS} days · Early season · small sample`],
+  deployment: [`TOI/GP L${TREND_WINDOW_GAMES} / season: all · EV · PP`, "Line & PP unit: last game vs the game before", `Column: TOI change ±${MIN_DEPLOYMENT_TOI_DELTA_SECONDS / 60}:00+ by its sign, else line/PP direction · PP ? = unknown`],
   rates: [`Per-60: L${TREND_WINDOW_GAMES} rate and Δ vs season`, `Min ${MIN_RATE_TOI_SECONDS_LAST5 / 60} L${TREND_WINDOW_GAMES} min · ${MIN_TREND_SEASON_GAMES}+ GP`, "iCF = all individual shot attempts"],
   movers: [`pct pts = percentage-point change in Yahoo rostered %, latest vs on/before ${MOVER_WINDOW_DAYS} days earlier`, "No observation ≠ 0% · not add/drop counts"],
 };

@@ -29,17 +29,21 @@ export function fictionalTrendSources(season: number, today: string, updatedAt: 
     roster.forEach((position, index) => {
       const id = 8480000 + teamIndex * 20 + index, n = teamIndex * 20 + index, defense = position === "D", goalie = position === "G";
       players.push({ id, fullName: `Fixture ${team}-T${index + 1}`, position });
-      const inactive = n % 19 === 0, gpNow = n % 23 === 0 ? 12 : 15 + Math.floor(random() * 6), traded = n % 31 === 5;
+      // gpNow 8 (every 23rd) is under Recent Form's 10 appearances; every 29th + 3 has season points that are not whole (unproven).
+      const inactive = n % 19 === 0, gpNow = n % 23 === 0 ? 8 : 10 + Math.floor(random() * 8), traded = n % 31 === 5, unproven = n % 29 === 3;
       const ppg = round((defense ? 0.15 : 0.25) + random() * (defense ? 0.55 : 0.85)), toi = Math.round((defense ? 1150 : 900) + random() * 400);
       const sog = round(4 + random() * 8), icf = round(sog * (1.6 + random() * 0.6)), ixg = round(0.3 + random() * 1.1, 3);
-      const swing = () => 0.45 + random() * 1.3, toiL5 = Math.max(600, Math.round(toi + (random() - 0.5) * 420)), points5 = Math.round(ppg * 5 * swing());
+      const swing = () => 0.45 + random() * 1.3, toiL5 = Math.max(600, Math.round(toi + (random() - 0.5) * 420));
+      // Whole season points, with the last 10 appearances inside them (the writer's windows are last-N observations).
+      const seasonPoints = Math.round(ppg * gpNow), points5 = Math.min(seasonPoints, Math.round(ppg * 5 * swing())), points10 = Math.min(seasonPoints, points5 + Math.round(ppg * 5 * swing()));
       const lineNow = 1 + Math.floor(random() * (defense ? 3 : 4)), lineBefore = random() < 0.3 ? Math.min(defense ? 3 : 4, lineNow + (random() < 0.5 ? 1 : -1)) || 1 : lineNow;
       const unitNow = !goalie && random() < 0.55 ? 1 + Math.floor(random() * 2) : null, unitBefore = random() < 0.2 ? (unitNow === 1 ? 2 : unitNow === 2 ? null : 1) : unitNow;
       for (let game = 0; game < GAMES; game++) {
         const latest = game === 0, date = shift(today, -(inactive ? 10 : 1) - game * 2), unit = latest ? unitNow : unitBefore;
         const row: ShareRollingRow = {
           player_id: id, team_id: traded && !latest ? teamsInfo[teams[(teamIndex + 1) % teams.length]].id : teamId, season, game_id: gameId(game), game_date: date, strength_state: "all",
-          updated_at: updatedAt, season_games_played: gpNow - game, points_avg_season: round(ppg, 3), points_total_last5: points5,
+          updated_at: updatedAt, season_games_played: gpNow - game, points_avg_season: Math.max(0, seasonPoints - game * ppg) / Math.max(1, gpNow - game) + (unproven ? 0.013 : 0),
+          points_total_last5: points5, points_total_last10: points10,
           toi_seconds_avg_last5: toiL5, toi_seconds_avg_season: toi, toi_seconds_total_last5: toiL5 * 5,
           pp_toi_seconds_total_last5: unit ? Math.round((90 + random() * 120) * 5) : 0, pp_toi_seconds_avg_season: unitNow || unitBefore ? round(80 + random() * 100) : 4,
           sog_per_60_last5: round(sog * swing()), sog_per_60_season: sog, shot_attempts_per_60_last5: round(icf * swing()), shot_attempts_per_60_season: icf,

@@ -21,15 +21,19 @@ Native sources only. Tuesday never reads `PROJECTIONS_20262027_*`, `PROJECTIONS_
   - No Yahoo keys, timelines or `updated_at` leave the server.
   - The response is `private, no-store`, and it is served only to a social editor (`requireSocialShareAccess`, unchanged).
 
-## 1. Hot / cold — "Tuesday form" (interim; separate from BLSH)
+## 1. Recent Form — rule `recent-form-v1-early` (replaces "Tuesday form" before release; TJ, TT-3)
 
 | Item | Definition |
 |---|---|
-| L5 value (shown large, "P/GP L5") | `points_total_last5 ÷ 5`, rounded to 0.01 |
-| Prior baseline | `(points_avg_season × season_games_played − points_total_last5) ÷ (season_games_played − 5)`, i.e. season P/GP **excluding** the L5 games; rounded to 0.01 |
-| Delta (shown small, "VS PRIOR") | `L5 − prior` from the rounded values |
-| Minimums | ≥ 10 prior GP (`MIN_PRIOR_GAMES`, so 15+ season GP); last game within 7 days |
-| Lists | HOT: delta > 0, largest first; COLD: delta < 0, most negative first; 5 each (`TREND_LIST`). Ties: L5 desc, NHL id asc |
+| Windows | **Last 5 completed appearances** vs **the preceding 5**, with no overlapping games |
+| Values | Recent: `points_total_last5 ÷ 5`. Preceding: `(points_total_last10 − points_total_last5) ÷ 5`. Both are rounded to 0.01, and the change is computed from the rounded values. All three are shown (hero "P/GP LAST 5", detail "Prior 5", small "CHANGE") |
+| Why this is game-aligned | The writer's `*_last5/_last10` points windows hold the last N **valid observations**, carried across seasons (`fetchRollingPlayerAverages.ts`, `updateAccumulator`: a null skips its slot). A skater qualifies only when: **season GP ≥ 10**, so all 10 appearances are **this season**; `points_avg_season × season_games_played` is a whole number (within 0.01), so no in-season game lacks points and the 10 observations are the last 10 appearances; and `0 ≤ last5 ≤ last10 ≤ season points` |
+| Minimums | All 10 appearances in the current season; last game within 7 days; every input present. A missing or unproven input leaves the player out. It is never counted as zero |
+| Lists | UP VS PRIOR 5 (change > 0, largest first) and DOWN VS PRIOR 5 (change < 0); 5 each. Ties: recent P/GP desc, then NHL id. `qualifiers` = skaters who passed every check |
+| Copy | Descriptive only. The eyebrow says "Early season · small sample" on the card and in the PNG. It is not BLSH and not a streak, and it makes no sustainability claim |
+| Empty | "No qualifiers yet" with the requirement. Download is off for this card only; deployment, rates and movers export independently (E2E) |
+| Versioning | The rule id is in the layer (`sections.hot.rule`) and in the footer. A later rule (e.g. L5 vs preceding 10) needs a new id plus an explicit, documented edition rule or a reviewed transition. **Never** switch automatically on a qualifier count, and never mix windows in one ranking |
+| Reads | No new statement: `points_total_last10` is added to the existing R1 rolling select |
 
 ## 2. Ownership movers
 
@@ -37,7 +41,7 @@ Native sources only. Tuesday never reads `PROJECTIONS_20262027_*`, `PROJECTIONS_
 |---|---|
 | Source | `yahoo_player_ownership_history` (PK `player_key, ownership_date`) |
 | Dates | Latest observation date **D** in the table, and **P** = the latest date ≤ D − 5 (`MOVER_WINDOW_DAYS`). Both are shown on every row and in the footer |
-| Value | `ownership_pct` on D and on P, each rounded to 0.1 |
+| Value | `ownership_pct` on D and on P, each rounded to 0.1. Shown at the source's precision: Yahoo values are whole percents, so the card shows "+17" and "28% → 45%". One decimal is shown only when a value has decimals |
 | Change | `latest − previous` from the rounded values, in **percentage points**. The card says "PCT PTS ROSTERED" (not "PTS", which reads as fantasy points), and the definition reads "pct pts = percentage-point change in Yahoo rostered %". It never says adds or drops; the footer says "not add/drop counts" |
 | Missing | A player without a valid observation on D **and** P is not a mover. A missing observation is never 0% |
 | Minimum | abs(change) ≥ 1.0 pt (`MIN_MOVER_POINTS`) |
@@ -55,8 +59,8 @@ Native sources only. Tuesday never reads `PROJECTIONS_20262027_*`, `PROJECTIONS_
 | PP change | Only when both games are known. Unit order PP1 < PP2 < PP3 < none |
 | Team change | If the previous game's `team_id` differs, there is no line/PP comparison and the row shows "NEW TEAM" |
 | Inclusion | Any line or PP change (**even with flat TOI**), or abs(TOI delta) ≥ 60 s (`MIN_DEPLOYMENT_TOI_DELTA_SECONDS`); ≥ 10 season GP |
-| Direction | role = line step + PP step. role > 0 → USAGE UP, role < 0 → USAGE DOWN; role 0 → by TOI sign |
-| Order | Changed role first, then abs(role), then abs(TOI delta); 4 per side (`DEPLOYMENT_LIST`) |
+| Column (TT-3) | **abs(TOI change) ≥ 1:00 → column by the TOI sign** (USAGE UP if more ice), and the hero is the TOI change. The role chips keep their own arrows, e.g. "more ice, lost PP1". **Role-only rows** (abs(TOI change) < 1:00) → column by the role direction (line step + PP step), and the hero is the role ("▲ LINE", "▼ LINE + PP"). **Mixed-direction role-only rows** (line up while PP down, or the reverse) are **left out**. The hero and its column never contradict (Vitest and E2E) |
+| Order | Rows with a role change first, then abs(role), then abs(TOI change); 4 per side (`DEPLOYMENT_LIST`) |
 
 ## 4. Rate standouts
 

@@ -105,7 +105,7 @@ async function signIn(page: Page, access: Access) {
 
 async function install(page: Page, access: Access = { role: "social_editor", signedIn: true, roleReads: 0, writes: [] }) {
   await signIn(page, access);
-  const controller = { requests: 0, fail: false, mode: "ready" as Mode, longName: false, pinnedAt: undefined as string | undefined, rates: "ready" as Rates, players: "ready" as PlayerMode, trends: "ready" as Rates, recentRead: "ready" as RecentRead, liveTrim: false, longPlayer: false, widestLegend: false, ownershipStale: false, genuine: null as SocialShareSnapshot["trends"], latest: null as SocialShareSnapshot | null };
+  const controller = { requests: 0, fail: false, mode: "ready" as Mode, longName: false, pinnedAt: undefined as string | undefined, rates: "ready" as Rates, players: "ready" as PlayerMode, trends: "ready" as Rates, recentRead: "ready" as RecentRead, liveTrim: false, longPlayer: false, widestLegend: false, ownershipStale: false, formEmpty: false, genuine: null as SocialShareSnapshot["trends"], latest: null as SocialShareSnapshot | null };
   await page.context().route("**/*", route => ["127.0.0.1", "localhost"].includes(new URL(route.request().url()).hostname) ? route.continue() : route.abort());
   // Evidence harness only (lane TT): serve committed logo bytes from a folder, so PNG pins can be checked while a
   // working-tree logo is modified by someone else. Unset in normal runs.
@@ -140,6 +140,8 @@ async function install(page: Page, access: Access = { role: "social_editor", sig
     }
     // genuine (TT-2): a captured production trend layer on the offline fixture schedule. Schedule row abbreviations are
     // masked so no fixture "GP this week" chip sits beside a genuine player; logos still come from the edition's teams.
+    // formEmpty (TT-3): Recent Form has no qualifier (early season); the other sections are unchanged.
+    if (controller.formEmpty && next.trends) next = { ...next, trends: { ...next.trends, sections: { ...next.trends.sections, hot: { ...next.trends.sections.hot, qualifiers: 0, hot: [], cold: [] } } } };
     if (controller.genuine) next = { ...next, trends: controller.genuine, rows: next.rows.map(row => ({ ...row, team: { ...row.team, abbreviation: `x${row.team.abbreviation}` } })) };
     controller.latest = next;
     return route.fulfill({ json: next, headers: { "Cache-Control": "no-store" } });
@@ -746,7 +748,7 @@ test("Wednesday edition recomputes every card for Thursday to Sunday and names t
 function tuesdayCards(edition: SocialShareSnapshot): [string, string, string[]][] {
   const ids = (list: { nhlId: number }[]) => list.map(item => String(item.nhlId));
   return [
-    ["hot", "HOT & COLD", [...ids(hotCold(edition, true).hot), ...ids(hotCold(edition, true).cold)]],
+    ["hot", "RECENT FORM", [...ids(hotCold(edition, true).hot), ...ids(hotCold(edition, true).cold)]],
     ["deployment", "DEPLOYMENT CHANGES", [...ids(deploymentChanges(edition, true).up), ...ids(deploymentChanges(edition, true).down)]],
     ["rates", "RATE STANDOUTS", Object.values(rateStandouts(edition, true)).flatMap(ids)],
     ["movers", "OWNERSHIP MOVERS", [...ids(ownershipMovers(edition, true).risers), ...ids(ownershipMovers(edition, true).fallers)]],
@@ -775,13 +777,44 @@ test("Tuesday trend cards list the server's sections with definitions and a sour
     await expect(download).toBeEnabled();
     await downloadedPng(page, `tuesday-${card}`);
   }
+  // Recent Form says what it is on the card (and so in the PNG): early season, small sample, rule id.
+  await graphic.selectOption("hot");
+  await expect(square).toContainText("Early season · small sample");
+  await expect(square).toContainText("recent-form-v1-early");
+  // Deployment: a hero never contradicts its column (TOI sign, or the role arrow for role-only rows).
+  await graphic.selectOption("deployment");
+  for (const column of ["up", "down"]) {
+    const heroes = await square.locator(`[data-column="${column}"] [data-player] [class*="trendValue"] > strong`).allTextContents();
+    expect(heroes.length).toBeGreaterThan(0);
+    for (const hero of heroes) expect(hero.startsWith(column === "up" ? "+" : "−") || hero.startsWith(column === "up" ? "▲" : "▼")).toBe(true);
+  }
   // Movers are in percentage points of rostered %, never adds or drops.
+  await graphic.selectOption("movers");
   await expect(square).toContainText("PCT PTS ROSTERED");
+  // Fixture ownership carries decimals, so the change keeps one; whole-number sources show "+17" (unit test).
+  expect(await square.locator("[data-player] [class*='trendValue'] strong").first().textContent()).toMatch(/^[+−]\d+\.\d$/);
   await expect(square).toHaveAttribute("aria-label", /^FHFH Tuesday trends, ownership movers.*PCT PTS ROSTERED.*pct pts = percentage-point change in Yahoo rostered %.*not adds\/drops\.$/);
   await graphic.selectOption("deployment");
   // Unknown PP is "PP ?", never "no PP".
   await expect(square.locator("[data-badge]").filter({ hasText: /no PP/i })).toHaveCount(0);
   expect(errors).toEqual([]);
+});
+
+test("an empty Recent Form shows an honest empty state and never blocks the other Tuesday exports (TT-3)", async ({ page }) => {
+  const source = await install(page);
+  source.mode = "league"; source.formEmpty = true;
+  await open(page, "tuesday-trends");
+  const graphic = page.getByRole("combobox", { name: /^Graphic/ }), square = page.getByTestId("share-square"), download = page.getByRole("button", { name: "Download PNG", exact: true });
+  await expect(graphic).toHaveValue("hot");
+  await expect(square.locator("[data-empty-form]")).toContainText("No qualifiers yet");
+  await expect(square.locator("[data-player]")).toHaveCount(0);
+  await expect(download).toBeDisabled();
+  for (const card of ["deployment", "rates", "movers"]) {
+    await graphic.selectOption(card);
+    await expect(square.locator("[data-player]").first()).toBeVisible();
+    await expect(download).toBeEnabled();
+    await downloadedPng(page, `tuesday-${card}-with-empty-form`);
+  }
 });
 
 test("Tuesday cards never rank stale or failed sources, and say why with the as-of date", async ({ page }) => {
@@ -1168,7 +1201,7 @@ test("Tuesday GENUINE DATA render: captured layer, offline, export token per car
     for (const card of ["hot", "deployment", "rates", "movers"]) {
       await page.getByRole("combobox", { name: /^Graphic/ }).selectOption(card);
       const square = page.getByTestId("share-square");
-      await expect(square).toContainText(card === "hot" ? "HOT & COLD" : card === "deployment" ? "DEPLOYMENT CHANGES" : card === "rates" ? "RATE STANDOUTS" : "OWNERSHIP MOVERS");
+      await expect(square).toContainText(card === "hot" ? "RECENT FORM" : card === "deployment" ? "DEPLOYMENT CHANGES" : card === "rates" ? "RATE STANDOUTS" : "OWNERSHIP MOVERS");
       await expect(square).not.toContainText("GP this week");
       await square.scrollIntoViewIfNeeded();
       await label();

@@ -38,3 +38,11 @@ Make `/social-share/tuesday-trends` a truthful, data-backed edition from native 
 - Found: the per-row freshness rule dropped 55 current skaters (the writer writes each row once). Fixed offline with a regression test. The captured layer predates the fix.
 - Found: hot/cold is empty on Oct 26 because nobody has ≥ 15 GP. That is a contract minimum, so the decision belongs to the chef/TJ.
 - Next: chef decides the hot/cold minimum and whether to spend the one re-run (with the freshness fix).
+
+## Checkpoint 4 (TT-3, ~16:45Z)
+- TJ (chef pop-up): hot/cold → Recent Form `recent-form-v1-early` (last 5 vs preceding 5 appearances, all 10 this season). Derived as last10 − last5 from R1 (one extra column, no new statement); proof uses season GP ≥ 10 and whole season points.
+- Deployment: abs(TOI) ≥ 1:00 sets the column by its sign; role-only rows follow the role; mixed role-only rows are left out; the hero never contradicts the column.
+- Movers show integer precision.
+- The one approved re-run is used: 11 statements, 0 errors, 439 Recent Form qualifiers, footer updated Oct 26 10:15 UTC. E2E 33/33 with pins. Vitest 221.
+- tsc: 3 errors, all in other lanes' dirty files (player-cards, rosterScheduleData); 0 in social-share.
+- No more approved reads remain. Any new capture needs a new TJ approval.

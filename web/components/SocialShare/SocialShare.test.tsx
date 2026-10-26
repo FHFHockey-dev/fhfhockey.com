@@ -1,7 +1,7 @@
 import { StrictMode } from "react";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import SocialShare, { deploymentBadges, ppChip, roleChipList } from "./SocialShare";
+import SocialShare, { deploymentBadges, moverDigits, ppChip, roleChipList, roleHero } from "./SocialShare";
 import { TUESDAY_NOT_CONNECTED, buildBlockedSnapshot, buildScheduleSnapshot, calendarWeekStart, selectScheduleDates, weekDates } from "lib/socialShare/schedule";
 import { fictionalLeagueWeek } from "lib/socialShare/fixtures";
 import { buildTrendLayer, trendDefinitions, trendExportToken } from "lib/socialShare/trends";
@@ -197,7 +197,7 @@ describe("Tuesday trend edition (lane TT)", () => {
   });
 
   it("labels every section with its definition and the movers card in points, never adds or drops", () => {
-    expect(trendDefinitions.hot.join(" ")).toMatch(/prior GP \(season minus L5\).*Min 10 prior GP · last game ≤ 7 days/);
+    expect(trendDefinitions.hot.join(" ")).toMatch(/^Recent Form \(recent-form-v1-early\): P\/GP last 5 appearances vs the 5 before.*All 10 this season · last game ≤ 7 days · Early season · small sample$/);
     expect(trendDefinitions.rates.join(" ")).toMatch(/Min 50 L5 min/);
     expect(trendDefinitions.movers.join(" ")).toMatch(/^pct pts = percentage-point change.*No observation ≠ 0% · not add\/drop counts$/);
     const snapshot = tuesdayEdition(week);
@@ -215,10 +215,18 @@ describe("Tuesday trend edition (lane TT)", () => {
   it("shows PP ? for an unknown unit and off PP only with game evidence, never no PP", () => {
     expect([ppChip(null), ppChip("none"), ppChip(2)]).toEqual(["PP ?", "off PP", "PP2"]);
     const row = (change: Partial<ShareDeploymentRow>): ShareDeploymentRow => ({ nhlId: 1, name: "A", team: "TOR", position: "C", lastGame: "2026-10-26", toi: { l5: 1000, season: 1000 }, ev: { l5: null, season: null }, pp: { l5: null, season: null },
-      delta: 0, line: { now: "L2", before: "L2" }, ppUnit: { now: null, before: 1 }, teamChange: false, lineChange: 0, ppChange: 0, ...change });
+      delta: 0, driver: "role", line: { now: "L2", before: "L2" }, ppUnit: { now: null, before: 1 }, teamChange: false, lineChange: 0, ppChange: 0, ...change });
     expect(deploymentBadges(row({}))).toEqual([{ text: "L2", tone: "flat" }, { text: "PP ?", tone: "flat" }]);
     expect(deploymentBadges(row({ line: { now: "L1", before: "L3" }, lineChange: 1, ppUnit: { now: "none", before: 1 }, ppChange: -1 }))).toEqual([{ text: "▲ L3 → L1", tone: "up" }, { text: "▼ PP1 → off PP", tone: "down" }]);
     expect(deploymentBadges(row({ teamChange: true, line: { now: "L1", before: null } })).map(badge => badge.text)).toEqual(["NEW TEAM", "L1", "PP ?"]);
     for (const state of [null, "none", 1, 2, 3] as const) expect(ppChip(state)).not.toMatch(/no PP/i);
+    // Role-only heroes name the role direction, never a TOI number (TT-3).
+    expect(roleHero(row({ lineChange: 1 }))).toBe("▲ LINE");
+    expect(roleHero(row({ lineChange: -1, ppChange: -1 }))).toBe("▼ LINE + PP");
+  });
+
+  it("shows whole-number Yahoo rostered % without a decimal, and keeps one only when the source has decimals (TT-3)", () => {
+    expect(moverDigits([{ latest: 45, previous: 28 }, { latest: 31, previous: 44 }])).toBe(0);
+    expect(moverDigits([{ latest: 45.5, previous: 28 }])).toBe(1);
   });
 });

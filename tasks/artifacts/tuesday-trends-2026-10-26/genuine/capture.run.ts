@@ -11,7 +11,7 @@ import { loadTrendLayer, TREND_LIMITS } from "lib/socialShare/trendSources";
 const MAX_STATEMENTS = 40;
 it("captures one genuine Tuesday layer", async () => {
   // TT_DRY_* point a rehearsal at a fictional .invalid host and a scratch folder.
-  const dir = process.env.TT_DRY_DIR ?? process.env.TT_CAPTURE_DIR!, url = process.env.TT_DRY_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL!, key = process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY!;
+  const dir = process.env.TT_DRY_DIR ?? process.env.TT_RUN_DIR ?? process.env.TT_CAPTURE_DIR!, url = process.env.TT_DRY_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL!, key = process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY!;
   if (!url || !key) throw new Error("Supabase URL or public key missing from web/.env.local");
   const host = new URL(url).host, log: Record<string, unknown>[] = [], bodies: Record<string, unknown[][]> = {};
   let inFlight = 0, maxInFlight = 0;
@@ -72,6 +72,9 @@ it("captures one genuine Tuesday layer", async () => {
     fact4_pp: { gamesQueried: queriedGames.size, gamesWithPpRows: [...queriedGames].filter(id => ppcGames.has(id)).length, latestGames: latestGames.size, latestGamesWithPpRows: [...latestGames].filter(id => ppcGames.has(id)).length, ppcRows: ppc.length,
       latestRowsPpUnitNull: latest.filter(row => row.pp_unit === null).length, latestRowsPpUnitNullWithoutGameRows: latest.filter(row => row.pp_unit === null && !ppcGames.has(row.game_id)).length },
     fact5_map: { valuesQueried: log.filter(entry => entry.table === "yahoo_nhl_player_map_read").map(entry => entry.filters), mapRows: map.length, keysWithOneNhlId: [...mapIds.values()].filter(set => set.size === 1).length, keysWithManyNhlIds: [...mapIds.values()].filter(set => set.size > 1).length, evRows: ev.length },
+    recentForm: { rule: layer.sections.hot.rule, qualifiers: layer.sections.hot.qualifiers, up: layer.sections.hot.hot.length, down: layer.sections.hot.cold.length,
+      seasonGpAtLeast10: latest.filter(row => num(row.season_games_played) && (row.season_games_played as number) >= 10).length, last10Present: latest.filter(row => num(row.points_total_last10)).length },
+    footerFreshness: { metricsUpdatedAt: layer.metricsUpdatedAt, metricsThrough: layer.metricsThrough },
     sections: Object.fromEntries(Object.entries(layer.sections).map(([kind, section]) => [kind, { state: section.state, reasons: section.reasons, listed: Object.values(section).filter(Array.isArray).filter(list => list.length && typeof list[0] === "object").reduce((total, list) => total + list.length, 0) }])),
   };
   writeFileSync(`${dir}/layer.json`, `${JSON.stringify({ capturedAt, finishedAt, context, layer }, null, 2)}\n`);

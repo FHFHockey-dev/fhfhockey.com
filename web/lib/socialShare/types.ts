@@ -150,8 +150,10 @@ export type SharePlayerLayer = {
 /** Tuesday sections (CONTRACT.md in tasks/artifacts/tuesday-trends-2026-10-26). */
 export type ShareTrendKind = "hot" | "deployment" | "rates" | "movers";
 export type ShareTrendWho = { nhlId: number; name: string; /** Team of the player's latest game (per-game team_id). */ team: string; position: string };
-/** Tuesday form: L5 points/GP and the season baseline that excludes those five games. */
-export type ShareHotRow = ShareTrendWho & { lastGame: string; l5: number; prior: number; priorGames: number; delta: number };
+/** Edition rule for the form card. A different window needs a new id and a documented transition (CONTRACT.md). */
+export const RECENT_FORM_RULE = "recent-form-v1-early" as const;
+/** Recent Form (recent-form-v1-early): P/GP over the last 5 appearances vs the preceding 5, all in the current season. */
+export type ShareHotRow = ShareTrendWho & { lastGame: string; recent: number; preceding: number; delta: number };
 /** PP unit in one game: a unit number, "none" (the game has PP rows and the player is absent) or null (unknown). */
 export type SharePpState = number | "none" | null;
 export type ShareDeploymentRow = ShareTrendWho & {
@@ -159,6 +161,8 @@ export type ShareDeploymentRow = ShareTrendWho & {
   /** TOI per game in seconds: L5 vs season; EV from the ev rows and PP from the all row (null when unknown). */
   toi: { l5: number; season: number }; ev: { l5: number | null; season: number | null }; pp: { l5: number | null; season: number | null };
   delta: number;
+  /** Column: "toi" when abs(TOI change) ≥ 1:00 (column by its sign), else "role" (column by the line/PP direction). */
+  driver: "toi" | "role";
   /** Line/pair and PP unit in the latest game vs the previous contiguous game (null when not provable). */
   line: { now: string | null; before: string | null }; ppUnit: { now: SharePpState; before: SharePpState };
   teamChange: boolean; lineChange: -1 | 0 | 1; ppChange: -1 | 0 | 1;
@@ -180,7 +184,7 @@ export type ShareTrendLayer = {
   ownershipPreviousDate: string | null;
   /** Each section is gated on its own sources; only the players a card shows are present. */
   sections: {
-    hot: ShareTrendSectionState & { hot: ShareHotRow[]; cold: ShareHotRow[] };
+    hot: ShareTrendSectionState & { rule: typeof RECENT_FORM_RULE; qualifiers: number; hot: ShareHotRow[]; cold: ShareHotRow[] };
     deployment: ShareTrendSectionState & { up: ShareDeploymentRow[]; down: ShareDeploymentRow[] };
     rates: ShareTrendSectionState & { sogPer60: ShareRateRow[]; icfPer60: ShareRateRow[]; ixgPer60: ShareRateRow[] };
     movers: ShareTrendSectionState & { risers: ShareMoverRow[]; fallers: ShareMoverRow[] };

@@ -3,7 +3,7 @@ import { teamsInfo } from "lib/teamsInfo";
 import { buildScheduleSnapshot, weekDates } from "./schedule";
 import { fictionalLeagueWeek } from "./fixtures";
 import { fictionalTrendSources } from "./trendsFixture";
-import { buildTrendLayer, deploymentChanges, DEPLOYMENT_LIST, hotCold, MIN_PRIOR_GAMES, MIN_RATE_TOI_SECONDS_LAST5, ownershipMovers, RATE_LIST, rateStandouts, TREND_LIST, TREND_MAX_GAME_AGE_DAYS, trendSectionReady,
+import { buildTrendLayer, deploymentChanges, DEPLOYMENT_LIST, hotCold, RECENT_FORM_GAMES, MIN_RATE_TOI_SECONDS_LAST5, ownershipMovers, RATE_LIST, rateStandouts, TREND_LIST, TREND_MAX_GAME_AGE_DAYS, trendSectionReady,
   type ShareRollingRow, type ShareTrendSources } from "./trends";
 import type { SocialShareSnapshot } from "./types";
 
@@ -22,7 +22,7 @@ const TOR = teamsInfo.TOR.id, MTL = teamsInfo.MTL.id;
 function skater(id: number, games: Partial<ShareRollingRow>[], base: Partial<ShareRollingRow> = {}): ShareRollingRow[] {
   return games.map((game, index) => ({
     player_id: id, team_id: TOR, season, game_id: 9000 + index, game_date: `2026-10-${26 - index * 2}`, strength_state: "all", updated_at: fresh, season_games_played: 20 - index,
-    points_avg_season: 0.6, points_total_last5: 3, toi_seconds_avg_last5: 1100, toi_seconds_avg_season: 1100, toi_seconds_total_last5: 5500,
+    points_avg_season: 0.6, points_total_last5: 3, points_total_last10: 5, toi_seconds_avg_last5: 1100, toi_seconds_avg_season: 1100, toi_seconds_total_last5: 5500,
     pp_toi_seconds_total_last5: 600, pp_toi_seconds_avg_season: 120, sog_per_60_last5: 9, sog_per_60_season: 8, shot_attempts_per_60_last5: 16, shot_attempts_per_60_season: 15,
     ixg_per_60_last5: 0.9, ixg_per_60_season: 0.8, line_combo_slot: 2, line_combo_group: "forward", pp_unit: 1, ...base, ...game,
   }));
@@ -33,28 +33,44 @@ function sources(rolling: ShareRollingRow[], extra: Partial<ShareTrendSources> =
     players: { rows: ids.map(id => ({ id, fullName: `Skater ${id}`, position: "C" as const })) }, ...extra };
 }
 
-describe("Tuesday form (hot/cold)", () => {
-  it("compares L5 points/GP with the season baseline that excludes those five games", () => {
-    // 20 GP at 0.60 = 12 points; 5 in the last five → L5 1.00, prior 7 / 15 = 0.47, delta +0.53.
-    const layer = buildTrendLayer(sources(skater(1, [{ points_total_last5: 5 }, {}])), context);
-    expect(layer.sections.hot.hot).toEqual([expect.objectContaining({ nhlId: 1, l5: 1, prior: 0.47, priorGames: 15, delta: 0.53, team: "TOR", lastGame: "2026-10-26" })]);
-    expect(layer.sections.hot.cold).toEqual([]);
+describe("Recent Form (recent-form-v1-early)", () => {
+  it("compares P/GP over the last 5 appearances with the preceding 5, with no overlap", () => {
+    // 20 GP, 12 season points; 6 in the last five and 8 in the last ten → last 5 1.20, preceding 0.40, change +0.80.
+    const layer = buildTrendLayer(sources(skater(1, [{ points_total_last5: 6, points_total_last10: 8 }, {}])), context);
+    expect(layer.sections.hot).toMatchObject({ rule: "recent-form-v1-early", qualifiers: 1, cold: [] });
+    expect(layer.sections.hot.hot).toEqual([expect.objectContaining({ nhlId: 1, recent: 1.2, preceding: 0.4, delta: 0.8, team: "TOR", lastGame: "2026-10-26" })]);
   });
 
-  it("needs 10 prior games and a game within the last 7 days", () => {
-    const short = skater(2, [{ season_games_played: 14, points_total_last5: 6 }]), enough = skater(3, [{ season_games_played: 15, points_total_last5: 6 }]);
-    const old = skater(4, [{ game_date: "2026-10-19", points_total_last5: 6 }]);
-    expect(MIN_PRIOR_GAMES).toBe(10); expect(TREND_MAX_GAME_AGE_DAYS).toBe(7);
-    const layer = buildTrendLayer(sources([...short, ...enough, ...old]), context);
-    expect(layer.sections.hot.hot.map(row => row.nhlId)).toEqual([3]);
+  it("needs all 10 appearances this season, proven whole season points and valid windows; missing is never zero", () => {
+    expect(RECENT_FORM_GAMES).toBe(10); expect(TREND_MAX_GAME_AGE_DAYS).toBe(7);
+    const ok = skater(2, [{ season_games_played: 10, points_avg_season: 0.8, points_total_last5: 6, points_total_last10: 8 }]);
+    const nine = skater(3, [{ season_games_played: 9, points_avg_season: 1, points_total_last5: 6, points_total_last10: 8 }]);
+    const noLast10 = skater(4, [{ points_total_last5: 6, points_total_last10: null }]);
+    const unproven = skater(5, [{ points_avg_season: 0.613, points_total_last5: 6, points_total_last10: 8 }]);
+    const overlap = skater(6, [{ points_total_last5: 6, points_total_last10: 5 }]);
+    const pastSeason = skater(7, [{ points_total_last5: 6, points_total_last10: 13 }]);
+    const old = skater(8, [{ game_date: "2026-10-19", points_total_last5: 6, points_total_last10: 8 }]);
+    const layer = buildTrendLayer(sources([...ok, ...nine, ...noLast10, ...unproven, ...overlap, ...pastSeason, ...old]), context);
+    expect(layer.sections.hot.hot.map(row => row.nhlId)).toEqual([2]);
+    expect(layer.sections.hot.qualifiers).toBe(1);
   });
 
-  it("ranks five hot and five cold from the fixture with consistent rounding", () => {
+  it("an empty Recent Form is ready with zero qualifiers and does not block the other sections", () => {
+    const layer = buildTrendLayer(sources(skater(9, [{ season_games_played: 6, toi_seconds_avg_last5: 1300, sog_per_60_last5: 12 }])), context);
+    expect(layer.sections.hot).toMatchObject({ state: "ready", qualifiers: 0, hot: [], cold: [] });
+    // Rates and deployment need 10 season games, so give them their own skater.
+    const other = buildTrendLayer(sources([...skater(9, [{ season_games_played: 6 }]), ...skater(10, [{ toi_seconds_avg_last5: 1300, sog_per_60_last5: 12 }])]), context);
+    expect(other.sections.deployment.up.map(row => row.nhlId)).toEqual([10]);
+    expect(other.sections.rates.sogPer60.map(row => row.nhlId)).toEqual([10]);
+  });
+
+  it("ranks five each way from the fixture with consistent rounding", () => {
     const { hot, cold } = hotCold(edition(), true);
     expect(hot).toHaveLength(TREND_LIST); expect(cold).toHaveLength(TREND_LIST);
-    for (const row of [...hot, ...cold]) { expect(row.delta).toBe(Number((row.l5 - row.prior).toFixed(2))); expect(row.priorGames).toBeGreaterThanOrEqual(MIN_PRIOR_GAMES); expect(row.position).not.toBe("G"); }
+    for (const row of [...hot, ...cold]) { expect(row.delta).toBe(Number((row.recent - row.preceding).toFixed(2))); expect(row.position).not.toBe("G"); }
     for (let i = 1; i < TREND_LIST; i++) { expect(hot[i - 1].delta).toBeGreaterThanOrEqual(hot[i].delta); expect(cold[i - 1].delta).toBeLessThanOrEqual(cold[i].delta); }
     expect(hot.every(row => row.weekGames !== null)).toBe(true);
+    expect(edition().trends!.sections.hot.qualifiers).toBeGreaterThan(2 * TREND_LIST);
   });
 });
 
@@ -83,6 +99,30 @@ describe("deployment", () => {
     expect([...layer.sections.deployment.up, ...layer.sections.deployment.down]).toEqual([]);
     const moved = buildTrendLayer(sources(skater(8, [{ line_combo_slot: 1, toi_seconds_avg_last5: 1300 }, { line_combo_slot: 3, team_id: MTL }])), context);
     expect(moved.sections.deployment.up).toEqual([expect.objectContaining({ nhlId: 8, team: "TOR", teamChange: true, lineChange: 0, line: { now: "L1", before: null }, ppUnit: { now: 1, before: null } })]);
+  });
+
+  it("a TOI change of 1:00 or more sets the column by its sign, whatever the role chips say (TT-3)", () => {
+    // More ice but demoted (Carrier case) → up; less ice but promoted (Greene case) → down. Chips keep their arrows.
+    const carrier = skater(30, [{ toi_seconds_avg_last5: 1204, line_combo_slot: 3, line_combo_group: "defense" }, { line_combo_slot: 1, line_combo_group: "defense" }]);
+    const greene = skater(31, [{ toi_seconds_avg_last5: 976, line_combo_slot: 3 }, { line_combo_slot: 4 }]);
+    const layer = buildTrendLayer(sources([...carrier, ...greene]), context), { up, down } = layer.sections.deployment;
+    expect(up).toEqual([expect.objectContaining({ nhlId: 30, driver: "toi", delta: 104, lineChange: -1 })]);
+    expect(down).toEqual([expect.objectContaining({ nhlId: 31, driver: "toi", delta: -124, lineChange: 1 })]);
+  });
+
+  it("role-only rows follow the role direction; mixed-direction role-only rows are left out", () => {
+    const promoted = skater(32, [{ line_combo_slot: 1, toi_seconds_avg_last5: 1080 }, { line_combo_slot: 3 }]);
+    const mixed = skater(33, [{ line_combo_slot: 1, pp_unit: 2 }, { line_combo_slot: 3, pp_unit: 1 }]);
+    const layer = buildTrendLayer(sources([...promoted, ...mixed]), context);
+    expect(layer.sections.deployment.up).toEqual([expect.objectContaining({ nhlId: 32, driver: "role", delta: -20 })]);
+    expect(layer.sections.deployment.down).toEqual([]);
+  });
+
+  it("no listed row's hero contradicts its column", () => {
+    for (const [column, rows] of Object.entries(deploymentChanges(edition(), true))) for (const row of rows) {
+      if (row.driver === "toi") expect(Math.sign(row.delta)).toBe(column === "up" ? 1 : -1);
+      else { expect(Math.abs(row.delta)).toBeLessThan(60); expect(Math.sign(row.lineChange + row.ppChange)).toBe(column === "up" ? 1 : -1); expect(row.lineChange * row.ppChange).toBeGreaterThanOrEqual(0); }
+    }
   });
 
   it("fixture deployment lists four each way and needs EV, PP and rolling sources", () => {
@@ -157,7 +197,7 @@ describe("sources and freshness", () => {
 
   it("judges freshness by the writer's newest row, so a skater idle for four days stays current (TT-2 capture)", () => {
     // Player 20 last played Oct 22; the daily writer never rewrites that row, so its updated_at is 5 days old.
-    const idle = skater(20, [{ game_date: "2026-10-22", updated_at: "2026-10-23T10:10:00Z", points_total_last5: 6 }]), busy = skater(21, [{ points_total_last5: 6 }]);
+    const idle = skater(20, [{ game_date: "2026-10-22", updated_at: "2026-10-23T10:10:00Z", points_total_last5: 6, points_total_last10: 8 }]), busy = skater(21, [{ points_total_last5: 6, points_total_last10: 8 }]);
     const layer = buildTrendLayer(sources([...idle, ...busy]), context);
     expect(layer.sections.hot.hot.map(row => row.nhlId).sort()).toEqual([20, 21]);
     expect(layer).toMatchObject({ metricsUpdatedAt: "2026-10-27T08:00:00.000Z", metricsThrough: "2026-10-26" });

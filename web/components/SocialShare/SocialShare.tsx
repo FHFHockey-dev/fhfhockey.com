@@ -10,7 +10,7 @@ import { editionCountTiers, mondayGridRows, type CountTier } from "lib/socialSha
 import { fetchEdition } from "lib/socialShare/editionFetch";
 import { editionLabel } from "lib/socialShare/edition";
 import { easiestSchedules, opponentsReady, SOFT_DEFENSE_MAX, STREAM_TEAM_RANK_MAX, streamingNights, type MatchupGame, type RankedRate, type StreamNight } from "lib/socialShare/matchups";
-import { deploymentChanges, hotCold, ownershipMovers, RATE_DIGITS, RATE_METRICS, rateStandouts, TREND_WINDOW_GAMES, trendDefinitions, trendExportToken, trendSectionReady, type RateMetric } from "lib/socialShare/trends";
+import { deploymentChanges, hotCold, ownershipMovers, RATE_DIGITS, RATE_METRICS, rateStandouts, MIN_DEPLOYMENT_TOI_DELTA_SECONDS, RECENT_FORM_GAMES, TREND_MAX_GAME_AGE_DAYS, TREND_WINDOW_GAMES, trendDefinitions, trendExportToken, trendSectionReady, type RateMetric } from "lib/socialShare/trends";
 import { MIN_GOALIE_STARTS, MIN_SKATER_GAMES, PICKUP_BANDS, PLAYER_TEAM_RANK_MAX, pickupTiers, playersMatchSelection, playersReady, specialists, type RankedPlayer, type SpecialistCategory } from "lib/socialShare/players";
 import styles from "./SocialShare.module.scss";
 import { TeamBanner, teamBannerStyle } from "./TeamBanner";
@@ -376,7 +376,7 @@ function PlayerCard({ card, snapshot, trusted, logos, brandLogo }: { card: Playe
 
 type TrendKind = ShareTrendKind;
 const TREND_KINDS: readonly TrendKind[] = ["hot", "deployment", "rates", "movers"];
-const trendTitles: Record<TrendKind, string> = { hot: "HOT & COLD", deployment: "DEPLOYMENT CHANGES", rates: "RATE STANDOUTS", movers: "OWNERSHIP MOVERS" };
+const trendTitles: Record<TrendKind, string> = { hot: "RECENT FORM", deployment: "DEPLOYMENT CHANGES", rates: "RATE STANDOUTS", movers: "OWNERSHIP MOVERS" };
 const rateTitles: Record<RateMetric, string> = { sogPer60: "SOG/60", icfPer60: "iCF/60", ixgPer60: "ixG/60" };
 const signed = (value: number, digits: number) => `${value > 0 ? "+" : value < 0 ? "−" : ""}${Math.abs(value).toFixed(digits)}`;
 const clock = (seconds: number) => `${Math.floor(Math.abs(seconds) / 60)}:${String(Math.round(Math.abs(seconds) % 60)).padStart(2, "0")}`;
@@ -394,7 +394,10 @@ export function deploymentBadges(row: ShareDeploymentRow): { text: string; tone:
   else badges.push({ text: ppChip(row.ppUnit.now), tone: "flat" });
   return badges;
 }
-const moverPct = (value: number) => `${value.toFixed(1)}%`;
+/** Yahoo rostered % is whole-number precision: show "+17", not "+17.0", unless a value carries decimals (TT-3). */
+export const moverDigits = (rows: { latest: number; previous: number }[]) => rows.every(row => Number.isInteger(row.latest) && Number.isInteger(row.previous)) ? 0 : 1;
+/** Role-only deployment hero: the role direction and what moved, never a TOI number that could contradict the column. */
+export const roleHero = (row: ShareDeploymentRow) => `${row.lineChange + row.ppChange > 0 ? "▲" : "▼"} ${[row.lineChange ? "LINE" : null, row.ppChange ? "PP" : null].filter(Boolean).join(" + ")}`;
 
 type TrendRowData = { key: string; team: string | null; name: string; meta: string; weekGames?: number | null; detail: string | string[]; value: string; label: string; second?: { value: string; label: string }; tone: "up" | "down"; badges: { text: string; tone: "up" | "down" | "flat" }[] };
 type TrendColumn = { key: string; title: string; rows: TrendRowData[] };
@@ -413,16 +416,19 @@ function trendColumns(kind: TrendKind, snapshot: SocialShareSnapshot): TrendColu
   const meta = (row: ShareTrendWho) => `${row.team} · ${row.position}`;
   if (kind === "hot") {
     const { hot, cold } = hotCold(snapshot, true);
+    // Descriptive only (recent-form-v1-early): both windows' P/GP and the change; no streak or sustainability claim.
     const row = (pick: (typeof hot)[number]): TrendRowData => ({ key: String(pick.nhlId), team: pick.team, name: pick.name, meta: meta(pick), weekGames: pick.weekGames,
-      detail: `Prior ${pick.prior.toFixed(2)} P/GP over ${pick.priorGames} GP`, value: pick.l5.toFixed(2), label: `P/GP L${TREND_WINDOW_GAMES}`, second: { value: signed(pick.delta, 2), label: "VS PRIOR" }, tone: pick.delta > 0 ? "up" : "down", badges: [] });
-    return [{ key: "hot", title: "HOT", rows: hot.map(row) }, { key: "cold", title: "COLD", rows: cold.map(row) }];
+      detail: `Prior ${TREND_WINDOW_GAMES}: ${pick.preceding.toFixed(2)} P/GP`, value: pick.recent.toFixed(2), label: `P/GP LAST ${TREND_WINDOW_GAMES}`, second: { value: signed(pick.delta, 2), label: "CHANGE" }, tone: pick.delta > 0 ? "up" : "down", badges: [] });
+    return [{ key: "hot", title: `UP VS PRIOR ${TREND_WINDOW_GAMES}`, rows: hot.map(row) }, { key: "cold", title: `DOWN VS PRIOR ${TREND_WINDOW_GAMES}`, rows: cold.map(row) }];
   }
   if (kind === "deployment") {
     const { up, down } = deploymentChanges(snapshot, true);
     const row = (pick: (typeof up)[number]): TrendRowData => ({ key: String(pick.nhlId), team: pick.team, name: pick.name, meta: meta(pick), weekGames: pick.weekGames,
-      // L5 / season per game; the column follows the role change, the value's colour its own TOI sign.
+      // L5 / season per game. TOI-driven rows show the TOI change (its sign is the column); role-only rows show the role
+      // direction instead, so the hero never contradicts the column. Chips keep their own arrows.
       detail: [`TOI ${clock(pick.toi.l5)} / ${clock(pick.toi.season)} · EV ${clockOrDash(pick.ev.l5)} / ${clockOrDash(pick.ev.season)}`, `PP ${clockOrDash(pick.pp.l5)} / ${clockOrDash(pick.pp.season)} · L5 / season`],
-      value: signedClock(pick.delta), label: "TOI/GP VS SEASON", tone: pick.delta >= 0 ? "up" : "down", badges: deploymentBadges(pick) });
+      ...(pick.driver === "toi" ? { value: signedClock(pick.delta), label: "TOI/GP VS SEASON" } : { value: roleHero(pick), label: `ROLE · TOI WITHIN ±${MIN_DEPLOYMENT_TOI_DELTA_SECONDS / 60}:00` }),
+      tone: up.includes(pick) ? "up" : "down", badges: deploymentBadges(pick) });
     return [{ key: "up", title: "USAGE UP", rows: up.map(row) }, { key: "down", title: "USAGE DOWN", rows: down.map(row) }];
   }
   if (kind === "rates") {
@@ -432,9 +438,9 @@ function trendColumns(kind: TrendKind, snapshot: SocialShareSnapshot): TrendColu
       detail: `Season ${pick.season.toFixed(RATE_DIGITS[metric])} · ${pick.l5Minutes} L${TREND_WINDOW_GAMES} min`,
       value: pick.l5.toFixed(RATE_DIGITS[metric]), label: `L${TREND_WINDOW_GAMES}`, second: { value: signed(pick.delta, RATE_DIGITS[metric]), label: "Δ/60" }, tone: "up" as const, badges: [] })) }));
   }
-  const { risers, fallers } = ownershipMovers(snapshot, true), trends = snapshot.trends!;
+  const { risers, fallers } = ownershipMovers(snapshot, true), trends = snapshot.trends!, digits = moverDigits([...risers, ...fallers]);
   const row = (mover: (typeof risers)[number]): TrendRowData => ({ key: String(mover.nhlId), team: mover.team, name: mover.name, meta: meta(mover), weekGames: mover.weekGames,
-    detail: `${moverPct(mover.previous)} ${dateLabel(trends.ownershipPreviousDate!)} → ${moverPct(mover.latest)} ${dateLabel(trends.ownershipLatestDate!)}`, value: `${signed(mover.delta, 1)}`, label: "PCT PTS ROSTERED", tone: mover.delta > 0 ? "up" : "down", badges: [] });
+    detail: `${mover.previous.toFixed(digits)}% ${dateLabel(trends.ownershipPreviousDate!)} → ${mover.latest.toFixed(digits)}% ${dateLabel(trends.ownershipLatestDate!)}`, value: `${signed(mover.delta, digits)}`, label: "PCT PTS ROSTERED", tone: mover.delta > 0 ? "up" : "down", badges: [] });
   return [{ key: "risers", title: "RISING", rows: risers.map(row) }, { key: "fallers", title: "FALLING", rows: fallers.map(row) }];
 }
 
@@ -456,9 +462,10 @@ function TrendCard({ kind, snapshot, trusted, logos, brandLogo }: { kind: TrendK
   const ready = trendReady(kind, snapshot, trusted);
   const columns = ready ? trendColumns(kind, snapshot) : [];
   return <>
-    <CardHeader snapshot={snapshot} brandLogo={brandLogo} eyebrow={ready ? `${editionDay(snapshot)} · ${kind === "movers" ? "Rostered % movers" : kind === "hot" ? "Tuesday form" : `Last ${TREND_WINDOW_GAMES} games vs season`}` : "Unranked preview"} title={trendTitles[kind]} compact />
+    <CardHeader snapshot={snapshot} brandLogo={brandLogo} eyebrow={ready ? `${editionDay(snapshot)} · ${kind === "movers" ? "Rostered % movers" : kind === "hot" ? "Early season · small sample" : `Last ${TREND_WINDOW_GAMES} games vs season`}` : "Unranked preview"} title={trendTitles[kind]} compact />
     {!ready ? <div className={styles.matchupEmpty}><strong>Ranking unavailable</strong><p>Trend cards need a ready schedule and current {kind === "movers" ? "Yahoo ownership" : "rolling game metrics"}; {trendUnreadyReason(kind, snapshot, trusted)}.</p></div>
-      : <div className={styles.trendColumns} style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(0, 1fr))` }}>{columns.map(column => <div key={column.key} className={styles.trendColumn}>
+      : kind === "hot" && columns.every(column => !column.rows.length) ? <div className={styles.matchupEmpty} data-empty-form><strong>No qualifiers yet</strong><p>Recent Form needs {RECENT_FORM_GAMES} completed appearances this season with complete points, the last within {TREND_MAX_GAME_AGE_DAYS} days, and a change between the two windows. The other Tuesday cards are unaffected.</p></div>
+      : <div className={styles.trendColumns} style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(0, 1fr))` }}>{columns.map(column => <div key={column.key} data-column={column.key} className={styles.trendColumn}>
         <h3>{column.title}</h3>
         {column.rows.map(row => {
           const team = snapshot.teams.find(item => item.abbreviation === row.team) ?? { id: 0, abbreviation: row.team ?? "—", name: row.team ?? "Unknown team" };
@@ -655,7 +662,7 @@ export default function SocialShare({ format, asOf }: { format: SocialShareForma
           <button type="button" disabled={loading || exporting} onClick={() => void load(weekStart, selectedRef.current)}>Refresh schedule</button>
           <label>Graphic<select value={graphic} onChange={event => { setGraphic(event.target.value); setFeedback(""); }} disabled={!snapshot || loading || exporting}>
             {format === "tuesday-trends" ? <>
-            <option value="hot">Hot &amp; cold (Tuesday default)</option>
+            <option value="hot">Recent form · early season (Tuesday default)</option>
             <option value="deployment">Deployment changes (TOI, line, PP)</option>
             <option value="rates">Rate standouts (SOG/60, iCF/60, ixG/60)</option>
             <option value="movers">Ownership movers (rostered %)</option>

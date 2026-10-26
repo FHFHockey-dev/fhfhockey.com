@@ -1,0 +1,25 @@
+{
+  "capturedAt": "2026-10-26T16:18:39.380Z",
+  "tokens": {
+    "hot": {
+      "token": "schedule-c32cbb0e|hot|2026-10-26,2026-10-27,2026-10-28,2026-10-29,2026-10-30,2026-10-31,2026-11-01",
+      "expected": "schedule-c32cbb0e|hot|2026-10-26,2026-10-27,2026-10-28,2026-10-29,2026-10-30,2026-10-31,2026-11-01",
+      "png": "fhfh-tuesday-trends-hot-2026-10-26-schedule-c32cbb0e.png"
+    },
+    "deployment": {
+      "token": "schedule-c32cbb0e|deployment|2026-10-26,2026-10-27,2026-10-28,2026-10-29,2026-10-30,2026-10-31,2026-11-01",
+      "expected": "schedule-c32cbb0e|deployment|2026-10-26,2026-10-27,2026-10-28,2026-10-29,2026-10-30,2026-10-31,2026-11-01",
+      "png": "fhfh-tuesday-trends-deployment-2026-10-26-schedule-c32cbb0e.png"
+    },
+    "rates": {
+      "token": "schedule-c32cbb0e|rates|2026-10-26,2026-10-27,2026-10-28,2026-10-29,2026-10-30,2026-10-31,2026-11-01",
+      "expected": "schedule-c32cbb0e|rates|2026-10-26,2026-10-27,2026-10-28,2026-10-29,2026-10-30,2026-10-31,2026-11-01",
+      "png": "fhfh-tuesday-trends-rates-2026-10-26-schedule-c32cbb0e.png"
+    },
+    "movers": {
+      "token": "schedule-c32cbb0e|movers|2026-10-26,2026-10-27,2026-10-28,2026-10-29,2026-10-30,2026-10-31,2026-11-01",
+      "expected": "schedule-c32cbb0e|movers|2026-10-26,2026-10-27,2026-10-28,2026-10-29,2026-10-30,2026-10-31,2026-11-01",
+      "png": "fhfh-tuesday-trends-movers-2026-10-26-schedule-c32cbb0e.png"
+    }
+  }
+}

@@ -310,7 +310,7 @@ describe("social editor schedule API", () => {
     trendSource.loadTrendLayer.mockRejectedValueOnce(new Error("offline"));
     const failed = await request({ format: "tuesday-trends", weekStart });
     expect(failed.code).toBe(200);
-    expect(failed.body.trends.sections.hot).toEqual({ state: "missing", reasons: ["Trend sources could not be read."], hot: [], cold: [] });
+    expect(failed.body.trends.sections.hot).toEqual({ state: "missing", reasons: ["Trend sources could not be read."], rule: "recent-form-v1-early", qualifiers: 0, hot: [], cold: [] });
     // An unready schedule makes no trend read; a failed schedule is a 503 with no trend read.
     trendSource.loadTrendLayer.mockClear();
     upstream.getSchedule.mockImplementation(async (week: string) => ({ ...fictionalLeagueWeek(week, new Date().toISOString()), coveredDates: weekDates(week).slice(1) }));
