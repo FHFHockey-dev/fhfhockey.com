@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as rsoPolicy from "../player-forecasts/rsoUsePolicy";
 import { defaultIntent, defaultWorkspace } from "./workspace";
-import { evaluatePlan, planRoster } from "./planning";
+import { evaluatePlan, forecastPointsReader, planRoster, playerAssignedPoints } from "./planning";
+import { knownDropOrder } from "./retention";
 import { reconcileIntent } from "./reconciliation";
-import { streamingChainSteps } from "./streamingChain";
+import { buildStreamingChains, streamingChainSteps } from "./streamingChain";
 import { zonedMidnight } from "./planningDates";
 import { snapshotSchema } from "../in-season/workspaceSchema";
 import type { GameForecast, PlanIntent, PlanStep, PlanningPlayer, PlanningSnapshot, StreamingChain } from "./planningTypes";
@@ -271,6 +272,39 @@ describe("streaming chain star vs streamer", () => {
     const plan = planRoster(week(starWeek(2, 1), { asOf: "2026-10-28T14:00:00Z", remaining: 1 }), { ...intent(), objective: "outcome" }).streaming!;
     // Shown totals stay projected FPts; the blend is the ranking net.
     expect(plan.chains[0]).toMatchObject({ netGames: 2, netPoints: 4, netScore: 4 });
+  });
+});
+
+/** C/LW/RW play daily for little, so they rank first to drop, but dropping one loses as many games as the D streamer adds.
+ * The D plays Monday only (4th in drop order): only his drop gains. */
+const fourthDrop: Spec[] = [
+  { id: "c1", team: "TC", days: [0, 1, 2, 3, 4, 5, 6], perGame: 0.01, rostered: true, positions: ["C"] },
+  { id: "lw1", team: "TL", days: [0, 1, 2, 3, 4, 5, 6], perGame: 0.02, rostered: true, positions: ["LW"] },
+  { id: "rw1", team: "TR", days: [0, 1, 2, 3, 4, 5, 6], perGame: 0.03, rostered: true, positions: ["RW"] },
+  { id: "d1", team: "TD", days: [0], perGame: 0.4, rostered: true, positions: ["D"] },
+  { id: "dfa", team: "DFA", days: [1, 2, 3, 4, 5, 6], perGame: 1, positions: ["D"] },
+];
+const fourSlots = { slots: { C: 1, LW: 1, RW: 1, D: 1, BN: 0 } };
+
+describe("streaming chain drop candidates", () => {
+  it("tries drops past the first three", () => {
+    const plan = legSummary(week(fourthDrop, fourSlots));
+    expect(plan.chains[0].legs.map(leg => [leg.startDate, leg.endDate, leg.playerId, leg.dropPlayerId])).toEqual([[WEEK[1], WEEK[6], "dfa", "d1"]]);
+    expect(plan.chains[0].netGames).toBe(6);
+    expect(plan.limitations).not.toContain("Streaming search reached its time limit; some drop candidates were not tried.");
+  });
+
+  it("stops after the first three past the deadline and says so", () => {
+    const snapshot = week(fourthDrop, fourSlots), base = intent();
+    // Most starts: under Best projected points, swapping a 0.01 C for the 1.0 D is a points gain on its own.
+    const baseline = evaluatePlan(snapshot, base, "agp", []);
+    const dropOrder = knownDropOrder(snapshot.players.filter(player => player.availability === "rostered"),
+      player => playerAssignedPoints(snapshot, baseline, player.id));
+    expect([...dropOrder.keys()]).toEqual(["c1", "lw1", "rw1", "d1"]);
+    const plan = buildStreamingChains({ snapshot, intent: base, baseline, dropOrder, dueNow: null, deadline: 0,
+      evaluate: steps => evaluatePlan(snapshot, base, "agp", steps, false), points: forecastPointsReader(snapshot) });
+    expect(plan.chains).toEqual([]);
+    expect(plan.limitations).toContain("Streaming search reached its time limit; some drop candidates were not tried.");
   });
 });
 

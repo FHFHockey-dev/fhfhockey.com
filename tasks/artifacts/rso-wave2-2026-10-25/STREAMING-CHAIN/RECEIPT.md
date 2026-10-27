@@ -76,7 +76,7 @@ The only existing read path is `PlanningPlayer.form`. It is loaded in `lib/roste
 - DP proposals are heuristic (gains from per-day matchings; the two-spot pass is sequential and greedy). Only `evaluatePlan`-certified chains are returned, and their totals come from that evaluation.
 - Chain structure is AGP-first, then FPts. A 1-game star never beats a 2-game streamer in the same window. **Lifted on 10-27; see "Blended ranking and FPts-first chains" below.**
 - Only free agents and manager-available players are chained; waiver claims are not.
-- Daily lineup leagues only. One acquisition period per chain. At most 3 drop candidates (`knownDropOrder`).
+- Daily lineup leagues only. One acquisition period per chain. At most 3 drop candidates (`knownDropOrder`). **The drop cap was lifted on 10-27; see "Drop candidates" below.**
 - Within a stream spot, a player is never re-added.
 - Option totals after a swap are estimates until re-planned.
 - The goalie minimum is not targeted directly. A goalie streamer counts when a G slot is open, and the evaluation reports `goalie.risk`. **Lifted on 10-27; see "Goalie minimum" below.**
@@ -205,3 +205,16 @@ The setup is TJ's league on Wednesday: 2 adds left, a 3-start minimum with 1 cre
   - `TZ=UTC` and then `TZ=America/New_York`, the RSO vitest command: 57 files and 1480 tests passed in each.
   - `npx tsc --noEmit` (8 GB, under the heavy lock): exit 0.
   - eslint on the 5 touched files: clean.
+
+## Drop candidates (10-27)
+- **Single spots:** every droppable player in `knownDropOrder` is tried. The first 3 (the old cap) are always tried; the rest are tried only before `deadline`. The deadline is `planRoster`'s start + `timeBudgetMs` and is unbounded when no budget is set. This is a one-line change in `planning.ts`.
+- **Two-spot pairs:** pairs come from the 4 drops whose own best single spot does most, rather than the first 3 in drop order. Drop order breaks ties, and drops with no spot go last. The first 3 pairs per goal pass always run; the rest stop at the deadline.
+- When the deadline cuts the search, the plan says "Streaming search reached its time limit; some drop candidates were not tried."
+- **Fixtures** ("streaming chain drop candidates"):
+  - C/LW/RW play daily for little, so they rank first to drop, but dropping one costs as many games as the D streamer adds. The D plays Monday only and is 4th in drop order. The chain now finds "drop d1, stream the D Tue–Sun", +6.
+  - With `deadline: 0` and "Most starts", only the first 3 are tried, no chain is found and the limitation appears.
+- **Work bound:** with a ~17-player roster this is about 34 single runs and 6 pairs × 2 orders × (adds − 1) splits × goals, up from 6 + 3 pairs. It is not timed on a production-size pool.
+- **Checks:**
+  - `TZ=UTC` and then `TZ=America/New_York`, the RSO vitest command: 57 files and 1482 tests passed in each (about 29 s each).
+  - tsc (heavy lock): exit 0.
+  - eslint on `streamingChain.ts`, its test and `planning.ts`: clean.
