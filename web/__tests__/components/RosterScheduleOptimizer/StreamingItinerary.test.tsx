@@ -69,7 +69,7 @@ describe("Streaming itinerary", () => {
     const goalie = (projected: number, risk: boolean) => ({ goalie: { projected, risk, credited: 1, confirmed: 0, required: 3 } }) as PlanEvaluation;
     const meetsChain: StreamingChain = { ...chain, netGames: 3, netPoints: 3.6, evaluation: goalie(3.2, false) };
     const missesChain: StreamingChain = { ...chain, netGames: 4, netPoints: 7.04, evaluation: goalie(2, true) };
-    render(<StreamingItinerary {...props} plan={{ ...plan, chains: [meetsChain, missesChain], goalieMinimum: { required: 3, baseline: 2, met: false } }} onSelect={vi.fn()} />);
+    render(<StreamingItinerary {...props} plan={{ ...plan, chains: [meetsChain, missesChain], goalieMinimum: { required: 3, baseline: 2, met: false, cover: true } }} onSelect={vi.fn()} />);
     const group = screen.getByRole("group", { name: "Stream spots" });
     expect(within(group).getAllByRole("button").map(button => button.textContent)).toEqual(["One spot · +3 AGP · meets G min · suggested", "One spot · +4 AGP · misses G min"]);
     expect(screen.getByLabelText("Goalie minimum").textContent).toBe("Goalie starts 2/3 → 3.2/3 with this plan · meets the minimum");
@@ -77,6 +77,13 @@ describe("Streaming itinerary", () => {
     fireEvent.click(within(group).getByRole("button", { name: /\+4 AGP/ }));
     expect(screen.getByLabelText("Goalie minimum").textContent).toBe("Goalie starts 2/3 → 2/3 with this plan · misses the minimum");
     expect(screen.getByText("The one-spot plan (+3 AGP) meets it instead.")).toBeTruthy();
+  });
+
+  it("marks an accepted goalie risk without a tradeoff note", () => {
+    const evaluation = { goalie: { projected: 2, risk: true, credited: 1, confirmed: 0, required: 3 } } as PlanEvaluation;
+    render(<StreamingItinerary {...props} plan={{ ...plan, chains: [{ ...chain, evaluation }], goalieMinimum: { required: 3, baseline: 2, met: false, cover: false } }} onSelect={vi.fn()} />);
+    expect(screen.getByLabelText("Goalie minimum").textContent).toBe("Goalie starts 2/3 → 2/3 with this plan · misses the minimum (risk accepted)");
+    expect(screen.queryByText(/Meeting it costs|meets it instead/)).toBeNull();
   });
 
   it("offers the one-spot chain beside a suggested two-spot split and explains a blocked select", () => {

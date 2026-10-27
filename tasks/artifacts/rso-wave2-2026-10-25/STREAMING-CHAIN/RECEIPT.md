@@ -183,3 +183,8 @@ The setup is TJ's league on Wednesday: 2 adds left, a 3-start minimum with 1 cre
 - **No code change needed.** `buildStreamingChains` already builds its days from max(today, `context.startDate`) through `context.endDate`, and it stops at the acquisition period's end. The sibling session's "plan from day" slider sets `context.startDate`. The parent's itinerary `dates` are `datesBetween(context.startDate, context.endDate)`, so a Thursday start renders Thu–Sun.
 - **New test** ("starts at a later plan-from day (Thu) and runs to the range end"): TJ's +7 week, read on Monday, with `startDate` on Thursday. The chain is WPG Thu–Fri → EDM Sat–Sun, +4 AGP and 2 adds. Steps are claimed at the Thu and Sat league midnights, and every game date falls in Thu–Sun.
 - **Checks:** the same as the goalie section; the full RSO suite ran with this test present.
+
+## Goalie minimum respects "accept risk" (10-27, TJ pop-up)
+- TJ: with goalie coverage set to "accept risk", goalies must not be pushed to the top. The goalie pass, the meets-first ranking and the extra most-AGP chain now run only with `intent.goalieCoverage === "cover"`.
+- With "accept risk" (the default), the chain is the plain AGP chain. The itinerary still reports progress, for example "Goalie starts 2/3 → 2/3 with this plan · misses the minimum (risk accepted)", with no tradeoff note.
+- `StreamingGoalieMinimum` gains `cover`. The goalie fixtures now use the cover intent, and the "unchanged" test also covers the accepted risk.

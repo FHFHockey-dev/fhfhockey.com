@@ -23,8 +23,9 @@ const meets = (chain: StreamingChain) => !chain.evaluation.goalie.risk;
 const chainName = (chain: StreamingChain) => `${chain.spots === 1 ? "one-spot" : "two-spot"} plan (${signed(chain.netGames)} AGP)`;
 /** Goalie-minimum readout for the shown chain, and what meeting it costs against a chain that misses it (never silent). */
 function goalieStatus(minimum: StreamingGoalieMinimum, chain: StreamingChain, chains: StreamingChain[]) {
-  const status = `Goalie starts ${number(minimum.baseline)}/${minimum.required} → ${number(chain.evaluation.goalie.projected)}/${minimum.required} with this plan · ${meets(chain) ? "meets" : "misses"} the minimum`;
+  const status = `Goalie starts ${number(minimum.baseline)}/${minimum.required} → ${number(chain.evaluation.goalie.projected)}/${minimum.required} with this plan · ${meets(chain) ? "meets the minimum" : minimum.cover ? "misses the minimum" : "misses the minimum (risk accepted)"}`;
   let tradeoff: string | null = null;
+  if (!minimum.cover) return { status, tradeoff };
   if (meets(chain)) {
     const other = chains.find(item => !meets(item) && (item.netGames > chain.netGames
       || item.netGames === chain.netGames && item.netPoints !== null && chain.netPoints !== null && item.netPoints > chain.netPoints));

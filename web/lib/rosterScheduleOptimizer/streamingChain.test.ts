@@ -184,11 +184,12 @@ const midWeek = (credited: number | null, required: number | null = 3): WeekOpti
   slots: { C: 1, UTIL: 1, G: 1, BN: 0 }, goalieMinimum: { required, credited, counts: "starts", penalty: "lose_goalie_categories",
     periodStart: "2026-10-26", periodEnd: "2026-11-02" } });
 const legRows = (chain: StreamingChain) => chain.legs.map(leg => [leg.startDate, leg.endDate, leg.playerId, leg.dropPlayerId]);
+const cover = (extra: Partial<PlanIntent> = {}): PlanIntent => ({ ...intent(), goalieCoverage: "cover", ...extra });
 
 describe("streaming chain goalie minimum", () => {
   it("streams a goalie to reach 3/3 when the lineup would miss, and still offers the most-games chain", () => {
-    const plan = legSummary(week(goalieWeek, midWeek(1)));
-    expect(plan.goalieMinimum).toEqual({ required: 3, baseline: 2, met: false });
+    const plan = planRoster(week(goalieWeek, midWeek(1)), cover()).streaming!;
+    expect(plan.goalieMinimum).toEqual({ required: 3, baseline: 2, met: false, cover: true });
     // Best: a second spot swaps the rostered goalie, after his last start, for a goalie streamer.
     expect(plan.recommended).toBe(2);
     expect(plan.chains.map(chain => [chain.spots, chain.netGames, chain.evaluation.goalie.risk])).toEqual([[2, 4, false], [1, 3, false], [1, 4, true]]);
@@ -205,7 +206,7 @@ describe("streaming chain goalie minimum", () => {
   });
 
   it("streams a goalie through the one open spot when the rostered goalie is protected", () => {
-    const plan = planRoster(week(goalieWeek, midWeek(1)), { ...intent(), protectedPlayerIds: ["g1"] }).streaming!;
+    const plan = planRoster(week(goalieWeek, midWeek(1)), cover({ protectedPlayerIds: ["g1"] })).streaming!;
     expect(plan.recommended).toBe(1);
     const [chain, mostGames] = plan.chains;
     expect(legRows(chain)).toEqual([[WEEK[3], WEEK[3], "wpg", "drop"], [WEEK[4], WEEK[6], "gs", "wpg"]]);
@@ -216,12 +217,16 @@ describe("streaming chain goalie minimum", () => {
     expect(plan.chains).toHaveLength(2);
   });
 
-  it("leaves the chain alone when the minimum is already met or absent", () => {
-    const met = legSummary(week(goalieWeek, midWeek(3)));
-    const none = legSummary(week(goalieWeek, midWeek(null, null)));
+  it("leaves the chain alone when the minimum is met, absent or its risk accepted", () => {
+    const met = planRoster(week(goalieWeek, midWeek(3)), cover()).streaming!;
+    const none = planRoster(week(goalieWeek, midWeek(null, null)), cover()).streaming!;
+    // "Accept risk" reports the shortfall but never pushes goalies up.
+    const accepted = legSummary(week(goalieWeek, midWeek(1)));
     expect(met.goalieMinimum).toMatchObject({ required: 3, met: true });
     expect(none.goalieMinimum).toBeUndefined();
-    for (const plan of [met, none]) {
+    expect(accepted.goalieMinimum).toEqual({ required: 3, baseline: 2, met: false, cover: false });
+    expect(accepted.chains[0].evaluation.goalie.risk).toBe(true);
+    for (const plan of [met, none, accepted]) {
       expect(plan.chains.map(legRows)).toEqual([[[WEEK[3], WEEK[4], "wpg", "drop"], [WEEK[5], WEEK[6], "edm", "wpg"]]]);
       expect(plan.chains[0].netGames).toBe(4);
     }
@@ -229,7 +234,7 @@ describe("streaming chain goalie minimum", () => {
 
   it("says so when no chain can reach the minimum", () => {
     const short = goalieWeek.filter(spec => spec.id !== "gs");
-    const plan = legSummary(week(short, midWeek(0)));
+    const plan = planRoster(week(short, midWeek(0)), cover()).streaming!;
     expect(plan.goalieMinimum).toMatchObject({ baseline: 1, met: false });
     expect(plan.limitations).toContain("No streaming chain reaches the goalie minimum with the adds left.");
     expect(plan.chains[0].netGames).toBeGreaterThan(0);

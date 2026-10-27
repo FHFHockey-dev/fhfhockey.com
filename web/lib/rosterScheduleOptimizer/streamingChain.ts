@@ -11,7 +11,7 @@ import type { PlanEvaluation, PlanIntent, PlanStep, PlanningGame, PlanningPlayer
  * add. Windows come from team schedules and open lineup slots (small per-day matchings); players are ranked within a
  * window by projected points over the games they would start; last-10 FPts/G orders near ties only. Proposals are heuristic; every returned chain is
  * certified by the plan evaluator, which alone supplies its legality and net totals.
- * Goalie minimum (TJ, 2026-10-27): when the no-move plan falls short of the league's goalie-start minimum, a second search
+ * Goalie minimum (TJ, 2026-10-27): with goalie coverage set to cover, when the no-move plan falls short of the minimum, a second search
  * puts expected goalie starts (up to the shortfall) ahead of games, and certified chains that meet the minimum rank first. */
 export type StreamingInputs = {
   snapshot: PlanningSnapshot; intent: PlanIntent;
@@ -73,10 +73,12 @@ export function buildStreamingChains(inputs: StreamingInputs): StreamingPlan {
   const { snapshot, intent, baseline, dropOrder } = inputs;
   const plan: StreamingPlan = { policyVersion: "rso-stream-v1", recommended: null, chains: [], limitations: [] };
   const zone = snapshot.context.timeZone, asOf = snapshot.context.asOf, rules = snapshot.rules;
-  // The minimum is targeted only when it counts starts and missing it costs something; the evaluator alone says whether it is met.
+  // The minimum is reported when missing it costs something, and targeted only when the manager chose to cover it
+  // (TJ, 10-27: "accept risk" never pushes goalies up). The evaluator alone says whether it is met.
   const required = rules.goalieMinimum.required ?? 0;
-  const targeted = required > 0 && rules.goalieMinimum.penalty !== "none";
-  if (targeted) plan.goalieMinimum = { required, baseline: baseline.goalie.projected, met: !baseline.goalie.risk };
+  const cover = intent.goalieCoverage === "cover";
+  const targeted = required > 0 && rules.goalieMinimum.penalty !== "none" && cover;
+  if (required > 0 && rules.goalieMinimum.penalty !== "none") plan.goalieMinimum = { required, baseline: baseline.goalie.projected, met: !baseline.goalie.risk, cover };
   const need = targeted && rules.goalieMinimum.counts === "starts" && baseline.goalie.risk && baseline.goalie.projected !== null
     ? required - baseline.goalie.projected : 0;
   if (rules.lineupMode !== "daily") { plan.limitations.push("Streaming chains need a daily lineup league."); return plan; }
