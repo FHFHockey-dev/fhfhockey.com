@@ -59,7 +59,7 @@ export default function TeamScheduleContext({ dates, seasonId, timeZone, enabled
           const opponentId = game ? home ? game.awayTeam.id : game.homeTeam.id : null;
           const opponent = opponentId === null ? null : data?.teams.find(row => row.id === opponentId)?.abbreviation ?? null;
           const offNight = Boolean(game) && calcTotalOffNights(team.games, context.counts, context.days.filter((_, i) => i !== index), context.days) > 0;
-          return <span key={date} aria-label={`${labelDate(date)}: ${game ? `${home ? "Home vs" : "Away at"} ${opponent ?? "unknown opponent"}` : "No game"}${offNight ? " · Off-night" : ""}`}>
+          return <span key={date} className={styles.dayCell} aria-label={`${labelDate(date)}: ${game ? `${home ? "Home vs" : "Away at"} ${opponent ?? "unknown opponent"}` : "No game"}${offNight ? " · Off-night" : ""}`}>
             <small>{new Date(`${date}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" })}</small>
             <b data-off-night={offNight} data-game={game ? home ? "home" : "away" : undefined}>{!game ? "—" : opponent
               ? <Image className={styles.opponentLogo} src={getLocalTeamLogoPath(opponent)} alt="" width={22} height={22} onError={event => { event.currentTarget.src = fallbackTeamLogo; }} />

@@ -1639,6 +1639,38 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect(screen.getByText("Target source timestamps unavailable.")).toBeTruthy();
     expect(screen.queryByText(/Baseline rate input/)).toBeNull();
   });
+  it("re-plans from a later day with the plan-from slider in every schedule view, then goes back to today", async () => {
+    pinMidweek(); // Wednesday 10-14 of the Mon 10-12 – Sun 10-18 week.
+    vi.stubGlobal("fetch", fetchMock);
+    render(<RosterScheduleOptimizer />);
+    fireEvent.click(await screen.findByRole("button", { name: "By position" }));
+    const slider = () => screen.getByRole("slider", { name: "Plan from day" }) as HTMLInputElement;
+    const range = () => [(screen.getByLabelText("From") as HTMLInputElement).value, (screen.getByLabelText("Through") as HTMLInputElement).value];
+    expect(slider().value).toBe("2");
+    expect(range()).toEqual(["2026-10-12", "2026-10-18"]);
+    fireEvent.pointerDown(slider());
+    fireEvent.change(slider(), { target: { value: "0" } }); // Days before today are not plannable.
+    expect(slider().value).toBe("2");
+    fireEvent.change(slider(), { target: { value: "4" } });
+    fireEvent.pointerUp(slider());
+    await waitFor(() => expect(range()).toEqual(["2026-10-16", "2026-10-18"]));
+    const grid = screen.getByRole("table", { name: "Lineup by position" });
+    expect([...grid.querySelectorAll("th[data-date]")].map(cell => cell.getAttribute("data-date"))).toHaveLength(7);
+    expect([...grid.querySelectorAll("th[data-greyed]")].map(cell => cell.getAttribute("data-date")))
+      .toEqual(["2026-10-12", "2026-10-13", "2026-10-14", "2026-10-15"]);
+    // The "Current week" auto-range leaves a chosen start alone.
+    await act(async () => { await Promise.resolve(); });
+    expect(range()[0]).toBe("2026-10-16");
+    expect(screen.getByText(/^Planning from .*16.*; earlier days are left out\./)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Show lineup by player" }));
+    expect(slider().value).toBe("4");
+    fireEvent.click(screen.getByRole("button", { name: "Streaming itinerary" }));
+    expect(slider().value).toBe("4");
+    fireEvent.click(screen.getByRole("button", { name: "Back to today" }));
+    await waitFor(() => expect(range()).toEqual(["2026-10-12", "2026-10-18"]));
+    expect(slider().value).toBe("2");
+    expect(screen.queryByRole("button", { name: "Back to today" })).toBeNull();
+  });
   it("labels unverified lineups as schedule capacity", async () => {
     vi.stubGlobal("fetch", fetchMock);
     render(<RosterScheduleOptimizer />);

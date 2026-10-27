@@ -8,6 +8,7 @@ import type { GameForecast, PastLineup, PlanningAssignment, PlanningGame, Planni
 import { providerStartNote } from "lib/rosterScheduleOptimizer/providerGoalieStarts";
 import InfoTooltip from "./InfoTooltip";
 import ForecastPoints from "./ForecastPoints";
+import PlanFromSlider, { type PlanFrom } from "./PlanFromSlider";
 import styles from "./SlotWeekGrid.module.scss";
 
 export type Props = {
@@ -28,6 +29,8 @@ export type Props = {
   benchCapacity?: number;
   /** The lineups the provider recorded on elapsed days; those columns show them, with each player's actual points. */
   pastLineups?: PastLineup[];
+  /** The plan-from slider over the day columns; days before `planFrom.from` are greyed and left out of the plan. */
+  planFrom?: PlanFrom;
 };
 
 const SUFFIXES = new Set(["jr", "jr.", "sr", "sr.", "ii", "iii", "iv"]);
@@ -66,7 +69,7 @@ function Logo({ abbr }: { abbr: string | null }) {
   return <Image className={styles.logo} src={getLocalTeamLogoPath(abbr)} alt="" width={18} height={18} onError={event => { event.currentTarget.src = fallbackTeamLogo; }} />;
 }
 
-export default function SlotWeekGrid({ dates, slots, assignments, games, players, roster, forecasts, pointsFor, focusedDate, onSelectPlayer, animationToken, today, benchCapacity = 0, pastLineups }: Props) {
+export default function SlotWeekGrid({ dates, slots, assignments, games, players, roster, forecasts, pointsFor, focusedDate, onSelectPlayer, animationToken, today, benchCapacity = 0, pastLineups, planFrom }: Props) {
   const playerById = new Map(players.map(player => [player.id, player]));
   // An elapsed day shows the lineup the provider recorded, not the planner's assignments (which start today).
   const pastByDate = new Map((pastLineups ?? []).filter(day => today && day.date < today).map(day => [day.date, day]));
@@ -89,7 +92,10 @@ export default function SlotWeekGrid({ dates, slots, assignments, games, players
     const slot = slots.find(item => !beforeSlots.has(item.id) && canEligibilityOccupySlot(eligibility, item.type));
     if (slot) { beforeSlots.set(slot.id, player.id); beforeActive.add(player.id); }
   }
-  const sequence = dates.filter(date => date >= (today ?? dates[0] ?? "") && gameCount.get(date));
+  // Left of the slider: elapsed days keep their recorded lineup and skipped days stay empty, both greyed.
+  const greyed = (date: string) => Boolean(planFrom && date < planFrom.from);
+  const skipped = (date: string) => greyed(date) && !pastByDate.has(date);
+  const sequence = dates.filter(date => date >= (today ?? dates[0] ?? "") && !greyed(date) && gameCount.get(date));
   const [run, setRun] = useState<{ index: number; stage: "before" | "after" } | null>(null);
   const current = run ? sequence[run.index] ?? null : null;
   const gridRef = useRef<HTMLDivElement>(null);
@@ -126,7 +132,7 @@ export default function SlotWeekGrid({ dates, slots, assignments, games, players
     const position = sequence.indexOf(date);
     return position > run.index || position === run.index && run.stage === "before";
   };
-  const columnAttrs = (date: string) => ({ "data-date": date, ...focus(date),
+  const columnAttrs = (date: string) => ({ "data-date": date, ...focus(date), ...(greyed(date) ? { "data-greyed": "" } : {}),
     ...(run && sequence.indexOf(date) > run.index ? { "data-pending": "" } : {}),
     ...(current === date && run?.stage === "after" ? { "data-pulse": "" } : {}) });
   // Bench: everyone rostered (not IR/NA) who is out of the lineup that day. Players with a game come first and are
@@ -185,7 +191,7 @@ export default function SlotWeekGrid({ dates, slots, assignments, games, players
   }
 
   function slotCell(slot: ActiveSlotInstance, date: string) {
-    if (!gameCount.get(date)) return <td key={date} role="cell" {...columnAttrs(date)}><span className={styles.noGames}>—</span></td>;
+    if (!gameCount.get(date) || skipped(date)) return <td key={date} role="cell" {...columnAttrs(date)}><span className={styles.noGames}>—</span></td>;
     const past = pastByDate.get(date);
     if (past) return pastCell(slot, date, past);
     const showBefore = before(date);
@@ -243,6 +249,9 @@ export default function SlotWeekGrid({ dates, slots, assignments, games, players
     <div className={styles.scroller} ref={gridRef}>
       <table className={styles.grid} aria-label="Lineup by position" style={{ "--day-count": dates.length } as CSSProperties}>
         <thead role="rowgroup">
+          {planFrom && <tr role="row" className={`${styles.row} ${styles.headRow} ${styles.sliderRow}`}>
+            <td role="cell" className={styles.sliderCell}><PlanFromSlider days={dates} {...planFrom} /></td>
+          </tr>}
           <tr role="row" className={`${styles.row} ${styles.headRow}`}>
             <th scope="col" role="columnheader" className={styles.corner}><InfoTooltip label="About the lineup grid"><span className={styles.legend}>Numbers are each player&apos;s projected fantasy points for that game, using your league&apos;s scoring: <span className={styles.points} data-tier="high">high</span> <span className={styles.points} data-tier="mid">mid</span> <span className={styles.points} data-tier="low">low</span> for your lineup this week. Goalie expected FP includes participation probability; if-starts FP assumes a start. These are alternative views of the same game, not values to add. — means complete approved scoring inputs are unavailable. <b>✓</b> confirmed starter · <b>✗</b> not starting (Yahoo) · <b>~</b> likely starter · <span className={styles.dust} aria-hidden="true" /> game on the bench · grey: no game that night. Past days show the lineup Yahoo recorded and each player&apos;s <span className={styles.points} data-actual="">actual</span> points.</span></InfoTooltip></th>
             {dates.map(date => {
@@ -267,6 +276,7 @@ export default function SlotWeekGrid({ dates, slots, assignments, games, players
             {Array.from({ length: benchRows }, (_, index) => row(`bn${index}`, <>
               {index === 0 && <th scope="rowgroup" role="rowheader" rowSpan={benchRows} className={styles.band}><span>BN</span></th>}
               {dates.map(date => {
+                if (skipped(date)) return <td key={date} role="cell" {...columnAttrs(date)} />;
                 const list = benchLists.get(date)!, folded = list.length > benchRows ? list.length - benchRows + 1 : 0;
                 if (folded && index === benchRows - 1) return <td key={date} role="cell" {...columnAttrs(date)}>
                   <span className={styles.offChip} title={list.slice(index).map(item => item.player.name).join(", ")}>+{folded} off</span></td>;
@@ -309,7 +319,7 @@ export default function SlotWeekGrid({ dates, slots, assignments, games, players
               const past = pastByDate.get(date);
               const filled = past ? slots.filter(slot => past.entries.some(entry => entry.slotId === slot.id)).length
                 : slots.filter(slot => assignmentAt.has(`${date}|${slot.id}`)).length;
-              return <td key={date} role="cell" className={styles.footer} {...columnAttrs(date)}>{gameCount.get(date) ? `${filled}/${slots.length}` : ""}</td>;
+              return <td key={date} role="cell" className={styles.footer} {...columnAttrs(date)}>{gameCount.get(date) && !skipped(date) ? `${filled}/${slots.length}` : ""}</td>;
             })}
           </tr>
         </tfoot>
