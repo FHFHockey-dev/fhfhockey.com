@@ -7,6 +7,7 @@ import { expandActiveSlots } from "./slots";
 import { acquisitionEffectiveAt, buildTimeline } from "./planningTimeline";
 import { deferBenchDecisions, explainBenchDecisions, reserveBenchEvaluation, type BenchEvaluationBudget } from "./benchDecisions";
 import { dropEligible, droppedOwnership, knownDropOrder, orderDropCandidates, providerListsOut, reservedPlayerIds } from "./retention";
+import { buildStreamingChains } from "./streamingChain";
 import type { ContributionPlanningSnapshot, ForecastExclusionReason, ForecastOpportunityExclusion, GameForecast, PlanEvaluation, PlanIntent, PlanStep, PlanningAssignment, PlanningGame, PlanningObjective, PlanningPlayer, PlanningResult, PlanningSnapshot, ScoringCategory, StatLine } from "./planningTypes";
 
 export type PlanningSearchOptions = { maxEvaluations?: number; beamWidth?: number; maxCandidates?: number; maxSteps?: number; timeBudgetMs?: number; maxBenchEvaluations?: number };
@@ -137,6 +138,20 @@ export function gameForecastPoints(snapshot: PlanningSnapshot, forecast: GameFor
       if (forecast.contributions) return contribution?.basis === "per_start" ? contribution.conditionalMean : null;
       return forecast.conditionalStats?.[key];
     }) : null,
+  };
+}
+/** `gameForecastPoints(...).expected` for many player-games of one resolved snapshot (applicability read once). */
+export function forecastPointsReader(snapshot: PlanningSnapshot): (playerId: string, gameId: string) => number | null {
+  const players = new Map(snapshot.players.map(player => [player.id, player]));
+  const forecasts = new Map(snapshot.forecasts.filter(row => !row.expiresAt || time(row.expiresAt) > time(snapshot.context.asOf))
+    .map(row => [`${row.playerId}:${row.gameId}`, row]));
+  const applicability = statApplicability(snapshot);
+  return (playerId, gameId) => {
+    const player = players.get(playerId), forecast = forecasts.get(`${playerId}:${gameId}`);
+    if (!player || !forecast || snapshot.rules.scoring.mode !== "points") return null;
+    const weights = Object.entries(snapshot.rules.scoring.weights).filter(([key, weight]) => weight !== 0 && applies(key, player.playerClass, applicability));
+    if (!weights.length || weights.some(([key, weight]) => !finite(weight) || !forecastAllows(forecast, key, "totals") || !finite(forecast.stats[key]))) return null;
+    return weights.reduce((sum, [key, weight]) => sum + forecast.stats[key]! * weight, 0);
   };
 }
 /** Supported remaining points on a player's selected assignments, excluding banked results. */
@@ -1472,11 +1487,19 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
       reasons: [...evaluation.recommendation.reasons, ...reasons] }, limitations: [...evaluation.limitations, ...reasons] };
   });
   const continuationsExplained = noClaimContinuations.map(row => ({ ...row, evaluation: explain(row.evaluation) }));
+  // The streaming chain is its own deterministic pass over every available player, not bounded by the search above.
+  const streamingPool = new Set([...relevantPlayerIds, ...sourceSnapshot.players
+    .filter(player => ["free_agent", "manager_available"].includes(player.availability)).map(player => player.id)]);
+  const streaming = timeBudgetMs !== Infinity && Date.now() - start >= timeBudgetMs
+    ? { policyVersion: "rso-stream-v1" as const, recommended: null, chains: [], limitations: ["Search time limit reached before streaming chains were built."] }
+    : buildStreamingChains({ snapshot: sourceSnapshot, intent, baseline, dropOrder, dueNow: latestEquivalentActionAt(sourceSnapshot),
+      evaluate: steps => evaluatePlan(sourceSnapshot, intent, objective, steps, false),
+      points: forecastPointsReader(resolvePlanningContributions(sourceSnapshot, { playerIds: streamingPool, consumer: "rso" })) });
   const benchComplete = !benchBudget.workQuotaReached && !benchBudget.timeLimitReached;
   if (!benchComplete) limitations.add(benchBudget.timeLimitReached
     ? "Bench explanations reached the response time limit; unchecked scoring decisions remain unresolved."
     : "Bench explanations reached their work quota; unchecked scoring decisions remain unresolved.");
-  return { snapshotId: snapshot.id, intentRevision: intent.revision, baseline: baselineExplained,
+  return { streaming, snapshotId: snapshot.id, intentRevision: intent.revision, baseline: baselineExplained,
     noMoveAgp: noMoveAgpExplained, noMoveOutcome: noMoveOutcomeExplained, selected: selectedExplained,
     alternatives: alternativesExplained, noClaimContinuations: continuationsExplained, scheduleFits: fitResult.fits,
     search: { policyVersion: "rso-search-v3", evaluated, candidates: generated, maxDepthReached,

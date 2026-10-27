@@ -45,6 +45,9 @@ export type PlanningPlayer = {
   reserveEligibility: Array<"IR" | "IR+" | "NA">;
   waiverClearsAt?: string | null;
   form?: { label: string; games: number; points: number; includedInForecast: boolean | null };
+  /** Box-score sums over the last (up to 10) played games, keyed by scoring stat; league weights apply client-side.
+   * A hint only. A mapped key absent from `stats` summed to 0; null means a game was missing it. */
+  recentTotals?: { games: number; stats: StatLine };
   /** Provider injury designation (e.g. Yahoo IR, IR-LT, O, DTD); absent when healthy or unknown. */
   injury?: { status: string; label: string; note: string | null } | null;
   /** Yahoo's daily goalie designation from today's roster read; null when Yahoo has not set one, absent when unread. */
@@ -296,7 +299,20 @@ export type PlanEvaluation = {
   acquisitions: Record<string, number>;
   limitations: string[];
 };
+/** One ranked player for a streaming leg's day window. `points` is projected fantasy points over the games he would
+ * start in it; recent league-scored fantasy points per game (last 10 played) is a hint and near-tie tiebreak only. */
+export type StreamingOption = { playerId: string; games: number; gameDates: string[]; points: number | null;
+  recentPointsPerGame: number | null; recentGames: number | null };
+/** One add in a stream spot: the streamer is effective from `startDate` and held through `endDate` (inclusive). */
+export type StreamingLeg = { spot: number; step: PlanStep; actionDate: string; startDate: string; endDate: string;
+  playerId: string; dropPlayerId: string; games: number; gameDates: string[]; points: number | null; options: StreamingOption[] };
+/** A day-by-day add chain over one or two roster spots, certified by the plan evaluator. */
+export type StreamingChain = { spots: 1 | 2; legs: StreamingLeg[]; steps: PlanStep[]; evaluation: PlanEvaluation;
+  netGames: number; netPoints: number | null; addsUsed: number; addsAvailable: number };
+export type StreamingPlan = { policyVersion: "rso-stream-v1"; recommended: 1 | 2 | null; chains: StreamingChain[]; limitations: string[] };
 export type PlanningResult = {
+  /** Deterministic streaming chains (best one-spot, and the best two-spot split when it adds more). */
+  streaming?: StreamingPlan;
   snapshotId: string;
   intentRevision: number;
   baseline: PlanEvaluation;

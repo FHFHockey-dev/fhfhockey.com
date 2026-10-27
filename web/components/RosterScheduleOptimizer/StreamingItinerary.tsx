@@ -1,0 +1,81 @@
+import { useState } from "react";
+import { streamingChainSteps } from "lib/rosterScheduleOptimizer/streamingChain";
+import type { PlanStep, StreamingChain, StreamingLeg, StreamingPlan } from "lib/rosterScheduleOptimizer/planningTypes";
+import styles from "./StreamingItinerary.module.scss";
+
+const dateLabel = (date: string) => new Date(`${date}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
+const number = (value: number | null) => value === null ? "—" : Number.isInteger(value) ? String(value) : value.toFixed(1);
+const signed = (value: number | null) => value === null ? "unknown" : `${value > 0 ? "+" : ""}${number(value)}`;
+
+/** Totals after swaps: the certified chain's net plus each swapped option's change (an estimate until re-planned). */
+function totals(chain: StreamingChain, overrides: Record<number, string>) {
+  let games = chain.netGames, points = chain.netPoints;
+  for (const [index, playerId] of Object.entries(overrides)) {
+    const leg = chain.legs[Number(index)], option = leg?.options.find(item => item.playerId === playerId);
+    if (!leg || !option || option.playerId === leg.playerId) continue;
+    games += option.games - leg.games;
+    points = points === null || option.points === null || leg.points === null ? null : points + option.points - leg.points;
+  }
+  return { games, points };
+}
+
+/** Day-by-day streaming plan: ADD or HOLD per day for each stream spot, the ranked options for each add, and totals.
+ * Ranked by projected fantasy points over the games each player would start; last-10 FPts/G is a hint only. */
+export default function StreamingItinerary({ plan, dates, today, nameOf, teamOf, selectDisabled, onSelect }: {
+  plan: StreamingPlan | undefined; dates: string[]; today: string; nameOf: (id: string) => string;
+  teamOf: (id: string) => string | null; selectDisabled: string | null; onSelect: (steps: PlanStep[]) => void;
+}) {
+  const [choice, setChoice] = useState<{ key: string; chain: number; overrides: Record<number, string> }>({ key: "", chain: 0, overrides: {} });
+  if (!plan) return null;
+  const key = plan.chains.map(chain => chain.steps.map(step => step.id).join("|")).join("/");
+  const state = choice.key === key ? choice : { key, chain: 0, overrides: {} };
+  const chain = plan.chains[state.chain];
+  if (!chain) return <section className={styles.itinerary} aria-label="Streaming plan"><h3>Streaming plan</h3>
+    <p className={styles.note}>{plan.limitations[0] ?? "No streaming chain adds active games this week."}</p></section>;
+  const playerFor = (index: number) => state.overrides[index] ?? chain.legs[index].playerId;
+  const ordered = chain.legs.map((leg, index) => ({ leg, index })).sort((a, b) => a.leg.startDate.localeCompare(b.leg.startDate) || a.leg.spot - b.leg.spot);
+  const optionFor = (index: number) => chain.legs[index].options.find(option => option.playerId === playerFor(index));
+  const legGames = (index: number) => optionFor(index)?.games ?? chain.legs[index].games;
+  const gameDates = (index: number) => optionFor(index)?.gameDates ?? chain.legs[index].gameDates;
+  const cumulative = new Map<number, { adds: number; games: number }>();
+  ordered.reduce((sum, { index }) => { const next = { adds: sum.adds + 1, games: sum.games + legGames(index) }; cumulative.set(index, next); return next; }, { adds: 0, games: 0 });
+  const total = totals(chain, state.overrides), estimated = Object.entries(state.overrides).some(([index, id]) => chain.legs[Number(index)].playerId !== id);
+  const spots = [...new Set(chain.legs.map(leg => leg.spot))];
+  const describe = (id: string) => `${nameOf(id)}${teamOf(id) ? ` (${teamOf(id)})` : ""}`;
+  const update = (patch: Partial<typeof state>) => setChoice({ ...state, ...patch });
+  const legOn = (spot: number, date: string): { leg: StreamingLeg; index: number } | null => {
+    const index = chain.legs.findIndex(leg => leg.spot === spot && leg.startDate <= date && date <= leg.endDate);
+    return index < 0 ? null : { leg: chain.legs[index], index };
+  };
+  return <section className={styles.itinerary} aria-label="Streaming plan">
+    <h3>Streaming plan</h3>
+    {plan.chains.length > 1 && <div className={styles.spots} role="group" aria-label="Stream spots">{plan.chains.map((option, index) =>
+      <button key={index} aria-pressed={state.chain === index} onClick={() => update({ chain: index, overrides: {} })}>
+        {option.spots === 1 ? "One spot" : "Two spots"} · {signed(option.netGames)} AGP{option.spots === plan.recommended ? " · suggested" : ""}</button>)}</div>}
+    <p className={styles.totals} aria-label="Streaming totals">Adds {chain.addsUsed}/{chain.addsAvailable} · {signed(total.games)} AGP · {signed(total.points)} proj FPts{estimated ? " (estimate after swaps)" : ""}</p>
+    <ol className={styles.days}>{dates.filter(date => date >= today).map(date => <li key={date} className={styles.day}>
+      <strong className={styles.date}>{dateLabel(date)}</strong>
+      <div className={styles.moves}>{spots.map(spot => {
+        const found = legOn(spot, date), label = spots.length > 1 ? `Spot ${spot + 1}: ` : "";
+        if (!found) return <p key={spot} className={styles.hold}>{label}No move</p>;
+        const { leg, index } = found, playerId = playerFor(index);
+        if (leg.startDate !== date) return <p key={spot} className={styles.hold}>{label}HOLD {describe(playerId)} · {gameDates(index).includes(date) ? "plays" : "no game"}</p>;
+        const prior = chain.legs.slice(0, index).filter(item => item.spot === spot).at(-1), drop = prior ? playerFor(chain.legs.indexOf(prior)) : leg.dropPlayerId;
+        const step = cumulative.get(index)!;
+        return <div key={spot} className={styles.add}>
+          <p><span className={styles.verb}>{label}ADD</span> {describe(playerId)} · DROP {describe(drop)}{leg.actionDate !== leg.startDate ? ` · claim ${dateLabel(leg.actionDate)}` : ""}</p>
+          <small>{step.adds}/{chain.addsAvailable} adds · {signed(step.games)} AGP · {number(optionFor(index)?.points ?? leg.points)} proj FPts over {legGames(index)} game{legGames(index) === 1 ? "" : "s"}{leg.step.conditional ? " · recheck availability" : ""}</small>
+          {leg.options.length > 1 && <ol className={styles.options} aria-label={`Options for ${dateLabel(leg.startDate)}`}>{leg.options.map(option =>
+            <li key={option.playerId}><button aria-pressed={option.playerId === playerId} onClick={() => update({ overrides: { ...state.overrides, [index]: option.playerId } })}>
+              <span>{describe(option.playerId)}</span>
+              <small>{option.games} GP · {number(option.points)} proj FPts{option.recentPointsPerGame !== null ? ` · ${number(option.recentPointsPerGame)} FPts/G (last ${option.recentGames ?? 10})` : ""}</small>
+            </button></li>)}</ol>}
+        </div>;
+      })}</div>
+    </li>)}</ol>
+    {selectDisabled && <small id="rso-streaming-reason" className={styles.note}>{selectDisabled}</small>}
+    <button className={styles.use} disabled={Boolean(selectDisabled)} aria-describedby={selectDisabled ? "rso-streaming-reason" : undefined}
+      onClick={() => onSelect(streamingChainSteps(chain, state.overrides))}>Use this streaming plan</button>
+    <p className={styles.note}>Ranked by projected fantasy points over the games each player would start. Fantasy points per game over the last 10 played games only break near ties.</p>
+  </section>;
+}
