@@ -359,9 +359,16 @@ describe("current league planning range", () => {
       period: { week: 1, startDate: "2026-10-09", endDate: "2026-10-22", containsHorizon: true }
     } } as any;
     expect(currentProviderPeriod(snapshot, context, now)).toEqual(snapshot.acquisitionEvidence.period);
+    // Read earlier in the same matchup period: the dates still hold (the range line kept falling back two minutes
+    // after a provider read, on the next render).
+    for (const asOf of ["2026-10-13T11:00:00Z", "2026-10-09T00:30:00Z"])
+      expect(currentProviderPeriod({ ...snapshot, acquisitionEvidence: { ...snapshot.acquisitionEvidence, asOf } }, context, now))
+        .toEqual(snapshot.acquisitionEvidence.period);
     for (const invalid of [
       { ...snapshot, context: { ...context, teamId: "other" } },
-      { ...snapshot, acquisitionEvidence: { ...snapshot.acquisitionEvidence, asOf: "2026-10-13T11:00:00Z" } },
+      // Read before this period began, or stamped by a clock ahead of ours.
+      { ...snapshot, acquisitionEvidence: { ...snapshot.acquisitionEvidence, asOf: "2026-10-08T23:00:00Z" } },
+      { ...snapshot, acquisitionEvidence: { ...snapshot.acquisitionEvidence, asOf: "2026-10-13T12:05:00Z" } },
       { ...snapshot, acquisitionEvidence: { ...snapshot.acquisitionEvidence, counter: { coverageType: "week", coverageWeek: 1, used: null } } },
       { ...snapshot, acquisitionEvidence: { ...snapshot.acquisitionEvidence, period: { ...snapshot.acquisitionEvidence.period, containsHorizon: false } } },
     ]) expect(currentProviderPeriod(invalid, context, now)).toBeUndefined();
