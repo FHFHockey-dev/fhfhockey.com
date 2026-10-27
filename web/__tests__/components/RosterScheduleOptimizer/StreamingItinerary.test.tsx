@@ -79,6 +79,11 @@ describe("Streaming itinerary", () => {
     expect(screen.getByText("The one-spot plan (+3 AGP) meets it instead.")).toBeTruthy();
   });
 
+  it("shows the blended net that ranks the chain beside projected totals", () => {
+    render(<StreamingItinerary {...props} plan={{ ...plan, chains: [{ ...chain, netScore: 9.8 }] }} onSelect={vi.fn()} />);
+    expect(screen.getByLabelText("Streaming totals").textContent).toBe("Adds 4/4 · +7 AGP · +11.3 proj FPts · +9.8 blended FPts");
+  });
+
   it("marks an accepted goalie risk without a tradeoff note", () => {
     const evaluation = { goalie: { projected: 2, risk: true, credited: 1, confirmed: 0, required: 3 } } as PlanEvaluation;
     render(<StreamingItinerary {...props} plan={{ ...plan, chains: [{ ...chain, evaluation }], goalieMinimum: { required: 3, baseline: 2, met: false, cover: false } }} onSelect={vi.fn()} />);

@@ -38,7 +38,7 @@ function goalieStatus(minimum: StreamingGoalieMinimum, chain: StreamingChain, ch
 }
 
 /** Day-by-day streaming plan: ADD or HOLD per day for each stream spot, the ranked options for each add, and totals.
- * Ranked by projected fantasy points over the games each player would start; last-10 FPts/G is a hint only. */
+ * Ranked by the average of projected FPts and last-10 FPts/G over the games each player would start; totals show projections. */
 export default function StreamingItinerary({ plan, dates, today, nameOf, teamOf, selectDisabled, onSelect }: {
   plan: StreamingPlan | undefined; dates: string[]; today: string; nameOf: (id: string) => string;
   teamOf: (id: string) => string | null; selectDisabled: string | null; onSelect: (steps: PlanStep[]) => void;
@@ -71,7 +71,7 @@ export default function StreamingItinerary({ plan, dates, today, nameOf, teamOf,
     {plan.chains.length > 1 && <div className={styles.spots} role="group" aria-label="Stream spots">{plan.chains.map((option, index) =>
       <button key={index} aria-pressed={state.chain === index} onClick={() => update({ chain: index, overrides: {} })}>
         {option.spots === 1 ? "One spot" : "Two spots"} · {signed(option.netGames)} AGP{plan.goalieMinimum ? ` · ${meets(option) ? "meets" : "misses"} G min` : ""}{index === 0 ? " · suggested" : ""}</button>)}</div>}
-    <p className={styles.totals} aria-label="Streaming totals">Adds {chain.addsUsed}/{chain.addsAvailable} · {signed(total.games)} AGP · {signed(total.points)} proj FPts{estimated ? " (estimate after swaps)" : ""}</p>
+    <p className={styles.totals} aria-label="Streaming totals">Adds {chain.addsUsed}/{chain.addsAvailable} · {signed(total.games)} AGP · {signed(total.points)} proj FPts{estimated ? " (estimate after swaps)" : chain.netScore != null ? ` · ${signed(chain.netScore)} blended FPts` : ""}</p>
     {goalie && <p className={styles.totals} aria-label="Goalie minimum">{goalie.status}{estimated ? " (before swaps)" : ""}</p>}
     {goalie?.tradeoff && <p className={styles.note}>{goalie.tradeoff}</p>}
     <ol className={styles.days}>{dates.filter(date => date >= today).map(date => <li key={date} className={styles.day}>
@@ -97,6 +97,6 @@ export default function StreamingItinerary({ plan, dates, today, nameOf, teamOf,
     {selectDisabled && <small id="rso-streaming-reason" className={styles.note}>{selectDisabled}</small>}
     <button className={styles.use} disabled={Boolean(selectDisabled)} aria-describedby={selectDisabled ? "rso-streaming-reason" : undefined}
       onClick={() => onSelect(streamingChainSteps(chain, state.overrides))}>Use this streaming plan</button>
-    <p className={styles.note}>Ranked by projected fantasy points over the games each player would start. Fantasy points per game over the last 10 played games only break near ties.</p>
+    <p className={styles.note}>Ranked by the average of projected fantasy points and fantasy points per game over the last 10 played games (the projection alone when there is no last 10), over the games each player would start.</p>
   </section>;
 }

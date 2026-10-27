@@ -74,7 +74,7 @@ The only existing read path is `PlanningPlayer.form`. It is loaded in `lib/roste
 
 ## Limits
 - DP proposals are heuristic (gains from per-day matchings; the two-spot pass is sequential and greedy). Only `evaluatePlan`-certified chains are returned, and their totals come from that evaluation.
-- Chain structure is AGP-first, then FPts. A 1-game star never beats a 2-game streamer in the same window.
+- Chain structure is AGP-first, then FPts. A 1-game star never beats a 2-game streamer in the same window. **Lifted on 10-27; see "Blended ranking and FPts-first chains" below.**
 - Only free agents and manager-available players are chained; waiver claims are not.
 - Daily lineup leagues only. One acquisition period per chain. At most 3 drop candidates (`knownDropOrder`).
 - Within a stream spot, a player is never re-added.
@@ -188,3 +188,20 @@ The setup is TJ's league on Wednesday: 2 adds left, a 3-start minimum with 1 cre
 - TJ: with goalie coverage set to "accept risk", goalies must not be pushed to the top. The goalie pass, the meets-first ranking and the extra most-AGP chain now run only with `intent.goalieCoverage === "cover"`.
 - With "accept risk" (the default), the chain is the plain AGP chain. The itinerary still reports progress, for example "Goalie starts 2/3 → 2/3 with this plan · misses the minimum (risk accepted)", with no tradeoff note.
 - `StreamingGoalieMinimum` gains `cover`. The goalie fixtures now use the cover intent, and the "unchanged" test also covers the accepted risk.
+
+## Blended ranking and FPts-first chains (10-27, TJ pop-up)
+- **Blend (TJ: "past + future"):** each player-game is ranked by (projected FPts + last-10 FPts/G) / 2, or by the projection alone when there is no last-10 read. It is used for option ranking within a window, for the DP's points, for the drop's lost points, and for a certified chain's `netScore` (the blended total over the remaining assignments, minus the baseline's). Shown leg, option and total points stay FORGE projected FPts. The totals line adds "· +X blended FPts".
+- **"Best projected points"** (`baseline.objective === "outcome"`): windows, the DP and certified chains rank by blended points first, then games, then fewer adds. A one-game spot start wins only when he adds more for the week: 5 beats 2 + 2, but 3 + 3 beats 5 (TJ: winning the week beats winning a day).
+- **"Most starts":** unchanged. Games first, then blended points (the evaluator's net when the blend is unknown).
+- **Goalie cover still comes first in both modes.** A chain with no added games is kept under "Best projected points" when its blended net is positive.
+- **Fixtures (`streamingChain.test.ts`, "star vs streamer", Wednesday with 1 add):**
+  - outcome: 5×1 beats 2×2, and 3×2 beats 5×1;
+  - agp: 2×2 beats 5×1;
+  - blend: a star at last-10 1 FPts/G (blend 3) loses to 2×2, and one at last-10 7 FPts/G (blend 6) beats 2.9×2;
+  - the shown `netPoints` stays the projection.
+  
+  `StreamingItinerary.test.tsx` checks the blended totals line.
+- **Checks:**
+  - `TZ=UTC` and then `TZ=America/New_York`, the RSO vitest command: 57 files and 1480 tests passed in each.
+  - `npx tsc --noEmit` (8 GB, under the heavy lock): exit 0.
+  - eslint on the 5 touched files: clean.

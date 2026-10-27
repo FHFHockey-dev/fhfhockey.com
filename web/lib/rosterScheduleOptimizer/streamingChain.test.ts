@@ -241,6 +241,39 @@ describe("streaming chain goalie minimum", () => {
   });
 });
 
+/** One add left on Wed: a one-game star (Thu) against a two-game streamer (Thu–Fri) for the one open spot. */
+const starWeek = (twoPerGame: number, starForm?: number): Spec[] => [
+  { id: "core", team: "CORE", days: [0, 1, 2, 3, 4, 5, 6], perGame: 3, rostered: true },
+  { id: "drop", team: "IDLE", days: [], perGame: 0, rostered: true },
+  { id: "star", team: "STA", days: [3], perGame: 5, ...(starForm === undefined ? {} : { recentTotals: { games: 10, stats: { GOALS: starForm * 10 } } }) },
+  { id: "two", team: "TWO", days: [3, 4], perGame: twoPerGame },
+];
+const pick = (specs: Spec[], objective: "agp" | "outcome") => {
+  const plan = planRoster(week(specs, { asOf: "2026-10-28T14:00:00Z", remaining: 1 }), { ...intent(), objective }).streaming!;
+  expect(plan.chains[0].evaluation.objective).toBe(objective);
+  return plan.chains[0].legs.map(leg => leg.playerId);
+};
+
+describe("streaming chain star vs streamer", () => {
+  it("takes the one-game star under Best projected points only when he adds more for the week", () => {
+    // 5 FPts in one game beats 2 + 2; 3 + 3 beats 5.
+    expect(pick(starWeek(2), "outcome")).toEqual(["star"]);
+    expect(pick(starWeek(3), "outcome")).toEqual(["two"]);
+    // Most starts stays games-first.
+    expect(pick(starWeek(2), "agp")).toEqual(["two"]);
+  });
+
+  it("ranks by the average of projected FPts and last-10 FPts/G", () => {
+    // The star's blend is (5 + 1) / 2 = 3 for one game, under the streamer's 2 + 2.
+    expect(pick(starWeek(2, 1), "outcome")).toEqual(["two"]);
+    // A hot last 10 (7 FPts/G) lifts him to 6 for one game.
+    expect(pick(starWeek(2.9, 7), "outcome")).toEqual(["star"]);
+    const plan = planRoster(week(starWeek(2, 1), { asOf: "2026-10-28T14:00:00Z", remaining: 1 }), { ...intent(), objective: "outcome" }).streaming!;
+    // Shown totals stay projected FPts; the blend is the ranking net.
+    expect(plan.chains[0]).toMatchObject({ netGames: 2, netPoints: 4, netScore: 4 });
+  });
+});
+
 describe("streaming chain planning range", () => {
   it("starts at a later plan-from day (Thu) and runs to the range end", () => {
     const plan = legSummary(week(tjWeek, { startDate: WEEK[3] }));
