@@ -9,7 +9,7 @@ import { cachedYahooPlayer, withCachedYahooEligibility } from "lib/rosterSchedul
 import { comparePlanSensitivity } from "lib/player-forecasts/planComparison";
 import { capacityPlanningSnapshot, type CurrentPlanningOptions } from "lib/rosterScheduleOptimizer/currentPlanningRead";
 import { contributionLedger } from "lib/rosterScheduleOptimizer/contributionLedger";
-import { gameForecastPoints, type GameForecastPoints } from "lib/rosterScheduleOptimizer/planning";
+import { gameForecastPoints, latestEquivalentActionAt, type GameForecastPoints } from "lib/rosterScheduleOptimizer/planning";
 import { expandActiveSlots } from "lib/rosterScheduleOptimizer/slots";
 import { localDate } from "lib/rosterScheduleOptimizer/planningDates";
 import { acquisitionEffectiveAt } from "lib/rosterScheduleOptimizer/planningTimeline";
@@ -978,7 +978,12 @@ export default function RosterScheduleOptimizer() {
   const chooseCandidate = (player: PlanningPlayer) => {
     selectPlayer(player.id);
     if (rosterIds.has(player.id) || !["free_agent", "manager_available", "waivers"].includes(player.availability)) return;
-    const at = new Date(Date.now() + 60_000).toISOString();
+    // Same deadline as a card's "now" move, so the add stays legal on later reads. Puck drops are only known from a
+    // complete schedule; without one, keep the one-minute lead.
+    const now = new Date().toISOString();
+    const at = (snapshot?.evidence.schedule?.completeness === "complete"
+      ? latestEquivalentActionAt({ context: { ...workspace.context, asOf: now }, games: snapshot.games, rules }) : null)
+      ?? new Date(Date.parse(now) + 60_000).toISOString();
     const effectiveAt = acquisitionEffectiveAt({ context: workspace.context, rules }, player, at);
     if (!effectiveAt) {
       setNotice(rules.acquisitionTiming === "unknown" ? "Verify acquisition timing before selecting an add."

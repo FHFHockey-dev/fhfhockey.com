@@ -3,7 +3,9 @@ import * as rsoPolicy from "../player-forecasts/rsoUsePolicy";
 import { candidatePlanMetrics as candidateMetrics, candidatePlanForSort } from "./candidatePlanMetrics";
 import { defaultIntent, defaultWorkspace } from "./workspace";
 import { evaluatePlan } from "./planning";
-import type { GameForecast, PlanningSnapshot } from "./planningTypes";
+import { buildTimeline } from "./planningTimeline";
+import { reconcileIntent } from "./reconciliation";
+import type { GameForecast, PlanIntent, PlanStep, PlanningSnapshot } from "./planningTypes";
 
 // Native fixture rows carry an explicit fictional review of their one scored target.
 // The production catalog stays empty; the denial case below removes the binding.
@@ -550,5 +552,51 @@ describe("approved totals/comparison without assignment permission", () => {
     expect(plan).toMatchObject({ legal: true, activeGames: 1, comparisonEligible: false, projectedValue: null, selectionMethod: "schedule_capacity" });
     const plans = candidateMetrics(data, defaultIntent()).candidates.find(row => row.playerId === "c")!.plans;
     expect(plans.every(row => row.netPoints === null)).toBe(true);
+  });
+});
+
+// RSO-2b-A3: card plans come from the current read (asOf = server evaluation time). The timeline and reconciliation
+// check the provider snapshot, whose asOf is older at selection and newer after the confirmation re-read or a Refresh.
+describe("Preview swap legality across newer reads", () => {
+  const reread = (data: PlanningSnapshot, asOf: string): PlanningSnapshot => ({ ...data, id: `${data.id}:${asOf}`, context: { ...data.context, asOf } });
+  // Same copy as the component's selectPlan handler.
+  const selectPlan = (steps: PlanStep[]): PlanIntent => ({ ...defaultIntent(), revision: 1, steps: steps.map(step => ({ ...step, dependsOn: [...step.dependsOn] })) });
+  const timeline = (data: PlanningSnapshot, intent: PlanIntent) => { const result = buildTimeline(data, intent, intent.steps); result.at("9999-12-31T23:59:59Z"); return result; };
+  const cardRead = (timing: "same_day" | "next_day", gameDate: string) => {
+    const data = auditSearchFixture(1), startsAt = `${gameDate}T20:00:00Z`;
+    data.context = { ...data.context, timeZone: "America/New_York", asOf: "2026-10-05T12:03:00Z", endDate: gameDate };
+    data.rules.acquisitionTiming = timing;
+    data.games = data.games.map(game => ({ ...game, date: gameDate, startsAt }));
+    data.forecasts = data.forecasts.map(row => ({ ...row, expiresAt: startsAt, issuedContext: { ...row.issuedContext!, scheduledAt: startsAt } }));
+    return data;
+  };
+
+  it.each([
+    // Same-day: due before the 4:00 p.m. ET puck drop. Next-day: due before league midnight, effective at midnight.
+    ["same_day", "2026-10-05", "2026-10-05T19:59:00.000Z", "2026-10-05T19:59:00.000Z"],
+    ["next_day", "2026-10-06", "2026-10-06T03:59:00.000Z", "2026-10-06T04:00:00.000Z"],
+  ] as const)("%s: card plan → selectPlan → legal timeline, kept by reconcileIntent on later reads", (timing, gameDate, at, effectiveAt) => {
+    const read = cardRead(timing, gameDate);
+    const plan = candidatePlanForSort(candidateMetrics(read, defaultIntent()).candidates[0].plans, "points")!;
+    expect(plan.netPoints).toBe(9);
+    expect(plan.steps).toHaveLength(1);
+    // A move timed after the read is a future acquisition, so it carries the availability recheck.
+    expect(plan.steps[0]).toMatchObject({ type: "add", playerId: "100", dropPlayerId: "3", at, effectiveAt, conditional: true });
+    const intent = selectPlan(plan.steps);
+    const projected = evaluatePlan(read, intent, "outcome", intent.steps).projectedValue;
+    // Provider snapshot older than the card read, the card read, the confirmation re-read and a manual Refresh provider.
+    for (const asOf of ["2026-10-05T12:00:00Z", read.context.asOf, "2026-10-05T12:03:20Z", "2026-10-05T12:45:00Z"]) {
+      const snapshot = reread(read, asOf), result = timeline(snapshot, intent);
+      expect(result.legal, result.limitations.join(" ")).toBe(true);
+      expect(reconcileIntent(snapshot, intent, read)).toMatchObject({ issues: [], suggestedSteps: null });
+      expect(evaluatePlan(snapshot, intent, "outcome", intent.steps)).toMatchObject({ legal: true, projectedValue: projected });
+    }
+    // Past-time detection is unchanged once the planned action time has passed.
+    const passed = reconcileIntent(reread(read, new Date(Date.parse(at) + 30_000).toISOString()), intent, read);
+    expect(passed.issues).toContainEqual({ stepId: plan.steps[0].id, message: "Selected action time has passed; review this step." });
+    expect(passed.suggestedSteps).toEqual([]);
+    // The defect's shape, a non-conditional move pinned to the read's asOf, is still rejected on an older snapshot.
+    const pinned = timeline(reread(read, "2026-10-05T12:00:00Z"), selectPlan([{ ...plan.steps[0], at: read.context.asOf, conditional: false }]));
+    expect(pinned.limitations.join(" ")).toContain("must be conditional on availability recheck");
   });
 });
