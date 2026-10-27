@@ -1,0 +1,25 @@
+@use "styles/vars" as v;
+
+// Day-by-day streaming chain above the lineup views: one row per day, ADD/HOLD per stream spot, ranked options per add.
+.itinerary { display: flex; flex-direction: column; gap: 6px; margin: 0 0 v.$space-sm; padding: 8px 10px; border: v.$border-subtle; border-left: 4px solid v.$primary-color; border-radius: v.$radius-control; background: v.$draft-surface; color: v.$text-primary; font-size: 12px; line-height: 1.4; }
+.itinerary h3 { margin: 0; color: v.$primary-color; font: 700 11px v.$font-family-primary; letter-spacing: .08em; text-transform: uppercase; }
+.itinerary p { margin: 0; }
+.spots { display: flex; flex-wrap: wrap; gap: 6px; }
+.spots button[aria-pressed="true"], .options button[aria-pressed="true"] { border-color: v.$primary-color; color: v.$primary-color; }
+.totals { font-family: v.$font-family-numbers; font-weight: 700; }
+.days { display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.day { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 8px; padding: 4px 0; border-top: v.$border-subtle; }
+.date { color: v.$text-secondary; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+.moves { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.hold { color: v.$text-secondary; }
+.add small { display: block; color: v.$text-secondary; }
+.verb { color: v.$success-color; font-weight: 700; }
+.options { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 0; padding: 0; list-style: none; }
+.options button { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; padding: 3px 6px; text-align: left; }
+.options small { color: v.$text-secondary; font-size: 10px; }
+.use { align-self: flex-start; }
+.note { color: v.$text-secondary; font-size: 11px; }
+
+@media (max-width: 480px) {
+  .day { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+}

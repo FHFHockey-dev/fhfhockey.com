@@ -34,6 +34,7 @@ const player = z.object({
   ownership: z.number().finite().min(0).max(100).nullable(), ownershipEvidence: ownershipEvidence.optional(), canDrop: z.boolean().nullable(), holdValue: nullableNumber,
   reserveEligibility: z.array(z.enum(["IR", "IR+", "NA"])), waiverClearsAt: instant.nullable().optional(),
   form: z.object({ label: id, games: z.number().int().nonnegative(), points: z.number().finite(), includedInForecast: z.boolean().nullable() }).strict().optional(),
+  recentTotals: z.object({ games: z.number().int().nonnegative(), stats: statLine }).strict().optional(),
   injury: z.object({ status: id, label: id, note: z.string().nullable() }).strict().nullable().optional(),
   startingStatus: z.object({ source: z.literal("yahoo"), date, isStarting: z.boolean(), observedAt: instant }).strict().nullable().optional(),
 }).strict();

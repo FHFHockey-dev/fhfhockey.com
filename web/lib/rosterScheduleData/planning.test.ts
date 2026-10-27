@@ -73,14 +73,14 @@ function rpcResponse(value: unknown): any {
   const promise = Promise.resolve(value);
   return Object.assign(promise, { abortSignal: () => promise });
 }
-function formDb(historyGames: unknown[], stats: unknown[], fail?: "games" | "skatersGameStats",
+function formDb(skaterRows: unknown[], goalieRows: unknown[], fail?: "wgo_skater_stats" | "wgo_goalie_stats",
   options: { cap?: number; badTable?: string; failure?: string; hangTable?: string } = {}) {
   const calls: Array<{ table: string; method: string; args: unknown[] }> = [];
   const tables: Record<string, unknown[]> = {
     roster_optimizer_team_games: rows,
     fhfh_player_identities: [{ id: 7, nhl_player_id: 847001, canonical_name: "Skater", canonical_position: "L" }],
     teams: [{ id: 1, abbreviation: "TOR" }], rosters: [{ playerId: 847001, teamId: 1, created_at: membershipCreatedAt[0] }],
-    yahoo_matchup_weeks: [], games: historyGames, skatersGameStats: stats,
+    yahoo_matchup_weeks: [], wgo_skater_stats: skaterRows, wgo_goalie_stats: goalieRows,
   };
   const db = { from: (table: string) => {
     let start = 0, end = Infinity;
@@ -146,12 +146,12 @@ describe("public RSO data boundary", () => {
     const scope = { seasonId: 20262027, startDate: "2026-10-10", endDate: "2026-10-10", timeZone: "America/New_York", mode: "calendar" as const, games: 1 };
     const now = new Date("2026-10-10T12:00:00Z");
     await loadGameExpectations(db as never, scope, now);
-    const optionalTables = ["yahoo_player_ownership_daily", "yahoo_nhl_player_map_read", "games", "skatersGameStats"];
+    const optionalTables = ["yahoo_player_ownership_daily", "yahoo_nhl_player_map_read", "wgo_skater_stats", "wgo_goalie_stats"];
     expect(calls.filter(call => optionalTables.includes(call.table))).toEqual([]);
     calls.length = 0;
     const result = await loadPlanningData(db as never, scope, { now, forecastsEnabled: false });
     expect(calls.some(call => call.table === "yahoo_player_ownership_daily")).toBe(true);
-    expect(calls.some(call => call.table === "games")).toBe(true);
+    expect(calls.some(call => call.table === "wgo_skater_stats")).toBe(true);
     expect(result.evidence.form?.source).not.toBe("not_requested");
   });
 
@@ -644,13 +644,13 @@ describe("public RSO data boundary", () => {
     });
 
   it("preserves complete schedule planning when optional reads are incomplete", async () => {
-    for (const badTable of ["yahoo_player_ownership_daily", "yahoo_matchup_weeks", "games"]) {
+    for (const badTable of ["yahoo_player_ownership_daily", "yahoo_matchup_weeks", "wgo_skater_stats"]) {
       const { db } = cappedInputs({ badTable, failure: "missing_count" });
       const result = await loadPlanningData(db as any, publicQuery, publicOptions);
       expect(result.games).toHaveLength(2);
       expect(result.players).toHaveLength(2);
       expect(result.forecastManifest?.requiredOpportunities).toBe(4);
-      const source = badTable === "games" ? "form" : badTable === "yahoo_matchup_weeks" ? "matchupWeeks" : "ownership";
+      const source = badTable === "wgo_skater_stats" ? "form" : badTable === "yahoo_matchup_weeks" ? "matchupWeeks" : "ownership";
       expect(result.evidence[source].limitations.length).toBeGreaterThan(0);
     }
   });
@@ -1129,41 +1129,59 @@ describe("public RSO data boundary", () => {
     expect(result.evidence.forecasts.limitations.join(" ")).toContain("rollout");
     expect(result.matchupWeeks).toEqual([{ gameKey: "477", week: 1, startDate: "2026-09-29", endDate: "2026-10-04" }, { gameKey: "477", week: 2, startDate: "2026-10-05", endDate: "2026-10-11" }]);
   });
-  it("skips the skater stats read when no prior regular-season games are present", async () => {
-    const { db, calls } = formDb([], []);
+  it("leaves recent form empty without failing when no recent games are present", async () => {
+    const { db } = formDb([], []);
     const result = await loadPlanningData(db as any, { seasonId: 20262027, startDate: "2026-10-10", endDate: "2026-10-10" },
       { now: new Date("2026-10-10T12:00:00Z") });
-    expect(calls.some(call => call.table === "games")).toBe(true);
-    expect(calls.some(call => call.table === "skatersGameStats")).toBe(false);
+    expect(result.players[0].form).toBeUndefined();
+    expect(result.players[0].recentTotals).toBeUndefined();
     expect(result.evidence.form.limitations.join(" ")).not.toContain("query_failed");
     expect(result.forecastManifest?.exclusions).toContainEqual({ gameId: "2026020001", reasons: ["serving_disabled"] });
   });
   it("reports a safe recent-form failure stage without database details", async () => {
-    for (const stage of ["games", "skatersGameStats"] as const) {
-      const { db } = formDb([{ id: 100, date: "2026-10-09" }], [], stage);
+    for (const table of ["wgo_skater_stats", "wgo_goalie_stats"] as const) {
+      const { db } = formDb([], [], table);
       const result = await loadPlanningData(db as any, { seasonId: 20262027, startDate: "2026-10-10", endDate: "2026-10-10" },
         { now: new Date("2026-10-10T12:00:00Z") });
-      expect(result.evidence.form.limitations).toContain(`recent_form_${stage === "games" ? "games" : "stats"}_query_failed`);
+      expect(result.evidence.form.limitations).toContain("recent_form_stats_query_failed");
       expect(JSON.stringify(result.evidence.form)).not.toContain("private database details");
     }
   });
-  it("orders NHL-identity game logs by actual date before deriving recent form", async () => {
-    const history = [100, 200, 300, 400, 500, 600].map((id, index) => ({ id, date: `2026-10-0${9 - index}` }));
-    const stats = [3, 3, 1, 0, 0, 0].map((points, index) => ({ playerId: 847001, gameId: history[index].id, points }));
-    const { db, calls } = formDb(history, stats);
+  it("orders WGO game logs by date, derives recent form and sums the last 10 played games", async () => {
+    // Twelve played games out of order, plus a repeated date that must not count twice.
+    const dates = Array.from({ length: 12 }, (_, index) => `2026-09-${String(28 - index).padStart(2, "0")}`);
+    const skater = (date: string, index: number, extra: Record<string, unknown> = {}) => ({ id: 1000 + index, player_id: 847001, date,
+      games_played: 1, goals: 1, assists: index === 0 ? 2 : 0, points: [3, 3, 1, 0, 0][index] ?? 1, shots: 3, hits: index < 10 ? 2 : 50,
+      blocked_shots: 0, plus_minus: 0, penalty_minutes: 0, pp_goals: 0, pp_assists: 0, pp_points: 0, sh_goals: 0, sh_assists: 0,
+      sh_points: 0, gw_goals: 0, total_fow: index === 3 ? null : 0, total_fol: 0, ...extra });
+    const rows = [...dates.map((date, index) => skater(date, index)).reverse(), skater(dates[0], 99, { goals: 9 })];
+    const { db, calls } = formDb(rows, []);
     const result = await loadPlanningData(db as any, { seasonId: 20262027, startDate: "2026-10-10", endDate: "2026-10-10" },
       { now: new Date("2026-10-10T12:00:00Z") });
     expect(result.players[0].form).toEqual({ label: "Scoring hot", games: 3, points: 7, includedInForecast: null });
-    expect(calls.find(call => call.table === "skatersGameStats" && call.method === "in")?.args[0]).toBe("gameId");
-    expect(calls.filter(call => call.table === "skatersGameStats" && call.method === "in").every(call => (call.args[1] as number[]).length <= 100)).toBe(true);
+    // Last 10 only: hits 2 each (the two oldest games' 50s are outside); a missing faceoff value makes that sum unknown.
+    expect(result.players[0].recentTotals).toEqual({ games: 10, stats: { GOALS: 10, ASSISTS: 2, POINTS: 12, SHOTS_ON_GOAL: 30, HITS: 20, FACEOFFS_WON: null } });
+    // Query shape: one newest-first, season- and date-bounded read per table of played games only, paged by a unique key.
+    for (const table of ["wgo_skater_stats", "wgo_goalie_stats"]) {
+      const own = calls.filter(call => call.table === table);
+      expect(own.filter(call => call.method === "eq").map(call => call.args)).toEqual([["season_id", 20262027], ["games_played", 1]]);
+      expect(own.filter(call => call.method === "gte").map(call => call.args)).toEqual([["date", "2026-09-10"]]);
+      expect(own.filter(call => call.method === "lte").map(call => call.args)).toEqual([["date", "2026-10-09"]]);
+      expect(own.find(call => call.method === "order")?.args).toEqual(["date", { ascending: false }]);
+      expect(own.some(call => call.method === "in")).toBe(false);
+    }
+    const select = calls.find(call => call.table === "wgo_skater_stats" && call.method === "select")!.args;
+    expect(String(select[0]).split(",").slice(0, 4)).toEqual(["id", "player_id", "date", "games_played"]);
+    expect(select[1]).toEqual({ count: "exact" });
   });
-  it("bounds each skater stats lookup to 100 game IDs", async () => {
-    const history = Array.from({ length: 101 }, (_, index) => ({ id: index + 1, date: "2026-10-09" }));
-    const { db, calls } = formDb(history, []);
-    await loadPlanningData(db as any, { seasonId: 20262027, startDate: "2026-10-10", endDate: "2026-10-10" },
+  it("sums goalie rows separately and gives goalies no skater form", async () => {
+    const { db, tables } = formDb([], [1, 2, 3].map(index => ({ goalie_id: 847001, date: `2026-10-0${index}`, games_played: 1, wins: index === 1 ? 1 : 0,
+      losses: 0, goals_against: 2, shots_against: 30, saves: 28, shutouts: 0, games_started: 1 })));
+    tables.fhfh_player_identities = [{ id: 7, nhl_player_id: 847001, canonical_name: "Goalie", canonical_position: "G" }];
+    const result = await loadPlanningData(db as any, { seasonId: 20262027, startDate: "2026-10-10", endDate: "2026-10-10" },
       { now: new Date("2026-10-10T12:00:00Z") });
-    expect(calls.filter(call => call.table === "skatersGameStats" && call.method === "in").map(call => (call.args[1] as number[]).length))
-      .toEqual([100, 1]);
+    expect(result.players[0].recentTotals).toEqual({ games: 3, stats: { WINS_GOALIE: 1, GOALS_AGAINST_GOALIE: 6, SHOTS_AGAINST_GOALIE: 90, SAVES_GOALIE: 84, GAMES_STARTED: 3 } });
+    expect(result.players[0].form).toBeUndefined();
   });
 });
 
