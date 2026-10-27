@@ -236,6 +236,17 @@ describe("streaming chain goalie minimum", () => {
   });
 });
 
+describe("streaming chain planning range", () => {
+  it("starts at a later plan-from day (Thu) and runs to the range end", () => {
+    const plan = legSummary(week(tjWeek, { startDate: WEEK[3] }));
+    const [chain] = plan.chains;
+    expect(chain.legs.map(leg => [leg.startDate, leg.endDate, leg.playerId])).toEqual([[WEEK[3], WEEK[4], "wpg"], [WEEK[5], WEEK[6], "edm"]]);
+    expect(chain).toMatchObject({ netGames: 4, addsUsed: 2, evaluation: { legal: true } });
+    expect(chain.steps.map(step => step.at)).toEqual([zonedMidnight(WEEK[3], ZONE), zonedMidnight(WEEK[5], ZONE)]);
+    expect(chain.legs.every(leg => leg.gameDates.every(date => date >= WEEK[3] && date <= WEEK[6]))).toBe(true);
+  });
+});
+
 describe("saved snapshots with recent totals", () => {
   it("round-trips recentTotals and still accepts an older snapshot without it", () => {
     const withTotals = week(tjWeek);

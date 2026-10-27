@@ -178,3 +178,8 @@ The setup is TJ's league on Wednesday: 2 adds left, a 3-start minimum with 1 cre
 - `NODE_OPTIONS=--max-old-space-size=8192 npx tsc --noEmit` under `/private/tmp/fhfh-heavy.lock` (noclobber, released): exit 0.
 - eslint on the 5 touched files: clean. No scss was touched.
 - No production, Supabase or Yahoo calls.
+
+## Planning range start (10-27)
+- **No code change needed.** `buildStreamingChains` already builds its days from max(today, `context.startDate`) through `context.endDate`, and it stops at the acquisition period's end. The sibling session's "plan from day" slider sets `context.startDate`. The parent's itinerary `dates` are `datesBetween(context.startDate, context.endDate)`, so a Thursday start renders Thu–Sun.
+- **New test** ("starts at a later plan-from day (Thu) and runs to the range end"): TJ's +7 week, read on Monday, with `startDate` on Thursday. The chain is WPG Thu–Fri → EDM Sat–Sun, +4 AGP and 2 adds. Steps are claimed at the Thu and Sat league midnights, and every game date falls in Thu–Sun.
+- **Checks:** the same as the goalie section; the full RSO suite ran with this test present.
