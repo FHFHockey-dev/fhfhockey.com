@@ -174,7 +174,11 @@ export function currentProviderPeriod(snapshot: PlanningSnapshot | null, context
     || evidence.source !== "Yahoo team roster_adds and league current_week" || evidence.counter.coverageType !== "week"
     || evidence.counter.used === null || !evidence.period.containsHorizon
     || !evidence.period.week || evidence.counter.coverageWeek !== evidence.period.week
-    || !Number.isFinite(Date.parse(evidence.asOf)) || Math.abs(now.getTime() - Date.parse(evidence.asOf)) > 120000) return undefined;
+    // Matchup dates stay true for the whole period, so evidence read during this period is current (not only for
+    // two minutes after the read: the range line fell back to Mon–Sun on the next render). Evidence from a clock
+    // ahead of ours, or read before the period began, is not.
+    || !Number.isFinite(Date.parse(evidence.asOf)) || Date.parse(evidence.asOf) - now.getTime() > 120000
+    || !evidence.period.startDate || localDate(evidence.asOf, context.timeZone) < evidence.period.startDate) return undefined;
   return evidence.period;
 }
 
