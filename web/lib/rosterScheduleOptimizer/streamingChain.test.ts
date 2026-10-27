@@ -291,7 +291,7 @@ describe("streaming chain drop candidates", () => {
     const plan = legSummary(week(fourthDrop, fourSlots));
     expect(plan.chains[0].legs.map(leg => [leg.startDate, leg.endDate, leg.playerId, leg.dropPlayerId])).toEqual([[WEEK[1], WEEK[6], "dfa", "d1"]]);
     expect(plan.chains[0].netGames).toBe(6);
-    expect(plan.limitations).not.toContain("Streaming search reached its time limit; some drop candidates were not tried.");
+    expect(plan.limitations).not.toContain("Streaming search reached its work or time limit; some drop candidates were not tried.");
   });
 
   it("stops after the first three past the deadline and says so", () => {
@@ -304,7 +304,7 @@ describe("streaming chain drop candidates", () => {
     const plan = buildStreamingChains({ snapshot, intent: base, baseline, dropOrder, dueNow: null, deadline: 0,
       evaluate: steps => evaluatePlan(snapshot, base, "agp", steps, false), points: forecastPointsReader(snapshot) });
     expect(plan.chains).toEqual([]);
-    expect(plan.limitations).toContain("Streaming search reached its time limit; some drop candidates were not tried.");
+    expect(plan.limitations).toContain("Streaming search reached its work or time limit; some drop candidates were not tried.");
   });
 });
 

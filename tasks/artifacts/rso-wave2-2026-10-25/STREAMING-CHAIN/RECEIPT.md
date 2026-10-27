@@ -218,3 +218,4 @@ The setup is TJ's league on Wednesday: 2 adds left, a 3-start minimum with 1 cre
   - `TZ=UTC` and then `TZ=America/New_York`, the RSO vitest command: 57 files and 1482 tests passed in each (about 29 s each).
   - tsc (heavy lock): exit 0.
   - eslint on `streamingChain.ts`, its test and `planning.ts`: clean.
+- **Work bound (fix, next commit):** no production caller passes `timeBudgetMs`, so the deadline alone left large ranges unbounded. On "bounds a 367-day catalog workload with 25 rostered and 300 available players" it went from 2.3 s (3-drop cap) to 7.2 s. Drops and pairs beyond the guaranteed ones now also need the cumulative window × candidate work (`rows × n(n+1)/2` per spot run) to stay ≤ 2,000,000. This is deterministic: a 7-day week with ~300 players costs about 17k per drop, so every drop fits, while the 367-day workload stops at the first 3 and is back at 2.3 s. The limitation text is now "…reached its work or time limit…".

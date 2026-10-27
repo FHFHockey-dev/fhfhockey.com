@@ -42,9 +42,10 @@ const STREAMABLE = new Set(["free_agent", "manager_available"]);
 const RESERVES = new Set(["IR", "IR+", "NA"]);
 /** Blended points this close are a near tie: last-10 FPts/G orders them. */
 const NEAR_TIE = 0.1;
-/** Every droppable player is tried for one spot; the first GUARANTEED_DROPS (drop order) always, the rest before the
- * deadline. Two-spot pairs come from the PAIR_DROPS best single-spot drops. */
-const OPTION_COUNT = 5, RANKED_COUNT = 12, GUARANTEED_DROPS = 3, PAIR_DROPS = 4;
+/** Every droppable player is tried for one spot: the first GUARANTEED_DROPS (drop order) always, the rest while the
+ * search's window × candidate work stays under EXTRA_WORK (a week fits every drop; a season-long range stops at the
+ * guaranteed ones) and before the deadline. Two-spot pairs come from the PAIR_DROPS best single-spot drops. */
+const OPTION_COUNT = 5, RANKED_COUNT = 12, GUARANTEED_DROPS = 3, PAIR_DROPS = 4, EXTRA_WORK = 2_000_000;
 const ZERO: Value = { games: 0, points: 0, known: true, adds: 0, starts: 0 };
 /** More games, then points (points first when `pointsFirst`), then fewer adds; with a goalie-start `need`, expected starts
  * up to it come first. */
@@ -184,6 +185,7 @@ export function buildStreamingChains(inputs: StreamingInputs): StreamingPlan {
     return forecast?.confirmedStart ? 1 : forecast?.startProbability ?? 0;
   };
 
+  let work = 0;
   /** Best chain for one spot that starts by dropping `drop`, on top of `context` (another spot's streamers). With a goalie
    * `goal`, each window also offers its best goalie by expected starts, and starts up to `goal` outrank games. */
   const runSpot = (context: Context, drop: PlanningPlayer, adds: number, used: ReadonlySet<string>, goal = 0): SpotPlan | null => {
@@ -208,6 +210,7 @@ export function buildStreamingChains(inputs: StreamingInputs): StreamingPlan {
       const firstDay = timing.map((item, day) => !!item && starts[day] && claimable(games[day]!, item.effectiveAt));
       return { player, games, starts, points, scores, chances, firstDay, form: recent(player) };
     });
+    work += rows.length * n * (n + 1) / 2;
     const windows: Window[][] = dates.map(() => []), goalieWindows: Window[][] = dates.map(() => []);
     for (let start = 0; start < n; start++) if (timing[start]) for (let end = start + 1; end <= n; end++) {
       const ranked: Candidate[] = [];
@@ -360,10 +363,11 @@ export function buildStreamingChains(inputs: StreamingInputs): StreamingPlan {
   const top = (chains: StreamingChain[], order: typeof objectiveBetter) => chains.reduce<StreamingChain | null>((result, chain) => !result || order(chain, result) ? chain : result, null);
   const goals = need > 0 ? [0, need] : [0];
   const deadline = inputs.deadline ?? Infinity;
+  const extraAllowed = () => work <= EXTRA_WORK && Date.now() < deadline;
   let skipped = 0;
   const singles: Array<{ drop: PlanningPlayer; spots: SpotPlan[] }> = [];
   for (const [index, drop] of drops.entries()) {
-    if (index >= GUARANTEED_DROPS && Date.now() >= deadline) { skipped = drops.length - index; break; }
+    if (index >= GUARANTEED_DROPS && !extraAllowed()) { skipped = drops.length - index; break; }
     singles.push({ drop, spots: goals.flatMap(goal => runSpot(empty, drop, budget, new Set(), goal) ?? []) });
   }
   const ones = certifyAll(singles.flatMap(single => single.spots.map(spot => [spot])));
@@ -377,7 +381,7 @@ export function buildStreamingChains(inputs: StreamingInputs): StreamingPlan {
   const pairs: SpotPlan[][] = [];
   let pairCount = 0;
   if (budget >= 2) for (const [index, firstDrop] of pairDrops.entries()) for (const secondDrop of pairDrops.slice(index + 1)) for (const goal of goals) {
-    if (pairCount++ >= GUARANTEED_DROPS * goals.length && Date.now() >= deadline) { skipped++; continue; }
+    if (pairCount++ >= GUARANTEED_DROPS * goals.length && !extraAllowed()) { skipped++; continue; }
     let bestPair: { spots: SpotPlan[]; value: Value } | null = null;
     for (const [a, b] of [[firstDrop, secondDrop], [secondDrop, firstDrop]]) for (let split = 1; split < budget; split++) {
       const spotA = runSpot(empty, a, split, new Set(), goal);
@@ -395,7 +399,7 @@ export function buildStreamingChains(inputs: StreamingInputs): StreamingPlan {
   if (one && two && chainBetter(two, one)) { plan.recommended = 2; plan.chains = [two, one]; }
   else if (one) { plan.recommended = 1; plan.chains = [one]; }
   else if (two) { plan.recommended = 2; plan.chains = [two]; }
-  if (skipped) plan.limitations.push("Streaming search reached its time limit; some drop candidates were not tried.");
+  if (skipped) plan.limitations.push("Streaming search reached its work or time limit; some drop candidates were not tried.");
   if (!plan.chains.length) plan.limitations.push("No streaming chain adds active games over holding the roster.");
   // Meeting the minimum is never traded silently: the best chain that misses it is offered beside the one that meets it.
   const unconstrained = top([...ones, ...twos], objectiveBetter);
