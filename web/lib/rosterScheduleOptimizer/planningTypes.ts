@@ -309,7 +309,11 @@ export type StreamingLeg = { spot: number; step: PlanStep; actionDate: string; s
 /** A day-by-day add chain over one or two roster spots, certified by the plan evaluator. */
 export type StreamingChain = { spots: 1 | 2; legs: StreamingLeg[]; steps: PlanStep[]; evaluation: PlanEvaluation;
   netGames: number; netPoints: number | null; addsUsed: number; addsAvailable: number };
-export type StreamingPlan = { policyVersion: "rso-stream-v1"; recommended: 1 | 2 | null; chains: StreamingChain[]; limitations: string[] };
+/** The league's goalie-start minimum as the no-move plan stands: projected starts (credited plus expected) and whether it is met. */
+export type StreamingGoalieMinimum = { required: number; baseline: number | null; met: boolean };
+export type StreamingPlan = { policyVersion: "rso-stream-v1"; recommended: 1 | 2 | null; chains: StreamingChain[]; limitations: string[];
+  /** Present when the league has a goalie minimum with a penalty; chains that meet it rank first. */
+  goalieMinimum?: StreamingGoalieMinimum };
 export type PlanningResult = {
   /** Deterministic streaming chains (best one-spot, and the best two-spot split when it adds more). */
   streaming?: StreamingPlan;

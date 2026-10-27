@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { streamingChainSteps } from "lib/rosterScheduleOptimizer/streamingChain";
-import type { PlanStep, StreamingChain, StreamingLeg, StreamingPlan } from "lib/rosterScheduleOptimizer/planningTypes";
+import type { PlanStep, StreamingChain, StreamingGoalieMinimum, StreamingLeg, StreamingPlan } from "lib/rosterScheduleOptimizer/planningTypes";
 import styles from "./StreamingItinerary.module.scss";
 
 const dateLabel = (date: string) => new Date(`${date}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
@@ -17,6 +17,23 @@ function totals(chain: StreamingChain, overrides: Record<number, string>) {
     points = points === null || option.points === null || leg.points === null ? null : points + option.points - leg.points;
   }
   return { games, points };
+}
+
+const meets = (chain: StreamingChain) => !chain.evaluation.goalie.risk;
+const chainName = (chain: StreamingChain) => `${chain.spots === 1 ? "one-spot" : "two-spot"} plan (${signed(chain.netGames)} AGP)`;
+/** Goalie-minimum readout for the shown chain, and what meeting it costs against a chain that misses it (never silent). */
+function goalieStatus(minimum: StreamingGoalieMinimum, chain: StreamingChain, chains: StreamingChain[]) {
+  const status = `Goalie starts ${number(minimum.baseline)}/${minimum.required} → ${number(chain.evaluation.goalie.projected)}/${minimum.required} with this plan · ${meets(chain) ? "meets" : "misses"} the minimum`;
+  let tradeoff: string | null = null;
+  if (meets(chain)) {
+    const other = chains.find(item => !meets(item) && (item.netGames > chain.netGames
+      || item.netGames === chain.netGames && item.netPoints !== null && chain.netPoints !== null && item.netPoints > chain.netPoints));
+    if (other) tradeoff = `Meeting it costs ${other.netGames > chain.netGames ? `${other.netGames - chain.netGames} AGP` : `${number(other.netPoints! - chain.netPoints!)} proj FPts`} versus the ${chainName(other)}, which misses it.`;
+  } else {
+    const other = chains.find(meets);
+    if (other) tradeoff = `The ${chainName(other)} meets it instead.`;
+  }
+  return { status, tradeoff };
 }
 
 /** Day-by-day streaming plan: ADD or HOLD per day for each stream spot, the ranked options for each add, and totals.
@@ -43,6 +60,7 @@ export default function StreamingItinerary({ plan, dates, today, nameOf, teamOf,
   const spots = [...new Set(chain.legs.map(leg => leg.spot))];
   const describe = (id: string) => `${nameOf(id)}${teamOf(id) ? ` (${teamOf(id)})` : ""}`;
   const update = (patch: Partial<typeof state>) => setChoice({ ...state, ...patch });
+  const goalie = plan.goalieMinimum ? goalieStatus(plan.goalieMinimum, chain, plan.chains) : null;
   const legOn = (spot: number, date: string): { leg: StreamingLeg; index: number } | null => {
     const index = chain.legs.findIndex(leg => leg.spot === spot && leg.startDate <= date && date <= leg.endDate);
     return index < 0 ? null : { leg: chain.legs[index], index };
@@ -51,8 +69,10 @@ export default function StreamingItinerary({ plan, dates, today, nameOf, teamOf,
     <h3>Streaming plan</h3>
     {plan.chains.length > 1 && <div className={styles.spots} role="group" aria-label="Stream spots">{plan.chains.map((option, index) =>
       <button key={index} aria-pressed={state.chain === index} onClick={() => update({ chain: index, overrides: {} })}>
-        {option.spots === 1 ? "One spot" : "Two spots"} · {signed(option.netGames)} AGP{option.spots === plan.recommended ? " · suggested" : ""}</button>)}</div>}
+        {option.spots === 1 ? "One spot" : "Two spots"} · {signed(option.netGames)} AGP{plan.goalieMinimum ? ` · ${meets(option) ? "meets" : "misses"} G min` : ""}{index === 0 ? " · suggested" : ""}</button>)}</div>}
     <p className={styles.totals} aria-label="Streaming totals">Adds {chain.addsUsed}/{chain.addsAvailable} · {signed(total.games)} AGP · {signed(total.points)} proj FPts{estimated ? " (estimate after swaps)" : ""}</p>
+    {goalie && <p className={styles.totals} aria-label="Goalie minimum">{goalie.status}{estimated ? " (before swaps)" : ""}</p>}
+    {goalie?.tradeoff && <p className={styles.note}>{goalie.tradeoff}</p>}
     <ol className={styles.days}>{dates.filter(date => date >= today).map(date => <li key={date} className={styles.day}>
       <strong className={styles.date}>{dateLabel(date)}</strong>
       <div className={styles.moves}>{spots.map(spot => {

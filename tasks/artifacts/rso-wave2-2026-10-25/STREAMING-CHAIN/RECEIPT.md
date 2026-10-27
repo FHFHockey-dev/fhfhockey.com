@@ -79,7 +79,7 @@ The only existing read path is `PlanningPlayer.form`. It is loaded in `lib/roste
 - Daily lineup leagues only. One acquisition period per chain. At most 3 drop candidates (`knownDropOrder`).
 - Within a stream spot, a player is never re-added.
 - Option totals after a swap are estimates until re-planned.
-- The goalie minimum is not targeted directly. A goalie streamer counts when a G slot is open, and the evaluation reports `goalie.risk`.
+- The goalie minimum is not targeted directly. A goalie streamer counts when a G slot is open, and the evaluation reports `goalie.risk`. **Lifted on 10-27; see "Goalie minimum" below.**
 - Recent form is NHL points per game over the last ≤5 games, not last-10 FPts (see above).
 - Not browser-verified. No dev server was run.
 
@@ -150,3 +150,31 @@ TJ's pop-up decisions were: extend the existing planning read (no shortlist requ
 - eslint on the 10 touched files: 0 errors, 0 warnings.
 - No production, Supabase or Yahoo calls; the Supabase client is mocked.
 - **Follow-up for Chef:** `SKATER/GOALIE_POINT_COLUMNS` in `lib/integrations/yahoo/rosterPlanning.ts` now duplicate `recentForm.ts`. Deduping them means editing that file, which is outside my lanes.
+
+## Goalie minimum (10-27)
+- **When it applies:** the league has `rules.goalieMinimum.required > 0` and a penalty other than `none`. The target is the shortfall `required − baseline.goalie.projected`, where projected = credited + expected starts. It is used only when the no-move plan is at risk, counts are `starts` and the projection is known. If progress is unknown, the plan says "Goalie start progress is unknown, so streaming chains can't target the goalie minimum."
+- **Search:** a second pass runs beside the AGP pass. Each window also offers its best goalie by expected starts (a goalie's start probability, or 1 when confirmed, over the games he would fill in an open G slot). In this pass, expected starts up to the shortfall outrank games, then points, then adds. Dropping a rostered goalie subtracts his expected starts. Two-spot splits pass the second spot whatever shortfall is left. Proposals are deduplicated before certification.
+- **Ranking:** certified chains that meet the minimum (`!evaluation.goalie.risk`) beat chains that miss it, whatever their AGP. This also stops an AGP chain from dropping a goalie the minimum needs. A chain with no AGP gain is kept only when it reaches the minimum.
+- **Never traded silently:** when the suggested chain meets the minimum and the most-AGP chain misses it, the most-AGP chain is added after it. The itinerary shows:
+  - "Goalie starts 2/3 → 3.2/3 with this plan · meets the minimum";
+  - "meets G min" or "misses G min" on each chain button;
+  - "Meeting it costs N AGP (or N proj FPts) versus the … plan, which misses it", or "The … plan meets it instead."
+  
+  When no chain can reach it, the plan says "No streaming chain reaches the goalie minimum with the adds left."
+- **Unchanged when met or absent:** with the minimum met (credited ≥ required) or absent, only the AGP pass runs and the chain is identical. `StreamingPlan.goalieMinimum = { required, baseline, met }` is new and optional; streaming results are not schema-persisted.
+- **UI:** "suggested" now marks the first chain, not every chain with the recommended spot count, because a third chain can share it.
+- **Not changed:** `planning.ts` (start probabilities are read from the snapshot's forecasts inside the chain) and the evaluator's goalie rules.
+
+### Fixtures (`streamingChain.test.ts`, synthetic)
+The setup is TJ's league on Wednesday: 2 adds left, a 3-start minimum with 1 credited, and one rostered goalie who starts Thursday, so the no-move projection is 2/3.
+- **Default:** two spots. The rostered goalie is swapped after his last start for a goalie streamer (Fri–Sat, 0.6 each), and the idle skater for WPG Thu–Sun. The result is +4 AGP and 3.2/3. Behind it come the one-spot goalie chain (+3, meets) and the most-points chain (+4, misses at 2/3).
+- **Rostered goalie protected:** one spot, WPG Thu → goalie streamer Fri–Sun. The result is +3 AGP and 3.2/3, with the +4 chain that misses shown beside it.
+- **Minimum met (credited 3/3) or absent:** the same WPG → EDM chain, +4, and no extra chain.
+- **Unreachable** (no goalie streamer): the limitation text above.
+- **Itinerary** (`StreamingItinerary.test.tsx`): the status line, the meets/misses labels and both tradeoff notes.
+
+### Checks
+- `TZ=UTC` and then `TZ=America/New_York`, the same 9-path RSO vitest command as above: 56 files and 1466 tests each, with 1465 passed and 1 failed. The failure is `BenchDays.test.tsx` ("shows the top rows and toggles the rest…"), which is the sibling session's uncommitted `BenchDays.*` edit. It doesn't import the chain.
+- `NODE_OPTIONS=--max-old-space-size=8192 npx tsc --noEmit` under `/private/tmp/fhfh-heavy.lock` (noclobber, released): exit 0.
+- eslint on the 5 touched files: clean. No scss was touched.
+- No production, Supabase or Yahoo calls.
