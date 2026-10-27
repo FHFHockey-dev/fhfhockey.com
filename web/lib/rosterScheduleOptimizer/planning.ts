@@ -1,7 +1,7 @@
 import { weightedAssignment } from "../projections/weightedAssignment";
 import { resolvePlanningContributions } from "../player-forecasts/planningContributions";
 import { summarizeContributionCoverage, type ResolvedContribution } from "../player-forecasts/contributions";
-import { lineupPeriodAtDate, localDate, zonedMidnight } from "./planningDates";
+import { lineupPeriodAtDate, localDate, nextLocalMidnight, zonedMidnight } from "./planningDates";
 import { canEligibilityOccupySlot, normalizeEligibility } from "./eligibility";
 import { expandActiveSlots } from "./slots";
 import { acquisitionEffectiveAt, buildTimeline } from "./planningTimeline";
@@ -1200,6 +1200,21 @@ function shortlist(snapshot: PlanningSnapshot, intent: PlanIntent, limit: number
   for (const item of sorted) if (selected.length < limit && !used.has(item.player.id)) { selected.push(item.player); used.add(item.player.id); }
   return selected;
 }
+/** A move due "now" cannot be timed at the read's `asOf`: the next read (or the wall clock) is already later, so
+ * it would be stale at once. Time it at the latest instant with the same outcome instead: a minute before the next
+ * puck drop, league-local midnight, acquisition period or lineup boundary. Until then it stays a legal future
+ * (conditional) move on every newer read. Null when no such instant is after `asOf`. */
+function latestEquivalentActionAt(snapshot: PlanningSnapshot): string | null {
+  const asOf = time(snapshot.context.asOf);
+  const boundaries = [
+    ...snapshot.games.map(game => game.startsAt ?? ""),
+    nextLocalMidnight(localDate(snapshot.context.asOf, snapshot.context.timeZone), snapshot.context.timeZone),
+    ...snapshot.rules.periods.flatMap(period => [period.start, period.end]),
+    ...(snapshot.rules.lineupPeriods ?? []).flatMap(period => [period.start, period.end, period.lockAt ?? ""]),
+  ].map(time).filter(value => Number.isFinite(value) && value >= asOf);
+  const latest = Math.min(...boundaries) - 60_000;
+  return Number.isFinite(asOf) && Number.isFinite(latest) && latest > asOf ? new Date(latest).toISOString() : null;
+}
 function* extensions(snapshot: PlanningSnapshot, intent: PlanIntent, prior: PlanStep[], candidates: PlanningPlayer[], dropOrder?: ReadonlyMap<string, number>): Generator<PlanStep[]> {
   const owned = new Set(snapshot.roster.map(entry => entry.playerId));
   for (const step of prior) {
@@ -1218,6 +1233,7 @@ function* extensions(snapshot: PlanningSnapshot, intent: PlanIntent, prior: Plan
     && (dropOrder?.has(player.id) || !onRoster.has(player.id))), () => null)
     .sort((a, b) => (dropOrder?.get(a.id) ?? Infinity) - (dropOrder?.get(b.id) ?? Infinity));
   const proposals: Array<{ player: PlanningPlayer; date: string; step: PlanStep }> = [];
+  const dueNow = latestEquivalentActionAt(snapshot);
   const useful = candidates.map(player => ({ player, dates: owned.has(player.id) ? [] : dates.filter(date => snapshot.games.some(game => game.date === date && game.teamAbbreviation === player.teamAbbreviation)) }));
   const maxDates = Math.max(0, ...useful.map(item => item.dates.length));
   for (let dateIndex = 0; dateIndex < maxDates; dateIndex++) for (const { player, dates: playerDates } of useful) {
@@ -1226,7 +1242,7 @@ function* extensions(snapshot: PlanningSnapshot, intent: PlanIntent, prior: Plan
     const actionDate = snapshot.rules.acquisitionTiming === "next_day"
       ? new Date(Date.parse(`${date}T12:00:00Z`) - 86400000).toISOString().slice(0, 10) : date;
     let at = zonedMidnight(actionDate, snapshot.context.timeZone);
-    if (time(at) < time(snapshot.context.asOf)) at = snapshot.context.asOf;
+    if (time(at) < time(snapshot.context.asOf)) at = dueNow ?? snapshot.context.asOf;
     if (prior.length && time(at) < time(prior[prior.length - 1].effectiveAt)) continue;
     if (snapshot.rules.acquisitionTiming === "next_day" && localDate(at, snapshot.context.timeZone) >= date) continue;
     const effectiveAt = acquisitionEffectiveAt(snapshot, player, at);
