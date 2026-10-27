@@ -286,18 +286,52 @@ export function ownershipSeriesDates(previous: string | null, latest: string | n
   return days < 1 || days > OWNERSHIP_SERIES_MAX_DAYS ? null : Array.from({ length: days + 1 }, (_, day) => shiftDate(previous, day));
 }
 
+/** A known sum of games `from`..`to` (season appearance numbers, inclusive): a season total or a last-N window. */
+export type GameRange = { from: number; to: number; total: number };
 /**
- * One skater's last SERIES_GAMES per-game values, oldest first, from season-to-date values on contiguous rows. A game
- * whose own row, previous row or value is missing is null (a gap), never interpolated.
+ * One skater's last SERIES_GAMES per-game values, oldest first. TT-17: solved exactly from sums the read already
+ * holds, never interpolated:
+ * - every stored row's season-to-date total (games 1..n); two rows with the same n that disagree give no sum;
+ * - `windows`, the last-N totals on the rows of the rolling read (games n−N+1..n).
+ * Nested sums sharing an end are subtracted into new sums, and a sum with exactly one unknown game solves it. So a
+ * game whose own or previous row is missing from the table (run-3: early-season rows absent for some players) is
+ * still a point when a window pins it; a game no sum isolates stays null (a gap). `valid` rejects impossible values.
+ * `nonNegative` (points): a sum of 0 makes every game in it 0, since no game can be negative.
  */
-function gameSeries(rows: ShareSeriesRow[], latestSgp: number, cumulative: (row: ShareSeriesRow) => number | null) {
-  const bySgp = new Map<number, ShareSeriesRow | null>();
-  for (const row of rows) if (num(row.season_games_played)) bySgp.set(row.season_games_played, bySgp.has(row.season_games_played) ? null : row);
-  const at = (sgp: number) => { const row = bySgp.get(sgp); return row ? cumulative(row) : null; };
-  return Array.from({ length: SERIES_GAMES }, (_, k) => {
-    const sgp = latestSgp - (SERIES_GAMES - 1 - k), now = sgp >= 1 ? at(sgp) : null, before = sgp === 1 ? 0 : at(sgp - 1);
-    return now === null || before === null ? null : now - before;
-  });
+export function gameSeries(rows: ShareSeriesRow[], latestSgp: number, cumulative: (row: ShareSeriesRow) => number | null, windows: GameRange[] = [], valid: (value: number) => boolean = () => true, nonNegative = false) {
+  const totals = new Map<number, number | null>();
+  for (const row of rows) {
+    const sgp = row.season_games_played, value = cumulative(row);
+    if (!num(sgp) || sgp < 1) continue;
+    totals.set(sgp, value === null || (totals.has(sgp) && totals.get(sgp) !== value) ? null : value);
+  }
+  const ranges = new Map<string, GameRange>(), add = (range: GameRange) => {
+    if (range.from < 1 || range.to < range.from || range.to > latestSgp || ranges.size > 400) return false;
+    const key = `${range.from}-${range.to}`;
+    if (ranges.has(key)) return false;
+    ranges.set(key, range);
+    return true;
+  };
+  for (const [sgp, total] of totals) if (total !== null) add({ from: 1, to: sgp, total });
+  for (const window of windows) add({ ...window, from: Math.max(1, window.from) });
+  const known = new Map<number, number>();
+  for (let progress = true, rounds = 0; progress && rounds < 12; rounds++) {
+    progress = false;
+    const list = [...ranges.values()];
+    for (const a of list) for (const b of list) {
+      if (a.to - a.from >= b.to - b.from) continue;
+      if (a.from === b.from) progress = add({ from: a.to + 1, to: b.to, total: b.total - a.total }) || progress;
+      else if (a.to === b.to) progress = add({ from: b.from, to: a.from - 1, total: b.total - a.total }) || progress;
+    }
+    for (const range of ranges.values()) {
+      const unknown: number[] = [];
+      let rest = range.total;
+      for (let game = range.from; game <= range.to; game++) if (known.has(game)) rest -= known.get(game)!; else unknown.push(game);
+      if (unknown.length === 1 && valid(rest)) { known.set(unknown[0], rest); progress = true; }
+      else if (nonNegative && unknown.length > 1 && rest === 0) { for (const game of unknown) known.set(game, 0); progress = true; }
+    }
+  }
+  return Array.from({ length: SERIES_GAMES }, (_, k) => known.get(latestSgp - (SERIES_GAMES - 1 - k)) ?? null);
 }
 const complete = (values: (number | null)[]): values is number[] => values.every(num);
 
@@ -357,20 +391,30 @@ export function buildTrendLayer(sources: ShareTrendSources | null, context: Tren
     if (row.season !== context.season || row.strength_state !== "all" || !isDate(row.game_date) || row.game_date < oldestGame || row.game_date > lists.today) continue;
     seriesRows.set(row.player_id, [...(seriesRows.get(row.player_id) ?? []), row]);
   }
-  const seriesFor = (nhlId: number, cumulative: (row: ShareSeriesRow) => number | null) => {
+  // TT-17: the rolling read's own last-5 / last-10 totals (rows of the last week, already read in R1) pin games whose
+  // stored rows are missing; see gameSeries.
+  const windowRows = new Map<number, ShareRollingRow[]>();
+  for (const row of rowsOf(sources.rolling) ?? []) if (row.season === context.season && row.strength_state === "all" && num(row.season_games_played)) windowRows.set(row.player_id, [...(windowRows.get(row.player_id) ?? []), row]);
+  const windowsOf = (nhlId: number, columns: [keyof ShareRollingRow, number][]) => (windowRows.get(nhlId) ?? []).flatMap(row => columns.flatMap(([column, size]) => {
+    const total = row[column], to = row.season_games_played!;
+    return num(total) ? [{ from: to - size + 1, to, total }] : [];
+  }));
+  const seriesFor = (nhlId: number, cumulative: (row: ShareSeriesRow) => number | null, windows: GameRange[] = [], valid?: (value: number) => boolean, nonNegative?: boolean) => {
     const latest = lists.active.get(nhlId)?.latest, rows = seriesRows.get(nhlId);
     if (!latest || !rows || !num(latest.season_games_played) || !rows.some(row => row.game_date === latest.game_date && row.season_games_played === latest.season_games_played)) return null;
-    return gameSeries(rows, latest.season_games_played, cumulative);
+    return gameSeries(rows, latest.season_games_played, cumulative, windows, valid, nonNegative);
   };
   const pointsSeries = (nhlId: number) => {
-    const values = seriesFor(nhlId, row => { const total = num(row.points_avg_season) && num(row.season_games_played) ? row.points_avg_season * row.season_games_played : null; return total !== null && Math.abs(total - Math.round(total)) <= 0.01 ? Math.round(total) : null; });
+    const values = seriesFor(nhlId, row => { const total = num(row.points_avg_season) && num(row.season_games_played) ? row.points_avg_season * row.season_games_played : null; return total !== null && Math.abs(total - Math.round(total)) <= 0.01 ? Math.round(total) : null; },
+      windowsOf(nhlId, [["points_total_last5", 5], ["points_total_last10", 10]]), value => Number.isInteger(value) && value >= 0, true);
     const latest = lists.active.get(nhlId)!.latest, sum = (list: (number | null)[]) => complete(list) ? list.reduce((a, b) => a + b, 0) : null;
     if (!values || values.some(value => value !== null && value < 0)) return null;
     const last5 = sum(values.slice(-5)), last10 = sum(values);
     return (last5 !== null && last5 !== latest.points_total_last5) || (last10 !== null && last10 !== latest.points_total_last10) ? null : values;
   };
   const toiSeries = (nhlId: number) => {
-    const values = seriesFor(nhlId, row => num(row.toi_seconds_avg_season) && num(row.season_games_played) ? row.toi_seconds_avg_season * row.season_games_played : null)?.map(value => value === null ? null : Math.round(value));
+    const values = seriesFor(nhlId, row => num(row.toi_seconds_avg_season) && num(row.season_games_played) ? row.toi_seconds_avg_season * row.season_games_played : null,
+      windowsOf(nhlId, [["toi_seconds_total_last5", 5]]), value => value > 0)?.map(value => value === null ? null : Math.round(value));
     const latest = lists.active.get(nhlId)!.latest, last5 = values?.slice(-5);
     if (!values || values.some(value => value !== null && value <= 0)) return null;
     return last5 && complete(last5) && num(latest.toi_seconds_avg_last5) && Math.abs(last5.reduce((a, b) => a + b, 0) / 5 - latest.toi_seconds_avg_last5) > 2 ? null : values;

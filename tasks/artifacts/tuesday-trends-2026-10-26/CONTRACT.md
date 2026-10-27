@@ -223,3 +223,12 @@ Native sources only. Tuesday never reads `PROJECTIONS_20262027_*`, `PROJECTIONS_
 - **Rates:** no ABOVE SEASON badge.
 - **No series:** the baseline is labelled "NO PER-GAME DATA".
 - **Gaps:** a game whose row or value is missing (not a missed game; missed games are never points) gets a faint dotted column above the hollow tick, and "N game(s) no data" on the meta line.
+
+## TT-17: per-game series from every exact sum the read holds
+
+- **Sums:** a game's value is solved from known sums: each stored row's season-to-date total (games 1..n), plus the last-5 / last-10 totals on the rolling read's own rows (R1, already read).
+  - Nested sums are subtracted into new sums, and a sum with one unknown game solves it.
+  - For points, a sum of 0 makes each game in it 0.
+- **Strictly exact:** values are never interpolated or split.
+- **Gaps:** a game no sum isolates stays a gap, shown as "N games no data". The cause is usually that the table has no row for that early-season game.
+- **Reads:** no read change: same statements, columns and caps as READ-PLAN v3.

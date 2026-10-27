@@ -1345,6 +1345,7 @@ test("Tuesday GENUINE DATA render: captured layer, offline, export token per car
   const capture = JSON.parse(await readFile(file!, "utf8")) as { capturedAt: string; layer: NonNullable<SocialShareSnapshot["trends"]> };
   const source = await install(page), shots = process.env.TUESDAY_GENUINE_DIR || evidence;
   source.mode = "league"; source.genuine = capture.layer;
+  const capturedSeries = Object.values(capture.layer.sections).some(section => Object.values(section).some(list => Array.isArray(list) && list.some(row => typeof row === "object" && row && "series" in row && Array.isArray((row as { series?: unknown }).series))));
   await mkdir(shots, { recursive: true });
   const label = () => page.evaluate(text => {
     if (document.querySelector("[data-genuine]")) return;
@@ -1366,9 +1367,16 @@ test("Tuesday GENUINE DATA render: captured layer, offline, export token per car
       await expect(square).toContainText(card === "hot" ? "HOT/COLD" : card === "deployment" ? "DEPLOYMENT CHANGES" : card === "rates" ? "RATE STANDOUTS" : "OWNERSHIP MOVERS");
       await expect(square).not.toContainText("GP this week");
       expect(await tileCollisions(page), `genuine ${card}`).toEqual([]);
-      // TT-15: run-2 predates the series, so every tile shows its values over the neutral baseline, never a drawn line.
-      await expect(square.locator("[data-player] [data-sparkline]")).toHaveCount(0);
-      expect(await square.locator("[data-player] [data-baseline]").count()).toBe(await square.locator("[data-player]").count());
+      // TT-15: a capture without series (run-2) shows every tile's values over the labelled baseline, never a drawn line.
+      // TT-17: a capture with series (run-3) draws each tile's own series exactly; the guard above checks one of the two.
+      if (!capturedSeries) {
+        await expect(square.locator("[data-player] [data-sparkline]")).toHaveCount(0);
+        expect(await square.locator("[data-player] [data-baseline]").count()).toBe(await square.locator("[data-player]").count());
+      } else if (card === "hot") {
+        const drawn = await square.locator("[data-player]").evaluateAll(tiles => tiles.map(tile => [tile.getAttribute("data-player"), tile.querySelector("[data-sparkline]")?.getAttribute("data-sparkline") ?? null]));
+        const hot = [...capture.layer.sections.hot.hot, ...capture.layer.sections.hot.cold];
+        expect(drawn).toEqual(hot.map(row => [String(row.nhlId), row.series?.some(value => value !== null) ? row.series.map(value => value ?? "gap").join(",") : null]));
+      }
       await square.scrollIntoViewIfNeeded();
       await label();
       await page.screenshot({ path: `${shots}/GENUINE-DATA-${name}-${card}.png`, fullPage: name === "desktop" });
