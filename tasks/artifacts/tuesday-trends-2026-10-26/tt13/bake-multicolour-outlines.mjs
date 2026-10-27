@@ -25,7 +25,7 @@ const TRACE = 768, OUT = 384, BLUR = 1.4, ALPHA_T = 0.2, COLOR_T = 0.3, MIN_STRO
  * - stroke: line radius at 768 px (default 3). Thicker: CAR, CBJ, CGY, EDM, BUF; NYR slightly.
  * - floor: minimum contrast on the card (default 4.5:1). Brighter: BUF, COL, DAL.
  * - colorT / minStroke: interior-edge threshold and shortest kept interior stroke (share of 768). VGK keeps its forehead
- *   ridge and cheek details; WPG keeps its ring and jet edges.
+ *   ridge and cheek details; WPG keeps its ring and jet edges; COL keeps the A's triangle cutout (TJ, after TT-13).
  * - minShare: smallest palette region kept (default 2%). SEA keeps its small red eye.
  * - only: every palette colour becomes one colour (`stroke` = the team's tuned single colour) except those near `keep`.
  *   SEA: the single team colour with its red highlight at the top of the S.
@@ -37,7 +37,7 @@ const TRACE = 768, OUT = 384, BLUR = 1.4, ALPHA_T = 0.2, COLOR_T = 0.3, MIN_STRO
  */
 const PARAMS = {
   CAR: { stroke: 5.5 }, CBJ: { stroke: 5.5 }, CGY: { stroke: 5.5 }, EDM: { stroke: 5.5 }, NYR: { stroke: 4.25 },
-  BUF: { stroke: 5, floor: 5.5 }, COL: { stroke: 4.5, floor: 8 }, DAL: { stroke: 4, floor: 8 },
+  BUF: { stroke: 5, floor: 5.5 }, COL: { stroke: 4.5, floor: 8, colorT: 0.12, minStroke: 0.015 }, DAL: { stroke: 4, floor: 8 },
   VGK: { colorT: 0.12, minStroke: 0.015 },
   SEA: { minShare: 0.002, only: { keep: [[0xc8, 0x10, 0x2e]], within: 110, to: "stroke" } },
   TOR: { pick: "interior", interiorColor: "#ffffff", twoTone: false },

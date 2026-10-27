@@ -107,3 +107,33 @@ The bake moved to `tt13/bake-multicolour-outlines.mjs`, which supersedes `tt12/`
 | `tasks/artifacts/tuesday-trends-2026-10-26/tt13/genuine-run2/TT13-GENUINE-DATA-png-rates.png` | `0edc221450a357a9f3e3ba32ad4594dfc50e1c4c7c58b654c00309fa39d609da` |
 | `tasks/artifacts/tuesday-trends-2026-10-26/tt13/palettes.json` | `e3153bf965efdeae9ff9887ad4464f4d7c3330455eec23584e985b6a416ddd4b` |
 | `tasks/artifacts/tuesday-trends-2026-10-26/tt13/sheets.mjs` | `7fa1cf9dfa5e85c07b1cd77d80a726038437b2ca2eddb6771d7be25b254a85d1` |
+
+
+## Follow-up: COL's A triangle cutout (TJ)
+
+- **Problem:** the cutout inside the A was never traced. Its burgundy-against-blue edge falls under the default interior-edge threshold.
+- **Fix:** `PARAMS.COL` gains `colorT: 0.12` and `minStroke: 0.015`, the same treatment as VGK and WPG. The cutout now traces, and the A's own edges show in its burgundy (floored to `#dd9db1`).
+- **Scope:** only `outline/color/COL.png` changed. No other team's PNG changed, and no code changed.
+
+**Refreshed**
+- `tt13/final-all32.png` and `tt13/contact-sheet-tt12-vs-tt13.png`
+- `tt13/fixture` and `tt13/genuine-run2` renders. Genuine export tokens match.
+
+| Check | Result |
+|---|---|
+| E2E, :3110, v2 pins (two passes) | **34 passed** (33 + 1); collision guard passed; Monday and Wednesday byte-identical |
+| Tuesday pins | 0608bf1f64f31ead365b78fa86a86f753ef91cdb0f075dfa156f82ed17ad4402, 2e4c8eb69b34e8e9edac2c9028c696d448a8ec2825ce83fd7314466f43b869f8, 81096611db36c5800a6158c012203f523cc31ddd73546eaaed8e9e398c5033db, c0ecbb322111519077ee620f5723643aacdafb33d69f5419facee90025d53e4a |
+| Vitest | 241/241 |
+| ESLint / tsc / CSS pure | not rerun; no code or CSS changed |
+
+| File | sha256 |
+|---|---|
+| `web/public/teamLogos/outline/color/COL.png` | `2c76bf22523d31e17d344ebaf7ca802a3d69fdea7f8f92983ab4f578e4050f81` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt13/bake-multicolour-outlines.mjs` | `1eec03aafadf10b07660c7c8b874383560a59c99199880845d6f3e01c1bb0fcc` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt13/palettes.json` | `ce2484acf2eb825f194e6533a87bfd76f65ae2f4bc483a2f226b91c37494d718` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt13/final-all32.png` | `bd93eef7b027efff21ca584f5fd54a2995d5eb6d0d1cd71ee367e2665a6194dd` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/tt13/contact-sheet-tt12-vs-tt13.png` | `0f84cc56eda62cc814d7636030c0fc4b08df64387458425016fed750fdfbf075` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/run/e2e-final-28a.log` | `b70ca4f6ba23710bf586eb7f7e74f1785d2ccdd456c3bb35635547d3e60db4f9` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/run/e2e-final-28b.log` | `6bbc13ba13144155603a57a4d9089ba538b9ec62272840a0cceb3c68a69854b2` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/run/vitest.log` | `bc7eace71f965e26f2cf245f0467907939faa3c2845aef6c0cfdddc0df1c733c` |
+| `tasks/artifacts/tuesday-trends-2026-10-26/run/evidence-28/tuesday-cards-pinned.sha256` | `201fc3cdd311a4647e8654301e4817bca62b5ba25ba9be5922fe2ddd0ec00d2a` |

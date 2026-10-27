@@ -201,38 +201,40 @@
     "COL": {
       "params": {
         "stroke": 4.5,
-        "floor": 8
+        "floor": 8,
+        "colorT": 0.12,
+        "minStroke": 0.015
       },
       "palette": [
         {
           "original": "#236192",
           "neon": "#7eb5e0",
           "logoShare": 0.311,
-          "outlineShare": 0.894
+          "outlineShare": 0.763
         },
         {
           "original": "#ffffff",
           "neon": "#ffffff",
           "logoShare": 0.333,
-          "outlineShare": 0.02
+          "outlineShare": 0.019
         },
         {
           "original": "#111111",
           "neon": "#afafaf",
           "logoShare": 0.034,
-          "outlineShare": 0.056
+          "outlineShare": 0.04
         },
         {
           "original": "#a2aaad",
           "neon": "#a8b0b3",
           "logoShare": 0.061,
-          "outlineShare": 0
+          "outlineShare": 0.034
         },
         {
           "original": "#6f263d",
           "neon": "#dd9db1",
           "logoShare": 0.261,
-          "outlineShare": 0.03
+          "outlineShare": 0.143
         }
       ]
     },
