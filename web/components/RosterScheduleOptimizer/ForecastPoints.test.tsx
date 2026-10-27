@@ -18,8 +18,8 @@ describe("ForecastPoints", () => {
     render(<ForecastPoints goalie points={{ expected: 2.31, ifStarts: 4.2 }} tier="mid" />);
     const expected = screen.getByLabelText("Expected fantasy points: 2.3");
     const conditional = screen.getByLabelText("Fantasy points if starts: 4.2");
-    expect(expected.textContent).toBe("2.3 expected");
-    expect(conditional.textContent).toBe("4.2 if starts");
+    expect(expected.textContent).toBe("2.3 exp");
+    expect(conditional.textContent).toBe("4.2 if GS");
     expect(expected.getAttribute("title")).toContain("including participation probability");
     expect(conditional.getAttribute("title")).toContain("conditional on starting");
     expect(conditional.getAttribute("data-tier")).toBeNull();
@@ -27,7 +27,7 @@ describe("ForecastPoints", () => {
 
   it("keeps genuine zero expected FP visible while conditional FP is unavailable", () => {
     render(<ForecastPoints goalie points={{ expected: 0, ifStarts: null }} tier="low" />);
-    expect(screen.getByLabelText("Expected fantasy points: 0.0").textContent).toBe("0.0 expected");
-    expect(screen.getByLabelText("Fantasy points if starts: unavailable").textContent).toBe("— if starts");
+    expect(screen.getByLabelText("Expected fantasy points: 0.0").textContent).toBe("0.0 exp");
+    expect(screen.getByLabelText("Fantasy points if starts: unavailable").textContent).toBe("— if GS");
   });
 });

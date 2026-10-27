@@ -323,6 +323,8 @@ describe("authenticated Yahoo generation through the real adapter", () => {
     expect(result.displaySnapshot.forecasts[0]).toMatchObject({ startProbability: probability,
       confirmedStart: probability === 1, stats: { SAVES_GOALIE: 25 * probability }, conditionalStats: { SAVES_GOALIE: 25 } });
     expect(result.expiresAtMonotonic! - planningMonotonicNow()).toBe(120000);
+    // The two-minute Yahoo window, not a public input, ends this plan (a public-only stand-in may follow it).
+    expect(result.privateLapsesFirst).toBe(true);
     expect(JSON.stringify(result)).not.toContain("synthetic-only");
     fallback.release(); same.release();
     const { runWorkerRequest } = await import("../../hooks/rosterPlanning.worker");
@@ -366,7 +368,14 @@ describe("authenticated Yahoo generation through the real adapter", () => {
     const request = requestRosterPlanning(f.snapshot, f.intent, f.options), result = await request.promise; request.release();
     expect(result.result.selected.projectedValue).toBeNull(); expect(result.displaySnapshot.forecasts).toEqual([]);
     expect(result.displaySnapshot.rules).toEqual(f.snapshot.rules); expect(result.displaySnapshot.roster).toEqual(f.snapshot.roster);
+    expect(result.privateLapsesFirst).toBe(false);
     expect(f.fetcher).toHaveBeenCalledOnce();
+  });
+  it("reports a public input, not the Yahoo window, when a forecast expires first", async () => {
+    const f = privateFixture();
+    f.body.data.forecasts[0].expiresAt = "2026-10-22T12:01:00Z";
+    const request = requestRosterPlanning(f.snapshot, f.intent, f.options), result = await request.promise; request.release();
+    expect(result.expiresAt).not.toBeNull(); expect(result.privateLapsesFirst).toBe(false);
   });
   it("cannot mint private authority from options/worker request JSON without a runtime channel", async () => {
     const f = privateFixture();

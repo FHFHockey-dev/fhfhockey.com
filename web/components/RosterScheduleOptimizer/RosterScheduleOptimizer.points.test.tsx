@@ -80,13 +80,13 @@ describe("RSO live grid points callback", () => {
 
   it("renders goalie expected and if-starts FP with distinct semantics", async () => {
     const { cell } = await mount({ goalie: true, stats: { SAVES_GOALIE: 11.55 }, conditional: { SAVES_GOALIE: 21 }, probability: 0.55 });
-    expect(cell.getByLabelText("Expected fantasy points: 2.3").textContent).toBe("2.3 expected");
-    expect(cell.getByLabelText("Fantasy points if starts: 4.2").textContent).toBe("4.2 if starts");
+    expect(cell.getByLabelText("Expected fantasy points: 2.3").textContent).toBe("2.3 exp");
+    expect(cell.getByLabelText("Fantasy points if starts: 4.2").textContent).toBe("4.2 if GS");
   });
 
   it.each([0, null])("does not invent an if-starts estimate at start probability %s", async probability => {
     const { cell } = await mount({ goalie: true, stats: { SAVES_GOALIE: 0 }, probability });
-    expect(cell.getByLabelText("Fantasy points if starts: unavailable").textContent).toBe("— if starts");
+    expect(cell.getByLabelText("Fantasy points if starts: unavailable").textContent).toBe("— if GS");
     expect(cell.queryByText(/NaN|Infinity/)).toBeNull();
   });
 
@@ -94,7 +94,7 @@ describe("RSO live grid points callback", () => {
     const { cell } = await mount({ goalie: true, stats: { SAVES_GOALIE: 11.55 }, conditional: { SAVES_GOALIE: 21 }, probability: 0.55, native: true });
     expect(cell.getByLabelText("Expected fantasy points: unavailable")).toBeTruthy();
     expect(cell.getByLabelText("Fantasy points if starts: unavailable")).toBeTruthy();
-    expect(cell.queryByText("2.3 expected")).toBeNull();
-    expect(cell.queryByText("4.2 if starts")).toBeNull();
+    expect(cell.queryByText("2.3 exp")).toBeNull();
+    expect(cell.queryByText("4.2 if GS")).toBeNull();
   });
 });

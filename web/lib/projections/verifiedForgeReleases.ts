@@ -78,6 +78,14 @@ export const VERIFIED_FORGE_PRODUCER_CLOSURES: readonly VerifiedForgeProducerClo
     verifierVersion: "forge-release-sha-verifier-v1",
     note: "Release candidate: days-ahead preflight anchoring, commit 02153acba: 194-module closure, 0 findings.",
   },
+  {
+    closureSha256: "bf23edfea5b5c9301fcedd2b5c3fa86016ceecd86d1d2d49c0a6d6c687e7ab3b",
+    commit: "eff1b377ae8c831705710758979cc67e9d38846b",
+    receipt: "tasks/artifacts/projection-table-audit-2026-10-26/release-verification/eff1b377ae8c831705710758979cc67e9d38846b.json",
+    receiptSha256: "bec39018543794fcf5c55fa8e5517f8ce020c3fad8866edc52ce615d95bc15cd",
+    verifierVersion: "forge-release-sha-verifier-v1",
+    note: "P1 release: RSO bridge labelled conservative 0 (bridgeForecastWire.ts), commit eff1b377a: 194-module closure, 0 findings.",
+  },
 ];
 
 const FULL_SHA = /^[0-9a-f]{40}$/, SHA256 = /^[0-9a-f]{64}$/;

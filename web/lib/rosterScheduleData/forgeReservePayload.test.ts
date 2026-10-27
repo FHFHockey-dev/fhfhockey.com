@@ -1,7 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { forecastCalendarPolicy } from "lib/player-forecasts/contributions";
-import type { GameForecast } from "lib/rosterScheduleOptimizer/planningTypes";
-import { compactBridgeForecasts, expandBridgeForecasts, jsonUtf8Bytes, PLANNING_RESPONSE_BYTE_BUDGET, reserveCodeOf } from "./bridgeForecastWire";
+import type { GameForecast, PlanningData, PlanningPlayer, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
+import { currentRsoUsePolicy } from "lib/player-forecasts/rsoUsePolicy";
+import { withCurrentPlanningRead } from "lib/rosterScheduleOptimizer/currentPlanningRead";
+import { evaluatePlan } from "lib/rosterScheduleOptimizer/planning";
+import { candidatePlanMetrics } from "lib/rosterScheduleOptimizer/candidatePlanMetrics";
+import { compactBridgeForecasts, expandBridgeForecasts, fitBridgeWire, jsonUtf8Bytes, PLANNING_RESPONSE_BYTE_BUDGET, reserveCodeOf } from "./bridgeForecastWire";
 import { buildForgeDailyBridgeForecasts, FORGE_DAILY_BRIDGE_BYTE_BUDGET, FORGE_DAILY_BRIDGE_EXPANDED_BYTE_BUDGET, FORGE_RESERVE_EXPANDED_BYTE_BUDGET, type ForgeDailyBridgeInputs } from "./forgeDailyBridge";
 import { league, now, seasonId, SKATERS, LINEUP, type Shape } from "./forgeReservePayload.fixture";
 
@@ -46,21 +50,9 @@ describe("FORGE reserve payload (full selected-horizon coverage)", () => {
     expect(week.bytes.snapshot).toBeLessThan(BACKUP_LIMIT - HEADROOM);
   });
 
-  it("keeps the 4 MB expanded budget with the reserve pass off, and uses 6 MB only with it on", () => {
-    expect(FORGE_DAILY_BRIDGE_EXPANDED_BYTE_BUDGET).toBe(4_000_000);
-    expect(FORGE_RESERVE_EXPANDED_BYTE_BUDGET).toBe(6_000_000);
-    // Two weeks of lineup rows alone exceed 4 MB, so the default budget decides how many are kept.
-    const { players, games, inputs } = league(14);
-    const kept = (reserves: ForgeDailyBridgeInputs["reserves"]) => {
-      const { forecasts } = buildForgeDailyBridgeForecasts({ ...inputs, reserves }, players, games, now, seasonId, forecastCalendarPolicy(15));
-      return forecasts.reduce((sum, row) => sum + jsonUtf8Bytes(row) + 1, 0);
-    };
-    const off = kept(undefined), on = kept([]);
-    expect(off).toBeLessThanOrEqual(FORGE_DAILY_BRIDGE_EXPANDED_BYTE_BUDGET);
-    expect(off).toBeGreaterThan(FORGE_DAILY_BRIDGE_EXPANDED_BYTE_BUDGET - 3000);
-    // With the pass on, every lineup row (about 5.9 MB here) is kept under the 6 MB budget.
-    expect(on).toBeGreaterThan(FORGE_DAILY_BRIDGE_EXPANDED_BYTE_BUDGET);
-    expect(on).toBeLessThanOrEqual(FORGE_RESERVE_EXPANDED_BYTE_BUDGET);
+  it("uses one 6 MB expanded budget, with or without the reserve pass, now that every player has a row (TJ, option B)", () => {
+    expect(FORGE_DAILY_BRIDGE_EXPANDED_BYTE_BUDGET).toBe(6_000_000);
+    expect(FORGE_RESERVE_EXPANDED_BYTE_BUDGET).toBe(FORGE_DAILY_BRIDGE_EXPANDED_BYTE_BUDGET);
   });
 
   it("keeps the budget itself inside the saved-snapshot ceiling with headroom", () => {
@@ -91,4 +83,64 @@ describe("FORGE reserve payload (full selected-horizon coverage)", () => {
     console.info(`FORGE_RESERVE_PAYLOAD ${JSON.stringify(rows)}`);
     expect(rows[0].forecasts).toBe(rows[0].opportunities);
   });
+
+  it("with the reserve pass off, gives every rostered player a row so one scratched roster player no longer blanks every candidate", async () => {
+    // P1 (2026-10-26): one rostered skater with no FORGE line used to null the roster baseline and every candidate's points.
+    const { players: catalog, games, inputs } = league(7, "typical");
+    const { reserves: _off, ...flagOff } = inputs;
+    const built = buildForgeDailyBridgeForecasts(flagOff, catalog, games, now, seasonId, forecastCalendarPolicy(14));
+    const teamed = catalog.filter(player => player.teamAbbreviation);
+    const indexOf = (player: PlanningPlayer) => (player.nhlId! - 8470000) % 100;
+    const lineupSkater = (player: PlanningPlayer) => player.playerClass === "skater" && indexOf(player) < LINEUP;
+    // Full coverage with the pass off: a real line or a labelled 0 for every rostered player's every game, within budget.
+    const opportunities = teamed.reduce((sum, player) => sum + games.filter(game => game.teamAbbreviation === player.teamAbbreviation).length, 0);
+    expect(built.forecasts).toHaveLength(opportunities);
+    expect(built.forecasts.reduce((sum, row) => sum + jsonUtf8Bytes(row) + 1, 0)).toBeLessThanOrEqual(FORGE_DAILY_BRIDGE_EXPANDED_BYTE_BUDGET);
+    const roster = [...teamed.filter(lineupSkater).filter((_, index) => index % 30 === 0).slice(0, 17),
+      ...teamed.filter(player => player.playerClass === "goalie" && indexOf(player) === SKATERS).slice(0, 2)];
+    const scratched = teamed.find(player => player.playerClass === "skater" && indexOf(player) >= LINEUP && !roster.includes(player))!;
+    expect(built.forecasts.filter(row => row.playerId === scratched.id).every(row => reserveCodeOf(row) === "skater:no_forge_line")).toBe(true);
+    const others = teamed.filter(player => !roster.includes(player) && player !== scratched && player.playerClass === "skater" && indexOf(player) < LINEUP)
+      .filter((_, index) => index % 2 === 0).slice(0, 242);
+    const owned = new Set([...roster, scratched, ...others].map(player => player.id));
+    const free = new Set(teamed.filter(player => !owned.has(player.id)).slice(0, 815).map(player => player.id));
+    const players = catalog.map(player => ({ ...player, eligibilityVerified: owned.has(player.id) || free.has(player.id),
+      canDrop: owned.has(player.id) ? true : player.canDrop,
+      availability: free.has(player.id) ? "free_agent" as const : owned.has(player.id) ? "rostered" as const : "unknown" as const }));
+    const { wire } = compactBridgeForecasts(built.forecasts, { players, games }, seasonId);
+    const revisions = [...new Set(built.forecasts.map(row => row.revisionId))].sort();
+    const data: PlanningData = { players, games, forecasts: [], baselineSources: [], participationSources: [],
+      evidence: { schedule: { source: "fixture", asOf: now.toISOString(), seasonId, completeness: "complete", limitations: [] } },
+      forecastManifest: { version: "planning-forecasts-v1", id: "current-read", seasonId, asOf: now.toISOString(),
+        scheduleRevision: "schedule", rosterRevision: "roster", issuedRevisionIds: revisions, baselineChecksum: null,
+        requiredOpportunities: built.forecasts.length, forecastedOpportunities: built.forecasts.length, exclusionCounts: {},
+        rsoUsePolicy: { version: "rso-target-use-v1", revision: currentRsoUsePolicy().revision, bridgeRevisionIds: revisions } } };
+    const body = fitBridgeWire(wire, value => ({ success: true, data, ...(value ? { bridgeForecasts: value } : {}) }), PLANNING_RESPONSE_BYTE_BUDGET)!;
+    const intent = { revision: 1, steps: [], protectedPlayerIds: [], excludedPlayerIds: [], goalieCoverage: "accept_risk" as const,
+      goalieWindow: "any" as const, goalieSplit: "mon_wed" as const, alternativeCount: 5 as const, objective: "outcome" as const };
+    // Goalie wins need team-strength priors this fixture lacks, so the league scores skater heads and saves.
+    const snapshot: PlanningSnapshot = { id: "snap",
+      context: { provider: "manual", seasonId, leagueId: "l", teamId: "t", startDate: "2026-10-27", endDate: "2026-11-02", timeZone: "UTC", asOf: now.toISOString() },
+      players, games, forecasts: [], roster: [...roster, scratched].map(player => ({ playerId: player.id, position: "active" as const })),
+      lockedAssignments: [], realized: {}, opponent: null,
+      rules: { lineupMode: "daily", rosterSlots: { C: 6, D: 4, UTIL: 1, G: 2, BN: 7 }, acquisitionTiming: "next_day", acquisitionCost: 1,
+        periods: [{ id: "w", start: "2026-10-26T00:00:00.000Z", end: "2026-11-03T00:00:00.000Z", remaining: 4, source: "provider" }],
+        scoring: { mode: "points", weights: { GOALS: 3, ASSISTS: 2, SHOTS_ON_GOAL: 0.4, HITS: 0.2, BLOCKED_SHOTS: 0.3, SAVES_GOALIE: 0.2 }, categories: [] },
+        goalieMinimum: { required: null, credited: null, counts: "unknown", penalty: "none" }, unsupported: [] },
+      evidence: { schedule: { source: "fixture", asOf: now.toISOString(), seasonId, completeness: "complete", limitations: [] } } };
+    vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(now);
+    vi.stubGlobal("fetch", vi.fn(async (_url: string, init: RequestInit) => ({ ok: true, json: async () => JSON.parse(JSON.stringify({ ...body,
+      read: { nonce: (init.headers as Record<string, string>)["X-RSO-Read-Nonce"], evaluatedAt: now.toISOString() } })) }) as Response));
+    try {
+      const result = await withCurrentPlanningRead(snapshot, {}, currentRsoUsePolicy().revision, new AbortController().signal, (input, _data, readError) => {
+        expect(readError).toBeNull();
+        return { baseline: evaluatePlan(input, intent, "outcome", [], false), metrics: candidatePlanMetrics(input, intent, { maxCandidates: 8, maxEvaluations: 24 }) };
+      });
+      expect(result.baseline.comparisonEligible).toBe(true);
+      expect(result.baseline.projectedValue).toBeGreaterThan(0);
+      // Every evaluated candidate gets net points again (bounded here to keep the test fast; production evaluates 40).
+      expect(result.metrics.search.candidates).toBe(8);
+      expect(result.metrics.activePoints.filter(([, value]) => value != null)).toHaveLength(8);
+    } finally { vi.useRealTimers(); vi.unstubAllGlobals(); }
+  }, 60000);
 });

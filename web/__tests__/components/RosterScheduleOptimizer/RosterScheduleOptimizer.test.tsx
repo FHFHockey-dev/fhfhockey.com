@@ -835,6 +835,55 @@ describe("RosterScheduleOptimizer workspace", () => {
       await waitFor(() => expect(points.getAttribute("aria-pressed")).toBe("true"));
     }
   });
+  it("keeps Bench days as its own Current Roster tab, with Players shown by default", async () => {
+    const workspace = defaultWorkspace();
+    workspace.roster = [{ playerId: player.id, position: "active" }];
+    workspace.manualPlayers = [{ ...player, eligibilityVerified: true }];
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<RosterScheduleOptimizer />);
+    const tab = within(screen.getByRole("group", { name: "Current Roster views" })).getByRole("button", { name: "Bench days" });
+    const playersTab = within(screen.getByRole("group", { name: "Current Roster views" })).getByRole("button", { name: "Players" });
+    expect(tab.getAttribute("aria-pressed")).toBe("false");
+    expect(playersTab.getAttribute("aria-pressed")).toBe("true");
+    expect(document.getElementById("rso-bench-days")).toBeNull();
+    const rows = document.querySelectorAll('[aria-label="Roster and setup"] [class*="rosterRow"]').length;
+    expect(rows).toBeGreaterThan(0);
+    fireEvent.click(tab);
+    expect(tab.getAttribute("aria-pressed")).toBe("true");
+    expect(document.getElementById("rso-bench-days")).not.toBeNull();
+    // Bench days replaces the player rows instead of squeezing them.
+    expect(document.querySelectorAll('[aria-label="Roster and setup"] [class*="rosterRow"]').length).toBe(0);
+    fireEvent.click(playersTab);
+    expect(document.getElementById("rso-bench-days")).toBeNull();
+    expect(document.querySelectorAll('[aria-label="Roster and setup"] [class*="rosterRow"]').length).toBe(rows);
+  });
+
+  it("keeps the page mounted, its view and its plan when the tab is hidden, shown and refocused with the same user", async () => {
+    authState.user = { id: "manager" };
+    const workspace = defaultWorkspace();
+    workspace.roster = [{ playerId: player.id, position: "active" }];
+    workspace.manualPlayers = [{ ...player, eligibilityVerified: true }];
+    workspace.intent.protectedPlayerIds = [player.id];
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
+    vi.stubGlobal("fetch", fetchMock);
+    const view = render(<RosterScheduleOptimizer />);
+    await screen.findByLabelText("Plan summary");
+    fireEvent.click(screen.getByRole("button", { name: "Plan details" }));
+    const bar = screen.getByRole("group", { name: "Planning command bar" });
+    const details = screen.getByRole("button", { name: "Plan details" });
+    expect(details.getAttribute("aria-pressed")).toBe("true");
+    const visibility = vi.spyOn(document, "visibilityState", "get");
+    visibility.mockReturnValue("hidden"); fireEvent(document, new Event("visibilitychange")); fireEvent(window, new Event("blur"));
+    visibility.mockReturnValue("visible"); fireEvent(document, new Event("visibilitychange")); fireEvent(window, new Event("focus"));
+    // A token refresh hands out a new user object for the same principal.
+    authState.user = { id: "manager" }; view.rerender(<RosterScheduleOptimizer />);
+    await act(async () => {});
+    expect(screen.getByRole("group", { name: "Planning command bar" })).toBe(bar);
+    expect(screen.getByRole("button", { name: "Plan details" }).getAttribute("aria-pressed")).toBe("true");
+    expect(JSON.parse(window.localStorage.getItem(activeKey())!).intent.protectedPlayerIds).toEqual([player.id]);
+  });
+
   describe("category summary metric (C7 R46 C1) and opponent remaining hint (U1)", () => {
     const categoryWorkspace = (opponent: PlanningWorkspace["opponent"]) => {
       const workspace = defaultWorkspace();

@@ -530,13 +530,14 @@ export async function loadYahooPlanningSnapshot(args: {
     periodEnd: new Date(Date.parse(`${week.endDate}T12:00:00Z`) + 86400000).toISOString().slice(0, 10) } : { periodStart: null, periodEnd: null };
   const reserveSlots = Object.fromEntries(Object.entries(settings.excludedInjurySlots ?? {})
     .filter(([slot]) => ["IR", "IR+", "NA"].includes(slot.trim().toUpperCase())));
-  // D6: same-day or next-day adds inferred from Yahoo's weekly deadline (as Start Chart does); the manager can override.
-  const inferredTiming = diet && fresh ? yahooInferredAcquisitionTiming(settings) : null;
+  // D6: same-day or next-day adds inferred from Yahoo's weekly deadline (as Start Chart does), independent of
+  // RSO_YAHOO_DIET (which gates only read reductions); the manager can override.
+  const inferredTiming = fresh ? yahooInferredAcquisitionTiming(settings) : null;
   const reportedRules = yahooPlanningReportedRules({ settings: settingsResponse, settingsReadAt, team: teamResult, teamReadAt, teamKey: team.external_team_key });
   const rules: LeagueRules = {
     // Restore supported reserve capacities that the draft parser excludes.
     lineupMode: mode, rosterSlots: { ...settings.rosterConfig, ...reserveSlots },
-    // Without the diet flag, a lineup deadline does not establish when a transaction becomes effective.
+    // TJ D6, with or without the diet flag: inferred from a fresh weekly deadline; anything else stays unknown.
     acquisitionTiming: inferredTiming ?? "unknown",
     acquisitionCost: periods.length ? 1 : null, periods, scoring: { mode: settings.leagueType, weights: { ...settings.scoringCategories }, categories: yahooPlanningCategories(Object.keys(settings.categoryWeights)) },
     goalieMinimum: { required: settings.minimumGoalieStarts, credited: null, counts: "unknown", penalty: "unknown", ...goaliePeriod }, unsupported,

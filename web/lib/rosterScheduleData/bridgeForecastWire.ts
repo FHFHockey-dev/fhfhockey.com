@@ -22,6 +22,8 @@ export const RESERVE_FORECAST_NOTES = {
   "skater:ruled_out_at_run": `FORGE reserve line: ruled out when FORGE ran, with no news for this game; dressing is unknown, so ${COUNTS_ZERO}.`,
   "skater:no_lineup_evidence": `FORGE reserve line: not in FORGE's projected lineup and no lineup news for this game; dressing is unknown, so ${COUNTS_ZERO}.`,
   "skater:evidence_unavailable": `FORGE reserve line: lineup news could not be read; dressing is unknown, so ${COUNTS_ZERO}.`,
+  "skater:no_forge_line": `No FORGE line: FORGE has no current line for him, so ${COUNTS_ZERO}; his last FORGE line, where one exists, is his "if he plays" line.`,
+  "goalie:no_forge_line": `No FORGE line: FORGE has no line for him or his team's starter, so ${COUNTS_ZERO}.`,
   "goalie:start_unknown": `FORGE goalie line: no start share or news for this game, so his start chance is unknown and ${COUNTS_ZERO}.`,
   "goalie:start_unknown_team_line": `FORGE goalie line: no start share or news for this game, so his start chance is unknown and ${COUNTS_ZERO}. FORGE has no line of his own: the "if he starts" line is his team starter's.`,
   // A label, not a reserve line: a goalie with a known start chance whose per-start line is his team starter's.
