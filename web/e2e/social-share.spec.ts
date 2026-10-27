@@ -836,6 +836,13 @@ test("Tuesday trend cards list the server's sections with definitions and a sour
       }
     }
   }
+  // TT-15: each tile's line ends are the layer's own values: previous at the left, current at the right.
+  const ends = async (card: string) => { await graphic.selectOption(card); return square.locator("[data-player]").evaluateAll(tiles => tiles.map(tile => [tile.getAttribute("data-player"), tile.querySelector("[data-part='prev'] strong")?.textContent, tile.querySelector("[data-part='curr'] strong")?.textContent])); };
+  const sections = edition.trends!.sections;
+  expect(await ends("hot")).toEqual([...sections.hot.hot, ...sections.hot.cold].map(row => [String(row.nhlId), row.preceding.toFixed(2), row.recent.toFixed(2)]));
+  expect((await ends("movers")).map(([id]) => id)).toEqual([...sections.movers.risers, ...sections.movers.fallers].map(row => String(row.nhlId)));
+  for (const [, prev, curr] of await ends("movers")) { expect(prev).toMatch(/^\d+(\.\d)?%$/); expect(curr).toMatch(/^\d+(\.\d)?%$/); }
+  for (const [, prev, curr] of await ends("deployment")) { expect(prev).toMatch(/^\d+:\d{2}$/); expect(curr).toMatch(/^\d+:\d{2}$/); }
   const shown = new Map([...edition.trends!.sections.hot.hot, ...edition.trends!.sections.hot.cold].map(row => [String(row.nhlId), row.series]));
   await graphic.selectOption("hot");
   for (const tile of await square.locator("[data-player]").all()) {
@@ -861,7 +868,7 @@ async function tileCollisions(page: Page) {
     const overlap = (a: DOMRect, b: DOMRect) => Math.min(a.right, b.right) - Math.max(a.left, b.left) > 0.5 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 0.5;
     for (const tile of Array.from(square.querySelectorAll<HTMLElement>("[data-player][data-tone]"))) {
       const id = tile.getAttribute("data-player"), box = tile.getBoundingClientRect(), find = (selector: string) => tile.querySelector<HTMLElement>(selector);
-      // Every tagged part (TT-10: data-part on name, hero, absolute, kind, details, table, chips, rate ends, sparkline).
+      // Every tagged part (TT-15: name, chips, hero, kind, prev, spark, curr, evpp, foot, and the tag on the art).
       const name = find("[data-part='name']")!, parts = Array.from(tile.querySelectorAll<HTMLElement>("[data-part]"));
       const rects = parts.map(element => [element.getAttribute("data-part")!, element.getBoundingClientRect()] as const);
       // Text cut off inside its own box (e.g. "GP this wee" at the tile edge) counts as a collision too.
@@ -871,38 +878,35 @@ async function tileCollisions(page: Page) {
         if (rect.left < box.left - 0.5 || rect.right > box.right + 0.5 || rect.top < box.top - 0.5 || rect.bottom > box.bottom + 0.5) problems.push(`${id}: ${label} outside the tile`);
         for (let j = i + 1; j < rects.length; j++) if (overlap(rect, rects[j][1])) problems.push(`${id}: ${label} overlaps ${rects[j][0]}`);
       }
-      // The export (html-to-image) re-lays out a clone, where a wrapping hero row once dropped the absolute block onto
-      // the label (TT-7b): the row must be no-wrap, one line, with the absolute block level with the hero.
-      const heroRow = find("[class*='trendTileHeroRow']"), heroText = find("[class*='trendHero'] > strong"), absolute = find("[class*='trendTileAbsolute']");
-      if (heroRow && heroText && absolute) {
-        const row = heroRow.getBoundingClientRect(), heroBox = heroText.getBoundingClientRect(), absBox = absolute.getBoundingClientRect();
-        if (getComputedStyle(heroRow).flexWrap !== "nowrap") problems.push(`${id}: hero row may wrap`);
-        if (absBox.left < heroBox.right - 0.5 || absBox.top > heroBox.bottom || row.height > Math.max(heroBox.height, absBox.height) + 1) problems.push(`${id}: absolute value not beside the hero`);
+      // TT-15 sparkline-led layout: one no-wrap row reading previous · sparkline · current, left to right (mirrored
+      // columns too), with the difference centred above it. The export re-lays out a clone, so wrapping is a failure.
+      const line = find("[class*='trendTileLine']"), prev = find("[data-part='prev']"), curr = find("[data-part='curr']"), spark = find("[data-part='spark']"), heroText = find("[class*='trendHero'] > strong");
+      if (!line || !prev || !curr || !spark || !heroText) problems.push(`${id}: line row incomplete`);
+      else {
+        const row = line.getBoundingClientRect(), p = prev.getBoundingClientRect(), c = curr.getBoundingClientRect(), s = spark.getBoundingClientRect(), h = heroText.getBoundingClientRect();
+        if (getComputedStyle(line).flexWrap !== "nowrap" || row.height > Math.max(p.height, c.height, s.height) + 1) problems.push(`${id}: line row wraps`);
+        if (p.right > s.left + 0.5 || s.right > c.left + 0.5) problems.push(`${id}: previous, line and current out of order`);
+        if (s.width < 40) problems.push(`${id}: sparkline too narrow`);
+        if (h.bottom > row.top + 0.5 || Math.abs((h.left + h.right) / 2 - (row.left + row.right) / 2) > 2) problems.push(`${id}: difference not centred above the line`);
+        // Exactly one of a drawn series or the neutral baseline.
+        if ((spark.querySelector("[data-sparkline]") ? 1 : 0) + (spark.querySelector("[data-baseline]") ? 1 : 0) !== 1) problems.push(`${id}: sparkline and baseline both or neither`);
       }
       const column = name.parentElement!.getBoundingClientRect(), nameBox = name.getBoundingClientRect(), logo = find("[data-art] img")?.getBoundingClientRect();
       if (nameBox.left < column.left - 0.5 || nameBox.right > column.right + 0.5 || name.scrollWidth > name.clientWidth + 1) problems.push(`${id}: name leaves its column`);
       if (logo) {
+        // Only the team tag sits on the logo; every other part stays off its visible box.
         const visible = new DOMRect(Math.max(logo.left, box.left), Math.max(logo.top, box.top), Math.min(logo.right, box.right) - Math.max(logo.left, box.left), Math.min(logo.bottom, box.bottom) - Math.max(logo.top, box.top));
-        if (overlap(nameBox, visible)) problems.push(`${id}: name overlaps the logo`);
+        for (const [label, rect] of rects) if (label !== "tag" && overlap(rect, visible)) problems.push(`${id}: ${label} overlaps the logo`);
       }
-      // TT-14: the stripes live in their own band, never behind the logo or any text. The band's ends fade to the body,
-      // so its visible core (the middle 40%) must clear every tagged part and the logo's box; the art carries no stripes.
-      const art = find("[data-art]"), band = find("[data-band]");
-      if (art && getComputedStyle(art).backgroundImage !== "none") problems.push(`${id}: stripes behind the logo`);
-      if (band) {
-        const b = band.getBoundingClientRect(), core = new DOMRect(b.left + b.width * 0.3, b.top, b.width * 0.4, b.height);
-        if (core.width > 0.5) {
-          // Rates draw the band inside the sparkline's box, behind the line (TT-14), so that part is its container, not a clash.
-          for (const [index, [label, rect]] of rects.entries()) if (!parts[index].contains(band) && overlap(core, rect)) problems.push(`${id}: stripe band behind ${label}`);
-          if (logo && overlap(core, logo)) problems.push(`${id}: stripe band behind the logo`);
-        }
-      }
+      // TT-15: no striping anywhere on the tile (TJ): the art and the tile carry no background image.
+      const art = find("[data-art]");
+      if ((art && getComputedStyle(art).backgroundImage !== "none") || getComputedStyle(tile).backgroundImage !== "none") problems.push(`${id}: striping on the tile`);
     }
     return problems;
   });
 }
 
-test("Tuesday tiles never collide: hero, absolute, label, details and chips stay apart; names stay in their column (TT-7b)", async ({ page }) => {
+test("Tuesday tiles never collide: name, chips, difference, line ends, sparkline and meta stay apart; names stay in their column (TT-7b, TT-15)", async ({ page }) => {
   const source = await install(page);
   source.mode = "league"; source.layoutStress = true;
   await open(page, "tuesday-trends");
@@ -930,7 +934,7 @@ test("Tuesday tiles never collide: hero, absolute, label, details and chips stay
   const badges = await square.locator("[data-player]").evaluateAll(tiles => tiles.map((tile): [string, string | null] => [tile.querySelector("[class*='trendHero'] > strong")?.textContent ?? "", tile.querySelector("[class*='trendBadge'] em")?.textContent ?? null]));
   expect(badges.length).toBeGreaterThan(0);
   for (const [hero, badge] of badges) expect(badge).toBe(hero.startsWith("▲") ? "PROMOTED" : hero.startsWith("▼") ? "DEMOTED" : null);
-  // The stress set reached the tight cases: a one-digit hero with its absolute beside it, and the longest names.
+  // The stress set reached the tight cases: a one-digit hero above its line, and the longest names.
   await graphic.selectOption("movers");
   const heroes = await square.locator("[class*='trendHero'] > strong").allTextContents();
   expect(heroes).toContain("−8");
@@ -1344,6 +1348,9 @@ test("Tuesday GENUINE DATA render: captured layer, offline, export token per car
       await expect(square).toContainText(card === "hot" ? "HOT/COLD" : card === "deployment" ? "DEPLOYMENT CHANGES" : card === "rates" ? "RATE STANDOUTS" : "OWNERSHIP MOVERS");
       await expect(square).not.toContainText("GP this week");
       expect(await tileCollisions(page), `genuine ${card}`).toEqual([]);
+      // TT-15: run-2 predates the series, so every tile shows its values over the neutral baseline, never a drawn line.
+      await expect(square.locator("[data-player] [data-sparkline]")).toHaveCount(0);
+      expect(await square.locator("[data-player] [data-baseline]").count()).toBe(await square.locator("[data-player]").count());
       await square.scrollIntoViewIfNeeded();
       await label();
       await page.screenshot({ path: `${shots}/GENUINE-DATA-${name}-${card}.png`, fullPage: name === "desktop" });

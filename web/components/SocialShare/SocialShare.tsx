@@ -431,10 +431,15 @@ export function moverSparkPoints(values: (number | null)[] | null | undefined, d
   if (!values || !dates || values.length !== dates.length || values.length < 2 || values.some(value => value === null)) return null;
   return values.map((value, index) => ({ date: dates[index], value: value! }));
 }
-type TrendRowData = { key: string; team: string | null; name: string; meta: string; weekGames?: number | null; detail: string | string[];
-  hero: { value: string; label: string; tone: Tone }; right: { value: string; label: string }; spark?: Spark; badge?: { text: string; tone: Tone }; chips: { text: string; tone: Tone }[];
-  /** Deployment (TT-10): L5 | label | season rows, replacing the EV/PP/season detail lines and the TOI labels. */
-  table?: [string, string, string][] };
+/**
+ * One tile (TT-15, sparkline-led): `prev` sits at the line's left end, `curr` at its right end and `hero` (the
+ * difference) large and centred above it. `meta` is the team tag; `foot` and `evpp` are the lines under the sparkline.
+ */
+type TrendRowData = { key: string; team: string | null; name: string; meta: string; weekGames?: number | null;
+  hero: { value: string; label: string; tone: Tone }; prev: { value: string; label: string }; curr: { value: string; label: string };
+  spark?: Spark; badge?: { text: string; tone: Tone }; chips: { text: string; tone: Tone }[]; foot?: string;
+  /** Deployment: EV and PP TOI/GP, season → L5 (the TT-10 mini table, compacted to one row). */
+  evpp?: string };
 /** `label`: the vertical group label (TT-8) along the column's left edge, in the sporty face, green or red. */
 type TrendColumn = { key: string; title: string; rows: TrendRowData[]; label?: { text: string; tone: Tone } };
 
@@ -492,10 +497,12 @@ function trendColumns(kind: TrendKind, snapshot: SocialShareSnapshot): TrendColu
   const meta = (row: ShareTrendWho) => `${row.team} · ${row.position}${rosteredTag(row)}`;
   if (kind === "hot") {
     const { hot, cold } = hotCold(snapshot, true);
-    // Descriptive only (recent-form-v1-early): the change is the hero; both windows' P/GP stay labelled.
+    // Descriptive only (recent-form-v1-early): the change is the hero; both windows' P/GP sit at the line's ends.
     const row = (pick: (typeof hot)[number]): TrendRowData => ({ key: String(pick.nhlId), team: pick.team, name: pick.name, meta: meta(pick), weekGames: pick.weekGames,
-      detail: `Prior ${TREND_WINDOW_GAMES}: ${pick.preceding.toFixed(2)} P/GP`, hero: { value: signed(pick.delta, 2), label: `P/GP VS PRIOR ${TREND_WINDOW_GAMES}`, tone: toneOf(pick.delta) },
-      right: { value: pick.recent.toFixed(2), label: `P/GP LAST ${TREND_WINDOW_GAMES}` }, spark: { values: pick.series, split: 5, zero: true, fill: 0.5, what: "Points in each of the last 10 games" },
+      hero: { value: signed(pick.delta, 2), label: `P/GP VS PRIOR ${TREND_WINDOW_GAMES}`, tone: toneOf(pick.delta) },
+      prev: { value: pick.preceding.toFixed(2), label: `PRIOR ${TREND_WINDOW_GAMES} P/GP` }, curr: { value: pick.recent.toFixed(2), label: `L${TREND_WINDOW_GAMES} P/GP` },
+      // TT-15 (TJ): the under-the-line fill at 22%, more transparent than TT-10's 50%.
+      spark: { values: pick.series, split: 5, zero: true, fill: 0.22, what: "Points in each of the last 10 games" },
       badge: { text: pick.delta > 0 ? "RISING" : "FALLING", tone: toneOf(pick.delta) }, chips: tileRoleChips(pick) });
     return [{ key: "hot", title: `UP VS PRIOR ${TREND_WINDOW_GAMES}`, label: { text: "HOT", tone: "up" }, rows: hot.map(row) }, { key: "cold", title: `DOWN VS PRIOR ${TREND_WINDOW_GAMES}`, label: { text: "COLD", tone: "down" }, rows: cold.map(row) }];
   }
@@ -506,9 +513,10 @@ function trendColumns(kind: TrendKind, snapshot: SocialShareSnapshot): TrendColu
       // so the hero never contradicts the column. Chips keep their own arrows.
       const tone: Tone = pick.driver === "toi" ? toneOf(pick.delta) : toneOf(pick.lineChange + pick.ppChange);
       return { key: String(pick.nhlId), team: pick.team, name: pick.name, meta: meta(pick), weekGames: pick.weekGames,
-        detail: [], table: [[clockOrDash(pick.ev.l5), "EV", clockOrDash(pick.ev.season)], [clockOrDash(pick.pp.l5), "PP", clockOrDash(pick.pp.season)], [clock(pick.toi.l5), "TOI", clock(pick.toi.season)]],
         hero: pick.driver === "toi" ? { value: signedClock(pick.delta), label: "TOI/GP VS SEASON", tone } : { value: roleHero(pick), label: "ROLE · TOI FLAT", tone },
-        right: { value: clock(pick.toi.l5), label: "" }, spark: { values: pick.series, split: 5, reference: pick.toi.season, what: "TOI in each of the last 10 games (dashed: season TOI/GP)" },
+        prev: { value: clock(pick.toi.season), label: "SEASON TOI/GP" }, curr: { value: clock(pick.toi.l5), label: `L${TREND_WINDOW_GAMES} TOI/GP` },
+        evpp: `EV ${clockOrDash(pick.ev.season)} → ${clockOrDash(pick.ev.l5)} · PP ${clockOrDash(pick.pp.season)} → ${clockOrDash(pick.pp.l5)}`,
+        spark: { values: pick.series, split: 5, reference: pick.toi.season, what: "TOI in each of the last 10 games (dashed: season TOI/GP)" },
         // TT-9: the column label now says MORE / LESS ICE, so ice-time rows carry no badge; role-only rows keep PROMOTED /
         // DEMOTED, which the column label does not say.
         badge: pick.driver === "toi" ? undefined : { text: tone === "up" ? "PROMOTED" : "DEMOTED", tone }, chips: deploymentBadges(pick) };
@@ -520,17 +528,16 @@ function trendColumns(kind: TrendKind, snapshot: SocialShareSnapshot): TrendColu
   if (kind === "rates") {
     const board = rateStandouts(snapshot, true);
     return RATE_METRICS.map(metric => ({ key: metric, title: rateTitles[metric], rows: board[metric].map(pick => ({
-      key: String(pick.nhlId), team: pick.team, name: pick.name, meta: meta(pick), weekGames: pick.weekGames,
-      // The season rate sits at the sparkline's left end (TT-10), so the meta line carries only the sample and games.
-      detail: `${pick.l5Minutes} L${TREND_WINDOW_GAMES} min`,
-      hero: { value: signed(pick.delta, RATE_DIGITS[metric]), label: `Δ/60 VS SEASON`, tone: toneOf(pick.delta) }, right: { value: pick.l5.toFixed(RATE_DIGITS[metric]), label: `L${TREND_WINDOW_GAMES} ${rateTitles[metric]}` },
+      key: String(pick.nhlId), team: pick.team, name: pick.name, meta: meta(pick), weekGames: pick.weekGames, foot: `${pick.l5Minutes} L${TREND_WINDOW_GAMES} min`,
+      hero: { value: signed(pick.delta, RATE_DIGITS[metric]), label: `Δ/60 VS SEASON`, tone: toneOf(pick.delta) },
+      prev: { value: pick.season.toFixed(RATE_DIGITS[metric]), label: "SEASON" }, curr: { value: pick.l5.toFixed(RATE_DIGITS[metric]), label: `L${TREND_WINDOW_GAMES} ${rateTitles[metric]}` },
       spark: { values: pick.series, split: 5, reference: pick.season, what: `${rateTitles[metric]} in each of the last 10 games (dashed: season)` },
       badge: { text: "ABOVE SEASON", tone: toneOf(pick.delta) }, chips: tileRoleChips(pick) })) }));
   }
   const { risers, fallers } = ownershipMovers(snapshot, true), trends = snapshot.trends!, digits = moverDigits([...risers, ...fallers]);
   const row = (mover: (typeof risers)[number]): TrendRowData => ({ key: String(mover.nhlId), team: mover.team, name: mover.name, meta: meta(mover), weekGames: mover.weekGames,
-    detail: `${mover.previous.toFixed(digits)}% ${dateLabel(trends.ownershipPreviousDate!)} → ${mover.latest.toFixed(digits)}% ${dateLabel(trends.ownershipLatestDate!)}`,
-    hero: { value: signed(mover.delta, digits), label: "PCT PTS ROSTERED", tone: toneOf(mover.delta) }, right: { value: `${mover.latest.toFixed(digits)}%`, label: "ROSTERED" },
+    hero: { value: signed(mover.delta, digits), label: "PCT PTS ROSTERED", tone: toneOf(mover.delta) },
+    prev: { value: `${mover.previous.toFixed(digits)}%`, label: dateLabel(trends.ownershipPreviousDate!).toUpperCase() }, curr: { value: `${mover.latest.toFixed(digits)}%`, label: dateLabel(trends.ownershipLatestDate!).toUpperCase() },
     spark: { values: mover.series, dates: trends.ownershipSeriesDates, what: `Yahoo rostered % on each day ${trends.ownershipSeriesDates?.[0] ?? ""} to ${trends.ownershipSeriesDates?.at(-1) ?? ""}` },
     badge: { text: mover.delta > 0 ? "RISING" : "FALLING", tone: toneOf(mover.delta) }, chips: tileRoleChips(mover) });
   return [{ key: "risers", title: "ROSTERED % UP", label: { text: "RISING", tone: "up" }, rows: risers.map(row) }, { key: "fallers", title: "ROSTERED % DOWN", label: { text: "FALLING", tone: "down" }, rows: fallers.map(row) }];
@@ -547,7 +554,7 @@ function trendAltText(kind: TrendKind, snapshot: SocialShareSnapshot, trusted: b
   const head = `FHFH Tuesday trends, ${trendTitles[kind].toLowerCase()}, week of ${yearDateLabel(snapshot.weekStart)}.`;
   const tail = `${trendDefinitions[kind].join(". ")}. Source: ${trendSourceLine(kind, snapshot)}.`;
   if (!trendReady(kind, snapshot, trusted)) return `${head} Unranked preview; ranking unavailable because ${trendUnreadyReason(kind, snapshot, trusted)}. ${tail}`;
-  return `${head} ${trendColumns(kind, snapshot).map(column => `${column.title}: ${column.rows.map(row => `${row.name} (${row.meta}${row.weekGames != null ? ` · ${row.weekGames} GP this week` : ""}), ${row.hero.value} ${row.hero.label}, ${row.right.value} ${row.right.label}, ${[row.detail].flat().join(", ")}${row.table ? `, ${row.table.map(([l5, label, season]) => `${label} L5 ${l5}, season ${season}`).join(", ")}` : ""}${row.chips.length ? `, ${row.chips.map(chip => chip.text).join(", ")}` : ""}${row.spark?.values?.length ? `, ${row.spark.what}: ${row.spark.values.map(value => value ?? "no data").join(", ")}` : ""}`).join("; ") || "none"}`).join(". ")}. ${tail}`;
+  return `${head} ${trendColumns(kind, snapshot).map(column => `${column.title}: ${column.rows.map(row => `${row.name} (${row.meta}${row.weekGames != null ? ` · ${row.weekGames} GP this week` : ""}), ${row.hero.value} ${row.hero.label}, ${row.prev.label} ${row.prev.value} to ${row.curr.label} ${row.curr.value}${row.evpp ? `, ${row.evpp}` : ""}${row.foot ? `, ${row.foot}` : ""}${row.chips.length ? `, ${row.chips.map(chip => chip.text).join(", ")}` : ""}${row.spark?.values?.length ? `, ${row.spark.what}: ${row.spark.values.map(value => value ?? "no data").join(", ")}` : ""}`).join("; ") || "none"}`).join(". ")}. ${tail}`;
 }
 
 /**
@@ -591,7 +598,7 @@ function TrendArt({ team, logo, outlines }: { team: string | null; logo: string 
   // TT-12: multi-colour teams draw their baked outline (data-stroke "multi"); the glow spread is per team (NEON_SPREADS).
   const spread = colors && NEON_SPREADS[colors.spread], alpha = (value: number) => Math.round(value * 255).toString(16).padStart(2, "0");
   return <span className={styles.trendTileArt} data-art={neon ? "neon" : "card"} data-stroke={neon ? colors?.multicolour ? "multi" : colors?.stroke : undefined} data-halo={neon ? colors?.halo : undefined} data-spread={neon ? colors?.spread : undefined}
-    style={{ ...teamBannerStyle(team), ...(neon && colors && spread ? { "--neon-halo": `${colors.halo}${alpha(spread.haloAlpha)}`, "--neon-halo-r": `${spread.haloPx}px`, "--neon-glow": `rgba(255, 255, 255, ${spread.glowAlpha})`, "--neon-glow-r": `${spread.glowPx}px` } : {}) } as CSSProperties} aria-hidden="true">
+    style={{ ...(neon && colors && spread ? { "--neon-halo": `${colors.halo}${alpha(spread.haloAlpha)}`, "--neon-halo-r": `${spread.haloPx}px`, "--neon-glow": `rgba(255, 255, 255, ${spread.glowAlpha})`, "--neon-glow-r": `${spread.glowPx}px` } : {}) } as CSSProperties} aria-hidden="true">
     {neon ? <img src={neon} alt="" /> : logo && <img src={logo} alt="" />}
   </span>;
 }
@@ -609,59 +616,42 @@ function TrendCard({ kind, snapshot, trusted, logos, outlines, brandLogo }: { ki
         {column.rows.map(row => {
           const stacked = columns.length > 2;
           const mirror = columns.length === 2 && columns.indexOf(column) === 1;
-          const [sparkWidth, sparkHeight] = stacked ? [176, 50] : [104, 24];
+          // TT-15: the sparkline spans the body between the previous (left) and current (right) values. Deployment tiles are
+          // taller, so their logo zone is wider and the line shorter.
+          const [sparkWidth, sparkHeight] = stacked ? [176, 50] : kind === "deployment" ? [112, 24] : [150, 24];
           const spark = kind === "movers" ? (() => {
             const points = moverSparkPoints(row.spark?.values, row.spark?.dates);
             return points && <NeonOwnershipSparkline points={points} tone={row.hero.tone} what={row.spark!.what} width={sparkWidth} height={sparkHeight} />;
-          })() : row.spark && <Sparkline {...row.spark} width={sparkWidth} height={sparkHeight} />;
+          })() : row.spark?.values?.some(value => value !== null) ? <Sparkline {...row.spark} width={sparkWidth} height={sparkHeight} /> : null;
           const week = row.weekGames != null && <><Count value={row.weekGames} tier={countsFor(snapshot, true).gp(row.weekGames)} /> GP this week</>;
           const chips = <span className={cx(styles.trendTileChips, styles.roleChips)} data-part="chips">
             {row.badge && <TrendBadge {...row.badge} />}
             {row.chips.map(chip => <i key={chip.text} data-badge={chip.text} data-tone={chipTone(chip)}>{chip.text}</i>)}
           </span>;
-          const hero = <span className={styles.trendHero} data-tone={row.hero.tone} data-role={/^[▲▼]/.test(row.hero.value) || undefined} data-part="hero"><strong>{row.hero.value}</strong></span>;
-          // TT-14 (TJ): the team stripes sit in their own band between the logo zone and the text, not behind the neon logo.
-          // It is a flex sibling of the text, so it only ever fills the gap the text leaves.
-          const band = row.team && <span className={styles.trendTileBand} data-band="" style={teamBannerStyle(row.team)} aria-hidden="true" />;
           // TT-10: the right column of 2-column cards is mirrored (art right, text left); rates keep their own stacked layout.
           return <div key={row.key} data-player={row.key} data-team={row.team ?? ""} data-tone={row.hero.tone} data-mirror={mirror || undefined} className={cx(styles.trendTile, stacked && styles.trendTileStacked)}>
             <TrendArt team={row.team} logo={row.team ? logos[row.team] : null} outlines={outlines} />
             <small className={styles.trendTileMeta} data-part="tag">{row.meta}</small>
-            {stacked ? <div className={styles.trendRateTile}>
-              <div className={styles.trendTileText}>
+            {/* TT-15 (TJ, after the rates mockup): name and chips; the difference centred above the line; previous value at
+                the line's left end, current at its right end; then the meta lines. */}
+            <div className={styles.trendTileBody}>
+              <div className={styles.trendTileHead}>
                 <strong className={styles.trendTileName} data-tone={row.hero.tone} data-part="name" style={{ fontSize: nameFontSize(row.name, stacked) }}>{row.name}</strong>
                 {chips}
               </div>
-              {/* Rates (TT-10): the Δ centred above a large sparkline, season rate at its left end, L5 at its right end. */}
-              <div className={styles.trendRateBlock}>
-                {hero}
+              <div className={styles.trendTileDelta}>
+                <span className={styles.trendHero} data-tone={row.hero.tone} data-role={/^[▲▼]/.test(row.hero.value) || undefined} data-part="hero"><strong>{row.hero.value}</strong></span>
                 <small className={styles.trendTileKind} data-part="kind">{row.hero.label}</small>
-                <span className={styles.trendRateLine}>
-                  <span className={styles.trendRateEnd} data-part="season"><strong>{row.spark?.reference != null ? Number(row.spark.reference).toFixed(RATE_DIGITS[column.key as RateMetric] ?? 1) : "—"}</strong><small>SEASON</small></span>
-                  {/* Rates (TT-14): the stripe band sits in the tile's centre, behind the sparkline area only. */}
-                  <span className={styles.trendRateSpark} data-part="spark">{band}{spark}</span>
-                  <span className={cx(styles.trendRateEnd, styles.trendTileAbsolute)} data-part="absolute"><strong>{row.right.value}</strong><small>{row.right.label}</small></span>
-                </span>
-                {[row.detail].flat().map((line, index, lines) => <small key={line} className={styles.trendTileDetail} data-part={`detail${index}`}>{line}{index === lines.length - 1 && week && <> · {week}</>}</small>)}
               </div>
-            </div> : <>{band}<div className={styles.trendTileText}>
-              <strong className={styles.trendTileName} data-tone={row.hero.tone} data-part="name" style={{ fontSize: nameFontSize(row.name, stacked) }}>{row.name}</strong>
-              {row.table && week && <small className={styles.trendTileDetail} data-part="week">{week}</small>}
-              {/* Deployment (TT-10): the table carries L5 / season TOI, so the hero row holds the sparkline and the change. */}
-              {row.table ? <span className={styles.trendTileHeroRow}>{mirror ? <>{hero}{spark}</> : <>{spark}{hero}</>}</span> : <>
-                <span className={styles.trendTileHeroRow}>
-                  {hero}
-                  <span className={styles.trendTileAbsolute} data-part="absolute"><strong>{row.right.value}</strong>{row.right.label && <small>{row.right.label}</small>}</span>
-                </span>
-                <span className={styles.trendTileKindRow}>{spark}<small className={styles.trendTileKind} data-part="kind">{row.hero.label}</small></span>
-              </>}
-              {row.table && <span className={styles.trendTileTable} data-part="table" role="table" aria-label="L5 and season TOI per game">
-                <i>L5</i><i /><i>Season</i>
-                {row.table.flatMap(([l5, label, season]) => [<b key={`${label}l`}>{l5}</b>, <em key={`${label}m`}>{label}</em>, <b key={`${label}s`}>{season}</b>])}
-              </span>}
-              {[row.detail].flat().map((line, index, lines) => <small key={line} className={styles.trendTileDetail} data-part={`detail${index}`}>{line}{index === lines.length - 1 && !row.table && week && <> · {week}</>}</small>)}
-              {chips}
-            </div></>}
+              <span className={styles.trendTileLine}>
+                <span className={styles.trendTileEnd} data-part="prev"><strong>{row.prev.value}</strong><small>{row.prev.label}</small></span>
+                {/* No series (missing data or an older capture): a neutral baseline, never a drawn line. */}
+                <span className={styles.trendTileSpark} data-part="spark">{spark || <i className={styles.trendBaseline} data-baseline="" aria-hidden="true" />}</span>
+                <span className={cx(styles.trendTileEnd, styles.trendTileCurrent)} data-part="curr"><strong>{row.curr.value}</strong><small>{row.curr.label}</small></span>
+              </span>
+              {row.evpp && <small className={styles.trendTileFoot} data-part="evpp">{row.evpp}</small>}
+              {(row.foot || week) && <small className={styles.trendTileFoot} data-part="foot">{row.foot}{row.foot && week && " · "}{week}</small>}
+            </div>
           </div>;
         })}
         {!column.rows.length && <p className={styles.playerShort}>None qualify</p>}

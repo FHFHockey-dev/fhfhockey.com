@@ -192,3 +192,25 @@ Native sources only. Tuesday never reads `PROJECTIONS_20262027_*`, `PROJECTIONS_
   - The spot between the logo and the name was rejected: the badge and chips row leaves only a sliver of space there.
   - Without a sparkline, there is no band.
 - **Guard:** the art must have no background image. The band's visible core (its middle 40%) may not sit behind any tagged part or the logo's box, except the sparkline box that contains it on Rates.
+
+## TT-15: no striping; a sparkline-led layout on every tile
+
+- **No stripes:** striping is removed on all four cards: no band, edge lines or fill. The stripe functions, the band element and rules, the art's team-colour vars and the `sass:list`/`sass:map` imports are deleted. Neon logos sit on the dark field. The guard fails any background image on the tile or the art.
+- **Every tile (TJ's Rates mockup):**
+  - **Top:** name, then badge and line/PP chips.
+  - **Above the line:** the difference, large and centred, with its kind label.
+  - **The line row:** one no-wrap row: the previous value at the left end, the sparkline in the middle, the current value at the right end.
+  - **Below:** the meta lines.
+- **Line ends per card** (`TrendRowData.prev` / `.curr`):
+
+  | Card | Left end (previous) | Right end (current) |
+  |---|---|---|
+  | Hot/Cold | prior-5 P/GP | L5 P/GP |
+  | Deployment | season TOI/GP | L5 TOI/GP |
+  | Movers | rostered % at P, labelled with its date | rostered % at D, labelled with its date |
+  | Rates | season rate | L5 rate |
+
+  - **Deployment extras:** EV/PP become one compact row, "EV season → L5 · PP season → L5"; the mini table didn't fit.
+  - **Mirrored columns:** still read previous → current, left to right.
+- **No series:** a neutral dashed baseline sits between the two values; nothing is drawn as a line.
+- **Fill:** Hot/Cold's under-line fill is now 22% (was 50%); the Movers area stays at 20%.
