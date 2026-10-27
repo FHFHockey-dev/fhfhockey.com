@@ -407,8 +407,13 @@ export const moverDigits = (rows: { latest: number; previous: number }[]) => row
  * or the game's PP rows omit him) or "PP ?" (no PP rows for that game). Monday's tones; the PP states stay neutral.
  */
 export const tileRoleChips = (who: ShareTrendWho): { text: string; tone: "flat" }[] => who.role ? [...(who.role.line ? [{ text: who.role.line, tone: "flat" as const }] : []), { text: ppChip(who.role.pp), tone: "flat" }] : [];
-/** TT-10: Yahoo rostered % on the team tag. Missing is "—", never 0%; a layer without the field (older captures) shows nothing. */
-export const rosteredTag = (who: ShareTrendWho) => who.rostered === undefined ? "" : ` · ${who.rostered === null ? "—" : `${who.rostered.toFixed(who.rostered < 10 && !Number.isInteger(who.rostered) ? 1 : 0)}%`} ROST`;
+/**
+ * TT-16: Yahoo rostered % beside the name. Missing is "—", never 0%; a layer without the field (older captures) shows
+ * nothing (null).
+ */
+export const rosteredText = (who: ShareTrendWho) => who.rostered === undefined ? null : who.rostered === null ? "—" : `${who.rostered.toFixed(who.rostered < 10 && !Number.isInteger(who.rostered) ? 1 : 0)}%`;
+/** TT-16 (TJ): gold glow strength for widely available players: 0 at 50% rostered or more (or missing), 1 at 25% or less. */
+export const goldGlow = (who: ShareTrendWho) => who.rostered == null ? 0 : Math.round(Math.min(1, Math.max(0, (50 - who.rostered) / 25)) * 100) / 100;
 export const roleHero = (row: ShareDeploymentRow) => `${row.lineChange + row.ppChange > 0 ? "▲" : "▼"} ${[row.lineChange ? "LINE" : null, row.ppChange ? "PP" : null].filter(Boolean).join(" + ")}`;
 
 type Tone = "up" | "down" | "flat";
@@ -435,7 +440,9 @@ export function moverSparkPoints(values: (number | null)[] | null | undefined, d
  * One tile (TT-15, sparkline-led): `prev` sits at the line's left end, `curr` at its right end and `hero` (the
  * difference) large and centred above it. `meta` is the team tag; `foot` and `evpp` are the lines under the sparkline.
  */
-type TrendRowData = { key: string; team: string | null; name: string; meta: string; weekGames?: number | null;
+type TrendRowData = { key: string; team: string | null; name: string; weekGames?: number | null;
+  /** TT-16: team · position (on the meta line), rostered % beside the name, and the gold glow (0–1). */
+  who: string; rost: string | null; gold: number;
   hero: { value: string; label: string; tone: Tone }; prev: { value: string; label: string }; curr: { value: string; label: string };
   spark?: Spark; badge?: { text: string; tone: Tone }; chips: { text: string; tone: Tone }[]; foot?: string;
   /** Deployment: EV and PP TOI/GP, season → L5 (the TT-10 mini table, compacted to one row). */
@@ -470,7 +477,9 @@ export function Sparkline({ values, split, reference, zero, what, width, height,
     {split != null && split > 0 && split < values.length && <line x1={(x(split - 1) + x(split)) / 2} x2={(x(split - 1) + x(split)) / 2} y1={1} y2={height - 1} stroke="currentColor" strokeOpacity="0.35" strokeDasharray="2 3" strokeWidth="1" />}
     {runs(0).map(d => <path key={`a${d}`} d={d} fill="none" stroke="currentColor" strokeOpacity={split != null ? 0.45 : 1} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />)}
     {split != null && runs(Math.max(0, split - 1)).map(d => <path key={`b${d}`} d={d} fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinejoin="round" strokeLinecap="round" />)}
+    {/* A gap is a game without data (TT-16: a faint dotted column above the hollow tick, and "no data" on the meta line), never a clipped line. */}
     {values.map((value, i) => value === null ? <path key={`g${i}`} d={`M${(x(i) - 3).toFixed(1)} ${height - 2}L${(x(i) + 3).toFixed(1)} ${height - 2}`} stroke="currentColor" strokeOpacity="0.6" strokeWidth="1.5" data-gap="" /> : null)}
+    {values.map((value, i) => value === null ? <line key={`c${i}`} x1={x(i)} x2={x(i)} y1={2} y2={height - 4} stroke="currentColor" strokeOpacity="0.3" strokeWidth="1" strokeDasharray="1 2" data-gap-column="" /> : null)}
     {last >= 0 && <circle cx={x(last)} cy={y(values[last]!)} r="3.2" fill="currentColor" />}
   </svg>;
 }
@@ -494,11 +503,11 @@ function trendUnreadyReason(kind: TrendKind, snapshot: SocialShareSnapshot, trus
 const trendReady = (kind: TrendKind, snapshot: SocialShareSnapshot, trusted: boolean) => trusted && trendSectionReady(snapshot, kind);
 
 function trendColumns(kind: TrendKind, snapshot: SocialShareSnapshot): TrendColumn[] {
-  const meta = (row: ShareTrendWho) => `${row.team} · ${row.position}${rosteredTag(row)}`;
+  const meta = (row: ShareTrendWho) => ({ who: `${row.team} · ${row.position}`, rost: rosteredText(row), gold: goldGlow(row) });
   if (kind === "hot") {
     const { hot, cold } = hotCold(snapshot, true);
     // Descriptive only (recent-form-v1-early): the change is the hero; both windows' P/GP sit at the line's ends.
-    const row = (pick: (typeof hot)[number]): TrendRowData => ({ key: String(pick.nhlId), team: pick.team, name: pick.name, meta: meta(pick), weekGames: pick.weekGames,
+    const row = (pick: (typeof hot)[number]): TrendRowData => ({ key: String(pick.nhlId), team: pick.team, name: pick.name, ...meta(pick), weekGames: pick.weekGames,
       hero: { value: signed(pick.delta, 2), label: `P/GP VS PRIOR ${TREND_WINDOW_GAMES}`, tone: toneOf(pick.delta) },
       prev: { value: pick.preceding.toFixed(2), label: `PRIOR ${TREND_WINDOW_GAMES} P/GP` }, curr: { value: pick.recent.toFixed(2), label: `L${TREND_WINDOW_GAMES} P/GP` },
       // TT-15 (TJ): the under-the-line fill at 22%, more transparent than TT-10's 50%.
@@ -512,7 +521,7 @@ function trendColumns(kind: TrendKind, snapshot: SocialShareSnapshot): TrendColu
       // TOI-driven rows show the TOI change (its sign is the column); role-only rows show the role direction instead,
       // so the hero never contradicts the column. Chips keep their own arrows.
       const tone: Tone = pick.driver === "toi" ? toneOf(pick.delta) : toneOf(pick.lineChange + pick.ppChange);
-      return { key: String(pick.nhlId), team: pick.team, name: pick.name, meta: meta(pick), weekGames: pick.weekGames,
+      return { key: String(pick.nhlId), team: pick.team, name: pick.name, ...meta(pick), weekGames: pick.weekGames,
         hero: pick.driver === "toi" ? { value: signedClock(pick.delta), label: "TOI/GP VS SEASON", tone } : { value: roleHero(pick), label: "ROLE · TOI FLAT", tone },
         prev: { value: clock(pick.toi.season), label: "SEASON TOI/GP" }, curr: { value: clock(pick.toi.l5), label: `L${TREND_WINDOW_GAMES} TOI/GP` },
         evpp: `EV ${clockOrDash(pick.ev.season)} → ${clockOrDash(pick.ev.l5)} · PP ${clockOrDash(pick.pp.season)} → ${clockOrDash(pick.pp.l5)}`,
@@ -528,14 +537,15 @@ function trendColumns(kind: TrendKind, snapshot: SocialShareSnapshot): TrendColu
   if (kind === "rates") {
     const board = rateStandouts(snapshot, true);
     return RATE_METRICS.map(metric => ({ key: metric, title: rateTitles[metric], rows: board[metric].map(pick => ({
-      key: String(pick.nhlId), team: pick.team, name: pick.name, meta: meta(pick), weekGames: pick.weekGames, foot: `${pick.l5Minutes} L${TREND_WINDOW_GAMES} min`,
+      key: String(pick.nhlId), team: pick.team, name: pick.name, ...meta(pick), weekGames: pick.weekGames, foot: `${pick.l5Minutes} L${TREND_WINDOW_GAMES} min`,
       hero: { value: signed(pick.delta, RATE_DIGITS[metric]), label: `Δ/60 VS SEASON`, tone: toneOf(pick.delta) },
       prev: { value: pick.season.toFixed(RATE_DIGITS[metric]), label: "SEASON" }, curr: { value: pick.l5.toFixed(RATE_DIGITS[metric]), label: `L${TREND_WINDOW_GAMES} ${rateTitles[metric]}` },
       spark: { values: pick.series, split: 5, reference: pick.season, what: `${rateTitles[metric]} in each of the last 10 games (dashed: season)` },
-      badge: { text: "ABOVE SEASON", tone: toneOf(pick.delta) }, chips: tileRoleChips(pick) })) }));
+      // TT-16 (TJ): no ABOVE SEASON badge; the column and the Δ already say it.
+      chips: tileRoleChips(pick) })) }));
   }
   const { risers, fallers } = ownershipMovers(snapshot, true), trends = snapshot.trends!, digits = moverDigits([...risers, ...fallers]);
-  const row = (mover: (typeof risers)[number]): TrendRowData => ({ key: String(mover.nhlId), team: mover.team, name: mover.name, meta: meta(mover), weekGames: mover.weekGames,
+  const row = (mover: (typeof risers)[number]): TrendRowData => ({ key: String(mover.nhlId), team: mover.team, name: mover.name, ...meta(mover), weekGames: mover.weekGames,
     hero: { value: signed(mover.delta, digits), label: "PCT PTS ROSTERED", tone: toneOf(mover.delta) },
     prev: { value: `${mover.previous.toFixed(digits)}%`, label: dateLabel(trends.ownershipPreviousDate!).toUpperCase() }, curr: { value: `${mover.latest.toFixed(digits)}%`, label: dateLabel(trends.ownershipLatestDate!).toUpperCase() },
     spark: { values: mover.series, dates: trends.ownershipSeriesDates, what: `Yahoo rostered % on each day ${trends.ownershipSeriesDates?.[0] ?? ""} to ${trends.ownershipSeriesDates?.at(-1) ?? ""}` },
@@ -554,7 +564,7 @@ function trendAltText(kind: TrendKind, snapshot: SocialShareSnapshot, trusted: b
   const head = `FHFH Tuesday trends, ${trendTitles[kind].toLowerCase()}, week of ${yearDateLabel(snapshot.weekStart)}.`;
   const tail = `${trendDefinitions[kind].join(". ")}. Source: ${trendSourceLine(kind, snapshot)}.`;
   if (!trendReady(kind, snapshot, trusted)) return `${head} Unranked preview; ranking unavailable because ${trendUnreadyReason(kind, snapshot, trusted)}. ${tail}`;
-  return `${head} ${trendColumns(kind, snapshot).map(column => `${column.title}: ${column.rows.map(row => `${row.name} (${row.meta}${row.weekGames != null ? ` · ${row.weekGames} GP this week` : ""}), ${row.hero.value} ${row.hero.label}, ${row.prev.label} ${row.prev.value} to ${row.curr.label} ${row.curr.value}${row.evpp ? `, ${row.evpp}` : ""}${row.foot ? `, ${row.foot}` : ""}${row.chips.length ? `, ${row.chips.map(chip => chip.text).join(", ")}` : ""}${row.spark?.values?.length ? `, ${row.spark.what}: ${row.spark.values.map(value => value ?? "no data").join(", ")}` : ""}`).join("; ") || "none"}`).join(". ")}. ${tail}`;
+  return `${head} ${trendColumns(kind, snapshot).map(column => `${column.title}: ${column.rows.map(row => `${row.name}${row.rost ? ` ${row.rost} rostered` : ""} (${row.who}${row.weekGames != null ? ` · ${row.weekGames} GP this week` : ""}), ${row.hero.value} ${row.hero.label}, ${row.prev.label} ${row.prev.value} to ${row.curr.label} ${row.curr.value}${row.evpp ? `, ${row.evpp}` : ""}${row.foot ? `, ${row.foot}` : ""}${row.chips.length ? `, ${row.chips.map(chip => chip.text).join(", ")}` : ""}${row.spark?.values?.length ? `, ${row.spark.what}: ${row.spark.values.map(value => value ?? "no data").join(", ")}` : ""}`).join("; ") || "none"}`).join(". ")}. ${tail}`;
 }
 
 /**
@@ -618,7 +628,7 @@ function TrendCard({ kind, snapshot, trusted, logos, outlines, brandLogo }: { ki
           const mirror = columns.length === 2 && columns.indexOf(column) === 1;
           // TT-15: the sparkline spans the body between the previous (left) and current (right) values. Deployment tiles are
           // taller, so their logo zone is wider and the line shorter.
-          const [sparkWidth, sparkHeight] = stacked ? [176, 50] : kind === "deployment" ? [112, 24] : [150, 24];
+          const [sparkWidth, sparkHeight] = stacked ? [176, 50] : kind === "deployment" ? [112, 22] : [150, 22];
           const spark = kind === "movers" ? (() => {
             const points = moverSparkPoints(row.spark?.values, row.spark?.dates);
             return points && <NeonOwnershipSparkline points={points} tone={row.hero.tone} what={row.spark!.what} width={sparkWidth} height={sparkHeight} />;
@@ -629,14 +639,18 @@ function TrendCard({ kind, snapshot, trusted, logos, outlines, brandLogo }: { ki
             {row.chips.map(chip => <i key={chip.text} data-badge={chip.text} data-tone={chipTone(chip)}>{chip.text}</i>)}
           </span>;
           // TT-10: the right column of 2-column cards is mirrored (art right, text left); rates keep their own stacked layout.
-          return <div key={row.key} data-player={row.key} data-team={row.team ?? ""} data-tone={row.hero.tone} data-mirror={mirror || undefined} className={cx(styles.trendTile, stacked && styles.trendTileStacked)}>
+          const gaps = spark && row.spark?.values ? row.spark.values.filter(value => value === null).length : 0;
+          // TT-16: team · position, games this week and any no-data games on one meta line under the sparkline.
+          const foot = [row.who, row.foot, gaps ? `${gaps} ${gaps === 1 ? "game" : "games"} no data` : null].filter(Boolean).join(" · ");
+          return <div key={row.key} data-player={row.key} data-team={row.team ?? ""} data-tone={row.hero.tone} data-mirror={mirror || undefined} data-gold={row.gold || undefined}
+            className={cx(styles.trendTile, stacked && styles.trendTileStacked)} style={row.gold ? { "--gold": row.gold } as CSSProperties : undefined}>
             <TrendArt team={row.team} logo={row.team ? logos[row.team] : null} outlines={outlines} />
-            <small className={styles.trendTileMeta} data-part="tag">{row.meta}</small>
             {/* TT-15 (TJ, after the rates mockup): name and chips; the difference centred above the line; previous value at
                 the line's left end, current at its right end; then the meta lines. */}
             <div className={styles.trendTileBody}>
               <div className={styles.trendTileHead}>
-                <strong className={styles.trendTileName} data-tone={row.hero.tone} data-part="name" style={{ fontSize: nameFontSize(row.name, stacked) }}>{row.name}</strong>
+                {/* TT-16: rostered % beside the name at the same size; the badge and line/PP chips directly under it. */}
+                <strong className={styles.trendTileName} data-tone={row.hero.tone} data-part="name" style={{ fontSize: nameFontSize(row.rost ? `${row.name} ${row.rost}` : row.name, stacked) }}>{row.name}{row.rost && <span className={styles.trendTileRost} data-rost={row.rost}> {row.rost}</span>}</strong>
                 {chips}
               </div>
               <div className={styles.trendTileDelta}>
@@ -645,12 +659,12 @@ function TrendCard({ kind, snapshot, trusted, logos, outlines, brandLogo }: { ki
               </div>
               <span className={styles.trendTileLine}>
                 <span className={styles.trendTileEnd} data-part="prev"><strong>{row.prev.value}</strong><small>{row.prev.label}</small></span>
-                {/* No series (missing data or an older capture): a neutral baseline, never a drawn line. */}
-                <span className={styles.trendTileSpark} data-part="spark">{spark || <i className={styles.trendBaseline} data-baseline="" aria-hidden="true" />}</span>
+                {/* No series (missing data or an older capture): a labelled neutral baseline, never a drawn line. */}
+                <span className={styles.trendTileSpark} data-part="spark">{spark || <i className={styles.trendBaseline} data-baseline=""><em>NO PER-GAME DATA</em></i>}</span>
                 <span className={cx(styles.trendTileEnd, styles.trendTileCurrent)} data-part="curr"><strong>{row.curr.value}</strong><small>{row.curr.label}</small></span>
               </span>
               {row.evpp && <small className={styles.trendTileFoot} data-part="evpp">{row.evpp}</small>}
-              {(row.foot || week) && <small className={styles.trendTileFoot} data-part="foot">{row.foot}{row.foot && week && " · "}{week}</small>}
+              <small className={styles.trendTileFoot} data-part="foot">{foot}{week && <> · {week}</>}</small>
             </div>
           </div>;
         })}

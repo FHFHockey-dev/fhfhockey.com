@@ -214,3 +214,12 @@ Native sources only. Tuesday never reads `PROJECTIONS_20262027_*`, `PROJECTIONS_
   - **Mirrored columns:** still read previous → current, left to right.
 - **No series:** a neutral dashed baseline sits between the two values; nothing is drawn as a line.
 - **Fill:** Hot/Cold's under-line fill is now 22% (was 50%); the Movers area stays at 20%.
+
+## TT-16: inline meta, chips under the name, gold glow
+
+- **Corner tag removed.** Rostered % sits beside the name at the name's size: "93%", "—" when missing, nothing when a layer predates the field. Team · position starts the meta line under the sparkline.
+- **Chips:** the badge and line/PP chips (Deployment: the movement chips) sit in a row directly under the name, aligned with it.
+- **Gold glow:** a gold outer glow and name shadow with strength (50 − rostered %) / 25, clamped to 0–1. None at 50% or more, or when missing; full at 25% or less. It sits outside the tone border.
+- **Rates:** no ABOVE SEASON badge.
+- **No series:** the baseline is labelled "NO PER-GAME DATA".
+- **Gaps:** a game whose row or value is missing (not a missed game; missed games are never points) gets a faint dotted column above the hollow tick, and "N game(s) no data" on the meta line.

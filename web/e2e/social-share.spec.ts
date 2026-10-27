@@ -144,7 +144,7 @@ async function install(page: Page, access: Access = { role: "social_editor", sig
     if (controller.layoutStress && next.trends) {
       const long = ["Charle-Edouard D'Astous", "Oliver Bjorkstrand", "Ryan Nugent-Hopkins"];
       // TT-10: the widest tag ("100% ROST") and chip set (L4 · off PP) ride on the long-name tile; the second tile shows "—".
-      const rename = <T extends { name: string; rostered?: number | null; role?: ShareTrendWho["role"] }>(list: T[], at = 0) => list.map((row, index) => index === 0 ? { ...row, name: long[at % long.length], rostered: 100, role: { line: "L4", pp: "none" as const } } : index === 1 ? { ...row, rostered: null } : row);
+      const rename = <T extends { name: string; rostered?: number | null; role?: ShareTrendWho["role"] }>(list: T[], at = 0) => list.map((row, index) => index === 0 ? { ...row, name: long[at % long.length], rostered: 100, role: { line: "L4", pp: "none" as const } } : index === 1 ? { ...row, rostered: null } : index === 2 ? { ...row, rostered: 20 } : row);
       const whole = <T extends { latest: number; previous: number; delta: number }>(list: T[], deltas: number[]): T[] => list.map((row, index) => ({ ...row, previous: Math.round(row.previous), latest: Math.round(row.previous) + deltas[index % deltas.length], delta: deltas[index % deltas.length] }));
       const { hot, deployment, rates, movers } = next.trends.sections;
       next = { ...next, trends: { ...next.trends, sections: {
@@ -786,12 +786,16 @@ test("Tuesday trend cards list the server's sections with definitions and a sour
     for (const definition of trendDefinitions[card as "hot"]) await expect(square).toContainText(definition);
     // Compact source + freshness line: dates the reader can check on a phone.
     await expect(square.locator("[data-trend-source]")).toHaveText(card === "movers" ? /^Yahoo rostered % · [A-Z][a-z]{2} \d{1,2} → [A-Z][a-z]{2} \d{1,2} · not adds\/drops$/ : /^FHFH rolling metrics · games thru [A-Z][a-z]{2} \d{1,2} · updated [A-Z][a-z]{2} \d{1,2}, \d{1,2}:\d{2} [AP]M E[DS]T · Yahoo rostered % as of [A-Z][a-z]{2} \d{1,2} · not projections$/);
-    // TT-10: every tile's tag carries rostered % ("—" when missing, never 0%); Hot/Cold, Rates and Movers tiles carry the
-    // latest PP chip (and the line when known); Deployment keeps its change chips, which already name the current role.
-    const tiles = await square.locator("[data-player]").evaluateAll(nodes => nodes.map(node => [node.querySelector("[data-part='tag']")?.textContent ?? "", Array.from(node.querySelectorAll("[data-part='chips'] i[data-badge]")).map(chip => chip.textContent ?? "")] as const));
-    for (const [tag, chips] of tiles) {
-      expect(tag).toMatch(/ · (?:\d+(?:\.\d)?%|—) ROST$/);
-      if (card !== "deployment") expect(chips.filter(chip => /^(?:PP[12]|off PP|PP \?)$/.test(chip)), tag).toHaveLength(1);
+    // TT-16: no corner tag; rostered % sits beside every name ("—" when missing, never 0%) and team · position on the
+    // meta line. Hot/Cold, Rates and Movers tiles carry the latest PP chip (and the line when known); Deployment keeps its
+    // change chips, which already name the current role. Rates carry no ABOVE SEASON badge.
+    const tiles = await square.locator("[data-player]").evaluateAll(nodes => nodes.map(node => [node.querySelector("[data-rost]")?.getAttribute("data-rost") ?? "", node.querySelector("[data-part='foot']")?.textContent ?? "", Array.from(node.querySelectorAll("[data-part='chips'] i[data-badge]")).map(chip => chip.textContent ?? ""), node.querySelectorAll("[data-part='tag']").length, node.querySelector("[class*='trendBadge']")?.textContent ?? null] as const));
+    for (const [rost, foot, chips, tags, badge] of tiles) {
+      expect(rost).toMatch(/^(?:\d+(?:\.\d)?%|—)$/);
+      expect(foot).toMatch(/^[A-Z]{3} · [CLRDW]{1,2}( · |$)/);
+      expect(tags).toBe(0);
+      if (card !== "deployment") expect(chips.filter(chip => /^(?:PP[12]|off PP|PP \?)$/.test(chip)), rost).toHaveLength(1);
+      if (card === "rates") expect(badge).toBeNull();
     }
     await expect(square).toHaveAttribute("data-export-token", `${edition.id}|${card}|${edition.selectedDates.join(",")}`);
     expect(expected.length).toBeGreaterThanOrEqual(8);
@@ -868,7 +872,7 @@ async function tileCollisions(page: Page) {
     const overlap = (a: DOMRect, b: DOMRect) => Math.min(a.right, b.right) - Math.max(a.left, b.left) > 0.5 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 0.5;
     for (const tile of Array.from(square.querySelectorAll<HTMLElement>("[data-player][data-tone]"))) {
       const id = tile.getAttribute("data-player"), box = tile.getBoundingClientRect(), find = (selector: string) => tile.querySelector<HTMLElement>(selector);
-      // Every tagged part (TT-15: name, chips, hero, kind, prev, spark, curr, evpp, foot, and the tag on the art).
+      // Every tagged part (TT-15/16: name with its rostered %, chips, hero, kind, prev, spark, curr, evpp, foot).
       const name = find("[data-part='name']")!, parts = Array.from(tile.querySelectorAll<HTMLElement>("[data-part]"));
       const rects = parts.map(element => [element.getAttribute("data-part")!, element.getBoundingClientRect()] as const);
       // Text cut off inside its own box (e.g. "GP this wee" at the tile edge) counts as a collision too.
@@ -891,12 +895,26 @@ async function tileCollisions(page: Page) {
         // Exactly one of a drawn series or the neutral baseline.
         if ((spark.querySelector("[data-sparkline]") ? 1 : 0) + (spark.querySelector("[data-baseline]") ? 1 : 0) !== 1) problems.push(`${id}: sparkline and baseline both or neither`);
       }
+      // TT-16: the badge and chips sit directly under the name, aligned with it (right edge; left edge when mirrored);
+      // rostered % stays inside the name; the gold glow matches rostered % (none at 50%+ or missing, full at 25% or less).
+      const chipsRow = find("[data-part='chips']"), rostSpan = find("[data-rost]"), mirrored = tile.hasAttribute("data-mirror") && !tile.className.includes("Stacked");
+      if (chipsRow && chipsRow.children.length) {
+        const n = name.getBoundingClientRect(), c = chipsRow.getBoundingClientRect();
+        if (c.top < n.bottom - 0.5 || c.top - n.bottom > 4) problems.push(`${id}: chips not directly under the name`);
+        if (mirrored ? Math.abs(c.left - n.left) > 1 : Math.abs(c.right - n.right) > 1) problems.push(`${id}: chips not aligned with the name`);
+      }
+      const rostValue = rostSpan?.getAttribute("data-rost"), pct = rostValue && rostValue !== "—" ? Number.parseFloat(rostValue) : null;
+      const expectedGold = pct === null ? 0 : Math.round(Math.min(1, Math.max(0, (50 - pct) / 25)) * 100) / 100;
+      // The shown % is rounded, so allow its half-point (0.02 of glow) either way.
+      if (Math.abs(Number(tile.getAttribute("data-gold") ?? 0) - expectedGold) > 0.03) problems.push(`${id}: gold glow ${tile.getAttribute("data-gold")} for ${rostValue}`);
+      if (rostSpan && !name.contains(rostSpan)) problems.push(`${id}: rostered % outside the name`);
+      if (tile.querySelector("[data-part='tag']")) problems.push(`${id}: corner tag still drawn`);
       const column = name.parentElement!.getBoundingClientRect(), nameBox = name.getBoundingClientRect(), logo = find("[data-art] img")?.getBoundingClientRect();
       if (nameBox.left < column.left - 0.5 || nameBox.right > column.right + 0.5 || name.scrollWidth > name.clientWidth + 1) problems.push(`${id}: name leaves its column`);
       if (logo) {
-        // Only the team tag sits on the logo; every other part stays off its visible box.
+        // No text part sits on the logo's visible box (TT-16: the corner tag is gone).
         const visible = new DOMRect(Math.max(logo.left, box.left), Math.max(logo.top, box.top), Math.min(logo.right, box.right) - Math.max(logo.left, box.left), Math.min(logo.bottom, box.bottom) - Math.max(logo.top, box.top));
-        for (const [label, rect] of rects) if (label !== "tag" && overlap(rect, visible)) problems.push(`${id}: ${label} overlaps the logo`);
+        for (const [label, rect] of rects) if (overlap(rect, visible)) problems.push(`${id}: ${label} overlaps the logo`);
       }
       // TT-15: no striping anywhere on the tile (TJ): the art and the tile carry no background image.
       const art = find("[data-art]");

@@ -1,7 +1,7 @@
 import { StrictMode } from "react";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import SocialShare, { deploymentBadges, moverDigits, moverSparkPoints, NEON, OUTLINE_FALLBACK_TEAMS, ppChip, roleChipList, roleHero, rosteredTag, Sparkline, tileRoleChips, toneOf } from "./SocialShare";
+import SocialShare, { deploymentBadges, moverDigits, moverSparkPoints, NEON, OUTLINE_FALLBACK_TEAMS, ppChip, goldGlow, roleChipList, roleHero, rosteredText, Sparkline, tileRoleChips, toneOf } from "./SocialShare";
 import { TUESDAY_NOT_CONNECTED, buildBlockedSnapshot, buildScheduleSnapshot, calendarWeekStart, selectScheduleDates, weekDates } from "lib/socialShare/schedule";
 import { fictionalLeagueWeek } from "lib/socialShare/fixtures";
 import { buildTrendLayer, trendDefinitions, trendExportToken } from "lib/socialShare/trends";
@@ -212,10 +212,12 @@ describe("Tuesday trend edition (lane TT)", () => {
     expect(() => assertToken(node, {})).not.toThrow();
   });
 
-  it("tags every tile with rostered % (— when missing, never 0%) and the latest line/PP chips (TT-10)", () => {
+  it("shows rostered % beside every name (— when missing, never 0%), the gold glow, and the latest line/PP chips (TT-10, TT-16)", () => {
     const who = { nhlId: 1, name: "A", team: "TOR", position: "C" };
-    expect([rosteredTag({ ...who, rostered: 45 }), rosteredTag({ ...who, rostered: 3.4 }), rosteredTag({ ...who, rostered: null }), rosteredTag(who)]).toEqual([" · 45% ROST", " · 3.4% ROST", " · — ROST", ""]);
-    expect(rosteredTag({ ...who, rostered: null })).not.toMatch(/0%/);
+    expect([rosteredText({ ...who, rostered: 45 }), rosteredText({ ...who, rostered: 3.4 }), rosteredText({ ...who, rostered: null }), rosteredText(who)]).toEqual(["45%", "3.4%", "—", null]);
+    // TT-16: gold glow under 50% rostered, full at 25% or less; none when missing or not computed.
+    expect([50, 49, 37.5, 25, 3, 100].map(rostered => goldGlow({ ...who, rostered }))).toEqual([0, 0.04, 0.5, 1, 1, 0]);
+    expect([goldGlow({ ...who, rostered: null }), goldGlow(who)]).toEqual([0, 0]);
     const chips = (line: string | null, pp: 1 | 2 | 3 | "none" | null) => tileRoleChips({ ...who, role: { line, pp } }).map(chip => chip.text);
     expect(chips("L1", 1)).toEqual(["L1", "PP1"]);
     expect(chips(null, null)).toEqual(["PP ?"]);
@@ -247,6 +249,8 @@ describe("Tuesday trend edition (lane TT)", () => {
     const svg = container.querySelector("svg")!;
     expect(svg.getAttribute("data-sparkline")).toBe("1,gap,3,2,gap");
     expect(svg.querySelectorAll("[data-gap]")).toHaveLength(2);
+    // TT-16: each gap also gets a faint dotted column, so it reads as "no data" rather than a clipped line.
+    expect(svg.querySelectorAll("[data-gap-column]")).toHaveLength(2);
     // Runs break at gaps: [1] alone has no line; [3,2] is one segment.
     expect([...svg.querySelectorAll("path:not([data-gap])")].map(path => path.getAttribute("d")!.split("L").length)).toEqual([1, 2, 2]);
     expect(render(<Sparkline values={[null, null]} what="none" width={100} height={30} />).container.querySelector("svg")).toBeNull();

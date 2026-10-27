@@ -372,13 +372,19 @@ $trend-row: 140px;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .trendTileName[data-tone="up"] { color: v.$success-color; }
 .trendTileName[data-tone="down"] { color: v.$color-pink-red; }
-// Team · position · rostered tag on the art, bottom-left.
-.trendTileMeta { position: absolute; left: 8px; bottom: 6px; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 800; letter-spacing: 0.05em; color: v.$color-white; background: rgba(16, 19, 23, 0.82); }
+// TT-16: rostered % beside the name at the name's size, in white so the tone stays on the name itself.
+.trendTileRost { color: v.$color-white; }
+// TT-16 (TJ): a subtle gold glow for players under 50% rostered, strongest at 25% or less (--gold, 0–1, set inline).
+// It sits outside the tone border and under the tone glow, so green and red still read first.
+.trendTile[data-gold] { box-shadow: 0 0 8px rgba(v.$color-blue-300, 0.18), 0 0 14px 1px rgb(255 201 74 / calc(var(--gold) * 0.5)); }
+.trendTile[data-gold][data-tone="up"] { box-shadow: 0 0 8px rgba(v.$success-color, 0.22), 0 0 14px 1px rgb(255 201 74 / calc(var(--gold) * 0.5)); }
+.trendTile[data-gold][data-tone="down"] { box-shadow: 0 0 8px rgba(v.$color-pink-red, 0.22), 0 0 14px 1px rgb(255 201 74 / calc(var(--gold) * 0.5)); }
+.trendTile[data-gold] .trendTileName { text-shadow: 0 0 6px rgb(255 201 74 / calc(var(--gold) * 0.75)); }
 // Badge and role chips share one row (Monday role-chip styling); it never wraps.
-.trendTileChips.roleChips { display: flex; flex-wrap: nowrap; justify-content: flex-end; gap: 4px; margin: 0; max-width: none; white-space: nowrap; }
+.trendTileChips.roleChips { display: flex; flex-wrap: nowrap; justify-content: flex-end; align-self: flex-end; gap: 4px; margin: 0; max-width: none; white-space: nowrap; }
 .trendTileDelta { display: flex; flex-direction: column; align-items: center; line-height: 1; }
 .trendHero { line-height: 1; color: v.$color-white;
-  strong { font: 600 26px "Share Martian Mono", monospace; white-space: nowrap; }
+  strong { font: 600 24px "Share Martian Mono", monospace; white-space: nowrap; }
 }
 .trendHero[data-tone="up"] strong { color: v.$success-color; text-shadow: 0 0 6px rgba(v.$success-color, 0.35); }
 .trendHero[data-tone="down"] strong { color: v.$color-pink-red; text-shadow: 0 0 6px rgba(v.$color-pink-red, 0.35); }
@@ -392,9 +398,12 @@ $trend-row: 140px;
   small { font-size: 8.5px; font-weight: 800; letter-spacing: 0.04em; color: v.$text-secondary; margin-top: 2px; white-space: nowrap; }
 }
 .trendTileCurrent strong { color: v.$color-white; }
-.trendTileSpark { flex: 1; min-width: 0; display: flex; justify-content: center; align-items: center; min-height: 24px; }
-// No series: a neutral dashed baseline across the line's width, so the two values still read as before → now.
-.trendBaseline { display: block; width: 100%; border-top: 1.5px dashed rgba(v.$color-white, 0.28); }
+.trendTileSpark { flex: 1; min-width: 0; display: flex; justify-content: center; align-items: center; min-height: 22px; }
+// No series: a neutral dashed baseline across the line's width, so the two values still read as before → now, labelled
+// (TT-16) so it never reads as a clipped line.
+.trendBaseline { position: relative; display: flex; justify-content: center; width: 100%; border-top: 1.5px dashed rgba(v.$color-white, 0.22);
+  em { position: relative; top: -6px; padding: 0 5px; background: #15191f; font-style: normal; font-size: 8px; font-weight: 800; letter-spacing: 0.06em; line-height: 10px; color: rgba(v.$color-white, 0.42); white-space: nowrap; }
+}
 .trendTileFoot { font-size: 11.5px; font-weight: 600; color: v.$color-blue-300; white-space: nowrap; text-align: center; }
 .trendSpark { display: block; overflow: visible; color: v.$color-blue-300; filter: drop-shadow(0 0 1.5px currentColor); }
 .trendTile[data-tone="up"] .trendSpark { color: v.$success-color; }
@@ -408,18 +417,15 @@ $trend-row: 140px;
 .trendTileStacked .trendTileHead { align-self: flex-end; width: 58%; }
 .trendTileStacked .trendHero strong { font-size: 34px; }
 .trendTileStacked .trendTileSpark { min-height: 50px; }
-// TT-10: with rostered % the tag is wider, so on rates it sits top-left above the logo, clear of the centred meta line.
-.trendTileStacked .trendTileMeta { top: 6px; bottom: auto; }
 // Mirrored right column of 2-column cards (TT-10): art on the right, name and chips left-aligned. The line still reads
 // previous (left) to current (right).
 .trendTile[data-mirror] .trendTileArt { inset: 0 0 0 auto;
   img { left: auto; right: -16%; }
 }
 .trendTile[data-mirror] .trendTileArt[data-art="card"] img { left: auto; right: -10%; }
-.trendTile[data-mirror] .trendTileMeta { left: auto; right: 8px; }
 .trendTile[data-mirror] .trendTileBody { margin: 0 calc(118cqh - 7.36cqw) 0 0; padding: 6px 4px 6px 12px; }
 .trendTile[data-mirror] .trendTileHead { align-items: flex-start; text-align: left; }
-.trendTile[data-mirror] .trendTileChips.roleChips { justify-content: flex-start; }
+.trendTile[data-mirror] .trendTileChips.roleChips { justify-content: flex-start; align-self: flex-start; }
 // The mirrored column's group label sits on its right edge, reading top to bottom.
 .trendColumn[data-labelled][data-mirror] { grid-template-columns: minmax(0, 1fr) 30px;
   > * { grid-column: 1; }
