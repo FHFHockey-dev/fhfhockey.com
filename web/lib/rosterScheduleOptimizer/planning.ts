@@ -1204,7 +1204,7 @@ function shortlist(snapshot: PlanningSnapshot, intent: PlanIntent, limit: number
  * it would be stale at once. Time it at the latest instant with the same outcome instead: a minute before the next
  * puck drop, league-local midnight, acquisition period or lineup boundary. Until then it stays a legal future
  * (conditional) move on every newer read. Null when no such instant is after `asOf`. */
-function latestEquivalentActionAt(snapshot: PlanningSnapshot): string | null {
+export function latestEquivalentActionAt(snapshot: Pick<PlanningSnapshot, "context" | "games" | "rules">): string | null {
   const asOf = time(snapshot.context.asOf);
   const boundaries = [
     ...snapshot.games.map(game => game.startsAt ?? ""),
