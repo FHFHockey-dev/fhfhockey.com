@@ -1,7 +1,7 @@
 import { StrictMode } from "react";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import SocialShare, { deploymentBadges, moverDigits, moverSparkPoints, NEON, OUTLINE_FALLBACK_TEAMS, ppChip, roleChipList, roleHero, Sparkline, toneOf } from "./SocialShare";
+import SocialShare, { deploymentBadges, moverDigits, moverSparkPoints, NEON, OUTLINE_FALLBACK_TEAMS, ppChip, roleChipList, roleHero, rosteredTag, Sparkline, tileRoleChips, toneOf } from "./SocialShare";
 import { TUESDAY_NOT_CONNECTED, buildBlockedSnapshot, buildScheduleSnapshot, calendarWeekStart, selectScheduleDates, weekDates } from "lib/socialShare/schedule";
 import { fictionalLeagueWeek } from "lib/socialShare/fixtures";
 import { buildTrendLayer, trendDefinitions, trendExportToken } from "lib/socialShare/trends";
@@ -210,6 +210,18 @@ describe("Tuesday trend edition (lane TT)", () => {
     expect(() => assertToken(node, { token: "edition-1|hot|2026-11-03" })).not.toThrow();
     expect(() => assertToken(node, { token: "edition-2|hot|2026-11-03" })).toThrow("The preview changed after Download was clicked. Download again.");
     expect(() => assertToken(node, {})).not.toThrow();
+  });
+
+  it("tags every tile with rostered % (— when missing, never 0%) and the latest line/PP chips (TT-10)", () => {
+    const who = { nhlId: 1, name: "A", team: "TOR", position: "C" };
+    expect([rosteredTag({ ...who, rostered: 45 }), rosteredTag({ ...who, rostered: 3.4 }), rosteredTag({ ...who, rostered: null }), rosteredTag(who)]).toEqual([" · 45% ROST", " · 3.4% ROST", " · — ROST", ""]);
+    expect(rosteredTag({ ...who, rostered: null })).not.toMatch(/0%/);
+    const chips = (line: string | null, pp: 1 | 2 | 3 | "none" | null) => tileRoleChips({ ...who, role: { line, pp } }).map(chip => chip.text);
+    expect(chips("L1", 1)).toEqual(["L1", "PP1"]);
+    expect(chips(null, null)).toEqual(["PP ?"]);
+    expect(chips("P2", "none")).toEqual(["P2", "off PP"]);
+    expect(chips("L3", 3)).toEqual(["L3", "off PP"]);
+    expect(tileRoleChips(who)).toEqual([]);
   });
 
   it("shows PP ? for an unknown unit and off PP only with game evidence, never no PP", () => {

@@ -57,6 +57,8 @@ export type ShareTrendSources = {
   series?: SourceRead<ShareSeriesRow>;
   /** Sparklines (TT-4): the shown movers' daily observations from the comparison date to the latest. */
   ownershipSeries?: SourceRead<ShareOwnershipRow>;
+  /** TT-10 (READ-PLAN v3 M3): Yahoo↔NHL id map rows for the shown non-mover players (rostered % on every tile). */
+  rosterMap?: SourceRead<ShareMapRow>;
 };
 
 export const TREND_WINDOW_GAMES = 5;
@@ -316,13 +318,36 @@ export function buildTrendLayer(sources: ShareTrendSources | null, context: Tren
   const base = { name: "FHFH rolling game metrics + Yahoo ownership" as const, version: 2 as const, season: context.season, fetchedAt: context.fetchedAt };
   if (!sources) {
     const empty = { state: "missing" as const, reasons: [notReadReason] };
-    return { ...base, metricsThrough: null, metricsUpdatedAt: null, ownershipLatestDate: null, ownershipPreviousDate: null, ownershipSeriesDates: null,
+    return { ...base, metricsThrough: null, metricsUpdatedAt: null, ownershipLatestDate: null, ownershipPreviousDate: null, ownershipSeriesDates: null, rosteredAsOf: null,
       sections: { hot: { ...empty, rule: RECENT_FORM_RULE, qualifiers: 0, hot: [], cold: [] }, deployment: { ...empty, up: [], down: [] }, rates: { ...empty, sogPer60: [], icfPer60: [], ixgPer60: [] }, movers: { ...empty, risers: [], fallers: [] } } };
   }
   const lists = trendShortlists(sources, context), names = skaterNames(rowsOf(sources.players) ?? []);
+  // TT-10: rostered % for every shown player from the ownership rows already read at the latest date D (O3), mapped
+  // NHL → Yahoo by M3. Only fresh ownership counts; no observation, or Yahoo ids that disagree, is null ("—"), never 0%.
+  const ownershipRows = rowsOf(sources.ownership) ?? [], rosteredFresh = !!lists.latestDate && lists.latestDate <= lists.today && lists.latestDate >= shiftDate(lists.today, -OWNERSHIP_MAX_AGE_DAYS);
+  const atLatest = new Map<string, number>();
+  for (const row of ownershipRows) if (row.ownership_date === lists.latestDate && num(row.ownership_pct) && row.ownership_pct >= 0 && row.ownership_pct <= 100) {
+    const value = round(row.ownership_pct, 1);
+    atLatest.set(row.player_key, value);
+    if (row.player_id !== null) atLatest.set(String(row.player_id), value);
+  }
+  const yahooIds = new Map<number, string[]>();
+  for (const row of rowsOf(sources.rosterMap) ?? []) {
+    const id = Number(row.nhl_player_id);
+    if (row.yahoo_player_id && Number.isInteger(id)) yahooIds.set(id, [...(yahooIds.get(id) ?? []), row.yahoo_player_id]);
+  }
+  const rosteredOf = (nhlId: number) => {
+    if (!rosteredFresh || !sources.rosterMap || !("rows" in sources.rosterMap)) return null;
+    const values = new Set((yahooIds.get(nhlId) ?? []).flatMap(key => atLatest.has(key) ? [atLatest.get(key)!] : []));
+    return values.size === 1 ? [...values][0] : null;
+  };
+  // TT-10: the latest game's line/pair and PP unit, from the rolling row and the PP rows already read (two-unit rule).
+  const ppOf = ppEvidence(rowsOf(sources.ppc) ?? []), ppKnown = !!sources.ppc && "rows" in sources.ppc;
   const who = (nhlId: number): ShareTrendWho | null => {
     const name = names.get(nhlId), active = lists.active.get(nhlId);
-    return name && active ? { nhlId, name: name.fullName, team: active.team, position: name.position } : null;
+    if (!name || !active) return null;
+    const line = normalizeEvDeploymentBucket({ lineComboGroup: active.latest.line_combo_group, lineComboSlot: active.latest.line_combo_slot });
+    return { nhlId, name: name.fullName, team: active.team, position: name.position, rostered: rosteredOf(nhlId), role: { line, pp: ppKnown ? ppOf(active.latest) : null } };
   };
   const shown = <T extends { nhlId: number }, R>(list: T[], size: number, make: (row: T, person: ShareTrendWho) => R) => list.flatMap(row => { const person = who(row.nhlId); return person ? [make(row, person)] : []; }).slice(0, size);
   // Sparklines (TT-4): per-game series for listed rows only, each checked against the row's own L5 window. A failed
@@ -393,10 +418,10 @@ export function buildTrendLayer(sources: ShareTrendSources | null, context: Tren
   }
   const moversState = section([sources.ownership, sources.map, sources.rolling, sources.players], ["Yahoo ownership", "Yahoo to NHL id map", "Rolling game metrics", "Player names"], ownershipGate);
   const moversReady = moversState.state === "ready";
-  const moverRow = (row: TrendShortlists["risers"][number], person: ShareTrendWho): ShareMoverRow => ({ ...person, latest: row.latest, previous: row.previous, delta: row.delta, series: moverSeries(row) });
+  const moverRow = (row: TrendShortlists["risers"][number], person: ShareTrendWho): ShareMoverRow => ({ ...person, rostered: row.latest, latest: row.latest, previous: row.previous, delta: row.delta, series: moverSeries(row) });
 
   return { ...base, metricsThrough: lists.skaters?.through ?? null, metricsUpdatedAt: lists.skaters?.updatedAt ?? null,
-    ownershipLatestDate: lists.latestDate, ownershipPreviousDate: lists.previousDate, ownershipSeriesDates: seriesDates,
+    ownershipLatestDate: lists.latestDate, ownershipPreviousDate: lists.previousDate, ownershipSeriesDates: seriesDates, rosteredAsOf: rosteredFresh ? lists.latestDate : null,
     sections: {
       hot: { ...hotState, reasons: [...hotState.reasons, ...(hotReady ? seriesNote : [])], rule: RECENT_FORM_RULE, qualifiers: hotReady ? lists.formQualifiers : 0, hot: hotReady ? shown(lists.hot, TREND_LIST, hotRow) : [], cold: hotReady ? shown(lists.cold, TREND_LIST, hotRow) : [] },
       deployment: { ...deployState, reasons: [...deployState.reasons, ...(deployReady ? seriesNote : [])], up: deployReady ? shown(lists.up, DEPLOYMENT_LIST, deployRow) : [], down: deployReady ? shown(lists.down, DEPLOYMENT_LIST, deployRow) : [] },

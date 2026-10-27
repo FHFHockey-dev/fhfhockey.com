@@ -249,6 +249,46 @@ describe("sparklines (TT-4)", () => {
   });
 });
 
+describe("rostered % and role on every tile (TT-10)", () => {
+  const obs = (key: string, date: string, pct: number | null, id: number | null = null) => ({ player_key: key, player_id: id, ownership_date: date, ownership_pct: pct });
+  const build = (ownership: ReturnType<typeof obs>[], rosterMap: { yahoo_player_id: string; nhl_player_id: string }[] | null, rolling = skater(60, [{ points_total_last5: 6, points_total_last10: 8 }])) =>
+    buildTrendLayer({ ...sources(rolling), ownership: { rows: ownership }, rosterMap: rosterMap ? { rows: rosterMap } : { failed: "timeout" } }, context);
+
+  it("takes the latest-date observation through the NHL → Yahoo map; the footer date is that day", () => {
+    const layer = build([obs("k60", "2026-10-27", 45.04), obs("k60", "2026-10-22", 30)], [{ yahoo_player_id: "k60", nhl_player_id: "60" }]);
+    expect(layer.rosteredAsOf).toBe("2026-10-27");
+    expect(layer.sections.hot.hot[0]).toMatchObject({ nhlId: 60, rostered: 45 });
+    // A bare Yahoo id maps too (the view keys some rows by player_id).
+    expect(build([obs("465.p.9", "2026-10-27", 12, 9)], [{ yahoo_player_id: "9", nhl_player_id: "60" }]).sections.hot.hot[0].rostered).toBe(12);
+  });
+
+  it("missing is null (shown as —), never 0%: no observation, no mapping, a failed map read, or ids that disagree", () => {
+    const map = [{ yahoo_player_id: "k60", nhl_player_id: "60" }];
+    expect(build([obs("k99", "2026-10-27", 40)], map).sections.hot.hot[0].rostered).toBeNull();
+    expect(build([obs("k60", "2026-10-27", null)], map).sections.hot.hot[0].rostered).toBeNull();
+    expect(build([obs("k60", "2026-10-27", 40)], []).sections.hot.hot[0].rostered).toBeNull();
+    expect(build([obs("k60", "2026-10-27", 40)], null).sections.hot.hot[0].rostered).toBeNull();
+    expect(build([obs("k60", "2026-10-27", 40), obs("k61", "2026-10-27", 3)], [...map, { yahoo_player_id: "k61", nhl_player_id: "60" }]).sections.hot.hot[0].rostered).toBeNull();
+  });
+
+  it("stale ownership shows no rostered % and no footer date", () => {
+    const layer = build([obs("k60", "2026-10-24", 45)], [{ yahoo_player_id: "k60", nhl_player_id: "60" }]);
+    expect(layer.rosteredAsOf).toBeNull();
+    expect(layer.sections.hot.hot[0].rostered).toBeNull();
+  });
+
+  it("role: the latest line, and PP from the game's PP rows: unit, off PP (unit 3 or absent), or unknown", () => {
+    const rows = (gameId: number, line: number | null, ppUnit: number | null) => skater(62, [{ game_id: gameId, line_combo_slot: line, pp_unit: ppUnit, points_total_last5: 6, points_total_last10: 8 }]);
+    const role = (rolling: ShareRollingRow[], ppc: { gameId: number; playerId: number; unit: number }[] | null) =>
+      buildTrendLayer({ ...sources(rolling), ppc: ppc ? { rows: ppc } : { failed: "timeout" } }, context).sections.hot.hot[0].role;
+    expect(role(rows(9000, 1, 1), [{ gameId: 9000, playerId: 62, unit: 1 }])).toEqual({ line: "L1", pp: 1 });
+    expect(role(rows(9000, 2, null), [{ gameId: 9000, playerId: 62, unit: 3 }])).toEqual({ line: "L2", pp: "none" });
+    expect(role(rows(9000, 2, null), [{ gameId: 9000, playerId: 99, unit: 1 }])).toEqual({ line: "L2", pp: "none" });
+    expect(role(rows(9100, null, null), [{ gameId: 9000, playerId: 99, unit: 1 }])).toEqual({ line: null, pp: null });
+    expect(role(rows(9000, 3, 2), null)).toEqual({ line: "L3", pp: null });
+  });
+});
+
 describe("sources and freshness", () => {
   it("only listed skaters leave the layer, with team from the per-game team_id and no Yahoo keys", () => {
     const sources = fixture(), layer = edition(sources).trends!;

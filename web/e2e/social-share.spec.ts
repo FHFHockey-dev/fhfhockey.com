@@ -3,7 +3,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { buildScheduleSnapshot, calendarWeekStart, selectScheduleDates, weekDates } from "../lib/socialShare/schedule";
 import type { SocialScheduleGame as GameData } from "../lib/socialShare/types";
-import type { SocialShareFormat, SocialShareSnapshot } from "../lib/socialShare/types";
+import type { ShareTrendWho, SocialShareFormat, SocialShareSnapshot } from "../lib/socialShare/types";
 import { fictionalLeagueWeek, fictionalTeamStats } from "../lib/socialShare/fixtures";
 import { buildOpponentLayer, easiestSchedules, streamingNights } from "../lib/socialShare/matchups";
 import { attachRecent, buildPlayerLayer, pickupTiers, specialists, type ShareGoalieGameRow, type ShareRecentRollingRow } from "../lib/socialShare/players";
@@ -11,6 +11,7 @@ import { fictionalPlayerRecent, fictionalPlayerSources } from "../lib/socialShar
 import { localDate } from "../lib/rosterScheduleOptimizer/planningDates";
 import { buildTrendLayer, deploymentChanges, hotCold, ownershipMovers, rateStandouts, trendDefinitions } from "../lib/socialShare/trends";
 import { fictionalTrendSources } from "../lib/socialShare/trendsFixture";
+import { teamNeon } from "../lib/socialShare/teamNeon";
 import { editionLabel } from "../lib/socialShare/edition";
 import { countTiers } from "../lib/socialShare/mondayGrid";
 import { streamingTiers, trimEditionPlayers } from "../lib/socialShare/tiers";
@@ -142,7 +143,8 @@ async function install(page: Page, access: Access = { role: "social_editor", sig
     // real-world names on the first tiles of every list, so the geometry check sees the tightest layouts.
     if (controller.layoutStress && next.trends) {
       const long = ["Charle-Edouard D'Astous", "Oliver Bjorkstrand", "Ryan Nugent-Hopkins"];
-      const rename = <T extends { name: string }>(list: T[], at = 0) => list.map((row, index) => index === 0 ? { ...row, name: long[at % long.length] } : row);
+      // TT-10: the widest tag ("100% ROST") and chip set (L4 · off PP) ride on the long-name tile; the second tile shows "—".
+      const rename = <T extends { name: string; rostered?: number | null; role?: ShareTrendWho["role"] }>(list: T[], at = 0) => list.map((row, index) => index === 0 ? { ...row, name: long[at % long.length], rostered: 100, role: { line: "L4", pp: "none" as const } } : index === 1 ? { ...row, rostered: null } : row);
       const whole = <T extends { latest: number; previous: number; delta: number }>(list: T[], deltas: number[]): T[] => list.map((row, index) => ({ ...row, previous: Math.round(row.previous), latest: Math.round(row.previous) + deltas[index % deltas.length], delta: deltas[index % deltas.length] }));
       const { hot, deployment, rates, movers } = next.trends.sections;
       next = { ...next, trends: { ...next.trends, sections: {
@@ -783,7 +785,14 @@ test("Tuesday trend cards list the server's sections with definitions and a sour
     await expect(square).toContainText(title);
     for (const definition of trendDefinitions[card as "hot"]) await expect(square).toContainText(definition);
     // Compact source + freshness line: dates the reader can check on a phone.
-    await expect(square.locator("[data-trend-source]")).toHaveText(card === "movers" ? /^Yahoo rostered % · [A-Z][a-z]{2} \d{1,2} → [A-Z][a-z]{2} \d{1,2} · not adds\/drops$/ : /^FHFH rolling metrics · games thru [A-Z][a-z]{2} \d{1,2} · updated [A-Z][a-z]{2} \d{1,2}, \d{1,2}:\d{2} [AP]M E[DS]T · not projections$/);
+    await expect(square.locator("[data-trend-source]")).toHaveText(card === "movers" ? /^Yahoo rostered % · [A-Z][a-z]{2} \d{1,2} → [A-Z][a-z]{2} \d{1,2} · not adds\/drops$/ : /^FHFH rolling metrics · games thru [A-Z][a-z]{2} \d{1,2} · updated [A-Z][a-z]{2} \d{1,2}, \d{1,2}:\d{2} [AP]M E[DS]T · Yahoo rostered % as of [A-Z][a-z]{2} \d{1,2} · not projections$/);
+    // TT-10: every tile's tag carries rostered % ("—" when missing, never 0%); Hot/Cold, Rates and Movers tiles carry the
+    // latest PP chip (and the line when known); Deployment keeps its change chips, which already name the current role.
+    const tiles = await square.locator("[data-player]").evaluateAll(nodes => nodes.map(node => [node.querySelector("[data-part='tag']")?.textContent ?? "", Array.from(node.querySelectorAll("[data-part='chips'] i[data-badge]")).map(chip => chip.textContent ?? "")] as const));
+    for (const [tag, chips] of tiles) {
+      expect(tag).toMatch(/ · (?:\d+(?:\.\d)?%|—) ROST$/);
+      if (card !== "deployment") expect(chips.filter(chip => /^(?:PP[12]|off PP|PP \?)$/.test(chip)), tag).toHaveLength(1);
+    }
     await expect(square).toHaveAttribute("data-export-token", `${edition.id}|${card}|${edition.selectedDates.join(",")}`);
     expect(expected.length).toBeGreaterThanOrEqual(8);
     expect(await square.locator("[data-player]").evaluateAll(nodes => nodes.map(node => node.getAttribute("data-player")))).toEqual(expected);
@@ -812,11 +821,19 @@ test("Tuesday trend cards list the server's sections with definitions and a sour
       await expect(tile).toHaveAttribute("data-tone", /^[+▲]/.test(hero) ? "up" : /^[−▼]/.test(hero) ? "down" : "flat");
     }
     expect(await square.locator("[data-sparkline]").count()).toBeGreaterThan(0);
-    // TT-5: every tile has art, inlined as a data URL (so the PNG carries it), neon in the tile's tone or the card fallback.
+    // TT-5: every tile has art, inlined as a data URL (so the PNG carries it), neon or the card fallback. TT-11: the neon
+    // logo is in its team's colours (floored lightColor stroke, secondaryColor halo), whatever the tile's green/red tone.
     for (const tile of await tiles.all()) {
       const art = tile.locator("[data-art]");
       await expect(art).toHaveCount(1);
-      if (await art.getAttribute("data-art") === "neon") { await expect(art).toHaveAttribute("data-tone", (await tile.getAttribute("data-tone"))!); expect(await art.locator("img").getAttribute("src")).toMatch(/^data:image\/png;base64,/); }
+      if (await art.getAttribute("data-art") === "neon") {
+        const colors = teamNeon((await tile.getAttribute("data-team"))!)!;
+        // TT-12: the nine multi-colour teams draw their baked outline; the others the team tint. Halo and spread per team.
+        await expect(art).toHaveAttribute("data-stroke", colors.multicolour ? "multi" : colors.stroke);
+        await expect(art).toHaveAttribute("data-halo", colors.halo);
+        await expect(art).toHaveAttribute("data-spread", colors.spread);
+        expect(await art.locator("img").getAttribute("src")).toMatch(/^data:image\/png;base64,/);
+      }
     }
   }
   const shown = new Map([...edition.trends!.sections.hot.hot, ...edition.trends!.sections.hot.cold].map(row => [String(row.nhlId), row.series]));
@@ -844,9 +861,11 @@ async function tileCollisions(page: Page) {
     const overlap = (a: DOMRect, b: DOMRect) => Math.min(a.right, b.right) - Math.max(a.left, b.left) > 0.5 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 0.5;
     for (const tile of Array.from(square.querySelectorAll<HTMLElement>("[data-player][data-tone]"))) {
       const id = tile.getAttribute("data-player"), box = tile.getBoundingClientRect(), find = (selector: string) => tile.querySelector<HTMLElement>(selector);
-      const name = find("[class*='trendTileName']")!, parts: [string, Element | null][] = [["name", name], ["hero", find("[class*='trendHero'] > strong")], ["absolute", find("[class*='trendTileAbsolute']")],
-        ["kind", find("[class*='trendTileKind']")], ...Array.from(tile.querySelectorAll("[class*='trendTileDetail']")).map((detail, index): [string, Element] => [`detail${index}`, detail]), ["chips", find("[class*='trendTileChips']")]];
-      const rects = parts.filter((part): part is [string, Element] => !!part[1]).map(([label, element]) => [label, element.getBoundingClientRect()] as const);
+      // Every tagged part (TT-10: data-part on name, hero, absolute, kind, details, table, chips, rate ends, sparkline).
+      const name = find("[data-part='name']")!, parts = Array.from(tile.querySelectorAll<HTMLElement>("[data-part]"));
+      const rects = parts.map(element => [element.getAttribute("data-part")!, element.getBoundingClientRect()] as const);
+      // Text cut off inside its own box (e.g. "GP this wee" at the tile edge) counts as a collision too.
+      for (const element of parts) if (element.clientWidth > 0 && element.scrollWidth > element.clientWidth + 1 && element !== name) problems.push(`${id}: ${element.getAttribute("data-part")} is clipped`);
       for (let i = 0; i < rects.length; i++) {
         const [label, rect] = rects[i];
         if (rect.left < box.left - 0.5 || rect.right > box.right + 0.5 || rect.top < box.top - 0.5 || rect.bottom > box.bottom + 0.5) problems.push(`${id}: ${label} outside the tile`);
