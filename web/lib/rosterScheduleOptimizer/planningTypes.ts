@@ -45,6 +45,9 @@ export type PlanningPlayer = {
   reserveEligibility: Array<"IR" | "IR+" | "NA">;
   waiverClearsAt?: string | null;
   form?: { label: string; games: number; points: number; includedInForecast: boolean | null };
+  /** Box-score sums over the last (up to 10) played games, keyed by scoring stat; league weights apply client-side.
+   * A hint only. A mapped key absent from `stats` summed to 0; null means a game was missing it. */
+  recentTotals?: { games: number; stats: StatLine };
   /** Provider injury designation (e.g. Yahoo IR, IR-LT, O, DTD); absent when healthy or unknown. */
   injury?: { status: string; label: string; note: string | null } | null;
   /** Yahoo's daily goalie designation from today's roster read; null when Yahoo has not set one, absent when unread. */
@@ -297,7 +300,7 @@ export type PlanEvaluation = {
   limitations: string[];
 };
 /** One ranked player for a streaming leg's day window. `points` is projected fantasy points over the games he would
- * start in it; recent scoring (NHL points per game) is a hint and near-tie tiebreak only. */
+ * start in it; recent league-scored fantasy points per game (last 10 played) is a hint and near-tie tiebreak only. */
 export type StreamingOption = { playerId: string; games: number; gameDates: string[]; points: number | null;
   recentPointsPerGame: number | null; recentGames: number | null };
 /** One add in a stream spot: the streamer is effective from `startDate` and held through `endDate` (inclusive). */

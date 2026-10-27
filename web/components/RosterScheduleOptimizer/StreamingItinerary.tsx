@@ -20,7 +20,7 @@ function totals(chain: StreamingChain, overrides: Record<number, string>) {
 }
 
 /** Day-by-day streaming plan: ADD or HOLD per day for each stream spot, the ranked options for each add, and totals.
- * Ranked by projected fantasy points over the games each player would start; recent scoring is a hint only. */
+ * Ranked by projected fantasy points over the games each player would start; last-10 FPts/G is a hint only. */
 export default function StreamingItinerary({ plan, dates, today, nameOf, teamOf, selectDisabled, onSelect }: {
   plan: StreamingPlan | undefined; dates: string[]; today: string; nameOf: (id: string) => string;
   teamOf: (id: string) => string | null; selectDisabled: string | null; onSelect: (steps: PlanStep[]) => void;
@@ -68,7 +68,7 @@ export default function StreamingItinerary({ plan, dates, today, nameOf, teamOf,
           {leg.options.length > 1 && <ol className={styles.options} aria-label={`Options for ${dateLabel(leg.startDate)}`}>{leg.options.map(option =>
             <li key={option.playerId}><button aria-pressed={option.playerId === playerId} onClick={() => update({ overrides: { ...state.overrides, [index]: option.playerId } })}>
               <span>{describe(option.playerId)}</span>
-              <small>{option.games} GP · {number(option.points)} proj FPts{option.recentPointsPerGame !== null ? ` · recent ${number(option.recentPointsPerGame)} P/G` : ""}</small>
+              <small>{option.games} GP · {number(option.points)} proj FPts{option.recentPointsPerGame !== null ? ` · ${number(option.recentPointsPerGame)} FPts/G (last ${option.recentGames ?? 10})` : ""}</small>
             </button></li>)}</ol>}
         </div>;
       })}</div>
@@ -76,6 +76,6 @@ export default function StreamingItinerary({ plan, dates, today, nameOf, teamOf,
     {selectDisabled && <small id="rso-streaming-reason" className={styles.note}>{selectDisabled}</small>}
     <button className={styles.use} disabled={Boolean(selectDisabled)} aria-describedby={selectDisabled ? "rso-streaming-reason" : undefined}
       onClick={() => onSelect(streamingChainSteps(chain, state.overrides))}>Use this streaming plan</button>
-    <p className={styles.note}>Ranked by projected fantasy points over the games each player would start. Recent scoring (NHL points per game) only breaks near ties.</p>
+    <p className={styles.note}>Ranked by projected fantasy points over the games each player would start. Fantasy points per game over the last 10 played games only break near ties.</p>
   </section>;
 }

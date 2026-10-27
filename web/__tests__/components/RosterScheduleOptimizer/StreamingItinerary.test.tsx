@@ -46,10 +46,10 @@ describe("Streaming itinerary", () => {
     ]);
     expect(within(rows[1]).getByText(/^2\/4 adds · \+3 AGP/)).toBeTruthy();
     expect(within(rows[5]).getByText(/^4\/4 adds · \+7 AGP/)).toBeTruthy();
-    // Options are ranked by projection; recent scoring is shown beside them.
+    // Options are ranked by projection; last-10 FPts/G is shown beside them.
     const weekend = within(rows[5]).getByRole("list", { name: /Options for/ });
     expect(within(weekend).getAllByRole("button").map(button => button.textContent)).toEqual([
-      "Weekend Stream (EDM)2 GP · 3.0 proj FPts · recent 2 P/G", "Weekend Backup (OTT)2 GP · 3 proj FPts · recent 0.4 P/G"]);
+      "Weekend Stream (EDM)2 GP · 3.0 proj FPts · 2 FPts/G (last 5)", "Weekend Backup (OTT)2 GP · 3 proj FPts · 0.4 FPts/G (last 5)"]);
   });
 
   it("swaps a step's player, re-links the next drop and selects the edited chain", () => {

@@ -3,12 +3,13 @@ import { canEligibilityOccupySlot, normalizeEligibility } from "./eligibility";
 import { expandActiveSlots } from "./slots";
 import { acquisitionEffectiveAt } from "./planningTimeline";
 import { dropEligible, providerListsOut, reservedPlayerIds } from "./retention";
+import { recentPointsPerGame } from "./recentForm";
 import type { PlanEvaluation, PlanIntent, PlanStep, PlanningGame, PlanningPlayer, PlanningSnapshot, StreamingChain, StreamingLeg, StreamingOption, StreamingPlan } from "./planningTypes";
 
 /** Streaming chains (TJ, 2026-10-27): turn the period's remaining adds into the most added active games, then projected
  * fantasy points. A stream spot is a sequence of contiguous day windows; each window's streamer is dropped by the next
  * add. Windows come from team schedules and open lineup slots (small per-day matchings); players are ranked within a
- * window by projected points over the games they would start. Proposals are heuristic; every returned chain is
+ * window by projected points over the games they would start; last-10 FPts/G orders near ties only. Proposals are heuristic; every returned chain is
  * certified by the plan evaluator, which alone supplies its legality and net totals. */
 export type StreamingInputs = {
   snapshot: PlanningSnapshot; intent: PlanIntent;
@@ -31,7 +32,7 @@ type Context = { removedFrom: Map<string, number>; extras: Elig[][] };
 const time = (value: string) => Date.parse(value);
 const STREAMABLE = new Set(["free_agent", "manager_available"]);
 const RESERVES = new Set(["IR", "IR+", "NA"]);
-/** Projected points this close are a near tie: recent scoring orders them. */
+/** Projected points this close are a near tie: last-10 FPts/G orders them. */
 const NEAR_TIE = 0.1;
 const OPTION_COUNT = 5, RANKED_COUNT = 12, DROP_CANDIDATES = 3;
 const ZERO: Value = { games: 0, points: 0, known: true, adds: 0 };
@@ -136,7 +137,7 @@ export function buildStreamingChains(inputs: StreamingInputs): StreamingPlan {
     .filter(player => dropOrder.has(player.id) && dropEligible(player, intent, reserved))
     .sort((a, b) => dropOrder.get(a.id)! - dropOrder.get(b.id)!).slice(0, DROP_CANDIDATES);
   if (!drops.length) { plan.limitations.push("No droppable roster player has a known contribution; streaming chains need a drop candidate."); return plan; }
-  const recent = (player: PlanningPlayer) => player.form && player.form.games > 0 ? player.form.points / player.form.games : null;
+  const recent = (player: PlanningPlayer) => recentPointsPerGame(player, rules.scoring);
 
   /** Best chain for one spot that starts by dropping `drop`, on top of `context` (another spot's streamers). */
   const runSpot = (context: Context, drop: PlanningPlayer, adds: number, used: ReadonlySet<string>): SpotPlan | null => {
@@ -171,7 +172,7 @@ export function buildStreamingChains(inputs: StreamingInputs): StreamingPlan {
         const known = values.every(value => value !== null && Number.isFinite(value));
         ranked.push({ player: row.player, playerId: row.player.id, games: playDays.length, gameDates: playDays.map(day => dates[day]), playDays,
           points: known ? values.reduce<number>((sum, value) => sum + value!, 0) : null, pointsKnown: known,
-          recentPointsPerGame: row.form, recentGames: row.player.form?.games ?? null });
+          recentPointsPerGame: row.form, recentGames: row.form === null ? null : row.player.recentTotals?.games ?? null });
       }
       windows[start][end] = { start, end, ranked: ranked.sort(rankOptions).slice(0, RANKED_COUNT) };
     }

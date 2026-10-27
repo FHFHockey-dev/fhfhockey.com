@@ -5,6 +5,7 @@ import { evaluatePlan, planRoster } from "./planning";
 import { reconcileIntent } from "./reconciliation";
 import { streamingChainSteps } from "./streamingChain";
 import { zonedMidnight } from "./planningDates";
+import { snapshotSchema } from "../in-season/workspaceSchema";
 import type { GameForecast, PlanIntent, PlanStep, PlanningPlayer, PlanningSnapshot } from "./planningTypes";
 
 // Synthetic teams and players only. One fictional review covers the single scored target.
@@ -22,7 +23,7 @@ const ZONE = "America/New_York";
 // Mon 2026-10-26 … Sun 2026-11-01; every game starts 7 p.m. ET.
 const WEEK = Array.from({ length: 7 }, (_, day) => new Date(Date.UTC(2026, 9, 26 + day)).toISOString().slice(0, 10));
 type Spec = { id: string; team: string; days: number[]; perGame: number; rostered?: boolean; positions?: string[];
-  form?: PlanningPlayer["form"] };
+  recentTotals?: PlanningPlayer["recentTotals"] };
 
 function week(specs: Spec[], options: { asOf?: string; remaining?: number; slots?: Record<string, number> } = {}): PlanningSnapshot {
   const workspace = defaultWorkspace(new Date("2026-10-26T12:00:00Z"));
@@ -36,7 +37,7 @@ function week(specs: Spec[], options: { asOf?: string; remaining?: number; slots
     rosterRevision: `roster-${spec.id}`, name: `Synthetic ${spec.id}`, teamAbbreviation: spec.team,
     eligiblePositions: spec.positions ?? ["C"], eligibilityVerified: true, playerClass: "skater",
     availability: spec.rostered ? "rostered" : "free_agent", canDrop: true, ownership: null, holdValue: null,
-    reserveEligibility: [], ...(spec.form ? { form: spec.form } : {}) }));
+    reserveEligibility: [], ...(spec.recentTotals ? { recentTotals: spec.recentTotals } : {}) }));
   const snapshot: PlanningSnapshot = { id: "streaming-week", context: { ...workspace.context, startDate: WEEK[0], endDate: WEEK[6], timeZone: ZONE, asOf },
     players, roster: specs.filter(spec => spec.rostered).map(spec => ({ playerId: spec.id, position: "active" as const })), games, forecasts: [],
     rules: { ...workspace.rules, lineupMode: "daily", rosterSlots: options.slots ?? { C: 1, UTIL: 1, BN: 0 }, acquisitionTiming: "same_day", acquisitionCost: 1,
@@ -67,8 +68,8 @@ const tjWeek: Spec[] = [
   { id: "njd", team: "NJD", days: [1, 2], perGame: 1.2 },
   { id: "phi", team: "PHI", days: [1, 2], perGame: 1.6, positions: ["LW"] },
   { id: "wpg", team: "WPG", days: [3, 4], perGame: 2 },
-  { id: "ott", team: "OTT", days: [5, 6], perGame: 1.5, form: { label: "Recent scoring", games: 5, points: 2, includedInForecast: null } },
-  { id: "edm", team: "EDM", days: [5, 6], perGame: 1.52, form: { label: "Scoring hot", games: 3, points: 6, includedInForecast: null } },
+  { id: "ott", team: "OTT", days: [5, 6], perGame: 1.5, recentTotals: { games: 10, stats: { GOALS: 4 } } },
+  { id: "edm", team: "EDM", days: [5, 6], perGame: 1.52, recentTotals: { games: 10, stats: { GOALS: 20 } } },
   // Four spread games for one add: the greedy pick a chain must beat.
   { id: "dec", team: "DEC", days: [0, 2, 4, 6], perGame: 1 },
 ];
@@ -87,7 +88,7 @@ describe("streaming chain", () => {
       // NJD and PHI both cover Tue/Wed; PHI projects more.
       [WEEK[1], WEEK[2], "phi", "lak", 2],
       [WEEK[3], WEEK[4], "wpg", "phi", 2],
-      // OTT and EDM project within the near-tie band, so recent scoring orders them.
+      // OTT and EDM project within the near-tie band, so last-10 FPts/G orders them.
       [WEEK[5], WEEK[6], "edm", "wpg", 2],
     ]);
     expect(chain.legs[1].options.map(option => option.playerId).slice(0, 2)).toEqual(["phi", "njd"]);
@@ -163,5 +164,21 @@ describe("streaming chain", () => {
     const evaluation = evaluatePlan(read, { ...intent(), steps }, "outcome", steps);
     expect(evaluation.legal, evaluation.limitations.join(" ")).toBe(true);
     expect(evaluation.activeGames - evaluatePlan(read, intent(), "outcome", []).activeGames).toBe(7);
+  });
+});
+
+describe("saved snapshots with recent totals", () => {
+  it("round-trips recentTotals and still accepts an older snapshot without it", () => {
+    const withTotals = week(tjWeek);
+    withTotals.players[2].recentTotals = { games: 10, stats: { GOALS: 4, FACEOFFS_WON: null } };
+    const saved = JSON.parse(JSON.stringify(withTotals));
+    expect(snapshotSchema.parse(saved).players.map(player => player.recentTotals ?? null))
+      .toEqual(withTotals.players.map(player => player.recentTotals ?? null));
+    const older = JSON.parse(JSON.stringify({ ...withTotals, players: withTotals.players.map(({ recentTotals: _, ...player }) => player) }));
+    expect(snapshotSchema.parse(older).players.every(player => player.recentTotals === undefined)).toBe(true);
+    // The field stays strict: an unknown key inside it is still rejected.
+    const extra = JSON.parse(JSON.stringify(withTotals));
+    extra.players[2].recentTotals.label = "hot";
+    expect(snapshotSchema.safeParse(extra).success).toBe(false);
   });
 });

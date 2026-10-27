@@ -18,6 +18,7 @@ import { forecastCalendarPolicy } from "lib/player-forecasts/contributions";
 import type { ForgeGameRevision } from "lib/projections/gameRevisions";
 import { starterBoardCanaryGameIds, starterBoardFlags } from "lib/projections/starterBoardFlags";
 import type { ForecastDiscoveryExclusion, ForecastExclusionReason, ForecastManifest, PlanningData, SourceEvidence } from "lib/rosterScheduleOptimizer/planningTypes";
+import { GOALIE_RECENT_COLUMNS, recentTotals, SKATER_RECENT_COLUMNS } from "lib/rosterScheduleOptimizer/recentForm";
 
 export function parsePlanningDataQuery(query: Record<string, unknown>): PlanningDataQuery {
   const seasonId = Number(query.seasonId);
@@ -39,6 +40,9 @@ export function parsePlanningDataQuery(query: Record<string, unknown>): Planning
 
 type Row = Record<string, any>;
 const numberOrNull = (value: unknown) => typeof value === "number" && Number.isFinite(value) ? value : null;
+/** Recent form reads 30 days of played games: about 10 for a regular, fewer after a layoff. At most 16 games a day
+ * dress about 36 skaters and 4 goalies each, so these caps sit above any full window; a larger count fails the read. */
+const RECENT_FORM_DAYS = 30, RECENT_SKATER_ROWS = 25000, RECENT_GOALIE_ROWS = 2500;
 /** Provider ownership percentage: a finite 0–100 number or plain numeric string; anything else is unknown, never 0. */
 const ownershipPct = (value: unknown) => {
   const parsed = typeof value === "string" && /^\d+(\.\d+)?$/.test(value) ? Number(value) : numberOrNull(value);
@@ -302,39 +306,40 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
     }
     sources.ownership = evidence("Yahoo daily ownership", ownership[0]?.updated_at ?? null, query.seasonId, ["Ownership is not league availability; missing or older than three days is unknown."]);
   } catch { sources.ownership = evidence("Yahoo daily ownership", null, query.seasonId, ["Ownership could not be verified."]); }
-  let recentFormStage: "games" | "stats" | "processing" = "games";
+  let recentFormStage: "stats" | "processing" = "stats";
   if (options.skipRecentForm) {
     sources.form = evidence("not_requested", null, query.seasonId, ["Recent scoring context was not requested by this consumer."]);
   } else try {
     const formDeadline = Math.min(deadline, Date.now() + 2000);
-    const start = new Date(now.getTime() - 21 * 86400000).toISOString().slice(0, 10);
+    const start = new Date(now.getTime() - RECENT_FORM_DAYS * 86400000).toISOString().slice(0, 10);
     const cutoff = new Date(now.getTime() - 24 * 3600000).toISOString().slice(0, 10);
-    const historyGames = await pages(() => db.from("games").select("id,date", { count: "exact" })
-      .eq("seasonId", query.seasonId).eq("type", 2).gte("date", start).lte("date", cutoff)
-      .order("date", { ascending: false }).order("id", { ascending: false }), formDeadline, 500);
-    const gameDates = new Map<number, string>(historyGames.filter(row => Number.isSafeInteger(Number(row.id)) && /^\d{4}-\d{2}-\d{2}$/.test(row.date))
-      .map(row => [Number(row.id), row.date]));
-    const gameIds = [...gameDates.keys()];
-    recentFormStage = "stats";
-    const recent: Row[] = [];
-    for (let index = 0; index < gameIds.length; index += 100) {
-      const batch = gameIds.slice(index, index + 100);
-      recent.push(...await pages(() => db.from("skatersGameStats").select("playerId,gameId,points", { count: "exact" }).in("gameId", batch)
-        .order("gameId", { ascending: false }).order("playerId"), formDeadline, 25000 - recent.length, row => [row.gameId, row.playerId]));
-    }
+    // One newest-first date-window read per table for every player (date and games_played indexes), each capped;
+    // every player keeps his last 10 played games (recentTotals). League weights are applied client-side.
+    // Skater rows are keyed by `id` (player and date are not unique there); goalie rows by their unique goalie and date.
+    const window = (table: string, id: string, key: string[], columns: Readonly<Record<string, string>>, maximum: number) => pages(() => db.from(table)
+      .select([...new Set([...key, id, "date", "games_played", ...Object.values(columns)])].join(","), { count: "exact" })
+      .eq("season_id", query.seasonId).eq("games_played", 1).gte("date", start).lte("date", cutoff)
+      .order("date", { ascending: false }).order(key[0]), formDeadline, maximum, row => key.map(column => row[column]));
+    const [skaterRows, goalieRows] = await Promise.all([
+      window("wgo_skater_stats", "player_id", ["id"], SKATER_RECENT_COLUMNS, RECENT_SKATER_ROWS),
+      window("wgo_goalie_stats", "goalie_id", ["goalie_id", "date"], GOALIE_RECENT_COLUMNS, RECENT_GOALIE_ROWS)]);
     recentFormStage = "processing";
-    const byPlayer = new Map<number, Row[]>();
-    for (const row of recent) if (gameDates.has(Number(row.gameId))) {
-      const playerId = Number(row.playerId);
-      byPlayer.set(playerId, [...(byPlayer.get(playerId) ?? []), row]);
-    }
-    for (const samples of byPlayer.values()) samples.sort((a, b) => gameDates.get(Number(b.gameId))!.localeCompare(gameDates.get(Number(a.gameId))!)
-      || Number(b.gameId) - Number(a.gameId));
+    const byPlayer = (rows: Row[], id: string) => {
+      const grouped = new Map<number, Row[]>();
+      // One game per player per date: a repeated date is ignored rather than counted twice.
+      for (const row of rows) if (/^\d{4}-\d{2}-\d{2}$/.test(String(row.date)) && !grouped.get(Number(row[id]))?.some(item => item.date === row.date))
+        grouped.set(Number(row[id]), [...grouped.get(Number(row[id])) ?? [], row]);
+      for (const samples of grouped.values()) samples.sort((a, b) => String(b.date).localeCompare(String(a.date)));
+      return grouped;
+    };
+    const skaters = byPlayer(skaterRows, "player_id"), goalies = byPlayer(goalieRows, "goalie_id");
     for (const player of players) {
-      const samples = player.nhlId === null ? [] : byPlayer.get(player.nhlId) ?? [];
-      if (samples.length < 3 || samples.slice(0, 5).some(row => numberOrNull(row.points) === null)) continue;
-      const lastThree = samples.slice(0, 3).reduce((sum, row) => sum + row.points, 0);
-      const lastFive = samples.slice(0, 5).reduce((sum, row) => sum + row.points, 0);
+      const samples = player.nhlId === null ? [] : (player.playerClass === "goalie" ? goalies : skaters).get(player.nhlId) ?? [];
+      const totals = recentTotals(samples, player.playerClass);
+      if (totals) player.recentTotals = totals;
+      if (player.playerClass === "goalie" || samples.length < 3 || samples.slice(0, 5).some(row => numberOrNull(row.points) === null)) continue;
+      const lastThree = samples.slice(0, 3).reduce((sum, row) => sum + Number(row.points), 0);
+      const lastFive = samples.slice(0, 5).reduce((sum, row) => sum + Number(row.points), 0);
       const hot = lastThree >= 6, cold = samples.length >= 5 && lastFive === 0;
       player.form = { label: hot ? "Scoring hot" : cold ? "Scoring cold" : "Recent scoring", games: hot ? 3 : Math.min(samples.length, 5), points: hot ? lastThree : lastFive, includedInForecast: null };
     }
