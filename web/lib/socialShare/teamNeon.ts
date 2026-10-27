@@ -29,13 +29,16 @@ function hex([h, s, l]: [number, number, number]) {
   return `#${[r, g, b].map(v => Math.round((v + m) * 255).toString(16).padStart(2, "0")).join("")}`;
 }
 
-/** Raise HSL lightness (hue and saturation kept) just until the colour clears the contrast floor on the card. */
-export function withNeonFloor(color: string) {
+/**
+ * Raise HSL lightness (hue and saturation kept) just until the colour clears the contrast floor on the card. `min` is
+ * a higher per-team floor for logos TJ asked to be brighter (TT-13, set in the offline bake).
+ */
+export function withNeonFloor(color: string, min = NEON_MIN_CONTRAST) {
   const value = color.toLowerCase();
-  if (contrast(value, NEON_CARD) >= NEON_MIN_CONTRAST) return value;
+  if (contrast(value, NEON_CARD) >= min) return value;
   const [h, s, l] = hsl(value);
   let lo = l, hi = 1;
-  for (let i = 0; i < 24; i++) { const mid = (lo + hi) / 2; if (contrast(hex([h, s, mid]), NEON_CARD) >= NEON_MIN_CONTRAST) hi = mid; else lo = mid; }
+  for (let i = 0; i < 24; i++) { const mid = (lo + hi) / 2; if (contrast(hex([h, s, mid]), NEON_CARD) >= min) hi = mid; else lo = mid; }
   return hex([h, s, hi]);
 }
 
@@ -56,6 +59,14 @@ export const NEON_SPREADS: Record<NeonSpread, { glowPx: number; glowAlpha: numbe
  */
 export const NEON_SINGLE_COLOUR: Readonly<Record<string, string>> = {
   TBL: "the logo is one blue, so a multi-colour bake is the same single colour; the tuned tint (distinct halo) stays",
+  NSH: "TJ (TT-13): back to the TT-11 all-yellow single colour",
+};
+/**
+ * Saved alternatives TJ wants kept (TT-13, "save both"): the switch is NEON_SINGLE_COLOUR. Adding the team there with
+ * the reason shows the alternative; removing it shows the baked multi-colour outline. Nothing is deleted either way.
+ */
+export const NEON_SAVED_VARIANTS: Readonly<Record<string, string>> = {
+  ANA: "TT-11 single orange (lightColor #ec623c, secondaryColor halo); shipped: the TT-12 multi-colour bake",
 };
 export const NEON_MULTICOLOUR: ReadonlySet<string> = new Set([...activeTeamAbbreviations].map(String).filter(team => !(team in NEON_SINGLE_COLOUR)));
 /**

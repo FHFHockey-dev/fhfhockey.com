@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { activeTeamAbbreviations, teamsInfo } from "lib/teamsInfo";
-import { contrast, NEON_CARD, NEON_MIN_CONTRAST, NEON_MULTICOLOUR, NEON_OVERRIDES, NEON_SINGLE_COLOUR, NEON_SPREADS, teamNeon, withNeonFloor } from "./teamNeon";
+import { contrast, NEON_CARD, NEON_MIN_CONTRAST, NEON_MULTICOLOUR, NEON_OVERRIDES, NEON_SAVED_VARIANTS, NEON_SINGLE_COLOUR, NEON_SPREADS, teamNeon, withNeonFloor } from "./teamNeon";
 
 describe("team neon colours (TT-11)", () => {
   const teams = [...activeTeamAbbreviations].map(String);
@@ -50,9 +50,19 @@ describe("team neon colours (TT-11)", () => {
     expect(NEON_SPREADS.distinct.haloPx).toBeLessThanOrEqual(NEON_SPREADS.normal.haloPx);
     expect(NEON_SPREADS.distinct.glowAlpha).toBeLessThan(NEON_SPREADS.normal.glowAlpha);
     // Add-on (TJ): every team is baked multi-colour except the recorded single-colour fallbacks.
-    expect(Object.keys(NEON_SINGLE_COLOUR)).toEqual(["TBL"]);
-    expect(NEON_MULTICOLOUR.size).toBe(31);
+    // TT-13: NSH back to its TT-11 all-yellow single colour.
+    expect(Object.keys(NEON_SINGLE_COLOUR).sort()).toEqual(["NSH", "TBL"]);
+    expect(NEON_MULTICOLOUR.size).toBe(30);
     for (const team of teams) expect(NEON_MULTICOLOUR.has(team), team).toBe(!(team in NEON_SINGLE_COLOUR));
     for (const team of teams) expect(teamNeon(team)!.multicolour, team).toBe(NEON_MULTICOLOUR.has(team));
+  });
+
+  it("keeps ANA's TT-11 orange as a saved variant, and lifts brighter teams to their own higher floor (TT-13)", () => {
+    expect(Object.keys(NEON_SAVED_VARIANTS)).toEqual(["ANA"]);
+    expect(teamNeon("ANA")).toMatchObject({ multicolour: true, stroke: "#ec623c", strokeFrom: "lightColor" });
+    expect(teamNeon("NSH")).toMatchObject({ multicolour: false, stroke: "#efbe53" });
+    const navy = "#236192";
+    expect(contrast(withNeonFloor(navy, 8), NEON_CARD)).toBeGreaterThanOrEqual(8);
+    expect(contrast(withNeonFloor(navy, 8), NEON_CARD)).toBeGreaterThan(contrast(withNeonFloor(navy), NEON_CARD));
   });
 });

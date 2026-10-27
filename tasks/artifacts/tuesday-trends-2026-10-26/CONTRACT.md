@@ -172,3 +172,9 @@ Native sources only. Tuesday never reads `PROJECTIONS_20262027_*`, `PROJECTIONS_
   - The outlines are baked offline into `public/teamLogos/outline/color/` in the logo's own floored colours and drawn untinted.
   - If a baked file is missing, the tile falls back to the single-colour tint.
 - **Unchanged:** the tile's green/red elements. No reads.
+
+## TT-13: TJ's per-team notes on the TT-12 sheet
+
+- **Bake script:** `tt13/bake-multicolour-outlines.mjs` supersedes the TT-12 script. Per-team `PARAMS`, documented in the script, set stroke width, contrast floor, edge threshold, palette minimum, single-colour-plus-highlight and the region pick. The floors still apply; the brighter teams get a higher one.
+- **Single colour (`NEON_SINGLE_COLOUR`):** NSH goes back to its TT-11 yellow; TBL stays single.
+- **ANA:** ships the multi-colour bake. Its TT-11 orange is a saved variant (`NEON_SAVED_VARIANTS`). Adding ANA to `NEON_SINGLE_COLOUR` switches it.
