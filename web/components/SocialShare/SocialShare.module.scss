@@ -364,14 +364,14 @@ $trend-row: 140px;
 // Tuesday tiles (TT-7, home-page light game card): a dark body with a tone-coloured border and a faint glow; the
 // team's 65° jersey stripes and a large logo cropped at the left edge; everything else right-aligned. The tone
 // follows the hero's sign: green up, red down, neutral blue when zero or unknown.
+// TT-14: a size container, so the stripe band can start where the logo ends (the logo is sized from the tile height).
 .trendTile { position: relative; isolation: isolate; display: flex; justify-content: flex-end; min-height: 0; min-width: 0; overflow: hidden; border-radius: 10px;
-  background: #15191f; border: 2px solid rgba(v.$color-white, 0.14); }
+  background: #15191f; border: 2px solid rgba(v.$color-white, 0.14); container-type: size; }
 .trendTile[data-tone="up"] { border-color: rgba(v.$success-color, 0.8); box-shadow: 0 0 8px rgba(v.$success-color, 0.22); }
 .trendTile[data-tone="down"] { border-color: rgba(v.$color-pink-red, 0.8); box-shadow: 0 0 8px rgba(v.$color-pink-red, 0.22); }
-// Art: stripes darkened so the outline reads, fading into the body; plain gradients and an image, so html-to-image
-// draws them exactly (no masks).
+// Art: the logo on a clean dark field (TT-14: the stripes moved to .trendTileBand); plain image, so html-to-image draws
+// it exactly (no masks).
 .trendTileArt { position: absolute; z-index: -1; inset: 0 auto 0 0; width: 46%; overflow: hidden; color: v.$color-blue-300;
-  background: linear-gradient(90deg, rgba(21, 25, 31, 0) 35%, #15191f 96%), neon-stripes(0.75px), neon-stripes(2.5px, 32%), stripe-bands();
   img { position: absolute; top: 50%; left: -16%; height: 118%; width: auto; aspect-ratio: 1; transform: translateY(-50%); }
 }
 // Neon outline: crisp strokes with a light halo (TJ, TT-7: a halo, not a fill), plus a thin dark edge for contrast.
@@ -380,7 +380,8 @@ $trend-row: 140px;
 // fallbacks are TT-7's normal strength.
 .trendTileArt[data-art="neon"] img { filter: drop-shadow(0 0 var(--neon-glow-r, 3px) var(--neon-glow, rgba(v.$color-white, 0.5))) drop-shadow(0 0 1px rgba(v.$color-black, 0.9)) drop-shadow(0 0 var(--neon-halo-r, 2px) var(--neon-halo, rgba(v.$color-blue-300, 0.55))); }
 .trendTileArt[data-art="card"] img { left: -10%; height: 105%; filter: drop-shadow(0 0 3px rgba(v.$color-white, 0.5)) drop-shadow(0 2px 4px rgba(v.$color-black, 0.6)); }
-.trendTileText { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; gap: 2px; width: 70%; min-width: 0; padding: 5px 12px 5px 0; text-align: right;
+// TT-14: the text column hugs its widest line (at most 70%), so the stripe band beside it never runs behind text.
+.trendTileText { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; gap: 2px; flex: none; width: fit-content; max-width: 70%; min-width: 0; padding: 5px 12px 5px 0; text-align: right;
   > * { flex: none; max-width: 100%; }
 }
 .trendTileName { font: 900 20px/1.02 "Share Roboto Condensed", sans-serif; text-transform: uppercase; letter-spacing: 0.01em; color: v.$color-blue-300;
@@ -414,7 +415,6 @@ $trend-row: 140px;
 .trendTile[data-tone="down"] .trendSpark { color: v.$color-pink-red; }
 // Stacked (rates, three narrow tall columns): a smaller logo in the upper left and a shorter fade, so text stays clear.
 .trendTileStacked .trendTileArt { width: 58%;
-  background: linear-gradient(90deg, rgba(21, 25, 31, 0) 20%, #15191f 88%), neon-stripes(0.75px), neon-stripes(2.5px, 32%), stripe-bands();
   img { top: 28%; left: -16%; height: 50%; }
 }
 // The stacked text column starts right of the logo zone (logo right edge ~40% of the tile), so a long name never
@@ -422,7 +422,18 @@ $trend-row: 140px;
 // Rates (TT-10, TJ mockup): name and badge top right (clear of the logo); below, the Δ centred above a large sparkline
 // with the season rate at its left end and the L5 rate at its right end; the meta line underneath.
 .trendRateTile { display: flex; flex-direction: column; justify-content: space-between; width: 100%; min-width: 0; padding: 8px 12px; }
-.trendTileStacked .trendTileText { align-self: flex-end; width: 58%; justify-content: flex-start; padding: 0; }
+.trendTileStacked .trendTileText { align-self: flex-end; width: 58%; max-width: none; justify-content: flex-start; padding: 0; }
+// TT-14 stripe band: the home page's neon stripes (edges and subtle fill) in a band between the logo zone and the text,
+// faded to the body at both ends. It starts where the logo's box ends: 118% of the tile height, less the 16% overhang
+// of the 46%-wide art (7.36% of the tile width); on rates, 50% of the height less 16% of 58% (9.28%).
+.trendTileBand { flex: 1 1 0; min-width: 0; align-self: stretch; margin-left: calc(118cqh - 7.36cqw);
+  background: linear-gradient(90deg, #15191f 0%, rgba(21, 25, 31, 0) 30%, rgba(21, 25, 31, 0) 70%, #15191f 100%), neon-stripes(0.75px), neon-stripes(2.5px, 32%), stripe-bands();
+}
+// Rates: the band sits in the tile's centre behind the sparkline area (between the season and L5 values), dimmer than
+// on 2-column tiles so the sparkline's line, dots and dashed season level stay the brightest marks.
+.trendTileStacked .trendTileBand { position: absolute; z-index: -1; inset: 0; margin: 0;
+  background: linear-gradient(90deg, #15191f 0%, rgba(21, 25, 31, 0) 25%, rgba(21, 25, 31, 0) 75%, #15191f 100%), neon-stripes(0.75px, 28%), neon-stripes(2.5px, 8%), stripe-bands(65deg, 7%);
+}
 .trendRateBlock { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0;
   > * { flex: none; max-width: 100%; }
   .trendTileKind { margin-top: -2px; }
@@ -431,7 +442,7 @@ $trend-row: 140px;
 // TT-10: with rostered % the tag is wider, so on rates it sits top-left above the logo, clear of the centred meta line.
 .trendTileStacked .trendTileMeta { top: 6px; bottom: auto; }
 .trendRateLine { display: flex; align-items: center; gap: 6px; width: 100%; margin-top: 2px; }
-.trendRateSpark { flex: 1; min-width: 0; display: flex; justify-content: center; }
+.trendRateSpark { position: relative; flex: 1; min-width: 0; display: flex; justify-content: center; }
 .trendRateEnd { flex: none; display: grid; justify-items: center; line-height: 1;
   strong { font: 700 15px "Share Martian Mono", monospace; color: v.$text-secondary; }
   small { font-size: 8.5px; font-weight: 800; letter-spacing: 0.04em; color: v.$text-secondary; margin-top: 2px; }
@@ -447,10 +458,12 @@ $trend-row: 140px;
 // Mirrored right column of 2-column cards (TT-10): art and stripes on the right (angle inverted), text left-aligned.
 .trendTile[data-mirror] { justify-content: flex-start; }
 .trendTile[data-mirror] .trendTileArt { inset: 0 0 0 auto;
-  background: linear-gradient(270deg, rgba(21, 25, 31, 0) 35%, #15191f 96%), neon-stripes(0.75px, 100%, -65deg), neon-stripes(2.5px, 32%, -65deg), stripe-bands(-65deg);
   img { left: auto; right: -16%; }
 }
 .trendTile[data-mirror] .trendTileArt[data-art="card"] img { left: auto; right: -10%; }
+.trendTile[data-mirror] .trendTileBand { order: 1; margin: 0 calc(118cqh - 7.36cqw) 0 0;
+  background: linear-gradient(90deg, #15191f 0%, rgba(21, 25, 31, 0) 30%, rgba(21, 25, 31, 0) 70%, #15191f 100%), neon-stripes(0.75px, 100%, -65deg), neon-stripes(2.5px, 32%, -65deg), stripe-bands(-65deg);
+}
 .trendTile[data-mirror] .trendTileMeta { left: auto; right: 8px; }
 .trendTile[data-mirror] .trendTileText { align-items: flex-start; text-align: left; padding: 5px 0 5px 12px; }
 .trendTile[data-mirror] .trendTileHeroRow, .trendTile[data-mirror] .trendTileKindRow { justify-content: flex-start; }

@@ -81,3 +81,4 @@ Make `/social-share/tuesday-trends` a truthful, data-backed edition from native 
 - TT-12 add-on: all 32 baked (DAL green -> jersey), multi-colour for 31 (TBL single: one-colour logo); sheet original/TT-11/TT-12; E2E 34 (v2 pins), Vitest 240, eslint 0, tsc 0, CSS pure OK. Committing.
 - TT-13: tt13 bake with per-team PARAMS (thicker CAR/CBJ/CGY/EDM/BUF/NYR, brighter BUF/COL/DAL, VGK details, SEA single+red, TOR blue/white, WPG regions); NSH single; ANA saved variant. E2E 34 (v2 pins), Vitest 241, eslint 0, tsc 0, CSS pure OK. Committing.
 - COL follow-up: A cutout traced (PARAMS.COL colorT 0.12, minStroke 0.015); only COL.png changed; E2E 34, Vitest 241. Committed.
+- TT-14: stripes moved to a centre band (flex sibling of text; rates behind the sparkline, dimmed); guard extended; E2E 34 (v2 pins), Vitest 241, eslint 0, tsc 0, CSS pure OK; crops tt14/before-after-crops.png. Committing.

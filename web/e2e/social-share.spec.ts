@@ -885,6 +885,18 @@ async function tileCollisions(page: Page) {
         const visible = new DOMRect(Math.max(logo.left, box.left), Math.max(logo.top, box.top), Math.min(logo.right, box.right) - Math.max(logo.left, box.left), Math.min(logo.bottom, box.bottom) - Math.max(logo.top, box.top));
         if (overlap(nameBox, visible)) problems.push(`${id}: name overlaps the logo`);
       }
+      // TT-14: the stripes live in their own band, never behind the logo or any text. The band's ends fade to the body,
+      // so its visible core (the middle 40%) must clear every tagged part and the logo's box; the art carries no stripes.
+      const art = find("[data-art]"), band = find("[data-band]");
+      if (art && getComputedStyle(art).backgroundImage !== "none") problems.push(`${id}: stripes behind the logo`);
+      if (band) {
+        const b = band.getBoundingClientRect(), core = new DOMRect(b.left + b.width * 0.3, b.top, b.width * 0.4, b.height);
+        if (core.width > 0.5) {
+          // Rates draw the band inside the sparkline's box, behind the line (TT-14), so that part is its container, not a clash.
+          for (const [index, [label, rect]] of rects.entries()) if (!parts[index].contains(band) && overlap(core, rect)) problems.push(`${id}: stripe band behind ${label}`);
+          if (logo && overlap(core, logo)) problems.push(`${id}: stripe band behind the logo`);
+        }
+      }
     }
     return problems;
   });

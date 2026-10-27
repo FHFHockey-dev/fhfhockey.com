@@ -178,3 +178,17 @@ Native sources only. Tuesday never reads `PROJECTIONS_20262027_*`, `PROJECTIONS_
 - **Bake script:** `tt13/bake-multicolour-outlines.mjs` supersedes the TT-12 script. Per-team `PARAMS`, documented in the script, set stroke width, contrast floor, edge threshold, palette minimum, single-colour-plus-highlight and the region pick. The floors still apply; the brighter teams get a higher one.
 - **Single colour (`NEON_SINGLE_COLOUR`):** NSH goes back to its TT-11 yellow; TBL stays single.
 - **ANA:** ships the multi-colour bake. Its TT-11 orange is a saved variant (`NEON_SAVED_VARIANTS`). Adding ANA to `NEON_SINGLE_COLOUR` switches it.
+
+## TT-14: stripes moved off the logo into a centre band
+
+- **Logo:** the art carries no stripes; the neon logo sits on the dark tile body.
+- **2-column cards:**
+  - The stripes are a band element (`.trendTileBand`) and a flex sibling of the text column, so they fill only the gap the text leaves.
+  - The text column hugs its widest line, up to the old 70%.
+  - The band starts where the logo's box ends (118% of the tile height, less the art's overhang; the tile is a size container).
+  - The band fades to the body over its outer 30% on each side. Edge lines and subtle fill as before.
+  - Mirrored right columns invert the angle and swap the band's side.
+- **Rates:** the band sits in the tile's centre, behind the sparkline area only, dimmed (lines 28%, fill 7%), so the sparkline line, dots and dashed season level stay the brightest marks.
+  - The spot between the logo and the name was rejected: the badge and chips row leaves only a sliver of space there.
+  - Without a sparkline, there is no band.
+- **Guard:** the art must have no background image. The band's visible core (its middle 40%) may not sit behind any tagged part or the logo's box, except the sparkline box that contains it on Rates.

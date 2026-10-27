@@ -620,6 +620,9 @@ function TrendCard({ kind, snapshot, trusted, logos, outlines, brandLogo }: { ki
             {row.chips.map(chip => <i key={chip.text} data-badge={chip.text} data-tone={chipTone(chip)}>{chip.text}</i>)}
           </span>;
           const hero = <span className={styles.trendHero} data-tone={row.hero.tone} data-role={/^[▲▼]/.test(row.hero.value) || undefined} data-part="hero"><strong>{row.hero.value}</strong></span>;
+          // TT-14 (TJ): the team stripes sit in their own band between the logo zone and the text, not behind the neon logo.
+          // It is a flex sibling of the text, so it only ever fills the gap the text leaves.
+          const band = row.team && <span className={styles.trendTileBand} data-band="" style={teamBannerStyle(row.team)} aria-hidden="true" />;
           // TT-10: the right column of 2-column cards is mirrored (art right, text left); rates keep their own stacked layout.
           return <div key={row.key} data-player={row.key} data-team={row.team ?? ""} data-tone={row.hero.tone} data-mirror={mirror || undefined} className={cx(styles.trendTile, stacked && styles.trendTileStacked)}>
             <TrendArt team={row.team} logo={row.team ? logos[row.team] : null} outlines={outlines} />
@@ -635,12 +638,13 @@ function TrendCard({ kind, snapshot, trusted, logos, outlines, brandLogo }: { ki
                 <small className={styles.trendTileKind} data-part="kind">{row.hero.label}</small>
                 <span className={styles.trendRateLine}>
                   <span className={styles.trendRateEnd} data-part="season"><strong>{row.spark?.reference != null ? Number(row.spark.reference).toFixed(RATE_DIGITS[column.key as RateMetric] ?? 1) : "—"}</strong><small>SEASON</small></span>
-                  <span className={styles.trendRateSpark} data-part="spark">{spark}</span>
+                  {/* Rates (TT-14): the stripe band sits in the tile's centre, behind the sparkline area only. */}
+                  <span className={styles.trendRateSpark} data-part="spark">{band}{spark}</span>
                   <span className={cx(styles.trendRateEnd, styles.trendTileAbsolute)} data-part="absolute"><strong>{row.right.value}</strong><small>{row.right.label}</small></span>
                 </span>
                 {[row.detail].flat().map((line, index, lines) => <small key={line} className={styles.trendTileDetail} data-part={`detail${index}`}>{line}{index === lines.length - 1 && week && <> · {week}</>}</small>)}
               </div>
-            </div> : <div className={styles.trendTileText}>
+            </div> : <>{band}<div className={styles.trendTileText}>
               <strong className={styles.trendTileName} data-tone={row.hero.tone} data-part="name" style={{ fontSize: nameFontSize(row.name, stacked) }}>{row.name}</strong>
               {row.table && week && <small className={styles.trendTileDetail} data-part="week">{week}</small>}
               {/* Deployment (TT-10): the table carries L5 / season TOI, so the hero row holds the sparkline and the change. */}
@@ -657,7 +661,7 @@ function TrendCard({ kind, snapshot, trusted, logos, outlines, brandLogo }: { ki
               </span>}
               {[row.detail].flat().map((line, index, lines) => <small key={line} className={styles.trendTileDetail} data-part={`detail${index}`}>{line}{index === lines.length - 1 && !row.table && week && <> · {week}</>}</small>)}
               {chips}
-            </div>}
+            </div></>}
           </div>;
         })}
         {!column.rows.length && <p className={styles.playerShort}>None qualify</p>}
