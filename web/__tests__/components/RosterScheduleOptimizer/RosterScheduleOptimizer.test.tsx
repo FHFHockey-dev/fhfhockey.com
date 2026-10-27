@@ -13,10 +13,16 @@ import { resolveContribution } from "lib/player-forecasts/contributions";
 import { forecastFromContributions } from "lib/player-forecasts/resolvedPlanningForecast";
 import { saveWorkspaceSchema } from "lib/in-season/workspaceSchema";
 import { useCanonicalSchedule } from "components/RosterScheduleOptimizer/canonicalSchedule";
+import { yahooPlanningReadBroker } from "hooks/yahooPlanningReadBroker";
 
 const { authState, planningState } = vi.hoisted(() => ({ authState: { user: null as { id: string } | null, teams: [] as unknown[] }, planningState: { evaluate: null as null | ((snapshot: PlanningSnapshot, intent: PlanIntent) => PlanningResult) } }));
 vi.mock("components/RosterScheduleOptimizer/canonicalSchedule", async importOriginal => ({ ...await importOriginal<typeof import("components/RosterScheduleOptimizer/canonicalSchedule")>(), useCanonicalSchedule: vi.fn(() => ({ games: [], teams: [], complete: false, error: "Isolated canonical calendar fixture" })) }));
 vi.mock("contexts/AuthProviderContext", () => ({ useAuth: () => authState }));
+// Pass-through: counts the private Yahoo planning reads the page sets up.
+vi.mock("hooks/yahooPlanningReadBroker", async importOriginal => {
+  const actual = await importOriginal<typeof import("hooks/yahooPlanningReadBroker")>();
+  return { yahooPlanningReadBroker: vi.fn(actual.yahooPlanningReadBroker) };
+});
 vi.mock("lib/supabase/client", () => ({ default: { auth: { getSession: async () => ({ data: { session: authState.user ? { access_token: `token-${authState.user.id}` } : null } }) }, from: () => ({ select: () => ({ eq: async () => ({ data: authState.teams }) }) }) } }));
 // Component tests stub the execution boundary, whose real GET/provenance/worker
 // behavior is covered by executionAdapter.test.ts and the hook tests. Keep actual
@@ -121,8 +127,8 @@ afterEach(() => { cleanup(); window.localStorage.clear(); window.sessionStorage.
 describe("active provider refresh scheduling", () => {
   const success = (snapshot: PlanningSnapshot) => ({ ok: true, status: 200, json: async () => ({ success: true, snapshot,
     capabilities: { roster: true, availability: true, limitations: [] } }) });
-  function setup(reply: (snapshot: PlanningSnapshot, read: number) => Promise<unknown> = async snapshot => success(snapshot), initiallyOnline = true, accountSnapshot = false, sharedData: (read: number) => PlanningData = () => data, accountSaves = false, manualOpponent: PlanningSnapshot["opponent"] = null, emptyIntent = false) {
-    vi.useFakeTimers(); vi.setSystemTime(new Date("2026-10-11T12:00:00Z"));
+  function setup(reply: (snapshot: PlanningSnapshot, read: number) => Promise<unknown> = async snapshot => success(snapshot), initiallyOnline = true, accountSnapshot = false, sharedData: (read: number) => PlanningData = () => data, accountSaves = false, manualOpponent: PlanningSnapshot["opponent"] = null, emptyIntent = false, now = new Date("2026-10-11T12:00:00Z")) {
+    vi.useFakeTimers(); vi.setSystemTime(now);
     const network = vi.spyOn(navigator, "onLine", "get").mockReturnValue(initiallyOnline);
     const visibility = vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
     authState.user = { id: "fixture-refresh-manager" };
@@ -152,6 +158,33 @@ describe("active provider refresh scheduling", () => {
   }
   const advance = (ms = 0) => act(async () => { await vi.advanceTimersByTimeAsync(ms); });
   const returned = async () => { fireEvent(document, new Event("visibilitychange")); await advance(); };
+
+  it("moves the plan-from slider within the read week without any Yahoo read; a new end date still refreshes", async () => {
+    const evaluated: PlanningSnapshot[] = [];
+    planningState.evaluate = (snapshot, intent) => { evaluated.push(snapshot); return planRoster(snapshot, intent); };
+    const view = setup(undefined, true, false, () => data, false, null, true, MIDWEEK); // Wednesday 10-14.
+    await advance();
+    expect(view.reads()).toBe(1);
+    const calls = () => vi.mocked(fetch).mock.calls.map(([url]) => String(url));
+    const before = calls().length, brokers = vi.mocked(yahooPlanningReadBroker).mock.calls.length;
+    fireEvent.click(screen.getByRole("button", { name: "By position" }));
+    const slider = () => screen.getByRole("slider", { name: "Plan from day" }) as HTMLInputElement;
+    for (const index of ["3", "5"]) { // Thursday, then Saturday.
+      fireEvent.pointerDown(slider()); fireEvent.change(slider(), { target: { value: index } }); fireEvent.pointerUp(slider());
+      await advance(5000);
+    }
+    expect(evaluated.at(-1)?.context.startDate).toBe("2026-10-17");
+    const moved = calls().slice(before);
+    expect(moved.filter(url => url.endsWith("/provider") || url.includes("yahoo-current-data") || url.includes("/workspace"))).toEqual([]);
+    expect(moved.filter(url => url.includes("/data?")).map(url => new URL(url, "http://localhost").searchParams.get("startDate")))
+      .toEqual(["2026-10-15", "2026-10-17"]);
+    // No private Yahoo planning read is set up for a slider-narrowed range.
+    expect(vi.mocked(yahooPlanningReadBroker).mock.calls.slice(brokers)).toEqual([]);
+    expect(view.reads()).toBe(1);
+    fireEvent.change(screen.getByLabelText("Through"), { target: { value: "2026-10-17" } });
+    await advance();
+    expect(view.reads()).toBe(2);
+  });
 
   it("rechecks an expired catalog with one shared read while preserving provider state and saved intent", async () => {
     const evaluated: PlanningSnapshot[] = [];
@@ -1641,6 +1674,8 @@ describe("RosterScheduleOptimizer workspace", () => {
   });
   it("re-plans from a later day with the plan-from slider in every schedule view, then goes back to today", async () => {
     pinMidweek(); // Wednesday 10-14 of the Mon 10-12 – Sun 10-18 week.
+    const evaluated: PlanningSnapshot[] = [];
+    planningState.evaluate = (snapshot, intent) => { evaluated.push(snapshot); return planRoster(snapshot, intent); };
     vi.stubGlobal("fetch", fetchMock);
     render(<RosterScheduleOptimizer />);
     fireEvent.click(await screen.findByRole("button", { name: "By position" }));
@@ -1653,21 +1688,24 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect(slider().value).toBe("2");
     fireEvent.change(slider(), { target: { value: "4" } });
     fireEvent.pointerUp(slider());
-    await waitFor(() => expect(range()).toEqual(["2026-10-16", "2026-10-18"]));
+    // Planning runs from Friday; the workspace range (and so its context) is unchanged.
+    await waitFor(() => expect(evaluated.at(-1)?.context.startDate).toBe("2026-10-16"));
+    expect(evaluated.at(-1)?.context.endDate).toBe("2026-10-18");
+    expect(range()).toEqual(["2026-10-12", "2026-10-18"]);
     const grid = screen.getByRole("table", { name: "Lineup by position" });
     expect([...grid.querySelectorAll("th[data-date]")].map(cell => cell.getAttribute("data-date"))).toHaveLength(7);
     expect([...grid.querySelectorAll("th[data-greyed]")].map(cell => cell.getAttribute("data-date")))
       .toEqual(["2026-10-12", "2026-10-13", "2026-10-14", "2026-10-15"]);
-    // The "Current week" auto-range leaves a chosen start alone.
-    await act(async () => { await Promise.resolve(); });
-    expect(range()[0]).toBe("2026-10-16");
     expect(screen.getByText(/^Planning from .*16.*; earlier days are left out\./)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Show lineup by player" }));
     expect(slider().value).toBe("4");
+    // Skipped days cannot be chosen; the focused day moves to the plan start.
+    expect((screen.getByRole("button", { name: /^Select Wed, Oct 14/ }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByRole("button", { name: /^Select Fri, Oct 16/ }).getAttribute("aria-pressed")).toBe("true");
     fireEvent.click(screen.getByRole("button", { name: "Streaming itinerary" }));
     expect(slider().value).toBe("4");
     fireEvent.click(screen.getByRole("button", { name: "Back to today" }));
-    await waitFor(() => expect(range()).toEqual(["2026-10-12", "2026-10-18"]));
+    await waitFor(() => expect(evaluated.at(-1)?.context.startDate).toBe("2026-10-12"));
     expect(slider().value).toBe("2");
     expect(screen.queryByRole("button", { name: "Back to today" })).toBeNull();
   });

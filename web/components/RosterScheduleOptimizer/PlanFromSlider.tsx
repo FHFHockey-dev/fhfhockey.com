@@ -12,7 +12,7 @@ export type PlanFrom = {
   disabled?: boolean;
 };
 
-/** Each new start date re-reads the provider, so a drag commits once on release and the keyboard once it settles. */
+/** Each new start date re-plans (one schedule read), so a drag commits once on release and the keyboard once it settles. */
 export const PLAN_FROM_SETTLE_MS = 600;
 const dayLabel = (date: string) => new Date(`${date}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
 
