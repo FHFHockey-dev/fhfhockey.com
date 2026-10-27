@@ -1,0 +1,20 @@
+# 2026-10-27 · Claude · RSO streaming chain
+
+- **Scope:** deterministic one/two-spot streaming chain (max AGP then projected FPts) as the top plan plus alternatives, and a day-by-day itinerary UI with ranked per-step options. Files: `web/lib/rosterScheduleOptimizer/**`, `web/components/RosterScheduleOptimizer/**`, `web/__tests__/components/RosterScheduleOptimizer/**`.
+- **Where:** octoberBranch, base 60cd358ea. Local commit by explicit pathspec.
+- **Diagnosis verified (planning.ts):** `defaultWorkQuotas` gives ~43 evaluations and 13 fit groups at 816 FAs. `scheduleFits` walks the groups alphabetically, `phaseBudget` is ~5, and `extensions` tries a streamer added by the plan itself as a drop only via `drops.slice(0, 2)`; that streamer sorts last.
+- **Recent form:** the only read path is `player.form` (NHL points over the last 3–5 games, `skatersGameStats` in `lib/rosterScheduleData/planning.ts`, outside my lane). No last-10 FPts read exists, so I rank by projection and show `form` as the hint. Ask TJ by pop-up.
+- **Built:** `streamingChain.ts` is a DP over contiguous day windows per stream spot. Per-day slot gains come from Kuhn matchings. Players in a window are ranked by projected FPts, and `form` (recent NHL pts/G) orders near ties (≤0.1). Each leg starts on its pick's first game. The two-spot split runs sequentially with a budget split, and every chain is certified by `evaluatePlan`. Exposed as `PlanningResult.streaming`; `alternatives` is untouched, to keep its tests and contract. UI: `StreamingItinerary.tsx` above the itinerary-panel views.
+- **Checks so far:** RSO Vitest 43 files / 1025 tests pass in UTC and in NY. Hook test 9/9. eslint 0 errors (6 old warnings). Pure-check ok. A perf probe with 830 FAs (no forecasts) ran planRoster in ~0.4 s.
+- **Gotcha:** the heavy lock was a BLSH directory lock (owner.json). tsc waits in the background for it to clear.
+- **Next:** tsc, receipt, commit, pop-up to TJ about a last-10 FPts read.
+- **Committed** 979c05ae1 (8 files, explicit pathspecs; index was empty). tsc exit 0 under the heavy lock, which is released. Receipt: `tasks/artifacts/rso-wave2-2026-10-25/STREAMING-CHAIN/RECEIPT.md` (uncommitted, like the sibling receipts).
+- **Handoff:** Chef verifies, releases and pushes. TJ's pop-up answer on a last-10 FPts read decides any follow-up. Keep this diary until Chef accepts.
+- **TJ pop-up answer (10-27):** add a last-10 FPts read. Chef stages it as a follow-up: 10 games of box-score stats, weighted by league scoring. It changes a production query, so Chef reviews it. Show it combined with projections: projected points for the week's games, with last-10 for past results and momentum. Not done here, since it is outside this lane (`lib/rosterScheduleData/planning.ts`). The UI hook is `StreamingOption.recentPointsPerGame`/`recentGames`.
+- **Ticket 2 (last-10 FPts):**
+  - TJ pop-up: extend the existing read, and use `wgo_skater_stats` + `wgo_goalie_stats`, replacing the skatersGameStats form read. TJ floated an L10GP materialized view; that needs a migration, so it's a follow-up only.
+  - Built: `recentForm.ts` (column maps, `recentTotals`, `recentPointsPerGame`) and the loader change in `lib/rosterScheduleData/planning.ts`. It does two newest-first reads: season, `games_played=1`, a 30-day window; caps 25k/2.5k rows; skaters paged by `id`.
+  - New field `PlanningPlayer.recentTotals`. The chain and UI now show "FPts/G (last N)".
+  - Tests: 53 files / 1367 pass in UTC and in NY; eslint clean.
+  - **Blocker:** `lib/in-season/workspaceSchema.ts` validates players with `.strict()`, so saving or restoring a snapshot with `recentTotals` would fail. It needs a one-line optional field there, which is outside my lanes. Asked Chef. Uncommitted until answered; tsc not yet run.
+- **Ticket 2 committed:** a7dfb06a1 (10 files incl. the one-line schema change Chef approved). 56 files / 1459 tests pass in UTC and NY; tsc 0 under the lock (released); eslint clean. Receipt section added. Follow-up: dedupe the column maps with `yahoo/rosterPlanning.ts` (outside my lanes). Keep this diary until Chef accepts.
