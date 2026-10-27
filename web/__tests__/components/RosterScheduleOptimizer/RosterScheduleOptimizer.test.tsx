@@ -6,6 +6,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { BenchDecision, GameForecast, PlanEvaluation, PlanIntent, PlanStep, PlanningData, PlanningPlayer, PlanningResult, PlanningSnapshot, PlanningWorkspace } from "lib/rosterScheduleOptimizer/planningTypes";
 import { WORKSPACE_PRESERVATION_JOURNAL, workspaceStorageKey, defaultWorkspace, preservationChecksum, readWorkspaceHistory, writeWorkspace, type WorkspacePreservation } from "lib/rosterScheduleOptimizer/workspace";
 import { planRoster, sanitizeForecastInputs } from "lib/rosterScheduleOptimizer/planning";
+import { buildTimeline } from "lib/rosterScheduleOptimizer/planningTimeline";
+import { reconcileIntent } from "lib/rosterScheduleOptimizer/reconciliation";
 import { resolvePlanningContributions } from "lib/player-forecasts/planningContributions";
 import { resolveContribution } from "lib/player-forecasts/contributions";
 import { forecastFromContributions } from "lib/player-forecasts/resolvedPlanningForecast";
@@ -1952,6 +1954,41 @@ describe("RosterScheduleOptimizer workspace", () => {
     fireEvent.click(screen.getByRole("button", { name: "Select add" }));
     const saved = JSON.parse(window.localStorage.getItem(activeKey()) ?? "null");
     expect(saved.intent.steps).toMatchObject([{ playerId: "fhfh:1", conditional: true }]);
+  });
+
+  it("times a same-day Select add at its real deadline so it stays legal on later reads", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-10T12:03:00Z"));
+    const workspace = defaultWorkspace();
+    workspace.context = { ...workspace.context, startDate: "2026-10-10", endDate: "2026-10-10", timeZone: "America/New_York" };
+    workspace.rules.acquisitionTiming = "same_day";
+    workspace.rules.acquisitionCost = 1;
+    workspace.rules.periods = [{ id: "week", start: "2026-10-06T04:00:00Z", end: "2026-10-13T04:00:00Z", remaining: 1, source: "manager" }];
+    workspace.manualPlayers = [{ ...player, availability: "free_agent" }];
+    const games = [{ id: "night-game", date: "2026-10-10", startsAt: "2026-10-10T23:00:00Z", teamAbbreviation: "CAR", opponent: "NJD", home: true, status: "scheduled" as const }];
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
+    vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve({ ok: url.includes("/data?"), json: async () => ({ success: true, data: { ...data, games,
+      evidence: { schedule: { source: "roster_optimizer_team_games", asOf: "2026-10-10T12:00:00Z", seasonId: 20262027, completeness: "complete", limitations: [] } } } }) })));
+    render(<RosterScheduleOptimizer />);
+    await screen.findByText("Shared schedule: complete");
+    fireEvent.click(screen.getByRole("button", { name: "All players" }));
+    fireEvent.click(screen.getByRole("button", { name: "Select add" }));
+    const saved = JSON.parse(window.localStorage.getItem(activeKey())!);
+    const intent: PlanIntent = saved.intent;
+    // A minute before the 7 p.m. ET puck drop, not one minute after the click.
+    expect(intent.steps).toMatchObject([{ playerId: player.id, at: "2026-10-10T22:59:00.000Z", effectiveAt: "2026-10-10T22:59:00.000Z", conditional: true }]);
+    const read = (asOf: string): PlanningSnapshot => ({ id: `read:${asOf}`, context: { ...saved.context, asOf }, players: saved.manualPlayers, roster: saved.roster,
+      rules: saved.rules, lockedAssignments: [], games, forecasts: [], realized: {}, opponent: null, evidence: {} });
+    // The confirmation re-read and a manual Refresh provider with unchanged inputs keep the add.
+    for (const asOf of ["2026-10-10T12:03:20Z", "2026-10-10T12:45:00Z"]) {
+      const timeline = buildTimeline(read(asOf), intent, intent.steps);
+      timeline.at("9999-12-31T23:59:59Z");
+      expect(timeline.legal, timeline.limitations.join(" ")).toBe(true);
+      expect(reconcileIntent(read(asOf), intent).issues).toEqual([]);
+    }
+    // Past-time detection still applies after the deadline.
+    expect(reconcileIntent(read("2026-10-10T22:59:30Z"), intent).issues)
+      .toContainEqual({ stepId: intent.steps[0].id, message: "Selected action time has passed; review this step." });
   });
 
   it.each([0, 2, null])("shows selected acquisition cost %s with its drop and sequence prerequisite", async (cost) => {
