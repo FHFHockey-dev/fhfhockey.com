@@ -75,7 +75,7 @@ The only existing read path is `PlanningPlayer.form`. It is loaded in `lib/roste
 ## Limits
 - DP proposals are heuristic (gains from per-day matchings; the two-spot pass is sequential and greedy). Only `evaluatePlan`-certified chains are returned, and their totals come from that evaluation.
 - Chain structure is AGP-first, then FPts. A 1-game star never beats a 2-game streamer in the same window. **Lifted on 10-27; see "Blended ranking and FPts-first chains" below.**
-- Only free agents and manager-available players are chained; waiver claims are not.
+- Only free agents and manager-available players are chained; waiver claims are not. **Lifted for priority-waiver leagues on 10-27; see "Waiver claims" below.**
 - Daily lineup leagues only. One acquisition period per chain. At most 3 drop candidates (`knownDropOrder`). **The drop cap was lifted on 10-27; see "Drop candidates" below.**
 - Within a stream spot, a player is never re-added.
 - Option totals after a swap are estimates until re-planned.
@@ -219,3 +219,25 @@ The setup is TJ's league on Wednesday: 2 adds left, a 3-start minimum with 1 cre
   - tsc (heavy lock): exit 0.
   - eslint on `streamingChain.ts`, its test and `planning.ts`: clean.
 - **Work bound (fix, next commit):** no production caller passes `timeBudgetMs`, so the deadline alone left large ranges unbounded. On "bounds a 367-day catalog workload with 25 rostered and 300 available players" it went from 2.3 s (3-drop cap) to 7.2 s. Drops and pairs beyond the guaranteed ones now also need the cumulative window × candidate work (`rows × n(n+1)/2` per spot run) to stay ≤ 2,000,000. This is deterministic: a 7-day week with ~300 players costs about 17k per drop, so every drop fits, while the 367-day workload stops at the first 3 and is back at 2.3 s. The limitation text is now "…reached its work or time limit…".
+
+## Waiver claims (10-27)
+- **No new data was needed.** The Yahoo planning read already maps `ownership.waiver_date` to `PlanningPlayer.waiverClearsAt`. The plan timeline already requires a waiver claim to be `conditional` with `effectiveAt ≥ waiverClearsAt`, and it checks the waiver policy.
+- **Pool:** waiver players with a valid `waiverClearsAt` join the pool only when `rules.waivers.mode === "priority"`. With a budget or unknown policy the timeline marks a claim's spend unverified (`budgetVerified` false), so certification would reject it. Those leagues chain free agents only, and the plan says "Waiver claims are chained only in priority-waiver leagues; this league's waiver policy is a budget or unverified." The old "waiver claims are not chained" notice never fired, because it checked the already-filtered pool.
+- **Clearance timing:** a waiver player can only take a window whose leg takes effect at or after he clears. His step is always `conditional` (the claim may fail, and later legs depend on it), and `streamingChainSteps` keeps a swapped-in waiver option conditional. Free agents win near ties over waiver players.
+- **UI and types:**
+  - `StreamingOption.waiverClearsOn` holds the league date he clears.
+  - The ADD line reads "· waiver claim, clears Wed, Oct 28", and the leg note reads "· the claim may fail".
+  - Options are prefixed "Waivers ·".
+- **`planning.ts`:** the streaming points pool now includes `waivers` players, so their projections resolve.
+- **Fixtures** (TJ's week plus a 3 FPts/G Thu–Fri waiver player):
+  - Priority league, clearing Wednesday: the chain is LAK → PHI → waiver claim Thu–Fri → EDM, +7, legal and budget-verified. The claim step is conditional, takes effect at Thursday midnight, and has WPG as the free-agent option. Swapping back to WPG stays legal.
+  - Clearing Friday, too late for Thursday: WPG.
+  - Budget league: free agents only, with the limitation above.
+  - Itinerary: the waiver labels.
+- **Not done:** no-claim fallbacks for a failed claim (the existing `noClaimContinuations` cover selected steps, not chain proposals), and waiver budget spend amounts.
+- **Checks (final tree):**
+  - `TZ=UTC` and then `TZ=America/New_York`, the RSO vitest command: 57 files and 1486 tests passed in each.
+  - An earlier UTC run under load average ~30 had 9 timeouts in heavy tests. They passed when rerun, and the New York run passed throughout.
+  - tsc (heavy lock): exit 0.
+  - eslint on the 6 touched files: clean.
+  - No production, Supabase or Yahoo calls.

@@ -24,9 +24,9 @@ const ZONE = "America/New_York";
 // Mon 2026-10-26 … Sun 2026-11-01; every game starts 7 p.m. ET.
 const WEEK = Array.from({ length: 7 }, (_, day) => new Date(Date.UTC(2026, 9, 26 + day)).toISOString().slice(0, 10));
 type Spec = { id: string; team: string; days: number[]; perGame: number; rostered?: boolean; positions?: string[];
-  recentTotals?: PlanningPlayer["recentTotals"]; startProbability?: number };
+  recentTotals?: PlanningPlayer["recentTotals"]; startProbability?: number; waiverClearsAt?: string };
 type WeekOptions = { asOf?: string; remaining?: number; slots?: Record<string, number>; startDate?: string;
-  goalieMinimum?: Partial<PlanningSnapshot["rules"]["goalieMinimum"]> };
+  goalieMinimum?: Partial<PlanningSnapshot["rules"]["goalieMinimum"]>; waivers?: PlanningSnapshot["rules"]["waivers"] };
 
 function week(specs: Spec[], options: WeekOptions = {}): PlanningSnapshot {
   const workspace = defaultWorkspace(new Date("2026-10-26T12:00:00Z"));
@@ -39,14 +39,15 @@ function week(specs: Spec[], options: WeekOptions = {}): PlanningSnapshot {
   const players: PlanningPlayer[] = specs.map((spec, index) => ({ id: spec.id, nhlId: index + 1, nhlTeamId: index + 1,
     rosterRevision: `roster-${spec.id}`, name: `Synthetic ${spec.id}`, teamAbbreviation: spec.team,
     eligiblePositions: spec.positions ?? ["C"], eligibilityVerified: true, playerClass: spec.positions?.includes("G") ? "goalie" : "skater",
-    availability: spec.rostered ? "rostered" : "free_agent", canDrop: true, ownership: null, holdValue: null,
+    availability: spec.rostered ? "rostered" : spec.waiverClearsAt ? "waivers" : "free_agent", canDrop: true,
+    ...(spec.waiverClearsAt ? { waiverClearsAt: spec.waiverClearsAt } : {}), ownership: null, holdValue: null,
     reserveEligibility: [], ...(spec.recentTotals ? { recentTotals: spec.recentTotals } : {}) }));
   const snapshot: PlanningSnapshot = { id: "streaming-week", context: { ...workspace.context, startDate: options.startDate ?? WEEK[0], endDate: WEEK[6], timeZone: ZONE, asOf },
     players, roster: specs.filter(spec => spec.rostered).map(spec => ({ playerId: spec.id, position: "active" as const })), games, forecasts: [],
     rules: { ...workspace.rules, lineupMode: "daily", rosterSlots: options.slots ?? { C: 1, UTIL: 1, BN: 0 }, acquisitionTiming: "same_day", acquisitionCost: 1,
       periods: [{ id: "week", start: zonedMidnight(WEEK[0], ZONE), end: zonedMidnight("2026-11-02", ZONE), remaining: options.remaining ?? 4, source: "provider" }],
       scoring: { mode: "points", weights: { GOALS: 1 }, categories: [] },
-      goalieMinimum: { ...workspace.rules.goalieMinimum, ...options.goalieMinimum } },
+      goalieMinimum: { ...workspace.rules.goalieMinimum, ...options.goalieMinimum }, ...(options.waivers ? { waivers: options.waivers } : {}) },
     lockedAssignments: [], realized: {}, opponent: null,
     evidence: { schedule: { source: "Local fixture", asOf, seasonId: workspace.context.seasonId, completeness: "complete", limitations: [] } } };
   snapshot.forecasts = specs.flatMap((spec, index) => spec.days.map(day => {
@@ -305,6 +306,38 @@ describe("streaming chain drop candidates", () => {
       evaluate: steps => evaluatePlan(snapshot, base, "agp", steps, false), points: forecastPointsReader(snapshot) });
     expect(plan.chains).toEqual([]);
     expect(plan.limitations).toContain("Streaming search reached its work or time limit; some drop candidates were not tried.");
+  });
+});
+
+/** TJ's week plus a better Thu–Fri streamer on waivers, clearing Wed 6 a.m. ET (or Fri, too late for Thu). */
+const waiverWeek = (clearsAt = "2026-10-28T10:00:00Z"): Spec[] => [...tjWeek, { id: "wv", team: "WV", days: [3, 4], perGame: 3, waiverClearsAt: clearsAt }];
+const priority = { waivers: { mode: "priority" as const, remainingBudget: null } };
+
+describe("streaming chain waiver claims", () => {
+  it("claims a cleared waiver player as a conditional step in a priority league", () => {
+    const read = week(waiverWeek(), priority);
+    const [chain] = legSummary(read).chains;
+    expect(chain.legs.map(leg => [leg.startDate, leg.playerId])).toEqual([[WEEK[0], "lak"], [WEEK[1], "phi"], [WEEK[3], "wv"], [WEEK[5], "edm"]]);
+    expect(chain).toMatchObject({ netGames: 7, evaluation: { legal: true, budgetVerified: true } });
+    expect(chain.steps[2]).toMatchObject({ playerId: "wv", conditional: true, effectiveAt: zonedMidnight(WEEK[3], ZONE) });
+    expect(chain.legs[2].options.slice(0, 2).map(option => [option.playerId, option.waiverClearsOn ?? null])).toEqual([["wv", WEEK[2]], ["wpg", null]]);
+    // Swapping the claim back to the free agent keeps the chain legal; a waiver option always makes its step conditional.
+    const steps = streamingChainSteps(chain, { 2: "wpg" });
+    const evaluation = evaluatePlan(read, { ...intent(), steps }, "outcome", steps);
+    expect(evaluation.legal, evaluation.limitations.join(" | ")).toBe(true);
+    const unflagged = { legs: chain.legs.map((leg, index) => index === 2 ? { ...leg, step: { ...leg.step, conditional: false } } : leg) };
+    expect(streamingChainSteps(unflagged)[2]).toMatchObject({ playerId: "wv", conditional: true });
+  });
+
+  it("skips a waiver player for windows before he clears", () => {
+    const [chain] = legSummary(week(waiverWeek("2026-10-30T10:00:00Z"), priority)).chains;
+    expect(chain.legs.map(leg => leg.playerId)).toEqual(["lak", "phi", "wpg", "edm"]);
+  });
+
+  it("chains free agents only, and says why, when waivers use a budget", () => {
+    const plan = legSummary(week(waiverWeek(), { waivers: { mode: "budget", remainingBudget: 100 } }));
+    expect(plan.chains[0].legs.map(leg => leg.playerId)).toEqual(["lak", "phi", "wpg", "edm"]);
+    expect(plan.limitations).toContain("Waiver claims are chained only in priority-waiver leagues; this league's waiver policy is a budget or unverified.");
   });
 });
 

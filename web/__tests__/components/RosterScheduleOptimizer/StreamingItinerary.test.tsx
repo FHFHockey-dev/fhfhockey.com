@@ -79,6 +79,15 @@ describe("Streaming itinerary", () => {
     expect(screen.getByText("The one-spot plan (+3 AGP) meets it instead.")).toBeTruthy();
   });
 
+  it("labels a waiver claim with its clearance day and that it may fail", () => {
+    const waiverLeg: StreamingLeg = { ...legs[2], options: [{ ...legs[2].options[0], waiverClearsOn: days[2] }, option("njd", [days[3], days[4]], 2.4)] };
+    render(<StreamingItinerary {...props} plan={{ ...plan, chains: [{ ...chain, legs: [legs[0], legs[1], waiverLeg, legs[3]] }] }} onSelect={vi.fn()} />);
+    expect([...document.querySelectorAll("p")].map(row => row.textContent)).toContain("ADD Thu-Fri Stream (WPG) · DROP Tue-Wed Stream (PHI) · waiver claim, clears Wed, Oct 28");
+    expect(screen.getByText(/^3\/4 adds .* · the claim may fail$/)).toBeTruthy();
+    expect(within(screen.getByRole("list", { name: "Options for Thu, Oct 29" })).getAllByRole("button").map(button => button.textContent))
+      .toEqual(["Thu-Fri Stream (WPG)Waivers · 2 GP · 4 proj FPts", "Tue-Wed Backup (NJD)2 GP · 2.4 proj FPts"]);
+  });
+
   it("shows the blended net that ranks the chain beside projected totals", () => {
     render(<StreamingItinerary {...props} plan={{ ...plan, chains: [{ ...chain, netScore: 9.8 }] }} onSelect={vi.fn()} />);
     expect(screen.getByLabelText("Streaming totals").textContent).toBe("Adds 4/4 · +7 AGP · +11.3 proj FPts · +9.8 blended FPts");

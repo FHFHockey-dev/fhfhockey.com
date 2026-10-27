@@ -1489,7 +1489,7 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
   const continuationsExplained = noClaimContinuations.map(row => ({ ...row, evaluation: explain(row.evaluation) }));
   // The streaming chain is its own deterministic pass over every available player, not bounded by the search above.
   const streamingPool = new Set([...relevantPlayerIds, ...sourceSnapshot.players
-    .filter(player => ["free_agent", "manager_available"].includes(player.availability)).map(player => player.id)]);
+    .filter(player => ["free_agent", "manager_available", "waivers"].includes(player.availability)).map(player => player.id)]);
   const streaming = timeBudgetMs !== Infinity && Date.now() - start >= timeBudgetMs
     ? { policyVersion: "rso-stream-v1" as const, recommended: null, chains: [], limitations: ["Search time limit reached before streaming chains were built."] }
     : buildStreamingChains({ snapshot: sourceSnapshot, intent, baseline, dropOrder, dueNow: latestEquivalentActionAt(sourceSnapshot),

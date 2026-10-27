@@ -84,12 +84,12 @@ export default function StreamingItinerary({ plan, dates, today, nameOf, teamOf,
         const prior = chain.legs.slice(0, index).filter(item => item.spot === spot).at(-1), drop = prior ? playerFor(chain.legs.indexOf(prior)) : leg.dropPlayerId;
         const step = cumulative.get(index)!;
         return <div key={spot} className={styles.add}>
-          <p><span className={styles.verb}>{label}ADD</span> {describe(playerId)} · DROP {describe(drop)}{leg.actionDate !== leg.startDate ? ` · claim ${dateLabel(leg.actionDate)}` : ""}</p>
-          <small>{step.adds}/{chain.addsAvailable} adds · {signed(step.games)} AGP · {number(optionFor(index)?.points ?? leg.points)} proj FPts over {legGames(index)} game{legGames(index) === 1 ? "" : "s"}{leg.step.conditional ? " · recheck availability" : ""}</small>
+          <p><span className={styles.verb}>{label}ADD</span> {describe(playerId)} · DROP {describe(drop)}{leg.actionDate !== leg.startDate ? ` · claim ${dateLabel(leg.actionDate)}` : ""}{optionFor(index)?.waiverClearsOn ? ` · waiver claim, clears ${dateLabel(optionFor(index)!.waiverClearsOn!)}` : ""}</p>
+          <small>{step.adds}/{chain.addsAvailable} adds · {signed(step.games)} AGP · {number(optionFor(index)?.points ?? leg.points)} proj FPts over {legGames(index)} game{legGames(index) === 1 ? "" : "s"}{optionFor(index)?.waiverClearsOn ? " · the claim may fail" : leg.step.conditional ? " · recheck availability" : ""}</small>
           {leg.options.length > 1 && <ol className={styles.options} aria-label={`Options for ${dateLabel(leg.startDate)}`}>{leg.options.map(option =>
             <li key={option.playerId}><button aria-pressed={option.playerId === playerId} onClick={() => update({ overrides: { ...state.overrides, [index]: option.playerId } })}>
               <span>{describe(option.playerId)}</span>
-              <small>{option.games} GP · {number(option.points)} proj FPts{option.recentPointsPerGame !== null ? ` · ${number(option.recentPointsPerGame)} FPts/G (last ${option.recentGames ?? 10})` : ""}</small>
+              <small>{option.waiverClearsOn ? "Waivers · " : ""}{option.games} GP · {number(option.points)} proj FPts{option.recentPointsPerGame !== null ? ` · ${number(option.recentPointsPerGame)} FPts/G (last ${option.recentGames ?? 10})` : ""}</small>
             </button></li>)}</ol>}
         </div>;
       })}</div>

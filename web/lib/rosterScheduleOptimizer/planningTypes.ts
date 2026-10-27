@@ -302,7 +302,9 @@ export type PlanEvaluation = {
 /** One ranked player for a streaming leg's day window. `points` is projected fantasy points over the games he would
  * start in it; options rank by the per-game average of that projection and league-scored FPts/G over the last 10 played. */
 export type StreamingOption = { playerId: string; games: number; gameDates: string[]; points: number | null;
-  recentPointsPerGame: number | null; recentGames: number | null };
+  recentPointsPerGame: number | null; recentGames: number | null;
+  /** A conditional waiver claim: the league date he clears waivers. Absent for free agents. */
+  waiverClearsOn?: string };
 /** One add in a stream spot: the streamer is effective from `startDate` and held through `endDate` (inclusive). */
 export type StreamingLeg = { spot: number; step: PlanStep; actionDate: string; startDate: string; endDate: string;
   playerId: string; dropPlayerId: string; games: number; gameDates: string[]; points: number | null; options: StreamingOption[] };

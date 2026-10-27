@@ -14,7 +14,9 @@ import type { PlanEvaluation, PlanIntent, PlanStep, PlanningGame, PlanningPlayer
  * blended total beats added games, so a one-game star wins only when he adds more for the matchup. Proposals are heuristic; every returned chain is
  * certified by the plan evaluator, which alone supplies its legality and net totals.
  * Goalie minimum (TJ, 2026-10-27): with goalie coverage set to cover, when the no-move plan falls short of the minimum, a second search
- * puts expected goalie starts (up to the shortfall) ahead of games, and certified chains that meet the minimum rank first. */
+ * puts expected goalie starts (up to the shortfall) ahead of games, and certified chains that meet the minimum rank first.
+ * Waiver claims (10-27): in priority-waiver leagues a waiver player can take a window that starts once he clears; the
+ * step is conditional (the claim may fail) and free agents win near ties. Budget or unknown waiver policies aren't chained. */
 export type StreamingInputs = {
   snapshot: PlanningSnapshot; intent: PlanIntent;
   /** The no-move plan for the same objective the chains are evaluated with. */
@@ -39,6 +41,7 @@ type Context = { removedFrom: Map<string, number>; extras: Elig[][] };
 
 const time = (value: string) => Date.parse(value);
 const STREAMABLE = new Set(["free_agent", "manager_available"]);
+const isWaiver = (player: PlanningPlayer) => player.availability === "waivers";
 const RESERVES = new Set(["IR", "IR+", "NA"]);
 /** Blended points this close are a near tie: last-10 FPts/G orders them. */
 const NEAR_TIE = 0.1;
@@ -64,6 +67,7 @@ const rankOptions = (pointsFirst: boolean) => (a: Candidate, b: Candidate) => {
   if (a.score !== null && b.score !== null && Math.abs(a.score - b.score) > NEAR_TIE) return b.score - a.score;
   if (a.score === null !== (b.score === null)) return a.score === null ? 1 : -1;
   if (a.games !== b.games) return b.games - a.games;
+  if (isWaiver(a.player) !== isWaiver(b.player)) return isWaiver(a.player) ? 1 : -1;
   const recent = (b.recentPointsPerGame ?? -Infinity) - (a.recentPointsPerGame ?? -Infinity);
   if (recent && Number.isFinite(recent)) return recent;
   return (b.score ?? 0) - (a.score ?? 0) || a.player.id.localeCompare(b.player.id);
@@ -155,7 +159,9 @@ export function buildStreamingChains(inputs: StreamingInputs): StreamingPlan {
       [...days[day].flexible.filter(player => !removed.includes(player.id)).map(elig), ...extras]));
     return memo.get(key)!;
   };
-  const pool = snapshot.players.filter(player => !owned.has(player.id) && STREAMABLE.has(player.availability)
+  const priorityWaivers = rules.waivers?.mode === "priority";
+  const pool = snapshot.players.filter(player => !owned.has(player.id)
+    && (STREAMABLE.has(player.availability) || priorityWaivers && isWaiver(player) && Number.isFinite(time(player.waiverClearsAt ?? "")))
     && !intent.excludedPlayerIds.includes(player.id) && !!player.teamAbbreviation && elig(player).valid
     && elig(player).playerClass === player.playerClass && dates.some(date => gameOn.has(`${player.teamAbbreviation}:${date}`)));
   if (!pool.length) { plan.limitations.push("No available player has a remaining game to stream."); return plan; }
@@ -208,13 +214,16 @@ export function buildStreamingChains(inputs: StreamingInputs): StreamingPlan {
       const scores = games.map((game, day) => starts[day] ? blended(player, game!.id) : 0);
       const chances = games.map((game, day) => starts[day] ? startChance(player, game!.id) : 0);
       const firstDay = timing.map((item, day) => !!item && starts[day] && claimable(games[day]!, item.effectiveAt));
-      return { player, games, starts, points, scores, chances, firstDay, form: recent(player) };
+      // A waiver player only takes a window effective once he has cleared.
+      const clears = isWaiver(player) ? time(player.waiverClearsAt!) : -Infinity;
+      return { player, games, starts, points, scores, chances, firstDay, clears, form: recent(player) };
     });
     work += rows.length * n * (n + 1) / 2;
     const windows: Window[][] = dates.map(() => []), goalieWindows: Window[][] = dates.map(() => []);
     for (let start = 0; start < n; start++) if (timing[start]) for (let end = start + 1; end <= n; end++) {
       const ranked: Candidate[] = [];
       for (const row of rows) {
+        if (row.clears > time(timing[start]!.effectiveAt)) continue;
         const playDays = [...(row.firstDay[start] ? [start] : [])];
         for (let day = start + 1; day < end; day++) if (row.starts[day]) playDays.push(day);
         if (!playDays.length) continue;
@@ -223,7 +232,8 @@ export function buildStreamingChains(inputs: StreamingInputs): StreamingPlan {
         ranked.push({ player: row.player, playerId: row.player.id, games: playDays.length, gameDates: playDays.map(day => dates[day]), playDays,
           points: sum(playDays.map(day => row.points[day])), score: sum(playDays.map(day => row.scores[day])),
           starts: playDays.reduce((sum, day) => sum + row.chances[day], 0),
-          recentPointsPerGame: row.form, recentGames: row.form === null ? null : row.player.recentTotals?.games ?? null });
+          recentPointsPerGame: row.form, recentGames: row.form === null ? null : row.player.recentTotals?.games ?? null,
+          ...(isWaiver(row.player) ? { waiverClearsOn: localDate(row.player.waiverClearsAt!, zone) } : {}) });
       }
       ranked.sort(rank);
       windows[start][end] = { start, end, ranked: ranked.slice(0, RANKED_COUNT) };
@@ -297,10 +307,11 @@ export function buildStreamingChains(inputs: StreamingInputs): StreamingPlan {
     const prior = leg ? spot.chosen[leg - 1].playerId : spot.drop.id;
     const step: PlanStep = { id: `stream:${index}:${leg}:${pick.playerId}`, type: "add", playerId: pick.playerId, dropPlayerId: prior,
       at: item.at, effectiveAt: acquisitionEffectiveAt(snapshot, pick.player, item.at)!,
-      conditional: time(item.at) > time(asOf), dependsOn: leg ? [`stream:${index}:${leg - 1}:${spot.chosen[leg - 1].playerId}`] : [] };
+      conditional: time(item.at) > time(asOf) || isWaiver(pick.player), dependsOn: leg ? [`stream:${index}:${leg - 1}:${spot.chosen[leg - 1].playerId}`] : [] };
     const others = spots.flatMap(other => other === spot ? spot.chosen.filter((_, position) => position !== leg) : other.chosen).map(option => option.playerId);
     const options = window.ranked.filter(option => !others.includes(option.playerId)).slice(0, OPTION_COUNT)
-      .map(({ playerId, games, gameDates, points, recentPointsPerGame, recentGames }) => ({ playerId, games, gameDates, points, recentPointsPerGame, recentGames }));
+      .map(({ playerId, games, gameDates, points, recentPointsPerGame, recentGames, waiverClearsOn }) =>
+        ({ playerId, games, gameDates, points, recentPointsPerGame, recentGames, ...(waiverClearsOn ? { waiverClearsOn } : {}) }));
     return { spot: index, step, actionDate: item.actionDate, startDate: dates[window.start], endDate: dates[window.end - 1],
       playerId: pick.playerId, dropPlayerId: prior, games: pick.games, gameDates: pick.gameDates, points: pick.points, options };
   }));
@@ -405,18 +416,21 @@ export function buildStreamingChains(inputs: StreamingInputs): StreamingPlan {
   const unconstrained = top([...ones, ...twos], objectiveBetter);
   if (targeted && unconstrained && !meets(unconstrained) && plan.chains.length && meets(plan.chains[0]) && !plan.chains.includes(unconstrained)) plan.chains.push(unconstrained);
   if (need > 0 && plan.chains.length && !plan.chains.some(meets)) plan.limitations.push("No streaming chain reaches the goalie minimum with the adds left.");
-  if (pool.some(player => player.availability === "waivers")) plan.limitations.push("Streaming chains use free agents only; waiver claims are not chained.");
+  if (!priorityWaivers && snapshot.players.some(player => !owned.has(player.id) && isWaiver(player)))
+    plan.limitations.push("Waiver claims are chained only in priority-waiver leagues; this league's waiver policy is a budget or unverified.");
   return plan;
 }
 
 /** The chain's steps with some legs swapped to another ranked option (leg index → player id). Timing is unchanged:
- * every option is a free agent claimed at the same moment; the next leg drops whoever this leg adds. */
+ * every option is claimed at the same moment (a waiver option has cleared by then, and keeps the step conditional);
+ * the next leg drops whoever this leg adds. */
 export function streamingChainSteps(chain: Pick<StreamingChain, "legs">, overrides: Readonly<Record<number, string>> = {}): PlanStep[] {
   const lastBySpot = new Map<number, PlanStep>();
   return chain.legs.map((leg, index) => {
     const playerId = overrides[index] ?? leg.playerId, prior = lastBySpot.get(leg.spot);
+    const waiver = !!leg.options.find(option => option.playerId === playerId)?.waiverClearsOn;
     const position = chain.legs.slice(0, index).filter(item => item.spot === leg.spot).length;
-    const step: PlanStep = { ...leg.step, id: `stream:${leg.spot}:${position}:${playerId}`, playerId,
+    const step: PlanStep = { ...leg.step, id: `stream:${leg.spot}:${position}:${playerId}`, playerId, conditional: leg.step.conditional || waiver,
       dropPlayerId: prior ? prior.playerId : leg.dropPlayerId, dependsOn: prior ? [prior.id] : [] };
     lastBySpot.set(leg.spot, step);
     return step;
