@@ -110,7 +110,7 @@ export default function CandidateCard({ player, rank, plan, comparison, diagnost
       {goalieBoost && plan?.netGoalieStarts != null && plan.netGoalieStarts > 0
         && <p className={styles.reason}>Helps your goalie minimum: {signed(plan.netGoalieStarts)} starts</p>}
       {excluded && <p className={styles.warning}>Excluded from suggestions</p>}
-      {conditional && <p className={styles.warning}>Recheck availability before claiming</p>}
+      {conditional && <p className={styles.warning}>Recheck availability before {player.availability === "waivers" ? "claiming" : "adding"}</p>}
       {reserves.map(step => <p key={step.id} className={styles.warning}>Move {nameOf(step.playerId)} to {step.reservePosition} first</p>)}
       <div className={styles.footer}>
         {plan && selectPlan ? <button className={styles.action} disabled={!canSelectPlan || !selectionAvailable}

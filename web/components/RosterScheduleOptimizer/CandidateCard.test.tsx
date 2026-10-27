@@ -27,6 +27,11 @@ describe("complete acquisition card presentation", () => {
     fireEvent.click(screen.getByRole("button", swap));
     expect(props.selectPlan).toHaveBeenLastCalledWith(plan.steps);
   });
+  it("asks a free agent's conditional add to be rechecked before adding, not claiming", () => {
+    render(<CandidateCard {...props} player={{ ...player, availability: "free_agent" }} />);
+    expect(screen.getByText("Recheck availability before adding")).toBeTruthy();
+    expect(screen.queryByText("Recheck availability before claiming")).toBeNull();
+  });
   it("describes the dropped player from the supplied player pool", () => {
     const dropped: PlanningPlayer = { ...player, id: "drop", name: "Rostered Center", teamAbbreviation: "BOS", eligiblePositions: ["C"] };
     render(<CandidateCard {...props} players={[player, dropped]} />);

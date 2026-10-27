@@ -59,3 +59,4 @@ Implementation needs TJ approval + file leases from orchestrator.
 - TJ (10-27): hold 620ed5b66 (matchup-dates fix) locally and ship it with the next release batch.
 - 22:5xZ RC12 e6bd4068e (refs/rc/2026-10-27-matchup-dates) gated: tsc 0, eslint 0 errors, vitest has the same 6 baseline failing files in both zones. Waiting for TJ's push approval.
 - 23:0xZ Release #396 is live: master d35d82a21 (tree = RC12). Deploy dpl_GjFZSEoErkuHiGX8rwKcrythKFae is READY; cms/functions/fhfhockey.com were CANCELED. Smoke: 3 GETs, all 200; new RSO chunk f5558731.
+- 23:2xZ Small items done here: rosterPlanning.ts reuses recentForm's WGO column maps; free-agent cards say 'before adding' (waivers keep 'claiming'); two FORGE closure receipts tracked. 20 files / 318 tests pass in UTC and NY; eslint ok; tsc deferred to the release gate. Started rso-layout-slider (local_2beeb32c…) and rso-chain-limits (local_0c61a1b2…).
