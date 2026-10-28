@@ -1,0 +1,13 @@
+# 2026-10-27 · Claude · RSO-2b-A3 swap legality
+
+- **Scope:** fix Preview-swap steps that are illegal on select and stale after the confirmation re-read. Files: `web/lib/rosterScheduleOptimizer/**`, `web/components/RosterScheduleOptimizer/**`, `web/hooks/useRosterPlanning.ts` + tests. No git mutations; orchestrator commits.
+- **Where:** octoberBranch (base 7da3e8663), uncommitted.
+- **Root cause (confirmed by reading):** `planning.ts` `extensions()` clamps a same-day action to `at = snapshot.context.asOf`, `conditional = false`. Card plans run on the current-read snapshot (`currentPlanningRead.ts` restamps `asOf` = server `evaluatedAt`), which is newer than the provider snapshot the timeline checks → "future, must be conditional". Any later read (confirmation, Refresh) has a newer `asOf` → "time has passed". A step pinned to one read's `asOf` is legal on that read only.
+- **Fix plan:** in `extensions()`, anchor a clamped (same-day) action to the latest instant with the same outcome: 1 min before the earliest boundary at/after `asOf` (scheduled puck drop of any snapshot game, next local midnight, acquisition period start/end, lineup period start/lock/end). It is then a future step, so `conditional: true` (existing rule). Falls back to `asOf` when no room.
+- **Visible change:** same-day FA cards now carry "Recheck availability before claiming" (as tomorrow-dated cards already did).
+- **State:** done locally, uncommitted. Fix is in `planning.ts` and tests are in `candidatePlanMetrics.test.ts`. RSO Vitest passes under UTC and New York (41 files, 1015 tests). The new tests fail with the old clamp. tsc exit 0 (heavy lock taken and released). eslint clean.
+- **Receipt:** `tasks/artifacts/rso-wave2-2026-10-25/YAHOO/RECEIPT-2b-A3-SWAP-LEGALITY.md`.
+- **Next:** the orchestrator verifies and commits by pathspec, then the R4 re-run in an approved Yahoo window. Retire this diary once committed.
+- **Card fix committed** as 74ebba759 (orchestrator re-verified it).
+- **Select add follow-up (2nd ticket), done locally and uncommitted:** `latestEquivalentActionAt` is exported. `chooseCandidate` now uses it with asOf set to the click time, but only when the schedule is complete; otherwise it keeps the +60 s fallback. New component test in `__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx`; it fails with the old timing. Checks: 1016/1016 under UTC and NY, tsc 0, eslint 0 errors (the 6 warnings also exist at HEAD). Receipt: `tasks/artifacts/rso-wave2-2026-10-25/YAHOO/RECEIPT-2b-A3-SELECT-ADD.md`.
+- **Gotcha:** the component test file lives in `web/__tests__/components/RosterScheduleOptimizer/`, not beside the component. The `components/RosterScheduleOptimizer` vitest filter matches it anyway.
