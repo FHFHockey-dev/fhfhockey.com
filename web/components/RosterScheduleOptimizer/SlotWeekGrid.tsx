@@ -92,8 +92,8 @@ export default function SlotWeekGrid({ dates, slots, assignments, games, players
     const slot = slots.find(item => !beforeSlots.has(item.id) && canEligibilityOccupySlot(eligibility, item.type));
     if (slot) { beforeSlots.set(slot.id, player.id); beforeActive.add(player.id); }
   }
-  // Left of the slider: elapsed days keep their recorded lineup and skipped days stay empty, both greyed.
-  const greyed = (date: string) => Boolean(planFrom && date < planFrom.from);
+  // Left of the slider: elapsed days keep their recorded lineup and skipped days stay empty, both greyed (as are week days past the range).
+  const greyed = (date: string) => Boolean(planFrom && (date < planFrom.from || date > planFrom.max));
   const skipped = (date: string) => greyed(date) && !pastByDate.has(date);
   const sequence = dates.filter(date => date >= (today ?? dates[0] ?? "") && !greyed(date) && gameCount.get(date));
   const [run, setRun] = useState<{ index: number; stage: "before" | "after" } | null>(null);

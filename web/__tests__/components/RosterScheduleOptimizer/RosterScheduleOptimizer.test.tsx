@@ -1672,7 +1672,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect(screen.getByText("Target source timestamps unavailable.")).toBeTruthy();
     expect(screen.queryByText(/Baseline rate input/)).toBeNull();
   });
-  it("re-plans from a later day with the plan-from slider in every schedule view, then goes back to today", async () => {
+  it("re-plans from a later day with the plan-from slider in every schedule view, then plans the full week again", async () => {
     pinMidweek(); // Wednesday 10-14 of the Mon 10-12 – Sun 10-18 week.
     const evaluated: PlanningSnapshot[] = [];
     planningState.evaluate = (snapshot, intent) => { evaluated.push(snapshot); return planRoster(snapshot, intent); };
@@ -1696,7 +1696,8 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect([...grid.querySelectorAll("th[data-date]")].map(cell => cell.getAttribute("data-date"))).toHaveLength(7);
     expect([...grid.querySelectorAll("th[data-greyed]")].map(cell => cell.getAttribute("data-date")))
       .toEqual(["2026-10-12", "2026-10-13", "2026-10-14", "2026-10-15"]);
-    expect(screen.getByText(/^Planning from .*16.*; earlier days are left out\./)).toBeTruthy();
+    expect(screen.getByText(/^Planning from .*16.*; earlier days are greyed and left out\./)).toBeTruthy();
+    expect(screen.getByText(/^Full week plans from today \(Wed, Oct 14\): days already played keep their recorded lineups/)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Show lineup by player" }));
     expect(slider().value).toBe("4");
     // Skipped days cannot be chosen; the focused day moves to the plan start.
@@ -1704,10 +1705,47 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect(screen.getByRole("button", { name: /^Select Fri, Oct 16/ }).getAttribute("aria-pressed")).toBe("true");
     fireEvent.click(screen.getByRole("button", { name: "Streaming itinerary" }));
     expect(slider().value).toBe("4");
-    fireEvent.click(screen.getByRole("button", { name: "Back to today" }));
+    fireEvent.click(screen.getByRole("button", { name: "Full week" }));
     await waitFor(() => expect(evaluated.at(-1)?.context.startDate).toBe("2026-10-12"));
     expect(slider().value).toBe("2");
-    expect(screen.queryByRole("button", { name: "Back to today" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Full week" })).toBeNull();
+  });
+  it("shows the whole week from a restored Thursday start and plans the full week again", async () => {
+    pinMidweek(); // Wednesday 10-14 of the Mon 10-12 – Sun 10-18 week.
+    const workspace = defaultWorkspace();
+    workspace.context = { ...workspace.context, startDate: "2026-10-15" }; // Saved by the first slider, which moved the range.
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
+    const evaluated: PlanningSnapshot[] = [];
+    planningState.evaluate = (snapshot, intent) => { evaluated.push(snapshot); return planRoster(snapshot, intent); };
+    vi.stubGlobal("fetch", fetchMock);
+    render(<RosterScheduleOptimizer />);
+    const range = () => [(screen.getByLabelText("From") as HTMLInputElement).value, (screen.getByLabelText("Through") as HTMLInputElement).value];
+    const slider = () => screen.getByRole("slider", { name: "Plan from day" }) as HTMLInputElement;
+    const greyed = () => [...screen.getByRole("table", { name: "Lineup by position" }).querySelectorAll("th[data-greyed]")].map(cell => cell.getAttribute("data-date"));
+    fireEvent.click(await screen.findByRole("button", { name: "By position" }));
+    await waitFor(() => expect(evaluated.at(-1)?.context.startDate).toBe("2026-10-15"));
+    expect(range()).toEqual(["2026-10-15", "2026-10-18"]);
+    // Every view shows Mon–Sun; Mon–Wed are greyed (the plan starts Thursday).
+    expect([...screen.getByRole("table", { name: "Lineup by position" }).querySelectorAll("th[data-date]")].map(cell => cell.getAttribute("data-date")))
+      .toEqual(["2026-10-12", "2026-10-13", "2026-10-14", "2026-10-15", "2026-10-16", "2026-10-17", "2026-10-18"]);
+    expect(greyed()).toEqual(["2026-10-12", "2026-10-13", "2026-10-14"]);
+    expect(slider().max).toBe("6");
+    expect(slider().value).toBe("3");
+    fireEvent.click(screen.getByRole("button", { name: "Show lineup by player" }));
+    expect(screen.getAllByRole("button", { name: /^Select (Mon|Tue|Wed|Thu|Fri|Sat|Sun), Oct/ })).toHaveLength(7);
+    expect((screen.getByRole("button", { name: /^Select Wed, Oct 14/ }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "Streaming itinerary" }));
+    expect(slider().max).toBe("6");
+    expect(screen.getByText(/^Planning from .*15.*; earlier days are greyed and left out\./)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Full week" }));
+    // The range returns to the whole week; planning starts today, and the played Monday and Tuesday stay greyed.
+    await waitFor(() => expect(range()).toEqual(["2026-10-12", "2026-10-18"]));
+    await waitFor(() => expect(evaluated.at(-1)?.context.startDate).toBe("2026-10-12"));
+    expect(screen.queryByRole("button", { name: "Full week" })).toBeNull();
+    expect(slider().value).toBe("2");
+    fireEvent.click(screen.getByRole("button", { name: "By position" }));
+    expect(greyed()).toEqual(["2026-10-12", "2026-10-13"]);
+    await waitFor(() => expect(JSON.parse(window.localStorage.getItem(activeKey())!).context.startDate).toBe("2026-10-12"));
   });
   it("labels unverified lineups as schedule capacity", async () => {
     vi.stubGlobal("fetch", fetchMock);

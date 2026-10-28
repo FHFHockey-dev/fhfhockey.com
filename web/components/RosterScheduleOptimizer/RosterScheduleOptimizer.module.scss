@@ -138,6 +138,7 @@
 .streamingGrid .planFromRow td, .streamingGrid .planFromRow th { padding-block: 0; }
 .streamingGrid .greyedDay { opacity: .4; }
 .planFromNote { display: flex; flex-wrap: wrap; align-items: center; gap: v.$space-xs; margin: 0 0 v.$space-xs; color: v.$text-secondary; font-size: v.$font-size-xs; }
+.planFromNote small { flex-basis: 100%; }
 .emptyStream { color: v.$text-secondary; }
 .gridScroll table { border-collapse: collapse; min-width: 100%; white-space: nowrap; font-size: v.$font-size-xs; }
 .gridScroll th, .gridScroll td { padding: v.$space-xs v.$space-sm; border-bottom: v.$border-subtle; border-right: v.$border-subtle; text-align: center; }

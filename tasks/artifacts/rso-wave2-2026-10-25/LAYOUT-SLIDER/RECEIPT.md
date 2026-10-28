@@ -143,3 +143,79 @@ c44b21e623aae2b668e4cf118f3b2f6651705232d0f33158218a7475964b1365  web/components
 **Limits:**
 - Each settled slider move is one new planning generation. That means one `/data` read on our own route, shared with candidate metrics; there are no Yahoo reads.
 - Still not browser-verified.
+
+---
+
+## Follow-up: full-week view, "Full week" reset, collapsible Streaming Plan (TJ 10-27, Chef ticket)
+
+**TJ's report:** the RSO showed only Thu–Sun, with no way back to the full week; the Streaming Plan should collapse.
+
+**Cause (verified):**
+- Every view was built from `dates = datesBetween(context.startDate, context.endDate)`.
+- TJ's saved workspace still has `context.startDate` on Thursday. The first slider (cf6193abd) wrote it there; fe5eecd9b later moved the slider to view state, but the saved range stayed.
+- The slider's floor is max(range start, today), so Thursday was the floor. "Back to today" only cleared the view-state choice.
+
+**Changes (UI files only; no `lib/` edits):**
+1. **Display week vs planning range.**
+   - `weekDates` is the range widened to its whole matchup week: Yahoo's `matchupWeeks` once the shared read has them, else Mon–Sun.
+   - These views get `weekDates`: By position (`SlotWeekGrid`), the Itinerary grid (`StreamingGrid`), the plan-from slider in both, and the Streaming Plan.
+   - By player already showed a Mon–Sun week; out-of-range days stay disabled there.
+   - `dates` (the planning range) still drives planning, the focused day and the canonical schedule read. Nothing new is read.
+   - Greying: days before the plan start or after the range end are greyed. Elapsed days keep their recorded lineup where the snapshot has one.
+   - Mon–Wed of a Thursday range have no data in the snapshot, so they show greyed "—".
+2. **"Full week" control.** It replaces "Back to today", in the "Planning from …" note.
+   - **When it shows:** while the plan starts after the week's first plannable day. That day is today once the week has begun, else the week's first day.
+   - **What the note says:** "Full week plans from today (…): days already played keep their recorded lineups and can't be re-planned." Before the week begins, it names the week's first day instead.
+   - **Clicking it:**
+     - It clears the slider choice.
+     - If the range itself starts late (the restored Thursday case), it sets the range to the display week, with origin `"current"` when that equals the current week.
+     - That is a range change like "Current week": **one provider refresh**.
+     - A slider-only shift needs no read.
+3. **Collapsible Streaming Plan.**
+   - The header is now a toggle (`aria-expanded`, `aria-controls`), expanded by default.
+   - The choice is kept in `localStorage` under `fhfh:rso:streaming-plan-open:v1`; reads and writes are in try/catch.
+   - The Streaming Plan also lists days from today up to the plan start, greyed: "Not planned · before the plan start".
+
+**Files (sha256):**
+```
+ec62bbac271f5dc3a6ed9562da19d30c2cc3320c3df4888c4548c05e8226d024  web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+4cbd58a37a973dce7a657cba3478782acbcae8a914bcfd54140df3ddc4dd92a9  web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+3250962f1a8fdae638380275db118cd56e5046eb78e46df68762f760ee8d5b7a  web/components/RosterScheduleOptimizer/SlotWeekGrid.tsx
+623eca0f2958c85c724f94a3046fba749f51dfbbf320ac12609ca4ae45d15fd1  web/components/RosterScheduleOptimizer/StreamingItinerary.tsx
+75f83f6c61a8af1098806eedee406eeb30d53c04a5d1df52d370a321b635a39c  web/components/RosterScheduleOptimizer/StreamingItinerary.module.scss
+fa18cf90e5a60910bd4dd951cd946e718f43bd00cf79770dad3860f465f5f0ed  web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx
+2f3b724cc46f34662b563379da398a1f6fa1efaa78d3f86679504e0e6093ba17  web/__tests__/components/RosterScheduleOptimizer/StreamingItinerary.test.tsx
+```
+
+**Tests:**
+- **Restored Thursday workspace** (page, Wed 10-14):
+  - By position shows 7 day columns, with Mon–Wed greyed.
+  - The slider spans 7 stops and sits on Thursday.
+  - By player shows 7 day buttons.
+  - "Full week" resets From/Through to 10-12…10-18 and plans from 10-12 (today is Wed). The saved workspace is updated.
+  - Afterwards only Mon and Tue stay greyed.
+- **Slider page test:** "Back to today" became "Full week", with the explanation text.
+- **No-read check:** the Yahoo-provider slider test still passes: no `/provider`, `yahoo-current-data` or `/workspace` fetch, and no broker.
+- **Streaming Plan:**
+  - It collapses and expands.
+  - The choice persists across a remount.
+  - It still works when storage throws.
+  - Days before the plan start are listed greyed.
+
+**Checks** (from `web/`, `GIT_DIR` unset):
+
+| Check | Result |
+|---|---|
+| `TZ=UTC npx vitest run components/RosterScheduleOptimizer __tests__/components/RosterScheduleOptimizer lib/rosterScheduleOptimizer hooks` | passed: 75 files, 1313 tests |
+| The same with `TZ=America/New_York` | passed: 75 files, 1313 tests |
+| `NODE_OPTIONS=--max-old-space-size=8192 npx tsc --noEmit`, under `/private/tmp/fhfh-heavy.lock` (noclobber, released) | passed (rc 0) |
+| eslint on the 5 touched TS/TSX files | 0 errors; the same 6 pre-existing `exhaustive-deps` warnings |
+| CSS pure check (sass, then Next's `postcss-modules-local-by-default` `{ mode: "pure" }`) on both touched `.module.scss` files | passed; a planted impure selector was rejected |
+
+The suite ran with the sibling's uncommitted `CandidateCard`/`lib` edits in the tree.
+
+**Limits:**
+- **Not browser-verified.** I ran no preview server.
+- **Team schedule context and Bench Days** still list remaining in-range days, today onward, as before. After the reset they cover today–Sun.
+- **"Full week" on a late-starting range is one provider (Yahoo) refresh**, the same as "Current week". It may also restore a stored workspace saved for the full-week range, as any range change does.
+- No production calls, Yahoo reads, pushes or deploys were made.

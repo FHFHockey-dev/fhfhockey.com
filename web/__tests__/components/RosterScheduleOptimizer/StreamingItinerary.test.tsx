@@ -1,9 +1,9 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import StreamingItinerary from "components/RosterScheduleOptimizer/StreamingItinerary";
+import StreamingItinerary, { STREAMING_PLAN_OPEN_KEY } from "components/RosterScheduleOptimizer/StreamingItinerary";
 import type { PlanEvaluation, PlanStep, StreamingChain, StreamingLeg, StreamingPlan } from "lib/rosterScheduleOptimizer/planningTypes";
 
-afterEach(cleanup);
+afterEach(() => { cleanup(); window.localStorage.clear(); });
 // Synthetic players: Monday's drop candidate, then one streamer per window of TJ's example week.
 const names: Record<string, string> = { drop: "Idle Center", lak: "Monday Stream", phi: "Tue-Wed Stream", njd: "Tue-Wed Backup",
   wpg: "Thu-Fri Stream", edm: "Weekend Stream", ott: "Weekend Backup" };
@@ -111,5 +111,42 @@ describe("Streaming itinerary", () => {
     expect(spotTwo()).toEqual([]);
     expect((screen.getByRole("button", { name: "Use this streaming plan" }) as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getByText("Saved inputs are read-only.")).toBeTruthy();
+  });
+
+  it("collapses and expands from its header and remembers the choice in this browser", () => {
+    const view = render(<StreamingItinerary {...props} plan={plan} onSelect={vi.fn()} />);
+    const toggle = () => screen.getByRole("button", { name: "Streaming plan" });
+    expect(toggle().getAttribute("aria-expanded")).toBe("true");
+    expect(screen.getByLabelText("Streaming totals")).toBeTruthy();
+    fireEvent.click(toggle());
+    expect(toggle().getAttribute("aria-expanded")).toBe("false");
+    expect(document.getElementById(toggle().getAttribute("aria-controls")!)!.hidden).toBe(true);
+    expect(screen.queryByLabelText("Streaming totals")).toBeNull();
+    expect(window.localStorage.getItem(STREAMING_PLAN_OPEN_KEY)).toBe("0");
+    view.unmount();
+    render(<StreamingItinerary {...props} plan={plan} onSelect={vi.fn()} />);
+    expect(toggle().getAttribute("aria-expanded")).toBe("false");
+    fireEvent.click(toggle());
+    expect(toggle().getAttribute("aria-expanded")).toBe("true");
+    expect(screen.getByLabelText("Streaming totals")).toBeTruthy();
+    expect(window.localStorage.getItem(STREAMING_PLAN_OPEN_KEY)).toBe("1");
+  });
+
+  it("stays usable when browser storage throws", () => {
+    const failing = vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => { throw new Error("blocked"); });
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("blocked"); });
+    render(<StreamingItinerary {...props} plan={plan} onSelect={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Streaming plan" }));
+    expect(screen.getByRole("button", { name: "Streaming plan" }).getAttribute("aria-expanded")).toBe("false");
+    failing.mockRestore(); vi.restoreAllMocks();
+  });
+
+  it("lists the days before the plan start greyed and unplanned", () => {
+    render(<StreamingItinerary {...props} today={days[1]} from={days[3]} through={days[6]} plan={plan} onSelect={vi.fn()} />);
+    const rows = within(screen.getByRole("region", { name: "Streaming plan" })).getAllByRole("listitem")
+      .filter(item => item.parentElement?.tagName === "OL" && item.querySelector("strong"));
+    expect(rows).toHaveLength(6); // Tuesday (today) through Sunday.
+    expect(rows.slice(0, 2).map(row => row.querySelector("p")?.textContent)).toEqual(["Not planned · before the plan start", "Not planned · before the plan start"]);
+    expect(rows[2].querySelector("p")?.textContent).toBe("ADD Thu-Fri Stream (WPG) · DROP Tue-Wed Stream (PHI)");
   });
 });

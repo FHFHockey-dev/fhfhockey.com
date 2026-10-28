@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 import { streamingChainSteps } from "lib/rosterScheduleOptimizer/streamingChain";
 import type { PlanStep, StreamingChain, StreamingGoalieMinimum, StreamingLeg, StreamingPlan } from "lib/rosterScheduleOptimizer/planningTypes";
 import styles from "./StreamingItinerary.module.scss";
@@ -19,6 +19,9 @@ function totals(chain: StreamingChain, overrides: Record<number, string>) {
   return { games, points };
 }
 
+/** The section's open state is remembered per browser. */
+export const STREAMING_PLAN_OPEN_KEY = "fhfh:rso:streaming-plan-open:v1";
+
 const meets = (chain: StreamingChain) => !chain.evaluation.goalie.risk;
 const chainName = (chain: StreamingChain) => `${chain.spots === 1 ? "one-spot" : "two-spot"} plan (${signed(chain.netGames)} AGP)`;
 /** Goalie-minimum readout for the shown chain, and what meeting it costs against a chain that misses it (never silent). */
@@ -38,18 +41,31 @@ function goalieStatus(minimum: StreamingGoalieMinimum, chain: StreamingChain, ch
 }
 
 /** Day-by-day streaming plan: ADD or HOLD per day for each stream spot, the ranked options for each add, and totals.
- * Ranked by the average of projected FPts and last-10 FPts/G over the games each player would start; totals show projections. */
-export default function StreamingItinerary({ plan, dates, today, nameOf, teamOf, selectDisabled, onSelect }: {
-  plan: StreamingPlan | undefined; dates: string[]; today: string; nameOf: (id: string) => string;
+ * Ranked by the average of projected FPts and last-10 FPts/G over the games each player would start; totals show projections.
+ * Days from today before `from` (the plan start) or after `through` (the range end) are listed greyed, unplanned. */
+export default function StreamingItinerary({ plan, dates, from, through, today, nameOf, teamOf, selectDisabled, onSelect }: {
+  plan: StreamingPlan | undefined; dates: string[]; from?: string; through?: string; today: string; nameOf: (id: string) => string;
   teamOf: (id: string) => string | null; selectDisabled: string | null; onSelect: (steps: PlanStep[]) => void;
 }) {
   const [choice, setChoice] = useState<{ key: string; chain: number; overrides: Record<number, string> }>({ key: "", chain: 0, overrides: {} });
+  const [open, setOpen] = useState(true);
+  const bodyId = useId();
+  useEffect(() => {
+    try { if (window.localStorage.getItem(STREAMING_PLAN_OPEN_KEY) === "0") setOpen(false); } catch { /* storage unavailable */ }
+  }, []);
   if (!plan) return null;
+  const toggle = () => {
+    setOpen(!open);
+    try { window.localStorage.setItem(STREAMING_PLAN_OPEN_KEY, open ? "0" : "1"); } catch { /* storage unavailable */ }
+  };
+  const section = (body: ReactNode) => <section className={styles.itinerary} aria-label="Streaming plan">
+    <h3><button type="button" className={styles.toggle} aria-expanded={open} aria-controls={bodyId} onClick={toggle}>Streaming plan</button></h3>
+    <div id={bodyId} className={styles.body} hidden={!open}>{open && body}</div>
+  </section>;
   const key = plan.chains.map(chain => chain.steps.map(step => step.id).join("|")).join("/");
   const state = choice.key === key ? choice : { key, chain: 0, overrides: {} };
   const chain = plan.chains[state.chain];
-  if (!chain) return <section className={styles.itinerary} aria-label="Streaming plan"><h3>Streaming plan</h3>
-    <p className={styles.note}>{plan.limitations[0] ?? "No streaming chain adds active games this week."}</p></section>;
+  if (!chain) return section(<p className={styles.note}>{plan.limitations[0] ?? "No streaming chain adds active games this week."}</p>);
   const playerFor = (index: number) => state.overrides[index] ?? chain.legs[index].playerId;
   const ordered = chain.legs.map((leg, index) => ({ leg, index })).sort((a, b) => a.leg.startDate.localeCompare(b.leg.startDate) || a.leg.spot - b.leg.spot);
   const optionFor = (index: number) => chain.legs[index].options.find(option => option.playerId === playerFor(index));
@@ -66,15 +82,18 @@ export default function StreamingItinerary({ plan, dates, today, nameOf, teamOf,
     const index = chain.legs.findIndex(leg => leg.spot === spot && leg.startDate <= date && date <= leg.endDate);
     return index < 0 ? null : { leg: chain.legs[index], index };
   };
-  return <section className={styles.itinerary} aria-label="Streaming plan">
-    <h3>Streaming plan</h3>
+  const unplanned = (date: string) => Boolean((from && date < from) || (through && date > through));
+  return section(<>
     {plan.chains.length > 1 && <div className={styles.spots} role="group" aria-label="Stream spots">{plan.chains.map((option, index) =>
       <button key={index} aria-pressed={state.chain === index} onClick={() => update({ chain: index, overrides: {} })}>
         {option.spots === 1 ? "One spot" : "Two spots"} · {signed(option.netGames)} AGP{plan.goalieMinimum ? ` · ${meets(option) ? "meets" : "misses"} G min` : ""}{index === 0 ? " · suggested" : ""}</button>)}</div>}
     <p className={styles.totals} aria-label="Streaming totals">Adds {chain.addsUsed}/{chain.addsAvailable} · {signed(total.games)} AGP · {signed(total.points)} proj FPts{estimated ? " (estimate after swaps)" : chain.netScore != null ? ` · ${signed(chain.netScore)} blended FPts` : ""}</p>
     {goalie && <p className={styles.totals} aria-label="Goalie minimum">{goalie.status}{estimated ? " (before swaps)" : ""}</p>}
     {goalie?.tradeoff && <p className={styles.note}>{goalie.tradeoff}</p>}
-    <ol className={styles.days}>{dates.filter(date => date >= today).map(date => <li key={date} className={styles.day}>
+    <ol className={styles.days}>{dates.filter(date => date >= today).map(date => unplanned(date) ? <li key={date} className={`${styles.day} ${styles.greyedDay}`}>
+      <strong className={styles.date}>{dateLabel(date)}</strong>
+      <p className={styles.hold}>Not planned · {from && date < from ? "before the plan start" : "after the planning range"}</p>
+    </li> : <li key={date} className={styles.day}>
       <strong className={styles.date}>{dateLabel(date)}</strong>
       <div className={styles.moves}>{spots.map(spot => {
         const found = legOn(spot, date), label = spots.length > 1 ? `Spot ${spot + 1}: ` : "";
@@ -98,5 +117,5 @@ export default function StreamingItinerary({ plan, dates, today, nameOf, teamOf,
     <button className={styles.use} disabled={Boolean(selectDisabled)} aria-describedby={selectDisabled ? "rso-streaming-reason" : undefined}
       onClick={() => onSelect(streamingChainSteps(chain, state.overrides))}>Use this streaming plan</button>
     <p className={styles.note}>Ranked by the average of projected fantasy points and fantasy points per game over the last 10 played games (the projection alone when there is no last 10), over the games each player would start.</p>
-  </section>;
+  </>);
 }
