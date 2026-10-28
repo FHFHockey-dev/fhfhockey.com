@@ -18,7 +18,7 @@ import { forecastCalendarPolicy } from "lib/player-forecasts/contributions";
 import type { ForgeGameRevision } from "lib/projections/gameRevisions";
 import { starterBoardCanaryGameIds, starterBoardFlags } from "lib/projections/starterBoardFlags";
 import type { ForecastDiscoveryExclusion, ForecastExclusionReason, ForecastManifest, PlanningData, SourceEvidence } from "lib/rosterScheduleOptimizer/planningTypes";
-import { GOALIE_RECENT_COLUMNS, recentTotals, SKATER_RECENT_COLUMNS } from "lib/rosterScheduleOptimizer/recentForm";
+import { GOALIE_RECENT_COLUMNS, lastFiveTotals, recentTotals, SKATER_RECENT_COLUMNS } from "lib/rosterScheduleOptimizer/recentForm";
 
 export function parsePlanningDataQuery(query: Record<string, unknown>): PlanningDataQuery {
   const seasonId = Number(query.seasonId);
@@ -43,6 +43,9 @@ const numberOrNull = (value: unknown) => typeof value === "number" && Number.isF
 /** Recent form reads 30 days of played games: about 10 for a regular, fewer after a layoff. At most 16 games a day
  * dress about 36 skaters and 4 goalies each, so these caps sit above any full window; a larger count fails the read. */
 const RECENT_FORM_DAYS = 30, RECENT_SKATER_ROWS = 25000, RECENT_GOALIE_ROWS = 2500;
+/** Deployment chips read every team's charted lineups over two weeks (about 8 games a team, 32 teams), then the PP units of
+ * each team's newest one (5 per unit, with every skater who had PP time); both caps sit well above a full window. */
+const DEPLOYMENT_DAYS = 14, DEPLOYMENT_STALE_DAYS = 7, DEPLOYMENT_LINE_ROWS = 600, DEPLOYMENT_PP_ROWS_PER_GAME = 40;
 /** Provider ownership percentage: a finite 0–100 number or plain numeric string; anything else is unknown, never 0. */
 const ownershipPct = (value: unknown) => {
   const parsed = typeof value === "string" && /^\d+(\.\d+)?$/.test(value) ? Number(value) : numberOrNull(value);
@@ -306,6 +309,27 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
     }
     sources.ownership = evidence("Yahoo daily ownership", ownership[0]?.updated_at ?? null, query.seasonId, ["Ownership is not league availability; missing or older than three days is unknown."]);
   } catch { sources.ownership = evidence("Yahoo daily ownership", null, query.seasonId, ["Ownership could not be verified."]); }
+  // Line and PP deployment: one season- and date-bounded read of charted lineups, then one read of the PP units in each
+  // team's newest charted game. It runs beside the box-score reads and settles to null on any failure (never unhandled).
+  const deploymentRead = options.skipRecentForm ? null : (async () => {
+    const deploymentDeadline = Math.min(deadline, Date.now() + 2000);
+    const since = new Date(now.getTime() - DEPLOYMENT_DAYS * 86400000).toISOString().slice(0, 10);
+    const lineups = await pages(() => db.from("lineCombinations").select("gameId,teamId,forwards,defensemen,game:games!inner(date,seasonId)", { count: "exact" })
+      .eq("game.seasonId", query.seasonId).gte("game.date", since).lte("game.date", now.toISOString().slice(0, 10))
+      .order("gameId", { ascending: false }).order("teamId"), deploymentDeadline, DEPLOYMENT_LINE_ROWS, row => [row.gameId, row.teamId]);
+    const newest = new Map<number, Row>();
+    for (const row of lineups) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(String(row.game?.date))) continue;
+      const current = newest.get(Number(row.teamId));
+      if (!current || row.game.date > current.game.date) newest.set(Number(row.teamId), row);
+    }
+    const gameIds = [...new Set([...newest.values()].map(row => Number(row.gameId)))].sort((a, b) => a - b);
+    const units = gameIds.length ? await pages(() => db.from("powerPlayCombinations").select("gameId,playerId,unit", { count: "exact" })
+      .in("gameId", gameIds).order("gameId").order("playerId"), deploymentDeadline, gameIds.length * DEPLOYMENT_PP_ROWS_PER_GAME,
+    row => [row.gameId, row.playerId]) : [];
+    return { newest, units };
+  })().catch(() => null);
+  const lastPlayed = new Map<string, string>();
   let recentFormStage: "stats" | "processing" = "stats";
   if (options.skipRecentForm) {
     sources.form = evidence("not_requested", null, query.seasonId, ["Recent scoring context was not requested by this consumer."]);
@@ -337,6 +361,8 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
       const samples = player.nhlId === null ? [] : (player.playerClass === "goalie" ? goalies : skaters).get(player.nhlId) ?? [];
       const totals = recentTotals(samples, player.playerClass);
       if (totals) player.recentTotals = totals;
+      const boxScore = lastFiveTotals(samples, player.playerClass);
+      if (boxScore) { player.lastFive = boxScore; lastPlayed.set(player.id, String(samples.find(row => Number(row.games_played) > 0)?.date)); }
       if (player.playerClass === "goalie" || samples.length < 3 || samples.slice(0, 5).some(row => numberOrNull(row.points) === null)) continue;
       const lastThree = samples.slice(0, 3).reduce((sum, row) => sum + Number(row.points), 0);
       const lastFive = samples.slice(0, 5).reduce((sum, row) => sum + Number(row.points), 0);
@@ -345,6 +371,29 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
     }
     sources.form = evidence("Recent regular-season box scores", null, query.seasonId, ["Recent scoring uses available game logs before the previous day; projection incorporation is unknown and no form bonus is added."]);
   } catch { sources.form = evidence("Recent box scores", null, query.seasonId, [`recent_form_${recentFormStage}_query_failed`]); }
+  if (deploymentRead) {
+    const deployment = await deploymentRead;
+    if (deployment) {
+      const units = new Map(deployment.units.map(row => [`${row.gameId}:${row.playerId}`, Number(row.unit)]));
+      const staleBefore = new Date(now.getTime() - DEPLOYMENT_STALE_DAYS * 86400000).toISOString().slice(0, 10);
+      for (const player of players) {
+        const lineup = player.nhlId === null || player.playerClass === "goalie" || player.nhlTeamId === undefined ? undefined : deployment.newest.get(player.nhlTeamId);
+        if (!lineup) continue;
+        // Lineups list forwards line by line (three a line) and defence pair by pair; extras past L4/D3 get no line.
+        const forward = (lineup.forwards ?? []).map(Number).indexOf(player.nhlId), defence = (lineup.defensemen ?? []).map(Number).indexOf(player.nhlId);
+        if (forward < 0 && defence < 0) continue;
+        const line = forward >= 0 ? (forward < 12 ? `L${Math.floor(forward / 3) + 1}` : null) : defence < 6 ? `D${Math.floor(defence / 2) + 1}` : null;
+        // Unit 3 collects every skater past the top ten, so only PP1 and PP2 are shown.
+        const unit = units.get(`${lineup.gameId}:${player.nhlId}`), powerPlayUnit = unit === 1 || unit === 2 ? unit : null;
+        if (!line && !powerPlayUnit) continue;
+        const asOf: string = lineup.game.date;
+        player.deployment = { line, powerPlayUnit, asOf, stale: asOf < staleBefore || (lastPlayed.get(player.id) ?? "") > asOf };
+      }
+    }
+    sources.deployment = evidence("Charted line combinations and power-play units", null, query.seasonId, deployment
+      ? ["Lines and PP units from each team's newest charted game in the last two weeks; older than a week or a player's last game is stale."]
+      : ["deployment_query_failed"]);
+  }
   const weekRows = weeks;
   const matchupWeeks = new Set(weekRows.map((row: Row) => row.game_key)).size === 1 ? weekRows
     .filter((row: Row) => Number.isInteger(row.week) && row.week > 0 && /^\d{4}-\d{2}-\d{2}$/.test(row.start_date) && row.start_date <= row.end_date)

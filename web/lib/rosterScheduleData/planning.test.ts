@@ -146,7 +146,7 @@ describe("public RSO data boundary", () => {
     const scope = { seasonId: 20262027, startDate: "2026-10-10", endDate: "2026-10-10", timeZone: "America/New_York", mode: "calendar" as const, games: 1 };
     const now = new Date("2026-10-10T12:00:00Z");
     await loadGameExpectations(db as never, scope, now);
-    const optionalTables = ["yahoo_player_ownership_daily", "yahoo_nhl_player_map_read", "wgo_skater_stats", "wgo_goalie_stats"];
+    const optionalTables = ["yahoo_player_ownership_daily", "yahoo_nhl_player_map_read", "wgo_skater_stats", "wgo_goalie_stats", "lineCombinations", "powerPlayCombinations"];
     expect(calls.filter(call => optionalTables.includes(call.table))).toEqual([]);
     calls.length = 0;
     const result = await loadPlanningData(db as never, scope, { now, forecastsEnabled: false });
@@ -1161,6 +1161,9 @@ describe("public RSO data boundary", () => {
     expect(result.players[0].form).toEqual({ label: "Scoring hot", games: 3, points: 7, includedInForecast: null });
     // Last 10 only: hits 2 each (the two oldest games' 50s are outside); a missing faceoff value makes that sum unknown.
     expect(result.players[0].recentTotals).toEqual({ games: 10, stats: { GOALS: 10, ASSISTS: 2, POINTS: 12, SHOTS_ON_GOAL: 30, HITS: 20, FACEOFFS_WON: null } });
+    // The card's last 5 from the same rows: only the shown keys (zeros left out), and no extra WGO read.
+    expect(result.players[0].lastFive).toEqual({ games: 5, stats: { GOALS: 5, ASSISTS: 2, POINTS: 7, SHOTS_ON_GOAL: 15, HITS: 10 } });
+    expect(calls.filter(call => call.table === "wgo_skater_stats" && call.method === "select")).toHaveLength(1);
     // Query shape: one newest-first, season- and date-bounded read per table of played games only, paged by a unique key.
     for (const table of ["wgo_skater_stats", "wgo_goalie_stats"]) {
       const own = calls.filter(call => call.table === table);
@@ -1181,7 +1184,60 @@ describe("public RSO data boundary", () => {
     const result = await loadPlanningData(db as any, { seasonId: 20262027, startDate: "2026-10-10", endDate: "2026-10-10" },
       { now: new Date("2026-10-10T12:00:00Z") });
     expect(result.players[0].recentTotals).toEqual({ games: 3, stats: { WINS_GOALIE: 1, GOALS_AGAINST_GOALIE: 6, SHOTS_AGAINST_GOALIE: 90, SAVES_GOALIE: 84, GAMES_STARTED: 3 } });
+    expect(result.players[0].lastFive).toEqual({ games: 3, stats: { WINS_GOALIE: 1, GOALS_AGAINST_GOALIE: 6, SAVES_GOALIE: 84, SHOTS_AGAINST_GOALIE: 90 } });
     expect(result.players[0].form).toBeUndefined();
+    expect(result.players[0].deployment).toBeUndefined();
+  });
+
+  // Fictional lineups: team 1's newest charted game (Oct 8) and an older one (Oct 5) that must not be used.
+  const lineup = (gameId: number, date: string, forwards: number[], defensemen: number[] = [], teamId = 1) =>
+    ({ gameId, teamId, forwards, defensemen, game: { date, seasonId: 20262027 } });
+  const others = (count: number) => Array.from({ length: count }, (_, index) => 900000 + index);
+  it.each([
+    ["second forward line with PP1", [...others(3), 847001, ...others(8)], [], [{ gameId: 2026020010, playerId: 847001, unit: 1 }], { line: "L2", powerPlayUnit: 1 }],
+    ["second defence pair, off the power play", others(12), [...others(3), 847001, ...others(2)], [], { line: "D2", powerPlayUnit: null }],
+    ["an extra forward past L4 with PP2", [...others(12), 847001], [], [{ gameId: 2026020010, playerId: 847001, unit: 2 }], { line: null, powerPlayUnit: 2 }],
+  ])("reads deployment from the team's newest charted game: %s", async (_, forwards, defensemen, units, expected) => {
+    const { db, calls, tables } = formDb([], []);
+    tables.lineCombinations = [lineup(2026020010, "2026-10-08", forwards, defensemen), lineup(2026020005, "2026-10-05", [847001]),
+      lineup(2026020011, "2026-10-08", [847001], [], 2)];
+    tables.powerPlayCombinations = [...units, { gameId: 2026020005, playerId: 847001, unit: 2 }];
+    const result = await loadPlanningData(db as any, { seasonId: 20262027, startDate: "2026-10-10", endDate: "2026-10-10" },
+      { now: new Date("2026-10-10T12:00:00Z") });
+    expect(result.players[0].deployment).toEqual({ ...expected, asOf: "2026-10-08", stale: false });
+    // Query shape: one season- and date-bounded lineup read and one PP read of each team's newest game, each capped.
+    const lines = calls.filter(call => call.table === "lineCombinations"), pp = calls.filter(call => call.table === "powerPlayCombinations");
+    expect(lines.filter(call => call.method === "select").map(call => call.args)).toEqual([["gameId,teamId,forwards,defensemen,game:games!inner(date,seasonId)", { count: "exact" }]]);
+    expect(lines.filter(call => ["eq", "gte", "lte"].includes(call.method)).map(call => [call.method, ...call.args])).toEqual([
+      ["eq", "game.seasonId", 20262027], ["gte", "game.date", "2026-09-26"], ["lte", "game.date", "2026-10-10"]]);
+    expect(pp.filter(call => call.method === "select").map(call => call.args)).toEqual([["gameId,playerId,unit", { count: "exact" }]]);
+    expect(pp.filter(call => call.method === "in").map(call => call.args)).toEqual([["gameId", [2026020010, 2026020011]]]);
+    expect([...lines, ...pp].filter(call => call.method === "range").map(call => call.args)).toEqual([[0, 999], [0, 999]]);
+    expect(result.evidence.deployment.limitations.join(" ")).not.toContain("failed");
+  });
+  it("marks deployment stale when the lineup is over a week old or older than the player's last game", async () => {
+    for (const [date, played, stale] of [["2026-10-02", [], true], ["2026-10-08", ["2026-10-09"], true], ["2026-10-08", ["2026-10-08"], false]] as const) {
+      const { db, tables } = formDb(played.map((day, index) => ({ id: index + 1, player_id: 847001, date: day, games_played: 1, points: 0 })), []);
+      tables.lineCombinations = [lineup(2026020010, date, [847001])];
+      const result = await loadPlanningData(db as any, { seasonId: 20262027, startDate: "2026-10-10", endDate: "2026-10-10" },
+        { now: new Date("2026-10-10T12:00:00Z") });
+      expect(result.players[0].deployment).toEqual({ line: "L1", powerPlayUnit: null, asOf: date, stale });
+    }
+  });
+  it("leaves deployment absent when the player is out of the lineup or the capped read fails", async () => {
+    const { db, tables } = formDb([], []);
+    tables.lineCombinations = [lineup(2026020010, "2026-10-08", others(12), others(6))];
+    tables.powerPlayCombinations = [{ gameId: 2026020010, playerId: 847001, unit: 1 }];
+    const absent = await loadPlanningData(db as any, { seasonId: 20262027, startDate: "2026-10-10", endDate: "2026-10-10" }, { now: new Date("2026-10-10T12:00:00Z") });
+    expect(absent.players[0].deployment).toBeUndefined();
+    for (const badTable of ["lineCombinations", "powerPlayCombinations"]) {
+      const failing = formDb([], [], undefined, { badTable, failure: "overflow" });
+      failing.tables.lineCombinations = [lineup(2026020010, "2026-10-08", [847001])];
+      const result = await loadPlanningData(failing.db as any, { seasonId: 20262027, startDate: "2026-10-10", endDate: "2026-10-10" }, { now: new Date("2026-10-10T12:00:00Z") });
+      expect(result.players[0].deployment).toBeUndefined();
+      expect(result.evidence.deployment.limitations).toEqual(["deployment_query_failed"]);
+      expect(result.evidence.form.limitations.join(" ")).not.toContain("failed");
+    }
   });
 });
 

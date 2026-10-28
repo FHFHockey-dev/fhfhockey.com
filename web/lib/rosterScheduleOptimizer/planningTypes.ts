@@ -48,6 +48,11 @@ export type PlanningPlayer = {
   /** Box-score sums over the last (up to 10) played games, keyed by scoring stat; league weights apply client-side.
    * A hint only. A mapped key absent from `stats` summed to 0; null means a game was missing it. */
   recentTotals?: { games: number; stats: StatLine };
+  /** The same sums over the last (up to 5) played games, for the candidate card's box score; same zero/null rules. */
+  lastFive?: { games: number; stats: StatLine };
+  /** Line (L1–L4) or defence pair (D1–D3) and power-play unit (PP1/PP2) in the player's team's newest charted game; absent when
+   * the player was not in that lineup. `stale` when that game is over a week old or older than his last played game. */
+  deployment?: { line: string | null; powerPlayUnit: number | null; asOf: string; stale: boolean };
   /** Provider injury designation (e.g. Yahoo IR, IR-LT, O, DTD); absent when healthy or unknown. */
   injury?: { status: string; label: string; note: string | null } | null;
   /** Yahoo's daily goalie designation from today's roster read; null when Yahoo has not set one, absent when unread. */

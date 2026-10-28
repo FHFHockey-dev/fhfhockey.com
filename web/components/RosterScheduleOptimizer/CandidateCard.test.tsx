@@ -119,6 +119,51 @@ describe("complete acquisition card presentation", () => {
     expect(screen.getByText("Same projected result as other options. This one drops the less-rostered player.")).toBeTruthy();
   });
 
+  it("keeps the compact layout: one box-score line, and reasons sharing the footer row with the action", () => {
+    const { container } = render(<CandidateCard {...props} player={{ ...player, lastFive: { games: 5, stats: { GOALS: 2, POINTS: 2, SHOTS_ON_GOAL: 14 } } }} />);
+    const card = container.querySelector("article")!, footer = card.querySelector('[class*="footer"]')!;
+    expect(footer.querySelector('[class*="notes"]')?.textContent).toContain("+1 active game, +4 projected points");
+    expect(footer.querySelector("button")?.textContent).toBe("Preview swap");
+    expect(card.querySelectorAll('[class*="boxScore"]')).toHaveLength(1);
+    // Moves, schedule (when dated), box score and footer are the only body rows.
+    expect([...card.querySelector('[class*="body"]')!.children].map(child => child.className.match(/(top|boxScore|footer)/)?.[1])).toEqual(["top", "boxScore", "footer"]);
+  });
+
+  it("shows last-5 box-score totals for a skater, unknowns as a dash", () => {
+    render(<CandidateCard {...props} player={{ ...player, lastFive: { games: 5, stats: { GOALS: 2, ASSISTS: 3, POINTS: 5, SHOTS_ON_GOAL: 14, PP_POINTS: 1, HITS: null, BLOCKED_SHOTS: 4 } } }} />);
+    const line = screen.getByLabelText("Last 5 games played: 2 G, 3 A, 5 PTS, 14 SOG, 1 PPP, — HIT, 4 BLK");
+    expect(line.textContent).toBe("L5 GP2 G3 A5 PTS14 SOG1 PPP— HIT4 BLK");
+    expect(line.getAttribute("title")).toBe("Totals over the last 5 games played");
+  });
+
+  it("shows a goalie's last games as W, GA, SV and pooled SV%, labelled by the games actually played", () => {
+    render(<CandidateCard {...props} player={{ ...player, playerClass: "goalie", lastFive: { games: 3, stats: { WINS_GOALIE: 2, GOALS_AGAINST_GOALIE: 7, SAVES_GOALIE: 83, SHOTS_AGAINST_GOALIE: 90 } } }} />);
+    expect(screen.getByLabelText("Last 3 games played: 2 W, 7 GA, 83 SV, .922 SV%")).toBeTruthy();
+    expect(screen.getByText("L3 GP")).toBeTruthy();
+  });
+
+  it("omits the box score without recent games", () => {
+    render(<CandidateCard {...props} />);
+    expect(screen.queryByLabelText(/^Last \d+ games played/)).toBeNull();
+  });
+
+  it("shows line and PP chips with their date, mutes stale ones and shows nothing when unknown", () => {
+    const { unmount } = render(<CandidateCard {...props} player={{ ...player, deployment: { line: "L1", powerPlayUnit: 1, asOf: "2026-10-26", stale: false } }} />);
+    const line = screen.getByText("L1"), pp = screen.getByText("PP1");
+    expect(line.getAttribute("title")).toBe("Lines as of Oct 26");
+    expect(pp.getAttribute("aria-label")).toBe("PP1. Lines as of Oct 26");
+    expect(line.getAttribute("data-stale")).toBe("false");
+    unmount();
+    const { unmount: second } = render(<CandidateCard {...props} player={{ ...player, deployment: { line: "D2", powerPlayUnit: null, asOf: "2026-10-12", stale: true } }} />);
+    expect(screen.getByText("D2").getAttribute("data-stale")).toBe("true");
+    expect(screen.getByText("D2").getAttribute("title")).toBe("Lines as of Oct 12 · may be out of date");
+    expect(screen.queryByText(/^PP\d$/)).toBeNull();
+    second();
+    render(<CandidateCard {...props} />);
+    expect(screen.queryByText(/^(L|D|PP)\d$/)).toBeNull();
+    expect(screen.queryByTitle(/Lines as of/)).toBeNull();
+  });
+
   it("lists the whole swap's per-category change on a category-league card (W12)", () => {
     const breakdown = [
       { key: "GOALS", direction: "higher" as const, ratio: false, before: 2, after: 4, delta: 2, gain: 3, sacrifice: 1, components: null, opponent: null, coverage: "known" as const, reason: null },

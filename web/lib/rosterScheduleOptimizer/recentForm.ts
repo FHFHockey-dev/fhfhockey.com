@@ -13,12 +13,20 @@ export const GOALIE_RECENT_COLUMNS: Readonly<Record<string, string>> = { WINS_GO
   GAMES_STARTED: "games_started" };
 const isGoalieStat = (key: string) => key.endsWith("_GOALIE") || ["GAMES_STARTED", "GOALS_AGAINST_AVERAGE", "SAVE_PERCENTAGE"].includes(key);
 
+/** Played games shown as the candidate card's last-5 box score (`PlanningPlayer.lastFive`). */
+export const LAST_FIVE_GAMES = 5;
+/** The box-score keys the card shows, in display order; goalie SV% is pooled from saves over shots against. */
+export const SKATER_LAST_FIVE_KEYS = ["GOALS", "ASSISTS", "POINTS", "SHOTS_ON_GOAL", "PP_POINTS", "HITS", "BLOCKED_SHOTS"] as const;
+export const GOALIE_LAST_FIVE_KEYS = ["WINS_GOALIE", "GOALS_AGAINST_GOALIE", "SAVES_GOALIE", "SHOTS_AGAINST_GOALIE"] as const;
+
 type Row = Record<string, unknown>;
 /** Sums of one player's last played games, newest first. A mapped key with a missing value in any summed game is null;
  * a mapped key absent from `stats` summed to 0 (zeros are left out to keep snapshots small). */
-export function recentTotals(rows: Row[], playerClass: PlanningPlayer["playerClass"]): NonNullable<PlanningPlayer["recentTotals"]> | null {
-  const columns = playerClass === "goalie" ? GOALIE_RECENT_COLUMNS : SKATER_RECENT_COLUMNS;
-  const played = rows.filter(row => Number(row.games_played) > 0).slice(0, RECENT_GAMES);
+export function recentTotals(rows: Row[], playerClass: PlanningPlayer["playerClass"], games = RECENT_GAMES,
+  keys?: readonly string[]): NonNullable<PlanningPlayer["recentTotals"]> | null {
+  const mapped = playerClass === "goalie" ? GOALIE_RECENT_COLUMNS : SKATER_RECENT_COLUMNS;
+  const columns = keys ? Object.fromEntries(keys.map(key => [key, mapped[key]])) : mapped;
+  const played = rows.filter(row => Number(row.games_played) > 0).slice(0, games);
   if (!played.length) return null;
   const stats: Record<string, number | null> = {};
   for (const [key, column] of Object.entries(columns)) {
@@ -32,6 +40,11 @@ export function recentTotals(rows: Row[], playerClass: PlanningPlayer["playerCla
   }
   return { games: played.length, stats };
 }
+
+/** The candidate card's last-5 box score: the same sums as `recentTotals` over at most five played games and only
+ * the shown keys, from the same WGO rows. */
+export const lastFiveTotals = (rows: Row[], playerClass: PlanningPlayer["playerClass"]) =>
+  recentTotals(rows, playerClass, LAST_FIVE_GAMES, playerClass === "goalie" ? GOALIE_LAST_FIVE_KEYS : SKATER_LAST_FIVE_KEYS);
 
 /** League-scored fantasy points per game over the recent games; null outside points leagues, without recent totals,
  * or when a weighted stat can't be scored per game or is missing. A hint only: never a projection input. */

@@ -49,6 +49,17 @@ describe("saved in-season workspace validation", () => {
     if (parsed.success) expect(parsed.data.snapshot?.acquisitionEvidence).toEqual(acquisitionEvidence);
     expect(saveWorkspaceSchema.safeParse({ workspace, snapshot: { ...snapshot, acquisitionEvidence: { ...acquisitionEvidence, counter: { ...acquisitionEvidence.counter, used: -1 } } }, expectedVersion: null }).success).toBe(false);
   });
+  it("round-trips card box scores and deployment, and still accepts an older snapshot player without them", () => {
+    const legacy = { id: "p1", nhlId: 847001, name: "Skater", teamAbbreviation: "TOR", eligiblePositions: ["C"], playerClass: "skater",
+      availability: "free_agent", ownership: null, canDrop: null, holdValue: null, reserveEligibility: [], recentTotals: { games: 10, stats: { GOALS: 4 } } };
+    const old = saveWorkspaceSchema.parse({ workspace, snapshot: { ...snapshot, players: [legacy] }, expectedVersion: null });
+    expect(old.snapshot?.players[0]).toEqual(legacy);
+    const current = { ...legacy, lastFive: { games: 5, stats: { GOALS: 2, HITS: null } }, deployment: { line: "D2", powerPlayUnit: 1, asOf: "2026-10-26", stale: true } };
+    const parsed = saveWorkspaceSchema.parse(JSON.parse(JSON.stringify({ workspace, snapshot: { ...snapshot, players: [current] }, expectedVersion: null })));
+    expect(parsed.snapshot?.players[0]).toEqual(current);
+    for (const deployment of [{ ...current.deployment, line: "L5" }, { ...current.deployment, powerPlayUnit: 3 }, { ...current.deployment, extra: 1 }])
+      expect(saveWorkspaceSchema.safeParse({ workspace, snapshot: { ...snapshot, players: [{ ...current, deployment }] }, expectedVersion: null }).success).toBe(false);
+  });
   it("accepts a coherent manual workspace and snapshot", () => {
     const parsed = saveWorkspaceSchema.safeParse({ workspace, snapshot, expectedVersion: null });
     expect(parsed.success).toBe(true);
