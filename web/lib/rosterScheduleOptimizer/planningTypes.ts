@@ -48,6 +48,11 @@ export type PlanningPlayer = {
   /** Box-score sums over the last (up to 10) played games, keyed by scoring stat; league weights apply client-side.
    * A hint only. A mapped key absent from `stats` summed to 0; null means a game was missing it. */
   recentTotals?: { games: number; stats: StatLine };
+  /** The same sums over the last (up to 5) played games, for the candidate card's box score; same zero/null rules. */
+  lastFive?: { games: number; stats: StatLine };
+  /** Line (L1–L4) or defence pair (D1–D3) and power-play unit (PP1/PP2) in the player's team's newest charted game; absent when
+   * the player was not in that lineup. `stale` when that game is over a week old or older than his last played game. */
+  deployment?: { line: string | null; powerPlayUnit: number | null; asOf: string; stale: boolean };
   /** Provider injury designation (e.g. Yahoo IR, IR-LT, O, DTD); absent when healthy or unknown. */
   injury?: { status: string; label: string; note: string | null } | null;
   /** Yahoo's daily goalie designation from today's roster read; null when Yahoo has not set one, absent when unread. */
@@ -300,16 +305,25 @@ export type PlanEvaluation = {
   limitations: string[];
 };
 /** One ranked player for a streaming leg's day window. `points` is projected fantasy points over the games he would
- * start in it; recent league-scored fantasy points per game (last 10 played) is a hint and near-tie tiebreak only. */
+ * start in it; options rank by the per-game average of that projection and league-scored FPts/G over the last 10 played. */
 export type StreamingOption = { playerId: string; games: number; gameDates: string[]; points: number | null;
-  recentPointsPerGame: number | null; recentGames: number | null };
+  recentPointsPerGame: number | null; recentGames: number | null;
+  /** A conditional waiver claim: the league date he clears waivers. Absent for free agents. */
+  waiverClearsOn?: string };
 /** One add in a stream spot: the streamer is effective from `startDate` and held through `endDate` (inclusive). */
 export type StreamingLeg = { spot: number; step: PlanStep; actionDate: string; startDate: string; endDate: string;
   playerId: string; dropPlayerId: string; games: number; gameDates: string[]; points: number | null; options: StreamingOption[] };
 /** A day-by-day add chain over one or two roster spots, certified by the plan evaluator. */
 export type StreamingChain = { spots: 1 | 2; legs: StreamingLeg[]; steps: PlanStep[]; evaluation: PlanEvaluation;
-  netGames: number; netPoints: number | null; addsUsed: number; addsAvailable: number };
-export type StreamingPlan = { policyVersion: "rso-stream-v1"; recommended: 1 | 2 | null; chains: StreamingChain[]; limitations: string[] };
+  netGames: number; netPoints: number | null;
+  /** Net blended FPts (the average of projected FPts and last-10 FPts/G per game) that ranks chains; null when unknown. */
+  netScore?: number | null; addsUsed: number; addsAvailable: number };
+/** The league's goalie-start minimum as the no-move plan stands: projected starts (credited plus expected) and whether it is met.
+ * `cover` is the manager's goalie coverage choice: only then do chains that meet it rank first. */
+export type StreamingGoalieMinimum = { required: number; baseline: number | null; met: boolean; cover: boolean };
+export type StreamingPlan = { policyVersion: "rso-stream-v1"; recommended: 1 | 2 | null; chains: StreamingChain[]; limitations: string[];
+  /** Present when the league has a goalie minimum with a penalty; with `cover`, chains that meet it rank first. */
+  goalieMinimum?: StreamingGoalieMinimum };
 export type PlanningResult = {
   /** Deterministic streaming chains (best one-spot, and the best two-spot split when it adds more). */
   streaming?: StreamingPlan;

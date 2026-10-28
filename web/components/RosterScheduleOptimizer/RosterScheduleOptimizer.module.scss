@@ -132,6 +132,13 @@
 .streamingGrid tbody th { position: sticky; left: 0; z-index: 1; background: v.$background-header; }
 .streamingGrid td strong, .streamingGrid td small { display: block; }
 .streamingGrid td small { color: v.$text-secondary; }
+.streamingGrid .planFromTable { table-layout: fixed; width: 100%; min-width: 720px; }
+.streamingGrid .planFromTable td, .streamingGrid .planFromTable th { overflow: hidden; text-overflow: ellipsis; }
+.streamingGrid .planFromSlotColumn { width: 96px; }
+.streamingGrid .planFromRow td, .streamingGrid .planFromRow th { padding-block: 0; }
+.streamingGrid .greyedDay { opacity: .4; }
+.planFromNote { display: flex; flex-wrap: wrap; align-items: center; gap: v.$space-xs; margin: 0 0 v.$space-xs; color: v.$text-secondary; font-size: v.$font-size-xs; }
+.planFromNote small { flex-basis: 100%; }
 .emptyStream { color: v.$text-secondary; }
 .gridScroll table { border-collapse: collapse; min-width: 100%; white-space: nowrap; font-size: v.$font-size-xs; }
 .gridScroll th, .gridScroll td { padding: v.$space-xs v.$space-sm; border-bottom: v.$border-subtle; border-right: v.$border-subtle; text-align: center; }
@@ -241,6 +248,10 @@
 .positionGroup td { line-height: 18px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .chosenDay { background: rgba(v.$primary-color, .12) !important; box-shadow: inset 0 0 0 1px rgba(v.$primary-color, .4); }
 .elapsedDay { color: v.$text-secondary; }
+// Plan-from slider row: sticks above the day headers, stops over the seven day columns; earlier days are greyed.
+.planFromControls .planFromLabel { color: v.$text-secondary; font-size: 10px; text-transform: uppercase; letter-spacing: .04em; }
+.planFromControls .planFromDays { grid-column: 2 / 9; min-width: 0; }
+.compactTable .greyedDay { opacity: .4; }
 .compactTable thead .elapsedDay button { color: v.$text-secondary; }
 .fantasyAssigned { font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 .benchHeading { display: block !important; height: 0; }

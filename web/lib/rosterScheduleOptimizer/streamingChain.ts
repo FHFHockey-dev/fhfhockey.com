@@ -9,8 +9,14 @@ import type { PlanEvaluation, PlanIntent, PlanStep, PlanningGame, PlanningPlayer
 /** Streaming chains (TJ, 2026-10-27): turn the period's remaining adds into the most added active games, then projected
  * fantasy points. A stream spot is a sequence of contiguous day windows; each window's streamer is dropped by the next
  * add. Windows come from team schedules and open lineup slots (small per-day matchings); players are ranked within a
- * window by projected points over the games they would start; last-10 FPts/G orders near ties only. Proposals are heuristic; every returned chain is
- * certified by the plan evaluator, which alone supplies its legality and net totals. */
+ * window by a per-game blend over the games they would start: the average of projected FPts and last-10 FPts/G when both are
+ * known (TJ, 10-27: past + future), else the projection. Under "Best projected points" chains are FPts-first: the week's
+ * blended total beats added games, so a one-game star wins only when he adds more for the matchup. Proposals are heuristic; every returned chain is
+ * certified by the plan evaluator, which alone supplies its legality and net totals.
+ * Goalie minimum (TJ, 2026-10-27): with goalie coverage set to cover, when the no-move plan falls short of the minimum, a second search
+ * puts expected goalie starts (up to the shortfall) ahead of games, and certified chains that meet the minimum rank first.
+ * Waiver claims (10-27): in priority-waiver leagues a waiver player can take a window that starts once he clears; the
+ * step is conditional (the claim may fail) and free agents win near ties. Budget or unknown waiver policies aren't chained. */
 export type StreamingInputs = {
   snapshot: PlanningSnapshot; intent: PlanIntent;
   /** The no-move plan for the same objective the chains are evaluated with. */
@@ -21,34 +27,51 @@ export type StreamingInputs = {
   evaluate: (steps: PlanStep[]) => PlanEvaluation;
   /** Admitted expected fantasy points for one player-game; null when unknown. */
   points: (playerId: string, gameId: string) => number | null;
+  /** Epoch ms after which no drop candidate beyond the first few is tried. */
+  deadline?: number;
 };
 type Elig = ReturnType<typeof normalizeEligibility> & { key: string };
-type Value = { games: number; points: number; known: boolean; adds: number };
-type Candidate = StreamingOption & { player: PlanningPlayer; playDays: number[]; pointsKnown: boolean };
+/** `points`: blended FPts (see above); `starts`: expected goalie starts the streamers add, net of the drop's. */
+type Value = { games: number; points: number; known: boolean; adds: number; starts: number };
+/** `points` stays the projection (shown); `score` is the blended total that ranks. */
+type Candidate = StreamingOption & { player: PlanningPlayer; playDays: number[]; score: number | null; starts: number };
 type Window = { start: number; end: number; ranked: Candidate[] };
 type SpotPlan = { start: number; drop: PlanningPlayer; windows: Window[]; chosen: Candidate[]; value: Value };
 type Context = { removedFrom: Map<string, number>; extras: Elig[][] };
 
 const time = (value: string) => Date.parse(value);
 const STREAMABLE = new Set(["free_agent", "manager_available"]);
+const isWaiver = (player: PlanningPlayer) => player.availability === "waivers";
 const RESERVES = new Set(["IR", "IR+", "NA"]);
-/** Projected points this close are a near tie: last-10 FPts/G orders them. */
+/** Blended points this close are a near tie: last-10 FPts/G orders them. */
 const NEAR_TIE = 0.1;
-const OPTION_COUNT = 5, RANKED_COUNT = 12, DROP_CANDIDATES = 3;
-const ZERO: Value = { games: 0, points: 0, known: true, adds: 0 };
-const better = (a: Value, b: Value) => a.games !== b.games ? a.games > b.games
-  : Math.abs(a.points - b.points) > 1e-9 ? a.points > b.points : a.adds < b.adds;
-const plus = (a: Value, b: Value): Value => ({ games: a.games + b.games, points: a.points + b.points, known: a.known && b.known, adds: a.adds + b.adds });
+/** Every droppable player is tried for one spot: the first GUARANTEED_DROPS (drop order) always, the rest while the
+ * search's window × candidate work stays under EXTRA_WORK (a week fits every drop; a season-long range stops at the
+ * guaranteed ones) and before the deadline. Two-spot pairs come from the PAIR_DROPS best single-spot drops. */
+const OPTION_COUNT = 5, RANKED_COUNT = 12, GUARANTEED_DROPS = 3, PAIR_DROPS = 4, EXTRA_WORK = 2_000_000;
+const ZERO: Value = { games: 0, points: 0, known: true, adds: 0, starts: 0 };
+/** More games, then points (points first when `pointsFirst`), then fewer adds; with a goalie-start `need`, expected starts
+ * up to it come first. */
+const better = (a: Value, b: Value, need: number, pointsFirst: boolean) => {
+  const starts = Math.min(need, a.starts) - Math.min(need, b.starts);
+  if (Math.abs(starts) > 1e-9) return starts > 0;
+  const points = Math.abs(a.points - b.points) > 1e-9 ? a.points > b.points : null;
+  if (pointsFirst && points !== null) return points;
+  return a.games !== b.games ? a.games > b.games : points ?? a.adds < b.adds;
+};
+const plus = (a: Value, b: Value): Value => ({ games: a.games + b.games, points: a.points + b.points, known: a.known && b.known, adds: a.adds + b.adds, starts: a.starts + b.starts });
 const addDays = (date: string, days: number) => new Date(Date.parse(`${date}T12:00:00Z`) + days * 86400000).toISOString().slice(0, 10);
 
-function rankOptions(a: Candidate, b: Candidate) {
+const rankOptions = (pointsFirst: boolean) => (a: Candidate, b: Candidate) => {
+  if (!pointsFirst && a.games !== b.games) return b.games - a.games;
+  if (a.score !== null && b.score !== null && Math.abs(a.score - b.score) > NEAR_TIE) return b.score - a.score;
+  if (a.score === null !== (b.score === null)) return a.score === null ? 1 : -1;
   if (a.games !== b.games) return b.games - a.games;
-  if (a.points !== null && b.points !== null && Math.abs(a.points - b.points) > NEAR_TIE) return b.points - a.points;
-  if (a.points === null !== (b.points === null)) return a.points === null ? 1 : -1;
+  if (isWaiver(a.player) !== isWaiver(b.player)) return isWaiver(a.player) ? 1 : -1;
   const recent = (b.recentPointsPerGame ?? -Infinity) - (a.recentPointsPerGame ?? -Infinity);
   if (recent && Number.isFinite(recent)) return recent;
-  return (b.points ?? 0) - (a.points ?? 0) || a.player.id.localeCompare(b.player.id);
-}
+  return (b.score ?? 0) - (a.score ?? 0) || a.player.id.localeCompare(b.player.id);
+};
 function maxMatch(slots: string[], players: Elig[]) {
   const owner = new Array<number>(slots.length).fill(-1);
   const fits = players.map(player => slots.map(slot => canEligibilityOccupySlot(player, slot as never)));
@@ -66,6 +89,14 @@ export function buildStreamingChains(inputs: StreamingInputs): StreamingPlan {
   const { snapshot, intent, baseline, dropOrder } = inputs;
   const plan: StreamingPlan = { policyVersion: "rso-stream-v1", recommended: null, chains: [], limitations: [] };
   const zone = snapshot.context.timeZone, asOf = snapshot.context.asOf, rules = snapshot.rules;
+  // The minimum is reported when missing it costs something, and targeted only when the manager chose to cover it
+  // (TJ, 10-27: "accept risk" never pushes goalies up). The evaluator alone says whether it is met.
+  const required = rules.goalieMinimum.required ?? 0;
+  const cover = intent.goalieCoverage === "cover";
+  const targeted = required > 0 && rules.goalieMinimum.penalty !== "none" && cover;
+  if (required > 0 && rules.goalieMinimum.penalty !== "none") plan.goalieMinimum = { required, baseline: baseline.goalie.projected, met: !baseline.goalie.risk, cover };
+  const need = targeted && rules.goalieMinimum.counts === "starts" && baseline.goalie.risk && baseline.goalie.projected !== null
+    ? required - baseline.goalie.projected : 0;
   if (rules.lineupMode !== "daily") { plan.limitations.push("Streaming chains need a daily lineup league."); return plan; }
   if (rules.acquisitionTiming === "unknown" || rules.acquisitionCost === null || rules.acquisitionCost <= 0) {
     plan.limitations.push("Streaming chains need acquisition timing and cost. Review League rules and scoring."); return plan;
@@ -128,19 +159,42 @@ export function buildStreamingChains(inputs: StreamingInputs): StreamingPlan {
       [...days[day].flexible.filter(player => !removed.includes(player.id)).map(elig), ...extras]));
     return memo.get(key)!;
   };
-  const pool = snapshot.players.filter(player => !owned.has(player.id) && STREAMABLE.has(player.availability)
+  const priorityWaivers = rules.waivers?.mode === "priority";
+  const pool = snapshot.players.filter(player => !owned.has(player.id)
+    && (STREAMABLE.has(player.availability) || priorityWaivers && isWaiver(player) && Number.isFinite(time(player.waiverClearsAt ?? "")))
     && !intent.excludedPlayerIds.includes(player.id) && !!player.teamAbbreviation && elig(player).valid
     && elig(player).playerClass === player.playerClass && dates.some(date => gameOn.has(`${player.teamAbbreviation}:${date}`)));
   if (!pool.length) { plan.limitations.push("No available player has a remaining game to stream."); return plan; }
   const reserved = reservedPlayerIds(snapshot.roster);
   const drops = snapshot.roster.flatMap(entry => players.get(entry.playerId) ?? [])
     .filter(player => dropOrder.has(player.id) && dropEligible(player, intent, reserved))
-    .sort((a, b) => dropOrder.get(a.id)! - dropOrder.get(b.id)!).slice(0, DROP_CANDIDATES);
+    .sort((a, b) => dropOrder.get(a.id)! - dropOrder.get(b.id)!);
   if (!drops.length) { plan.limitations.push("No droppable roster player has a known contribution; streaming chains need a drop candidate."); return plan; }
-  const recent = (player: PlanningPlayer) => recentPointsPerGame(player, rules.scoring);
+  const forms = new Map<string, number | null>();
+  const recent = (player: PlanningPlayer) => {
+    if (!forms.has(player.id)) forms.set(player.id, recentPointsPerGame(player, rules.scoring));
+    return forms.get(player.id)!;
+  };
+  /** Ranking value of one player-game: the average of projected FPts and last-10 FPts/G, or the projection alone. */
+  const blended = (player: PlanningPlayer, gameId: string) => {
+    const projected = inputs.points(player.id, gameId), form = recent(player);
+    return projected === null ? null : form === null ? projected : (projected + form) / 2;
+  };
+  const pointsFirst = baseline.objective === "outcome";
+  const rank = rankOptions(pointsFirst);
+  if (targeted && baseline.goalie.risk && !need) plan.limitations.push("Goalie start progress is unknown, so streaming chains can't target the goalie minimum.");
+  const forecasts = new Map(snapshot.forecasts.filter(row => !row.expiresAt || time(row.expiresAt) > time(asOf)).map(row => [`${row.playerId}:${row.gameId}`, row]));
+  /** Expected start for a goalie's game (proposals only; the evaluator certifies). */
+  const startChance = (player: PlanningPlayer, gameId: string) => {
+    if (player.playerClass !== "goalie") return 0;
+    const forecast = forecasts.get(`${player.id}:${gameId}`);
+    return forecast?.confirmedStart ? 1 : forecast?.startProbability ?? 0;
+  };
 
-  /** Best chain for one spot that starts by dropping `drop`, on top of `context` (another spot's streamers). */
-  const runSpot = (context: Context, drop: PlanningPlayer, adds: number, used: ReadonlySet<string>): SpotPlan | null => {
+  let work = 0;
+  /** Best chain for one spot that starts by dropping `drop`, on top of `context` (another spot's streamers). With a goalie
+   * `goal`, each window also offers its best goalie by expected starts, and starts up to `goal` outrank games. */
+  const runSpot = (context: Context, drop: PlanningPlayer, adds: number, used: ReadonlySet<string>, goal = 0): SpotPlan | null => {
     const without: Context = { removedFrom: new Map([...context.removedFrom, [drop.id, 0]]), extras: context.extras };
     const gain = new Map<string, number[]>();
     const gainFor = (value: Elig) => {
@@ -148,48 +202,60 @@ export function buildStreamingChains(inputs: StreamingInputs): StreamingPlan {
       return gain.get(value.key)!;
     };
     const lossGames = dates.map((_, day) => capacity(day, context) - capacity(day, without));
-    const lossPoints = dates.map((date, day) => {
-      const row = lossGames[day] > 0 ? baseline.assignments.find(item => item.playerId === drop.id && item.date === date) : undefined;
-      return row ? inputs.points(drop.id, row.gameId) : 0;
-    });
+    const lossRows = dates.map((date, day) => lossGames[day] > 0 ? baseline.assignments.find(item => item.playerId === drop.id && item.date === date) : undefined);
+    const lossPoints = lossRows.map(row => row ? blended(drop, row.gameId) : 0);
+    const lossStarts = lossRows.map(row => row ? startChance(drop, row.gameId) : 0);
     // Per player: games he would start on each day, their projected points and the first-day claim for each window start.
     const rows = pool.filter(player => !used.has(player.id)).map(player => {
       const gains = gainFor(elig(player));
       const games = dates.map(date => gameOn.get(`${player.teamAbbreviation}:${date}`));
       const starts = games.map((game, day) => !!game && gains[day] > 0);
       const points = games.map((game, day) => starts[day] ? inputs.points(player.id, game!.id) : 0);
+      const scores = games.map((game, day) => starts[day] ? blended(player, game!.id) : 0);
+      const chances = games.map((game, day) => starts[day] ? startChance(player, game!.id) : 0);
       const firstDay = timing.map((item, day) => !!item && starts[day] && claimable(games[day]!, item.effectiveAt));
-      return { player, games, starts, points, firstDay, form: recent(player) };
+      // A waiver player only takes a window effective once he has cleared.
+      const clears = isWaiver(player) ? time(player.waiverClearsAt!) : -Infinity;
+      return { player, games, starts, points, scores, chances, firstDay, clears, form: recent(player) };
     });
-    const windows: Window[][] = dates.map(() => []);
+    work += rows.length * n * (n + 1) / 2;
+    const windows: Window[][] = dates.map(() => []), goalieWindows: Window[][] = dates.map(() => []);
     for (let start = 0; start < n; start++) if (timing[start]) for (let end = start + 1; end <= n; end++) {
       const ranked: Candidate[] = [];
       for (const row of rows) {
+        if (row.clears > time(timing[start]!.effectiveAt)) continue;
         const playDays = [...(row.firstDay[start] ? [start] : [])];
         for (let day = start + 1; day < end; day++) if (row.starts[day]) playDays.push(day);
         if (!playDays.length) continue;
-        const values = playDays.map(day => row.points[day]);
-        const known = values.every(value => value !== null && Number.isFinite(value));
+        const sum = (values: Array<number | null>) => values.every(value => value !== null && Number.isFinite(value))
+          ? values.reduce<number>((total, value) => total + value!, 0) : null;
         ranked.push({ player: row.player, playerId: row.player.id, games: playDays.length, gameDates: playDays.map(day => dates[day]), playDays,
-          points: known ? values.reduce<number>((sum, value) => sum + value!, 0) : null, pointsKnown: known,
-          recentPointsPerGame: row.form, recentGames: row.form === null ? null : row.player.recentTotals?.games ?? null });
+          points: sum(playDays.map(day => row.points[day])), score: sum(playDays.map(day => row.scores[day])),
+          starts: playDays.reduce((sum, day) => sum + row.chances[day], 0),
+          recentPointsPerGame: row.form, recentGames: row.form === null ? null : row.player.recentTotals?.games ?? null,
+          ...(isWaiver(row.player) ? { waiverClearsOn: localDate(row.player.waiverClearsAt!, zone) } : {}) });
       }
-      windows[start][end] = { start, end, ranked: ranked.sort(rankOptions).slice(0, RANKED_COUNT) };
+      ranked.sort(rank);
+      windows[start][end] = { start, end, ranked: ranked.slice(0, RANKED_COUNT) };
+      if (goal > 0) goalieWindows[start][end] = { start, end, ranked: ranked.filter(option => option.starts > 0)
+        .sort((a, b) => Math.min(goal, b.starts) - Math.min(goal, a.starts) || rank(a, b)).slice(0, RANKED_COUNT) };
     }
+    // Tables a leg can come from: the games ranking and, with a goalie goal, the expected-starts ranking.
+    const tables = goal > 0 ? [windows, goalieWindows] : [windows];
     const legValue = (window: Window | undefined): Value | null => {
       const best = window?.ranked[0];
-      return best ? { games: best.games, points: best.points ?? 0, known: best.pointsKnown, adds: 1 } : null;
+      return best ? { games: best.games, points: best.score ?? 0, known: best.score !== null, adds: 1, starts: best.starts } : null;
     };
     // best[start][used]: the most from a leg effective on dates[start] onward, `used` adds already spent.
-    const best: Array<Array<{ value: Value; end: number } | null>> = Array.from({ length: n + 1 }, () => new Array(adds).fill(null));
+    const best: Array<Array<{ value: Value; end: number; table: number } | null>> = Array.from({ length: n + 1 }, () => new Array(adds).fill(null));
     for (let start = n - 1; start >= 0; start--) if (timing[start]) for (let spent = 0; spent < adds; spent++) {
-      for (let end = start + 1; end <= n; end++) {
-        const leg = legValue(windows[start][end]);
+      for (let end = start + 1; end <= n; end++) for (const [table, windowsFor] of tables.entries()) {
+        const leg = legValue(windowsFor[start][end]);
         // The last streamer is held to the end; any other is dropped by the next leg, effective the day his window ends.
         const rest = end === n ? ZERO : spent + 1 < adds && timing[end] ? best[end][spent + 1]?.value ?? null : null;
         if (!leg || !rest) continue;
         const total = plus(leg, rest);
-        if (!best[start][spent] || better(total, best[start][spent]!.value)) best[start][spent] = { value: total, end };
+        if (!best[start][spent] || better(total, best[start][spent]!.value, goal, pointsFirst)) best[start][spent] = { value: total, end, table };
       }
     }
     let chosen: { start: number; value: Value } | null = null;
@@ -199,14 +265,16 @@ export function buildStreamingChains(inputs: StreamingInputs): StreamingPlan {
       const lost = lossGames.slice(start).reduce((sum, value) => sum + value, 0);
       const lostPoints = lossPoints.slice(start);
       const value: Value = { games: entry.value.games - lost, adds: entry.value.adds, known: entry.value.known && lostPoints.every(item => item !== null),
-        points: entry.value.points - lostPoints.reduce<number>((sum, item) => sum + (item ?? 0), 0) };
-      if (!chosen || better(value, chosen.value)) chosen = { start, value };
+        points: entry.value.points - lostPoints.reduce<number>((sum, item) => sum + (item ?? 0), 0),
+        starts: entry.value.starts - lossStarts.slice(start).reduce((sum, item) => sum + item, 0) };
+      if (!chosen || better(value, chosen.value, goal, pointsFirst)) chosen = { start, value };
     }
-    if (!chosen || chosen.value.games <= 0) return null;
-    const legs: Window[] = [];
+    if (!chosen || chosen.value.games <= 0 && !(goal > 0 && chosen.value.starts > 1e-9) && !(pointsFirst && chosen.value.known && chosen.value.points > 1e-9)) return null;
+    const legs: Window[] = [], kinds: number[] = [];
     for (let start = chosen.start, spent = 0; start < n; spent++) {
       const entry = best[start][spent]!;
-      legs.push(windows[start][entry.end]);
+      legs.push(tables[entry.table][start][entry.end]);
+      kinds.push(entry.table);
       start = entry.end;
     }
     const taken = new Set<string>();
@@ -219,9 +287,9 @@ export function buildStreamingChains(inputs: StreamingInputs): StreamingPlan {
     // Claim each streamer for his first game, not earlier: the player he replaces stays on the roster until then.
     for (const [index, pick] of (picks as Candidate[]).entries()) {
       const first = Math.min(...pick.playDays), window = legs[index];
-      if (first <= window.start || !timing[first] || !windows[first][window.end]) continue;
-      legs[index] = windows[first][window.end];
-      if (index) legs[index - 1] = windows[legs[index - 1].start][first];
+      if (first <= window.start || !timing[first] || !tables[kinds[index]][first][window.end]) continue;
+      legs[index] = tables[kinds[index]][first][window.end];
+      if (index) legs[index - 1] = tables[kinds[index - 1]][legs[index - 1].start][first];
     }
     return { start: legs[0].start, drop, windows: legs, chosen: picks as Candidate[], value: chosen.value };
   };
@@ -239,13 +307,26 @@ export function buildStreamingChains(inputs: StreamingInputs): StreamingPlan {
     const prior = leg ? spot.chosen[leg - 1].playerId : spot.drop.id;
     const step: PlanStep = { id: `stream:${index}:${leg}:${pick.playerId}`, type: "add", playerId: pick.playerId, dropPlayerId: prior,
       at: item.at, effectiveAt: acquisitionEffectiveAt(snapshot, pick.player, item.at)!,
-      conditional: time(item.at) > time(asOf), dependsOn: leg ? [`stream:${index}:${leg - 1}:${spot.chosen[leg - 1].playerId}`] : [] };
+      conditional: time(item.at) > time(asOf) || isWaiver(pick.player), dependsOn: leg ? [`stream:${index}:${leg - 1}:${spot.chosen[leg - 1].playerId}`] : [] };
     const others = spots.flatMap(other => other === spot ? spot.chosen.filter((_, position) => position !== leg) : other.chosen).map(option => option.playerId);
     const options = window.ranked.filter(option => !others.includes(option.playerId)).slice(0, OPTION_COUNT)
-      .map(({ playerId, games, gameDates, points, recentPointsPerGame, recentGames }) => ({ playerId, games, gameDates, points, recentPointsPerGame, recentGames }));
+      .map(({ playerId, games, gameDates, points, recentPointsPerGame, recentGames, waiverClearsOn }) =>
+        ({ playerId, games, gameDates, points, recentPointsPerGame, recentGames, ...(waiverClearsOn ? { waiverClearsOn } : {}) }));
     return { spot: index, step, actionDate: item.actionDate, startDate: dates[window.start], endDate: dates[window.end - 1],
       playerId: pick.playerId, dropPlayerId: prior, games: pick.games, gameDates: pick.gameDates, points: pick.points, options };
   }));
+  const openGames = new Set([...gameOn.values()].map(game => game.id));
+  /** Blended FPts over a lineup's remaining assignments; null when any is unknown. */
+  const scoreOf = (evaluation: PlanEvaluation) => {
+    let total = 0;
+    for (const row of evaluation.assignments) if (openGames.has(row.gameId) && row.date >= dates[0]) {
+      const player = players.get(row.playerId), value = player ? blended(player, row.gameId) : null;
+      if (value === null) return null;
+      total += value;
+    }
+    return total;
+  };
+  const baselineScore = scoreOf(baseline);
   const certify = (spots: SpotPlan[]): StreamingChain | null => {
     const legs = toLegs(spots), steps = legs.map(leg => leg.step);
     const evaluation = inputs.evaluate(steps);
@@ -264,52 +345,92 @@ export function buildStreamingChains(inputs: StreamingInputs): StreamingPlan {
     }
     const netPoints = evaluation.comparisonEligible && baseline.comparisonEligible && evaluation.projectedValue !== null && baseline.projectedValue !== null
       ? evaluation.projectedValue - baseline.projectedValue : null;
+    const score = scoreOf(evaluation);
     return { spots: spots.length as 1 | 2, legs, steps, evaluation, netGames: evaluation.activeGames - baseline.activeGames, netPoints,
-      addsUsed: steps.length, addsAvailable: budget };
+      netScore: score !== null && baselineScore !== null ? score - baselineScore : null, addsUsed: steps.length, addsAvailable: budget };
   };
-  const chainBetter = (a: StreamingChain, b: StreamingChain) => a.netGames !== b.netGames ? a.netGames > b.netGames
-    : a.netPoints !== null && b.netPoints !== null && Math.abs(a.netPoints - b.netPoints) > 1e-9 ? a.netPoints > b.netPoints : a.addsUsed < b.addsUsed;
-  const pickBest = (proposals: SpotPlan[][]) => {
-    let result: StreamingChain | null = null;
-    for (const spots of proposals) {
+  /** Blended net when known, else the evaluator's projected net. */
+  const pointsOf = (chain: StreamingChain) => chain.netScore ?? chain.netPoints;
+  // "Most starts": games, then points. "Best projected points": the week's points, then games.
+  const objectiveBetter = (a: StreamingChain, b: StreamingChain) => {
+    const left = pointsOf(a), right = pointsOf(b);
+    const points = left !== null && right !== null && Math.abs(left - right) > 1e-9 ? left > right : null;
+    if (pointsFirst && points !== null) return points;
+    return a.netGames !== b.netGames ? a.netGames > b.netGames : points ?? a.addsUsed < b.addsUsed;
+  };
+  const meets = (chain: StreamingChain) => !chain.evaluation.goalie.risk;
+  // A chain that keeps (or reaches) the goalie minimum beats one that misses it, whatever its AGP or points.
+  const chainBetter = (a: StreamingChain, b: StreamingChain) => targeted && meets(a) !== meets(b) ? meets(a) : objectiveBetter(a, b);
+  const certifyAll = (proposals: SpotPlan[][]) => {
+    const seen = new Set<string>();
+    return proposals.flatMap(spots => {
+      const key = spots.map(spot => `${spot.drop.id}:${spot.windows.map(window => window.start)}:${spot.chosen.map(option => option.playerId)}`).join("/");
+      if (seen.has(key)) return [];
+      seen.add(key);
       const chain = certify(spots);
-      if (chain && chain.netGames > 0 && (!result || chainBetter(chain, result))) result = chain;
-    }
-    return result;
+      return chain && (chain.netGames > 0 || need > 0 && meets(chain) || pointsFirst && (pointsOf(chain) ?? 0) > 1e-9) ? [chain] : [];
+    });
   };
-  const one = pickBest(drops.flatMap(drop => { const spot = runSpot(empty, drop, budget, new Set()); return spot ? [[spot]] : []; }));
-  // Two spots: the first spot keeps `split` adds, the second spends the rest on top of it.
+  const top = (chains: StreamingChain[], order: typeof objectiveBetter) => chains.reduce<StreamingChain | null>((result, chain) => !result || order(chain, result) ? chain : result, null);
+  const goals = need > 0 ? [0, need] : [0];
+  const deadline = inputs.deadline ?? Infinity;
+  const extraAllowed = () => work <= EXTRA_WORK && Date.now() < deadline;
+  let skipped = 0;
+  const singles: Array<{ drop: PlanningPlayer; spots: SpotPlan[] }> = [];
+  for (const [index, drop] of drops.entries()) {
+    if (index >= GUARANTEED_DROPS && !extraAllowed()) { skipped = drops.length - index; break; }
+    singles.push({ drop, spots: goals.flatMap(goal => runSpot(empty, drop, budget, new Set(), goal) ?? []) });
+  }
+  const ones = certifyAll(singles.flatMap(single => single.spots.map(spot => [spot])));
+  // Pair the drops whose own best spot does most (drop order breaks ties; a drop with no spot goes last).
+  const spotValue = (spots: SpotPlan[]) => spots.reduce<Value | null>((result, spot) => !result || better(spot.value, result, need, pointsFirst) ? spot.value : result, null);
+  const pairDrops = singles.map((single, order) => ({ drop: single.drop, order, value: spotValue(single.spots) }))
+    .sort((a, b) => a.value && b.value ? (better(a.value, b.value, need, pointsFirst) ? -1 : better(b.value, a.value, need, pointsFirst) ? 1 : a.order - b.order)
+      : a.value ? -1 : b.value ? 1 : a.order - b.order)
+    .slice(0, PAIR_DROPS).map(item => item.drop);
+  // Two spots: the first spot keeps `split` adds, the second spends the rest on top of it (and any goalie shortfall left).
   const pairs: SpotPlan[][] = [];
-  if (budget >= 2) for (const [index, firstDrop] of drops.entries()) for (const secondDrop of drops.slice(index + 1)) {
+  let pairCount = 0;
+  if (budget >= 2) for (const [index, firstDrop] of pairDrops.entries()) for (const secondDrop of pairDrops.slice(index + 1)) for (const goal of goals) {
+    if (pairCount++ >= GUARANTEED_DROPS * goals.length && !extraAllowed()) { skipped++; continue; }
     let bestPair: { spots: SpotPlan[]; value: Value } | null = null;
     for (const [a, b] of [[firstDrop, secondDrop], [secondDrop, firstDrop]]) for (let split = 1; split < budget; split++) {
-      const spotA = runSpot(empty, a, split, new Set());
+      const spotA = runSpot(empty, a, split, new Set(), goal);
       if (!spotA) continue;
-      const spotB = runSpot(contextWith(empty, spotA), b, budget - split, new Set(spotA.chosen.map(option => option.playerId)));
+      const spotB = runSpot(contextWith(empty, spotA), b, budget - split, new Set(spotA.chosen.map(option => option.playerId)), Math.max(0, goal - spotA.value.starts));
       if (!spotB) continue;
       const value = plus(spotA.value, spotB.value);
-      if (!bestPair || better(value, bestPair.value)) bestPair = { spots: [spotA, spotB], value };
+      if (!bestPair || better(value, bestPair.value, goal, pointsFirst)) bestPair = { spots: [spotA, spotB], value };
     }
     if (bestPair) pairs.push(bestPair.spots);
   }
-  const two = pickBest(pairs);
-  // A two-spot split is suggested only when it adds more than the one-spot chain; the one-spot chain is always offered.
+  const twos = certifyAll(pairs);
+  const one = top(ones, chainBetter), two = top(twos, chainBetter);
+  // A two-spot split is suggested only when it ranks above the one-spot chain; the one-spot chain is always offered.
   if (one && two && chainBetter(two, one)) { plan.recommended = 2; plan.chains = [two, one]; }
   else if (one) { plan.recommended = 1; plan.chains = [one]; }
   else if (two) { plan.recommended = 2; plan.chains = [two]; }
+  if (skipped) plan.limitations.push("Streaming search reached its work or time limit; some drop candidates were not tried.");
   if (!plan.chains.length) plan.limitations.push("No streaming chain adds active games over holding the roster.");
-  if (pool.some(player => player.availability === "waivers")) plan.limitations.push("Streaming chains use free agents only; waiver claims are not chained.");
+  // Meeting the minimum is never traded silently: the best chain that misses it is offered beside the one that meets it.
+  const unconstrained = top([...ones, ...twos], objectiveBetter);
+  if (targeted && unconstrained && !meets(unconstrained) && plan.chains.length && meets(plan.chains[0]) && !plan.chains.includes(unconstrained)) plan.chains.push(unconstrained);
+  if (need > 0 && plan.chains.length && !plan.chains.some(meets)) plan.limitations.push("No streaming chain reaches the goalie minimum with the adds left.");
+  if (!priorityWaivers && snapshot.players.some(player => !owned.has(player.id) && isWaiver(player)))
+    plan.limitations.push("Waiver claims are chained only in priority-waiver leagues; this league's waiver policy is a budget or unverified.");
   return plan;
 }
 
 /** The chain's steps with some legs swapped to another ranked option (leg index → player id). Timing is unchanged:
- * every option is a free agent claimed at the same moment; the next leg drops whoever this leg adds. */
+ * every option is claimed at the same moment (a waiver option has cleared by then, and keeps the step conditional);
+ * the next leg drops whoever this leg adds. */
 export function streamingChainSteps(chain: Pick<StreamingChain, "legs">, overrides: Readonly<Record<number, string>> = {}): PlanStep[] {
   const lastBySpot = new Map<number, PlanStep>();
   return chain.legs.map((leg, index) => {
     const playerId = overrides[index] ?? leg.playerId, prior = lastBySpot.get(leg.spot);
+    const waiver = !!leg.options.find(option => option.playerId === playerId)?.waiverClearsOn;
     const position = chain.legs.slice(0, index).filter(item => item.spot === leg.spot).length;
-    const step: PlanStep = { ...leg.step, id: `stream:${leg.spot}:${position}:${playerId}`, playerId,
+    const step: PlanStep = { ...leg.step, id: `stream:${leg.spot}:${position}:${playerId}`, playerId, conditional: leg.step.conditional || waiver,
       dropPlayerId: prior ? prior.playerId : leg.dropPlayerId, dependsOn: prior ? [prior.id] : [] };
     lastBySpot.set(leg.spot, step);
     return step;

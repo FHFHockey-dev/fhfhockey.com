@@ -1,0 +1,13 @@
+@use "styles/vars" as v;
+
+// Same look as the By player day slider. The padding puts each thumb stop over a day column's centre;
+// the track left of the thumb is greyed like the days it leaves out.
+.planFrom { box-sizing: border-box; width: 100%; padding-inline: calc(100% / (var(--slider-day-count) * 2) - 8px); }
+.planFrom input { --track: linear-gradient(to right, rgba(v.$color-neutral-400, .25) calc(var(--greyed) * 100%), #{v.$primary-color} calc(var(--greyed) * 100%));
+  appearance: none; display: block; width: 100%; height: 24px; min-width: 0; margin: 0; padding: 0; border: 0; border-radius: 0; background: transparent; accent-color: v.$primary-color; cursor: pointer; }
+.planFrom input:disabled { cursor: not-allowed; opacity: .55; }
+.planFrom input:focus-visible { outline: 2px solid v.$focus-color; outline-offset: 2px; }
+.planFrom input::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: var(--track); }
+.planFrom input::-webkit-slider-thumb { appearance: none; width: 16px; height: 16px; margin-top: -6px; border: 0; border-radius: 50%; background: v.$primary-color; }
+.planFrom input::-moz-range-track { height: 4px; border: 0; border-radius: 2px; background: var(--track); }
+.planFrom input::-moz-range-thumb { width: 16px; height: 16px; border: 0; border-radius: 50%; background: v.$primary-color; }

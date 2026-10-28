@@ -3,6 +3,12 @@
 // Day-by-day streaming chain above the lineup views: one row per day, ADD/HOLD per stream spot, ranked options per add.
 .itinerary { display: flex; flex-direction: column; gap: 6px; margin: 0 0 v.$space-sm; padding: 8px 10px; border: v.$border-subtle; border-left: 4px solid v.$primary-color; border-radius: v.$radius-control; background: v.$draft-surface; color: v.$text-primary; font-size: 12px; line-height: 1.4; }
 .itinerary h3 { margin: 0; color: v.$primary-color; font: 700 11px v.$font-family-primary; letter-spacing: .08em; text-transform: uppercase; }
+// The header toggle reads as the heading (global button styles would box it).
+.toggle.toggle { display: inline-flex; align-items: center; gap: 6px; padding: 0 !important; border: 0 !important; background: transparent !important; color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer; }
+.toggle::before { content: "▾"; transition: transform .15s ease; }
+.toggle[aria-expanded="false"]::before { transform: rotate(-90deg); }
+.body { display: flex; flex-direction: column; gap: 6px; }
+.body[hidden] { display: none; }
 .itinerary p { margin: 0; }
 .spots { display: flex; flex-wrap: wrap; gap: 6px; }
 .spots button[aria-pressed="true"], .options button[aria-pressed="true"] { border-color: v.$primary-color; color: v.$primary-color; }
@@ -12,6 +18,7 @@
 .date { color: v.$text-secondary; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
 .moves { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .hold { color: v.$text-secondary; }
+.greyedDay { opacity: .4; }
 .add small { display: block; color: v.$text-secondary; }
 .verb { color: v.$success-color; font-weight: 700; }
 .options { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 0; padding: 0; list-style: none; }

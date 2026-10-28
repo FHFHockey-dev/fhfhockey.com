@@ -1,4 +1,6 @@
 import { fireEvent, cleanup, render, screen, within } from "@testing-library/react";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { getTeamScheduleSummary } from "components/GameGrid/utils/scheduleSummary";
 import type { GameData } from "lib/NHL/types";
@@ -6,6 +8,7 @@ import type { CanonicalSchedule } from "./canonicalSchedule";
 const state = vi.hoisted(() => ({ data: null as CanonicalSchedule | null }));
 vi.mock("./canonicalSchedule", async importOriginal => ({ ...await importOriginal<typeof import("./canonicalSchedule")>(), useCanonicalSchedule: () => state.data }));
 import TeamScheduleContext, { teamScheduleContext } from "./TeamScheduleContext";
+import styles from "./TeamScheduleContext.module.scss";
 
 afterEach(cleanup);
 const dates = Array.from({ length: 7 }, (_, index) => `2026-10-${12 + index}`);
@@ -69,6 +72,21 @@ describe("RSO explanatory team schedule context", () => {
     expect(band.style.boxShadow).toBe("inset 0 0 0 2px #FFFFFF");
     const metrics = within(card).getByLabelText(/^GP 1 · OFF 1 · Score /);
     expect([...metrics.querySelectorAll("small")].map(node => node.textContent)).toEqual(["Score", "GP", "OFF"]);
+  });
+
+  it("stretches every day cell to the card's row height, label on top and the game box filling the rest", () => {
+    show(fixture(), dates.slice(1, 3));
+    const card = screen.getByLabelText("AAA team schedule");
+    const cells = [...card.querySelectorAll(`.${styles.days} > span`)];
+    expect(cells).toHaveLength(2);
+    for (const cell of cells) {
+      expect(cell.className).toBe(styles.dayCell);
+      expect([...cell.children].map(node => node.tagName)).toEqual(["SMALL", "B"]);
+    }
+    const css = readFileSync(join(__dirname, "TeamScheduleContext.module.scss"), "utf8");
+    expect(css).toMatch(/\.days \{ align-self: stretch; grid-auto-rows: 1fr; \}/);
+    expect(css).toMatch(/\.days > \.dayCell \{ display: flex; flex-direction: column;/);
+    expect(css).toMatch(/\.days \.dayCell b \{ flex: 1 1 auto; \}/);
   });
 
   it.each(["partial", "conflicting rows"])("withholds ranks for %s", mode => {

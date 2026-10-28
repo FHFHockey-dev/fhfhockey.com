@@ -3,6 +3,7 @@ import type { BridgeRunProof } from "lib/rosterScheduleData/bridgeForecastWire";
 import { loadPlanningData, parsePlanningDataQuery } from "lib/rosterScheduleData/planning";
 import { INFERRED_ACQUISITION_TIMING_KEY, INFERRED_ACQUISITION_TIMING_SOURCE } from "lib/rosterScheduleOptimizer/providerRules";
 import { expandActiveSlots } from "lib/rosterScheduleOptimizer/slots";
+import { GOALIE_RECENT_COLUMNS, SKATER_RECENT_COLUMNS } from "lib/rosterScheduleOptimizer/recentForm";
 import { normalizeEligibility } from "lib/rosterScheduleOptimizer/eligibility";
 import { nextLocalMidnight, zonedMidnight } from "lib/rosterScheduleOptimizer/planningDates";
 import type { AcquisitionEvidence, LeagueRules, PastLineup, PlanningData, PlanningGame, PlanningPlayer, PlanningSnapshot, ProviderCapabilities, RosterEntry, ScoringCategory, StatLine } from "lib/rosterScheduleOptimizer/planningTypes";
@@ -29,14 +30,8 @@ const discoveryCache = yahooReadCache<DiscoveryScan>();
 /** Private elapsed-day lineups (D4 migration, not yet applied): player keys and slots only. */
 const PAST_LINEUP_TABLE = "rso_yahoo_past_lineups";
 
-/** The per-game WGO column behind each points-league stat Yahoo scores per game; ratio stats can't be scored per game. */
-const SKATER_POINT_COLUMNS: Readonly<Record<string, string>> = { GOALS: "goals", ASSISTS: "assists", POINTS: "points",
-  PLUS_MINUS: "plus_minus", PENALTY_MINUTES: "penalty_minutes", PP_GOALS: "pp_goals", PP_ASSISTS: "pp_assists", PP_POINTS: "pp_points",
-  SH_GOALS: "sh_goals", SH_ASSISTS: "sh_assists", SH_POINTS: "sh_points", GAME_WINNING_GOALS: "gw_goals", SHOTS_ON_GOAL: "shots",
-  FACEOFFS_WON: "total_fow", FACEOFFS_LOST: "total_fol", HITS: "hits", BLOCKED_SHOTS: "blocked_shots" };
-const GOALIE_POINT_COLUMNS: Readonly<Record<string, string>> = { WINS_GOALIE: "wins", LOSSES_GOALIE: "losses",
-  GOALS_AGAINST_GOALIE: "goals_against", SHOTS_AGAINST_GOALIE: "shots_against", SAVES_GOALIE: "saves", SHUTOUTS_GOALIE: "shutouts",
-  GAMES_STARTED: "games_started" };
+/** The per-game WGO column behind each points-league stat Yahoo scores per game (shared with recent form). */
+const SKATER_POINT_COLUMNS = SKATER_RECENT_COLUMNS, GOALIE_POINT_COLUMNS = GOALIE_RECENT_COLUMNS;
 const isGoalieStat = (key: string) => key.endsWith("_GOALIE") || ["GAMES_STARTED", "GOALS_AGAINST_AVERAGE", "SAVE_PERCENTAGE"].includes(key);
 
 /**

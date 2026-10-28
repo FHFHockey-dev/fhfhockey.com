@@ -41,3 +41,7 @@
 .cardHead > span:last-child { color: v.$success-color; }
 .days b { display: grid; place-items: center; min-height: 20px; background: v.$draft-surface-raised; border-radius: v.$radius-xs; }
 @media (max-width: 1100px) { .context summary { min-height: 44px; } }
+// Each day cell fills the card's row height: the weekday label on top, the game box stretching beneath it.
+.days { align-self: stretch; grid-auto-rows: 1fr; }
+.days > .dayCell { display: flex; flex-direction: column; gap: 2px; }
+.days .dayCell b { flex: 1 1 auto; }
