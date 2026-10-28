@@ -9,6 +9,7 @@ import type { LeagueRules, PastLineup, PlanIntent, PlanningAssignment, PlanningP
 import styles from "./RosterScheduleOptimizer.module.scss";
 import type { PlayerContribution } from "lib/rosterScheduleOptimizer/contributionLedger";
 import InfoTooltip from "./InfoTooltip";
+import PlanFromSlider, { type PlanFrom } from "./PlanFromSlider";
 
 const activePositions = ["C", "LW", "RW", "D", "UTIL", "G", "F", "W"];
 const order = [...activePositions, "BN", "IR", "IR+", "NA", "Plan changes"];
@@ -186,13 +187,15 @@ export function ScheduleIdentity({ player }: { player: PlanningPlayer }) {
     onError={event => { event.currentTarget.src = fallbackTeamLogo; }} /><span>{player.name.split(" ").slice(1).join(" ") || player.name}</span></>;
 }
 
-export default function CompactSchedule({ admittedSnapshot, snapshot, roster, rules, players, assignments, intent, dates, date, today, ready, selectDate, selectPlayer, benchOpen: controlledBenchOpen, onBenchChange, contributions }: {
+export default function CompactSchedule({ admittedSnapshot, snapshot, roster, rules, players, assignments, intent, dates, date, today, ready, selectDate, selectPlayer, benchOpen: controlledBenchOpen, onBenchChange, contributions, planFrom }: {
   admittedSnapshot?: PlanningSnapshot | null;
   snapshot: PlanningSnapshot | null; roster: RosterEntry[]; rules: LeagueRules; players: PlanningPlayer[];
   assignments: PlanningAssignment[]; intent: PlanIntent; dates: string[]; date: string; today: string; ready: boolean;
   selectDate: (date: string) => void; selectPlayer: (id: string) => void;
   benchOpen?: boolean; onBenchChange?: (open: boolean) => void;
   contributions?: Map<string, PlayerContribution>;
+  /** The plan-from slider over the day columns; days before `planFrom.from` are greyed and left out of the plan. */
+  planFrom?: PlanFrom;
 }) {
   const [localBenchOpen, setLocalBenchOpen] = useState(true);
   const benchOpen = controlledBenchOpen ?? localBenchOpen;
@@ -270,6 +273,7 @@ export default function CompactSchedule({ admittedSnapshot, snapshot, roster, ru
     }
     return { text: `${game.home ? "vs" : "@"}${game.opponent}`, detail, assigned, goalie };
   };
+  const dayClass = (day: string) => `${day === date ? styles.chosenDay : ""} ${day < today ? styles.elapsedDay : ""} ${planFrom && day < planFrom.from ? styles.greyedDay : ""}`;
   const moveWeek = (offset: number) => {
     const next = scheduleWeek(offsetDate(week[0], offset)).filter(day => dates.includes(day));
     const weekday = new Date(`${date}T12:00:00Z`).getUTCDay();
@@ -319,8 +323,12 @@ export default function CompactSchedule({ admittedSnapshot, snapshot, roster, ru
     </div>
     <div ref={scrollElement} className={styles.compactScroll} tabIndex={0} role="region" aria-label="Player weekly schedule scroll area"
       onScroll={event => { if (dateControlsElement.current?.open) syncHorizontalScroll(event.currentTarget, dateControlsElement.current); }}>
+      {planFrom && <div className={`${styles.dayControls} ${styles.planFromControls}`}>
+        <span className={styles.planFromLabel}>Plan from</span>
+        <div className={styles.planFromDays}><PlanFromSlider days={week} {...planFrom} /></div>
+      </div>}
       <table className={styles.compactTable} aria-label="Individual player weekly schedule">
-        <thead><tr><th scope="col">Slot / player</th>{week.map(day => <th scope="col" key={day} className={`${day === date ? styles.chosenDay : ""} ${day < today ? styles.elapsedDay : ""}`}>
+        <thead><tr><th scope="col">Slot / player</th>{week.map(day => <th scope="col" key={day} className={dayClass(day)}>
           <button aria-label={`Select ${dateLabel(day)}`} aria-pressed={day === date} aria-describedby={!dates.includes(day) ? `${navigationReasonId}-dates` : undefined} disabled={!dates.includes(day)} onClick={() => selectDate(day)}>
             <span>{dateLabel(day).split(", ")[0]}</span><span>{dateLabel(day).split(", ")[1]}</span>
             {dates.includes(day) && <small>{knownCount(new Set(snapshot?.games.filter(game => game.date === day && ["scheduled", "live", "final"].includes(game.status)).map(game => game.id)).size, completeSchedule)} NHL</small>}
@@ -347,7 +355,7 @@ export default function CompactSchedule({ admittedSnapshot, snapshot, roster, ru
               <span className={styles.rowStatus} aria-label={row.status}>{row.assigned ? "●" : row.status.startsWith("Open") ? "Open" : /conflict|unsupported|unmatched|No compatible/i.test(row.status) ? "!" : /unverified|pending|unknown|unavailable/i.test(row.status) ? "?" : /Held|locked/.test(row.status) ? "L" : "·"}</span>
             </th>
             {week.map(day => { const cell = row.player ? gameLabel(row.player, day) : null; return <td key={day} title={`${dateLabel(day)} · ${cell?.detail ?? row.status}`} aria-label={`${dateLabel(day)} · ${cell?.detail ?? row.status}`}
-              className={`${day === date ? styles.chosenDay : ""} ${day < today ? styles.elapsedDay : ""} ${cell?.assigned ? styles.fantasyAssigned : ""}`}>{cell?.text ?? "—"}{cell?.goalie && <sup aria-hidden="true">{cell.goalie}</sup>}</td>; })}
+              className={`${dayClass(day)} ${cell?.assigned ? styles.fantasyAssigned : ""}`}>{cell?.text ?? "—"}{cell?.goalie && <sup aria-hidden="true">{cell.goalie}</sup>}</td>; })}
             {metrics.map((value, index) => <td key={index} className={styles.rangeMetric} aria-label={`${["Range GP", "Range AGP", "Range DUST/bench", "Range active points"][index]}: ${row.playerId ? value === "—" ? "unavailable" : value === "?" ? "unknown" : value.endsWith("+") ? `${value.slice(0, -1)} known; total unknown` : value : "no player"}`}>{row.playerId ? value : "—"}</td>)}
           </tr>; })}
         </tbody>)}

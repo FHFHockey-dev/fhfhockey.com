@@ -4,7 +4,7 @@
 .card {
   @include panel.panel-shell($radius: v.$radius-card, $padding: 0, $variant: flat, $overflow: hidden);
   display: flex;
-  margin-block: v.$space-xs;
+  margin-block: 2px;
   min-width: 0;
   font-size: v.$font-size-xs;
   font-variant-numeric: tabular-nums;
@@ -13,48 +13,60 @@
 .rank {
   display: grid;
   place-items: center;
-  flex: 0 0 32px;
+  flex: 0 0 26px;
   background: v.$primary-color;
   color: v.$color-neutral-950;
-  font-size: v.$font-size-lg;
+  font-size: v.$font-size-sm;
   font-weight: 700;
 }
 .card[data-gain="true"] .rank { background: v.$success-color; }
-.body { flex: 1; min-width: 0; padding: v.$space-xs v.$space-sm; }
-.top { display: flex; align-items: start; gap: v.$space-sm; }
-.moves { flex: 1; min-width: 0; display: grid; gap: 2px; }
-.move { display: flex; align-items: center; flex-wrap: wrap; gap: v.$space-xs; min-width: 0; }
+.body { flex: 1; min-width: 0; padding: 4px v.$space-xs; }
+.top { display: flex; align-items: start; gap: v.$space-xs; }
+.moves { flex: 1; min-width: 0; display: grid; gap: 0; }
+.move { display: flex; align-items: center; flex-wrap: wrap; column-gap: 4px; min-width: 0; }
 .move small { color: v.$text-secondary; font-size: 10px; }
 .caution { flex-basis: 100%; line-height: 1.3; }
 .caution[data-caution="high_demand"] { color: v.$warning-color; }
-.name.name { padding: 0 !important; min-height: 24px !important; background: transparent !important; border: 0 !important; text-align: left; font-weight: 600 !important; color: v.$text-primary; }
+.name.name { padding: 0 !important; min-height: 20px !important; background: transparent !important; border: 0 !important; text-align: left; font-weight: 600 !important; color: v.$text-primary; }
 .add, .drop { padding: 1px v.$space-xs; border-radius: v.$radius-xs; font-size: 10px; font-weight: 700; letter-spacing: .04em; }
 .add { color: v.$color-neutral-950; background: v.$success-color; }
 .drop { color: v.$color-neutral-950; background: v.$danger-color; }
-.badge, .form { padding: 0 4px; border: v.$border-subtle; border-radius: v.$radius-xs; color: v.$text-secondary; font-size: 9px; text-transform: uppercase; }
+.badge, .form, .chip { padding: 0 4px; border: v.$border-subtle; border-radius: v.$radius-xs; color: v.$text-secondary; font-size: 9px; text-transform: uppercase; }
 .form[data-form="hot"] { color: v.$success-color; }
 .form[data-form="cold"] { color: v.$danger-color; }
-.metrics { display: flex; gap: v.$space-sm; flex: 0 0 auto; }
-.metrics > span { display: flex; flex-direction: column; align-items: flex-end; min-width: 52px; }
-.metrics strong { font-size: v.$font-size-lg; font-weight: 700; line-height: 1.1; white-space: nowrap; color: v.$text-primary; }
+// Deployment chips (L1/D2, PP1): a stale lineup stays visible but muted and dashed, with its date in the title.
+.chip { color: v.$primary-color; font-weight: 700; }
+.chip[data-stale="true"] { border-style: dashed; color: v.$text-secondary; font-weight: 400; }
+.metrics { display: flex; gap: v.$space-xs; flex: 0 0 auto; }
+.metrics > span { display: flex; flex-direction: column; align-items: flex-end; min-width: 44px; }
+.metrics strong { font-size: v.$font-size-sm; font-weight: 700; line-height: 1.1; white-space: nowrap; color: v.$text-primary; }
 .metrics strong[data-sign="positive"] { color: v.$success-color; }
 .metrics strong[data-sign="negative"] { color: v.$danger-color; }
 .metrics strong:not([data-sign]) { color: v.$text-secondary; }
 .metrics small { color: v.$text-secondary; font-size: 9px; text-transform: uppercase; letter-spacing: .04em; }
-.schedule { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; margin-top: v.$space-xs; }
-.schedule > span { display: grid; justify-items: center; min-width: 0; padding-block: 1px; background: v.$draft-surface; border-radius: v.$radius-xs; }
+.schedule { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; margin-top: 2px; }
+// One line per day: weekday then the H/A mark.
+.schedule > span { display: flex; align-items: center; justify-content: center; gap: 2px; min-width: 0; padding-block: 0; background: v.$draft-surface; border-radius: v.$radius-xs; }
 .schedule small { color: v.$text-secondary; font-size: 9px; }
 .schedule b { display: flex; align-items: center; gap: 2px; color: v.$primary-color; font-size: 9px; line-height: 14px; }
 .schedule b.off { color: v.$text-secondary; }
 .dot { width: 6px; height: 6px; border-radius: 50%; background: v.$primary-color; }
-.reason { margin: v.$space-xs 0 0; color: v.$text-secondary; line-height: 1.35; }
-.warning.warning { margin: 2px 0 0; color: v.$warning-color; line-height: 1.35; }
-.footer { display: flex; flex-wrap: wrap; align-items: center; gap: v.$space-sm; margin-top: v.$space-xs; }
-.footer:empty { display: none; }
-.action.action { min-height: 32px; padding-inline: v.$space-sm; background: v.$primary-color; color: v.$color-neutral-950; font-weight: 700; }
+// Last-5 box score: one wrapping line of totals.
+.boxScore { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 6px; margin: 2px 0 0; color: v.$text-secondary; font-size: 10px; line-height: 1.3; }
+.boxScore small { color: v.$text-secondary; font-size: 9px; text-transform: uppercase; letter-spacing: .04em; }
+.boxScore b { color: v.$text-primary; font-weight: 600; }
+// Reasons and warnings share a row with the actions; they wrap below on narrow cards.
+.footer { display: flex; flex-wrap: wrap; align-items: center; column-gap: v.$space-xs; margin-top: 2px; }
+.footer:not(:has(button)):has(> .notes:empty) { display: none; }
+.notes { flex: 1 1 160px; min-width: 0; }
+.notes:empty { display: none; }
+.reason { margin: 0; color: v.$text-secondary; line-height: 1.3; }
+.warning.warning { margin: 0; color: v.$warning-color; line-height: 1.3; }
+.action.action { min-height: 28px; padding-inline: v.$space-sm; background: v.$primary-color; color: v.$color-neutral-950; font-weight: 700; }
 .textButton.textButton { min-height: 28px; padding: 0 !important; background: transparent !important; border: 0 !important; color: v.$text-secondary; font-size: 11px; text-decoration: underline; }
 @media (max-width: 1100px) {
-  .name.name, .action.action, .textButton.textButton { min-height: 44px !important; }
+  .action.action, .textButton.textButton { min-height: 44px !important; }
+  .name.name { min-height: 32px !important; }
 }
 
 // Injured free agents (provider IR/O/DTD): red border, red tint and the injured icon.

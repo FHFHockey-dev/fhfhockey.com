@@ -11,7 +11,7 @@ type Props = {
   /** League-local date; earlier days are already decided and are left out. */
   today: string;
   onSelect?: (playerId: string) => void;
-  /** Rows shown before "All players". */
+  /** Rows kept when the list is folded to "Show fewer". */
   visible?: number;
 };
 
@@ -23,7 +23,8 @@ const day = (date: string) => new Date(`${date}T12:00:00Z`).toLocaleDateString("
 
 /** Days left this week when each lineup player doesn't count: no game (off) plus games he sits (DUST). Most first. */
 export default function BenchDays({ roster, players, contributions, today, onSelect, visible = 5 }: Props) {
-  const [showAll, setShowAll] = useState(false);
+  // Every lineup player shows by default; the button folds a long list to its top rows.
+  const [showAll, setShowAll] = useState(true);
   const rows = roster.filter(entry => entry.position === "active" || entry.position === "bench").flatMap(entry => {
     const player = players.find(row => row.id === entry.playerId), contribution = contributions.get(entry.playerId);
     if (!player || !contribution) return [];
@@ -35,11 +36,17 @@ export default function BenchDays({ roster, players, contributions, today, onSel
     return [{ player, days, off: count("off"), sat: count("sat"), active: count("active") }];
   }).sort((a, b) => b.off + b.sat - (a.off + a.sat) || a.active - b.active || a.player.name.localeCompare(b.player.name));
   if (!rows.length) return null;
+  // One column per remaining date, shared by the label row and every strip so they line up.
+  const dates = [...new Set(rows.flatMap(row => row.days.map(entry => entry.date)))].sort();
+  const columns = { gridTemplateColumns: `repeat(${Math.max(1, dates.length)}, minmax(0, 1fr))` };
   const item = (row: typeof rows[number]) => <li key={row.player.id}>
     {onSelect ? <button type="button" className={styles.name} aria-label={`Bench days: ${row.player.name}`} onClick={() => onSelect(row.player.id)}>{row.player.name}</button>
       : <span className={styles.name}>{row.player.name}</span>}
-    <span className={styles.strip} role="img" aria-label={row.days.map(entry => `${day(entry.date)} ${label[entry.kind]}`).join(", ")}>
-      {row.days.map(entry => <i key={entry.date} data-kind={entry.kind} title={`${day(entry.date)}: ${label[entry.kind]}`} />)}
+    <span className={styles.strip} style={columns} role="img" aria-label={row.days.map(entry => `${day(entry.date)} ${label[entry.kind]}`).join(", ")}>
+      {dates.map(date => {
+        const entry = row.days.find(item => item.date === date);
+        return entry ? <i key={date} data-kind={entry.kind} title={`${day(date)}: ${label[entry.kind]}`} /> : <i key={date} data-kind="none" />;
+      })}
     </span>
     <strong className={styles.count} title={`${row.off + row.sat} of ${row.days.length} days not counting`}>{row.off + row.sat}<small>/{row.days.length}</small></strong>
     <small className={styles.split}>{row.off} off · {row.sat} sat</small>
@@ -49,6 +56,8 @@ export default function BenchDays({ roster, players, contributions, today, onSel
     <details open>
       <summary><strong>Bench days</strong><span className={styles.lead}>{rows[0].player.name} counts least</span></summary>
       <p className={styles.help}>Days left this week when a player doesn&apos;t count: no game (off) plus games on your bench (sat). <InfoTooltip label="About bench days">Most first, so the top name contributes least this week. Green: in the lineup · amber: game on the bench · grey: no game.</InfoTooltip></p>
+      <div className={styles.dayLabels} aria-hidden="true"><span />
+        <span className={styles.strip} style={columns}>{dates.map(date => <b key={date}>{day(date)}</b>)}</span><span /><span /></div>
       <ol>{(showAll ? rows : rows.slice(0, visible)).map(item)}</ol>
       {rows.length > visible && <button type="button" className={styles.more} aria-expanded={showAll} onClick={() => setShowAll(value => !value)}>
         {showAll ? "Show fewer" : `Show all (${rows.length})`}</button>}

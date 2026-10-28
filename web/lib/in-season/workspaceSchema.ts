@@ -35,6 +35,7 @@ const player = z.object({
   reserveEligibility: z.array(z.enum(["IR", "IR+", "NA"])), waiverClearsAt: instant.nullable().optional(),
   form: z.object({ label: id, games: z.number().int().nonnegative(), points: z.number().finite(), includedInForecast: z.boolean().nullable() }).strict().optional(),
   recentTotals: z.object({ games: z.number().int().nonnegative(), stats: statLine }).strict().optional(),
+  lastFive: z.object({ games: z.number().int().nonnegative(), stats: statLine }).strict().optional(), deployment: z.object({ line: z.string().regex(/^[LD][1-4]$/).nullable(), powerPlayUnit: z.number().int().min(1).max(2).nullable(), asOf: date, stale: z.boolean() }).strict().optional(),
   injury: z.object({ status: id, label: id, note: z.string().nullable() }).strict().nullable().optional(),
   startingStatus: z.object({ source: z.literal("yahoo"), date, isStarting: z.boolean(), observedAt: instant }).strict().nullable().optional(),
 }).strict();

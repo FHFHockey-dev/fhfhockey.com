@@ -16,6 +16,22 @@ const categoryChange = (row: NonNullable<CandidatePlan["categoryBreakdown"]>[num
   : row.ratio ? `${row.key} ${categoryFormatter(row, short).delta(row.delta)} (pooled)`
     : `${row.key} ${row.delta > 0 ? "+" : ""}${short(row.delta)} (+${short(row.gain ?? 0)} / −${short(row.sacrifice ?? 0)})`;
 
+const dayLabel = (date: string) => new Date(`${date}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+const SKATER_BOX: Array<[string, string]> = [["GOALS", "G"], ["ASSISTS", "A"], ["POINTS", "PTS"], ["SHOTS_ON_GOAL", "SOG"], ["PP_POINTS", "PPP"], ["HITS", "HIT"], ["BLOCKED_SHOTS", "BLK"]];
+const GOALIE_BOX: Array<[string, string]> = [["WINS_GOALIE", "W"], ["GOALS_AGAINST_GOALIE", "GA"], ["SAVES_GOALIE", "SV"]];
+/** Last-5 box-score totals; a key absent from `stats` summed to 0, a null is unknown. Goalie SV% is pooled saves over shots. */
+function boxScore(player: PlanningPlayer): Array<[string, string]> | null {
+  const recent = player.lastFive;
+  if (!recent?.games) return null;
+  const value = (key: string) => recent.stats[key] === undefined ? 0 : recent.stats[key];
+  const items = (player.playerClass === "goalie" ? GOALIE_BOX : SKATER_BOX).map(([key, label]): [string, string] => [label, value(key)?.toString() ?? "—"]);
+  if (player.playerClass === "goalie") {
+    const saves = value("SAVES_GOALIE"), shots = value("SHOTS_AGAINST_GOALIE");
+    items.push(["SV%", saves !== null && shots ? (saves / shots).toFixed(3).replace(/^0/, "") : "—"]);
+  }
+  return items;
+}
+
 /** One plain-language reason built only from the compared numbers. */
 function reasonFor(plan: CandidatePlan, categories: boolean, drops: number): string {
   const agp = plan.netAGP, pts = categories ? null : plan.netPoints;
@@ -57,6 +73,9 @@ export default function CandidateCard({ player, rank, plan, comparison, diagnost
   const badge = player.availability === "waivers" ? "Waivers" : ["free_agent", "manager_available"].includes(player.availability) ? "FA" : null;
   const form = player.form?.label.toLowerCase();
   const formChip = form?.includes("hot") ? "Hot" : form?.includes("cold") ? "Cold" : null;
+  const deployment = player.deployment;
+  const linesAsOf = deployment && `Lines as of ${dayLabel(deployment.asOf)}${deployment.stale ? " · may be out of date" : ""}`;
+  const lastFive = boxScore(player), games = player.lastFive?.games ?? 0;
   const number = (label: string, value: number | null | undefined) => <span>
     <strong data-sign={value == null ? undefined : value > 0 ? "positive" : value < 0 ? "negative" : "zero"}
       title={value == null ? "Not enough projection data yet" : undefined}>{value == null ? "—" : signed(value)}</strong>
@@ -74,6 +93,8 @@ export default function CandidateCard({ player, rank, plan, comparison, diagnost
               alt={`${player.injury.label}${player.injury.note ? ` · ${player.injury.note}` : ""}`} title={`${player.injury.label}${player.injury.note ? ` · ${player.injury.note}` : ""}`} />}
             {badge && <span className={styles.badge}>{badge}</span>}
             {formChip && <span className={styles.form} data-form={formChip.toLowerCase()}>{formChip}</span>}
+            {deployment?.line && <span className={styles.chip} data-stale={deployment.stale} title={linesAsOf} aria-label={`${deployment.line}. ${linesAsOf}`}>{deployment.line}</span>}
+            {deployment?.powerPlayUnit && <span className={styles.chip} data-stale={deployment.stale} title={linesAsOf} aria-label={`PP${deployment.powerPlayUnit}. ${linesAsOf}`}>PP{deployment.powerPlayUnit}</span>}
           </div>
           {drops.map(id => {
             const dropped = (players ?? snapshot?.players)?.find(row => row.id === id);
@@ -101,18 +122,24 @@ export default function CandidateCard({ player, rank, plan, comparison, diagnost
           </span>;
         })}
       </div>}
-      {plan && <p className={styles.reason}>{reasonFor(plan, categories, drops.length)}</p>}
-      {tieNote && <p className={styles.reason}>{OWNERSHIP_TIE_NOTE}</p>}
-      {categories && plan?.categoryBreakdown && <p className={styles.reason} aria-label="Category changes for the whole swap">
-        {plan.categoryBreakdown.map((row, index) => <span key={row.key}>{index ? " · " : ""}<span>{categoryChange(row)}</span></span>)}
+      {lastFive && <p className={styles.boxScore} title={`Totals over the last ${games} game${games === 1 ? "" : "s"} played`}
+        aria-label={`Last ${games} games played: ${lastFive.map(([label, value]) => `${value} ${label}`).join(", ")}`}>
+        <small>L{games} GP</small>{lastFive.map(([label, value]) => <span key={label}><b>{value}</b> {label}</span>)}
       </p>}
-      {!plan && upcomingGames != null && <p className={styles.reason}>{upcomingGames} upcoming game{upcomingGames === 1 ? "" : "s"}</p>}
-      {goalieBoost && plan?.netGoalieStarts != null && plan.netGoalieStarts > 0
-        && <p className={styles.reason}>Helps your goalie minimum: {signed(plan.netGoalieStarts)} starts</p>}
-      {excluded && <p className={styles.warning}>Excluded from suggestions</p>}
-      {conditional && <p className={styles.warning}>Recheck availability before claiming</p>}
-      {reserves.map(step => <p key={step.id} className={styles.warning}>Move {nameOf(step.playerId)} to {step.reservePosition} first</p>)}
       <div className={styles.footer}>
+        <div className={styles.notes}>
+          {plan && <p className={styles.reason}>{reasonFor(plan, categories, drops.length)}</p>}
+          {tieNote && <p className={styles.reason}>{OWNERSHIP_TIE_NOTE}</p>}
+          {categories && plan?.categoryBreakdown && <p className={styles.reason} aria-label="Category changes for the whole swap">
+            {plan.categoryBreakdown.map((row, index) => <span key={row.key}>{index ? " · " : ""}<span>{categoryChange(row)}</span></span>)}
+          </p>}
+          {!plan && upcomingGames != null && <p className={styles.reason}>{upcomingGames} upcoming game{upcomingGames === 1 ? "" : "s"}</p>}
+          {goalieBoost && plan?.netGoalieStarts != null && plan.netGoalieStarts > 0
+            && <p className={styles.reason}>Helps your goalie minimum: {signed(plan.netGoalieStarts)} starts</p>}
+          {excluded && <p className={styles.warning}>Excluded from suggestions</p>}
+          {conditional && <p className={styles.warning}>Recheck availability before {player.availability === "waivers" ? "claiming" : "adding"}</p>}
+          {reserves.map(step => <p key={step.id} className={styles.warning}>Move {nameOf(step.playerId)} to {step.reservePosition} first</p>)}
+        </div>
         {plan && selectPlan ? <button className={styles.action} disabled={!canSelectPlan || !selectionAvailable}
           aria-label={`Preview swap: add ${player.name}${drops.length ? `, drop ${drops.map(nameOf).join(", ")}` : ""}`}
           onClick={() => selectPlan(plan.steps)}>Preview swap</button>

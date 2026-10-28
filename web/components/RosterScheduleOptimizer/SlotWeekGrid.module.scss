@@ -110,3 +110,8 @@ td[data-pulse] .cellButton, td[data-pulse] .cellBody, td[data-pulse] .empty { an
 
 .srOnly { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .headRow .corner { overflow: visible; }
+
+// Plan-from slider: one row above the day headers, its stops over the day columns. Days left of it are greyed.
+.sliderRow { padding-block: 0; }
+.sliderRow .sliderCell { grid-column: 1 / -1; }
+.grid td[data-greyed] > *, .grid th[data-greyed] { opacity: .4; filter: saturate(.4); }

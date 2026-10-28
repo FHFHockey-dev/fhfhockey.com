@@ -41,6 +41,26 @@ describe("SlotWeekGrid", () => {
     const footer = screen.getAllByRole("cell").filter(cell => cell.getAttribute("data-date") === "2026-10-19" && /\d\/3/.test(cell.textContent ?? ""));
     expect(footer.map(cell => cell.textContent)).toEqual(["2/3"]);
   });
+  it("greys the days left of the plan-from slider: recorded elapsed days stay, skipped days show no plan", () => {
+    // Today is 10-20 and the plan starts 10-21: 10-19 is elapsed (recorded), 10-20 is skipped.
+    const pastLineups = [{ date: "2026-10-19", source: "yahoo" as const, entries: [
+      { playerId: "c", name: "Jack Hughes", position: "C", slotId: "C1", points: 7.2 }] }];
+    const onChange = vi.fn();
+    render(<SlotWeekGrid dates={dates} slots={slots} assignments={assignments} games={games} players={players} roster={roster}
+      today="2026-10-20" pastLineups={pastLineups} onSelectPlayer={vi.fn()}
+      planFrom={{ from: "2026-10-21", min: "2026-10-20", max: "2026-10-21", onChange }} />);
+    const slider = screen.getByRole("slider", { name: "Plan from day" }) as HTMLInputElement;
+    expect(slider.value).toBe("2");
+    expect(slider.closest("thead")).toBeTruthy();
+    const greyed = (date: string) => screen.getAllByRole("columnheader").find(cell => cell.getAttribute("data-date") === date)!.hasAttribute("data-greyed");
+    expect(dates.map(greyed)).toEqual([true, true, false]);
+    // The skipped day's planner assignment (Suzuki in C1) and its bench are not shown; the elapsed day's record is.
+    expect(screen.queryByRole("button", { name: /Nick Suzuki, C, 2026-10-20/ })).toBeNull();
+    expect(screen.getByRole("button", { name: /Jack Hughes, C, 2026-10-19, recorded lineup/ })).toBeTruthy();
+    const skipped = screen.getAllByRole("cell").filter(cell => cell.getAttribute("data-date") === "2026-10-20");
+    expect(skipped.every(cell => cell.hasAttribute("data-greyed") && !cell.querySelector("button"))).toBe(true);
+    expect(skipped.map(cell => cell.textContent).filter(text => /\d\/3/.test(text ?? ""))).toEqual([]);
+  });
   it("renders the position-first week", () => {
     const onSelectPlayer = vi.fn();
     render(<SlotWeekGrid dates={dates} slots={slots} assignments={assignments} games={games} players={players} roster={roster}
