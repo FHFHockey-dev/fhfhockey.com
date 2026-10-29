@@ -28,6 +28,8 @@ type Props = {
   add: (player: PlanningPlayer) => void;
   selectPlan?: (steps: PlanStep[]) => void;
   canSelectPlan?: boolean;
+  /** Element explaining why Preview swap is disabled. */
+  selectPlanReasonId?: string;
   markAvailable: (player: PlanningPlayer) => void;
 };
 const byName = (a: Candidate, b: Candidate) => a.player.name.localeCompare(b.player.name) || a.player.id.localeCompare(b.player.id);
@@ -38,7 +40,7 @@ const compareDiscovery = (a: Candidate, b: Candidate) => Number(knownInputs(b)) 
 export const compareCandidateFits = (a: Candidate, b: Candidate, sort: "points" | "schedule") => sort === "schedule"
   ? byFit(a, b) : (b.activePoints ?? -Infinity) - (a.activePoints ?? -Infinity) || byFit(a, b);
 
-export default function CandidateBrowser({ executionOptions, preferredSort, searchQuery, changeSearch, calendar, players, rosterIds, snapshot, intent, manual, select, add, selectPlan, canSelectPlan, markAvailable }: Props) {
+export default function CandidateBrowser({ executionOptions, preferredSort, searchQuery, changeSearch, calendar, players, rosterIds, snapshot, intent, manual, select, add, selectPlan, canSelectPlan, selectPlanReasonId, markAvailable }: Props) {
   const [view, setView] = useState<"team" | "all">("all");
   const [localQuery, setLocalQuery] = useState("");
   const query = searchQuery ?? localQuery;
@@ -114,7 +116,7 @@ export default function CandidateBrowser({ executionOptions, preferredSort, sear
     player={player} rank={ranked ? index + 1 : null} calendar={calendar} upcomingGames={upcomingGames} plan={plan} comparison={comparison} snapshot={snapshot} categories={categories}
     diagnostic={diagnostic} evaluationState={loading ? "loading" : error ? "error" : !snapshot ? "no_snapshot" : "completed"}
     excluded={intent.excludedPlayerIds.includes(player.id)} nameOf={nameOf} players={players} goalieBoost={goalieBoost}
-    select={select} add={add} selectPlan={selectPlan} canSelectPlan={canSelectPlan} manual={manual} markAvailable={markAvailable} compare={compare} />;
+    select={select} add={add} selectPlan={selectPlan} canSelectPlan={canSelectPlan} selectPlanReasonId={selectPlanReasonId} manual={manual} markAvailable={markAvailable} compare={compare} />;
   // A goalie minimum at risk lists goalie options that add expected starts first.
   const boosted = (row: Candidate) => Number(goalieBoost && (row.plan?.netGoalieStarts ?? 0) > 0);
   const lists = (rows: Candidate[]) => {
