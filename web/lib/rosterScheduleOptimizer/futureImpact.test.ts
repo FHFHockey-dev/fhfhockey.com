@@ -231,6 +231,10 @@ describe("source timing, exact-output availability and age (§3)", () => {
     expect(check(rebuilt, at(-H / 2))).toMatchObject({ state: "unknown", reasons: ["historical_reconstruction_excluded"] });
     expect(selectSourceRow([rebuilt], D, [capture("cap-1", [rebuilt], at(-H / 2))])).toMatchObject({ row: null, timing: { state: "unknown", reasons: ["historical_reconstruction_excluded"] } });
   });
+  it("treats an unrecorded replay classification as unknown, never as a live run (S3)", () => {
+    const unrecorded = timed(at(-2 * H), at(-H), { timing: { inputCutoff: at(-2 * H), issuedAt: at(-H), reconstruction: null } });
+    expect(check(unrecorded, at(-H / 2))).toMatchObject({ state: "unknown", reasons: ["replay_classification_unknown"] });
+  });
   it("selects the greatest availableAt at or before the decision among valid witnesses, never by slate order", () => {
     const make = (runId: string, completedAt: string, extra: Partial<ScenarioSourceRow> = {}) => {
       const source = { ...timed(at(-6 * H), at(-5 * H)), runId, witness: { kind: "observed_capture" as const, receiptId: `cap-${runId}` }, ...extra };

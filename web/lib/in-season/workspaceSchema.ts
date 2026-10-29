@@ -150,13 +150,45 @@ const acquisitionEvidence = z.object({ source: id, fetchedAt: instant, asOf: ins
   limit: z.object({ present: z.boolean(), reportedValue: z.union([z.string().max(100), z.number().finite(), z.boolean()]).nullable(), verified: z.boolean() }).strict(),
   period: z.object({ week: z.number().int().positive().nullable(), startDate: date.nullable(), endDate: date.nullable(), containsHorizon: z.boolean() }).strict(),
   remaining: z.number().int().nonnegative().nullable(), limitations: stringArray }).strict();
+// VORP S3: the later-impact rate scenario (S3-SCENARIO-CONTRACT v2), a separate versioned payload: never a GameForecast or a
+// native revision, never weekly input. Optional everywhere, so an old snapshot without it stays valid (later impact unknown).
+// Rows are tuples to stay inside the shared byte budgets; laterImpactInputs.ts documents each field and the checksums.
+const scenarioContract = z.object({ name: z.literal("rso-later-impact-rate-scenario"), version: z.literal("v2") }).strict();
+const scenarioIndex = z.number().int().nonnegative();
+const scenarioValues = z.array(nullableNumber).max(50);
+const scenarioRun = z.object({ runId: id, slateDate: date, issuedAt: instant, inputCutoff: instant.nullable(), reconstruction: z.boolean().nullable(),
+  modelVersion: id, proof: z.object({ runId: id, basis: z.enum(["captured_snapshot", "verified_producer_closure", "verified_release"]).nullable(),
+    releaseSha: id.nullable(), closureSha256: id.nullable() }).strict().nullable() }).strict();
+const capturedScenario = z.object({ version: z.literal("rso-later-impact-scenario-v1"), status: z.literal("captured"), contract: scenarioContract,
+  reasons: stringArray, decisionAsOf: instant, window: z.object({ startDate: date, endDate: date }).strict(), timeZone: timeZone.nullable(),
+  calendarPolicy, season: z.object({ id: seasonId, startDate: date, endDate: date }).strict().nullable(),
+  periods: z.object({ source: z.literal("yahoo_matchup_weeks"), leagueKey: id.nullable(), gameKeys: stringArray,
+    rows: z.array(z.object({ id, week: positiveInteger, startDate: date, endDate: date }).strict()).max(60) }).strict(),
+  schedule: z.object({ startDate: date, endDate: date, asOf: instant.nullable(), revision: hash, verifiedDates: z.array(date).max(31),
+    games: z.array(game).max(2000), limitations: stringArray }).strict().nullable(),
+  membership: z.object({ asOf: instant, revision: id, teams: z.record(id, id).refine(teams => Object.keys(teams).length <= 5000, "Too many members.") }).strict(),
+  basis: z.object({ ratePolicy: z.literal("last-available-line-per-game"), bridgeVersion: id, componentSets: z.array(z.array(id).max(50)).max(10),
+    units: z.record(id, z.enum(["count", "minutes"])), runs: z.array(scenarioRun).max(100),
+    // [playerId, run, basisGameId, team, componentSet, values, conditioning, checksum, sourceRowHash, reserveZero]
+    rows: z.array(z.tuple([id, scenarioIndex, id, id, scenarioIndex, scenarioValues, z.enum(["unconditional", "conditional"]).nullable(), hash, hash, z.boolean()])).max(5000) }).strict(),
+  capture: z.object({ id, kind: z.literal("observed_capture"), trustedSource: id, startedAt: instant, completedAt: instant, setChecksum: hash,
+    bindings: z.object({ runSucceeded: z.boolean(), admission: z.boolean(), identity: z.boolean(), conditioning: z.boolean(), proof: z.boolean() }).strict(),
+    // [playerId, run, basisGameId, horizonGames, componentSet, checksum]
+    rows: z.array(z.tuple([id, scenarioIndex, id, positiveInteger, scenarioIndex, hash])).max(5000) }).strict().nullable(),
+  limitations: stringArray }).strict();
+const withheldScenario = z.object({ version: z.literal("rso-later-impact-scenario-v1"), status: z.literal("withheld"), contract: scenarioContract,
+  reasons: stringArray, decisionAsOf: instant.nullable() }).strict();
+export const laterImpactScenarioSchema = z.discriminatedUnion("status", [capturedScenario, withheldScenario]);
+export type LaterImpactScenarioPayload = z.infer<typeof laterImpactScenarioSchema>;
+export type CapturedLaterImpactScenario = z.infer<typeof capturedScenario>;
+
 export const snapshotSchema: z.ZodType<PlanningSnapshot> = z.object({ id, context: contextSchema, acquisitionEvidence: acquisitionEvidence.optional(),
   players: z.array(player).max(3000), roster: z.array(rosterEntry).max(200), games: z.array(game).max(5000),
   forecasts: z.array(forecast).max(15000), baselineSources: z.array(contributionSource).max(15000).optional(),
   participationSources: z.array(contributionParticipation).max(15000).optional(),
   forecastInputExclusions: forecastManifest.shape.exclusions,
   forecastManifest: forecastManifest.optional(), rules, lockedAssignments: z.array(lockedAssignment).max(1000), pastLineups: z.array(pastLineup).max(14).optional(),
-  realized: statLine, opponent, evidence: z.record(z.string().min(1), evidence) }).strict();
+  realized: statLine, opponent, evidence: z.record(z.string().min(1), evidence), laterImpactScenario: laterImpactScenarioSchema.optional() }).strict();
 
 /** Exact UTF-8 bytes of any workspace response as sent (packed): inside Vercel's 4.5 MB response limit. */
 export const WORKSPACE_TRANSPORT_BYTE_BUDGET = 4_000_000;

@@ -80,7 +80,8 @@ export type ScenarioSourceRow = {
   /** Checksum of the exact selected row bytes; it must equal the capture receipt's entry for the same identity. */
   checksum: string; modelVersion: string; bridgeVersion: string;
   admission: { succeeded: boolean; public: boolean; released: boolean; horizonGames: number; exclusionProof: boolean };
-  timing: { inputCutoff: string | null; issuedAt: string | null; reconstruction: boolean };
+  /** `reconstruction` is null when the run's replay classification is not recorded: unknown, never live. */
+  timing: { inputCutoff: string | null; issuedAt: string | null; reconstruction: boolean | null };
   /** Exact-output availability witness (contract v2 §3). Only `observed_capture` is implementable; a run finish time,
    * `updated_at` or run status never proves the selected bytes existed at a past time. */
   witness: { kind: "observed_capture"; receiptId: string } | { kind: "immutable_publication"; version: string | null }
@@ -110,6 +111,7 @@ export function sourceTiming(row: ScenarioSourceRow, decisionAsOf: string, captu
   const found: Array<[TimingCheck["state"], string]> = [];
   const add = (state: TimingCheck["state"], reason: string) => found.push([state, reason]);
   if (row.timing.reconstruction) add("unknown", "historical_reconstruction_excluded");
+  else if (row.timing.reconstruction !== false) add("unknown", "replay_classification_unknown");
   const parse = (value: string | null | undefined) => value ? Date.parse(value) : NaN;
   const cutoff = parse(row.timing.inputCutoff), issued = parse(row.timing.issuedAt), decision = Date.parse(decisionAsOf);
   let available = NaN, receipt: CaptureReceipt | null = null;
@@ -208,7 +210,7 @@ export type LaterImpactResult = {
   delta: { points: number | null; components: StatLine | null; categories: Array<{ key: string; plan: CategoryLine; noMove: CategoryLine; delta: CategoryLine }> | null } | null;
   arms: { plan: LaterImpactArm; noMove: LaterImpactArm } | null;
   provenance: Array<{ playerId: string; runId: string; slateDate: string; basisGameId: string; teamAbbreviation: string; seasonId: number;
-    checksum: string; issuedAt: string | null; inputCutoff: string | null; reconstruction: boolean;
+    checksum: string; issuedAt: string | null; inputCutoff: string | null; reconstruction: boolean | null;
     witness: { kind: "observed_capture"; label: "observed available by"; availableAt: string; receiptId: string; trustedSource: string;
       captureStartedAt: string; captureCompletedAt: string; setChecksum: string; bindings: CaptureReceipt["bindings"] };
     modelVersion: string; bridgeVersion: string; conditioning: string | null; units: Record<string, string> }>;
@@ -222,7 +224,8 @@ const RATE_SCENARIO_LABEL = "Rate scenario: eligible decision-time basis rates a
 const LIMITATIONS = ["Fixed boundary rosters: no transactions in the later period.",
   "Informational only: never added to weekly gain, ranking, sorting or pruning; no calibration or accuracy claim."];
 
-function blocked(state: LaterImpactState, reasons: string[], period: LaterPeriod | null, decisionAsOf: string | null): LaterImpactResult {
+/** A result with no arms and no number: `state` and every reason are kept (also S3's answer when its inputs are unavailable). */
+export function blocked(state: LaterImpactState, reasons: string[], period: LaterPeriod | null, decisionAsOf: string | null): LaterImpactResult {
   return { contract: { name: LATER_IMPACT_CONTRACT.name, version: LATER_IMPACT_CONTRACT.version }, use: LATER_IMPACT_USE, ratePolicy: LATER_IMPACT_RATE_POLICY,
     state, reasons, assumptions: [], decisionAsOf, period, delta: null, arms: null, provenance: [],
     claims: { withinBound: period?.state === "ok", scenarioInputsComplete: false, nativeForecasts: false, basis: "rate_scenario", label: RATE_SCENARIO_LABEL },

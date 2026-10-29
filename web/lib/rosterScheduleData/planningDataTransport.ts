@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { PlanningData } from "../rosterScheduleOptimizer/planningTypes";
 import type { ContributionParticipation } from "../player-forecasts/contributions";
+import { laterImpactScenarioSchema } from "../in-season/workspaceSchema";
 
 export const PLANNING_DATA_TRANSPORT_VERSION = "planning-data-transport-v1" as const;
 export const PLANNING_DATA_TRANSPORT_LIMITS = Object.freeze({ bytes: 4_000_000, rows: 50000, players: 5000, catalog: 10000 });
@@ -65,7 +66,9 @@ const dataShape = z.object({ players: z.array(z.object({ id: z.string(), nhlId: 
   }).passthrough().optional(),
   evidence: z.record(z.object({ source: z.string(), asOf: clock.nullable(), seasonId: positive.nullable(),
     completeness: z.enum(["complete", "partial", "unknown"]), limitations: strings }).strict()),
-  matchupWeeks: rows(z.object({ gameKey: z.string(), week: positive, startDate: z.string(), endDate: z.string() }).strict()).optional() }).strict();
+  matchupWeeks: rows(z.object({ gameKey: z.string(), week: positive, startDate: z.string(), endDate: z.string() }).strict()).optional(),
+  // VORP S3 (flag on only): the separate later-impact scenario payload; absent, later impact is unknown.
+  laterImpactScenario: laterImpactScenarioSchema.optional() }).strict();
 const transportShape = z.object({ version: z.literal(PLANNING_DATA_TRANSPORT_VERSION), data: dataShape,
   catalogs: z.object({ models: z.array(model.omit({ inputHash: true, evidenceHashes: true })).max(PLANNING_DATA_TRANSPORT_LIMITS.catalog),
     hashes: strings.max(PLANNING_DATA_TRANSPORT_LIMITS.catalog) }).strict() }).strict();

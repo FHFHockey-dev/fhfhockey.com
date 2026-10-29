@@ -13,3 +13,6 @@
 - Codex v1 review → contract v2 sha 2f31491a6a63f52e2b6ec3f4eba6633928a14c1d4f6e625283eccf31fb7acca5 (exact-output witness: observed_capture only; 3 coverage claims; keep all reason codes). Mailbox CLAUDE-20261029-131.
 - S2 verify: RSO suite 1,147/1,149 (2 known load flakes pass alone), eslint ok, isolation harness 0/436. tsc exit 2: 2 errors in futureImpact.ts (state type includes "ok"), 1 pre-existing in player-cards/currentNhl.test.ts (other lane). Sent back to rso-future-impact to fix + fill receipt placeholders. Not committed.
 - S2 verified by orchestrator: hashes OK, futureImpact+planning tests 212 pass, eslint ok, tsc only other lane's player-cards TS2775; committing.
+- Codex CODEX-RSO-SCENARIO-CONTRACT-CLOSED: v2 accepted for offline implementation (no live capture/schema/flag/accuracy). S3 awaits TJ go-ahead; FORGE-RESERVE handoff conditional on session start.
+- TJ pop-ups: Start S3 offline; build RC after S3. Lease RSO-S3-SCENARIO (FORGE-RESERVE handoff activated, baselines match Codex fingerprints). Session rso-s3-inputs local_b0abfc02 started. Note: working-tree tsc not clean (other lane's player-cards test).
+- S3 verified by orchestrator: hashes OK, 1,853 RSO+data tests pass, eslint ok, whole-project tsc exit 0 (player-cards error gone). Committing.
