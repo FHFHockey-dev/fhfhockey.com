@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as rsoPolicy from "../player-forecasts/rsoUsePolicy";
-import { candidatePlanMetrics as candidateMetrics, candidatePlanForSort } from "./candidatePlanMetrics";
+import { candidateAlternativeForSort, candidatePlanMetrics as candidateMetrics, candidatePlanForSort, type CandidatePlan } from "./candidatePlanMetrics";
 import { defaultIntent, defaultWorkspace } from "./workspace";
 import { evaluatePlan } from "./planning";
 import { buildTimeline } from "./planningTimeline";
@@ -77,7 +77,7 @@ function exhaustiveDayPoints(data: PlanningSnapshot, ids: string[]): number {
     let best = assign(index + 1, remaining);
     for (const id of remaining) {
       const player = data.players.find(row => row.id === id)!;
-      if (!player.eligiblePositions.includes(slots[index])) continue;
+      if (slots[index] === "UTIL" ? player.playerClass !== "skater" : !player.eligiblePositions.includes(slots[index])) continue;
       const forecast = data.forecasts.find(row => row.playerId === id)!;
       const value = Object.entries(data.rules.scoring.weights).reduce((sum, [key, weight]) => sum + forecast.stats[key]! * weight, 0);
       best = Math.max(best, value + assign(index + 1, remaining.filter(other => other !== id)));
@@ -102,6 +102,95 @@ function exhaustiveSingleSwap(data: PlanningSnapshot, candidateId: string, prote
     .map(drop => ({ drop, netPoints: exhaustiveDayPoints(data, [...owned.filter(id => id !== drop), candidateId]) - baseline }));
   return options.sort((a, b) => b.netPoints - a.netPoints)[0] ?? null;
 }
+
+/** One shared game; every listed player has explicit positions and goals. `fa` is the free-agent candidate (VORP S1). */
+type DropRow = { id: string; positions: string[]; goals: number; free?: boolean; reserve?: "IR+"; out?: boolean };
+function dropFixture(slots: Record<string, number>, rows: DropRow[]): PlanningSnapshot {
+  const data = auditSearchFixture(1), template = data.players[0], forecast = data.forecasts[0];
+  data.players = rows.map((row, index) => ({ ...template, id: row.id, nhlId: index + 20000, name: `Synthetic ${row.id}`,
+    eligiblePositions: row.positions, availability: row.free ? "free_agent" : "rostered", reserveEligibility: row.reserve ? [row.reserve] : [],
+    ...(row.out ? { injury: { status: "O", label: "Out", note: null } } : {}) }));
+  data.roster = rows.filter(row => !row.free).map(row => ({ playerId: row.id, position: row.reserve ?? "active" }));
+  data.rules.rosterSlots = slots;
+  data.forecasts = rows.map((row, index) => ({ ...forecast, playerId: row.id, stats: { GOALS: row.goals }, revisionId: `drop-${row.id}`,
+    issuedContext: { ...forecast.issuedContext!, playerId: row.id, nhlPlayerId: index + 20000 } }));
+  return data;
+}
+/** Independent oracle: net points of the swap for every automatically droppable player, by exhaustive assignment. */
+function exhaustiveDropNets(data: PlanningSnapshot, candidateId: string, protectedIds: string[]) {
+  const active = data.roster.filter(row => row.position === "active").map(row => row.playerId);
+  const baseline = exhaustiveDayPoints(data, active);
+  const droppable = active.filter(id => !protectedIds.includes(id) && !data.players.find(row => row.id === id)!.injury);
+  return new Map(droppable.map(drop => [drop, exhaustiveDayPoints(data, [...active.filter(id => id !== drop), candidateId]) - baseline]));
+}
+const dropsOf = (plan: CandidatePlan) => plan.steps.flatMap(step => step.dropPlayerId ? [step.dropPlayerId] : []).sort().join("|");
+/** Best known net points per dropped-player set among the given plans. */
+const bestByDrop = (plans: CandidatePlan[]) => plans.reduce((best, plan) =>
+  best.set(dropsOf(plan), Math.max(best.get(dropsOf(plan)) ?? -Infinity, plan.netPoints ?? -Infinity)), new Map<string, number>());
+// C 50 holds C; the only two D are the lowest contributors; a C 5 holds UTIL. Protected, out and IR+ players are never drops.
+const gated: DropRow[] = [{ id: "p", positions: ["C"], goals: 0.2 }, { id: "o", positions: ["C"], goals: 0.1, out: true },
+  { id: "ir", positions: ["C"], goals: 3, reserve: "IR+" }];
+const scarce = (utility: number, candidate: string[]) => dropFixture({ C: 1, D: 2, UTIL: 1, BN: 2, "IR+": 1 }, [
+  { id: "c1", positions: ["C"], goals: 50 }, { id: "d1", positions: ["D"], goals: 1 }, { id: "d2", positions: ["D"], goals: 2 },
+  { id: "u1", positions: ["C"], goals: utility }, ...gated, { id: "fa", positions: candidate, goals: 10, free: true }]);
+const protect = (): PlanIntent => ({ ...defaultIntent(), protectedPlayerIds: ["p"] });
+
+describe("distinct drop alternatives (VORP S1)", () => {
+  it("keeps the window-dominated D drops as alternatives when the first two ordered drops are poor", () => {
+    // Drop order is d1 (1), d2 (2), u1 (5), c1 (50). Dropping either D empties a D slot (+4/+3, -1 AGP); dropping u1
+    // lets the C play UTIL (+5, 0 AGP) and dominates both, so the window keeps one drop. The D plans survive beside it.
+    const data = scarce(5, ["C"]), oracle = exhaustiveDropNets(data, "fa", ["p"]);
+    expect(Object.fromEntries(oracle)).toEqual({ c1: -40, d1: 4, d2: 3, u1: 5 });
+    const [comparison] = candidateMetrics(data, protect()).candidates;
+    const representative = candidatePlanForSort(comparison.plans, "points")!;
+    expect(dropsOf(representative)).toBe("u1");
+    expect(representative).toMatchObject({ netPoints: oracle.get("u1"), netAGP: 0 });
+    // Before S1 only `plans` existed: one drop set. Alternatives now add the others, each at its exhaustive best.
+    expect(new Set(comparison.plans.map(dropsOf))).toEqual(new Set(["u1"]));
+    expect(comparison.alternatives!.map(dropsOf)).toEqual(["d1", "d2", "c1"]);
+    expect(Object.fromEntries(bestByDrop([...comparison.plans, ...comparison.alternatives!]))).toEqual(Object.fromEntries(oracle));
+    expect(comparison.alternativesTruncated).toBe(0);
+    expect(comparison.alternatives![0]).toMatchObject({ netAGP: -1, dropped: [{ playerId: "d1", lostAGP: 1, lostPoints: 1 }] });
+    expect(dropsOf(candidateAlternativeForSort(comparison, "points")!)).toBe("d1");
+    // By more starts the representative is still u1 (0 AGP, +5); the best other drop at 0 AGP is c1.
+    expect(dropsOf(candidatePlanForSort(comparison.plans, "schedule")!)).toBe("u1");
+    expect(dropsOf(candidateAlternativeForSort(comparison, "schedule")!)).toBe("c1");
+  });
+
+  it("still drops a D when a D is the right drop, with no positional bonus", () => {
+    // A D candidate and a valuable UTIL C: replacing the weakest D wins (+9); the other D (+8) is the alternative.
+    const data = scarce(30, ["D"]), oracle = exhaustiveDropNets(data, "fa", ["p"]);
+    expect(Object.fromEntries(oracle)).toEqual({ c1: -40, d1: 9, d2: 8, u1: -20 });
+    const [comparison] = candidateMetrics(data, protect()).candidates;
+    expect(candidatePlanForSort(comparison.plans, "points")).toMatchObject({ netPoints: 9, netAGP: 0,
+      dropped: [{ playerId: "d1", lostAGP: 1, lostPoints: 1 }] });
+    expect(dropsOf(candidateAlternativeForSort(comparison, "points")!)).toBe("d2");
+    // Every drop ties at 0 AGP, so both sorts keep the same three best sets; c1 (-40) is past the cap and reported.
+    expect(Object.fromEntries(bestByDrop([...comparison.plans, ...comparison.alternatives!])))
+      .toEqual({ d1: oracle.get("d1"), d2: oracle.get("d2"), u1: oracle.get("u1") });
+    expect(comparison.alternativesTruncated).toBe(1);
+  });
+
+  it("never offers a protected, provider-out or reserve-held player as a drop or an alternative", () => {
+    for (const data of [scarce(5, ["C"]), scarce(30, ["D"])]) {
+      const result = candidateMetrics(data, protect());
+      const drops = result.candidates.flatMap(row => [...row.plans, ...row.alternatives ?? []]).flatMap(plan => plan.steps)
+        .flatMap(step => step.dropPlayerId ? [step.dropPlayerId] : []);
+      expect(drops.length).toBeGreaterThan(0);
+      expect(drops.filter(id => ["p", "o", "ir"].includes(id))).toEqual([]);
+    }
+  });
+
+  it("caps distinct drops per sort and reports the rest as truncated", () => {
+    // Five interchangeable C drops: the window keeps the cheapest; three sets per sort are kept, two truncated.
+    const data = dropFixture({ C: 5, BN: 0 }, [...[1, 2, 3, 4, 5].map(goals => ({ id: `r${goals}`, positions: ["C"], goals })),
+      { id: "fa", positions: ["C"], goals: 10, free: true }]);
+    const [comparison] = candidateMetrics(data, defaultIntent()).candidates;
+    expect(new Set(comparison.plans.map(dropsOf))).toEqual(new Set(["r1"]));
+    expect(comparison.alternatives!.map(dropsOf)).toEqual(["r2", "r3"]);
+    expect(comparison.alternativesTruncated).toBe(2);
+  });
+});
 
 describe("complete timed candidate metrics", () => {
   it("retains a verified category comparison at zero AGP without a points utility", () => {

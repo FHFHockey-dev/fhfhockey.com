@@ -1,8 +1,9 @@
 import { loadPlanningInputs, pages, withinDeadline, PlanningReadDeadlineError, type PlanningDataQuery } from "./planningInputs";
 import { admitConsumerGameRevisions } from "lib/projections/consumerRevisionAdmission";
 import { currentRsoUsePolicy, issuedParticipationLineage, restrictRsoForecast, type RsoUsePolicyManifest } from "lib/player-forecasts/rsoUsePolicy";
-import { loadForgeDailyBridgeForecasts } from "./forgeDailyBridge";
+import { loadForgeDailyBridgeForecasts, type ForgeBridgeCapture } from "./forgeDailyBridge";
 import type { BridgeRunProof } from "./bridgeForecastWire";
+import { fitLaterImpactScenario, laterImpactScenarioEnabled, loadLaterImpactScenario, planningBodyBytes } from "./laterImpactInputs";
 export { normalizePlanningGames } from "./planningInputs";
 export { publicPlanningForecasts } from "lib/projections/consumerRevisionAdmission";
 export type { PlanningDataQuery } from "./planningInputs";
@@ -83,6 +84,8 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
   const inputDeadline = Math.min(deadline, Date.now() + 8000);
   const selectedEnvironment = source.environment;
   const calendarPolicy = forecastCalendarPolicy(Number(process.env.STARTER_BOARD_CALENDAR_HORIZON_DAYS ?? 14));
+  // VORP S3: the later-impact scenario's inputs, only with RSO_LATER_IMPACT_SCENARIO=on; off, nothing below changes.
+  const scenarioOn = laterImpactScenarioEnabled();
   const [{ players, games, scheduleRows, scheduleProblems, evidence: sources }, weeks, baseline, skaterParticipation, goalieParticipation,
     frozenSkaterParticipation, frozenGoalieParticipation, frozenGoalieStarts,
     observedSkaterParticipation, observedGoalieParticipation, observedGoalieStarts,
@@ -117,6 +120,7 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
     withinDeadline(inputDeadline, signal => loadRollingWindowGoalieStarts(db, query.seasonId, now, { signal, environment: selectedEnvironment }))
       .catch(() => ({ sources: [], checksum: null, limitations: ["rolling_goalie_starts_read_unavailable"] })),
   ]);
+  const membershipAsOf = scenarioOn ? new Date().toISOString() : "";
   // Preserve the existing skater checksum and disabled behavior when no goalie
   // releases are admitted; goalie revisions are an independently pinned catalog.
   const legacyParticipationChecksum = goalieParticipation.checksum ? playerForecastSourcePayloadHash({ skater: skaterParticipation.checksum,
@@ -201,15 +205,18 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
     db, revisions, players, games, now, query.seasonId, exclusionCounts, exclusionRows, deadline, calendarPolicy);
   forecastProblems.push(...admissionProblems);
   let forecasts = admitted, bridged = false;
+  let observation: ForgeBridgeCapture | null = null, servedProofs: BridgeRunProof[] = [];
   // Interim RSO source (TJ, 2026-10-19): before native activation only; native and its fallbacks never fall back to it.
   if (options.forgeDailyBridge && source.kind === "legacy" && !admitted.length && !baseline.sources.length
     && process.env.RSO_FORGE_DAILY_BRIDGE !== "off") {
     try {
-      const bridge = await loadForgeDailyBridgeForecasts(db, players, games, now, query.seasonId, deadline, calendarPolicy);
+      const bridge = await (scenarioOn ? loadForgeDailyBridgeForecasts(db, players, games, now, query.seasonId, deadline, calendarPolicy, captured => { observation = captured; })
+        : loadForgeDailyBridgeForecasts(db, players, games, now, query.seasonId, deadline, calendarPolicy));
       forecastProblems.push(...bridge.limitations);
       if (bridge.forecasts.length) {
         forecasts = bridge.forecasts; bridged = true;
         options.onBridgeRunProofs?.(bridge.runProofs);
+        servedProofs = bridge.runProofs;
         const covered = new Set(forecasts.map(row => row.gameId));
         delete exclusionCounts.serving_disabled;
         for (let index = exclusionRows.length - 1; index >= 0; index--) if (exclusionRows[index].reasons.includes("serving_disabled")) exclusionRows.splice(index, 1);
@@ -399,6 +406,14 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
     .filter((row: Row) => Number.isInteger(row.week) && row.week > 0 && /^\d{4}-\d{2}-\d{2}$/.test(row.start_date) && row.start_date <= row.end_date)
     .map((row: Row) => ({ gameKey: String(row.game_key), week: row.week, startDate: row.start_date, endDate: row.end_date })) : [];
   sources.matchupWeeks = evidence("Yahoo matchup weeks", null, query.seasonId, matchupWeeks.length ? [] : ["Matchup week presets are unavailable for this season; use custom dates."]);
-  return { players, games, forecasts, baselineSources: baseline.sources, participationSources: participation.sources,
+  const data: PlanningData = { players, games, forecasts, baselineSources: baseline.sources, participationSources: participation.sources,
     forecastManifest, evidence: sources, matchupWeeks };
+  if (!scenarioOn) return data;
+  // Informational only: it rides beside the data, never in forecasts, and gives way (disclosed) before the bridge wire does.
+  const scenario = await loadLaterImpactScenario(db, { query, players, weekRows, calendarPolicy, membershipAsOf, rosterRevision,
+    observation: bridged ? observation : null, deadline }).catch(() => null);
+  let baseBytes = Infinity;
+  try { baseBytes = planningBodyBytes(data, query.seasonId, servedProofs); } catch { /* too large either way: nothing attached */ }
+  const laterImpactScenario = fitLaterImpactScenario(scenario, baseBytes);
+  return laterImpactScenario ? { ...data, laterImpactScenario } as PlanningData : data;
 }

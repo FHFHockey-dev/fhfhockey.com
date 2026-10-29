@@ -34,6 +34,7 @@ import { ROLLING_WINDOW_SKATER_PARTICIPATION_DATASET } from "lib/player-forecast
 import { fetchBoundedNhlSchedule } from "./source";
 import { normalizeNhlGameToTeamRows } from "./normalize";
 import { provenSnapshotRow, unprovenSnapshotRow } from "lib/projections/externalInputProof.fixtures";
+import { laterImpactScenarioSchema, type LaterImpactScenarioPayload } from "lib/in-season/workspaceSchema";
 
 vi.mock("lib/supabase/server", () => ({ default: {} }));
 
@@ -313,6 +314,47 @@ describe("public RSO data boundary", () => {
       source: { kind: "empty", reason: "native_catalog_expired", environment: {} } })).forecasts).toEqual([]);
     vi.stubEnv("RSO_FORGE_DAILY_BRIDGE", "off");
     expect((await loadPlanningData(db as never, publicQuery, { ...publicOptions, forgeDailyBridge: true })).forecasts).toEqual([]);
+  });
+
+  it("VORP S3: with RSO_LATER_IMPACT_SCENARIO off (default) nothing changes; on, only a separate scenario rides beside identical data", async () => {
+    const load = async () => {
+      const { db, tables, calls } = formDb([], []);
+      Object.assign(tables, {
+        forge_runs: [{ run_id: "run-b", as_of_date: "2026-10-09", created_at: "2026-10-09T15:00:00Z", git_sha: "abc" }],
+        forge_player_projections: [{ run_id: "run-b", as_of_date: "2026-10-09", horizon_games: 1, game_id: 2026020000, player_id: 847001, team_id: 1,
+          proj_goals_es: 0.3, proj_goals_pp: 0.1, proj_assists_es: 0.4, proj_assists_pp: 0.1, proj_shots_es: 2, proj_shots_pp: 0.5,
+          proj_toi_es_seconds: 900, proj_toi_pp_seconds: 120, proj_hits: 1, proj_blocks: 0.4 }],
+        forge_goalie_projections: [], goalie_start_projections: [], player_forecast_source_observations: [provenSnapshotRow("run-b")] });
+      const proofs: unknown[][] = [];
+      const data = await loadPlanningData(db as never, publicQuery, { ...publicOptions, forgeDailyBridge: true, consumer: "rso", onBridgeRunProofs: served => { proofs.push(served); } });
+      return { data, proofs, calls: calls.map(call => `${call.table}.${call.method}`) };
+    };
+    const unset = await load();
+    vi.stubEnv("RSO_LATER_IMPACT_SCENARIO", "off");
+    const off = await load();
+    expect(JSON.stringify(off.data)).toBe(JSON.stringify(unset.data));
+    expect(JSON.stringify(encodePlanningDataTransport(off.data))).toBe(JSON.stringify(encodePlanningDataTransport(unset.data)));
+    expect(off.calls).toEqual(unset.calls);
+    expect(JSON.stringify(off.data)).not.toContain("laterImpactScenario");
+    vi.stubEnv("RSO_LATER_IMPACT_SCENARIO", "on");
+    const on = await load();
+    const { laterImpactScenario, ...rest } = on.data as typeof on.data & { laterImpactScenario?: LaterImpactScenarioPayload };
+    // Weekly data and the bridge's proofs are unchanged; the scenario is never a forecast.
+    expect(JSON.stringify(rest)).toBe(JSON.stringify(off.data));
+    expect(on.proofs).toEqual(off.proofs);
+    expect(on.data.forecasts).toEqual(off.data.forecasts);
+    const scenario = laterImpactScenarioSchema.parse(laterImpactScenario);
+    if (scenario.status !== "captured") throw new Error("expected a captured scenario");
+    expect(scenario.basis.rows.map(row => row[0])).toEqual(["7"]);
+    expect(scenario.capture!.rows.map(row => row[0])).toEqual(["7"]);
+    expect(Date.parse(scenario.decisionAsOf)).toBeGreaterThanOrEqual(Date.parse(scenario.capture!.completedAt));
+    expect(scenario.window).toEqual({ startDate: "2026-10-10", endDate: "2026-10-11" });
+    // F's schedule is its own read, after the window; the window's games are as before.
+    expect(on.calls.filter(call => call === "roster_optimizer_team_games.select")).toHaveLength(2);
+    expect(on.data.games).toEqual(off.data.games);
+    // The transport carries it as an optional field and decodes it unchanged.
+    expect((decodePlanningDataTransport(JSON.parse(JSON.stringify(encodePlanningDataTransport(on.data)))) as typeof on.data & { laterImpactScenario?: unknown })
+      .laterImpactScenario).toEqual(scenario);
   });
 
   it("keeps RSO schedule-only when the interim bridge's only run cannot prove it excluded third-party fantasy inputs", async () => {

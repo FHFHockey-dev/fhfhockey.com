@@ -1989,3 +1989,65 @@ describe("P07 planner denial", () => {
     expect(result.recommendation?.eligible).toBe(false);
   });
 });
+
+describe("distinct drop alternatives in the planner (VORP S1)", () => {
+  // One date, three C slots: r3 is the obvious drop, and every top window plan drops him.
+  const points: Record<string, number> = { r1: 9, r2: 8, r3: 1, f1: 20, f2: 19, f3: 18, f4: 17 };
+  const single = () => {
+    const data = snapshot();
+    data.context.endDate = data.context.startDate;
+    data.players = Object.keys(points).map(id => player(id, id.toUpperCase(), id.startsWith("f") ? "free_agent" : "rostered"));
+    data.roster = ["r1", "r2", "r3"].map(playerId => ({ playerId, position: "active" as const }));
+    data.rules.rosterSlots = { C: 3, BN: 0 };
+    data.games = data.players.map(row => ({ id: `${row.teamAbbreviation}0`, scheduleRevision: `schedule-${row.teamAbbreviation}0`, date: "2026-10-05",
+      startsAt: "2026-10-05T20:00:00Z", teamAbbreviation: row.teamAbbreviation!, opponent: "X", home: true, status: "scheduled" as const }));
+    data.forecasts = data.players.map(row => issuedForecast(data, row.id, `${row.teamAbbreviation}0`, { stats: { pts: points[row.id] } }));
+    return data;
+  };
+  const drops = (plan: { steps: Array<{ dropPlayerId?: string }> }) => plan.steps.flatMap(step => step.dropPlayerId ? [step.dropPlayerId] : []).sort().join("|");
+  const net = (result: ReturnType<typeof planRoster>, index: number) => result.alternatives[index].projectedValue! - result.baseline.projectedValue!;
+  // Independent oracle: all C, so a roster scores the sum of its three players.
+  const oracle = (dropped: string[], added: string[]) => ["r1", "r2", "r3"].filter(id => !dropped.includes(id)).concat(added)
+    .reduce((sum, id) => sum + points[id], 0) - (points.r1 + points.r2 + points.r3);
+
+  it("shows the best plan of other drops beside the window winner without moving it", () => {
+    const result = planRoster(single(), intent, { maxSteps: 1 });
+    expect(result.alternatives[0].steps).toEqual([]);
+    expect(drops(result.alternatives[1])).toBe("r3");
+    expect(net(result, 1)).toBe(oracle(["r3"], ["f1"]));
+    // Pure score order would list four r3 drops (19, 18, 17, 16); two places now go to the best r2 and r1 plans.
+    expect(result.alternatives.slice(1).map(drops)).toEqual(["r3", "r3", "r2", "r1"]);
+    expect(result.alternatives.slice(1).map((_, index) => net(result, index + 1))).toEqual([19, 18, 12, 11]);
+    expect(net(result, 3)).toBe(Math.max(...["f1", "f2", "f3", "f4"].map(id => oracle(["r2"], [id]))));
+    expect(net(result, 4)).toBe(Math.max(...["f1", "f2", "f3", "f4"].map(id => oracle(["r1"], [id]))));
+    const primaryOnly = planRoster(single(), { ...intent, alternativeCount: 2 } as unknown as PlanIntent, { maxSteps: 1 });
+    expect(primaryOnly.alternatives).toEqual(result.alternatives.slice(0, 2));
+  });
+
+  it("gives pruned states with an unkept drop one more move as alternatives only, and discloses it", () => {
+    const options = { maxSteps: 2, beamWidth: 2 };
+    const result = planRoster(single(), { ...intent, alternativeCount: 10 }, options);
+    // The beam keeps only r3 → f1, so only the reserve pass reaches the r1 + r2 roster (oracle +22).
+    const both = result.alternatives.find(plan => drops(plan) === "r1|r2");
+    expect(both && both.projectedValue! - result.baseline.projectedValue!).toBe(oracle(["r1", "r2"], ["f1", "f2"]));
+    expect(result.search.complete).toBe(false);
+    expect(result.search.limitations).toContain("Beam width pruned feasible plans; search is incomplete.");
+    expect(result.search.limitations.find(text => text.startsWith("Beam reserve:"))).toMatch(/^Beam reserve: 4 of 4 pruned plans/);
+    // The primary plan is the main search's; a wide beam has no reserve and an equally good best plan here.
+    expect(drops(result.alternatives[1])).toBe("r2|r3");
+    expect(net(result, 1)).toBe(oracle(["r2", "r3"], ["f1", "f2"]));
+    const wide = planRoster(single(), { ...intent, alternativeCount: 10 }, { maxSteps: 2, beamWidth: 64 });
+    expect(wide.search.limitations.some(text => text.startsWith("Beam reserve:"))).toBe(false);
+    expect([drops(wide.alternatives[1]), net(wide, 1)]).toEqual([drops(result.alternatives[1]), net(result, 1)]);
+    expect(planRoster(single(), { ...intent, alternativeCount: 2 } as unknown as PlanIntent, options).alternatives).toEqual(result.alternatives.slice(0, 2));
+  });
+
+  it("never drops a protected or provider-out player, in the beam reserve or the alternatives", () => {
+    const data = single();
+    data.players = data.players.map(row => row.id === "r1" ? { ...row, injury: { status: "O", label: "Out", note: null } } : row);
+    const result = planRoster(data, { ...intent, protectedPlayerIds: ["r2"], alternativeCount: 20 }, { maxSteps: 2, beamWidth: 2 });
+    const dropped = result.alternatives.flatMap(plan => plan.steps).flatMap(step => step.dropPlayerId ? [step.dropPlayerId] : []);
+    expect(dropped).toContain("r3");
+    expect(dropped.filter(id => id === "r1" || id === "r2")).toEqual([]);
+  });
+});
