@@ -117,7 +117,7 @@ Declutter in place (see `AUDIT-2026-10-29.md`). One local commit per approved st
 - **Checks:** CSS pure check passed; contrast measured in the fixture page.
 - **Screens:** `screens/step7-drop-chip-before-after.png`.
 - **TJ verdict:** approved 2026-10-29.
-- **Commit:** pending.
+- **Commit:** `c368c679e`.
 
 ## Wrap-up checks
 
