@@ -64,3 +64,12 @@ Implementation needs TJ approval + file leases from orchestrator.
 - 01:1xZ Verified 87d431d6f (full week, Full week reset, collapsible Streaming Plan) and 439966985 (compact cards, L/PP chips from lineCombinations/powerPlayCombinations with 600/1,280 caps, L5 from the existing WGO rows). Combined RSO suite: 81 files / 2041 tests pass in UTC and NY. Batch 15e86fcc2..439966985 is local and unreleased; RC13 waits for TJ's go.
 - 01:2xZ RC13 cae4d72db gated: tsc 0, eslint 0 errors, 7 scss pure; vitest has the 6 baseline failing files plus a TeamStandingsChart load flake (3/3 alone), in UTC and NY. Waiting for TJ's push approval.
 - 01:4xZ Release #397 is live: master 2126296d2 (tree = RC13). Deploy dpl_5ptpWd2xQFyj7yNqUpbWJRsSp9ux is READY; cms/functions/fhfhockey.com were CANCELED. Smoke: 3 GETs, all 200; RSO chunk 749cdba6 has Full week / Planning from / Show fewer.
+- 2026-10-29 12:0xZ TJ's real-league check of #397 (his tab, pulled into my group):
+  - Preview swap and Use this streaming plan were disabled because 'Confirm planning inputs' was unpressed and hidden in the collapsed League rules section; no reason was shown.
+  - Timed upkeep ran a full provider snapshot every ~5 min (11:51:49, 11:57:00, 12:02:11Z); at ~65 reads each that is ~780/h. onLine was true this time, so upkeep ran; the 2b windows ran offline, so it never showed.
+  - The unprompted reload was navType 'reload' with wasDiscarded false, and no site code reloads the page; most likely Chrome restarted the renderer under load (avg >100). Persistence held.
+  - TJ approved pausing: tab navigated to newtab at ~12:03Z. TJ pop-up: stopgap now (30-min cadence and a 60-min idle stop while the diet flag is off), diet later.
+  - Started session rso-upkeep-confirm (local_bea8d0a5…).
+- 12:4xZ Verified c3cf52629 (30-min diet-off upkeep with 60-min idle stop; visible confirm gate). RSO suite: 81 files / 2048 tests pass in UTC and NY. Local and unreleased.
+- 13:2xZ RC14 008f70c6b gated: tsc 0, eslint 0 errors, 2 scss pure; vitest has the 6 baseline failing files in UTC, plus one planner-test timeout in NY under load (145/145 on 2 reruns). Waiting for TJ's push approval.
+- 13:4xZ Release #398 is live: master fec2ba2d2 (tree = RC14). Deploy dpl_EWsgH9tqSEriPPS1iiNms4WF7vj3 is READY; cms/functions/fhfhockey.com were CANCELED. Smoke: 3 GETs, all 200; RSO chunk 9d603752 has the confirm-gate text and the 30/60-min constants.
