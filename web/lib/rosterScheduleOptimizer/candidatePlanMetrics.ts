@@ -18,7 +18,13 @@ export type CandidatePlan = {
   /** Category leagues: the whole swap's per-category gains and sacrifices against the same-objective no-move lineup (R8). */
   categoryBreakdown?: CategorySwapRow[] | null;
 };
-export type CandidateComparison = { playerId: string; plans: CandidatePlan[]; complete: boolean };
+export type CandidateComparison = { playerId: string; plans: CandidatePlan[]; complete: boolean;
+  /** The best legal plan for each of the leading dropped-player sets (MAX_DROP_VARIANTS per sort) that `plans` does not
+   * already hold, typically because a plan with a different drop won the selected window. Shown only as alternatives:
+   * never ranked against `plans` or used for the representative. */
+  alternatives?: CandidatePlan[];
+  /** Further evaluated dropped-player sets past that cap (not returned). */
+  alternativesTruncated?: number };
 export type CandidateDiagnostic = {
   playerId: string;
   status: "filtered" | "not_selected" | "no_proposals" | "rejected" | "partial" | "evaluated";
@@ -32,6 +38,10 @@ export type CandidatePlanOptions = { maxCandidates?: number; maxEvaluations?: nu
 
 const number = (value: number | null) => value ?? -Infinity;
 const dropped = (plan: CandidatePlan) => plan.steps.some(step => step.dropPlayerId);
+/** The plan's dropped-player set; "" when it drops nobody. */
+const dropKey = (plan: CandidatePlan) => plan.steps.flatMap(step => step.dropPlayerId ? [step.dropPlayerId] : []).sort().join("|");
+/** Distinct dropped-player sets kept per sort order beside the window winner (S1 of the VORP assessment). */
+const MAX_DROP_VARIANTS = 3;
 export function compareCandidatePlans(a: CandidatePlan, b: CandidatePlan, sort: "points" | "schedule") {
   const primary = sort === "points" ? number(b.netPoints) - number(a.netPoints) : number(b.netAGP) - number(a.netAGP);
   if (primary && !Number.isNaN(primary)) return primary;
@@ -58,6 +68,14 @@ function orderCandidatePlans(plans: CandidatePlan[], sort: "points" | "schedule"
 }
 export function candidatePlanForSort(plans: CandidatePlan[], sort: "points" | "schedule") {
   return orderCandidatePlans(plans, sort)[0];
+}
+/** The best plan, in this sort order, that drops a different player set than the representative. It is an alternative
+ * beside the representative, never a re-ranking; undefined when every evaluated plan drops the same players. */
+export function candidateAlternativeForSort(comparison: CandidateComparison, sort: "points" | "schedule") {
+  const representative = candidatePlanForSort(comparison.plans, sort);
+  if (!representative) return undefined;
+  const key = dropKey(representative);
+  return candidatePlanForSort([...comparison.plans, ...comparison.alternatives ?? []].filter(plan => dropKey(plan) !== key), sort);
 }
 /** True when ownership alone chose this plan over an exactly equivalent one that drops a more-rostered player. */
 export function ownershipBrokeTie(plans: CandidatePlan[], plan: CandidatePlan) {
@@ -136,6 +154,9 @@ export function candidatePlanMetrics(snapshot: PlanningSnapshot, intent: PlanInt
     state.reasons = [...new Set([...state.reasons, ...reasons])].slice(0, 8);
   };
   const comparisons: CandidateComparison[] = selected.map(player => ({ playerId: player.id, plans: [], complete: false }));
+  // Per candidate and dropped-player set: the best legal plan in each sort order, whichever plan wins the window.
+  type Variant = { plan: CandidatePlan; evaluation: PlanEvaluation };
+  const variants = selected.map(() => new Map<string, Record<"points" | "schedule", Variant>>());
   // The shared retention order (lineupGaps and the planner use the same one).
   const playersById = new Map(snapshot.players.map(player => [player.id, player]));
   const dropOrder = knownDropOrder([...baselineLedger.keys()].flatMap(id => playersById.get(id) ?? []),
@@ -180,13 +201,20 @@ export function candidatePlanMetrics(snapshot: PlanningSnapshot, intent: PlanInt
         ? evaluation.goalie.expectedStarts - baseline.goalie.expectedStarts : null,
       dropped: [], droppedOwnership: droppedOwnership(evaluation.steps, playersById), displacedPlayerIds: [...new Set(baseline.assignments.filter(row => !evaluation.assignments.some(next =>
         next.date === row.date && next.gameId === row.gameId && next.playerId === row.playerId && next.slotId === row.slotId)).map(row => row.playerId))].sort() };
+    const key = dropKey(plan), best = variants[index].get(key);
+    variants[index].set(key, { points: !best || compareCandidatePlans(plan, best.points.plan, "points") < 0 ? { plan, evaluation } : best.points,
+      schedule: !best || compareCandidatePlans(plan, best.schedule.plan, "schedule") < 0 ? { plan, evaluation } : best.schedule });
     const rows = comparisons[index].plans;
     // An exact tie prunes only a plan dropping the same players, so the retention order can still choose between drops.
-    const dropIds = (row: CandidatePlan) => row.steps.flatMap(step => step.dropPlayerId ? [step.dropPlayerId] : []).sort().join("|");
     const dominates = (a: CandidatePlan, b: CandidatePlan) => a.netAGP != null && b.netAGP != null
       && a.netPoints != null && b.netPoints != null && a.netAGP >= b.netAGP && a.netPoints >= b.netPoints
-      && (a.netAGP > b.netAGP || a.netPoints > b.netPoints || dropIds(a) === dropIds(b) && compareCandidatePlans(a, b, "points") <= 0);
+      && (a.netAGP > b.netAGP || a.netPoints > b.netPoints || dropKey(a) === dropKey(b) && compareCandidatePlans(a, b, "points") <= 0);
     if (rows.some(row => dominates(row, plan))) return;
+    explain(plan, evaluation);
+    comparisons[index].plans = [...rows.filter(row => !dominates(plan, row)), plan];
+  };
+  /** Lost contributions (and category changes) of a kept plan's drops. */
+  const explain = (plan: CandidatePlan, evaluation: PlanEvaluation) => {
     const after = contributionLedger(snapshot, evaluation, originalIntent);
     plan.dropped = evaluation.steps.flatMap(step => step.dropPlayerId ? [step.dropPlayerId] : []).map(playerId => {
       const before = baselineLedger.get(playerId), retained = after.get(playerId);
@@ -195,7 +223,6 @@ export function candidatePlanMetrics(snapshot: PlanningSnapshot, intent: PlanInt
     });
     if (snapshot.rules.scoring.mode === "categories")
       plan.categoryBreakdown = swapCategoryBreakdown(snapshot, evaluation.objective === "outcome" ? outcomeBaseline : agpBaseline, evaluation);
-    comparisons[index].plans = [...rows.filter(row => !dominates(plan, row)), plan];
   };
   // Round-robin work lets every selected candidate reach its first legal swap before expanding.
   while (evaluated + objectives.length <= maxEvaluations && finished.some(value => !value)) {
@@ -238,6 +265,16 @@ export function candidatePlanMetrics(snapshot: PlanningSnapshot, intent: PlanInt
       ...snapshot.rules.unsupported,
       ...(scheduleProblem ? [scheduleProblem] : []),
     ]);
+    // A plan beaten in the window by a different drop stays available as that drop's alternative, within the cap.
+    const kept = new Set<string>(), alternatives = new Map<CandidatePlan, PlanEvaluation>();
+    for (const sort of ["points", "schedule"] as const) for (const [key, best] of [...variants[index].entries()]
+      .sort(([, a], [, b]) => compareCandidatePlans(a[sort].plan, b[sort].plan, sort)).slice(0, MAX_DROP_VARIANTS)) {
+      kept.add(key);
+      if (!comparison.plans.includes(best[sort].plan)) alternatives.set(best[sort].plan, best[sort].evaluation);
+    }
+    comparison.alternatives = [...alternatives].sort(([a], [b]) => compareCandidatePlans(a, b, "points"))
+      .map(([plan, evaluation]) => { explain(plan, evaluation); return plan; });
+    comparison.alternativesTruncated = variants[index].size - kept.size;
   }
   const representative = comparisons.map(row => ({ playerId: row.playerId, plan: candidatePlanForSort(row.plans, "points") }));
   const activePoints = representative.map(({ playerId, plan }): [string, number | null] => [playerId, plan?.netPoints ?? null]);

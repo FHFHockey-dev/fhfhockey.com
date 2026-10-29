@@ -113,6 +113,23 @@ describe("Streaming itinerary", () => {
     expect(screen.getByText("Saved inputs are read-only.")).toBeTruthy();
   });
 
+  it("lists another first drop's chain after the offered ones as an alternative, never suggested", () => {
+    const other = leg(0, "lak", "spare", 0, 0, [option("lak", [days[0]], 1.1)]);
+    const alternative: StreamingChain = { ...chain, legs: [other, ...legs.slice(1)], steps: [other.step, ...legs.slice(1).map(item => item.step)], netGames: 5, netPoints: 9 };
+    const onSelect = vi.fn();
+    render(<StreamingItinerary {...props} nameOf={(id: string) => id === "spare" ? "Spare Wing" : names[id] ?? id}
+      plan={{ ...plan, alternatives: [alternative], alternativesTruncated: 0 }} onSelect={onSelect} />);
+    const group = screen.getByRole("group", { name: "Stream spots" });
+    expect(within(group).getAllByRole("button").map(button => button.textContent)).toEqual([
+      "One spot · +7 AGP · suggested", "Alternative · drop Spare Wing · +5 AGP"]);
+    expect(screen.queryByText(/^Alternative with a different first drop/)).toBeNull();
+    fireEvent.click(within(group).getByRole("button", { name: "Alternative · drop Spare Wing · +5 AGP" }));
+    expect(screen.getByText(/^Alternative with a different first drop, not the suggested plan/)).toBeTruthy();
+    expect(screen.getByLabelText("Streaming totals").textContent).toBe("Adds 4/4 · +5 AGP · +9 proj FPts");
+    fireEvent.click(screen.getByRole("button", { name: "Use this streaming plan" }));
+    expect(onSelect.mock.calls[0][0][0]).toMatchObject({ playerId: "lak", dropPlayerId: "spare" });
+  });
+
   it("collapses and expands from its header and remembers the choice in this browser", () => {
     const view = render(<StreamingItinerary {...props} plan={plan} onSelect={vi.fn()} />);
     const toggle = () => screen.getByRole("button", { name: "Streaming plan" });

@@ -30,6 +30,9 @@ export type StreamingInputs = {
   /** Epoch ms after which no drop candidate beyond the first few is tried. */
   deadline?: number;
 };
+/** With the best certified chain for each initial drop the offered chains don't start with (VORP S1, best first, at most
+ * ALTERNATIVE_DROPS). Alternatives are never recommended; their totals are their own certified ones. */
+export type StreamingPlanWithAlternatives = StreamingPlan & { alternatives?: StreamingChain[]; alternativesTruncated?: number };
 type Elig = ReturnType<typeof normalizeEligibility> & { key: string };
 /** `points`: blended FPts (see above); `starts`: expected goalie starts the streamers add, net of the drop's. */
 type Value = { games: number; points: number; known: boolean; adds: number; starts: number };
@@ -48,7 +51,7 @@ const NEAR_TIE = 0.1;
 /** Every droppable player is tried for one spot: the first GUARANTEED_DROPS (drop order) always, the rest while the
  * search's window × candidate work stays under EXTRA_WORK (a week fits every drop; a season-long range stops at the
  * guaranteed ones) and before the deadline. Two-spot pairs come from the PAIR_DROPS best single-spot drops. */
-const OPTION_COUNT = 5, RANKED_COUNT = 12, GUARANTEED_DROPS = 3, PAIR_DROPS = 4, EXTRA_WORK = 2_000_000;
+const OPTION_COUNT = 5, RANKED_COUNT = 12, GUARANTEED_DROPS = 3, PAIR_DROPS = 4, EXTRA_WORK = 2_000_000, ALTERNATIVE_DROPS = 3;
 const ZERO: Value = { games: 0, points: 0, known: true, adds: 0, starts: 0 };
 /** More games, then points (points first when `pointsFirst`), then fewer adds; with a goalie-start `need`, expected starts
  * up to it come first. */
@@ -85,9 +88,9 @@ function maxMatch(slots: string[], players: Elig[]) {
   return players.reduce((count, _, index) => count + (augment(index, new Array(slots.length).fill(false)) ? 1 : 0), 0);
 }
 
-export function buildStreamingChains(inputs: StreamingInputs): StreamingPlan {
+export function buildStreamingChains(inputs: StreamingInputs): StreamingPlanWithAlternatives {
   const { snapshot, intent, baseline, dropOrder } = inputs;
-  const plan: StreamingPlan = { policyVersion: "rso-stream-v1", recommended: null, chains: [], limitations: [] };
+  const plan: StreamingPlanWithAlternatives = { policyVersion: "rso-stream-v1", recommended: null, chains: [], limitations: [] };
   const zone = snapshot.context.timeZone, asOf = snapshot.context.asOf, rules = snapshot.rules;
   // The minimum is reported when missing it costs something, and targeted only when the manager chose to cover it
   // (TJ, 10-27: "accept risk" never pushes goalies up). The evaluator alone says whether it is met.
@@ -415,6 +418,16 @@ export function buildStreamingChains(inputs: StreamingInputs): StreamingPlan {
   // Meeting the minimum is never traded silently: the best chain that misses it is offered beside the one that meets it.
   const unconstrained = top([...ones, ...twos], objectiveBetter);
   if (targeted && unconstrained && !meets(unconstrained) && plan.chains.length && meets(plan.chains[0]) && !plan.chains.includes(unconstrained)) plan.chains.push(unconstrained);
+  // A chain that loses to one with a different first drop stays as that drop's alternative (searched drops only).
+  const initialDrops = (chain: StreamingChain) => chain.legs.filter(leg => !leg.step.dependsOn.length).map(leg => leg.dropPlayerId).sort().join("|");
+  const offered = new Set(plan.chains.map(initialDrops)), byDrop = new Map<string, StreamingChain>();
+  for (const chain of [...ones, ...twos]) {
+    const key = initialDrops(chain), best = byDrop.get(key);
+    if (!offered.has(key) && (!best || chainBetter(chain, best))) byDrop.set(key, chain);
+  }
+  const ranked = [...byDrop].sort(([left, a], [right, b]) => chainBetter(a, b) ? -1 : chainBetter(b, a) ? 1 : left.localeCompare(right));
+  plan.alternatives = ranked.slice(0, ALTERNATIVE_DROPS).map(([, chain]) => chain);
+  plan.alternativesTruncated = Math.max(0, ranked.length - ALTERNATIVE_DROPS);
   if (need > 0 && plan.chains.length && !plan.chains.some(meets)) plan.limitations.push("No streaming chain reaches the goalie minimum with the adds left.");
   if (!priorityWaivers && snapshot.players.some(player => !owned.has(player.id) && isWaiver(player)))
     plan.limitations.push("Waiver claims are chained only in priority-waiver leagues; this league's waiver policy is a budget or unverified.");

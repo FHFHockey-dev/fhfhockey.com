@@ -289,6 +289,16 @@ function goalieLine(row: Row): StatLine {
   return Object.fromEntries(Object.entries(line).map(([key, value]) => [key, round(value)]));
 }
 
+/** VORP S3: one FORGE h1 row's own per-game line in league stat keys, in native units, with no season-rate substitute
+ * (stats FORGE does not project stay null) and, for a goalie, no assumed start or minutes. Null when its heads are missing. */
+export function forgeNativeLine(row: Row, playerClass: "skater" | "goalie"): StatLine | null {
+  if (playerClass === "skater") return skaterStats(withPowerPlayZeros(row).row, null);
+  const { GOALIE_MINUTES: _minutes, GAMES_STARTED: _started, ...line } = goalieLine(row);
+  return line;
+}
+/** What the bridge read for one request, timed around the read of the admitted runs' output rows (VORP S3 capture). */
+export type ForgeBridgeCapture = { startedAt: string; completedAt: string; runs: Row[]; skaters: Row[]; goalies: Row[]; reserves: Row[] | null | undefined };
+
 /** Pure: no reads. Rows from runs not in `inputs.runs`, or from runs without external-input exclusion proof, are ignored. */
 export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, players: PlanningPlayer[], games: PlanningGame[],
   now: Date, seasonId: number, calendarPolicy: ForecastCalendarPolicy, byteBudget = FORGE_DAILY_BRIDGE_BYTE_BUDGET,
@@ -731,8 +741,11 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
  * proof shows it excluded third-party fantasy inputs. Newer unproven runs of a date are passed on unread, only to be
  * counted. A later run of a date supersedes an earlier one for that date's games. */
 export async function loadForgeDailyBridgeForecasts(db: SupabaseClient<any>, players: PlanningPlayer[], games: PlanningGame[], now: Date,
-  seasonId: number, deadline: number, calendarPolicy: ForecastCalendarPolicy): Promise<ForgeDailyBridgeResult> {
+  seasonId: number, deadline: number, calendarPolicy: ForecastCalendarPolicy,
+  /** VORP S3 only (flag on): receives the admitted runs and their output rows as read; never changes the result. */
+  capture?: (observation: ForgeBridgeCapture) => void): Promise<ForgeDailyBridgeResult> {
   const readDeadline = Math.min(deadline, Date.now() + 6000);
+  const captureStartedAt = capture ? new Date().toISOString() : "";
   const from = new Date(now.getTime() - FORGE_DAILY_BRIDGE_LOOKBACK_DAYS * DAY_MS).toISOString().slice(0, 10);
   const to = new Date(now.getTime() + FORGE_DAILY_BRIDGE_AHEAD_DAYS * DAY_MS).toISOString().slice(0, 10);
   const runRows = await pages(() => restrictRunsToHorizon(excludeOffReleaseRuns(db.from("forge_runs").select("run_id,as_of_date,created_at,git_sha", { count: "exact" })
@@ -780,5 +793,6 @@ export async function loadForgeDailyBridgeForecasts(db: SupabaseClient<any>, pla
     forgeReservePassEnabled() ? pages(() => db.from("forge_reserve_projections").select(RESERVE_COLUMNS, { count: "exact" }).in("run_id", runIds).eq("horizon_games", 1)
       .order("run_id").order("game_id").order("player_id"), readDeadline, 15000, row => [row.run_id, row.game_id, row.player_id]).catch(() => null) : Promise.resolve(undefined),
   ]);
+  capture?.({ startedAt: captureStartedAt, completedAt: new Date().toISOString(), runs, skaters, goalies, reserves });
   return buildForgeDailyBridgeForecasts({ runs: [...runs, ...withheld], skaters, goalies, goalieShares, seasonTotals, goalieNews, teamPriors, lastSeasonTeams, teamGames, positionAllowed, reserves }, players, games, now, seasonId, calendarPolicy);
 }
