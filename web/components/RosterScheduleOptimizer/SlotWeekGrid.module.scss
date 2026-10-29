@@ -1,68 +1,69 @@
 @use "styles/vars" as v;
+@use "scale" as s;
 
 // Position-first week grid. Each slot type is one rounded block: a full colour rail on the left
 // (the border itself, so its ends follow the radius), the same colour around it and a light tint inside.
 .scroller { width: 100%; }
-.grid { --band: 26px; --cell-height: 40px; display: block; width: 100%; border-collapse: separate; font: 12px v.$font-family-primary; color: v.$text-primary; }
+.grid { --band: 26px; --cell-height: 40px; display: block; width: 100%; border-collapse: separate; font: s.$text-sm v.$font-family-primary; color: s.$ink; }
 .grid { @include v.draft-position-colors; }
 .grid thead, .grid tbody, .grid tfoot { display: block; }
-.caption { display: block; padding: v.$space-xs 0; color: v.$text-secondary; font-size: 11px; text-align: left; text-transform: uppercase; letter-spacing: .06em; }
+.caption { display: block; padding: v.$space-xs 0; color: s.$ink-muted; font-size: s.$text-xs; text-align: left; text-transform: uppercase; letter-spacing: .06em; }
 .row { position: relative; display: grid; grid-template-columns: repeat(var(--day-count), minmax(0, 1fr)); gap: 4px; padding: 3px 4px; }
-.grid th, .grid td { min-width: 0; padding: 0; border: 0; text-align: left; font-weight: 400; }
+.grid th, .grid td { min-width: 0; padding: 0; border: 0; text-align: left; font-weight: s.$weight-regular; }
 
 // Header and footer rows line up with the block content (rail + border).
 .headRow, .footRow { padding-left: calc(var(--band) + 5px); }
-.headRow .corner, .footRow .corner { position: absolute; inset-block: 0; left: 0; width: var(--band); display: flex; align-items: center; justify-content: center; color: v.$text-secondary; font-size: 9px; text-transform: uppercase; }
-.headRow th { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 4px; padding: 2px 4px; border-radius: v.$radius-control; font-weight: 600; white-space: nowrap; overflow: hidden; }
+.headRow .corner, .footRow .corner { position: absolute; inset-block: 0; left: 0; width: var(--band); display: flex; align-items: center; justify-content: center; color: s.$ink-muted; font-size: s.$text-micro; text-transform: uppercase; }
+.headRow th { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 4px; padding: 2px 4px; border-radius: s.$radius-small; font-weight: s.$weight-bold; white-space: nowrap; overflow: hidden; }
 .headRow th[data-focused] { background: rgba(v.$primary-color, .14); box-shadow: inset 0 0 0 1px rgba(v.$primary-color, .45); }
 .weekday { text-transform: uppercase; }
-.date { color: v.$text-secondary; font-weight: 400; }
-.count { flex-basis: 100%; color: v.$text-secondary; font: 400 10px v.$font-family-numbers; }
+.date { color: s.$ink-muted; font-weight: s.$weight-regular; }
+.count { flex-basis: 100%; color: s.$ink-muted; font: s.$weight-regular s.$text-micro v.$font-family-numbers; }
 
-.group { --position-color: #{v.$color-neutral-400}; position: relative; display: block; margin: 4px 0; border: 1px solid var(--position-color); border-left-width: var(--band); border-radius: v.$radius-md; background: color-mix(in srgb, var(--position-color) 12%, #{v.$draft-surface}); }
+.group { --position-color: #{v.$color-neutral-400}; position: relative; display: block; margin: 4px 0; border: 1px solid var(--position-color); border-left-width: var(--band); border-radius: s.$radius-card; background: color-mix(in srgb, var(--position-color) 12%, #{v.$draft-surface}); }
 .group .row + .row { border-top: 1px solid color-mix(in srgb, var(--position-color) 22%, transparent); }
-.band { position: absolute; top: 0; bottom: 0; left: calc(-1 * var(--band)); width: var(--band); display: flex !important; align-items: center; justify-content: center; color: v.$draft-surface; font: 700 12px v.$font-family-primary !important; letter-spacing: .02em; }
+.band { position: absolute; top: 0; bottom: 0; left: calc(-1 * var(--band)); width: var(--band); display: flex !important; align-items: center; justify-content: center; color: s.$on-accent; font: s.$weight-bold s.$text-sm v.$font-family-primary !important; letter-spacing: .02em; }
 .group[data-position="UTIL"] .band span, .bench .band span { transform: rotate(-90deg); }
 
 // Every cell is the same size: player chip, "Empty" and the no-game dash.
-.cellButton, .cellBody, .empty, .noGames { box-sizing: border-box; width: 100%; height: var(--cell-height); border-radius: 5px; }
+.cellButton, .cellBody, .empty, .noGames { box-sizing: border-box; width: 100%; height: var(--cell-height); border-radius: s.$radius-small; }
 .cellButton, .cellBody { display: flex; flex-direction: column; justify-content: center; gap: 2px; padding: 2px 5px; border: 1px solid color-mix(in srgb, var(--position-color) 30%, #{v.$draft-border}); background: v.$draft-surface; color: inherit; font: inherit; text-align: left; }
 .cellButton { cursor: pointer; }
 .cellButton:hover, .cellButton:focus-visible { border-color: var(--position-color); background: v.$draft-surface-raised; }
 td[data-focused] .cellButton, td[data-focused] .cellBody, td[data-focused] .empty { box-shadow: inset 0 0 0 1px rgba(v.$primary-color, .55); }
-.empty { display: flex; align-items: center; justify-content: center; border: 1px dashed color-mix(in srgb, var(--position-color) 55%, transparent); color: v.$text-secondary; }
-.noGames { display: flex; align-items: center; justify-content: center; color: v.$text-secondary; }
+.empty { display: flex; align-items: center; justify-content: center; border: 1px dashed color-mix(in srgb, var(--position-color) 55%, transparent); color: s.$ink-muted; }
+.noGames { display: flex; align-items: center; justify-content: center; color: s.$ink-muted; }
 .nameLine { display: flex; align-items: center; gap: 4px; min-width: 0; }
 .logo { flex: none; }
-.name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
-.lock, .start { flex: none; font-size: 10px; }
-.start { color: v.$success-color; font-weight: 700; }
-.start[data-out] { color: v.$color-coral-500; }
-.points { margin-left: auto; padding: 0 4px; border-radius: 3px; color: v.$text-secondary; font: 600 10px v.$font-family-numbers; }
-.points[data-tier="high"] { background: color-mix(in srgb, #{v.$success-color} 18%, transparent); color: v.$success-color; }
-.points[data-tier="mid"] { background: color-mix(in srgb, #{v.$warning-color} 14%, transparent); color: v.$warning-color; }
-.points[data-tier="low"] { background: color-mix(in srgb, #{v.$color-coral-500} 18%, transparent); color: v.$color-coral-500; }
-.points[data-actual] { background: color-mix(in srgb, #{v.$color-white} 12%, transparent); color: v.$color-white; }
+.name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: s.$weight-bold; }
+.lock, .start { flex: none; font-size: s.$text-micro; }
+.start { color: s.$good; font-weight: s.$weight-bold; }
+.start[data-out] { color: s.$bad; }
+.points { margin-left: auto; padding: 0 4px; border-radius: s.$radius-small; color: s.$ink-muted; font: s.$weight-bold s.$text-micro v.$font-family-numbers; }
+.points[data-tier="high"] { background: color-mix(in srgb, #{v.$success-color} 18%, transparent); color: s.$good; }
+.points[data-tier="mid"] { background: color-mix(in srgb, #{v.$warning-color} 14%, transparent); color: s.$warn; }
+.points[data-tier="low"] { background: color-mix(in srgb, #{v.$color-coral-500} 18%, transparent); color: s.$bad; }
+.points[data-actual] { background: color-mix(in srgb, #{v.$color-white} 12%, transparent); color: s.$ink-strong; }
 .legend .points { margin-left: 0; }
-.opp { align-self: flex-start; padding: 0 4px; border-radius: 3px; background: v.$draft-input; color: v.$text-secondary; font-size: 10px; line-height: 14px; }
+.opp { align-self: flex-start; padding: 0 4px; border-radius: s.$radius-small; background: v.$draft-input; color: s.$ink-muted; font-size: s.$text-micro; line-height: 14px; }
 .dust { display: inline-block; flex: none; width: 6px; height: 6px; border-radius: 50%; background: v.$color-coral-500; }
 
 .reserve .row { grid-template-columns: 1fr; }
-.reserveList { padding: 6px 4px !important; color: v.$text-secondary; }
-.footer { color: v.$text-secondary; font: 11px v.$font-family-numbers; text-align: center !important; }
-.legend { margin: v.$space-xs 0 0; color: v.$text-secondary; font-size: 11px; line-height: 1.5; }
-.legend b { color: v.$success-color; }
+.reserveList { padding: 6px 4px !important; color: s.$ink-muted; }
+.footer { color: s.$ink-muted; font: s.$text-xs v.$font-family-numbers; text-align: center !important; }
+.legend { margin: v.$space-xs 0 0; color: s.$ink-muted; font-size: s.$text-xs; line-height: 1.5; }
+.legend b { color: s.$good; }
 
 // Narrow screens keep seven readable columns and scroll; desktop fits the panel.
 @media (max-width: 760px) { .scroller { overflow-x: auto; } .grid { min-width: 680px; } }
 
 // Optimize animation: days still waiting are dimmed, the day being optimized pulses as its chips settle.
-.status { color: v.$primary-color; text-transform: none; letter-spacing: 0; }
+.status { color: s.$accent; text-transform: none; letter-spacing: 0; }
 .grid td[data-pending] > *, .grid th[data-pending] { opacity: .45; filter: saturate(.55); transition: opacity 200ms ease, filter 200ms ease; }
 td[data-pulse] .cellButton, td[data-pulse] .cellBody, td[data-pulse] .empty { animation: columnPulse 620ms ease-out; }
 .headRow th[data-pulse] { animation: headPulse 620ms ease-out; }
 .grid [data-idle] { border-style: dashed !important; opacity: .75; }
-.noGameTag { align-self: flex-start; color: v.$color-coral-500; font-size: 10px; line-height: 14px; }
+.noGameTag { align-self: flex-start; color: s.$bad; font-size: s.$text-micro; line-height: 14px; }
 @keyframes columnPulse {
   0% { box-shadow: 0 0 0 0 rgba(v.$primary-color, 0); }
   35% { box-shadow: 0 0 0 2px rgba(v.$primary-color, .7), 0 0 14px rgba(v.$primary-color, .45); }
@@ -84,23 +85,23 @@ td[data-pulse] .cellButton, td[data-pulse] .cellBody, td[data-pulse] .empty { an
 // Bench chips: a game left on the bench is highlighted; no game that night is greyed out.
 .grid [data-bench="playing"] { border-color: v.$warning-color; background: color-mix(in srgb, #{v.$warning-color} 12%, #{v.$draft-surface}); }
 .grid [data-bench="idle"] { opacity: .5; filter: grayscale(.85); }
-.offChip { display: flex; align-items: center; justify-content: center; box-sizing: border-box; height: var(--cell-height); border: 1px dashed v.$draft-border; border-radius: 5px; color: v.$text-secondary; font-size: 11px; }
-.noGameTag[data-quiet] { color: v.$text-secondary; }
+.offChip { display: flex; align-items: center; justify-content: center; box-sizing: border-box; height: var(--cell-height); border: 1px dashed v.$draft-border; border-radius: s.$radius-small; color: s.$ink-muted; font-size: s.$text-xs; }
+.noGameTag[data-quiet] { color: s.$ink-muted; }
 
 // Chip layout: name (row 1) and opponent (row 2) on the left; the projected points box spans both rows on the right.
 .cellButton, .cellBody { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; align-content: center; column-gap: 5px; row-gap: 2px; }
 .cellButton > .nameLine, .cellBody > .nameLine { grid-column: 1; }
 .cellButton > .opp, .cellBody > .opp, .cellButton > .noGameTag, .cellBody > .noGameTag { grid-column: 1; justify-self: start; }
-.cellButton > .points, .cellBody > .points { grid-column: 2; grid-row: 1 / span 2; align-self: stretch; display: flex; align-items: center; justify-content: center; min-width: 34px; margin: 6px 0; padding: 5px; border-radius: 4px; font-size: 15px; }
-.legend .points { display: inline; padding: 0 4px; font-size: 10px; }
+.cellButton > .points, .cellBody > .points { grid-column: 2; grid-row: 1 / span 2; align-self: stretch; display: flex; align-items: center; justify-content: center; min-width: 34px; margin: 6px 0; padding: 5px; border-radius: s.$radius-small; font-size: s.$text-lg; }
+.legend .points { display: inline; padding: 0 4px; font-size: s.$text-micro; }
 .forecastPoints { grid-column: 2; grid-row: 1 / span 2; align-self: center; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
-.forecastPoints .points { margin: 0; padding: 3px 4px; font-size: 15px; white-space: nowrap; }
-.forecastPoints small { font: 400 9px v.$font-family-primary; }
-.conditionalPoints { color: v.$text-secondary; font: 600 11px v.$font-family-numbers; white-space: nowrap; text-align: center; }
+.forecastPoints .points { margin: 0; padding: 3px 4px; font-size: s.$text-md; white-space: nowrap; }
+.forecastPoints small { font: s.$weight-regular s.$text-micro v.$font-family-primary; }
+.conditionalPoints { color: s.$ink-muted; font: s.$weight-bold s.$text-xs v.$font-family-numbers; white-space: nowrap; text-align: center; }
 // Goalie cells keep the shared cell height: "expected" and "if starts" stack in the same box as a skater's points.
 .forecastPoints[data-goalie] { grid-column: 2; grid-row: 1 / span 2; flex-direction: column; align-items: flex-end; justify-content: center; gap: 1px; }
-.forecastPoints[data-goalie] .points { padding: 0 3px; font-size: 12px; line-height: 14px; }
-.forecastPoints[data-goalie] .conditionalPoints { font-size: 10px; line-height: 12px; }
+.forecastPoints[data-goalie] .points { padding: 0 3px; font-size: s.$text-sm; line-height: 14px; }
+.forecastPoints[data-goalie] .conditionalPoints { font-size: s.$text-micro; line-height: 12px; }
 .forecastPoints[data-goalie] small { display: inline; line-height: inherit; }
 
 // Injured players (provider IR/O/DTD): red border, red tint and the injured icon.
@@ -114,4 +115,6 @@ td[data-pulse] .cellButton, td[data-pulse] .cellBody, td[data-pulse] .empty { an
 // Plan-from slider: one row above the day headers, its stops over the day columns. Days left of it are greyed.
 .sliderRow { padding-block: 0; }
 .sliderRow .sliderCell { grid-column: 1 / -1; }
-.grid td[data-greyed] > *, .grid th[data-greyed] { opacity: .4; filter: saturate(.4); }
+.grid td[data-greyed] > *, .grid th[data-greyed] { opacity: .3; filter: saturate(.25); }
+// Greyed days also drop the position tint behind their cells, so the planned days carry the colour.
+.grid td[data-greyed] { border-radius: s.$radius-small; background: color-mix(in srgb, #{v.$draft-surface} 70%, transparent); }

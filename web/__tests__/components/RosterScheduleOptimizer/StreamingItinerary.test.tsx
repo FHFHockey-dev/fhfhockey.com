@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 import { afterEach, describe, expect, it, vi } from "vitest";
 import StreamingItinerary, { STREAMING_PLAN_OPEN_KEY } from "components/RosterScheduleOptimizer/StreamingItinerary";
 import type { PlanEvaluation, PlanStep, StreamingChain, StreamingLeg, StreamingPlan } from "lib/rosterScheduleOptimizer/planningTypes";
+import type { StreamingAlternative } from "lib/rosterScheduleOptimizer/streamingChain";
 
 afterEach(() => { cleanup(); window.localStorage.clear(); });
 // Synthetic players: Monday's drop candidate, then one streamer per window of TJ's example week.
@@ -115,19 +116,36 @@ describe("Streaming itinerary", () => {
 
   it("lists another first drop's chain after the offered ones as an alternative, never suggested", () => {
     const other = leg(0, "lak", "spare", 0, 0, [option("lak", [days[0]], 1.1)]);
-    const alternative: StreamingChain = { ...chain, legs: [other, ...legs.slice(1)], steps: [other.step, ...legs.slice(1).map(item => item.step)], netGames: 5, netPoints: 9 };
+    const alternative: StreamingAlternative = { ...chain, legs: [other, ...legs.slice(1)], steps: [other.step, ...legs.slice(1).map(item => item.step)], netGames: 5, netPoints: 9, wins: ["games"] };
     const onSelect = vi.fn();
     render(<StreamingItinerary {...props} nameOf={(id: string) => id === "spare" ? "Spare Wing" : names[id] ?? id}
       plan={{ ...plan, alternatives: [alternative], alternativesTruncated: 0 }} onSelect={onSelect} />);
     const group = screen.getByRole("group", { name: "Stream spots" });
     expect(within(group).getAllByRole("button").map(button => button.textContent)).toEqual([
-      "One spot · +7 AGP · suggested", "Alternative · drop Spare Wing · +5 AGP"]);
+      "One spot · +7 AGP · suggested", "Alternative · most starts · drop Spare Wing · +5 AGP"]);
     expect(screen.queryByText(/^Alternative with a different first drop/)).toBeNull();
-    fireEvent.click(within(group).getByRole("button", { name: "Alternative · drop Spare Wing · +5 AGP" }));
+    fireEvent.click(within(group).getByRole("button", { name: "Alternative · most starts · drop Spare Wing · +5 AGP" }));
     expect(screen.getByText(/^Alternative with a different first drop, not the suggested plan/)).toBeTruthy();
     expect(screen.getByLabelText("Streaming totals").textContent).toBe("Adds 4/4 · +5 AGP · +9 proj FPts");
     fireEvent.click(screen.getByRole("button", { name: "Use this streaming plan" }));
     expect(onSelect.mock.calls[0][0][0]).toMatchObject({ playerId: "lak", dropPlayerId: "spare" });
+  });
+
+  it("names the goal each alternative wins and shows a points alternative's FPts (VORP S4)", () => {
+    const other = leg(0, "lak", "spare", 0, 0, [option("lak", [days[0]], 1.1)]), spare = leg(0, "lak", "idle2", 0, 0, [option("lak", [days[0]], 1.1)]);
+    const base: StreamingChain = { ...chain, legs: [other, ...legs.slice(1)], steps: [other.step, ...legs.slice(1).map(item => item.step)] };
+    const games: StreamingAlternative = { ...base, netGames: 6, netPoints: 4, wins: ["games"] };
+    const points: StreamingAlternative = { ...base, legs: [spare, ...legs.slice(1)], netGames: 3, netPoints: 9.5, wins: ["points", "games"] };
+    render(<StreamingItinerary {...props} nameOf={(id: string) => id === "spare" ? "Spare Wing" : id === "idle2" ? "Idle Two" : names[id] ?? id}
+      plan={{ ...plan, alternatives: [games, points], alternativesTruncated: 0 }} onSelect={vi.fn()} />);
+    const group = screen.getByRole("group", { name: "Stream spots" });
+    expect(within(group).getAllByRole("button").map(button => button.textContent)).toEqual([
+      "One spot · +7 AGP · suggested", "Alternative · most starts · drop Spare Wing · +6 AGP", "Alternative · best points, most starts · drop Idle Two · +3 AGP · +9.5 FPts"]);
+    fireEvent.click(within(group).getAllByRole("button")[1]);
+    expect(screen.getByText("Alternative with a different first drop, not the suggested plan. Of the other first drops, it is the best for starts. Its totals are its own checked plan.")).toBeTruthy();
+    fireEvent.click(within(group).getAllByRole("button")[2]);
+    expect(screen.getByText(/it is the best for points and starts\. Its totals/)).toBeTruthy();
+    expect(screen.getByLabelText("Streaming totals").textContent).toBe("Adds 4/4 · +3 AGP · +9.5 proj FPts");
   });
 
   it("collapses and expands from its header and remembers the choice in this browser", () => {
@@ -147,6 +165,19 @@ describe("Streaming itinerary", () => {
     expect(toggle().getAttribute("aria-expanded")).toBe("true");
     expect(screen.getByLabelText("Streaming totals")).toBeTruthy();
     expect(window.localStorage.getItem(STREAMING_PLAN_OPEN_KEY)).toBe("1");
+  });
+
+  it("starts collapsed when the page asks (desktop) until the manager's stored choice says otherwise", () => {
+    window.localStorage.removeItem(STREAMING_PLAN_OPEN_KEY);
+    const view = render(<StreamingItinerary {...props} plan={plan} onSelect={vi.fn()} defaultOpen={false} />);
+    const toggle = () => screen.getByRole("button", { name: "Streaming plan" });
+    expect(toggle().getAttribute("aria-expanded")).toBe("false");
+    expect(screen.queryByLabelText("Streaming totals")).toBeNull();
+    view.unmount();
+    window.localStorage.setItem(STREAMING_PLAN_OPEN_KEY, "1");
+    render(<StreamingItinerary {...props} plan={plan} onSelect={vi.fn()} defaultOpen={false} />);
+    expect(toggle().getAttribute("aria-expanded")).toBe("true");
+    expect(screen.getByLabelText("Streaming totals")).toBeTruthy();
   });
 
   it("stays usable when browser storage throws", () => {

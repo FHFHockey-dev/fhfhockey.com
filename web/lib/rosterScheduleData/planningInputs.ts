@@ -81,6 +81,79 @@ export async function pages(build: () => any, deadline: number, maximum = 15000,
   });
 }
 
+/** A safe, fixed failure code from `concurrentPages`: never raw database text. */
+export class PlanningPageReadError extends Error {
+  constructor(readonly code: string) { super("Planning source read is incomplete"); }
+}
+
+/**
+ * Opt-in concurrent pager for one bounded snapshot. The first page fixes the exact count and the server's page size;
+ * the remaining pages are read `concurrency` at a time. Every page still asks for the exact count and must see the
+ * first page's, every page must be exactly full, and every identity must be present and unique, so rows are never
+ * deduplicated, skipped or merged across two states. A changed count or a duplicate (offset drift while the table is
+ * written) retries the whole read once from scratch inside the same deadline; any other failure does not retry.
+ */
+export async function concurrentPages(build: () => any, deadline: number, maximum: number, key: (row: Row) => unknown,
+  { concurrency = 4, retries = 1 } = {}): Promise<Row[]> {
+  return withinDeadline(deadline, async signal => {
+    for (let attempt = 0; ; attempt++) {
+      try { return await snapshot(build, signal, maximum, key, concurrency); } catch (error) {
+        if (signal.aborted) throw new PlanningReadDeadlineError();
+        const drift = error instanceof PlanningPageReadError && ["count_changed", "duplicate_rows"].includes(error.code);
+        if (!drift || attempt >= retries) throw error;
+      }
+    }
+  });
+}
+
+async function snapshot(build: () => any, outer: AbortSignal, maximum: number, key: (row: Row) => unknown, concurrency: number) {
+  const local = new AbortController(), abort = () => local.abort();
+  outer.addEventListener("abort", abort, { once: true });
+  const page = async (offset: number, size: number, expected: number | null) => {
+    if (local.signal.aborted) throw new PlanningReadDeadlineError();
+    const result = await build().range(offset, offset + size - 1).abortSignal(local.signal);
+    const code = typeof result.error?.code === "string" && /^[A-Z0-9]{5,8}$/.test(result.error.code) ? result.error.code : "page_error";
+    if (result.error) throw new PlanningPageReadError(code);
+    if (!Array.isArray(result.data)) throw new PlanningPageReadError("bad_data");
+    if (!Number.isSafeInteger(result.count) || result.count < 0) throw new PlanningPageReadError("missing_count");
+    if (result.count > maximum) throw new PlanningPageReadError("cap_exceeded");
+    if (expected !== null && result.count !== expected) throw new PlanningPageReadError("count_changed");
+    return { count: result.count as number, data: result.data as Row[] };
+  };
+  try {
+    const first = await page(0, 1000, null);
+    // A server row cap below 1000 sets the page size; every later page must then be exactly that full.
+    const size = first.data.length, total = first.count;
+    if (size > total || !size && total || size < Math.min(1000, total) && Math.ceil(total / Math.max(size, 1)) > 64) {
+      throw new PlanningPageReadError("incomplete_page");
+    }
+    const offsets: number[] = [];
+    for (let offset = size; offset < total; offset += size) offsets.push(offset);
+    const rest: Row[][] = new Array(offsets.length);
+    let next = 0;
+    const worker = async () => {
+      while (next < offsets.length) {
+        const index = next++, offset = offsets[index], result = await page(offset, size, total);
+        if (result.data.length !== Math.min(size, total - offset)) throw new PlanningPageReadError("incomplete_page");
+        rest[index] = result.data;
+      }
+    };
+    // The first failure rejects at once; `finally` then aborts the sibling requests still in flight.
+    await Promise.all(Array.from({ length: Math.min(concurrency, offsets.length) }, worker));
+    const rows: Row[] = [], seen = new Set<string>();
+    for (const row of [first.data, ...rest].flat()) {
+      const value = key(row), parts = Array.isArray(value) ? value : [value];
+      if (parts.some(part => part === undefined || part === null || part === "")) throw new PlanningPageReadError("missing_identity");
+      const identity = JSON.stringify(value);
+      if (seen.has(identity)) throw new PlanningPageReadError("duplicate_rows");
+      seen.add(identity);
+      rows.push(row);
+    }
+    if (rows.length !== total) throw new PlanningPageReadError("incomplete_page");
+    return rows;
+  } finally { outer.removeEventListener("abort", abort); local.abort(); }
+}
+
 export function hasScheduleCoverage(rows: Row[], query: PlanningDataQuery, now: Date): boolean {
   const validDate = (value: unknown): value is string => typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)
     && Number.isFinite(Date.parse(value)) && new Date(`${value}T12:00:00Z`).toISOString().slice(0, 10) === value;

@@ -32,6 +32,7 @@ import { buildRollingWindowGoalieParticipationReceipt, buildRollingWindowGoalieS
 import { ROLLING_WINDOW_GOALIE_PARTICIPATION_DATASET, ROLLING_WINDOW_GOALIE_START_DATASET } from "lib/player-forecasts/modeledGoalieParticipationStore";
 import { ROLLING_WINDOW_SKATER_PARTICIPATION_DATASET } from "lib/player-forecasts/modeledSkaterParticipationStore";
 import { fetchBoundedNhlSchedule } from "./source";
+import { pages } from "./planningInputs";
 import { normalizeNhlGameToTeamRows } from "./normalize";
 import { provenSnapshotRow, unprovenSnapshotRow } from "lib/projections/externalInputProof.fixtures";
 import { laterImpactScenarioSchema, type LaterImpactScenarioPayload } from "lib/in-season/workspaceSchema";
@@ -75,8 +76,11 @@ function rpcResponse(value: unknown): any {
   return Object.assign(promise, { abortSignal: () => promise });
 }
 function formDb(skaterRows: unknown[], goalieRows: unknown[], fail?: "wgo_skater_stats" | "wgo_goalie_stats",
-  options: { cap?: number; badTable?: string; failure?: string; hangTable?: string } = {}) {
+  options: { cap?: number; badTable?: string; failure?: string; hangTable?: string; slowTable?: string; delayMs?: number; errorCode?: string } = {}) {
   const calls: Array<{ table: string; method: string; args: unknown[] }> = [];
+  // Requests in flight per table (now and at most), for the concurrent recent-form pager.
+  const inFlight: Record<string, { now: number; max: number }> = {};
+  let drifted = false;
   const tables: Record<string, unknown[]> = {
     roster_optimizer_team_games: rows,
     fhfh_player_identities: [{ id: 7, nhl_player_id: 847001, canonical_name: "Skater", canonical_position: "L" }],
@@ -90,13 +94,21 @@ function formDb(skaterRows: unknown[], goalieRows: unknown[], fail?: "wgo_skater
       if (table === options.hangTable) return new Promise<never>(() => {});
       const failure = table === options.badTable ? options.failure : undefined;
       const offset = failure === "duplicate" ? 0 : start;
-      return Promise.resolve({ count: failure === "missing_count" ? null : failure === "overflow" ? 100000
-        : selected.length + (failure === "count_drift" && start ? 1 : 0),
+      // count_drift_once: only the first later page sees one extra row, as if WGO ingest wrote once mid-read.
+      const driftOnce = failure === "count_drift_once" && start > 0 && !drifted;
+      if (driftOnce) drifted = true;
+      const value = { count: failure === "missing_count" ? null : failure === "overflow" ? 100000
+        : selected.length + (failure === "count_drift" && start || driftOnce ? 1 : 0),
       data: failure === "null_data" ? null : failure === "no_progress" && start ? []
         : selected.slice(offset, offset + Math.min(end - start + 1, options.cap ?? Infinity)),
-      error: table === fail || failure === "late_error" && start ? { message: "private database details" } : null });
+      error: table === fail || failure === "late_error" && start
+        ? { message: "private database details", ...options.errorCode ? { code: options.errorCode } : {} } : null };
+      if (table !== options.slowTable) return Promise.resolve(value);
+      const flight = inFlight[table] ??= { now: 0, max: 0 };
+      flight.max = Math.max(flight.max, ++flight.now);
+      return new Promise(resolve => setTimeout(() => { flight.now--; resolve(value); }, options.delayMs));
     };
-    const chain: any = new Proxy({}, { get: (_, method) => method === "then" ? Promise.resolve(result()).then.bind(Promise.resolve(result()))
+    const chain: any = new Proxy({}, { get: (_, method) => method === "then" ? (pending => pending.then.bind(pending))(Promise.resolve(result()))
       : (...args: any[]) => {
         calls.push({ table, method: String(method), args });
         if (method === "range") [start, end] = args;
@@ -105,7 +117,7 @@ function formDb(skaterRows: unknown[], goalieRows: unknown[], fail?: "wgo_skater
       } });
     return chain;
   }, rpc: vi.fn().mockReturnValue(rpcResponse({ data: [], error: null })) };
-  return { db, calls, tables };
+  return { db, calls, tables, inFlight };
 }
 function newsDb(events: Array<{ id: string; game_id: number; queue_version: number; accepted_at: string }>,
   options: { cap?: number; missingCount?: boolean; failPage?: number; duplicatePage?: boolean } = {}) {
@@ -1185,9 +1197,91 @@ describe("public RSO data boundary", () => {
       const { db } = formDb([], [], table);
       const result = await loadPlanningData(db as any, { seasonId: 20262027, startDate: "2026-10-10", endDate: "2026-10-10" },
         { now: new Date("2026-10-10T12:00:00Z") });
-      expect(result.evidence.form.limitations).toContain("recent_form_stats_query_failed");
+      expect(result.evidence.form.limitations).toContain("recent_form_stats_query_failed:page_error");
       expect(JSON.stringify(result.evidence.form)).not.toContain("private database details");
     }
+  });
+  // 5,600 fictional skater rows (6 pages of 1,000): player 847001 has the 12 newest, the rest are other players.
+  const boxScores = (count = 5600) => Array.from({ length: count }, (_, index) => ({ id: 5000 + index,
+    player_id: index < 12 ? 847001 : 900000 + index, date: index < 12 ? new Date(Date.UTC(2026, 9, 9 - index)).toISOString().slice(0, 10) : "2026-10-01",
+    games_played: 1, goals: 1, assists: 0, points: 1, shots: 2, hits: 1, blocked_shots: 0, plus_minus: 0, penalty_minutes: 0,
+    pp_goals: 0, pp_assists: 0, pp_points: 0, sh_goals: 0, sh_assists: 0, sh_points: 0, gw_goals: 0, total_fow: 0, total_fol: 0 }));
+  const formQuery = { seasonId: 20262027, startDate: "2026-10-10", endDate: "2026-10-10" };
+  const formOptions = { now: new Date("2026-10-10T12:00:00Z") };
+  it.each([0, 1500])("reads six recent-form pages concurrently within the 6 s budget (%i ms a page)", async delayMs => {
+    vi.useFakeTimers();
+    const { db, calls, inFlight } = formDb(boxScores(), [], undefined, delayMs ? { slowTable: "wgo_skater_stats", delayMs } : {});
+    const pending = loadPlanningData(db as any, formQuery, formOptions);
+    // One first page, then five pages four at a time: three page round trips (4.5 s), where six sequential ones would be 9 s.
+    await vi.advanceTimersByTimeAsync(3 * delayMs);
+    const result = await pending;
+    expect(result.evidence.form.completeness).toBe("partial");
+    expect(result.evidence.form.limitations.join(" ")).not.toMatch(/recent_form_/);
+    expect(result.players[0].lastFive).toEqual({ games: 5, stats: { GOALS: 5, POINTS: 5, SHOTS_ON_GOAL: 10, HITS: 5 } });
+    expect(result.players[0].recentTotals).toMatchObject({ games: 10, stats: { GOALS: 10, POINTS: 10, SHOTS_ON_GOAL: 20, HITS: 10 } });
+    const own = calls.filter(call => call.table === "wgo_skater_stats");
+    expect(own.filter(call => call.method === "range").map(call => call.args)).toEqual([0, 1, 2, 3, 4, 5].map(page => [page * 1000, page * 1000 + 999]));
+    expect(own.filter(call => call.method === "select").every(call => (call.args[1] as any).count === "exact")).toBe(true);
+    if (delayMs) expect(inFlight.wgo_skater_stats.max).toBe(4);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+  it.each([
+    ["timeout", { hangTable: "wgo_skater_stats" }, "recent_form_stats_timeout"],
+    ["a count that changes on every attempt", { badTable: "wgo_skater_stats", failure: "count_drift" }, "recent_form_stats_count_changed"],
+    ["a count above the cap", { badTable: "wgo_skater_stats", failure: "overflow" }, "recent_form_stats_cap_exceeded"],
+    ["a coded database error", { badTable: "wgo_skater_stats", failure: "late_error", errorCode: "57014" }, "recent_form_stats_query_failed:57014"],
+    ["an uncoded database error", { badTable: "wgo_goalie_stats", failure: "late_error" }, "recent_form_stats_query_failed:page_error"],
+    ["a missing count", { badTable: "wgo_skater_stats", failure: "missing_count" }, "recent_form_stats_query_failed:missing_count"],
+    ["duplicate rows on every attempt", { badTable: "wgo_skater_stats", failure: "duplicate" }, "recent_form_stats_query_failed:duplicate_rows"],
+    ["missing data", { badTable: "wgo_skater_stats", failure: "null_data" }, "recent_form_stats_query_failed:bad_data"],
+    ["short later pages", { badTable: "wgo_skater_stats", failure: "no_progress" }, "recent_form_stats_query_failed:incomplete_page"],
+  ] as const)("records a specific recent-form reason for %s", async (_, options, reason) => {
+    vi.useFakeTimers();
+    const goalies = Array.from({ length: 1200 }, (_, index) => ({ goalie_id: 800000 + index, date: "2026-10-01", games_played: 1 }));
+    // Six full pages, so a page that repeats the first page's rows is a duplicate rather than an over-long last page.
+    const { db, calls } = formDb(boxScores(6000), goalies, undefined, options);
+    const pending = loadPlanningData(db as any, formQuery, formOptions);
+    await vi.advanceTimersByTimeAsync(6000);
+    const result = await pending;
+    expect(result.evidence.form.limitations).toEqual([reason]);
+    expect(JSON.stringify(result.evidence)).not.toContain("private database details");
+    expect(result.players[0].lastFive).toBeUndefined();
+    expect(result.players[0].recentTotals).toBeUndefined();
+    // Drift (a changed count or a duplicate) retries the whole read once; other failures do not retry.
+    const table = "badTable" in options ? options.badTable : options.hangTable;
+    const firstPages = calls.filter(call => call.table === table && call.method === "range" && call.args[0] === 0).length;
+    expect(firstPages).toBe(["count_drift", "duplicate"].includes("failure" in options ? options.failure : "") ? 2 : 1);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+  it("retries one mid-read write and serves the consistent second snapshot", async () => {
+    const { db, calls } = formDb(boxScores(), [], undefined, { badTable: "wgo_skater_stats", failure: "count_drift_once" });
+    const result = await loadPlanningData(db as any, formQuery, formOptions);
+    expect(result.evidence.form.limitations.join(" ")).not.toMatch(/recent_form_/);
+    expect(result.players[0].lastFive?.games).toBe(5);
+    expect(result.players[0].recentTotals?.games).toBe(10);
+    expect(calls.filter(call => call.table === "wgo_skater_stats" && call.method === "range" && call.args[0] === 0)).toHaveLength(2);
+  });
+  it("never serves recent form with a missing row identity", async () => {
+    const { db } = formDb(boxScores().map((row, index) => index === 4321 ? { ...row, id: null } : row), []);
+    const result = await loadPlanningData(db as any, formQuery, formOptions);
+    expect(result.evidence.form.limitations).toEqual(["recent_form_stats_query_failed:missing_identity"]);
+    expect(result.players[0].lastFive).toBeUndefined();
+  });
+  it("keeps the shared sequential pager unchanged for every other read", async () => {
+    vi.useFakeTimers();
+    const fixture = formDb([], [], undefined, { slowTable: "teams", delayMs: 100 });
+    fixture.tables.teams = Array.from({ length: 2500 }, (_, index) => ({ id: index + 1, abbreviation: `T${index}` }));
+    const read = pages(() => fixture.db.from("teams").select("id,abbreviation", { count: "exact" }).order("id"), Date.now() + 60000, 5000);
+    await vi.advanceTimersByTimeAsync(300);
+    expect(await read).toHaveLength(2500);
+    expect(fixture.inFlight.teams.max).toBe(1);
+    expect(fixture.calls.filter(call => call.table === "teams" && call.method === "range").map(call => call.args[0])).toEqual([0, 1000, 2000]);
+    // A changed count still fails at once with no retry, and the reader still uses it for ownership and deployment.
+    const drift = formDb([], [], undefined, { badTable: "teams", failure: "count_drift" });
+    drift.tables.teams = fixture.tables.teams;
+    await expect(pages(() => drift.db.from("teams").select("id", { count: "exact" }).order("id"), Date.now() + 60000, 5000))
+      .rejects.toThrow("Planning source read is incomplete");
+    expect(drift.calls.filter(call => call.table === "teams" && call.method === "range")).toHaveLength(2);
   });
   it("orders WGO game logs by date, derives recent form and sums the last 10 played games", async () => {
     // Twelve played games out of order, plus a repeated date that must not count twice.

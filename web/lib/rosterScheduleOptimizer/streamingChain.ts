@@ -30,9 +30,14 @@ export type StreamingInputs = {
   /** Epoch ms after which no drop candidate beyond the first few is tried. */
   deadline?: number;
 };
-/** With the best certified chain for each initial drop the offered chains don't start with (VORP S1, best first, at most
- * ALTERNATIVE_DROPS). Alternatives are never recommended; their totals are their own certified ones. */
-export type StreamingPlanWithAlternatives = StreamingPlan & { alternatives?: StreamingChain[]; alternativesTruncated?: number };
+/** The goal a streaming alternative is the best different-drop chain for: "games" (most starts) or "points" (best points). */
+export type StreamingGoal = "games" | "points";
+export type StreamingAlternative = StreamingChain & { wins: StreamingGoal[] };
+/** With the best certified chain for each initial drop the offered chains don't start with (VORP S1, best first by the
+ * chain objective, at most ALTERNATIVE_DROPS), plus the best such chain by the other goal when no kept alternative starts
+ * with its drop (VORP S4). `wins` names the goal(s) each is best for. Alternatives are never recommended; their totals are
+ * their own certified ones. `alternativesTruncated` counts the different-drop sets not shown. */
+export type StreamingPlanWithAlternatives = StreamingPlan & { alternatives?: StreamingAlternative[]; alternativesTruncated?: number };
 type Elig = ReturnType<typeof normalizeEligibility> & { key: string };
 /** `points`: blended FPts (see above); `starts`: expected goalie starts the streamers add, net of the drop's. */
 type Value = { games: number; points: number; known: boolean; adds: number; starts: number };
@@ -355,15 +360,17 @@ export function buildStreamingChains(inputs: StreamingInputs): StreamingPlanWith
   /** Blended net when known, else the evaluator's projected net. */
   const pointsOf = (chain: StreamingChain) => chain.netScore ?? chain.netPoints;
   // "Most starts": games, then points. "Best projected points": the week's points, then games.
-  const objectiveBetter = (a: StreamingChain, b: StreamingChain) => {
+  const objectiveOrder = (byPoints: boolean) => (a: StreamingChain, b: StreamingChain) => {
     const left = pointsOf(a), right = pointsOf(b);
     const points = left !== null && right !== null && Math.abs(left - right) > 1e-9 ? left > right : null;
-    if (pointsFirst && points !== null) return points;
+    if (byPoints && points !== null) return points;
     return a.netGames !== b.netGames ? a.netGames > b.netGames : points ?? a.addsUsed < b.addsUsed;
   };
+  const objectiveBetter = objectiveOrder(pointsFirst);
   const meets = (chain: StreamingChain) => !chain.evaluation.goalie.risk;
   // A chain that keeps (or reaches) the goalie minimum beats one that misses it, whatever its AGP or points.
-  const chainBetter = (a: StreamingChain, b: StreamingChain) => targeted && meets(a) !== meets(b) ? meets(a) : objectiveBetter(a, b);
+  const chainOrder = (order: typeof objectiveBetter) => (a: StreamingChain, b: StreamingChain) => targeted && meets(a) !== meets(b) ? meets(a) : order(a, b);
+  const chainBetter = chainOrder(objectiveBetter);
   const certifyAll = (proposals: SpotPlan[][]) => {
     const seen = new Set<string>();
     return proposals.flatMap(spots => {
@@ -426,8 +433,13 @@ export function buildStreamingChains(inputs: StreamingInputs): StreamingPlanWith
     if (!offered.has(key) && (!best || chainBetter(chain, best))) byDrop.set(key, chain);
   }
   const ranked = [...byDrop].sort(([left, a], [right, b]) => chainBetter(a, b) ? -1 : chainBetter(b, a) ? 1 : left.localeCompare(right));
-  plan.alternatives = ranked.slice(0, ALTERNATIVE_DROPS).map(([, chain]) => chain);
-  plan.alternativesTruncated = Math.max(0, ranked.length - ALTERNATIVE_DROPS);
+  const goal: StreamingGoal = pointsFirst ? "points" : "games", otherGoal: StreamingGoal = pointsFirst ? "games" : "points";
+  const kept = ranked.slice(0, ALTERNATIVE_DROPS).map(([, chain]) => chain);
+  // The other goal's best different-drop chain is never cut by the cap (VORP S4): it joins when no kept one starts with its drop.
+  const otherBest = top([...ones, ...twos].filter(chain => !offered.has(initialDrops(chain))), chainOrder(objectiveOrder(!pointsFirst)));
+  plan.alternatives = kept.map(chain => ({ ...chain, wins: chain === otherBest ? [goal, otherGoal] : [goal] }));
+  if (otherBest && !kept.some(chain => initialDrops(chain) === initialDrops(otherBest))) plan.alternatives.push({ ...otherBest, wins: [otherGoal] });
+  plan.alternativesTruncated = ranked.length - plan.alternatives.length;
   if (need > 0 && plan.chains.length && !plan.chains.some(meets)) plan.limitations.push("No streaming chain reaches the goalie minimum with the adds left.");
   if (!priorityWaivers && snapshot.players.some(player => !owned.has(player.id) && isWaiver(player)))
     plan.limitations.push("Waiver claims are chained only in priority-waiver leagues; this league's waiver policy is a budget or unverified.");
