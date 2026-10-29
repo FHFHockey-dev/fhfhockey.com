@@ -45,4 +45,21 @@ Declutter in place (see `AUDIT-2026-10-29.md`). One local commit per approved st
   - CSS pure check passed.
 - **Screens:** `screens/step3-summary-before-after.png`, `screens/step3-phone-before-after.png`.
 - **TJ verdict:** approved 2026-10-29.
+- **Commit:** `da62093c2`.
+
+## Step 4: Best Fit toolbar
+
+- **What changed:**
+  - **Confirm bar:** the "Confirm planning inputs to enable Preview swap" prompt is a slim one-line bar with the reason on the left and a compact button on the right. It is sticky at the top of the Best Fit column, so it stays in view while you scroll the cards whose Preview swap it unlocks.
+  - **Toolbar:** sort ("By projected points" / "By more starts") is a segmented control, and "Find & filter" sits on the same row. When opened, the filter takes the full row below.
+  - **Status slot:** goalie-first notes, "Rankings appear once…", loading and error lines now share one quiet slot below the toolbar (12 px, muted).
+  - **Unchanged:** labels, roles, ids and behaviour. The cards start about 90 px higher.
+- **Files:** `CandidateBrowser.tsx`, `RosterScheduleOptimizer.module.scss`.
+- **Checks:**
+  - RSO vitest passed: 421 of 421, with no test edits.
+  - eslint on `CandidateBrowser.tsx`: clean.
+  - CSS pure check passed.
+  - On phones (under 640 px) the toolbar buttons keep their 44 px touch height.
+- **Screens:** `screens/step4-bestfit-before-after.png`, `screens/step4-phone-before-after.png`.
+- **TJ verdict:** approved 2026-10-29.
 - **Commit:** pending.

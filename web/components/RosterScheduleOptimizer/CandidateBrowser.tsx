@@ -166,25 +166,30 @@ export default function CandidateBrowser({ executionOptions, preferredSort, sear
       {rows.length > limit && <button onClick={showMore}>{`Show more recommendations (${rows.length - limit})`}</button>}</>;
   };
   return <section aria-label="Candidate browser" aria-busy={loading}>
-    {!categories && <div className={styles.candidateViews} role="group" aria-label="Sort recommendations">
-      <button aria-pressed={sort === "points"} onClick={() => setSort("points")}>By projected points</button>
-      <button aria-pressed={sort === "schedule"} onClick={() => setSort("schedule")}>By more starts</button>
-    </div>}
-    {categories && <p className={styles.limitation}>Ranked by more starts. Each card shows the category gains and losses for the whole swap.</p>}
-    {goalieBoost && <p className={styles.limitation}>Your goalie minimum may be missed, so goalies who add starts are listed first.</p>}
-    {loading ? <p role="status" aria-live="polite">Comparing free agents…</p>
-      : !hasEvaluatedFit && <p role="status">{noAddsRemain(snapshot) ? "No adds remain this period; adds return when the period resets." : "Rankings appear once projections and schedules load."}</p>}
-    {error && <p aria-live="polite">{error}</p>}
-    <div className={styles.candidateTools}><details className={styles.candidateFilterDetails}><summary>Find & filter</summary><div className={styles.candidateFilters}>
-      <label className={styles.field}>Find candidate<input id="rso-candidate-search" type="search" value={query} onChange={event => { setQuery(event.target.value); resetExpansion(); }} /></label>
-      <label className={styles.field}>Team<select value={team} onChange={event => { setTeam(event.target.value); resetExpansion(); }}><option value="">All teams</option>{teams.map(value => <option key={value}>{value}</option>)}</select></label>
-      <label className={styles.field}>Position<select value={position} onChange={event => { setPosition(event.target.value); resetExpansion(); }}><option value="">All positions</option>{positions.map(value => <option key={value}>{value}</option>)}</select></label>
+    {/* One toolbar (sort, then find & filter), then one slot for status lines, then the cards. */}
+    <div className={styles.candidateToolbar}>
+      {!categories && <div className={styles.candidateViews} role="group" aria-label="Sort recommendations">
+        <button aria-pressed={sort === "points"} onClick={() => setSort("points")}>By projected points</button>
+        <button aria-pressed={sort === "schedule"} onClick={() => setSort("schedule")}>By more starts</button>
+      </div>}
+      <details className={styles.candidateFilterDetails}><summary>Find & filter</summary><div className={styles.candidateFilters}>
+        <label className={styles.field}>Find candidate<input id="rso-candidate-search" type="search" value={query} onChange={event => { setQuery(event.target.value); resetExpansion(); }} /></label>
+        <label className={styles.field}>Team<select value={team} onChange={event => { setTeam(event.target.value); resetExpansion(); }}><option value="">All teams</option>{teams.map(value => <option key={value}>{value}</option>)}</select></label>
+        <label className={styles.field}>Position<select value={position} onChange={event => { setPosition(event.target.value); resetExpansion(); }}><option value="">All positions</option>{positions.map(value => <option key={value}>{value}</option>)}</select></label>
+        </div>
+        <div className={styles.candidateViews} role="group" aria-label="Candidate views">
+          <button aria-pressed={view === "team"} onClick={() => setView("team")}>By Team</button>
+          <button aria-pressed={view === "all"} onClick={() => setView("all")}>All players</button>
+        </div>
+      </details>
     </div>
-      <div className={styles.candidateViews} role="group" aria-label="Candidate views">
-        <button aria-pressed={view === "team"} onClick={() => setView("team")}>By Team</button>
-        <button aria-pressed={view === "all"} onClick={() => setView("all")}>All players</button>
-      </div>
-    </details></div>
+    <div className={styles.candidateStatus}>
+      {categories && <p className={styles.limitation}>Ranked by more starts. Each card shows the category gains and losses for the whole swap.</p>}
+      {goalieBoost && <p className={styles.limitation}>Your goalie minimum may be missed, so goalies who add starts are listed first.</p>}
+      {loading ? <p role="status" aria-live="polite">Comparing free agents…</p>
+        : !hasEvaluatedFit && <p role="status">{noAddsRemain(snapshot) ? "No adds remain this period; adds return when the period resets." : "Rankings appear once projections and schedules load."}</p>}
+      {error && <p aria-live="polite">{error}</p>}
+    </div>
     {filtered.length === 0 ? <p>No candidates match these filters.</p> : view === "all" ? lists(filtered) : grouped.map(group => <details key={group.name} className={styles.alternative}><summary>{group.name} · {group.rows.length} players</summary>{lists(group.rows)}</details>)}
     {!loading && unrankedReasons.length > 0 && <details className={styles.unrankedDisclosure}><summary>Why some players aren&apos;t ranked</summary>
       <ul aria-label="Why some players aren't ranked">{unrankedReasons.map(reason => <li key={reason}>{reason}</li>)}</ul>
