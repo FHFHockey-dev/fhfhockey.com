@@ -1,28 +1,29 @@
 @use "styles/vars" as v;
+@use "scale" as s;
 
 // Bench days: one compact row per lineup player, most non-counting days first.
-.benchDays { display: flex; flex-direction: column; gap: 2px; padding: 4px 6px; border: 1px solid v.$draft-border; border-radius: v.$radius-card; background: v.$draft-surface; font-size: 11px; }
-.benchDays summary { display: flex; align-items: baseline; gap: 6px; cursor: pointer; color: v.$text-secondary; font-size: 10px; text-transform: uppercase; letter-spacing: .04em; }
-.benchDays summary strong { color: v.$text-primary; }
-.lead { overflow: hidden; color: v.$text-secondary; text-overflow: ellipsis; text-transform: none; letter-spacing: 0; white-space: nowrap; }
-.help { display: flex; align-items: center; gap: 4px; margin: 2px 0; color: v.$text-secondary; font-size: 10px; }
-.more { align-self: flex-start; margin-top: 2px; padding: 1px 6px; border: 1px solid v.$draft-border; border-radius: v.$radius-control; background: transparent; color: v.$text-secondary; font-size: 10px; cursor: pointer; }
-.more:hover, .more:focus-visible { color: v.$primary-color; border-color: v.$primary-color; }
+.benchDays { display: flex; flex-direction: column; gap: 2px; padding: 4px 6px; border: 1px solid v.$draft-border; border-radius: s.$radius-card; background: v.$draft-surface; font-size: s.$text-xs; }
+.benchDays summary { display: flex; align-items: baseline; gap: 6px; cursor: pointer; color: s.$ink-muted; font-size: s.$text-micro; text-transform: uppercase; letter-spacing: .04em; }
+.benchDays summary strong { color: s.$ink; }
+.lead { overflow: hidden; color: s.$ink-muted; text-overflow: ellipsis; text-transform: none; letter-spacing: 0; white-space: nowrap; }
+.help { display: flex; align-items: center; gap: 4px; margin: 2px 0; color: s.$ink-muted; font-size: s.$text-micro; }
+.more { align-self: flex-start; margin-top: 2px; padding: 1px 6px; border: 1px solid v.$draft-border; border-radius: s.$radius-small; background: transparent; color: s.$ink-muted; font-size: s.$text-micro; cursor: pointer; }
+.more:hover, .more:focus-visible { color: s.$accent; border-color: v.$primary-color; }
 .benchDays ol { display: flex; flex-direction: column; gap: 1px; margin: 0; padding: 0; list-style: none; }
 // Name | day strip (takes the spare width) | count | split, all fixed but the strip, so the label row above lines up.
 .benchDays li, .dayLabels { display: grid; grid-template-columns: minmax(0, 92px) minmax(0, 1fr) 34px 66px; align-items: center; gap: 6px; min-height: 20px; }
-.dayLabels { min-height: 0; color: v.$text-secondary; font-size: 9px; text-transform: uppercase; letter-spacing: .02em; }
-.dayLabels .strip b { overflow: hidden; font-weight: 600; text-align: center; white-space: nowrap; }
-.name { overflow: hidden; padding: 0; border: 0; background: none; color: v.$text-primary; font: inherit; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+.dayLabels { min-height: 0; color: s.$ink-muted; font-size: s.$text-micro; text-transform: uppercase; letter-spacing: .02em; }
+.dayLabels .strip b { overflow: hidden; font-weight: s.$weight-bold; text-align: center; white-space: nowrap; }
+.name { overflow: hidden; padding: 0; border: 0; background: none; color: s.$ink; font: inherit; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
 button.name { cursor: pointer; }
-button.name:hover, button.name:focus-visible { color: v.$primary-color; }
+button.name:hover, button.name:focus-visible { color: s.$accent; }
 .strip { display: grid; gap: 2px; min-width: 0; }
-.strip i { display: block; height: 9px; border-radius: 2px; background: rgba(v.$color-neutral-400, .35); }
+.strip i { display: block; height: 9px; border-radius: s.$radius-round; background: rgba(v.$color-neutral-400, .35); }
 .strip i[data-kind="active"] { background: v.$success-color; }
 .strip i[data-kind="sat"] { background: v.$warning-color; }
 .strip i[data-kind="off"] { background: rgba(v.$color-neutral-400, .35); }
 .strip i[data-kind="none"] { background: transparent; }
 .strip i[data-kind="unknown"] { background: transparent; outline: 1px dashed v.$text-secondary; outline-offset: -1px; }
-.count { color: v.$color-white; font: 700 13px v.$font-family-numbers; text-align: right; }
-.count small { color: v.$text-secondary; font-size: 10px; font-weight: 400; }
-.split { color: v.$text-secondary; font-size: 10px; white-space: nowrap; }
+.count { color: s.$ink-strong; font: s.$weight-bold s.$text-sm v.$font-family-numbers; text-align: right; }
+.count small { color: s.$ink-muted; font-size: s.$text-micro; font-weight: s.$weight-regular; }
+.split { color: s.$ink-muted; font-size: s.$text-micro; white-space: nowrap; }

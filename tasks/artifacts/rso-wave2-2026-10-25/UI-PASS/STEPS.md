@@ -62,4 +62,32 @@ Declutter in place (see `AUDIT-2026-10-29.md`). One local commit per approved st
   - On phones (under 640 px) the toolbar buttons keep their 44 px touch height.
 - **Screens:** `screens/step4-bestfit-before-after.png`, `screens/step4-phone-before-after.png`.
 - **TJ verdict:** approved 2026-10-29.
+- **Commit:** `f4e96126a`.
+
+## Step 5: one type, colour and radius scale
+
+- **What changed:**
+  - **New scale partial:** `_scale.scss`, built on `styles/vars` tokens. It holds six sizes (10, 11, 12, 14, 16, 20 px), two weights (400, 700), three radii (small = `$radius-control` 6 px, card = `$radius-card` 10 px, round) and eight text-colour roles (ink, muted, strong, accent, on-accent, good, warn, bad).
+  - **Stylesheets mapped onto it:** all nine RSO `.module.scss` files now take their font sizes, weights, radii and text colours from the scale.
+    - Sizes: 9 → 10, 13 → 12, 15 → 16 (grid point badges → 14 so names keep their room), 18–23 → 20, and the 12/14/20/24 px tokens map to their nearest step.
+    - Weights: 500 → 400, and 600/800/900 → 700.
+    - Radii: 2–5 px and `$radius-xs` → small, 8 px pills → round, `$radius-md` → card.
+    - Colours: gold, neutral-400, danger and background-dark text → the matching role.
+  - **Inherited text:** the workspace base size is 14 px, the panel-body step, instead of the page's 16 px. A `<small>` with no size of its own gets 11 px instead of the browser's relative "smaller", which produced 11.67 and 9.17 px.
+  - **Phone fix:** on narrow screens, the command bar's status row hides when it has nothing to show. In manual mode it had left a blank band about 40 px tall (a step 1 leftover).
+- **Measured** (rendered text inside the workspace, manual fixture, 1600 px):
+
+  | | Before | After |
+  | --- | --- | --- |
+  | Size/weight combos | 24 | 11 |
+  | Text colours | 11 | 8 |
+  | Corner radii | 6 | 3 (6 px, 10 px, round) |
+
+- **Files:** `_scale.scss` (new) and the nine RSO `*.module.scss` files.
+- **Checks:**
+  - RSO vitest passed: 421 of 421.
+  - CSS pure check passed on all nine.
+  - The e2e Plan-summary contract (10 px card radius, 1 px outline, 4 px accent) is kept.
+- **Screens:** `screens/step5-desktop-before-after.png`, `screens/step5-phone-before-after.png`.
+- **TJ verdict:** approved 2026-10-29.
 - **Commit:** pending.

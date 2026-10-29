@@ -1,45 +1,46 @@
 @use "styles/vars" as v;
+@use "scale" as s;
 
-.context { position: relative; flex-shrink: 0; min-width: 0; border: 1px solid v.$draft-border; border-radius: v.$radius-card; background: v.$draft-surface; font-size: 11px; }
-.context summary { min-height: 40px; padding: 4px 8px; cursor: pointer; color: v.$text-primary; }
-.context summary > span { color: v.$text-secondary; }
+.context { position: relative; flex-shrink: 0; min-width: 0; border: 1px solid v.$draft-border; border-radius: s.$radius-card; background: v.$draft-surface; font-size: s.$text-xs; }
+.context summary { min-height: 40px; padding: 4px 8px; cursor: pointer; color: s.$ink; }
+.context summary > span { color: s.$ink-muted; }
 .context summary:focus-visible { outline: 2px solid v.$focus-color; outline-offset: -2px; }
-.context p { margin: 4px 8px 8px; color: v.$text-secondary; line-height: 1.4; }
+.context p { margin: 4px 8px 8px; color: s.$ink-muted; line-height: 1.4; }
 .cards { display: grid; grid-template-columns: repeat(5, minmax(180px, 1fr)); gap: 6px; overflow-x: auto; padding: 0 8px 8px; }
 .cards:focus-visible { outline: 2px solid v.$focus-color; outline-offset: -2px; }
-.cards article { min-width: 0; padding: 6px; border: 1px solid v.$draft-border; border-radius: v.$radius-control; }
+.cards article { min-width: 0; padding: 6px; border: 1px solid v.$draft-border; border-radius: s.$radius-small; }
 .cardHead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; font-variant-numeric: tabular-nums; }
-.cardHead strong { margin-right: auto; color: v.$primary-color; font-size: 12px; }
+.cardHead strong { margin-right: auto; color: s.$accent; font-size: s.$text-sm; }
 .days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; margin-top: 4px; }
 .days > span { min-width: 0; text-align: center; }
 .days small, .days b { display: block; }
-.days small { color: v.$text-secondary; font-size: 10px; }
-.days b { color: v.$text-primary; font-size: 11px; line-height: 16px; font-weight: 600; }
+.days small { color: s.$ink-muted; font-size: s.$text-micro; }
+.days b { color: s.$ink; font-size: s.$text-xs; line-height: 16px; font-weight: s.$weight-bold; }
 .days b[data-off-night="true"] { background: color-mix(in srgb, #{v.$success-color} 24%, transparent); box-shadow: inset 0 0 0 1px v.$success-color; }
 
 .context .contextToolbar { position: absolute; top: 0; right: v.$space-xs; display: flex; align-items: center; }
 .context summary { padding-right: 48px; }
-.context .contextToolbar > span { color: v.$text-secondary; }
+.context .contextToolbar > span { color: s.$ink-muted; }
 .cards article { background: v.$draft-input; }
 // Card: team band | bigger 7-day schedule | week score with GP and OFF beneath it.
 .cards article { display: grid; grid-template-columns: 22px minmax(0, 1fr) 58px; align-items: stretch; gap: 0 6px; padding-left: 0; overflow: hidden; }
-.teamBand { display: flex; align-items: center; justify-content: center; margin: -6px 0; border-radius: v.$radius-control 0 0 v.$radius-control; }
-.teamBand strong { writing-mode: vertical-rl; transform: rotate(180deg); font-size: 11px; font-weight: 800; letter-spacing: .08em; }
+.teamBand { display: flex; align-items: center; justify-content: center; margin: -6px 0; border-radius: s.$radius-small 0 0 s.$radius-small; }
+.teamBand strong { writing-mode: vertical-rl; transform: rotate(180deg); font-size: s.$text-xs; font-weight: s.$weight-bold; letter-spacing: .08em; }
 .days { grid-column: 2; margin-top: 0; }
 .days b { min-height: 26px; }
 .opponentLogo { width: 22px; height: 22px; object-fit: contain; }
 .teamMetrics { grid-column: 3; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: center; gap: 2px; font-variant-numeric: tabular-nums; text-align: center; }
 .teamMetrics .weekScore { grid-column: 1 / -1; }
 .teamMetrics small, .teamMetrics b { display: block; }
-.teamMetrics small { color: v.$text-secondary; font-size: 9px; }
-.teamMetrics b { color: v.$text-primary; font-size: 16px; font-weight: 600; }
-.teamMetrics .weekScore b { color: v.$success-color; font-size: 18px; }
-.teamMetrics > span:not(.weekScore) b { font-size: 12px; }
+.teamMetrics small { color: s.$ink-muted; font-size: s.$text-micro; }
+.teamMetrics b { color: s.$ink; font-size: s.$text-lg; font-weight: s.$weight-bold; }
+.teamMetrics .weekScore b { color: s.$good; font-size: s.$text-xl; }
+.teamMetrics > span:not(.weekScore) b { font-size: s.$text-sm; }
 .context summary { box-sizing: border-box; min-height: 32px; display: flex; align-items: center; gap: v.$space-xs; }
 .cards { grid-template-columns: repeat(5, minmax(250px, 1fr)); }
-.cardHead strong { font-size: v.$font-size-sm; font-weight: 700; }
-.cardHead > span:last-child { color: v.$success-color; }
-.days b { display: grid; place-items: center; min-height: 20px; background: v.$draft-surface-raised; border-radius: v.$radius-xs; }
+.cardHead strong { font-size: s.$text-md; font-weight: s.$weight-bold; }
+.cardHead > span:last-child { color: s.$good; }
+.days b { display: grid; place-items: center; min-height: 20px; background: v.$draft-surface-raised; border-radius: s.$radius-small; }
 @media (max-width: 1100px) { .context summary { min-height: 44px; } }
 // Each day cell fills the card's row height: the weekday label on top, the game box stretching beneath it.
 .days { align-self: stretch; grid-auto-rows: 1fr; }
