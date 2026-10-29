@@ -1,0 +1,6 @@
+# RSO reload-flake test fix (2026-10-29, Claude)
+- Scope: make `it.each(["manual","yahoo"]) reloads shared schedule data…` in RosterScheduleOptimizer.test.tsx load-robust. Test file only. Lease RSO-RELOAD-FLAKE.
+- Baseline sha256 dd2e2b15… verified at start.
+- State: investigating (start). Next: read planningState mock + reload path, repro under load.
+- 2026-10-29 checkpoint: cause = default 1 s waitFor spans fetch+replan+renders; CPU load alone slows test ~5x (350ms→1.9s) but each wait <1s so not fail; async 1.3s delay injected on reload read reproduces `expected 1 to be 2` on old. Fix applied: shared `settle` {timeout:15000} on the 5 waitFors + 30s test timeout. Final verification running (whole file, 64 burners, eslint). Then write RELOAD-FLAKE/RECEIPT.md. Orig copy in scratchpad orig.test.tsx.
+- DONE 2026-10-29: real cause = click on Reload while button disabled (loadingData) is dropped; fix = wait-enabled helper + settle timeout 15s + test timeout 30s. After sha aa5d2d59…. 16/16 loaded, 6/6 unloaded whole-file, eslint 0. Receipt in rso-wave2-2026-10-25/RELOAD-FLAKE/RECEIPT.md. Not committed. Side finding: other tests hit the 5s default test timeout in whole-file runs at load ~200 (out of scope).

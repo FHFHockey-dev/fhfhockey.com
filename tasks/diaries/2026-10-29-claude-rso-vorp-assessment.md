@@ -18,3 +18,7 @@
 - S3 verified by orchestrator: hashes OK, 1,853 RSO+data tests pass, eslint ok, whole-project tsc exit 0 (player-cards error gone). Committing.
 - S3 committed 1a9aac33b. RC15 refs/rc/rso-vorp-rc15 = 54dc346f4 (origin/master fec2ba2d2 + 19 RSO files; base blobs = master; 72 imports identical to master). Gate running in background (scratchpad rc15gate.sh). Push needs TJ pop-up.
 - RC15 gate: tsc 0, lint 0, pure ok, vitest UTC = 6 baseline; NY +RSO page reload test = load flake (master/RC equal timing ~350ms, 3/3 + 4/4 both). Record VORP/RC15-GATE.md. Awaiting TJ push pop-up.
+- 19:0xZ Release #399 live: master 69ec142bd (tree = RC15). Deploy dpl_92MEuKYLvagNaE35MaSqJ7oRMvzQ fhfhockey READY; cms/functions/fhfhockey.com CANCELED. Smoke 3 GETs 200; RSO chunk 813c1c8d has Alternative / not the suggested plan. octoberBranch synced c91d8445f (ours-merge, tree unchanged) and pushed 19:05:31Z; 90 s no-build check running.
+- No-build check: see result; release #399 complete.
+- TJ pop-up: fix flaky RSO reload test. Lease RSO-RELOAD-FLAKE (test file only, baseline dd2e2b15). Session rso-reload-flake local_011b3d04 started.
+- Reload-flake fix verified (sha aa5d2d59, 238/238 x2 in UTC and NY, eslint ok); cause = click on disabled Reload button while loading. Committing. Possible separate load flakes noted: 5 s default timeouts on two timezone-resume tests under extreme load.
