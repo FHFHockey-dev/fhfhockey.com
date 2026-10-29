@@ -90,4 +90,22 @@ Declutter in place (see `AUDIT-2026-10-29.md`). One local commit per approved st
   - The e2e Plan-summary contract (10 px card radius, 1 px outline, 4 px accent) is kept.
 - **Screens:** `screens/step5-desktop-before-after.png`, `screens/step5-phone-before-after.png`.
 - **TJ verdict:** approved 2026-10-29.
+- **Commit:** `7499af689`.
+
+## Step 6: slimmer top-five team strip
+
+- **What changed:** the five team cards keep their content (team band, every day with its opponent logo and off-night highlight, Score, GP and OFF) in about half the height:
+  - day boxes are 18 px tall and opponent logos 16 px;
+  - Score, GP and OFF are inline label-value pairs, with Score still above GP (the e2e pins that);
+  - the team band is 18 px wide;
+  - on desktop the summary row is 24 px tall; on phones it keeps its 44 px touch height.
+- **Height:** the desktop strip goes from about 118 px to about 75 px, which gives about 40 px back to the three columns.
+- **Seven days (TJ asked):** a full week fits on desktop. On phones (≤1100 px) each card keeps a 280 px minimum, so seven weekday labels don't collide and the cards scroll sideways as before.
+- **Files:** `TeamScheduleContext.module.scss`.
+- **Checks:**
+  - RSO vitest passed: 421 of 421.
+  - CSS pure check passed.
+  - The e2e `expectTeamCards` invariants hold: 5 cards, vertical band, score above GP, logos, off-night background.
+- **Screens:** `screens/step6-strip-before-after.png`, `screens/step6-strip-7day-before-after.png`, `screens/step6-desktop-after.png`.
+- **TJ verdict:** approved 2026-10-29 after a 7-day check.
 - **Commit:** pending.

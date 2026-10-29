@@ -46,3 +46,19 @@
 .days { align-self: stretch; grid-auto-rows: 1fr; }
 .days > .dayCell { display: flex; flex-direction: column; gap: 2px; }
 .days .dayCell b { flex: 1 1 auto; }
+// UI pass step 6: a slimmer strip. Same five cards and the same facts, in about half the height: smaller day
+// boxes and logos, the score and GP / OFF as inline label-value pairs (score still above GP), a thinner band.
+.cards { gap: 4px; padding: 0 6px 6px; grid-template-columns: repeat(5, minmax(220px, 1fr)); }
+.cards article { grid-template-columns: 18px minmax(0, 1fr) 66px; gap: 0 4px; padding-block: 3px; }
+.teamBand { margin: -3px 0; }
+.teamBand strong { font-size: s.$text-micro; }
+.days > .dayCell { gap: 1px; }
+.days b { min-height: 18px; }
+.days .opponentLogo { width: 16px; height: 16px; }
+.teamMetrics { gap: 0 4px; }
+.teamMetrics > span { display: flex; align-items: baseline; justify-content: center; gap: 3px; }
+.teamMetrics > span :is(small, b) { display: inline; }
+.teamMetrics .weekScore b { font-size: s.$text-lg; }
+@media (min-width: 1101px) { .context summary { min-height: 24px; padding-block: 2px; } }
+// Phones scroll the cards sideways; each keeps room for a full seven-day week.
+@media (max-width: 1100px) { .cards { grid-template-columns: repeat(5, minmax(280px, 1fr)); } }
