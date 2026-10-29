@@ -16,3 +16,5 @@
 - Codex CODEX-RSO-SCENARIO-CONTRACT-CLOSED: v2 accepted for offline implementation (no live capture/schema/flag/accuracy). S3 awaits TJ go-ahead; FORGE-RESERVE handoff conditional on session start.
 - TJ pop-ups: Start S3 offline; build RC after S3. Lease RSO-S3-SCENARIO (FORGE-RESERVE handoff activated, baselines match Codex fingerprints). Session rso-s3-inputs local_b0abfc02 started. Note: working-tree tsc not clean (other lane's player-cards test).
 - S3 verified by orchestrator: hashes OK, 1,853 RSO+data tests pass, eslint ok, whole-project tsc exit 0 (player-cards error gone). Committing.
+- S3 committed 1a9aac33b. RC15 refs/rc/rso-vorp-rc15 = 54dc346f4 (origin/master fec2ba2d2 + 19 RSO files; base blobs = master; 72 imports identical to master). Gate running in background (scratchpad rc15gate.sh). Push needs TJ pop-up.
+- RC15 gate: tsc 0, lint 0, pure ok, vitest UTC = 6 baseline; NY +RSO page reload test = load flake (master/RC equal timing ~350ms, 3/3 + 4/4 both). Record VORP/RC15-GATE.md. Awaiting TJ push pop-up.
