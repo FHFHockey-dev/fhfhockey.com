@@ -126,3 +126,15 @@ Declutter in place (see `AUDIT-2026-10-29.md`). One local commit per approved st
 - **Accessibility:** see `A11Y-2026-10-29.md`.
 - **Not run:** Playwright e2e specs. The capture scripts used the same fixtures, but the specs themselves did not run.
 - **Not done:** no push, deploy or production access.
+
+## Step 8: Streaming plan starts collapsed on desktop (design review)
+
+- **What changed:** `StreamingItinerary` takes a `defaultOpen` prop. RSO passes `!desktop`, so on screens wider than 1100 px the plan opens collapsed and the week grid is visible without scrolling. Phones still open it. The manager's last toggle is remembered in this browser and wins, both "open" and "closed" (before, only "closed" was restored).
+- **Files:** `StreamingItinerary.tsx`, `RosterScheduleOptimizer.tsx`, `__tests__/…/StreamingItinerary.test.tsx` (one new test).
+- **Checks:**
+  - RSO vitest passed: 422 of 422 (one test added).
+  - eslint: clean.
+  - No e2e spec depends on the plan being open.
+- **Screens:** `screens/step8-streaming-collapsed-before-after.png`.
+- **TJ verdict:** approved 2026-10-29.
+- **Commit:** pending.

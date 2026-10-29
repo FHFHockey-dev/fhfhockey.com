@@ -51,15 +51,17 @@ function goalieStatus(minimum: StreamingGoalieMinimum, chain: StreamingChain, ch
  * Ranked by the average of projected FPts and last-10 FPts/G over the games each player would start; totals show projections.
  * Days from today before `from` (the plan start) or after `through` (the range end) are listed greyed, unplanned.
  * `confirm` is an inline way past `selectDisabled` (the planning-inputs confirmation), shown beside the reason. */
-export default function StreamingItinerary({ plan, dates, from, through, today, nameOf, teamOf, selectDisabled, confirm, onSelect }: {
+export default function StreamingItinerary({ plan, dates, from, through, today, nameOf, teamOf, selectDisabled, confirm, onSelect, defaultOpen = true }: {
   plan: StreamingPlanWithAlternatives | undefined; dates: string[]; from?: string; through?: string; today: string; nameOf: (id: string) => string;
   teamOf: (id: string) => string | null; selectDisabled: string | null; confirm?: ReactNode; onSelect: (steps: PlanStep[]) => void;
+  /** Open state until the manager toggles it; their last choice (stored) wins. */
+  defaultOpen?: boolean;
 }) {
   const [choice, setChoice] = useState<{ key: string; chain: number; overrides: Record<number, string> }>({ key: "", chain: 0, overrides: {} });
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(defaultOpen);
   const bodyId = useId();
   useEffect(() => {
-    try { if (window.localStorage.getItem(STREAMING_PLAN_OPEN_KEY) === "0") setOpen(false); } catch { /* storage unavailable */ }
+    try { const stored = window.localStorage.getItem(STREAMING_PLAN_OPEN_KEY); if (stored === "0" || stored === "1") setOpen(stored === "1"); } catch { /* storage unavailable */ }
   }, []);
   if (!plan) return null;
   const toggle = () => {

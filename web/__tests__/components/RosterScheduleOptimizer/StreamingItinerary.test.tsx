@@ -167,6 +167,19 @@ describe("Streaming itinerary", () => {
     expect(window.localStorage.getItem(STREAMING_PLAN_OPEN_KEY)).toBe("1");
   });
 
+  it("starts collapsed when the page asks (desktop) until the manager's stored choice says otherwise", () => {
+    window.localStorage.removeItem(STREAMING_PLAN_OPEN_KEY);
+    const view = render(<StreamingItinerary {...props} plan={plan} onSelect={vi.fn()} defaultOpen={false} />);
+    const toggle = () => screen.getByRole("button", { name: "Streaming plan" });
+    expect(toggle().getAttribute("aria-expanded")).toBe("false");
+    expect(screen.queryByLabelText("Streaming totals")).toBeNull();
+    view.unmount();
+    window.localStorage.setItem(STREAMING_PLAN_OPEN_KEY, "1");
+    render(<StreamingItinerary {...props} plan={plan} onSelect={vi.fn()} defaultOpen={false} />);
+    expect(toggle().getAttribute("aria-expanded")).toBe("true");
+    expect(screen.getByLabelText("Streaming totals")).toBeTruthy();
+  });
+
   it("stays usable when browser storage throws", () => {
     const failing = vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => { throw new Error("blocked"); });
     vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("blocked"); });
