@@ -1,6 +1,6 @@
 import { useEffect, useId, useState, type ReactNode } from "react";
-import { streamingChainSteps } from "lib/rosterScheduleOptimizer/streamingChain";
-import type { PlanStep, StreamingChain, StreamingGoalieMinimum, StreamingLeg, StreamingPlan } from "lib/rosterScheduleOptimizer/planningTypes";
+import { streamingChainSteps, type StreamingPlanWithAlternatives } from "lib/rosterScheduleOptimizer/streamingChain";
+import type { PlanStep, StreamingChain, StreamingGoalieMinimum, StreamingLeg } from "lib/rosterScheduleOptimizer/planningTypes";
 import styles from "./StreamingItinerary.module.scss";
 
 const dateLabel = (date: string) => new Date(`${date}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
@@ -23,6 +23,7 @@ function totals(chain: StreamingChain, overrides: Record<number, string>) {
 export const STREAMING_PLAN_OPEN_KEY = "fhfh:rso:streaming-plan-open:v1";
 
 const meets = (chain: StreamingChain) => !chain.evaluation.goalie.risk;
+const firstDrops = (chain: StreamingChain) => chain.legs.filter(leg => !leg.step.dependsOn.length).map(leg => leg.dropPlayerId);
 const chainName = (chain: StreamingChain) => `${chain.spots === 1 ? "one-spot" : "two-spot"} plan (${signed(chain.netGames)} AGP)`;
 /** Goalie-minimum readout for the shown chain, and what meeting it costs against a chain that misses it (never silent). */
 function goalieStatus(minimum: StreamingGoalieMinimum, chain: StreamingChain, chains: StreamingChain[]) {
@@ -41,11 +42,12 @@ function goalieStatus(minimum: StreamingGoalieMinimum, chain: StreamingChain, ch
 }
 
 /** Day-by-day streaming plan: ADD or HOLD per day for each stream spot, the ranked options for each add, and totals.
+ * After the offered chains, the best chain for each other first drop is listed as an alternative, never suggested.
  * Ranked by the average of projected FPts and last-10 FPts/G over the games each player would start; totals show projections.
  * Days from today before `from` (the plan start) or after `through` (the range end) are listed greyed, unplanned.
  * `confirm` is an inline way past `selectDisabled` (the planning-inputs confirmation), shown beside the reason. */
 export default function StreamingItinerary({ plan, dates, from, through, today, nameOf, teamOf, selectDisabled, confirm, onSelect }: {
-  plan: StreamingPlan | undefined; dates: string[]; from?: string; through?: string; today: string; nameOf: (id: string) => string;
+  plan: StreamingPlanWithAlternatives | undefined; dates: string[]; from?: string; through?: string; today: string; nameOf: (id: string) => string;
   teamOf: (id: string) => string | null; selectDisabled: string | null; confirm?: ReactNode; onSelect: (steps: PlanStep[]) => void;
 }) {
   const [choice, setChoice] = useState<{ key: string; chain: number; overrides: Record<number, string> }>({ key: "", chain: 0, overrides: {} });
@@ -63,9 +65,10 @@ export default function StreamingItinerary({ plan, dates, from, through, today, 
     <h3><button type="button" className={styles.toggle} aria-expanded={open} aria-controls={bodyId} onClick={toggle}>Streaming plan</button></h3>
     <div id={bodyId} className={styles.body} hidden={!open}>{open && body}</div>
   </section>;
-  const key = plan.chains.map(chain => chain.steps.map(step => step.id).join("|")).join("/");
+  const chains = [...plan.chains, ...plan.alternatives ?? []];
+  const key = chains.map(chain => chain.steps.map(step => step.id).join("|")).join("/");
   const state = choice.key === key ? choice : { key, chain: 0, overrides: {} };
-  const chain = plan.chains[state.chain];
+  const chain = chains[state.chain], alternative = state.chain >= plan.chains.length;
   if (!chain) return section(<p className={styles.note}>{plan.limitations[0] ?? "No streaming chain adds active games this week."}</p>);
   const playerFor = (index: number) => state.overrides[index] ?? chain.legs[index].playerId;
   const ordered = chain.legs.map((leg, index) => ({ leg, index })).sort((a, b) => a.leg.startDate.localeCompare(b.leg.startDate) || a.leg.spot - b.leg.spot);
@@ -85,9 +88,10 @@ export default function StreamingItinerary({ plan, dates, from, through, today, 
   };
   const unplanned = (date: string) => Boolean((from && date < from) || (through && date > through));
   return section(<>
-    {plan.chains.length > 1 && <div className={styles.spots} role="group" aria-label="Stream spots">{plan.chains.map((option, index) =>
+    {chains.length > 1 && <div className={styles.spots} role="group" aria-label="Stream spots">{chains.map((option, index) =>
       <button key={index} aria-pressed={state.chain === index} onClick={() => update({ chain: index, overrides: {} })}>
-        {option.spots === 1 ? "One spot" : "Two spots"} · {signed(option.netGames)} AGP{plan.goalieMinimum ? ` · ${meets(option) ? "meets" : "misses"} G min` : ""}{index === 0 ? " · suggested" : ""}</button>)}</div>}
+        {index >= plan.chains.length ? `Alternative · drop ${firstDrops(option).map(nameOf).join(" + ")}` : option.spots === 1 ? "One spot" : "Two spots"} · {signed(option.netGames)} AGP{plan.goalieMinimum ? ` · ${meets(option) ? "meets" : "misses"} G min` : ""}{index === 0 ? " · suggested" : ""}</button>)}</div>}
+    {alternative && <p className={styles.note}>Alternative with a different first drop, not the suggested plan. Its totals are its own checked plan.</p>}
     <p className={styles.totals} aria-label="Streaming totals">Adds {chain.addsUsed}/{chain.addsAvailable} · {signed(total.games)} AGP · {signed(total.points)} proj FPts{estimated ? " (estimate after swaps)" : chain.netScore != null ? ` · ${signed(chain.netScore)} blended FPts` : ""}</p>
     {goalie && <p className={styles.totals} aria-label="Goalie minimum">{goalie.status}{estimated ? " (before swaps)" : ""}</p>}
     {goalie?.tradeoff && <p className={styles.note}>{goalie.tradeoff}</p>}

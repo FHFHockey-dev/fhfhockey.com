@@ -1,8 +1,8 @@
 import type { CurrentPlanningOptions } from "lib/rosterScheduleOptimizer/currentPlanningRead";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useCandidateMetrics } from "hooks/useCandidateMetrics";
 import { normalizeEligibility } from "lib/rosterScheduleOptimizer/eligibility";
-import { candidatePlanForSort, type CandidateComparison, type CandidateDiagnostic, type CandidatePlan } from "lib/rosterScheduleOptimizer/candidatePlanMetrics";
+import { candidateAlternativeForSort, candidatePlanForSort, type CandidateComparison, type CandidateDiagnostic, type CandidatePlan } from "lib/rosterScheduleOptimizer/candidatePlanMetrics";
 import type { PlanIntent, PlanningPlayer, PlanningResult, PlanningSnapshot, PlanStep } from "lib/rosterScheduleOptimizer/planningTypes";
 import styles from "./RosterScheduleOptimizer.module.scss";
 import CandidateCard from "./CandidateCard";
@@ -10,7 +10,9 @@ import type { CanonicalSchedule } from "./canonicalSchedule";
 
 type Candidate = { player: PlanningPlayer; activeGames: number | null; points: number | null; activePoints: number | null;
   eligibilityKnown?: boolean; availabilityKnown?: boolean;
-  plan?: CandidatePlan; comparison?: CandidateComparison; diagnostic?: CandidateDiagnostic; upcomingGames?: number | null };
+  plan?: CandidatePlan; comparison?: CandidateComparison;
+  /** The best plan with a different drop (VORP S1): shown under the card, never ranked. */
+  alternative?: CandidatePlan; diagnostic?: CandidateDiagnostic; upcomingGames?: number | null };
 type Props = {
   executionOptions?: CurrentPlanningOptions;
   /** Follows the lineup goal (most starts → schedule, best projected points → points); the manager can still switch. */
@@ -34,6 +36,7 @@ type Props = {
 };
 const byName = (a: Candidate, b: Candidate) => a.player.name.localeCompare(b.player.name) || a.player.id.localeCompare(b.player.id);
 const byFit = (a: Candidate, b: Candidate) => (b.activeGames ?? -Infinity) - (a.activeGames ?? -Infinity) || byName(a, b);
+const signed = (value: number | null) => value === null ? "unknown" : `${value > 0 ? "+" : ""}${Number.isInteger(value) ? value : value.toFixed(1)}`;
 const knownInputs = (row: Candidate) => row.eligibilityKnown === true && row.availabilityKnown === true;
 const compareDiscovery = (a: Candidate, b: Candidate) => Number(knownInputs(b)) - Number(knownInputs(a))
   || (b.upcomingGames ?? -Infinity) - (a.upcomingGames ?? -Infinity) || byName(a, b);
@@ -74,6 +77,7 @@ export default function CandidateBrowser({ executionOptions, preferredSort, sear
         const availabilityKnown = ["free_agent", "manager_available", "waivers"].includes(player.availability);
         const comparison = metrics?.candidates?.find(row => row.playerId === player.id);
         const plan = comparison ? candidatePlanForSort(comparison.plans, categories ? "schedule" : sort) : undefined;
+        const alternative = comparison && plan ? candidateAlternativeForSort(comparison, categories ? "schedule" : sort) : undefined;
         const teamKnown = Number.isSafeInteger(player.nhlTeamId) && player.nhlTeamId! > 0
           && (calendar?.teams.some(team => team.id === player.nhlTeamId)
             || calendar?.games.some(game => game.homeTeam.id === player.nhlTeamId || game.awayTeam.id === player.nhlTeamId));
@@ -82,7 +86,7 @@ export default function CandidateBrowser({ executionOptions, preferredSort, sear
         const statesKnown = teamGames.every(game => typeof game.gameState === "string" && game.gameState.trim().length > 0);
         const upcomingGames = calendar?.complete && clocksKnown && statesKnown && teamKnown && Number.isFinite(discoveryAsOf)
           ? teamGames.filter(game => Date.parse(game.startTimeUTC ?? "") > discoveryAsOf && !["LIVE", "CRIT", "OFF", "FINAL", "CNCL", "POST"].includes(game.gameState ?? "")).length : null;
-        return { player, eligibilityKnown, availabilityKnown, comparison, plan, diagnostic: diagnostics.get(player.id), upcomingGames, activeGames: plan?.netAGP ?? null, points: plan?.netPoints ?? null, activePoints: plan?.netPoints ?? null };
+        return { player, eligibilityKnown, availabilityKnown, comparison, plan, alternative, diagnostic: diagnostics.get(player.id), upcomingGames, activeGames: plan?.netAGP ?? null, points: plan?.netPoints ?? null, activePoints: plan?.netPoints ?? null };
       });
   }, [players, rosterIds, metrics, sort, categories, calendar, discoveryAsOf]);
   const teams = [...new Set(candidates.map(row => row.player.teamAbbreviation).filter((value): value is string => Boolean(value)))].sort();
@@ -112,11 +116,15 @@ export default function CandidateBrowser({ executionOptions, preferredSort, sear
     .map(name => ({ name, rows: filtered.filter(row => (row.player.teamAbbreviation ?? "Team unknown") === name) }))
     .sort((a, b) => compareGroups([...a.rows].sort(compareGroups)[0], [...b.rows].sort(compareGroups)[0]) || a.name.localeCompare(b.name));
   const nameOf = (id: string) => players.find(player => player.id === id)?.name ?? id;
-  const row = ({ player, plan, comparison, diagnostic, upcomingGames }: Candidate, index: number, ranked = true) => <CandidateCard key={player.id}
+  const alternativeDrops = (plan: CandidatePlan) => plan.steps.flatMap(step => step.dropPlayerId ? [step.dropPlayerId] : []);
+  const row = ({ player, plan, alternative, comparison, diagnostic, upcomingGames }: Candidate, index: number, ranked = true) => <Fragment key={player.id}><CandidateCard
     player={player} rank={ranked ? index + 1 : null} calendar={calendar} upcomingGames={upcomingGames} plan={plan} comparison={comparison} snapshot={snapshot} categories={categories}
     diagnostic={diagnostic} evaluationState={loading ? "loading" : error ? "error" : !snapshot ? "no_snapshot" : "completed"}
     excluded={intent.excludedPlayerIds.includes(player.id)} nameOf={nameOf} players={players} goalieBoost={goalieBoost}
-    select={select} add={add} selectPlan={selectPlan} canSelectPlan={canSelectPlan} selectPlanReasonId={selectPlanReasonId} manual={manual} markAvailable={markAvailable} compare={compare} />;
+    select={select} add={add} selectPlan={selectPlan} canSelectPlan={canSelectPlan} selectPlanReasonId={selectPlanReasonId} manual={manual} markAvailable={markAvailable} compare={compare} />
+    {alternative && <p className={styles.limitation} aria-label={`Alternative for ${player.name}`}>
+      Alternative: {alternativeDrops(alternative).length ? `drop ${alternativeDrops(alternative).map(nameOf).join(", ")}` : "no drop"}
+      {!categories && ` · Net Pts ${signed(alternative.netPoints)}`} · Net AGP {signed(alternative.netAGP)}</p>}</Fragment>;
   // A goalie minimum at risk lists goalie options that add expected starts first.
   const boosted = (row: Candidate) => Number(goalieBoost && (row.plan?.netGoalieStarts ?? 0) > 0);
   const lists = (rows: Candidate[]) => {

@@ -4,7 +4,7 @@ import { defaultIntent, defaultWorkspace } from "./workspace";
 import { evaluatePlan, forecastPointsReader, planRoster, playerAssignedPoints } from "./planning";
 import { knownDropOrder } from "./retention";
 import { reconcileIntent } from "./reconciliation";
-import { buildStreamingChains, streamingChainSteps } from "./streamingChain";
+import { buildStreamingChains, streamingChainSteps, type StreamingPlanWithAlternatives } from "./streamingChain";
 import { zonedMidnight } from "./planningDates";
 import { snapshotSchema } from "../in-season/workspaceSchema";
 import type { GameForecast, PlanIntent, PlanStep, PlanningPlayer, PlanningSnapshot, StreamingChain } from "./planningTypes";
@@ -365,5 +365,75 @@ describe("saved snapshots with recent totals", () => {
     const extra = JSON.parse(JSON.stringify(withTotals));
     extra.players[2].recentTotals.label = "hot";
     expect(snapshotSchema.safeParse(extra).success).toBe(false);
+  });
+});
+
+describe("streaming chain alternatives (VORP S1)", () => {
+  // Drop order is d1 (0.7), d2 (1.4), g3 (2.0), core. The two D-like fillers play every day, so streaming over either
+  // swaps a start for a start; g3 plays once, so dropping him opens a slot six days. Protected, out and IR+ players
+  // would free a spot for nothing, but are never drops.
+  const all = [0, 1, 2, 3, 4, 5, 6];
+  const scarce: Spec[] = [
+    { id: "core", team: "CORE", days: all, perGame: 3, rostered: true },
+    { id: "d1", team: "DA", days: all, perGame: 0.1, rostered: true },
+    { id: "d2", team: "DB", days: all, perGame: 0.2, rostered: true },
+    { id: "g3", team: "GT", days: [6], perGame: 2, rostered: true },
+    { id: "prot", team: "IDLE", days: [], perGame: 0, rostered: true },
+    { id: "out", team: "IDLE", days: [], perGame: 0, rostered: true },
+    { id: "ir", team: "IDLE", days: [], perGame: 0, rostered: true },
+    { id: "s1", team: "SA", days: [0, 1, 2, 3, 4, 5], perGame: 1 },
+    { id: "s2", team: "SB", days: [0, 1, 2], perGame: 0.9 },
+    { id: "s3", team: "SC", days: [3, 4, 5, 6], perGame: 0.8 },
+  ];
+  const data = () => {
+    const snapshot = week(scarce, { slots: { C: 1, UTIL: 3, BN: 2, "IR+": 1 } });
+    snapshot.players = snapshot.players.map(player => player.id === "out" ? { ...player, injury: { status: "O", label: "Out", note: null } }
+      : player.id === "ir" ? { ...player, reserveEligibility: ["IR+"] } : player);
+    snapshot.roster = snapshot.roster.map(entry => entry.playerId === "ir" ? { ...entry, position: "IR+" as const } : entry);
+    return snapshot;
+  };
+  const droppable = ["core", "d1", "d2", "g3"];
+  const initial = (chain: StreamingChain) => chain.legs.filter(leg => !leg.step.dependsOn.length).map(leg => leg.dropPlayerId).sort().join("|");
+  const run = (protectedPlayerIds: string[]) => planRoster(data(), { ...intent(), protectedPlayerIds });
+
+  it("finds the third-ordered drop when the first two are poor, without inventing alternatives (most starts)", () => {
+    // Streaming over d1 or d2 trades a start for a start, so only g3's chain adds games; no drop chain is certified for them.
+    const plan = planRoster(data(), { ...intent(), objective: "agp", protectedPlayerIds: ["prot"] }).streaming as StreamingPlanWithAlternatives;
+    expect(plan.chains.map(chain => [initial(chain), chain.netGames])).toEqual([["g3", 6]]);
+    expect(plan.alternatives).toEqual([]);
+    expect(plan.alternativesTruncated).toBe(0);
+  });
+
+  it("keeps the best certified chain for each other initial drop, with its own certified totals (best points)", () => {
+    const result = run(["prot"]), plan = result.streaming as StreamingPlanWithAlternatives;
+    // Unchanged recommendation: the two-spot d1 + d2 split, then the one-spot d1 chain.
+    expect(plan.chains.map(initial)).toEqual(["d1|d2", "d1"]);
+    // Before S1 that was all. Now the best chain of each other first drop follows, best points first, capped at three:
+    // g3's own six-start chain (+4.8) ranks fourth here and is reported as truncated, not shown.
+    const alternatives = plan.alternatives!;
+    expect(alternatives.map(initial)).toEqual(["d1|g3", "d2|g3", "d2"]);
+    expect(plan.alternativesTruncated).toBe(1);
+    for (const chain of alternatives) {
+      expect(chain.evaluation).toMatchObject({ legal: true, budgetVerified: true });
+      expect(chain.netGames).toBe(chain.evaluation.activeGames - result.baseline.activeGames);
+      expect(chain.netPoints).toBeCloseTo(chain.evaluation.projectedValue! - result.baseline.projectedValue!);
+    }
+    // Oracle: with every other drop protected, the planner's own best chain for that drop is the alternative.
+    const only = run(["prot", ...droppable.filter(id => id !== "d2")]).streaming!;
+    expect(only.chains).toEqual([alternatives[2]]);
+  });
+
+  it("never starts or continues a chain by dropping a protected, out or reserve-held player", () => {
+    const plan = run(["prot"]).streaming as StreamingPlanWithAlternatives;
+    const drops = [...plan.chains, ...plan.alternatives!].flatMap(chain => chain.legs.map(leg => leg.dropPlayerId));
+    expect(drops.length).toBeGreaterThan(0);
+    expect(drops.filter(id => ["prot", "out", "ir"].includes(id))).toEqual([]);
+  });
+
+  it("changes only the alternatives when another drop is protected", () => {
+    const open = run(["prot"]).streaming as StreamingPlanWithAlternatives, fewer = run(["prot", "g3"]).streaming as StreamingPlanWithAlternatives;
+    expect(fewer.alternatives!.map(initial)).toEqual(["d2"]);
+    expect(fewer.recommended).toBe(open.recommended);
+    expect(fewer.chains).toEqual(open.chains);
   });
 });

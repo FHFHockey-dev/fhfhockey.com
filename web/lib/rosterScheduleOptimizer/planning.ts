@@ -1300,6 +1300,9 @@ export function candidateAcquisitionSteps(snapshot: PlanningSnapshot, intent: Pl
   return extensions(snapshot, intent, [], [player], dropOrder);
 }
 
+/** VORP S1 bounds: pruned states with an unkept drop extended per depth and objective, and alternative places that go
+ * first to a dropped-player set not yet shown. */
+const BEAM_RESERVE = 2, DISTINCT_DROP_SLOTS = 2;
 /** Synchronous and serializable; terminate the owning Worker to cancel a running search. */
 export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, options: PlanningSearchOptions = {}): PlanningResult {
   const start = Date.now();
@@ -1395,6 +1398,10 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
   let evaluated = 3, generated = 0, maxDepthReached = 0, complete = true, beamPruned = false, phasePruned = false, timedOut = false;
   const phaseBudget = maxSteps ? Math.max(1, Math.floor((maxEvaluations - evaluated) / (maxSteps * 2))) : 0;
   const all: State[] = [], seen = new Set(["agp:", "outcome:"]);
+  // Beam reserve (VORP S1): the best pruned states whose dropped players no kept state drops get one more move after the
+  // search, as alternatives only, so the primary plan and the search budget are untouched.
+  const droppedKey = (state: State) => state.steps.flatMap(step => step.dropPlayerId ? [step.dropPlayerId] : step.type === "drop" ? [step.playerId] : []).sort().join("|");
+  const reserved: Array<{ objective: PlanningObjective; state: State }> = [];
   for (let depth = 0; depth < maxSteps; depth++) {
     let anyNext = false;
     for (const searchObjective of ["agp", "outcome"] as const) {
@@ -1438,6 +1445,12 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
       if (retained.length) anyNext = true;
       if (retained.length > beamWidth - 1) beamPruned = true;
       frontiers[searchObjective] = [noMoves[searchObjective], ...retained.slice(0, beamWidth - 1)];
+      if (depth + 1 < maxSteps) {
+        const kept = new Set(frontiers[searchObjective].map(droppedKey)), before = reserved.length;
+        for (const state of retained.slice(beamWidth - 1)) if (reserved.length - before < BEAM_RESERVE && !kept.has(droppedKey(state))) {
+          kept.add(droppedKey(state)); reserved.push({ objective: searchObjective, state });
+        }
+      }
     }
     if (!complete || !anyNext) break;
   }
@@ -1446,6 +1459,23 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
     : "Search work quota exhausted; plans are best found in the evaluated search, not proven optimal.");
   if (phasePruned) limitations.add("Per-depth sampling left candidate transitions unexplored.");
   if (beamPruned) limitations.add("Beam width pruned feasible plans; search is incomplete.");
+  // The reserve pass spends at most one phase's budget, and only after a search that finished within its own bounds.
+  const reserveAll: State[] = [];
+  let reserveEvaluated = 0, reserveSkipped = complete ? 0 : reserved.length;
+  if (complete) for (const [index, { objective: searchObjective, state }] of reserved.entries()) {
+    if (reserveEvaluated >= phaseBudget || timeBudgetMs !== Infinity && Date.now() - start >= timeBudgetMs) { reserveSkipped = reserved.length - index; break; }
+    for (const addition of extensions(snapshot, intent, state.steps, candidates, dropOrder)) {
+      const steps = [...state.steps, ...addition];
+      const key = `${searchObjective}:` + steps.map(step => `${step.type}:${step.playerId}:${step.dropPlayerId ?? ""}:${step.reservePosition ?? ""}:${step.effectiveAt}`).join("|");
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const evaluation = evaluatePlan(snapshot, intent, searchObjective, steps, false);
+      reserveEvaluated++;
+      if (evaluation.legal && evaluation.budgetVerified) reserveAll.push({ steps, evaluation });
+      if (reserveEvaluated >= phaseBudget) break;
+    }
+  }
+  if (reserved.length) limitations.add(`Beam reserve: ${reserved.length - reserveSkipped} of ${reserved.length} pruned plans with a different drop were offered one more move as alternatives only (${reserveEvaluated} new evaluations); deeper sequences for them are unexplored.`);
   const depthPruned = maxSteps === 0 ? candidates.length > 0 : (["agp", "outcome"] as const).some(searchObjective => frontiers[searchObjective].slice(1).some(state => !extensions(snapshot, intent, state.steps, candidates, dropOrder).next().done));
   if (depthPruned) limitations.add("Acquisition depth limit left additional sequences unexplored.");
   if (categoryMode) limitations.add("Category alternatives use projected means without calibrated joint scenarios and are not globally ranked. Presentation order is deterministic; incomparable supported tradeoffs remain available within search bounds.");
@@ -1453,7 +1483,20 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
   const supported = all.filter(state => state.steps.length && safeAlternative(snapshot, state.evaluation.objective === "agp" ? noMoveAgp : noMoveOutcome, state.evaluation, coverageTarget));
   const retained = categoryMode ? supported.filter(candidate => !supported.some(other => other.evaluation.objective === candidate.evaluation.objective
     && compareCategoryEvaluations(snapshot, other.evaluation, candidate.evaluation, coverageTarget) === "better")) : supported;
-  const alternatives = [baseline, ...retained.map(state => state.evaluation)].slice(0, intent.alternativeCount);
+  // The best plan leads as before. Up to DISTINCT_DROP_SLOTS of the remaining places go first to the best plan of each
+  // dropped-player set not yet shown (including reserve-pass plans, never above the best plan); the rest keep score order.
+  const extended = retained.length ? reserveAll.filter(state => safeAlternative(snapshot, state.evaluation.objective === "agp" ? noMoveAgp : noMoveOutcome, state.evaluation, coverageTarget)) : [];
+  if (categoryMode) extended.splice(0, extended.length, ...extended.filter(candidate => ![...supported, ...extended].some(other => other.evaluation.objective === candidate.evaluation.objective
+    && compareCategoryEvaluations(snapshot, other.evaluation, candidate.evaluation, coverageTarget) === "better")));
+  const rest = [...retained.slice(1), ...extended];
+  orderStates(rest, objective);
+  const places = Math.max(0, intent.alternativeCount - 2), shown = new Set<State>(retained.slice(0, 1)), shownDrops = new Set([...shown].map(droppedKey));
+  for (const state of rest) if (shown.size && shown.size - 1 < Math.min(places, DISTINCT_DROP_SLOTS) && !shownDrops.has(droppedKey(state))) {
+    shown.add(state); shownDrops.add(droppedKey(state));
+  }
+  for (const state of retained) if (shown.size < intent.alternativeCount - 1) shown.add(state);
+  const listed = [...retained.slice(0, 1), ...rest.filter(state => shown.has(state))];
+  const alternatives = [baseline, ...listed.map(state => state.evaluation)].slice(0, intent.alternativeCount);
   const categoryLineupBounded = categoryMode && [noMoveAgp, noMoveOutcome, selected, ...alternatives]
     .some(plan => plan.limitations.some(text => text.startsWith("Category lineup analysis is bounded and incomplete")));
   // Only returned plans receive bench evidence. Counterfactuals never recursively

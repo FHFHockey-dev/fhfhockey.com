@@ -306,3 +306,21 @@ it("tells category managers that each card carries the whole swap's category gai
     select={vi.fn()} add={vi.fn()} markAvailable={vi.fn()} />);
   expect(screen.getByText("Ranked by more starts. Each card shows the category gains and losses for the whole swap.")).toBeTruthy();
 });
+
+it("shows the best plan with a different drop under its card as an alternative, without re-ranking (VORP S1)", () => {
+  const workspace = defaultWorkspace();
+  const players: PlanningPlayer[] = ["a", "b", "d1", "d2"].map(id => ({ id, nhlId: null, name: `Synthetic ${id}`, teamAbbreviation: "CAR",
+    eligiblePositions: [id.startsWith("d") ? "D" : "C"], playerClass: "skater", availability: id.startsWith("d") ? "rostered" : "free_agent",
+    ownership: null, canDrop: true, holdValue: null, reserveEligibility: [] }));
+  const plan = (drop: string, netPoints: number, netAGP: number) => ({ objective: "outcome" as const, netAGP, netPoints, displacedPlayerIds: [],
+    dropped: [{ playerId: drop, lostAGP: 1, lostPoints: 1 }], steps: [{ id: `add:${drop}`, type: "add" as const, playerId: "x", dropPlayerId: drop,
+      at: "2026-10-05T00:00:00Z", effectiveAt: "2026-10-05T00:00:00Z", conditional: false, dependsOn: [] }] });
+  // a's alternative (+9) beats b's representative (+4), yet b's own plan still ranks the cards.
+  fixture.candidates = [{ playerId: "a", complete: true, plans: [plan("d1", 3, 0)], alternatives: [plan("d2", 9, -1)], alternativesTruncated: 0 },
+    { playerId: "b", complete: true, plans: [plan("d1", 4, 0)] }];
+  render(<CandidateBrowser players={players} rosterIds={new Set(["d1", "d2"])} snapshot={null} intent={workspace.intent} fits={[]} manual
+    select={vi.fn()} add={vi.fn()} markAvailable={vi.fn()} />);
+  expect(screen.getAllByRole("article").map(article => article.getAttribute("data-rso-candidate-id"))).toEqual(["b", "a"]);
+  expect(screen.getByLabelText("Alternative for Synthetic a").textContent).toBe("Alternative: drop Synthetic d2 · Net Pts +9 · Net AGP -1");
+  expect(screen.queryByLabelText("Alternative for Synthetic b")).toBeNull();
+});
