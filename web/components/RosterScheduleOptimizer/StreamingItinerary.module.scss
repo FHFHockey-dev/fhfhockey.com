@@ -26,6 +26,7 @@
 .options small { color: v.$text-secondary; font-size: 10px; }
 .use { align-self: flex-start; }
 .note { color: v.$text-secondary; font-size: 11px; }
+.gate { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 0; color: v.$text-secondary; font-size: 11px; }
 
 @media (max-width: 480px) {
   .day { grid-template-columns: minmax(0, 1fr); gap: 2px; }
