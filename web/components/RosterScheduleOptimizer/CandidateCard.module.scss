@@ -72,3 +72,8 @@
 // Injured free agents (provider IR/O/DTD): red border, red tint and the injured icon.
 .card[data-injured="true"] { border-color: v.$color-coral-500; background: color-mix(in srgb, #{v.$color-coral-500} 10%, #{v.$draft-surface}); }
 .injury { flex: none; align-self: center; }
+// Best Fit (VORP S4): a less relevant different-drop alternative, collapsed under its card.
+.otherDrop { margin: 0 0 2px; color: v.$text-secondary; font-size: v.$font-size-xs; }
+.otherDrop > summary { display: inline-flex; align-items: center; min-height: 24px; cursor: pointer; }
+.otherDrop > p { margin: 0; }
+@media (max-width: 1100px) { .otherDrop > summary { min-height: 44px; } }

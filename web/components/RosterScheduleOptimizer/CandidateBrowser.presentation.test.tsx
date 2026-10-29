@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
-import CandidateBrowser from "./CandidateBrowser";
+import CandidateBrowser, { alternativeShown, noAddsRemain } from "./CandidateBrowser";
 import { defaultWorkspace } from "lib/rosterScheduleOptimizer/workspace";
 import type { PlanningPlayer, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
 import type { CandidateComparison, CandidateDiagnostic } from "lib/rosterScheduleOptimizer/candidatePlanMetrics";
@@ -323,4 +323,76 @@ it("shows the best plan with a different drop under its card as an alternative, 
   expect(screen.getAllByRole("article").map(article => article.getAttribute("data-rso-candidate-id"))).toEqual(["b", "a"]);
   expect(screen.getByLabelText("Alternative for Synthetic a").textContent).toBe("Alternative: drop Synthetic d2 · Net Pts +9 · Net AGP -1");
   expect(screen.queryByLabelText("Alternative for Synthetic b")).toBeNull();
+});
+
+it("shows a close or other-goal alternative on the card and collapses the rest into an Other drop disclosure (VORP S4)", () => {
+  const workspace = defaultWorkspace();
+  const players: PlanningPlayer[] = ["a", "b", "c", "d1", "d2"].map(id => ({ id, nhlId: null, name: `Synthetic ${id}`, teamAbbreviation: "CAR",
+    eligiblePositions: [id.startsWith("d") ? "D" : "C"], playerClass: "skater", availability: id.startsWith("d") ? "rostered" : "free_agent",
+    ownership: null, canDrop: true, holdValue: null, reserveEligibility: [] }));
+  const plan = (drop: string, netPoints: number, netAGP: number) => ({ objective: "outcome" as const, netAGP, netPoints, displacedPlayerIds: [],
+    dropped: [{ playerId: drop, lostAGP: 1, lostPoints: 1 }], steps: [{ id: `add:${drop}`, type: "add" as const, playerId: "x", dropPlayerId: drop,
+      at: "2026-10-05T00:00:00Z", effectiveAt: "2026-10-05T00:00:00Z", conditional: false, dependsOn: [] }] });
+  // a: 9.5 vs 10 (within 1) → shown. b: 6 vs 10 with fewer AGP → collapsed. c: 4 vs 10 but +1 AGP more → shown.
+  fixture.candidates = [{ playerId: "a", complete: true, plans: [plan("d1", 10, 1)], alternatives: [plan("d2", 9.5, 1)] },
+    { playerId: "b", complete: true, plans: [plan("d1", 10, 1)], alternatives: [plan("d2", 6, 0)] },
+    { playerId: "c", complete: true, plans: [plan("d1", 10, 1)], alternatives: [plan("d2", 4, 2)] }];
+  render(<CandidateBrowser players={players} rosterIds={new Set(["d1", "d2"])} snapshot={null} intent={workspace.intent} fits={[]} manual
+    select={vi.fn()} add={vi.fn()} markAvailable={vi.fn()} />);
+  const line = (id: string) => screen.getByLabelText(`Alternative for Synthetic ${id}`);
+  expect(line("a").closest("details")).toBeNull();
+  expect(line("c").closest("details")).toBeNull();
+  const collapsed = line("b").closest("details") as HTMLDetailsElement;
+  expect(collapsed.open).toBe(false);
+  expect(within(collapsed).getByText("Other drop").tagName).toBe("SUMMARY");
+  // The collapsed alternative keeps its own certified numbers; equal representatives still rank by name, whatever c's +2 AGP alternative.
+  expect(line("b").textContent).toBe("Alternative: drop Synthetic d2 · Net Pts +6 · Net AGP 0");
+  expect(screen.getAllByText("Other drop")).toHaveLength(1);
+  expect(screen.getAllByRole("article").map(article => article.getAttribute("data-rso-candidate-id"))).toEqual(["a", "b", "c"]);
+  // The same rule holds under By more starts: a's 9.5 is still within a point, b's 6 is not.
+  fireEvent.click(screen.getByRole("button", { name: "By more starts" }));
+  expect(line("a").closest("details")).toBeNull();
+  expect((line("b").closest("details") as HTMLDetailsElement).open).toBe(false);
+});
+it("decides alternative relevance by Net Pts within the larger of 1 point and 10%, or more Net AGP; starts only in category leagues (VORP S4)", () => {
+  const plan = (netPoints: number | null, netAGP: number | null) => ({ objective: "outcome" as const, netAGP, netPoints, displacedPlayerIds: [], dropped: [], steps: [] });
+  expect(alternativeShown(plan(20, 2), plan(18, 1), false)).toBe(true);
+  expect(alternativeShown(plan(20, 2), plan(17.9, 2), false)).toBe(false);
+  expect(alternativeShown(plan(3, 2), plan(2, 1), false)).toBe(true);
+  expect(alternativeShown(plan(3, 2), plan(1.9, 2), false)).toBe(false);
+  expect(alternativeShown(plan(-5, 0), plan(-6, 0), false)).toBe(true);
+  expect(alternativeShown(plan(3, 2), plan(null, 3), false)).toBe(true);
+  expect(alternativeShown(plan(3, 2), plan(null, 2), false)).toBe(false);
+  // Schedule-only comparisons (no Net Pts) and category leagues: only more Net AGP shows the line.
+  expect(alternativeShown(plan(null, 2), plan(null, 2), false)).toBe(false);
+  expect(alternativeShown(plan(null, 2), plan(null, 3), false)).toBe(true);
+  expect(alternativeShown(plan(null, 2), plan(null, 2), true)).toBe(false);
+  expect(alternativeShown(plan(null, 2), plan(null, 3), true)).toBe(true);
+});
+it("knows no add plan can exist only when every period in the range has a known allowance under one add (VORP S4)", () => {
+  const workspace = defaultWorkspace(new Date("2026-10-26T15:00:00Z"));
+  const period = { id: "week", start: "2026-10-26T04:00:00Z", end: "2026-11-02T05:00:00Z", remaining: 0, source: "provider" as const };
+  const snapshot = (periods: typeof period[], cost: number | null = 1): PlanningSnapshot => ({ id: "budget", games: [], players: [], roster: [], lockedAssignments: [],
+    forecasts: [], realized: {}, opponent: null, evidence: {}, context: { ...workspace.context, startDate: "2026-10-26", endDate: "2026-11-01", timeZone: "America/New_York", asOf: "2026-10-26T15:00:00Z" },
+    rules: { ...workspace.rules, acquisitionCost: cost, periods } });
+  expect(noAddsRemain(snapshot([period]))).toBe(true);
+  expect(noAddsRemain(snapshot([{ ...period, remaining: 1 }]))).toBe(false);
+  expect(noAddsRemain(snapshot([{ ...period, remaining: null as unknown as number }]))).toBe(false);
+  expect(noAddsRemain(snapshot([{ ...period, source: "unknown" as never }]))).toBe(false);
+  expect(noAddsRemain(snapshot([period], null))).toBe(false);
+  expect(noAddsRemain(snapshot([]))).toBe(false);
+  expect(noAddsRemain(null)).toBe(false);
+  // A reset inside the range brings adds back, so a plan can still exist.
+  expect(noAddsRemain(snapshot([{ ...period, end: "2026-10-29T04:00:00Z" }, { ...period, id: "next", start: "2026-10-29T04:00:00Z", remaining: 2 }]))).toBe(false);
+  // An ended period does not count.
+  expect(noAddsRemain(snapshot([{ ...period, id: "past", start: "2026-10-19T04:00:00Z", end: "2026-10-26T04:00:00Z", remaining: 3 }, period]))).toBe(true);
+});
+it("keeps the loading message when adds remain and names the spent budget when they don't (VORP S4)", () => {
+  const props = discoveryFixture();
+  props.snapshot.rules = { ...props.snapshot.rules, acquisitionCost: 1,
+    periods: [{ id: "week", start: "2026-10-12T00:00:00Z", end: "2026-10-19T00:00:00Z", remaining: 2, source: "provider" }] };
+  const view = render(<CandidateBrowser {...props} />);
+  expect(screen.getByRole("status").textContent).toBe("Rankings appear once projections and schedules load.");
+  view.rerender(<CandidateBrowser {...props} snapshot={{ ...props.snapshot, rules: { ...props.snapshot.rules, periods: [{ ...props.snapshot.rules.periods[0], remaining: 0 }] } }} />);
+  expect(screen.getByRole("status").textContent).toBe("No adds remain this period; adds return when the period resets.");
 });

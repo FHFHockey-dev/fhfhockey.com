@@ -26,3 +26,4 @@
 - Timed read: first page 4.5 ms (DB fast); cause = round trips vs count-change guard. TJ: offline fix + clearer reason. Lease RSO-RECENT-FORM; session rso-recent-form local_e6c5056e started.
 - UI pass: audit UI-PASS/AUDIT-2026-10-29.md; TJ: declutter in place, per-step commits (revertible), approve/edit pop-up per step; 3 design plugins enabled. Start after rso-alt-tidy lands.
 - Recent-form fix verified (hashes, 1,026 tests, eslint; tsc error only in rso-alt-tidy's in-progress test). Axe parked until Monday per TJ. Committing.
+- Alt-tidy verified (hashes, 1,446/1,447 + known 1000-player flake passes alone, eslint, pure, tsc exit 0). Committing; visual pass next.

@@ -109,6 +109,15 @@ it("automatically renders full-roster schedule-only swaps before any plan select
   expectNoExternalInteractions();
 });
 
+it("says no adds remain, not that rankings are loading, when the period's add budget is spent (VORP S4)", async () => {
+  const props = fixture(); props.snapshot.rules.periods = [{ ...props.snapshot.rules.periods[0], remaining: 0 }];
+  render(<CandidateBrowser {...props} />);
+  await screen.findByText("Why some players aren't ranked");
+  expect(screen.getByRole("status").textContent).toBe("No adds remain this period; adds return when the period resets.");
+  expect(screen.queryAllByLabelText(/^Result /)).toHaveLength(0);
+  expectNoExternalInteractions();
+});
+
 it("renders actual no-proposal timing diagnostics through the real solver instead of requesting a selected plan", async () => {
   const props = fixture(); props.snapshot.rules.acquisitionTiming = "unknown";
   const before = JSON.stringify({ snapshot: props.snapshot, intent: props.intent });
