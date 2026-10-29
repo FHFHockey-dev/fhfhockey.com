@@ -108,4 +108,21 @@ Declutter in place (see `AUDIT-2026-10-29.md`). One local commit per approved st
   - The e2e `expectTeamCards` invariants hold: 5 cards, vertical band, score above GP, logos, off-night background.
 - **Screens:** `screens/step6-strip-before-after.png`, `screens/step6-strip-7day-before-after.png`, `screens/step6-desktop-after.png`.
 - **TJ verdict:** approved 2026-10-29 after a 7-day check.
+- **Commit:** `25f44e002`.
+
+## Step 7: DROP chip contrast (from the accessibility check)
+
+- **What changed:** the DROP chip text is dark (`$on-accent`) on the same coral, so contrast goes from 2.78:1 to 6.76:1. The old value predated this pass and failed AA.
+- **Files:** `RosterScheduleOptimizer.module.scss`.
+- **Checks:** CSS pure check passed; contrast measured in the fixture page.
+- **Screens:** `screens/step7-drop-chip-before-after.png`.
+- **TJ verdict:** approved 2026-10-29.
 - **Commit:** pending.
+
+## Wrap-up checks
+
+- **Type-check:** `NODE_OPTIONS=--max-old-space-size=8192 npx tsc --noEmit` under `/private/tmp/fhfh-heavy.lock` passed (exit 0, no errors). It ran after step 6; step 7 only touched scss.
+- **Unit tests:** RSO vitest passed 421 of 421 after every step, with no test edits in any step.
+- **Accessibility:** see `A11Y-2026-10-29.md`.
+- **Not run:** Playwright e2e specs. The capture scripts used the same fixtures, but the specs themselves did not run.
+- **Not done:** no push, deploy or production access.

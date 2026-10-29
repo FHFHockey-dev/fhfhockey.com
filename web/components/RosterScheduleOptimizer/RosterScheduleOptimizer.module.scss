@@ -495,7 +495,7 @@ details.alternative .candidateRow button { width: auto; }
 .comparison p[data-selected="true"] { border-color: v.$primary-color; color: s.$ink; }
 .comparison b { color: s.$ink-strong; font-family: v.$font-family-numbers; font-weight: s.$weight-bold; white-space: nowrap; }
 .dropChip, .reserveChip { margin-left: 6px; padding: 0 5px; border-radius: s.$radius-small; font: normal s.$weight-bold s.$text-micro v.$font-family-primary; letter-spacing: .04em; vertical-align: middle; }
-.dropChip { background: v.$color-coral-500; color: s.$ink-strong; }
+.dropChip { background: v.$color-coral-500; color: s.$on-accent; }
 .unprojectedChip { margin-left: 6px; padding: 0 5px; border: v.$border-subtle; border-radius: s.$radius-small; color: s.$ink-muted; font: normal s.$weight-bold s.$text-micro v.$font-family-primary; letter-spacing: .04em; vertical-align: middle; }
 .dropNotice { grid-column: 1 / -1; padding-block: 2px; color: s.$ink-muted; font-size: s.$text-sm; }
 .reserveChip { border: 1px solid v.$text-secondary; color: s.$ink-muted; }
