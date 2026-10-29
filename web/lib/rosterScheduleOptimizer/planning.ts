@@ -102,8 +102,14 @@ function applies(key: string, kind: "skater" | "goalie", applicability: Applicab
   if (GOALIE_STATS.has(key.toUpperCase())) return kind === "goalie";
   return applicability[kind].has(key) || !applicability.skater.has(key) && !applicability.goalie.has(key);
 }
+/** VORP S2 later-impact scenario (contract v1 §6). Rows marked with this use are in-memory scenario rates, never
+ * native forecasts: they are refused everywhere except inside `evaluateScenarioPlan`, the only setter below. */
+export const LATER_IMPACT_USE = "later_impact_informational";
+let scenarioUse: typeof LATER_IMPACT_USE | null = null;
+const scenarioMark = (forecast: GameForecast | null) => (forecast as { scenarioUse?: unknown } | null)?.scenarioUse;
 export function forecastAllows(forecast: GameForecast | null, key: string, use: "assignment" | "totals" | "comparison" | "conditionalTieBreak"): boolean {
   if (use !== "conditionalTieBreak" && forecast?.conditioning !== "unconditional") return false;
+  if (scenarioUse || scenarioMark(forecast) !== undefined) return scenarioUse !== null && scenarioMark(forecast) === scenarioUse && use !== "conditionalTieBreak";
   return (forecast?.contributions ? forecast.contributions[key]?.allowedUses[use] : (forecast?.targetAllowedUses?.[key] ?? forecast?.allowedUses)?.[use]) === true;
 }
 export function assignmentStats(forecast: GameForecast): StatLine {
@@ -629,7 +635,8 @@ export function scheduleAdmissionProblem(snapshot: PlanningSnapshot): string | n
   return `Schedule evidence observed ${iso(observed)} expired ${iso(observed + SCHEDULE_WITNESS_TTL_MS)}; planning time is ${iso(planning)}. Reload the schedule; a forecast refresh does not renew it.`;
 }
 function prepareEvaluation(snapshot: PlanningSnapshot, playerIds?: ReadonlySet<string>) {
-  snapshot = resolvePlanningContributions(sanitizeForecastInputs(snapshot), { consumer: "rso", playerIds });
+  // Scenario rows never reach the native contribution resolver or its serving policy.
+  snapshot = scenarioUse ? sanitizeForecastInputs(snapshot) : resolvePlanningContributions(sanitizeForecastInputs(snapshot), { consumer: "rso", playerIds });
   const players = new Map(snapshot.players.map(player => [player.id, player]));
   const forecasts = new Map(snapshot.forecasts.filter(forecast => !forecast.expiresAt || Date.parse(forecast.expiresAt) > time(snapshot.context.asOf)).map(forecast => [`${forecast.playerId}:${forecast.gameId}`, forecast]));
   const applicability = statApplicability({ ...snapshot, forecasts: [...forecasts.values()] });
@@ -639,6 +646,15 @@ function prepareEvaluation(snapshot: PlanningSnapshot, playerIds?: ReadonlySet<s
 export function evaluatePlan(snapshot: PlanningSnapshot, intent: PlanIntent, objective: PlanningObjective, steps: PlanStep[] = intent.steps,
   includeBenchEvidence = true, benchBudget?: BenchEvaluationBudget): PlanEvaluation {
   return evaluatePreparedPlan(prepareEvaluation(snapshot, new Set([...snapshot.roster.map(row => row.playerId), ...steps.flatMap(step => [step.playerId, ...(step.dropPlayerId ? [step.dropPlayerId] : [])])])), intent, objective, steps, includeBenchEvidence, benchBudget);
+}
+/** The only entry that sets the scenario use: a frozen roster (no steps) over a derived snapshot whose every forecast is a
+ * marked scenario row. Weekly callers never reach it. The result carries no forecast objects. */
+export function evaluateScenarioPlan(snapshot: PlanningSnapshot, intent: PlanIntent, objective: PlanningObjective, use: typeof LATER_IMPACT_USE): PlanEvaluation {
+  if (use !== LATER_IMPACT_USE || scenarioUse) throw new Error("Scenario evaluation needs the later-impact use and cannot nest.");
+  if (snapshot.forecasts.some(forecast => scenarioMark(forecast) !== use) || snapshot.baselineSources?.length || snapshot.participationSources?.length)
+    throw new Error("Scenario evaluation accepts only marked scenario rows.");
+  scenarioUse = use;
+  try { return { ...evaluatePlan(snapshot, { ...intent, steps: [] }, objective, [], false), forecastInputs: [] }; } finally { scenarioUse = null; }
 }
 function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, intent: PlanIntent, objective: PlanningObjective,
   steps: PlanStep[], includeBenchEvidence: boolean, benchBudget?: BenchEvaluationBudget): PlanEvaluation {
