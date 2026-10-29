@@ -22,3 +22,7 @@
 - No-build check: see result; release #399 complete.
 - TJ pop-up: fix flaky RSO reload test. Lease RSO-RELOAD-FLAKE (test file only, baseline dd2e2b15). Session rso-reload-flake local_011b3d04 started.
 - Reload-flake fix verified (sha aa5d2d59, 238/238 x2 in UTC and NY, eslint ok); cause = click on disabled Reload button while loading. Committing. Possible separate load flakes noted: 5 s default timeouts on two timezone-resume tests under extreme load.
+- Walkthrough: recent form read failing (form partial), Best Fit no-adds message, alt lines untestable (0 adds); Vercel CLI logs no timing; MCP runtime logs 403; 2-min private-confirmation re-read pattern (~1 Yahoo read each, diet off). Tidy session rso-alt-tidy local_00577d05 started.
+- Timed read: first page 4.5 ms (DB fast); cause = round trips vs count-change guard. TJ: offline fix + clearer reason. Lease RSO-RECENT-FORM; session rso-recent-form local_e6c5056e started.
+- UI pass: audit UI-PASS/AUDIT-2026-10-29.md; TJ: declutter in place, per-step commits (revertible), approve/edit pop-up per step; 3 design plugins enabled. Start after rso-alt-tidy lands.
+- Recent-form fix verified (hashes, 1,026 tests, eslint; tsc error only in rso-alt-tidy's in-progress test). Axe parked until Monday per TJ. Committing.

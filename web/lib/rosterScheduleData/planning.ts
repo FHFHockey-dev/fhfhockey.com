@@ -1,4 +1,4 @@
-import { loadPlanningInputs, pages, withinDeadline, PlanningReadDeadlineError, type PlanningDataQuery } from "./planningInputs";
+import { concurrentPages, loadPlanningInputs, pages, withinDeadline, PlanningPageReadError, PlanningReadDeadlineError, type PlanningDataQuery } from "./planningInputs";
 import { admitConsumerGameRevisions } from "lib/projections/consumerRevisionAdmission";
 import { currentRsoUsePolicy, issuedParticipationLineage, restrictRsoForecast, type RsoUsePolicyManifest } from "lib/player-forecasts/rsoUsePolicy";
 import { loadForgeDailyBridgeForecasts, type ForgeBridgeCapture } from "./forgeDailyBridge";
@@ -44,6 +44,9 @@ const numberOrNull = (value: unknown) => typeof value === "number" && Number.isF
 /** Recent form reads 30 days of played games: about 10 for a regular, fewer after a layoff. At most 16 games a day
  * dress about 36 skaters and 4 goalies each, so these caps sit above any full window; a larger count fails the read. */
 const RECENT_FORM_DAYS = 30, RECENT_SKATER_ROWS = 25000, RECENT_GOALIE_ROWS = 2500;
+/** The box-score read gets 6 s (never past the loader deadline): 5–8 skater pages at 4 at a time is at most 3 round trips,
+ * so even 1 s pages leave room for the one whole-read retry after a mid-read write. */
+const RECENT_FORM_BUDGET_MS = 6000, RECENT_FORM_CONCURRENCY = 4;
 /** Deployment chips read every team's charted lineups over two weeks (about 8 games a team, 32 teams), then the PP units of
  * each team's newest one (5 per unit, with every skater who had PP time); both caps sit well above a full window. */
 const DEPLOYMENT_DAYS = 14, DEPLOYMENT_STALE_DAYS = 7, DEPLOYMENT_LINE_ROWS = 600, DEPLOYMENT_PP_ROWS_PER_GAME = 40;
@@ -341,16 +344,18 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
   if (options.skipRecentForm) {
     sources.form = evidence("not_requested", null, query.seasonId, ["Recent scoring context was not requested by this consumer."]);
   } else try {
-    const formDeadline = Math.min(deadline, Date.now() + 2000);
+    const formDeadline = Math.min(deadline, Date.now() + RECENT_FORM_BUDGET_MS);
     const start = new Date(now.getTime() - RECENT_FORM_DAYS * 86400000).toISOString().slice(0, 10);
     const cutoff = new Date(now.getTime() - 24 * 3600000).toISOString().slice(0, 10);
     // One newest-first date-window read per table for every player (date and games_played indexes), each capped;
     // every player keeps his last 10 played games (recentTotals). League weights are applied client-side.
     // Skater rows are keyed by `id` (player and date are not unique there); goalie rows by their unique goalie and date.
-    const window = (table: string, id: string, key: string[], columns: Readonly<Record<string, string>>, maximum: number) => pages(() => db.from(table)
+    // Pages are read concurrently, each re-checking the exact count; a write inside the window retries once (concurrentPages).
+    const window = (table: string, id: string, key: string[], columns: Readonly<Record<string, string>>, maximum: number) => concurrentPages(() => db.from(table)
       .select([...new Set([...key, id, "date", "games_played", ...Object.values(columns)])].join(","), { count: "exact" })
       .eq("season_id", query.seasonId).eq("games_played", 1).gte("date", start).lte("date", cutoff)
-      .order("date", { ascending: false }).order(key[0]), formDeadline, maximum, row => key.map(column => row[column]));
+      .order("date", { ascending: false }).order(key[0]), formDeadline, maximum, row => key.map(column => row[column]),
+    { concurrency: RECENT_FORM_CONCURRENCY });
     const [skaterRows, goalieRows] = await Promise.all([
       window("wgo_skater_stats", "player_id", ["id"], SKATER_RECENT_COLUMNS, RECENT_SKATER_ROWS),
       window("wgo_goalie_stats", "goalie_id", ["goalie_id", "date"], GOALIE_RECENT_COLUMNS, RECENT_GOALIE_ROWS)]);
@@ -377,7 +382,13 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
       player.form = { label: hot ? "Scoring hot" : cold ? "Scoring cold" : "Recent scoring", games: hot ? 3 : Math.min(samples.length, 5), points: hot ? lastThree : lastFive, includedInForecast: null };
     }
     sources.form = evidence("Recent regular-season box scores", null, query.seasonId, ["Recent scoring uses available game logs before the previous day; projection incorporation is unknown and no form bonus is added."]);
-  } catch { sources.form = evidence("Recent box scores", null, query.seasonId, [`recent_form_${recentFormStage}_query_failed`]); }
+  } catch (error) {
+    // A specific, fixed reason: timeout, count changed (after the retry), cap exceeded, or a short safe code.
+    const code = error instanceof PlanningReadDeadlineError ? "timeout" : !(error instanceof PlanningPageReadError) ? "query_failed:unexpected"
+      : ["count_changed", "cap_exceeded"].includes(error.code) ? error.code : `query_failed:${error.code}`;
+    sources.form = evidence("Recent box scores", null, query.seasonId,
+      [recentFormStage === "stats" ? `recent_form_stats_${code}` : "recent_form_processing_query_failed"]);
+  }
   if (deploymentRead) {
     const deployment = await deploymentRead;
     if (deployment) {
