@@ -42,10 +42,11 @@ function goalieStatus(minimum: StreamingGoalieMinimum, chain: StreamingChain, ch
 
 /** Day-by-day streaming plan: ADD or HOLD per day for each stream spot, the ranked options for each add, and totals.
  * Ranked by the average of projected FPts and last-10 FPts/G over the games each player would start; totals show projections.
- * Days from today before `from` (the plan start) or after `through` (the range end) are listed greyed, unplanned. */
-export default function StreamingItinerary({ plan, dates, from, through, today, nameOf, teamOf, selectDisabled, onSelect }: {
+ * Days from today before `from` (the plan start) or after `through` (the range end) are listed greyed, unplanned.
+ * `confirm` is an inline way past `selectDisabled` (the planning-inputs confirmation), shown beside the reason. */
+export default function StreamingItinerary({ plan, dates, from, through, today, nameOf, teamOf, selectDisabled, confirm, onSelect }: {
   plan: StreamingPlan | undefined; dates: string[]; from?: string; through?: string; today: string; nameOf: (id: string) => string;
-  teamOf: (id: string) => string | null; selectDisabled: string | null; onSelect: (steps: PlanStep[]) => void;
+  teamOf: (id: string) => string | null; selectDisabled: string | null; confirm?: ReactNode; onSelect: (steps: PlanStep[]) => void;
 }) {
   const [choice, setChoice] = useState<{ key: string; chain: number; overrides: Record<number, string> }>({ key: "", chain: 0, overrides: {} });
   const [open, setOpen] = useState(true);
@@ -113,7 +114,7 @@ export default function StreamingItinerary({ plan, dates, from, through, today, 
         </div>;
       })}</div>
     </li>)}</ol>
-    {selectDisabled && <small id="rso-streaming-reason" className={styles.note}>{selectDisabled}</small>}
+    {selectDisabled && <p className={styles.gate}><small id="rso-streaming-reason">{selectDisabled}</small>{confirm}</p>}
     <button className={styles.use} disabled={Boolean(selectDisabled)} aria-describedby={selectDisabled ? "rso-streaming-reason" : undefined}
       onClick={() => onSelect(streamingChainSteps(chain, state.overrides))}>Use this streaming plan</button>
     <p className={styles.note}>Ranked by the average of projected fantasy points and fantasy points per game over the last 10 played games (the projection alone when there is no last 10), over the games each player would start.</p>

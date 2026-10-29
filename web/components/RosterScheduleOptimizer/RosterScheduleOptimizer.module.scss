@@ -569,3 +569,4 @@ details.alternative .candidateRow button { width: auto; }
 .objectiveSwitch button { min-height: 26px; padding: 2px 8px; border: 0; background: transparent; color: v.$text-secondary; font-size: 11px; white-space: nowrap; }
 .objectiveSwitch button[aria-pressed="true"] { background: v.$primary-color; color: v.$color-neutral-950; font-weight: 700; }
 .objectiveSwitch button:disabled { opacity: .45; cursor: not-allowed; }
+.confirmGate { display: flex; flex-wrap: wrap; align-items: center; gap: v.$space-xs v.$space-sm; margin-bottom: v.$space-sm; padding: 5px 8px; border: v.$border-subtle; border-left: 4px solid v.$warning-color; border-radius: v.$radius-control; background: v.$draft-surface; font-size: 12px; line-height: 1.4; }

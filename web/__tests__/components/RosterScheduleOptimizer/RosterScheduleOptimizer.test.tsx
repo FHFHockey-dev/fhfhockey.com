@@ -2,7 +2,7 @@ import { webcrypto } from "node:crypto";
 import { Blob as NodeBlob } from "node:buffer";
 import { StrictMode } from "react";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { BenchDecision, GameForecast, PlanEvaluation, PlanIntent, PlanStep, PlanningData, PlanningPlayer, PlanningResult, PlanningSnapshot, PlanningWorkspace } from "lib/rosterScheduleOptimizer/planningTypes";
 import { WORKSPACE_PRESERVATION_JOURNAL, workspaceStorageKey, defaultWorkspace, preservationChecksum, readWorkspaceHistory, writeWorkspace, type WorkspacePreservation } from "lib/rosterScheduleOptimizer/workspace";
 import { planRoster, sanitizeForecastInputs } from "lib/rosterScheduleOptimizer/planning";
@@ -15,7 +15,7 @@ import { saveWorkspaceSchema } from "lib/in-season/workspaceSchema";
 import { useCanonicalSchedule } from "components/RosterScheduleOptimizer/canonicalSchedule";
 import { yahooPlanningReadBroker } from "hooks/yahooPlanningReadBroker";
 
-const { authState, planningState } = vi.hoisted(() => ({ authState: { user: null as { id: string } | null, teams: [] as unknown[] }, planningState: { evaluate: null as null | ((snapshot: PlanningSnapshot, intent: PlanIntent) => PlanningResult) } }));
+const { authState, planningState } = vi.hoisted(() => ({ authState: { user: null as { id: string } | null, teams: [] as unknown[] }, planningState: { evaluate: null as null | ((snapshot: PlanningSnapshot, intent: PlanIntent) => PlanningResult), metrics: undefined as unknown } }));
 vi.mock("components/RosterScheduleOptimizer/canonicalSchedule", async importOriginal => ({ ...await importOriginal<typeof import("components/RosterScheduleOptimizer/canonicalSchedule")>(), useCanonicalSchedule: vi.fn(() => ({ games: [], teams: [], complete: false, error: "Isolated canonical calendar fixture" })) }));
 vi.mock("contexts/AuthProviderContext", () => ({ useAuth: () => authState }));
 // Pass-through: counts the private Yahoo planning reads the page sets up.
@@ -61,7 +61,7 @@ vi.mock("lib/rosterScheduleOptimizer/executionAdapter", async () => {
     if (signal.aborted) throw new Error("obsolete fixture generation");
     const expiry = forecastInputExpiry(view);
     if (expiry !== null && expiry <= Date.now()) view = capacityPlanningSnapshot(view);
-    return { result: planningState.evaluate?.(view, intent) ?? null, displaySnapshot: view, data, readError,
+    return { result: planningState.evaluate?.(view, intent) ?? null, metrics: planningState.metrics, displaySnapshot: view, data, readError,
       expiresAt: expiry !== null && expiry > Date.now() ? expiry : null };
   } };
 });
@@ -122,9 +122,18 @@ const benchReceipt: NonNullable<BenchDecision["evidence"]> = { startDate: "2026-
     { date: "2026-10-05", slotId: "UTIL#1", selectedPlayerId: "center", withPlayerId: "kaprizov" }], categories: [],
   sources: [{ playerId: "batherson", kinds: ["blended"], revisionIds: ["private-revision-id"],
     participation: [{ gameId: "game", basis: "appearance", probability: 0.5, confirmed: false }] }] };
-afterEach(() => { cleanup(); window.localStorage.clear(); window.sessionStorage.clear(); vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks(); fetchMock.mockClear(); authState.user = null; authState.teams = []; planningState.evaluate = null; });
+// The rules section's confirmation; an inline prompt may also offer one where selection is blocked.
+const rulesConfirm = () => within(document.getElementById("rso-rule-settings")!).getByRole("button", { name: "Confirm planning inputs" });
+afterEach(() => { cleanup(); window.localStorage.clear(); window.sessionStorage.clear(); vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks(); fetchMock.mockClear(); authState.user = null; authState.teams = []; planningState.evaluate = null; planningState.metrics = undefined; });
 
 describe("active provider refresh scheduling", () => {
+  // Generic scheduler tests run at the diet-on 5-minute cadence; the diet-off stopgap has its own tests below.
+  let dietBodies = false;
+  beforeEach(() => { dietBodies = false; });
+  const withDiet = async (response: Promise<unknown>) => {
+    const value = await response as { json: () => Promise<Record<string, unknown>> };
+    return dietBodies ? { ...value, json: async () => ({ ...await value.json(), yahooDiet: true }) } : value;
+  };
   const success = (snapshot: PlanningSnapshot) => ({ ok: true, status: 200, json: async () => ({ success: true, snapshot,
     capabilities: { roster: true, availability: true, limitations: [] } }) });
   function setup(reply: (snapshot: PlanningSnapshot, read: number) => Promise<unknown> = async snapshot => success(snapshot), initiallyOnline = true, accountSnapshot = false, sharedData: (read: number) => PlanningData = () => data, accountSaves = false, manualOpponent: PlanningSnapshot["opponent"] = null, emptyIntent = false, now = new Date("2026-10-11T12:00:00Z")) {
@@ -143,7 +152,7 @@ describe("active provider refresh scheduling", () => {
     window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     let reads = 0, sharedReads = 0;
     vi.stubGlobal("fetch", vi.fn((url: string, init?: RequestInit) => {
-      if (url.endsWith("/provider")) return reply(snapshot, ++reads);
+      if (url.endsWith("/provider")) return withDiet(reply(snapshot, ++reads));
       if (url.endsWith("/workspace") && init?.method === "PUT") {
         const body = JSON.parse(String(init.body));
         return Promise.resolve({ ok: true, status: 200, json: async () => ({ data: { workspace: body.workspace, snapshot: body.snapshot, version: 1, updatedAt: body.snapshot.context.asOf } }) });
@@ -503,6 +512,7 @@ describe("active provider refresh scheduling", () => {
   });
 
   it("attempts the first load despite a misreported offline flag, keeps timed polling conservative and refreshes only a stale return", async () => {
+    dietBodies = true;
     const state = setup(undefined, false); await advance(); expect(state.reads()).toBe(1);
     state.network.mockReturnValue(true); fireEvent(window, new Event("online")); await advance(); expect(state.reads()).toBe(1);
     await returned(); await returned(); expect(state.reads()).toBe(1);
@@ -518,6 +528,7 @@ describe("active provider refresh scheduling", () => {
     expect(state.reads()).toBe(3); expect(state.saved().intent).toEqual(state.workspace.intent);
   });
   it("honors a Retry-After longer than the backoff across explicit refresh and visibility returns", async () => {
+    dietBodies = true;
     const state = setup(async (snapshot, read) => read === 1 ? { ok: false, status: 429,
       json: async () => ({ success: false, code: "yahoo_rate_limited", retryAfterSeconds: 3600, error: "Yahoo asked us to slow down." }) } : success(snapshot));
     await advance(); expect(state.reads()).toBe(1);
@@ -528,6 +539,7 @@ describe("active provider refresh scheduling", () => {
     await advance(5 * 60_000); expect(state.reads()).toBe(3); expect(state.saved().intent).toEqual(state.workspace.intent);
   });
   it("keeps partial facts and nonzero intent without treating a throttled partial response as fresh", async () => {
+    dietBodies = true;
     const state = setup(async (snapshot, read) => read === 1 ? { ok: true, status: 200,
       json: async () => ({ success: true, snapshot, capabilities: { roster: true, availability: false, limitations: [] },
         code: "yahoo_rate_limited", retryAfterSeconds: 1200 }) } : success(snapshot));
@@ -538,6 +550,7 @@ describe("active provider refresh scheduling", () => {
     await advance(5 * 60_000); expect(state.reads()).toBe(3);
   });
   it("backs off partial discovery without inventing a rate-limit value", async () => {
+    dietBodies = true;
     const state = setup(async (snapshot, read) => read === 1 ? { ok: true, status: 200,
       json: async () => ({ success: true, snapshot, capabilities: { roster: true, availability: false, limitations: [] } }) } : success(snapshot));
     await advance(); await advance(5 * 60_000); await returned(); expect(state.reads()).toBe(1);
@@ -605,7 +618,61 @@ describe("active provider refresh scheduling", () => {
       expect(leaseReads()).toBe(0); expect(state.reads()).toBe(1);
     });
   });
+  describe("diet-off upkeep stopgap (TJ 10-29)", () => {
+    const MINUTE = 60_000;
+    const kinds = () => vi.mocked(fetch).mock.calls.filter(([url]) => String(url).endsWith("/provider")).map(([, init]) => JSON.parse(String(init?.body)).refresh);
+    it("runs one full snapshot every 30 minutes while visible and active: 1 initial + 4 timed over 2 hours", async () => {
+      const state = setup();
+      await advance(); expect(state.reads()).toBe(1);
+      for (let tick = 1; tick <= 4; tick++) {
+        await advance(29 * MINUTE); fireEvent.pointerDown(document.body); expect(state.reads()).toBe(tick);
+        await advance(MINUTE); expect(state.reads()).toBe(tick + 1);
+      }
+      expect(kinds()).toEqual(["auto", "auto", "auto", "auto", "auto"]);
+    });
+    it("stops after 60 idle minutes and resumes on the next interaction", async () => {
+      const state = setup();
+      await advance(); await advance(30 * MINUTE); expect(state.reads()).toBe(2);
+      // The 60-minute tick finds an hour without interaction and stops.
+      await advance(30 * MINUTE); expect(state.reads()).toBe(2);
+      await advance(2 * 60 * MINUTE); expect(state.reads()).toBe(2);
+      // Returning to a visible tab is not interaction; the next key press is, and the snapshot is overdue.
+      await returned(); expect(state.reads()).toBe(2);
+      fireEvent.keyDown(window, { key: "Tab" }); await advance(); expect(state.reads()).toBe(3);
+      // Further interaction does not snapshot sooner than the 30-minute cadence.
+      fireEvent.pointerDown(document.body); fireEvent.focus(window); await advance(29 * MINUTE); expect(state.reads()).toBe(3);
+      await advance(MINUTE); expect(state.reads()).toBe(4);
+      expect(kinds()).toEqual(["auto", "auto", "auto", "auto"]);
+    });
+    it("keeps the 5-minute cadence without an idle stop when the diet flag is on", async () => {
+      dietBodies = true;
+      const state = setup();
+      await advance(); await advance(5 * MINUTE); expect(state.reads()).toBe(2);
+      await advance(5 * MINUTE); expect(state.reads()).toBe(3);
+      await advance(60 * MINUTE); expect(state.reads()).toBe(15);
+    });
+    it("keeps manual Refresh provider immediate", async () => {
+      const state = setup();
+      await advance(); await advance(10 * MINUTE); expect(state.reads()).toBe(1);
+      fireEvent.click(screen.getByRole("button", { name: "Refresh provider" })); await advance();
+      expect(state.reads()).toBe(2); expect(kinds()).toEqual(["auto", "manual"]);
+      // The timed cadence restarts from the manual refresh.
+      fireEvent.pointerDown(document.body); await advance(29 * MINUTE); expect(state.reads()).toBe(2);
+      await advance(MINUTE); expect(state.reads()).toBe(3);
+    });
+    it("adds no snapshot for a hide/show or reconnect inside the 30-minute window", async () => {
+      const state = setup();
+      await advance(); await advance(10 * MINUTE);
+      state.visibility.mockReturnValue("hidden"); fireEvent(document, new Event("visibilitychange")); await advance(5 * MINUTE);
+      state.visibility.mockReturnValue("visible"); await returned(); fireEvent.focus(window); await advance();
+      fireEvent(window, new Event("online")); await advance();
+      expect(state.reads()).toBe(1);
+      await advance(14 * MINUTE); expect(state.reads()).toBe(1);
+      await advance(MINUTE); expect(state.reads()).toBe(2);
+    });
+  });
   it("pauses automatic permission retries and resumes polling after an explicit successful retry", async () => {
+    dietBodies = true;
     const state = setup(async (snapshot, read) => read === 1 ? { ok: false, status: 403,
       json: async () => ({ success: false, code: "yahoo_access_denied", error: "Reconnect Yahoo and verify league access." }) } : success(snapshot));
     await advance(); await advance(60 * 60_000); await returned(); expect(state.reads()).toBe(1);
@@ -627,6 +694,7 @@ describe("active provider refresh scheduling", () => {
     expect(state.saved().context.asOf).toBe("2026-10-11T12:01:00Z");
   });
   it("does not let an old account response impose a cooldown on the current account", async () => {
+    dietBodies = true;
     let release!: (response: unknown) => void;
     const state = setup(async (snapshot, read) => read === 1 ? new Promise(resolve => { release = resolve; }) : success(snapshot));
     await advance(); expect(state.reads()).toBe(1);
@@ -653,6 +721,7 @@ describe("active provider refresh scheduling", () => {
     { status: 401, code: "yahoo_reauth_required", retryAfterSeconds: undefined },
     { status: 403, code: "yahoo_access_denied", retryAfterSeconds: undefined },
   ])("keeps the current context's $status block when a retired refresh settles", async ({ status, code, retryAfterSeconds }) => {
+    dietBodies = true;
     let release!: (response: unknown) => void;
     const state = setup(async (snapshot, read) => read === 1 ? new Promise(resolve => { release = resolve; })
       : read === 2 ? { ok: false, status, json: async () => ({ success: false, code, retryAfterSeconds, error: "Current context is paused." }) }
@@ -1464,7 +1533,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     vi.stubGlobal("fetch", fetchMock);
     render(<RosterScheduleOptimizer />);
     fireEvent.click(await screen.findByText("League rules and scoring"));
-    const confirm = await screen.findByRole("button", { name: "Confirm planning inputs" });
+    const confirm = await waitFor(rulesConfirm);
     await waitFor(() => expect(confirm.hasAttribute("disabled")).toBe(false));
     expect(screen.queryByText(/Selected plan passes the current rule checks/)).toBeNull();
     const select = () => screen.queryByRole("button", { name: "Select plan" });
@@ -2171,7 +2240,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve({ ok: url.includes("/data?"), json: async () => ({ success: true, data: { ...data, players: [member] } }) })));
     render(<RosterScheduleOptimizer />);
     const next = await screen.findByText("Next selected action: DROP Alpha Center");
-    fireEvent.click(screen.getByRole("button", { name: "Confirm planning inputs" }));
+    fireEvent.click(rulesConfirm());
     expect(next.parentElement?.textContent).toContain("Review inputs and rule checks before acting.");
     expect(next.parentElement?.textContent).not.toContain("Confirm this selected move with your provider.");
     expect(JSON.parse(window.localStorage.getItem(activeKey())!).intent).toEqual(workspace.intent);
@@ -2946,6 +3015,55 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect(previous.disabled).toBe(true); expect(next.disabled).toBe(true);
   });
 
+  it("offers Confirm planning inputs where Preview swap and the streaming plan wait, then enables both", async () => {
+    vi.stubGlobal("fetch", fetchMock);
+    const workspace = defaultWorkspace(), day = workspace.context.endDate;
+    const candidate = { ...player, id: "fhfh:2", nhlId: 2, name: "Beta Wing", availability: "free_agent" as const };
+    workspace.roster = [{ playerId: player.id, position: "bench" }]; workspace.manualPlayers = [player, candidate];
+    workspace.rules.scoring.weights = { GOALS: 1 };
+    const step: PlanStep = { id: "stream-swap", type: "add", playerId: candidate.id, dropPlayerId: player.id, at: `${day}T12:00:00Z`, effectiveAt: `${day}T12:00:00Z`, conditional: false, dependsOn: [] };
+    const option = { playerId: candidate.id, games: 1, gameDates: [day], points: 2, recentPointsPerGame: null, recentGames: null };
+    planningState.evaluate = (snapshot, intent) => ({ ...planRoster(snapshot, intent), streaming: { policyVersion: "rso-stream-v1", recommended: 1, limitations: [], chains: [{
+      spots: 1, steps: [step], evaluation: {} as PlanEvaluation, netGames: 1, netPoints: 2, addsUsed: 1, addsAvailable: 1,
+      legs: [{ spot: 0, step, actionDate: day, startDate: day, endDate: day, playerId: candidate.id, dropPlayerId: player.id, games: 1, gameDates: [day], points: 2, options: [option] }] }] } });
+    planningState.metrics = { candidates: [{ playerId: candidate.id, complete: true,
+      plans: [{ objective: "outcome", steps: [step], netAGP: 1, netPoints: 2, dropped: [], displacedPlayerIds: [] }] }] };
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
+    render(<RosterScheduleOptimizer />);
+    const use = await screen.findByRole("button", { name: "Use this streaming plan" }) as HTMLButtonElement;
+    fireEvent.click(screen.getByRole("button", { name: "All players" }));
+    const swap = await screen.findByRole("button", { name: /^Preview swap: add Beta Wing/ }) as HTMLButtonElement;
+    const described = (button: HTMLElement) => document.getElementById(button.getAttribute("aria-describedby") ?? "")?.textContent;
+    expect(use.disabled).toBe(true); expect(swap.disabled).toBe(true);
+    expect(described(use)).toBe("Confirm planning inputs to enable this streaming plan.");
+    expect(described(swap)).toBe("Confirm planning inputs to enable Preview swap.");
+    const prompts = () => screen.queryAllByRole("button", { name: "Confirm planning inputs" }).filter(button => !button.closest("#rso-rule-settings"));
+    await waitFor(() => expect(prompts()).toHaveLength(2));
+    const panel = screen.getByRole("region", { name: "Candidates and detail" });
+    expect(within(panel).getByRole("button", { name: "Confirm planning inputs" })).toBe(prompts().find(button => panel.contains(button)));
+    fireEvent.click(within(panel).getByRole("button", { name: "Confirm planning inputs" }));
+    await waitFor(() => expect(use.disabled).toBe(false));
+    expect(swap.disabled).toBe(false);
+    expect(use.hasAttribute("aria-describedby")).toBe(false); expect(swap.hasAttribute("aria-describedby")).toBe(false);
+    expect(prompts()).toHaveLength(0);
+    expect(screen.queryByText(/Confirm planning inputs to enable/)).toBeNull();
+    fireEvent.click(swap);
+    expect(JSON.parse(window.localStorage.getItem(activeKey())!).intent.steps.map((row: PlanStep) => row.id)).toEqual(["stream-swap"]);
+  });
+
+  it("keeps other blockers' reasons and shows why confirming is unavailable instead of a button", async () => {
+    vi.stubGlobal("fetch", fetchMock);
+    const workspace = defaultWorkspace();
+    workspace.rules.scoring.weights = { GOALS: 1 };
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
+    render(<RosterScheduleOptimizer />);
+    const panel = screen.getByRole("region", { name: "Candidates and detail" });
+    expect(await within(panel).findByText("Confirm planning inputs to enable Preview swap.")).toBeTruthy();
+    // No roster yet: confirming is unavailable, so the prompt gives that reason rather than a button.
+    expect(within(panel).getByText("Add roster players before confirming inputs.")).toBeTruthy();
+    expect(within(panel).queryByRole("button", { name: "Confirm planning inputs" })).toBeNull();
+  });
+
   it.each([
     { gate: "input", reason: "Review and confirm planning inputs before selecting this plan." },
     { gate: "scoring", reason: "Enter league scoring before selecting this plan." },
@@ -2970,7 +3088,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     const select = await screen.findByRole("button", { name: "Select plan" }) as HTMLButtonElement;
     if (gate !== "hold") expect(screen.getByText("Hypothetical schedule comparison only. Net fantasy points and drop cost are unknown; additional games do not establish a better roster.")).toBeTruthy();
     fireEvent.click(screen.getByText("League rules and scoring", { selector: "summary" }));
-    if (gate !== "input") fireEvent.click(screen.getByRole("button", { name: "Confirm planning inputs" }));
+    if (gate !== "input") fireEvent.click(rulesConfirm());
     if (reason) {
       expect(select.disabled).toBe(true);
       expect(document.getElementById(select.getAttribute("aria-describedby")!)?.textContent).toBe(reason);

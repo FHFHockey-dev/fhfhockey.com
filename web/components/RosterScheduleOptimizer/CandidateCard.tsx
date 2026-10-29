@@ -44,7 +44,7 @@ function reasonFor(plan: CandidatePlan, categories: boolean, drops: number): str
 }
 
 export default function CandidateCard({ player, rank, plan, comparison, diagnostic, evaluationState = "completed", snapshot, categories, excluded,
-  select, add, selectPlan, canSelectPlan, manual, markAvailable, compare, calendar, upcomingGames, goalieBoost, players,
+  select, add, selectPlan, canSelectPlan, selectPlanReasonId, manual, markAvailable, compare, calendar, upcomingGames, goalieBoost, players,
   nameOf = id => (players ?? snapshot?.players)?.find(row => row.id === id)?.name ?? id }: {
   player: PlanningPlayer; rank: number | null; calendar?: CanonicalSchedule; upcomingGames?: number | null; plan?: CandidatePlan; comparison?: CandidateComparison;
   snapshot: PlanningSnapshot | null; categories: boolean; excluded: boolean;
@@ -52,7 +52,7 @@ export default function CandidateCard({ player, rank, plan, comparison, diagnost
   details?: (plan: CandidatePlan) => ReactNode;
   diagnostic?: CandidateDiagnostic; evaluationState?: "no_snapshot" | "loading" | "error" | "completed";
   select: (id: string) => void; add: (player: PlanningPlayer) => void;
-  selectPlan?: (steps: PlanStep[]) => void; canSelectPlan?: boolean; manual: boolean; markAvailable: (player: PlanningPlayer) => void;
+  selectPlan?: (steps: PlanStep[]) => void; canSelectPlan?: boolean; selectPlanReasonId?: string; manual: boolean; markAvailable: (player: PlanningPlayer) => void;
   compare?: (id: string) => void; nameOf?: (id: string) => string; goalieBoost?: boolean;
   /** Player pool used to describe dropped players; falls back to the snapshot. */
   players?: PlanningPlayer[];
@@ -141,6 +141,7 @@ export default function CandidateCard({ player, rank, plan, comparison, diagnost
           {reserves.map(step => <p key={step.id} className={styles.warning}>Move {nameOf(step.playerId)} to {step.reservePosition} first</p>)}
         </div>
         {plan && selectPlan ? <button className={styles.action} disabled={!canSelectPlan || !selectionAvailable}
+          aria-describedby={!canSelectPlan ? selectPlanReasonId : undefined}
           aria-label={`Preview swap: add ${player.name}${drops.length ? `, drop ${drops.map(nameOf).join(", ")}` : ""}`}
           onClick={() => selectPlan(plan.steps)}>Preview swap</button>
           : ACQUIRABLE.includes(player.availability) && <button className={styles.textButton} onClick={() => add(player)}>Select add</button>}
