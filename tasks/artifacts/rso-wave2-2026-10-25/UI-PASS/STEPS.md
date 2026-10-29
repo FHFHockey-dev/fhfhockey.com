@@ -30,4 +30,19 @@ Declutter in place (see `AUDIT-2026-10-29.md`). One local commit per approved st
   - Phone roster tab checked at 390 px.
 - **Screens:** `screens/step2-grid-before-after.png`, `screens/step2-roster-before-after.png` (manual fixture with projections).
 - **TJ verdict:** approved 2026-10-29 with one edit: keep the "Empty" boxes with their dotted borders. The faint unlabeled slots were reverted.
+- **Commit:** `e982e1968`.
+
+## Step 3: roster summary
+
+- **What changed:**
+  - **Stat cards:** the three week-summary cards (Active games, Bench games, Projected points or Category outcomes) are compact. Text is left-aligned, the value is 15 px, and the detail and note are each one line, with the full text in a tooltip (and still in the DOM). Each card keeps its 1 px band outline, 10 px radius and 4 px accent, as the e2e "Release C" contract pins them.
+  - **Footer row:** the goalie-starts chip moves from its own row above the cards into one footer row below them, beside the lineup comparison. The comparison is borderless there and moves just outside the "Plan summary" region; the unit tests pin no comparison text.
+  - **Height:** about 250 px down to about 165 px in the desktop roster column. On the phone, the old cards stretched to a tall empty height; they are now compact.
+- **Files:** `RosterScheduleOptimizer.tsx`, `RosterScheduleOptimizer.module.scss`.
+- **Checks:**
+  - RSO vitest passed: 421 of 421, with no test edits.
+  - eslint: 0 errors. The 6 exhaustive-deps warnings were already there.
+  - CSS pure check passed.
+- **Screens:** `screens/step3-summary-before-after.png`, `screens/step3-phone-before-after.png`.
+- **TJ verdict:** approved 2026-10-29.
 - **Commit:** pending.

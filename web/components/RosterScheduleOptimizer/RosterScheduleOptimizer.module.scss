@@ -617,3 +617,15 @@ details.alternative .candidateRow button { width: auto; }
   .navContext .navWeek button { flex: 1 1 auto; min-height: 40px; }
   .navContext .refreshButton { min-height: 40px; }
 }
+// UI pass step 3: the week summary is one compact block: three stat cards (value plus a one-line detail whose
+// full text is its tooltip), then one row with goalie starts and the lineup comparison.
+.rosterSummary { gap: 4px; padding: 5px 6px; }
+.rosterSummary .metrics article { align-items: flex-start; padding: 3px 6px 3px 9px; text-align: left; }
+.rosterSummary .metrics article strong { font-size: 15px; line-height: 1.15; }
+.rosterSummary .metrics article :is(small, .metricNote) { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; line-height: 1.3; }
+.summaryFoot { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; min-width: 0; }
+.summaryFoot:empty { display: none; }
+.rosterSummary .summaryFoot .goalieChip { flex: none; min-height: 24px; padding: 1px 8px; font-size: 11px; }
+.rosterSummary .summaryFoot .comparison { flex: 1 1 auto; flex-wrap: wrap; gap: 2px 4px; padding: 0; border: 0; background: transparent; font-size: 11px; }
+.summaryFoot .comparison > span { font-size: 10px; }
+.summaryFoot .comparison p { gap: 4px; padding: 1px 5px; white-space: nowrap; }
