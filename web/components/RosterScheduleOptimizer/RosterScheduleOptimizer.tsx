@@ -1,6 +1,6 @@
 import { PROVIDER_SYNC_UPSELL } from "lib/integrations/providerSyncAccess";
 import { expandBridgeForecasts, packPlanningSnapshots, unpackPlanningSnapshots } from "lib/rosterScheduleData/bridgeForecastWire";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fromZonedTime } from "date-fns-tz";
 import { useAuth } from "contexts/AuthProviderContext";
 import { useRosterPlanning } from "hooks/useRosterPlanning";
@@ -130,6 +130,13 @@ function datesBetween(start: string, end: string) {
   const cursor = new Date(`${start}T12:00:00Z`);
   for (let i = 0; i < 367 && cursor.toISOString().slice(0, 10) <= end; i++, cursor.setUTCDate(cursor.getUTCDate() + 1)) dates.push(cursor.toISOString().slice(0, 10));
   return dates;
+}
+
+/** Alternates for each new toast message so its fade restarts without remounting the live region. */
+function useToastRun(message: object | null) {
+  const run = useRef<{ message: object | null; odd: boolean }>({ message: null, odd: false });
+  if (message && message !== run.current.message) run.current = { message, odd: !run.current.odd };
+  return run.current.odd;
 }
 
 /** Opt-in diagnostics for "the page reset" reports: localStorage.setItem("fhfh:rso:debug", "1"), then reload. */
@@ -444,8 +451,13 @@ export default function RosterScheduleOptimizer() {
   const refreshBusy = !refreshUnavailable && refreshFeedback?.state === "busy";
   const saveFeedback = accountSave?.key === accountKey && accountSave.userId === user?.id ? accountSave : null;
   const saveBusy = saveFeedback?.state === "busy";
+  const refreshToast = workspace.context.provider !== "manual" && !refreshUnavailable && refreshFeedback?.state === "success";
+  const saveToast = saveFeedback?.state === "success";
+  const refreshRun = useToastRun(refreshToast ? refreshFeedback : null);
+  const saveRun = useToastRun(saveToast ? saveFeedback : null);
   const localFeedback = actionFeedback?.key === accountKey && actionFeedback.userId === user?.id
     && (actionFeedback.intentRevision === undefined || actionFeedback.intentRevision === workspace.intent.revision) ? actionFeedback.text : null;
+  const actionRun = useToastRun(localFeedback ? actionFeedback : null);
   const undoUnavailable = readOnlySaved ? "Saved inputs are read-only." : !history.current.some(entry => workspaceContextKey(entry.context) === accountKey) ? "No edits to undo." : null;
   useEffect(() => { accountSaveRequest.current = null; setAccountSave(null); return () => { accountSaveRequest.current = null; }; }, [accountKey, user?.id]);
   useEffect(() => { setSelectedPlayer(null); setQuery(""); setCandidateSearch(""); }, [accountKey, user?.id]);
@@ -1148,14 +1160,23 @@ export default function RosterScheduleOptimizer() {
   return <div ref={workspaceElement} className={styles.workspace}>
     <header className={styles.navBar} role="group" aria-label="Planning command bar">
       <h1 className={styles.navTitle}>Roster Schedule Optimizer</h1>
+      {/* Context (league, sync, week), then status, then actions. */}
+      <div className={styles.navContext} role="group" aria-label="League and week">
       <button className={styles.providerControl} aria-controls="rso-planning-setup" aria-expanded={setupExpanded} onClick={() => setSetupExpanded(value => !value)}><span className={styles.providerMark} aria-hidden="true">{workspace.context.provider === "yahoo" ? "Y!" : workspace.context.provider === "manual" ? "M" : "F"}</span><span><strong>{workspace.context.provider === "manual" ? "Manual roster" : workspace.context.provider === "yahoo" ? "Connected to Yahoo" : "Connected to Fantrax"}</strong><small>{usingRetainedRoster ? "Saved roster · refresh to sync" : viewingSaved ? "Saved plan" : connectedInput ? `Synced${addsLeft !== null ? ` · ${addsLeft} ${addsLeft === 1 ? "add" : "adds"} left this week` : ""}` : "Choose source and dates"}</small></span></button>
+      {workspace.context.provider !== "manual" && <button className={styles.refreshButton} onClick={() => void refreshProvider()} disabled={readOnlySaved || Boolean(refreshUnavailable) || refreshBusy} aria-label="Refresh provider" aria-busy={refreshBusy} aria-describedby="rso-provider-refresh-status"><span aria-hidden="true" className={styles.refreshIcon}>↻</span>{refreshBusy ? "Refreshing…" : "Refresh"}</button>}
       <div className={styles.navWeek}><button className={styles.rangeButton} aria-controls="rso-planning-setup" aria-expanded={setupExpanded} onClick={() => setSetupExpanded(value => !value)} aria-label={`Planning setup · ${dateLabel(workspace.context.startDate)} – ${dateLabel(workspace.context.endDate)}`}>{dateLabel(workspace.context.startDate)} – {dateLabel(workspace.context.endDate)}</button><button disabled={readOnlySaved} aria-describedby="rso-current-week-range" onClick={() => edit(current => ({ ...current, context: { ...current.context, startDate: currentRange.startDate, endDate: currentRange.endDate } }), "current")}>Current week</button><small id="rso-current-week-range"><span className={styles.scheduleSrOnly}>{dateRangeOrigin.current === "restored" ? "Saved range retained. " : dateRangeOrigin.current === "custom" ? "Custom range retained. " : ""}Current week {dateLabel(currentRange.startDate)} – {dateLabel(currentRange.endDate)} · {currentRange.source === "provider" ? "Yahoo matchup dates" : "Mon–Sun fallback; league matchup dates unverified"}</span></small></div>
+      </div>
       <label className={styles.commandSearch}><span className={styles.scheduleSrOnly}>Player search</span><input type="search" aria-label="Search candidate players" placeholder="Search players or teams…" value={candidateSearch} onFocus={() => setTab("candidates")} onChange={event => setCandidateSearch(event.target.value)} /></label>
       {/* One line in the bar; hover or keyboard focus opens every notice as an overlay. */}
       <div className={styles.navStatus}><div className={styles.statusRail}>
-    {workspace.context.provider !== "manual" && <div id="rso-provider-refresh-status" className={styles.notice} hidden={!refreshUnavailable && !refreshFeedback} role={refreshFeedback?.state === "error" && !refreshUnavailable ? "alert" : "status"}>{refreshUnavailable || refreshFeedback?.text}{!refreshUnavailable && refreshFeedback?.state === "error" && <span> Try Refresh provider again.</span>}</div>}
-    <div id="rso-account-save-status" className={styles.notice} hidden={!saveFeedback} role={saveFeedback?.state === "error" ? "alert" : "status"}>{saveFeedback?.text}{saveFeedback?.state === "error" && <span> Review the reason and try Save to account again.</span>}</div>
-    <div id="rso-action-status" className={styles.notice} role="status" hidden={!localFeedback}>{localFeedback}</div>
+    {/* Success messages leave the rail as a toast that fades (the live region stays put); errors and reasons stay in the rail. */}
+    {workspace.context.provider !== "manual" && (refreshToast
+      ? <div id="rso-provider-refresh-status" className={`${styles.toastSlot} ${refreshRun ? styles.toastAgain : ""}`} role="status" style={{ "--toast-row": 0 } as CSSProperties}>{refreshFeedback?.text}</div>
+      : <div id="rso-provider-refresh-status" className={styles.notice} hidden={!refreshUnavailable && !refreshFeedback} role={refreshFeedback?.state === "error" && !refreshUnavailable ? "alert" : "status"}>{refreshUnavailable || refreshFeedback?.text}{!refreshUnavailable && refreshFeedback?.state === "error" && <span> Try Refresh provider again.</span>}</div>)}
+    {saveToast
+      ? <div id="rso-account-save-status" className={`${styles.toastSlot} ${saveRun ? styles.toastAgain : ""}`} role="status" style={{ "--toast-row": Number(refreshToast) } as CSSProperties}>{saveFeedback?.text}</div>
+      : <div id="rso-account-save-status" className={styles.notice} hidden={!saveFeedback} role={saveFeedback?.state === "error" ? "alert" : "status"}>{saveFeedback?.text}{saveFeedback?.state === "error" && <span> Review the reason and try Save to account again.</span>}</div>}
+    <div id="rso-action-status" className={`${styles.toastSlot} ${actionRun ? styles.toastAgain : ""}`} role="status" hidden={!localFeedback} style={{ "--toast-row": Number(refreshToast) + Number(saveToast) } as CSSProperties}>{localFeedback}</div>
     {usingRetainedRoster && <div className={styles.notice} role="status">Retained roster · roster, locks &amp; availability unverified.</div>}
     {usingRetainedRoster && workspace.context.provider === "yahoo" && !yahooEligibility.loading && (yahooEligibility.error || yahooEligibility.receipt?.status === "error") && <div className={styles.notice} role="status">Saved Yahoo positions could not be read; refresh Yahoo to update them.</div>}
     {snapshot && result && !scheduleComplete && <div className={styles.notice} role="status">Some team schedules for these dates aren&apos;t confirmed yet, so a few game counts are estimates.</div>}
@@ -1167,7 +1188,6 @@ export default function RosterScheduleOptimizer() {
     {supplemented?.conflicts.length ? <div className={styles.notice} role="status">Provider inputs changed. Manager inputs were kept for review: {supplemented.conflicts.join(" ")}</div> : null}
     </div></div>
       <div className={styles.commandActions} role="group" aria-label="Workspace actions"><button onClick={undo} disabled={Boolean(undoUnavailable)} aria-describedby={undoUnavailable ? "rso-undo-reason" : undefined}>Undo</button>{undoUnavailable && <small id="rso-undo-reason" className={styles.scheduleSrOnly}>{undoUnavailable}</small>}<button disabled={planHeld} onClick={() => setTab(tab === "matchup" ? "candidates" : "matchup")}>{tab === "matchup" ? "Candidates" : "Matchup"}</button>{account?.snapshot && <button disabled={planHeld} onClick={() => { dateRangeOrigin.current = "restored"; setWorkspace(account.workspace); setViewingSaved(true); }}>View account save</button>}{access?.capabilities.includes("rso_account_save") && !readOnlySaved && <button className={styles.primaryAction} onClick={() => void saveAccount()} disabled={saveBusy} aria-busy={saveBusy} aria-describedby="rso-account-save-status">Save to account{saveBusy && <span aria-hidden="true"> · Saving…</span>}</button>}</div>
-      {workspace.context.provider !== "manual" && <button onClick={() => void refreshProvider()} disabled={readOnlySaved || Boolean(refreshUnavailable) || refreshBusy} aria-label="Refresh provider" aria-busy={refreshBusy} aria-describedby="rso-provider-refresh-status">{refreshBusy ? "Refreshing provider…" : "Refresh provider"}</button>}
       <details className={styles.navMenu}><summary aria-label="Settings and tools"><span aria-hidden="true">☰</span></summary><div className={styles.navMenuPanel}>
         <small id="rso-updated-at" className={styles.updatedAt}>{viewingSaved && inputSnapshot ? `Saved ${actionTime(inputSnapshot.context.asOf, inputSnapshot.context.timeZone)}` : lastUpdated ? `Updated ${new Date(lastUpdated).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` : ""}</small>
         <button className={styles.commandControl} onClick={() => reachInput("roster", "#rso-rule-settings > summary")}><strong>League settings</strong><small>{rules.scoring.mode === "categories" ? "Categories" : "Points"} · {rules.lineupMode} lineup</small></button>

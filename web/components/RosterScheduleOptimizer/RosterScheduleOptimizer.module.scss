@@ -570,3 +570,43 @@ details.alternative .candidateRow button { width: auto; }
 .objectiveSwitch button[aria-pressed="true"] { background: v.$primary-color; color: v.$color-neutral-950; font-weight: 700; }
 .objectiveSwitch button:disabled { opacity: .45; cursor: not-allowed; }
 .confirmGate { display: flex; flex-wrap: wrap; align-items: center; gap: v.$space-xs v.$space-sm; margin-bottom: v.$space-sm; padding: 5px 8px; border: v.$border-subtle; border-left: 4px solid v.$warning-color; border-radius: v.$radius-control; background: v.$draft-surface; font-size: 12px; line-height: 1.4; }
+// UI pass step 1: the command bar reads as three clusters. Context (league, sync, refresh, week) is one joined
+// control; secondary actions are quiet so Save stands out; success messages fade out as a toast.
+.navContext { display: flex; align-items: stretch; flex-shrink: 0; min-width: 0; border: 1px solid v.$draft-border; border-radius: v.$radius-control; background: v.$draft-input; }
+.navContext > * + * { border-left: 1px solid v.$draft-border; }
+.navBar .navContext .providerControl { min-height: 30px; border: 0; border-radius: 0; background: transparent; }
+.navContext .navWeek { gap: 0; }
+.navContext .navWeek button { border: 0; border-radius: 0; background: transparent; }
+.navContext .navWeek button + button { border-left: 1px solid v.$draft-border; }
+.navContext .refreshButton { display: inline-flex; align-items: center; gap: 4px; min-height: 30px; padding: 2px 9px; border: 0; border-radius: 0; background: transparent; color: v.$text-secondary; font-size: 12px; white-space: nowrap; }
+.navContext :is(.refreshButton, .navWeek button, .providerControl):hover:not(:disabled) { color: v.$primary-color; }
+.navContext .refreshButton[aria-busy="true"] .refreshIcon { animation: rsoSpin 1s linear infinite; }
+.refreshIcon { display: inline-block; font-size: 14px; line-height: 1; }
+@keyframes rsoSpin { to { transform: rotate(360deg); } }
+.navBar .commandActions button:not(.primaryAction) { border-color: transparent; background: transparent; color: v.$text-secondary; }
+.navBar .commandActions button:not(.primaryAction):hover:not(:disabled) { border-color: v.$draft-border; color: v.$text-primary; }
+.toastSlot { padding: v.$space-sm 12px; border: 1px solid v.$draft-border; border-left: 3px solid v.$success-color; border-radius: v.$radius-control; background: v.$draft-surface-raised; box-shadow: v.$shadow-panel; color: v.$text-primary; font-size: 13px; line-height: 1.4; animation: rsoToast 7s ease forwards; position: fixed; right: v.$space-md; bottom: calc(#{v.$space-md} + var(--toast-row, 0) * 52px); z-index: v.$z-desktop-toast; max-width: min(380px, calc(100vw - 32px)); }
+.toastSlot[hidden] { display: none; }
+// Hovering a toast holds it so a longer message can be read.
+.toastSlot:hover { animation-play-state: paused; }
+// A new message switches to an identical animation so the fade starts again.
+.toastAgain { animation-name: rsoToastAgain; }
+@keyframes rsoToast { 0% { opacity: 0; transform: translateY(6px); } 4% { opacity: 1; transform: none; } 88% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
+@keyframes rsoToastAgain { 0% { opacity: 0; transform: translateY(6px); } 4% { opacity: 1; transform: none; } 88% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
+@keyframes rsoToastStill { 0%, 88% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
+@keyframes rsoToastStillAgain { 0%, 88% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
+@media (prefers-reduced-motion: reduce) {
+  .toastSlot { animation-name: rsoToastStill; }
+  .toastSlot.toastAgain { animation-name: rsoToastStillAgain; }
+  .navContext .refreshButton[aria-busy="true"] .refreshIcon { animation: none; }
+}
+@media (max-width: 1100px) {
+  .toastSlot { left: v.$space-md; right: v.$space-md; bottom: calc(84px + var(--toast-row, 0) * 52px); max-width: none; }
+}
+@media (max-width: 640px) {
+  .navContext { flex: 1 1 100%; flex-wrap: wrap; }
+  .navBar .navContext .providerControl { flex: 1 1 auto; }
+  .navContext .navWeek { flex: 1 1 100%; border-left: 0; border-top: 1px solid v.$draft-border; }
+  .navContext .navWeek button { flex: 1 1 auto; min-height: 40px; }
+  .navContext .refreshButton { min-height: 40px; }
+}
