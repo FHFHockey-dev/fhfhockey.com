@@ -1230,9 +1230,12 @@ export default function RosterScheduleOptimizer() {
         {gapReport && !gapReport.bestDrop && dropBlockers.length > 0 && (() => {
           const reasons = `${dropBlockers.map(row => row.playerId ? `${nameOf(row.playerId)} ${row.reason}` : row.reason).join(" · ")}.`;
           // A long per-player list would push the roster rows off screen (FR18); keep it one click away.
+          // So would one long reason (coverage and goalie-minimum detail), so long text folds too (UI pass step 9).
           return dropBlockers.length > 2
             ? <details className={styles.dropNotice} role="status"><summary>No drop suggested: projected points are unknown for {dropBlockers.length} players</summary>{reasons}</details>
-            : <p className={styles.dropNotice} role="status">No drop suggested: {reasons}</p>;
+            : reasons.length > 90
+              ? <details className={styles.dropNotice} role="status"><summary>No drop suggested: projected points are unknown</summary>{reasons}</details>
+              : <p className={styles.dropNotice} role="status">No drop suggested: {reasons}</p>;
         })()}
         {gapReport && !gapReport.bestDrop && !gapReport.projectionBlockers.length && gapReport.unprojectedDrops.length > 0 && <p className={styles.dropNotice} role="status">No drop suggested: {gapReport.unprojectedDrops.length} {gapReport.unprojectedDrops.length === 1 ? "player" : "players"} unprojected ({gapReport.unprojectedDrops.map(nameOf).join(", ")}).</p>}
         {roster.map((entry) => { const player = players.find((item) => item.id === entry.playerId); if (!player) return <div key={entry.playerId} className={styles.rosterRow}>Unmatched ID {entry.playerId}<RosterContribution name={entry.playerId} contribution={contributions.get(entry.playerId)} nameOf={nameOf} /></div>; const protectedPlayer = workspace.intent.protectedPlayerIds.includes(player.id); return <RosterPlayerRow key={player.id}

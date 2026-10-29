@@ -137,4 +137,16 @@ Declutter in place (see `AUDIT-2026-10-29.md`). One local commit per approved st
   - No e2e spec depends on the plan being open.
 - **Screens:** `screens/step8-streaming-collapsed-before-after.png`.
 - **TJ verdict:** approved 2026-10-29.
+- **Commit:** `ab4f9987e`.
+
+## Step 9: one-line "No drop suggested" notice (design review)
+
+- **What changed:** a single long reason (over 90 characters, such as the coverage and goalie-minimum detail) now folds into the same one-line disclosure that 3+ blockers already used: "No drop suggested: projected points are unknown", with the reason one click away. Short reasons stay inline. The summary for 3+ blockers is unchanged, as the e2e pins it.
+- **Not done on purpose:** a single confirm button. The 10-29 decision (pinned in the unit tests) offers "Confirm planning inputs" both where swaps wait and where the streaming plan waits. On phones the Streaming plan's button is the only one in the Itinerary tab. Step 8 already hides that copy on desktop by collapsing the plan.
+- **Files:** `RosterScheduleOptimizer.tsx`.
+- **Checks:**
+  - RSO vitest passed: 422 of 422.
+  - eslint: 0 errors.
+- **Screens:** `screens/step9-drop-notice-before-after.png`.
+- **TJ verdict:** approved 2026-10-29.
 - **Commit:** pending.
