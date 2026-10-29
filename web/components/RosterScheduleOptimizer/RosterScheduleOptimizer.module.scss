@@ -618,6 +618,8 @@ details.alternative .candidateRow button { width: auto; }
   .toastSlot { left: v.$space-md; right: v.$space-md; bottom: calc(84px + var(--toast-row, 0) * 52px); max-width: none; }
 }
 @media (max-width: 640px) {
+  // Search shrinks first so the actions and ☰ can share its row (UI pass step 10).
+  .navBar .commandSearch { flex: 1 1 120px; }
   .navContext { flex: 1 1 100%; flex-wrap: wrap; }
   .navBar .navContext .providerControl { flex: 1 1 auto; }
   .navContext .navWeek { flex: 1 1 100%; border-left: 0; border-top: 1px solid v.$draft-border; }

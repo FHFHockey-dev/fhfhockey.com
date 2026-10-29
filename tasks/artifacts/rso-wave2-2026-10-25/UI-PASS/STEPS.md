@@ -149,4 +149,20 @@ Declutter in place (see `AUDIT-2026-10-29.md`). One local commit per approved st
   - eslint: 0 errors.
 - **Screens:** `screens/step9-drop-notice-before-after.png`.
 - **TJ verdict:** approved 2026-10-29.
+- **Commit:** `64ac85ad1`.
+
+## Step 10: small copy and phone fix (design review)
+
+- **What changed:**
+  - **Strip summary:** reads "Top five team schedules · Oct 7–Oct 11"; the redundant "· Team context" is gone.
+  - **Best Fit card labels:** sentence case ("Net Pts / Net AGP") instead of all caps.
+  - **Phones:** the command bar's search box shrinks first, so in manual mode ☰ shares the search row instead of taking a row of its own (about 40 px saved).
+- **Changed from the review:** the review suggested "Net starts" for AGP. AGP is the page's term in the roster columns, the Streaming plan and the tooltips, and tests pin "Net AGP", so renaming only the cards would make the terms inconsistent. A page-wide AGP → "starts" rename is a separate copy task.
+- **Files:** `TeamScheduleContext.tsx`, `CandidateCard.module.scss`, `RosterScheduleOptimizer.module.scss`.
+- **Checks:**
+  - RSO vitest passed: 422 of 422.
+  - eslint: clean.
+  - CSS pure check passed.
+- **Screens:** `screens/step10-copy-phone-before-after.png`.
+- **TJ verdict:** approved 2026-10-29.
 - **Commit:** pending.
