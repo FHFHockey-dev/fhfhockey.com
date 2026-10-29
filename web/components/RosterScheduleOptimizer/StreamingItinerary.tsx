@@ -1,5 +1,5 @@
 import { useEffect, useId, useState, type ReactNode } from "react";
-import { streamingChainSteps, type StreamingPlanWithAlternatives } from "lib/rosterScheduleOptimizer/streamingChain";
+import { streamingChainSteps, type StreamingAlternative, type StreamingPlanWithAlternatives } from "lib/rosterScheduleOptimizer/streamingChain";
 import type { PlanStep, StreamingChain, StreamingGoalieMinimum, StreamingLeg } from "lib/rosterScheduleOptimizer/planningTypes";
 import styles from "./StreamingItinerary.module.scss";
 
@@ -24,6 +24,10 @@ export const STREAMING_PLAN_OPEN_KEY = "fhfh:rso:streaming-plan-open:v1";
 
 const meets = (chain: StreamingChain) => !chain.evaluation.goalie.risk;
 const firstDrops = (chain: StreamingChain) => chain.legs.filter(leg => !leg.step.dependsOn.length).map(leg => leg.dropPlayerId);
+/** The goal(s) an alternative is the best different-drop chain for (VORP S4). */
+const winsOf = (chain: StreamingChain) => (chain as Partial<StreamingAlternative>).wins ?? [];
+const goalsOf = (chain: StreamingChain) => winsOf(chain).map(goal => goal === "games" ? "most starts" : "best points").join(", ");
+const bestFor = (chain: StreamingChain) => winsOf(chain).map(goal => goal === "games" ? "starts" : "points").join(" and ");
 const chainName = (chain: StreamingChain) => `${chain.spots === 1 ? "one-spot" : "two-spot"} plan (${signed(chain.netGames)} AGP)`;
 /** Goalie-minimum readout for the shown chain, and what meeting it costs against a chain that misses it (never silent). */
 function goalieStatus(minimum: StreamingGoalieMinimum, chain: StreamingChain, chains: StreamingChain[]) {
@@ -42,19 +46,22 @@ function goalieStatus(minimum: StreamingGoalieMinimum, chain: StreamingChain, ch
 }
 
 /** Day-by-day streaming plan: ADD or HOLD per day for each stream spot, the ranked options for each add, and totals.
- * After the offered chains, the best chain for each other first drop is listed as an alternative, never suggested.
+ * After the offered chains, the best chain for each other first drop is listed as an alternative, never suggested, named
+ * by the goal it is best for (points alternatives also show their projected FPts).
  * Ranked by the average of projected FPts and last-10 FPts/G over the games each player would start; totals show projections.
  * Days from today before `from` (the plan start) or after `through` (the range end) are listed greyed, unplanned.
  * `confirm` is an inline way past `selectDisabled` (the planning-inputs confirmation), shown beside the reason. */
-export default function StreamingItinerary({ plan, dates, from, through, today, nameOf, teamOf, selectDisabled, confirm, onSelect }: {
+export default function StreamingItinerary({ plan, dates, from, through, today, nameOf, teamOf, selectDisabled, confirm, onSelect, defaultOpen = true }: {
   plan: StreamingPlanWithAlternatives | undefined; dates: string[]; from?: string; through?: string; today: string; nameOf: (id: string) => string;
   teamOf: (id: string) => string | null; selectDisabled: string | null; confirm?: ReactNode; onSelect: (steps: PlanStep[]) => void;
+  /** Open state until the manager toggles it; their last choice (stored) wins. */
+  defaultOpen?: boolean;
 }) {
   const [choice, setChoice] = useState<{ key: string; chain: number; overrides: Record<number, string> }>({ key: "", chain: 0, overrides: {} });
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(defaultOpen);
   const bodyId = useId();
   useEffect(() => {
-    try { if (window.localStorage.getItem(STREAMING_PLAN_OPEN_KEY) === "0") setOpen(false); } catch { /* storage unavailable */ }
+    try { const stored = window.localStorage.getItem(STREAMING_PLAN_OPEN_KEY); if (stored === "0" || stored === "1") setOpen(stored === "1"); } catch { /* storage unavailable */ }
   }, []);
   if (!plan) return null;
   const toggle = () => {
@@ -90,8 +97,8 @@ export default function StreamingItinerary({ plan, dates, from, through, today, 
   return section(<>
     {chains.length > 1 && <div className={styles.spots} role="group" aria-label="Stream spots">{chains.map((option, index) =>
       <button key={index} aria-pressed={state.chain === index} onClick={() => update({ chain: index, overrides: {} })}>
-        {index >= plan.chains.length ? `Alternative · drop ${firstDrops(option).map(nameOf).join(" + ")}` : option.spots === 1 ? "One spot" : "Two spots"} · {signed(option.netGames)} AGP{plan.goalieMinimum ? ` · ${meets(option) ? "meets" : "misses"} G min` : ""}{index === 0 ? " · suggested" : ""}</button>)}</div>}
-    {alternative && <p className={styles.note}>Alternative with a different first drop, not the suggested plan. Its totals are its own checked plan.</p>}
+        {index >= plan.chains.length ? `Alternative${goalsOf(option) ? ` · ${goalsOf(option)}` : ""} · drop ${firstDrops(option).map(nameOf).join(" + ")}` : option.spots === 1 ? "One spot" : "Two spots"} · {signed(option.netGames)} AGP{index >= plan.chains.length && winsOf(option).includes("points") ? ` · ${signed(option.netPoints)} FPts` : ""}{plan.goalieMinimum ? ` · ${meets(option) ? "meets" : "misses"} G min` : ""}{index === 0 ? " · suggested" : ""}</button>)}</div>}
+    {alternative && <p className={styles.note}>Alternative with a different first drop, not the suggested plan.{bestFor(chain) ? ` Of the other first drops, it is the best for ${bestFor(chain)}.` : ""} Its totals are its own checked plan.</p>}
     <p className={styles.totals} aria-label="Streaming totals">Adds {chain.addsUsed}/{chain.addsAvailable} · {signed(total.games)} AGP · {signed(total.points)} proj FPts{estimated ? " (estimate after swaps)" : chain.netScore != null ? ` · ${signed(chain.netScore)} blended FPts` : ""}</p>
     {goalie && <p className={styles.totals} aria-label="Goalie minimum">{goalie.status}{estimated ? " (before swaps)" : ""}</p>}
     {goalie?.tradeoff && <p className={styles.note}>{goalie.tradeoff}</p>}

@@ -1,0 +1,28 @@
+// RSO type, colour and radius scale (UI pass step 5), built on styles/vars tokens. Every RSO stylesheet takes
+// its sizes, weights, radii and text colours from here.
+@use "styles/vars" as v;
+
+// Type: six sizes, two weights.
+$text-micro: 10px; // chip labels, grid counts, unit captions
+$text-xs: 11px; // secondary detail lines
+$text-sm: 12px; // controls and dense body text (v.$font-size-xs)
+$text-md: 14px; // panel body (v.$font-size-sm)
+$text-lg: 16px; // key values
+$text-xl: 20px; // headline numbers
+$weight-regular: 400;
+$weight-bold: 700;
+
+// Shape: a small radius for controls, chips and cells, the card radius for panels and cards, and round.
+$radius-small: v.$radius-control;
+$radius-card: v.$radius-card;
+$radius-round: 999px;
+
+// Text colour roles.
+$ink: v.$text-primary;
+$ink-muted: v.$text-secondary;
+$ink-strong: v.$color-white;
+$accent: v.$primary-color;
+$on-accent: v.$color-neutral-950;
+$good: v.$success-color;
+$warn: v.$warning-color;
+$bad: v.$color-coral-500;

@@ -408,11 +408,12 @@ describe("streaming chain alternatives (VORP S1)", () => {
     const result = run(["prot"]), plan = result.streaming as StreamingPlanWithAlternatives;
     // Unchanged recommendation: the two-spot d1 + d2 split, then the one-spot d1 chain.
     expect(plan.chains.map(initial)).toEqual(["d1|d2", "d1"]);
-    // Before S1 that was all. Now the best chain of each other first drop follows, best points first, capped at three:
-    // g3's own six-start chain (+4.8) ranks fourth here and is reported as truncated, not shown.
+    // Before S1 that was all. Now the best chain of each other first drop follows, best points first, capped at three.
+    // g3's own six-start chain (+4.8) ranks fourth by points; since S4 it still follows as the most-starts alternative.
     const alternatives = plan.alternatives!;
-    expect(alternatives.map(initial)).toEqual(["d1|g3", "d2|g3", "d2"]);
-    expect(plan.alternativesTruncated).toBe(1);
+    expect(alternatives.map(initial)).toEqual(["d1|g3", "d2|g3", "d2", "g3"]);
+    expect(alternatives.map(chain => chain.wins)).toEqual([["points"], ["points"], ["points"], ["games"]]);
+    expect(plan.alternativesTruncated).toBe(0);
     for (const chain of alternatives) {
       expect(chain.evaluation).toMatchObject({ legal: true, budgetVerified: true });
       expect(chain.netGames).toBe(chain.evaluation.activeGames - result.baseline.activeGames);
@@ -420,7 +421,8 @@ describe("streaming chain alternatives (VORP S1)", () => {
     }
     // Oracle: with every other drop protected, the planner's own best chain for that drop is the alternative.
     const only = run(["prot", ...droppable.filter(id => id !== "d2")]).streaming!;
-    expect(only.chains).toEqual([alternatives[2]]);
+    const { wins: _, ...d2 } = alternatives[2];
+    expect(only.chains).toEqual([d2]);
   });
 
   it("never starts or continues a chain by dropping a protected, out or reserve-held player", () => {
@@ -433,7 +435,52 @@ describe("streaming chain alternatives (VORP S1)", () => {
   it("changes only the alternatives when another drop is protected", () => {
     const open = run(["prot"]).streaming as StreamingPlanWithAlternatives, fewer = run(["prot", "g3"]).streaming as StreamingPlanWithAlternatives;
     expect(fewer.alternatives!.map(initial)).toEqual(["d2"]);
+    // The only other drop is the best by both goals, so it is listed once with both (VORP S4).
+    expect(fewer.alternatives![0].wins).toEqual(["points", "games"]);
     expect(fewer.recommended).toBe(open.recommended);
     expect(fewer.chains).toEqual(open.chains);
+  });
+});
+
+describe("streaming alternatives cover both goals (VORP S4)", () => {
+  // One add and no C on the roster: a 7-game C streamer (0.5 a game) fills the open C slot whoever is dropped. Each D
+  // drop plays the last 1-5 days in his own slot, so dropping him loses those games: fewer games lost means more AGP,
+  // but dF's five games are worth almost nothing, so his chain has the fewest starts and the most points.
+  const d = (id: string, games: number, perGame: number): Spec => ({ id, team: `T${id}`, days: [6, 5, 4, 3, 2].slice(0, games), perGame, rostered: true, positions: ["D"] });
+  const specs: Spec[] = [d("dA", 1, 3), d("dB", 2, 1.4), d("dD", 3, 0.9), d("dE", 4, 0.6), d("dF", 5, 0.01),
+    { id: "sC", team: "SC", days: [0, 1, 2, 3, 4, 5, 6], perGame: 0.5, positions: ["C"] }];
+  const run = (objective: PlanIntent["objective"]) => {
+    const result = planRoster(week(specs, { remaining: 1, slots: { C: 1, D: 5, BN: 0 } }), { ...intent(), objective });
+    return { result, plan: result.streaming as StreamingPlanWithAlternatives };
+  };
+  const first = (chain: StreamingChain) => chain.legs[0].dropPlayerId;
+  const summary = (chain: StreamingChain & { wins?: string[] }) => [first(chain), chain.netGames, Number(chain.netPoints!.toFixed(2)), chain.wins ?? null];
+
+  it("keeps the best-points chain for another drop under Most starts, though it ranks past the cap", () => {
+    const { result, plan } = run("agp");
+    expect(plan.chains.map(summary)).toEqual([["dA", 6, 0.5, null]]);
+    // Most starts keeps three (dB, dD, dE); dF's chain is last by starts but first by points, so it follows them.
+    expect(plan.alternatives!.map(summary)).toEqual([["dB", 5, 0.7, ["games"]], ["dD", 4, 0.8, ["games"]], ["dE", 3, 1.1, ["games"]], ["dF", 2, 3.45, ["points"]]]);
+    expect(plan.alternativesTruncated).toBe(0);
+    for (const chain of plan.alternatives!) {
+      expect(chain.evaluation).toMatchObject({ legal: true, budgetVerified: true });
+      expect(chain.netGames).toBe(chain.evaluation.activeGames - result.baseline.activeGames);
+    }
+  });
+
+  it("keeps the most-starts chain for another drop under Best projected points", () => {
+    const { plan } = run("outcome");
+    expect(plan.chains.map(summary)).toEqual([["dF", 2, 3.45, null]]);
+    expect(plan.alternatives!.map(summary)).toEqual([["dE", 3, 1.1, ["points"]], ["dD", 4, 0.8, ["points"]], ["dB", 5, 0.7, ["points"]], ["dA", 6, 0.5, ["games"]]]);
+    expect(plan.alternativesTruncated).toBe(0);
+  });
+
+  it("adds nothing past the cap when a kept alternative already wins the other goal, and counts the rest as truncated", () => {
+    // A cheaper dA (2.6 a game) is now second by points as well as first by starts; a sixth drop dG (4 games at 0.9) trails.
+    const more = [...specs.map(spec => spec.id === "dA" ? { ...spec, perGame: 2.6 } : spec), d("dG", 4, 0.9)];
+    const plan = planRoster(week(more, { remaining: 1, slots: { C: 1, D: 6, BN: 0 } }), { ...intent(), objective: "outcome" }).streaming as StreamingPlanWithAlternatives;
+    expect(plan.chains.map(first)).toEqual(["dF"]);
+    expect(plan.alternatives!.map(chain => [first(chain), chain.wins])).toEqual([["dE", ["points"]], ["dA", ["points", "games"]], ["dD", ["points"]]]);
+    expect(plan.alternativesTruncated).toBe(2);
   });
 });

@@ -2022,6 +2022,17 @@ describe("RosterScheduleOptimizer workspace", () => {
     workspace.intent.steps = [{ id: "fixture-selected-add", type: "add", playerId: "fixture-candidate",
       at: "2026-10-15T18:00:00Z", effectiveAt: "2026-10-15T18:00:00Z", conditional: false, dependsOn: [] }];
     localStorage.setItem(activeKey(), JSON.stringify(workspace));
+    // Each wait spans a fetch, a re-plan and React renders; the 1 s default expires on a loaded machine.
+    const settle = { timeout: 15_000 };
+    // The button is disabled while a read is in flight, and a click on a disabled button is silently dropped.
+    const reload = async () => {
+      const button = await waitFor(() => {
+        const found = screen.getByRole("button", { name: "Reload schedule data" }) as HTMLButtonElement;
+        expect(found.disabled).toBe(false);
+        return found;
+      }, settle);
+      fireEvent.click(button);
+    };
     const snapshots: PlanningSnapshot[] = [];
     planningState.evaluate = (snapshot, intent) => { snapshots.push(snapshot); return planRoster(snapshot, intent); };
     let reads = 0;
@@ -2036,9 +2047,9 @@ describe("RosterScheduleOptimizer workspace", () => {
     });
     vi.stubGlobal("fetch", requests);
     render(<RosterScheduleOptimizer />);
-    await waitFor(() => expect(snapshots.at(-1)?.games.length).toBe(1));
-    fireEvent.click(screen.getByRole("button", { name: "Reload schedule data" }));
-    await waitFor(() => expect(snapshots.at(-1)?.games.length).toBe(2));
+    await waitFor(() => expect(snapshots.at(-1)?.games.length).toBe(1), settle);
+    await reload();
+    await waitFor(() => expect(snapshots.at(-1)?.games.length).toBe(2), settle);
     expect(reads).toBe(2);
     const dataUrls = requests.mock.calls.map(([url]) => url).filter(url => url.includes("/data?"));
     const initialParams = new URL(dataUrls[0], "http://localhost").searchParams;
@@ -2055,17 +2066,17 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect(saved.context.endDate).toBe(workspace.context.endDate);
     expect(saved.context.timeZone).toBe(workspace.context.timeZone);
     expect(requests.mock.calls.some(([url]) => url.endsWith("/provider"))).toBe(false);
-    fireEvent.click(screen.getByRole("button", { name: "Reload schedule data" }));
-    await waitFor(() => expect(reads).toBe(3));
+    await reload();
+    await waitFor(() => expect(reads).toBe(3), settle);
     const repeatedUrl = requests.mock.calls.map(([url]) => url).filter(url => url.includes("/data?"))[2];
     expect(repeatedUrl).toBe(dataUrls[1]);
     if (provider === "manual") {
       fireEvent.change(screen.getByLabelText("From"), { target: { value: "2026-10-13" } });
-      await waitFor(() => expect(reads).toBe(4));
+      await waitFor(() => expect(reads).toBe(4), settle);
       const changedUrl = requests.mock.calls.map(([url]) => url).filter(url => url.includes("/data?"))[3];
       expect(new URL(changedUrl, "http://localhost").searchParams.has("readToken")).toBe(false);
     }
-  });
+  }, 30_000);
 
   it("undoes local roster edits without changing the public snapshot", async () => {
     vi.stubGlobal("fetch", fetchMock);

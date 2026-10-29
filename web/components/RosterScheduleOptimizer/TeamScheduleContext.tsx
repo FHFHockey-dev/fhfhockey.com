@@ -45,7 +45,7 @@ export default function TeamScheduleContext({ dates, seasonId, timeZone, enabled
   // Nothing to act on without a verified schedule; the strip simply stays hidden.
   if (context.reason) return null;
   return <details className={styles.context} open={expanded}>
-    <summary>Top five team schedules <span>{context.reason ? "· unavailable" : `· ${labelDate(dates[0])}–${labelDate(dates.at(-1)!)}`}</span><span> · Team context</span></summary>
+    <summary>Top five team schedules <span>{context.reason ? "· unavailable" : `· ${labelDate(dates[0])}–${labelDate(dates.at(-1)!)}`}</span></summary>
     {context.reason ? <p role="status">{context.reason}</p> : <>
       <div className={styles.cards} role="group" aria-label="Top team schedule cards" tabIndex={0}>{context.teams.map(team => {
         const colors = teamsInfo[team.abbreviation];

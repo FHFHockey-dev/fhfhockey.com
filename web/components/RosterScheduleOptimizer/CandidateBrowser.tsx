@@ -4,7 +4,9 @@ import { useCandidateMetrics } from "hooks/useCandidateMetrics";
 import { normalizeEligibility } from "lib/rosterScheduleOptimizer/eligibility";
 import { candidateAlternativeForSort, candidatePlanForSort, type CandidateComparison, type CandidateDiagnostic, type CandidatePlan } from "lib/rosterScheduleOptimizer/candidatePlanMetrics";
 import type { PlanIntent, PlanningPlayer, PlanningResult, PlanningSnapshot, PlanStep } from "lib/rosterScheduleOptimizer/planningTypes";
+import { nextLocalMidnight, zonedMidnight } from "lib/rosterScheduleOptimizer/planningDates";
 import styles from "./RosterScheduleOptimizer.module.scss";
+import cardStyles from "./CandidateCard.module.scss";
 import CandidateCard from "./CandidateCard";
 import type { CanonicalSchedule } from "./canonicalSchedule";
 
@@ -42,6 +44,26 @@ const compareDiscovery = (a: Candidate, b: Candidate) => Number(knownInputs(b)) 
   || (b.upcomingGames ?? -Infinity) - (a.upcomingGames ?? -Infinity) || byName(a, b);
 export const compareCandidateFits = (a: Candidate, b: Candidate, sort: "points" | "schedule") => sort === "schedule"
   ? byFit(a, b) : (b.activePoints ?? -Infinity) - (a.activePoints ?? -Infinity) || byFit(a, b);
+const more = (a: number | null, b: number | null) => a !== null && b !== null && a > b + 1e-9;
+const atLeast = (a: number | null, b: number | null) => a !== null && b !== null && a >= b - 1e-9;
+/** VORP S4: a different-drop alternative shows on the card only when it is materially relevant: more Net AGP than the
+ * representative, or (points leagues with a known Net Pts) Net Pts within the larger of 1 point and 10% of the
+ * representative's, under either sort. Category leagues show no Net Pts, so there only more Net AGP counts. Any other
+ * alternative stays in a collapsed "Other drop" disclosure. Display only: ranking uses the representative alone. */
+export function alternativeShown(plan: CandidatePlan, alternative: CandidatePlan, categories: boolean) {
+  if (more(alternative.netAGP, plan.netAGP)) return true;
+  return !categories && plan.netPoints !== null && atLeast(alternative.netPoints, plan.netPoints - Math.max(1, Math.abs(plan.netPoints) * 0.1));
+}
+/** True when every acquisition period from the plan start to the range end has a known allowance below one add's cost:
+ * no add plan can exist, whatever loads (the streaming plan's "No adds remain this period" case). */
+export function noAddsRemain(snapshot: PlanningSnapshot | null) {
+  const cost = snapshot?.rules.acquisitionCost;
+  if (!snapshot || cost == null || cost <= 0) return false;
+  const { asOf, startDate, endDate, timeZone } = snapshot.context;
+  const from = Math.max(Date.parse(asOf), Date.parse(zonedMidnight(startDate, timeZone))), to = Date.parse(nextLocalMidnight(endDate, timeZone));
+  const periods = snapshot.rules.periods.filter(period => Date.parse(period.end) > from && Date.parse(period.start) < to);
+  return periods.length > 0 && periods.every(period => period.source !== "unknown" && period.remaining !== null && Math.floor(period.remaining / cost) < 1);
+}
 
 export default function CandidateBrowser({ executionOptions, preferredSort, searchQuery, changeSearch, calendar, players, rosterIds, snapshot, intent, manual, select, add, selectPlan, canSelectPlan, selectPlanReasonId, markAvailable }: Props) {
   const [view, setView] = useState<"team" | "all">("all");
@@ -117,14 +139,16 @@ export default function CandidateBrowser({ executionOptions, preferredSort, sear
     .sort((a, b) => compareGroups([...a.rows].sort(compareGroups)[0], [...b.rows].sort(compareGroups)[0]) || a.name.localeCompare(b.name));
   const nameOf = (id: string) => players.find(player => player.id === id)?.name ?? id;
   const alternativeDrops = (plan: CandidatePlan) => plan.steps.flatMap(step => step.dropPlayerId ? [step.dropPlayerId] : []);
+  const alternativeLine = (name: string, alternative: CandidatePlan) => <p className={styles.limitation} aria-label={`Alternative for ${name}`}>
+    Alternative: {alternativeDrops(alternative).length ? `drop ${alternativeDrops(alternative).map(nameOf).join(", ")}` : "no drop"}
+    {!categories && ` · Net Pts ${signed(alternative.netPoints)}`} · Net AGP {signed(alternative.netAGP)}</p>;
   const row = ({ player, plan, alternative, comparison, diagnostic, upcomingGames }: Candidate, index: number, ranked = true) => <Fragment key={player.id}><CandidateCard
     player={player} rank={ranked ? index + 1 : null} calendar={calendar} upcomingGames={upcomingGames} plan={plan} comparison={comparison} snapshot={snapshot} categories={categories}
     diagnostic={diagnostic} evaluationState={loading ? "loading" : error ? "error" : !snapshot ? "no_snapshot" : "completed"}
     excluded={intent.excludedPlayerIds.includes(player.id)} nameOf={nameOf} players={players} goalieBoost={goalieBoost}
     select={select} add={add} selectPlan={selectPlan} canSelectPlan={canSelectPlan} selectPlanReasonId={selectPlanReasonId} manual={manual} markAvailable={markAvailable} compare={compare} />
-    {alternative && <p className={styles.limitation} aria-label={`Alternative for ${player.name}`}>
-      Alternative: {alternativeDrops(alternative).length ? `drop ${alternativeDrops(alternative).map(nameOf).join(", ")}` : "no drop"}
-      {!categories && ` · Net Pts ${signed(alternative.netPoints)}`} · Net AGP {signed(alternative.netAGP)}</p>}</Fragment>;
+    {alternative && plan && (alternativeShown(plan, alternative, categories) ? alternativeLine(player.name, alternative)
+      : <details className={cardStyles.otherDrop}><summary>Other drop</summary>{alternativeLine(player.name, alternative)}</details>)}</Fragment>;
   // A goalie minimum at risk lists goalie options that add expected starts first.
   const boosted = (row: Candidate) => Number(goalieBoost && (row.plan?.netGoalieStarts ?? 0) > 0);
   const lists = (rows: Candidate[]) => {
@@ -142,25 +166,30 @@ export default function CandidateBrowser({ executionOptions, preferredSort, sear
       {rows.length > limit && <button onClick={showMore}>{`Show more recommendations (${rows.length - limit})`}</button>}</>;
   };
   return <section aria-label="Candidate browser" aria-busy={loading}>
-    {!categories && <div className={styles.candidateViews} role="group" aria-label="Sort recommendations">
-      <button aria-pressed={sort === "points"} onClick={() => setSort("points")}>By projected points</button>
-      <button aria-pressed={sort === "schedule"} onClick={() => setSort("schedule")}>By more starts</button>
-    </div>}
-    {categories && <p className={styles.limitation}>Ranked by more starts. Each card shows the category gains and losses for the whole swap.</p>}
-    {goalieBoost && <p className={styles.limitation}>Your goalie minimum may be missed, so goalies who add starts are listed first.</p>}
-    {loading ? <p role="status" aria-live="polite">Comparing free agents…</p>
-      : !hasEvaluatedFit && <p role="status">Rankings appear once projections and schedules load.</p>}
-    {error && <p aria-live="polite">{error}</p>}
-    <div className={styles.candidateTools}><details className={styles.candidateFilterDetails}><summary>Find & filter</summary><div className={styles.candidateFilters}>
-      <label className={styles.field}>Find candidate<input id="rso-candidate-search" type="search" value={query} onChange={event => { setQuery(event.target.value); resetExpansion(); }} /></label>
-      <label className={styles.field}>Team<select value={team} onChange={event => { setTeam(event.target.value); resetExpansion(); }}><option value="">All teams</option>{teams.map(value => <option key={value}>{value}</option>)}</select></label>
-      <label className={styles.field}>Position<select value={position} onChange={event => { setPosition(event.target.value); resetExpansion(); }}><option value="">All positions</option>{positions.map(value => <option key={value}>{value}</option>)}</select></label>
+    {/* One toolbar (sort, then find & filter), then one slot for status lines, then the cards. */}
+    <div className={styles.candidateToolbar}>
+      {!categories && <div className={styles.candidateViews} role="group" aria-label="Sort recommendations">
+        <button aria-pressed={sort === "points"} onClick={() => setSort("points")}>By projected points</button>
+        <button aria-pressed={sort === "schedule"} onClick={() => setSort("schedule")}>By more starts</button>
+      </div>}
+      <details className={styles.candidateFilterDetails}><summary>Find & filter</summary><div className={styles.candidateFilters}>
+        <label className={styles.field}>Find candidate<input id="rso-candidate-search" type="search" value={query} onChange={event => { setQuery(event.target.value); resetExpansion(); }} /></label>
+        <label className={styles.field}>Team<select value={team} onChange={event => { setTeam(event.target.value); resetExpansion(); }}><option value="">All teams</option>{teams.map(value => <option key={value}>{value}</option>)}</select></label>
+        <label className={styles.field}>Position<select value={position} onChange={event => { setPosition(event.target.value); resetExpansion(); }}><option value="">All positions</option>{positions.map(value => <option key={value}>{value}</option>)}</select></label>
+        </div>
+        <div className={styles.candidateViews} role="group" aria-label="Candidate views">
+          <button aria-pressed={view === "team"} onClick={() => setView("team")}>By Team</button>
+          <button aria-pressed={view === "all"} onClick={() => setView("all")}>All players</button>
+        </div>
+      </details>
     </div>
-      <div className={styles.candidateViews} role="group" aria-label="Candidate views">
-        <button aria-pressed={view === "team"} onClick={() => setView("team")}>By Team</button>
-        <button aria-pressed={view === "all"} onClick={() => setView("all")}>All players</button>
-      </div>
-    </details></div>
+    <div className={styles.candidateStatus}>
+      {categories && <p className={styles.limitation}>Ranked by more starts. Each card shows the category gains and losses for the whole swap.</p>}
+      {goalieBoost && <p className={styles.limitation}>Your goalie minimum may be missed, so goalies who add starts are listed first.</p>}
+      {loading ? <p role="status" aria-live="polite">Comparing free agents…</p>
+        : !hasEvaluatedFit && <p role="status">{noAddsRemain(snapshot) ? "No adds remain this period; adds return when the period resets." : "Rankings appear once projections and schedules load."}</p>}
+      {error && <p aria-live="polite">{error}</p>}
+    </div>
     {filtered.length === 0 ? <p>No candidates match these filters.</p> : view === "all" ? lists(filtered) : grouped.map(group => <details key={group.name} className={styles.alternative}><summary>{group.name} · {group.rows.length} players</summary>{lists(group.rows)}</details>)}
     {!loading && unrankedReasons.length > 0 && <details className={styles.unrankedDisclosure}><summary>Why some players aren&apos;t ranked</summary>
       <ul aria-label="Why some players aren't ranked">{unrankedReasons.map(reason => <li key={reason}>{reason}</li>)}</ul>

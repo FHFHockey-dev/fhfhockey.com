@@ -1,8 +1,9 @@
 @use "styles/vars" as v;
+@use "scale" as s;
 
 // Day-by-day streaming chain above the lineup views: one row per day, ADD/HOLD per stream spot, ranked options per add.
-.itinerary { display: flex; flex-direction: column; gap: 6px; margin: 0 0 v.$space-sm; padding: 8px 10px; border: v.$border-subtle; border-left: 4px solid v.$primary-color; border-radius: v.$radius-control; background: v.$draft-surface; color: v.$text-primary; font-size: 12px; line-height: 1.4; }
-.itinerary h3 { margin: 0; color: v.$primary-color; font: 700 11px v.$font-family-primary; letter-spacing: .08em; text-transform: uppercase; }
+.itinerary { display: flex; flex-direction: column; gap: 6px; margin: 0 0 v.$space-sm; padding: 8px 10px; border: v.$border-subtle; border-left: 4px solid v.$primary-color; border-radius: s.$radius-small; background: v.$draft-surface; color: s.$ink; font-size: s.$text-sm; line-height: 1.4; }
+.itinerary h3 { margin: 0; color: s.$accent; font: s.$weight-bold s.$text-xs v.$font-family-primary; letter-spacing: .08em; text-transform: uppercase; }
 // The header toggle reads as the heading (global button styles would box it).
 .toggle.toggle { display: inline-flex; align-items: center; gap: 6px; padding: 0 !important; border: 0 !important; background: transparent !important; color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer; }
 .toggle::before { content: "▾"; transition: transform .15s ease; }
@@ -11,22 +12,22 @@
 .body[hidden] { display: none; }
 .itinerary p { margin: 0; }
 .spots { display: flex; flex-wrap: wrap; gap: 6px; }
-.spots button[aria-pressed="true"], .options button[aria-pressed="true"] { border-color: v.$primary-color; color: v.$primary-color; }
-.totals { font-family: v.$font-family-numbers; font-weight: 700; }
+.spots button[aria-pressed="true"], .options button[aria-pressed="true"] { border-color: v.$primary-color; color: s.$accent; }
+.totals { font-family: v.$font-family-numbers; font-weight: s.$weight-bold; }
 .days { display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 0; list-style: none; }
 .day { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 8px; padding: 4px 0; border-top: v.$border-subtle; }
-.date { color: v.$text-secondary; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+.date { color: s.$ink-muted; font-size: s.$text-xs; text-transform: uppercase; letter-spacing: .04em; }
 .moves { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.hold { color: v.$text-secondary; }
+.hold { color: s.$ink-muted; }
 .greyedDay { opacity: .4; }
-.add small { display: block; color: v.$text-secondary; }
-.verb { color: v.$success-color; font-weight: 700; }
+.add small { display: block; color: s.$ink-muted; }
+.verb { color: s.$good; font-weight: s.$weight-bold; }
 .options { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 0; padding: 0; list-style: none; }
 .options button { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; padding: 3px 6px; text-align: left; }
-.options small { color: v.$text-secondary; font-size: 10px; }
+.options small { color: s.$ink-muted; font-size: s.$text-micro; }
 .use { align-self: flex-start; }
-.note { color: v.$text-secondary; font-size: 11px; }
-.gate { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 0; color: v.$text-secondary; font-size: 11px; }
+.note { color: s.$ink-muted; font-size: s.$text-xs; }
+.gate { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 0; color: s.$ink-muted; font-size: s.$text-xs; }
 
 @media (max-width: 480px) {
   .day { grid-template-columns: minmax(0, 1fr); gap: 2px; }

@@ -1,4 +1,5 @@
 @use "styles/vars" as v;
+@use "scale" as s;
 
 .trigger.trigger {
   display: inline-grid;
@@ -9,13 +10,13 @@
   min-height: 40px;
   padding: 0;
   border: 0;
-  border-radius: v.$radius-control;
+  border-radius: s.$radius-small;
   background: transparent;
-  color: v.$text-secondary;
-  font: 400 18px/1 v.$font-family-primary;
+  color: s.$ink-muted;
+  font: s.$weight-regular #{s.$text-lg}/1 v.$font-family-primary;
   cursor: pointer;
 
-  &:hover, &[aria-expanded="true"] { color: v.$primary-color; }
+  &:hover, &[aria-expanded="true"] { color: s.$accent; }
   &:focus-visible { outline: 2px solid v.$focus-color; outline-offset: -2px; }
 }
 
@@ -29,11 +30,11 @@
   overflow: auto;
   padding: v.$space-sm v.$space-md;
   border: v.$border-subtle;
-  border-radius: v.$radius-card;
+  border-radius: s.$radius-card;
   background: v.$draft-surface-raised;
-  color: v.$text-primary;
+  color: s.$ink;
   box-shadow: v.$shadow-panel;
-  font: 400 v.$font-size-sm/1.5 v.$font-family-primary;
+  font: s.$weight-regular #{s.$text-md}/1.5 v.$font-family-primary;
   text-wrap: pretty;
 
   p { margin: v.$space-xs 0; }
