@@ -165,4 +165,10 @@ Declutter in place (see `AUDIT-2026-10-29.md`). One local commit per approved st
   - CSS pure check passed.
 - **Screens:** `screens/step10-copy-phone-before-after.png`.
 - **TJ verdict:** approved 2026-10-29.
-- **Commit:** pending.
+- **Commit:** `f552d0f4c`.
+
+## Wrap-up after steps 8–10
+
+- **Type-check:** `tsc --noEmit` under the heavy lock passed again after step 10 (exit 0).
+- **Unit tests:** RSO vitest passed 422 of 422.
+- **Not run:** Playwright e2e specs.
