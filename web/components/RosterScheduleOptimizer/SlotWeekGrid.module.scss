@@ -114,4 +114,6 @@ td[data-pulse] .cellButton, td[data-pulse] .cellBody, td[data-pulse] .empty { an
 // Plan-from slider: one row above the day headers, its stops over the day columns. Days left of it are greyed.
 .sliderRow { padding-block: 0; }
 .sliderRow .sliderCell { grid-column: 1 / -1; }
-.grid td[data-greyed] > *, .grid th[data-greyed] { opacity: .4; filter: saturate(.4); }
+.grid td[data-greyed] > *, .grid th[data-greyed] { opacity: .3; filter: saturate(.25); }
+// Greyed days also drop the position tint behind their cells, so the planned days carry the colour.
+.grid td[data-greyed] { border-radius: 5px; background: color-mix(in srgb, #{v.$draft-surface} 70%, transparent); }
