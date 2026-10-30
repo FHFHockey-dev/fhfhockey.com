@@ -1,0 +1,43 @@
+{
+  "id": "CODEX-PLAYER-CARDS-PORTRAIT-TREATMENTS-20261025",
+  "at": "2026-10-25T05:22:34.937631+00:00",
+  "owner_thread": "01a16ec2-f81c-717b-8961-8c3832fdc00f",
+  "status": "Granted: exact seven paths for deterministic local portrait treatments; production inclusion requires independent acceptance",
+  "source_paths": [
+    "web/lib/player-cards/portraitTreatment.ts",
+    "web/lib/player-cards/portraitTreatment.test.ts",
+    "web/components/player-cards/HeroPlayerCard.tsx",
+    "web/components/player-cards/PlayerCardShareStudio.tsx",
+    "web/components/player-cards/PlayerCardShareStudio.test.tsx",
+    "web/lib/player-cards/shareExport.ts",
+    "web/lib/player-cards/shareExport.test.ts"
+  ],
+  "baseline_sha256": {
+    "web/lib/player-cards/portraitTreatment.ts": null,
+    "web/lib/player-cards/portraitTreatment.test.ts": null,
+    "web/components/player-cards/HeroPlayerCard.tsx": "97743b313e22666e6abedea9ea16b17b3ad15050e3fa72a8f8d924f98c1829fc",
+    "web/components/player-cards/PlayerCardShareStudio.tsx": "3e8aad27ad7585170706c0a975237a8c29a055bac95e0b9d20bac75fd77e1d00",
+    "web/components/player-cards/PlayerCardShareStudio.test.tsx": "617efa35e88953c79bcbcb16308603e562edfc79f43b050852a625ae91b7ba24",
+    "web/lib/player-cards/shareExport.ts": "fddfd3bd89470da289ea14f8f6a8ea13b3407c1222d2e189482dee47a8d7bbde",
+    "web/lib/player-cards/shareExport.test.ts": "9669b12a8e4ade7e3badce18ea9cd44a29ddd4c9a5297a2cfe5fd1e862938426"
+  },
+  "baseline_bytes": {
+    "web/lib/player-cards/portraitTreatment.ts": null,
+    "web/lib/player-cards/portraitTreatment.test.ts": null,
+    "web/components/player-cards/HeroPlayerCard.tsx": 5279,
+    "web/components/player-cards/PlayerCardShareStudio.tsx": 8120,
+    "web/components/player-cards/PlayerCardShareStudio.test.tsx": 4401,
+    "web/lib/player-cards/shareExport.ts": 4730,
+    "web/lib/player-cards/shareExport.test.ts": 3425
+  },
+  "request": "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/CUSTODY-REQUEST.json",
+  "request_sha256": "727d4846ddf0ff66046ea6343f180a78c71006841577e806ac3e7b5743be4cdd",
+  "artifact_root": "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/",
+  "preserved_originals": "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/before/",
+  "verification": "Two paths independently verified absent; five existing hash/size baselines and all five before copies independently match. No other exact Codex writer or Claude lease found.",
+  "scope": "Deterministic client posterized, nearest-neighbor pixelated and team-color portrait variants, style persistence, same-snapshot export assertions and focused tests. Preserve original hero packet and pre-edit copies for independent review.",
+  "read_only": "All accepted math/source/window/NST adapter modules, Editorial, shared auth/navigation/routes, sample assets and dependencies. No uploads, production, model inference, new dependencies or Git operations.",
+  "input_state": "Worker reports actual pixels inspected from both TJ-supplied local attachments; prior Library materialization blocker superseded without retry. LOCAL-REFERENCES.json exists; coordinator has not independently reviewed pixels.",
+  "resource": "Conditional same-owned loopback3125 handoff only after offline QA. Keep served artifact until then; verify exact owned PID/command and listener immediately before any stop/bind, stop only that process, retain prior hero/functional/editorial artifacts and route map, record new PID and byte/hash readbacks. Last recorded owner PID30284 is historical until freshly verified. No other port/server action.",
+  "nst_review_boundary": "NST capture two sources remain frozen; independent reviewer read-only on them and writes only observed-adapter-01-review artifacts; no server action."
+}

@@ -1,0 +1,32 @@
+# 2026-10-29 Claude: RSO drop retention / VORP assessment
+
+- Scope: assess Codex research `tasks/artifacts/rso-vorp-research-2026-10-29/` for RSO; plan only, no code.
+- Where: octoberBranch 5453d2eca; RSO paths identical to fec2ba2d2, clean. Output `tasks/artifacts/rso-wave2-2026-10-25/VORP/ASSESSMENT.md`.
+- State: assessment written; staged path S1–S5. No checks run (planning only).
+- Next: TJ pop-up on S1 go-ahead, horizon, presentation, forecast stand-in ask. Before edits: exact lease in CLAUDE-LEASES.json + mailbox note (Codex scope reservation over RSO paths).
+- Gotchas: snapshot has games only for the selected window (±1 day); FORGE bridge reads runs through today+6, horizon_games=1, 2.5 MB wire budget, so ΔF is unknown today. Alternatives are lost in candidate dominance, representative pick, planner beam and chain top().
+- Started S1 session rso-alt-drops local_ff7fc0aa; lease RSO-ALT-DROPS; mailbox 127 (lease), 128 (forecast ask to Codex).
+- 17:xxZ Codex reply CODEX-RSO-CLAUDE127-128: S1 clear; recorded RSO-FLAKE UI carve-out + FORGE-RESERVE proposed S3 handoff; wrote VORP/S3-SCENARIO-CONTRACT.md; mailbox CLAUDE-20261029-129.
+- TJ pop-up: start S2 after S1's receipt is verified (pure futureImpact.ts on synthetic data; app shows unknown). Pending: S1 receipt, Codex forecast-lead disposition of contract v0.
+- Codex review of v0 (4 amendments) → contract v1 sha ca0ab38245a753953a0d99680f7ec693700a22378ed850dc2db50bdf5f3381a1; mailbox CLAUDE-20261029-130.
+- S1 verified (hashes, 1,085 RSO tests, eslint, tsc exit 0) and committed 081fcb849 (local, not pushed). RSO-ALT-DROPS released. S2 lease RSO-S2-FUTURE; session rso-future-impact local_03aab18a started.
+- Codex v1 review → contract v2 sha 2f31491a6a63f52e2b6ec3f4eba6633928a14c1d4f6e625283eccf31fb7acca5 (exact-output witness: observed_capture only; 3 coverage claims; keep all reason codes). Mailbox CLAUDE-20261029-131.
+- S2 verify: RSO suite 1,147/1,149 (2 known load flakes pass alone), eslint ok, isolation harness 0/436. tsc exit 2: 2 errors in futureImpact.ts (state type includes "ok"), 1 pre-existing in player-cards/currentNhl.test.ts (other lane). Sent back to rso-future-impact to fix + fill receipt placeholders. Not committed.
+- S2 verified by orchestrator: hashes OK, futureImpact+planning tests 212 pass, eslint ok, tsc only other lane's player-cards TS2775; committing.
+- Codex CODEX-RSO-SCENARIO-CONTRACT-CLOSED: v2 accepted for offline implementation (no live capture/schema/flag/accuracy). S3 awaits TJ go-ahead; FORGE-RESERVE handoff conditional on session start.
+- TJ pop-ups: Start S3 offline; build RC after S3. Lease RSO-S3-SCENARIO (FORGE-RESERVE handoff activated, baselines match Codex fingerprints). Session rso-s3-inputs local_b0abfc02 started. Note: working-tree tsc not clean (other lane's player-cards test).
+- S3 verified by orchestrator: hashes OK, 1,853 RSO+data tests pass, eslint ok, whole-project tsc exit 0 (player-cards error gone). Committing.
+- S3 committed 1a9aac33b. RC15 refs/rc/rso-vorp-rc15 = 54dc346f4 (origin/master fec2ba2d2 + 19 RSO files; base blobs = master; 72 imports identical to master). Gate running in background (scratchpad rc15gate.sh). Push needs TJ pop-up.
+- RC15 gate: tsc 0, lint 0, pure ok, vitest UTC = 6 baseline; NY +RSO page reload test = load flake (master/RC equal timing ~350ms, 3/3 + 4/4 both). Record VORP/RC15-GATE.md. Awaiting TJ push pop-up.
+- 19:0xZ Release #399 live: master 69ec142bd (tree = RC15). Deploy dpl_92MEuKYLvagNaE35MaSqJ7oRMvzQ fhfhockey READY; cms/functions/fhfhockey.com CANCELED. Smoke 3 GETs 200; RSO chunk 813c1c8d has Alternative / not the suggested plan. octoberBranch synced c91d8445f (ours-merge, tree unchanged) and pushed 19:05:31Z; 90 s no-build check running.
+- No-build check: see result; release #399 complete.
+- TJ pop-up: fix flaky RSO reload test. Lease RSO-RELOAD-FLAKE (test file only, baseline dd2e2b15). Session rso-reload-flake local_011b3d04 started.
+- Reload-flake fix verified (sha aa5d2d59, 238/238 x2 in UTC and NY, eslint ok); cause = click on disabled Reload button while loading. Committing. Possible separate load flakes noted: 5 s default timeouts on two timezone-resume tests under extreme load.
+- Walkthrough: recent form read failing (form partial), Best Fit no-adds message, alt lines untestable (0 adds); Vercel CLI logs no timing; MCP runtime logs 403; 2-min private-confirmation re-read pattern (~1 Yahoo read each, diet off). Tidy session rso-alt-tidy local_00577d05 started.
+- Timed read: first page 4.5 ms (DB fast); cause = round trips vs count-change guard. TJ: offline fix + clearer reason. Lease RSO-RECENT-FORM; session rso-recent-form local_e6c5056e started.
+- UI pass: audit UI-PASS/AUDIT-2026-10-29.md; TJ: declutter in place, per-step commits (revertible), approve/edit pop-up per step; 3 design plugins enabled. Start after rso-alt-tidy lands.
+- Recent-form fix verified (hashes, 1,026 tests, eslint; tsc error only in rso-alt-tidy's in-progress test). Axe parked until Monday per TJ. Committing.
+- Alt-tidy verified (hashes, 1,446/1,447 + known 1000-player flake passes alone, eslint, pure, tsc exit 0). Committing; visual pass next.
+- Alt-tidy committed c96c353d1. UI pass session rso-ui-pass local_c6323285 started (lease RSO-UI-PASS, 51 files; per-step commits + approve/edit pop-ups; Axe parked).
+- UI pass verified: 7 commits dc4f705fb..c368c679e inside lease; 1,447 unit tests, eslint 0 err, pure all; e2e rso-continuity+acceptance 17/19 then the 2 failures pass on rerun (dev-server first-compile ENOENT). Committing STEPS.md + diaries.
+- UI pass steps 8-10 (TJ-approved direct) verified: 422 RSO unit, pure, e2e rso-continuity+acceptance 19/19 on final code. RC16 next.

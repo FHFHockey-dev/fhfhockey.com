@@ -434,6 +434,7 @@ Definition of done
 ## New TODOs (Q4 Roadmap)
 
 - [x] Bookmarking: snapshot everything — completed for the current scope with bookmark/session v3 covering draft, keeper/trade, source/custom metadata, grouping/value/need/settings state while excluding private CSV rows/headers; focused privacy/reproducibility regressions pass (2026-07-12).
+  - Caveat 2026-10-18 (audit G8): bookmarks still exclude CSV rows. A Draft Pro saved draft is a separate opt-in path that does store the rows server-side (`web/lib/draft-pro/savedDrafts.ts`).
   - Save/restore a complete session bundle (draft board state, keepers, traded picks, projections source selections + weights, imported CSV(s), settings including forward grouping, need‑weight, baseline mode, category weights, custom team names, position overrides).
   - Files: `DraftDashboard.tsx` (serialize/deserialize), `DraftSettings.tsx` (export/import helpers), `ImportCsvModal.tsx` (persist imported sources), `useProcessedProjectionsData.tsx` (rebuild from snapshot), `localStorage/sessionStorage` keys.
 
@@ -451,6 +452,7 @@ Definition of done
   - Files: `ImportCsvModal.tsx` (store array `draft.customCsvList.v1`), `DraftDashboard.tsx` (synthesize multiple `customAdditionalSource`s), `useProcessedProjectionsData.tsx` (merge loop already supports N sources), `DraftSettings.tsx` (chips for each custom source).
 
 - [x] Add SHA derived metric — projected/actual/custom-input contract completed with null-safe non-negative derivation, selector/board/export wiring, and focused regression evidence (2026-07-13).
+  - Superseded in part 2026-09-04 (`83e3a0bde`; audit G8 2026-10-18): every official skater source now maps `SH_Assists` directly, so projected SHA uses the provider value (including zero). `SHP - SHG` now applies only to actual SHA and to custom sources with no SHA mapping. Hook coverage: `web/hooks/useProcessedProjectionsData.test.tsx` (direct mapping keeps provider SHA 0, the fallback derives 2, and every official skater config maps `SH_ASSISTS`).
   - Most sources provide SHP and some SHG. Provide `SHA = SHP - SHG` as a derived projection/actual metric; expose in categories/points selectors.
   - Files: `useProcessedProjectionsData.tsx` (post‑aggregation derivation), `statsMasterList.ts` (new `SHA` definition), `projectionSourcesConfig.ts` (mark derived), `DraftSettings.tsx` (labels), `DraftBoard.tsx` (column), CSV export.
 

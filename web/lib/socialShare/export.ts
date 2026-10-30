@@ -48,10 +48,11 @@ export async function teamLogoDataUrl(abbreviation: string, size = 96): Promise<
  * Neon outline (TT-5): the offline-traced white outline (public/teamLogos/outline, from committed logos) tinted to one
  * colour on a canvas and returned as a data URL, the same way team logos are inlined, so html-to-image draws it as-is.
  */
-export async function teamOutlineDataUrl(abbreviation: string, color: string, size = 112): Promise<string> {
-  if (!/^[A-Z]{3}$/.test(abbreviation) || !/^#[0-9a-f]{6}$/i.test(color)) throw new Error("Invalid outline request.");
+export async function teamOutlineDataUrl(abbreviation: string, color: string | null, size = 112): Promise<string> {
+  if (!/^[A-Z]{3}$/.test(abbreviation) || (color !== null && !/^#[0-9a-f]{6}$/i.test(color))) throw new Error("Invalid outline request.");
   const image = new Image();
-  image.src = `/teamLogos/outline/${abbreviation}.png`;
+  // TT-12: color null = the outline baked offline in the logo's own colours (outline/color), drawn as-is, untinted.
+  image.src = color === null ? `/teamLogos/outline/color/${abbreviation}.png` : `/teamLogos/outline/${abbreviation}.png`;
   await bounded(image.decode(), "Team outline unavailable", 5000);
   if (!image.naturalWidth || !image.naturalHeight) throw new Error("Team outline unavailable");
   const canvas = document.createElement("canvas");
@@ -60,6 +61,7 @@ export async function teamOutlineDataUrl(abbreviation: string, color: string, si
   if (!context) throw new Error("Canvas unavailable");
   context.imageSmoothingQuality = "high";
   context.drawImage(image, 0, 0, size, size);
+  if (color === null) return canvas.toDataURL("image/png");
   context.globalCompositeOperation = "source-in";
   context.fillStyle = color;
   context.fillRect(0, 0, size, size);

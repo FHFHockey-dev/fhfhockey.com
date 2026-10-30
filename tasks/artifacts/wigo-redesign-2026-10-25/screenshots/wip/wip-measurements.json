@@ -1,0 +1,354 @@
+{
+  "1024x768": {
+    "doc": [
+      1024,
+      1889
+    ],
+    "panels": [
+      {
+        "id": "C01",
+        "x": 51,
+        "y": 62,
+        "w": 922,
+        "h": 32,
+        "outside": false
+      },
+      {
+        "id": "C02 C03",
+        "x": 51,
+        "y": 100,
+        "w": 458,
+        "h": 78,
+        "outside": false
+      },
+      {
+        "id": "C04",
+        "x": 51,
+        "y": 184,
+        "w": 458,
+        "h": 63,
+        "outside": false
+      },
+      {
+        "id": "C05",
+        "x": 51,
+        "y": 254,
+        "w": 458,
+        "h": 102,
+        "outside": false
+      },
+      {
+        "id": "C06",
+        "x": 515,
+        "y": 100,
+        "w": 458,
+        "h": 148,
+        "outside": false
+      },
+      {
+        "id": "C07",
+        "x": 515,
+        "y": 254,
+        "w": 458,
+        "h": 123,
+        "outside": false
+      },
+      {
+        "id": "C08 C09 C10 C11",
+        "x": 51,
+        "y": 383,
+        "w": 922,
+        "h": 156,
+        "outside": false
+      },
+      {
+        "id": "C14",
+        "x": 51,
+        "y": 1101,
+        "w": 458,
+        "h": 220,
+        "outside": true
+      },
+      {
+        "id": "C15",
+        "x": 515,
+        "y": 1101,
+        "w": 458,
+        "h": 220,
+        "outside": true
+      },
+      {
+        "id": "C12",
+        "x": 51,
+        "y": 545,
+        "w": 922,
+        "h": 304,
+        "outside": true
+      },
+      {
+        "id": "C13",
+        "x": 51,
+        "y": 855,
+        "w": 922,
+        "h": 240,
+        "outside": true
+      },
+      {
+        "id": "C16",
+        "x": 51,
+        "y": 1327,
+        "w": 458,
+        "h": 240,
+        "outside": true
+      },
+      {
+        "id": "C17",
+        "x": 515,
+        "y": 1327,
+        "w": 458,
+        "h": 240,
+        "outside": true
+      },
+      {
+        "id": "C18",
+        "x": 51,
+        "y": 1573,
+        "w": 458,
+        "h": 240,
+        "outside": true
+      },
+      {
+        "id": "C19",
+        "x": 515,
+        "y": 1573,
+        "w": 458,
+        "h": 209,
+        "outside": true
+      }
+    ],
+    "overflowing": 19,
+    "smallTextUnder11": 0,
+    "errors": [
+      "Failed to load resource: net::ERR_FAILED",
+      "Failed to load resource: net::ERR_FAILED",
+      "Failed to load resource: net::ERR_FAILED",
+      "Failed to load resource: net::ERR_FAILED"
+    ],
+    "requests": 36,
+    "denied": [
+      {
+        "kind": "deny",
+        "target": "https://img.buymeacoffee.com/button-api/"
+      },
+      {
+        "kind": "deny",
+        "target": "https://cdn.vercel-insights.com/v1/script.debug.js"
+      },
+      {
+        "kind": "deny",
+        "target": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js"
+      },
+      {
+        "kind": "deny",
+        "target": "https://api-web.nhle.com/v1/player/8470001/landing"
+      }
+    ],
+    "localApi": [],
+    "tables": [
+      "players",
+      "wigo_career",
+      "wigo_recent",
+      "wigo_rates",
+      "wgo_skater_stats_totals",
+      "rpc/get_skaters_avg_stats",
+      "nst_percentile_as_offense",
+      "nst_percentile_as_defense",
+      "nst_percentile_es_offense",
+      "nst_percentile_es_defense",
+      "nst_percentile_pp_offense",
+      "nst_percentile_pk_defense",
+      "games",
+      "nst_gamelog_as_rates",
+      "wgo_skater_stats",
+      "rpc/get_skater_game_scores_for_season",
+      "nst_team_5v5",
+      "wgo_team_stats"
+    ]
+  },
+  "1280x700": {
+    "doc": [
+      1280,
+      1825
+    ],
+    "panels": [
+      {
+        "id": "C01",
+        "x": 64,
+        "y": 74,
+        "w": 1152,
+        "h": 32,
+        "outside": false
+      },
+      {
+        "id": "C02 C03",
+        "x": 64,
+        "y": 112,
+        "w": 573,
+        "h": 78,
+        "outside": false
+      },
+      {
+        "id": "C04",
+        "x": 64,
+        "y": 196,
+        "w": 573,
+        "h": 63,
+        "outside": false
+      },
+      {
+        "id": "C05",
+        "x": 64,
+        "y": 266,
+        "w": 573,
+        "h": 102,
+        "outside": false
+      },
+      {
+        "id": "C06",
+        "x": 643,
+        "y": 112,
+        "w": 573,
+        "h": 148,
+        "outside": false
+      },
+      {
+        "id": "C07",
+        "x": 643,
+        "y": 266,
+        "w": 573,
+        "h": 123,
+        "outside": false
+      },
+      {
+        "id": "C08 C09 C10 C11",
+        "x": 64,
+        "y": 395,
+        "w": 1152,
+        "h": 156,
+        "outside": false
+      },
+      {
+        "id": "C14",
+        "x": 64,
+        "y": 1113,
+        "w": 573,
+        "h": 220,
+        "outside": true
+      },
+      {
+        "id": "C15",
+        "x": 643,
+        "y": 1113,
+        "w": 573,
+        "h": 220,
+        "outside": true
+      },
+      {
+        "id": "C12",
+        "x": 64,
+        "y": 557,
+        "w": 1152,
+        "h": 304,
+        "outside": true
+      },
+      {
+        "id": "C13",
+        "x": 64,
+        "y": 867,
+        "w": 1152,
+        "h": 240,
+        "outside": true
+      },
+      {
+        "id": "C16",
+        "x": 64,
+        "y": 1339,
+        "w": 573,
+        "h": 240,
+        "outside": true
+      },
+      {
+        "id": "C17",
+        "x": 643,
+        "y": 1339,
+        "w": 573,
+        "h": 240,
+        "outside": true
+      },
+      {
+        "id": "C18",
+        "x": 64,
+        "y": 1585,
+        "w": 573,
+        "h": 240,
+        "outside": true
+      },
+      {
+        "id": "C19",
+        "x": 643,
+        "y": 1585,
+        "w": 573,
+        "h": 209,
+        "outside": true
+      }
+    ],
+    "overflowing": 19,
+    "smallTextUnder11": 0,
+    "errors": [
+      "Failed to load resource: net::ERR_FAILED",
+      "Failed to load resource: net::ERR_FAILED",
+      "Failed to load resource: net::ERR_FAILED",
+      "Failed to load resource: net::ERR_FAILED"
+    ],
+    "requests": 36,
+    "denied": [
+      {
+        "kind": "deny",
+        "target": "https://img.buymeacoffee.com/button-api/"
+      },
+      {
+        "kind": "deny",
+        "target": "https://cdn.vercel-insights.com/v1/script.debug.js"
+      },
+      {
+        "kind": "deny",
+        "target": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js"
+      },
+      {
+        "kind": "deny",
+        "target": "https://api-web.nhle.com/v1/player/8470001/landing"
+      }
+    ],
+    "localApi": [],
+    "tables": [
+      "players",
+      "wigo_career",
+      "wigo_recent",
+      "wigo_rates",
+      "wgo_skater_stats_totals",
+      "rpc/get_skaters_avg_stats",
+      "nst_percentile_as_offense",
+      "nst_percentile_as_defense",
+      "nst_percentile_es_offense",
+      "nst_percentile_es_defense",
+      "nst_percentile_pp_offense",
+      "nst_percentile_pk_defense",
+      "games",
+      "nst_gamelog_as_rates",
+      "wgo_skater_stats",
+      "rpc/get_skater_game_scores_for_season",
+      "nst_team_5v5",
+      "wgo_team_stats"
+    ]
+  }
+}

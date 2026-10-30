@@ -1,0 +1,6 @@
+   × Healthy reserve alert > says only the best can be activated when spots run out, and keeps unknown gains' own wording 7ms
+     → Unable to find an element with the text: Can be activated: Fresh Legs (+10 pts) and Third Man.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your
+   × healthy reserve players > activates as many players as the spots and swap partners allow before maximising gain 5ms
+     → expected [ { playerId: 'f', …(3) }, …(1) ] to deeply equal [ { playerId: 'f', …(3) }, …(1) ]
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  2 failed | 16 passed (18)

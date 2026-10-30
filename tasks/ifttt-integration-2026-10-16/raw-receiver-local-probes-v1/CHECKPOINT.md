@@ -1,0 +1,17 @@
+# Unchanged HTTP receiver: local characterization
+
+Owner-only local evidence; **not independently reviewed** and outside the frozen R18 correction. No application source/test file was edited. The existing dirty receiver and flag module were copied read-only with their exact hashes, together with the raw baseline schema/index definitions. `inputs-sha256.json` identifies all three copies. No ownership of the existing source diff is inferred.
+
+Eleven focused cases passed (`evidence/receiver-v3-results.json`) against the unchanged captured `createLineSourceIftttReceiver` body, a strict fixture SQL adapter and actual raw schemas/unique indexes in disposable PG17. The adapter explicitly translates only the handler's observed insert/upsert options to parameterized SQL, including `ON CONFLICT DO NOTHING`. This is not hosted PostgREST or the real network sender's behavior. The handler runs in process with a synthetic secret, `process=false`, capture off and the network-denial harness; no processor route, scheduler, hosted database or external queue was invoked.
+
+Observed local behavior:
+
+- The handler awaits storage before HTTP success and preserves the exact request body in the raw row. A storage rejection returns 500 with no row.
+- After a committed storage reply is lost, both allowlisted raw tables retain one row. A same-key retry returns 200 and preserves that exact first row. Lost HTTP response after a successful commit has the same safe known-key retry behavior.
+- Concurrent known-key duplicates retain one row. Retrying a previously processed raw receipt preserves its status, marker/body and first receipt clock. Different configured generic source keys retain separate receipts for one post.
+- Missing post identity stores separate text-only receipts; this does not establish identity or independent claim/effect allocation.
+- **Concrete open boundary:** a changed body at the same `(source_key,tweet_id)` receives success while only the first body remains. `evidence/same-key-variant-boundary.json` retains the first body, changed request, response and resulting row. The handler's ignore-duplicates option does not preserve the changed variant for later classification as correction/revision/ambiguity. This is a local adapter reproduction, not evidence of an observed production loss.
+
+Scoped TypeScript passed (`evidence/scoped-tsc-pass.log`). Initial config startup/module-resolution failures occurred before tests ran; their logs and the scoped path-resolution errors are preserved. Final configuration resolves the web package's moment-timezone dependency and Vitest/PG types explicitly for task-local snapshots. No full compiler/build/browser/web suite was run. PG stopped and its private Unix-socket cluster was removed; no process remains active.
+
+Next implementation decision: coordinate ownership before any receiver edit, then use existing durable retention mechanisms if they can preserve same-key variants without overwriting the original or allocating a second independent action. Authenticated edits must be treated as revisions/supersession, with unresolved variants held, per TJ's accepted policy. Do not deduplicate missing-ID requests by text or infer independent effects from game IDs. Any additional SQL must stay task-local and default off until separately approved migration/schema/ACL/fencing and intake gates are met. These probes do not authorize production requests, raw correction/replay, new credentials, ingestion activation or cron changes.

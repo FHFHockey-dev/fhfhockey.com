@@ -1,0 +1,588 @@
+{
+  "1440x900": {
+    "doc": [
+      1440,
+      1103
+    ],
+    "panels": [
+      {
+        "id": "C01",
+        "x": 17,
+        "y": 85,
+        "w": 1406,
+        "h": 52,
+        "outside": false
+      },
+      {
+        "id": "C02 C03",
+        "x": 18,
+        "y": 146,
+        "w": 291,
+        "h": 182,
+        "outside": false
+      },
+      {
+        "id": "C04",
+        "x": 18,
+        "y": 328,
+        "w": 291,
+        "h": 88,
+        "outside": false
+      },
+      {
+        "id": "C05",
+        "x": 18,
+        "y": 416,
+        "w": 291,
+        "h": 284,
+        "outside": false
+      },
+      {
+        "id": "C06",
+        "x": 18,
+        "y": 700,
+        "w": 291,
+        "h": 150,
+        "outside": false
+      },
+      {
+        "id": "C07",
+        "x": 18,
+        "y": 850,
+        "w": 291,
+        "h": 150,
+        "outside": true
+      },
+      {
+        "id": "C08 C09 C10 C11",
+        "x": 18,
+        "y": 1000,
+        "w": 291,
+        "h": 151,
+        "outside": true
+      },
+      {
+        "id": "C14",
+        "x": 997,
+        "y": 146,
+        "w": 212,
+        "h": 184,
+        "outside": false
+      },
+      {
+        "id": "C15",
+        "x": 1209,
+        "y": 146,
+        "w": 213,
+        "h": 184,
+        "outside": false
+      },
+      {
+        "id": "C16",
+        "x": 997,
+        "y": 331,
+        "w": 425,
+        "h": 180,
+        "outside": false
+      },
+      {
+        "id": "C17",
+        "x": 997,
+        "y": 511,
+        "w": 425,
+        "h": 155,
+        "outside": false
+      },
+      {
+        "id": "C18",
+        "x": 997,
+        "y": 666,
+        "w": 425,
+        "h": 155,
+        "outside": false
+      },
+      {
+        "id": "C19",
+        "x": 997,
+        "y": 821,
+        "w": 425,
+        "h": 205,
+        "outside": true
+      }
+    ],
+    "overflowing": 24,
+    "smallTextUnder11": 72,
+    "errors": [
+      "Failed to load resource: net::ERR_FAILED",
+      "Failed to load resource: net::ERR_FAILED",
+      "Failed to load resource: net::ERR_FAILED",
+      "Failed to load resource: net::ERR_FAILED",
+      "C19 meters not rendered in 45s"
+    ],
+    "requests": 42,
+    "denied": [
+      {
+        "kind": "deny",
+        "target": "https://img.buymeacoffee.com/button-api/"
+      },
+      {
+        "kind": "deny",
+        "target": "https://cdn.vercel-insights.com/v1/script.debug.js"
+      },
+      {
+        "kind": "deny",
+        "target": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js"
+      },
+      {
+        "kind": "deny",
+        "target": "https://api-web.nhle.com/v1/player/8470001/landing"
+      }
+    ],
+    "localApi": [],
+    "tables": [
+      "players",
+      "wigo_career",
+      "wigo_recent",
+      "wigo_rates",
+      "wgo_skater_stats_totals",
+      "rpc/get_skaters_avg_stats",
+      "nst_percentile_as_offense",
+      "nst_percentile_as_defense",
+      "nst_percentile_es_offense",
+      "nst_percentile_es_defense",
+      "nst_percentile_pp_offense",
+      "nst_percentile_pk_defense",
+      "games",
+      "wgo_skater_stats",
+      "rpc/get_skater_game_scores_for_season",
+      "nst_team_5v5",
+      "wgo_team_stats"
+    ]
+  },
+  "1280x800": {
+    "doc": [
+      1280,
+      1121
+    ],
+    "panels": [
+      {
+        "id": "C01",
+        "x": 17,
+        "y": 85,
+        "w": 1246,
+        "h": 52,
+        "outside": false
+      },
+      {
+        "id": "C02 C03",
+        "x": 18,
+        "y": 146,
+        "w": 259,
+        "h": 182,
+        "outside": false
+      },
+      {
+        "id": "C04",
+        "x": 18,
+        "y": 328,
+        "w": 259,
+        "h": 88,
+        "outside": false
+      },
+      {
+        "id": "C05",
+        "x": 18,
+        "y": 416,
+        "w": 259,
+        "h": 284,
+        "outside": false
+      },
+      {
+        "id": "C06",
+        "x": 18,
+        "y": 700,
+        "w": 259,
+        "h": 150,
+        "outside": true
+      },
+      {
+        "id": "C07",
+        "x": 18,
+        "y": 850,
+        "w": 259,
+        "h": 150,
+        "outside": true
+      },
+      {
+        "id": "C08 C09 C10 C11",
+        "x": 18,
+        "y": 1000,
+        "w": 259,
+        "h": 151,
+        "outside": true
+      },
+      {
+        "id": "C14",
+        "x": 910,
+        "y": 146,
+        "w": 176,
+        "h": 184,
+        "outside": false
+      },
+      {
+        "id": "C15",
+        "x": 1085,
+        "y": 146,
+        "w": 177,
+        "h": 184,
+        "outside": false
+      },
+      {
+        "id": "C16",
+        "x": 910,
+        "y": 331,
+        "w": 352,
+        "h": 180,
+        "outside": false
+      },
+      {
+        "id": "C17",
+        "x": 910,
+        "y": 511,
+        "w": 352,
+        "h": 155,
+        "outside": false
+      },
+      {
+        "id": "C18",
+        "x": 910,
+        "y": 666,
+        "w": 352,
+        "h": 155,
+        "outside": true
+      },
+      {
+        "id": "C19",
+        "x": 910,
+        "y": 821,
+        "w": 352,
+        "h": 205,
+        "outside": true
+      }
+    ],
+    "overflowing": 30,
+    "smallTextUnder11": 72,
+    "errors": [
+      "Failed to load resource: net::ERR_FAILED",
+      "Failed to load resource: net::ERR_FAILED",
+      "Failed to load resource: net::ERR_FAILED",
+      "Failed to load resource: net::ERR_FAILED",
+      "C19 meters not rendered in 45s"
+    ],
+    "requests": 42,
+    "denied": [
+      {
+        "kind": "deny",
+        "target": "https://img.buymeacoffee.com/button-api/"
+      },
+      {
+        "kind": "deny",
+        "target": "https://cdn.vercel-insights.com/v1/script.debug.js"
+      },
+      {
+        "kind": "deny",
+        "target": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js"
+      },
+      {
+        "kind": "deny",
+        "target": "https://api-web.nhle.com/v1/player/8470001/landing"
+      }
+    ],
+    "localApi": [],
+    "tables": [
+      "players",
+      "wigo_career",
+      "wigo_recent",
+      "wigo_rates",
+      "wgo_skater_stats_totals",
+      "rpc/get_skaters_avg_stats",
+      "nst_percentile_as_offense",
+      "nst_percentile_as_defense",
+      "nst_percentile_es_offense",
+      "nst_percentile_es_defense",
+      "nst_percentile_pp_offense",
+      "nst_percentile_pk_defense",
+      "games",
+      "wgo_skater_stats",
+      "rpc/get_skater_game_scores_for_season",
+      "nst_team_5v5",
+      "wgo_team_stats"
+    ]
+  },
+  "1024x768": {
+    "doc": [
+      1024,
+      2075
+    ],
+    "panels": [
+      {
+        "id": "C01",
+        "x": 17,
+        "y": 73,
+        "w": 990,
+        "h": 52,
+        "outside": false
+      },
+      {
+        "id": "C02 C03",
+        "x": 18,
+        "y": 134,
+        "w": 296,
+        "h": 182,
+        "outside": false
+      },
+      {
+        "id": "C04",
+        "x": 18,
+        "y": 316,
+        "w": 296,
+        "h": 88,
+        "outside": false
+      },
+      {
+        "id": "C05",
+        "x": 18,
+        "y": 404,
+        "w": 296,
+        "h": 284,
+        "outside": false
+      },
+      {
+        "id": "C06",
+        "x": 18,
+        "y": 688,
+        "w": 296,
+        "h": 150,
+        "outside": true
+      },
+      {
+        "id": "C07",
+        "x": 18,
+        "y": 838,
+        "w": 296,
+        "h": 150,
+        "outside": true
+      },
+      {
+        "id": "C08 C09 C10 C11",
+        "x": 18,
+        "y": 988,
+        "w": 296,
+        "h": 151,
+        "outside": true
+      },
+      {
+        "id": "C14",
+        "x": 18,
+        "y": 902,
+        "w": 494,
+        "h": 184,
+        "outside": true
+      },
+      {
+        "id": "C15",
+        "x": 512,
+        "y": 902,
+        "w": 495,
+        "h": 184,
+        "outside": true
+      },
+      {
+        "id": "C16",
+        "x": 18,
+        "y": 1087,
+        "w": 988,
+        "h": 180,
+        "outside": true
+      },
+      {
+        "id": "C17",
+        "x": 18,
+        "y": 1267,
+        "w": 988,
+        "h": 155,
+        "outside": true
+      },
+      {
+        "id": "C18",
+        "x": 18,
+        "y": 1422,
+        "w": 988,
+        "h": 155,
+        "outside": true
+      },
+      {
+        "id": "C19",
+        "x": 18,
+        "y": 1577,
+        "w": 988,
+        "h": 205,
+        "outside": true
+      }
+    ],
+    "overflowing": 23,
+    "smallTextUnder11": 72,
+    "errors": [
+      "Failed to load resource: net::ERR_FAILED",
+      "Failed to load resource: net::ERR_FAILED",
+      "Failed to load resource: net::ERR_FAILED",
+      "Failed to load resource: net::ERR_FAILED",
+      "C19 meters not rendered in 45s"
+    ],
+    "requests": 42,
+    "denied": [
+      {
+        "kind": "deny",
+        "target": "https://img.buymeacoffee.com/button-api/"
+      },
+      {
+        "kind": "deny",
+        "target": "https://cdn.vercel-insights.com/v1/script.debug.js"
+      },
+      {
+        "kind": "deny",
+        "target": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js"
+      },
+      {
+        "kind": "deny",
+        "target": "https://api-web.nhle.com/v1/player/8470001/landing"
+      }
+    ],
+    "localApi": [],
+    "tables": [
+      "players",
+      "wigo_career",
+      "wigo_recent",
+      "wigo_rates",
+      "wgo_skater_stats_totals",
+      "rpc/get_skaters_avg_stats",
+      "nst_percentile_as_offense",
+      "nst_percentile_as_defense",
+      "nst_percentile_es_offense",
+      "nst_percentile_es_defense",
+      "nst_percentile_pp_offense",
+      "nst_percentile_pk_defense",
+      "games",
+      "wgo_skater_stats",
+      "rpc/get_skater_game_scores_for_season",
+      "nst_team_5v5",
+      "wgo_team_stats"
+    ]
+  },
+  "390x844": {
+    "doc": [
+      390,
+      1530
+    ],
+    "panels": [
+      {
+        "id": "C02 C03",
+        "x": 16,
+        "y": 269,
+        "w": 358,
+        "h": 249,
+        "outside": false
+      },
+      {
+        "id": "C04",
+        "x": 16,
+        "y": 534,
+        "w": 358,
+        "h": 88,
+        "outside": false
+      },
+      {
+        "id": "C05",
+        "x": 16,
+        "y": 622,
+        "w": 358,
+        "h": 284,
+        "outside": true
+      },
+      {
+        "id": "C06",
+        "x": 16,
+        "y": 922,
+        "w": 358,
+        "h": 150,
+        "outside": true
+      },
+      {
+        "id": "C07",
+        "x": 16,
+        "y": 1088,
+        "w": 358,
+        "h": 150,
+        "outside": true
+      },
+      {
+        "id": "C08 C09 C10 C11",
+        "x": 16,
+        "y": 1254,
+        "w": 358,
+        "h": 151,
+        "outside": true
+      }
+    ],
+    "overflowing": 4,
+    "smallTextUnder11": 29,
+    "errors": [
+      "Failed to load resource: net::ERR_FAILED",
+      "Failed to load resource: net::ERR_FAILED",
+      "Failed to load resource: net::ERR_FAILED",
+      "Failed to load resource: net::ERR_FAILED",
+      "Failed to load resource: net::ERR_FAILED",
+      "C19 meters not rendered in 45s"
+    ],
+    "requests": 54,
+    "denied": [
+      {
+        "kind": "deny",
+        "target": "https://img.buymeacoffee.com/button-api/"
+      },
+      {
+        "kind": "deny",
+        "target": "https://cdn.vercel-insights.com/v1/script.debug.js"
+      },
+      {
+        "kind": "deny",
+        "target": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js"
+      },
+      {
+        "kind": "deny",
+        "target": "https://api-web.nhle.com/v1/player/8470001/landing"
+      },
+      {
+        "kind": "deny",
+        "target": "https://api-web.nhle.com/v1/player/8470001/landing"
+      }
+    ],
+    "localApi": [],
+    "tables": [
+      "players",
+      "wigo_career",
+      "wigo_recent",
+      "wigo_rates",
+      "wgo_skater_stats_totals",
+      "nst_percentile_as_offense",
+      "nst_percentile_as_defense",
+      "nst_percentile_es_offense",
+      "nst_percentile_es_defense",
+      "nst_percentile_pp_offense",
+      "nst_percentile_pk_defense",
+      "games",
+      "nst_team_5v5",
+      "wgo_team_stats"
+    ]
+  }
+}

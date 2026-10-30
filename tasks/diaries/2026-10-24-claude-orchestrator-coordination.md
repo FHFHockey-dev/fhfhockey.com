@@ -1,0 +1,160 @@
+# 2026-10-24 Claude orchestrator — cross-platform coordination
+
+- Scope: Chef for TJ's Claude allocation (Q1, Q2, C1–C7) per packet in tasks/artifacts/cross-platform/2026-10-24-coordination/. Codex keeps FORGE/RSO/Start Chart/Testing Grounds, master/ledger, all Git/release.
+- Where: octoberBranch @ 2a5092d37 (no Git writes). Leases: CLAUDE-LEASES.json. Mailbox: CLAUDE-TO-CODEX.md (CLAUDE-20261024-001).
+- 14:23Z: freshness verified (master d7b07541, handoff f289e9e0, Luna 6/6). Installed 18 packet files, none pre-existing. Allocated Q1, Q2, C1, C4, C5, C7. Held C2/C6; C3 blocked on Codex transfer of InSeasonPanel paths.
+- Gotcha: only one isolated Next distDir (.next-playwright) → one browser server at a time; C1 holds :3110 first.
+- Old session scout-blender (local_af28accd, V19 context) is idle/stale; Q1 gets a fresh session to avoid V19 assumptions.
+- Next: dispatch sessions; verify each receipt against brief + steers; hand slot C1→C4→C7.
+- 14:31Z: wave 1 dispatched — q1-scout-geometry local_2f9bc26b, q2-unity-map local_fb82e1b0 (first try failed: task-12 folder untrusted; retry ok), c1-team-tabs local_bb5804ab, c4-wigo-links local_2837d829, c5-route-audit local_ab65c5a7, c7-luna-review local_f9ee2dca. Mailbox CLAUDE-20261024-002.
+- Waiting on: Codex reply on C3 transfer; C1 to release :3110 before C4 browser checks.
+- 2026-10-24T15:03Z: Codex CODEX-003 granted C3 isolated candidate (hashes match). Dispatched c3-cancel-reload local_d400a595 (snapshot /private/tmp/fhfh-c3-isolated/web, :3120). C4 granted :3110 after C1 release. TJ holds C7 F1/F2 repair and C5 disabled/suspended audit placement pending own inspection. Mailbox CLAUDE-003.
+- Next: verify C1/C4/C5/C7/Q1 receipts (patch apply-check, focused tests, screenshots); await Q2, C3, C4 slot handback.
+- 2026-10-24T15:06Z: verified C1/C4/C5 patches (14/14 HEAD+patch==tree), 110/110 focused tests, Q1 hashes; full tsc exit 2 = 2 Luna Buffer/BinaryLike errors (C1's tsc-pass claim wrong; C4 right). Mailbox CLAUDE-004.
+- 2026-10-24T15:12Z: C4 slot released, Q2 v14 verified (hash, v13 unchanged, sheet viewed). Q1 follow-up sent: IoU re-measure V42 vs TJ's 4 refs → V43. Mailbox CLAUDE-005.
+- 2026-10-24T15:16Z: C3 verified (canonical unchanged, patch reproduces candidate, 52/52 rerun in snapshot). browser-auth.ts boundary request → Codex (CLAUDE-006). C7 social-share ticket sent, holds :3110.
+- 2026-10-24T15:25Z: C7 social-share verified (7/7, deny log, slot free; SS-1 config finding). Q1 V43 verified (hashes, preserved V40-V42). TJ decision pending: V43 vs V42. Mailbox CLAUDE-007.
+- 2026-10-24T15:30Z: TJ chose V43 as working Scout candidate; Q1 ticket 3 (V44) sent. Mailbox CLAUDE-008.
+- 2026-10-24T15:31Z: TJ drafted Game Grid social-share edition reqs (4:5/1:1, ranked logo grid, easiest schedules, streams, <50/<30/<20% pickups from yahoo_players). Recorded as pending (CLAUDE-009); awaiting TJ summary + staffing choice.
+- 2026-10-24T15:32Z: TJ: new design session for game-grid share, start after his summary. Waiting.
+- 2026-10-24T15:34Z: social-share steer settled (1:1, default+extra cards, unlinked, no auto-post, tiers 50/30/20, Thu/Fri proposals). SS1 lease + mailbox CLAUDE-010; dispatching design session.
+- 2026-10-24T15:34Z: SS1 dispatched local_4542f7f4, holds :3110.
+- 2026-10-24T15:47Z: verified SS1 (29/29, e2e 9/9, pure OK, card viewed), Q1 V44 (hashes; arm-sweep tradeoff), Q2 v15 (hashes). TJ decision pending V44 vs V43. Mailbox CLAUDE-011.
+- 2026-10-24T16:08Z: TJ reinstated V43 over Q1-recorded V44 (16:07Z); Q1 ticket 4 = V45-clearance from V43. Mailbox CLAUDE-012.
+- 2026-10-24T16:12Z: autonomy steer (TJ + CODEX-007/S12) acknowledged CLAUDE-013. Leases updated. Dispatching round 2: C3, C5, C2(new), C1 S05, C4 BLSH, C6(new), C7 review, Q2 v16, SS1 card.
+- 2026-10-24T16:13Z: round 2 dispatched (C2 local_d396b1e2, C6 local_65db6ff7 + 7 follow-ups). Slot queue SS1→C1→C4→C7.
+- 2026-10-24T16:24Z: verified C3-2 (77/77), C5-r2 (72/72), C6 (1 line), Q1 V45 (hashes). Routed C7 findings to C1/C4; C4-F1 boundary to Codex. Q1 ticket 5 (asymmetric weapons, V46). Mailbox CLAUDE-014.
+- 2026-10-24T16:45Z: SS1-2, C2 (Luna+news), Q1 V46, Q2 v16 checked. C2 told to build authority-neutral (b). C7 ticket 4 (Luna, C3, C5). :3110 → C1. Mailbox CLAUDE-015.
+- 2026-10-24T16:56Z: C7 accepted Luna R1; C3/C5 with limits (C3-O1/O2 routed). C1 S05+S06-R1 verified (46/46, pure OK). :3110 → C4. C7 ticket 5. Mailbox CLAUDE-016.
+- 2026-10-24T17:04Z: C7 accepted NEWS R1, S06-R1; S05/SS1 with limits (routed). C3-3 & C4 v2/R1 handed back (in lease). :3110 → C1 then SS1. C7 ticket 6. Mailbox CLAUDE-017.
+- 2026-10-24T17:11Z: C7 accepted C3 R1, C4 WiGO R1; BLSH v2 with limits (no fix needed). C1 S05 re-capture done. :3110 → SS1 for e2e. Mailbox CLAUDE-018.
+- 2026-10-24T17:14Z: SS1-3 verified (45/45, cache only for ready editions). C7 ticket 7 queued. Mailbox CLAUDE-019.
+- 2026-10-24T17:17Z: CLOSEOUT CLAUDE-020 written; leases marked handed back. Remaining: TJ V46 decision; TJ approval for first live nst_team_stats check; Codex boundary requests (5).
+- 2026-10-24T17:36Z: TJ kept V46; Q1 ticket 6 (V47 fist/cannon detail, lower fist) queued. Mailbox CLAUDE-021.
+- 2026-10-24T17:39Z: read CODEX-016..041; Scout base reconciled to V46 (CLAUDE-022). Round 4: SS1 t4, C3 t4, C2 t3 (+CODEX-024 NewsCard), Q2 v17, C7 t8.
+- 2026-10-24T17:50Z: round 4 verified (SS1-4 53/53; canonical C2/C3 unchanged; V47, v17 hashes). New: DraftProPanel transfer request, identity-contract decision, league-config 10 decisions. C7 t9 queued. Mailbox CLAUDE-023.
+- 2026-10-24T18:00Z: V47 working (TJ in Q1). C7 t9: SS1-4/C3-4 with limits → routed; NewsCard accepted; dup-identity proposal. TJ: tiers = separate bands. Mailbox CLAUDE-024.
+- 2026-10-24T18:07Z: SS1-5 verified (55/55). C7 t10 queued. C3 t5 tsc running under heavy lock. Mailbox CLAUDE-025.
+- 2026-10-24T18:12Z: SS1-5 accepted; C3-5 verified (canonical unchanged, tsc only known Luna errors). C7 t11 queued. Mailbox CLAUDE-026.
+- 2026-10-24T18:14Z: round 4 complete; closeout addendum CLAUDE-027; leases handed back. All idle.
+- 2026-10-24T18:21Z: Codex-independent round: Q1 t7 (V48), Q2 v18, SS1 t6 (Wed+Tue). Mailbox CLAUDE-028.
+- 2026-10-24T18:52Z: usage-limit pause; resumed Q1 (V48 from checkpoint) + SS1 (t6 finish). Q2 v18 verified. Mailbox CLAUDE-029.
+- 2026-10-24T19:10Z: SS1-6 verified (62/62, pure OK). C7 t12 queued. Q1 needs TJ (joint limits). Mailbox CLAUDE-030.
+- 2026-10-24T19:14Z: SS1-6 accepted with limits; O1 → SS1 t7 (keep tuesday-trends blocked). Q1 still waiting on TJ. Mailbox CLAUDE-031.
+- 2026-10-24T19:18Z: SS1-7 verified (zero upstream reads for tuesday-trends; 62/62). SS1 handed back. Only Q1 active (waiting on TJ). Mailbox CLAUDE-032.
+- 2026-10-24T19:25Z: TJ: connect live pickups data; bounded live check approved (≤5 GETs, read-only). SS1 t8 dispatched. Mailbox CLAUDE-033.
+- 2026-10-24T19:37Z: SS1-8 verified (68/68, read-only, 2/5 GETs; extra nst_team_stats + id-map reads disclosed). C7 t13 queued. Q1 V48 verifier running. Mailbox CLAUDE-034.
+- 2026-10-24T19:48Z: CORRECTION (CLAUDE-035): extra tables were TJ-approved in SS1 pop-up; live check broke concurrency 1 (2 ms apart, strict-mode); 4 local GETs. SS1 t9 fixes. V48 verified; TJ decision pending.
+- 2026-10-24T19:56Z: TJ kept V48 + gun-hands need refinement → Q1 t8 = V49 gun-hand refinement (first send errored; resent OK). Mailbox CLAUDE-036.
+- 2026-10-24T20:17Z: SS1-9/10 verified (75/75, pure OK, no live). TJ's direct SS1 requests recorded. C7 t14 queued. Q1 V49 running. Mailbox CLAUDE-037.
+- 2026-10-24T20:25Z: C7 t14: SS1-9 accepted; SS1-10 F1/F2 → SS1 t11. Q1 V49 verifier running. Mailbox CLAUDE-038.
+- 2026-10-24T20:32Z: SS1-11 verified (77/77). V49 working (TJ pop-up in Q1); Q1 t9 = V50 started. Mailbox CLAUDE-039.
+- 2026-10-24T20:34Z: TJ steer: relative G/W/Y/R tiers for GP + off-nights → SS1 t12. Mailbox CLAUDE-040.
+- 2026-10-24T20:41Z: SS1-12 verified (80/80; colours match TJ rule on card; no live). Mailbox CLAUDE-041.
+- 2026-10-24T21:19Z: SS1 t13 (tier list) + new read-only rso-free-analysis (local_6ba5e439). Mailbox CLAUDE-042.
+- 2026-10-24T21:26Z: Codex CODEX-054 took 12 SS1 paths (access gating); recorded; SS1 t13 must avoid them (SS1 waiting on TJ — warn on resume). Free-RSO analysis verified + delivered. Mailbox CLAUDE-043.
+- 2026-10-24T21:35Z: V50 working (TJ in Q1). SS1 t13 e2e blocked by Codex gate → spec-only page.route mock (B) with negative test; tier trim deferred. Mailbox CLAUDE-044.
+- 2026-10-24T21:36Z: SS1-13 verified (131/131); e2e/PNGs + tier trim blocked on Codex social-access handback (B impossible: auth from storage). Mailbox CLAUDE-045.
+- 2026-10-24T22:14Z: Q1 t10 (V51 next gap from V50). Mailbox CLAUDE-046.
+- 2026-10-24T22:17Z: Codex returned 12 social paths (CODEX-056); SS1 t14 = live tier rows + t13 e2e; auth/access read-only. Mailbox CLAUDE-047.
+- 2026-10-24T22:45Z: SS1-14 verified (133/133; security files untouched; cap 66). TJ to refresh. Mailbox CLAUDE-048.
+- 2026-10-24T22:48Z: SS1 t15 (reset fix, FP+role ranking all slides, neon chips, LOHO plan) — pre-prod priority. Mailbox CLAUDE-049.
+- 2026-10-24T22:52Z: TJ: FHFH lanes ok for prod once ready. SS1 t15 still running → then C7 review SS1-12..15 → readiness closeout. Mailbox CLAUDE-050.
+- 2026-10-24T22:54Z: told Codex NOT checkpointed (SS1 mid-t15); TJ chose finish t15 first. Mailbox CLAUDE-051.
+- 2026-10-24T22:58Z: V51 working (TJ in Q1). Q1 t11 = V52 integrate floating hip/knee plates. Mailbox CLAUDE-052.
+- 2026-10-24T23:23Z: ALL IDLE AND CHECKPOINTED posted (CLAUDE-053) with SS1 chain hashes; C7 review SS1-12..15 next; gate boundary request for Codex.
+- 2026-10-24T23:54Z: C7 accepted SS1-12..14; SS1-15 F1–F4. TJ: fix first → checkpoint withdrawn (CLAUDE-054); SS1 t16.
+- 2026-10-25T00:06Z: SS1-16 verified (148/148). TJ committed+pushed octoberBranch cb8ed5217 (no secrets/node_modules found). C7 t16 spot-check queued. Mailbox CLAUDE-055.
+- 2026-10-25T00:09Z: FINAL ALL IDLE AND CHECKPOINTED (CLAUDE-056): HEAD cb8ed5217 + SS1-16 only; C7 accepted SS1-16; year<1000 week crash deferred. V52 working.
+- 2026-10-25T00:12Z: post-push SS1 ticket queued (year<1000 week crash); dispatch after Codex push note. Mailbox CLAUDE-057.
+- 2026-10-25T04:07Z: HANDOFF — TJ reclaimed all lanes for Codex; all leases released (CLAUDE-058).
+- 2026-10-25T13:31Z: Q1/Q2 re-activated by TJ (review Codex sprint, then bigger passes). Mailbox CLAUDE-059.
+- 2026-10-25T14:12Z: Oct-25 plan: C1/C2 snapshot-only, C3 artifact-only (no safe-base handback yet); requests in CLAUDE-060. Quest on hold.
+- 2026-10-25T14:13Z: started C3 local_dd2e025f, C1 local_003887f5, C2 local_1bef5915; Q1 pause after V57. Mailbox CLAUDE-061.
+- 2026-10-25T14:32Z: C1/C2/C3 first-pass frozen; verified (C1 26/26, C3 36/36, patches apply to 1ee5127dc, canonical untouched). Mailbox CLAUDE-062.
+- 2026-10-25T14:43Z: TJ outlined Scout concept → Q1 V58 big segmentation pass (supersedes pause). Mailbox CLAUDE-063.
+- 2026-10-25T14:51Z: SS1 t17 (prod Pickups recent unavailable + meta text removal), snapshot; mailbox CLAUDE-064.
+- 2026-10-25T14:59Z: SS1 t18 queued (hot/cold streak icons). Mailbox CLAUDE-065.
+- 2026-10-25T16:23Z: freeze lifted; outbox flushed to mailbox (CLAUDE-066..072) and handoffs; WiGO leased back to Claude per TJ; C1 install next.
+- 2026-10-25T16:24Z: TJ reversed Codex reclaim of all Claude lanes; SS1/C3/C1 installing in-tree; C7 reviews. Mailbox CLAUDE-073.
+- 2026-10-25T16:26Z: TJ: BLSH only Codex lane; Claude owns local commits; Codex to freeze+hand over all else (CLAUDE-074).
+- 2026-10-25T16:27Z: committed C1 9dbc55afb (explicit paths, not pushed). C7 t17 reviews installs. Mailbox CLAUDE-075.
+
+## 2026-10-25 ~17:30Z final-quota push (41 min left)
+- TJ steers (direct pop-up): HIR P1 = soft DTD-in-IR+ game-day note; HIR P2 = rank competing flagged reserves, "Only one can be activated: best is X (+N pts)". P3 stays out of scope.
+- Dispatched: TG RECEIPT-2 durable-store contract kit; HIR RECEIPT-2 policy 1+2. Q1 V58 attempt 3 build running (PID 99415).
+- 33d99b377 kept as is (TJ). VS Code's 10k count was stale, from before Codex's 15:05Z archive.
+- Next: verify both receipts, commit each lane by explicit pathspec, and hold the push.
+
+## 2026-10-25 ~17:55Z resume point (quota reset at 21:00Z)
+- Committed locally, not pushed (13 ahead of origin/octoberBranch): 9dbc55afb C1, ac98431aa docs, 80425a4a9 C3a/b, 27ea7fc36 SS1, 4436789f1 WiGO, f951732dc GS, 9e861bfdc HIR, cee5d6a1f C3d, 664345ce5 TG, 4d37b51c9 PC, 33d99b377 records, 63654c308 TG kit, 48809914a HIR policy.
+- Push: TJ said hold. Before any push, re-check the 4 Vercel projects' preview settings with TJ and get direct pop-up approval.
+- Open: Q1 V58 attempt 3 (build → verify → renders, background) then a review sheet for TJ's keep/revert. HIR policy 3 (weekly IR lock) is unanswered. The PC wiring gate requires validateAdmittedEvidence. TG kit and HIR policy have no C7 review (Codex vets; mailbox 081). Social-share root cause waits on Vercel runtime logs after a deploy.
+- Never commit web/next-env.d.ts or the 663 untracked PNG/scratch files.
+- ~17:58Z TJ: "We need to continue work on what we can." Dispatched 10–12 min boxes: C7 R20 (review 63654c308 + 48809914a), GS RECEIPT-2, WiGO RECEIPT-2. All uncommitted; after the reset, verify the receipts and commit each lane by explicit pathspec.
+
+## 2026-10-25 14:50 EDT push + 2-hour window
+- Pushed octoberBranch 2f2b43230..86583ba6b (TJ, direct pop-up). No Vercel deployment, GitHub status, check-run or deployment appeared for the SHA, and all 4 linked projects still have previews disabled.
+- TJ: pop-ups always mark "(Recommended)" (memory updated). HIR policy 3 = Option A (follow the planner's weekly lock).
+- TJ wants meaningful usage, not burn. Dispatched: HIR-4 policy 3A; C3-4 route-runner pre-existing failure; C7-R23 PC WIRING-1 review; C1 dynamic-import lint gap; WiGO-4 audit items; Q2 v24 slices plus a review sheet. SS1 is doing ticket 21/22 (Targeted Matchups plus the legend steer). Q1 V58 attempt 4 is in the background. GS, TG and the read-only lanes stay idle (no high-value items left).
+
+## 2026-10-25 16:12 EDT release complete
+- Production: PR #382 squash-merged into master b84ff5b51 (tree = RC 8384a8563). The deploy dpl_4f7rvaZQ is READY; cms, functions and the empty-root project were canceled as usual. Smoke test, 5 GETs: 4×200, plus one 404 from my bad route (monday isn't a format).
+- octoberBranch is synced (ours-merge e74d6060e) and pushed; no builds.
+- Open: the social-share recent-form root cause (watch runtime logs when an editor opens Monday's edition); Q1 V58 attempt 7 still in progress.
+
+## 2026-10-26 checkpoint (TJ: pause for the Astra audit)
+- Finished the in-flight slice: cd73cbd69 (PROV-GUARD step 2). All implementation is paused; the guard expansion is not started.
+- Handoff: tasks/artifacts/astra-rso-handoff-2026-10-26/ (see README). Resume only on TJ's explicit instruction; follow CHECKPOINT.md §9.
+
+## 2026-10-26 15:50Z Astra audit resume
+- HEAD cd73cbd69 = the audited cut. F1–F6 confirmed (AMENDMENT-01 in astra-rso-handoff). Audit copied to tasks/artifacts/astra-audit-2026-10-26/.
+- Dispatched: prov-guard F1; rso-flake F6 + E2E packet; rso-manual F2→F3; C7 R40 on cd73cbd69. Leases pinned 15:46Z; mailbox 104.
+- Next: verify each receipt, commit by pathspec, C7 review, then F4 (prov-guard) and an integrated gate. Push/release only by TJ pop-up.
+
+## 2026-10-26 16:20Z slices 1–3 committed locally
+- Combined tree verified by me: tsc 0; 4,536/4,536 tests in UTC and New York (164 files); eslint 0 errors. Closure hash at HEAD = allowlisted 0e9876…4f8e4f.
+- Commits: 978134e22 (F2), 00d375839 (F6 + E2E packet), 5a19f1def (F1 + bd337d97a receipt for C7 R40 V1). Not pushed.
+- C7 R40: cd73cbd69 accepted with limits (V1 fixed; V2/V3 sent to prov-guard).
+- In flight: rso-manual F3; prov-guard V2/V3 + isolated build check + F4; rso-yahoo-diet cache-key account identity; C7 R41.
+- TJ-started forge-reserve-pass session: told the boundaries; it must request a lease before writing.
+
+## 2026-10-26 ~17:00Z F3 + Yahoo keys committed
+- 9e66c7e20 F3 (with F2F3 receipts); c0ebd63f7 Yahoo account-keyed caches. Verified on a clean HEAD overlay: tsc 0, eslint 0; the only test failures were export-only and pass in the checkout (5 files, 182 tests).
+- Closure at HEAD is now 4c06fd9e…; the allowlist holds 6613 (pre-F3). Re-verify once at the release candidate.
+- V2/V3 are interleaved with F4 in shared files, so they commit together after F4. FORGE-RESERVE: out-of-lease edits and a "count 0 for unknown dressing" rule were queried (TJ said null by default); waiting for its answer.
+
+## 2026-10-26 ~17:30Z paused (usage limit)
+- PROV-GUARD F4 + V2/V3 is done and uncommitted. All 35 files match tasks/artifacts/astra-rso-handoff-2026-10-26/slices/F4/RECEIPT.md; the list is in scratchpad p-f4.txt.
+- Next:
+  - run scratchpad/verify-f4.sh (clean HEAD overlay; rerun export-only failures in the checkout);
+  - commit by pathspec;
+  - C7 review of V2/V3 + F4.
+- Ask TJ by pop-up:
+  - GAME_PREDICTIONS_REQUIRE_FORGE_PROOF (default off);
+  - teams/goalies endpoints go unavailable while runs are unproven (GameGrid team forecasts, GoalieRiskCard, dashboards) until verified-closure runs exist after the release.
+- FORGE-RESERVE: lease extended; the count-0 rule is TJ's answer. Waiting for the final receipt and payload measurements, then a clean overlay check and commit.
+- Then: re-verify the final integrated closure hash and list it; full gate; release proposal pop-up.
+
+## 2026-10-26 ~18:00Z F4 committed
+- TJ pop-ups: GAME_PREDICTIONS_REQUIRE_FORGE_PROOF stays off; team/goalie guard accepted (mailbox 105).
+- 595ab13d9 = V2/V3 + F4 (36 files). Clean overlay: tsc 0, eslint 0, closure 4c06fd9e (allowlisted). The 6 overlay test-file failures are export-only and pass in the checkout (175 tests). C7 R42 requested.
+- FORGE-RESERVE: asked to keep the 4 MB budget when its flag is off (6 MB only with the flag on) and to add mobile decode/save measurement or record it as an activation gate. Then verify and commit.
+
+## 2026-10-26 ~18:50Z reserve + R42 committed
+- 074694095 reserve pass (flag off; 4 MB budget when off; migration local, not applied). 6fb1812c1 R42 fixes A1/A2/A4/A7 (A3 accepted as a residual).
+- Both verified on a clean HEAD overlay: tsc 0, eslint 0; the 7 export-only test files pass in the checkout.
+- Closure at HEAD: c1f0129a. prov-guard is listing it with a commit receipt (6fb1812c1). C7 R43 is reviewing both commits.
+- Next: commit the allowlist entry, full gate on HEAD, release-candidate proposal pop-up (push/deploy needs TJ).
+
+## 2026-10-26 ~19:30Z gate on HEAD
+- Full gate (export of 7b9770e4b): tsc 0; lint 0 errors / 69 warnings; CSS pure pass. Vitest: 47 export-only files rerun in the checkout, 46 pass. The one real failure (supportedBaselineMigration: unregistered D4 and reserve migrations, failing since 3795abb43) is fixed in ad079935e as pending records.
+- a02159b64: M1 migration revoke. The C7 R43 X1 closure is listed (7b9770e4b).
+- prov-guard: admit resumed runs whose stamps are all the same verified closure (availability). Then the RC proposal pop-up.
+- RC scope question for TJ: HEAD:web also carries the TT Tuesday Trends commits 82490cd45, c5829aa9e and 8e755dab8.
+
+## 2026-10-26 ~20:00Z RC built and gated
+- origin/master = 19890a8cb (Tuesday Trends #386, released by another session). RC efb36e908 (refs/rc/2026-10-26-web-5) = master tree with web from HEAD b9206fe31; 73 web files; tree 1ad87b0a.
+- RC gate: tsc 0; lint 0 errors / 69 warnings; CSS pure pass. 46 vitest files fail in the export, all export-only (pass in the checkout).
+- Vercel: all 4 projects previewDeploymentsDisabled=true, production branch master; last release had fhfhockey READY and the other 3 CANCELED.
+- TJ pop-up: ship after C7 accepts b9206fe31 (R44 requested). An earlier mismatched answer about moving evidence files was not treated as approval; re-asked.

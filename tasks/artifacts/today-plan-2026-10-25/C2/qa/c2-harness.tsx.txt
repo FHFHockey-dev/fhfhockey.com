@@ -1,0 +1,38 @@
+// C2 snapshot-only QA harness. NOT part of the patch. Renders the real Studio ungated,
+// or HeroPlayerCard for fixtures the Studio does not expose, exporting through the real rasterizer.
+import React, { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/router";
+import PlayerCardShareStudio from "components/player-cards/PlayerCardShareStudio";
+import HeroPlayerCard, { type PreparedHero, type CardShareFormat } from "components/player-cards/HeroPlayerCard";
+import { REVIEWED_HERO_SAMPLES } from "lib/player-cards/reviewedHeroSamples";
+import { prepareHero, rasterizePlayerCard, saveCardFile } from "lib/player-cards/shareExport";
+import { preparePortrait } from "lib/player-cards/portraitTreatment";
+import { adaptLocalSnapshot } from "lib/player-cards/adapter";
+import { buildInteractionFixture, type FixtureScenario } from "lib/player-cards/interactionFixtures";
+import { displaySnapshot, flowSettings, INITIAL_FLOW, type FlowState } from "lib/player-cards/interactionSnapshot";
+import styles from "components/player-cards/PlayerCardShareStudio.module.scss";
+
+function Hero({ q }: { q: Record<string, string> }) {
+  const sample = REVIEWED_HERO_SAMPLES.find(s => String(s.id) === (q.player || "8478864"))!;
+  const format = (q.format || "landscape") as CardShareFormat;
+  const [hero, setHero] = useState<PreparedHero | null>(null), [status, setStatus] = useState("");
+  const svgRef = useRef<SVGSVGElement>(null);
+  useEffect(() => { prepareHero(sample).then(h => preparePortrait(h, "team-colors")).then(setHero, e => setStatus(String(e))); }, [sample]);
+  const state: FlowState = { ...INITIAL_FLOW, ...(q.flow ? JSON.parse(q.flow) : {}) };
+  const result = adaptLocalSnapshot(buildInteractionFixture(flowSettings(state), (q.scenario || "complete") as FixtureScenario, state.playerId), state.playerId);
+  if (result.state === "rejected") return <p>rejected: {result.reason}</p>;
+  const fixture = displaySnapshot(result);
+  const snapshot = { ...fixture, id: `art-study-${sample.id}-${fixture.id}`, player: { id: String(sample.id), name: sample.name, team: sample.team, position: sample.position } };
+  return <main className={styles.studio}>
+    <button data-export onClick={async () => { try { const blob = await rasterizePlayerCard(svgRef.current!, snapshot, hero!, format); saveCardFile(blob, `c2-${q.name || "card"}.png`); setStatus("saved"); } catch (e) { setStatus(String(e)); } }}>Download PNG</button>
+    <p role="status">{status}</p>
+    {hero && <section className={styles.artwork} aria-label="Player card preview"><HeroPlayerCard snapshot={snapshot} hero={hero} format={format} svgRef={svgRef} /></section>}
+  </main>;
+}
+
+export default function C2Harness() {
+  const { query, isReady } = useRouter();
+  if (!isReady) return null;
+  const q = Object.fromEntries(Object.entries(query).map(([k, v]) => [k, String(v)]));
+  return q.mode === "hero" ? <Hero q={q} /> : <PlayerCardShareStudio />;
+}

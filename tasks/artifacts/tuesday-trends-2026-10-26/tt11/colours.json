@@ -1,0 +1,226 @@
+{
+  "ANA": {
+    "stroke": "#ec623c",
+    "halo": "#967e53",
+    "strokeFrom": "lightColor",
+    "strokeContrast": 5.36,
+    "haloContrast": 4.54
+  },
+  "BOS": {
+    "stroke": "#dfc16c",
+    "halo": "#ffc64d",
+    "strokeFrom": "lightColor",
+    "strokeContrast": 10.06,
+    "haloContrast": 11.28
+  },
+  "BUF": {
+    "stroke": "#4a80db",
+    "halo": "#ffb81c",
+    "strokeFrom": "lightColor",
+    "strokeContrast": 4.54,
+    "haloContrast": 10.18
+  },
+  "CAR": {
+    "stroke": "#eb3e5d",
+    "halo": "#ff0f2f",
+    "strokeFrom": "lightColor",
+    "strokeContrast": 4.52,
+    "haloContrast": 4.5
+  },
+  "CBJ": {
+    "stroke": "#3181e2",
+    "halo": "#7da1c4",
+    "strokeFrom": "lightColor",
+    "strokeContrast": 4.51,
+    "haloContrast": 6.52
+  },
+  "CGY": {
+    "stroke": "#dd4f66",
+    "halo": "#faaf19",
+    "strokeFrom": "lightColor",
+    "strokeContrast": 4.52,
+    "haloContrast": 9.42
+  },
+  "CHI": {
+    "stroke": "#dd4f66",
+    "halo": "#818181",
+    "strokeFrom": "lightColor",
+    "strokeContrast": 4.52,
+    "haloContrast": 4.53
+  },
+  "COL": {
+    "stroke": "#397cf6",
+    "halo": "#d2567c",
+    "strokeFrom": "lightColor",
+    "strokeContrast": 4.52,
+    "haloContrast": 4.5
+  },
+  "DAL": {
+    "stroke": "#65ed50",
+    "halo": "#44d62c",
+    "strokeFrom": "lightColor",
+    "strokeContrast": 11.58,
+    "haloContrast": 9.15
+  },
+  "DET": {
+    "stroke": "#dd4f66",
+    "halo": "#ffffff",
+    "strokeFrom": "lightColor",
+    "strokeContrast": 4.52,
+    "haloContrast": 17.64
+  },
+  "EDM": {
+    "stroke": "#457ee7",
+    "halo": "#fc4c02",
+    "strokeFrom": "lightColor",
+    "strokeContrast": 4.53,
+    "haloContrast": 5.18
+  },
+  "FLA": {
+    "stroke": "#eb3e5a",
+    "halo": "#b9975b",
+    "strokeFrom": "lightColor",
+    "strokeContrast": 4.51,
+    "haloContrast": 6.42
+  },
+  "LAK": {
+    "stroke": "#bac8cd",
+    "halo": "#a2aaad",
+    "strokeFrom": "lightColor",
+    "strokeContrast": 10.27,
+    "haloContrast": 7.47
+  },
+  "MIN": {
+    "stroke": "#32916d",
+    "halo": "#ddcba4",
+    "strokeFrom": "lightColor",
+    "strokeContrast": 4.54,
+    "haloContrast": 11.05
+  },
+  "MTL": {
+    "stroke": "#467ee4",
+    "halo": "#6cace4",
+    "strokeFrom": "lightColor",
+    "strokeContrast": 4.51,
+    "haloContrast": 7.27
+  },
+  "NJD": {
+    "stroke": "#f03654",
+    "halo": "#f7284b",
+    "strokeFrom": "lightColor",
+    "strokeContrast": 4.5,
+    "haloContrast": 4.5
+  },
+  "NSH": {
+    "stroke": "#efbe53",
+    "halo": "#ffb81c",
+    "strokeFrom": "lightColor",
+    "strokeContrast": 10.21,
+    "haloContrast": 10.18
+  },
+  "NYI": {
+    "stroke": "#467ee4",
+    "halo": "#818181",
+    "strokeFrom": "lightColor",
+    "strokeContrast": 4.51,
+    "haloContrast": 4.53
+  },
+  "NYR": {
+    "stroke": "#4d7edf",
+    "halo": "#ffffff",
+    "strokeFrom": "lightColor",
+    "strokeContrast": 4.51,
+    "haloContrast": 17.64
+  },
+  "OTT": {
+    "stroke": "#ed3b58",
+    "halo": "#f7284b",
+    "strokeFrom": "lightColor",
+    "strokeContrast": 4.51,
+    "haloContrast": 4.5
+  },
+  "PHI": {
+    "stroke": "#ef794b",
+    "halo": "#ffffff",
+    "strokeFrom": "lightColor",
+    "strokeContrast": 6.3,
+    "haloContrast": 17.64
+  },
+  "PIT": {
+    "stroke": "#ffc852",
+    "halo": "#ffb81c",
+    "strokeFrom": "lightColor",
+    "strokeContrast": 11.45,
+    "haloContrast": 10.18
+  },
+  "SEA": {
+    "stroke": "#6bcdf4",
+    "halo": "#68a2b9",
+    "strokeFrom": "lightColor",
+    "strokeContrast": 9.8,
+    "haloContrast": 6.26
+  },
+  "SJS": {
+    "stroke": "#1a8e97",
+    "halo": "#818181",
+    "strokeFrom": "lightColor",
+    "strokeContrast": 4.5,
+    "haloContrast": 4.53
+  },
+  "STL": {
+    "stroke": "#397cf6",
+    "halo": "#fcb514",
+    "strokeFrom": "lightColor",
+    "strokeContrast": 4.52,
+    "haloContrast": 9.88
+  },
+  "TBL": {
+    "stroke": "#397cf6",
+    "halo": "#ffffff",
+    "strokeFrom": "lightColor",
+    "strokeContrast": 4.52,
+    "haloContrast": 17.64
+  },
+  "TOR": {
+    "stroke": "#397cf6",
+    "halo": "#ffffff",
+    "strokeFrom": "lightColor",
+    "strokeContrast": 4.52,
+    "haloContrast": 17.64
+  },
+  "UTA": {
+    "stroke": "#67bdfb",
+    "halo": "#69b3e7",
+    "strokeFrom": "lightColor",
+    "strokeContrast": 8.61,
+    "haloContrast": 7.73
+  },
+  "VAN": {
+    "stroke": "#259358",
+    "halo": "#009545",
+    "strokeFrom": "lightColor",
+    "strokeContrast": 4.53,
+    "haloContrast": 4.52
+  },
+  "VGK": {
+    "stroke": "#7c8286",
+    "halo": "#b4975a",
+    "strokeFrom": "lightColor",
+    "strokeContrast": 4.53,
+    "haloContrast": 6.31
+  },
+  "WPG": {
+    "stroke": "#457ee7",
+    "halo": "#a2aaad",
+    "strokeFrom": "lightColor",
+    "strokeContrast": 4.53,
+    "haloContrast": 7.47
+  },
+  "WSH": {
+    "stroke": "#3480e8",
+    "halo": "#ef3855",
+    "strokeFrom": "lightColor",
+    "strokeContrast": 4.53,
+    "haloContrast": 4.51
+  }
+}

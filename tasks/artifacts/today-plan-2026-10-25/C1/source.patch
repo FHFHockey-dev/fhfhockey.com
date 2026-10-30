@@ -1,0 +1,486 @@
+--- /dev/null
++++ b/web/lib/player-cards/evidenceBundle.ts
+@@ -0,0 +1,227 @@
++import type { CardSettings, MetricId, MetricReading, Period, Strength } from "./contracts";
++import { METRICS, REGISTRY_VERSION } from "./registry";
++import { adaptLocalSnapshot, type AdaptedCard, type LocalCardInput, type MetricCoverage } from "./adapter";
++import { instant, settingsError, validDate } from "./windows";
++
++type Origin = LocalCardInput["origin"];
++export type ReceiptRef = { receiptId: string; sha256: string };
++type Retained<K extends string, S> = { kind: K; receiptId: string; sha256: string; retainedPath: string; origin: Origin; capturedAt: string; subject: S };
++export type HistoryReceipt = Retained<"appearance-history", {
++  playerId: number; season: number; gameType: "regular"; dateBasis: "UTC" | "provider-game-date";
++  sourceClass: "complete-official-log" | "latest-n" | "row-count"; through: string;
++  appearances: readonly { gameId: number; date: string; played: boolean }[];
++}>;
++export type FinalityReceipt = Retained<"game-finality", {
++  gameId: number; season: number; date: string; endedAt: string;
++  sourceClass: "official-game-end" | "ingestion-completion" | "scheduled-start";
++}>;
++export type DefinitionReceipt = Retained<"metric-definition", {
++  metricId: MetricId; registryVersion: string; sourceDefinition: string; sourceVersion: string; definitionVersion: string;
++  zeroSemantics: "verified-distinct" | "placeholder-coerced" | "unknown";
++}>;
++export type PopulationReceipt = Retained<"population-membership", {
++  metricId: MetricId; scope: LocalCardInput["population"]["scope"]; definitionVersion: string;
++  sourceClass: "metric-population-inventory" | "roster-snapshot" | "ingestion-position-filter";
++  season: number; gameType: "regular"; strength: Strength; period: Period; cutoff: string; memberIds: readonly number[];
++}>;
++export type RetainedReceipt = HistoryReceipt | FinalityReceipt | DefinitionReceipt | PopulationReceipt;
++type ReceiptKind = RetainedReceipt["kind"];
++
++/** Card claims bound to retained receipt references. Caller flags in LocalCardInput are never consulted as proof. */
++export type EvidenceBundle = {
++  id: string; origin: Origin;
++  selection: { playerId: number; season: number; gameType: "regular"; strength: Strength; period: Period; cutoff: string };
++  history: readonly { playerId: number; receipt: ReceiptRef }[];
++  finality: readonly { gameId: number; receipt: ReceiptRef }[];
++  definitions: readonly { metricId: MetricId; definitionVersion: string; receipt: ReceiptRef }[];
++  populations: readonly { metricId: MetricId; receipt: ReceiptRef }[];
++};
++export type EvidenceIssue = { severity: "rejected" | "incomplete"; code: string; reason: string; playerId?: number; gameId?: number; metricId?: MetricId; receiptId?: string };
++export type MetricEvidence = { state: "eligible" | "incomplete" | "rejected"; reasons: string[] };
++export type EvidenceResult = {
++  state: "eligible" | "incomplete" | "rejected"; bundleId: string; issues: EvidenceIssue[];
++  metrics: Record<MetricId, MetricEvidence>; card: AdaptedCard | null;
++  liveActivation: false; premiumActivation: false;
++};
++type At = Pick<EvidenceIssue, "playerId" | "gameId" | "metricId">;
++
++const samePeriod = (a: Period, b: Period) => a.mode === b.mode && (a.mode === "appearances"
++  ? b.mode === "appearances" && a.count === b.count
++  : b.mode === "calendar" && a.start === b.start && a.end === b.end && a.timezone === b.timezone);
++const inPeriod = (date: string, settings: CardSettings) => date <= settings.cutoff.slice(0, 10)
++  && (settings.period.mode !== "calendar" || (date >= settings.period.start && date <= settings.period.end));
++const positiveIds = (ids: readonly number[]) => ids.every(id => Number.isSafeInteger(id) && id > 0) && new Set(ids).size === ids.length;
++
++/**
++ * Offline classifier for supplied card inputs. `retained` must come from the retained-artifact
++ * loader (hashes computed over kept receipt files), not from the card caller; no fetch or file access here.
++ * Eligible means every claim resolves to a matching retained receipt; it is not live or premium activation.
++ */
++export function validateEvidenceBundle(input: LocalCardInput, bundle: EvidenceBundle, retained: readonly RetainedReceipt[]): EvidenceResult {
++  const issues: EvidenceIssue[] = [];
++  const reject = (code: string, reason: string, at: At & { receiptId?: string } = {}) => { issues.push({ severity: "rejected", code, reason, ...at }); };
++  const lack = (code: string, reason: string, at: At & { receiptId?: string } = {}) => { issues.push({ severity: "incomplete", code, reason, ...at }); };
++  const settings = input.settings, selection = bundle.selection, playerId = selection.playerId;
++  const scope = input.origin === "synthetic" ? "synthetic-all-values" : "all-nhl";
++  const supplied = input.players.map(player => player.frame.playerId);
++
++  if (!bundle.id.trim()) reject("bundle-identity", "Evidence bundle identity is missing");
++  if (bundle.origin !== input.origin) reject("origin-mismatch", "Bundle origin does not match the card input origin");
++  const settingsProblem = settingsError(settings);
++  if (settingsProblem) reject("settings", settingsProblem);
++  if (selection.season !== settings.season) reject("selection-season", "Bundle season does not match the selected season");
++  if (selection.gameType !== settings.gameType) reject("selection-game-type", "Bundle game type does not match the selected game type");
++  if (selection.strength !== settings.strength) reject("selection-strength", "Bundle strength does not match the selected strength");
++  if (!samePeriod(selection.period, settings.period)) reject("selection-window", "Bundle window does not match the selected window");
++  if (instant(selection.cutoff) === null || instant(selection.cutoff) !== instant(settings.cutoff)) reject("selection-cutoff", "Bundle cutoff does not match the selected cutoff");
++  if (!Number.isSafeInteger(playerId) || playerId <= 0 || !supplied.includes(playerId)) reject("selection-player", "Selected player is absent from the supplied card inputs", { playerId });
++  if (!positiveIds(supplied)) reject("player-identity", "Supplied player identities are invalid or duplicated");
++  if (issues.length) return finish(issues, null, new Map());
++  const cutoff = instant(settings.cutoff)!;
++
++  const byId = new Map<string, RetainedReceipt[]>();
++  for (const receipt of retained) byId.set(receipt.receiptId, [...(byId.get(receipt.receiptId) || []), receipt]);
++  function resolve<K extends ReceiptKind>(ref: ReceiptRef | undefined, kind: K, at: At): Extract<RetainedReceipt, { kind: K }> | null {
++    if (!ref || !ref.receiptId.trim()) { lack(`${kind}-missing`, `No ${kind} receipt is referenced`, at); return null; }
++    const found = byId.get(ref.receiptId) || [], receiptId = ref.receiptId;
++    if (found.length > 1) { reject("receipt-ambiguous", `Receipt ${receiptId} is retained more than once`, { ...at, receiptId }); return null; }
++    const receipt = found[0];
++    if (!receipt || !receipt.retainedPath.trim()) { lack("receipt-not-retained", `Receipt ${receiptId} is not among retained receipts; a reference or hash alone is not evidence`, { ...at, receiptId }); return null; }
++    if (!/^[0-9a-f]{64}$/.test(receipt.sha256) || receipt.sha256 !== ref.sha256) { reject("receipt-hash", `Receipt ${receiptId} hash does not match the retained receipt`, { ...at, receiptId }); return null; }
++    if (receipt.kind !== kind) { reject("receipt-kind", `Receipt ${receiptId} is a ${receipt.kind} receipt, not ${kind}`, { ...at, receiptId }); return null; }
++    if (receipt.origin !== bundle.origin) { reject("receipt-origin", `Receipt ${receiptId} origin does not match the bundle origin`, { ...at, receiptId }); return null; }
++    if (instant(receipt.capturedAt) === null) { reject("receipt-time", `Receipt ${receiptId} capture time is invalid`, { ...at, receiptId }); return null; }
++    return receipt as Extract<RetainedReceipt, { kind: K }>;
++  }
++  function single<T>(entries: readonly T[], at: At, label: string): T | undefined {
++    if (entries.length > 1) { reject("duplicate-evidence", `Multiple ${label} entries for one subject`, at); return undefined; }
++    return entries[0];
++  }
++
++  // Complete appearance history, per supplied player (every pool member needs its own window).
++  const verifiedHistory = new Map<number, HistoryReceipt>();
++  for (const entry of bundle.history) if (!supplied.includes(entry.playerId)) reject("history-unknown-player", "History receipt references a player without supplied card inputs", { playerId: entry.playerId });
++  const required = new Map<number, { date: string }>();
++  for (const player of input.players) {
++    const id = player.frame.playerId, at = { playerId: id }, before = issues.length;
++    const games = player.frame.appearances.filter(game => game.playerId === id && game.season === settings.season && game.gameType === settings.gameType);
++    if (!positiveIds(games.map(game => game.gameId)) || games.some(game => !validDate(game.date))) { reject("frame-game-identity", "Supplied frame has an invalid or duplicate game identity", at); continue; }
++    if (new Set(games.map(game => game.date)).size !== games.length) { reject("duplicate-date", "Supplied frame lists multiple appearances on one date; date-keyed NST rows cannot identify the game", at); continue; }
++    for (const game of games) {
++      if (game.played !== true || !inPeriod(game.date, settings)) continue;
++      const known = required.get(game.gameId);
++      if (known && known.date !== game.date) reject("game-date-conflict", "One game identity carries different dates across players", { gameId: game.gameId });
++      required.set(game.gameId, { date: game.date });
++    }
++    const receipt = resolve(single(bundle.history.filter(entry => entry.playerId === id), at, "history")?.receipt, "appearance-history", at);
++    if (!receipt) continue;
++    const history = receipt.subject, through = instant(history.through);
++    if (history.playerId !== id || history.season !== settings.season || history.gameType !== settings.gameType) { reject("history-identity", "History receipt player, season or game type does not match the supplied frame", at); continue; }
++    if (through === null || through > instant(receipt.capturedAt)!) { reject("history-time", "History receipt claims coverage beyond its own capture time", at); continue; }
++    if (!positiveIds(history.appearances.map(game => game.gameId)) || history.appearances.some(game => !validDate(game.date))) { reject("history-game-identity", "History receipt has an invalid or duplicate game identity", at); continue; }
++    if (new Set(history.appearances.map(game => game.date)).size !== history.appearances.length) { reject("duplicate-date", "History receipt lists multiple appearances on one date; date-keyed NST rows cannot identify the game", at); continue; }
++    for (const game of games) {
++      const listed = history.appearances.find(entry => entry.gameId === game.gameId);
++      if (!listed) reject("history-extra-appearance", `Supplied appearance ${game.gameId} is not in the history receipt`, { ...at, gameId: game.gameId });
++      else if (listed.date !== game.date || listed.played !== game.played) reject("history-conflict", `Supplied appearance ${game.gameId} date or participation conflicts with the history receipt`, { ...at, gameId: game.gameId });
++    }
++    for (const listed of history.appearances) if (!games.some(game => game.gameId === listed.gameId)) lack("history-appearance-absent", `History receipt appearance ${listed.gameId} is absent from the supplied frame`, { ...at, gameId: listed.gameId });
++    if (history.sourceClass !== "complete-official-log") lack("history-not-complete", `History source "${history.sourceClass}" does not establish complete appearance history`, at);
++    if (history.dateBasis !== "UTC") lack("date-basis", "Game dates are not established as UTC calendar dates", at);
++    if (through < cutoff) lack("history-through", "Complete appearance history does not reach the selected cutoff", at);
++    if (issues.length === before) verifiedHistory.set(id, receipt);
++  }
++
++  // Independently sourced finality for every played appearance the window could select.
++  const verifiedFinal = new Map<number, FinalityReceipt>();
++  for (const [gameId, game] of required) {
++    const at = { gameId };
++    const receipt = resolve(single(bundle.finality.filter(entry => entry.gameId === gameId), at, "finality")?.receipt, "game-finality", at);
++    if (!receipt) continue;
++    const final = receipt.subject, ended = instant(final.endedAt);
++    if (final.gameId !== gameId || final.season !== settings.season || final.date !== game.date) { reject("finality-identity", "Finality receipt game, season or date does not match the appearance", at); continue; }
++    if (ended === null || ended > instant(receipt.capturedAt)! || ended < Date.parse(`${game.date}T00:00:00Z`)) { reject("finality-time", "Finality end time is invalid, precedes the game date or follows its own capture", at); continue; }
++    if (final.sourceClass !== "official-game-end") { lack("finality-not-actual-end", final.sourceClass === "ingestion-completion" ? "Ingestion completion is not an actual game-end time" : `Finality source "${final.sourceClass}" is not an actual game-end time`, at); continue; }
++    verifiedFinal.set(gameId, receipt);
++  }
++
++  // Metric-definition version and metric-specific population membership.
++  const verifiedDefinitions = new Map<MetricId, DefinitionReceipt>();
++  const verifiedPopulations = new Map<MetricId, readonly number[]>();
++  for (const metric of METRICS) {
++    const at = { metricId: metric.id };
++    const declared = single(bundle.definitions.filter(entry => entry.metricId === metric.id), at, "definition");
++    const definition = resolve(declared?.receipt, "metric-definition", at);
++    if (definition && declared) {
++      const subject = definition.subject;
++      if (subject.metricId !== metric.id || subject.registryVersion !== REGISTRY_VERSION || subject.sourceDefinition !== input.source.definition || subject.sourceVersion !== input.source.version || !subject.definitionVersion.trim() || subject.definitionVersion !== declared.definitionVersion) reject("definition-mismatch", "Metric definition receipt does not match the registry, source or declared definition version", at);
++      else if (subject.zeroSemantics !== "verified-distinct") lack("zero-semantics", "Provider zero/placeholder semantics are unverified; a stored zero may not be a measured zero", at);
++      else verifiedDefinitions.set(metric.id, definition);
++    }
++    const population = resolve(single(bundle.populations.filter(entry => entry.metricId === metric.id), at, "population")?.receipt, "population-membership", at);
++    if (!population) continue;
++    const pool = population.subject, members = pool.memberIds;
++    if (pool.metricId !== metric.id || pool.season !== settings.season || pool.gameType !== settings.gameType || pool.strength !== settings.strength || !samePeriod(pool.period, settings.period) || instant(pool.cutoff) !== cutoff) reject("population-selection", "Population receipt does not match the selected metric, season, strength, window or cutoff", at);
++    else if (pool.scope !== scope) reject("population-scope", `Population scope "${pool.scope}" does not match the required "${scope}"`, at);
++    else if (declared && pool.definitionVersion !== declared.definitionVersion) reject("population-definition", "Population receipt was built for a different metric-definition version", at);
++    else if (!members.length || !positiveIds(members)) reject("population-members", "Population receipt members are empty, invalid or duplicated", at);
++    else if (!members.includes(playerId)) reject("population-selected-player", "Selected player is not a member of this metric population", at);
++    else if (pool.sourceClass !== "metric-population-inventory") lack("population-source", `Population source "${pool.sourceClass}" does not establish metric-specific membership`, at);
++    else {
++      const absent = members.filter(id => !supplied.includes(id));
++      if (absent.length) lack("population-incomplete", `${absent.length} population member(s) lack supplied card inputs: ${absent.join(", ")}`, at);
++      else verifiedPopulations.set(metric.id, members);
++    }
++  }
++  if (issues.some(issue => issue.severity === "rejected")) return finish(issues, null, new Map());
++
++  // Re-derive every adapter proof flag from verified receipts, then reuse the accepted adapter unchanged.
++  const players = input.players.map(player => {
++    const history = verifiedHistory.get(player.frame.playerId);
++    return { records: player.records, frame: {
++      ...player.frame, completeHistory: !!history, historyThrough: history?.subject.through ?? "", historyReference: history?.receiptId ?? "",
++      appearances: player.frame.appearances.map(game => {
++        const final = verifiedFinal.get(game.gameId);
++        return { ...game, completion: final ? { status: "verified-final" as const, completedAt: final.subject.endedAt, reference: final.receiptId } : { status: "unverified" as const } };
++      }),
++    } };
++  });
++  const verifiedMetrics = METRICS.filter(metric => verifiedDefinitions.has(metric.id)).map(metric => metric.id);
++  const base: LocalCardInput = { ...input, players, source: { ...input.source, definitionReference: verifiedMetrics.length ? `evidence-bundle:${bundle.id}` : "", verifiedMetrics } };
++  const groups = new Map<string, { members: readonly number[] | null; metrics: MetricId[] }>();
++  for (const metric of METRICS) {
++    const members = verifiedPopulations.get(metric.id) ?? null;
++    const key = members ? [...members].sort((a, b) => a - b).join(",") : "unverified";
++    groups.set(key, { members, metrics: [...(groups.get(key)?.metrics || []), metric.id] });
++  }
++  const readings = new Map<MetricId, MetricReading>(), coverage = {} as Record<MetricId, MetricCoverage>;
++  let card: AdaptedCard | null = null;
++  for (const group of groups.values()) {
++    const result = adaptLocalSnapshot({
++      ...base,
++      players: group.members ? players.filter(player => group.members!.includes(player.frame.playerId)) : players,
++      population: group.members
++        ? { scope, complete: true, reference: `evidence-bundle:${bundle.id}`, expectedPlayerIds: [...group.members] }
++        : { scope, complete: false, reference: "", expectedPlayerIds: supplied },
++    }, playerId);
++    if (result.state === "rejected") { reject("adapter-rejected", result.reason); return finish(issues, null, new Map()); }
++    for (const id of group.metrics) { readings.set(id, result.readings.find(reading => reading.id === id)!); coverage[id] = result.coverage[id]; }
++    card ??= result;
++  }
++  const ordered = METRICS.map(metric => readings.get(metric.id)!);
++  const valid = ordered.filter(reading => reading.state === "valid").length;
++  return finish(issues, { ...card!, readings: ordered, coverage, state: valid === ordered.length ? "ready" : valid ? "partial" : "unavailable" }, readings);
++
++  function finish(found: EvidenceIssue[], adapted: AdaptedCard | null, values: Map<MetricId, MetricReading>): EvidenceResult {
++    const metrics = Object.fromEntries(METRICS.map(metric => {
++      const own = found.filter(issue => issue.metricId === metric.id), reading = values.get(metric.id);
++      const reasons = own.map(issue => issue.reason);
++      if (reading?.state === "missing") reasons.push(reading.reason || "Metric value missing");
++      if (reading?.state === "valid" && !reading.rank) reasons.push(reading.rankReason || "League rank unavailable");
++      const state = found.some(issue => issue.severity === "rejected" && (issue.metricId === undefined || issue.metricId === metric.id)) ? "rejected" : reasons.length || !reading ? "incomplete" : "eligible";
++      return [metric.id, { state, reasons }];
++    })) as Record<MetricId, MetricEvidence>;
++    const state = found.some(issue => issue.severity === "rejected") ? "rejected" : found.length || Object.values(metrics).some(metric => metric.state !== "eligible") ? "incomplete" : "eligible";
++    return { state, bundleId: bundle.id, issues: found, metrics, card: state === "rejected" ? null : adapted, liveActivation: false, premiumActivation: false };
++  }
++}
+--- /dev/null
++++ b/web/lib/player-cards/evidenceBundle.test.ts
+@@ -0,0 +1,253 @@
++import { createHash } from "node:crypto";
++import { describe, expect, it } from "vitest";
++import type { CardSettings, MetricId } from "./contracts";
++import { METRICS, REGISTRY_VERSION } from "./registry";
++import { adaptLocalSnapshot, type LocalCardInput } from "./adapter";
++import type { Components, GameMetricRecord } from "./aggregation";
++import type { Appearance } from "./windows";
++import { validateEvidenceBundle, type DefinitionReceipt, type EvidenceBundle, type FinalityReceipt, type HistoryReceipt, type PopulationReceipt, type ReceiptRef, type RetainedReceipt } from "./evidenceBundle";
++
++// SYNTHETIC: every player, game, value and receipt below is fabricated. Nothing here is NHL/NST evidence.
++const settings: CardSettings = { season: 20262027, gameType: "regular", strength: "all", cutoff: "2026-10-24T00:00:00Z", period: { mode: "appearances", count: 5 }, seasonPolicy: "season-only-proposed", shortSamplePolicy: "allow-known-short-proposed", rankPolicy: "competition-midrank-proposed" };
++const PLAYERS = [1001, 1002, 1003];
++const DAYS = [14, 16, 18, 20, 22];
++const SELECTED = 1001;
++const sha = (id: string) => createHash("sha256").update(`synthetic:${id}`).digest("hex");
++const ref = (receiptId: string): ReceiptRef => ({ receiptId, sha256: sha(receiptId) });
++const retainedBase = (receiptId: string) => ({ receiptId, sha256: sha(receiptId), retainedPath: `synthetic/receipts/${receiptId}.json`, origin: "synthetic" as const, capturedAt: "2026-10-24T06:00:00Z" });
++const date = (day: number) => `2026-10-${String(day).padStart(2, "0")}`;
++const gameId = (playerId: number, day: number) => 2026020000 + (playerId - 1000) * 100 + day;
++
++function components(playerId: number): Components {
++  const k = playerId - 1000;
++  return { toiUnit: "seconds", individual: { toi: 1000 + 100 * k, shots: 2 + k, icf: 4 + k, iscfs: 1 + k, ixg: 0.1 * k, total_points: 1, goals: 1 }, onIce: { toi: 1000 + 100 * k, cf: 15 + k, scf: 6 + k, xgf: 0.5 + 0.1 * k, xga: 0.6, gf: 2, sf: 12 + k } };
++}
++type Options = { components?: (playerId: number, day: number) => Components };
++function world(options: Options = {}) {
++  const players = PLAYERS.map(playerId => {
++    const appearances: Appearance[] = DAYS.map(day => ({ playerId, gameId: gameId(playerId, day), season: 20262027, gameType: "regular", date: date(day), played: true, completion: { status: "unverified" } }));
++    const records: GameMetricRecord[] = appearances.map(game => ({ ...(options.components?.(playerId, Number(game.date.slice(8))) ?? components(playerId)), playerId, gameId: game.gameId, season: game.season, date: game.date, strength: "all", sourceDefinition: "synthetic-nst-contract", sourceVersion: "synthetic-v1", capturedAt: "2026-10-24T03:00:00Z", state: "ready" }));
++    return { frame: { playerId, season: 20262027, gameType: "regular" as const, dateBasis: "UTC" as const, completeHistory: false, historyThrough: "", historyReference: "", appearances }, records };
++  });
++  const input: LocalCardInput = { id: "synthetic-card-input", origin: "synthetic", capturedAt: "2026-10-24T04:00:00Z", settings, source: { definition: "synthetic-nst-contract", version: "synthetic-v1", definitionReference: "", verifiedMetrics: [] }, population: { scope: "synthetic-all-values", complete: false, reference: "", expectedPlayerIds: PLAYERS }, players };
++  const history: HistoryReceipt[] = PLAYERS.map(playerId => ({ ...retainedBase(`history-${playerId}`), kind: "appearance-history", subject: { playerId, season: 20262027, gameType: "regular", dateBasis: "UTC", sourceClass: "complete-official-log", through: "2026-10-24T05:00:00Z", appearances: DAYS.map(day => ({ gameId: gameId(playerId, day), date: date(day), played: true })) } }));
++  const finality: FinalityReceipt[] = PLAYERS.flatMap(playerId => DAYS.map(day => ({ ...retainedBase(`final-${gameId(playerId, day)}`), kind: "game-finality" as const, subject: { gameId: gameId(playerId, day), season: 20262027, date: date(day), endedAt: `${date(day)}T22:30:00Z`, sourceClass: "official-game-end" as const } })));
++  const definitions: DefinitionReceipt[] = METRICS.map(metric => ({ ...retainedBase(`definition-${metric.id}`), kind: "metric-definition", subject: { metricId: metric.id, registryVersion: REGISTRY_VERSION, sourceDefinition: "synthetic-nst-contract", sourceVersion: "synthetic-v1", definitionVersion: "synthetic-def-1", zeroSemantics: "verified-distinct" } }));
++  const populations: PopulationReceipt[] = METRICS.map(metric => ({ ...retainedBase(`population-${metric.id}`), kind: "population-membership", subject: { metricId: metric.id, scope: "synthetic-all-values", definitionVersion: "synthetic-def-1", sourceClass: "metric-population-inventory", season: 20262027, gameType: "regular", strength: "all", period: { mode: "appearances", count: 5 }, cutoff: settings.cutoff, memberIds: PLAYERS } }));
++  const bundle: EvidenceBundle = {
++    id: "synthetic-bundle", origin: "synthetic",
++    selection: { playerId: SELECTED, season: 20262027, gameType: "regular", strength: "all", period: { mode: "appearances", count: 5 }, cutoff: settings.cutoff },
++    history: history.map(receipt => ({ playerId: receipt.subject.playerId, receipt: ref(receipt.receiptId) })),
++    finality: finality.map(receipt => ({ gameId: receipt.subject.gameId, receipt: ref(receipt.receiptId) })),
++    definitions: definitions.map(receipt => ({ metricId: receipt.subject.metricId, definitionVersion: "synthetic-def-1", receipt: ref(receipt.receiptId) })),
++    populations: populations.map(receipt => ({ metricId: receipt.subject.metricId, receipt: ref(receipt.receiptId) })),
++  };
++  return { input, bundle, history, finality, definitions, populations, retained: (): RetainedReceipt[] => [...history, ...finality, ...definitions, ...populations] };
++}
++type World = ReturnType<typeof world>;
++const run = (w: World, retained = w.retained()) => validateEvidenceBundle(w.input, w.bundle, retained);
++const codes = (result: ReturnType<typeof run>) => result.issues.map(issue => issue.code);
++const reading = (result: ReturnType<typeof run>, id: MetricId) => result.card!.readings.find(r => r.id === id)!;
++function deepFreeze<T>(value: T): T {
++  if (value && typeof value === "object") { Object.values(value).forEach(deepFreeze); Object.freeze(value); }
++  return value;
++}
++
++describe("evidence bundle: explicitly qualified synthetic positive", () => {
++  it("is eligible only when every claim resolves to a matching retained receipt", () => {
++    const result = run(world());
++    expect(result.issues).toEqual([]);
++    expect(result.state).toBe("eligible");
++    expect(Object.values(result.metrics).every(metric => metric.state === "eligible")).toBe(true);
++    expect(result.card).toMatchObject({ state: "ready", liveActivation: false, premiumActivation: false, selection: { actualGp: 5, knownShort: false } });
++    expect(result.card!.readings.every(r => r.state === "valid" && r.rank?.population === 3)).toBe(true);
++    expect(result.card!.selection.games.every(game => game.completion.status === "verified-final" && game.completion.reference.startsWith("final-"))).toBe(true);
++  });
++  it("produces the same readings as the accepted adapter given the same receipt-derived proof", () => {
++    const w = world(), result = run(w);
++    const qualified: LocalCardInput = { ...w.input, source: { ...w.input.source, definitionReference: "evidence-bundle:synthetic-bundle", verifiedMetrics: METRICS.map(metric => metric.id) }, population: { scope: "synthetic-all-values", complete: true, reference: "evidence-bundle:synthetic-bundle", expectedPlayerIds: PLAYERS },
++      players: w.input.players.map(player => ({ records: player.records, frame: { ...player.frame, completeHistory: true, historyThrough: "2026-10-24T05:00:00Z", historyReference: `history-${player.frame.playerId}`, appearances: player.frame.appearances.map(game => ({ ...game, completion: { status: "verified-final" as const, completedAt: `${game.date}T22:30:00Z`, reference: `final-${game.gameId}` } })) } })) };
++    const direct = adaptLocalSnapshot(qualified, SELECTED);
++    expect(direct.state).toBe("ready");
++    expect(result.card!.readings).toEqual(direct.state === "rejected" ? null : direct.readings);
++  });
++});
++
++describe("caller claims, hashes and row counts are not proof", () => {
++  it("ignores caller complete:true / verified-final / verifiedMetrics with no receipts", () => {
++    const w = world();
++    const claimed: LocalCardInput = { ...w.input, source: { ...w.input.source, definitionReference: "caller-says-verified", verifiedMetrics: METRICS.map(metric => metric.id) }, population: { scope: "synthetic-all-values", complete: true, reference: "caller-says-complete", expectedPlayerIds: PLAYERS },
++      players: w.input.players.map(player => ({ records: player.records, frame: { ...player.frame, completeHistory: true, historyThrough: "2026-10-24T05:00:00Z", historyReference: "caller", appearances: player.frame.appearances.map(game => ({ ...game, completion: { status: "verified-final" as const, completedAt: `${game.date}T22:30:00Z`, reference: "caller" } })) } })) };
++    const empty: EvidenceBundle = { ...w.bundle, history: [], finality: [], definitions: [], populations: [] };
++    const result = validateEvidenceBundle(claimed, empty, []);
++    expect(result.state).toBe("incomplete");
++    expect(new Set(codes(result))).toEqual(new Set(["appearance-history-missing", "game-finality-missing", "metric-definition-missing", "population-membership-missing"]));
++    expect(result.card!.readings.every(r => r.state === "missing" && r.rank === null)).toBe(true);
++  });
++  it("treats a reference whose hash matches nothing retained as missing, and a wrong hash as rejected", () => {
++    const w = world();
++    const unretained = run(w, w.retained().filter(receipt => receipt.receiptId !== "history-1002"));
++    expect(unretained.state).toBe("incomplete");
++    expect(unretained.issues).toContainEqual(expect.objectContaining({ code: "receipt-not-retained", playerId: 1002, receiptId: "history-1002" }));
++    expect(unretained.card!.readings.every(r => r.rank === null)).toBe(true);
++    w.bundle = { ...w.bundle, history: w.bundle.history.map(entry => entry.playerId === 1002 ? { ...entry, receipt: { ...entry.receipt, sha256: sha("other") } } : entry) };
++    expect(run(w)).toMatchObject({ state: "rejected", card: null });
++    expect(codes(run(w))).toContain("receipt-hash");
++  });
++  it("does not accept a five-successful-rows history or ingestion completion as finality", () => {
++    const w = world();
++    w.history[0].subject = { ...w.history[0].subject, sourceClass: "row-count" };
++    w.finality.filter(receipt => Math.floor((receipt.subject.gameId - 2026020000) / 100) === 1).forEach(receipt => { receipt.subject = { ...receipt.subject, sourceClass: "ingestion-completion" }; });
++    const result = run(w);
++    expect(result.state).toBe("incomplete");
++    expect(result.issues).toContainEqual({ severity: "incomplete", code: "history-not-complete", reason: 'History source "row-count" does not establish complete appearance history', playerId: 1001 });
++    expect(result.issues.filter(issue => issue.code === "finality-not-actual-end").map(issue => [issue.gameId, issue.reason])).toEqual(DAYS.map(day => [gameId(1001, day), "Ingestion completion is not an actual game-end time"]));
++    expect(reading(result, "atoi")).toMatchObject({ state: "missing", value: null, rank: null });
++  });
++  it("keeps receipts with mixed origin out of a synthetic bundle", () => {
++    const w = world();
++    w.definitions[0] = { ...w.definitions[0], origin: "local-observed" };
++    expect(codes(run(w))).toContain("receipt-origin");
++  });
++});
++
++describe("identity and selection mismatches are rejected", () => {
++  it.each([
++    ["selection-season", (b: EvidenceBundle) => ({ ...b, selection: { ...b.selection, season: 20252026 } })],
++    ["selection-strength", (b: EvidenceBundle) => ({ ...b, selection: { ...b.selection, strength: "5v5" as const } })],
++    ["selection-cutoff", (b: EvidenceBundle) => ({ ...b, selection: { ...b.selection, cutoff: "2026-10-23T00:00:00Z" } })],
++    ["selection-window", (b: EvidenceBundle) => ({ ...b, selection: { ...b.selection, period: { mode: "appearances" as const, count: 10 as const } } })],
++    ["selection-player", (b: EvidenceBundle) => ({ ...b, selection: { ...b.selection, playerId: 9999 } })],
++  ])("%s", (code, mutate) => {
++    const w = world(); w.bundle = mutate(w.bundle);
++    expect(run(w)).toMatchObject({ state: "rejected", card: null });
++    expect(codes(run(w))).toEqual([code]);
++  });
++  it("rejects receipts whose subject identity differs from the reference subject", () => {
++    const history = world(); history.history[1].subject = { ...history.history[1].subject, playerId: 1003 };
++    expect(codes(run(history))).toContain("history-identity");
++    const final = world(); final.finality[0].subject = { ...final.finality[0].subject, gameId: 2026029999 };
++    expect(codes(run(final))).toContain("finality-identity");
++    const season = world(); season.history[0].subject = { ...season.history[0].subject, season: 20252026 };
++    expect(codes(run(season))).toContain("history-identity");
++  });
++  it("rejects a population built for another strength/cutoff or definition version", () => {
++    const strength = world(); strength.populations[2].subject = { ...strength.populations[2].subject, strength: "pp" };
++    expect(run(strength).issues).toContainEqual(expect.objectContaining({ severity: "rejected", code: "population-selection", metricId: METRICS[2].id }));
++    const cutoff = world(); cutoff.populations[0].subject = { ...cutoff.populations[0].subject, cutoff: "2026-10-25T00:00:00Z" };
++    expect(codes(run(cutoff))).toContain("population-selection");
++    const version = world(); version.populations[0].subject = { ...version.populations[0].subject, definitionVersion: "synthetic-def-0" };
++    expect(codes(run(version))).toContain("population-definition");
++    const definition = world(); definition.definitions[0].subject = { ...definition.definitions[0].subject, sourceVersion: "synthetic-v0" };
++    expect(codes(run(definition))).toContain("definition-mismatch");
++  });
++});
++
++describe("history, finality and date evidence", () => {
++  it("excludes a game whose actual end follows the cutoff instead of counting it", () => {
++    const w = world();
++    const last = w.finality.find(receipt => receipt.subject.gameId === gameId(SELECTED, 22))!;
++    last.subject = { ...last.subject, date: "2026-10-22", endedAt: "2026-10-24T01:30:00Z" };
++    last.capturedAt = "2026-10-24T06:00:00Z";
++    const result = run(w);
++    expect(result.state).toBe("eligible");
++    expect(result.card!.selection).toMatchObject({ actualGp: 4, knownShort: true, lastDate: "2026-10-20" });
++  });
++  it("marks missing or short-of-cutoff appearance history incomplete", () => {
++    const none = world(); none.bundle = { ...none.bundle, history: none.bundle.history.filter(entry => entry.playerId !== 1003) };
++    const result = run(none);
++    expect(result.state).toBe("incomplete");
++    expect(result.issues).toEqual([{ severity: "incomplete", code: "appearance-history-missing", reason: "No appearance-history receipt is referenced", playerId: 1003 }]);
++    expect(reading(result, "sog60")).toMatchObject({ state: "valid", rank: null, rankReason: "League rank unavailable: incomplete coverage" });
++    const short = world(); short.history[0].subject = { ...short.history[0].subject, through: "2026-10-23T00:00:00Z" };
++    expect(codes(run(short))).toEqual(["history-through"]);
++  });
++  it("flags receipt appearances absent from the frame as incomplete and extra frame appearances as rejected", () => {
++    const absent = world();
++    absent.history[0].subject = { ...absent.history[0].subject, appearances: [...absent.history[0].subject.appearances, { gameId: 2026020199, date: "2026-10-23", played: true }] };
++    expect(run(absent).issues).toContainEqual(expect.objectContaining({ severity: "incomplete", code: "history-appearance-absent", gameId: 2026020199 }));
++    const extra = world();
++    extra.history[0].subject = { ...extra.history[0].subject, appearances: extra.history[0].subject.appearances.slice(1) };
++    expect(codes(run(extra))).toContain("history-extra-appearance");
++  });
++  it("does not label a provider game date as a UTC date", () => {
++    const w = world(); w.history[0].subject = { ...w.history[0].subject, dateBasis: "provider-game-date" };
++    expect(run(w).issues).toEqual([{ severity: "incomplete", code: "date-basis", reason: "Game dates are not established as UTC calendar dates", playerId: 1001 }]);
++  });
++  it("rejects duplicate appearance dates in the receipt or the supplied frame", () => {
++    const receipt = world();
++    const listed = receipt.history[0].subject.appearances;
++    receipt.history[0].subject = { ...receipt.history[0].subject, appearances: [...listed.slice(0, 4), { ...listed[4], date: listed[3].date }] };
++    expect(run(receipt).issues).toContainEqual(expect.objectContaining({ severity: "rejected", code: "duplicate-date", playerId: 1001 }));
++    const frame = world();
++    const games = frame.input.players[0].frame.appearances as Appearance[];
++    games[4] = { ...games[4], date: games[3].date };
++    expect(codes(run(frame))).toContain("duplicate-date");
++  });
++});
++
++describe("metric-specific population membership", () => {
++  it("leaves only the metric with an incomplete population unranked", () => {
++    const w = world(); w.populations[1].subject = { ...w.populations[1].subject, memberIds: [...PLAYERS, 1004] };
++    const result = run(w);
++    expect(result.state).toBe("incomplete");
++    expect(result.metrics[METRICS[1].id]).toEqual({ state: "incomplete", reasons: ["1 population member(s) lack supplied card inputs: 1004", "League rank unavailable: incomplete coverage"] });
++    expect(reading(result, METRICS[1].id).rank).toBeNull();
++    expect(METRICS.filter((_, index) => index !== 1).every(metric => result.metrics[metric.id].state === "eligible")).toBe(true);
++  });
++  it("ranks each metric against its own verified population", () => {
++    const w = world(); w.populations[0].subject = { ...w.populations[0].subject, memberIds: [1001, 1002] };
++    const result = run(w);
++    expect(result.state).toBe("eligible");
++    expect(reading(result, METRICS[0].id).rank?.population).toBe(2);
++    expect(reading(result, METRICS[1].id).rank?.population).toBe(3);
++  });
++  it("rejects a population that excludes the selected player and does not accept a position-filtered pool", () => {
++    const excluded = world(); excluded.populations[0].subject = { ...excluded.populations[0].subject, memberIds: [1002, 1003] };
++    expect(codes(run(excluded))).toContain("population-selected-player");
++    const filtered = world(); filtered.populations[0].subject = { ...filtered.populations[0].subject, sourceClass: "ingestion-position-filter" };
++    expect(run(filtered).metrics[METRICS[0].id].state).toBe("incomplete");
++  });
++});
++
++describe("valid zero versus undefined or missing", () => {
++  const variant = (individual: Partial<Components["individual"]>) => (playerId: number): Components => {
++    const base = components(playerId);
++    return playerId === SELECTED ? { ...base, individual: { ...base.individual, ...individual } } : base;
++  };
++  it("keeps a measured zero valid and ranked when zero semantics are verified", () => {
++    const result = run(world({ components: variant({ goals: 0 }) }));
++    expect(result.state).toBe("eligible");
++    expect(reading(result, "shPct")).toMatchObject({ state: "valid", value: 0, rank: { ordinal: 3, population: 3 } });
++  });
++  it("keeps a zero-denominator metric undefined, not zero and not missing", () => {
++    const result = run(world({ components: variant({ shots: 0, goals: 0 }) }));
++    expect(result.metrics.shPct).toEqual({ state: "eligible", reasons: [] });
++    expect(reading(result, "shPct")).toMatchObject({ state: "undefined", value: null, rank: null });
++    expect(reading(result, "sog60")).toMatchObject({ state: "valid", value: 0 });
++  });
++  it("keeps a missing component missing", () => {
++    const result = run(world({ components: variant({ goals: null }) }));
++    expect(result.state).toBe("incomplete");
++    expect(result.metrics.shPct).toEqual({ state: "incomplete", reasons: ["Required component is missing, invalid or has incompatible TOI units"] });
++    expect(reading(result, "shPct")).toMatchObject({ state: "missing", value: null, rank: null });
++  });
++  it("does not treat stored zeros as measured when provider placeholder semantics are unverified", () => {
++    const w = world(); const index = METRICS.findIndex(metric => metric.id === "shPct");
++    w.definitions[index].subject = { ...w.definitions[index].subject, zeroSemantics: "placeholder-coerced" };
++    const result = run(w);
++    expect(result.metrics.shPct.state).toBe("incomplete");
++    expect(reading(result, "shPct")).toMatchObject({ state: "missing", reason: "Metric provider/model definition is unverified" });
++  });
++});
++
++describe("existing adapter behaviour is unchanged", () => {
++  it("does not mutate supplied inputs or receipts and leaves direct adapter output identical", () => {
++    const w = world();
++    const before = adaptLocalSnapshot(w.input, SELECTED);
++    deepFreeze(w);
++    expect(() => run(w)).not.toThrow();
++    expect(adaptLocalSnapshot(w.input, SELECTED)).toEqual(before);
++    expect(before).toMatchObject({ state: "unavailable" });
++  });
++});

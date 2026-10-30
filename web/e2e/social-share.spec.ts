@@ -3,7 +3,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { buildScheduleSnapshot, calendarWeekStart, selectScheduleDates, weekDates } from "../lib/socialShare/schedule";
 import type { SocialScheduleGame as GameData } from "../lib/socialShare/types";
-import type { SocialShareFormat, SocialShareSnapshot } from "../lib/socialShare/types";
+import type { ShareTrendWho, SocialShareFormat, SocialShareSnapshot } from "../lib/socialShare/types";
 import { fictionalLeagueWeek, fictionalTeamStats } from "../lib/socialShare/fixtures";
 import { buildOpponentLayer, easiestSchedules, streamingNights } from "../lib/socialShare/matchups";
 import { attachRecent, buildPlayerLayer, pickupTiers, specialists, type ShareGoalieGameRow, type ShareRecentRollingRow } from "../lib/socialShare/players";
@@ -11,6 +11,7 @@ import { fictionalPlayerRecent, fictionalPlayerSources } from "../lib/socialShar
 import { localDate } from "../lib/rosterScheduleOptimizer/planningDates";
 import { buildTrendLayer, deploymentChanges, hotCold, ownershipMovers, rateStandouts, trendDefinitions } from "../lib/socialShare/trends";
 import { fictionalTrendSources } from "../lib/socialShare/trendsFixture";
+import { teamNeon } from "../lib/socialShare/teamNeon";
 import { editionLabel } from "../lib/socialShare/edition";
 import { countTiers } from "../lib/socialShare/mondayGrid";
 import { streamingTiers, trimEditionPlayers } from "../lib/socialShare/tiers";
@@ -142,7 +143,8 @@ async function install(page: Page, access: Access = { role: "social_editor", sig
     // real-world names on the first tiles of every list, so the geometry check sees the tightest layouts.
     if (controller.layoutStress && next.trends) {
       const long = ["Charle-Edouard D'Astous", "Oliver Bjorkstrand", "Ryan Nugent-Hopkins"];
-      const rename = <T extends { name: string }>(list: T[], at = 0) => list.map((row, index) => index === 0 ? { ...row, name: long[at % long.length] } : row);
+      // TT-10: the widest tag ("100% ROST") and chip set (L4 · off PP) ride on the long-name tile; the second tile shows "—".
+      const rename = <T extends { name: string; rostered?: number | null; role?: ShareTrendWho["role"] }>(list: T[], at = 0) => list.map((row, index) => index === 0 ? { ...row, name: long[at % long.length], rostered: 100, role: { line: "L4", pp: "none" as const } } : index === 1 ? { ...row, rostered: null } : index === 2 ? { ...row, rostered: 20 } : row);
       const whole = <T extends { latest: number; previous: number; delta: number }>(list: T[], deltas: number[]): T[] => list.map((row, index) => ({ ...row, previous: Math.round(row.previous), latest: Math.round(row.previous) + deltas[index % deltas.length], delta: deltas[index % deltas.length] }));
       const { hot, deployment, rates, movers } = next.trends.sections;
       next = { ...next, trends: { ...next.trends, sections: {
@@ -783,7 +785,18 @@ test("Tuesday trend cards list the server's sections with definitions and a sour
     await expect(square).toContainText(title);
     for (const definition of trendDefinitions[card as "hot"]) await expect(square).toContainText(definition);
     // Compact source + freshness line: dates the reader can check on a phone.
-    await expect(square.locator("[data-trend-source]")).toHaveText(card === "movers" ? /^Yahoo rostered % · [A-Z][a-z]{2} \d{1,2} → [A-Z][a-z]{2} \d{1,2} · not adds\/drops$/ : /^FHFH rolling metrics · games thru [A-Z][a-z]{2} \d{1,2} · updated [A-Z][a-z]{2} \d{1,2}, \d{1,2}:\d{2} [AP]M E[DS]T · not projections$/);
+    await expect(square.locator("[data-trend-source]")).toHaveText(card === "movers" ? /^Yahoo rostered % · [A-Z][a-z]{2} \d{1,2} → [A-Z][a-z]{2} \d{1,2} · not adds\/drops$/ : /^FHFH rolling metrics · games thru [A-Z][a-z]{2} \d{1,2} · updated [A-Z][a-z]{2} \d{1,2}, \d{1,2}:\d{2} [AP]M E[DS]T · Yahoo rostered % as of [A-Z][a-z]{2} \d{1,2} · not projections$/);
+    // TT-16: no corner tag; rostered % sits beside every name ("—" when missing, never 0%) and team · position on the
+    // meta line. Hot/Cold, Rates and Movers tiles carry the latest PP chip (and the line when known); Deployment keeps its
+    // change chips, which already name the current role. Rates carry no ABOVE SEASON badge.
+    const tiles = await square.locator("[data-player]").evaluateAll(nodes => nodes.map(node => [node.querySelector("[data-rost]")?.getAttribute("data-rost") ?? "", node.querySelector("[data-part='foot']")?.textContent ?? "", Array.from(node.querySelectorAll("[data-part='chips'] i[data-badge]")).map(chip => chip.textContent ?? ""), node.querySelectorAll("[data-part='tag']").length, node.querySelector("[class*='trendBadge']")?.textContent ?? null] as const));
+    for (const [rost, foot, chips, tags, badge] of tiles) {
+      expect(rost).toMatch(/^(?:\d+(?:\.\d)?%|—)$/);
+      expect(foot).toMatch(/^[A-Z]{3} · [CLRDW]{1,2}( · |$)/);
+      expect(tags).toBe(0);
+      if (card !== "deployment") expect(chips.filter(chip => /^(?:PP[12]|off PP|PP \?)$/.test(chip)), rost).toHaveLength(1);
+      if (card === "rates") expect(badge).toBeNull();
+    }
     await expect(square).toHaveAttribute("data-export-token", `${edition.id}|${card}|${edition.selectedDates.join(",")}`);
     expect(expected.length).toBeGreaterThanOrEqual(8);
     expect(await square.locator("[data-player]").evaluateAll(nodes => nodes.map(node => node.getAttribute("data-player")))).toEqual(expected);
@@ -812,13 +825,28 @@ test("Tuesday trend cards list the server's sections with definitions and a sour
       await expect(tile).toHaveAttribute("data-tone", /^[+▲]/.test(hero) ? "up" : /^[−▼]/.test(hero) ? "down" : "flat");
     }
     expect(await square.locator("[data-sparkline]").count()).toBeGreaterThan(0);
-    // TT-5: every tile has art, inlined as a data URL (so the PNG carries it), neon in the tile's tone or the card fallback.
+    // TT-5: every tile has art, inlined as a data URL (so the PNG carries it), neon or the card fallback. TT-11: the neon
+    // logo is in its team's colours (floored lightColor stroke, secondaryColor halo), whatever the tile's green/red tone.
     for (const tile of await tiles.all()) {
       const art = tile.locator("[data-art]");
       await expect(art).toHaveCount(1);
-      if (await art.getAttribute("data-art") === "neon") { await expect(art).toHaveAttribute("data-tone", (await tile.getAttribute("data-tone"))!); expect(await art.locator("img").getAttribute("src")).toMatch(/^data:image\/png;base64,/); }
+      if (await art.getAttribute("data-art") === "neon") {
+        const colors = teamNeon((await tile.getAttribute("data-team"))!)!;
+        // TT-12: the nine multi-colour teams draw their baked outline; the others the team tint. Halo and spread per team.
+        await expect(art).toHaveAttribute("data-stroke", colors.multicolour ? "multi" : colors.stroke);
+        await expect(art).toHaveAttribute("data-halo", colors.halo);
+        await expect(art).toHaveAttribute("data-spread", colors.spread);
+        expect(await art.locator("img").getAttribute("src")).toMatch(/^data:image\/png;base64,/);
+      }
     }
   }
+  // TT-15: each tile's line ends are the layer's own values: previous at the left, current at the right.
+  const ends = async (card: string) => { await graphic.selectOption(card); return square.locator("[data-player]").evaluateAll(tiles => tiles.map(tile => [tile.getAttribute("data-player"), tile.querySelector("[data-part='prev'] strong")?.textContent, tile.querySelector("[data-part='curr'] strong")?.textContent])); };
+  const sections = edition.trends!.sections;
+  expect(await ends("hot")).toEqual([...sections.hot.hot, ...sections.hot.cold].map(row => [String(row.nhlId), row.preceding.toFixed(2), row.recent.toFixed(2)]));
+  expect((await ends("movers")).map(([id]) => id)).toEqual([...sections.movers.risers, ...sections.movers.fallers].map(row => String(row.nhlId)));
+  for (const [, prev, curr] of await ends("movers")) { expect(prev).toMatch(/^\d+(\.\d)?%$/); expect(curr).toMatch(/^\d+(\.\d)?%$/); }
+  for (const [, prev, curr] of await ends("deployment")) { expect(prev).toMatch(/^\d+:\d{2}$/); expect(curr).toMatch(/^\d+:\d{2}$/); }
   const shown = new Map([...edition.trends!.sections.hot.hot, ...edition.trends!.sections.hot.cold].map(row => [String(row.nhlId), row.series]));
   await graphic.selectOption("hot");
   for (const tile of await square.locator("[data-player]").all()) {
@@ -844,34 +872,59 @@ async function tileCollisions(page: Page) {
     const overlap = (a: DOMRect, b: DOMRect) => Math.min(a.right, b.right) - Math.max(a.left, b.left) > 0.5 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 0.5;
     for (const tile of Array.from(square.querySelectorAll<HTMLElement>("[data-player][data-tone]"))) {
       const id = tile.getAttribute("data-player"), box = tile.getBoundingClientRect(), find = (selector: string) => tile.querySelector<HTMLElement>(selector);
-      const name = find("[class*='trendTileName']")!, parts: [string, Element | null][] = [["name", name], ["hero", find("[class*='trendHero'] > strong")], ["absolute", find("[class*='trendTileAbsolute']")],
-        ["kind", find("[class*='trendTileKind']")], ...Array.from(tile.querySelectorAll("[class*='trendTileDetail']")).map((detail, index): [string, Element] => [`detail${index}`, detail]), ["chips", find("[class*='trendTileChips']")]];
-      const rects = parts.filter((part): part is [string, Element] => !!part[1]).map(([label, element]) => [label, element.getBoundingClientRect()] as const);
+      // Every tagged part (TT-15/16: name with its rostered %, chips, hero, kind, prev, spark, curr, evpp, foot).
+      const name = find("[data-part='name']")!, parts = Array.from(tile.querySelectorAll<HTMLElement>("[data-part]"));
+      const rects = parts.map(element => [element.getAttribute("data-part")!, element.getBoundingClientRect()] as const);
+      // Text cut off inside its own box (e.g. "GP this wee" at the tile edge) counts as a collision too.
+      for (const element of parts) if (element.clientWidth > 0 && element.scrollWidth > element.clientWidth + 1 && element !== name) problems.push(`${id}: ${element.getAttribute("data-part")} is clipped`);
       for (let i = 0; i < rects.length; i++) {
         const [label, rect] = rects[i];
         if (rect.left < box.left - 0.5 || rect.right > box.right + 0.5 || rect.top < box.top - 0.5 || rect.bottom > box.bottom + 0.5) problems.push(`${id}: ${label} outside the tile`);
         for (let j = i + 1; j < rects.length; j++) if (overlap(rect, rects[j][1])) problems.push(`${id}: ${label} overlaps ${rects[j][0]}`);
       }
-      // The export (html-to-image) re-lays out a clone, where a wrapping hero row once dropped the absolute block onto
-      // the label (TT-7b): the row must be no-wrap, one line, with the absolute block level with the hero.
-      const heroRow = find("[class*='trendTileHeroRow']"), heroText = find("[class*='trendHero'] > strong"), absolute = find("[class*='trendTileAbsolute']");
-      if (heroRow && heroText && absolute) {
-        const row = heroRow.getBoundingClientRect(), heroBox = heroText.getBoundingClientRect(), absBox = absolute.getBoundingClientRect();
-        if (getComputedStyle(heroRow).flexWrap !== "nowrap") problems.push(`${id}: hero row may wrap`);
-        if (absBox.left < heroBox.right - 0.5 || absBox.top > heroBox.bottom || row.height > Math.max(heroBox.height, absBox.height) + 1) problems.push(`${id}: absolute value not beside the hero`);
+      // TT-15 sparkline-led layout: one no-wrap row reading previous · sparkline · current, left to right (mirrored
+      // columns too), with the difference centred above it. The export re-lays out a clone, so wrapping is a failure.
+      const line = find("[class*='trendTileLine']"), prev = find("[data-part='prev']"), curr = find("[data-part='curr']"), spark = find("[data-part='spark']"), heroText = find("[class*='trendHero'] > strong");
+      if (!line || !prev || !curr || !spark || !heroText) problems.push(`${id}: line row incomplete`);
+      else {
+        const row = line.getBoundingClientRect(), p = prev.getBoundingClientRect(), c = curr.getBoundingClientRect(), s = spark.getBoundingClientRect(), h = heroText.getBoundingClientRect();
+        if (getComputedStyle(line).flexWrap !== "nowrap" || row.height > Math.max(p.height, c.height, s.height) + 1) problems.push(`${id}: line row wraps`);
+        if (p.right > s.left + 0.5 || s.right > c.left + 0.5) problems.push(`${id}: previous, line and current out of order`);
+        if (s.width < 40) problems.push(`${id}: sparkline too narrow`);
+        if (h.bottom > row.top + 0.5 || Math.abs((h.left + h.right) / 2 - (row.left + row.right) / 2) > 2) problems.push(`${id}: difference not centred above the line`);
+        // Exactly one of a drawn series or the neutral baseline.
+        if ((spark.querySelector("[data-sparkline]") ? 1 : 0) + (spark.querySelector("[data-baseline]") ? 1 : 0) !== 1) problems.push(`${id}: sparkline and baseline both or neither`);
       }
+      // TT-16: the badge and chips sit directly under the name, aligned with it (right edge; left edge when mirrored);
+      // rostered % stays inside the name; the gold glow matches rostered % (none at 50%+ or missing, full at 25% or less).
+      const chipsRow = find("[data-part='chips']"), rostSpan = find("[data-rost]"), mirrored = tile.hasAttribute("data-mirror") && !tile.className.includes("Stacked");
+      if (chipsRow && chipsRow.children.length) {
+        const n = name.getBoundingClientRect(), c = chipsRow.getBoundingClientRect();
+        if (c.top < n.bottom - 0.5 || c.top - n.bottom > 4) problems.push(`${id}: chips not directly under the name`);
+        if (mirrored ? Math.abs(c.left - n.left) > 1 : Math.abs(c.right - n.right) > 1) problems.push(`${id}: chips not aligned with the name`);
+      }
+      const rostValue = rostSpan?.getAttribute("data-rost"), pct = rostValue && rostValue !== "—" ? Number.parseFloat(rostValue) : null;
+      const expectedGold = pct === null ? 0 : Math.round(Math.min(1, Math.max(0, (50 - pct) / 25)) * 100) / 100;
+      // The shown % is rounded, so allow its half-point (0.02 of glow) either way.
+      if (Math.abs(Number(tile.getAttribute("data-gold") ?? 0) - expectedGold) > 0.03) problems.push(`${id}: gold glow ${tile.getAttribute("data-gold")} for ${rostValue}`);
+      if (rostSpan && !name.contains(rostSpan)) problems.push(`${id}: rostered % outside the name`);
+      if (tile.querySelector("[data-part='tag']")) problems.push(`${id}: corner tag still drawn`);
       const column = name.parentElement!.getBoundingClientRect(), nameBox = name.getBoundingClientRect(), logo = find("[data-art] img")?.getBoundingClientRect();
       if (nameBox.left < column.left - 0.5 || nameBox.right > column.right + 0.5 || name.scrollWidth > name.clientWidth + 1) problems.push(`${id}: name leaves its column`);
       if (logo) {
+        // No text part sits on the logo's visible box (TT-16: the corner tag is gone).
         const visible = new DOMRect(Math.max(logo.left, box.left), Math.max(logo.top, box.top), Math.min(logo.right, box.right) - Math.max(logo.left, box.left), Math.min(logo.bottom, box.bottom) - Math.max(logo.top, box.top));
-        if (overlap(nameBox, visible)) problems.push(`${id}: name overlaps the logo`);
+        for (const [label, rect] of rects) if (overlap(rect, visible)) problems.push(`${id}: ${label} overlaps the logo`);
       }
+      // TT-15: no striping anywhere on the tile (TJ): the art and the tile carry no background image.
+      const art = find("[data-art]");
+      if ((art && getComputedStyle(art).backgroundImage !== "none") || getComputedStyle(tile).backgroundImage !== "none") problems.push(`${id}: striping on the tile`);
     }
     return problems;
   });
 }
 
-test("Tuesday tiles never collide: hero, absolute, label, details and chips stay apart; names stay in their column (TT-7b)", async ({ page }) => {
+test("Tuesday tiles never collide: name, chips, difference, line ends, sparkline and meta stay apart; names stay in their column (TT-7b, TT-15)", async ({ page }) => {
   const source = await install(page);
   source.mode = "league"; source.layoutStress = true;
   await open(page, "tuesday-trends");
@@ -899,7 +952,7 @@ test("Tuesday tiles never collide: hero, absolute, label, details and chips stay
   const badges = await square.locator("[data-player]").evaluateAll(tiles => tiles.map((tile): [string, string | null] => [tile.querySelector("[class*='trendHero'] > strong")?.textContent ?? "", tile.querySelector("[class*='trendBadge'] em")?.textContent ?? null]));
   expect(badges.length).toBeGreaterThan(0);
   for (const [hero, badge] of badges) expect(badge).toBe(hero.startsWith("▲") ? "PROMOTED" : hero.startsWith("▼") ? "DEMOTED" : null);
-  // The stress set reached the tight cases: a one-digit hero with its absolute beside it, and the longest names.
+  // The stress set reached the tight cases: a one-digit hero above its line, and the longest names.
   await graphic.selectOption("movers");
   const heroes = await square.locator("[class*='trendHero'] > strong").allTextContents();
   expect(heroes).toContain("−8");
@@ -1292,6 +1345,7 @@ test("Tuesday GENUINE DATA render: captured layer, offline, export token per car
   const capture = JSON.parse(await readFile(file!, "utf8")) as { capturedAt: string; layer: NonNullable<SocialShareSnapshot["trends"]> };
   const source = await install(page), shots = process.env.TUESDAY_GENUINE_DIR || evidence;
   source.mode = "league"; source.genuine = capture.layer;
+  const capturedSeries = Object.values(capture.layer.sections).some(section => Object.values(section).some(list => Array.isArray(list) && list.some(row => typeof row === "object" && row && "series" in row && Array.isArray((row as { series?: unknown }).series))));
   await mkdir(shots, { recursive: true });
   const label = () => page.evaluate(text => {
     if (document.querySelector("[data-genuine]")) return;
@@ -1313,6 +1367,16 @@ test("Tuesday GENUINE DATA render: captured layer, offline, export token per car
       await expect(square).toContainText(card === "hot" ? "HOT/COLD" : card === "deployment" ? "DEPLOYMENT CHANGES" : card === "rates" ? "RATE STANDOUTS" : "OWNERSHIP MOVERS");
       await expect(square).not.toContainText("GP this week");
       expect(await tileCollisions(page), `genuine ${card}`).toEqual([]);
+      // TT-15: a capture without series (run-2) shows every tile's values over the labelled baseline, never a drawn line.
+      // TT-17: a capture with series (run-3) draws each tile's own series exactly; the guard above checks one of the two.
+      if (!capturedSeries) {
+        await expect(square.locator("[data-player] [data-sparkline]")).toHaveCount(0);
+        expect(await square.locator("[data-player] [data-baseline]").count()).toBe(await square.locator("[data-player]").count());
+      } else if (card === "hot") {
+        const drawn = await square.locator("[data-player]").evaluateAll(tiles => tiles.map(tile => [tile.getAttribute("data-player"), tile.querySelector("[data-sparkline]")?.getAttribute("data-sparkline") ?? null]));
+        const hot = [...capture.layer.sections.hot.hot, ...capture.layer.sections.hot.cold];
+        expect(drawn).toEqual(hot.map(row => [String(row.nhlId), row.series?.some(value => value !== null) ? row.series.map(value => value ?? "gap").join(",") : null]));
+      }
       await square.scrollIntoViewIfNeeded();
       await label();
       await page.screenshot({ path: `${shots}/GENUINE-DATA-${name}-${card}.png`, fullPage: name === "desktop" });

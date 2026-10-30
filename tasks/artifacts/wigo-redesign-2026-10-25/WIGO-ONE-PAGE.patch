@@ -1,0 +1,3307 @@
+--- a/web/pages/wigoCharts.tsx
++++ b/web/pages/wigoCharts.tsx
+@@ -1,5 +1,6 @@
+-import React, { useState, useEffect, useCallback, useMemo } from "react";
++import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+ import { useRouter } from "next/router";
++import clsx from "clsx";
+ 
+ import styles from "styles/wigoCharts.module.scss";
+ import { TableAggregateData } from "components/WiGO/types";
+@@ -12,8 +13,6 @@
+ } from "components/WiGO/WigoDashboardSections";
+ import useWigoPlayerDashboard from "hooks/useWigoPlayerDashboard";
+ import { computeDiffColumn } from "components/WiGO/tableUtils";
+-import SurfaceWorkflowLinks from "components/SurfaceWorkflowLinks";
+-import { getWigoSurfaceLinks } from "lib/navigation/siteSurfaceLinks";
+ 
+ type TabKey = "overview" | "trends" | "percentiles" | "comparison";
+ const VALID_TABS: TabKey[] = [
+@@ -23,6 +22,11 @@
+   "comparison",
+ ];
+ 
++// One-page dashboard: every panel on one screen when the viewport has room; otherwise the same panels flow and scroll.
++const WIGO_FIT_MIN_WIDTH = 1200;
++const WIGO_FIT_MIN_HEIGHT = 700;
++const WIGO_BOTTOM_GUTTER = 6;
++
+ const WigoCharts: React.FC = () => {
+   const router = useRouter();
+   const [leftTimeframe, setLeftTimeframe] =
+@@ -31,13 +35,23 @@
+     useState<keyof TableAggregateData>("CA");
+   const [minGp, setMinGp] = useState<number>(10);
+   const [viewportWidth, setViewportWidth] = useState<number | null>(null);
++  const [availableHeight, setAvailableHeight] = useState(0);
++  const rootRef = useRef<HTMLDivElement>(null);
+   useEffect(() => {
+-    const update = () => setViewportWidth(window.innerWidth);
++    const update = () => {
++      const top = (rootRef.current?.getBoundingClientRect().top ?? 0) + window.scrollY;
++      setViewportWidth(window.innerWidth);
++      setAvailableHeight(Math.floor(window.innerHeight - top - WIGO_BOTTOM_GUTTER));
++    };
+     update();
+     window.addEventListener("resize", update);
+     return () => window.removeEventListener("resize", update);
+   }, []);
+-  const wideDesktop = (viewportWidth ?? 0) >= 1600;
++  const onePage = viewportWidth !== null && viewportWidth > 768;
++  const fitViewport =
++    onePage &&
++    viewportWidth >= WIGO_FIT_MIN_WIDTH &&
++    availableHeight >= WIGO_FIT_MIN_HEIGHT;
+ 
+   const {
+     selectedPlayer,
+@@ -79,27 +93,6 @@
+     document.getElementById("wigo-player-search")?.focus();
+   }, [updateUrlWith]);
+ 
+-  // Team-scoped links appear only once the selected player's team resolves.
+-  // WiGO keeps playerId/tab in the URL, so browser Back returns to this read.
+-  const renderWorkflowLinks = () => (
+-    <SurfaceWorkflowLinks
+-      eyebrow="WiGO workflow"
+-      title={
+-        selectedPlayer
+-          ? `Take the ${selectedPlayer.fullName} read further`
+-          : "Keep exploring"
+-      }
+-      description={
+-        teamAbbreviation
+-          ? `Open ${teamAbbreviation} team context or a league-wide decision view. Back returns to this player.`
+-          : selectedPlayer
+-            ? "Team HQ and lines appear once this player's team is known; these league-wide views open now."
+-            : "Select a player to add their team HQ and lines; these league-wide views open now."
+-      }
+-      links={getWigoSurfaceLinks(teamAbbreviation)}
+-    />
+-  );
+-
+   const renderTabs = () => (
+     <div className={styles.mobileTabsBar}>
+       {VALID_TABS.map((t) => (
+@@ -120,13 +113,21 @@
+   );
+ 
+   return (
+-    <div className={styles.wigoDashHeader}>
++    <div
++      ref={rootRef}
++      className={clsx(
++        styles.wigoDashHeader,
++        onePage && "wigo-one-page",
++        onePage && (fitViewport ? "wigo-fit" : "wigo-flow")
++      )}
++    >
+       <div className={styles.wigoDashboardContainer}>
+         {playerDataError && <p role="alert">{playerDataError}</p>}
+-        {viewportWidth !== null && viewportWidth > 768 && <div
++        {onePage && <div
+           className={styles.wigoDashboardContent}
+           style={
+             {
++              "--wigo-fit-height": fitViewport ? `${availableHeight}px` : undefined,
+               "--primary-color": teamColors.primaryColor,
+               "--secondary-color": teamColors.secondaryColor,
+               "--accent-color": teamColors.accentColor,
+@@ -155,9 +156,9 @@
+               teamIdForLog={teamIdForLog}
+               currentSeasonId={currentSeasonId}
+               minGp={minGp}
+-              desktop={wideDesktop}
++              desktop
+             />
+-            {wideDesktop && <WigoTrendsSection selectedPlayer={selectedPlayer} currentSeasonId={currentSeasonId} summaryOnly />}
++            <WigoTrendsSection selectedPlayer={selectedPlayer} currentSeasonId={currentSeasonId} summaryOnly />
+           </div>
+ 
+           <div className={styles.comparisonColumnWrapper}>
+@@ -170,7 +171,7 @@
+               leftTimeframe={leftTimeframe}
+               rightTimeframe={rightTimeframe}
+               onCompare={handleTimeframeCompare}
+-              desktop={wideDesktop}
++              desktop
+             />
+           </div>
+ 
+@@ -178,11 +179,10 @@
+             <WigoTrendsSection
+               selectedPlayer={selectedPlayer}
+               currentSeasonId={currentSeasonId}
+-              trendsOnly={wideDesktop}
++              trendsOnly
+             />
+-            {!wideDesktop && <WigoPercentilesSection playerId={selectedPlayer?.id} seasonId={currentSeasonId} minGp={minGp} onMinGpChange={setMinGp} />}
+           </div>
+-          {wideDesktop && <div className={styles.percentilesBand}>
++          <div className={styles.percentilesBand}>
+             <WigoPercentilesSection
+               playerId={selectedPlayer?.id}
+               seasonId={currentSeasonId}
+@@ -190,12 +190,8 @@
+               onMinGpChange={setMinGp}
+               desktop
+             />
+-          </div>}
+-
++          </div>
+         </div>}
+-        {viewportWidth !== null && viewportWidth > 768 && (
+-          <div style={{ marginTop: 10 }}>{renderWorkflowLinks()}</div>
+-        )}
+ 
+         {viewportWidth !== null && viewportWidth <= 768 && <div
+           className={styles.mobileContainer}
+@@ -264,7 +260,6 @@
+               />
+             )}
+           </div>
+-          <div className={styles.mobilePanel}>{renderWorkflowLinks()}</div>
+         </div>}
+       </div>
+     </div>
+--- a/web/__tests__/pages/wigoCharts.test.tsx
++++ b/web/__tests__/pages/wigoCharts.test.tsx
+@@ -1,6 +1,5 @@
+ import React from "react";
+-import { act, cleanup, render, screen, within } from "@testing-library/react";
+-import userEvent from "@testing-library/user-event";
++import { act, cleanup, render, screen } from "@testing-library/react";
+ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+ 
+ const routerState = vi.hoisted(() => ({ query: {} as Record<string, string> }));
+@@ -51,15 +50,6 @@
+   Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
+ };
+ 
+-// The shared section is unnamed, so locate it from its heading.
+-const workflowSections = (name: RegExp) =>
+-  screen.getAllByRole("heading", { name }).map((heading) => heading.closest("section")!);
+-
+-const workflowHrefs = () =>
+-  within(workflowSections(/keep exploring|read further/i)[0])
+-    .getAllByRole("link")
+-    .map((link) => link.getAttribute("href"));
+-
+ beforeEach(() => {
+   routerState.query = {};
+   dashboardState.selectedPlayer = null;
+@@ -69,92 +59,39 @@
+ 
+ afterEach(cleanup);
+ 
+-describe("WiGO workflow links", () => {
+-  it("offers only league-wide destinations before a player is selected", () => {
+-    render(<WigoCharts />);
++// TJ removed the WiGO workflow link block (2026-10-25); the dashboard ends at its own panels.
++describe("WiGO page without workflow links", () => {
++  const expectNoWorkflowLinks = () => {
++    expect(screen.queryByText("WiGO workflow")).toBeNull();
++    expect(screen.queryByRole("heading", { name: /keep exploring|read further/i })).toBeNull();
++    expect(screen.queryAllByRole("link")).toHaveLength(0);
++  };
+ 
+-    expect(screen.getByRole("heading", { name: "Keep exploring" })).toBeTruthy();
+-    expect(screen.getByText(/^Select a player to add their team HQ and lines/)).toBeTruthy();
+-    expect(workflowHrefs()).toEqual([
+-      "/trends",
+-      "/game-grid/7-Day-Forecast",
+-      "/start-chart",
+-    ]);
+-    expect(screen.queryByRole("link", { name: /team hq/i })).toBeNull();
+-  });
+-
+-  it("keeps team links hidden while the selected player's team is unresolved", () => {
+-    dashboardState.selectedPlayer = { id: 8478402, fullName: "Connor McDavid" };
+-
++  it("renders no workflow links on desktop, with or without a selected player", () => {
+     render(<WigoCharts />);
++    expectNoWorkflowLinks();
++    cleanup();
+ 
+-    expect(workflowHrefs()).not.toContain("/stats/team/null");
+-    expect(screen.queryByRole("link", { name: /team lines/i })).toBeNull();
+-    expect(screen.getByRole("heading", { name: "Take the Connor McDavid read further" })).toBeTruthy();
+-    expect(screen.getByText(/appear once this player's team is known/)).toBeTruthy();
+-    expect(screen.queryByText(/Select a player/)).toBeNull();
+-  });
+-
+-  it("carries the resolved team into Team HQ and Team Lines without nesting anchors", () => {
+-    dashboardState.selectedPlayer = {
+-      id: 8480012,
+-      fullName: "Jean-Sébastien Dea-Longname-Hyphenated-Placeholder",
+-    };
+-    dashboardState.teamAbbreviation = "UTA";
+-
+-    const { container } = render(<WigoCharts />);
+-
+-    expect(
+-      screen.getByRole("heading", {
+-        name: "Take the Jean-Sébastien Dea-Longname-Hyphenated-Placeholder read further",
+-      }),
+-    ).toBeTruthy();
+-    expect(workflowHrefs()).toEqual([
+-      "/stats/team/UTA",
+-      "/lines/UTA",
+-      "/trends",
+-      "/game-grid/7-Day-Forecast",
+-      "/start-chart",
+-    ]);
+-    expect(container.querySelector("a a")).toBeNull();
+-    expect(workflowSections(/read further/i)).toHaveLength(1);
+-  });
+-
+-  it("reaches the links by keyboard from the desktop layout", async () => {
+     dashboardState.selectedPlayer = { id: 8479318, fullName: "Auston Matthews" };
+     dashboardState.teamAbbreviation = "TOR";
+-    const user = userEvent.setup();
+-
+     render(<WigoCharts />);
+-    await user.tab();
+-
+-    expect(document.activeElement).toBe(screen.getByRole("link", { name: /team hq/i }));
+-    await user.tab();
+-    expect(document.activeElement).toBe(screen.getByRole("link", { name: /team lines/i }));
++    expect(screen.getByTestId("wigo-comparison")).toBeTruthy();
++    expectNoWorkflowLinks();
+   });
+ 
+-  it("shows one set of links on narrow screens beneath every mobile tab", () => {
++  it("renders no workflow links beneath the mobile tabs or after a resize", () => {
+     setViewport(375);
+     routerState.query = { tab: "comparison" };
+     dashboardState.selectedPlayer = { id: 8479318, fullName: "Auston Matthews" };
+     dashboardState.teamAbbreviation = "TOR";
+-
+     render(<WigoCharts />);
+-
+     expect(screen.getByTestId("wigo-comparison")).toBeTruthy();
+-    expect(workflowSections(/read further/i)).toHaveLength(1);
+-    expect(workflowHrefs()[0]).toBe("/stats/team/TOR");
+-  });
++    expectNoWorkflowLinks();
+ 
+-  it("switches layouts on resize without duplicating the links", () => {
+-    render(<WigoCharts />);
+-    expect(workflowSections(/keep exploring/i)).toHaveLength(1);
+-
+     act(() => {
+-      setViewport(375);
++      setViewport(1280);
+       window.dispatchEvent(new Event("resize"));
+     });
+-
+-    expect(workflowSections(/keep exploring/i)).toHaveLength(1);
++    expectNoWorkflowLinks();
+   });
+ });
+--- a/web/styles/wigoCharts.module.scss
++++ b/web/styles/wigoCharts.module.scss
+@@ -137,43 +137,8 @@
+     overflow-x: auto;
+   }
+ 
+-}
+-
+-@media (min-width: 769px) and (max-width: 1420px) {
+-  .wigoDashboardContent {
+-    grid-template-columns:
+-      minmax(245px, 0.7fr)
+-      minmax(600px, 1.65fr)
+-      minmax(330px, 0.95fr);
+-    grid-template-rows: auto minmax(760px, calc(100vh - 150px));
+-    grid-template-areas:
+-      "context context context"
+-      "dossier comparison evidence";
+-  }
+-}
+-
+-@media (min-width: 769px) and (max-width: 1180px) {
+-  .wigoDashboardContent {
+-    grid-template-columns: minmax(260px, 0.72fr) minmax(660px, 1.65fr);
+-    grid-template-rows: auto minmax(760px, calc(100vh - 150px)) auto;
+-    grid-template-areas:
+-      "context context"
+-      "dossier comparison"
+-      "evidence evidence";
+-  }
+ }
+ 
+-@media (min-width: 769px) and (max-width: 980px) {
+-  .wigoDashboardContent {
+-    grid-template-columns: minmax(0, 1fr);
+-    grid-template-rows: auto auto minmax(760px, calc(100vh - 150px)) auto;
+-    grid-template-areas:
+-      "context"
+-      "dossier"
+-      "comparison"
+-      "evidence";
+-  }
+-}
+ 
+ /* Base Styles for Grid Items */
+ 
+@@ -1551,19 +1516,17 @@
+   overflow: hidden;
+ }
+ 
+-@media (min-width: 1600px) {
+-  .wigoDashHeader {
++:global(.wigo-one-page) {
++  &.wigoDashHeader {
+     margin: 0;
+   }
+   .wigoDashboardContainer {
+-    max-width: none;
+-    padding: 8px 12px 12px;
++    max-width: v.$page-max-width;
++    padding: 6px 0 0;
+   }
+   .wigoDashboardContent {
+-    grid-template-columns: minmax(0, 708fr) minmax(0, 528fr) minmax(0, 640fr);
+-    grid-template-rows: 46px 260px 280px 376px;
+-    grid-template-areas: "context context context" "summary summary summary" "comparison comparison comparison" "selected trends percentiles";
+-    gap: 10px;
++    grid-template-columns: repeat(24, minmax(0, 1fr));
++    gap: 6px;
+     padding: 0;
+     border: 0;
+     border-radius: 0;
+@@ -1574,24 +1537,17 @@
+     min-height: 0;
+     padding: 0 8px;
+   }
+-  .leftColumnWrapper {
+-    grid-area: summary;
+-    display: grid;
+-    grid-template-columns: 252fr 196fr 212fr 224fr 226fr 236fr 246fr 248fr;
+-    gap: 8px;
+-    overflow: visible;
+-    border: 0;
+-    background: none;
+-    > * {
+-      min-width: 0;
+-      min-height: 0;
+-    }
++  .leftColumnWrapper,
++  .trendsColumnWrapper,
++  .percentilesBand {
++    display: contents;
+   }
+   .summaryProduction,
+   .consistencyAndCategoryWrapper,
+   .comparisonColumnWrapper {
+     display: contents;
+   }
++  .rateStatBarPercentilesContainer,
+   .identitySummary,
+   .opponentLogContainer,
+   .ratingsContainer,
+@@ -1661,33 +1617,47 @@
+       letter-spacing: 0;
+     }
+   }
+-  .trendsColumnWrapper {
+-    grid-area: trends;
+-    display: grid;
+-    grid-template-rows: repeat(3, minmax(0, 1fr));
+-    gap: 8px;
+-    border: 0;
+-    overflow: visible;
+-  }
+-  .percentilesBand {
+-    grid-area: percentiles;
+-  }
+-  .comparisonMatrixPanel {
+-    grid-area: comparison;
+-  }
++  .headerRowWrapper { grid-area: context; }
++  .identitySummary { grid-area: identity; }
++  .opponentLogContainer { grid-area: sched; }
++  .ratingsContainer { grid-area: ratings; }
++  .teamDriversSummary { grid-area: drivers; }
++  .consistencyRatingContainer { grid-area: consist; }
++  .percentileChartContainer { grid-area: radar; }
++  .comparisonMatrixPanel { grid-area: matrix; }
++  .selectedStatPanel { grid-area: selected; }
++  .toiChartContainer { grid-area: toi; }
++  .ppgChartContainer { grid-area: ppg; }
++  .gameScoreContainer { grid-area: gs; }
++  .rateStatBarPercentilesContainer { grid-area: pct; }
+   .selectedStatPanel {
+-    grid-area: selected;
+-    padding: 8px;
++    display: flex;
++    flex-direction: column;
++    padding: 4px 6px;
+   }
+   .selectedStatPanel h3 {
+-    font-size: 14px;
+-    margin: 0;
++    font-size: 12px;
++    margin: 0 0 2px;
+     color: v.$primary-color;
++    letter-spacing: 0.04em;
++    text-transform: uppercase;
++    span {
++      color: v.$text-secondary;
++      font-size: 11px;
++      letter-spacing: 0;
++      text-transform: none;
++    }
+   }
+-  .selectedStatPanel p {
+-    font-size: 12px;
+-    margin: 2px 0 4px;
++  .selectedStatPanel .gameLogChartContainer {
++    flex: 1;
++    min-height: 0;
++    display: flex;
++    flex-direction: column;
+   }
++  .gameLogChartPlot {
++    flex: 1;
++    min-height: 0;
++  }
+   .chartContainer,
+   .chartCanvasContainer {
+     min-height: 0;
+@@ -1724,95 +1694,102 @@
+       width: 410px;
+     }
+   }
++  .matrixHalves {
++    flex: 1;
++    min-height: 0;
++    display: grid;
++    grid-template-columns: repeat(2, minmax(0, 1fr));
++    gap: 8px;
++    padding: 0 6px 4px;
++  }
+   .comparisonMatrix {
+     width: 100%;
++    height: 100%;
+     table-layout: fixed;
+     border-collapse: collapse;
+-    font-size: 12px;
++    font-size: var(--wigo-data-size);
++    line-height: 1.15;
+     font-family: v.$font-family-primary;
+     font-variant-numeric: tabular-nums;
+     th,
+     td {
+-      padding: 0 2px;
+-      text-align: center;
++      padding: 0 3px;
++      text-align: right;
+       border-bottom: v.$border-subtle;
+-      height: 25px;
+       white-space: nowrap;
+     }
+     thead th {
+-      height: 38px;
++      height: 18px;
+       background: v.$background-header;
+-      white-space: normal;
++      color: v.$text-secondary;
++      font-weight: 700;
++      text-align: right;
+     }
++    thead th:first-child,
++    tbody th {
++      text-align: left;
++    }
+     th button {
+       width: 100%;
+-      padding: 4px 0;
++      padding: 0;
+       background: none;
+       border: 0;
+-      color: inherit;
++      color: v.$text-primary;
+       font: inherit;
+       font-weight: 700;
++      text-align: left;
+       cursor: pointer;
+     }
++    th button:hover,
++    th button[aria-pressed="true"] {
++      color: v.$primary-color;
++    }
+     th button:focus-visible {
+       outline: 2px solid v.$focus-color;
+       outline-offset: -2px;
+     }
+-    tbody th {
+-      text-align: left;
+-      padding-left: 8px;
++    [data-left] {
++      background: rgba(v.$primary-color, 0.16);
+     }
+-    tr[data-left] {
+-      background: rgba(v.$primary-color, 0.18);
+-      outline: 1px solid v.$primary-color;
+-      outline-offset: -1px;
++    [data-right] {
++      background: rgba(v.$warning-color, 0.13);
+     }
+-    tr[data-right] {
+-      background: rgba(v.$warning-color, 0.15);
+-      outline: 1px solid v.$warning-color;
+-      outline-offset: -1px;
++    thead [data-left] {
++      color: v.$primary-color;
++      box-shadow: inset 0 -2px v.$primary-color;
+     }
+-    tr[data-left][data-right] {
+-      outline: 2px double v.$primary-color;
++    thead [data-right] {
++      color: v.$warning-color;
++      box-shadow: inset 0 -2px v.$warning-color;
+     }
+-    [data-selected] {
+-      background: rgba(v.$primary-color, 0.12);
+-      border-inline: 1px solid v.$primary-color;
++    tr[data-selected] > * {
++      background-color: rgba(v.$primary-color, 0.22);
+     }
+-    // Transpose the legacy metric-row hover treatment across the full column.
+-    @for $column from 2 through 37 {
+-      &:has(tr > :nth-child(#{$column}):hover) {
+-        tr > :nth-child(#{$column}) {
+-          background-color: color.change(
+-            color.adjust(v.$focus-color, $lightness: -5%),
+-            $alpha: 0.2
+-          );
+-          border-inline-color: v.$focus-color;
+-          box-shadow: inset 1px 0 v.$focus-color, inset -1px 0 v.$focus-color;
+-        }
+-        thead tr > :nth-child(#{$column}) {
+-          box-shadow: inset 1px 0 v.$focus-color, inset -1px 0 v.$focus-color,
+-            inset 0 1px v.$focus-color;
+-        }
+-        tbody tr:last-child > :nth-child(#{$column}) {
+-          box-shadow: inset 1px 0 v.$focus-color, inset -1px 0 v.$focus-color,
+-            inset 0 -1px v.$focus-color;
+-        }
+-      }
++    tr[data-selected] > th {
++      box-shadow: inset 3px 0 v.$primary-color;
+     }
++    tbody tr:hover > * {
++      background-color: color.change(
++        color.adjust(v.$focus-color, $lightness: -5%),
++        $alpha: 0.2
++      );
++    }
+   }
++  .matrixLabelColumn {
++    width: 17%;
++  }
+   .periodMarker {
+-    font-size: 12px;
+-    color: v.$text-secondary;
++    margin-left: 3px;
++    font-size: inherit;
+   }
+-  .matrixDiff {
+-    border-top: 2px solid v.$primary-color;
++  .matrixDiffCell {
++    border-left: 2px solid v.$primary-color;
+     // Fixed scale: white at 0%, full red/green at -100%/+100% and beyond.
+-    [data-diff-sign] {
++    &[data-diff-sign] {
+       color: color-mix(in srgb, var(--diff-color) var(--diff-strength), white);
+     }
+-    [data-diff-sign="negative"] { --diff-color: #{v.$danger-color}; }
+-    [data-diff-sign="positive"] { --diff-color: #{v.$success-color}; }
++    &[data-diff-sign="negative"] { --diff-color: #{v.$danger-color}; }
++    &[data-diff-sign="positive"] { --diff-color: #{v.$success-color}; }
+   }
+   .selectedStatPanel .gameLogChartContainer {
+     padding: 0;
+@@ -1827,14 +1804,10 @@
+   .selectedStatPanel .avgButton {
+     font-size: 12px;
+     padding: 2px 4px;
+-  }
+-  .rateStatBarPercentilesContainer {
+-    height: 100%;
+-    border: 0;
+   }
+ }
+ 
+-@media (min-width: 1600px) {
++:global(.wigo-one-page) {
+   .trendsColumnWrapper > div {
+     height: 100%;
+     flex-shrink: 1;
+@@ -1924,7 +1897,7 @@
+   }
+ }
+ 
+-@media (min-width: 1600px) {
++:global(.wigo-one-page) {
+   .consistencyRatingContainer {
+     .chartContainer,
+     .consistencyContent,
+@@ -1985,7 +1958,7 @@
+   }
+ }
+ 
+-@media (min-width: 1600px) {
++:global(.wigo-one-page) {
+   .playerName {
+     line-height: 1.1;
+   }
+@@ -2039,12 +2012,12 @@
+     display: flex;
+     flex-direction: column;
+   }
+-  .wigoDashHeader :global(.wigo-trend-legend) {
++  &.wigoDashHeader :global(.wigo-trend-legend) {
+     font-size: 12px;
+     text-transform: none;
+     white-space: nowrap;
+   }
+-  .wigoDashHeader :global(.wigo-chart-help) {
++  &.wigoDashHeader :global(.wigo-chart-help) {
+     position: relative;
+     font-size: 12px;
+     summary {
+@@ -2083,7 +2056,7 @@
+   display: block;
+ }
+ 
+-@media (min-width: 1600px) {
++:global(.wigo-one-page) {
+   .noSelectedPlayer,
+   .wigoHeader .headerText {
+     font-size: 12px;
+@@ -2100,9 +2073,376 @@
+   }
+ }
+ 
+-@media (min-width: 1600px) {
++:global(.wigo-one-page) {
+   .ratingsContainer :global(.wigo-chart-help) p {
+     bottom: auto;
+     top: 20px;
++  }
++}
++
++// One-page dashboard (TJ, 2026-10-25): every panel visible together. "wigo-fit" pins the 24-column grid to the
++// measured viewport height (≥1200px wide with enough height); "wigo-flow" keeps the same panels at natural height and
++// lets the page scroll (769–1199px, or short viewports). Nothing scrolls or clips inside a panel in either mode.
++@function wigo-areas($spans...) {
++  $row: "";
++  @each $name, $count in $spans {
++    @for $i from 1 through $count {
++      $row: $row + $name + " ";
++    }
++  }
++  @return $row;
++}
++
++:global(.wigo-one-page) {
++  &.wigoDashHeader {
++    --wigo-data-size: 11px;
++    --wigo-emphasis-size: 15px;
++  }
++  .wigoDashboardContent {
++    grid-template-areas:
++      "#{wigo-areas(context 24)}"
++      "#{wigo-areas(identity 5, pace 5, sched 4, ratings 4, drivers 6)}"
++      "#{wigo-areas(prod 5, pace 5, sched 4, ratings 4, drivers 6)}"
++      "#{wigo-areas(matrix 18, consist 6)}"
++      "#{wigo-areas(matrix 18, radar 6)}"
++      "#{wigo-areas(selected 5, toi 4, ppg 4, gs 4, pct 7)}";
++  }
++  .identitySummary,
++  .opponentLogContainer,
++  .ratingsContainer,
++  .teamDriversSummary,
++  .consistencyRatingContainer,
++  .percentileChartContainer,
++  .comparisonMatrixPanel,
++  .selectedStatPanel,
++  .rateStatBarPercentilesContainer,
++  .toiChartContainer,
++  .ppgChartContainer,
++  .gameScoreContainer {
++    overflow: hidden;
++  }
++  .comparisonMatrixPanel {
++    display: flex;
++    flex-direction: column;
++    container-type: inline-size;
++  }
++  .matrixToolbar {
++    height: auto;
++    min-height: 28px;
++    gap: 10px;
++    padding: 2px 8px;
++    font-size: 11px;
++    > div {
++      width: 300px;
++    }
++  }
++  // The identity card carries the page's one team-colour accent: a filled top rail, never a border fragment.
++  .identitySummary {
++    position: relative;
++    &::before {
++      content: "";
++      position: absolute;
++      inset: 0 0 auto;
++      height: 3px;
++      border-radius: v.$radius-sm v.$radius-sm 0 0;
++      background: var(--primary-color, #{v.$primary-color});
++      pointer-events: none;
++    }
+   }
+ }
++
++:global(.wigo-one-page.wigo-fit) {
++  .wigoDashboardContent {
++    height: calc(var(--wigo-fit-height) - 4px);
++    grid-template-rows:
++      auto
++      minmax(80px, 13fr)
++      minmax(56px, 9fr)
++      minmax(158px, 24fr)
++      minmax(158px, 24fr)
++      minmax(175px, 27fr);
++  }
++}
++
++@media (min-width: 1400px) and (min-height: 860px) {
++  .wigoDashHeader:global(.wigo-one-page.wigo-fit) {
++    --wigo-data-size: 12px;
++    --wigo-emphasis-size: 17px;
++  }
++}
++
++:global(.wigo-one-page.wigo-flow) {
++  .wigoDashboardContent {
++    grid-template-columns: repeat(2, minmax(0, 1fr));
++    grid-template-rows: none;
++    grid-auto-rows: auto;
++    align-items: start;
++    grid-template-areas:
++      "context context"
++      "identity sched"
++      "prod sched"
++      "pace ratings"
++      "drivers drivers"
++      "matrix matrix"
++      "selected selected"
++      "consist radar"
++      "toi ppg"
++      "gs pct";
++  }
++  .selectedStatPanel,
++  .toiChartContainer,
++  .ppgChartContainer,
++  .gameScoreContainer {
++    height: 240px;
++  }
++  .identitySummary,
++  .productionSnapshot,
++  .ratingsContainer,
++  .teamDriversSummary {
++    align-self: stretch;
++  }
++  .consistencyRatingContainer,
++  .percentileChartContainer {
++    height: 220px;
++  }
++  @container (max-width: 700px) {
++    .matrixHalves {
++      grid-template-columns: minmax(0, 1fr);
++    }
++  }
++}
++
++// One-page identity: headshot on the left; team, name, role and the biography (inline label/value pairs) beside it.
++:global(.wigo-one-page) {
++  .identitySummary {
++    display: grid;
++    grid-template-columns: 52px minmax(0, 1fr);
++    grid-template-rows: auto minmax(0, 1fr);
++    column-gap: 8px;
++    align-content: center;
++    padding: 4px 6px 2px;
++    background: linear-gradient(
++      105deg,
++      color-mix(in srgb, var(--primary-color) 24%, transparent),
++      v.$background-medium 70%
++    );
++  }
++  .playerIdentityCard {
++    display: contents;
++  }
++  .playerHeaderContainer {
++    grid-row: 1 / span 2;
++    align-self: center;
++    width: 52px;
++    min-width: 0;
++    height: 64px;
++  }
++  .playerIdentityCopy {
++    padding: 0;
++  }
++  .playerName {
++    display: block;
++    margin: 1px 0;
++    font-size: var(--wigo-emphasis-size);
++    line-height: 1.1;
++    span {
++      display: inline;
++      margin-right: 0.3em;
++      font-size: inherit;
++    }
++    // Long names wrap to two lines at a smaller size instead of pushing the biography out of the card.
++    &[data-name-length="long"] {
++      font-size: 11px;
++      letter-spacing: 0;
++      overflow-wrap: anywhere;
++    }
++  }
++  .playerTeam,
++  .playerRole {
++    font-size: 11px;
++    line-height: 1.2;
++    letter-spacing: 0.02em;
++  }
++  .playerMetaGrid {
++    display: flex;
++    flex-wrap: wrap;
++    gap: 0 8px;
++    min-height: 0;
++    padding: 0;
++    border: 0;
++    > span {
++      flex-direction: row;
++      align-items: baseline;
++      gap: 3px;
++      padding: 0;
++      border: 0;
++      font-family: v.$font-family-primary;
++      font-size: var(--wigo-data-size);
++      line-height: 1.15;
++    }
++    small {
++      font-size: 11px;
++      letter-spacing: 0;
++      color: v.$text-secondary;
++    }
++  }
++}
++
++// One-page panel chrome: compact headers whose controls wrap under the title instead of squeezing it.
++:global(.wigo-one-page) {
++  .chartHeader {
++    flex-wrap: wrap;
++    gap: 0 6px;
++    padding: 2px 6px;
++    border-bottom-width: 1px;
++    h3 {
++      padding: 0;
++      font-size: 11px;
++      letter-spacing: 0.06em;
++      white-space: nowrap;
++    }
++  }
++  .chartToolbar {
++    flex-wrap: wrap;
++    gap: 2px 4px;
++    font-size: 11px;
++  }
++  .chartToolbar button,
++  .chartHeader .toggleButtons button {
++    font-size: 11px;
++    padding: 0 4px;
++    line-height: 1.4;
++  }
++  .chartCanvasContainer {
++    padding: 2px 4px;
++  }
++}
++
++// One-page consistency legend: tighter rows so the full point distribution fits beside the doughnut.
++:global(.wigo-one-page) {
++  .consistencyRatingContainer {
++    .consistencyContent { padding: 0 4px; }
++    .consistencyChartArea { min-height: 0; height: 100%; padding: 2px; overflow: hidden; }
++    .consistencyListArea ul { height: auto; }
++    .consistencyItem { margin: 0; padding: 0; line-height: 1.1; }
++  }
++}
++
++// One-page rate percentiles: title and strength toggles share a line; 16 single-line tiles in 3 columns.
++:global(.wigo-one-page) {
++  .percentileDesktop {
++    display: flex;
++    flex-direction: column;
++    .mainContentWrapper { flex: 1; min-height: 0; }
++    .percentileFiltersContainer { padding: 2px 6px 0; gap: 1px; }
++    .filtersTitle { font-size: 11px; letter-spacing: 0.06em; }
++    .filterControlsWrapper { flex-wrap: wrap; gap: 2px 10px; }
++    .strengthSelector { flex: 0 0 auto; }
++    .gpSliderContainer { flex: 1 1 120px; min-width: 0; }
++    .gpSlider { min-width: 0; flex: 1; }
++    .strengthSelector button { font-size: 11px; padding: 0 8px; line-height: 1.5; }
++    .gpSliderContainer, .gpSliderContainer label, .gpSliderMaxLabel, .gpSliderMinLabel { font-size: 11px; }
++    .thresholdMessage { font-size: 11px; padding: 1px 4px; line-height: 1.2; }
++  }
++  .percentileContext { font-size: 11px; line-height: 1.2; }
++  .percentileTileGrid {
++    grid-template-columns: repeat(2, minmax(0, 1fr));
++    grid-template-rows: repeat(8, minmax(0, 1fr));
++    grid-auto-flow: column;
++    gap: 1px 8px;
++    padding: 1px 6px 3px;
++  }
++  .percentileTile {
++    position: relative;
++    grid-template-columns: minmax(0, 1fr) auto auto;
++    column-gap: 5px;
++    padding: 0 2px 2px;
++    border: 0;
++    border-radius: 0;
++    font-size: 11px;
++    line-height: 1.2;
++    strong { font-size: var(--wigo-data-size); }
++    small { grid-column: auto; font-size: 11px; color: v.$text-secondary; }
++    meter { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; }
++  }
++}
++
++:global(.wigo-one-page) {
++  .thresholdChips {
++    display: flex;
++    flex-wrap: wrap;
++    gap: 2px 4px;
++    margin: 1px 0;
++    .thresholdMessage {
++      width: auto;
++      margin: 0;
++      padding: 0 5px;
++      border-radius: v.$radius-sm;
++      font-size: 11px;
++      line-height: 1.35;
++    }
++  }
++  .selectedStatPanel .averageToggleButtons {
++    gap: 2px 3px;
++    margin-bottom: 2px;
++  }
++  .selectedStatPanel .avgButton {
++    font-size: 11px;
++    padding: 0 3px;
++    line-height: 1.45;
++  }
++}
++
++// One-page toolbar row: one 30px strip (wordmark, search, selected player) so the panels keep the height.
++:global(.wigo-one-page) {
++  .headerRowWrapper {
++    min-height: 0;
++    height: 32px;
++    padding: 1px 6px;
++  }
++  .wigoContextIdentity {
++    align-items: center;
++    height: 30px;
++  }
++  .spanColorBlue {
++    font-size: 20px;
++    line-height: 30px;
++  }
++  .nameSearchBarContainer,
++  .selectedPlayerControl {
++    height: 28px;
++  }
++  .selectedPlayerThumb {
++    width: 28px;
++    flex-basis: 28px;
++  }
++  .selectedPlayerText strong {
++    font-size: 12px;
++  }
++  .selectedPlayerText span,
++  .selectedPlayerControl button {
++    font-size: 11px;
++  }
++}
++
++:global(.wigo-one-page.wigo-fit) {
++  .wigoDashboardContent {
++    gap: 4px;
++  }
++  .wigoDashboardContainer {
++    padding-top: 4px;
++  }
++}
++
++:global(.wigo-one-page) {
++  .percentileChartContainer .chartTitle {
++    gap: 8px;
++  }
++}
++
++@media (min-width: 1800px) and (min-height: 1000px) {
++  .wigoDashHeader:global(.wigo-one-page.wigo-fit) {
++    --wigo-data-size: 13px;
++    --wigo-emphasis-size: 19px;
++  }
++}
+--- a/web/components/WiGO/NameSearchBar.module.scss
++++ b/web/components/WiGO/NameSearchBar.module.scss
+@@ -118,3 +118,23 @@
+ .error {
+   color: #ff6b6b; // Standard error color
+ }
++
++:global(.wigo-one-page) {
++  .searchInput {
++    padding: 0 10px;
++    font-size: 14px;
++  }
++  // Status lines float under the 28px input like the results list instead of growing the toolbar.
++  .loadingIndicator,
++  .errorMessage {
++    position: absolute;
++    top: 100%;
++    left: 0;
++    right: 0;
++    z-index: 11;
++    padding: 2px 10px;
++    border: 1px solid v.$border-color-secondary;
++    background: v.$background-dark;
++    font-size: 11px;
++  }
++}
+--- a/web/components/WiGO/OpponentGameLog.module.scss
++++ b/web/components/WiGO/OpponentGameLog.module.scss
+@@ -99,6 +99,13 @@
+ 
+ // Add styles for loading/error states if needed
+ 
+-@media (min-width: 1600px) {
+-  .scheduleTable { overflow: visible; th, td, th:not(:first-child), td:not(:first-child), thead th { font-size: 12px; letter-spacing: 0; padding: 2px; white-space: normal; } thead th { position: static; } }
++:global(.wigo-one-page) {
++  .scheduleTable {
++    overflow: visible;
++    th, td, th:not(:first-child), td:not(:first-child), thead th { font-size: var(--wigo-data-size, 11px); line-height: 1.15; letter-spacing: 0; padding: 0 3px; white-space: nowrap; }
++    th:first-child { width: 40%; }
++    th:nth-child(2) { width: 27%; }
++    th:nth-child(3) { width: 33%; }
++    thead th { position: static; text-transform: none; }
++  }
+ }
+--- a/web/components/WiGO/PerGameStatsTable.module.scss
++++ b/web/components/WiGO/PerGameStatsTable.module.scss
+@@ -226,22 +226,44 @@
+   color: #aaa;
+ }
+ 
+-@media (min-width: 1600px) {
++:global(.wigo-one-page) {
+   .desktopSummary {
+     display: contents;
+     .productionSnapshot, .projectionTableSection {
+       min-width: 0;
++      min-height: 0;
++      overflow: hidden;
+       border: v.$border-subtle;
+       border-radius: v.$radius-sm;
+       background: v.$background-medium;
+-      h3 { padding: 6px; font-size: 12px; letter-spacing: .02em; span { display: block; } }
++      h3 { margin: 0; padding: 2px 6px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; span { color: v.$text-secondary; letter-spacing: 0; } }
+     }
+-    .productionGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 8px; }
+-    .productionStat { border: v.$border-subtle; border-radius: v.$radius-sm; padding: 10px 0; span, small { font-size: 12px; } strong { font-size: 24px; } }
+-    .verticalStatsTable { border: 0; th, td, tbody td.valueCell, thead th { font-size: 12px; letter-spacing: 0; padding: 2px 3px; height: 20px; } thead th { position: static; border-bottom-width: 1px; } }
++    .productionSnapshot { grid-area: prod; display: flex; flex-direction: column; }
++    .summaryStatus { margin: 0; padding: 2px 6px; font-size: 11px; line-height: 1.2; }
++    .projectionTableSection { grid-area: pace; display: flex; flex-direction: column; }
++    .productionGrid { flex: 1; min-height: 0; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; padding: 0 4px 1px; }
++    .productionStat {
++      display: flex; flex-direction: column; justify-content: center; align-items: center;
++      min-height: 0; padding: 0; border: v.$border-subtle; border-radius: v.$radius-sm;
++      span, small { font-size: 11px; line-height: 1.05; letter-spacing: 0; }
++      strong { font-family: v.$font-family-primary; font-size: var(--wigo-emphasis-size, 15px); line-height: 1.15; font-variant-numeric: tabular-nums; }
++      small { font-family: v.$font-family-primary; white-space: nowrap; }
++    }
++    .paceTables { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; padding: 0 4px 3px; }
++    .paceHelp summary { padding: 3px 6px; font-size: 11px; }
++    .verticalStatsTable {
++      min-height: 0; height: 100%; border: 0;
++      th, td, tbody td.valueCell, thead th { font-size: var(--wigo-data-size, 11px); letter-spacing: 0; padding: 0 2px; height: auto; line-height: 1.15; }
++      thead th { position: static; border-bottom-width: 1px; text-transform: none; letter-spacing: 0; font-family: v.$font-family-primary; }
++      thead th.metricHeader, tbody th.metricCell { width: 30%; padding-left: 4px; }
++      thead th.valueHeader { width: 35%; }
++      tbody td.valueCell { font-family: v.$font-family-primary; font-variant-numeric: tabular-nums; }
++    }
+   }
+ }
+ 
++.paceTables { display: contents; }
++
+ .summaryStatus { padding: 8px; font-size: 12px; }
+ 
+ .paceHelp {
+--- a/web/components/WiGO/PerGameStatsTable.tsx
++++ b/web/components/WiGO/PerGameStatsTable.tsx
+@@ -162,10 +162,13 @@
+           <summary><h3>Per-game / 84-game pace</h3></summary>
+           <p>Observed counting rate × 84, rounded to a whole count. Constant-rate pace, not a remaining-game, availability or health prediction.</p>
+         </details>
+-        <table className={styles.verticalStatsTable}>
+-          <thead><tr><th className={styles.metricHeader}>Metric</th><th className={styles.valueHeader}>Per/GP</th><th className={styles.valueHeader}>Pace/84</th></tr></thead>
+-          <tbody>{visibleRows.map(row => <tr key={row.stat}><th scope="row" className={styles.metricCell}>{row.stat}</th><td className={styles.valueCell}>{row.perGame}</td><td className={styles.valueCell}>{row.per84}</td></tr>)}</tbody>
+-        </table>
++        {/* The one-page dashboard shows the ten rows as two five-row halves side by side. */}
++        <div className={styles.paceTables}>
++          {(desktop ? [visibleRows.slice(0, 5), visibleRows.slice(5)] : [visibleRows]).map(rows => <table key={rows[0]?.stat} className={styles.verticalStatsTable}>
++            <thead><tr><th className={styles.metricHeader}>Metric</th><th className={styles.valueHeader}>Per/GP</th><th className={styles.valueHeader}>Pace/84</th></tr></thead>
++            <tbody>{rows.map(row => <tr key={row.stat}><th scope="row" className={styles.metricCell}>{row.stat}</th><td className={styles.valueCell}>{row.perGame}</td><td className={styles.valueCell}>{row.per84}</td></tr>)}</tbody>
++          </table>)}
++        </div>
+       </section>
+     </div>
+   );
+--- a/web/components/WiGO/PlayerRatingsDisplay.module.scss
++++ b/web/components/WiGO/PlayerRatingsDisplay.module.scss
+@@ -133,22 +133,18 @@
+   color: #ff6b6b;
+ }
+ 
+-@media (min-width: 1600px) {
+-  .ratingsRoot { flex-direction: column; overflow: visible; padding: 0; gap: 2px; }
+-  .ratingSection { overflow: visible; border: 0; }
++// One-page dashboard: a 3×3 matrix (Offense / Defense / Overall × three strengths); each cell carries a filled bar.
++:global(.wigo-one-page) {
++  .ratingsRoot { display: flex; flex-direction: column; gap: 3px; height: 100%; min-height: 0; overflow: visible; padding: 0; }
++  .ratingSection { flex: 1; min-height: 0; display: grid; grid-template-columns: 54px repeat(3, minmax(0, 1fr)); gap: 3px; overflow: visible; border: 0; }
+   .ratingSection:nth-child(2) { order: 3; }
+-  .ratingTitle { text-align: left; font-size: 12px; padding: 1px 2px; }
+-  .ratingsBoxes { padding: 0; gap: 1px; }
+-  .ratingBox { flex-direction: row; justify-content: space-between; min-height: 18px; padding: 0 6px; border-width: 1px; }
+-  .ratingLabel, .ratingValue, .finalRating .ratingValue { font-size: 12px; }
+-}
+-
+-@media (min-width: 1600px) {
++  .ratingTitle { align-self: center; margin: 0; padding: 0; font-size: 11px; letter-spacing: .04em; text-align: left; text-transform: uppercase; }
++  .ratingsBoxes { display: contents; }
+   .ratingBox {
+-    position: relative;
+-    border: 0 !important;
+-    background: v.$background-dark;
+-    &::before { content: ""; position: absolute; height: 5px; width: calc(var(--rating-width) * .55); max-width: 55%; left: 25%; bottom: 6px; background: var(--rating-color); border-radius: 2px; opacity: .7; }
+-    .ratingLabel, .ratingValue { position: relative; z-index: 1; }
++    position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center;
++    min-height: 0; padding: 0 2px 5px; border: 0 !important; border-radius: v.$radius-sm; background: v.$background-dark;
++    &::before { content: ""; position: absolute; left: 4px; bottom: 3px; height: 3px; width: calc(100% - 8px); background: linear-gradient(90deg, var(--rating-color) var(--rating-width), rgba(255, 255, 255, .08) var(--rating-width)); border-radius: 2px; }
+   }
++  .ratingLabel { font-size: 11px; line-height: 1.1; color: v.$text-secondary; }
++  .ratingValue, .finalRating .ratingValue { font-size: var(--wigo-data-size, 11px); line-height: 1.15; font-weight: 700; }
+ }
+--- a/web/components/WiGO/PlayerRatingsDisplay.test.tsx
++++ b/web/components/WiGO/PlayerRatingsDisplay.test.tsx
+@@ -14,6 +14,15 @@
+   fetchRawStatsForAllStrengths: mockFetchRawStatsForAllStrengths
+ }));
+ 
++// The small fixtures below predate the minimum cohort; most tests switch it off and one turns it on.
++const cohortRule = vi.hoisted(() => ({ minPeers: 0 }));
++vi.mock("utils/calculateWigoRatings", async (importOriginal) => ({
++  ...(await importOriginal<typeof import("utils/calculateWigoRatings")>()),
++  get WIGO_RATING_MIN_COHORT_PEERS() {
++    return cohortRule.minPeers;
++  }
++}));
++
+ function renderWithClient(ui: React.ReactElement) {
+   const queryClient = new QueryClient({
+     defaultOptions: {
+@@ -31,8 +40,26 @@
+ describe("PlayerRatingsDisplay", () => {
+   beforeEach(() => {
+     mockFetchRawStatsForAllStrengths.mockReset();
++    cohortRule.minPeers = 0;
+   });
+ 
++  it("shows no rating rather than 50.0 when the cohort is only the selected player", async () => {
++    cohortRule.minPeers = 20;
++    const alone = [{ player_id: 91, season: 20252026, gp: 3, toi_seconds: 300, total_points_per_60: 4, xga_per_60: 1, gf_per_60: 3, ga_per_60: 2 }];
++    mockFetchRawStatsForAllStrengths.mockResolvedValue({
++      as: { offense: alone, defense: alone },
++      es: { offense: alone, defense: alone },
++      pp: { offense: alone, defense: [] },
++      pk: { offense: [], defense: alone }
++    });
++
++    renderWithClient(<PlayerRatingsDisplay playerId={91} seasonId={20252026} minGp={10} />);
++
++    await waitFor(() => expect(screen.getByText("Offense")).toBeTruthy());
++    expect(screen.queryByText("50.0")).toBeNull();
++    expect(screen.getAllByText("-")).toHaveLength(9);
++  });
++
+   it("renders ratings for a low-gp forward instead of dropping them from the cohort", async () => {
+     const rawStats: RawStatsCollection = {
+       as: {
+--- a/web/components/WiGO/PlayerRatingsDisplay.tsx
++++ b/web/components/WiGO/PlayerRatingsDisplay.tsx
+@@ -2,7 +2,10 @@
+ import { useQuery } from "@tanstack/react-query";
+ 
+ import { fetchRawStatsForAllStrengths } from "utils/fetchWigoRatingStats";
+-import { calculatePlayerRatings } from "utils/calculateWigoRatings";
++import {
++  calculatePlayerRatings,
++  WIGO_RATING_MIN_COHORT_PEERS
++} from "utils/calculateWigoRatings";
+ 
+ import styles from "./PlayerRatingsDisplay.module.scss";
+ import { WIGO_ERROR_MESSAGES } from "./errorMessages";
+@@ -66,7 +69,7 @@
+   });
+   const ratings = useMemo(
+     () => playerId && rawStats
+-      ? calculatePlayerRatings(playerId, rawStats, undefined, undefined, minGp)
++      ? calculatePlayerRatings(playerId, rawStats, undefined, undefined, minGp, WIGO_RATING_MIN_COHORT_PEERS)
+       : null,
+     [playerId, rawStats, minGp]
+   );
+--- a/web/components/WiGO/RateStatPercentiles.test.tsx
++++ b/web/components/WiGO/RateStatPercentiles.test.tsx
+@@ -326,7 +326,8 @@
+       <RateStatPercentiles playerId={1} seasonId={20252026} minGp={10} onMinGpChange={vi.fn()} desktop />
+     );
+     await waitFor(() => expect(screen.getAllByText("50%")).toHaveLength(2));
+-    expect(screen.getAllByText("1st rank")).toHaveLength(2);
++    // The tile shows "1st" with a visually hidden " rank" suffix for screen readers.
++    expect(screen.getAllByText((_, element) => element?.tagName === "SMALL" && element.textContent === "1st rank")).toHaveLength(2);
+   });
+ 
+   it("recalculates the minimum-GP population without refetching", async () => {
+--- a/web/components/WiGO/RateStatPercentiles.tsx
++++ b/web/components/WiGO/RateStatPercentiles.tsx
+@@ -389,6 +389,31 @@
+       ),
+     [calculatedPercentiles, calculatedRanks]
+   );
++
++  const strengthLabel = selectedStrength.toUpperCase();
++  const formatSeason = (season: number) => `${String(season).slice(0, 4)}–${String(season).slice(6)}`;
++  const thresholdMessages: Array<{ short: string; full: string }> = [];
++  if (allPlayersStats.length === 0) {
++    thresholdMessages.push({ short: `No ${strengthLabel} data`, full: `No player data available for ${strengthLabel}.` });
++  }
++  if (calculatedPercentiles !== null && percentileCohort?.fallbackReason) {
++    thresholdMessages.push({
++      short: `Showing ${formatSeason(percentileCohort.appliedSeasonId)} values and cohort, not ${formatSeason(seasonId as number)}`,
++      full: percentileCohort.fallbackReason
++    });
++  }
++  if (calculatedPercentiles !== null && !selectedPlayerMeetsGpThreshold && selectedPlayerGp !== null) {
++    thresholdMessages.push({
++      short: `GP ${selectedPlayerGp} below min ${minGp}`,
++      full: `Selected Player GP (${selectedPlayerGp}) below threshold (${minGp}). Comparing against ${minGp}+ GP players.`
++    });
++  }
++  if (selectedPlayerGp === 0) {
++    thresholdMessages.push({ short: `0 GP at ${strengthLabel}`, full: `Selected Player has 0 GP for ${strengthLabel}.` });
++  }
++  if (selectedPlayerGp === null && playerId && !isLoading) {
++    thresholdMessages.push({ short: `No ${strengthLabel} GP data`, full: `Selected Player has no GP data for ${strengthLabel}.` });
++  }
+ 
+   return (
+     <div className={`${styles.rateStatPercentilesComponent} ${desktop ? styles.percentileDesktop : ""}`}>
+@@ -465,37 +490,13 @@
+             </div>
+ 
+             <div className={styles.percentileContext}>Player GP: {selectedPlayerGp ?? "—"} · Requested {seasonId} · Applied {percentileCohort?.appliedSeasonId ?? seasonId}</div>
+-            <div className={styles.thresholdMessagesContainer}>
+-              {allPlayersStats.length === 0 && (
+-                <div className={styles.thresholdMessage}>
+-                  No player data available for {selectedStrength.toUpperCase()}.
+-                </div>
+-              )}
+-              {calculatedPercentiles !== null &&
+-                percentileCohort?.fallbackReason && (
+-                  <div className={styles.thresholdMessage}>
+-                    {percentileCohort.fallbackReason}
++            <div className={desktop ? styles.thresholdChips : styles.thresholdMessagesContainer}>
++              {thresholdMessages.map(message => desktop
++                // One-page mode keeps each notice to a short chip; the full sentence stays for screen readers and hover.
++                ? <div key={message.full} className={styles.thresholdMessage} title={message.full}>
++                    {message.short}<span className={styles.visuallyHidden}>: {message.full}</span>
+                   </div>
+-                )}
+-              {calculatedPercentiles !== null &&
+-                !selectedPlayerMeetsGpThreshold &&
+-                selectedPlayerGp !== null && (
+-                  <div className={styles.thresholdMessage}>
+-                    Selected Player GP ({selectedPlayerGp}) below threshold (
+-                    {minGp}). Comparing against {minGp}+ GP players.
+-                  </div>
+-                )}
+-              {selectedPlayerGp === 0 && (
+-                <div className={styles.thresholdMessage}>
+-                  Selected Player has 0 GP for {selectedStrength.toUpperCase()}.
+-                </div>
+-              )}
+-              {selectedPlayerGp === null && playerId && !isLoading && (
+-                <div className={styles.thresholdMessage}>
+-                  Selected Player has no GP data for{" "}
+-                  {selectedStrength.toUpperCase()}.
+-                </div>
+-              )}
++                : <div key={message.full} className={styles.thresholdMessage}>{message.full}</div>)}
+             </div>
+           </div>
+           {desktop ? <div className={styles.percentileTileGrid}>
+@@ -507,7 +508,7 @@
+                 <span>{stat.label}</span>
+                 <strong>{available ? `${Math.round(percentile * 100)}%` : "—"}</strong>
+                 <meter aria-label={`${stat.label} percentile`} min={0} max={100} value={available ? percentile * 100 : 0} />
+-                <small>{rank != null ? `${formatOrdinal(rank)} rank` : "Rank unavailable"}</small>
++                <small>{rank != null ? <>{formatOrdinal(rank)}<span className={styles.visuallyHidden}> rank</span></> : "Rank unavailable"}</small>
+               </div>;
+             })}
+           </div> : <div className={styles.chartAndRanksArea}>
+--- a/web/components/WiGO/StatsTable.test.tsx
++++ b/web/components/WiGO/StatsTable.test.tsx
+@@ -67,9 +67,9 @@
+ 
+ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+ import { within } from "@testing-library/react";
+-import WigoComparisonMatrix, { COMPARISON_PERIODS } from "./WigoComparisonMatrix";
++import WigoComparisonMatrix, { COMPARISON_PERIODS, MATRIX_HALVES } from "./WigoComparisonMatrix";
+ import { WIGO_STAT_ORDER } from "./statMetadata";
+-import { formatCell, computeDiffColumn } from "./tableUtils";
++import { formatCell, computeDiffColumn, formatDiffPercent } from "./tableUtils";
+ 
+ function createLogQueryWrapper() {
+   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+@@ -156,8 +156,8 @@
+   });
+ });
+ 
+-describe("horizontal comparison matrix", () => {
+-  it("preserves all 252 values and 36 differences in canonical order and selects one reserved chart", async () => {
++describe("transposed comparison matrix", () => {
++  it("preserves all 252 values and 36 differences across two halves and selects one reserved chart", async () => {
+     mockFetchPlayerGameLogForStat.mockReset().mockResolvedValue([]);
+     const onCompare = vi.fn();
+     const data = computeDiffColumn(WIGO_STAT_ORDER.map((label, metric) => ({
+@@ -168,18 +168,23 @@
+       data={data} isLoadingAggData={false} aggDataError={null} playerId={1} currentSeasonId={20252026}
+       leftTimeframe="STD" rightTimeframe="CA" onCompare={onCompare}
+     /></QueryClientProvider>);
+-    const table = screen.getByRole("table");
+-    expect(within(table).getAllByRole("columnheader")).toHaveLength(37);
+-    expect(within(table).getAllByRole("columnheader").slice(1).map(cell => cell.textContent)).toEqual([...WIGO_STAT_ORDER]);
+-    const rows = within(table).getAllByRole("row").slice(1);
+-    expect(rows).toHaveLength(8);
+-    COMPARISON_PERIODS.forEach((period, index) => {
+-      const cells = within(rows[index]).getAllByRole("cell");
+-      expect(cells).toHaveLength(36);
+-      expect(cells.map(cell => cell.textContent)).toEqual(data.map(row => formatCell(row, period)));
++    const tables = screen.getAllByRole("table");
++    expect(tables).toHaveLength(2);
++    expect(tables.flatMap(table => within(table).getAllByRole("rowheader").map(cell => cell.textContent)))
++      .toEqual(MATRIX_HALVES.flatMap(half => half.labels));
++    expect([...MATRIX_HALVES.flatMap(half => half.labels)].sort()).toEqual([...WIGO_STAT_ORDER].sort());
++    tables.forEach((table, half) => {
++      expect(within(table).getAllByRole("columnheader").map(cell => cell.textContent))
++        .toEqual([MATRIX_HALVES[half].short, "STDL", "LY", "CAR", "3YA", "L5", "L10", "L20", "DIFF"]);
++      const rows = within(table).getAllByRole("row").slice(1);
++      expect(rows).toHaveLength(18);
++      rows.forEach((row, index) => {
++        const source = data.find(entry => entry.label === MATRIX_HALVES[half].labels[index])!;
++        const cells = within(row).getAllByRole("cell").map(cell => cell.textContent);
++        expect(cells).toEqual([...COMPARISON_PERIODS.map(period => formatCell(source, period)), formatDiffPercent(source.DIFF)]);
++      });
+     });
+-    expect(within(rows[7]).getAllByRole("cell")).toHaveLength(36);
+-    expect(within(table).queryByRole("button", { name: "Show GP game log" })).toBeNull();
++    expect(screen.queryByRole("button", { name: "Show GP game log" })).toBeNull();
+     expect(screen.getByRole("button", { name: "Show SOG/60 game log" }).getAttribute("aria-pressed")).toBe("true");
+     await waitFor(() => expect(mockFetchPlayerGameLogForStat).toHaveBeenCalledWith(1, 20252026, "SOG/60"));
+     fireEvent.change(screen.getByLabelText("Select right timeframe for comparison"), { target: { value: "STD" } });
+@@ -187,7 +192,6 @@
+     fireEvent.click(screen.getByRole("button", { name: "Show Goals game log" }));
+     await waitFor(() => expect(mockFetchPlayerGameLogForStat).toHaveBeenCalledWith(1, 20252026, "Goals"));
+     expect(container.querySelectorAll("#wigo-selected-stat")).toHaveLength(1);
+-    expect(within(table).getAllByRole("row")).toHaveLength(9);
+     expect(screen.getAllByRole("button", { name: /^Toggle .* reference$/ })).toHaveLength(7);
+   });
+ });
+--- a/web/components/WiGO/StatsTableRowChart.tsx
++++ b/web/components/WiGO/StatsTableRowChart.tsx
+@@ -39,6 +39,8 @@
+   error: string | null;
+   tableType: "COUNTS" | "RATES";
+   height?: number;
++  // Fill the parent's height with tighter axes (one-page dashboard panel).
++  fill?: boolean;
+ }
+ 
+ type AverageKey = keyof GameLogChartProps["averages"];
+@@ -70,7 +72,8 @@
+   isLoading,
+   error,
+   tableType,
+-  height = 230
++  height = 230,
++  fill = false
+ }) => {
+   const [visibleAverages, setVisibleAverages] = useState<
+     Record<AverageKey, boolean>
+@@ -156,7 +159,7 @@
+   };
+ 
+   // Adjust chart height if needed for row layout, REMOVE fixed width
+-  const chartHeight = height; // Increased height slightly for better visibility in a row
++  const chartHeight = fill ? "100%" : height; // Increased height slightly for better visibility in a row
+ 
+   const status = isLoading ? "Loading game log..." : error || (gameLogData.length === 0 ? "No game log data available for this season." : null);
+ 
+@@ -215,10 +218,10 @@
+           }
+         })}
+       </div>
+-      {status ? <div className={styles.chartStatus} role="status">{status}</div> : <ResponsiveContainer width="100%" height={chartHeight}>
++      {status ? <div className={styles.chartStatus} role="status">{status}</div> : <div className={fill ? styles.gameLogChartPlot : undefined}><ResponsiveContainer width="100%" height={chartHeight}>
+         <LineChart
+           data={chartData}
+-          margin={{ top: 5, right: 10, left: 0, bottom: 16 }}
++          margin={fill ? { top: 4, right: 6, left: 0, bottom: 0 } : { top: 5, right: 10, left: 0, bottom: 16 }}
+         >
+           {" "}
+           {/* Adjusted margins */}
+@@ -227,7 +230,7 @@
+             dataKey="game"
+             minTickGap={40}
+             tickFormatter={(game) => chartData[Number(game) - 1]?.date.slice(5) ?? String(game)}
+-            label={{
++            label={fill ? undefined : {
+               value: "Game date",
+               position: "insideBottom",
+               offset: -15,
+@@ -240,8 +243,8 @@
+                 textTransform: "uppercase"
+               }
+             }}
+-            tick={{ fontSize: 12, fill: "#aaa" }}
+-            height={40} // Increased height for label
++            tick={{ fontSize: fill ? 11 : 12, fill: "#aaa" }}
++            height={fill ? 18 : 40} // Increased height for label
+           />
+           <YAxis
+             tickFormatter={(tick) =>
+@@ -250,8 +253,8 @@
+                 isTOIStat ? "TOI" : isPercentStat ? "Percent" : "Other"
+               )
+             }
+-            tick={{ fontSize: 12, fill: "#aaa" }}
+-            width={65} // Slightly increased width
++            tick={{ fontSize: fill ? 11 : 12, fill: "#aaa" }}
++            width={fill ? 42 : 65} // Slightly increased width
+ 
+           />
+           <Tooltip content={<CustomTooltip />} />
+@@ -329,7 +332,7 @@
+             return null;
+           })}
+         </LineChart>
+-      </ResponsiveContainer>}
++      </ResponsiveContainer></div>}
+     </div>
+   );
+ };
+--- a/web/components/WiGO/TeamPerformanceDrivers.module.scss
++++ b/web/components/WiGO/TeamPerformanceDrivers.module.scss
+@@ -80,12 +80,12 @@
+   summary { cursor: pointer; }
+   > div { position: absolute; z-index: 20; right: 0; width: 280px; padding: 12px; border: v.$border-subtle; background: v.$background-header; }
+ }
+-@media (min-width: 1600px) {
+-  .body { padding: 4px; gap: 4px; }
+-  .driverGrid { gap: 4px; }
+-  .driverCard { padding: 4px; }
+-  .driverHeader { flex-direction: column; align-items: flex-start; gap: 2px; }
+-  .driverLabel, .driverValue, .driverBand, .sourceNote { font-size: 12px; line-height: 1.2; }
++:global(.wigo-one-page) {
++  .body { height: 100%; display: flex; flex-direction: column; gap: 3px; padding: 3px 4px; }
++  .driverGrid { flex: 1; min-height: 0; grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 3px; }
++  .driverCard { min-height: 0; display: flex; flex-direction: column; justify-content: center; padding: 2px 6px; }
++  .driverHeader { flex-direction: column; align-items: flex-start; gap: 0; }
++  .driverLabel, .driverValue, .driverBand, .sourceNote { font-size: 11px; line-height: 1.2; letter-spacing: 0; }
+   .driverValue { font-family: v.$font-family-primary; font-variant-numeric: tabular-nums; }
+-  .driverBand { margin-top: 3px; }
++  .driverBand { margin-top: 1px; }
+ }
+--- a/web/components/WiGO/TimeframeComparison.module.scss
++++ b/web/components/WiGO/TimeframeComparison.module.scss
+@@ -161,7 +161,7 @@
+   }
+ }
+ 
+-@media (min-width: 1600px) {
++:global(.wigo-one-page) {
+   .timeframeContainer { min-height: 30px; padding: 0 4px; }
+   .timeframeSelectContainer { padding: 0; }
+   .countsTableTitle, .vsText { font-size: 12px; }
+--- a/web/components/WiGO/ToiLineChart.tsx
++++ b/web/components/WiGO/ToiLineChart.tsx
+@@ -221,7 +221,8 @@
+           display: chartView === "toi", // Only display if view is 'toi'
+           beginAtZero: true,
+           min: 0,
+-          max: 60 * 30,
++          // A floor, not a cap: overtime-heavy games above 30:00 extend the axis instead of being clipped.
++          suggestedMax: 60 * 30,
+           title: {
+             display: false,
+             text: "Time On Ice (Minutes)",
+--- /dev/null
++++ b/web/components/WiGO/ToiLineChart.test.tsx
+@@ -0,0 +1,34 @@
++import React from "react";
++import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
++import { cleanup, render, screen } from "@testing-library/react";
++import { afterEach, describe, expect, it, vi } from "vitest";
++import ToiLineChart from "./ToiLineChart";
++
++const { fetchLogs } = vi.hoisted(() => ({ fetchLogs: vi.fn() }));
++vi.mock("utils/fetchWigoPlayerStats", () => ({ fetchPlayerGameLogStats: fetchLogs }));
++vi.mock("hooks/useWigoPlayerTotals", () => ({
++  default: () => ({ data: { toi_per_game: 1500, pp_toi_pct_per_game: 0.4 }, isLoading: false, error: null })
++}));
++vi.mock("chartjs-plugin-zoom", () => ({ default: {} }));
++vi.mock("react-chartjs-2", () => ({
++  Line: ({ options }: any) => <output data-testid="toi-options">{JSON.stringify(options.scales.yTime)}</output>
++}));
++afterEach(cleanup);
++
++describe("ToiLineChart", () => {
++  it("lets a game above 30:00 extend the time axis instead of clipping it", async () => {
++    fetchLogs.mockResolvedValue([
++      { date: "2026-01-01", toi_per_game: 1500, pp_toi_per_game: 120, pp_toi_pct_per_game: 40 },
++      { date: "2026-01-03", toi_per_game: 2160, pp_toi_per_game: 200, pp_toi_pct_per_game: 45 }
++    ]);
++    render(
++      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
++        <ToiLineChart playerId={1} seasonId={20252026} />
++      </QueryClientProvider>
++    );
++    const axis = JSON.parse((await screen.findByTestId("toi-options")).textContent!);
++    expect(axis.max).toBeUndefined();
++    expect(axis.suggestedMax).toBe(1800);
++    expect(axis.min).toBe(0);
++  });
++});
+--- a/web/components/WiGO/WigoComparisonMatrix.tsx
++++ b/web/components/WiGO/WigoComparisonMatrix.tsx
+@@ -7,7 +7,7 @@
+   WigoStatLabel,
+   isWigoCountChartStat
+ } from "./statMetadata";
+-import { formatCell } from "./tableUtils";
++import { formatCell, formatDiffPercent } from "./tableUtils";
+ import TimeframeComparison from "./TimeframeComparison";
+ import GameLogChart from "./StatsTableRowChart";
+ import styles from "styles/wigoCharts.module.scss";
+@@ -22,6 +22,21 @@
+   "L20"
+ ] as const;
+ 
++// Transposed into two 18-metric halves so 36 metrics × 8 columns stay legible on one screen at 1280px.
++const MATRIX_SPLIT = WIGO_STAT_ORDER.indexOf("G/60");
++export const MATRIX_HALVES = [
++  {
++    title: "Totals and shares",
++    short: "Totals",
++    labels: [...WIGO_STAT_ORDER.slice(0, MATRIX_SPLIT), "IPP"] as WigoStatLabel[]
++  },
++  {
++    title: "Per 60 and on-ice",
++    short: "Rates",
++    labels: WIGO_STAT_ORDER.slice(MATRIX_SPLIT).filter((label) => label !== "IPP") as WigoStatLabel[]
++  }
++];
++
+ interface Props {
+   data: TableAggregateData[];
+   isLoadingAggData: boolean;
+@@ -55,9 +70,7 @@
+       fetchPlayerGameLogForStat(playerId!, currentSeasonId!, selectedMetric),
+     enabled: !!playerId && !!currentSeasonId
+   });
+-  const metrics = WIGO_STAT_ORDER.map(
+-    (label) => data.find((row) => row.label === label) ?? { label }
+-  );
++  const metricsByLabel = new Map(data.map((row) => [row.label, row]));
+   const selectedRow = data.find((row) => row.label === selectedMetric);
+   const gp = data.find((row) => row.label === "GP");
+   const averages = Object.fromEntries(
+@@ -106,95 +119,91 @@
+                   : "")}
+           </span>
+         </div>
+-        <table className={styles.comparisonMatrix}>
+-          <caption className={styles.visuallyHidden}>
+-            Seven timeframes and relative difference across 36 metrics. L and R
+-            mark the selected comparison periods.
+-          </caption>
+-          <colgroup>
+-            <col style={{ width: 78 }} />
+-            {WIGO_STAT_ORDER.map((label) => (
+-              <col key={label} />
+-            ))}
+-          </colgroup>
+-          <thead>
+-            <tr>
+-              <th scope="col">Period</th>
+-              {WIGO_STAT_ORDER.map((label) => (
+-                <th
+-                  scope="col"
+-                  key={label}
+-                  data-selected={label === selectedMetric || undefined}
+-                >
+-                  {label === "GP" ? (
+-                    label
+-                  ) : (
+-                    <button
+-                      type="button"
+-                      aria-label={`Show ${label} game log`}
+-                      aria-pressed={label === selectedMetric}
+-                      aria-controls="wigo-selected-stat"
+-                      onClick={() => setSelectedMetric(label)}
+-                    >
+-                      {label.includes("/") ? (
+-                        <>
+-                          {label.split("/")[0]}
+-                          <wbr />/{label.split("/")[1]}
+-                        </>
+-                      ) : (
+-                        label
+-                      )}
+-                    </button>
+-                  )}
+-                </th>
+-              ))}
+-            </tr>
+-          </thead>
+-          <tbody>
+-            {COMPARISON_PERIODS.map((period) => (
+-              <tr
+-                key={period}
+-                data-left={period === leftTimeframe || undefined}
+-                data-right={period === rightTimeframe || undefined}
+-              >
+-                <th scope="row">
+-                  {period}{" "}
+-                  <span className={styles.periodMarker}>
+-                    {period === leftTimeframe ? "L" : ""}
+-                    {period === rightTimeframe ? "R" : ""}
+-                  </span>
+-                </th>
+-                {metrics.map((row) => (
+-                  <td
+-                    key={row.label}
+-                    data-selected={row.label === selectedMetric || undefined}
+-                  >
+-                    {formatCell(row, period)}
+-                  </td>
++        <div className={styles.matrixHalves}>
++          {MATRIX_HALVES.map((half) => (
++            <table key={half.title} className={styles.comparisonMatrix}>
++              <caption className={styles.visuallyHidden}>
++                {half.title}: seven timeframes and relative difference for{" "}
++                {half.labels.length} metrics. L and R mark the selected
++                comparison periods.
++              </caption>
++              <colgroup>
++                <col className={styles.matrixLabelColumn} />
++                {COMPARISON_PERIODS.map((period) => (
++                  <col key={period} />
+                 ))}
+-              </tr>
+-            ))}
+-            <tr className={styles.matrixDiff}>
+-              <th scope="row">DIFF</th>
+-              {metrics.map((row) => (
+-                <td
+-                  key={row.label}
+-                  data-selected={row.label === selectedMetric || undefined}
+-                  data-diff-sign={typeof row.DIFF === "number" && Number.isFinite(row.DIFF)
+-                    ? row.DIFF < 0 ? "negative" : "positive"
+-                    : undefined}
+-                  style={typeof row.DIFF === "number" && Number.isFinite(row.DIFF)
+-                    ? { "--diff-strength": `${Math.min(Math.abs(row.DIFF), 100)}%` } as React.CSSProperties
+-                    : undefined}
+-                >
+-                  {typeof row.DIFF === "number" && Number.isFinite(row.DIFF)
+-                    ? `${row.DIFF > 0 ? "+" : ""}${row.DIFF.toFixed(1)}%`
+-                    : "-"}
+-                </td>
+-              ))}
+-            </tr>
+-          </tbody>
+-        </table>
++                <col />
++              </colgroup>
++              <thead>
++                <tr>
++                  <th scope="col">{half.short}</th>
++                  {COMPARISON_PERIODS.map((period) => (
++                    <th
++                      scope="col"
++                      key={period}
++                      data-left={period === leftTimeframe || undefined}
++                      data-right={period === rightTimeframe || undefined}
++                    >
++                      {period}
++                      <span className={styles.periodMarker}>
++                        {period === leftTimeframe ? "L" : ""}
++                        {period === rightTimeframe ? "R" : ""}
++                      </span>
++                    </th>
++                  ))}
++                  <th scope="col">DIFF</th>
++                </tr>
++              </thead>
++              <tbody>
++                {half.labels.map((label) => {
++                  const row = metricsByLabel.get(label) ?? { label };
++                  return (
++                    <tr
++                      key={label}
++                      data-selected={label === selectedMetric || undefined}
++                    >
++                      <th scope="row">
++                        {label === "GP" ? (
++                          label
++                        ) : (
++                          <button
++                            type="button"
++                            aria-label={`Show ${label} game log`}
++                            aria-pressed={label === selectedMetric}
++                            aria-controls="wigo-selected-stat"
++                            onClick={() => setSelectedMetric(label)}
++                          >
++                            {label}
++                          </button>
++                        )}
++                      </th>
++                      {COMPARISON_PERIODS.map((period) => (
++                        <td
++                          key={period}
++                          data-left={period === leftTimeframe || undefined}
++                          data-right={period === rightTimeframe || undefined}
++                        >
++                          {formatCell(row, period)}
++                        </td>
++                      ))}
++                      <td
++                        className={styles.matrixDiffCell}
++                        data-diff-sign={typeof row.DIFF === "number" && Number.isFinite(row.DIFF)
++                          ? row.DIFF < 0 ? "negative" : "positive"
++                          : undefined}
++                        style={typeof row.DIFF === "number" && Number.isFinite(row.DIFF)
++                          ? { "--diff-strength": `${Math.min(Math.abs(row.DIFF), 100)}%` } as React.CSSProperties
++                          : undefined}
++                      >
++                        {formatDiffPercent(row.DIFF)}
++                      </td>
++                    </tr>
++                  );
++                })}
++              </tbody>
++            </table>
++          ))}
++        </div>
+       </section>
+       <section
+         id="wigo-selected-stat"
+@@ -202,15 +211,17 @@
+         aria-label="Selected-stat game log"
+         data-coverage="C13"
+       >
+-        <h3>Selected stat game log · {selectedMetric}</h3>
+-        <p>
+-          {currentSeasonId
+-            ? `${String(currentSeasonId).slice(0, 4)}–${String(currentSeasonId).slice(6)}`
+-            : "Season unavailable"}{" "}
+-          · current-season games
+-        </p>
++        <h3>
++          {selectedMetric} game log{" "}
++          <span>
++            {currentSeasonId
++              ? `${String(currentSeasonId).slice(0, 4)}–${String(currentSeasonId).slice(6)}`
++              : "Season unavailable"}{" "}
++            games
++          </span>
++        </h3>
+         <GameLogChart
+-          height={300}
++          fill
+           playerId={playerId ?? 0}
+           seasonId={currentSeasonId ?? 0}
+           statLabel={selectedMetric}
+--- a/web/components/WiGO/WigoDashboardSections.tsx
++++ b/web/components/WiGO/WigoDashboardSections.tsx
+@@ -11,6 +11,7 @@
+ import NameSearchBar from "components/WiGO/NameSearchBar";
+ import RateStatPercentiles from "components/WiGO/RateStatPercentiles";
+ import WigoSectionCard from "./WigoSectionCard";
++import { WIGO_RATING_MIN_COHORT_PEERS } from "utils/calculateWigoRatings";
+ import WigoComparisonMatrix from "./WigoComparisonMatrix";
+ import StatsTable from "components/WiGO/StatsTable";
+ import TimeframeComparison from "components/WiGO/TimeframeComparison";
+@@ -126,7 +127,10 @@
+         {selectedPlayer ? (
+           <div className={styles.playerIdentityCopy}>
+             <span className={styles.playerTeam}>{teamName}</span>
+-            <h2 className={styles.playerName}>
++            <h2
++              className={styles.playerName}
++              data-name-length={selectedPlayer.fullName.length > 22 ? "long" : undefined}
++            >
+               <span>{selectedPlayer.firstName}</span>
+               {selectedPlayer.lastName}
+             </h2>
+@@ -256,7 +260,7 @@
+         />
+       </div>
+       <div className={styles.ratingsContainer} data-coverage="C07">
+-        {desktop ? <WigoSectionCard title="Player ratings" toolbar={<details className="wigo-chart-help"><summary aria-label="Player rating methodology and cohort">ⓘ</summary><p>Weighted percentile composites, using the existing {currentSeasonId} cohorts and minimum {minGp} GP. Overall All/Even combines offense and defense. Special combines PP offense and PK defense with ice-time weighting. Adjust the rate panel’s minimum GP to change the cohort.</p></details>}>
++        {desktop ? <WigoSectionCard title="Player ratings" toolbar={<details className="wigo-chart-help"><summary aria-label="Player rating methodology and cohort">ⓘ</summary><p>Weighted percentile composites, using the existing {currentSeasonId} cohorts and minimum {minGp} GP. Overall All/Even combines offense and defense. Special combines PP offense and PK defense with ice-time weighting. Adjust the rate panel’s minimum GP to change the cohort. A stat needs at least {WIGO_RATING_MIN_COHORT_PEERS} other qualifying players; with fewer, its rating shows “-”.</p></details>}>
+           <PlayerRatingsDisplay playerId={selectedPlayer?.id} seasonId={currentSeasonId} minGp={minGp} />
+         </WigoSectionCard> : <>
+         {selectedPlayer ? (
+--- a/web/components/WiGO/tableUtils.ts
++++ b/web/components/WiGO/tableUtils.ts
+@@ -95,6 +95,14 @@
+  * Assumes time values (ATOI, PPTOI) are consistently in average seconds per game.
+  * Assumes percentage values (S%, PP%, etc.) are consistently scaled 0-100.
+  */
++// Signed relative difference. Four-digit and larger magnitudes drop the decimal so the
++// one-page matrix's DIFF column never needs more than seven characters ("+3585%").
++export const formatDiffPercent = (diff: unknown): string => {
++  if (typeof diff !== "number" || !Number.isFinite(diff)) return "-";
++  const magnitude = Math.abs(diff) >= 1000 ? diff.toFixed(0) : diff.toFixed(1);
++  return `${diff > 0 ? "+" : ""}${magnitude}%`;
++};
++
+ export const formatCell = (
+   row: TableAggregateData,
+   columnKey: keyof Omit<TableAggregateData, "label" | "GP" | "DIFF">
+--- a/web/components/WiGO/tableUtils.test.ts
++++ b/web/components/WiGO/tableUtils.test.ts
+@@ -1,7 +1,7 @@
+ import { describe, expect, it } from "vitest";
+ 
+ import type { TableAggregateData } from "./types";
+-import { computeDiffColumn, formatCell } from "./tableUtils";
++import { computeDiffColumn, formatCell, formatDiffPercent } from "./tableUtils";
+ 
+ describe("computeDiffColumn", () => {
+   it("computes per-game diffs for count stats using GP context", () => {
+@@ -63,3 +63,15 @@
+     expect(formatCell({ label: "Goals", STD: null }, "STD")).toBe("-");
+   });
+ });
++
++describe("formatDiffPercent", () => {
++  it("keeps one decimal below 1000% and drops it above so the DIFF cell stays narrow", () => {
++    expect(formatDiffPercent(272.66)).toBe("+272.7%");
++    expect(formatDiffPercent(-8.14)).toBe("-8.1%");
++    expect(formatDiffPercent(0)).toBe("0.0%");
++    expect(formatDiffPercent(3584.8)).toBe("+3585%");
++    expect(formatDiffPercent(-1021.7)).toBe("-1022%");
++    expect(formatDiffPercent(null)).toBe("-");
++    expect(formatDiffPercent(Number.POSITIVE_INFINITY)).toBe("-");
++  });
++});
+--- a/web/components/WiGO/teamPerformanceDriverModel.ts
++++ b/web/components/WiGO/teamPerformanceDriverModel.ts
+@@ -71,10 +71,10 @@
+   }
+   return [...teams.entries()].map(([team_id, games]) => {
+     const values = [...games.values()];
++    // A major can yield several PP goals from one opportunity, so goals may exceed opportunities in a game.
+     const valid = values.every(row =>
+       [row.pp_opportunities, row.power_play_goals_for, row.times_shorthanded, row.pp_goals_against]
+-        .every(value => value != null && Number.isInteger(value) && value >= 0) &&
+-      row.power_play_goals_for! <= row.pp_opportunities! && row.pp_goals_against! <= row.times_shorthanded!
++        .every(value => value != null && Number.isInteger(value) && value >= 0)
+     );
+     const ppOpp = values.reduce((sum, row) => sum + (row.pp_opportunities ?? 0), 0);
+     const pkOpp = values.reduce((sum, row) => sum + (row.times_shorthanded ?? 0), 0);
+--- a/web/components/WiGO/teamPerformanceDrivers.test.ts
++++ b/web/components/WiGO/teamPerformanceDrivers.test.ts
+@@ -203,6 +203,12 @@
+   it("rejects conflicting observations for a game", () => {
+     expect(() => aggregateTeamSpecialTeams([game, { ...game, power_play_goals_for: 0 }])).toThrow("Conflicting");
+   });
++  it("keeps a season whose game had more PP goals than opportunities (a major penalty)", () => {
++    const major = { ...game, game_id: 2, date: "2026-01-02", pp_opportunities: 1, power_play_goals_for: 2, times_shorthanded: 1, pp_goals_against: 2 };
++    expect(aggregateTeamSpecialTeams([game, major])).toEqual([
++      { team_id: 1, date: "2026-01-02", power_play_pct: 150, penalty_kill_pct: 0 }
++    ]);
++  });
+ });
+ 
+ describe("cumulative five-on-five coverage", () => {
+--- a/web/utils/calculateWigoRatings.ts
++++ b/web/utils/calculateWigoRatings.ts
+@@ -60,13 +60,18 @@
+     );
+ }
+ 
++// A percentile against only a handful of qualifying peers is noise (one peer or none collapses to 50.0),
++// so the page withholds a stat's percentile until this many other players qualify.
++export const WIGO_RATING_MIN_COHORT_PEERS = 20;
++
+ // --- Main Calculation Function ---
+ export function calculatePlayerRatings(
+   playerId: number,
+   rawStats: RawStatsCollection,
+   weightsConfig: RatingWeightsConfig = RATING_WEIGHTS,
+   regressionConfig: RegressionConfig = REGRESSION_CONFIG,
+-  cohortMinGp = 0
++  cohortMinGp = 0,
++  minCohortPeers = 0
+ ): CalculatedPlayerRatings | null {
+   const strengths: Strength[] = ["as", "es", "pp", "pk"];
+   const finalRatings: Partial<CalculatedPlayerRatings> & {
+@@ -128,11 +133,13 @@
+           cohortMinGp
+         );
+ 
+-        const targetRanking = calculateRankingResult(
+-          comparisonRows,
+-          playerId,
+-          higherIsBetter
+-        );
++        const peerCount = comparisonRows.filter(
++          (row) => row.player_id !== playerId
++        ).length;
++        const targetRanking =
++          peerCount >= minCohortPeers
++            ? calculateRankingResult(comparisonRows, playerId, higherIsBetter)
++            : null;
+         const percentile =
+           targetRanking !== null ? targetRanking.percentile * 100 : null;
+         intermediatePercentiles[strength]![String(statKey)] = percentile;
+--- a/web/utils/calculateWigoRatings.test.ts
++++ b/web/utils/calculateWigoRatings.test.ts
+@@ -1,7 +1,7 @@
+ import { describe, expect, it } from "vitest";
+ 
+ import type { RatingWeightsConfig, RawStatsCollection } from "components/WiGO/types";
+-import { calculatePlayerRatings } from "./calculateWigoRatings";
++import { calculatePlayerRatings, WIGO_RATING_MIN_COHORT_PEERS } from "./calculateWigoRatings";
+ 
+ const TEST_WEIGHTS: RatingWeightsConfig = {
+   as: {
+@@ -116,4 +116,30 @@
+     ).toBeCloseTo(57.5, 2);
+     expect(ratings?.offense.as).toBeCloseTo(57.5, 2);
+   });
++
++  it("withholds ratings instead of reporting 50.0 when too few other players qualify", () => {
++    const cohort = (size: number) => Array.from({ length: size }, (_, index) => ({
++      player_id: index + 1, season: 20252026, gp: 12, toi_seconds: 900,
++      total_points_per_60: index + 1, xga_per_60: index + 1, gf_per_60: index + 1, ga_per_60: index + 1
++    }));
++    const stats = (size: number): RawStatsCollection => ({
++      as: { offense: cohort(size), defense: cohort(size) },
++      es: { offense: cohort(size), defense: cohort(size) },
++      pp: { offense: cohort(size), defense: [] },
++      pk: { offense: [], defense: cohort(size) }
++    });
++
++    // Target alone: the old behaviour reported 50.0 for every rating.
++    const alone = calculatePlayerRatings(1, stats(1), TEST_WEIGHTS, undefined, 10, WIGO_RATING_MIN_COHORT_PEERS);
++    expect(alone?.offense.as).toBeNull();
++    expect(alone?.defense.pk).toBeNull();
++    expect(alone?.overall.final).toBeNull();
++    expect(calculatePlayerRatings(1, stats(1), TEST_WEIGHTS, undefined, 10)?.offense.as).toBe(50);
++
++    // One peer short of the minimum still withholds; at the minimum the percentile is real.
++    expect(calculatePlayerRatings(1, stats(WIGO_RATING_MIN_COHORT_PEERS), TEST_WEIGHTS, undefined, 10, WIGO_RATING_MIN_COHORT_PEERS)?.offense.as).toBeNull();
++    const enough = calculatePlayerRatings(1, stats(WIGO_RATING_MIN_COHORT_PEERS + 1), TEST_WEIGHTS, undefined, 10, WIGO_RATING_MIN_COHORT_PEERS);
++    expect(enough?.offense.as).toBeLessThan(10);
++    expect(enough?.defense.as).toBeGreaterThan(90);
++  });
+ });
+--- a/web/utils/fetchWigoPlayerStats.ts
++++ b/web/utils/fetchWigoPlayerStats.ts
+@@ -82,6 +82,13 @@
+       table: "nst_gamelog_as_rates";
+       requiredColumns: string[];
+     } // **** ADDED PTS1/60 Calculation Type ****
++  | {
++      // PP count per 60 PP minutes from the per-game WGO row, matching the aggregate writer's
++      // calculatePer60FromSeconds(wgo_pp*, wgo_pp_toi).
++      calculation: "PP_PER_60";
++      table: "wgo_skater_stats";
++      countColumn: "pp_goals" | "pp_assists" | "pp_points";
++    }
+ > = {
+   // --- From wgo_skater_stats (Likely best source for direct game stats) ---
+   GP: { table: "wgo_skater_stats", column: "games_played" }, // Value is usually 1 per game row
+@@ -135,9 +142,10 @@
+   "iCF/60": { table: "nst_gamelog_as_rates", column: "icf_per_60" },
+   "iHDCF/60": { table: "nst_gamelog_as_rates", column: "hdcf_per_60" }, // NST uses hdcf_per_60
+   "iSCF/60": { table: "nst_gamelog_as_rates", column: "iscfs_per_60" }, // NST uses iscfs_per_60
+-  "PPG/60": { table: "nst_gamelog_as_rates", column: "ppg_per_60" }, // Need powerplay specific table/columns
+-  "PPA/60": { table: "nst_gamelog_as_rates", column: "ppa_per_60" }, // Need powerplay specific table/columns
+-  "PPP/60": { table: "nst_gamelog_as_rates", column: "ppp_per_60" }, // Need powerplay specific table/columns
++  // nst_gamelog_as_rates has no PP columns; these per-PP-minute rates come from the WGO game row.
++  "PPG/60": { calculation: "PP_PER_60", table: "wgo_skater_stats", countColumn: "pp_goals" },
++  "PPA/60": { calculation: "PP_PER_60", table: "wgo_skater_stats", countColumn: "pp_assists" },
++  "PPP/60": { calculation: "PP_PER_60", table: "wgo_skater_stats", countColumn: "pp_points" },
+   "HIT/60": { table: "nst_gamelog_as_rates", column: "hits_per_60" },
+   "BLK/60": { table: "nst_gamelog_as_rates", column: "shots_blocked_per_60" }, // NST uses shots_blocked_per_60
+   "PIM/60": { table: "nst_gamelog_as_rates", column: "pim_per_60" },
+@@ -450,7 +458,8 @@
+             typeof points === "number" &&
+             points > 0
+           ) {
+-            value = (goals + primaryAssists) / points;
++            // Aggregates show PTS1% on a 0–100 scale; the chart's reference lines use the same scale.
++            value = ((goals + primaryAssists) / points) * 100;
+           } else if (points === 0 && (goals > 0 || primaryAssists > 0)) {
+             value = null;
+           } else if (points === 0 && goals === 0 && primaryAssists === 0) {
+@@ -510,6 +519,28 @@
+         "rows"
+       );
+       return calculatedData;
++    } else if ("calculation" in mapping && mapping.calculation === "PP_PER_60") {
++      const { countColumn } = mapping;
++      const { data, error } = await supabase
++        .from("wgo_skater_stats")
++        .select(`date, ${countColumn}, pp_toi_per_game`)
++        .eq("player_id", playerId)
++        .eq("season_id", seasonId)
++        .order("date", { ascending: true });
++      if (error) throw error;
++
++      return (data ?? []).map((item: any) => {
++        const count = item[countColumn];
++        const ppSeconds = item.pp_toi_per_game;
++        return {
++          date: item.date,
++          // No PP time means no PP rate for that game, not a zero rate.
++          value:
++            typeof count === "number" && typeof ppSeconds === "number" && ppSeconds > 0
++              ? (count * 3600) / ppSeconds
++              : null
++        };
++      });
+     } else if ("column" in mapping) {
+       // **** Handle Standard Column Fetching ****
+       const { table, column: statColumn, unit } = mapping;
+@@ -543,10 +574,11 @@
+         data?.map((item: any) => {
+           let value = item[statColumn];
+ 
+-          // Unit handling remains the same (commented out unless needed)
+-          // if (unit === "percent_decimal" && typeof value === 'number' && value > 1) {
+-          //    value = value / 100;
+-          // }
++          // WGO stores S% and PP% as 0–1 fractions while the matrix and reference lines use 0–100.
++          // NST percentage columns are left as stored (their scale is unverified).
++          if (table === "wgo_skater_stats" && unit === "percent_decimal") {
++            value = normalizeWigoAggregateValue(statLabel, value);
++          }
+ 
+           return {
+             date: item[dateColumn], // Use the fetched date column
+--- a/web/utils/fetchWigoPlayerStats.test.ts
++++ b/web/utils/fetchWigoPlayerStats.test.ts
+@@ -305,6 +305,53 @@
+   });
+ });
+ 
++describe("fetchPlayerGameLogForStat units (selected-stat chart)", () => {
++  it("puts WGO fraction percentages on the 0–100 scale the matrix and reference lines use", async () => {
++    installGameLogQueryMock([
++      { date: "2026-01-01", shooting_percentage: 0.25 },
++      { date: "2026-01-02", shooting_percentage: null }
++    ]);
++    await expect(fetchPlayerGameLogForStat(1, 20252026, "S%")).resolves.toEqual([
++      { date: "2026-01-01", value: 25 },
++      { date: "2026-01-02", value: null }
++    ]);
++
++    installGameLogQueryMock([{ date: "2026-01-01", pp_toi_pct_per_game: 0.6 }]);
++    await expect(fetchPlayerGameLogForStat(1, 20252026, "PP%")).resolves.toEqual([
++      { date: "2026-01-01", value: 60 }
++    ]);
++  });
++
++  it("reports PTS1% per game as a percentage", async () => {
++    installGameLogQueryMock([{ date: "2026-01-01", goals: 1, total_primary_assists: 0, points: 2 }]);
++    await expect(fetchPlayerGameLogForStat(1, 20252026, "PTS1%")).resolves.toEqual([
++      { date: "2026-01-01", value: 50 }
++    ]);
++  });
++
++  it("derives PP per-60 rates from WGO PP counts and PP seconds, with no rate when there was no PP time", async () => {
++    installGameLogQueryMock([
++      { date: "2026-01-01", pp_points: 1, pp_toi_per_game: 240 },
++      { date: "2026-01-02", pp_points: 0, pp_toi_per_game: 0 },
++      { date: "2026-01-03", pp_points: 0, pp_toi_per_game: 180 }
++    ]);
++    await expect(fetchPlayerGameLogForStat(8478402, 20252026, "PPP/60")).resolves.toEqual([
++      { date: "2026-01-01", value: 15 },
++      { date: "2026-01-02", value: null },
++      { date: "2026-01-03", value: 0 }
++    ]);
++    expect(queryTraces.at(-1)).toEqual({
++      table: "wgo_skater_stats",
++      calls: [
++        ["select", "date, pp_points, pp_toi_per_game"],
++        ["eq", "player_id", 8478402],
++        ["eq", "season_id", 20252026],
++        ["order", "date", { ascending: true }]
++      ]
++    });
++  });
++});
++
+ describe("fetchPaginatedData query contract", () => {
+   it("uses stable player ordering through every page", async () => {
+     const rows = Array.from({ length: 501 }, (_, index) => ({
+--- /dev/null
++++ b/web/e2e/wigo-one-page.spec.ts
+@@ -0,0 +1,160 @@
++import { expect, test, type Page } from "@playwright/test";
++import { WIGO_STAT_ORDER } from "../components/WiGO/statMetadata";
++import { installWigoFixtures, WIGO_FIXTURE_PLAYER_ID, type FixtureLogEntry } from "./fixtures/wigo/wigoFixtures";
++
++// TJ's one-page WiGO dashboard (2026-10-25): at ≥1280×800 every component is on one screen with nothing scrolling,
++// clipped or below 11px; narrower or shorter viewports flow the same panels and let the page scroll instead.
++// All data is fictional (fixtures/wigo); no request leaves the local server.
++
++const COVERAGE = Array.from({ length: 19 }, (_, index) => `C${String(index + 1).padStart(2, "0")}`);
++const PERIODS = ["STD", "LY", "CA", "3YA", "L5", "L10", "L20"];
++
++async function open(page: Page, { player = true, longName = false } = {}) {
++  const log: FixtureLogEntry[] = [];
++  await installWigoFixtures(page, { longName, log: (entry) => log.push(entry) });
++  await page.goto(player ? `/wigoCharts?playerId=${WIGO_FIXTURE_PLAYER_ID}` : "/wigoCharts");
++  if (player) {
++    await expect(page.locator('[data-coverage="C19"] meter')).toHaveCount(16, { timeout: 60_000 });
++    await expect(page.locator('[data-coverage="C14"]')).toContainText("GP", { timeout: 60_000 });
++    await expect(page.locator('[data-coverage="C08 C09 C10 C11"] article')).toHaveCount(4, { timeout: 60_000 });
++  } else {
++    await expect(page.locator('[data-coverage="C12"]')).toBeVisible({ timeout: 60_000 });
++  }
++  await page.mouse.move(0, 0);
++  await page.waitForTimeout(800);
++  return log;
++}
++
++async function measure(page: Page) {
++  return page.evaluate(() => {
++    const root = document.querySelector('[class*="wigoDashboardContent"]')!;
++    const visible = (element: Element) => {
++      const bounds = element.getBoundingClientRect();
++      return bounds.width > 0 && bounds.height > 0;
++    };
++    const ignored = (element: Element) =>
++      String(element.className).includes("visuallyHidden") || !!element.closest("details:not([open])");
++    const panels = Array.from(root.querySelectorAll<HTMLElement>("[data-coverage]")).filter(visible);
++    return {
++      document: [document.documentElement.scrollWidth, document.documentElement.scrollHeight],
++      coverage: panels.flatMap((element) => element.dataset.coverage!.split(" ")),
++      outside: panels
++        .filter((element) => {
++          const bounds = element.getBoundingClientRect();
++          return bounds.left < -1 || bounds.top < -1 || bounds.right > innerWidth + 1 || bounds.bottom > innerHeight + 1;
++        })
++        .map((element) => element.dataset.coverage),
++      overflowing: Array.from(root.querySelectorAll<HTMLElement>("*"))
++        .filter((element) =>
++          visible(element) && !ignored(element) && getComputedStyle(element).display !== "inline" &&
++          (element.scrollWidth > element.clientWidth + 1 || element.scrollHeight > element.clientHeight + 1))
++        .map((element) => `${element.closest<HTMLElement>("[data-coverage]")?.dataset.coverage} ${element.className} "${element.innerText.slice(0, 40)}"`),
++      clippedCells: Array.from(root.querySelectorAll("th, td"))
++        .filter((cell) => {
++          const bounds = cell.getBoundingClientRect();
++          const walker = document.createTreeWalker(cell, NodeFilter.SHOW_TEXT);
++          let node;
++          while ((node = walker.nextNode())) {
++            if (!node.textContent?.trim() || ignored(node.parentElement!)) continue;
++            const range = document.createRange();
++            range.selectNodeContents(node);
++            const text = range.getBoundingClientRect();
++            if (text.left < bounds.left - 1 || text.right > bounds.right + 1 || text.top < bounds.top - 1 || text.bottom > bounds.bottom + 1) return true;
++          }
++          return false;
++        })
++        .map((cell) => cell.textContent),
++      smallText: Array.from(root.querySelectorAll<HTMLElement>("*"))
++        .filter((element) =>
++          visible(element) && !ignored(element) &&
++          Array.from(element.childNodes).some((node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) &&
++          parseFloat(getComputedStyle(element).fontSize) < 11)
++        .map((element) => `${element.textContent?.slice(0, 30)} ${getComputedStyle(element).fontSize}`)
++    };
++  });
++}
++
++for (const [width, height] of [[1280, 800], [1440, 900], [1920, 1080]]) {
++  test(`every WiGO component fits one ${width}×${height} screen`, async ({ page }) => {
++    test.setTimeout(120_000);
++    await page.setViewportSize({ width, height });
++    const log = await open(page);
++    const result = await measure(page);
++    expect(result.document, JSON.stringify(result)).toEqual([width, height]);
++    for (const id of COVERAGE) expect(result.coverage).toContain(id);
++    expect(result.outside).toEqual([]);
++    expect(result.overflowing).toEqual([]);
++    expect(result.clippedCells).toEqual([]);
++    expect(result.smallText).toEqual([]);
++    await expect(page.getByText("WiGO workflow")).toHaveCount(0);
++    expect(log.filter((entry) => entry.kind === "blocked-write")).toEqual([]);
++    await page.screenshot({ path: test.info().outputPath(`wigo-one-page-${width}x${height}.png`) });
++  });
++}
++
++test("the comparison matrix shows all 36 metrics in two transposed halves and drives the game log", async ({ page }) => {
++  test.setTimeout(120_000);
++  await page.setViewportSize({ width: 1280, height: 800 });
++  await open(page);
++  const matrix = page.locator('[data-coverage="C12"]');
++  const tables = matrix.locator("table");
++  await expect(tables).toHaveCount(2);
++  const labels: string[] = [];
++  for (const table of await tables.all()) {
++    await expect(table.locator("thead th")).toHaveCount(9);
++    await expect(table.locator("tbody tr")).toHaveCount(18);
++    labels.push(...(await table.getByRole("rowheader").allTextContents()));
++  }
++  expect([...labels].sort()).toEqual([...WIGO_STAT_ORDER].sort());
++  expect(await tables.first().locator("thead th").allTextContents()).toEqual(["Totals", "STDL", "LY", "CAR", "3YA", "L5", "L10", "L20", "DIFF"]);
++  await expect(matrix.getByRole("button", { name: "Show GP game log", exact: true })).toHaveCount(0);
++
++  const selected = page.locator("#wigo-selected-stat");
++  const before = await selected.boundingBox();
++  for (const metric of ["Goals", "ATOI", "S%", "PPP/60"]) {
++    await matrix.getByRole("button", { name: `Show ${metric} game log`, exact: true }).click();
++    await expect(selected.locator("h3")).toContainText(metric);
++    await expect(selected).not.toContainText("Failed to load");
++    expect(await selected.boundingBox()).toEqual(before);
++  }
++  await expect(page.getByRole("button", { name: /^Toggle .* reference$/ })).toHaveCount(PERIODS.length);
++
++  await page.getByLabel("Select left timeframe for comparison").selectOption("L10");
++  await expect(tables.first().locator('thead th[data-left]')).toHaveText("L10L");
++  await expect(tables.first().locator("tbody tr").first().locator("td[data-left]")).toHaveCount(1);
++  expect((await measure(page)).overflowing).toEqual([]);
++});
++
++test("a long name and the no-player state stay on one 1280×800 screen", async ({ page }) => {
++  test.setTimeout(120_000);
++  await page.setViewportSize({ width: 1280, height: 800 });
++  await open(page, { longName: true });
++  await expect(page.locator('[data-coverage="C02 C03"]')).toContainText("Beauvillier-Johnson", { ignoreCase: true });
++  let result = await measure(page);
++  expect(result.document).toEqual([1280, 800]);
++  expect(result.overflowing).toEqual([]);
++
++  await page.getByRole("button", { name: "Clear", exact: true }).click();
++  await expect(page).not.toHaveURL(/playerId=/);
++  // Clear refocuses search; its transient status line floats over the page like the results list.
++  await expect(page.locator('[data-coverage="C01"]').getByText("Loading...", { exact: true })).toHaveCount(0);
++  result = await measure(page);
++  expect(result.document).toEqual([1280, 800]);
++  expect(result.outside).toEqual([]);
++  expect(result.overflowing).toEqual([]);
++});
++
++for (const [width, height] of [[1024, 768], [1280, 700]]) {
++  test(`${width}×${height} flows every panel without clipping instead of fitting one screen`, async ({ page }) => {
++    test.setTimeout(120_000);
++    await page.setViewportSize({ width, height });
++    await open(page);
++    const result = await measure(page);
++    for (const id of COVERAGE) expect(result.coverage).toContain(id);
++    expect(result.document[0]).toBe(width);
++    expect(result.document[1]).toBeGreaterThan(height);
++    expect(result.overflowing).toEqual([]);
++    expect(result.clippedCells).toEqual([]);
++    expect(result.smallText).toEqual([]);
++  });
++}
+--- /dev/null
++++ b/web/e2e/fixtures/wigo/wigoFixtures.ts
+@@ -0,0 +1,278 @@
++import type { Page } from "@playwright/test";
++import schemaJson from "./schema.json";
++
++// Fictional-data PostgREST emulator for the WiGO one-page layout checks. Every Supabase REST/RPC request is answered
++// from deterministic, schema-shaped fictional rows (the column list comes from database-generated.types.ts), and every
++// other non-loopback request is aborted. These numbers are layout fixtures only: they are not internally consistent
++// statistics and establish nothing about production data.
++
++type Row = Record<string, any>;
++type Filter = { column: string; negate: boolean; op: string; value: string };
++type Schema = Record<string, Record<string, string>>;
++export type FixtureLogEntry = Record<string, unknown> & { kind: string };
++
++const schema = schemaJson as Schema;
++export const WIGO_FIXTURE_PLAYER_ID = 9900001;
++const TEAM_ID = 23; // VAN
++const SEASON = 20252026;
++const SEASONS = [20212022, 20222023, 20232024, 20242025, 20252026];
++const OTHER_PEOPLE: Array<[number, string, string, string]> = [
++  [9900002, "Jordan", "Placeholder", "L"],
++  [9900003, "Casey", "Samplesson", "D"],
++  [9900004, "Riley", "Fixture", "R"],
++  [9900005, "Morgan", "Testerov", "C"]
++];
++const TEAMS: Array<[number, string]> = [[1, "NJD"], [2, "NYI"], [3, "NYR"], [4, "PHI"], [5, "PIT"], [6, "BOS"], [7, "BUF"], [8, "MTL"], [9, "OTT"], [10, "TOR"], [12, "CAR"], [13, "FLA"], [14, "TBL"], [15, "WSH"], [16, "CHI"], [17, "DET"], [18, "NSH"], [19, "STL"], [20, "CGY"], [21, "COL"], [22, "EDM"], [23, "VAN"], [24, "ANA"], [25, "DAL"], [26, "LAK"], [28, "SJS"], [29, "CBJ"], [30, "MIN"], [52, "WPG"], [54, "VGK"], [55, "SEA"], [68, "UTA"]];
++const SCHEDULE_OPPONENTS = ["BOS", "MTL", "TOR", "EDM", "CGY", "SEA", "LAK", "ANA", "SJS", "VGK", "COL", "DAL", "MIN", "WPG", "CHI", "STL", "NSH", "UTA", "NJD", "NYR", "PHI", "PIT"];
++
++// Circle-method round robin: every team plays once on each of 82 fixture dates, so team tables are complete.
++const LEAGUE_GAMES: Array<{ id: number; d: number; home: [number, string]; away: [number, string] }> = [];
++for (let d = 0; d < 82; d++) {
++  const order = [TEAMS[0], ...TEAMS.slice(1).map((_, i) => TEAMS[1 + ((i + d) % 31)])];
++  for (let k = 0; k < 16; k++) {
++    const [a, b] = [order[k], order[31 - k]];
++    LEAGUE_GAMES.push({ id: 990000001 + LEAGUE_GAMES.length, d, home: d % 2 ? a : b, away: d % 2 ? b : a });
++  }
++}
++
++const hash = (text: string) => {
++  let h = 2166136261;
++  for (const ch of text) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
++  return ((h >>> 0) % 100000) / 100000;
++};
++const dateFor = (index: number) =>
++  new Date(Date.UTC(2025, 9, 8) + Math.round(index * 2.2) * 86400000).toISOString().slice(0, 10);
++const isDateColumn = (column: string) => /^(date|game_date|date_scraped|gameDate|startTime)$/.test(column);
++const ENTITY_COLUMNS = ["player_id", "playerId", "team_id", "teamId", "id", "goalie_id"];
++
++function value(table: string, column: string, type: string, row: Row): unknown {
++  const r = hash(`${table}.${column}.${row.__i}.${row.__entity}`);
++  if (column in row) return row[column];
++  if (isDateColumn(column)) return row.__date ?? dateFor(row.__i);
++  if (/season/i.test(column)) return /string/.test(type) ? String(row.__season) : row.__season;
++  if (/^(player_id|playerId|goalie_id)$/.test(column)) return row.__entity;
++  if (/^game_?id$|^gameId$/i.test(column)) return 990000001 + row.__i;
++  if (/^(team_id|teamId|current_team_id)$/.test(column)) return row.__team ?? TEAM_ID;
++  if (/opponent.*id|_team_id$/.test(column)) return 1 + Math.floor(r * 32);
++  if (type.includes("boolean")) return false;
++  if (type.includes("Json")) return {};
++  if (!type.includes("number")) {
++    if (/abbrev/.test(column)) return "VAN";
++    if (/team.*name|team_full/.test(column)) return "Vancouver Canucks";
++    if (/position/i.test(column)) return row.__position ?? "C";
++    if (/first/i.test(column)) return row.__first ?? "Sam";
++    if (/last/i.test(column)) return row.__last ?? "Sample";
++    if (/full|name/i.test(column)) return `${row.__first ?? "Sam"} ${row.__last ?? "Sample"}`;
++    if (/image|url|headshot/.test(column)) return null;
++    if (/birth_?date|birthDate/i.test(column)) return "1998-04-12";
++    if (/shoots|catches/.test(column)) return "L";
++    if (/home_road|homeRoad/i.test(column)) return r > 0.5 ? "H" : "R";
++    if (/date|_at$/.test(column)) return row.__date ?? dateFor(row.__i);
++    return "fixture";
++  }
++  const window = row.__games ?? 1;
++  if (/(^|_)gp$|games_played|^numgames$|^count$/.test(column)) {
++    const prefix = column.match(/^(l5|l10|l20)_/);
++    return prefix ? Number(prefix[1].slice(1)) : row.__games ?? 76;
++  }
++  if (/height/i.test(column)) return 185;
++  if (/weight/i.test(column)) return 88;
++  if (/sweater|number/.test(column)) return 17;
++  if (/(^|_)ipp$/.test(column)) return Number((0.5 + r * 0.4).toFixed(3));
++  if (/pct|percentage|_percent|^sh_|shooting/.test(column)) return Number((0.25 + r * 0.5).toFixed(3));
++  if (/atoi/.test(column)) return Number((15 + r * 7).toFixed(2));
++  if (/pp.*toi|toi.*pp/.test(column)) return Math.round(90 + r * 180) * (window > 1 && !/per_game|pct/.test(column) ? window : 1);
++  if (/toi/.test(column)) return Math.round(1000 + r * 400) * (window > 1 && !/per_game|per_gp|avg/.test(column) ? window : 1);
++  if (/per_60|_60$|per60/.test(column)) return Number((0.4 + r * 3).toFixed(2));
++  if (/per_game|per_gp|^avg/.test(column)) return Number((r * 1.2).toFixed(2));
++  if (/rank/.test(column)) return 1 + Math.floor(r * 400);
++  if (/x?g[af]$|xg|cf$|ca$|ff$|fa$|sf$|sa$|scf|sca|hdcf|hdca/.test(column)) return Number((((5 + r * 20) * window) / 10).toFixed(2));
++  if (/game_score/.test(column)) return Number((r * 3 - 0.5).toFixed(2));
++  if (/plus_minus|plusminus/.test(column)) return Math.round((r - 0.5) * 4);
++  return Math.round(r * 3 * window);
++}
++
++function baseRows(table: string, filters: Filter[], people: Array<[number, string, string, string]>): Row[] {
++  const names = Object.keys(schema[table] ?? {});
++  const eq = Object.fromEntries(filters.filter((f) => f.op === "eq").map((f) => [f.column, f.value]));
++  const entityColumn = ENTITY_COLUMNS.find((column) => column in eq && names.includes(column));
++  const seasonColumn =
++    ["season", "season_id", "seasonId", "season_id_int"].find((column) => names.includes(column)) ??
++    names.find((column) => /season/i.test(column));
++  const dated = names.some(isDateColumn);
++  const teamTable = /team/.test(table) && !names.includes("player_id");
++  const rows: Row[] = [];
++  const push = (extra: Row) => rows.push({ __i: rows.length, __season: SEASON, ...extra });
++  if (table === "players") {
++    for (const [id, first, last, position] of people)
++      push({ __entity: id, id, firstName: first, lastName: last, fullName: `${first} ${last}`, position, sweater_number: 17, team_id: TEAM_ID, birthDate: "1998-04-12", heightInCentimeters: 185, weightInKilograms: 88, image_url: null, __first: first, __last: last, __position: position });
++    return rows;
++  }
++  if (table === "games") {
++    for (const g of LEAGUE_GAMES)
++      push({ __entity: g.id, id: g.id, date: dateFor(g.d), seasonId: SEASON, type: 2, homeTeamId: g.home[0], awayTeamId: g.away[0], startTime: `${dateFor(g.d)}T23:00:00Z` });
++    return rows;
++  }
++  if (table === "nst_team_5v5") {
++    for (const g of LEAGUE_GAMES)
++      for (const [id, abbrev] of [g.home, g.away]) {
++        const r = (k: string) => hash(`${k}${g.id}${id}`);
++        push({ __entity: id, __team: id, team_abbreviation: abbrev, date: dateFor(g.d), gp: 1, xgf: Number((1.6 + r("xgf") * 1.6).toFixed(2)), xga: Number((1.6 + r("xga") * 1.6).toFixed(2)), gf: Math.floor(r("gf") * 4) });
++      }
++    return rows;
++  }
++  if (table === "wgo_team_stats") {
++    for (const g of LEAGUE_GAMES)
++      for (const [id] of [g.home, g.away]) {
++        const r = (k: string) => hash(`${k}${g.id}${id}`);
++        const opp = 1 + Math.floor(r("o") * 4);
++        const sh = 1 + Math.floor(r("s") * 4);
++        push({ __entity: id, __team: id, team_id: id, game_id: g.id, date: dateFor(g.d), season_id: SEASON, pp_opportunities: opp, power_play_goals_for: Math.floor(r("p") * (opp + 1) * 0.5), times_shorthanded: sh, pp_goals_against: Math.floor(r("k") * (sh + 1) * 0.4) });
++      }
++    return rows;
++  }
++  const entity = entityColumn ? Number(eq[entityColumn]) : null;
++  const season = seasonColumn && eq[seasonColumn] ? Number(eq[seasonColumn]) : SEASON;
++  if (entity && dated) {
++    for (let i = 0; i < 76; i++) push({ __entity: entity, __season: season, __team: teamTable ? entity : TEAM_ID, games_played: 1, game_type: 2 });
++  } else if (entity && table.startsWith("wigo_")) {
++    push({ __entity: entity, __season: season, __games: 76 });
++  } else if (entity) {
++    for (const s of seasonColumn && eq[seasonColumn] ? [season] : SEASONS) push({ __entity: entity, __season: s, __games: s === SEASON ? 76 : 80 });
++  } else {
++    for (let p = 0; p < 420; p++) push({ __entity: p === 0 ? WIGO_FIXTURE_PLAYER_ID : 9910000 + p, __season: season, __games: 20 + (p % 60) });
++  }
++  return rows;
++}
++
++function materialize(table: string, rows: Row[], select: string | null) {
++  const columns = schema[table] ?? {};
++  const wanted =
++    !select || select.trim() === "*"
++      ? Object.keys(columns)
++      : select.split(",").map((c) => c.trim().split(":").pop()!.split("::")[0]).filter((c) => c && !c.includes("("));
++  return rows.map((row) => Object.fromEntries(wanted.map((column) => [column, value(table, column, columns[column] ?? "number", row)])));
++}
++
++function parseFilters(params: Array<[string, string]>): Filter[] {
++  const filters: Filter[] = [];
++  for (const [column, raw] of params) {
++    if (["select", "order", "limit", "offset", "or", "and", "on_conflict", "columns"].includes(column)) continue;
++    const match = raw.match(/^(not\.)?(\w+)\.(.*)$/);
++    if (match) filters.push({ column, negate: !!match[1], op: match[2], value: match[3] });
++  }
++  return filters;
++}
++
++function applyFilters(table: string, rows: Row[], filters: Filter[]) {
++  const columns = schema[table] ?? {};
++  const test = (v: any, f: Filter) => {
++    if (v === undefined) return true;
++    const operand = typeof v === "number" ? Number(f.value) : f.value;
++    switch (f.op) {
++      case "eq": return String(v) === f.value;
++      case "neq": return String(v) !== f.value;
++      case "gt": return v > operand;
++      case "gte": return v >= operand;
++      case "lt": return v < operand;
++      case "lte": return v <= operand;
++      case "in": return f.value.replace(/^\(|\)$/g, "").split(",").map((s) => s.replace(/"/g, "")).includes(String(v));
++      case "is": return f.value === "null" ? v === null : true;
++      case "ilike":
++      case "like": return new RegExp(f.value.replace(/[%*]/g, ".*"), "i").test(String(v));
++      default: return true;
++    }
++  };
++  return rows.filter((row) =>
++    filters.every((f) => f.negate !== test(f.column in columns || f.column in row ? value(table, f.column, columns[f.column] ?? "number", row) : undefined, f))
++  );
++}
++
++function rpc(name: string) {
++  if (name === "get_skater_game_scores_for_season")
++    return Array.from({ length: 76 }, (_, i) => ({ game_date: dateFor(i), game_score: Number((hash(`gs${i}`) * 3 - 0.4).toFixed(2)) }));
++  if (name === "get_skaters_avg_stats")
++    return Array.from({ length: 420 }, (_, p) => {
++      const r = (k: string) => Number((hash(`${k}${p}`) * (k === "avgplusminus" ? 1 : 2)).toFixed(3));
++      return { id: p === 0 ? WIGO_FIXTURE_PLAYER_ID : 9910000 + p, avggoals: r("avggoals") / 3, avgassists: r("avgassists") / 2, avgplusminus: r("avgplusminus") - 0.5, avgpim: r("avgpim") / 2, avghits: r("avghits") * 1.5, avgblockedshots: r("avgblockedshots"), avgpowerplaypoints: r("avgpowerplaypoints") / 4, avgshots: r("avgshots") * 2, numgames: 20 + (p % 60) };
++    });
++  return [];
++}
++
++const seasonResponse = { seasonId: SEASON, regularSeasonStartDate: "2025-10-07", regularSeasonEndDate: "2026-04-16", seasonEndDate: "2026-06-20", numberOfGames: 82, lastSeasonId: 20242025, lastRegularSeasonStartDate: "2024-10-04", lastRegularSeasonEndDate: "2025-04-17", lastSeasonEndDate: "2025-06-17", lastNumberOfGames: 82 };
++
++const teamSchedule = () => ({
++  games: Array.from({ length: 82 }, (_, i) => {
++    const home = i % 2 === 1;
++    const opponent = { id: 1 + (i % 22), abbrev: SCHEDULE_OPPONENTS[i % 22] };
++    const own = { id: TEAM_ID, abbrev: "VAN" };
++    const played = i < 76;
++    const a = Math.floor(hash(`sa${i}`) * 5);
++    const b = Math.floor(hash(`sb${i}`) * 5);
++    return {
++      id: 990000001 + i, season: SEASON, gameType: 2, gameScheduleState: "OK", gameDate: dateFor(i), startTimeUTC: `${dateFor(i)}T23:00:00Z`, gameState: played ? "OFF" : "FUT",
++      homeTeam: { ...(home ? own : opponent), ...(played ? { score: a } : {}) },
++      awayTeam: { ...(home ? opponent : own), ...(played ? { score: a === b ? b + 1 : b } : {}) },
++      gameOutcome: played ? { lastPeriodType: i % 9 === 0 ? "OT" : "REG" } : undefined
++    };
++  })
++});
++
++export async function installWigoFixtures(
++  page: Page,
++  { longName = false, log = () => {} }: { longName?: boolean; log?: (entry: FixtureLogEntry) => void } = {}
++) {
++  const people: Array<[number, string, string, string]> = [
++    longName ? [WIGO_FIXTURE_PLAYER_ID, "Jean-Christophe", "Beauvillier-Johnson", "D"] : [WIGO_FIXTURE_PLAYER_ID, "Alex", "Fictional", "C"],
++    ...OTHER_PEOPLE
++  ];
++  await page.route("**/*", async (route) => {
++    const request = route.request();
++    const url = new URL(request.url());
++    const loopback = ["127.0.0.1", "localhost"].includes(url.hostname);
++    if (url.pathname.includes("/rest/v1/")) {
++      if (request.method() === "OPTIONS")
++        return route.fulfill({ status: 204, headers: { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "GET,POST,HEAD", "access-control-expose-headers": "content-range" } });
++      const target = url.pathname.split("/rest/v1/")[1];
++      if (!["GET", "HEAD", "POST"].includes(request.method()) || (request.method() === "POST" && !target.startsWith("rpc/"))) {
++        log({ kind: "blocked-write", method: request.method(), path: url.pathname });
++        return route.abort();
++      }
++      if (target.startsWith("rpc/")) {
++        const body = rpc(target.slice(4));
++        log({ kind: "rpc", name: target, rows: body.length });
++        return route.fulfill({ status: 200, headers: { "content-type": "application/json", "access-control-allow-origin": "*" }, body: JSON.stringify(body) });
++      }
++      const filters = parseFilters([...url.searchParams.entries()]);
++      let rows = applyFilters(target, baseRows(target, filters, people), filters);
++      const order = url.searchParams.get("order");
++      if (order) {
++        const [column, direction] = order.split(",")[0].split(".");
++        const key = (row: Row) => value(target, column, schema[target]?.[column] ?? "number", row) as any;
++        rows.sort((a, b) => (key(a) > key(b) ? 1 : key(a) < key(b) ? -1 : 0) * (direction === "desc" ? -1 : 1));
++      }
++      const range = request.headers()["range"]?.match(/(\d+)-(\d+)/);
++      const offset = Number(url.searchParams.get("offset") ?? range?.[1] ?? 0);
++      const limit = Number(url.searchParams.get("limit") ?? (range ? Number(range[2]) - Number(range[1]) + 1 : 1000));
++      const total = rows.length;
++      rows = rows.slice(offset, offset + Math.min(limit, 1000));
++      let body = materialize(target, rows, url.searchParams.get("select"));
++      const single = /vnd\.pgrst\.object/.test(request.headers()["accept"] ?? "");
++      if (single && body.length > 1) body = [body.find((_, index) => rows[index].__season === SEASON) ?? body[0]];
++      log({ kind: "rest", table: target, rows: body.length, total });
++      return route.fulfill({
++        status: single && body.length !== 1 ? 406 : 200,
++        headers: { "content-type": "application/json", "content-range": `${offset}-${offset + body.length - 1}/${total}`, "access-control-allow-origin": "*", "access-control-expose-headers": "content-range" },
++        body: JSON.stringify(single ? body[0] ?? { code: "PGRST116", message: "fixture: no row" } : body)
++      });
++    }
++    if (loopback && url.pathname === "/api/v1/season") return route.fulfill({ json: seasonResponse });
++    if (loopback && url.pathname === "/api/cors" && /club-schedule-season/.test(url.searchParams.get("url") ?? ""))
++      return route.fulfill({ json: teamSchedule() });
++    if (loopback) return route.continue();
++    // Public font files only, so typography matches the site; never data.
++    if (request.method() === "GET" && ["fonts.googleapis.com", "fonts.gstatic.com"].includes(url.hostname)) return route.continue();
++    log({ kind: "deny", target: `${url.origin}${url.pathname}` });
++    return route.abort();
++  });
++}
+--- /dev/null
++++ b/web/e2e/fixtures/wigo/schema.json
+@@ -0,0 +1 @@
++{"games":{"awayTeamId":"number","created_at":"string","date":"string","homeTeamId":"number","id":"number","seasonId":"number","startTime":"string","type":"number | null"},"nst_gamelog_as_counts":{"date_scraped":"string","faceoffs_lost":"number | null","faceoffs_percentage":"number | null","faceoffs_won":"number | null","first_assists":"number | null","giveaways":"number | null","goals":"number | null","gp":"number | null","hdcf":"number | null","hits":"number | null","hits_taken":"number | null","icf":"number | null","id":"number","iff":"number | null","ipp":"number | null","iscfs":"number | null","ixg":"number | null","major_penalties":"number | null","minor_penalties":"number | null","misconduct_penalties":"number | null","penalties_drawn":"number | null","pim":"number | null","player_id":"number","rebounds_created":"number | null","rush_attempts":"number | null","season":"number","second_assists":"number | null","sh_percentage":"number | null","shots":"number | null","shots_blocked":"number | null","takeaways":"number | null","toi":"number | null","total_assists":"number | null","total_penalties":"number | null","total_points":"number | null"},"nst_gamelog_as_counts_oi":{"ca":"number | null","cf":"number | null","cf_pct":"number | null","date_scraped":"string","def_zone_faceoffs":"number | null","def_zone_starts":"number | null","fa":"number | null","ff":"number | null","ff_pct":"number | null","ga":"number | null","gf":"number | null","gf_pct":"number | null","gp":"number | null","hdca":"number | null","hdcf":"number | null","hdcf_pct":"number | null","hdga":"number | null","hdgf":"number | null","hdgf_pct":"number | null","id":"number","ldca":"number | null","ldcf":"number | null","ldcf_pct":"number | null","ldga":"number | null","ldgf":"number | null","ldgf_pct":"number | null","mdca":"number | null","mdcf":"number | null","mdcf_pct":"number | null","mdga":"number | null","mdgf":"number | null","mdgf_pct":"number | null","neu_zone_faceoffs":"number | null","neu_zone_starts":"number | null","off_zone_faceoff_pct":"number | null","off_zone_faceoffs":"number | null","off_zone_start_pct":"number | null","off_zone_starts":"number | null","on_ice_sh_pct":"number | null","on_ice_sv_pct":"number | null","on_the_fly_starts":"number | null","pdo":"number | null","player_id":"number","sa":"number | null","sca":"number | null","scf":"number | null","scf_pct":"number | null","season":"number","sf":"number | null","sf_pct":"number | null","shots_blocked":"number | null","toi":"number | null","xga":"number | null","xgf":"number | null","xgf_pct":"number | null"},"nst_gamelog_as_rates":{"date_scraped":"string","faceoffs_lost_per_60":"number | null","faceoffs_percentage":"number | null","faceoffs_won_per_60":"number | null","first_assists_per_60":"number | null","giveaways_per_60":"number | null","goals_per_60":"number | null","gp":"number | null","hdcf_per_60":"number | null","hits_per_60":"number | null","hits_taken_per_60":"number | null","icf_per_60":"number | null","id":"number","iff_per_60":"number | null","ipp":"number | null","iscfs_per_60":"number | null","ixg_per_60":"number | null","major_penalties_per_60":"number | null","minor_penalties_per_60":"number | null","misconduct_penalties_per_60":"number | null","penalties_drawn_per_60":"number | null","pim_per_60":"number | null","player_id":"number","rebounds_created_per_60":"number | null","rush_attempts_per_60":"number | null","season":"number","second_assists_per_60":"number | null","sh_percentage":"number | null","shots_blocked_per_60":"number | null","shots_per_60":"number | null","takeaways_per_60":"number | null","toi":"number | null","toi_per_gp":"number | null","total_assists_per_60":"number | null","total_penalties_per_60":"number | null","total_points_per_60":"number | null"},"nst_gamelog_as_rates_oi":{"ca_per_60":"number | null","cf_pct":"number | null","cf_per_60":"number | null","date_scraped":"string","def_zone_faceoffs_per_60":"number | null","def_zone_starts_per_60":"number | null","fa_per_60":"number | null","ff_pct":"number | null","ff_per_60":"number | null","ga_per_60":"number | null","gf_pct":"number | null","gf_per_60":"number | null","gp":"number | null","hdca_per_60":"number | null","hdcf_pct":"number | null","hdcf_per_60":"number | null","hdga_per_60":"number | null","hdgf_pct":"number | null","hdgf_per_60":"number | null","id":"number","ldca_per_60":"number | null","ldcf_pct":"number | null","ldcf_per_60":"number | null","ldga_per_60":"number | null","ldgf_pct":"number | null","ldgf_per_60":"number | null","mdca_per_60":"number | null","mdcf_pct":"number | null","mdcf_per_60":"number | null","mdga_per_60":"number | null","mdgf_pct":"number | null","mdgf_per_60":"number | null","neu_zone_faceoffs_per_60":"number | null","neu_zone_starts_per_60":"number | null","off_zone_faceoff_pct":"number | null","off_zone_faceoffs_per_60":"number | null","off_zone_start_pct":"number | null","off_zone_starts_per_60":"number | null","on_ice_sh_pct":"number | null","on_ice_sv_pct":"number | null","pdo":"number | null","player_id":"number","position":"string | null","sa_per_60":"number | null","sca_per_60":"number | null","scf_pct":"number | null","scf_per_60":"number | null","season":"number","sf_pct":"number | null","sf_per_60":"number | null","toi":"number | null","toi_per_gp":"number | null","xga_per_60":"number | null","xgf_pct":"number | null","xgf_per_60":"number | null"},"nst_percentile_as_defense":{"ca_per_60":"number | null","fa_per_60":"number | null","ga_per_60":"number | null","giveaways_per_60":"number | null","gp":"number | null","hdca_per_60":"number | null","hdga_per_60":"number | null","hits_per_60":"number | null","ldga_per_60":"number | null","major_penalties_per_60":"number | null","mdga_per_60":"number | null","minor_penalties_per_60":"number | null","misconduct_penalties_per_60":"number | null","on_ice_sv_pct":"number | null","pim_per_60":"number | null","player_id":"number | null","sa_per_60":"number | null","sca_per_60":"number | null","season":"number | null","shots_blocked_per_60":"number | null","takeaways_per_60":"number | null","toi_seconds":"number | null","total_penalties_per_60":"number | null","xga_per_60":"number | null"},"nst_percentile_as_defense_filtered":{"ca_per_60":"number | null","fa_per_60":"number | null","ga_per_60":"number | null","ga_per_60_percentile":"string | null","giveaways_per_60":"number | null","giveaways_per_60_percentile":"number | null","gp":"number | null","hdca_per_60":"number | null","hdca_per_60_percentile":"number | null","hdga_per_60":"number | null","hits_per_60":"number | null","ldga_per_60":"number | null","major_penalties_per_60":"number | null","mdga_per_60":"number | null","minor_penalties_per_60":"number | null","minor_penalties_per_60_percentile":"number | null","misconduct_penalties_per_60":"number | null","on_ice_sv_pct":"number | null","pim_per_60":"number | null","player_id":"number | null","sa_per_60":"number | null","sa_per_60_percentile":"string | null","sca_per_60":"number | null","sca_per_60_percentile":"number | null","season":"number | null","shots_blocked_per_60":"number | null","shots_blocked_per_60_percentile":"number | null","takeaways_per_60":"number | null","takeaways_per_60_percentile":"number | null","toi_seconds":"number | null","total_penalties_per_60":"number | null","xga_per_60":"number | null","xga_per_60_percentile":"number | null"},"nst_percentile_as_offense":{"cf_pct":"number | null","cf_per_60":"number | null","ff_pct":"number | null","ff_per_60":"number | null","first_assists_per_60":"number | null","gf_pct":"number | null","gf_per_60":"number | null","goals_per_60":"number | null","gp":"number | null","hdcf_pct":"number | null","hdgf_pct":"number | null","hdgf_per_60":"number | null","i_hdcf_per_60":"number | null","icf_per_60":"number | null","iff_per_60":"number | null","ipp":"number | null","iscfs_per_60":"number | null","ixg_per_60":"number | null","ldgf_pct":"number | null","ldgf_per_60":"number | null","mdgf_pct":"number | null","mdgf_per_60":"number | null","oi_hdcf_per_60":"number | null","on_ice_sh_pct":"number | null","penalties_drawn_per_60":"number | null","player_id":"number | null","rebounds_created_per_60":"number | null","rush_attempts_per_60":"number | null","scf_pct":"number | null","scf_per_60":"number | null","season":"number | null","second_assists_per_60":"number | null","sf_pct":"number | null","sf_per_60":"number | null","sh_percentage":"number | null","shots_per_60":"number | null","toi_seconds":"number | null","total_assists_per_60":"number | null","total_points_per_60":"number | null","xgf_pct":"number | null","xgf_per_60":"number | null"},"nst_percentile_es_defense":{"ca_per_60":"number | null","fa_per_60":"number | null","ga_per_60":"number | null","giveaways_per_60":"number | null","gp":"number | null","hdca_per_60":"number | null","hdga_per_60":"number | null","hits_per_60":"number | null","ldga_per_60":"number | null","major_penalties_per_60":"number | null","mdga_per_60":"number | null","minor_penalties_per_60":"number | null","misconduct_penalties_per_60":"number | null","on_ice_sv_pct":"number | null","pim_per_60":"number | null","player_id":"number | null","sa_per_60":"number | null","sca_per_60":"number | null","season":"number | null","shots_blocked_per_60":"number | null","takeaways_per_60":"number | null","toi_seconds":"number | null","total_penalties_per_60":"number | null","xga_per_60":"number | null"},"nst_percentile_es_defense_filtered":{"ca_per_60":"number | null","fa_per_60":"number | null","ga_per_60":"number | null","ga_per_60_percentile":"string | null","giveaways_per_60":"number | null","giveaways_per_60_percentile":"number | null","gp":"number | null","hdca_per_60":"number | null","hdca_per_60_percentile":"number | null","hdga_per_60":"number | null","hits_per_60":"number | null","ldga_per_60":"number | null","major_penalties_per_60":"number | null","mdga_per_60":"number | null","minor_penalties_per_60":"number | null","minor_penalties_per_60_percentile":"number | null","misconduct_penalties_per_60":"number | null","on_ice_sv_pct":"number | null","pim_per_60":"number | null","player_id":"number | null","sa_per_60":"number | null","sa_per_60_percentile":"string | null","sca_per_60":"number | null","sca_per_60_percentile":"number | null","season":"number | null","shots_blocked_per_60":"number | null","shots_blocked_per_60_percentile":"number | null","takeaways_per_60":"number | null","takeaways_per_60_percentile":"number | null","toi_seconds":"number | null","total_penalties_per_60":"number | null","xga_per_60":"number | null","xga_per_60_percentile":"number | null"},"nst_percentile_es_offense":{"cf_pct":"number | null","cf_per_60":"number | null","ff_pct":"number | null","ff_per_60":"number | null","first_assists_per_60":"number | null","gf_pct":"number | null","gf_per_60":"number | null","goals_per_60":"number | null","gp":"number | null","hdcf_pct":"number | null","hdgf_pct":"number | null","hdgf_per_60":"number | null","i_hdcf_per_60":"number | null","icf_per_60":"number | null","iff_per_60":"number | null","ipp":"number | null","iscfs_per_60":"number | null","ixg_per_60":"number | null","ldgf_pct":"number | null","ldgf_per_60":"number | null","mdgf_pct":"number | null","mdgf_per_60":"number | null","oi_hdcf_per_60":"number | null","on_ice_sh_pct":"number | null","penalties_drawn_per_60":"number | null","player_id":"number | null","rebounds_created_per_60":"number | null","rush_attempts_per_60":"number | null","scf_pct":"number | null","scf_per_60":"number | null","season":"number | null","second_assists_per_60":"number | null","sf_pct":"number | null","sf_per_60":"number | null","sh_percentage":"number | null","shots_per_60":"number | null","toi_seconds":"number | null","total_assists_per_60":"number | null","total_points_per_60":"number | null","xgf_pct":"number | null","xgf_per_60":"number | null"},"nst_percentile_es_offense_filtered":{"cf_pct":"number | null","cf_pct_percentile":"number | null","cf_per_60":"number | null","ff_pct":"number | null","ff_per_60":"number | null","first_assists_per_60":"number | null","gf_pct":"number | null","gf_per_60":"number | null","gf_per_60_percentile":"number | null","goals_per_60":"number | null","gp":"number | null","hdcf_pct":"number | null","hdgf_pct":"number | null","hdgf_per_60":"number | null","hdgf_per_60_percentile":"number | null","i_hdcf_per_60":"number | null","icf_per_60":"number | null","iff_per_60":"number | null","ipp":"number | null","iscfs_per_60":"number | null","iscfs_per_60_percentile":"number | null","ixg_per_60":"number | null","ixg_per_60_percentile":"number | null","ldgf_pct":"number | null","ldgf_per_60":"number | null","mdgf_pct":"number | null","mdgf_per_60":"number | null","oi_hdcf_per_60":"number | null","on_ice_sh_pct":"number | null","penalties_drawn_per_60":"number | null","penalties_drawn_per_60_percentile":"number | null","player_id":"number | null","rebounds_created_per_60":"number | null","rush_attempts_per_60":"number | null","scf_pct":"number | null","scf_per_60":"number | null","scf_per_60_percentile":"number | null","season":"number | null","second_assists_per_60":"number | null","sf_pct":"number | null","sf_per_60":"number | null","sh_percentage":"number | null","shots_per_60":"number | null","shots_per_60_percentile":"number | null","toi_seconds":"number | null","total_assists_per_60":"number | null","total_points_per_60":"number | null","total_points_per_60_percentile":"number | null","xgf_pct":"number | null","xgf_pct_percentile":"number | null","xgf_per_60":"number | null"},"nst_percentile_pk_defense":{"ca_per_60":"number | null","fa_per_60":"number | null","ga_per_60":"number | null","giveaways_per_60":"number | null","gp":"number | null","hdca_per_60":"number | null","hdga_per_60":"number | null","hits_per_60":"number | null","ldga_per_60":"number | null","major_penalties_per_60":"number | null","mdga_per_60":"number | null","minor_penalties_per_60":"number | null","misconduct_penalties_per_60":"number | null","on_ice_sv_pct":"number | null","pim_per_60":"number | null","player_id":"number | null","sa_per_60":"number | null","sca_per_60":"number | null","season":"number | null","shots_blocked_per_60":"number | null","takeaways_per_60":"number | null","toi_seconds":"number | null","total_penalties_per_60":"number | null","xga_per_60":"number | null"},"nst_percentile_pk_defense_filtered":{"ca_per_60":"number | null","fa_per_60":"number | null","ga_per_60":"number | null","ga_per_60_percentile":"number | null","giveaways_per_60":"number | null","giveaways_per_60_percentile":"number | null","gp":"number | null","hdca_per_60":"number | null","hdca_per_60_percentile":"number | null","hdga_per_60":"number | null","hits_per_60":"number | null","ldga_per_60":"number | null","major_penalties_per_60":"number | null","mdga_per_60":"number | null","minor_penalties_per_60":"number | null","minor_penalties_per_60_percentile":"number | null","misconduct_penalties_per_60":"number | null","on_ice_sv_pct":"number | null","pim_per_60":"number | null","player_id":"number | null","sa_per_60":"number | null","sa_per_60_percentile":"number | null","sca_per_60":"number | null","sca_per_60_percentile":"number | null","season":"number | null","shots_blocked_per_60":"number | null","shots_blocked_per_60_percentile":"number | null","takeaways_per_60":"number | null","takeaways_per_60_percentile":"number | null","toi_seconds":"number | null","total_penalties_per_60":"number | null","xga_per_60":"number | null","xga_per_60_percentile":"number | null"},"nst_percentile_pk_offense":{"cf_pct":"number | null","cf_per_60":"number | null","ff_pct":"number | null","ff_per_60":"number | null","first_assists_per_60":"number | null","gf_pct":"number | null","gf_per_60":"number | null","goals_per_60":"number | null","gp":"number | null","hdcf_pct":"number | null","hdgf_pct":"number | null","hdgf_per_60":"number | null","i_hdcf_per_60":"number | null","icf_per_60":"number | null","iff_per_60":"number | null","ipp":"number | null","iscfs_per_60":"number | null","ixg_per_60":"number | null","ldgf_pct":"number | null","ldgf_per_60":"number | null","mdgf_pct":"number | null","mdgf_per_60":"number | null","oi_hdcf_per_60":"number | null","on_ice_sh_pct":"number | null","penalties_drawn_per_60":"number | null","player_id":"number | null","rebounds_created_per_60":"number | null","rush_attempts_per_60":"number | null","scf_pct":"number | null","scf_per_60":"number | null","season":"number | null","second_assists_per_60":"number | null","sf_pct":"number | null","sf_per_60":"number | null","sh_percentage":"number | null","shots_per_60":"number | null","toi_seconds":"number | null","total_assists_per_60":"number | null","total_points_per_60":"number | null","xgf_pct":"number | null","xgf_per_60":"number | null"},"nst_percentile_pk_offense_filtered":{"cf_pct":"number | null","cf_per_60":"number | null","ff_pct":"number | null","ff_per_60":"number | null","first_assists_per_60":"number | null","gf_pct":"number | null","gf_per_60":"number | null","gf_per_60_percentile":"number | null","goals_per_60":"number | null","gp":"number | null","hdcf_pct":"number | null","hdgf_pct":"number | null","hdgf_per_60":"number | null","hdgf_per_60_percentile":"number | null","i_hdcf_per_60":"number | null","icf_per_60":"number | null","iff_per_60":"number | null","ipp":"number | null","iscfs_per_60":"number | null","ixg_per_60":"number | null","ixg_per_60_percentile":"number | null","ldgf_pct":"number | null","ldgf_per_60":"number | null","mdgf_pct":"number | null","mdgf_per_60":"number | null","oi_hdcf_per_60":"number | null","on_ice_sh_pct":"number | null","penalties_drawn_per_60":"number | null","player_id":"number | null","rebounds_created_per_60":"number | null","rush_attempts_per_60":"number | null","scf_pct":"number | null","scf_per_60":"number | null","scf_per_60_percentile":"number | null","season":"number | null","second_assists_per_60":"number | null","sf_pct":"number | null","sf_per_60":"number | null","sh_percentage":"number | null","shots_per_60":"number | null","shots_per_60_percentile":"number | null","toi_seconds":"number | null","total_assists_per_60":"number | null","total_points_per_60":"number | null","total_points_per_60_percentile":"number | null","xgf_pct":"number | null","xgf_per_60":"number | null","xgf_per_60_percentile":"number | null"},"nst_percentile_pp_defense":{"ca_per_60":"number | null","fa_per_60":"number | null","ga_per_60":"number | null","giveaways_per_60":"number | null","gp":"number | null","hdca_per_60":"number | null","hdga_per_60":"number | null","hits_per_60":"number | null","ldga_per_60":"number | null","major_penalties_per_60":"number | null","mdga_per_60":"number | null","minor_penalties_per_60":"number | null","misconduct_penalties_per_60":"number | null","on_ice_sv_pct":"number | null","pim_per_60":"number | null","player_id":"number | null","sa_per_60":"number | null","sca_per_60":"number | null","season":"number | null","shots_blocked_per_60":"number | null","takeaways_per_60":"number | null","toi_seconds":"number | null","total_penalties_per_60":"number | null","xga_per_60":"number | null"},"nst_percentile_pp_defense_filtered":{"ca_per_60":"number | null","fa_per_60":"number | null","ga_per_60":"number | null","ga_per_60_percentile":"number | null","giveaways_per_60":"number | null","giveaways_per_60_percentile":"number | null","gp":"number | null","hdca_per_60":"number | null","hdca_per_60_percentile":"number | null","hdga_per_60":"number | null","hits_per_60":"number | null","ldga_per_60":"number | null","major_penalties_per_60":"number | null","mdga_per_60":"number | null","minor_penalties_per_60":"number | null","minor_penalties_per_60_percentile":"number | null","misconduct_penalties_per_60":"number | null","on_ice_sv_pct":"number | null","pim_per_60":"number | null","player_id":"number | null","sa_per_60":"number | null","sa_per_60_percentile":"number | null","sca_per_60":"number | null","sca_per_60_percentile":"number | null","season":"number | null","shots_blocked_per_60":"number | null","shots_blocked_per_60_percentile":"number | null","takeaways_per_60":"number | null","takeaways_per_60_percentile":"number | null","toi_seconds":"number | null","total_penalties_per_60":"number | null","xga_per_60":"number | null","xga_per_60_percentile":"number | null"},"nst_percentile_pp_offense":{"cf_pct":"number | null","cf_per_60":"number | null","ff_pct":"number | null","ff_per_60":"number | null","first_assists_per_60":"number | null","gf_pct":"number | null","gf_per_60":"number | null","goals_per_60":"number | null","gp":"number | null","hdcf_pct":"number | null","hdgf_pct":"number | null","hdgf_per_60":"number | null","i_hdcf_per_60":"number | null","icf_per_60":"number | null","iff_per_60":"number | null","ipp":"number | null","iscfs_per_60":"number | null","ixg_per_60":"number | null","ldgf_pct":"number | null","ldgf_per_60":"number | null","mdgf_pct":"number | null","mdgf_per_60":"number | null","oi_hdcf_per_60":"number | null","on_ice_sh_pct":"number | null","penalties_drawn_per_60":"number | null","player_id":"number | null","rebounds_created_per_60":"number | null","rush_attempts_per_60":"number | null","scf_pct":"number | null","scf_per_60":"number | null","season":"number | null","second_assists_per_60":"number | null","sf_pct":"number | null","sf_per_60":"number | null","sh_percentage":"number | null","shots_per_60":"number | null","toi_seconds":"number | null","total_assists_per_60":"number | null","total_points_per_60":"number | null","xgf_pct":"number | null","xgf_per_60":"number | null"},"nst_percentile_pp_offense_filtered":{"cf_pct":"number | null","cf_per_60":"number | null","ff_pct":"number | null","ff_per_60":"number | null","first_assists_per_60":"number | null","gf_pct":"number | null","gf_per_60":"number | null","gf_per_60_percentile":"number | null","goals_per_60":"number | null","gp":"number | null","hdcf_pct":"number | null","hdgf_pct":"number | null","hdgf_per_60":"number | null","hdgf_per_60_percentile":"number | null","i_hdcf_per_60":"number | null","icf_per_60":"number | null","iff_per_60":"number | null","ipp":"number | null","iscfs_per_60":"number | null","ixg_per_60":"number | null","ixg_per_60_percentile":"number | null","ldgf_pct":"number | null","ldgf_per_60":"number | null","mdgf_pct":"number | null","mdgf_per_60":"number | null","oi_hdcf_per_60":"number | null","on_ice_sh_pct":"number | null","penalties_drawn_per_60":"number | null","player_id":"number | null","rebounds_created_per_60":"number | null","rush_attempts_per_60":"number | null","scf_pct":"number | null","scf_per_60":"number | null","scf_per_60_percentile":"number | null","season":"number | null","second_assists_per_60":"number | null","sf_pct":"number | null","sf_per_60":"number | null","sh_percentage":"number | null","shots_per_60":"number | null","shots_per_60_percentile":"number | null","toi_seconds":"number | null","total_assists_per_60":"number | null","total_points_per_60":"number | null","total_points_per_60_percentile":"number | null","xgf_pct":"number | null","xgf_per_60":"number | null","xgf_per_60_percentile":"number | null"},"nst_team_5v5":{"ca":"number | null","cf":"number | null","cf_pct":"number | null","created_at":"string | null","date":"string","fa":"number | null","ff":"number | null","ff_pct":"number | null","ga":"number | null","gf":"number | null","gf_pct":"number | null","gp":"number | null","hdca":"number | null","hdcf":"number | null","hdcf_pct":"number | null","hdga":"number | null","hdgf":"number | null","hdgf_pct":"number | null","hdsa":"number | null","hdsf":"number | null","hdsf_pct":"number | null","l":"number | null","otl":"number | null","pdo":"number | null","points":"number | null","sa":"number | null","sca":"number | null","scf":"number | null","scf_pct":"number | null","sf":"number | null","sf_pct":"number | null","sh_pct":"number | null","situation":"string","sv_pct":"number | null","team_abbreviation":"string","team_name":"string","toi":"number | null","updated_at":"string | null","w":"number | null","xga":"number | null","xgf":"number | null","xgf_pct":"number | null"},"players":{"birthCity":"string | null","birthCountry":"string | null","birthDate":"string","firstName":"string","fullName":"string","heightInCentimeters":"number","id":"number","image_url":"string | null","lastName":"string","position":"Database[\"public\"][\"Enums\"][\"NHL_Position_Code\"]","sweater_number":"number | null","team_id":"number | null","weightInKilograms":"number"},"wgo_skater_stats":{"assists":"number | null","assists_5v5":"number | null","assists_per_60_5v5":"number | null","assists_per_game":"number | null","birth_city":"string | null","birth_country":"string | null","birth_date":"string | null","blocked_shots":"number | null","blocks_per_60":"number | null","blocks_per_game":"number | null","current_team_abbreviation":"string | null","current_team_name":"string | null","d_zone_faceoffs":"number | null","d_zone_fo_percentage":"number | null","d_zone_fol":"number | null","d_zone_fow":"number | null","date":"string","draft_overall":"number | null","draft_round":"number | null","draft_year":"number | null","empty_net_assists":"number | null","empty_net_goals":"number | null","empty_net_points":"number | null","es_goal_diff":"number | null","es_goals_against":"number | null","es_goals_for":"number | null","es_goals_for_percentage":"number | null","es_toi_per_game":"number | null","ev_faceoff_percentage":"number | null","ev_faceoffs":"number | null","ev_fol":"number | null","ev_fow":"number | null","ev_goals":"number | null","ev_points":"number | null","ev_time_on_ice":"number | null","ev_time_on_ice_per_game":"number | null","faceoff_pct_5v5":"number | null","first_goals":"number | null","first_season_for_game_type":"number | null","fow_percentage":"number | null","game_id":"number | null","game_misconduct_penalties":"number | null","games_played":"number | null","giveaways":"number | null","giveaways_per_60":"number | null","goals":"number | null","goals_5v5":"number | null","goals_backhand":"number | null","goals_bat":"number | null","goals_between_legs":"number | null","goals_cradle":"number | null","goals_deflected":"number | null","goals_pct":"number | null","goals_per_60_5v5":"number | null","goals_per_game":"number | null","goals_poke":"number | null","goals_slap":"number | null","goals_snap":"number | null","goals_tip_in":"number | null","goals_wrap_around":"number | null","goals_wrist":"number | null","gw_goals":"number | null","height":"number | null","hits":"number | null","hits_per_60":"number | null","hits_per_game":"number | null","home_road":"string | null","id":"number","individual_sat_for_per_60":"number | null","individual_shots_for_per_60":"number | null","major_penalties":"number | null","match_penalties":"number | null","minor_penalties":"number | null","misconduct_penalties":"number | null","missed_shot_crossbar":"number | null","missed_shot_goal_post":"number | null","missed_shot_over_net":"number | null","missed_shot_short_side":"number | null","missed_shot_wide_of_net":"number | null","missed_shots":"number | null","n_zone_faceoffs":"number | null","n_zone_fo_percentage":"number | null","n_zone_fol":"number | null","n_zone_fow":"number | null","nationality_code":"string | null","net_minor_penalties_per_60":"number | null","net_penalties":"number | null","net_penalties_per_60":"number | null","o_zone_faceoffs":"number | null","o_zone_fo_percentage":"number | null","o_zone_fol":"number | null","o_zone_fow":"number | null","o_zone_start_pct_5v5":"number | null","on_ice_shooting_pct":"number | null","on_ice_shooting_pct_5v5":"number | null","opponent_team_abbrev":"string | null","ot_goals":"number | null","ot_time_on_ice":"number | null","ot_time_on_ice_per_game":"number | null","penalties":"number | null","penalties_drawn":"number | null","penalties_drawn_per_60":"number | null","penalties_taken_per_60":"number | null","penalty_minutes":"number | null","penalty_minutes_per_game":"number | null","penalty_minutes_per_toi":"number | null","penalty_seconds_per_game":"number | null","player_id":"number","player_name":"string","plus_minus":"number | null","points":"number | null","points_5v5":"number | null","points_per_60_5v5":"number | null","points_per_game":"number | null","position_code":"string | null","pp_assists":"number | null","pp_faceoff_percentage":"number | null","pp_faceoffs":"number | null","pp_fol":"number | null","pp_fow":"number | null","pp_goals":"number | null","pp_goals_against":"number | null","pp_goals_against_per_60":"number | null","pp_goals_for":"number | null","pp_goals_for_per_60":"number | null","pp_goals_per_60":"number | null","pp_individual_sat_for":"number | null","pp_individual_sat_per_60":"number | null","pp_points":"number | null","pp_points_per_60":"number | null","pp_primary_assists":"number | null","pp_primary_assists_per_60":"number | null","pp_secondary_assists":"number | null","pp_secondary_assists_per_60":"number | null","pp_shooting_percentage":"number | null","pp_shots":"number | null","pp_shots_per_60":"number | null","pp_toi":"number | null","pp_toi_pct_per_game":"number | null","pp_toi_per_game":"number | null","primary_assists_5v5":"number | null","primary_assists_per_60_5v5":"number | null","primary_assists_per_game":"number | null","sat_against":"number | null","sat_ahead":"number | null","sat_behind":"number | null","sat_close":"number | null","sat_for":"number | null","sat_pct":"number | null","sat_percentage":"number | null","sat_percentage_ahead":"number | null","sat_percentage_behind":"number | null","sat_percentage_close":"number | null","sat_percentage_tied":"number | null","sat_relative":"number | null","sat_relative_5v5":"number | null","sat_tied":"number | null","sat_total":"number | null","season_id":"number | null","secondary_assists_5v5":"number | null","secondary_assists_per_60_5v5":"number | null","secondary_assists_per_game":"number | null","sh_assists":"number | null","sh_faceoff_percentage":"number | null","sh_faceoffs":"number | null","sh_fol":"number | null","sh_fow":"number | null","sh_goals":"number | null","sh_goals_against":"number | null","sh_goals_for":"number | null","sh_goals_per_60":"number | null","sh_individual_sat_for":"number | null","sh_individual_sat_per_60":"number | null","sh_points":"number | null","sh_points_per_60":"number | null","sh_primary_assists":"number | null","sh_primary_assists_per_60":"number | null","sh_secondary_assists":"number | null","sh_secondary_assists_per_60":"number | null","sh_shooting_percentage":"number | null","sh_shots":"number | null","sh_shots_per_60":"number | null","sh_time_on_ice":"number | null","sh_time_on_ice_pct_per_game":"number | null","sh_toi_per_game":"number | null","shifts":"number | null","shifts_per_game":"number | null","shooting_pct_backhand":"number | null","shooting_pct_bat":"number | null","shooting_pct_between_legs":"number | null","shooting_pct_cradle":"number | null","shooting_pct_deflected":"number | null","shooting_pct_poke":"number | null","shooting_pct_slap":"number | null","shooting_pct_snap":"number | null","shooting_pct_tip_in":"number | null","shooting_pct_wrap_around":"number | null","shooting_pct_wrist":"number | null","shooting_percentage":"number | null","shooting_percentage_5v5":"number | null","shoots_catches":"string | null","shots":"number | null","shots_on_net_backhand":"number | null","shots_on_net_bat":"number | null","shots_on_net_between_legs":"number | null","shots_on_net_cradle":"number | null","shots_on_net_deflected":"number | null","shots_on_net_poke":"number | null","shots_on_net_slap":"number | null","shots_on_net_snap":"number | null","shots_on_net_tip_in":"number | null","shots_on_net_wrap_around":"number | null","shots_on_net_wrist":"number | null","shots_per_game":"number | null","skater_save_pct_5v5":"number | null","skater_shooting_plus_save_pct_5v5":"number | null","takeaways":"number | null","takeaways_per_60":"number | null","team_abbrev":"string | null","time_on_ice_per_shift":"number | null","toi_per_game":"number | null","toi_per_game_5v5":"number | null","total_faceoffs":"number | null","total_fol":"number | null","total_fow":"number | null","total_primary_assists":"number | null","total_secondary_assists":"number | null","usat_against":"number | null","usat_ahead":"number | null","usat_behind":"number | null","usat_close":"number | null","usat_for":"number | null","usat_pct":"number | null","usat_percentage":"number | null","usat_percentage_ahead":"number | null","usat_percentage_behind":"number | null","usat_percentage_close":"number | null","usat_percentage_tied":"number | null","usat_relative":"number | null","usat_tied":"number | null","usat_total":"number | null","weight":"number | null","zone_start_pct":"number | null","zone_start_pct_5v5":"number | null"},"wgo_skater_stats_totals":{"assists":"number | null","assists_5v5":"number | null","assists_per_60_5v5":"number | null","birth_city":"string | null","birth_country":"string | null","birth_date":"string | null","blocked_shots":"number | null","blocks_per_60":"number | null","current_team_abbreviation":"string | null","current_team_name":"string | null","d_zone_faceoffs":"number | null","d_zone_fo_percentage":"number | null","d_zone_fol":"number | null","d_zone_fow":"number | null","draft_overall":"number | null","draft_round":"number | null","draft_year":"number | null","empty_net_goals":"number | null","empty_net_points":"number | null","es_goals_against":"number | null","es_goals_for":"number | null","es_goals_for_percentage":"number | null","es_toi_per_game":"number | null","ev_faceoff_percentage":"number | null","ev_faceoffs":"number | null","ev_fol":"number | null","ev_fow":"number | null","ev_time_on_ice":"number | null","ev_time_on_ice_per_game":"number | null","faceoff_pct_5v5":"number | null","first_season_for_game_type":"number | null","fow_percentage":"number | null","game_misconduct_penalties":"number | null","games_played":"number | null","giveaways":"number | null","giveaways_per_60":"number | null","goals":"number | null","goals_5v5":"number | null","goals_backhand":"number | null","goals_bat":"number | null","goals_between_legs":"number | null","goals_cradle":"number | null","goals_deflected":"number | null","goals_pct":"number | null","goals_per_60_5v5":"number | null","goals_poke":"number | null","goals_slap":"number | null","goals_snap":"number | null","goals_tip_in":"number | null","goals_wrap_around":"number | null","goals_wrist":"number | null","gw_goals":"number | null","height":"number | null","hits":"number | null","hits_per_60":"number | null","individual_sat_for_per_60":"number | null","individual_shots_for_per_60":"number | null","major_penalties":"number | null","match_penalties":"number | null","minor_penalties":"number | null","misconduct_penalties":"number | null","missed_shots":"number | null","n_zone_faceoffs":"number | null","n_zone_fo_percentage":"number | null","n_zone_fol":"number | null","n_zone_fow":"number | null","nationality_code":"string | null","o_zone_faceoffs":"number | null","o_zone_fo_percentage":"number | null","o_zone_fol":"number | null","o_zone_fow":"number | null","o_zone_start_pct_5v5":"number | null","on_ice_shooting_pct":"number | null","on_ice_shooting_pct_5v5":"number | null","ot_goals":"number | null","ot_time_on_ice":"number | null","ot_time_on_ice_per_game":"number | null","penalties":"number | null","penalties_drawn":"number | null","penalties_drawn_per_60":"number | null","penalties_taken_per_60":"number | null","penalty_minutes":"number | null","penalty_minutes_per_toi":"number | null","penalty_seconds_per_game":"number | null","player_id":"number","player_name":"string | null","plus_minus":"number | null","points":"number | null","points_5v5":"number | null","points_per_60_5v5":"number | null","points_per_game":"number | null","position_code":"string | null","pp_assists":"number | null","pp_faceoff_percentage":"number | null","pp_faceoffs":"number | null","pp_fol":"number | null","pp_fow":"number | null","pp_goals":"number | null","pp_goals_against":"number | null","pp_goals_against_per_60":"number | null","pp_goals_for":"number | null","pp_goals_for_per_60":"number | null","pp_goals_per_60":"number | null","pp_individual_sat_for":"number | null","pp_individual_sat_per_60":"number | null","pp_points":"number | null","pp_points_per_60":"number | null","pp_primary_assists":"number | null","pp_primary_assists_per_60":"number | null","pp_secondary_assists":"number | null","pp_secondary_assists_per_60":"number | null","pp_shooting_percentage":"number | null","pp_shots":"number | null","pp_shots_per_60":"number | null","pp_toi":"number | null","pp_toi_pct_per_game":"number | null","pp_toi_per_game":"number | null","primary_assists_5v5":"number | null","primary_assists_per_60_5v5":"number | null","sat_against":"number | null","sat_ahead":"number | null","sat_behind":"number | null","sat_close":"number | null","sat_for":"number | null","sat_pct":"number | null","sat_percentage":"number | null","sat_percentage_ahead":"number | null","sat_percentage_behind":"number | null","sat_percentage_close":"number | null","sat_percentage_tied":"number | null","sat_relative":"number | null","sat_relative_5v5":"number | null","sat_tied":"number | null","sat_total":"number | null","season":"string","secondary_assists_5v5":"number | null","secondary_assists_per_60_5v5":"number | null","sh_assists":"number | null","sh_faceoff_percentage":"number | null","sh_faceoffs":"number | null","sh_fol":"number | null","sh_fow":"number | null","sh_goals":"number | null","sh_goals_against":"number | null","sh_goals_for":"number | null","sh_goals_per_60":"number | null","sh_individual_sat_for":"number | null","sh_individual_sat_per_60":"number | null","sh_points":"number | null","sh_points_per_60":"number | null","sh_primary_assists":"number | null","sh_primary_assists_per_60":"number | null","sh_secondary_assists":"number | null","sh_secondary_assists_per_60":"number | null","sh_shooting_percentage":"number | null","sh_shots":"number | null","sh_shots_per_60":"number | null","sh_time_on_ice":"number | null","sh_time_on_ice_pct_per_game":"number | null","sh_toi_per_game":"number | null","shifts":"number | null","shifts_per_game":"number | null","shooting_percentage":"number | null","shooting_percentage_5v5":"number | null","shoots_catches":"string | null","shots":"number | null","shots_on_net_backhand":"number | null","shots_on_net_bat":"number | null","shots_on_net_between_legs":"number | null","shots_on_net_cradle":"number | null","shots_on_net_deflected":"number | null","shots_on_net_poke":"number | null","shots_on_net_slap":"number | null","shots_on_net_snap":"number | null","shots_on_net_tip_in":"number | null","shots_on_net_wrap_around":"number | null","shots_on_net_wrist":"number | null","skater_save_pct_5v5":"number | null","skater_shooting_plus_save_pct_5v5":"number | null","takeaways":"number | null","takeaways_per_60":"number | null","time_on_ice_per_shift":"number | null","toi_per_game":"number | null","toi_per_game_5v5":"number | null","total_faceoffs":"number | null","total_fol":"number | null","total_fow":"number | null","total_primary_assists":"number | null","total_secondary_assists":"number | null","updated_at":"string | null","usat_against":"number | null","usat_ahead":"number | null","usat_behind":"number | null","usat_close":"number | null","usat_for":"number | null","usat_pct":"number | null","usat_percentage":"number | null","usat_percentage_ahead":"number | null","usat_percentage_behind":"number | null","usat_percentage_close":"number | null","usat_percentage_tied":"number | null","usat_relative":"number | null","usat_tied":"number | null","usat_total":"number | null","weight":"number | null","zone_start_pct":"number | null","zone_start_pct_5v5":"number | null"},"wgo_team_stats":{"bench_minor_penalties":"number | null","blocked_shots":"number | null","blocked_shots_per_60":"number | null","d_zone_faceoff_pct":"number | null","d_zone_faceoffs":"number | null","d_zone_fo":"number | null","d_zone_fol":"number | null","d_zone_fow":"number | null","date":"string","empty_net_goals":"number | null","ev_faceoff_pct":"number | null","ev_faceoffs":"number | null","ev_fo":"number | null","ev_fol":"number | null","ev_fow":"number | null","faceoff_win_pct":"number | null","faceoffs_lost":"number | null","faceoffs_won":"number | null","franchise_name":"string","game_id":"number | null","game_misconducts":"number | null","games_played":"number | null","giveaways":"number | null","giveaways_per_60":"number | null","goals_4v3":"number | null","goals_5v3":"number | null","goals_5v4":"number | null","goals_against":"number | null","goals_against_3v4":"number | null","goals_against_3v5":"number | null","goals_against_4v5":"number | null","goals_against_per_game":"number | null","goals_for":"number | null","goals_for_per_game":"number | null","goals_for_percentage":"number | null","hits":"number | null","hits_per_60":"number | null","id":"number","losses":"number | null","major_penalties":"number | null","match_penalties":"number | null","minor_penalties":"number | null","misconduct_penalties":"number | null","missed_shots":"number | null","net_penalties":"number | null","net_penalties_per_60":"number | null","neutral_zone_faceoff_pct":"number | null","neutral_zone_faceoffs":"number | null","neutral_zone_fo":"number | null","neutral_zone_fol":"number | null","neutral_zone_fow":"number | null","o_zone_faceoff_pct":"number | null","o_zone_faceoffs":"number | null","o_zone_fo":"number | null","o_zone_fol":"number | null","o_zone_fow":"number | null","opponent_id":"number | null","opportunities_4v3":"number | null","opportunities_5v3":"number | null","opportunities_5v4":"number | null","ot_losses":"number | null","overall_penalty_kill_pct":"number | null","overall_power_play_pct":"number | null","penalties":"number | null","penalties_drawn_per_60":"number | null","penalties_taken_per_60":"number | null","penalty_kill_net_pct":"number | null","penalty_kill_pct":"number | null","penalty_minutes":"number | null","penalty_seconds_per_game":"number | null","pk_3v4_pct":"number | null","pk_3v5_pct":"number | null","pk_4v5_pct":"number | null","pk_net_goals":"number | null","pk_net_goals_per_game":"number | null","point_pct":"number | null","points":"number | null","power_play_goals_for":"number | null","power_play_net_pct":"number | null","power_play_pct":"number | null","pp_faceoff_pct":"number | null","pp_faceoffs":"number | null","pp_fol":"number | null","pp_fow":"number | null","pp_goals_against":"number | null","pp_goals_against_per_game":"number | null","pp_goals_per_game":"number | null","pp_net_goals":"number | null","pp_net_goals_per_game":"number | null","pp_opportunities":"number | null","pp_opportunities_per_game":"number | null","pp_pct_4v3":"number | null","pp_pct_5v3":"number | null","pp_pct_5v4":"number | null","pp_time_on_ice_per_game":"number | null","regulation_and_ot_wins":"number | null","sat_against":"number | null","sat_behind":"number | null","sat_close":"number | null","sat_for":"number | null","sat_pct":"number | null","sat_pct_ahead":"number | null","sat_pct_behind":"number | null","sat_pct_close":"number | null","sat_pct_tied":"number | null","sat_percentage":"number | null","sat_tied":"number | null","sat_total":"number | null","save_pct_5v5":"number | null","season_id":"number | null","sh_faceoff_pct":"number | null","sh_faceoffs":"number | null","sh_fol":"number | null","sh_fow":"number | null","sh_goals_against":"number | null","sh_goals_against_per_game":"number | null","sh_goals_for":"number | null","sh_goals_for_per_game":"number | null","shooting_pct_5v5":"number | null","shooting_plus_save_pct_5v5":"number | null","shots_5v5":"number | null","shots_against_per_game":"number | null","shots_for_per_game":"number | null","takeaways":"number | null","takeaways_per_60":"number | null","team_id":"number | null","time_on_ice_per_game_5v5":"number | null","times_shorthanded":"number | null","times_shorthanded_3v4":"number | null","times_shorthanded_3v5":"number | null","times_shorthanded_4v5":"number | null","times_shorthanded_per_game":"number | null","toi_3v4":"number | null","toi_3v5":"number | null","toi_4v3":"number | null","toi_4v5":"number | null","toi_5v3":"number | null","toi_5v4":"number | null","toi_pp":"number | null","toi_shorthanded":"number | null","total_faceoffs":"number | null","total_penalties_drawn":"number | null","usat_against":"number | null","usat_ahead":"number | null","usat_behind":"number | null","usat_close":"number | null","usat_for":"number | null","usat_pct":"number | null","usat_pct_ahead":"number | null","usat_pct_behind":"number | null","usat_pct_close":"number | null","usat_pct_tied":"number | null","usat_tied":"number | null","usat_total":"number | null","wins":"number | null","wins_in_regulation":"number | null","wins_in_shootout":"number | null","zone_start_pct_5v5":"number | null"},"wigo_career":{"ca_a":"number | null","ca_a_per_60":"number | null","ca_atoi":"number | null","ca_blk":"number | null","ca_blk_per_60":"number | null","ca_g":"number | null","ca_g_per_60":"number | null","ca_gp":"number | null","ca_hit":"number | null","ca_hit_per_60":"number | null","ca_icf":"number | null","ca_icf_per_60":"number | null","ca_ihdcf_per_60":"number | null","ca_ipp":"number | null","ca_iscf_per_60":"number | null","ca_ixg":"number | null","ca_ixg_per_60":"number | null","ca_oi_sh_pct":"number | null","ca_ozs_pct":"number | null","ca_pim":"number | null","ca_pim_per_60":"number | null","ca_pp_pct":"number | null","ca_ppa":"number | null","ca_ppa_per_60":"number | null","ca_ppg":"number | null","ca_ppg_per_60":"number | null","ca_ppp":"number | null","ca_ppp_per_60":"number | null","ca_pptoi":"number | null","ca_pts":"number | null","ca_pts_per_60":"number | null","ca_pts1_pct":"number | null","ca_pts1_per_60":"number | null","ca_s_pct":"number | null","ca_seasons_used":"number | null","ca_sog":"number | null","ca_sog_per_60":"number | null","last_updated":"string","ly_a":"number | null","ly_a_per_60":"number | null","ly_atoi":"number | null","ly_blk":"number | null","ly_blk_per_60":"number | null","ly_g":"number | null","ly_g_per_60":"number | null","ly_gp":"number | null","ly_hit":"number | null","ly_hit_per_60":"number | null","ly_icf":"number | null","ly_icf_per_60":"number | null","ly_ihdcf_per_60":"number | null","ly_ipp":"number | null","ly_iscf_per_60":"number | null","ly_ixg":"number | null","ly_ixg_per_60":"number | null","ly_oi_sh_pct":"number | null","ly_ozs_pct":"number | null","ly_pim":"number | null","ly_pim_per_60":"number | null","ly_pp_pct":"number | null","ly_ppa":"number | null","ly_ppa_per_60":"number | null","ly_ppg":"number | null","ly_ppg_per_60":"number | null","ly_ppp":"number | null","ly_ppp_per_60":"number | null","ly_pptoi":"number | null","ly_pts":"number | null","ly_pts_per_60":"number | null","ly_pts1_pct":"number | null","ly_pts1_per_60":"number | null","ly_s_pct":"number | null","ly_sog":"number | null","ly_sog_per_60":"number | null","player_id":"number","std_a":"number | null","std_a_per_60":"number | null","std_atoi":"number | null","std_blk":"number | null","std_blk_per_60":"number | null","std_g":"number | null","std_g_per_60":"number | null","std_gp":"number | null","std_hit":"number | null","std_hit_per_60":"number | null","std_icf":"number | null","std_icf_per_60":"number | null","std_ihdcf_per_60":"number | null","std_ipp":"number | null","std_iscf_per_60":"number | null","std_ixg":"number | null","std_ixg_per_60":"number | null","std_oi_sh_pct":"number | null","std_ozs_pct":"number | null","std_pim":"number | null","std_pim_per_60":"number | null","std_pp_pct":"number | null","std_ppa":"number | null","std_ppa_per_60":"number | null","std_ppg":"number | null","std_ppg_per_60":"number | null","std_ppp":"number | null","std_ppp_per_60":"number | null","std_pptoi":"number | null","std_pts":"number | null","std_pts_per_60":"number | null","std_pts1_pct":"number | null","std_pts1_per_60":"number | null","std_s_pct":"number | null","std_sog":"number | null","std_sog_per_60":"number | null","ya3_a":"number | null","ya3_a_per_60":"number | null","ya3_atoi":"number | null","ya3_blk":"number | null","ya3_blk_per_60":"number | null","ya3_g":"number | null","ya3_g_per_60":"number | null","ya3_gp":"number | null","ya3_hit":"number | null","ya3_hit_per_60":"number | null","ya3_icf":"number | null","ya3_icf_per_60":"number | null","ya3_ihdcf_per_60":"number | null","ya3_ipp":"number | null","ya3_iscf_per_60":"number | null","ya3_ixg":"number | null","ya3_ixg_per_60":"number | null","ya3_oi_sh_pct":"number | null","ya3_ozs_pct":"number | null","ya3_pim":"number | null","ya3_pim_per_60":"number | null","ya3_pp_pct":"number | null","ya3_ppa":"number | null","ya3_ppa_per_60":"number | null","ya3_ppg":"number | null","ya3_ppg_per_60":"number | null","ya3_ppp":"number | null","ya3_ppp_per_60":"number | null","ya3_pptoi":"number | null","ya3_pts":"number | null","ya3_pts_per_60":"number | null","ya3_pts1_pct":"number | null","ya3_pts1_per_60":"number | null","ya3_s_pct":"number | null","ya3_seasons_used":"number | null","ya3_sog":"number | null","ya3_sog_per_60":"number | null"},"wigo_rates":{"a_per_60_3ya":"number | null","a_per_60_ca":"number | null","a_per_60_l10":"number | null","a_per_60_l20":"number | null","a_per_60_l5":"number | null","a_per_60_ly":"number | null","a_per_60_std":"number | null","blk_per_60_3ya":"number | null","blk_per_60_ca":"number | null","blk_per_60_l10":"number | null","blk_per_60_l20":"number | null","blk_per_60_l5":"number | null","blk_per_60_ly":"number | null","blk_per_60_std":"number | null","g_per_60_3ya":"number | null","g_per_60_ca":"number | null","g_per_60_l10":"number | null","g_per_60_l20":"number | null","g_per_60_l5":"number | null","g_per_60_ly":"number | null","g_per_60_std":"number | null","hit_per_60_3ya":"number | null","hit_per_60_ca":"number | null","hit_per_60_l10":"number | null","hit_per_60_l20":"number | null","hit_per_60_l5":"number | null","hit_per_60_ly":"number | null","hit_per_60_std":"number | null","icf_per_60_3ya":"number | null","icf_per_60_ca":"number | null","icf_per_60_l10":"number | null","icf_per_60_l20":"number | null","icf_per_60_l5":"number | null","icf_per_60_ly":"number | null","icf_per_60_std":"number | null","ixg_per_60_3ya":"number | null","ixg_per_60_ca":"number | null","ixg_per_60_l10":"number | null","ixg_per_60_l20":"number | null","ixg_per_60_l5":"number | null","ixg_per_60_ly":"number | null","ixg_per_60_std":"number | null","pim_per_60_3ya":"number | null","pim_per_60_ca":"number | null","pim_per_60_l10":"number | null","pim_per_60_l20":"number | null","pim_per_60_l5":"number | null","pim_per_60_ly":"number | null","pim_per_60_std":"number | null","player_id":"number","ppa_per_60_3ya":"number | null","ppa_per_60_ca":"number | null","ppa_per_60_l10":"number | null","ppa_per_60_l20":"number | null","ppa_per_60_l5":"number | null","ppa_per_60_ly":"number | null","ppa_per_60_std":"number | null","ppa_per_60pp_3ya":"number | null","ppa_per_60pp_ca":"number | null","ppa_per_60pp_l10":"number | null","ppa_per_60pp_l20":"number | null","ppa_per_60pp_l5":"number | null","ppa_per_60pp_ly":"number | null","ppa_per_60pp_std":"number | null","ppg_per_60_3ya":"number | null","ppg_per_60_ca":"number | null","ppg_per_60_l10":"number | null","ppg_per_60_l20":"number | null","ppg_per_60_l5":"number | null","ppg_per_60_ly":"number | null","ppg_per_60_std":"number | null","ppg_per_60pp_3ya":"number | null","ppg_per_60pp_ca":"number | null","ppg_per_60pp_l10":"number | null","ppg_per_60pp_l20":"number | null","ppg_per_60pp_l5":"number | null","ppg_per_60pp_ly":"number | null","ppg_per_60pp_std":"number | null","ppp_per_60_3ya":"number | null","ppp_per_60_ca":"number | null","ppp_per_60_l10":"number | null","ppp_per_60_l20":"number | null","ppp_per_60_l5":"number | null","ppp_per_60_ly":"number | null","ppp_per_60_std":"number | null","ppp_per_60pp_3ya":"number | null","ppp_per_60pp_ca":"number | null","ppp_per_60pp_l10":"number | null","ppp_per_60pp_l20":"number | null","ppp_per_60pp_l5":"number | null","ppp_per_60pp_ly":"number | null","ppp_per_60pp_std":"number | null","pts_per_60_3ya":"number | null","pts_per_60_ca":"number | null","pts_per_60_l10":"number | null","pts_per_60_l20":"number | null","pts_per_60_l5":"number | null","pts_per_60_ly":"number | null","pts_per_60_std":"number | null","pts1_per_60_3ya":"number | null","pts1_per_60_ca":"number | null","pts1_per_60_l10":"number | null","pts1_per_60_l20":"number | null","pts1_per_60_l5":"number | null","pts1_per_60_ly":"number | null","pts1_per_60_std":"number | null","sog_per_60_3ya":"number | null","sog_per_60_ca":"number | null","sog_per_60_l10":"number | null","sog_per_60_l20":"number | null","sog_per_60_l5":"number | null","sog_per_60_ly":"number | null","sog_per_60_std":"number | null","updated_at":"string"},"wigo_recent":{"l10_a":"number | null","l10_a_per_60":"number | null","l10_atoi":"number | null","l10_blk":"number | null","l10_blk_per_60":"number | null","l10_g":"number | null","l10_g_per_60":"number | null","l10_gp":"number | null","l10_hit":"number | null","l10_hit_per_60":"number | null","l10_icf":"number | null","l10_icf_per_60":"number | null","l10_ihdcf_per_60":"number | null","l10_ipp":"number | null","l10_iscf_per_60":"number | null","l10_ixg":"number | null","l10_ixg_per_60":"number | null","l10_oi_sh_pct":"number | null","l10_ozs_pct":"number | null","l10_pim":"number | null","l10_pim_per_60":"number | null","l10_pp_pct":"number | null","l10_ppa":"number | null","l10_ppa_per_60":"number | null","l10_ppg":"number | null","l10_ppg_per_60":"number | null","l10_ppp":"number | null","l10_ppp_per_60":"number | null","l10_pptoi":"number | null","l10_pts":"number | null","l10_pts_per_60":"number | null","l10_pts1_pct":"number | null","l10_pts1_per_60":"number | null","l10_s_pct":"number | null","l10_sog":"number | null","l10_sog_per_60":"number | null","l20_a":"number | null","l20_a_per_60":"number | null","l20_atoi":"number | null","l20_blk":"number | null","l20_blk_per_60":"number | null","l20_g":"number | null","l20_g_per_60":"number | null","l20_gp":"number | null","l20_hit":"number | null","l20_hit_per_60":"number | null","l20_icf":"number | null","l20_icf_per_60":"number | null","l20_ihdcf_per_60":"number | null","l20_ipp":"number | null","l20_iscf_per_60":"number | null","l20_ixg":"number | null","l20_ixg_per_60":"number | null","l20_oi_sh_pct":"number | null","l20_ozs_pct":"number | null","l20_pim":"number | null","l20_pim_per_60":"number | null","l20_pp_pct":"number | null","l20_ppa":"number | null","l20_ppa_per_60":"number | null","l20_ppg":"number | null","l20_ppg_per_60":"number | null","l20_ppp":"number | null","l20_ppp_per_60":"number | null","l20_pptoi":"number | null","l20_pts":"number | null","l20_pts_per_60":"number | null","l20_pts1_pct":"number | null","l20_pts1_per_60":"number | null","l20_s_pct":"number | null","l20_sog":"number | null","l20_sog_per_60":"number | null","l5_a":"number | null","l5_a_per_60":"number | null","l5_atoi":"number | null","l5_blk":"number | null","l5_blk_per_60":"number | null","l5_g":"number | null","l5_g_per_60":"number | null","l5_gp":"number | null","l5_hit":"number | null","l5_hit_per_60":"number | null","l5_icf":"number | null","l5_icf_per_60":"number | null","l5_ihdcf_per_60":"number | null","l5_ipp":"number | null","l5_iscf_per_60":"number | null","l5_ixg":"number | null","l5_ixg_per_60":"number | null","l5_oi_sh_pct":"number | null","l5_ozs_pct":"number | null","l5_pim":"number | null","l5_pim_per_60":"number | null","l5_pp_pct":"number | null","l5_ppa":"number | null","l5_ppa_per_60":"number | null","l5_ppg":"number | null","l5_ppg_per_60":"number | null","l5_ppp":"number | null","l5_ppp_per_60":"number | null","l5_pptoi":"number | null","l5_pts":"number | null","l5_pts_per_60":"number | null","l5_pts1_pct":"number | null","l5_pts1_per_60":"number | null","l5_s_pct":"number | null","l5_sog":"number | null","l5_sog_per_60":"number | null","last_updated":"string","player_id":"number"}}
+--- a/web/e2e/wigo-single-viewport.spec.ts
++++ /dev/null
+@@ -1,663 +0,0 @@
+-import { expect, test, Page } from "@playwright/test";
+-import { WIGO_STAT_ORDER } from "../components/WiGO/statMetadata";
+-
+-const evidenceDirectory = "../tasks/TASKS/wigo-single-viewport/evidence";
+-const periods = ["STD", "LY", "CA", "3YA", "L5", "L10", "L20"];
+-
+-test("recent-window disclosure and focusable timeframe controls remain visible across viewport sizes", async ({ page }) => {
+-  test.setTimeout(120_000);
+-  await page.route("**/rest/v1/**", route =>
+-    ["GET", "HEAD"].includes(route.request().method()) || new URL(route.request().url()).pathname.includes("/rpc/")
+-      ? route.continue()
+-      : route.abort(),
+-  );
+-  for (const [width, height] of [[1180, 757], [1024, 768], [768, 1024], [390, 844], [320, 844]]) {
+-    await page.setViewportSize({ width, height });
+-    await page.goto("/wigoCharts?playerId=8476453&tab=comparison");
+-    const caption = page.locator("caption").filter({ hasText: "Aggregate dates and source coverage are unavailable" });
+-    await expect(caption).toBeVisible({ timeout: 60_000 });
+-    await expect(caption).toContainText("see GP for actual samples");
+-    const timeframe = page.getByLabel("Select left timeframe for comparison");
+-    await timeframe.focus();
+-    await expect(timeframe).toBeFocused();
+-    await timeframe.selectOption("LY");
+-    await expect(timeframe).toHaveValue("LY");
+-    await expect(caption).toBeVisible();
+-    const showGoals = page.getByRole("button", { name: "Show Goals game log", exact: true });
+-    await showGoals.focus();
+-    await page.keyboard.press("Enter");
+-    const hideGoals = page.getByRole("button", { name: "Hide Goals game log", exact: true });
+-    await expect(hideGoals).toHaveAttribute("aria-expanded", "true");
+-    await page.keyboard.press("Enter");
+-    await expect(showGoals).toHaveAttribute("aria-expanded", "false");
+-  }
+-});
+-
+-test("radar distinguishes a timeout from missing data and supports retry", async ({ page }) => {
+-  let attempts = 0;
+-  await page.route("**/rest/v1/rpc/get_skaters_avg_stats", route => {
+-    attempts++;
+-    return attempts <= 2
+-      ? route.fulfill({ status: 500, json: { code: "57014", message: "statement timeout" } })
+-      : route.fulfill({ json: [{ id: 8476453, avggoals: 1, avgassists: 1, avgplusminus: 1, avgpim: 1, avghits: 1, avgblockedshots: 1, avgpowerplaypoints: 1, avgshots: 1, numgames: 76 }] });
+-  });
+-  await page.goto("/wigoCharts?playerId=8476453");
+-  const radar = page.locator('[data-coverage="C15"]');
+-  await expect(radar).toContainText("Category percentile request timed out.");
+-  expect(attempts).toBe(2);
+-  await expect(radar).not.toContainText("unavailable for this player");
+-  await radar.getByRole("button", { name: "Retry category percentiles" }).click();
+-  await expect(radar.locator("canvas")).toBeVisible();
+-  expect(attempts).toBe(3);
+-  await expect(radar).not.toContainText("timed out");
+-});
+-
+-test.use({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 });
+-
+-async function assertViewport(page: Page) {
+-  const measurements = await page.evaluate(() => {
+-    const visible = (element: Element) =>
+-      element.getBoundingClientRect().width > 0 &&
+-      element.getBoundingClientRect().height > 0;
+-    const root = document.querySelector('[class*="wigoDashboardContent"]')!;
+-    const panels = Array.from(
+-      root.querySelectorAll<HTMLElement>("[data-coverage]"),
+-    ).filter(visible);
+-    const outside = panels
+-      .filter((element) => {
+-        const r = element.getBoundingClientRect();
+-        return (
+-          r.x < -1 ||
+-          r.y < -1 ||
+-          r.right > innerWidth + 1 ||
+-          r.bottom > innerHeight + 1
+-        );
+-      })
+-      .map((element) => element.dataset.coverage);
+-    const overflowing = Array.from(root.querySelectorAll<HTMLElement>("*"))
+-      .filter(
+-        (element) =>
+-          visible(element) &&
+-          !element.closest("details:not([open])") &&
+-          !element.className.toString().includes("visuallyHidden") &&
+-          element instanceof HTMLElement &&
+-          getComputedStyle(element).display !== "inline" &&
+-          (element.scrollWidth > element.clientWidth + 1 ||
+-            element.scrollHeight > element.clientHeight + 1),
+-      )
+-      .map((element) => ({
+-        name: element.className,
+-        text: element.innerText?.slice(0, 50),
+-        client: [element.clientWidth, element.clientHeight],
+-        scroll: [element.scrollWidth, element.scrollHeight],
+-      }));
+-    const smallText = [
+-      ...Array.from(root.querySelectorAll<HTMLElement>("*")),
+-      ...Array.from(document.querySelectorAll<HTMLElement>("header *")),
+-    ]
+-      .filter(
+-        (element) =>
+-          visible(element) &&
+-          !element.closest("details:not([open])") &&
+-          Array.from(element.childNodes).some(
+-            (node) =>
+-              node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
+-          ) &&
+-          parseFloat(getComputedStyle(element).fontSize) < 12,
+-      )
+-      .map((element) => ({
+-        text: element.textContent?.slice(0, 60),
+-        size: getComputedStyle(element).fontSize,
+-      }));
+-    const clippedCells = Array.from(root.querySelectorAll("table th, table td"))
+-      .filter((cell) => {
+-        const bounds = cell.getBoundingClientRect();
+-        const walker = document.createTreeWalker(cell, NodeFilter.SHOW_TEXT);
+-        let node;
+-        while ((node = walker.nextNode())) {
+-          if (!node.textContent?.trim()) continue;
+-          const range = document.createRange();
+-          range.selectNodeContents(node);
+-          const text = range.getBoundingClientRect();
+-          if (
+-            text.left < bounds.left - 1 ||
+-            text.right > bounds.right + 1 ||
+-            text.top < bounds.top - 1 ||
+-            text.bottom > bounds.bottom + 1
+-          )
+-            return true;
+-        }
+-        return false;
+-      })
+-      .map((cell) => cell.textContent);
+-    return {
+-      clippedCells,
+-      document: [
+-        document.documentElement.scrollWidth,
+-        document.documentElement.scrollHeight,
+-      ],
+-      outside,
+-      overflowing,
+-      smallText,
+-      coverage: panels.flatMap((element) =>
+-        element.dataset.coverage!.split(" "),
+-      ),
+-    };
+-  });
+-  expect(measurements.document, JSON.stringify(measurements)).toEqual([1920, 1080]);
+-  expect(measurements.outside).toEqual([]);
+-  expect(measurements.overflowing).toEqual([]);
+-  expect(measurements.smallText).toEqual([]);
+-  expect(measurements.clippedCells).toEqual([]);
+-  for (let id = 1; id <= 19; id++)
+-    expect(measurements.coverage).toContain(`C${String(id).padStart(2, "0")}`);
+-  return measurements;
+-}
+-
+-async function ready(page: Page) {
+-  await page.goto("/wigoCharts?playerId=8476453&tab=comparison");
+-  await expect(
+-    page.getByRole("combobox", { name: "Search player" }),
+-  ).toHaveValue("Nikita Kucherov");
+-  await expect(page.locator('[data-coverage="C07"]')).toContainText("Offense", {
+-    timeout: 60_000,
+-  });
+-  await expect(page.locator('[data-coverage="C19"] meter')).toHaveCount(16, {
+-    timeout: 60_000,
+-  });
+-  await expect(page.locator("#wigo-selected-stat .recharts-line")).toHaveCount(
+-    1,
+-  );
+-}
+-
+-test("complete desktop matrix, reserved log, filters and chart controls", async ({
+-  page,
+-}) => {
+-  test.setTimeout(120_000);
+-  await page.addInitScript(() => {
+-    const fillText = CanvasRenderingContext2D.prototype.fillText;
+-    CanvasRenderingContext2D.prototype.fillText = function (
+-      text,
+-      x,
+-      y,
+-      maxWidth,
+-    ) {
+-      const canvas = this.canvas as HTMLCanvasElement & {
+-        wigoLabels?: Record<string, string>;
+-      };
+-      (canvas.wigoLabels ??= {})[text] = this.font;
+-      if (maxWidth === undefined) fillText.call(this, text, x, y);
+-      else fillText.call(this, text, x, y, maxWidth);
+-    };
+-  });
+-  const errors: string[] = [];
+-  let teamGameRequests = 0;
+-  page.on("request", request => {
+-    const url = new URL(request.url());
+-    if (url.pathname.endsWith("/wgo_team_stats") && url.searchParams.get("select")?.includes("pp_opportunities")) teamGameRequests++;
+-  });
+-  page.on("pageerror", (error) => errors.push(error.message));
+-  page.on("console", (message) => {
+-    if (/hydration|Warning:.*React|Each child in a list/.test(message.text()))
+-      errors.push(message.text());
+-  });
+-  // This verification never permits existing image-enrichment code to write remotely.
+-  await page.route("**/rest/v1/**", (route) =>
+-    ["PATCH", "PUT", "DELETE"].includes(route.request().method())
+-      ? route.abort()
+-      : route.continue(),
+-  );
+-  // Fictional cohorts and game logs keep this populated-state check independent
+-  // of current-season ingestion. They do not establish live/historical acceptance.
+-  await page.route("**/rest/v1/nst_percentile_*", route => {
+-    const query = new URL(route.request().url()).searchParams;
+-    const season = Number(query.get("season")?.replace("eq.", ""));
+-    const columns = query.get("select")!.split(",").map(column => column.trim());
+-    const rows = [8476453, 8478402, 8478483].map((playerId, index) => ({
+-      ...Object.fromEntries(columns.map(column => [column, column.endsWith("_pct") ? 0.4 + index * 0.1 : index + 1])),
+-      player_id: playerId, season, gp: 20, toi_seconds: 24_000,
+-    }));
+-    return route.fulfill({ json: rows });
+-  });
+-  const gameLogs = Array.from({ length: 20 }, (_, index) => ({
+-    game_id: 2026020001 + index,
+-    date: `2026-10-${String(index + 1).padStart(2, "0")}`,
+-    points: index % 4, goals: index % 2, shots: 2 + index % 5,
+-    hits: index % 3, blocked_shots: index % 2,
+-    toi_per_game: 1200 + index * 10, pp_toi_per_game: 240 + index * 5,
+-    pp_toi_pct_per_game: 0.2,
+-  }));
+-  await page.route("**/rest/v1/wgo_skater_stats?*", route => route.fulfill({ json: gameLogs }));
+-  await page.route("**/rest/v1/nst_gamelog_as_rates?*", route => route.fulfill({ json: gameLogs.map(game => ({
+-    date_scraped: game.date, shots_per_60: game.shots * 3600 / game.toi_per_game,
+-  })) }));
+-  await page.route("**/rest/v1/rpc/get_skater_game_scores_for_season*", route => route.fulfill({ json: gameLogs.map((game, index) => ({
+-    game_date: game.date, game_score: (index % 7) * 0.5,
+-  })) }));
+-  await page.route("**/rest/v1/rpc/get_skaters_avg_stats", (route) =>
+-    route.fulfill({
+-      json: [0, 1, 2].map((value) => ({
+-        id: value === 1 ? 8476453 : value,
+-        avggoals: value,
+-        avgassists: value,
+-        avgplusminus: value,
+-        avgpim: value,
+-        avghits: value,
+-        avgblockedshots: value,
+-        avgpowerplaypoints: value,
+-        avgshots: value,
+-        count: 20,
+-      })),
+-    }),
+-  );
+-  await ready(page);
+-  const teamDrivers = page.locator('[class*="driverGrid"]');
+-  await expect(teamDrivers.locator("article")).toHaveCount(4);
+-  await expect(page.locator('[data-coverage="C08 C09 C10 C11"]')).toContainText(/Regular season · 5v5:|Incomplete regular-season coverage/);
+-  const initialTeamRequests = teamGameRequests;
+-  expect(initialTeamRequests).toBeGreaterThan(0);
+-  await test.info().attach("team-driver-values", { body: await teamDrivers.innerText(), contentType: "text/plain" });
+-  const matrix = page.getByRole("table", { name: /Seven timeframes/ });
+-  await expect(matrix.getByRole("columnheader")).toHaveCount(37);
+-  expect(await matrix.getByRole("columnheader").allTextContents()).toEqual([
+-    "Period",
+-    ...WIGO_STAT_ORDER,
+-  ]);
+-  await expect(matrix.locator("tbody tr")).toHaveCount(8);
+-  await expect(matrix.locator("tbody td")).toHaveCount(288);
+-  expect(await matrix.getByRole("rowheader").allTextContents()).toEqual([
+-    "STD L",
+-    "LY ",
+-    "CA R",
+-    "3YA ",
+-    "L5 ",
+-    "L10 ",
+-    "L20 ",
+-    "DIFF",
+-  ]);
+-  await expect(
+-    matrix.getByRole("button", { name: "Show GP game log", exact: true }),
+-  ).toHaveCount(0);
+-  const before = await page.locator("#wigo-selected-stat").boundingBox();
+-  for (const metric of ["Goals", "ATOI", "S%", "SOG/60"]) {
+-    await page
+-      .getByRole("button", { name: `Show ${metric} game log`, exact: true })
+-      .click();
+-    await expect(page.locator("#wigo-selected-stat h3")).toContainText(metric);
+-    await expect(
+-      page.getByRole("button", {
+-        name: `Show ${metric} game log`,
+-        exact: true,
+-      }),
+-    ).toHaveAttribute("aria-pressed", "true");
+-    expect(await page.locator("#wigo-selected-stat").boundingBox()).toEqual(
+-      before,
+-    );
+-  }
+-  for (const period of periods) {
+-    const toggle = page.getByRole("button", {
+-      name: `Toggle ${period} reference`,
+-      exact: true,
+-    });
+-    const previous = await toggle.getAttribute("aria-pressed");
+-    await toggle.click();
+-    await expect(toggle).toHaveAttribute(
+-      "aria-pressed",
+-      previous === "true" ? "false" : "true",
+-    );
+-  }
+-  await page
+-    .getByLabel("Select left timeframe for comparison")
+-    .selectOption("L10");
+-  await page
+-    .getByLabel("Select right timeframe for comparison")
+-    .selectOption("L10");
+-  await expect(matrix.locator("tr[data-left][data-right] th")).toHaveText(
+-    "L10 LR",
+-  );
+-  await page
+-    .getByLabel("Select left timeframe for comparison")
+-    .selectOption("STD");
+-  await page
+-    .getByLabel("Select right timeframe for comparison")
+-    .selectOption("CA");
+-  const toi = page.locator('[data-coverage="C16"]');
+-  await toi.getByRole("button", { name: "PP TOI %", exact: true }).click();
+-  await expect(toi).toContainText("Power Play TOI %");
+-  await toi.getByRole("button", { name: "TOI", exact: true }).click();
+-  for (const id of ["C16", "C17", "C18"]) {
+-    const panel = page.locator(`[data-coverage="${id}"]`);
+-    const canvas = panel.locator("canvas");
+-    await page.mouse.move(0, 0);
+-    await page.waitForTimeout(1100);
+-    const originalPlot = await canvas.evaluate((element) =>
+-      (element as HTMLCanvasElement).toDataURL(),
+-    );
+-    const bounds = (await canvas.boundingBox())!;
+-    await page.mouse.move(bounds.x + 100, bounds.y + 30);
+-    await page.mouse.down();
+-    await page.mouse.move(bounds.x + 300, bounds.y + 40, { steps: 8 });
+-    await page.mouse.up();
+-    await page.mouse.move(0, 0);
+-    await page.waitForTimeout(1100);
+-    const zoomedPlot = await canvas.evaluate((element) =>
+-      (element as HTMLCanvasElement).toDataURL(),
+-    );
+-    expect(zoomedPlot).not.toBe(originalPlot);
+-    await page.keyboard.down("Shift");
+-    await page.mouse.move(bounds.x + 250, bounds.y + 45);
+-    await page.mouse.down();
+-    await page.mouse.move(bounds.x + 180, bounds.y + 45, { steps: 8 });
+-    await page.mouse.up();
+-    await page.keyboard.up("Shift");
+-    await page.mouse.move(0, 0);
+-    await page.waitForTimeout(1100);
+-    expect(
+-      await canvas.evaluate((element) =>
+-        (element as HTMLCanvasElement).toDataURL(),
+-      ),
+-    ).not.toBe(zoomedPlot);
+-    await panel.getByRole("button", { name: "Reset", exact: true }).click();
+-    await page.mouse.move(0, 0);
+-    await page.waitForTimeout(1100);
+-    expect(
+-      await canvas.evaluate((element) =>
+-        (element as HTMLCanvasElement).toDataURL(),
+-      ),
+-    ).toBe(originalPlot);
+-  }
+-  const rates = page.locator('[data-coverage="C19"]');
+-  for (const strength of ["ES", "PP", "PK", "AS"]) {
+-    await rates.getByRole("button", { name: strength, exact: true }).click();
+-    await expect(
+-      rates.getByRole("button", { name: strength, exact: true }),
+-    ).toHaveAttribute("aria-pressed", "true");
+-    await expect(rates.locator("meter")).toHaveCount(16, { timeout: 60_000 });
+-  }
+-  await page.getByLabel("Min GP:").fill("15");
+-  await expect(rates).toContainText("Min GP:15");
+-  await page.getByLabel("Min GP:").fill("10");
+-  await page.mouse.move(0, 0);
+-  const radarLabels = await page
+-    .locator('[data-coverage="C15"] canvas')
+-    .evaluate(
+-      (element) =>
+-        (element as HTMLCanvasElement & { wigoLabels: Record<string, string> })
+-          .wigoLabels,
+-    );
+-  for (const label of [
+-    "GOALS",
+-    "ASSISTS",
+-    "PPP",
+-    "SOG",
+-    "+/−",
+-    "PIM",
+-    "BLK",
+-    "HITS",
+-    "100",
+-  ])
+-    expect(radarLabels).toHaveProperty(label);
+-  const smallCanvasLabels = await page
+-    .locator('[class*="wigoDashboardContent"] canvas')
+-    .evaluateAll((elements) =>
+-      elements.flatMap((element) =>
+-        Object.entries(
+-          (
+-            element as HTMLCanvasElement & {
+-              wigoLabels?: Record<string, string>;
+-            }
+-          ).wigoLabels ?? {},
+-        ).filter(([, font]) => Number(font.match(/([\d.]+)px/)?.[1]) < 12),
+-      ),
+-    );
+-  expect(smallCanvasLabels).toEqual([]);
+-  const measurements = await assertViewport(page);
+-  await page.screenshot({
+-    path: test.info().outputPath("desktop-populated-fixture-1920x1080.png"),
+-    fullPage: false,
+-  });
+-  await test.info().attach("viewport-measurements", {
+-    body: JSON.stringify(measurements, null, 2),
+-    contentType: "application/json",
+-  });
+-  await page
+-    .locator("#wigo-selected-stat .recharts-wrapper")
+-    .hover({ position: { x: 350, y: 100 } });
+-  await expect(page.locator("#wigo-selected-stat")).toContainText(
+-    /Game \d+ \(/,
+-  );
+-  await page.mouse.move(0, 0);
+-  expect(errors).toEqual([]);
+-  await page.getByRole("button", { name: "Clear", exact: true }).click();
+-  await expect(
+-    page.getByRole("combobox", { name: "Search player" }),
+-  ).toBeFocused();
+-  await expect(page).not.toHaveURL(/playerId=/);
+-  await assertViewport(page);
+-  const search = page.getByRole("combobox", { name: "Search player" });
+-  await search.fill("Connor McDavid");
+-  await expect(page.getByRole("option").first()).toContainText(
+-    "Connor McDavid",
+-  );
+-  await search.press("ArrowDown");
+-  await search.press("Enter");
+-  await expect(search).toHaveValue("Connor McDavid");
+-  await expect(search).toBeFocused();
+-  await expect(page).toHaveURL(/playerId=8478402/);
+-  await expect(page.locator('[data-coverage="C02 C03"]')).toContainText(
+-    "MCDAVID",
+-    { ignoreCase: true },
+-  );
+-  await expect(teamDrivers.locator("article")).toHaveCount(4);
+-  expect(teamGameRequests).toBe(initialTeamRequests);
+-});
+-
+-test("long identity, missing image and radar, seven-point bucket and empty stat log fit", async ({
+-  page,
+-}) => {
+-  test.setTimeout(120_000);
+-  await page.route("**/rest/v1/players?*", async (route) => {
+-    const response = await route.fetch();
+-    const data = await response.json();
+-    if (!Array.isArray(data) && data?.id === 8476453) {
+-      await route.fulfill({
+-        response,
+-        json: {
+-          ...data,
+-          firstName: "Jean-Christophe",
+-          lastName: "Beauvillier-Johnson",
+-          fullName: "Jean-Christophe Beauvillier-Johnson",
+-          image_url: null,
+-          birthDate: null,
+-          heightInCentimeters: null,
+-          weightInKilograms: null,
+-        },
+-      });
+-    } else await route.fulfill({ response });
+-  });
+-  await page.route("https://api-web.nhle.com/v1/player/*/landing", (route) =>
+-    route.fulfill({ json: {} }),
+-  );
+-  await page.route("**/rest/v1/rpc/get_skaters_avg_stats", (route) =>
+-    route.fulfill({ json: [] }),
+-  );
+-  await page.route("**/rest/v1/nst_gamelog_as_rates?*", (route) =>
+-    route.fulfill({ json: [] }),
+-  );
+-  await page.route("**/rest/v1/wgo_skater_stats?*", (route) => {
+-    const select = new URL(route.request().url()).searchParams
+-      .get("select")
+-      ?.replace(/\s/g, "");
+-    if (select === "game_id,date,points,shots,hits,blocked_shots") {
+-      return route.fulfill({
+-        json: Array.from({ length: 8 }, (_, points) => ({
+-          game_id: 2025020001 + points,
+-          date: `2026-01-${String(points + 1).padStart(2, "0")}`,
+-          points,
+-          shots: points,
+-          hits: 0,
+-          blocked_shots: 0,
+-        })),
+-      });
+-    }
+-    return route.continue();
+-  });
+-  await page.goto("/wigoCharts?playerId=8476453");
+-  await expect(
+-    page.getByRole("combobox", { name: "Search player" }),
+-  ).toHaveValue("Jean-Christophe Beauvillier-Johnson");
+-  await expect(page.locator('[data-coverage="C14"]')).toContainText("7 Pts:");
+-  await expect(page.locator('[data-coverage="C14"]')).toContainText("8 GP");
+-  await expect(page.locator('[data-coverage="C15"]')).toContainText(
+-    "unavailable",
+-  );
+-  await expect(page.locator("#wigo-selected-stat")).toContainText(
+-    "No game log data",
+-  );
+-  await expect(
+-    page.getByRole("button", { name: /^Toggle .* reference$/ }),
+-  ).toHaveCount(7);
+-  await expect(page.locator('[data-coverage="C19"] meter')).toHaveCount(16, {
+-    timeout: 60_000,
+-  });
+-  await assertViewport(page);
+-  await page.screenshot({
+-    path: `${evidenceDirectory}/edge-states-1920x1080.png`,
+-    fullPage: false,
+-  });
+-});
+-
+-test("existing narrower-screen access and URL tabs remain available", async ({
+-  page,
+-}) => {
+-  test.setTimeout(120_000);
+-  await ready(page);
+-  for (const size of [
+-    { width: 1440, height: 900 },
+-    { width: 1024, height: 768 },
+-    { width: 390, height: 844 },
+-  ]) {
+-    await page.setViewportSize(size);
+-    await expect(
+-      page.getByRole("combobox", { name: "Search player" }),
+-    ).toHaveCount(1);
+-    await expect(
+-      page.getByRole("combobox", { name: "Search player" }),
+-    ).toBeVisible();
+-    if (size.width === 390) {
+-      await expect(
+-        page.getByRole("button", { name: "Comparison", exact: true }),
+-      ).toBeVisible();
+-      await page.getByRole("button", { name: "Overview", exact: true }).click();
+-      await expect(page).toHaveURL(/tab=overview/);
+-      await page
+-        .getByRole("button", { name: "Comparison", exact: true })
+-        .click();
+-      await expect(page).toHaveURL(/tab=comparison/);
+-      const comparison = page.locator('table').filter({ has: page.getByRole("columnheader", { name: "STD", exact: true }) });
+-      await expect(comparison).toBeVisible();
+-      for (const period of [...periods, "DIFF"]) {
+-        await expect(comparison.getByRole("columnheader", { name: period, exact: true })).toBeVisible();
+-      }
+-    }
+-    await page.screenshot({
+-      path: `${evidenceDirectory}/narrow-${size.width}x${size.height}.png`,
+-      fullPage: false,
+-    });
+-  }
+-});
+-
+-test("source failure and missing history remain explicit within their reserved regions", async ({
+-  page,
+-}) => {
+-  test.setTimeout(120_000);
+-  await page.route("**/rest/v1/wigo_recent?*", async route => {
+-    const response = await route.fetch();
+-    const data = await response.json();
+-    for (const row of Array.isArray(data) ? data : data ? [data] : []) {
+-      // Fictional source gaps and independent PP coverage; these are consumer fixtures.
+-      for (const prefix of ["l5", "l10", "l20"]) Object.assign(row, {
+-        [`${prefix}_gp`]: 1, [`${prefix}_atoi`]: 20, [`${prefix}_g`]: 0, [`${prefix}_g_per_60`]: 0,
+-        [`${prefix}_pts`]: null, [`${prefix}_pts_per_60`]: null,
+-        [`${prefix}_pptoi`]: 320, [`${prefix}_ppp`]: 1, [`${prefix}_ppp_per_60`]: 11.25,
+-      });
+-    }
+-    await route.fulfill({ response, json: data });
+-  });
+-  await page.route("**/rest/v1/wigo_rates?*", route => route.fulfill({ json: {
+-    player_id: 8476453, pts_per_60_l5: 999, pts_per_60_l10: 999, pts_per_60_l20: 999,
+-    g_per_60_l5: 0, g_per_60_l10: 0, g_per_60_l20: 0,
+-    ppp_per_60_l5: 11.25, ppp_per_60_l10: 11.25, ppp_per_60_l20: 11.25,
+-  } }));
+-  await page.route("**/rest/v1/wgo_skater_stats?*", (route) => {
+-    const select = new URL(route.request().url()).searchParams
+-      .get("select")
+-      ?.replace(/\s/g, "");
+-    return select === "game_id,date,points,shots,hits,blocked_shots"
+-      ? route.fulfill({
+-          json: [
+-            {
+-              game_id: 2025020001,
+-              date: "2026-01-01",
+-              points: null,
+-              shots: 0,
+-              hits: 0,
+-              blocked_shots: 0,
+-            },
+-          ],
+-        })
+-      : route.continue();
+-  });
+-  await page.route("**/rest/v1/nst_gamelog_as_rates?*", (route) =>
+-    route.fulfill({
+-      status: 503,
+-      json: { message: "Test source unavailable" },
+-    }),
+-  );
+-  for (const table of ["wigo_career"]) {
+-    await page.route(`**/rest/v1/${table}?*`, async (route) => {
+-      const response = await route.fetch();
+-      const data = await response.json();
+-      for (const row of Array.isArray(data) ? data : data ? [data] : [])
+-        for (const key of Object.keys(row))
+-          if (/^(ly|ca|ya3|3ya)_/.test(key)) row[key] = null;
+-      await route.fulfill({ response, json: data });
+-    });
+-  }
+-  await page.goto("/wigoCharts?playerId=8476453");
+-  await expect(page.locator("#wigo-selected-stat")).toContainText(
+-    "Failed to load game log for SOG/60.",
+-    { timeout: 60_000 },
+-  );
+-  const matrix = page.getByRole("table", { name: /Seven timeframes/ });
+-  await expect(page.locator('[data-coverage="C14"]')).toContainText(
+-    "Consistency unavailable: incomplete game data.",
+-  );
+-  await expect(matrix.locator("tbody tr").nth(1).locator("td")).toHaveText(
+-    Array(36).fill("-"),
+-  );
+-  for (const period of ["L5", "L10", "L20"]) {
+-    const row = matrix.locator("tbody tr").nth(periods.indexOf(period));
+-    await expect(row.locator("td").nth(WIGO_STAT_ORDER.indexOf("PTS/60"))).toHaveText("-");
+-    await expect(row.locator("td").nth(WIGO_STAT_ORDER.indexOf("Goals"))).toHaveText("0");
+-    await expect(row.locator("td").nth(WIGO_STAT_ORDER.indexOf("ATOI"))).toHaveText("20:00");
+-    await expect(row.locator("td").nth(WIGO_STAT_ORDER.indexOf("PPP/60"))).toHaveText("11.25");
+-  }
+-  await expect(
+-    page.getByRole("button", { name: /^Toggle .* reference$/ }),
+-  ).toHaveCount(7);
+-  await expect(page.locator('[data-coverage="C19"] meter')).toHaveCount(16, {
+-    timeout: 60_000,
+-  });
+-  await assertViewport(page);
+-  await page.setViewportSize({ width: 390, height: 844 });
+-  await page.getByRole("button", { name: "Comparison", exact: true }).click();
+-  const comparison = page.locator("table").filter({ has: page.getByRole("columnheader", { name: "STD", exact: true }) });
+-  const points = comparison.getByRole("row", { name: /PTS\/60/ });
+-  const goals = comparison.getByRole("row", { name: /^Goals/ });
+-  for (const period of ["L5", "L10", "L20"]) {
+-    await expect(points.locator("td").nth(periods.indexOf(period) + 1)).toHaveText("-");
+-    await expect(goals.locator("td").nth(periods.indexOf(period) + 1)).toHaveText("0");
+-  }
+-  await expect(points.locator("td").last()).toHaveText("-");
+-});

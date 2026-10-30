@@ -1,0 +1,54 @@
+--- a/web/pages/api/v1/db/calculate-wigo-stats.ts
++++ b/web/pages/api/v1/db/calculate-wigo-stats.ts
+@@ -243,6 +243,7 @@
+     );
+ 
+     let processedCount = 0;
++    const rejectedPlayerIds: number[] = [];
+     // Define batch arrays with non-partial types
+     const allCareerUpsertData: WigoCareerData[] = [];
+     const allRecentUpsertData: WigoRecentData[] = [];
+@@ -304,7 +305,7 @@
+       const wgoLogs = (wgoGamelogRes.data || []) as SelectedWgoGamelog[];
+       const gameIds = new Set<number>();
+       const recentSeasons = new Set<number>();
+-      for (const game of wgoLogs) {
++      const invalidFrame = wgoLogs.some(game => {
+         const seasonStart = Math.floor((game.season_id ?? 0) / 10000);
+         if (
+           game.game_id == null || game.season_id == null ||
+@@ -314,11 +315,15 @@
+           game.season_id !== seasonStart * 10000 + seasonStart + 1 ||
+           game.games_played !== 1 ||
+           gameIds.has(game.game_id)
+-        ) {
+-          throw new Error(`Invalid or duplicate regular-season NHL appearance for player ${playerId}.`);
+-        }
++        ) return true;
+         gameIds.add(game.game_id);
+         recentSeasons.add(game.season_id);
++        return false;
++      });
++      // Withhold every write for this player only; the run still reports failure.
++      if (invalidFrame) {
++        rejectedPlayerIds.push(playerId);
++        continue;
+       }
+ 
+       // Keep the existing cross-season NHL window; NST must match its exact dates
+@@ -1345,6 +1350,15 @@
+ 
+     const durationSec = ((Date.now() - startTime) / 1000).toFixed(2);
+     console.log(`Finished player stats update in ${durationSec}s.`);
++    if (rejectedPlayerIds.length > 0) {
++      return res.status(207).json({
++        success: false,
++        error: `Invalid or duplicate regular-season NHL appearance for ${rejectedPlayerIds.length} player(s): ${rejectedPlayerIds.slice(0, 10).join(", ")}.`,
++        rejectedPlayerIds,
++        message: `Processed ${processedCount} of ${uniquePlayerIds.length} players; rejected players were not written.`,
++        duration: `${durationSec} s`
++      });
++    }
+     return res.status(200).json({
+       success: true,
+       message: `Successfully processed ${processedCount} of ${uniquePlayerIds.length} players.`,

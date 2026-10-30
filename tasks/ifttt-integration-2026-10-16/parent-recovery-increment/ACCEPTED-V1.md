@@ -1,0 +1,9 @@
+# Parent recovery v1 — independently accepted bounded legacy producer
+
+Reviewer independently verified all63 pins at SHA256 `827c373d5fb4dc80d2dbe5b5b5c624ff6d62a78e4f826c6aad7abaa123697863`, allaccepted59 and579 prior reviewer artifacts unchanged. Formal report: `../review-parent-recovery-v1/REVIEW.md`; immutable evidence manifest: `../review-parent-recovery-v1/review-artifacts-sha256.json`.
+
+Eight PG tests pass: the unchanged five author tests plus three independent probes, including committed-parent readback missing/conflicting boundaries. All eight original CR037/CR041 assertions pass in the documented legacy projection; scoped TSC exits0. The four forced full-parent conflict variants reject with no new report/event/fixture child or downstream call; distinct original/relay provenance and exact committed-parent readback ordering are accepted within this fixture boundary.
+
+The reviewer accepts bounded local legacy producer projections only. CR041 evidence-version uniqueness maps specifically to legacy report_key, the forecast consumer remains mocked to fixture children, and no native-r3 evidence ledger, real consumer receipt, full52, authentic future or operational acceptance is inferred. No runtime/SQL edit was required. The fresh adapter models a logical retry, not an operating-system kill/restart. Earlier setup/JSON-body fixture evidence remains preserved and separate from final retained-schema results.
+
+The parent-specific hold is released. The overlapping67 transport candidate remains frozen for its separate review; no source change follows this acceptance. Production DDL/deployment, ingestion, dispatch, replay, activation, scheduler and historical repair remain unauthorized. The next actual integration boundary is documented in `../transport-recovery-increment/NEXT-CONSUMER-BOUNDARY.md`.

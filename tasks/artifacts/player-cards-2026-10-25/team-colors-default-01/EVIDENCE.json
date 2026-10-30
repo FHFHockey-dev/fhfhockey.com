@@ -1,0 +1,205 @@
+{
+  "sourcePins": [
+    {
+      "path": "web/components/player-cards/PlayerCardShareStudio.tsx",
+      "bytes": 10076,
+      "sha256": "c96629b6cc07ec8be06aab2804e0e6f3793650b0e3ed71f692591f5cd9969ad9"
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardShareStudio.test.tsx",
+      "bytes": 7034,
+      "sha256": "2fcd04e379852ba7104c03f4ee5df5462ebe3a1de659cf5f2a98d7eaad1afd78"
+    }
+  ],
+  "artifactPins": [
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/CHANGED-FILES.json",
+      "bytes": 488,
+      "sha256": "ab6cbbe8b5b38263b761a8c838ada07c2325a6a9e387d8f9122a033213dd40bd"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/LEASE.json",
+      "bytes": 2348,
+      "sha256": "e725722d18c7ba99e459a7c515543368bbe4a87eb4bbdd4351d1dfafaf465657"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/before/web/components/player-cards/PlayerCardShareStudio.test.tsx",
+      "bytes": 6170,
+      "sha256": "29e6d762119eb5d68eb2c241d04589f5bb1057dfa373354d224012c7eda93ba8"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/before/web/components/player-cards/PlayerCardShareStudio.tsx",
+      "bytes": 10073,
+      "sha256": "703c29716a52c18c3560606155474016351f9e080e46f5e603b9bfb71a5abfb4"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/browser-check.mjs",
+      "bytes": 6401,
+      "sha256": "41cd963a90aa0732e4bf9b128e212ec1603731cbf86e512df8364ac9182c15e2"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/browser-command.json",
+      "bytes": 660,
+      "sha256": "7b3f864adb694089f8b49343217244820665f6c2b76f49322538466e94f8c2da"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/browser-results.json",
+      "bytes": 635,
+      "sha256": "1f7d4eb9afad19fec72d8409e0476bec7cbff10b74e8e2346a33fd909027f898"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/browser.log",
+      "bytes": 596,
+      "sha256": "52d1f843591f67ec591c7b410b068fdb7df6046f7c2123f2d33d137262e25986"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/candidate-pins.json",
+      "bytes": 776,
+      "sha256": "8556deff3de739e1f36c61bc9ff177b9745974af66fe5433abf3c10fd64d2a6c"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/default-card.png",
+      "bytes": 614664,
+      "sha256": "10bb4a91caaf0f8fa2f36cd34505c3523f8cf062939a23ed96133f33779f8d91"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/default-manifest.json",
+      "bytes": 5551,
+      "sha256": "971a63d672c9d0ed7b58d3881e404212588b611eef057f0b97e316e509aa517b"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/desktop-card.png",
+      "bytes": 48579,
+      "sha256": "3bcdac14180dcf7e4afd00a8b4e2446bc11034bbbe1e599aef16059e8e0ea5d2"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/handoff-preview.py",
+      "bytes": 4816,
+      "sha256": "fe5b5383c76a44e779331da727487b769e4605cc43a6b960656c0186bffb403c"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/lint-command.json",
+      "bytes": 691,
+      "sha256": "a2f0f881806609f05ee8179f11efaed00c79dcac99ab69c85ec055da921f5986"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/lint.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/offline.setup.ts",
+      "bytes": 206,
+      "sha256": "1cc06f39cb5f2dd1983fbd1f3c1afa18300893b5b6c97376e41fcb71e88da592"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/phone-card.png",
+      "bytes": 63240,
+      "sha256": "bc89803092af7a9ba3a84b9d9e8b50eb41d5259bb9573ab682d962e1328871bb"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/phone-page.png",
+      "bytes": 137131,
+      "sha256": "94ffc386f7c7a8df7d7ff51ddd6717ca6952ac104cc216dcdf97310fd1130b5c"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/preview-entry.tsx",
+      "bytes": 719,
+      "sha256": "ae52bf502255ccf938114456a9b9862c5ccc676e7411a9a14e05b945800444dd"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/preview.css",
+      "bytes": 133,
+      "sha256": "932a1b07784d9b9aa60782cad2bf60241a19341e620dfeb6ff1887a462dd4372"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/preview.html",
+      "bytes": 3132147,
+      "sha256": "e2b037f6b82d444f099e9cbfefbc555a673e1131496bea084158771830625c5f"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/render-command.json",
+      "bytes": 660,
+      "sha256": "9097bb38b5a60491decb3d4925358d2f17264c7230ed7223732f4cdbd24a2246"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/render-preview.mjs",
+      "bytes": 2281,
+      "sha256": "86679b49c51eb5df6cee4485a204dc7d1c5d14c1846ddd8c82096a80d48cec7b"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/render.log",
+      "bytes": 264,
+      "sha256": "7afb28c667d33e42e9ea118f734636b6b8c8e4c67bf1045ad77f990e7dde6985"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/run-check.py",
+      "bytes": 2112,
+      "sha256": "7db6ca99f5ed59e941efe12eafcc26f291a8c8435978af70cbed4e05d65868b5"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/runtime.json",
+      "bytes": 1737,
+      "sha256": "d5f489b204dbbf71f9ca0a8fe2b1244f0a755747901c87d4bd453f2d02250636"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/serve-preview.mjs",
+      "bytes": 1724,
+      "sha256": "4b82f93d24e8779e8791acadcb9d9ce05a11177f1ab805d2327e5eb85d44f6d9"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/share-fallback.png",
+      "bytes": 614664,
+      "sha256": "10bb4a91caaf0f8fa2f36cd34505c3523f8cf062939a23ed96133f33779f8d91"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/source-files/web/components/player-cards/PlayerCardShareStudio.test.tsx",
+      "bytes": 7034,
+      "sha256": "2fcd04e379852ba7104c03f4ee5df5462ebe3a1de659cf5f2a98d7eaad1afd78"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/source-files/web/components/player-cards/PlayerCardShareStudio.tsx",
+      "bytes": 10076,
+      "sha256": "c96629b6cc07ec8be06aab2804e0e6f3793650b0e3ed71f692591f5cd9969ad9"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/source.patch",
+      "bytes": 6697,
+      "sha256": "379e48a1bb91ea7464705c1020930d685e00dbcbec3a64f5a8500c19b588d51f"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/tests-command.json",
+      "bytes": 681,
+      "sha256": "da5b66614bc7a69c1acd14e9a87779973303ae32d7f6bf7fabe4404a6bd62eba"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/tests.log",
+      "bytes": 635,
+      "sha256": "52d35c8de93d8319a318ef97f397ac4a24c78d78a23c3f2d432f580f0d1ff938"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/tsconfig.json",
+      "bytes": 415,
+      "sha256": "de1e8b35813409c9f42f7449cbe262923a720ae00533f7f920aa254ae1fddf52"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/types-command.json",
+      "bytes": 690,
+      "sha256": "85b58cd915c362578fa7dd16a7bef2bf8484f7e6bf9c693fd040a07ad67ec624"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/types.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/vitest.config.mts",
+      "bytes": 719,
+      "sha256": "966e8924b3463b1e0f1327d907ec7aaaf7322d13b5f6de55b806c484606c577e"
+    }
+  ],
+  "stopSignal": "Parent verified usage reset100%remaining at06:14UTC; stop received after completed atomic3125 handoff",
+  "runtimePid": 48266,
+  "liveActivation": false,
+  "premiumActivation": false
+}

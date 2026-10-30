@@ -1,0 +1,19 @@
+ FAIL  scripts/qualify-native-players-offline.test.ts > offline current native player qualification > writes a new reproducible receipt without changing or overwriting original inputs
+Error: Command failed: git rev-parse HEAD
+fatal: not a git repository (or any of the parent directories): .git
+
+--
+ FAIL  lib/projections/nativeGoalLedgerAudit.test.ts > local audit CLI > writes reproducible receipts, never calls fetch and refuses to overwrite inputs
+Error: Command failed: git rev-parse HEAD
+fatal: not a git repository (or any of the parent directories): .git
+
+--
+ FAIL  lib/projections/nativeIntervalReconciliation.test.ts > retained interval integrity and offline CLI > replays retained files identically, leaves every input untouched and requires a new output
+Error: Command failed: git rev-parse HEAD
+fatal: not a git repository (or any of the parent directories): .git
+
+--
+ FAIL  lib/projections/researchGoalBaseline.test.ts > retained official GOALS research evaluation > runs deterministic offline CLI evaluations without overwriting retained input/output bytes
+Error: Command failed: git rev-parse HEAD
+fatal: not a git repository (or any of the parent directories): .git
+

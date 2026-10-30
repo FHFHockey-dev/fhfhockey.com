@@ -1,0 +1,20 @@
+{
+  "source": "claude-lanes/source/MASTER-TASKLIST-2026-10-20(1)(2).md",
+  "source_sha256": "86260ab86adc99fe4a17a29ca4487b5f7768eecd97bfd77d00ab4e49d6759347",
+  "source_bytes": 361564,
+  "source_task_ids": 188,
+  "unique_classified": 189,
+  "classification_counts": {
+    "Codex-reserved": 108,
+    "preserve accepted scope": 28,
+    "Claude prep/held requires approval": 21,
+    "Claude actionable lane": 22,
+    "parked": 10
+  },
+  "no_missing_ids": true,
+  "original_ids_preserved": 188,
+  "new_ids": [
+    "SITE-FORGE-TESTING-GROUNDS"
+  ],
+  "current_master_sha256": "d7b07541d0e868fde79da88af84b6588b9507236044ff6148fd8d37f4e3f6032"
+}

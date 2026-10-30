@@ -1,0 +1,103 @@
+{
+  "asOfUtc": "2026-10-25T13:43:56.782867+00:00",
+  "status": "FROZEN_FOR_LOCAL_COMMIT_COORDINATOR_NOT_INDEPENDENTLY_ACCEPTED",
+  "head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+  "branch": "octoberBranch",
+  "ownerReportedReleasedSha": "0619f912",
+  "source_sha256": {
+    "web/components/GoalieShareChart/index.tsx": "1f3d4cdb91b1dddd1dc272d82ec1fa368200ce9b585f163eecea8ec8c1944b05",
+    "web/components/GoalieShareChart/GoalieShareChart.test.ts": "7010f8de122e0a2ea000aca650d890ff79d4ca15916d2bf54085dbb218e68aff",
+    "web/components/GoalieShareChart/GoalieShareChart.pagination.test.tsx": "90b0c79ab18d68cd649e31ec5421cbc6dc768869eb75e89ae90ac4b7d00dda06",
+    "web/lib/goalieWorkload.ts": "d4cbf44ffdc0a25bf020b3ed7062fe7097dfeb7d39ecd6e8ca0399cbe01b7f6f",
+    "web/lib/projections/goalie/workloadEvidence.ts": "8d9ae620a65f7f4a528f766cd4629eeb0bf422cac57844ede384e7e4bb07fa43",
+    "web/lib/projections/goalie/workloadEvidence.test.ts": "fcd8305829c5f0871bde6c86fb54aec8179934e9afa782c7e373c88ba5e9c167"
+  },
+  "sourceChangedUnexpectedly": false,
+  "readOnlyProtectedFourPathsMatchRelease": true,
+  "checks": {
+    "focused": [
+      {
+        "command": [
+          "node",
+          "node_modules/vitest/vitest.mjs",
+          "run",
+          "--config",
+          "/Users/tim/Code/fhfhockey.com/tasks/artifacts/goalie-workload-forge-2026-10-25/vitest.config.mts",
+          "components/GoalieShareChart/GoalieShareChart.test.ts",
+          "components/GoalieShareChart/GoalieShareChart.pagination.test.tsx",
+          "lib/projections/goalie/workloadEvidence.test.ts"
+        ],
+        "cwd": "/Users/tim/Code/fhfhockey.com/web",
+        "exitCode": 0,
+        "log": "tasks/artifacts/goalie-workload-forge-2026-10-25/focused-1.log"
+      }
+    ],
+    "controls": [
+      {
+        "command": [
+          "node",
+          "node_modules/vitest/vitest.mjs",
+          "run",
+          "--config",
+          "/Users/tim/Code/fhfhockey.com/tasks/artifacts/goalie-workload-forge-2026-10-25/vitest.config.mts",
+          "lib/player-forecasts/rollingWindowParticipation.test.ts",
+          "lib/projections/goaliePipeline.test.ts",
+          "lib/rosterScheduleData/forgeDailyBridge.test.ts",
+          "__tests__/pages/api/v1/start-chart.test.ts"
+        ],
+        "cwd": "/Users/tim/Code/fhfhockey.com/web",
+        "exitCode": 0,
+        "log": "tasks/artifacts/goalie-workload-forge-2026-10-25/controls-1.log"
+      }
+    ],
+    "static": [
+      {
+        "command": [
+          "node",
+          "node_modules/typescript/bin/tsc",
+          "--noEmit",
+          "-p",
+          "/Users/tim/Code/fhfhockey.com/tasks/artifacts/goalie-workload-forge-2026-10-25/tsconfig.json"
+        ],
+        "cwd": "/Users/tim/Code/fhfhockey.com/web",
+        "exitCode": 0,
+        "log": "tasks/artifacts/goalie-workload-forge-2026-10-25/static-1.log"
+      },
+      {
+        "command": [
+          "node",
+          "node_modules/eslint/bin/eslint.js",
+          "components/GoalieShareChart/index.tsx",
+          "components/GoalieShareChart/GoalieShareChart.test.ts",
+          "components/GoalieShareChart/GoalieShareChart.pagination.test.tsx",
+          "lib/goalieWorkload.ts",
+          "lib/projections/goalie/workloadEvidence.ts",
+          "lib/projections/goalie/workloadEvidence.test.ts"
+        ],
+        "cwd": "/Users/tim/Code/fhfhockey.com/web",
+        "exitCode": 0,
+        "log": "tasks/artifacts/goalie-workload-forge-2026-10-25/static-2.log"
+      }
+    ]
+  },
+  "focusedPassed": 37,
+  "existingControlPassed": 299,
+  "existingControlSkipped": 1,
+  "typecheck": "scoped pass",
+  "lint": "scoped pass; two existing img warnings",
+  "browserRuntime": "not run; component tests mock Chart.js",
+  "network": "blocked for all tests; inert service variables; no local env file loading",
+  "heavyLock": "first acquisition deferred while occupied; later exclusive runs completed, own locks released; absent at checkpoint",
+  "remaining": "Parent review/acceptance and commit composition; predictive source/calibration/activation gates remain pending",
+  "recovery": {
+    "baseline": "BASELINE.json",
+    "existingDirtyDelta": "existing-chart.patch",
+    "beforeFiles": [
+      "before-index.tsx",
+      "before-GoalieShareChart.test.ts",
+      "before-GoalieShareChart.pagination.test.tsx"
+    ],
+    "taskOnlyPatchSha256": "a9d8fd7af55ced4d0197377c281b4f918b842f3f02be3adf0840ba98731e025a"
+  },
+  "pausedForCoordinator": "01a16e23-72b5-76ee-8ade-2d209d0e7002"
+}

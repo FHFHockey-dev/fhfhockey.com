@@ -1,0 +1,699 @@
+{
+  "matched": 99,
+  "different": 0,
+  "checks": [
+    {
+      "path": "web/components/player-cards/EditorialPlayerCard.tsx",
+      "verifiedAt": "web/components/player-cards/EditorialPlayerCard.tsx",
+      "expected": "f3c996c4c0cf9d75f533d1d4937a5db2474edb6a7c9b9665bbb3849df205afb5",
+      "actual": "f3c996c4c0cf9d75f533d1d4937a5db2474edb6a7c9b9665bbb3849df205afb5",
+      "match": true
+    },
+    {
+      "path": "web/components/player-cards/HeroPlayerCard.tsx",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/before/web/components/player-cards/HeroPlayerCard.tsx",
+      "expected": "97743b313e22666e6abedea9ea16b17b3ad15050e3fa72a8f8d924f98c1829fc",
+      "actual": "97743b313e22666e6abedea9ea16b17b3ad15050e3fa72a8f8d924f98c1829fc",
+      "match": true
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardShareStudio.tsx",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/before/web/components/player-cards/PlayerCardShareStudio.tsx",
+      "expected": "3e8aad27ad7585170706c0a975237a8c29a055bac95e0b9d20bac75fd77e1d00",
+      "actual": "3e8aad27ad7585170706c0a975237a8c29a055bac95e0b9d20bac75fd77e1d00",
+      "match": true
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardShareStudio.module.scss",
+      "verifiedAt": "web/components/player-cards/PlayerCardShareStudio.module.scss",
+      "expected": "0bcab0a01648ff20a2d083dea3ec7e3d9c7fa0ca644eba48fa5d1b976db50db3",
+      "actual": "0bcab0a01648ff20a2d083dea3ec7e3d9c7fa0ca644eba48fa5d1b976db50db3",
+      "match": true
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardShareStudio.test.tsx",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/before/web/components/player-cards/PlayerCardShareStudio.test.tsx",
+      "expected": "617efa35e88953c79bcbcb16308603e562edfc79f43b050852a625ae91b7ba24",
+      "actual": "617efa35e88953c79bcbcb16308603e562edfc79f43b050852a625ae91b7ba24",
+      "match": true
+    },
+    {
+      "path": "web/lib/player-cards/shareExport.ts",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/before/web/lib/player-cards/shareExport.ts",
+      "expected": "fddfd3bd89470da289ea14f8f6a8ea13b3407c1222d2e189482dee47a8d7bbde",
+      "actual": "fddfd3bd89470da289ea14f8f6a8ea13b3407c1222d2e189482dee47a8d7bbde",
+      "match": true
+    },
+    {
+      "path": "web/lib/player-cards/shareExport.test.ts",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/before/web/lib/player-cards/shareExport.test.ts",
+      "expected": "9669b12a8e4ade7e3badce18ea9cd44a29ddd4c9a5297a2cfe5fd1e862938426",
+      "actual": "9669b12a8e4ade7e3badce18ea9cd44a29ddd4c9a5297a2cfe5fd1e862938426",
+      "match": true
+    },
+    {
+      "path": "web/pages/social-share/player-cards.tsx",
+      "verifiedAt": "web/pages/social-share/player-cards.tsx",
+      "expected": "fac7acb9dd79e6812ff3d60da5b575861baede0fbd3ee66b9f56742426f92043",
+      "actual": "fac7acb9dd79e6812ff3d60da5b575861baede0fbd3ee66b9f56742426f92043",
+      "match": true
+    },
+    {
+      "path": "web/lib/player-cards/reviewedHeroSamples.ts",
+      "verifiedAt": "web/lib/player-cards/reviewedHeroSamples.ts",
+      "expected": "1e8fe079c5a29b5d4355b7dfa729acabacb6ff8164a0c52c6ef93b7e2e16af18",
+      "actual": "1e8fe079c5a29b5d4355b7dfa729acabacb6ff8164a0c52c6ef93b7e2e16af18",
+      "match": true
+    },
+    {
+      "path": "web/public/player-cards/hero-samples/8479318.png",
+      "verifiedAt": "web/public/player-cards/hero-samples/8479318.png",
+      "expected": "713a4923cf4742cefbbc09a647a249f98c095edea8eb92f7bda028929e0db065",
+      "actual": "713a4923cf4742cefbbc09a647a249f98c095edea8eb92f7bda028929e0db065",
+      "match": true
+    },
+    {
+      "path": "web/public/player-cards/hero-samples/8478864.png",
+      "verifiedAt": "web/public/player-cards/hero-samples/8478864.png",
+      "expected": "4199308c2f56a9ac0244697e7162f42283f1a5c247b656fb7c9278597b3ee18c",
+      "actual": "4199308c2f56a9ac0244697e7162f42283f1a5c247b656fb7c9278597b3ee18c",
+      "match": true
+    },
+    {
+      "path": "web/components/SocialShare/SocialShare.tsx",
+      "verifiedAt": "web/components/SocialShare/SocialShare.tsx",
+      "expected": "4b724ac9b91c8825bd392c9821546799ac73e5a6c465dad00b8f3b90d490375e",
+      "actual": "4b724ac9b91c8825bd392c9821546799ac73e5a6c465dad00b8f3b90d490375e",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/CHANGED-FILES.json",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/CHANGED-FILES.json",
+      "expected": "e7dcf8fb7bbdf1c5bea9e4021360a6c79e7c520e25c4b39f4001351f509c9894",
+      "actual": "e7dcf8fb7bbdf1c5bea9e4021360a6c79e7c520e25c4b39f4001351f509c9894",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/EditorialPlayerCard.before.tsx",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/EditorialPlayerCard.before.tsx",
+      "expected": "053d67ea06e1be6ba336db2afa35eaa04a7ec72b3e599f3d166e0c0d898d8a29",
+      "actual": "053d67ea06e1be6ba336db2afa35eaa04a7ec72b3e599f3d166e0c0d898d8a29",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/HANDOFF.md",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/HANDOFF.md",
+      "expected": "8f7ba17427e3a2b1678e52aa18237edb624a4c58a399716e920a0f0236e0c9b6",
+      "actual": "8f7ba17427e3a2b1678e52aa18237edb624a4c58a399716e920a0f0236e0c9b6",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/LEASE.json",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/LEASE.json",
+      "expected": "48101d71269e76868b29621fd0157a92c76770f0c65c1f0da7fb4de1d0e97b73",
+      "actual": "48101d71269e76868b29621fd0157a92c76770f0c65c1f0da7fb4de1d0e97b73",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/SocialShare.before.tsx",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/SocialShare.before.tsx",
+      "expected": "ff809aa03f785462d53ec50a94e4580efecb7fb6b39e1ded2d37d37c76ffb5c4",
+      "actual": "ff809aa03f785462d53ec50a94e4580efecb7fb6b39e1ded2d37d37c76ffb5c4",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/baseline.json",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/baseline.json",
+      "expected": "0fcf61021fea02c953a8107ec31462f11b8197f848ba4f244f2cabef8e973256",
+      "actual": "0fcf61021fea02c953a8107ec31462f11b8197f848ba4f244f2cabef8e973256",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/browser-check.mjs",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/browser-check.mjs",
+      "expected": "af127032602e96788bd87cd85a6e7978da25b1e02bda8e153b2f598f6f899d37",
+      "actual": "af127032602e96788bd87cd85a6e7978da25b1e02bda8e153b2f598f6f899d37",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/browser-command.json",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/browser-command.json",
+      "expected": "ab08f9ddf97af11bac6979b1de4a177103c2239e0d8cc48c31f7c3d7465b5ef3",
+      "actual": "ab08f9ddf97af11bac6979b1de4a177103c2239e0d8cc48c31f7c3d7465b5ef3",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/browser-initial.log",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/browser-initial.log",
+      "expected": "5b34991aa49b45e7b671c22b025c0451550168c488866f61b354602ca94611d7",
+      "actual": "5b34991aa49b45e7b671c22b025c0451550168c488866f61b354602ca94611d7",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/browser-results.json",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/browser-results.json",
+      "expected": "33defda45b1c00ef2b179dcdf2d5e458bd937caa6ad7700456580c1a149b27e6",
+      "actual": "33defda45b1c00ef2b179dcdf2d5e458bd937caa6ad7700456580c1a149b27e6",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/browser.log",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/browser.log",
+      "expected": "d81213b9e5233310705b24fc8a8c39dc9846f3bf64c9054c5fd8c010355b9b8e",
+      "actual": "d81213b9e5233310705b24fc8a8c39dc9846f3bf64c9054c5fd8c010355b9b8e",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/candidate-pins.json",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/candidate-pins.json",
+      "expected": "bdf790d2425479bde8bb24f465ea800d9da167a1f4bc654b7f7795ce671a9678",
+      "actual": "bdf790d2425479bde8bb24f465ea800d9da167a1f4bc654b7f7795ce671a9678",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/desktop.png",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/desktop.png",
+      "expected": "110a93d5d134448939c87c007202dd8c4795efc02607bfe6ed21bb69919dc68e",
+      "actual": "110a93d5d134448939c87c007202dd8c4795efc02607bfe6ed21bb69919dc68e",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/handoff-preview.py",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/handoff-preview.py",
+      "expected": "40c37902dc532e3f6a6c129426be0e41e3c977bfa3610fc1b959d0d19ef7d278",
+      "actual": "40c37902dc532e3f6a6c129426be0e41e3c977bfa3610fc1b959d0d19ef7d278",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/hero-inputs.json",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/hero-inputs.json",
+      "expected": "45b5ac4f5c9b8e6ecc9309bc0ca2962da92e9e3e0716b99a5fe28602c81383eb",
+      "actual": "45b5ac4f5c9b8e6ecc9309bc0ca2962da92e9e3e0716b99a5fe28602c81383eb",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/kaprizov-social-manifest.json",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/kaprizov-social-manifest.json",
+      "expected": "de330abdc22f75f655e3aa945d02185221dc7d135fe86781de2ab5ded2465da8",
+      "actual": "de330abdc22f75f655e3aa945d02185221dc7d135fe86781de2ab5ded2465da8",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/kaprizov-social-square.png",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/kaprizov-social-square.png",
+      "expected": "96d3776e5d549f367da34d27ae289fb7eada22432838476b6da7e99928b68074",
+      "actual": "96d3776e5d549f367da34d27ae289fb7eada22432838476b6da7e99928b68074",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/lifecycle-readback.json",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/lifecycle-readback.json",
+      "expected": "f70f1e06ac755b2151ad2fca45cecf5ac727ba86036b265229b1b5e5a2d97c91",
+      "actual": "f70f1e06ac755b2151ad2fca45cecf5ac727ba86036b265229b1b5e5a2d97c91",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/lint-command.json",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/lint-command.json",
+      "expected": "841d860f489e900a0ccccba11c1a034575a33f258ea28c044d074f9b902fb68b",
+      "actual": "841d860f489e900a0ccccba11c1a034575a33f258ea28c044d074f9b902fb68b",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/lint.log",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/lint.log",
+      "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "actual": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/local-assets.json",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/local-assets.json",
+      "expected": "880664c5adb333b10ee908e4368570a48c89b97e0d2a79c74f1b5563dceede58",
+      "actual": "880664c5adb333b10ee908e4368570a48c89b97e0d2a79c74f1b5563dceede58",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/matthews-landscape-manifest.json",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/matthews-landscape-manifest.json",
+      "expected": "970ba22cdbb8f18949204f9b5b24bf62c818d5ac35e117dfb8e0c90566248957",
+      "actual": "970ba22cdbb8f18949204f9b5b24bf62c818d5ac35e117dfb8e0c90566248957",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/matthews-landscape.png",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/matthews-landscape.png",
+      "expected": "fbbf177eed3f021bca5f674a5f087be83753e7b8c163051c60f2aaf0dd1aab37",
+      "actual": "fbbf177eed3f021bca5f674a5f087be83753e7b8c163051c60f2aaf0dd1aab37",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/missing-metric.png",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/missing-metric.png",
+      "expected": "2eb85c7295910fb0ce95b977540d901e0e6e67d5d5ddf137f8ff7c30f62448b1",
+      "actual": "2eb85c7295910fb0ce95b977540d901e0e6e67d5d5ddf137f8ff7c30f62448b1",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/nav-lint-command.json",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/nav-lint-command.json",
+      "expected": "509c96db485d3127fab8aac56fef0f6cb268043f44da53a31b94857c93f03943",
+      "actual": "509c96db485d3127fab8aac56fef0f6cb268043f44da53a31b94857c93f03943",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/nav-lint.log",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/nav-lint.log",
+      "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "actual": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/offline.setup.ts",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/offline.setup.ts",
+      "expected": "1cc06f39cb5f2dd1983fbd1f3c1afa18300893b5b6c97376e41fcb71e88da592",
+      "actual": "1cc06f39cb5f2dd1983fbd1f3c1afa18300893b5b6c97376e41fcb71e88da592",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/phone-card.png",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/phone-card.png",
+      "expected": "667bee17b1d47e6342ab302d0f7e41760a9b8fa142b5b69c64c613573f76ec62",
+      "actual": "667bee17b1d47e6342ab302d0f7e41760a9b8fa142b5b69c64c613573f76ec62",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/phone-page.png",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/phone-page.png",
+      "expected": "b4692742c76e554fd687da226ea5dd9104bcbd94d3f3a40d53db798a535a3411",
+      "actual": "b4692742c76e554fd687da226ea5dd9104bcbd94d3f3a40d53db798a535a3411",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/preservation-results.json",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/preservation-results.json",
+      "expected": "2a19d7a685b0ef25e67ae326bdb89cff48b39b3c6baf54d61640316e9b62d51f",
+      "actual": "2a19d7a685b0ef25e67ae326bdb89cff48b39b3c6baf54d61640316e9b62d51f",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/preview-entry.tsx",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/preview-entry.tsx",
+      "expected": "2196aeb02144308deb4d66206024742a0ed7266a441e744022135c1cd9ae544f",
+      "actual": "2196aeb02144308deb4d66206024742a0ed7266a441e744022135c1cd9ae544f",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/preview.css",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/preview.css",
+      "expected": "932a1b07784d9b9aa60782cad2bf60241a19341e620dfeb6ff1887a462dd4372",
+      "actual": "932a1b07784d9b9aa60782cad2bf60241a19341e620dfeb6ff1887a462dd4372",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/preview.html",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/preview.html",
+      "expected": "ecd560310b358ebd0521574967a480cab1521946c9d42d5f33341fcc57a5187a",
+      "actual": "ecd560310b358ebd0521574967a480cab1521946c9d42d5f33341fcc57a5187a",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/render-command.json",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/render-command.json",
+      "expected": "5c2dbfb0a7177903c775b839a01292c4e6c94cbcfdd1587b8338f02f144b943e",
+      "actual": "5c2dbfb0a7177903c775b839a01292c4e6c94cbcfdd1587b8338f02f144b943e",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/render-preview.mjs",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/render-preview.mjs",
+      "expected": "86679b49c51eb5df6cee4485a204dc7d1c5d14c1846ddd8c82096a80d48cec7b",
+      "actual": "86679b49c51eb5df6cee4485a204dc7d1c5d14c1846ddd8c82096a80d48cec7b",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/render.log",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/render.log",
+      "expected": "1777e38d8cb59aba9eafa9aef47c8bf00094604d06678ccb32eeff73c16774d9",
+      "actual": "1777e38d8cb59aba9eafa9aef47c8bf00094604d06678ccb32eeff73c16774d9",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/route-integration.test.tsx",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/route-integration.test.tsx",
+      "expected": "34a103bd35b9e501008c576bafc9df9a90c0e82d4f9c3b4b7d51d93784cf1e84",
+      "actual": "34a103bd35b9e501008c576bafc9df9a90c0e82d4f9c3b4b7d51d93784cf1e84",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/run-check.py",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/run-check.py",
+      "expected": "8e73b64ad2bcac9b299222cf066738438f230a1764be00bb68899770a2f41901",
+      "actual": "8e73b64ad2bcac9b299222cf066738438f230a1764be00bb68899770a2f41901",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/runtime.json",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/runtime.json",
+      "expected": "e6be080f7a9499b21e8b94b7612d1c42384716d1042fce50f15fc30da316fab5",
+      "actual": "e6be080f7a9499b21e8b94b7612d1c42384716d1042fce50f15fc30da316fab5",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/serve-preview.mjs",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/serve-preview.mjs",
+      "expected": "68c9ebeb770cebf819d5f0af370a56c0ef4d073a94cc4c9c9c16138fc995eab4",
+      "actual": "68c9ebeb770cebf819d5f0af370a56c0ef4d073a94cc4c9c9c16138fc995eab4",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/share-fallback.png",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/share-fallback.png",
+      "expected": "96d3776e5d549f367da34d27ae289fb7eada22432838476b6da7e99928b68074",
+      "actual": "96d3776e5d549f367da34d27ae289fb7eada22432838476b6da7e99928b68074",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/social-navigation.patch",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/social-navigation.patch",
+      "expected": "f9d9f978e31a3a9b3d37a23231646af1ff19f74a519c1d4193dcfb3cfaddad92",
+      "actual": "f9d9f978e31a3a9b3d37a23231646af1ff19f74a519c1d4193dcfb3cfaddad92",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source.patch",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source.patch",
+      "expected": "20acbaf3987d1336fa30de990c99f1d11ce541f2259e09cef77dd39dec18e504",
+      "actual": "20acbaf3987d1336fa30de990c99f1d11ce541f2259e09cef77dd39dec18e504",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/tests-command.json",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/tests-command.json",
+      "expected": "0c3bdd8e7978e35de2fbd15929829398636bc8c766ab1586b17170dffd5456b4",
+      "actual": "0c3bdd8e7978e35de2fbd15929829398636bc8c766ab1586b17170dffd5456b4",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/tests-initial.log",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/tests-initial.log",
+      "expected": "b47081bb99b7825655dfe389a116b399d7dbaa6ec2da75a50e5a9883b0ea5bfd",
+      "actual": "b47081bb99b7825655dfe389a116b399d7dbaa6ec2da75a50e5a9883b0ea5bfd",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/tests.log",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/tests.log",
+      "expected": "e48b60af3c99f1fb6afcc0a7ce14756406964965aa3bbada20068bc1965655b8",
+      "actual": "e48b60af3c99f1fb6afcc0a7ce14756406964965aa3bbada20068bc1965655b8",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/tsconfig.json",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/tsconfig.json",
+      "expected": "168ed3b6b5f3746a7154b0634133253ebbc2cde64b0075d4d6c65953650e3720",
+      "actual": "168ed3b6b5f3746a7154b0634133253ebbc2cde64b0075d4d6c65953650e3720",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/types-command.json",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/types-command.json",
+      "expected": "a57d875d4da795300792164a3982754cea6e609d0cdba45b08af71c58678a3a5",
+      "actual": "a57d875d4da795300792164a3982754cea6e609d0cdba45b08af71c58678a3a5",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/types-initial.log",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/types-initial.log",
+      "expected": "72c8d85363eaf06438944c2003fe8293deff4fd8229642e4463b969cc277c7d8",
+      "actual": "72c8d85363eaf06438944c2003fe8293deff4fd8229642e4463b969cc277c7d8",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/types.log",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/types.log",
+      "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "actual": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/vitest.config.mts",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/vitest.config.mts",
+      "expected": "74c8aaeb9ef730f8d29a87e486ae78fbb7da807e68b5a2c27fabcc7a217bb2a6",
+      "actual": "74c8aaeb9ef730f8d29a87e486ae78fbb7da807e68b5a2c27fabcc7a217bb2a6",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/components/player-cards/EditorialPlayerCard.tsx",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/components/player-cards/EditorialPlayerCard.tsx",
+      "expected": "f3c996c4c0cf9d75f533d1d4937a5db2474edb6a7c9b9665bbb3849df205afb5",
+      "actual": "f3c996c4c0cf9d75f533d1d4937a5db2474edb6a7c9b9665bbb3849df205afb5",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/components/player-cards/HeroPlayerCard.tsx",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/components/player-cards/HeroPlayerCard.tsx",
+      "expected": "97743b313e22666e6abedea9ea16b17b3ad15050e3fa72a8f8d924f98c1829fc",
+      "actual": "97743b313e22666e6abedea9ea16b17b3ad15050e3fa72a8f8d924f98c1829fc",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/components/player-cards/PlayerCardShareStudio.module.scss",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/components/player-cards/PlayerCardShareStudio.module.scss",
+      "expected": "0bcab0a01648ff20a2d083dea3ec7e3d9c7fa0ca644eba48fa5d1b976db50db3",
+      "actual": "0bcab0a01648ff20a2d083dea3ec7e3d9c7fa0ca644eba48fa5d1b976db50db3",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/components/player-cards/PlayerCardShareStudio.test.tsx",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/components/player-cards/PlayerCardShareStudio.test.tsx",
+      "expected": "617efa35e88953c79bcbcb16308603e562edfc79f43b050852a625ae91b7ba24",
+      "actual": "617efa35e88953c79bcbcb16308603e562edfc79f43b050852a625ae91b7ba24",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/components/player-cards/PlayerCardShareStudio.tsx",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/components/player-cards/PlayerCardShareStudio.tsx",
+      "expected": "3e8aad27ad7585170706c0a975237a8c29a055bac95e0b9d20bac75fd77e1d00",
+      "actual": "3e8aad27ad7585170706c0a975237a8c29a055bac95e0b9d20bac75fd77e1d00",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/lib/player-cards/reviewedHeroSamples.ts",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/lib/player-cards/reviewedHeroSamples.ts",
+      "expected": "1e8fe079c5a29b5d4355b7dfa729acabacb6ff8164a0c52c6ef93b7e2e16af18",
+      "actual": "1e8fe079c5a29b5d4355b7dfa729acabacb6ff8164a0c52c6ef93b7e2e16af18",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/lib/player-cards/shareExport.test.ts",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/lib/player-cards/shareExport.test.ts",
+      "expected": "9669b12a8e4ade7e3badce18ea9cd44a29ddd4c9a5297a2cfe5fd1e862938426",
+      "actual": "9669b12a8e4ade7e3badce18ea9cd44a29ddd4c9a5297a2cfe5fd1e862938426",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/lib/player-cards/shareExport.ts",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/lib/player-cards/shareExport.ts",
+      "expected": "fddfd3bd89470da289ea14f8f6a8ea13b3407c1222d2e189482dee47a8d7bbde",
+      "actual": "fddfd3bd89470da289ea14f8f6a8ea13b3407c1222d2e189482dee47a8d7bbde",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/pages/social-share/player-cards.tsx",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/pages/social-share/player-cards.tsx",
+      "expected": "fac7acb9dd79e6812ff3d60da5b575861baede0fbd3ee66b9f56742426f92043",
+      "actual": "fac7acb9dd79e6812ff3d60da5b575861baede0fbd3ee66b9f56742426f92043",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/public/player-cards/hero-samples/8478864.png",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/public/player-cards/hero-samples/8478864.png",
+      "expected": "4199308c2f56a9ac0244697e7162f42283f1a5c247b656fb7c9278597b3ee18c",
+      "actual": "4199308c2f56a9ac0244697e7162f42283f1a5c247b656fb7c9278597b3ee18c",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/public/player-cards/hero-samples/8479318.png",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/public/player-cards/hero-samples/8479318.png",
+      "expected": "713a4923cf4742cefbbc09a647a249f98c095edea8eb92f7bda028929e0db065",
+      "actual": "713a4923cf4742cefbbc09a647a249f98c095edea8eb92f7bda028929e0db065",
+      "match": true
+    },
+    {
+      "path": "web/lib/player-cards/nstCapture.ts",
+      "verifiedAt": "web/lib/player-cards/nstCapture.ts",
+      "expected": "8febc82875c998d9b89c9e8d70194ddf25f204b6fcca8ef08b32d338c16bebb5",
+      "actual": "8febc82875c998d9b89c9e8d70194ddf25f204b6fcca8ef08b32d338c16bebb5",
+      "match": true
+    },
+    {
+      "path": "web/lib/player-cards/nstCapture.test.ts",
+      "verifiedAt": "web/lib/player-cards/nstCapture.test.ts",
+      "expected": "7c88e4a14687c325858eb4ca7b4c297368179dfedfc6d1a1837539a5829914ed",
+      "actual": "7c88e4a14687c325858eb4ca7b4c297368179dfedfc6d1a1837539a5829914ed",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/CHANGED-FILES.json",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/CHANGED-FILES.json",
+      "expected": "2195be124168309d28ddbecdf77006bb4584ab4b7e648e40c406ef0bc3d9fde5",
+      "actual": "2195be124168309d28ddbecdf77006bb4584ab4b7e648e40c406ef0bc3d9fde5",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/HANDOFF.md",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/HANDOFF.md",
+      "expected": "aa9c0b5e7db2b5a2e99d7bab3e0afb9385c217e6c12f7fe0eb4d34e19184ab80",
+      "actual": "aa9c0b5e7db2b5a2e99d7bab3e0afb9385c217e6c12f7fe0eb4d34e19184ab80",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/INPUT-PINS.json",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/INPUT-PINS.json",
+      "expected": "aa23bf4829cac275428e8bc65e360e828587821d77cca6193ef27c500d2d641d",
+      "actual": "aa23bf4829cac275428e8bc65e360e828587821d77cca6193ef27c500d2d641d",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/LEASE.json",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/LEASE.json",
+      "expected": "b13dad3f6540b4c74d75302b0d4431d400594a0769b9544b26036f6b5dadf901",
+      "actual": "b13dad3f6540b4c74d75302b0d4431d400594a0769b9544b26036f6b5dadf901",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/PROPOSED-READ-ONLY-COMPLETION.sql",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/PROPOSED-READ-ONLY-COMPLETION.sql",
+      "expected": "dd4a0495188d7cc6c7b9f5dd496740692c941cd4f77a707ef33e6098a04d3e1a",
+      "actual": "dd4a0495188d7cc6c7b9f5dd496740692c941cd4f77a707ef33e6098a04d3e1a",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/READ-REQUEST.md",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/READ-REQUEST.md",
+      "expected": "c0a72698b13949e61a1bc2e2d9a9ce5aba819447254dba8f70f94dd469b5621d",
+      "actual": "c0a72698b13949e61a1bc2e2d9a9ce5aba819447254dba8f70f94dd469b5621d",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/READINESS.md",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/READINESS.md",
+      "expected": "17bb99165f3a60725111221c0be694139d11e2b79e919b46c760a51d1aa19820",
+      "actual": "17bb99165f3a60725111221c0be694139d11e2b79e919b46c760a51d1aa19820",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/capture-command.json",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/capture-command.json",
+      "expected": "66ccb3269004f489077293e05e6e3520657247ef99bcc3a3bf7ac7b137c9007c",
+      "actual": "66ccb3269004f489077293e05e6e3520657247ef99bcc3a3bf7ac7b137c9007c",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/capture-reconciliation.json",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/capture-reconciliation.json",
+      "expected": "965f96b9272c428e2e3ad190051ba021be14650bd9db4e8a2bbcfd77108f3ba9",
+      "actual": "965f96b9272c428e2e3ad190051ba021be14650bd9db4e8a2bbcfd77108f3ba9",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/capture.log",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/capture.log",
+      "expected": "7427dc8b6983ea96a70dce8974a5a89367a73ebae2480383a137c913cd5ed7ea",
+      "actual": "7427dc8b6983ea96a70dce8974a5a89367a73ebae2480383a137c913cd5ed7ea",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/lint-command.json",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/lint-command.json",
+      "expected": "343bff9106391a18120d2dff28a3d2d59c42be0a2ea9c290ee1462fae133048d",
+      "actual": "343bff9106391a18120d2dff28a3d2d59c42be0a2ea9c290ee1462fae133048d",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/lint.log",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/lint.log",
+      "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "actual": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/offline.setup.ts",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/offline.setup.ts",
+      "expected": "da56870e98afa02755d924bc7f8b2aff5babf3ab285b947682a0b4bda66edd10",
+      "actual": "da56870e98afa02755d924bc7f8b2aff5babf3ab285b947682a0b4bda66edd10",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/preservation-results.json",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/preservation-results.json",
+      "expected": "7102bafaf9abb2bee65c209f1c9eaa25f0b76534a66cf804cd2fe92c90ba7412",
+      "actual": "7102bafaf9abb2bee65c209f1c9eaa25f0b76534a66cf804cd2fe92c90ba7412",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/reconcile-capture.mjs",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/reconcile-capture.mjs",
+      "expected": "3bd7c3358f90418b33a178e02ec9fe59390df6df0af65c6636cfda92d9bc5c69",
+      "actual": "3bd7c3358f90418b33a178e02ec9fe59390df6df0af65c6636cfda92d9bc5c69",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/run-check.py",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/run-check.py",
+      "expected": "bced75da16e7136b2026634d649b298abab542b010baae46617ccfb3b121eff5",
+      "actual": "bced75da16e7136b2026634d649b298abab542b010baae46617ccfb3b121eff5",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/source.patch",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/source.patch",
+      "expected": "9a0f6ede11e929e2f13518308563225bf8c64df7864fd4693c406942130a87ef",
+      "actual": "9a0f6ede11e929e2f13518308563225bf8c64df7864fd4693c406942130a87ef",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/tests-command.json",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/tests-command.json",
+      "expected": "0545332c2040380e09e43a3f2c0c74606dd0d550c04f344a38707bac25d24638",
+      "actual": "0545332c2040380e09e43a3f2c0c74606dd0d550c04f344a38707bac25d24638",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/tests.log",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/tests.log",
+      "expected": "03e8a75fdd4c263a8bdbb469c10fdfda20ce18423cbf98c90377f6028f7c966f",
+      "actual": "03e8a75fdd4c263a8bdbb469c10fdfda20ce18423cbf98c90377f6028f7c966f",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/tsconfig.json",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/tsconfig.json",
+      "expected": "ade9d16a6e947cc0f6f4db3316dc337a9800f43583202afd090a1f7d0773d7e1",
+      "actual": "ade9d16a6e947cc0f6f4db3316dc337a9800f43583202afd090a1f7d0773d7e1",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/types-command.json",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/types-command.json",
+      "expected": "0b3e925b2c352aa8c82c4bff29b8c833521e8a0d4c02ce43c84b7c881b31e000",
+      "actual": "0b3e925b2c352aa8c82c4bff29b8c833521e8a0d4c02ce43c84b7c881b31e000",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/types.log",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/types.log",
+      "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "actual": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/vitest.config.mts",
+      "verifiedAt": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/vitest.config.mts",
+      "expected": "a0d307a3becf89b55932159fdbeeb44a20d4726864fa74e23e58acea3e10769f",
+      "actual": "a0d307a3becf89b55932159fdbeeb44a20d4726864fa74e23e58acea3e10769f",
+      "match": true
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "at": "2026-10-25T05:03:05.803870+00:00",
+  "archive": "production-completion-evidence.tar.gz",
+  "sha256": "80d3d4b70b00eeb9afcf236bbe6debeb326d1bc04873cf0dbfaee628fd624ae0",
+  "bytes": 19068,
+  "entries": {
+    "PRODUCTION-RELEASE-RECEIPT.json": {
+      "sha256": "ece23ebf6520167ac962b84393959b8789020defd3fccd7ef5e153a4afcfea0b",
+      "bytes": 3880
+    },
+    "FINAL-REMOTE-EVIDENCE.json": {
+      "sha256": "a75989c4b914cf686357ede7bb58ea26f6c454459a2159628bcfcdfd2b4ee40b",
+      "bytes": 15138
+    },
+    "PRODUCTION-SMOKE.json": {
+      "sha256": "3f6f21f3bd2a3b41488333f714570cfb341c159e7bfc054562f544eb9ace6eb1",
+      "bytes": 3200
+    },
+    "PRODUCTION-SMOKE-TLS-SETUP-FAILURE.json": {
+      "sha256": "e73ca7ab434ba4b498f7523fc3d078d26e6a835191d25d04654b37846ab9fd39",
+      "bytes": 479
+    },
+    "PLAYER-CARD-ARCHIVE-RECONCILIATION.json": {
+      "sha256": "9eb5100c1c151b15d53267be45df174fcce147f6c35d59dd8c356878ebed9dc0",
+      "bytes": 19213
+    },
+    "verify-production-smoke.py": {
+      "sha256": "78ca1b0b8f4ef4da9fc5f98f44c9517a1aff30f759fe6f498a08c4fa299fd328",
+      "bytes": 2961
+    },
+    "work/build-memory-repair/FINAL.json": {
+      "sha256": "0a87bc1f994d654daa6d65ad0bd10dbc7bf9d8bba3734315992c1472c20ae2c4",
+      "bytes": 1616
+    },
+    "work/build-memory-repair/CHECKS.json": {
+      "sha256": "e7f9c0a11b0d503b71e602798732c1ba46b8d2d03abd58a45687f766ed6cb163",
+      "bytes": 1185
+    },
+    "work/build-memory-repair/CANDIDATE.json": {
+      "sha256": "9a8bd8f89f4a0ae2e95752923def5eb79086e84a86af84d08a102f761e33f6c6",
+      "bytes": 826
+    },
+    "work/build-memory-repair/PUSH.json": {
+      "sha256": "71038e20880ecde8c0a8300bb1d453349930f7dd28a45e5c2c965323d49a7830",
+      "bytes": 295
+    },
+    "work/build-memory-repair/MERGE-OPERATION.json": {
+      "sha256": "51e54a742f2d802c7d3decff0cf93d24d35a28b597180142abad642bce2e0767",
+      "bytes": 234
+    },
+    "work/build-memory-repair/PR-BODY.md": {
+      "sha256": "a21cdecb0ba1265b94da854cb38ce00fd5bd0c5c3d05fe07dc0ac1910484d3d7",
+      "bytes": 1154
+    },
+    "work/build-memory-repair/source.patch": {
+      "sha256": "9bc651a5fbaad04d670585de6b9641c82eed1a638b313ce689467658cabf733f",
+      "bytes": 1075
+    },
+    "work/build-memory-repair/production-types-6144.log": {
+      "sha256": "38fec23c6288016a9bc6e6a27cfd67e022727fe3779b8213bf5528f7a6c2ab39",
+      "bytes": 972
+    },
+    "work/build-memory-repair/production-compile-6144.log": {
+      "sha256": "38791e17a9697fbac147663c5c6238730a9178c36cf2f513f45f996d4f41ec5f",
+      "bytes": 58082
+    },
+    "reviews/final-aggregate-astra/BUILD-MEMORY-REVIEW.md": {
+      "sha256": "080b4990ddb002c82f44cf9a3159e2c5ccb72c6621293081075dcf6c2366c915",
+      "bytes": 2457
+    }
+  },
+  "round_trip_verified": true
+}

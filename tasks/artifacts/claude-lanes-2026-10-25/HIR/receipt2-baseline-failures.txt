@@ -1,0 +1,24 @@
+   ✓ Healthy reserve alert > names the healthy IR player, says the lineup is illegal and shows the gain from activating him 32ms
+   ✓ Healthy reserve alert > suggests the swap, or a drop when no spot opens, and never invents a gain 6ms
+   × Healthy reserve alert > says only the best can be activated when spots run out, and keeps unknown gains' own wording 5ms
+     → Unable to find an element with the text: Only one can be activated: best is Fresh Legs (+10 pts).. This could be because the text is broken up by multiple elements. In this case, you can provide a function for y
+   × Healthy reserve alert > adds a soft note, never a warning, for a DTD player in IR+ whose team plays today 2ms
+     → Unable to find an accessible element with the role "note"
+   ✓ healthy reserve players > flags a healthy player left in IR and prices moving him to the open spot 16ms
+   ✓ healthy reserve players > still flags him while Yahoo keeps him eligible for the slot 1ms
+   ✓ healthy reserve players > does not flag injured players, including DTD and O in IR+, or players whose status was never read 0ms
+   ✓ healthy reserve players > needs a live, complete Yahoo roster read 0ms
+   ✓ healthy reserve players > suggests the swap with an injured player Yahoo lists for the slot when the roster is full 1ms
+   ✓ healthy reserve players > offers no activation when a full roster has nobody to swap into the slot 0ms
+   ✓ healthy reserve players > prices only the games left after today's started games, and stays unknown while a weekly window is unverified 2ms
+   ✓ healthy reserve players > leaves points unknown, not zero, when he adds no active games but may outscore the starter 1ms
+   ✓ healthy reserve players > drops only the lineup-gap blocker that repeats a flagged player's alert 3ms
+   × healthy reserve players > gives the open spot to the bigger gain, not roster order, and leaves the rest to a drop 5ms
+     → expected [ { playerId: 'd', …(3) }, …(1) ] to deeply equal [ { playerId: 'f', …(3) }, …(1) ]
+   × healthy reserve players > gives a shared swap partner to the bigger gain only 2ms
+     → expected [ { playerId: 'd', …(3) }, …(1) ] to deeply equal [ { playerId: 'f', …(3) }, …(1) ]
+   × healthy reserve players > notes a DTD player in IR+ only when his team plays today 0ms
+     → (0 , dtdReserves) is not a function
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+TypeError: (0 , dtdReserves) is not a function
+      Tests  5 failed | 11 passed (16)

@@ -1,0 +1,17 @@
+{
+  "id": "CODEX-PLAYER-CARDS-NST-CAPTURE-20261025",
+  "at": "2026-10-25T05:00:03.462280+00:00",
+  "owner_thread": "01a16ec2-f81c-717b-8961-8c3832fdc00f",
+  "status": "Granted: two absent paths for parent-requested offline supplied-row mapping only",
+  "source_paths": [
+    "web/lib/player-cards/nstCapture.ts",
+    "web/lib/player-cards/nstCapture.test.ts"
+  ],
+  "baseline_sha256": {
+    "web/lib/player-cards/nstCapture.ts": null,
+    "web/lib/player-cards/nstCapture.test.ts": null
+  },
+  "artifact_root": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/",
+  "scope": "Pure supplied NST count rows to existing LocalCardInput; explicit table/strength/seconds/provenance validation, appearance season/date alignment and collision refusal, per-metric missing preservation, unknown population rank suppression. Existing approved one-player capture may be inspected locally; no inferred history/completion/population proof.",
+  "excluded": "No fetch, service, database, auth, math/window/source changes, WiGO repair, route/server/visual changes, activation or new workers. Hero/share packet frozen; no production inclusion implied."
+}

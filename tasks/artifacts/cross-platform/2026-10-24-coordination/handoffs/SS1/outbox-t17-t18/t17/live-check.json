@@ -1,0 +1,70 @@
+{
+  "at": "2026-10-25T15:00:15.101Z",
+  "season": 20262027,
+  "since": "2026-10-04",
+  "reads": [
+    {
+      "label": "1 rolling_player_game_metrics (card columns, 5 rows)",
+      "status": 206,
+      "ms": 233,
+      "count": 5093,
+      "error": null,
+      "rows": 5,
+      "columns": 17,
+      "nonNullByColumn": {
+        "player_id": 5,
+        "season": 5,
+        "game_date": 5,
+        "strength_state": 5,
+        "season_games_played": 5,
+        "goals_total_last5": 5,
+        "assists_total_last5": 5,
+        "points_total_last5": 5,
+        "shots_total_last5": 5,
+        "hits_avg_last5": 0,
+        "blocks_avg_last5": 0,
+        "toi_seconds_avg_last5": 5,
+        "pp_points_total_last5": 5,
+        "toi_seconds_avg_season": 5,
+        "line_combo_slot": 5,
+        "line_combo_group": 5,
+        "pp_unit": 5
+      },
+      "dates": [
+        "2026-10-24"
+      ]
+    },
+    {
+      "label": "2 wgo_goalie_stats (card columns, 5 rows)",
+      "status": 206,
+      "ms": 68,
+      "count": 307,
+      "error": null,
+      "rows": 5,
+      "columns": 10,
+      "nonNullByColumn": {
+        "goalie_id": 5,
+        "date": 5,
+        "season_id": 5,
+        "games_played": 5,
+        "wins": 5,
+        "saves": 5,
+        "shots_against": 5,
+        "goals_against": 5,
+        "quality_start": 5,
+        "shutouts": 5
+      },
+      "dates": [
+        "2026-10-24"
+      ]
+    },
+    {
+      "label": "3 rolling window count only",
+      "status": 206,
+      "ms": 90,
+      "count": 5093,
+      "error": null,
+      "rows": null
+    }
+  ]
+}

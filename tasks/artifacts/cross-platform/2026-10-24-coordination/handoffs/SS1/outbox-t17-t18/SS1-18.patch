@@ -1,0 +1,453 @@
+--- a/web/components/SocialShare/SocialShare.module.scss
++++ b/web/components/SocialShare/SocialShare.module.scss
+@@ -396,3 +396,15 @@
+ }
+ .tierWho .roleChips i { font-size: 9px; padding: 1px 4px; border-width: 1px; }
+ .scoreFormula { font-size: 11.5px; line-height: 1.3; color: v.$text-secondary; }
++
++// Hot / cold streak badge beside the L5 line (TJ, ticket 18): neon outline, icon and criteria in the streak colour.
++.streak { display: inline-flex; align-items: center; gap: 5px; flex: none; justify-self: start; max-width: 100%; padding: 3px 7px 3px 5px; border-radius: 5px; border: 1.5px solid currentColor;
++  font: 700 12px/1 "Share Roboto Condensed", sans-serif; letter-spacing: 0.03em; white-space: nowrap; overflow: hidden;
++  svg { flex: none; width: 15px; height: 15px; filter: drop-shadow(0 0 3px currentColor); }
++  em { font-style: normal; font-weight: 900; letter-spacing: 0.06em; }
++  span { overflow: hidden; text-overflow: ellipsis; color: #ffffff; }
++}
++.streak[data-streak="hot"] { color: v.$color-orange; background: linear-gradient(rgba(v.$color-orange, 0.16), rgba(v.$color-orange, 0.16)), rgba(#0b0d10, 0.6); box-shadow: 0 0 8px rgba(v.$color-orange, 0.35); }
++.streak[data-streak="cold"] { color: v.$color-blue-300; background: linear-gradient(rgba(v.$color-blue-300, 0.16), rgba(v.$color-blue-300, 0.16)), rgba(#0b0d10, 0.6); box-shadow: 0 0 8px rgba(v.$color-blue-300, 0.35); }
++.tierRecent .streak { margin-left: auto; padding: 1px 6px 1px 4px; font-size: 10.5px; border-width: 1px; svg { width: 12px; height: 12px; } }
++.tierRecent > span:not(.streak) { overflow: hidden; text-overflow: ellipsis; }
+--- a/web/components/SocialShare/SocialShare.tsx
++++ b/web/components/SocialShare/SocialShare.tsx
+@@ -16,6 +16,7 @@
+ import { TeamBanner, teamBannerStyle } from "./TeamBanner";
+ import { streamingTiers, tierPlayersAvailable, type TierMode } from "lib/socialShare/tiers";
+ import { playerScore, SCORE_FORMULA, SPECIALIST_FORMULA } from "lib/socialShare/score";
++import { streakOf, type Streak, type StreakContext } from "lib/socialShare/streak";
+ 
+ const labels: Record<SocialShareFormat, string> = {
+   "game-grid": "Weekly schedule", "remaining-week": "Remaining week",
+@@ -267,7 +268,7 @@
+   const head = `FHFH ${card.kind === "pickups" ? `Pickups ${bandLabel(card.max).toLowerCase()} rostered` : "Hits, shots and blocks specialists"}, ${yearDateLabel(snapshot.weekStart)} through ${yearDateLabel(snapshot.weekEnd)}.`;
+   const tail = `Yahoo rostered percent as of ${dayDate(snapshot.players?.ownershipAsOf ?? null)}. NHL.com season totals updated ${timeLabel(snapshot.players?.statsUpdatedAt ?? null)}. Not projections.`;
+   if (!trusted || !playersReady(snapshot)) return `${head} Unranked preview; ranking unavailable because ${playerUnreadyReason(snapshot, trusted)}. ${tail}`;
+-  const describe = (player: RankedPlayer, stat: string) => `${player.name} (${player.team}, ${player.positions}), ${stat}, ${rosteredLabel(player.ownership)} rostered, number ${player.weekRank} Week Score team with ${player.remainingGames} games${player.widened ? ", wider pool" : ""}`;
++  const describe = (player: RankedPlayer, stat: string) => `${player.name} (${player.team}, ${player.positions}), ${stat}, ${rosteredLabel(player.ownership)} rostered, number ${player.weekRank} Week Score team with ${player.remainingGames} games${player.widened ? ", wider pool" : ""}${streakText(streakOf(player, card.kind === "pickups" ? "pickup" : "specialist"))}`;
+   const pool = `Top-${PLAYER_TEAM_RANK_MAX} Week Score teams first; a list short of three fills from teams ranked ${PLAYER_TEAM_RANK_MAX + 1} and lower, marked wider pool`;
+   if (card.kind === "pickups") {
+     const tier = pickupTiers(snapshot, true).find(item => item.max === card.max)!;
+@@ -278,6 +279,7 @@
+ }
+ 
+ type RecentFocus = "pickup" | SpecialistCategory;
++const streakContext = (focus: RecentFocus): StreakContext => focus === "pickup" ? "pickup" : "specialist";
+ /** The player's last five games, focused on the stat that justifies the pick. */
+ const LINE_TONES: Record<string, string> = { L1: "green", L2: "yellow", L3: "orange", L4: "red", P1: "green", P2: "yellow", P3: "red" };
+ /** Latest-game role chips (ticket 15): line or pair, and PP1 / PP2 / PP3. Nothing when deployment is unknown. */
+@@ -291,7 +293,20 @@
+ function RoleChips({ player }: { player: RankedPlayer }) {
+   const chips = roleChipList(player.recent);
+   return chips.length ? <span className={styles.roleChips}>{chips.map(chip => <i key={chip.role} data-role={chip.role} data-tone={chip.tone}>{chip.role}</i>)}</span> : null;
++}
++
++/** Hot or cold streak next to the L5 line (TJ, ticket 18): neon icon, HOT/COLD and the criteria that fired. */
++function StreakBadge({ streak, max = 2 }: { streak: Streak | null; max?: number }) {
++  if (!streak) return null;
++  const shown = streak.reasons.slice(0, max), more = streak.reasons.length - shown.length;
++  return <span className={styles.streak} data-streak={streak.kind} data-reasons={streak.reasons.join("|")}>
++    {streak.kind === "hot"
++      ? <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.5 2c.9 3.6-1.6 5.3-1.6 7.8a2.4 2.4 0 0 0 2.4 2.4c0-1.6 1-2.7 1-2.7 2.1 2.1 4.2 4.4 4.2 7.6A6.5 6.5 0 0 1 5.5 17c0-4.6 4.4-6.9 7-15Z" /></svg>
++      : <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" d="M12 2.5v19M3.8 7.25l16.4 9.5M3.8 16.75l16.4-9.5M9 4l3 2.2L15 4M9 20l3-2.2 3 2.2" /></svg>}
++    <em>{streak.kind === "hot" ? "HOT" : "COLD"}</em><span>{shown.join(" · ")}{more > 0 ? ` +${more}` : ""}</span>
++  </span>;
+ }
++const streakText = (streak: Streak | null) => streak ? `, ${streak.kind} streak (${streak.reasons.join(", ")})` : "";
+ 
+ function recentLine(player: RankedPlayer, focus: RecentFocus, layer: SharePlayerLayer | null | undefined) {
+   const recent = player.recent;
+@@ -320,6 +335,7 @@
+     <div className={styles.playerBody}>
+       <div className={styles.playerStat}><strong>{stat}</strong><small>{label}</small><RoleChips player={player} /></div>
+       <p className={styles.playerRecent}><b>L5 GP</b><span>{recentLine(player, focus, snapshot.players)}</span></p>
++      <StreakBadge streak={streakOf(player, streakContext(focus))} max={3} />
+       <small className={styles.playerSchedule}>#{player.weekRank} Week Score · <Count value={player.remainingGames} tier={countsFor(snapshot, true).gp(player.remainingGames)} /> GP · <Count value={player.offNightGames} tier={countsFor(snapshot, true).off(player.offNightGames)} /> off-night{player.widened && <i className={styles.widened}>WIDER POOL</i>}</small>
+     </div>
+   </div>;
+@@ -458,7 +474,7 @@
+   const head = `FHFH Schedule-aware streaming options, ${mode === "widened" ? "widened " : ""}tier list, ${yearDateLabel(snapshot.weekStart)} through ${yearDateLabel(snapshot.weekEnd)}${snapshot.selectedDates.length === 7 ? "" : `, covering ${coveredDays(snapshot)}`}.`;
+   if (!trusted || !tierPlayersAvailable(snapshot)) return `${head} Unavailable because ${tierUnreadyReason(snapshot, trusted)}.`;
+   return `${head} Tiers group teams by exact games and off-nights, best Week Score first${mode === "widened" ? "; tiers 2 and 3 fold in the next pair" : ""}. Players under 50% rostered on tier teams only, ranked by points per game, goalies by quality-start percent. ${streamingTiers(snapshot, true, mode).map(tier =>
+-    `Tier ${tier.index}, ${tier.pairs.map(pair => `${pair.gp} games and ${pair.off} off-nights`).join(" or ")}, ${tier.teams.map(team => team.abbreviation).join(", ")}: ${tier.shown.map(player => `${player.name} (${player.team}, ${player.positions}), ${Math.floor(player.ownership)}% rostered, ${tierRate(player)}`).join("; ") || "no players under 50% rostered"}${tier.more ? `; plus ${tier.more} more` : ""}`).join(". ")}. Ranked by last-five-games fantasy score times opportunity. Yahoo rostered percent as of ${dayDate(snapshot.players?.ownershipAsOf ?? null)}; not projections.`;
++    `Tier ${tier.index}, ${tier.pairs.map(pair => `${pair.gp} games and ${pair.off} off-nights`).join(" or ")}, ${tier.teams.map(team => team.abbreviation).join(", ")}: ${tier.shown.map(player => `${player.name} (${player.team}, ${player.positions}), ${Math.floor(player.ownership)}% rostered, ${tierRate(player)}${streakText(streakOf(player, "tier"))}`).join("; ") || "no players under 50% rostered"}${tier.more ? `; plus ${tier.more} more` : ""}`).join(". ")}. Ranked by last-five-games fantasy score times opportunity. Yahoo rostered percent as of ${dayDate(snapshot.players?.ownershipAsOf ?? null)}; not projections.`;
+ }
+ 
+ /** Schedule-aware streaming tier list (TJ, ticket 13): tier bars with team logos, then list rows. */
+@@ -477,7 +493,7 @@
+           <span className={styles.tierRank}>{index + 1}</span>
+           <span className={styles.tierWho}><TeamMark team={{ id: 0, abbreviation: player.team, name: player.team }} logo={logos[player.team]} size={28} /><span><strong>{player.name}</strong><small>{player.team} · {player.positions}<RoleChips player={player} /></small></span></span>
+           <span className={styles.tierOwn}><strong>{rosteredLabel(player.ownership)}</strong><small>{bandChip(player.ownership)}</small></span>
+-          <span className={styles.tierRecent}><b>L5 GP</b>{recentLine(player, "pickup", snapshot.players)}</span>
++          <span className={styles.tierRecent}><b>L5 GP</b><span>{recentLine(player, "pickup", snapshot.players)}</span><StreakBadge streak={streakOf(player, "tier")} /></span>
+           <span className={styles.tierRate}>{tierRate(player)}</span>
+         </div>) : <p className={styles.tierEmpty}>No players under 50% rostered on these teams</p>}
+       </section>)}</div>}
+--- a/web/e2e/social-share.spec.ts
++++ b/web/e2e/social-share.spec.ts
+@@ -15,6 +15,7 @@
+ import { countTiers } from "../lib/socialShare/mondayGrid";
+ import { streamingTiers, trimEditionPlayers } from "../lib/socialShare/tiers";
+ import { SCORE_FORMULA, SPECIALIST_FORMULA } from "../lib/socialShare/score";
++import { streakOf, type StreakContext } from "../lib/socialShare/streak";
+ 
+ const evidence = process.env.SOCIAL_SHARE_EVIDENCE_DIR || "/tmp/fhf-social-card-readiness-evidence-20261008";
+ const upcomingWeek = calendarWeekStart(new Date(Date.now() + 7 * 86400000).toISOString());
+@@ -981,3 +982,35 @@
+   await expect(square).toContainText("No odds or projections");
+ });
+ 
++test("hot and cold streak badges sit beside the L5 line and match the streak rules (SS1-18)", async ({ page }) => {
++  const source = await install(page);
++  source.mode = "league";
++  await open(page);
++  const graphic = page.getByRole("combobox", { name: /^Graphic/ }), square = page.getByTestId("share-square");
++  await expect(square.locator("[data-team][data-tier]")).toHaveCount(32);
++  const counts = { hot: 0, cold: 0 };
++  for (const [card, context] of [["pickups-50", "pickup"], ["pickups-30", "pickup"], ["pickups-20", "pickup"], ["specialists", "specialist"], ["tiers", "tier"], ["tiers-wide", "tier"]] as [string, StreakContext][]) {
++    await graphic.selectOption(card);
++    await expect(square.locator("[data-player]").first()).toBeVisible();
++    const byId = new Map(source.latest!.players!.players.map(player => [String(player.nhlId), player]));
++    const rows = await square.locator("[data-player]").evaluateAll(nodes => nodes.map(node => ({ id: node.getAttribute("data-player")!, streak: node.querySelector("[data-streak]")?.getAttribute("data-streak") ?? null,
++      reasons: node.querySelector("[data-streak]")?.getAttribute("data-reasons") ?? null })));
++    expect(rows.length).toBeGreaterThan(0);
++    for (const row of rows) {
++      const expected = streakOf(byId.get(row.id)!, context);
++      expect({ id: row.id, card, streak: row.streak, reasons: row.reasons }).toEqual({ id: row.id, card, streak: expected?.kind ?? null, reasons: expected ? expected.reasons.join("|") : null });
++      if (expected) counts[expected.kind]++;
++    }
++    expect(await matchupGeometry(page)).toEqual({ fits: true, rowsInside: true, brokenImages: 0 });
++  }
++  // The fixture exercises both kinds.
++  expect(counts.hot).toBeGreaterThan(0);
++  expect(counts.cold).toBeGreaterThan(0);
++  await graphic.selectOption("pickups-50");
++  await downloadedPng(page, "streaks-pickups-50");
++  await graphic.selectOption("specialists");
++  await downloadedPng(page, "streaks-specialists");
++  await graphic.selectOption("tiers-wide");
++  await downloadedPng(page, "streaks-tiers-wide");
++});
++
+--- a/web/lib/socialShare/pickupsFixture.ts
++++ b/web/lib/socialShare/pickupsFixture.ts
+@@ -109,10 +109,19 @@
+         goalieGames.push({ goalie_id: player.nhlId, date: day(1 + game * 2), season_id: season, games_played: 1, wins: goals <= 2 ? 1 : 0, saves: shots - goals, shots_against: shots, goals_against: goals, quality_start: goals <= 2 ? 1 : 0, shutouts: goals === 0 ? 1 : 0 });
+       }
+     } else {
+-      const goals = seed % 4, assists = (seed * 3) % 5;
+-      rolling.push({ player_id: player.nhlId, season, game_date: day(1), strength_state: "all", season_games_played: 10, goals_total_last5: goals, assists_total_last5: assists, points_total_last5: goals + assists,
++      const goals = seed % 4, assists = (seed * 3) % 5, points = goals + assists;
++      // Six consecutive game rows (SS1-18 streaks): the L5 points spread over the five latest games, cumulative
++      // season points on each row, and fictional TOI / PP TOI totals around the season averages.
++      const perGame = [0, 0, 0, 0, 0];
++      for (let point = 0; point < points; point++) perGame[(seed + point * 2) % 5]++;
++      const toiL5 = player.group === "D" ? 1200 + seed * 4 : 900 + seed * 5, ppSeason = 40 + (seed % 5) * 30, ppL5 = Math.round(ppSeason * (0.5 + (seed % 8) * 0.17));
++      const cumulative = 20 + seed % 7, split = (total: number) => ({ goals_total_all: Math.floor(total / 2), assists_total_all: total - Math.floor(total / 2) });
++      for (let game = 5; game >= 1; game--) rolling.push({ player_id: player.nhlId, season, game_date: day(1 + game * 2), strength_state: "all", season_games_played: 10 - game,
++        ...split(cumulative - perGame.slice(0, game).reduce((sum, value) => sum + value, 0)) });
++      rolling.push({ player_id: player.nhlId, season, game_date: day(1), strength_state: "all", season_games_played: 10, goals_total_last5: goals, assists_total_last5: assists, points_total_last5: points,
++        ...split(cumulative), toi_seconds_total_last5: toiL5 * 5, pp_toi_seconds_total_last5: ppL5 * 5, pp_toi_seconds_avg_season: ppSeason,
+         shots_total_last5: 6 + (seed % 12), hits_avg_last5: Math.round((0.4 + (seed % 9) * 0.45) * 10) / 10, blocks_avg_last5: Math.round((0.2 + (seed % 7) * 0.35) * 10) / 10,
+-        toi_seconds_avg_last5: player.group === "D" ? 1200 + seed * 4 : 900 + seed * 5, pp_points_total_last5: seed % 3,
++        toi_seconds_avg_last5: toiL5, pp_points_total_last5: seed % 3,
+         // Fictional deployment (ticket 15): line or pair, PP unit (some none), season TOI near the L5 value.
+         toi_seconds_avg_season: player.group === "D" ? 1180 + ((seed * 7) % 160) : 880 + ((seed * 11) % 260), line_combo_group: player.group === "D" ? "defense" : "forward",
+         line_combo_slot: 1 + (seed % (player.group === "D" ? 3 : 4)), pp_unit: seed % 5 === 0 ? null : 1 + (seed % 2) });
+--- a/web/lib/socialShare/playerSources.ts
++++ b/web/lib/socialShare/playerSources.ts
+@@ -75,7 +75,7 @@
+   }
+   return String(reason).slice(0, 200);
+ }
+-const RECENT_SKATER_COLUMNS = "player_id,season,game_date,strength_state,season_games_played,goals_total_last5,assists_total_last5,points_total_last5,shots_total_last5,hits_avg_last5,blocks_avg_last5,toi_seconds_avg_last5,pp_points_total_last5,toi_seconds_avg_season,line_combo_slot,line_combo_group,pp_unit";
++const RECENT_SKATER_COLUMNS = "player_id,season,game_date,strength_state,season_games_played,goals_total_last5,assists_total_last5,points_total_last5,shots_total_last5,hits_avg_last5,blocks_avg_last5,toi_seconds_avg_last5,pp_points_total_last5,toi_seconds_avg_season,line_combo_slot,line_combo_group,pp_unit,goals_total_all,assists_total_all,toi_seconds_total_last5,pp_toi_seconds_total_last5,pp_toi_seconds_avg_season";
+ const RECENT_GOALIE_COLUMNS = "goalie_id,date,season_id,games_played,wins,saves,shots_against,goals_against,quality_start,shutouts";
+ 
+ export async function loadSharePlayerSources(season: number, teams: string[]): Promise<SharePlayerSources> {
+--- a/web/lib/socialShare/players.test.ts
++++ b/web/lib/socialShare/players.test.ts
+@@ -143,13 +143,13 @@
+     const { attachRecent } = await import("./players");
+     const layer = edition().players!, skater = layer.players.find(player => player.group !== "G")!, goalie = layer.players.find(player => player.group === "G")!;
+     const rolling = [
+-      { player_id: skater.nhlId, season, game_date: "2026-10-20", strength_state: "all", season_games_played: 6, goals_total_last5: 1, assists_total_last5: 1, points_total_last5: 2, shots_total_last5: 9, hits_avg_last5: 1, blocks_avg_last5: 0.4, toi_seconds_avg_last5: 1000, pp_points_total_last5: 0, toi_seconds_avg_season: null, line_combo_slot: null, line_combo_group: null, pp_unit: null },
+-      { player_id: skater.nhlId, season, game_date: "2026-10-24", strength_state: "all", season_games_played: 7, goals_total_last5: 3, assists_total_last5: 2, points_total_last5: 5, shots_total_last5: 14, hits_avg_last5: 1.2, blocks_avg_last5: 0.6, toi_seconds_avg_last5: 1100, pp_points_total_last5: 2, toi_seconds_avg_season: null, line_combo_slot: null, line_combo_group: null, pp_unit: null },
+-      { player_id: skater.nhlId, season, game_date: "2026-10-25", strength_state: "pp", season_games_played: 8, goals_total_last5: 9, assists_total_last5: 9, points_total_last5: 9, shots_total_last5: 9, hits_avg_last5: 9, blocks_avg_last5: 9, toi_seconds_avg_last5: 9, pp_points_total_last5: 9, toi_seconds_avg_season: null, line_combo_slot: null, line_combo_group: null, pp_unit: null },
++      { player_id: skater.nhlId, season, game_date: "2026-10-20", strength_state: "all", season_games_played: 6, goals_total_last5: 1, assists_total_last5: 1, points_total_last5: 2, shots_total_last5: 9, hits_avg_last5: 1, blocks_avg_last5: 0.4, toi_seconds_avg_last5: 1000, pp_points_total_last5: 0, toi_seconds_avg_season: null, line_combo_slot: null, line_combo_group: null, pp_unit: null, goals_total_all: null, assists_total_all: null, toi_seconds_total_last5: null, pp_toi_seconds_total_last5: null, pp_toi_seconds_avg_season: null },
++      { player_id: skater.nhlId, season, game_date: "2026-10-24", strength_state: "all", season_games_played: 7, goals_total_last5: 3, assists_total_last5: 2, points_total_last5: 5, shots_total_last5: 14, hits_avg_last5: 1.2, blocks_avg_last5: 0.6, toi_seconds_avg_last5: 1100, pp_points_total_last5: 2, toi_seconds_avg_season: null, line_combo_slot: null, line_combo_group: null, pp_unit: null, goals_total_all: null, assists_total_all: null, toi_seconds_total_last5: null, pp_toi_seconds_total_last5: null, pp_toi_seconds_avg_season: null },
++      { player_id: skater.nhlId, season, game_date: "2026-10-25", strength_state: "pp", season_games_played: 8, goals_total_last5: 9, assists_total_last5: 9, points_total_last5: 9, shots_total_last5: 9, hits_avg_last5: 9, blocks_avg_last5: 9, toi_seconds_avg_last5: 9, pp_points_total_last5: 9, toi_seconds_avg_season: null, line_combo_slot: null, line_combo_group: null, pp_unit: null, goals_total_all: null, assists_total_all: null, toi_seconds_total_last5: null, pp_toi_seconds_total_last5: null, pp_toi_seconds_avg_season: null },
+     ];
+     const goalieGames = Array.from({ length: 7 }, (_, i) => ({ goalie_id: goalie.nhlId, date: `2026-10-${String(12 + i * 2).padStart(2, "0")}`, season_id: season, games_played: i === 6 ? 0 : 1, wins: i % 2, saves: 25 + i, shots_against: 28 + i, goals_against: 3, quality_start: i % 2, shutouts: 0 }));
+     const withRecent = attachRecent(layer, { rolling, goalieGames }, now);
+-    expect(withRecent.players.find(player => player.nhlId === skater.nhlId)!.recent).toEqual({ kind: "skater", games: 5, through: "2026-10-24", goals: 3, assists: 2, points: 5, shots: 14, hitsPerGame: 1.2, blocksPerGame: 0.6, toiSeconds: 1100, ppPoints: 2, line: null, ppUnit: null, toiSeasonSeconds: null });
++    expect(withRecent.players.find(player => player.nhlId === skater.nhlId)!.recent).toEqual({ kind: "skater", games: 5, through: "2026-10-24", goals: 3, assists: 2, points: 5, shots: 14, hitsPerGame: 1.2, blocksPerGame: 0.6, toiSeconds: 1100, ppPoints: 2, line: null, ppUnit: null, toiSeasonSeconds: null, pointGames: null, toiPreSeconds: null, ppToiSeconds: null, ppToiPreSeconds: null });
+     // Seven dated rows: the 0-GP row is skipped, then the five latest games (Oct 22, 20, 18, 16, 14).
+     expect(withRecent.players.find(player => player.nhlId === goalie.nhlId)!.recent).toEqual({ kind: "goalie", games: 5, through: "2026-10-22", wins: 3, saves: 26 + 27 + 28 + 29 + 30, shotsAgainst: 29 + 30 + 31 + 32 + 33, goalsAgainst: 15, qualityStarts: 3, shutouts: 0 });
+     // A failed read is "unavailable"; an answered read is "ready" even when a player has no rows.
+@@ -168,6 +168,27 @@
+   });
+ });
+ 
++describe("streak inputs from per-game rows (SS1-18)", () => {
++  it("counts L5 games with a point from consecutive cumulative rows, and builds pre-L5 baselines that exclude the L5 games", async () => {
++    const { attachRecent } = await import("./players");
++    const layer = edition().players!, skater = layer.players.find(player => player.group !== "G")!;
++    // Six consecutive games (GP 5…10); per-game points 1, 0, 2, 1, 1 for the five latest -> 4 of 5 with a point.
++    const cumulative = [10, 9, 9, 7, 6, 5];
++    const row = (i: number, extra: Record<string, unknown> = {}) => ({ player_id: skater.nhlId, season, game_date: `2026-10-${String(24 - i * 2).padStart(2, "0")}`, strength_state: "all", season_games_played: 10 - i, goals_total_all: Math.floor(cumulative[i] / 2), assists_total_all: cumulative[i] - Math.floor(cumulative[i] / 2),
++      goals_total_last5: 2, assists_total_last5: 3, points_total_last5: 5, shots_total_last5: 10, hits_avg_last5: 1, blocks_avg_last5: 1, toi_seconds_avg_last5: 1200, pp_points_total_last5: 1,
++      toi_seconds_avg_season: 1000, line_combo_slot: 1, line_combo_group: "forward", pp_unit: 1, toi_seconds_total_last5: 6000, pp_toi_seconds_total_last5: 750, pp_toi_seconds_avg_season: 120, ...extra });
++    const recentOf = (rows: Record<string, unknown>[]) => attachRecent(layer, { rolling: rows as never, goalieGames: [] }, now).players.find(player => player.nhlId === skater.nhlId)!.recent;
++    // Season 1000 s × 10 GP − 6000 s in L5 = 4000 s over 5 earlier games = 800 s; PP (120 × 10 − 750) / 5 = 90 s.
++    expect(recentOf([0, 1, 2, 3, 4, 5].map(i => row(i)))).toMatchObject({ pointGames: 4, toiPreSeconds: 800, ppToiSeconds: 150, ppToiPreSeconds: 90 });
++    // A gap in the season GP sequence (a missing game row) leaves per-game points unknown, never guessed.
++    expect(recentOf([0, 1, 2, 3, 4, 5].map(i => row(i, i === 5 ? { season_games_played: 3 } : {})))).toMatchObject({ pointGames: null });
++    // Fewer than six rows: unknown too.
++    expect(recentOf([0, 1, 2, 3, 4].map(i => row(i)))).toMatchObject({ pointGames: null, toiPreSeconds: 800 });
++    // Too few games before the L5 window: no pre-L5 baseline.
++    expect(recentOf([row(0, { season_games_played: 7 })])).toMatchObject({ toiPreSeconds: null, ppToiPreSeconds: null });
++  });
++});
++
+ describe("live trimming and day selection", () => {
+   it("keeps only shown players for the prepared selection and needs a refresh for other days", async () => {
+     const { trimPlayerLayer, playersReady } = await import("./players");
+--- a/web/lib/socialShare/players.ts
++++ b/web/lib/socialShare/players.ts
+@@ -2,6 +2,7 @@
+ import { localDate } from "lib/rosterScheduleOptimizer/planningDates";
+ import { normalizeEvDeploymentBucket, normalizePpDeploymentBucket } from "lib/rankings/skaterDeploymentAggregation";
+ import { byScore, opportunityMultiplier, playerScore } from "./score";
++import { STREAK } from "./streak";
+ import { PICKUP_YAHOO_TEAM_ALIASES, type PickupOwnershipRow } from "./pickupsFixture";
+ import { SHARE_TIME_ZONE, type ShareDataState, type SharePlayer, type SharePlayerLayer, type SocialShareSnapshot } from "./types";
+ 
+@@ -203,10 +204,30 @@
+       byScore<Specialist>(player => player.l5PerGame === null ? null : player.l5PerGame * opportunityMultiplier(player), (a, b) => b.perGame - a.perGame || tieBreak(a, b)), perList)])) as Record<SpecialistCategory, Specialist[]>;
+ }
+ 
++/**
++ * Streak inputs from one player's strength-all rows, latest first (SS1-18). Each row is one game, so a game's
++ * points are the difference of consecutive cumulative goals + assists (`goals_total_all` + `assists_total_all`;
++ * `points_total_all` was dropped from the table on 2026-10-21), counted only when the six
++ * latest rows are provably consecutive games (season GP steps by exactly 1); otherwise null, never guessed.
++ * Pre-L5 averages exclude the L5 games: (season average × GP − L5 total) ÷ (GP − 5).
++ */
++function streakInputs(rows: ShareRecentRollingRow[]) {
++  const latest = rows[0], gp = latest.season_games_played;
++  const six = rows.slice(0, 6), consecutive = six.length === 6 && six.every((row, i) => i === 0 || (row.season_games_played !== null && six[i - 1].season_games_played !== null && six[i - 1].season_games_played! - row.season_games_played === 1))
++    && six.every(row => typeof row.goals_total_all === "number" && typeof row.assists_total_all === "number");
++  const cumulative = (row: ShareRecentRollingRow) => row.goals_total_all! + row.assists_total_all!;
++  const pointGames = consecutive ? six.slice(0, 5).filter((row, i) => cumulative(row) - cumulative(six[i + 1]) > 0).length : null;
++  const preGames = gp === null ? 0 : gp - 5;
++  const pre = (seasonAvg: number | null | undefined, l5Total: number | null | undefined) => preGames < STREAK.minPreGames || seasonAvg == null || l5Total == null ? null : (seasonAvg * gp! - l5Total) / preGames;
++  return { pointGames, toiPreSeconds: pre(latest.toi_seconds_avg_season, latest.toi_seconds_total_last5),
++    ppToiSeconds: latest.pp_toi_seconds_total_last5 == null ? null : latest.pp_toi_seconds_total_last5 / 5, ppToiPreSeconds: pre(latest.pp_toi_seconds_avg_season, latest.pp_toi_seconds_total_last5) };
++}
++
+ /** Read-only recent-game source shapes. */
+ export type ShareRecentRollingRow = Pick<Tables["rolling_player_game_metrics"]["Row"], "player_id" | "season" | "game_date" | "strength_state" | "season_games_played" |
+   "goals_total_last5" | "assists_total_last5" | "points_total_last5" | "shots_total_last5" | "hits_avg_last5" | "blocks_avg_last5" | "toi_seconds_avg_last5" | "pp_points_total_last5"
+-  | "toi_seconds_avg_season" | "line_combo_slot" | "line_combo_group" | "pp_unit">;
++  | "toi_seconds_avg_season" | "line_combo_slot" | "line_combo_group" | "pp_unit"
++  | "goals_total_all" | "assists_total_all" | "toi_seconds_total_last5" | "pp_toi_seconds_total_last5" | "pp_toi_seconds_avg_season">;
+ export type ShareGoalieGameRow = Pick<Tables["wgo_goalie_stats"]["Row"], "goalie_id" | "date" | "season_id" | "games_played" | "wins" | "saves" | "shots_against" | "goals_against" | "quality_start" | "shutouts">;
+ /** A last-5 window older than this (no game in two weeks) is not shown as recent form. */
+ export const RECENT_MAX_AGE_DAYS = 14;
+@@ -224,12 +245,12 @@
+   const players = layer.players.map(player => {
+     if (player.group !== "G") {
+       if (!sources.rolling) return { ...player, recent: null };
+-      const latest = sources.rolling.filter(row => row.player_id === player.nhlId && row.season === layer.season && row.strength_state === "all" && isDate(row.game_date) && row.game_date <= today)
+-        .sort((a, b) => b.game_date.localeCompare(a.game_date))[0];
++      const rows = sources.rolling.filter(row => row.player_id === player.nhlId && row.season === layer.season && row.strength_state === "all" && isDate(row.game_date) && row.game_date <= today)
++        .sort((a, b) => b.game_date.localeCompare(a.game_date)), latest = rows[0];
+       if (!latest || latest.game_date < oldest) return { ...player, recent: null };
+       return { ...player, recent: { kind: "skater" as const, games: Math.min(5, latest.season_games_played ?? 5), through: latest.game_date, goals: latest.goals_total_last5, assists: latest.assists_total_last5, points: latest.points_total_last5,
+         shots: latest.shots_total_last5, hitsPerGame: latest.hits_avg_last5, blocksPerGame: latest.blocks_avg_last5, toiSeconds: latest.toi_seconds_avg_last5, ppPoints: latest.pp_points_total_last5,
+-        line: normalizeEvDeploymentBucket({ lineComboGroup: latest.line_combo_group, lineComboSlot: latest.line_combo_slot }), ppUnit: normalizePpDeploymentBucket(latest.pp_unit), toiSeasonSeconds: latest.toi_seconds_avg_season ?? null } };
++        line: normalizeEvDeploymentBucket({ lineComboGroup: latest.line_combo_group, lineComboSlot: latest.line_combo_slot }), ppUnit: normalizePpDeploymentBucket(latest.pp_unit), toiSeasonSeconds: latest.toi_seconds_avg_season ?? null, ...streakInputs(rows) } };
+     }
+     if (!sources.goalieGames) return { ...player, recent: null };
+     const games = sources.goalieGames.filter(row => row.goalie_id === player.nhlId && row.season_id === layer.season && isDate(row.date) && row.date <= today && (row.games_played ?? 0) > 0)
+--- /dev/null
++++ b/web/lib/socialShare/streak.test.ts
+@@ -0,0 +1,84 @@
++import { describe, expect, it } from "vitest";
++import { STREAK, streakOf } from "./streak";
++import type { SharePlayerRecent } from "./types";
++
++type Skater = Extract<SharePlayerRecent, { kind: "skater" }>;
++// A neutral skater: 2 points in 5 GP over 2 games, TOI and PP TOI flat, no specialist rates: no streak.
++const skater = (patch: Partial<Skater> = {}, group: "F" | "D" = "F") => ({ group, recent: { kind: "skater" as const, games: 5, through: "2026-10-24", goals: 1, assists: 1, points: 2, shots: 10,
++  hitsPerGame: 1, blocksPerGame: 1, toiSeconds: 1000, ppPoints: 1, line: null, ppUnit: null, toiSeasonSeconds: 1000, pointGames: 2, toiPreSeconds: 1000, ppToiSeconds: 100, ppToiPreSeconds: 100, ...patch } });
++const goalie = (qualityStarts: number, saves: number, shotsAgainst: number, games = 5) => ({ group: "G" as const, recent: { kind: "goalie" as const, games, through: "2026-10-24", wins: 3, saves, shotsAgainst, goalsAgainst: shotsAgainst - saves, qualityStarts, shutouts: 0 } });
++const kind = (player: Parameters<typeof streakOf>[0], context: Parameters<typeof streakOf>[1] = "pickup") => streakOf(player, context)?.kind ?? null;
++
++describe("streak thresholds (TJ, ticket 18)", () => {
++  it("documents TJ's choices in one config", () => {
++    expect(STREAK.hot).toEqual({ pointGames: 4, pointsPerGame: 0.85, toiRise: 0.15, ppToiRise: 0.35 });
++    expect(STREAK.cold).toEqual({ pointGames: 1, pointsPerGame: 0.25, toiDrop: 0.15, ppToiDrop: 0.35 });
++    expect(STREAK.specialists).toEqual({ hitsPerGame: 2, blocksPerGame: 2, shotsPerGame: 2.5, ppPointsPerGame: 0.5 });
++    expect(kind(skater())).toBeNull();
++  });
++
++  it("points in 4 of 5 games is hot; 3 of 5 is not (games with a point, not total points)", () => {
++    expect(streakOf(skater({ pointGames: 4 }), "pickup")).toEqual({ kind: "hot", reasons: ["4/5 P"] });
++    expect(kind(skater({ pointGames: 3, points: 4 }))).toBeNull();
++    // Unknown per-game points never fire either way.
++    expect(kind(skater({ pointGames: null, points: 2 }))).toBeNull();
++  });
++
++  it("0.85 P/GP or more is hot: over 5 GP that is 5 points (1.0); 4 points (0.80) is not", () => {
++    expect(streakOf(skater({ points: 5, pointGames: 3 }), "tier")).toEqual({ kind: "hot", reasons: ["1.0 P/GP"] });
++    expect(kind(skater({ points: 4, pointGames: 3 }))).toBeNull();
++    // The comparator itself is inclusive at exactly 0.85 (e.g. a shorter span in a future config).
++    expect(kind({ group: "F", recent: { ...skater().recent, games: 20, points: 17, pointGames: 3 } })).toBe("hot");
++  });
++
++  it("TOI up 15% or more vs the pre-L5 average is hot; 14.9% is not", () => {
++    expect(streakOf(skater({ toiSeconds: 1150, toiPreSeconds: 1000 }), "pickup")).toEqual({ kind: "hot", reasons: ["TOI +15%"] });
++    expect(kind(skater({ toiSeconds: 1149, toiPreSeconds: 1000 }))).toBeNull();
++    expect(kind(skater({ toiSeconds: 1500, toiPreSeconds: null }))).toBeNull();
++  });
++
++  it("PP TOI up 35% or more is hot; 34.9% is not; a tiny pre-L5 baseline never fires", () => {
++    expect(streakOf(skater({ ppToiSeconds: 135, ppToiPreSeconds: 100 }), "pickup")).toEqual({ kind: "hot", reasons: ["PP TOI +35%"] });
++    expect(kind(skater({ ppToiSeconds: 134.9, ppToiPreSeconds: 100 }))).toBeNull();
++    expect(kind(skater({ ppToiSeconds: 90, ppToiPreSeconds: STREAK.ppToiMinBaselineSeconds - 1 }))).toBeNull();
++  });
++
++  it("specialist rates are strictly greater than, and only on the Specialists card", () => {
++    expect(kind(skater({ hitsPerGame: 2.0 }), "specialist")).toBeNull();
++    expect(streakOf(skater({ hitsPerGame: 2.01 }), "specialist")).toEqual({ kind: "hot", reasons: ["2.0 HIT/GP"] });
++    expect(kind(skater({ hitsPerGame: 2.01 }), "pickup")).toBeNull();
++    expect(kind(skater({ blocksPerGame: 2.0 }), "specialist")).toBeNull();
++    expect(kind(skater({ blocksPerGame: 2.2 }), "specialist")).toBe("hot");
++    expect(kind(skater({ shots: 12.5 }), "specialist")).toBeNull();
++    expect(kind(skater({ shots: 13 }), "specialist")).toBe("hot");
++    expect(kind(skater({ ppPoints: 2.5 }), "specialist")).toBeNull();
++    expect(kind(skater({ ppPoints: 3, points: 3 }), "specialist")).toBe("hot");
++    // Missing L5 hits (as live today) never fires.
++    expect(kind(skater({ hitsPerGame: null, blocksPerGame: null }), "specialist")).toBeNull();
++  });
++
++  it("cold mirrors hot: ≤ 1 of 5, ≤ 0.25 P/GP, TOI or PP TOI down; hot wins when both apply", () => {
++    expect(streakOf(skater({ pointGames: 1, points: 2 }), "pickup")).toEqual({ kind: "cold", reasons: ["1/5 P"] });
++    expect(streakOf(skater({ points: 1, pointGames: 2 }), "pickup")).toEqual({ kind: "cold", reasons: ["0.2 P/GP"] });
++    expect(kind(skater({ points: 2, pointGames: 2 }))).toBeNull();
++    expect(streakOf(skater({ toiSeconds: 850, toiPreSeconds: 1000 }), "pickup")).toEqual({ kind: "cold", reasons: ["TOI −15%"] });
++    expect(kind(skater({ toiSeconds: 851, toiPreSeconds: 1000 }))).toBeNull();
++    expect(streakOf(skater({ ppToiSeconds: 65, ppToiPreSeconds: 100 }), "pickup")).toEqual({ kind: "cold", reasons: ["PP TOI −35%"] });
++    expect(kind(skater({ toiSeconds: 1200, toiPreSeconds: 1000, pointGames: 0, points: 0 }))).toBe("hot");
++  });
++
++  it("shows nothing with fewer than 5 recent games or no recent form", () => {
++    expect(kind(skater({ games: 4, pointGames: 4, points: 8 }))).toBeNull();
++    expect(kind({ group: "F", recent: null })).toBeNull();
++    expect(kind(goalie(5, 140, 150, 4))).toBeNull();
++  });
++
++  it("goalies (TJ: goalies too; proposed rules): ≥ 4 of 5 quality starts or ≥ .930 SV% hot; ≤ 1 QS or ≤ .870 cold", () => {
++    expect(streakOf(goalie(4, 130, 145), "pickup")).toEqual({ kind: "hot", reasons: ["4/5 QS"] });
++    expect(streakOf(goalie(3, 139.5, 150), "pickup")).toEqual({ kind: "hot", reasons: [".930 SV%"] });
++    expect(kind(goalie(3, 139, 150))).toBeNull();
++    expect(streakOf(goalie(1, 135, 150), "pickup")).toEqual({ kind: "cold", reasons: ["1/5 QS"] });
++    expect(streakOf(goalie(2, 130.5, 150), "pickup")).toEqual({ kind: "cold", reasons: [".870 SV%"] });
++    expect(kind(goalie(2, 131, 150))).toBeNull();
++  });
++});
+--- /dev/null
++++ b/web/lib/socialShare/streak.ts
+@@ -0,0 +1,69 @@
++import type { SharePlayer } from "./types";
++
++/**
++ * Hot and cold streaks next to the L5 "Recent form" line (TJ, ticket 18). One tunable config.
++ * - Hot (any one): points in ≥ 4 of the last 5 GP; ≥ 0.85 P/GP over L5; L5 TOI ≥ 15% above the pre-L5 season
++ *   average (TJ chose 15% from his 10–15% range); L5 PP TOI ≥ 35% above the pre-L5 average. On the Specialists
++ *   card also > 2 HIT/GP, > 2 BLK/GP, > 2.5 SOG/GP or > 0.5 PPP/GP over L5.
++ * - Cold (TJ chose the mirrored opposites): points in ≤ 1 of 5; ≤ 0.25 P/GP; TOI down ≥ 15%; PP TOI down ≥ 35%.
++ * - Goalies (TJ: goalies too; these rules are SS1's proposal for him to confirm): hot = quality starts in ≥ 4 of 5
++ *   or L5 SV% ≥ .930; cold = quality starts in ≤ 1 of 5 or L5 SV% ≤ .870.
++ * Pre-L5 baselines exclude the L5 games: (season total − L5 total) ÷ (season GP − 5). Fewer than 5 recent games
++ * shows no icon; a criterion with missing data simply doesn't fire, so missing data never yields an icon. Hot wins
++ * when a player meets both.
++ */
++export const STREAK = {
++  games: 5,
++  /** Pre-L5 games needed before the TOI and PP TOI rules apply. */
++  minPreGames: 3,
++  /** A pre-L5 PP TOI below this (seconds per game) is too small to compare against. */
++  ppToiMinBaselineSeconds: 30,
++  hot: { pointGames: 4, pointsPerGame: 0.85, toiRise: 0.15, ppToiRise: 0.35 },
++  /** Specialists card only; strictly greater than. */
++  specialists: { hitsPerGame: 2, blocksPerGame: 2, shotsPerGame: 2.5, ppPointsPerGame: 0.5 },
++  cold: { pointGames: 1, pointsPerGame: 0.25, toiDrop: 0.15, ppToiDrop: 0.35 },
++  goalie: { hot: { qualityStarts: 4, savePct: 0.93 }, cold: { qualityStarts: 1, savePct: 0.87 } },
++} as const;
++
++export type StreakContext = "pickup" | "specialist" | "tier";
++export type Streak = { kind: "hot" | "cold"; reasons: string[] };
++
++const EPSILON = 1e-9;
++const pct = (ratio: number) => `${ratio >= 0 ? "+" : "−"}${Math.round(Math.abs(ratio) * 100)}%`;
++/** L5 vs pre-L5 change, or null when either side is missing or the baseline is too small. */
++const change = (l5: number | null | undefined, pre: number | null | undefined, minBaseline = 1) =>
++  l5 == null || pre == null || !Number.isFinite(l5) || !Number.isFinite(pre) || pre < minBaseline ? null : l5 / pre - 1;
++
++export function streakOf(player: Pick<SharePlayer, "group" | "recent">, context: StreakContext): Streak | null {
++  const recent = player.recent;
++  if (!recent || recent.games < STREAK.games) return null;
++  if (recent.kind === "goalie") {
++    const savePct = recent.shotsAgainst > 0 ? recent.saves / recent.shotsAgainst : null, sv = (value: number) => `${value.toFixed(3).replace(/^0/, "")} SV%`;
++    const hot = [...(recent.qualityStarts >= STREAK.goalie.hot.qualityStarts ? [`${recent.qualityStarts}/5 QS`] : []), ...(savePct !== null && savePct >= STREAK.goalie.hot.savePct - EPSILON ? [sv(savePct)] : [])];
++    if (hot.length) return { kind: "hot", reasons: hot };
++    const cold = [...(recent.qualityStarts <= STREAK.goalie.cold.qualityStarts ? [`${recent.qualityStarts}/5 QS`] : []), ...(savePct !== null && savePct <= STREAK.goalie.cold.savePct + EPSILON ? [sv(savePct)] : [])];
++    return cold.length ? { kind: "cold", reasons: cold } : null;
++  }
++  const games = recent.games, perGame = (total: number | null) => (total === null ? null : total / games);
++  const ppg = perGame(recent.points), pointGames = recent.pointGames ?? null;
++  const toi = change(recent.toiSeconds, recent.toiPreSeconds), pp = change(recent.ppToiSeconds, recent.ppToiPreSeconds, STREAK.ppToiMinBaselineSeconds);
++  const hot: string[] = [];
++  if (pointGames !== null && pointGames >= STREAK.hot.pointGames) hot.push(`${pointGames}/5 P`);
++  if (ppg !== null && ppg >= STREAK.hot.pointsPerGame - EPSILON) hot.push(`${ppg.toFixed(1)} P/GP`);
++  if (toi !== null && toi >= STREAK.hot.toiRise - EPSILON) hot.push(`TOI ${pct(toi)}`);
++  if (pp !== null && pp >= STREAK.hot.ppToiRise - EPSILON) hot.push(`PP TOI ${pct(pp)}`);
++  if (context === "specialist") {
++    const s = STREAK.specialists, sog = perGame(recent.shots), ppp = perGame(recent.ppPoints);
++    if (recent.hitsPerGame !== null && recent.hitsPerGame > s.hitsPerGame + EPSILON) hot.push(`${recent.hitsPerGame.toFixed(1)} HIT/GP`);
++    if (recent.blocksPerGame !== null && recent.blocksPerGame > s.blocksPerGame + EPSILON) hot.push(`${recent.blocksPerGame.toFixed(1)} BLK/GP`);
++    if (sog !== null && sog > s.shotsPerGame + EPSILON) hot.push(`${sog.toFixed(1)} SOG/GP`);
++    if (ppp !== null && ppp > s.ppPointsPerGame + EPSILON) hot.push(`${ppp.toFixed(1)} PPP/GP`);
++  }
++  if (hot.length) return { kind: "hot", reasons: hot };
++  const cold: string[] = [];
++  if (pointGames !== null && pointGames <= STREAK.cold.pointGames) cold.push(`${pointGames}/5 P`);
++  if (ppg !== null && ppg <= STREAK.cold.pointsPerGame + EPSILON) cold.push(`${ppg.toFixed(1)} P/GP`);
++  if (toi !== null && toi <= -STREAK.cold.toiDrop + EPSILON) cold.push(`TOI ${pct(toi)}`);
++  if (pp !== null && pp <= -STREAK.cold.ppToiDrop + EPSILON) cold.push(`PP TOI ${pct(pp)}`);
++  return cold.length ? { kind: "cold", reasons: cold } : null;
++}
+--- a/web/lib/socialShare/types.ts
++++ b/web/lib/socialShare/types.ts
+@@ -78,7 +78,10 @@
+ export type SharePlayerRecent =
+   | { kind: "skater"; games: number; through: string; goals: number | null; assists: number | null; points: number | null; shots: number | null; hitsPerGame: number | null; blocksPerGame: number | null; toiSeconds: number | null; ppPoints: number | null;
+       /** Latest game's role (SS1-15): even-strength line L1–L4 or pair P1–P3, PP unit, and season TOI per game for the relative-TOI note. */
+-      line?: EvDeploymentBucket | null; ppUnit?: SpecialTeamsDeploymentBucket | null; toiSeasonSeconds?: number | null }
++      line?: EvDeploymentBucket | null; ppUnit?: SpecialTeamsDeploymentBucket | null; toiSeasonSeconds?: number | null;
++      /** Streak inputs (SS1-18): L5 games with a point (null unless the 6 latest rows are consecutive games), and
++       *  pre-L5 averages that exclude the L5 games ((season total − L5 total) ÷ (GP − 5)); seconds per game. */
++      pointGames?: number | null; toiPreSeconds?: number | null; ppToiSeconds?: number | null; ppToiPreSeconds?: number | null }
+   | { kind: "goalie"; games: number; through: string; wins: number; saves: number; shotsAgainst: number; goalsAgainst: number; qualityStarts: number; shutouts?: number };
+ 
+ /** One public player row joined from Yahoo ownership and NHL.com (WGO) season totals. */

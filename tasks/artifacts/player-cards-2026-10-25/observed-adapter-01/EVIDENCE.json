@@ -1,0 +1,233 @@
+{
+  "status": "Frozen offline supplied-row candidate; independent review pending",
+  "at": "2026-10-25T05:15:40.128812+00:00",
+  "sources": [
+    {
+      "path": "web/lib/player-cards/nstCapture.ts",
+      "baseline": "absent",
+      "bytes": 7448,
+      "sha256": "8febc82875c998d9b89c9e8d70194ddf25f204b6fcca8ef08b32d338c16bebb5"
+    },
+    {
+      "path": "web/lib/player-cards/nstCapture.test.ts",
+      "baseline": "absent",
+      "bytes": 8377,
+      "sha256": "7c88e4a14687c325858eb4ca7b4c297368179dfedfc6d1a1837539a5829914ed"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/CHANGED-FILES.json",
+      "bytes": 378,
+      "sha256": "2195be124168309d28ddbecdf77006bb4584ab4b7e648e40c406ef0bc3d9fde5"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/HANDOFF.md",
+      "bytes": 5883,
+      "sha256": "aa9c0b5e7db2b5a2e99d7bab3e0afb9385c217e6c12f7fe0eb4d34e19184ab80"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/INPUT-PINS.json",
+      "bytes": 2189,
+      "sha256": "aa23bf4829cac275428e8bc65e360e828587821d77cca6193ef27c500d2d641d"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/LEASE.json",
+      "bytes": 1148,
+      "sha256": "b13dad3f6540b4c74d75302b0d4431d400594a0769b9544b26036f6b5dadf901"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/PROPOSED-READ-ONLY-COMPLETION.sql",
+      "bytes": 1110,
+      "sha256": "dd4a0495188d7cc6c7b9f5dd496740692c941cd4f77a707ef33e6098a04d3e1a"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/READ-REQUEST.md",
+      "bytes": 2428,
+      "sha256": "c0a72698b13949e61a1bc2e2d9a9ce5aba819447254dba8f70f94dd469b5621d"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/READINESS.md",
+      "bytes": 7840,
+      "sha256": "17bb99165f3a60725111221c0be694139d11e2b79e919b46c760a51d1aa19820"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/capture-command.json",
+      "bytes": 655,
+      "sha256": "66ccb3269004f489077293e05e6e3520657247ef99bcc3a3bf7ac7b137c9007c"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/capture-reconciliation.json",
+      "bytes": 10135,
+      "sha256": "965f96b9272c428e2e3ad190051ba021be14650bd9db4e8a2bbcfd77108f3ba9"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/capture.log",
+      "bytes": 152,
+      "sha256": "7427dc8b6983ea96a70dce8974a5a89367a73ebae2480383a137c913cd5ed7ea"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/lint-command.json",
+      "bytes": 646,
+      "sha256": "343bff9106391a18120d2dff28a3d2d59c42be0a2ea9c290ee1462fae133048d"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/lint.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/offline.setup.ts",
+      "bytes": 103,
+      "sha256": "da56870e98afa02755d924bc7f8b2aff5babf3ab285b947682a0b4bda66edd10"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/preservation-results.json",
+      "bytes": 324,
+      "sha256": "7102bafaf9abb2bee65c209f1c9eaa25f0b76534a66cf804cd2fe92c90ba7412"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/reconcile-capture.mjs",
+      "bytes": 4922,
+      "sha256": "3bd7c3358f90418b33a178e02ec9fe59390df6df0af65c6636cfda92d9bc5c69"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/run-check.py",
+      "bytes": 2007,
+      "sha256": "bced75da16e7136b2026634d649b298abab542b010baae46617ccfb3b121eff5"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/source.patch",
+      "bytes": 16178,
+      "sha256": "9a0f6ede11e929e2f13518308563225bf8c64df7864fd4693c406942130a87ef"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/tests-command.json",
+      "bytes": 672,
+      "sha256": "0545332c2040380e09e43a3f2c0c74606dd0d550c04f344a38707bac25d24638"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/tests.log",
+      "bytes": 412,
+      "sha256": "03e8a75fdd4c263a8bdbb469c10fdfda20ce18423cbf98c90377f6028f7c966f"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/tsconfig.json",
+      "bytes": 241,
+      "sha256": "ade9d16a6e947cc0f6f4db3316dc337a9800f43583202afd090a1f7d0773d7e1"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/types-command.json",
+      "bytes": 680,
+      "sha256": "0b3e925b2c352aa8c82c4bff29b8c833521e8a0d4c02ce43c84b7c881b31e000"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/types.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/vitest.config.mts",
+      "bytes": 508,
+      "sha256": "a0d307a3becf89b55932159fdbeeb44a20d4726864fa74e23e58acea3e10769f"
+    }
+  ],
+  "checks": {
+    "tests": {
+      "action": "tests",
+      "command": [
+        "npm",
+        "test",
+        "--",
+        "--run",
+        "--config",
+        "../tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/vitest.config.mts"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 0.885,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    },
+    "types": {
+      "action": "types",
+      "command": [
+        "npx",
+        "--no-install",
+        "tsc",
+        "--noEmit",
+        "--project",
+        "../tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/tsconfig.json"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 0.89,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    },
+    "lint": {
+      "action": "lint",
+      "command": [
+        "npx",
+        "--no-install",
+        "eslint",
+        "lib/player-cards/nstCapture.ts",
+        "lib/player-cards/nstCapture.test.ts"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 1.49,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    },
+    "capture": {
+      "action": "capture",
+      "command": [
+        "node",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/reconcile-capture.mjs"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 0.129,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    }
+  },
+  "newTestsPassed": 10,
+  "productionRequests": 0,
+  "providerRequests": 0,
+  "liveActivation": false,
+  "premiumActivation": false,
+  "protectedHeroPinsMatched": 74,
+  "notPerformed": [
+    "browser/server change",
+    "old suite rerun",
+    "production SQL execution",
+    "WiGO/source repair",
+    "image processing",
+    "image-dependent treatment implementation",
+    "uploads",
+    "Git/deploy",
+    "new workers"
+  ]
+}

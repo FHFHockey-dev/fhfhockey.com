@@ -178,7 +178,7 @@
     - Evidence (2026-07-11): the existing opponent-metrics rail remains intact, the summary retains OPP%, and weekly detail exposes the actual opponent sequence beside volume/off nights.
   - [x] 7.5 Expand the WGO explanatory-chart experience into a clearer over/under-performance tool for teams, focusing on readable drivers such as chance generation, chance suppression, finishing, and special teams.
     - Evidence (2026-07-11): WGO overview now renders league-relative Chance Generation, Chance Suppression, Finishing, and Special Teams cards with plain-language directionality, strength/neutral/concern status, completeness gates, and source-date ranges. Live EDM example uses 32 teams.
-  - [x] 7.6 Ensure the upgraded grid and WGO surfaces link cleanly to team pages, trends, and other deep-dive tools instead of acting like isolated utilities.
+  - [x] 7.6 Ensure the upgraded grid and WGO surfaces link cleanly to team pages, trends, and other deep-dive tools instead of acting like isolated utilities. _(Superseded by 2026-10-17 audit row NEW 16.0.)_
     - Evidence (2026-07-11): the previously imported-but-unmounted Game Grid workflow links now render; WGO provides selected Team HQ/Lines plus Trends, Game Grid, and Starter Board links.
   - [x] 7.7 Add component and route tests for tab switching, state preservation, and explanatory-chart data shaping.
     - Evidence (2026-07-11): four focused files pass 13/13 tests; TypeScript and diff checks pass. Live March Game Grid verified both populated tabs and real opponent sequences; live WGO rendered four EDM driver cards and workflow links.
@@ -216,7 +216,7 @@
 - [x] NEW 12.0 Correct malformed WGO percentile ordinal copy discovered during live team-driver verification.
   - Evidence (2026-07-11): shared ordinal formatting now renders `41st`, `30th`, and `73rd` correctly and covers 1/2/3/11/12/13 edge cases.
 
-- [x] NEW 13.0 Mount the existing but unused Game Grid workflow-link configuration and add equivalent selected-team navigation to WGO.
+- [x] NEW 13.0 Mount the existing but unused Game Grid workflow-link configuration and add equivalent selected-team navigation to WGO. _(Superseded by 2026-10-17 audit row NEW 16.0.)_
   - Evidence (2026-07-11): live Game Grid and WGO routes expose the expected team, trends, lines, schedule, goalie, and starter destinations.
 
 - [x] NEW 14.0 Add direct canonical Team HQ links to team identities across the standard, desktop-master, and four-week Game Grid variants so the required grid-to-team-deep-dive flow does not stop at a generic navigation rail.
@@ -224,3 +224,5 @@
 
 - [x] NEW 15.0 **P1 paginate the public Splits season cohort and fail closed on dependency errors.**
   - Evidence (2026-07-29): every season-wide roster/game/player-strength/team-strength read now uses deterministic complete range pagination, and large goalie/outcome game-ID filters use bounded chunks with independent pagination. Invalid team/opponent input retains bounded 400 detail; dependency failures return stable 503 without raw table/provider text. The implementation map now recognizes the shipped `/splits` route instead of describing it as uncreated deferred scope.
+
+- [ ] NEW 16.0 **P2 Game Grid and WiGO workflow links were removed after being marked live (2026-10-17 completion audit):** `SurfaceWorkflowLinks`/`GAME_GRID_SURFACE_LINKS` were deleted from `web/pages/game-grid/[mode].tsx` by `f90bb13cd` (2026-09-17) and `getWigoSurfaceLinks` from `web/pages/wigoCharts.tsx` by `15caa26eac` (2026-08-01), both in production; the exports at `web/lib/navigation/siteSurfaceLinks.ts:134,157` now have zero consumers. Grid-to-Team HQ row links survive, but grid-to-trends/splits/lines and WGO-to-anything links are gone. Supersedes 7.6 (C0052), NEW 13.0 (C0069) and the cross-link clauses of master 3.7 and 5.7.4. Close by remounting the links or recording an owner decision and removing the dead exports. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G4-underlying-site-ux.md`.

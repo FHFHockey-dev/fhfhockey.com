@@ -1,0 +1,39 @@
+{
+  "results": [
+    {
+      "style": "posterized",
+      "dimensions": [
+        1296,
+        729
+      ],
+      "alphaDifferences": 0,
+      "rgbDifferences": 2808065,
+      "manifestHashMatches": true,
+      "analyticsPixelsMatch": true
+    },
+    {
+      "style": "pixelated",
+      "dimensions": [
+        1296,
+        729
+      ],
+      "alphaDifferences": 0,
+      "rgbDifferences": 2779335,
+      "manifestHashMatches": true,
+      "analyticsPixelsMatch": true
+    },
+    {
+      "style": "team-colors",
+      "dimensions": [
+        1296,
+        729
+      ],
+      "alphaDifferences": 0,
+      "rgbDifferences": 2824919,
+      "manifestHashMatches": true,
+      "analyticsPixelsMatch": true
+    }
+  ],
+  "shareFallbackEqualsReload": true,
+  "scope": "Readbacks of frozen existing PNGs; no browser rerun"
+}

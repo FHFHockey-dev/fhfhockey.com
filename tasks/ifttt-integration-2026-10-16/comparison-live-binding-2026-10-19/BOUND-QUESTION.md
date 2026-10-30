@@ -1,0 +1,7 @@
+For the OpenAI API documentation/support owner:
+
+We have an approved $0.26 aggregate four-arm development pilot: one Luna structured extraction and two isolated Decisions calls for one retained hockey post. Both Decisions calls use `gpt-6-luna`, text only, no tools/images, at most65 indexed support/wording questions. The current actual rules-side request has three questions; extraction-side size depends on the bounded structured reply. We have not made an authenticated request or paid probe.
+
+Please establish a documented/enforced upper bound on **aggregate billable input_tokens per `/v1/decisions` request**, including shared evidence, every question's instructions/options, formatting and any internal replication. Does the model's max-input/context limit cap that entire usage value, or can per-question processing sum beyond it? Is there a smaller endpoint-specific limit or supported preflight counter/control? The Responses counter is documented for Responses; we have no Decisions equivalence guarantee.
+
+The generic922,000-input ceiling alone would reserve $0.20284 per Decisions call at the published long-context/regional maximum, so two calls cannot fit this whole-pair budget. A sufficiently tighter verified upper bound would suffice; exact prediction is unnecessary. UTF-8 byte counts and usual observed usage are not substitutes. Please request the sanitized request/schema/policy files if needed before proposing a solution. No credential, paid probe or higher budget is authorized by this question.

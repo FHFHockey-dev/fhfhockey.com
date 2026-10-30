@@ -1,3 +1,5 @@
+> **Superseded hierarchy (2026-10-17).** This list records the original dashboard-first landing page. The simplified layout in `tasks/tasks-underlying-stats-lineupexperts-alignment.md` and the approved desktop/mobile mockup replace it. The What Looks Real, Under the Radar, Schedule Texture, utility, and standalone readiness panels were removed deliberately; do not restore them from this list.
+
 ## Relevant Files
 
 - `web/pages/underlying-stats/index.tsx` - Main dashboard page with the quadrant map, risers/fallers, trust/context/inefficiency modules, and the lower-page supporting table.
@@ -34,9 +36,9 @@
   - [x] 2.1 Review the existing `team-ratings` payload and identify the smallest viable expansion needed to power the new dashboard modules while keeping the current data pipeline intact.
   - [x] 2.2 Add league quadrant-map coordinates derived from offensive process and defensive process inputs rather than from final rank labels.
   - [x] 2.3 Add risers/fallers slices driven by recent trend deltas plus compact plain-English reasons grounded in actual rating inputs.
-  - [x] 2.4 Add sustainability/trust summaries using existing scoring, goaltending, PDO, and result-vs-process context while keeping rank drivers separate from descriptive variance signals.
-  - [x] 2.5 Extend schedule-context shaping beyond raw future SoS to summarize near-future difficulty, game density, rest edges, home/road tilt, and other intuitive schedule texture signals when data is available.
-  - [x] 2.6 Add a market-inefficiency summary that flags teams whose surface results and underlying profile disagree most, with clearly defined comparison logic.
+  - [x] 2.4 Add sustainability/trust summaries using existing scoring, goaltending, PDO, and result-vs-process context while keeping rank drivers separate from descriptive variance signals. _(Superseded by 2026-10-17 audit row NEW 8.0.)_ _(Owner supersession recorded 2026-10-19: approved alignment 4.1 intentionally removes this landing module; do not restore it.)_
+  - [x] 2.5 Extend schedule-context shaping beyond raw future SoS to summarize near-future difficulty, game density, rest edges, home/road tilt, and other intuitive schedule texture signals when data is available. _(Superseded by 2026-10-17 audit row NEW 8.0.)_ _(Owner supersession recorded 2026-10-19: approved alignment 4.1 intentionally removes this landing module; do not restore it.)_
+  - [x] 2.6 Add a market-inefficiency summary that flags teams whose surface results and underlying profile disagree most, with clearly defined comparison logic. _(Superseded by 2026-10-17 audit row NEW 8.0.)_ _(Owner supersession recorded 2026-10-19: approved alignment 4.1 intentionally removes this landing module; do not restore it.)_
   - [x] 2.7 Derive lightweight archetype tags from existing metrics where the labeling is cheap, honest, and immediately useful.
 
 - [x] 3.0 Build the league quadrant map as the primary above-the-fold chart module
@@ -48,9 +50,9 @@
 
 - [x] 4.0 Build the supporting dashboard modules for change, trust, context, and inefficiency
   - [x] 4.1 Add a risers/fallers module that surfaces the biggest recent movers with compact “why up / why down” copy based on rating drivers rather than eye-catching but secondary context.
-  - [x] 4.2 Add a sustainability/trust module that separates process-backed teams from teams running hot, cold, or otherwise noisy.
-  - [x] 4.3 Add a “what matters next” module that translates future schedule context into intuitive, glanceable league-wide signals rather than forcing users to parse SoS alone.
-  - [x] 4.4 Add a market-inefficiency or under-the-radar module that highlights overperformers, underperformers, and hidden quality where process and results diverge.
+  - [x] 4.2 Add a sustainability/trust module that separates process-backed teams from teams running hot, cold, or otherwise noisy. _(Superseded by 2026-10-17 audit row NEW 8.0.)_ _(Owner supersession recorded 2026-10-19: approved alignment 4.1 intentionally removes this landing module; do not restore it.)_
+  - [x] 4.3 Add a “what matters next” module that translates future schedule context into intuitive, glanceable league-wide signals rather than forcing users to parse SoS alone. _(Superseded by 2026-10-17 audit row NEW 8.0.)_ _(Owner supersession recorded 2026-10-19: approved alignment 4.1 intentionally removes this landing module; do not restore it.)_
+  - [x] 4.4 Add a market-inefficiency or under-the-radar module that highlights overperformers, underperformers, and hidden quality where process and results diverge. _(Superseded by 2026-10-17 audit row NEW 8.0.)_ _(Owner supersession recorded 2026-10-19: approved alignment 4.1 intentionally removes this landing module; do not restore it.)_
   - [x] 4.5 Weave archetype tags into these modules where they sharpen interpretation without turning the page into a taxonomy exercise.
   - [x] 4.6 Standardize microcopy, labels, legends, and tooltip language across the new modules so users can quickly distinguish strength, movement, and context.
 
@@ -69,3 +71,5 @@
 
 - [x] 7.0 NEW: Clean up the missing asset request observed during live verification
   - [x] 7.1 Investigate why `/pictures/hamburgerMenu.svg` returned `404` during the local `/underlying-stats` browser pass and either restore the asset or remove the stale reference. The desktop header now points at the existing `/pictures/burgerMenu.svg` asset.
+
+- [x] NEW 8.0 **P3 landing summary and trust modules were removed after being marked done (2026-10-17 completion audit):** `25c89d795` (in production) removed the sustainability/trust, schedule-context, what-matters-next and market-inefficiency modules from `/underlying-stats`; `web/__tests__/pages/underlying-stats/index.test.tsx:308-310` asserts "What looks real?", "Schedule texture" and "Under the radar" are absent, and the helper code is being deleted in the working tree. The owner has superseded this scope (see `tasks/tasks-underlying-stats-lineupexperts-alignment.md`). Supersedes 2.4-2.6 (C0011-C0013) and 4.2-4.4 (C0023-C0025). Close by recording the owner's supersession disposition on these rows and in master 5.3.4/5.7.3. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G4-underlying-site-ux.md`. _(Closed locally 2026-10-19: Owner-approved tasks/tasks-underlying-stats-lineupexperts-alignment.md sections 3.2/4.1 and its 2026-10-17 reconciliation supersede original 2.4–2.6/4.2–4.4. Keep removed modules absent; this is an accepted supersession, not restored implementation. Current landing suite 15/15 passes.)_ [Local reconciliation](/Users/tim/Code/fhfhockey.com/tasks/codex-sprint-2026-10-19/master-local/MASTER-RECONCILIATION.md).

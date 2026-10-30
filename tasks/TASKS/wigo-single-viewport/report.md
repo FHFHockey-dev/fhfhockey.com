@@ -10,6 +10,8 @@ Pace uses the original unrounded counting rate × 84 with existing whole-count r
 
 ## Evidence
 
+> The spec named in this report was deleted in `4436789f1`; see `tasks/artifacts/wigo-redesign-2026-10-25/RECEIPT.md`.
+
 - `evidence/desktop-1920x1080.png`: viewport-only live-data capture. The live radar source returned unavailable; other panels show real sources, including the percentile fallback season.
 - `evidence/desktop-radar-fixture-1920x1080.png`: viewport-only interaction-test capture. Only the radar cohort is explicitly fixture data; this proves eight-axis rendering and scale labels despite the live RPC timeout. It is not a production-data screenshot for radar values.
 - `evidence/edge-states-1920x1080.png`: long name, absent portrait/bio/radar, individual 0–7 point buckets, and empty selected-stat log.

@@ -1,0 +1,19 @@
+# Three remaining original consumer contracts
+
+Original oracle SHA256 remains `d9fe45ca44042673ff0381cd0f1981074b196da99fb6fdf9da573ac5df84fd8b`; original fixtures, assertions, pure41/43 result and its nine persistence deferrals remain unchanged. Separate integrated evidence is never folded into that pure runner report or a full52 claim.
+
+Independently accepted local mappings now cover CR036/CR039/CR040/CR052 (durable-v3 actual replacement RPCs;14unchanged assertions) and CR037/CR041 (parent-recovery-v1 actual legacy producer/retained local table DDL;8unchanged assertions). The first four retain native reserved effects only. The parent pair uses a fixture-child capture boundary and specifically legacy report_key uniqueness for CR041, not a native-r3 evidenceVersions or real-consumer delivery guarantee. See `../review-durable-occurrence-v3/REVIEW.md` and `../review-parent-recovery-v1/REVIEW.md`.
+
+The actual tested parent is `web/lib/sources/tweetProjectionStorage.ts:persistProjectionSourceSnapshots`, reached through public `persistTweetProjectionReports`. The earlier matrix's reference to newer `appendLineEvidence` was an incomplete inventory; that separate LineClaim path is not substituted for the legacy parent. No new storage service or new parent readback implementation was required. All accepted59 source/SQL paths remain unchanged.
+
+| Original case | Concrete unimplemented boundary | Next bounded local integration |
+| --- | --- | --- |
+| CR042 | Preserve declared opaque prior action/transition IDs with complete authoritative no-attempt transport coverage bound to the exact retained source parent and semantics. Reserved status/zero current outbox attempts do not establish historical absence. | Bind the existing intended consumer and its native receipt/source IDs without renaming a newly allocated r3 identity. Reuse the current outbox/claim worker, hold any absent/conflicting coverage, and prove no duplicate identities with actual consumer storage. |
+| CR043 | The production-specific opaque action and unknown transport outcome/reconciliation contract. | Commit the actual local consumer effect, lose acknowledgment, restart from its real durable receipt/invocation state, and require no blind resend/new identity. Incomplete history remains unknown. |
+| CR044 | The actual consumer receipt and its separate inference/news/queue acknowledgment boundary. | Preserve exact action/parent/native snapshot bindings across consumer commit and queue failure. Replay must reuse the original action and check a complete exact receipt, not infer success from a currently absent queue row. |
+
+`../transport-recovery-increment/` supplies bounded actual-worker/RPC protocol evidence with a private synthetic consumer. It preserves original expired clocks as no-dispatch negative controls and uses an explicitly versioned operational-clock fixture for nine unchanged assertions. It does not score original CR042–044 or implement a production caller/import. Its independent review status belongs to that increment's own report, not this matrix.
+
+The next real reusable path is `capturePlayerForecastSourceRows` and existing atomic `capture_starter_board_lineup`; queue operations follow separately. Read-only inventory and exact next work are in `../transport-recovery-increment/NEXT-CONSUMER-BOUNDARY.md`. Those forecast files are owned by the combined goal: coordinate edits through Scout, continue uncolliding local work, and do not start competing writers. This is an ownership/integration dependency, not pending permission for a live read.
+
+Complete legacy/history/writer-fence coverage, authentic dated identity/intake, genuine future labels/performance and operational approvals remain open. No production DDL, deployment, ingestion, dispatch, replay/correction, scheduler/cohort activation or credentials are authorized by these local tests. Do not fabricate future performance or claim external exactly-once effects.

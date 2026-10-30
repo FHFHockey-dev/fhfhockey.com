@@ -1,0 +1,78 @@
+{
+  "at": "2026-10-25T16:32:28.072974+00:00",
+  "local_commit_owner": "Claude; refresh hashes immediately before staging, each push separately approved",
+  "files": [
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-LEASES.json",
+      "sha256": "d394680d846236be1bbb7ead6970d9122c609f0f9d3388186e90cabc215e6f67",
+      "bytes": 366539
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-TO-CLAUDE.md",
+      "sha256": "493d54a1ae4c0d918ff59e2dd8de87cd5f641cac3a7593e5198aa5037627cdef",
+      "bytes": 155686
+    },
+    {
+      "path": "tasks/today-plan-2026-10-25.md",
+      "sha256": "3c3c0fe3a33931e034eb0cb1b00db2b8b41fc7572abf176e2f0fb261a0ace95c",
+      "bytes": 21586
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/TODAY-PROPOSALS-2026-10-25.md",
+      "sha256": "d822e77af992d94b1bd303b96cb96efeb058e73de44239a41c3249354b000b70",
+      "bytes": 3342
+    },
+    {
+      "path": "tasks/diaries/2026-10-24-codex-task-artifact-audit.md",
+      "sha256": "994ae5a78e39a77916abe1b9ad9adf2ddb462f4bd0b746d6a5835498a7aa5da4",
+      "bytes": 64933
+    },
+    {
+      "path": "tasks/artifacts/claude-custody-transfer-2026-10-25/TRANSFER-MANIFEST.json",
+      "sha256": "e7314f181f1a91982cf8203c201e5897b38f142168735c3598a58f67fd8f195f",
+      "bytes": 66407
+    },
+    {
+      "path": "tasks/artifacts/claude-custody-transfer-2026-10-25/DECISION.json",
+      "sha256": "5c0732b10a7aaf8f2b9176cd1d8627efa3cd90999991ee1c29dba3292e84bfc8",
+      "bytes": 2984
+    },
+    {
+      "path": "tasks/artifacts/claude-custody-transfer-2026-10-25/COORDINATION.patch",
+      "sha256": "9cd9f798f55ee45080c1f4effdb1a3f48aba1e32946169dff762cd8d87e975e5",
+      "bytes": 52493
+    },
+    {
+      "path": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "sha256": "67da59ad42eab4c40a5ebb6d6654ca1bc8734b322421fe55f44f48132d8e795a",
+      "bytes": 780247
+    },
+    {
+      "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "sha256": "2364d2ebccb0a232e12eadaf829799ee8b3e3069bb769e545d13fbb38a1a959f",
+      "bytes": 816666
+    },
+    {
+      "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json",
+      "sha256": "e0214b21c7726603f929a8aa055afd7bc18019219b7eb15c7a5156ed5bb69443",
+      "bytes": 1626877
+    },
+    {
+      "path": "tasks/artifacts/blsh-p1-registration-2026-10-25/OWNER-REGISTRATION.md",
+      "sha256": "3cce020d8dc8f888cae07ab19d5616a39bd3d91c27a7517b5c82ed274f6dd6e1",
+      "bytes": 2503
+    },
+    {
+      "path": "tasks/artifacts/blsh-p1-registration-2026-10-25/CHANGELOG.json",
+      "sha256": "4881ab35a85835c8e60b87221a3d2f2e2628778e966c8e68f2058fed842fd503",
+      "bytes": 2324
+    },
+    {
+      "path": "tasks/artifacts/blsh-p1-registration-2026-10-25/REGISTER.patch",
+      "sha256": "a6d54abdfaf8648555c4a9b913b81083e47c1d7f765cc481b82c126df7f168f0",
+      "bytes": 48316
+    }
+  ],
+  "no_other_source_included": true,
+  "self_hash_omitted_to_avoid_circularity": true
+}

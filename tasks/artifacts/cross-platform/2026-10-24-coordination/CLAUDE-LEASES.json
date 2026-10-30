@@ -1,0 +1,1985 @@
+{
+  "owner": "Claude orchestrator",
+  "as_of_utc": "2026-10-26T16:23:58Z",
+  "base_head": "2f2b432306b048f16bf48c2e274f21e55a7514d4",
+  "status": "Claude lanes reclaimed per TJ 2026-10-25T16:24Z",
+  "shared_resources": {
+    "note": "none held by Claude"
+  },
+  "leases": [
+    {
+      "lane": "Q1",
+      "ids": [
+        "QUEST-SCOUT (outside FHFH register)"
+      ],
+      "scope": "Scout V41 trial03 geometry/rig refinement; new named candidate only",
+      "write_paths": [
+        "/Users/tim/Documents/Codex/2026-10-15/task-3/ \u2014 NEW versioned candidate/export/review files only (V42+ names)",
+        "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q1/"
+      ],
+      "read_only": [
+        "V40 and V41 candidates, concept references, existing handoffs"
+      ],
+      "resources": [
+        "Blender app and its scene (sole Blender owner)"
+      ],
+      "forbidden": [
+        "Unity projects",
+        "other mechs",
+        "texture/weathering",
+        "main-project integration",
+        "Git"
+      ],
+      "owner": "Claude orchestrator session (this thread) \u2192 lane session",
+      "status": "hold after current V57 checkpoint 2026-10-25T14:12Z (lower priority per today plan)",
+      "start_utc": "2026-10-24T14:22:50Z",
+      "base_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+      "session": "local_2f9bc26b-1412-46a2-b634-45654a119ac4 (q1-scout-geometry)",
+      "outputs": {
+        "scout_rear_spine_v42.blend": "d6a6b7012c6ec6438ea5d1827ab1c0ac360dcdeceb3abea4925b7b373b2cf149",
+        "scout_v42_rear_spine_unscaled.glb": "68d90270cae7dd0132d7c77c9e8624854f4238a739dd4a0e55856d5157abd17b",
+        "SCOUT_V42_REVIEW_PACKET.md": "ef61fcb101dbb0ea6c8cf65adc0390435aea714dd2fb8fe8c6660c13d8e9fa62",
+        "note": "worker-reported; orchestrator verification pending"
+      }
+    },
+    {
+      "lane": "Q2",
+      "ids": [
+        "QUEST-RADARASCENT-MAP (outside FHFH register)"
+      ],
+      "scope": "v13 RadarAscent isolated map visual/playability pass; new scene version only",
+      "write_paths": [
+        "Isolated validation project named in /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023C/FINAL_HANDOFF.md \u2014 new scene version and lane outputs only",
+        "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/"
+      ],
+      "read_only": [
+        "v13 scene",
+        "main Unity project (611-file baseline must stay unchanged)"
+      ],
+      "resources": [
+        "Unity Editor/project/Play Mode (sole Unity owner)"
+      ],
+      "forbidden": [
+        "Scout Blender inputs/outputs",
+        "package/Editor upgrades",
+        "main-project integration",
+        "Git"
+      ],
+      "owner": "Claude orchestrator session (this thread) \u2192 lane session",
+      "status": "hold 2026-10-25T14:12Z (waiting on TJ pop-up; lower priority per today plan)",
+      "start_utc": "2026-10-24T14:22:50Z",
+      "base_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+      "session": "local_fb82e1b0-a532-4eb9-ab7c-1f5e84262517 (q2-unity-map)"
+    },
+    {
+      "lane": "C1",
+      "ids": [
+        "STATS-S06",
+        "STATS-S05"
+      ],
+      "scope": "Team lines and shot-map tab correctness slice",
+      "write_paths": [
+        {
+          "path": "web/pages/stats/team/[teamAbbreviation].tsx",
+          "baseline_sha256": "6f64bdfc68d1b8bfe7c98ba7b263923f001d369e1ca96827238cc58ad3f65be5",
+          "git_state": "clean"
+        },
+        {
+          "path": "web/components/LineCombinations/LineCombinationsGrid.tsx",
+          "baseline_sha256": "6a606f4a7dec24a5525ae42da63cc39e57b2e8dbf4adf6398e9ba0937da579cd",
+          "git_state": "clean"
+        },
+        {
+          "path": "web/hooks/useShotData.ts",
+          "baseline_sha256": "cc659fb7526cfd9f0ff2f1986c3dcc7a517a09e9a887e032240cd5fd2da276fb",
+          "git_state": "clean"
+        },
+        {
+          "path": "web/hooks/useShotData.test.tsx",
+          "baseline_sha256": "cc4a4e3f48d4ca6a6af42e4e24e02d88fccf15e46e102882fb2ac1d7c7051b5b",
+          "git_state": "clean"
+        },
+        {
+          "path": "web/components/ShotVisualization/ShotVisualization.tsx",
+          "baseline_sha256": "65357ab5681c8b5dc11ce9cd5b51e9fd6a01c919aae79d4d0132e6da38902e1e",
+          "git_state": "clean"
+        },
+        {
+          "path": "web/components/TeamTabNavigation/TeamTabNavigation.tsx",
+          "baseline_sha256": "ce601088433bdfa422dabc86df20fa53b6b611e8eb461aeb34ec963711a9bed4",
+          "git_state": "clean"
+        },
+        {
+          "path": "web/components/TeamTabNavigation/TeamTabNavigation.test.tsx",
+          "baseline_sha256": "40ad88b2eb67298eff2d57461065c74f6aa9ad687b0536b011c10f2a4d98adbf",
+          "git_state": "clean"
+        },
+        {
+          "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C1/"
+        }
+      ],
+      "resources": [
+        "Isolated Next slot released at handoff (:3110 confirmed free ~15:05Z)"
+      ],
+      "forbidden": [
+        "siteSurfaceLinks.ts and shared nav",
+        "global CSS/Layout/Header",
+        "A9 cache files incl. web/lib/dashboard/clientFetchCache.ts, web/hooks/useTeams.ts",
+        "player hydration/other S-IDs",
+        "Git"
+      ],
+      "owner": "Claude orchestrator session (this thread) \u2192 lane session",
+      "status": "RELEASED 2026-10-25T04:07Z \u2014 TJ reclaimed all lanes for Codex handoff (CLAUDE-058)",
+      "start_utc": "2026-10-24T14:22:50Z",
+      "base_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+      "session": "local_bb5804ab-c83a-446e-8acc-6be5b5b2f828 (c1-team-tabs)",
+      "slice2_write_paths": [
+        {
+          "path": "web/components/GoalieShareChart/index.tsx",
+          "baseline_sha256": "eaf214966a91a931c5a67eba2f723f7db943a1905f2bb9f89ab26a33d07bee7b",
+          "git_state": "clean"
+        },
+        {
+          "path": "web/components/GoalieShareChart/GoalieShareChart.module.scss",
+          "baseline_sha256": "54ef5a57ddd62f32cb5d9d495fb9abd89b1a17136a9924a9a45cbe83041b221c",
+          "git_state": "clean"
+        },
+        {
+          "path": "web/components/GoalieShareChart/GoalieShareChart.test.ts",
+          "baseline_sha256": "250bfc553ce0caa0cb1901c7592e1d3f0dde93180e0e97255a0948b8435baeec",
+          "git_state": "clean"
+        },
+        {
+          "path": "web/components/GoalieShareChart/GoalieShareChart.pagination.test.tsx",
+          "baseline_sha256": "8358449fbb8a3ce4b96c47afe3fc6907af1de077b04612df6874add87e04ba7a",
+          "git_state": "clean"
+        },
+        {
+          "path": "web/styles/Stats.module.scss",
+          "baseline_sha256": "66596f49ac1246ea9911df5cf607fa8cf4a1b2e7f90775becb9d74da6cd12312",
+          "git_state": "clean"
+        },
+        {
+          "path": "web/styles/TeamStatsPage.module.scss",
+          "baseline_sha256": "95729a78494dde4f7d1973a751651e97063ddfe0397423b7a4e5d5d3122b05f1",
+          "git_state": "clean"
+        }
+      ]
+    },
+    {
+      "lane": "C4",
+      "ids": [
+        "SITE-WIGO",
+        "BLSH-3.1/3.4"
+      ],
+      "scope": "Connect existing supported WiGO workflow links",
+      "write_paths": [
+        {
+          "path": "web/pages/wigoCharts.tsx",
+          "baseline_sha256": "96806e645d81076869dbd9f139afa4338af6643b54c0bd7a5ac2fcac6444bb15",
+          "git_state": "clean"
+        },
+        {
+          "path": "web/__tests__/pages/wigoCharts.test.tsx",
+          "baseline_sha256": null,
+          "git_state": "absent (new file allowed)"
+        },
+        {
+          "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C4/"
+        }
+      ],
+      "read_only": [
+        "web/lib/navigation/siteSurfaceLinks.ts",
+        "web/components/SurfaceWorkflowLinks/**"
+      ],
+      "resources": [
+        "Isolated Next slot .next-playwright on :3110 \u2014 granted after C1 released it (~15:05Z)"
+      ],
+      "forbidden": [
+        "Game Grid",
+        "global nav",
+        "sKO/forecast formulas",
+        "BLSH follow-up",
+        "tasks/tasks-README.md (C6)",
+        "Git"
+      ],
+      "owner": "Claude orchestrator session (this thread) \u2192 lane session",
+      "status": "RELEASED 2026-10-25T04:07Z \u2014 TJ reclaimed all lanes for Codex handoff (CLAUDE-058)",
+      "start_utc": "2026-10-24T14:22:50Z",
+      "base_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+      "session": "local_2837d829-8bba-4240-9356-0d1bef41b5a2 (c4-wigo-links)",
+      "slice2_write_paths": [
+        {
+          "path": "web/components/buyLowSellHigh/BuyLowSellHighPreview.tsx",
+          "baseline_sha256": "2f2141c56fca99e87cf91153a1c190c53f0aa2d51d66fe76637b73642ff314d9",
+          "git_state": "clean"
+        },
+        {
+          "path": "web/components/buyLowSellHigh/BuyLowSellHighPreview.test.tsx",
+          "baseline_sha256": "4707412981f71c191ad0aa75a1bca1a62df633d62077df035b7df41a0c173efc",
+          "git_state": "clean"
+        }
+      ],
+      "slice2_read_only": [
+        "web/lib/buyLowSellHigh/**",
+        "web/lib/skoElement/**",
+        "web/lib/sko/**",
+        "web/components/skoElement/**"
+      ]
+    },
+    {
+      "lane": "C5",
+      "ids": [
+        "CRON-AUDIT-COVERAGE"
+      ],
+      "scope": "Existing audit-wrapper adoption for two routes",
+      "write_paths": [
+        {
+          "path": "web/pages/api/internal/yahoo-live-draft.ts",
+          "baseline_sha256": "ce7c6553d8085ea1431dbddef01a5fc5150d59e2a8648514a6eed7168ea92c69",
+          "git_state": "clean"
+        },
+        {
+          "path": "web/pages/api/v1/db/update-drafted-prospects.ts",
+          "baseline_sha256": "980b050f88509ae0f333a458d4726a4c2b32986ed630b23c27c61d5d4b2b2c9c",
+          "git_state": "clean"
+        },
+        {
+          "path": "web/__tests__/pages/api/internal/yahoo-live-draft.test.ts",
+          "baseline_sha256": "fba094aa3ac7f1ea4a49014e3c5f8afb56ec51b0246c102530e34fe9f353f5b1",
+          "git_state": "clean"
+        },
+        {
+          "path": "web/__tests__/pages/api/v1/db/update-drafted-prospects.test.ts",
+          "baseline_sha256": "995d6da8e75b0b4d015f22a64d2f6cdf52b10788500544b37043f1da90762c1e",
+          "git_state": "clean"
+        },
+        {
+          "path": "web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts",
+          "baseline_sha256": "e4d387ce6d35f2532ce88fe437c82a13aadc81cdf49cea825d2cfacda98ad451",
+          "git_state": "clean"
+        },
+        {
+          "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C5/"
+        }
+      ],
+      "resources": [
+        "none (no server, all services mocked)"
+      ],
+      "forbidden": [
+        "shared audit wrapper/auth helpers",
+        "cron config/inventory source",
+        "provider writers",
+        "remote route execution",
+        "Git"
+      ],
+      "owner": "Claude orchestrator session (this thread) \u2192 lane session",
+      "status": "RELEASED 2026-10-25T04:07Z \u2014 TJ reclaimed all lanes for Codex handoff (CLAUDE-058)",
+      "start_utc": "2026-10-24T14:22:50Z",
+      "base_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+      "session": "local_ab65c5a7-3c1e-4bba-ac12-131d4ce62e10 (c5-route-audit)"
+    },
+    {
+      "lane": "C7",
+      "ids": [
+        "LUNA-LOCAL",
+        "SITE-SOCIAL-SHARE",
+        "STATS-S06",
+        "SITE-WIGO",
+        "LEAGUE-CONFIG-ANALYTICS"
+      ],
+      "scope": "Independent read-only review of pinned six-file Luna packet + four protected pins",
+      "write_paths": [
+        "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C7/",
+        "isolated review scratch outside web/ source"
+      ],
+      "read_only": [
+        {
+          "path": "web/lib/sources/tweetLunaReview.ts",
+          "baseline_sha256": "1dc24189c12333628eb536f37556fe7fc958c2cac16163d77fd80b0a2dba2b94",
+          "git_state": "??"
+        },
+        {
+          "path": "web/lib/sources/tweetLunaTransport.ts",
+          "baseline_sha256": "129dfdf337fee692fbf07959a5041651222108836631ecc192436edee988ada2",
+          "git_state": "??"
+        },
+        {
+          "path": "web/lib/sources/tweetLunaLocalStore.ts",
+          "baseline_sha256": "52977c7949d2f60ee4274da0c7d1e0583bc8c5c1324bb6ffb187a32037a2d543",
+          "git_state": "??"
+        },
+        {
+          "path": "web/lib/sources/tweetLunaReview.test.ts",
+          "baseline_sha256": "8a3e8adacd888215aa9ba4226331b3e3576c98e8d2fcc113e01a305a22074ce2",
+          "git_state": "??"
+        },
+        {
+          "path": "web/lib/sources/fixtures/tweetLunaAdjudicatedLibrary.json",
+          "baseline_sha256": "e787036b54c89f8fa06e4b28032c8895fbbed81feef1fa04e357435f3229726a",
+          "git_state": "??"
+        },
+        {
+          "path": "web/scripts/review-ifttt-luna.ts",
+          "baseline_sha256": "03d37708a0ed6902162459cd61e82f70a1828c581e806e30eef4854bf9fa532d",
+          "git_state": "??"
+        }
+      ],
+      "resources": [
+        "Released :3110 after social-share run (15:20:57Z)"
+      ],
+      "forbidden": [
+        "any application source edit",
+        "paid/model calls",
+        "alias writes",
+        "hosted activation",
+        "Git"
+      ],
+      "owner": "Claude orchestrator session (this thread) \u2192 lane session",
+      "status": "ACTIVE 2026-10-25T16:24Z \u2014 independent review of in-tree installs (read-only)",
+      "start_utc": "2026-10-24T14:22:50Z",
+      "base_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+      "session": "local_f9ee2dca-cbf5-4df7-9274-66687e6ea435 (c7-luna-review)"
+    },
+    {
+      "lane": "C3",
+      "ids": [
+        "BILLING-CANCEL-RELOAD"
+      ],
+      "scope": "Isolated pinned candidate only (CODEX-20261024-003); canonical bytes must not change",
+      "canonical_read_only": [
+        {
+          "path": "web/components/account/InSeasonPanel.tsx",
+          "baseline_sha256": "e5cde3349ee10bd4d8c9623e8051eb56853c4f72d50f7a9657fef257d4c70352",
+          "git_state": "M"
+        },
+        {
+          "path": "web/components/account/InSeasonPanel.test.tsx",
+          "baseline_sha256": "d21fd263ef203b557c3f34030205ff9a8fd9ce32d2fa040babb93c0f6eb8b76c",
+          "git_state": "M"
+        },
+        {
+          "path": "web/components/account/InSeasonPanel.rollout.test.tsx",
+          "baseline_sha256": "b63510f723564a0707ed92f581f83f02a1f6db114550ff4415ab770db9d0e930",
+          "git_state": "??"
+        }
+      ],
+      "write_paths": [
+        "/private/tmp/fhfh-c3-isolated/web/** (snapshot copy of working-tree web/, no .env*/node_modules/.next*)",
+        "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/"
+      ],
+      "resources": [
+        "snapshot-local Next server on :3120",
+        "/private/tmp/fhfh-heavy.lock for heavy checks, shared, never stolen"
+      ],
+      "forbidden": [
+        "canonical InSeasonPanel writes",
+        "auth/API/RPC/schema/Stripe/entitlement policy",
+        "real cancellation/refund",
+        "Git"
+      ],
+      "owner": "Claude orchestrator \u2192 lane session",
+      "session": "local_d400a595-ead2-4f50-80a6-862b4414be6e (c3-cancel-reload)",
+      "status": "RELEASED 2026-10-25T04:07Z \u2014 TJ reclaimed all lanes for Codex handoff (CLAUDE-058)",
+      "start_utc": "2026-10-24T15:03Z",
+      "base_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+      "transfer": "CODEX-20261024-003",
+      "exception_CODEX_012": {
+        "files_copied_read_only_into_snapshot": [
+          {
+            "path": "web/lib/supabase/browser-auth.ts",
+            "baseline_sha256": "7f4cae98be09dd0c77da863264b61d1543f91654da3b58291df9bc016a2daf7a",
+            "git_state": "clean"
+          },
+          {
+            "path": "web/__tests__/contexts/AuthProviderContext.test.tsx",
+            "baseline_sha256": "7e9bb5e5f6370b1e8ffb69eca11dbcc4385fab0aa441facceb62de66758d8074",
+            "git_state": "clean"
+          }
+        ],
+        "scope": "anchored /^fhfh:in-season-cancellation:v1$/i cleanup pattern + focused regressions, snapshot only"
+      }
+    },
+    {
+      "lane": "SS1",
+      "ids": [
+        "SITE-SOCIAL-SHARE"
+      ],
+      "scope": "Game Grid social-share Monday edition: default 1:1 ranked logo-grid card + specced extra cards (fixtures only)",
+      "write_paths": [
+        "web/lib/socialShare/**",
+        "web/components/SocialShare/**",
+        "web/pages/social-share/[format].tsx",
+        "web/pages/api/v1/social-share/[format].ts",
+        "web/e2e/social-share.spec.ts",
+        "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/SS1/"
+      ],
+      "read_only": [
+        "web/components/GameGrid/**",
+        "weekScore source",
+        "web/lib/dashboard/commandCenterData.ts",
+        "web/public/fonts/social-share/**"
+      ],
+      "resources": [
+        "Isolated Next slot .next-playwright on :3110"
+      ],
+      "forbidden": [
+        "Game Grid/ownership contract edits",
+        "global nav/links",
+        "Supabase/NHL reads",
+        "auto-posting",
+        "Git"
+      ],
+      "owner": "Claude orchestrator \u2192 lane session",
+      "session": "local_4542f7f4-e6a6-4e51-83eb-74e26e54ff0f (ss1-gamegrid-share)",
+      "status": "RELEASED 2026-10-26T15:20:05Z \u2014 SS1 idle since 2026-10-25T20:39Z; SS1-24 committed 80fa80b5c. Monday files preserved as accepted; Tuesday files move to lane TT (CLAUDE-20261026-103).",
+      "start_utc": "2026-10-24T15:34Z",
+      "base_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+      "spec": "CLAUDE-20261024-009/-010",
+      "approved_production_reads": "TJ pop-up 2026-10-24T19:25Z: \u22645 sequential local GETs on :3110; read-only yahoo_players(<50%, current season), wgo_skater_stats_totals, wgo_goalie_stats_totals, NHL schedule; no writes",
+      "read_only_security_paths": [
+        "web/components/SocialShare/SocialShareAccessGate.test.tsx",
+        "web/components/SocialShare/SocialShareAccessGate.tsx",
+        "web/lib/socialShare/access.test.ts",
+        "web/lib/socialShare/access.ts",
+        "auth lines in social-share page/API"
+      ],
+      "authority": "TJ direct 2026-10-25T16:24Z: 'nor should they have reclaimed anything\u2026 most tasks should live here' \u2014 Claude lanes reclaimed from CODEX-RECLAIM-WEB-20261025",
+      "canonical_write_paths": [
+        {
+          "path": "web/components/SocialShare/SocialShare.module.scss",
+          "baseline_sha256": "2c5190a761330c728b4447cad259078f241843d03d69e9795bcf69b4c190ae93"
+        },
+        {
+          "path": "web/components/SocialShare/SocialShare.test.tsx",
+          "baseline_sha256": "5a4e3b240d69d076d5763409a56873f39a915ebc054973efd516e7eb1c0d8e80"
+        },
+        {
+          "path": "web/components/SocialShare/SocialShare.tsx",
+          "baseline_sha256": "c4a52fbd8685cd8f3fe5a6435e880f6b6b3f3acfac7909eab880db6dbbf5ffaa"
+        },
+        {
+          "path": "web/components/SocialShare/TeamBanner.tsx",
+          "baseline_sha256": "f0aff1ab3d0139742c834d65893445ae18fb477600dc13dcfecb54901730867f"
+        },
+        {
+          "path": "web/e2e/social-share.spec.ts",
+          "baseline_sha256": "bffae5468fa727c1b543bffa3d57765985e84e714307f1b69690d82c5c8d92fb"
+        },
+        {
+          "path": "web/lib/socialShare/edition.ts",
+          "baseline_sha256": "dc9a225a0d942946e47ff0549ec602f12f8210acf8fe48931bae6716842a45a0"
+        },
+        {
+          "path": "web/lib/socialShare/editionFetch.test.ts",
+          "baseline_sha256": "94f0d9cbbeba2755fe027ec517b84722107eabf64b4e4c52bc69ed94aa479236"
+        },
+        {
+          "path": "web/lib/socialShare/editionFetch.ts",
+          "baseline_sha256": "f09e756cda24dd32d0b8ac6144fb241bf90b8788d3e6bbfc6d6e5bf308b05cd3"
+        },
+        {
+          "path": "web/lib/socialShare/export.ts",
+          "baseline_sha256": "8dc961de8b11c6c79dc34b78c991fc51ce38eaf2cc2bbdd1a073a72bc034cabd"
+        },
+        {
+          "path": "web/lib/socialShare/fixtures.ts",
+          "baseline_sha256": "865e699e39f7d0895b3f1059327221111d7d2bc14a43e96c749ccffeb29944df"
+        },
+        {
+          "path": "web/lib/socialShare/matchups.test.ts",
+          "baseline_sha256": "3f01ea8f7acb5fe6fe276503809b154cbe6786c03c8acd1f271b4f118061246f"
+        },
+        {
+          "path": "web/lib/socialShare/matchups.ts",
+          "baseline_sha256": "d41d5b906a71b75e1eafa4718aea781eb112eb6e99656b5dc65afd50a1075bba"
+        },
+        {
+          "path": "web/lib/socialShare/mondayGrid.test.ts",
+          "baseline_sha256": "95fbb3ec80b05ebd2162c6b1d4c86a7f7da4b0585bc0507d0b6b642e8ea576eb"
+        },
+        {
+          "path": "web/lib/socialShare/mondayGrid.ts",
+          "baseline_sha256": "bc822677df3df6713d6f978eadb4c80261c78afb7dc3d82ed5d15a6b57a2f960"
+        },
+        {
+          "path": "web/lib/socialShare/pickupsFixture.ts",
+          "baseline_sha256": "7aca611c24aca68bb936cc54217b7e9e5b174cdd687a303ae47bdc24597c80e9"
+        },
+        {
+          "path": "web/lib/socialShare/playerSources.test.ts",
+          "baseline_sha256": "44c1b6810a2cb121fff079f29243c8eaed378d02c70903eec41d877524697818"
+        },
+        {
+          "path": "web/lib/socialShare/playerSources.ts",
+          "baseline_sha256": "3fb96ad69c5d71cdb5a0b784a2574c72d16d76155575cf21214c283c3756d994"
+        },
+        {
+          "path": "web/lib/socialShare/players.test.ts",
+          "baseline_sha256": "e9447b5cc007dbd4b9af549af380a84599612c6a8a495d73d609502369728fea"
+        },
+        {
+          "path": "web/lib/socialShare/players.ts",
+          "baseline_sha256": "a27accd1f3a9ddad8bc25bac0454e7c37d71c2be4174740007a880616ef0117d"
+        },
+        {
+          "path": "web/lib/socialShare/schedule.test.ts",
+          "baseline_sha256": "1871a473280115576de43396e448f5a84ccfb3fa078c1d43a99420e4eafffaf0"
+        },
+        {
+          "path": "web/lib/socialShare/schedule.ts",
+          "baseline_sha256": "b96f23685d276e194c4f9899dc4fb9c44e5335acb46fefd81833fca5c4356e73"
+        },
+        {
+          "path": "web/lib/socialShare/score.test.ts",
+          "baseline_sha256": "261810a0165cfc5022d95f63f54d7f6b3190044fa1e6f70135f3ad1fa994ddea"
+        },
+        {
+          "path": "web/lib/socialShare/score.ts",
+          "baseline_sha256": "c5ebea322dc770e71ae31630711f076754a4e3bca2d5bf5973e9ea29c3f6820f"
+        },
+        {
+          "path": "web/lib/socialShare/server.ts",
+          "baseline_sha256": "8bdd7975839c01e9cd33ccdb880cddee6cb8595049c3425d4daea780ca4afaf5"
+        },
+        {
+          "path": "web/lib/socialShare/teamRates.test.ts",
+          "baseline_sha256": "dcfdefa521aa64e9424da65ad9619dcc62ef41b53a048f684a2c3966b81b2913"
+        },
+        {
+          "path": "web/lib/socialShare/teamRates.ts",
+          "baseline_sha256": "b30ffcb491fc60213fc476b2cc67f41a3330a5be9e4a89d8599d446fb0f96a32"
+        },
+        {
+          "path": "web/lib/socialShare/tiers.test.ts",
+          "baseline_sha256": "f850e2657ec3dde749ccf7e2b4dcf18516ca1b1f4c001beb9c8ff6db08f10f8d"
+        },
+        {
+          "path": "web/lib/socialShare/tiers.ts",
+          "baseline_sha256": "9bbb92a2c70b8e0efa2daa7c2a79b45b0a3343b3980e05da3160de8a1ad52d84"
+        },
+        {
+          "path": "web/lib/socialShare/trends.test.ts",
+          "baseline_sha256": "2c8f535b243a7af5fba4c28480c505242399249b163853c5106722636ddb7028"
+        },
+        {
+          "path": "web/lib/socialShare/trends.ts",
+          "baseline_sha256": "03ffc190244f6657069dcaa402b5fddfe462d80029fba5e9fe0285bc6b71f943"
+        },
+        {
+          "path": "web/lib/socialShare/trendsFixture.ts",
+          "baseline_sha256": "c431b1c687e3dfc844510a1f74b848b9bedf62638d2344cf323dcd4702839101"
+        },
+        {
+          "path": "web/lib/socialShare/types.ts",
+          "baseline_sha256": "1f73d4957e8f0cd5df46882d452adfacd25c65538fd770630fe1d5550fe6d754"
+        },
+        {
+          "path": "web/pages/api/v1/social-share/[format].ts",
+          "baseline_sha256": "68a09aa87f7a0333217199bd6668e8ba2fe444c07e009fce7a28459ef230b0ab"
+        },
+        {
+          "path": "web/pages/social-share/[format].tsx",
+          "baseline_sha256": "70ffbcceef51f4ad101b6226066aa99ae1393108c73fcad4197d494a95a76fc7"
+        },
+        {
+          "path": "web/pages/social-share/player-cards.tsx",
+          "baseline_sha256": "fac7acb9dd79e6812ff3d60da5b575861baede0fbd3ee66b9f56742426f92043"
+        }
+      ]
+    },
+    {
+      "lane": "C2",
+      "ids": [
+        "LUNA-LOCAL",
+        "NEWS-SOURCE-PRESENTATION"
+      ],
+      "scope": "Implementation owner for Luna F1/F2/F3 repair, then news metadata-loss reproduction; isolated snapshot only",
+      "canonical_read_only": [
+        {
+          "path": "web/lib/sources/tweetLunaReview.ts",
+          "baseline_sha256": "1dc24189c12333628eb536f37556fe7fc958c2cac16163d77fd80b0a2dba2b94",
+          "git_state": "??"
+        },
+        {
+          "path": "web/lib/sources/tweetLunaTransport.ts",
+          "baseline_sha256": "129dfdf337fee692fbf07959a5041651222108836631ecc192436edee988ada2",
+          "git_state": "??"
+        },
+        {
+          "path": "web/lib/sources/tweetLunaLocalStore.ts",
+          "baseline_sha256": "52977c7949d2f60ee4274da0c7d1e0583bc8c5c1324bb6ffb187a32037a2d543",
+          "git_state": "??"
+        },
+        {
+          "path": "web/lib/sources/tweetLunaReview.test.ts",
+          "baseline_sha256": "8a3e8adacd888215aa9ba4226331b3e3576c98e8d2fcc113e01a305a22074ce2",
+          "git_state": "??"
+        },
+        {
+          "path": "web/lib/sources/fixtures/tweetLunaAdjudicatedLibrary.json",
+          "baseline_sha256": "e787036b54c89f8fa06e4b28032c8895fbbed81feef1fa04e357435f3229726a",
+          "git_state": "??"
+        },
+        {
+          "path": "web/scripts/review-ifttt-luna.ts",
+          "baseline_sha256": "03d37708a0ed6902162459cd61e82f70a1828c581e806e30eef4854bf9fa532d",
+          "git_state": "??"
+        },
+        {
+          "path": "web/pages/api/v1/db/tweet-pattern-review.ts",
+          "baseline_sha256": "0145984ba46c82bc09698b047b00a395018b0e9488acd52cb5f1d9c616083445",
+          "git_state": "M"
+        },
+        {
+          "path": "web/lib/sources/tweetPatternReview.ts",
+          "baseline_sha256": "96d441ee89b959a9b785498a98819aaec2237f26e9beba9ff1a2735111ba3244",
+          "git_state": "clean"
+        },
+        {
+          "path": "web/lib/newsFeed.ts",
+          "baseline_sha256": "de83177935db749e99793a25ad55902c690c35a6ef3b4c03fe8a3f56e464218d",
+          "git_state": "M"
+        }
+      ],
+      "write_paths": [
+        "/private/tmp/fhfh-c2-isolated/web/** (snapshot)",
+        "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C2/"
+      ],
+      "forbidden": [
+        "protected pins (adapter.mjs, tweetIdentityReplacementReview*, aggregate-budget.sqlite)",
+        "dispatch on, paid calls, alias writes, public claims",
+        "homepage, schema, Git"
+      ],
+      "owner": "Claude orchestrator \u2192 lane session",
+      "status": "RELEASED 2026-10-25T04:07Z \u2014 TJ reclaimed all lanes for Codex handoff (CLAUDE-058)",
+      "start_utc": "2026-10-24T16:11Z",
+      "base_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+      "session": "local_d396b1e2-0db8-45a7-8200-b02c31cd14a9 (c2-luna-news)",
+      "exception_CODEX_024": {
+        "files_copied_read_only_into_snapshot": {
+          "web/components/NewsFeed/NewsCard.tsx": "29e36122471afc47cc85fd5678d528ee3b68338b5e0836bbc63579cb80f3315d",
+          "web/components/NewsFeed/NewsCard.test.tsx": "21f1e4feaa47763690c224d51d8710821dbd6d1dd4827f0c9566c679cde28591"
+        }
+      }
+    },
+    {
+      "lane": "C6",
+      "ids": [
+        "REPO-DOCUMENTATION"
+      ],
+      "scope": "One verified stale-pointer correction",
+      "write_paths": [
+        {
+          "path": "tasks/tasks-README.md",
+          "baseline_sha256": "28fc17b6954a2d78660555cabd8124c30816bf761dc444f7d143706b711f2497",
+          "git_state": "clean"
+        },
+        {
+          "path": "tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md",
+          "baseline_sha256": "e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b",
+          "git_state": "clean"
+        },
+        {
+          "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C6/"
+        }
+      ],
+      "forbidden": [
+        "canonical master/LEDGER",
+        "release manifests",
+        "app code",
+        "untracking/deletion",
+        "Git"
+      ],
+      "owner": "Claude orchestrator \u2192 lane session",
+      "status": "RELEASED 2026-10-25T04:07Z \u2014 TJ reclaimed all lanes for Codex handoff (CLAUDE-058)",
+      "start_utc": "2026-10-24T16:11Z",
+      "base_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+      "session": "local_65db6ff7-f175-47b6-ad79-7a2d2a3735c4 (c6-doc-pointers)"
+    },
+    {
+      "lane": "RSO-FREE",
+      "ids": [
+        "RSO (analysis only)",
+        "SITE-SOCIAL-SHARE"
+      ],
+      "scope": "Read-only analysis doc: social-share pickups logic + free RSO option",
+      "write_paths": [
+        "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/RSO-FREE/FREE-RSO-ANALYSIS.md",
+        "its own tasks/diaries/ diary"
+      ],
+      "read_only": [
+        "web/pages/roster-schedule-optimizer.tsx",
+        "web/components/RosterScheduleOptimizer/**",
+        "web/lib/rosterScheduleOptimizer/**",
+        "web/pages/api/v1/roster-schedule-optimizer/**",
+        "web/lib/socialShare/**",
+        "web/components/SocialShare/**"
+      ],
+      "forbidden": [
+        "any source edit (RSO is Codex-reserved)",
+        "production reads",
+        "servers",
+        "Git"
+      ],
+      "owner": "Claude orchestrator \u2192 lane session",
+      "session": "local_6ba5e439-2e6a-48c4-8808-33ef36170b72 (rso-free-analysis)",
+      "status": "RELEASED 2026-10-25T04:07Z \u2014 TJ reclaimed all lanes for Codex handoff (CLAUDE-058)",
+      "start_utc": "2026-10-24T21:19Z",
+      "base_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5"
+    },
+    {
+      "lane": "T1-C1",
+      "ids": [
+        "SITE-PLAYER-CARDS"
+      ],
+      "scope": "Evidence-bundle validator + tests (offline, synthetic)",
+      "phase": "snapshot build now; canonical install only after coordinator safe-base handback + exact grant",
+      "canonical_new_paths_requested": [
+        {
+          "path": "web/lib/player-cards/evidenceBundle.ts",
+          "baseline_sha256": null,
+          "git_state": "absent"
+        },
+        {
+          "path": "web/lib/player-cards/evidenceBundle.test.ts",
+          "baseline_sha256": null,
+          "git_state": "absent"
+        }
+      ],
+      "write_now": [
+        "/private/tmp/fhfh-c1-isolated/web/** (snapshot)",
+        "tasks/artifacts/today-plan-2026-10-25/C1/"
+      ],
+      "read_only": [
+        "web/lib/player-cards/** (all existing files)",
+        "web/components/player-cards/**"
+      ],
+      "status": "RELEASED 2026-10-26T15:20:05Z \u2014 idle since 2026-10-25T18:54Z; C1-X1b eslint.config.mjs 58cbf257\u2026 matches tree; handed back with card paths (CLAUDE-20261026-103).",
+      "base_head": "9d4996033c978fb1570c85e3ca226627872fdf30",
+      "session": "local_003887f5-f8cd-4290-8920-3d8fa95cf1b2 (c1-evidence-bundle)"
+    },
+    {
+      "lane": "T2-C2",
+      "ids": [
+        "SITE-PLAYER-CARDS",
+        "SITE-SOCIAL-SHARE"
+      ],
+      "scope": "Team Colors card + share preview/export small-text readability (phones + exported PNG)",
+      "phase": "snapshot candidate now; canonical edit only after card-custody transfer",
+      "canonical_paths_requested": [
+        {
+          "path": "web/components/player-cards/EditorialPlayerCard.tsx",
+          "baseline_sha256": "f3c996c4c0cf9d75f533d1d4937a5db2474edb6a7c9b9665bbb3849df205afb5",
+          "git_state": "clean"
+        },
+        {
+          "path": "web/components/player-cards/EditorialPlayerCard.test.tsx",
+          "baseline_sha256": "99b9013b5d2d16d343f88381730d5794c1beaefda5b6647aa092f0cef5d8bfe6",
+          "git_state": "??"
+        },
+        {
+          "path": "web/components/player-cards/PlayerCardShareStudio.module.scss",
+          "baseline_sha256": "0bcab0a01648ff20a2d083dea3ec7e3d9c7fa0ca644eba48fa5d1b976db50db3",
+          "git_state": "clean"
+        }
+      ],
+      "write_now": [
+        "/private/tmp/fhfh-c2cards-isolated/web/** (snapshot)",
+        "tasks/artifacts/today-plan-2026-10-25/C2/"
+      ],
+      "read_only": [
+        "PlayerCardShareStudio.tsx/test (Codex card-worker grant CODEX-076)",
+        "portrait/hero, shareExport, source math, auth/routes, SocialShare/**"
+      ],
+      "resources": [
+        "snapshot server :3140 only (:3125 = Codex card worker)"
+      ],
+      "status": "CLOSED 2026-10-25T16:24Z \u2014 not approved by TJ; nothing installed",
+      "base_head": "9d4996033c978fb1570c85e3ca226627872fdf30",
+      "session": "local_1bef5915-33f7-48c0-baa4-2a4f0ca452f2 (c2-card-readability)"
+    },
+    {
+      "lane": "T3-C3",
+      "ids": [
+        "SITE-WIGO",
+        "PIPE-NATURAL",
+        "CRON-REPORT",
+        "MASTER-F6/RSO-FE-01"
+      ],
+      "scope": "Offline reproduction of today's cron/data-integrity reports",
+      "write_now": [
+        "tasks/artifacts/today-plan-2026-10-25/C3/"
+      ],
+      "read_only": [
+        {
+          "path": "web/pages/api/v1/db/calculate-wigo-stats.ts",
+          "baseline_sha256": "f438eb129e1f70dd0691151916e78a8ea2225412ec63847ce93e334bc9ee9fa6",
+          "git_state": "M"
+        },
+        {
+          "path": "web/lib/cron/normalizeDependencyError.ts",
+          "baseline_sha256": "6bc3d9862f9d40f4a1be277b41f225266ee80af510afc2d484e92778fcb6830a",
+          "git_state": "clean"
+        },
+        {
+          "path": "web/lib/rosterScheduleData/planningInputs.ts",
+          "baseline_sha256": "8193aa5d1bd22349b729e0a135f2060e847c5569312f83a84b23d2cbee498313",
+          "git_state": "clean"
+        },
+        {
+          "path": "web/lib/rosterScheduleData/recurring.ts",
+          "baseline_sha256": "e876ef82ec720744588bbc4dc3e984db8669b1861229666b6637d6de1ae46136",
+          "git_state": "clean"
+        }
+      ],
+      "forbidden": [
+        "any source edit",
+        "live logs/DB/provider/cron",
+        "lock clearing, backfill, schedule change",
+        "goalie-share files (Codex D1)"
+      ],
+      "status": "ACTIVE canonical 2026-10-25T16:24Z \u2014 install C3a + C3b v2; C3d stays Codex (FORGE file)",
+      "base_head": "9d4996033c978fb1570c85e3ca226627872fdf30",
+      "session": "local_dd2e025f-d067-400a-9479-7e3dce2e1bf8 (c3-cron-repro)",
+      "authority": "TJ direct 2026-10-25T16:24Z: 'nor should they have reclaimed anything\u2026 most tasks should live here' \u2014 Claude lanes reclaimed from CODEX-RECLAIM-WEB-20261025",
+      "canonical_write_paths": [
+        {
+          "path": "web/__tests__/pages/api/v1/db/calculate-wigo-stats.test.ts",
+          "baseline_sha256": "a065e5ea2a93f2fc93efd93ae90a6e2c72b733566e74597135ef94010815c198"
+        },
+        {
+          "path": "web/lib/underlying-stats/playerStatsRefreshWindow.ts",
+          "baseline_sha256": "d6a291b2371deab1f260ff5fe575069c4aaf42fe97a0dd87a81dcc952b820fb1"
+        },
+        {
+          "path": "web/pages/api/v1/db/calculate-wigo-stats.ts",
+          "baseline_sha256": "f438eb129e1f70dd0691151916e78a8ea2225412ec63847ce93e334bc9ee9fa6"
+        },
+        {
+          "path": "web/pages/api/v1/db/forge-served-forecast-snapshot.ts",
+          "baseline_sha256": "968c894ab0ece10b7e897278310f89b9c1f2b36ec8d2111e9296cf1029139a72",
+          "note": "C3d diagnostic only; FORGE now unowned by Codex (BLSH-only)"
+        }
+      ]
+    },
+    {
+      "lane": "WIGO",
+      "ids": [
+        "SITE-WIGO"
+      ],
+      "session": "local_ec8a69cc-dc02-4a39-9df0-1fedcbae16f4 (wigo-charts-full-audit)",
+      "scope": "WiGO full audit + one-page dashboard redesign",
+      "authority": "TJ direct 2026-10-25T16:23Z: 'codex should not have reclaimed wigocharts' \u2014 supersedes CODEX-RECLAIM-WEB-20261025 for these paths",
+      "write_paths": [
+        {
+          "path": "web/__tests__/pages/wigoCharts.test.tsx",
+          "baseline_sha256": "6ca27777fe011e1ee44d7b390fab62da882e2202446bdc5107bca1e1c81bd01b"
+        },
+        {
+          "path": "web/components/WiGO/ConsistencyChart.test.tsx",
+          "baseline_sha256": "48b2bcb7815e197995f0254e31ca0e481f911b9f76e69fca7effc9bfb6aa75e5"
+        },
+        {
+          "path": "web/components/WiGO/ConsistencyChart.tsx",
+          "baseline_sha256": "2cec71cf162d898e245ae6a4b3b255df40977df0801adc1f23169f8be40977aa"
+        },
+        {
+          "path": "web/components/WiGO/GameScoreLineChart/RollingAverageChart.tsx",
+          "baseline_sha256": "7f47e6f28468561d13318c4b4a84213116c7796e5e70db5f1b9877b34fc8571d"
+        },
+        {
+          "path": "web/components/WiGO/GameScoreLineChart/index.test.tsx",
+          "baseline_sha256": "c224a7465b22ca7d12be7dea66e203956ff4bd1fe5f707056bf59c0768cdd61e"
+        },
+        {
+          "path": "web/components/WiGO/GameScoreLineChart/index.tsx",
+          "baseline_sha256": "affef99576d5cb1f6fbfe9e93fe00e5d4dd19c1244debfa5e1d8ab8931293f90"
+        },
+        {
+          "path": "web/components/WiGO/GameScoreSection.tsx",
+          "baseline_sha256": "9a1402ee5f3955c11eb463541052d44c0f55b27cc64873b1b6895b9bdf516548"
+        },
+        {
+          "path": "web/components/WiGO/NameSearchBar.module.scss",
+          "baseline_sha256": "00406ae39c9c991d5bb4cc1b1193930bfb725423eda6fb210629d45681be298f"
+        },
+        {
+          "path": "web/components/WiGO/NameSearchBar.test.tsx",
+          "baseline_sha256": "b5a36e507770bcbd9e2e6acf6688afe6e717b506479f32845fdb5ef4a0afbf19"
+        },
+        {
+          "path": "web/components/WiGO/NameSearchBar.tsx",
+          "baseline_sha256": "b824a9a6aa65230e12c7b7c654708134e763f22cbd9b97081a4fea2edc32346b"
+        },
+        {
+          "path": "web/components/WiGO/OpponentGameLog.module.scss",
+          "baseline_sha256": "87cd20ec26f3bb25a5524b94d3b9a1c16498d6e1559cd6a2c30d6217ecfa1815"
+        },
+        {
+          "path": "web/components/WiGO/OpponentGamelog.test.tsx",
+          "baseline_sha256": "437b3dfaac2051a646f789c525a276fef9f682e835ff349e16f83465f00b8de0"
+        },
+        {
+          "path": "web/components/WiGO/OpponentGamelog.tsx",
+          "baseline_sha256": "e37389337526cf43c2e111d24c597d8860abe5afec775bc8dab1a7028379dbed"
+        },
+        {
+          "path": "web/components/WiGO/PerGameStatsTable.module.scss",
+          "baseline_sha256": "4221439d550f705f373159131f4058efb291efb5a34d60b007f75177139cd3c9"
+        },
+        {
+          "path": "web/components/WiGO/PerGameStatsTable.test.tsx",
+          "baseline_sha256": "4e6f34a0226317d5cf0808ab50db30cbc818563572849e3dd55bca063ee0cdd7"
+        },
+        {
+          "path": "web/components/WiGO/PerGameStatsTable.tsx",
+          "baseline_sha256": "70e99a5095c0d888dcbd7d4305e19f1787551aee15d0d3234ec22c43de79d577"
+        },
+        {
+          "path": "web/components/WiGO/PlayerHeader.test.tsx",
+          "baseline_sha256": "1c544e51a7183a08890e2b63f60901d2870d44310ebe1ee28370d383d9914d64"
+        },
+        {
+          "path": "web/components/WiGO/PlayerHeader.tsx",
+          "baseline_sha256": "74736551d087fe52a9190ac11e1b4d336e89b040d629a9fd7ce24c9765bfe938"
+        },
+        {
+          "path": "web/components/WiGO/PlayerRatingsDisplay.module.scss",
+          "baseline_sha256": "cafffcec4c08d7b4c7a303f4bfc859d4d85f00777b339e2ce78de63c823f85a7"
+        },
+        {
+          "path": "web/components/WiGO/PlayerRatingsDisplay.test.tsx",
+          "baseline_sha256": "8645945d5ead8eec0284fe3cc4d7b50a5ac4adea8ead3cea1fec32c1e819ee80"
+        },
+        {
+          "path": "web/components/WiGO/PlayerRatingsDisplay.tsx",
+          "baseline_sha256": "eaf260d96ef479df5db5879157643258b571a7e3fac75bcd6ed8ffa099e553ff"
+        },
+        {
+          "path": "web/components/WiGO/PpgLineChart.tsx",
+          "baseline_sha256": "41891513f184cc5fb84bae94809f6e0c162d0d7634db91c7ba93ae937f58eeb2"
+        },
+        {
+          "path": "web/components/WiGO/RateStatPercentiles.test.tsx",
+          "baseline_sha256": "3a71c8331bb7b532bda9421fd9c6b2ec75b870c90caf582dc38b0db4b1b87eb6"
+        },
+        {
+          "path": "web/components/WiGO/RateStatPercentiles.tsx",
+          "baseline_sha256": "a580e10fc5cfb4da416eae12879c7680c2cac3ba0f28dcf22fe090b81df4e41b"
+        },
+        {
+          "path": "web/components/WiGO/StatsTable.test.tsx",
+          "baseline_sha256": "8ac9ca365d7242a3c0723be54b17ffb729085300953785b89cd81ae835f57646"
+        },
+        {
+          "path": "web/components/WiGO/StatsTable.tsx",
+          "baseline_sha256": "52c12e88f5cbaae90a1a3e169f163c4829453a6f095c53e42c0fb32c3a8b8738"
+        },
+        {
+          "path": "web/components/WiGO/StatsTableRowChart.test.tsx",
+          "baseline_sha256": "107ac9a850205cc51bf681d1fb33588eca93ab69cbf09b3d895e26001d3fdf0b"
+        },
+        {
+          "path": "web/components/WiGO/StatsTableRowChart.tsx",
+          "baseline_sha256": "5f52f7ef0ed1da4241e63c75ce6947003a6254f7e8a7937699691204519b27e3"
+        },
+        {
+          "path": "web/components/WiGO/TeamPerformanceDrivers.module.scss",
+          "baseline_sha256": "6b11b2eba882f8f767ab268098cedc3835f468f4f6e16c9a29f4040a00e5b5f0"
+        },
+        {
+          "path": "web/components/WiGO/TeamPerformanceDrivers.tsx",
+          "baseline_sha256": "3d6f9f03ad223c47991ae0ef1990396b9e98d2b2134b3d23ba636a6c752959ed"
+        },
+        {
+          "path": "web/components/WiGO/TimeframeComparison.module.scss",
+          "baseline_sha256": "3b9596233a86bbb111d491849619adcfd1d989a37d55d70cdf4ed6117b7674e0"
+        },
+        {
+          "path": "web/components/WiGO/TimeframeComparison.tsx",
+          "baseline_sha256": "a814e19eb056eaaf4997a3572a104135cb4805fb2201755b0ca52d3b76eeb765"
+        },
+        {
+          "path": "web/components/WiGO/ToiLineChart.tsx",
+          "baseline_sha256": "3887e6c3262eeeb76773d139b280764e0da4aeaf88b68946e3685fc981a49299"
+        },
+        {
+          "path": "web/components/WiGO/WigoComparisonMatrix.tsx",
+          "baseline_sha256": "be4317f504f9e0ee7624370e8a3f35f910287d172bd30f5b87c7e65f6d9fdd9e"
+        },
+        {
+          "path": "web/components/WiGO/WigoDashboardSections.tsx",
+          "baseline_sha256": "0749adeb960eea2be39f20a3d0a876c6d0c7d8b52a51c6d090c315a50a183920"
+        },
+        {
+          "path": "web/components/WiGO/WigoSectionCard.tsx",
+          "baseline_sha256": "63baf86644cd43d622b811823012678c1c0ed374d6f9eb9f281bf556bdf5e13a"
+        },
+        {
+          "path": "web/components/WiGO/errorMessages.ts",
+          "baseline_sha256": "95757b696cff820f479a0bd575b67d5eb4c9e9bf8a7572df9cc266da8f338a1c"
+        },
+        {
+          "path": "web/components/WiGO/fetchTeamDriverSnapshots.test.ts",
+          "baseline_sha256": "aaea69b62d6e4f3ccc4d4c524da468623792859de9419030a67db1b1700ea031"
+        },
+        {
+          "path": "web/components/WiGO/fetchTeamDriverSnapshots.ts",
+          "baseline_sha256": "f678d52fd3d5618b1b1c0b39542987a5f95a20007f92d5cad925b0aa477c9a6c"
+        },
+        {
+          "path": "web/components/WiGO/playerBiography.test.ts",
+          "baseline_sha256": "fe1b48736a0408bf30f6125b3139c985aa09b3233b0b2970045ed8ed121760f1"
+        },
+        {
+          "path": "web/components/WiGO/playerBiography.ts",
+          "baseline_sha256": "3401976f091c05e62beb96585a449dbff96d868fcb5e7bcbb95c290e761710df"
+        },
+        {
+          "path": "web/components/WiGO/ratingWeights.ts",
+          "baseline_sha256": "85b954bbf5dd8ebed467a6c707161f712895b99936de20b81f1c977acbdb691a"
+        },
+        {
+          "path": "web/components/WiGO/statMetadata.test.ts",
+          "baseline_sha256": "befb6f3731bd9125324d0c8b05609de7effb85e4c11799ca57c1c45a1c7ce06a"
+        },
+        {
+          "path": "web/components/WiGO/statMetadata.ts",
+          "baseline_sha256": "8ef22249e8066164e3bf1ce13fe4693f3e37fba9d907cc881c1af8c9c2b435d3"
+        },
+        {
+          "path": "web/components/WiGO/tableUtils.test.ts",
+          "baseline_sha256": "fdd11e4db397b0849497b4fd181bb3cc8245d59ae6c6cb42dc422a99c4c520d7"
+        },
+        {
+          "path": "web/components/WiGO/tableUtils.ts",
+          "baseline_sha256": "4ebfd69a30fc21792cb6916fbc0c92e2b1dd501498f24712db667e80ef4f86f5"
+        },
+        {
+          "path": "web/components/WiGO/teamPerformanceDriverModel.ts",
+          "baseline_sha256": "df23754c9d1362ad40088cda142f165fd61d7849d10128f9fa7903091aeaec97"
+        },
+        {
+          "path": "web/components/WiGO/teamPerformanceDrivers.test.ts",
+          "baseline_sha256": "2c98e24e6d04518b631660db952cd9432aac063e132c05bccdb83e55d36a89d0"
+        },
+        {
+          "path": "web/components/WiGO/types.ts",
+          "baseline_sha256": "42a5f4d80eee7f2ebb35d82a154f24734b0768dea89b542f31394918e53aabf4"
+        },
+        {
+          "path": "web/components/WiGO/wigoCharts.module.scss",
+          "baseline_sha256": "891294f0dd491122d63313fe1f1a76813adf5474d15c7a14081d16b6eaaeb001"
+        },
+        {
+          "path": "web/hooks/useWigoPlayerDashboard.test.tsx",
+          "baseline_sha256": "35b42a08be20c90d6f76b6888685e8d073ea929ab3cfe1a6194bb9b3f9649446"
+        },
+        {
+          "path": "web/hooks/useWigoPlayerDashboard.ts",
+          "baseline_sha256": "1438e51a5be91d85ce2c2fbd9ec589df05291a62fb75148625e34e772a49cc5f"
+        },
+        {
+          "path": "web/pages/wigoCharts.tsx",
+          "baseline_sha256": "7ee8ff5779ac2f686b3fa45e7f1415dcafa25879422938b7a8e0f69cd1833151"
+        },
+        {
+          "path": "web/styles/wigoCharts.module.scss",
+          "baseline_sha256": "f5048029d7d7b09e98a1936dcce3222d7e5591117c5c3e5967194ce64151480e"
+        },
+        {
+          "path": "web/styles/wigoColors.ts",
+          "baseline_sha256": "6d4539cd1d81344e08749c00fadbfa009d04a6675a18f61dbafe931bee668662"
+        },
+        {
+          "path": "web/utils/calculateWigoRatings.test.ts",
+          "baseline_sha256": "a28827aa75523665c23c09a9291901f4cee7b3b451ef9c2844a7a19401c2cbf5"
+        },
+        {
+          "path": "web/utils/calculateWigoRatings.ts",
+          "baseline_sha256": "fc8cfd7f1081b242237eef32e308476deeb60031f56fc2220e3990017997427f"
+        },
+        {
+          "path": "web/utils/fetchWigoPercentiles.test.ts",
+          "baseline_sha256": "4da118d336b2aeaccedc89a2f437068724c235be6902b0d37c272c5c7af74e32"
+        },
+        {
+          "path": "web/utils/fetchWigoPercentiles.ts",
+          "baseline_sha256": "a0218435c570dc4fdf28c2823c6ccf2d16d999cd51c4fdaaceaf2b7a409b9ef9"
+        },
+        {
+          "path": "web/utils/fetchWigoPlayerStats.test.ts",
+          "baseline_sha256": "ed73a729821cac9579c5bcb877988c048496d7b3e39b6bec6ee6c63fc06d24e1"
+        },
+        {
+          "path": "web/utils/fetchWigoPlayerStats.ts",
+          "baseline_sha256": "7a253deedaa1c30593e944afbd84679087df235dd7fa16204810f2379b60414f"
+        },
+        {
+          "path": "web/utils/fetchWigoRatingStats.test.ts",
+          "baseline_sha256": "94e37adda0e5eccf1b14b4429545afe335f52709cad9a1aa23bbfda948d9aea6"
+        },
+        {
+          "path": "web/utils/fetchWigoRatingStats.ts",
+          "baseline_sha256": "82ed538a65bba9add4b4f75c3b2b793130b389de8ff8a894f1efc648f550b032"
+        },
+        {
+          "path": "tasks/artifacts/wigo-redesign-2026-10-25/"
+        },
+        {
+          "path": "web/e2e/wigo-one-page.spec.ts",
+          "note": "new"
+        },
+        {
+          "path": "web/e2e/fixtures/wigo/wigoFixtures.ts",
+          "note": "new"
+        },
+        {
+          "path": "web/e2e/fixtures/wigo/schema.json",
+          "note": "new"
+        },
+        {
+          "path": "web/e2e/wigo-single-viewport.spec.ts",
+          "note": "DELETE approved 2026-10-25T16:40Z: retired layout + live Supabase reads"
+        }
+      ],
+      "forbidden": [
+        "shared nav/layout/global CSS",
+        "web/lib/navigation/siteSurfaceLinks.ts",
+        "production reads without TJ pop-up",
+        "Git"
+      ],
+      "must_preserve": [
+        "released WiGO reader fix in web/utils/fetchWigoPlayerStats.ts (+test) from production release"
+      ],
+      "resources": [
+        "dev server :3150 from canonical with PLAYWRIGHT_ISOLATED_NEXT=1 only if :3110 slot free; else snapshot"
+      ],
+      "status": "active 2026-10-25T16:23Z",
+      "base_head": "2f2b432306b048f16bf48c2e274f21e55a7514d4"
+    },
+    {
+      "lane": "GS",
+      "scope": "Goalie-share/FORGE workload (6 handed files)",
+      "authority": "TJ 16:22\u201316:27 + CODEX-20261025-086 handover",
+      "write_paths": [
+        {
+          "path": "web/components/GoalieShareChart/index.tsx",
+          "baseline_sha256": "1f3d4cdb91b1dddd1dc272d82ec1fa368200ce9b585f163eecea8ec8c1944b05"
+        },
+        {
+          "path": "web/components/GoalieShareChart/GoalieShareChart.test.ts",
+          "baseline_sha256": "7010f8de122e0a2ea000aca650d890ff79d4ca15916d2bf54085dbb218e68aff"
+        },
+        {
+          "path": "web/components/GoalieShareChart/GoalieShareChart.pagination.test.tsx",
+          "baseline_sha256": "90b0c79ab18d68cd649e31ec5421cbc6dc768869eb75e89ae90ac4b7d00dda06"
+        },
+        {
+          "path": "web/lib/goalieWorkload.ts",
+          "baseline_sha256": "d4cbf44ffdc0a25bf020b3ed7062fe7097dfeb7d39ecd6e8ca0399cbe01b7f6f"
+        },
+        {
+          "path": "web/lib/projections/goalie/workloadEvidence.ts",
+          "baseline_sha256": "8d9ae620a65f7f4a528f766cd4629eeb0bf422cac57844ede384e7e4bb07fa43"
+        },
+        {
+          "path": "web/lib/projections/goalie/workloadEvidence.test.ts",
+          "baseline_sha256": "fcd8305829c5f0871bde6c86fb54aec8179934e9afa782c7e373c88ba5e9c167"
+        },
+        {
+          "path": "tasks/artifacts/claude-lanes-2026-10-25/GS/"
+        }
+      ],
+      "forbidden": [
+        "general FORGE namespace beyond these 6 files",
+        "model/predictive activation",
+        "live reads"
+      ],
+      "status": "active 2026-10-25T16:39Z",
+      "base_head": "ac98431aa0714573f4f89691f3b9502fe4e375ec",
+      "session": "local_a8559739-12dc-451c-bb15-fe8f035ed862 (gs-goalie-share)"
+    },
+    {
+      "lane": "PC",
+      "scope": "Player cards (38 handed files)",
+      "authority": "TJ 16:22\u201316:27 + CODEX-20261025-086 handover",
+      "write_paths": [
+        {
+          "path": "web/components/player-cards/HeroPlayerCard.tsx",
+          "baseline_sha256": "4305ed15a9113022df9c8e4402d6ba2db1019871d6adfba580a7aa33c8c2e166"
+        },
+        {
+          "path": "web/components/player-cards/InteractiveCard.tsx",
+          "baseline_sha256": "70b6edce10ffe219817c64f2c4763a8e58091b9c59f9b77fb2a68aa2b7d33271"
+        },
+        {
+          "path": "web/components/player-cards/PlayerCard.module.scss",
+          "baseline_sha256": "cec892e73d5642253435108e81c91ab0f6fb6b9bedacee849ffd10808e792b77"
+        },
+        {
+          "path": "web/components/player-cards/PlayerCard.tsx",
+          "baseline_sha256": "917edf84256f3153459bc02302ff9a804a3847838eaaf8192bd000fb21f9cdfc"
+        },
+        {
+          "path": "web/components/player-cards/PlayerCardFlow.module.scss",
+          "baseline_sha256": "4e49342c3f99b62201e8bc2dcf76c60faee6a565ff924894c00e40c374512c43"
+        },
+        {
+          "path": "web/components/player-cards/PlayerCardFlow.test.tsx",
+          "baseline_sha256": "0ce3fb52c6f19fcea4d5f0755924faab1472cda1b4e1fa704396e1b4176c8579"
+        },
+        {
+          "path": "web/components/player-cards/PlayerCardFlow.tsx",
+          "baseline_sha256": "036c44fb865ac729e2ddfba06bf0d6205d983bf9f89133c88f20918869302e30"
+        },
+        {
+          "path": "web/components/player-cards/PlayerCardPreview.test.tsx",
+          "baseline_sha256": "5309f794268f88a670c19efe98939ca008b2439fd07c700c223bc832799b7e8f"
+        },
+        {
+          "path": "web/components/player-cards/PlayerCardPreview.tsx",
+          "baseline_sha256": "f58bdd545fa121be6ca79ffab03f52aeff8ca9d18a74e3e608b4addf7ae1a4b6"
+        },
+        {
+          "path": "web/components/player-cards/PlayerCardShareStudio.module.scss",
+          "baseline_sha256": "0bcab0a01648ff20a2d083dea3ec7e3d9c7fa0ca644eba48fa5d1b976db50db3"
+        },
+        {
+          "path": "web/components/player-cards/PlayerCardShareStudio.test.tsx",
+          "baseline_sha256": "2fcd04e379852ba7104c03f4ee5df5462ebe3a1de659cf5f2a98d7eaad1afd78"
+        },
+        {
+          "path": "web/components/player-cards/PlayerCardShareStudio.tsx",
+          "baseline_sha256": "c96629b6cc07ec8be06aab2804e0e6f3793650b0e3ed71f692591f5cd9969ad9"
+        },
+        {
+          "path": "web/lib/player-cards/adapter.ts",
+          "baseline_sha256": "095368ab27e9a207a62b0309f0ff45f7a401e2735c609ed6481199846883c81f"
+        },
+        {
+          "path": "web/lib/player-cards/aggregation.r1.test.ts",
+          "baseline_sha256": "54df67e6ff24264a685db97bfbba2a54803ef9214d2132941ffa580f522cf348"
+        },
+        {
+          "path": "web/lib/player-cards/aggregation.ts",
+          "baseline_sha256": "4ffe0ed5cbdea97ecb15b153543aace6b2d349cac10b0ff3e6de7484768b410a"
+        },
+        {
+          "path": "web/lib/player-cards/contracts.ts",
+          "baseline_sha256": "5bc0b00708a6dd9f3638f801701d3bf56dfe9a0dfcdd1484fd34d806ff8c283d"
+        },
+        {
+          "path": "web/lib/player-cards/domain.test.ts",
+          "baseline_sha256": "da0e7e3bcc4b923acc7e4229e63236efe4e7210877092f063e4bb3c96bac46b1"
+        },
+        {
+          "path": "web/lib/player-cards/evidenceBundle.test.ts",
+          "baseline_sha256": "d4c674cb41deadcb05941d3c2bbb0312495894393cce6faa675c4895711d23b3"
+        },
+        {
+          "path": "web/lib/player-cards/evidenceBundle.ts",
+          "baseline_sha256": "2899407e81b88dec5c78548cd9c9eff524c7592a3c67f5d6253c2181a3424084"
+        },
+        {
+          "path": "web/lib/player-cards/fixtures.ts",
+          "baseline_sha256": "00ac0c5bc1194427c2aecb7981c0f228b22b51fef16b343a72ec0f47a4405f65"
+        },
+        {
+          "path": "web/lib/player-cards/interactionFixtures.ts",
+          "baseline_sha256": "803cf3b41962b3125a0cd78c886700c58d2a37fd61206562545919767d04774e"
+        },
+        {
+          "path": "web/lib/player-cards/interactionSnapshot.ts",
+          "baseline_sha256": "53ce89f2495a7b832a20302d070c9f6b87d1dc099f1e460600e7471eb4aa3759"
+        },
+        {
+          "path": "web/lib/player-cards/nstCapture.test.ts",
+          "baseline_sha256": "7c88e4a14687c325858eb4ca7b4c297368179dfedfc6d1a1837539a5829914ed"
+        },
+        {
+          "path": "web/lib/player-cards/nstCapture.ts",
+          "baseline_sha256": "8febc82875c998d9b89c9e8d70194ddf25f204b6fcca8ef08b32d338c16bebb5"
+        },
+        {
+          "path": "web/lib/player-cards/portraitTreatment.test.ts",
+          "baseline_sha256": "921177c59ca88558260fc95b0f4dee62938b49b429f1bf9f6a548747ead78116"
+        },
+        {
+          "path": "web/lib/player-cards/portraitTreatment.ts",
+          "baseline_sha256": "12826051100dc134e0c39838909ef5ca49f18376ae3f849c99ebe21eb2b3299f"
+        },
+        {
+          "path": "web/lib/player-cards/ranking.test.ts",
+          "baseline_sha256": "b6177f53c26acde7f03e9afcdc5a3bbe4cdf2be071aea5a6e8be455e7375c027"
+        },
+        {
+          "path": "web/lib/player-cards/ranking.ts",
+          "baseline_sha256": "813a18860ac97ce19bceeb01f014541644b9a4d002c34ac7a0d95c09ef6b5338"
+        },
+        {
+          "path": "web/lib/player-cards/registry.ts",
+          "baseline_sha256": "f9c6a55ef5ee37a4e9de4cb1321ee971af5da0e3008dfdd86dfcec260c25cd29"
+        },
+        {
+          "path": "web/lib/player-cards/reviewedHeroSamples.ts",
+          "baseline_sha256": "1e8fe079c5a29b5d4355b7dfa729acabacb6ff8164a0c52c6ef93b7e2e16af18"
+        },
+        {
+          "path": "web/lib/player-cards/shareExport.test.ts",
+          "baseline_sha256": "446b53b6571db6770dabfc5b762863d15850f3f0b2d0aff749c6a71b7148397e"
+        },
+        {
+          "path": "web/lib/player-cards/shareExport.ts",
+          "baseline_sha256": "fd5d5081e35522cea8b33e5c8d697b0a304fe666de461f0e30967fe2eac4f435"
+        },
+        {
+          "path": "web/lib/player-cards/windows.ts",
+          "baseline_sha256": "b7e989c211b8a9f5a1a91af157c69fc28cd29a409442f89365e57c662d10adb2"
+        },
+        {
+          "path": "web/pages/social-share/player-cards.tsx",
+          "baseline_sha256": "fac7acb9dd79e6812ff3d60da5b575861baede0fbd3ee66b9f56742426f92043"
+        },
+        {
+          "path": "web/public/player-cards/hero-samples/8478864.png",
+          "baseline_sha256": "4199308c2f56a9ac0244697e7162f42283f1a5c247b656fb7c9278597b3ee18c"
+        },
+        {
+          "path": "web/public/player-cards/hero-samples/8479318.png",
+          "baseline_sha256": "713a4923cf4742cefbbc09a647a249f98c095edea8eb92f7bda028929e0db065"
+        },
+        {
+          "path": "tasks/artifacts/claude-lanes-2026-10-25/PC/"
+        }
+      ],
+      "forbidden": [
+        "C2 candidate replay",
+        "live data/ranks",
+        "portrait reprocessing",
+        "premium/live activation"
+      ],
+      "status": "RELEASED 2026-10-26T15:20:05Z \u2014 card paths handed back to Codex (CODEX-20261026-001 / CLAUDE-20261026-103). Session idle since 2026-10-25T21:07Z; PC-5 committed 32f82b1ee; all 42 SOURCE-PINS match tree.",
+      "base_head": "ac98431aa0714573f4f89691f3b9502fe4e375ec",
+      "session": "local_bd4b0f5c-a517-4d89-98f8-cdb2e7b9b5d7 (pc-player-cards)"
+    },
+    {
+      "lane": "TG",
+      "scope": "Testing Grounds namespace (25 handed files)",
+      "authority": "TJ 16:22\u201316:27 + CODEX-20261025-086 handover",
+      "write_paths": [
+        {
+          "path": "web/lib/forge-testing-grounds/TestingGroundsOwnerGate.test.tsx",
+          "baseline_sha256": "ad376e0cb335723bed1a741a24a418e2d88012f539260405a48b8848f34c4eee"
+        },
+        {
+          "path": "web/lib/forge-testing-grounds/TestingGroundsOwnerGate.tsx",
+          "baseline_sha256": "3bcd1c56aae644f7ea7f0caaaf7053d38feb03a33d5ed4412dc54592b8dc5f4c"
+        },
+        {
+          "path": "web/lib/forge-testing-grounds/boundedWorker.test.ts",
+          "baseline_sha256": "7a4cd4194686bb16823542d35e9a49f4c6d459480ec2a1d76a0d9a91b39833eb"
+        },
+        {
+          "path": "web/lib/forge-testing-grounds/boundedWorker.ts",
+          "baseline_sha256": "9395c902111a38f2eae4723cb4b9401f4fba53f989d17a041552f9dd9b4e85ac"
+        },
+        {
+          "path": "web/lib/forge-testing-grounds/dataHealth.test.ts",
+          "baseline_sha256": "c806bcf60ccf4c19958e9bc735213481f0239749abc2ef358d063fcb821691d3"
+        },
+        {
+          "path": "web/lib/forge-testing-grounds/dataHealth.ts",
+          "baseline_sha256": "0205a7bfd011305e4fc109de9f81f1958b9b623f8a56f79808515ddb6d24e982"
+        },
+        {
+          "path": "web/lib/forge-testing-grounds/memoryRunStore.ts",
+          "baseline_sha256": "085abad213e05d0d2a973d54197896cd54a2d72c2d218ede70b3f95d5ccb9fdc"
+        },
+        {
+          "path": "web/lib/forge-testing-grounds/operationalProgress.test.ts",
+          "baseline_sha256": "886d74890917da528fe1c787889d274f7cf004b3061606d406d5edfa973a33fd"
+        },
+        {
+          "path": "web/lib/forge-testing-grounds/operationalProgress.ts",
+          "baseline_sha256": "60fdf02b9c1480b1c3a3066e5ebf4f22254bc9c7902c154300ce77015939b5c7"
+        },
+        {
+          "path": "web/lib/forge-testing-grounds/ownerPolicy.test.ts",
+          "baseline_sha256": "9d715c4577c2e98d28f641b96c7e46c3a08d1234db62e8bf7059a89f18fc776d"
+        },
+        {
+          "path": "web/lib/forge-testing-grounds/ownerPolicy.ts",
+          "baseline_sha256": "b0de88d27e731856e37470aee46cde57cf50af351fa6cc8ebeacb070842748c5"
+        },
+        {
+          "path": "web/lib/forge-testing-grounds/ownerRoutes.test.ts",
+          "baseline_sha256": "54476cd5db0cb4505544ea91d1e0559164845cb08951a6a690588ddec6c0dad3"
+        },
+        {
+          "path": "web/lib/forge-testing-grounds/ownerRoutes.ts",
+          "baseline_sha256": "33c185c9c693e42872b61b9e003dbade8471e2a8f9f73abede6debf7437cb249"
+        },
+        {
+          "path": "web/lib/forge-testing-grounds/preview/TestingGroundsPreview.module.scss",
+          "baseline_sha256": "d810009a51f0385837c270f59cbb7d2861050f9f59b836b608fca9847ed6cf74"
+        },
+        {
+          "path": "web/lib/forge-testing-grounds/preview/TestingGroundsPreview.test.tsx",
+          "baseline_sha256": "b7eaba367791e360d4f7d1fa67f1a992fb77e7433d15da214e51fe66c384cae1"
+        },
+        {
+          "path": "web/lib/forge-testing-grounds/preview/TestingGroundsPreview.tsx",
+          "baseline_sha256": "0ba7e33fbddf0eb846811f1be0e9062f2980ce78316c68f60c7174d890f3be4d"
+        },
+        {
+          "path": "web/lib/forge-testing-grounds/preview/previewFixtures.ts",
+          "baseline_sha256": "78a34b4eb07a588b95b0f6876152f1cd3fa4527bf35a6edcec5fc63cb551ddea"
+        },
+        {
+          "path": "web/lib/forge-testing-grounds/runStore.ts",
+          "baseline_sha256": "07f197bf59d44187a8d93c98488b711e0e28edd6ba7db80f12962a6c5628fa8c"
+        },
+        {
+          "path": "web/lib/forge-testing-grounds/runnerContracts.ts",
+          "baseline_sha256": "eaefa7e188004b89fc305f886f9673316e1650107179795d0994caea81777eeb"
+        },
+        {
+          "path": "web/lib/forge-testing-grounds/serverOwnerBoundary.test.ts",
+          "baseline_sha256": "ec88815502d2bfbfd71d5cd14f8c5626fb319a4ea70a83b7d0dcc36974db3cb8"
+        },
+        {
+          "path": "web/lib/forge-testing-grounds/serverOwnerBoundary.ts",
+          "baseline_sha256": "5bdd35c403441dd6c04f34908ea0bb3f91a7de4fb7690d63e884cf642bc09fde"
+        },
+        {
+          "path": "web/pages/api/v1/forge/testing-grounds/access.ts",
+          "baseline_sha256": "abcb5af6c8a9cb97822b6bfad8f8bf217ab305b4e2e76e9c8d5671f9eb737b25"
+        },
+        {
+          "path": "web/pages/api/v1/forge/testing-grounds/runs/[runId]/[operation].ts",
+          "baseline_sha256": "6f0bbf14d718075a6d1b38c614bc132510f4550af2f7a395a72f64ab3d5c8962"
+        },
+        {
+          "path": "web/pages/api/v1/forge/testing-grounds/runs/index.ts",
+          "baseline_sha256": "94469027fcb99205b3b6337e2228f978a697ba4f499aafb10b6e3b28ef4ed836"
+        },
+        {
+          "path": "web/pages/forge/testing-grounds.tsx",
+          "baseline_sha256": "69860a37f7df17830b5c09645d774d51c31ec3bb6b1c531bf9f87dcc693daba2"
+        },
+        {
+          "path": "tasks/artifacts/claude-lanes-2026-10-25/TG/"
+        }
+      ],
+      "forbidden": [
+        "runner activation, real captures, storage/cost/retention",
+        "auth/credential/env values",
+        "shared FORGE/auth"
+      ],
+      "status": "active 2026-10-25T16:39Z",
+      "base_head": "ac98431aa0714573f4f89691f3b9502fe4e375ec",
+      "session": "local_481d91a5-8d30-4e4c-b98b-728f3a9b1b36 (tg-testing-grounds)"
+    },
+    {
+      "lane": "HIR",
+      "scope": "RSO healthy-reserve completion (D2)",
+      "authority": "TJ 16:22\u201316:27 + CODEX-20261025-086 handover",
+      "write_paths": [
+        {
+          "path": "web/lib/rosterScheduleOptimizer/healthyReserves.ts",
+          "baseline_sha256": "e1a203d3fa557398d60a94a2fd9dcbffbeec2890fbfca7f8ec9a83466439b5c4"
+        },
+        {
+          "path": "web/lib/rosterScheduleOptimizer/healthyReserves.test.ts",
+          "baseline_sha256": "394fc6deca5cbf0433c74205e9b0b8dc3959c440a13e086727b38006499d1ddf"
+        },
+        {
+          "path": "web/components/RosterScheduleOptimizer/HealthyReserveAlert.tsx",
+          "baseline_sha256": "793e2d277551cba192d2f6595d4e91393d48c775794502e8e5e5e3e4c79f70b3"
+        },
+        {
+          "path": "web/components/RosterScheduleOptimizer/HealthyReserveAlert.test.tsx",
+          "baseline_sha256": "159e3b49a6ae7f258a492ee2b2b782adb1667304729a93eadbfd1e08e065946f"
+        },
+        {
+          "path": "tasks/artifacts/claude-lanes-2026-10-25/HIR/"
+        },
+        {
+          "path": "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+          "baseline_sha256": "3d7e8ac4c48fe6decde41ef48ec8606af6ce58030586fea9e0ab50f4d277e803",
+          "note": "granted 2026-10-25T16:42Z: drop-notice seam only (~3 lines)"
+        }
+      ],
+      "forbidden": [
+        "RosterScheduleOptimizer.tsx parent (separate request)",
+        "goalie/planning/forecast/provider/auth files",
+        "Yahoo rule invention"
+      ],
+      "status": "released",
+      "base_head": "ac98431aa0714573f4f89691f3b9502fe4e375ec",
+      "session": "local_5e1f0f8d-c5d4-43e8-9c0f-51f744687daa (hir-healthy-reserves)",
+      "released_note": "2026-10-26T15:47Z re-pin at Astra-audit resume: lane work already committed (checkpoint: no RSO/FORGE product code dirty); paths reassigned to active audit slices"
+    },
+    {
+      "lane": "RSO-BRIDGE",
+      "scope": "forgeDailyBridge P1: unknown-vs-zero season-rate supplements; goalie share team/season/trade binding",
+      "authority": "TJ direct pop-up 2026-10-25 ~23:20Z (RSO wave 1; beta = daily manual + Yahoo); RSO/FORGE custody per TJ ('BLSH only Codex lane') and RSO-CURRENT-STATUS 22:38Z. Supersedes CODEX-LEASES 16:32Z broad reservations for these exact paths only.",
+      "write_paths": [
+        {
+          "path": "web/lib/rosterScheduleData/forgeDailyBridge.ts",
+          "baseline_sha256": "651eff511275b93f6f598181f3c5402c9b4d1b57d3959eb772528842910855f5"
+        },
+        {
+          "path": "web/lib/rosterScheduleData/forgeDailyBridge.test.ts",
+          "baseline_sha256": "16c3d6f394be1a2a877b2a4ddaac9ef8d2100c577ff98ec3adb96aaf4342f9d1"
+        },
+        {
+          "path": "web/lib/rosterScheduleData/planningInputs.ts",
+          "baseline_sha256": "8193aa5d1bd22349b729e0a135f2060e847c5569312f83a84b23d2cbee498313"
+        }
+      ],
+      "status": "released",
+      "released_note": "2026-10-26T15:47Z re-pin at Astra-audit resume: lane work already committed (checkpoint: no RSO/FORGE product code dirty); paths reassigned to active audit slices"
+    },
+    {
+      "lane": "RSO-FLAKE",
+      "scope": "AUDIT F6 lease retry fix + slice 2 manual end-to-end acceptance packet on interim bridge (new test files; defects reported, not fixed outside lease)",
+      "authority": "TJ chat 2026-10-26 Astra-audit resume: ordinary local edits/offline tests within RSO/FORGE ownership; plan in astra-rso-handoff-2026-10-26/AMENDMENT-01-AUDIT-RECONCILIATION.md",
+      "write_paths": [
+        "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+        "web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx",
+        "web/lib/rosterScheduleOptimizer/dailyAcceptance.e2e.test.ts",
+        "web/e2e/rso-acceptance.spec.ts",
+        "web/e2e/fixtures/rso-acceptance/"
+      ],
+      "status": "idle",
+      "pinned_utc": "2026-10-26T15:46:11Z",
+      "artifact_dir": "tasks/artifacts/astra-rso-handoff-2026-10-26/slices/E2E/",
+      "note": "F6+E2E 00d375839 committed"
+    },
+    {
+      "lane": "RSO-MANUAL",
+      "scope": "AUDIT F2 (slice 3) then F3 (slice 4): separate legal selection from approved totals/comparison; stable method binding + per-issuance lineage. SOG assignment/tie-break stay denied",
+      "authority": "TJ chat 2026-10-26 Astra-audit resume: ordinary local edits/offline tests within RSO/FORGE ownership; plan in astra-rso-handoff-2026-10-26/AMENDMENT-01-AUDIT-RECONCILIATION.md",
+      "write_paths": [
+        "web/lib/rosterScheduleOptimizer/planning.ts",
+        "web/lib/rosterScheduleOptimizer/planning.test.ts",
+        "web/lib/rosterScheduleOptimizer/candidatePlanMetrics.ts",
+        "web/lib/rosterScheduleOptimizer/candidatePlanMetrics.test.ts",
+        "web/lib/rosterScheduleOptimizer/planningTypes.ts",
+        "web/lib/player-forecasts/rsoUsePolicy.ts",
+        "web/lib/player-forecasts/rsoUsePolicy.test.ts",
+        "web/lib/player-forecasts/rsoUsePolicy.fixtures.ts",
+        "web/lib/rosterScheduleData/planning.ts",
+        "web/lib/rosterScheduleData/planning.test.ts"
+      ],
+      "artifact_dir": "tasks/artifacts/astra-rso-handoff-2026-10-26/slices/F2F3/",
+      "status": "idle",
+      "pinned_utc": "2026-10-26T15:46:11Z",
+      "note": "F2 978134e22, F3 9e66c7e20 committed"
+    },
+    {
+      "lane": "RSO-RECON",
+      "scope": "Fix MANUAL D1 (reserve-step reconciliation + timing rechecks) and D2 (projected goalie starts unknown after minimum met)",
+      "authority": "TJ wave-1 approval; orchestrator dispatch of found defects",
+      "write_paths": [
+        {
+          "path": "web/lib/rosterScheduleOptimizer/reconciliation.ts",
+          "baseline_sha256": "f43c7f84cd408d95c7cc89fad545f05c41c8f69beae03f13f1188e2ed50ab69d"
+        },
+        {
+          "path": "web/lib/rosterScheduleOptimizer/reconciliation.test.ts",
+          "baseline_sha256": "7a83a334e68ca83b4b24b0fb8adab2d8a7f9cfbfb4e3f7a7b0a3fa5981784ec5"
+        },
+        {
+          "path": "web/lib/rosterScheduleOptimizer/planning.ts",
+          "baseline_sha256": "d1300a64ac98d97765b9daff8017f3fe8341aa8757984ff176a177fc3a2674f2"
+        },
+        {
+          "path": "web/lib/rosterScheduleOptimizer/planning.test.ts",
+          "baseline_sha256": "95b534df3ace78d45187dcc99f791b1a46d71f2c79f7b0b942786a79a45e27a9"
+        },
+        {
+          "path": "web/lib/rosterScheduleOptimizer/dailyAcceptance.manual.test.ts",
+          "baseline_sha256": "d5177d39a88d5bc1821ba8f070c5d9c60a3b130c551708a1385aeefd03658962"
+        }
+      ],
+      "status": "released",
+      "released_note": "2026-10-26T15:47Z re-pin at Astra-audit resume: lane work already committed (checkpoint: no RSO/FORGE product code dirty); paths reassigned to active audit slices"
+    },
+    {
+      "lane": "RSO-YAHOO",
+      "scope": "Offline Yahoo daily acceptance suite (new test file + artifacts; defects reported, not fixed)",
+      "authority": "TJ direct pop-up 2026-10-25 ~23:45Z (RSO wave 2: Yahoo acceptance, continuity E2E, forecast qualification plan, release wave 1)",
+      "write_paths": [
+        {
+          "path": "web/lib/rosterScheduleOptimizer/dailyAcceptance.yahoo.test.ts",
+          "baseline_sha256": "absent"
+        }
+      ],
+      "artifact_dir": "tasks/artifacts/rso-wave2-2026-10-25/YAHOO/",
+      "status": "released",
+      "released_note": "2026-10-26T15:47Z re-pin at Astra-audit resume: lane work already committed (checkpoint: no RSO/FORGE product code dirty); paths reassigned to active audit slices"
+    },
+    {
+      "lane": "RSO-E2E",
+      "scope": "Browser continuity acceptance spec on isolated dev server :3160 with mocks",
+      "authority": "TJ direct pop-up 2026-10-25 ~23:45Z (RSO wave 2: Yahoo acceptance, continuity E2E, forecast qualification plan, release wave 1)",
+      "write_paths": [
+        {
+          "path": "web/e2e/rso-continuity.spec.ts",
+          "baseline_sha256": "absent"
+        }
+      ],
+      "write_dirs": [
+        "web/e2e/fixtures/rso-continuity/"
+      ],
+      "resources": {
+        "port": 3160,
+        "distDir": ".next-playwright",
+        "env": "PLAYWRIGHT_ISOLATED_NEXT=1"
+      },
+      "artifact_dir": "tasks/artifacts/rso-wave2-2026-10-25/E2E/",
+      "status": "released",
+      "released_note": "2026-10-26T15:47Z re-pin at Astra-audit resume: lane work already committed (checkpoint: no RSO/FORGE product code dirty); paths reassigned to active audit slices"
+    },
+    {
+      "lane": "FORGE-QUAL",
+      "scope": "Read-only audit: FORGE writer -> admission -> RSO/Start Chart consumer qualification plan and draft readback tooling (artifacts only)",
+      "authority": "TJ direct pop-up 2026-10-25 ~23:45Z (RSO wave 2: Yahoo acceptance, continuity E2E, forecast qualification plan, release wave 1)",
+      "write_paths": [],
+      "artifact_dir": "tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/"
+    },
+    {
+      "lane": "RSO-PRIVACY",
+      "scope": "E2E D2 per-account local workspace + D1 context-switch intent reset; land rso-continuity spec green",
+      "authority": "TJ direct pop-ups 2026-10-26 ~00:10Z: workspace scope per account; FORGE first target skater SOG (Start Chart display + RSO totals/comparison); adopt FORGE-QUAL D1/D3/D4/D5; let native v2 stop after 10-27T04:00Z",
+      "write_paths": [
+        {
+          "path": "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+          "baseline_sha256": "cc1314372e277473a0e960e811144f0aa6367b64341392e9bf8fb791ab2f0935"
+        },
+        {
+          "path": "web/lib/rosterScheduleOptimizer/workspace.ts",
+          "baseline_sha256": "8a82c0f7c21f031402e0a3d6a480de12a8e780a9fe2f5097236bce64e00fcb3f"
+        },
+        {
+          "path": "web/lib/rosterScheduleOptimizer/workspace.test.ts",
+          "baseline_sha256": "4c5666efe9b30203ded0f4d20aa64eeb479a9af28acffa703ab541e41bbe6810"
+        },
+        {
+          "path": "web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx",
+          "baseline_sha256": "bede9e5ffefcc8e9c563b30ac01d3752baf674616fac059a443279730c84f32e"
+        },
+        {
+          "path": "web/e2e/rso-continuity.spec.ts",
+          "baseline_sha256": "24f7f6720c2d54aff646707123b7a31ad98c68a35660940467f91322ba196c2a"
+        }
+      ],
+      "write_dirs": [
+        "web/e2e/fixtures/rso-continuity/"
+      ],
+      "status": "released",
+      "released_note": "2026-10-26T15:47Z re-pin at Astra-audit resume: lane work already committed (checkpoint: no RSO/FORGE product code dirty); paths reassigned to active audit slices"
+    },
+    {
+      "lane": "RSO-Y1",
+      "scope": "Yahoo capabilities.rules:false must name unverified rule facts",
+      "authority": "TJ direct pop-ups 2026-10-26 ~00:10Z: workspace scope per account; FORGE first target skater SOG (Start Chart display + RSO totals/comparison); adopt FORGE-QUAL D1/D3/D4/D5; let native v2 stop after 10-27T04:00Z",
+      "write_paths": [
+        {
+          "path": "web/lib/integrations/yahoo/rosterPlanning.ts",
+          "baseline_sha256": "631ee6917cb67646695322d15ac280bf0b050e5a504e6cbb6d9dbf0d6e635e54"
+        },
+        {
+          "path": "web/lib/integrations/yahoo/rosterPlanning.test.ts",
+          "baseline_sha256": "08aab39c3f2f56ba96e221cf0c6c2c2a21d7641d4855c45a262c93c77a800636"
+        },
+        {
+          "path": "web/lib/rosterScheduleOptimizer/dailyAcceptance.yahoo.test.ts",
+          "baseline_sha256": "f81cb3fcde13e043e94ca7bd7d37a8ad40fedfcc191d8b564c9a374a7747def7"
+        }
+      ],
+      "status": "released",
+      "released_note": "2026-10-26T15:47Z re-pin at Astra-audit resume: lane work already committed (checkpoint: no RSO/FORGE product code dirty); paths reassigned to active audit slices"
+    },
+    {
+      "lane": "FORGE-PROV",
+      "scope": "D3 producer configuration/artifact hashes into revision payload and RSO binding; D5 RsoTargetUseReview evidence/approval refs (no review added); D4 scope.json draft",
+      "authority": "TJ direct pop-ups 2026-10-26 ~00:10Z: workspace scope per account; FORGE first target skater SOG (Start Chart display + RSO totals/comparison); adopt FORGE-QUAL D1/D3/D4/D5; let native v2 stop after 10-27T04:00Z",
+      "write_paths": [
+        {
+          "path": "web/lib/projections/run-forge-projections.ts",
+          "baseline_sha256": "cb4cdbc68045dba3521405c9a3f832f894420af94ddf7e60c4ae0548eb81416e"
+        },
+        {
+          "path": "web/lib/rosterScheduleData/planning.ts",
+          "baseline_sha256": "e945135114e21ff631a1f23b486490323e569db0c30d67b6c565deb2a87f5306"
+        },
+        {
+          "path": "web/lib/rosterScheduleData/planning.test.ts",
+          "baseline_sha256": "4ac0ced587c384e74068a712d9d0d9e13b7cdd12dd3e6d52ce42013d37963a3b"
+        },
+        {
+          "path": "web/lib/player-forecasts/rsoUsePolicy.ts",
+          "baseline_sha256": "3130a3cfb2bd028af42d0dc4a6bdaa72935a08823dc185aceaf830f330eb3215"
+        },
+        {
+          "path": "web/lib/player-forecasts/rsoUsePolicy.test.ts",
+          "baseline_sha256": "234ae88abcae41182a9673aa31e99aeea0db50bd39de4c4b1002de596e643e07"
+        },
+        {
+          "path": "web/lib/player-forecasts/rsoUsePolicy.fixtures.ts",
+          "baseline_sha256": "4e75f0e7e90576fa5e2b29b300e715d28a7620d169d85a07eabe975ad9b37811"
+        }
+      ],
+      "artifact_dir": "tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/",
+      "status": "released",
+      "released_note": "2026-10-26T15:47Z re-pin at Astra-audit resume: lane work already committed (checkpoint: no RSO/FORGE product code dirty); paths reassigned to active audit slices"
+    },
+    {
+      "lane": "FORGE-EXTIN",
+      "scope": "Audit live FORGE for external fantasy inputs; if none, writer claims the exclusion contract with an enforcing test; declare modelIdentity type | TJ 2026-10-26: remove draft-dashboard fantasy projection tables from FORGE entirely (skater bootstrap no longer reads them)",
+      "authority": "TJ direct pop-up 2026-10-26 ~00:25Z ('Audit, then claim')",
+      "write_paths": [
+        {
+          "path": "web/lib/projections/run-forge-projections.ts",
+          "baseline_sha256": "c7614e43248455020a107f715cd2d3b6aaa9f3f11a6648f8772c1fce86fc34ce"
+        },
+        {
+          "path": "web/lib/projections/gameRevisions.ts",
+          "baseline_sha256": "2b16ffb05973d007798e46329720579bf12b25c409daaf750d2cca8cf0841e95"
+        },
+        {
+          "path": "web/lib/projections/seasonBootstrap.ts",
+          "baseline_sha256": "3ff0c0f3bb7c2af79ce0419575349d46c1d87a5c113d25e82a7976c0630638db"
+        },
+        {
+          "path": "web/lib/projections/stages/skater-stage.ts",
+          "baseline_sha256": "6adc2f970899251775587c08c906a8121eb8f38ed3394549abf2bc9774086b56"
+        },
+        {
+          "path": "web/lib/projections/nativeInputEligibility.test.ts",
+          "baseline_sha256": "03f09ffba40fe9b671a68a4158f8f347d10b6d125983dccbb9decf630766a1c8"
+        }
+      ],
+      "test_files_allowed": "new or existing tests adjacent to these two files only",
+      "artifact_dir": "tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/",
+      "status": "released",
+      "released_note": "2026-10-26T15:47Z re-pin at Astra-audit resume: lane work already committed (checkpoint: no RSO/FORGE product code dirty); paths reassigned to active audit slices"
+    },
+    {
+      "lane": "SC-541-FIX",
+      "scope": "TJ 2026-10-26: hide private Yahoo lineup on 401/403 refresh failures only; keep through other failures; lapsed entitlement stays read-only with refresh disabled",
+      "authority": "TJ wave-2 scope; orchestrator fix of reported regression from fd58ba245",
+      "write_paths": [
+        {
+          "path": "web/components/StarterBoardYahoo.test.tsx",
+          "baseline_sha256": "68d574f291cb6b7fb596e575b60f03f5dc19e87576894f2c7c059d0f6b046025"
+        },
+        {
+          "path": "web/e2e/start-chart.spec.ts",
+          "baseline_sha256": "d2ce825496b91068dfee444f12cdea0025126595897177b17d044b06fb1ba6b7"
+        },
+        {
+          "path": "web/components/StarterBoardYahoo.tsx",
+          "baseline_sha256": "9bc215494dce959c0bdf02091f354659f531adced5ed637812c745b8822107fc"
+        }
+      ]
+    },
+    {
+      "lane": "RSO-ONLINE",
+      "scope": "TJ 2026-10-26: stop gating RSO access/planning/explicit loads on navigator.onLine; show offline only on real failure; never stick on 'Checking access'",
+      "authority": "TJ direct reply 2026-10-26",
+      "write_paths": [
+        {
+          "path": "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+          "baseline_sha256": "7917cbc69cdb993e4fa742610a14b2fa7881c49593d373a8184bb7100a4b025e"
+        },
+        {
+          "path": "web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx",
+          "baseline_sha256": "0453faa277dd38b598091dcae819de4f7900c50c4cc3df08488218703abfe601"
+        },
+        {
+          "path": "web/e2e/rso-continuity.spec.ts",
+          "baseline_sha256": "ea808b9a1738a61f68521fa24069dea5225d91ce5277404222072fae7307300a"
+        }
+      ],
+      "status": "released",
+      "released_note": "2026-10-26T15:47Z re-pin at Astra-audit resume: lane work already committed (checkpoint: no RSO/FORGE product code dirty); paths reassigned to active audit slices"
+    },
+    {
+      "lane": "RSO-YAHOO-DIET-P2",
+      "scope": "Implement TJ decisions D2,D3,D5,D6,D8 (+D4 migration file only, not applied) behind a server flag (D7); D1 full scan kept | 2026-10-26 16:20Z: add connected-account identity to process-local Yahoo cache keys (RSO-FLAKE F6 report)",
+      "authority": "TJ direct pop-ups 2026-10-26 (TJ-DECISIONS-RECORDED.md)",
+      "write_paths": [
+        "web/lib/integrations/yahoo/rosterPlanning.ts",
+        "web/lib/integrations/yahoo/rosterPlanning.test.ts",
+        "web/lib/integrations/yahoo/planningConfirmations.ts",
+        "web/lib/integrations/yahoo/planningConfirmations.test.ts",
+        "web/lib/integrations/yahoo/providerClient.ts",
+        "web/lib/rosterScheduleOptimizer/dailyAcceptance.yahoo.test.ts",
+        "web/lib/integrations/yahoo/starterBoard.ts",
+        "web/lib/rosterScheduleOptimizer/providerRules.ts",
+        "web/lib/rosterScheduleOptimizer/providerRules.test.ts",
+        "web/pages/api/v1/roster-schedule-optimizer/provider.ts"
+      ],
+      "new_files_allowed": "new shared identity resolver + caches + tests under web/lib/integrations/yahoo/ and web/lib/rosterScheduleOptimizer/; one new migration file (NOT applied)",
+      "artifact_dir": "tasks/artifacts/rso-yahoo-diet-2026-10-26/",
+      "status": "paused",
+      "note_keys": "account-keyed caches c0ebd63f7 committed; diet flag still off"
+    },
+    {
+      "lane": "PROV-GUARD",
+      "scope": "AUDIT F1 (slice 1): verified producer-closure identity admission; then F4 (slice 5) after C7 review | F4 lease added 2026-10-26",
+      "authority": "TJ chat 2026-10-26 Astra-audit resume: ordinary local edits/offline tests within RSO/FORGE ownership; plan in astra-rso-handoff-2026-10-26/AMENDMENT-01-AUDIT-RECONCILIATION.md",
+      "write_paths": [
+        "web/pages/api/v1/start-chart.ts",
+        "web/__tests__/pages/api/v1/start-chart.test.ts",
+        "web/lib/projections/apiHelpers.ts",
+        "web/pages/api/v1/forge/players.ts",
+        "web/pages/api/v1/projections/players.ts",
+        "web/pages/api/v1/db/forge-served-forecast-snapshot.ts",
+        "web/__tests__/pages/api/v1/db/forge-served-forecast-snapshot.test.ts",
+        "web/lib/projections/externalInputProof.ts",
+        "web/lib/projections/apiHelpers.runAdmission.test.ts",
+        "web/lib/projections/apiHelpers.test.ts",
+        "web/__tests__/pages/api/v1/forge/players.test.ts",
+        "web/__tests__/pages/api/v1/projections/players.test.ts",
+        "web/lib/projections/verifiedForgeReleases.ts",
+        "web/lib/projections/verifiedForgeReleases.test.ts",
+        "web/scripts/verify-forge-release-sha.ts",
+        "web/lib/projections/releasedRunFence.ts",
+        "web/lib/projections/releasedRunFence.test.ts",
+        "web/next.config.js",
+        "web/lib/projections/forgeProducerIdentity.ts",
+        "web/lib/projections/forgeProducerIdentity.test.ts",
+        "web/scripts/forge-producer-closure.ts",
+        "web/pages/api/v1/projections/teams.ts",
+        "web/pages/api/v1/projections/goalies.ts",
+        "web/pages/api/v1/forge/goalies.ts",
+        "web/lib/game-predictions/featureBuilder.ts",
+        "web/lib/game-predictions/workflow.ts",
+        "web/lib/game-predictions/publicPredictions.ts",
+        "web/__tests__/pages/api/v1/projections/goalies.test.ts",
+        "web/__tests__/pages/api/v1/forge/goalies.test.ts",
+        "web/lib/game-predictions/featureBuilder.test.ts",
+        "web/lib/game-predictions/workflow.test.ts",
+        "web/lib/game-predictions/publicPredictions.test.ts",
+        "web/__tests__/pages/api/v1/projections/explicitRunAdmission.test.ts"
+      ],
+      "status": "active",
+      "pinned_utc": "2026-10-26T15:46:11Z",
+      "artifact_dir": "tasks/artifacts/astra-rso-handoff-2026-10-26/slices/F1/"
+    },
+    {
+      "lane": "DISCOVERY-NOPUNDIT",
+      "scope": "F3: remove pundit-table count reads + health metadata from Draft Rankings discovery",
+      "authority": "TJ direct pop-ups 2026-10-26: fix audit F1+F2+F3; one bounded read (\u22643 read-only queries) before release",
+      "write_paths": [
+        {
+          "path": "web/lib/draft-ranker/discoveryServer.ts",
+          "baseline_sha256": "07ebade83d8aa3bcd60b7d94089a17f2a29c9aa005e409da1a134758f380488a"
+        },
+        {
+          "path": "web/lib/draft-ranker/discoveryReadServer.ts",
+          "baseline_sha256": "87f204566084834b4afeb7e081b84660f15c9c4aa452ea3c36731e17fc63b449"
+        },
+        {
+          "path": "web/pages/api/v1/db/refresh-draft-ranker-discovery.ts",
+          "baseline_sha256": "73b0eff48ab3841a2e61520c84d955379931eab0d5a55274a8fa5cd0988f05cc"
+        },
+        {
+          "path": "web/lib/draft-ranker/discovery.test.ts",
+          "baseline_sha256": "468720f5db889ba4e8251dd0f961321bdf182ad4a990199e2745830ac82fa1f6"
+        }
+      ]
+    },
+    {
+      "lane": "TT",
+      "ids": [
+        "SITE-SOCIAL-SHARE"
+      ],
+      "scope": "Tuesday Trends social-share edition: live native data, semantic fixes, four sections (hot/cold, ownership movers, deployment, rate standouts). No Monday redesign, no Player Cards/Thursday.",
+      "authority": "TJ 2026-10-26 direct (/orchestrator Tuesday Trends) + CODEX-20261026-001 relay",
+      "owner": "Claude Tuesday Trends chef (this session) \u2192 TT worker session",
+      "start_utc": "2026-10-26T15:20:05Z",
+      "base_head": "cd73cbd695347a04c0d217ca7535a87ca609f4fb",
+      "write_paths": [
+        "web/lib/socialShare/trends.ts",
+        "web/lib/socialShare/trends.test.ts",
+        "web/lib/socialShare/trendsFixture.ts",
+        "web/lib/socialShare/trendSources.ts (new)",
+        "web/lib/socialShare/trendSources.test.ts (new)",
+        "web/lib/socialShare/server.ts (Tuesday branch only)",
+        "web/lib/socialShare/schedule.ts (TUESDAY_NOT_CONNECTED only)",
+        "web/lib/socialShare/schedule.test.ts (Tuesday cases only)",
+        "web/lib/socialShare/types.ts (Tuesday trend types only)",
+        "web/lib/socialShare/export.ts (trend exportability only)",
+        "web/components/SocialShare/SocialShare.tsx (TrendCard/trend helpers only)",
+        "web/components/SocialShare/SocialShare.module.scss (.trend* only)",
+        "web/components/SocialShare/SocialShare.test.tsx (Tuesday cases)",
+        "web/e2e/social-share.spec.ts (Tuesday cases)",
+        "tasks/artifacts/tuesday-trends-2026-10-26/",
+        "tasks/diaries/2026-10-26-claude-tuesday-trends*.md"
+      ],
+      "shared_later": "types.ts format registry, SocialShare.tsx renderer, pages/social-share/[format].tsx and api [format].ts: Codex Thursday gets an exact lease after TT hands back",
+      "read_only": [
+        "web/lib/socialShare/access.ts(+test)",
+        "web/components/SocialShare/SocialShareAccessGate.tsx(+test)",
+        "AuthProvider",
+        "auth lines in page/API",
+        "web/lib/rosterScheduleOptimizer/planningDates.ts (Astra pin)",
+        "web/lib/rosterScheduleData/normalize.ts (Astra pin)",
+        "Monday code paths (Monday PNG pins must stay byte-identical)"
+      ],
+      "forbidden": [
+        "web/lib/player-cards/**",
+        "web/components/player-cards/**",
+        "web/pages/social-share/player-cards.tsx",
+        "Astra/RSO pinned files",
+        "PROJECTIONS_20262027_*/PROJECTIONS_20252026_* tables",
+        "production reads without a direct TJ pop-up",
+        "migrations, pushes, deploys",
+        "Git except explicit-pathspec commits by the TT worker"
+      ],
+      "status": "HANDED BACK 2026-10-26T16:23:58Z: implementation done (82490cd45, c5829aa9e, 8e755dab8; local only). Awaiting TJ acceptance/release. Shared renderer, format registry and routes are free for an exact Codex Thursday lease."
+    },
+    {
+      "lane": "FORGE-RESERVE",
+      "session": "local_23d80159-b2ab-48ee-beca-f0f030201073",
+      "status": "active",
+      "pinned_utc": "2026-10-26T16:10:00Z",
+      "scope": "FORGE reserve pass: project all rostered players into a separate reserve table (TJ pop-ups: separate table, measure payload before raising budget, participation null by default)",
+      "authority": "TJ-started session; TJ pop-up answers in that session; local edits/offline tests only; migration file local, NOT applied",
+      "write_paths": [
+        "web/lib/projections/stages/skater-stage.ts",
+        "web/lib/projections/stages/goalie-stage.ts",
+        "web/lib/projections/stages/persistence-stage.ts",
+        "web/lib/rosterScheduleData/forgeDailyBridge.ts",
+        "web/lib/rosterScheduleData/forgeDailyBridge.test.ts",
+        "web/lib/projections/reserveProjections.ts",
+        "web/lib/projections/reserveProjections.test.ts",
+        "web/lib/rosterScheduleData/forgeReservePayload.test.ts",
+        "supabase/migrations/2026102700xxxx_forge_reserve_projections.sql (one new file)",
+        "web/lib/projections/queries/run-lifecycle-queries.ts",
+        "web/lib/projections/run-forge-projections.ts",
+        "web/lib/rosterScheduleData/bridgeForecastWire.ts",
+        "web/lib/projections/run-forge-projections.local-attempt.test.ts"
+      ],
+      "note_1650Z": "Added the 3 out-of-lease files the lane claimed. run-lifecycle-queries.ts and run-forge-projections.resume.test.ts edits were reverted (empty diff). Count-0 for unsupported reserves = TJ pop-up answer verified in session transcript 7ef17b6e (labelled conservative assumption; conditional line kept)."
+    }
+  ],
+  "held_or_blocked": [],
+  "holds": [
+    {
+      "note": "TJ's earlier C7/C5 holds released by TJ's autonomy steer 2026-10-24T16:11Z and CODEX-007"
+    }
+  ],
+  "operating_mode": {
+    "source": "TJ direct in Claude chat 2026-10-24T16:11Z + CODEX-20261024-007/S12",
+    "rule": "Claude lanes proceed autonomously inside assigned lanes and exact leases; Codex vets and sends corrections after lanes finish. No routine Scout acknowledgement or TJ courier step. TJ direct popup approvals for production/spend/migration/push/deploy and Codex Git/release custody unchanged."
+  }
+}

@@ -3,7 +3,7 @@ import { teamsInfo } from "lib/teamsInfo";
 import { buildScheduleSnapshot, weekDates } from "./schedule";
 import { fictionalLeagueWeek } from "./fixtures";
 import { fictionalTrendSources } from "./trendsFixture";
-import { buildTrendLayer, deploymentChanges, DEPLOYMENT_LIST, hotCold, RECENT_FORM_GAMES, MIN_RATE_TOI_SECONDS_LAST5, ownershipMovers, RATE_LIST, rateStandouts, TREND_LIST, TREND_MAX_GAME_AGE_DAYS, trendSectionReady,
+import { buildTrendLayer, gameSeries, deploymentChanges, DEPLOYMENT_LIST, hotCold, RECENT_FORM_GAMES, MIN_RATE_TOI_SECONDS_LAST5, ownershipMovers, RATE_LIST, rateStandouts, TREND_LIST, TREND_MAX_GAME_AGE_DAYS, trendSectionReady,
   type ShareRollingRow, type ShareSeriesRow, type ShareTrendSources } from "./trends";
 import type { SocialShareSnapshot } from "./types";
 
@@ -246,6 +246,80 @@ describe("sparklines (TT-4)", () => {
     const layer = edition().trends!;
     for (const row of [...layer.sections.hot.hot, ...layer.sections.hot.cold]) if (row.series?.every(value => value !== null)) expect(row.series.slice(-5).reduce((a, b) => a! + b!, 0)! / 5).toBeCloseTo(row.recent, 2);
     expect([...layer.sections.hot.hot, ...layer.sections.deployment.up, ...layer.sections.rates.ixgPer60, ...layer.sections.movers.risers].every(row => row.series === null || row.series?.length)).toBe(true);
+  });
+});
+
+describe("sparkline series from the sums the read holds (TT-17, run-3 causes)", () => {
+  // Season-to-date points rows (S1) keyed by season games played; `points_avg_season × games` is the season total.
+  const rows = (totals: Record<number, number>) => Object.entries(totals).map(([sgp, total]) => ({ player_id: 1, season: 20262027, game_date: `2026-10-${String(Number(sgp) + 1).padStart(2, "0")}`, strength_state: "all", season_games_played: Number(sgp), points_avg_season: total / Number(sgp) } as ShareSeriesRow));
+  const points = (row: ShareSeriesRow) => Math.round(row.points_avg_season! * row.season_games_played!);
+  const whole = (value: number) => Number.isInteger(value) && value >= 0;
+
+  it("a missing early row (Michkov: first stored row is game 4) is pinned by the latest row's last-10 total", () => {
+    // Games 4..13 shown; rows for games 1-3 are absent from the table, so game 4 has no previous row.
+    const totals = { 4: 1, 5: 2, 6: 2, 7: 2, 8: 2, 9: 3, 10: 5, 11: 7, 12: 8, 13: 10 };
+    expect(gameSeries(rows(totals), 13, points)).toEqual([null, 1, 0, 0, 0, 1, 2, 2, 1, 2]);
+    expect(gameSeries(rows(totals), 13, points, [{ from: 4, to: 13, total: 9 }], whole, true)).toEqual([0, 1, 0, 0, 0, 1, 2, 2, 1, 2]);
+  });
+
+  it("a season total of 0 through a missing stretch makes each game in it 0 (Gritsyuk: games 1-2 absent, 0 points through game 3)", () => {
+    const totals = { 3: 0, 4: 1, 5: 2, 6: 2, 7: 3, 8: 5, 9: 6, 10: 7, 11: 9 };
+    expect(gameSeries(rows(totals), 11, points, [], whole, true)).toEqual([0, 0, 1, 1, 0, 1, 2, 1, 1, 2]);
+  });
+
+  it("two missing games known only as a sum stay gaps, never split (Perfetti: games 2+3 = 4)", () => {
+    const totals = { 3: 5, 4: 6, 5: 6, 6: 8, 7: 8, 8: 8, 9: 9, 10: 9, 11: 9 };
+    expect(gameSeries(rows(totals), 11, points, [{ from: 2, to: 11, total: 8 }], whole, true)).toEqual([null, null, 1, 0, 2, 0, 0, 1, 0, 0]);
+  });
+
+  it("a missing middle row is pinned by a later row's last-5 window; rows that disagree on one game count give no sum", () => {
+    // Game 4's row is absent (Greene: rows for games 3 and 5), so games 4 and 5 are known only as a sum; the game-9
+    // row's last-5 window (games 5-9) pins game 5, and then game 4.
+    const totals = { 1: 0, 2: 1, 3: 1, 5: 3, 6: 3, 7: 4, 8: 4, 9: 5, 10: 5 };
+    expect(gameSeries(rows(totals), 10, points)).toEqual([0, 1, 0, null, null, 0, 1, 0, 1, 0]);
+    expect(gameSeries(rows(totals), 10, points, [{ from: 5, to: 9, total: 3 }], whole, true)).toEqual([0, 1, 0, 1, 1, 0, 1, 0, 1, 0]);
+    const clash = [...rows(totals), ...rows({ 6: 4 })];
+    expect(gameSeries(clash, 10, points).slice(5, 7)).toEqual([null, null]);
+  });
+});
+
+describe("rostered % and role on every tile (TT-10)", () => {
+  const obs = (key: string, date: string, pct: number | null, id: number | null = null) => ({ player_key: key, player_id: id, ownership_date: date, ownership_pct: pct });
+  const build = (ownership: ReturnType<typeof obs>[], rosterMap: { yahoo_player_id: string; nhl_player_id: string }[] | null, rolling = skater(60, [{ points_total_last5: 6, points_total_last10: 8 }])) =>
+    buildTrendLayer({ ...sources(rolling), ownership: { rows: ownership }, rosterMap: rosterMap ? { rows: rosterMap } : { failed: "timeout" } }, context);
+
+  it("takes the latest-date observation through the NHL → Yahoo map; the footer date is that day", () => {
+    const layer = build([obs("k60", "2026-10-27", 45.04), obs("k60", "2026-10-22", 30)], [{ yahoo_player_id: "k60", nhl_player_id: "60" }]);
+    expect(layer.rosteredAsOf).toBe("2026-10-27");
+    expect(layer.sections.hot.hot[0]).toMatchObject({ nhlId: 60, rostered: 45 });
+    // A bare Yahoo id maps too (the view keys some rows by player_id).
+    expect(build([obs("465.p.9", "2026-10-27", 12, 9)], [{ yahoo_player_id: "9", nhl_player_id: "60" }]).sections.hot.hot[0].rostered).toBe(12);
+  });
+
+  it("missing is null (shown as —), never 0%: no observation, no mapping, a failed map read, or ids that disagree", () => {
+    const map = [{ yahoo_player_id: "k60", nhl_player_id: "60" }];
+    expect(build([obs("k99", "2026-10-27", 40)], map).sections.hot.hot[0].rostered).toBeNull();
+    expect(build([obs("k60", "2026-10-27", null)], map).sections.hot.hot[0].rostered).toBeNull();
+    expect(build([obs("k60", "2026-10-27", 40)], []).sections.hot.hot[0].rostered).toBeNull();
+    expect(build([obs("k60", "2026-10-27", 40)], null).sections.hot.hot[0].rostered).toBeNull();
+    expect(build([obs("k60", "2026-10-27", 40), obs("k61", "2026-10-27", 3)], [...map, { yahoo_player_id: "k61", nhl_player_id: "60" }]).sections.hot.hot[0].rostered).toBeNull();
+  });
+
+  it("stale ownership shows no rostered % and no footer date", () => {
+    const layer = build([obs("k60", "2026-10-24", 45)], [{ yahoo_player_id: "k60", nhl_player_id: "60" }]);
+    expect(layer.rosteredAsOf).toBeNull();
+    expect(layer.sections.hot.hot[0].rostered).toBeNull();
+  });
+
+  it("role: the latest line, and PP from the game's PP rows: unit, off PP (unit 3 or absent), or unknown", () => {
+    const rows = (gameId: number, line: number | null, ppUnit: number | null) => skater(62, [{ game_id: gameId, line_combo_slot: line, pp_unit: ppUnit, points_total_last5: 6, points_total_last10: 8 }]);
+    const role = (rolling: ShareRollingRow[], ppc: { gameId: number; playerId: number; unit: number }[] | null) =>
+      buildTrendLayer({ ...sources(rolling), ppc: ppc ? { rows: ppc } : { failed: "timeout" } }, context).sections.hot.hot[0].role;
+    expect(role(rows(9000, 1, 1), [{ gameId: 9000, playerId: 62, unit: 1 }])).toEqual({ line: "L1", pp: 1 });
+    expect(role(rows(9000, 2, null), [{ gameId: 9000, playerId: 62, unit: 3 }])).toEqual({ line: "L2", pp: "none" });
+    expect(role(rows(9000, 2, null), [{ gameId: 9000, playerId: 99, unit: 1 }])).toEqual({ line: "L2", pp: "none" });
+    expect(role(rows(9100, null, null), [{ gameId: 9000, playerId: 99, unit: 1 }])).toEqual({ line: null, pp: null });
+    expect(role(rows(9000, 3, 2), null)).toEqual({ line: "L3", pp: null });
   });
 });
 

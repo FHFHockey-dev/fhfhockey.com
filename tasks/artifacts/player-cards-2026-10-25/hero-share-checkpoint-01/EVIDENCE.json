@@ -1,0 +1,561 @@
+{
+  "status": "Frozen local candidate; parent independent review pending",
+  "frozenAtUtc": "2026-10-25T04:55:53.234013+00:00",
+  "lease": "CODEX-PLAYER-CARDS-HERO-SHARE-20261025",
+  "sources": [
+    {
+      "path": "web/components/player-cards/EditorialPlayerCard.tsx",
+      "beforeSha256": "053d67ea06e1be6ba336db2afa35eaa04a7ec72b3e599f3d166e0c0d898d8a29",
+      "sha256": "f3c996c4c0cf9d75f533d1d4937a5db2474edb6a7c9b9665bbb3849df205afb5",
+      "bytes": 11100,
+      "integration": "Frozen candidate bytes"
+    },
+    {
+      "path": "web/components/player-cards/HeroPlayerCard.tsx",
+      "beforeSha256": null,
+      "sha256": "97743b313e22666e6abedea9ea16b17b3ad15050e3fa72a8f8d924f98c1829fc",
+      "bytes": 5279,
+      "integration": "Frozen candidate bytes"
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardShareStudio.tsx",
+      "beforeSha256": null,
+      "sha256": "3e8aad27ad7585170706c0a975237a8c29a055bac95e0b9d20bac75fd77e1d00",
+      "bytes": 8120,
+      "integration": "Frozen candidate bytes"
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardShareStudio.module.scss",
+      "beforeSha256": null,
+      "sha256": "0bcab0a01648ff20a2d083dea3ec7e3d9c7fa0ca644eba48fa5d1b976db50db3",
+      "bytes": 1418,
+      "integration": "Frozen candidate bytes"
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardShareStudio.test.tsx",
+      "beforeSha256": null,
+      "sha256": "617efa35e88953c79bcbcb16308603e562edfc79f43b050852a625ae91b7ba24",
+      "bytes": 4401,
+      "integration": "Frozen candidate bytes"
+    },
+    {
+      "path": "web/lib/player-cards/shareExport.ts",
+      "beforeSha256": null,
+      "sha256": "fddfd3bd89470da289ea14f8f6a8ea13b3407c1222d2e189482dee47a8d7bbde",
+      "bytes": 4730,
+      "integration": "Frozen candidate bytes"
+    },
+    {
+      "path": "web/lib/player-cards/shareExport.test.ts",
+      "beforeSha256": null,
+      "sha256": "9669b12a8e4ade7e3badce18ea9cd44a29ddd4c9a5297a2cfe5fd1e862938426",
+      "bytes": 3425,
+      "integration": "Frozen candidate bytes"
+    },
+    {
+      "path": "web/pages/social-share/player-cards.tsx",
+      "beforeSha256": null,
+      "sha256": "fac7acb9dd79e6812ff3d60da5b575861baede0fbd3ee66b9f56742426f92043",
+      "bytes": 836,
+      "integration": "Frozen candidate bytes"
+    },
+    {
+      "path": "web/lib/player-cards/reviewedHeroSamples.ts",
+      "beforeSha256": null,
+      "sha256": "1e8fe079c5a29b5d4355b7dfa729acabacb6ff8164a0c52c6ef93b7e2e16af18",
+      "bytes": 1371,
+      "integration": "Frozen candidate bytes"
+    },
+    {
+      "path": "web/public/player-cards/hero-samples/8479318.png",
+      "beforeSha256": null,
+      "sha256": "713a4923cf4742cefbbc09a647a249f98c095edea8eb92f7bda028929e0db065",
+      "bytes": 1152357,
+      "integration": "Frozen candidate bytes"
+    },
+    {
+      "path": "web/public/player-cards/hero-samples/8478864.png",
+      "beforeSha256": null,
+      "sha256": "4199308c2f56a9ac0244697e7162f42283f1a5c247b656fb7c9278597b3ee18c",
+      "bytes": 929229,
+      "integration": "Frozen candidate bytes"
+    },
+    {
+      "path": "web/components/SocialShare/SocialShare.tsx",
+      "beforeSha256": "ff809aa03f785462d53ec50a94e4580efecb7fb6b39e1ded2d37d37c76ffb5c4",
+      "sha256": "4b724ac9b91c8825bd392c9821546799ac73e5a6c465dad00b8f3b90d490375e",
+      "bytes": 77915,
+      "integration": "Replay minimal social-navigation.patch onto released file only"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/CHANGED-FILES.json",
+      "bytes": 3089,
+      "sha256": "e7dcf8fb7bbdf1c5bea9e4021360a6c79e7c520e25c4b39f4001351f509c9894"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/EditorialPlayerCard.before.tsx",
+      "bytes": 10699,
+      "sha256": "053d67ea06e1be6ba336db2afa35eaa04a7ec72b3e599f3d166e0c0d898d8a29"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/HANDOFF.md",
+      "bytes": 11021,
+      "sha256": "8f7ba17427e3a2b1678e52aa18237edb624a4c58a399716e920a0f0236e0c9b6"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/LEASE.json",
+      "bytes": 5257,
+      "sha256": "48101d71269e76868b29621fd0157a92c76770f0c65c1f0da7fb4de1d0e97b73"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/SocialShare.before.tsx",
+      "bytes": 77784,
+      "sha256": "ff809aa03f785462d53ec50a94e4580efecb7fb6b39e1ded2d37d37c76ffb5c4"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/baseline.json",
+      "bytes": 2556,
+      "sha256": "0fcf61021fea02c953a8107ec31462f11b8197f848ba4f244f2cabef8e973256"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/browser-check.mjs",
+      "bytes": 7409,
+      "sha256": "af127032602e96788bd87cd85a6e7978da25b1e02bda8e153b2f598f6f899d37"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/browser-command.json",
+      "bytes": 666,
+      "sha256": "ab08f9ddf97af11bac6979b1de4a177103c2239e0d8cc48c31f7c3d7465b5ef3"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/browser-initial.log",
+      "bytes": 637,
+      "sha256": "5b34991aa49b45e7b671c22b025c0451550168c488866f61b354602ca94611d7"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/browser-results.json",
+      "bytes": 653,
+      "sha256": "33defda45b1c00ef2b179dcdf2d5e458bd937caa6ad7700456580c1a149b27e6"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/browser.log",
+      "bytes": 49,
+      "sha256": "d81213b9e5233310705b24fc8a8c39dc9846f3bf64c9054c5fd8c010355b9b8e"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/candidate-pins.json",
+      "bytes": 520,
+      "sha256": "bdf790d2425479bde8bb24f465ea800d9da167a1f4bc654b7f7795ce671a9678"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/desktop.png",
+      "bytes": 50548,
+      "sha256": "110a93d5d134448939c87c007202dd8c4795efc02607bfe6ed21bb69919dc68e"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/handoff-preview.py",
+      "bytes": 4427,
+      "sha256": "40c37902dc532e3f6a6c129426be0e41e3c977bfa3610fc1b959d0d19ef7d278"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/hero-inputs.json",
+      "bytes": 1709,
+      "sha256": "45b5ac4f5c9b8e6ecc9309bc0ca2962da92e9e3e0716b99a5fe28602c81383eb"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/kaprizov-social-manifest.json",
+      "bytes": 5234,
+      "sha256": "de330abdc22f75f655e3aa945d02185221dc7d135fe86781de2ab5ded2465da8"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/kaprizov-social-square.png",
+      "bytes": 685289,
+      "sha256": "96d3776e5d549f367da34d27ae289fb7eada22432838476b6da7e99928b68074"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/lifecycle-readback.json",
+      "bytes": 405,
+      "sha256": "f70f1e06ac755b2151ad2fca45cecf5ac727ba86036b265229b1b5e5a2d97c91"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/lint-command.json",
+      "bytes": 973,
+      "sha256": "841d860f489e900a0ccccba11c1a034575a33f258ea28c044d074f9b902fb68b"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/lint.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/local-assets.json",
+      "bytes": 2775540,
+      "sha256": "880664c5adb333b10ee908e4368570a48c89b97e0d2a79c74f1b5563dceede58"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/matthews-landscape-manifest.json",
+      "bytes": 5230,
+      "sha256": "970ba22cdbb8f18949204f9b5b24bf62c818d5ac35e117dfb8e0c90566248957"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/matthews-landscape.png",
+      "bytes": 678241,
+      "sha256": "fbbf177eed3f021bca5f674a5f087be83753e7b8c163051c60f2aaf0dd1aab37"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/missing-metric.png",
+      "bytes": 645223,
+      "sha256": "2eb85c7295910fb0ce95b977540d901e0e6e67d5d5ddf137f8ff7c30f62448b1"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/nav-lint-command.json",
+      "bytes": 626,
+      "sha256": "509c96db485d3127fab8aac56fef0f6cb268043f44da53a31b94857c93f03943"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/nav-lint.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/offline.setup.ts",
+      "bytes": 206,
+      "sha256": "1cc06f39cb5f2dd1983fbd1f3c1afa18300893b5b6c97376e41fcb71e88da592"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/phone-card.png",
+      "bytes": 71487,
+      "sha256": "667bee17b1d47e6342ab302d0f7e41760a9b8fa142b5b69c64c613573f76ec62"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/phone-page.png",
+      "bytes": 227951,
+      "sha256": "b4692742c76e554fd687da226ea5dd9104bcbd94d3f3a40d53db798a535a3411"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/preservation-results.json",
+      "bytes": 35323,
+      "sha256": "2a19d7a685b0ef25e67ae326bdb89cff48b39b3c6baf54d61640316e9b62d51f"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/preview-entry.tsx",
+      "bytes": 693,
+      "sha256": "2196aeb02144308deb4d66206024742a0ed7266a441e744022135c1cd9ae544f"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/preview.css",
+      "bytes": 133,
+      "sha256": "932a1b07784d9b9aa60782cad2bf60241a19341e620dfeb6ff1887a462dd4372"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/preview.html",
+      "bytes": 3123706,
+      "sha256": "ecd560310b358ebd0521574967a480cab1521946c9d42d5f33341fcc57a5187a"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/render-command.json",
+      "bytes": 666,
+      "sha256": "5c2dbfb0a7177903c775b839a01292c4e6c94cbcfdd1587b8338f02f144b943e"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/render-preview.mjs",
+      "bytes": 2281,
+      "sha256": "86679b49c51eb5df6cee4485a204dc7d1c5d14c1846ddd8c82096a80d48cec7b"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/render.log",
+      "bytes": 268,
+      "sha256": "1777e38d8cb59aba9eafa9aef47c8bf00094604d06678ccb32eeff73c16774d9"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/route-integration.test.tsx",
+      "bytes": 1777,
+      "sha256": "34a103bd35b9e501008c576bafc9df9a90c0e82d4f9c3b4b7d51d93784cf1e84"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/run-check.py",
+      "bytes": 2457,
+      "sha256": "8e73b64ad2bcac9b299222cf066738438f230a1764be00bb68899770a2f41901"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/runtime.json",
+      "bytes": 1336,
+      "sha256": "e6be080f7a9499b21e8b94b7612d1c42384716d1042fce50f15fc30da316fab5"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/serve-preview.mjs",
+      "bytes": 1436,
+      "sha256": "68c9ebeb770cebf819d5f0af370a56c0ef4d073a94cc4c9c9c16138fc995eab4"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/share-fallback.png",
+      "bytes": 685289,
+      "sha256": "96d3776e5d549f367da34d27ae289fb7eada22432838476b6da7e99928b68074"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/social-navigation.patch",
+      "bytes": 2055,
+      "sha256": "f9d9f978e31a3a9b3d37a23231646af1ff19f74a519c1d4193dcfb3cfaddad92"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source.patch",
+      "bytes": 36702,
+      "sha256": "20acbaf3987d1336fa30de990c99f1d11ce541f2259e09cef77dd39dec18e504"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/tests-command.json",
+      "bytes": 687,
+      "sha256": "0c3bdd8e7978e35de2fbd15929829398636bc8c766ab1586b17170dffd5456b4"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/tests-initial.log",
+      "bytes": 2486,
+      "sha256": "b47081bb99b7825655dfe389a116b399d7dbaa6ec2da75a50e5a9883b0ea5bfd"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/tests.log",
+      "bytes": 1485,
+      "sha256": "e48b60af3c99f1fb6afcc0a7ce14756406964965aa3bbada20068bc1965655b8"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/tsconfig.json",
+      "bytes": 353,
+      "sha256": "168ed3b6b5f3746a7154b0634133253ebbc2cde64b0075d4d6c65953650e3720"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/types-command.json",
+      "bytes": 696,
+      "sha256": "a57d875d4da795300792164a3982754cea6e609d0cdba45b08af71c58678a3a5"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/types-initial.log",
+      "bytes": 259,
+      "sha256": "72c8d85363eaf06438944c2003fe8293deff4fd8229642e4463b969cc277c7d8"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/types.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/vitest.config.mts",
+      "bytes": 918,
+      "sha256": "74c8aaeb9ef730f8d29a87e486ae78fbb7da807e68b5a2c27fabcc7a217bb2a6"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/components/player-cards/EditorialPlayerCard.tsx",
+      "bytes": 11100,
+      "sha256": "f3c996c4c0cf9d75f533d1d4937a5db2474edb6a7c9b9665bbb3849df205afb5"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/components/player-cards/HeroPlayerCard.tsx",
+      "bytes": 5279,
+      "sha256": "97743b313e22666e6abedea9ea16b17b3ad15050e3fa72a8f8d924f98c1829fc"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/components/player-cards/PlayerCardShareStudio.module.scss",
+      "bytes": 1418,
+      "sha256": "0bcab0a01648ff20a2d083dea3ec7e3d9c7fa0ca644eba48fa5d1b976db50db3"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/components/player-cards/PlayerCardShareStudio.test.tsx",
+      "bytes": 4401,
+      "sha256": "617efa35e88953c79bcbcb16308603e562edfc79f43b050852a625ae91b7ba24"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/components/player-cards/PlayerCardShareStudio.tsx",
+      "bytes": 8120,
+      "sha256": "3e8aad27ad7585170706c0a975237a8c29a055bac95e0b9d20bac75fd77e1d00"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/lib/player-cards/reviewedHeroSamples.ts",
+      "bytes": 1371,
+      "sha256": "1e8fe079c5a29b5d4355b7dfa729acabacb6ff8164a0c52c6ef93b7e2e16af18"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/lib/player-cards/shareExport.test.ts",
+      "bytes": 3425,
+      "sha256": "9669b12a8e4ade7e3badce18ea9cd44a29ddd4c9a5297a2cfe5fd1e862938426"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/lib/player-cards/shareExport.ts",
+      "bytes": 4730,
+      "sha256": "fddfd3bd89470da289ea14f8f6a8ea13b3407c1222d2e189482dee47a8d7bbde"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/pages/social-share/player-cards.tsx",
+      "bytes": 836,
+      "sha256": "fac7acb9dd79e6812ff3d60da5b575861baede0fbd3ee66b9f56742426f92043"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/public/player-cards/hero-samples/8478864.png",
+      "bytes": 929229,
+      "sha256": "4199308c2f56a9ac0244697e7162f42283f1a5c247b656fb7c9278597b3ee18c"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/public/player-cards/hero-samples/8479318.png",
+      "bytes": 1152357,
+      "sha256": "713a4923cf4742cefbbc09a647a249f98c095edea8eb92f7bda028929e0db065"
+    }
+  ],
+  "checks": {
+    "tests": {
+      "action": "tests",
+      "command": [
+        "npm",
+        "test",
+        "--",
+        "--run",
+        "--config",
+        "../tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/vitest.config.mts"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 2.495,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    },
+    "types": {
+      "action": "types",
+      "command": [
+        "npx",
+        "--no-install",
+        "tsc",
+        "--noEmit",
+        "--project",
+        "../tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/tsconfig.json"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 1.697,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    },
+    "lint": {
+      "action": "lint",
+      "command": [
+        "npx",
+        "--no-install",
+        "eslint",
+        "components/player-cards/EditorialPlayerCard.tsx",
+        "components/player-cards/HeroPlayerCard.tsx",
+        "components/player-cards/PlayerCardShareStudio.tsx",
+        "components/player-cards/PlayerCardShareStudio.test.tsx",
+        "lib/player-cards/shareExport.ts",
+        "lib/player-cards/shareExport.test.ts",
+        "lib/player-cards/reviewedHeroSamples.ts",
+        "pages/social-share/player-cards.tsx"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 1.427,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    },
+    "nav-lint": {
+      "action": "nav-lint",
+      "command": [
+        "npx",
+        "--no-install",
+        "eslint",
+        "components/SocialShare/SocialShare.tsx"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 1.469,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    },
+    "render": {
+      "action": "render",
+      "command": [
+        "node",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/render-preview.mjs"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 0.282,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    },
+    "browser": {
+      "action": "browser",
+      "command": [
+        "node",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/browser-check.mjs"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 1.793,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    }
+  },
+  "browserResult": {
+    "checks": [
+      "Matthews artwork verified/embedded; nine actuals/ranks/percentiles reconcile to same manifest; real landscapePNG1200x1020",
+      "Second accepted identity and team palette; square1200x1200 with explicit fictitious-stat warning",
+      "Native share cancellation performs no download/post; unsupported-share download equals prepared PNG; formatchange invalidates prepared image",
+      "Missing-source reason survives new artwork/export; unverifiedGP announced and export blocked",
+      "Phone390px no horizontal overflow; controls44px; actual image and whole-page screenshots retained"
+    ],
+    "externalAttempts": [],
+    "pageErrors": []
+  },
+  "preservation": {
+    "sourceMatched": 21,
+    "artifactMatched": 149,
+    "artifactMissing": 48,
+    "artifactChanged": 0,
+    "detail": "preservation-results.json"
+  },
+  "liveActivation": false,
+  "premiumActivation": false,
+  "upstreamRequests": 0,
+  "localReadOnlyGetCount": 3,
+  "notPerformed": [
+    "image processing or generation",
+    "roster805 consumption",
+    "external download/upload",
+    "real auth hydration",
+    "actual social posting",
+    "full application typecheck/build",
+    "production reads/writes",
+    "dependencies/migrations",
+    "Git/index/commit/push/deploy",
+    "Library output retry",
+    "new workers"
+  ]
+}
