@@ -2397,6 +2397,9 @@
 
 // Phone tabs. These sit last on purpose: they restyle base rules of equal specificity declared further up.
 @media (max-width: v.$breakpoint-tablet) {
+  .opponentLogContainer {
+    height: auto;
+  }
   .consistencyAndCategoryWrapper {
     flex-direction: column;
     align-items: stretch;

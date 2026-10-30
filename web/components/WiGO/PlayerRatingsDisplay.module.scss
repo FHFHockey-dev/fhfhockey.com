@@ -138,13 +138,20 @@
   .ratingsRoot { display: flex; flex-direction: column; gap: 3px; height: 100%; min-height: 0; overflow: visible; padding: 0; }
   .ratingSection { flex: 1; min-height: 0; display: grid; grid-template-columns: 54px repeat(3, minmax(0, 1fr)); gap: 3px; overflow: visible; border: 0; }
   .ratingSection:nth-child(2) { order: 3; }
-  .ratingTitle { align-self: center; margin: 0; padding: 0; font-size: 11px; letter-spacing: .04em; text-align: left; text-transform: uppercase; }
+  .ratingTitle { align-self: center; margin: 0; padding: 0; border: 0; background: none; color: v.$text-secondary; font-size: 12px; font-weight: 700; letter-spacing: 0; text-align: left; text-transform: none; }
   .ratingsBoxes { display: contents; }
   .ratingBox {
     position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center;
-    min-height: 0; padding: 0 2px 5px; border: 0 !important; border-radius: v.$radius-sm; background: v.$background-dark;
-    &::before { content: ""; position: absolute; left: 4px; bottom: 3px; height: 3px; width: calc(100% - 8px); background: linear-gradient(90deg, var(--rating-color) var(--rating-width), rgba(255, 255, 255, .08) var(--rating-width)); border-radius: 2px; }
+    min-height: 0; padding: 0 2px 5px; border: 0 !important; background: none;
+    &::before { content: ""; position: absolute; left: 4px; bottom: 3px; height: 2px; width: calc(100% - 8px); background: linear-gradient(90deg, var(--rating-color) var(--rating-width), rgba(255, 255, 255, .08) var(--rating-width)); border-radius: 2px; }
   }
   .ratingLabel { font-size: 11px; line-height: 1.1; color: v.$text-secondary; }
   .ratingValue, .finalRating .ratingValue { font-size: var(--wigo-data-size, 11px); line-height: 1.15; font-weight: 700; }
+}
+
+@media (max-width: v.$breakpoint-tablet) {
+  // The rating colour stays on the value and a thin outline, so nine boxes don't compete with the data.
+  .ratingBox {
+    border-width: 1px !important;
+  }
 }

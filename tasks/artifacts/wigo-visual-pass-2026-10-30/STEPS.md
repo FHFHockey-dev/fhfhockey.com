@@ -120,3 +120,21 @@ Declutter in place (see `AUDIT-2026-10-30.md`). One local commit per approved st
   - CSS pure check passed on both.
 - **Screens:** `screens/step6-identity-before-after.png`, `screens/step6-phone-before-after.png`.
 - **TJ verdict:** approved 2026-10-30.
+- **Commit:** `adfb25ebd`.
+
+## Step 7: ratings, drivers, schedule
+
+- **What changed:**
+  - **Schedule:** regular weight (was 900), left aligned, sentence case, no wide spacing, a thin neutral header line (was 3 px cyan). Today's game keeps its team-colour band.
+  - **Ratings:** row labels match the panel titles (12 px bold, sentence case, no underlined box). Cells lose their boxes, and bars go from 3 px to 2 px. Rating colours are unchanged.
+  - **Drivers:** no cards inside the panel, and "Strength · 80th pct" replaces caps. Status colours are unchanged.
+  - **Pace tables:** header line is thin and neutral; the phone header matches.
+  - **Phone:** rating outlines 1 px instead of 2 px. **Fixed:** the schedule was clipped at 150 px, hiding 5 of its 10 games; it now shows them all.
+- **Changed from the audit:** ratings keep labels on every row, because column three differs (PP, PK, Special), so one shared header would lose information. The drivers footer stays on two lines because it carries two data dates.
+- **Files:** `PlayerRatingsDisplay.module.scss`, `TeamPerformanceDrivers.module.scss`, `OpponentGameLog.module.scss`, `PerGameStatsTable.module.scss`, `styles/wigoCharts.module.scss`.
+- **Checks:**
+  - WIGO vitest passed: 145 of 145, with no test edits.
+  - `e2e/wigo-one-page.spec.ts` passed: 8 of 8, run before the final phone-only fix. It is rerun at the end.
+  - CSS pure check passed on all five.
+- **Screens:** `screens/step7-panels-before-after.png`, `screens/step7-phone-before-after.png`.
+- **TJ verdict:** approved 2026-10-30.
