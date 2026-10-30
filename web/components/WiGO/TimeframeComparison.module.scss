@@ -2,6 +2,7 @@
 @use "sass:color";
 @use "sass:math";
 @use "styles/vars" as v; // Use theme variables
+@use "components/WiGO/scale" as s;
 
 .timeframeContainer {
   display: flex;
@@ -32,7 +33,7 @@
     v.$background-light,
     $lightness: -2%
   ); // Slightly darker background for contrast
-  border-radius: v.$border-radius;
+  border-radius: s.$radius-card;
   width: min(70%, 420px);
 }
 
@@ -53,10 +54,10 @@ $arrow-color: v.$text-color-secondary; // Use theme variable for arrow color
     $lightness: -2%
   ); // Optional: darken for visual separation  box-sizing: border-box;
   border: 1px solid v.$border-color-secondary; // Default border
-  border-radius: v.$border-radius-sm;
+  border-radius: s.$radius-small;
   padding: v.$space-xs v.$space-md v.$space-xs v.$space-sm; // Keep your padding
-  font-size: v.$font-size-small;
-  color: v.$text-color-primary;
+  font-size: s.$text-14;
+  color: s.$ink;
   font-family: v.$font-family-primary;
   cursor: pointer;
   width: 100%;
@@ -98,7 +99,7 @@ $arrow-color: v.$text-color-secondary; // Use theme variable for arrow color
 
   option {
     background-color: v.$background-light;
-    color: v.$text-color-primary;
+    color: s.$ink;
   }
 }
 
@@ -121,19 +122,19 @@ $arrow-color: v.$text-color-secondary; // Use theme variable for arrow color
 }
 
 .vsText {
-  color: v.$text-color-secondary;
-  font-weight: 600;
+  color: s.$ink-muted;
+  font-weight: s.$weight-bold;
   font-family: v.$font-family-primary;
-  font-size: v.$font-size-small * 0.9; // Slightly smaller VS text
+  font-size: s.$text-12; // Slightly smaller VS text
   margin: v.$space-xs 0; // Vertical margin for spacing
   flex-shrink: 0;
 }
 
 .countsTableTitle {
-  font-size: 12px;
-  color: v.$text-color-secondary;
+  font-size: s.$text-12;
+  color: s.$ink-muted;
   font-family: v.$font-family-primary;
-  font-weight: 700;
+  font-weight: s.$weight-bold;
   text-align: left;
   width: auto;
   padding: v.$space-xs 0;
@@ -153,5 +154,5 @@ $arrow-color: v.$text-color-secondary; // Use theme variable for arrow color
 :global(.wigo-one-page) {
   .timeframeContainer { min-height: 30px; padding: 0 4px; }
   .timeframeSelectContainer { padding: 0; }
-  .countsTableTitle, .vsText { font-size: 12px; }
+  .countsTableTitle, .vsText { font-size: s.$text-12; }
 }

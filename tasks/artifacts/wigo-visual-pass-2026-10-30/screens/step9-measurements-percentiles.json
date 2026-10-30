@@ -1,0 +1,102 @@
+{
+ "390x844-percentiles": {
+  "errors": [],
+  "blocked": 4,
+  "doc": [
+   390,
+   953
+  ],
+  "rootTop": 56,
+  "page": {
+   "nodes": 44,
+   "controls": 11,
+   "controlKinds": {
+    "input": 2,
+    "button": 9
+   },
+   "textNodes": 18,
+   "chars": 293,
+   "type": {
+    "14/400": 5,
+    "12/400": 4,
+    "11/400": 3,
+    "11/700": 2,
+    "14/700": 2,
+    "28.8/700": 1,
+    "12/700": 1
+   },
+   "colors": {
+    "rgb(170, 170, 170)": 12,
+    "rgb(20, 162, 210)": 3,
+    "rgb(255, 255, 255)": 1,
+    "rgb(204, 204, 204)": 1,
+    "rgb(255, 204, 51)": 1
+   },
+   "radii": {
+    "6px": 6,
+    "8px": 4
+   },
+   "backgrounds": {
+    "rgb(4, 4, 4)": 3,
+    "rgb(24, 26, 30)": 2,
+    "rgb(15, 16, 19)": 2,
+    "rgb(32, 32, 32)": 1,
+    "rgb(22, 24, 27)": 1,
+    "rgb(0, 32, 91)": 1,
+    "rgb(20, 162, 210)": 1,
+    "rgb(255, 255, 255)": 1,
+    "rgba(255, 204, 51, 0.1)": 1
+   },
+   "borders": {
+    "rgb(80, 80, 80)": 7,
+    "rgb(16, 126, 163)": 1,
+    "rgb(20, 162, 210)": 1,
+    "rgba(255, 204, 51, 0.3)": 1
+   }
+  },
+  "areas": {
+   "C19": {
+    "rect": [
+     16,
+     269,
+     358,
+     559
+    ],
+    "nodes": 23,
+    "controls": 5,
+    "controlKinds": {
+     "button": 4,
+     "input": 1
+    },
+    "textNodes": 10,
+    "chars": 228,
+    "type": {
+     "11/400": 3,
+     "14/700": 2,
+     "12/400": 2,
+     "12/700": 1,
+     "11/700": 1,
+     "14/400": 1
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 6,
+     "rgb(20, 162, 210)": 2,
+     "rgb(204, 204, 204)": 1,
+     "rgb(255, 204, 51)": 1
+    },
+    "radii": {
+     "8px": 4,
+     "6px": 1
+    },
+    "sampleText": [
+     "Rate stat percentiles",
+     "Min GP:",
+     "Player GP:",
+     "· Requested",
+     "· Applied",
+     "Current-season percentile data is incomplete for AS. Showing 20242025 player values and league cohort; these are not 20252026 player values."
+    ]
+   }
+  }
+ }
+}

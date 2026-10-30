@@ -154,3 +154,30 @@ Declutter in place (see `AUDIT-2026-10-30.md`). One local commit per approved st
   - CSS pure check passed.
 - **Screens:** `screens/step8-panel-before-after.png`, `screens/step8-phone-before-after.png`.
 - **TJ verdict:** approved 2026-10-30.
+- **Commit:** `c1d61a517`.
+
+## Step 9: type, colour and radius scale
+
+- **What changed:**
+  - **New scale partial:** `components/WiGO/_scale.scss`, built on `styles/vars`. Steps are named by size (`$text-11`, `$text-12`, `$text-14`, `$text-16`, `$text-20`), which avoids the naming trap the RSO design review found. It also holds two weights, three radii (small, card, round) and seven text-colour roles.
+  - **Stylesheets mapped onto it:** all eight WiGO `.module.scss` files take font sizes, weights, radii and text colours from the scale. `--wigo-emphasis-size` is now 16 px (20 px at ≥1800×1000), and `--wigo-data-size` is 14 px at ≥1800×1000.
+  - **Kept on purpose:** the wordmark, the italic tagline, the large player name and all data colours (DIFF heat, ratings, team, chart series).
+- **Measured** (rendered text, fixture):
+
+  | | Before (start of pass) | After |
+  | --- | --- | --- |
+  | Size/weight combos, 1280×800 | 12 | 7 |
+  | Size/weight combos, 1440×900 | 12 | 7 |
+  | Size/weight combos, phone Overview | 19 | 10 |
+  | Text under 11 px, phone Overview | 29 | 0 |
+  | Weights in use, desktop | 5 | 2 |
+  | Fixed text colours, desktop | 13 | 10 (6 roles, 4 chart-series) |
+  | Corner radii, desktop | 4 | 2 (6 and 10 px) |
+
+- **Files:** `components/WiGO/_scale.scss` (new) and the eight WiGO `*.module.scss` files.
+- **Checks:**
+  - WIGO vitest passed: 145 of 145, with no test edits.
+  - `e2e/wigo-one-page.spec.ts` passed: 8 of 8.
+  - CSS pure check passed on all eight.
+- **Screens:** `screens/step9-desktop-before-after.png`, `screens/step9-phone-before-after.png`.
+- **TJ verdict:** approved 2026-10-30.

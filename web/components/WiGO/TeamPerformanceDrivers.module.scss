@@ -1,4 +1,5 @@
 @use "styles/vars" as v;
+@use "components/WiGO/scale" as s;
 
 .body {
   display: grid;
@@ -19,7 +20,7 @@
 .driverCard {
   padding: v.$space-sm;
   border: 1px solid rgba(v.$color-white, 0.08);
-  border-radius: v.$border-radius-md;
+  border-radius: s.$radius-card;
   background: rgba(v.$background-dark, 0.78);
 }
 
@@ -31,44 +32,44 @@
 }
 
 .driverLabel {
-  color: v.$text-color-primary;
-  font-size: v.$font-size-small;
-  font-weight: 700;
+  color: s.$ink;
+  font-size: s.$text-14;
+  font-weight: s.$weight-bold;
 }
 
 .driverValue {
-  color: v.$text-color-secondary;
+  color: s.$ink-muted;
   font-family: v.$font-family-numbers;
-  font-size: v.$font-size-small;
+  font-size: s.$text-14;
 }
 
 .driverBand {
   display: inline-block;
   margin-top: 4px;
-  font-size: 11px;
-  font-weight: 700;
+  font-size: s.$text-11;
+  font-weight: s.$weight-bold;
   &::first-letter {
     text-transform: uppercase;
   }
 }
 
 .strength {
-  color: v.$color-mint-300;
+  color: s.$good;
 }
 
 .neutral {
-  color: v.$color-gold-400;
+  color: s.$warn;
 }
 
 .concern {
-  color: v.$color-coral-500;
+  color: s.$bad;
 }
 
 .driverExplanation,
 .sourceNote {
   margin: 4px 0 0;
-  color: v.$text-color-secondary;
-  font-size: 11px;
+  color: s.$ink-muted;
+  font-size: s.$text-11;
   line-height: 1.4;
 }
 
@@ -78,7 +79,7 @@
 
 .driverHelp {
   position: relative;
-  font-size: 12px;
+  font-size: s.$text-12;
   summary { cursor: pointer; }
   > div { position: absolute; z-index: 20; right: 0; width: 280px; padding: 12px; border: v.$border-subtle; background: v.$background-header; }
 }
@@ -88,7 +89,7 @@
   .driverCard { min-height: 0; display: flex; flex-direction: column; justify-content: center; padding: 1px 2px; border: 0; border-radius: 0; background: none; }
   .driverHeader { flex-direction: column; align-items: flex-start; gap: 0; }
   // 1.15 keeps three card lines plus a partial-coverage note inside the 1280×800 band.
-  .driverLabel, .driverValue, .driverBand, .sourceNote { font-size: 11px; line-height: 1.15; letter-spacing: 0; }
+  .driverLabel, .driverValue, .driverBand, .sourceNote { font-size: s.$text-11; line-height: 1.15; letter-spacing: 0; }
   .driverValue { font-family: v.$font-family-primary; font-variant-numeric: tabular-nums; }
   .driverBand { margin-top: 1px; }
 }
