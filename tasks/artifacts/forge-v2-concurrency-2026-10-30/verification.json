@@ -1,0 +1,173 @@
+{
+  "codeCandidate": "5ceb68e4b114397e692010c70c9036eccc7e2538",
+  "base": "514614ed79a75498c81ad1df0c812150d51a46b0",
+  "finding": "F1",
+  "disposition": "local concurrency repair independently accepted",
+  "checks": [
+    {
+      "check": "unit",
+      "command": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "lib/forge-v2/preparation.test.ts",
+        "lib/forge-v2/pipeline.test.ts",
+        "lib/forge-v2/api.test.ts",
+        "--reporter=verbose"
+      ],
+      "exit": 0,
+      "durationSeconds": 7.869396924972534,
+      "log": "unit.txt",
+      "logSha256": "2876da9f21a62240b6e3bcabb109c81e48686dd383a291326baf1873dc6cfde9",
+      "syntheticOnly": true,
+      "remoteActions": 0
+    },
+    {
+      "check": "native",
+      "command": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "lib/forge-v2/history.test.ts",
+        "--reporter=verbose"
+      ],
+      "exit": 0,
+      "durationSeconds": 2.828991174697876,
+      "log": "native.txt",
+      "logSha256": "3e3522004ed8e3a3503b3585890e7f6afb4becedfffe2ed5f7cd23ebfcf0faee",
+      "syntheticOnly": true,
+      "remoteActions": 0
+    },
+    {
+      "check": "types",
+      "command": [
+        "/Users/tim/Code/fhfhockey.com/web/node_modules/.bin/tsc",
+        "--noEmit",
+        "--project",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-v2-concurrency-2026-10-30/tsconfig.json"
+      ],
+      "exit": 0,
+      "durationSeconds": 1.4126648902893066,
+      "log": "types.txt",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "syntheticOnly": true,
+      "remoteActions": 0
+    },
+    {
+      "check": "lint",
+      "command": [
+        "/Users/tim/Code/fhfhockey.com/web/node_modules/.bin/eslint",
+        "lib/forge-v2/history.server.ts",
+        "lib/forge-v2/history.test.ts",
+        "lib/forge-v2/preparation.server.ts",
+        "lib/forge-v2/preparation.test.ts",
+        "lib/forge-v2/fixtureHarness.server.ts"
+      ],
+      "exit": 0,
+      "durationSeconds": 1.4563119411468506,
+      "log": "lint.txt",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "syntheticOnly": true,
+      "remoteActions": 0
+    },
+    {
+      "check": "independent",
+      "command": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "lib/forge-v2/independent-concurrency.test.ts",
+        "--reporter=verbose"
+      ],
+      "exit": 0,
+      "durationSeconds": 2.964956045150757,
+      "log": "independent.txt",
+      "logSha256": "2bb67b788c5eff2215a1cd5508a0ebd916fc57bfa4be15485a75d3290c5e788f",
+      "syntheticOnly": true,
+      "remoteActions": 0
+    }
+  ],
+  "initialNativeAttempt": "native-initial.txt:13 passed,1 fixture failed; same-time archive successor corrected to advancing asOf; original failure preserved",
+  "node": "v22.11.0",
+  "isolation": "Disposable copied source; envDir:false; allowlisted env, no env files/credentials/data; PostgreSQL17 Unix sockets only, private synthetic roles and cluster cleanup; shared heavy lock",
+  "notRun": [
+    "browser rerun",
+    "full production build",
+    "broad repository suite",
+    "real data ingestion/fitting/calibration",
+    "hosted migration or production job"
+  ],
+  "scopeLimits": [
+    "Supported PostgresHistoryStore writers are fenced; privileged direct SQL bypass is outside this application guard.",
+    "Legacy corrupted heads are not retrospectively rewritten.",
+    "Native concurrency coverage was run by Chef and reviewed here; independent retest uses synthetic fixture store and real preparation/read functions.",
+    "No scientific qualification, provider data, production behavior, deployment or activation approval."
+  ],
+  "sourcePins": [
+    {
+      "path": "web/lib/forge-v2/history.server.ts",
+      "sha256": "2c690e5b7d0212a7b3f40653993e45170bdb1c1b072cf1dac7a386c67a5585bf",
+      "snapshotMatches": true
+    },
+    {
+      "path": "web/lib/forge-v2/history.test.ts",
+      "sha256": "f661d234204928417e156e61c84280ef3ca923a208f8aa313e755fcbf4f65663",
+      "snapshotMatches": true
+    },
+    {
+      "path": "web/lib/forge-v2/preparation.server.ts",
+      "sha256": "d2eade4ed0c37807f025bc031de00ad89423e77581f0d7daa5d518d537137710",
+      "snapshotMatches": true
+    },
+    {
+      "path": "web/lib/forge-v2/preparation.test.ts",
+      "sha256": "0980846c28be711c4f69399acfb623e33bf8c24e50f728d2f9091714a69e939a",
+      "snapshotMatches": true
+    },
+    {
+      "path": "web/lib/forge-v2/fixtureHarness.server.ts",
+      "sha256": "0642979cbccdb726666199bd076e825ae03d68f1f02258e9f6034e1716c35ab9",
+      "snapshotMatches": true
+    }
+  ],
+  "realDataReadiness": "real-data-readiness.json",
+  "currentTaskStatus": "task-status.json",
+  "incompleteOriginalSubtasks": [
+    "2.2",
+    "2.4",
+    "2.5",
+    "7.1",
+    "7.3",
+    "8.3",
+    "8.5",
+    "13.2",
+    "13.4",
+    "14.1",
+    "14.2",
+    "14.3",
+    "14.4",
+    "14.5",
+    "14.6"
+  ],
+  "incompleteNewDependencies": [
+    "NEW-07",
+    "NEW-08"
+  ],
+  "objectiveComplete": false,
+  "goalMarkerActive": false,
+  "restrictedActions": {
+    "protectedDataReads": 0,
+    "providerRequests": 0,
+    "productionRequests": 0,
+    "hostedMigrations": 0,
+    "pushes": 0,
+    "deployments": 0,
+    "activation": false
+  },
+  "actionStatus": {
+    "denied": [],
+    "pendingToolApprovals": [],
+    "uncertain": [],
+    "realDataTest": "not_attempted; no admitted source packet/rights/custody/schema mapping established"
+  }
+}

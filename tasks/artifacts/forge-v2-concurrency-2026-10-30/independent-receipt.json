@@ -1,0 +1,16 @@
+{
+  "check": "independent",
+  "command": [
+    "node",
+    "node_modules/vitest/vitest.mjs",
+    "run",
+    "lib/forge-v2/independent-concurrency.test.ts",
+    "--reporter=verbose"
+  ],
+  "exit": 0,
+  "durationSeconds": 2.964956045150757,
+  "log": "independent.txt",
+  "logSha256": "2bb67b788c5eff2215a1cd5508a0ebd916fc57bfa4be15485a75d3290c5e788f",
+  "syntheticOnly": true,
+  "remoteActions": 0
+}

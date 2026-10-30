@@ -1,0 +1,24 @@
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.7 /private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/forge-v2-concurrency-8iniyhsd/web
+
+ ✓ lib/forge-v2/history.test.ts > FORGE v2 native PostgreSQL persistence (T3) > publishes once under concurrent retries and preserves exact bytes 22ms
+ ✓ lib/forge-v2/history.test.ts > FORGE v2 native PostgreSQL persistence (T3) > rejects in-transaction proof, waits for committed output, and cannot backdate acknowledgement 5ms
+ ✓ lib/forge-v2/history.test.ts > FORGE v2 native PostgreSQL persistence (T3) > pages beyond 3,000 revisions with a fixed snapshot while new publications arrive 1081ms
+ ✓ lib/forge-v2/history.test.ts > FORGE v2 native PostgreSQL persistence (T3) > keeps a stable transaction snapshot when an earlier receipt commits between pages 6ms
+ ✓ lib/forge-v2/history.test.ts > FORGE v2 native PostgreSQL persistence (T3) > appends observations/corrections separately and fences mutable queue snapshots 3ms
+ ✓ lib/forge-v2/history.test.ts > FORGE v2 native PostgreSQL persistence (T3) > atomically fences database publication and retains the original receipt on a new attempt 7ms
+ ✓ lib/forge-v2/history.test.ts > FORGE v2 native PostgreSQL persistence (T3) > atomically saves queue history, rejects stale captures and rolls back all writes on identity collision 5ms
+ ✓ lib/forge-v2/history.test.ts > FORGE v2 native PostgreSQL persistence (T3) > runs prepared queue issuance through native claims, private files and immutable records 154ms
+ ✓ lib/forge-v2/history.test.ts > FORGE v2 native PostgreSQL persistence (T3) > retains an initial archived-game context lookup after that target leaves the current queue 8ms
+ ✓ lib/forge-v2/history.test.ts > FORGE v2 native PostgreSQL persistence (T3) > CAS-reconciles a trade before retaining linked observations and denies the former worker 8ms
+ ✓ lib/forge-v2/history.test.ts > FORGE v2 native PostgreSQL persistence (T3) > atomically fences competing context heads, exact retries, time regression and insertion rollback 17ms
+ ✓ lib/forge-v2/history.test.ts > FORGE v2 pinned artifact retention (T3) > retains immutable bytes through archive read and restoration 44ms
+ ✓ lib/forge-v2/history.test.ts > FORGE v2 pinned artifact retention (T3) > reports altered/missing/non-file artifacts without substituting archive bytes 2ms
+ ✓ lib/forge-v2/history.test.ts > FORGE v2 pinned artifact retention (T3) > reports actual permission failures and hash-pinned undecodable bytes 12ms
+
+ Test Files  1 passed (1)
+      Tests  14 passed (14)
+   Start at  08:26:47
+   Duration  2.45s (transform 116ms, setup 3ms, collect 164ms, tests 2.15s, environment 0ms, prepare 36ms)
+

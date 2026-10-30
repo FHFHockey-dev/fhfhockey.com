@@ -1,0 +1,16 @@
+{
+  "check": "native",
+  "command": [
+    "node",
+    "node_modules/vitest/vitest.mjs",
+    "run",
+    "lib/forge-v2/history.test.ts",
+    "--reporter=verbose"
+  ],
+  "exit": 1,
+  "durationSeconds": 2.5776162147521973,
+  "log": "native.txt",
+  "logSha256": "e767e37208ffb5eea509ac74ca79023e657068dafcfa79a618cffadb0cc70962",
+  "syntheticOnly": true,
+  "remoteActions": 0
+}

@@ -1,0 +1,18 @@
+{
+  "check": "unit",
+  "command": [
+    "node",
+    "node_modules/vitest/vitest.mjs",
+    "run",
+    "lib/forge-v2/preparation.test.ts",
+    "lib/forge-v2/pipeline.test.ts",
+    "lib/forge-v2/api.test.ts",
+    "--reporter=verbose"
+  ],
+  "exit": 0,
+  "durationSeconds": 7.869396924972534,
+  "log": "unit.txt",
+  "logSha256": "2876da9f21a62240b6e3bcabb109c81e48686dd383a291326baf1873dc6cfde9",
+  "syntheticOnly": true,
+  "remoteActions": 0
+}

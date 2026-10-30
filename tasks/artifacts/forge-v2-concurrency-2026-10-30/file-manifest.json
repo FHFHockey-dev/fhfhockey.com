@@ -1,0 +1,148 @@
+{
+  "codeCommit": "5ceb68e4b114397e692010c70c9036eccc7e2538",
+  "reviewedProductFiles": [
+    {
+      "path": "web/lib/forge-v2/history.server.ts",
+      "sha256": "2c690e5b7d0212a7b3f40653993e45170bdb1c1b072cf1dac7a386c67a5585bf",
+      "snapshotMatches": true
+    },
+    {
+      "path": "web/lib/forge-v2/history.test.ts",
+      "sha256": "f661d234204928417e156e61c84280ef3ca923a208f8aa313e755fcbf4f65663",
+      "snapshotMatches": true
+    },
+    {
+      "path": "web/lib/forge-v2/preparation.server.ts",
+      "sha256": "d2eade4ed0c37807f025bc031de00ad89423e77581f0d7daa5d518d537137710",
+      "snapshotMatches": true
+    },
+    {
+      "path": "web/lib/forge-v2/preparation.test.ts",
+      "sha256": "0980846c28be711c4f69399acfb623e33bf8c24e50f728d2f9091714a69e939a",
+      "snapshotMatches": true
+    },
+    {
+      "path": "web/lib/forge-v2/fixtureHarness.server.ts",
+      "sha256": "0642979cbccdb726666199bd076e825ae03d68f1f02258e9f6034e1716c35ab9",
+      "snapshotMatches": true
+    }
+  ],
+  "unchangedPriorDependencyPins": 45,
+  "files": [
+    {
+      "path": "tasks/artifacts/forge-v2-concurrency-2026-10-30/OWNERSHIP.json",
+      "sha256": "3bd77ec9e6abf9fb969b9895203e3962be01ed70a2849c3c55ab42995e348527",
+      "bytes": 1371
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-concurrency-2026-10-30/independent-concurrency.test.ts",
+      "sha256": "14bfcb73f6102ae3dea28bb54bbdfe5cc5a28b4405bfd627416afa4eb5da3918",
+      "bytes": 2925
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-concurrency-2026-10-30/independent-receipt.json",
+      "sha256": "2569367f83da34276b9cf9fe5293ed15ed9dd1d74a46c2b5ffe3ece47450f4ef",
+      "bytes": 398
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-concurrency-2026-10-30/independent-review.json",
+      "sha256": "9ad590c62e3f8e0c82b3fe19528cea98a380f876dfe54c89f62beaf0a36b2edc",
+      "bytes": 4931
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-concurrency-2026-10-30/independent-run.py",
+      "sha256": "fdfd609126b3a7f09c9bf0557635e5580fdeef584a1fb7d9f13d8dc093aff42d",
+      "bytes": 1606
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-concurrency-2026-10-30/independent.txt",
+      "sha256": "2bb67b788c5eff2215a1cd5508a0ebd916fc57bfa4be15485a75d3290c5e788f",
+      "bytes": 967
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-concurrency-2026-10-30/lint-receipt.json",
+      "sha256": "806a7c0cd413a070674664874fb811315da5b3f3dad0620d8ff3a8f1aa284867",
+      "bytes": 513
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-concurrency-2026-10-30/lint.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-concurrency-2026-10-30/native-initial-receipt.json",
+      "sha256": "d4863f3ba165c9d381547e0afe7b5d22e22d462036862a7f4265a2ea172f63ce",
+      "bytes": 373
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-concurrency-2026-10-30/native-initial.txt",
+      "sha256": "e767e37208ffb5eea509ac74ca79023e657068dafcfa79a618cffadb0cc70962",
+      "bytes": 3699
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-concurrency-2026-10-30/native-receipt.json",
+      "sha256": "d296336733950ce642280c9e1a0276543fd18aacabbf4a905bf069eb962a2010",
+      "bytes": 372
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-concurrency-2026-10-30/native.txt",
+      "sha256": "3e3522004ed8e3a3503b3585890e7f6afb4becedfffe2ed5f7cd23ebfcf0faee",
+      "bytes": 2812
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-concurrency-2026-10-30/real-data-readiness.json",
+      "sha256": "e4fde64a2540c560148f14db6bd75bc5d612161559caf89b027fd66c194690fd",
+      "bytes": 10391
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-concurrency-2026-10-30/run.py",
+      "sha256": "30c6f9078150f4d6297f222f0c4068717df7b448a26dc8cd94d15bfd48f9d5c5",
+      "bytes": 3130
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-concurrency-2026-10-30/snapshot-path.txt",
+      "sha256": "aed6bee90ce03c7601bd93f88e31d58f99c57c42d94984e579a13cf94b3ddfb1",
+      "bytes": 79
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-concurrency-2026-10-30/task-status.json",
+      "sha256": "f0ab7d7e502bffd2133f47ac2b11036c9000f141a09c87e9ff5c616e7462be99",
+      "bytes": 32228
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-concurrency-2026-10-30/tsconfig.json",
+      "sha256": "798e4afac421c23d8c37e4c69fb7f57652c5e51c1fade5feacec09ad7a8c0a7d",
+      "bytes": 296
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-concurrency-2026-10-30/types-receipt.json",
+      "sha256": "ad2693a58359dbdfc8261c016a77a233b14d1df06eaac5e25d6171cb4c7ef0c2",
+      "bytes": 443
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-concurrency-2026-10-30/types.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-concurrency-2026-10-30/unit-receipt.json",
+      "sha256": "36f49e63114b62519d4dcd2ae28c689bb451c368eae4770e23be0e71f7bc3edd",
+      "bytes": 441
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-concurrency-2026-10-30/unit.txt",
+      "sha256": "2876da9f21a62240b6e3bcabb109c81e48686dd383a291326baf1873dc6cfde9",
+      "bytes": 6167
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-concurrency-2026-10-30/verification.json",
+      "sha256": "6b5b7a02a2f24b4e97b695b8eba0d89f07d980a6f7d847ad80ba580ecfd78049",
+      "bytes": 5530
+    },
+    {
+      "path": "tasks/tasks-prd-forge-v2-skater-game-forecasts.md",
+      "sha256": "88094b7e0ecaeec2650d443bf880be9273ab7150375b737103dc0845c8dd90bd",
+      "bytes": 65167
+    }
+  ]
+}
