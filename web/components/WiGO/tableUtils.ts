@@ -4,6 +4,10 @@ import {
   shouldUseGpForDiff
 } from "./statMetadata";
 
+/** 20252026 → "2025–26". */
+export const formatSeasonRange = (season: number | string) =>
+  `${String(season).slice(0, 4)}–${String(season).slice(6)}`;
+
 /**
  * Computes the .DIFF property for each row in the tableData based on comparing leftKey vs. rightKey.
  * Applies per-game calculation for true counts and direct comparison for rates/averages/percentages.

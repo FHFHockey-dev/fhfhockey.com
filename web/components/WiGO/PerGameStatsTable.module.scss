@@ -39,11 +39,9 @@
     padding: 6px v.$space-sm;
     border-bottom: 1px solid v.$border-color-secondary;
     background: color.adjust(v.$background-dark, $lightness: -5%);
-    color: v.$text-color-primary;
-    font-size: 11px;
+    color: v.$text-color-secondary;
+    font-size: 12px;
     font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
 
     span {
       color: v.$text-color-secondary;
@@ -236,7 +234,7 @@ table.verticalStatsTable {
       border: v.$border-subtle;
       border-radius: v.$radius-sm;
       background: v.$background-medium;
-      h3 { margin: 0; padding: 2px 6px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; span { color: v.$text-secondary; letter-spacing: 0; } }
+      h3 { margin: 0; padding: 2px 6px; font-size: 12px; span { color: v.$text-secondary; } }
     }
     .productionSnapshot { grid-area: prod; display: flex; flex-direction: column; }
     .summaryStatus { margin: 0; padding: 2px 6px; font-size: 11px; line-height: 1.2; }
@@ -250,7 +248,7 @@ table.verticalStatsTable {
       small { font-family: v.$font-family-primary; white-space: nowrap; }
     }
     .paceTables { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; padding: 0 4px 3px; }
-    .paceHelp summary { padding: 3px 6px; font-size: 11px; }
+    .paceHelp summary { padding: 2px 6px; font-size: 12px; }
     .verticalStatsTable {
       min-height: 0; height: 100%; border: 0;
       th, td, tbody td.valueCell, thead th { font-size: var(--wigo-data-size, 11px); letter-spacing: 0; padding: 0 2px; height: auto; line-height: 1.15; }
@@ -269,7 +267,8 @@ table.verticalStatsTable {
 .paceHelp {
   position: relative;
   summary { cursor: pointer; }
-  summary h3 { display: inline; }
+  summary h3 { display: inline; border: 0; padding: 0; background: none; }
+  summary::after { content: " ⓘ"; }
   summary { padding: 6px; border-bottom: v.$border-subtle; font-size: 12px; }
   p { position: absolute; top: 100%; left: 0; z-index: 10; width: 260px; margin: 0; padding: 10px; border: v.$border-subtle; border-radius: v.$radius-sm; background: v.$background-dark; font-size: 12px; line-height: 1.4; }
 }

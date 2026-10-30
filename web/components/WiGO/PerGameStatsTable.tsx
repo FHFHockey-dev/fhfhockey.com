@@ -5,6 +5,7 @@ import {
   SkaterTotalsData
 } from "utils/fetchWigoPlayerStats";
 import { formatWigoStatValue } from "./statMetadata";
+import { formatSeasonRange } from "./tableUtils";
 import { WIGO_ERROR_MESSAGES } from "./errorMessages";
 import styles from "./PerGameStatsTable.module.scss";
 
@@ -150,7 +151,7 @@ const PerGameStatsTable: React.FC<PerGameStatsTableProps> = ({
   return (
     <div className={`${styles.perGameTableContainer} ${desktop ? styles.desktopSummary : ""}`}>
       <section className={styles.productionSnapshot} data-coverage="C04">
-        <h3>Season production <span>{totalsData?.season || seasonId || "Season unavailable"}</span></h3>
+        <h3>Season production <span>{(totalsData?.season || seasonId) ? formatSeasonRange((totalsData?.season || seasonId)!) : "Season unavailable"}</span></h3>
         {status ? <p className={styles.summaryStatus} role="status">{status}</p> : <div className={styles.productionGrid}>
           {productionSnapshot.map(stat => <div key={stat.label} className={styles.productionStat}>
             <span>{stat.label}</span><strong>{stat.value ?? "-"}</strong><small>{formatStatValue(stat.perGame)} / GP</small>

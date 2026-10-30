@@ -39,7 +39,7 @@ const TeamPerformanceDrivers: React.FC<TeamPerformanceDriversProps> = ({
 
   return (
     <WigoSectionCard
-      title={`${teamAbbreviation || "Team"} Performance Drivers`}
+      title={`${teamAbbreviation || "Team"} performance drivers`}
       toolbar={result ? <details className={styles.driverHelp}><summary aria-label="Team driver definitions and source context">ⓘ</summary><div>{result.drivers.map(driver => <p key={driver.key}><strong>{driver.label}:</strong> {driver.explanation}</p>)}<p>League sample: {result.leagueSample} teams. Five-on-five rows {result.fiveOnFiveOldestDate}–{result.fiveOnFiveDate}; special teams rows {result.specialTeamsOldestDate}–{result.specialTeamsDate}.</p></div></details> : undefined}
       bodyClassName={styles.body}
     >

@@ -19,4 +19,19 @@ Declutter in place (see `AUDIT-2026-10-30.md`). One local commit per approved st
   - Desktop 1280×800 screenshot byte-identical before and after.
 - **Screens:** `screens/step1-percentiles-before-after.png`, `screens/step1-trends-before-after.png`, `screens/step1-comparison-before-after.png`.
 - **TJ verdict:** approved 2026-10-30.
-- **Commit:** see `git log` ("WIGO UI pass step 1").
+- **Commit:** `864226544`.
+
+## Step 2: one panel title style
+
+- **What changed:**
+  - **Titles:** every panel title is 12 px, bold, sentence case, muted, with no letter spacing and the same header background: chart panels, Category percentiles, Rate stat percentiles, the game log, Season production, Per-game / pace, Compare. Wording follows ("Time on ice", "Point consistency", "VAN performance drivers", "Compare").
+  - **Category percentiles:** the filled teal band is gone, so the team-colour rail on identity is the only brand accent. The context fits on one line.
+  - **Help:** ⓘ alone, with no ▶ (five places). Per-game / pace gets its ⓘ from CSS. Summaries have a visible focus ring.
+  - **Seasons:** one format, 2025–26, through a new `formatSeasonRange` helper in `tableUtils.ts`. The Rate percentiles detail line still shows raw ids (tests pin it); step 8 covers it.
+- **Files:** `styles/wigoCharts.module.scss`, `PerGameStatsTable.module.scss`, `TimeframeComparison.module.scss`, `ConsistencyChart.tsx`, `GameScoreSection.tsx`, `PpgLineChart.tsx`, `ToiLineChart.tsx`, `RateStatPercentiles.tsx`, `TeamPerformanceDrivers.tsx`, `TimeframeComparison.tsx`, `WigoComparisonMatrix.tsx`, `WigoDashboardSections.tsx`, `PerGameStatsTable.tsx`, `tableUtils.ts`, plus two test strings ("Rate stat percentiles", "2024–25").
+- **Checks:**
+  - WIGO vitest passed: 145 of 145.
+  - eslint on touched files: clean.
+  - CSS pure check passed on all three.
+- **Screens:** `screens/step2-desktop-before-after.png`, `screens/step2-phone-before-after.png`.
+- **TJ verdict:** approved 2026-10-30.

@@ -16,7 +16,7 @@ import WigoComparisonMatrix from "./WigoComparisonMatrix";
 import StatsTable from "components/WiGO/StatsTable";
 import TimeframeComparison from "components/WiGO/TimeframeComparison";
 import TeamPerformanceDrivers from "components/WiGO/TeamPerformanceDrivers";
-import { formatCell as formatCellUtil } from "components/WiGO/tableUtils";
+import { formatCell as formatCellUtil, formatSeasonRange } from "components/WiGO/tableUtils";
 import { Player, TableAggregateData, TeamColors } from "components/WiGO/types";
 import styles from "styles/wigoCharts.module.scss";
 
@@ -306,7 +306,7 @@ export function WigoTrendsSection({
         <div className={styles.percentileChartContainer} data-coverage="C15">
           <div className={styles.chartTitle}>
             <h3 style={{ margin: 0 }}>Category percentiles</h3>
-            {summaryOnly && <span className={styles.radarContext}>Skaters · {currentSeasonId ?? "Season unavailable"} · 0–100</span>}
+            {summaryOnly && <span className={styles.radarContext}>Skaters · {currentSeasonId ? formatSeasonRange(currentSeasonId) : "Season unavailable"} · 0–100</span>}
           </div>
           <CategoryCoverageChart
             playerId={selectedPlayer?.id}

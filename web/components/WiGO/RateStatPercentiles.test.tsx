@@ -69,7 +69,7 @@ describe("RateStatPercentiles", () => {
         />
       );
       await waitFor(() =>
-        expect(screen.getByText("Rate Stat Percentiles")).toBeTruthy()
+        expect(screen.getByText("Rate stat percentiles")).toBeTruthy()
       );
       return container.querySelector("#gpSlider")?.getAttribute("max");
     }
@@ -244,7 +244,7 @@ describe("RateStatPercentiles", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText("Rate Stat Percentiles")).toBeTruthy();
+      expect(screen.getByText("Rate stat percentiles")).toBeTruthy();
     });
 
     const chartPayload = JSON.parse(

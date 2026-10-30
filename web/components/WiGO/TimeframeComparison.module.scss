@@ -139,12 +139,10 @@ $arrow-color: v.$text-color-secondary; // Use theme variable for arrow color
 }
 
 .countsTableTitle {
-  font-size: 11px;
-  color: v.$text-color-primary;
-  font-family: "Lucida Sans", "Lucida Grande", sans-serif;
-  font-weight: 600; // Less bold
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
+  font-size: 12px;
+  color: v.$text-color-secondary;
+  font-family: v.$font-family-primary;
+  font-weight: 700;
   text-align: left;
   width: auto;
   padding: v.$space-xs 0;

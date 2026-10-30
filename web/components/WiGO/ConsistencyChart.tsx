@@ -154,7 +154,7 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({
   // will automatically pick up the new colors stored in processedData
   return (
     <WigoSectionCard
-      title="Point Consistency"
+      title="Point consistency"
       toolbar={<span className={styles.consistencyGp}>{gameLogs.length} GP</span>}
       bodyClassName={styles.sectionCardBodyFlush}
     >

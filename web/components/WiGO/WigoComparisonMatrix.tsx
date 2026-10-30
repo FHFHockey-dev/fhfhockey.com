@@ -7,7 +7,7 @@ import {
   WigoStatLabel,
   isWigoCountChartStat
 } from "./statMetadata";
-import { formatCell, formatDiffPercent } from "./tableUtils";
+import { formatCell, formatDiffPercent, formatSeasonRange } from "./tableUtils";
 import TimeframeComparison from "./TimeframeComparison";
 import GameLogChart from "./StatsTableRowChart";
 import styles from "styles/wigoCharts.module.scss";
@@ -215,7 +215,7 @@ export default function WigoComparisonMatrix({
           {selectedMetric} game log{" "}
           <span>
             {currentSeasonId
-              ? `${String(currentSeasonId).slice(0, 4)}–${String(currentSeasonId).slice(6)}`
+              ? formatSeasonRange(currentSeasonId)
               : "Season unavailable"}{" "}
             games
           </span>

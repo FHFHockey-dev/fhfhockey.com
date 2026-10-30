@@ -2533,3 +2533,55 @@
   font-size: 12px;
   line-height: 1.35;
 }
+
+// One panel title style on every screen size. `.wigoDashHeader` lifts these above the older per-layout header rules.
+@mixin panel-title {
+  margin: 0;
+  padding: 0;
+  color: v.$text-color-secondary;
+  font-family: v.$font-family-primary;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.wigoDashHeader {
+  .chartHeader h3,
+  .percentileChartContainer .chartTitle h3,
+  .selectedStatPanel h3,
+  .percentileFiltersContainer .filtersTitle {
+    @include panel-title;
+  }
+  .selectedStatPanel h3 span {
+    font-weight: 400;
+  }
+  .percentileFiltersContainer .filtersTitle {
+    border-bottom: 0;
+  }
+  .percentileChartContainer .chartTitle {
+    justify-content: space-between;
+    padding: 2px 6px;
+    border-bottom: 1px solid color.adjust(v.$background-dark, $lightness: 3%);
+    background-color: color.adjust(v.$background-dark, $lightness: -5%);
+    text-transform: none;
+  }
+  .radarContext {
+    color: v.$text-color-secondary;
+    white-space: nowrap;
+  }
+
+  // Every disclosure on this page is a help note: ⓘ alone says so, without a second ▶ marker.
+  details > summary {
+    list-style: none;
+    &::-webkit-details-marker {
+      display: none;
+    }
+    &:focus-visible {
+      outline: 2px solid v.$primary-color;
+      outline-offset: 1px;
+      border-radius: 2px;
+    }
+  }
+}
+

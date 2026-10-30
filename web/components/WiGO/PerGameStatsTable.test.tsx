@@ -59,7 +59,7 @@ describe("PerGameStatsTable", () => {
     });
 
     expect(screen.getByText("Season production")).toBeTruthy();
-    expect(screen.getByText("20242025")).toBeTruthy();
+    expect(screen.getByText("2024–25")).toBeTruthy();
     const goalsRow = screen.getByRole("rowheader", { name: "G" }).closest("tr")!;
     expect(within(goalsRow).getByText("42")).toBeTruthy();
     const pointsRow = screen.getByRole("rowheader", { name: "PTS" }).closest("tr")!;

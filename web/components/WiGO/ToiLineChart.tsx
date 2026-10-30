@@ -317,7 +317,7 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
   };
 
   // ---  Title based on view ---
-  const chartTitle = chartView === "toi" ? "Time On Ice" : "Power Play TOI %";
+  const chartTitle = chartView === "toi" ? "Time on ice" : "Power play TOI %";
   const chartData = getChartData();
   const chartOptions = getChartOptions();
 

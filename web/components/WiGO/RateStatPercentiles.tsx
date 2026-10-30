@@ -21,6 +21,7 @@ import {
 } from "utils/calculatePercentiles";
 import { formatOrdinal } from "utils/formattingUtils";
 import { WIGO_ERROR_MESSAGES } from "./errorMessages";
+import { formatSeasonRange } from "./tableUtils";
 import useCurrentSeason from "hooks/useCurrentSeason";
 
 ChartJS.register(
@@ -365,14 +366,13 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
   );
 
   const strengthLabel = selectedStrength.toUpperCase();
-  const formatSeason = (season: number) => `${String(season).slice(0, 4)}–${String(season).slice(6)}`;
   const thresholdMessages: Array<{ short: string; full: string }> = [];
   if (allPlayersStats.length === 0) {
     thresholdMessages.push({ short: `No ${strengthLabel} data`, full: `No player data available for ${strengthLabel}.` });
   }
   if (calculatedPercentiles !== null && percentileCohort?.fallbackReason) {
     thresholdMessages.push({
-      short: `Showing ${formatSeason(percentileCohort.appliedSeasonId)} values and cohort, not ${formatSeason(seasonId as number)}`,
+      short: `Showing ${formatSeasonRange(percentileCohort.appliedSeasonId)} values and cohort, not ${formatSeasonRange(seasonId as number)}`,
       full: percentileCohort.fallbackReason
     });
   }
@@ -409,7 +409,7 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
       {!isLoading && !error && playerId && seasonId && (
         <div className={styles.mainContentWrapper}>
           <div className={styles.percentileFiltersContainer}>
-            <h1 className={styles.filtersTitle}>Rate Stat Percentiles</h1>
+            <h1 className={styles.filtersTitle}>Rate stat percentiles</h1>
             <div className={styles.filterControlsWrapper}>
               <div className={styles.strengthSelector}>
                 {(["as", "es", "pp", "pk"] as PercentileStrength[]).map(
