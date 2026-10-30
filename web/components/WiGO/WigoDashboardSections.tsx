@@ -203,7 +203,6 @@ export function WigoDashboardHeader({
               />
             </div>
             <div className={styles.selectedPlayerText}>
-              <strong>{selectedPlayer.fullName}</strong>
               <span>
                 {teamAbbreviation || "NHL"} · {formatPosition(selectedPlayer.position)}
               </span>
@@ -215,11 +214,6 @@ export function WigoDashboardHeader({
         ) : (
           <span className={styles.noSelectedPlayer}>No player selected</span>
         )}
-      </div>
-      <div className={styles.wigoHeader} aria-hidden="true">
-        <div className={styles.headerText}>
-          Player research
-        </div>
       </div>
     </>
   );

@@ -20,3 +20,5 @@ None.
 - Phone rules above base rules in wigoCharts.module.scss lose on source order; new phone rules go in the block at the end of the file.
 - Canvas fonts need a generic fallback ("Roboto Condensed, sans-serif") or they paint serif.
 - Phone full-page captures hide the fixed nav; step0 phone shots still have it.
+- TJ keeps brand elements: the "What Is Going On" italic caps tagline stays. Do not flatten branding; ask first.
+- Do not widen controls just to fill freed space (search capped at 340 px).

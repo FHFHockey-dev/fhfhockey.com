@@ -35,3 +35,21 @@ Declutter in place (see `AUDIT-2026-10-30.md`). One local commit per approved st
   - CSS pure check passed on all three.
 - **Screens:** `screens/step2-desktop-before-after.png`, `screens/step2-phone-before-after.png`.
 - **TJ verdict:** approved 2026-10-30.
+- **Commit:** `4661ec6cb`.
+
+## Step 3: top bar
+
+- **What changed:**
+  - **Name:** it now shows in the search box and the identity panel, no longer a third time in the selected-player chip.
+  - **Chip:** no box. It keeps the thumbnail, team · position and Clear in plain 12 px text at the far right.
+  - **"Player research":** the decorative label is gone (it was hidden from screen readers anyway).
+  - **Search box:** capped at 340 px on desktop, 14 px text. The phone keeps 16 px so iOS doesn't zoom on tap. All corners rounded the same.
+  - **Clear:** 32 px touch height on phones.
+- **Files:** `WigoDashboardSections.tsx`, `styles/wigoCharts.module.scss`, `NameSearchBar.module.scss`.
+- **Checks:**
+  - WIGO vitest passed: 145 of 145, with no test edits.
+  - eslint: clean.
+  - CSS pure check passed on both.
+  - No-player state checked at 1280.
+- **Screens:** `screens/step3-bar-before-after.png`, `screens/step3-phone-before-after.png`.
+- **TJ verdict:** approved 2026-10-30 after two edits: narrow the search box (first version was too wide), and keep the "What Is Going On" tagline in its original italic, spaced caps.
