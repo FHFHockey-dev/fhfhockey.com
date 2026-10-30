@@ -12,7 +12,8 @@ import { contentHash, sha256 } from "./hash.server";
 import { fixtureVintage, fixtureOpportunity, fixtureSource } from "./fixtures";
 import { PostgresHistoryStore, SqlConnection } from "./history.server";
 import { FileArtifactStore } from "./artifacts.server";
-import { PostgresContextReader, PreparedPlayerContext } from "./api.server";
+import { PostgresContextReader, PreparedForgeReadRepository, PreparedPlayerContext } from "./api.server";
+import { preparePlayerReadContext } from "./preparation.server";
 import { normalizeSourceBatch } from "./data";
 import { claimRefreshBatch, createRefreshState, enqueueRefresh, planScheduledRefresh, RefreshBounds, RefreshState } from "./refresh";
 import { capturePreparedLedger, reconcilePreparedQueueScopes, runPreparedQueueBatch, PreparedIssuance } from "./pipeline.server";
@@ -142,12 +143,25 @@ describe.runIf(Boolean(bin))("FORGE v2 native PostgreSQL persistence (T3)", () =
     await expect(store.publish(vintage)).rejects.toThrow(/requires a current claim/);
     await store.saveQueue(claim.queueId, 0, { jobs: [job] });
     const first = await store.publishClaimed(vintage, claim);
-    await store.saveQueue(claim.queueId, 1, { jobs: [{ ...job, attempts: 2, startedAt: new Date().toISOString() }] });
+    expect((await store.loadQueue(claim.queueId))!.revision).toBe(2);
+    await expect(store.saveQueueWithRecords(claim.queueId, 1, { jobs: [] }, [{ id: "false-native-gap", kind: "history_event", scopeKey: "native-gap", payload: { kind: "missing_refresh" }, predecessorId: null }])).rejects.toThrow("Queue revision conflict");
+    expect(await store.records("native-gap", "history_event")).toEqual([]);
+    await store.saveQueue(claim.queueId, (await store.loadQueue(claim.queueId))!.revision, { jobs: [{ ...job, attempts: 2, startedAt: new Date().toISOString() }] });
     await expect(store.publishClaimed(vintage, claim)).rejects.toThrow(/claim lost/);
     expect(await store.publishClaimed(vintage, { ...claim, attempt: 2 })).toEqual(first);
-    await store.saveQueue(claim.queueId, 2, { jobs: [{ ...job, attempts: 2, status: "expired" }] });
+    await store.saveQueue(claim.queueId, (await store.loadQueue(claim.queueId))!.revision, { jobs: [{ ...job, attempts: 2, status: "expired" }] });
     await expect(store.publishClaimed(vintage, { ...claim, attempt: 2 })).rejects.toThrow(/claim lost/);
     expect(await store.get(vintage.id)).toEqual(first);
+  });
+
+  it("atomically saves queue history, rejects stale captures and rolls back all writes on identity collision", async () => {
+    const id = "atomic-events", record = { id: "atomic-event", kind: "history_event" as const, scopeKey: "atomic-scope", payload: { reason: "fixture_missing" }, predecessorId: null };
+    await store.saveQueue(id, 0, { jobs: [] });
+    expect(await store.saveQueueWithRecords(id, 1, { jobs: [], phase: 1 }, [record])).toBe(2);
+    expect(await store.saveQueueWithRecords(id, 2, { jobs: [], phase: 2 }, [record])).toBe(3);
+    await expect(store.saveQueueWithRecords(id, 3, { jobs: [], phase: "must-not-commit" }, [{ ...record, id: "new-event" }, { ...record, payload: { reason: "conflicting" } }])).rejects.toThrow("Immutable record identity conflict");
+    expect(await store.loadQueue(id)).toEqual({ revision: 3, state: { jobs: [], phase: 2 } });
+    expect((await store.records(record.scopeKey, record.kind)).map(row => row.id)).toEqual([record.id]);
   });
 
   it("runs prepared queue issuance through native claims, private files and immutable records", async () => {
@@ -171,6 +185,17 @@ describe.runIf(Boolean(bin))("FORGE v2 native PostgreSQL persistence (T3)", () =
     expect(published?.vintage.qualificationId).toBeNull();
     expect((await store.history(scope.playerId, scope.gameId)).revisions).toEqual([published]);
     expect(await store.getDraft(plan.issuanceKey)).toEqual(published?.vintage);
+    const failedPlan = { ...plan, issuanceKey: "native-missing-input", trigger: "material" as const, readyAt: now };
+    const persistedQueue = (await store.loadQueue("pipeline"))!;
+    await store.saveQueue("pipeline", persistedQueue.revision, enqueueRefresh(persistedQueue.state as RefreshState, [failedPlan], now, bounds));
+    await runPreparedQueueBatch({ queueId: "pipeline", store, artifacts, prepared: new Map(), bounds, clock: () => new Date().toISOString() });
+    const preparedContext = await preparePlayerReadContext({ store, artifacts, player: { id: scope.playerId, name: "Native Issued Fixture" }, targets: [scope], asOf: new Date().toISOString(), evidenceClass: "fixture", profiles: [DEFAULT_SCORING], qualifications: [], excluded: [], previous: null, maximumRecordsPerKind: 200, maximumPublicationsPerGame: 100, visibility: "local_fixture" });
+    const reader = new PostgresContextReader(db as SqlConnection);
+    expect(await reader.read(scope.playerId)).toEqual(preparedContext);
+    const publicView = await new PreparedForgeReadRepository(reader, store, artifacts).player(scope.playerId, DEFAULT_SCORING);
+    expect(publicView?.games[0].latestRevision?.id).toBe(published?.vintage.id);
+    expect(publicView?.games[0].events.some(event => event.kind === "missing_refresh")).toBe(true);
+    expect(publicView?.accountability.profileId).toBe(DEFAULT_SCORING.id);
     const closed = { ...prepared.episode, exitedAt: new Date(Date.parse(now) + 1000).toISOString() };
     const reentered = { ...prepared.episode, id: "native-episode-2", episode: 2, enteredAt: new Date(Date.parse(now) + 2000).toISOString() };
     await capturePreparedLedger({ store, opportunities: [], episodes: [{ value: closed, predecessor: prepared.episode }, { value: reentered, predecessor: closed }], locks: [], events: [] });

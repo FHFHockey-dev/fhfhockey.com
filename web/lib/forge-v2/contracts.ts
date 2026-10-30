@@ -248,6 +248,7 @@ export interface PublicRevision {
   participation: Component<number>;
   intervals: Component<Interval[]>;
   intervalVintageId: string;
+  categoryIntervals?: Categories<Component<Interval[]>>;
   eligiblePregame: boolean;
   artifactState: "online" | "archived" | "retrieval_pending" | "unavailable";
   limitations: string[];
@@ -267,7 +268,22 @@ export interface PublicGameView {
   qualification: { state: "qualified" | "unqualified"; reason: string; supportedHorizons: Horizon[]; supportedCategories: Category[] };
 }
 
+export interface PublicAccuracy { count: number; mae: number | null; mse: number | null; rmse: number | null; bias: number | null }
+export interface PublicAccountabilityStratum {
+  dimensions: { evidenceClass: EvidenceClass; series: "primary_horizon" | "locked_final"; horizon: Horizon | null; modelVersion: string | null; cohort: string; period: string; profileId: string; valueKind: Category | "FP"; label: "original_scoring" | "historical_rescore" };
+  requested: number; forecastCoverage: number; outcomeCoverage: number; abstentions: number;
+  missingHorizons: number; unresolvedOutcomes: number; integrityExclusions: number; artifactFailures?: number; corrections: number;
+  accuracy: PublicAccuracy;
+  intervals: Array<{ level: number; count: number; missing: number; coverage: number | null; width: number | null; intervalScore: number | null }>;
+  paired: Array<{ name: "last_five" | "season_rate"; requested: number; paired: number; coverage: number; candidate: PublicAccuracy; baseline: PublicAccuracy; mseImprovement: number | null }>;
+  participation: { count: number; missing: number; brier: number | null; logLoss: number | null; logLossState: string; impossibleEvents: number; reliability: Array<{ bin: number; count: number; predicted: number | null; observed: number | null }> };
+}
+
 export interface PublicAccountability {
+  profileId?: string;
+  observationUnit?: "checkpoint_observation";
+  uniqueTargets?: number;
+  strata?: PublicAccountabilityStratum[];
   requested: number;
   forecastCount: number;
   outcomeCount: number;

@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import { CATEGORIES, type Categories, type Component, type HistoryEvent, type PublicGameView, type PublicPlayerView, type PublicRevision, type ScoringProfile } from "../../lib/forge-v2/contracts";
 import { DEFAULT_SCORING, scoringProfile } from "../../lib/forge-v2/identity";
 import styles from "./ForecastExplorer.module.scss";
+import AccountabilityReport from "./AccountabilityReport";
 
 export interface ForecastExplorerProps {
   initialView: PublicPlayerView | null;
@@ -114,7 +115,8 @@ export default function ForecastExplorer({ initialView, players, onSelectPlayer,
     const token = ++request.current; setBusy(true); setError("");
     try {
       const next = await onRescore(view.player.id, profile);
-      if (next.player.id !== view.player.id || next.profile.id !== profile.id || next.scoringLabel !== "re-scored under selected profile"
+      const label = profile.id === DEFAULT_SCORING.id ? "as issued" : "re-scored under selected profile";
+      if (next.player.id !== view.player.id || next.profile.id !== profile.id || next.scoringLabel !== label
         || next.games.some(g => g.profileId !== profile.id)) throw new Error("Scoring response did not match the selected profile.");
       if (token === request.current) accept(next, true);
     } catch (err) { if (token === request.current) setError(err instanceof Error ? err.message : "Scoring could not be applied."); }
@@ -186,7 +188,7 @@ export default function ForecastExplorer({ initialView, players, onSelectPlayer,
               : <p>Intervals unavailable{selectedRevision.intervals.state === "unavailable" ? ` — ${words(selectedRevision.intervals.reason)}` : ": vintage, artifact or qualification support is missing."}</p>}
             <p>Participation: {selectedRevision.qualified && selectedRevision.participation.state === "available" ? `${number(selectedRevision.participation.value * 100)}% official appearance probability` : "probability unavailable"}.</p>
           </> : <p>No vintage is available.</p>}</section>
-          <section aria-labelledby="categories-heading"><h3 id="categories-heading">If-playing category means</h3><table className={styles.categories}><caption>Conditional category means · {selectedRevision?.id ?? "no vintage"}</caption><thead><tr><th scope="col">Category</th><th scope="col">Mean per official appearance</th></tr></thead><tbody>{CATEGORIES.map(c => <tr key={c}><th scope="row">{c}</th><td>{selectedRevision?.qualified ? display(selectedRevision.means[c]) : "Unavailable — vintage not qualified"}</td></tr>)}</tbody></table><p>Counts per official appearance; PIM is penalty minutes. A credited zero-minute appearance still counts.</p></section></div>
+          <section aria-labelledby="categories-heading"><h3 id="categories-heading">If-playing category means</h3><table className={styles.categories}><caption>Conditional category means · {selectedRevision?.id ?? "no vintage"}</caption><thead><tr><th scope="col">Category</th><th scope="col">Mean per official appearance</th><th scope="col">50% / 90% outcome intervals</th></tr></thead><tbody>{CATEGORIES.map(c => <tr key={c}><th scope="row">{c}</th><td>{selectedRevision?.qualified ? display(selectedRevision.means[c]) : "Unavailable — vintage not qualified"}</td><td>{selectedRevision?.qualified && selectedRevision.categoryIntervals?.[c].state === "available" ? selectedRevision.categoryIntervals[c].value.map(band => `${band.level * 100}%: ${number(band.lower)}–${number(band.upper)}`).join(" / ") : "Unavailable"}</td></tr>)}</tbody></table><p>Counts per official appearance; PIM is penalty minutes. A credited zero-minute appearance still counts.</p></section></div>
         <h3>Revision table</h3><p>{revisions.length} revisions loaded. {game.nextCursor ? "More history remains; extrema describe loaded history only." : "All supplied history is loaded."} Values follow the selected scoring profile.</p>
         <div className={styles.tableScroll} role="region" aria-label="Revision history table; scroll horizontally for all columns" tabIndex={0}><table><caption>Comparable revisions, publication times and original issued values</caption><thead><tr><th scope="col">Revision / time</th><th scope="col">Selected score</th><th scope="col">Original score</th><th scope="col">Horizon / trigger</th><th scope="col">Model / team</th><th scope="col">Status</th></tr></thead><tbody>{revisions.slice(0, visibleRows).map(r => {
           const value = revisionValue(r, game, view.profile);
@@ -196,6 +198,7 @@ export default function ForecastExplorer({ initialView, players, onSelectPlayer,
         {game.events.length ? <details><summary>History events and gaps ({game.events.length})</summary><ul>{game.events.map(event => <li key={event.id}><time dateTime={event.at}>{stamp(event.at)}</time> · {words(event.kind)}: {words(event.reason)}</li>)}</ul></details> : null}
       </section> : <p>No game detail is available in this scope.</p>}
       <section className={styles.panel} aria-labelledby="accountability-heading"><h2 id="accountability-heading">Coverage and accountability</h2><p>{view.accountability.forecastCount} forecasts / {view.accountability.requested} requested opportunities · {view.accountability.outcomeCount} outcomes · {view.accountability.abstentions} abstentions.</p><p>Evidence: {words(view.accountability.evidenceClass)}. {view.scoringLabel}.</p><dl className={styles.marks}>{(["mae", "rmse", "bias"] as const).map(key => <div key={key}><dt>{key.toUpperCase()}</dt><dd>{display(view.accountability[key])}</dd></div>)}</dl><ul>{view.accountability.limitations.map((reason, i) => <li key={i}>{words(reason)}</li>)}</ul><p>{view.methodology}</p></section>
+      <AccountabilityReport value={view.accountability} />
     </>}
   </main>;
 }

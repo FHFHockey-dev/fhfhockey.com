@@ -1,4 +1,4 @@
-import { ArtifactReference, CATEGORIES, Category, Component, Interval, QualificationManifest, ScoringProfile, Target, Vintage, available, unavailable, assertArtifact, assertTarget, instant } from "./contracts";
+import { ArtifactReference, CATEGORIES, Category, Component, Interval, QualificationManifest, ScoringProfile, Target, Vintage, available, unavailable, assertArtifact, assertTarget, assertVintage, instant } from "./contracts";
 import { contentHash } from "./hash.server";
 import { scoringProfile, targetKey } from "./identity";
 import { QualificationEvidence, assessQualification } from "./qualification";
@@ -28,6 +28,20 @@ export interface CalibrationArtifact extends ModelAvailability {
   sampleIds: string[];
   evidence: "development_only";
   padding: Array<{ level: 0.5 | 0.9; lower: number; upper: number }>;
+}
+/** One immutable pin retains every explicitly supported profile's fitted parameters. */
+export interface CalibrationBundle {
+  schemaVersion: "profile-calibration-bundle-v1";
+  profiles: Record<string, { profile: ScoringProfile; calibration: CalibrationArtifact }>;
+}
+export type CalibrationPayload = CalibrationArtifact | CalibrationBundle;
+export function calibrationForProfile(payload: CalibrationPayload, profile: ScoringProfile): CalibrationArtifact | null {
+  if (payload.schemaVersion === "profile-tail-padding-v1") return payload.profileId === profile.id ? payload : null;
+  if (payload.schemaVersion !== "profile-calibration-bundle-v1" || !Object.keys(payload.profiles).length) return null;
+  for (const [id, entry] of Object.entries(payload.profiles)) {
+    if (scoringProfile(entry.profile.weights).id !== id || entry.profile.id !== id || entry.profile.ruleVersion !== "linear-seven-v1" || entry.calibration.profileId !== id || entry.calibration.schemaVersion !== "profile-tail-padding-v1") return null;
+  }
+  return Object.hasOwn(payload.profiles, profile.id) ? payload.profiles[profile.id].calibration : null;
 }
 export interface PinnedArtifact<T> { reference: ArtifactReference; payload: T }
 
@@ -106,26 +120,40 @@ export function fitIntervalCalibration(rows: CalibrationObservation[], protocol:
   return available({ schemaVersion: "profile-tail-padding-v1", calculationVersion: INTERVAL_CALCULATION, ...applicability, fittedAt: protocol.fittedAt, availableAt: protocol.availableAt, dependencyAvailableAt: new Date(Math.max(...rows.map(row => instant(row.outcomeAvailableAt)))).toISOString(), protocolId: protocol.id, sampleIds: rows.map(r => r.id).sort(), evidence: "development_only", padding: padding as CalibrationArtifact["padding"] });
 }
 
-function verifyPin<T>(artifact: PinnedArtifact<T>, expected: ArtifactReference, vintage: Vintage, profile: ScoringProfile, manifest: QualificationManifest): boolean {
+function verifyPin<T>(artifact: PinnedArtifact<T>, expected: ArtifactReference, vintage: Vintage, profile: ScoringProfile): boolean {
   try {
     assertArtifact(artifact.reference);
     const reference = artifact.reference;
-    const fixedDependency = reference.kind !== "calibration" || manifest.artifactHashes.includes(reference.sha256);
-    return contentHash(reference) === contentHash(expected) && contentHash(artifact.payload) === reference.sha256 && fixedDependency && reference.decoderVersion === JOINT_DECODER && reference.calculationVersion === INTERVAL_CALCULATION && reference.horizons.includes(vintage.horizon) && reference.cohorts.includes(vintage.cohort) && reference.profileIds.includes(profile.id) && CATEGORIES.every(c => profile.weights[c] === 0 || reference.categories.includes(c));
+    return contentHash(reference) === contentHash(expected) && contentHash(artifact.payload) === reference.sha256 && reference.targetVersion === vintage.targetVersion && reference.conditioning === vintage.conditioning && reference.decoderVersion === JOINT_DECODER && reference.calculationVersion === INTERVAL_CALCULATION && reference.horizons.includes(vintage.horizon) && reference.cohorts.includes(vintage.cohort) && reference.profileIds.includes(profile.id) && CATEGORIES.every(c => profile.weights[c] === 0 || reference.categories.includes(c));
   } catch { return false; }
 }
 
-export function reproduceIntervals(vintage: Vintage, profile: ScoringProfile, manifest: QualificationManifest | null, evidence: QualificationEvidence[], joint: PinnedArtifact<JointDistribution> | null, calibration: PinnedArtifact<CalibrationArtifact> | null): Component<Interval[]> {
+export function reproduceIntervals(vintage: Vintage, profile: ScoringProfile, manifest: QualificationManifest | null, evidence: QualificationEvidence[], joint: PinnedArtifact<JointDistribution> | null, calibration: PinnedArtifact<CalibrationPayload> | null): Component<Interval[]> {
   const decision = assessQualification(vintage, manifest, evidence, profile);
   if (decision.state !== "available") return decision;
   if (!manifest!.profileIds.includes(profile.id) || ![0.5, 0.9].every(level => manifest!.intervalLevels.includes(level as 0.5 | 0.9))) return unavailable("uncalibrated_profile_or_levels");
-  if (!joint || !calibration || vintage.distribution.state !== "available" || vintage.calibration.state !== "available") return unavailable("required_artifact_unavailable");
-  if (joint.reference.kind !== "joint_distribution" || calibration.reference.kind !== "calibration" || joint.reference.schemaVersion !== JOINT_SCHEMA || calibration.reference.schemaVersion !== "profile-tail-padding-v1" || !verifyPin(joint, vintage.distribution.value, vintage, profile, manifest!) || !verifyPin(calibration, vintage.calibration.value, vintage, profile, manifest!)) return unavailable("artifact_integrity_or_applicability_mismatch");
-  if (targetKey(joint.payload) !== targetKey(vintage) || joint.payload.inputCutoffAt !== vintage.inputCutoffAt || joint.payload.modelVersion !== vintage.modelVersion || contentHash([...joint.payload.categories].sort()) !== contentHash([...joint.reference.categories].sort())) return unavailable("joint_target_or_model_mismatch");
+  const intervals = evaluatePinnedIntervals(vintage, profile, joint, calibration, evidence.find(record => record.id === manifest!.finalEvaluationId)?.payload.protocolId ?? "");
+  if (intervals.state !== "available") return intervals;
+  if (!manifest!.artifactHashes.includes(calibration!.reference.sha256)) return unavailable("artifact_integrity_or_applicability_mismatch");
   const generator = manifest!.jointGenerator;
-  if (joint.payload.modelArtifactHash !== generator.modelArtifactHash || joint.payload.algorithmVersion !== generator.algorithmVersion || joint.reference.schemaVersion !== generator.schemaVersion || joint.reference.decoderVersion !== generator.decoderVersion || joint.reference.calculationVersion !== generator.calculationVersion) return unavailable("joint_generator_mismatch");
-  const fitted = calibration.payload;
-  const protocolId = evidence.find(record => record.id === manifest!.finalEvaluationId)?.payload.protocolId;
+  if (joint!.payload.modelArtifactHash !== generator.modelArtifactHash || joint!.payload.algorithmVersion !== generator.algorithmVersion || joint!.reference.schemaVersion !== generator.schemaVersion || joint!.reference.decoderVersion !== generator.decoderVersion || joint!.reference.calculationVersion !== generator.calculationVersion) return unavailable("joint_generator_mismatch");
+  return intervals;
+}
+
+/** Internal evaluation arithmetic only. This does not establish public qualification. */
+export function evaluatePinnedIntervals(vintage: Vintage, profile: ScoringProfile, joint: PinnedArtifact<JointDistribution> | null, calibration: PinnedArtifact<CalibrationPayload> | null, protocolId: string): Component<Interval[]> {
+  try { return pinnedIntervals(vintage, profile, joint, calibration, protocolId); }
+  catch { return unavailable("invalid_pinned_interval_artifact"); }
+}
+function pinnedIntervals(vintage: Vintage, profile: ScoringProfile, joint: PinnedArtifact<JointDistribution> | null, calibration: PinnedArtifact<CalibrationPayload> | null, protocolId: string): Component<Interval[]> {
+  assertVintage(vintage);
+  if (!protocolId.trim()) return unavailable("calibration_protocol_required");
+  if (!joint || !calibration || vintage.distribution.state !== "available" || vintage.calibration.state !== "available") return unavailable("required_artifact_unavailable");
+  if (joint.reference.kind !== "joint_distribution" || calibration.reference.kind !== "calibration" || joint.reference.schemaVersion !== JOINT_SCHEMA || !(["profile-tail-padding-v1", "profile-calibration-bundle-v1"].includes(calibration.reference.schemaVersion)) || calibration.reference.schemaVersion !== calibration.payload.schemaVersion || !verifyPin(joint, vintage.distribution.value, vintage, profile) || !verifyPin(calibration, vintage.calibration.value, vintage, profile)) return unavailable("artifact_integrity_or_applicability_mismatch");
+  if (targetKey(joint.payload) !== targetKey(vintage) || joint.payload.inputCutoffAt !== vintage.inputCutoffAt || joint.payload.modelVersion !== vintage.modelVersion || contentHash([...joint.payload.categories].sort()) !== contentHash([...joint.reference.categories].sort())) return unavailable("joint_target_or_model_mismatch");
+  let fitted: CalibrationArtifact | null;
+  try { fitted = calibrationForProfile(calibration.payload, profile); } catch { return unavailable("calibration_applicability_mismatch"); }
+  if (!fitted) return unavailable("calibration_applicability_mismatch");
   if (fitted.schemaVersion !== "profile-tail-padding-v1" || fitted.calculationVersion !== INTERVAL_CALCULATION || fitted.profileId !== profile.id || fitted.modelVersion !== vintage.modelVersion || fitted.horizon !== vintage.horizon || fitted.cohort !== vintage.cohort || fitted.protocolId !== protocolId || !fitted.sampleIds.length || fitted.padding.length !== 2) return unavailable("calibration_applicability_mismatch");
   if (!modelAvailableAtCutoff(fitted, vintage.inputCutoffAt)) return unavailable("calibration_not_available_at_cutoff");
   const score = scoreJoint(joint.payload, profile);

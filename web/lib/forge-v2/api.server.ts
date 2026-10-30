@@ -1,12 +1,12 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { CATEGORIES, Component, HistoryEvent, LockEpoch, Opportunity, OutcomeRevision, PublicAccountability, PublicGameView, PublicPlayerView, PublicRevision, PublishedVintage, QualificationManifest, ScoringProfile, available, assertSource, assertTarget, instant, unavailable } from "./contracts";
-import { canonicalJson, DEFAULT_SCORING, scoreMeans, targetKey } from "./identity";
+import { canonicalJson, DEFAULT_SCORING, scoreMeans, scoringProfile, targetKey } from "./identity";
 import { contentHash } from "./hash.server";
 import { FileArtifactStore } from "./artifacts.server";
 import { PostgresHistoryStore, SqlConnection } from "./history.server";
 import { QualificationEvidence, assessQualification, qualifiedMeans, qualifiedParticipation } from "./qualification";
-import { CalibrationArtifact, JointDistribution, reproduceIntervals } from "./uncertainty";
-import { publicationEligibility } from "./evaluation";
+import { CalibrationPayload, JointDistribution, reproduceIntervals } from "./uncertainty";
+import { projectPublicAccountability, publicationEligibility } from "./evaluation";
 import { ForgeReadRepository, Methodology, executeRead, parseReadRequest } from "./api";
 
 export interface GameReadContext {
@@ -27,6 +27,8 @@ export interface PreparedPlayerContext {
   excluded: PublicPlayerView["excluded"];
   qualifications: Array<{ manifest: QualificationManifest; evidence: QualificationEvidence[] }>;
   accountability: PublicAccountability;
+  accountabilityByProfile?: Record<string, PublicAccountability>;
+  preparationFingerprint?: string;
 }
 export interface ContextReader {
   players(query: string): Promise<Array<{ id: number; name: string }>>;
@@ -78,12 +80,19 @@ export async function projectRevision(row: PublishedVintage, context: PreparedPl
   const q = qualification(context, row), means = qualifiedMeans(v, q.manifest, q.evidence, profile);
   let intervals: PublicRevision["intervals"] = unavailable("uncertainty_not_qualified");
   let artifactState: PublicRevision["artifactState"] = "unavailable";
+  const categoryIntervals = Object.fromEntries(CATEGORIES.map(c => [c, unavailable("category_uncertainty_not_qualified")])) as NonNullable<PublicRevision["categoryIntervals"]>;
   if (assessQualification(v, q.manifest, q.evidence, profile).state === "available" && v.distribution.state === "available" && v.calibration.state === "available") {
     const [joint, calibration] = await Promise.all([artifacts.read(v.distribution.value), artifacts.read(v.calibration.value)]);
     if (joint.state === "available" && calibration.state === "available") {
       intervals = reproduceIntervals(v, profile, q.manifest, q.evidence,
         { reference: joint.reference, payload: JSON.parse(joint.bytes) as JointDistribution },
-        { reference: calibration.reference, payload: JSON.parse(calibration.bytes) as CalibrationArtifact });
+        { reference: calibration.reference, payload: JSON.parse(calibration.bytes) as CalibrationPayload });
+      for (const category of CATEGORIES) {
+        const categoryProfile = scoringProfile(Object.fromEntries(CATEGORIES.map(c => [c, Number(c === category)])) as ScoringProfile["weights"]);
+        categoryIntervals[category] = reproduceIntervals(v, categoryProfile, q.manifest, q.evidence,
+          { reference: joint.reference, payload: JSON.parse(joint.bytes) as JointDistribution },
+          { reference: calibration.reference, payload: JSON.parse(calibration.bytes) as CalibrationPayload });
+      }
       artifactState = joint.location === "archived" || calibration.location === "archived" ? "archived" : "online";
     } else intervals = unavailable(joint.state === "unavailable" ? joint.reason : calibration.state === "unavailable" ? calibration.reason : "artifact_unavailable");
   }
@@ -91,7 +100,7 @@ export async function projectRevision(row: PublishedVintage, context: PreparedPl
     id: v.id, sequence: v.sequence, publishedAt: receipt.confirmedAt, inputCutoffAt: v.inputCutoffAt, horizon: v.horizon, teamId: v.teamId,
     modelVersion: v.modelVersion, trigger: v.trigger, evidenceClass: v.evidenceClass, value: scoreMeans(means, profile), qualified: assessQualification(v, q.manifest, q.evidence, profile).state === "available",
     issuedValue: scoreMeans(qualifiedMeans(v, q.manifest, q.evidence, v.scoring), v.scoring), issuedProfileId: v.scoring.id,
-    means: Object.fromEntries(CATEGORIES.map(c => [c, publicNumber(means[c])])) as typeof means, participation: publicNumber(qualifiedParticipation(v, q.manifest, q.evidence)), intervals, intervalVintageId: v.id,
+    means: Object.fromEntries(CATEGORIES.map(c => [c, publicNumber(means[c])])) as typeof means, participation: publicNumber(qualifiedParticipation(v, q.manifest, q.evidence)), intervals, intervalVintageId: v.id, categoryIntervals,
     eligiblePregame: publicationEligibility(row, game.epochs, context.asOf) === null, artifactState,
     limitations: [...v.limitations, ...(intervals.state === "unavailable" ? [intervals.reason] : [])],
   };
@@ -123,15 +132,18 @@ export class PreparedForgeReadRepository implements ForgeReadRepository {
     const games: PublicGameView[] = [];
     for (const game of context.games) games.push(await this.gameView(context, game, profile));
     return { player: { id: context.player.id, name: context.player.name }, games, excluded: context.excluded.map(x => ({ gameId: x.gameId, reason: x.reason })), profile,
-      scoringLabel: profile.id === DEFAULT_SCORING.id ? "as issued" : "re-scored under selected profile", methodology: "Conditional on official appearance; participation is separate. Revision shading is not probability.", accountability: this.publicAccountability(context.accountability, profile) };
+      scoringLabel: profile.id === DEFAULT_SCORING.id ? "as issued" : "re-scored under selected profile", methodology: "Conditional on official appearance; participation is separate. Revision shading is not probability.", accountability: this.publicAccountability(context, profile) };
   }
-  private publicAccountability(value: PublicAccountability, profile: ScoringProfile): PublicAccountability {
-    const metric = (number: Component<number>) => profile.id === DEFAULT_SCORING.id ? publicNumber(number) : unavailable("profile_metrics_unavailable");
-    return { requested: value.requested, forecastCount: value.forecastCount, outcomeCount: value.outcomeCount, abstentions: value.abstentions, mae: metric(value.mae), rmse: metric(value.rmse), bias: metric(value.bias), evidenceClass: value.evidenceClass, limitations: [...value.limitations, ...(profile.id === DEFAULT_SCORING.id ? [] : ["Metrics have not been prepared for the selected scoring profile"])] };
+  private publicAccountability(context: PreparedPlayerContext, profile: ScoringProfile): PublicAccountability {
+    // Legacy contexts retain their explicitly default-scored metrics. New contexts bind every profile.
+    const value = context.accountabilityByProfile?.[profile.id] ?? context.accountability;
+    return projectPublicAccountability(value.profileId ? value : { ...value, profileId: DEFAULT_SCORING.id }, profile);
   }
   async accountability(playerId: number, profile: ScoringProfile) {
     const context = await this.contexts.read(playerId);
-    return context?.publicApproved ? this.publicAccountability(context.accountability, profile) : null;
+    if (!context?.publicApproved) return null;
+    assertContext(context);
+    return this.publicAccountability(context, profile);
   }
   async methodology(): Promise<Methodology> { return { version: "forge-v2-methodology-v1", publicEnabled: false, qualification: "No qualified release is registered", categories: [...CATEGORIES], horizons: "Next ten distinct scheduled regular-season games", conditioning: "Official appearance, conditional on game occurring", limitations: ["Scientific qualification and separate public release remain required"] }; }
 

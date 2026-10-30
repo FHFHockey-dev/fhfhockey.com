@@ -1,4 +1,4 @@
-import { CATEGORIES, Component, EvidenceClass, Horizon, HorizonEpisode, Instant, Interval, LockEpoch, OutcomeRevision, PublishedVintage, ScoringProfile, Target, available, assertComponent, assertSource, assertTarget, assertVintage, instant, unavailable } from "./contracts";
+import { CATEGORIES, Component, EvidenceClass, Horizon, HorizonEpisode, Instant, Interval, LockEpoch, OutcomeRevision, PublicAccountability, PublishedVintage, ScoringProfile, Target, available, assertComponent, assertSource, assertTarget, assertVintage, instant, unavailable } from "./contracts";
 import { contentHash } from "./hash.server";
 import { scoreMeans, targetKey } from "./identity";
 
@@ -31,6 +31,31 @@ function deduplicate(rows: readonly PublishedVintage[], eligible: (row: Publishe
   });
 }
 
+/** Latest recorded timing is authoritative for grading; observing play is an irreversible issuance fence. */
+function timing(epochs: readonly LockEpoch[], gameId: number, asOf: Instant) {
+  const known = epochs.filter(row => row.gameId === gameId && instant(row.adoptedAt) <= instant(asOf)).sort((a, b) => instant(a.adoptedAt) - instant(b.adoptedAt));
+  const actual = known.filter(row => row.actualStartAt !== null).at(-1)?.actualStartAt;
+  return { actual: actual ? instant(actual) : Infinity, observed: Math.min(Infinity, ...known.filter(row => row.playBegun).map(row => instant(row.adoptedAt))) };
+}
+
+export interface SelectionRevision { id: string; predecessorId: string | null; recordedAt: Instant; selection: Selection; reason: string | null }
+export function appendSelectionRevision(history: readonly SelectionRevision[], revision: SelectionRevision): SelectionRevision[] {
+  const duplicate = history.find(row => row.id === revision.id);
+  if (duplicate) { if (contentHash(duplicate) !== contentHash(revision)) throw new Error("Selection identity conflict"); return structuredClone([...history]); }
+  const key = (s: Selection) => [targetKey(s), s.series, s.horizon, s.evidenceClass].join("|");
+  const previous = history.filter(row => key(row.selection) === key(revision.selection)).at(-1);
+  assertTarget(revision.selection);
+  if (!revision.id || instant(revision.recordedAt) < instant(revision.selection.selectedAt) || (previous?.id ?? null) !== revision.predecessorId || (previous && (instant(revision.recordedAt) <= instant(previous.recordedAt) || !revision.reason?.trim()))) throw new Error("Invalid selection correction lineage");
+  if (previous && revision.selection.series === "primary_horizon" && previous.selection.vintageId !== revision.selection.vintageId) {
+    const prior = previous.selection, next = revision.selection;
+    const firstObservation = prior.vintageId === null && next.vintageId !== null &&
+      ((prior.state === "pending" && prior.reason === "first_episode_open" && prior.episodeId !== null && prior.episodeId === next.episodeId) ||
+       (prior.state === "missing" && prior.reason === "unobserved_horizon" && prior.episodeId === null && next.episodeId !== null));
+    if (!firstObservation) throw new Error("Primary identity is immutable");
+  }
+  return structuredClone([...history, revision]);
+}
+
 /** Complete proof includes output hash, source cutoff, generation, epoch and actual-start clocks. */
 export function publicationEligibility(row: PublishedVintage, epochs: readonly LockEpoch[], asOf: Instant): string | null {
   try {
@@ -41,12 +66,11 @@ export function publicationEligibility(row: PublishedVintage, epochs: readonly L
     if (published < instant(v.generatedAt) || published > instant(asOf)) return "invalid_publication_clock";
     const epoch = epochs.find(item => item.id === v.lockEpochId && item.gameId === v.gameId);
     if (!epoch || published < instant(epoch.adoptedAt) || instant(v.inputCutoffAt) < instant(epoch.adoptedAt)) return "unproven_lock_epoch";
-    if (epoch.playBegun) return "play_already_observed";
+    if (epoch.playBegun || published >= timing(epochs, v.gameId, asOf).observed) return "play_already_observed";
     if (published >= instant(epoch.lockAt) || instant(v.inputCutoffAt) >= instant(epoch.lockAt)) return "at_or_after_lock";
-    const next = epochs.find(item => item.predecessorId === epoch.id);
+    const next = epochs.find(item => item.gameId === v.gameId && item.predecessorId === epoch.id && instant(item.adoptedAt) <= instant(asOf));
     if (next && published >= instant(next.adoptedAt)) return "superseded_lock_epoch";
-    const actuals = epochs.filter(item => item.gameId === v.gameId && instant(item.adoptedAt) <= instant(asOf) && item.actualStartAt !== null).map(item => instant(item.actualStartAt!));
-    if (actuals.length && published >= Math.min(...actuals)) return "at_or_after_actual_start";
+    if (published >= timing(epochs, v.gameId, asOf).actual) return "at_or_after_actual_start";
     return null;
   } catch { return "invalid_publication_contract"; }
 }
@@ -67,7 +91,9 @@ export function selectPrimaryCheckpoints(input: { target: Target; episodes: read
   const corrected = (selection: Selection): Selection => {
     const row = publications.find(item => item.vintage.id === selection.vintageId);
     const reason = row ? publicationEligibility(row, input.epochs, input.asOf) : selection.vintageId ? "selected_publication_proof_unavailable" : null;
-    return disposition(reason ? { ...selection, state: "excluded", reason } : selection, input.invalidations ?? [], input.asOf);
+    const restored = !reason && selection.state === "excluded" && selection.reason === "at_or_after_actual_start"
+      ? { ...selection, state: "selected" as const, reason: null } : selection;
+    return disposition(reason ? { ...selection, state: "excluded", reason } : restored, input.invalidations ?? [], input.asOf);
   };
   return Array.from({ length: 10 }, (_, index) => {
     const horizon = (index + 1) as Horizon;
@@ -85,7 +111,7 @@ export function selectLockedFinal(input: { target: Target; publications: readonl
   assertTarget(input.target);
   const epochs = input.epochs.filter(row => row.gameId === input.target.gameId && instant(row.adoptedAt) <= instant(input.asOf)).sort((a, b) => instant(a.adoptedAt) - instant(b.adoptedAt));
   const latest = epochs.at(-1);
-  const deadline = latest ? Math.min(instant(latest.lockAt), ...epochs.flatMap(row => row.actualStartAt !== null ? [instant(row.actualStartAt)] : row.playBegun ? [instant(row.adoptedAt)] : [])) : Infinity;
+  const deadline = latest ? Math.min(instant(latest.lockAt), timing(epochs, input.target.gameId, input.asOf).actual, timing(epochs, input.target.gameId, input.asOf).observed) : Infinity;
   const pending = instant(input.asOf) < deadline;
   const selected = !pending && deduplicate(input.publications.filter(row => targetKey(row.vintage) === targetKey(input.target) && row.vintage.evidenceClass === input.evidenceClass), row => publicationEligibility(row, epochs, input.asOf) === null).filter(row => instant(row.receipt.confirmedAt) < deadline).sort(publicationOrder).at(-1);
   return disposition({ ...input.target, series: "locked_final", horizon: null, evidenceClass: input.evidenceClass, episodeId: selected ? selected.vintage.episodeId : null, vintageId: selected ? selected.vintage.id : null, state: pending ? "pending" : selected ? "selected" : "missing", reason: pending ? "lock_pending" : selected ? null : "no_proven_pregame_publication", selectedAt: input.asOf, lockEpochId: latest?.id ?? null, timingStatus: latest?.timingStatus ?? "provisional" }, input.invalidations ?? [], input.asOf);
@@ -128,13 +154,19 @@ export interface EvaluationRevision {
   correctionReason: string | null;
 }
 
-export function settleEvaluation(input: { id: string; selection: Selection; publication: PublishedVintage | null; outcome: OutcomeRevision | null; profile: ScoringProfile; valueKind: EvaluationRevision["valueKind"]; recordedAt: Instant; period: string; rescheduled: boolean; intervals?: Component<Interval[]>; prior?: EvaluationRevision; correctionReason?: string; label?: EvaluationRevision["label"] }): EvaluationRevision {
+export function settleEvaluation(input: { id: string; selection: Selection; publication: PublishedVintage | null; outcome: OutcomeRevision | null; profile: ScoringProfile; valueKind: EvaluationRevision["valueKind"]; recordedAt: Instant; period: string; rescheduled: boolean; intervals?: Component<Interval[]>; prior?: EvaluationRevision; selectionRevision?: SelectionRevision; priorSelectionRevision?: SelectionRevision; correctionReason?: string; label?: EvaluationRevision["label"] }): EvaluationRevision {
   const { selection, publication, outcome, profile } = input;
   instant(input.recordedAt); assertTarget(selection);
   if (outcome) { assertSource(outcome.source, input.recordedAt); CATEGORIES.forEach(category => assertComponent(outcome.values[category])); }
   if (publication && (publication.vintage.id !== selection.vintageId || targetKey(publication.vintage) !== targetKey(selection))) throw new Error("Selected vintage mismatch");
   if (outcome && (targetKey(outcome) !== targetKey(selection) || instant(outcome.recordedAt) > instant(input.recordedAt))) throw new Error("Outcome target/clock mismatch");
-  if (input.prior && (!input.correctionReason?.trim() || instant(input.recordedAt) <= instant(input.prior.recordedAt) || input.prior.selection.vintageId !== selection.vintageId || input.prior.profile.id !== profile.id || input.prior.valueKind !== input.valueKind || targetKey(input.prior.selection) !== targetKey(selection) || input.prior.selection.series !== selection.series || input.prior.selection.horizon !== selection.horizon || input.prior.selection.evidenceClass !== selection.evidenceClass)) throw new Error("Invalid evaluation correction lineage");
+  const changedSelection = input.prior && input.prior.selection.vintageId !== selection.vintageId;
+  if (changedSelection) {
+    const previous = input.priorSelectionRevision, revision = input.selectionRevision;
+    if (!previous || !revision || contentHash(previous.selection) !== contentHash(input.prior!.selection) || contentHash(revision.selection) !== contentHash(selection)) throw new Error("Invalid evaluation selection correction lineage");
+    appendSelectionRevision([previous], revision);
+  }
+  if (input.prior && (!input.correctionReason?.trim() || instant(input.recordedAt) <= instant(input.prior.recordedAt) || input.prior.profile.id !== profile.id || input.prior.valueKind !== input.valueKind || targetKey(input.prior.selection) !== targetKey(selection) || input.prior.selection.series !== selection.series || input.prior.selection.horizon !== selection.horizon || input.prior.selection.evidenceClass !== selection.evidenceClass)) throw new Error("Invalid evaluation correction lineage");
   const v = publication?.vintage;
   const originalProfile = v?.scoring.id === profile.id;
   if (v && !originalProfile && input.label !== "historical_rescore") throw new Error("Changed weights require labeled historical re-scoring");
@@ -190,8 +222,38 @@ export function summarizeAccountability(rows: readonly EvaluationRevision[], pub
       const candidate = errors(pairs.map(row => row.candidate)), baseline = errors(pairs.map(row => row.baseline));
       return { name, requested: group.length, paired: pairs.length, coverage: pairs.length / group.length, candidate, baseline, mseImprovement: candidate.mse === null || baseline.mse === null ? null : baseline.mse - candidate.mse };
     });
-    return { stratum, requested: group.length, forecastCoverage: group.filter(row => row.forecast.state === "available").length / group.length, outcomeCoverage: group.filter(row => row.actual.state === "available").length / group.length, abstentions: group.filter(row => row.forecast.state === "unavailable").length, missingHorizons: group.filter(row => row.selection.series === "primary_horizon" && row.selection.state === "missing").length, integrityExclusions: group.filter(row => row.selection.state === "excluded").length, corrections: group.filter(row => row.predecessorId !== null).length, accuracy: errors(graded), intervals, paired, participation: { count: probabilities.length, missing: group.length - probabilities.length, brier: mean(probabilities.map(row => (row.p - row.y) ** 2)), logLoss: impossibleEvents ? null : mean(probabilities.map(row => row.y === 1 ? -Math.log(row.p) : -Math.log(1 - row.p))), logLossState: impossibleEvents ? "infinite" : probabilities.length ? "finite" : "missing", impossibleEvents, reliability: Array.from({ length: 10 }, (_, bin) => { const members = probabilities.filter(row => Math.min(9, Math.floor(row.p * 10)) === bin); return { bin, count: members.length, predicted: mean(members.map(row => row.p)), observed: mean(members.map(row => row.y)) }; }) }, manifest: group.map(row => ({ evaluationId: row.id, vintageId: row.selection.vintageId, outcomeId: row.outcomeId, leadHours: row.leadHours, rescheduled: row.rescheduled, dependence: row.dependence })) };
+    return { stratum, dimensions: { evidenceClass: group[0].selection.evidenceClass, series: group[0].selection.series, horizon: group[0].selection.horizon, modelVersion: group[0].modelVersion, cohort: group[0].cohort, period: group[0].period, profileId: group[0].profile.id, valueKind: group[0].valueKind, label: group[0].label }, unresolvedOutcomes: group.filter(row => row.status === "pending" || row.appearance === "ambiguous").length, requested: group.length, forecastCoverage: group.filter(row => row.forecast.state === "available").length / group.length, outcomeCoverage: group.filter(row => row.actual.state === "available").length / group.length, abstentions: group.filter(row => row.forecast.state === "unavailable").length, missingHorizons: group.filter(row => row.selection.series === "primary_horizon" && row.selection.state === "missing").length, integrityExclusions: group.filter(row => row.selection.state === "excluded").length, artifactFailures: group.filter(row => row.interval.state === "unavailable" && /artifact|integrity/.test(row.interval.reason)).length, corrections: group.filter(row => row.predecessorId !== null).length, accuracy: errors(graded), intervals, paired, participation: { count: probabilities.length, missing: group.length - probabilities.length, brier: mean(probabilities.map(row => (row.p - row.y) ** 2)), logLoss: impossibleEvents ? null : mean(probabilities.map(row => row.y === 1 ? -Math.log(row.p) : -Math.log(1 - row.p))), logLossState: impossibleEvents ? "infinite" : probabilities.length ? "finite" : "missing", impossibleEvents, reliability: Array.from({ length: 10 }, (_, bin) => { const members = probabilities.filter(row => Math.min(9, Math.floor(row.p * 10)) === bin); return { bin, count: members.length, predicted: mean(members.map(row => row.p)), observed: mean(members.map(row => row.y)) }; }) }, manifest: group.map(row => ({ evaluationId: row.id, vintageId: row.selection.vintageId, outcomeId: row.outcomeId, leadHours: row.leadHours, rescheduled: row.rescheduled, dependence: row.dependence })) };
   });
+}
+
+/** Exact-profile public projection. Internal observation IDs/dependence manifests never leave this boundary. */
+export function buildAccountability(input: { evaluations: readonly EvaluationRevision[]; publications: readonly PublishedVintage[]; baselines?: readonly MatchedBaseline[]; profile: ScoringProfile; evidenceClass: EvidenceClass }): PublicAccountability {
+  const rows = input.evaluations.filter(row => row.profile.id === input.profile.id && row.selection.evidenceClass === input.evidenceClass);
+  if (rows.some(row => contentHash(row.profile.weights) !== contentHash(input.profile.weights))) throw new Error("Accountability profile identity conflict");
+  const reports = summarizeAccountability(rows, input.publications, input.baselines);
+  // Overall point accuracy is FP only: combining category units would mislead.
+  const fp = rows.filter(row => row.valueKind === "FP");
+  const accuracy = errors(fp.flatMap(row => row.error.state === "available" ? [row.error.value] : []));
+  const metric = (value: number | null) => value === null ? unavailable("no_graded_profile_observations") : available(value);
+  return { profileId: input.profile.id, observationUnit: "checkpoint_observation", uniqueTargets: new Set(fp.map(row => targetKey(row.selection))).size, requested: fp.length, forecastCount: fp.filter(row => row.forecast.state === "available").length, outcomeCount: fp.filter(row => row.actual.state === "available").length, abstentions: fp.filter(row => row.forecast.state === "unavailable").length, mae: metric(accuracy.mae), rmse: metric(accuracy.rmse), bias: metric(accuracy.bias), evidenceClass: input.evidenceClass,
+    limitations: ["Overall errors describe fantasy points only; category results are stratified", "Repeated player/game horizons are dependent; no independent-sample uncertainty is claimed"],
+    strata: reports.map(({ manifest: _manifest, stratum: _stratum, ...report }) => report) };
+}
+
+/** Whitelist the public metric DTO, including nested fields, and refuse cross-profile reuse. */
+export function projectPublicAccountability(value: PublicAccountability, profile: ScoringProfile): PublicAccountability {
+  if (value.profileId !== profile.id) return { profileId: profile.id, observationUnit: "checkpoint_observation", uniqueTargets: 0, requested: 0, forecastCount: 0, outcomeCount: 0, abstentions: 0, mae: unavailable("profile_metrics_unavailable"), rmse: unavailable("profile_metrics_unavailable"), bias: unavailable("profile_metrics_unavailable"), evidenceClass: value.evidenceClass, strata: [], limitations: ["Metrics have not been prepared for the selected scoring profile"] };
+  const number = (n: number | null) => { if (n !== null && !Number.isFinite(n)) throw new Error("Nonfinite public metric"); return n; };
+  const component = (n: Component<number>): Component<number> => n.state === "available" ? available(number(n.value)!) : unavailable(n.reason);
+  const accuracy = (a: NonNullable<PublicAccountability["strata"]>[number]["accuracy"]) => ({ count: a.count, mae: number(a.mae), mse: number(a.mse), rmse: number(a.rmse), bias: number(a.bias) });
+  return { profileId: value.profileId, observationUnit: "checkpoint_observation", uniqueTargets: value.uniqueTargets ?? 0, requested: value.requested, forecastCount: value.forecastCount, outcomeCount: value.outcomeCount, abstentions: value.abstentions, mae: component(value.mae), rmse: component(value.rmse), bias: component(value.bias), evidenceClass: value.evidenceClass, limitations: [...value.limitations], strata: (value.strata ?? []).map(s => {
+    const d = s.dimensions, p = s.participation;
+    if (d.profileId !== profile.id || d.evidenceClass !== value.evidenceClass) throw new Error("Public accountability stratum scope mismatch");
+    return { dimensions: { evidenceClass: d.evidenceClass, series: d.series, horizon: d.horizon, modelVersion: d.modelVersion, cohort: d.cohort, period: d.period, profileId: d.profileId, valueKind: d.valueKind, label: d.label }, requested: s.requested, forecastCoverage: s.forecastCoverage, outcomeCoverage: s.outcomeCoverage, abstentions: s.abstentions, missingHorizons: s.missingHorizons, unresolvedOutcomes: s.unresolvedOutcomes, integrityExclusions: s.integrityExclusions, artifactFailures: s.artifactFailures ?? 0, corrections: s.corrections, accuracy: accuracy(s.accuracy),
+      intervals: s.intervals.map(i => ({ level: i.level, count: i.count, missing: i.missing, coverage: number(i.coverage), width: number(i.width), intervalScore: number(i.intervalScore) })),
+      paired: s.paired.map(b => ({ name: b.name, requested: b.requested, paired: b.paired, coverage: b.coverage, candidate: accuracy(b.candidate), baseline: accuracy(b.baseline), mseImprovement: number(b.mseImprovement) })),
+      participation: { count: p.count, missing: p.missing, brier: number(p.brier), logLoss: number(p.logLoss), logLossState: p.logLossState, impossibleEvents: p.impossibleEvents, reliability: p.reliability.map(r => ({ bin: r.bin, count: r.count, predicted: number(r.predicted), observed: number(r.observed) })) } };
+  }) };
 }
 
 export interface RsoEvidence { id: string; kind: "stored" | "bridge_snapshot" | "served" | "displayed"; parentId: string | null; vintageId: string; profileId: string; consumerVersion: string; at: Instant; value: Component<number>; valueHash: string }

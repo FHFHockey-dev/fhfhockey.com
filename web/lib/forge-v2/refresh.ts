@@ -57,14 +57,15 @@ function validatePlan(plan: RefreshPlan) {
 }
 
 function validateRecoveredPublication(job: RefreshJob, published: PublishedVintage, queueId: string | undefined,
-  vintageId: string, confirmedAt: string) {
+  vintageId: string, confirmedAt: string, allowCurrentAttempt = false) {
   if (!queueId?.trim() || !published?.vintage || !published.receipt) throw new Error("Missing recovered publication provenance");
   const { vintage, receipt } = published;
   assertVintage(vintage);
   const stamp = vintage.issuanceAttempt, confirmed = clock(receipt.confirmedAt);
-  if (!stamp || stamp.queueId !== queueId || stamp.jobId !== job.id || stamp.attempt >= job.attempts
+  if (!stamp || stamp.queueId !== queueId || stamp.jobId !== job.id || stamp.attempt > job.attempts || !allowCurrentAttempt && stamp.attempt === job.attempts
     || clock(stamp.startedAt) < clock(job.firstQueuedAt) || clock(stamp.startedAt) > clock(vintage.generatedAt)
-    || confirmed < clock(vintage.generatedAt) || confirmed >= clock(job.startedAt!)
+    || !job.startedAt || confirmed < clock(vintage.generatedAt)
+    || (stamp.attempt === job.attempts ? stamp.startedAt !== job.startedAt : confirmed >= clock(job.startedAt))
     || !receipt.id?.trim() || receipt.witness !== "committed_readback" || receipt.evidenceClass !== vintage.evidenceClass
     || receipt.vintageId !== vintage.id || vintage.id !== vintageId || clock(confirmedAt) !== confirmed
     || receipt.outputHash !== contentHash(vintage) || vintage.issuanceKey !== job.issuanceKey
@@ -106,7 +107,7 @@ export function restoreRefreshState(value: unknown, bounds: RefreshBounds): Refr
       || ["published", "failed", "expired"].includes(job.status) && !job.finishedAt) throw new Error("Invalid refresh job lifecycle");
     if (job.recoveredPublication !== undefined || job.publicationQueueId !== undefined) {
       if (job.status !== "published" || !job.recoveredPublication) throw new Error("Recovery proof requires a completed publication");
-      validateRecoveredPublication(job, job.recoveredPublication, job.publicationQueueId, job.vintageId!, job.confirmedAt!);
+      validateRecoveredPublication(job, job.recoveredPublication, job.publicationQueueId, job.vintageId!, job.confirmedAt!, true);
     }
   }
   if (state.jobs.filter(job => job.status === "running").length > bounds.concurrency) throw new Error("Refresh capacity conflict");
@@ -318,6 +319,22 @@ export function claimRefreshBatch(input: RefreshState, now: string, bounds: Refr
 }
 export type RefreshResult = { state: "published"; vintageId: string; confirmedAt: string; recoveredPublication?: PublishedVintage }
   | { state: "failed" | "unavailable"; reason: string; retryable: boolean };
+
+/** Recover committed publication evidence without inventing a new claim or issuance.
+ * The caller must CAS the returned queue against the snapshot used for receipt discovery. */
+export function recoverRefreshPublication(input: RefreshState, jobId: string, publication: PublishedVintage, now: string,
+  bounds: RefreshBounds, queueId: string): RefreshState {
+  const state = restoreRefreshState(input, bounds), job = state.jobs.find(row => row.id === jobId);
+  if (!job || job.status === "published" || job.attempts < 1 || clock(publication.receipt.confirmedAt) > clock(now)) throw new Error("Invalid refresh publication recovery");
+  validateRecoveredPublication(job, publication, queueId, publication.vintage.id, publication.receipt.confirmedAt, true);
+  const confirmed = clock(publication.receipt.confirmedAt);
+  job.status = "published"; job.leaseUntil = null; job.finishedAt = now;
+  job.confirmedAt = publication.receipt.confirmedAt; job.vintageId = publication.vintage.id;
+  job.recoveredPublication = structuredClone(publication); job.publicationQueueId = queueId;
+  job.late = confirmed > clock(job.deadlineAt) || confirmed >= clock(job.lockAt);
+  job.reason = confirmed >= clock(job.lockAt) ? "post_lock_publication" : job.late ? "publication_deadline_missed" : null;
+  return restoreRefreshState(state, bounds);
+}
 
 /** Attempt token prevents a timed-out worker from acknowledging a newer claim. */
 export function finishRefresh(input: RefreshState, jobId: string, attempt: number, result: RefreshResult, now: string,

@@ -4,7 +4,7 @@ import { FIXTURE_TARGET, fixtureVintage } from "./fixtures";
 import { DEFAULT_SCORING, scoringProfile } from "./identity";
 import { contentHash } from "./hash.server";
 import { QualificationEvidence, qualificationScopeHash } from "./qualification";
-import { CalibrationArtifact, CalibrationObservation, INTERVAL_CALCULATION, JOINT_ALGORITHM, JOINT_DECODER, JOINT_SCHEMA, JointDistribution, fitIntervalCalibration, reproduceIntervals, scoreJoint, validateJoint } from "./uncertainty";
+import { CalibrationArtifact, CalibrationBundle, CalibrationObservation, INTERVAL_CALCULATION, JOINT_ALGORITHM, JOINT_DECODER, JOINT_SCHEMA, JointDistribution, fitIntervalCalibration, evaluatePinnedIntervals, reproduceIntervals, scoreJoint, validateJoint } from "./uncertainty";
 
 function joint(): JointDistribution {
   return { ...FIXTURE_TARGET, schemaVersion: JOINT_SCHEMA, inputCutoffAt: "2026-01-01T12:00:00.000Z", modelVersion: "fixture-model-v1", modelArtifactHash: "c".repeat(64), algorithmVersion: JOINT_ALGORITHM, categories: [...CATEGORIES], outcomes: [
@@ -53,6 +53,38 @@ describe("joint count transformations", () => {
 });
 
 describe("pinned interval calibration and qualification", () => {
+  it("evaluates pinned intervals before public qualification without bypassing artifact integrity", () => {
+    const s = pinnedScenario(); s.vintage.qualificationId = null; s.vintage.evidenceClass = "fixture";
+    expect(evaluatePinnedIntervals(s.vintage, DEFAULT_SCORING, s.distribution, s.calibration, "protocol").state).toBe("available");
+    expect(reproduceIntervals(s.vintage, DEFAULT_SCORING, s.manifest, s.evidence, s.distribution, s.calibration)).toEqual(unavailable("not_qualified"));
+    expect(evaluatePinnedIntervals(s.vintage, DEFAULT_SCORING, s.distribution, s.calibration, "other")).toEqual(unavailable("calibration_applicability_mismatch"));
+    s.calibration.payload.padding[0].upper++;
+    expect(evaluatePinnedIntervals(s.vintage, DEFAULT_SCORING, s.distribution, s.calibration, "protocol")).toEqual(unavailable("artifact_integrity_or_applicability_mismatch"));
+  });
+  it("reproduces issued and signed custom intervals from one immutable bundle and refuses substitutions", () => {
+    const s = pinnedScenario(), custom = scoringProfile({ ...DEFAULT_SCORING.weights, G: -3 });
+    const payload: CalibrationBundle = { schemaVersion: "profile-calibration-bundle-v1", profiles: {
+      [DEFAULT_SCORING.id]: { profile: DEFAULT_SCORING, calibration: s.calibration.payload },
+      [custom.id]: { profile: custom, calibration: { ...s.calibration.payload, profileId: custom.id, padding: [{ level: 0.5, lower: 2, upper: 2 }, { level: 0.9, lower: 3, upper: 3 }] } },
+    } };
+    const calibration = { payload, reference: { ...s.calibration.reference, schemaVersion: payload.schemaVersion, sha256: contentHash(payload), profileIds: [DEFAULT_SCORING.id, custom.id] } };
+    s.vintage.calibration = available(calibration.reference);
+    s.distribution.reference.profileIds.push(custom.id);
+    s.manifest.profileIds.push(custom.id); s.manifest.artifactHashes = [s.distribution.payload.modelArtifactHash, calibration.reference.sha256];
+    for (const e of s.evidence) { e.payload.scopeHash = qualificationScopeHash(s.manifest); e.payload.artifactHashes = s.manifest.artifactHashes; e.sha256 = contentHash(e.payload); }
+    const before = contentHash(s.vintage);
+    const original = reproduceIntervals(s.vintage, DEFAULT_SCORING, s.manifest, s.evidence, s.distribution, calibration);
+    expect(original.state).toBe("available");
+    const raw = scoreJoint(s.distribution.payload, custom);
+    if (raw.state !== "available") throw new Error("fixture joint unavailable");
+    expect(reproduceIntervals(s.vintage, custom, s.manifest, s.evidence, s.distribution, calibration)).toEqual(available(raw.value.intervals.map((interval, i) => ({ ...interval, lower: interval.lower - (i + 2), upper: interval.upper + (i + 2) }))));
+    expect(reproduceIntervals(s.vintage, scoringProfile({ ...custom.weights, PIM: 2 }), s.manifest, s.evidence, s.distribution, calibration).state).toBe("unavailable");
+    expect(contentHash(s.vintage)).toBe(before);
+    expect(reproduceIntervals(s.vintage, DEFAULT_SCORING, s.manifest, s.evidence, s.distribution, calibration)).toEqual(original);
+    const substituted = structuredClone(calibration); substituted.payload.profiles[custom.id].calibration.padding[0].lower++;
+    expect(reproduceIntervals(s.vintage, custom, s.manifest, s.evidence, s.distribution, substituted)).toEqual(unavailable("artifact_integrity_or_applicability_mismatch"));
+    expect(reproduceIntervals(s.vintage, custom, s.manifest, s.evidence, s.distribution, s.calibration).state).toBe("unavailable");
+  });
   it("qualifies a second future target without rewriting frozen dependencies or evidence", () => {
     const s = pinnedScenario();
     const frozen = contentHash({ manifest: s.manifest, evidence: s.evidence });

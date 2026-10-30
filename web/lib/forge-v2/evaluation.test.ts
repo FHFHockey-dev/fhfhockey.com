@@ -3,7 +3,7 @@ import { Component, HorizonEpisode, LockEpoch, PublishedVintage, available, unav
 import { FIXTURE_CLOCK, FIXTURE_TARGET, fixtureMeans, fixtureOutcome, fixturePublished } from "./fixtures";
 import { DEFAULT_SCORING, scoringProfile } from "./identity";
 import { contentHash } from "./hash.server";
-import { EvaluationRevision, RsoEvidence, appendOutcomeRevision, publicationEligibility, reportRsoEvidence, selectLockedFinal, selectPrimaryCheckpoints, settleEvaluation, summarizeAccountability } from "./evaluation";
+import { EvaluationRevision, RsoEvidence, appendSelectionRevision, buildAccountability, projectPublicAccountability, appendOutcomeRevision, publicationEligibility, reportRsoEvidence, selectLockedFinal, selectPrimaryCheckpoints, settleEvaluation, summarizeAccountability } from "./evaluation";
 
 const end = "2026-01-02T12:00:00.000Z", after = "2026-01-12T12:00:00.000Z";
 const epoch: LockEpoch = { id: "lock-1", gameId: FIXTURE_TARGET.gameId, adoptedAt: FIXTURE_CLOCK, lockAt: "2026-01-11T23:00:00.000Z", scheduleRevision: "schedule-1", predecessorId: null, reopened: false, actualStartAt: null, timingStatus: "provisional", playBegun: false };
@@ -181,5 +181,88 @@ describe("RSO lineage", () => {
     expect(reportRsoEvidence(records.slice(0, 2)).every(row => row.exposure === "missing_exposure_proof")).toBe(true);
     expect(reportRsoEvidence([...records.slice(0, 3), evidence("displayed", "served", available(99))]).at(-1)?.proven).toBe(false);
     expect(reportRsoEvidence([{ ...records[3], vintageId: "newer-vintage" }, ...records.slice(0, 3)])[0].proven).toBe(false);
+  });
+});
+
+describe("unresolved selection revision transitions", () => {
+  it("allows the first publication from an open first episode or newly observed horizon, but preserves settled identities", () => {
+    const selected = primary([pub])[9];
+    const unobserved = primary([], { episodes: [], asOf: FIXTURE_CLOCK })[9];
+    const pending = primary([], { asOf: FIXTURE_CLOCK })[9];
+    const revise = (prior: typeof selected, next = selected) => {
+      const previous = { id: "before", predecessorId: null, recordedAt: FIXTURE_CLOCK, selection: prior, reason: null };
+      const revision = { id: "after", predecessorId: previous.id, recordedAt: after, selection: next, reason: "first_publication_observed" };
+      return { previous, revision, history: () => appendSelectionRevision([previous], revision) };
+    };
+    for (const prior of [pending, unobserved]) {
+      const transition = revise(prior);
+      expect(transition.history()).toHaveLength(2);
+      const priorGrade = grade({ selection: prior, publication: null, outcome: null, recordedAt: FIXTURE_CLOCK });
+      expect(grade({ id: "settled", prior: priorGrade, selection: selected, correctionReason: "first_publication_observed", priorSelectionRevision: transition.previous, selectionRevision: transition.revision }).forecast.state).toBe("available");
+    }
+    expect(revise(pending, { ...selected, episodeId: "second-episode" }).history).toThrow("immutable");
+    expect(revise(primary([])[9]).history).toThrow("immutable");
+    expect(revise(selected, { ...selected, vintageId: "replacement" }).history).toThrow("immutable");
+    expect(revise({ ...selected, state: "excluded" }, { ...selected, vintageId: "replacement" }).history).toThrow("immutable");
+  });
+
+  it("ignores future superseding epochs at an earlier evaluation cutoff", () => {
+    const future: LockEpoch = { ...epoch, id: "future-epoch", predecessorId: epoch.id, adoptedAt: end, lockAt: "2026-01-13T23:00:00.000Z" };
+    expect(publicationEligibility(pub, [epoch, future], pub.receipt.confirmedAt)).toBeNull();
+    const delayed = fixturePublished({ id: "superseded" }, "2026-01-03T12:00:00.000Z");
+    expect(publicationEligibility(delayed, [epoch, future], after)).toBe("superseded_lock_epoch");
+  });
+});
+
+describe("authoritative timing corrections and public accountability", () => {
+  it("restores the corrected final with append-only selection/evaluation lineage without reopening issuance", () => {
+    const published = fixturePublished({ id: "between-start-estimates" }, "2026-01-11T22:15:00.000Z");
+    const first: LockEpoch = { ...epoch, id: "wrong-start", predecessorId: epoch.id, adoptedAt: "2026-01-12T01:00:00.000Z", actualStartAt: "2026-01-11T22:00:00.000Z", playBegun: true, timingStatus: "confirmed" };
+    const corrected: LockEpoch = { ...first, id: "corrected-start", predecessorId: first.id, adoptedAt: "2026-01-12T02:00:00.000Z", actualStartAt: "2026-01-11T22:30:00.000Z" };
+    const epochs = [epoch, first, corrected];
+    const before = final([published], { epochs, asOf: first.adoptedAt });
+    const afterCorrection = final([published], { epochs, asOf: corrected.adoptedAt });
+    const primaryBefore = selectPrimaryCheckpoints({ target: FIXTURE_TARGET, episodes: [{ ...episode, exitedAt: null }], publications: [published], epochs, evidenceClass: "fixture", asOf: first.adoptedAt });
+    const primaryAfter = selectPrimaryCheckpoints({ target: FIXTURE_TARGET, episodes: [{ ...episode, exitedAt: null }], publications: [published], epochs, evidenceClass: "fixture", asOf: corrected.adoptedAt, prior: primaryBefore });
+    expect(primaryBefore[9].state).toBe("excluded");
+    expect(primaryAfter[9]).toMatchObject({ state: "selected", vintageId: published.vintage.id, reason: null });
+    expect(before.state).toBe("missing");
+    expect(afterCorrection).toMatchObject({ state: "selected", vintageId: published.vintage.id });
+    const original = { id: "selection-1", predecessorId: null, selection: before, recordedAt: first.adoptedAt, reason: null };
+    const revision = { id: "selection-2", predecessorId: original.id, selection: afterCorrection, recordedAt: corrected.adoptedAt, reason: "authoritative_start_correction" };
+    const history = appendSelectionRevision([original], revision);
+    expect(history[0].selection.state).toBe("missing");
+    expect(appendSelectionRevision(history, revision)).toHaveLength(2);
+    const oldGrade = grade({ selection: before, publication: null, recordedAt: after });
+    const input = { id: "corrected-grade", prior: oldGrade, selection: afterCorrection, publication: published, recordedAt: "2026-01-13T12:00:00.000Z", correctionReason: revision.reason };
+    expect(() => grade(input)).toThrow("selection correction lineage");
+    expect(grade({ ...input, priorSelectionRevision: original, selectionRevision: revision })).toMatchObject({ predecessorId: oldGrade.id, forecast: available(0.5) });
+    const fakeReopen: LockEpoch = { ...corrected, id: "cannot-reopen", predecessorId: corrected.id, adoptedAt: "2026-01-12T03:00:00.000Z", lockAt: "2026-01-14T23:00:00.000Z", actualStartAt: null, playBegun: false };
+    const postPlay = fixturePublished({ id: "post-play", lockEpochId: fakeReopen.id, inputCutoffAt: fakeReopen.adoptedAt, generatedAt: "2026-01-12T03:00:01.000Z" }, "2026-01-12T03:00:02.000Z");
+    expect(publicationEligibility(postPlay, [...epochs, fakeReopen], after)).toBe("play_already_observed");
+  });
+
+  it("projects exact-profile paired, interval, participation and stratified metrics without internal manifests", () => {
+    const profile = scoringProfile({ ...DEFAULT_SCORING.weights, PIM: -1 });
+    const row = grade({ profile, valueKind: "FP", label: "historical_rescore", intervals: available([{ level: 0.5, lower: -3, upper: 0 }, { level: 0.9, lower: -4, upper: 1 }]) });
+    const baseline = { evaluationId: row.id, valueKind: row.valueKind, evidenceClass: row.selection.evidenceClass, name: "season_rate" as const, selectedVintageId: pub.vintage.id, inputCutoffAt: pub.vintage.inputCutoffAt, target: FIXTURE_TARGET, profileId: profile.id, outcomeId: row.outcomeId!, value: available(0) };
+    const report = buildAccountability({ evaluations: [grade({ id: "default", valueKind: "FP" }), row], publications: [pub], baselines: [baseline], profile, evidenceClass: "fixture" });
+    expect(report).toMatchObject({ profileId: profile.id, requested: 1, forecastCount: 1, outcomeCount: 1 });
+    expect(report).toMatchObject({ observationUnit: "checkpoint_observation", uniqueTargets: 1 });
+    expect(report.strata).toHaveLength(1);
+    const polluted = structuredClone(report) as typeof report & { secret?: string };
+    polluted.secret = "internal";
+    Object.assign(polluted.strata![0].participation, { manifest: "internal" });
+    expect(projectPublicAccountability(polluted, profile)).toEqual(report);
+    expect(projectPublicAccountability(report, DEFAULT_SCORING)).toMatchObject({ requested: 0, strata: [], mae: unavailable("profile_metrics_unavailable") });
+    expect(report.strata![0]).toMatchObject({ dimensions: { profileId: profile.id, evidenceClass: "fixture", horizon: 10, cohort: pub.vintage.cohort, modelVersion: pub.vintage.modelVersion, period: "synthetic-period" }, missingHorizons: 0, unresolvedOutcomes: 0, corrections: 0, integrityExclusions: 0 });
+    expect(report.strata![0].paired[1]).toMatchObject({ paired: 1, candidate: { count: 1 }, baseline: { mae: 2, rmse: 2, bias: 2 } });
+    expect(report.strata![0].intervals[0]).toMatchObject({ coverage: 1, width: 3, intervalScore: 3 });
+    expect(report.strata![0].participation.reliability).toHaveLength(10);
+    expect(JSON.stringify(report)).not.toContain('evaluationId');
+    expect(JSON.parse(JSON.stringify(report))).toEqual(report);
+    const absent = buildAccountability({ evaluations: [row], publications: [pub], profile: DEFAULT_SCORING, evidenceClass: "fixture" });
+    expect(absent).toMatchObject({ requested: 0, mae: unavailable("no_graded_profile_observations"), strata: [] });
+    expect(() => buildAccountability({ evaluations: [{ ...row, profile: { ...profile, weights: DEFAULT_SCORING.weights } }], publications: [pub], profile, evidenceClass: "fixture" })).toThrow("profile identity conflict");
   });
 });

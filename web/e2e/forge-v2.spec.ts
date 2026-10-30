@@ -10,6 +10,9 @@ import type { PublicGameView, PublicPlayerView, PublicRevision } from "../lib/fo
 import { CATEGORIES, available, unavailable } from "../lib/forge-v2/contracts";
 import { fixtureMeans, fixtureOpportunity } from "../lib/forge-v2/fixtures";
 import { DEFAULT_SCORING } from "../lib/forge-v2/identity";
+import type { NextApiRequest, NextApiResponse } from "next";
+import { createForgeReadHandler } from "../lib/forge-v2/api.server";
+import { issuedLifecycleFixture } from "../lib/forge-v2/fixtureHarness.server";
 
 /** Display states exercise browser rendering only; they are never qualification evidence. */
 function syntheticPublicPlayerView(): PublicPlayerView {
@@ -37,10 +40,12 @@ function syntheticPublicPlayerView(): PublicPlayerView {
 }
 
 let server: Server | undefined, root: string | undefined, origin: string;
-const screens = resolve(process.cwd(), "../tasks/artifacts/forge-v2-implementation-2026-10-29/screens");
+const screens = resolve(process.cwd(), "../tasks/artifacts/forge-v2-remediation-2026-10-30/screens");
 test.beforeAll(async () => {
   if (process.env.PLAYWRIGHT_SKIP_WEB_SERVER !== "1") throw new Error("Fixture acceptance requires PLAYWRIGHT_SKIP_WEB_SERVER=1; do not start Next");
   root = await mkdtemp(join(tmpdir(), "forge-v2-browser-"));
+  const issued = await issuedLifecycleFixture(join(root, "issued"));
+  const handler = createForgeReadHandler({ enabled: true, repository: issued.repository });
   const fixture = JSON.stringify(syntheticPublicPlayerView()).replaceAll("<", "\\u003c");
   const code = `import React from 'react';
     import { createRoot } from 'react-dom/client';
@@ -60,17 +65,56 @@ test.beforeAll(async () => {
   const built = await build({ stdin: { contents: code, resolveDir: process.cwd(), sourcefile: "forge-browser-fixture.tsx", loader: "tsx" }, bundle: true, platform: "browser", format: "esm", outdir: root, entryNames: "fixture", jsx: "automatic", define: { "process.env.NODE_ENV": '"production"' }, metafile: true, logLevel: "silent", plugins: [{ name: "real-sass-css-modules", setup(builder) { builder.onLoad({ filter: /\.module\.scss$/ }, args => ({ contents: compile(args.path).css, loader: "local-css", resolveDir: process.cwd() })); } }] });
   const forbidden = Object.keys(built.metafile!.inputs).filter(path => /forge-v2\/(?:hash\.server|history\.server|artifacts\.server|model|qualification|evaluation)\./.test(path) || /supabase|\/server\//.test(path));
   expect(forbidden).toEqual([]);
+  const integrated = `import React from 'react'; import {createRoot} from 'react-dom/client'; import ConnectedForecastExplorer from './components/ForgeV2/ConnectedForecastExplorer';
+    fetch('/api/v2/forge/next-ten?playerId=9900001').then(r=>{if(!r.ok)throw new Error('Fixture API unavailable');return r.json()}).then(view=>createRoot(document.getElementById('root')).render(<><aside>SYNTHETIC ISSUANCE · Real queue, prepared records and read API; no scientific qualification</aside><ConnectedForecastExplorer initialView={view} players={[view.player]} /></>));`;
+  await build({ stdin: { contents: integrated, resolveDir: process.cwd(), sourcefile: "forge-issued-browser.tsx", loader: "tsx" }, bundle: true, platform: "browser", format: "esm", outdir: root, entryNames: "integrated", jsx: "automatic", define: { "process.env.NODE_ENV": '"production"' }, logLevel: "silent", plugins: [{ name: "real-sass-css-modules", setup(builder) { builder.onLoad({ filter: /\.module\.scss$/ }, args => ({ contents: compile(args.path).css, loader: "local-css", resolveDir: process.cwd() })); } }] });
   const html = '<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>FORGE v2 synthetic browser acceptance</title><link rel="stylesheet" href="/fixture.css"><style>body{margin:0;font-family:system-ui,sans-serif}*{box-sizing:border-box}</style></head><body><div id="root"></div><script type="module" src="/fixture.js"></script></body></html>';
   server = createServer(async (request, response) => {
-    const path = new URL(request.url ?? "/", "http://127.0.0.1").pathname;
+    const url = new URL(request.url ?? "/", "http://127.0.0.1"), path = url.pathname;
+    if (path.startsWith("/api/v2/forge/")) {
+      const req = { method: request.method, query: { ...Object.fromEntries(url.searchParams), operation: path.split("/").at(-1) } } as unknown as NextApiRequest;
+      const res = { setHeader: (name: string, value: string) => response.setHeader(name, value), status(code: number) { response.statusCode = code; return res; }, json(body: unknown) { response.setHeader("content-type", "application/json"); response.end(JSON.stringify(body)); return res; } };
+      await handler(req, res as unknown as NextApiResponse); return;
+    }
+    if (path === "/integrated") { response.setHeader("content-type", "text/html"); response.end(html.replaceAll("fixture.css", "integrated.css").replaceAll("fixture.js", "integrated.js")); return; }
     if (path === "/") { response.setHeader("content-type", "text/html"); response.end(html); return; }
-    if (path !== "/fixture.js" && path !== "/fixture.css") { response.writeHead(404); response.end(); return; }
+    if (!["/fixture.js", "/fixture.css", "/integrated.js", "/integrated.css"].includes(path)) { response.writeHead(404); response.end(); return; }
     try { response.setHeader("content-type", path.endsWith(".js") ? "text/javascript" : "text/css"); response.end(await readFile(join(root!, path.slice(1)))); }
     catch { response.writeHead(500); response.end("Fixture file unavailable"); }
   });
   await new Promise<void>((resolvePromise, reject) => { server!.once("error", reject); server!.listen(0, "127.0.0.1", resolvePromise); });
   origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   await mkdir(screens, { recursive: true });
+});
+
+for (const width of [1440, 390]) test(`issued queue → prepared API → browser scoring and accountability: ${width}`, async ({ page }) => {
+  await page.setViewportSize({ width, height: 900 });
+  const errors: string[] = [];
+  page.on("pageerror", error => errors.push(error.message));
+  await page.route("**/*", route => new URL(route.request().url()).origin === origin ? route.continue() : route.abort());
+  await page.goto(`${origin}/integrated`);
+  await expect(page.getByRole("heading", { name: "One skater. Ten games." })).toBeVisible();
+  await expect(page.getByText(/SYNTHETIC ISSUANCE/)).toBeVisible();
+  await expect(page.getByText("Actual result · diamond").locator("..")).toContainText("corrected");
+  await page.getByRole("spinbutton", { name: "G weight", exact: true }).fill("-3");
+  await page.getByRole("spinbutton", { name: "PIM weight", exact: true }).fill("-0.5");
+  await page.getByRole("button", { name: "Apply scoring" }).click();
+  await expect(page.getByText(/Re-scored under selected profile. Original issued values and grades remain unchanged/)).toBeVisible();
+  await expect(page.getByText("Actual result · diamond").locator("..")).toContainText("-2");
+  const report = page.getByText(/^FP · Locked-final/).locator("..");
+  await report.locator("summary").click();
+  await expect(report).toContainText("last five: 1 / 1 paired");
+  await expect(report).toContainText("proper interval score");
+  await expect(report).toContainText("Participation reliability");
+  await page.getByRole("button", { name: "Use default weights" }).click();
+  await page.getByRole("button", { name: "Apply scoring" }).click();
+  await expect(page.getByText(/Showing original issued scoring/)).toBeVisible();
+  await expect(page.getByRole("alert")).toHaveCount(0);
+  await page.getByText(/^History events and gaps/).click();
+  await expect(page.getByText(/missing refresh: missing refresh:lock passed/)).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: join(screens, `issued-${width}.png`), fullPage: true });
+  expect(errors).toEqual([]);
 });
 test.afterAll(async () => {
   if (server) await new Promise<void>((resolvePromise, reject) => server!.close(error => error ? reject(error) : resolvePromise()));

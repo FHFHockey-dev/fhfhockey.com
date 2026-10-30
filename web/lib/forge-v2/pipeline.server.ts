@@ -1,16 +1,16 @@
-import { ArtifactReference, CATEGORIES, CategoryMeans, Component, HistoryEvent, HorizonEpisode, LockEpoch, Opportunity, PublishedVintage, ScoringProfile, Vintage, assertArtifact, assertHorizon, assertId, assertSource, assertTarget, assertVintage, available, instant, unavailable } from "./contracts";
+import { ArtifactReference, CATEGORIES, Category, CategoryMeans, Component, HistoryEvent, HorizonEpisode, LockEpoch, Opportunity, PublishedVintage, ScoringProfile, Vintage, assertArtifact, assertHorizon, assertId, assertSource, assertTarget, assertVintage, available, instant, unavailable } from "./contracts";
 import { FileArtifactStore } from "./artifacts.server";
 import type { SourceBatchResult } from "./data";
-import type { PostgresHistoryStore } from "./history.server";
+import type { PostgresHistoryStore, QueueHistoryRecord } from "./history.server";
 import { contentHash } from "./hash.server";
 import { scoringProfile, targetKey } from "./identity";
 import { CandidateModel, ModelContext, modelAvailableAtCutoff, predictConditional } from "./model";
 import { AppearanceModel, predictParticipation } from "./participation";
-import { CalibrationArtifact, INTERVAL_CALCULATION, JOINT_DECODER, JOINT_SCHEMA, PinnedArtifact, predictJoint } from "./uncertainty";
-import { RefreshBounds, RefreshJob, RefreshPlan, RefreshResult, claimRefreshBatch, finishRefresh, reconcileRefreshScopes, restoreRefreshState } from "./refresh";
+import { CalibrationPayload, calibrationForProfile, INTERVAL_CALCULATION, JOINT_DECODER, JOINT_SCHEMA, PinnedArtifact, JointDistribution, predictJoint } from "./uncertainty";
+import { RefreshBounds, RefreshJob, RefreshPlan, RefreshResult, claimRefreshBatch, finishRefresh, reconcileRefreshScopes, recoverRefreshPublication, restoreRefreshState } from "./refresh";
 import { observeHorizonEpisodes } from "./schedule";
 
-export type PreparedHistoryStore = Pick<PostgresHistoryStore, "reserveSequence" | "getDraft" | "publish" | "publishClaimed" | "appendRecord" | "loadQueue" | "saveQueue">;
+export type PreparedHistoryStore = Pick<PostgresHistoryStore, "reserveSequence" | "getDraft" | "get" | "publish" | "publishClaimed" | "appendRecord" | "loadQueue" | "saveQueue" | "saveQueueWithRecords">;
 export interface PreparedLedgerObservation<T> { value: T; predecessor: T | null }
 export interface PreparedLedgerInput {
   store: Pick<PreparedHistoryStore, "appendRecord">;
@@ -126,7 +126,7 @@ export interface PreparedIssuance {
   lock: LockEpoch;
   model: CandidateModel | null;
   participationModel: AppearanceModel | null;
-  calibration: PinnedArtifact<CalibrationArtifact> | null;
+  calibration: PinnedArtifact<CalibrationPayload> | null;
   scoring: ScoringProfile;
   featureVersion: string;
   codeVersion: string;
@@ -206,14 +206,19 @@ function calibrationReference(prepared: PreparedIssuance, plan: RefreshPlan): Co
   if (!artifact) return unavailable("not_calibrated");
   try {
     assertArtifact(artifact.reference);
-    const ref = artifact.reference, payload = artifact.payload;
-    if (ref.kind !== "calibration" || contentHash(payload) !== ref.sha256 || ref.schemaVersion !== "profile-tail-padding-v1" || ref.decoderVersion !== JOINT_DECODER || ref.calculationVersion !== INTERVAL_CALCULATION
-      || payload.schemaVersion !== ref.schemaVersion || payload.calculationVersion !== INTERVAL_CALCULATION || !modelAvailableAtCutoff(payload, prepared.context.inputCutoffAt)
-      || payload.modelVersion !== prepared.model?.version || payload.profileId !== prepared.scoring.id || payload.horizon !== plan.scope.horizon || payload.cohort !== prepared.cohort
-      || !payload.protocolId || !payload.sampleIds.length || payload.padding.length !== 2 || ([0.5, 0.9] as const).some(level => payload.padding.filter(p => p.level === level).length !== 1)
-      || payload.padding.some(p => !Number.isFinite(p.lower) || !Number.isFinite(p.upper) || p.lower < 0 || p.upper < 0)
-      || !ref.horizons.includes(plan.scope.horizon) || !ref.cohorts.includes(prepared.cohort) || !ref.profileIds.includes(prepared.scoring.id)
-      || CATEGORIES.some(c => prepared.scoring.weights[c] !== 0 && !ref.categories.includes(c))) return unavailable("calibration_incompatible_with_prepared_issuance");
+    const ref = artifact.reference, body = artifact.payload;
+    const profiles = body.schemaVersion === "profile-calibration-bundle-v1" ? Object.values(body.profiles).map(entry => entry.profile) : [prepared.scoring];
+    if (ref.kind !== "calibration" || contentHash(body) !== ref.sha256 || ref.schemaVersion !== body.schemaVersion || ref.decoderVersion !== JOINT_DECODER || ref.calculationVersion !== INTERVAL_CALCULATION
+      || !profiles.length || contentHash([...ref.profileIds].sort()) !== contentHash(profiles.map(profile => profile.id).sort())
+      || !ref.horizons.includes(plan.scope.horizon) || !ref.cohorts.includes(prepared.cohort) || !ref.profileIds.includes(prepared.scoring.id)) return unavailable("calibration_incompatible_with_prepared_issuance");
+    for (const profile of profiles) {
+      const payload = calibrationForProfile(body, profile);
+      if (!payload || payload.calculationVersion !== INTERVAL_CALCULATION || !modelAvailableAtCutoff(payload, prepared.context.inputCutoffAt)
+        || payload.modelVersion !== prepared.model?.version || payload.horizon !== plan.scope.horizon || payload.cohort !== prepared.cohort
+        || !payload.protocolId || !payload.sampleIds.length || payload.padding.length !== 2 || ([0.5, 0.9] as const).some(level => payload.padding.filter(p => p.level === level).length !== 1)
+        || payload.padding.some(p => !Number.isFinite(p.lower) || !Number.isFinite(p.upper) || p.lower < 0 || p.upper < 0)
+        || CATEGORIES.some(c => profile.weights[c] !== 0 && !ref.categories.includes(c))) return unavailable("calibration_incompatible_with_prepared_issuance");
+    }
     return available(ref);
   } catch { return unavailable("invalid_prepared_calibration"); }
 }
@@ -251,19 +256,29 @@ export async function runPreparedIssuance(input: PreparedRunInput): Promise<Prep
     means = prediction.means; limitations = [...prediction.limitations, "private_development_unqualified"];
   } catch { return { state: "unavailable", reason: "conditional_model_generation_failed", retryable: false }; }
   const participation = predictParticipation(prepared.participationModel, prepared.context);
+  const calibration = calibrationReference(prepared, input.plan);
   let distribution: Component<ArtifactReference> = unavailable("joint_model_unavailable");
   if (prepared.model) {
-    const categories = CATEGORIES.filter(c => means[c].state === "available");
-    const joint = predictJoint(prepared.model, prepared.context, categories);
+    const body = prepared.calibration?.payload;
+    const profiles = calibration.state === "available" && body?.schemaVersion === "profile-calibration-bundle-v1" ? Object.values(body.profiles).map(entry => entry.profile) : [prepared.scoring];
+    const support = (selected: ScoringProfile[]): Category[] => {
+      const categories = CATEGORIES.filter(c => selected.some(profile => profile.weights[c] !== 0));
+      if (categories.includes("PPP")) for (const c of ["G", "A"] as const) if (!categories.includes(c)) categories.push(c);
+      return categories;
+    };
+    let categories = support(profiles);
+    let joint = predictJoint(prepared.model, prepared.context, categories);
+    const coherent = (value: Component<JointDistribution>) => value.state === "available" && categories.every(c => means[c].state === "available" && Math.abs((means[c] as { value: number }).value - value.value.outcomes.reduce((sum, row) => sum + row.probability * row.values[c]!, 0)) <= 1e-10);
+    // A broader optional profile must not discard support needed by the issued profile.
+    if (!coherent(joint) && profiles.length > 1) { categories = support([prepared.scoring]); joint = predictJoint(prepared.model, prepared.context, categories); }
     distribution = joint.state === "unavailable" ? joint : unavailable("joint_mean_mismatch");
-    if (joint.state === "available" && categories.every(c => means[c].state === "available" && Math.abs((means[c] as { value: number }).value - joint.value.outcomes.reduce((sum, row) => sum + row.probability * row.values[c]!, 0)) <= 1e-10)) {
+    if (joint.state === "available" && coherent(joint)) {
       const sha256 = contentHash(joint.value);
-      const reference: ArtifactReference = { id: `joint:${contentHash(input.plan.issuanceKey)}:${sha256}`, version: "v1", sha256, kind: "joint_distribution", schemaVersion: JOINT_SCHEMA, decoderVersion: JOINT_DECODER, calculationVersion: INTERVAL_CALCULATION, categories, horizons: [input.plan.scope.horizon], cohorts: [prepared.cohort], profileIds: [prepared.scoring.id], targetVersion: input.plan.scope.targetVersion, conditioning: input.plan.scope.conditioning };
+      const reference: ArtifactReference = { id: `joint:${contentHash(input.plan.issuanceKey)}:${sha256}`, version: "v1", sha256, kind: "joint_distribution", schemaVersion: JOINT_SCHEMA, decoderVersion: JOINT_DECODER, calculationVersion: INTERVAL_CALCULATION, categories, horizons: [input.plan.scope.horizon], cohorts: [prepared.cohort], profileIds: profiles.filter(profile => CATEGORIES.every(c => profile.weights[c] === 0 || categories.includes(c))).map(profile => profile.id), targetVersion: input.plan.scope.targetVersion, conditioning: input.plan.scope.conditioning };
       await assertClaim(input); await input.artifacts.put(reference, joint.value);
       distribution = available(reference);
     }
   }
-  const calibration = calibrationReference(prepared, input.plan);
   if (calibration.state === "available") { await assertClaim(input); await input.artifacts.put(calibration.value, prepared.calibration!.payload); }
   await assertClaim(input);
   const sequence = await input.store.reserveSequence(), generatedAt = input.clock();
@@ -291,6 +306,18 @@ export interface PreparedBatchResult {
   state: "completed" | "claim_conflict" | "queue_missing";
   jobs: Array<{ jobId: string; attempt: number; result: PreparedRunResult | { state: "failed"; reason: string }; acknowledgement: "saved" | "stale_claim" | "revision_conflict" }>;
 }
+export interface PreparedRefreshHistoryEvent extends HistoryEvent {
+  queueId: string; jobId: string; issuanceKey: string; attempt: number; startedAt: string | null;
+}
+function refreshEventRecord(input: PreparedBatchInput, job: RefreshJob, kind: HistoryEvent["kind"], reason: string, at: string): QueueHistoryRecord {
+  const event: PreparedRefreshHistoryEvent = {
+    playerId: job.scope.playerId, gameId: job.scope.gameId, seasonId: job.scope.seasonId, targetVersion: job.scope.targetVersion, conditioning: job.scope.conditioning,
+    id: `refresh-event:${contentHash({ queueId: input.queueId, jobId: job.id, attempt: job.attempts, kind, reason, at })}`,
+    at, kind, reason, vintageId: null, predecessorId: null,
+    queueId: input.queueId, jobId: job.id, issuanceKey: job.issuanceKey, attempt: job.attempts, startedAt: job.startedAt,
+  };
+  return { id: preparedLedgerRecordId("history_event", event), kind: "history_event", scopeKey: targetKey(event), payload: event, predecessorId: null };
+}
 const revisionConflict = (error: unknown) => error instanceof Error && error.message === "Queue revision conflict";
 
 /** One bounded batch; claim CAS precedes all work, and acknowledgements merge only their current attempt. */
@@ -299,8 +326,31 @@ export async function runPreparedQueueBatch(input: PreparedBatchInput): Promise<
   if (!input.queueId.trim() || !Number.isInteger(mergeLimit) || mergeLimit < 1 || mergeLimit > 5) throw new Error("invalid_prepared_batch_bounds");
   const snapshot = await input.store.loadQueue(input.queueId);
   if (!snapshot) return { state: "queue_missing", jobs: [] };
-  const claimed = claimRefreshBatch(restoreRefreshState(snapshot.state, input.bounds), input.clock(), input.bounds);
-  try { await input.store.saveQueue(input.queueId, snapshot.revision, claimed.state); }
+  let prior = restoreRefreshState(snapshot.state, input.bounds);
+  const claimedAt = input.clock();
+  const transitioning = prior.jobs.filter(job => job.status === "failed" || job.status === "expired" || job.status === "running" && instant(job.leaseUntil!) <= instant(claimedAt) || job.status === "pending" && instant(job.lockAt) <= instant(claimedAt));
+  const recovery = transitioning.filter(job => job.attempts > 0);
+  // At most 200 sequential local store reads; no unbounded per-population probing.
+  if (recovery.length > 100 || transitioning.length > 100) throw new Error("prepared_receipt_recovery_capacity_exceeded");
+  for (const job of recovery) {
+    const draft = await input.store.getDraft(job.issuanceKey);
+    if (!draft) continue;
+    const publication = await input.store.get(draft.id);
+    if (!publication) continue;
+    if (contentHash(draft) !== contentHash(publication.vintage)) throw new Error("recovery_draft_receipt_mismatch");
+    prior = recoverRefreshPublication(prior, job.id, publication, claimedAt, input.bounds, input.queueId);
+  }
+  const claimed = claimRefreshBatch(prior, claimedAt, input.bounds);
+  if (claimed.jobs.length > 100) throw new Error("prepared_receipt_recovery_capacity_exceeded");
+  // Stable lease/lock timestamps make repeated observations idempotent.
+  // The winning queue transition and its events commit atomically.
+  const claimEvents: QueueHistoryRecord[] = [];
+  for (const job of prior.jobs) {
+    if (job.status === "running" && instant(job.leaseUntil!) <= instant(claimedAt)) claimEvents.push(refreshEventRecord(input, job, "failed_attempt", "worker_lease_expired", job.leaseUntil!));
+    if ((job.status === "pending" || job.status === "running" && instant(job.leaseUntil!) <= instant(claimedAt)) && instant(job.lockAt) <= instant(claimedAt)) claimEvents.push(refreshEventRecord(input, job, "missing_refresh", "missing_refresh:lock_passed", job.lockAt));
+    if ((job.status === "failed" || job.status === "expired") && job.reason && job.finishedAt) claimEvents.push(refreshEventRecord(input, job, "missing_refresh", job.reason, job.reason === "missing_refresh:lock_passed" ? job.lockAt : job.finishedAt));
+  }
+  try { await input.store.saveQueueWithRecords(input.queueId, snapshot.revision, claimed.state, claimEvents); }
   catch (error) { if (revisionConflict(error)) return { state: "claim_conflict", jobs: [] }; throw error; }
   const results: PreparedBatchResult["jobs"] = [];
   for (const job of claimed.jobs) {
@@ -308,6 +358,7 @@ export async function runPreparedQueueBatch(input: PreparedBatchInput): Promise<
     let result: PreparedBatchResult["jobs"][number]["result"];
     try { result = await runPreparedIssuance(runInput); }
     catch (error) { result = { state: "failed", reason: error instanceof Error ? error.message : "prepared_issuance_failed" }; }
+    const completedAt = input.clock();
     let acknowledgement: PreparedBatchResult["jobs"][number]["acknowledgement"] = "revision_conflict";
     for (let merge = 0; merge < mergeLimit; merge++) {
       const current = await input.store.loadQueue(input.queueId);
@@ -321,9 +372,31 @@ export async function runPreparedQueueBatch(input: PreparedBatchInput): Promise<
         completion = { state: "published", vintageId: publication.vintage.id, confirmedAt: publication.receipt.confirmedAt,
           ...(instant(publication.receipt.confirmedAt) < instant(job.startedAt!) ? { recoveredPublication: publication } : {}) };
       } else completion = { state: result.state, reason: result.reason, retryable: result.state === "unavailable" ? result.retryable : true };
-      const merged = finishRefresh(state, job.id, job.attempts, completion, now, input.bounds, input.queueId);
-      try { await input.store.saveQueue(input.queueId, current.revision, merged); acknowledgement = "saved"; break; }
+      let merged = finishRefresh(state, job.id, job.attempts, completion, completedAt, input.bounds, input.queueId);
+      // A terminal acknowledgement failure is not evidence that publication was absent.
+      // This adds at most two receipt reads per claimed job per bounded merge attempt.
+      if (result.state !== "published" && merged.jobs.find(row => row.id === job.id)!.status === "failed") {
+        const draft = await input.store.getDraft(job.issuanceKey);
+        const publication = draft && await input.store.get(draft.id);
+        if (draft && publication) {
+          if (contentHash(draft) !== contentHash(publication.vintage)) throw new Error("recovery_draft_receipt_mismatch");
+          merged = recoverRefreshPublication(state, job.id, publication, now, input.bounds, input.queueId);
+        }
+      }
+      const completionEvents: QueueHistoryRecord[] = [];
+      if (result.state !== "published") {
+        completionEvents.push(refreshEventRecord(input, job, result.state === "unavailable" ? "unavailable" : "failed_attempt", result.reason, completedAt));
+        const finished = merged.jobs.find(row => row.id === job.id)!;
+        if (finished.status === "failed") completionEvents.push(refreshEventRecord(input, job, "missing_refresh", finished.reason!, completedAt));
+      }
+      try { await input.store.saveQueueWithRecords(input.queueId, current.revision, merged, completionEvents); acknowledgement = "saved"; break; }
       catch (error) { if (!revisionConflict(error)) throw error; }
+    }
+    // An executed failure remains an attempt fact even if its lease was subsequently lost.
+    // It cannot acknowledge newer work or declare a terminal missing refresh.
+    if (acknowledgement !== "saved" && result.state !== "published" && !["stale_refresh_claim", "stale_publication_claim", "Refresh publication claim lost"].includes(result.reason)) {
+      const record = refreshEventRecord(input, job, "failed_attempt", result.reason, completedAt);
+      await input.store.appendRecord(record.id, record.kind, record.scopeKey, record.payload, record.predecessorId);
     }
     results.push({ jobId: job.id, attempt: job.attempts, result, acknowledgement });
   }

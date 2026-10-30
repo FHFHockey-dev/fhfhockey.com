@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import { afterEach, describe, expect, it, vi } from "vitest";
 import ForecastExplorer, { buildRevisionSpans } from "./ForecastExplorer";
 import { CATEGORIES, available, unavailable, type HistoryEvent, type PublicGameView, type PublicPlayerView, type PublicRevision } from "../../lib/forge-v2/contracts";
-import { DEFAULT_SCORING } from "../../lib/forge-v2/identity";
+import { DEFAULT_SCORING, scoringProfile } from "../../lib/forge-v2/identity";
 import { fixtureMeans, fixtureOpportunity } from "../../lib/forge-v2/fixtures";
 import { getServerSideProps } from "../../pages/forge/v2";
 
@@ -50,6 +50,19 @@ describe("FORGE revision overlap", () => {
 });
 
 describe("FORGE forecast explorer", () => {
+  it("restores default scoring using the API's as-issued label", async () => {
+    const initial = fixtureView();
+    const profile = scoringProfile({ ...DEFAULT_SCORING.weights, G: 4 });
+    initial.profile = profile; initial.scoringLabel = "re-scored under selected profile";
+    initial.games.forEach(game => { game.profileId = profile.id; });
+    const onRescore = vi.fn(async () => fixtureView());
+    render(<ForecastExplorer initialView={initial} players={players} onRescore={onRescore} />);
+    fireEvent.click(screen.getByRole("button", { name: "Use default weights" }));
+    fireEvent.click(screen.getByRole("button", { name: "Apply scoring" }));
+    await waitFor(() => expect(screen.getByText(/Showing original issued scoring/)).toBeTruthy());
+    expect(onRescore).toHaveBeenCalledWith(initial.player.id, DEFAULT_SCORING);
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
   it("keeps latest, extrema, locked-final, actual and outcome intervals distinct when values coincide", () => {
     render(<ForecastExplorer initialView={fixtureView()} players={players} />);
     expect(screen.getByText("Latest eligible revision")).toBeTruthy();

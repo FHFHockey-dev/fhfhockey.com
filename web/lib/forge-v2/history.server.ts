@@ -9,6 +9,7 @@ export type RecordKind = "opportunity" | "schedule" | "affiliation" | "horizon_e
 interface StoredVintage extends Record<string, unknown> { payload: string; output_hash: string; confirmed_at: Date | string | null; snapshot?: string }
 interface HistoryCursor { playerId: number; gameId: number; snapshot: string; upper: [string, number, string]; after: [string, number, string] }
 export interface HistoryPage { revisions: PublishedVintage[]; nextCursor: string | null }
+export interface QueueHistoryRecord { id: string; kind: "history_event"; scopeKey: string; payload: object; predecessorId: string | null }
 export interface PublicationClaim { queueId: string; jobId: string; attempt: number }
 
 function decoded(row: StoredVintage): PublishedVintage {
@@ -75,7 +76,9 @@ export class PostgresHistoryStore {
     if (committed.rows[0]?.id !== vintage.id || committed.rows[0]?.output_hash !== hash) throw new Error("Idempotency conflict: issuance bytes changed");
     const receipt = claim ? await this.db.query<{ admitted: number }>(`${guard}, inserted as (
       insert into forge_v2_private.forge_v2_publication_receipts (vintage_id,output_hash,confirmed_at,witness)
-      select $1,$10,clock_timestamp(),'committed_readback' from admitted where $3::bigint>0 and $6::text::jsonb->>'id'=$1 on conflict (vintage_id) do nothing returning vintage_id)
+      select $1,$10,clock_timestamp(),'committed_readback' from admitted where $3::bigint>0 and $6::text::jsonb->>'id'=$1 on conflict (vintage_id) do nothing returning vintage_id), fenced as (
+      update forge_v2_private.forge_v2_work_queue set revision=revision+1,updated_at=clock_timestamp()
+      where id=$7 and exists(select 1 from inserted) returning revision)
       select count(*)::int as admitted from admitted`, [...values, hash])
       : await this.db.query("insert into forge_v2_private.forge_v2_publication_receipts (vintage_id,output_hash,confirmed_at,witness) values ($1,$2,clock_timestamp(),'committed_readback') on conflict (vintage_id) do nothing", [vintage.id, hash]);
     if (claim && receipt.rows[0]?.admitted !== 1) throw new Error("Refresh publication claim lost");
@@ -133,7 +136,7 @@ export class PostgresHistoryStore {
 
   async records(scopeKey: string, kind: RecordKind, afterOrdinal = 0, limit = 100): Promise<Array<{ id: string; ordinal: number; payload: object; predecessorId: string | null }>> {
     if (!Number.isSafeInteger(limit) || limit < 1 || limit > 200 || !Number.isSafeInteger(afterOrdinal) || afterOrdinal < 0) throw new Error("Invalid record page");
-    const { rows } = await this.db.query<{ id: string; ordinal: string; payload: string; predecessor_id: string | null; content_hash: string }>("select id,ordinal::text,payload,predecessor_id,content_hash from forge_v2_private.forge_v2_records where scope_key=$1 and kind=$2 and ordinal>$3 order by ordinal limit $4", [scopeKey, kind, afterOrdinal, limit]);
+    const { rows } = await this.db.query<{ id: string; ordinal: string; payload: string; predecessor_id: string | null; content_hash: string }>("select r.id,r.ordinal::text,r.payload,r.predecessor_id,r.content_hash from forge_v2_private.forge_v2_records r where r.scope_key=$1 and r.kind=$2 and r.ordinal>$3 order by r.ordinal limit $4", [scopeKey, kind, afterOrdinal, limit]);
     return rows.map(row => {
       const payload = JSON.parse(row.payload), ordinal = Number(row.ordinal);
       if (contentHash(payload) !== row.content_hash || !Number.isSafeInteger(ordinal)) throw new Error("Corrupt scientific record");
@@ -148,6 +151,39 @@ export class PostgresHistoryStore {
       : await this.db.query<{ revision: string }>("update forge_v2_private.forge_v2_work_queue set state=$3::jsonb,revision=revision+1,updated_at=clock_timestamp() where id=$1 and revision=$2 returning revision::text", [id, expectedRevision, canonicalJson(state)]);
     if (!rows[0]) throw new Error("Queue revision conflict");
     return Number(rows[0].revision);
+  }
+  /** Queue CAS and immutable event capture either both commit or neither does.
+   * Concurrent record conflicts unseen by this statement's snapshot also fail closed. */
+  async saveQueueWithRecords(id: string, expectedRevision: number, state: object, records: QueueHistoryRecord[]): Promise<number> {
+    if (!id.trim() || !Number.isSafeInteger(expectedRevision) || expectedRevision < 1 || records.length > 200 || new Set(records.map(record => record.id)).size !== records.length) throw new Error("Invalid atomic queue capture");
+    const entries = records.map(record => {
+      if (!record.id.trim() || record.kind !== "history_event" || !record.scopeKey.trim()) throw new Error("Invalid queue history record");
+      return { id: record.id, kind: record.kind, scope_key: record.scopeKey, predecessor_id: record.predecessorId, payload: canonicalJson(record.payload) };
+    });
+    try {
+      const { rows } = await this.db.query<{ revision: string }>(`with admitted as materialized (
+        select id from forge_v2_private.forge_v2_work_queue where id=$1 and revision=$2 for update
+      ), proposed as materialized (
+        select r.* from jsonb_to_recordset($4::jsonb) as r(id text,kind text,scope_key text,predecessor_id text,payload text)
+        where exists(select 1 from admitted)
+      ), existing as materialized (
+        select r.id from forge_v2_private.forge_v2_records r join proposed p on r.id=p.id
+        where r.kind=p.kind and r.scope_key=p.scope_key and r.predecessor_id is not distinct from p.predecessor_id and r.payload=p.payload
+      ), inserted as (
+        insert into forge_v2_private.forge_v2_records (id,kind,scope_key,predecessor_id,payload)
+        select id,kind,scope_key,predecessor_id,payload from proposed where id not in (select id from existing)
+        on conflict (id) do nothing returning id
+      ), verified as (
+        select (select count(*) from proposed) as wanted, (select count(*) from existing)+(select count(*) from inserted) as captured
+      ) update forge_v2_private.forge_v2_work_queue q set state=$3::jsonb,
+        revision=revision+case when verified.wanted=verified.captured then 1 else 1/(verified.captured-verified.captured) end,
+        updated_at=clock_timestamp() from admitted,verified where q.id=admitted.id returning q.revision::text`, [id, expectedRevision, canonicalJson(state), JSON.stringify(entries)]);
+      if (!rows[0]) throw new Error("Queue revision conflict");
+      return Number(rows[0].revision);
+    } catch (error) {
+      if ((error as { code?: string })?.code === "22012") throw new Error("Immutable record identity conflict");
+      throw error;
+    }
   }
   async loadQueue(id: string): Promise<{ revision: number; state: object } | null> {
     const { rows } = await this.db.query<{ revision: string; state: object }>("select revision::text,state from forge_v2_private.forge_v2_work_queue where id=$1", [id]);

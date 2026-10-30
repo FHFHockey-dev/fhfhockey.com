@@ -3,15 +3,16 @@ import { afterEach, describe, expect, it } from "vitest";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { CATEGORIES, CategoryMeans, HistoryEvent, PublishedVintage, Vintage, assertVintage, available } from "./contracts";
+import { CATEGORIES, CategoryMeans, HistoryEvent, PublishedVintage, Vintage, assertVintage, available, unavailable } from "./contracts";
 import { FileArtifactStore } from "./artifacts.server";
 import { normalizeSourceBatch } from "./data";
 import { FIXTURE_CLOCK, FIXTURE_TARGET, fixtureAffiliation, fixtureOpportunity, fixtureSchedule, fixtureSource } from "./fixtures";
+import { QueueHistoryRecord } from "./history.server";
 import { contentHash } from "./hash.server";
-import { DEFAULT_SCORING } from "./identity";
+import { DEFAULT_SCORING, scoringProfile } from "./identity";
 import { CandidateModel, ModelExample, predictConditional } from "./model";
 import { PreparedHistoryStore, PreparedIssuance, capturePreparedLedger, preparedLedgerRecordId, reconcilePreparedQueueScopes, runPreparedIssuance, runPreparedQueueBatch } from "./pipeline.server";
-import { CalibrationArtifact, INTERVAL_CALCULATION, JOINT_DECODER } from "./uncertainty";
+import { CalibrationArtifact, CalibrationBundle, INTERVAL_CALCULATION, JOINT_DECODER } from "./uncertainty";
 import { RefreshBounds, RefreshState, claimRefreshBatch, createRefreshState, enqueueMaterialEvent, enqueueRefresh, planScheduledRefresh, restoreRefreshState } from "./refresh";
 import { advanceLock, buildOpportunities, observeHorizonEpisodes } from "./schedule";
 
@@ -37,6 +38,7 @@ class DurableStore implements PreparedHistoryStore {
   beforeAppend: (() => void) | null = null;
   constructor(readonly clock: () => string) {}
   async reserveSequence() { return ++this.sequence; }
+  async get(id: string) { return structuredClone(this.publications.get(id) ?? null); }
   async getDraft(key: string) { return structuredClone(this.drafts.get(key) ?? null); }
   async appendRecord(id: string, kind: Parameters<PreparedHistoryStore["appendRecord"]>[1], scopeKey: string, payload: object, predecessorId: string | null = null) {
     this.beforeAppend?.();
@@ -53,12 +55,28 @@ class DurableStore implements PreparedHistoryStore {
     this.afterSave?.();
     return actual + 1;
   }
+  async saveQueueWithRecords(id: string, expectedRevision: number, state: object, records: QueueHistoryRecord[]) {
+    this.onSave?.(expectedRevision, state);
+    const actual = this.queues.get(id)?.revision ?? 0;
+    if (actual !== expectedRevision) throw new Error("Queue revision conflict");
+    for (const record of records) {
+      const { id: recordId, ...next } = record, prior = this.records.get(recordId);
+      if (prior && contentHash(prior) !== contentHash(next)) throw new Error("Immutable record identity conflict");
+    }
+    for (const record of records) { const { id: recordId, ...next } = record; this.records.set(recordId, structuredClone(next)); }
+    this.queues.set(id, { revision: actual + 1, state: structuredClone(state) });
+    this.afterSave?.();
+    return actual + 1;
+  }
   private committed(vintage: Vintage) {
     assertVintage(vintage);
     const previous = this.drafts.get(vintage.issuanceKey);
     if (previous && contentHash(previous) !== contentHash(vintage)) throw new Error("Idempotency conflict: issuance bytes changed");
     this.drafts.set(vintage.issuanceKey, structuredClone(vintage));
-    if (!this.publications.has(vintage.id)) this.publications.set(vintage.id, { vintage: structuredClone(vintage), receipt: { id: `publication:${vintage.id}`, vintageId: vintage.id, outputHash: contentHash(vintage), confirmedAt: this.clock(), witness: "committed_readback", evidenceClass: vintage.evidenceClass } });
+    if (!this.publications.has(vintage.id)) {
+      if (vintage.issuanceAttempt) this.queues.get(vintage.issuanceAttempt.queueId)!.revision++;
+      this.publications.set(vintage.id, { vintage: structuredClone(vintage), receipt: { id: `publication:${vintage.id}`, vintageId: vintage.id, outputHash: contentHash(vintage), confirmedAt: this.clock(), witness: "committed_readback", evidenceClass: vintage.evidenceClass } });
+    }
     if (this.lostAcknowledgement) { this.lostAcknowledgement = false; throw new Error("Publication acknowledgement unavailable"); }
     return structuredClone(this.publications.get(vintage.id)!);
   }
@@ -100,6 +118,28 @@ async function queue(env: Awaited<ReturnType<typeof environment>>) {
 }
 
 describe("prepared local issuance", () => {
+  it("keeps default joint support coherent when zero-weight PIM is only partially observed", async () => {
+    const env = await environment();
+    env.data.model!.training[1].values.PIM = unavailable("PIM_source_incomplete");
+    const result = await runPreparedIssuance({ ...env, plan, prepared: env.data });
+    expect(result.state).toBe("published");
+    if (result.state !== "published") throw new Error("missing publication");
+    const distribution = result.publication.vintage.distribution;
+    expect(distribution.state).toBe("available");
+    if (distribution.state === "available") expect(distribution.value.categories).toEqual(CATEGORIES.filter(c => DEFAULT_SCORING.weights[c] !== 0));
+    expect(result.publication.vintage.means).toEqual(predictConditional(env.data.model!, env.data.context).means);
+  });
+  it("retains a profile-addressable calibration bundle and supported joint profile identities", async () => {
+    const env = await environment(), custom = scoringProfile({ ...DEFAULT_SCORING.weights, G: -3 });
+    const fitted: CalibrationArtifact = { schemaVersion: "profile-tail-padding-v1", calculationVersion: INTERVAL_CALCULATION, modelVersion: env.data.model!.version, profileId: DEFAULT_SCORING.id, horizon: scope.horizon, cohort: env.data.cohort, fittedAt: "2025-12-16T00:00:00.000Z", availableAt: "2025-12-17T00:00:00.000Z", dependencyAvailableAt: "2025-12-15T00:00:00.000Z", protocolId: "fixture-protocol", sampleIds: ["fixture-only"], evidence: "development_only", padding: [{ level: 0.5, lower: 0, upper: 0 }, { level: 0.9, lower: 1, upper: 1 }] };
+    const payload: CalibrationBundle = { schemaVersion: "profile-calibration-bundle-v1", profiles: { [DEFAULT_SCORING.id]: { profile: DEFAULT_SCORING, calibration: fitted }, [custom.id]: { profile: custom, calibration: { ...fitted, profileId: custom.id } } } };
+    env.data.calibration = { payload, reference: { id: "fixture-bundle", version: "v1", sha256: contentHash(payload), kind: "calibration", schemaVersion: payload.schemaVersion, decoderVersion: JOINT_DECODER, calculationVersion: INTERVAL_CALCULATION, categories: [...CATEGORIES], horizons: [scope.horizon], cohorts: [env.data.cohort], profileIds: [DEFAULT_SCORING.id, custom.id], targetVersion: scope.targetVersion, conditioning: scope.conditioning } };
+    const result = await runPreparedIssuance({ ...env, plan, prepared: env.data });
+    if (result.state !== "published") throw new Error("missing publication");
+    expect(result.publication.vintage.calibration).toEqual(available(env.data.calibration.reference));
+    expect(result.publication.vintage.distribution).toMatchObject({ state: "available", value: { profileIds: [DEFAULT_SCORING.id, custom.id] } });
+    expect((await env.artifacts.read(env.data.calibration.reference)).state).toBe("available");
+  });
   it("retains original episode and lock lineage across same-horizon trade and schedule revisions", async () => {
     const env = await environment(), observedAt = later(FIXTURE_CLOCK, 300000);
     const game = { ...fixtureSchedule(1)[0], gameId: FIXTURE_TARGET.gameId };
@@ -282,6 +322,98 @@ describe("prepared scope reconciliation", () => {
 });
 
 describe("durable prepared queue execution", () => {
+  it("fails closed before oversized recovery batches perform receipt reads or queue writes", async () => {
+    const env = await environment(), expanded = { ...bounds, maximumJobs: 101 };
+    const plans = Array.from({ length: 101 }, (_, i) => ({ ...plan, issuanceKey: `${plan.issuanceKey}:${i}` }));
+    env.setClock(later(scope.scheduledStartAt, 1000));
+    await env.store.saveQueue("queue", 0, enqueueRefresh(createRefreshState(), plans, env.clock(), expanded));
+    env.store.getDraft = async () => { throw new Error("unexpected_receipt_read"); };
+    await expect(runPreparedQueueBatch({ queueId: "queue", ...env, bounds: expanded, prepared: new Map() })).rejects.toThrow("prepared_receipt_recovery_capacity_exceeded");
+    expect((await env.store.loadQueue("queue"))!.revision).toBe(1); expect(env.store.records.size).toBe(0);
+  });
+  it("retains the failed acknowledgement without a false terminal gap when the last attempt committed", async () => {
+    const env = await environment(), input = await queue(env); env.store.lostAcknowledgement = true;
+    const result = await runPreparedQueueBatch({ ...input, bounds: { ...bounds, maximumAttempts: 1 } });
+    expect(result.jobs[0]).toMatchObject({ result: { state: "failed" }, acknowledgement: "saved" });
+    expect(restoreRefreshState((await env.store.loadQueue("queue"))!.state, { ...bounds, maximumAttempts: 1 }).jobs[0].status).toBe("published");
+    const events = [...env.store.records.values()].filter(row => row.kind === "history_event");
+    expect(events).toHaveLength(1); expect(events[0].payload).toMatchObject({ kind: "failed_attempt", reason: "Publication acknowledgement unavailable" });
+  });
+  it("recovers a committed receipt after lock without issuing again or declaring a missing refresh", async () => {
+    const env = await environment(), input = await queue(env);
+    env.store.lostAcknowledgement = true;
+    const first = await runPreparedQueueBatch(input);
+    expect(first.jobs[0].result.state).toBe("failed");
+    const original = structuredClone([...env.store.publications.values()][0]);
+    const failureEvents = structuredClone([...env.store.records.values()].filter(row => row.kind === "history_event"));
+    env.setClock(later(scope.scheduledStartAt, 1000));
+    expect(await runPreparedQueueBatch(input)).toEqual({ state: "completed", jobs: [] });
+    const state = restoreRefreshState((await env.store.loadQueue("queue"))!.state, bounds);
+    expect(state.jobs[0]).toMatchObject({ status: "published", attempts: 1, confirmedAt: original.receipt.confirmedAt, recoveredPublication: original });
+    expect([...env.store.records.values()].filter(row => row.kind === "history_event")).toEqual(failureEvents);
+    expect(env.store.sequence).toBe(1); expect([...env.store.publications.values()]).toEqual([original]);
+  });
+  it("does not commit stale expiry evidence when a receipt arrives during recovery reads", async () => {
+    const env = await environment(), input = await queue(env);
+    const snapshot = (await env.store.loadQueue("queue"))!;
+    const claimed = claimRefreshBatch(snapshot.state as RefreshState, env.clock(), bounds);
+    await env.store.saveQueue("queue", snapshot.revision, claimed.state);
+    const publication = await runPreparedIssuance({ ...env, plan, prepared: env.data, claim: { queueId: "queue", job: claimed.jobs[0], bounds } });
+    if (publication.state !== "published") throw new Error("fixture publication missing");
+    env.setClock(later(scope.scheduledStartAt, 1000));
+    const get = env.store.get.bind(env.store);
+    env.store.get = async () => { env.store.queues.get("queue")!.revision++; return null; };
+    expect(await runPreparedQueueBatch(input)).toEqual({ state: "claim_conflict", jobs: [] });
+    expect([...env.store.records.values()].filter(row => row.kind === "history_event")).toEqual([]);
+    env.store.get = get;
+    expect(await runPreparedQueueBatch(input)).toEqual({ state: "completed", jobs: [] });
+    expect(((await env.store.loadQueue("queue"))!.state as RefreshState).jobs[0].status).toBe("published");
+  });
+  it("rejects a substituted receipt rather than hiding a missing refresh", async () => {
+    const env = await environment(), input = await queue(env); env.store.lostAcknowledgement = true;
+    await runPreparedQueueBatch(input);
+    const publication = [...env.store.publications.values()][0]; publication.receipt.outputHash = "0".repeat(64);
+    env.setClock(later(scope.scheduledStartAt, 1000));
+    await expect(runPreparedQueueBatch(input)).rejects.toThrow("Recovered publication does not match");
+    expect(((await env.store.loadQueue("queue"))!.state as RefreshState).jobs[0].status).toBe("pending");
+  });
+  it("does not retain a phantom expiry when the queue CAS loses to a concurrent acknowledgement", async () => {
+    const env = await environment(), input = await queue(env), snapshot = (await env.store.loadQueue("queue"))!;
+    const claimed = claimRefreshBatch(snapshot.state as RefreshState, env.clock(), bounds);
+    await env.store.saveQueue("queue", snapshot.revision, claimed.state);
+    env.setClock(later(scope.scheduledStartAt, 1));
+    env.store.onSave = () => { env.store.queues.get("queue")!.revision++; };
+    expect(await runPreparedQueueBatch(input)).toEqual({ state: "claim_conflict", jobs: [] });
+    expect([...env.store.records.values()].filter(row => row.kind === "history_event")).toEqual([]);
+  });
+  it("retains an executed failure after lease loss without changing the newer queue claim", async () => {
+    const env = await environment(), input = await queue(env);
+    env.store.beforeAppend = () => { env.store.beforeAppend = null; env.setClock(later(env.clock(), bounds.leaseMs)); throw new Error("fixture_storage_failure"); };
+    const result = await runPreparedQueueBatch(input);
+    expect(result.jobs[0]).toMatchObject({ result: { state: "failed", reason: "fixture_storage_failure" }, acknowledgement: "stale_claim" });
+    const events = [...env.store.records.values()].filter(row => row.kind === "history_event");
+    expect(events).toHaveLength(1); expect(events[0].payload).toMatchObject({ kind: "failed_attempt", attempt: 1, reason: "fixture_storage_failure" });
+    expect(((await env.store.loadQueue("queue"))!.state as RefreshState).jobs[0].status).toBe("running");
+  });
+  it("retains missing-input attempts and gaps after queue archival without duplicate rescans", async () => {
+    const env = await environment(), input = await queue(env); input.prepared.clear();
+    expect((await runPreparedQueueBatch(input)).jobs[0].result).toMatchObject({ state: "unavailable", reason: "prepared_inputs_missing" });
+    const records = () => [...env.store.records.values()].filter(row => row.kind === "history_event");
+    expect(records().map(row => (row.payload as HistoryEvent).kind).sort()).toEqual(["missing_refresh", "unavailable"]);
+    const before = structuredClone(records());
+    await runPreparedQueueBatch(input); expect(records()).toEqual(before);
+    env.store.queues.delete("queue"); expect(records()).toEqual(before);
+  });
+  it("captures expired leases and lock gaps before mutable queue transitions", async () => {
+    const env = await environment(), input = await queue(env);
+    const snapshot = (await env.store.loadQueue("queue"))!;
+    const claimed = claimRefreshBatch(snapshot.state as RefreshState, env.clock(), bounds);
+    await env.store.saveQueue("queue", snapshot.revision, claimed.state);
+    env.setClock(later(scope.scheduledStartAt, 1));
+    await runPreparedQueueBatch(input);
+    const records = [...env.store.records.values()].filter(row => row.kind === "history_event").map(row => row.payload as HistoryEvent);
+    expect(records).toEqual(expect.arrayContaining([expect.objectContaining({ kind: "failed_attempt", reason: "worker_lease_expired" }), expect.objectContaining({ kind: "missing_refresh", reason: "missing_refresh:lock_passed" })]));
+  });
   it("does no work when the durable claim CAS loses a revision race", async () => {
     const env = await environment(), input = await queue(env);
     env.store.onSave = () => { const current = env.store.queues.get("queue")!; current.revision++; };
@@ -327,6 +459,9 @@ describe("durable prepared queue execution", () => {
     const first = await runPreparedQueueBatch(input);
     expect(first.jobs[0]).toMatchObject({ result: { state: "failed" }, acknowledgement: "saved" });
     const original = [...env.store.publications.values()][0];
+    const failureEvents = [...env.store.records.values()].filter(row => row.kind === "history_event");
+    expect(failureEvents).toHaveLength(1);
+    expect(failureEvents[0].payload).toMatchObject({ kind: "failed_attempt", attempt: 1, reason: "Publication acknowledgement unavailable" });
     await expect(runPreparedIssuance({ ...env, plan, prepared: null })).rejects.toThrow("queued_draft_requires_current_claim");
     env.setClock(later(env.clock(), 2000));
     const recovered = await runPreparedQueueBatch({ ...input, prepared: new Map() });
@@ -336,5 +471,8 @@ describe("durable prepared queue execution", () => {
     expect(state.jobs[0].attempts).toBe(2); expect(state.jobs[0].confirmedAt).toBe(original.receipt.confirmedAt);
     expect(Date.parse(state.jobs[0].confirmedAt!)).toBeLessThan(Date.parse(state.jobs[0].startedAt!));
     expect(env.store.sequence).toBe(1);
+    expect([...env.store.records.values()].filter(row => row.kind === "history_event")).toEqual(failureEvents);
+    env.store.queues.delete("queue");
+    expect([...env.store.records.values()].filter(row => row.kind === "history_event")).toEqual(failureEvents);
   });
 });
