@@ -135,6 +135,7 @@ export interface Participation {
 export interface Vintage extends Target {
   id: string;
   issuanceKey: string;
+  issuanceAttempt?: { queueId: string; jobId: string; attempt: number; startedAt: Instant };
   sequence: number;
   teamId: number;
   opponentId: number;
@@ -192,7 +193,15 @@ export interface QualificationManifest {
   participationModelVersion: string;
   participationQualified: boolean;
   intervalLevels: Array<0.5 | 0.9>;
+  /** Frozen scientific dependencies; per-issuance joint output hashes belong to vintages. */
   artifactHashes: string[];
+  jointGenerator: {
+    modelArtifactHash: string;
+    algorithmVersion: string;
+    schemaVersion: string;
+    decoderVersion: string;
+    calculationVersion: string;
+  };
   finalEvaluationId: string;
   prospectiveEvaluationId: string;
   independentReviewId: string;
@@ -232,6 +241,7 @@ export interface PublicRevision {
   trigger: Vintage["trigger"];
   evidenceClass: EvidenceClass;
   value: Component<number>;
+  qualified: boolean;
   issuedValue: Component<number>;
   issuedProfileId: string;
   means: CategoryMeans;
@@ -246,6 +256,8 @@ export interface PublicRevision {
 export interface PublicGameView {
   profileId: string;
   opportunity: Opportunity;
+  latestRevision: PublicRevision | null;
+  lockedFinalRevision: PublicRevision | null;
   revisions: PublicRevision[];
   events: HistoryEvent[];
   nextCursor: string | null;
@@ -333,6 +345,10 @@ export function assertVintage(vintage: Vintage): void {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(vintage.sourceGameDate)) throw new Error("Missing source game date");
   instant(vintage.scheduledStartAt);
   if (instant(vintage.generatedAt) < instant(vintage.inputCutoffAt)) throw new Error("Generation precedes cutoff");
+  if (vintage.issuanceAttempt) {
+    const attempt = vintage.issuanceAttempt;
+    if (!attempt.queueId || !attempt.jobId || !Number.isSafeInteger(attempt.attempt) || attempt.attempt < 1 || instant(attempt.startedAt) > instant(vintage.generatedAt)) throw new Error("Invalid original issuance attempt");
+  }
   if (!Array.isArray(vintage.sourceManifest) || !vintage.sourceManifest.length) throw new Error("Missing source manifest");
   vintage.sourceManifest.forEach(source => assertSource(source, vintage.inputCutoffAt));
   CATEGORIES.forEach(c => assertComponent(vintage.means[c]));
