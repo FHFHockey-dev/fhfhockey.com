@@ -6,6 +6,8 @@
 
 **Status:** Approved for unattended local implementation by the 2026-10-29 goal objective. Fourteen parent tasks; evidence and gate status below. The original approved attachment hash is recorded in OWNERSHIP.json. Historical planning-only instructions below do not override the current local implementation/commit authorization.
 
+**Current acceptance — 2026-10-30:** Outside-audit remediation is implemented, tested and independently accepted at local code commit `7113329d2c24b8629f54484df37441f95a63d853`. The all-tasks objective remains incomplete: the fifteen explicitly unchecked scientific/external subtasks below still require evidence and authorization. See the remediation acceptance section and `tasks/artifacts/forge-v2-remediation-2026-10-30/RUNBOOK.md`. No actual persistent goal marker is active.
+
 ## Relevant Files
 
 Created/modified for this task (exact ownership and hashes tracked in task artifact manifest):
@@ -25,6 +27,9 @@ Created/modified for this task (exact ownership and hashes tracked in task artif
 - `web/components/ForgeV2/ForecastExplorer.tsx`, `ForecastExplorer.module.scss`, `ForecastExplorer.test.tsx`; `web/pages/forge/v2/index.tsx`; `web/pages/api/v2/forge/[operation].ts`; `web/e2e/forge-v2.spec.ts` — disabled page/API, real responsive component and browser fixtures.
 - `tasks/artifacts/forge-v2-implementation-2026-10-29/{RUNBOOK.md,verification.json,source-pins.json,independent-review.json,review-followup.json,screens/desktop.png,screens/phone.png}` — handoff, final evidence/pins, independent review and synthetic UI screenshots.
 - Task diaries under `tasks/diaries/2026-10-29-codex-forge-v2-*.md` — working progress only, excluded from commits.
+- `web/lib/forge-v2/{preparation.server.ts,preparation.test.ts,fixtureHarness.server.ts}`, `web/components/ForgeV2/{ConnectedForecastExplorer.tsx,AccountabilityReport.tsx}` — retained-context preparation and actual-issuance lifecycle/read integration.
+- `tasks/artifacts/forge-v2-remediation-2026-10-30/` — final local review, logs, pins, task status, unfrozen scientific proposal and exact prerequisites; supersedes former local acceptance.
+- `tasks/diaries/2026-10-30-codex-forge-v2-*.md` — ongoing work notes, excluded from commits.
 
 
 Existing sources are references, not automatically available for modification:
@@ -276,7 +281,7 @@ These identifiers describe cohesive checks, not a requirement to create one new 
 Use Node 22.11.0 and existing npm tooling. Run commands from `/Users/tim/Code/fhfhockey.com/web`.
 
 - Focused Vitest: `npm test -- --run <affected-test-paths>`
-- Integrated TypeScript verification: `npm run typecheck`, when warranted and under existing resource coordination.
+- Integrated TypeScript verification: `npx tsc --noEmit`, when warranted and under existing resource coordination. The remediation receipt uses an explicit scoped project extending `web/tsconfig.json`; no `typecheck` npm script exists.
 - Lint affected files using the repository’s ESLint configuration.
 - Fixture browser acceptance: `npm run test:e2e -- e2e/forge-v2.spec.ts`
 - Run persistence checks against an isolated local database with fixtures; never use production as a test target.
@@ -395,7 +400,29 @@ Use this prompt after the approved PRD and task list have been saved and local i
 
 ## NEW tasks discovered during implementation
 
-- [ ] **NEW-01** Close independent review defects: irreversible play-begun observation, savepoint-safe committed publication, fixed transaction-snapshot pagination, model/participation fit availability clocks, and separation of frozen scientific pins from per-issuance distribution hashes. Retain regression evidence and review dispositions.
+- [x] **NEW-01** Close independent review defects: irreversible play-begun observation, savepoint-safe committed publication, fixed transaction-snapshot pagination, model/participation fit availability clocks, and separation of frozen scientific pins from per-issuance distribution hashes. Retain regression evidence and review dispositions.
 
-- [ ] **NEW-02** Persist immutable episode closure/reentry observations and atomically reconcile superseded refresh scopes, including running-claim fences, cancellation and reentry. Verify native storage, pipeline CAS and explicit history events.
-- [ ] **NEW-03** Verify the final read seam (archived-game entry lookup, selected-profile metrics, public fields, absent-field cache hashing) and synthetic scoped promote/disable/restore; retain final independent source disposition.
+- [x] **NEW-02** Persist immutable episode closure/reentry observations and atomically reconcile superseded refresh scopes, including running-claim fences, cancellation and reentry. Verify native storage, pipeline CAS and explicit history events.
+- [x] **NEW-03** Verify the final read seam (archived-game entry lookup, selected-profile metrics, public fields, absent-field cache hashing) and synthetic scoped promote/disable/restore; retain final independent source disposition.
+
+
+### Outside-audit remediation — 2026-10-30 (local acceptance; external gates incomplete)
+
+The outside audit reopened 3.3, 3.5, 5.4, 8.2, 8.4, 9.2, 9.4, 10.1, 11.1, 11.4, 13.1 and 13.5. These have now passed corrected local acceptance below; their scientific dependencies remain separately unchecked. The original completion statements above are historical evidence, not current acceptance. The original worker is idle and all writers handed back. Canonical PRD matches the approved hash; its historical planning/absence language is preserved, and current user authorization supersedes it. No persistent goal-marker API is exposed in this delegated interface; no actual marker has been established. Exact remediation ownership and runtime limits are in `tasks/artifacts/forge-v2-remediation-2026-10-30/OWNERSHIP.json`.
+
+- [x] **NEW-04** Repair immutable failed-refresh history, profile-addressable calibration, zero-weight PIM joint support, authoritative actual-start corrections, and default-scoring UI/API labels; retain targeted regressions.
+- [x] **NEW-05** Produce immutable prepared read contexts from issuance/ledger records, connect complete per-profile accountability, and verify the queue/persistence/API/UI lifecycle with public serving and RSO activation disabled.
+- [x] **NEW-06** Independently review the corrected candidate and reconcile every scientific/external acceptance gate with precise, bounded prerequisites.
+
+
+### Remediation acceptance and exact remaining work
+
+- **Candidate:** `7113329d2c24b8629f54484df37441f95a63d853`, local only on `octoberBranch`. All five outside-audit failures repaired. Four additional independent-review findings resolved; final disposition `ACCEPT_LOCAL_REMEDIATION_WITH_EXTERNAL_GATES_OPEN` in `tasks/artifacts/forge-v2-remediation-2026-10-30/review-followup.json`.
+- **3.3 / 3.5 / 5.4 / NEW-02 / NEW-04:** Atomic queue/history CAS, receipt fencing/recovery, immutable failed-attempt/gap facts, archived original/custom calibration reproduction and integrity incidents. Native PostgreSQL 13 and targeted pipeline/uncertainty regressions pass. Numeric scientific-record pagination repaired.
+- **8.2 / 8.4:** Profile-addressable immutable calibration bundles retain original and supported signed profiles. Default joint support excludes zero-weight PIM; contributing unavailable categories still block their profiles. Public qualification remains mandatory. Internal evaluation can compute category/FP diagnostics before public qualification.
+- **9.2 / 9.4 / 10.1 / NEW-05:** Authoritative actual-start corrections and same-primary identity recovery; append-only selection/grade corrections; bounded offline `preparation.server.ts` consumes retained opportunities/episodes/locks/publications/outcomes. Idempotent historical context replay never replaces current head. `AccountabilityReport.tsx` exposes exact-profile/evidence/checkpoint strata, paired baselines, interval proper scores, participation reliability, counts and failures.
+- **11.1 / 11.4 / 13.1:** `ConnectedForecastExplorer.tsx` uses real read callbacks. Default-scoring reset matches API labels. Queue-issued H10–H1 lifecycle covers material/unchanged changes, gap, postponement/re-entry, custom scoring, archive/failure/recovery, lock/late attempt, actual/corrected result and all appearance dispositions. Four Chromium cases include actual queue→prepared API→UI at desktop1440/phone390, plus display/accessibility fixtures. Native storage is tested separately; no single native-database→Chromium claim.
+- **13.5 / NEW-01 / NEW-03 / NEW-06:** 183 unique v2 tests and 93 existing consumer tests passed across focused runs; four browser cases passed; scoped TypeScript, ESLint and final diff checks passed. Reviewer independently reran all three executable first-pass reproductions. Exact commands/logs/source pins and full task status are in remediation `verification.json`, `source-pins.json`, and `task-status.json`. Fixtures establish engineering behavior only.
+- **Still incomplete:** 2.2, 2.4, 2.5, 7.1, 7.3, 8.3, 8.5, 13.2, 13.4, 14.1, 14.2, 14.3, 14.4, 14.5, 14.6. Every acceptance prerequisite and owner role is explicit in `scientific-prerequisites.json`. `protocol-proposal.json` remains an unfrozen proposal; `approval-code-pins.json` supplies only the now-known local code identity. No real population/calibration/final/prospective evidence or owner release approval exists for these tasks.
+- **Safety/release state:** No remote actions, protected-label access, production requests, pushes, builds, deployments or schedules. Public API/page and RSO adapter stay disabled. No denial, pending tool approval or uncertain action outcome. Required external actions are unattempted and blocked by absent prerequisites/authorization. The persistent goal marker is inactive because this interface exposes no such capability.
+- **Resume:** Read remediation `RUNBOOK.md`, check ownership/current diffs, obtain the exact source/custody evidence first, and progress the still-open tasks through their real acceptance gates. Do not reinterpret this local checkpoint as completion of the all-tasks objective.

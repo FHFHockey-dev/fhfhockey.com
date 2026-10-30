@@ -1,5 +1,7 @@
 # FORGE v2 morning handoff — 2026-10-29
 
+**Later remediation — 2026-10-30:** The outside audit superseded the original local-acceptance claims below. Follow [the remediation runbook](../forge-v2-remediation-2026-10-30/RUNBOOK.md) for the corrected candidate, executed checks, independent correction review, current task register, and precise outstanding scientific/external prerequisites. Original evidence below is preserved as historical context. No scientific qualification or release was established by either implementation pass.
+
 **Current qualified subset: none.** No horizon, category, scoring profile, participation probability, or interval has passed real scientific qualification in this task. Local implementation and synthetic evidence do not authorize prospective capture, production writes, hosted migrations, public release, or RSO activation.
 
 Work lives in the canonical `/Users/tim/Code/fhfhockey.com` checkout on `octoberBranch`. The lead owns final review, exact checkpoint commits, consolidated test receipts, and task-list acceptance. Preserve unrelated dirty work and other owners' research/resource reservations. This document records the local implementation and the remaining decision gates; it is not an execution approval.

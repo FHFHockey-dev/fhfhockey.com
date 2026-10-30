@@ -1,0 +1,64 @@
+
+> web@0.1.0 test
+> vitest --run lib/forge-v2/preparation.test.ts lib/forge-v2/data.test.ts lib/forge-v2/model.test.ts lib/forge-v2/schedule.test.ts lib/forge-v2/lifecycle.test.ts --maxWorkers=1 --minWorkers=1
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ lib/forge-v2/preparation.test.ts (1 test) 4428ms
+   ✓ issues H10 to H1 through queue, prepares immutable corrections and serves the API without fabricated publications  4428ms
+ ✓ lib/forge-v2/data.test.ts (16 tests) 3ms
+(node:18941) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stdout | lib/forge-v2/lifecycle.test.ts > runs a synthetic H10-to-H1 lifecycle with gaps, reentry, immutable artifacts, lock and settlement
+FORGE fixture archive lifecycle { elapsedMs: 13.474999999999909, scientificQualification: false }
+
+stdout | lib/forge-v2/lifecycle.test.ts > measures bounded 1,200-skater queue fanout, recovery and JSON retention without production budgets
+FORGE bounded synthetic capacity {
+  evidenceClass: 'fixture',
+  scopes: 12000,
+  planMs: 115.35012500000005,
+  predictionMs: 606.8810419999999,
+  syntheticTrainingRows: 5,
+  enqueueMs: 420.38125000000014,
+  materialFanoutMs: 1014.7879579999999,
+  recoveryMs: 922.1011670000003,
+  serializationMs: 158.36008299999958,
+  queueBytes: 24556324,
+  retention: {
+    basis: 'uncompressed_canonical_json_only',
+    scopes: 12000,
+    dailyRevisions: 2,
+    modeledDays: 365,
+    bytesPerRevision: 2214,
+    rows: 8760000,
+    bytes: 19394640000,
+    permanentHistory: true,
+    automaticDeletion: false,
+    excludes: [ 'indexes', 'replicas', 'artifacts', 'backups', 'provider_costs' ]
+  },
+  productionCapacityQualified: false,
+  unmeasured: [
+    'real_model_inference_cost',
+    'database_write_throughput',
+    'api_pagination',
+    'mobile_rendering',
+    'desktop_rendering',
+    'v1_rso_reservations'
+  ]
+}
+
+ ✓ lib/forge-v2/lifecycle.test.ts (4 tests) 3403ms
+   ✓ measures bounded 1,200-skater queue fanout, recovery and JSON retention without production budgets  3241ms
+(node:18943) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/forge-v2/model.test.ts (8 tests) 13ms
+(node:18947) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/forge-v2/schedule.test.ts (8 tests) 5ms
+
+ Test Files  5 passed (5)
+      Tests  37 passed (37)
+   Start at  22:46:59
+   Duration  9.26s (transform 169ms, setup 7ms, collect 260ms, tests 7.85s, environment 544ms, prepare 155ms)
+

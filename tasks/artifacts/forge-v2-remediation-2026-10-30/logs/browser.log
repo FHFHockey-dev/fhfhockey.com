@@ -1,0 +1,31 @@
+
+> web@0.1.0 test:e2e
+> playwright test e2e/forge-v2.spec.ts --project=chromium --workers=1 --output=/tmp/forge-remediation-browser-results
+
+
+Running 4 tests using 1 worker
+
+  ✓  1 [chromium] › e2e/forge-v2.spec.ts:90:38 › issued queue → prepared API → browser scoring and accountability: 1440 (1.2s)
+  ✓  2 [chromium] › e2e/forge-v2.spec.ts:90:38 › issued queue → prepared API → browser scoring and accountability: 390 (769ms)
+FORGE real browser fixture {
+  evidence: [32m'synthetic_browser_only'[39m,
+  viewport: { width: [33m1440[39m, height: [33m1080[39m },
+  initialReadyMs: [33m45.2690419999999[39m,
+  interactionSequenceMs: [33m375.25683299999946[39m,
+  pageOverflow: [33m0[39m,
+  blockedRequests: [33m0[39m
+}
+(node:18716) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  3 [chromium] › e2e/forge-v2.spec.ts:124:79 › real FORGE fixture keyboard, history, scoring and responsive layout: desktop (479ms)
+FORGE real browser fixture {
+  evidence: [32m'synthetic_browser_only'[39m,
+  viewport: { width: [33m390[39m, height: [33m844[39m },
+  initialReadyMs: [33m44.14912499999991[39m,
+  interactionSequenceMs: [33m442.1525419999998[39m,
+  pageOverflow: [33m0[39m,
+  blockedRequests: [33m0[39m
+}
+  ✓  4 [chromium] › e2e/forge-v2.spec.ts:124:79 › real FORGE fixture keyboard, history, scoring and responsive layout: phone (518ms)
+
+  4 passed (6.1s)
