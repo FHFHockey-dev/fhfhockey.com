@@ -70,6 +70,9 @@ describe("saved in-season workspace validation", () => {
       expect(parsed.data.workspace.managerRuleOverrides?.goalieMinimum).toEqual({ credited: 2 });
       expect(parsed.data.snapshot?.rules.goalieMinimum.periodStart).toBe(rules.goalieMinimum.periodStart);
     }
+    const confirmedRuleNotes = ["Yahoo does not report these league rules; confirm them in League rules: the exact weekly add reset time."];
+    const confirmed = saveWorkspaceSchema.safeParse({ workspace: { ...workspace, managerRuleOverrides: { confirmedRuleNotes } }, snapshot, expectedVersion: null });
+    expect(confirmed.success && confirmed.data.workspace.managerRuleOverrides?.confirmedRuleNotes).toEqual(confirmedRuleNotes);
   });
   it("round-trips shared forecast lineage while rejecting private payload fields", () => {
     const calendarPolicy = { version: "forecast-calendar-v1", calendarDays: 21, overlapDays: 7, timeZone: "UTC" };

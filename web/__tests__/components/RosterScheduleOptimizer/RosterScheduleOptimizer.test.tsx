@@ -3945,6 +3945,42 @@ describe("stored Yahoo eligibility while provider verification is pending", () =
     expect(fetch.mock.calls.filter(([url]) => url.endsWith("/provider"))).toHaveLength(1);
     expect(fetch.mock.calls.some(([, init]: any[]) => init?.method === "PUT")).toBe(false);
   });
+  it("says inputs are complete when only Yahoo rule notes remain, and clears each note once confirmed", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(new Date("2026-10-13T12:00:00Z"));
+    authState.user = { id: "rule-note-manager" };
+    const workspace = defaultWorkspace();
+    workspace.context = { ...workspace.context, provider: "yahoo", leagueId: "league", teamId: "team", timeZone: "UTC" };
+    workspace.managerRuleOverrides = { timeZone: "UTC" };
+    workspace.rules = { ...workspace.rules, acquisitionTiming: "same_day", goalieMinimum: { ...workspace.rules.goalieMinimum, required: 0 } };
+    const owned = { ...player, id: "owned", name: "Owned Player", eligibilityVerified: true, availability: "rostered" as const };
+    workspace.roster = [{ playerId: owned.id, position: "bench" }]; workspace.manualPlayers = [owned];
+    const complete: PlanningSnapshot = { id: "complete-provider", context: workspace.context, players: [owned], roster: workspace.roster,
+      rules: workspace.rules, lockedAssignments: [], games: [], forecasts: [], realized: {}, opponent: null, evidence: {} };
+    const timingNote = "Add timing is inferred from Yahoo's weekly deadline (same-day); change it in League rules if your league differs.";
+    const rulesNote = "Yahoo does not report these league rules; confirm them in League rules: whether the add timing inferred from Yahoo's weekly deadline is right; the exact weekly add reset time (league-local midnight is assumed).";
+    writeWorkspace(window.localStorage, workspace, [], authState.user?.id ?? null);
+    const reply = (body: unknown) => ({ ok: true, json: async () => body });
+    const fetch = vi.fn((url: string) => Promise.resolve(reply(url.includes("/data?") ? { success: true, data: { ...data, players: [owned] } }
+      : url.endsWith("/access") ? { data: { eligible: true, capabilities: ["rso_sync"] } }
+        : url.endsWith("/provider") ? { success: true, snapshot: complete, capabilities: { roster: true, availability: true,
+          rules: false, acquisitions: false, limitations: [timingNote, rulesNote], diagnostics: ["Yahoo availability read: complete."] } } : { data: null })));
+    vi.stubGlobal("fetch", fetch);
+    let evaluated: PlanningSnapshot | null = null;
+    planningState.evaluate = (snapshot, intent) => { evaluated = snapshot; return planRoster(snapshot, intent); };
+    render(<RosterScheduleOptimizer />);
+    await waitFor(() => expect(evaluated?.id).toBe(complete.id));
+    const health = screen.getByText("Data health").closest("details")!;
+    // Unconfirmed league rules are review items, not missing provider inputs.
+    expect(within(health).getByText("2 items to review · Provider inputs complete")).toBeTruthy();
+    fireEvent.click(within(within(health).getByText(rulesNote).closest("li")!).getByRole("button", { name: "Confirm" }));
+    expect(within(health).queryByText(rulesNote)).toBeNull();
+    expect(within(health).getByText("1 item to review · Provider inputs complete")).toBeTruthy();
+    // A manager timing choice answers the inferred-timing note.
+    fireEvent.change(screen.getByLabelText("Acquisition timing"), { target: { value: "next_day" } });
+    expect(within(health).queryByText(timingNote)).toBeNull();
+    expect(within(health).getByText("No items to review · Provider inputs complete")).toBeTruthy();
+    expect(fetch.mock.calls.filter(([url]) => url.endsWith("/provider"))).toHaveLength(1);
+  });
   it.each([1, 241])("requests stored positions for a %i-candidate catalogue and retained roster without promoting availability", async count => {
     vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(new Date("2026-10-13T12:00:00Z"));
     authState.user = { id: "candidate-cache-manager" };
