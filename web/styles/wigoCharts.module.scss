@@ -116,22 +116,9 @@
     padding: 0 v.$space-md;
   }
   // Tweak some heights for better mobile fit
-  .playerHeaderContainer,
-  .toiChartContainer,
-  .ppgChartContainer,
-  .gameScoreContainer {
+  .playerHeaderContainer {
     height: auto;
     min-height: 180px;
-  }
-  .consistencyAndCategoryWrapper {
-    flex-direction: column;
-    height: auto;
-    gap: v.$space-md;
-  }
-  .consistencyRatingContainer,
-  .percentileChartContainer {
-    flex: initial;
-    min-height: 220px;
   }
   .combinedStatsTableContainer {
     overflow-x: auto;
@@ -2445,4 +2432,104 @@
     --wigo-data-size: 13px;
     --wigo-emphasis-size: 19px;
   }
+}
+
+// Phone tabs. These sit last on purpose: they restyle base rules of equal specificity declared further up.
+@media (max-width: v.$breakpoint-tablet) {
+  .consistencyAndCategoryWrapper {
+    flex-direction: column;
+    align-items: stretch;
+    height: auto;
+    min-height: 0;
+    gap: v.$space-md;
+    border-bottom: 0;
+  }
+  .consistencyRatingContainer,
+  .percentileChartContainer {
+    flex: none;
+    width: 100%;
+    border-left: 0;
+  }
+  .consistencyRatingContainer {
+    height: 240px;
+  }
+  .consistencyGp {
+    font-size: 12px;
+  }
+  .percentileChartContainer {
+    height: 300px;
+    .chartTitle h3 {
+      letter-spacing: 0.06em;
+    }
+  }
+  .toiChartContainer,
+  .ppgChartContainer,
+  .gameScoreContainer {
+    height: 260px;
+    min-height: 0;
+  }
+  .chartHeader {
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    h3 {
+      letter-spacing: 0.06em;
+    }
+    :global(.wigo-trend-legend) {
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .toggleButtons {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px;
+    }
+  }
+  .chartToolbar {
+    flex-wrap: wrap;
+    button,
+    .toggleButtons button {
+      min-height: 32px;
+      margin-left: 0;
+      padding: 2px 8px;
+      border: 1px solid v.$border-color;
+      border-radius: v.$border-radius-sm;
+      background-color: color.adjust(v.$background-dark, $lightness: -10%);
+      color: v.$text-color-secondary;
+      font-size: 12px;
+    }
+  }
+  .rateStatBarPercentilesContainer,
+  .rateStatPercentilesComponent,
+  .percentileFiltersContainer,
+  .chartAndRanksArea {
+    height: auto;
+    min-height: 0;
+    flex-basis: auto;
+  }
+  .percentileContext {
+    padding: 0 v.$space-sm;
+    color: v.$text-color-secondary;
+    font-size: 12px;
+  }
+  .percentileChartsContainer {
+    flex: none;
+    height: 416px;
+  }
+  .statsTable {
+    min-width: 700px;
+    th:first-child,
+    td:first-child {
+      width: 112px;
+    }
+  }
+}
+
+.statsTableNote {
+  flex-shrink: 0;
+  margin: 0;
+  padding: v.$space-xs v.$space-sm;
+  color: v.$text-color-secondary;
+  font-size: 12px;
+  line-height: 1.35;
 }

@@ -114,27 +114,29 @@ const generateChartConfig = (
     ]
   };
 
+  // Phone tab only (one-page mode uses tiles): one row per stat so 16 labels fit a 390px screen.
   const options: ChartOptions<"bar"> = {
-    indexAxis: "x",
+    indexAxis: "y",
     responsive: true,
     maintainAspectRatio: false,
     scales: {
-      y: {
+      x: {
         beginAtZero: true,
         max: 100,
         ticks: {
-          color: "#ccc",
-          font: { size: 10 },
-          stepSize: 20
+          display: false,
+          stepSize: 25
         },
+        border: { display: false },
         grid: {
           color: "rgba(255, 255, 255, 0.1)"
         }
       },
-      x: {
+      y: {
         ticks: {
-          display: false,
-          color: "#ccc"
+          color: "#ccc",
+          autoSkip: false,
+          font: { size: 12, family: "Roboto Condensed, sans-serif" }
         },
         grid: {
           display: false
@@ -153,8 +155,8 @@ const generateChartConfig = (
             if (label) {
               label += ": ";
             }
-            if (context.parsed.y !== null) {
-              label += context.parsed.y + "%";
+            if (context.parsed.x !== null) {
+              label += context.parsed.x + "%";
             }
             return label;
           },
@@ -165,57 +167,29 @@ const generateChartConfig = (
       },
       datalabels: {
         labels: {
-          categoryLabel: {
-            display: true,
-            rotation: -90,
-            color: (context) => {
-              const value = context.dataset.data[context.dataIndex] as
-                | number
-                | null;
-              return value !== null && value > 50 ? "#ffffff" : "#dddddd";
-            },
-            font: {
-              size: 14,
-              weight: "bolder",
-              family: "Roboto Condensed",
-              lineHeight: 1.2
-            },
-            anchor: "center",
-            align: "center",
-            formatter: (value, context) =>
-              (context.chart.data.labels?.[context.dataIndex] as string) || ""
-          },
           valueLabel: {
             display: true,
-            color: "#fff",
+            // Dark on the light long bars, white on the page background beside short ones.
+            color: (context) =>
+              ((context.dataset.data[context.dataIndex] as number | null) ?? 0) >= 65
+                ? "#06202b"
+                : "#fff",
             anchor: "end",
-            align: "center",
-            offset: 6,
+            // Long bars carry the label inside so it cannot run off the canvas.
+            align: (context) =>
+              ((context.dataset.data[context.dataIndex] as number | null) ?? 0) >= 65
+                ? "start"
+                : "end",
             font: {
-              size: 16,
-              weight: "bolder",
-              family: "Roboto Condensed"
-            },
-            formatter: (value) => (value === null ? null : `${value}%`)
-          },
-          rankLabel: {
-            display: true,
-            color: "#FFF",
-            anchor: "start",
-            align: "center",
-            offset: 10,
-            font: {
-              size: 14,
-              weight: "bolder",
-              family: "Roboto Condensed"
+              size: 12,
+              weight: "bold",
+              family: "Roboto Condensed, sans-serif"
             },
             formatter: (value, context) => {
+              if (value === null) return null;
               const statKey = statsToDisplay[context.dataIndex]?.key;
-              if (!statKey || !ranks) {
-                return "-";
-              }
-              const rank = ranks[statKey];
-              return formatOrdinal(rank) ?? "-";
+              const rank = statKey && ranks ? formatOrdinal(ranks[statKey]) : null;
+              return `${value}% · ${rank ?? "-"}`;
             }
           }
         }

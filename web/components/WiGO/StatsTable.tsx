@@ -164,9 +164,10 @@ const StatsTable: React.FC<StatsTableProps> = ({
   const totalColumns = renderColumnKeys.length + 2;
 
   return (
+    <>
+    <p id="wigo-stats-table-note" className={styles.statsTableNote}>L5/L10/L20: up to the latest played games across seasons; see GP for actual samples. Aggregate dates and source coverage are unavailable.</p>
     <div className={styles.statsTableContainer}>
-      <table className={styles.statsTable}>
-        <caption>L5/L10/L20: up to the latest played games across seasons; see GP for actual samples. Aggregate dates and source coverage are unavailable.</caption>
+      <table className={styles.statsTable} aria-describedby="wigo-stats-table-note">
         <thead>
           <tr>
             {/* Stat Header (No Highlight) */}
@@ -340,6 +341,7 @@ const StatsTable: React.FC<StatsTableProps> = ({
         </tbody>
       </table>
     </div>
+    </>
   );
 };
 
