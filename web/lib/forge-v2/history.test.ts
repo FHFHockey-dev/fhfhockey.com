@@ -208,7 +208,7 @@ describe.runIf(Boolean(bin))("FORGE v2 native PostgreSQL persistence (T3)", () =
     const game = fixtureOpportunity(), reader = new PostgresContextReader(db as SqlConnection);
     const original: PreparedPlayerContext = { id: "context-old", player: { id: game.playerId, name: "Synthetic" }, publicApproved: true, asOf: "2026-01-12T04:00:00.000Z", games: [{ opportunity: game, epochs: [], latestVintageId: null, finalVintageId: null, outcome: null, events: [], freshness: { state: "unavailable", asOf: "2026-01-12T04:00:00.000Z", reason: "fixture" } }], excluded: [], qualifications: [], accountability: { requested: 0, forecastCount: 0, outcomeCount: 0, abstentions: 0, mae: unavailable("fixture"), rmse: unavailable("fixture"), bias: unavailable("fixture"), evidenceClass: "fixture", limitations: [] } };
     await store.appendRecord(original.id, "read_context", `player:${game.playerId}`, original);
-    await store.appendRecord("context-new", "read_context", `player:${game.playerId}`, { ...original, id: "context-new", games: [] }, original.id);
+    await store.appendRecord("context-new", "read_context", `player:${game.playerId}`, { ...original, id: "context-new", asOf: "2026-01-13T04:00:00.000Z", games: [] }, original.id);
     expect((await reader.read(game.playerId))?.games).toEqual([]);
     expect((await reader.readGame(game.playerId, game.gameId))?.id).toBe(original.id);
     expect(await reader.players("Synthetic")).toEqual([original.player]);
@@ -237,6 +237,60 @@ describe.runIf(Boolean(bin))("FORGE v2 native PostgreSQL persistence (T3)", () =
     expect((await reconcilePreparedQueueScopes(transition)).state).toBe("captured");
     expect(await store.records(targetKey(scope), "opportunity")).toEqual(observations);
   });
+  it("atomically fences competing context heads, exact retries, time regression and insertion rollback", async () => {
+    const base: PreparedPlayerContext = { id: "race-base", player: { id: 9900999, name: "Native Race Fixture" }, publicApproved: true, asOf: "2026-01-12T00:00:00.000Z", games: [], excluded: [], qualifications: [], accountability: { requested: 0, forecastCount: 0, outcomeCount: 0, abstentions: 0, mae: unavailable("fixture"), rmse: unavailable("fixture"), bias: unavailable("fixture"), evidenceClass: "fixture", limitations: [] } };
+    const scope = `player:${base.player.id}`, headKey = `forge-v2/read-context-head/${scope}`;
+    // Simulate an existing pre-fix context: initialization must honor immutable history.
+    await db.query("insert into forge_v2_private.forge_v2_records(id,kind,scope_key,payload) values($1,'read_context',$2,$3)", [base.id, scope, canonicalJson(base)]);
+    const newer = { ...base, id: "race-newer", asOf: "2026-01-14T00:00:00.000Z" };
+    const older = { ...base, id: "race-older", asOf: "2026-01-13T00:00:00.000Z" };
+    const writer = await db.connect(), contender = await db.connect();
+    let pending: Promise<unknown> | undefined;
+    try {
+      await writer.query("begin");
+      await new PostgresHistoryStore(writer as SqlConnection).appendRecord(newer.id, "read_context", scope, newer, base.id);
+      const pid = (await contender.query("select pg_backend_pid() as pid")).rows[0].pid;
+      pending = new PostgresHistoryStore(contender as SqlConnection).appendRecord(older.id, "read_context", scope, older, base.id).then(() => "unexpected-success", error => error.message);
+      // Observe the actual database lock wait: the losing statement has an older snapshot.
+      let waiting = false;
+      for (let attempt = 0; attempt < 100 && !waiting; attempt++) {
+        waiting = (await admin.query("select wait_event_type from pg_stat_activity where pid=$1", [pid])).rows[0]?.wait_event_type === "Lock";
+      }
+      expect(waiting).toBe(true);
+      expect((await new PostgresContextReader(db as SqlConnection).read(base.player.id))?.id).toBe(base.id);
+      await writer.query("commit");
+      expect(await pending).toBe("prepared_context_predecessor_or_time_conflict");
+    } finally { await writer.query("rollback"); await pending; writer.release(); contender.release(); }
+    const reader = new PostgresContextReader(db as SqlConnection);
+    expect((await reader.read(base.player.id))?.id).toBe(newer.id);
+    const before = await store.records(scope, "read_context");
+    await store.appendRecord(base.id, "read_context", scope, base);
+    await Promise.all([store.appendRecord(newer.id, "read_context", scope, newer, base.id), store.appendRecord(newer.id, "read_context", scope, newer, base.id)]);
+    expect(await store.records(scope, "read_context")).toEqual(before);
+    await expect(store.appendRecord(older.id, "read_context", scope, older, newer.id)).rejects.toThrow(/time_conflict/);
+    await expect(store.appendRecord("same-time", "read_context", scope, { ...newer, id: "same-time" }, newer.id)).rejects.toThrow(/time_conflict/);
+    await expect(store.appendRecord(newer.id, "read_context", scope, { ...newer, publicApproved: false }, base.id)).rejects.toThrow(/identity conflict/);
+    const headBefore = await store.loadQueue(headKey);
+    const next = { ...newer, id: "race-insert-collision", asOf: "2026-01-15T00:00:00.000Z" };
+    // A record ID wins elsewhere after the optimistic idempotency read. The head CAS
+    // must roll back along with the conflicting immutable insert, not strand the head.
+    const racingStore = new PostgresHistoryStore({ query: async (text, values) => {
+      if (text.startsWith("with latest")) await store.appendRecord(next.id, "outcome", "unrelated-scope", {});
+      return db.query(text, values);
+    } } as SqlConnection);
+    await expect(racingStore.appendRecord(next.id, "read_context", scope, next, newer.id)).rejects.toThrow(/duplicate key/);
+    expect(await store.loadQueue(headKey)).toEqual(headBefore);
+    expect((await reader.read(base.player.id))?.id).toBe(newer.id);
+    const final = { ...next, id: "race-final" };
+    await store.appendRecord(final.id, "read_context", scope, final, newer.id);
+    expect((await reader.read(base.player.id))?.id).toBe(final.id);
+    expect((await reader.read(base.player.id, base.id))?.id).toBe(base.id);
+    await expect(store.saveQueue(headKey, 0, {})).rejects.toThrow(/Reserved/);
+    const first = { ...base, id: "first-context", player: { id: 9900998, name: "Separate player" } };
+    await Promise.all([store.appendRecord(first.id, "read_context", "player:9900998", first), store.appendRecord(first.id, "read_context", "player:9900998", first)]);
+    expect((await reader.read(first.player.id))?.id).toBe(first.id);
+  });
+
 });
 
 describe("FORGE v2 pinned artifact retention (T3)", () => {

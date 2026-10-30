@@ -10,6 +10,8 @@ import { DEFAULT_SCORING, targetKey } from "./identity";
 import { FIXTURE_TARGET } from "./fixtures";
 import { EvaluationRevision, SelectionRevision } from "./evaluation";
 import { preparePlayerReadContext } from "./preparation.server";
+import { available } from "./contracts";
+import type { PreparedPlayerContext } from "./api.server";
 import { CalibrationPayload, JointDistribution, evaluatePinnedIntervals } from "./uncertainty";
 
 const roots: string[] = [];
@@ -95,3 +97,39 @@ it("issues H10 to H1 through queue, prepares immutable corrections and serves th
     priorOutcome = outcome;
   }
 }, 20000);
+
+it('concurrent older preparation must not replace a newer corrected read head', async()=>{
+ const root=await mkdtemp(join(tmpdir(),'forge-independent-race-'));
+ try {
+  const env=await issuedLifecycleFixture(root), early='2026-01-13T04:00:00.000Z', late='2026-01-14T04:00:00.000Z';
+  const input={store:env.store,artifacts:env.artifacts,player:env.context.player,targets:[FIXTURE_TARGET],evidenceClass:'fixture' as const,profiles:[DEFAULT_SCORING],qualifications:[],excluded:[],previous:env.context,maximumRecordsPerKind:5000,maximumPublicationsPerGame:200,visibility:'local_fixture' as const};
+  let paused!:()=>void,release!:()=>void;
+  const atAppend=new Promise<void>(r=>paused=r), resume=new Promise<void>(r=>release=r);
+  const append=env.store.appendRecord.bind(env.store);
+  env.store.appendRecord=async(...args:Parameters<typeof append>)=>{
+   if(args[1]==='read_context' && (args[3] as PreparedPlayerContext).asOf===early){paused();await resume;}
+   return append(...args);
+  };
+  const older=preparePlayerReadContext({...input,asOf:early}).then(value=>({value,error:null}),error=>({value:null,error}));
+  await atAppend;
+  const oldOutcome=env.context.games[0].outcome!;
+  const corrected={...oldOutcome,id:'independent-new-correction',predecessorId:oldOutcome.id,recordedAt:'2026-01-14T03:00:00.000Z',values:{...oldOutcome.values,G:available(5)},reason:'synthetic_later_official_correction'};
+  await append(corrected.id,'outcome',targetKey(corrected),corrected,oldOutcome.id);
+  const newer=await preparePlayerReadContext({...input,asOf:late});
+  release(); const olderResult=await older;
+  expect(olderResult.error?.message).toBe("prepared_context_predecessor_or_time_conflict");
+  expect(olderResult.value).toBeNull();
+  const read=async()=>[...env.store.ledger.values()].filter(r=>r.kind==='read_context').at(-1)!.payload as PreparedPlayerContext;
+  const repo=new PreparedForgeReadRepository({players:async()=>[env.context.player],read,readGame:read},env.store.asPostgresStore(),env.artifacts);
+  const served=await repo.player(FIXTURE_TARGET.playerId,DEFAULT_SCORING);
+  console.info('Independent race evidence',JSON.stringify({olderRejected:Boolean(olderResult.error),newer:newer.asOf,lastInserted:(await read()).asOf,expectedOutcome:corrected.id,servedOutcome:served?.games[0].actual.revisionId}));
+  expect((await read()).asOf).toBe(late);
+  expect(served?.games[0].actual.revisionId).toBe(corrected.id);
+  expect([...env.store.ledger.values()].filter(r=>r.kind==='read_context').some(r=>(r.payload as PreparedPlayerContext).asOf===early)).toBe(false);
+  // Reload and recompute against the winning head; the next context keeps the correction.
+  const next=await preparePlayerReadContext({...input,previous:newer,asOf:'2026-01-15T04:00:00.000Z'});
+  expect(next.games[0].outcome?.id).toBe(corrected.id);
+  expect((await preparePlayerReadContext({...input,previous:next,asOf:late})).id).toBe(newer.id);
+  expect((await read()).id).toBe(next.id);
+ } finally {await rm(root,{recursive:true,force:true});}
+},20000);

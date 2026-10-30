@@ -6,6 +6,8 @@ export interface SqlConnection {
   query<T extends Record<string, unknown> = Record<string, unknown>>(text: string, values?: unknown[]): Promise<{ rows: T[] }>;
 }
 export type RecordKind = "opportunity" | "schedule" | "affiliation" | "horizon_episode" | "lock_epoch" | "history_event" | "qualification" | "outcome" | "evaluation" | "integrity_incident" | "exposure_receipt" | "read_context";
+const CONTEXT_HEAD_PREFIX = "forge-v2/read-context-head/";
+
 interface StoredVintage extends Record<string, unknown> { payload: string; output_hash: string; confirmed_at: Date | string | null; snapshot?: string }
 interface HistoryCursor { playerId: number; gameId: number; snapshot: string; upper: [string, number, string]; after: [string, number, string] }
 export interface HistoryPage { revisions: PublishedVintage[]; nextCursor: string | null }
@@ -129,9 +131,44 @@ export class PostgresHistoryStore {
   async appendRecord(id: string, kind: RecordKind, scopeKey: string, payload: object, predecessorId: string | null = null): Promise<void> {
     if (!id.trim() || !scopeKey.trim()) throw new Error("Record identity required");
     const bytes = canonicalJson(payload);
+    if (kind === "read_context") return this.appendReadContext(id, scopeKey, payload, predecessorId);
     await this.db.query(`insert into forge_v2_private.forge_v2_records (id,kind,scope_key,predecessor_id,payload) values ($1,$2,$3,$4,$5) on conflict (id) do nothing`, [id, kind, scopeKey, predecessorId, bytes]);
     const { rows } = await this.db.query<{ kind: string; scope_key: string; predecessor_id: string | null; content_hash: string }>("select kind,scope_key,predecessor_id,content_hash from forge_v2_private.forge_v2_records where id=$1", [id]);
     if (rows[0]?.content_hash !== contentHash(payload) || rows[0]?.kind !== kind || rows[0]?.scope_key !== scopeKey || rows[0]?.predecessor_id !== predecessorId) throw new Error("Immutable record identity conflict");
+  }
+
+  /** The operational head CAS and immutable insert share one statement/transaction.
+   * ON CONFLICT checks the locked current head, including commits after this statement's
+   * snapshot. A separate check or advisory lock within a SELECT would not provide that fence.
+   * Existing immutable records seed the head on first use; no migration/backfill is required. */
+  private async appendReadContext(id: string, scopeKey: string, payload: object, predecessorId: string | null): Promise<void> {
+    const context = payload as { id?: string; player?: { id?: number }; asOf?: string };
+    if (context.id !== id || !Number.isSafeInteger(context.player?.id) || context.player!.id! <= 0 || scopeKey !== `player:${context.player!.id}` || typeof context.asOf !== "string") throw new Error("invalid_read_context_identity");
+    instant(context.asOf);
+    const bytes = canonicalJson(payload);
+    const existing = async () => {
+      const { rows } = await this.db.query<{ kind: string; scope_key: string; predecessor_id: string | null; payload: string }>("select kind,scope_key,predecessor_id,payload from forge_v2_private.forge_v2_records where id=$1", [id]);
+      if (!rows[0]) return false;
+      if (rows[0].kind !== "read_context" || rows[0].scope_key !== scopeKey || rows[0].predecessor_id !== predecessorId || rows[0].payload !== bytes) throw new Error("Immutable record identity conflict");
+      return true;
+    };
+    // Exact retries, including historical ones, never move the head or append a new ordinal.
+    if (await existing()) return;
+    const { rows } = await this.db.query<{ id: string }>(`with latest as materialized (
+      select id,payload::jsonb->>'asOf' as as_of from forge_v2_private.forge_v2_records
+      where kind='read_context' and scope_key=$2 order by ordinal desc limit 1
+    ), admitted as (
+      insert into forge_v2_private.forge_v2_work_queue as head (id,state)
+      select $6,jsonb_build_object('contextId',$1::text,'asOf',$5::text)
+      where (select id from latest) is not distinct from $3::text
+        and (not exists(select 1 from latest) or (select as_of::timestamptz from latest)<$5::timestamptz)
+      on conflict (id) do update set state=excluded.state,revision=head.revision+1,updated_at=clock_timestamp()
+      where head.state->>'contextId'=$3::text and (head.state->>'asOf')::timestamptz<$5::timestamptz
+      returning id
+    ) insert into forge_v2_private.forge_v2_records(id,kind,scope_key,predecessor_id,payload)
+      select $1,'read_context',$2,$3,$4 from admitted returning id`, [id, scopeKey, predecessorId, bytes, context.asOf, CONTEXT_HEAD_PREFIX + scopeKey]);
+    // A concurrent exact retry may have won while our statement was waiting.
+    if (!rows.length && !await existing()) throw new Error("prepared_context_predecessor_or_time_conflict");
   }
 
   async records(scopeKey: string, kind: RecordKind, afterOrdinal = 0, limit = 100): Promise<Array<{ id: string; ordinal: number; payload: object; predecessorId: string | null }>> {
@@ -145,6 +182,7 @@ export class PostgresHistoryStore {
   }
 
   async saveQueue(id: string, expectedRevision: number, state: object): Promise<number> {
+    if (id.startsWith(CONTEXT_HEAD_PREFIX)) throw new Error("Reserved read context head");
     if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 0) throw new Error("Invalid queue revision");
     const { rows } = expectedRevision === 0
       ? await this.db.query<{ revision: string }>("insert into forge_v2_private.forge_v2_work_queue (id,state) values ($1,$2::jsonb) on conflict (id) do nothing returning revision::text", [id, canonicalJson(state)])
@@ -155,6 +193,7 @@ export class PostgresHistoryStore {
   /** Queue CAS and immutable event capture either both commit or neither does.
    * Concurrent record conflicts unseen by this statement's snapshot also fail closed. */
   async saveQueueWithRecords(id: string, expectedRevision: number, state: object, records: QueueHistoryRecord[]): Promise<number> {
+    if (id.startsWith(CONTEXT_HEAD_PREFIX)) throw new Error("Reserved read context head");
     if (!id.trim() || !Number.isSafeInteger(expectedRevision) || expectedRevision < 1 || records.length > 200 || new Set(records.map(record => record.id)).size !== records.length) throw new Error("Invalid atomic queue capture");
     const entries = records.map(record => {
       if (!record.id.trim() || record.kind !== "history_event" || !record.scopeKey.trim()) throw new Error("Invalid queue history record");

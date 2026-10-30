@@ -27,6 +27,12 @@ export class FixtureHistoryStore {
     const prior = this.ledger.get(id), row = { id, ordinal: prior?.ordinal ?? this.ledger.size + 1, kind, scope, payload, predecessorId };
     if (prior && contentHash(prior) !== contentHash(row)) throw new Error("Immutable record identity conflict");
     if (predecessorId && !this.ledger.has(predecessorId)) throw new Error("Missing record predecessor");
+    if (!prior && kind === "read_context") {
+      const context = payload as PreparedPlayerContext;
+      const head = [...this.ledger.values()].filter(value => value.kind === kind && value.scope === scope).at(-1);
+      if (context.id !== id || scope !== `player:${context.player.id}` || !Number.isFinite(Date.parse(context.asOf))) throw new Error("invalid_read_context_identity");
+      if ((head?.id ?? null) !== predecessorId || head && Date.parse((head.payload as PreparedPlayerContext).asOf) >= Date.parse(context.asOf)) throw new Error("prepared_context_predecessor_or_time_conflict");
+    }
     this.ledger.set(id, structuredClone(row));
   }
   async records(scope: string, kind: RecordKind, afterOrdinal = 0, limit = 100) {

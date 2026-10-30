@@ -168,6 +168,8 @@ export async function preparePlayerReadContext(input: ReadPreparationInput): Pro
   context.accountability = context.accountabilityByProfile![DEFAULT_SCORING.id];
   context.id = `context:${contentHash({ ...context, id: null })}`;
   if (Buffer.byteLength(JSON.stringify(context)) > 2 * 1024 * 1024) throw new Error("prepared_context_capacity_exceeded");
+  // The store atomically rechecks this predecessor and strictly increasing asOf at publication.
+  // A losing worker must reload/reprepare; it must not retry by merely changing its predecessor.
   if (context.id !== input.previous?.id) await input.store.appendRecord(context.id, "read_context", `player:${input.player.id}`, context, input.previous?.id ?? null);
   return context;
 }
