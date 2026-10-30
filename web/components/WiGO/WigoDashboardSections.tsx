@@ -103,6 +103,7 @@ function WigoPlayerIdentity({
   teamName,
   teamAbbreviation,
   teamColors,
+  desktop,
 }: Pick<
   WigoOverviewSectionProps,
   | "selectedPlayer"
@@ -110,6 +111,7 @@ function WigoPlayerIdentity({
   | "teamName"
   | "teamAbbreviation"
   | "teamColors"
+  | "desktop"
 >) {
   return (
     <>
@@ -139,7 +141,6 @@ function WigoPlayerIdentity({
                 ? `#${selectedPlayer.sweater_number} · `
                 : ""}
               {formatPosition(selectedPlayer.position)}
-              {teamAbbreviation ? ` · ${teamAbbreviation}` : ""}
             </span>
           </div>
         ) : (
@@ -153,16 +154,12 @@ function WigoPlayerIdentity({
             {getAge(selectedPlayer.birthDate)}
           </span>
           <span>
-            <small>Height</small>
+            <small className={desktop ? styles.visuallyHidden : undefined}>Height</small>
             {formatHeight(selectedPlayer.heightInCentimeters)}
           </span>
           <span>
-            <small>Weight</small>
+            <small className={desktop ? styles.visuallyHidden : undefined}>Weight</small>
             {formatWeight(selectedPlayer.weightInKilograms)}
-          </span>
-          <span>
-            <small>Position</small>
-            {formatPosition(selectedPlayer.position)}
           </span>
         </div>
       ) : null}
@@ -238,6 +235,7 @@ export function WigoOverviewSection({
         teamName={teamName}
         teamAbbreviation={teamAbbreviation}
         teamColors={teamColors}
+        desktop={desktop}
       /></div>
       <div className={desktop ? styles.summaryProduction : styles.perGameStatsContainer}>
         <PerGameStatsTable

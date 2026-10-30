@@ -342,7 +342,7 @@
 
 .playerMetaGrid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   min-height: 52px;
   border-bottom: 1px solid color.adjust(v.$background-dark, $lightness: 9%);
 

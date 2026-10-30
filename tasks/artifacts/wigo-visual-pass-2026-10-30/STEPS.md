@@ -102,3 +102,21 @@ Declutter in place (see `AUDIT-2026-10-30.md`). One local commit per approved st
   - CSS pure check passed on both.
 - **Screens:** `screens/step5-charts-before-after.png`, `screens/step5-phone-before-after.png`.
 - **TJ verdict:** approved 2026-10-30.
+- **Commit:** `339c23ee6`.
+
+## Step 6: identity and production
+
+- **What changed:**
+  - **Repeats removed:** the Position tile is gone ("#17 · C" says it), and the team abbreviation leaves that line because the full team name sits above it.
+  - **Biography (desktop):** age, height and weight share one line. "Height" and "Weight" stay for screen readers only (`visuallyHidden`).
+  - **Production:** the four numbers lose their boxes and cyan caps labels, and sit in one row with thin dividers. Applies on the phone too, whose biography is now three columns.
+  - **Unchanged:** the player name and the team-colour rail.
+- **Files:** `WigoDashboardSections.tsx`, `styles/wigoCharts.module.scss`, `PerGameStatsTable.module.scss`.
+- **Checks:**
+  - WIGO vitest passed: 145 of 145, with no test edits.
+  - `e2e/wigo-one-page.spec.ts` passed: 8 of 8.
+  - One earlier full run failed the long-name test on a transient search "Loading..." line, then it passed 4 runs straight. That is a timing race in the test, not this change.
+  - eslint: clean.
+  - CSS pure check passed on both.
+- **Screens:** `screens/step6-identity-before-after.png`, `screens/step6-phone-before-after.png`.
+- **TJ verdict:** approved 2026-10-30.

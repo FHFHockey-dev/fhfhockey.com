@@ -70,10 +70,9 @@
   }
 
   span {
-    color: v.$primary-color;
-    font-size: 9px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    color: v.$text-color-secondary;
+    font-family: v.$font-family-primary;
+    font-size: 11px;
   }
 
   strong {
@@ -239,10 +238,11 @@ table.verticalStatsTable {
     .productionSnapshot { grid-area: prod; display: flex; flex-direction: column; }
     .summaryStatus { margin: 0; padding: 2px 6px; font-size: 11px; line-height: 1.2; }
     .projectionTableSection { grid-area: pace; display: flex; flex-direction: column; }
-    .productionGrid { flex: 1; min-height: 0; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; padding: 0 4px 1px; }
+    .productionGrid { flex: 1; min-height: 0; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 0 4px 1px; }
     .productionStat {
       display: flex; flex-direction: column; justify-content: center; align-items: center;
-      min-height: 0; padding: 0; border: v.$border-subtle; border-radius: v.$radius-sm;
+      min-height: 0; padding: 0; border: 0; border-right: v.$border-subtle;
+      &:last-child { border-right: 0; }
       span, small { font-size: 11px; line-height: 1.05; letter-spacing: 0; }
       strong { font-family: v.$font-family-primary; font-size: var(--wigo-emphasis-size, 15px); line-height: 1.15; font-variant-numeric: tabular-nums; }
       small { font-family: v.$font-family-primary; white-space: nowrap; }
