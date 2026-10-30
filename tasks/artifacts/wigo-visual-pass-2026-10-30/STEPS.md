@@ -181,3 +181,23 @@ Declutter in place (see `AUDIT-2026-10-30.md`). One local commit per approved st
   - CSS pure check passed on all eight.
 - **Screens:** `screens/step9-desktop-before-after.png`, `screens/step9-phone-before-after.png`.
 - **TJ verdict:** approved 2026-10-30.
+- **Commit:** `b07744b04`.
+
+## Review after step 9
+
+`DESIGN-REVIEW-2026-10-30.md` (critique, copy, design system) and `A11Y-2026-10-30.md` (hand checks; Axe is parked). TJ approved all three proposed follow-ups: help notes, one empty state, accessibility fixes.
+
+## Step 10: help notes open fully
+
+- **What changed:** a new `WigoHelp` component replaces the five `<details>` notes. Each note opens in the browser's top layer (popover), so a panel's `overflow: hidden` can't clip it, and is placed inside the window beside its button. Escape or clicking elsewhere closes it. The wording of the notes is unchanged.
+- **Defects fixed (they predate this pass):** the Game score note was invisible, the Comparison note's paragraphs overlapped and hid the DIFF formula, and the Ratings note was cut off.
+- **Limit:** needs browser popover support (Safari 17+, Chrome 114+, Firefox 125+).
+- **Files:** `WigoHelp.tsx` and `WigoHelp.test.tsx` (new), `GameScoreSection.tsx`, `WigoDashboardSections.tsx`, `TeamPerformanceDrivers.tsx`, `WigoComparisonMatrix.tsx`, `PerGameStatsTable.tsx`, `styles/wigoCharts.module.scss`, `PerGameStatsTable.module.scss`, `TeamPerformanceDrivers.module.scss`, `e2e/wigo-one-page.spec.ts` (one test added).
+- **Checks:**
+  - WIGO vitest passed: 146 of 146 (one test added).
+  - `e2e/wigo-one-page.spec.ts` passed: 9 of 9. The new test opens all five notes at 1280×800, checks each fits the window and closes on Escape.
+  - eslint: clean.
+  - CSS pure check passed on all three.
+  - Phone notes not checked here; see the accessibility step.
+- **Screens:** `screens/step10-comparison-before-after.png`, `screens/step10-gamescore-before-after.png`, `screens/step10-ratings-before-after.png`.
+- **TJ verdict:** approved 2026-10-30.

@@ -6,6 +6,7 @@ import {
 } from "utils/fetchWigoPlayerStats";
 import { formatWigoStatValue } from "./statMetadata";
 import { formatSeasonRange } from "./tableUtils";
+import WigoHelp from "./WigoHelp";
 import { WIGO_ERROR_MESSAGES } from "./errorMessages";
 import styles from "./PerGameStatsTable.module.scss";
 
@@ -159,10 +160,10 @@ const PerGameStatsTable: React.FC<PerGameStatsTableProps> = ({
         </div>}
       </section>
       <section className={styles.projectionTableSection} data-coverage="C05">
-        <details className={styles.paceHelp}>
-          <summary><h3>Per-game / 84-game pace</h3></summary>
-          <p>Observed counting rate × 84, rounded to a whole count. Constant-rate pace, not a remaining-game, availability or health prediction.</p>
-        </details>
+        <div className={styles.paceTitle}>
+          <h3>Per-game / 84-game pace</h3>
+          <WigoHelp label="How pace is calculated"><p>Observed counting rate × 84, rounded to a whole count. Constant-rate pace, not a remaining-game, availability or health prediction.</p></WigoHelp>
+        </div>
         {/* The one-page dashboard shows the ten rows as two five-row halves side by side. */}
         <div className={styles.paceTables}>
           {(desktop ? [visibleRows.slice(0, 5), visibleRows.slice(5)] : [visibleRows]).map(rows => <table key={rows[0]?.stat} className={styles.verticalStatsTable}>

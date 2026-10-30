@@ -1965,39 +1965,6 @@
     text-transform: none;
     white-space: nowrap;
   }
-  &.wigoDashHeader :global(.wigo-chart-help) {
-    position: relative;
-    font-size: s.$text-12;
-    summary {
-      cursor: pointer;
-    }
-    p {
-      position: absolute;
-      right: 0;
-      bottom: 20px;
-      z-index: 20;
-      width: 260px;
-      background: v.$background-header;
-      border: v.$border-subtle;
-      padding: 12px;
-    }
-  }
-}
-
-.matrixHelp {
-  position: relative;
-  font-size: s.$text-12;
-  summary {
-    cursor: pointer;
-  }
-  p {
-    position: absolute;
-    z-index: 20;
-    width: 320px;
-    padding: 12px;
-    background: v.$background-header;
-    border: v.$border-subtle;
-  }
 }
 
 .selectedStatPanel :global(.recharts-surface) {
@@ -2018,13 +1985,6 @@
   }
   .percentileTile meter::-moz-meter-bar {
     background: v.$primary-color;
-  }
-}
-
-:global(.wigo-one-page) {
-  .ratingsContainer :global(.wigo-chart-help) p {
-    bottom: auto;
-    top: 20px;
   }
 }
 
@@ -2627,16 +2587,25 @@
     border-radius: s.$radius-small;
   }
 
-  // Every disclosure on this page is a help note: ⓘ alone says so, without a second ▶ marker.
-  details > summary {
-    list-style: none;
-    &::-webkit-details-marker {
-      display: none;
+  .helpButton,
+  .chartToolbar .helpButton {
+    flex: none;
+    min-height: 0;
+    margin: 0;
+    padding: 0 2px;
+    border: 0;
+    background: none;
+    color: s.$ink;
+    font-size: s.$text-14;
+    line-height: 16px;
+    cursor: help;
+    &:hover {
+      background: none;
+      color: s.$ink-strong;
     }
     &:focus-visible {
       outline: 2px solid v.$primary-color;
       outline-offset: 1px;
-      border-radius: s.$radius-small;
     }
   }
 }
@@ -2648,6 +2617,29 @@
     }
     .gpSliderContainer {
       gap: 6px;
+    }
+  }
+}
+
+// WigoHelp's note. Top layer, placed by the component; the browser's own centring is switched off.
+.helpPanel {
+  position: fixed;
+  inset: auto;
+  width: min(320px, calc(100vw - 16px));
+  max-height: calc(100vh - 16px);
+  margin: 0;
+  padding: 10px 12px;
+  overflow-y: auto;
+  border: v.$border-subtle;
+  border-radius: s.$radius-card;
+  background: v.$background-header;
+  color: s.$ink;
+  font-size: s.$text-12;
+  line-height: 1.4;
+  p {
+    margin: 0 0 8px;
+    &:last-child {
+      margin-bottom: 0;
     }
   }
 }
