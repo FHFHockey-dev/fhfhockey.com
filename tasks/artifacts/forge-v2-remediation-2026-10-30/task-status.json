@@ -566,8 +566,27 @@
       "title": "Independently review the corrected candidate and reconcile every scientific/external acceptance gate with precise, bounded prerequisites.",
       "state": "COMPLETE_LOCAL_ACCEPTANCE",
       "evidence": "verification.json; review-followup.json; canonical task-list per-ID notes"
+    },
+    {
+      "id": "NEW-07",
+      "title": "Finalize and implement the exact statistical methodology for 2.5/8.3/8.5/13.4: baseline predictive intervals, dependence estimator, tested family/multiplicity, source-field mappings and development-justified thresholds. The methods appendix fixes draft selection/chronology and proposes feature formulas, but the remaining choices need independent methodological disposition and source metadata. Retain synthetic arithmetic checks, every trial, immutable freeze and real evidence; preparation review is not scientific approval.",
+      "state": "INCOMPLETE",
+      "evidence": "protocol-methods-draft.json; execution-prerequisites.json; continuation-verification.json",
+      "blocker": "Exact baseline interval/dependence/multiplicity method and source-field mapping disposition absent; numerical justification also needs admitted development data",
+      "ownerRole": "scientific reviewer plus source owner",
+      "actionState": "metadata/specification needed; no external operation attempted or denied"
+    },
+    {
+      "id": "NEW-08",
+      "title": "Implement and independently verify the authority-bound private prospective producer for 14.1/14.2. First obtain the named service identity, trusted approval/source-capture readers, isolated persistence target and resource reservation contract in `execution-prerequisites.json`. Test expired/revoked/wrong-scope approval, real clock/lock fences, committed readback, retry caps and durable misses before any separately authorized execution. The current fixture/reconstruction producer remains unchanged; changing an evidence-class string is insufficient.",
+      "state": "INCOMPLETE",
+      "evidence": "execution-prerequisites.json; open-task-reassessment.json; pipeline.server.ts fixture/reconstruction fence",
+      "blocker": "Actual service, trusted approval/source readers, durable bounds and isolated target contract absent; live prospective producer not implemented",
+      "ownerRole": "environment/service owner plus independent implementation reviewer",
+      "actionState": "metadata/specification needed; no external operation attempted or denied"
     }
   ],
   "science": "NO_QUALIFIED_SUBSET",
-  "goalMarkerActive": false
+  "goalMarkerActive": false,
+  "continuation": "continuation-verification.json; preparation-review.json; open-task-reassessment.json; execution-prerequisites.json"
 }

@@ -6,7 +6,7 @@
 
 **Status:** Approved for unattended local implementation by the 2026-10-29 goal objective. Fourteen parent tasks; evidence and gate status below. The original approved attachment hash is recorded in OWNERSHIP.json. Historical planning-only instructions below do not override the current local implementation/commit authorization.
 
-**Current acceptance — 2026-10-30:** Outside-audit remediation is implemented, tested and independently accepted at local code commit `7113329d2c24b8629f54484df37441f95a63d853`. The all-tasks objective remains incomplete: the fifteen explicitly unchecked scientific/external subtasks below still require evidence and authorization. See the remediation acceptance section and `tasks/artifacts/forge-v2-remediation-2026-10-30/RUNBOOK.md`. No actual persistent goal marker is active.
+**Current acceptance — 2026-10-30:** Outside-audit remediation is implemented, tested and independently accepted at local code commit `7113329d2c24b8629f54484df37441f95a63d853`. The all-tasks objective remains incomplete: the fifteen explicitly unchecked original scientific/external subtasks and newly explicit NEW-07/NEW-08 dependencies remain incomplete. See the remediation acceptance section and `tasks/artifacts/forge-v2-remediation-2026-10-30/RUNBOOK.md`. No actual persistent goal marker is active.
 
 ## Relevant Files
 
@@ -30,6 +30,11 @@ Created/modified for this task (exact ownership and hashes tracked in task artif
 - `web/lib/forge-v2/{preparation.server.ts,preparation.test.ts,fixtureHarness.server.ts}`, `web/components/ForgeV2/{ConnectedForecastExplorer.tsx,AccountabilityReport.tsx}` — retained-context preparation and actual-issuance lifecycle/read integration.
 - `tasks/artifacts/forge-v2-remediation-2026-10-30/` — final local review, logs, pins, task status, unfrozen scientific proposal and exact prerequisites; supersedes former local acceptance.
 - `tasks/diaries/2026-10-30-codex-forge-v2-*.md` — ongoing work notes, excluded from commits.
+- `tasks/artifacts/forge-v2-remediation-2026-10-30/{intake_check.py,test_intake_check.py,intake-template.json,intake-template-report.json}` — metadata-only prerequisite validation, regressions and deliberately blocked sample intake.
+- `tasks/artifacts/forge-v2-remediation-2026-10-30/{chronology-check.ts,capacity-check.ts,run_continuation.py,capacity-plan.json}` — bounded synthetic chronology, native capacity checks and measured limits.
+- `tasks/artifacts/forge-v2-remediation-2026-10-30/{continuation-intake,continuation-chronology,continuation-capacity,continuation-types}{.txt,-receipt.json}` — retained outputs and actual exits for the four preparation checks.
+- `tasks/artifacts/forge-v2-remediation-2026-10-30/{open-task-reassessment.json,CRITICAL-PATH.md,protocol-methods-draft.json,execution-prerequisites.json}` — per-task blockers, ordered owner requests, unfrozen method and execution-contract proposals.
+- `tasks/artifacts/forge-v2-remediation-2026-10-30/{preparation-review.json,continuation-verification.json,continuation-pins.json}` — independent preparation review, integrated checks and final continuation hashes.
 
 
 Existing sources are references, not automatically available for modification:
@@ -426,3 +431,21 @@ The outside audit reopened 3.3, 3.5, 5.4, 8.2, 8.4, 9.2, 9.4, 10.1, 11.1, 11.4, 
 - **Still incomplete:** 2.2, 2.4, 2.5, 7.1, 7.3, 8.3, 8.5, 13.2, 13.4, 14.1, 14.2, 14.3, 14.4, 14.5, 14.6. Every acceptance prerequisite and owner role is explicit in `scientific-prerequisites.json`. `protocol-proposal.json` remains an unfrozen proposal; `approval-code-pins.json` supplies only the now-known local code identity. No real population/calibration/final/prospective evidence or owner release approval exists for these tasks.
 - **Safety/release state:** No remote actions, protected-label access, production requests, pushes, builds, deployments or schedules. Public API/page and RSO adapter stay disabled. No denial, pending tool approval or uncertain action outcome. Required external actions are unattempted and blocked by absent prerequisites/authorization. The persistent goal marker is inactive because this interface exposes no such capability.
 - **Resume:** Read remediation `RUNBOOK.md`, check ownership/current diffs, obtain the exact source/custody evidence first, and progress the still-open tasks through their real acceptance gates. Do not reinterpret this local checkpoint as completion of the all-tasks objective.
+
+### Continued per-task preparation — 2026-10-30
+
+All fifteen incomplete IDs were reassessed against their exact acceptance text in remediation `open-task-reassessment.json`; each records missing artifact/action, custodian role (no human authority invented), prior attempts, why required and smallest next step. `CRITICAL-PATH.md` orders the source/custody intake, bounded development registration, chronological calibration, final freeze/untouched review, representative capacity, prospective capture and separate releases. No original gate was checked from this preparation.
+
+- `intake_check.py`, `intake-template.json` and `test_intake_check.py` provide executable metadata-only intake: eleven metadata/runner tests pass, the incomplete real template returns expected exit 2 with 153 explicit missing fields, all 15 tasks remain incomplete, and referenced files/URLs/labels are never opened. Even structurally complete fictional metadata cannot authorize execution or claim qualification.
+- `protocol-methods-draft.json` reconciles proposed candidate selection with actual code, specifies draft feature/history formulas and separate model/interval-calibration windows. `chronology-check.ts` executes that staged path with 32 synthetic observations and refuses earlier model/calibrator use. This resolves a draft chronology mismatch without backdating or changing product fences. Numerical thresholds and dependence/comparator methods still require independent methodology/data review.
+- `capacity-check.ts` and `capacity-plan.json` retain bounded local PostgreSQL measurements: 25 publication calls, 3,005 bulk fixture rows, 16 complete history pages, 1 MiB verified archive/restore and ten-game unqualified read projection. This fills local measurement preparation; real-model capacity, full-scale qualified rendering, permanent hosted retention costs and v1/RSO reservations still block 13.2/14.1.
+- `continuation-verification.json` records executed commands, exits and limits. Product code at `7113329d2` is unchanged. No protected data or restricted external action was attempted; two public PRD methodology references were read without numerical sports data.
+
+- Independent review `preparation-review.json` accepted local preparation only after independently reproducing and verifying the malformed-UTC and stale-run-receipt fixes. Eleven owner-run metadata/runner tests and two independent correction tests passed. Its exact source/log hashes were reconciled; prior product/source pins remain unchanged.
+
+### NEW dependencies made explicit by continuation
+
+These refine still-open original tasks; they do not change the PRD or convert scientific evidence requirements into local test acceptance.
+
+- [ ] **NEW-07** Finalize and implement the exact statistical methodology for 2.5/8.3/8.5/13.4: baseline predictive intervals, dependence estimator, tested family/multiplicity, source-field mappings and development-justified thresholds. The methods appendix fixes draft selection/chronology and proposes feature formulas, but the remaining choices need independent methodological disposition and source metadata. Retain synthetic arithmetic checks, every trial, immutable freeze and real evidence; preparation review is not scientific approval.
+- [ ] **NEW-08** Implement and independently verify the authority-bound private prospective producer for 14.1/14.2. First obtain the named service identity, trusted approval/source-capture readers, isolated persistence target and resource reservation contract in `execution-prerequisites.json`. Test expired/revoked/wrong-scope approval, real clock/lock fences, committed readback, retry caps and durable misses before any separately authorized execution. The current fixture/reconstruction producer remains unchanged; changing an evidence-class string is insufficient.

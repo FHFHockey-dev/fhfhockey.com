@@ -1,0 +1,17 @@
+{
+  "check": "types",
+  "exit": 0,
+  "status": "passed",
+  "commands": [
+    [
+      "/Users/tim/Code/fhfhockey.com/web/node_modules/.bin/tsc",
+      "--noEmit",
+      "--project",
+      "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/forge-continuation-types-j0byg7l4/tsconfig.json"
+    ]
+  ],
+  "log": "continuation-types.txt",
+  "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "scientificallyQualified": false,
+  "remoteActions": 0
+}
