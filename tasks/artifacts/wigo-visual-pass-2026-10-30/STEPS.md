@@ -138,3 +138,19 @@ Declutter in place (see `AUDIT-2026-10-30.md`). One local commit per approved st
   - CSS pure check passed on all five.
 - **Screens:** `screens/step7-panels-before-after.png`, `screens/step7-phone-before-after.png`.
 - **TJ verdict:** approved 2026-10-30.
+- **Commit:** `dc2f9927a`.
+
+## Step 8: rate percentiles
+
+- **What changed:**
+  - **Slider:** reads "Min GP: 10 ▬ 79". The stray "0" that sat beside the value is gone, and the slider's left end means zero.
+  - **Desktop status line:** Player GP and the notice chip share one line, so the tiles get more height. "Requested / Applied" seasons stay for screen readers only; the chip already says when they differ. To fit one line, the chip reads "2024–25 values and cohort, not 2025–26" (no "Showing"). The full sentence stays in the tooltip and for screen readers.
+  - **Phone:** keeps the full detail line and sentence, which tests pin. Regains the title padding lost in step 2, and the value no longer touches the slider.
+- **Files:** `RateStatPercentiles.tsx`, `styles/wigoCharts.module.scss`.
+- **Checks:**
+  - WIGO vitest passed: 145 of 145, with no test edits.
+  - `e2e/wigo-one-page.spec.ts` passed: 8 of 8, run before the phone-only padding fix.
+  - eslint: clean.
+  - CSS pure check passed.
+- **Screens:** `screens/step8-panel-before-after.png`, `screens/step8-phone-before-after.png`.
+- **TJ verdict:** approved 2026-10-30.

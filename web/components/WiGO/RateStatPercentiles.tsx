@@ -372,7 +372,7 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
   }
   if (calculatedPercentiles !== null && percentileCohort?.fallbackReason) {
     thresholdMessages.push({
-      short: `Showing ${formatSeasonRange(percentileCohort.appliedSeasonId)} values and cohort, not ${formatSeasonRange(seasonId as number)}`,
+      short: `${formatSeasonRange(percentileCohort.appliedSeasonId)} values and cohort, not ${formatSeasonRange(seasonId as number)}`,
       full: percentileCohort.fallbackReason
     });
   }
@@ -459,18 +459,27 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
                   }
                 />
 
-                <span className={styles.gpSliderMinLabel}>0</span>
               </div>
             </div>
 
-            <div className={styles.percentileContext}>Player GP: {selectedPlayerGp ?? "—"} · Requested {seasonId} · Applied {percentileCohort?.appliedSeasonId ?? seasonId}</div>
-            <div className={desktop ? styles.thresholdChips : styles.thresholdMessagesContainer}>
-              {thresholdMessages.map(message => desktop
-                // One-page mode keeps each notice to a short chip; the full sentence stays for screen readers and hover.
-                ? <div key={message.full} className={styles.thresholdMessage} title={message.full}>
-                    {message.short}<span className={styles.visuallyHidden}>: {message.full}</span>
-                  </div>
-                : <div key={message.full} className={styles.thresholdMessage}>{message.full}</div>)}
+            <div className={desktop ? styles.percentileStatusRow : undefined}>
+              {/* One-page mode keeps the requested and applied seasons for screen readers; the chip says when they differ. */}
+              {desktop ? (
+                <div className={styles.percentileContext}>
+                  Player GP: {selectedPlayerGp ?? "—"}
+                  <span className={styles.visuallyHidden}> · Requested {seasonId} · Applied {percentileCohort?.appliedSeasonId ?? seasonId}</span>
+                </div>
+              ) : (
+                <div className={styles.percentileContext}>Player GP: {selectedPlayerGp ?? "—"} · Requested {seasonId} · Applied {percentileCohort?.appliedSeasonId ?? seasonId}</div>
+              )}
+              <div className={desktop ? styles.thresholdChips : styles.thresholdMessagesContainer}>
+                {thresholdMessages.map(message => desktop
+                  // One-page mode keeps each notice to a short chip; the full sentence stays for screen readers and hover.
+                  ? <div key={message.full} className={styles.thresholdMessage} title={message.full}>
+                      {message.short}<span className={styles.visuallyHidden}>: {message.full}</span>
+                    </div>
+                  : <div key={message.full} className={styles.thresholdMessage}>{message.full}</div>)}
+              </div>
             </div>
           </div>
           {desktop ? <div className={styles.percentileTileGrid}>

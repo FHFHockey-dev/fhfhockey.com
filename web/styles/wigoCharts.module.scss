@@ -1392,19 +1392,12 @@
       cursor: pointer;
     }
   }
-  .gpSliderMaxLabel,
-  .gpSliderMinLabel {
+  .gpSliderMaxLabel {
     font-size: v.$font-size-small;
     color: v.$primary-color;
     width: 20%;
     text-align: center;
-    order: 0;
-  }
-  .gpSliderMaxLabel {
     order: 2;
-  }
-  .gpSliderMinLabel {
-    order: 0;
   }
 }
 .thresholdMessagesContainer {
@@ -1947,8 +1940,7 @@
         font-size: 12px;
       }
     }
-    .gpSliderMaxLabel,
-    .gpSliderMinLabel {
+    .gpSliderMaxLabel {
       width: auto;
       flex: none;
       font-size: 12px;
@@ -2296,7 +2288,7 @@
     .gpSliderContainer { flex: 1 1 120px; min-width: 0; }
     .gpSlider { min-width: 0; flex: 1; }
     .strengthSelector button { font-size: 11px; padding: 0 8px; line-height: 1.5; }
-    .gpSliderContainer, .gpSliderContainer label, .gpSliderMaxLabel, .gpSliderMinLabel { font-size: 11px; }
+    .gpSliderContainer, .gpSliderContainer label, .gpSliderMaxLabel { font-size: 11px; }
     .thresholdMessage { font-size: 11px; padding: 1px 4px; line-height: 1.2; }
   }
   .percentileContext { font-size: 11px; line-height: 1.2; }
@@ -2572,6 +2564,24 @@
   }
 }
 
+// One-page percentiles status: player GP and the notice chips share a line, so the tiles keep the height.
+:global(.wigo-one-page) {
+  .percentileStatusRow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1px 8px;
+    padding: 0 6px;
+  }
+  .percentileStatusRow .percentileContext {
+    color: v.$text-secondary;
+    white-space: nowrap;
+  }
+  .percentileStatusRow .thresholdChips {
+    margin: 0;
+  }
+}
+
 // One panel title style on every screen size. `.wigoDashHeader` lifts these above the older per-layout header rules.
 @mixin panel-title {
   margin: 0;
@@ -2622,6 +2632,17 @@
       outline: 2px solid v.$primary-color;
       outline-offset: 1px;
       border-radius: 2px;
+    }
+  }
+}
+
+@media (max-width: v.$breakpoint-tablet) {
+  .wigoDashHeader {
+    .percentileFiltersContainer .filtersTitle {
+      padding: 6px 10px;
+    }
+    .gpSliderContainer {
+      gap: 6px;
     }
   }
 }
