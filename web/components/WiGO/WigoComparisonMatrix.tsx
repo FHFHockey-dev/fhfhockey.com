@@ -93,9 +93,8 @@ export default function WigoComparisonMatrix({
             initialRight={rightTimeframe}
             onCompare={onCompare}
           />
-          <span>
-            DIFF: {leftTimeframe} vs {rightTimeframe} · relative % · counts per
-            game
+          <span className={styles.matrixCaption}>
+            DIFF: % change · counts per game
           </span>
           <details className={styles.matrixHelp}>
             <summary aria-label="How comparison differences are calculated">

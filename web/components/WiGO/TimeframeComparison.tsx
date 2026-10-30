@@ -68,7 +68,7 @@ const TimeframeComparison: React.FC<TimeframeComparisonProps> = ({
           ))}
         </select>
 
-        <span className={styles.vsText}>TO:</span>
+        <span className={styles.vsText}>vs</span>
 
         <select
           className={clsx(

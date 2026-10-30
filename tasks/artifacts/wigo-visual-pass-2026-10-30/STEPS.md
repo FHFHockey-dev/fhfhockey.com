@@ -53,3 +53,22 @@ Declutter in place (see `AUDIT-2026-10-30.md`). One local commit per approved st
   - No-player state checked at 1280.
 - **Screens:** `screens/step3-bar-before-after.png`, `screens/step3-phone-before-after.png`.
 - **TJ verdict:** approved 2026-10-30 after two edits: narrow the search box (first version was too wide), and keep the "What Is Going On" tagline in its original italic, spaced caps.
+- **Commit:** `dacf1a515`.
+
+## Step 4: compare toolbar and matrix
+
+- **What changed:**
+  - **Columns:** body tint on the selected timeframes drops to 6% (from 16% and 13%), with the strong blue and gold kept in the header cell. The selected metric row is now the loudest thing in the matrix.
+  - **Labels:** metric labels are regular weight; the selected one stays bold and blue.
+  - **Selects:** one border instead of a double outline, and a lighter fill. The broken arrow is a proper chevron. The focus ring now shows (the highlight classes used to override it).
+  - **Wording:** "TO:" is now "vs". The caption is "DIFF: % change · counts per game", because the selects already name the periods.
+  - **DIFF column:** the 2 px accent line is now a subtle neutral one.
+  - **Phone table:** selected columns have a 1 px outline and an 8% tint instead of 3 px and 20–25%.
+- **Files:** `styles/wigoCharts.module.scss`, `TimeframeComparison.module.scss`, `TimeframeComparison.tsx`, `WigoComparisonMatrix.tsx`.
+- **Checks:**
+  - WIGO vitest passed: 145 of 145, with no test edits.
+  - eslint: clean.
+  - CSS pure check passed on both.
+  - The e2e-pinned header text ("STDL", "CAR") is unchanged.
+- **Screens:** `screens/step4-desktop-before-after.png`, `screens/step4-phone-before-after.png`.
+- **TJ verdict:** approved 2026-10-30.

@@ -80,10 +80,9 @@ $arrow-color: v.$text-color-secondary; // Use theme variable for arrow color
 
   // Position from the right edge (adjust $arrow-offset-right as needed)
   background-position:
-    calc(100% - #{$arrow-offset-right}) center,
-    // Position first triangle (bottom-left part)
-    calc(100% - #{$arrow-offset-right} - #{$arrow-size} - #{$arrow-spacing})
-      center; // Position second triangle (top-left part) to the left of the first
+    calc(100% - #{$arrow-offset-right} - #{$arrow-size}) center,
+    // Position first triangle (left half of the chevron)
+    calc(100% - #{$arrow-offset-right}) center; // Right half of the chevron
 
   // Set the size of each triangle image
   background-size: #{$arrow-size} #{$arrow-size};
@@ -105,28 +104,20 @@ $arrow-color: v.$text-color-secondary; // Use theme variable for arrow color
 
 // Highlight class for the LEFT dropdown
 .selectHighlightedLeft {
-  box-shadow:
-    inset 0 0 0 1px #07aae2,
-    // Blue inset shadow (add this)
-    0 0 0 1px rgba(
-        v.$primary-color,
-        0.05
-      ); // Keep focus shadow if needed, adjust if overlaps
-  border-color: #07aae2; // Optional: change border color too
-  background-color: rgba(color.adjust(#07aae2, $lightness: -5%), 0.2);
+  border-color: #07aae2;
+  background-color: rgba(#07aae2, 0.1);
+  &:focus-visible {
+    box-shadow: 0 0 0 2px rgba(#07aae2, 0.5);
+  }
 }
 
 // Highlight class for the RIGHT dropdown
 .selectHighlightedRight {
-  box-shadow:
-    inset 0 0 0 1px #ffcd56,
-    // Yellow inset shadow (add this)
-    0 0 0 1px rgba(
-        v.$primary-color,
-        0.05
-      ); // Keep focus shadow if needed, adjust if overlaps
-  background-color: rgba(color.adjust(#ffcd56, $lightness: -5%), 0.3);
-  border-color: #ffcd56; // Optional: change border color too
+  border-color: #ffcd56;
+  background-color: rgba(#ffcd56, 0.1);
+  &:focus-visible {
+    box-shadow: 0 0 0 2px rgba(#ffcd56, 0.5);
+  }
 }
 
 .vsText {
