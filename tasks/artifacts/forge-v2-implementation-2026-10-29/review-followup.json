@@ -1,0 +1,177 @@
+{
+  "status": "no_remaining_source_blocker_in_bounded_review_pending_lead_checks",
+  "startedAt": "2026-10-30T00:26:57.584328+00:00",
+  "sourceHashes": {
+    "web/lib/forge-v2/pipeline.server.ts": "1b145709444c734d23f4a75c4874fe2e74c9d00e66c6037c56c9317bac9eca1a",
+    "web/lib/forge-v2/api.server.ts": "6514a14f985a2b67d7cf0c62572da9f13c15575de183bc31bde85b3b97df81ce",
+    "web/lib/forge-v2/history.server.ts": "611ba872b14dd1ddff7279a7b5994e798be8cea1d43376b314c62b3629599b7b",
+    "web/lib/forge-v2/contracts.ts": "ba839e111a7ddc886fda74a3fb8e8b8ba8dd9dafd3e9555e362c7e7af8a37bf2",
+    "web/lib/forge-v2/model.ts": "563c95530612de830788056cda7ad36e26cd6181c5d6a5db1689cb00586488f4",
+    "web/lib/forge-v2/participation.ts": "5521885456b989ac6393521f814b3ceef2242cd62f36e508ed384eebdca38b9e",
+    "web/lib/forge-v2/qualification.ts": "519d36a99b76b2fe3db799483eb4578c2e412bd146a25e6d0f508d2a822b215c",
+    "web/lib/forge-v2/uncertainty.ts": "709ab05be74fa3727669f04806873c7b53886dde0f753861f683fcab1da87f61",
+    "web/lib/forge-v2/schedule.ts": "99d7be262d15f9aa7a092df4f639f42bbfa320a22aa4b87d435362462c99e819",
+    "web/lib/forge-v2/evaluation.ts": "2cce784c2f29a9827f7ca62cebfd0d283dbc88e3984f2a9dbe61eee329ed0933",
+    "supabase/migrations/20261029235656_forge_v2_immutable_history.sql": "63de96ba1b44316ebd25028fc7149c0e04d9046af5ed1d90919a13a4aee9bfca"
+  },
+  "completedAt": "2026-10-30T00:44:30.264158+00:00",
+  "originalReport": "tasks/artifacts/forge-v2-implementation-2026-10-29/independent-review.json",
+  "scope": "Five prior findings; final prepared pipeline, API projection/read paths and PostgreSQL claim/publication/history guards. Local implementation review only.",
+  "originalFindingDispositions": [
+    {
+      "id": "R1",
+      "state": "addressed_in_source",
+      "evidence": "Migration assigns top-level pg_current_xact_id() to insert_transaction server-side and receipt trigger explicitly requires pg_xact_status committed. Existing native test now includes nested SAVEPOINT case. No test rerun by reviewer."
+    },
+    {
+      "id": "R2",
+      "state": "addressed_in_source",
+      "evidence": "History cursor pins pg_current_snapshot; receipts carry server-owned top-level receipt_transaction and each page applies pg_visible_in_snapshot. Native test explicitly holds an early receipt commit across first page. No test rerun by reviewer."
+    },
+    {
+      "id": "R3",
+      "state": "addressed_in_source",
+      "evidence": "LockEpoch playBegun persists independently of actualStartAt; advanceLock carries it forward and test covers in_progress/suspended/final with unknown actual timestamp."
+    },
+    {
+      "id": "R4",
+      "state": "addressed_in_source",
+      "evidence": "ModelAvailability retains fittedAt/availableAt/dependencyAvailableAt; fitted model and participation inference enforce cutoff availability. Calibration shares this contract. Predeclared recipe arithmetic is internal and separately labeled; tests cover earlier-cutoff inference."
+    },
+    {
+      "id": "R5",
+      "state": "addressed_in_source",
+      "evidence": "Qualification pins stable jointGenerator plus model/calibration dependencies; per-vintage output hashes are validated against vintage pins rather than preregistered artifactHashes. Regression constructs second future target/cutoff with unchanged frozen evidence."
+    }
+  ],
+  "newFindings": [
+    {
+      "id": "F1",
+      "severity": "P1",
+      "state": "reported_then_source_repaired",
+      "location": {
+        "file": "web/lib/forge-v2/pipeline.server.ts",
+        "originalStart": 69,
+        "originalEnd": 70
+      },
+      "title": "Material refresh incorrectly equated current revisions with episode-entry and lock-adoption revisions",
+      "problem": "observeHorizonEpisodes preserves entry metadata while ordinal is unchanged, and advanceLock preserves adoption metadata when start is unchanged. Strict equality with current opportunity revisions rejected valid material updates.",
+      "reproduction": "Keep horizon and start unchanged; revise schedule or affiliation; feed helper-produced episode and lock plus new opportunity to runPreparedIssuance. Initial reviewed source returned prepared_identity_episode_or_lock_mismatch.",
+      "repairObserved": "Lead replaced equality with nonempty historical lineage validation at lines 72\u201373 during review. Source rechecked; regression execution remains lead-owned."
+    },
+    {
+      "id": "F2",
+      "severity": "P1",
+      "state": "reported_then_source_repaired",
+      "location": {
+        "file": "web/lib/forge-v2/api.server.ts",
+        "start": 128,
+        "end": 132
+      },
+      "title": "Fresh history requests cannot reach games removed from active player context",
+      "problem": "history without a cursor reads only the latest player context and then searches its at-most-ten games. After an old completed/cancelled target leaves that queue, initial history becomes unavailable even though immutable history remains. Only callers preserving an old context cursor can still reach it.",
+      "reproduction": "Persist context A containing game G and vintages; then context B with the current next ten excluding G. Call history(player,G,profile) without cursor: context B yields no game and returns null.",
+      "repair": "Provide a bounded game-specific context lookup independent of active player queue; test a new reader starting old/cancelled/postgame history.",
+      "repairObserved": "PostgresContextReader.readGame now selects latest retained context containing the requested game; history uses readGame while retaining cursor context identity. Bounded source reinspection completed; lead owns native/API regression execution."
+    }
+  ],
+  "pendingChecks": [
+    {
+      "id": "P1",
+      "location": "web/lib/forge-v2/history.server.ts receipt SQL in publishInternal",
+      "description": "Claimed receipt query supplies parameters 1\u201310 but does not reference 3 or 6; PostgreSQL may reject undetermined parameter types. Lead already native-testing publishClaimed; reported immediately for confirmation. Not represented as runtime-confirmed by reviewer.",
+      "state": "source_repaired_runtime_confirmation_owned_by_lead",
+      "repairObserved": "Receipt query now explicitly types/uses $3::bigint and $6::jsonb, eliminating parameter holes."
+    }
+  ],
+  "checks": [
+    {
+      "name": "Bounded repaired-source and relevant regression inspection",
+      "state": "completed"
+    },
+    {
+      "name": "Heavy checks/application tests/native PostgreSQL during follow-up",
+      "state": "not_run",
+      "reason": "Other agents active; lead owns verification and repairs."
+    }
+  ],
+  "knownExcludedItems": [
+    "Lead-owned custom-profile accountability projection and explicit DTO sanitization, already being fixed; not duplicated as findings."
+  ],
+  "remainingScope": [
+    "Lead final native and API verification; independent follow-up/seam review was source-only.",
+    "No remaining actionable source blocker found in bounded reviewed paths. Concurrency source hashes are recorded; changes after those hashes require relevant verification.",
+    "No scientific qualification, source rights acceptance, live provider execution, public release or RSO rollout approval is asserted."
+  ],
+  "sourceHashesAtReport": {
+    "web/lib/forge-v2/pipeline.server.ts": "acefff324f108d309a57b59c4fa07a13ecf04f6db7fd149f982319a0063499ca",
+    "web/lib/forge-v2/api.server.ts": "a670458ac5cdaf0de4702126a83d3a68f44344937e91a7042588e7a1e33577ed",
+    "web/lib/forge-v2/history.server.ts": "9dbf4d11d6a8ae3492d6aeb77dd741411909e98e8a9615629e85741bc2b5d31c",
+    "web/lib/forge-v2/contracts.ts": "ba839e111a7ddc886fda74a3fb8e8b8ba8dd9dafd3e9555e362c7e7af8a37bf2",
+    "web/lib/forge-v2/model.ts": "563c95530612de830788056cda7ad36e26cd6181c5d6a5db1689cb00586488f4",
+    "web/lib/forge-v2/participation.ts": "5521885456b989ac6393521f814b3ceef2242cd62f36e508ed384eebdca38b9e",
+    "web/lib/forge-v2/qualification.ts": "519d36a99b76b2fe3db799483eb4578c2e412bd146a25e6d0f508d2a822b215c",
+    "web/lib/forge-v2/uncertainty.ts": "709ab05be74fa3727669f04806873c7b53886dde0f753861f683fcab1da87f61",
+    "web/lib/forge-v2/schedule.ts": "99d7be262d15f9aa7a092df4f639f42bbfa320a22aa4b87d435362462c99e819",
+    "web/lib/forge-v2/evaluation.ts": "2cce784c2f29a9827f7ca62cebfd0d283dbc88e3984f2a9dbe61eee329ed0933",
+    "supabase/migrations/20261029235656_forge_v2_immutable_history.sql": "63de96ba1b44316ebd25028fc7149c0e04d9046af5ed1d90919a13a4aee9bfca"
+  },
+  "sourceDriftDuringReview": [
+    "web/lib/forge-v2/pipeline.server.ts",
+    "web/lib/forge-v2/api.server.ts",
+    "web/lib/forge-v2/history.server.ts"
+  ],
+  "sourceHashesAtFinalBoundedInspection": {
+    "web/lib/forge-v2/pipeline.server.ts": "acefff324f108d309a57b59c4fa07a13ecf04f6db7fd149f982319a0063499ca",
+    "web/lib/forge-v2/api.server.ts": "a670458ac5cdaf0de4702126a83d3a68f44344937e91a7042588e7a1e33577ed",
+    "web/lib/forge-v2/history.server.ts": "9dbf4d11d6a8ae3492d6aeb77dd741411909e98e8a9615629e85741bc2b5d31c",
+    "web/lib/forge-v2/contracts.ts": "ba839e111a7ddc886fda74a3fb8e8b8ba8dd9dafd3e9555e362c7e7af8a37bf2",
+    "web/lib/forge-v2/model.ts": "563c95530612de830788056cda7ad36e26cd6181c5d6a5db1689cb00586488f4",
+    "web/lib/forge-v2/participation.ts": "5521885456b989ac6393521f814b3ceef2242cd62f36e508ed384eebdca38b9e",
+    "web/lib/forge-v2/qualification.ts": "519d36a99b76b2fe3db799483eb4578c2e412bd146a25e6d0f508d2a822b215c",
+    "web/lib/forge-v2/uncertainty.ts": "709ab05be74fa3727669f04806873c7b53886dde0f753861f683fcab1da87f61",
+    "web/lib/forge-v2/schedule.ts": "99d7be262d15f9aa7a092df4f639f42bbfa320a22aa4b87d435362462c99e819",
+    "web/lib/forge-v2/evaluation.ts": "2cce784c2f29a9827f7ca62cebfd0d283dbc88e3984f2a9dbe61eee329ed0933",
+    "supabase/migrations/20261029235656_forge_v2_immutable_history.sql": "63de96ba1b44316ebd25028fc7149c0e04d9046af5ed1d90919a13a4aee9bfca"
+  },
+  "finalSeamReview": {
+    "state": "no_remaining_source_blocker_in_reviewed_seams",
+    "at": "2026-10-30T00:38:18.839154+00:00",
+    "reviewed": [
+      "capturePreparedLedger snapshot hashing and FK predecessors",
+      "episode same-ID closure and incremented same-horizon reentry",
+      "PostgresHistoryStore.publish unclaimed issuanceAttempt refusal",
+      "pipeline existing queued-draft unclaimed recovery refusal",
+      "reconcileRefreshScopes bounded affected-target proposal, obsolete pending/running job expiration, immutable published-job preservation, revision-scoped deterministic replacement IDs",
+      "reconcilePreparedQueueScopes validation before CAS, CAS before ledger writes, explicit opportunity predecessors and complete episode-entry/closure/reentry snapshots",
+      "API prepared context scope/clock checks for opportunity, epochs, events and outcome; publication cutoff refusal and context-as-of history filtering"
+    ],
+    "checks": "Source inspection only; no heavy checks. Native ledger test pass is lead-reported, not independently rerun.",
+    "finding": {
+      "id": "F3",
+      "severity": "P2",
+      "location": "web/lib/forge-v2/pipeline.server.ts:37",
+      "title": "Lock successor can reuse its predecessor scientific ID",
+      "problem": "Snapshot hashes distinguish bytes but lock validation permits value.id===predecessor.id and value.predecessorId===predecessor.id, producing two conflicting LockEpoch payloads with one scientific ID. Evaluation resolves epoch IDs directly.",
+      "requestedRepair": "Require distinct scientific ID for lock successors; preserve the deliberate episode closure exception.",
+      "state": "addressed_in_source",
+      "repairObserved": "Lock and event branches explicitly reject successor scientific ID equal to predecessor ID; episode closure remains the deliberate same-ID exception."
+    },
+    "pending": "Lead native and API verification only; source/model worker readiness received and final scope seam inspection completed.",
+    "sourceHashes": {
+      "web/lib/forge-v2/pipeline.server.ts": "06bd908caa435c6fcebf41a8eb91ca039dbcf1932e4c3350d7c8c4310a9b4576",
+      "web/lib/forge-v2/history.server.ts": "d896ab7ac89a1b2430ad2fed845824474362b85ee1a771723096c3d567242e10"
+    },
+    "completedAt": "2026-10-30T00:44:30.264158+00:00",
+    "workerReportedChecks": {
+      "source": "model_uncertainty readiness handoff",
+      "results": "16 pipeline + 7 integration tests passed; scoped strict TypeScript and ESLint pipeline/refresh passed. Not independently rerun by reviewer."
+    },
+    "finalSourceHashes": {
+      "web/lib/forge-v2/pipeline.server.ts": "7fec24883f633f91bf092ca620be95e1d924ff5236443142edb2e478c01051db",
+      "web/lib/forge-v2/refresh.ts": "f70d4509c49406b8272c3982e7c9a6efd6a8e56f9e2ea869746ac3d34c581e5b",
+      "web/lib/forge-v2/history.server.ts": "d896ab7ac89a1b2430ad2fed845824474362b85ee1a771723096c3d567242e10",
+      "web/lib/forge-v2/api.server.ts": "e468cb231895c4b346e234f2ae11891a22072b00825315af051581995f9a3065"
+    }
+  }
+}

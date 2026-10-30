@@ -1,0 +1,225 @@
+{
+  "status": "changes_requested",
+  "sourceHashes": {
+    "web/lib/forge-v2/contracts.ts": "3803569308a8cd26d78d948bd485a282d28f4b22c6c3a19b9585610c1e66fb62",
+    "web/lib/forge-v2/identity.ts": "a09e8f0df6077baf11686098ff061e5bf8a7149e482a2e3fac5f5ff9bec081b1",
+    "web/lib/forge-v2/hash.server.ts": "e2e5aba6e427331453ded2d54e2ea5eebd6a00d5d399acef7c56262b8fbac7e5",
+    "web/lib/forge-v2/data.ts": "286d5d6bc40e7296a668185cba724029597b4669c6b86ea890e757f9d8910db2",
+    "web/lib/forge-v2/refresh.ts": "471a1669ab51f99b9e5653594d04531f9efcd8cd3ce01e68e08084aeb448a914",
+    "web/lib/forge-v2/schedule.ts": "23750bcab2265520b71c76d0276c223b690f4a111c08152c2266eedd30fb8531",
+    "web/lib/forge-v2/evaluation.ts": "f53a17c36cccd7aa809d697fe0ae799c0695d3b4c1292fefdc145355a890c62f",
+    "web/lib/forge-v2/model.ts": "fa89896fc576c5d16620ef7c4b1405e273eb728077d0ec0fb5797c43b2457dd5",
+    "web/lib/forge-v2/participation.ts": "39d2b12171d1a6f12c5e07622f91e1a56f92ddc859dea3436167a2fba955c27a",
+    "web/lib/forge-v2/uncertainty.ts": "0074c4911f2d027cf5ff99c1d8a4fbc10e6709ab6cc2e8cd1a7e8f3e3a789943",
+    "web/lib/forge-v2/qualification.ts": "18db767908783fba7c9bc97e064ac41b6df3fc7af028035066b4f21dcf00d9c1",
+    "web/lib/forge-v2/integration.ts": "e17a16ef8acc7960887e61f8ac25d97069ad6d84560880b03b168745f07e394d",
+    "web/lib/forge-v2/history.server.ts": "4dd52f5037758a4e28f0ed72f608a3aa54a8c95eaee3f7f55633a308bb411a11",
+    "web/lib/forge-v2/artifacts.server.ts": "a2b450c77a913431a790c8261d13bde77c1396ed1d4d3fe20f06670b1e7cccf7",
+    "web/lib/forge-v2/schedule.test.ts": "dab30937795ea8e93a4c6bf8179c55c3bdc44422f62c0dd6453ce7d3fdd0340b",
+    "web/lib/forge-v2/model.test.ts": "12acedc616c2a903b58f3748aa13cb7f818d0d52373d41325c665bba1e101beb",
+    "web/lib/forge-v2/data.test.ts": "80169aa3b34c91170321800a4c053173eb422ac45b9828fcbe57fbbe4f286d71",
+    "web/lib/forge-v2/history.test.ts": "c4236b5f1b8254e13a91a3d1437634a3e83609ebcfe19902b84d0ba9ca7d940c",
+    "web/lib/forge-v2/uncertainty.test.ts": "6e6de8e36a242ed391182da98f8310076c7286ed7a3127b5ac45dfaa7064fc2e",
+    "web/lib/forge-v2/refresh.test.ts": "ace316681bd2a6753b3bb812b58764edf551171cfc2523766861f91b44330d0e",
+    "web/lib/forge-v2/integration.test.ts": "bfc88f77603ffda2cbc3a46a75556318c0508d2b33973c99bf34afc5b3d4c7b0",
+    "web/lib/forge-v2/contracts.test.ts": "6239503a65a34525f7a77cfea3918c4b6b3702dc48951ee21f96831e65d54cfd",
+    "web/lib/forge-v2/evaluation.test.ts": "4ac2e54fbb5f253b1886423c1cd0b600e6c07b8432b610c4b1ab84861fae2965",
+    "supabase/migrations/20261029235656_forge_v2_immutable_history.sql": "fb57c50c8210d9c46d3ff50798d950b59b6d22fb4367d14b4699ccbd2d5d337c"
+  },
+  "findings": [
+    {
+      "id": "R1",
+      "severity": "P1",
+      "title": "Subtransaction insertion bypasses committed-output barrier",
+      "location": {
+        "file": "supabase/migrations/20261029235656_forge_v2_immutable_history.sql",
+        "start": 44,
+        "end": 53
+      },
+      "requirements": [
+        "FR-13",
+        "AC-04",
+        "AC-05"
+      ],
+      "problem": "xmin is the inserting subtransaction ID, whereas pg_current_xact_id() returns the top-level transaction ID. Their inequality does not prove that output committed. A receipt can therefore retain a pre-lock timestamp even when the entire output transaction commits after lock.",
+      "reproduction": "BEGIN; SAVEPOINT nested; INSERT vintage; RELEASE SAVEPOINT nested; INSERT receipt; hold outer transaction across lock; COMMIT. The receipt trigger accepts the still-uncommitted vintage.",
+      "verification": "Confirmed on isolated local PostgreSQL 17: inserting xmin 741, top transaction 740, top status in progress; receipt accepted; concurrent store.get returned null. No remote calls.",
+      "repair": "Store a server-assigned top-level xid8 for the output and require an explicit committed transaction status before issuing its receipt. Cover savepoints and delayed outer commit.",
+      "status": "open_at_review_snapshot"
+    },
+    {
+      "id": "R2",
+      "severity": "P1",
+      "title": "History cursor silently loses receipts committed between pages",
+      "location": {
+        "file": "web/lib/forge-v2/history.server.ts",
+        "start": 65,
+        "end": 85
+      },
+      "requirements": [
+        "FR-18",
+        "AC-11"
+      ],
+      "problem": "A fixed publication tuple upper bound is not a transaction snapshot. A receipt can acquire an early confirmed_at in an uncommitted transaction, then commit after the reader has advanced past its tuple. That immutable revision is absent from all subsequent pages of that traversal.",
+      "reproduction": "Commit vintage B, insert its receipt inside held transaction B. Publish C and D normally. Fetch page size 1 (C), commit B, fetch continuation (D). A fresh query sees B,C,D, but the paginated traversal sees only C,D.",
+      "verification": "Confirmed on isolated PostgreSQL 17: first=[review-3], rest=[review-4], freshRead=[review-2,review-3,review-4]. pg_visible_in_snapshot on B top xid against the initial snapshot returned false after B committed, validating the proposed snapshot fence primitive.",
+      "repair": "Pin an actual transaction-visibility snapshot in the cursor and filter all receipt rows by server-owned top-level receipt transaction identity, or provide another committed-order stable pagination guarantee. Cover delayed receipt commit, not only new publications started after page one.",
+      "status": "open_at_review_snapshot"
+    },
+    {
+      "id": "R3",
+      "severity": "P1",
+      "title": "Observed play-begun state is lost when actual start is unknown",
+      "location": {
+        "file": "web/lib/forge-v2/schedule.ts",
+        "start": 125,
+        "end": 139
+      },
+      "requirements": [
+        "FR-04",
+        "FR-21",
+        "AC-03"
+      ],
+      "problem": "When a schedule observation says in_progress/suspended/final but actualStartAt is null, advanceLock closes only the returned boolean and leaves the prior epoch unchanged. Subsequent calls have no memory that play began and can reopen issuance.",
+      "reproduction": "Create initial lock; accept a suspended observation with actualStartAt=null; pass its returned epoch to a later scheduled observation with noPlayConfirmed=true and future start after the original lock. The final call reaches affirmative_no_play_reopening.",
+      "verification": "Source-traced; existing suspended-play test supplies an actual timestamp and does not cover the unknown-timestamp transition. No standalone execution performed.",
+      "repair": "Persist affirmative play-begun evidence independently of actualStartAt and never reopen a target after that evidence. Preserve timing uncertainty without erasing the lifecycle state.",
+      "status": "open_at_review_snapshot"
+    },
+    {
+      "id": "R4",
+      "severity": "P1",
+      "title": "Participation replay can use bins fitted from future appearance labels",
+      "location": {
+        "file": "web/lib/forge-v2/participation.ts",
+        "start": 43,
+        "end": 69
+      },
+      "requirements": [
+        "FR-12",
+        "RV-02",
+        "RV-05",
+        "AC-14"
+      ],
+      "problem": "fitParticipation consumes calibration outcomes and returns bins without retaining their fitted/available-at clock. predictParticipation applies those bins to any context. Filtering raw training observations at the cutoff does not prevent leakage through the already fitted bins. CandidateModel similarly lacks a serving-time availability clock for its development-selected recipe.",
+      "reproduction": "Use model.test.ts fit fixture with fitAt Jan 30 and calibration rows 16/17. Apply fitted participation model to row 16 input cutoff Jan 17 instead of Jan 30. Its bin probability includes row 16 and row 17 appearance labels learned after that cutoff.",
+      "verification": "Source-traced; existing test predicts only at the final fit date, so it does not test pre-fit replay. No standalone execution performed.",
+      "repair": "Retain fitted/first-available and dependency chronology on models/calibrators; reject inference cutoffs before those dependencies were available. Keep development scoring helpers explicitly separated from admissible historical/public issuance.",
+      "status": "open_at_review_snapshot"
+    },
+    {
+      "id": "R5",
+      "severity": "P1",
+      "title": "Frozen qualification scope requires hashes of future per-vintage predictions",
+      "location": {
+        "file": "web/lib/forge-v2/qualification.ts",
+        "start": 36,
+        "end": 38
+      },
+      "requirements": [
+        "FR-25",
+        "RV-02",
+        "RV-06",
+        "RV-07"
+      ],
+      "problem": "qualificationScopeHash includes all manifest.artifactHashes, and frozen protocol/final/shadow/review records must match that digest and include those hashes (line 63). reproduceIntervals/verifyPin additionally requires each per-vintage JointDistribution hash in that manifest (uncertainty.ts:111). JointDistribution includes target and inputCutoffAt, so a newly issued future forecast necessarily requires a new hash. Preserving the original frozen evidence therefore makes ordinary future interval reproduction unavailable; updating it would rewrite preregistered evidence.",
+      "reproduction": "Take a valid pinnedScenario from uncertainty.test.ts. Produce a second vintage with a new input cutoff and correctly pinned corresponding joint payload, retaining the qualified model/calibration and frozen evidence. verifyPin rejects the new joint hash. Adding that hash to the manifest changes scopeHash and invalidates all frozen evidence.",
+      "verification": "Source-traced across qualification.ts:38,63 and uncertainty.ts:10-16,111,120-121. Current synthetic scenario precomputes future payload hashes into earlier evidence, hiding the temporal impossibility.",
+      "repair": "Separate frozen qualified model/calibration/decoder/algorithm applicability from dynamically generated per-vintage joint output pins. Bind each output to its qualified generator and immutable vintage without requiring its future bytes in the pre-evaluation protocol.",
+      "status": "open_at_review_snapshot"
+    }
+  ],
+  "reviewedAt": "2026-10-30T00:12:22.866192+00:00",
+  "branch": "octoberBranch",
+  "headAtReviewStart": "18e52a481589a314dc6a67663dd98d1fa8c48454",
+  "requirements": "tasks/TASKS/prd-forge-v2-skater-game-forecasts.md",
+  "scope": "Core contracts, identity/hash, source normalization, refresh, schedule/episodes/locks, evaluation, model/participation/joint uncertainty, qualification, disabled integration, PostgreSQL history, artifact retention and adjacent tests. UI/API/operations outside review.",
+  "scientificAcceptance": "not_passed",
+  "disposition": "Findings refer to frozen sourceHashes; lead may repair concurrently. This report does not certify later revisions.",
+  "checks": [
+    {
+      "name": "Bounded source and adjacent-test inspection against approved PRD",
+      "state": "completed"
+    },
+    {
+      "name": "Local PostgreSQL 17 savepoint and late receipt commit reproduction",
+      "state": "passed_reproduction_of_failures",
+      "isolation": "Private temporary cluster, Unix socket only, inherited PG environment removed, no external services; cluster stopped and removed; shared heavy lock released."
+    },
+    {
+      "name": "Initial vite-node temporary-script invocation",
+      "state": "failed",
+      "reason": "Vite refused module outside project root; changed approach to installed esbuild bundle and executed successfully."
+    },
+    {
+      "name": "Application suites, full build, remote source acquisition, migration apply, public/scientific evaluation",
+      "state": "not_run"
+    }
+  ],
+  "evidenceBlockers": [
+    {
+      "id": "E1",
+      "kind": "missing_scientific_evidence",
+      "requirements": [
+        "RV-01",
+        "RV-02",
+        "RV-03",
+        "RV-04",
+        "RV-05",
+        "AC-14"
+      ],
+      "description": "The reviewed implementation and fabricated fixtures cannot establish original as-of source availability, rights, official-appearance/PIM completeness, independently frozen numerical protocol, untouched final performance gains, empirical category/FP calibration, participation reliability, or dependence-aware confidence. No real dataset or frozen final-evaluation evidence was provided to this review. These remain evidence gates, not findings that code tests can close."
+    },
+    {
+      "id": "E2",
+      "kind": "remaining_acceptance_scope",
+      "requirements": [
+        "AC-09",
+        "AC-10",
+        "AC-12",
+        "AC-17",
+        "AC-18"
+      ],
+      "description": "UI/API/operations were concurrently changing outside this review. Their end-to-end consumer behavior, routing, full lifecycle integration, live capacity, browser acceptance and unchanged v1/RSO behavior require separate bounded verification."
+    }
+  ],
+  "remainingScope": [
+    "Independent inspection of repaired hashes and their focused regression evidence; current findings are against the frozen snapshot.",
+    "Public UI/API/operations integration and complete required H10-to-postgame scenario.",
+    "Scientific source/protocol/final/prospective evidence; no model qualification or release recommendation is made."
+  ],
+  "sourceDriftAtFinish": {
+    "web/lib/forge-v2/contracts.ts": {
+      "reviewed": "3803569308a8cd26d78d948bd485a282d28f4b22c6c3a19b9585610c1e66fb62",
+      "current": "65495e6a5296b4392fe85d4643ba6ebc99d17b8714e9566e1dcce716dd1e8331"
+    },
+    "web/lib/forge-v2/schedule.ts": {
+      "reviewed": "23750bcab2265520b71c76d0276c223b690f4a111c08152c2266eedd30fb8531",
+      "current": "99d7be262d15f9aa7a092df4f639f42bbfa320a22aa4b87d435362462c99e819"
+    },
+    "web/lib/forge-v2/evaluation.ts": {
+      "reviewed": "f53a17c36cccd7aa809d697fe0ae799c0695d3b4c1292fefdc145355a890c62f",
+      "current": "2cce784c2f29a9827f7ca62cebfd0d283dbc88e3984f2a9dbe61eee329ed0933"
+    },
+    "web/lib/forge-v2/history.server.ts": {
+      "reviewed": "4dd52f5037758a4e28f0ed72f608a3aa54a8c95eaee3f7f55633a308bb411a11",
+      "current": "c44e25856f4abc6624a81376149287c7226f220d03e633afa86cd954aa9121c2"
+    },
+    "web/lib/forge-v2/schedule.test.ts": {
+      "reviewed": "dab30937795ea8e93a4c6bf8179c55c3bdc44422f62c0dd6453ce7d3fdd0340b",
+      "current": "12b28aee6c5a341e0451e402459619e5fa18daeeb08d1b6184cb4a1e348630d8"
+    },
+    "web/lib/forge-v2/history.test.ts": {
+      "reviewed": "c4236b5f1b8254e13a91a3d1437634a3e83609ebcfe19902b84d0ba9ca7d940c",
+      "current": "3e1339d13e0c1e47395330e9e5181d4c3ab32fa082bb50185c60b8d1adcffd24"
+    },
+    "web/lib/forge-v2/evaluation.test.ts": {
+      "reviewed": "4ac2e54fbb5f253b1886423c1cd0b600e6c07b8432b610c4b1ab84861fae2965",
+      "current": "ed96c5bcc155f7dbf773d6a641f8a9af8347f572f0c89758c6f5019443ad9068"
+    },
+    "supabase/migrations/20261029235656_forge_v2_immutable_history.sql": {
+      "reviewed": "fb57c50c8210d9c46d3ff50798d950b59b6d22fb4367d14b4699ccbd2d5d337c",
+      "current": "2d567363d0289f1268f26de119fc53a7c706f05a786c5c34e4d3593e935da103"
+    }
+  }
+}

@@ -73,7 +73,8 @@
     "tasks/diaries/2026-10-29-codex-forge-v2-model-uncertainty.md",
     "supabase/migrations/20261029235656_forge_v2_immutable_history.sql",
     "tasks/diaries/2026-10-29-codex-forge-v2-review.md",
-    "web/lib/forge-v2/pipeline.server.ts"
+    "web/lib/forge-v2/pipeline.server.ts",
+    "web/lib/forge-v2/pipeline.test.ts"
   ],
   "artifactPaths": [
     "tasks/artifacts/forge-v2-implementation-2026-10-29/OWNERSHIP.json",
@@ -81,7 +82,10 @@
     "tasks/artifacts/forge-v2-implementation-2026-10-29/RUNBOOK.md",
     "tasks/artifacts/forge-v2-implementation-2026-10-29/verification.json",
     "tasks/artifacts/forge-v2-implementation-2026-10-29/source-pins.json",
-    "tasks/artifacts/forge-v2-implementation-2026-10-29/independent-review.json"
+    "tasks/artifacts/forge-v2-implementation-2026-10-29/independent-review.json",
+    "tasks/artifacts/forge-v2-implementation-2026-10-29/review-followup.json",
+    "tasks/artifacts/forge-v2-implementation-2026-10-29/screens/desktop.png",
+    "tasks/artifacts/forge-v2-implementation-2026-10-29/screens/phone.png"
   ],
   "existingProtected": "All other existing source, research allocations, v1/RSO, leases/mailboxes and shared config remain read-only. Migrations register exact new filename after workflow inspection. Existing index must be empty for checkpoint.",
   "workers": [
@@ -89,7 +93,7 @@
       "task": "source_audit",
       "modelControl": "gpt-6-astra",
       "effortControl": "high",
-      "status": "dispatched; returned task /root/source_audit; worker runtime settings not separately exposed",
+      "status": "completed and handed off; selected Astra/high, separate runtime attestation unavailable",
       "paths": [
         "tasks/artifacts/forge-v2-implementation-2026-10-29/source-audit.json",
         "tasks/diaries/2026-10-29-codex-forge-v2-source-audit.md"
@@ -110,7 +114,8 @@
         "web/lib/forge-v2/schedule.test.ts",
         "web/lib/forge-v2/evaluation.ts",
         "web/lib/forge-v2/evaluation.test.ts"
-      ]
+      ],
+      "status": "completed and handed off; selected Astra/high, separate runtime attestation unavailable"
     },
     {
       "task": "model_uncertainty",
@@ -125,8 +130,28 @@
         "web/lib/forge-v2/qualification.ts",
         "web/lib/forge-v2/integration.ts",
         "web/lib/forge-v2/integration.test.ts"
+      ],
+      "status": "completed and handed off; selected Astra/high, separate runtime attestation unavailable"
+    },
+    {
+      "task": "implementation_review",
+      "modelControl": "gpt-6-astra",
+      "effortControl": "high",
+      "status": "completed bounded independent source/native review; original and follow-up reports preserved",
+      "paths": [
+        "tasks/artifacts/forge-v2-implementation-2026-10-29/independent-review.json",
+        "tasks/artifacts/forge-v2-implementation-2026-10-29/review-followup.json",
+        "tasks/diaries/2026-10-29-codex-forge-v2-review.md"
       ]
     }
   ],
-  "migrationWorkflow": "supabase2.90.0 --workdir .. migration new forge_v2_immutable_history from web; new isolated schema only; not applied remotely"
+  "migrationWorkflow": "supabase2.90.0 --workdir .. migration new forge_v2_immutable_history from web; new isolated schema only; not applied remotely",
+  "finalLocalState": {
+    "candidate": "43d35f8020d2071e07d08da13f50f1f882277f26",
+    "implementedSubtasks": 48,
+    "gatedSubtasks": 15,
+    "review": "No remaining source blocker in bounded inspected seams; scientific review open",
+    "allWriters": "Workers handed off; lead accepted exact files",
+    "diaries": "Uncommitted working notes retained for open evidence gates"
+  }
 }
