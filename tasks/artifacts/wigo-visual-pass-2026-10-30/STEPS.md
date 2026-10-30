@@ -72,3 +72,33 @@ Declutter in place (see `AUDIT-2026-10-30.md`). One local commit per approved st
   - The e2e-pinned header text ("STDL", "CAR") is unchanged.
 - **Screens:** `screens/step4-desktop-before-after.png`, `screens/step4-phone-before-after.png`.
 - **TJ verdict:** approved 2026-10-30.
+- **Commit:** `f2a36c35b`.
+
+## Step 5: chart row
+
+- **What changed:**
+  - **Headers:** title and small controls share one line, with the legend on its own line below. It's CSS only: the toolbar wrappers use `display: contents` and the legend takes a full row.
+  - **Reset:** a small ↺. `aria-label="Reset"` and the tooltip stay.
+  - **TOI / PP TOI %:** the active button is lit (accent border and tint) instead of looking disabled.
+  - **Game log averages:** no boxes, in a four-column grid on two rows, with a coloured underline and bold on active ones. Seven values can't fit one line at 1280, so the audit's "one line" isn't possible.
+  - **"Game mean":** 11 px regular instead of 16 px bold.
+  - **Wording:** the TOI panel's second title is "PP TOI %" so it fits beside its controls.
+  - **Fix from step 2:** the 12 px Season production title made the four tiles overflow at 1280 by a pixel (e2e caught it). The title now has a 14 px line height and 1 px padding.
+- **Measured chart height at 1280×800 (panel 187 px):**
+
+  | Panel | Before | After |
+  | --- | --- | --- |
+  | Game log | 113 | 117 |
+  | Time on ice | 131 | 144 |
+  | Points / game | 129 | 144 |
+  | Game score | 129 | 144 |
+  | Category percentiles (from step 2) | 120 | 145 |
+
+- **Files:** `GameScoreSection.tsx`, `PpgLineChart.tsx`, `ToiLineChart.tsx`, `StatsTableRowChart.tsx`, `styles/wigoCharts.module.scss`, `PerGameStatsTable.module.scss`.
+- **Checks:**
+  - WIGO vitest passed: 145 of 145, with no test edits.
+  - `e2e/wigo-one-page.spec.ts` passed: 8 of 8, against the isolated server.
+  - eslint: clean.
+  - CSS pure check passed on both.
+- **Screens:** `screens/step5-charts-before-after.png`, `screens/step5-phone-before-after.png`.
+- **TJ verdict:** approved 2026-10-30.

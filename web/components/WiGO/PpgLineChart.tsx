@@ -270,7 +270,7 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId, seasonId }) => {
   const chartData = getChartData();
   const chartOptions = getChartOptions();
   return (
-    <WigoSectionCard title="Points / game" toolbar={<><span className="wigo-trend-legend"><span style={{ color: CHART_COLORS.BAR_PRIMARY }}>▮Pts</span> · <span style={{ color: CHART_COLORS.LINE_PRIMARY }}>━5-GM</span> · <span style={{ color: CHART_COLORS.PP_TOI }}>━10-GM</span> · <span style={{ color: CHART_COLORS.AVG_LINE_PRIMARY }}>┄Avg</span></span><button type="button" title="Drag to zoom; Shift+drag to pan; Reset restores all games" onClick={() => chartRef.current?.resetZoom()}>Reset</button></>}>
+    <WigoSectionCard title="Points / game" toolbar={<><span className="wigo-trend-legend"><span style={{ color: CHART_COLORS.BAR_PRIMARY }}>▮Pts</span> · <span style={{ color: CHART_COLORS.LINE_PRIMARY }}>━5-GM</span> · <span style={{ color: CHART_COLORS.PP_TOI }}>━10-GM</span> · <span style={{ color: CHART_COLORS.AVG_LINE_PRIMARY }}>┄Avg</span></span><button type="button" aria-label="Reset" title="Drag to zoom; Shift+drag to pan; Reset restores all games" onClick={() => chartRef.current?.resetZoom()}>↺</button></>}>
       {/* Render the chart structure if NO error */}
       {/* Shows empty state (with dummy labels) while loading */}
       {!error && (

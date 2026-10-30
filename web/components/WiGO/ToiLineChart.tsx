@@ -317,7 +317,7 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
   };
 
   // ---  Title based on view ---
-  const chartTitle = chartView === "toi" ? "Time on ice" : "Power play TOI %";
+  const chartTitle = chartView === "toi" ? "Time on ice" : "PP TOI %";
   const chartData = getChartData();
   const chartOptions = getChartOptions();
 
@@ -327,7 +327,7 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
       toolbar={
         <div className={styles.toggleButtons}>
           <span className="wigo-trend-legend">{chartView === "toi" ? <><span style={{ color: CHART_COLORS.BAR_PRIMARY }}>━Total</span> · <span style={{ color: CHART_COLORS.PP_TOI }}>━PP</span> · Avg (min)</> : "PP share · Avg (%)"}</span>
-          <button type="button" title="Drag to zoom; Shift+drag to pan; Reset restores all games" onClick={() => chartRef.current?.resetZoom()}>Reset</button>
+          <button type="button" aria-label="Reset" title="Drag to zoom; Shift+drag to pan; Reset restores all games" onClick={() => chartRef.current?.resetZoom()}>↺</button>
           <button
             onClick={() => setChartView("toi")}
             disabled={chartView === "toi"}

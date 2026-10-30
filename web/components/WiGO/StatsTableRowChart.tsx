@@ -219,7 +219,7 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
                 }`}
                 style={
                   isActive
-                    ? { backgroundColor: "#1a1d21", borderColor: buttonColor, color: "#fff", textDecoration: "underline", fontWeight: 700 }
+                    ? { backgroundColor: "#1a1d21", borderColor: buttonColor, color: "#fff", fontWeight: 700 }
                     : {}
                 }
               >
@@ -296,8 +296,7 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
                 value: formatGameMeanLabel(statLabel, seasonAverageValue),
                 position: "insideBottomRight",
                 fill: "#FFF", // #ff7300
-                fontSize: 16,
-                fontWeight: "bolder"
+                fontSize: 11
               }}
               stroke="#ff6b6b" // #ff7300
               strokeDasharray="3 3"

@@ -234,7 +234,7 @@ table.verticalStatsTable {
       border: v.$border-subtle;
       border-radius: v.$radius-sm;
       background: v.$background-medium;
-      h3 { margin: 0; padding: 2px 6px; font-size: 12px; span { color: v.$text-secondary; } }
+      h3 { margin: 0; padding: 1px 6px; font-size: 12px; line-height: 14px; span { color: v.$text-secondary; } }
     }
     .productionSnapshot { grid-area: prod; display: flex; flex-direction: column; }
     .summaryStatus { margin: 0; padding: 2px 6px; font-size: 11px; line-height: 1.2; }

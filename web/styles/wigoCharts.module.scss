@@ -2511,6 +2511,64 @@
   }
 }
 
+// One-page chart headers: title and small controls on one line, legend on its own line below, so the charts keep
+// the height. The wrappers dissolve so their children can be ordered inside the header.
+:global(.wigo-one-page) {
+  .chartHeader {
+    justify-content: flex-start;
+    gap: 0 4px;
+    .chartToolbar,
+    .toggleButtons {
+      display: contents;
+    }
+    :global(.wigo-trend-legend) {
+      order: 5;
+      flex: 1 0 100%;
+    }
+  }
+  .chartHeader .toggleButtons button,
+  .chartToolbar button {
+    margin: 0;
+    padding: 0 4px;
+    line-height: 16px;
+    &:disabled {
+      opacity: 1;
+      border-color: v.$primary-color;
+      background: rgba(v.$primary-color, 0.16);
+      color: v.$text-primary;
+      cursor: default;
+    }
+  }
+  .selectedStatPanel .averageToggleButtons {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    justify-items: start;
+    gap: 0 4px;
+  }
+  .selectedStatPanel .avgButton {
+    padding: 0;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    background: none;
+    color: v.$text-secondary;
+    font-weight: 400;
+    letter-spacing: 0;
+    white-space: nowrap;
+    &:hover {
+      background: none;
+      color: v.$text-primary;
+    }
+    &.active {
+      outline: 0;
+    }
+    &:focus-visible {
+      outline: 2px solid v.$focus-color;
+      outline-offset: 1px;
+    }
+  }
+}
+
 // One panel title style on every screen size. `.wigoDashHeader` lifts these above the older per-layout header rules.
 @mixin panel-title {
   margin: 0;
@@ -2529,6 +2587,9 @@
   .selectedStatPanel h3,
   .percentileFiltersContainer .filtersTitle {
     @include panel-title;
+  }
+  .chartHeader h3 {
+    margin-right: auto;
   }
   .selectedStatPanel h3 span {
     font-weight: 400;

@@ -22,3 +22,4 @@ None.
 - Phone full-page captures hide the fixed nav; step0 phone shots still have it.
 - TJ keeps brand elements: the "What Is Going On" italic caps tagline stays. Do not flatten branding; ask first.
 - Do not widen controls just to fill freed space (search capped at 340 px).
+- Do not run the e2e with PLAYWRIGHT_PORT on a port with a running server: its webServer clobbers .next-playwright and that server returns 404/500. Use PLAYWRIGHT_BASE_URL + PLAYWRIGHT_SKIP_WEB_SERVER=1 against the running server.
