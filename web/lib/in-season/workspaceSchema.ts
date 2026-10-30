@@ -139,6 +139,7 @@ const managerRuleOverrides = rules.partial().extend({
   scoring: rules.shape.scoring.partial().optional(),
   goalieMinimum: goalieMinimum.partial().refine(goaliePeriodOrdered, "Goalie minimum period ends before it starts.").optional(),
   timeZone: timeZone.optional(),
+  confirmedRuleNotes: z.array(z.string().max(1000)).max(20).optional(),
 });
 const opponent = z.object({ roster: z.array(rosterEntry), realized: statLine, remaining: statLine.nullable() }).strict().nullable();
 const step = z.object({ id, type: z.enum(["add", "drop", "reserve"]), playerId: id, dropPlayerId: id.optional(), reservePosition: z.enum(["IR", "IR+", "NA"]).optional(), at: instant, effectiveAt: instant, conditional: z.boolean(), waiverSpend: z.number().finite().nonnegative().nullable().optional(), dependsOn: stringArray }).strict();

@@ -390,6 +390,8 @@ export type ManagerRuleOverrides = Omit<Partial<LeagueRules>, "scoring" | "goali
   goalieMinimum?: Partial<LeagueRules["goalieMinimum"]>;
   /** League time zone the manager confirmed; Yahoo does not report one. */
   timeZone?: string;
+  /** Provider rule notes the manager confirmed, by exact text; a changed note asks again. */
+  confirmedRuleNotes?: string[];
 };
 export type PlanningWorkspace = {
   version: 1;
