@@ -6,7 +6,7 @@ import { formatSeconds, gameCoverage, listedRanks, newestDate, teamChangeOf, win
 
 /** Role Watch (SS 4.0): observed TOI and PP TOI change against a baseline that shares no game with the recent window. */
 export type RoleWatchSettings = { window: WhatChangedWindow; minToiChange: number; minPpChange: number };
-export const ROLE_WATCH_COPY = "Observed opportunity, not a production forecast.";
+export const ROLE_WATCH_COPY = "Observed opportunity, not a forecast.";
 
 export const ROLE_ROLLING_COLUMNS = ["player_id", "game_id", "line_combo_slot", "line_combo_group"] as const;
 export const ROLE_PP_COLUMNS = ["gameId", "playerId", "unit"] as const;
@@ -95,17 +95,18 @@ export function buildRoleWatch(input: RoleWatchInput): SharePostLoadResult<RoleW
     { name: "FHFH rolling line combinations", tables: ["rolling_player_game_metrics"], state: unknownLines ? "partial" : "ready", asOf: null, updatedAt: null, reasons: unknownLines ? [`${unknownLines} line slots are unknown; rolling has no first-week rows.`] : [] },
     { name: "Power-play combinations", tables: ["powerPlayCombinations"], state: unknownPp ? "partial" : "ready", asOf: null, updatedAt: null, reasons: unknownPp ? [`${unknownPp} PP slots are unknown: those games have no PP rows.`] : [] },
   ];
-  const shortSample = entries.length - players.length, windowName = windowLabel(settings.window);
+  const shortSample = entries.length - players.length, windowName = windowLabel(settings.window), unlisted = toi.total + pp.total - toiMovers.length - ppMovers.length;
+  const moves = [...new Set(shown.flatMap(row => row.teamChange ? [`${row.name ?? row.playerId} ${row.teamChange.from} to ${row.teamChange.to}, ${row.teamChange.recentGamesWithNewTeam} of ${row.recentGames} recent games`] : []))];
   return {
     state: reasons.length ? "partial" : "ready", reasons,
     data: { through: input.through, window: settings.window, requested, minToiChange: settings.minToiChange, minPpChange: settings.minPpChange, toiMovers, ppMovers,
-      cohort: { players: entries.length, compared: players.length, shortSample, unknownChange, qualified: new Set([...players.filter(player => player.toi.qualifies || player.pp.qualifies).map(player => player.playerId)]).size, unlisted: toi.total + pp.total - toiMovers.length - ppMovers.length } },
+      cohort: { players: entries.length, compared: players.length, shortSample, unknownChange, qualified: new Set([...players.filter(player => player.toi.qualifies || player.pp.qualifies).map(player => player.playerId)]).size, unlisted } },
     teams: [...new Set(shown.flatMap(row => row.team ? [row.team] : []))].sort(),
     evidence: {
       sources,
-      sample: `${windowName} versus the season before it, through ${input.through}. No game is in both; each row shows its actual samples`,
+      sample: `${windowName} versus the season before it, through ${input.through}. No game is in both; each row shows its actual samples. Unknown means no source row for that game; Off PP means the game has PP rows and this skater is not on PP1 or PP2${moves.length ? `. New team: ${moves.join("; ")}` : ""}`,
       strength: "TOI all situations; PP TOI power play",
-      cohort: `${entries.length} skaters this season: ${players.length} with a full ${windowName} and at least ${requested} baseline games, ${shortSample} short sample`,
+      cohort: `${entries.length} skaters this season: ${players.length} with a full ${windowName} and at least ${requested} baseline games, ${shortSample} short sample${unlisted ? `, ${unlisted} more not listed` : ""}`,
       coverage: { observed: games.observed, expected: games.expected, missing: games.missing, unit: "team games" },
     },
   };

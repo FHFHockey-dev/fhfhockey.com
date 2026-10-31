@@ -58,7 +58,16 @@ Each loader is season to date, so it needs more than 50 rows. Today: `wgo_skater
 - What Changed has fields beyond the contract's two defaults: comparison, min coverage, metric, basis, and a one-player lookup. A name matching more than one player selects nobody and the card lists the candidates.
 - Role Watch requires a baseline at least as long as the window, a fixed rule printed in the cohort line rather than a new field.
 - Per-60 uses WGO TOI of the same covered games. PP points per 60 uses PP time, so a player with no PP time is unknown rather than 0. TOI, PP TOI and xGF% have no per-60 form and always show their own unit.
-- Lists show 6 ranks, keeping ties up to 9 rows, and count the rest. Card fit in the 1080 square has not been seen in a browser.
+- Lists show 8 ranks, keeping ties up to 9 rows, and count the rest in the evidence cohort line. Card fit in the 1080 square has not been seen in a browser.
+
+## Whitespace pass (TJ's review, lead's direction)
+
+- **Fill:** both cards now take the full body height. Rows share each section's height, and sections split the body by row count. Lists went from 6 to 8 ranks per direction, table text from 22 to 24 px (one-player view 26 px).
+- **Budget, estimated from CSS, not measured:** about 690 px for rows in the 860 px body. 16 rows at about 43 px each; the worst case of 18 rows gets about 38 px against a 29 px text line and a 37 px two-line role cell.
+- **On-card text:** one legend line per card. What Changed keeps GP and "OV = recent games inside STD" (or "No game in both"), plus "† new team" when needed. Role Watch keeps "Observed opportunity, not a forecast.", BASE and GP. The one-player view also keeps Short sample, Below min GP and the move, since they prevent a false claim.
+- **Moved to evidence and alt text:** ranked and unranked counts stay in `evidence.cohort`, which now also counts unlisted rows. `evidence.sample` gains new-team detail, the dash and Unknown / Off PP meanings, and the one player's GP and overlap.
+- **Copy:** `ROLE_WATCH_COPY` shortened to the lead's wording. The PRD's 4.2 line says "not a production forecast".
+- **Not run:** browser render. The lead renders on real data and sends measurements if anything clips. Role Watch's real row counts at default minimums are still unknown; the rows stretch to fill whatever the count.
 
 ## Blockers
 

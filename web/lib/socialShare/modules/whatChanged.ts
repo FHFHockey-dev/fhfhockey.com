@@ -127,7 +127,7 @@ export type WhatChangedData = {
   focus: WhatChangedFocus | null; playerQuery: string; candidates: { playerId: number; name: string | null; team: string | null }[];
 };
 
-export const WHAT_CHANGED_LIST = 6;
+export const WHAT_CHANGED_LIST = 8;
 export const WHAT_CHANGED_LIST_CAP = 9;
 /** Top ranks of one direction. Everyone tied at the last listed rank stays, up to a hard cap, and the rest are counted by the caller. */
 export const listedRanks = <T extends { rank: number }>(rows: readonly T[], list = WHAT_CHANGED_LIST, cap = WHAT_CHANGED_LIST_CAP) => rows.filter(row => row.rank <= list).slice(0, cap);
@@ -204,6 +204,10 @@ export function buildWhatChanged(input: WhatChangedInput): SharePostLoadResult<W
   const unadmitted = changed.filter(row => comparable(row.who) && row.change.delta === null).length;
   const usedNst = metric.source === "nst" ? changed.reduce((total, row) => ({ observed: total.observed + row.change.baseline.coverage.observed + (settings.comparison === "previous" ? row.change.recent.coverage.observed : 0), expected: total.expected + row.change.baseline.coverage.expected + (settings.comparison === "previous" ? row.change.recent.coverage.expected : 0) }), { observed: 0, expected: 0 }) : null;
   const windowName = windowLabel(settings.window);
+  const unlisted = up.length + down.length - risers.length - fallers.length;
+  const moves = [...new Set([...risers, ...fallers, ...(focus ? [focus] : [])].flatMap(row => row.teamChange ? [`${row.name ?? row.playerId} ${row.teamChange.from} to ${row.teamChange.to}, ${row.teamChange.recentGamesWithNewTeam} of ${row.recentGames} recent games`] : []))];
+  const focusSample = focus ? `. ${focus.name ?? focus.playerId}: ${focus.recentGames} recent GP, ${focus.baselineGames} baseline GP, ${focus.overlap} overlap. A dash means below coverage or no denominator` : "";
+  const movesSample = moves.length ? `. New team: ${moves.join("; ")}` : "";
   const focusGaps = focus?.changes.some(change => change.group === "Underlying" && (change.recent.coverage.missing > 0 || change.baseline.coverage.missing > 0)) ?? false;
   const nstState = (usedNst && usedNst.observed < usedNst.expected) || focusGaps ? "partial" as const : "ready" as const;
   const sources: SharePostSource[] = [
@@ -217,17 +221,17 @@ export function buildWhatChanged(input: WhatChangedInput): SharePostLoadResult<W
     state: reasons.length ? "partial" : "ready", reasons,
     data: {
       through: input.through, window: settings.window, comparison: settings.comparison, requested, metricLabel: metric.label, unit: unitOf(metric, settings.basis), strength: metric.strength,
-      risers, fallers, cohort: { eligible: eligible.length, ranked: admitted.length, shortSample, unadmitted, unchanged: admitted.length - up.length - down.length, listedLimit: WHAT_CHANGED_LIST, unlisted: up.length + down.length - risers.length - fallers.length },
+      risers, fallers, cohort: { eligible: eligible.length, ranked: admitted.length, shortSample, unadmitted, unchanged: admitted.length - up.length - down.length, listedLimit: WHAT_CHANGED_LIST, unlisted },
       focus, playerQuery: settings.player, candidates,
     },
     teams: [...new Set(rowTeams)].sort(),
     evidence: {
       sources,
       sample: settings.comparison === "std"
-        ? `${windowName} versus season to date through ${input.through}. Season values contain the recent games: overlap is shown per player`
-        : `${windowName} versus the previous ${requested} appearances through ${input.through}. No game is in both windows`,
+        ? `${windowName} versus season to date through ${input.through}. Season values contain the recent games: overlap is shown per player${focusSample}${movesSample}`
+        : `${windowName} versus the previous ${requested} appearances through ${input.through}. No game is in both windows${focusSample}${movesSample}`,
       strength: focus ? "All situations; PP points and PP TOI on the power play; each row names its own" : metric.strength,
-      cohort: `${eligible.length} skaters with ${settings.minGp}+ season GP: ${admitted.length} ranked, ${shortSample} short sample, ${unadmitted} below coverage`,
+      cohort: `${eligible.length} skaters with ${settings.minGp}+ season GP: ${admitted.length} ranked, ${shortSample} short sample, ${unadmitted} below coverage${unlisted ? `, ${unlisted} more not listed` : ""}`,
       coverage: usedNst ? { observed: usedNst.observed, expected: usedNst.expected, missing: usedNst.expected - usedNst.observed, unit: `${metric.label} appearances` } : { observed: games.observed, expected: games.expected, missing: games.missing, unit: "team games" },
     },
   };

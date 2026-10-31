@@ -6,4 +6,5 @@
 - **Next:** lead runs the E2E spec and the league-wide real render at 13.0, then closes 2.5 and 4.4.
 - **Decisions:** NST is read only when an NST metric ranks, or for one selected player. Per-60 denominators use WGO TOI of the same covered games, avoiding NST's unit. PP points per 60 use PP time. WGO metrics require 100% coverage; NST uses `minCoverage`.
 - **Gotchas:** on-ice xGF% vs STD admits only 380 of 502 eligible today, since NST gaps cluster in the first week. Rolling has no first-week line rows.
+- **Whitespace pass:** cards fill the body with stretched rows, 8 ranks per list, one legend line; fine print moved to evidence. No browser run; lead sends measurements if anything clips.
 - **Blockers:** none.

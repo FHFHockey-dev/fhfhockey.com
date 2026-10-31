@@ -97,9 +97,11 @@ describe("Role Watch card and export gates", () => {
     const claims = `${html} ${alt}`.replaceAll(ROLE_WATCH_COPY, "");
     expect(claims).not.toMatch(/forecast|project|predict|expect|will |breakout|likely/i);
   });
-  it("names a traded player's teams on the card", () => {
+  it("marks a traded player on the card and names the teams in the evidence", () => {
     const traded = appearances.map((game, index) => ({ ...game, team: index >= 9 ? "NYR" : "NJD" }));
-    expect(render(base({ appearances: traded })).html).toContain("New team: Skater 1 NJD to NYR, 3 of 5 recent games");
+    const { html, snapshot } = render(base({ appearances: traded }));
+    expect(html).toContain("† new team");
+    expect(snapshot.evidence.sample).toContain("New team: Skater 1 NJD to NYR, 3 of 5 recent games");
   });
   it("is empty, and not exportable, when nothing meets the minimums", () => {
     const { html, result } = render(base({ appearances: games(1, 12, () => 1000) }));

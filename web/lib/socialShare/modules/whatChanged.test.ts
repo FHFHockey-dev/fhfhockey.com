@@ -156,7 +156,7 @@ describe("What Changed card and export gates", () => {
   it("prints values, samples and overlap, and no rank without an admitted population", () => {
     const appearances = [...games(1, 10, index => index >= 5 ? 2 : 0), ...games(2, 10, index => index >= 5 ? 0 : 2)];
     const html = render(base({ appearances }));
-    for (const text of ["Points per game", "L5 versus season to date", "STD", "OV", "+1.00", "−1.00", "5/10", "Skater 1", "OV = recent games also inside STD"]) expect(html).toContain(text);
+    for (const text of ["Points per game", "L5 versus season to date", "STD", "OV", "+1.00", "−1.00", "5/10", "Skater 1", "OV = recent games inside STD"]) expect(html).toContain(text);
     const empty = render(base({ appearances: games(1, 4, () => 1) }));
     expect(empty).toContain("No player qualifies");
     expect(empty).not.toContain("RK");
