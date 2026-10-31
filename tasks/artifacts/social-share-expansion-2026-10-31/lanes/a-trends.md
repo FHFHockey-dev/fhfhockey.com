@@ -51,14 +51,14 @@ Project `fyhftlxokyjtpndbkfse`, Supabase MCP `execute_sql`, 2026-10-31. Single `
 
 ## Read budget for the lead's render
 
-Each loader is season to date, so it needs more than 50 rows. Today: `wgo_skater_stats` 7,775 rows (ceiling 50,000, about 46,000 at season end), `wgo_team_stats` 432 (2,800), `games` 216 (1,400). What Changed adds an NST table of about 7,000 rows (50,000) only when ranking an NST metric, and only that table; ranking a WGO metric now adds `nst_gamelog_as_counts` for the players on the boards (ceiling 1,200: 12 players, 100 rows each); a selected player reads under 82 rows from each. Role Watch adds at most 648 rolling rows and 1,440 PP rows for listed players. All are exact-count and fail closed. Reads are page-size bounded and sequential.
+Each loader is season to date, so it needs more than 50 rows. Today: `wgo_skater_stats` 7,775 rows (ceiling 50,000, about 46,000 at season end), `wgo_team_stats` 432 (2,800), `games` 216 (1,400). What Changed adds an NST table of about 7,000 rows (50,000) only when ranking an NST metric, and only that table; ranking a WGO metric now adds `nst_gamelog_as_counts` for the players on the boards (ceiling 1,200: 12 players, 100 rows each); a selected player reads under 82 rows from each. Role Watch adds at most 288 rolling rows and 960 PP rows for listed players. All are exact-count and fail closed. Reads are page-size bounded and sequential.
 
 ## Choices to review at 13.0
 
 - What Changed has fields beyond the contract's two defaults: comparison, min coverage, metric, basis, and a one-player lookup. A name matching more than one player selects nobody and the card lists the candidates.
 - Role Watch requires a baseline at least as long as the window, a fixed rule printed in the cohort line rather than a new field.
 - Per-60 uses WGO TOI of the same covered games. PP points per 60 uses PP time, so a player with no PP time is unknown rather than 0. TOI, PP TOI and xGF% have no per-60 form and always show their own unit.
-- Role Watch lists show 8 ranks, keeping ties up to 9 rows, and count the rest in the evidence cohort line. What Changed's boards show 6. Card fit in the 1080 square has not been seen in a browser.
+- Both posts' boards show 6 rows a side and count the rest in the evidence cohort line. Card fit in the 1080 square has not been seen in a browser.
 
 ## Whitespace pass (TJ's review, lead's direction)
 
@@ -81,6 +81,16 @@ Each loader is season to date, so it needs more than 50 rows. Today: `wgo_skater
 - **Read-plan change:** a WGO ranking now reads NST for the boards' players, after a first build picks them. The default post therefore lists `nst_gamelog_as_counts` as a source, and a failure of that read fails the post closed.
 - **Fit, estimated from CSS, not measured:** a 6-row side gets about 128 px a row, and a row's content needs about 117 px.
 - **Not run:** browser render and the E2E spec (`--list` only). No new real reads in this pass; the listed-player NST read first runs at the lead's render.
+
+## Role Watch boards (TJ's review, lead's direction)
+
+- **Measure choice:** a new Board field, default TOI, picks whether TOI or PP TOI ranks, on its own minimum. The field is beyond the contract's three listed settings. Both measures stay reachable, the heading names the board and its strength, and each row has a small tile for the other measure. One PNG shows one board: four sides would not fit 860 px with larger rows.
+- **Layout:** the same Up and Down boards as What Changed, sharing its `ChangeSide`, `RecentSpark` and row styles. The change tile is in m:ss per game. Each row keeps recent versus BASE and its actual samples.
+- **Role context:** each row keeps Before and Latest, each with line and PP unit, including Unknown and Off PP.
+- **Ranks:** now per side rather than by size across both directions.
+- **Sparkline:** the board's measure, not always TOI, so the PP board draws PP time. **A listed row cannot show a gap today:** a qualifying change needs complete recent and baseline windows, and the last 10 appearances sit inside them. The gap is tested through the card with a patched series, not from the builder.
+- **Untouched:** Tuesday's deployment section; `trends.ts`, `trends.test.ts` and `trendSources.ts` have no diff from this lane.
+- **Fit, estimated from CSS, not measured:** the same row budget as What Changed. **Not run:** browser render and E2E (`--list` only). No new real reads.
 
 ## Blockers
 

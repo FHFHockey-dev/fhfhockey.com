@@ -138,14 +138,12 @@ export type WhatChangedData = {
   focus: WhatChangedFocus | null; playerQuery: string; candidates: { playerId: number; name: string | null; team: string | null }[];
 };
 
-/** Role Watch's list length. What Changed's boards use WHAT_CHANGED_BOARD_ROWS. */
-export const WHAT_CHANGED_LIST = 8;
-export const WHAT_CHANGED_LIST_CAP = 9;
-/** Top ranks of one direction. Everyone tied at the last listed rank stays, up to a hard cap, and the rest are counted by the caller. */
-export const listedRanks = <T extends { rank: number }>(rows: readonly T[], list = WHAT_CHANGED_LIST, cap = WHAT_CHANGED_LIST_CAP) => rows.filter(row => row.rank <= list).slice(0, cap);
-
 /** Rows per side on the Up and Down boards. A tie running past them is counted and said, not shown. */
 export const WHAT_CHANGED_BOARD_ROWS = 6;
+export function boardRanks<T extends { rank: number }>(ranked: readonly T[]) {
+  const listed = ranked.slice(0, WHAT_CHANGED_BOARD_ROWS), last = listed[listed.length - 1]?.rank;
+  return { listed, moreTied: ranked.slice(listed.length).filter(row => row.rank === last).length };
+}
 export const WHAT_CHANGED_SERIES = 10;
 const GROUP_DEFAULTS: Record<MetricDefinition["group"], WhatChangedMetricId> = { Production: "points", Opportunity: "toi", Underlying: "ixg" };
 /** One metric per group: the group's default, or the ranked metric in its own group so its recent value is printed. */
@@ -229,9 +227,8 @@ export function buildWhatChanged(input: WhatChangedInput): SharePostLoadResult<W
     const last = lastN(row.player.games, WHAT_CHANGED_SERIES).rows;
     return { ...row.who, rank, change: row.change, tiles: tileMetrics(settings.metric).map(entry => metricChange(entry, settings.basis, row.player.recent, row.player.baseline, settings.minCoverage)), series: last.map(game => ({ gameId: game.gameId, date: game.date, value: gameValue(metric, settings.basis, game) })), recentFrom: Math.max(0, last.length - requested) };
   };
-  const shownUp = listedRanks(up, WHAT_CHANGED_BOARD_ROWS, WHAT_CHANGED_BOARD_ROWS), shownDown = listedRanks(down, WHAT_CHANGED_BOARD_ROWS, WHAT_CHANGED_BOARD_ROWS);
-  const risers = shownUp.map(boardRow), fallers = shownDown.map(boardRow);
-  const tiedPast = (all: typeof up, shown: typeof up) => all.slice(shown.length).filter(row => row.rank === shown[shown.length - 1]?.rank).length;
+  const upBoard = boardRanks(up), downBoard = boardRanks(down);
+  const risers = upBoard.listed.map(boardRow), fallers = downBoard.listed.map(boardRow);
   const focusPlayer = focusId === null ? null : players.find(player => player.who.playerId === focusId) ?? null;
   const focus: WhatChangedFocus | null = focusPlayer && { ...focusPlayer.who, eligible: focusPlayer.who.seasonGames >= settings.minGp, changes: WHAT_CHANGED_METRICS.map(entry => metricChange(entry, settings.basis, focusPlayer.recent, focusPlayer.baseline, settings.minCoverage)) };
 
@@ -263,7 +260,7 @@ export function buildWhatChanged(input: WhatChangedInput): SharePostLoadResult<W
     data: {
       through: input.through, window: settings.window, comparison: settings.comparison, requested, metricLabel: metric.label, unit: unitOf(metric, settings.basis), strength: metric.strength,
       risers, fallers, cohort: { eligible: eligible.length, ranked: admitted.length, shortSample, unadmitted, unchanged: admitted.length - up.length - down.length, listedLimit: WHAT_CHANGED_BOARD_ROWS, unlisted },
-      moreTied: { up: tiedPast(up, shownUp), down: tiedPast(down, shownDown) },
+      moreTied: { up: upBoard.moreTied, down: downBoard.moreTied },
       focus, playerQuery: settings.player, candidates,
     },
     teams: [...new Set(rowTeams)].sort(),

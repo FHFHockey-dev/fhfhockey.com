@@ -3,11 +3,11 @@ import type { SharePostContext, SharePostLoadResult } from "./contract";
 import { readCompletedTeamGames } from "./shared/goalieLedger.sources";
 import { readSkaterAppearances } from "./shared/skaterAppearances.sources";
 import { buildRoleWatch, ROLE_PP_COLUMNS, ROLE_ROLLING_COLUMNS, roleWatchShown, type RolePpRow, type RoleRollingRow, type RoleWatchData, type RoleWatchSettings } from "./roleWatch";
-import { shareThrough, WHAT_CHANGED_LIST_CAP } from "./whatChanged";
+import { shareThrough, WHAT_CHANGED_BOARD_ROWS } from "./whatChanged";
 import { readSchedule, WHAT_CHANGED_LIMITS } from "./whatChanged.sources";
 
-/** Role context reads only the listed players' two games: at most 18 players × 36 games, and 40 PP rows per game. */
-const LISTED_PLAYERS = WHAT_CHANGED_LIST_CAP * 2, LISTED_GAMES = LISTED_PLAYERS * 2, PP_ROWS_PER_GAME = 40;
+/** Role context reads only the listed players' two games: at most 12 players × 24 games, and 40 PP rows per game. */
+const LISTED_PLAYERS = WHAT_CHANGED_BOARD_ROWS * 2, LISTED_GAMES = LISTED_PLAYERS * 2, PP_ROWS_PER_GAME = 40;
 
 export async function loadRoleWatch({ client, generatedAt }: SharePostContext, settings: RoleWatchSettings): Promise<SharePostLoadResult<RoleWatchData>> {
   const { through, season, from } = shareThrough(generatedAt);

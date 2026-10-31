@@ -39,10 +39,10 @@ const edition = (post: string, settings: Record<string, string | number>, result
   return { schemaVersion: 1, id: `${post}-e2e`, post, state: "ready", reasons: [], generatedAt, expiresAt: new Date(Date.parse(generatedAt) + 600000).toISOString(), timeZone: "America/New_York", settings, evidence: result.evidence, data: result.data, teams: result.teams ?? [], fixture };
 };
 const whatChangedSettings = { window: "l5", comparison: "std", minGp: 10, minCoverage: 90, metric: "points", basis: "perGame", player: "" } as const;
-const roleSettings = { window: "l5", minToiChange: 60, minPpChange: 30 } as const;
+const roleSettings = { window: "l5", board: "toi", minToiChange: 60, minPpChange: 30 } as const;
 // Each fictional game has both teams here, so the schedule's expected count is met.
 const whatChanged = () => buildWhatChanged({ appearances, nstCounts: null, nstOnIce: null, ...completion, settings: whatChangedSettings });
-const roleWatch = () => buildRoleWatch({ appearances, evidence: { rolling: [{ player_id: 1, game_id: 1011, line_combo_slot: 1, line_combo_group: "forward" }], pp: [{ gameId: 1011, playerId: 1, unit: 1 }] }, ...completion, settings: roleSettings });
+const roleWatch = (settings: { window: "l5"; board: "toi" | "pp"; minToiChange: number; minPpChange: number } = roleSettings) => buildRoleWatch({ appearances, evidence: { rolling: [{ player_id: 1, game_id: 1011, line_combo_slot: 1, line_combo_group: "forward" }], pp: [{ gameId: 1011, playerId: 1, unit: 1 }] }, ...completion, settings });
 
 async function open(page: Page, post: string, body: object) {
   await page.context().route("**/*", route => ["127.0.0.1", "localhost"].includes(new URL(route.request().url()).hostname) ? route.continue() : route.abort());
@@ -76,12 +76,20 @@ test("What Changed with offline fixture data and no ranked player refuses export
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
 });
 
-test("Role Watch prints seconds as m:ss, samples, role context and the observed-opportunity copy", async ({ page }) => {
+test("Role Watch prints side-by-side boards in m:ss, samples, role context and the observed-opportunity copy", async ({ page }) => {
   await open(page, "role-watch", edition("role-watch", roleSettings, roleWatch(), false));
   const square = page.getByTestId("share-square");
-  for (const text of ["Observed opportunity, not a forecast.", "Fictional Riser", "L1 · PP1", "Line unknown · Off PP", "1:00+ CHANGE", "0:30+ CHANGE", "5/7"]) await expect(square).toContainText(text);
+  for (const text of ["Observed opportunity, not a forecast.", "Fictional Riser", "L1 · PP1", "Line unknown · Off PP", "TOI per game, all situations", "1:00+ change", "5 vs 7 GP"]) await expect(square).toContainText(text);
+  for (const board of ["board-up", "board-down"]) await expect(page.getByTestId(board).locator("[data-sparkline]")).toHaveCount(1);
   await expect(page.getByTestId("post-evidence")).toContainText("No game is in both");
   const download = page.waitForEvent("download");
   await page.getByRole("button", { name: "Download PNG", exact: true }).click();
   expect((await download).suggestedFilename()).toMatch(/\.png$/);
+});
+
+test("Role Watch's PP TOI board is labelled and ranks power-play time", async ({ page }) => {
+  const settings = { ...roleSettings, board: "pp" } as const;
+  await open(page, "role-watch", edition("role-watch", settings, roleWatch(settings), false));
+  const square = page.getByTestId("share-square");
+  for (const text of ["PP TOI per game, power play", "0:30+ change", "PP TOI/G", "Fictional Riser"]) await expect(square).toContainText(text);
 });

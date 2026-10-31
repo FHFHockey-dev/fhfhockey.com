@@ -1,5 +1,6 @@
 import type { SharePostCardProps } from "lib/socialShare/modules/contract";
-import { formatMetricValue, seriesRuns, windowLabel, type MetricChange, type MetricWindow, type WhatChangedData, type WhatChangedRow, type WhatChangedSettings } from "lib/socialShare/modules/whatChanged";
+import type { ReactNode } from "react";
+import { formatMetricValue, seriesRuns, windowLabel, type MetricChange, type MetricWindow, type SeriesPoint, type WhatChangedData, type WhatChangedRow, type WhatChangedSettings } from "lib/socialShare/modules/whatChanged";
 import { HeatTile } from "./GoalieBoards";
 import { PostEmpty, PostTable, PostTeamMark, type PostColumn } from "./kit";
 import styles from "./WhatChangedCard.module.scss";
@@ -11,18 +12,18 @@ const belowCoverage = (tile: MetricChange) => !tile.recent.admitted ? coverageTe
 
 const SPARK_WIDTH = 180, SPARK_HEIGHT = 54, SPARK_PAD = 5, LINE = "#ffffff";
 /** Game-by-game line of the ranked metric: a missing game breaks the line and leaves a tick, and a band marks the recent window. */
-function ChangeSpark({ row, recentLabel }: { row: WhatChangedRow; recentLabel: string }) {
-  const values = row.series.map(point => point.value), known = values.filter((value): value is number => value !== null);
+export function RecentSpark({ series, recentFrom, recentLabel }: { series: readonly SeriesPoint[]; recentFrom: number; recentLabel: string }) {
+  const values = series.map(point => point.value), known = values.filter((value): value is number => value !== null);
   const low = Math.min(...known), high = Math.max(...known), step = (SPARK_WIDTH - 2 * SPARK_PAD) / Math.max(1, values.length - 1);
   const x = (index: number) => SPARK_PAD + index * step;
   const y = (value: number) => high === low ? SPARK_HEIGHT / 2 : SPARK_HEIGHT - SPARK_PAD - (value - low) / (high - low) * (SPARK_HEIGHT - 2 * SPARK_PAD);
-  const start = row.recentFrom === 0 ? 0 : x(row.recentFrom) - step / 2;
-  return <svg className={styles.spark} width={SPARK_WIDTH} height={SPARK_HEIGHT} viewBox={`0 0 ${SPARK_WIDTH} ${SPARK_HEIGHT}`} aria-hidden="true" data-sparkline={values.map(value => value ?? "gap").join(",")} data-recent-from={row.recentFrom}>
+  const start = recentFrom === 0 ? 0 : x(recentFrom) - step / 2;
+  return <svg className={styles.spark} width={SPARK_WIDTH} height={SPARK_HEIGHT} viewBox={`0 0 ${SPARK_WIDTH} ${SPARK_HEIGHT}`} aria-hidden="true" data-sparkline={values.map(value => value ?? "gap").join(",")} data-recent-from={recentFrom}>
     <rect x={start.toFixed(1)} y="0" width={(SPARK_WIDTH - start).toFixed(1)} height={SPARK_HEIGHT} fill={LINE} fillOpacity="0.09" />
     <path d={`M${start.toFixed(1)} 0V${SPARK_HEIGHT}`} stroke={LINE} strokeOpacity="0.55" strokeWidth="1" strokeDasharray="3 3" />
     <text x={SPARK_WIDTH - 3} y="11" textAnchor="end" fontSize="11" fill={LINE} fillOpacity="0.7">{recentLabel}</text>
     {seriesRuns(values).filter(run => run.length > 1).map(run => <path key={run[0]} d={run.map((index, at) => `${at ? "L" : "M"}${x(index).toFixed(1)} ${y(values[index]!).toFixed(1)}`).join("")} fill="none" stroke={LINE} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />)}
-    {row.series.map((point, index) => point.value === null
+    {series.map((point, index) => point.value === null
       ? <path key={point.gameId} d={`M${x(index).toFixed(1)} ${SPARK_HEIGHT - 2}v-4`} stroke={LINE} strokeOpacity="0.6" strokeWidth="1.5" data-gap="" />
       : <circle key={point.gameId} cx={x(index).toFixed(1)} cy={y(point.value).toFixed(1)} r="2.5" fill={LINE} />)}
   </svg>;
@@ -39,13 +40,16 @@ function GroupTile({ tile }: { tile: MetricChange }) {
 
 /** Rows share the height left in the body; a small pool stops short of oversized rows. */
 const FILL_FROM_ROWS = 4;
-function ChangeBoard({ kind, rows, comparison, recentLabel, largest, logos }: { kind: "up" | "down"; rows: readonly WhatChangedRow[]; comparison: WhatChangedData["comparison"]; recentLabel: string; largest: number; logos: SharePostCardProps<WhatChangedSettings, WhatChangedData>["logos"] }) {
-  const title = kind === "up" ? "Up" : "Down";
+export function ChangeSide<Row>({ kind, rows, rowKey, empty, renderRow }: { kind: "up" | "down"; rows: readonly Row[]; rowKey: (row: Row) => number; empty: string; renderRow: (row: Row) => ReactNode }) {
   const track = rows.length >= FILL_FROM_ROWS ? "minmax(min-content, 1fr)" : "minmax(min-content, 130px)";
   return <section className={styles.side} data-testid={`board-${kind}`} style={{ gridTemplateRows: rows.length ? `auto repeat(${rows.length}, ${track})` : "auto 1fr" }}>
-    <h4 className={styles.sideHead} data-kind={kind}>{title}</h4>
-    {!rows.length && <p className={styles.note}>No {kind === "up" ? "riser" : "faller"} qualifies</p>}
-    {rows.map(row => <div key={row.playerId} className={styles.row} data-testid="change-row">
+    <h4 className={styles.sideHead} data-kind={kind}>{kind === "up" ? "Up" : "Down"}</h4>
+    {!rows.length && <p className={styles.note}>{empty}</p>}
+    {rows.map(row => <div key={rowKey(row)} className={styles.row} data-testid="change-row">{renderRow(row)}</div>)}
+  </section>;
+}
+function ChangeBoard({ kind, rows, comparison, recentLabel, largest, logos }: { kind: "up" | "down"; rows: readonly WhatChangedRow[]; comparison: WhatChangedData["comparison"]; recentLabel: string; largest: number; logos: SharePostCardProps<WhatChangedSettings, WhatChangedData>["logos"] }) {
+  return <ChangeSide kind={kind} rows={rows} rowKey={row => row.playerId} empty={`No ${kind === "up" ? "riser" : "faller"} qualifies`} renderRow={row => <>
       <span className={styles.rank}>{row.rank}</span>
       <span className={styles.logo}>{row.team && <PostTeamMark team={row.team} logo={logos[row.team]} size={34} />}</span>
       <span className={styles.ident}>
@@ -55,10 +59,9 @@ function ChangeBoard({ kind, rows, comparison, recentLabel, largest, logos }: { 
       <HeatTile value={row.change.delta} text={formatMetricValue(row.change, row.change.delta, true)} caption={row.change.short} largest={largest} />
       <div className={styles.strip}>
         {row.tiles.map(tile => <GroupTile key={tile.metric} tile={tile} />)}
-        <ChangeSpark row={row} recentLabel={recentLabel} />
+        <RecentSpark series={row.series} recentFrom={row.recentFrom} recentLabel={recentLabel} />
       </div>
-    </div>)}
-  </section>;
+    </>} />;
 }
 
 export default function WhatChangedCard({ data, logos }: SharePostCardProps<WhatChangedSettings, WhatChangedData>) {
