@@ -1,0 +1,10 @@
+@use "styles/vars" as v;
+
+.body { display: flex; flex-direction: column; gap: v.$space-xs; min-height: 0; }
+.slate { display: flex; flex-wrap: wrap; align-items: center; gap: v.$space-xs; margin: 0; font-size: 16px; color: v.$text-secondary; b { color: v.$color-white; font-weight: 600; } }
+.day { display: inline-block; min-width: 22px; padding: 0 4px; border-radius: 4px; text-align: center; }
+.day[data-off] { background: rgba(v.$success-color, 0.3); color: v.$color-white; }
+.team { display: inline-flex; align-items: center; gap: v.$space-xxs; }
+.pick { display: grid; line-height: 1.05; min-width: 0; b { font-size: 17px; font-weight: 600; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; } small { font-size: 13px; color: v.$text-secondary; } }
+.gap { display: block; font-size: 13px; line-height: 1.1; color: v.$text-secondary; }
+.note { margin: 0; font-size: 14px; line-height: 1.2; color: v.$text-secondary; }
