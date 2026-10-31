@@ -1,7 +1,7 @@
 import type { BoardAssertion } from "lib/projections/dailyBoardEvidence";
 import { teamsInfo } from "lib/teamsInfo";
 import type { GoalieAppearance } from "./goalieLedger";
-import { buildGoalieInventory, type GoalieInventoryInput, type InventoryForecastInput, type InventoryNstRow, type InventoryObservationRow, type InventoryScheduleRow, type InventoryTeamGameRow } from "./goalieInventory.sources";
+import { buildGoalieInventory, type GoalieInventoryInput, type InventoryForecastInput, type InventoryNstRow, type InventoryScheduleRow, type InventoryTeamGameRow } from "./goalieInventory.sources";
 
 /**
  * Handoff fixture for `goalie-inventory-v1` (SS 11.6). Fictional goalies and invented numbers in a four-team league, run

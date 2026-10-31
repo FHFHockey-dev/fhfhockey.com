@@ -1,15 +1,52 @@
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
+import StartSitCard from "components/SocialShare/modules/StartSitCard";
+import { resolveDailyBoardEvidence, type BoardGoalieEvidence } from "lib/projections/dailyBoardEvidence";
 import { parseShareSettings, sharePostExportToken } from "./contract";
 import { shareModule } from "./registry";
 import { FORECAST_ADMITTED_NOTE, startSitConflicting, startSitModule, startSitResult, startSitRows, upcomingInventory, type StartSitData, type StartSitSettings } from "./startSit";
-import { FIXTURE_INPUT, GOALIE_INVENTORY_FIXTURE, GOALIE_INVENTORY_FIXTURE_DETAIL } from "./shared/goalieInventory.fixture";
-import { buildGoalieInventory, CONFIRMATION_CLOSED_REASON, FORECAST_CLOSED_REASON } from "./shared/goalieInventory.sources";
+import { FIXTURE_GENERATED_AT, FIXTURE_INPUT, GOALIE_INVENTORY_FIXTURE, GOALIE_INVENTORY_FIXTURE_DETAIL } from "./shared/goalieInventory.fixture";
+import { buildGoalieInventory, CONFIRMATION_CLOSED_REASON, CONFIRMATION_LINK_GAP, CONFIRMATION_REPORTER_GAP, FORECAST_CLOSED_REASON } from "./shared/goalieInventory.sources";
 
 vi.mock("lib/supabase/public-client", () => ({ default: {} }));
+vi.mock("lib/supabase/server", () => ({ default: { from: () => { throw new Error("No database reads in card tests."); } } }));
 
 const data = startSitResult(GOALIE_INVENTORY_FIXTURE_DETAIL).data as StartSitData;
 const settings = (search: string): StartSitSettings => ({ days: 7, search });
 const names = (search: string) => [...new Set(startSitRows(data, search).map(row => row.goalie.name))];
+
+
+const reporters = (team: number, gameId: number, first: number, second: number): BoardGoalieEvidence[] => [first, second].map((player_id, index) => ({ id: `obs-${index}`, game_id: gameId, team_id: team, player_id, observation_status: "confirmed", accepted: true, source_key: "validated_events", source_account: `reporter${index}`, source_url: null, observed_at: `2026-11-02T10:0${index * 5}:00Z`, available_at: `2026-11-02T10:0${index * 5}:30Z`, created_at: `2026-11-02T10:0${index * 5}:40Z`, expires_at: null }));
+const throughResolver = (goalies: BoardGoalieEvidence[], gaps: string[] = []) => buildGoalieInventory({ ...FIXTURE_INPUT, confirmations: { evidence: resolveDailyBoardEvidence({ cutoff: FIXTURE_GENERATED_AT, lineups: [], goalies, conflicts: [] }), expiresAt: new Map(), gaps } });
+const card = (result: ReturnType<typeof startSitResult>, search = "") => renderToStaticMarkup(createElement(StartSitCard, { snapshot: { generatedAt: FIXTURE_GENERATED_AT } as never, data: result.data as StartSitData, settings: settings(search), logos: {} }));
+
+describe("Start/Sit card, through the real resolver", () => {
+  it("keeps a resolver conflict between distinct reporters conflicting on the card", () => {
+    const detail = throughResolver(reporters(1, 900010, 7001, 7002));
+    expect(detail.conflicts).toEqual([{ gameId: 900010, team: "NJD" }]);
+    const html = card(startSitResult(detail), "new jersey");
+    expect(html).toContain("Conflicting reports");
+    expect(html).toContain('data-state="conflicting"');
+    expect(html).not.toContain("Source: confirmed");
+    // The frozen shape is still unknown, with the reason in its source.
+    expect(detail.inventory.goalies.find(goalie => goalie.goalieId === 7001)!.games[0].confirmation.state).toBe("none");
+    expect(detail.inventory.sources.find(source => source.name === "Goalie start observations")!.reasons.join(" ")).toMatch(/conflicting start reports/);
+  });
+  it("marks only that team's game, and shows a resolved claim with its source and age", () => {
+    const detail = throughResolver([{ ...reporters(1, 900010, 7001, 7002)[0], source_account: null }]);
+    const html = card(startSitResult(detail), "new jersey");
+    expect(html).not.toContain("Conflicting reports");
+    expect(html).toContain("Source: confirmed");
+    expect(html).toContain("Validated reports · 5h ago");
+    expect(html).toContain("Unknown");
+  });
+  it("prints the gap in reader-facing words", () => {
+    const html = card(startSitResult(throughResolver([], [CONFIRMATION_REPORTER_GAP, CONFIRMATION_LINK_GAP])));
+    expect(html).toContain("conflicts between sources can&#x27;t be detected");
+    expect(html).toContain("No source link or expiry exists");
+  });
+});
 
 describe("Start/Sit (11.5)", () => {
   it("finds a goalie regardless of accents, through the frozen search", () => {

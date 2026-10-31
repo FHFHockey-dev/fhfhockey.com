@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { resolveDailyBoardEvidence, type BoardConflict, type BoardGoalieEvidence } from "lib/projections/dailyBoardEvidence";
 import { GOALIE_INVENTORY_VERSION, type GoalieInventory, type LoadGoalieInventory, type SearchGoalieInventory } from "./goalieInventory";
 import { FIXTURE_GENERATED_AT, FIXTURE_INPUT, FIXTURE_TEAMS, GOALIE_INVENTORY_FIXTURE } from "./goalieInventory.fixture";
-import { admitStartParticipation, buildGoalieInventory, buildTeamLenses, CONFIRMATION_ABSENT_NOTE, CONFIRMATION_CLOSED_REASON, CONFIRMATION_REPORTER_GAP, confirmationFreshness, confirmationLabel, FORECAST_CLOSED_REASON, INVENTORY_OBSERVATION_COLUMNS, inventoryWindow, loadGoalieInventory, loadGoalieInventoryDetail, mapBoardEvidence, searchGoalieInventory, type InventoryForecastInput } from "./goalieInventory.sources";
+import { admitStartParticipation, buildGoalieInventory, buildTeamLenses, CONFIRMATION_ABSENT_NOTE, CONFIRMATION_CLOSED_REASON, CONFIRMATION_LINK_GAP, CONFIRMATION_REPORTER_GAP, confirmationFreshness, confirmationLabel, FORECAST_CLOSED_REASON, INVENTORY_OBSERVATION_COLUMNS, inventoryWindow, loadGoalieInventory, loadGoalieInventoryDetail, mapBoardEvidence, observationGaps, searchGoalieInventory, type InventoryForecastInput } from "./goalieInventory.sources";
 
 vi.mock("lib/supabase/public-client", () => ({ default: { from: () => { throw new Error("The inventory test must never reach Supabase."); } } }));
 const serverRead = vi.hoisted(() => ({ tables: [] as string[], from: null as null | ((table: string) => unknown) }));
@@ -175,7 +175,9 @@ describe("confirmation through the starter-board resolver", () => {
     const detail = resolve([ifttt(), ifttt({ id: "b", player_id: 7002, observed_at: "2026-11-02T10:05:00Z" })]);
     expect(detail.conflicts).toEqual([]);
     expect(state(detail, 7002)).toBe("confirmed");
-    expect(CONFIRMATION_REPORTER_GAP).toMatch(/cannot be detected/);
+    expect(observationGaps([{ source_account: null, source_url: null, expires_at: null }])).toEqual([CONFIRMATION_REPORTER_GAP, CONFIRMATION_LINK_GAP]);
+    expect(observationGaps([{ source_account: "named", source_url: "https://fixture.invalid/x", expires_at: null }])).toEqual([]);
+    expect(observationGaps([])).toEqual([]);
   });
   it("treats no observation as unknown, with no claim to age", () => {
     const { confirmation } = game(resolve([]).inventory, 7001, 900010);
@@ -261,7 +263,7 @@ describe("live loader, injected client", () => {
     expect(serverRead.tables).toEqual(CLOSED.slice(0, 2));
     expect(selects.join(",")).not.toMatch(/raw_status|metadata/);
     expect(game(inventory, 7001, 900010).confirmation.state).toBe("confirmed");
-    expect(inventory.reasons).toContain(CONFIRMATION_REPORTER_GAP);
+    expect(inventory.reasons).toEqual(expect.arrayContaining([CONFIRMATION_REPORTER_GAP, CONFIRMATION_LINK_GAP]));
   });
   it("is unknown with the reason, keeping the rest, when the server credential is missing", async () => {
     serverRead.from = null;

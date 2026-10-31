@@ -1,5 +1,5 @@
 import type { SharePostCardProps } from "lib/socialShare/modules/contract";
-import { confirmationFreshness, confirmationLabel, forecastLabel, metricLabel } from "lib/socialShare/modules/shared/goalieInventory.sources";
+import { confirmationFreshness, confirmationLabel, confirmationSourceLabel, forecastLabel, metricLabel } from "lib/socialShare/modules/shared/goalieInventory.sources";
 import { START_SIT_ROW_LIMIT, startSitConflicting, startSitRows, type StartSitData, type StartSitSettings } from "lib/socialShare/modules/startSit";
 import { PostEmpty, PostTeamMark } from "./kit";
 import styles from "./StartSitCard.module.scss";
@@ -19,7 +19,7 @@ export default function StartSitCard({ snapshot, data, settings, logos }: ShareP
           <span>{dayLabel(game.date)}</span>
           <span className={styles.goalie}><b>{goalie.name}</b><small>{goalie.recentStarts.starts === null ? "—" : goalie.recentStarts.starts}/{goalie.recentStarts.teamGames} GS, last {goalie.recentStarts.teamGames} team games{goalie.recentStarts.reliefAppearances ? `, ${goalie.recentStarts.reliefAppearances} relief` : ""}</small></span>
           <span className={styles.game}><PostTeamMark team={game.team} logo={logos[game.team]} size={24} />{game.home ? "vs" : "@"} {game.opponent}</span>
-          <span data-testid="start-sit-confirmation" data-state={conflicting ? "conflicting" : game.confirmation.state} className={styles.status}>{confirmationLabel(game.confirmation, conflicting)}{freshness && <small>{game.confirmation.source} · {freshness}</small>}</span>
+          <span data-testid="start-sit-confirmation" data-state={conflicting ? "conflicting" : game.confirmation.state} className={styles.status}>{confirmationLabel(game.confirmation, conflicting)}{freshness && <small>{confirmationSourceLabel(game.confirmation.source)} · {freshness}</small>}</span>
           <span data-testid="start-sit-forecast" data-state={game.forecast.state}>{forecastLabel(game.forecast)}</span>
           <span>{metricLabel(volume.opponentShotsForPerGame, 1)} / {metricLabel(volume.teamShotsAgainstPerGame, 1)}</span>
           <span>{metricLabel(ratio.opponentXgfPerGame, 2)} / {metricLabel(ratio.teamXgaPerGame, 2)}</span>

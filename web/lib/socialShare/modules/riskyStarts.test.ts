@@ -1,14 +1,42 @@
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
+import RiskyStartsCard from "components/SocialShare/modules/RiskyStartsCard";
+import { resolveDailyBoardEvidence, type BoardGoalieEvidence } from "lib/projections/dailyBoardEvidence";
 import { sharePostExportToken } from "./contract";
 import { RISKY_CORRELATION_NOTE, riskyFlags, riskyPairs, riskyRows, riskyRowsForLens, riskyStartsModule, riskyStartsResult, type RiskyRow, type RiskyStartsData, type RiskyStartsSettings } from "./riskyStarts";
-import { gameSignals, buildTeamLenses, buildGoalieInventory } from "./shared/goalieInventory.sources";
-import { FIXTURE_INPUT, FIXTURE_TEAMS, GOALIE_INVENTORY_FIXTURE, GOALIE_INVENTORY_FIXTURE_DETAIL } from "./shared/goalieInventory.fixture";
+import { gameSignals, buildTeamLenses, buildGoalieInventory, CONFIRMATION_LINK_GAP, CONFIRMATION_REPORTER_GAP } from "./shared/goalieInventory.sources";
+import { FIXTURE_GENERATED_AT, FIXTURE_INPUT, FIXTURE_TEAMS, GOALIE_INVENTORY_FIXTURE, GOALIE_INVENTORY_FIXTURE_DETAIL } from "./shared/goalieInventory.fixture";
 
 vi.mock("lib/supabase/public-client", () => ({ default: {} }));
+vi.mock("lib/supabase/server", () => ({ default: { from: () => { throw new Error("No database reads in card tests."); } } }));
 
 const { lenses } = buildTeamLenses({ teamGames: FIXTURE_INPUT.teamGames, nst: FIXTURE_INPUT.nst, teams: FIXTURE_TEAMS, season: 20262027, cutoff: "2026-11-01" });
 const data = riskyStartsResult(GOALIE_INVENTORY_FIXTURE_DETAIL).data as RiskyStartsData;
 const settings = (lens: RiskyStartsSettings["lens"]): RiskyStartsSettings => ({ days: 7, lens });
+
+
+const reporters = (team: number, gameId: number, first: number, second: number): BoardGoalieEvidence[] => [first, second].map((player_id, index) => ({ id: `obs-${index}`, game_id: gameId, team_id: team, player_id, observation_status: "confirmed", accepted: true, source_key: "validated_events", source_account: `reporter${index}`, source_url: null, observed_at: `2026-11-02T10:0${index * 5}:00Z`, available_at: `2026-11-02T10:0${index * 5}:30Z`, created_at: `2026-11-02T10:0${index * 5}:40Z`, expires_at: null }));
+const throughResolver = (goalies: BoardGoalieEvidence[], gaps: string[] = []) => buildGoalieInventory({ ...FIXTURE_INPUT, confirmations: { evidence: resolveDailyBoardEvidence({ cutoff: FIXTURE_GENERATED_AT, lineups: [], goalies, conflicts: [] }), expiresAt: new Map(), gaps } });
+const card = (result: ReturnType<typeof riskyStartsResult>, lens: RiskyStartsSettings["lens"]) => renderToStaticMarkup(createElement(RiskyStartsCard, { snapshot: { generatedAt: FIXTURE_GENERATED_AT } as never, data: result.data as RiskyStartsData, settings: settings(lens), logos: {} }));
+
+describe("Risky Starts card, through the real resolver", () => {
+  it("keeps a resolver conflict between distinct reporters conflicting on the card", () => {
+    // NYR's night against NJD is flagged under volume. A second goalie id makes the reporters disagree.
+    const detail = throughResolver(reporters(3, 900010, 7003, 7999));
+    expect(detail.conflicts).toEqual([{ gameId: 900010, team: "NYR" }]);
+    const html = card(riskyStartsResult(detail), "volume");
+    expect(html).toContain('data-team="NYR"');
+    expect(html).toContain("Conflicting reports");
+    expect(html).not.toContain("Source: confirmed");
+  });
+  it("prints the gap and the correlation note in reader-facing words", () => {
+    const html = card(riskyStartsResult(throughResolver([], [CONFIRMATION_REPORTER_GAP, CONFIRMATION_LINK_GAP])), "volume");
+    expect(html).toContain("conflicts between sources can&#x27;t be detected");
+    expect(html).toContain("No source link or expiry exists");
+    expect(html).toContain("correlated");
+  });
+});
 
 describe("Risky Starts pairings (11.4)", () => {
   it("is symmetric: each game gives both sides, and each side's opponent rate is the other's own", () => {

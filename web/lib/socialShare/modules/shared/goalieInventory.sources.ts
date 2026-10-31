@@ -15,7 +15,7 @@ import { TEAM_GAME_COLUMNS, teamStartShare, toCompletedTeamGames, type Completed
 export const INVENTORY_LENS_COLUMNS = ["goals_for", "goals_against", "pp_opportunities", "power_play_goals_for", "times_shorthanded", "pp_goals_against"] as const satisfies readonly (keyof Database["public"]["Tables"]["wgo_team_stats"]["Row"])[];
 export const INVENTORY_NST_COLUMNS = ["team_abbreviation", "date", "season_id", "situation", "sf", "sa", "xgf", "xga", "scf", "sca", "updated_at"] as const satisfies readonly (keyof Database["public"]["Tables"]["nst_team_gamelogs_as_counts"]["Row"])[];
 /** Only what the starter-board resolver needs. Raw report text and metadata never leave the database. */
-export const INVENTORY_OBSERVATION_COLUMNS = ["id", "game_id", "team_id", "player_id", "observation_status", "source_key", "source_account", "source_url", "observed_at", "available_at", "created_at", "expires_at", "accepted"] as const satisfies readonly (keyof Database["public"]["Tables"]["player_forecast_goalie_start_observations"]["Row"])[];
+export const INVENTORY_OBSERVATION_COLUMNS = ["id", "game_id", "team_id", "player_id", "observation_status", "source_key", "source_account", "source_url", "observed_at", "available_at", "created_at", "expires_at", "accepted"] as const satisfies readonly (keyof BoardGoalieEvidence)[];
 export type InventoryTeamGameRow = TeamGameRow & Pick<Database["public"]["Tables"]["wgo_team_stats"]["Row"], typeof INVENTORY_LENS_COLUMNS[number]>;
 export type InventoryNstRow = Pick<Database["public"]["Tables"]["nst_team_gamelogs_as_counts"]["Row"], typeof INVENTORY_NST_COLUMNS[number]>;
 export type InventoryConfirmationInput = {
@@ -33,7 +33,13 @@ export type GoalieInventoryDetail = { inventory: GoalieInventory; coverage: Inve
 
 export const CONFIRMATION_CLOSED_REASON = "Goalie start observations could not be read, so every goalie is unknown. That does not mean not starting.";
 export const CONFIRMATION_ABSENT_NOTE = "Unknown means no current observation, not that the goalie is not starting. Observations cover part of the slate.";
-export const CONFIRMATION_REPORTER_GAP = "These observations do not name their original reporter, so reporters who disagree cannot be detected: the newest report stands.";
+export const CONFIRMATION_REPORTER_GAP = "Reports aren't separated by reporter, so conflicts between sources can't be detected.";
+export const CONFIRMATION_LINK_GAP = "No source link or expiry exists for these reports.";
+/** Limits of the rows read, stated on the card. A row with no account counts as one shared reporter in the resolver. */
+export const observationGaps = (rows: readonly Pick<BoardGoalieEvidence, "source_account" | "source_url" | "expires_at">[]) => [
+  ...(rows.some(row => !row.source_account) ? [CONFIRMATION_REPORTER_GAP] : []),
+  ...(rows.length && rows.every(row => !row.source_url && !row.expires_at) ? [CONFIRMATION_LINK_GAP] : []),
+];
 export const FORECAST_CLOSED_REASON = "No admitted Start Chart start participation is available, so every forecast is unavailable. A raw start_probability is not admitted.";
 const METRIC_WINDOW = "Season to date";
 
@@ -253,6 +259,8 @@ export const searchGoalieInventory: SearchGoalieInventory = (inventory, query) =
 
 /* Display labels, one wording for every card. */
 export const confirmationLabel = (confirmation: GoalieConfirmation, conflicting = false) => conflicting ? "Conflicting reports" : confirmation.state === "confirmed" ? "Source: confirmed" : confirmation.state === "projected" ? "Source: projected" : "Unknown";
+/** The pipeline's internal key, in reader-facing words. v1 keeps the raw key. */
+export const confirmationSourceLabel = (source: string | null) => source === "validated_events" ? "Validated reports" : source;
 /** How old the claim is at the edition. Absent for an unknown, which has no claim to age. */
 export function confirmationFreshness(confirmation: GoalieConfirmation, generatedAt: string) {
   if (confirmation.state === "none") return null;
@@ -302,7 +310,7 @@ async function readBoardConfirmations(client: SharePostReadClient, gameIds: read
   const conflictRows = await bounded<ConflictRow>("Goalie start conflicts", LIMITS.conflicts, (from, to) => client.from("player_forecast_observation_conflicts").select("id,conflict_key,conflict_version,game_id,team_id,player_id,conflict_type,detected_at,created_at", { count: "exact" }).in("game_id", [...gameIds]).eq("conflict_type", "goalie_start").lte("detected_at", cutoff).order("id", { ascending: true }).range(from, to));
   const resolutions = conflictRows.length ? await bounded<ResolutionRow>("Goalie conflict resolutions", LIMITS.conflicts, (from, to) => client.from("player_forecast_conflict_resolutions").select("id,conflict_id,action,selected_observation_id,resolved_at,created_at", { count: "exact" }).in("conflict_id", conflictRows.map(row => row.id)).lte("resolved_at", cutoff).order("id", { ascending: true }).range(from, to)) : [];
   const evidence = resolver.resolveDailyBoardEvidence({ cutoff, lineups: [], goalies, conflicts: conflictRows.map(row => ({ ...row, player_forecast_conflict_resolutions: resolutions.filter(item => item.conflict_id === row.id) })) });
-  return { evidence, expiresAt: new Map(goalies.map(row => [row.id, row.expires_at ?? null])), gaps: goalies.some(row => !row.source_account) ? [CONFIRMATION_REPORTER_GAP] : [] };
+  return { evidence, expiresAt: new Map(goalies.map(row => [row.id, row.expires_at ?? null])), gaps: observationGaps(goalies) };
 }
 export async function loadGoalieInventoryDetail(client: { from: (table: string) => any }, request: GoalieInventoryRequest, options: GoalieInventoryOptions = {}): Promise<GoalieInventoryDetail> {
   try {

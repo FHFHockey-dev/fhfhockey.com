@@ -18,10 +18,10 @@ Files are under `web/`. Posts: `risky-starts` and `start-sit`, group Goalies, ba
 
 | Check | Result |
 | --- | --- |
-| `npm test` on the 3 test files | Passed, 69 of 69. With `server`, `contract` and Player Cards' `sharedGoalieOutlook` tests, 88 of 88 |
+| `npm test` on the 3 test files and Player Cards' `sharedGoalieOutlook` test | Passed, 82 of 82 |
 | `eslint` on all lane TS and TSX files | Passed, no findings |
 | CSS-module pure check on both SCSS files | Passed |
-| `npx tsc --noEmit` | Passed, 0 errors in the whole project at the time of the run |
+| `NODE_OPTIONS=--max-old-space-size=12288 npx tsc --noEmit` | 0 errors in lane files. 4 errors remain elsewhere, in `modules/contract.test.ts` and `modules/server.ts`, which the lead is fixing. **Correction: my two earlier reports said 0 errors in the whole project. That was wrong.** Plain `npx tsc --noEmit` runs out of memory here (exit 134) and prints no errors, and I had filtered its output without checking the exit code. It hid two real errors in my files, now fixed |
 | `playwright test e2e/social-share-inventory.spec.ts --list` | 4 tests discovered |
 | Browser run of that spec | **Not run**, the lead's at 13.0. Neither card's fit in the 1080 square has been seen |
 | Browser bundle | **Not verified.** `lib/supabase/server` and the resolver are imported behind `typeof window === "undefined"`, so they should drop out of the client compile, which a dev compile at 13.0 will show. No credential is exposed either way, because the key is not `NEXT_PUBLIC` |
@@ -56,9 +56,15 @@ Project `fyhftlxokyjtpndbkfse`, Supabase MCP `execute_sql`, 2026-10-31. Every st
 
 **Resolver.** `resolveDailyBoardEvidence` in `lib/projections/dailyBoardEvidence.ts`, unedited. It is applied to a narrow read of the goalie, conflict and resolution tables with `lineups: []`, rather than `loadDailyBoardEvidence`, which also reads lineups with `select *`. `raw_status` and `metadata` are never selected. A failed conflict read fails the whole confirmation to unknown.
 
+**Row counts (2026-10-31):** 604 observations, 486 confirmed and 118 projected, all accepted, all from 10-10 onward. `source_account`, `source_url`, `expires_at` and `supersedes_id` are null on all 604. 0 `goalie_start` conflict rows and 0 conflict resolutions.
+
+**Printed on both cards:** "Reports aren't separated by reporter, so conflicts between sources can't be detected." and "No source link or expiry exists for these reports." Each appears only when the rows read have that gap.
+
+**Conflict proof:** because live rows cannot produce a conflict, `startSit.test.ts` and `riskyStarts.test.ts` feed fixtures with distinct reporters through the real resolver and render the real cards, which must show "Conflicting reports" and not "Source: confirmed". The writer gap goes to TJ through the lead; `tweetProjectionStorage.ts` is untouched.
+
 **Gaps, which are flagged and not filled:**
 
-1. **Reporter disagreement cannot be detected live.** The writer sets `source_account` null on every row, and both the resolver and the capture RPC identify a reporter by account, else `source_key`. All live rows are therefore one reporter: the newest report wins. **There have been 0 `goalie_start` conflict rows ever, yet 3 team games hold confirmations of two different goalies.** Those may be corrections or real disagreements; the data cannot say which. The cards print `CONFIRMATION_REPORTER_GAP`. Fixing it means the writer keeping the original reporter, which is outside this lane.
+1. **Reporter disagreement cannot be detected live.** The writer sets `source_account` null on every row, and both the resolver and the capture RPC identify a reporter by account, else `source_key`. All live rows are therefore one reporter: the newest report wins. **There have been 0 `goalie_start` conflict rows ever, yet 3 team games hold confirmations of two different goalies.** Those may be corrections or real disagreements; the data cannot say which. The cards print this gap. Fixing it means the writer keeping the original reporter, which is outside this lane.
 2. **No expiry-based staleness.** `expires_at` is null on every row, so only a later report retires an old one. The cards show age instead (for example "3d ago"). I added no threshold of my own.
 3. **No source link.** `source_url` is null on every row, although the writer passes `report.originalUrl`, so attribution may be pending. I did not trace why.
 4. **Partial coverage.** 13 team games have observations in the next 7 days, out of 96. Unknown is the common state.
@@ -67,7 +73,7 @@ Project `fyhftlxokyjtpndbkfse`, Supabase MCP `execute_sql`, 2026-10-31. Every st
 
 ## Blockers and open items
 
-1. **`conflicting` is not in v1.** v1 is unchanged, and I told the lead before building. A conflict is `none` in `goalie-inventory-v1`, with a count in the source's `reasons`. `GoalieInventoryDetail.conflicts` carries the list, and both posts show "Conflicting reports" from it. Player Cards sees unknown plus the reason unless both owners agree on a v2. `likely`, `unconfirmed` and `ruled_out` also show unknown.
+1. **`conflicting` is not in v1, and stays out** (lead's decision: no v2, because Player Cards already tests the version id). A conflict is `none` in `goalie-inventory-v1`, with a count in the source's `reasons`. `GoalieInventoryDetail.conflicts` carries the list, and both posts show "Conflicting reports" from it. Player Cards sees unknown plus the reason unless both owners agree on a v2. `likely`, `unconfirmed` and `ruled_out` also show unknown.
 2. **Live forecast.** Every live forecast is `unavailable`. Admission is built and tested, and `readStartParticipations` is the seam, but no post passes it. `loadGameExpectations` is a broad planning read whose cost I did not assess.
 3. **Render step is the lead's.** The confirmation read adds `player_forecast_goalie_start_observations` (ceiling 2,000), `player_forecast_observation_conflicts` (500) and `player_forecast_conflict_resolutions` (500), through the server credential.
 
