@@ -90,7 +90,8 @@ test("Busy and Quiet keeps volume apart from performance, and basis changes the 
   await expect(card).toContainText("Workload only");
   await expect(card).toContainText("SA/GS");
   await expect(card).toContainText("HD SHOTS/GS");
-  await expect(card).toContainText("TEAM SCA/GM");
+  await expect(card).toContainText("TEAM SCA");
+  await expect(card.locator("svg[data-sparkline]").first()).toBeVisible();
   await expect(card).not.toContainText(/SV%|GAA/);
   await expect(page.getByTestId("post-watermark")).toHaveText("OBSERVED RESULTS");
   await expect(page.getByTestId("post-evidence")).toContainText("All situations");

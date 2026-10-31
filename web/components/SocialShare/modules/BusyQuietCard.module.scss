@@ -1,13 +1,15 @@
 @use "styles/vars" as v;
 
 .card { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: v.$space-xs; }
-.side { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; }
-.title { margin: 0; font-size: 22px; line-height: 1.2; letter-spacing: v.$mobile-letter-spacing-wide; text-transform: uppercase; }
 .note { margin: 0; font-size: 16px; line-height: 1.25; color: v.$text-secondary; }
-.goalie { display: inline-flex; align-items: center; gap: v.$space-xs; min-width: 0; }
-.name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.gap { font-size: 15px; color: v.$text-secondary; white-space: nowrap; }
-.fill { flex: 1 1 0; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr); }
-.fill > div { min-height: 0; grid-template-rows: auto; grid-auto-rows: minmax(27px, 60px); align-content: start; align-items: stretch; }
-.fill > div > span { display: flex; align-items: center; padding: 0; }
-.fill > div > span[data-numeric] { justify-content: flex-end; }
+.boards { flex: 1 1 0; min-height: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); column-gap: 20px; }
+.boards[data-sides="1"] { grid-template-columns: minmax(0, 1fr); }
+.side { min-width: 0; min-height: 0; display: grid; }
+.title { margin: 0; padding-bottom: 2px; border-bottom: 2px solid currentColor; font-size: 24px; line-height: 1.1; font-weight: 800; color: #63d2f5; }
+.row { display: grid; grid-template-columns: 24px 34px minmax(0, 1fr) 90px 72px; column-gap: 6px; align-items: center; min-width: 0; padding: 3px 0; border-bottom: 1px solid v.$border-soft; }
+.detail { display: block; overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.spark { display: block; }
+.tile { display: grid; justify-items: center; align-content: center; min-height: 50px; padding: 2px; border-radius: 5px; color: v.$color-white; background: rgba(v.$color-white, 0.06);
+  b { font-size: 26px; line-height: 1; font-weight: 800; }
+  small { font-size: 12px; line-height: 1.1; white-space: nowrap; }
+}

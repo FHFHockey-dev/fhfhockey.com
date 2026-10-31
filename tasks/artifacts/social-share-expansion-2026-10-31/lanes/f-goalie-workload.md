@@ -87,6 +87,17 @@ The lead measured content of 1142, 1423 and 887px against bodies of 845 to 861px
 - **Rescue tie cap:** 30 becomes 29, which fits at the 27px minimum in an 845px body.
 - **Not verified:** no browser run. The lead re-measures.
 
+## Follow-up: Busy and Quiet visuals (TJ, 2026-10-31)
+
+- **Layout:** Busy and Quiet sit side by side in the goalie board style, reusing `GoalieIdent`. Its Best and Worst boards and `HeatTile` are not used, because they carry goodness colours.
+- **Tile:** SA on the selected basis, in one cyan hue whose strength follows the shown low-to-high range. No green, red or tone attribute.
+- **Sparkline:** shots against per appearance, oldest first, on one scale for the whole card. A null is a gap with a tick and a broken line; a real 0 is plotted. Relief is an open dot. The series is the goalie's appearances, so a team game he did not play is not a gap.
+- **Kept, compact:** GP, GS, relief, total SA, HD SHOTS on the basis, and TEAM SCA and HDCA per game, in two detail lines. The legend keeps "Workload only, not how well a goalie played."
+- **Rows and ties:** 11 per side gives about 72px rows at an 845px body. Minimum row is 63px, so the tie cap drops from 13 to 12; anyone cut is counted in `evidence.sample`.
+- **Alt text:** adds each goalie's shots by game.
+- **Spec:** expects `TEAM SCA` and a visible sparkline.
+- **Not verified:** no browser run. The fit is arithmetic until the lead's render.
+
 ## Blockers
 
 None. No frozen file needs a change.

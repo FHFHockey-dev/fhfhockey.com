@@ -13,7 +13,8 @@ export type BusyQuietSettings = { basis: BusyQuietBasis; window: GoalieWindowKey
 
 /** Fills the card's 860px body per side. Ties may run past the size; the hard cap keeps them from clipping, and the sample names any left out. */
 export const BUSY_QUIET_LIST_SIZE = 11;
-const BUSY_QUIET_MAX_ROWS = 13;
+/** (845px body - 53 legend and side head) / 63px minimum row. */
+const BUSY_QUIET_MAX_ROWS = 12;
 /** CONTRACT §2 coverage admission: below this share of window games, an NST value is not shown. */
 export const NST_MIN_COVERAGE = 0.9;
 export const VOLUME_NOTE = "Workload only, not how well a goalie played.";
@@ -103,11 +104,13 @@ export function teamChances(rows: readonly GoalieAppearance[], all: readonly Goa
   return { sca: admitted ? sum(covered.map(row => row.sca)) / covered.length : null, hdca: admitted ? sum(covered.map(row => row.hdca)) / covered.length : null, covered: covered.length, expected, missing: expected - covered.length, admitted, sharedNetGames };
 }
 
+/** One appearance on the sparkline. Null shots are a gap, never 0, and relief stays marked. */
+export type ShotPoint = { gameId: number; date: string; shots: number | null; relief: boolean };
 export type BusyQuietRow = {
   goalieId: number; name: string | null; team: string; rank: number;
   appearances: number; requested: number | null; short: boolean; starts: number; relief: number; unlabeled: number;
   /** Every shot in the window, and the part of it faced in relief. */
-  totalShots: number | null; reliefShots: number | null; volume: BasisVolume; danger: DangerZoneShots; teamChances: TeamChances;
+  totalShots: number | null; reliefShots: number | null; series: ShotPoint[]; volume: BasisVolume; danger: DangerZoneShots; teamChances: TeamChances;
 };
 export type BusyQuietData = { basis: BusyQuietBasis; window: GoalieWindowKey; through: string; busy: BusyQuietRow[]; quiet: BusyQuietRow[]; eligible: number; appeared: number; unranked: number; dangerUnadmitted: number; teamChancesUnadmitted: number };
 
@@ -126,6 +129,7 @@ export function buildBusyQuiet(input: {
   const built = eligible.map(window => ({
     goalieId: window.goalieId, name: window.name, team: window.team, appearances: window.actual, requested: window.requested, short: window.short, starts: window.starts, relief: window.relief, unlabeled: window.unlabeled,
     totalShots: knownSum(window.rows.map(row => row.shotsAgainst)), reliefShots: knownSum(window.rows.filter(row => row.started === false).map(row => row.shotsAgainst)),
+    series: window.rows.map(row => ({ gameId: row.gameId, date: row.date, shots: row.shotsAgainst, relief: row.started === false })),
     volume: shotsOnBasis(window.rows, settings.basis), danger: dangerZoneShots(window.rows, settings.basis, nstGoalie), teamChances: teamChances(window.rows, appearances, nstTeam),
   }));
   const ranked = (direction: "high" | "low") => competitionRanks(built, row => row.volume.value, row => row.goalieId, direction).filter(entry => entry.rank <= BUSY_QUIET_LIST_SIZE).map(({ row, rank }): BusyQuietRow => ({ ...row, rank }));
@@ -158,7 +162,17 @@ export function buildBusyQuiet(input: {
 }
 
 export const formatVolume = (value: number | null) => value === null ? "—" : value.toFixed(1);
-const altRow = (row: BusyQuietRow, basis: BusyQuietBasis) => `${row.rank}. ${row.name ?? `Goalie ${row.goalieId}`} (${row.team}): ${formatVolume(row.volume.value)} shots against ${BASIS_LABELS[basis]}, ${row.starts} starts, ${row.relief} relief`;
+/** One shots-against scale for every line on the card, so a busier goalie's line sits higher. Null when no game has a value. */
+export function shotScale(rows: readonly BusyQuietRow[]) {
+  const known = rows.flatMap(row => row.series.flatMap(point => point.shots === null ? [] : [point.shots]));
+  return known.length ? { low: Math.min(...known), high: Math.max(...known) } : null;
+}
+/** Share of the shown range, 0 to 1, for the tile's single-hue fill. More workload is a stronger fill, not a better goalie. */
+export function workloadLevel(value: number | null, low: number, high: number) {
+  if (value === null) return null;
+  return high === low ? 0.5 : (value - low) / (high - low);
+}
+const altRow = (row: BusyQuietRow, basis: BusyQuietBasis) => `${row.rank}. ${row.name ?? `Goalie ${row.goalieId}`} (${row.team}): ${formatVolume(row.volume.value)} shots against ${BASIS_LABELS[basis]}, ${row.starts} starts, ${row.relief} relief, shots by game ${row.series.map(point => point.shots ?? "no data").join(", ")}`;
 
 export const busyQuietModule = defineShareModule<BusyQuietSettings, BusyQuietData>({
   id: "busy-quiet-goalies", title: "Busy and Quiet Goalies", summary: "Shots faced, starts and relief, kept apart from how a goalie played.", group: "goalies", basis: "observed",

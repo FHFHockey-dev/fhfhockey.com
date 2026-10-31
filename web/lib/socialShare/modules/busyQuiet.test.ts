@@ -2,7 +2,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { createElement } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import BusyQuietCard from "components/SocialShare/modules/BusyQuietCard";
-import { busyQuietModule, buildBusyQuiet, dangerZoneShots, goalieLedgerScope, goalieWindows, ledgerCoverage, nstToiSeconds, shotsOnBasis, teamChances, VOLUME_NOTE, type BusyQuietData, type BusyQuietSettings, type NstGoalieRow, type NstTeamRow } from "./busyQuiet";
+import { busyQuietModule, buildBusyQuiet, dangerZoneShots, goalieLedgerScope, goalieWindows, ledgerCoverage, nstToiSeconds, shotScale, shotsOnBasis, teamChances, VOLUME_NOTE, workloadLevel, type BusyQuietData, type BusyQuietSettings, type NstGoalieRow, type NstTeamRow } from "./busyQuiet";
 import { parseShareSettings, UNKNOWN_EVIDENCE, type SharePostSnapshot } from "./contract";
 import type { CompletedTeamGame, GoalieAppearance } from "./shared/goalieLedger";
 
@@ -131,11 +131,11 @@ describe("the list", () => {
   it("caps a tie that would clip the card and says how many it left out", () => {
     const tied = Array.from({ length: 16 }, (_, index) => index + 10).flatMap(id => [0, 1, 2].map(game => appearance({ goalieId: id, gameId: id * 10 + game, date: date(game + 1), team: "PHI" })));
     const result = build({ appearances: tied });
-    expect(result.data!.busy).toHaveLength(13);
-    expect(result.data!.quiet).toHaveLength(3);
+    expect(result.data!.busy).toHaveLength(12);
+    expect(result.data!.quiet).toHaveLength(4);
     expect(result.evidence.sample).not.toContain("more tied goalies");
     const wider = Array.from({ length: 30 }, (_, index) => index + 10).flatMap(id => [0, 1, 2].map(game => appearance({ goalieId: id, gameId: id * 10 + game, date: date(game + 1), team: "PHI" })));
-    expect(build({ appearances: wider }).evidence.sample).toContain("4 more tied goalies are not listed.");
+    expect(build({ appearances: wider }).evidence.sample).toContain("6 more tied goalies are not listed.");
   });
   it("names strength, cohort and source tables", () => {
     const { evidence } = build();
@@ -161,7 +161,7 @@ describe("busy and quiet card", () => {
   it("labels danger-zone shots as shots and team chances as team-level, with relief apart", () => {
     const { container } = renderCard(full, settings());
     const text = container.textContent!;
-    for (const label of ["Busy", "RELIEF", "SA/GS", "HD SHOTS/GS", "TEAM SCA/GM", "TEAM HDCA/GM", VOLUME_NOTE]) expect(text).toContain(label);
+    for (const label of ["Busy", "3 GS", "1 relief", "SA/GS", "HD SHOTS/GS", "TEAM SCA 22.0", "HDCA 9.0", VOLUME_NOTE]) expect(text).toContain(label);
     expect(text).not.toMatch(/\bHD CHANCES\b|\bGOALIE CHANCES\b/i);
     expect(screen.getByText("G1")).toBeTruthy();
   });
@@ -180,6 +180,57 @@ describe("busy and quiet card", () => {
     const per60 = build({ settings: settings({ basis: "per60" }) }).data!;
     const text = renderCard(per60, settings({ basis: "per60" })).container.textContent!;
     expect(text).toContain("SA/60");
+  });
+  const sparkline = (container: HTMLElement) => container.querySelector("svg[data-sparkline]")!;
+  it("plots each appearance's shots against, oldest first, with relief open and in the alt text", () => {
+    const { busy } = build().data!, g1 = busy.find(row => row.goalieId === 1)!;
+    expect(g1.series.map(point => [point.date, point.shots, point.relief])).toEqual([[date(1), 30, false], [date(2), 30, false], [date(3), 30, false], [date(4), 10, true]]);
+    const { container } = renderCard(build().data!, settings());
+    expect(sparkline(container).getAttribute("data-sparkline")).toBe("30,30,30,10");
+    expect(sparkline(container).querySelectorAll("[data-relief]")).toHaveLength(1);
+    expect(sparkline(container).querySelectorAll("path")).toHaveLength(3);
+    expect(container.querySelector("p")!.textContent).toContain("open dot relief");
+    expect(busyQuietModule.altText(snapshot(build().data!, settings()), build().data!, settings())).toContain("shots by game 30, 30, 30, 10");
+  });
+  it("breaks the line at a missing game and keeps a real zero", () => {
+    const gappy = [1, 2, 3].map(day => appearance({ goalieId: 7, gameId: day, date: date(day), shotsAgainst: day === 2 ? null : 30 }));
+    const { container } = renderCard(build({ appearances: gappy }).data!, settings());
+    const line = sparkline(container);
+    expect(line.getAttribute("data-sparkline")).toBe("30,gap,30");
+    expect(line.querySelectorAll("[data-gap]")).toHaveLength(1);
+    expect(line.querySelectorAll("[data-segment]")).toHaveLength(0);
+    expect(line.querySelectorAll("[data-point]")).toHaveLength(2);
+    expect(line.getAttribute("aria-label")).toContain("no data");
+    cleanup();
+    const zero = [1, 2, 3].map(day => appearance({ goalieId: 7, gameId: day, date: date(day), shotsAgainst: day === 2 ? 0 : 30 }));
+    const zeroLine = sparkline(renderCard(build({ appearances: zero }).data!, settings()).container);
+    expect(zeroLine.getAttribute("data-sparkline")).toBe("30,0,30");
+    expect(zeroLine.querySelectorAll("[data-gap]")).toHaveLength(0);
+    expect(zeroLine.querySelectorAll("[data-segment]")).toHaveLength(2);
+  });
+  it("draws every line on one shots scale", () => {
+    const data = build().data!;
+    expect(shotScale(data.busy)).toEqual({ low: 10, high: 30 });
+    expect(shotScale([])).toBeNull();
+    const lines = [...renderCard(data, settings()).container.querySelectorAll("svg[data-sparkline]")];
+    expect(lines.map(line => line.getAttribute("data-scale"))).toEqual(["10-30", "10-30"]);
+  });
+  const pool = Array.from({ length: 24 }, (_, index) => index + 10).flatMap(id => [0, 1, 2].map(game => appearance({ goalieId: id, gameId: id * 10 + game, date: date(game + 1), team: "PHI", shotsAgainst: id })));
+  it("sets Busy and Quiet side by side with a tile for every goalie", () => {
+    const { container } = renderCard(build({ appearances: pool }).data!, settings());
+    expect(container.querySelector("[data-sides='2']")).toBeTruthy();
+    expect(screen.getByTestId("board-busy").querySelectorAll("[data-testid='workload-tile']")).toHaveLength(11);
+    expect(screen.getByTestId("board-quiet").querySelectorAll("[data-testid='workload-tile']")).toHaveLength(11);
+    expect(screen.getByTestId("board-busy").querySelector("svg[data-sparkline]")).toBeTruthy();
+  });
+  it("scales the tile in one neutral hue, with no goodness colour or tone", () => {
+    expect([workloadLevel(10, 10, 30), workloadLevel(20, 10, 30), workloadLevel(30, 10, 30), workloadLevel(25, 25, 25), workloadLevel(null, 10, 30)]).toEqual([0, 0.5, 1, 0.5, null]);
+    const { container } = renderCard(build({ appearances: pool }).data!, settings());
+    const tiles = [...container.querySelectorAll<HTMLElement>("[data-testid='workload-tile']")];
+    const alphas = (board: string) => [...screen.getByTestId(board).querySelectorAll<HTMLElement>("[data-testid='workload-tile']")].map(tile => Number(tile.dataset.level));
+    expect(Math.min(...alphas("board-busy"))).toBeGreaterThan(Math.max(...alphas("board-quiet")));
+    for (const tile of tiles) expect(tile.style.background.replace(/\s/g, "")).toMatch(/^rgba\(99,210,245,/);
+    expect(container.innerHTML.replace(/\s/g, "")).not.toMatch(/0,255,153|255,99,132|data-tone|data-kind="(best|worst)"/);
   });
   it("uses no goodness wording in the card or alt text", () => {
     const active = settings();
