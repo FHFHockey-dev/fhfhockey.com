@@ -1,0 +1,11 @@
+@use "styles/vars" as v;
+
+.board { display: grid; gap: v.$space-sm; min-height: 0; }
+.lead { margin: 0; font-size: 20px; line-height: 1.25; color: v.$text-secondary; b { color: v.$color-white; font-weight: 600; } }
+.player { display: flex; align-items: center; gap: v.$space-xs; min-width: 0; }
+.name { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.pos { flex: none; font-size: 15px; color: v.$text-secondary; }
+.pair { white-space: nowrap; small { font-size: 16px; color: v.$text-secondary; } }
+.strong { font-weight: 700; color: v.$primary-color; white-space: nowrap; }
+.missing { color: v.$warning-color; }
+.note { margin: 0; font-size: 17px; line-height: 1.25; color: v.$text-secondary; }

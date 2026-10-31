@@ -1,0 +1,88 @@
+// @vitest-environment jsdom
+import { createElement } from "react";
+import { cleanup, render } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
+import type { SkaterSeason } from "./bshBoard";
+import { buildCategoryBlueprint, categoryBlueprintModule, chosenCategories, type CategoryBlueprintData, type CategoryBlueprintSettings } from "./categoryBlueprint";
+import { parseShareSettings, type SharePostSnapshot } from "./contract";
+import type { SkaterAppearance } from "./shared/skaterAppearances";
+
+const settings = (over: Partial<CategoryBlueprintSettings> = {}): CategoryBlueprintSettings => ({ cat1: "points", cat2: "shots", cat3: "hits", cat4: "none", window: "l5", minGp: 1, position: "all", topIn: 1000, ...over });
+const game = (playerId: number, index: number, stats: Partial<SkaterAppearance> = {}): SkaterAppearance => ({
+  playerId, name: `Skater ${playerId}`, position: "D", group: "D", gameId: 1000 + index, date: `2026-10-${String(index + 1).padStart(2, "0")}`, team: "NJD", opponent: "NYR", home: true,
+  goals: 0, assists: 0, points: 0, shots: 0, hits: 0, blocks: 0, ppPoints: 0, toiSeconds: 900, ppToiSeconds: 0, penaltyMinutes: 0, ...stats,
+});
+const games = (playerId: number, count: number, stats: Partial<SkaterAppearance> | ((index: number) => Partial<SkaterAppearance>) = {}) => Array.from({ length: count }, (_, index) => game(playerId, index, typeof stats === "function" ? stats(index) : stats));
+const season = (appearances: SkaterAppearance[]): SkaterSeason => ({ appearances, teamGames: [], scheduledGames: 0, through: "2026-10-30" });
+const cells = (data: CategoryBlueprintData, playerId: number) => data.rows.find(row => row.playerId === playerId)!.cells.map(cell => [cell.category, cell.perGame, cell.rank]);
+
+describe("Category Blueprint", () => {
+  const pool = () => season([...games(1, 5, { points: 2, shots: 1, hits: 0, blocks: 3 }), ...games(2, 5, { points: 1, shots: 3, hits: 4, blocks: 0 }), ...games(3, 5, { points: 1, shots: 2, hits: 4, blocks: 1 })]);
+  it("gives each chosen category its own per-game value and rank", () => {
+    const { data } = buildCategoryBlueprint(pool(), settings());
+    expect(data!.rows.map(row => row.playerId)).toEqual([1, 2, 3]);
+    expect(cells(data!, 1)).toEqual([["points", 2, 1], ["shots", 1, 3], ["hits", 0, 3]]);
+    expect(cells(data!, 2)).toEqual([["points", 1, 2], ["shots", 3, 1], ["hits", 4, 1]]);
+    expect(cells(data!, 3)).toEqual([["points", 1, 2], ["shots", 2, 2], ["hits", 4, 1]]);
+  });
+  it("honours the chosen combination and order", () => {
+    const active = settings({ cat1: "blocks", cat2: "points", cat3: "none" }), { data } = buildCategoryBlueprint(pool(), active);
+    expect(chosenCategories(active)).toEqual(["blocks", "points"]);
+    expect(data!.categories.map(category => category.label)).toEqual(["BLK", "PTS"]);
+    expect(data!.rows.map(row => row.playerId)).toEqual([1, 3, 2]);
+    expect(data!.rows[0].cells).toHaveLength(2);
+  });
+  it("keeps one basis and cohort for every category", () => {
+    const { data, evidence } = buildCategoryBlueprint(season([...games(1, 7, index => ({ points: index >= 2 ? 1 : 9, shots: index >= 2 ? 2 : 9 })), ...games(2, 3, { points: 1 }), ...games(3, 5, { position: "C", group: "F", points: 5 })]), settings({ position: "D", minGp: 3 }));
+    expect(data!.cohortSize).toBe(2);
+    expect(evidence.cohort).toContain("Defensemen, 3+ season GP: 2 skaters");
+    expect(data!.rows.find(row => row.playerId === 1)!.games).toBe(5);
+    expect(cells(data!, 1).slice(0, 2)).toEqual([["points", 1, 1], ["shots", 2, 1]]);
+    expect(data!.rows.find(row => row.playerId === 2)!.games).toBe(3);
+  });
+  it("shows a missing category as missing, not zero, and counts it", () => {
+    const { data } = buildCategoryBlueprint(season([...games(1, 5, index => index === 2 ? { hits: null, points: 1 } : { hits: 3, points: 1 }), ...games(2, 5, { hits: 0 })]), settings());
+    expect(data!.rows[0].cells.find(cell => cell.category === "hits")).toEqual({ category: "hits", total: null, perGame: null, rank: null });
+    expect(data!.rows[1].cells.find(cell => cell.category === "hits")).toMatchObject({ total: 0, perGame: 0, rank: 1 });
+    expect(data!.categories.find(category => category.id === "hits")!.missing).toBe(1);
+  });
+  it("filters on every category's own rank, and a missing category neither passes nor fails", () => {
+    const { data } = buildCategoryBlueprint(pool(), settings({ topIn: 2 }));
+    expect(data!.rows.map(row => row.playerId)).toEqual([2, 3]);
+    expect(data!.qualifying).toBe(2);
+    const withMissing = buildCategoryBlueprint(season([...games(1, 5, { points: 2, hits: null }), ...games(2, 5, { points: 1, hits: 1 })]), settings({ topIn: 1, cat2: "goals" }));
+    expect(withMissing.data!.rows.map(row => row.playerId)).toEqual([1]);
+  });
+  it("has no universal score, rating or overall rank", () => {
+    const { data } = buildCategoryBlueprint(pool(), settings());
+    expect(JSON.stringify(data)).not.toMatch(/score|rating|overall|composite|total_?rank/i);
+    expect(Object.keys(data!.rows[0]).sort()).toEqual(["cells", "games", "name", "playerId", "position", "team", "teams"]);
+  });
+  it("refuses a repeated category and an empty pool cannot export", () => {
+    expect(() => parseShareSettings(categoryBlueprintModule, { cat2: "points" })).toThrow(/only once/);
+    expect(parseShareSettings(categoryBlueprintModule, {})).toMatchObject({ cat1: "points", cat2: "shots", cat3: "hits", cat4: "blocks", window: "l10", minGp: 5, position: "all", topIn: 100 });
+    const active = settings({ minGp: 9 }), { data } = buildCategoryBlueprint(pool(), active);
+    expect(data!.rows).toEqual([]);
+    expect(categoryBlueprintModule.hasRows(data, active)).toBe(false);
+  });
+});
+
+describe("Category Blueprint card", () => {
+  afterEach(cleanup);
+  const show = async (data: CategoryBlueprintData, active: CategoryBlueprintSettings) => {
+    const Card = await categoryBlueprintModule.card();
+    render(createElement(Card, { snapshot: { settings: active } as unknown as SharePostSnapshot, data, settings: active, logos: {} }));
+    return document.body.textContent!;
+  };
+  it("prints each category, rank, window, cohort and missing", async () => {
+    const active = settings(), { data } = buildCategoryBlueprint(season([...games(1, 5, { points: 2, hits: null }), ...games(2, 5, { points: 1, hits: 2 })]), active);
+    const text = await show(data!, active);
+    for (const label of ["PTS/G", "SOG/G", "HITS/G", "2.00 #1", "missing", "last 5 appearances", "among 2 skaters", "no combined score", "Hits: 1 skaters missing"]) expect(text).toContain(label);
+  });
+  it("says why nobody qualifies and asks for a refresh after a settings change", async () => {
+    const active = settings({ minGp: 9 }), { data } = buildCategoryBlueprint(season(games(1, 2)), active);
+    expect(await show(data!, active)).toContain("No skater is in the top");
+    cleanup();
+    expect(await show(data!, settings({ minGp: 8 }))).toContain("Refresh this post");
+  });
+});
