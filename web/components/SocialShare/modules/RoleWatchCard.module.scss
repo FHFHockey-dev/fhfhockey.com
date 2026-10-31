@@ -1,0 +1,8 @@
+@use "styles/vars" as v;
+
+.card { display: flex; flex-direction: column; gap: v.$space-sm; min-height: 0; }
+.list { display: flex; flex-direction: column; gap: v.$space-xxs; }
+.list h3 { margin: 0; font-size: 18px; letter-spacing: v.$mobile-letter-spacing-wide; color: v.$text-secondary; }
+.player { display: inline-flex; align-items: center; gap: v.$space-xs; min-width: 0; }
+.role { font-size: 15px; color: v.$text-secondary; }
+.note { margin: 0; font-size: 16px; line-height: 1.3; color: v.$text-secondary; }
