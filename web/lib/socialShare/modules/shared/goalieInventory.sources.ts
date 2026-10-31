@@ -228,16 +228,18 @@ export function buildGoalieInventory(input: GoalieInventoryInput): GoalieInvento
   const conflictList = [...conflicts].flatMap(key => { const [gameId, teamId] = key.split(":").map(Number), team = teamById.get(teamId); return team && scheduled.some(game => game.id === gameId) ? [{ gameId, team }] : []; });
   const confirmationReasons = input.confirmations ? [
     CONFIRMATION_ABSENT_NOTE, ...(input.confirmations.gaps ?? []),
-    ...(conflictList.length ? [`${conflictList.length} team games have conflicting start reports, shown as unknown here.`] : []),
-    ...(unlisted ? [`${unlisted} observed goalies have no appearance in their team's last 10 games, so this inventory does not list them.`] : []),
+    ...(conflictList.length ? [`${conflictList.length} team ${conflictList.length === 1 ? "game has" : "games have"} conflicting start reports, shown as unknown here.`] : []),
+    ...(unlisted ? [unlisted === 1 ? "1 observed goalie has no appearance in their team's last 10 games, so this inventory does not list them." : `${unlisted} observed goalies have no appearance in their team's last 10 games, so this inventory does not list them.`] : []),
   ] : [input.observationReason ?? CONFIRMATION_CLOSED_REASON];
   const forecastReasons = input.forecasts ? [] : [FORECAST_CLOSED_REASON];
+  // A New York date like every other source; the exact time of the newest report goes in `updatedAt`.
+  const newestObservation = (input.confirmations?.evidence.assertions ?? []).map(row => row.publishedAt).sort((a, b) => Date.parse(a) - Date.parse(b)).at(-1) ?? null;
   const sources: GoalieInventorySource[] = [
     { name: "NHL schedule", tables: ["games"], state: "ready", asOf: newest(scheduled.map(game => game.date)), updatedAt: null, reasons: [] },
     { name: "NHL.com team game stats", tables: ["wgo_team_stats"], state: observed === expected ? "ready" : "partial", asOf: newest(ledger.map(game => game.date)), updatedAt: null, reasons: [] },
     { name: "NST team game logs (all situations)", tables: ["nst_team_gamelogs_as_counts"], state: nstComplete ? "ready" : "partial", asOf: nstAsOf, updatedAt: nstUpdatedAt ? asUtc(nstUpdatedAt) : null, reasons: [] },
     { name: "NHL.com goalie game stats", tables: ["wgo_goalie_stats"], state: incompleteShares ? "partial" : "ready", asOf: newest(input.appearances.map(row => row.date)), updatedAt: null, reasons: [] },
-    { name: "Goalie start observations", tables: ["player_forecast_goalie_start_observations"], state: input.confirmations ? "ready" : "blocked", asOf: newest((input.confirmations?.evidence.assertions ?? []).map(row => row.publishedAt)), updatedAt: null, reasons: confirmationReasons },
+    { name: "Goalie start observations", tables: ["player_forecast_goalie_start_observations"], state: input.confirmations ? "ready" : "blocked", asOf: newestObservation ? editionDate(newestObservation) : null, updatedAt: newestObservation, reasons: confirmationReasons },
     { name: "Start Chart start participation", tables: [], state: input.forecasts ? "ready" : "blocked", asOf: null, updatedAt: null, reasons: forecastReasons },
   ];
   return {

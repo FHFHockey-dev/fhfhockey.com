@@ -161,7 +161,7 @@ describe("confirmation through the starter-board resolver", () => {
     const detail = resolve([ifttt({ source_account: "reporterA" }), ifttt({ id: "b", player_id: 7002, source_account: "reporterB", observed_at: "2026-11-02T10:05:00Z" })]);
     expect([state(detail), state(detail, 7002)]).toEqual(["none", "none"]);
     expect(detail.conflicts).toEqual([{ gameId: 900010, team: "NJD" }]);
-    expect(detail.inventory.reasons.join(" ")).toMatch(/1 team games have conflicting/);
+    expect(detail.inventory.reasons.join(" ")).toMatch(/1 team game has conflicting/);
     expect(confirmationLabel(game(detail.inventory, 7001, 900010).confirmation, true)).toBe("Conflicting reports");
   });
   it("honors a persisted conflict and its review", () => {
@@ -179,6 +179,12 @@ describe("confirmation through the starter-board resolver", () => {
     expect(observationGaps([{ source_account: "named", source_url: "https://fixture.invalid/x", expires_at: null }])).toEqual([]);
     expect(observationGaps([])).toEqual([]);
   });
+  it("dates the source in New York, like every other source, and keeps the exact time as its update", () => {
+    const late = "2026-11-02T03:30:00+00:00";
+    const source = (detail: ReturnType<typeof resolve>) => detail.inventory.sources.find(item => item.name === "Goalie start observations")!;
+    expect(source(resolve([ifttt({ observed_at: late, available_at: late, created_at: late })]))).toMatchObject({ asOf: "2026-11-01", updatedAt: late });
+    expect(source(resolve([]))).toMatchObject({ asOf: null, updatedAt: null });
+  });
   it("treats no observation as unknown, with no claim to age", () => {
     const { confirmation } = game(resolve([]).inventory, 7001, 900010);
     expect(confirmation.state).toBe("none");
@@ -187,7 +193,9 @@ describe("confirmation through the starter-board resolver", () => {
   it("gives only the asserted goalie the claim, and says when that goalie is not listed", () => {
     const detail = resolve([ifttt({ player_id: 7999 })]);
     expect(state(detail)).toBe("none");
-    expect(detail.inventory.reasons.join(" ")).toMatch(/1 observed goalies have no appearance/);
+    expect(detail.inventory.reasons.join(" ")).toContain("1 observed goalie has no appearance in their team's last 10 games, so this inventory does not list them.");
+    const two = resolve([ifttt({ player_id: 7999 }), ifttt({ id: "b", game_id: 900012, player_id: 7998 })]);
+    expect(two.inventory.reasons.join(" ")).toContain("2 observed goalies have no appearance");
   });
   it("maps likely and unconfirmed to unknown and ignores other dimensions", () => {
     const row = { gameId: 1, teamId: 1, playerId: 2, evidenceId: "e", sourceKey: "k", sourceUrl: null, publishedAt: "t", receivedAt: "t", confirmed: false };

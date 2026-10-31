@@ -77,6 +77,11 @@ Project `fyhftlxokyjtpndbkfse`, Supabase MCP `execute_sql`, 2026-10-31. Every st
 2. **Live forecast.** Every live forecast is `unavailable`. Admission is built and tested, and `readStartParticipations` is the seam, but no post passes it. `loadGameExpectations` is a broad planning read whose cost I did not assess.
 3. **Render step is the lead's.** The confirmation read adds `player_forecast_goalie_start_observations` (ceiling 2,000), `player_forecast_observation_conflicts` (500) and `player_forecast_conflict_resolutions` (500), through the server credential.
 
+## Render follow-up (lead, real render)
+
+- The goalie observations source now reports `asOf` as the New York date of the newest report, with the exact time in `updatedAt`, so the shell prints a date and "(updated ...)". The value changed, not the v1 shape: `asOf` is still `string | null`, and Player Cards only prints it in `sourceNotes`.
+- "1 observed goalie has..." and "1 team game has..." are now singular. Browser re-render is the lead's.
+
 ## Decisions to review
 
 - PP, PK and times shorthanded come from WGO, not NST PP and PK logs. WGO has opportunities and known zeros, and NST is missing 4 rows of each.
