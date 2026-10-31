@@ -1,3 +1,4 @@
+import type { BoardConflict, BoardGoalieEvidence, DailyBoardEvidence } from "lib/projections/dailyBoardEvidence";
 import type { StartChartParticipation } from "lib/projections/startChartContract";
 import { currentSeason } from "lib/socialShare/schedule";
 import type { Database } from "lib/supabase/database-generated.types";
@@ -13,18 +14,26 @@ import { TEAM_GAME_COLUMNS, teamStartShare, toCompletedTeamGames, type Completed
  */
 export const INVENTORY_LENS_COLUMNS = ["goals_for", "goals_against", "pp_opportunities", "power_play_goals_for", "times_shorthanded", "pp_goals_against"] as const satisfies readonly (keyof Database["public"]["Tables"]["wgo_team_stats"]["Row"])[];
 export const INVENTORY_NST_COLUMNS = ["team_abbreviation", "date", "season_id", "situation", "sf", "sa", "xgf", "xga", "scf", "sca", "updated_at"] as const satisfies readonly (keyof Database["public"]["Tables"]["nst_team_gamelogs_as_counts"]["Row"])[];
-export const INVENTORY_OBSERVATION_COLUMNS = ["id", "game_id", "team_id", "player_id", "observation_status", "source_group", "source_url", "observed_at", "available_at", "expires_at", "supersedes_id", "accepted"] as const satisfies readonly (keyof Database["public"]["Tables"]["player_forecast_goalie_start_observations"]["Row"])[];
+/** Only what the starter-board resolver needs. Raw report text and metadata never leave the database. */
+export const INVENTORY_OBSERVATION_COLUMNS = ["id", "game_id", "team_id", "player_id", "observation_status", "source_key", "source_account", "source_url", "observed_at", "available_at", "created_at", "expires_at", "accepted"] as const satisfies readonly (keyof Database["public"]["Tables"]["player_forecast_goalie_start_observations"]["Row"])[];
 export type InventoryTeamGameRow = TeamGameRow & Pick<Database["public"]["Tables"]["wgo_team_stats"]["Row"], typeof INVENTORY_LENS_COLUMNS[number]>;
 export type InventoryNstRow = Pick<Database["public"]["Tables"]["nst_team_gamelogs_as_counts"]["Row"], typeof INVENTORY_NST_COLUMNS[number]>;
-export type InventoryObservationRow = Pick<Database["public"]["Tables"]["player_forecast_goalie_start_observations"]["Row"], typeof INVENTORY_OBSERVATION_COLUMNS[number]>;
+export type InventoryConfirmationInput = {
+  /** The starter-board resolver's output. It applies source, timing, supersession, conflict and correction rules. */
+  evidence: DailyBoardEvidence;
+  expiresAt: ReadonlyMap<string, string | null>;
+  /** Known limits of what was read, printed with the source. */
+  gaps?: readonly string[];
+};
 export type InventoryScheduleRow = { id: number; date: string; startTime: string | null; homeTeamId: number; awayTeamId: number };
 /** One goalie-game from Start Chart. `startProbability` is that row's own head, which a participation must equal. */
 export type InventoryForecastInput = { gameId: number; goalieId: number; startProbability: number | null; startParticipation?: StartChartParticipation | null };
 export type InventoryCoverage = { observed: number; expected: number; missing: number };
-export type GoalieInventoryDetail = { inventory: GoalieInventory; coverage: InventoryCoverage | null };
+export type GoalieInventoryDetail = { inventory: GoalieInventory; coverage: InventoryCoverage | null; conflicts: readonly InventoryConflict[] };
 
-export const CONFIRMATION_CLOSED_REASON = "Goalie confirmation is not readable by this route yet: player_forecast_goalie_start_observations has no read access here. Every goalie shows no observation, which does not mean not starting.";
-export const CONFIRMATION_ABSENT_NOTE = "Observations cover part of the slate; an absent observation means none was recorded, not that the goalie is not starting.";
+export const CONFIRMATION_CLOSED_REASON = "Goalie start observations could not be read, so every goalie is unknown. That does not mean not starting.";
+export const CONFIRMATION_ABSENT_NOTE = "Unknown means no current observation, not that the goalie is not starting. Observations cover part of the slate.";
+export const CONFIRMATION_REPORTER_GAP = "These observations do not name their original reporter, so reporters who disagree cannot be detected: the newest report stands.";
 export const FORECAST_CLOSED_REASON = "No admitted Start Chart start participation is available, so every forecast is unavailable. A raw start_probability is not admitted.";
 const METRIC_WINDOW = "Season to date";
 
@@ -115,35 +124,22 @@ export function gameSignals(team: TeamLens, opponent: TeamLens): GoalieGameSigna
 
 /* Confirmation */
 const NO_CONFIRMATION: GoalieConfirmation = { state: "none", source: null, observedAt: null, expiresAt: null, sourceUrl: null };
-const claimTime = (row: InventoryObservationRow) => Date.parse(row.observed_at);
 /**
- * Newest usable claim per goalie and team game. Rejected, future, expired and superseded rows are dropped; a newest
- * claim other than confirmed or projected shows none; a newer confirmation of another goalie displaces older claims,
- * and two goalies confirmed at the same moment are a conflict that confirms neither. Absent stays `none`.
+ * Maps the starter-board resolver's output to v1 and applies no rule of its own. A team game gets at most one assertion,
+ * for one goalie; every other goalie there is unknown. `likely`, `unconfirmed` and `ruled_out` have no v1 state, so they
+ * are unknown. v1 has no conflicting state, so a conflict is `none` here and is listed in `conflicts`.
  */
-export function resolveConfirmations(rows: readonly InventoryObservationRow[], generatedAt: string): Map<string, GoalieConfirmation> {
-  const now = Date.parse(generatedAt), superseded = new Set(rows.flatMap(row => row.accepted && row.supersedes_id ? [row.supersedes_id] : []));
-  const games = new Map<string, Map<number, InventoryObservationRow>>();
-  for (const row of rows) {
-    if (!row.accepted || row.player_id == null || superseded.has(row.id) || Date.parse(row.available_at) > now || (row.expires_at && Date.parse(row.expires_at) <= now)) continue;
-    const key = `${row.game_id}:${row.team_id}`, goalies = games.get(key) ?? new Map<number, InventoryObservationRow>();
-    const held = goalies.get(row.player_id);
-    if (!held || claimTime(row) > claimTime(held) || (claimTime(row) === claimTime(held) && row.available_at > held.available_at)) goalies.set(row.player_id, row);
-    games.set(key, goalies);
+export function mapBoardEvidence({ evidence, expiresAt }: InventoryConfirmationInput) {
+  const confirmations = new Map<string, GoalieConfirmation>(), conflicts = new Set<string>();
+  for (const assertion of evidence.assertions) {
+    if (assertion.dimension !== "goalie" || (assertion.value !== "confirmed" && assertion.value !== "projected")) continue;
+    confirmations.set(`${assertion.gameId}:${assertion.teamId}:${assertion.playerId}`, { state: assertion.value, source: assertion.sourceKey, observedAt: assertion.publishedAt, expiresAt: expiresAt.get(assertion.evidenceId) ?? null, sourceUrl: assertion.sourceUrl });
   }
-  const confirmations = new Map<string, GoalieConfirmation>();
-  for (const goalies of games.values()) {
-    const confirmed = [...goalies.values()].filter(row => row.observation_status === "confirmed");
-    const newest = confirmed.length ? Math.max(...confirmed.map(claimTime)) : null;
-    const conflict = confirmed.filter(row => claimTime(row) === newest).length > 1;
-    for (const [goalieId, row] of goalies) {
-      if (row.observation_status !== "confirmed" && row.observation_status !== "projected") continue;
-      if (conflict || (newest !== null && claimTime(row) < newest)) continue;
-      confirmations.set(`${row.game_id}:${goalieId}`, { state: row.observation_status, source: row.source_group, observedAt: row.observed_at, expiresAt: row.expires_at, sourceUrl: row.source_url });
-    }
-  }
-  return confirmations;
+  for (const conflict of evidence.conflicts) if (conflict.dimension === "goalie") conflicts.add(`${conflict.gameId}:${conflict.teamId}`);
+  return { confirmations, conflicts };
 }
+/** Conflicting start reports, by game and team. Not in `goalie-inventory-v1`; posts read it from the detail. */
+export type InventoryConflict = { gameId: number; team: string };
 
 /* Forecast */
 /** Only a Start Chart `startParticipation` qualifies. Everything else, including a bare probability, is unavailable. */
@@ -168,8 +164,8 @@ export type GoalieInventoryInput = {
   /** Season schedule through `request.through`. Dates before `scheduleFrom` were not read, so back-to-backs there are unknown. */
   schedule: readonly InventoryScheduleRow[]; scheduleFrom: string;
   teamGames: readonly InventoryTeamGameRow[]; nst: readonly InventoryNstRow[]; appearances: readonly GoalieAppearance[];
-  /** Null means the source could not be read; `observationReason` then says why. An empty array is a real read with none. */
-  observations: readonly InventoryObservationRow[] | null; observationReason?: string;
+  /** Null means the source could not be read; `observationReason` then says why. Empty evidence is a real read with none. */
+  confirmations: InventoryConfirmationInput | null; observationReason?: string;
   /** Null means no Start Chart input was available. */
   forecasts: readonly InventoryForecastInput[] | null;
 };
@@ -198,7 +194,7 @@ export function buildGoalieInventory(input: GoalieInventoryInput): GoalieInvento
   }
   if (unknownTeams) reasons.push(`${unknownTeams} scheduled games name a team this inventory cannot place.`);
 
-  const confirmations = input.observations ? resolveConfirmations(input.observations, request.generatedAt) : new Map<string, GoalieConfirmation>();
+  const { confirmations, conflicts } = input.confirmations ? mapBoardEvidence(input.confirmations) : { confirmations: new Map<string, GoalieConfirmation>(), conflicts: new Set<string>() };
   const forecasts = new Map((input.forecasts ?? []).map(row => [`${row.gameId}:${row.goalieId}`, row]));
   const latestTeam = new Map(input.appearances.map(row => [row.goalieId, row.team]));
   const goalies: GoalieInventoryEntry[] = [];
@@ -213,7 +209,7 @@ export function buildGoalieInventory(input: GoalieInventoryInput): GoalieInvento
     for (const goalie of roster) goalies.push({
       goalieId: goalie.goalieId, name: goalie.name ?? `Goalie ${goalie.goalieId}`, team,
       recentStarts: { window: "L10", teamGames: share.teamGames, starts: share.complete ? goalie.starts : null, reliefAppearances: goalie.reliefAppearances, share: share.complete ? goalie.share : null, complete: share.complete },
-      games: games.map(game => ({ ...game, confirmation: confirmations.get(`${game.gameId}:${goalie.goalieId}`) ?? NO_CONFIRMATION, forecast: admitStartParticipation(forecasts.get(`${game.gameId}:${goalie.goalieId}`), request.generatedAt) })),
+      games: games.map(game => ({ ...game, confirmation: confirmations.get(`${game.gameId}:${teamsInfo[team].id}:${goalie.goalieId}`) ?? NO_CONFIRMATION, forecast: admitStartParticipation(forecasts.get(`${game.gameId}:${goalie.goalieId}`), request.generatedAt) })),
     });
   }
   if (incompleteShares) reasons.push(`${incompleteShares} teams have an L10 game without exactly one labeled starter, so their start shares are unknown.`);
@@ -221,18 +217,25 @@ export function buildGoalieInventory(input: GoalieInventoryInput): GoalieInvento
   const degraded = observed !== expected || !nstComplete || unknownTeams > 0 || incompleteShares > 0 || noRoster;
 
   const newest = (values: readonly (string | null)[]) => values.reduce<string | null>((latest, value) => value && (!latest || value > latest) ? value : latest, null);
-  const confirmationReasons = input.observations ? [CONFIRMATION_ABSENT_NOTE] : [input.observationReason ?? CONFIRMATION_CLOSED_REASON];
+  const listed = new Set(goalies.map(goalie => `${teamsInfo[goalie.team].id}:${goalie.goalieId}`));
+  const unlisted = [...confirmations.keys()].filter(key => { const [gameId, teamId, goalieId] = key.split(":"); return scheduled.some(game => String(game.id) === gameId) && !listed.has(`${teamId}:${goalieId}`); }).length;
+  const conflictList = [...conflicts].flatMap(key => { const [gameId, teamId] = key.split(":").map(Number), team = teamById.get(teamId); return team && scheduled.some(game => game.id === gameId) ? [{ gameId, team }] : []; });
+  const confirmationReasons = input.confirmations ? [
+    CONFIRMATION_ABSENT_NOTE, ...(input.confirmations.gaps ?? []),
+    ...(conflictList.length ? [`${conflictList.length} team games have conflicting start reports, shown as unknown here.`] : []),
+    ...(unlisted ? [`${unlisted} observed goalies have no appearance in their team's last 10 games, so this inventory does not list them.`] : []),
+  ] : [input.observationReason ?? CONFIRMATION_CLOSED_REASON];
   const forecastReasons = input.forecasts ? [] : [FORECAST_CLOSED_REASON];
   const sources: GoalieInventorySource[] = [
     { name: "NHL schedule", tables: ["games"], state: "ready", asOf: newest(scheduled.map(game => game.date)), updatedAt: null, reasons: [] },
     { name: "NHL.com team game stats", tables: ["wgo_team_stats"], state: observed === expected ? "ready" : "partial", asOf: newest(ledger.map(game => game.date)), updatedAt: null, reasons: [] },
     { name: "NST team game logs (all situations)", tables: ["nst_team_gamelogs_as_counts"], state: nstComplete ? "ready" : "partial", asOf: nstAsOf, updatedAt: nstUpdatedAt ? asUtc(nstUpdatedAt) : null, reasons: [] },
     { name: "NHL.com goalie game stats", tables: ["wgo_goalie_stats"], state: incompleteShares ? "partial" : "ready", asOf: newest(input.appearances.map(row => row.date)), updatedAt: null, reasons: [] },
-    { name: "Goalie start observations", tables: ["player_forecast_goalie_start_observations"], state: input.observations ? "ready" : "blocked", asOf: newest((input.observations ?? []).map(row => row.observed_at)), updatedAt: null, reasons: confirmationReasons },
+    { name: "Goalie start observations", tables: ["player_forecast_goalie_start_observations"], state: input.confirmations ? "ready" : "blocked", asOf: newest((input.confirmations?.evidence.assertions ?? []).map(row => row.publishedAt)), updatedAt: null, reasons: confirmationReasons },
     { name: "Start Chart start participation", tables: [], state: input.forecasts ? "ready" : "blocked", asOf: null, updatedAt: null, reasons: forecastReasons },
   ];
   return {
-    coverage,
+    coverage, conflicts: conflictList,
     inventory: { version: GOALIE_INVENTORY_VERSION, season: request.season, generatedAt: request.generatedAt, from: request.from, through: request.through, state: degraded ? "partial" : "ready", reasons: [...reasons, ...confirmationReasons, ...forecastReasons], sources, goalies },
   };
 }
@@ -249,15 +252,21 @@ export const searchGoalieInventory: SearchGoalieInventory = (inventory, query) =
 };
 
 /* Display labels, one wording for every card. */
-export const confirmationLabel = (confirmation: GoalieConfirmation) => confirmation.state === "confirmed" ? "Source: confirmed" : confirmation.state === "projected" ? "Source: projected" : "No observation";
+export const confirmationLabel = (confirmation: GoalieConfirmation, conflicting = false) => conflicting ? "Conflicting reports" : confirmation.state === "confirmed" ? "Source: confirmed" : confirmation.state === "projected" ? "Source: projected" : "Unknown";
+/** How old the claim is at the edition. Absent for an unknown, which has no claim to age. */
+export function confirmationFreshness(confirmation: GoalieConfirmation, generatedAt: string) {
+  if (confirmation.state === "none") return null;
+  const minutes = Math.max(0, Math.floor((Date.parse(generatedAt) - Date.parse(confirmation.observedAt)) / 60000));
+  return minutes < 60 ? `${minutes}m ago` : minutes < 2880 ? `${Math.floor(minutes / 60)}h ago` : `${Math.floor(minutes / 1440)}d ago`;
+}
 export const forecastLabel = (forecast: GoalieForecast) => forecast.state === "qualified" ? `Conditional forecast ${Math.round(forecast.startProbability * 100)}%` : "Forecast unavailable";
 export const metricLabel = (value: InventoryMetric, digits: number) => value.value === null ? "—" : `${value.value.toFixed(digits)}${value.unit.startsWith("%") ? "%" : ""}${value.leagueRank === null ? "" : ` (#${value.leagueRank})`}`;
 /** A game with no start time stays listed; one already under way is no longer a start decision. */
 export const isUpcomingGame = (game: Pick<GoalieInventoryGame, "startTimeUtc">, generatedAt: string) => game.startTimeUtc === null || Date.parse(game.startTimeUtc) > Date.parse(generatedAt);
-export const inventoryNote = (inventory: GoalieInventory, tables: string, fallback: string) => inventory.sources.find(source => source.tables.includes(tables))?.reasons[0] ?? fallback;
+export const confirmationNote = (inventory: GoalieInventory) => inventory.sources.find(source => source.tables.includes("player_forecast_goalie_start_observations"))?.reasons.join(" ") ?? CONFIRMATION_ABSENT_NOTE;
 
 /** The shell's evidence block for a post built on the inventory. A blocked source was not read, so it is not listed as one. */
-export function inventoryEvidence({ inventory, coverage }: GoalieInventoryDetail, cohort: string, teamGames: number): SharePostEvidence {
+export function inventoryEvidence({ inventory, coverage }: Pick<GoalieInventoryDetail, "inventory" | "coverage">, cohort: string, teamGames: number): SharePostEvidence {
   return {
     sources: inventory.sources.filter(source => source.state === "ready" || source.state === "partial").map(({ name, tables, state, asOf, updatedAt, reasons }) => ({ name, tables, state, asOf, updatedAt, reasons })),
     sample: `${inventory.from} to ${inventory.through}: ${teamGames} upcoming team games; rates are season to date through ${shiftDays(editionDate(inventory.generatedAt), -1)}`,
@@ -267,13 +276,34 @@ export function inventoryEvidence({ inventory, coverage }: GoalieInventoryDetail
 }
 
 /* Live reads. Row ceilings fail closed; a season has 1,312 to 1,344 games and two team rows per game. */
-const LIMITS = { schedule: 1400, teamGames: 2800, nst: 2800, appearances: 1200, observations: 2000 } as const;
+const LIMITS = { schedule: 1400, teamGames: 2800, nst: 2800, appearances: 1200, observations: 2000, conflicts: 500 } as const;
 const MAX_RANGE_DAYS = 31;
 export type GoalieInventoryOptions = {
-  /** A client allowed to read the observation table. Until TJ decides that access (SOURCES fact 3) the post routes pass none. */
+  /** A client allowed to read the observation tables, server only (`serverObservationClient`). Without one, every goalie is unknown. */
   observationClient?: SharePostReadClient;
   readStartParticipations?: (request: GoalieInventoryRequest, gameIds: readonly number[]) => Promise<readonly InventoryForecastInput[]>;
 };
+type BoundedRead = <T>(what: string, limit: number, page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown; count: number | null }>) => Promise<T[]>;
+/**
+ * The service credential stays on the server: this guarded import is dropped from browser bundles, and the anon client
+ * is never used for these tables. Only the post route's server-side loader calls it.
+ */
+export async function serverObservationClient(): Promise<SharePostReadClient | undefined> {
+  return typeof window === "undefined" ? (await import("lib/supabase/server")).default as unknown as SharePostReadClient : undefined;
+}
+/** The starter board's goalie evidence, read narrowly, through the board's own resolver. A failed conflict read fails it all. */
+async function readBoardConfirmations(client: SharePostReadClient, gameIds: readonly number[], cutoff: string, bounded: BoundedRead): Promise<InventoryConfirmationInput> {
+  if (!gameIds.length) return { evidence: { assertions: [], conflicts: [] }, expiresAt: new Map() };
+  const resolver = typeof window === "undefined" ? await import("lib/projections/dailyBoardEvidence") : null;
+  if (!resolver) throw new Error("Goalie confirmation is server only.");
+  const goalies = await bounded<BoardGoalieEvidence>("Goalie start observations", LIMITS.observations, (from, to) => client.from("player_forecast_goalie_start_observations").select(INVENTORY_OBSERVATION_COLUMNS.join(","), { count: "exact" }).in("game_id", [...gameIds]).eq("accepted", true).lte("available_at", cutoff).lte("created_at", cutoff).order("id", { ascending: true }).range(from, to));
+  type ConflictRow = Omit<BoardConflict, "player_forecast_conflict_resolutions">;
+  type ResolutionRow = BoardConflict["player_forecast_conflict_resolutions"][number] & { conflict_id: string };
+  const conflictRows = await bounded<ConflictRow>("Goalie start conflicts", LIMITS.conflicts, (from, to) => client.from("player_forecast_observation_conflicts").select("id,conflict_key,conflict_version,game_id,team_id,player_id,conflict_type,detected_at,created_at", { count: "exact" }).in("game_id", [...gameIds]).eq("conflict_type", "goalie_start").lte("detected_at", cutoff).order("id", { ascending: true }).range(from, to));
+  const resolutions = conflictRows.length ? await bounded<ResolutionRow>("Goalie conflict resolutions", LIMITS.conflicts, (from, to) => client.from("player_forecast_conflict_resolutions").select("id,conflict_id,action,selected_observation_id,resolved_at,created_at", { count: "exact" }).in("conflict_id", conflictRows.map(row => row.id)).lte("resolved_at", cutoff).order("id", { ascending: true }).range(from, to)) : [];
+  const evidence = resolver.resolveDailyBoardEvidence({ cutoff, lineups: [], goalies, conflicts: conflictRows.map(row => ({ ...row, player_forecast_conflict_resolutions: resolutions.filter(item => item.conflict_id === row.id) })) });
+  return { evidence, expiresAt: new Map(goalies.map(row => [row.id, row.expires_at ?? null])), gaps: goalies.some(row => !row.source_account) ? [CONFIRMATION_REPORTER_GAP] : [] };
+}
 export async function loadGoalieInventoryDetail(client: { from: (table: string) => any }, request: GoalieInventoryRequest, options: GoalieInventoryOptions = {}): Promise<GoalieInventoryDetail> {
   try {
     if ((Date.parse(request.through) - Date.parse(request.from)) / DAY_MS >= MAX_RANGE_DAYS) throw new Error("Inventory range is too long.");
@@ -287,18 +317,17 @@ export async function loadGoalieInventoryDetail(client: { from: (table: string) 
     const windowStart = teams.reduce((earliest, team) => { const games = ledger.filter(game => game.team === team), first = games[Math.max(0, games.length - 10)]?.date; return first && first < earliest ? first : earliest; }, cutoff);
     const appearances = await readGoalieAppearances(client, { season: request.season, from: windowStart, through: cutoff, limit: LIMITS.appearances });
     const gameIds = schedule.filter(game => game.date >= request.from).map(game => game.id);
-    let observations: InventoryObservationRow[] | null = null, observationReason: string | undefined;
-    const reader = options.observationClient;
-    if (reader && gameIds.length) {
-      try { observations = await bounded<InventoryObservationRow>("Goalie start observations", LIMITS.observations, (from, to) => reader.from("player_forecast_goalie_start_observations").select(INVENTORY_OBSERVATION_COLUMNS.join(","), { count: "exact" }).in("game_id", gameIds).order("observed_at", { ascending: true }).order("id", { ascending: true }).range(from, to)); }
-      catch { observationReason = "Goalie start observations could not be read, so every goalie shows no observation."; }
-    } else if (reader) observations = [];
+    let confirmations: InventoryConfirmationInput | null = null, observationReason: string | undefined;
+    if (options.observationClient) {
+      try { confirmations = await readBoardConfirmations(options.observationClient, gameIds, request.generatedAt, bounded); }
+      catch { observationReason = CONFIRMATION_CLOSED_REASON; }
+    }
     let forecasts: readonly InventoryForecastInput[] | null = null;
     if (options.readStartParticipations) { try { forecasts = await options.readStartParticipations(request, gameIds); } catch { forecasts = null; } }
-    return buildGoalieInventory({ request, teams, schedule, scheduleFrom: seasonStart, teamGames, nst, appearances, observations, observationReason, forecasts });
+    return buildGoalieInventory({ request, teams, schedule, scheduleFrom: seasonStart, teamGames, nst, appearances, confirmations, observationReason, forecasts });
   } catch {
     const reason = "The goalie inventory's sources could not be read.";
-    return { coverage: null, inventory: { version: GOALIE_INVENTORY_VERSION, season: request.season, generatedAt: request.generatedAt, from: request.from, through: request.through, state: "missing", reasons: [reason], sources: [], goalies: [] } };
+    return { coverage: null, conflicts: [], inventory: { version: GOALIE_INVENTORY_VERSION, season: request.season, generatedAt: request.generatedAt, from: request.from, through: request.through, state: "missing", reasons: [reason], sources: [], goalies: [] } };
   }
 }
-export const loadGoalieInventory: LoadGoalieInventory = (client, request) => loadGoalieInventoryDetail(client as SharePostReadClient, request).then(detail => detail.inventory);
+export const loadGoalieInventory: LoadGoalieInventory = async (client, request) => (await loadGoalieInventoryDetail(client as SharePostReadClient, request, { observationClient: await serverObservationClient() })).inventory;

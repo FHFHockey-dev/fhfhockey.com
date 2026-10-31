@@ -1,3 +1,4 @@
+import type { BoardAssertion } from "lib/projections/dailyBoardEvidence";
 import { teamsInfo } from "lib/teamsInfo";
 import type { GoalieAppearance } from "./goalieLedger";
 import { buildGoalieInventory, type GoalieInventoryInput, type InventoryForecastInput, type InventoryNstRow, type InventoryObservationRow, type InventoryScheduleRow, type InventoryTeamGameRow } from "./goalieInventory.sources";
@@ -5,7 +6,7 @@ import { buildGoalieInventory, type GoalieInventoryInput, type InventoryForecast
 /**
  * Handoff fixture for `goalie-inventory-v1` (SS 11.6). Fictional goalies and invented numbers in a four-team league, run
  * through the real mapping so its shape cannot drift. It covers confirmed with no forecast, projected, no observation,
- * a qualified forecast, a raw probability refused as unavailable, a start split, relief and second nights.
+ * a qualified forecast, a raw probability refused as unavailable, a conflict (unknown in v1, listed in the detail), a start split, relief and second nights.
  */
 const SEASON = 20262027;
 export const FIXTURE_TEAMS = ["MTL", "NJD", "NYR", "TOR"] as const;
@@ -22,7 +23,7 @@ const PAST: readonly { gameId: number; date: string; home: string; away: string;
 const teamRow = (team: string, opponent: string, gameId: number, date: string, own: Side, other: Side): InventoryTeamGameRow => ({ team_id: id(team), game_id: gameId, date, season_id: SEASON, opponent_id: id(opponent), goals_for: own.gf, goals_against: other.gf, pp_opportunities: own.ppo, power_play_goals_for: own.ppg, times_shorthanded: other.ppo, pp_goals_against: other.ppg });
 const nstRow = (team: string, date: string, own: Side, other: Side): InventoryNstRow => ({ team_abbreviation: team, date, season_id: SEASON, situation: "all", sf: own.sf, sa: other.sf, xgf: own.xgf, xga: other.xgf, scf: own.scf, sca: other.scf, updated_at: "2026-11-02T09:55:05.317" });
 const appearance = (goalieId: number, name: string, game: typeof PAST[number], team: string, started: boolean): GoalieAppearance => ({ goalieId, name, gameId: game.gameId, date: game.date, team, opponent: team === game.home ? game.away : game.home, home: team === game.home, started, wins: null, losses: null, otLosses: null, saves: null, shotsAgainst: null, goalsAgainst: null, toiSeconds: null, shutouts: null, qualityStart: null });
-const observation = (gameId: number, team: string, goalieId: number, status: string, observedAt: string): InventoryObservationRow => ({ id: `obs-${gameId}-${goalieId}`, game_id: gameId, team_id: id(team), player_id: goalieId, observation_status: status, source_group: "fixture_source", source_url: "https://fixture.invalid/observation", observed_at: observedAt, available_at: observedAt, expires_at: null, supersedes_id: null, accepted: true });
+const assertion = (gameId: number, team: string, goalieId: number, value: "confirmed" | "projected", publishedAt: string, sourceUrl: string | null): BoardAssertion => ({ gameId, teamId: id(team), playerId: goalieId, dimension: "goalie", value, evidenceId: `obs-${gameId}-${goalieId}`, sourceKey: "validated_events", sourceUrl, publishedAt, receivedAt: publishedAt, confirmed: value === "confirmed" });
 
 export const FIXTURE_SCHEDULE: readonly InventoryScheduleRow[] = [
   ...PAST.map(game => ({ id: game.gameId, date: game.date, startTime: `${game.date}T23:00:00Z`, homeTeamId: id(game.home), awayTeamId: id(game.away) })),
@@ -47,7 +48,13 @@ export const FIXTURE_INPUT: GoalieInventoryInput = {
     appearance(7004, "Jonas Šimek", PAST[1], "MTL", true), appearance(7004, "Jonas Šimek", PAST[2], "MTL", true),
     appearance(7005, "Ana Split", PAST[1], "TOR", true), appearance(7006, "Lee Split", PAST[3], "TOR", true),
   ],
-  observations: [observation(900010, "NJD", 7001, "confirmed", "2026-11-02T14:00:00.000Z"), observation(900010, "NYR", 7003, "projected", "2026-11-02T13:00:00.000Z")],
+  confirmations: {
+    evidence: {
+      assertions: [assertion(900010, "NJD", 7001, "confirmed", "2026-11-02T14:00:00.000Z", "https://fixture.invalid/observation"), assertion(900010, "NYR", 7003, "projected", "2026-11-02T13:00:00.000Z", null)],
+      conflicts: [{ gameId: 900012, teamId: id("TOR"), playerId: null, dimension: "goalie", evidenceIds: ["obs-a", "obs-b"] }],
+    },
+    expiresAt: new Map(), gaps: [],
+  },
   forecasts: FIXTURE_STUDIO_FORECASTS,
 };
 export const GOALIE_INVENTORY_FIXTURE_DETAIL = buildGoalieInventory(FIXTURE_INPUT);

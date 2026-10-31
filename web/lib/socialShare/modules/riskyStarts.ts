@@ -1,6 +1,6 @@
 import { UNKNOWN_EVIDENCE, defineShareModule, type SharePostLoadResult } from "./contract";
 import type { GoalieConfirmation, GoalieGameSignals, GoalieInventory, InventoryMetric } from "./shared/goalieInventory";
-import { confirmationLabel, inventoryEvidence, isUpcomingGame, metricLabel, type GoalieInventoryDetail } from "./shared/goalieInventory.sources";
+import { confirmationLabel, confirmationNote, inventoryEvidence, isUpcomingGame, metricLabel, type GoalieInventoryDetail, type InventoryConflict } from "./shared/goalieInventory.sources";
 
 /**
  * Risky Starts (SS 11.0, SS-R14) mirrors Cherry-Picked Matchups from the goalie's chair: one tile per team-night, a pairing
@@ -17,8 +17,8 @@ export type RiskyStartsSettings = { days: number; lens: RiskyLens };
 export type RiskySide = { team: string; label: string; metric: InventoryMetric; digits: number };
 export type RiskyPair = { id: string; label: string; sides: RiskySide[]; flagged: boolean };
 export type RiskyGoalie = { goalieId: number; name: string; starts: number | null; teamGames: number; confirmation: GoalieConfirmation };
-export type RiskyRow = { gameId: number; date: string; startTimeUtc: string | null; team: string; opponent: string; home: boolean; teamSecondNight: boolean | null; opponentSecondNight: boolean | null; goalies: RiskyGoalie[]; lenses: Record<RiskyLens, RiskyPair[]> };
-export type RiskyStartsData = { from: string; through: string; rows: RiskyRow[]; correlationNote: string; confirmationNote: string | null };
+export type RiskyRow = { gameId: number; date: string; startTimeUtc: string | null; team: string; opponent: string; home: boolean; teamSecondNight: boolean | null; opponentSecondNight: boolean | null; conflicting: boolean; goalies: RiskyGoalie[]; lenses: Record<RiskyLens, RiskyPair[]> };
+export type RiskyStartsData = { from: string; through: string; rows: RiskyRow[]; correlationNote: string; confirmationNote: string };
 
 const topThird = ({ leagueRank, leagueCohort }: InventoryMetric) => leagueRank !== null && leagueCohort !== null && leagueRank <= Math.ceil(leagueCohort / 3);
 const bottomThird = ({ leagueRank, leagueCohort }: InventoryMetric) => leagueRank !== null && leagueCohort !== null && leagueRank > leagueCohort - Math.ceil(leagueCohort / 3);
@@ -40,12 +40,12 @@ export function riskyPairs(team: string, opponent: string, { volume, ratioExposu
     ],
   };
 }
-export function riskyRows(inventory: GoalieInventory): RiskyRow[] {
+export function riskyRows(inventory: GoalieInventory, conflicts: readonly InventoryConflict[] = []): RiskyRow[] {
   const rows = new Map<string, RiskyRow>();
   for (const goalie of inventory.goalies) for (const game of goalie.games) {
     if (!isUpcomingGame(game, inventory.generatedAt)) continue;
     const key = `${game.gameId}:${game.team}`;
-    const row = rows.get(key) ?? { gameId: game.gameId, date: game.date, startTimeUtc: game.startTimeUtc, team: game.team, opponent: game.opponent, home: game.home, teamSecondNight: game.teamSecondNight, opponentSecondNight: game.opponentSecondNight, goalies: [], lenses: riskyPairs(game.team, game.opponent, game.signals) };
+    const row = rows.get(key) ?? { gameId: game.gameId, date: game.date, startTimeUtc: game.startTimeUtc, team: game.team, opponent: game.opponent, home: game.home, teamSecondNight: game.teamSecondNight, opponentSecondNight: game.opponentSecondNight, conflicting: conflicts.some(item => item.gameId === game.gameId && item.team === game.team), goalies: [], lenses: riskyPairs(game.team, game.opponent, game.signals) };
     row.goalies.push({ goalieId: goalie.goalieId, name: goalie.name, starts: goalie.recentStarts.starts, teamGames: goalie.recentStarts.teamGames, confirmation: game.confirmation });
     rows.set(key, row);
   }
@@ -57,13 +57,12 @@ export const riskyRowsForLens = (rows: readonly RiskyRow[], lens: RiskyLens) => 
   .sort((a, b) => riskyFlags(b, lens) - riskyFlags(a, lens) || a.date.localeCompare(b.date) || a.gameId - b.gameId || a.team.localeCompare(b.team));
 export const riskyLensMeaning = (lens: RiskyLens) => LENS_MEANINGS[lens];
 
-export function riskyStartsResult({ inventory, coverage }: GoalieInventoryDetail): SharePostLoadResult<RiskyStartsData> {
+export function riskyStartsResult({ inventory, coverage, conflicts }: GoalieInventoryDetail): SharePostLoadResult<RiskyStartsData> {
   if (inventory.state === "missing") return { state: "missing", reasons: [...inventory.reasons], evidence: UNKNOWN_EVIDENCE, data: null };
-  const rows = riskyRows(inventory), cohort = rows[0]?.lenses.volume[0].sides[0].metric.leagueCohort ?? null;
-  const confirmation = inventory.sources.find(source => source.tables.includes("player_forecast_goalie_start_observations"));
+  const rows = riskyRows(inventory, conflicts), cohort = rows[0]?.lenses.volume[0].sides[0].metric.leagueCohort ?? null;
   return {
     state: inventory.state, reasons: inventory.state === "ready" ? [] : [...inventory.reasons],
-    data: { from: inventory.from, through: inventory.through, rows, correlationNote: RISKY_CORRELATION_NOTE, confirmationNote: confirmation?.reasons[0] ?? null },
+    data: { from: inventory.from, through: inventory.through, rows, correlationNote: RISKY_CORRELATION_NOTE, confirmationNote: confirmationNote(inventory) },
     teams: [...new Set(rows.flatMap(row => [row.team, row.opponent]))].sort(),
     evidence: inventoryEvidence({ inventory, coverage }, `${rows.length} team-nights in the window; ranks ${cohort === null ? "withheld without a complete league" : `over all ${cohort} teams`}`, rows.length),
   };
@@ -81,6 +80,6 @@ export const riskyStartsModule = defineShareModule<RiskyStartsSettings, RiskySta
   hasRows: (data, settings) => riskyRowsForLens(data.rows, settings.lens).length > 0,
   altText: (snapshot, data, settings) => {
     const rows = riskyRowsForLens(data.rows, settings.lens), side = (pair: RiskyPair) => pair.sides.map(item => `${item.team} ${item.label} ${metricLabel(item.metric, item.digits)}`).join(" against ");
-    return `FHFH Risky Starts, ${RISKY_LENS_LABELS[settings.lens]}, ${data.from} to ${data.through}. ${rows.slice(0, RISKY_TILE_LIMIT).map(row => `${row.team} ${row.home ? "vs" : "at"} ${row.opponent} on ${row.date}: ${row.lenses[settings.lens].filter(pair => pair.flagged).map(side).join("; ")}. Goalies: ${row.goalies.map(goalie => `${goalie.name}, ${confirmationLabel(goalie.confirmation)}`).join(", ")}`).join(". ")}. ${data.correlationNote} ${snapshot.evidence.sample}.`;
+    return `FHFH Risky Starts, ${RISKY_LENS_LABELS[settings.lens]}, ${data.from} to ${data.through}. ${rows.slice(0, RISKY_TILE_LIMIT).map(row => `${row.team} ${row.home ? "vs" : "at"} ${row.opponent} on ${row.date}: ${row.lenses[settings.lens].filter(pair => pair.flagged).map(side).join("; ")}. Goalies: ${row.goalies.map(goalie => `${goalie.name}, ${confirmationLabel(goalie.confirmation, row.conflicting)}`).join(", ")}`).join(". ")}. ${data.correlationNote} ${snapshot.evidence.sample}.`;
   },
 });

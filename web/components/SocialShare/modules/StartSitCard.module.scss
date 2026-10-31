@@ -9,7 +9,9 @@
   small { font-size: 11px; }
 }
 .game { display: inline-flex; align-items: center; gap: v.$space-xxs; white-space: nowrap; }
-.status { color: v.$text-secondary; }
+.status { display: grid; color: v.$text-secondary;
+  small { font-size: 11px; font-weight: 400; color: v.$text-secondary; }
+}
 .status[data-state="confirmed"] { color: v.$primary-color; font-weight: 700; }
-.status[data-state="projected"] { color: v.$color-white; }
+.status[data-state="projected"], .status[data-state="conflicting"] { color: v.$color-white; }
 .note { margin: 0; font-size: 13px; line-height: 1.25; color: v.$text-secondary; }

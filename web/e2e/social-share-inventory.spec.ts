@@ -82,15 +82,17 @@ test("Start/Sit: accent-free search narrows in the browser, status and forecast 
   await expect(page.getByTestId("start-sit-confirmation").first()).toHaveAttribute("data-state", "confirmed");
   await expect(page.getByTestId("start-sit-forecast").first()).toHaveText("Forecast unavailable");
   await downloadedPng(page, "start-sit-eric");
+  await page.getByLabel("Search goalie or team").fill("toronto");
+  await expect(page.locator('[data-testid="start-sit-confirmation"][data-state="conflicting"]').first()).toHaveText("Conflicting reports");
   await page.getByLabel("Search goalie or team").fill("nobody");
   await expect(page.getByText('No goalie or team matches "nobody"')).toBeVisible();
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
   expect(served.requests).toBe(before);
 });
 
-test("Start/Sit: with confirmation closed every goalie shows no observation and the reason is on the card", async ({ page }) => {
+test("Start/Sit: with confirmation unreadable every goalie is unknown and the reason is on the card", async ({ page }) => {
   await signIn(page);
-  await serve(page, "start-sit", edition("start-sit", { days: 7, search: "" }, startSitResult(buildGoalieInventory({ ...FIXTURE_INPUT, observations: null, forecasts: null }))));
+  await serve(page, "start-sit", edition("start-sit", { days: 7, search: "" }, startSitResult(buildGoalieInventory({ ...FIXTURE_INPUT, confirmations: null, forecasts: null }))));
   await page.goto("/social-share/posts?post=start-sit");
   await expect(page.getByTestId("start-sit-confirmation-note")).toContainText("does not mean not starting");
   await expect(page.getByTestId("start-sit-forecast-note")).toContainText("raw start_probability is not admitted");

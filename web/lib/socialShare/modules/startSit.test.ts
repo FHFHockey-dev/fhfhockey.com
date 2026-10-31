@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { parseShareSettings, sharePostExportToken } from "./contract";
 import { shareModule } from "./registry";
-import { FORECAST_ADMITTED_NOTE, startSitModule, startSitResult, startSitRows, upcomingInventory, type StartSitData, type StartSitSettings } from "./startSit";
+import { FORECAST_ADMITTED_NOTE, startSitConflicting, startSitModule, startSitResult, startSitRows, upcomingInventory, type StartSitData, type StartSitSettings } from "./startSit";
 import { FIXTURE_INPUT, GOALIE_INVENTORY_FIXTURE, GOALIE_INVENTORY_FIXTURE_DETAIL } from "./shared/goalieInventory.fixture";
 import { buildGoalieInventory, CONFIRMATION_CLOSED_REASON, FORECAST_CLOSED_REASON } from "./shared/goalieInventory.sources";
 
@@ -45,12 +45,19 @@ describe("Start/Sit (11.5)", () => {
     expect([row("900011:7005").confirmation.state, row("900011:7005").forecast.state]).toEqual(["none", "unavailable"]);
   });
   it("still previews descriptive context with both sources closed, and says why", () => {
-    const closed = startSitResult(buildGoalieInventory({ ...FIXTURE_INPUT, observations: null, forecasts: null }));
+    const closed = startSitResult(buildGoalieInventory({ ...FIXTURE_INPUT, confirmations: null, forecasts: null }));
     expect(closed.state).toBe("ready");
     expect(closed.data!.confirmationNote).toBe(CONFIRMATION_CLOSED_REASON);
     expect(closed.data!.forecastNote).toBe(FORECAST_CLOSED_REASON);
     expect(startSitRows(closed.data!, "").every(row => row.game.confirmation.state === "none" && row.game.forecast.state === "unavailable")).toBe(true);
     expect(startSitRows(closed.data!, "").length).toBeGreaterThan(0);
+  });
+  it("marks conflicting reports for that team game alone, with v1 still unknown", () => {
+    const tor = startSitRows(data, "").find(item => item.key === "900012:7005")!, njd = startSitRows(data, "").find(item => item.key === "900012:7001")!;
+    expect(startSitConflicting(data, tor.game)).toBe(true);
+    expect(tor.game.confirmation.state).toBe("none");
+    expect(startSitConflicting(data, njd.game)).toBe(false);
+    expect(startSitModule.altText({ evidence: { sample: "s" } } as never, data, settings("tor"))).toContain("Conflicting reports");
   });
   it("does not call forecasts unavailable when admitted ones were read", () => {
     expect(data.forecastNote).toBe(FORECAST_ADMITTED_NOTE);
@@ -60,7 +67,7 @@ describe("Start/Sit (11.5)", () => {
     expect(later.goalies).toEqual([]);
   });
   it("is missing with no data when the inventory is", () => {
-    expect(startSitResult({ coverage: null, inventory: { ...GOALIE_INVENTORY_FIXTURE, state: "missing", reasons: ["r"], goalies: [], sources: [] } })).toMatchObject({ state: "missing", data: null });
+    expect(startSitResult({ coverage: null, conflicts: [], inventory: { ...GOALIE_INVENTORY_FIXTURE, state: "missing", reasons: ["r"], goalies: [], sources: [] } })).toMatchObject({ state: "missing", data: null });
   });
   it("registers both posts as observed goalie posts", () => {
     for (const id of ["risky-starts", "start-sit"]) expect(shareModule(id)).toMatchObject({ group: "goalies", basis: "observed" });

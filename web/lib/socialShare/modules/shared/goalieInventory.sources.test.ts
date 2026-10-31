@@ -1,9 +1,13 @@
+// @vitest-environment node
 import { describe, expect, it, vi } from "vitest";
+import { resolveDailyBoardEvidence, type BoardConflict, type BoardGoalieEvidence } from "lib/projections/dailyBoardEvidence";
 import { GOALIE_INVENTORY_VERSION, type GoalieInventory, type LoadGoalieInventory, type SearchGoalieInventory } from "./goalieInventory";
 import { FIXTURE_GENERATED_AT, FIXTURE_INPUT, FIXTURE_TEAMS, GOALIE_INVENTORY_FIXTURE } from "./goalieInventory.fixture";
-import { admitStartParticipation, buildGoalieInventory, buildTeamLenses, CONFIRMATION_CLOSED_REASON, FORECAST_CLOSED_REASON, inventoryWindow, loadGoalieInventory, loadGoalieInventoryDetail, resolveConfirmations, searchGoalieInventory, type InventoryForecastInput, type InventoryObservationRow } from "./goalieInventory.sources";
+import { admitStartParticipation, buildGoalieInventory, buildTeamLenses, CONFIRMATION_ABSENT_NOTE, CONFIRMATION_CLOSED_REASON, CONFIRMATION_REPORTER_GAP, confirmationFreshness, confirmationLabel, FORECAST_CLOSED_REASON, INVENTORY_OBSERVATION_COLUMNS, inventoryWindow, loadGoalieInventory, loadGoalieInventoryDetail, mapBoardEvidence, searchGoalieInventory, type InventoryForecastInput } from "./goalieInventory.sources";
 
 vi.mock("lib/supabase/public-client", () => ({ default: { from: () => { throw new Error("The inventory test must never reach Supabase."); } } }));
+const serverRead = vi.hoisted(() => ({ tables: [] as string[], from: null as null | ((table: string) => unknown) }));
+vi.mock("lib/supabase/server", () => ({ default: { from: (table: string) => { serverRead.tables.push(table); if (!serverRead.from) throw new Error("No server client in this test."); return serverRead.from(table); } } }));
 
 const entry = (inventory: GoalieInventory, goalieId: number) => inventory.goalies.find(goalie => goalie.goalieId === goalieId)!;
 const game = (inventory: GoalieInventory, goalieId: number, gameId: number) => entry(inventory, goalieId).games.find(row => row.gameId === gameId)!;
@@ -20,13 +24,13 @@ describe("inventory mapping (11.1)", () => {
   it("gives none for an absent observation, and says it is not 'not starting'", () => {
     const row = game(GOALIE_INVENTORY_FIXTURE, 7002, 900010);
     expect(row.confirmation).toEqual({ state: "none", source: null, observedAt: null, expiresAt: null, sourceUrl: null });
-    expect(GOALIE_INVENTORY_FIXTURE.reasons.join(" ")).toMatch(/not that the goalie is not starting/);
+    expect(GOALIE_INVENTORY_FIXTURE.reasons.join(" ")).toContain(CONFIRMATION_ABSENT_NOTE);
   });
   it("gives unavailable for a raw probability", () => {
     expect(game(GOALIE_INVENTORY_FIXTURE, 7005, 900011).forecast).toEqual({ state: "unavailable", reason: "A raw start probability is not an admitted forecast." });
   });
   it("reports a closed confirmation source as none with its reason, and no forecast input as unavailable", () => {
-    const { inventory } = buildGoalieInventory({ ...FIXTURE_INPUT, observations: null, forecasts: null });
+    const { inventory } = buildGoalieInventory({ ...FIXTURE_INPUT, confirmations: null, forecasts: null });
     expect(inventory.state).toBe("ready");
     expect(inventory.goalies.flatMap(goalie => goalie.games).every(row => row.confirmation.state === "none" && row.forecast.state === "unavailable")).toBe(true);
     expect(inventory.reasons).toEqual(expect.arrayContaining([CONFIRMATION_CLOSED_REASON, FORECAST_CLOSED_REASON]));
@@ -120,26 +124,77 @@ describe("lens metrics (11.2)", () => {
   });
 });
 
-describe("confirmation", () => {
-  const row = (overrides: Partial<InventoryObservationRow>): InventoryObservationRow => ({ id: "a", game_id: 1, team_id: 1, player_id: 10, observation_status: "confirmed", source_group: "src", source_url: null, observed_at: "2026-11-02T10:00:00Z", available_at: "2026-11-02T10:00:00Z", expires_at: null, supersedes_id: null, accepted: true, ...overrides });
-  const at = FIXTURE_GENERATED_AT;
-  it("drops rejected, not-yet-available, expired and superseded rows", () => {
-    expect(resolveConfirmations([row({ accepted: false })], at).size).toBe(0);
-    expect(resolveConfirmations([row({ available_at: "2026-11-02T20:00:00Z" })], at).size).toBe(0);
-    expect(resolveConfirmations([row({ expires_at: "2026-11-02T12:00:00Z" })], at).size).toBe(0);
-    expect(resolveConfirmations([row({ id: "old" }), row({ id: "new", observation_status: "projected", observed_at: "2026-11-02T09:00:00Z", supersedes_id: "old" })], at).get("1:10")?.state).toBe("projected");
+describe("confirmation through the starter-board resolver", () => {
+  const cutoff = FIXTURE_GENERATED_AT;
+  // The shape the IFTTT pipeline writes: persistTweetProjectionReports -> capture_starter_board_goalies.
+  const ifttt = (overrides: Partial<BoardGoalieEvidence> = {}): BoardGoalieEvidence => ({ id: "a", game_id: 900010, team_id: 1, player_id: 7001, observation_status: "confirmed", accepted: true, source_key: "validated_events", source_account: null, source_url: null, observed_at: "2026-11-02T10:00:00Z", available_at: "2026-11-02T10:05:00Z", created_at: "2026-11-02T10:06:00Z", expires_at: null, ...overrides });
+  const resolve = (goalies: BoardGoalieEvidence[], conflicts: BoardConflict[] = []) => buildGoalieInventory({ ...FIXTURE_INPUT, confirmations: { evidence: resolveDailyBoardEvidence({ cutoff, lineups: [], goalies, conflicts }), expiresAt: new Map(goalies.map(row => [row.id, row.expires_at ?? null])) } });
+  const state = (detail: ReturnType<typeof resolve>, goalieId = 7001) => game(detail.inventory, goalieId, 900010).confirmation.state;
+
+  it("carries IFTTT-origin evidence with its source and freshness, and repeats do not count twice", () => {
+    const detail = resolve([ifttt(), ifttt({ id: "b", observed_at: "2026-11-02T11:00:00Z", available_at: "2026-11-02T11:05:00Z", created_at: "2026-11-02T11:06:00Z" })]);
+    const { confirmation } = game(detail.inventory, 7001, 900010);
+    expect(confirmation).toEqual({ state: "confirmed", source: "validated_events", observedAt: "2026-11-02T11:00:00Z", expiresAt: null, sourceUrl: null });
+    expect(detail.conflicts).toEqual([]);
+    expect(confirmationFreshness(confirmation, cutoff)).toBe("4h ago");
+    expect(state(resolve([ifttt({ observation_status: "projected" })]))).toBe("projected");
   });
-  it("takes a goalie's newest claim, and a newest non-claim shows none", () => {
-    expect(resolveConfirmations([row({ id: "a", observation_status: "projected" }), row({ id: "b", observed_at: "2026-11-02T11:00:00Z" })], at).get("1:10")?.state).toBe("confirmed");
-    expect(resolveConfirmations([row({ id: "a" }), row({ id: "b", observation_status: "ruled_out", observed_at: "2026-11-02T11:00:00Z" })], at).size).toBe(0);
+  it("applies a correction: a reporter's later report replaces the earlier one, in any direction", () => {
+    const later = { observed_at: "2026-11-02T12:00:00Z", available_at: "2026-11-02T12:05:00Z", created_at: "2026-11-02T12:06:00Z" };
+    const switched = resolve([ifttt(), ifttt({ id: "b", player_id: 7002, ...later })]);
+    expect([state(switched), state(switched, 7002)]).toEqual(["none", "confirmed"]);
+    expect(switched.conflicts).toEqual([]);
+    expect(state(resolve([ifttt(), ifttt({ id: "b", observation_status: "projected", ...later })]))).toBe("projected");
+    expect(state(resolve([ifttt(), ifttt({ id: "b", observation_status: "ruled_out", ...later })]))).toBe("none");
   });
-  it("lets a newer confirmation displace another goalie, and a same-moment conflict confirms neither", () => {
-    const displaced = resolveConfirmations([row({ id: "a" }), row({ id: "b", player_id: 11, observed_at: "2026-11-02T11:00:00Z" })], at);
-    expect([displaced.has("1:10"), displaced.get("1:11")?.state]).toEqual([false, "confirmed"]);
-    expect(resolveConfirmations([row({ id: "a" }), row({ id: "b", player_id: 11 })], at).size).toBe(0);
+  it("drops stale and not-yet-known reports: expired, rejected, or later than the edition", () => {
+    expect(state(resolve([ifttt({ expires_at: "2026-11-02T12:00:00Z" })]))).toBe("none");
+    expect(state(resolve([ifttt({ accepted: false })]))).toBe("none");
+    expect(state(resolve([ifttt({ available_at: "2026-11-02T20:00:00Z", created_at: "2026-11-02T20:00:00Z" })]))).toBe("none");
+    const unexpired = game(resolve([ifttt({ expires_at: "2026-11-03T00:00:00Z" })]).inventory, 7001, 900010).confirmation;
+    expect(unexpired).toMatchObject({ state: "confirmed", expiresAt: "2026-11-03T00:00:00Z" });
+    // An old report with no expiry stays visible with its age: no staleness rule exists to retire it.
+    const old = game(resolve([ifttt({ observed_at: "2026-10-30T10:00:00Z", available_at: "2026-10-30T10:05:00Z", created_at: "2026-10-30T10:06:00Z" })]).inventory, 7001, 900010).confirmation;
+    expect(confirmationFreshness(old, cutoff)).toBe("3d ago");
   });
-  it("keeps the source, time and null URL as stated", () => {
-    expect(resolveConfirmations([row({})], at).get("1:10")).toEqual({ state: "confirmed", source: "src", observedAt: "2026-11-02T10:00:00Z", expiresAt: null, sourceUrl: null });
+  it("shows two named reporters disagreeing as conflicting, unknown in v1", () => {
+    const detail = resolve([ifttt({ source_account: "reporterA" }), ifttt({ id: "b", player_id: 7002, source_account: "reporterB", observed_at: "2026-11-02T10:05:00Z" })]);
+    expect([state(detail), state(detail, 7002)]).toEqual(["none", "none"]);
+    expect(detail.conflicts).toEqual([{ gameId: 900010, team: "NJD" }]);
+    expect(detail.inventory.reasons.join(" ")).toMatch(/1 team games have conflicting/);
+    expect(confirmationLabel(game(detail.inventory, 7001, 900010).confirmation, true)).toBe("Conflicting reports");
+  });
+  it("honors a persisted conflict and its review", () => {
+    const review = (resolutions: BoardConflict["player_forecast_conflict_resolutions"]): BoardConflict => ({ id: "c", conflict_key: "goalie:900010:1", conflict_version: 1, game_id: 900010, team_id: 1, player_id: 7001, conflict_type: "goalie_start", detected_at: "2026-11-02T11:00:00Z", player_forecast_conflict_resolutions: resolutions });
+    expect(resolve([ifttt()], [review([])]).conflicts).toHaveLength(1);
+    const rows = [ifttt({ source_account: "reporterA" }), ifttt({ id: "b", player_id: 7002, source_account: "reporterB", observed_at: "2026-11-02T10:05:00Z" })];
+    const selected = resolve(rows, [review([{ action: "select_observation", selected_observation_id: "a", resolved_at: "2026-11-02T12:00:00Z" }])]);
+    expect([state(selected), selected.conflicts]).toEqual(["confirmed", []]);
+  });
+  it("keeps the live gap visible: rows with no account are one reporter, so no conflict can appear", () => {
+    const detail = resolve([ifttt(), ifttt({ id: "b", player_id: 7002, observed_at: "2026-11-02T10:05:00Z" })]);
+    expect(detail.conflicts).toEqual([]);
+    expect(state(detail, 7002)).toBe("confirmed");
+    expect(CONFIRMATION_REPORTER_GAP).toMatch(/cannot be detected/);
+  });
+  it("treats no observation as unknown, with no claim to age", () => {
+    const { confirmation } = game(resolve([]).inventory, 7001, 900010);
+    expect(confirmation.state).toBe("none");
+    expect([confirmationLabel(confirmation), confirmationFreshness(confirmation, cutoff)]).toEqual(["Unknown", null]);
+  });
+  it("gives only the asserted goalie the claim, and says when that goalie is not listed", () => {
+    const detail = resolve([ifttt({ player_id: 7999 })]);
+    expect(state(detail)).toBe("none");
+    expect(detail.inventory.reasons.join(" ")).toMatch(/1 observed goalies have no appearance/);
+  });
+  it("maps likely and unconfirmed to unknown and ignores other dimensions", () => {
+    const row = { gameId: 1, teamId: 1, playerId: 2, evidenceId: "e", sourceKey: "k", sourceUrl: null, publishedAt: "t", receivedAt: "t", confirmed: false };
+    const { confirmations, conflicts } = mapBoardEvidence({ expiresAt: new Map(), evidence: { assertions: [{ ...row, dimension: "goalie", value: "likely" }, { ...row, dimension: "goalie", value: "unconfirmed" }, { ...row, dimension: "pp", value: "confirmed" }], conflicts: [{ gameId: 1, teamId: 1, playerId: 2, dimension: "ev", evidenceIds: [] }] } });
+    expect([confirmations.size, conflicts.size]).toEqual([0, 0]);
+  });
+  it("selects no raw report text or metadata", () => {
+    expect(INVENTORY_OBSERVATION_COLUMNS).not.toContain("raw_status");
+    expect(INVENTORY_OBSERVATION_COLUMNS).not.toContain("metadata");
   });
 });
 
@@ -188,33 +243,47 @@ describe("search (11.5)", () => {
 
 describe("live loader, injected client", () => {
   const request = { season: 20262027, from: "2026-11-02", through: "2026-11-04", generatedAt: FIXTURE_GENERATED_AT };
-  const tables: Record<string, readonly unknown[]> = { games: FIXTURE_INPUT.schedule, wgo_team_stats: FIXTURE_INPUT.teamGames, nst_team_gamelogs_as_counts: FIXTURE_INPUT.nst, player_forecast_goalie_start_observations: FIXTURE_INPUT.observations!,
+  const observation = { id: "a", game_id: 900010, team_id: 1, player_id: 7001, observation_status: "confirmed", accepted: true, source_key: "validated_events", source_account: null, source_url: null, observed_at: "2026-11-02T10:00:00Z", available_at: "2026-11-02T10:05:00Z", created_at: "2026-11-02T10:06:00Z", expires_at: null };
+  const tables: Record<string, readonly unknown[]> = { games: FIXTURE_INPUT.schedule, wgo_team_stats: FIXTURE_INPUT.teamGames, nst_team_gamelogs_as_counts: FIXTURE_INPUT.nst, player_forecast_goalie_start_observations: [observation], player_forecast_observation_conflicts: [],
     wgo_goalie_stats: FIXTURE_INPUT.appearances.map(row => ({ goalie_id: row.goalieId, goalie_name: row.name, date: row.date, season_id: 20262027, game_id: row.gameId, team_abbreviation: row.team, opponent_team_abbrev: row.opponent, home_road: row.home ? "H" : "R", games_played: 1, games_started: row.started ? 1 : 0 })) };
-  const fakeClient = (read: string[], fail: readonly string[] = []) => ({ from(table: string) {
+  const CLOSED = ["player_forecast_goalie_start_observations", "player_forecast_observation_conflicts", "player_forecast_conflict_resolutions"];
+  const fakeClient = (read: string[], fail: readonly string[] = [], selects: string[] = []) => ({ from(table: string) {
     read.push(table);
-    const builder: any = { select: () => builder, eq: () => builder, gte: () => builder, lte: () => builder, in: () => builder, order: () => builder, range: (from: number, to: number) => Promise.resolve(fail.includes(table) ? { data: null, error: { message: "permission denied" }, count: null } : { data: (tables[table] ?? []).slice(from, to + 1), error: null, count: (tables[table] ?? []).length }) };
+    const builder: any = { select: (columns: string) => { selects.push(columns); return builder; }, eq: () => builder, gte: () => builder, lte: () => builder, in: () => builder, order: () => builder, range: (from: number, to: number) => Promise.resolve(fail.includes(table) ? { data: null, error: { message: "permission denied" }, count: null } : { data: (tables[table] ?? []).slice(from, to + 1), error: null, count: (tables[table] ?? []).length }) };
     return builder;
   } });
-  it("never touches the observation table through the post route's client", async () => {
-    const read: string[] = [];
-    const inventory = await loadGoalieInventory(fakeClient(read), request);
-    expect(read).not.toContain("player_forecast_goalie_start_observations");
-    expect(read).toEqual(expect.arrayContaining(["games", "wgo_team_stats", "nst_team_gamelogs_as_counts", "wgo_goalie_stats"]));
+  it("reads confirmation through the server client only, never the post route's anon client", async () => {
+    const anon: string[] = [], selects: string[] = [];
+    serverRead.tables.length = 0; serverRead.from = fakeClient([], [], selects).from;
+    const inventory = await loadGoalieInventory(fakeClient(anon), request);
+    serverRead.from = null;
+    expect(anon.filter(table => CLOSED.includes(table))).toEqual([]);
+    expect(serverRead.tables).toEqual(CLOSED.slice(0, 2));
+    expect(selects.join(",")).not.toMatch(/raw_status|metadata/);
+    expect(game(inventory, 7001, 900010).confirmation.state).toBe("confirmed");
+    expect(inventory.reasons).toContain(CONFIRMATION_REPORTER_GAP);
+  });
+  it("is unknown with the reason, keeping the rest, when the server credential is missing", async () => {
+    serverRead.from = null;
+    const inventory = await loadGoalieInventory(fakeClient([]), request);
+    expect(inventory.goalies.length).toBeGreaterThan(0);
     expect(inventory.reasons).toContain(CONFIRMATION_CLOSED_REASON);
     expect(inventory.goalies.flatMap(goalie => goalie.games).every(row => row.confirmation.state === "none")).toBe(true);
   });
-  it("reads confirmation through an injected client, and forecasts through an injected reader", async () => {
-    const read: string[] = [], observationRead: string[] = [];
-    const { inventory } = await loadGoalieInventoryDetail(fakeClient(read), request, { observationClient: fakeClient(observationRead), readStartParticipations: async () => FIXTURE_INPUT.forecasts! });
-    expect(observationRead).toEqual(["player_forecast_goalie_start_observations"]);
+  it("reads no observations at all without an observation client", async () => {
+    const read: string[] = [];
+    const { inventory } = await loadGoalieInventoryDetail(fakeClient(read), request);
     expect(read).not.toContain("player_forecast_goalie_start_observations");
-    expect(game(inventory, 7001, 900010).confirmation.state).toBe("confirmed");
-    expect(game(inventory, 7004, 900011).forecast.state).toBe("qualified");
+    expect(inventory.reasons).toContain(CONFIRMATION_CLOSED_REASON);
   });
-  it("shows none with a reason when the injected observation read fails, and keeps the rest", async () => {
-    const { inventory } = await loadGoalieInventoryDetail(fakeClient([]), request, { observationClient: fakeClient([], ["player_forecast_goalie_start_observations"]) });
-    expect(inventory.goalies.length).toBeGreaterThan(0);
-    expect(inventory.reasons.join(" ")).toMatch(/could not be read/);
+  it("fails the whole confirmation closed when the conflict read fails, rather than confirming past a conflict", async () => {
+    const { inventory } = await loadGoalieInventoryDetail(fakeClient([]), request, { observationClient: fakeClient([], ["player_forecast_observation_conflicts"]) });
+    expect(game(inventory, 7001, 900010).confirmation.state).toBe("none");
+    expect(inventory.reasons).toContain(CONFIRMATION_CLOSED_REASON);
+  });
+  it("reads forecasts through an injected reader", async () => {
+    const { inventory } = await loadGoalieInventoryDetail(fakeClient([]), request, { readStartParticipations: async () => FIXTURE_INPUT.forecasts! });
+    expect(game(inventory, 7004, 900011).forecast.state).toBe("qualified");
   });
   it("reports missing with no goalies when a required source fails", async () => {
     const { inventory, coverage } = await loadGoalieInventoryDetail(fakeClient([], ["wgo_team_stats"]), request);

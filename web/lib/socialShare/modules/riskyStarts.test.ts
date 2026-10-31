@@ -49,7 +49,7 @@ describe("Risky Starts pairings (11.4)", () => {
   });
   it("orders within one lens: another lens's flags never move a row, and nothing sums them", () => {
     const pair = (flagged: boolean) => ({ id: "p", label: "P", sides: [], flagged });
-    const row = (team: string, volume: boolean[], ratio: boolean[]): RiskyRow => ({ gameId: 1, date: "2026-11-02", startTimeUtc: null, team, opponent: "X", home: true, teamSecondNight: false, opponentSecondNight: false, goalies: [], lenses: { volume: volume.map(pair), ratio: ratio.map(pair), win: [] } });
+    const row = (team: string, volume: boolean[], ratio: boolean[]): RiskyRow => ({ gameId: 1, date: "2026-11-02", startTimeUtc: null, team, opponent: "X", home: true, teamSecondNight: false, opponentSecondNight: false, conflicting: false, goalies: [], lenses: { volume: volume.map(pair), ratio: ratio.map(pair), win: [] } });
     const rows = [row("A", [true], [true, true, true]), row("B", [true], [true]), row("C", [false], [true, true])];
     expect(riskyRowsForLens(rows, "ratio").map(item => item.team)).toEqual(["A", "C", "B"]);
     expect(riskyRowsForLens(rows, "volume").map(item => item.team)).toEqual(["A", "B"]);
@@ -72,17 +72,22 @@ describe("Risky Starts post", () => {
     const njd = data.rows.find(row => row.team === "NJD" && row.gameId === 900010)!;
     expect(njd.goalies.map(goalie => [goalie.name, goalie.confirmation.state])).toEqual([["Éric Testeur", "confirmed"], ["Sam Relief", "none"]]);
   });
+  it("marks a conflicting team-night and keeps it off the other side", () => {
+    const row = (team: string, gameId: number) => data.rows.find(item => item.team === team && item.gameId === gameId)!;
+    expect(row("TOR", 900012).conflicting).toBe(true);
+    expect(row("NJD", 900012).conflicting).toBe(false);
+  });
   it("has no rows, so no export, when the lens has nothing flagged", () => {
     expect(riskyStartsModule.hasRows({ ...data, rows: [] }, settings("ratio"))).toBe(false);
     expect(riskyStartsModule.hasRows(data, settings("volume"))).toBe(true);
   });
   it("is missing with no data when the inventory is, and keeps blocked sources out of its evidence", () => {
-    const missing = riskyStartsResult({ coverage: null, inventory: { ...GOALIE_INVENTORY_FIXTURE, state: "missing", goalies: [], sources: [], reasons: ["could not be read"] } });
+    const missing = riskyStartsResult({ coverage: null, conflicts: [], inventory: { ...GOALIE_INVENTORY_FIXTURE, state: "missing", goalies: [], sources: [], reasons: ["could not be read"] } });
     expect(missing).toMatchObject({ state: "missing", data: null, reasons: ["could not be read"] });
-    const closed = riskyStartsResult(buildGoalieInventory({ ...FIXTURE_INPUT, observations: null, forecasts: null }));
+    const closed = riskyStartsResult(buildGoalieInventory({ ...FIXTURE_INPUT, confirmations: null, forecasts: null }));
     expect(closed.state).toBe("ready");
     expect(closed.evidence.sources.map(source => source.name)).not.toContain("Goalie start observations");
-    expect(closed.data!.confirmationNote).toMatch(/no read access/);
+    expect(closed.data!.confirmationNote).toMatch(/could not be read/);
   });
   it("treats the lens as a browser setting the export token still covers", () => {
     const field = riskyStartsModule.fields.find(item => item.id === "lens")!;
