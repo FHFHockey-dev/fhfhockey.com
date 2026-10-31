@@ -5,7 +5,7 @@ import StartSitCard from "components/SocialShare/modules/StartSitCard";
 import { resolveDailyBoardEvidence, type BoardGoalieEvidence } from "lib/projections/dailyBoardEvidence";
 import { parseShareSettings, sharePostExportToken } from "./contract";
 import { shareModule } from "./registry";
-import { FORECAST_ADMITTED_NOTE, startSitConflicting, startSitModule, startSitResult, startSitRows, upcomingInventory, type StartSitData, type StartSitSettings } from "./startSit";
+import { FORECAST_ADMITTED_NOTE, START_SIT_LENS_NOTE, startSitConflicting, startSitModule, startSitResult, startSitRows, upcomingInventory, type StartSitData, type StartSitSettings } from "./startSit";
 import { FIXTURE_GENERATED_AT, FIXTURE_INPUT, GOALIE_INVENTORY_FIXTURE, GOALIE_INVENTORY_FIXTURE_DETAIL } from "./shared/goalieInventory.fixture";
 import { buildGoalieInventory, CONFIRMATION_CLOSED_REASON, CONFIRMATION_LINK_GAP, CONFIRMATION_REPORTER_GAP, FORECAST_CLOSED_REASON } from "./shared/goalieInventory.sources";
 
@@ -38,13 +38,26 @@ describe("Start/Sit card, through the real resolver", () => {
     const html = card(startSitResult(detail), "new jersey");
     expect(html).not.toContain("Conflicting reports");
     expect(html).toContain("Source: confirmed");
-    expect(html).toContain("Validated reports · 5h ago");
+    expect(html).toContain("Validated · 5h ago");
     expect(html).toContain("Unknown");
   });
-  it("prints the gap in reader-facing words", () => {
-    const html = card(startSitResult(throughResolver([], [CONFIRMATION_REPORTER_GAP, CONFIRMATION_LINK_GAP])));
-    expect(html).toContain("conflicts between sources can&#x27;t be detected");
-    expect(html).toContain("No source link or expiry exists");
+  it("keeps the short labels on the card and moves the full notes to the evidence", () => {
+    const result = startSitResult(throughResolver([], [CONFIRMATION_REPORTER_GAP, CONFIRMATION_LINK_GAP])), html = card(result);
+    expect(html).toContain("Unknown = no report yet. Reports aren&#x27;t split by reporter.");
+    expect(html).toContain("No win odds");
+    expect(html).toContain("Forecast unavailable");
+    expect(html).not.toContain("No source link or expiry exists");
+    expect(html).not.toContain("correlated");
+    for (const note of [CONFIRMATION_REPORTER_GAP, CONFIRMATION_LINK_GAP, START_SIT_LENS_NOTE, FORECAST_ADMITTED_NOTE]) expect(result.evidence.sample).toContain(note);
+  });
+  it("says no start odds only while no forecast is qualified, and caps the rows it shows", () => {
+    const closed = startSitResult(buildGoalieInventory({ ...FIXTURE_INPUT, forecasts: null }));
+    expect(card(closed)).toContain("No win or start odds");
+    const goalie = closed.data!.inventory.goalies[0];
+    const inventory = { ...closed.data!.inventory, goalies: [{ ...goalie, games: Array.from({ length: 25 }, (_, index) => ({ ...goalie.games[0], gameId: 800000 + index })) }] };
+    const html = card({ ...closed, data: { ...closed.data!, inventory } });
+    expect(html.match(/data-testid="start-sit-row"/g)).toHaveLength(18);
+    expect(html).toContain("18 of 25");
   });
 });
 
@@ -84,8 +97,8 @@ describe("Start/Sit (11.5)", () => {
   it("still previews descriptive context with both sources closed, and says why", () => {
     const closed = startSitResult(buildGoalieInventory({ ...FIXTURE_INPUT, confirmations: null, forecasts: null }));
     expect(closed.state).toBe("ready");
-    expect(closed.data!.confirmationNote).toBe(CONFIRMATION_CLOSED_REASON);
-    expect(closed.data!.forecastNote).toBe(FORECAST_CLOSED_REASON);
+    expect(closed.evidence.sample).toContain(CONFIRMATION_CLOSED_REASON);
+    expect(closed.evidence.sample).toContain(FORECAST_CLOSED_REASON);
     expect(startSitRows(closed.data!, "").every(row => row.game.confirmation.state === "none" && row.game.forecast.state === "unavailable")).toBe(true);
     expect(startSitRows(closed.data!, "").length).toBeGreaterThan(0);
   });
@@ -97,7 +110,7 @@ describe("Start/Sit (11.5)", () => {
     expect(startSitModule.altText({ evidence: { sample: "s" } } as never, data, settings("tor"))).toContain("Conflicting reports");
   });
   it("does not call forecasts unavailable when admitted ones were read", () => {
-    expect(data.forecastNote).toBe(FORECAST_ADMITTED_NOTE);
+    expect(startSitResult(GOALIE_INVENTORY_FIXTURE_DETAIL).evidence.sample).toContain(FORECAST_ADMITTED_NOTE);
   });
   it("drops games already under way, and a goalie with none left", () => {
     const later = upcomingInventory({ ...GOALIE_INVENTORY_FIXTURE, generatedAt: "2026-11-05T00:00:00.000Z" });

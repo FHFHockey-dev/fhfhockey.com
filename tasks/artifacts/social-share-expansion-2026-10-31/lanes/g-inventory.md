@@ -18,10 +18,10 @@ Files are under `web/`. Posts: `risky-starts` and `start-sit`, group Goalies, ba
 
 | Check | Result |
 | --- | --- |
-| `npm test` on the 3 test files and Player Cards' `sharedGoalieOutlook` test | Passed, 82 of 82 |
+| `npm test` on the 3 test files and Player Cards' `sharedGoalieOutlook` test | Passed, 86 of 86 |
 | `eslint` on all lane TS and TSX files | Passed, no findings |
 | CSS-module pure check on both SCSS files | Passed |
-| `NODE_OPTIONS=--max-old-space-size=12288 npx tsc --noEmit` | 0 errors in lane files. 4 errors remain elsewhere, in `modules/contract.test.ts` and `modules/server.ts`, which the lead is fixing. **Correction: my two earlier reports said 0 errors in the whole project. That was wrong.** Plain `npx tsc --noEmit` runs out of memory here (exit 134) and prints no errors, and I had filtered its output without checking the exit code. It hid two real errors in my files, now fixed |
+| `NODE_OPTIONS=--max-old-space-size=12288 npx tsc --noEmit` | Exit 0, no errors after the lead's fixes. **Correction: my two earlier reports said 0 errors in the whole project. That was wrong.** Plain `npx tsc --noEmit` runs out of memory here (exit 134) and prints no errors, and I had filtered its output without checking the exit code. It hid two real errors in my files, now fixed |
 | `playwright test e2e/social-share-inventory.spec.ts --list` | 4 tests discovered |
 | Browser run of that spec | **Not run**, the lead's at 13.0. Neither card's fit in the 1080 square has been seen |
 | Browser bundle | **Not verified.** `lib/supabase/server` and the resolver are imported behind `typeof window === "undefined"`, so they should drop out of the client compile, which a dev compile at 13.0 will show. No credential is exposed either way, because the key is not `NEXT_PUBLIC` |
@@ -58,7 +58,7 @@ Project `fyhftlxokyjtpndbkfse`, Supabase MCP `execute_sql`, 2026-10-31. Every st
 
 **Row counts (2026-10-31):** 604 observations, 486 confirmed and 118 projected, all accepted, all from 10-10 onward. `source_account`, `source_url`, `expires_at` and `supersedes_id` are null on all 604. 0 `goalie_start` conflict rows and 0 conflict resolutions.
 
-**Printed on both cards:** "Reports aren't separated by reporter, so conflicts between sources can't be detected." and "No source link or expiry exists for these reports." Each appears only when the rows read have that gap.
+**Printed on both cards (TJ's layout review):** the legend keeps "Unknown = no report yet. Reports aren't split by reporter." The full notes, "Reports aren't separated by reporter, so conflicts between sources can't be detected." and "No source link or expiry exists for these reports.", print in the evidence beside the preview. Each appears only when the rows read have that gap.
 
 **Conflict proof:** because live rows cannot produce a conflict, `startSit.test.ts` and `riskyStarts.test.ts` feed fixtures with distinct reporters through the real resolver and render the real cards, which must show "Conflicting reports" and not "Source: confirmed". The writer gap goes to TJ through the lead; `tweetProjectionStorage.ts` is untouched.
 
@@ -81,6 +81,13 @@ Project `fyhftlxokyjtpndbkfse`, Supabase MCP `execute_sql`, 2026-10-31. Every st
 
 - The goalie observations source now reports `asOf` as the New York date of the newest report, with the exact time in `updatedAt`, so the shell prints a date and "(updated ...)". The value changed, not the v1 shape: `asOf` is still `string | null`, and Player Cards only prints it in `sourceNotes`.
 - "1 observed goalie has..." and "1 team game has..." are now singular. Browser re-render is the lead's.
+
+## Layout pass (TJ: fill the space, cut meta text)
+
+- Risky Starts shows up to 8 tiles (was 6), and Start/Sit up to 18 rows (was 12), and both stretch to fill the body. Row and tile counts come from estimates of the 860px body. **Not measured: no browser run in this lane.** The lead renders on real data and reports any clipping.
+- Each card has one legend line. The correlation, unknown, gap and forecast notes moved to `evidence.sample` and `evidence.cohort`, and the alt text. Per-lens flag counts came off the tile.
+- Below about 5 tiles or 10 rows (thin data or a narrow search) the card stays at natural height rather than stretching one row over the body, so it can show a band.
+- "Validated" replaces "Validated reports" on Start/Sit rows for width.
 
 ## Decisions to review
 

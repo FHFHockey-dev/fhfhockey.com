@@ -56,7 +56,8 @@ test("Risky Starts: a lens switch needs no refetch, changes the token and stays 
   await page.goto("/social-share/posts?post=risky-starts");
   const square = page.getByTestId("share-square");
   await expect(square).toBeVisible();
-  await expect(page.getByTestId("risky-correlation-note")).toContainText("correlated");
+  await expect(page.getByTestId("risky-legend")).toContainText("No win or start odds");
+  await expect(page.getByTestId("post-evidence")).toContainText("correlated");
   await expect(page.getByTestId("post-watermark")).toHaveText("OBSERVED RESULTS");
   const before = served.requests, ratioToken = await square.getAttribute("data-export-token");
   await page.getByRole("combobox", { name: /^Lens/ }).selectOption("volume");
@@ -94,8 +95,9 @@ test("Start/Sit: with confirmation unreadable every goalie is unknown and the re
   await signIn(page);
   await serve(page, "start-sit", edition("start-sit", { days: 7, search: "" }, startSitResult(buildGoalieInventory({ ...FIXTURE_INPUT, confirmations: null, forecasts: null }))));
   await page.goto("/social-share/posts?post=start-sit");
-  await expect(page.getByTestId("start-sit-confirmation-note")).toContainText("does not mean not starting");
-  await expect(page.getByTestId("start-sit-forecast-note")).toContainText("raw start_probability is not admitted");
+  await expect(page.getByTestId("start-sit-legend")).toContainText("Unknown = reports unreadable.");
+  await expect(page.getByTestId("post-evidence")).toContainText("does not mean not starting");
+  await expect(page.getByTestId("post-evidence")).toContainText("raw start_probability is not admitted");
   await expect(page.locator('[data-testid="start-sit-confirmation"]:not([data-state="none"])')).toHaveCount(0);
   await expect(page.getByTestId("start-sit-forecast").first()).toHaveText("Forecast unavailable");
 });

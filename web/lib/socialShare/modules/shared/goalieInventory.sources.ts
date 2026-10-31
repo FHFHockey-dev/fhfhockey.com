@@ -262,7 +262,7 @@ export const searchGoalieInventory: SearchGoalieInventory = (inventory, query) =
 /* Display labels, one wording for every card. */
 export const confirmationLabel = (confirmation: GoalieConfirmation, conflicting = false) => conflicting ? "Conflicting reports" : confirmation.state === "confirmed" ? "Source: confirmed" : confirmation.state === "projected" ? "Source: projected" : "Unknown";
 /** The pipeline's internal key, in reader-facing words. v1 keeps the raw key. */
-export const confirmationSourceLabel = (source: string | null) => source === "validated_events" ? "Validated reports" : source;
+export const confirmationSourceLabel = (source: string | null) => source === "validated_events" ? "Validated" : source;
 /** How old the claim is at the edition. Absent for an unknown, which has no claim to age. */
 export function confirmationFreshness(confirmation: GoalieConfirmation, generatedAt: string) {
   if (confirmation.state === "none") return null;
@@ -273,13 +273,19 @@ export const forecastLabel = (forecast: GoalieForecast) => forecast.state === "q
 export const metricLabel = (value: InventoryMetric, digits: number) => value.value === null ? "—" : `${value.value.toFixed(digits)}${value.unit.startsWith("%") ? "%" : ""}${value.leagueRank === null ? "" : ` (#${value.leagueRank})`}`;
 /** A game with no start time stays listed; one already under way is no longer a start decision. */
 export const isUpcomingGame = (game: Pick<GoalieInventoryGame, "startTimeUtc">, generatedAt: string) => game.startTimeUtc === null || Date.parse(game.startTimeUtc) > Date.parse(generatedAt);
+/** The few words a card keeps; the full notes print with the evidence beside the preview. */
+export function confirmationLegend(inventory: GoalieInventory) {
+  const source = inventory.sources.find(item => item.tables.includes("player_forecast_goalie_start_observations"));
+  if (!source || source.state === "blocked") return "Unknown = reports unreadable.";
+  return source.reasons.includes(CONFIRMATION_REPORTER_GAP) ? "Unknown = no report yet. Reports aren't split by reporter." : "Unknown = no report yet.";
+}
 export const confirmationNote = (inventory: GoalieInventory) => inventory.sources.find(source => source.tables.includes("player_forecast_goalie_start_observations"))?.reasons.join(" ") ?? CONFIRMATION_ABSENT_NOTE;
 
 /** The shell's evidence block for a post built on the inventory. A blocked source was not read, so it is not listed as one. */
-export function inventoryEvidence({ inventory, coverage }: Pick<GoalieInventoryDetail, "inventory" | "coverage">, cohort: string, teamGames: number): SharePostEvidence {
+export function inventoryEvidence({ inventory, coverage }: Pick<GoalieInventoryDetail, "inventory" | "coverage">, cohort: string, teamGames: number, notes: readonly string[] = []): SharePostEvidence {
   return {
     sources: inventory.sources.filter(source => source.state === "ready" || source.state === "partial").map(({ name, tables, state, asOf, updatedAt, reasons }) => ({ name, tables, state, asOf, updatedAt, reasons })),
-    sample: `${inventory.from} to ${inventory.through}: ${teamGames} upcoming team games; rates are season to date through ${shiftDays(editionDate(inventory.generatedAt), -1)}`,
+    sample: `${inventory.from} to ${inventory.through}: ${teamGames} upcoming team games; rates are season to date through ${shiftDays(editionDate(inventory.generatedAt), -1)}. ${[confirmationNote(inventory), ...notes].join(" ")}`,
     strength: "All situations (shots, xG, chances); PP and PK as labeled", cohort,
     coverage: coverage ? { observed: coverage.observed, expected: coverage.expected, missing: coverage.missing, unit: "completed team games" } : null,
   };

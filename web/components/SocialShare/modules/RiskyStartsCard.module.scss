@@ -1,20 +1,21 @@
 @use "styles/vars" as v;
 
-.card { display: flex; flex-direction: column; gap: v.$space-xs; height: 100%; min-height: 0; }
-.lens { margin: 0; font-size: 17px; color: v.$text-secondary; b { color: v.$color-white; } }
-.grid { display: grid; grid-template-columns: 1fr 1fr; gap: v.$space-xs; align-content: start; flex: 1; min-height: 0; }
-.tile { display: grid; gap: v.$space-xxs; padding: v.$space-xs; border: 1px solid v.$border-soft; min-width: 0; }
-.head { display: grid; grid-template-columns: auto 1fr auto; align-items: center; column-gap: v.$space-xs;
-  strong { font-size: 21px; color: v.$color-white; }
-  span { grid-column: 1 / -1; font-size: 14px; color: v.$text-secondary; }
+.card { display: flex; flex-direction: column; gap: v.$space-xs; flex: 1; min-height: 0; }
+.legend { margin: 0; font-size: 14px; line-height: 1.2; color: v.$text-secondary; b { color: v.$color-white; } }
+.grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(4, auto); gap: v.$space-xs; align-content: start; flex: 1; min-height: 0; }
+.grid[data-full] { grid-template-rows: none; grid-auto-rows: 1fr; align-content: stretch; }
+.tile { display: flex; flex-direction: column; justify-content: space-between; gap: v.$space-xxs; padding: v.$space-xs; border: 1px solid v.$border-soft; min-width: 0; min-height: 0; }
+.head { display: grid; grid-template-columns: auto auto auto minmax(0, 1fr); align-items: center; column-gap: v.$space-xs;
+  strong { font-size: 22px; white-space: nowrap; color: v.$color-white; }
+  span { font-size: 13px; line-height: 1.15; text-align: right; color: v.$text-secondary; }
 }
-.pairs { display: grid; grid-template-columns: auto 1fr; gap: 2px v.$space-xs; margin: 0; font-size: 14px; line-height: 1.25;
+.pairs { display: grid; grid-template-columns: auto 1fr; gap: 2px v.$space-xs; align-items: baseline; margin: 0; font-size: 15px; line-height: 1.2;
   dt { color: v.$text-secondary; }
   dd { margin: 0; color: v.$text-secondary; }
   dd[data-flagged] { color: v.$primary-color; font-weight: 700; }
 }
-.flags { display: flex; flex-wrap: wrap; gap: v.$space-xs; margin: 0; font-size: 13px; color: v.$text-secondary;
-  span[data-active] { color: v.$color-white; }
+.pairs[data-count="1"] { font-size: 20px; }
+.pairs[data-count="2"] { font-size: 18px; }
+.goalies { display: grid; margin: 0; font-size: 14px; line-height: 1.2; color: v.$text-secondary;
+  b { font-weight: 600; color: v.$color-white; }
 }
-.goalies { margin: 0; font-size: 13px; color: v.$text-secondary; }
-.more, .note { margin: 0; font-size: 14px; line-height: 1.25; color: v.$text-secondary; }

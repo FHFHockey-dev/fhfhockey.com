@@ -30,11 +30,22 @@ describe("Risky Starts card, through the real resolver", () => {
     expect(html).toContain("Conflicting reports");
     expect(html).not.toContain("Source: confirmed");
   });
-  it("prints the gap and the correlation note in reader-facing words", () => {
-    const html = card(riskyStartsResult(throughResolver([], [CONFIRMATION_REPORTER_GAP, CONFIRMATION_LINK_GAP])), "volume");
-    expect(html).toContain("conflicts between sources can&#x27;t be detected");
-    expect(html).toContain("No source link or expiry exists");
-    expect(html).toContain("correlated");
+  it("keeps the short gap label on the card and moves the full notes to the evidence", () => {
+    const result = riskyStartsResult(throughResolver([], [CONFIRMATION_REPORTER_GAP, CONFIRMATION_LINK_GAP])), html = card(result, "volume");
+    expect(html).toContain("Unknown = no report yet. Reports aren&#x27;t split by reporter.");
+    expect(html).toContain("No win or start odds");
+    expect(html).not.toContain("correlated");
+    expect(html).not.toContain("No source link or expiry exists");
+    expect(result.evidence.sample).toContain(CONFIRMATION_REPORTER_GAP);
+    expect(result.evidence.sample).toContain(CONFIRMATION_LINK_GAP);
+    expect(result.evidence.cohort).toContain(RISKY_CORRELATION_NOTE);
+  });
+  it("shows up to eight tiles and says how many it left out", () => {
+    const row = data.rows.find(item => item.lenses.volume[0].flagged)!;
+    const many = Array.from({ length: 11 }, (_, index) => ({ ...row, gameId: 800000 + index }));
+    const html = card({ ...riskyStartsResult(GOALIE_INVENTORY_FIXTURE_DETAIL), data: { ...data, rows: many } }, "volume");
+    expect(html.match(/data-testid="risky-row"/g)).toHaveLength(8);
+    expect(html).toContain("8 of 11");
   });
 });
 
@@ -84,8 +95,8 @@ describe("Risky Starts pairings (11.4)", () => {
     expect(riskyFlags(rows[0], "volume")).toBe(1);
     expect(JSON.stringify(data)).not.toMatch(/"(score|total|composite|odds|winProbability)"/);
   });
-  it("carries the correlation note on the data and in the alt text, and promises no odds", () => {
-    expect(data.correlationNote).toBe(RISKY_CORRELATION_NOTE);
+  it("carries the correlation note in the evidence and the alt text, and promises no odds", () => {
+    expect(riskyStartsResult(GOALIE_INVENTORY_FIXTURE_DETAIL).evidence.cohort).toContain(RISKY_CORRELATION_NOTE);
     expect(RISKY_CORRELATION_NOTE).toMatch(/correlated/);
     expect(RISKY_CORRELATION_NOTE).toMatch(/no win or start odds/);
     expect(riskyStartsModule.altText({ evidence: { sample: "s" } } as never, data, settings("volume"))).toContain(RISKY_CORRELATION_NOTE);
@@ -115,7 +126,8 @@ describe("Risky Starts post", () => {
     const closed = riskyStartsResult(buildGoalieInventory({ ...FIXTURE_INPUT, confirmations: null, forecasts: null }));
     expect(closed.state).toBe("ready");
     expect(closed.evidence.sources.map(source => source.name)).not.toContain("Goalie start observations");
-    expect(closed.data!.confirmationNote).toMatch(/could not be read/);
+    expect(closed.evidence.sample).toMatch(/could not be read/);
+    expect(closed.data!.confirmationLegend).toBe("Unknown = reports unreadable.");
   });
   it("treats the lens as a browser setting the export token still covers", () => {
     const field = riskyStartsModule.fields.find(item => item.id === "lens")!;
