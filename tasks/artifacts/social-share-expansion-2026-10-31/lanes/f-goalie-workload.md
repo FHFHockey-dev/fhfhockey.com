@@ -21,7 +21,7 @@ Posts: `busy-quiet-goalies`, `goalie-rescue`, `ratio-impact`, all registered thr
 - `eslint` on all lane files: clean.
 - CSS-module pure check (sass, then `postcss-modules-local-by-default` in pure mode) on the three SCSS files: passed.
 - `npx tsc --noEmit`: no errors in lane files.
-- `e2e/social-share-goalie-workload.spec.ts`: `--list` finds 4 tests. **Not run in a browser**; that belongs to the lead at 13.0.
+- `e2e/social-share-goalie-workload.spec.ts`: this lane ran `--list` only (4 tests). The lead reports all 4 pass in a browser, after changing the spec at `108c68938` to click Refresh after server-scoped settings and to use role selectors for Category.
 
 ## Real reads
 
@@ -48,7 +48,7 @@ Findings:
 - Top of the real Busy list on default settings, computed in SQL from the same definition: 32.4 SA per start, 8 starts, 2 relief. This checks the definition against real rows; it is not a loader run.
 - Ratio base read for one goalie: 2 appearances, 39 SA, 36 saves, 3 GA, 7,200 s, no nulls.
 
-**Not run:** the three loaders end to end. A real edition reads about 455 appearances and 432 team games, above the 50-row sample bound, so that is the lead's to run at the render step. `ratio-impact` reads nothing without a goalie id.
+**Loaders:** this lane did not run them end to end. A real edition reads about 455 appearances and 432 team games, above the 50-row sample bound, so the lead ran them at the render step and reports that all three posts rendered and exported correctly on real data. `ratio-impact` reads nothing without a goalie id.
 
 ## Decisions for the lead to check
 
@@ -61,9 +61,9 @@ Findings:
 7. **Ratio Impact takes saves as shots less goals** for entered lines, so a line cannot contradict itself. The sensitivity axis is goals allowed, at the entered shots and minutes, and it stops at the entered shots rather than print negative saves.
 8. **`goalie-rescue` is a new id.** The older gated `category-rescue` format is untouched; its disposition stays with 13.0.
 
-## For the browser run
+## Follow-up from the real render
 
-Layout at 1080 × 1080 is unverified. Watch the Busy/Quiet header widths (`TEAM HDCA/GM`) and Rescue with a short window (`GS` cell prints `3 (4/10 GP)`). Ties can lengthen a list past its nominal 6 or 10 rows.
+The lead's render found "1 listed appearances shared the net" in the Busy/Quiet footnote. It now handles the singular, with a test for each form.
 
 ## Blockers
 

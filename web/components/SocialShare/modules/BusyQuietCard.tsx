@@ -26,7 +26,7 @@ export default function BusyQuietCard({ data, settings, logos }: SharePostCardPr
       <PostTable columns={columns} rows={rows} rowKey={row => row.goalieId} />
     </section> : null)}
     <p className={styles.note}>
-      {data.basis === "start" ? "Per start reads official starts only; relief is counted apart. " : ""}HD SHOTS are shots from the high-danger zone, not chances, shown once 90% of games are covered, otherwise as covered/expected games. {TEAM_CHANCES_NOTE}{shared ? ` ${shared} listed appearances shared the net.` : ""}
+      {data.basis === "start" ? "Per start reads official starts only; relief is counted apart. " : ""}HD SHOTS are shots from the high-danger zone, not chances, shown once 90% of games are covered, otherwise as covered/expected games. {TEAM_CHANCES_NOTE}{shared ? ` ${shared} listed ${shared === 1 ? "appearance" : "appearances"} shared the net.` : ""}
     </p>
   </div>;
 }

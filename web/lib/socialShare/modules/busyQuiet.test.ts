@@ -152,9 +152,13 @@ describe("busy and quiet card", () => {
   it("labels danger-zone shots as shots and team chances as team-level, with relief apart", () => {
     const { container } = renderCard(full, settings());
     const text = container.textContent!;
-    for (const label of ["Busy", "RELIEF", "SA/GS", "HD SHOTS/GS", "TEAM SCA/GM", "TEAM HDCA/GM", VOLUME_NOTE, "not chances", "including time another goalie was in net", "Per start reads official starts only", "1 listed appearances shared the net"]) expect(text).toContain(label);
+    for (const label of ["Busy", "RELIEF", "SA/GS", "HD SHOTS/GS", "TEAM SCA/GM", "TEAM HDCA/GM", VOLUME_NOTE, "not chances", "including time another goalie was in net", "Per start reads official starts only", "1 listed appearance shared the net."]) expect(text).toContain(label);
     expect(text).not.toMatch(/\bHD CHANCES\b|\bGOALIE CHANCES\b/i);
     expect(screen.getByText("G1")).toBeTruthy();
+  });
+  it("uses the plural for more than one shared net", () => {
+    const [first, ...rest] = full.busy, shared = { ...full, busy: [{ ...first, teamChances: { ...first.teamChances, sharedNetGames: 2 } }, ...rest] };
+    expect(renderCard(shared, settings()).container.textContent).toContain("2 listed appearances shared the net.");
   });
   it("shows coverage instead of a value when danger-zone shots are not admitted", () => {
     const thin = build({ nstGoalie: [nstGoalie(1, 1)] }).data!;
