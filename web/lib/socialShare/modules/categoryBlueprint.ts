@@ -39,6 +39,14 @@ const FIELDS: readonly ShareSettingField[] = [
   // Specialists dominate each category: on 2026-10-31 nobody of 633 was top 100 in these four, and 16 were top 250.
   { id: "topIn", label: "Top N in every category", kind: "number", default: 250, min: 1, max: 1000, step: 1 },
 ];
+/** One scale for every category: a rank's share of the cohort. Rank 1 is always in the top band, however small the cohort. */
+export const CATEGORY_RANK_BANDS = [{ id: "top5", limit: 5, label: "top 5%" }, { id: "top15", limit: 15, label: "15%" }, { id: "top30", limit: 30, label: "30%" }, { id: "top50", limit: 50, label: "50%" }, { id: "lower", limit: 100, label: "lower" }] as const;
+export type CategoryRankBand = typeof CATEGORY_RANK_BANDS[number]["id"];
+/** Null is a missing category: it has no band, so it can never read as weak. */
+export function categoryRankBand(rank: number | null, cohortSize: number): CategoryRankBand | null {
+  if (rank === null) return null;
+  return rank === 1 ? "top5" : CATEGORY_RANK_BANDS.find(band => rank * 100 <= band.limit * cohortSize)?.id ?? "lower";
+}
 export const chosenCategories = (settings: CategoryBlueprintSettings) => [settings.cat1, settings.cat2, settings.cat3, settings.cat4].filter((id): id is SkaterCategoryId => id !== "none");
 
 /**
@@ -63,7 +71,7 @@ export function buildCategoryBlueprint(season: SkaterSeason, settings: CategoryB
   const categories = chosen.map(id => ({ id, label: SKATER_CATEGORIES[id].label, name: SKATER_CATEGORIES[id].name, missing: players.filter(player => player.cells.get(id)!.perGame === null).length }));
   const windowLabel = skaterWindowLabel(settings.window), notes = [...categories.filter(category => category.missing).map(category => `${category.name} missing for ${category.missing}`), belowTheCard(qualifying.length - rows.length)].filter(Boolean).join(", ");
   return {
-    ...skaterSeasonEvidence(season, { windowLabel: `${windowLabel}, per game`, note: `Ordered by ${categories[0].name.toLowerCase()}. Each category ranks alone, and a missing category neither passes nor fails the top-${settings.topIn} filter.`, cohort: `${skaterCohortLabel(settings)}: ${pool.length} skaters, ${qualifying.length} in the top ${settings.topIn} of every category${notes ? `, ${notes}` : ""}` }),
+    ...skaterSeasonEvidence(season, { windowLabel: `${windowLabel}, per game`, note: `Ordered by ${categories[0].name.toLowerCase()}. Each category ranks alone, and a missing category neither passes nor fails the top-${settings.topIn} filter. Cell colour is that category's rank as a share of the cohort, on one scale; it is never combined across categories.`, cohort: `${skaterCohortLabel(settings)}: ${pool.length} skaters, ${qualifying.length} in the top ${settings.topIn} of every category${notes ? `, ${notes}` : ""}` }),
     data: { applied: shareSettingsKey(FIELDS, settings), through: season.through, windowLabel, cohortSize: pool.length, topIn: settings.topIn, categories, rows, qualifying: qualifying.length, notShown: qualifying.length - rows.length },
     teams: shownTeams(rows),
   };

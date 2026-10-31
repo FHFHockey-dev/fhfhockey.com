@@ -3,7 +3,7 @@ import { createElement } from "react";
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import type { SkaterSeason } from "./bshBoard";
-import { buildCategoryBlueprint, categoryBlueprintModule, chosenCategories, type CategoryBlueprintData, type CategoryBlueprintSettings } from "./categoryBlueprint";
+import { buildCategoryBlueprint, categoryBlueprintModule, categoryRankBand, chosenCategories, type CategoryBlueprintData, type CategoryBlueprintSettings } from "./categoryBlueprint";
 import { parseShareSettings, type SharePostSnapshot } from "./contract";
 import type { SkaterAppearance } from "./shared/skaterAppearances";
 
@@ -101,6 +101,20 @@ describe("Category Blueprint default on a specialist-heavy pool", () => {
   });
 });
 
+describe("Category Blueprint rank bands", () => {
+  it("changes band exactly at each boundary", () => {
+    const bands = [[1, "top5"], [5, "top5"], [6, "top15"], [15, "top15"], [16, "top30"], [30, "top30"], [31, "top50"], [50, "top50"], [51, "lower"], [100, "lower"]] as const;
+    for (const [rank, band] of bands) expect(categoryRankBand(rank, 100)).toBe(band);
+  });
+  it("uses the same scale at any cohort size, with rank 1 always on top", () => {
+    expect([categoryRankBand(31, 633), categoryRankBand(32, 633)]).toEqual(["top5", "top15"]);
+    expect([categoryRankBand(1, 1), categoryRankBand(1, 2), categoryRankBand(2, 2)]).toEqual(["top5", "top5", "lower"]);
+  });
+  it("gives a missing category no band", () => {
+    expect(categoryRankBand(null, 100)).toBeNull();
+  });
+});
+
 describe("Category Blueprint card", () => {
   afterEach(cleanup);
   const show = async (data: CategoryBlueprintData, active: CategoryBlueprintSettings) => {
@@ -114,6 +128,16 @@ describe("Category Blueprint card", () => {
     for (const label of ["PTS/G", "SOG/G", "HITS/G", "2.00 #1", "missing", "L5", "among 2", "no combined score"]) expect(text).toContain(label);
     expect(document.querySelectorAll("p")).toHaveLength(1);
     expect(buildCategoryBlueprint(season([...games(1, 5, { hits: null }), ...games(2, 5)]), active).evidence.cohort).toContain("Hits missing for 1");
+  });
+  it("colours each cell by its own rank, keeps value and rank printed, and leaves missing uncoloured", async () => {
+    const active = settings({ cat3: "none" }), { data } = buildCategoryBlueprint(season([...games(1, 5, { points: 3, shots: 0 }), ...games(2, 5, { points: 2, shots: 2 }), ...games(3, 5, { points: 1, shots: null }), ...games(4, 5, { points: 0, shots: 1 })]), active);
+    const text = await show(data!, active), cells = [...document.querySelectorAll("[data-testid=rank-cell]")];
+    // Rows stay in Category 1 order; each row pairs its PTS cell with its SOG cell, and neither colour depends on the other.
+    expect(cells.map(cell => cell.getAttribute("data-band"))).toEqual(["top5", "lower", "top50", "top5", "lower", "missing", "lower", "top50"]);
+    expect(cells.map(cell => cell.textContent)).toEqual(["3.00 #1", "0.00 #3", "2.00 #2", "2.00 #1", "1.00 #3", "missing", "0.00 #4", "1.00 #2"]);
+    expect(document.querySelector("[data-band=missing]")!.getAttribute("style")).toBeNull();
+    for (const label of ["Rank among 4", "top 5%", "15%", "30%", "50%", "lower", "no combined score"]) expect(text).toContain(label);
+    expect(document.querySelectorAll("p")).toHaveLength(1);
   });
   it("says why nobody qualifies and asks for a refresh after a settings change", async () => {
     const active = settings({ minGp: 9 }), { data } = buildCategoryBlueprint(season(games(1, 2)), active);

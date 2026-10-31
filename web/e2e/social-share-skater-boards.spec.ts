@@ -130,6 +130,7 @@ test("Category Blueprint keeps categories separate with their own ranks", async 
   await open(page, "category-blueprint", () => edition("category-blueprint", blueprintSettings, buildCategoryBlueprint(fictional, blueprintSettings)));
   const square = page.getByTestId("share-square");
   for (const text of ["PTS/G", "SOG/G", "HITS/G", "BLK/G", "#1", "no combined score", "among 2"]) await expect(square).toContainText(text);
+  await expect(square.getByTestId("rank-cell").first()).toHaveAttribute("data-band", "top5");
   await expectFits(page);
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeEnabled();
 });

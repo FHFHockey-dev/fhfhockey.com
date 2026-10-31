@@ -43,3 +43,14 @@ $layer-h: #cf5cad;
 .part[data-layer="b"] { background: rgba($layer-b, 0.16); }
 .part[data-layer="s"] { background: rgba($layer-s, 0.16); }
 .part[data-layer="h"] { background: rgba($layer-h, 0.16); }
+/* Category Blueprint: one rank scale for every category. A missing cell has no fill, so it cannot read as weak. */
+.band, .bandMissing { align-self: stretch; display: flex; align-items: center; justify-content: flex-end; padding-inline: 8px; border-radius: 4px; white-space: nowrap; }
+.band .pair small { color: inherit; opacity: 0.85; }
+.band[data-band="top5"], .bandKey i[data-band="top5"] { background: rgba(v.$success-color, 0.8); }
+.band[data-band="top5"] { color: #0b0f12; }
+.band[data-band="top15"], .bandKey i[data-band="top15"] { background: rgba(v.$success-color, 0.48); }
+.band[data-band="top30"], .bandKey i[data-band="top30"] { background: rgba(v.$success-color, 0.22); }
+.band[data-band="top50"], .bandKey i[data-band="top50"] { background: rgba(v.$color-white, 0.08); }
+.band[data-band="lower"], .bandKey i[data-band="lower"] { background: rgba(v.$danger-color, 0.42); }
+.bandMissing { color: v.$warning-color; font-size: 0.8em; outline: 1px dashed rgba(v.$warning-color, 0.6); outline-offset: -1px; }
+.bandKey { display: inline-flex; gap: 8px; color: v.$color-white; span { white-space: nowrap; } i { display: inline-block; width: 14px; height: 14px; margin-right: 3px; border-radius: 3px; vertical-align: -1px; } }

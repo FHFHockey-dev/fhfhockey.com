@@ -129,3 +129,12 @@ Follow-up commit (Blueprint default): 50 tests in the lane's 3 files passed, esl
 - **Gaps:** a missing component in either window unranks the skater, so no gap reaches this card under the current rule either.
 - **Not measured:** no browser run; the lead renders on real data.
 - **Checks:** 59 tests in the lane's 3 files passed before a final legend-wording edit, and `bshBoard.test.ts` was rerun after it. eslint clean, the pure check passed, `--list` found 10 tests, `tsc` printed no errors (both before that edit).
+
+## Category Blueprint rank colours (TJ's review: add visuals)
+
+- **Scale:** each cell is coloured by its own category rank as a share of the cohort, on one scale for every category: top 5% (strong green), 15%, 30%, 50% (neutral), lower (red). Rank 1 is always the top band, whatever the cohort size.
+- **Unchanged:** value and rank stay printed, rows stay ordered by Category 1, and there is no combined score or summed colour. Up to 20 rows.
+- **Missing:** a dashed outline with "missing" in amber and no fill, so it cannot read as weak.
+- **On the default:** Top 250 of 633 is about the top 39.5%, so every ranked cell falls in the top 50% and red cannot appear. Red needs a looser Top N.
+- **Legend:** "Per game, L10. Rank among 633: top 5% 15% 30% 50% lower. Top 250 in each; no combined score." with colour swatches. One line by estimate, not measured.
+- **Checks:** 63 tests in the lane's 3 files passed, including each band boundary. eslint clean, the pure check passed, `--list` found 10 tests, `tsc` printed no errors. No browser run.
