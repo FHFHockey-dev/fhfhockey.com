@@ -1,0 +1,11 @@
+@use "styles/vars" as v;
+
+.card { display: flex; flex-direction: column; gap: v.$space-xs; min-height: 0; font-size: 16px; }
+.lead p { margin: 0; font-size: 15px; color: v.$text-secondary; }
+.lead h3 { margin: 0; font-size: 26px; line-height: 1.1; color: v.$color-white; }
+.method { margin: 0 0 2px; font-size: 15px; letter-spacing: v.$mobile-letter-spacing-wide; color: v.$color-white; }
+.goalie b { display: block; font-size: 17px; font-weight: 600; }
+.goalie small { display: block; font-size: 12px; color: v.$text-secondary; }
+.counts { display: grid; font-size: 15px; }
+.counts small { font-size: 12px; color: v.$text-secondary; }
+.note { margin: 3px 0 0; font-size: 12px; line-height: 1.2; color: v.$text-secondary; }

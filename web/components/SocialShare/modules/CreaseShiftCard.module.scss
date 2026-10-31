@@ -1,0 +1,8 @@
+@use "styles/vars" as v;
+
+.card { display: flex; flex-direction: column; gap: v.$space-sm; min-height: 0; font-size: 18px; }
+.note { margin: 0; font-size: 15px; line-height: 1.25; color: v.$text-secondary; }
+.team { display: inline-flex; align-items: center; gap: v.$space-xs; }
+.team b { display: block; font-size: 20px; }
+.team small { display: block; font-size: 13px; color: v.$text-secondary; }
+.lines { display: grid; gap: 1px; font-size: 18px; }
