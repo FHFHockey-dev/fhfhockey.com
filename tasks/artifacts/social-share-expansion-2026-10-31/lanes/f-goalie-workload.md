@@ -109,6 +109,18 @@ The lead measured content of 1142, 1423 and 887px against bodies of 845 to 861px
 - **Spec:** expects the Volume head and the selected W head.
 - **Not verified:** no browser run. The fit is arithmetic until the lead's render.
 
+## Follow-up: Ratio Impact visuals (TJ, 2026-10-31)
+
+- **Tiles:** large before and after tiles for SV% and GAA, with an arrow and the change between them. With no base, or a base that leaves a rate unknown, the before tile shows "—" and no change is drawn. Rates still come from the same pooled totals, printed in the tile captions.
+- **Hypothetical line:** one printed line carries the entered line's saves, shots, goals, TOI and rates.
+- **Chart:** SV% after and GAA after across the stated goals, each spanning the table's value columns so a point sits over its printed values. No bar or row was dropped: GA, SV, SV% after, GAA after and both changes are still printed for every step.
+- **Marks:** the entered line gets a band, an ENTERED label, a larger point and a highlighted column. An entered value outside the range is stated in the title. A dashed line marks the before value when known.
+- **Gaps:** a zero or missing denominator leaves a tick and a broken line, never a point at 0.
+- **Capture:** every SVG colour is an attribute, with no classes on SVG children.
+- **Alt text:** adds the charted values.
+- **Spec:** expects 7 SV% points, and 0 changes with no base and 2 with one.
+- **Not verified:** no browser run. The fit is arithmetic until the lead's render: tiles take about 270px of an 845px body. The chart assumes a 1006px body width; a different width scales its height slightly, and the tiles absorb that.
+
 ## Blockers
 
 None. No frozen file needs a change.

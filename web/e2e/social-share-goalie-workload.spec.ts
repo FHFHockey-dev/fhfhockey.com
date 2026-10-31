@@ -143,10 +143,13 @@ test("Ratio Impact is hypothetical, works with no base and pools with one", asyn
   await expect(page.getByTestId("post-watermark")).toHaveText("HYPOTHETICAL SCENARIO");
   await expect(card).toContainText("Before: No base entered");
   await expect(card).toContainText("Sensitivity at 30 SA and 60:00 TOI");
+  await expect(card.locator('svg[data-chart="savePct"] circle')).toHaveCount(7);
+  await expect(card.getByTestId("ratio-change")).toHaveCount(0);
   await expect(card).not.toContainText(/forecast|transaction/i);
   await page.goto("/social-share/posts?post=ratio-impact&baseShots=1000&baseGoals=80&baseMinutes=2000");
   await expect(card).toContainText("Before: Entered base");
   await expect(card).toContainText("2060:00");
+  await expect(card.getByTestId("ratio-change")).toHaveCount(2);
   await expect(card).toContainText(".920");
   await downloadsPng(page, "ratio-impact");
 });

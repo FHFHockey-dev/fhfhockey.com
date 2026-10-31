@@ -1,12 +1,28 @@
 @use "styles/vars" as v;
 
-.card { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: v.$space-xs; }
+/* 845px body: 26 legend, 34 line, 32 title, 46 x 3 printed rows and 170 x 2 charts leave about 275 for the tiles. */
+.card { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 6px; }
 .note { margin: 0; font-size: 16px; line-height: 1.25; color: v.$text-secondary; }
-.title { margin: 0; font-size: 24px; line-height: 1.2; }
-.change { margin: 0; font-size: 34px; line-height: 1.2; text-align: right; }
-.sensitivity { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; }
-.fill > div { font-size: 30px; }
-.fill { flex: 1 1 0; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr); }
-.fill > div { min-height: 0; grid-template-rows: auto; grid-auto-rows: minmax(36px, 84px); align-content: start; align-items: stretch; }
-.fill > div > span { display: flex; align-items: center; padding: 0; }
-.fill > div > span[data-numeric] { justify-content: flex-end; }
+.tiles { flex: 1 1 0; min-height: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); column-gap: 16px; }
+.metric { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 4px; }
+.metricTitle { margin: 0; padding-bottom: 2px; border-bottom: 2px solid #63d2f5; font-size: 24px; line-height: 1.1; font-weight: 800; color: #63d2f5; }
+.pair { flex: 1 1 0; min-height: 0; display: flex; align-items: stretch; gap: 6px; }
+.tile { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border-radius: 6px; color: v.$color-white; background: rgba(v.$color-white, 0.06);
+  b { font-size: 72px; line-height: 1; font-weight: 800; }
+  small { font-size: 15px; line-height: 1.15; white-space: nowrap; color: v.$text-secondary; }
+}
+.tile[data-tile="after"] { background: rgba(#63d2f5, 0.22); }
+.tile[data-tile="after"] small { color: v.$color-white; }
+.change { flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; width: 76px; }
+.change b { font-size: 24px; line-height: 1; font-weight: 800; white-space: nowrap; color: v.$color-white; }
+.line { margin: 0; font-size: 20px; line-height: 1.2; text-align: center; color: v.$color-white; }
+.sensitivity { flex: none; display: flex; flex-direction: column; gap: 2px; }
+.title { margin: 0; font-size: 22px; line-height: 1.2; }
+.title small { font-size: 15px; font-weight: 400; color: v.$text-secondary; }
+.table { display: grid; align-items: stretch; }
+.rowLabel { display: flex; align-items: center; font-size: 14px; line-height: 1.1; letter-spacing: v.$mobile-letter-spacing-wide; color: v.$text-secondary; border-bottom: 1px solid v.$border-soft; }
+.value { display: flex; align-items: center; justify-content: center; min-width: 0; height: 23px; font-size: 19px; line-height: 1; font-weight: 600; white-space: nowrap; border-bottom: 1px solid v.$border-soft; }
+.value[data-entered] { font-weight: 800; background: rgba(v.$color-white, 0.09); }
+.chartLabel { display: flex; flex-direction: column; justify-content: center; gap: 4px; font-size: 15px; line-height: 1.1; font-weight: 700; color: v.$color-white; }
+.chartLabel small { font-size: 13px; font-weight: 400; color: v.$text-secondary; }
+.chart { display: block; grid-column: 2 / -1; width: 100%; height: auto; }

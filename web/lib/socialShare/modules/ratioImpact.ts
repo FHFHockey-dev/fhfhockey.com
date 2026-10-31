@@ -17,7 +17,7 @@ export type RatioBase = { kind: "none" | "manual" | "goalie"; goalieId: number |
 export type RatioSensitivityRow = { goals: number; saves: number; after: RatioRates; savePctChange: number | null; gaaChange: number | null };
 export type RatioImpactData = { base: RatioBase; line: RatioTotals; lineRates: RatioRates; before: RatioRates; after: RatioTotals; afterRates: RatioRates; savePctChange: number | null; gaaChange: number | null; sensitivity: RatioSensitivityRow[] };
 
-/** The most rows the card's 860px body holds at its type size. */
+/** The most goal counts the card's chart columns hold with their values still printed. */
 export const SENSITIVITY_MAX_STEPS = 12;
 export const RATIO_LEGEND = "Hypothetical, pooled from totals.";
 export const RATIO_NOTE = "Arithmetic on the numbers entered, pooled from summed totals rather than averaged percentages. It predicts nothing and changes no roster.";
@@ -105,5 +105,5 @@ export const ratioImpactModule = defineShareModule<RatioImpactSettings, RatioImp
   load: () => import("./ratioImpact.sources").then(sources => sources.loadRatioImpact),
   card: () => import("components/SocialShare/modules/RatioImpactCard").then(card => card.default),
   hasRows: data => data.afterRates.savePct !== null || data.afterRates.gaa !== null,
-  altText: (snapshot, data) => `FHFH hypothetical ratio scenario. ${snapshot.evidence.sample} Before: SV% ${formatRatioSavePct(data.before.savePct)}, GAA ${formatRatioGaa(data.before.gaa)}. After: SV% ${formatRatioSavePct(data.afterRates.savePct)}, GAA ${formatRatioGaa(data.afterRates.gaa)}.`,
+  altText: (snapshot, data) => `FHFH hypothetical ratio scenario. ${snapshot.evidence.sample} Before: SV% ${formatRatioSavePct(data.before.savePct)}, GAA ${formatRatioGaa(data.before.gaa)}. After: SV% ${formatRatioSavePct(data.afterRates.savePct)}, GAA ${formatRatioGaa(data.afterRates.gaa)}. After by hypothetical goals against: ${data.sensitivity.map(row => `${row.goals}: SV% ${formatRatioSavePct(row.after.savePct)}, GAA ${formatRatioGaa(row.after.gaa)}`).join("; ")}.`,
 });
