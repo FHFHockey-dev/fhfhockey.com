@@ -148,8 +148,8 @@ describe("goalie rescue card", () => {
     const everyone = (count: number) => own(Object.fromEntries(Array.from({ length: count }, (_, index) => [index + 10, 10])));
     expect(build({ appearances: pool(25), availability: everyone(25) }).data!.rows).toHaveLength(25);
     const tied = build({ appearances: pool(34), availability: everyone(34) });
-    expect(tied.data!.rows).toHaveLength(30);
-    expect(tied.evidence.sample).toContain("4 more tied goalies are not listed.");
+    expect(tied.data!.rows).toHaveLength(29);
+    expect(tied.evidence.sample).toContain("5 more tied goalies are not listed.");
     const distinct = Array.from({ length: 25 }, (_, index) => index + 10).flatMap(id => three(id, "PHI", { saves: id }));
     expect(build({ settings: settings({ category: "saves" }), appearances: distinct, availability: everyone(25) }).data!.rows).toHaveLength(20);
   });

@@ -77,6 +77,16 @@ Built on the lead's shell change (`9bb30218d`, `756d4706f`), with a body of abou
 - **Spec:** `e2e/social-share-goalie-workload.spec.ts` now expects the Rescue legend, on top of the lead's `108c68938`.
 - **Not verified:** no browser run. The row counts come from arithmetic on the 860px body, so the fill and the no-clip result need the lead's real render.
 
+## Follow-up: overflow on the real render
+
+The lead measured content of 1142, 1423 and 887px against bodies of 845 to 861px.
+
+- **Cause:** the `.fill` wrapper's grid row sized to the table's largest content, so table rows grew to their height cap. Rows at the cap predict 1146, 1427 and 896px from the real snapshots' row counts, which matches. Row count was not the cause.
+- **Fix:** `.fill` now has a `minmax(0, 1fr)` row and the table `min-height: 0`, so rows share the height actually available.
+- **Expected row heights from the real snapshots, by arithmetic:** Busy/Quiet about 33px (11 per side), Rescue about 35px (23 rows), Ratio Impact about 80px on top and 67px in sensitivity. Ratio Impact's cap rises from 72 to 84px so its top table leaves no band.
+- **Rescue tie cap:** 30 becomes 29, which fits at the 27px minimum in an 845px body.
+- **Not verified:** no browser run. The lead re-measures.
+
 ## Blockers
 
 None. No frozen file needs a change.

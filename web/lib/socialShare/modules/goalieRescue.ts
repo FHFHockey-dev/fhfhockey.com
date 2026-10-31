@@ -13,7 +13,8 @@ export type GoalieRescueSettings = { category: RescueCategory; window: GoalieWin
 
 /** Fills the card's 860px body. Ties may run past the size; the hard cap keeps them from clipping, and the sample names any left out. */
 export const RESCUE_LIST_SIZE = 20;
-const RESCUE_MAX_ROWS = 30;
+/** (845px body - 28 legend - 19 head) / 27px minimum row. */
+const RESCUE_MAX_ROWS = 29;
 /** Same rule as the pickup cards: anything but healthy or day to day is not a candidate. */
 const AVAILABLE_STATUSES = new Set(["", "DTD"]);
 export const RESCUE_NOTE = "Rostered % is Yahoo-wide. GMS LEFT are team games, not starts.";
