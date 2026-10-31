@@ -10,7 +10,7 @@ import type { SkaterAppearance } from "./shared/skaterAppearances";
 export const NO_CONSENSUS = "No consensus established";
 export const SAMPLE_CAVEAT = "Hand-picked posts. Not a market price, a poll or a consensus.";
 export const CANDIDATE_FILE = "playerVsPlayer.candidates.json";
-const CLAIM_MAX = 240, NOTE_MAX = 160, CARD_CLAIMS = 2;
+const CLAIM_MAX = 240, NOTE_MAX = 160, URL_MAX = 200, CARD_CLAIMS = 2;
 
 export type CandidatePlatform = "reddit" | "x";
 export type CandidateClaimKind = "quoted" | "paraphrased";
@@ -48,6 +48,7 @@ export function validateCandidate(raw: unknown, today: string | null = null): { 
   if (!id) reasons.push("Missing id.");
   if (!isPlatform(platform)) reasons.push("Platform must be reddit or x.");
   if (!url) reasons.push("Missing URL.");
+  else if (url.length > URL_MAX) reasons.push(`URL is over ${URL_MAX} characters.`);
   else if (isPlatform(platform) && !hostMatches(url, platform)) reasons.push("URL must be https on the stated platform.");
   if (!date) reasons.push("Missing date.");
   else if (!isDate(date)) reasons.push("Date must be YYYY-MM-DD.");
@@ -264,8 +265,10 @@ export function buildPlayerVsPlayer(input: BuildPvpInput): SharePostLoadResult<P
   const sources: SharePostSource[] = [{ name: "NHL.com skater game stats", tables: ["wgo_skater_stats", "wgo_team_stats", "games"], state: scheduled > completed ? "partial" : "ready", asOf: newest(wgoDates), updatedAt: null }];
   if (usesNst) sources.push({ name: "Natural Stat Trick game logs", tables: ["nst_gamelog_as_counts"], state: input.nst === null ? "missing" : "ready", asOf: newest(nstRows.map(row => row.date_scraped)), updatedAt: null });
   if (claims.length) sources.push({ name: "Reviewed discussion posts", tables: [CANDIDATE_FILE], state: "ready", asOf: newest(claims.map(claim => claim.date)), updatedAt: null });
+  /* The card carries one legend line; the disclosures it used to print sit beside the preview and in the alt text. */
+  const cohort = ["Two selected players, not a league ranking.", claims.length ? `Selected because: ${discussion.rationales.join(" ")}` : "Editor-chosen pair, with no sourced discussion behind it.", discussion.note, ...(discussion.caveat ? [discussion.caveat] : []), ...comparison.notes].join(" ");
   const evidence: SharePostEvidence = {
-    sources, sample: `${PVP_WINDOW_LABELS[settings.window]}: ${sampleText(a)}; ${sampleText(b)}`, strength: PVP_STRENGTH_LABELS[settings.strength], cohort: "Two selected players, not a league ranking",
+    sources, sample: `${PVP_WINDOW_LABELS[settings.window]}: ${sampleText(a)}; ${sampleText(b)}`, strength: PVP_STRENGTH_LABELS[settings.strength], cohort,
     coverage: { observed: completed, expected: scheduled, missing: Math.max(0, scheduled - completed), unit: "team games" },
   };
   return {
@@ -279,6 +282,12 @@ export function buildPlayerVsPlayer(input: BuildPvpInput): SharePostLoadResult<P
 
 export const pvpDataMatches = (data: PlayerVsPlayerData, settings: PlayerVsPlayerSettings) => data.settingsKey === pvpSettingsKey(settings);
 export const pvpHasRows = (data: PlayerVsPlayerData, settings: PlayerVsPlayerSettings) => pvpDataMatches(data, settings) && data.a.appearances > 0 && data.b.appearances > 0 && data.metrics.some(row => row.a.value !== null && row.b.value !== null);
+
+/** The card's one line under the stats: how to read the marks, and what the posts are. */
+export function pvpLegend(data: PlayerVsPlayerData) {
+  const marks = data.metrics.some(row => row.higher !== null) ? "Bright = higher." : data.a.appearances !== data.b.appearances && data.basisLabel === PVP_BASIS_LABELS.total ? "Totals not compared: samples differ." : "Not compared.";
+  return `${marks} ${data.discussion.claims.length ? "Hand-picked posts, not a market price or a poll." : "No posts on file."}`;
+}
 
 const claimAlt = (claim: CandidateRecord) => `${claim.platform === "x" ? "X" : "Reddit"}, ${claim.date}, ${claim.claimKind}: ${claim.claimKind === "quoted" ? `"${claim.claim}"` : claim.claim} ${claim.url} Limitations: ${claim.limitations}`;
 export function pvpAltText(data: PlayerVsPlayerData, sample: string) {

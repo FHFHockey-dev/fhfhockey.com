@@ -29,7 +29,8 @@ async function signIn(page: Page) {
 
 const metric = (id: string, label: string, a: string, b: string, higher: "a" | "b" | "tie" | null) => ({ id, label, source: "wgo", higher,
   a: { value: Number(a), shown: a, observed: 10, expected: 10, missing: 0, admitted: true }, b: { value: Number(b), shown: b, observed: 6, expected: 6, missing: 0, admitted: true } });
-const claim = (id: string, over: Record<string, unknown>) => ({ id, players: [{ id: 9000001, name: "Alpha Fake" }, { id: 9000002, name: "Beta Fake" }], url: `https://www.reddit.com/r/fake/comments/${id}`, date: "2026-10-20", platform: "reddit", claimKind: "paraphrased", claim: "A fictional poster prefers one fictional player over another for a long and carefully worded reason that fills the claim limit on the card, as a real post might do when argued in detail by someone who cares a lot about it.", favorsPlayerId: 9000001, selectionRationale: "A fictional thread asked this exact question, and it is the longest allowed rationale so the layout is tested at its limit, near the maximum.", limitations: "One fictional thread with a small audience, self-selected posters and no sampling frame of any kind, so it stands for nobody but the people in it here.", ...over });
+const longest = (text: string, limit: number) => text.padEnd(limit, " and more").slice(0, limit);
+const claim = (id: string, over: Record<string, unknown>) => ({ id, players: [{ id: 9000001, name: "Alpha Fake" }, { id: 9000002, name: "Beta Fake" }], url: `https://www.reddit.com/r/fake/comments/${id}/`.padEnd(200, "a"), date: "2026-10-20", platform: "reddit", claimKind: "paraphrased", claim: longest("A fictional poster prefers one fictional player over another for a long and carefully worded reason", 240), favorsPlayerId: 9000001, selectionRationale: "A fictional thread asked this exact question, and it is the longest allowed rationale so the layout is tested at its limit, near the maximum.", limitations: "One fictional thread with a small audience, self-selected posters and no sampling frame of any kind, so it stands for nobody but the people in it here.", ...over });
 const sides = { a: { playerId: 9000001, name: "Alpha Fake", group: "F", team: "NJD", appearances: 10, requested: 10, short: false, firstDate: "2026-10-01", lastDate: "2026-10-30" }, b: { playerId: 9000002, name: "Beta Fake", group: "F", team: "NYI", appearances: 6, requested: 10, short: true, firstDate: "2026-10-05", lastDate: "2026-10-29" } };
 const metrics = ["Goals", "Assists", "Points", "SOG", "Hits", "Blocks", "BSH", "TOI", "ixG (NST)", "iSCF (NST)"].map((label, index) => metric(label, label, "1.25", "0.75", index % 2 ? "b" : "a"));
 const settingsKey = "9000001-9000002|l10|per-game|all|90";
@@ -42,6 +43,18 @@ function snapshot(claims: ReturnType<typeof claim>[], kind: string, over: Record
     data: { settingsKey, through: "2026-10-30", season: 20262027, windowLabel: "Last 10 appearances", basisLabel: "Per appearance", strengthLabel: "All situations", ...sides, metrics, notes: ["Samples differ: Alpha Fake 10, Beta Fake 6 appearances."],
       discussion: { headline: "No consensus established", kind, note: "The reviewed posts here disagree.", caveat: claims.length ? "Hand-picked posts. Not a market price, a poll or a consensus." : null, claims, shown: claims.slice(0, 2), rationales: [...new Set(claims.map(entry => entry.selectionRationale))] },
       selection: { sourced: claims.length > 0, rationales: [...new Set(claims.map(entry => entry.selectionRationale))] } }, ...over };
+}
+/** TJ's bar: the body fills, nothing clips, and no empty band over about 40px at 1080. */
+async function expectFills(page: Page) {
+  const fit = await page.locator("[class*=postBody]").evaluate(body => {
+    const scale = body.getBoundingClientRect().height / body.clientHeight;
+    const parts = [...(body.firstElementChild as Element).children].map(part => part.getBoundingClientRect());
+    const bottom = body.getBoundingClientRect().bottom;
+    const gaps = parts.slice(1).map((part, index) => part.top - parts[index].bottom);
+    return { clipped: body.scrollHeight > body.clientHeight + 1, band: Math.max(bottom - parts[parts.length - 1].bottom, ...gaps) / scale };
+  });
+  expect(fit.clipped, "the longest allowed content must fit the square").toBe(false);
+  expect(fit.band, "no empty band over about 40px").toBeLessThanOrEqual(40);
 }
 async function open(page: Page, body: unknown) {
   await signIn(page);
@@ -58,20 +71,27 @@ test.describe("Player vs Player post", () => {
     await expect(discussion.getByRole("heading", { name: "No consensus established" })).toBeVisible();
     await expect(discussion).toContainText("https://www.reddit.com/r/fake/comments/fake1");
     await expect(discussion).toContainText("https://x.com/fake/status/2");
-    await expect(discussion).toContainText("Not a market price");
+    await expect(discussion).toContainText("Paraphrased");
+    await expect(discussion).toContainText("Quoted");
     await expect(discussion).not.toContainText(/\d+%/);
+    await expect(page.getByTestId("pvp-legend")).toContainText("not a market price");
     await expect(page.getByTestId("share-square")).toHaveAttribute("aria-label", /comments\/fake3/);
     await expect(page.getByTestId("post-evidence")).toContainText("Beta Fake 6 of 10");
-    const clipped = await page.locator("[class*=postBody]").evaluate(body => body.scrollHeight > body.clientHeight + 1);
-    expect(clipped, "the longest allowed claims must fit the square").toBe(false);
+    await expectFills(page);
   });
-  test("no discussion on file still prints no consensus, and says the editor chose the pair", async ({ page }) => {
+  test("no discussion on file still prints no consensus, and the stats fill the body", async ({ page }) => {
     await open(page, snapshot([], "empty"));
     const discussion = page.getByTestId("pvp-discussion");
     await expect(discussion).toHaveAttribute("data-kind", "empty");
     await expect(discussion).toContainText("No consensus established");
-    await expect(discussion).toContainText("chosen by the editor");
-    await expect(discussion).not.toContainText("Not a market price");
+    await expect(page.getByTestId("pvp-legend")).toContainText("No posts on file");
+    await expectFills(page);
+  });
+  test("a power-play view with one stat row still fills the body", async ({ page }) => {
+    const base = snapshot([], "empty");
+    await open(page, { ...base, data: { ...base.data, metrics: metrics.slice(0, 1) } });
+    await expect(page.getByTestId("pvp-stats")).toBeVisible();
+    await expectFills(page);
   });
   test("a blocked post shows why, with no card and no export", async ({ page }) => {
     await open(page, snapshot([], "empty", { state: "blocked", reasons: ["Enter two NHL player ids, or choose a sourced pair."], data: null }));

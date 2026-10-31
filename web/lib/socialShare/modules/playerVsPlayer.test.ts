@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import PlayerVsPlayerCard from "components/SocialShare/modules/PlayerVsPlayerCard";
 import { parseShareSettings, sharePostExportBlock, type AnyShareModule, type SharePostSnapshot } from "./contract";
 import shippedCandidates from "./playerVsPlayer.candidates.json";
-import { buildPlayerVsPlayer, claimsForPair, comparePlayerWindows, joinNst, NO_CONSENSUS, playerVsPlayerModule, playerWindow, pvpAltText, pvpHasRows, summarizeDiscussion, validateCandidate, validateCandidateFile, type CandidateRecord, type PlayerVsPlayerData, type PlayerVsPlayerSettings, type PvpNstRow, type PvpStrength } from "./playerVsPlayer";
+import { buildPlayerVsPlayer, claimsForPair, comparePlayerWindows, joinNst, NO_CONSENSUS, playerVsPlayerModule, playerWindow, pvpAltText, pvpHasRows, pvpLegend, summarizeDiscussion, validateCandidate, validateCandidateFile, type CandidateRecord, type PlayerVsPlayerData, type PlayerVsPlayerSettings, type PvpNstRow, type PvpStrength } from "./playerVsPlayer";
 import type { SkaterAppearance } from "./shared/skaterAppearances";
 
 const entry = playerVsPlayerModule as AnyShareModule;
@@ -37,6 +37,7 @@ describe("candidate schema (5.1)", () => {
     expect(validateCandidate(claimInput({ url: "https://example.com/post" })).record).toBeNull();
     expect(validateCandidate(claimInput({ url: "https://notreddit.com/post" })).record).toBeNull();
     expect(validateCandidate(claimInput({ url: "http://www.reddit.com/r/fake" })).record).toBeNull();
+    expect(validateCandidate(claimInput({ url: `https://www.reddit.com/r/fake/${"a".repeat(200)}` })).reasons).toContain("URL is over 200 characters.");
     expect(validateCandidate(claimInput({ platform: "x", url: "https://x.com/fake/status/1" })).record?.platform).toBe("x");
     expect(validateCandidate(claimInput({ date: "2026-11-02" }), "2026-10-31").reasons).toContain("Date is in the future.");
     expect(validateCandidate(claimInput({ selectionRationale: " " })).reasons).toContain("Missing selection rationale.");
@@ -103,6 +104,7 @@ describe("comparable windows (5.2)", () => {
     const ixg = result.data?.metrics.find(row => row.id === "ixg");
     expect(ixg).toMatchObject({ higher: null, b: { value: null, shown: "—", observed: 8, expected: 10, missing: 2, admitted: false }, a: { admitted: true } });
     expect(result.data?.notes.join(" ")).toContain("Beta Fake 8 of 10, 2 missing");
+    expect(result.evidence.cohort).toContain("Beta Fake 8 of 10, 2 missing");
     expect(build({ appearances, nst, settings: settings({ minCoverage: 80 }) }).data?.metrics.find(row => row.id === "ixg")?.b.admitted).toBe(true);
   });
   it("joins nothing on a repeated NST date, and a null stat is missing, not zero", () => {
@@ -168,7 +170,7 @@ describe("card and alt text (5.4)", () => {
   const snapshotOf = (data: PlayerVsPlayerData, current: PlayerVsPlayerSettings) => ({ schemaVersion: 1, id: "x", post: "player-vs-player", state: "ready", reasons: [], generatedAt: "2026-10-31T12:00:00Z", expiresAt: "2026-10-31T12:15:00Z", timeZone: "America/New_York", settings: current, evidence: { sources: [{ name: "x", tables: [], state: "ready", asOf: null, updatedAt: null }], sample: "s", strength: "s", cohort: "c", coverage: null }, data, teams: [], fixture: false } as unknown as SharePostSnapshot<PlayerVsPlayerSettings, PlayerVsPlayerData>);
   const show = (data: PlayerVsPlayerData, current = settings()) => render(createElement(PlayerVsPlayerCard, { snapshot: snapshotOf(data, current), data, settings: current, logos: {} }));
 
-  it("prints the headline, labels, URLs and limits, and keeps quoted apart from paraphrased", () => {
+  it("prints the headline, labels and URLs, and keeps quoted apart from paraphrased", () => {
     const data = build({ candidates }).data!;
     show(data);
     expect(screen.getByTestId("pvp-discussion").dataset.kind).toBe("conflicting");
@@ -177,9 +179,26 @@ describe("card and alt text (5.4)", () => {
     expect(screen.getByText(/Reddit · 2026-10-20 · Quoted/)).toBeTruthy();
     expect(screen.getByText(/X · 2026-10-21 · Paraphrased/)).toBeTruthy();
     expect(screen.getByText("https://x.com/fake/status/2")).toBeTruthy();
-    expect(screen.getAllByText(/Limits: One fictional thread\./).length).toBe(2);
-    expect(screen.getByText(/Not a market price/)).toBeTruthy();
-    expect(screen.getByText(/alt text/)).toBeTruthy();
+    expect(screen.getByTestId("pvp-legend").textContent).toBe("Bright = higher. Hand-picked posts, not a market price or a poll.");
+  });
+  it("marks the higher side, and marks nothing on totals over differing samples", () => {
+    const { unmount } = show(build({ appearances: [...games(A, 10), ...games(B, 10, { goals: 0 })] }).data!);
+    expect(screen.getByTestId("pvp-stats").querySelectorAll("[data-higher]").length).toBeGreaterThan(0);
+    unmount();
+    const current = settings({ basis: "total" }), data = build({ settings: current, appearances: [...games(A, 10), ...games(B, 6)] }).data!;
+    show(data, current);
+    expect(screen.getByTestId("pvp-stats").querySelectorAll("[data-higher]").length).toBe(0);
+    expect(pvpLegend(data)).toBe("Totals not compared: samples differ. No posts on file.");
+  });
+  it("sends the disclosures to the evidence, off the card", () => {
+    const result = build({ candidates, appearances: [...games(A, 10), ...games(B, 6)] });
+    show(result.data!);
+    expect(result.evidence.cohort).toContain("Selected because: Fictional thread");
+    expect(result.evidence.cohort).toContain("The reviewed posts here disagree.");
+    expect(result.evidence.cohort).toContain("Hand-picked posts. Not a market price");
+    expect(result.evidence.cohort).toContain("Samples differ: Alpha Fake 10, Beta Fake 6 appearances.");
+    expect(result.evidence.cohort).not.toMatch(/% of|majority/i);
+    expect(screen.getByTestId("pvp-discussion").textContent).not.toMatch(/Limits|Why this pair|disagree/);
   });
   it("puts every URL, the labels and the headline in the alt text", () => {
     const data = build({ candidates }).data!;
@@ -193,9 +212,9 @@ describe("card and alt text (5.4)", () => {
   });
   it("says the pair is editor-chosen when nothing is on file", () => {
     show(build().data!);
-    expect(screen.getByText(/chosen by the editor/)).toBeTruthy();
     expect(screen.getByRole("heading", { name: NO_CONSENSUS })).toBeTruthy();
-    expect(screen.queryByText(/Not a market price/)).toBeNull();
+    expect(screen.getByTestId("pvp-legend").textContent).toBe("Bright = higher. No posts on file.");
+    expect(build().evidence.cohort).toContain("Editor-chosen pair");
     expect(pvpAltText(build().data!, "s")).toContain("Editor-chosen pair.");
   });
   it("shows why a player has no window, and does not export it", () => {

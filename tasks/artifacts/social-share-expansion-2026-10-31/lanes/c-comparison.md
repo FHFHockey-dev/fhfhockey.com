@@ -11,18 +11,30 @@ Base `7bddeaf0d`. Commit: see the commit that adds this file on `octoberBranch`.
 | 5.3 Empty and conflicting states | Done | `summarizeDiscussion`. Tests: empty, one post, one-sided, conflicting and no-side all print "No consensus established", with no digit, percentage or majority wording |
 | 5.4 Card | Done | `PlayerVsPlayerCard.tsx`. Tests: headline, labels, URLs, limits, and every URL in the alt text |
 | 5.5 Assessment | Done | [SENTIMENT-ASSESSMENT.md](../SENTIMENT-ASSESSMENT.md). **Discovery stays blocked**; TJ decides any next step |
-| 5.6 Real candidates | **Open** | No candidates supplied or approved, so none were invented. The bounded player-stat read waits with it |
+| 5.6 Real candidates | **Open by TJ's decision** | TJ decided, relayed by the lead on 2026-10-31: manual reviewed records are the design, and TJ adds candidates later. So 5.6 stays open, discovery stays blocked, and the shipped file stays empty. The bounded player-stat read waits with it |
+
+## Layout pass (TJ's review: fill the space, less meta text)
+
+- The card is now a head-to-head stat block across the full width: value, label, value. Its rows take all the height the discussion leaves, so the body has no spare band. Filled tiles mark the higher side.
+- With no posts or few rows, the type grows: 30px, 46px or 130px values. A one-row power-play view is one tall tile, which meets the rule by fill. TJ may prefer something else there.
+- Two claims sit side by side under the headline.
+- On the card: player names, GP, window and basis, "No consensus established", claim text, claim URLs, quoted or paraphrased labels, and one legend line (`pvpLegend`).
+- **Judgment call:** the legend also carries a short "Hand-picked posts, not a market price or a poll". Without it, a PNG shared alone could read a one-sided pair of posts as opinion at large.
+- Moved off the card to `evidence.cohort`, which prints on the page, and the alt text: why this pair, the discussion note, the full caveat, samples, positions, teams, and coverage notes.
+- Per-post limitations and the claims the card doesn't show are in the alt text only.
+- New refusal: a URL over 200 characters. URLs had no limit, and an unbounded one could clip the card.
 
 ## Checks
 
 | Check | Result |
 | --- | --- |
-| `npm test -- lib/socialShare/modules/playerVsPlayer.test.ts` | Passed, 34 tests |
-| `contract.test.ts`, `server.test.ts`, `PostStudio.test.tsx` with this post registered | Passed (49 tests with the post tests) |
-| eslint on my files | Clean |
+| `playerVsPlayer.test.ts`, `contract.test.ts`, `server.test.ts`, `PostStudio.test.tsx` | Passed, 52 tests |
+| eslint on my TypeScript files | Clean |
 | CSS-module pure check on `PlayerVsPlayerCard.module.scss` | Passed |
-| `npx tsc --noEmit` | 0 errors at the time of the run, repo-wide |
-| `playwright test e2e/social-share-comparison.spec.ts --list` | 3 tests listed. **Not run in a browser**: that is the lead's at 13.0 |
+| `npx tsc --noEmit` (with an 8 GB heap; the default heap crashed) | 0 errors, repo-wide |
+| `playwright test e2e/social-share-comparison.spec.ts --list` | 4 tests listed. **Not run in a browser**: that is the lead's at 13.0 |
+
+**The fill is unproven.** Type sizes come from arithmetic on the 860px body, not from a render. The spec's `expectFills` checks for clipping and for bands over 40px, using 240-character claims and 200-character URLs, at 13.0.
 
 ## Real reads
 
@@ -37,12 +49,12 @@ So this post has **no real-input evidence yet**. These source assumptions are un
 
 1. **Runtime read size.** The loader reads up to 170 rows from each of `wgo_skater_stats`, `nst_gamelog_as_counts`, `games` and `wgo_team_stats`, only after two players are chosen, and fails closed above that. That is above the 50-row sample bound. LANES says a larger runtime read needs a new approval, so this needs TJ's yes before live use. The example post's loader has limits of 600 and 300.
 2. **Shell finding, not changed.** After a server setting changes with no Refresh, `PostStudio` prints the new settings in the footer and token over the old data, so a PNG can mislabel its data. This post guards itself: `hasRows` compares `data.settingsKey`, and the card asks for a refresh. Other posts may need the same guard or a shell fix.
-3. **Fit at the limit.** The E2E asserts that the longest allowed claims don't overflow the square. It is the first real test of this layout, since nothing has rendered in a browser.
+3. **Fit at the limit.** The E2E asserts the fill and no overflow at the longest allowed content. It is the first real test of this layout, since nothing has rendered in a browser.
 4. **Basis is `observed`.** `market-observation` was rejected on purpose: hand-picked posts are not a market. If 13.0 wants a different label, the claim wording needs review too.
 5. **Player entry is by NHL id.** The shell has no player search, and this lane may not edit it. A sourced pair appears in the dropdown once the file has records.
 
 ## Blockers
 
-- 5.6 needs TJ to supply or approve candidates.
-- Discovery is blocked by the assessment's findings, and TJ decides.
+- 5.6 stays open until TJ adds candidates, as TJ decided. Nothing is needed from this lane.
+- Discovery stays blocked, as TJ decided.
 - Reddit's own terms could not be read (fetch refused), so they are cited through secondary sources and marked that way.
