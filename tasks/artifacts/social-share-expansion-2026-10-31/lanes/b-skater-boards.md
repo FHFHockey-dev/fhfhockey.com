@@ -107,3 +107,14 @@ Follow-up commit (Blueprint default): 50 tests in the lane's 3 files passed, esl
 - **Fit test:** the spec now fails on clipping, a truncated cell or name, or a dead band over 40px, with a new test at the 20-row limit for each post.
 - **Not measured:** the 20-row fit and the name widths are from the CSS. No browser run; the lead renders on real data.
 - **Checks:** 50 tests in the lane's 3 files passed, eslint clean, the pure check passed, `--list` found 9 tests, and `tsc` exited 0 for the whole app.
+
+## BSH leaders chart and tile (TJ's review: "Add a layered line, with each segment representing B, S and H")
+
+- **Chart:** each leader row has a stacked chart of the window's appearances, oldest to newest: blocks at the bottom, then shots, then hits, with a white top edge at that game's BSH. All rows share one scale.
+- **Colours:** B `#3f9bdc`, S `#c88120`, H `#cf5cad`, with a B, S, H key in the one legend line and the same tints behind the BLK, SOG and HITS columns. The dataviz validator passes them on the post's dark surface.
+- **Tile:** the goalie `HeatTile`, per-game BSH scaling with value, caption "N total". BLK, SOG and HITS each still print total over per game.
+- **Gap versus 0:** a game with a missing component breaks the shape and draws nothing. A known 0 draws on the baseline.
+- **Gaps cannot reach a ranked leader today.** The rule unranks a skater with a missing component in the window, so a gap only appears if that rule changes. The card and tests handle it anyway.
+- **Rows:** leaders go from 20 to 12, because the chart and tile need the height. Risers, fallers, Blueprint and Nightly Floor stay at 20. Skaters below the card are counted in `evidence.cohort`.
+- **PNG:** drawn as inline SVG like the What Changed sparkline. Not measured or exported here; no browser run.
+- **Checks:** 57 tests in the lane's 3 files passed, eslint clean, the pure check passed, `--list` found 9 tests, `tsc` printed no errors.

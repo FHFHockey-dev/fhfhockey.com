@@ -18,6 +18,8 @@ export const skaterWindowOf = (rows: readonly SkaterAppearance[], window: Skater
 };
 /** Rows the 860px post body holds at the dense type size. What falls below is counted in the evidence. */
 export const SKATER_BOARD_ROWS = 20;
+/** BSH leaders carry a chart and a tile in each row, which need the height of 12 rows. */
+export const BSH_LEADER_ROWS = 12;
 /** The cohort line's count of ranked rows the card has no room for. */
 export const belowTheCard = (notShown: number, tied = 0) => notShown ? `${notShown} more below the card${tied ? `, ${tied} tied with the last row` : ""}` : "";
 export const STALE_SETTINGS_NOTE = "Settings changed. Refresh this post to apply them.";
@@ -66,7 +68,9 @@ export type BshComparison = "previous" | "std";
 export type BshBoardSettings = { view: BshView; window: SkaterWindowId; comparison: BshComparison; minGp: number; position: SkaterPositionId };
 /** A null component total means a game in the window lacks that stat. Shot attempts never stand in for shots. */
 export type BshTotals = { games: number; blocks: number | null; shots: number | null; hits: number | null; bsh: number | null; blocksPerGame: number | null; shotsPerGame: number | null; hitsPerGame: number | null; bshPerGame: number | null };
-export type BshRow = SkaterIdentity & { rank: number; recent: BshTotals; baseline: BshTotals | null; delta: number | null };
+/** One appearance in the leaders' chart, oldest first. A null component makes the game a gap, never a zero. */
+export type BshGameStack = { date: string; blocks: number | null; shots: number | null; hits: number | null; bsh: number | null };
+export type BshRow = SkaterIdentity & { rank: number; recent: BshTotals; baseline: BshTotals | null; delta: number | null; games: BshGameStack[] };
 export type BshBoardData = {
   applied: string; view: BshView; through: string; windowLabel: string; comparisonLabel: string | null; rows: BshRow[];
   cohort: { eligible: number; comparable: number; ranked: number; missingComponent: number; shortWindow: number; flat: number };
@@ -79,6 +83,9 @@ export function bshTotals(rows: readonly SkaterAppearance[]): BshTotals {
   const total = known ? rows.reduce((sum, row) => sum + bsh(row)!, 0) : null;
   return { games, blocks, shots, hits, bsh: total, blocksPerGame: perGame(blocks, games), shotsPerGame: perGame(shots, games), hitsPerGame: perGame(hits, games), bshPerGame: perGame(total, games) };
 }
+export const bshGameStacks = (rows: readonly SkaterAppearance[]): BshGameStack[] => rows.map(row => ({ date: row.date, blocks: row.blocks, shots: row.shots, hits: row.hits, bsh: bsh(row) }));
+/** Top of the B, S and H layers for one game, bottom to top. Null is a gap. */
+export const bshStackTops = (game: BshGameStack): [number, number, number] | null => game.bsh === null ? null : [game.blocks!, game.blocks! + game.shots!, game.bsh];
 /** Differences of per-game rates, rounded so two equal changes tie instead of parting on floating-point noise. */
 const tieSafe = (value: number) => Math.round(value * 1e6) / 1e6;
 
@@ -103,22 +110,22 @@ const BSH_FIELDS: readonly ShareSettingField[] = [
 export function buildBshBoard(season: SkaterSeason, settings: BshBoardSettings): SharePostLoadResult<BshBoardData> {
   const pool = skaterCohort(season.appearances, settings);
   let missingComponent = 0, shortWindow = 0;
-  const candidates = pool.flatMap((rows): { id: SkaterIdentity; recent: BshTotals; baseline: BshTotals | null; delta: number | null }[] => {
+  const candidates = pool.flatMap((rows): { id: SkaterIdentity; recent: BshTotals; baseline: BshTotals | null; delta: number | null; games: BshGameStack[] }[] => {
     const recent = skaterWindowOf(rows, settings.window);
     if (settings.view === "leaders") {
       const totals = bshTotals(recent.rows);
       if (totals.bsh === null) { missingComponent++; return []; }
-      return [{ id: skaterIdentity(recent.rows), recent: totals, baseline: null, delta: null }];
+      return [{ id: skaterIdentity(recent.rows), recent: totals, baseline: null, delta: null, games: bshGameStacks(recent.rows) }];
     }
     const base = baselineOf(rows, settings.window, settings.comparison);
     if (recent.short || base.actual < recent.requested!) { shortWindow++; return []; }
     const totals = bshTotals(recent.rows), baseline = bshTotals(base.rows);
     if (totals.bshPerGame === null || baseline.bshPerGame === null) { missingComponent++; return []; }
-    return [{ id: skaterIdentity(recent.rows), recent: totals, baseline, delta: tieSafe(totals.bshPerGame - baseline.bshPerGame) }];
+    return [{ id: skaterIdentity(recent.rows), recent: totals, baseline, delta: tieSafe(totals.bshPerGame - baseline.bshPerGame), games: [] }];
   });
   const moving = settings.view === "leaders" ? candidates : candidates.filter(row => settings.view === "risers" ? row.delta! > 0 : row.delta! < 0);
   const ranked = competitionRanks(moving, row => settings.view === "leaders" ? row.recent.bshPerGame : row.delta, row => row.id.playerId, settings.view === "fallers" ? "low" : "high");
-  const rows: BshRow[] = ranked.slice(0, SKATER_BOARD_ROWS).map(({ row, rank }) => ({ ...row.id, rank, recent: row.recent, baseline: row.baseline, delta: row.delta }));
+  const rows: BshRow[] = ranked.slice(0, settings.view === "leaders" ? BSH_LEADER_ROWS : SKATER_BOARD_ROWS).map(({ row, rank }) => ({ ...row.id, rank, recent: row.recent, baseline: row.baseline, delta: row.delta, games: row.games }));
   const lastRank = rows[rows.length - 1]?.rank, comparisonLabel = bshComparisonLabel(settings);
   const flat = settings.view === "leaders" ? 0 : candidates.filter(row => row.delta === 0).length;
   const counted = settings.view === "leaders" ? `${ranked.length} ranked` : `${candidates.length} comparable, ${ranked.length} ${settings.view}`;
@@ -126,7 +133,7 @@ export function buildBshBoard(season: SkaterSeason, settings: BshBoardSettings):
   const excluded = [missingComponent ? `${missingComponent} unranked for a missing component` : "", shortWindow ? `${shortWindow} short of a full comparison` : "", flat ? `${flat} unchanged` : "", belowTheCard(notShown, tiedBeyondCut)].filter(Boolean).join(", ");
   const windowLabel = skaterWindowLabel(settings.window);
   return {
-    ...skaterSeasonEvidence(season, { windowLabel: comparisonLabel ? `${windowLabel} vs ${comparisonLabel}` : windowLabel, cohort: `${skaterCohortLabel(settings)}: ${pool.length} eligible, ${counted}${excluded ? `, ${excluded}` : ""}`, note: settings.view === "leaders" ? "Ranked by BSH per game. A missing component leaves a skater unranked; shot attempts never stand in." : "Ranked by the change in BSH per game. Both windows must be full." }),
+    ...skaterSeasonEvidence(season, { windowLabel: comparisonLabel ? `${windowLabel} vs ${comparisonLabel}` : windowLabel, cohort: `${skaterCohortLabel(settings)}: ${pool.length} eligible, ${counted}${excluded ? `, ${excluded}` : ""}`, note: settings.view === "leaders" ? "Ranked by BSH per game. A missing component leaves a skater unranked; shot attempts never stand in. The chart stacks blocks, shots and hits by appearance, oldest to newest, on one scale across rows." : "Ranked by the change in BSH per game. Both windows must be full." }),
     data: {
       applied: shareSettingsKey(BSH_FIELDS, settings), view: settings.view, through: season.through, windowLabel, comparisonLabel, rows,
       cohort: { eligible: pool.length, comparable: candidates.length, ranked: ranked.length, missingComponent, shortWindow, flat },

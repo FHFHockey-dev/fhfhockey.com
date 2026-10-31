@@ -14,6 +14,8 @@
 - Layout pass for TJ: 20-row limit, rows stretch to fill the body, one legend line per card, other notes moved to evidence. Fit is unmeasured until the lead renders.
 - Blueprint default moved from Top 100 (0 skaters of 633 on real data) to Top 250 (16), keeping the four categories. Reasoning and read R6 are in the receipt.
 
+- BSH leaders: stacked B, S, H chart per game plus a HeatTile; 12 rows. Gaps cannot reach a ranked leader under the current unranking rule. Fit unmeasured until the lead renders.
+
 **Gotchas:**
 - PostStudio shows old data under new labels until Refresh and lets it export. The lead fixed the export side at `839aa7af4`. These posts keep `data.applied` so the card also asks for a refresh.
 - `yahoo_nhl_player_map_read` joins on `player_key`, not `player_id`; many NHL ids hold several Yahoo ids.

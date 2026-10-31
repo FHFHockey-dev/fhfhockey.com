@@ -2,7 +2,7 @@
 import { createElement } from "react";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { bshBoardModule, buildBshBoard, skaterSeasonEvidence, skaterSeasonScope, type BshBoardData, type BshBoardSettings, type SkaterSeason } from "./bshBoard";
+import { BSH_LEADER_ROWS, bshBoardModule, bshGameStacks, bshStackTops, buildBshBoard, skaterSeasonEvidence, skaterSeasonScope, type BshBoardData, type BshBoardSettings, type SkaterSeason } from "./bshBoard";
 import { parseShareSettings, sharePostExportBlock, type SharePostSnapshot } from "./contract";
 import { skaterBoardModules } from "./lanes/skaterBoards";
 import type { SkaterAppearance } from "./shared/skaterAppearances";
@@ -40,10 +40,10 @@ describe("BSH leaderboard", () => {
     const tied = buildBshBoard(season([...games(1, 5, { shots: 5 }), ...games(2, 5), ...games(3, 5), ...games(4, 5, { shots: 0 })]), settings());
     expect(tied.data!.rows.map(row => row.rank)).toEqual([1, 2, 2, 4]);
     const many = buildBshBoard(season(Array.from({ length: 22 }, (_, index) => games(index + 1, 5)).flat()), settings());
-    expect(many.data).toMatchObject({ notShown: 2, tiedBeyondCut: 2 });
-    expect(many.data!.rows).toHaveLength(20);
+    expect(many.data).toMatchObject({ notShown: 10, tiedBeyondCut: 10 });
+    expect(many.data!.rows).toHaveLength(BSH_LEADER_ROWS);
     expect(many.data!.rows.every(row => row.rank === 1)).toBe(true);
-    expect(many.evidence.cohort).toContain("2 more below the card, 2 tied with the last row");
+    expect(many.evidence.cohort).toContain("10 more below the card, 10 tied with the last row");
   });
   it("shows the actual count for a short window and applies season GP and position", () => {
     const { data } = buildBshBoard(season([...games(1, 3), ...games(2, 8, { position: "D", group: "D" })]), settings({ window: "l10", minGp: 5, position: "D" }));
@@ -61,6 +61,30 @@ describe("BSH leaderboard", () => {
     const empty = buildBshBoard(season(games(1, 2)), settings({ minGp: 5 }));
     expect(empty.data!.rows).toEqual([]);
     expect(bshBoardModule.hasRows(empty.data, settings({ minGp: 5 }))).toBe(false);
+  });
+});
+
+describe("BSH game stacks", () => {
+  it("stacks blocks, shots and hits per game, with BSH on top", () => {
+    const [stack] = bshGameStacks([game(1, 0, { blocks: 2, shots: 3, hits: 1 })]);
+    expect(stack).toEqual({ date: "2026-10-01", blocks: 2, shots: 3, hits: 1, bsh: 6 });
+    expect(bshStackTops(stack)).toEqual([2, 5, 6]);
+  });
+  it("makes a missing component a gap and keeps a known 0", () => {
+    expect(bshStackTops(bshGameStacks([game(1, 0, { shots: null })])[0])).toBeNull();
+    expect(bshStackTops(bshGameStacks([game(1, 0, { blocks: 0, shots: 0, hits: 0 })])[0])).toEqual([0, 0, 0]);
+  });
+  it("carries the window's games oldest to newest on leaders only", () => {
+    const rows = games(1, 12, index => ({ shots: index }));
+    const { data } = buildBshBoard(season(rows), settings());
+    expect(data!.rows[0].games.map(entry => entry.date)).toEqual(["2026-10-08", "2026-10-09", "2026-10-10", "2026-10-11", "2026-10-12"]);
+    expect(data!.rows[0].games.map(entry => entry.shots)).toEqual([7, 8, 9, 10, 11]);
+    expect(buildBshBoard(season(rows), settings({ view: "risers" })).data!.rows[0].games).toEqual([]);
+  });
+  it("holds 12 leaders and still 20 risers", () => {
+    const many = season(Array.from({ length: 22 }, (_, index) => games(index + 1, 10, entry => ({ shots: entry >= 5 ? 4 : 1 })) ).flat());
+    expect(buildBshBoard(many, settings()).data!.rows).toHaveLength(12);
+    expect(buildBshBoard(many, settings({ view: "risers" })).data!.rows).toHaveLength(20);
   });
 });
 
@@ -140,7 +164,7 @@ describe("BSH card", () => {
   it("prints components, per-game values, window and cohort", async () => {
     const active = settings(), { data } = buildBshBoard(season([...games(1, 5, { blocks: 2, shots: 3, hits: 1 }), ...games(2, 5, index => index === 0 ? { hits: null } : {})]), active);
     const text = await show(data!, active);
-    for (const label of ["BLK /G", "SOG /G", "HITS /G", "BSH /G", "Skater 1", "10 2.00", "15 3.00", "5 1.00", "30 6.00", "L5", "1 of 2 ranked"]) expect(text).toContain(label);
+    for (const label of ["BLK /G", "SOG /G", "HITS /G", "BSH /G", "Skater 1", "10 2.00", "15 3.00", "5 1.00", "6.00", "30 total", "BY GAME", "L5", "1 of 2 ranked"]) expect(text).toContain(label);
     expect(text).not.toContain("Skater 2");
     expect(document.querySelectorAll("p")).toHaveLength(1);
   });
@@ -149,6 +173,34 @@ describe("BSH card", () => {
     const text = await show(data!, active);
     for (const label of ["L5, then previous 5 in grey", "4.00 1.00", "6.00 3.00", "+3.00", "5/5"]) expect(text).toContain(label);
     expect(evidence.sample).toContain("last 5 appearances vs the previous 5 appearances");
+  });
+  describe("chart and tile", () => {
+    const chart = () => document.querySelector("[data-testid=bsh-stack]")!;
+    it("draws one shape of three layers oldest first, with a tile scaling with value", async () => {
+      const active = settings(), { data } = buildBshBoard(season([...games(1, 5, index => ({ blocks: index, shots: 2, hits: 1 })), ...games(2, 5, { blocks: 0, shots: 1, hits: 0 })]), active);
+      await show(data!, active);
+      expect(chart().getAttribute("data-stack")).toBe("0+2+1,1+2+1,2+2+1,3+2+1,4+2+1");
+      expect([...chart().querySelectorAll("[data-layer]")].map(path => path.getAttribute("data-layer"))).toEqual(["b", "s", "h"]);
+      expect(chart().querySelectorAll("[data-edge]")).toHaveLength(1);
+      const alphas = screen.getAllByTestId("heat-tile").map(tile => Number(tile.getAttribute("data-alpha")));
+      expect(alphas[0]).toBe(0.8);
+      expect(alphas[1]).toBeLessThan(alphas[0]);
+    });
+    it("breaks the shape at a missing game and draws a known 0 on the baseline", async () => {
+      const active = settings(), { data } = buildBshBoard(season(games(1, 5, { blocks: 1, shots: 1, hits: 1 })), active), row = data!.rows[0];
+      const gapped = { ...data!, rows: [{ ...row, games: [row.games[0], row.games[1], { ...row.games[2], shots: null, bsh: null }, { ...row.games[3], blocks: 0, shots: 0, hits: 0, bsh: 0 }, row.games[4]] }] };
+      await show(gapped, active);
+      expect(chart().getAttribute("data-stack")).toBe("1+1+1,1+1+1,gap,0+0+0,1+1+1");
+      const edges = [...chart().querySelectorAll("[data-edge]")].map(path => path.getAttribute("d")!);
+      expect(edges).toHaveLength(2);
+      expect(edges[1]).toContain("L"); // The 0 joins the next game, so it is drawn, not dropped.
+      expect(edges[1].startsWith("M126.00 46.00")).toBe(true); // Fourth of five games, on the chart's baseline.
+    });
+    it("has no chart on risers", async () => {
+      const active = settings({ view: "risers" }), { data } = buildBshBoard(season(games(1, 10, index => ({ shots: index >= 5 ? 4 : 1 }))), active);
+      await show(data!, active);
+      expect(document.querySelector("[data-testid=bsh-stack]")).toBeNull();
+    });
   });
   it("says why an empty board is empty", async () => {
     const active = settings({ view: "fallers" }), { data } = buildBshBoard(season(games(1, 6)), active);

@@ -1,5 +1,9 @@
 @use "styles/vars" as v;
 
+$layer-b: #3f9bdc;
+$layer-s: #c88120;
+$layer-h: #cf5cad;
+
 /* Fills the post body: rows share whatever height the legend leaves, so a short board has no dead band. */
 .board { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: v.$space-xs; }
 .legend { margin: 0; font-size: 19px; line-height: 1.2; color: v.$text-secondary; }
@@ -14,3 +18,19 @@
 .pair { white-space: nowrap; small { font-size: 0.72em; color: v.$text-secondary; } }
 .strong { font-weight: 700; color: v.$primary-color; white-space: nowrap; }
 .missing { color: v.$warning-color; }
+
+/* BSH leaders, eight columns: RK, SKATER, GP, BLK, SOG, HITS, BY GAME, BSH. Each component column wears its chart layer's tint. */
+.fill[data-charted] > div { font-size: 24px; column-gap: 12px; }
+.fill[data-charted] > div > span:nth-child(8n + 4), .fill[data-charted] > div > span:nth-child(8n + 5), .fill[data-charted] > div > span:nth-child(8n + 6) { padding-inline: 6px; }
+.fill[data-charted] > div > span:nth-child(8n + 4) { background: rgba($layer-b, 0.16); }
+.fill[data-charted] > div > span:nth-child(8n + 5) { background: rgba($layer-s, 0.16); }
+.fill[data-charted] > div > span:nth-child(8n + 6) { background: rgba($layer-h, 0.16); }
+.stat { display: grid; justify-items: end; line-height: 1.1; small { font-size: 0.72em; color: v.$text-secondary; } }
+.chart { position: relative; align-self: stretch; width: 180px; svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; } }
+.layer { stroke: v.$background-dark; stroke-width: 1px; vector-effect: non-scaling-stroke; }
+.layer[data-layer="b"] { fill: $layer-b; }
+.layer[data-layer="s"] { fill: $layer-s; }
+.layer[data-layer="h"] { fill: $layer-h; }
+.edge { fill: none; stroke: v.$color-white; stroke-width: 2px; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.tile > span { min-width: 92px; }
+.key { color: v.$color-white; font-weight: 700; i { display: inline-block; width: 14px; height: 14px; margin: 0 4px 0 8px; border-radius: 3px; vertical-align: -1px; } i:first-child { margin-left: 0; } i[data-layer="b"] { background: $layer-b; } i[data-layer="s"] { background: $layer-s; } i[data-layer="h"] { background: $layer-h; } }
