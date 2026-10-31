@@ -87,7 +87,7 @@ test("goalie of the period: Category Counts and the TGV grade stay under their o
   await install(page);
   const result = buildGoaliePeriod({ settings: periodSettings, period: weekPeriod(week, "2026-10-30"), appearances, reported, scheduled, tgv });
   await page.route("**/api/v1/social-share/posts/**", route => route.fulfill({ json: edition("goalie-period", periodSettings, result) }));
-  await page.goto("/social-share/posts?post=goalie-period");
+  await page.goto("/social-share/posts?post=goalie-period&week=4");
   await expect(page.getByTestId("goalie-period-winners")).toContainText("Fictional Goalie 1");
   await expect(page.getByTestId("category-counts")).toContainText("Category Counts");
   await expect(page.getByTestId("category-counts")).not.toContainText("TGV");
@@ -100,7 +100,7 @@ test("goalie of the period: a game without one labeled starter cannot export", a
   await install(page);
   const result = buildGoaliePeriod({ settings: periodSettings, period: weekPeriod(week, "2026-10-30"), appearances: [...appearances, stat(9, "NJD", 1, days[0])], reported, scheduled, tgv });
   await page.route("**/api/v1/social-share/posts/**", route => route.fulfill({ json: edition("goalie-period", periodSettings, result) }));
-  await page.goto("/social-share/posts?post=goalie-period");
+  await page.goto("/social-share/posts?post=goalie-period&week=4");
   await expect(page.getByTestId("post-watermark")).toHaveText("PARTIAL · NOT FOR EXPORT");
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
 });
@@ -111,7 +111,7 @@ test("GSAx: NST model, strength, lag and the unavailable FHFH model are on the c
   const result = buildGoalieGsax({ appearances, nstGames, strength: "all", window: 10, board: "best", minAppearances: 1, minCoverage: 90, reported: reported.filter(game => game.date <= days[2]), scheduled: scheduled.filter(game => game.date <= days[2]), fhfhRows: 0 });
   const settings = { window: "10", strength: "all", board: "best", minAppearances: 1, minCoverage: 90 };
   await page.route("**/api/v1/social-share/posts/**", route => route.fulfill({ json: edition("goalie-gsax", settings, result) }));
-  await page.goto("/social-share/posts?post=goalie-gsax");
+  await page.goto("/social-share/posts?post=goalie-gsax&minAppearances=1");
   const square = page.getByTestId("share-square");
   await expect(square).toContainText("NST model, All situations.");
   await expect(square).toContainText("1 day behind NHL.com");

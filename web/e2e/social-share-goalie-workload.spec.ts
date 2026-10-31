@@ -98,6 +98,7 @@ test("Busy and Quiet keeps volume apart from performance, and basis changes the 
   expect(requests[0]).toContain("basis=start");
   await expect(page.getByText("Works for a Thursday or Friday post.")).toBeVisible();
   await page.getByLabel("Basis").selectOption("per60");
+  await page.getByRole("button", { name: "Refresh post" }).click();
   await expect(card).toContainText("SA/60");
   expect(requests.at(-1)).toContain("basis=per60");
   await downloadsPng(page, "busy-quiet");
@@ -122,9 +123,11 @@ test("Goalie Category Rescue orders by one category and shows ownership states",
   await expect(page.getByTestId("post-evidence")).toContainText("1 unknown ownership excluded");
   await expect(page.getByText("Works for a Thursday or Friday post.")).toBeVisible();
   await page.getByLabel("Include unknown ownership").selectOption("on");
+  await page.getByRole("button", { name: "Refresh post" }).click();
   await expect(card).toContainText("Fictional Goalie 2");
   expect(requests.at(-1)).toContain("includeUnknown=on");
-  await page.getByLabel("Category", { exact: true }).selectOption("gaa");
+  await page.getByRole("combobox", { name: /^Category/ }).selectOption("gaa");
+  await page.getByRole("button", { name: "Refresh post" }).click();
   expect(new URL(page.url()).searchParams.get("category")).toBe("gaa");
   await downloadsPng(page, "goalie-rescue");
 });

@@ -59,7 +59,7 @@ test("Risky Starts: a lens switch needs no refetch, changes the token and stays 
   await expect(page.getByTestId("risky-correlation-note")).toContainText("correlated");
   await expect(page.getByTestId("post-watermark")).toHaveText("OBSERVED RESULTS");
   const before = served.requests, ratioToken = await square.getAttribute("data-export-token");
-  await page.getByLabel("Lens").selectOption("volume");
+  await page.getByRole("combobox", { name: /^Lens/ }).selectOption("volume");
   await expect(page.getByTestId("risky-row").first()).toBeVisible();
   await expect(square).not.toHaveAttribute("data-export-token", ratioToken!);
   await expect(page.getByTestId("risky-row").filter({ hasText: "NYR vs NJD" })).toContainText("SA/GP");

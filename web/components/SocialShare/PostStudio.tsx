@@ -10,6 +10,7 @@ import { SHARE_TIME_ZONE } from "lib/socialShare/types";
 import styles from "./SocialShare.module.scss";
 import postStyles from "./PostStudio.module.scss";
 
+const FONT_ATTEMPTS = 3, FONT_RETRY_MS = 500;
 const queryText = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value) ?? "";
 const timeLabel = (value: string | null) => value ? new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: SHARE_TIME_ZONE, timeZoneName: "short" }).format(new Date(value)) : "Not available";
 
@@ -67,6 +68,7 @@ export default function PostStudio() {
   const [exporting, setExporting] = useState(false);
   const [assetsReady, setAssetsReady] = useState(false);
   const [assetError, setAssetError] = useState("");
+  const [assetAttempt, setAssetAttempt] = useState(0);
   const [brandLogo, setBrandLogo] = useState<string | null>(null);
   const [logos, setLogos] = useState<Record<string, string | null>>({});
   const [scale, setScale] = useState(0);
@@ -108,8 +110,13 @@ export default function PostStudio() {
   useEffect(() => {
     let live = true;
     (async () => {
+      setAssetError("");
       try {
-        await readyShareFonts();
+        // The stylesheet declaring the fonts can arrive just after this first runs, so one miss is not yet a failure.
+        for (let attempt = 1; ; attempt++) {
+          try { await readyShareFonts(); break; }
+          catch (cause) { if (attempt === FONT_ATTEMPTS) throw cause; await new Promise(resolve => setTimeout(resolve, FONT_RETRY_MS)); if (!live) return; }
+        }
         const image = new Image(); image.src = "/pictures/logo-fhfh.svg";
         try { await bounded(image.decode(), "Logo unavailable", 5000); if (live) setBrandLogo(image.naturalWidth ? image.src : null); }
         catch { if (live) setBrandLogo(null); }
@@ -117,7 +124,7 @@ export default function PostStudio() {
       } catch (cause) { if (live) setAssetError(cause instanceof Error ? cause.message : "Preview assets unavailable."); }
     })();
     return () => { live = false; };
-  }, []);
+  }, [assetAttempt]);
   useEffect(() => {
     const missing = snapshot?.teams.filter(team => !requestedLogos.current.has(team)) ?? [];
     if (!missing.length) return;
@@ -162,7 +169,7 @@ export default function PostStudio() {
       {error && <p role="alert">{error} <button type="button" disabled={loading || exporting} onClick={() => void load(settings)}>Retry</button></p>}
       {snapshot && !loading && snapshot.state !== "ready" && <p>{snapshot.state}: {snapshot.reasons.join(" ")}</p>}
       {snapshot && !loading && exportBlock && snapshot.state === "ready" && <p>{exportBlock}</p>}
-      {assetError && <p role="alert">{assetError}</p>}
+      {assetError && <p role="alert">{assetError} <button type="button" onClick={() => setAssetAttempt(current => current + 1)}>Retry</button></p>}
     </div>
     <section className={styles.panel} aria-label="Graphic preview">
       <div className={styles.panelHeader}><h2>1080 × 1080 preview</h2><span>{entry.title}</span></div>

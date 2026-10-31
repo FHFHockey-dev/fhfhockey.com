@@ -51,6 +51,19 @@ describe("PostStudio", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it("waits out a font that is not declared yet, and offers a retry if it never loads", async () => {
+    serve(edition());
+    const load = vi.fn(async () => [] as unknown[]);
+    Object.defineProperty(document, "fonts", { configurable: true, value: { load, check: () => true } });
+    render(<PostStudio />);
+    await waitFor(() => expect(screen.getByRole("alert").textContent).toContain("Required font unavailable"), { timeout: 3000 });
+    expect(load).toHaveBeenCalledTimes(3);
+    load.mockImplementation(async () => [{}]);
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    await waitFor(() => expect(screen.getByTestId("share-square")).toBeTruthy());
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
   it("shows the reason instead of a card, and keeps export off, for an unavailable edition", async () => {
     serve(edition({ state: "missing", data: null, reasons: ["Team Games Played sources could not be read."], teams: [] }));
     render(<PostStudio />);
