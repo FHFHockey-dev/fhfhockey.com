@@ -32,7 +32,7 @@ describe("PostStudio", () => {
   it("requests the post's edition with its visible default and prints its evidence", async () => {
     serve(edition());
     render(<PostStudio />);
-    await waitFor(() => expect(screen.getByTestId("post-evidence")).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId("share-square")).toBeTruthy());
     expect(fetchMock.mock.calls[0][0]).toBe("/api/v1/social-share/posts/team-games?days=7");
     const evidence = screen.getByTestId("post-evidence").textContent!;
     for (const label of ["NHL.com team game stats through 2026-10-30", "21 completed team games", "Not applicable", "All 32 teams", "21 of 21 team games", "Days: 7"]) expect(evidence).toContain(label);
@@ -48,7 +48,7 @@ describe("PostStudio", () => {
   it("keeps export off and asks for a refresh when a setting changes the edition's data", async () => {
     serve(edition());
     render(<PostStudio />);
-    await waitFor(() => expect(screen.getByTestId("post-evidence")).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId("share-square")).toBeTruthy());
     fireEvent.change(screen.getByLabelText(/^Days/), { target: { value: "14" } });
     await waitFor(() => expect(screen.getByText(/Refresh the post to apply/)).toBeTruthy());
     expect((screen.getByRole("button", { name: "Download PNG" }) as HTMLButtonElement).disabled).toBe(true);
