@@ -1,0 +1,6 @@
+@use "styles/vars" as v;
+
+.card { display: grid; gap: v.$space-sm; align-content: start; }
+.title { margin: 0 0 v.$space-xxs; font-size: 22px; }
+.change { margin: 0; font-size: 26px; text-align: right; }
+.note { margin: 0; font-size: 15px; line-height: 1.25; color: v.$text-secondary; }
