@@ -14,7 +14,7 @@ function FloorStrip({ marks, unwanted }: { marks: readonly (boolean | null)[]; u
   return <span className={styles.strip}><svg viewBox={`0 0 ${STRIP_WIDTH} ${STRIP_HEIGHT}`} preserveAspectRatio="none" aria-hidden="true" data-testid="floor-strip" data-unwanted={unwanted || undefined}>
     {marks.map((mark, index) => {
       const x = (step * (index + 0.14)).toFixed(2), kind = mark === null ? "gap" : mark ? "met" : "not";
-      return <rect key={index} className={styles.mark} data-mark={kind} x={x} width={width} y={mark === false ? STRIP_HEIGHT - 8 : 1} height={mark === false ? 7 : STRIP_HEIGHT - 2} />;
+      return <rect key={index} data-mark={kind} fill={kind === "gap" ? "none" : kind === "not" ? "rgba(255,255,255,0.28)" : unwanted ? "#ff6384" : "#00ff99"} stroke={kind === "gap" ? "#ffcc33" : undefined} strokeWidth={kind === "gap" ? 1.5 : undefined} vectorEffect={kind === "gap" ? "non-scaling-stroke" : undefined} x={x} width={width} y={mark === false ? STRIP_HEIGHT - 8 : 1} height={mark === false ? 7 : STRIP_HEIGHT - 2} />;
     })}
   </svg></span>;
 }

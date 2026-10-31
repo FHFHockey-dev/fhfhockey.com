@@ -27,15 +27,8 @@ $layer-h: #cf5cad;
 .fill[data-charted] > div > span:nth-child(8n + 6) { background: rgba($layer-h, 0.16); }
 .stat { display: grid; justify-items: end; line-height: 1.1; small { font-size: 0.72em; color: v.$text-secondary; } }
 .chart { position: relative; align-self: stretch; width: 180px; svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; } }
-.layer { stroke: v.$background-dark; stroke-width: 1px; vector-effect: non-scaling-stroke; }
-.layer[data-layer="b"] { fill: $layer-b; }
-.layer[data-layer="s"] { fill: $layer-s; }
-.layer[data-layer="h"] { fill: $layer-h; }
-.edge { fill: none; stroke: v.$color-white; stroke-width: 2px; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
 .tile > span { min-width: 92px; }
 .key { color: v.$color-white; font-weight: 700; i { display: inline-block; width: 14px; height: 14px; margin: 0 4px 0 8px; border-radius: 3px; vertical-align: -1px; } i:first-child { margin-left: 0; } i[data-layer="b"] { background: $layer-b; } i[data-layer="s"] { background: $layer-s; } i[data-layer="h"] { background: $layer-h; } }
-.recentBand { fill: rgba(v.$color-white, 0.08); }
-.recentMark { fill: none; stroke: v.$color-white; stroke-width: 1.5px; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
 /* Risers and fallers, 7 rows a side: about 114px a row, and a row's content needs about 107px. */
 .moverStrip { min-height: 46px; }
 .moverStrip > .chart { width: auto; }
@@ -59,9 +52,5 @@ $layer-h: #cf5cad;
 .floorTile { align-self: stretch; display: flex; }
 .floorTile > span { min-height: 0; min-width: 76px; b { font-size: 24px; } }
 .strip { position: relative; align-self: stretch; width: 170px; margin-block: 4px; svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; } }
-.mark[data-mark="met"] { fill: v.$success-color; }
-svg[data-unwanted] .mark[data-mark="met"] { fill: v.$danger-color; }
-.mark[data-mark="not"] { fill: rgba(v.$color-white, 0.28); }
-.mark[data-mark="gap"] { fill: none; stroke: v.$warning-color; stroke-width: 1.5px; vector-effect: non-scaling-stroke; }
 .markKey { color: v.$color-white; i { display: inline-block; width: 12px; margin: 0 3px 0 8px; border-radius: 2px; } i:first-child { margin-left: 0; } i[data-mark="met"] { height: 14px; background: v.$success-color; vertical-align: -1px; } i[data-mark="not"] { height: 5px; background: rgba(v.$color-white, 0.28); vertical-align: -1px; } i[data-mark="gap"] { height: 14px; box-sizing: border-box; border: 1.5px solid v.$warning-color; vertical-align: -1px; } }
 .markKey[data-unwanted] i[data-mark="met"] { background: v.$danger-color; }

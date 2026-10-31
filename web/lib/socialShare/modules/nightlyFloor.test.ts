@@ -148,6 +148,8 @@ describe("Nightly Floor card", () => {
       const active = settings({ minCoverage: 50 }), { data } = buildNightlyFloor(season(games(1, [{ shots: 3 }, { shots: 2 }, { shots: null }, { shots: 0 }, { shots: 5 }])), active, none);
       await show(data!, active);
       expect(marks()).toEqual(["met", "not", "gap", "not", "met"]);
+      // A stylesheet fill is lost in the PNG capture and draws black, so colours must be attributes.
+      expect([...document.querySelectorAll("[data-testid=floor-strip] [data-mark]")].map(mark => mark.getAttribute("fill")).slice(0, 3)).toEqual(["#00ff99", "rgba(255,255,255,0.28)", "none"]);
       expect(data!.rows[0]).toMatchObject({ numerator: 2, denominator: 4, missing: 1, marks: [true, false, null, false, true] });
     });
     it("has as many met marks as the numerator on every view", async () => {

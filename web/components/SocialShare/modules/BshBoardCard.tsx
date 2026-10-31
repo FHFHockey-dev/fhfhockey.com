@@ -32,6 +32,8 @@ export const skaterLogoSize = logoSize;
 const total = (count: number | null, per: number | null) => count === null ? <span className={styles.missing}>{MISSING}</span> : <span className={styles.stat}>{count} <small>{rate(per)}</small></span>;
 
 const CHART_WIDTH = 180, CHART_HEIGHT = 48, CHART_LAYERS = ["b", "s", "h"] as const;
+/** Chart colours are SVG attributes: the PNG capture drops fills set from a stylesheet, which drew these charts black. */
+const LAYER_FILL = { b: "#3f9bdc", s: "#c88120", h: "#cf5cad" } as const;
 /** Games left to right, oldest first, on one scale across rows. A missing game breaks the shape; a known 0 sits on the baseline. */
 function BshStackChart({ games, highest, recentFrom = 0 }: { games: readonly BshGameStack[]; highest: number; recentFrom?: number }) {
   const start = recentFrom * CHART_WIDTH / Math.max(1, games.length), step = CHART_WIDTH / Math.max(1, games.length), y = (value: number) => (CHART_HEIGHT - 2 - value / highest * (CHART_HEIGHT - 4)).toFixed(2);
@@ -41,12 +43,12 @@ function BshStackChart({ games, highest, recentFrom = 0 }: { games: readonly Bsh
   const line = (points: typeof shapes[number], layer: number) => points.map((point, at) => `${at ? "L" : "M"}${point.x.toFixed(2)} ${y(point.tops[layer])}`).join("");
   const under = (points: typeof shapes[number], layer: number) => [...points].reverse().map(point => `L${point.x.toFixed(2)} ${y(layer ? point.tops[layer - 1] : 0)}`).join("");
   return <span className={styles.chart}><svg viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`} preserveAspectRatio="none" aria-hidden="true" data-testid="bsh-stack" data-recent-from={recentFrom} data-stack={games.map(game => game.bsh === null ? "gap" : `${game.blocks}+${game.shots}+${game.hits}`).join(",")}>
-    {recentFrom > 0 && <rect className={styles.recentBand} x={start.toFixed(2)} y="0" width={(CHART_WIDTH - start).toFixed(2)} height={CHART_HEIGHT} />}
+    {recentFrom > 0 && <rect fill="rgba(255,255,255,0.08)" x={start.toFixed(2)} y="0" width={(CHART_WIDTH - start).toFixed(2)} height={CHART_HEIGHT} />}
     {shapes.map(points => <g key={points[0].x}>
-      {CHART_LAYERS.map((layer, index) => <path key={layer} className={styles.layer} data-layer={layer} d={`${line(points, index)}${under(points, index)}Z`} />)}
-      <path className={styles.edge} data-edge="" d={line(points, 2)} />
+      {CHART_LAYERS.map((layer, index) => <path key={layer} data-layer={layer} fill={LAYER_FILL[layer]} stroke="#1a1d21" strokeWidth="1" vectorEffect="non-scaling-stroke" d={`${line(points, index)}${under(points, index)}Z`} />)}
+      <path data-edge="" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" d={line(points, 2)} />
     </g>)}
-    {recentFrom > 0 && <path className={styles.recentMark} data-recent-mark="" d={`M${start.toFixed(2)} 0V${CHART_HEIGHT}`} />}
+    {recentFrom > 0 && <path data-recent-mark="" fill="none" stroke="#ffffff" strokeWidth="1.5" strokeDasharray="4 3" vectorEffect="non-scaling-stroke" d={`M${start.toFixed(2)} 0V${CHART_HEIGHT}`} />}
   </svg></span>;
 }
 

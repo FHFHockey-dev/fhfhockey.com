@@ -199,6 +199,9 @@ describe("BSH card", () => {
       await show(data!, active);
       expect(chart().getAttribute("data-stack")).toBe("0+2+1,1+2+1,2+2+1,3+2+1,4+2+1");
       expect([...chart().querySelectorAll("[data-layer]")].map(path => path.getAttribute("data-layer"))).toEqual(["b", "s", "h"]);
+      // A stylesheet fill is lost in the PNG capture and draws black, so colours must be attributes.
+      expect([...chart().querySelectorAll("[data-layer]")].map(path => path.getAttribute("fill"))).toEqual(["#3f9bdc", "#c88120", "#cf5cad"]);
+      expect(chart().querySelector("[data-edge]")!.getAttribute("fill")).toBe("none");
       expect(chart().querySelectorAll("[data-edge]")).toHaveLength(1);
       const alphas = screen.getAllByTestId("heat-tile").map(tile => Number(tile.getAttribute("data-alpha")));
       expect(alphas[0]).toBe(0.8);
