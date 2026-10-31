@@ -99,28 +99,31 @@ async function embeddedFonts() {
   }))).join("\n");
 }
 
-export async function downloadSharePng(node: HTMLElement, snapshot: SocialShareSnapshot, options: ShareExportOptions = {}) {
-  assertExportable(snapshot, options);
-  assertToken(node, options);
+/** Same-snapshot capture: `guard` must hold before capture, after fonts and images settle, and after the PNG exists. */
+export async function captureSharePng(node: HTMLElement, guard: () => void, filename: string) {
+  guard();
   await readyShareFonts();
   await Promise.all(Array.from(node.querySelectorAll("img")).map(async image => {
     await bounded(image.decode(), "Brand image could not be decoded. Retry preview preparation.");
     if (!image.naturalWidth) throw new Error("Brand image unavailable.");
   }));
   const fontEmbedCSS = await bounded(embeddedFonts(), "Font embedding timed out.");
-  assertExportable(snapshot, options);
-  assertToken(node, options);
+  guard();
   const blob = await bounded(toBlob(node, {
     width: SHARE_SIZE, height: SHARE_SIZE, canvasWidth: SHARE_SIZE, canvasHeight: SHARE_SIZE,
     pixelRatio: 1, fontEmbedCSS, style: { transform: "none", transformOrigin: "top left" },
   }), "PNG creation timed out. Retry with the same edition.", 20000);
   if (!blob) throw new Error("PNG could not be created.");
-  assertExportable(snapshot, options);
-  assertToken(node, options);
+  guard();
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = `fhfh-${snapshot.format}${options.card ? `-${options.card.replace(/[^a-z0-9-]/g, "")}` : ""}-${snapshot.weekStart}-${snapshot.id.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 20)}.png`;
+  anchor.download = filename;
   anchor.click();
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+export async function downloadSharePng(node: HTMLElement, snapshot: SocialShareSnapshot, options: ShareExportOptions = {}) {
+  await captureSharePng(node, () => { assertExportable(snapshot, options); assertToken(node, options); },
+    `fhfh-${snapshot.format}${options.card ? `-${options.card.replace(/[^a-z0-9-]/g, "")}` : ""}-${snapshot.weekStart}-${snapshot.id.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 20)}.png`);
 }

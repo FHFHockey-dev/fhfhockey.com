@@ -32,7 +32,7 @@ type CountedPage<T> = PromiseLike<{ data: T[] | null; error: unknown; count: num
 export type TrendReadClient = { from: (table: string) => any };
 
 /** Exact-count read with a ceiling (playerSources.ts pattern): a larger or changing source fails instead of paging on. */
-async function bounded<T>(what: string, limit: number, page: (from: number, to: number) => CountedPage<T>): Promise<T[]> {
+export async function bounded<T>(what: string, limit: number, page: (from: number, to: number) => CountedPage<T>): Promise<T[]> {
   let expected: number | null = null;
   const rows = await fetchAllSupabasePages<T>(async ({ from, to }) => {
     if (expected != null && from >= expected) return { data: [], error: null };

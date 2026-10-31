@@ -1395,3 +1395,32 @@ test("Tuesday GENUINE DATA render: captured layer, offline, export token per car
   }
   await writeFile(`${shots}/GENUINE-DATA-export-tokens.json`, `${JSON.stringify({ capturedAt: capture.capturedAt, tokens }, null, 2)}\n`);
 });
+
+test("post library: a post's edition previews with its evidence and exports the same snapshot; an unavailable edition cannot", async ({ page }) => {
+  await install(page);
+  const generatedAt = new Date().toISOString();
+  const edition = { schemaVersion: 1, id: "team-games-e2e", post: "team-games", state: "ready", reasons: [] as string[], generatedAt, expiresAt: new Date(Date.parse(generatedAt) + 600000).toISOString(), timeZone: "America/New_York", settings: { days: 7 }, fixture: false, teams: ["NJD", "NYR"],
+    evidence: { sources: [{ name: "NHL.com team game stats", tables: ["wgo_team_stats", "games"], state: "ready", asOf: "2026-10-30", updatedAt: null }], sample: "2026-10-24 to 2026-10-30: 2 completed team games", strength: "Not applicable (game counts)", cohort: "All 2 teams", coverage: { observed: 2, expected: 2, missing: 0, unit: "team games" } },
+    data: { from: "2026-10-24", through: "2026-10-30", rows: [{ team: "NJD", games: 1, lastGame: "2026-10-30", rank: 1 }, { team: "NYR", games: 1, lastGame: "2026-10-30", rank: 1 }] } };
+  let requests = 0, unavailable = false;
+  await page.route("**/api/v1/social-share/posts/**", route => {
+    requests++;
+    expect(route.request().headers().authorization).toBe(`Bearer ${editorToken}`);
+    return route.fulfill({ json: unavailable ? { ...edition, state: "missing", data: null, teams: [], expiresAt: null, reasons: ["Team Games Played sources could not be read."] } : edition });
+  });
+  const response = await page.goto("/social-share/posts?post=team-games");
+  expect(response?.headers()["x-robots-tag"]).toContain("noindex");
+  const square = page.getByTestId("share-square");
+  await expect(square).toBeVisible();
+  await expect(page.getByTestId("post-evidence")).toContainText("NHL.com team game stats through 2026-10-30");
+  await expect(page.getByTestId("post-evidence")).toContainText("Days: 7");
+  await expect(page.getByTestId("post-watermark")).toHaveText("OBSERVED RESULTS");
+  await expect(square).toHaveAttribute("data-export-token", 'team-games-e2e|team-games|[["days",7]]');
+  const before = requests;
+  await downloadedPng(page, "post-library-team-games");
+  expect(requests).toBe(before);
+  unavailable = true;
+  await page.getByRole("button", { name: "Refresh post", exact: true }).click();
+  await expect(page.getByTestId("post-unavailable")).toContainText("could not be read");
+  await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
+});

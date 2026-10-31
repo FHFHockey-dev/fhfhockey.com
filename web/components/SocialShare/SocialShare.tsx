@@ -866,7 +866,7 @@ export default function SocialShare({ format, asOf }: { format: SocialShareForma
   };
 
   return <div className={styles.page}>
-    <header className={styles.heading}><div><p className={styles.eyebrow}>FHFH / Share studio</p><h1>{labels[format]}</h1><p><Link href="/social-share/player-cards" prefetch={false}>Player cards · visual preview</Link></p></div><span className={styles.scope}>{!supported ? "Source qualification pending" : format === "tuesday-trends" ? "Rolling game metrics · Yahoo ownership · NHL schedule" : "Schedule only · NHL schedule source"}</span></header>
+    <header className={styles.heading}><div><p className={styles.eyebrow}>FHFH / Share studio</p><h1>{labels[format]}</h1><p><Link href="/social-share/player-cards" prefetch={false}>Player cards · visual preview</Link> · <Link href="/social-share/posts" prefetch={false}>Post library</Link></p></div><span className={styles.scope}>{!supported ? "Source qualification pending" : format === "tuesday-trends" ? "Rolling game metrics · Yahoo ownership · NHL schedule" : "Schedule only · NHL schedule source"}</span></header>
     {!supported ? <section className={styles.panel}><h2>Source qualification required</h2><p>This format is blocked until current-season player data, dated ownership evidence, participation and provider rights qualify. No player rankings are available.</p><a href="/social-share/game-grid">Open the schedule studio</a></section> : <>
       <section className={styles.panel} aria-label="Schedule settings">
         <div className={styles.controls}>
