@@ -221,3 +221,23 @@ Declutter in place (see `AUDIT-2026-10-30.md`). One local commit per approved st
   - DOM count at 1280: every prompt is one style.
 - **Screens:** `screens/step11-desktop-before-after.png`, `screens/step11-390x844.png`.
 - **TJ verdict:** approved 2026-10-30.
+- **Commit:** `eb659a83a`.
+
+## Step 12: accessibility fixes
+
+- **What changed (from `A11Y-2026-10-30.md`):**
+  - **Contrast:** active strength pill text is dark (was 1.83:1). The selected metric is a slightly lighter blue (was 4.47:1). "0 Pts" and "Cardio" labels are a lighter grey (was 4.41:1); the donut is unchanged.
+  - **Phone targets:** strength pills at least 40×32 and the slider 28 tall, so pills and slider now sit on two rows. Help buttons at least 28×28, comparison "+" at least 24×24. The active TOI / PP TOI % button is lit on phones too (it looked disabled at 60% opacity).
+  - **Headings:** a visually hidden page H1 ("WiGO player dashboard"). "Rate stat percentiles" is an H3 like its siblings.
+  - **Announcements and labels:** the active phone tab has `aria-current`. Canvas charts and the game log plot have `role="img"` with an `aria-label`. The phone percentile chart's label lists every stat's percentile.
+- **Files:** `pages/wigoCharts.tsx`, `ConsistencyChart.tsx`, `PpgLineChart.tsx`, `ToiLineChart.tsx`, `RateStatPercentiles.tsx`, `StatsTableRowChart.tsx`, `GameScoreLineChart/RollingAverageChart.tsx`, `_scale.scss`, `styles/wigoCharts.module.scss`.
+- **Checks:**
+  - WIGO vitest passed: 146 of 146, with no test edits.
+  - `e2e/wigo-one-page.spec.ts` passed: 9 of 9.
+  - eslint: clean.
+  - CSS pure check passed.
+  - `tools/a11y.cjs` rerun: no contrast failures, no phone target under 24 px, heading order correct.
+  - `tools/phone-help.cjs`: all three phone help notes fit at 390×844.
+- **Not checked:** VoiceOver or NVDA, and Axe (parked).
+- **Screens:** `screens/step12-desktop-before-after.png`, `screens/step12-percentiles-before-after.png`, `screens/step12-comparison-before-after.png`.
+- **TJ verdict:** approved 2026-10-30.

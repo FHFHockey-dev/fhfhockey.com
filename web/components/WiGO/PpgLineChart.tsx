@@ -279,6 +279,8 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId, seasonId }) => {
           type="bar" // Base type is bar, lines override in datasets
           options={chartOptions}
           data={chartData}
+          role="img"
+          aria-label="Points per game by game, with 5-game and 10-game averages"
         />
       )}
 

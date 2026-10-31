@@ -409,7 +409,7 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
       {!isLoading && !error && playerId && seasonId && (
         <div className={styles.mainContentWrapper}>
           <div className={styles.percentileFiltersContainer}>
-            <h1 className={styles.filtersTitle}>Rate stat percentiles</h1>
+            <h3 className={styles.filtersTitle}>Rate stat percentiles</h3>
             <div className={styles.filterControlsWrapper}>
               <div className={styles.strengthSelector}>
                 {(["as", "es", "pp", "pk"] as PercentileStrength[]).map(
@@ -501,6 +501,10 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
                   options={combinedChartConfig.options}
                   data={combinedChartConfig.data}
                   plugins={[ChartDataLabels]}
+                  role="img"
+                  aria-label={`Percentile by stat: ${(combinedChartConfig.data.labels ?? [])
+                    .map((statLabel, index) => `${statLabel} ${combinedChartConfig.data.datasets[0]?.data[index] ?? "unavailable"}%`)
+                    .join(", ")}`}
                 />
               ) : (
                 <div className={styles.chartLoadingPlaceholder}>

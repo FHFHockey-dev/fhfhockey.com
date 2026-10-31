@@ -346,7 +346,7 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
       {/* Render the chart structure if NO error */}
       {/* It will show the empty state (with dummy labels) while loading */}
       {!error && (
-        <Line ref={chartRef} options={chartOptions} data={chartData} />
+        <Line ref={chartRef} options={chartOptions} data={chartData} role="img" aria-label={chartView === "toi" ? "Total and power play time on ice by game" : "Power play share of time on ice by game"} />
       )}
 
       {/* --- Overlapping Status Indicators --- */}

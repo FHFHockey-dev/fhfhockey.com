@@ -1690,6 +1690,7 @@
       color: s.$accent;
     }
     th button[aria-pressed="true"] {
+      color: color.adjust(v.$primary-color, $lightness: 8%);
       font-weight: s.$weight-bold;
     }
     th button:focus-visible {
@@ -2585,6 +2586,9 @@
   .strengthSelector button {
     border-radius: s.$radius-small;
   }
+  .strengthSelector button.active {
+    color: s.$on-accent;
+  }
 
   .helpButton,
   .chartToolbar .helpButton {
@@ -2651,4 +2655,61 @@
   height: 100%;
   color: s.$ink-muted;
   font-size: s.$text-12;
+}
+
+// Phone touch targets.
+@media (max-width: v.$breakpoint-tablet) {
+  .wigoDashHeader {
+    .strengthSelector button {
+      min-width: 40px;
+      min-height: 32px;
+    }
+    .filterControlsWrapper {
+      flex-wrap: wrap;
+    }
+    .strengthSelector {
+      flex: 0 0 auto;
+      width: auto;
+      justify-content: flex-start;
+    }
+    .gpSliderContainer {
+      flex: 1 1 100%;
+    }
+    .gpSliderContainer .gpSlider {
+      min-height: 28px;
+      &::-webkit-slider-runnable-track {
+        height: 8px;
+      }
+      &::-moz-range-track {
+        height: 8px;
+      }
+      &::-webkit-slider-thumb {
+        width: 20px;
+        height: 20px;
+        margin-top: -6px;
+      }
+      &::-moz-range-thumb {
+        width: 20px;
+        height: 20px;
+      }
+    }
+    .helpButton,
+    .chartToolbar .helpButton {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 28px;
+      min-height: 28px;
+    }
+    .statsTable button.expandButton {
+      min-width: 24px;
+      min-height: 24px;
+    }
+    .chartToolbar .toggleButtons button:disabled {
+      opacity: 1;
+      border-color: v.$primary-color;
+      background: rgba(v.$primary-color, 0.16);
+      color: v.$text-primary;
+    }
+  }
 }

@@ -223,7 +223,7 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({
                     {/* Color applied to label text via inline style */}
                     <span
                       className={styles.consistencyLabel}
-                      style={{ color: item.color }} // Uses the color stored in processedData
+                      style={{ color: item.color === WIGO_COLORS.GREY_MEDIUM ? "#999999" : item.color }} // The donut's grey is too dim for text
                     >
                       {item.label}:
                     </span>

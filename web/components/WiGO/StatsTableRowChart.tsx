@@ -231,7 +231,7 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
           }
         })}
       </div>
-      {status ? <div className={styles.chartStatus} role="status">{status}</div> : <div className={fill ? styles.gameLogChartPlot : undefined}><ResponsiveContainer width="100%" height={chartHeight}>
+      {status ? <div className={styles.chartStatus} role="status">{status}</div> : <div className={fill ? styles.gameLogChartPlot : undefined} role="img" aria-label={`${statLabel} by game`}><ResponsiveContainer width="100%" height={chartHeight}>
         <LineChart
           data={chartData}
           margin={fill ? { top: 4, right: 6, left: 0, bottom: 0 } : { top: 5, right: 10, left: 0, bottom: 16 }}
