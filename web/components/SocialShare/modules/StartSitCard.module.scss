@@ -1,0 +1,15 @@
+@use "styles/vars" as v;
+
+.card { display: flex; flex-direction: column; gap: v.$space-xs; height: 100%; min-height: 0; }
+.table { display: grid; grid-template-columns: auto minmax(0, 1.5fr) auto minmax(0, 0.8fr) minmax(0, 0.8fr) auto auto auto; column-gap: v.$space-xs; align-items: center; font-size: 14px; line-height: 1.2; color: v.$text-secondary; }
+.head { font-size: 11px; letter-spacing: v.$mobile-letter-spacing-wide; padding-bottom: v.$space-xxs; border-bottom: 1px solid v.$border-soft; }
+.row { display: grid; grid-column: 1 / -1; grid-template-columns: subgrid; align-items: center; padding: 3px 0; border-bottom: 1px solid v.$border-soft; }
+.goalie { display: grid; min-width: 0;
+  b { font-size: 16px; color: v.$color-white; }
+  small { font-size: 11px; }
+}
+.game { display: inline-flex; align-items: center; gap: v.$space-xxs; white-space: nowrap; }
+.status { color: v.$text-secondary; }
+.status[data-state="confirmed"] { color: v.$primary-color; font-weight: 700; }
+.status[data-state="projected"] { color: v.$color-white; }
+.note { margin: 0; font-size: 13px; line-height: 1.25; color: v.$text-secondary; }
