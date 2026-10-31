@@ -19,8 +19,8 @@ export type CreaseShiftGoalie = {
   change: number | null;
   /** Other teams this goalie appeared for this season. Each game binds to the team he played for. */
   otherTeams: string[];
-  /** Start share so far at each `CreaseShiftTeam.series` game, ending at `share`. Null from a game that cannot be resolved onward: never interpolated. */
-  series: (number | null)[];
+  /** Start share over the `rollingSpan` games ending at each `CreaseShiftTeam.series` game. Null until that many games exist, and while any of them is unresolved: never interpolated. */
+  rolling: (number | null)[];
 };
 export type CreaseShiftTeam = {
   team: string; rank: number | null;
@@ -39,8 +39,9 @@ export type CreaseShiftTeam = {
   series: CreaseShiftPoint[];
   withheld: string | null;
 };
-export type CreaseShiftPoint = { gameId: number; date: string; state: "resolved" | "unresolved" | "missing" };
-export type CreaseShiftData = { window: number; comparison: "previous" | "std"; minComparisonGames: number; through: string; teams: CreaseShiftTeam[] };
+/** `starterId` is the one labeled starter, null unless the game is resolved: a starter is never guessed. */
+export type CreaseShiftPoint = { gameId: number; date: string; state: "resolved" | "unresolved" | "missing"; starterId: number | null };
+export type CreaseShiftData = { window: number; rollingSpan: number; comparison: "previous" | "std"; minComparisonGames: number; through: string; teams: CreaseShiftTeam[] };
 
 /** A `games` row: proves a game was scheduled, not that it finished. */
 export type ScheduledGame = { id: number; date: string; homeTeamId: number | null; awayTeamId: number | null };
@@ -70,24 +71,22 @@ export function reconcileSchedule(scheduled: readonly ScheduledGame[], reported:
 /** The exact share change, divided once, so equal changes on different denominators stay tied. */
 const shareChange = (starts: number, games: number, baseStarts: number, baseGames: number) => (starts * baseGames - baseStarts * games) * 100 / (games * baseGames);
 
-/** The window's games with any schedule gap inside them, and each goalie's cumulative share across them, for this team's games only. */
-function shareSeries(team: string, recent: TeamStartShare, games: readonly CompletedTeamGame[], gaps: readonly ScheduleGap[], window: number) {
-  const reported = lastN(games.filter(game => game.team === team), window).rows, unresolved = new Set(recent.unresolvedGames);
+/** Games in the rolling line: short enough to show a shift inside the window, and countable off the blocks under it. */
+export const creaseRollingSpan = (window: number) => window >= 10 ? 5 : 3;
+
+/** The window's games with any schedule gap inside them, each with its one starter, and each goalie's rolling share across them, for this team's games only. */
+function shareSeries(team: string, recent: TeamStartShare, input: { games: readonly CompletedTeamGame[]; appearances: readonly GoalieAppearance[]; window: number }, gaps: readonly ScheduleGap[]) {
+  const reported = lastN(input.games.filter(game => game.team === team), input.window).rows, unresolved = new Set(recent.unresolvedGames), span = creaseRollingSpan(input.window);
+  const starterOf = (gameId: number) => input.appearances.find(row => row.team === team && row.gameId === gameId && row.started === true)?.goalieId ?? null;
   const points: CreaseShiftPoint[] = [
-    ...reported.map(game => ({ gameId: game.gameId, date: game.date, state: unresolved.has(game.gameId) ? "unresolved" as const : "resolved" as const })),
-    ...recent.firstDate ? gaps.filter(gap => gap.team === team && gap.date >= recent.firstDate!).map(gap => ({ gameId: gap.gameId, date: gap.date, state: "missing" as const })) : [],
+    ...reported.map(game => unresolved.has(game.gameId) ? { gameId: game.gameId, date: game.date, state: "unresolved" as const, starterId: null } : { gameId: game.gameId, date: game.date, state: "resolved" as const, starterId: starterOf(game.gameId) }),
+    ...recent.firstDate ? gaps.filter(gap => gap.team === team && gap.date >= recent.firstDate!).map(gap => ({ gameId: gap.gameId, date: gap.date, state: "missing" as const, starterId: null })) : [],
   ].sort((a, b) => a.date.localeCompare(b.date) || a.gameId - b.gameId);
-  const cumulative = (startedGames: ReadonlySet<number>) => {
-    let played = 0, starts = 0, broken = false;
-    return points.map(point => {
-      if (point.state !== "resolved") broken = true;
-      if (broken) return null;
-      played++;
-      if (startedGames.has(point.gameId)) starts++;
-      return starts / played;
-    });
-  };
-  return { points, cumulative };
+  const rolling = (goalieId: number) => points.map((_, index) => {
+    const games = points.slice(Math.max(0, index + 1 - span), index + 1);
+    return games.length === span && games.every(point => point.state === "resolved") ? games.filter(point => point.starterId === goalieId).length / span : null;
+  });
+  return { points, rolling };
 }
 
 function teamRow(team: string, input: { games: readonly CompletedTeamGame[]; appearances: readonly GoalieAppearance[]; window: number; comparison: "previous" | "std"; minComparisonGames: number }, gaps: readonly ScheduleGap[]): Omit<CreaseShiftTeam, "rank"> {
@@ -95,7 +94,7 @@ function teamRow(team: string, input: { games: readonly CompletedTeamGame[]; app
   const base: TeamStartShare = input.comparison === "std" ? teamStartShare(team, input.games, input.appearances, null) : teamStartShare(team, input.games, input.appearances, input.window, input.window);
   // Season to date contains the recent games, so only the games outside them can be evidence of a change.
   const overlap = input.comparison === "std" ? recent.teamGames : 0, shortComparison = recent.teamGames > 0 && base.teamGames - overlap < input.minComparisonGames;
-  const { points, cumulative } = shareSeries(team, recent, input.games, gaps, input.window);
+  const { points, rolling } = shareSeries(team, recent, input, gaps);
   const ids = [...new Set([...recent.goalies, ...base.goalies].map(goalie => goalie.goalieId))];
   const goalies = ids.map((goalieId): CreaseShiftGoalie => {
     const now = recent.goalies.find(goalie => goalie.goalieId === goalieId), then = base.goalies.find(goalie => goalie.goalieId === goalieId);
@@ -108,7 +107,7 @@ function teamRow(team: string, input: { games: readonly CompletedTeamGame[]; app
       change: recent.complete && base.complete && !shortComparison ? shareChange(starts, recent.teamGames, baseStarts, base.teamGames) : null,
       otherTeams: [...new Set(input.appearances.filter(row => row.goalieId === goalieId && row.team !== team).map(row => row.team))].sort(),
       // Official starts only, on this team only: relief and a traded goalie's other team never move this line.
-      series: cumulative(new Set(input.appearances.filter(row => row.goalieId === goalieId && row.team === team && row.started === true).map(row => row.gameId))),
+      rolling: rolling(goalieId),
     };
   }).sort((a, b) => b.starts - a.starts || (b.comparisonStarts ?? 0) - (a.comparisonStarts ?? 0) || a.goalieId - b.goalieId);
   const changes = goalies.flatMap(goalie => goalie.change === null ? [] : [Math.abs(goalie.change)]);
@@ -144,13 +143,13 @@ export function buildCreaseShift(input: { reported: readonly CompletedTeamGame[]
   const compared = input.comparison === "std" ? "season to date, which contains the recent games" : `the ${input.window} games before them`;
   return {
     state, reasons, ttlSeconds: 900, teams: teams.slice(0, CREASE_SHIFT_SHOWN).map(team => team.team),
-    data: { window: input.window, comparison: input.comparison, minComparisonGames: input.minComparisonGames, through: input.through, teams },
+    data: { window: input.window, rollingSpan: creaseRollingSpan(input.window), comparison: input.comparison, minComparisonGames: input.minComparisonGames, through: input.through, teams },
     evidence: {
       sources: [
         { name: "NHL.com team game stats", tables: ["wgo_team_stats", "games"], state: schedule.missing ? "partial" : "ready", asOf, updatedAt: null },
         { name: "NHL.com goalie game stats", tables: ["wgo_goalie_stats"], state: unresolved ? "partial" : "ready", asOf: input.appearances.reduce<string | null>((latest, row) => !latest || row.date > latest ? row.date : latest, null), updatedAt: null },
       ],
-      sample: `Last ${input.window} completed team games per team through ${input.through}, compared with ${compared}. PTS is share change in percentage points; relief is counted apart; describes past starts only${others.length ? `. Unranked: ${others.join(", ")}` : ""}`,
+      sample: `Last ${input.window} completed team games per team through ${input.through}, compared with ${compared}. PTS is share change in percentage points; the line is start share over ${creaseRollingSpan(input.window)} games; relief is not a start; describes past starts only${others.length ? `. Unranked: ${others.join(", ")}` : ""}`,
       strength: "All situations (official starter labels)", cohort: `${ranked.length} of ${input.teams.length} teams ranked; ${rows.filter(row => row.shortComparison).length} short comparison`,
       coverage: { observed: schedule.observed, expected: schedule.expected, missing: schedule.missing, unit: "team games" },
     },

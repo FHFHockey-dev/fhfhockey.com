@@ -19,3 +19,7 @@
 - NST goalie rows can name a different goalie than WGO for the same game (NSH 10-10). GSAx drops and counts them.
 - `teamStartShare` gives `share: 0` on an incomplete window; treat it as null.
 - zsh does not word-split `$FILES`, so eslint needs the paths spelled out.
+
+## Blocks and rolling line (TJ's second Crease Shift review)
+
+Replaced the running share with per-game starter blocks and a rolling share line (5 games, 3 for L5). Removed RELIEF and GS / GP. Vitest, eslint, tsc on Crease files and the CSS pure check pass; spec lists 10, no browser run. Next: lead's render checks fit and PNG.

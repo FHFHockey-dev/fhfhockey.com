@@ -145,15 +145,18 @@ test("GSAx: ten rows a side fill the body", async ({ page }) => {
 for (const teamCount of [6, 12]) test(`crease shift: ${teamCount} ranked teams fill the body`, async ({ page }) => {
   await install(page);
   const teams = ["NJD", "NYR", "PHI", "PIT", "BOS", "BUF", "MTL", "OTT", "TOR", "DET", "FLA", "TBL"].slice(0, teamCount) as (keyof typeof teamsInfo)[];
-  const games = teams.flatMap((team, index) => index % 2 ? [] : [0, 1, 2, 3].map(game => ({ id: 100 * (index + 1) + game, date: `2026-10-${19 + game}`, homeTeamId: teamsInfo[team].id, awayTeamId: teamsInfo[teams[index + 1]].id })));
-  const reportedGames = teams.flatMap((team, index) => [0, 1, 2, 3].map(game => ({ gameId: 100 * ((index - index % 2) + 1) + game, date: `2026-10-${19 + game}`, team: String(team) })));
+  const twenty = Array.from({ length: 20 }, (_, game) => game), day = (game: number) => `2026-10-${String(game + 1).padStart(2, "0")}`;
+  const games = teams.flatMap((team, index) => index % 2 ? [] : twenty.map(game => ({ id: 100 * (index + 1) + game, date: day(game), homeTeamId: teamsInfo[team].id, awayTeamId: teamsInfo[teams[index + 1]].id })));
+  const reportedGames = teams.flatMap((team, index) => twenty.map(game => ({ gameId: 100 * ((index - index % 2) + 1) + game, date: day(game), team: String(team) })));
   const stats = reportedGames.map((game, index) => stat((teams.indexOf(game.team as keyof typeof teamsInfo) + 1) * 10 + (index % 4 < 2 ? 1 : 2), game.team, game.gameId, game.date, { name: "Ukko-Pekka Luukkonen" }));
-  const result = buildCreaseShift({ reported: reportedGames, appearances: stats, scheduled: games, teams: teams.map(String), window: 2, comparison: "previous", minComparisonGames: 2, through: "2026-10-30" });
+  const result = buildCreaseShift({ reported: reportedGames, appearances: stats, scheduled: games, teams: teams.map(String), window: 10, comparison: "previous", minComparisonGames: 2, through: "2026-10-30" });
   const settings = { window: "10", comparison: "previous", minComparisonGames: 2 };
   await page.route("**/api/v1/social-share/posts/**", route => route.fulfill({ json: edition("crease-shift", settings, result) }));
   await page.goto("/social-share/posts?post=crease-shift&minComparisonGames=2");
   await expect(page.getByTestId("crease-shift-rank")).toHaveCount(teamCount);
-  // A real game-by-game line per starter in each row, in the PNG's own attributes.
+  // Ten blocks and a rolling line per starter in each row, in the PNG's own attributes.
+  await expect(page.locator('[data-testid="crease-shift-card"] svg rect[data-block="started"]')).toHaveCount(teamCount * 10);
+  await expect(page.locator('[data-testid="crease-shift-card"] svg rect[data-block="started"]').first()).toHaveAttribute("fill", /^#/);
   await expect(page.locator('[data-testid="crease-shift-card"] svg g[data-goalie]')).toHaveCount(teamCount * 2);
   await expect(page.locator('[data-testid="crease-shift-card"] svg g[data-goalie] path').first()).toHaveAttribute("stroke", /^#/);
   await expectBodyFilled(page, "crease-shift-card");

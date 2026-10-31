@@ -250,6 +250,25 @@ The lift also changes shades: navy primaries (TOR, TBL, NYR, EDM, FLA and others
 
 Width at 22px: fixed columns and gaps use about 759 of 1,008, leaving about 249 for the goalie name. A long name fits (about 200), but a long name **plus** "(also BOS)" for a traded goalie is cut with an ellipsis so the columns stay aligned. Spec tests assert no overflow and a band under 40px at 6 and 12 teams, and now check the lines and the PNG, so your run is the real check. No new real reads were made.
 
+## Follow-up from TJ's second Crease Shift review: blocks and a rolling line
+
+This replaces the running-share line above; the colour rules above still apply.
+
+- **Blocks:** one per team game, oldest to newest, in `team.series[].starterId`. G1 and G2 use the team colours, any other starter is grey, and a game without one labeled starter or with no report is an empty outlined block. A starter is never guessed. A schedule gap inside the window adds a block, so that partial preview can show 11; such a post cannot export.
+- **Rolling line:** `goalie.rolling`, each starter's share over the last `rollingSpan` games, 5 for L10 and L20, 3 for L5. It uses only games in the window, so any point can be counted off the blocks beneath it, and starts at game 5 of 10. It is null while any game in its span is unresolved, breaks there and resumes once the span is clear. The line's end is the last 5 games and differs from the printed SHARE, which is the whole window.
+- **Removed from the card:** RELIEF, GS / GP, and the PREV count. Relief data stays in the snapshot. PREV prints the share only, so the legend says "up to the N games before", which stays true for a short comparison. A goalie with only relief in both windows now drops from the row.
+- **PNG:** block and line colours are SVG attributes, and a test asserts no class on any SVG child.
+
+**Fit: calculated, not rendered.** 803 for rows as before, with a two-line note. Chart height is `min(200, floor(803 / rows) - 8)`.
+
+| Teams | Chart (px) | Goalie name room (px) | Row after stretch (px) |
+| --- | --- | --- | --- |
+| Up to 6 | 420 wide, 125 high at 6 | about 200 | about 134 at 6 |
+| 7 to 9 | 460 wide, 81 high at 9 | about 190 | about 89 at 9 |
+| 10 to 12 | 500 wide, 58 high at 12 | about 175 | about 67 at 12 |
+
+Names up to about 20 characters fit by estimate. Three goalie lines fit at 12 teams, but 4 or more on many rows would still clip, which is the case to measure. No new real reads were made.
+
 ## Blockers
 
 None for building. Open: TJ's first real-output review (9.7) and the browser run of the spec.
