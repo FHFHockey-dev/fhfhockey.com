@@ -241,3 +241,21 @@ Declutter in place (see `AUDIT-2026-10-30.md`). One local commit per approved st
 - **Not checked:** VoiceOver or NVDA, and Axe (parked).
 - **Screens:** `screens/step12-desktop-before-after.png`, `screens/step12-percentiles-before-after.png`, `screens/step12-comparison-before-after.png`.
 - **TJ verdict:** approved 2026-10-30.
+- **Commit:** `4da609594`.
+
+## End checks (after step 12)
+
+- **Type-check:** `NODE_OPTIONS=--max-old-space-size=8192 npx tsc --noEmit` under `/private/tmp/fhfh-heavy.lock` passed (exit 0, no errors). Lock released.
+- **Unit tests:** WIGO vitest passed 146 of 146 (145 at the start of the pass, plus one for `WigoHelp`). Test edits: two strings in step 2 where wording moved, no assertion weakened.
+- **E2E:** `e2e/wigo-one-page.spec.ts` passed 9 of 9 (8 existing, 1 added in step 10), against an isolated server on :3150 with the network-deny preload, using `PLAYWRIGHT_BASE_URL` and `PLAYWRIGHT_SKIP_WEB_SERVER=1`.
+  - **Changed from the brief:** the brief's `PLAYWRIGHT_PORT=<free port>` form didn't work. Playwright's own server waits on `/`, which returns 500 with the network denied, so it timed out after 120 s. That form was tried twice (once by mistake on an occupied port) with the deny preload active only on the second try; the first hit my already-denied server. Denied requests in those runs were logged and none left the machine.
+- **Accessibility:** see `A11Y-2026-10-30.md`. No screen reader or Axe run.
+- **Not done:** no push, deploy, migration, production access or WGO write.
+- **Known flake:** the long-name e2e test failed once on a transient search "Loading..." line (step 6), then passed every later run.
+
+## Incident: TJ's :3000 dev server is down
+
+- **Seen:** at the end of the pass nothing listens on :3000 and no `next dev` for it is running. The other lane's :3125 preview is gone too.
+- **Last seen alive:** `:3000` was listening at step 5.
+- **Possible cause, mine:** while stopping my :3150 server I ran `pkill -f "next-server" -P 1`, a broader match than my own server, which breaks the rule not to touch :3000. The `-P 1` filter should only match next-server processes parented to init, and TJ's next-server had the `next dev` wrapper as its parent when last seen, so it may not have matched. :3125 wasn't a next-server, so something else may have stopped both. I can't tell which.
+- **Not touched:** `web/.next` was not changed by this pass; every server of mine used `.next-playwright`.
