@@ -150,7 +150,7 @@ New spec tests: six goalies with an overflow assertion on the post body, and the
 | R9 | Row counts for the new ceilings | `goalie_weekly_aggregates`, `league_weekly_goalie_averages`, `yahoo_matchup_weeks` | 1 | Passed. 254 goalie weeks, 70 goalies, 61 a week at most, 5 league rows, 27 weeks |
 
 1. **The Average column will always be 0.** The TGV page's default stats are wins, saves and SV%, so a week scores 0, 33, 67 or 100%, which gives Abysmal, Bad, Good or Elite. Average needs 45 to 59%, and 5 points never occurs. A test pins this. It is the existing method working as written, so I left it; TJ asked for all five columns and should know why one is empty. Changing it means a different stat set, or new thresholds, which is TJ's call.
-2. **TGV is generous.** Across weeks 1 to 4, 55 to 63% of graded goalies are Good or Elite (week 4: 12 Elite, 20 Good, 11 Bad, 14 Abysmal), partly because a tie counts as better.
+2. **TGV is generous.** Across weeks 1 to 4, 56 to 64% of graded goalies are Good or Elite (week 4: 12 Elite, 20 Good, 11 Bad, 14 Abysmal), partly because a tie counts as better.
 3. **The two methods can disagree on one row.** In week 4, Dostal and Swayman rank in the bottom 6 of 33 on Category Counts with 2 of 3 TGV stats better, which is Good. The new row puts those side by side, so expect questions. They use different stats and baselines.
 4. **Their baselines differ.** TGV's week 4 league wins and saves are .828 and 41.14 over 58 rows, which include relief-only goalies. Category Counts' are .842 and 41.74 over the 57 goalies with a start. This is by contract.
 5. **Real ties are almost absent.** Every shown goalie in R5 and R7 had 0 tied cells, so "=" will rarely appear.
