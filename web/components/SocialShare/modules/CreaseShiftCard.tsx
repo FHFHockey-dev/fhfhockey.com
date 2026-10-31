@@ -9,8 +9,8 @@ const lines = (team: CreaseShiftTeam, cell: (goalie: CreaseShiftTeam["goalies"][
 const crease = (team: CreaseShiftTeam) => team.startersUsed > 1 ? `Split, ${team.startersUsed} starters` : team.startersUsed === 1 ? "One starter" : "—";
 
 export default function CreaseShiftCard({ data, logos }: SharePostCardProps<CreaseShiftSettings, CreaseShiftData>) {
-  const ranked = data.teams.filter(team => team.rank !== null), shown = ranked.slice(0, CREASE_SHIFT_SHOWN), withheld = data.teams.filter(team => team.rank === null);
-  if (!ranked.length) return <PostEmpty>No team has both windows resolved</PostEmpty>;
+  const ranked = data.teams.filter(team => team.rank !== null), shown = ranked.slice(0, CREASE_SHIFT_SHOWN), short = data.teams.filter(team => team.shortComparison).length, withheld = data.teams.filter(team => team.rank === null && !team.shortComparison);
+  if (!ranked.length) return <PostEmpty>No team has both windows resolved with {data.minComparisonGames} comparison games</PostEmpty>;
   const compared = data.comparison === "std" ? "STD" : "PREV";
   const columns: PostColumn<CreaseShiftTeam>[] = [
     { id: "rank", label: "RK", numeric: true, cell: team => team.rank },
@@ -29,6 +29,7 @@ export default function CreaseShiftCard({ data, logos }: SharePostCardProps<Crea
       {data.comparison === "std" ? `STD is season to date and contains each team's recent games. ` : `PREV is the ${data.window} games before the window, with no shared game. `}
       PTS is share change in percentage points.
       {ranked.length > shown.length ? ` Showing ${shown.length} of ${ranked.length} ranked teams.` : ""}
+      {short ? ` Unranked teams with under ${data.minComparisonGames} comparison games outside the window: ${short}.` : ""}
       {withheld.length ? ` Unranked: ${withheld.map(team => team.team).join(", ")}.` : ""}
     </p>
   </div>;

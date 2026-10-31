@@ -30,8 +30,9 @@ const base = { settings, period: weekPeriod(weeks[0], "2026-10-30"), appearances
 
 describe("goalie of the period", () => {
   it("ranks best and worst from one ranking, with evidence on every row", () => {
-    const { data, state } = buildGoaliePeriod(base);
+    const { data, state, evidence } = buildGoaliePeriod(base);
     expect(state).toBe("ready");
+    expect(evidence.sample).toBe("Week 4, 2026-10-19 to 2026-10-25: 4 official starts in the 1 matchup week used");
     expect(data!.rows.map(row => [row.goalieId, row.categoryCounts.rank, row.categoryCounts.worstRank])).toEqual([[1, 1, 2], [2, 2, 1]]);
     expect(data!.winners).toEqual([1]);
     expect(data!.rows[0].categoryCounts).toMatchObject({ starts: 2, relief: 0, game: { compared: 10 }, week: { compared: 5 } });

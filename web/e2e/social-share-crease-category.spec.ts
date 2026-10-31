@@ -57,17 +57,17 @@ const download = async (page: Page) => {
 
 test("crease shift: official share over team games, labeled comparison, and it exports the same snapshot", async ({ page }) => {
   await install(page);
-  const result = buildCreaseShift({ reported, appearances, scheduled, teams: ["NJD", "NYR"], window: 2, comparison: "previous", through: "2026-10-30" });
-  const settings = { window: "10", comparison: "previous" };
+  const result = buildCreaseShift({ reported, appearances, scheduled, teams: ["NJD", "NYR"], window: 2, comparison: "previous", minComparisonGames: 2, through: "2026-10-30" });
+  const settings = { window: "10", comparison: "previous", minComparisonGames: 2 };
   let requests = 0;
   await page.route("**/api/v1/social-share/posts/**", route => { requests++; return route.fulfill({ json: edition("crease-shift", settings, result) }); });
-  await page.goto("/social-share/posts?post=crease-shift");
+  await page.goto("/social-share/posts?post=crease-shift&minComparisonGames=2");
   const square = page.getByTestId("share-square");
   await expect(square).toContainText("Official starts ÷ completed team games");
   await expect(square).toContainText("Fictional Goalie 2");
   await expect(square).not.toContainText(/probab|likely|odds/i);
   await expect(page.getByTestId("post-watermark")).toHaveText("OBSERVED RESULTS");
-  await expect(square).toHaveAttribute("data-export-token", 'crease-shift-e2e|crease-shift|[["window","10"],["comparison","previous"]]');
+  await expect(square).toHaveAttribute("data-export-token", 'crease-shift-e2e|crease-shift|[["window","10"],["comparison","previous"],["minComparisonGames",2]]');
   const before = requests;
   await download(page);
   expect(requests).toBe(before);
@@ -75,10 +75,10 @@ test("crease shift: official share over team games, labeled comparison, and it e
 
 test("crease shift: a schedule gap previews as partial and cannot export", async ({ page }) => {
   await install(page);
-  const result = buildCreaseShift({ reported: reported.slice(1), appearances, scheduled, teams: ["NJD", "NYR"], window: 2, comparison: "previous", through: "2026-10-30" });
+  const result = buildCreaseShift({ reported: reported.slice(1), appearances, scheduled, teams: ["NJD", "NYR"], window: 2, comparison: "previous", minComparisonGames: 2, through: "2026-10-30" });
   expect(reconcileSchedule(scheduled, reported.slice(1)).missing).toBe(1);
-  await page.route("**/api/v1/social-share/posts/**", route => route.fulfill({ json: edition("crease-shift", { window: "10", comparison: "previous" }, result) }));
-  await page.goto("/social-share/posts?post=crease-shift");
+  await page.route("**/api/v1/social-share/posts/**", route => route.fulfill({ json: edition("crease-shift", { window: "10", comparison: "previous", minComparisonGames: 2 }, result) }));
+  await page.goto("/social-share/posts?post=crease-shift&minComparisonGames=2");
   await expect(page.getByTestId("post-watermark")).toHaveText("PARTIAL · NOT FOR EXPORT");
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
 });

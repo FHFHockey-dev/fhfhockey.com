@@ -18,5 +18,5 @@ export async function loadCreaseShift({ client, generatedAt }: SharePostContext,
     readGoalieAppearances(client, { season, from, through, limit: SEASON_GOALIE_LIMIT }),
     readScheduledGames(client, { season, from, through, limit: SEASON_SCHEDULE_LIMIT }),
   ]);
-  return buildCreaseShift({ reported, appearances, scheduled, teams: [...activeTeamAbbreviations].map(String).sort(), window: Number(settings.window), comparison: settings.comparison === "std" ? "std" : "previous", through });
+  return buildCreaseShift({ reported, appearances, scheduled, teams: [...activeTeamAbbreviations].map(String).sort(), window: Number(settings.window), comparison: settings.comparison === "std" ? "std" : "previous", minComparisonGames: settings.minComparisonGames, through });
 }

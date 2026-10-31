@@ -22,7 +22,7 @@ Posts: `crease-shift`, `goalie-period`, `goalie-gsax`, registered in `lanes/crea
 
 | Check | Result |
 | --- | --- |
-| `npm test --` the four lane test files plus `server.test.ts`, `contract.test.ts` | Passed: 6 files, 86 tests |
+| `npm test --` the four lane test files plus `server.test.ts`, `contract.test.ts` | Passed at the first commit: 6 files, 86 tests. See the follow-up below for the later run |
 | `npx eslint` on all lane files | Passed, no findings |
 | `npx tsc --noEmit` filtered to lane files | No errors in lane files |
 | CSS-module pure check on the three SCSS files | Passed |
@@ -98,6 +98,20 @@ Compare with the tables above: `?post=goalie-period&week=4` and `?post=goalie-pe
 - **NST goalie identity does not always match WGO.** Through 10-27, 3 NST rows have no WGO appearance for that goalie and date. One looks misattributed: NST 8476899 NSH 10-10 logs 64.95 minutes, and WGO has 8483575 NSH 10-10 at 3,897 seconds, the same time. The other two (8475683 TOR 10-06, 8477968 S.J 10-03) have no explained match. GSAx drops all three, counts them on the card, and the real goalie loses that appearance's coverage. Any other NST goalie consumer (lane F's danger-zone shots) may want the same check.
 - `teamStartShare` returns `share: 0` on an incomplete window. Crease Shift treats that as null; other consumers should too.
 - NST uses `S.J`, not `SJS`. Team always comes from WGO here.
+
+## Follow-up from the real render: minimum comparison games
+
+The lead's real L10 render ranked MTL first against a 3-game comparison and CBJ third against a 1-game one. Crease Shift now has a visible `minComparisonGames` setting, default 5, range 1 to 82, and the L10 default is unchanged.
+
+- A team under the minimum has no shift and no rank. Its goalies' `change` is null too; nothing is invented. The card's note gives only a count of such teams, and the cohort line reads "N of 32 teams ranked; M short comparison".
+- **Season to date:** the minimum counts only games outside the recent window, because season to date contains the recent games. L10 versus STD on 13 games has 3 independent games, the same evidence as previous-10 on that team. The field label says "outside the window".
+- A team with no completed games is not counted as short.
+- Goalie of the Period's sample now reads "1 matchup week used".
+- Checks on this follow-up: the same 6 test files pass (93 tests); eslint and `tsc` are clean on the touched files; the spec lists 5 tests. No browser run: the lead's. The spec's Crease Shift fixtures now send `minComparisonGames=2` in the URL and settings, so its export token changed.
+
+**Effect today, from the lead's pre-change `crease-shift.json`** (not a new read, and it predates this change): only **6 of 32** teams have 5 comparison games, all at exactly 5: VAN (+50), CAR (30), MIN (20), PHI, TOR and VGK (10). The other 26 are short. So a real L10 card today is a six-team board led by VAN, which fills as teams pass 15 games. **The lead's real render needs repeating.**
+
+CONTRACT §2's defaults table lists only Window and Comparison for Crease Shift. It is frozen, so adding this row is the lead's.
 
 ## Blockers
 

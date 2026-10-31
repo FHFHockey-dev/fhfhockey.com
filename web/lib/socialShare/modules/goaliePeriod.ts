@@ -108,7 +108,7 @@ export function buildGoaliePeriod(input: GoaliePeriodInput): SharePostLoadResult
         { name: "Yahoo matchup weeks", tables: ["yahoo_matchup_weeks"], state: "ready", asOf: null, updatedAt: null },
         { name: `${TGV_LABEL} views`, tables: ["goalie_weekly_aggregates", "league_weekly_goalie_averages"], state: input.tgv ? "ready" : "missing", asOf: null, updatedAt: null },
       ],
-      sample: `${period.label}: ${ledgers.reduce((total, ledger) => total + ledger.officialStarts, 0)} official starts in the ${ledgers.length} matchup weeks used`,
+      sample: `${period.label}: ${ledgers.reduce((total, ledger) => total + ledger.officialStarts, 0)} official starts in the ${ledgers.length} matchup week${ledgers.length === 1 ? "" : "s"} used`,
       strength: "All situations", cohort: `${ranked.length} goalies with at least ${minStarts} official starts; baselines use every goalie with a start, week by week`,
       coverage: { observed: schedule.observed, expected: schedule.expected, missing: schedule.missing, unit: "team games" },
     },

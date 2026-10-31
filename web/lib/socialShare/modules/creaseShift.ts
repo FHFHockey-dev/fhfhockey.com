@@ -9,7 +9,7 @@ import { shiftDays } from "./teamGames";
  * Crease Shift (SS 8.0): official start share over a team's last N completed games, against a labeled comparison window.
  * The denominator is completed team games, so this is not the appearance share in GoalieShareChart's pie. Descriptive only.
  */
-export type CreaseShiftSettings = { window: string; comparison: string };
+export type CreaseShiftSettings = { window: string; comparison: string; minComparisonGames: number };
 export type CreaseShiftGoalie = {
   goalieId: number; name: string | null; starts: number; relief: number;
   /** Null unless every game in the window has exactly one labeled starter. */
@@ -27,12 +27,14 @@ export type CreaseShiftTeam = {
   comparisonGames: number; comparisonShort: boolean;
   /** Games shared by both windows: the recent games when comparing with season to date, otherwise 0. */
   overlap: number;
+  /** Fewer comparison games outside the recent window than the minimum: unranked, with no shift. */
+  shortComparison: boolean;
   /** Goalies with at least one start in the window; two or more is a split crease. */
   startersUsed: number; goalies: CreaseShiftGoalie[];
   unresolvedGames: number; comparisonUnresolvedGames: number; missingGames: number;
   withheld: string | null;
 };
-export type CreaseShiftData = { window: number; comparison: "previous" | "std"; through: string; teams: CreaseShiftTeam[] };
+export type CreaseShiftData = { window: number; comparison: "previous" | "std"; minComparisonGames: number; through: string; teams: CreaseShiftTeam[] };
 
 /** A `games` row: proves a game was scheduled, not that it finished. */
 export type ScheduledGame = { id: number; date: string; homeTeamId: number | null; awayTeamId: number | null };
@@ -62,9 +64,11 @@ export function reconcileSchedule(scheduled: readonly ScheduledGame[], reported:
 /** The exact share change, divided once, so equal changes on different denominators stay tied. */
 const shareChange = (starts: number, games: number, baseStarts: number, baseGames: number) => (starts * baseGames - baseStarts * games) * 100 / (games * baseGames);
 
-function teamRow(team: string, input: { games: readonly CompletedTeamGame[]; appearances: readonly GoalieAppearance[]; window: number; comparison: "previous" | "std" }, gaps: readonly ScheduleGap[]): Omit<CreaseShiftTeam, "rank"> {
+function teamRow(team: string, input: { games: readonly CompletedTeamGame[]; appearances: readonly GoalieAppearance[]; window: number; comparison: "previous" | "std"; minComparisonGames: number }, gaps: readonly ScheduleGap[]): Omit<CreaseShiftTeam, "rank"> {
   const recent: TeamStartShare = teamStartShare(team, input.games, input.appearances, input.window);
   const base: TeamStartShare = input.comparison === "std" ? teamStartShare(team, input.games, input.appearances, null) : teamStartShare(team, input.games, input.appearances, input.window, input.window);
+  // Season to date contains the recent games, so only the games outside them can be evidence of a change.
+  const overlap = input.comparison === "std" ? recent.teamGames : 0, shortComparison = recent.teamGames > 0 && base.teamGames - overlap < input.minComparisonGames;
   const ids = [...new Set([...recent.goalies, ...base.goalies].map(goalie => goalie.goalieId))];
   const goalies = ids.map((goalieId): CreaseShiftGoalie => {
     const now = recent.goalies.find(goalie => goalie.goalieId === goalieId), then = base.goalies.find(goalie => goalie.goalieId === goalieId);
@@ -74,7 +78,7 @@ function teamRow(team: string, input: { games: readonly CompletedTeamGame[]; app
       // A complete window proves an absent goalie's 0 starts; teamStartShare's 0 on an incomplete window proves nothing.
       share: recent.complete ? starts / recent.teamGames : null,
       comparisonStarts: base.complete ? baseStarts : null, comparisonRelief: base.complete ? then?.reliefAppearances ?? 0 : null, comparisonShare: base.complete ? baseStarts / base.teamGames : null,
-      change: recent.complete && base.complete ? shareChange(starts, recent.teamGames, baseStarts, base.teamGames) : null,
+      change: recent.complete && base.complete && !shortComparison ? shareChange(starts, recent.teamGames, baseStarts, base.teamGames) : null,
       otherTeams: [...new Set(input.appearances.filter(row => row.goalieId === goalieId && row.team !== team).map(row => row.team))].sort(),
     };
   }).sort((a, b) => b.starts - a.starts || (b.comparisonStarts ?? 0) - (a.comparisonStarts ?? 0) || a.goalieId - b.goalieId);
@@ -83,20 +87,21 @@ function teamRow(team: string, input: { games: readonly CompletedTeamGame[]; app
     : recent.unresolvedGames.length ? `${recent.unresolvedGames.length} of ${recent.teamGames} window games lack exactly one labeled starter.`
     : !base.teamGames ? "No completed games in the comparison window."
     : base.unresolvedGames.length ? `${base.unresolvedGames.length} of ${base.teamGames} comparison games lack exactly one labeled starter.`
+    : shortComparison ? `Only ${base.teamGames - overlap} comparison games outside the window, under the minimum of ${input.minComparisonGames}.`
     : null;
   return {
     team, shift: withheld === null && changes.length ? Math.max(...changes) : null,
     games: recent.teamGames, short: recent.short, firstDate: recent.firstDate, lastDate: recent.lastDate,
-    comparisonGames: base.teamGames, comparisonShort: input.comparison === "previous" && base.short, overlap: input.comparison === "std" ? recent.teamGames : 0,
+    comparisonGames: base.teamGames, comparisonShort: input.comparison === "previous" && base.short, overlap, shortComparison,
     startersUsed: recent.complete ? goalies.filter(goalie => goalie.starts > 0).length : 0, goalies,
     unresolvedGames: recent.unresolvedGames.length, comparisonUnresolvedGames: base.unresolvedGames.length,
     missingGames: gaps.filter(gap => gap.team === team).length, withheld,
   };
 }
 
-export function buildCreaseShift(input: { reported: readonly CompletedTeamGame[]; appearances: readonly GoalieAppearance[]; scheduled: readonly ScheduledGame[]; teams: readonly string[]; window: number; comparison: "previous" | "std"; through: string }): SharePostLoadResult<CreaseShiftData> {
+export function buildCreaseShift(input: { reported: readonly CompletedTeamGame[]; appearances: readonly GoalieAppearance[]; scheduled: readonly ScheduledGame[]; teams: readonly string[]; window: number; comparison: "previous" | "std"; minComparisonGames: number; through: string }): SharePostLoadResult<CreaseShiftData> {
   const schedule = reconcileSchedule(input.scheduled, input.reported);
-  const rows = input.teams.map(team => teamRow(team, { games: schedule.games, appearances: input.appearances, window: input.window, comparison: input.comparison }, schedule.gaps));
+  const rows = input.teams.map(team => teamRow(team, { games: schedule.games, appearances: input.appearances, window: input.window, comparison: input.comparison, minComparisonGames: input.minComparisonGames }, schedule.gaps));
   const ranked = competitionRanks(rows, row => row.shift, row => row.team), ranks = new Map(ranked.map(entry => [entry.row.team, entry.rank]));
   const teams: CreaseShiftTeam[] = rows.map(row => ({ ...row, rank: ranks.get(row.team) ?? null })).sort((a, b) => (a.rank ?? Infinity) - (b.rank ?? Infinity) || a.team.localeCompare(b.team));
   const unresolved = rows.filter(row => row.unresolvedGames || row.comparisonUnresolvedGames).length;
@@ -109,14 +114,14 @@ export function buildCreaseShift(input: { reported: readonly CompletedTeamGame[]
   const compared = input.comparison === "std" ? "season to date, which contains the recent games" : `the ${input.window} games before them`;
   return {
     state, reasons, ttlSeconds: 900, teams: teams.slice(0, CREASE_SHIFT_SHOWN).map(team => team.team),
-    data: { window: input.window, comparison: input.comparison, through: input.through, teams },
+    data: { window: input.window, comparison: input.comparison, minComparisonGames: input.minComparisonGames, through: input.through, teams },
     evidence: {
       sources: [
         { name: "NHL.com team game stats", tables: ["wgo_team_stats", "games"], state: schedule.missing ? "partial" : "ready", asOf, updatedAt: null },
         { name: "NHL.com goalie game stats", tables: ["wgo_goalie_stats"], state: unresolved ? "partial" : "ready", asOf: input.appearances.reduce<string | null>((latest, row) => !latest || row.date > latest ? row.date : latest, null), updatedAt: null },
       ],
       sample: `Last ${input.window} completed team games per team through ${input.through}, compared with ${compared}`,
-      strength: "All situations (official starter labels)", cohort: `${ranked.length} of ${input.teams.length} teams with both windows resolved`,
+      strength: "All situations (official starter labels)", cohort: `${ranked.length} of ${input.teams.length} teams ranked; ${rows.filter(row => row.shortComparison).length} short comparison`,
       coverage: { observed: schedule.observed, expected: schedule.expected, missing: schedule.missing, unit: "team games" },
     },
   };
@@ -131,6 +136,7 @@ export const creaseShiftModule = defineShareModule<CreaseShiftSettings, CreaseSh
   fields: [
     { id: "window", label: "Window", kind: "select", default: "10", options: [{ value: "5", label: "L5 team games" }, { value: "10", label: "L10 team games" }, { value: "20", label: "L20 team games" }] },
     { id: "comparison", label: "Comparison", kind: "select", default: "previous", options: [{ value: "previous", label: "Previous N team games" }, { value: "std", label: "Season to date" }] },
+    { id: "minComparisonGames", label: "Min comparison games outside the window", kind: "number", default: 5, min: 1, max: 82, step: 1 },
   ],
   load: () => import("./creaseShift.sources").then(sources => sources.loadCreaseShift),
   card: () => import("components/SocialShare/modules/CreaseShiftCard").then(card => card.default),

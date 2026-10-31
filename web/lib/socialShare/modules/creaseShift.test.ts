@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { parseShareSettings } from "./contract";
 import { buildCreaseShift, creaseShiftModule, editionCutoff, reconcileSchedule, type CreaseShiftData, type ScheduledGame } from "./creaseShift";
 import type { CompletedTeamGame, GoalieAppearance } from "./shared/goalieLedger";
 import { teamsInfo } from "lib/teamsInfo";
@@ -15,7 +16,7 @@ const row = (goalieId: number, team: string, index: number, started: boolean | n
 const schedule = (games: readonly CompletedTeamGame[]): ScheduledGame[] => games.map(entry => ({ id: entry.gameId, date: entry.date, homeTeamId: teamsInfo[entry.team as "NJD"].id, awayTeamId: null })).map(entry => ({ ...entry, awayTeamId: entry.homeTeamId === NJD ? NYR : NJD }));
 /** NJD games only, with NYR's side reported too, so the schedule reconciles. */
 const reportBoth = (games: readonly CompletedTeamGame[]) => games.flatMap(entry => [entry, { ...entry, team: entry.team === "NJD" ? "NYR" : "NJD" }]);
-const base = { teams: ["NJD"], window: 5, comparison: "previous" as const, through: "2026-10-30" };
+const base = { teams: ["NJD"], window: 5, comparison: "previous" as const, minComparisonGames: 1, through: "2026-10-30" };
 const twenty = Array.from({ length: 10 }, (_, index) => game("NJD", index));
 
 describe("crease shift", () => {
@@ -86,6 +87,61 @@ describe("crease shift", () => {
   });
 });
 
+describe("minimum comparison games", () => {
+  const games = (count: number) => Array.from({ length: count }, (_, index) => game("NJD", index));
+  /** Goalie 2 starts only before the recent window, so any comparison shows a real shift. */
+  const run = (count: number, minComparisonGames: number, comparison: "previous" | "std" = "previous") => {
+    const list = games(count), appearances = list.map((_, index) => row(index === 0 ? 2 : 1, "NJD", index));
+    return buildCreaseShift({ ...base, comparison, minComparisonGames, reported: reportBoth(list), appearances, scheduled: schedule(list) });
+  };
+  it("ranks a team at exactly the minimum and not one game under it", () => {
+    expect(run(10, 5).data!.teams[0]).toMatchObject({ comparisonGames: 5, shortComparison: false, shift: 20, rank: 1, withheld: null });
+    const short = run(9, 5);
+    expect(short.data!.teams[0]).toMatchObject({ comparisonGames: 4, shortComparison: true, shift: null, rank: null, withheld: "Only 4 comparison games outside the window, under the minimum of 5." });
+    expect(short.data!.teams[0].goalies.every(goalie => goalie.change === null)).toBe(true);
+    expect(short.evidence.cohort).toBe("0 of 1 teams ranked; 1 short comparison");
+    expect(creaseShiftModule.hasRows(short.data, { window: "5", comparison: "previous", minComparisonGames: 5 })).toBe(false);
+  });
+  it("never ranks a 1-game comparison at the default, however large the swing", () => {
+    const team = run(6, 5).data!.teams[0];
+    expect(team.goalies.find(goalie => goalie.goalieId === 2)).toMatchObject({ comparisonShare: 1, change: null });
+    expect(team).toMatchObject({ comparisonGames: 1, shift: null, rank: null });
+    expect(run(6, 1).data!.teams[0]).toMatchObject({ shift: 100, rank: 1 });
+  });
+  it("counts only games outside the window for season to date, which contains the recent games", () => {
+    const at = run(10, 5, "std").data!.teams[0];
+    expect(at).toMatchObject({ comparisonGames: 10, overlap: 5, shortComparison: false, rank: 1 });
+    const under = run(9, 5, "std").data!.teams[0];
+    expect(under).toMatchObject({ comparisonGames: 9, overlap: 5, shortComparison: true, shift: null, rank: null });
+    expect(under.withheld).toBe("Only 4 comparison games outside the window, under the minimum of 5.");
+  });
+  it("does not count a team with no games as short, and names the cohort when some are", () => {
+    const list = games(10), appearances = list.map((_, index) => row(1, "NJD", index));
+    const result = buildCreaseShift({ ...base, teams: ["NJD", "PHI"], minComparisonGames: 5, reported: reportBoth(list), appearances, scheduled: schedule(list) });
+    expect(result.evidence.cohort).toBe("1 of 2 teams ranked; 0 short comparison");
+  });
+  it("defaults to 5 and leaves the window at L10", () => {
+    expect(parseShareSettings(creaseShiftModule, {})).toEqual({ window: "10", comparison: "previous", minComparisonGames: 5 });
+    expect(() => parseShareSettings(creaseShiftModule, { minComparisonGames: "0" })).toThrow();
+  });
+  const render = async (result: ReturnType<typeof run>) => {
+    const Card = await creaseShiftModule.card();
+    return renderToStaticMarkup(createElement(Card, { data: result.data, logos: {}, settings: { window: "5", comparison: "previous", minComparisonGames: 5 }, snapshot: {} as never }));
+  };
+  it("shows short teams only as a count in the note", async () => {
+    const list = games(10), other = Array.from({ length: 6 }, (_, index) => game("NYR", index, 2000 + index));
+    const appearances = [...list.map((_, index) => row(index === 0 ? 2 : 1, "NJD", index)), ...other.map((entry, index) => row(9, "NYR", index, true, entry.gameId))];
+    const scheduled = [...list, ...other].map(entry => ({ id: entry.gameId, date: entry.date, homeTeamId: teamsInfo[entry.team as "NJD"].id, awayTeamId: null }));
+    const html = await render(buildCreaseShift({ ...base, teams: ["NJD", "NYR"], minComparisonGames: 5, reported: [...list, ...other], appearances, scheduled }));
+    expect(html).toContain("Unranked teams with under 5 comparison games outside the window: 1.");
+    expect(html).not.toContain("G9");
+    expect(html).not.toContain("Unranked: NYR");
+  });
+  it("uses the honest empty state when nothing qualifies", async () => {
+    expect(await render(run(9, 5))).toContain("No team has both windows resolved");
+  });
+});
+
 describe("schedule reconciliation", () => {
   it("compares team games with the schedule, and one missing team game is partial", () => {
     const appearances = twenty.map((_, index) => row(1, "NJD", index)), reported = reportBoth(twenty).slice(0, -1);
@@ -109,18 +165,18 @@ describe("crease shift card", () => {
   const load = buildCreaseShift({ ...base, reported: reportBoth(twenty), appearances, scheduled: schedule(twenty) });
   const render = async (data: CreaseShiftData) => {
     const Card = await creaseShiftModule.card();
-    return renderToStaticMarkup(createElement(Card, { data, logos: {}, settings: { window: "5", comparison: "previous" }, snapshot: {} as never }));
+    return renderToStaticMarkup(createElement(Card, { data, logos: {}, settings: { window: "5", comparison: "previous", minComparisonGames: 1 }, snapshot: {} as never }));
   };
   it("names official starts and team games, and claims nothing about the next start", async () => {
     const html = await render(load.data!);
     expect(html).toContain("Official starts ÷ completed team games");
     expect(html).toContain("3/5");
     expect(html).not.toMatch(/probab|likely|odds|expected to start|will start|appearance share/i);
-    expect(creaseShiftModule.altText({ evidence: load.evidence } as never, load.data, { window: "5", comparison: "previous" })).not.toMatch(/probab|likely|odds|will start/i);
+    expect(creaseShiftModule.altText({ evidence: load.evidence } as never, load.data, { window: "5", comparison: "previous", minComparisonGames: 1 })).not.toMatch(/probab|likely|odds|will start/i);
   });
   it("has nothing to export when no team resolves", async () => {
     const empty = buildCreaseShift({ ...base, reported: [], appearances: [], scheduled: [] });
-    expect(creaseShiftModule.hasRows(empty.data, { window: "5", comparison: "previous" })).toBe(false);
+    expect(creaseShiftModule.hasRows(empty.data, { window: "5", comparison: "previous", minComparisonGames: 1 })).toBe(false);
     expect(await render(empty.data!)).toContain("No team has both windows resolved");
   });
   it("leaves the appearance pie alone: this post reads no appearance share", () => {
