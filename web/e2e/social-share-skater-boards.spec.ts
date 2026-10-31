@@ -42,7 +42,7 @@ const fictional: SkaterSeason = (() => {
 })();
 /** A full board: more ranked skaters than the card holds, so every post is measured at its row limit. */
 const crowded: SkaterSeason = (() => {
-  const appearances = Array.from({ length: 24 }, (_, player) => Array.from({ length: 12 }, (_, index) => game(player + 1, `Fictional Longname Skater ${player + 1}`, player % 2 ? "NYR" : "NJD", index, { shots: 1 + (player % 6) + (index % 3), hits: 1 + (player % 5), blocks: 1 + (player % 4), points: (player + index) % 2 }))).flat();
+  const appearances = Array.from({ length: 24 }, (_, player) => Array.from({ length: 12 }, (_, index) => game(player + 1, `Fictional Long Name ${player + 1}`, player % 2 ? "NYR" : "NJD", index, { shots: 1 + (player % 6) + (index % 3), hits: 1 + (player % 5), blocks: 1 + (player % 4), points: (player + index) % 2 }))).flat();
   const teamGames = [...new Map(appearances.map(row => [`${row.team}:${row.gameId}`, { gameId: row.gameId, date: row.date, team: row.team! }])).values()];
   return { appearances, teamGames, scheduledGames: teamGames.length / 2, through: "2026-10-30" };
 })();
@@ -138,7 +138,9 @@ test("Category Blueprint keeps categories separate with their own ranks", async 
 test("Nightly Floor prints numerator, denominator, missing and its strict test", async ({ page }) => {
   await open(page, "nightly-floor", () => edition("nightly-floor", floorSettings(), buildNightlyFloor(fictional, floorSettings(), ownership)));
   const square = page.getByTestId("share-square");
-  for (const text of ["More than 2 SOG.", "Exactly 2 fails.", "MET / KNOWN", "10 / 10", "MISSING", "40%"]) await expect(square).toContainText(text);
+  for (const text of ["More than 2 SOG.", "Exactly 2 fails.", "MET / KNOWN", "10 / 10", "MISSING", "40%", "oldest to newest"]) await expect(square).toContainText(text);
+  await expect(square.getByTestId("floor-strip").first().locator("[data-mark]")).toHaveCount(10);
+  await expect(square.getByTestId("heat-tile")).toHaveCount(2);
   await expect(page.getByTestId("post-evidence")).toContainText("A DNP is not an appearance");
   await expect(page.getByTestId("post-evidence")).toContainText("Yahoo rostered %");
   await expectFits(page);
@@ -148,7 +150,7 @@ test("Nightly Floor prints numerator, denominator, missing and its strict test",
 const crowdedOwnership = { byPlayer: new Map(Array.from({ length: 24 }, (_, index) => [index + 1, ownershipOf(10 + index, "2026-10-31")])), updatedAt: "2026-10-31T08:00:00" };
 test("BSH Board risers and fallers fill the body with no clipping at 7 rows a side", async ({ page }) => {
   const moving: SkaterSeason = (() => {
-    const appearances = Array.from({ length: 24 }, (_, player) => Array.from({ length: 20 }, (_, index) => game(player + 1, `Fictional Longname Skater ${player + 1}`, player % 2 ? "NYR" : "NJD", index, { shots: (index >= 10) === (player % 2 === 0) ? 4 + (player % 5) : 1, hits: 1 + (player % 5), blocks: 1 + (player % 4) }))).flat();
+    const appearances = Array.from({ length: 24 }, (_, player) => Array.from({ length: 20 }, (_, index) => game(player + 1, `Fictional Long Name ${player + 1}`, player % 2 ? "NYR" : "NJD", index, { shots: (index >= 10) === (player % 2 === 0) ? 4 + (player % 5) : 1, hits: 1 + (player % 5), blocks: 1 + (player % 4) }))).flat();
     const teamGames = [...new Map(appearances.map(row => [`${row.team}:${row.gameId}`, { gameId: row.gameId, date: row.date, team: row.team! }])).values()];
     return { appearances, teamGames, scheduledGames: teamGames.length / 2, through: "2026-10-30" };
   })();
@@ -160,7 +162,7 @@ test("BSH Board risers and fallers fill the body with no clipping at 7 rows a si
   await expectMoversFit(page);
 });
 
-const crowdedRows: Record<string, number> = { "bsh-board": 12, "category-blueprint": 20, "nightly-floor": 20 };
+const crowdedRows: Record<string, number> = { "bsh-board": 12, "category-blueprint": 20, "nightly-floor": 14 };
 const crowdedEditions: Record<string, () => object> = {
   "bsh-board": () => edition("bsh-board", bshSettings(), buildBshBoard(crowded, bshSettings())),
   "category-blueprint": () => edition("category-blueprint", blueprintSettings, buildCategoryBlueprint(crowded, blueprintSettings)),
@@ -168,7 +170,7 @@ const crowdedEditions: Record<string, () => object> = {
 };
 for (const [post, build] of Object.entries(crowdedEditions)) test(`${post} fills the body with no clipping at its row limit`, async ({ page }) => {
   await open(page, post, build);
-  await expect(page.getByTestId("share-square").getByText("Fictional Longname Skater", { exact: false })).toHaveCount(crowdedRows[post]);
+  await expect(page.getByTestId("share-square").getByText("Fictional Long Name", { exact: false })).toHaveCount(crowdedRows[post]);
   await expectFits(page);
 });
 

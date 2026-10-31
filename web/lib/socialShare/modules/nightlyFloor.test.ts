@@ -95,7 +95,7 @@ describe("Nightly Floor filters", () => {
     const { data } = buildNightlyFloor(season([...games(1, [{ shots: 3 }, { shots: 3 }]), ...games(2, [{ shots: 3 }]), ...games(3, [{ shots: 3 }, { shots: 1 }])]), settings(), none);
     expect(data!.rows.map(row => [row.playerId, row.rank])).toEqual([[1, 1], [2, 1], [3, 3]]);
     const many = buildNightlyFloor(season(Array.from({ length: 21 }, (_, index) => games(index + 1, [{ shots: 3 }])).flat()), settings(), none);
-    expect(many.data).toMatchObject({ notShown: 1, tiedBeyondCut: 1 });
+    expect(many.data).toMatchObject({ notShown: 7, tiedBeyondCut: 7 });
   });
   it("keeps an empty pool empty and refuses to export a board nobody clears", () => {
     const active = settings({ minGp: 5 }), empty = buildNightlyFloor(season(games(1, [{ shots: 3 }])), active, none);
@@ -141,6 +141,40 @@ describe("Nightly Floor card", () => {
     for (const label of ["More than 2 SOG.", "Exactly 2 fails.", "L10", "MET / KNOWN", "1 / 2", "MISSING", "50%", "—", "1 of 1 ranked"]) expect(text).toContain(label);
     expect(document.querySelectorAll("p")).toHaveLength(1);
     expect(buildNightlyFloor(season(games(1, [{ shots: 3 }])), active, none).evidence.sample).toContain("A DNP is not an appearance");
+  });
+  describe("strip and tile", () => {
+    const marks = () => [...document.querySelectorAll("[data-mark]")].filter(mark => mark.closest("[data-testid=floor-strip]")).map(mark => mark.getAttribute("data-mark"));
+    it("marks oldest to newest with the count's strict test: exactly X is not met, missing is a gap", async () => {
+      const active = settings({ minCoverage: 50 }), { data } = buildNightlyFloor(season(games(1, [{ shots: 3 }, { shots: 2 }, { shots: null }, { shots: 0 }, { shots: 5 }])), active, none);
+      await show(data!, active);
+      expect(marks()).toEqual(["met", "not", "gap", "not", "met"]);
+      expect(data!.rows[0]).toMatchObject({ numerator: 2, denominator: 4, missing: 1, marks: [true, false, null, false, true] });
+    });
+    it("has as many met marks as the numerator on every view", async () => {
+      const line = (index: number) => ({ shots: index % 4, hits: (index + 1) % 4, blocks: (index + 2) % 4, points: index % 3 === 0 ? 0 : 1 });
+      const rows = Array.from({ length: 10 }, (_, index) => line(index));
+      for (const view of ["sog", "hits", "blk", "point", "cardio", "zero"] as const) {
+        const active = settings({ view }), { data } = buildNightlyFloor(season(games(1, rows)), active, none);
+        await show(data!, active);
+        expect(marks().filter(mark => mark === "met")).toHaveLength(data!.rows[0].numerator);
+        expect(marks()).toHaveLength(10);
+        cleanup();
+      }
+    });
+    it("marks Cardio Masters' scoreless games, in red, with a missing points line as a gap", async () => {
+      const active = settings({ view: "cardio", minCoverage: 50 }), { data } = buildNightlyFloor(season(games(1, [{ points: 0 }, { points: 2 }, { points: null }, { points: 0 }])), active, none);
+      await show(data!, active);
+      expect(marks()).toEqual(["met", "not", "gap", "met"]);
+      expect(data!.rows[0].numerator).toBe(2);
+      const tile = document.querySelector("[data-testid=heat-tile]")!;
+      expect(tile.getAttribute("data-tone")).toBe("worse");
+      expect(tile.textContent).toBe("67%of GP");
+    });
+    it("scales the tile with the value on one absolute scale", async () => {
+      const active = settings(), { data } = buildNightlyFloor(season([...games(1, [{ shots: 3 }, { shots: 3 }]), ...games(2, [{ shots: 3 }, { shots: 0 }])]), active, none);
+      await show(data!, active);
+      expect([...document.querySelectorAll("[data-testid=heat-tile]")].map(tile => [tile.getAttribute("data-tone"), Number(tile.getAttribute("data-alpha"))])).toEqual([["better", 0.8], ["better", 0.5]]);
+    });
   });
   it("labels Cardio Masters and an empty board, and asks for a refresh after a settings change", async () => {
     const active = settings({ view: "cardio" }), { data } = buildNightlyFloor(season(games(1, [{ points: 1 }])), active, none);

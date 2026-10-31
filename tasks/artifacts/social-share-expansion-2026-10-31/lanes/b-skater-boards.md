@@ -138,3 +138,15 @@ Follow-up commit (Blueprint default): 50 tests in the lane's 3 files passed, esl
 - **On the default:** Top 250 of 633 is about the top 39.5%, so every ranked cell falls in the top 50% and red cannot appear. Red needs a looser Top N.
 - **Legend:** "Per game, L10. Rank among 633: top 5% 15% 30% 50% lower. Top 250 in each; no combined score." with colour swatches. One line by estimate, not measured.
 - **Checks:** 63 tests in the lane's 3 files passed, including each band boundary. eslint clean, the pure check passed, `--list` found 10 tests, `tsc` printed no errors. No browser run.
+
+## Nightly Floor and Cardio Masters strip and tile (TJ's review: add visuals)
+
+- **Strip:** one mark per appearance in the window, oldest to newest: a tall bar for met, a low grey bar for not met, a hollow amber box for a missing stat. It applies to all six views, since they share the card.
+- **Same test as the count:** the row stores the `floorOutcome` results as `marks`, and the numerator and denominator are counted from that same list. Exactly X is not met.
+- **Tile:** % on one absolute scale, full strength at 100%, so a colour means the same on every board. Green for SOG, hits, blocks and points.
+- **My call, not in the ticket:** Cardio Masters and zero-category boards use red for the tile and the met marks, because the count is one a skater would rather not have.
+- **Kept:** MET / KNOWN, MISSING, "Exactly X fails" and the ranked count, in one legend line with a mark key.
+- **Rows:** 20 to 14 (about 57px each), so the strip and tile fit. Skaters below the card are counted in `evidence.cohort`.
+- **Spec fixture:** crowded names changed from "Fictional Longname Skater N" to "Fictional Long Name N". 21 to 22 characters is longer than real NHL names as far as I know, but the old 28 no longer fit this card's narrower name column by estimate.
+- **Not measured:** no browser run; the lead renders on real data.
+- **Checks:** 67 tests in the lane's 3 files passed, including met marks equal to the numerator on every view, scoreless marks, the equality boundary and the missing gap. eslint clean, the pure check passed, `--list` found 10 tests, `tsc` printed no errors. The last test expectation was corrected after those three ran.

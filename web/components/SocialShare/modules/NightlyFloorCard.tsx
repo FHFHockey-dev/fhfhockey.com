@@ -1,14 +1,27 @@
 import type { SharePostCardProps } from "lib/socialShare/modules/contract";
-import { nightlyFloorCurrent, type FloorRow, type NightlyFloorData, type NightlyFloorSettings } from "lib/socialShare/modules/nightlyFloor";
+import { floorViewIsUnwanted, nightlyFloorCurrent, type FloorRow, type NightlyFloorData, type NightlyFloorSettings } from "lib/socialShare/modules/nightlyFloor";
 import { STALE_SETTINGS_NOTE } from "lib/socialShare/modules/bshBoard";
 import { ownershipLabel } from "lib/socialShare/modules/shared/definitions";
 import { SkaterBoard, SkaterCell, skaterLogoSize, windowShort } from "./BshBoardCard";
+import { HeatTile } from "./GoalieBoards";
 import { PostEmpty, type PostColumn } from "./kit";
 import styles from "./BshBoardCard.module.scss";
 
+const STRIP_WIDTH = 170, STRIP_HEIGHT = 30;
+/** One mark per appearance, oldest first: a tall bar for met, a low bar for not met, and a hollow amber box for a missing stat. */
+function FloorStrip({ marks, unwanted }: { marks: readonly (boolean | null)[]; unwanted: boolean }) {
+  const step = STRIP_WIDTH / Math.max(1, marks.length), width = (step * 0.72).toFixed(2);
+  return <span className={styles.strip}><svg viewBox={`0 0 ${STRIP_WIDTH} ${STRIP_HEIGHT}`} preserveAspectRatio="none" aria-hidden="true" data-testid="floor-strip" data-unwanted={unwanted || undefined}>
+    {marks.map((mark, index) => {
+      const x = (step * (index + 0.14)).toFixed(2), kind = mark === null ? "gap" : mark ? "met" : "not";
+      return <rect key={index} className={styles.mark} data-mark={kind} x={x} width={width} y={mark === false ? STRIP_HEIGHT - 8 : 1} height={mark === false ? 7 : STRIP_HEIGHT - 2} />;
+    })}
+  </svg></span>;
+}
+
 export default function NightlyFloorCard({ data, settings, logos }: SharePostCardProps<NightlyFloorSettings, NightlyFloorData>) {
   if (!nightlyFloorCurrent(data, settings)) return <PostEmpty>{STALE_SETTINGS_NOTE}</PostEmpty>;
-  const { cohort } = data, size = skaterLogoSize(data.rows.length);
+  const unwanted = floorViewIsUnwanted(settings.view), { cohort } = data, size = skaterLogoSize(data.rows.length);
   const columns: PostColumn<FloorRow>[] = [
     { id: "rank", label: "RK", numeric: true, cell: row => row.rank },
     { id: "player", label: "SKATER", cell: row => <SkaterCell row={row} logo={row.team ? logos[row.team] : null} size={size} /> },
@@ -16,8 +29,10 @@ export default function NightlyFloorCard({ data, settings, logos }: SharePostCar
     { id: "gp", label: "GP", numeric: true, cell: row => row.appearances },
     { id: "count", label: "MET / KNOWN", numeric: true, cell: row => `${row.numerator} / ${row.denominator}` },
     { id: "missing", label: "MISSING", numeric: true, cell: row => row.missing ? <span className={styles.missing}>{row.missing}</span> : 0 },
-    { id: "pct", label: "%", numeric: true, cell: row => <b className={styles.strong}>{Math.round(row.pct * 100)}%</b> },
+    { id: "strip", label: "BY GAME", numeric: true, cell: row => <FloorStrip marks={row.marks} unwanted={unwanted} /> },
+    // On one absolute scale, 100% at full strength, so a colour means the same on every board. Red where the count is unwanted.
+    { id: "pct", label: "%", numeric: true, cell: row => <span className={styles.floorTile}><HeatTile value={unwanted ? -row.pct : row.pct} text={`${Math.round(row.pct * 100)}%`} caption={unwanted ? "of GP" : "met"} largest={1} /></span> },
   ];
-  const legend = `${data.test} ${windowShort(settings.window)}: ${cohort.ranked} of ${cohort.pool} ranked.`;
-  return <SkaterBoard legend={legend} columns={columns} rows={data.rows} rowKey={row => row.playerId} empty={data.rows.some(row => row.numerator > 0) ? null : "No skater meets this test with these settings"} />;
+  const legend = <>{data.test} {windowShort(settings.window)}, oldest to newest: <span className={styles.markKey} data-unwanted={unwanted || undefined}><i data-mark="met" />met<i data-mark="not" />not<i data-mark="gap" />missing</span>. {cohort.ranked} of {cohort.pool} ranked.</>;
+  return <SkaterBoard legend={legend} columns={columns} rows={data.rows} rowKey={row => row.playerId} empty={data.rows.some(row => row.numerator > 0) ? null : "No skater meets this test with these settings"} compact />;
 }

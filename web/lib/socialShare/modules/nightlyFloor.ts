@@ -1,4 +1,4 @@
-import { SKATER_BOARD_ROWS, belowTheCard, SKATER_POSITION_OPTIONS, SKATER_WINDOW_OPTIONS, shownTeams, skaterCohort, skaterCohortLabel, skaterIdentity, skaterSeasonEvidence, skaterWindowLabel, skaterWindowOf, type SkaterIdentity, type SkaterPositionId, type SkaterSeason, type SkaterWindowId } from "./bshBoard";
+import { belowTheCard, SKATER_POSITION_OPTIONS, SKATER_WINDOW_OPTIONS, shownTeams, skaterCohort, skaterCohortLabel, skaterIdentity, skaterSeasonEvidence, skaterWindowLabel, skaterWindowOf, type SkaterIdentity, type SkaterPositionId, type SkaterSeason, type SkaterWindowId } from "./bshBoard";
 import { SKATER_CATEGORIES, type SkaterCategoryId } from "./categoryBlueprint";
 import { defineShareModule, shareSettingsKey, type SharePostLoadResult, type ShareSettingField } from "./contract";
 import { competitionRanks, ownershipInRange, ownershipOf, strictlyAbove, type OwnershipState } from "./shared/definitions";
@@ -10,8 +10,8 @@ export type NightlyFloorSettings = {
   window: SkaterWindowId; minGp: number; position: SkaterPositionId;
   ownMin: number; ownMax: number; unknownOwnership: "exclude" | "include"; minCoverage: number;
 };
-/** `numerator` of `denominator` known appearances met the test; `missing` appearances lack the stat and count as neither. */
-export type FloorRow = SkaterIdentity & { rank: number; appearances: number; numerator: number; denominator: number; missing: number; pct: number; ownership: OwnershipState };
+/** `numerator` of `denominator` known appearances met the test; `missing` appearances lack the stat and count as neither. `marks` holds each appearance's outcome, oldest first, and is what those counts are taken from. */
+export type FloorRow = SkaterIdentity & { rank: number; appearances: number; numerator: number; denominator: number; missing: number; pct: number; ownership: OwnershipState; marks: (boolean | null)[] };
 export type NightlyFloorData = {
   applied: string; through: string; windowLabel: string; viewLabel: string; test: string; rows: FloorRow[];
   cohort: { pool: number; outOfOwnershipRange: number; unknownOwnershipExcluded: number; unadmitted: number; ranked: number };
@@ -19,6 +19,11 @@ export type NightlyFloorData = {
 };
 export type YahooOwnershipRow = { player_key: string; player_id: string | null; percent_ownership: number | null; last_updated: string | null };
 export type OwnershipMapRow = { yahoo_player_id: string | null; nhl_player_id: string | number | null };
+
+/** A strip and a tile in each row need the height of 14 rows. */
+export const NIGHTLY_FLOOR_ROWS = 14;
+/** Cardio Masters and zero boards count a stat line the skater would rather not have. */
+export const floorViewIsUnwanted = (view: FloorView) => view === "cardio" || view === "zero";
 
 const FIELDS: readonly ShareSettingField[] = [
   { id: "view", label: "View", kind: "select", default: "sog", options: [{ value: "sog", label: "SOG above X" }, { value: "hits", label: "Hits above X" }, { value: "blk", label: "Blocks above X" }, { value: "point", label: "At least 1 point" }, { value: "cardio", label: "Cardio Masters (zero points)" }, { value: "zero", label: "Zero in a category" }] },
@@ -89,16 +94,16 @@ export function buildNightlyFloor(season: SkaterSeason, settings: NightlyFloorSe
     const denominator = outcomes.filter(outcome => outcome !== null).length;
     if (!floorAdmitted(denominator, window.actual, settings.minCoverage)) { unadmitted++; return []; }
     const numerator = outcomes.filter(outcome => outcome === true).length;
-    return [{ id: skaterIdentity(window.rows), appearances: window.actual, numerator, denominator, missing: window.actual - denominator, pct: numerator / denominator, ownership: owned }];
+    return [{ id: skaterIdentity(window.rows), appearances: window.actual, numerator, denominator, missing: window.actual - denominator, pct: numerator / denominator, ownership: owned, marks: outcomes }];
   });
   const ranked = competitionRanks(admitted, row => row.pct, row => row.id.playerId);
-  const rows: FloorRow[] = ranked.slice(0, SKATER_BOARD_ROWS).map(({ row, rank }) => ({ ...row.id, rank, appearances: row.appearances, numerator: row.numerator, denominator: row.denominator, missing: row.missing, pct: row.pct, ownership: row.ownership }));
+  const rows: FloorRow[] = ranked.slice(0, NIGHTLY_FLOOR_ROWS).map(({ row, rank }) => ({ ...row.id, rank, appearances: row.appearances, numerator: row.numerator, denominator: row.denominator, missing: row.missing, pct: row.pct, ownership: row.ownership, marks: row.marks }));
   const lastRank = rows[rows.length - 1]?.rank, windowLabel = skaterWindowLabel(settings.window);
   const notShown = ranked.length - rows.length, tiedBeyondCut = ranked.slice(rows.length).filter(row => row.rank === lastRank).length;
   const excluded = [outOfOwnershipRange ? `${outOfOwnershipRange} outside the rostered range` : "", unknownOwnershipExcluded ? `${unknownOwnershipExcluded} unknown rostered % excluded` : "", unadmitted ? `${unadmitted} below min coverage` : "", belowTheCard(notShown, tiedBeyondCut)].filter(Boolean).join(", ");
   return {
     ...skaterSeasonEvidence(season, {
-      windowLabel, note: "A DNP is not an appearance. A missing stat counts as neither a pass nor a fail.", cohort: `${skaterCohortLabel(settings)}, ${settings.ownMin}-${settings.ownMax}% rostered: ${pool.length} eligible, ${ranked.length} ranked${excluded ? `, ${excluded}` : ""}`,
+      windowLabel, note: "A DNP is not an appearance. A missing stat counts as neither a pass nor a fail. The strip shows each appearance oldest to newest, using the same test as the count.", cohort: `${skaterCohortLabel(settings)}, ${settings.ownMin}-${settings.ownMax}% rostered: ${pool.length} eligible, ${ranked.length} ranked${excluded ? `, ${excluded}` : ""}`,
       extraSources: [{ name: "Yahoo rostered %", tables: ["yahoo_players", "yahoo_nhl_player_map_read"], state: "ready", asOf: ownership.updatedAt?.slice(0, 10) ?? null, updatedAt: ownership.updatedAt }],
     }),
     data: {
