@@ -153,7 +153,11 @@ for (const teamCount of [6, 12]) test(`crease shift: ${teamCount} ranked teams f
   await page.route("**/api/v1/social-share/posts/**", route => route.fulfill({ json: edition("crease-shift", settings, result) }));
   await page.goto("/social-share/posts?post=crease-shift&minComparisonGames=2");
   await expect(page.getByTestId("crease-shift-rank")).toHaveCount(teamCount);
+  // A real game-by-game line per starter in each row, in the PNG's own attributes.
+  await expect(page.locator('[data-testid="crease-shift-card"] svg g[data-goalie]')).toHaveCount(teamCount * 2);
+  await expect(page.locator('[data-testid="crease-shift-card"] svg g[data-goalie] path').first()).toHaveAttribute("stroke", /^#/);
   await expectBodyFilled(page, "crease-shift-card");
+  await download(page);
 });
 
 test("goalie of the period: a failed TGV read shows grades as unavailable and cannot export", async ({ page }) => {

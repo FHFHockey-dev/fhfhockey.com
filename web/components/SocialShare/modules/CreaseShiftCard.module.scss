@@ -1,16 +1,18 @@
 @use "styles/vars" as v;
 
 .card { flex: 1; display: flex; flex-direction: column; gap: 5px; min-height: 0; }
-.table { flex: 1; min-height: 0; display: grid; grid-template-columns: auto auto minmax(0, 1fr) repeat(5, auto); column-gap: 14px; }
-.head { align-self: end; padding-bottom: 2px; border-bottom: 1px solid v.$border-soft; text-align: right; font-size: 14px; letter-spacing: v.$mobile-letter-spacing-wide; color: v.$text-secondary; }
+.table { flex: 1; min-height: 0; display: grid; grid-template-columns: auto auto minmax(0, 1fr) repeat(6, auto); column-gap: 11px; }
+.head { align-self: end; padding-bottom: 2px; border-bottom: 1px solid v.$border-soft; text-align: right; white-space: nowrap; font-size: 13px; letter-spacing: v.$mobile-letter-spacing-wide; color: v.$text-secondary; }
 .cell { display: flex; align-items: center; justify-content: flex-end; min-width: 0; padding: 2px 0; border-bottom: 1px solid v.$border-soft; text-align: right; white-space: nowrap; }
 .head[data-left], .cell[data-left] { justify-content: flex-start; text-align: left; }
-.cell[data-left] .lines { white-space: normal; }
+.cell[data-left] .lines { min-width: 0; }
+.cell[data-left] .lines span { overflow: hidden; text-overflow: ellipsis; }
 .team { display: inline-flex; align-items: center; gap: v.$space-xs; }
 .team b { display: block; line-height: 1.1; }
 .team small { display: block; font-size: 13px; color: v.$text-secondary; }
 .lines { display: grid; gap: 1px; line-height: 1.15; }
-.note { margin: 0; font-size: 15px; line-height: 1.2; color: v.$text-secondary; }
-.card[data-size="large"] .cell { font-size: 26px; }
-.card[data-size="medium"] .cell { font-size: 22px; }
-.card[data-size="small"] .cell { font-size: 18px; }
+.line { display: block; }
+.note { margin: 0; font-size: 14px; line-height: 1.2; color: v.$text-secondary; }
+.card[data-size="large"] .cell { font-size: 22px; }
+.card[data-size="medium"] .cell { font-size: 19px; }
+.card[data-size="small"] .cell { font-size: 17px; }

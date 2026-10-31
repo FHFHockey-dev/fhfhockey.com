@@ -215,6 +215,41 @@ TJ: too much whitespace and too much meta text. The shell's footer is now one li
 
 GSAx has room for more rows if the real render looks loose. A Crease Shift team with 4 or more goalies grows its row, so 12 such teams would clip; that is the case to measure. New spec tests assert no overflow and a band under 40px, for Period, GSAx and Crease Shift at 6 and 12 teams, so your run is the real check. No new real reads were made.
 
+## Follow-up from TJ's Crease Shift review: share by game
+
+TJ approved Goalie of the Period and GSAx, which are unchanged, and asked for a game-by-game line in each Crease Shift row.
+
+- **The line:** across the window's games, oldest to newest, each starter's cumulative share of official starts, 0 to 100%, ending exactly at the printed share. It sits in a "SHARE BY GAME" column, with faint guides at 0, 50 and 100%. Values are in `data` as `goalie.series`, with the games in `team.series`.
+- **Who draws:** G1 is the most starts in the window, G2 next, by the existing order. G3 or later draws dashed in neutral grey, stays in the row's text with its numbers. A goalie with no start, relief-only for instance, has no line.
+- **Names:** each goalie's name and share print in the line's colour, and SHARE moved beside GOALIE, so the row reads without a legend.
+- **Holds and gaps:** a goalie with no start in a game holds their count, so their share falls. Relief never counts. A game without one labeled starter, or a scheduled game with no report, is a gap, and **every value from that game on is null**, because the share so far is no longer known. Such a post is already partial or the team withheld, so a gap can't reach an exported card.
+- **Traded goalies:** the line counts only that row's team.
+- **PNG:** colours are SVG attributes, because html-to-image drops class styles on SVG children.
+
+**Colours:** `teamsInfo` order is primary, secondary, light, jersey, accent, alt, dark, each lifted with Tuesday's `withNeonFloor` (4.5:1). A black or charcoal colour is skipped, because lifted it is plain grey, which isn't a team colour and is G3's line. G2 must be at least 180 apart from G1 on the redmean scale. All 32 pass a test on contrast and distance. **15 teams needed something other than primary and secondary:**
+
+| Team | G1 | G2 | Why |
+| --- | --- | --- | --- |
+| BOS, PIT, LAK, UTA | Secondary | Jersey | Black primary skipped; G2 white or next |
+| NJD, CAR, OTT | Secondary | Jersey | Black primary skipped |
+| DAL | Secondary | Jersey | Black primary skipped. Green on dark green, the closest pair at 193 |
+| VGK | Secondary (gold) | Jersey (red) | Charcoal primary skipped |
+| ANA | Primary | Accent (white) | Secondary too close once lifted |
+| CBJ, MTL | Primary | Jersey | Secondary too close to lifted navy |
+| CHI, NYI, SJS | Primary | Jersey | Black secondary skipped |
+
+The lift also changes shades: navy primaries (TOR, TBL, NYR, EDM, FLA and others) become a brighter blue, and several end up looking alike across teams, since they share hue. TJ should check VGK's red and DAL's two greens, the two choices least like their brand.
+
+**Fit: calculated, not rendered.** 860 less a note of up to 2 lines (34), a gap (5) and heads (18) leaves about 803 for rows. Type dropped a step to make room for the line: 22, 19 and 17px.
+
+| Teams | Line height (px) | Row content, 2 or 3 goalies (px) | Row after stretch (px) |
+| --- | --- | --- | --- |
+| Up to 6 | 110 | 115 | about 134 at 6 |
+| 7 to 9 | 72 | 77 | about 89 at 9 |
+| 10 to 12 | 50 | 55 to 66 | about 67 at 12 |
+
+Width at 22px: fixed columns and gaps use about 759 of 1,008, leaving about 249 for the goalie name. A long name fits (about 200), but a long name **plus** "(also BOS)" for a traded goalie is cut with an ellipsis so the columns stay aligned. Spec tests assert no overflow and a band under 40px at 6 and 12 teams, and now check the lines and the PNG, so your run is the real check. No new real reads were made.
+
 ## Blockers
 
 None for building. Open: TJ's first real-output review (9.7) and the browser run of the spec.

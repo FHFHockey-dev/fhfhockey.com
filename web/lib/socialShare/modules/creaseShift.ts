@@ -1,7 +1,8 @@
 import { currentSeason } from "lib/socialShare/schedule";
+import { luminance, withNeonFloor } from "lib/socialShare/teamNeon";
 import { teamsInfo } from "lib/teamsInfo";
 import { defineShareModule, type SharePostLoadResult } from "./contract";
-import { competitionRanks, editionDate } from "./shared/definitions";
+import { competitionRanks, editionDate, lastN } from "./shared/definitions";
 import { teamStartShare, type CompletedTeamGame, type GoalieAppearance, type TeamStartShare } from "./shared/goalieLedger";
 import { shiftDays } from "./teamGames";
 
@@ -18,6 +19,8 @@ export type CreaseShiftGoalie = {
   change: number | null;
   /** Other teams this goalie appeared for this season. Each game binds to the team he played for. */
   otherTeams: string[];
+  /** Start share so far at each `CreaseShiftTeam.series` game, ending at `share`. Null from a game that cannot be resolved onward: never interpolated. */
+  series: (number | null)[];
 };
 export type CreaseShiftTeam = {
   team: string; rank: number | null;
@@ -32,8 +35,11 @@ export type CreaseShiftTeam = {
   /** Goalies with at least one start in the window; two or more is a split crease. */
   startersUsed: number; goalies: CreaseShiftGoalie[];
   unresolvedGames: number; comparisonUnresolvedGames: number; missingGames: number;
+  /** The window's games, oldest first. A scheduled game with no report, or without one labeled starter, is a gap. */
+  series: CreaseShiftPoint[];
   withheld: string | null;
 };
+export type CreaseShiftPoint = { gameId: number; date: string; state: "resolved" | "unresolved" | "missing" };
 export type CreaseShiftData = { window: number; comparison: "previous" | "std"; minComparisonGames: number; through: string; teams: CreaseShiftTeam[] };
 
 /** A `games` row: proves a game was scheduled, not that it finished. */
@@ -64,11 +70,32 @@ export function reconcileSchedule(scheduled: readonly ScheduledGame[], reported:
 /** The exact share change, divided once, so equal changes on different denominators stay tied. */
 const shareChange = (starts: number, games: number, baseStarts: number, baseGames: number) => (starts * baseGames - baseStarts * games) * 100 / (games * baseGames);
 
+/** The window's games with any schedule gap inside them, and each goalie's cumulative share across them, for this team's games only. */
+function shareSeries(team: string, recent: TeamStartShare, games: readonly CompletedTeamGame[], gaps: readonly ScheduleGap[], window: number) {
+  const reported = lastN(games.filter(game => game.team === team), window).rows, unresolved = new Set(recent.unresolvedGames);
+  const points: CreaseShiftPoint[] = [
+    ...reported.map(game => ({ gameId: game.gameId, date: game.date, state: unresolved.has(game.gameId) ? "unresolved" as const : "resolved" as const })),
+    ...recent.firstDate ? gaps.filter(gap => gap.team === team && gap.date >= recent.firstDate!).map(gap => ({ gameId: gap.gameId, date: gap.date, state: "missing" as const })) : [],
+  ].sort((a, b) => a.date.localeCompare(b.date) || a.gameId - b.gameId);
+  const cumulative = (startedGames: ReadonlySet<number>) => {
+    let played = 0, starts = 0, broken = false;
+    return points.map(point => {
+      if (point.state !== "resolved") broken = true;
+      if (broken) return null;
+      played++;
+      if (startedGames.has(point.gameId)) starts++;
+      return starts / played;
+    });
+  };
+  return { points, cumulative };
+}
+
 function teamRow(team: string, input: { games: readonly CompletedTeamGame[]; appearances: readonly GoalieAppearance[]; window: number; comparison: "previous" | "std"; minComparisonGames: number }, gaps: readonly ScheduleGap[]): Omit<CreaseShiftTeam, "rank"> {
   const recent: TeamStartShare = teamStartShare(team, input.games, input.appearances, input.window);
   const base: TeamStartShare = input.comparison === "std" ? teamStartShare(team, input.games, input.appearances, null) : teamStartShare(team, input.games, input.appearances, input.window, input.window);
   // Season to date contains the recent games, so only the games outside them can be evidence of a change.
   const overlap = input.comparison === "std" ? recent.teamGames : 0, shortComparison = recent.teamGames > 0 && base.teamGames - overlap < input.minComparisonGames;
+  const { points, cumulative } = shareSeries(team, recent, input.games, gaps, input.window);
   const ids = [...new Set([...recent.goalies, ...base.goalies].map(goalie => goalie.goalieId))];
   const goalies = ids.map((goalieId): CreaseShiftGoalie => {
     const now = recent.goalies.find(goalie => goalie.goalieId === goalieId), then = base.goalies.find(goalie => goalie.goalieId === goalieId);
@@ -80,6 +107,8 @@ function teamRow(team: string, input: { games: readonly CompletedTeamGame[]; app
       comparisonStarts: base.complete ? baseStarts : null, comparisonRelief: base.complete ? then?.reliefAppearances ?? 0 : null, comparisonShare: base.complete ? baseStarts / base.teamGames : null,
       change: recent.complete && base.complete && !shortComparison ? shareChange(starts, recent.teamGames, baseStarts, base.teamGames) : null,
       otherTeams: [...new Set(input.appearances.filter(row => row.goalieId === goalieId && row.team !== team).map(row => row.team))].sort(),
+      // Official starts only, on this team only: relief and a traded goalie's other team never move this line.
+      series: cumulative(new Set(input.appearances.filter(row => row.goalieId === goalieId && row.team === team && row.started === true).map(row => row.gameId))),
     };
   }).sort((a, b) => b.starts - a.starts || (b.comparisonStarts ?? 0) - (a.comparisonStarts ?? 0) || a.goalieId - b.goalieId);
   const changes = goalies.flatMap(goalie => goalie.change === null ? [] : [Math.abs(goalie.change)]);
@@ -95,7 +124,7 @@ function teamRow(team: string, input: { games: readonly CompletedTeamGame[]; app
     comparisonGames: base.teamGames, comparisonShort: input.comparison === "previous" && base.short, overlap, shortComparison,
     startersUsed: recent.complete ? goalies.filter(goalie => goalie.starts > 0).length : 0, goalies,
     unresolvedGames: recent.unresolvedGames.length, comparisonUnresolvedGames: base.unresolvedGames.length,
-    missingGames: gaps.filter(gap => gap.team === team).length, withheld,
+    missingGames: gaps.filter(gap => gap.team === team).length, series: points, withheld,
   };
 }
 
@@ -126,6 +155,30 @@ export function buildCreaseShift(input: { reported: readonly CompletedTeamGame[]
       coverage: { observed: schedule.observed, expected: schedule.expected, missing: schedule.missing, unit: "team games" },
     },
   };
+}
+
+type ColorField = "primaryColor" | "secondaryColor" | "lightColor" | "jersey" | "accent" | "alt" | "darkColor";
+const COLOR_ORDER: readonly ColorField[] = ["primaryColor", "secondaryColor", "lightColor", "jersey", "accent", "alt", "darkColor"];
+/** Black or charcoal lifted to the contrast floor is plain grey, which is no team colour and is G3's line. Navy keeps its hue. */
+const isGreyOnceLifted = (color: string) => {
+  const parts = [1, 3, 5].map(index => parseInt(color.slice(index, index + 2), 16));
+  return luminance(color) < 0.05 && Math.max(...parts) - Math.min(...parts) < 24;
+};
+/** Perceptual "redmean" distance between #rrggbb colours; below this, two lines read as one on the dark card. */
+export const CREASE_MIN_COLOR_DISTANCE = 180;
+export function colorDistance(a: string, b: string) {
+  const parts = (hex: string) => [1, 3, 5].map(index => parseInt(hex.slice(index, index + 2), 16));
+  const [r1, g1, b1] = parts(a), [r2, g2, b2] = parts(b), mean = (r1 + r2) / 2;
+  return Math.sqrt((2 + mean / 256) * (r1 - r2) ** 2 + 4 * (g1 - g2) ** 2 + (2 + (255 - mean) / 256) * (b1 - b2) ** 2);
+}
+export type CreaseColors = { g1: string; g2: string; g1From: ColorField; g2From: ColorField };
+/** G1 and G2 from the team's own colours, in `teamsInfo` order, lifted to the Tuesday floor. A too-dark or too-close colour moves to the next. */
+export function creaseColors(team: string): CreaseColors {
+  const info = teamsInfo[team], fallback = { g1: "#ffffff", g2: "#63d2f5", g1From: "primaryColor" as const, g2From: "secondaryColor" as const };
+  if (!info) return fallback;
+  const usable = COLOR_ORDER.flatMap(field => { const value = info[field]; return value && !isGreyOnceLifted(value) ? [{ field, color: withNeonFloor(value) }] : []; });
+  const first = usable[0], second = usable.slice(1).find(entry => colorDistance(entry.color, first.color) >= CREASE_MIN_COLOR_DISTANCE);
+  return first && second ? { g1: first.color, g2: second.color, g1From: first.field, g2From: second.field } : first ? { ...fallback, g1: first.color, g1From: first.field } : fallback;
 }
 
 /** Teams shown on the card; the rest stay in the snapshot and are counted on it. */
