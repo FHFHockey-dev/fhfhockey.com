@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import PostStudio from "./PostStudio";
 import type { SharePostSnapshot } from "lib/socialShare/modules/contract";
@@ -39,6 +39,16 @@ describe("PostStudio", () => {
     expect(screen.getByText("Default: 7")).toBeTruthy();
     expect(screen.getByTestId("post-watermark").textContent).toBe("OBSERVED RESULTS");
     expect(screen.getByTestId("share-square").getAttribute("data-export-token")).toBe('team-games-1|team-games|[["days",7]]');
+  });
+
+  it("keeps export off and asks for a refresh when a setting changes the edition's data", async () => {
+    serve(edition());
+    render(<PostStudio />);
+    await waitFor(() => expect(screen.getByTestId("post-evidence")).toBeTruthy());
+    fireEvent.change(screen.getByLabelText(/^Days/), { target: { value: "14" } });
+    await waitFor(() => expect(screen.getByText(/Refresh the post to apply/)).toBeTruthy());
+    expect((screen.getByRole("button", { name: "Download PNG" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it("shows the reason instead of a card, and keeps export off, for an unavailable edition", async () => {

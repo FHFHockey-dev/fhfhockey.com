@@ -46,6 +46,12 @@ describe("post export", () => {
     expect(sharePostExportBlock(entry, snapshot({ evidence: UNKNOWN_EVIDENCE }), {}, now)).toMatch(/source labels/);
     expect(sharePostExportBlock(entry, snapshot({ data: { rows: [] } }), {}, now)).toMatch(/Nothing qualifies/);
   });
+  it("refuses export while server settings differ from the ones the data was built with; browser-only settings may differ", () => {
+    const built = snapshot({ settings: { x: 3, pos: "all", search: "", since: null } });
+    expect(sharePostExportBlock(entry, built, { x: 3, pos: "all", search: "", since: null }, now)).toBeNull();
+    expect(sharePostExportBlock(entry, built, { x: 3, pos: "all", search: "connor", since: null }, now)).toBeNull();
+    for (const changed of [{ x: 4 }, { pos: "D" }, { since: "2026-10-01" }]) expect(sharePostExportBlock(entry, built, { x: 3, pos: "all", search: "", since: null, ...changed }, now)).toMatch(/Refresh the post/);
+  });
   it("ties the token to the edition, post and every setting, including browser-only ones", () => {
     const a = sharePostExportToken(entry.fields, snapshot(), { x: 3, pos: "all", search: "", since: null });
     expect(sharePostExportToken(entry.fields, snapshot(), { x: 3, pos: "all", search: "a", since: null })).not.toBe(a);
