@@ -54,7 +54,10 @@ test("off-night edge: dates refetch a recomputed order, gaps and 0% print, and e
   await expect(square).toHaveAttribute("data-export-token", /off-night-edge-rest-of-week\|off-night-edge\|/);
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeEnabled();
 
+  // A changed setting applies on refresh; until then the old edition's data cannot export under the new label.
   await page.getByLabel("Dates").selectOption("weekly");
+  await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
+  await page.getByRole("button", { name: "Refresh post", exact: true }).click();
   await expect(square.getByTestId("off-night-slate")).toContainText("Full week");
   await expect(square).toHaveAttribute("data-export-token", /off-night-edge-weekly\|off-night-edge\|/);
   expect(requested.some(search => search.includes("dates=weekly"))).toBe(true);
