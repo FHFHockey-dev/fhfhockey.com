@@ -1,6 +1,6 @@
 @use "styles/vars" as v;
 
-/* Fits the 860px post body: a 6-row side has about 128px a row, and a row's content needs about 117px. */
+/* Fits the 860px post body: a 5-row side has about 150px a row, and a row's content needs 145px (50 top line, 4 gap, 84 strip, 7 padding and border). */
 .card { flex: 1; display: flex; flex-direction: column; gap: 6px; min-height: 0; }
 .heading { display: flex; align-items: center; gap: v.$space-xs; margin: 0; font-size: 24px; line-height: 1.15; font-weight: 700; color: v.$color-white; }
 .boards { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 20px; }
@@ -14,16 +14,18 @@
 .ident { min-width: 0; }
 .ident b { display: block; font-size: 22px; line-height: 1.1; font-weight: 600; color: v.$color-white; }
 .ident small { display: block; margin-top: 2px; font-size: 14px; line-height: 1.15; color: v.$text-secondary; }
-.strip { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, 98px) minmax(0, 1fr); column-gap: 4px; align-items: stretch; }
-.tile { display: grid; align-content: center; justify-items: center; min-width: 0; padding: 2px 3px; border-radius: 4px; background: rgba(v.$color-white, 0.06); }
-.tile small { font-size: 12px; line-height: 1.15; white-space: nowrap; color: v.$text-secondary; }
+.strip { grid-column: 1 / -1; display: grid; grid-template-columns: 196px 280px; justify-content: space-between; align-items: stretch; }
+.tiles { display: grid; grid-auto-rows: 1fr; gap: 3px; min-width: 0; }
+.tile { display: flex; align-items: center; justify-content: space-between; column-gap: 6px; min-width: 0; padding: 1px 5px; border-radius: 4px; background: rgba(v.$color-white, 0.06); }
+.tileLabel { display: grid; min-width: 0; }
+.tile small { font-size: 12px; line-height: 1; white-space: nowrap; color: v.$text-secondary; }
 .tileValue { display: inline-flex; align-items: baseline; gap: 4px; white-space: nowrap; }
-.tileValue b { font-size: 18px; line-height: 1.15; font-weight: 700; color: v.$color-white; }
+.tileValue b { font-size: 18px; line-height: 1; font-weight: 700; color: v.$color-white; }
 .tileValue i { font-size: 14px; font-style: normal; font-weight: 600; color: v.$text-secondary; }
 .tile[data-direction="up"] .tileValue i { color: v.$success-color; }
 .tile[data-direction="down"] .tileValue i { color: v.$danger-color; }
 .tileValue i[data-covered] { color: v.$warning-color; }
-.spark { display: block; justify-self: end; }
+.spark { display: block; }
 .list { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; gap: v.$space-xxs; }
 /* Rows share the section's height, so the one-player table fills the body. */
 .list > div { flex: 1; min-height: 0; grid-template-rows: auto; grid-auto-rows: 1fr; align-items: stretch; font-size: 26px; }

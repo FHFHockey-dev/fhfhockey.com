@@ -139,7 +139,7 @@ export type WhatChangedData = {
 };
 
 /** Rows per side on the Up and Down boards. A tie running past them is counted and said, not shown. */
-export const WHAT_CHANGED_BOARD_ROWS = 6;
+export const WHAT_CHANGED_BOARD_ROWS = 5;
 export function boardRanks<T extends { rank: number }>(ranked: readonly T[]) {
   const listed = ranked.slice(0, WHAT_CHANGED_BOARD_ROWS), last = listed[listed.length - 1]?.rank;
   return { listed, moreTied: ranked.slice(listed.length).filter(row => row.rank === last).length };

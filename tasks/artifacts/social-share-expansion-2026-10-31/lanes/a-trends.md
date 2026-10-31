@@ -95,3 +95,10 @@ Each loader is season to date, so it needs more than 50 rows. Today: `wgo_skater
 ## Blockers
 
 None. No frozen file needed a change. No fan-out sessions were started.
+
+## Larger sparklines (TJ's second review)
+
+- **Chart:** 180×54 grew to 280×84 on both cards. The value axis marks the line's high and low with hairlines and labels in the metric's own format. The date axis has a tick per game with the first and last dates, and the recent label sits on the band. All colours are SVG attributes, and a test checks this.
+- **Row layout:** the tiles moved from a horizontal strip into a stack beside the chart, each one line high with its group and metric labels. All three What Changed group tiles stay. Role Watch's stack holds Before and Latest and the other-measure tile.
+- **Rows:** boards now show 5 rows a side, down from 6, to make the height. Ties past the last row are still counted in the legend. Role Watch's read ceilings fall to 200 rolling rows and 800 PP rows.
+- **Fit, estimated from CSS, not measured:** about 150 px a row against 145 px of content in the 860 px body, assuming a two-line legend. No browser run; the lead renders.

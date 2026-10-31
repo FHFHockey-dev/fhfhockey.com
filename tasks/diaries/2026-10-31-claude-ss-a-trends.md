@@ -9,4 +9,5 @@
 - **Whitespace pass:** cards fill the body with stretched rows, 8 ranks per list, one legend line; fine print moved to evidence. No browser run; lead sends measurements if anything clips.
 - **What Changed boards:** Up and Down at 6 rows, group tiles, last-10 sparkline; a WGO ranking now reads NST for the boards' players. Role Watch untouched. No browser run; lead renders on real data.
 - **Role Watch boards:** same layout, new Board field picks TOI or PP TOI. Sparkline gaps can't occur on listed rows today, since windows must be complete. No browser run.
+- **Larger sparklines:** 280×84 with value and date axes, tiles stacked beside the chart, boards at 5 rows. No browser run.
 - **Blockers:** none.

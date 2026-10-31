@@ -188,7 +188,7 @@ describe("What Changed card and export gates", () => {
 describe("What Changed boards", () => {
   const snapshotOf = (result: ReturnType<typeof buildWhatChanged>, active: WhatChangedSettings) => ({ schemaVersion: 1 as const, id: "x", post: "what-changed", state: result.state, reasons: [], generatedAt: "2026-10-31T16:00:00Z", expiresAt: null, timeZone: "America/New_York" as const, settings: active, evidence: result.evidence, data: result.data, teams: [], fixture: true });
   const html = (input: WhatChangedInput) => { const result = buildWhatChanged(input); return renderToStaticMarkup(createElement(WhatChangedCard, { snapshot: snapshotOf(result, input.settings), data: result.data!, settings: input.settings, logos: {} })); };
-  const tileOf = (markup: string, metric: string) => markup.match(new RegExp(`<span[^>]*data-testid="group-tile"[^>]*data-metric="${metric}"[^>]*>.*?</small></span>`))![0];
+  const tileOf = (markup: string, metric: string) => markup.match(new RegExp(`<span[^>]*data-testid="group-tile"[^>]*data-metric="${metric}"[^>]*>.*?</span></span>`))![0];
   it("draws the ranked metric's last 10 appearances, with a missing game a gap and the recent window marked", () => {
     expect(seriesRuns([1, null, 2, 3, null])).toEqual([[0], [2, 3]]);
     const appearances = games(1, 20, () => 1);
@@ -201,6 +201,11 @@ describe("What Changed boards", () => {
     expect(markup).toContain('data-sparkline="0.5,0.5,0.5,gap,0.5,1,1,1,1,1"');
     expect(markup).toContain('data-recent-from="5"');
     expect(markup).toContain("data-gap");
+    const spark = markup.match(/<svg[^>]*data-sparkline.*?<\/svg>/)![0];
+    expect([...spark.matchAll(/<text[^>]*data-axis="value"[^>]*>([^<]*)</g)].map(mark => mark[1])).toEqual(["1.00", "0.50"]);
+    expect(spark.match(/<text[^>]*data-axis="date"/g)).toHaveLength(2);
+    expect(spark).not.toMatch(/<(?:path|circle|rect|text)[^>]*class=/);
+    for (const mark of spark.match(/<(?:circle|rect|text)[^>]*>/g)!) expect(mark).toContain('fill="#ffffff"');
     const l10 = buildWhatChanged(base({ appearances: games(1, 30, index => index >= 20 ? 2 : 0), settings: { ...settings, window: "l10" } })).data!.risers[0];
     expect(l10).toMatchObject({ recentFrom: 0 });
     expect(l10.series).toHaveLength(10);
@@ -238,18 +243,18 @@ describe("What Changed boards", () => {
     expect(buildWhatChanged(base({ appearances, nstCounts: counts, settings: loose })).data!.risers[0].tiles[2]).toMatchObject({ baseline: { admitted: true }, delta: 0 });
     expect(tileOf(html(base({ appearances, nstCounts: counts, settings: loose })), "ixg")).not.toContain("17/20");
   });
-  it("lays Up and Down side by side, stops at 6 rows, shares tied ranks and says who a tie left off", () => {
+  it("lays Up and Down side by side, stops at 5 rows, shares tied ranks and says who a tie left off", () => {
     const appearances = [1, 2, 3, 4, 5, 6, 7, 8].flatMap(id => games(id, 10, index => index >= 5 ? 2 : 0)).concat(games(9, 10, index => index >= 5 ? 0 : 2));
     const { data } = buildWhatChanged(base({ appearances }));
-    expect(data!.risers.map(row => row.rank)).toEqual([1, 1, 1, 1, 1, 1]);
+    expect(data!.risers.map(row => row.rank)).toEqual([1, 1, 1, 1, 1]);
     expect(data!.fallers.map(row => row.rank)).toEqual([1]);
-    expect(data!.moreTied).toEqual({ up: 2, down: 0 });
-    expect(data!.cohort).toMatchObject({ unlisted: 2, listedLimit: 6 });
+    expect(data!.moreTied).toEqual({ up: 3, down: 0 });
+    expect(data!.cohort).toMatchObject({ unlisted: 3, listedLimit: 5 });
     const markup = html(base({ appearances }));
     expect(markup).toContain('data-testid="board-up"');
     expect(markup).toContain('data-testid="board-down"');
-    expect(markup.match(/data-testid="change-row"/g)).toHaveLength(7);
-    expect(markup).toContain("Up: 2 more tied at rank 1");
+    expect(markup.match(/data-testid="change-row"/g)).toHaveLength(6);
+    expect(markup).toContain("Up: 3 more tied at rank 1");
     expect(html(base({ appearances: games(1, 10, index => index >= 5 ? 2 : 0) }))).toContain("No faller qualifies");
   });
   it("colours the change tile by direction and scales it by size, and each group tile by its own sign", () => {

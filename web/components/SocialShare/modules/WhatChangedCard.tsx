@@ -10,31 +10,39 @@ const coverageText = (window: MetricWindow) => `${window.coverage.observed}/${wi
 const coverageNote = (window: MetricWindow) => window.coverage.unresolved ? ` (${window.coverage.unresolved} unresolved)` : "";
 const belowCoverage = (tile: MetricChange) => !tile.recent.admitted ? coverageText(tile.recent) : !tile.baseline.admitted ? coverageText(tile.baseline) : null;
 
-const SPARK_WIDTH = 180, SPARK_HEIGHT = 54, SPARK_PAD = 5, LINE = "#ffffff";
-/** Game-by-game line of the ranked metric: a missing game breaks the line and leaves a tick, and a band marks the recent window. */
-export function RecentSpark({ series, recentFrom, recentLabel }: { series: readonly SeriesPoint[]; recentFrom: number; recentLabel: string }) {
+const SPARK_WIDTH = 280, SPARK_HEIGHT = 84, PLOT_LEFT = 38, PLOT_RIGHT = 274, PLOT_TOP = 5, PLOT_BOTTOM = 68, LINE = "#ffffff";
+const shortDate = (date: string) => date.slice(5).replace("-", "/");
+/** Game-by-game line of the ranked metric on a value and date axis: a missing game breaks the line and leaves a tick, and a band marks the recent window. Colours are attributes because the PNG capture drops stylesheet fills. */
+export function RecentSpark({ series, recentFrom, recentLabel, format }: { series: readonly SeriesPoint[]; recentFrom: number; recentLabel: string; format: (value: number) => string }) {
   const values = series.map(point => point.value), known = values.filter((value): value is number => value !== null);
-  const low = Math.min(...known), high = Math.max(...known), step = (SPARK_WIDTH - 2 * SPARK_PAD) / Math.max(1, values.length - 1);
-  const x = (index: number) => SPARK_PAD + index * step;
-  const y = (value: number) => high === low ? SPARK_HEIGHT / 2 : SPARK_HEIGHT - SPARK_PAD - (value - low) / (high - low) * (SPARK_HEIGHT - 2 * SPARK_PAD);
-  const start = recentFrom === 0 ? 0 : x(recentFrom) - step / 2;
+  const low = Math.min(...known), high = Math.max(...known), step = (PLOT_RIGHT - PLOT_LEFT) / Math.max(1, values.length - 1);
+  const x = (index: number) => PLOT_LEFT + index * step;
+  const y = (value: number) => high === low ? (PLOT_TOP + PLOT_BOTTOM) / 2 : PLOT_BOTTOM - (value - low) / (high - low) * (PLOT_BOTTOM - PLOT_TOP);
+  const start = recentFrom === 0 ? PLOT_LEFT : x(recentFrom) - step / 2, marks = !known.length ? [] : high === low ? [high] : [high, low];
+  const axisText = { fontSize: "12", fill: LINE, fillOpacity: "0.75" };
   return <svg className={styles.spark} width={SPARK_WIDTH} height={SPARK_HEIGHT} viewBox={`0 0 ${SPARK_WIDTH} ${SPARK_HEIGHT}`} aria-hidden="true" data-sparkline={values.map(value => value ?? "gap").join(",")} data-recent-from={recentFrom}>
-    <rect x={start.toFixed(1)} y="0" width={(SPARK_WIDTH - start).toFixed(1)} height={SPARK_HEIGHT} fill={LINE} fillOpacity="0.09" />
-    <path d={`M${start.toFixed(1)} 0V${SPARK_HEIGHT}`} stroke={LINE} strokeOpacity="0.55" strokeWidth="1" strokeDasharray="3 3" />
-    <text x={SPARK_WIDTH - 3} y="11" textAnchor="end" fontSize="11" fill={LINE} fillOpacity="0.7">{recentLabel}</text>
-    {seriesRuns(values).filter(run => run.length > 1).map(run => <path key={run[0]} d={run.map((index, at) => `${at ? "L" : "M"}${x(index).toFixed(1)} ${y(values[index]!).toFixed(1)}`).join("")} fill="none" stroke={LINE} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />)}
+    <rect x={start.toFixed(1)} y="0" width={(SPARK_WIDTH - start).toFixed(1)} height={PLOT_BOTTOM + 3} fill={LINE} fillOpacity="0.09" />
+    {recentFrom > 0 && <path d={`M${start.toFixed(1)} 0V${PLOT_BOTTOM + 3}`} stroke={LINE} strokeOpacity="0.55" strokeWidth="1" strokeDasharray="3 3" />}
+    {marks.map(mark => <g key={mark}>
+      <path d={`M${PLOT_LEFT} ${y(mark).toFixed(1)}H${PLOT_RIGHT}`} stroke={LINE} strokeOpacity="0.22" strokeWidth="1" />
+      <text x={PLOT_LEFT - 4} y={(y(mark) + 4).toFixed(1)} textAnchor="end" data-axis="value" {...axisText}>{format(mark)}</text>
+    </g>)}
+    {series.map((point, index) => <path key={point.gameId} d={`M${x(index).toFixed(1)} ${PLOT_BOTTOM + 3}v-3`} stroke={LINE} strokeOpacity="0.5" strokeWidth="1" />)}
+    {seriesRuns(values).filter(run => run.length > 1).map(run => <path key={run[0]} d={run.map((index, at) => `${at ? "L" : "M"}${x(index).toFixed(1)} ${y(values[index]!).toFixed(1)}`).join("")} fill="none" stroke={LINE} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />)}
     {series.map((point, index) => point.value === null
-      ? <path key={point.gameId} d={`M${x(index).toFixed(1)} ${SPARK_HEIGHT - 2}v-4`} stroke={LINE} strokeOpacity="0.6" strokeWidth="1.5" data-gap="" />
-      : <circle key={point.gameId} cx={x(index).toFixed(1)} cy={y(point.value).toFixed(1)} r="2.5" fill={LINE} />)}
+      ? <path key={point.gameId} d={`M${x(index).toFixed(1)} ${PLOT_BOTTOM}v-12`} stroke={LINE} strokeOpacity="0.7" strokeWidth="1.5" strokeDasharray="3 2" data-gap="" />
+      : <circle key={point.gameId} cx={x(index).toFixed(1)} cy={y(point.value).toFixed(1)} r="3.5" fill={LINE} />)}
+    {series.length > 0 && <text x={PLOT_LEFT} y="82" textAnchor="start" data-axis="date" {...axisText}>{shortDate(series[0].date)}</text>}
+    {series.length > 1 && <text x={PLOT_RIGHT} y="82" textAnchor="end" data-axis="date" {...axisText}>{shortDate(series[series.length - 1].date)}</text>}
+    <text x={recentFrom === 0 ? (PLOT_LEFT + PLOT_RIGHT) / 2 : start + 3} y="82" textAnchor={recentFrom === 0 ? "middle" : "start"} fontSize="12" fontWeight="700" fill={LINE}>{recentLabel}</text>
   </svg>;
 }
 
 function GroupTile({ tile }: { tile: MetricChange }) {
   const mark = belowCoverage(tile), direction = tile.delta === null ? "none" : tile.delta > 0 ? "up" : tile.delta < 0 ? "down" : "flat";
   return <span className={styles.tile} data-testid="group-tile" data-metric={tile.metric} data-direction={direction}>
-    <small>{tile.group}</small>
+    <span className={styles.tileLabel}><small>{tile.group}</small><small>{tile.short}</small></span>
     <span className={styles.tileValue}><b>{formatMetricValue(tile, tile.recent.value)}</b><i data-covered={mark ? "below" : undefined}>{mark ?? formatMetricValue(tile, tile.delta, true)}</i></span>
-    <small>{tile.short}</small>
   </span>;
 }
 
@@ -58,8 +66,8 @@ function ChangeBoard({ kind, rows, comparison, recentLabel, largest, logos }: { 
       </span>
       <HeatTile value={row.change.delta} text={formatMetricValue(row.change, row.change.delta, true)} caption={row.change.short} largest={largest} />
       <div className={styles.strip}>
-        {row.tiles.map(tile => <GroupTile key={tile.metric} tile={tile} />)}
-        <RecentSpark series={row.series} recentFrom={row.recentFrom} recentLabel={recentLabel} />
+        <div className={styles.tiles}>{row.tiles.map(tile => <GroupTile key={tile.metric} tile={tile} />)}</div>
+        <RecentSpark series={row.series} recentFrom={row.recentFrom} recentLabel={recentLabel} format={value => formatMetricValue(row.change, value)} />
       </div>
     </>} />;
 }

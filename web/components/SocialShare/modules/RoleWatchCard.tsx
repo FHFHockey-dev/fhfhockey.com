@@ -11,9 +11,8 @@ const BOARD_TEXT = { toi: { name: "TOI", strength: "all situations", other: "PP 
 
 function OtherMeasure({ label, change }: { label: string; change: RoleChange }) {
   return <span className={board.tile} data-testid="group-tile" data-metric={label} data-direction={change.changeSeconds === null ? "none" : change.direction}>
-    <small>{label}</small>
+    <span className={board.tileLabel}><small>{label}</small><small>per game</small></span>
     <span className={board.tileValue}><b>{formatSeconds(change.recentSeconds)}</b><i>{formatSeconds(change.changeSeconds, true)}</i></span>
-    <small>per game</small>
   </span>;
 }
 
@@ -36,13 +35,15 @@ export default function RoleWatchCard({ data, logos }: SharePostCardProps<RoleWa
       <small>{formatSeconds(change(row).recentSeconds)} vs {formatSeconds(change(row).baselineSeconds)} BASE · {row.recentGames} vs {row.baselineGames} GP</small>
     </span>
     <HeatTile value={change(row).changeSeconds} text={formatSeconds(change(row).changeSeconds, true)} caption={`${text.name}/G`} largest={largest} />
-    <div className={`${board.strip} ${styles.strip}`}>
-      <span className={styles.role}>
-        <span><small>Before</small> {row.before ? roleSlotLabel(row.before.role) : "No game before"}</span>
-        <span><small>Latest</small> {roleSlotLabel(row.latest.role)}</span>
-      </span>
-      <OtherMeasure label={text.other} change={other(row)} />
-      <RecentSpark series={row.series} recentFrom={row.recentFrom} recentLabel={recentLabel} />
+    <div className={board.strip}>
+      <div className={`${board.tiles} ${styles.stack}`}>
+        <span className={styles.role}>
+          <span><small>Before</small> {row.before ? roleSlotLabel(row.before.role) : "No game before"}</span>
+          <span><small>Latest</small> {roleSlotLabel(row.latest.role)}</span>
+        </span>
+        <OtherMeasure label={text.other} change={other(row)} />
+      </div>
+      <RecentSpark series={row.series} recentFrom={row.recentFrom} recentLabel={recentLabel} format={value => formatSeconds(value)} />
     </div>
   </>;
   const sides = { rowKey: (row: RoleWatchRow) => row.playerId, renderRow };

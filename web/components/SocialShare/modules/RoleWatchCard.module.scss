@@ -1,6 +1,6 @@
 @use "styles/vars" as v;
 
 /* The board layout is What Changed's; a row here budgets the same as its row. */
-.strip { grid-template-columns: minmax(0, 1fr) 98px 180px; }
+.stack { grid-auto-rows: auto; grid-template-rows: 1fr auto; }
 .role { display: grid; align-content: center; gap: 2px; min-width: 0; padding: 2px 6px; border-radius: 4px; font-size: 14px; line-height: 1.2; white-space: nowrap; color: v.$color-white; background: rgba(v.$color-white, 0.06); }
 .role small { font-size: 12px; color: v.$text-secondary; }

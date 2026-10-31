@@ -51,15 +51,15 @@ describe("Role Watch changes", () => {
     const data = buildRoleWatch(base({ appearances: games(1, 20, index => index >= 10 ? 1200 : 1000), settings: { ...settings, window: "l10" } })).data!;
     expect(data.risers[0]).toMatchObject({ recentGames: 10, baselineGames: 10, toi: { changeSeconds: 200 } });
   });
-  it("ranks each side on its own, with ties sharing a rank, and stops at 6 rows saying who a tie left off", () => {
+  it("ranks each side on its own, with ties sharing a rank, and stops at 5 rows saying who a tie left off", () => {
     const appearances = [...games(1, 12, index => index >= 7 ? 1100 : 1000), ...games(2, 12, index => index >= 7 ? 900 : 1000), ...games(3, 12, index => index >= 7 ? 1070 : 1000), ...games(4, 12, index => index >= 7 ? 1100 : 1000)];
     const data = buildRoleWatch(base({ appearances })).data!;
     expect(data.risers.map(row => [row.playerId, row.rank])).toEqual([[1, 1], [4, 1], [3, 3]]);
     expect(data.fallers.map(row => [row.playerId, row.rank])).toEqual([[2, 1]]);
     const tied = buildRoleWatch(base({ appearances: [1, 2, 3, 4, 5, 6, 7, 8].flatMap(id => games(id, 12, index => index >= 7 ? 1200 : 1000)) })).data!;
-    expect(tied.risers).toHaveLength(6);
-    expect(tied.moreTied).toEqual({ up: 2, down: 0 });
-    expect(tied.cohort).toMatchObject({ qualified: 8, unlisted: 2 });
+    expect(tied.risers).toHaveLength(5);
+    expect(tied.moreTied).toEqual({ up: 3, down: 0 });
+    expect(tied.cohort).toMatchObject({ qualified: 8, unlisted: 3 });
   });
   it("keeps both measures reachable: the Board field picks which one ranks, on its own minimum", () => {
     expect(roleWatchModule.fields.find(field => field.id === "board")).toMatchObject({ default: "toi", options: [{ value: "toi" }, { value: "pp" }] });
@@ -122,6 +122,7 @@ describe("Role Watch card and export gates", () => {
     for (const text of ["20:00 vs 18:00 BASE", "+2:00", "5 vs 7 GP", "Before", "Latest", "Line unknown · PP unknown", "Line unknown · Off PP", ROLE_WATCH_COPY, "TOI per game, all situations", "1:00+ change", "TOI/G", "PP TOI", "2:30"]) expect(html).toContain(text);
     expect(html).toContain('data-sparkline="1080,1080,1080,1080,1080,1200,1200,1200,1200,1200"');
     expect(html).toContain('data-recent-from="5"');
+    expect([...html.matchAll(/<text[^>]*data-axis="value"[^>]*>([^<]*)</g)].map(mark => mark[1]).slice(0, 2)).toEqual(["20:00", "18:00"]);
     const pp = render(base({ appearances, settings: { ...settings, board: "pp" } })).html;
     for (const text of ["PP TOI per game, power play", "0:30+ change", "PP TOI/G", "+1:00"]) expect(pp).toContain(text);
     const alt = roleWatchModule.altText(snapshot, result.data!, settings);
