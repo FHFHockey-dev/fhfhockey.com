@@ -11,10 +11,12 @@ export type RescueCategory = "wins" | "saves" | "savePct" | "gaa";
 export const RESCUE_CATEGORY_OPTIONS = [{ value: "wins", label: "Wins" }, { value: "saves", label: "Saves" }, { value: "savePct", label: "SV%" }, { value: "gaa", label: "GAA" }] as const;
 export type GoalieRescueSettings = { category: RescueCategory; window: GoalieWindowKey; ownershipCeiling: number; includeUnknown: "off" | "on"; minStarts: number };
 
-export const RESCUE_LIST_SIZE = 10;
+/** Fills the card's 860px body. Ties may run past the size; the hard cap keeps them from clipping, and the sample names any left out. */
+export const RESCUE_LIST_SIZE = 20;
+const RESCUE_MAX_ROWS = 30;
 /** Same rule as the pickup cards: anything but healthy or day to day is not a candidate. */
 const AVAILABLE_STATUSES = new Set(["", "DTD"]);
-export const RESCUE_NOTE = "Rostered % is Yahoo-wide, not any one league. Check your own league. Team games left are scheduled games, not starts.";
+export const RESCUE_NOTE = "Rostered % is Yahoo-wide. GMS LEFT are team games, not starts.";
 
 export type YahooGoalieRow = { player_key: string; player_id: string | null; percent_ownership: number | null; status: string | null; last_updated: string | null };
 export type YahooMapRow = { yahoo_player_id: string | null; nhl_player_id: string | null };
@@ -71,7 +73,8 @@ export function buildGoalieRescue(input: {
       wins: sumOrNull(window.rows.map(row => row.wins)), saves, shotsAgainst, goalsAgainst, toiSeconds, savePct: pooledSavePct(saves, shotsAgainst), gaa: pooledGaa(goalsAgainst, toiSeconds), teamGamesLeft: input.teamGamesLeft.get(window.team) ?? null }];
   });
   const ranked = competitionRanks(candidates, row => categoryValue(row, settings.category), row => row.goalieId, settings.category === "gaa" ? "low" : "high");
-  const rows = ranked.filter(entry => entry.rank <= RESCUE_LIST_SIZE).map(({ row, rank }): RescueRow => ({ ...row, rank }));
+  const listed = ranked.filter(entry => entry.rank <= RESCUE_LIST_SIZE).map(({ row, rank }): RescueRow => ({ ...row, rank }));
+  const rows = listed.slice(0, RESCUE_MAX_ROWS), tiedOut = listed.length - rows.length;
   const unranked = candidates.length - ranked.length;
   const reasons = [...ledger.reasons, ...(unranked ? [`${unranked} candidates have no recorded value for this category and are unranked.`] : []), ...(input.ownershipFresh ? [] : [`Yahoo ownership was last observed ${input.ownershipAsOf ?? "at an unknown date"}, older than yesterday.`])];
   const complete = reasons.length === 0, asOf = input.appearances[input.appearances.length - 1]?.date ?? null;
@@ -84,9 +87,9 @@ export function buildGoalieRescue(input: {
         { name: "Yahoo rostered %", tables: ["yahoo_players", "yahoo_nhl_player_map_read"], state: input.ownershipFresh ? "ready" : "stale", asOf: input.ownershipAsOf, updatedAt: null, reasons: ["Candidate availability is Yahoo-wide rostered %, never a league's own roster."] },
         { name: "NHL schedule", tables: ["games"], state: "ready", asOf: input.weekEnd, updatedAt: null },
       ],
-      sample: `${windowLabel(settings.window)} through ${input.through}: ${candidates.length} candidates, ${candidates.reduce((total, row) => total + row.starts, 0)} starts, ${candidates.reduce((total, row) => total + row.relief, 0)} relief`,
+      sample: `${windowLabel(settings.window)} through ${input.through}: ${candidates.length} candidates, ${candidates.reduce((total, row) => total + row.starts, 0)} starts, ${candidates.reduce((total, row) => total + row.relief, 0)} relief. Win support: W. Volume: SV, with SA as context. Ratio exposure: SV%, GA, GAA, pooled. One selected category orders the list. Team games left run through ${input.weekEnd}.${tiedOut ? ` ${tiedOut} more tied ${tiedOut === 1 ? "goalie is" : "goalies are"} not listed.` : ""}`,
       strength: "All situations",
-      cohort: `${candidates.length} of ${qualified.length} goalies with at least ${settings.minStarts} official starts at or under ${settings.ownershipCeiling}% rostered${settings.includeUnknown === "on" ? ", unknown ownership included" : `; ${unknownExcluded} unknown ownership excluded`}; ${unavailableStatus} excluded by Yahoo status`,
+      cohort: `${candidates.length} of ${qualified.length} goalies with at least ${settings.minStarts} official starts at or under ${settings.ownershipCeiling}% rostered${settings.includeUnknown === "on" ? ", unknown ownership included" : `; ${unknownExcluded} unknown ownership excluded`}; ${aboveCeiling} above the ceiling; ${unavailableStatus} excluded by Yahoo status`,
       coverage: ledger.coverage,
     },
   };

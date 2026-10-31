@@ -1,5 +1,5 @@
 import type { SharePostCardProps } from "lib/socialShare/modules/contract";
-import { baseLabel, formatGaaChange, formatRatioGaa, formatRatioSavePct, formatSavePctChange, formatToi, RATIO_NOTE, type RatioImpactData, type RatioImpactSettings, type RatioRates, type RatioSensitivityRow, type RatioTotals } from "lib/socialShare/modules/ratioImpact";
+import { baseLabel, formatGaaChange, formatRatioGaa, formatRatioSavePct, formatSavePctChange, formatToi, RATIO_LEGEND, type RatioImpactData, type RatioImpactSettings, type RatioRates, type RatioSensitivityRow, type RatioTotals } from "lib/socialShare/modules/ratioImpact";
 import { PostEmpty, PostTable, type PostColumn } from "./kit";
 import styles from "./RatioImpactCard.module.scss";
 
@@ -8,8 +8,8 @@ type Line = { id: string; label: string; totals: RatioTotals | null; rates: Rati
 export default function RatioImpactCard({ data }: SharePostCardProps<RatioImpactSettings, RatioImpactData>) {
   if (data.afterRates.savePct === null && data.afterRates.gaa === null) return <PostEmpty>These inputs leave both SV% and GAA unknown</PostEmpty>;
   const lines: Line[] = [
-    { id: "before", label: `Before: ${baseLabel(data.base)}`, totals: data.base.totals, rates: data.before },
-    { id: "line", label: "Hypothetical line", totals: data.line, rates: data.lineRates },
+    { id: "before", label: "Before", totals: data.base.totals, rates: data.before },
+    { id: "line", label: "Hypothetical", totals: data.line, rates: data.lineRates },
     { id: "after", label: "After, pooled", totals: data.after, rates: data.afterRates },
   ];
   const lineColumns: PostColumn<Line>[] = [
@@ -30,12 +30,12 @@ export default function RatioImpactCard({ data }: SharePostCardProps<RatioImpact
     { id: "gaaChange", label: "CHANGE", numeric: true, cell: row => formatGaaChange(row.gaaChange) },
   ];
   return <div className={styles.card} data-testid="ratio-impact-card">
-    <PostTable columns={lineColumns} rows={lines} rowKey={line => line.id} />
+    <p className={styles.note}>{RATIO_LEGEND} Before: {baseLabel(data.base)}.</p>
+    <div className={styles.fill} style={{ flexGrow: lines.length + 1 }}><PostTable columns={lineColumns} rows={lines} rowKey={line => line.id} /></div>
     <p className={styles.change}>SV% {formatSavePctChange(data.savePctChange)} · GAA {formatGaaChange(data.gaaChange)}</p>
-    <section>
+    <section className={styles.sensitivity} style={{ flexGrow: data.sensitivity.length + 1 }}>
       <h3 className={styles.title}>Sensitivity at {data.line.shotsAgainst} SA and {formatToi(data.line.toiSeconds)} TOI</h3>
-      <PostTable columns={sensitivityColumns} rows={data.sensitivity} rowKey={row => row.goals} />
+      <div className={styles.fill}><PostTable columns={sensitivityColumns} rows={data.sensitivity} rowKey={row => row.goals} /></div>
     </section>
-    <p className={styles.note}>{RATIO_NOTE} SV% = saves ÷ SA. GAA = GA × 3600 ÷ TOI seconds. A zero or missing denominator shows —.</p>
   </div>;
 }

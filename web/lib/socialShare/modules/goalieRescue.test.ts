@@ -134,8 +134,24 @@ const renderCard = (data: RescueData, active: GoalieRescueSettings) => render(cr
 describe("goalie rescue card", () => {
   it("prints the separate lenses, ownership states and the limits of rostered %", () => {
     const active = settings({ includeUnknown: "on" }), data = build({ settings: active, availability: own({ 1: 10, 2: null, 3: 0, 4: 40 }) }).data!, text = renderCard(data, active);
-    for (const label of ["OWN", "W", "SV", "SA", "SV%", "GA", "GAA", "RELIEF", "TEAM GMS LEFT", "Win support: W", "Volume: SV", "Ratio exposure: SV%", RESCUE_NOTE, "10%", "0%", "—", ".833", "4.00"]) expect(text).toContain(label);
+    for (const label of ["OWN", "W", "SV", "SA", "SV%", "GA", "GAA", "RELIEF", "GMS LEFT", RESCUE_NOTE, "10%", "0%", "—", ".833", "4.00"]) expect(text).toContain(label);
     expect(text).not.toMatch(/\bscore\b|start odds|will start/i);
+  });
+  it("keeps the card to one legend line and moves the explainers to the printed evidence", () => {
+    const active = settings(), result = build({ settings: active });
+    expect(render(createElement(GoalieRescueCard, { snapshot: snapshot(result.data!, active), data: result.data!, settings: active, logos: {} })).container.querySelectorAll("p")).toHaveLength(1);
+    for (const label of ["Win support: W", "Volume: SV", "Ratio exposure: SV%", "run through 2026-11-01"]) expect(result.evidence.sample).toContain(label);
+    for (const label of ["0 above the ceiling", "0 excluded by Yahoo status"]) expect(result.evidence.cohort).toContain(label);
+  });
+  it("lists up to its size, and caps a tie that would clip the card", () => {
+    const pool = (count: number) => Array.from({ length: count }, (_, index) => index + 10).flatMap(id => three(id, "PHI", {}));
+    const everyone = (count: number) => own(Object.fromEntries(Array.from({ length: count }, (_, index) => [index + 10, 10])));
+    expect(build({ appearances: pool(25), availability: everyone(25) }).data!.rows).toHaveLength(25);
+    const tied = build({ appearances: pool(34), availability: everyone(34) });
+    expect(tied.data!.rows).toHaveLength(30);
+    expect(tied.evidence.sample).toContain("4 more tied goalies are not listed.");
+    const distinct = Array.from({ length: 25 }, (_, index) => index + 10).flatMap(id => three(id, "PHI", { saves: id }));
+    expect(build({ settings: settings({ category: "saves" }), appearances: distinct, availability: everyone(25) }).data!.rows).toHaveLength(20);
   });
   it("says why an empty pool is empty, with no filler", () => {
     const active = settings({ ownershipCeiling: 0 });

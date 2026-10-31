@@ -17,7 +17,9 @@ export type RatioBase = { kind: "none" | "manual" | "goalie"; goalieId: number |
 export type RatioSensitivityRow = { goals: number; saves: number; after: RatioRates; savePctChange: number | null; gaaChange: number | null };
 export type RatioImpactData = { base: RatioBase; line: RatioTotals; lineRates: RatioRates; before: RatioRates; after: RatioTotals; afterRates: RatioRates; savePctChange: number | null; gaaChange: number | null; sensitivity: RatioSensitivityRow[] };
 
-export const SENSITIVITY_MAX_STEPS = 20;
+/** The most rows the card's 860px body holds at its type size. */
+export const SENSITIVITY_MAX_STEPS = 12;
+export const RATIO_LEGEND = "Hypothetical, pooled from totals.";
 export const RATIO_NOTE = "Arithmetic on the numbers entered, pooled from summed totals rather than averaged percentages. It predicts nothing and changes no roster.";
 const emptyNumbers = (...values: (number | null)[]) => values.every(value => value === null);
 const isCount = (value: number | null) => value === null || Number.isInteger(value);
@@ -78,7 +80,7 @@ export function buildRatioImpact(settings: RatioImpactSettings, base: RatioBase,
   if (base.totals && Object.values(base.totals).some(value => value === null)) reasons.push("A base total is missing, so a rate that needs it is unknown.");
   const evidence: SharePostEvidence = {
     sources: [{ name: "Entered hypothetical inputs", tables: [], state: "ready", asOf: null, updatedAt: null }, ...(source ? [source] : [])],
-    sample: `Hypothetical line: ${settings.scenarioShots} SA, ${settings.scenarioGoals} GA, ${formatToi(data.line.toiSeconds)} TOI. Base: ${baseLabel(base)}${base.appearances === null ? "" : `, ${base.appearances} appearances through ${base.through}`}`,
+    sample: `Hypothetical line: ${settings.scenarioShots} SA, ${settings.scenarioGoals} GA, ${formatToi(data.line.toiSeconds)} TOI. Base: ${baseLabel(base)}${base.appearances === null ? "" : `, ${base.appearances} appearances through ${base.through}`}. ${RATIO_NOTE} SV% = saves ÷ SA. GAA = GA × 3600 ÷ TOI seconds. A zero or missing denominator shows —.`,
     strength: base.kind === "goalie" ? "All situations (base); line as entered" : "As entered",
     cohort: base.kind === "goalie" ? "One goalie" : "Entered totals only",
     coverage: null,
@@ -103,5 +105,5 @@ export const ratioImpactModule = defineShareModule<RatioImpactSettings, RatioImp
   load: () => import("./ratioImpact.sources").then(sources => sources.loadRatioImpact),
   card: () => import("components/SocialShare/modules/RatioImpactCard").then(card => card.default),
   hasRows: data => data.afterRates.savePct !== null || data.afterRates.gaa !== null,
-  altText: (snapshot, data) => `FHFH hypothetical ratio scenario. ${snapshot.evidence.sample}. Before: SV% ${formatRatioSavePct(data.before.savePct)}, GAA ${formatRatioGaa(data.before.gaa)}. After: SV% ${formatRatioSavePct(data.afterRates.savePct)}, GAA ${formatRatioGaa(data.afterRates.gaa)}. ${RATIO_NOTE}`,
+  altText: (snapshot, data) => `FHFH hypothetical ratio scenario. ${snapshot.evidence.sample} Before: SV% ${formatRatioSavePct(data.before.savePct)}, GAA ${formatRatioGaa(data.before.gaa)}. After: SV% ${formatRatioSavePct(data.afterRates.savePct)}, GAA ${formatRatioGaa(data.afterRates.gaa)}.`,
 });

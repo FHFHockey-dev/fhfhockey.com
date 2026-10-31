@@ -65,6 +65,18 @@ Findings:
 
 The lead's render found "1 listed appearances shared the net" in the Busy/Quiet footnote. It now handles the singular, with a test for each form.
 
+## Follow-up: fill the card, cut the text (TJ, 2026-10-31)
+
+Built on the lead's shell change (`9bb30218d`, `756d4706f`), with a body of about 860px.
+
+- **Rows:** Busy/Quiet goes from 6 to 11 per side, and Rescue from 10 to 20. Row heights stretch to fill the body, up to a cap, so a thin pool leaves a band rather than giant rows.
+- **Ties:** Busy/Quiet holds at most 13 per side and Rescue 30. Anyone cut by that cap is counted in `evidence.sample`, so a tied goalie is never dropped silently.
+- **Ratio Impact:** type is 30px and row heights stretch. `SENSITIVITY_MAX_STEPS` drops from 20 to 12, so the table still fits at that size.
+- **On-card text:** each card has one legend line. Rescue and Busy/Quiet keep the window and through date in it, so the PNG still says what it covers. Explainers moved to `evidence.sample` and `evidence.cohort`, which print on the page.
+- **Column changes:** Rescue's `TEAM GMS LEFT` is now `GMS LEFT`, with its meaning in the legend. Its `GS` cell no longer prints the short-window count; `GS` plus `RELIEF` is that count.
+- **Spec:** `e2e/social-share-goalie-workload.spec.ts` now expects the Rescue legend, on top of the lead's `108c68938`.
+- **Not verified:** no browser run. The row counts come from arithmetic on the 860px body, so the fill and the no-clip result need the lead's real render.
+
 ## Blockers
 
 None. No frozen file needs a change.

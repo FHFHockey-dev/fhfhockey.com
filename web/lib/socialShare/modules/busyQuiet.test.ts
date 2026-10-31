@@ -122,11 +122,20 @@ describe("the list", () => {
     const tied = build({ appearances: [...rows, ...[8, 9, 10].map(day => appearance({ goalieId: 4, gameId: day, date: date(day), team: "PHI", shotsAgainst: 20 }))] }).data!;
     expect(tied.busy.map(row => [row.goalieId, row.rank])).toEqual([[1, 1], [3, 2], [4, 2]]);
     expect(tied.quiet).toEqual([]);
-    const ids = Array.from({ length: 14 }, (_, index) => index + 10), many = ids.flatMap(id => [0, 1, 2].map(game => appearance({ goalieId: id, gameId: id * 10 + game, date: date(game + 1), team: "PHI", shotsAgainst: id })));
+    const ids = Array.from({ length: 24 }, (_, index) => index + 10), many = ids.flatMap(id => [0, 1, 2].map(game => appearance({ goalieId: id, gameId: id * 10 + game, date: date(game + 1), team: "PHI", shotsAgainst: id })));
     const data = build({ appearances: many }).data!;
-    expect(data.busy.map(row => row.goalieId)).toEqual([23, 22, 21, 20, 19, 18]);
-    expect(data.quiet.map(row => row.goalieId)).toEqual([10, 11, 12, 13, 14, 15]);
-    expect(data.quiet.map(row => row.rank)).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(data.busy.map(row => row.goalieId)).toEqual([33, 32, 31, 30, 29, 28, 27, 26, 25, 24, 23]);
+    expect(data.quiet.map(row => row.goalieId)).toEqual([10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]);
+    expect(data.quiet.map(row => row.rank)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+  });
+  it("caps a tie that would clip the card and says how many it left out", () => {
+    const tied = Array.from({ length: 16 }, (_, index) => index + 10).flatMap(id => [0, 1, 2].map(game => appearance({ goalieId: id, gameId: id * 10 + game, date: date(game + 1), team: "PHI" })));
+    const result = build({ appearances: tied });
+    expect(result.data!.busy).toHaveLength(13);
+    expect(result.data!.quiet).toHaveLength(3);
+    expect(result.evidence.sample).not.toContain("more tied goalies");
+    const wider = Array.from({ length: 30 }, (_, index) => index + 10).flatMap(id => [0, 1, 2].map(game => appearance({ goalieId: id, gameId: id * 10 + game, date: date(game + 1), team: "PHI" })));
+    expect(build({ appearances: wider }).evidence.sample).toContain("4 more tied goalies are not listed.");
   });
   it("names strength, cohort and source tables", () => {
     const { evidence } = build();
@@ -152,13 +161,16 @@ describe("busy and quiet card", () => {
   it("labels danger-zone shots as shots and team chances as team-level, with relief apart", () => {
     const { container } = renderCard(full, settings());
     const text = container.textContent!;
-    for (const label of ["Busy", "RELIEF", "SA/GS", "HD SHOTS/GS", "TEAM SCA/GM", "TEAM HDCA/GM", VOLUME_NOTE, "not chances", "including time another goalie was in net", "Per start reads official starts only", "1 listed appearance shared the net."]) expect(text).toContain(label);
+    for (const label of ["Busy", "RELIEF", "SA/GS", "HD SHOTS/GS", "TEAM SCA/GM", "TEAM HDCA/GM", VOLUME_NOTE]) expect(text).toContain(label);
     expect(text).not.toMatch(/\bHD CHANCES\b|\bGOALIE CHANCES\b/i);
     expect(screen.getByText("G1")).toBeTruthy();
   });
-  it("uses the plural for more than one shared net", () => {
-    const [first, ...rest] = full.busy, shared = { ...full, busy: [{ ...first, teamChances: { ...first.teamChances, sharedNetGames: 2 } }, ...rest] };
-    expect(renderCard(shared, settings()).container.textContent).toContain("2 listed appearances shared the net.");
+  it("keeps the card to one legend line and moves the explainers to the printed evidence", () => {
+    expect(renderCard(full, settings()).container.querySelectorAll("p")).toHaveLength(1);
+    const { sample } = build().evidence;
+    for (const label of ["Per start reads official starts only", "not chances", "including time another goalie was in net", "1 listed appearance shared the net."]) expect(sample).toContain(label);
+    expect(build({ appearances: [...rows, appearance({ goalieId: 1, gameId: 8, date: date(8), started: false }), appearance({ goalieId: 5, gameId: 8, date: date(8) })] }).evidence.sample).toContain("2 listed appearances shared the net.");
+    expect(build({ settings: settings({ basis: "per60" }) }).evidence.sample).not.toContain("Per start reads");
   });
   it("shows coverage instead of a value when danger-zone shots are not admitted", () => {
     const thin = build({ nstGoalie: [nstGoalie(1, 1)] }).data!;
@@ -168,7 +180,6 @@ describe("busy and quiet card", () => {
     const per60 = build({ settings: settings({ basis: "per60" }) }).data!;
     const text = renderCard(per60, settings({ basis: "per60" })).container.textContent!;
     expect(text).toContain("SA/60");
-    expect(text).not.toContain("Per start reads");
   });
   it("uses no goodness wording in the card or alt text", () => {
     const active = settings();
@@ -176,6 +187,7 @@ describe("busy and quiet card", () => {
     const alt = busyQuietModule.altText(snapshot(full, active), full, active);
     expect(alt).toContain(VOLUME_NOTE);
     expect(alt).not.toMatch(GOODNESS);
+    expect(build().evidence.sample).not.toMatch(GOODNESS);
     expect(`${busyQuietModule.title} ${busyQuietModule.summary}`).not.toMatch(GOODNESS);
   });
   it("carries no performance figure", () => {

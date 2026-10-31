@@ -1,4 +1,4 @@
-import { BASIS_LABELS, formatVolume, TEAM_CHANCES_NOTE, VOLUME_NOTE, windowLabel, type BusyQuietData, type BusyQuietRow, type BusyQuietSettings } from "lib/socialShare/modules/busyQuiet";
+import { BASIS_LABELS, formatVolume, VOLUME_NOTE, windowLabel, type BusyQuietData, type BusyQuietRow, type BusyQuietSettings } from "lib/socialShare/modules/busyQuiet";
 import type { SharePostCardProps } from "lib/socialShare/modules/contract";
 import { PostEmpty, PostTable, PostTeamMark, type PostColumn } from "./kit";
 import styles from "./BusyQuietCard.module.scss";
@@ -18,15 +18,11 @@ export default function BusyQuietCard({ data, settings, logos }: SharePostCardPr
     { id: "sca", label: "TEAM SCA/GM", numeric: true, cell: row => row.teamChances.admitted ? formatVolume(row.teamChances.sca) : "—" },
     { id: "hdca", label: "TEAM HDCA/GM", numeric: true, cell: row => row.teamChances.admitted ? formatVolume(row.teamChances.hdca) : "—" },
   ];
-  const shared = [...data.busy, ...data.quiet].reduce((total, row) => total + row.teamChances.sharedNetGames, 0);
   return <div className={styles.card} data-testid="busy-quiet-card">
     <p className={styles.note}>{VOLUME_NOTE} {windowLabel(data.window)} through {data.through}.</p>
-    {([["Busy", data.busy], ["Quiet", data.quiet]] as const).map(([title, rows]) => rows.length ? <section key={title}>
+    {([["Busy", data.busy], ["Quiet", data.quiet]] as const).map(([title, rows]) => rows.length ? <section key={title} className={styles.side} style={{ flexGrow: rows.length + 1 }}>
       <h3 className={styles.title}>{title}</h3>
-      <PostTable columns={columns} rows={rows} rowKey={row => row.goalieId} />
+      <div className={styles.fill}><PostTable columns={columns} rows={rows} rowKey={row => row.goalieId} /></div>
     </section> : null)}
-    <p className={styles.note}>
-      {data.basis === "start" ? "Per start reads official starts only; relief is counted apart. " : ""}HD SHOTS are shots from the high-danger zone, not chances, shown once 90% of games are covered, otherwise as covered/expected games. {TEAM_CHANCES_NOTE}{shared ? ` ${shared} listed ${shared === 1 ? "appearance" : "appearances"} shared the net.` : ""}
-    </p>
   </div>;
 }

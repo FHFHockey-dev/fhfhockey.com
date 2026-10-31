@@ -11,10 +11,12 @@ export const BUSY_QUIET_BASIS_OPTIONS = [{ value: "start", label: "Per start" },
 export const BASIS_LABELS: Record<BusyQuietBasis, string> = { start: "/GS", appearance: "/GP", per60: "/60" };
 export type BusyQuietSettings = { basis: BusyQuietBasis; window: GoalieWindowKey; minStarts: number };
 
-export const BUSY_QUIET_LIST_SIZE = 6;
+/** Fills the card's 860px body per side. Ties may run past the size; the hard cap keeps them from clipping, and the sample names any left out. */
+export const BUSY_QUIET_LIST_SIZE = 11;
+const BUSY_QUIET_MAX_ROWS = 13;
 /** CONTRACT §2 coverage admission: below this share of window games, an NST value is not shown. */
 export const NST_MIN_COVERAGE = 0.9;
-export const VOLUME_NOTE = "Workload only. This does not measure how well a goalie played.";
+export const VOLUME_NOTE = "Workload only, not how well a goalie played.";
 export const TEAM_CHANCES_NOTE = "TEAM columns are team totals per team game, including time another goalie was in net.";
 
 /** One goalie's window. Appearances are oldest first, and the team shown is the team of the latest one. */
@@ -127,9 +129,11 @@ export function buildBusyQuiet(input: {
     volume: shotsOnBasis(window.rows, settings.basis), danger: dangerZoneShots(window.rows, settings.basis, nstGoalie), teamChances: teamChances(window.rows, appearances, nstTeam),
   }));
   const ranked = (direction: "high" | "low") => competitionRanks(built, row => row.volume.value, row => row.goalieId, direction).filter(entry => entry.rank <= BUSY_QUIET_LIST_SIZE).map(({ row, rank }): BusyQuietRow => ({ ...row, rank }));
-  const busy = ranked("high"), shown = new Set(busy.map(row => row.goalieId));
+  const allBusy = ranked("high"), busy = allBusy.slice(0, BUSY_QUIET_MAX_ROWS), shown = new Set(busy.map(row => row.goalieId));
   // A small pool would otherwise list the same goalie as both busy and quiet.
-  const quiet = ranked("low").filter(row => !shown.has(row.goalieId));
+  const allQuiet = ranked("low").filter(row => !shown.has(row.goalieId)), quiet = allQuiet.slice(0, BUSY_QUIET_MAX_ROWS);
+  const listed = new Set([...busy, ...quiet].map(row => row.goalieId));
+  const tiedOut = new Set([...allBusy, ...allQuiet].map(row => row.goalieId).filter(id => !listed.has(id))).size, shared = [...busy, ...quiet].reduce((total, row) => total + row.teamChances.sharedNetGames, 0);
   const unranked = built.filter(row => row.volume.value === null).length, missingShots = built.reduce((total, row) => total + row.volume.missing, 0);
   const dangerUnadmitted = built.filter(row => !row.danger.admitted).length, teamChancesUnadmitted = built.filter(row => !row.teamChances.admitted).length;
   const reasons = [...ledger.reasons, ...(missingShots ? [`${missingShots} window appearances have no recorded shots against or time on ice.`] : [])];
@@ -144,7 +148,7 @@ export function buildBusyQuiet(input: {
       nstSource("Natural Stat Trick goalie shots by danger zone", "nst_gamelog_goalie_all_counts", input.nstGoalie, newest((input.nstGoalie ?? []).map(row => row.date_scraped)), dangerUnadmitted, "danger-zone shots"),
       nstSource("Natural Stat Trick team chances against", "nst_team_gamelogs_as_counts", input.nstTeam, newest((input.nstTeam ?? []).map(row => row.date)), teamChancesUnadmitted, "team chances"),
     ],
-    sample: `${windowLabel(settings.window)} through ${input.through}: ${built.reduce((total, row) => total + row.appearances, 0)} appearances, ${built.reduce((total, row) => total + row.starts, 0)} starts, ${built.reduce((total, row) => total + row.relief, 0)} relief`,
+    sample: `${windowLabel(settings.window)} through ${input.through}: ${built.reduce((total, row) => total + row.appearances, 0)} appearances, ${built.reduce((total, row) => total + row.starts, 0)} starts, ${built.reduce((total, row) => total + row.relief, 0)} relief. ${settings.basis === "start" ? "Per start reads official starts only; relief is counted apart. " : ""}HD SHOTS are shots from the high-danger zone, not chances, shown at ${NST_MIN_COVERAGE * 100}% coverage, otherwise as covered/expected games. ${TEAM_CHANCES_NOTE}${shared ? ` ${shared} listed ${shared === 1 ? "appearance" : "appearances"} shared the net.` : ""}${tiedOut ? ` ${tiedOut} more tied ${tiedOut === 1 ? "goalie is" : "goalies are"} not listed.` : ""}`,
     strength: "All situations",
     cohort: `${eligible.length} of ${windows.length} goalies with at least ${settings.minStarts} official starts in the window`,
     coverage: ledger.coverage,

@@ -3,7 +3,7 @@ import { createElement } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import RatioImpactCard from "components/SocialShare/modules/RatioImpactCard";
 import { parseShareSettings, sharePostExportBlock, SharePostRequestError, UNKNOWN_EVIDENCE, type SharePostSnapshot } from "./contract";
-import { addTotals, buildRatioImpact, formatGaaChange, formatRatioSavePct, formatSavePctChange, formatToi, goalieBase, lineTotals, manualBase, minutesToSeconds, RATIO_NOTE, ratesOf, ratioImpact, ratioImpactModule, validateRatioSettings, type RatioImpactData, type RatioImpactSettings } from "./ratioImpact";
+import { addTotals, buildRatioImpact, formatGaaChange, formatRatioSavePct, formatSavePctChange, formatToi, goalieBase, lineTotals, manualBase, minutesToSeconds, RATIO_LEGEND, RATIO_NOTE, ratesOf, ratioImpact, ratioImpactModule, validateRatioSettings, type RatioImpactData, type RatioImpactSettings } from "./ratioImpact";
 import { loadRatioImpact } from "./ratioImpact.sources";
 import type { GoalieAppearance } from "./shared/goalieLedger";
 
@@ -90,7 +90,7 @@ describe("zero and missing safeguards", () => {
     expect(goalieBase(5, [], "2026-10-30").totals).toBeNull();
   });
   it("refuses contradictions and fractional counts", () => {
-    for (const bad of [settings({ baseGoalieId: 1, baseShots: 10 }), settings({ baseShots: 5, baseGoals: 6 }), settings({ scenarioShots: 2, scenarioGoals: 3 }), settings({ sensitivityGoalsFrom: 5, sensitivityGoalsTo: 1 }), settings({ sensitivityGoalsFrom: 0, sensitivityGoalsTo: 20 }), settings({ scenarioShots: 30.5 })]) expect(validateRatioSettings(bad)).toBeTruthy();
+    for (const bad of [settings({ baseGoalieId: 1, baseShots: 10 }), settings({ baseShots: 5, baseGoals: 6 }), settings({ scenarioShots: 2, scenarioGoals: 3 }), settings({ sensitivityGoalsFrom: 5, sensitivityGoalsTo: 1 }), settings({ sensitivityGoalsFrom: 0, sensitivityGoalsTo: 12 }), settings({ scenarioShots: 30.5 })]) expect(validateRatioSettings(bad)).toBeTruthy();
     expect(validateRatioSettings(settings())).toBeNull();
     expect(() => parseShareSettings(ratioImpactModule, { scenarioShots: "2", scenarioGoals: "3" })).toThrow(SharePostRequestError);
   });
@@ -158,17 +158,20 @@ describe("ratio impact card", () => {
   it("has the hypothetical basis, and shows denominators, units and sensitivity", () => {
     expect(ratioImpactModule.basis).toBe("hypothetical");
     const text = renderCard(withBase);
-    for (const label of ["Before: Entered base", "Hypothetical line", "After, pooled", "TOI (M:SS)", "2000:00", "60:00", "2060:00", ".920", ".900", "2.40", "3.00", "Sensitivity at 30 SA and 60:00 TOI", "HYPOTHETICAL GA", "SV% = saves ÷ SA", "GAA = GA × 3600 ÷ TOI seconds", RATIO_NOTE]) expect(text).toContain(label);
+    for (const label of ["Before: Entered base", RATIO_LEGEND, "After, pooled", "TOI (M:SS)", "2000:00", "60:00", "2060:00", ".920", ".900", "2.40", "3.00", "Sensitivity at 30 SA and 60:00 TOI", "HYPOTHETICAL GA"]) expect(text).toContain(label);
+    const { sample } = buildRatioImpact(withBase, manualBase(withBase), null).evidence;
+    for (const label of [RATIO_NOTE, "SV% = saves ÷ SA", "GAA = GA × 3600 ÷ TOI seconds"]) expect(sample).toContain(label);
     expect(formatRatioSavePct(0.92)).toBe(".920");
   });
   it("uses no forecast or transaction wording anywhere", () => {
     const data = ratioImpact(manualBase(withBase), withBase), built = buildRatioImpact(withBase, manualBase(withBase), null);
-    for (const text of [renderCard(withBase), RATIO_NOTE, ratioImpactModule.summary, ratioImpactModule.title, JSON.stringify(ratioImpactModule.fields), built.evidence.sample, ratioImpactModule.altText({ ...snapshot(data, withBase), evidence: built.evidence }, data, withBase)]) expect(text).not.toMatch(FORBIDDEN);
+    for (const text of [renderCard(withBase), RATIO_LEGEND, RATIO_NOTE, ratioImpactModule.summary, ratioImpactModule.title, JSON.stringify(ratioImpactModule.fields), built.evidence.sample, ratioImpactModule.altText({ ...snapshot(data, withBase), evidence: built.evidence }, data, withBase)]) expect(text).not.toMatch(FORBIDDEN);
     expect(ratioImpactModule).not.toHaveProperty("suggestedUse");
   });
   it("shows an empty base as unknown rather than zero", () => {
     const text = renderCard(settings());
-    expect(text).toContain("Before: No base entered——————");
+    expect(text).toContain("Before: No base entered.");
+    expect(text).toContain("Before——————");
   });
   it("says why both rates are unknown, with no filler", () => {
     expect(renderCard(settings({ scenarioShots: 0, scenarioGoals: 0, scenarioMinutes: 0 }))).toBe("These inputs leave both SV% and GAA unknown");

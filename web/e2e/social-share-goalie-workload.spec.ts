@@ -117,7 +117,7 @@ test("Goalie Category Rescue orders by one category and shows ownership states",
   const requests = await serve(page, rescue);
   await page.goto("/social-share/posts?post=goalie-rescue");
   const card = page.getByTestId("goalie-rescue-card");
-  await expect(card).toContainText("Win support: W");
+  await expect(card).toContainText("Rostered % is Yahoo-wide");
   await expect(card).toContainText("20%");
   await expect(card).not.toContainText("Fictional Goalie 2");
   await expect(page.getByTestId("post-evidence")).toContainText("1 unknown ownership excluded");
