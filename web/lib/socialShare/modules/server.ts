@@ -11,7 +11,7 @@ export async function loadPostSnapshot(post: string, query: Record<string, strin
   if (!entry) throw new SharePostRequestError("Unknown social-share post.", 404);
   const settings = parseShareSettings(entry, query, "server");
   const generatedAt = now().toISOString();
-  const base = { schemaVersion: 1 as const, id: `${post}-${Date.parse(generatedAt).toString(36)}`, post, generatedAt, timeZone: SHARE_TIME_ZONE, settings, fixture: false };
+  const base = { schemaVersion: 1 as const, id: `${post}-${Date.parse(generatedAt).toString(36)}`, post, generatedAt, timeZone: SHARE_TIME_ZONE as typeof SHARE_TIME_ZONE, settings, fixture: false };
   try {
     const load = await entry.load();
     const result = await load({ client, generatedAt }, settings);

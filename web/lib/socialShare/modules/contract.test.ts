@@ -23,7 +23,7 @@ describe("post settings", () => {
   it("takes visible defaults, types values and refuses unknown or invalid input", () => {
     expect(parseShareSettings(entry, {})).toEqual({ x: 3, pos: "all", search: "", since: null });
     expect(parseShareSettings(entry, { x: "0", pos: "D", since: "2026-10-01" })).toMatchObject({ x: 0, pos: "D", since: "2026-10-01" });
-    for (const bad of [{ x: "11" }, { x: "" }, { x: "abc" }, { pos: "G" }, { since: "2026-02-31" }, { other: "1" }]) expect(() => parseShareSettings(entry, bad as Record<string, string>)).toThrow(SharePostRequestError);
+    for (const bad of [{ x: "11" }, { x: "" }, { x: "abc" }, { pos: "G" }, { since: "2026-02-31" }, { other: "1" }] as Record<string, string>[]) expect(() => parseShareSettings(entry, bad)).toThrow(SharePostRequestError);
     expect(() => parseShareSettings(entry, { pos: "D", x: "9" })).toThrow("Refused pair.");
   });
   it("keeps browser-only settings out of the server query", () => {
@@ -68,7 +68,7 @@ describe("post export", () => {
 describe("registry", () => {
   it("refuses duplicate and malformed ids and holds the example post", () => {
     expect(() => buildRegistry([[entry], [entry]])).toThrow("Duplicate");
-    expect(() => buildRegistry([[{ ...module, id: "Bad Id" }]])).toThrow("Invalid");
+    expect(() => buildRegistry([[{ ...entry, id: "Bad Id" }]])).toThrow("Invalid");
     expect(SHARE_MODULES.has("team-games")).toBe(true);
     expect(LANE_MODULES).toHaveLength(8);
   });
