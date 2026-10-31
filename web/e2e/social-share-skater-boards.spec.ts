@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { buildBshBoard, type BshBoardSettings, type SkaterSeason } from "../lib/socialShare/modules/bshBoard";
-import { buildCategoryBlueprint, type CategoryBlueprintSettings } from "../lib/socialShare/modules/categoryBlueprint";
-import type { SharePostLoadResult } from "../lib/socialShare/modules/contract";
+import { buildCategoryBlueprint, categoryBlueprintModule, type CategoryBlueprintSettings } from "../lib/socialShare/modules/categoryBlueprint";
+import { parseShareSettings, type SharePostLoadResult } from "../lib/socialShare/modules/contract";
 import { buildNightlyFloor, type NightlyFloorSettings } from "../lib/socialShare/modules/nightlyFloor";
 import { ownershipOf } from "../lib/socialShare/modules/shared/definitions";
 import type { SkaterAppearance } from "../lib/socialShare/modules/shared/skaterAppearances";
@@ -41,7 +41,8 @@ const fictional: SkaterSeason = (() => {
   return { appearances, teamGames, scheduledGames: 20, through: "2026-10-30" };
 })();
 const bshSettings = (over: Partial<BshBoardSettings> = {}): BshBoardSettings => ({ view: "leaders", window: "l10", comparison: "previous", minGp: 5, position: "all", ...over });
-const blueprintSettings: CategoryBlueprintSettings = { cat1: "points", cat2: "shots", cat3: "hits", cat4: "blocks", window: "l10", minGp: 5, position: "all", topIn: 100 };
+// The visible defaults, so the edition and the URL agree whatever the default is.
+const blueprintSettings = parseShareSettings(categoryBlueprintModule, {}) as CategoryBlueprintSettings;
 const floorSettings = (over: Partial<NightlyFloorSettings> = {}): NightlyFloorSettings => ({ view: "sog", xSog: 2, xHits: 2, xBlk: 1, zeroCategory: "shots", window: "l10", minGp: 5, position: "all", ownMin: 0, ownMax: 100, unknownOwnership: "exclude", minCoverage: 90, ...over });
 const ownership = { byPlayer: new Map([[1, ownershipOf(40, "2026-10-31")], [2, ownershipOf(12, "2026-10-31")]]), updatedAt: "2026-10-31T08:00:00" };
 const edition = (post: string, settings: object, result: SharePostLoadResult<unknown>) => {

@@ -60,10 +60,44 @@ describe("Category Blueprint", () => {
   });
   it("refuses a repeated category and an empty pool cannot export", () => {
     expect(() => parseShareSettings(categoryBlueprintModule, { cat2: "points" })).toThrow(/only once/);
-    expect(parseShareSettings(categoryBlueprintModule, {})).toMatchObject({ cat1: "points", cat2: "shots", cat3: "hits", cat4: "blocks", window: "l10", minGp: 5, position: "all", topIn: 100 });
+    expect(parseShareSettings(categoryBlueprintModule, {})).toMatchObject({ cat1: "points", cat2: "shots", cat3: "hits", cat4: "blocks", window: "l10", minGp: 5, position: "all", topIn: 250 });
     const active = settings({ minGp: 9 }), { data } = buildCategoryBlueprint(pool(), active);
     expect(data!.rows).toEqual([]);
     expect(categoryBlueprintModule.hasRows(data, active)).toBe(false);
+  });
+});
+
+describe("Category Blueprint default on a specialist-heavy pool", () => {
+  // Shaped like 2026-10-31: 120 specialists lead each category, 20 all-rounders sit just behind them in all four, and the rest spread out.
+  const categories = ["points", "shots", "hits", "blocks"] as const;
+  const steps = { points: 7, shots: 11, hits: 13, blocks: 17 };
+  const specialists = categories.flatMap((specialty, group) => Array.from({ length: 120 }, (_, index) => {
+    const id = 1000 + group * 1000 + index, stats = Object.fromEntries(categories.map(category => [category, category === specialty ? 3 : 1 - ((id * steps[category]) % 360) / 400]));
+    return games(id, 5, stats);
+  })).flat();
+  const allRounders = Array.from({ length: 20 }, (_, index) => games(index + 1, 5, { points: 2, shots: 2, hits: 2, blocks: 2 })).flat();
+  const pool = season([...specialists, ...allRounders]);
+  const defaults = parseShareSettings(categoryBlueprintModule, {}) as CategoryBlueprintSettings;
+
+  it("publishes rows on the visible default, led by the skaters who contribute everywhere", () => {
+    const { data } = buildCategoryBlueprint(pool, defaults);
+    expect(data!.cohortSize).toBe(500);
+    expect(data!.qualifying).toBeGreaterThanOrEqual(20);
+    expect(data!.qualifying).toBeLessThan(250);
+    expect(data!.rows.every(row => row.cells.every(cell => cell.rank !== null && cell.rank <= defaults.topIn))).toBe(true);
+    expect(categoryBlueprintModule.hasRows(data, defaults)).toBe(true);
+    expect(JSON.stringify(data)).not.toMatch(/score|rating|overall|composite/i);
+  });
+  it("finds the all-rounders by each category's own rank, with no combined value", () => {
+    const { data } = buildCategoryBlueprint(pool, { ...defaults, topIn: 121 });
+    expect(data!.qualifying).toBe(20);
+    expect(data!.rows.every(row => row.playerId <= 20 && row.cells.every(cell => cell.rank === 121 && cell.perGame === 2))).toBe(true);
+  });
+  it("keeps the honest empty state where nobody qualifies", () => {
+    const strict = { ...defaults, topIn: 100 }, { data } = buildCategoryBlueprint(pool, strict);
+    expect(data!.qualifying).toBe(0);
+    expect(data!.rows).toEqual([]);
+    expect(categoryBlueprintModule.hasRows(data, strict)).toBe(false);
   });
 });
 

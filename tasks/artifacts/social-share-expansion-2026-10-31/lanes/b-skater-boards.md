@@ -59,7 +59,7 @@ Late in the season the appearance read is about 47,000 rows, in pages against th
 
 - Default BSH risers and fallers (L10 vs previous 10) need 20 GP. Teams have about 13.5 games now, so that default shows its empty state. L5 vs previous 5 works today.
 - Nightly Floor's default excludes unknown ownership even at 0-100%, per the contract. 757 Yahoo rows are null, and the card prints how many skaters that removes. Task 13.8 already tracks the source gap.
-- Blueprint's "Top N in every category" defaults to 100, and missing categories neither pass nor fail. This default is mine, not the contract's.
+- Blueprint's "Top N in every category" defaults to 250, and missing categories neither pass nor fail. This default is mine, not the contract's. See "Blueprint default" below.
 
 ## Blockers
 
@@ -67,9 +67,33 @@ None for this lane.
 
 Shell issue reported to the lead and fixed at `839aa7af4`: export is now refused when server-scoped settings differ from `snapshot.settings`. These posts keep their own guard, because the card body should not show old data under new labels while the editor is still changing settings. The shell's message appears first.
 
+## Blueprint default (follow-up to the real render)
+
+The first default, Top 100, made an empty post: nobody of 633 skaters was top 100 in points, shots, hits and blocks. Read R6 (MCP `execute_sql`, `wgo_skater_stats`, 0 sample rows, 8 aggregate rows; same rule as the post: season through 2026-10-30, 5+ season GP, L10 per game, competition rank) counted skaters in the top N of every category:
+
+| Top N | PTS, SOG, HITS, BLK | PTS, SOG, HITS | PTS, SOG, BLK | SOG, HITS, BLK | PTS, SOG |
+| --- | --- | --- | --- | --- | --- |
+| 50 | 0 | 1 | 0 | 0 | 27 |
+| 100 | 0 | 2 | 1 | 0 | 64 |
+| 150 | 1 | 9 | 12 | 3 | 90 |
+| 200 | 5 | 32 | 34 | 11 | 167 |
+| 250 | **16** | 53 | 52 | 29 | 191 |
+| 300 | 31 | 83 | 91 | 49 | 238 |
+
+**Decision: keep the four categories and default to Top 250.** That gives 16 skaters today: 12 shown and 4 counted below the table.
+
+- The four categories stay because offense and physical play rarely meet, which is the point of this post. Dropping to PTS and SOG would just list scoring forwards.
+- Top 200 gives 5 and Top 150 gives 1, so a few games could empty the default again. 250 leaves margin.
+- 250 of 633 is about the top 40%, a looser claim than the old default. The card prints the N and the cohort, so the reader can see that.
+- It stays a visible field. No score was added. A strict setting still gets the honest empty state and no export.
+
+The count comes from SQL using the post's rule, not from the loader. The lead's real render is the check that the card shows 16.
+
 ## Checks
 
 - `npm test` on the lane's three files plus `PostStudio`, `server` and `contract` tests: passed.
 - eslint on the lane's TypeScript files: clean. The CSS-module pure check on `BshBoardCard.module.scss`: passed.
 - `npx tsc --noEmit` with an 8 GB heap: 0 errors in this lane's files. Errors remain in `modules/contract.test.ts`, `modules/server.ts` and `shared/goalieInventory.sources.ts`, which are not this lane's.
 - `playwright --list`: 6 tests found. Not run in a browser.
+
+Follow-up commit (Blueprint default): 50 tests in the lane's 3 files passed, eslint clean on the changed TypeScript, `--list` found 6 tests, and `tsc` shows 0 errors in this lane's files (3 remain in `creaseShift.test.ts`, not this lane's). No SCSS changed. Not run in a browser.

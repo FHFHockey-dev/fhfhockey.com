@@ -36,7 +36,8 @@ const FIELDS: readonly ShareSettingField[] = [
   { id: "window", label: "Window", kind: "select", default: "l10", options: SKATER_WINDOW_OPTIONS },
   { id: "minGp", label: "Min season GP", kind: "number", default: 5, min: 1, max: 82, step: 1 },
   { id: "position", label: "Position", kind: "select", default: "all", options: SKATER_POSITION_OPTIONS },
-  { id: "topIn", label: "Top N in every category", kind: "number", default: 100, min: 1, max: 1000, step: 1 },
+  // Specialists dominate each category: on 2026-10-31 nobody of 633 was top 100 in these four, and 16 were top 250.
+  { id: "topIn", label: "Top N in every category", kind: "number", default: 250, min: 1, max: 1000, step: 1 },
 ];
 export const chosenCategories = (settings: CategoryBlueprintSettings) => [settings.cat1, settings.cat2, settings.cat3, settings.cat4].filter((id): id is SkaterCategoryId => id !== "none");
 

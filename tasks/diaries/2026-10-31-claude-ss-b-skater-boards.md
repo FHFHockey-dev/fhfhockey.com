@@ -11,6 +11,7 @@
 - Risers and fallers need a full recent window and a baseline at least that long. L10 vs previous 10 needs 20 GP, so that default is empty early in the season.
 - Shared window, cohort and coverage helpers live in `bshBoard.ts` and `bshBoard.sources.ts` because the write set allows no extra file.
 - Blueprint has no overall rank: each category ranks alone and "Top N" is a filter on those ranks.
+- Blueprint default moved from Top 100 (0 skaters of 633 on real data) to Top 250 (16), keeping the four categories. Reasoning and read R6 are in the receipt.
 
 **Gotchas:**
 - PostStudio shows old data under new labels until Refresh and lets it export. The lead fixed the export side at `839aa7af4`. These posts keep `data.applied` so the card also asks for a refresh.
