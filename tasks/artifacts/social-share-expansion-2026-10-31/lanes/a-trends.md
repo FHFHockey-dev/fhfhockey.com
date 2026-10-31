@@ -51,14 +51,14 @@ Project `fyhftlxokyjtpndbkfse`, Supabase MCP `execute_sql`, 2026-10-31. Single `
 
 ## Read budget for the lead's render
 
-Each loader is season to date, so it needs more than 50 rows. Today: `wgo_skater_stats` 7,775 rows (ceiling 50,000, about 46,000 at season end), `wgo_team_stats` 432 (2,800), `games` 216 (1,400). What Changed adds an NST table of about 7,000 rows (50,000) only when ranking an NST metric, and only that table; a selected player reads under 82 rows from each. Role Watch adds at most 648 rolling rows and 1,440 PP rows for listed players. All are exact-count and fail closed. Reads are page-size bounded and sequential.
+Each loader is season to date, so it needs more than 50 rows. Today: `wgo_skater_stats` 7,775 rows (ceiling 50,000, about 46,000 at season end), `wgo_team_stats` 432 (2,800), `games` 216 (1,400). What Changed adds an NST table of about 7,000 rows (50,000) only when ranking an NST metric, and only that table; ranking a WGO metric now adds `nst_gamelog_as_counts` for the players on the boards (ceiling 1,200: 12 players, 100 rows each); a selected player reads under 82 rows from each. Role Watch adds at most 648 rolling rows and 1,440 PP rows for listed players. All are exact-count and fail closed. Reads are page-size bounded and sequential.
 
 ## Choices to review at 13.0
 
 - What Changed has fields beyond the contract's two defaults: comparison, min coverage, metric, basis, and a one-player lookup. A name matching more than one player selects nobody and the card lists the candidates.
 - Role Watch requires a baseline at least as long as the window, a fixed rule printed in the cohort line rather than a new field.
 - Per-60 uses WGO TOI of the same covered games. PP points per 60 uses PP time, so a player with no PP time is unknown rather than 0. TOI, PP TOI and xGF% have no per-60 form and always show their own unit.
-- Lists show 8 ranks, keeping ties up to 9 rows, and count the rest in the evidence cohort line. Card fit in the 1080 square has not been seen in a browser.
+- Role Watch lists show 8 ranks, keeping ties up to 9 rows, and count the rest in the evidence cohort line. What Changed's boards show 6. Card fit in the 1080 square has not been seen in a browser.
 
 ## Whitespace pass (TJ's review, lead's direction)
 
@@ -68,6 +68,19 @@ Each loader is season to date, so it needs more than 50 rows. Today: `wgo_skater
 - **Moved to evidence and alt text:** ranked and unranked counts stay in `evidence.cohort`, which now also counts unlisted rows. `evidence.sample` gains new-team detail, the dash and Unknown / Off PP meanings, and the one player's GP and overlap.
 - **Copy:** `ROLE_WATCH_COPY` shortened to the lead's wording. The PRD's 4.2 line says "not a production forecast".
 - **Not run:** browser render. The lead renders on real data and sends measurements if anything clips. Role Watch's real row counts at default minimums are still unknown; the rows stretch to fill whatever the count.
+
+## What Changed boards (TJ's review, lead's direction; Role Watch unchanged)
+
+- **Layout:** Up and Down side by side at 6 rows a side, with team logo, name and a large change tile reusing lane E's `HeatTile`, read-only. Strength scales against the largest change shown, and sign sets the colour.
+- **Tiles:** one metric per group, labelled Production, Opportunity, Underlying. Defaults are Points/G, TOI and ixG/G. The ranked metric takes its own group's slot, so its recent value always prints.
+- **Nulls and coverage:** each tile uses the normal admission rule. A null prints "—", and a window below `minCoverage` prints an n/m mark instead of the change.
+- **Sparkline:** the ranked metric over the last 10 appearances. A missing game breaks the line and leaves a tick, and a band marks where the recent window starts. In L10 the band covers the whole line, because the series stays at 10 appearances.
+- **Ties:** a side stops at 6 rows. Ranks stay shared, and a tie running past the last row is said in the legend.
+- **Overlap:** the per-row OV column is gone, because in STD it always equals the recent games. The legend says "L5 games are inside STD"; alt text keeps the count.
+- **Data shape:** `WhatChangedRow` gains `tiles`, `series` and `recentFrom`; `WhatChangedData` gains `moreTied`.
+- **Read-plan change:** a WGO ranking now reads NST for the boards' players, after a first build picks them. The default post therefore lists `nst_gamelog_as_counts` as a source, and a failure of that read fails the post closed.
+- **Fit, estimated from CSS, not measured:** a 6-row side gets about 128 px a row, and a row's content needs about 117 px.
+- **Not run:** browser render and the E2E spec (`--list` only). No new real reads in this pass; the listed-player NST read first runs at the lead's render.
 
 ## Blockers
 

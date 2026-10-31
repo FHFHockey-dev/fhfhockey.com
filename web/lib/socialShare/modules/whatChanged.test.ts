@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import WhatChangedCard from "components/SocialShare/modules/WhatChangedCard";
 import { lastN, previousN } from "./shared/definitions";
 import type { SkaterAppearance } from "./shared/skaterAppearances";
-import { buildWhatChanged, changeWindows, coverageAdmits, formatSeconds, joinNst, matchPlayer, shareThrough, type NstCountRow, type NstOnIceRow, type WhatChangedInput, type WhatChangedSettings, whatChangedModule } from "./whatChanged";
+import { buildWhatChanged, changeWindows, coverageAdmits, formatSeconds, joinNst, matchPlayer, seriesRuns, shareThrough, tileMetrics, type NstCountRow, type NstOnIceRow, type WhatChangedInput, type WhatChangedSettings, whatChangedModule } from "./whatChanged";
 import { loadWhatChanged } from "./whatChanged.sources";
 
 vi.mock("lib/supabase/public-client", () => ({ default: {} }));
@@ -156,7 +156,8 @@ describe("What Changed card and export gates", () => {
   it("prints values, samples and overlap, and no rank without an admitted population", () => {
     const appearances = [...games(1, 10, index => index >= 5 ? 2 : 0), ...games(2, 10, index => index >= 5 ? 0 : 2)];
     const html = render(base({ appearances }));
-    for (const text of ["Points per game", "L5 versus season to date", "STD", "OV", "+1.00", "−1.00", "5/10", "Skater 1", "OV = recent games inside STD"]) expect(html).toContain(text);
+    for (const text of ["Points per game", "L5 versus season to date", "+1.00", "−1.00", "5 of 10 GP", "Skater 1", "L5 games are inside STD", "Production", "Opportunity", "Underlying", "Points/G", "TOI", "ixG/G"]) expect(html).toContain(text);
+    expect(html).not.toMatch(/forecast|predict|will /i);
     const empty = render(base({ appearances: games(1, 4, () => 1) }));
     expect(empty).toContain("No player qualifies");
     expect(empty).not.toContain("RK");
@@ -165,8 +166,7 @@ describe("What Changed card and export gates", () => {
     const appearances = games(1, 20, index => index);
     const counts = Array.from({ length: 20 }, (_, index) => nstRow(1, index, index >= 15 ? 1 : 0.2));
     const ranked = render(base({ appearances, nstCounts: counts, settings: { ...settings, metric: "ixg" } }));
-    expect(ranked).toContain("COVERED");
-    expect(ranked).toContain("5/5 · 20/20");
+    expect(ranked).toContain("NST 5/5 · 20/20");
     const focus = render(base({ appearances, nstCounts: counts, nstOnIce: [], settings: { ...settings, player: "1" } }));
     for (const text of ["Goals", "PP TOI", "Individual xG (ixG)", "On-ice xGF%", "0/5 · 0/20", "20:00"]) expect(focus).toContain(text);
   });
@@ -185,6 +185,95 @@ describe("What Changed card and export gates", () => {
   });
 });
 
+describe("What Changed boards", () => {
+  const snapshotOf = (result: ReturnType<typeof buildWhatChanged>, active: WhatChangedSettings) => ({ schemaVersion: 1 as const, id: "x", post: "what-changed", state: result.state, reasons: [], generatedAt: "2026-10-31T16:00:00Z", expiresAt: null, timeZone: "America/New_York" as const, settings: active, evidence: result.evidence, data: result.data, teams: [], fixture: true });
+  const html = (input: WhatChangedInput) => { const result = buildWhatChanged(input); return renderToStaticMarkup(createElement(WhatChangedCard, { snapshot: snapshotOf(result, input.settings), data: result.data!, settings: input.settings, logos: {} })); };
+  const tileOf = (markup: string, metric: string) => markup.match(new RegExp(`<span[^>]*data-testid="group-tile"[^>]*data-metric="${metric}"[^>]*>.*?</small></span>`))![0];
+  it("draws the ranked metric's last 10 appearances, with a missing game a gap and the recent window marked", () => {
+    expect(seriesRuns([1, null, 2, 3, null])).toEqual([[0], [2, 3]]);
+    const appearances = games(1, 20, () => 1);
+    const counts = Array.from({ length: 20 }, (_, index) => index).filter(index => index !== 13).map(index => nstRow(1, index, index >= 15 ? 1 : 0.5));
+    const row = buildWhatChanged(base({ appearances, nstCounts: counts, settings: { ...settings, metric: "ixg" } })).data!.risers[0];
+    expect(row.series.map(point => point.date)).toEqual(appearances.slice(-10).map(game => game.date));
+    expect(row.series.map(point => point.value)).toEqual([0.5, 0.5, 0.5, null, 0.5, 1, 1, 1, 1, 1]);
+    expect(row.recentFrom).toBe(5);
+    const markup = html(base({ appearances, nstCounts: counts, settings: { ...settings, metric: "ixg" } }));
+    expect(markup).toContain('data-sparkline="0.5,0.5,0.5,gap,0.5,1,1,1,1,1"');
+    expect(markup).toContain('data-recent-from="5"');
+    expect(markup).toContain("data-gap");
+    const l10 = buildWhatChanged(base({ appearances: games(1, 30, index => index >= 20 ? 2 : 0), settings: { ...settings, window: "l10" } })).data!.risers[0];
+    expect(l10).toMatchObject({ recentFrom: 0 });
+    expect(l10.series).toHaveLength(10);
+  });
+  it("reads a share game by game and per 60 on the chosen basis, with no denominator a gap", () => {
+    const appearances = games(1, 20, () => 1, { toiSeconds: 1800 }).map((game, index) => index === 13 ? { ...game, toiSeconds: null } : game);
+    const counts = Array.from({ length: 20 }, (_, index) => nstRow(1, index, index >= 15 ? 1 : 0.5));
+    expect(buildWhatChanged(base({ appearances, nstCounts: counts, settings: { ...settings, metric: "ixg", basis: "per60" } })).data!.risers[0].series.map(point => point.value)).toEqual([1, 1, 1, null, 1, 2, 2, 2, 2, 2]);
+    const onIce: NstOnIceRow[] = Array.from({ length: 12 }, (_, index) => ({ player_id: 1, date_scraped: dateOf(index), season: 20262027, xgf: index >= 7 ? 3 : 1, xga: index === 2 ? 0 : 1 }));
+    onIce[3] = { ...onIce[3], xgf: 0, xga: 0 };
+    const row = buildWhatChanged(base({ appearances: games(1, 12, () => 1), nstOnIce: onIce, settings: { ...settings, metric: "xgfPct" } })).data!.risers[0];
+    expect(row.series.slice(0, 3).map(point => point.value)).toEqual([100, null, 50]);
+    expect(row.series[row.series.length - 1].value).toBe(75);
+  });
+  it("shows one metric per group, swapping in the ranked metric, and a null stays a dash, never 0", () => {
+    expect(tileMetrics("points").map(metric => metric.id)).toEqual(["points", "toi", "ixg"]);
+    expect(tileMetrics("ppToi").map(metric => metric.id)).toEqual(["points", "ppToi", "ixg"]);
+    expect(tileMetrics("xgfPct").map(metric => metric.id)).toEqual(["points", "toi", "xgfPct"]);
+    const appearances = games(1, 20, index => index >= 15 ? 2 : 0);
+    const unread = base({ appearances });
+    expect(buildWhatChanged(unread).data!.risers[0].tiles[2]).toMatchObject({ metric: "ixg", delta: null, recent: { value: null, admitted: false, coverage: { observed: 0, expected: 5 } } });
+    const tile = tileOf(html(unread), "ixg");
+    expect(tile).toContain("—");
+    expect(tile).toContain("0/5");
+    expect(tile).not.toContain("0.00");
+    expect(tile).toContain('data-direction="none"');
+  });
+  it("admits each tile on the post's minimum coverage: a baseline below it prints the recent value and its mark", () => {
+    const appearances = games(1, 20, index => index >= 15 ? 2 : 0);
+    const counts = Array.from({ length: 20 }, (_, index) => index).filter(index => index > 2).map(index => nstRow(1, index, 0.5));
+    const strict = buildWhatChanged(base({ appearances, nstCounts: counts })).data!.risers[0].tiles[2];
+    expect(strict).toMatchObject({ delta: null, recent: { value: 0.5, admitted: true }, baseline: { value: null, admitted: false, coverage: { observed: 17, expected: 20 } } });
+    expect(tileOf(html(base({ appearances, nstCounts: counts })), "ixg")).toContain("17/20");
+    const loose = { ...settings, minCoverage: 80 };
+    expect(buildWhatChanged(base({ appearances, nstCounts: counts, settings: loose })).data!.risers[0].tiles[2]).toMatchObject({ baseline: { admitted: true }, delta: 0 });
+    expect(tileOf(html(base({ appearances, nstCounts: counts, settings: loose })), "ixg")).not.toContain("17/20");
+  });
+  it("lays Up and Down side by side, stops at 6 rows, shares tied ranks and says who a tie left off", () => {
+    const appearances = [1, 2, 3, 4, 5, 6, 7, 8].flatMap(id => games(id, 10, index => index >= 5 ? 2 : 0)).concat(games(9, 10, index => index >= 5 ? 0 : 2));
+    const { data } = buildWhatChanged(base({ appearances }));
+    expect(data!.risers.map(row => row.rank)).toEqual([1, 1, 1, 1, 1, 1]);
+    expect(data!.fallers.map(row => row.rank)).toEqual([1]);
+    expect(data!.moreTied).toEqual({ up: 2, down: 0 });
+    expect(data!.cohort).toMatchObject({ unlisted: 2, listedLimit: 6 });
+    const markup = html(base({ appearances }));
+    expect(markup).toContain('data-testid="board-up"');
+    expect(markup).toContain('data-testid="board-down"');
+    expect(markup.match(/data-testid="change-row"/g)).toHaveLength(7);
+    expect(markup).toContain("Up: 2 more tied at rank 1");
+    expect(html(base({ appearances: games(1, 10, index => index >= 5 ? 2 : 0) }))).toContain("No faller qualifies");
+  });
+  it("colours the change tile by direction and scales it by size, and each group tile by its own sign", () => {
+    const appearances = [...games(1, 10, index => index >= 5 ? 2 : 0), ...games(2, 10, index => index >= 5 ? 0 : 1)];
+    const markup = html(base({ appearances }));
+    const up = markup.slice(markup.indexOf('data-testid="board-up"'), markup.indexOf('data-testid="board-down"')), down = markup.slice(markup.indexOf('data-testid="board-down"'));
+    expect(up).toContain('data-tone="better"');
+    expect(up).toContain('data-alpha="0.8"');
+    expect(down).toContain('data-tone="worse"');
+    expect(down).toContain('data-alpha="0.5"');
+    expect(tileOf(up, "points")).toContain('data-direction="up"');
+    expect(tileOf(down, "points")).toContain('data-direction="down"');
+    expect(tileOf(up, "toi")).toContain('data-direction="flat"');
+  });
+  it("carries tiles and the line into the alt text, and fills the evidence rather than the card", () => {
+    const appearances = games(1, 12, index => index >= 7 ? 2 : 0);
+    const result = buildWhatChanged(base({ appearances }));
+    const alt = whatChangedModule.altText(snapshotOf(result, settings), result.data!, settings);
+    expect(alt).toContain("Points/G 2.00, change +");
+    expect(alt).toContain("Last 10 games: 0.00, 0.00, 0.00, 0.00, 0.00, 2.00");
+    expect(result.evidence.sample).toContain("a gap is a game with no value");
+  });
+});
+
 describe("What Changed read plan", () => {
   const tables = (rows: Record<string, unknown[]>) => {
     const asked: { table: string; calls: unknown[][] }[] = [];
@@ -199,14 +288,22 @@ describe("What Changed read plan", () => {
   };
   const skater = { player_id: 1, player_name: "Skater 1", position_code: "C", date: "2026-10-30", season_id: 20262027, game_id: 5, team_abbrev: "NJD", opponent_team_abbrev: "NYR", home_road: "H", games_played: 1, goals: 0, assists: 0, points: 0, shots: 1, hits: 0, blocked_shots: 0, pp_points: 0, toi_per_game: 900, pp_toi: 0, penalty_minutes: 0 };
   const context = (client: unknown) => ({ client: client as never, generatedAt: "2026-10-31T16:00:00Z" });
-  it("skips NST for a production ranking, and reads it for the whole league only when an NST metric ranks", async () => {
-    const production = tables({ wgo_skater_stats: [skater] });
-    await loadWhatChanged(context(production.client), settings);
-    expect(production.asked.map(entry => entry.table)).toEqual(["wgo_skater_stats", "wgo_team_stats", "games"]);
+  it("reads no NST with nobody listed, and reads it for the whole league only when an NST metric ranks", async () => {
+    const nobodyListed = tables({ wgo_skater_stats: [skater] });
+    await loadWhatChanged(context(nobodyListed.client), settings);
+    expect(nobodyListed.asked.map(entry => entry.table)).toEqual(["wgo_skater_stats", "wgo_team_stats", "games"]);
     const ranking = tables({ wgo_skater_stats: [skater] });
     await loadWhatChanged(context(ranking.client), { ...settings, metric: "ixg" });
     expect(ranking.asked.map(entry => entry.table)).toContain("nst_gamelog_as_counts");
     expect(ranking.asked.map(entry => entry.table)).not.toContain("nst_gamelog_as_counts_oi");
+  });
+  it("narrows a production ranking's NST to the players on the boards", async () => {
+    const rows = Array.from({ length: 10 }, (_, index) => ({ ...skater, date: dateOf(index), game_id: 1000 + index, points: index >= 5 ? 2 : 0 }));
+    const listed = tables({ wgo_skater_stats: rows });
+    const result = await loadWhatChanged(context(listed.client), settings);
+    expect(listed.asked.find(entry => entry.table === "nst_gamelog_as_counts")!.calls).toContainEqual(["in", "player_id", [1]]);
+    expect(listed.asked.map(entry => entry.table)).not.toContain("nst_gamelog_as_counts_oi");
+    expect(result.data!.risers[0].tiles[2].metric).toBe("ixg");
   });
   it("narrows NST to the one selected player", async () => {
     const focus = tables({ wgo_skater_stats: [skater] });

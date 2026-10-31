@@ -56,12 +56,13 @@ async function open(page: Page, post: string, body: object) {
 }
 test.beforeEach(({ page }) => page.setDefaultTimeout(10000));
 
-test("What Changed prints its values, samples and overlap, and carries them into the export's labels", async ({ page }) => {
+test("What Changed prints side-by-side boards, tiles, samples and the overlap disclosure, and carries them into the export's labels", async ({ page }) => {
   await open(page, "what-changed", edition("what-changed", whatChangedSettings, whatChanged(), false));
   const square = page.getByTestId("share-square");
-  for (const text of ["Points per game", "L5 versus season to date", "Fictional Riser", "Fictional Faller", "OV = recent games inside STD"]) await expect(square).toContainText(text);
+  for (const text of ["Points per game", "L5 versus season to date", "Fictional Riser", "Fictional Faller", "L5 games are inside STD", "Production", "Opportunity", "Underlying"]) await expect(square).toContainText(text);
+  for (const board of ["board-up", "board-down"]) await expect(page.getByTestId(board).locator("[data-sparkline]")).toHaveCount(1);
   const evidence = page.getByTestId("post-evidence");
-  for (const text of ["Season values contain the recent games", "All situations", "2 skaters with 10+ season GP", "Min NST coverage %: 90", "Recent window: L5"]) await expect(evidence).toContainText(text);
+  for (const text of ["recent games sit inside STD", "All situations", "2 skaters with 10+ season GP", "Min NST coverage %: 90", "Recent window: L5"]) await expect(evidence).toContainText(text);
   await expect(page.getByTestId("post-watermark")).toHaveText("OBSERVED RESULTS");
   const download = page.waitForEvent("download");
   await page.getByRole("button", { name: "Download PNG", exact: true }).click();
