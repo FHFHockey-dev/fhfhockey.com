@@ -37,6 +37,10 @@ describe("PostStudio", () => {
     const evidence = screen.getByTestId("post-evidence").textContent!;
     for (const label of ["NHL.com team game stats through 2026-10-30", "21 completed team games", "Not applicable", "All 32 teams", "21 of 21 team games", "Days: 7"]) expect(evidence).toContain(label);
     expect(screen.getByText("Default: 7")).toBeTruthy();
+    const square = screen.getByTestId("share-square");
+    expect(square.contains(screen.getByTestId("post-evidence"))).toBe(false);
+    expect(screen.getByTestId("post-evidence-line").textContent).toBe("NHL.com team game stats through 2026-10-30 · Not applicable · 21 of 21 team games");
+    expect(square.contains(screen.getByTestId("post-evidence-line"))).toBe(true);
     expect(screen.getByTestId("post-watermark").textContent).toBe("OBSERVED RESULTS");
     expect(screen.getByTestId("share-square").getAttribute("data-export-token")).toBe('team-games-1|team-games|[["days",7]]');
   });

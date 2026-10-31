@@ -23,8 +23,8 @@ const fieldText = (value: ShareSettings[string]) => value === null ? "" : String
 const defaultNote = (field: ShareSettingField) => field.kind === "select" ? field.options.find(option => option.value === field.default)?.label ?? field.default : field.default === null || field.default === "" ? "any" : String(field.default);
 
 /**
- * Evidence every post inherits, on screen and in the PNG: sources with their as-of times, sample, strength, cohort,
- * coverage and active filters. A post cannot drop them because it only renders the body.
+ * Full evidence every post inherits, printed beside the preview: sources with their as-of times, sample, strength,
+ * cohort, coverage and active filters. A post cannot drop it because it only renders the body.
  */
 export function PostEvidence({ entry, snapshot, settings }: { entry: AnyShareModule; snapshot: SharePostSnapshot; settings: ShareSettings }) {
   const { evidence } = snapshot, coverage = evidence.coverage;
@@ -34,6 +34,12 @@ export function PostEvidence({ entry, snapshot, settings }: { entry: AnyShareMod
     {coverage && <span><b>Coverage</b> {coverage.observed}{coverage.expected === null ? "" : ` of ${coverage.expected}`} {coverage.unit}{coverage.missing ? ` · ${coverage.missing} missing` : ""}</span>}
     {entry.fields.length > 0 && <span><b>Settings</b> {shareSettingLines(entry.fields, settings).map(line => `${line.label}: ${line.value}`).join(" · ")}</span>}
   </div>;
+}
+
+/** The one line a PNG carries (TJ, 2026-10-31: less fine print on the card): sources through their dates, strength, coverage. */
+export function postEvidenceLine({ sources, strength, coverage }: SharePostSnapshot["evidence"]) {
+  const named = sources.length ? sources.map(source => `${source.name}${source.asOf ? ` through ${source.asOf}` : ""}`).join(" · ") : "Source not available";
+  return [named, strength, coverage && `${coverage.observed}${coverage.expected === null ? "" : ` of ${coverage.expected}`} ${coverage.unit}${coverage.missing ? `, ${coverage.missing} missing` : ""}`].filter(Boolean).join(" · ");
 }
 
 function PostFrame({ entry, snapshot, settings, brandLogo, logos, Card }: { entry: AnyShareModule; snapshot: SharePostSnapshot; settings: ShareSettings; brandLogo: string | null; logos: Record<string, string | null>; Card: ComponentType<any> | null }) {
@@ -48,9 +54,8 @@ function PostFrame({ entry, snapshot, settings, brandLogo, logos, Card }: { entr
       {shows && Card ? <Card snapshot={snapshot} data={snapshot.data} settings={settings} logos={logos} />
         : <div className={postStyles.unavailable} data-testid="post-unavailable"><strong>Not available</strong>{(snapshot.reasons.length ? snapshot.reasons : ["This post's sources are not ready."]).map(reason => <p key={reason}>{reason}</p>)}</div>}
     </div>
-    <footer className={styles.gridFooter}>
-      <PostEvidence entry={entry} snapshot={snapshot} settings={settings} />
-      <p><span>{snapshot.state === "partial" ? <span className={postStyles.warning}>{snapshot.reasons[0]}</span> : `Edition ${timeLabel(snapshot.generatedAt)}`}</span><strong className={styles.gridWatermark} data-testid="post-watermark">{watermark}</strong></p>
+    <footer className={`${styles.gridFooter} ${postStyles.footer}`}>
+      <p><span data-testid="post-evidence-line">{snapshot.state === "partial" && <span className={postStyles.warning}>{snapshot.reasons[0]} </span>}{postEvidenceLine(snapshot.evidence)}</span><strong className={styles.gridWatermark} data-testid="post-watermark">{watermark}</strong></p>
     </footer>
   </>;
 }
@@ -196,6 +201,8 @@ export default function PostStudio() {
         try { await navigator.clipboard.writeText(alt); setFeedback("Alt text copied."); }
         catch { setFeedback("Alt text could not be copied. Select and copy the text below."); }
       }}>Copy alt text</button></div><p role="status">{feedback}</p>
+      {snapshot && <PostEvidence entry={entry} snapshot={snapshot} settings={settings} />}
+      {snapshot && <p className={postStyles.defaultNote}>Edition {timeLabel(snapshot.generatedAt)}</p>}
       {snapshot && <details><summary>Suggested alt text</summary><p>{alt}</p></details>}
     </section>
   </div>;
