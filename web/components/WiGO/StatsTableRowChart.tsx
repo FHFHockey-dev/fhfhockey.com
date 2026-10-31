@@ -77,6 +77,7 @@ export function formatGameMeanLabel(statLabel: string, mean: number): string {
 }
 
 const GameLogChart: React.FC<GameLogChartProps> = ({
+  playerId,
   statLabel,
   gameLogData,
   averages,
@@ -173,7 +174,7 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
   // Adjust chart height if needed for row layout, REMOVE fixed width
   const chartHeight = fill ? "100%" : height; // Increased height slightly for better visibility in a row
 
-  const status = isLoading ? "Loading game log..." : error || (gameLogData.length === 0 ? "No game log data available for this season." : null);
+  const status = isLoading ? "Loading game log..." : error || (!playerId ? "Select a player" : gameLogData.length === 0 ? "No game log data available for this season." : null);
 
   return (
     <div className={styles.gameLogChartContainer}>

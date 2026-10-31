@@ -367,7 +367,7 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
 
       {/* "Select Player" Placeholder (overlaps empty chart if !isLoading, !error, !playerId) */}
       {!isLoading && !error && !playerId && (
-        <div style={placeholderStyle}>Select a player to view chart.</div>
+        <div style={placeholderStyle}>Select a player</div>
       )}
 
       {!isLoading && !error && playerId && !seasonId && (

@@ -194,8 +194,8 @@ const OpponentGamelog: React.FC<OpponentGamelogProps> = ({
   // ---- Rendering (mostly the same) ----
   if (!teamId) {
     return (
-      <div className={styles.opponentLogContainer}>
-        Select a player to see their schedule.
+      <div className={`${styles.opponentLogContainer} ${styles.emptyPrompt}`}>
+        Select a player
       </div>
     );
   }

@@ -27,24 +27,24 @@ const ChartLoadingPlaceholder = ({ message }: { message: string }) => (
 
 const GameScoreSection = dynamic(() => import("components/WiGO/GameScoreSection"), {
   ssr: false,
-  loading: () => <ChartLoadingPlaceholder message="Loading Game Score…" />,
+  loading: () => <ChartLoadingPlaceholder message="Loading game score…" />,
 });
 
 const ToiLineChart = dynamic(() => import("components/WiGO/ToiLineChart"), {
   ssr: false,
-  loading: () => <ChartLoadingPlaceholder message="Loading TOI Chart..." />,
+  loading: () => <ChartLoadingPlaceholder message="Loading time on ice…" />,
 });
 
 const PpgLineChart = dynamic(() => import("components/WiGO/PpgLineChart"), {
   ssr: false,
-  loading: () => <ChartLoadingPlaceholder message="Loading PPG Chart..." />,
+  loading: () => <ChartLoadingPlaceholder message="Loading points…" />,
 });
 
 const ConsistencyChart = dynamic(
   () => import("components/WiGO/ConsistencyChart"),
   {
     ssr: false,
-    loading: () => <ChartLoadingPlaceholder message="Loading Consistency..." />,
+    loading: () => <ChartLoadingPlaceholder message="Loading consistency…" />,
   },
 );
 
@@ -210,7 +210,7 @@ export function WigoDashboardHeader({
             </button>
           </>
         ) : (
-          <span className={styles.noSelectedPlayer}>No player selected</span>
+          <span className={styles.noSelectedPlayer}>Search for a player to fill the dashboard</span>
         )}
       </div>
     </>
@@ -264,7 +264,7 @@ export function WigoOverviewSection({
           />
         ) : (
           <div className={styles.chartLoadingPlaceholder}>
-            Select player for ratings
+            Select a player
           </div>
         )}</>}
       </div>
@@ -301,11 +301,15 @@ export function WigoTrendsSection({
             <h3 style={{ margin: 0 }}>Category percentiles</h3>
             {summaryOnly && <span className={styles.radarContext}>Skaters · {currentSeasonId ? formatSeasonRange(currentSeasonId) : "Season unavailable"} · 0–100</span>}
           </div>
-          <CategoryCoverageChart
-            playerId={selectedPlayer?.id}
-            compact={summaryOnly}
-            timeOption="SEASON"
-          />
+          {selectedPlayer ? (
+            <CategoryCoverageChart
+              playerId={selectedPlayer.id}
+              compact={summaryOnly}
+              timeOption="SEASON"
+            />
+          ) : (
+            <ChartLoadingPlaceholder message="Select a player" />
+          )}
         </div>
       </div>}
       {!summaryOnly && <><div className={styles.toiChartContainer} data-coverage="C16">

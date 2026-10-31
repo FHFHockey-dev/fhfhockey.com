@@ -403,7 +403,7 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
         <div className={styles.loadingMessage}>Loading season info...</div>
       )}
       {!isLoading && !error && !playerId && (
-        <div className={styles.noPlayerMessage}>Please select a player.</div>
+        <div className={styles.noPlayerMessage}>Select a player</div>
       )}
 
       {!isLoading && !error && playerId && seasonId && (

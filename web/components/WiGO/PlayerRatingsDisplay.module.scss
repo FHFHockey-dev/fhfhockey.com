@@ -156,3 +156,10 @@
     border-width: 1px !important;
   }
 }
+
+.noPlayer {
+  min-height: 0;
+  color: s.$ink-muted;
+  font-size: s.$text-12;
+  font-style: normal;
+}

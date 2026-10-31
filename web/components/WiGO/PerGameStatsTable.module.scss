@@ -237,7 +237,7 @@ table.verticalStatsTable {
       h3 { margin: 0; padding: 1px 6px; font-size: s.$text-12; line-height: 14px; span { color: s.$ink-muted; } }
     }
     .productionSnapshot { grid-area: prod; display: flex; flex-direction: column; }
-    .summaryStatus { margin: 0; padding: 2px 6px; font-size: s.$text-11; line-height: 1.2; }
+    .summaryStatus { margin: 0; padding: 2px 6px; color: s.$ink-muted; font-size: s.$text-12; line-height: 1.2; }
     .projectionTableSection { grid-area: pace; display: flex; flex-direction: column; }
     .productionGrid { flex: 1; min-height: 0; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 0 4px 1px; }
     .productionStat {
@@ -263,7 +263,7 @@ table.verticalStatsTable {
 
 .paceTables { display: contents; }
 
-.summaryStatus { padding: 8px; font-size: s.$text-12; }
+.summaryStatus { padding: 8px; color: s.$ink-muted; font-size: s.$text-12; }
 
 .paceTitle {
   display: flex;

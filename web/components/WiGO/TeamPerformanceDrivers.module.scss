@@ -87,3 +87,11 @@
   .driverValue { font-family: v.$font-family-primary; font-variant-numeric: tabular-nums; }
   .driverBand { margin-top: 1px; }
 }
+
+.body .emptyPrompt {
+  margin: auto;
+  padding: 0;
+  color: s.$ink-muted;
+  font-size: s.$text-12;
+  letter-spacing: 0;
+}

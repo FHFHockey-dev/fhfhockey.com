@@ -201,3 +201,23 @@ Declutter in place (see `AUDIT-2026-10-30.md`). One local commit per approved st
   - Phone notes not checked here; see the accessibility step.
 - **Screens:** `screens/step10-comparison-before-after.png`, `screens/step10-gamescore-before-after.png`, `screens/step10-ratings-before-after.png`.
 - **TJ verdict:** approved 2026-10-30.
+- **Commit:** `18078d3d9`.
+
+## Step 11: one empty state
+
+- **What changed:**
+  - **No player selected:** the top bar says "Search for a player to fill the dashboard". Every empty panel shows the same "Select a player" at 12 px, regular, muted, centred. Before, there were 11 wordings in four styles.
+  - **Game log:** with no player it no longer says "No game log data available for this season". That text stays for a selected player with no games, as the tests pin.
+  - **Matrix toolbar:** its own "Select a player" status is gone; the top bar covers it.
+  - **Category percentiles:** with no player, `WigoTrendsSection` shows the shared placeholder instead of the chart component's large white prompt (that component is outside the lease).
+  - **Loading text:** "Loading time on ice…", "Loading points…", "Loading game score…", "Loading consistency…".
+  - **With a player selected:** nothing changes.
+- **Files:** `WigoDashboardSections.tsx`, `PerGameStatsTable.tsx`, `OpponentGamelog.tsx`, `PlayerRatingsDisplay.tsx`, `TeamPerformanceDrivers.tsx`, `WigoComparisonMatrix.tsx`, `PpgLineChart.tsx`, `ToiLineChart.tsx`, `GameScoreLineChart/index.tsx`, `RateStatPercentiles.tsx`, `StatsTableRowChart.tsx`, and the stylesheets `styles/wigoCharts.module.scss`, `OpponentGameLog.module.scss`, `TeamPerformanceDrivers.module.scss`, `PlayerRatingsDisplay.module.scss`, `PerGameStatsTable.module.scss`.
+- **Checks:**
+  - WIGO vitest passed: 146 of 146, with no test edits.
+  - `e2e/wigo-one-page.spec.ts` passed: 9 of 9, run before removing the last italic rule (a text-style change). It is rerun at the end.
+  - eslint: clean.
+  - CSS pure check passed.
+  - DOM count at 1280: every prompt is one style.
+- **Screens:** `screens/step11-desktop-before-after.png`, `screens/step11-390x844.png`.
+- **TJ verdict:** approved 2026-10-30.

@@ -109,11 +109,7 @@ export default function WigoComparisonMatrix({
           </WigoHelp>
           <span role="status">
             {aggDataError ||
-              (isLoadingAggData
-                ? "Loading stats…"
-                : !playerId
-                  ? "Select a player"
-                  : "")}
+              (isLoadingAggData ? "Loading stats…" : "")}
           </span>
         </div>
         <div className={styles.matrixHalves}>

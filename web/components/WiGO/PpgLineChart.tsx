@@ -298,7 +298,7 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId, seasonId }) => {
 
       {/* "Select Player" Placeholder */}
       {!isLoading && !error && !playerId && (
-        <div style={placeholderStyle}>Select a player to view chart.</div>
+        <div style={placeholderStyle}>Select a player</div>
       )}
 
       {!isLoading && !error && playerId && !seasonId && (

@@ -47,7 +47,8 @@ const TeamPerformanceDrivers: React.FC<TeamPerformanceDriversProps> = ({
       {state === "idle" ? (
         <PanelStatus
           state="empty"
-          message="Select a player to load team drivers."
+          message="Select a player"
+          className={styles.emptyPrompt}
         />
       ) : state === "loading" ? (
         <PanelStatus state="loading" message="Loading team driver context..." />

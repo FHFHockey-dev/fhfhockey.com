@@ -1006,7 +1006,7 @@
   padding: v.$space-md; // Reduced padding
   text-align: center;
   color: s.$ink-muted;
-  font-style: italic;
+  font-size: s.$text-12;
   background-color: inherit; // Inherits from parent td
   min-height: 100px; // Minimum height specification
   display: flex;
@@ -1128,7 +1128,6 @@
   padding: v.$space-lg;
   text-align: center;
   color: s.$ink-muted;
-  font-style: italic;
   background-color: inherit;
 }
 .chartTooltip {
@@ -1222,7 +1221,7 @@
   height: 100%;
   min-height: 100px;
   color: s.$ink-muted;
-  font-size: s.$text-14;
+  font-size: s.$text-12;
   flex-grow: 1;
   background-color: inherit;
 }
@@ -2642,4 +2641,14 @@
       margin-bottom: 0;
     }
   }
+}
+
+// The one "Select a player" line every empty panel shares.
+.wigoDashHeader .noPlayerMessage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: s.$ink-muted;
+  font-size: s.$text-12;
 }

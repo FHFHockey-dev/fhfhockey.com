@@ -147,7 +147,7 @@ const PerGameStatsTable: React.FC<PerGameStatsTableProps> = ({
     ];
   }, [totalsData]);
 
-  const status = !playerId ? "Select a player to view stats." : !seasonId ? "Loading season info..." : isLoading ? "Loading Stats..." : errorMessage;
+  const status = !playerId ? "Select a player" : !seasonId ? "Loading season info..." : isLoading ? "Loading Stats..." : errorMessage;
   const visibleRows = statRows.length ? statRows : ["GP", "G", "A", "PTS", "SOG", "S%", "PPP", "HIT", "BLK", "PIM"].map(stat => ({ stat, perGame: "-", per84: "-" }));
   return (
     <div className={`${styles.perGameTableContainer} ${desktop ? styles.desktopSummary : ""}`}>
