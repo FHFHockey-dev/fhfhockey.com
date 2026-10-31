@@ -24,7 +24,7 @@ const appearances = scheduled.flatMap((game, index) => [
   stat(3, "NYR", game.id, game.date, { losses: 1, saves: 20, shotsAgainst: 24, goalsAgainst: 4 }),
 ]);
 const week = { week: 4, start: "2026-10-19", end: "2026-10-25" };
-const periodSettings = { period: "week", week: 4, month: "", minStartsWeek: 2, minStartsMonth: 5, board: "best", categories: "wins,saves,svPct,gaa,shutouts" };
+const periodSettings = { period: "week", week: 4, month: "", minStartsWeek: 2, minStartsMonth: 5, board: "both", categories: "wins,saves,svPct,gaa,shutouts" };
 const tgv = { goalies: [{ goalie_id: 1, week: 4, weekly_gs: 2, weekly_toi_seconds: 7200, weekly_wins: 2, weekly_saves: 68, weekly_sv_pct: 0.97 }], league: [{ week: 4, avg_league_weekly_wins: 1, avg_league_weekly_saves: 40, avg_league_weekly_sv_pct: 0.9 }], weeks: [week] } as never;
 
 function edition(post: string, settings: Record<string, unknown>, result: { state: string; reasons?: string[]; evidence: unknown; data: unknown; teams?: string[] }) {
@@ -96,23 +96,24 @@ test("goalie of the period: Category Counts and the TGV grade stay under their o
   await download(page);
 });
 
-test("goalie of the period: six goalies and five categories fit the square, with grades and a line per goalie", async ({ page }) => {
+test("goalie of the period: Best and Worst fit the square at five rows a side and five categories", async ({ page }) => {
   await install(page);
-  // The longest real name shape, five default categories, four weeks of TGV with a gap in week 2.
-  const names = ["Ukko-Pekka Luukkonen", "Sergei Bobrovsky", "Andrei Vasilevskiy", "Connor Hellebuyck", "Juuse Saros", "Igor Shesterkin"];
-  const fit = Array.from({ length: 6 }, (_, index) => ({ id: index + 1, date: `2026-10-${19 + index}`, homeTeamId: teamsInfo.NJD.id, awayTeamId: teamsInfo.NYR.id }));
+  // Twelve goalies, so the sides do not overlap; long real name shapes; four weeks of TGV with a gap in week 2.
+  const names = ["Ukko-Pekka Luukkonen", "Sergei Bobrovsky", "Andrei Vasilevskiy", "Connor Hellebuyck", "Juuse Saros", "Igor Shesterkin", "Filip Gustavsson", "Jacob Markstrom", "Stuart Skinner", "Thatcher Demko", "Jeremy Swayman", "Linus Ullmark"];
+  const fit = names.map((_, index) => ({ id: index + 1, date: `2026-10-${19 + index % 7}`, homeTeamId: teamsInfo.NJD.id, awayTeamId: teamsInfo.NYR.id }));
   const rows = fit.flatMap(game => [{ gameId: game.id, date: game.date, team: "NJD" }, { gameId: game.id, date: game.date, team: "NYR" }]);
-  const stats = rows.map((game, index) => stat(index % 6 + 1, game.team, game.gameId, game.date, { name: names[index % 6], wins: index % 3 === 0 ? 1 : 0, saves: 20 + index, shotsAgainst: 24 + index, goalsAgainst: index % 4 }));
-  const weeks = [1, 2, 3, 4].map(number => ({ week: number, start: `2026-10-0${number}`, end: `2026-10-0${number}` }));
-  const season = { weeks: [...weeks.slice(0, 3), week], league: [1, 2, 3, 4].map(number => ({ week: number, avg_league_weekly_wins: 1, avg_league_weekly_saves: 40, avg_league_weekly_sv_pct: 0.9 })),
-    goalies: names.flatMap((_, goalie) => [1, 3, 4].map(number => ({ goalie_id: goalie + 1, week: number, weekly_gs: 2, weekly_toi_seconds: 7200, weekly_wins: goalie % 3, weekly_saves: 30 + goalie * 5, weekly_sv_pct: 0.88 + goalie * 0.01 }))) } as never;
+  const stats = rows.map((game, index) => stat(index % 12 + 1, game.team, game.gameId, game.date, { name: names[index % 12], wins: index % 3 === 0 ? 1 : 0, saves: 20 + index, shotsAgainst: 24 + index, goalsAgainst: index % 4 }));
+  const weeks = [1, 2, 3].map(number => ({ week: number, start: `2026-10-0${number}`, end: `2026-10-0${number}` }));
+  const season = { weeks: [...weeks, week], league: [1, 2, 3, 4].map(number => ({ week: number, avg_league_weekly_wins: 1, avg_league_weekly_saves: 40, avg_league_weekly_sv_pct: 0.9 })),
+    goalies: names.flatMap((_, goalie) => [1, 3, 4].map(number => ({ goalie_id: goalie + 1, week: number, weekly_gs: 2, weekly_toi_seconds: 7200, weekly_wins: goalie % 3, weekly_saves: 30 + goalie * 3, weekly_sv_pct: 0.88 + goalie * 0.005 }))) } as never;
   const result = buildGoaliePeriod({ settings: periodSettings, period: weekPeriod(week, "2026-10-30"), appearances: stats, reported: rows, scheduled: fit, tgv: season });
   await page.route("**/api/v1/social-share/posts/**", route => route.fulfill({ json: edition("goalie-period", periodSettings, result) }));
   await page.goto("/social-share/posts?post=goalie-period&week=4");
   const card = page.getByTestId("goalie-period-card");
-  await expect(card).toBeVisible();
-  await expect(page.getByTestId("goalie-period-row")).toHaveCount(6);
+  await expect(page.getByTestId("board-best").getByTestId("goalie-period-row")).toHaveCount(5);
+  await expect(page.getByTestId("board-worst").getByTestId("goalie-period-row")).toHaveCount(5);
   await expect(page.getByTestId("goalie-period-row").first().locator("svg[data-sparkline]")).toBeVisible();
+  await expect(card).toContainText("W 2/2 = better than league average in 2 of 2 starts.");
   // The post body clips overflow, so this is the check that nothing was cut off.
   const overflow = await card.evaluate(element => { const body = element.parentElement!; return { client: body.clientHeight, scroll: body.scrollHeight, card: element.getBoundingClientRect().bottom - body.getBoundingClientRect().bottom, wide: element.scrollWidth - element.clientWidth }; });
   expect(overflow.scroll).toBeLessThanOrEqual(overflow.client);
@@ -140,17 +141,21 @@ test("goalie of the period: a game without one labeled starter cannot export", a
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
 });
 
-test("GSAx: NST model, strength, lag and the unavailable FHFH model are on the card", async ({ page }) => {
+test("GSAx: Best and Worst, NST model and through-date, with the unavailable FHFH model on the card", async ({ page }) => {
   await install(page);
   const nstGames = appearances.filter(row => row.date <= days[2]).map(row => ({ goalieId: row.goalieId, date: row.date, toiSeconds: 3600, xgAgainst: 3, goalsAgainst: row.goalsAgainst, shotsAgainst: row.shotsAgainst }));
-  const result = buildGoalieGsax({ appearances, nstGames, strength: "all", window: 10, board: "best", minAppearances: 1, minCoverage: 90, reported: reported.filter(game => game.date <= days[2]), scheduled: scheduled.filter(game => game.date <= days[2]), fhfhRows: 0 });
-  const settings = { window: "10", strength: "all", board: "best", minAppearances: 1, minCoverage: 90 };
+  const result = buildGoalieGsax({ appearances, nstGames, strength: "all", window: "week", weeks: [week], board: "both", minAppearances: 1, minCoverage: 90, reported: reported.filter(game => game.date <= days[2]), scheduled: scheduled.filter(game => game.date <= days[2]), fhfhRows: 0 });
+  const settings = { window: "week", strength: "all", board: "both", minAppearances: 1, minCoverage: 90 };
   await page.route("**/api/v1/social-share/posts/**", route => route.fulfill({ json: edition("goalie-gsax", settings, result) }));
-  await page.goto("/social-share/posts?post=goalie-gsax&minAppearances=1");
+  await page.goto("/social-share/posts?post=goalie-gsax");
   const square = page.getByTestId("share-square");
-  await expect(square).toContainText("NST model, All situations.");
-  await expect(square).toContainText("1 day behind NHL.com");
+  await expect(page.getByTestId("board-best")).toBeVisible();
+  await expect(page.getByTestId("board-worst")).toBeVisible();
+  await expect(square).toContainText("NST model, All situations. NST through 2026-10-21");
+  await expect(square).toContainText("Week 4");
   await expect(square).toContainText("FHFH xG model: unavailable this season");
   await expect(square).not.toContainText(/gsaa/i);
+  const clipped = await page.getByTestId("board-best").evaluate(element => { const body = element.closest("[class*=postBody]")!; return body.scrollHeight - body.clientHeight; });
+  expect(clipped).toBeLessThanOrEqual(0);
   await download(page);
 });

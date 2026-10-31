@@ -9,7 +9,7 @@ import type { GoalieAppearance } from "./shared/goalieLedger";
 const date = (index: number) => `2026-10-${String(index + 1).padStart(2, "0")}`;
 const appearance = (goalieId: number, index: number, values: Partial<GoalieAppearance> = {}): GoalieAppearance => ({ goalieId, name: `G${goalieId}`, gameId: goalieId * 100 + index, date: date(index), team: "NJD", opponent: null, home: null, started: true, wins: 0, losses: 0, otLosses: 0, saves: 25, shotsAgainst: 28, goalsAgainst: 3, toiSeconds: 3600, shutouts: 0, qualityStart: 0, ...values });
 const nst = (goalieId: number, index: number, values: Partial<NstGoalieGame> = {}): NstGoalieGame => ({ goalieId, date: date(index), toiSeconds: 3600, xgAgainst: 3, goalsAgainst: 2, shotsAgainst: 28, ...values });
-const base: GoalieGsaxInput = { appearances: [], nstGames: [], strength: "all", window: 10, board: "best", minAppearances: 3, minCoverage: 90, reported: [], scheduled: [], fhfhRows: 0 };
+const base: GoalieGsaxInput = { appearances: [], nstGames: [], strength: "all", window: 10, weeks: [], board: "both", minAppearances: 3, minCoverage: 90, reported: [], scheduled: [], fhfhRows: 0 };
 const three = (goalieId: number) => [0, 1, 2].map(index => appearance(goalieId, index));
 
 describe("NST-model GSAx", () => {
@@ -78,7 +78,7 @@ describe("NST-model GSAx", () => {
   it("ranks ties together and can sort from the bottom", () => {
     const input = { ...base, appearances: [...three(1), ...three(2), ...three(3)], nstGames: [1, 2].flatMap(id => [0, 1, 2].map(index => nst(id, index, { xgAgainst: 2.1, goalsAgainst: 2 }))).concat([0, 1, 2].map(index => nst(3, index, { xgAgainst: 1, goalsAgainst: 2 }))) };
     expect(buildGoalieGsax(input).data!.rows.map(row => [row.goalieId, row.rank])).toEqual([[1, 1], [2, 1], [3, 3]]);
-    expect(buildGoalieGsax({ ...input, board: "worst" }).data!.rows.map(row => [row.goalieId, row.rank])).toEqual([[3, 1], [1, 2], [2, 2]]);
+    expect(buildGoalieGsax({ ...input, board: "worst" }).data!.rows.map(row => [row.goalieId, row.worstRank])).toEqual([[3, 1], [1, 2], [2, 2]]);
   });
   it("is missing with no NST rows, and partial on a schedule gap", () => {
     expect(buildGoalieGsax({ ...base, appearances: three(1) })).toMatchObject({ state: "missing", data: null });
@@ -93,26 +93,86 @@ describe("NST-model GSAx", () => {
     expect(evidence.sources.find(source => source.name === "FHFH xG model")).toMatchObject({ state: "missing", reasons: [data!.fhfhModel.reason] });
   });
   it("has visible defaults", () => {
-    expect(parseShareSettings(goalieGsaxModule, {})).toEqual({ window: "10", strength: "all", board: "best", minAppearances: 3, minCoverage: 90 });
+    expect(parseShareSettings(goalieGsaxModule, {})).toEqual({ window: "week", strength: "all", board: "both", minAppearances: 1, minCoverage: 90 });
+    for (const window of ["5", "10", "std"]) expect(parseShareSettings(goalieGsaxModule, { window }).window).toBe(window);
+  });
+});
+
+describe("the last completed matchup week", () => {
+  const weeks = [{ week: 1, start: "2026-10-01", end: "2026-10-03" }, { week: 2, start: "2026-10-04", end: "2026-10-10" }];
+  const input = { ...base, window: "week" as const, weeks, minAppearances: 1 };
+  it("uses that week's appearances only, at a minimum of one", () => {
+    const { data, evidence } = buildGoalieGsax({ ...input, appearances: [...three(1), appearance(1, 4), appearance(2, 9)], nstGames: [...[0, 1, 2, 4].map(index => nst(1, index)), nst(2, 9)] });
+    expect(data).toMatchObject({ week: weeks[1], windowLabel: "Week 2, 2026-10-04 to 2026-10-10", nstThrough: "2026-10-10" });
+    expect(data!.rows.map(row => [row.goalieId, row.appearances, row.lastDate])).toEqual([[1, 1, "2026-10-05"], [2, 1, "2026-10-10"]]);
+    expect(evidence.sample).toContain("NST through 2026-10-10");
+  });
+  it("stops at the last week NST fully covers, so a lag gives an older complete week", () => {
+    const { data } = buildGoalieGsax({ ...input, appearances: [...three(1), appearance(1, 4), appearance(1, 9)], nstGames: [...[0, 1, 2, 4].map(index => nst(1, index))] });
+    expect(data).toMatchObject({ week: weeks[0], windowLabel: "Week 1, 2026-10-01 to 2026-10-03", nstThrough: "2026-10-05", lagDays: 5 });
+    expect(data!.rows[0]).toMatchObject({ appearances: 3, covered: 3 });
+  });
+  it("labels a week still under way when none is complete", () => {
+    const { data } = buildGoalieGsax({ ...input, appearances: [appearance(1, 0)], nstGames: [nst(1, 0)] });
+    expect(data).toMatchObject({ week: weeks[0], windowLabel: "Week 1, 2026-10-01 to 2026-10-03, through 2026-10-01" });
+  });
+  it("is unaffected by a schedule gap outside the week", () => {
+    const gap = buildGoalieGsax({ ...input, appearances: three(1), nstGames: [0, 1, 2].map(index => nst(1, index)), scheduled: [{ id: 5, date: "2026-09-30", homeTeamId: 1, awayTeamId: 2 }] });
+    expect(gap.state).toBe("ready");
+    expect(buildGoalieGsax({ ...input, appearances: three(1), nstGames: [0, 1, 2].map(index => nst(1, index)), scheduled: [{ id: 5, date: "2026-10-02", homeTeamId: 1, awayTeamId: 2 }] }).state).toBe("partial");
+  });
+  it("keeps the existing windows selectable", () => {
+    const appearances = Array.from({ length: 6 }, (_, index) => appearance(1, index)), nstGames = appearances.map((_, index) => nst(1, index));
+    expect(buildGoalieGsax({ ...base, appearances, nstGames, window: 5 }).data!.rows[0]).toMatchObject({ appearances: 5 });
+    expect(buildGoalieGsax({ ...base, appearances, nstGames, window: null }).data!).toMatchObject({ windowLabel: "Season to date", rows: [{ appearances: 6 }] });
   });
 });
 
 describe("GSAx card", () => {
   const render = async (data: GoalieGsaxData) => {
     const Card = await goalieGsaxModule.card();
-    return renderToStaticMarkup(createElement(Card, { data, logos: {}, settings: {} as never, snapshot: {} as never }));
+    return new DOMParser().parseFromString(renderToStaticMarkup(createElement(Card, { data, logos: {}, settings: {} as never, snapshot: {} as never })), "text/html");
+  };
+  const many = (count: number) => {
+    const appearances = Array.from({ length: count }, (_, index) => appearance(index + 1, 0));
+    return buildGoalieGsax({ ...base, minAppearances: 1, appearances, nstGames: appearances.map((row, index) => nst(row.goalieId, 0, { xgAgainst: 8 - index, goalsAgainst: 3 })) });
   };
   const ready = buildGoalieGsax({ ...base, appearances: [...three(1), appearance(1, 3)], nstGames: [0, 1, 2].map(index => nst(1, index, { xgAgainst: 2, goalsAgainst: 3 })) }).data!;
   it("prints the model, strength, sign, lag, sample and the FHFH model's state", async () => {
-    const html = await render(ready);
-    expect(html).toContain("NST model, All situations.");
-    expect(html).toContain("−3.00");
-    expect(html).toContain("through 2026-10-03, 1 day behind NHL.com (2026-10-04); later appearances not counted: 1");
-    expect(html).toContain("3/3");
-    expect(html).toContain("FHFH xG model: unavailable this season, 0 goalie games.");
-    expect(html).not.toMatch(/gsaa|probab|likely|will start/i);
+    const text = (await render(ready)).body.textContent!;
+    expect(text).toContain("NST model, All situations. NST through 2026-10-03, 1 day behind NHL.com (2026-10-04).");
+    expect(text).toContain("−3.00");
+    expect(text).toContain("Later appearances not counted: 1");
+    expect(text).toContain("NST 3/3");
+    expect(text).toContain("FHFH xG model: unavailable this season, 0 goalie games.");
+    expect(text).not.toMatch(/gsaa|probab|likely|will start/i);
+  });
+  it("makes no claim that GSAx beats SV% or GAA", async () => {
+    expect((await render(ready)).body.textContent).not.toMatch(/superior|better than (sv|gaa)|more accurate|truer|real measure/i);
+  });
+  it("shows Best and Worst side by side, with the sign setting each tile's colour and size its strength", async () => {
+    const root = await render(many(14).data!);
+    const tiles = (board: string) => [...root.querySelectorAll(`[data-board="${board}"] [data-testid="heat-tile"]`)];
+    expect(tiles("best")).toHaveLength(6);
+    expect(tiles("worst")).toHaveLength(6);
+    expect(tiles("best")[0].textContent).toBe("+5.00GSAx");
+    expect(tiles("best")[0].getAttribute("data-tone")).toBe("better");
+    expect(tiles("worst")[0].getAttribute("data-tone")).toBe("worse");
+    expect(Number(tiles("best")[0].getAttribute("data-alpha"))).toBeGreaterThan(Number(tiles("best")[3].getAttribute("data-alpha")));
+    expect(root.body.textContent).not.toContain("on both sides");
+  });
+  it("says so when a small pool puts a goalie on both sides", async () => {
+    expect((await render(many(3).data!)).body.textContent).toContain("Only 3 goalies qualified, so 3 appear on both sides.");
+  });
+  it("shares tied ranks on both boards", () => {
+    const appearances = [1, 2, 3].map(id => appearance(id, 0));
+    const { data } = buildGoalieGsax({ ...base, minAppearances: 1, appearances, nstGames: [nst(1, 0), nst(2, 0), nst(3, 0, { xgAgainst: 1 })] });
+    expect(data!.rows.map(row => [row.goalieId, row.rank, row.worstRank])).toEqual([[1, 1, 2], [2, 1, 2], [3, 3, 1]]);
+  });
+  it("asks the shell for shown goalies' team logos", () => {
+    expect(many(2).teams).toEqual(["NJD"]);
   });
   it("says why an empty pool is empty", async () => {
-    expect(await render(buildGoalieGsax({ ...base, minAppearances: 9, appearances: three(1), nstGames: [0, 1, 2].map(index => nst(1, index)) }).data!)).toContain("No goalie has 9 appearances at 90% NST coverage");
+    expect((await render(buildGoalieGsax({ ...base, minAppearances: 9, appearances: three(1), nstGames: [0, 1, 2].map(index => nst(1, index)) }).data!)).body.textContent).toContain("No goalie has 9 appearances at 90% NST coverage");
   });
 });

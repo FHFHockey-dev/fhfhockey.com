@@ -156,6 +156,41 @@ New spec tests: six goalies with an overflow assertion on the post body, and the
 5. **Real ties are almost absent.** Every shown goalie in R5 and R7 had 0 tied cells, so "=" will rarely appear.
 6. **An in-progress week grades against a partial average.** Week 5's league wins are .483 against about .83 for full weeks. Defaults avoid it, but choosing the current week on purpose shows an early grade.
 
+## Follow-up from TJ's second review: Best and Worst
+
+TJ could not read the bare numbers and supplied a layout to emulate. **Layout only; none of its wording or claims is copied.** The side heads read "Best" and "Worst". This supersedes the grade columns above for the card; the per-goalie season counts stay in `data` and the alt text.
+
+**`goalie-period`** defaults to Best and Worst side by side, 5 rows a side. "Best only" and "Worst only" stay selectable.
+- **Headline:** games net in a heat tile captioned "games net". Colour strength scales with size against the largest value shown; the sign sets the colour, so a good goalie in a small Worst column stays green.
+- **Tiles:** `W 2/2  SV 2/2  SV% 2/2  GAA 2/2  SO 0/2` read as better than league in N of M starts. **Green or red needs a majority of compared starts**, so 1/2 is neutral and 0/2 shutouts is red. M excludes unavailable starts. Ties stay out of the tile, and in `data` and the alt text.
+- **Weeks:** week-level counts left the tiles and stay in `data` and the alt text, with a compact "week net" in the row.
+- **TGV:** per-goalie grade cells do not fit a half-width row, so I used the fallback: a league-wide five-column strip of goalies per grade with each grade's points, and in each row the selected grade chip, season points and the line, all under "TGV grade (existing method)". A month's chip shows each week's first letter. The legend says Average cannot occur with the three default stats. Ranking stays Category Counts.
+- **Small pools:** a goalie can appear on both sides only with the note "Only N goalies qualified, so N appear on both sides." When a tie runs past the rows shown, the side says "3 more tied at rank 1".
+
+**`goalie-gsax`** uses the same layout, 6 rows a side, with the window defaulting to the last completed matchup week and minimum appearances to 1. L5, L10 and season to date stay selectable. The card states the NST through-date and makes no claim against SV% or GAA.
+- **The default week is the last one NST fully covers**, so a lagging NST shows an older complete week rather than part of a newer one. Before any week completes, it labels the one under way "through <date>".
+- **A schedule gap outside that week no longer makes it partial.** Other windows still prove the whole season.
+- **Minimum 1 lets one relief appearance reach a board.** The row shows starts, relief, TOI and SA, so it is visible, but TJ may want a higher floor.
+
+**Headshots: team logos stay.** Read-only check: `lib/socialShare` and `components/SocialShare` have no headshot path. The only inlined images are `teamLogoDataUrl`, which draws same-origin `/teamLogos/*.png` to a canvas. Headshot URLs in the tables are remote, so inlining them needs a same-origin proxy, which is a new source. Logos show each goalie's latest team and come through `teams`, so the shell prepares them before export.
+
+**New files beyond my original list**, all this lane's and used only by these two posts: `lib/socialShare/modules/shared/goalieBoards.ts`, `components/SocialShare/modules/GoalieBoards.tsx` and `.module.scss`. No other lane reads or writes them. `cellTone` now needs a majority, and only this card uses it.
+
+**Fit: calculated, not rendered.** No browser run. About 744 available, as above.
+
+| `goalie-period`, 5 rows a side, 5 categories | Height (px) |
+| --- | --- |
+| Date and winner lines | 47 |
+| Side head | 27 |
+| 5 rows at 80 (a two-line detail, tiles, padding) | 400 |
+| "Showing 5 of N" line | 16 |
+| TGV strip | 50 |
+| Legend, 7 lines at 15 | 109 |
+| Gaps | 24 |
+| **Total** | **about 673, about 70 spare** |
+
+Half-width is 494: identity, TGV block and heat tile leave about 213 for the name, and tiles are about 97 wide. `goalie-gsax` totals about 530 at 6 rows. Both spec tests assert the post body does not overflow, so your run is the real check. Eight categories wrap to two tile rows and add about 25 a row, which **would not fit**; check it if TJ wants that setting. No new real reads were made for this change.
+
 ## Blockers
 
 None for building. Open: TJ's first real-output review (9.7) and the browser run of the spec.

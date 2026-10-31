@@ -1,24 +1,16 @@
 import type { SharePostCardProps } from "lib/socialShare/modules/contract";
-import { GOALIE_PERIOD_SHOWN, TGV_GRADES, TGV_LABEL, type GoaliePeriodData, type GoaliePeriodRow, type GoaliePeriodSettings, type TgvSeasonWeek } from "lib/socialShare/modules/goaliePeriod";
-import { categoryById, CATEGORY_COUNTS_LABEL, cellTone, type CellCounts } from "lib/socialShare/modules/shared/categoryCounts";
+import { goaliePeriodRanks, TGV_GRADES, TGV_LABEL, type GoaliePeriodData, type GoaliePeriodRow, type GoaliePeriodSettings, type TgvResult, type TgvSeasonWeek } from "lib/socialShare/modules/goaliePeriod";
+import { boardSides, bothSidesNote, largestShown } from "lib/socialShare/modules/shared/goalieBoards";
+import { categoryById, CATEGORY_COUNTS_LABEL, cellTone } from "lib/socialShare/modules/shared/categoryCounts";
 import { PostEmpty } from "./kit";
+import { GoalieBoards, GoalieIdent, HeatTile } from "./GoalieBoards";
 import styles from "./GoaliePeriodCard.module.scss";
 
-/* html-to-image does not carry class styles onto SVG children, so marks and lines set their colours as attributes. */
-const BETTER = "#00ff99", WORSE = "#ff6384", LINE = "#63D2F5", SELECTED = "#ffffff";
+/* html-to-image does not carry class styles onto SVG children, so the line sets its colours as attributes. */
+const LINE = "#63D2F5", SELECTED = "#ffffff";
 const signed = (value: number) => value > 0 ? `+${value}` : value < 0 ? `−${Math.abs(value)}` : "0";
-const rankOf = (data: GoaliePeriodData, row: GoaliePeriodRow) => data.board === "worst" ? row.categoryCounts.worstRank : row.categoryCounts.rank;
 
-const Mark = ({ kind }: { kind: "better" | "worse" }) => <svg className={styles.mark} width="10" height="9" viewBox="0 0 10 9" aria-hidden="true"><path d={kind === "better" ? "M5 0L10 9H0Z" : "M5 9L10 0H0Z"} fill={kind === "better" ? BETTER : WORSE} /></svg>;
-function Tile({ counts, label }: { counts: CellCounts; label: string }) {
-  const tone = cellTone(counts);
-  if (tone === "none") return <span className={styles.tile} data-tone="none" aria-label={`${label}: not compared`}>—</span>;
-  return <span className={styles.tile} data-tone={tone} aria-label={`${label}: ${counts.better} better than league, ${counts.worse} worse${counts.tied ? `, ${counts.tied} level` : ""}`}>
-    <span><Mark kind="better" />{counts.better}</span><span><Mark kind="worse" />{counts.worse}</span>{counts.tied > 0 && <span data-level="">={counts.tied}</span>}
-  </span>;
-}
-
-const SPARK_WIDTH = 92, SPARK_HEIGHT = 44, SPARK_PAD = 6, POINTS_LOW = 1, POINTS_HIGH = 20;
+const SPARK_WIDTH = 78, SPARK_HEIGHT = 40, SPARK_PAD = 5, POINTS_LOW = 1, POINTS_HIGH = 20;
 /** Weekly grade points on one fixed scale for every goalie. Lines join consecutive graded weeks only: a gap is a break, never 0. */
 function GradeLine({ series, name }: { series: TgvSeasonWeek[]; name: string }) {
   const x = (index: number) => series.length === 1 ? SPARK_WIDTH / 2 : SPARK_PAD + index * (SPARK_WIDTH - 2 * SPARK_PAD) / (series.length - 1);
@@ -36,60 +28,55 @@ function GradeLine({ series, name }: { series: TgvSeasonWeek[]; name: string }) 
       : <circle key={`p${week.week}`} cx={x(index)} cy={y(week.points)} r={week.selected ? 3.5 : 2.2} fill={week.selected ? SELECTED : LINE} data-point="" />)}
   </svg>;
 }
+/** The selected week's grade, or for a month each assigned week's first letter. */
+function selectedGrade(tgv: TgvResult) {
+  const selected = tgv.series.filter(week => week.selected);
+  if (selected.length === 1) return selected[0].ranking ?? "No grade";
+  return selected.map(week => week.ranking?.[0] ?? "–").join(" ");
+}
 
-export default function GoaliePeriodCard({ data }: SharePostCardProps<GoaliePeriodSettings, GoaliePeriodData>) {
+export default function GoaliePeriodCard({ data, logos }: SharePostCardProps<GoaliePeriodSettings, GoaliePeriodData>) {
   const { period } = data, noun = period.kind === "month" ? "Month" : "Week";
   if (!data.ranked) return <PostEmpty>No goalie has {data.minStarts} official starts in {period.label}{period.kind === "month" ? ". Choose a month in the settings" : ""}</PostEmpty>;
-  const ranked = data.rows.filter(row => rankOf(data, row) !== null), shown = ranked.slice(0, GOALIE_PERIOD_SHOWN);
-  const winners = ranked.filter(row => data.winners.includes(row.goalieId)), many = data.categories.length > 6 || undefined;
-  const countColumns = { gridTemplateColumns: `44px repeat(${data.categories.length}, minmax(0, 1fr)) 70px` };
-  const lastWeek = period.weeks[period.weeks.length - 1]?.week;
-  const selectedWord = period.kind === "month" ? "this month's weeks" : "this week";
-  return <div className={styles.card} data-testid="goalie-period-card" data-many={many}>
-    <header className={styles.lead}>
-      <p>{data.board === "worst" ? `Worst of the ${noun}` : `Goalie of the ${noun}`}{winners.length > 1 ? `: ${winners.length} tied` : ""}, {period.label}</p>
-      <h3 data-testid="goalie-period-winners">{winners.map(row => row.name ?? row.goalieId).join(" · ")}</h3>
-    </header>
-    <div className={styles.head}>
-      <span className={styles.rankHead}>RK</span><span>GOALIE</span>
-      <div data-testid="category-counts">
-        <h4 className={styles.method}>{CATEGORY_COUNTS_LABEL}</h4>
-        <div className={styles.counts} style={countColumns}><span />{data.categories.map(id => <span key={id} className={styles.columnHead}>{categoryById(id).label}</span>)}<span className={styles.columnHead}>NET</span></div>
-      </div>
-      <div data-testid="tgv-existing">
-        <h4 className={styles.method}>{TGV_LABEL}</h4>
-        <div className={styles.grades}>{TGV_GRADES.map(grade => <span key={grade} className={styles.columnHead}>{grade}</span>)}<span className={styles.columnHead}>PTS</span><span className={styles.columnHead}>BY WEEK</span></div>
-      </div>
-    </div>
-    {shown.map(row => {
-      const counts = row.categoryCounts, name = row.name ?? String(row.goalieId), selected = new Set(row.tgv.series.filter(week => week.selected).map(week => week.ranking));
-      return <div key={row.goalieId} className={styles.row} data-testid="goalie-period-row">
-        <span className={styles.rank}>{rankOf(data, row)}</span>
-        <span className={styles.goalie}><b>{name}</b><small>{row.teams.join(", ")} · {counts.starts} starts · {counts.relief} relief</small></span>
-        <div className={styles.counts} style={countColumns} data-group="category-counts">
-          <span className={styles.unit}>Games</span>
-          {counts.byCategory.map(entry => <Tile key={entry.category} counts={entry.game} label={`${categoryById(entry.category).label}, games`} />)}
-          <span className={styles.net}>{signed(counts.gameNet)} <small>of {counts.game.compared}</small></span>
-          <span className={styles.unit}>Weeks</span>
-          {counts.byCategory.map(entry => <Tile key={entry.category} counts={entry.week} label={`${categoryById(entry.category).label}, weeks`} />)}
-          <span className={styles.net}>{signed(counts.weekNet)} <small>of {counts.week.compared}</small></span>
-        </div>
-        <div className={styles.grades} data-group="tgv">
+  const { sides, onBoth } = boardSides(data.rows, goaliePeriodRanks, data.board);
+  const winners = data.rows.filter(row => data.winners.includes(row.goalieId)), largest = largestShown(sides, row => row.categoryCounts.gameNet);
+  const strip = data.tgvLeague, plural = strip !== null && strip.weeks.length > 1, smallPool = bothSidesNote(onBoth.length, data.ranked);
+  const renderRow = (row: GoaliePeriodRow, rank: number) => {
+    const counts = row.categoryCounts, name = row.name ?? String(row.goalieId), team = row.teams[row.teams.length - 1];
+    return <div className={styles.goalie} data-testid="goalie-period-row">
+      <div className={styles.top}>
+        <GoalieIdent rank={rank} team={team} logo={team ? logos[team] : null} name={name} detail={`${row.teams.join(", ")} · ${counts.starts} starts · ${counts.relief} relief · week net ${signed(counts.weekNet)}`} />
+        <div className={styles.tgv} data-group="tgv">
           {row.tgv.counts ? <>
-            {TGV_GRADES.map(grade => <span key={grade} className={styles.grade} data-grade={grade} data-selected={selected.has(grade) || undefined} data-empty={row.tgv.counts![grade] === 0 || undefined}>{row.tgv.counts![grade]}</span>)}
-            <span className={styles.points}>{row.tgv.points}</span>
+            <span className={styles.chip}><span className={styles.grade} data-selected-grade="">{selectedGrade(row.tgv)}</span><small>{row.tgv.points} pts</small></span>
             <GradeLine series={row.tgv.series} name={name} />
           </> : <span className={styles.unavailable}>Unavailable</span>}
         </div>
-      </div>;
-    })}
+        <span data-group="category-counts"><HeatTile value={counts.gameNet} text={signed(counts.gameNet)} caption="games net" largest={largest} /></span>
+      </div>
+      <div className={styles.tiles} data-group="category-counts" data-many={data.categories.length > 6 || undefined}>
+        {counts.byCategory.map(entry => <span key={entry.category} className={styles.tile} data-tone={cellTone(entry.game)} data-category={entry.category}>{categoryById(entry.category).label} {entry.game.compared ? `${entry.game.better}/${entry.game.compared}` : "—"}</span>)}
+      </div>
+    </div>;
+  };
+  return <div className={styles.card} data-testid="goalie-period-card">
+    <header className={styles.lead}>
+      <p>{period.label}</p>
+      <h3>{data.board === "worst" ? `Worst of the ${noun}` : `Goalie of the ${noun}`}: <span data-testid="goalie-period-winners">{winners.map(row => row.name ?? row.goalieId).join(" · ")}</span></h3>
+    </header>
+    <GoalieBoards sides={sides} rowKey={row => row.goalieId} renderRow={renderRow} />
+    <section className={styles.strip} data-testid="tgv-existing">
+      <h4>{TGV_LABEL}: {plural ? "goalie weeks" : "goalies"} at each grade, league-wide{strip ? `, week${plural ? "s" : ""} ${strip.weeks.join(", ")}` : ""}</h4>
+      {strip ? <div className={styles.stripCells}>{TGV_GRADES.map(grade => <span key={grade} className={styles.stripCell} data-strip-grade={grade}><small>{grade}</small><b>{strip.counts[grade]}</b><small>{strip.points[grade]} pts</small></span>)}</div>
+        : <p className={styles.stripEmpty}>Unavailable</p>}
+    </section>
     <div className={styles.legend}>
-      <p data-group="category-counts"><b>{CATEGORY_COUNTS_LABEL}.</b> <Mark kind="better" /> better than the league average, <Mark kind="worse" /> worse, = level (shown only when it happens). Games: each official start against that week&apos;s average. Weeks: the goalie&apos;s week totals against the week&apos;s average. Lower GAA already counts as better, so every category reads the same way. NET is better minus worse, out of the comparisons made. Rank is games NET, then weeks NET, then share of game comparisons better.</p>
-      <p data-group="tgv"><b>{TGV_LABEL}.</b> Weeks at each grade through week {lastWeek}, outlined for {selectedWord}. PTS adds 20, 10, 5, 3 or 1 a week. The line plots those points week by week, white at {selectedWord}; a break is a week with no grade. A separate method: these grades are not applied to Category Counts.</p>
+      <p data-group="category-counts" data-testid="category-counts"><b>Ranked by {CATEGORY_COUNTS_LABEL}.</b> W 2/2 = better than league average in 2 of 2 starts. Lower GAA counts as better. Green or red means most starts were better or worse. Games net = better results minus worse results across those tiles; week net does the same for the goalie&apos;s whole week. Rank: games net, then week net, then share better. Equal goalies share a rank.</p>
+      <p data-group="tgv"><b>{TGV_LABEL}.</b> In each row: this {noun.toLowerCase()}&apos;s grade{plural ? " by week (first letter)" : ""}, season points and week-by-week points, white at {plural ? "these weeks" : "this week"}; a break is a week with no grade. Average cannot occur with this method&apos;s three default stats. These grades are not applied to {CATEGORY_COUNTS_LABEL}.</p>
       <p>
-        {period.weeks.map(week => `Week ${week.week}: ${week.poolGoalies} goalies, ${week.officialStarts} starts`).join(" · ")}. Unavailable comparisons: {data.unavailableCells}.
-        {data.reliefOnly.length ? ` Relief-only, not compared: ${data.reliefOnly.map(goalie => `${goalie.name ?? goalie.goalieId} (W${goalie.weeks.join(", W")})`).join(", ")}.` : ""}
-        {ranked.length > shown.length ? ` Showing ${shown.length} of ${ranked.length} ranked goalies.` : ""}
+        {period.weeks.map(week => `Week ${week.week}: ${week.poolGoalies} goalies, ${week.officialStarts} starts`).join(" · ")}. Results not comparable: {data.unavailableCells}.
+        {data.reliefOnly.length ? ` Relief-only, not compared: ${data.reliefOnly.length}.` : ""}
+        {smallPool ? ` ${smallPool}` : ""}
       </p>
     </div>
   </div>;

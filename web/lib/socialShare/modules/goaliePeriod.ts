@@ -1,8 +1,10 @@
-import { calculateWeeklyRanking, isGoalieWeekEligible } from "components/GoaliePage/goalieCalculations";
+import { calculateWeeklyRanking, isGoalieWeekEligible, rankingPoints } from "components/GoaliePage/goalieCalculations";
 import type { GoalieWeeklyAggregate, LeagueWeeklyAverage, NumericGoalieStatKey, Ranking, StatColumn } from "components/GoaliePage/goalieTypes";
+import { teamsInfo } from "lib/teamsInfo";
 import { defineShareModule, type SharePostLoadResult } from "./contract";
 import { reconcileSchedule, type ScheduledGame } from "./creaseShift";
 import { buildWeekLedgers, CATEGORIES, categoryById, CATEGORY_COUNTS_LABEL, DEFAULT_CATEGORY_IDS, defaultMonth, defaultWeek, monthPeriod, periodGoalies, rankPeriodGoalies, weekPeriod, type CategoryId, type CellCounts, type MatchupWeek, type PeriodGoalie, type SharePeriod } from "./shared/categoryCounts";
+import { BOARD_FIELD_OPTIONS, boardChoice, boardSides, type BoardChoice } from "./shared/goalieBoards";
 import { teamStartShare, type CompletedTeamGame, type GoalieAppearance } from "./shared/goalieLedger";
 
 /** Goalie of the Week and Month, with best and worst (SS 9.0), by Category Counts. TGV grades sit beside it under their own label. */
@@ -26,13 +28,16 @@ export type TgvResult = {
   /** Weeks with a row that the existing method leaves unclassified. */
   unclassified: number; series: TgvSeasonWeek[];
 };
+export type TgvLeagueStrip = { label: typeof TGV_LABEL; counts: Record<Ranking, number>; points: Record<Ranking, number>; unclassified: number; weeks: number[] };
 export type GoaliePeriodRow = { goalieId: number; name: string | null; teams: string[]; categoryCounts: PeriodGoalie; tgv: TgvResult };
 export type GoaliePeriodWeek = MatchupWeek & { poolGoalies: number; officialStarts: number };
 export type GoaliePeriodData = {
-  method: typeof CATEGORY_COUNTS_LABEL; board: "best" | "worst"; categories: CategoryId[]; minStarts: number;
+  method: typeof CATEGORY_COUNTS_LABEL; board: BoardChoice; categories: CategoryId[]; minStarts: number;
   period: Pick<SharePeriod, "kind" | "key" | "label" | "inProgress" | "through" | "gameFrom" | "gameTo"> & { weeks: GoaliePeriodWeek[] };
-  /** Best or worst, ordered by that board's rank, then everyone unranked. */
+  /** Ordered by the chosen board's rank, then everyone unranked. `winners` are that board's rank 1, or Best's when both show. */
   rows: GoaliePeriodRow[]; winners: number[];
+  /** League-wide grade counts for the period's weeks, by the existing method; null when TGV could not be read. */
+  tgvLeague: TgvLeagueStrip | null;
   ranked: number; unavailableCells: number; reliefOnly: { goalieId: number; name: string | null; weeks: number[] }[];
 };
 
@@ -86,6 +91,21 @@ export function tgvSeason(goalieId: number, tgv: TgvRows | null, selected: Reado
   return { label: TGV_LABEL, state: "ready", counts, points, unclassified, series };
 }
 
+/** Every goalie-week in the period's weeks, graded as the existing method grades it. */
+export function tgvLeagueStrip(tgv: TgvRows | null, weeks: readonly MatchupWeek[]): TgvLeagueStrip | null {
+  if (!tgv) return null;
+  const counts: Record<Ranking, number> = { Elite: 0, Good: 0, Average: 0, Bad: 0, Abysmal: 0 };
+  let unclassified = 0;
+  for (const week of weeks) {
+    const league = tgv.league.find(entry => entry.week === week.week);
+    for (const row of tgv.goalies.filter(entry => entry.week === week.week)) {
+      if (league && isGoalieWeekEligible(row)) counts[calculateWeeklyRanking(row, league, TGV_STAT_KEYS, TGV_STAT_COLUMNS).ranking]++;
+      else unclassified++;
+    }
+  }
+  return { label: TGV_LABEL, counts, points: { ...rankingPoints }, unclassified, weeks: weeks.map(week => week.week) };
+}
+
 export type GoaliePeriodInput = {
   settings: GoaliePeriodSettings; period: SharePeriod; appearances: readonly GoalieAppearance[]; reported: readonly CompletedTeamGame[]; scheduled: readonly ScheduledGame[];
   /** Null when the existing method's views could not be read; it then reads as unavailable and never as a Category Counts value. */
@@ -96,14 +116,15 @@ export function buildGoaliePeriod(input: GoaliePeriodInput): SharePostLoadResult
   const schedule = reconcileSchedule(input.scheduled, input.reported);
   const unresolved = [...new Set(schedule.games.map(game => game.team))].flatMap(team => teamStartShare(team, schedule.games, input.appearances, null).unresolvedGames.map(gameId => `${team}:${gameId}`));
   const { ledgers, unassigned } = buildWeekLedgers(period.touchedWeeks, input.appearances, categories);
-  const minStarts = period.kind === "month" ? settings.minStartsMonth : settings.minStartsWeek, board = settings.board === "worst" ? "worst" : "best";
+  const minStarts = period.kind === "month" ? settings.minStartsMonth : settings.minStartsWeek, board = boardChoice(settings.board);
   const goalies = rankPeriodGoalies(periodGoalies(ledgers, period, categories), minStarts);
   const selectedWeeks = new Set(period.cellWeeks.map(week => week.week));
   const boardRank = (row: PeriodGoalie) => board === "worst" ? row.worstRank : row.rank;
   const rows = goalies.filter(row => row.starts > 0).sort((a, b) => (boardRank(a) ?? Infinity) - (boardRank(b) ?? Infinity) || b.starts - a.starts || a.goalieId - b.goalieId)
     .map((row): GoaliePeriodRow => ({ goalieId: row.goalieId, name: row.name, teams: row.teams, categoryCounts: row,
       tgv: tgvSeason(row.goalieId, input.tgv, selectedWeeks) }));
-  const ranked = rows.filter(row => boardRank(row.categoryCounts) !== null);
+  const ranked = rows.filter(row => row.categoryCounts.rank !== null);
+  const shownTeams = boardSides(rows, goaliePeriodRanks, board).sides.flatMap(side => side.entries.map(({ row }) => row.teams[row.teams.length - 1]));
   const reasons = [
     ...schedule.missing ? [`${schedule.missing} of ${schedule.expected} scheduled team games in this period's weeks have no reported result.`] : [],
     ...unresolved.length ? [`Team games in this period's weeks lacking exactly one labeled starter: ${unresolved.length}.`] : [],
@@ -115,11 +136,11 @@ export function buildGoaliePeriod(input: GoaliePeriodInput): SharePostLoadResult
   const relieved = goalies.filter(row => row.reliefOnlyWeeks.length);
   const state = reasons.length ? "partial" : "ready";
   return {
-    state, reasons,
+    state, reasons, teams: [...new Set(shownTeams)].filter(team => team in teamsInfo),
     data: {
       method: CATEGORY_COUNTS_LABEL, board, categories, minStarts,
       period: { kind: period.kind, key: period.key, label: period.label, inProgress: period.inProgress, through: period.through, gameFrom: period.gameFrom, gameTo: period.gameTo, weeks },
-      rows, winners: ranked.filter(row => boardRank(row.categoryCounts) === 1).map(row => row.goalieId), ranked: ranked.length,
+      rows, winners: ranked.filter(row => boardRank(row.categoryCounts) === 1).map(row => row.goalieId), ranked: ranked.length, tgvLeague: tgvLeagueStrip(input.tgv, period.cellWeeks),
       unavailableCells: goalies.reduce((total, row) => total + row.game.unavailable + row.week.unavailable, 0),
       reliefOnly: relieved.map(row => ({ goalieId: row.goalieId, name: row.name, weeks: row.reliefOnlyWeeks })),
     },
@@ -137,26 +158,24 @@ export function buildGoaliePeriod(input: GoaliePeriodInput): SharePostLoadResult
   };
 }
 
-/** Goalies shown on the card; the rest stay in the snapshot and are counted on it. */
-export const GOALIE_PERIOD_SHOWN = 6;
+export const goaliePeriodRanks = { id: (row: GoaliePeriodRow) => row.goalieId, best: (row: GoaliePeriodRow) => row.categoryCounts.rank, worst: (row: GoaliePeriodRow) => row.categoryCounts.worstRank };
 const exactCounts = (counts: CellCounts) => `${counts.above} above, ${counts.below} below, ${counts.tied} tied`;
 const tgvAlt = (tgv: TgvResult) => tgv.counts ? `${tgv.label}: ${TGV_GRADES.map(grade => `${grade} ${tgv.counts![grade]}`).join(", ")}, ${tgv.points} points.` : `${tgv.label}: unavailable.`;
-const boardRankOf = (data: GoaliePeriodData, row: GoaliePeriodRow) => data.board === "worst" ? row.categoryCounts.worstRank : row.categoryCounts.rank;
 
 export const goaliePeriodModule = defineShareModule<GoaliePeriodSettings, GoaliePeriodData>({
-  id: "goalie-period", title: "Goalie of the Period", summary: "Goalie of the Week or Month, best or worst, by per-category counts above, below and tied with the league, beside existing TGV grades.", group: "goalies", basis: "observed",
+  id: "goalie-period", title: "Goalie of the Period", summary: "Goalie of the Week or Month, Best and Worst, by how often each goalie beat the league average category by category, beside existing TGV grades.", group: "goalies", basis: "observed",
   fields: [
     { id: "period", label: "Period", kind: "select", default: "week", options: [{ value: "week", label: "Matchup week" }, { value: "month", label: "Calendar month" }] },
     { id: "week", label: "Week (blank is the last completed)", kind: "number", default: null, min: 1, max: 30, step: 1 },
     { id: "month", label: "Month, YYYY-MM (blank is the last completed)", kind: "text", default: "", maxLength: 7 },
     { id: "minStartsWeek", label: "Min starts, week", kind: "number", default: 2, min: 1, max: 7, step: 1 },
     { id: "minStartsMonth", label: "Min starts, month", kind: "number", default: 5, min: 1, max: 20, step: 1 },
-    { id: "board", label: "Board", kind: "select", default: "best", options: [{ value: "best", label: "Best" }, { value: "worst", label: "Worst" }] },
+    { id: "board", label: "Board", kind: "select", default: "both", options: BOARD_FIELD_OPTIONS },
     { id: "categories", label: "Categories", kind: "text", default: DEFAULT_CATEGORY_IDS.join(","), maxLength: 80 },
   ],
   validate: validateGoaliePeriod,
   load: () => import("./goaliePeriod.sources").then(sources => sources.loadGoaliePeriod),
   card: () => import("components/SocialShare/modules/GoaliePeriodCard").then(card => card.default),
   hasRows: data => data.ranked > 0,
-  altText: (snapshot, data) => `FHFH ${data.board} goalies, ${data.period.label}, by ${CATEGORY_COUNTS_LABEL}. ${data.rows.filter(row => boardRankOf(data, row) !== null).slice(0, GOALIE_PERIOD_SHOWN).map(row => `${boardRankOf(data, row)}. ${row.name ?? row.goalieId}: ${row.categoryCounts.starts} starts, game cells ${row.categoryCounts.game.better} better, ${row.categoryCounts.game.worse} worse, ${row.categoryCounts.game.tied} tied. ${row.categoryCounts.byCategory.map(entry => `${categoryById(entry.category).label}: games ${exactCounts(entry.game)}; weeks ${exactCounts(entry.week)}`).join("; ")}. ${tgvAlt(row.tgv)}`).join(" ")} Not a forecast. ${snapshot.evidence.sample}.`,
+  altText: (snapshot, data) => `FHFH goalies, ${data.period.label}, by ${CATEGORY_COUNTS_LABEL}. ${boardSides(data.rows, goaliePeriodRanks, data.board).sides.map(side => `${side.kind === "best" ? "Best" : "Worst"}: ${side.entries.map(({ row, rank }) => `${rank}. ${row.name ?? row.goalieId}: ${row.categoryCounts.starts} starts, game cells ${row.categoryCounts.game.better} better, ${row.categoryCounts.game.worse} worse, ${row.categoryCounts.game.tied} tied. ${row.categoryCounts.byCategory.map(entry => `${categoryById(entry.category).label}: games ${exactCounts(entry.game)}; weeks ${exactCounts(entry.week)}`).join("; ")}. ${tgvAlt(row.tgv)}`).join(" ")}`).join(" ")} Not a forecast. ${snapshot.evidence.sample}.`,
 });

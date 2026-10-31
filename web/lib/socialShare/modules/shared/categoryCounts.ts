@@ -200,9 +200,9 @@ export function countCells(cells: readonly CategoryCell[]): CellCounts {
   }
   return counts;
 }
-/** One tone for every category: better, worse or level with the league after direction, so GAA and shutouts read alike. */
+/** One tone for every category after direction, so GAA and shutouts read alike: better or worse needs most of the compared results. */
 export type CellTone = "better" | "worse" | "level" | "none";
-export const cellTone = (counts: CellCounts): CellTone => !counts.compared ? "none" : counts.better > counts.worse ? "better" : counts.worse > counts.better ? "worse" : "level";
+export const cellTone = (counts: CellCounts): CellTone => !counts.compared ? "none" : counts.better * 2 > counts.compared ? "better" : counts.worse * 2 > counts.compared ? "worse" : "level";
 export type PeriodGoalie = {
   goalieId: number; name: string | null; teams: string[];
   /** Official starts and relief appearances in the period's game dates. Relief has no game cells. */
