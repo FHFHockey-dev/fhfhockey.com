@@ -11,6 +11,7 @@
 - Risers and fallers need a full recent window and a baseline at least that long. L10 vs previous 10 needs 20 GP, so that default is empty early in the season.
 - Shared window, cohort and coverage helpers live in `bshBoard.ts` and `bshBoard.sources.ts` because the write set allows no extra file.
 - Blueprint has no overall rank: each category ranks alone and "Top N" is a filter on those ranks.
+- Layout pass for TJ: 20-row limit, rows stretch to fill the body, one legend line per card, other notes moved to evidence. Fit is unmeasured until the lead renders.
 - Blueprint default moved from Top 100 (0 skaters of 633 on real data) to Top 250 (16), keeping the four categories. Reasoning and read R6 are in the receipt.
 
 **Gotchas:**

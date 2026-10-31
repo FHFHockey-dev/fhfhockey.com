@@ -40,6 +40,12 @@ const fictional: SkaterSeason = (() => {
   const teamGames = appearances.map(row => ({ gameId: row.gameId, date: row.date, team: row.team! }));
   return { appearances, teamGames, scheduledGames: 20, through: "2026-10-30" };
 })();
+/** A full board: more ranked skaters than the card holds, so every post is measured at its row limit. */
+const crowded: SkaterSeason = (() => {
+  const appearances = Array.from({ length: 24 }, (_, player) => Array.from({ length: 12 }, (_, index) => game(player + 1, `Fictional Longname Skater ${player + 1}`, player % 2 ? "NYR" : "NJD", index, { shots: 1 + (player % 6) + (index % 3), hits: 1 + (player % 5), blocks: 1 + (player % 4), points: (player + index) % 2 }))).flat();
+  const teamGames = [...new Map(appearances.map(row => [`${row.team}:${row.gameId}`, { gameId: row.gameId, date: row.date, team: row.team! }])).values()];
+  return { appearances, teamGames, scheduledGames: teamGames.length / 2, through: "2026-10-30" };
+})();
 const bshSettings = (over: Partial<BshBoardSettings> = {}): BshBoardSettings => ({ view: "leaders", window: "l10", comparison: "previous", minGp: 5, position: "all", ...over });
 // The visible defaults, so the edition and the URL agree whatever the default is.
 const blueprintSettings = parseShareSettings(categoryBlueprintModule, {}) as CategoryBlueprintSettings;
@@ -62,19 +68,24 @@ async function open(page: Page, post: string, body: (query: URLSearchParams) => 
   await expect(page.getByTestId("share-square")).toBeVisible();
   return requests;
 }
-/** A clipped footer or table would drop evidence from the PNG, so the body must fit its frame at 1080 × 1080. */
+/** Nothing clipped and no dead band over 40px: the table's last row must end near the bottom of the post body. */
 const expectFits = (page: Page) => expect.poll(() => page.getByTestId("share-square").evaluate(square => {
-  const body = square.querySelector("[class*=postBody]"), inner = body?.firstElementChild;
-  return !!body && !!inner && inner.scrollHeight <= body.clientHeight + 1 && square.scrollHeight <= square.clientHeight + 1;
-})).toBe(true);
+  const body = square.querySelector("[class*=postBody]"), board = body?.firstElementChild, table = board?.lastElementChild?.firstElementChild;
+  if (!body || !board || !table) return "no table";
+  if (table.scrollHeight > table.clientHeight + 1 || body.scrollHeight > body.clientHeight + 1 || square.scrollHeight > square.clientHeight + 1) return "clipped";
+  const clippedCell = [...table.children].some(cell => cell.scrollWidth > cell.clientWidth + 1) || [...table.querySelectorAll("[class*=name]")].some(name => name.scrollWidth > name.clientWidth);
+  const band = body.getBoundingClientRect().bottom - table.lastElementChild!.getBoundingClientRect().bottom;
+  return clippedCell ? "clipped cell" : band > 40 ? `dead band ${band}` : "fits";
+})).toBe("fits");
 
 test.beforeEach(({ page }) => page.setDefaultTimeout(10000));
 
 test("BSH Board leaders print components, per-game values and cohort, then export", async ({ page }) => {
   await open(page, "bsh-board", () => edition("bsh-board", bshSettings(), buildBshBoard(fictional, bshSettings())));
   const square = page.getByTestId("share-square");
-  for (const text of ["BLK /G", "SOG /G", "HITS /G", "BSH /G", "Fictional Riser", "last 10 appearances"]) await expect(square).toContainText(text);
+  for (const text of ["BLK /G", "SOG /G", "HITS /G", "BSH /G", "Fictional Riser", "L10"]) await expect(square).toContainText(text);
   await expect(page.getByTestId("post-evidence")).toContainText("All situations");
+  await expect(page.getByTestId("post-evidence")).toContainText("last 10 appearances");
   await expect(page.getByTestId("post-evidence")).toContainText("40 of 40 team games");
   await expect(page.getByTestId("post-watermark")).toHaveText("OBSERVED RESULTS");
   await expectFits(page);
@@ -91,7 +102,8 @@ test("BSH Board risers state their comparison, and stale settings cannot export"
   await expect(page.getByTestId("share-square")).toContainText("Refresh this post");
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
   await page.getByRole("button", { name: "Refresh post", exact: true }).click();
-  await expect(page.getByTestId("share-square")).toContainText("the previous 10 appearances");
+  await expect(page.getByTestId("share-square")).toContainText("L10, then previous 10 in grey");
+  await expect(page.getByTestId("post-evidence")).toContainText("the previous 10 appearances");
   await expect(page.getByTestId("share-square")).toContainText("Fictional Riser");
   await expect(page.getByTestId("share-square")).not.toContainText("Fictional Faller");
   await expectFits(page);
@@ -100,7 +112,7 @@ test("BSH Board risers state their comparison, and stale settings cannot export"
 test("Category Blueprint keeps categories separate with their own ranks", async ({ page }) => {
   await open(page, "category-blueprint", () => edition("category-blueprint", blueprintSettings, buildCategoryBlueprint(fictional, blueprintSettings)));
   const square = page.getByTestId("share-square");
-  for (const text of ["PTS/G", "SOG/G", "HITS/G", "BLK/G", "#1", "no combined score", "among 2 skaters"]) await expect(square).toContainText(text);
+  for (const text of ["PTS/G", "SOG/G", "HITS/G", "BLK/G", "#1", "no combined score", "among 2"]) await expect(square).toContainText(text);
   await expectFits(page);
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeEnabled();
 });
@@ -108,10 +120,23 @@ test("Category Blueprint keeps categories separate with their own ranks", async 
 test("Nightly Floor prints numerator, denominator, missing and its strict test", async ({ page }) => {
   await open(page, "nightly-floor", () => edition("nightly-floor", floorSettings(), buildNightlyFloor(fictional, floorSettings(), ownership)));
   const square = page.getByTestId("share-square");
-  for (const text of ["SOG above 2.", "Exactly 2 fails.", "MET / KNOWN", "10 / 10", "MISSING", "A DNP is not an appearance", "40%"]) await expect(square).toContainText(text);
+  for (const text of ["More than 2 SOG.", "Exactly 2 fails.", "MET / KNOWN", "10 / 10", "MISSING", "40%"]) await expect(square).toContainText(text);
+  await expect(page.getByTestId("post-evidence")).toContainText("A DNP is not an appearance");
   await expect(page.getByTestId("post-evidence")).toContainText("Yahoo rostered %");
   await expectFits(page);
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeEnabled();
+});
+
+const crowdedOwnership = { byPlayer: new Map(Array.from({ length: 24 }, (_, index) => [index + 1, ownershipOf(10 + index, "2026-10-31")])), updatedAt: "2026-10-31T08:00:00" };
+const crowdedEditions: Record<string, () => object> = {
+  "bsh-board": () => edition("bsh-board", bshSettings(), buildBshBoard(crowded, bshSettings())),
+  "category-blueprint": () => edition("category-blueprint", blueprintSettings, buildCategoryBlueprint(crowded, blueprintSettings)),
+  "nightly-floor": () => edition("nightly-floor", floorSettings(), buildNightlyFloor(crowded, floorSettings(), crowdedOwnership)),
+};
+for (const [post, build] of Object.entries(crowdedEditions)) test(`${post} fills the body with no clipping at its row limit`, async ({ page }) => {
+  await open(page, post, build);
+  await expect(page.getByTestId("share-square").getByText("Fictional Longname Skater", { exact: false })).toHaveCount(20);
+  await expectFits(page);
 });
 
 test("A board nobody clears says so and cannot export", async ({ page }) => {

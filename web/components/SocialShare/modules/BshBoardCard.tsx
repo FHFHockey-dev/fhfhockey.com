@@ -1,5 +1,4 @@
-import type { ReactNode } from "react";
-import { bshBoardCurrent, STALE_SETTINGS_NOTE, type BshBoardData, type BshBoardSettings, type BshRow } from "lib/socialShare/modules/bshBoard";
+import { bshBoardCurrent, STALE_SETTINGS_NOTE, type BshBoardData, type BshBoardSettings, type BshRow, type SkaterWindowId } from "lib/socialShare/modules/bshBoard";
 import type { SharePostCardProps } from "lib/socialShare/modules/contract";
 import { PostEmpty, PostTable, PostTeamMark, type PostColumn } from "./kit";
 import styles from "./BshBoardCard.module.scss";
@@ -7,20 +6,33 @@ import styles from "./BshBoardCard.module.scss";
 const MISSING = "—";
 const rate = (value: number | null) => value === null ? MISSING : value.toFixed(2);
 const signed = (value: number | null) => value === null ? MISSING : `${value > 0 ? "+" : ""}${value.toFixed(2)}`;
-export const SkaterCell = ({ row, logo }: { row: { name: string; position: string | null; team: string | null; teams: string[] }; logo: string | null | undefined }): ReactNode => <span className={styles.player}>
-  {row.team && <PostTeamMark team={row.team} logo={logo} size={26} />}
+export const windowShort = (window: SkaterWindowId) => window === "std" ? "season to date" : window.toUpperCase();
+/** Boards above this many rows use the smaller type, so 20 rows still fit the body. */
+const DENSE_ROWS = 14;
+const logoSize = (rows: number) => rows > DENSE_ROWS ? 30 : 34;
+
+export const SkaterCell = ({ row, logo, size }: { row: { name: string; position: string | null; team: string | null; teams: string[] }; logo: string | null | undefined; size: number }) => <span className={styles.player}>
+  {row.team && <PostTeamMark team={row.team} logo={logo} size={size} />}
   <span className={styles.name}>{row.name}</span>
   <span className={styles.pos}>{[row.position, row.teams.length > 1 ? row.teams.join("/") : null].filter(Boolean).join(" · ")}</span>
 </span>;
+/** One legend line over a table that takes the rest of the body. */
+export function SkaterBoard<Row>({ legend, columns, rows, rowKey, empty }: { legend: string; columns: readonly PostColumn<Row>[]; rows: readonly Row[]; rowKey: (row: Row) => string | number; empty: string | null }) {
+  return <div className={styles.board}>
+    <p className={styles.legend}>{legend}</p>
+    {empty ? <PostEmpty>{empty}</PostEmpty> : <div className={styles.fill} data-dense={rows.length > DENSE_ROWS || undefined}><PostTable columns={columns} rows={rows} rowKey={rowKey} /></div>}
+  </div>;
+}
+export const skaterLogoSize = logoSize;
 const total = (count: number | null, per: number | null) => count === null ? <span className={styles.missing}>{MISSING}</span> : <span className={styles.pair}>{count} <small>{rate(per)}</small></span>;
-const change = (recent: number | null, base: number | null) => <span className={styles.pair}>{rate(recent)} <small>was {rate(base)}</small></span>;
+const change = (recent: number | null, base: number | null) => <span className={styles.pair}>{rate(recent)} <small>{rate(base)}</small></span>;
 
 export default function BshBoardCard({ data, settings, logos }: SharePostCardProps<BshBoardSettings, BshBoardData>) {
   if (!bshBoardCurrent(data, settings)) return <PostEmpty>{STALE_SETTINGS_NOTE}</PostEmpty>;
-  const { cohort } = data, leaders = data.view === "leaders";
+  const { cohort } = data, leaders = data.view === "leaders", size = logoSize(data.rows.length);
   const shared: PostColumn<BshRow>[] = [
     { id: "rank", label: "RK", numeric: true, cell: row => row.rank },
-    { id: "player", label: "SKATER", cell: row => <SkaterCell row={row} logo={row.team ? logos[row.team] : null} /> },
+    { id: "player", label: "SKATER", cell: row => <SkaterCell row={row} logo={row.team ? logos[row.team] : null} size={size} /> },
   ];
   const columns: PostColumn<BshRow>[] = leaders ? [...shared,
     { id: "gp", label: "GP", numeric: true, cell: row => row.recent.games },
@@ -36,18 +48,8 @@ export default function BshBoardCard({ data, settings, logos }: SharePostCardPro
     { id: "bsh", label: "BSH/G", numeric: true, cell: row => change(row.recent.bshPerGame, row.baseline?.bshPerGame ?? null) },
     { id: "delta", label: "CHANGE", numeric: true, cell: row => <b className={styles.strong}>{signed(row.delta)}</b> },
   ];
-  const lead = leaders ? <>BLK + SOG + HITS over each skater&apos;s <b>{data.windowLabel}</b>. Ranked by BSH per game among <b>{cohort.ranked}</b> of {cohort.eligible} eligible.</>
-    : <>BLK + SOG + HITS per game: <b>{data.windowLabel}</b> against <b>{data.comparisonLabel}</b>. {cohort.ranked} {data.view} among {cohort.comparable} comparable of {cohort.eligible} eligible.</>;
-  const notes = [
-    cohort.missingComponent ? `${cohort.missingComponent} unranked: a game lacks BLK, SOG or HITS.` : "",
-    cohort.shortWindow ? `${cohort.shortWindow} excluded: not enough games for both windows.` : "",
-    !leaders && cohort.flat ? `${cohort.flat} unchanged.` : "",
-    data.notShown ? `${data.notShown} more ranked below${data.tiedBeyondCut ? `, ${data.tiedBeyondCut} tied with the last row` : ""}.` : "",
-  ].filter(Boolean).join(" ");
-  if (!data.rows.length) return <div className={styles.board}><p className={styles.lead}>{lead}</p><PostEmpty>{leaders ? "No skater qualifies with these settings" : `No ${data.view} qualify with these settings`}</PostEmpty>{notes && <p className={styles.note}>{notes}</p>}</div>;
-  return <div className={styles.board}>
-    <p className={styles.lead}>{lead}</p>
-    <PostTable columns={columns} rows={data.rows} rowKey={row => row.playerId} />
-    {notes && <p className={styles.note}>{notes}</p>}
-  </div>;
+  const window = windowShort(settings.window), base = settings.comparison === "previous" ? `previous ${settings.window === "l5" ? 5 : 10}` : "earlier season";
+  const legend = leaders ? `BLK + SOG + HITS, ${window}: total, then per game. ${cohort.ranked} of ${cohort.eligible} ranked.`
+    : `BLK + SOG + HITS per game: ${window}, then ${base} in grey. ${cohort.ranked} ${data.view} of ${cohort.comparable} comparable.`;
+  return <SkaterBoard legend={legend} columns={columns} rows={data.rows} rowKey={row => row.playerId} empty={data.rows.length ? null : leaders ? "No skater qualifies with these settings" : `No ${data.view} qualify with these settings`} />;
 }

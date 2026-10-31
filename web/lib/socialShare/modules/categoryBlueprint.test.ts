@@ -111,7 +111,9 @@ describe("Category Blueprint card", () => {
   it("prints each category, rank, window, cohort and missing", async () => {
     const active = settings(), { data } = buildCategoryBlueprint(season([...games(1, 5, { points: 2, hits: null }), ...games(2, 5, { points: 1, hits: 2 })]), active);
     const text = await show(data!, active);
-    for (const label of ["PTS/G", "SOG/G", "HITS/G", "2.00 #1", "missing", "last 5 appearances", "among 2 skaters", "no combined score", "Hits: 1 skaters missing"]) expect(text).toContain(label);
+    for (const label of ["PTS/G", "SOG/G", "HITS/G", "2.00 #1", "missing", "L5", "among 2", "no combined score"]) expect(text).toContain(label);
+    expect(document.querySelectorAll("p")).toHaveLength(1);
+    expect(buildCategoryBlueprint(season([...games(1, 5, { hits: null }), ...games(2, 5)]), active).evidence.cohort).toContain("Hits missing for 1");
   });
   it("says why nobody qualifies and asks for a refresh after a settings change", async () => {
     const active = settings({ minGp: 9 }), { data } = buildCategoryBlueprint(season(games(1, 2)), active);

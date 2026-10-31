@@ -1,4 +1,4 @@
-import { SKATER_BOARD_ROWS, SKATER_POSITION_OPTIONS, SKATER_WINDOW_OPTIONS, shownTeams, skaterCohort, skaterCohortLabel, skaterIdentity, skaterSeasonEvidence, skaterWindowLabel, skaterWindowOf, type SkaterIdentity, type SkaterPositionId, type SkaterSeason, type SkaterWindowId } from "./bshBoard";
+import { SKATER_BOARD_ROWS, belowTheCard, SKATER_POSITION_OPTIONS, SKATER_WINDOW_OPTIONS, shownTeams, skaterCohort, skaterCohortLabel, skaterIdentity, skaterSeasonEvidence, skaterWindowLabel, skaterWindowOf, type SkaterIdentity, type SkaterPositionId, type SkaterSeason, type SkaterWindowId } from "./bshBoard";
 import { SKATER_CATEGORIES, type SkaterCategoryId } from "./categoryBlueprint";
 import { defineShareModule, shareSettingsKey, type SharePostLoadResult, type ShareSettingField } from "./contract";
 import { competitionRanks, ownershipInRange, ownershipOf, strictlyAbove, type OwnershipState } from "./shared/definitions";
@@ -52,7 +52,7 @@ export function floorViewLabels(settings: NightlyFloorSettings) {
     case "hits": return { viewLabel: `Hits above ${settings.xHits}`, test: `More than ${settings.xHits} hits. Exactly ${settings.xHits} fails.` };
     case "blk": return { viewLabel: `Blocks above ${settings.xBlk}`, test: `More than ${settings.xBlk} blocks. Exactly ${settings.xBlk} fails.` };
     case "point": return { viewLabel: "At least 1 point", test: "1 point or more." };
-    case "cardio": return { viewLabel: "Cardio Masters", test: "Appeared and scored exactly 0 points." };
+    case "cardio": return { viewLabel: "Cardio Masters", test: "Cardio Masters: appeared with exactly 0 points." };
     case "zero": return { viewLabel: `Zero ${SKATER_CATEGORIES[settings.zeroCategory].name.toLowerCase()}`, test: `Appeared with exactly 0 ${SKATER_CATEGORIES[settings.zeroCategory].name.toLowerCase()}.` };
   }
 }
@@ -94,16 +94,17 @@ export function buildNightlyFloor(season: SkaterSeason, settings: NightlyFloorSe
   const ranked = competitionRanks(admitted, row => row.pct, row => row.id.playerId);
   const rows: FloorRow[] = ranked.slice(0, SKATER_BOARD_ROWS).map(({ row, rank }) => ({ ...row.id, rank, appearances: row.appearances, numerator: row.numerator, denominator: row.denominator, missing: row.missing, pct: row.pct, ownership: row.ownership }));
   const lastRank = rows[rows.length - 1]?.rank, windowLabel = skaterWindowLabel(settings.window);
-  const excluded = [outOfOwnershipRange ? `${outOfOwnershipRange} outside the rostered range` : "", unknownOwnershipExcluded ? `${unknownOwnershipExcluded} unknown rostered % excluded` : "", unadmitted ? `${unadmitted} below min coverage` : ""].filter(Boolean).join(", ");
+  const notShown = ranked.length - rows.length, tiedBeyondCut = ranked.slice(rows.length).filter(row => row.rank === lastRank).length;
+  const excluded = [outOfOwnershipRange ? `${outOfOwnershipRange} outside the rostered range` : "", unknownOwnershipExcluded ? `${unknownOwnershipExcluded} unknown rostered % excluded` : "", unadmitted ? `${unadmitted} below min coverage` : "", belowTheCard(notShown, tiedBeyondCut)].filter(Boolean).join(", ");
   return {
     ...skaterSeasonEvidence(season, {
-      windowLabel, cohort: `${skaterCohortLabel(settings)}, ${settings.ownMin}-${settings.ownMax}% rostered: ${pool.length} eligible, ${ranked.length} ranked${excluded ? `, ${excluded}` : ""}`,
+      windowLabel, note: "A DNP is not an appearance. A missing stat counts as neither a pass nor a fail.", cohort: `${skaterCohortLabel(settings)}, ${settings.ownMin}-${settings.ownMax}% rostered: ${pool.length} eligible, ${ranked.length} ranked${excluded ? `, ${excluded}` : ""}`,
       extraSources: [{ name: "Yahoo rostered %", tables: ["yahoo_players", "yahoo_nhl_player_map_read"], state: "ready", asOf: ownership.updatedAt?.slice(0, 10) ?? null, updatedAt: ownership.updatedAt }],
     }),
     data: {
       applied: shareSettingsKey(FIELDS, settings), through: season.through, windowLabel, ...floorViewLabels(settings), rows,
       cohort: { pool: pool.length, outOfOwnershipRange, unknownOwnershipExcluded, unadmitted, ranked: ranked.length },
-      notShown: ranked.length - rows.length, tiedBeyondCut: ranked.slice(rows.length).filter(row => row.rank === lastRank).length,
+      notShown, tiedBeyondCut,
     },
     teams: shownTeams(rows),
   };

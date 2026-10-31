@@ -16,8 +16,10 @@ export const skaterWindowOf = (rows: readonly SkaterAppearance[], window: Skater
   const length = WINDOW_LENGTH[window];
   return length === null ? versusSeason(rows, 0).season : lastN(rows, length);
 };
-/** Rows a card can hold at 1080 × 1080 with its evidence footer. What falls below is counted on the card. */
-export const SKATER_BOARD_ROWS = 12;
+/** Rows the 860px post body holds at the dense type size. What falls below is counted in the evidence. */
+export const SKATER_BOARD_ROWS = 20;
+/** The cohort line's count of ranked rows the card has no room for. */
+export const belowTheCard = (notShown: number, tied = 0) => notShown ? `${notShown} more below the card${tied ? `, ${tied} tied with the last row` : ""}` : "";
 export const STALE_SETTINGS_NOTE = "Settings changed. Refresh this post to apply them.";
 export const perGame = (total: number | null, games: number) => total === null || games === 0 ? null : total / games;
 const sumOf = (rows: readonly SkaterAppearance[], pick: (row: SkaterAppearance) => number | null) => rows.some(row => pick(row) === null) ? null : rows.reduce((total, row) => total + pick(row)!, 0);
@@ -31,7 +33,7 @@ export function skaterSeasonScope(generatedAt: string) {
 export type SkaterSeason = { appearances: readonly SkaterAppearance[]; teamGames: readonly CompletedTeamGame[]; scheduledGames: number; through: string };
 
 /** A scheduled team game counts only once the team feed has it and skater rows exist for that team in that game. */
-export function skaterSeasonEvidence(season: SkaterSeason, input: { windowLabel: string; cohort: string; extraSources?: readonly SharePostSource[] }): { state: "ready" | "partial"; reasons: string[]; evidence: SharePostEvidence } {
+export function skaterSeasonEvidence(season: SkaterSeason, input: { windowLabel: string; cohort: string; note?: string; extraSources?: readonly SharePostSource[] }): { state: "ready" | "partial"; reasons: string[]; evidence: SharePostEvidence } {
   const withSkaters = new Set(season.appearances.map(row => `${row.team}:${row.gameId}`));
   const expected = season.scheduledGames * 2, observed = season.teamGames.filter(game => withSkaters.has(`${game.team}:${game.gameId}`)).length;
   const complete = observed === expected, state = complete ? "ready" as const : "partial" as const;
@@ -40,7 +42,7 @@ export function skaterSeasonEvidence(season: SkaterSeason, input: { windowLabel:
     state, reasons: complete ? [] : [`${observed} of ${expected} scheduled team games have reported skater results.`],
     evidence: {
       sources: [{ name: "NHL.com skater game stats", tables: ["wgo_skater_stats", "wgo_team_stats", "games"], state, asOf, updatedAt: null }, ...(input.extraSources ?? [])],
-      sample: `Season through ${season.through}: ${season.appearances.length} appearances. Window: ${input.windowLabel}`, strength: "All situations", cohort: input.cohort,
+      sample: `Season through ${season.through}: ${season.appearances.length} appearances. Window: ${input.windowLabel}.${input.note ? ` ${input.note}` : ""}`, strength: "All situations", cohort: input.cohort,
       coverage: { observed, expected, missing: Math.max(0, expected - observed), unit: "team games" },
     },
   };
@@ -120,14 +122,15 @@ export function buildBshBoard(season: SkaterSeason, settings: BshBoardSettings):
   const lastRank = rows[rows.length - 1]?.rank, comparisonLabel = bshComparisonLabel(settings);
   const flat = settings.view === "leaders" ? 0 : candidates.filter(row => row.delta === 0).length;
   const counted = settings.view === "leaders" ? `${ranked.length} ranked` : `${candidates.length} comparable, ${ranked.length} ${settings.view}`;
-  const excluded = [missingComponent ? `${missingComponent} unranked for a missing component` : "", shortWindow ? `${shortWindow} short of a full comparison` : ""].filter(Boolean).join(", ");
+  const notShown = ranked.length - rows.length, tiedBeyondCut = ranked.slice(rows.length).filter(row => row.rank === lastRank).length;
+  const excluded = [missingComponent ? `${missingComponent} unranked for a missing component` : "", shortWindow ? `${shortWindow} short of a full comparison` : "", flat ? `${flat} unchanged` : "", belowTheCard(notShown, tiedBeyondCut)].filter(Boolean).join(", ");
   const windowLabel = skaterWindowLabel(settings.window);
   return {
-    ...skaterSeasonEvidence(season, { windowLabel: comparisonLabel ? `${windowLabel} vs ${comparisonLabel}` : windowLabel, cohort: `${skaterCohortLabel(settings)}: ${pool.length} eligible, ${counted}${excluded ? `, ${excluded}` : ""}` }),
+    ...skaterSeasonEvidence(season, { windowLabel: comparisonLabel ? `${windowLabel} vs ${comparisonLabel}` : windowLabel, cohort: `${skaterCohortLabel(settings)}: ${pool.length} eligible, ${counted}${excluded ? `, ${excluded}` : ""}`, note: settings.view === "leaders" ? "Ranked by BSH per game. A missing component leaves a skater unranked; shot attempts never stand in." : "Ranked by the change in BSH per game. Both windows must be full." }),
     data: {
       applied: shareSettingsKey(BSH_FIELDS, settings), view: settings.view, through: season.through, windowLabel, comparisonLabel, rows,
       cohort: { eligible: pool.length, comparable: candidates.length, ranked: ranked.length, missingComponent, shortWindow, flat },
-      notShown: ranked.length - rows.length, tiedBeyondCut: ranked.slice(rows.length).filter(row => row.rank === lastRank).length,
+      notShown, tiedBeyondCut,
     },
     teams: shownTeams(rows),
   };

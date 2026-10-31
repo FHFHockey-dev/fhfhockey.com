@@ -49,7 +49,7 @@ describe("Nightly Floor views", () => {
     expect(floorOutcome(settings({ view: "cardio" }), game(1, 0, { points: 0 }))).toBe(true);
     expect(floorOutcome(settings({ view: "cardio" }), game(1, 0, { points: 1 }))).toBe(false);
     const { data } = buildNightlyFloor(season(games(1, [{ points: 0 }, { points: 0 }, { points: 1 }, { points: 0 }])), settings({ view: "cardio" }), none);
-    expect(data).toMatchObject({ viewLabel: "Cardio Masters", test: "Appeared and scored exactly 0 points." });
+    expect(data).toMatchObject({ viewLabel: "Cardio Masters", test: "Cardio Masters: appeared with exactly 0 points." });
     expect(data!.rows[0]).toMatchObject({ numerator: 3, denominator: 4 });
   });
   it("selected-category zero uses the chosen category and keeps zero apart from missing", () => {
@@ -94,7 +94,7 @@ describe("Nightly Floor filters", () => {
   it("shares ranks on an equal percentage and counts ties below the cut", () => {
     const { data } = buildNightlyFloor(season([...games(1, [{ shots: 3 }, { shots: 3 }]), ...games(2, [{ shots: 3 }]), ...games(3, [{ shots: 3 }, { shots: 1 }])]), settings(), none);
     expect(data!.rows.map(row => [row.playerId, row.rank])).toEqual([[1, 1], [2, 1], [3, 3]]);
-    const many = buildNightlyFloor(season(Array.from({ length: 13 }, (_, index) => games(index + 1, [{ shots: 3 }])).flat()), settings(), none);
+    const many = buildNightlyFloor(season(Array.from({ length: 21 }, (_, index) => games(index + 1, [{ shots: 3 }])).flat()), settings(), none);
     expect(many.data).toMatchObject({ notShown: 1, tiedBeyondCut: 1 });
   });
   it("keeps an empty pool empty and refuses to export a board nobody clears", () => {
@@ -138,12 +138,14 @@ describe("Nightly Floor card", () => {
   it("prints the test, numerator, denominator, missing and unknown ownership", async () => {
     const active = settings({ minCoverage: 50 }), { data } = buildNightlyFloor(season(games(1, [{ shots: 3 }, { shots: 2 }, { shots: null }])), active, none);
     const text = await show(data!, active);
-    for (const label of ["SOG above 2.", "Exactly 2 fails.", "last 10 appearances", "A DNP is not an appearance", "MET / KNOWN", "1 / 2", "MISSING", "50%", "—", "1 ranked of 1 eligible"]) expect(text).toContain(label);
+    for (const label of ["More than 2 SOG.", "Exactly 2 fails.", "L10", "MET / KNOWN", "1 / 2", "MISSING", "50%", "—", "1 of 1 ranked"]) expect(text).toContain(label);
+    expect(document.querySelectorAll("p")).toHaveLength(1);
+    expect(buildNightlyFloor(season(games(1, [{ shots: 3 }])), active, none).evidence.sample).toContain("A DNP is not an appearance");
   });
   it("labels Cardio Masters and an empty board, and asks for a refresh after a settings change", async () => {
     const active = settings({ view: "cardio" }), { data } = buildNightlyFloor(season(games(1, [{ points: 1 }])), active, none);
     const text = await show(data!, active);
-    expect(text).toContain("Cardio Masters.");
+    expect(text).toContain("Cardio Masters: appeared with exactly 0 points.");
     expect(text).toContain("No skater meets this test");
     cleanup();
     expect(await show(data!, settings({ view: "point" }))).toContain("Refresh this post");

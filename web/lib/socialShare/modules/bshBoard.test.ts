@@ -39,9 +39,11 @@ describe("BSH leaderboard", () => {
   it("shares tied ranks and counts ties below the cut", () => {
     const tied = buildBshBoard(season([...games(1, 5, { shots: 5 }), ...games(2, 5), ...games(3, 5), ...games(4, 5, { shots: 0 })]), settings());
     expect(tied.data!.rows.map(row => row.rank)).toEqual([1, 2, 2, 4]);
-    const many = buildBshBoard(season(Array.from({ length: 14 }, (_, index) => games(index + 1, 5)).flat()), settings());
+    const many = buildBshBoard(season(Array.from({ length: 22 }, (_, index) => games(index + 1, 5)).flat()), settings());
     expect(many.data).toMatchObject({ notShown: 2, tiedBeyondCut: 2 });
+    expect(many.data!.rows).toHaveLength(20);
     expect(many.data!.rows.every(row => row.rank === 1)).toBe(true);
+    expect(many.evidence.cohort).toContain("2 more below the card, 2 tied with the last row");
   });
   it("shows the actual count for a short window and applies season GP and position", () => {
     const { data } = buildBshBoard(season([...games(1, 3), ...games(2, 8, { position: "D", group: "D" })]), settings({ window: "l10", minGp: 5, position: "D" }));
@@ -138,13 +140,15 @@ describe("BSH card", () => {
   it("prints components, per-game values, window and cohort", async () => {
     const active = settings(), { data } = buildBshBoard(season([...games(1, 5, { blocks: 2, shots: 3, hits: 1 }), ...games(2, 5, index => index === 0 ? { hits: null } : {})]), active);
     const text = await show(data!, active);
-    for (const label of ["BLK /G", "SOG /G", "HITS /G", "BSH /G", "Skater 1", "10 2.00", "15 3.00", "5 1.00", "30 6.00", "last 5 appearances", "1 of 2 eligible", "1 unranked"]) expect(text).toContain(label);
+    for (const label of ["BLK /G", "SOG /G", "HITS /G", "BSH /G", "Skater 1", "10 2.00", "15 3.00", "5 1.00", "30 6.00", "L5", "1 of 2 ranked"]) expect(text).toContain(label);
     expect(text).not.toContain("Skater 2");
+    expect(document.querySelectorAll("p")).toHaveLength(1);
   });
   it("prints both windows and the change for risers", async () => {
-    const active = settings({ view: "risers" }), { data } = buildBshBoard(season(games(1, 10, index => ({ shots: index >= 5 ? 4 : 1 }))), active);
+    const active = settings({ view: "risers" }), { data, evidence } = buildBshBoard(season(games(1, 10, index => ({ shots: index >= 5 ? 4 : 1 }))), active);
     const text = await show(data!, active);
-    for (const label of ["the previous 5 appearances", "4.00 was 1.00", "6.00 was 3.00", "+3.00", "5/5"]) expect(text).toContain(label);
+    for (const label of ["L5, then previous 5 in grey", "4.00 1.00", "6.00 3.00", "+3.00", "5/5"]) expect(text).toContain(label);
+    expect(evidence.sample).toContain("last 5 appearances vs the previous 5 appearances");
   });
   it("says why an empty board is empty", async () => {
     const active = settings({ view: "fallers" }), { data } = buildBshBoard(season(games(1, 6)), active);

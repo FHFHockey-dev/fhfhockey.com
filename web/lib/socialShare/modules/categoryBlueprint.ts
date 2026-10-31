@@ -1,4 +1,4 @@
-import { SKATER_BOARD_ROWS, SKATER_POSITION_OPTIONS, SKATER_WINDOW_OPTIONS, STALE_SETTINGS_NOTE, perGame, shownTeams, skaterCategoryTotal, skaterCohort, skaterCohortLabel, skaterIdentity, skaterSeasonEvidence, skaterWindowLabel, skaterWindowOf, type SkaterIdentity, type SkaterPositionId, type SkaterSeason, type SkaterWindowId } from "./bshBoard";
+import { SKATER_BOARD_ROWS, belowTheCard, SKATER_POSITION_OPTIONS, SKATER_WINDOW_OPTIONS, STALE_SETTINGS_NOTE, perGame, shownTeams, skaterCategoryTotal, skaterCohort, skaterCohortLabel, skaterIdentity, skaterSeasonEvidence, skaterWindowLabel, skaterWindowOf, type SkaterIdentity, type SkaterPositionId, type SkaterSeason, type SkaterWindowId } from "./bshBoard";
 import { defineShareModule, shareSettingsKey, type SharePostLoadResult, type ShareSettingField } from "./contract";
 import { competitionRanks } from "./shared/definitions";
 import type { SkaterAppearance } from "./shared/skaterAppearances";
@@ -61,9 +61,9 @@ export function buildCategoryBlueprint(season: SkaterSeason, settings: CategoryB
   }).sort((a, b) => (a.cells.get(chosen[0])!.rank ?? Infinity) - (b.cells.get(chosen[0])!.rank ?? Infinity) || a.id.playerId - b.id.playerId);
   const rows = qualifying.slice(0, SKATER_BOARD_ROWS).map(player => ({ ...player.id, games: player.games, cells: chosen.map(category => player.cells.get(category)!) }));
   const categories = chosen.map(id => ({ id, label: SKATER_CATEGORIES[id].label, name: SKATER_CATEGORIES[id].name, missing: players.filter(player => player.cells.get(id)!.perGame === null).length }));
-  const windowLabel = skaterWindowLabel(settings.window);
+  const windowLabel = skaterWindowLabel(settings.window), notes = [...categories.filter(category => category.missing).map(category => `${category.name} missing for ${category.missing}`), belowTheCard(qualifying.length - rows.length)].filter(Boolean).join(", ");
   return {
-    ...skaterSeasonEvidence(season, { windowLabel: `${windowLabel}, per game`, cohort: `${skaterCohortLabel(settings)}: ${pool.length} skaters, ${qualifying.length} in the top ${settings.topIn} of every category` }),
+    ...skaterSeasonEvidence(season, { windowLabel: `${windowLabel}, per game`, note: `Ordered by ${categories[0].name.toLowerCase()}. Each category ranks alone, and a missing category neither passes nor fails the top-${settings.topIn} filter.`, cohort: `${skaterCohortLabel(settings)}: ${pool.length} skaters, ${qualifying.length} in the top ${settings.topIn} of every category${notes ? `, ${notes}` : ""}` }),
     data: { applied: shareSettingsKey(FIELDS, settings), through: season.through, windowLabel, cohortSize: pool.length, topIn: settings.topIn, categories, rows, qualifying: qualifying.length, notShown: qualifying.length - rows.length },
     teams: shownTeams(rows),
   };

@@ -52,7 +52,7 @@ Late in the season the appearance read is about 47,000 rows, in pages against th
 
 ## Not verified
 
-- Browser runs. `e2e/social-share-skater-boards.spec.ts` passed `--list` only. It includes a fit check, because a clipped table would lose evidence from the PNG. Row counts (12) are estimated from the CSS, not measured.
+- Browser runs. `e2e/social-share-skater-boards.spec.ts` passed `--list` only. It includes a fit check, because a clipped table would lose evidence from the PNG. Row counts (20) are estimated from the CSS, not measured.
 - A real full-pool ranking, for the reason above.
 
 ## Behaviour to review
@@ -80,7 +80,7 @@ The first default, Top 100, made an empty post: nobody of 633 skaters was top 10
 | 250 | **16** | 53 | 52 | 29 | 191 |
 | 300 | 31 | 83 | 91 | 49 | 238 |
 
-**Decision: keep the four categories and default to Top 250.** That gives 16 skaters today: 12 shown and 4 counted below the table.
+**Decision: keep the four categories and default to Top 250.** That gives 16 skaters today, all shown under the 20-row limit.
 
 - The four categories stay because offense and physical play rarely meet, which is the point of this post. Dropping to PTS and SOG would just list scoring forwards.
 - Top 200 gives 5 and Top 150 gives 1, so a few games could empty the default again. 250 leaves margin.
@@ -97,3 +97,13 @@ The count comes from SQL using the post's rule, not from the loader. The lead's 
 - `playwright --list`: 6 tests found. Not run in a browser.
 
 Follow-up commit (Blueprint default): 50 tests in the lane's 3 files passed, eslint clean on the changed TypeScript, `--list` found 6 tests, and `tsc` shows 0 errors in this lane's files (3 remain in `creaseShift.test.ts`, not this lane's). No SCSS changed. Not run in a browser.
+
+## Layout pass (TJ's review: less whitespace, less meta text)
+
+- **Rows:** the limit moved from 12 to 20. Rows now share all the body height the legend leaves, so a short board stretches instead of leaving a dead band, and boards over 14 rows use 24px type instead of 28px.
+- **Text:** each card has one legend line. Kept on the card: Nightly Floor's "Exactly X fails", Blueprint's "no combined score", the ranked count, and the per-row MET / KNOWN and MISSING columns.
+- **Moved to `evidence.sample` and `evidence.cohort`:** the DNP rule, the unranked and excluded counts, skaters missing a category, and how many rows sit below the card. These print on the page, not in the PNG.
+- **Risers and fallers:** cells changed from "4.00 was 1.00" to "4.00 1.00", with the earlier value in grey as the legend says.
+- **Fit test:** the spec now fails on clipping, a truncated cell or name, or a dead band over 40px, with a new test at the 20-row limit for each post.
+- **Not measured:** the 20-row fit and the name widths are from the CSS. No browser run; the lead renders on real data.
+- **Checks:** 50 tests in the lane's 3 files passed, eslint clean, the pure check passed, `--list` found 9 tests, and `tsc` exited 0 for the whole app.
