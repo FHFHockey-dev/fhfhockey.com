@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { heatLevel, type BoardSide } from "lib/socialShare/modules/shared/goalieBoards";
+import { heatLevel, moreTiedNote, type BoardSide } from "lib/socialShare/modules/shared/goalieBoards";
 import { PostTeamMark } from "./kit";
 import styles from "./GoalieBoards.module.scss";
 
@@ -13,17 +13,25 @@ export function HeatTile({ value, text, caption, largest }: { value: number | nu
 export function GoalieIdent({ rank, team, logo, name, detail }: { rank: number; team: string | undefined; logo: string | null | undefined; name: string; detail: ReactNode }) {
   return <>
     <span className={styles.rank}>{rank}</span>
-    <span className={styles.logo}>{team && <PostTeamMark team={team} logo={logo} size={30} />}</span>
+    <span className={styles.logo}>{team && <PostTeamMark team={team} logo={logo} size={34} />}</span>
     <span className={styles.ident}><b>{name}</b><small>{detail}</small></span>
   </>;
 }
 const SIDE_TITLE = { best: "Best", worst: "Worst" };
-export function GoalieBoards<Row>({ sides, rowKey, renderRow }: { sides: readonly BoardSide<Row>[]; rowKey: (row: Row) => number; renderRow: (row: Row, rank: number) => ReactNode }) {
-  return <div className={styles.boards} data-sides={sides.length}>
-    {sides.map(side => <section key={side.kind} className={styles.side} data-board={side.kind} data-testid={`board-${side.kind}`}>
-      <h4 className={styles.sideHead} data-kind={side.kind}>{SIDE_TITLE[side.kind]}</h4>
-      {side.entries.map(({ row, rank }) => <div key={rowKey(row)} className={styles.row}>{renderRow(row, rank)}</div>)}
-      {side.notShown > 0 && <p className={styles.more}>Showing {side.entries.length} of {side.entries.length + side.notShown}{side.moreTied ? `; ${side.moreTied} more tied at rank ${side.entries[side.entries.length - 1].rank}` : ""}.</p>}
-    </section>)}
-  </div>;
+/** Rows share the height left in the body, so the boards fill it however many goalies qualify; a small pool stops short of oversized rows. */
+const FILL_FROM_ROWS = 4;
+export function GoalieBoards<Row>({ sides, rowKey, renderRow, headNote, note }: { sides: readonly BoardSide<Row>[]; rowKey: (row: Row) => number; renderRow: (row: Row, rank: number) => ReactNode; headNote?: string; note?: string }) {
+  const tied = moreTiedNote(sides), line = [tied, note].filter(Boolean).join(" ");
+  return <>
+    <div className={styles.boards} data-sides={sides.length}>
+      {sides.map(side => {
+        const rows = side.entries.length, track = rows >= FILL_FROM_ROWS ? "minmax(min-content, 1fr)" : "minmax(min-content, 130px)";
+        return <section key={side.kind} className={styles.side} data-board={side.kind} data-testid={`board-${side.kind}`} style={{ gridTemplateRows: `auto repeat(${rows}, ${track})` }}>
+          <h4 className={styles.sideHead} data-kind={side.kind}><span>{SIDE_TITLE[side.kind]}</span>{headNote && <small>{headNote}</small>}</h4>
+          {side.entries.map(({ row, rank }) => <div key={rowKey(row)} className={styles.row}>{renderRow(row, rank)}</div>)}
+        </section>;
+      })}
+    </div>
+    {line && <p className={styles.more}>{line}</p>}
+  </>;
 }

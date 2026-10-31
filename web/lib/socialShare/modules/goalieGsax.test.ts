@@ -137,24 +137,26 @@ describe("GSAx card", () => {
     const appearances = Array.from({ length: count }, (_, index) => appearance(index + 1, 0));
     return buildGoalieGsax({ ...base, minAppearances: 1, appearances, nstGames: appearances.map((row, index) => nst(row.goalieId, 0, { xgAgainst: 8 - index, goalsAgainst: 3 })) });
   };
-  const ready = buildGoalieGsax({ ...base, appearances: [...three(1), appearance(1, 3)], nstGames: [0, 1, 2].map(index => nst(1, index, { xgAgainst: 2, goalsAgainst: 3 })) }).data!;
+  const readyResult = buildGoalieGsax({ ...base, appearances: [...three(1), appearance(1, 3)], nstGames: [0, 1, 2].map(index => nst(1, index, { xgAgainst: 2, goalsAgainst: 3 })) }), ready = readyResult.data!;
   it("prints the model, strength, sign, lag, sample and the FHFH model's state", async () => {
     const text = (await render(ready)).body.textContent!;
-    expect(text).toContain("NST model, All situations. NST through 2026-10-03, 1 day behind NHL.com (2026-10-04).");
+    expect(text).toContain("NST model, All situations, through 2026-10-03");
     expect(text).toContain("−3.00");
-    expect(text).toContain("Later appearances not counted: 1");
-    expect(text).toContain("NST 3/3");
-    expect(text).toContain("FHFH xG model: unavailable this season, 0 goalie games.");
-    expect(text).not.toMatch(/gsaa|probab|likely|will start/i);
+    expect(text).toContain("3 GP · xGA 6.00 · GA 9 · SA 84");
+    expect(text).not.toMatch(/gsaa|probab|likely|will start|FHFH|TOI/i);
+    const { evidence } = readyResult;
+    expect(evidence.sample).toContain("1 day behind NHL.com (2026-10-04)");
+    expect(evidence.sample).toContain("Later appearances not counted: 1");
+    expect(evidence.cohort).toContain("FHFH xG model: unavailable this season, 0 goalie games.");
   });
   it("makes no claim that GSAx beats SV% or GAA", async () => {
     expect((await render(ready)).body.textContent).not.toMatch(/superior|better than (sv|gaa)|more accurate|truer|real measure/i);
   });
   it("shows Best and Worst side by side, with the sign setting each tile's colour and size its strength", async () => {
-    const root = await render(many(14).data!);
+    const root = await render(many(24).data!);
     const tiles = (board: string) => [...root.querySelectorAll(`[data-board="${board}"] [data-testid="heat-tile"]`)];
-    expect(tiles("best")).toHaveLength(6);
-    expect(tiles("worst")).toHaveLength(6);
+    expect(tiles("best")).toHaveLength(10);
+    expect(tiles("worst")).toHaveLength(10);
     expect(tiles("best")[0].textContent).toBe("+5.00GSAx");
     expect(tiles("best")[0].getAttribute("data-tone")).toBe("better");
     expect(tiles("worst")[0].getAttribute("data-tone")).toBe("worse");
@@ -171,6 +173,19 @@ describe("GSAx card", () => {
   });
   it("asks the shell for shown goalies' team logos", () => {
     expect(many(2).teams).toEqual(["NJD"]);
+  });
+  it("shows GP as covered of window when NST misses one, and keeps one legend line", async () => {
+    const appearances = Array.from({ length: 10 }, (_, index) => appearance(1, index));
+    const root = await render(buildGoalieGsax({ ...base, minAppearances: 1, appearances, nstGames: Array.from({ length: 10 }, (_, index) => nst(1, index)).filter((_, index) => index !== 4) }).data!);
+    expect(root.body.textContent).toContain("9 of 10 GP");
+    expect(root.querySelectorAll('[data-testid="goalie-gsax-card"] > p')).toHaveLength(1);
+  });
+  it("writes one appearance in the singular", async () => {
+    const one = buildGoalieGsax({ ...base, minAppearances: 1, appearances: [appearance(1, 0)], nstGames: [nst(1, 0)] });
+    expect(one.evidence.cohort).toContain("1 goalie with at least 1 appearance and");
+    expect(one.evidence.sample).toContain("1 of 1 appearance with NST rows");
+    expect(goalieGsaxModule.altText({ evidence: one.evidence } as never, one.data, {} as never)).toContain("in 1 of 1 appearance");
+    expect((await render(buildGoalieGsax({ ...base, minAppearances: 1, minCoverage: 100, appearances: [appearance(1, 0)], nstGames: [nst(9, 0)] }).data!)).body.textContent).toContain("No goalie has 1 appearance at 100%");
   });
   it("says why an empty pool is empty", async () => {
     expect((await render(buildGoalieGsax({ ...base, minAppearances: 9, appearances: three(1), nstGames: [0, 1, 2].map(index => nst(1, index)) }).data!)).body.textContent).toContain("No goalie has 9 appearances at 90% NST coverage");

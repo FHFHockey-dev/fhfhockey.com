@@ -1,6 +1,6 @@
 import type { SharePostCardProps } from "lib/socialShare/modules/contract";
 import { goaliePeriodRanks, TGV_GRADES, TGV_LABEL, type GoaliePeriodData, type GoaliePeriodRow, type GoaliePeriodSettings, type TgvResult, type TgvSeasonWeek } from "lib/socialShare/modules/goaliePeriod";
-import { boardSides, bothSidesNote, largestShown } from "lib/socialShare/modules/shared/goalieBoards";
+import { boardSides, bothSidesNote, countOf, largestShown } from "lib/socialShare/modules/shared/goalieBoards";
 import { categoryById, CATEGORY_COUNTS_LABEL, cellTone } from "lib/socialShare/modules/shared/categoryCounts";
 import { PostEmpty } from "./kit";
 import { GoalieBoards, GoalieIdent, HeatTile } from "./GoalieBoards";
@@ -37,15 +37,15 @@ function selectedGrade(tgv: TgvResult) {
 
 export default function GoaliePeriodCard({ data, logos }: SharePostCardProps<GoaliePeriodSettings, GoaliePeriodData>) {
   const { period } = data, noun = period.kind === "month" ? "Month" : "Week";
-  if (!data.ranked) return <PostEmpty>No goalie has {data.minStarts} official starts in {period.label}{period.kind === "month" ? ". Choose a month in the settings" : ""}</PostEmpty>;
+  if (!data.ranked) return <PostEmpty>No goalie has {countOf(data.minStarts, "official start")} in {period.label}{period.kind === "month" ? ". Choose a month in the settings" : ""}</PostEmpty>;
   const { sides, onBoth } = boardSides(data.rows, goaliePeriodRanks, data.board);
   const winners = data.rows.filter(row => data.winners.includes(row.goalieId)), largest = largestShown(sides, row => row.categoryCounts.gameNet);
-  const strip = data.tgvLeague, plural = strip !== null && strip.weeks.length > 1, smallPool = bothSidesNote(onBoth.length, data.ranked);
+  const strip = data.tgvLeague, plural = strip !== null && strip.weeks.length > 1;
   const renderRow = (row: GoaliePeriodRow, rank: number) => {
     const counts = row.categoryCounts, name = row.name ?? String(row.goalieId), team = row.teams[row.teams.length - 1];
     return <div className={styles.goalie} data-testid="goalie-period-row">
       <div className={styles.top}>
-        <GoalieIdent rank={rank} team={team} logo={team ? logos[team] : null} name={name} detail={`${row.teams.join(", ")} · ${counts.starts} starts · ${counts.relief} relief · week net ${signed(counts.weekNet)}`} />
+        <GoalieIdent rank={rank} team={team} logo={team ? logos[team] : null} name={name} detail={[...row.teams.length > 1 ? [row.teams.join(", ")] : [], countOf(counts.starts, "start"), ...counts.relief ? [`${counts.relief} relief`] : [], `week net ${signed(counts.weekNet)}`].join(" · ")} />
         <div className={styles.tgv} data-group="tgv">
           {row.tgv.counts ? <>
             <span className={styles.chip}><span className={styles.grade} data-selected-grade="">{selectedGrade(row.tgv)}</span><small>{row.tgv.points} pts</small></span>
@@ -61,23 +61,14 @@ export default function GoaliePeriodCard({ data, logos }: SharePostCardProps<Goa
   };
   return <div className={styles.card} data-testid="goalie-period-card">
     <header className={styles.lead}>
-      <p>{period.label}</p>
-      <h3>{data.board === "worst" ? `Worst of the ${noun}` : `Goalie of the ${noun}`}: <span data-testid="goalie-period-winners">{winners.map(row => row.name ?? row.goalieId).join(" · ")}</span></h3>
+      <h3><small>{period.label}.</small> {data.board === "worst" ? `Worst of the ${noun}` : `Goalie of the ${noun}`}: <span data-testid="goalie-period-winners">{winners.map(row => row.name ?? row.goalieId).join(" · ")}</span></h3>
     </header>
-    <GoalieBoards sides={sides} rowKey={row => row.goalieId} renderRow={renderRow} />
+    <GoalieBoards sides={sides} rowKey={row => row.goalieId} renderRow={renderRow} headNote={TGV_LABEL} note={bothSidesNote(onBoth.length, data.ranked)} />
     <section className={styles.strip} data-testid="tgv-existing">
-      <h4>{TGV_LABEL}: {plural ? "goalie weeks" : "goalies"} at each grade, league-wide{strip ? `, week${plural ? "s" : ""} ${strip.weeks.join(", ")}` : ""}</h4>
+      <h4>{TGV_LABEL}: {plural ? "goalie weeks" : "goalies"} at each grade{strip ? `, week${plural ? "s" : ""} ${strip.weeks.join(", ")}` : ""}</h4>
       {strip ? <div className={styles.stripCells}>{TGV_GRADES.map(grade => <span key={grade} className={styles.stripCell} data-strip-grade={grade}><small>{grade}</small><b>{strip.counts[grade]}</b><small>{strip.points[grade]} pts</small></span>)}</div>
         : <p className={styles.stripEmpty}>Unavailable</p>}
     </section>
-    <div className={styles.legend}>
-      <p data-group="category-counts" data-testid="category-counts"><b>Ranked by {CATEGORY_COUNTS_LABEL}.</b> W 2/2 = better than league average in 2 of 2 starts. Lower GAA counts as better. Green or red means most starts were better or worse. Games net = better results minus worse results across those tiles; week net does the same for the goalie&apos;s whole week. Rank: games net, then week net, then share better. Equal goalies share a rank.</p>
-      <p data-group="tgv"><b>{TGV_LABEL}.</b> In each row: this {noun.toLowerCase()}&apos;s grade{plural ? " by week (first letter)" : ""}, season points and week-by-week points, white at {plural ? "these weeks" : "this week"}; a break is a week with no grade. Average cannot occur with this method&apos;s three default stats. These grades are not applied to {CATEGORY_COUNTS_LABEL}.</p>
-      <p>
-        {period.weeks.map(week => `Week ${week.week}: ${week.poolGoalies} goalies, ${week.officialStarts} starts`).join(" · ")}. Results not comparable: {data.unavailableCells}.
-        {data.reliefOnly.length ? ` Relief-only, not compared: ${data.reliefOnly.length}.` : ""}
-        {smallPool ? ` ${smallPool}` : ""}
-      </p>
-    </div>
+    <p className={styles.legend} data-testid="category-counts">{CATEGORY_COUNTS_LABEL}: W 2/2 = better than league average in 2 of 2 starts.</p>
   </div>;
 }

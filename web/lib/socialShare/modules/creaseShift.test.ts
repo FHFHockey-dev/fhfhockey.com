@@ -132,10 +132,25 @@ describe("minimum comparison games", () => {
     const list = games(10), other = Array.from({ length: 6 }, (_, index) => game("NYR", index, 2000 + index));
     const appearances = [...list.map((_, index) => row(index === 0 ? 2 : 1, "NJD", index)), ...other.map((entry, index) => row(9, "NYR", index, true, entry.gameId))];
     const scheduled = [...list, ...other].map(entry => ({ id: entry.gameId, date: entry.date, homeTeamId: teamsInfo[entry.team as "NJD"].id, awayTeamId: null }));
-    const html = await render(buildCreaseShift({ ...base, teams: ["NJD", "NYR"], minComparisonGames: 5, reported: [...list, ...other], appearances, scheduled }));
-    expect(html).toContain("Unranked teams with under 5 comparison games outside the window: 1.");
+    const result = buildCreaseShift({ ...base, teams: ["NJD", "NYR"], minComparisonGames: 5, reported: [...list, ...other], appearances, scheduled });
+    const html = await render(result);
     expect(html).not.toContain("G9");
-    expect(html).not.toContain("Unranked: NYR");
+    expect(html).not.toContain("NYR");
+    expect(result.evidence.cohort).toBe("1 of 2 teams ranked; 1 short comparison");
+  });
+  it("puts unresolved teams and the fine print in the evidence, with one note line on the card", async () => {
+    const list = games(10), appearances = list.slice(0, 9).map((_, index) => row(1, "NJD", index));
+    const result = buildCreaseShift({ ...base, minComparisonGames: 1, reported: reportBoth(list), appearances, scheduled: schedule(list) });
+    expect(result.evidence.sample).toContain("Unranked: NJD");
+    expect(result.evidence.sample).toContain("relief is counted apart");
+    const full = run(10, 5), root = new DOMParser().parseFromString(await render(full), "text/html");
+    expect(root.querySelectorAll("p")).toHaveLength(1);
+    expect(root.body.textContent).not.toMatch(/Showing|Unranked/);
+  });
+  it("uses larger type when few teams rank, and fills the rows at any count", async () => {
+    const root = new DOMParser().parseFromString(await render(run(10, 5)), "text/html");
+    expect(root.querySelector('[data-testid="crease-shift-card"]')!.getAttribute("data-size")).toBe("large");
+    expect(root.querySelector('[class*="table"], div[style]')!.getAttribute("style")).toContain("repeat(1, minmax(min-content, 1fr))");
   });
   it("uses the honest empty state when nothing qualifies", async () => {
     expect(await render(run(9, 5))).toContain("No team has both windows resolved");

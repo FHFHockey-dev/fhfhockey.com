@@ -38,7 +38,7 @@ describe("goalie of the period", () => {
   it("ranks best and worst from one ranking, with evidence on every row", () => {
     const { data, state, evidence } = buildGoaliePeriod(base);
     expect(state).toBe("ready");
-    expect(evidence.sample).toBe("Week 4, 2026-10-19 to 2026-10-25: 4 official starts in the 1 matchup week used");
+    expect(evidence.sample).toContain("Week 4, 2026-10-19 to 2026-10-25: 4 official starts in the 1 matchup week used.");
     expect(data!.rows.map(row => [row.goalieId, row.categoryCounts.rank, row.categoryCounts.worstRank])).toEqual([[1, 1, 2], [2, 2, 1]]);
     expect(data!.winners).toEqual([1]);
     expect(data!.rows[0].categoryCounts).toMatchObject({ starts: 2, relief: 0, game: { compared: 10 }, week: { compared: 5 } });
@@ -149,16 +149,16 @@ describe("TGV beside Category Counts", () => {
   };
   it("shows both boards by default, Best first, with rank from the same ranking", async () => {
     expect(parseShareSettings(goaliePeriodModule, {}).board).toBe("both");
-    const { data } = pool(12), root = await render(data!);
+    const { data } = pool(20), root = await render(data!);
     const names = (board: string) => [...root.querySelectorAll(`[data-board="${board}"] [data-testid="goalie-period-row"] b:not([class*="heat"])`)].map(entry => entry.textContent).filter(text => text?.startsWith("G"));
-    expect(names("best")).toEqual(["G1", "G2", "G3", "G4", "G5"]);
-    // Ranked from the same order: the five with the lowest worst rank, and nobody on both sides.
-    const bottom = [...data!.rows].sort((a, b) => a.categoryCounts.worstRank! - b.categoryCounts.worstRank! || a.goalieId - b.goalieId).slice(0, 5).map(row => row.name);
+    expect(names("best")).toEqual(["G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8"]);
+    // Ranked from the same order: the eight with the lowest worst rank, and nobody on both sides.
+    const bottom = [...data!.rows].sort((a, b) => a.categoryCounts.worstRank! - b.categoryCounts.worstRank! || a.goalieId - b.goalieId).slice(0, 8).map(row => row.name);
     expect(names("worst")).toEqual(bottom);
     expect(names("worst").filter(name => names("best").includes(name))).toEqual([]);
-    expect(root.querySelector('[data-testid="board-best"] h4')!.textContent).toBe("Best");
-    expect(root.querySelector('[data-testid="board-worst"] h4')!.textContent).toBe("Worst");
-    expect(root.body.textContent).toMatch(/Showing 5 of 12/);
+    expect(root.querySelector('[data-testid="board-best"] h4 span')!.textContent).toBe("Best");
+    expect(root.querySelector('[data-testid="board-worst"] h4 span')!.textContent).toBe("Worst");
+    expect(root.body.textContent).not.toMatch(/Showing/);
     expect(root.body.textContent).not.toContain("on both sides");
   });
   it("can still show one board", async () => {
@@ -174,11 +174,11 @@ describe("TGV beside Category Counts", () => {
     expect(root.body.textContent).toContain("Only 2 goalies qualified, so 2 appear on both sides.");
   });
   it("shares ties, and says when a tie runs past the rows shown", async () => {
-    const result = pool(8, () => ({}));
+    const result = pool(11, () => ({}));
     expect(result.data!.rows.every(row => row.categoryCounts.rank === 1 && row.categoryCounts.worstRank === 1)).toBe(true);
     const text = (await render(result.data!)).body.textContent!;
-    expect(text).toContain("Showing 5 of 8; 3 more tied at rank 1.");
-    expect(result.data!.winners).toHaveLength(8);
+    expect(text).toContain("Best: 3 more tied at rank 1.");
+    expect(result.data!.winners).toHaveLength(11);
     const tied = appearances.map(row => ({ ...row, wins: 0, losses: 0, saves: 25, shotsAgainst: 28, goalsAgainst: 3, shutouts: 0 }));
     expect(buildGoaliePeriod({ ...base, appearances: tied }).data!.winners).toEqual([1, 2]);
   });
@@ -241,7 +241,7 @@ describe("TGV beside Category Counts", () => {
     expect(strip("Elite").textContent).toContain("20 pts");
     expect(strip("Abysmal").textContent).toContain("1 pts");
     expect(buildGoaliePeriod({ ...base, tgv: season }).data!.tgvLeague).toMatchObject({ label: TGV_LABEL, weeks: [4], unclassified: 0 });
-    expect(root.body.textContent).toContain("Average cannot occur");
+    expect(buildGoaliePeriod(base).evidence.cohort).toContain("Average cannot occur");
   });
   it("keeps each goalie's selected grade, season points and line in the row", async () => {
     const root = await render(buildGoaliePeriod({ ...base, tgv: season }).data!), row = root.querySelector('[data-testid="goalie-period-row"]')!;
@@ -286,12 +286,26 @@ describe("TGV beside Category Counts", () => {
   it("shows starts, relief and N, in plain words", async () => {
     const root = await render(buildGoaliePeriod(base).data!), text = root.body.textContent!;
     expect(text).toContain("Goalie of the Week");
-    expect(text).toContain("2 starts · 0 relief");
-    expect(text).toContain("Week 4: 2 goalies, 4 starts");
-    expect(text).toContain("Results not comparable: 0");
+    expect(text).toContain("2 starts · week net");
+    const { evidence } = buildGoaliePeriod(base);
+    expect(evidence.sample).toContain("Week 4: 2 goalies, 4 starts");
+    expect(evidence.sample).toContain("Comparisons not available: 0");
+    expect(evidence.cohort).toContain("Ranked by Category Counts");
     expect(text).not.toMatch(/forecast|probab|likely/i);
   });
   it("says why a pool is empty", async () => {
     expect((await render(buildGoaliePeriod({ ...base, settings: { ...settings, minStartsWeek: 3 } }).data!)).body.textContent).toContain("No goalie has 3 official starts");
+  });
+  it("keeps one legend line, and writes one start and one relief in the singular", async () => {
+    const root = await render(buildGoaliePeriod(base).data!);
+    expect(root.querySelector('[data-testid="category-counts"]')!.textContent).toBe("Category Counts: W 2/2 = better than league average in 2 of 2 starts.");
+    expect(root.body.textContent).not.toMatch(/Ranked by|Average cannot|Week 4: 2 goalies/);
+    const one = buildGoaliePeriod({ ...base, settings: { ...settings, minStartsWeek: 1 }, appearances: [stat(1, "NJD", 1, "2026-10-20"), stat(2, "NYR", 1, "2026-10-20")], reported: reported.slice(0, 2), scheduled: scheduled.slice(0, 1) });
+    expect((await render(one.data!)).body.textContent).toContain("1 start · week net");
+    expect((await render(one.data!)).body.textContent).not.toContain("1 starts");
+    expect(goaliePeriodModule.altText({ evidence: one.evidence } as never, one.data, settings)).not.toMatch(/\b1 starts/);
+    expect(one.evidence.sample).toContain("2 official starts in the 1 matchup week used");
+    expect(one.evidence.cohort).toContain("with at least 1 official start;");
+    expect((await render(buildGoaliePeriod({ ...base, settings: { ...settings, minStartsWeek: 1 }, appearances: [] }).data!)).body.textContent).toContain("No goalie has 1 official start in");
   });
 });

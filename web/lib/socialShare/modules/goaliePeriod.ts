@@ -4,7 +4,7 @@ import { teamsInfo } from "lib/teamsInfo";
 import { defineShareModule, type SharePostLoadResult } from "./contract";
 import { reconcileSchedule, type ScheduledGame } from "./creaseShift";
 import { buildWeekLedgers, CATEGORIES, categoryById, CATEGORY_COUNTS_LABEL, DEFAULT_CATEGORY_IDS, defaultMonth, defaultWeek, monthPeriod, periodGoalies, rankPeriodGoalies, weekPeriod, type CategoryId, type CellCounts, type MatchupWeek, type PeriodGoalie, type SharePeriod } from "./shared/categoryCounts";
-import { BOARD_FIELD_OPTIONS, boardChoice, boardSides, type BoardChoice } from "./shared/goalieBoards";
+import { BOARD_FIELD_OPTIONS, boardChoice, boardSides, countOf, type BoardChoice } from "./shared/goalieBoards";
 import { teamStartShare, type CompletedTeamGame, type GoalieAppearance } from "./shared/goalieLedger";
 
 /** Goalie of the Week and Month, with best and worst (SS 9.0), by Category Counts. TGV grades sit beside it under their own label. */
@@ -151,8 +151,9 @@ export function buildGoaliePeriod(input: GoaliePeriodInput): SharePostLoadResult
         { name: "Yahoo matchup weeks", tables: ["yahoo_matchup_weeks"], state: "ready", asOf: null, updatedAt: null },
         { name: `${TGV_LABEL} views`, tables: ["goalie_weekly_aggregates", "league_weekly_goalie_averages"], state: input.tgv ? "ready" : "missing", asOf: null, updatedAt: null },
       ],
-      sample: `${period.label}: ${ledgers.reduce((total, ledger) => total + ledger.officialStarts, 0)} official starts in the ${ledgers.length} matchup week${ledgers.length === 1 ? "" : "s"} used`,
-      strength: "All situations", cohort: `${ranked.length} goalies with at least ${minStarts} official starts; baselines use every goalie with a start, week by week`,
+      sample: `${period.label}: ${countOf(ledgers.reduce((total, ledger) => total + ledger.officialStarts, 0), "official start")} in the ${countOf(ledgers.length, "matchup week")} used. ${weeks.map(week => `Week ${week.week}: ${countOf(week.poolGoalies, "goalie")}, ${countOf(week.officialStarts, "start")}`).join("; ")}. Comparisons not available: ${goalies.reduce((total, row) => total + row.game.unavailable + row.week.unavailable, 0)}. Relief-only goalies, not compared: ${relieved.length}`,
+      strength: "All situations",
+      cohort: `${countOf(ranked.length, "goalie")} with at least ${countOf(minStarts, "official start")}; baselines use every goalie with a start, week by week. Ranked by ${CATEGORY_COUNTS_LABEL}: games net (better minus worse results), then week net, then share better; equal goalies share a rank; lower GAA counts as better. ${TGV_LABEL} is a separate method, not applied to ${CATEGORY_COUNTS_LABEL}; Average cannot occur with its three default stats`,
       coverage: { observed: schedule.observed, expected: schedule.expected, missing: schedule.missing, unit: "team games" },
     },
   };
@@ -177,5 +178,5 @@ export const goaliePeriodModule = defineShareModule<GoaliePeriodSettings, Goalie
   load: () => import("./goaliePeriod.sources").then(sources => sources.loadGoaliePeriod),
   card: () => import("components/SocialShare/modules/GoaliePeriodCard").then(card => card.default),
   hasRows: data => data.ranked > 0,
-  altText: (snapshot, data) => `FHFH goalies, ${data.period.label}, by ${CATEGORY_COUNTS_LABEL}. ${boardSides(data.rows, goaliePeriodRanks, data.board).sides.map(side => `${side.kind === "best" ? "Best" : "Worst"}: ${side.entries.map(({ row, rank }) => `${rank}. ${row.name ?? row.goalieId}: ${row.categoryCounts.starts} starts, game cells ${row.categoryCounts.game.better} better, ${row.categoryCounts.game.worse} worse, ${row.categoryCounts.game.tied} tied. ${row.categoryCounts.byCategory.map(entry => `${categoryById(entry.category).label}: games ${exactCounts(entry.game)}; weeks ${exactCounts(entry.week)}`).join("; ")}. ${tgvAlt(row.tgv)}`).join(" ")}`).join(" ")} Not a forecast. ${snapshot.evidence.sample}.`,
+  altText: (snapshot, data) => `FHFH goalies, ${data.period.label}, by ${CATEGORY_COUNTS_LABEL}. ${boardSides(data.rows, goaliePeriodRanks, data.board).sides.map(side => `${side.kind === "best" ? "Best" : "Worst"}: ${side.entries.map(({ row, rank }) => `${rank}. ${row.name ?? row.goalieId}: ${countOf(row.categoryCounts.starts, "start")}, game cells ${row.categoryCounts.game.better} better, ${row.categoryCounts.game.worse} worse, ${row.categoryCounts.game.tied} tied. ${row.categoryCounts.byCategory.map(entry => `${categoryById(entry.category).label}: games ${exactCounts(entry.game)}; weeks ${exactCounts(entry.week)}`).join("; ")}. ${tgvAlt(row.tgv)}`).join(" ")}`).join(" ")} Not a forecast. ${snapshot.evidence.sample}.`,
 });

@@ -1,9 +1,7 @@
 @use "styles/vars" as v;
 
-.card { display: flex; flex-direction: column; gap: v.$space-sm; min-height: 0; }
-.lead p { margin: 0; font-size: 16px; color: v.$text-secondary; }
-.lead h3 { margin: 0; font-size: 22px; line-height: 1.15; font-weight: 700; color: v.$color-white; }
-.goalie { display: grid; grid-template-columns: 22px 30px minmax(0, 1fr) 78px; column-gap: 6px; align-items: center; }
-.legend { display: grid; gap: 3px; font-size: 14px; line-height: 1.25; color: v.$text-secondary;
-  p { margin: 0; }
-}
+.card { flex: 1; display: flex; flex-direction: column; gap: 5px; min-height: 0; }
+.lead { margin: 0; font-size: 22px; line-height: 1.15; font-weight: 700; color: v.$color-white; }
+.lead small { font-size: 15px; font-weight: 400; color: v.$text-secondary; }
+.goalie { display: grid; grid-template-columns: 24px 34px minmax(0, 1fr) 84px; column-gap: 6px; align-items: center; }
+.legend { margin: 0; font-size: 15px; line-height: 1.2; color: v.$text-secondary; }

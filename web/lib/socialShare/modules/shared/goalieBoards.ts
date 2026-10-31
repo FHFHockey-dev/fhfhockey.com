@@ -1,5 +1,7 @@
 /** Best and Worst side by side, shared by the goalie posts. A goalie's rank comes from the post's own method; this only lays out and scales. */
-export const BOARD_ROWS = 5;
+export const BOARD_ROWS = 8;
+/** "1 start", "2 starts". */
+export const countOf = (count: number, noun: string) => `${count} ${noun}${count === 1 ? "" : "s"}`;
 export type BoardChoice = "both" | "best" | "worst";
 export const BOARD_FIELD_OPTIONS = [{ value: "both", label: "Best and Worst" }, { value: "best", label: "Best only" }, { value: "worst", label: "Worst only" }];
 export const boardChoice = (value: string): BoardChoice => value === "best" || value === "worst" ? value : "both";
@@ -24,6 +26,8 @@ export function boardSides<Row>(rows: readonly Row[], ranks: BoardRanks<Row>, ch
   return { sides, onBoth };
 }
 export const bothSidesNote = (onBoth: number, ranked: number) => onBoth ? `Only ${ranked} goalie${ranked === 1 ? "" : "s"} qualified, so ${onBoth} appear${onBoth === 1 ? "s" : ""} on both sides.` : "";
+/** Said on the card only when a tie runs past the rows shown; otherwise the rows simply stop. */
+export const moreTiedNote = <Row>(sides: readonly BoardSide<Row>[]) => sides.filter(entry => entry.moreTied).map(entry => `${entry.kind === "best" ? "Best" : "Worst"}: ${entry.moreTied} more tied at rank ${entry.entries[entry.entries.length - 1].rank}.`).join(" ");
 
 export type HeatTone = "better" | "worse" | "level" | "none";
 /** Colour strength by size against the largest shown value. Sign sets the colour, so a good goalie in a small Worst column stays green. */

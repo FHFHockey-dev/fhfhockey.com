@@ -3,7 +3,7 @@ import { defineShareModule, type SharePostLoadResult } from "./contract";
 import { reconcileSchedule, type ScheduledGame } from "./creaseShift";
 import { defaultWeek, type MatchupWeek } from "./shared/categoryCounts";
 import { competitionRanks, lastN, per60 } from "./shared/definitions";
-import { BOARD_FIELD_OPTIONS, boardSides, type BoardChoice } from "./shared/goalieBoards";
+import { BOARD_FIELD_OPTIONS, boardSides, countOf, type BoardChoice } from "./shared/goalieBoards";
 import type { CompletedTeamGame, GoalieAppearance } from "./shared/goalieLedger";
 import { teamsInfo } from "lib/teamsInfo";
 
@@ -133,15 +133,15 @@ export function buildGoalieGsax(input: GoalieGsaxInput): SharePostLoadResult<Goa
         { name: "NHL.com goalie game stats", tables: ["wgo_goalie_stats", "wgo_team_stats", "games"], state: schedule.missing ? "partial" : "ready", asOf: wgoThrough, updatedAt: null },
         { name: "FHFH xG model", tables: ["nhl_xg_goalie_game_aggregates"], state: fhfhModel.state === "unavailable" ? "missing" : "ready", asOf: null, updatedAt: null, reasons: [fhfhModel.reason] },
       ],
-      sample: `${windowLabel}, NST through ${nstThrough ?? "no date"}: ${covered} of ${expected} appearances with NST rows`,
-      strength: strengthLabel, cohort: `${ranked.length} goalies with at least ${input.minAppearances} appearances and ${input.minCoverage}% NST coverage; ${rows.length - ranked.length} unranked`,
+      sample: `${windowLabel}, NST through ${nstThrough ?? "no date"}${lagDays ? `, ${gsaxLagLabel(lagDays)} behind NHL.com (${wgoThrough})` : ""}: ${covered} of ${countOf(expected, "appearance")} with NST rows. Later appearances not counted: ${appearancesBehindNst}. NST rows dropped for no NHL.com appearance that date: ${input.nstGames.filter(game => !appearanceKeys.has(`${game.goalieId}:${game.date}`)).length}`,
+      strength: strengthLabel, cohort: `${countOf(ranked.length, "goalie")} with at least ${countOf(input.minAppearances, "appearance")} and ${input.minCoverage}% NST coverage; ${rows.length - ranked.length} unranked. Above 0 means fewer goals allowed than this model expected; one model's context beside SV% and GAA, not comparable across models or strengths, and nothing about the next start. ${fhfhModel.reason}`,
       coverage: { observed: covered, expected, missing: expected - covered, unit: "goalie appearances" },
     },
   };
 }
 
 /** Goalies shown per side; the rest stay in the snapshot and are counted on it. */
-export const GSAX_SHOWN = 6;
+export const GSAX_SHOWN = 10;
 export const goalieGsaxRanks = { id: (row: GoalieGsaxRow) => row.goalieId, best: (row: GoalieGsaxRow) => row.rank, worst: (row: GoalieGsaxRow) => row.worstRank };
 export const goalieGsaxModule = defineShareModule<GoalieGsaxSettings, GoalieGsaxData>({
   id: "goalie-gsax", title: "GSAx (NST model)", summary: "Goals saved above expected from NST's model only, with sign, strength, sample and through-date. Context, not a ranking method or a start forecast.", group: "goalies", basis: "observed",
@@ -155,5 +155,5 @@ export const goalieGsaxModule = defineShareModule<GoalieGsaxSettings, GoalieGsax
   load: () => import("./goalieGsax.sources").then(sources => sources.loadGoalieGsax),
   card: () => import("components/SocialShare/modules/GoalieGsaxCard").then(card => card.default),
   hasRows: data => data.ranked > 0,
-  altText: (snapshot, data) => `FHFH GSAx, NST model, ${data.strengthLabel}, ${data.windowLabel}, NST through ${data.nstThrough}. ${boardSides(data.rows, goalieGsaxRanks, data.board, GSAX_SHOWN).sides.map(side => `${side.kind === "best" ? "Best" : "Worst"}: ${side.entries.map(({ row, rank }) => `${rank}. ${row.name ?? row.goalieId}: ${row.gsax} in ${row.covered} of ${row.appearances} appearances`).join("; ")}`).join(". ")}. ${data.fhfhModel.reason} ${snapshot.evidence.sample}.`,
+  altText: (snapshot, data) => `FHFH GSAx, NST model, ${data.strengthLabel}, ${data.windowLabel}, NST through ${data.nstThrough}. ${boardSides(data.rows, goalieGsaxRanks, data.board, GSAX_SHOWN).sides.map(side => `${side.kind === "best" ? "Best" : "Worst"}: ${side.entries.map(({ row, rank }) => `${rank}. ${row.name ?? row.goalieId}: ${row.gsax} in ${row.covered} of ${countOf(row.appearances, "appearance")}`).join("; ")}`).join(". ")}. ${data.fhfhModel.reason} ${snapshot.evidence.sample}.`,
 });

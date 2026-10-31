@@ -191,6 +191,30 @@ TJ could not read the bare numbers and supplied a layout to emulate. **Layout on
 
 Half-width is 494: identity, TGV block and heat tile leave about 213 for the name, and tiles are about 97 wide. `goalie-gsax` totals about 530 at 6 rows. Both spec tests assert the post body does not overflow, so your run is the real check. Eight categories wrap to two tile rows and add about 25 a row, which **would not fit**; check it if TJ wants that setting. No new real reads were made for this change.
 
+## Follow-up from TJ's third review: fill the card, less text
+
+TJ: too much whitespace and too much meta text. The shell's footer is now one line, with the full evidence on the page beside the preview (`9bb30218d`, `756d4706f`), and the body is about 860px.
+
+- **Rows stretch to fill.** The boards and the Crease Shift table share the height left in the body, so no band is left under them at any row count of 4 or more. Below 4 rows a side, rows cap at 130px rather than balloon, which can leave a band on a very small pool only.
+- **`goalie-period`:** 8 rows a side, one legend line. The rank rule, TGV explainer, pool counts, unavailable and relief-only counts moved to `evidence.sample` and `evidence.cohort`. Each side head carries "TGV grade (existing method)" over the chip and line. Row meta is starts, relief when non-zero, and week net; team names only when traded, because the logo shows the team.
+- **`goalie-gsax`:** 10 rows a side, one legend line. Row meta is GP, xGA, GA, SA. GP reads "9 of 10 GP" when NST misses a window game. Lag, later appearances, dropped NST rows and the FHFH model moved to evidence. "NST model" and the through-date stay on the card.
+- **`crease-shift`:** up to 12 teams, one note line, and type scales up when few rank (26px at 6 or fewer, 22px at 9 or fewer, 18px above). Unranked teams moved to evidence.
+- **On-card exceptions:** "N more tied at rank R" and "Only N goalies qualified..." still print, each only when it applies, because rows would otherwise look like a complete list or a mistake.
+- **Plurals:** "1 start", "1 appearance", "1 official start" and "1 goalie" now read correctly on cards, evidence and alt text.
+
+**Contract wording, for the lead:** CONTRACT §3 says the card "always shows" compared cells and N, and that every `unavailable` is "counted and shown". Compared cells and N now print on the page and in the alt text, not in the PNG, as you directed. A PNG shared alone no longer carries them, so §3 needs your edit or TJ's nod.
+
+**Fit: calculated, not rendered.** About 860 available, 5 gaps of 5.
+
+| Post, default rows | Fixed parts (px) | Each row's content (px) | Row after stretch (px) | Spare |
+| --- | --- | --- | --- | --- |
+| `goalie-period`, 8 a side, 5 categories | 137 | 82 | about 90 | about 67, or 50 with a tie line |
+| `goalie-gsax`, 10 a side | 81 | 57 | about 78 | about 209 before stretch |
+| `crease-shift`, 12 teams at 18px | 43 | 46 to 68 (2 or 3 goalies) | about 68 | fits up to 3 goalies a team on every row |
+| `crease-shift`, 6 teams at 26px | 43 | up to 94 | about 136 | about 250 before stretch |
+
+GSAx has room for more rows if the real render looks loose. A Crease Shift team with 4 or more goalies grows its row, so 12 such teams would clip; that is the case to measure. New spec tests assert no overflow and a band under 40px, for Period, GSAx and Crease Shift at 6 and 12 teams, so your run is the real check. No new real reads were made.
+
 ## Blockers
 
 None for building. Open: TJ's first real-output review (9.7) and the browser run of the spec.

@@ -111,6 +111,7 @@ export function buildCreaseShift(input: { reported: readonly CompletedTeamGame[]
   ];
   const state = reasons.length ? "partial" : "ready";
   const asOf = schedule.games.reduce<string | null>((latest, game) => !latest || game.date > latest ? game.date : latest, null);
+  const others = rows.filter(row => row.withheld !== null && !row.shortComparison).map(row => row.team);
   const compared = input.comparison === "std" ? "season to date, which contains the recent games" : `the ${input.window} games before them`;
   return {
     state, reasons, ttlSeconds: 900, teams: teams.slice(0, CREASE_SHIFT_SHOWN).map(team => team.team),
@@ -120,7 +121,7 @@ export function buildCreaseShift(input: { reported: readonly CompletedTeamGame[]
         { name: "NHL.com team game stats", tables: ["wgo_team_stats", "games"], state: schedule.missing ? "partial" : "ready", asOf, updatedAt: null },
         { name: "NHL.com goalie game stats", tables: ["wgo_goalie_stats"], state: unresolved ? "partial" : "ready", asOf: input.appearances.reduce<string | null>((latest, row) => !latest || row.date > latest ? row.date : latest, null), updatedAt: null },
       ],
-      sample: `Last ${input.window} completed team games per team through ${input.through}, compared with ${compared}`,
+      sample: `Last ${input.window} completed team games per team through ${input.through}, compared with ${compared}. PTS is share change in percentage points; relief is counted apart; describes past starts only${others.length ? `. Unranked: ${others.join(", ")}` : ""}`,
       strength: "All situations (official starter labels)", cohort: `${ranked.length} of ${input.teams.length} teams ranked; ${rows.filter(row => row.shortComparison).length} short comparison`,
       coverage: { observed: schedule.observed, expected: schedule.expected, missing: schedule.missing, unit: "team games" },
     },
@@ -128,7 +129,7 @@ export function buildCreaseShift(input: { reported: readonly CompletedTeamGame[]
 }
 
 /** Teams shown on the card; the rest stay in the snapshot and are counted on it. */
-export const CREASE_SHIFT_SHOWN = 8;
+export const CREASE_SHIFT_SHOWN = 12;
 export const creaseShiftWindowLabel = (team: Pick<CreaseShiftTeam, "games" | "short">, requested: number) => team.short ? `${team.games} of ${requested}` : `${team.games}`;
 
 export const creaseShiftModule = defineShareModule<CreaseShiftSettings, CreaseShiftData>({
