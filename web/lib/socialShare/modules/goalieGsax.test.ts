@@ -178,7 +178,8 @@ describe("GSAx card", () => {
     const appearances = Array.from({ length: 10 }, (_, index) => appearance(1, index));
     const root = await render(buildGoalieGsax({ ...base, minAppearances: 1, appearances, nstGames: Array.from({ length: 10 }, (_, index) => nst(1, index)).filter((_, index) => index !== 4) }).data!);
     expect(root.body.textContent).toContain("9 of 10 GP");
-    expect(root.querySelectorAll('[data-testid="goalie-gsax-card"] > p')).toHaveLength(1);
+    // A one-goalie pool adds the both-sides note; a full pool has the legend alone.
+    expect((await render(many(24).data!)).querySelectorAll('[data-testid="goalie-gsax-card"] > p')).toHaveLength(1);
   });
   it("writes one appearance in the singular", async () => {
     const one = buildGoalieGsax({ ...base, minAppearances: 1, appearances: [appearance(1, 0)], nstGames: [nst(1, 0)] });
