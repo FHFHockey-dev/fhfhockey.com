@@ -3,7 +3,7 @@ import { createElement } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import GoalieRescueCard from "components/SocialShare/modules/GoalieRescueCard";
 import { parseShareSettings, UNKNOWN_EVIDENCE, type SharePostSnapshot } from "./contract";
-import { buildGoalieRescue, goalieAvailability, goalieRescueModule, RESCUE_NOTE, type GoalieAvailability, type GoalieRescueSettings, type RescueData } from "./goalieRescue";
+import { buildGoalieRescue, cellShade, goalieAvailability, goalieRescueModule, RESCUE_GROUPS, RESCUE_NOTE, type GoalieAvailability, type GoalieRescueSettings, type RescueData } from "./goalieRescue";
 import { teamGamesLeft } from "./goalieRescue.sources";
 import { ownershipOf } from "./shared/definitions";
 import type { CompletedTeamGame, GoalieAppearance } from "./shared/goalieLedger";
@@ -148,10 +148,62 @@ describe("goalie rescue card", () => {
     const everyone = (count: number) => own(Object.fromEntries(Array.from({ length: count }, (_, index) => [index + 10, 10])));
     expect(build({ appearances: pool(25), availability: everyone(25) }).data!.rows).toHaveLength(25);
     const tied = build({ appearances: pool(34), availability: everyone(34) });
-    expect(tied.data!.rows).toHaveLength(29);
-    expect(tied.evidence.sample).toContain("5 more tied goalies are not listed.");
+    expect(tied.data!.rows).toHaveLength(28);
+    expect(tied.evidence.sample).toContain("6 more tied goalies are not listed.");
     const distinct = Array.from({ length: 25 }, (_, index) => index + 10).flatMap(id => three(id, "PHI", { saves: id }));
     expect(build({ settings: settings({ category: "saves" }), appearances: distinct, availability: everyone(25) }).data!.rows).toHaveLength(20);
+  });
+  const column = (id: string) => RESCUE_GROUPS.flatMap(group => group.columns).find(entry => entry.id === id)!;
+  const cells = (container: HTMLElement, id: string) => [...container.querySelectorAll<HTMLElement>(`[data-column="${id}"]:not([data-head])`)];
+  const rendered = (active: GoalieRescueSettings) => render(createElement(GoalieRescueCard, { snapshot: snapshot(build({ settings: active }).data!, active), data: build({ settings: active }).data!, settings: active, logos: {} })).container;
+  it("groups the columns under Wins, Volume and Ratios", () => {
+    const container = rendered(settings());
+    expect([...container.querySelectorAll("[data-group-head]")].map(head => head.textContent)).toEqual(["Wins", "Volume", "Ratios"]);
+    expect(RESCUE_GROUPS.map(group => group.columns.map(entry => entry.label))).toEqual([["W"], ["SV", "SA"], ["SV%", "GA", "GAA"]]);
+    expect(container.querySelector('[data-head][data-column="gaa"]')!.getAttribute("data-group")).toBe("ratios");
+  });
+  it("reads better the same way in every column: low GAA and GA like high SV% and W", () => {
+    const { rows: listed } = build().data!;
+    expect(cellShade(2, listed, column("gaa"))).toMatchObject({ tone: "better" });
+    expect(cellShade(0, listed, column("gaa")).goodness).toBeGreaterThan(cellShade(4, listed, column("gaa")).goodness!);
+    expect(cellShade(4, listed, column("gaa"))).toMatchObject({ tone: "worse", goodness: 0 });
+    const container = rendered(settings()), tone = (id: string, goalie: number) => { const index = listed.findIndex(row => row.goalieId === goalie); return cells(container, id)[index].dataset.tone; };
+    // G1 has the worst ratios and the most wins; G4 the lowest GAA of the group.
+    expect([tone("gaa", 1), tone("savePct", 1), tone("wins", 1), tone("gaa", 4), tone("savePct", 4)]).toEqual(["worse", "worse", "better", "better", "better"]);
+    expect(cells(container, "gaa")[listed.findIndex(row => row.goalieId === 4)].style.background.replace(/\s/g, "")).toMatch(/^rgba\(0,255,153,/);
+    expect(cells(container, "gaa")[listed.findIndex(row => row.goalieId === 1)].style.background.replace(/\s/g, "")).toMatch(/^rgba\(255,99,132,/);
+  });
+  it("scales each column on its own and leaves SA and missing values unshaded, with every value printed", () => {
+    const { rows: listed } = build().data!;
+    expect(cellShade(30, listed, column("shotsAgainst"))).toEqual({ tone: "none", goodness: null, alpha: 0 });
+    expect(cellShade(null, listed, column("gaa"))).toEqual({ tone: "none", goodness: null, alpha: 0 });
+    const same = build({ availability: own({ 1: 10 }) }).data!.rows;
+    expect(cellShade(same[0].gaa, same, column("gaa"))).toEqual({ tone: "level", goodness: 0.5, alpha: 0 });
+    const container = rendered(settings());
+    expect(cells(container, "shotsAgainst").every(cell => cell.dataset.tone === "none" && !cell.style.background)).toBe(true);
+    expect(cells(container, "shotsAgainst").map(cell => cell.textContent)).toEqual(listed.map(row => String(row.shotsAgainst)));
+    expect(cells(container, "gaa").map(cell => cell.textContent)).toEqual(listed.map(row => row.gaa!.toFixed(2)));
+  });
+  it("highlights the selected category's column and no other", () => {
+    for (const category of ["wins", "saves", "savePct", "gaa"] as const) {
+      const container = rendered(settings({ category }));
+      expect([...new Set([...container.querySelectorAll<HTMLElement>("[data-selected]")].map(cell => cell.dataset.column))]).toEqual([category]);
+      expect(container.querySelector(`[data-head][data-column="${category}"]`)!.hasAttribute("data-selected")).toBe(true);
+      expect(cells(container, category).every(cell => cell.hasAttribute("data-selected") && cell.querySelector("b"))).toBe(true);
+      cleanup();
+    }
+  });
+  it("shows team games left as one dot per game beside the number, and unknown as a dash", () => {
+    const { rows: listed } = build().data!, container = rendered(settings());
+    const left = cells(container, "left");
+    expect(left.map(cell => cell.querySelectorAll("[data-dot]").length)).toEqual(listed.map(row => row.teamGamesLeft ?? 0));
+    expect(left.map(cell => cell.textContent)).toEqual(listed.map(row => String(row.teamGamesLeft ?? "—")));
+    expect(listed.some(row => row.teamGamesLeft === null) && listed.some(row => row.teamGamesLeft === 3)).toBe(true);
+  });
+  it("adds no score: shades are worked out on the card and never stored", () => {
+    const data = build().data!, container = rendered(settings());
+    expect(JSON.stringify(data)).not.toMatch(/score|composite|goodness|shade|tone/i);
+    expect(container.textContent).not.toMatch(/score|composite|overall/i);
   });
   it("says why an empty pool is empty, with no filler", () => {
     const active = settings({ ownershipCeiling: 0 });

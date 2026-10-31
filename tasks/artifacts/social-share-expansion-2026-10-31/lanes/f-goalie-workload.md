@@ -98,6 +98,17 @@ The lead measured content of 1142, 1423 and 887px against bodies of 845 to 861px
 - **Spec:** expects `TEAM SCA` and a visible sparkline.
 - **Not verified:** no browser run. The fit is arithmetic until the lead's render.
 
+## Follow-up: Rescue visuals (TJ, 2026-10-31)
+
+- **Groups:** W sits under Wins, SV and SA under Volume, and SV%, GA and GAA under Ratios. There is no combined score, and shades are worked out on the card, never stored in the data.
+- **Colour:** each column is scaled on its own over the goalies listed, using the board green and red. `cellShade` flips GA and GAA, so lower reads as better. SA has no better end, so it stays unshaded, as does a missing value.
+- **Selected category:** that column's head inverts, and its cells get side rules and a bold value.
+- **GMS LEFT:** one dot per team game beside the printed number; unknown prints a dash.
+- **Legend:** keeps the Yahoo-wide and team-games wording, and adds "Colour compares this list, by column."
+- **Tie cap:** 29 becomes 28, because the group head takes about 21px. Anyone cut is counted in `evidence.sample`.
+- **Spec:** expects the Volume head and the selected W head.
+- **Not verified:** no browser run. The fit is arithmetic until the lead's render.
+
 ## Blockers
 
 None. No frozen file needs a change.

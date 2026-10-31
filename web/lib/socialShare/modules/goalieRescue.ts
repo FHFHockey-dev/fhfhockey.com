@@ -13,8 +13,8 @@ export type GoalieRescueSettings = { category: RescueCategory; window: GoalieWin
 
 /** Fills the card's 860px body. Ties may run past the size; the hard cap keeps them from clipping, and the sample names any left out. */
 export const RESCUE_LIST_SIZE = 20;
-/** (845px body - 28 legend - 19 head) / 27px minimum row. */
-const RESCUE_MAX_ROWS = 29;
+/** (845px body - 28 legend - 40 group and column heads) / 27px minimum row. */
+const RESCUE_MAX_ROWS = 28;
 /** Same rule as the pickup cards: anything but healthy or day to day is not a candidate. */
 const AVAILABLE_STATUSES = new Set(["", "DTD"]);
 export const RESCUE_NOTE = "Rostered % is Yahoo-wide. GMS LEFT are team games, not starts.";
@@ -99,6 +99,25 @@ export function buildGoalieRescue(input: {
 export const formatSavePct = (value: number | null) => value === null ? "—" : value.toFixed(3).replace(/^0/, "");
 export const formatGaa = (value: number | null) => value === null ? "—" : value.toFixed(2);
 export const formatRescueValue = (row: Pick<RescueRow, RescueCategory>, category: RescueCategory) => category === "savePct" ? formatSavePct(row.savePct) : category === "gaa" ? formatGaa(row.gaa) : row[category] ?? "—";
+
+/** The card's three lenses, never blended. `better` sets which end reads as better; SA is context with no such end, so it stays unshaded. */
+export type RescueColumnId = RescueCategory | "shotsAgainst" | "goalsAgainst";
+export type RescueColumn = { id: RescueColumnId; label: string; better: "high" | "low" | null };
+export const RESCUE_GROUPS: readonly { id: string; label: string; columns: readonly RescueColumn[] }[] = [
+  { id: "wins", label: "Wins", columns: [{ id: "wins", label: "W", better: "high" }] },
+  { id: "volume", label: "Volume", columns: [{ id: "saves", label: "SV", better: "high" }, { id: "shotsAgainst", label: "SA", better: null }] },
+  { id: "ratios", label: "Ratios", columns: [{ id: "savePct", label: "SV%", better: "high" }, { id: "goalsAgainst", label: "GA", better: "low" }, { id: "gaa", label: "GAA", better: "low" }] },
+];
+export type RescueShade = { tone: "better" | "worse" | "level" | "none"; goodness: number | null; alpha: number };
+/** Each column on its own, over the goalies listed: goodness 1 is the best end whichever way the stat runs, so a low GAA reads like a high SV%. */
+export function cellShade(value: number | null, rows: readonly RescueRow[], column: RescueColumn): RescueShade {
+  if (value === null || column.better === null) return { tone: "none", goodness: null, alpha: 0 };
+  const known = rows.flatMap(row => row[column.id] ?? []), low = Math.min(...known), high = Math.max(...known);
+  if (high === low) return { tone: "level", goodness: 0.5, alpha: 0 };
+  const position = (value - low) / (high - low), goodness = column.better === "low" ? 1 - position : position;
+  if (goodness === 0.5) return { tone: "level", goodness, alpha: 0 };
+  return { tone: goodness > 0.5 ? "better" : "worse", goodness, alpha: Math.round((0.16 + 0.54 * Math.abs(goodness - 0.5) * 2) * 100) / 100 };
+}
 const categoryLabel = (category: RescueCategory) => RESCUE_CATEGORY_OPTIONS.find(option => option.value === category)!.label;
 
 export const goalieRescueModule = defineShareModule<GoalieRescueSettings, RescueData>({

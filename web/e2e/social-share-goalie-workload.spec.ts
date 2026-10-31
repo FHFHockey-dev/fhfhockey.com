@@ -120,6 +120,8 @@ test("Goalie Category Rescue orders by one category and shows ownership states",
   const card = page.getByTestId("goalie-rescue-card");
   await expect(card).toContainText("Rostered % is Yahoo-wide");
   await expect(card).toContainText("20%");
+  await expect(card).toContainText("Volume");
+  await expect(card.locator('[data-head][data-selected]')).toHaveText("W");
   await expect(card).not.toContainText("Fictional Goalie 2");
   await expect(page.getByTestId("post-evidence")).toContainText("1 unknown ownership excluded");
   await expect(page.getByText("Works for a Thursday or Friday post.")).toBeVisible();

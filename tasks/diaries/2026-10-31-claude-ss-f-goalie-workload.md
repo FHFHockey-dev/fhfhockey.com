@@ -8,3 +8,4 @@
 - **Blockers:** none.
 - **Gotchas:** NST goalie `toi` is minutes and arrives as a string. NST goalie `team` uses `N.J`, `L.A`, so bind team from WGO and join by goalie and date only. NST `shots_against` differs from WGO on 36 of 414 joined rows, so NST supplies only the danger-zone splits.
 - **Busy and Quiet visuals:** side-by-side boards, neutral SA tile, per-game SA sparkline, tie cap 12. Rescue and Ratio Impact notes from TJ may follow. Fit needs the lead's render.
+- **Rescue visuals:** grouped heads, per-column colour with GA and GAA flipped, selected-column highlight, dots for games left, tie cap 28. Fit needs the lead's render.
