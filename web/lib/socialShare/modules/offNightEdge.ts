@@ -160,7 +160,7 @@ export function buildOffNightEdge(input: { edition: SocialShareSnapshot; setting
   const ownershipState: ShareDataState = !input.yahoo.length ? "missing" : judged && ownership.stale > ownership.known + ownership.unknown ? "stale" : ownership.stale ? "partial" : "ready";
   const ownershipSource: SharePostSource = { name: "Yahoo ownership", tables: OWNERSHIP_TABLES, state: ownershipState, asOf: ownership.asOf, updatedAt: null };
   const sources = [scheduleSource(edition), statsSource, ownershipSource];
-  const sample = `${input.from} to ${input.through}: ${new Set(appearances.map(row => row.playerId)).size} skaters; picks need ${MIN_SKATER_GAMES} appearances, active in ${RECENT_MAX_AGE_DAYS} days`;
+  const sample = `${input.from} to ${input.through}: ${new Set(appearances.map(row => row.playerId)).size} skaters; picks need ${MIN_SKATER_GAMES} appearances, active in ${RECENT_MAX_AGE_DAYS} days, ranked by L5 fantasy points per game × ice time; ownership among qualified skaters: ${ownership.known} known, ${ownership.unknown} unknown, ${ownership.stale} stale`;
   if (ownershipState === "missing") return unready("missing", ["Yahoo ownership returned no rows, so no pickups can be judged."], sources, sample);
   if (ownershipState === "stale") return unready("stale", [`Most Yahoo ownership is older than a day (${ownership.stale} of ${judged} qualified skaters).`], sources, sample);
   const reasons = [
@@ -175,7 +175,7 @@ export function buildOffNightEdge(input: { edition: SocialShareSnapshot; setting
     teams: schedule.rows.map(row => row.team),
     // A puck drop or the schedule's freshness window ends this edition sooner than the default.
     ttlSeconds: Math.min(SHARE_POST_DEFAULT_TTL_SECONDS, Math.floor((Date.parse(edition.expiresAt!) - Date.parse(edition.generatedAt)) / 1000)),
-    evidence: { sources, sample, strength: "All situations", cohort: `Top ${schedule.rows.length} of ${schedule.teamsWithGames} teams with games; skaters at or under ${settings.ownershipCeiling}% rostered, ${unknownNote}`,
+    evidence: { sources, sample, strength: "All situations", cohort: `Top ${schedule.rows.length} of ${schedule.teamsWithGames} teams with games${schedule.tiedOut.length ? ` (also tied at the last rank: ${schedule.tiedOut.join(", ")})` : ""}; skaters at or under ${settings.ownershipCeiling}% rostered, ${unknownNote}`,
       coverage: { observed, expected, missing, unit: "team games" } },
   };
 }
@@ -193,5 +193,5 @@ export const offNightEdgeModule = defineShareModule<OffNightSettings, OffNightDa
   load: () => import("./offNightEdge.sources").then(sources => sources.loadOffNightEdge),
   card: () => import("components/SocialShare/modules/OffNightEdgeCard").then(card => card.default),
   hasRows: data => data.rows.some(row => row.picks.F || row.picks.D),
-  altText: (snapshot, data) => `FHFH Off-Night Edge, ${data.dates === "weekly" ? "full week" : "rest of week"}, ${data.days[0]?.date ?? data.weekStart} to ${data.weekEnd}. ${data.rows.map(row => `${row.rank}. ${row.team}: ${row.games} games, ${row.offNightGames} off-night, score ${row.score.toFixed(1)}; ${pickText(row.picks.F, row.gaps.F)}; ${pickText(row.picks.D, row.gaps.D)}`).join(". ")}. ${snapshot.evidence.sample}.`,
+  altText: (snapshot, data) => `FHFH Off-Night Edge, ${data.dates === "weekly" ? "full week" : "rest of week"}, ${data.days[0]?.date ?? data.weekStart} to ${data.weekEnd}. ${data.rows.map(row => `${row.rank}. ${row.team}: ${row.games} games, ${row.offNightGames} off-night, score ${row.score.toFixed(1)}; ${pickText(row.picks.F, row.gaps.F)}; ${pickText(row.picks.D, row.gaps.D)}`).join(". ")}. NHL games by day: ${data.days.map(day => `${day.label} ${day.leagueGames}${day.offNight ? " (off night)" : ""}`).join(", ")}. ${snapshot.evidence.cohort}. ${snapshot.evidence.sample}.`,
 });

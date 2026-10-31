@@ -79,6 +79,8 @@ describe("6.1 schedule: GP by day and top 16 by actual Week Score", () => {
     expect(result.rows.length).toBe(16);
     expect(result.rows.every(row => row.rank === 1)).toBe(true);
     expect(result.tiedOut.length).toBe(16);
+    const built = buildOffNightEdge({ edition: edition(THURSDAY, "rest-of-week", schedule), settings: settings(), ...world([{ id: 1, team: teams[0].abbrev }]) });
+    for (const team of result.tiedOut) expect(built.evidence.cohort).toContain(team);
   });
   it("publishes no order from a schedule that is not ready", () => {
     const partial = week(THURSDAY); partial.numGamesPerDay = [1, 1, 1, 1, 1, 1, 1];
@@ -211,12 +213,15 @@ describe("6.4 card and registration", () => {
     expect(html).toContain("— ·");
     expect(html).not.toContain("null");
     expect(html).toContain("No F: no skaters played");
-    expect(html).toContain("Games still to start");
-    for (const day of result.data!.days) expect(html).toContain(`${day.label} ${day.leagueGames}`);
-    expect(html).toContain("included, shown —");
+    expect(html).toContain("Rest of week");
+    for (const day of result.data!.days) expect(html).toContain(`${day.label.slice(0, 2).toUpperCase()}<small>${day.leagueGames}</small>`);
+    expect(html).toContain("— unknown %");
+    expect(result.evidence.sample).toContain("ownership among qualified skaters: 1 known, 1 unknown, 0 stale");
     const alt = offNightEdgeModule.altText(snapshotOf(result, active) as never, result.data!, active);
     expect(alt).toContain("Skater 1 0%");
     expect(alt).toContain("Skater 2 —");
+    expect(alt).toContain("NHL games by day:");
+    expect(alt).toContain(result.evidence.cohort);
   });
   it("says so when no team has games left", () => {
     const data: OffNightData = { dates: "rest-of-week", weekStart: WEEK, weekEnd: "2026-11-01", days: [], rows: [], teamsWithGames: 0, countedGames: 0, tiedOut: [], ownership: { known: 0, unknown: 0, stale: 0, asOf: null } };

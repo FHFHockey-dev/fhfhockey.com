@@ -50,7 +50,8 @@ test("off-night edge: dates refetch a recomputed order, gaps and 0% print, and e
   await expect(square.getByTestId("off-night-gap").first()).toContainText("No D: 2 over 50%, 1 unknown %");
   await expect(page.getByTestId("post-evidence")).toContainText("Ownership ceiling %: 50");
   await expect(page.getByTestId("post-evidence")).toContainText("Dates: Rest of week");
-  await expect(square.getByTestId("off-night-slate")).toContainText("Games still to start");
+  await expect(square.getByTestId("off-night-legend")).toContainText("Rest of week");
+  await expect(page.getByTestId("post-evidence")).toContainText("Top 2 of 2 teams with games");
   await expect(square).toHaveAttribute("data-export-token", /off-night-edge-rest-of-week\|off-night-edge\|/);
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeEnabled();
 
@@ -58,7 +59,7 @@ test("off-night edge: dates refetch a recomputed order, gaps and 0% print, and e
   await page.getByLabel("Dates").selectOption("weekly");
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
   await page.getByRole("button", { name: "Refresh post", exact: true }).click();
-  await expect(square.getByTestId("off-night-slate")).toContainText("Full week");
+  await expect(square.getByTestId("off-night-legend")).toContainText("Full week");
   await expect(square).toHaveAttribute("data-export-token", /off-night-edge-weekly\|off-night-edge\|/);
   expect(requested.some(search => search.includes("dates=weekly"))).toBe(true);
 });
