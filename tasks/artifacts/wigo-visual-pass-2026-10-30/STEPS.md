@@ -259,3 +259,4 @@ Declutter in place (see `AUDIT-2026-10-30.md`). One local commit per approved st
 - **Last seen alive:** `:3000` was listening at step 5.
 - **Possible cause, mine:** while stopping my :3150 server I ran `pkill -f "next-server" -P 1`, a broader match than my own server, which breaks the rule not to touch :3000. The `-P 1` filter should only match next-server processes parented to init, and TJ's next-server had the `next dev` wrapper as its parent when last seen, so it may not have matched. :3125 wasn't a next-server, so something else may have stopped both. I can't tell which.
 - **Not touched:** `web/.next` was not changed by this pass; every server of mine used `.next-playwright`.
+- **Resolved:** TJ chose a restart. `npm run dev` is running on :3000 in the Terminal tab "FHFH dev :3000" and answers requests. The :3125 preview belongs to another lane and was left alone.
