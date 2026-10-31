@@ -98,3 +98,12 @@ Project `fyhftlxokyjtpndbkfse`, Supabase MCP `execute_sql`, 2026-10-31. Every st
 - Risky Starts flags are top third on both sides, as Cherry-Picked Matchups does; PP v PK uses a bottom-third PK. Default lens is ratio exposure, and days ahead defaults to 7. These are chosen starting points, not findings.
 - Games already under way are dropped from both posts, but stay in the inventory.
 - A blocked source is left out of the card's evidence list because it was not read; the card prints its reason instead.
+
+## Visual rework (Chef's ticket, TJ asked for visuals on both cards)
+
+- **Scale:** `RANK_BANDS` and `rankBand` in `goalieInventory.sources.ts`, in thirds, the same cut as the Risky Starts flag, which now reads from it. One hue, because a high rank is danger in the ratio lens and support in the win lens, so green and red would mislabel one of them. Category Blueprint's green and red scale was not reused for that reason.
+- **Risky Starts:** each pairing is head-to-head SVG bars out from the centre. Length is `(cohort - rank + 1) / cohort`. Fills are attributes. Numbers stay beside the bars. No rank gives a dashed empty track. Only the lens in view is drawn.
+- **Start/Sit:** every lens number is its own chip, filled inline by rank. Source status: confirmed green, projected amber, conflicting magenta with a dashed edge, unknown unfilled. Forecast has no fill in either state.
+- **Known reading point:** a weak PK is flagged from the bottom of the league, so its bar is short and pale on a flagged row. It was not inverted, so length means the same thing on every bar. The flagged row's bold text carries the signal.
+- **Checks:** lane tests and `sharedGoalieOutlook` pass; full tsc with the larger heap exit 0; eslint clean; CSS pure check passed; spec `--list` shows 4 tests. **Browser not run. Fit at 860px is estimated, not measured:** about 206px a tile (30px a pairing at 4 pairs) and about 45px a Start/Sit row.
+- **Not this lane:** `lib/player-cards/cardEvidenceVerdict.test.ts` fails in the shared checkout, in a file with another lane's uncommitted edits.

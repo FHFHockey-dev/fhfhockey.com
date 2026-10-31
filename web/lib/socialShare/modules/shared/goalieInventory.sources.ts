@@ -271,6 +271,22 @@ export function confirmationFreshness(confirmation: GoalieConfirmation, generate
 }
 export const forecastLabel = (forecast: GoalieForecast) => forecast.state === "qualified" ? `Conditional forecast ${Math.round(forecast.startProbability * 100)}%` : "Forecast unavailable";
 export const metricLabel = (value: InventoryMetric, digits: number) => value.value === null ? "—" : `${value.value.toFixed(digits)}${value.unit.startsWith("%") ? "%" : ""}${value.leagueRank === null ? "" : ` (#${value.leagueRank})`}`;
+/**
+ * One league-rank scale for both posts, in one hue because a high rank is danger in one lens and support in another, so it can
+ * never mean good or bad. Thirds match the Risky Starts flag. Hex values go on as attributes or inline styles so the PNG keeps them.
+ */
+export const RANK_BANDS = { top: { label: "top third", fill: "#3f9bdc", ink: "#0b0f12" }, middle: { label: "middle", fill: "#2a6a96", ink: "#ffffff" }, bottom: { label: "bottom third", fill: "#2b3a46", ink: "#ffffff" } } as const;
+export type RankBand = keyof typeof RANK_BANDS;
+/** Null without a value or a complete league's rank: that metric has no band, so it can never read as low. */
+export function rankBand({ value, leagueRank, leagueCohort }: InventoryMetric): RankBand | null {
+  if (value === null || leagueRank === null || leagueCohort === null) return null;
+  const third = Math.ceil(leagueCohort / 3);
+  return leagueRank <= third ? "top" : leagueRank > leagueCohort - third ? "bottom" : "middle";
+}
+/** A rank's share of the league: #1 fills the bar and last place is one step. Null follows `rankBand`. */
+export const rankShare = (metric: InventoryMetric) => rankBand(metric) === null ? null : (metric.leagueCohort! - metric.leagueRank! + 1) / metric.leagueCohort!;
+/** Source status colours, apart from the rank hue. An unknown has none: no report is not a bad report. */
+export const CONFIRMATION_TONES = { confirmed: { fill: "#0e5c46", ink: "#ffffff", border: null }, projected: { fill: "#6b5213", ink: "#ffffff", border: null }, conflicting: { fill: "#7a1f52", ink: "#ffffff", border: "1px dashed #ff6384" } } as const;
 /** A game with no start time stays listed; one already under way is no longer a start decision. */
 export const isUpcomingGame = (game: Pick<GoalieInventoryGame, "startTimeUtc">, generatedAt: string) => game.startTimeUtc === null || Date.parse(game.startTimeUtc) > Date.parse(generatedAt);
 /** The few words a card keeps; the full notes print with the evidence beside the preview. */

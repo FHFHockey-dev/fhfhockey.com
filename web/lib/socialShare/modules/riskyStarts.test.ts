@@ -5,7 +5,7 @@ import RiskyStartsCard from "components/SocialShare/modules/RiskyStartsCard";
 import { resolveDailyBoardEvidence, type BoardGoalieEvidence } from "lib/projections/dailyBoardEvidence";
 import { sharePostExportToken } from "./contract";
 import { RISKY_CORRELATION_NOTE, riskyFlags, riskyPairs, riskyRows, riskyRowsForLens, riskyStartsModule, riskyStartsResult, type RiskyRow, type RiskyStartsData, type RiskyStartsSettings } from "./riskyStarts";
-import { gameSignals, buildTeamLenses, buildGoalieInventory, CONFIRMATION_LINK_GAP, CONFIRMATION_REPORTER_GAP } from "./shared/goalieInventory.sources";
+import { gameSignals, buildTeamLenses, buildGoalieInventory, CONFIRMATION_LINK_GAP, CONFIRMATION_REPORTER_GAP, RANK_BANDS, rankBand, rankShare } from "./shared/goalieInventory.sources";
 import { FIXTURE_GENERATED_AT, FIXTURE_INPUT, FIXTURE_TEAMS, GOALIE_INVENTORY_FIXTURE, GOALIE_INVENTORY_FIXTURE_DETAIL } from "./shared/goalieInventory.fixture";
 
 vi.mock("lib/supabase/public-client", () => ({ default: {} }));
@@ -46,6 +46,56 @@ describe("Risky Starts card, through the real resolver", () => {
     const html = card({ ...riskyStartsResult(GOALIE_INVENTORY_FIXTURE_DETAIL), data: { ...data, rows: many } }, "volume");
     expect(html.match(/data-testid="risky-row"/g)).toHaveLength(8);
     expect(html).toContain("8 of 11");
+  });
+});
+
+describe("Risky Starts head-to-head bars", () => {
+  const metric = (value: number | null, leagueRank: number | null, leagueCohort: number | null = 32) => ({ value, unit: "per game", window: "", sampleGames: 10, leagueRank, leagueCohort });
+  const side = (team: string, label: string, value: ReturnType<typeof metric>) => ({ team, label, metric: value, digits: 1 });
+  const barCard = (sides: RiskyRow["lenses"]["volume"][number]["sides"]) => {
+    const base = data.rows.find(item => item.lenses.volume[0].flagged)!;
+    const row = { ...base, lenses: { ...base.lenses, volume: [{ id: "shots", label: "Shots", flagged: true, sides }] } };
+    return card({ ...riskyStartsResult(GOALIE_INVENTORY_FIXTURE_DETAIL), data: { ...data, rows: [row] } }, "volume");
+  };
+  const bars = (html: string) => [...html.matchAll(/<rect [^>]*data-testid="risky-bar"[^>]*>/g)].map(match => match[0]);
+  it("draws each side's length from its league rank, out from the centre, with the fill as an attribute", () => {
+    const html = barCard([side("NJD", "SF/GP", metric(34.1, 1)), side("NYR", "SA/GP", metric(25.2, 32))]);
+    const [left, right] = bars(html);
+    // #1 fills the left track to x=0; last place is one step of 32 starting at the right track's inner edge.
+    expect(left).toContain('width="99.00"');
+    expect(left).toContain('x="0.00"');
+    expect(left).toContain(`fill="${RANK_BANDS.top.fill}"`);
+    expect(right).toContain(`width="${(99 / 32).toFixed(2)}"`);
+    expect(right).toContain('x="101.00"');
+    expect(right).toContain(`fill="${RANK_BANDS.bottom.fill}"`);
+    expect(html).toContain("NJD SF/GP 34.1 (#1)");
+    expect(html).toContain("NYR SA/GP 25.2 (#32)");
+  });
+  it("gives rank shares that fall one step per rank", () => {
+    expect([1, 2, 16, 32].map(rank => rankShare(metric(1, rank)))).toEqual([1, 31 / 32, 17 / 32, 1 / 32]);
+  });
+  it("keeps a missing metric visibly missing: no length, no band, a dash, and the other side still drawn", () => {
+    const html = barCard([side("NJD", "SF/GP", metric(null, null, null)), side("NYR", "SA/GP", metric(25.2, 4))]);
+    const [left, right] = bars(html);
+    expect(left).toContain('data-mark="missing"');
+    expect(left).toContain('fill="none"');
+    expect(left).toContain("stroke-dasharray");
+    expect(html).toContain("NJD SF/GP —");
+    expect(right).toContain('data-mark="top"');
+  });
+  it("treats a value with no complete league rank as missing a bar, and keeps the number", () => {
+    const html = barCard([side("NJD", "SF/GP", metric(34.1, null, null)), side("NYR", "SA/GP", metric(25.2, 4))]);
+    expect(bars(html)[0]).toContain('data-mark="missing"');
+    expect(html).toContain("NJD SF/GP 34.1");
+    expect(rankBand(metric(34.1, null, null))).toBeNull();
+  });
+  it("draws only the lens in view, adds no combined score and no odds", () => {
+    const row = data.rows.find(item => item.lenses.volume[0].flagged)!;
+    const html = card({ ...riskyStartsResult(GOALIE_INVENTORY_FIXTURE_DETAIL), data: { ...data, rows: [row] } }, "volume");
+    expect(bars(html).map(bar => bar.match(/data-side="([^"]+)"/)![1])).toEqual(row.lenses.volume[0].sides.map(item => item.label));
+    expect(html).not.toMatch(/xGF|Goal diff|score|composite|probability/i);
+    expect(html).toContain("No win or start odds");
+    expect(JSON.stringify(row)).not.toMatch(/"(share|score|total|composite|odds)"/);
   });
 });
 

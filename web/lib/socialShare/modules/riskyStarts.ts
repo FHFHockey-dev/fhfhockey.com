@@ -1,6 +1,6 @@
 import { UNKNOWN_EVIDENCE, defineShareModule, type SharePostLoadResult } from "./contract";
 import type { GoalieConfirmation, GoalieGameSignals, GoalieInventory, InventoryMetric } from "./shared/goalieInventory";
-import { confirmationLabel, confirmationLegend, inventoryEvidence, isUpcomingGame, metricLabel, type GoalieInventoryDetail, type InventoryConflict } from "./shared/goalieInventory.sources";
+import { confirmationLabel, confirmationLegend, inventoryEvidence, isUpcomingGame, metricLabel, rankBand, type GoalieInventoryDetail, type InventoryConflict } from "./shared/goalieInventory.sources";
 
 /**
  * Risky Starts (SS 11.0, SS-R14) mirrors Cherry-Picked Matchups from the goalie's chair: one tile per team-night, a pairing
@@ -20,8 +20,8 @@ export type RiskyGoalie = { goalieId: number; name: string; starts: number | nul
 export type RiskyRow = { gameId: number; date: string; startTimeUtc: string | null; team: string; opponent: string; home: boolean; teamSecondNight: boolean | null; opponentSecondNight: boolean | null; conflicting: boolean; goalies: RiskyGoalie[]; lenses: Record<RiskyLens, RiskyPair[]> };
 export type RiskyStartsData = { from: string; through: string; rows: RiskyRow[]; confirmationLegend: string };
 
-const topThird = ({ leagueRank, leagueCohort }: InventoryMetric) => leagueRank !== null && leagueCohort !== null && leagueRank <= Math.ceil(leagueCohort / 3);
-const bottomThird = ({ leagueRank, leagueCohort }: InventoryMetric) => leagueRank !== null && leagueCohort !== null && leagueRank > leagueCohort - Math.ceil(leagueCohort / 3);
+const topThird = (metric: InventoryMetric) => rankBand(metric) === "top";
+const bottomThird = (metric: InventoryMetric) => rankBand(metric) === "bottom";
 
 /** Every pairing for one side of a game. Mirror the two teams and each pairing's sides swap to the other team's rates. */
 export function riskyPairs(team: string, opponent: string, { volume, ratioExposure: ratio, winSupport: win }: GoalieGameSignals): Record<RiskyLens, RiskyPair[]> {

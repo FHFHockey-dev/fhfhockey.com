@@ -13,9 +13,11 @@
   small { font-size: 12px; }
 }
 .game { display: inline-flex; align-items: center; gap: v.$space-xxs; white-space: nowrap; }
-.rate { white-space: nowrap; }
-.status { display: grid; color: v.$text-secondary;
-  small { font-size: 12px; font-weight: 400; color: v.$text-secondary; }
+.key { display: inline-flex; gap: 6px; span { white-space: nowrap; } i { display: inline-block; width: 11px; height: 11px; margin-right: 2px; border-radius: 2px; vertical-align: -1px; } }
+.lens { display: flex; gap: 2px; align-self: stretch; padding-block: 2px; white-space: nowrap; }
+.chip { flex: 1; display: flex; align-items: center; justify-content: center; padding-inline: 4px; border-radius: 3px; color: v.$color-white; }
+.chip[data-band="missing"] { color: v.$text-secondary; outline: 1px dashed rgba(v.$warning-color, 0.6); outline-offset: -1px; }
+.status { display: grid; align-self: stretch; align-content: center; margin-block: 2px; padding-inline: 4px; border-radius: 3px; color: v.$text-secondary;
+  small { font-size: 12px; font-weight: 400; color: inherit; }
 }
-.status[data-state="confirmed"] { color: v.$primary-color; font-weight: 700; }
-.status[data-state="projected"], .status[data-state="conflicting"] { color: v.$color-white; }
+.status[data-state="confirmed"], .status[data-state="conflicting"] { font-weight: 700; }

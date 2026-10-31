@@ -8,3 +8,6 @@
 - Gotcha: `trendSources.ts` imports the public Supabase client, so `goalieInventory.sources.ts` imports readers lazily inside the loader. Keep it that way, because the Start/Sit card imports search from it.
 - Gotcha: the server guard is `typeof window`, so the test file runs in the node environment; jsdom would make it return no client.
 - Gotcha: `source_url` and `expires_at` are null on every live observation, so no link or expiry can be shown yet.
+
+## Visual rework
+Bars on Risky Starts and rank chips plus status colours on Start/Sit, one-hue thirds scale shared through `rankBand`. Fit still needs the lead's real-data render; adjust `RISKY_TILE_LIMIT` or `START_SIT_ROW_LIMIT` if it clips.

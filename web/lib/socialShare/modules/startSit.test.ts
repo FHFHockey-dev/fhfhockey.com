@@ -7,7 +7,7 @@ import { parseShareSettings, sharePostExportToken } from "./contract";
 import { shareModule } from "./registry";
 import { FORECAST_ADMITTED_NOTE, START_SIT_LENS_NOTE, startSitConflicting, startSitModule, startSitResult, startSitRows, upcomingInventory, type StartSitData, type StartSitSettings } from "./startSit";
 import { FIXTURE_GENERATED_AT, FIXTURE_INPUT, GOALIE_INVENTORY_FIXTURE, GOALIE_INVENTORY_FIXTURE_DETAIL } from "./shared/goalieInventory.fixture";
-import { buildGoalieInventory, CONFIRMATION_CLOSED_REASON, CONFIRMATION_LINK_GAP, CONFIRMATION_REPORTER_GAP, FORECAST_CLOSED_REASON } from "./shared/goalieInventory.sources";
+import { buildGoalieInventory, CONFIRMATION_CLOSED_REASON, CONFIRMATION_LINK_GAP, CONFIRMATION_REPORTER_GAP, CONFIRMATION_TONES, FORECAST_CLOSED_REASON, RANK_BANDS, rankBand } from "./shared/goalieInventory.sources";
 
 vi.mock("lib/supabase/public-client", () => ({ default: {} }));
 vi.mock("lib/supabase/server", () => ({ default: { from: () => { throw new Error("No database reads in card tests."); } } }));
@@ -58,6 +58,52 @@ describe("Start/Sit card, through the real resolver", () => {
     const html = card({ ...closed, data: { ...closed.data!, inventory } });
     expect(html.match(/data-testid="start-sit-row"/g)).toHaveLength(18);
     expect(html).toContain("18 of 25");
+  });
+});
+
+describe("Start/Sit colour", () => {
+  const metric = (value: number | null, leagueRank: number | null, leagueCohort: number | null = 32) => ({ value, unit: "per game", window: "", sampleGames: 10, leagueRank, leagueCohort });
+  const cell = (html: string, testid: string, state: string) => html.match(new RegExp(`<span[^>]*data-testid="${testid}"[^>]*data-state="${state}"[^>]*>`))?.[0];
+  it("bands league ranks at the thirds, on one scale for every cohort", () => {
+    expect([1, 11, 12, 21, 22, 32].map(rank => rankBand(metric(1, rank)))).toEqual(["top", "top", "middle", "middle", "bottom", "bottom"]);
+    expect([1, 2, 3, 4].map(rank => rankBand(metric(1, rank, 4)))).toEqual(["top", "top", "bottom", "bottom"]);
+    expect(rankBand(metric(null, null, null))).toBeNull();
+    expect(rankBand(metric(3, null, 32))).toBeNull();
+  });
+  it("fills each lens number from its own rank and keeps every number", () => {
+    const html = card(startSitResult(GOALIE_INVENTORY_FIXTURE_DETAIL));
+    const row = startSitRows(data, "")[0], { volume, ratioExposure, winSupport } = row.game.signals;
+    const chips = [...html.matchAll(/<span data-testid="rank-chip" data-band="(\w+)"([^>]*)>([^<]*)</g)].slice(0, 6);
+    const metrics = [volume.opponentShotsForPerGame, volume.teamShotsAgainstPerGame, ratioExposure.opponentXgfPerGame, ratioExposure.teamXgaPerGame, winSupport.teamGoalsForPerGame, winSupport.opponentGoalsAgainstPerGame];
+    chips.forEach((chip, index) => {
+      const band = rankBand(metrics[index]);
+      expect(chip[1]).toBe(band ?? "missing");
+      if (band) expect(chip[2]).toContain(`background:${RANK_BANDS[band].fill}`);
+      expect(chip[3]).toContain(metrics[index].value!.toFixed(index < 2 ? 1 : 2));
+      expect(chip[3]).toContain(`#${metrics[index].leagueRank}`);
+    });
+    expect(chips).toHaveLength(6);
+  });
+  it("leaves a metric with no rank unfilled, never the bottom colour", () => {
+    const html = card(startSitResult(buildGoalieInventory({ ...FIXTURE_INPUT, nst: FIXTURE_INPUT.nst.filter(row => row.team_abbreviation !== "TOR") })));
+    const missing = html.match(/<span data-testid="rank-chip" data-band="missing"[^>]*>/)![0];
+    expect(missing).not.toContain("style=");
+  });
+  it("keeps unknown neutral, conflicting distinct and an unavailable forecast plain", () => {
+    const html = card(startSitResult(GOALIE_INVENTORY_FIXTURE_DETAIL));
+    expect(cell(html, "start-sit-confirmation", "none")).not.toContain("style=");
+    expect(cell(html, "start-sit-confirmation", "conflicting")).toContain(`background:${CONFIRMATION_TONES.conflicting.fill}`);
+    expect(cell(html, "start-sit-confirmation", "conflicting")).toContain("dashed");
+    expect(cell(html, "start-sit-confirmation", "confirmed")).toContain(`background:${CONFIRMATION_TONES.confirmed.fill}`);
+    expect(cell(html, "start-sit-confirmation", "projected")).toContain(`background:${CONFIRMATION_TONES.projected.fill}`);
+    expect(cell(html, "start-sit-forecast", "unavailable")).not.toContain("style=");
+    const fills = [...Object.values(CONFIRMATION_TONES).map(tone => tone.fill), ...Object.values(RANK_BANDS).map(band => band.fill)];
+    expect(new Set(fills).size).toBe(fills.length);
+  });
+  it("adds nothing across lenses and gives no odds", () => {
+    const html = card(startSitResult(buildGoalieInventory({ ...FIXTURE_INPUT, forecasts: null })));
+    expect(html).toContain("No win or start odds");
+    expect(html).not.toMatch(/score|composite|total/i);
   });
 });
 
