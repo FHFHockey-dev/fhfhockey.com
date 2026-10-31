@@ -78,6 +78,18 @@ const expectFits = (page: Page) => expect.poll(() => page.getByTestId("share-squ
   return clippedCell ? "clipped cell" : band > 40 ? `dead band ${band}` : "fits";
 })).toBe("fits");
 
+/** Risers and fallers: nothing clipped, each side's last row near the body's bottom when that side is full. */
+const expectMoversFit = (page: Page) => expect.poll(() => page.getByTestId("share-square").evaluate(square => {
+  const body = square.querySelector("[class*=postBody]"), sides = [...square.querySelectorAll("[data-testid^=board-]")];
+  if (!body || sides.length !== 2) return "no boards";
+  if (body.scrollHeight > body.clientHeight + 1 || square.scrollHeight > square.clientHeight + 1 || sides.some(side => side.scrollHeight > side.clientHeight + 1)) return "clipped";
+  const rows = [...square.querySelectorAll("[data-testid=change-row]")];
+  if (rows.some(row => row.scrollWidth > row.clientWidth + 1 || row.scrollHeight > row.clientHeight + 1) || [...square.querySelectorAll("[class*=ident] b")].some(name => name.scrollWidth > name.clientWidth)) return "clipped row";
+  const tallest = Math.max(...sides.map(side => side.lastElementChild!.getBoundingClientRect().bottom));
+  const band = body.getBoundingClientRect().bottom - tallest;
+  return band > 40 ? `dead band ${band}` : "fits";
+})).toBe("fits");
+
 test.beforeEach(({ page }) => page.setDefaultTimeout(10000));
 
 test("BSH Board leaders print components, per-game values and cohort, then export", async ({ page }) => {
@@ -94,21 +106,24 @@ test("BSH Board leaders print components, per-game values and cohort, then expor
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeEnabled();
 });
 
-test("BSH Board risers state their comparison, and stale settings cannot export", async ({ page }) => {
+test("BSH Board risers and fallers state their comparison side by side, and stale settings cannot export", async ({ page }) => {
   await open(page, "bsh-board", query => {
     const active = bshSettings({ view: (query.get("view") ?? "leaders") as BshBoardSettings["view"] });
     return edition("bsh-board", active, buildBshBoard(fictional, active));
   });
-  await page.locator("label", { hasText: /^View/ }).locator("select").selectOption("risers");
+  await page.locator("label", { hasText: /^View/ }).locator("select").selectOption("movers");
   // The view changed but the edition did not: the old data must not ship under the new label.
   await expect(page.getByTestId("share-square")).toContainText("Refresh this post");
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
   await page.getByRole("button", { name: "Refresh post", exact: true }).click();
-  await expect(page.getByTestId("share-square")).toContainText("L10, then previous 10 in grey");
+  const square = page.getByTestId("share-square");
+  await expect(square).toContainText("L10 vs previous 10");
   await expect(page.getByTestId("post-evidence")).toContainText("the previous 10 appearances");
-  await expect(page.getByTestId("share-square")).toContainText("Fictional Riser");
-  await expect(page.getByTestId("share-square")).not.toContainText("Fictional Faller");
-  await expectFits(page);
+  await expect(square.getByTestId("board-up")).toContainText("Fictional Riser");
+  await expect(square.getByTestId("board-down")).toContainText("Fictional Faller");
+  await expect(square.getByTestId("bsh-stack").first()).toHaveAttribute("data-recent-from", "10");
+  await expect(square.getByTestId("heat-tile")).toHaveCount(2);
+  await expectMoversFit(page);
 });
 
 test("Category Blueprint keeps categories separate with their own ranks", async ({ page }) => {
@@ -130,6 +145,20 @@ test("Nightly Floor prints numerator, denominator, missing and its strict test",
 });
 
 const crowdedOwnership = { byPlayer: new Map(Array.from({ length: 24 }, (_, index) => [index + 1, ownershipOf(10 + index, "2026-10-31")])), updatedAt: "2026-10-31T08:00:00" };
+test("BSH Board risers and fallers fill the body with no clipping at 7 rows a side", async ({ page }) => {
+  const moving: SkaterSeason = (() => {
+    const appearances = Array.from({ length: 24 }, (_, player) => Array.from({ length: 20 }, (_, index) => game(player + 1, `Fictional Longname Skater ${player + 1}`, player % 2 ? "NYR" : "NJD", index, { shots: (index >= 10) === (player % 2 === 0) ? 4 + (player % 5) : 1, hits: 1 + (player % 5), blocks: 1 + (player % 4) }))).flat();
+    const teamGames = [...new Map(appearances.map(row => [`${row.team}:${row.gameId}`, { gameId: row.gameId, date: row.date, team: row.team! }])).values()];
+    return { appearances, teamGames, scheduledGames: teamGames.length / 2, through: "2026-10-30" };
+  })();
+  const active = bshSettings({ view: "movers" });
+  await open(page, "bsh-board", () => edition("bsh-board", active, buildBshBoard(moving, active)));
+  await page.locator("label", { hasText: /^View/ }).locator("select").selectOption("movers");
+  await page.getByRole("button", { name: "Refresh post", exact: true }).click();
+  await expect(page.getByTestId("change-row")).toHaveCount(14);
+  await expectMoversFit(page);
+});
+
 const crowdedRows: Record<string, number> = { "bsh-board": 12, "category-blueprint": 20, "nightly-floor": 20 };
 const crowdedEditions: Record<string, () => object> = {
   "bsh-board": () => edition("bsh-board", bshSettings(), buildBshBoard(crowded, bshSettings())),

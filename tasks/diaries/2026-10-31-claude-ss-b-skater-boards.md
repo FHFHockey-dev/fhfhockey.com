@@ -16,6 +16,8 @@
 
 - BSH leaders: stacked B, S, H chart per game plus a HeatTile; 12 rows. Gaps cannot reach a ranked leader under the current unranking rule. Fit unmeasured until the lead renders.
 
+- BSH risers and fallers: one `movers` view, side by side, 7 rows a side, charts spanning both windows with a recent-window mark. Fit unmeasured until the lead renders.
+
 **Gotchas:**
 - PostStudio shows old data under new labels until Refresh and lets it export. The lead fixed the export side at `839aa7af4`. These posts keep `data.applied` so the card also asks for a refresh.
 - `yahoo_nhl_player_map_read` joins on `player_key`, not `player_id`; many NHL ids hold several Yahoo ids.

@@ -118,3 +118,14 @@ Follow-up commit (Blueprint default): 50 tests in the lane's 3 files passed, esl
 - **Rows:** leaders go from 20 to 12, because the chart and tile need the height. Risers, fallers, Blueprint and Nightly Floor stay at 20. Skaters below the card are counted in `evidence.cohort`.
 - **PNG:** drawn as inline SVG like the What Changed sparkline. Not measured or exported here; no browser run.
 - **Checks:** 57 tests in the lane's 3 files passed, eslint clean, the pure check passed, `--list` found 9 tests, `tsc` printed no errors.
+
+## BSH risers and fallers, side by side (TJ's review: same visuals)
+
+- **View:** the View field's Risers and Fallers options became one, "Risers and fallers" (`view=movers`). An old `?view=risers` link now returns a 400; these posts have not shipped.
+- **Rows:** 7 a side, about 114px each against about 107px of content (from the CSS, not measured). Rows reuse the What Changed `ChangeSide` layout, so the sides are headed Up and Down. Skaters below the card are counted per side in `evidence.cohort`.
+- **Each row:** a coloured change tile, red or green and scaling with size on one scale across both sides. Below it, BLK, SOG and HITS per game with the earlier value in grey, in the leaders' tints, then the stacked chart.
+- **Chart:** spans the baseline and recent windows, oldest to newest, on one scale across both sides, with a dashed line and a light band from where the recent window starts. With "Season excl. recent" it covers the whole season.
+- **Kept on the card:** "L5 vs previous 5" and the short-comparison count in the one legend line. The full wording stays in the evidence.
+- **Gaps:** a missing component in either window unranks the skater, so no gap reaches this card under the current rule either.
+- **Not measured:** no browser run; the lead renders on real data.
+- **Checks:** 59 tests in the lane's 3 files passed before a final legend-wording edit, and `bshBoard.test.ts` was rerun after it. eslint clean, the pure check passed, `--list` found 10 tests, `tsc` printed no errors (both before that edit).

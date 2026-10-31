@@ -20,6 +20,8 @@ export const skaterWindowOf = (rows: readonly SkaterAppearance[], window: Skater
 export const SKATER_BOARD_ROWS = 20;
 /** BSH leaders carry a chart and a tile in each row, which need the height of 12 rows. */
 export const BSH_LEADER_ROWS = 12;
+/** Risers and fallers sit side by side, with a chart row under each skater: 7 rows a side fit the body. */
+export const BSH_MOVER_ROWS = 7;
 /** The cohort line's count of ranked rows the card has no room for. */
 export const belowTheCard = (notShown: number, tied = 0) => notShown ? `${notShown} more below the card${tied ? `, ${tied} tied with the last row` : ""}` : "";
 export const STALE_SETTINGS_NOTE = "Settings changed. Refresh this post to apply them.";
@@ -63,17 +65,19 @@ export function skaterCohort(appearances: readonly SkaterAppearance[], settings:
 export const skaterCohortLabel = (settings: { position: SkaterPositionId; minGp: number }) => `${SKATER_POSITION_OPTIONS.find(option => option.value === settings.position)!.label}, ${settings.minGp}+ season GP`;
 export const shownTeams = (rows: readonly { team: string | null }[]) => [...new Set(rows.flatMap(row => row.team ? [row.team] : []))].sort();
 
-export type BshView = "leaders" | "risers" | "fallers";
+export type BshView = "leaders" | "movers";
 export type BshComparison = "previous" | "std";
 export type BshBoardSettings = { view: BshView; window: SkaterWindowId; comparison: BshComparison; minGp: number; position: SkaterPositionId };
 /** A null component total means a game in the window lacks that stat. Shot attempts never stand in for shots. */
 export type BshTotals = { games: number; blocks: number | null; shots: number | null; hits: number | null; bsh: number | null; blocksPerGame: number | null; shotsPerGame: number | null; hitsPerGame: number | null; bshPerGame: number | null };
-/** One appearance in the leaders' chart, oldest first. A null component makes the game a gap, never a zero. */
+/** One appearance in a row's chart, oldest first. A null component makes the game a gap, never a zero. */
 export type BshGameStack = { date: string; blocks: number | null; shots: number | null; hits: number | null; bsh: number | null };
-export type BshRow = SkaterIdentity & { rank: number; recent: BshTotals; baseline: BshTotals | null; delta: number | null; games: BshGameStack[] };
+export type BshRow = SkaterIdentity & { rank: number; recent: BshTotals; baseline: BshTotals | null; delta: number | null; games: BshGameStack[]; recentFrom: number };
 export type BshBoardData = {
-  applied: string; view: BshView; through: string; windowLabel: string; comparisonLabel: string | null; rows: BshRow[];
-  cohort: { eligible: number; comparable: number; ranked: number; missingComponent: number; shortWindow: number; flat: number };
+  applied: string; view: BshView; through: string; windowLabel: string; comparisonLabel: string | null;
+  /** Leaders view. The movers view fills `risers` and `fallers`. */
+  rows: BshRow[]; risers: BshRow[]; fallers: BshRow[];
+  cohort: { eligible: number; comparable: number; ranked: number; risers: number; fallers: number; missingComponent: number; shortWindow: number; flat: number };
   notShown: number; tiedBeyondCut: number;
 };
 
@@ -99,7 +103,7 @@ export const bshComparisonLabel = (settings: Pick<BshBoardSettings, "view" | "wi
 };
 
 const BSH_FIELDS: readonly ShareSettingField[] = [
-  { id: "view", label: "View", kind: "select", default: "leaders", options: [{ value: "leaders", label: "Leaders" }, { value: "risers", label: "Risers" }, { value: "fallers", label: "Fallers" }] },
+  { id: "view", label: "View", kind: "select", default: "leaders", options: [{ value: "leaders", label: "Leaders" }, { value: "movers", label: "Risers and fallers" }] },
   { id: "window", label: "Window", kind: "select", default: "l10", options: SKATER_WINDOW_OPTIONS },
   { id: "comparison", label: "Comparison (risers, fallers)", kind: "select", default: "previous", options: [{ value: "previous", label: "Previous N" }, { value: "std", label: "Season excl. recent" }] },
   { id: "minGp", label: "Min season GP", kind: "number", default: 5, min: 1, max: 82, step: 1 },
@@ -108,43 +112,50 @@ const BSH_FIELDS: readonly ShareSettingField[] = [
 
 /** Leaders rank BSH per game in the window. Risers and fallers need a full recent window and a baseline at least as long. */
 export function buildBshBoard(season: SkaterSeason, settings: BshBoardSettings): SharePostLoadResult<BshBoardData> {
-  const pool = skaterCohort(season.appearances, settings);
+  const pool = skaterCohort(season.appearances, settings), leaders = settings.view === "leaders";
   let missingComponent = 0, shortWindow = 0;
-  const candidates = pool.flatMap((rows): { id: SkaterIdentity; recent: BshTotals; baseline: BshTotals | null; delta: number | null; games: BshGameStack[] }[] => {
+  const candidates = pool.flatMap((rows): (Omit<BshRow, "rank" | keyof SkaterIdentity> & { id: SkaterIdentity })[] => {
     const recent = skaterWindowOf(rows, settings.window);
-    if (settings.view === "leaders") {
+    if (leaders) {
       const totals = bshTotals(recent.rows);
       if (totals.bsh === null) { missingComponent++; return []; }
-      return [{ id: skaterIdentity(recent.rows), recent: totals, baseline: null, delta: null, games: bshGameStacks(recent.rows) }];
+      return [{ id: skaterIdentity(recent.rows), recent: totals, baseline: null, delta: null, games: bshGameStacks(recent.rows), recentFrom: 0 }];
     }
     const base = baselineOf(rows, settings.window, settings.comparison);
     if (recent.short || base.actual < recent.requested!) { shortWindow++; return []; }
     const totals = bshTotals(recent.rows), baseline = bshTotals(base.rows);
     if (totals.bshPerGame === null || baseline.bshPerGame === null) { missingComponent++; return []; }
-    return [{ id: skaterIdentity(recent.rows), recent: totals, baseline, delta: tieSafe(totals.bshPerGame - baseline.bshPerGame), games: [] }];
+    return [{ id: skaterIdentity(recent.rows), recent: totals, baseline, delta: tieSafe(totals.bshPerGame - baseline.bshPerGame), games: bshGameStacks([...base.rows, ...recent.rows]), recentFrom: base.rows.length }];
   });
-  const moving = settings.view === "leaders" ? candidates : candidates.filter(row => settings.view === "risers" ? row.delta! > 0 : row.delta! < 0);
-  const ranked = competitionRanks(moving, row => settings.view === "leaders" ? row.recent.bshPerGame : row.delta, row => row.id.playerId, settings.view === "fallers" ? "low" : "high");
-  const rows: BshRow[] = ranked.slice(0, settings.view === "leaders" ? BSH_LEADER_ROWS : SKATER_BOARD_ROWS).map(({ row, rank }) => ({ ...row.id, rank, recent: row.recent, baseline: row.baseline, delta: row.delta, games: row.games }));
-  const lastRank = rows[rows.length - 1]?.rank, comparisonLabel = bshComparisonLabel(settings);
-  const flat = settings.view === "leaders" ? 0 : candidates.filter(row => row.delta === 0).length;
-  const counted = settings.view === "leaders" ? `${ranked.length} ranked` : `${candidates.length} comparable, ${ranked.length} ${settings.view}`;
-  const notShown = ranked.length - rows.length, tiedBeyondCut = ranked.slice(rows.length).filter(row => row.rank === lastRank).length;
-  const excluded = [missingComponent ? `${missingComponent} unranked for a missing component` : "", shortWindow ? `${shortWindow} short of a full comparison` : "", flat ? `${flat} unchanged` : "", belowTheCard(notShown, tiedBeyondCut)].filter(Boolean).join(", ");
-  const windowLabel = skaterWindowLabel(settings.window);
+  const board = (entries: typeof candidates, limit: number, value: (row: typeof candidates[number]) => number | null, direction: "high" | "low") => {
+    const ranked = competitionRanks(entries, value, row => row.id.playerId, direction);
+    const rows: BshRow[] = ranked.slice(0, limit).map(({ row: { id, ...row }, rank }) => ({ ...id, rank, ...row }));
+    const lastRank = rows[rows.length - 1]?.rank;
+    return { rows, ranked: ranked.length, notShown: ranked.length - rows.length, tied: ranked.slice(rows.length).filter(row => row.rank === lastRank).length };
+  };
+  const top = leaders ? board(candidates, BSH_LEADER_ROWS, row => row.recent.bshPerGame, "high") : null;
+  const up = leaders ? null : board(candidates.filter(row => row.delta! > 0), BSH_MOVER_ROWS, row => row.delta, "high");
+  const down = leaders ? null : board(candidates.filter(row => row.delta! < 0), BSH_MOVER_ROWS, row => row.delta, "low");
+  const comparisonLabel = bshComparisonLabel(settings), flat = leaders ? 0 : candidates.filter(row => row.delta === 0).length;
+  const counted = top ? `${top.ranked} ranked` : `${candidates.length} comparable, ${up!.ranked} risers, ${down!.ranked} fallers`;
+  const below = top ? [belowTheCard(top.notShown, top.tied)] : [up!.notShown ? `risers: ${belowTheCard(up!.notShown, up!.tied)}` : "", down!.notShown ? `fallers: ${belowTheCard(down!.notShown, down!.tied)}` : ""];
+  const excluded = [missingComponent ? `${missingComponent} unranked for a missing component` : "", shortWindow ? `${shortWindow} short of a full comparison` : "", flat ? `${flat} unchanged` : "", ...below].filter(Boolean).join(", ");
+  const windowLabel = skaterWindowLabel(settings.window), shown = top ? top.rows : [...up!.rows, ...down!.rows];
   return {
-    ...skaterSeasonEvidence(season, { windowLabel: comparisonLabel ? `${windowLabel} vs ${comparisonLabel}` : windowLabel, cohort: `${skaterCohortLabel(settings)}: ${pool.length} eligible, ${counted}${excluded ? `, ${excluded}` : ""}`, note: settings.view === "leaders" ? "Ranked by BSH per game. A missing component leaves a skater unranked; shot attempts never stand in. The chart stacks blocks, shots and hits by appearance, oldest to newest, on one scale across rows." : "Ranked by the change in BSH per game. Both windows must be full." }),
+    ...skaterSeasonEvidence(season, { windowLabel: comparisonLabel ? `${windowLabel} vs ${comparisonLabel}` : windowLabel, cohort: `${skaterCohortLabel(settings)}: ${pool.length} eligible, ${counted}${excluded ? `, ${excluded}` : ""}`, note: leaders ? "Ranked by BSH per game. A missing component leaves a skater unranked; shot attempts never stand in. The chart stacks blocks, shots and hits by appearance, oldest to newest, on one scale across rows." : "Ranked by the change in BSH per game. Both windows must be full. The chart stacks blocks, shots and hits by appearance across both windows, oldest to newest, on one scale across rows; the dashed line marks where the recent window starts." }),
     data: {
-      applied: shareSettingsKey(BSH_FIELDS, settings), view: settings.view, through: season.through, windowLabel, comparisonLabel, rows,
-      cohort: { eligible: pool.length, comparable: candidates.length, ranked: ranked.length, missingComponent, shortWindow, flat },
-      notShown, tiedBeyondCut,
+      applied: shareSettingsKey(BSH_FIELDS, settings), view: settings.view, through: season.through, windowLabel, comparisonLabel,
+      rows: top?.rows ?? [], risers: up?.rows ?? [], fallers: down?.rows ?? [],
+      cohort: { eligible: pool.length, comparable: candidates.length, ranked: top ? top.ranked : up!.ranked + down!.ranked, risers: up?.ranked ?? 0, fallers: down?.ranked ?? 0, missingComponent, shortWindow, flat },
+      notShown: top ? top.notShown : up!.notShown + down!.notShown, tiedBeyondCut: top ? top.tied : up!.tied + down!.tied,
     },
-    teams: shownTeams(rows),
+    teams: shownTeams(shown),
   };
 }
 export const bshBoardCurrent = (data: BshBoardData, settings: BshBoardSettings) => data.applied === shareSettingsKey(BSH_FIELDS, settings);
 
 const fixed = (value: number | null) => value === null ? "missing" : value.toFixed(2);
+const altRows = (rows: readonly BshRow[]) => rows.map(row => `${row.rank}. ${row.name}: ${fixed(row.recent.bshPerGame)} BSH per game (BLK ${fixed(row.recent.blocksPerGame)}, SOG ${fixed(row.recent.shotsPerGame)}, HITS ${fixed(row.recent.hitsPerGame)}) in ${row.recent.games} GP${row.delta === null ? "" : `, change ${row.delta.toFixed(2)}`}`).join("; ");
 export const bshBoardModule = defineShareModule<BshBoardSettings, BshBoardData>({
   id: "bsh-board", title: "BSH Board", summary: "BLK + SOG + HITS leaders, risers and fallers, with all three components per game.", group: "skaters", basis: "observed",
   suggestedUse: "Works for a midweek category post; choose it on any day.",
@@ -152,6 +163,6 @@ export const bshBoardModule = defineShareModule<BshBoardSettings, BshBoardData>(
   validate: settings => settings.view !== "leaders" && settings.window === "std" ? "Risers and fallers compare a recent window: choose L5 or L10." : null,
   load: () => import("./bshBoard.sources").then(sources => sources.loadBshBoard),
   card: () => import("components/SocialShare/modules/BshBoardCard").then(card => card.default),
-  hasRows: (data, settings) => data.rows.length > 0 && bshBoardCurrent(data, settings),
-  altText: (snapshot, data) => `FHFH BSH ${data.view}, ${data.windowLabel}${data.comparisonLabel ? ` versus ${data.comparisonLabel}` : ""}, through ${data.through}. ${data.rows.map(row => `${row.rank}. ${row.name}: ${fixed(row.recent.bshPerGame)} BSH per game (BLK ${fixed(row.recent.blocksPerGame)}, SOG ${fixed(row.recent.shotsPerGame)}, HITS ${fixed(row.recent.hitsPerGame)}) in ${row.recent.games} GP${row.delta === null ? "" : `, change ${row.delta.toFixed(2)}`}`).join("; ")}. ${snapshot.evidence.cohort}.`,
+  hasRows: (data, settings) => data.rows.length + data.risers.length + data.fallers.length > 0 && bshBoardCurrent(data, settings),
+  altText: (snapshot, data) => `FHFH BSH ${data.view === "leaders" ? "leaders" : "risers and fallers"}, ${data.windowLabel}${data.comparisonLabel ? ` versus ${data.comparisonLabel}` : ""}, through ${data.through}. ${data.view === "leaders" ? altRows(data.rows) : `Risers: ${altRows(data.risers) || "none"}. Fallers: ${altRows(data.fallers) || "none"}`}. ${snapshot.evidence.cohort}.`,
 });

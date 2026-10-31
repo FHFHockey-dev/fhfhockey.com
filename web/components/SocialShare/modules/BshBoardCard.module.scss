@@ -34,3 +34,12 @@ $layer-h: #cf5cad;
 .edge { fill: none; stroke: v.$color-white; stroke-width: 2px; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
 .tile > span { min-width: 92px; }
 .key { color: v.$color-white; font-weight: 700; i { display: inline-block; width: 14px; height: 14px; margin: 0 4px 0 8px; border-radius: 3px; vertical-align: -1px; } i:first-child { margin-left: 0; } i[data-layer="b"] { background: $layer-b; } i[data-layer="s"] { background: $layer-s; } i[data-layer="h"] { background: $layer-h; } }
+.recentBand { fill: rgba(v.$color-white, 0.08); }
+.recentMark { fill: none; stroke: v.$color-white; stroke-width: 1.5px; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
+/* Risers and fallers, 7 rows a side: about 114px a row, and a row's content needs about 107px. */
+.moverStrip { min-height: 46px; }
+.moverStrip > .chart { width: auto; }
+.part { display: grid; align-content: center; justify-items: center; min-width: 0; padding: 2px 3px; border-radius: 4px; font-size: 19px; line-height: 1.15; color: v.$color-white; small { font-size: 13px; color: v.$text-secondary; } }
+.part[data-layer="b"] { background: rgba($layer-b, 0.16); }
+.part[data-layer="s"] { background: rgba($layer-s, 0.16); }
+.part[data-layer="h"] { background: rgba($layer-h, 0.16); }
