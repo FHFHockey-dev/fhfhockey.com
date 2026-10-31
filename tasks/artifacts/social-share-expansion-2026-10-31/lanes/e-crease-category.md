@@ -113,6 +113,49 @@ The lead's real L10 render ranked MTL first against a 3-game comparison and CBJ 
 
 CONTRACT §2's defaults table lists only Window and Comparison for Crease Shift. It is frozen, so adding this row is the lead's.
 
+## Follow-up from TJ's card review (9.7): grades, line and readable marks
+
+TJ asked for grade columns, a week-to-week line, and something readable in place of the above-below-tied cells. `goalie-period` now has:
+
+- **Five grade columns in each row**, under "TGV grade (existing method)": graded weeks per grade through the period's last week, from the unedited `calculateWeeklyRanking`, with the selected week's grade outlined and summed points. A week with no row, or one the method leaves unclassified, adds nothing.
+- **A line per goalie**: weekly grade points on one fixed 1-to-20 scale, season start through the period's last week. A week with no grade is a break with a small tick, never 0, and the selected week is white. I wrote a small local SVG instead of reusing `Sparkline`: importing it pulls all of `SocialShare.tsx` into this card, it cannot mark a week, and its colours rely on `currentColor`. Colours here are attributes, because html-to-image drops class styles on SVG children.
+- **Direction-normalized marks**: per-category tiles with a green up triangle for better than league and a red down triangle for worse, the same for every category, on rows labeled Games and Weeks. "=" appears only when non-zero. NET now reads "+6 of 10", which replaces CMP. Exact above, below and tied counts stay in `data` and the alt text. The ranking rule is unchanged.
+- **A failed TGV read** previews as partial, with "Unavailable" in place of grades and the line.
+
+**"Season to date" stops at the selected period**, so a Week 2 card never shows week 5. Say if the line should always run to the cutoff instead.
+
+**Reads:** the season read replaces the selected-weeks read: `goalie_weekly_aggregates` ceiling **2,200 rows** (254 today, 61 a week at most) and `league_weekly_goalie_averages` **40 rows**. They fail closed into the unavailable state. All of this loader's reads now run one after another.
+
+**Fit in the 1080 square, 6 goalies and 5 categories: calculated, not rendered.** I ran no browser. The new spec test measures it, so that run is the real check.
+
+| Part | Height (px) |
+| --- | --- |
+| Available: 1080 − 72 padding − 96 header − 28 gaps − about 140 footer (6 evidence lines plus the edition line) | **about 744** |
+| Lead line and winner | 50 |
+| Group and column heads | 39 |
+| 6 rows at 62 | 372 |
+| Legend, up to 8 lines at 16, with relief-only names | 128 |
+| Gaps | 56 |
+| **Total** | **about 645, about 100 spare** |
+
+Width: 1,008 available. Rank 26, goalie 165, grades 354 and 3 gaps of 10 leave 433 for counts, so each of 5 tiles is about 58 wide, which fits two single-digit counts on a line. Two-digit counts or a "=" wrap inside the tile and add about 18 to that row; the spare height covers that. **Eight categories make the tiles about 34 wide and are not budgeted**; that setting may clip, so check it if TJ wants it.
+
+New spec tests: six goalies with an overflow assertion on the post body, and the failed-TGV state. Selectors `category-counts`, `tgv-existing` and `goalie-period-winners` are unchanged.
+
+### Readings that surprised me (reads R8, R9)
+
+| # | Statement | Tables read | Rows returned | Result |
+| --- | --- | --- | --- | --- |
+| R8 | TGV grade spread by week, by the method's rule | `goalie_weekly_aggregates`, `league_weekly_goalie_averages` | 5 | Passed |
+| R9 | Row counts for the new ceilings | `goalie_weekly_aggregates`, `league_weekly_goalie_averages`, `yahoo_matchup_weeks` | 1 | Passed. 254 goalie weeks, 70 goalies, 61 a week at most, 5 league rows, 27 weeks |
+
+1. **The Average column will always be 0.** The TGV page's default stats are wins, saves and SV%, so a week scores 0, 33, 67 or 100%, which gives Abysmal, Bad, Good or Elite. Average needs 45 to 59%, and 5 points never occurs. A test pins this. It is the existing method working as written, so I left it; TJ asked for all five columns and should know why one is empty. Changing it means a different stat set, or new thresholds, which is TJ's call.
+2. **TGV is generous.** Across weeks 1 to 4, 55 to 63% of graded goalies are Good or Elite (week 4: 12 Elite, 20 Good, 11 Bad, 14 Abysmal), partly because a tie counts as better.
+3. **The two methods can disagree on one row.** In week 4, Dostal and Swayman rank in the bottom 6 of 33 on Category Counts with 2 of 3 TGV stats better, which is Good. The new row puts those side by side, so expect questions. They use different stats and baselines.
+4. **Their baselines differ.** TGV's week 4 league wins and saves are .828 and 41.14 over 58 rows, which include relief-only goalies. Category Counts' are .842 and 41.74 over the 57 goalies with a start. This is by contract.
+5. **Real ties are almost absent.** Every shown goalie in R5 and R7 had 0 tied cells, so "=" will rarely appear.
+6. **An in-progress week grades against a partial average.** Week 5's league wins are .483 against about .83 for full weeks. Defaults avoid it, but choosing the current week on purpose shows an early grade.
+
 ## Blockers
 
 None for building. Open: TJ's first real-output review (9.7) and the browser run of the spec.

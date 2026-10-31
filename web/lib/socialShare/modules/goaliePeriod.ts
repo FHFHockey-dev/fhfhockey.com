@@ -2,7 +2,7 @@ import { calculateWeeklyRanking, isGoalieWeekEligible } from "components/GoalieP
 import type { GoalieWeeklyAggregate, LeagueWeeklyAverage, NumericGoalieStatKey, Ranking, StatColumn } from "components/GoaliePage/goalieTypes";
 import { defineShareModule, type SharePostLoadResult } from "./contract";
 import { reconcileSchedule, type ScheduledGame } from "./creaseShift";
-import { buildWeekLedgers, CATEGORIES, CATEGORY_COUNTS_LABEL, DEFAULT_CATEGORY_IDS, defaultMonth, defaultWeek, monthPeriod, periodGoalies, rankPeriodGoalies, weekPeriod, type CategoryId, type MatchupWeek, type PeriodGoalie, type SharePeriod } from "./shared/categoryCounts";
+import { buildWeekLedgers, CATEGORIES, categoryById, CATEGORY_COUNTS_LABEL, DEFAULT_CATEGORY_IDS, defaultMonth, defaultWeek, monthPeriod, periodGoalies, rankPeriodGoalies, weekPeriod, type CategoryId, type CellCounts, type MatchupWeek, type PeriodGoalie, type SharePeriod } from "./shared/categoryCounts";
 import { teamStartShare, type CompletedTeamGame, type GoalieAppearance } from "./shared/goalieLedger";
 
 /** Goalie of the Week and Month, with best and worst (SS 9.0), by Category Counts. TGV grades sit beside it under their own label. */
@@ -16,8 +16,16 @@ export const TGV_STAT_COLUMNS: StatColumn[] = [
   { label: "SV", value: "saves", dbFieldGoalie: "weekly_saves", dbFieldAverage: "avg_league_weekly_saves" },
   { label: "SV%", value: "savePct", dbFieldGoalie: "weekly_sv_pct", dbFieldAverage: "avg_league_weekly_sv_pct", dbFieldRate: true },
 ];
-export type TgvWeekGrade = { week: number; ranking: Ranking | null };
-export type TgvResult = { label: typeof TGV_LABEL; state: "ready" | "unavailable"; grades: TgvWeekGrade[] };
+export const TGV_GRADES: readonly Ranking[] = ["Elite", "Good", "Average", "Bad", "Abysmal"];
+/** One matchup week. Null is no grade, which is a gap in the line and never 0 points. */
+export type TgvSeasonWeek = { week: number; ranking: Ranking | null; points: number | null; selected: boolean };
+export type TgvResult = {
+  label: typeof TGV_LABEL; state: "ready" | "unavailable";
+  /** Graded weeks by grade and their summed points, season start through the period's last week; null when TGV could not be read. */
+  counts: Record<Ranking, number> | null; points: number | null;
+  /** Weeks with a row that the existing method leaves unclassified. */
+  unclassified: number; series: TgvSeasonWeek[];
+};
 export type GoaliePeriodRow = { goalieId: number; name: string | null; teams: string[]; categoryCounts: PeriodGoalie; tgv: TgvResult };
 export type GoaliePeriodWeek = MatchupWeek & { poolGoalies: number; officialStarts: number };
 export type GoaliePeriodData = {
@@ -56,19 +64,32 @@ export const periodReadRange = (period: SharePeriod) => ({
   through: [period.touchedWeeks.reduce((last, week) => week.end > last ? week.end : last, period.gameTo), period.through].sort()[0],
 });
 
-/** Existing TGV, read through its own functions: one grade per assigned week, and null where its own rule leaves a week unclassified. */
-export function tgvGrades(goalieId: number, weeks: readonly MatchupWeek[], goalieRows: readonly GoalieWeeklyAggregate[], leagueRows: readonly LeagueWeeklyAverage[]): TgvWeekGrade[] {
-  return weeks.flatMap(week => {
-    const row = goalieRows.find(entry => entry.goalie_id === goalieId && entry.week === week.week), league = leagueRows.find(entry => entry.week === week.week);
-    if (!row) return [];
-    return [{ week: week.week, ranking: league && isGoalieWeekEligible(row) ? calculateWeeklyRanking(row, league, TGV_STAT_KEYS, TGV_STAT_COLUMNS).ranking : null }];
+/** Season start through the period's last assigned week: a card never shows a week later than the one it is about. */
+export function tgvSeasonWeeks(weeks: readonly MatchupWeek[], period: Pick<SharePeriod, "cellWeeks">) {
+  const last = Math.max(...period.cellWeeks.map(week => week.week), -Infinity);
+  return weeks.filter(week => week.week <= last);
+}
+export type TgvRows = { weeks: readonly MatchupWeek[]; goalies: readonly GoalieWeeklyAggregate[]; league: readonly LeagueWeeklyAverage[] };
+/** Existing TGV, read through its own functions, week by week. A week with no row, or one its own rule leaves unclassified, has no grade. */
+export function tgvSeason(goalieId: number, tgv: TgvRows | null, selected: ReadonlySet<number>): TgvResult {
+  if (!tgv) return { label: TGV_LABEL, state: "unavailable", counts: null, points: null, unclassified: 0, series: [] };
+  const own = tgv.goalies.filter(entry => entry.goalie_id === goalieId), counts: Record<Ranking, number> = { Elite: 0, Good: 0, Average: 0, Bad: 0, Abysmal: 0 };
+  let points = 0, unclassified = 0;
+  const series = tgv.weeks.map((week): TgvSeasonWeek => {
+    const row = own.find(entry => entry.week === week.week), league = tgv.league.find(entry => entry.week === week.week), base = { week: week.week, selected: selected.has(week.week) };
+    if (!row) return { ...base, ranking: null, points: null };
+    if (!league || !isGoalieWeekEligible(row)) { unclassified++; return { ...base, ranking: null, points: null }; }
+    const grade = calculateWeeklyRanking(row, league, TGV_STAT_KEYS, TGV_STAT_COLUMNS);
+    counts[grade.ranking]++; points += grade.points;
+    return { ...base, ranking: grade.ranking, points: grade.points };
   });
+  return { label: TGV_LABEL, state: "ready", counts, points, unclassified, series };
 }
 
 export type GoaliePeriodInput = {
   settings: GoaliePeriodSettings; period: SharePeriod; appearances: readonly GoalieAppearance[]; reported: readonly CompletedTeamGame[]; scheduled: readonly ScheduledGame[];
   /** Null when the existing method's views could not be read; it then reads as unavailable and never as a Category Counts value. */
-  tgv: { goalies: readonly GoalieWeeklyAggregate[]; league: readonly LeagueWeeklyAverage[] } | null;
+  tgv: TgvRows | null;
 };
 export function buildGoaliePeriod(input: GoaliePeriodInput): SharePostLoadResult<GoaliePeriodData> {
   const { settings, period } = input, categories = parseCategories(settings.categories);
@@ -77,10 +98,11 @@ export function buildGoaliePeriod(input: GoaliePeriodInput): SharePostLoadResult
   const { ledgers, unassigned } = buildWeekLedgers(period.touchedWeeks, input.appearances, categories);
   const minStarts = period.kind === "month" ? settings.minStartsMonth : settings.minStartsWeek, board = settings.board === "worst" ? "worst" : "best";
   const goalies = rankPeriodGoalies(periodGoalies(ledgers, period, categories), minStarts);
+  const selectedWeeks = new Set(period.cellWeeks.map(week => week.week));
   const boardRank = (row: PeriodGoalie) => board === "worst" ? row.worstRank : row.rank;
   const rows = goalies.filter(row => row.starts > 0).sort((a, b) => (boardRank(a) ?? Infinity) - (boardRank(b) ?? Infinity) || b.starts - a.starts || a.goalieId - b.goalieId)
     .map((row): GoaliePeriodRow => ({ goalieId: row.goalieId, name: row.name, teams: row.teams, categoryCounts: row,
-      tgv: { label: TGV_LABEL, state: input.tgv ? "ready" : "unavailable", grades: input.tgv ? tgvGrades(row.goalieId, period.cellWeeks, input.tgv.goalies, input.tgv.league) : [] } }));
+      tgv: tgvSeason(row.goalieId, input.tgv, selectedWeeks) }));
   const ranked = rows.filter(row => boardRank(row.categoryCounts) !== null);
   const reasons = [
     ...schedule.missing ? [`${schedule.missing} of ${schedule.expected} scheduled team games in this period's weeks have no reported result.`] : [],
@@ -117,6 +139,8 @@ export function buildGoaliePeriod(input: GoaliePeriodInput): SharePostLoadResult
 
 /** Goalies shown on the card; the rest stay in the snapshot and are counted on it. */
 export const GOALIE_PERIOD_SHOWN = 6;
+const exactCounts = (counts: CellCounts) => `${counts.above} above, ${counts.below} below, ${counts.tied} tied`;
+const tgvAlt = (tgv: TgvResult) => tgv.counts ? `${tgv.label}: ${TGV_GRADES.map(grade => `${grade} ${tgv.counts![grade]}`).join(", ")}, ${tgv.points} points.` : `${tgv.label}: unavailable.`;
 const boardRankOf = (data: GoaliePeriodData, row: GoaliePeriodRow) => data.board === "worst" ? row.categoryCounts.worstRank : row.categoryCounts.rank;
 
 export const goaliePeriodModule = defineShareModule<GoaliePeriodSettings, GoaliePeriodData>({
@@ -134,5 +158,5 @@ export const goaliePeriodModule = defineShareModule<GoaliePeriodSettings, Goalie
   load: () => import("./goaliePeriod.sources").then(sources => sources.loadGoaliePeriod),
   card: () => import("components/SocialShare/modules/GoaliePeriodCard").then(card => card.default),
   hasRows: data => data.ranked > 0,
-  altText: (snapshot, data) => `FHFH ${data.board} goalies, ${data.period.label}, by ${CATEGORY_COUNTS_LABEL}. ${data.rows.filter(row => boardRankOf(data, row) !== null).slice(0, GOALIE_PERIOD_SHOWN).map(row => `${boardRankOf(data, row)}. ${row.name ?? row.goalieId}: ${row.categoryCounts.starts} starts, game cells ${row.categoryCounts.game.better} better, ${row.categoryCounts.game.worse} worse, ${row.categoryCounts.game.tied} tied`).join("; ")}. Not a forecast. ${snapshot.evidence.sample}.`,
+  altText: (snapshot, data) => `FHFH ${data.board} goalies, ${data.period.label}, by ${CATEGORY_COUNTS_LABEL}. ${data.rows.filter(row => boardRankOf(data, row) !== null).slice(0, GOALIE_PERIOD_SHOWN).map(row => `${boardRankOf(data, row)}. ${row.name ?? row.goalieId}: ${row.categoryCounts.starts} starts, game cells ${row.categoryCounts.game.better} better, ${row.categoryCounts.game.worse} worse, ${row.categoryCounts.game.tied} tied. ${row.categoryCounts.byCategory.map(entry => `${categoryById(entry.category).label}: games ${exactCounts(entry.game)}; weeks ${exactCounts(entry.week)}`).join("; ")}. ${tgvAlt(row.tgv)}`).join(" ")} Not a forecast. ${snapshot.evidence.sample}.`,
 });

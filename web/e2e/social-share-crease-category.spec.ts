@@ -25,7 +25,7 @@ const appearances = scheduled.flatMap((game, index) => [
 ]);
 const week = { week: 4, start: "2026-10-19", end: "2026-10-25" };
 const periodSettings = { period: "week", week: 4, month: "", minStartsWeek: 2, minStartsMonth: 5, board: "best", categories: "wins,saves,svPct,gaa,shutouts" };
-const tgv = { goalies: [{ goalie_id: 1, week: 4, weekly_gs: 2, weekly_toi_seconds: 7200, weekly_wins: 2, weekly_saves: 68, weekly_sv_pct: 0.97 }], league: [{ week: 4, avg_league_weekly_wins: 1, avg_league_weekly_saves: 40, avg_league_weekly_sv_pct: 0.9 }] } as never;
+const tgv = { goalies: [{ goalie_id: 1, week: 4, weekly_gs: 2, weekly_toi_seconds: 7200, weekly_wins: 2, weekly_saves: 68, weekly_sv_pct: 0.97 }], league: [{ week: 4, avg_league_weekly_wins: 1, avg_league_weekly_saves: 40, avg_league_weekly_sv_pct: 0.9 }], weeks: [week] } as never;
 
 function edition(post: string, settings: Record<string, unknown>, result: { state: string; reasons?: string[]; evidence: unknown; data: unknown; teams?: string[] }) {
   const at = generatedAt();
@@ -94,6 +94,41 @@ test("goalie of the period: Category Counts and the TGV grade stay under their o
   await expect(page.getByTestId("tgv-existing")).toContainText("TGV grade (existing method)");
   await expect(page.getByTestId("post-evidence")).toContainText("Categories: wins,saves,svPct,gaa,shutouts");
   await download(page);
+});
+
+test("goalie of the period: six goalies and five categories fit the square, with grades and a line per goalie", async ({ page }) => {
+  await install(page);
+  // The longest real name shape, five default categories, four weeks of TGV with a gap in week 2.
+  const names = ["Ukko-Pekka Luukkonen", "Sergei Bobrovsky", "Andrei Vasilevskiy", "Connor Hellebuyck", "Juuse Saros", "Igor Shesterkin"];
+  const fit = Array.from({ length: 6 }, (_, index) => ({ id: index + 1, date: `2026-10-${19 + index}`, homeTeamId: teamsInfo.NJD.id, awayTeamId: teamsInfo.NYR.id }));
+  const rows = fit.flatMap(game => [{ gameId: game.id, date: game.date, team: "NJD" }, { gameId: game.id, date: game.date, team: "NYR" }]);
+  const stats = rows.map((game, index) => stat(index % 6 + 1, game.team, game.gameId, game.date, { name: names[index % 6], wins: index % 3 === 0 ? 1 : 0, saves: 20 + index, shotsAgainst: 24 + index, goalsAgainst: index % 4 }));
+  const weeks = [1, 2, 3, 4].map(number => ({ week: number, start: `2026-10-0${number}`, end: `2026-10-0${number}` }));
+  const season = { weeks: [...weeks.slice(0, 3), week], league: [1, 2, 3, 4].map(number => ({ week: number, avg_league_weekly_wins: 1, avg_league_weekly_saves: 40, avg_league_weekly_sv_pct: 0.9 })),
+    goalies: names.flatMap((_, goalie) => [1, 3, 4].map(number => ({ goalie_id: goalie + 1, week: number, weekly_gs: 2, weekly_toi_seconds: 7200, weekly_wins: goalie % 3, weekly_saves: 30 + goalie * 5, weekly_sv_pct: 0.88 + goalie * 0.01 }))) } as never;
+  const result = buildGoaliePeriod({ settings: periodSettings, period: weekPeriod(week, "2026-10-30"), appearances: stats, reported: rows, scheduled: fit, tgv: season });
+  await page.route("**/api/v1/social-share/posts/**", route => route.fulfill({ json: edition("goalie-period", periodSettings, result) }));
+  await page.goto("/social-share/posts?post=goalie-period&week=4");
+  const card = page.getByTestId("goalie-period-card");
+  await expect(card).toBeVisible();
+  await expect(page.getByTestId("goalie-period-row")).toHaveCount(6);
+  await expect(page.getByTestId("goalie-period-row").first().locator("svg[data-sparkline]")).toBeVisible();
+  // The post body clips overflow, so this is the check that nothing was cut off.
+  const overflow = await card.evaluate(element => { const body = element.parentElement!; return { client: body.clientHeight, scroll: body.scrollHeight, card: element.getBoundingClientRect().bottom - body.getBoundingClientRect().bottom, wide: element.scrollWidth - element.clientWidth }; });
+  expect(overflow.scroll).toBeLessThanOrEqual(overflow.client);
+  expect(overflow.card).toBeLessThanOrEqual(0);
+  expect(overflow.wide).toBeLessThanOrEqual(0);
+  await download(page);
+});
+
+test("goalie of the period: a failed TGV read shows grades as unavailable and cannot export", async ({ page }) => {
+  await install(page);
+  const result = buildGoaliePeriod({ settings: periodSettings, period: weekPeriod(week, "2026-10-30"), appearances, reported, scheduled, tgv: null });
+  await page.route("**/api/v1/social-share/posts/**", route => route.fulfill({ json: edition("goalie-period", periodSettings, result) }));
+  await page.goto("/social-share/posts?post=goalie-period&week=4");
+  await expect(page.getByTestId("goalie-period-row").first().locator('[data-group="tgv"]')).toHaveText("Unavailable");
+  await expect(page.getByTestId("post-watermark")).toHaveText("PARTIAL · NOT FOR EXPORT");
+  await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
 });
 
 test("goalie of the period: a game without one labeled starter cannot export", async ({ page }) => {

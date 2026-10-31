@@ -4,8 +4,8 @@ import { describe, expect, it } from "vitest";
 import type { GoalieWeeklyAggregate, LeagueWeeklyAverage } from "components/GoaliePage/goalieTypes";
 import { teamsInfo } from "lib/teamsInfo";
 import { parseShareSettings } from "./contract";
-import { buildGoaliePeriod, goaliePeriodModule, periodReadRange, resolvePeriod, TGV_LABEL, type GoaliePeriodData, type GoaliePeriodSettings } from "./goaliePeriod";
-import { monthPeriod, weekPeriod, type MatchupWeek } from "./shared/categoryCounts";
+import { buildGoaliePeriod, goaliePeriodModule, periodReadRange, resolvePeriod, TGV_LABEL, tgvSeasonWeeks, type GoaliePeriodData, type GoaliePeriodSettings } from "./goaliePeriod";
+import { cellTone, monthPeriod, weekPeriod, type MatchupWeek } from "./shared/categoryCounts";
 import type { GoalieAppearance } from "./shared/goalieLedger";
 
 const weeks: MatchupWeek[] = [{ week: 4, start: "2026-10-19", end: "2026-10-25" }, { week: 5, start: "2026-10-26", end: "2026-11-01" }];
@@ -25,7 +25,12 @@ const tgv = {
     { goalie_id: 2, week: 4, weekly_gs: 2, weekly_toi_seconds: 7200, weekly_wins: 0, weekly_saves: 38, weekly_sv_pct: 0.82 },
   ] as GoalieWeeklyAggregate[],
   league: [{ week: 4, avg_league_weekly_wins: 1, avg_league_weekly_saves: 51.5, avg_league_weekly_sv_pct: 0.92 }] as LeagueWeeklyAverage[],
+  weeks: [weeks[0]],
 };
+const seasonWeeks: MatchupWeek[] = [{ week: 1, start: "2026-09-29", end: "2026-10-04" }, { week: 2, start: "2026-10-05", end: "2026-10-11" }, { week: 3, start: "2026-10-12", end: "2026-10-18" }, weeks[0]];
+const seasonLeague = [1, 3, 4].map(week => ({ ...tgv.league[0], week }));
+/** Goalie 1: Elite in week 1, no row in week 2, Good in week 3 (2 of 3 stats), Elite in week 4. */
+const season = { weeks: seasonWeeks, league: seasonLeague, goalies: [{ ...tgv.goalies[0], week: 1 }, { ...tgv.goalies[0], week: 3, weekly_wins: 0 }, ...tgv.goalies] };
 const base = { settings, period: weekPeriod(weeks[0], "2026-10-30"), appearances, reported, scheduled, tgv };
 
 describe("goalie of the period", () => {
@@ -95,48 +100,126 @@ describe("TGV beside Category Counts", () => {
   it("keeps the two methods in separate objects, each with its own label", () => {
     const { data } = buildGoaliePeriod(base), row = data!.rows[0];
     expect(data!.method).toBe("Category Counts");
-    expect(row.tgv).toEqual({ label: TGV_LABEL, state: "ready", grades: [{ week: 4, ranking: "Elite" }] });
-    expect(row.categoryCounts).not.toHaveProperty("ranking");
+    expect(row.tgv).toMatchObject({ label: TGV_LABEL, state: "ready", points: 20, counts: { Elite: 1, Good: 0, Average: 0, Bad: 0, Abysmal: 0 } });
+    expect(row.categoryCounts).not.toHaveProperty("counts");
     expect(row.tgv).not.toHaveProperty("gameNet");
+  });
+  it("counts each goalie's graded weeks per grade through the period's end, and sums the points", () => {
+    const series = buildGoaliePeriod({ ...base, tgv: season }).data!.rows.find(row => row.goalieId === 1)!.tgv;
+    expect(series.counts).toEqual({ Elite: 2, Good: 1, Average: 0, Bad: 0, Abysmal: 0 });
+    expect(series.points).toBe(50);
+    expect(series.series.map(week => [week.week, week.ranking, week.points, week.selected])).toEqual([[1, "Elite", 20, false], [2, null, null, false], [3, "Good", 10, false], [4, "Elite", 20, true]]);
+    expect(series.unclassified).toBe(0);
+  });
+  it("never reads a week past the period's end", () => {
+    const later: MatchupWeek[] = [{ week: 3, start: "2026-10-12", end: "2026-10-18" }, ...weeks];
+    expect(tgvSeasonWeeks(later, weekPeriod(weeks[0], "2026-10-30")).map(week => week.week)).toEqual([3, 4]);
+    expect(tgvSeasonWeeks(later, { cellWeeks: [] })).toEqual([]);
+  });
+  it("can never give Average with the method's default three stats: 0, 33, 67 or 100% only", () => {
+    const seen = new Set<string>();
+    for (const wins of [0, 2]) for (const saves of [0, 99]) for (const svPct of [0.5, 0.99]) {
+      const week = { ...tgv.goalies[0], weekly_wins: wins, weekly_saves: saves, weekly_sv_pct: svPct };
+      seen.add(buildGoaliePeriod({ ...base, tgv: { ...tgv, goalies: [week] } }).data!.rows.find(row => row.goalieId === 1)!.tgv.series[0].ranking!);
+    }
+    expect([...seen].sort()).toEqual(["Abysmal", "Bad", "Elite", "Good"]);
+  });
+  it("keeps an unclassified week out of the counts and the points, as the existing method does", () => {
+    const short = { ...tgv, goalies: [{ ...tgv.goalies[0], weekly_toi_seconds: 600 }, tgv.goalies[1]] };
+    expect(buildGoaliePeriod({ ...base, tgv: short }).data!.rows[0].tgv).toMatchObject({ points: 0, unclassified: 1, counts: { Elite: 0 }, series: [{ week: 4, ranking: null, points: null, selected: true }] });
   });
   it("marks TGV unavailable without touching the counts, and that is partial", () => {
     const result = buildGoaliePeriod({ ...base, tgv: null });
     expect(result.state).toBe("partial");
-    expect(result.data!.rows[0].tgv).toEqual({ label: TGV_LABEL, state: "unavailable", grades: [] });
+    expect(result.data!.rows[0].tgv).toEqual({ label: TGV_LABEL, state: "unavailable", counts: null, points: null, unclassified: 0, series: [] });
     expect(result.data!.rows[0].categoryCounts).toEqual(buildGoaliePeriod(base).data!.rows[0].categoryCounts);
-  });
-  it("leaves an ineligible week unclassified, as the existing method does", () => {
-    const short = { ...tgv, goalies: [{ ...tgv.goalies[0], weekly_toi_seconds: 600 }, tgv.goalies[1]] };
-    expect(buildGoaliePeriod({ ...base, tgv: short }).data!.rows[0].tgv.grades).toEqual([{ week: 4, ranking: null }]);
   });
   const render = async (data: GoaliePeriodData) => {
     const Card = await goaliePeriodModule.card();
-    return renderToStaticMarkup(createElement(Card, { data, logos: {}, settings, snapshot: {} as never }));
+    return new DOMParser().parseFromString(renderToStaticMarkup(createElement(Card, { data, logos: {}, settings, snapshot: {} as never })), "text/html");
   };
   it("never merges the labels on the card", async () => {
-    const html = await render(buildGoaliePeriod(base).data!), root = new DOMParser().parseFromString(html, "text/html");
-    const counts = root.querySelector('[data-testid="category-counts"]')!.textContent!, existing = root.querySelector('[data-testid="tgv-existing"]')!.textContent!;
-    expect(counts).toContain("Category Counts");
-    expect(counts).not.toMatch(/TGV|Elite|Good|Abysmal/);
-    expect(existing).toContain("TGV grade (existing method)");
-    expect(existing).toContain("W4 Elite");
-    expect(existing).not.toMatch(/Category Counts|above|NET/);
+    const root = await render(buildGoaliePeriod(base).data!);
+    expect(root.querySelector('[data-testid="category-counts"]')!.textContent).toContain("Category Counts");
+    expect(root.querySelector('[data-testid="category-counts"]')!.textContent).not.toMatch(/TGV|Elite|Good|Abysmal/);
+    expect(root.querySelector('[data-testid="tgv-existing"]')!.textContent).toContain("TGV grade (existing method)");
+    expect(root.querySelector('[data-testid="tgv-existing"]')!.textContent).not.toMatch(/Category Counts|NET|SV%/);
+    for (const group of root.querySelectorAll('[data-group="category-counts"]')) expect(group.textContent).not.toMatch(/TGV|Elite|Abysmal/);
+    for (const group of root.querySelectorAll('.row [data-group="tgv"], [data-testid="goalie-period-row"] [data-group="tgv"]')) expect(group.textContent).not.toMatch(/Games|Weeks|NET/);
+    expect(root.querySelector('[data-testid="category-counts"] [data-grade]')).toBeNull();
   });
-  it("shows per-category above, below and tied, compared cells, starts and N", async () => {
-    const html = await render(buildGoaliePeriod(base).data!);
-    expect(html).toContain("Goalie of the Week");
-    expect(html).toContain("G1");
-    expect(html).toContain("2–0–0");
-    expect(html).toContain("Week 4: 2 goalies, 4 starts");
-    expect(html).toContain("Unavailable cells: 0");
-    expect(html).toContain("GAA ↓");
-    expect(html).not.toMatch(/forecast|probab|likely/i);
+  it("puts each count under its grade and outlines the selected week's grade", async () => {
+    const root = await render(buildGoaliePeriod({ ...base, tgv: season }).data!), row = root.querySelector('[data-testid="goalie-period-row"]')!;
+    const cell = (grade: string) => row.querySelector(`[data-grade="${grade}"]`)!;
+    expect(["Elite", "Good", "Average", "Bad", "Abysmal"].map(grade => cell(grade).textContent)).toEqual(["2", "1", "0", "0", "0"]);
+    expect(cell("Elite").hasAttribute("data-selected")).toBe(true);
+    expect(cell("Good").hasAttribute("data-selected")).toBe(false);
+    expect(row.querySelector('[data-group="tgv"]')!.textContent).toContain("50");
+  });
+  it("draws a gap as a break, never as 0, and marks the selected week", async () => {
+    const root = await render(buildGoaliePeriod({ ...base, tgv: season }).data!), spark = root.querySelector('[data-testid="goalie-period-row"] svg[data-sparkline]')!;
+    expect(spark.getAttribute("data-sparkline")).toBe("20,gap,10,20");
+    expect(spark.querySelectorAll("[data-point]")).toHaveLength(3);
+    expect(spark.querySelectorAll("[data-gap]")).toHaveLength(1);
+    // Weeks 3 to 4 join; nothing crosses week 2.
+    expect(spark.querySelectorAll('path[fill="none"]')).toHaveLength(1);
+    expect(spark.querySelector("[data-selected-week]")!.getAttribute("data-selected-week")).toBe("4");
+    expect(spark.getAttribute("aria-label")).toContain("week 2 no grade");
+  });
+  it("shows grades and the line as unavailable when TGV could not be read", async () => {
+    const root = await render(buildGoaliePeriod({ ...base, tgv: null }).data!), row = root.querySelector('[data-testid="goalie-period-row"]')!;
+    expect(row.querySelector('[data-group="tgv"]')!.textContent).toBe("Unavailable");
+    expect(row.querySelector("svg[data-sparkline]")).toBeNull();
+    expect(row.querySelector("[data-grade]")).toBeNull();
+  });
+  it("reads GAA and shutouts the same way: better is better, whatever the raw direction", async () => {
+    const root = await render(buildGoaliePeriod(base).data!);
+    const [winner, other] = [...root.querySelectorAll('[data-testid="goalie-period-row"]')];
+    const tiles = (row: Element) => [...row.querySelectorAll('[data-group="category-counts"] [aria-label]')];
+    const gaa = (row: Element) => tiles(row).find(tile => tile.getAttribute("aria-label") === "GAA, games: 2 better than league, 0 worse" || tile.getAttribute("aria-label") === "GAA, games: 0 better than league, 2 worse")!;
+    expect(gaa(winner).getAttribute("data-tone")).toBe("better");
+    expect(gaa(winner).getAttribute("aria-label")).toContain("2 better");
+    expect(gaa(other).getAttribute("data-tone")).toBe("worse");
+    const row = buildGoaliePeriod(base).data!.rows[0].categoryCounts.byCategory;
+    // Goalie 1 is below the GAA baseline and above the shutouts one, and both come out better.
+    expect(row.find(entry => entry.category === "gaa")!.game).toMatchObject({ below: 2, above: 0, better: 2, worse: 0 });
+    expect(cellTone(row.find(entry => entry.category === "gaa")!.game)).toBe("better");
+    const shutouts = row.find(entry => entry.category === "shutouts")!.game;
+    expect(shutouts).toMatchObject({ above: 1, below: 1, better: 1, worse: 1 });
+    expect(cellTone(shutouts)).toBe("level");
+    expect(root.body.textContent).not.toMatch(/\d[–-]\d[–-]\d/);
+    expect(root.body.textContent).not.toContain("CMP");
+  });
+  it("shows level only when it happened", async () => {
+    expect((await render(buildGoaliePeriod(base).data!)).querySelector('[data-testid="goalie-period-row"] [data-level]')).toBeNull();
+    const tied = appearances.map(row => ({ ...row, wins: 0, losses: 0, saves: 25, shotsAgainst: 28, goalsAgainst: 3, shutouts: 0 }));
+    expect((await render(buildGoaliePeriod({ ...base, appearances: tied }).data!)).querySelector('[data-testid="goalie-period-row"] [data-level]')!.textContent).toBe("=2");
+  });
+  it("keeps the exact above, below and tied counts in the data and the alt text", () => {
+    const result = buildGoaliePeriod(base), alt = goaliePeriodModule.altText({ evidence: result.evidence } as never, result.data, settings);
+    expect(alt).toContain("GAA: games 0 above, 2 below, 0 tied; weeks 0 above, 1 below, 0 tied");
+    expect(alt).toContain("SO: games 1 above, 1 below, 0 tied");
+    expect(alt).toContain("TGV grade (existing method): Elite 1, Good 0, Average 0, Bad 0, Abysmal 0, 20 points.");
+    expect(alt).not.toMatch(/forecast(?!\.)|probab|likely/i);
+  });
+  it("shows starts, relief, compared counts and N, in plain words", async () => {
+    const root = await render(buildGoaliePeriod(base).data!), text = root.body.textContent!;
+    expect(text).toContain("Goalie of the Week");
+    expect(text).toContain("G1");
+    expect(text).toContain("2 starts · 0 relief");
+    expect(text).toContain("of 10");
+    expect(text).toContain("Week 4: 2 goalies, 4 starts");
+    expect(text).toContain("Unavailable comparisons: 0");
+    expect(text).toContain("better than the league average");
+    expect(text).not.toMatch(/forecast|probab|likely/i);
   });
   it("names co-winners and says why a pool is empty", async () => {
     const tied = appearances.map(row => ({ ...row, wins: 0, losses: 0, saves: 25, shotsAgainst: 28, goalsAgainst: 3, shutouts: 0 }));
-    const html = await render(buildGoaliePeriod({ ...base, appearances: tied }).data!);
-    expect(html).toContain("2 tied");
-    expect(html).toContain("G1 · G2");
-    expect(await render(buildGoaliePeriod({ ...base, settings: { ...settings, minStartsWeek: 3 } }).data!)).toContain("No goalie has 3 official starts");
+    const result = buildGoaliePeriod({ ...base, appearances: tied });
+    expect(result.data!.winners).toEqual([1, 2]);
+    const text = (await render(result.data!)).body.textContent!;
+    expect(text).toContain("2 tied");
+    expect(text).toContain("G1 · G2");
+    expect((await render(buildGoaliePeriod({ ...base, settings: { ...settings, minStartsWeek: 3 } }).data!)).body.textContent).toContain("No goalie has 3 official starts");
   });
 });
