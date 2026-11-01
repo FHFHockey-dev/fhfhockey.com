@@ -31,3 +31,7 @@ Line is now per game (`byGame`), blocks and line reach the chart's edges, legend
 ## Running start share (TJ's fourth Crease Shift review)
 
 Line is now `runningShare`: starts so far ÷ team games so far, with TJ's VAN example as a fixture. A no-report game holds flat because SHARE leaves it out. Next: lead's render checks fit and PNG.
+
+## Period ADP (TJ, 2026-11-01)
+
+Removed the TGV league section and added the Avg ADP line. Gotcha: `yahoo_players` holds three seasons and the 192 max is a null-season row; goalie values must filter to the current season. The aliased JSON select has not run through PostgREST here. Next: lead's render.

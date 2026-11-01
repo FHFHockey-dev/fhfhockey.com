@@ -24,6 +24,7 @@ const appearances = scheduled.flatMap((game, index) => [
   stat(3, "NYR", game.id, game.date, { losses: 1, saves: 20, shotsAgainst: 24, goalsAgainst: 4 }),
 ]);
 const week = { week: 4, start: "2026-10-19", end: "2026-10-25" };
+const adp = { goalies: [{ player_key: "465.p.1", player_id: "1", average_pick: "84.3" }, { player_key: "465.p.2", player_id: "2", average_pick: "-" }], map: [{ yahoo_player_id: "465.p.1", nhl_player_id: "1" }, { yahoo_player_id: "465.p.2", nhl_player_id: "2" }], averagePicks: ["192.0", "84.3"] };
 const periodSettings = { period: "week", week: 4, month: "", minStartsWeek: 2, minStartsMonth: 5, board: "both", categories: "wins,saves,svPct,gaa,shutouts" };
 const tgv = { goalies: [{ goalie_id: 1, week: 4, weekly_gs: 2, weekly_toi_seconds: 7200, weekly_wins: 2, weekly_saves: 68, weekly_sv_pct: 0.97 }], league: [{ week: 4, avg_league_weekly_wins: 1, avg_league_weekly_saves: 40, avg_league_weekly_sv_pct: 0.9 }], weeks: [week] } as never;
 
@@ -86,13 +87,15 @@ test("crease shift: a schedule gap previews as partial and cannot export", async
 
 test("goalie of the period: Category Counts and the TGV grade stay under their own labels", async ({ page }) => {
   await install(page);
-  const result = buildGoaliePeriod({ settings: periodSettings, period: weekPeriod(week, "2026-10-30"), appearances, reported, scheduled, tgv });
+  const result = buildGoaliePeriod({ settings: periodSettings, period: weekPeriod(week, "2026-10-30"), appearances, reported, scheduled, tgv, adp });
   await page.route("**/api/v1/social-share/posts/**", route => route.fulfill({ json: edition("goalie-period", periodSettings, result) }));
   await page.goto("/social-share/posts?post=goalie-period&week=4");
   await expect(page.getByTestId("goalie-period-winners")).toContainText("Fictional Goalie 1");
   await expect(page.getByTestId("category-counts")).toContainText("Category Counts");
   await expect(page.getByTestId("category-counts")).not.toContainText("TGV");
-  await expect(page.getByTestId("tgv-existing")).toContainText("TGV grade (existing method)");
+  await expect(page.getByTestId("tgv-existing")).toHaveCount(0);
+  await expect(page.getByTestId("board-best")).toContainText("TGV grade (existing method)");
+  await expect(page.getByTestId("goalie-period-adp")).toContainText("Counted as undrafted (200)");
   await expect(page.getByTestId("post-evidence")).toContainText("Categories: wins,saves,svPct,gaa,shutouts");
   await download(page);
 });
@@ -117,13 +120,14 @@ test("goalie of the period: eight rows a side fill the body at five categories",
   const weeks = [1, 2, 3].map(number => ({ week: number, start: `2026-10-0${number}`, end: `2026-10-0${number}` }));
   const season = { weeks: [...weeks, week], league: [1, 2, 3, 4].map(number => ({ week: number, avg_league_weekly_wins: 1, avg_league_weekly_saves: 40, avg_league_weekly_sv_pct: 0.9 })),
     goalies: names.flatMap((_, goalie) => [1, 3, 4].map(number => ({ goalie_id: goalie + 1, week: number, weekly_gs: 2, weekly_toi_seconds: 7200, weekly_wins: goalie % 3, weekly_saves: 30 + goalie * 3, weekly_sv_pct: 0.88 + goalie * 0.005 }))) } as never;
-  const result = buildGoaliePeriod({ settings: periodSettings, period: weekPeriod(week, "2026-10-30"), appearances: stats, reported: rows, scheduled: fit, tgv: season });
+  const result = buildGoaliePeriod({ settings: periodSettings, period: weekPeriod(week, "2026-10-30"), appearances: stats, reported: rows, scheduled: fit, tgv: season, adp });
   await page.route("**/api/v1/social-share/posts/**", route => route.fulfill({ json: edition("goalie-period", periodSettings, result) }));
   await page.goto("/social-share/posts?post=goalie-period&week=4");
   await expect(page.getByTestId("board-best").getByTestId("goalie-period-row")).toHaveCount(8);
   await expect(page.getByTestId("board-worst").getByTestId("goalie-period-row")).toHaveCount(8);
   await expect(page.getByTestId("goalie-period-row").first().locator("svg[data-sparkline]")).toBeVisible();
   await expect(page.getByTestId("goalie-period-card")).toContainText("W 2/2 = better than league average in 2 of 2 starts.");
+  await expect(page.getByTestId("goalie-period-adp")).toContainText("Avg ADP: Best");
   await expectBodyFilled(page, "goalie-period-card");
   await download(page);
 });
@@ -166,7 +170,7 @@ for (const teamCount of [6, 12]) test(`crease shift: ${teamCount} ranked teams f
 
 test("goalie of the period: a failed TGV read shows grades as unavailable and cannot export", async ({ page }) => {
   await install(page);
-  const result = buildGoaliePeriod({ settings: periodSettings, period: weekPeriod(week, "2026-10-30"), appearances, reported, scheduled, tgv: null });
+  const result = buildGoaliePeriod({ settings: periodSettings, period: weekPeriod(week, "2026-10-30"), appearances, reported, scheduled, tgv: null, adp });
   await page.route("**/api/v1/social-share/posts/**", route => route.fulfill({ json: edition("goalie-period", periodSettings, result) }));
   await page.goto("/social-share/posts?post=goalie-period&week=4");
   await expect(page.getByTestId("goalie-period-row").first().locator('[data-group="tgv"]')).toHaveText("Unavailable");
@@ -176,7 +180,7 @@ test("goalie of the period: a failed TGV read shows grades as unavailable and ca
 
 test("goalie of the period: a game without one labeled starter cannot export", async ({ page }) => {
   await install(page);
-  const result = buildGoaliePeriod({ settings: periodSettings, period: weekPeriod(week, "2026-10-30"), appearances: [...appearances, stat(9, "NJD", 1, days[0])], reported, scheduled, tgv });
+  const result = buildGoaliePeriod({ settings: periodSettings, period: weekPeriod(week, "2026-10-30"), appearances: [...appearances, stat(9, "NJD", 1, days[0])], reported, scheduled, tgv, adp });
   await page.route("**/api/v1/social-share/posts/**", route => route.fulfill({ json: edition("goalie-period", periodSettings, result) }));
   await page.goto("/social-share/posts?post=goalie-period&week=4");
   await expect(page.getByTestId("post-watermark")).toHaveText("PARTIAL · NOT FOR EXPORT");

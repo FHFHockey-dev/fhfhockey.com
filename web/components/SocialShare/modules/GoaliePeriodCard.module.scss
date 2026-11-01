@@ -19,12 +19,4 @@
 .tile[data-tone="none"] { color: v.$text-secondary; }
 .tiles[data-many] { flex-wrap: wrap; }
 .tiles[data-many] .tile { flex: 0 1 calc(25% - 3px); font-size: 12px; }
-.strip { padding: 3px 0 4px; border-bottom: 1px solid v.$border-soft; }
-.strip h4 { margin: 0 0 2px; font-size: 14px; font-weight: 700; color: v.$color-white; }
-.stripCells { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); column-gap: 4px; }
-.stripCell { display: grid; grid-template-columns: auto auto auto; column-gap: 8px; justify-content: center; align-items: baseline; padding: 1px 0; border-radius: 3px; background: rgba(v.$color-white, 0.06);
-  b { font-size: 20px; line-height: 1.1; font-weight: 800; color: v.$color-white; }
-  small { font-size: 12px; color: v.$text-secondary; }
-}
-.stripEmpty { margin: 0; font-size: 14px; color: v.$text-secondary; }
 .legend { margin: 0; font-size: 15px; line-height: 1.2; color: v.$text-secondary; }

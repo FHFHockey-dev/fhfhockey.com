@@ -297,6 +297,39 @@ This replaces the per-game line above. TJ's VAN example, LMMLMLMMMM, is a test f
 - **Scheduled game with no report:** SHARE's denominator leaves it out, so counting it would break "ends at SHARE". The value holds flat across its empty block instead. That post is partial and cannot export.
 - **Legend:** "Line: running start share, ending at SHARE." One line of 139 characters. PREV N GP and PTS are unchanged. Chart sizes are unchanged from the table above, so fit is still calculated, not rendered. No new real reads were made.
 
+## Follow-up from TJ: Goalie of the Period drops the TGV section and adds average ADP
+
+**Removed:** the "goalies at each grade" section, with its `tgvLeague` data and CSS. Each row's grade chip, points and sparkline stay, and stay meaningful, because each board's head still reads "TGV grade (existing method)".
+
+**Added:** one line at the bottom, for example "Avg ADP: Best 84.3 · Worst 156.0. Counted as undrafted (200): Best 3 of 8 · Worst 5 of 8." It is the mean over the goalies shown on each board. The fallback rule is in the evidence sample.
+
+### Reads, 2026-11-01
+
+Project `fyhftlxokyjtpndbkfse`, Supabase MCP `execute_sql`, single `SELECT` statements. Aggregates only, no player rows.
+
+| # | Statement | Tables | Rows returned | Result |
+| --- | --- | --- | --- | --- |
+| R10 | Rows, numeric picks and highest pick by season | `yahoo_players` | 3 | Passed. See below |
+| R11 | Duplicates and conflicts across all seasons | `yahoo_players`, `yahoo_nhl_player_map_read`, `wgo_goalie_stats` | 1 | Passed. 41 of 72 goalies have conflicting picks across seasons |
+| R12 | The same join for season 2026 only, row count for the max read, column privileges | Same | 1 | Passed. 70 of 72 match one row, 2 match none, 0 match two |
+
+| `season` | Rows | Numeric picks | Highest pick | Last updated |
+| --- | --- | --- | --- | --- |
+| 2025 | 1,494 | 256 | 151.3 | 2026-07-27 |
+| 2026 | 1,608 | 269 | 150.7 | 2026-11-01 |
+| null | 1,333 | 191 | **192.0** | 2025-08-27 |
+
+### Rules
+
+- **A goalie's value:** only the row with `season` = the current Yahoo season and `display_position` = G. Without this filter, 41 of 72 goalies could take a wrong pick from another season.
+- **Join:** the same as Goalie Rescue, through `player_key` and `player_id`. A Yahoo row with two NHL ids, or an NHL id claimed by two rows, has no match and counts as undrafted.
+- **Fallback:** the highest numeric pick across **all** rows, as the rule says, rounded up to a multiple of 10. Reads 716 rows, skipping "-", with a ceiling of 1,500.
+- **Any failed Yahoo read, or no numeric pick at all:** "Avg ADP: unavailable", and the post is partial like a failed TGV read, so it cannot export.
+
+**For the lead: the 192 comes from an old row.** It is in the null-season rows last updated 2025-08-27. The current season's highest is 150.7, which would give 160, not 200. I followed the ticket, so undrafted goalies count as 200.
+
+**Fit: calculated, not rendered.** Fixed parts drop from 137 to about 105: section out about 55, line in about 23. Eight rows a side get about 94 each, against 82 of content. The spec checks the band and overflow.
+
 ## Blockers
 
 None for building. Open: TJ's first real-output review (9.7) and the browser run of the spec.

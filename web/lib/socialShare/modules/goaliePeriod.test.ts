@@ -4,7 +4,8 @@ import { describe, expect, it } from "vitest";
 import type { GoalieWeeklyAggregate, LeagueWeeklyAverage } from "components/GoaliePage/goalieTypes";
 import { teamsInfo } from "lib/teamsInfo";
 import { parseShareSettings } from "./contract";
-import { buildGoaliePeriod, goaliePeriodModule, periodReadRange, resolvePeriod, TGV_LABEL, tgvSeasonWeeks, type GoaliePeriodData, type GoaliePeriodSettings } from "./goaliePeriod";
+import { adpLine, buildGoaliePeriod, goaliePeriodModule, goaliePicks, numericPick, periodReadRange, resolvePeriod, TGV_LABEL, tgvSeasonWeeks, undraftedAdp, type GoalieAdpRows, type GoaliePeriodData, type GoaliePeriodSettings } from "./goaliePeriod";
+import { readPeriodAdp } from "./goaliePeriod.sources";
 import { cellTone, monthPeriod, weekPeriod, type MatchupWeek } from "./shared/categoryCounts";
 import { heatLevel } from "./shared/goalieBoards";
 import type { GoalieAppearance } from "./shared/goalieLedger";
@@ -32,7 +33,12 @@ const seasonWeeks: MatchupWeek[] = [{ week: 1, start: "2026-09-29", end: "2026-1
 const seasonLeague = [1, 3, 4].map(week => ({ ...tgv.league[0], week }));
 /** Goalie 1: Elite in week 1, no row in week 2, Good in week 3 (2 of 3 stats), Elite in week 4. */
 const season = { weeks: seasonWeeks, league: seasonLeague, goalies: [{ ...tgv.goalies[0], week: 1 }, { ...tgv.goalies[0], week: 3, weekly_wins: 0 }, ...tgv.goalies] };
-const base = { settings, period: weekPeriod(weeks[0], "2026-10-30"), appearances, reported, scheduled, tgv };
+/** Goalie `id` has Yahoo row 465.p.`id` with this pick; `undefined` leaves the goalie without a Yahoo row. */
+const adpRows = (picks: Record<number, string | number | null | undefined>, averagePicks: (string | number | null)[] = ["192.0", "84.3", "-"]): GoalieAdpRows => {
+  const owned = Object.entries(picks).filter(([, pick]) => pick !== undefined);
+  return { goalies: owned.map(([id, pick]) => ({ player_key: `465.p.${id}`, player_id: id, average_pick: pick ?? null })), map: owned.map(([id]) => ({ yahoo_player_id: `465.p.${id}`, nhl_player_id: id })), averagePicks };
+};
+const base = { settings, period: weekPeriod(weeks[0], "2026-10-30"), appearances, reported, scheduled, tgv, adp: adpRows({ 1: "84.3", 2: "156.0" }) };
 
 describe("goalie of the period", () => {
   it("ranks best and worst from one ranking, with evidence on every row", () => {
@@ -140,12 +146,12 @@ describe("TGV beside Category Counts", () => {
     return new DOMParser().parseFromString(renderToStaticMarkup(createElement(Card, { data, logos: {}, settings, snapshot: {} as never })), "text/html");
   };
   /** n goalies with two starts each, one game a side, better goalies first. */
-  const pool = (n: number, values: (goalie: number) => Partial<GoalieAppearance> = goalie => ({ saves: 40 - goalie, shotsAgainst: 42 })) => {
+  const pool = (n: number, values: (goalie: number) => Partial<GoalieAppearance> = goalie => ({ saves: 40 - goalie, shotsAgainst: 42 }), adp: GoalieAdpRows | null = base.adp) => {
     const games = Array.from({ length: n }, (_, index) => ({ id: index + 1, date: `2026-10-${String(19 + index % 7)}` }));
     const sched = games.map(game => ({ ...game, homeTeamId: NJD, awayTeamId: NYR }));
     const rep = games.flatMap(game => [{ gameId: game.id, date: game.date, team: "NJD" }, { gameId: game.id, date: game.date, team: "NYR" }]);
     const stats = rep.map((game, index) => stat(index % n + 1, game.team, game.gameId, game.date, values(index % n + 1)));
-    return buildGoaliePeriod({ ...base, appearances: stats, reported: rep, scheduled: sched });
+    return buildGoaliePeriod({ ...base, appearances: stats, reported: rep, scheduled: sched, adp });
   };
   it("shows both boards by default, Best first, with rank from the same ranking", async () => {
     expect(parseShareSettings(goaliePeriodModule, {}).board).toBe("both");
@@ -228,19 +234,20 @@ describe("TGV beside Category Counts", () => {
   it("never merges the labels on the card", async () => {
     const root = await render(buildGoaliePeriod(base).data!);
     expect(root.querySelector('[data-testid="category-counts"]')!.textContent).toContain("Category Counts");
-    expect(root.querySelector('[data-testid="tgv-existing"]')!.textContent).toContain("TGV grade (existing method)");
-    expect(root.querySelector('[data-testid="tgv-existing"]')!.textContent).not.toMatch(/net|SV%/);
+    expect(root.querySelector('[data-testid="board-best"] h4')!.textContent).toContain("TGV grade (existing method)");
     for (const group of root.querySelectorAll('[data-testid="goalie-period-row"] [data-group="category-counts"]')) expect(group.textContent).not.toMatch(/TGV|Elite|Abysmal|pts/);
     for (const group of root.querySelectorAll('[data-testid="goalie-period-row"] [data-group="tgv"]')) expect(group.textContent).not.toMatch(/net|SV%|GAA/);
     expect(root.querySelector('[data-group="category-counts"] [data-selected-grade]')).toBeNull();
   });
-  it("counts goalies per grade league-wide for the period, with each grade's points", async () => {
-    const root = await render(buildGoaliePeriod({ ...base, tgv: season }).data!);
-    const strip = (grade: string) => root.querySelector(`[data-strip-grade="${grade}"]`)!;
-    expect(["Elite", "Good", "Average", "Bad", "Abysmal"].map(grade => strip(grade).querySelector("b")!.textContent)).toEqual(["1", "0", "0", "0", "1"]);
-    expect(strip("Elite").textContent).toContain("20 pts");
-    expect(strip("Abysmal").textContent).toContain("1 pts");
-    expect(buildGoaliePeriod({ ...base, tgv: season }).data!.tgvLeague).toMatchObject({ label: TGV_LABEL, weeks: [4], unclassified: 0 });
+  it("removes the league-wide grade section, and still labels each row's grade", async () => {
+    for (const period of [weekPeriod(weeks[0], "2026-10-30"), monthPeriod([...seasonWeeks], "2026-10", "2026-11-08")]) {
+      const root = await render(buildGoaliePeriod({ ...base, period, settings: { ...settings, period: period.kind, minStartsMonth: 2 }, tgv: season }).data!);
+      expect(root.querySelector('[data-testid="tgv-existing"]')).toBeNull();
+      expect(root.querySelector("[data-strip-grade]")).toBeNull();
+      expect(root.body.textContent).not.toContain("at each grade");
+      expect(root.querySelector("[data-selected-grade]")).not.toBeNull();
+      expect(root.querySelector('[data-testid="board-worst"] h4')!.textContent).toContain(TGV_LABEL);
+    }
     expect(buildGoaliePeriod(base).evidence.cohort).toContain("Average cannot occur");
   });
   it("keeps each goalie's selected grade, season points and line in the row", async () => {
@@ -264,12 +271,10 @@ describe("TGV beside Category Counts", () => {
     expect(spark.querySelector("[data-selected-week]")!.getAttribute("data-selected-week")).toBe("4");
     expect(spark.getAttribute("aria-label")).toContain("week 2 no grade");
   });
-  it("shows grades, the line and the strip as unavailable when TGV could not be read", async () => {
+  it("shows grades and the line as unavailable when TGV could not be read", async () => {
     const root = await render(buildGoaliePeriod({ ...base, tgv: null }).data!), row = root.querySelector('[data-testid="goalie-period-row"]')!;
     expect(row.querySelector('[data-group="tgv"]')!.textContent).toBe("Unavailable");
     expect(row.querySelector("svg[data-sparkline]")).toBeNull();
-    expect(root.querySelector('[data-testid="tgv-existing"]')!.textContent).toContain("Unavailable");
-    expect(root.querySelector("[data-strip-grade]")).toBeNull();
   });
   it("asks the shell for each shown goalie's latest team logo", () => {
     expect(buildGoaliePeriod(base).teams).toEqual(["NJD", "NYR"]);
@@ -307,5 +312,100 @@ describe("TGV beside Category Counts", () => {
     expect(one.evidence.sample).toContain("2 official starts in the 1 matchup week used");
     expect(one.evidence.cohort).toContain("with at least 1 official start;");
     expect((await render(buildGoaliePeriod({ ...base, settings: { ...settings, minStartsWeek: 1 }, appearances: [] }).data!)).body.textContent).toContain("No goalie has 1 official start in");
+  });
+  describe("average ADP", () => {
+    const line = async (data: GoaliePeriodData) => (await render(data)).querySelector('[data-testid="goalie-period-adp"]')!.textContent;
+    const picks = (pick: (goalie: number) => string | number | null | undefined) => adpRows(Object.fromEntries(Array.from({ length: 20 }, (_, index) => [index + 1, pick(index + 1)])));
+    it("averages every shown goalie on each board when all are drafted", async () => {
+      const { data } = pool(20, undefined, picks(goalie => goalie * 10));
+      const worst = data!.adp!.sides.find(side => side.kind === "worst")!;
+      expect(data!.adp!.sides[0]).toEqual({ kind: "best", goalies: 8, undrafted: 0, average: 45 });
+      expect(worst).toMatchObject({ goalies: 8, undrafted: 0 });
+      expect(await line(data!)).toBe(`Avg ADP: Best 45.0 · Worst ${worst.average.toFixed(1)}. Counted as undrafted (200): Best 0 of 8 · Worst 0 of 8.`);
+    });
+    it("counts undrafted goalies at the fallback in a mean, not a median, and says how many", async () => {
+      const { data } = pool(20, undefined, picks(goalie => goalie <= 4 ? "10" : "-"));
+      expect(data!.adp!.sides).toEqual([{ kind: "best", goalies: 8, undrafted: 4, average: 105 }, { kind: "worst", goalies: 8, undrafted: 8, average: 200 }]);
+      expect(await line(data!)).toBe("Avg ADP: Best 105.0 · Worst 200.0. Counted as undrafted (200): Best 4 of 8 · Worst 8 of 8.");
+    });
+    it("treats 0, a dash, null, blank and no Yahoo match as undrafted", () => {
+      for (const pick of [0, "0", "0.0", "-", null, "", "n/a"]) expect(numericPick(pick)).toBeNull();
+      expect(numericPick("84.3")).toBe(84.3);
+      expect(numericPick(150)).toBe(150);
+      const { data } = pool(20, undefined, picks(goalie => goalie === 1 ? "0" : goalie === 2 ? "-" : goalie === 3 ? null : goalie === 4 ? undefined : "20"));
+      expect(data!.adp!.sides[0]).toEqual({ kind: "best", goalies: 8, undrafted: 4, average: 110 });
+    });
+    it("rounds the highest pick up to the next 10, and leaves an exact multiple", () => {
+      expect(undraftedAdp(["192.0", "84.3", "-"])).toEqual({ highestPick: 192, undraftedValue: 200 });
+      expect(undraftedAdp(["190.0", "-", null])).toEqual({ highestPick: 190, undraftedValue: 190 });
+      expect(undraftedAdp(["190.1"])).toEqual({ highestPick: 190.1, undraftedValue: 200 });
+      expect(pool(20, undefined, adpRows({}, ["190"])).data!.adp).toMatchObject({ undraftedValue: 190, sides: [{ average: 190 }, { average: 190 }] });
+    });
+    it("prints unavailable, never a guess, when the highest pick can't be read, and that is partial", async () => {
+      expect(undraftedAdp(["-", null, 0])).toBeNull();
+      for (const adp of [null, adpRows({ 1: "84.3" }, ["-"]), adpRows({ 1: "84.3" }, [])]) {
+        const result = buildGoaliePeriod({ ...base, adp });
+        expect(result.data!.adp).toBeNull();
+        expect(result.state).toBe("partial");
+        expect(result.reasons).toContain("Average draft position could not be read.");
+        expect(result.evidence.sources.find(source => source.name === "Yahoo average pick")!.state).toBe("missing");
+        expect(await line(result.data!)).toBe("Avg ADP: unavailable");
+      }
+      expect(adpLine(null)).not.toMatch(/\d/);
+    });
+    it("gives no value when an id is ambiguous, as Goalie Rescue's join does", () => {
+      const row = (key: string, id: string, pick: string) => ({ player_key: key, player_id: id, average_pick: pick });
+      const twoRows = { goalies: [row("465.p.1", "1", "50"), row("465.p.9", "9", "60")], map: [{ yahoo_player_id: "465.p.1", nhl_player_id: "1" }, { yahoo_player_id: "465.p.9", nhl_player_id: "1" }], averagePicks: [] };
+      expect(goaliePicks(twoRows).has(1)).toBe(false);
+      const twoIds = { goalies: [row("465.p.1", "1", "50")], map: [{ yahoo_player_id: "465.p.1", nhl_player_id: "1" }, { yahoo_player_id: "1", nhl_player_id: "2" }], averagePicks: [] };
+      expect(goaliePicks(twoIds).size).toBe(0);
+      expect(goaliePicks({ goalies: [row("465.p.1", "1", "50")], map: [{ yahoo_player_id: "1", nhl_player_id: "1" }], averagePicks: [] }).get(1)).toBe(50);
+    });
+    it("averages only the board shown", async () => {
+      const data = buildGoaliePeriod({ ...base, settings: { ...settings, board: "worst" } }).data!;
+      expect(data.adp!.sides.map(side => side.kind)).toEqual(["worst"]);
+      expect(await line(data)).toMatch(/^Avg ADP: Worst [\d.]+\. Counted as undrafted \(200\): Worst 0 of 2\.$/);
+    });
+    it("works for a month", () => {
+      const period = monthPeriod([...seasonWeeks], "2026-10", "2026-11-08");
+      expect(buildGoaliePeriod({ ...base, period, settings: { ...settings, period: "month", minStartsMonth: 2 }, tgv: season }).data!.adp!.sides).toHaveLength(2);
+    });
+    it("states the fallback rule in the evidence and the line in the alt text, and keeps it off the card", async () => {
+      const result = buildGoaliePeriod(base);
+      expect(result.evidence.sample).toContain('no numeric pick, 0, "-", null or no Yahoo match, counts as the highest average pick of any player in yahoo_players, in any season, rounded up to the next 10: 192 gives 200');
+      expect(result.evidence.sample).toContain("this season's Yahoo row only");
+      expect(goaliePeriodModule.altText({ evidence: result.evidence } as never, result.data, settings)).toContain("Avg ADP: Best");
+      expect((await render(result.data!)).body.textContent).not.toContain("rounded up");
+    });
+    /** Serves the rows it is given, recording each read's filters, in the shape `bounded` needs. */
+    const fakeClient = (rows: Record<string, unknown[]>, fail?: string) => {
+      const calls: { table: string; columns: string; filters: string[] }[] = [];
+      return { calls, client: { from: (table: string) => {
+        const call = { table, columns: "", filters: [] as string[] }; calls.push(call);
+        const chain: Record<string, unknown> = {
+          select: (columns: string) => { call.columns = columns; return chain; },
+          eq: (column: string, value: unknown) => { call.filters.push(`eq:${column}:${value}`); return chain; },
+          neq: (column: string, value: unknown) => { call.filters.push(`neq:${column}:${value}`); return chain; },
+          in: (column: string) => { call.filters.push(`in:${column}`); return chain; },
+          order: () => chain,
+          range: async () => table === fail ? { data: null, error: { message: "read failed" }, count: null } : { data: rows[table] ?? [], error: null, count: (rows[table] ?? []).length },
+        };
+        return chain;
+      } } };
+    };
+    it("reads a goalie's value from this Yahoo season only, and the highest pick across all", async () => {
+      const yahoo = [{ player_key: "465.p.1", player_id: "1", average_pick: "84.3" }];
+      const { client, calls } = fakeClient({ yahoo_players: yahoo, yahoo_nhl_player_map_read: [{ yahoo_player_id: "465.p.1", nhl_player_id: "1" }] });
+      expect(await readPeriodAdp(client, 2026)).toMatchObject({ goalies: yahoo, averagePicks: ["84.3"] });
+      const [goalieRead, pickRead] = calls.filter(call => call.table === "yahoo_players");
+      expect(goalieRead.filters).toEqual(["eq:season:2026", "eq:display_position:G"]);
+      expect(goalieRead.columns).toContain("average_pick:draft_analysis->>average_pick");
+      expect(pickRead.filters).toEqual(["neq:draft_analysis->>average_pick:-"]);
+      expect(calls.some(call => call.columns.includes("average_draft_pick"))).toBe(false);
+    });
+    it("reads as unavailable when any Yahoo read fails", async () => {
+      expect(await readPeriodAdp(fakeClient({}, "yahoo_players").client, 2026)).toBeNull();
+      expect(await readPeriodAdp(fakeClient({ yahoo_players: [{ player_key: "465.p.1", player_id: "1", average_pick: "1" }] }, "yahoo_nhl_player_map_read").client, 2026)).toBeNull();
+    });
   });
 });

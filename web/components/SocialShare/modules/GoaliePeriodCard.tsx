@@ -1,5 +1,5 @@
 import type { SharePostCardProps } from "lib/socialShare/modules/contract";
-import { goaliePeriodRanks, TGV_GRADES, TGV_LABEL, type GoaliePeriodData, type GoaliePeriodRow, type GoaliePeriodSettings, type TgvResult, type TgvSeasonWeek } from "lib/socialShare/modules/goaliePeriod";
+import { adpLine, goaliePeriodRanks, TGV_LABEL, type GoaliePeriodData, type GoaliePeriodRow, type GoaliePeriodSettings, type TgvResult, type TgvSeasonWeek } from "lib/socialShare/modules/goaliePeriod";
 import { boardSides, bothSidesNote, countOf, largestShown } from "lib/socialShare/modules/shared/goalieBoards";
 import { categoryById, CATEGORY_COUNTS_LABEL, cellTone } from "lib/socialShare/modules/shared/categoryCounts";
 import { PostEmpty } from "./kit";
@@ -40,7 +40,6 @@ export default function GoaliePeriodCard({ data, logos }: SharePostCardProps<Goa
   if (!data.ranked) return <PostEmpty>No goalie has {countOf(data.minStarts, "official start")} in {period.label}{period.kind === "month" ? ". Choose a month in the settings" : ""}</PostEmpty>;
   const { sides, onBoth } = boardSides(data.rows, goaliePeriodRanks, data.board);
   const winners = data.rows.filter(row => data.winners.includes(row.goalieId)), largest = largestShown(sides, row => row.categoryCounts.gameNet);
-  const strip = data.tgvLeague, plural = strip !== null && strip.weeks.length > 1;
   const renderRow = (row: GoaliePeriodRow, rank: number) => {
     const counts = row.categoryCounts, name = row.name ?? String(row.goalieId), team = row.teams[row.teams.length - 1];
     return <div className={styles.goalie} data-testid="goalie-period-row">
@@ -64,11 +63,7 @@ export default function GoaliePeriodCard({ data, logos }: SharePostCardProps<Goa
       <h3><small>{period.label}.</small> {data.board === "worst" ? `Worst of the ${noun}` : `Goalie of the ${noun}`}: <span data-testid="goalie-period-winners">{winners.map(row => row.name ?? row.goalieId).join(" · ")}</span></h3>
     </header>
     <GoalieBoards sides={sides} rowKey={row => row.goalieId} renderRow={renderRow} headNote={TGV_LABEL} note={bothSidesNote(onBoth.length, data.ranked)} />
-    <section className={styles.strip} data-testid="tgv-existing">
-      <h4>{TGV_LABEL}: {plural ? "goalie weeks" : "goalies"} at each grade{strip ? `, week${plural ? "s" : ""} ${strip.weeks.join(", ")}` : ""}</h4>
-      {strip ? <div className={styles.stripCells}>{TGV_GRADES.map(grade => <span key={grade} className={styles.stripCell} data-strip-grade={grade}><small>{grade}</small><b>{strip.counts[grade]}</b><small>{strip.points[grade]} pts</small></span>)}</div>
-        : <p className={styles.stripEmpty}>Unavailable</p>}
-    </section>
     <p className={styles.legend} data-testid="category-counts">{CATEGORY_COUNTS_LABEL}: W 2/2 = better than league average in 2 of 2 starts.</p>
+    <p className={styles.legend} data-testid="goalie-period-adp">{adpLine(data.adp)}</p>
   </div>;
 }
