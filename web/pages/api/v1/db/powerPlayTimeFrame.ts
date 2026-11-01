@@ -6,7 +6,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { get } from "lib/NHL/base";
 import { getCurrentSeason } from "lib/NHL/server";
 import adminOnly from "utils/adminOnlyMiddleware";
-import getPowerPlayBlocks, { Block } from "utils/getPowerPlayBlocks"; // Adjust the import path as necessary
+import { getPenaltyPowerPlayBlocks, Block } from "utils/getPowerPlayBlocks"; // Adjust the import path as necessary
 import { extractPowerPlayDetails, PowerPlay } from "utils/extractPPDetails"; // Import the new function
 
 export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(async (req, res) => {
@@ -102,7 +102,7 @@ export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(async (req, res) 
       // Extract power play details for each game
       const gamesWithPP: any[] = await Promise.all(
         successfulResults.map(async (game: any) => {
-          const blocks: Block[] = getPowerPlayBlocks(game.plays);
+          const blocks: Block[] = getPenaltyPowerPlayBlocks(game.plays);
           const ppTimeframes: PowerPlay[] = extractPowerPlayDetails(
             blocks,
             game.plays,
@@ -165,7 +165,7 @@ export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(async (req, res) 
         // Extract power play details for each retried game
         const retriedGamesWithPP: any[] = await Promise.all(
           successfulRetries.map(async (game: any) => {
-            const blocks: Block[] = getPowerPlayBlocks(game.plays);
+            const blocks: Block[] = getPenaltyPowerPlayBlocks(game.plays);
             const ppTimeframes: PowerPlay[] = extractPowerPlayDetails(
               blocks,
               game.plays,

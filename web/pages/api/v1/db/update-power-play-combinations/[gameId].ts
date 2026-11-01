@@ -148,7 +148,8 @@ export async function updatePowerPlayCombinations(
     });
   });
 
-  if (rows.length === 0) {
+  // A game with no power plays is real. Power plays with no rows mean the shifts are missing, so keep what is stored.
+  if (rows.length === 0 && (ppBlocks.length > 0 || getShiftRows(rawData).length === 0)) {
     throw new Error("No power play combinations found");
   }
   console.log("[updatePowerPlayCombinations] summary", {
@@ -158,7 +159,15 @@ export async function updatePowerPlayCombinations(
     shiftSource
   });
 
-  await supabase.from("powerPlayCombinations").upsert(rows).throwOnError();
+  if (rows.length > 0) {
+    await supabase.from("powerPlayCombinations").upsert(rows).throwOnError();
+  }
+  // The key is game and player, so a player who no longer has PP time would otherwise keep their old row.
+  const staleRows = supabase.from("powerPlayCombinations").delete().eq("gameId", gameId);
+  await (rows.length > 0
+    ? staleRows.not("playerId", "in", `(${rows.map((row) => row.playerId).join(",")})`)
+    : staleRows
+  ).throwOnError();
   return {
     gameId,
     rowCount: rows.length,
