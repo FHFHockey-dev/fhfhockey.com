@@ -65,7 +65,7 @@ export type PeriodWindowOptions = PeriodControl & {
 const canPick = (week: MatchupWeek, { mode, cutoff }: Pick<PeriodWindowOptions, "mode" | "cutoff">) => mode === "any-week" || week.start <= cutoff;
 /** A blank week: past-only takes the last completed, any-week the one under way, else the next, else the last. */
 function blankWeek(weeks: readonly MatchupWeek[], { mode, cutoff }: Pick<PeriodWindowOptions, "mode" | "cutoff">) {
-  return mode === "past-only" ? defaultWeek(weeks, cutoff) : weeks.find(week => week.end >= cutoff) ?? weeks[weeks.length - 1] ?? null;
+  return mode === "past-only" ? defaultWeek(weeks, cutoff) : weeks.find(week => week.end > cutoff) ?? weeks[weeks.length - 1] ?? null;
 }
 /** Why these dates can never be a range, needing no calendar: for a post's `validate`, so a bad range is refused before any read. */
 export function customRangeReason({ start, end }: Pick<PeriodWindowSettings, "start" | "end">) {

@@ -44,6 +44,13 @@ describe("period window", () => {
     expect(resolvePeriodWindow(matchup(5), calendar, pastOnly).window?.week).toBe(5);
     expect(resolvePeriodWindow(matchup(6), calendar, anyWeek).window?.week).toBe(6);
   });
+  it("moves a schedule's blank week on once the week's last day is the cutoff, so Monday opens the new week", () => {
+    const calendar = matchupCalendar([{ week: 1, start_date: "2026-10-19", end_date: "2026-10-25" }, { week: 2, start_date: "2026-10-26", end_date: "2026-11-01" }]);
+    const blankWeekOn = (cutoff: string) => resolvePeriodWindow({ period: "matchup", week: null, start: null, end: null }, calendar, { mode: "any-week", cutoff }).window?.week;
+    expect(blankWeekOn("2026-10-24")).toBe(1);
+    expect(blankWeekOn("2026-10-25")).toBe(2);
+  });
+
   it("reads a blank week as the last completed for results and the one under way for a schedule", () => {
     expect(resolvePeriodWindow(matchup(null), calendar, pastOnly).window?.week).toBe(3);
     expect(resolvePeriodWindow(matchup(null), calendar, anyWeek).window?.week).toBe(5);
