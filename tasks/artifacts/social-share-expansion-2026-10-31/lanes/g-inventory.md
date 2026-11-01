@@ -149,3 +149,10 @@ Project `fyhftlxokyjtpndbkfse`, Supabase MCP `execute_sql`, 2026-10-31. Every st
 - **Combined date:** the oldest date any source reaches.
 - **Tile edge:** inline `TILE_EDGE`, 1.5px lighter border, 10px radius, light shadow. Grid gap 4px to 6px, tile padding 4px to 5px.
 - **Browser not run; one line and fit at 860px not measured.**
+
+## Start/Sit one status column (TJ's final review)
+
+- One 104px STATUS column ("SOURCE · FORECAST"): Confirmed, Projected, Conflicting (magenta, dashed edge) or Unknown (no fill). A second line gives source and age when a report exists. A qualified forecast adds "Cond. forecast 62%". No forecast line prints otherwise.
+- Full wording: `START_SIT_STATUS_NOTE` and the forecast reasons in the evidence; "Source: confirmed", "Conflicting reports" and "Forecast unavailable" stay in the alt text.
+- Freed width goes to the lens columns, and chips now flex to fill them. Goalie column reduced to 1fr against 1.3fr per lens.
+- **Browser not run; fit at 860px not measured.** The tightest row is a report plus a forecast: three lines, about 38.5px, against about 40px.

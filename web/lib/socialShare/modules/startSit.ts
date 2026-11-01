@@ -8,6 +8,10 @@ import { confirmationLabel, confirmationLegend, forecastLabel, inventoryEvidence
  */
 export const START_SIT_ROW_LIMIT = 18;
 export const START_SIT_LENS_NOTE = "Rates are season to date and #1 is the highest value. Quality, quantity and win are separate, correlated lenses, never added, and no win odds are given.";
+export const START_SIT_STATUS_NOTE = "Status: Confirmed and Projected are what a source reported, Conflicting means conflicting reports, and Unknown means no report, which does not mean not starting. A conditional, uncalibrated Start Chart forecast prints as Cond. forecast only when one qualifies; otherwise the forecast is unavailable.";
+/** The narrow status column's words. The alt text and evidence keep the full ones. */
+export const startSitStatusLabel = (state: "confirmed" | "projected" | "conflicting" | "none") => ({ confirmed: "Confirmed", projected: "Projected", conflicting: "Conflicting", none: "Unknown" })[state];
+export const startSitForecastLabel = (probability: number) => `Cond. forecast ${Math.round(probability * 100)}%`;
 const START_CHART_SOURCE = "Start Chart start participation";
 export const FORECAST_ADMITTED_NOTE = "A forecast is a conditional, uncalibrated Start Chart value, separate from source status.";
 export type StartSitSettings = { days: number; search: string };
@@ -31,7 +35,7 @@ export function startSitResult({ inventory, coverage, conflicts }: GoalieInvento
     state: inventory.state, reasons: inventory.state === "ready" ? [] : [...inventory.reasons],
     data: { from: inventory.from, through: inventory.through, inventory: upcoming, conflicts, confirmationLegend: confirmationLegend(inventory) },
     teams: [...new Set(upcoming.goalies.flatMap(goalie => goalie.games.flatMap(game => [game.team, game.opponent])))].sort(),
-    evidence: inventoryEvidence({ inventory, coverage }, `${upcoming.goalies.length} goalies with an appearance in their team's last 10 games, on teams scheduled in the window`, teamGames, [inventory.sources.some(source => source.name === START_CHART_SOURCE && source.state === "ready") ? FORECAST_ADMITTED_NOTE : FORECAST_CLOSED_REASON, START_SIT_LENS_NOTE]),
+    evidence: inventoryEvidence({ inventory, coverage }, `${upcoming.goalies.length} goalies with an appearance in their team's last 10 games, on teams scheduled in the window`, teamGames, [inventory.sources.some(source => source.name === START_CHART_SOURCE && source.state === "ready") ? FORECAST_ADMITTED_NOTE : FORECAST_CLOSED_REASON, START_SIT_LENS_NOTE, START_SIT_STATUS_NOTE]),
   };
 }
 export const startSitModule = defineShareModule<StartSitSettings, StartSitData>({

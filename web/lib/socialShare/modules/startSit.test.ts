@@ -5,7 +5,7 @@ import StartSitCard from "components/SocialShare/modules/StartSitCard";
 import { resolveDailyBoardEvidence, type BoardGoalieEvidence } from "lib/projections/dailyBoardEvidence";
 import { parseShareSettings, sharePostExportToken } from "./contract";
 import { shareModule } from "./registry";
-import { FORECAST_ADMITTED_NOTE, START_SIT_LENS_NOTE, startSitConflicting, startSitModule, startSitResult, startSitRows, upcomingInventory, type StartSitData, type StartSitSettings } from "./startSit";
+import { FORECAST_ADMITTED_NOTE, START_SIT_LENS_NOTE, START_SIT_STATUS_NOTE, startSitConflicting, startSitModule, startSitResult, startSitRows, upcomingInventory, type StartSitData, type StartSitSettings } from "./startSit";
 import { FIXTURE_GENERATED_AT, FIXTURE_INPUT, GOALIE_INVENTORY_FIXTURE, GOALIE_INVENTORY_FIXTURE_DETAIL } from "./shared/goalieInventory.fixture";
 import { buildGoalieInventory, CONFIRMATION_CLOSED_REASON, CONFIRMATION_LINK_GAP, CONFIRMATION_REPORTER_GAP, CONFIRMATION_TONES, FORECAST_CLOSED_REASON, headToHeadWinner, HEAD_TO_HEAD_COLORS } from "./shared/goalieInventory.sources";
 
@@ -26,9 +26,9 @@ describe("Start/Sit card, through the real resolver", () => {
     const detail = throughResolver(reporters(1, 900010, 7001, 7002));
     expect(detail.conflicts).toEqual([{ gameId: 900010, team: "NJD" }]);
     const html = card(startSitResult(detail), "new jersey");
-    expect(html).toContain("Conflicting reports");
+    expect(html).toContain(">Conflicting<");
     expect(html).toContain('data-state="conflicting"');
-    expect(html).not.toContain("Source: confirmed");
+    expect(html).not.toContain(">Confirmed");
     // The frozen shape is still unknown, with the reason in its source.
     expect(detail.inventory.goalies.find(goalie => goalie.goalieId === 7001)!.games[0].confirmation.state).toBe("none");
     expect(detail.inventory.sources.find(source => source.name === "Goalie start observations")!.reasons.join(" ")).toMatch(/conflicting start reports/);
@@ -36,8 +36,8 @@ describe("Start/Sit card, through the real resolver", () => {
   it("marks only that team's game, and shows a resolved claim with its source and age", () => {
     const detail = throughResolver([{ ...reporters(1, 900010, 7001, 7002)[0], source_account: null }]);
     const html = card(startSitResult(detail), "new jersey");
-    expect(html).not.toContain("Conflicting reports");
-    expect(html).toContain("Source: confirmed");
+    expect(html).not.toContain(">Conflicting<");
+    expect(html).toContain(">Confirmed<");
     expect(html).toContain("Validated · 5h ago");
     expect(html).toContain("Unknown");
   });
@@ -45,10 +45,10 @@ describe("Start/Sit card, through the real resolver", () => {
     const result = startSitResult(throughResolver([], [CONFIRMATION_REPORTER_GAP, CONFIRMATION_LINK_GAP])), html = card(result);
     expect(html).toContain("Unknown = no report yet. Reports aren&#x27;t split by reporter.");
     expect(html).toContain("No win odds");
-    expect(html).toContain("Forecast unavailable");
+    expect(html).not.toContain("Forecast unavailable");
     expect(html).not.toContain("No source link or expiry exists");
     expect(html).not.toContain("correlated");
-    for (const note of [CONFIRMATION_REPORTER_GAP, CONFIRMATION_LINK_GAP, START_SIT_LENS_NOTE, FORECAST_ADMITTED_NOTE]) expect(result.evidence.sample).toContain(note);
+    for (const note of [CONFIRMATION_REPORTER_GAP, CONFIRMATION_LINK_GAP, START_SIT_LENS_NOTE, FORECAST_ADMITTED_NOTE, START_SIT_STATUS_NOTE]) expect(result.evidence.sample).toContain(note);
   });
   it("says no start odds only while no forecast is qualified, and caps the rows it shows", () => {
     const closed = startSitResult(buildGoalieInventory({ ...FIXTURE_INPUT, forecasts: null }));
@@ -139,6 +139,30 @@ describe("Start/Sit colour", () => {
     expect(first.text).toBe("3.00 #5");
     expect(cell).not.toContain("lens-edge");
   });
+  it("merges status and forecast into one column under one header", () => {
+    const html = card(startSitResult(GOALIE_INVENTORY_FIXTURE_DETAIL));
+    expect(html).toContain("STATUS");
+    expect(html).toContain("SOURCE · FORECAST");
+    expect(html).not.toContain("SOURCE STATUS");
+    expect(html).not.toContain(">FORECAST<");
+    const statuses = [...html.matchAll(/data-testid="start-sit-confirmation" data-state="(\w+)"[^>]*>(.*?)<\/span>/g)].map(match => [match[1], match[2].replace(/<[^>]*>/g, "|")]);
+    const of = (state: string) => statuses.filter(item => item[0] === state).map(item => item[1]);
+    expect(of("confirmed")[0]).toMatch(/^Confirmed\|Validated · \d+[mhd] ago\|$/);
+    expect(of("projected")[0]).toMatch(/^Projected\|Validated · /);
+    expect(of("conflicting")).toContain("Conflicting");
+    expect(of("none")).toContain("Unknown");
+    expect(of("none")).toContain("Unknown|Cond. forecast 62%|");
+  });
+  it("prints no forecast line when none qualifies, the full wording staying in the alt text and evidence", () => {
+    const closed = startSitResult(buildGoalieInventory({ ...FIXTURE_INPUT, forecasts: null })), html = card(closed);
+    expect(html).not.toContain("start-sit-forecast");
+    expect(html).not.toContain("Forecast unavailable");
+    expect(closed.evidence.sample).toContain(FORECAST_CLOSED_REASON);
+    expect(closed.evidence.sample).toContain(START_SIT_STATUS_NOTE);
+    const alt = startSitModule.altText({ evidence: { sample: "s" } } as never, closed.data as StartSitData, settings(""));
+    expect(alt).toContain("Forecast unavailable");
+    expect(alt).toContain("Source: confirmed");
+  });
   it("never adds blue chips or band fills", () => {
     expect(card(startSitResult(GOALIE_INVENTORY_FIXTURE_DETAIL))).not.toContain("#3f9bdc");
   });
@@ -147,7 +171,6 @@ describe("Start/Sit colour", () => {
     expect(cell(html, "start-sit-confirmation", "none")).not.toContain("style=");
     expect(cell(html, "start-sit-confirmation", "conflicting")).toContain(`background:${CONFIRMATION_TONES.conflicting.fill}`);
     expect(cell(html, "start-sit-confirmation", "conflicting")).toContain("dashed");
-    expect(cell(html, "start-sit-forecast", "unavailable")).not.toContain("style=");
   });
   it("adds nothing across lenses and gives no odds", () => {
     const html = card(startSitResult(buildGoalieInventory({ ...FIXTURE_INPUT, forecasts: null })));

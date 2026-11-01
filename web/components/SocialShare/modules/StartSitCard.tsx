@@ -1,7 +1,7 @@
 import type { SharePostCardProps } from "lib/socialShare/modules/contract";
-import { confirmationFreshness, confirmationLabel, confirmationSourceLabel, CONFIRMATION_TONES, forecastLabel, headToHeadWinner, HEAD_TO_HEAD_COLORS, metricLabel, type RankedSide } from "lib/socialShare/modules/shared/goalieInventory.sources";
+import { confirmationFreshness, confirmationSourceLabel, CONFIRMATION_TONES, headToHeadWinner, HEAD_TO_HEAD_COLORS, metricLabel, type RankedSide } from "lib/socialShare/modules/shared/goalieInventory.sources";
 import type { InventoryMetric } from "lib/socialShare/modules/shared/goalieInventory";
-import { START_SIT_ROW_LIMIT, startSitConflicting, startSitRows, type StartSitData, type StartSitSettings } from "lib/socialShare/modules/startSit";
+import { START_SIT_ROW_LIMIT, startSitConflicting, startSitForecastLabel, startSitRows, startSitStatusLabel, type StartSitData, type StartSitSettings } from "lib/socialShare/modules/startSit";
 import { PostEmpty, PostTeamMark } from "./kit";
 import styles from "./StartSitCard.module.scss";
 
@@ -25,7 +25,7 @@ function LensCell({ lens, first, second, digits, logos }: { lens: "quality" | "q
     <Chip side={second} digits={digits} result={result(1)} />
   </span>;
 }
-const HEADS: readonly (readonly [string, string?])[] = [["DATE"], ["GOALIE", "L10 STARTS"], ["GAME"], ["SOURCE STATUS"], ["FORECAST"], ["QUALITY", "xGA / OPP xGF"], ["QUANTITY", "SA / OPP SF"], ["WIN", "GF / OPP GA"]];
+const HEADS: readonly (readonly [string, string?])[] = [["DATE"], ["GOALIE", "L10 STARTS"], ["GAME"], ["STATUS", "SOURCE · FORECAST"], ["QUALITY", "xGA / OPP xGF"], ["QUANTITY", "SA / OPP SF"], ["WIN", "GF / OPP GA"]];
 
 export default function StartSitCard({ snapshot, data, settings, logos }: SharePostCardProps<StartSitSettings, StartSitData>) {
   const rows = startSitRows(data, settings.search), shown = rows.slice(0, START_SIT_ROW_LIMIT);
@@ -42,8 +42,7 @@ export default function StartSitCard({ snapshot, data, settings, logos }: ShareP
           <span>{dayLabel(game.date)}</span>
           <span className={styles.goalie}><b>{goalie.name}</b><small>{goalie.recentStarts.starts === null ? "—" : goalie.recentStarts.starts}/{goalie.recentStarts.teamGames} GS{goalie.recentStarts.reliefAppearances ? ` · ${goalie.recentStarts.reliefAppearances} relief` : ""}</small></span>
           <span className={styles.game} data-testid="start-sit-game"><PostTeamMark team={game.team} logo={logos[game.team]} size={24} />{game.home ? "vs" : "@"}<PostTeamMark team={game.opponent} logo={logos[game.opponent]} size={24} /></span>
-          <span data-testid="start-sit-confirmation" data-state={state} className={styles.status} style={tone ? { background: tone.fill, color: tone.ink, border: tone.border ?? undefined } : undefined}>{confirmationLabel(game.confirmation, conflicting)}{freshness && <small>{confirmationSourceLabel(game.confirmation.source)} · {freshness}</small>}</span>
-          <span data-testid="start-sit-forecast" data-state={game.forecast.state}>{forecastLabel(game.forecast)}</span>
+          <span data-testid="start-sit-confirmation" data-state={state} className={styles.status} style={tone ? { background: tone.fill, color: tone.ink, border: tone.border ?? undefined } : undefined}>{startSitStatusLabel(state)}{freshness && <small>{confirmationSourceLabel(game.confirmation.source)} · {freshness}</small>}{game.forecast.state === "qualified" && <small data-testid="start-sit-forecast">{startSitForecastLabel(game.forecast.startProbability)}</small>}</span>
           <LensCell lens="quality" first={{ team: game.team, metricId: "xga", metric: quality.teamXgaPerGame }} second={{ team: game.opponent, metricId: "xgf", metric: quality.opponentXgfPerGame }} digits={2} logos={logos} />
           <LensCell lens="quantity" first={{ team: game.team, metricId: "shotsAgainst", metric: quantity.teamShotsAgainstPerGame }} second={{ team: game.opponent, metricId: "shotsFor", metric: quantity.opponentShotsForPerGame }} digits={1} logos={logos} />
           <LensCell lens="win" first={{ team: game.team, metricId: "goalsFor", metric: win.teamGoalsForPerGame }} second={{ team: game.opponent, metricId: "goalsAgainst", metric: win.opponentGoalsAgainstPerGame }} digits={2} logos={logos} />
