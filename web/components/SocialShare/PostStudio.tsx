@@ -159,7 +159,7 @@ export default function PostStudio() {
   const pick = (id: string) => { void router.replace({ pathname: router.pathname, query: { post: id } }, undefined, { shallow: true, scroll: false }); };
 
   return <div className={styles.page}>
-    <header className={styles.heading}><div><p className={styles.eyebrow}>FHFH / Share studio</p><h1>Post library</h1><p><Link href="/social-share/game-grid" prefetch={false}>Weekly schedule studio</Link> · <Link href="/social-share/tuesday-trends" prefetch={false}>Tuesday trends</Link></p></div><span className={styles.scope}>Choose any post on any day. Nothing is scheduled or published from here.</span></header>
+    <header className={styles.heading}><div><p className={styles.eyebrow}>FHFH / Share studio</p><h1>Post library</h1><p><Link href="/social-share" prefetch={false}>All cards</Link> · <Link href="/social-share/game-grid" prefetch={false}>Weekly schedule studio</Link> · <Link href="/social-share/tuesday-trends" prefetch={false}>Tuesday trends</Link></p></div><span className={styles.scope}>Choose any post on any day. Nothing is scheduled or published from here.</span></header>
     <section className={styles.panel} aria-label="Post settings">
       <div className={styles.controls}>
         <label>Post<select value={entry.id} disabled={exporting} onChange={event => pick(event.target.value)}>{groups.map(group => <optgroup key={group} label={SHARE_POST_GROUP_LABELS[group]}>{modules.filter(item => item.group === group).map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</optgroup>)}</select></label>

@@ -1,0 +1,44 @@
+@use "styles/vars" as v;
+
+.landing { width: 100%; max-width: v.$page-max-width; margin: 0 auto; }
+.sort { display: flex; flex-wrap: wrap; gap: v.$space-xs; margin-bottom: v.$space-md; }
+.note { margin-bottom: v.$space-md !important; color: v.$text-secondary; font-size: v.$font-size-sm; }
+.section { margin-bottom: v.$space-lg; min-width: 0;
+  h2 { margin-bottom: v.$space-sm; }
+  small { color: v.$text-secondary; font-size: v.$font-size-sm; font-weight: 400; }
+}
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: v.$space-md;
+  @media (max-width: 600px) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: v.$space-sm; }
+}
+
+.tile { display: flex; flex-direction: column; gap: v.$space-xs; min-width: 0; }
+.tileLink { display: grid; gap: v.$space-xxs; min-width: 0; text-decoration: none; border-radius: v.$radius-control;
+  strong { color: v.$color-white; overflow-wrap: anywhere; }
+  &:hover strong { text-decoration: underline; }
+  &:focus-visible { outline: 2px solid v.$primary-color; outline-offset: 2px; }
+}
+.purpose { color: v.$text-secondary; font-size: v.$font-size-sm; line-height: 1.3; overflow-wrap: anywhere; }
+.frame { position: relative; display: block; aspect-ratio: 1; overflow: hidden; border: v.$border-subtle; border-radius: v.$radius-control; background: v.$background-dark;
+  img { display: block; width: 100%; height: 100%; object-fit: contain; }
+}
+.badge { position: absolute; left: v.$space-xxs; bottom: v.$space-xxs; padding: 1px v.$space-xs; border-radius: v.$radius-control; background: v.$background-dark; color: v.$text-primary; font-size: v.$font-size-xs; }
+.placeholder { display: grid; place-items: center; height: 100%; padding: v.$space-sm; text-align: center; color: v.$text-secondary; font-size: v.$font-size-sm; }
+.check { position: relative; display: flex; align-items: center; gap: v.$space-xs; min-height: v.$touch-target-min; color: v.$text-secondary; font-size: v.$font-size-sm; cursor: pointer;
+  input { min-height: 0; width: 18px; height: 18px; flex: none; }
+}
+.visuallyHidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+.misc { display: flex; gap: v.$space-md; overflow-x: auto; padding-bottom: v.$space-xs; scroll-snap-type: x proximity; overscroll-behavior-x: contain;
+  &:focus-visible { outline: 2px solid v.$primary-color; outline-offset: 2px; }
+  .tile { flex: 0 0 200px; scroll-snap-align: start; }
+}
+
+/* Seven columns only where a tile stays readable; narrower screens get fewer, and a phone reads them in order. */
+.days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: v.$space-sm; align-items: start;
+  @media (max-width: 1280px) { grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); }
+}
+.day { display: grid; gap: v.$space-md; min-width: 0; padding: v.$space-sm; border: v.$border-subtle; border-radius: v.$radius-control;
+  &[data-today] { border-color: v.$primary-color; }
+  h2 { display: grid; font-size: v.$font-size-md; }
+  small { color: v.$text-secondary; font-size: v.$font-size-xs; font-weight: 400; }
+}
