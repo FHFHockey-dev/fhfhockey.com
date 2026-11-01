@@ -150,6 +150,18 @@ test("Nightly Floor prints numerator, denominator, missing and its strict test",
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeEnabled();
 });
 
+test("Nightly Floor's headline follows its settings and its longest form stays on one line", async ({ page }) => {
+  await open(page, "nightly-floor", () => edition("nightly-floor", floorSettings(), buildNightlyFloor(fictional, floorSettings(), ownership)));
+  const title = page.getByTestId("share-square").getByRole("heading", { level: 2 }), view = page.locator("label", { hasText: /^View/ }).locator("select");
+  await view.selectOption("cardio");
+  await expect(title).toHaveText("CARDIO MASTERS");
+  await view.selectOption("hits");
+  await page.locator("label", { hasText: /^Hits X/ }).locator("input").fill("9.5");
+  await expect(title).toHaveText("GP% WITH OVER 9.5 HITS");
+  expect(await title.evaluate(heading => heading.getBoundingClientRect().height <= parseFloat(getComputedStyle(heading).lineHeight) * 1.2)).toBe(true);
+  await expect(page.getByLabel("Post")).toContainText("Nightly Floor");
+});
+
 const crowdedOwnership = { byPlayer: new Map(Array.from({ length: 24 }, (_, index) => [index + 1, ownershipOf(10 + index, "2026-10-31")])), updatedAt: "2026-10-31T08:00:00" };
 test("BSH Board risers and fallers fill the body with no clipping at 7 rows a side", async ({ page }) => {
   const moving: SkaterSeason = (() => {

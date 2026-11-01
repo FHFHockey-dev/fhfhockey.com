@@ -3,6 +3,7 @@ import { createElement } from "react";
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import type { SkaterSeason } from "./bshBoard";
+import { SKATER_CATEGORIES, type SkaterCategoryId } from "./categoryBlueprint";
 import { parseShareSettings, type SharePostSnapshot } from "./contract";
 import { buildNightlyFloor, floorAdmitted, floorAverage, floorHeadline, floorMetricLabels, floorOutcome, nightlyFloorModule, ownershipByPlayer, type NightlyFloorData, type NightlyFloorSettings } from "./nightlyFloor";
 import { ownershipOf, type OwnershipState } from "./shared/definitions";
@@ -86,6 +87,18 @@ describe("Nightly Floor headline and metric", () => {
   it("gives the post header its headline and keeps the post's name for the studio", () => {
     expect(nightlyFloorModule.headline?.(settings())).toBe("GP% WITH 3+ SOG");
     expect(nightlyFloorModule.title).toBe("Nightly Floor");
+    expect(nightlyFloorModule.headline?.(settings({ view: "cardio" }))).toBe("CARDIO MASTERS");
+  });
+  it("reads correctly once the header uppercases it, and is never longer than the longest post title", () => {
+    const every = [
+      ...(["sog", "hits", "blk", "point", "cardio"] as const).flatMap(view => [0, 10, 9.5].map(x => settings({ view, xSog: x, xHits: x, xBlk: x }))),
+      ...(Object.keys(SKATER_CATEGORIES) as SkaterCategoryId[]).map(zeroCategory => settings({ view: "zero", zeroCategory })),
+    ].map(floorHeadline);
+    for (const headline of every) expect(headline.toUpperCase()).toBe(headline);
+    // "Goalie Category Rescue" is 22 characters. The longest whole-number headline is shorter still.
+    expect(Math.max(...every.map(headline => headline.length))).toBe("GP% WITH OVER 9.5 HITS".length);
+    expect("GP% WITH OVER 9.5 HITS".length).toBeLessThanOrEqual(22);
+    expect(floorHeadline(settings({ view: "hits", xHits: 10 }))).toBe("GP% WITH 11+ HITS");
   });
   it("states the metric and the average's name", () => {
     expect(floorMetricLabels(settings())).toEqual({ metricLabel: "METRIC: SOG, 3+ per game", averageLabel: "SOG/G" });
