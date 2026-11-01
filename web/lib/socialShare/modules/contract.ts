@@ -73,6 +73,8 @@ export type SharePostCardProps<Settings extends ShareSettings = ShareSettings, D
 
 export type ShareModule<Settings extends ShareSettings = ShareSettings, Data = unknown> = {
   id: string; title: string; summary: string; group: SharePostGroup; basis: SharePostBasis;
+  /** The card's printed headline when it follows the settings; `title` still names the post in the studio. */
+  headline?: (settings: Settings) => string;
   /** A suggestion shown beside the post; posts are chosen freely and nothing is scheduled. */
   suggestedUse?: string;
   fields: readonly ShareSettingField[];
