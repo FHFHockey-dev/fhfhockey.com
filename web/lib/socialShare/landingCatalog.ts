@@ -57,22 +57,25 @@ export const LANDING_CARDS: readonly LandingCard[] = [
   { id: "player-cards", name: "Player Cards", purpose: "A report card for one skater or goalie.", example: "fixture", height: 459, link: { kind: "path", path: "/social-share/player-cards" } },
 ];
 
-export const LANDING_CATEGORIES: readonly { id: string; label: string; cards: readonly string[] }[] = [
-  { id: "schedule", label: "Schedule", cards: ["game-grid", "off-night-weekly", "off-night-rest", "team-games", "remaining-week"] },
-  { id: "weekly", label: "Weekly", cards: ["game-grid", "off-night-weekly", "stars-total", "stars-total-points-first", "stars-per-game", "stars-per-game-points-first", "goalie-of-week"] },
-  { id: "peripherals", label: "Peripherals", cards: ["bsh-leaders", "bsh-risers", "multi-cat-monsters", "multi-cat-points-first", "nightly-floor", "cardio-masters"] },
-  { id: "trends", label: "Trends", cards: ["tuesday-trends", "what-changed", "role-watch"] },
-  { id: "skaters", label: "Skaters", cards: ["what-changed", "role-watch", "stars-total", "stars-per-game", "bsh-leaders", "multi-cat-monsters", "nightly-floor", "standouts-forwards"] },
+export type LandingSection = { id: string; label: string; theme?: string; today?: boolean; cards: readonly string[] };
+
+/** TJ's order: cards with daily opportunities first, and daily-use cards lead within a section. */
+export const LANDING_CATEGORIES: readonly LandingSection[] = [
+  { id: "standouts", label: "Standouts", cards: ["standouts-forwards", "standouts-defensemen", "standouts-goalies", "standouts-under", "standouts-all"] },
+  { id: "schedule", label: "Schedule", cards: ["team-games", "off-night-rest", "remaining-week", "game-grid", "off-night-weekly"] },
+  { id: "trends", label: "Trends", cards: ["what-changed", "role-watch", "tuesday-trends"] },
+  { id: "peripherals", label: "Peripherals", cards: ["nightly-floor", "cardio-masters", "bsh-leaders", "bsh-risers", "multi-cat-monsters", "multi-cat-points-first"] },
+  { id: "skaters", label: "Skaters", cards: ["standouts-forwards", "what-changed", "role-watch", "nightly-floor", "bsh-leaders", "multi-cat-monsters", "stars-total", "stars-per-game"] },
   { id: "defensemen", label: "Defensemen", cards: ["standouts-defensemen"] },
-  { id: "standouts", label: "Standouts", cards: ["standouts-all", "standouts-under", "standouts-forwards", "standouts-defensemen", "standouts-goalies"] },
-  { id: "goalies", label: "Goalies", cards: ["goalie-of-week", "goalie-of-month", "crease-shift", "goalie-gsax", "busy-quiet", "goalie-rescue", "ratio-impact", "risky-starts", "start-sit", "standouts-goalies"] },
+  { id: "goalies", label: "Goalies", cards: ["standouts-goalies", "risky-starts", "start-sit", "crease-shift", "busy-quiet", "goalie-rescue", "goalie-gsax", "ratio-impact", "goalie-of-week", "goalie-of-month"] },
+  { id: "weekly", label: "Weekly", cards: ["game-grid", "off-night-weekly", "stars-total", "stars-total-points-first", "stars-per-game", "stars-per-game-points-first", "goalie-of-week"] },
   { id: "comparisons", label: "Comparisons", cards: ["player-vs-player"] },
   { id: "player-cards", label: "Player Cards", cards: ["player-cards"] },
 ];
 
-export const LANDING_MISC = { id: "misc", label: "Misc", theme: "Fits any day", cards: ["standouts-all", "standouts-under", "standouts-forwards", "standouts-defensemen", "standouts-goalies", "player-vs-player", "team-games", "goalie-of-month"] } as const;
+export const LANDING_MISC: LandingSection = { id: "misc", label: "Misc", theme: "Fits any day", cards: ["standouts-forwards", "standouts-defensemen", "standouts-goalies", "standouts-under", "standouts-all", "player-vs-player", "team-games", "goalie-of-month"] };
 
-export const LANDING_DAYS: readonly { id: string; label: string; theme: string; cards: readonly string[] }[] = [
+export const LANDING_DAYS: readonly (LandingSection & { theme: string })[] = [
   { id: "mon", label: "Mon", theme: "Best schedules and streamers", cards: ["game-grid", "off-night-weekly", "multi-cat-monsters", "multi-cat-points-first", "bsh-leaders", "nightly-floor", "cardio-masters", "goalie-of-week"] },
   { id: "tue", label: "Tue", theme: "Trends", cards: ["tuesday-trends", "what-changed", "role-watch", "bsh-risers"] },
   { id: "wed", label: "Wed", theme: "Rest of week", cards: ["remaining-week", "off-night-rest"] },
@@ -105,7 +108,25 @@ export function landingWeekStart(now: Date) {
   return new Date(Date.UTC(year, month - 1, day - sinceMonday)).toISOString().slice(0, 10);
 }
 
-/** The ticks saved for `week`. Another week's ticks, or anything unreadable, count as none. */
+/** By day's sections: today, then Misc, then the other days from tomorrow. Until the browser knows today, Misc and Mon to Sun. */
+export function landingDaySections(today: string | null): readonly LandingSection[] {
+  const at = LANDING_DAYS.findIndex(day => day.id === today);
+  if (at < 0) return [LANDING_MISC, ...LANDING_DAYS];
+  return [{ ...LANDING_DAYS[at], today: true }, LANDING_MISC, ...LANDING_DAYS.slice(at + 1), ...LANDING_DAYS.slice(0, at)];
+}
+
+export type LandingDayStatus = "done" | "missed" | "upcoming";
+/**
+ * One day's state in the top strip. Today this reads only the hand-marked days; an automatic source replaces this one
+ * function later. A day that has not come yet is never "missed".
+ */
+export function landingDayStatus(day: string, today: string | null, marked: ReadonlySet<string>): LandingDayStatus {
+  const ids = LANDING_DAYS.map(entry => entry.id), now = today ? ids.indexOf(today) : -1;
+  if (now < 0 || ids.indexOf(day) > now) return "upcoming";
+  return marked.has(day) ? "done" : "missed";
+}
+
+/** The days marked for `week`. Another week's marks, or anything unreadable, count as none. */
 export function readLandingChecklist(raw: string | null, week: string): ReadonlySet<string> {
   try {
     const saved = JSON.parse(raw ?? "null");

@@ -1,7 +1,7 @@
 import { existsSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { LANDING_CARDS, LANDING_CATEGORIES, LANDING_DAYS, LANDING_MISC, landingCard, landingCardHref, landingCardImage, landingToday, landingWeekStart, readLandingChecklist, writeLandingChecklist } from "./landingCatalog";
+import { LANDING_CARDS, LANDING_CATEGORIES, LANDING_DAYS, LANDING_MISC, landingCard, landingCardHref, landingCardImage, landingDaySections, landingDayStatus, landingToday, landingWeekStart, readLandingChecklist, writeLandingChecklist } from "./landingCatalog";
 import { parseShareSettings } from "./modules/contract";
 import { SHARE_MODULES } from "./modules/registry";
 import { isSocialShareFormat } from "./types";
@@ -74,12 +74,20 @@ describe("landing maps", () => {
   it("every tile lists under a category and exactly one day", () => {
     for (const { id } of LANDING_CARDS) {
       expect(LANDING_CATEGORIES.some(item => item.cards.includes(id)), id).toBe(true);
-      expect(dayBuckets.filter(item => (item.cards as readonly string[]).includes(id)).length, id).toBe(1);
+      expect(dayBuckets.filter(item => item.cards.includes(id)).length, id).toBe(1);
     }
   });
 
-  it("follows TJ's plan: categories and days in order, Standouts in Misc, and Standouts Defensemen under both", () => {
-    expect(LANDING_CATEGORIES.map(item => item.label)).toEqual(["Schedule", "Weekly", "Peripherals", "Trends", "Skaters", "Defensemen", "Standouts", "Goalies", "Comparisons", "Player Cards"]);
+  it("follows TJ's plan: daily cards first, Standouts leads in its set order, and days keep their themes", () => {
+    expect(LANDING_CATEGORIES.map(item => item.label)).toEqual(["Standouts", "Schedule", "Trends", "Peripherals", "Skaters", "Defensemen", "Goalies", "Weekly", "Comparisons", "Player Cards"]);
+    expect(LANDING_CATEGORIES[0].cards).toEqual(["standouts-forwards", "standouts-defensemen", "standouts-goalies", "standouts-under", "standouts-all"]);
+    const section = (id: string) => LANDING_CATEGORIES.find(item => item.id === id)!.cards;
+    expect(section("skaters")[0]).toBe("standouts-forwards");
+    expect(section("goalies")[0]).toBe("standouts-goalies");
+    expect(section("defensemen")).toContain("standouts-defensemen");
+    // Weekly-only cards follow the daily ones.
+    expect(section("trends").indexOf("what-changed")).toBeLessThan(section("trends").indexOf("tuesday-trends"));
+    expect(section("schedule").indexOf("team-games")).toBeLessThan(section("schedule").indexOf("game-grid"));
     expect(LANDING_DAYS.map(item => item.label)).toEqual(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]);
     const day = (id: string) => LANDING_DAYS.find(item => item.id === id)!.cards;
     expect(day("mon")).toEqual(expect.arrayContaining(["game-grid", "off-night-weekly"]));
@@ -87,8 +95,35 @@ describe("landing maps", () => {
     expect(day("wed")).toContain("remaining-week");
     expect(day("thu")).toContain("player-cards");
     expect(day("fri")).toEqual(expect.arrayContaining(["goalie-rescue", "busy-quiet"]));
-    for (const id of LANDING_CATEGORIES.find(item => item.id === "standouts")!.cards) expect(LANDING_MISC.cards as readonly string[], id).toContain(id);
-    expect(LANDING_CATEGORIES.find(item => item.id === "defensemen")!.cards).toContain("standouts-defensemen");
+    for (const id of section("standouts")) expect(LANDING_MISC.cards, id).toContain(id);
+  });
+});
+
+describe("landing day order", () => {
+  it.each([
+    ["mon", ["mon", "misc", "tue", "wed", "thu", "fri", "sat", "sun"]],
+    ["wed", ["wed", "misc", "thu", "fri", "sat", "sun", "mon", "tue"]],
+    ["fri", ["fri", "misc", "sat", "sun", "mon", "tue", "wed", "thu"]],
+    ["sun", ["sun", "misc", "mon", "tue", "wed", "thu", "fri", "sat"]],
+  ])("on %s: today, then Misc, then the rest from tomorrow", (today, expected) => {
+    const sections = landingDaySections(today);
+    expect(sections.map(item => item.id)).toEqual(expected);
+    expect(sections.filter(item => item.today).map(item => item.id)).toEqual([today]);
+  });
+  it("names no day as today until the browser knows it", () => {
+    expect(landingDaySections(null).map(item => item.id)).toEqual(["misc", "mon", "tue", "wed", "thu", "fri", "sat", "sun"]);
+    expect(landingDaySections(null).some(item => item.today)).toBe(false);
+  });
+});
+
+describe("landing day status", () => {
+  it("a past or current day is done or missed, and a future day is never missed", () => {
+    const status = (day: string) => landingDayStatus(day, "wed", new Set(["mon"]));
+    expect(LANDING_DAYS.map(day => status(day.id))).toEqual(["done", "missed", "missed", "upcoming", "upcoming", "upcoming", "upcoming"]);
+    expect(landingDayStatus("wed", "wed", new Set(["wed"]))).toBe("done");
+    // A stale mark on a day still ahead stays neutral too.
+    expect(landingDayStatus("fri", "wed", new Set(["fri"]))).toBe("upcoming");
+    expect(landingDayStatus("mon", null, new Set(["mon"]))).toBe("upcoming");
   });
 });
 
@@ -102,9 +137,9 @@ describe("landing checklist week", () => {
     expect(landingToday(new Date("2026-11-02T05:00:00Z"))).toBe("mon");
   });
 
-  it("keeps this week's ticks and resets on a new week or unreadable data", () => {
-    const saved = writeLandingChecklist("2026-10-26", new Set(["mon:game-grid"]));
-    expect([...readLandingChecklist(saved, "2026-10-26")]).toEqual(["mon:game-grid"]);
+  it("keeps this week's marks and resets on a new week or unreadable data", () => {
+    const saved = writeLandingChecklist("2026-10-26", new Set(["mon"]));
+    expect([...readLandingChecklist(saved, "2026-10-26")]).toEqual(["mon"]);
     expect(readLandingChecklist(saved, "2026-11-02").size).toBe(0);
     for (const raw of [null, "", "{", "null", "[]", '{"week":"2026-10-26"}', '{"week":"2026-10-26","done":"x"}']) expect(readLandingChecklist(raw, "2026-10-26").size, String(raw)).toBe(0);
     expect([...readLandingChecklist('{"week":"2026-10-26","done":["a",1]}', "2026-10-26")]).toEqual(["a"]);
