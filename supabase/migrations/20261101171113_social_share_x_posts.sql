@@ -1,5 +1,5 @@
 -- Social Share landing page: @FHFHockey's own media posts, delivered by one IFTTT applet.
--- LOCAL CANDIDATE: not applied anywhere. Apply only with TJ's explicit approval, BEFORE turning the applet on.
+-- Applied to production 2026-11-01 with TJ's approval, version 20261101171113.
 -- Until this table exists, or while it is empty, the landing strip stays on hand marking.
 --
 -- One row per X post. The first delivery wins: a repeat delivery of a tweet_id is ignored.
