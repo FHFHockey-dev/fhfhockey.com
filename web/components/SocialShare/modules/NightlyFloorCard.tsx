@@ -28,7 +28,7 @@ export default function NightlyFloorCard({ data, settings, logos }: SharePostCar
     { id: "owned", label: "ROST", numeric: true, cell: row => ownershipLabel(row.ownership) },
     { id: "gp", label: "GP", numeric: true, cell: row => row.appearances },
     { id: "average", label: data.averageLabel, numeric: true, cell: row => row.average === null ? <span className={styles.missing}>—</span> : row.average.toFixed(2) },
-    { id: "count", label: "MET / KNOWN", numeric: true, cell: row => `${row.numerator} / ${row.denominator}` },
+    { id: "count", label: "# GP", numeric: true, cell: row => `${row.numerator} / ${row.denominator}` },
     { id: "strip", label: "BY GAME", numeric: true, cell: row => <FloorStrip marks={row.marks} unwanted={unwanted} /> },
     // On one absolute scale, 100% at full strength, so a colour means the same on every board. Red where the count is unwanted.
     { id: "pct", label: "%", numeric: true, cell: row => <span className={styles.floorTile}><HeatTile value={unwanted ? -row.pct : row.pct} text={`${Math.round(row.pct * 100)}%`} caption={unwanted ? "of GP" : "met"} largest={1} /></span> },

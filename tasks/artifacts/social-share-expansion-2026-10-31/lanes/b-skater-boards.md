@@ -170,3 +170,4 @@ Follow-up commit (Blueprint default): 50 tests in the lane's 3 files passed, esl
 - **Not measured:** rows drop to about 54px by CSS; no browser run.
 - **Checks:** 75 tests in the lane's 3 files passed, eslint clean, the pure check passed, `tsc` printed no errors, `--list` found 10 tests.
 - **Headline length (from `54ed1bd11`):** the longest whole-number headline is "GP% WITH 11+ HITS" (17 characters). The field accepts a value like 9.5, which gives "GP% WITH OVER 9.5 HITS" (22), the same length as the longest post title. A new E2E test measures that form on one line; not run here.
+- **Column rename:** "MET / KNOWN" is now "# GP" (values unchanged, such as 9 / 10; the GP column stays). Earlier notes in this receipt use the old name. No other text printed on the PNG says "known".

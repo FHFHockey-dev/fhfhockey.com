@@ -192,7 +192,7 @@ describe("Nightly Floor card", () => {
   it("prints the metric, test, average, numerator, denominator and unknown ownership, with no missing column", async () => {
     const active = settings({ minCoverage: 50 }), { data } = buildNightlyFloor(season(games(1, [{ shots: 3 }, { shots: 2 }, { shots: null }])), active, none);
     const text = await show(data!, active);
-    for (const label of ["More than 2 SOG.", "Exactly 2 fails.", "L10", "SOG/G", "2.50", "MET / KNOWN", "1 / 2", "missing", "50%", "—", "1 of 1 ranked"]) expect(text).toContain(label);
+    for (const label of ["More than 2 SOG.", "Exactly 2 fails.", "L10", "SOG/G", "2.50", "# GP", "1 / 2", "missing", "50%", "—", "1 of 1 ranked"]) expect(text).toContain(label);
     expect(text).not.toContain("MISSING");
     expect(document.querySelector("[data-testid=floor-metric]")!.textContent).toBe("METRIC: SOG, 3+ per game");
     expect(document.querySelector("[data-testid=floor-strip] [data-mark=gap]")!.getAttribute("stroke")).toBe("#ffcc33");

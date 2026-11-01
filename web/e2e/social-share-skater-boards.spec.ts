@@ -139,7 +139,7 @@ test("Category Blueprint keeps categories separate with their own ranks", async 
 test("Nightly Floor prints numerator, denominator, missing and its strict test", async ({ page }) => {
   await open(page, "nightly-floor", () => edition("nightly-floor", floorSettings(), buildNightlyFloor(fictional, floorSettings(), ownership)));
   const square = page.getByTestId("share-square");
-  for (const text of ["More than 2 SOG.", "Exactly 2 fails.", "SOG/G", "MET / KNOWN", "10 / 10", "40%", "oldest to newest", "missing"]) await expect(square).toContainText(text);
+  for (const text of ["More than 2 SOG.", "Exactly 2 fails.", "SOG/G", "# GP", "10 / 10", "40%", "oldest to newest", "missing"]) await expect(square).toContainText(text);
   await expect(square.getByTestId("floor-metric")).toHaveText("METRIC: SOG, 3+ per game");
   await expect(square.getByRole("heading", { level: 2 })).toHaveText("GP% WITH 3+ SOG");
   await expect(square.getByTestId("floor-strip").first().locator("[data-mark]")).toHaveCount(10);
