@@ -1,4 +1,6 @@
 import { cleanup, render } from "@testing-library/react";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { createElement } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import GoalieRescueCard from "components/SocialShare/modules/GoalieRescueCard";
@@ -132,6 +134,13 @@ const snapshot = (data: RescueData, active: GoalieRescueSettings): SharePostSnap
 const renderCard = (data: RescueData, active: GoalieRescueSettings) => render(createElement(GoalieRescueCard, { snapshot: snapshot(data, active), data, settings: active, logos: {} })).container.textContent!;
 
 describe("goalie rescue card", () => {
+  it("sizes the name column to its text and gives the spare width to the stat columns", () => {
+    const scss = readFileSync(resolve(process.cwd(), "components/SocialShare/modules/GoalieRescueCard.module.scss"), "utf8");
+    expect(scss).toContain("grid-template-columns: max-content minmax(0, max-content) repeat(10, auto);");
+    expect(scss).not.toMatch(/justify-content: (start|center|end)/);
+    const named = rows.map(row => row.goalieId === 1 ? { ...row, name: "Dennis Hildeby" } : row);
+    expect(renderCard(build({ appearances: named, availability: own({ 1: 10, 2: 20, 3: 30, 4: 40 }, { 1: "DTD" }) }).data!, settings())).toContain("Dennis HildebyDTD");
+  });
   it("prints the separate lenses, ownership states and the limits of rostered %", () => {
     const active = settings({ includeUnknown: "on" }), data = build({ settings: active, availability: own({ 1: 10, 2: null, 3: 0, 4: 40 }) }).data!, text = renderCard(data, active);
     for (const label of ["OWN", "W", "SV", "SA", "SV%", "GA", "GAA", "RELIEF", "GMS LEFT", RESCUE_NOTE, "10%", "0%", "—", ".833", "4.00"]) expect(text).toContain(label);

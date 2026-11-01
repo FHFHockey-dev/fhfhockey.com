@@ -14,3 +14,7 @@
 ## 2026-11-01: Busy and Quiet third line
 
 Replaced the HD SHOTS / TEAM SCA / HDCA text line with three tiles. Thin HD coverage prints a dash; the counts moved to `evidence.sample`. Row minimum is 65px and the tie cap stays 12. Checks: Vitest, pure CSS, eslint, tsc filter, spec `--list`. Next: the lead's render runs the spec's tile overflow check.
+
+## 2026-11-01: Rescue column balance
+
+Name column is `minmax(0, max-content)`, RK is `max-content`, and the ten `auto` columns take the stretch. Checks: Vitest, pure CSS, eslint, tsc filter, spec `--list`. Next: the lead's render runs the spec's name, overflow and alignment checks.

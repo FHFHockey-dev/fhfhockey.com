@@ -133,3 +133,11 @@ None. No frozen file needs a change.
 - **Row height:** the minimum row rises from 63 to 65px. The tie cap stays at 12, because 12 x 65 + 53 = 833 fits an 845px body.
 - **Spec:** expects the three tiles and fails if a tile's text overflows it or a tile runs past its column (`--list` only).
 - **Not verified:** no browser run. The width budget is an estimate, about 221px of tile content plus 6px of gaps in a 249px column, until the lead's render runs that check.
+
+## Follow-up: Rescue column balance (TJ, 2026-11-01)
+
+- **Columns:** RK and GOALIE now stop at their text. The other ten columns share the spare width equally, so OWN, GS, RELIEF, the three groups and GMS LEFT all spread out.
+- **Long names:** names show whole when the table fits. A name too long for the card ellipsizes instead of pushing the table past the card edge.
+- **Kept:** group headers, the highlighted column and the colours are unchanged. `data-goalie-name` was added to the name span so the spec can check it.
+- **Spec:** fails if a name is cut, the table passes the card edge, or a group head does not span its columns (`--list` only).
+- **Not verified:** no browser run. Whether "Dennis Hildeby DTD" and "Daniil Tarasov DTD" show whole depends on the lead's render running those checks.

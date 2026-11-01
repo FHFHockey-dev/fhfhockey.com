@@ -30,7 +30,7 @@ export default function GoalieRescueCard({ data, settings, logos }: SharePostCar
       <span className={styles.head} data-numeric="" data-first="">GMS LEFT</span>
       {data.rows.map(row => <Fragment key={row.goalieId}>
         <span className={styles.cell} data-numeric="">{row.rank}</span>
-        <span className={styles.cell}><span className={styles.goalie}><PostTeamMark team={row.team} logo={logos[row.team]} size={26} /><span className={styles.name}>{row.name ?? `Goalie ${row.goalieId}`}</span>{row.status ? <small>{row.status}</small> : null}</span></span>
+        <span className={styles.cell}><span className={styles.goalie}><PostTeamMark team={row.team} logo={logos[row.team]} size={26} /><span className={styles.name} data-goalie-name="">{row.name ?? `Goalie ${row.goalieId}`}</span>{row.status ? <small>{row.status}</small> : null}</span></span>
         <span className={styles.cell} data-numeric="">{ownershipLabel(row.ownership)}</span>
         <span className={styles.cell} data-numeric="">{row.starts}</span>
         <span className={styles.cell} data-numeric="">{row.relief}</span>

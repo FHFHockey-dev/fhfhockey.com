@@ -126,6 +126,19 @@ test("Goalie Category Rescue orders by one category and shows ownership states",
   await expect(card).toContainText("20%");
   await expect(card).toContainText("Volume");
   await expect(card.locator('[data-head][data-selected]')).toHaveText("W");
+  // Names show whole, the table stays inside the card, and each group head spans exactly its columns.
+  const layout = await card.evaluate(element => {
+    const box = (node: Element) => node.getBoundingClientRect(), heads = [...element.querySelectorAll("[data-head]")];
+    const groups = [...new Set(heads.map(head => head.getAttribute("data-group")))].map(group => heads.filter(head => head.getAttribute("data-group") === group));
+    return {
+      cutNames: [...element.querySelectorAll<HTMLElement>("[data-goalie-name]")].filter(name => name.scrollWidth > name.clientWidth).map(name => name.textContent),
+      overflow: Math.max(...[...element.querySelectorAll("[data-column='left']")].map(cell => box(cell).right)) - box(element).right,
+      misaligned: [...element.querySelectorAll("[data-group-head]")].filter((head, index) => Math.abs(box(head).left - box(groups[index][0]).left) > 0.5 || Math.abs(box(head).right - box(groups[index][groups[index].length - 1]).right) > 0.5).map(head => head.textContent),
+    };
+  });
+  expect(layout.cutNames).toEqual([]);
+  expect(layout.overflow).toBeLessThanOrEqual(0.5);
+  expect(layout.misaligned).toEqual([]);
   await expect(card).not.toContainText("Fictional Goalie 2");
   await expect(page.getByTestId("post-evidence")).toContainText("1 unknown ownership excluded");
   await expect(page.getByText("Works for a Thursday or Friday post.")).toBeVisible();
