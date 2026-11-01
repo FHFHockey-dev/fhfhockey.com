@@ -17,3 +17,6 @@ Shared winner rule, Risky Starts to the mockup (`~/Desktop/Untitled-1.png`), Sta
 
 ## Market lines
 Stored DraftKings first, NHL `/now` fallback, in `riskyStarts.sources.ts`. Dated NHL paths 404. Expect "No line yet" for most of a 7-day window. Fit is tight on a 4-pairing tile with wrapped goalies; check the lead's render.
+
+## Audit F2, F3, F8
+Tied ranks, puck-drop expiry and DraftKings-only stored lines. Gotcha: a high-first competition rank can't be reversed across a tie, so `lowFirstRanks` sits on the detail, outside v1. Full `tsc` reports one error in `goalieRescue.sources.ts`, not this lane's file; reported to the lead.

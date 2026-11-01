@@ -3,8 +3,9 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import StartSitCard from "components/SocialShare/modules/StartSitCard";
 import { resolveDailyBoardEvidence, type BoardGoalieEvidence } from "lib/projections/dailyBoardEvidence";
-import { parseShareSettings, sharePostExportToken } from "./contract";
+import { parseShareSettings, sharePostExportBlock, sharePostExportToken } from "./contract";
 import { shareModule } from "./registry";
+import { loadPostSnapshot } from "./server";
 import { FORECAST_ADMITTED_NOTE, START_SIT_LENS_NOTE, START_SIT_STATUS_NOTE, startSitConflicting, startSitModule, startSitResult, startSitRows, upcomingInventory, type StartSitData, type StartSitSettings } from "./startSit";
 import { FIXTURE_GENERATED_AT, FIXTURE_INPUT, GOALIE_INVENTORY_FIXTURE, GOALIE_INVENTORY_FIXTURE_DETAIL } from "./shared/goalieInventory.fixture";
 import { buildGoalieInventory, CONFIRMATION_CLOSED_REASON, CONFIRMATION_LINK_GAP, CONFIRMATION_REPORTER_GAP, CONFIRMATION_TONES, FORECAST_CLOSED_REASON, headToHeadWinner, HEAD_TO_HEAD_COLORS } from "./shared/goalieInventory.sources";
@@ -63,10 +64,13 @@ describe("Start/Sit card, through the real resolver", () => {
 
 describe("Start/Sit colour", () => {
   const cell = (html: string, testid: string, state: string) => html.match(new RegExp(`<span[^>]*data-testid="${testid}"[^>]*data-state="${state}"[^>]*>`))?.[0];
-  const withSignals = (edit: (signals: StartSitData["inventory"]["goalies"][number]["games"][number]["signals"]) => object, logos: Record<string, string> = {}) => {
+  const withSignals = (edit: (signals: StartSitData["inventory"]["goalies"][number]["games"][number]["signals"]) => object, logos: Record<string, string> = {}, ranks?: StartSitData["lowFirstRanks"]) => {
     const result = startSitResult(GOALIE_INVENTORY_FIXTURE_DETAIL), row = startSitRows(result.data as StartSitData, "")[0];
-    const goalie = { ...row.goalie, games: [{ ...row.game, signals: { ...row.game.signals, ...edit(row.game.signals) } }] };
-    return renderToStaticMarkup(createElement(StartSitCard, { snapshot: { generatedAt: FIXTURE_GENERATED_AT } as never, data: { ...(result.data as StartSitData), inventory: { ...(result.data as StartSitData).inventory, goalies: [goalie] } }, settings: settings(""), logos }));
+    const signals = { ...row.game.signals, ...edit(row.game.signals) }, goalie = { ...row.goalie, games: [{ ...row.game, signals }] };
+    // These edits have no ties, so reversing a rank gives the low-first one. Fixture row: NJD at NYR.
+    const reversed = ({ leagueRank, leagueCohort }: { leagueRank: number | null; leagueCohort: number | null }) => leagueRank === null || leagueCohort === null ? 0 : leagueCohort - leagueRank + 1;
+    const lowFirstRanks = ranks ?? { xga: { NJD: reversed(signals.ratioExposure.teamXgaPerGame) }, shotsAgainst: { NJD: reversed(signals.volume.teamShotsAgainstPerGame) }, goalsAgainst: { NYR: reversed(signals.winSupport.opponentGoalsAgainstPerGame) } };
+    return renderToStaticMarkup(createElement(StartSitCard, { snapshot: { generatedAt: FIXTURE_GENERATED_AT } as never, data: { ...(result.data as StartSitData), lowFirstRanks, inventory: { ...(result.data as StartSitData).inventory, goalies: [goalie] } }, settings: settings(""), logos }));
   };
   const metric = (value: number | null, leagueRank: number | null, leagueCohort: number | null = 32) => ({ value, unit: "per game", window: "", sampleGames: 10, leagueRank, leagueCohort });
   type Metric = ReturnType<typeof metric>;
@@ -102,7 +106,7 @@ describe("Start/Sit colour", () => {
     expect(cell.indexOf("NJD")).toBeLessThan(cell.lastIndexOf("NYR"));
   });
   it("agrees with the shared rule", () => {
-    expect(headToHeadWinner({ metricId: "xga", metric: metric(3.4, 5) }, { metricId: "xgf", metric: metric(3.1, 10) })).toBe(1);
+    expect(headToHeadWinner({ metricId: "xga", metric: metric(3.4, 5), lowFirstRank: 28 }, { metricId: "xgf", metric: metric(3.1, 10), lowFirstRank: null })).toBe(1);
   });
   it("runs the columns Quality, Quantity, Win, with the headers in the same order as the chips", () => {
     const html = card(startSitResult(GOALIE_INVENTORY_FIXTURE_DETAIL));
@@ -129,6 +133,11 @@ describe("Start/Sit colour", () => {
     expect([first.result, second.result]).toEqual(["neutral", "neutral"]);
     expect(first.attrs).not.toContain("style=");
     expect(second.attrs).not.toContain("style=");
+    expect(cell).not.toContain("lens-edge");
+  });
+  it("leaves a tie for the fewest allowed against the top attack plain, whatever its high-first rank", () => {
+    const cell = lensCell(withSignals(lensEdits.quality(metric(2.1, 31), metric(3.4, 1)) as never, {}, { xga: { NJD: 1 } }), "quality"), [first, second] = chips(cell);
+    expect([first.result, second.result]).toEqual(["neutral", "neutral"]);
     expect(cell).not.toContain("lens-edge");
   });
   it("leaves a missing metric dashed and plain, its partner plain too", () => {
@@ -235,7 +244,25 @@ describe("Start/Sit (11.5)", () => {
     expect(later.goalies).toEqual([]);
   });
   it("is missing with no data when the inventory is", () => {
-    expect(startSitResult({ coverage: null, conflicts: [], inventory: { ...GOALIE_INVENTORY_FIXTURE, state: "missing", reasons: ["r"], goalies: [], sources: [] } })).toMatchObject({ state: "missing", data: null });
+    expect(startSitResult({ coverage: null, conflicts: [], lowFirstRanks: {}, inventory: { ...GOALIE_INVENTORY_FIXTURE, state: "missing", reasons: ["r"], goalies: [], sources: [] } })).toMatchObject({ state: "missing", data: null });
+  });
+  describe("edition expiry", () => {
+    const edition = async (generatedAt: string, schedule = FIXTURE_INPUT.schedule) => {
+      vi.spyOn(shareModule("start-sit")!, "load").mockResolvedValue((async () => startSitResult(buildGoalieInventory({ ...FIXTURE_INPUT, schedule, request: { ...FIXTURE_INPUT.request, generatedAt } }))) as never);
+      return loadPostSnapshot("start-sit", {}, {} as never, () => new Date(generatedAt));
+    };
+    const block = (snapshot: Awaited<ReturnType<typeof edition>>, now: string) => sharePostExportBlock(shareModule("start-sit")!, snapshot, snapshot.settings, Date.parse(now));
+    it("expires at the earliest puck drop, and blocks export from then on", async () => {
+      const snapshot = await edition("2026-11-02T22:59:00.000Z");
+      expect(snapshot.expiresAt).toBe("2026-11-02T23:00:00.000Z");
+      expect(block(snapshot, "2026-11-02T22:59:30.000Z")).toBeNull();
+      expect(block(snapshot, "2026-11-02T23:00:00.000Z")).toMatch(/expired/);
+      expect(block(snapshot, "2026-11-02T23:01:00.000Z")).toMatch(/expired/);
+    });
+    it("keeps the default with a later puck drop or no start time", async () => {
+      expect((await edition(FIXTURE_GENERATED_AT)).expiresAt).toBe("2026-11-02T15:15:00.000Z");
+      expect((await edition("2026-11-02T22:59:00.000Z", FIXTURE_INPUT.schedule.map(game => ({ ...game, startTime: null })))).expiresAt).toBe("2026-11-02T23:14:00.000Z");
+    });
   });
   it("registers both posts as observed goalie posts", () => {
     for (const id of ["risky-starts", "start-sit"]) expect(shareModule(id)).toMatchObject({ group: "goalies", basis: "observed" });

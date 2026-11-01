@@ -1,6 +1,6 @@
 import { UNKNOWN_EVIDENCE, defineShareModule, type SharePostEvidence, type SharePostLoadResult, type SharePostSource } from "./contract";
 import type { GoalieConfirmation, GoalieGameSignals, GoalieInventory, InventoryMetric } from "./shared/goalieInventory";
-import { confirmationLabel, confirmationLegend, inventoryEvidence, isUpcomingGame, headToHeadWinner, metricLabel, rankBand, type GoalieInventoryDetail, type InventoryConflict, type TeamLensMetric } from "./shared/goalieInventory.sources";
+import { confirmationLabel, confirmationLegend, inventoryEvidence, isUpcomingGame, headToHeadWinner, metricLabel, puckDropTtlSeconds, rankBand, rankedSide, type GoalieInventoryDetail, type InventoryConflict, type InventoryLowFirstRanks, type RankedSide, type TeamLensMetric } from "./shared/goalieInventory.sources";
 
 /**
  * Risky Starts (SS 11.0, SS-R14) mirrors Cherry-Picked Matchups from the goalie's chair: one tile per team-night, a pairing
@@ -14,7 +14,7 @@ export const RISKY_CORRELATION_NOTE = "These signals are correlated: shots, xG a
 export const RISKY_TILE_LIMIT = 8;
 
 export type RiskyStartsSettings = { days: number; lens: RiskyLens };
-export type RiskySide = { team: string; label: string; metricId: TeamLensMetric; metric: InventoryMetric; digits: number };
+export type RiskySide = RankedSide & { team: string; label: string; digits: number };
 /** `winner` is the team with the stronger rank, null when equal, missing or one-sided. */
 export type RiskyPair = { id: string; label: string; sides: RiskySide[]; flagged: boolean; winner: string | null };
 export type RiskyGoalie = { goalieId: number; name: string; starts: number | null; teamGames: number; confirmation: GoalieConfirmation };
@@ -32,9 +32,9 @@ const topThird = (metric: InventoryMetric) => rankBand(metric) === "top";
 const bottomThird = (metric: InventoryMetric) => rankBand(metric) === "bottom";
 
 /** Every pairing for one side of a game. Mirror the two teams and each pairing's sides swap to the other team's rates. */
-export function riskyPairs(team: string, opponent: string, { volume, ratioExposure: ratio, winSupport: win }: GoalieGameSignals): Record<RiskyLens, RiskyPair[]> {
+export function riskyPairs(team: string, opponent: string, { volume, ratioExposure: ratio, winSupport: win }: GoalieGameSignals, lowFirstRanks: InventoryLowFirstRanks): Record<RiskyLens, RiskyPair[]> {
   const pair = (id: string, label: string, flagged: boolean, ...entries: [string, string, TeamLensMetric, InventoryMetric, number][]): RiskyPair => {
-    const sides = entries.map(([owner, name, metricId, metric, digits]) => ({ team: owner, label: name, metricId, metric, digits }));
+    const sides = entries.map(([owner, name, metricId, metric, digits]) => ({ ...rankedSide(lowFirstRanks, owner, metricId, metric), team: owner, label: name, digits }));
     const winner = sides.length === 2 ? headToHeadWinner(sides[0], sides[1]) : null;
     return { id, label, flagged, sides, winner: winner === null ? null : sides[winner].team };
   };
@@ -52,12 +52,12 @@ export function riskyPairs(team: string, opponent: string, { volume, ratioExposu
     ],
   };
 }
-export function riskyRows(inventory: GoalieInventory, conflicts: readonly InventoryConflict[] = []): RiskyRow[] {
+export function riskyRows(inventory: GoalieInventory, conflicts: readonly InventoryConflict[], lowFirstRanks: InventoryLowFirstRanks): RiskyRow[] {
   const rows = new Map<string, RiskyRow>();
   for (const goalie of inventory.goalies) for (const game of goalie.games) {
     if (!isUpcomingGame(game, inventory.generatedAt)) continue;
     const key = `${game.gameId}:${game.team}`;
-    const row = rows.get(key) ?? { gameId: game.gameId, date: game.date, startTimeUtc: game.startTimeUtc, team: game.team, opponent: game.opponent, home: game.home, teamSecondNight: game.teamSecondNight, opponentSecondNight: game.opponentSecondNight, conflicting: conflicts.some(item => item.gameId === game.gameId && item.team === game.team), goalies: [], lenses: riskyPairs(game.team, game.opponent, game.signals) };
+    const row = rows.get(key) ?? { gameId: game.gameId, date: game.date, startTimeUtc: game.startTimeUtc, team: game.team, opponent: game.opponent, home: game.home, teamSecondNight: game.teamSecondNight, opponentSecondNight: game.opponentSecondNight, conflicting: conflicts.some(item => item.gameId === game.gameId && item.team === game.team), goalies: [], lenses: riskyPairs(game.team, game.opponent, game.signals, lowFirstRanks) };
     row.goalies.push({ goalieId: goalie.goalieId, name: goalie.name, starts: goalie.recentStarts.starts, teamGames: goalie.recentStarts.teamGames, confirmation: game.confirmation });
     rows.set(key, row);
   }
@@ -97,12 +97,12 @@ export function compactRiskyEvidence(evidence: SharePostEvidence): SharePostEvid
     sources: [{ name: [...new Set(sources.map(source => publisher(source.name)))].join(", "), tables: [...new Set(sources.flatMap(source => source.tables))], state: sources.some(source => source.state === "partial") ? "partial" : "ready", asOf: dates[0] ?? null, updatedAt: null, reasons: sources.flatMap(source => source.reasons ?? []) }],
   };
 }
-export function riskyStartsResult({ inventory, coverage, conflicts }: GoalieInventoryDetail, market: RiskyMarketLines = { lines: {}, sources: [], notes: [] }): SharePostLoadResult<RiskyStartsData> {
+export function riskyStartsResult({ inventory, coverage, conflicts, lowFirstRanks }: GoalieInventoryDetail, market: RiskyMarketLines = { lines: {}, sources: [], notes: [] }): SharePostLoadResult<RiskyStartsData> {
   if (inventory.state === "missing") return { state: "missing", reasons: [...inventory.reasons], evidence: UNKNOWN_EVIDENCE, data: null };
-  const rows = riskyRows(inventory, conflicts), cohort = rows[0]?.lenses.volume[0].sides[0].metric.leagueCohort ?? null;
+  const rows = riskyRows(inventory, conflicts, lowFirstRanks), cohort = rows[0]?.lenses.volume[0].sides[0].metric.leagueCohort ?? null;
   const evidence = inventoryEvidence({ inventory, coverage }, `${rows.length} team-nights in the window; ranks ${cohort === null ? "withheld without a complete league" : `over all ${cohort} teams`}. ${RISKY_CORRELATION_NOTE}`, rows.length, market.notes);
   return {
-    state: inventory.state, reasons: inventory.state === "ready" ? [] : [...inventory.reasons],
+    state: inventory.state, reasons: inventory.state === "ready" ? [] : [...inventory.reasons], ttlSeconds: puckDropTtlSeconds(rows.map(row => row.startTimeUtc), inventory.generatedAt),
     data: { from: inventory.from, through: inventory.through, rows, lines: market.lines, confirmationLegend: confirmationLegend(inventory) },
     teams: [...new Set(rows.flatMap(row => [row.team, row.opponent]))].sort(),
     evidence: compactRiskyEvidence({ ...evidence, sources: [...evidence.sources, ...market.sources] }),

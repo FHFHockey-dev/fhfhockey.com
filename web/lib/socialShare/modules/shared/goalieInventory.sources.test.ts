@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { resolveDailyBoardEvidence, type BoardConflict, type BoardGoalieEvidence } from "lib/projections/dailyBoardEvidence";
 import { GOALIE_INVENTORY_VERSION, type GoalieInventory, type LoadGoalieInventory, type SearchGoalieInventory } from "./goalieInventory";
 import { FIXTURE_GENERATED_AT, FIXTURE_INPUT, FIXTURE_TEAMS, GOALIE_INVENTORY_FIXTURE } from "./goalieInventory.fixture";
-import { admitStartParticipation, buildGoalieInventory, buildTeamLenses, CONFIRMATION_ABSENT_NOTE, CONFIRMATION_CLOSED_REASON, CONFIRMATION_LINK_GAP, CONFIRMATION_REPORTER_GAP, confirmationFreshness, confirmationLabel, FORECAST_CLOSED_REASON, INVENTORY_OBSERVATION_COLUMNS, inventoryWindow, loadGoalieInventory, loadGoalieInventoryDetail, mapBoardEvidence, observationGaps, searchGoalieInventory, type InventoryForecastInput , headToHeadWinner, strengthRank, strengthShare, type TeamLensMetric } from "./goalieInventory.sources";
+import { admitStartParticipation, buildGoalieInventory, buildTeamLenses, CONFIRMATION_ABSENT_NOTE, CONFIRMATION_CLOSED_REASON, CONFIRMATION_LINK_GAP, CONFIRMATION_REPORTER_GAP, confirmationFreshness, confirmationLabel, FORECAST_CLOSED_REASON, INVENTORY_OBSERVATION_COLUMNS, inventoryWindow, loadGoalieInventory, loadGoalieInventoryDetail, mapBoardEvidence, observationGaps, searchGoalieInventory, type InventoryForecastInput , headToHeadWinner, puckDropTtlSeconds, rankedSide, strengthRank, strengthShare, type InventoryTeamGameRow, type TeamLensMetric } from "./goalieInventory.sources";
 
 vi.mock("lib/supabase/public-client", () => ({ default: { from: () => { throw new Error("The inventory test must never reach Supabase."); } } }));
 const serverRead = vi.hoisted(() => ({ tables: [] as string[], from: null as null | ((table: string) => unknown) }));
@@ -310,7 +310,8 @@ describe("live loader, injected client", () => {
 
 describe("head-to-head winner rule", () => {
   const metric = (leagueRank: number | null, value: number | null = 1, leagueCohort: number | null = 32) => ({ value, unit: "per game", window: "", sampleGames: 10, leagueRank, leagueCohort });
-  const side = (metricId: TeamLensMetric, rank: number | null, value: number | null = 1) => ({ metricId, metric: metric(rank, value) });
+  // No ties here, so reversing a rank gives the low-first one.
+  const side = (metricId: TeamLensMetric, rank: number | null, value: number | null = 1) => ({ metricId, metric: metric(rank, value), lowFirstRank: rank === null ? null : 33 - rank });
   it.each(["shotsFor", "xgf", "chancesFor", "goalsFor", "powerPlayPct", "penaltyKillPct", "goalDifferential"] as const)("keeps %s's rank, the highest value being strongest", metricId => {
     expect(strengthRank(side(metricId, 1))).toBe(1);
     expect(strengthRank(side(metricId, 32))).toBe(32);
@@ -340,11 +341,62 @@ describe("head-to-head winner rule", () => {
     expect(headToHeadWinner(side("powerPlayPct", 8), side("penaltyKillPct", 8))).toBeNull();
   });
   it("has no winner with a missing value or rank, on either side", () => {
-    for (const missing of [side("xga", null), side("xga", 4, null), { metricId: "xga" as const, metric: metric(4, 1, null) }]) {
+    for (const missing of [side("xga", null), side("xga", 4, null), { metricId: "xga" as const, metric: metric(4, 1, null), lowFirstRank: 29 }, { metricId: "xga" as const, metric: metric(4), lowFirstRank: null }]) {
       expect(strengthRank(missing)).toBeNull();
       expect(strengthShare(missing)).toBeNull();
       expect(headToHeadWinner(side("xgf", 1), missing)).toBeNull();
       expect(headToHeadWinner(missing, side("xgf", 1))).toBeNull();
     }
+  });
+  describe("over tied cohorts", () => {
+    const TEAMS = ["MTL", "NJD", "NYR", "TOR"], ids: Record<string, number> = { MTL: 8, NJD: 1, NYR: 3, TOR: 10 };
+    const cohort = (goalsAgainst: number[], goalsFor = [4, 3, 2, 1]) => buildTeamLenses({ nst: [], teams: TEAMS, season: 20262027, cutoff: "2026-11-01", teamGames: TEAMS.map((team, index) => ({ team_id: ids[team], season_id: 20262027, game_id: index + 1, date: "2026-11-01", goals_for: goalsFor[index], goals_against: goalsAgainst[index], pp_opportunities: 1, power_play_goals_for: 0, times_shorthanded: 1, pp_goals_against: 0 }) as unknown as InventoryTeamGameRow) });
+    const of = (built: ReturnType<typeof cohort>, team: string, metricId: "goalsFor" | "goalsAgainst") => rankedSide(built.lowFirstRanks, team, metricId, built.lenses.get(team)![metricId]);
+    it("shares the best rank at a tie for the fewest allowed, a tie against the top attack", () => {
+      const built = cohort([1, 1, 2, 3]);
+      expect(built.lenses.get("MTL")!.goalsAgainst.leagueRank).toBe(3);
+      expect(built.lowFirstRanks.goalsAgainst).toEqual({ MTL: 1, NJD: 1, NYR: 3, TOR: 4 });
+      for (const team of ["MTL", "NJD"]) {
+        expect(strengthRank(of(built, team, "goalsAgainst"))).toBe(1);
+        expect(strengthShare(of(built, team, "goalsAgainst"))).toBe(1);
+        expect(headToHeadWinner(of(built, "MTL", "goalsFor"), of(built, team, "goalsAgainst"))).toBeNull();
+      }
+      expect(headToHeadWinner(of(built, "NJD", "goalsFor"), of(built, "NYR", "goalsAgainst"))).toBe(0);
+    });
+    it("shares the worst rank at a tie for the most allowed", () => {
+      const built = cohort([1, 2, 3, 3]);
+      expect(built.lowFirstRanks.goalsAgainst).toEqual({ MTL: 1, NJD: 2, NYR: 3, TOR: 3 });
+      expect(strengthRank(of(built, "TOR", "goalsAgainst"))).toBe(3);
+      expect(strengthShare(of(built, "TOR", "goalsAgainst"))).toBe(0.5);
+      expect(headToHeadWinner(of(built, "NYR", "goalsFor"), of(built, "TOR", "goalsAgainst"))).toBeNull();
+    });
+    it("keeps the shared rank of a tie on a metric where the highest is strongest, at either end", () => {
+      const top = cohort([1, 2, 3, 4], [3, 3, 2, 1]), bottom = cohort([1, 2, 3, 4], [3, 2, 1, 1]);
+      expect([strengthRank(of(top, "MTL", "goalsFor")), strengthRank(of(top, "NJD", "goalsFor"))]).toEqual([1, 1]);
+      expect([strengthRank(of(bottom, "NYR", "goalsFor")), strengthRank(of(bottom, "TOR", "goalsFor"))]).toEqual([3, 3]);
+      expect(top.lowFirstRanks.goalsFor).toBeUndefined();
+    });
+    it("leaves ranks out of the frozen shape, and withholds them with the league's rank", () => {
+      const { lowFirstRanks, lenses: built } = cohort([1, 1, 2, 3]);
+      expect(Object.keys(built.get("MTL")!.goalsAgainst).sort()).toEqual(["leagueCohort", "leagueRank", "sampleGames", "unit", "value", "window"]);
+      expect(lowFirstRanks.xga).toBeUndefined();
+      expect(built.get("MTL")!.xga.leagueRank).toBeNull();
+    });
+  });
+});
+
+describe("edition lifetime", () => {
+  const at = "2026-11-02T18:59:00.500Z";
+  it("ends by the earliest puck drop inside the default, rounding down", () => {
+    expect(puckDropTtlSeconds(["2026-11-02T20:00:00Z", "2026-11-02T19:00:00Z"], at)).toBe(59);
+  });
+  it("leaves the default for a later puck drop, for no start time and for no game", () => {
+    expect(puckDropTtlSeconds(["2026-11-02T19:14:00.500Z"], at)).toBeUndefined();
+    expect(puckDropTtlSeconds([null], at)).toBeUndefined();
+    expect(puckDropTtlSeconds([], at)).toBeUndefined();
+  });
+  it("ignores a null beside a real time, and never goes below zero", () => {
+    expect(puckDropTtlSeconds([null, "2026-11-02T19:00:00.500Z"], at)).toBe(60);
+    expect(puckDropTtlSeconds(["2026-11-02T18:00:00Z"], at)).toBe(0);
   });
 });

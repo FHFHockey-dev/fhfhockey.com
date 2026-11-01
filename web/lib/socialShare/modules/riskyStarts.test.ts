@@ -5,16 +5,18 @@ import { describe, expect, it, vi } from "vitest";
 import RiskyStartsCard from "components/SocialShare/modules/RiskyStartsCard";
 import { postEvidenceLine } from "components/SocialShare/PostStudio";
 import { resolveDailyBoardEvidence, type BoardGoalieEvidence } from "lib/projections/dailyBoardEvidence";
-import { sharePostExportToken } from "./contract";
+import { sharePostExportBlock, sharePostExportToken } from "./contract";
+import { shareModule } from "./registry";
+import { loadPostSnapshot } from "./server";
 import { compactRiskyEvidence, ordinalRank, RISKY_CORRELATION_NOTE, riskyFlags, riskyGameSides, riskyPairs, riskyRows, riskyRowsForLens, riskyStartsModule, riskyStartsResult, type RiskyPair, type RiskyRow, type RiskySide, type RiskyStartsData, type RiskyStartsSettings } from "./riskyStarts";
 import { loadRiskyMarketLines, MARKET_LINES_NOTE, NHL_FAILED_NOTE, NHL_PARTNER_URL, partnerLine, storedLine, STORED_FAILED_NOTE, type PartnerFeed, type StoredLineRow } from "./riskyStarts.sources";
-import { gameSignals, buildTeamLenses, buildGoalieInventory, CONFIRMATION_LINK_GAP, CONFIRMATION_REPORTER_GAP, rankBand } from "./shared/goalieInventory.sources";
+import { gameSignals, buildTeamLenses, buildGoalieInventory, CONFIRMATION_LINK_GAP, CONFIRMATION_REPORTER_GAP, rankBand, strengthShare } from "./shared/goalieInventory.sources";
 import { FIXTURE_GENERATED_AT, FIXTURE_INPUT, FIXTURE_TEAMS, GOALIE_INVENTORY_FIXTURE, GOALIE_INVENTORY_FIXTURE_DETAIL } from "./shared/goalieInventory.fixture";
 
 vi.mock("lib/supabase/public-client", () => ({ default: {} }));
 vi.mock("lib/supabase/server", () => ({ default: { from: () => { throw new Error("No database reads in card tests."); } } }));
 
-const { lenses } = buildTeamLenses({ teamGames: FIXTURE_INPUT.teamGames, nst: FIXTURE_INPUT.nst, teams: FIXTURE_TEAMS, season: 20262027, cutoff: "2026-11-01" });
+const { lenses, lowFirstRanks } = buildTeamLenses({ teamGames: FIXTURE_INPUT.teamGames, nst: FIXTURE_INPUT.nst, teams: FIXTURE_TEAMS, season: 20262027, cutoff: "2026-11-01" });
 const data = riskyStartsResult(GOALIE_INVENTORY_FIXTURE_DETAIL).data as RiskyStartsData;
 const settings = (lens: RiskyStartsSettings["lens"]): RiskyStartsSettings => ({ days: 7, lens });
 
@@ -54,7 +56,7 @@ describe("Risky Starts card, through the real resolver", () => {
 
 describe("Risky Starts head-to-head tiles", () => {
   const metric = (value: number | null, leagueRank: number | null, leagueCohort: number | null = 32) => ({ value, unit: "per game", window: "", sampleGames: 10, leagueRank, leagueCohort });
-  const side = (team: string, label: string, metricId: RiskySide["metricId"], value: ReturnType<typeof metric>): RiskySide => ({ team, label, metricId, metric: value, digits: 2 });
+  const side = (team: string, label: string, metricId: RiskySide["metricId"], value: ReturnType<typeof metric>): RiskySide => ({ team, label, metricId, metric: value, lowFirstRank: value.leagueRank === null || value.leagueCohort === null ? null : value.leagueCohort - value.leagueRank + 1, digits: 2 });
   // Game 900010: NYR at home, NJD away.
   const njdRow = data.rows.find(item => item.team === "NJD" && item.gameId === 900010)!, nyrRow = data.rows.find(item => item.team === "NYR" && item.gameId === 900010)!;
   const render = (row: RiskyRow, pairs: RiskyPair[], rows: RiskyRow[] = [row]) => {
@@ -87,12 +89,18 @@ describe("Risky Starts head-to-head tiles", () => {
   });
   it("computes the pair's winner through the shared rule", () => {
     const signals = gameSignals(lenses.get("NJD")!, lenses.get("NYR")!);
-    const ranks = (ratio: Partial<typeof signals.ratioExposure>) => riskyPairs("A", "B", { ...signals, ratioExposure: { ...signals.ratioExposure, ...ratio } }).ratio;
+    const ranks = (ratio: Partial<typeof signals.ratioExposure>, low = { xga: { A: 28 }, timesShorthanded: { A: 32 } }) => riskyPairs("A", "B", { ...signals, ratioExposure: { ...signals.ratioExposure, ...ratio } }, low).ratio;
     expect(ranks({ opponentXgfPerGame: metric(3, 10), teamXgaPerGame: metric(3, 5) })[0].winner).toBe("B");
     expect(ranks({ opponentPowerPlayPct: metric(20, 16), teamPenaltyKillPct: metric(90, 1) }).find(pair => pair.id === "special-teams")!.winner).toBe("A");
     expect(ranks({ opponentPowerPlayPct: metric(20, 16), teamTimesShorthandedPerGame: metric(5, 1) }).find(pair => pair.id === "penalties")!.winner).toBe("B");
     expect(ranks({ opponentXgfPerGame: metric(null, null, null) })[0].winner).toBeNull();
-    expect(riskyPairs("A", "B", signals).win.find(pair => pair.id === "differential")!.winner).toBeNull();
+    expect(riskyPairs("A", "B", signals, {}).win.find(pair => pair.id === "differential")!.winner).toBeNull();
+  });
+  it("has no winner, and a full bar, for a tie for the fewest allowed against the top attack", () => {
+    const signals = gameSignals(lenses.get("NJD")!, lenses.get("NYR")!);
+    const [xgPair] = riskyPairs("A", "B", { ...signals, ratioExposure: { ...signals.ratioExposure, opponentXgfPerGame: metric(3.4, 1), teamXgaPerGame: metric(2.1, 31) } }, { xga: { A: 1 } }).ratio;
+    expect(xgPair.winner).toBeNull();
+    expect(xgPair.sides.map(strengthShare)).toEqual([1, 1]);
   });
   it("sizes each bar by strength out from the centre, so the longer bar is the winner, with fills as attributes", () => {
     const html = render(njdRow, [xg("NYR", 1, 32)]);
@@ -148,7 +156,7 @@ describe("Risky Starts head-to-head tiles", () => {
 
 describe("Risky Starts pairings (11.4)", () => {
   it("is symmetric: each game gives both sides, and each side's opponent rate is the other's own", () => {
-    const rows = riskyRows(GOALIE_INVENTORY_FIXTURE).filter(row => row.gameId === 900010);
+    const rows = riskyRows(GOALIE_INVENTORY_FIXTURE, [], lowFirstRanks).filter(row => row.gameId === 900010);
     expect(rows.map(row => row.team).sort()).toEqual(["NJD", "NYR"]);
     const njd = rows.find(row => row.team === "NJD")!, nyr = rows.find(row => row.team === "NYR")!;
     expect([njd.home, nyr.home]).toEqual([false, true]);
@@ -160,7 +168,7 @@ describe("Risky Starts pairings (11.4)", () => {
     expect(nyr.lenses.win[0].sides[1].metric).toEqual(lenses.get("NJD")!.goalsAgainst);
   });
   it("mirrors pure: swapping the teams swaps every owner", () => {
-    const pairs = riskyPairs("NJD", "NYR", gameSignals(lenses.get("NJD")!, lenses.get("NYR")!)), mirror = riskyPairs("NYR", "NJD", gameSignals(lenses.get("NYR")!, lenses.get("NJD")!));
+    const pairs = riskyPairs("NJD", "NYR", gameSignals(lenses.get("NJD")!, lenses.get("NYR")!), lowFirstRanks), mirror = riskyPairs("NYR", "NJD", gameSignals(lenses.get("NYR")!, lenses.get("NJD")!), lowFirstRanks);
     for (const lens of ["volume", "ratio", "win"] as const) pairs[lens].forEach((pair, index) => {
       expect(pair.sides.map(side => side.team === "NJD" ? "NYR" : "NJD")).toEqual(mirror[lens][index].sides.map(side => side.team));
       expect(pair.sides.map(side => side.label)).toEqual(mirror[lens][index].sides.map(side => side.label));
@@ -173,7 +181,7 @@ describe("Risky Starts pairings (11.4)", () => {
     const other = data.rows.find(item => item.team === "NJD" && item.gameId === 900010)!;
     // NYR SF ranks 3.
     expect(other.lenses.volume[0].flagged).toBe(false);
-    const special = riskyPairs("A", "B", { ...gameSignals(lenses.get("NJD")!, lenses.get("TOR")!), ratioExposure: { ...gameSignals(lenses.get("NJD")!, lenses.get("TOR")!).ratioExposure, opponentPowerPlayPct: { value: 30, unit: "%", window: "", sampleGames: 2, leagueRank: 1, leagueCohort: 32 }, teamPenaltyKillPct: { value: 70, unit: "%", window: "", sampleGames: 2, leagueRank: 32, leagueCohort: 32 } } });
+    const special = riskyPairs("A", "B", { ...gameSignals(lenses.get("NJD")!, lenses.get("TOR")!), ratioExposure: { ...gameSignals(lenses.get("NJD")!, lenses.get("TOR")!).ratioExposure, opponentPowerPlayPct: { value: 30, unit: "%", window: "", sampleGames: 2, leagueRank: 1, leagueCohort: 32 }, teamPenaltyKillPct: { value: 70, unit: "%", window: "", sampleGames: 2, leagueRank: 32, leagueCohort: 32 } } }, {});
     expect(special.ratio.find(pair => pair.id === "special-teams")?.flagged).toBe(true);
   });
   it("never flags without ranks: an incomplete league leaves no flagged pairing to publish", () => {
@@ -202,7 +210,7 @@ describe("Risky Starts pairings (11.4)", () => {
 
 describe("Risky Starts post", () => {
   it("drops games already started, and keeps goalies with their own status", () => {
-    const rows = riskyRows({ ...GOALIE_INVENTORY_FIXTURE, generatedAt: "2026-11-02T23:15:00.000Z" });
+    const rows = riskyRows({ ...GOALIE_INVENTORY_FIXTURE, generatedAt: "2026-11-02T23:15:00.000Z" }, [], lowFirstRanks);
     expect(rows.some(row => row.gameId === 900010)).toBe(false);
     expect(rows.some(row => row.gameId === 900011)).toBe(true);
     const njd = data.rows.find(row => row.team === "NJD" && row.gameId === 900010)!;
@@ -218,7 +226,7 @@ describe("Risky Starts post", () => {
     expect(riskyStartsModule.hasRows(data, settings("volume"))).toBe(true);
   });
   it("is missing with no data when the inventory is, and keeps blocked sources out of its evidence", () => {
-    const missing = riskyStartsResult({ coverage: null, conflicts: [], inventory: { ...GOALIE_INVENTORY_FIXTURE, state: "missing", goalies: [], sources: [], reasons: ["could not be read"] } });
+    const missing = riskyStartsResult({ coverage: null, conflicts: [], lowFirstRanks: {}, inventory: { ...GOALIE_INVENTORY_FIXTURE, state: "missing", goalies: [], sources: [], reasons: ["could not be read"] } });
     expect(missing).toMatchObject({ state: "missing", data: null, reasons: ["could not be read"] });
     const closed = riskyStartsResult(buildGoalieInventory({ ...FIXTURE_INPUT, confirmations: null, forecasts: null }));
     expect(closed.state).toBe("ready");
@@ -241,7 +249,7 @@ describe("Risky Starts market lines", () => {
   const team = (abbrev: string, moneyline: number | null, total = "O6.5") => ({ abbrev, odds: [{ description: "MONEY_LINE_3_WAY", value: 999, qualifier: "" }, ...(moneyline === null ? [] : [{ description: "MONEY_LINE_2_WAY", value: moneyline, qualifier: "" }]), { description: "OVER_UNDER", value: -110, qualifier: total }] });
   const feed = (over: Partial<PartnerFeed> = {}): PartnerFeed => ({ lastUpdatedUTC: "2026-11-02T14:00:00Z", bettingPartner: { name: "OtherBook" }, games: [{ gameId: 900010, startTimeUTC: "2026-11-02T23:00:00Z", homeTeam: team("NYR", -140), awayTeam: team("NJD", 120, "U6.5") }], ...over });
   const client = (rows: StoredLineRow[] | null, error: unknown = null) => {
-    const query = { select: vi.fn(() => query), in: vi.fn(() => query), lte: vi.fn(() => query), order: vi.fn(() => query), limit: vi.fn(async () => ({ data: rows, error })) };
+    const query = { select: vi.fn(() => query), in: vi.fn(() => query), eq: vi.fn(() => query), lte: vi.fn(() => query), order: vi.fn(() => query), limit: vi.fn(async () => ({ data: rows, error })) };
     return { from: vi.fn(() => query), query };
   };
   const ok = (body: PartnerFeed) => vi.fn(async () => new Response(JSON.stringify(body), { status: 200 })) as unknown as typeof fetch;
@@ -275,6 +283,7 @@ describe("Risky Starts market lines", () => {
     expect(reader.from).toHaveBeenCalledWith("game_prediction_market_odds_snapshots");
     expect(reader.query.select.mock.calls[0]).toEqual([expect.not.stringContaining("no_vig")]);
     expect(reader.query.lte).toHaveBeenCalledWith("captured_at", FIXTURE_GENERATED_AT);
+    expect(reader.query.eq).toHaveBeenCalledWith("provider", "DraftKings");
   });
   it("falls back to NHL.com with one request when a game has no stored row", async () => {
     const fetchImpl = ok(feed()), result = await loadRiskyMarketLines(rows, FIXTURE_GENERATED_AT, { client: client([]) as never, fetchImpl });
@@ -282,7 +291,7 @@ describe("Risky Starts market lines", () => {
     expect((fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0]).toBe(NHL_PARTNER_URL);
     expect((fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls[0][1].signal).toBeInstanceOf(AbortSignal);
     expect(result.lines["900010"]).toMatchObject({ source: "nhl", book: "OtherBook", capturedAt: "2026-11-02T14:00:00Z", homeMoneyline: -140, awayMoneyline: 120, total: 6.5 });
-    expect(result.sources.map(source => source.name)).toEqual(["DraftKings market lines (stored)", "NHL.com partner odds"]);
+    expect(result.sources.map(source => source.name)).toEqual(["NHL.com partner odds (OtherBook)"]);
   });
   it("never mixes books within a game: each line is whole from one source", async () => {
     const twoGames = data.rows.filter(row => row.gameId === 900010 || row.gameId === 900011);
@@ -292,9 +301,17 @@ describe("Risky Starts market lines", () => {
     // The stored row lacking a total takes no total from the feed.
     const noTotal = await loadRiskyMarketLines(rows, FIXTURE_GENERATED_AT, { client: client([stored({ total_line: null })]) as never, fetchImpl: ok(feed()) });
     expect(noTotal.lines["900010"]).toMatchObject({ book: "DraftKings", total: null });
-    // Two books at the same second still give one row.
-    const tied = storedLine(game, [stored({ provider: "Zed", home_moneyline: -500, away_moneyline: 400 }), stored()], FIXTURE_GENERATED_AT);
-    expect(tied).toMatchObject({ book: "DraftKings", homeMoneyline: -132, awayMoneyline: 112 });
+  });
+  it("takes an older DraftKings row over a newer row from another book", () => {
+    const line = storedLine(game, [stored({ provider: "FanDuel", captured_at: "2026-11-02T14:00:00Z", home_moneyline: -500, away_moneyline: 400 }), stored()], FIXTURE_GENERATED_AT);
+    expect(line).toMatchObject({ book: "DraftKings", capturedAt: "2026-11-02T12:00:00Z", homeMoneyline: -132, awayMoneyline: 112 });
+  });
+  it("falls through to NHL.com when another book is all that's stored, and names no stored book", async () => {
+    const fetchImpl = ok(feed()), result = await loadRiskyMarketLines(rows, FIXTURE_GENERATED_AT, { client: client([stored({ provider: "FanDuel" })]) as never, fetchImpl });
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(result.lines["900010"]).toMatchObject({ source: "nhl", book: "OtherBook", homeMoneyline: -140 });
+    expect(result.sources.map(source => source.name)).toEqual(["NHL.com partner odds (OtherBook)"]);
+    expect(riskyStartsResult(GOALIE_INVENTORY_FIXTURE_DETAIL, result).evidence.sources[0].name).not.toContain("DraftKings");
   });
   it("refuses a feed updated after puck drop, a one-sided moneyline and mismatched teams", () => {
     expect(partnerLine(game, feed({ lastUpdatedUTC: "2026-11-02T23:00:00Z" }))).toBeNull();
@@ -391,5 +408,24 @@ describe("Risky Starts footer and tile edge", () => {
     expect(tile).toContain("border:1.5px solid");
     expect(tile).toContain("border-radius:10px");
     expect(tile).toContain("box-shadow:");
+  });
+});
+
+describe("Risky Starts edition expiry", () => {
+  const edition = async (generatedAt: string, schedule = FIXTURE_INPUT.schedule) => {
+    vi.spyOn(shareModule("risky-starts")!, "load").mockResolvedValue((async () => riskyStartsResult(buildGoalieInventory({ ...FIXTURE_INPUT, schedule, request: { ...FIXTURE_INPUT.request, generatedAt } }))) as never);
+    return loadPostSnapshot("risky-starts", {}, {} as never, () => new Date(generatedAt));
+  };
+  const block = (snapshot: Awaited<ReturnType<typeof edition>>, now: string) => sharePostExportBlock(shareModule("risky-starts")!, snapshot, { ...snapshot.settings, lens: "volume" }, Date.parse(now));
+  it("expires at the earliest puck drop, and blocks export from then on", async () => {
+    const snapshot = await edition("2026-11-02T22:59:00.000Z");
+    expect(snapshot.expiresAt).toBe("2026-11-02T23:00:00.000Z");
+    expect(block(snapshot, "2026-11-02T22:59:30.000Z")).toBeNull();
+    expect(block(snapshot, "2026-11-02T23:00:00.000Z")).toMatch(/expired/);
+    expect(block(snapshot, "2026-11-02T23:01:00.000Z")).toMatch(/expired/);
+  });
+  it("keeps the default with a later puck drop or no start time", async () => {
+    expect((await edition(FIXTURE_GENERATED_AT)).expiresAt).toBe("2026-11-02T15:15:00.000Z");
+    expect((await edition("2026-11-02T22:59:00.000Z", FIXTURE_INPUT.schedule.map(game => ({ ...game, startTime: null })))).expiresAt).toBe("2026-11-02T23:14:00.000Z");
   });
 });

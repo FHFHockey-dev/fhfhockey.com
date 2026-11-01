@@ -1,6 +1,6 @@
 import { UNKNOWN_EVIDENCE, defineShareModule, type SharePostLoadResult } from "./contract";
 import type { GoalieInventory, GoalieInventoryEntry, GoalieInventoryGame } from "./shared/goalieInventory";
-import { confirmationLabel, confirmationLegend, forecastLabel, inventoryEvidence, isUpcomingGame, searchGoalieInventory, FORECAST_CLOSED_REASON, type GoalieInventoryDetail, type InventoryConflict } from "./shared/goalieInventory.sources";
+import { confirmationLabel, confirmationLegend, forecastLabel, inventoryEvidence, isUpcomingGame, puckDropTtlSeconds, searchGoalieInventory, FORECAST_CLOSED_REASON, type GoalieInventoryDetail, type InventoryConflict, type InventoryLowFirstRanks } from "./shared/goalieInventory.sources";
 
 /**
  * Start/Sit (SS 11.0, SS-R16): a searchable game-by-game goalie schedule. A source's confirmation and a qualified
@@ -15,7 +15,7 @@ export const startSitForecastLabel = (probability: number) => `Cond. forecast ${
 const START_CHART_SOURCE = "Start Chart start participation";
 export const FORECAST_ADMITTED_NOTE = "A forecast is a conditional, uncalibrated Start Chart value, separate from source status.";
 export type StartSitSettings = { days: number; search: string };
-export type StartSitData = { from: string; through: string; inventory: GoalieInventory; confirmationLegend: string; conflicts: readonly InventoryConflict[] };
+export type StartSitData = { from: string; through: string; inventory: GoalieInventory; confirmationLegend: string; conflicts: readonly InventoryConflict[]; lowFirstRanks: InventoryLowFirstRanks };
 export type StartSitRow = { key: string; goalie: GoalieInventoryEntry; game: GoalieInventoryGame };
 
 /** Only games still to start; a goalie with none left drops out. */
@@ -28,12 +28,12 @@ export function startSitRows(data: StartSitData, search: string): StartSitRow[] 
     .sort((a, b) => a.game.date.localeCompare(b.game.date) || a.game.gameId - b.game.gameId || a.goalie.team.localeCompare(b.goalie.team) || (b.goalie.recentStarts.starts ?? -1) - (a.goalie.recentStarts.starts ?? -1) || a.goalie.goalieId - b.goalie.goalieId);
 }
 export const startSitConflicting = (data: Pick<StartSitData, "conflicts">, game: Pick<GoalieInventoryGame, "gameId" | "team">) => data.conflicts.some(item => item.gameId === game.gameId && item.team === game.team);
-export function startSitResult({ inventory, coverage, conflicts }: GoalieInventoryDetail): SharePostLoadResult<StartSitData> {
+export function startSitResult({ inventory, coverage, conflicts, lowFirstRanks }: GoalieInventoryDetail): SharePostLoadResult<StartSitData> {
   if (inventory.state === "missing") return { state: "missing", reasons: [...inventory.reasons], evidence: UNKNOWN_EVIDENCE, data: null };
   const upcoming = upcomingInventory(inventory), teamGames = new Set(upcoming.goalies.flatMap(goalie => goalie.games.map(game => `${game.gameId}:${game.team}`))).size;
   return {
-    state: inventory.state, reasons: inventory.state === "ready" ? [] : [...inventory.reasons],
-    data: { from: inventory.from, through: inventory.through, inventory: upcoming, conflicts, confirmationLegend: confirmationLegend(inventory) },
+    state: inventory.state, reasons: inventory.state === "ready" ? [] : [...inventory.reasons], ttlSeconds: puckDropTtlSeconds(upcoming.goalies.flatMap(goalie => goalie.games.map(game => game.startTimeUtc)), inventory.generatedAt),
+    data: { from: inventory.from, through: inventory.through, inventory: upcoming, conflicts, lowFirstRanks, confirmationLegend: confirmationLegend(inventory) },
     teams: [...new Set(upcoming.goalies.flatMap(goalie => goalie.games.flatMap(game => [game.team, game.opponent])))].sort(),
     evidence: inventoryEvidence({ inventory, coverage }, `${upcoming.goalies.length} goalies with an appearance in their team's last 10 games, on teams scheduled in the window`, teamGames, [inventory.sources.some(source => source.name === START_CHART_SOURCE && source.state === "ready") ? FORECAST_ADMITTED_NOTE : FORECAST_CLOSED_REASON, START_SIT_LENS_NOTE, START_SIT_STATUS_NOTE]),
   };

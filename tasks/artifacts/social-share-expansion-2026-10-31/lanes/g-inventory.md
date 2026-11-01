@@ -110,7 +110,7 @@ Project `fyhftlxokyjtpndbkfse`, Supabase MCP `execute_sql`, 2026-10-31. Every st
 
 ## TJ review rework (winner rule, home and away, mockup)
 
-- **Winner rule:** `headToHeadWinner`, `strengthRank` and `strengthShare` in `goalieInventory.sources.ts`, used by both cards. Every metric ranks #1 at its highest value (checked in `buildTeamLenses`). SA, xGA, SCA, GA and TSH/GP convert to `cohort - rank + 1`; SF, xGF, SCF, GF, PP%, PK% and GD/GP keep their rank. Equal strength or a missing side has no winner.
+- **Winner rule:** `headToHeadWinner`, `strengthRank` and `strengthShare` in `goalieInventory.sources.ts`, used by both cards. Every metric ranks #1 at its highest value (checked in `buildTeamLenses`). SA, xGA, SCA, GA and TSH/GP use a low-first competition rank (audit F2; see below); SF, xGF, SCF, GF, PP%, PK% and GD/GP keep their rank. Equal strength or a missing side has no winner.
 - **Risky Starts:** built to TJ's mockup (`~/Desktop/Untitled-1.png`). The actual home team is on the left whichever team the tile is for. The mockup's sample put CAR's numbers under WPG, which this corrects.
 - **Choices against the mockup:** bar length is strength, not raw rank, so the longer bar always agrees with the triangle. Raw length would contradict it, for example xGF #10 against xGA #5. Text is white rather than dark because dark text is unreadable where a short bar ends. The printed ordinal stays the real league rank, 1ST = highest.
 - **Opposing goalies:** read from the other team's row in the inventory. If there are none, the side shows "No goalie listed". The tile's own team has white names; the opponent's are muted.
@@ -156,3 +156,9 @@ Project `fyhftlxokyjtpndbkfse`, Supabase MCP `execute_sql`, 2026-10-31. Every st
 - Full wording: `START_SIT_STATUS_NOTE` and the forecast reasons in the evidence; "Source: confirmed", "Conflicting reports" and "Forecast unavailable" stay in the alt text.
 - Freed width goes to the lens columns, and chips now flex to fill them. Goalie column reduced to 1fr against 1.3fr per lens.
 - **Browser not run; fit at 860px not measured.** The tightest row is a report plus a forecast: three lines, about 38.5px, against about 40px.
+
+## Audit F2, F3 and F8
+
+- **F2 (tied ranks):** `buildTeamLenses` computes low-first competition ranks for SA, xGA, SCA, GA and TSH/GP from the values. They travel as `lowFirstRanks` on `GoalieInventoryDetail`, beside `conflicts`, so `goalie-inventory-v1` keeps its frozen shape. Both posts carry them in their own data. A high-is-weak side with no low-first rank has no strength and no winner.
+- **F3 (puck drop):** both posts set `ttlSeconds` with `puckDropTtlSeconds`, so an edition expires by its earliest listed puck drop. A later puck drop or a null start time keeps the 15-minute default. Shared contract code unchanged.
+- **F8 (DraftKings):** `storedLine` and the stored read take DraftKings only; other stored books are ignored and the NHL fallback follows. The stored source is named from the lines it supplied and is left out when it supplied none. The NHL source names its book, such as "NHL.com partner odds (DraftKings)".

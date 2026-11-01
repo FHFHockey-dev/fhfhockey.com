@@ -4,11 +4,12 @@ import { editionDate } from "./shared/definitions";
 import { inventoryWindow, loadGoalieInventoryDetail, serverObservationClient } from "./shared/goalieInventory.sources";
 
 /*
- * Market lines. Each game takes one row from one source, so two books never meet in a game: the latest stored snapshot before
- * puck drop, otherwise NHL.com's partner feed. `normalizeNhlScheduleOdds` reads the schedule's provider-keyed odds, a different
+ * Market lines. Each game takes one row from one source, so two books never meet in a game: the latest stored DraftKings snapshot
+ * before puck drop, otherwise NHL.com's partner feed. Other stored books are ignored. `normalizeNhlScheduleOdds` reads the schedule's provider-keyed odds, a different
  * shape, and it files prices for the ledger, so it is not reused. Nothing here turns a price into a probability.
  */
 const STORED_TABLE = "game_prediction_market_odds_snapshots";
+const STORED_BOOK = "DraftKings";
 const STORED_COLUMNS = "game_id, provider, captured_at, event_start_at, home_team_abbreviation, away_team_abbreviation, home_moneyline, away_moneyline, total_line";
 /** A 14-day window is about 110 games, at 5 snapshots a game at most so far. Reaching this fails closed. */
 const STORED_LIMIT = 1000;
@@ -33,10 +34,10 @@ const totalOf = (team: PartnerTeam) => {
   return match ? Number(match[1]) : null;
 };
 
-/** The latest stored row captured before puck drop. A row for other teams, or with no puck drop to compare, proves nothing. */
+/** The latest stored DraftKings row captured before puck drop. A row for other teams, or with no puck drop to compare, proves nothing. */
 export function storedLine(game: RiskyLineGame, rows: readonly StoredLineRow[], generatedAt: string): RiskyGameLine | null {
-  const usable = rows.filter(row => row.game_id === game.gameId && row.home_team_abbreviation === game.home && row.away_team_abbreviation === game.away && before(row.captured_at, game.startTimeUtc ?? row.event_start_at) && Date.parse(row.captured_at) <= Date.parse(generatedAt))
-    .sort((a, b) => Date.parse(b.captured_at) - Date.parse(a.captured_at) || a.provider.localeCompare(b.provider));
+  const usable = rows.filter(row => row.provider === STORED_BOOK && row.game_id === game.gameId && row.home_team_abbreviation === game.home && row.away_team_abbreviation === game.away && before(row.captured_at, game.startTimeUtc ?? row.event_start_at) && Date.parse(row.captured_at) <= Date.parse(generatedAt))
+    .sort((a, b) => Date.parse(b.captured_at) - Date.parse(a.captured_at));
   const row = usable[0];
   return row ? { gameId: game.gameId, source: "stored", book: row.provider, capturedAt: row.captured_at, home: game.home, away: game.away, homeMoneyline: row.home_moneyline, awayMoneyline: row.away_moneyline, total: row.total_line } : null;
 }
@@ -49,7 +50,7 @@ export function partnerLine(game: RiskyLineGame, feed: PartnerFeed): RiskyGameLi
   return { gameId: game.gameId, source: "nhl", book, capturedAt, home: game.home, away: game.away, homeMoneyline, awayMoneyline, total: homeTotal !== null && homeTotal === totalOf(entry.awayTeam) ? homeTotal : null };
 }
 async function readStored(client: SharePostReadClient, gameIds: readonly number[], generatedAt: string) {
-  const { data, error } = await client.from(STORED_TABLE).select(STORED_COLUMNS).in("game_id", gameIds).lte("captured_at", generatedAt).order("captured_at", { ascending: false }).limit(STORED_LIMIT);
+  const { data, error } = await client.from(STORED_TABLE).select(STORED_COLUMNS).in("game_id", gameIds).eq("provider", STORED_BOOK).lte("captured_at", generatedAt).order("captured_at", { ascending: false }).limit(STORED_LIMIT);
   if (error || !data || data.length >= STORED_LIMIT) throw new Error("Stored market lines could not be read.");
   return data as unknown as StoredLineRow[];
 }
@@ -72,14 +73,16 @@ export async function loadRiskyMarketLines(rows: readonly RiskyRow[], generatedA
     if (!client) throw new Error("No server client.");
     stored = await readStored(client, games.map(game => game.gameId), generatedAt);
     for (const game of games) { const line = storedLine(game, stored, generatedAt); if (line) lines[game.gameId] = line; }
-    sources.push(source("DraftKings market lines (stored)", [STORED_TABLE], Object.values(lines)));
+    // Named from the lines it supplied, so a read that supplied none puts no book on the footer.
+    const used = Object.values(lines);
+    if (used.length) sources.push(source(`${used[0].book} market lines (stored)`, [STORED_TABLE], used));
   } catch { notes.push(STORED_FAILED_NOTE); }
   const remaining = games.filter(game => !lines[game.gameId]);
   if (!remaining.length) return { lines, sources, notes };
   try {
     const feed = await readPartnerFeed(fetchImpl), added: RiskyGameLine[] = [];
     for (const game of remaining) { const line = partnerLine(game, feed); if (line) { lines[game.gameId] = line; added.push(line); } }
-    sources.push(source("NHL.com partner odds", ["api-web.nhle.com/v1/partner-game/US/now"], added));
+    sources.push(source(`NHL.com partner odds${added.length ? ` (${added[0].book})` : ""}`, ["api-web.nhle.com/v1/partner-game/US/now"], added));
   } catch { notes.push(NHL_FAILED_NOTE); }
   return { lines, sources, notes };
 }
@@ -88,5 +91,5 @@ export async function loadRiskyStarts({ client, generatedAt }: SharePostContext,
   const observationClient = await serverObservationClient();
   const detail = await loadGoalieInventoryDetail(client, { ...inventoryWindow(generatedAt, settings.days), generatedAt }, { observationClient });
   if (detail.inventory.state === "missing") return riskyStartsResult(detail);
-  return riskyStartsResult(detail, await loadRiskyMarketLines(riskyRows(detail.inventory, detail.conflicts), generatedAt, { client: observationClient }));
+  return riskyStartsResult(detail, await loadRiskyMarketLines(riskyRows(detail.inventory, detail.conflicts, detail.lowFirstRanks), generatedAt, { client: observationClient }));
 }

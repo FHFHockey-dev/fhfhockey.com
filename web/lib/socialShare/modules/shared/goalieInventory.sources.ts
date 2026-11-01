@@ -3,7 +3,7 @@ import type { StartChartParticipation } from "lib/projections/startChartContract
 import { currentSeason } from "lib/socialShare/schedule";
 import type { Database } from "lib/supabase/database-generated.types";
 import { teamsInfo } from "lib/teamsInfo";
-import type { SharePostEvidence, SharePostReadClient } from "../contract";
+import { SHARE_POST_DEFAULT_TTL_SECONDS, type SharePostEvidence, type SharePostReadClient } from "../contract";
 import { competitionRanks, editionDate } from "./definitions";
 import { GOALIE_INVENTORY_VERSION, type GoalieConfirmation, type GoalieForecast, type GoalieGameSignals, type GoalieInventory, type GoalieInventoryEntry, type GoalieInventoryGame, type GoalieInventoryRequest, type GoalieInventorySource, type InventoryMetric, type LoadGoalieInventory, type SearchGoalieInventory } from "./goalieInventory";
 import { TEAM_GAME_COLUMNS, teamStartShare, toCompletedTeamGames, type CompletedTeamGame, type GoalieAppearance, type TeamGameRow } from "./goalieLedger";
@@ -29,7 +29,7 @@ export type InventoryScheduleRow = { id: number; date: string; startTime: string
 /** One goalie-game from Start Chart. `startProbability` is that row's own head, which a participation must equal. */
 export type InventoryForecastInput = { gameId: number; goalieId: number; startProbability: number | null; startParticipation?: StartChartParticipation | null };
 export type InventoryCoverage = { observed: number; expected: number; missing: number };
-export type GoalieInventoryDetail = { inventory: GoalieInventory; coverage: InventoryCoverage | null; conflicts: readonly InventoryConflict[] };
+export type GoalieInventoryDetail = { inventory: GoalieInventory; coverage: InventoryCoverage | null; conflicts: readonly InventoryConflict[]; lowFirstRanks: InventoryLowFirstRanks };
 
 export const CONFIRMATION_CLOSED_REASON = "Goalie start observations could not be read, so every goalie is unknown. That does not mean not starting.";
 export const CONFIRMATION_ABSENT_NOTE = "Unknown means no current observation, not that the goalie is not starting. Observations cover part of the slate.";
@@ -56,6 +56,10 @@ const teamById = new Map(Object.entries(teamsInfo).map(([abbreviation, team]) =>
 export const TEAM_LENS_METRICS = ["shotsFor", "shotsAgainst", "xgf", "xga", "chancesFor", "chancesAgainst", "powerPlayPct", "penaltyKillPct", "timesShorthanded", "goalsFor", "goalsAgainst", "goalDifferential"] as const;
 export type TeamLensMetric = typeof TEAM_LENS_METRICS[number];
 export type TeamLens = Record<TeamLensMetric, InventoryMetric>;
+/** Every metric ranks #1 at its highest value. Allowing the most shots, xG, chances or goals, or being shorthanded the most, is the weakest; the highest PK% is the strongest. */
+const HIGH_IS_WEAK: ReadonlySet<TeamLensMetric> = new Set<TeamLensMetric>(["shotsAgainst", "xga", "chancesAgainst", "goalsAgainst", "timesShorthanded"]);
+/** Competition ranks from the lowest value, by metric and team, for the `HIGH_IS_WEAK` metrics. Not in `goalie-inventory-v1`; posts read them from the detail, because a high-first rank can't be reversed across a tie. */
+export type InventoryLowFirstRanks = Partial<Record<TeamLensMetric, Record<string, number>>>;
 const METRIC_UNITS: Record<TeamLensMetric, string> = {
   shotsFor: "shots per game", shotsAgainst: "shots against per game", xgf: "NST xG per game", xga: "NST xG against per game", chancesFor: "NST scoring chances per game", chancesAgainst: "NST scoring chances against per game",
   powerPlayPct: "% of opportunities", penaltyKillPct: "% of times shorthanded", timesShorthanded: "times shorthanded per game", goalsFor: "goals per game", goalsAgainst: "goals against per game", goalDifferential: "goal differential per game",
@@ -74,7 +78,7 @@ const metric = (id: TeamLensMetric, value: number | null, sampleGames: number, l
  * situations; goals, PP, PK and times shorthanded are WGO, whose zeros are known. A rank (1 = highest value) exists only
  * when every team has that value over all its completed games.
  */
-export function buildTeamLenses(input: { teamGames: readonly InventoryTeamGameRow[]; nst: readonly InventoryNstRow[]; teams: readonly string[]; season: number; cutoff: string }): { lenses: Map<string, TeamLens>; nstCovered: number; updatedAt: string | null; asOf: string | null } {
+export function buildTeamLenses(input: { teamGames: readonly InventoryTeamGameRow[]; nst: readonly InventoryNstRow[]; teams: readonly string[]; season: number; cutoff: string }): { lenses: Map<string, TeamLens>; lowFirstRanks: InventoryLowFirstRanks; nstCovered: number; updatedAt: string | null; asOf: string | null } {
   const byTeam = new Map(input.teams.map(team => [team, [] as InventoryTeamGameRow[]]));
   for (const row of input.teamGames) {
     const team = teamById.get(row.team_id ?? -1);
@@ -108,16 +112,18 @@ export function buildTeamLenses(input: { teamGames: readonly InventoryTeamGameRo
     // A count's denominator is games, and each game is one; `pooled` with null denominators divides by the known games.
     return { team, games: games.length, values };
   });
-  const ranks = new Map<TeamLensMetric, Map<string, number>>();
+  const ranks = new Map<TeamLensMetric, Map<string, number>>(), lowFirstRanks: InventoryLowFirstRanks = {};
   for (const id of TEAM_LENS_METRICS) {
     const complete = raw.length > 0 && raw.every(row => row.values[id].value !== null && row.games > 0 && row.values[id].sample === row.games);
-    if (complete) ranks.set(id, new Map(competitionRanks(raw, row => row.values[id].value, row => row.team).map(({ row, rank }) => [row.team, rank])));
+    if (!complete) continue;
+    ranks.set(id, new Map(competitionRanks(raw, row => row.values[id].value, row => row.team).map(({ row, rank }) => [row.team, rank])));
+    if (HIGH_IS_WEAK.has(id)) lowFirstRanks[id] = Object.fromEntries(competitionRanks(raw, row => row.values[id].value, row => row.team, "low").map(({ row, rank }) => [row.team, rank]));
   }
   const lenses = new Map(raw.map(row => [row.team, Object.fromEntries(TEAM_LENS_METRICS.map(id => {
     const rank = ranks.get(id)?.get(row.team) ?? null;
     return [id, metric(id, row.values[id].value, row.values[id].sample, rank, rank === null ? null : raw.length)];
   })) as TeamLens]));
-  return { lenses, nstCovered, updatedAt, asOf };
+  return { lenses, lowFirstRanks, nstCovered, updatedAt, asOf };
 }
 /** The frozen signal shape for one side of a game. Each lens stays its own object, and nothing here adds them. */
 export function gameSignals(team: TeamLens, opponent: TeamLens): GoalieGameSignals {
@@ -181,7 +187,7 @@ export function buildGoalieInventory(input: GoalieInventoryInput): GoalieInvento
   const expected = input.schedule.filter(game => game.date <= cutoff).length * 2, observed = ledger.length;
   const coverage: InventoryCoverage = { observed, expected, missing: Math.max(0, expected - observed) };
   if (observed !== expected) reasons.push(`${coverage.missing} of ${expected} scheduled team games through ${cutoff} have no reported result.`);
-  const { lenses, nstCovered, updatedAt: nstUpdatedAt, asOf: nstAsOf } = buildTeamLenses({ teamGames: input.teamGames, nst: input.nst, teams: input.teams, season: request.season, cutoff });
+  const { lenses, lowFirstRanks, nstCovered, updatedAt: nstUpdatedAt, asOf: nstAsOf } = buildTeamLenses({ teamGames: input.teamGames, nst: input.nst, teams: input.teams, season: request.season, cutoff });
   const nstComplete = nstCovered === observed;
   if (!nstComplete) reasons.push(`NST team logs cover ${nstCovered} of ${observed} completed team games, so shot, xG and chance ranks are withheld.`);
 
@@ -243,7 +249,7 @@ export function buildGoalieInventory(input: GoalieInventoryInput): GoalieInvento
     { name: "Start Chart start participation", tables: [], state: input.forecasts ? "ready" : "blocked", asOf: null, updatedAt: null, reasons: forecastReasons },
   ];
   return {
-    coverage, conflicts: conflictList,
+    coverage, conflicts: conflictList, lowFirstRanks,
     inventory: { version: GOALIE_INVENTORY_VERSION, season: request.season, generatedAt: request.generatedAt, from: request.from, through: request.through, state: degraded ? "partial" : "ready", reasons: [...reasons, ...confirmationReasons, ...forecastReasons], sources, goalies },
   };
 }
@@ -280,12 +286,11 @@ export function rankBand({ value, leagueRank, leagueCohort }: InventoryMetric): 
   const third = Math.ceil(leagueCohort / 3);
   return leagueRank <= third ? "top" : leagueRank > leagueCohort - third ? "bottom" : "middle";
 }
-/** Every metric ranks #1 at its highest value. Allowing the most shots, xG, chances or goals, or being shorthanded the most, is the weakest; the highest PK% is the strongest. */
-const HIGH_IS_WEAK: ReadonlySet<TeamLensMetric> = new Set<TeamLensMetric>(["shotsAgainst", "xga", "chancesAgainst", "goalsAgainst", "timesShorthanded"]);
-export type RankedSide = { metricId: TeamLensMetric; metric: InventoryMetric };
-/** A side's rank as strength, where 1 is the league's strongest. Null follows `rankBand`. */
-export const strengthRank = ({ metricId, metric }: RankedSide) => rankBand(metric) === null ? null : HIGH_IS_WEAK.has(metricId) ? metric.leagueCohort! - metric.leagueRank! + 1 : metric.leagueRank!;
-/** Strength as a share of the league: the strongest fills a bar, the weakest is one step. */
+export type RankedSide = { metricId: TeamLensMetric; metric: InventoryMetric; lowFirstRank: number | null };
+export const rankedSide = (ranks: InventoryLowFirstRanks, team: string, metricId: TeamLensMetric, metric: InventoryMetric): RankedSide => ({ metricId, metric, lowFirstRank: ranks[metricId]?.[team] ?? null });
+/** A side's rank as strength, where 1 is the league's strongest and tied teams share a rank. Null follows `rankBand`, or a `HIGH_IS_WEAK` metric with no low-first rank. */
+export const strengthRank = ({ metricId, metric, lowFirstRank }: RankedSide) => rankBand(metric) === null ? null : HIGH_IS_WEAK.has(metricId) ? lowFirstRank : metric.leagueRank!;
+/** Strength as a share of the league: the strongest fills a bar, and each rank down is one step less. */
 export function strengthShare(side: RankedSide) {
   const rank = strengthRank(side);
   return rank === null ? null : (side.metric.leagueCohort! - rank + 1) / side.metric.leagueCohort!;
@@ -301,6 +306,11 @@ export const HEAD_TO_HEAD_COLORS = { winner: "#12805c", loser: "#b3364f", ink: "
 export const CONFIRMATION_TONES = { confirmed: { fill: "#0e5c46", ink: "#ffffff", border: null }, projected: { fill: "#6b5213", ink: "#ffffff", border: null }, conflicting: { fill: "#7a1f52", ink: "#ffffff", border: "1px dashed #ff6384" } } as const;
 /** A game with no start time stays listed; one already under way is no longer a start decision. */
 export const isUpcomingGame = (game: Pick<GoalieInventoryGame, "startTimeUtc">, generatedAt: string) => game.startTimeUtc === null || Date.parse(game.startTimeUtc) > Date.parse(generatedAt);
+/** An edition's lifetime when a listed game starts inside the default one, so it expires by that puck drop. A game with no start time sets nothing. */
+export function puckDropTtlSeconds(startTimes: readonly (string | null)[], generatedAt: string) {
+  const seconds = Math.floor((Math.min(...startTimes.flatMap(at => at === null ? [] : [Date.parse(at)])) - Date.parse(generatedAt)) / 1000);
+  return seconds < SHARE_POST_DEFAULT_TTL_SECONDS ? Math.max(0, seconds) : undefined;
+}
 /** The few words a card keeps; the full notes print with the evidence beside the preview. */
 export function confirmationLegend(inventory: GoalieInventory) {
   const source = inventory.sources.find(item => item.tables.includes("player_forecast_goalie_start_observations"));
@@ -371,7 +381,7 @@ export async function loadGoalieInventoryDetail(client: { from: (table: string) 
     return buildGoalieInventory({ request, teams, schedule, scheduleFrom: seasonStart, teamGames, nst, appearances, confirmations, observationReason, forecasts });
   } catch {
     const reason = "The goalie inventory's sources could not be read.";
-    return { coverage: null, conflicts: [], inventory: { version: GOALIE_INVENTORY_VERSION, season: request.season, generatedAt: request.generatedAt, from: request.from, through: request.through, state: "missing", reasons: [reason], sources: [], goalies: [] } };
+    return { coverage: null, conflicts: [], lowFirstRanks: {}, inventory: { version: GOALIE_INVENTORY_VERSION, season: request.season, generatedAt: request.generatedAt, from: request.from, through: request.through, state: "missing", reasons: [reason], sources: [], goalies: [] } };
   }
 }
 export const loadGoalieInventory: LoadGoalieInventory = async (client, request) => (await loadGoalieInventoryDetail(client as SharePostReadClient, request, { observationClient: await serverObservationClient() })).inventory;
