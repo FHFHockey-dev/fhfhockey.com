@@ -35,6 +35,11 @@ function WorkloadTile({ value, caption, low, high }: { value: number | null; cap
   return <span className={styles.tile} data-testid="workload-tile" data-level={level ?? undefined} style={style}><b>{formatVolume(value)}</b><small>{caption}</small></span>;
 }
 
+/** One labelled count under the name, printed in full. A null is a dash and stays visibly missing; a real 0 prints as 0.0. */
+function StatTile({ id, label, value }: { id: string; label: string; value: number | null }) {
+  return <span className={styles.stat} data-stat={id} data-missing={value === null ? "" : undefined}><i>{label}</i><b>{formatVolume(value)}</b></span>;
+}
+
 /** Rows share the height left in the body, so the boards fill it however many goalies qualify; a small pool stops short of oversized rows. */
 const FILL_FROM_ROWS = 4;
 
@@ -48,7 +53,11 @@ export default function BusyQuietCard({ data, settings, logos }: SharePostCardPr
     return <>
       <GoalieIdent rank={row.rank} team={row.team} logo={logos[row.team]} name={name} detail={<>
         <span className={styles.detail}>{row.short ? `${row.appearances}/${row.requested}` : row.appearances} GP · {row.starts} GS · {row.relief} relief · {row.totalShots ?? "—"} SA</span>
-        <span className={styles.detail}>HD SHOTS{suffix} {row.danger.admitted ? formatVolume(row.danger.hd) : `— ${row.danger.covered}/${row.danger.expected}`} · TEAM SCA {chances.admitted ? formatVolume(chances.sca) : "—"} · HDCA {chances.admitted ? formatVolume(chances.hdca) : "—"}</span>
+        <span className={styles.stats}>
+          <StatTile id="hd" label={`HD${suffix}`} value={row.danger.admitted ? row.danger.hd : null} />
+          <StatTile id="sca" label="TEAM SCA" value={chances.admitted ? chances.sca : null} />
+          <StatTile id="hdca" label="HDCA" value={chances.admitted ? chances.hdca : null} />
+        </span>
       </>} />
       <ShotLine series={row.series} scale={scale} name={name} />
       <WorkloadTile value={row.volume.value} caption={`SA${suffix}`} low={low} high={high} />

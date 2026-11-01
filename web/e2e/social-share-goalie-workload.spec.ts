@@ -89,8 +89,12 @@ test("Busy and Quiet keeps volume apart from performance, and basis changes the 
   const card = page.getByTestId("busy-quiet-card");
   await expect(card).toContainText("Workload only");
   await expect(card).toContainText("SA/GS");
-  await expect(card).toContainText("HD SHOTS/GS");
-  await expect(card).toContainText("TEAM SCA");
+  await expect(card.locator("[data-stat='hd']").first()).toContainText("HD/GS");
+  await expect(card.locator("[data-stat='sca']").first()).toContainText("TEAM SCA");
+  await expect(card.locator("[data-stat='hdca']").first()).toContainText("HDCA");
+  // Every stat tile holds its text, and no tile runs past its own row.
+  const clipped = await card.locator("[data-stat]").evaluateAll(tiles => tiles.filter(tile => tile.scrollWidth > tile.clientWidth || tile.getBoundingClientRect().right > tile.parentElement!.parentElement!.getBoundingClientRect().right + 0.5).map(tile => tile.textContent));
+  expect(clipped).toEqual([]);
   await expect(card.locator("svg[data-sparkline]").first()).toBeVisible();
   await expect(card).not.toContainText(/SV%|GAA/);
   await expect(page.getByTestId("post-watermark")).toHaveText("OBSERVED RESULTS");

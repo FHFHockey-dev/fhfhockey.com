@@ -124,3 +124,12 @@ The lead measured content of 1142, 1423 and 887px against bodies of 845 to 861px
 ## Blockers
 
 None. No frozen file needs a change.
+
+## Follow-up: Busy and Quiet third line (TJ, 2026-11-01)
+
+- **Tiles:** the third line is now three small labelled tiles per row: HD on the basis (HD/GS, HD/GP or HD/60), TEAM SCA and HDCA. They are neutral, and they keep the same columns down the board.
+- **No truncation:** the tiles have no ellipsis or overflow rule, and their columns cannot go below their text width, so a long value widens the tile instead of clipping.
+- **Missing HD:** below 90% coverage the tile prints a dimmed "—". A real zero prints 0.0. The covered and expected counts moved to `evidence.sample` in plain wording, such as "G1 1 of 3 games". After a failed NST read, the source's own reason says so instead.
+- **Row height:** the minimum row rises from 63 to 65px. The tie cap stays at 12, because 12 x 65 + 53 = 833 fits an 845px body.
+- **Spec:** expects the three tiles and fails if a tile's text overflows it or a tile runs past its column (`--list` only).
+- **Not verified:** no browser run. The width budget is an estimate, about 221px of tile content plus 6px of gaps in a 249px column, until the lead's render runs that check.

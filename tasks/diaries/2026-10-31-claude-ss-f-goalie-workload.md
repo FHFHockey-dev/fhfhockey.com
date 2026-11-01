@@ -10,3 +10,7 @@
 - **Busy and Quiet visuals:** side-by-side boards, neutral SA tile, per-game SA sparkline, tie cap 12. Rescue and Ratio Impact notes from TJ may follow. Fit needs the lead's render.
 - **Rescue visuals:** grouped heads, per-column colour with GA and GAA flipped, selected-column highlight, dots for games left, tie cap 28. Fit needs the lead's render.
 - **Ratio Impact visuals:** before and after tiles, sensitivity charts aligned to printed columns, entered mark, gaps for zero denominators. Fit needs the lead's render.
+
+## 2026-11-01: Busy and Quiet third line
+
+Replaced the HD SHOTS / TEAM SCA / HDCA text line with three tiles. Thin HD coverage prints a dash; the counts moved to `evidence.sample`. Row minimum is 65px and the tie cap stays 12. Checks: Vitest, pure CSS, eslint, tsc filter, spec `--list`. Next: the lead's render runs the spec's tile overflow check.

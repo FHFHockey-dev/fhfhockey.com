@@ -13,7 +13,7 @@ export type BusyQuietSettings = { basis: BusyQuietBasis; window: GoalieWindowKey
 
 /** Fills the card's 860px body per side. Ties may run past the size; the hard cap keeps them from clipping, and the sample names any left out. */
 export const BUSY_QUIET_LIST_SIZE = 11;
-/** (845px body - 53 legend and side head) / 63px minimum row. */
+/** (845px body - 53 legend and side head) / 65px minimum row. */
 const BUSY_QUIET_MAX_ROWS = 12;
 /** CONTRACT §2 coverage admission: below this share of window games, an NST value is not shown. */
 export const NST_MIN_COVERAGE = 0.9;
@@ -142,6 +142,8 @@ export function buildBusyQuiet(input: {
   const dangerUnadmitted = built.filter(row => !row.danger.admitted).length, teamChancesUnadmitted = built.filter(row => !row.teamChances.admitted).length;
   const reasons = [...ledger.reasons, ...(missingShots ? [`${missingShots} window appearances have no recorded shots against or time on ice.`] : [])];
   const complete = reasons.length === 0;
+  // The card prints a dash below coverage, so the counts behind it live here. A failed read is the NST source's own reason instead.
+  const thinDanger = input.nstGoalie === null ? [] : [...busy, ...quiet].filter(row => !row.danger.admitted).map(row => `${row.name ?? `Goalie ${row.goalieId}`} ${row.danger.covered} of ${row.danger.expected} ${row.danger.expected === 1 ? "game" : "games"}`);
   const newest = (dates: readonly string[]) => dates.reduce<string | null>((latest, date) => !latest || date > latest ? date : latest, null);
   const nstSource = (name: string, table: string, rows: readonly unknown[] | null, asOf: string | null, unadmitted: number, what: string): SharePostSource => rows === null
     ? { name, tables: [table], state: "missing", asOf: null, updatedAt: null, reasons: [`${name} could not be read, so ${what} are unknown.`] }
@@ -152,7 +154,7 @@ export function buildBusyQuiet(input: {
       nstSource("Natural Stat Trick goalie shots by danger zone", "nst_gamelog_goalie_all_counts", input.nstGoalie, newest((input.nstGoalie ?? []).map(row => row.date_scraped)), dangerUnadmitted, "danger-zone shots"),
       nstSource("Natural Stat Trick team chances against", "nst_team_gamelogs_as_counts", input.nstTeam, newest((input.nstTeam ?? []).map(row => row.date)), teamChancesUnadmitted, "team chances"),
     ],
-    sample: `${windowLabel(settings.window)} through ${input.through}: ${built.reduce((total, row) => total + row.appearances, 0)} appearances, ${built.reduce((total, row) => total + row.starts, 0)} starts, ${built.reduce((total, row) => total + row.relief, 0)} relief. ${settings.basis === "start" ? "Per start reads official starts only; relief is counted apart. " : ""}HD SHOTS are shots from the high-danger zone, not chances, shown at ${NST_MIN_COVERAGE * 100}% coverage, otherwise as covered/expected games. ${TEAM_CHANCES_NOTE}${shared ? ` ${shared} listed ${shared === 1 ? "appearance" : "appearances"} shared the net.` : ""}${tiedOut ? ` ${tiedOut} more tied ${tiedOut === 1 ? "goalie is" : "goalies are"} not listed.` : ""}`,
+    sample: `${windowLabel(settings.window)} through ${input.through}: ${built.reduce((total, row) => total + row.appearances, 0)} appearances, ${built.reduce((total, row) => total + row.starts, 0)} starts, ${built.reduce((total, row) => total + row.relief, 0)} relief. ${settings.basis === "start" ? "Per start reads official starts only; relief is counted apart. " : ""}HD counts shots from the high-danger zone, not chances, shown at ${NST_MIN_COVERAGE * 100}% coverage, otherwise as a dash.${thinDanger.length ? ` HD coverage behind a dash: ${thinDanger.join(", ")}.` : ""} ${TEAM_CHANCES_NOTE}${shared ? ` ${shared} listed ${shared === 1 ? "appearance" : "appearances"} shared the net.` : ""}${tiedOut ? ` ${tiedOut} more tied ${tiedOut === 1 ? "goalie is" : "goalies are"} not listed.` : ""}`,
     strength: "All situations",
     cohort: `${eligible.length} of ${windows.length} goalies with at least ${settings.minStarts} official starts in the window`,
     coverage: ledger.coverage,

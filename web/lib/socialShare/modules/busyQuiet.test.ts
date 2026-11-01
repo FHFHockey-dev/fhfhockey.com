@@ -1,4 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { createElement } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import BusyQuietCard from "components/SocialShare/modules/BusyQuietCard";
@@ -153,6 +155,7 @@ describe("the list", () => {
 
 const snapshot = (data: BusyQuietData, active: BusyQuietSettings): SharePostSnapshot<BusyQuietSettings, BusyQuietData> => ({ schemaVersion: 1, id: "e", post: "busy-quiet-goalies", state: "ready", reasons: [], generatedAt: "2026-10-31T12:00:00Z", expiresAt: null, timeZone: "America/New_York", settings: active, evidence: UNKNOWN_EVIDENCE, data, teams: [], fixture: true });
 const renderCard = (data: BusyQuietData, active: BusyQuietSettings) => render(createElement(BusyQuietCard, { snapshot: snapshot(data, active), data, settings: active, logos: {} }));
+const statTexts = (container: HTMLElement) => [...container.querySelector("[data-stat]")!.parentElement!.children].map(tile => tile.textContent);
 /** Words that would turn workload into a verdict on goalie play. */
 const GOODNESS = /\b(good|great|bad|best|worst|better|worse|elite|strong|weak|poor|struggl\w*|hot|cold|stud|dud|excellent)\b/i;
 
@@ -161,7 +164,8 @@ describe("busy and quiet card", () => {
   it("labels danger-zone shots as shots and team chances as team-level, with relief apart", () => {
     const { container } = renderCard(full, settings());
     const text = container.textContent!;
-    for (const label of ["Busy", "3 GS", "1 relief", "SA/GS", "HD SHOTS/GS", "TEAM SCA 22.0", "HDCA 9.0", VOLUME_NOTE]) expect(text).toContain(label);
+    for (const label of ["Busy", "3 GS", "1 relief", "SA/GS", VOLUME_NOTE]) expect(text).toContain(label);
+    expect(statTexts(container)).toEqual(["HD/GS10.0", "TEAM SCA22.0", "HDCA9.0"]);
     expect(text).not.toMatch(/\bHD CHANCES\b|\bGOALIE CHANCES\b/i);
     expect(screen.getByText("G1")).toBeTruthy();
   });
@@ -172,14 +176,34 @@ describe("busy and quiet card", () => {
     expect(build({ appearances: [...rows, appearance({ goalieId: 1, gameId: 8, date: date(8), started: false }), appearance({ goalieId: 5, gameId: 8, date: date(8) })] }).evidence.sample).toContain("2 listed appearances shared the net.");
     expect(build({ settings: settings({ basis: "per60" }) }).evidence.sample).not.toContain("Per start reads");
   });
-  it("shows coverage instead of a value when danger-zone shots are not admitted", () => {
-    const thin = build({ nstGoalie: [nstGoalie(1, 1)] }).data!;
-    expect(renderCard(thin, settings()).container.textContent).toContain("— 1/3");
+  it("prints a dash for thin HD coverage, keeps the count in the evidence, and never reads missing as zero", () => {
+    const thin = build({ nstGoalie: [nstGoalie(1, 1)] });
+    const { container } = renderCard(thin.data!, settings());
+    const tile = container.querySelector<HTMLElement>("[data-stat='hd']")!;
+    expect(tile.textContent).toBe("HD/GS—");
+    expect(tile.dataset.missing).toBe("");
+    expect(container.textContent).not.toContain("1/3");
+    expect(thin.evidence.sample).toContain("HD coverage behind a dash: G1 1 of 3 games, G3 0 of 3 games.");
+    expect(build({ nstGoalie: [1, 2, 3].flatMap(day => [nstGoalie(1, day), nstGoalie(3, day + 4)]) }).evidence.sample).not.toContain("HD coverage behind");
+    expect(build({ nstGoalie: null }).evidence.sample).not.toContain("HD coverage behind");
+    cleanup();
+    const zero = renderCard(build({ nstGoalie: [1, 2, 3].map(day => nstGoalie(1, day, 0)) }).data!, settings()).container.querySelector<HTMLElement>("[data-stat='hd']")!;
+    expect(zero.textContent).toBe("HD/GS0.0");
+    expect(zero.dataset.missing).toBeUndefined();
+  });
+  it("prints the longest values whole, with no way for a tile to clip them", () => {
+    const longest = build({ nstGoalie: [1, 2, 3].map(day => nstGoalie(1, day, 100)), nstTeam: [1, 2, 3, 4].map(day => ({ team_abbreviation: "NJD", date: date(day), sca: 100, hdca: 100 })) }).data!;
+    expect(statTexts(renderCard(longest, settings()).container)).toEqual(["HD/GS100.0", "TEAM SCA100.0", "HDCA100.0"]);
+    const scss = readFileSync(resolve(process.cwd(), "components/SocialShare/modules/BusyQuietCard.module.scss"), "utf8");
+    const rules = scss.slice(scss.indexOf(".stats {"), scss.indexOf(".spark {"));
+    expect(rules).toContain("white-space: nowrap");
+    expect(rules).not.toMatch(/overflow|text-overflow|minmax\(0/);
   });
   it("changes its column labels with the basis", () => {
     const per60 = build({ settings: settings({ basis: "per60" }) }).data!;
-    const text = renderCard(per60, settings({ basis: "per60" })).container.textContent!;
-    expect(text).toContain("SA/60");
+    const { container } = renderCard(per60, settings({ basis: "per60" }));
+    expect(container.textContent).toContain("SA/60");
+    expect(container.querySelector("[data-stat='hd']")!.textContent).toContain("HD/60");
   });
   const sparkline = (container: HTMLElement) => container.querySelector("svg[data-sparkline]")!;
   it("plots each appearance's shots against, oldest first, with relief open and in the alt text", () => {

@@ -8,6 +8,13 @@
 .title { margin: 0; padding-bottom: 2px; border-bottom: 2px solid currentColor; font-size: 24px; line-height: 1.1; font-weight: 800; color: #63d2f5; }
 .row { display: grid; grid-template-columns: 24px 34px minmax(0, 1fr) 90px 72px; column-gap: 6px; align-items: center; min-width: 0; padding: 3px 0; border-bottom: 1px solid v.$border-soft; }
 .detail { display: block; overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+/* 249px column at a 1006px body. Columns line up down the board, and min-content means a value widens its tile rather than clipping. */
+.stats { display: grid; grid-template-columns: minmax(min-content, 67fr) minmax(min-content, 89fr) minmax(min-content, 65fr); column-gap: 3px; margin-top: 1px; }
+.stat { display: flex; align-items: baseline; justify-content: space-between; column-gap: 3px; padding: 1px 3px; border-radius: 3px; white-space: nowrap; background: rgba(v.$color-white, 0.06);
+  i { font-size: 10px; line-height: 1; font-style: normal; color: v.$text-secondary; }
+  b { font-size: 14px; line-height: 1; font-weight: 700; color: v.$color-white; }
+}
+.stat[data-missing] b { font-weight: 400; color: v.$text-secondary; }
 .spark { display: block; }
 .tile { display: grid; justify-items: center; align-content: center; min-height: 50px; padding: 2px; border-radius: 5px; color: v.$color-white; background: rgba(v.$color-white, 0.06);
   b { font-size: 26px; line-height: 1; font-weight: 800; }
