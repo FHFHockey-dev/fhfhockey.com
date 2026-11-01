@@ -4,8 +4,8 @@ import { describe, expect, it, vi } from "vitest";
 import RiskyStartsCard from "components/SocialShare/modules/RiskyStartsCard";
 import { resolveDailyBoardEvidence, type BoardGoalieEvidence } from "lib/projections/dailyBoardEvidence";
 import { sharePostExportToken } from "./contract";
-import { RISKY_CORRELATION_NOTE, riskyFlags, riskyPairs, riskyRows, riskyRowsForLens, riskyStartsModule, riskyStartsResult, type RiskyRow, type RiskyStartsData, type RiskyStartsSettings } from "./riskyStarts";
-import { gameSignals, buildTeamLenses, buildGoalieInventory, CONFIRMATION_LINK_GAP, CONFIRMATION_REPORTER_GAP, RANK_BANDS, rankBand, rankShare } from "./shared/goalieInventory.sources";
+import { ordinalRank, RISKY_CORRELATION_NOTE, riskyFlags, riskyGameSides, riskyPairs, riskyRows, riskyRowsForLens, riskyStartsModule, riskyStartsResult, type RiskyPair, type RiskyRow, type RiskySide, type RiskyStartsData, type RiskyStartsSettings } from "./riskyStarts";
+import { gameSignals, buildTeamLenses, buildGoalieInventory, CONFIRMATION_LINK_GAP, CONFIRMATION_REPORTER_GAP, rankBand } from "./shared/goalieInventory.sources";
 import { FIXTURE_GENERATED_AT, FIXTURE_INPUT, FIXTURE_TEAMS, GOALIE_INVENTORY_FIXTURE, GOALIE_INVENTORY_FIXTURE_DETAIL } from "./shared/goalieInventory.fixture";
 
 vi.mock("lib/supabase/public-client", () => ({ default: {} }));
@@ -49,53 +49,97 @@ describe("Risky Starts card, through the real resolver", () => {
   });
 });
 
-describe("Risky Starts head-to-head bars", () => {
+describe("Risky Starts head-to-head tiles", () => {
   const metric = (value: number | null, leagueRank: number | null, leagueCohort: number | null = 32) => ({ value, unit: "per game", window: "", sampleGames: 10, leagueRank, leagueCohort });
-  const side = (team: string, label: string, value: ReturnType<typeof metric>) => ({ team, label, metric: value, digits: 1 });
-  const barCard = (sides: RiskyRow["lenses"]["volume"][number]["sides"]) => {
-    const base = data.rows.find(item => item.lenses.volume[0].flagged)!;
-    const row = { ...base, lenses: { ...base.lenses, volume: [{ id: "shots", label: "Shots", flagged: true, sides }] } };
-    return card({ ...riskyStartsResult(GOALIE_INVENTORY_FIXTURE_DETAIL), data: { ...data, rows: [row] } }, "volume");
+  const side = (team: string, label: string, metricId: RiskySide["metricId"], value: ReturnType<typeof metric>): RiskySide => ({ team, label, metricId, metric: value, digits: 2 });
+  // Game 900010: NYR at home, NJD away.
+  const njdRow = data.rows.find(item => item.team === "NJD" && item.gameId === 900010)!, nyrRow = data.rows.find(item => item.team === "NYR" && item.gameId === 900010)!;
+  const render = (row: RiskyRow, pairs: RiskyPair[], rows: RiskyRow[] = [row]) => {
+    const tile = { ...row, lenses: { ...row.lenses, volume: pairs.map(pair => ({ ...pair, flagged: true })) } };
+    return card({ ...riskyStartsResult(GOALIE_INVENTORY_FIXTURE_DETAIL), data: { ...data, rows: [tile, ...rows.filter(item => item !== row)] } }, "volume");
   };
-  const bars = (html: string) => [...html.matchAll(/<rect [^>]*data-testid="risky-bar"[^>]*>/g)].map(match => match[0]);
-  it("draws each side's length from its league rank, out from the centre, with the fill as an attribute", () => {
-    const html = barCard([side("NJD", "SF/GP", metric(34.1, 1)), side("NYR", "SA/GP", metric(25.2, 32))]);
-    const [left, right] = bars(html);
-    // #1 fills the left track to x=0; last place is one step of 32 starting at the right track's inner edge.
-    expect(left).toContain('width="99.00"');
-    expect(left).toContain('x="0.00"');
-    expect(left).toContain(`fill="${RANK_BANDS.top.fill}"`);
-    expect(right).toContain(`width="${(99 / 32).toFixed(2)}"`);
-    expect(right).toContain('x="101.00"');
-    expect(right).toContain(`fill="${RANK_BANDS.bottom.fill}"`);
-    expect(html).toContain("NJD SF/GP 34.1 (#1)");
-    expect(html).toContain("NYR SA/GP 25.2 (#32)");
+  const sideOf = (html: string, placement: "home" | "away") => html.match(new RegExp(`<span class="[^"]*" data-side="${placement}" data-team="[^>]*>.*?</b>`))![0];
+  const barOf = (html: string) => html.match(/<rect data-testid="risky-bar"[^>]*>/)![0];
+  const xg = (winner: string | null, nyr: number | null, njd: number | null): RiskyPair => ({ id: "xg", label: "xG", flagged: true, winner, sides: [side("NYR", "xGF/GP", "xgf", metric(nyr === null ? null : 4.06, nyr)), side("NJD", "xGA/GP", "xga", metric(njd === null ? null : 3.5, njd))] });
+  it("puts the actual home team left and each value on its own team's side, from either team's tile", () => {
+    for (const row of [njdRow, nyrRow]) {
+      expect(riskyGameSides(data.rows, row).home.team).toBe("NYR");
+      expect(riskyGameSides(data.rows, row).away.team).toBe("NJD");
+      const html = render(row, [xg("NYR", 2, 8)]), home = sideOf(html, "home"), away = sideOf(html, "away");
+      expect(home).toContain('data-team="NYR"');
+      expect(home).toContain("4.06 XGF/GP | 2ND");
+      expect(away).toContain('data-team="NJD"');
+      expect(away).toContain("3.50 XGA/GP | 8TH");
+      expect(html.indexOf("HOME")).toBeLessThan(html.indexOf("AWAY"));
+    }
+    // Sides given the other way round still land by team.
+    const flipped = render(njdRow, [{ ...xg("NYR", 2, 8), sides: [...xg("NYR", 2, 8).sides].reverse() }]);
+    expect(sideOf(flipped, "home")).toContain("4.06 XGF/GP");
   });
-  it("gives rank shares that fall one step per rank", () => {
-    expect([1, 2, 16, 32].map(rank => rankShare(metric(1, rank)))).toEqual([1, 31 / 32, 17 / 32, 1 / 32]);
+  it("points the triangle at the winning side, and draws none without a winner", () => {
+    const left = render(njdRow, [xg("NYR", 2, 8)]), right = render(njdRow, [xg("NJD", 20, 32)]), none = render(njdRow, [xg(null, 8, 25)]);
+    expect(left).toContain('data-testid="risky-edge" data-points="left" data-winner="NYR"');
+    expect(right).toContain('data-testid="risky-edge" data-points="right" data-winner="NJD"');
+    expect(none).not.toContain("risky-edge");
   });
-  it("keeps a missing metric visibly missing: no length, no band, a dash, and the other side still drawn", () => {
-    const html = barCard([side("NJD", "SF/GP", metric(null, null, null)), side("NYR", "SA/GP", metric(25.2, 4))]);
-    const [left, right] = bars(html);
-    expect(left).toContain('data-mark="missing"');
-    expect(left).toContain('fill="none"');
-    expect(left).toContain("stroke-dasharray");
-    expect(html).toContain("NJD SF/GP —");
-    expect(right).toContain('data-mark="top"');
+  it("computes the pair's winner through the shared rule", () => {
+    const signals = gameSignals(lenses.get("NJD")!, lenses.get("NYR")!);
+    const ranks = (ratio: Partial<typeof signals.ratioExposure>) => riskyPairs("A", "B", { ...signals, ratioExposure: { ...signals.ratioExposure, ...ratio } }).ratio;
+    expect(ranks({ opponentXgfPerGame: metric(3, 10), teamXgaPerGame: metric(3, 5) })[0].winner).toBe("B");
+    expect(ranks({ opponentPowerPlayPct: metric(20, 16), teamPenaltyKillPct: metric(90, 1) }).find(pair => pair.id === "special-teams")!.winner).toBe("A");
+    expect(ranks({ opponentPowerPlayPct: metric(20, 16), teamTimesShorthandedPerGame: metric(5, 1) }).find(pair => pair.id === "penalties")!.winner).toBe("B");
+    expect(ranks({ opponentXgfPerGame: metric(null, null, null) })[0].winner).toBeNull();
+    expect(riskyPairs("A", "B", signals).win.find(pair => pair.id === "differential")!.winner).toBeNull();
   });
-  it("treats a value with no complete league rank as missing a bar, and keeps the number", () => {
-    const html = barCard([side("NJD", "SF/GP", metric(34.1, null, null)), side("NYR", "SA/GP", metric(25.2, 4))]);
-    expect(bars(html)[0]).toContain('data-mark="missing"');
-    expect(html).toContain("NJD SF/GP 34.1");
-    expect(rankBand(metric(34.1, null, null))).toBeNull();
+  it("sizes each bar by strength out from the centre, so the longer bar is the winner, with fills as attributes", () => {
+    const html = render(njdRow, [xg("NYR", 1, 32)]);
+    const [home, away] = [...html.matchAll(/<rect data-testid="risky-bar"[^>]*>/g)].map(match => match[0]);
+    expect(home).toContain('x="0.00"');
+    expect(home).toContain('width="100.00"');
+    expect(away).toContain('x="0.00"');
+    expect(away).toContain('width="100.00"');
+    const close = render(njdRow, [xg("NYR", 16, 1)]), [left, right] = [...close.matchAll(/<rect data-testid="risky-bar"[^>]*>/g)].map(match => match[0]);
+    expect(left).toContain(`width="${(17 / 32 * 100).toFixed(2)}"`);
+    expect(left).toContain(`x="${(100 - 17 / 32 * 100).toFixed(2)}"`);
+    expect(right).toContain(`width="${(1 / 32 * 100).toFixed(2)}"`);
+    expect(barOf(close)).toMatch(/fill="#/);
+    expect(close).toMatch(/<b style="color:#\w+">HOME/);
+    expect(close).toMatch(/<b style="color:#\w+">AWAY/);
   });
-  it("draws only the lens in view, adds no combined score and no odds", () => {
-    const row = data.rows.find(item => item.lenses.volume[0].flagged)!;
-    const html = card({ ...riskyStartsResult(GOALIE_INVENTORY_FIXTURE_DETAIL), data: { ...data, rows: [row] } }, "volume");
-    expect(bars(html).map(bar => bar.match(/data-side="([^"]+)"/)![1])).toEqual(row.lenses.volume[0].sides.map(item => item.label));
-    expect(html).not.toMatch(/xGF|Goal diff|score|composite|probability/i);
+  it("keeps a missing metric visibly missing, and a one-sided pairing's other half empty", () => {
+    const html = render(njdRow, [xg(null, null, 4)]);
+    expect(barOf(html)).toContain('data-mark="missing"');
+    expect(barOf(html)).toContain('fill="none"');
+    expect(sideOf(html, "home")).toContain("— XGF/GP | —");
+    expect(sideOf(html, "away")).toContain("3.50 XGA/GP | 4TH");
+    expect(rankBand(metric(4.06, null, null))).toBeNull();
+    const single = render(nyrRow, [{ id: "differential", label: "Goal diff", flagged: true, winner: null, sides: [side("NYR", "GD/GP", "goalDifferential", metric(0.5, 3))] }]);
+    expect(single).toContain('data-side="away" data-empty=""');
+    expect(single).not.toContain("risky-edge");
+  });
+  it("shows each team's goalies under its own side, finding the other team's in its own row", () => {
+    const html = card(riskyStartsResult(GOALIE_INVENTORY_FIXTURE_DETAIL), "volume");
+    const block = (team: string) => html.match(new RegExp(`data-testid="risky-row" data-team="NYR" data-game="900010".*?data-testid="risky-goalies" data-side="${team === "NYR" ? "home" : "away"}" data-team="${team}"[^>]*>(.*?)</p>`))![1];
+    expect(block("NYR")).toContain("Mikko Søgaard");
+    expect(block("NYR")).toContain("Source: projected");
+    expect(block("NJD")).toContain("Éric Testeur");
+    expect(block("NJD")).toContain("Source: confirmed");
+    expect(block("NJD")).toMatch(/\d+\/\d+ GS/);
+  });
+  it("leaves a side visibly empty when the other team has no goalies, and keeps date and rest", () => {
+    expect(riskyGameSides([njdRow], njdRow).home.goalies).toEqual([]);
+    const html = card({ ...riskyStartsResult(GOALIE_INVENTORY_FIXTURE_DETAIL), data: { ...data, rows: [nyrRow] } }, "volume");
+    expect(html).toContain('data-testid="risky-goalies-empty"');
+    expect(html).toContain("No goalie listed");
+    expect(html).toContain("Mon, Nov 2");
+    expect(html).toMatch(/rested|back-to-back/);
+  });
+  it("prints ordinals, and adds no combined score and no odds", () => {
+    expect([1, 2, 3, 4, 11, 12, 13, 21, 22, 23, 32].map(ordinalRank)).toEqual(["1ST", "2ND", "3RD", "4TH", "11TH", "12TH", "13TH", "21ST", "22ND", "23RD", "32ND"]);
+    const html = card(riskyStartsResult(GOALIE_INVENTORY_FIXTURE_DETAIL), "volume");
+    expect(html).not.toMatch(/score|composite|probability/i);
     expect(html).toContain("No win or start odds");
-    expect(JSON.stringify(row)).not.toMatch(/"(share|score|total|composite|odds)"/);
+    expect(JSON.stringify(data.rows[0])).not.toMatch(/"(share|score|total|composite|odds)"/);
   });
 });
 
@@ -137,7 +181,7 @@ describe("Risky Starts pairings (11.4)", () => {
     expect(result.evidence.cohort).toContain("team-nights");
   });
   it("orders within one lens: another lens's flags never move a row, and nothing sums them", () => {
-    const pair = (flagged: boolean) => ({ id: "p", label: "P", sides: [], flagged });
+    const pair = (flagged: boolean) => ({ id: "p", label: "P", sides: [], flagged, winner: null });
     const row = (team: string, volume: boolean[], ratio: boolean[]): RiskyRow => ({ gameId: 1, date: "2026-11-02", startTimeUtc: null, team, opponent: "X", home: true, teamSecondNight: false, opponentSecondNight: false, conflicting: false, goalies: [], lenses: { volume: volume.map(pair), ratio: ratio.map(pair), win: [] } });
     const rows = [row("A", [true], [true, true, true]), row("B", [true], [true]), row("C", [false], [true, true])];
     expect(riskyRowsForLens(rows, "ratio").map(item => item.team)).toEqual(["A", "C", "B"]);

@@ -271,21 +271,30 @@ export function confirmationFreshness(confirmation: GoalieConfirmation, generate
 }
 export const forecastLabel = (forecast: GoalieForecast) => forecast.state === "qualified" ? `Conditional forecast ${Math.round(forecast.startProbability * 100)}%` : "Forecast unavailable";
 export const metricLabel = (value: InventoryMetric, digits: number) => value.value === null ? "—" : `${value.value.toFixed(digits)}${value.unit.startsWith("%") ? "%" : ""}${value.leagueRank === null ? "" : ` (#${value.leagueRank})`}`;
-/**
- * One league-rank scale for both posts, in one hue because a high rank is danger in one lens and support in another, so it can
- * never mean good or bad. Thirds match the Risky Starts flag. Hex values go on as attributes or inline styles so the PNG keeps them.
- */
-export const RANK_BANDS = { top: { label: "top third", fill: "#3f9bdc", ink: "#0b0f12" }, middle: { label: "middle", fill: "#2a6a96", ink: "#ffffff" }, bottom: { label: "bottom third", fill: "#2b3a46", ink: "#ffffff" } } as const;
-export type RankBand = keyof typeof RANK_BANDS;
-/** Null without a value or a complete league's rank: that metric has no band, so it can never read as low. */
-export function rankBand({ value, leagueRank, leagueCohort }: InventoryMetric): RankBand | null {
+/** The Risky Starts flag's cut. Null without a value or a complete league's rank, so a missing metric can never read as low. */
+export function rankBand({ value, leagueRank, leagueCohort }: InventoryMetric): "top" | "middle" | "bottom" | null {
   if (value === null || leagueRank === null || leagueCohort === null) return null;
   const third = Math.ceil(leagueCohort / 3);
   return leagueRank <= third ? "top" : leagueRank > leagueCohort - third ? "bottom" : "middle";
 }
-/** A rank's share of the league: #1 fills the bar and last place is one step. Null follows `rankBand`. */
-export const rankShare = (metric: InventoryMetric) => rankBand(metric) === null ? null : (metric.leagueCohort! - metric.leagueRank! + 1) / metric.leagueCohort!;
-/** Source status colours, apart from the rank hue. An unknown has none: no report is not a bad report. */
+/** Every metric ranks #1 at its highest value. Allowing the most shots, xG, chances or goals, or being shorthanded the most, is the weakest; the highest PK% is the strongest. */
+const HIGH_IS_WEAK: ReadonlySet<TeamLensMetric> = new Set<TeamLensMetric>(["shotsAgainst", "xga", "chancesAgainst", "goalsAgainst", "timesShorthanded"]);
+export type RankedSide = { metricId: TeamLensMetric; metric: InventoryMetric };
+/** A side's rank as strength, where 1 is the league's strongest. Null follows `rankBand`. */
+export const strengthRank = ({ metricId, metric }: RankedSide) => rankBand(metric) === null ? null : HIGH_IS_WEAK.has(metricId) ? metric.leagueCohort! - metric.leagueRank! + 1 : metric.leagueRank!;
+/** Strength as a share of the league: the strongest fills a bar, the weakest is one step. */
+export function strengthShare(side: RankedSide) {
+  const rank = strengthRank(side);
+  return rank === null ? null : (side.metric.leagueCohort! - rank + 1) / side.metric.leagueCohort!;
+}
+/** The stronger of two sides by league rank, the one winner rule for both posts. Equal strength or a missing side has no winner. */
+export function headToHeadWinner(first: RankedSide, second: RankedSide): 0 | 1 | null {
+  const a = strengthRank(first), b = strengthRank(second);
+  return a === null || b === null || a === b ? null : a < b ? 0 : 1;
+}
+/** Winner and loser chip colours, and the triangle's. Inline or as attributes so the PNG keeps them. */
+export const HEAD_TO_HEAD_COLORS = { winner: "#12805c", loser: "#b3364f", ink: "#ffffff" } as const;
+/** Source status colours. An unknown has none: no report is not a bad report. */
 export const CONFIRMATION_TONES = { confirmed: { fill: "#0e5c46", ink: "#ffffff", border: null }, projected: { fill: "#6b5213", ink: "#ffffff", border: null }, conflicting: { fill: "#7a1f52", ink: "#ffffff", border: "1px dashed #ff6384" } } as const;
 /** A game with no start time stays listed; one already under way is no longer a start decision. */
 export const isUpcomingGame = (game: Pick<GoalieInventoryGame, "startTimeUtc">, generatedAt: string) => game.startTimeUtc === null || Date.parse(game.startTimeUtc) > Date.parse(generatedAt);

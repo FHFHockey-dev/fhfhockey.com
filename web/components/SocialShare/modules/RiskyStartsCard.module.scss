@@ -4,21 +4,27 @@
 .legend { margin: 0; font-size: 14px; line-height: 1.2; color: v.$text-secondary; b { color: v.$color-white; } }
 .grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(4, auto); gap: v.$space-xs; align-content: start; flex: 1; min-height: 0; }
 .grid[data-full] { grid-template-rows: none; grid-auto-rows: 1fr; align-content: stretch; }
-.tile { display: flex; flex-direction: column; justify-content: space-between; gap: v.$space-xxs; padding: v.$space-xs; border: 1px solid v.$border-soft; min-width: 0; min-height: 0; }
-.head { display: grid; grid-template-columns: auto auto auto minmax(0, 1fr); align-items: center; column-gap: v.$space-xs;
-  strong { font-size: 22px; white-space: nowrap; color: v.$color-white; }
-  span { font-size: 13px; line-height: 1.15; text-align: right; color: v.$text-secondary; }
+.tile { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: v.$space-xs; padding: v.$space-xs; border: 1px solid v.$border-soft; min-width: 0; min-height: 0; }
+.head { display: grid; grid-template-columns: minmax(0, 1fr) 130px minmax(0, 1fr); align-items: center; column-gap: v.$space-xs; }
+.teamHead { display: grid; grid-template-columns: auto 1fr; justify-items: center; align-items: center; font-size: 15px; letter-spacing: v.$mobile-letter-spacing-wide; }
+.teamHead[data-side="away"] { grid-template-columns: 1fr auto; }
+.when { font-size: 12px; line-height: 1.15; text-align: center; color: v.$text-secondary; }
+.pairs { display: grid; grid-auto-rows: minmax(20px, 1fr); gap: 2px; min-height: 0; }
+.pair { display: grid; grid-template-columns: minmax(0, 1fr) 84px minmax(0, 1fr); column-gap: v.$space-xs; align-items: stretch; min-height: 0; }
+.label { display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 14px; white-space: nowrap; color: v.$text-secondary; }
+.pair[data-flagged] .label { color: v.$primary-color; font-weight: 700; }
+/* The value sits over its bar, at the centre end, where the bar starts. */
+.side { display: grid; grid-template-rows: minmax(0, 1fr); align-items: center; min-width: 0; font-size: 13px; color: v.$color-white; white-space: nowrap;
+  > * { grid-area: 1 / 1; }
+  svg { display: block; width: 100%; height: 100%; }
+  b { position: relative; padding-inline: 4px; font-weight: 400; }
 }
-.key { display: inline-flex; gap: 6px; span { white-space: nowrap; } i { display: inline-block; width: 11px; height: 11px; margin-right: 2px; border-radius: 2px; vertical-align: -1px; } }
-/* Label, one side, the bars, the other side. The bars take what the text leaves. */
-.pairs { --bar-height: 14px; display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; gap: 2px v.$space-xs; margin: 0; font-size: 14px; line-height: 1.2; }
-.pairs[data-count="1"] { --bar-height: 28px; font-size: 18px; }
-.pairs[data-count="2"] { --bar-height: 22px; font-size: 16px; }
-.pair { display: grid; grid-column: 1 / -1; grid-template-columns: subgrid; align-items: center; white-space: nowrap;
-  dt, dd { margin: 0; color: v.$text-secondary; }
-  &[data-flagged] dt, &[data-flagged] dd { color: v.$primary-color; font-weight: 700; }
+.side[data-side="home"] { justify-items: end; }
+.side svg { justify-self: stretch; align-self: stretch; }
+.pair[data-flagged] .side b { font-weight: 700; }
+.goalieSides { display: grid; grid-template-columns: 1fr 1fr; column-gap: v.$space-sm; }
+.goalies { display: grid; align-content: start; margin: 0; font-size: 12px; line-height: 1.2; color: v.$text-secondary;
+  b { font-weight: 600; color: v.$text-secondary; }
 }
-.bars { min-width: 0; svg { display: block; width: 100%; height: var(--bar-height); } }
-.goalies { display: grid; margin: 0; font-size: 14px; line-height: 1.2; color: v.$text-secondary;
-  b { font-weight: 600; color: v.$color-white; }
-}
+.goalies[data-subject] b { color: v.$color-white; }
+.goalies[data-side="away"] { text-align: right; }

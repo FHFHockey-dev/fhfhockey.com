@@ -11,3 +11,6 @@
 
 ## Visual rework
 Bars on Risky Starts and rank chips plus status colours on Start/Sit, one-hue thirds scale shared through `rankBand`. Fit still needs the lead's real-data render; adjust `RISKY_TILE_LIMIT` or `START_SIT_ROW_LIMIT` if it clips.
+
+## TJ review rework
+Shared winner rule, Risky Starts to the mockup (`~/Desktop/Untitled-1.png`), Start/Sit green and red chips with logos and triangle. Removed the blue `RANK_BANDS`. Fit needs the lead's real-data render.

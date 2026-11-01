@@ -107,3 +107,12 @@ Project `fyhftlxokyjtpndbkfse`, Supabase MCP `execute_sql`, 2026-10-31. Every st
 - **Known reading point:** a weak PK is flagged from the bottom of the league, so its bar is short and pale on a flagged row. It was not inverted, so length means the same thing on every bar. The flagged row's bold text carries the signal.
 - **Checks:** lane tests and `sharedGoalieOutlook` pass; full tsc with the larger heap exit 0; eslint clean; CSS pure check passed; spec `--list` shows 4 tests. **Browser not run. Fit at 860px is estimated, not measured:** about 206px a tile (30px a pairing at 4 pairs) and about 45px a Start/Sit row.
 - **Not this lane:** `lib/player-cards/cardEvidenceVerdict.test.ts` fails in the shared checkout, in a file with another lane's uncommitted edits.
+
+## TJ review rework (winner rule, home and away, mockup)
+
+- **Winner rule:** `headToHeadWinner`, `strengthRank` and `strengthShare` in `goalieInventory.sources.ts`, used by both cards. Every metric ranks #1 at its highest value (checked in `buildTeamLenses`). SA, xGA, SCA, GA and TSH/GP convert to `cohort - rank + 1`; SF, xGF, SCF, GF, PP%, PK% and GD/GP keep their rank. Equal strength or a missing side has no winner.
+- **Risky Starts:** built to TJ's mockup (`~/Desktop/Untitled-1.png`). The actual home team is on the left whichever team the tile is for. The mockup's sample put CAR's numbers under WPG, which this corrects.
+- **Choices against the mockup:** bar length is strength, not raw rank, so the longer bar always agrees with the triangle. Raw length would contradict it, for example xGF #10 against xGA #5. Text is white rather than dark because dark text is unreadable where a short bar ends. The printed ordinal stays the real league rank, 1ST = highest.
+- **Opposing goalies:** read from the other team's row in the inventory. If there are none, the side shows "No goalie listed". The tile's own team has white names; the opponent's are muted.
+- **Start/Sit:** winner green, loser red, tie and missing plain. Logos and triangle sit between the chips. Goalie, status and forecast columns narrowed.
+- **Checks:** see the commit report. **Browser not run; fit at 860px is estimated.** About 206px per tile; 4 pairings get at least 20px each even with 4 wrapped goalie lines. Start/Sit lens cells take about 165px, leaving about 460px for the other five columns.

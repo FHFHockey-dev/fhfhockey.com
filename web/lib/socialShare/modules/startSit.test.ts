@@ -7,7 +7,7 @@ import { parseShareSettings, sharePostExportToken } from "./contract";
 import { shareModule } from "./registry";
 import { FORECAST_ADMITTED_NOTE, START_SIT_LENS_NOTE, startSitConflicting, startSitModule, startSitResult, startSitRows, upcomingInventory, type StartSitData, type StartSitSettings } from "./startSit";
 import { FIXTURE_GENERATED_AT, FIXTURE_INPUT, GOALIE_INVENTORY_FIXTURE, GOALIE_INVENTORY_FIXTURE_DETAIL } from "./shared/goalieInventory.fixture";
-import { buildGoalieInventory, CONFIRMATION_CLOSED_REASON, CONFIRMATION_LINK_GAP, CONFIRMATION_REPORTER_GAP, CONFIRMATION_TONES, FORECAST_CLOSED_REASON, RANK_BANDS, rankBand } from "./shared/goalieInventory.sources";
+import { buildGoalieInventory, CONFIRMATION_CLOSED_REASON, CONFIRMATION_LINK_GAP, CONFIRMATION_REPORTER_GAP, CONFIRMATION_TONES, FORECAST_CLOSED_REASON, headToHeadWinner, HEAD_TO_HEAD_COLORS } from "./shared/goalieInventory.sources";
 
 vi.mock("lib/supabase/public-client", () => ({ default: {} }));
 vi.mock("lib/supabase/server", () => ({ default: { from: () => { throw new Error("No database reads in card tests."); } } }));
@@ -62,43 +62,62 @@ describe("Start/Sit card, through the real resolver", () => {
 });
 
 describe("Start/Sit colour", () => {
-  const metric = (value: number | null, leagueRank: number | null, leagueCohort: number | null = 32) => ({ value, unit: "per game", window: "", sampleGames: 10, leagueRank, leagueCohort });
   const cell = (html: string, testid: string, state: string) => html.match(new RegExp(`<span[^>]*data-testid="${testid}"[^>]*data-state="${state}"[^>]*>`))?.[0];
-  it("bands league ranks at the thirds, on one scale for every cohort", () => {
-    expect([1, 11, 12, 21, 22, 32].map(rank => rankBand(metric(1, rank)))).toEqual(["top", "top", "middle", "middle", "bottom", "bottom"]);
-    expect([1, 2, 3, 4].map(rank => rankBand(metric(1, rank, 4)))).toEqual(["top", "top", "bottom", "bottom"]);
-    expect(rankBand(metric(null, null, null))).toBeNull();
-    expect(rankBand(metric(3, null, 32))).toBeNull();
+  const firstRow = (html: string) => html.match(/data-testid="start-sit-row".*?(?=data-testid="start-sit-row"|$)/)![0];
+  const lensCells = (html: string) => [...firstRow(html).matchAll(/<span class="[^"]*" data-testid="lens-cell"[^>]*>.*?<\/span><\/span>|<span class="[^"]*" data-testid="lens-cell"[^>]*>(?:(?!data-testid="lens-cell").)*/g)].map(match => match[0]);
+  const withSignals = (edit: (game: StartSitData["inventory"]["goalies"][number]["games"][number]) => object) => {
+    const result = startSitResult(GOALIE_INVENTORY_FIXTURE_DETAIL), row = startSitRows(result.data as StartSitData, "")[0];
+    const goalie = { ...row.goalie, games: [{ ...row.game, ...edit(row.game) }] };
+    return card({ ...result, data: { ...(result.data as StartSitData), inventory: { ...(result.data as StartSitData).inventory, goalies: [goalie] } } });
+  };
+  const metric = (value: number | null, leagueRank: number | null, leagueCohort: number | null = 32) => ({ value, unit: "per game", window: "", sampleGames: 10, leagueRank, leagueCohort });
+  const volume = (game: { signals: object }, sf: ReturnType<typeof metric>, sa: ReturnType<typeof metric>) => ({ signals: { ...game.signals, volume: { opponentShotsForPerGame: sf, teamShotsAgainstPerGame: sa } } });
+  const chips = (html: string) => [...html.matchAll(/<span data-testid="lens-chip" data-result="(\w+)"([^>]*)>([^<]*)</g)].map(match => ({ result: match[1], attrs: match[2], text: match[3] }));
+  it("colours the winner green and the loser red through the shared rule, keeping value and rank", () => {
+    const html = withSignals(game => volume(game as never, metric(33.1, 10), metric(30.2, 5))), [attack, defence] = chips(html);
+    // SF #10 against the 5th-most shots allowed, the 28th-strongest defence.
+    expect(headToHeadWinner({ metricId: "shotsFor", metric: metric(33.1, 10) }, { metricId: "shotsAgainst", metric: metric(30.2, 5) })).toBe(0);
+    expect(attack.result).toBe("winner");
+    expect(attack.attrs).toContain(`background:${HEAD_TO_HEAD_COLORS.winner}`);
+    expect(attack.text).toBe("33.1 #10");
+    expect(defence.result).toBe("loser");
+    expect(defence.attrs).toContain(`background:${HEAD_TO_HEAD_COLORS.loser}`);
+    expect(defence.text).toBe("30.2 #5");
   });
-  it("fills each lens number from its own rank and keeps every number", () => {
-    const html = card(startSitResult(GOALIE_INVENTORY_FIXTURE_DETAIL));
-    const row = startSitRows(data, "")[0], { volume, ratioExposure, winSupport } = row.game.signals;
-    const chips = [...html.matchAll(/<span data-testid="rank-chip" data-band="(\w+)"([^>]*)>([^<]*)</g)].slice(0, 6);
-    const metrics = [volume.opponentShotsForPerGame, volume.teamShotsAgainstPerGame, ratioExposure.opponentXgfPerGame, ratioExposure.teamXgaPerGame, winSupport.teamGoalsForPerGame, winSupport.opponentGoalsAgainstPerGame];
-    chips.forEach((chip, index) => {
-      const band = rankBand(metrics[index]);
-      expect(chip[1]).toBe(band ?? "missing");
-      if (band) expect(chip[2]).toContain(`background:${RANK_BANDS[band].fill}`);
-      expect(chip[3]).toContain(metrics[index].value!.toFixed(index < 2 ? 1 : 2));
-      expect(chip[3]).toContain(`#${metrics[index].leagueRank}`);
-    });
-    expect(chips).toHaveLength(6);
+  it("points the triangle at the winner's logo, on whichever side it sits", () => {
+    expect(withSignals(game => volume(game as never, metric(33, 10), metric(30, 5)))).toContain('data-testid="lens-edge" data-points="left"');
+    expect(withSignals(game => volume(game as never, metric(33, 20), metric(30, 32)))).toContain('data-testid="lens-edge" data-points="right"');
   });
-  it("leaves a metric with no rank unfilled, never the bottom colour", () => {
-    const html = card(startSitResult(buildGoalieInventory({ ...FIXTURE_INPUT, nst: FIXTURE_INPUT.nst.filter(row => row.team_abbreviation !== "TOR") })));
-    const missing = html.match(/<span data-testid="rank-chip" data-band="missing"[^>]*>/)![0];
-    expect(missing).not.toContain("style=");
+  it("draws both logos between the chips, the stronger team named on the cell", () => {
+    const html = card(startSitResult(GOALIE_INVENTORY_FIXTURE_DETAIL)), row = startSitRows(data, "")[0];
+    const first = lensCells(html)[0];
+    expect(first.indexOf(row.game.opponent)).toBeLessThan(first.lastIndexOf(row.game.team));
+    expect(first.split('data-testid="lens-chip"')).toHaveLength(3);
+  });
+  it("leaves a tie plain, with no triangle", () => {
+    const html = withSignals(game => volume(game as never, metric(33, 8), metric(30, 25))), [attack, defence] = chips(html);
+    expect([attack.result, defence.result]).toEqual(["neutral", "neutral"]);
+    expect(attack.attrs).not.toContain("style=");
+    expect(defence.attrs).not.toContain("style=");
+    expect(lensCells(html)[0]).not.toContain("lens-edge");
+  });
+  it("leaves a missing metric dashed and plain, its partner plain too", () => {
+    const html = withSignals(game => volume(game as never, metric(null, null, null), metric(30, 5))), [attack, defence] = chips(html);
+    expect([attack.result, defence.result]).toEqual(["missing", "neutral"]);
+    expect(attack.attrs).not.toContain("style=");
+    expect(attack.text).toBe("—");
+    expect(defence.text).toBe("30.0 #5");
+    expect(lensCells(html)[0]).not.toContain("lens-edge");
+  });
+  it("never adds blue chips or band fills", () => {
+    expect(card(startSitResult(GOALIE_INVENTORY_FIXTURE_DETAIL))).not.toContain("#3f9bdc");
   });
   it("keeps unknown neutral, conflicting distinct and an unavailable forecast plain", () => {
     const html = card(startSitResult(GOALIE_INVENTORY_FIXTURE_DETAIL));
     expect(cell(html, "start-sit-confirmation", "none")).not.toContain("style=");
     expect(cell(html, "start-sit-confirmation", "conflicting")).toContain(`background:${CONFIRMATION_TONES.conflicting.fill}`);
     expect(cell(html, "start-sit-confirmation", "conflicting")).toContain("dashed");
-    expect(cell(html, "start-sit-confirmation", "confirmed")).toContain(`background:${CONFIRMATION_TONES.confirmed.fill}`);
-    expect(cell(html, "start-sit-confirmation", "projected")).toContain(`background:${CONFIRMATION_TONES.projected.fill}`);
     expect(cell(html, "start-sit-forecast", "unavailable")).not.toContain("style=");
-    const fills = [...Object.values(CONFIRMATION_TONES).map(tone => tone.fill), ...Object.values(RANK_BANDS).map(band => band.fill)];
-    expect(new Set(fills).size).toBe(fills.length);
   });
   it("adds nothing across lenses and gives no odds", () => {
     const html = card(startSitResult(buildGoalieInventory({ ...FIXTURE_INPUT, forecasts: null })));

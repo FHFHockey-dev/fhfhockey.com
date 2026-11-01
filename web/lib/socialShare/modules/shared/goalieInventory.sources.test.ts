@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { resolveDailyBoardEvidence, type BoardConflict, type BoardGoalieEvidence } from "lib/projections/dailyBoardEvidence";
 import { GOALIE_INVENTORY_VERSION, type GoalieInventory, type LoadGoalieInventory, type SearchGoalieInventory } from "./goalieInventory";
 import { FIXTURE_GENERATED_AT, FIXTURE_INPUT, FIXTURE_TEAMS, GOALIE_INVENTORY_FIXTURE } from "./goalieInventory.fixture";
-import { admitStartParticipation, buildGoalieInventory, buildTeamLenses, CONFIRMATION_ABSENT_NOTE, CONFIRMATION_CLOSED_REASON, CONFIRMATION_LINK_GAP, CONFIRMATION_REPORTER_GAP, confirmationFreshness, confirmationLabel, FORECAST_CLOSED_REASON, INVENTORY_OBSERVATION_COLUMNS, inventoryWindow, loadGoalieInventory, loadGoalieInventoryDetail, mapBoardEvidence, observationGaps, searchGoalieInventory, type InventoryForecastInput } from "./goalieInventory.sources";
+import { admitStartParticipation, buildGoalieInventory, buildTeamLenses, CONFIRMATION_ABSENT_NOTE, CONFIRMATION_CLOSED_REASON, CONFIRMATION_LINK_GAP, CONFIRMATION_REPORTER_GAP, confirmationFreshness, confirmationLabel, FORECAST_CLOSED_REASON, INVENTORY_OBSERVATION_COLUMNS, inventoryWindow, loadGoalieInventory, loadGoalieInventoryDetail, mapBoardEvidence, observationGaps, searchGoalieInventory, type InventoryForecastInput , headToHeadWinner, strengthRank, strengthShare, type TeamLensMetric } from "./goalieInventory.sources";
 
 vi.mock("lib/supabase/public-client", () => ({ default: { from: () => { throw new Error("The inventory test must never reach Supabase."); } } }));
 const serverRead = vi.hoisted(() => ({ tables: [] as string[], from: null as null | ((table: string) => unknown) }));
@@ -305,5 +305,46 @@ describe("live loader, injected client", () => {
     const { inventory } = await loadGoalieInventoryDetail(fakeClient(read), { ...request, through: "2026-12-31" });
     expect(inventory.state).toBe("missing");
     expect(read).toEqual([]);
+  });
+});
+
+describe("head-to-head winner rule", () => {
+  const metric = (leagueRank: number | null, value: number | null = 1, leagueCohort: number | null = 32) => ({ value, unit: "per game", window: "", sampleGames: 10, leagueRank, leagueCohort });
+  const side = (metricId: TeamLensMetric, rank: number | null, value: number | null = 1) => ({ metricId, metric: metric(rank, value) });
+  it.each(["shotsFor", "xgf", "chancesFor", "goalsFor", "powerPlayPct", "penaltyKillPct", "goalDifferential"] as const)("keeps %s's rank, the highest value being strongest", metricId => {
+    expect(strengthRank(side(metricId, 1))).toBe(1);
+    expect(strengthRank(side(metricId, 32))).toBe(32);
+    expect(strengthShare(side(metricId, 1))).toBe(1);
+  });
+  it.each(["shotsAgainst", "xga", "chancesAgainst", "goalsAgainst", "timesShorthanded"] as const)("turns %s around, the team with the most being weakest", metricId => {
+    expect(strengthRank(side(metricId, 1))).toBe(32);
+    expect(strengthRank(side(metricId, 32))).toBe(1);
+    expect(strengthShare(side(metricId, 1))).toBe(1 / 32);
+  });
+  it("picks the stronger side in both orders", () => {
+    // xGF #10 against the 5th-most xGA, the 28th-strongest defence: the attack wins, though 5 is the lower number.
+    expect(headToHeadWinner(side("xgf", 10), side("xga", 5))).toBe(0);
+    expect(headToHeadWinner(side("xga", 5), side("xgf", 10))).toBe(1);
+    // SF #20 against the fewest shots allowed, the strongest defence.
+    expect(headToHeadWinner(side("shotsFor", 20), side("shotsAgainst", 32))).toBe(1);
+    // The best PK beats a middling power play, and the worst PK loses to it.
+    expect(headToHeadWinner(side("powerPlayPct", 16), side("penaltyKillPct", 1))).toBe(1);
+    expect(headToHeadWinner(side("powerPlayPct", 16), side("penaltyKillPct", 32))).toBe(0);
+    // Shorthanded the most is weak; the least is strong.
+    expect(headToHeadWinner(side("powerPlayPct", 16), side("timesShorthanded", 1))).toBe(0);
+    expect(headToHeadWinner(side("powerPlayPct", 16), side("timesShorthanded", 32))).toBe(1);
+    expect(headToHeadWinner(side("goalsFor", 3), side("goalsAgainst", 31))).toBe(1);
+  });
+  it("has no winner at equal strength", () => {
+    expect(headToHeadWinner(side("xgf", 8), side("xga", 25))).toBeNull();
+    expect(headToHeadWinner(side("powerPlayPct", 8), side("penaltyKillPct", 8))).toBeNull();
+  });
+  it("has no winner with a missing value or rank, on either side", () => {
+    for (const missing of [side("xga", null), side("xga", 4, null), { metricId: "xga" as const, metric: metric(4, 1, null) }]) {
+      expect(strengthRank(missing)).toBeNull();
+      expect(strengthShare(missing)).toBeNull();
+      expect(headToHeadWinner(side("xgf", 1), missing)).toBeNull();
+      expect(headToHeadWinner(missing, side("xgf", 1))).toBeNull();
+    }
   });
 });
