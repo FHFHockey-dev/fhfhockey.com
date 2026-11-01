@@ -36,3 +36,5 @@
 **Next:** the lead runs the E2E spec and the full-season loaders at the render step.
 
 **Blockers:** none.
+
+- Last Nights Standouts: new module, sources, test, card, panel, scss, E2E spec, plus the barrel. Reads are R8 and R9 in the receipt. Browser run and full-slate loader are the lead's. Rolling had 72 of 360 line slots for 10-31 at read time, so Line chips depend on that writer finishing.

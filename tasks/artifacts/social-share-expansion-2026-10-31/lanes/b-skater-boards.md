@@ -234,3 +234,22 @@ Points-First top 15, L10 (SQL using the same formula; the builder itself has not
 Top 15 now (SQL using the same formula; the builder has not run on the full season): Dahlin, Jones, Pionk, Suzuki, Stützle, Batherson, Hagel, Tuch, McAvoy (P85.2), Tkachuk, Sanderson, Bouchard, Schaefer, Holloway, Benson. Seider, Werenski and Neighbours leave; Schaefer, Holloway and Benson come in. 7 of 15 are defensemen, and 8 of the 15 are below P50 in hits or blocks.
 
 **Checks:** 91 tests in the lane's 3 files passed, eslint clean, `tsc` printed no errors, `--list` found 11 tests. No browser run.
+
+## Last Nights Standouts (TJ's request)
+
+- **Post:** one module, id `last-nights-standouts`, with five views. Under X% and No roster limit are built by hand in the sidebar and start blank. Goalies, Top forwards and Top defensemen rank themselves. The headline is fixed and a banner names the view and the slate date.
+- **Slate:** the newest date with skater rows, through yesterday in New York. A scheduled game with no result or no player rows makes the edition partial, so it cannot export.
+- **Baseline:** each skater's games before the slate, per game; last night is never in it. NHL.com windows must be complete, NST windows need the Min NST coverage field (default 90%), and xG% is pooled. Fewer than Min prior GP (default 3, my addition), a missing baseline or a zero baseline prints "—".
+- **xG and xG%:** xG is What Changed's individual ixG; xG% is its on-ice xGF%. The xG% change is a relative percent like the others: 75.0 against 50.0 prints +50%.
+- **Proposed default sorts, for TJ's review:** forwards and defensemen by points, then SOG, xG, TOI, with a Rank by field, top 8. Goalies by SV%, then saves, among those with 15+ shots against (a field), top 12.
+- **Card limit:** 8 skaters, printed in the sidebar; a ninth is disabled.
+- **Goalies:** no Line or PP chips and no goal line, since those are skater context. Missing GSAx prints "—" and the legend says how many; that does not block export, so a lagging NST table cannot hold the card back.
+- **Line chips will often print "Line —" in the morning:** see R8. `rolling_player_game_metrics` had 92 of 360 rows for 10-31 at read time, 72 of them with a line, while earlier dates are complete. The chip follows the table; PP chips had all 10 games.
+- **Duplicated, not shared:** the NST season read and the Yahoo read are copied into the post's own sources file, because `whatChanged.sources.ts` does not export its reader and this ticket stayed in new files.
+
+| # | Statement | Tables read | Rows returned | Result |
+| --- | --- | --- | --- | --- |
+| R8 | Slate coverage for 2026-10-31 through MCP `execute_sql` on 2026-11-01 | `wgo_skater_stats`, `games`, `wgo_team_stats`, `nst_gamelog_as_counts`, `nst_gamelog_as_counts_oi`, `rolling_player_game_metrics`, `powerPlayCombinations`, `wgo_goalie_stats`, `nst_gamelog_goalie_all_counts` | 0 sample rows (1 aggregate row, then 6 per-date rolling rows) | Passed. 360 skaters, 10 of 10 games, 360 NST matches, 20 goalies with 20 NST rows, rolling 92 rows, 72 with a line, PP rows for 10 of 10 games |
+| R9 | Top 8 forwards by the default sort, with the SOG baseline before the slate | `wgo_skater_stats` | 8 per-player rows | Passed. Baseline and percent arithmetic behave as the builder's on real rows |
+
+R9, for the default: Crosby 1G-2A-3P-1PPP, Anderson 2G-1A-3P, Kucherov 0G-3A-3P, Frondell 2G-0A-2P-1PPP (9 SOG, +484%), Thompson, Stützle, Bedard, Kreider. The loader has not run on the full slate; it is the lead's to run at the render step.

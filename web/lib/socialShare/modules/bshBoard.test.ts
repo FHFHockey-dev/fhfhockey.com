@@ -251,7 +251,7 @@ describe("BSH card", () => {
     expect(sharePostExportBlock(bshBoardModule, snapshot(data!, settings()), settings())).toBeNull();
   });
   it("is registered with no calendar and states its basis", () => {
-    expect(skaterBoardModules.map(entry => entry.id)).toEqual(["bsh-board", "category-blueprint", "nightly-floor", "multi-cat-stars"]);
+    expect(skaterBoardModules.map(entry => entry.id)).toEqual(["bsh-board", "category-blueprint", "nightly-floor", "multi-cat-stars", "last-nights-standouts"]);
     for (const entry of skaterBoardModules) { expect(entry.basis).toBe("observed"); expect(entry.suggestedUse).toMatch(/any day/); expect(entry.fields.some(field => field.kind === "date")).toBe(false); }
   });
 });

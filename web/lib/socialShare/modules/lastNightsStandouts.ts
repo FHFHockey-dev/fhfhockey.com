@@ -1,0 +1,245 @@
+import { defineShareModule, shareSettingsKey, type ShareSettingField, type SharePostLoadResult, type SharePostSource } from "./contract";
+import { toNstGoalieGames, type NstGsaxRow } from "./goalieGsax";
+import { roleSlotReader, type RoleEvidence, type RoleSlot } from "./roleWatch";
+import { ownershipOf, pooledSavePct, type OwnershipState } from "./shared/definitions";
+import type { GoalieAppearance } from "./shared/goalieLedger";
+import { appearancesByPlayer, type SkaterAppearance } from "./shared/skaterAppearances";
+import { coverageAdmits, formatSeconds, joinNst, WHAT_CHANGED_METRICS, type NstCountRow, type NstOnIceRow, type WhatChangedMetricId } from "./whatChanged";
+
+/**
+ * Last Nights Standouts: what happened on the latest completed slate, against each player's own season per game before it.
+ * Views 1 and 2 are built by hand in the sidebar and start blank. Views 3 to 5 rank themselves. Observed only, no forecast.
+ */
+export type StandoutView = "under" | "all" | "goalies" | "forwards" | "defensemen";
+export type StandoutStatId = "sog" | "toi" | "icf" | "iscf" | "xg" | "xgPct" | "ppToi";
+export type StandoutSortKey = "points" | StandoutStatId;
+export type StandoutSortMode = "value" | "jump";
+export type LastNightsStandoutsSettings = { view: StandoutView; rosterMax: number; rankBy: StandoutSortKey; minShotsAgainst: number; minPriorGp: number; minCoverage: number; picks: string };
+
+/** What fits the 860px body: two lines a skater, and one table line a goalie. The sidebar prints the skater limit. */
+export const STANDOUT_MAX_ROWS = 8;
+export const STANDOUT_GOALIE_ROWS = 12;
+
+const STAT_METRICS: readonly { id: StandoutStatId; label: string; metric: WhatChangedMetricId }[] = [
+  { id: "sog", label: "SOG", metric: "shots" }, { id: "toi", label: "TOI", metric: "toi" }, { id: "icf", label: "iCF", metric: "icf" }, { id: "iscf", label: "iSCF", metric: "iscf" },
+  { id: "xg", label: "xG", metric: "ixg" }, { id: "xgPct", label: "xG%", metric: "xgfPct" }, { id: "ppToi", label: "PPTOI", metric: "ppToi" },
+];
+export const STANDOUT_STAT_LABELS = Object.fromEntries(STAT_METRICS.map(stat => [stat.id, stat.label])) as Record<StandoutStatId, string>;
+export const STANDOUT_SORT_OPTIONS: readonly { value: StandoutSortKey; label: string }[] = [{ value: "points", label: "Points" }, ...STAT_METRICS.map(stat => ({ value: stat.id, label: stat.label }))];
+export const isHandBuilt = (view: StandoutView) => view === "under" || view === "all";
+export const isGoalieView = (view: StandoutView) => view === "goalies";
+
+const metricOf = (id: WhatChangedMetricId) => WHAT_CHANGED_METRICS.find(metric => metric.id === id)!;
+type Metric = typeof WHAT_CHANGED_METRICS[number];
+type JoinedGame = Parameters<Metric["read"]>[0];
+
+/** One game's value. A null is missing, never zero; an xG% with no xG either way has no value. */
+function gameValue(metric: Metric, game: JoinedGame) {
+  const value = metric.read(game);
+  if (value === null || typeof value === "number") return value;
+  return value.for + value.against > 0 ? value.for * 100 / (value.for + value.against) : null;
+}
+/** Per game over the games before the slate; xG% is pooled. NHL.com windows must be complete and NST windows must meet the post's coverage. */
+function baselineOf(metric: Metric, prior: readonly JoinedGame[], settings: Pick<LastNightsStandoutsSettings, "minCoverage" | "minPriorGp">) {
+  if (prior.length < settings.minPriorGp) return null;
+  let observed = 0, sum = 0, against = 0;
+  for (const game of prior) {
+    const value = metric.read(game);
+    if (value === null) continue;
+    observed++;
+    if (typeof value === "number") sum += value; else { sum += value.for; against += value.against; }
+  }
+  if (!coverageAdmits(observed, prior.length, metric.source === "wgo" ? 100 : settings.minCoverage)) return null;
+  if (metric.kind === "share") return sum + against > 0 ? sum * 100 / (sum + against) : null;
+  return sum / observed;
+}
+/** A zero or missing baseline has no percent change. */
+export const percentChange = (last: number | null, baseline: number | null) => last === null || baseline === null || baseline === 0 ? null : (last - baseline) * 100 / baseline;
+export function percentLabel(change: number | null) {
+  if (change === null) return "—";
+  const whole = Math.round(change);
+  return whole > 0 ? `+${whole}%` : whole < 0 ? `−${-whole}%` : "0%";
+}
+
+export type StandoutStat = { id: StandoutStatId; label: string; last: number | null; baseline: number | null; change: number | null };
+export function statText(stat: Pick<StandoutStat, "id" | "last">) {
+  if (stat.last === null) return "—";
+  if (stat.id === "toi" || stat.id === "ppToi") return formatSeconds(stat.last);
+  if (stat.id === "xgPct") return `${stat.last.toFixed(1)}%`;
+  return stat.id === "xg" ? stat.last.toFixed(2) : String(stat.last);
+}
+/** Exactly `1G-2A-3P-2PPP`, with PPP only above zero. A missing goal, assist or point is no line at all. */
+export function goalLine(game: { goals: number | null; assists: number | null; points: number | null; ppPoints: number | null }) {
+  if (game.goals === null || game.assists === null || game.points === null) return "—";
+  return `${game.goals}G-${game.assists}A-${game.points}P${game.ppPoints !== null && game.ppPoints > 0 ? `-${game.ppPoints}PPP` : ""}`;
+}
+export const lineChipText = (role: RoleSlot) => role.line === "unknown" ? "Line —" : role.line;
+export const ppChipText = (role: RoleSlot) => role.pp === "unknown" ? "PP —" : role.pp === "off" ? "Off PP" : `PP${role.pp}`;
+
+export type StandoutSkater = {
+  playerId: number; name: string | null; position: string | null; group: "F" | "D" | null; team: string | null; opponent: string | null;
+  ownership: OwnershipState; role: RoleSlot; goalLine: string; points: number | null; priorGames: number; stats: StandoutStat[];
+};
+export type StandoutGoalie = {
+  goalieId: number; name: string | null; team: string; opponent: string | null; started: boolean | null; ownership: OwnershipState;
+  saves: number | null; shotsAgainst: number | null; goalsAgainst: number | null; savePct: number | null; toiSeconds: number | null;
+  /** NST's xG against less its goals against, for this game. Null until NST has this goalie's row. */
+  gsax: number | null;
+};
+export type LastNightsStandoutsData = {
+  applied: string; view: StandoutView; slate: string; games: number;
+  skaters: StandoutSkater[]; goalies: StandoutGoalie[];
+};
+
+export const parsePicks = (picks: string) => [...new Set(picks.split(",").map(text => text.trim()).filter(text => /^\d+$/.test(text)).map(Number))];
+/** Adds at the end or removes in place. A pick past the card's limit is refused. */
+export function togglePick(picks: string, playerId: number) {
+  const current = parsePicks(picks);
+  if (current.includes(playerId)) return current.filter(id => id !== playerId).join(",");
+  return current.length >= STANDOUT_MAX_ROWS ? current.join(",") : [...current, playerId].join(",");
+}
+
+/** Who a view can show. "Under X%" is strict, and an unknown rostered % cannot prove it is under. */
+export function standoutPool(data: Pick<LastNightsStandoutsData, "skaters">, settings: Pick<LastNightsStandoutsSettings, "view" | "rosterMax">) {
+  switch (settings.view) {
+    case "under": return data.skaters.filter(row => row.ownership.state === "known" && row.ownership.pct < settings.rosterMax);
+    case "forwards": return data.skaters.filter(row => row.group === "F");
+    case "defensemen": return data.skaters.filter(row => row.group === "D");
+    case "all": return data.skaters;
+    case "goalies": return [];
+  }
+}
+const statOf = (row: StandoutSkater, id: StandoutStatId) => row.stats.find(stat => stat.id === id)!;
+const sortValue = (row: StandoutSkater, key: StandoutSortKey, mode: StandoutSortMode) => key === "points" ? (mode === "value" ? row.points : null) : mode === "value" ? statOf(row, key).last : statOf(row, key).change;
+const highFirst = (a: number | null, b: number | null) => a === b ? 0 : a === null ? 1 : b === null ? -1 : b - a;
+/** Largest first with missing values last, then points, SOG, xG and TOI, so a tie never depends on read order. */
+export function sortStandouts(rows: readonly StandoutSkater[], key: StandoutSortKey, mode: StandoutSortMode) {
+  return [...rows].sort((a, b) => highFirst(sortValue(a, key, mode), sortValue(b, key, mode)) || highFirst(a.points, b.points) || highFirst(statOf(a, "sog").last, statOf(b, "sog").last) || highFirst(statOf(a, "xg").last, statOf(b, "xg").last) || highFirst(statOf(a, "toi").last, statOf(b, "toi").last) || a.playerId - b.playerId);
+}
+/** The card's skaters: picks in pick order, dropping any that no longer meet the view, or the top of an auto-ranked view. */
+export function standoutRows(data: LastNightsStandoutsData, settings: LastNightsStandoutsSettings) {
+  const pool = standoutPool(data, settings);
+  if (!isHandBuilt(settings.view)) return sortStandouts(pool, settings.rankBy, "value").slice(0, STANDOUT_MAX_ROWS);
+  const byId = new Map(pool.map(row => [row.playerId, row]));
+  return parsePicks(settings.picks).flatMap(id => byId.get(id) ?? []).slice(0, STANDOUT_MAX_ROWS);
+}
+/** Ranked by SV% among goalies who faced enough shots to mean something, then by saves. */
+export function goalieRanking(data: Pick<LastNightsStandoutsData, "goalies">, settings: Pick<LastNightsStandoutsSettings, "minShotsAgainst">) {
+  const ranked = data.goalies.filter(row => row.savePct !== null && row.shotsAgainst !== null && row.shotsAgainst >= settings.minShotsAgainst).sort((a, b) => highFirst(a.savePct, b.savePct) || highFirst(a.saves, b.saves) || a.goalieId - b.goalieId);
+  return { rows: ranked.slice(0, STANDOUT_GOALIE_ROWS), qualified: ranked.length };
+}
+
+const FIELDS: readonly ShareSettingField[] = [
+  { id: "view", label: "View", kind: "select", default: "under", options: [{ value: "under", label: "Under X% rostered (by hand)" }, { value: "all", label: "No roster limit (by hand)" }, { value: "goalies", label: "Goalies" }, { value: "forwards", label: "Top forwards" }, { value: "defensemen", label: "Top defensemen" }] },
+  { id: "rosterMax", label: "Under X% rostered", kind: "number", default: 50, min: 1, max: 100, step: 1, clientOnly: true },
+  { id: "rankBy", label: "Rank forwards and defensemen by", kind: "select", default: "points", options: STANDOUT_SORT_OPTIONS, clientOnly: true },
+  { id: "minShotsAgainst", label: "Min shots against (goalies)", kind: "number", default: 15, min: 0, max: 60, step: 1, clientOnly: true },
+  { id: "minPriorGp", label: "Min prior GP for a % change", kind: "number", default: 3, min: 1, max: 82, step: 1 },
+  { id: "minCoverage", label: "Min NST coverage %", kind: "number", default: 90, min: 50, max: 100, step: 1 },
+  { id: "picks", label: "Picks", kind: "text", default: "", maxLength: 80, clientOnly: true, panelOnly: true },
+];
+const SERVER_FIELDS = FIELDS.filter(field => !field.clientOnly);
+export const standoutsCurrent = (data: LastNightsStandoutsData, settings: LastNightsStandoutsSettings) => data.applied === shareSettingsKey(SERVER_FIELDS, settings);
+export const viewTitle = (settings: Pick<LastNightsStandoutsSettings, "view" | "rosterMax">) => ({ under: `Under ${settings.rosterMax}% rostered`, all: "No roster limit", goalies: "Goalies", forwards: "Top forwards", defensemen: "Top defensemen" })[settings.view];
+export const sortLabel = (key: StandoutSortKey) => STANDOUT_SORT_OPTIONS.find(option => option.value === key)!.label;
+export const slateLabel = (slate: string) => new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(`${slate}T12:00:00Z`));
+
+/** Every scheduled game on the slate needs both teams reported and player rows. Anything short is partial, so it cannot export. */
+export function slateCoverage(input: { playerGameIds: readonly number[]; completedTeamGames: readonly { gameId: number }[]; scheduledGameIds: readonly number[] }) {
+  const scheduled = new Set(input.scheduledGameIds), withPlayers = new Set(input.playerGameIds);
+  const completed = input.completedTeamGames.filter(game => scheduled.has(game.gameId));
+  const expected = scheduled.size * 2, observed = completed.length, missing = Math.max(0, expected - observed);
+  const noPlayerRows = [...scheduled].filter(id => !withPlayers.has(id)).length;
+  return { observed, expected, missing, reasons: [...(missing ? [`${missing} of ${expected} scheduled team games on this slate have no reported result.`] : []), ...(noPlayerRows ? [`${noPlayerRows} games on this slate have no player rows.`] : [])] };
+}
+
+const STRENGTH = "All situations; PP TOI on the power play; xG% on ice (NST)";
+export type LastNightsStandoutsInput = {
+  slate: string; season: number; settings: LastNightsStandoutsSettings; completedTeamGames: readonly { gameId: number }[]; scheduledGameIds: readonly number[];
+  ownership: { byPlayer: ReadonlyMap<number, OwnershipState>; updatedAt: string | null };
+  /** Skater views: every game this season of everyone on the slate, the slate included. */
+  appearances?: readonly SkaterAppearance[]; nstCounts?: readonly NstCountRow[]; nstOnIce?: readonly NstOnIceRow[]; role?: RoleEvidence;
+  /** Goalie view: this slate's rows only. */
+  goalies?: readonly GoalieAppearance[]; nstGoalies?: readonly NstGsaxRow[];
+};
+const yahooSource = (input: LastNightsStandoutsInput, known: number, total: number): SharePostSource => ({ name: "Yahoo rostered %", tables: ["yahoo_players", "yahoo_nhl_player_map_read"], state: known < total ? "partial" : "ready", asOf: input.ownership.updatedAt?.slice(0, 10) ?? null, updatedAt: null, reasons: known < total ? [`${total - known} of ${total} have no rostered %.`] : [] });
+
+function buildGoalieView(input: LastNightsStandoutsInput, applied: string): SharePostLoadResult<LastNightsStandoutsData> {
+  const { slate, settings } = input, appearances = (input.goalies ?? []).filter(row => row.date === slate);
+  const nstGames = new Map(toNstGoalieGames(input.nstGoalies ?? [], { season: input.season, through: slate }).filter(game => game.date === slate).map(game => [game.goalieId, game]));
+  const goalies = appearances.map((row): StandoutGoalie => {
+    const game = nstGames.get(row.goalieId), gsax = game && game.xgAgainst !== null && game.goalsAgainst !== null ? Math.round((game.xgAgainst - game.goalsAgainst) * 100) / 100 : null;
+    return { goalieId: row.goalieId, name: row.name, team: row.team, opponent: row.opponent, started: row.started, ownership: input.ownership.byPlayer.get(row.goalieId) ?? ownershipOf(null), saves: row.saves, shotsAgainst: row.shotsAgainst, goalsAgainst: row.goalsAgainst, savePct: pooledSavePct(row.saves, row.shotsAgainst), toiSeconds: row.toiSeconds, gsax };
+  });
+  const coverage = slateCoverage({ playerGameIds: appearances.map(row => row.gameId), completedTeamGames: input.completedTeamGames, scheduledGameIds: input.scheduledGameIds });
+  const wgoGaps = appearances.filter(row => row.saves === null || row.shotsAgainst === null || row.goalsAgainst === null || row.toiSeconds === null).length;
+  const reasons = [...coverage.reasons, ...(wgoGaps ? [`${wgoGaps} goalies on this slate have a missing NHL.com stat.`] : [])];
+  const withGsax = goalies.filter(row => row.gsax !== null).length, knownOwned = goalies.filter(row => row.ownership.state === "known").length;
+  const sources: SharePostSource[] = [
+    { name: "NHL.com", tables: ["wgo_goalie_stats", "wgo_team_stats", "games"], state: reasons.length ? "partial" : "ready", asOf: slate, updatedAt: null },
+    { name: "Natural Stat Trick", tables: ["nst_gamelog_goalie_all_counts"], state: withGsax < goalies.length ? "partial" : "ready", asOf: withGsax ? slate : null, updatedAt: null, reasons: withGsax < goalies.length ? [`NST has no GSAx yet for ${goalies.length - withGsax} of ${goalies.length} goalies on this slate.`] : [] },
+    yahooSource(input, knownOwned, goalies.length),
+  ];
+  return {
+    state: reasons.length ? "partial" : "ready", reasons,
+    data: { applied, view: settings.view, slate, games: input.scheduledGameIds.length, skaters: [], goalies },
+    teams: [...new Set(goalies.map(row => row.team))].sort(),
+    evidence: { sources, sample: `Slate of ${slate}, ${input.scheduledGameIds.length} games. GSAx is NST xG against less NST goals against; it prints — until NST has that goalie's row`, strength: "All situations", cohort: `${goalies.length} goalies on the slate, ${withGsax} with NST GSAx`, coverage: { observed: coverage.observed, expected: coverage.expected, missing: coverage.missing, unit: "team games" } },
+  };
+}
+
+function buildSkaterViews(input: LastNightsStandoutsInput, applied: string): SharePostLoadResult<LastNightsStandoutsData> {
+  const { slate, settings } = input, appearances = input.appearances ?? [], role = roleSlotReader(input.role ?? { rolling: [], pp: [] });
+  const counts = joinNst(appearances, input.nstCounts ?? []), onIce = joinNst(appearances, input.nstOnIce ?? []);
+  const skaters = [...appearancesByPlayer(appearances)].flatMap(([playerId, games]): StandoutSkater[] => {
+    const joined = games.map((game): JoinedGame => ({ ...game, nst: counts(game), onIce: onIce(game) }));
+    const last = joined.find(game => game.date === slate);
+    if (!last) return [];
+    // Last night is never in its own baseline.
+    const prior = joined.filter(game => game.date < slate);
+    return [{ playerId, name: last.name, position: last.position, group: last.group, team: last.team, opponent: last.opponent, ownership: input.ownership.byPlayer.get(playerId) ?? ownershipOf(null), role: role(playerId, last.gameId), goalLine: goalLine(last), points: last.points, priorGames: prior.length,
+      stats: STAT_METRICS.map(stat => {
+        const metric = metricOf(stat.metric), value = gameValue(metric, last), baseline = baselineOf(metric, prior, settings);
+        return { id: stat.id, label: stat.label, last: value, baseline, change: percentChange(value, baseline) };
+      }) }];
+  });
+  const slateGames = appearances.filter(game => game.date === slate);
+  const coverage = slateCoverage({ playerGameIds: slateGames.map(game => game.gameId), completedTeamGames: input.completedTeamGames, scheduledGameIds: input.scheduledGameIds });
+  const wgoGaps = slateGames.filter(game => [game.goals, game.assists, game.points, game.shots, game.toiSeconds, game.ppToiSeconds].some(value => value === null)).length;
+  const reasons = [...coverage.reasons, ...(wgoGaps ? [`${wgoGaps} skaters on this slate have a missing NHL.com stat.`] : [])];
+  const nstGaps = skaters.filter(row => (["icf", "iscf", "xg", "xgPct"] as const).some(id => statOf(row, id).last === null)).length;
+  const unknownLines = skaters.filter(row => row.role.line === "unknown").length, unknownPp = skaters.filter(row => row.role.pp === "unknown").length;
+  const knownOwned = skaters.filter(row => row.ownership.state === "known").length;
+  const sources: SharePostSource[] = [
+    { name: "NHL.com", tables: ["wgo_skater_stats", "wgo_team_stats", "games"], state: reasons.length ? "partial" : "ready", asOf: slate, updatedAt: null },
+    { name: "Natural Stat Trick", tables: ["nst_gamelog_as_counts", "nst_gamelog_as_counts_oi"], state: nstGaps ? "partial" : "ready", asOf: nstGaps === skaters.length ? null : slate, updatedAt: null, reasons: nstGaps ? [`${nstGaps} of ${skaters.length} skaters have a missing NST value on this slate.`] : [] },
+    { name: "FHFH lines and PP units", tables: ["rolling_player_game_metrics", "powerPlayCombinations"], state: unknownLines || unknownPp ? "partial" : "ready", asOf: slate, updatedAt: null, reasons: [...(unknownLines ? [`${unknownLines} of ${skaters.length} line slots are not written yet.`] : []), ...(unknownPp ? [`${unknownPp} of ${skaters.length} PP slots have no rows.`] : [])] },
+    yahooSource(input, knownOwned, skaters.length),
+  ];
+  return {
+    state: reasons.length ? "partial" : "ready", reasons,
+    data: { applied, view: settings.view, slate, games: input.scheduledGameIds.length, skaters, goalies: [] },
+    teams: [...new Set(skaters.flatMap(row => row.team ? [row.team] : []))].sort(),
+    evidence: { sources, sample: `Slate of ${slate}, ${input.scheduledGameIds.length} games. Each % compares that game with the skater's own season per game before it, last night excluded, with ${settings.minPriorGp}+ prior GP; xG% is pooled. A zero or missing baseline prints —${isHandBuilt(settings.view) ? ". Skaters on this card are chosen by hand" : ""}`, strength: STRENGTH, cohort: `${skaters.length} skaters on the slate: ${skaters.filter(row => row.group === "F").length} F, ${skaters.filter(row => row.group === "D").length} D`, coverage: { observed: coverage.observed, expected: coverage.expected, missing: coverage.missing, unit: "team games" } },
+  };
+}
+export function buildLastNightsStandouts(input: LastNightsStandoutsInput): SharePostLoadResult<LastNightsStandoutsData> {
+  const applied = shareSettingsKey(SERVER_FIELDS, input.settings);
+  return isGoalieView(input.settings.view) ? buildGoalieView(input, applied) : buildSkaterViews(input, applied);
+}
+
+const altSkater = (row: StandoutSkater) => `${row.name ?? `Player ${row.playerId}`} ${row.goalLine}, ${lineChipText(row.role)}, ${ppChipText(row.role)}: ${row.stats.map(stat => `${stat.label} ${statText(stat)} (${percentLabel(stat.change)})`).join(", ")}`;
+const altGoalie = (row: StandoutGoalie) => `${row.name ?? `Goalie ${row.goalieId}`}: ${row.saves ?? "—"} saves on ${row.shotsAgainst ?? "—"} shots, ${row.goalsAgainst ?? "—"} GA, GSAx ${row.gsax ?? "—"}`;
+export const lastNightsStandoutsModule = defineShareModule<LastNightsStandoutsSettings, LastNightsStandoutsData>({
+  id: "last-nights-standouts", title: "Last Nights Standouts", summary: "Observed results from the latest completed slate, each against that player's own season per game before it. Two views are built by hand.", group: "skaters", basis: "observed",
+  suggestedUse: "Fits any day after a slate.",
+  fields: FIELDS,
+  load: () => import("./lastNightsStandouts.sources").then(sources => sources.loadLastNightsStandouts),
+  card: () => import("components/SocialShare/modules/LastNightsStandoutsCard").then(card => card.default),
+  panel: () => import("components/SocialShare/modules/LastNightsStandoutsPanel").then(panel => panel.default),
+  hasRows: (data, settings) => standoutsCurrent(data, settings) && (isGoalieView(settings.view) ? goalieRanking(data, settings).rows.length : standoutRows(data, settings).length) > 0,
+  altText: (snapshot, data, settings) => {
+    const rows = isGoalieView(settings.view) ? goalieRanking(data, settings).rows.map(altGoalie) : standoutRows(data, settings).map(altSkater);
+    return `FHFH Last Nights Standouts, ${viewTitle(settings)}, ${data.slate}. ${rows.join("; ") || "No one on the card yet"}. ${snapshot.evidence.sample}. ${snapshot.evidence.cohort}.`;
+  },
+});
