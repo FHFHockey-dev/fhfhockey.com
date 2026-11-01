@@ -1,5 +1,5 @@
 import type { SharePostCardProps } from "lib/socialShare/modules/contract";
-import { confirmationFreshness, confirmationSourceLabel, CONFIRMATION_TONES, headToHeadWinner, HEAD_TO_HEAD_COLORS, metricLabel, rankedSide, type RankedSide, type TeamLensMetric } from "lib/socialShare/modules/shared/goalieInventory.sources";
+import { confirmationFreshness, confirmationSourceLabel, CONFIRMATION_TONES, headToHeadWinner, HEAD_TO_HEAD_COLORS, metricLabel, NO_UPCOMING_LABEL, rankedSide, type RankedSide, type TeamLensMetric } from "lib/socialShare/modules/shared/goalieInventory.sources";
 import type { InventoryMetric } from "lib/socialShare/modules/shared/goalieInventory";
 import { START_SIT_ROW_LIMIT, startSitConflicting, startSitForecastLabel, startSitRows, startSitStatusLabel, type StartSitData, type StartSitSettings } from "lib/socialShare/modules/startSit";
 import { PostEmpty, PostTeamMark } from "./kit";
@@ -29,11 +29,12 @@ const HEADS: readonly (readonly [string, string?])[] = [["DATE"], ["GOALIE", "L1
 
 export default function StartSitCard({ snapshot, data, settings, logos }: SharePostCardProps<StartSitSettings, StartSitData>) {
   const rows = startSitRows(data, settings.search), shown = rows.slice(0, START_SIT_ROW_LIMIT);
-  if (!rows.length) return <PostEmpty>{settings.search ? `No goalie or team matches "${settings.search}"` : "No goalie games in this window"}</PostEmpty>;
+  if (!data.inventory.goalies.length) return <PostEmpty>{NO_UPCOMING_LABEL}: {data.periodLabel}</PostEmpty>;
+  if (!rows.length) return <PostEmpty>{`No goalie or team matches "${settings.search}"`}</PostEmpty>;
   const qualified = rows.some(row => row.game.forecast.state === "qualified");
   const side = (team: string, metricId: TeamLensMetric, metric: InventoryMetric): LensSide => ({ ...rankedSide(data.lowFirstRanks, team, metricId, metric), team });
   return <div className={styles.card}>
-    <p className={styles.legend} data-testid="start-sit-legend">{shown.length} of {rows.length} goalie games · Green = stronger by league rank · #1 = highest · {qualified ? "No win odds" : "No win or start odds"} · {data.confirmationLegend}</p>
+    <p className={styles.legend} data-testid="start-sit-legend"><b data-testid="start-sit-period">{data.periodLabel}</b> · {shown.length} of {rows.length} goalie games · Green = stronger by league rank · #1 = highest · {qualified ? "No win odds" : "No win or start odds"} · {data.confirmationLegend}</p>
     <div className={styles.table} data-full={shown.length >= 10 || undefined}>
       {HEADS.map(([label, detail]) => <span key={label} className={styles.head}>{label}{detail && <small>{detail}</small>}</span>)}
       {shown.map(({ key, goalie, game }) => {

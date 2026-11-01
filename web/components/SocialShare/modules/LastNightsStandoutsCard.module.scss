@@ -29,6 +29,8 @@
 
 /* The sidebar, in the studio's own theme. */
 .panel { display: grid; grid-template-columns: minmax(0, 1fr); gap: v.$space-xs; min-width: 0; }
+.slateChooser { display: flex; flex-wrap: wrap; align-items: flex-end; gap: v.$space-xs; min-width: 0; font-size: 13px; label { display: grid; gap: 2px; min-width: 0; } input { max-width: 100%; min-width: 0; } }
+.slatePager { display: flex; align-items: center; gap: v.$space-xs; span { min-width: 56px; text-align: center; font-weight: 700; } }
 .panelNote { margin: 0; font-size: 13px; color: v.$text-secondary; }
 .panelCount { margin: 0; font-size: 14px; button { margin-left: v.$space-xs; } }
 .panelSort { display: flex; flex-wrap: wrap; gap: v.$space-xs; align-items: flex-end; min-width: 0; font-size: 13px; label { display: grid; gap: 2px; min-width: 0; } select { max-width: 100%; } button[data-active] { font-weight: 700; color: v.$primary-color; } }

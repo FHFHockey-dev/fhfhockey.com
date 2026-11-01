@@ -1,5 +1,5 @@
 import type { SharePostCardProps } from "lib/socialShare/modules/contract";
-import { goaliePeriodRanks, TGV_GRADES, TGV_LABEL, type GoaliePeriodData, type GoaliePeriodRow, type GoaliePeriodSettings, type TgvResult, type TgvSeasonWeek } from "lib/socialShare/modules/goaliePeriod";
+import { adpLine, goaliePeriodRanks, periodNoun, TGV_LABEL, type GoaliePeriodData, type GoaliePeriodRow, type GoaliePeriodSettings, type TgvResult, type TgvSeasonWeek } from "lib/socialShare/modules/goaliePeriod";
 import { boardSides, bothSidesNote, countOf, largestShown } from "lib/socialShare/modules/shared/goalieBoards";
 import { categoryById, CATEGORY_COUNTS_LABEL, cellTone } from "lib/socialShare/modules/shared/categoryCounts";
 import { PostEmpty } from "./kit";
@@ -11,8 +11,20 @@ const LINE = "#63D2F5", SELECTED = "#ffffff";
 const signed = (value: number) => value > 0 ? `+${value}` : value < 0 ? `−${Math.abs(value)}` : "0";
 
 const SPARK_WIDTH = 78, SPARK_HEIGHT = 40, SPARK_PAD = 5, POINTS_LOW = 1, POINTS_HIGH = 20;
+/** Past this many weeks a joined line turns to noise in 78px, so each week is a thin bar on the same scale, and a gap is still a mark, never 0. */
+const LINE_WEEKS = 10, MANY_SELECTED = 6;
+function GradeBars({ series, name }: { series: TgvSeasonWeek[]; name: string }) {
+  const slot = SPARK_WIDTH / series.length, width = Math.max(slot - 0.6, 1), y = (points: number) => SPARK_HEIGHT - SPARK_PAD - (points - POINTS_LOW) / (POINTS_HIGH - POINTS_LOW) * (SPARK_HEIGHT - 2 * SPARK_PAD);
+  return <svg className={styles.spark} width={SPARK_WIDTH} height={SPARK_HEIGHT} viewBox={`0 0 ${SPARK_WIDTH} ${SPARK_HEIGHT}`} role="img"
+    aria-label={`${name}, TGV grade points by week: ${series.map(week => `week ${week.week} ${week.points ?? "no grade"}`).join(", ")}`} data-sparkline={series.map(week => week.points ?? "gap").join(",")} data-bars="">
+    {series.map((week, index) => week.points === null
+      ? <rect key={week.week} x={index * slot} y={SPARK_HEIGHT - 2} width={width} height={1.5} fill={LINE} fillOpacity="0.5" data-gap="" />
+      : <rect key={week.week} x={index * slot} y={y(week.points)} width={width} height={SPARK_HEIGHT - y(week.points)} fill={LINE} fillOpacity={week.selected ? 1 : 0.4} data-point="" />)}
+  </svg>;
+}
 /** Weekly grade points on one fixed scale for every goalie. Lines join consecutive graded weeks only: a gap is a break, never 0. */
 function GradeLine({ series, name }: { series: TgvSeasonWeek[]; name: string }) {
+  if (series.length > LINE_WEEKS) return <GradeBars series={series} name={name} />;
   const x = (index: number) => series.length === 1 ? SPARK_WIDTH / 2 : SPARK_PAD + index * (SPARK_WIDTH - 2 * SPARK_PAD) / (series.length - 1);
   const y = (points: number) => SPARK_HEIGHT - SPARK_PAD - (points - POINTS_LOW) / (POINTS_HIGH - POINTS_LOW) * (SPARK_HEIGHT - 2 * SPARK_PAD);
   const segments = series.flatMap((week, index) => {
@@ -28,19 +40,20 @@ function GradeLine({ series, name }: { series: TgvSeasonWeek[]; name: string }) 
       : <circle key={`p${week.week}`} cx={x(index)} cy={y(week.points)} r={week.selected ? 3.5 : 2.2} fill={week.selected ? SELECTED : LINE} data-point="" />)}
   </svg>;
 }
-/** The selected week's grade, or for a month each assigned week's first letter. */
+/** The selected week's grade; for a month each assigned week's first letter; for a long view, how many weeks have a grade. */
 function selectedGrade(tgv: TgvResult) {
   const selected = tgv.series.filter(week => week.selected);
   if (selected.length === 1) return selected[0].ranking ?? "No grade";
+  if (!selected.length) return "–";
+  if (selected.length > MANY_SELECTED) return countOf(selected.filter(week => week.ranking).length, "wk");
   return selected.map(week => week.ranking?.[0] ?? "–").join(" ");
 }
 
 export default function GoaliePeriodCard({ data, logos }: SharePostCardProps<GoaliePeriodSettings, GoaliePeriodData>) {
-  const { period } = data, noun = period.kind === "month" ? "Month" : "Week";
+  const { period } = data, noun = periodNoun(period), minNote = period.kind === "custom" || period.kind === "season" ? ` Min ${countOf(data.minStarts, "start")}.` : "";
   if (!data.ranked) return <PostEmpty>No goalie has {countOf(data.minStarts, "official start")} in {period.label}{period.kind === "month" ? ". Choose a month in the settings" : ""}</PostEmpty>;
   const { sides, onBoth } = boardSides(data.rows, goaliePeriodRanks, data.board);
   const winners = data.rows.filter(row => data.winners.includes(row.goalieId)), largest = largestShown(sides, row => row.categoryCounts.gameNet);
-  const strip = data.tgvLeague, plural = strip !== null && strip.weeks.length > 1;
   const renderRow = (row: GoaliePeriodRow, rank: number) => {
     const counts = row.categoryCounts, name = row.name ?? String(row.goalieId), team = row.teams[row.teams.length - 1];
     return <div className={styles.goalie} data-testid="goalie-period-row">
@@ -61,14 +74,10 @@ export default function GoaliePeriodCard({ data, logos }: SharePostCardProps<Goa
   };
   return <div className={styles.card} data-testid="goalie-period-card">
     <header className={styles.lead}>
-      <h3><small>{period.label}.</small> {data.board === "worst" ? `Worst of the ${noun}` : `Goalie of the ${noun}`}: <span data-testid="goalie-period-winners">{winners.map(row => row.name ?? row.goalieId).join(" · ")}</span></h3>
+      <h3><small>{period.label}.{minNote}</small> {data.board === "worst" ? `Worst of the ${noun}` : `Goalie of the ${noun}`}: <span data-testid="goalie-period-winners">{winners.map(row => row.name ?? row.goalieId).join(" · ")}</span></h3>
     </header>
     <GoalieBoards sides={sides} rowKey={row => row.goalieId} renderRow={renderRow} headNote={TGV_LABEL} note={bothSidesNote(onBoth.length, data.ranked)} />
-    <section className={styles.strip} data-testid="tgv-existing">
-      <h4>{TGV_LABEL}: {plural ? "goalie weeks" : "goalies"} at each grade{strip ? `, week${plural ? "s" : ""} ${strip.weeks.join(", ")}` : ""}</h4>
-      {strip ? <div className={styles.stripCells}>{TGV_GRADES.map(grade => <span key={grade} className={styles.stripCell} data-strip-grade={grade}><small>{grade}</small><b>{strip.counts[grade]}</b><small>{strip.points[grade]} pts</small></span>)}</div>
-        : <p className={styles.stripEmpty}>Unavailable</p>}
-    </section>
     <p className={styles.legend} data-testid="category-counts">{CATEGORY_COUNTS_LABEL}: W 2/2 = better than league average in 2 of 2 starts.</p>
+    <p className={styles.legend} data-testid="goalie-period-adp">{adpLine(data.adp)}</p>
   </div>;
 }

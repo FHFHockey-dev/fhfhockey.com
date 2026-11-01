@@ -1,11 +1,11 @@
 // @vitest-environment node
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import RiskyStartsCard from "components/SocialShare/modules/RiskyStartsCard";
 import { postEvidenceLine } from "components/SocialShare/PostStudio";
 import { resolveDailyBoardEvidence, type BoardGoalieEvidence } from "lib/projections/dailyBoardEvidence";
-import { sharePostExportBlock, sharePostExportToken } from "./contract";
+import { sharePostExportBlock, sharePostExportToken, parseShareSettings } from "./contract";
 import { shareModule } from "./registry";
 import { loadPostSnapshot } from "./server";
 import { compactRiskyEvidence, ordinalRank, RISKY_CORRELATION_NOTE, riskyFlags, riskyGameSides, riskyPairs, riskyRows, riskyRowsForLens, riskyStartsModule, riskyStartsResult, type RiskyPair, type RiskyRow, type RiskySide, type RiskyStartsData, type RiskyStartsSettings } from "./riskyStarts";
@@ -18,7 +18,24 @@ vi.mock("lib/supabase/server", () => ({ default: { from: () => { throw new Error
 
 const { lenses, lowFirstRanks } = buildTeamLenses({ teamGames: FIXTURE_INPUT.teamGames, nst: FIXTURE_INPUT.nst, teams: FIXTURE_TEAMS, season: 20262027, cutoff: "2026-11-01" });
 const data = riskyStartsResult(GOALIE_INVENTORY_FIXTURE_DETAIL).data as RiskyStartsData;
-const settings = (lens: RiskyStartsSettings["lens"]): RiskyStartsSettings => ({ days: 7, lens });
+const settings = (lens: RiskyStartsSettings["lens"]): RiskyStartsSettings => ({ days: 7, period: "days", week: null, start: null, end: null, lens });
+const POST = "risky-starts";
+const periodCard = (cardData: unknown) => renderToStaticMarkup(createElement(RiskyStartsCard, { snapshot: { generatedAt: FIXTURE_GENERATED_AT } as never, data: cardData as RiskyStartsData, settings: settings("ratio"), logos: {} }));
+/** Answers the calendar; every other table fails, so a test can see which dates were asked for without a real read. */
+const periodClient = (rows: readonly object[] | null = WEEKS) => {
+  const tables: string[] = [], filters: [string, string, unknown][] = [];
+  return { tables, filters, from: (table: string) => {
+    tables.push(table);
+    const chain: Record<string, unknown> = {};
+    for (const method of ["select", "order", "range", "in", "gte"]) chain[method] = () => chain;
+    chain.eq = chain.lte = (column: string, value: unknown) => { filters.push([table, column, value]); return chain; };
+    chain.then = (resolve: (value: object) => void) => resolve(table === "yahoo_matchup_weeks" && rows ? { data: rows, error: null, count: rows.length } : { data: null, error: new Error("not read"), count: null });
+    return chain;
+  } };
+};
+const WEEKS = [{ week: 1, start_date: "2026-10-05", end_date: "2026-10-11" }, { week: 2, start_date: "2026-10-12", end_date: "2026-10-18" }, { week: 3, start_date: "2026-10-19", end_date: "2026-10-25" }, { week: 4, start_date: "2026-10-26", end_date: "2026-11-01" }, { week: 5, start_date: "2026-11-02", end_date: "2026-11-08" }, { week: 6, start_date: "2026-11-09", end_date: "2026-11-22" }];
+const periodEdition = (query: Record<string, string>, table = periodClient(), at = FIXTURE_GENERATED_AT) => loadPostSnapshot(POST, query, table as never, () => new Date(at));
+
 
 
 const reporters = (team: number, gameId: number, first: number, second: number): BoardGoalieEvidence[] => [first, second].map((player_id, index) => ({ id: `obs-${index}`, game_id: gameId, team_id: team, player_id, observation_status: "confirmed", accepted: true, source_key: "validated_events", source_account: `reporter${index}`, source_url: null, observed_at: `2026-11-02T10:0${index * 5}:00Z`, available_at: `2026-11-02T10:0${index * 5}:30Z`, created_at: `2026-11-02T10:0${index * 5}:40Z`, expires_at: null }));
@@ -427,5 +444,73 @@ describe("Risky Starts edition expiry", () => {
   it("keeps the default with a later puck drop or no start time", async () => {
     expect((await edition(FIXTURE_GENERATED_AT)).expiresAt).toBe("2026-11-02T15:15:00.000Z");
     expect((await edition("2026-11-02T22:59:00.000Z", FIXTURE_INPUT.schedule.map(game => ({ ...game, startTime: null })))).expiresAt).toBe("2026-11-02T23:14:00.000Z");
+  });
+});
+
+describe("period control", () => {
+  beforeEach(() => vi.restoreAllMocks());
+  it("leaves the default URL as it was: seven days ahead with no calendar read", async () => {
+    expect(parseShareSettings(shareModule(POST)!, {})).toMatchObject({ days: 7, period: "days", week: null, start: null, end: null });
+    const table = periodClient(), snapshot = await periodEdition({}, table);
+    expect(table.tables).not.toContain("yahoo_matchup_weeks");
+    expect(snapshot.settings).toMatchObject({ days: 7, period: "days" });
+    expect(table.filters).toContainEqual(["games", "date", "2026-11-08"]);
+  });
+  it("reads a chosen matchup week's own dates", async () => {
+    const table = periodClient();
+    await periodEdition({ period: "matchup", week: "5" }, table);
+    expect(table.tables[0]).toBe("yahoo_matchup_weeks");
+    expect(table.filters).toContainEqual(["games", "date", "2026-11-08"]);
+  });
+  it("reads the whole of a 14-day week", async () => {
+    const table = periodClient();
+    await periodEdition({ period: "matchup", week: "6" }, table);
+    expect(table.filters).toContainEqual(["games", "date", "2026-11-22"]);
+  });
+  it("shows a past matchup as no upcoming games, with no game reads and no export", async () => {
+    const table = periodClient(), snapshot = await periodEdition({ period: "matchup", week: "3" }, table);
+    expect(table.tables).toEqual(["yahoo_matchup_weeks"]);
+    expect(snapshot).toMatchObject({ state: "ready", teams: [] });
+    expect(snapshot.evidence.sources.map(source => source.name)).toEqual(["Yahoo matchup weeks"]);
+    expect(sharePostExportBlock(shareModule(POST)!, snapshot, snapshot.settings, Date.parse(FIXTURE_GENERATED_AT))).toBe("Nothing qualifies with these settings.");
+    expect(periodCard(snapshot.data)).toContain("No upcoming games in this period: Week 3 · Oct 19 to Oct 25");
+  });
+  it("is missing, with the reason, for a week off the calendar or an unreadable calendar", async () => {
+    expect(await periodEdition({ period: "matchup", week: "9" })).toMatchObject({ state: "missing", data: null, reasons: ["Week 9 is not on the matchup calendar."] });
+    expect(await periodEdition({ period: "matchup" }, periodClient(null))).toMatchObject({ state: "missing", data: null, reasons: ["Matchup weeks could not be read."] });
+  });
+  it("refuses a bad custom range before any read", () => {
+    const parse = (query: Record<string, string>) => parseShareSettings(shareModule(POST)!, query, "server");
+    expect(() => parse({ period: "custom" })).toThrow("A custom range needs a start date and an end date.");
+    expect(() => parse({ period: "custom", start: "2026-11-05", end: "2026-11-03" })).toThrow("The start date must be before the end date.");
+    expect(() => parse({ period: "custom", start: "2026-11-02", end: "2026-12-03" })).toThrow("at most 31 days");
+    expect(parse({ period: "custom", start: "2026-11-02", end: "2026-12-02" })).toMatchObject({ start: "2026-11-02", end: "2026-12-02" });
+  });
+  it("refuses a custom range outside the season, and reads a good one", async () => {
+    expect(await periodEdition({ period: "custom", start: "2027-05-01", end: "2027-05-03" })).toMatchObject({ state: "missing", reasons: [expect.stringContaining("inside the season")] });
+    const table = periodClient();
+    await periodEdition({ period: "custom", start: "2026-11-03", end: "2026-11-06" }, table);
+    expect(table.filters).toContainEqual(["games", "date", "2026-11-06"]);
+  });
+});
+
+describe("the period on the card", () => {
+  const period = { label: "Week 4 · Oct 26 to Nov 8", from: "2026-10-26", through: "2026-11-08", listedFrom: "2026-11-02", elapsed: false, usedCalendar: true, season: 20262027 };
+  it("prints the dates, names a part-played week and files the calendar on the one footer source", () => {
+    const result = riskyStartsResult(GOALIE_INVENTORY_FIXTURE_DETAIL, undefined, period);
+    expect(card(result, "volume")).toContain("Week 4 · Oct 26 to Nov 8 · games still to start");
+    expect(result.evidence.sources).toHaveLength(1);
+    expect(result.evidence.sources[0].name).toContain("Yahoo");
+    expect(result.evidence.sources[0].tables).toContain("yahoo_matchup_weeks");
+  });
+  it("says no upcoming games once every game has started, and not a lens miss", () => {
+    const empty = riskyStartsResult({ ...GOALIE_INVENTORY_FIXTURE_DETAIL, inventory: { ...GOALIE_INVENTORY_FIXTURE_DETAIL.inventory, generatedAt: "2026-11-30T00:00:00.000Z" } }, undefined, period);
+    expect(card(empty, "volume")).toContain("No upcoming games in this period");
+    expect(card(empty, "volume")).not.toContain("flagged pairing");
+  });
+  it("keeps No line yet on a later week and expires at puck drop on a chosen period", () => {
+    const generatedAt = "2026-11-02T22:59:00.000Z", result = riskyStartsResult(buildGoalieInventory({ ...FIXTURE_INPUT, request: { ...FIXTURE_INPUT.request, generatedAt } }), undefined, period);
+    expect(result.ttlSeconds).toBe(60);
+    expect(card(result, "volume")).toContain("No line yet");
   });
 });

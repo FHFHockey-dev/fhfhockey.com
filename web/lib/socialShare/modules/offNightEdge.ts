@@ -2,12 +2,14 @@ import calcWeekScore from "components/GameGrid/utils/calcWeekScore";
 import { countsAsOpportunity } from "lib/socialShare/mondayGrid";
 import { PICKUP_YAHOO_TEAM_ALIASES, type PickupOwnershipRow } from "lib/socialShare/pickupsFixture";
 import { positionGroup, RECENT_MAX_AGE_DAYS, resolveOwnership, MIN_SKATER_GAMES, type ShareMapRow } from "lib/socialShare/players";
-import { weekDates } from "lib/socialShare/schedule";
+import { calendarWeekStart, weekDates } from "lib/socialShare/schedule";
 import { fantasyPointsPerGame, playerScore } from "lib/socialShare/score";
 import type { ShareDataState, SocialShareSnapshot } from "lib/socialShare/types";
 import { defineShareModule, SHARE_POST_DEFAULT_TTL_SECONDS, type SharePostEvidence, type SharePostLoadResult, type SharePostSource } from "./contract";
 import { appearancesByPlayer, type SkaterAppearance } from "./shared/skaterAppearances";
+import { spanDays } from "./shared/categoryCounts";
 import { competitionRanks, editionDate, lastN, ownershipInRange, ownershipLabel, ownershipOf, type OwnershipState } from "./shared/definitions";
+import { customRangeReason, PERIOD_CUSTOM, periodDates, periodWindowFields, resolvePeriodWindow, type MatchupCalendar, type PeriodControl, type PeriodWindow, type PeriodWindowResult, type PeriodWindowSettings } from "./shared/periodWindow";
 import { shiftDays } from "./teamGames";
 
 /**
@@ -21,7 +23,7 @@ export const OFF_NIGHT_LOOKBACK_DAYS = 21;
 const PLAYABLE_STATUSES = new Set(["", "DTD"]);
 
 export type OffNightDates = "weekly" | "rest-of-week";
-export type OffNightSettings = { ownershipCeiling: number; includeUnknown: "on" | "off"; dates: OffNightDates };
+export type OffNightSettings = PeriodWindowSettings & { ownershipCeiling: number; includeUnknown: "on" | "off"; dates: OffNightDates };
 export type OffNightGroup = "F" | "D";
 export type OffNightYahooRow = Omit<PickupOwnershipRow, "ownership_timeline">;
 export type OffNightPick = { nhlId: number; name: string; positions: string; ownership: OwnershipState; games: number; fantasyPerGame: number; score: number };
@@ -35,8 +37,13 @@ export type OffNightRow = {
   /** Why a position has no pick; null when it has one. */
   gaps: Record<OffNightGroup, string | null>;
 };
+/** The dates shown. A past or upcoming window has its own schedule, but its picks and ownership are always today's. */
+export type OffNightWindow = Pick<PeriodWindow, "kind" | "week" | "from" | "through" | "label"> & { past: boolean; playedIncluded: boolean;
+  /** Set when none of the dates have started: next week when they start next Monday. */
+  upcoming?: "next-week" | "upcoming" | null };
 export type OffNightData = {
-  dates: OffNightDates; weekStart: string; weekEnd: string; days: OffNightDay[]; rows: OffNightRow[];
+  /** What the score counts: `weekly` is every game on the dates, played or not; only this week's rest of week counts just what is left. */
+  dates: OffNightDates; window: OffNightWindow; weekStart: string; weekEnd: string; days: OffNightDay[]; rows: OffNightRow[];
   teamsWithGames: number; countedGames: number;
   /** Equal scores cut by the fixed top 16: they share the last rank and are named rather than silently dropped. */
   tiedOut: string[];
@@ -50,21 +57,59 @@ export function offNightSelectedDates(weekStart: string, today: string, dates: O
   return dates === "weekly" ? week : week.filter(date => date >= today);
 }
 
+/** The period option that keeps this calendar week's `dates` choice, the default. Needs no matchup calendar. */
+export const OFF_NIGHT_THIS_WEEK = "this-week";
+export const OFF_NIGHT_CONTROL: PeriodControl = { mode: "any-week" };
+/** Wider than this, the day columns no longer fit beside the picks. The longest matchup on the calendar is 14 days. */
+export const OFF_NIGHT_CUSTOM_MAX_DAYS = 14;
+/** One NHL schedule call per Monday week; 14 days can touch three. Above this a load fails closed. */
+export const OFF_NIGHT_MAX_SCHEDULE_WEEKS = 3;
+export const validateOffNight = (settings: OffNightSettings) => {
+  if (settings.period !== PERIOD_CUSTOM) return null;
+  return customRangeReason(settings) ?? (spanDays(settings.start!, settings.end!) > OFF_NIGHT_CUSTOM_MAX_DAYS ? `A custom range covers at most ${OFF_NIGHT_CUSTOM_MAX_DAYS} days.` : null);
+};
+export function resolveOffNightWindow(settings: OffNightSettings, calendar: MatchupCalendar, generatedAt: string): PeriodWindowResult {
+  const today = editionDate(generatedAt);
+  return resolvePeriodWindow(settings, calendar, { ...OFF_NIGHT_CONTROL, cutoff: shiftDays(today, -1), own: { [OFF_NIGHT_THIS_WEEK]: () => {
+    const dates = offNightSelectedDates(calendarWeekStart(generatedAt), today, settings.dates), from = dates[0], through = dates[dates.length - 1];
+    return { from, through, label: `${settings.dates === "weekly" ? "Full week" : "Rest of week"} · ${periodDates(from, through)}` };
+  } } });
+}
+/** The Monday weeks a window touches, each with its dates inside the window. */
+export function offNightWeeks(from: string, through: string) {
+  const weeks: { weekStart: string; dates: string[] }[] = [];
+  for (let monday = shiftDays(from, -((new Date(`${from}T12:00:00Z`).getUTCDay() + 6) % 7)); monday <= through; monday = shiftDays(monday, 7)) weeks.push({ weekStart: monday, dates: weekDates(monday).filter(date => date >= from && date <= through) });
+  return weeks;
+}
+
+type OffNightEditions = SocialShareSnapshot | readonly SocialShareSnapshot[];
+const editionsOf = (editions: OffNightEditions): readonly SocialShareSnapshot[] => "games" in editions ? [editions] : editions;
+
+/** A window with every date ahead of today, and whether it starts next Monday. */
+export function offNightUpcoming(window: Pick<PeriodWindow, "from">, generatedAt: string): OffNightWindow["upcoming"] {
+  if (window.from <= editionDate(generatedAt)) return null;
+  return window.from === shiftDays(calendarWeekStart(generatedAt), 7) ? "next-week" : "upcoming";
+}
+
 /**
  * Week Score over the games the selection counts, by the same `calcWeekScore` inputs as selectScheduleDates.
  * Rest of week uses its opportunity rule (selected, scheduled, known future start). The helper would drop played games
  * from a seven-day selection too, making weekly equal rest of week mid-week, so weekly counts the whole slate.
+ * A window across Monday weeks passes one edition per week and is scored as a single horizon.
  */
-export function offNightSchedule(edition: SocialShareSnapshot, dates: OffNightDates) {
-  const counted = edition.games.filter(game => dates === "rest-of-week" ? countsAsOpportunity(edition, game)
-    : game.gameType === 2 && edition.selectedDates.includes(game.date) && ["scheduled", "live", "final"].includes(game.status));
-  const days = edition.days.filter(day => day.selected).map(({ date, label, leagueGames, offNight }): OffNightDay => ({ date, label, leagueGames, offNight }));
-  const dayOf = new Map(edition.days.map(day => [day.date, day]));
-  const scored = edition.teams.flatMap(team => {
+export function offNightSchedule(input: OffNightEditions, dates: OffNightDates) {
+  const editions = editionsOf(input);
+  const counted = editions.flatMap(edition => edition.games.filter(game => dates === "rest-of-week" ? countsAsOpportunity(edition, game)
+    : game.gameType === 2 && edition.selectedDates.includes(game.date) && ["scheduled", "live", "final"].includes(game.status)));
+  const days = editions.flatMap(edition => edition.days.filter(day => day.selected)).map(({ date, label, leagueGames, offNight }): OffNightDay => ({ date, label, leagueGames, offNight }));
+  const dayOf = new Map(editions.flatMap(edition => edition.days).map(day => [day.date, day]));
+  const teams = [...new Map(editions.flatMap(edition => edition.teams).map(team => [team.id, team])).values()];
+  const trusted = editions.every(edition => edition.source.state === "ready");
+  const scored = teams.flatMap(team => {
     const own = counted.filter(game => game.homeTeam.id === team.id || game.awayTeam.id === team.id);
     if (!own.length) return [];
     const offNightGames = own.filter(game => dayOf.get(game.date)?.offNight).length;
-    const score = calcWeekScore([], offNightGames, counted.length, own.length, own.map(game => dayOf.get(game.date)!.leagueGames), edition.source.state === "ready");
+    const score = calcWeekScore([], offNightGames, counted.length, own.length, own.map(game => dayOf.get(game.date)!.leagueGames), trusted);
     return [{ team, score, games: own.length, offNightGames, gamesByDay: days.map(day => own.filter(game => game.date === day.date).length) }];
   });
   // Rounded for the comparison only: sums over the same slates in another order differ by float noise, not by schedule.
@@ -136,20 +181,35 @@ function selectPicks(input: { appearances: readonly SkaterAppearance[]; yahoo: r
 }
 
 const OWNERSHIP_TABLES = ["yahoo_players", "yahoo_nhl_player_map_read"] as const;
-const scheduleSource = (edition: SocialShareSnapshot): SharePostSource => ({ name: "NHL schedule (Game Grid edition)", tables: ["NHL schedule API"], state: edition.state, asOf: edition.weekEnd, updatedAt: edition.source.updatedAt ?? edition.source.fetchedAt, reasons: edition.reasons });
+const scheduleSource = (editions: readonly SocialShareSnapshot[]): SharePostSource => {
+  const last = editions[editions.length - 1];
+  return { name: "NHL schedule (Game Grid edition)", tables: ["NHL schedule API"], state: editions.find(edition => edition.state !== "ready")?.state ?? "ready", asOf: last.weekEnd, updatedAt: last.source.updatedAt ?? last.source.fetchedAt, reasons: [...new Set(editions.flatMap(edition => edition.reasons))] };
+};
 const unready = (state: ShareDataState, reasons: string[], sources: SharePostSource[], sample: string): SharePostLoadResult<OffNightData> => {
   const evidence: SharePostEvidence = { sources, sample, strength: "All situations", cohort: "Not ranked", coverage: null };
   return { state, reasons, evidence, data: null };
 };
 /** A schedule edition that is not ready publishes no order and reads no players, as on the Monday cards. */
-export const offNightScheduleGate = (edition: SocialShareSnapshot): SharePostLoadResult<OffNightData> | null => edition.state === "ready" && edition.source.state === "ready" ? null
-  : unready(edition.state === "ready" ? edition.source.state : edition.state, edition.reasons.length ? edition.reasons : ["The schedule edition is not ready, so no order is published."], [scheduleSource(edition)], "Schedule not ready; no players read");
+export const offNightScheduleGate = (input: OffNightEditions): SharePostLoadResult<OffNightData> | null => {
+  const editions = editionsOf(input), edition = editions.find(item => item.state !== "ready" || item.source.state !== "ready");
+  return edition ? unready(edition.state === "ready" ? edition.source.state : edition.state, edition.reasons.length ? edition.reasons : ["The schedule edition is not ready, so no order is published."], [scheduleSource(editions)], "Schedule not ready; no players read") : null;
+};
+/** Chosen dates with no games give a reason, not an empty ranking: ahead of today, the NHL may not have published them. */
+export function offNightEmptyWindow(editions: readonly SocialShareSnapshot[], window: PeriodWindow, settings: OffNightSettings): SharePostLoadResult<OffNightData> | null {
+  if (settings.period === OFF_NIGHT_THIS_WEEK || offNightSchedule(editions, "weekly").countedGames) return null;
+  const reason = offNightUpcoming(window, editions[0].generatedAt) ? `The NHL schedule shows no games yet for ${window.label}, so there is no ranking. It may not be published.` : `The NHL schedule has no games for ${window.label}, so there is no ranking.`;
+  return unready("missing", [reason], [scheduleSource(editions)], reason);
+}
+/** The chosen dates could not be resolved: nothing is read, and the reason prints. */
+export const offNightPeriodMissing = (reasons: string[]) => unready("missing", reasons, [{ name: "Yahoo matchup weeks", tables: ["yahoo_matchup_weeks"], state: "ready", asOf: null, updatedAt: null }], reasons[0]);
 
-export function buildOffNightEdge(input: { edition: SocialShareSnapshot; settings: OffNightSettings; appearances: readonly SkaterAppearance[]; yahoo: readonly OffNightYahooRow[]; map: readonly ShareMapRow[]; gameIds: readonly number[]; from: string; through: string }): SharePostLoadResult<OffNightData> {
-  const { edition, settings } = input;
-  const gated = offNightScheduleGate(edition);
+export function buildOffNightEdge(input: { edition: OffNightEditions; window: PeriodWindow; settings: OffNightSettings; appearances: readonly SkaterAppearance[]; yahoo: readonly OffNightYahooRow[]; map: readonly ShareMapRow[]; gameIds: readonly number[]; from: string; through: string }): SharePostLoadResult<OffNightData> {
+  const { settings } = input, editions = editionsOf(input.edition), first = editions[0], last = editions[editions.length - 1];
+  const gated = offNightScheduleGate(editions);
   if (gated) return gated;
-  const schedule = offNightSchedule(edition, settings.dates), today = editionDate(edition.generatedAt);
+  const dates: OffNightDates = settings.period === OFF_NIGHT_THIS_WEEK ? settings.dates : "weekly";
+  const schedule = offNightSchedule(editions, dates), today = editionDate(first.generatedAt);
+  const window: OffNightWindow = { kind: input.window.kind, week: input.window.week, from: input.window.from, through: input.window.through, label: input.window.label, past: input.window.through < today, playedIncluded: dates === "weekly" && input.window.from < today && input.window.through >= today, upcoming: offNightUpcoming(input.window, first.generatedAt) };
   // Regular season only: the game ids come from `games` with type 2.
   const regular = new Set(input.gameIds), appearances = input.appearances.filter(row => regular.has(row.gameId));
   const { byTeam, ownership } = selectPicks({ appearances, yahoo: input.yahoo, map: input.map, teams: schedule.rows.map(row => row.team), settings, today });
@@ -159,7 +219,7 @@ export function buildOffNightEdge(input: { edition: SocialShareSnapshot; setting
   const judged = ownership.known + ownership.unknown + ownership.stale;
   const ownershipState: ShareDataState = !input.yahoo.length ? "missing" : judged && ownership.stale > ownership.known + ownership.unknown ? "stale" : ownership.stale ? "partial" : "ready";
   const ownershipSource: SharePostSource = { name: "Yahoo ownership", tables: OWNERSHIP_TABLES, state: ownershipState, asOf: ownership.asOf, updatedAt: null };
-  const sources = [scheduleSource(edition), statsSource, ownershipSource];
+  const sources = [scheduleSource(editions), statsSource, ownershipSource];
   const sample = `${input.from} to ${input.through}: ${new Set(appearances.map(row => row.playerId)).size} skaters; picks need ${MIN_SKATER_GAMES} appearances, active in ${RECENT_MAX_AGE_DAYS} days, ranked by L5 fantasy points per game × ice time; ownership among qualified skaters: ${ownership.known} known, ${ownership.unknown} unknown, ${ownership.stale} stale`;
   if (ownershipState === "missing") return unready("missing", ["Yahoo ownership returned no rows, so no pickups can be judged."], sources, sample);
   if (ownershipState === "stale") return unready("stale", [`Most Yahoo ownership is older than a day (${ownership.stale} of ${judged} qualified skaters).`], sources, sample);
@@ -170,11 +230,11 @@ export function buildOffNightEdge(input: { edition: SocialShareSnapshot; setting
   const unknownNote = settings.includeUnknown === "on" ? "unknown % included" : "unknown % excluded";
   return {
     state: reasons.length ? "partial" : "ready", reasons,
-    data: { dates: settings.dates, weekStart: edition.weekStart, weekEnd: edition.weekEnd, days: schedule.days, countedGames: schedule.countedGames, teamsWithGames: schedule.teamsWithGames, tiedOut: schedule.tiedOut, ownership,
+    data: { dates, window, weekStart: first.weekStart, weekEnd: last.weekEnd, days: schedule.days, countedGames: schedule.countedGames, teamsWithGames: schedule.teamsWithGames, tiedOut: schedule.tiedOut, ownership,
       rows: schedule.rows.map(row => ({ ...row, ...byTeam.get(row.team)! })) },
     teams: schedule.rows.map(row => row.team),
     // A puck drop or the schedule's freshness window ends this edition sooner than the default.
-    ttlSeconds: Math.min(SHARE_POST_DEFAULT_TTL_SECONDS, Math.floor((Date.parse(edition.expiresAt!) - Date.parse(edition.generatedAt)) / 1000)),
+    ttlSeconds: Math.min(SHARE_POST_DEFAULT_TTL_SECONDS, Math.floor((Math.min(...editions.map(edition => Date.parse(edition.expiresAt!))) - Date.parse(first.generatedAt)) / 1000)),
     evidence: { sources, sample, strength: "All situations", cohort: `Top ${schedule.rows.length} of ${schedule.teamsWithGames} teams with games${schedule.tiedOut.length ? ` (also tied at the last rank: ${schedule.tiedOut.join(", ")})` : ""}; skaters at or under ${settings.ownershipCeiling}% rostered, ${unknownNote}`,
       coverage: { observed, expected, missing, unit: "team games" } },
   };
@@ -185,13 +245,16 @@ const pickText = (pick: OffNightPick | null, gap: string | null) => pick ? `${pi
 export const offNightEdgeModule = defineShareModule<OffNightSettings, OffNightData>({
   id: "off-night-edge", title: "Off-Night Edge", summary: "Games by day and the top 16 Week Score teams, with one forward and one defenseman under an ownership ceiling.", group: "schedule", basis: "observed",
   suggestedUse: "Works for a Monday plan or a midweek rest-of-week post.",
+  periodControl: OFF_NIGHT_CONTROL,
+  validate: validateOffNight,
   fields: [
     { id: "ownershipCeiling", label: "Ownership ceiling %", kind: "number", default: 50, min: 0, max: 100, step: 1 },
     { id: "includeUnknown", label: "Include unknown ownership", kind: "select", default: "off", options: [{ value: "off", label: "Off" }, { value: "on", label: "On" }] },
-    { id: "dates", label: "Dates", kind: "select", default: "rest-of-week", options: [{ value: "rest-of-week", label: "Rest of week" }, { value: "weekly", label: "Weekly" }] },
+    { id: "dates", label: "Dates", kind: "select", default: "rest-of-week", options: [{ value: "rest-of-week", label: "Rest of week" }, { value: "weekly", label: "Weekly" }], onlyForPeriod: OFF_NIGHT_THIS_WEEK },
+    ...periodWindowFields({ mode: OFF_NIGHT_CONTROL.mode, default: OFF_NIGHT_THIS_WEEK, options: [{ value: OFF_NIGHT_THIS_WEEK, label: "This week" }, { value: "matchup", label: "Matchup week" }, { value: PERIOD_CUSTOM, label: "Custom range" }] }),
   ],
   load: () => import("./offNightEdge.sources").then(sources => sources.loadOffNightEdge),
   card: () => import("components/SocialShare/modules/OffNightEdgeCard").then(card => card.default),
   hasRows: data => data.rows.some(row => row.picks.F || row.picks.D),
-  altText: (snapshot, data) => `FHFH Off-Night Edge, ${data.dates === "weekly" ? "full week" : "rest of week"}, ${data.days[0]?.date ?? data.weekStart} to ${data.weekEnd}. ${data.rows.map(row => `${row.rank}. ${row.team}: ${row.games} games, ${row.offNightGames} off-night, score ${row.score.toFixed(1)}; ${pickText(row.picks.F, row.gaps.F)}; ${pickText(row.picks.D, row.gaps.D)}`).join(". ")}. NHL games by day: ${data.days.map(day => `${day.label} ${day.leagueGames}${day.offNight ? " (off night)" : ""}`).join(", ")}. ${snapshot.evidence.cohort}. ${snapshot.evidence.sample}.`,
+  altText: (snapshot, data) => `${data.window.kind === OFF_NIGHT_THIS_WEEK ? `FHFH Off-Night Edge, ${data.dates === "weekly" ? "full week" : "rest of week"}, ${data.window.from} to ${data.window.through}` : `FHFH Off-Night Edge, ${data.window.label}`}${data.window.past ? ", past dates; picks and ownership are current, not as of then" : ""}${data.window.upcoming ? `, ${data.window.upcoming === "next-week" ? "next week" : "upcoming"}; picks use recent form and ownership as of today` : ""}. ${data.rows.map(row => `${row.rank}. ${row.team}: ${row.games} games, ${row.offNightGames} off-night, score ${row.score.toFixed(1)}; ${pickText(row.picks.F, row.gaps.F)}; ${pickText(row.picks.D, row.gaps.D)}`).join(". ")}. NHL games by day: ${data.days.map(day => `${day.label} ${day.leagueGames}${day.offNight ? " (off night)" : ""}`).join(", ")}. ${snapshot.evidence.cohort}. ${snapshot.evidence.sample}.`,
 });

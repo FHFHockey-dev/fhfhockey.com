@@ -3,9 +3,11 @@ import type { StartChartParticipation } from "lib/projections/startChartContract
 import { currentSeason } from "lib/socialShare/schedule";
 import type { Database } from "lib/supabase/database-generated.types";
 import { teamsInfo } from "lib/teamsInfo";
-import { SHARE_POST_DEFAULT_TTL_SECONDS, type SharePostEvidence, type SharePostReadClient } from "../contract";
+import { SHARE_POST_DEFAULT_TTL_SECONDS, type ShareSettingField, type SharePostEvidence, type SharePostReadClient, type SharePostSource } from "../contract";
+import { spanDays } from "./categoryCounts";
 import { competitionRanks, editionDate } from "./definitions";
 import { GOALIE_INVENTORY_VERSION, type GoalieConfirmation, type GoalieForecast, type GoalieGameSignals, type GoalieInventory, type GoalieInventoryEntry, type GoalieInventoryGame, type GoalieInventoryRequest, type GoalieInventorySource, type InventoryMetric, type LoadGoalieInventory, type SearchGoalieInventory } from "./goalieInventory";
+import { customRangeReason, matchupCalendar, periodDates, periodWindowFields, PERIOD_CUSTOM, resolvePeriodWindow, type MatchupCalendar, type PeriodControl, type PeriodWindowSettings } from "./periodWindow";
 import { TEAM_GAME_COLUMNS, teamStartShare, toCompletedTeamGames, type CompletedTeamGame, type GoalieAppearance, type TeamGameRow } from "./goalieLedger";
 
 /**
@@ -50,6 +52,55 @@ export function inventoryWindow(generatedAt: string, days: number) {
   const from = editionDate(generatedAt);
   return { from, through: shiftDays(from, days - 1), season: currentSeason(from) };
 }
+
+/* The shared period control. These posts only look ahead: a period's past dates are never read, and a period wholly past lists nothing. */
+export const INVENTORY_PERIOD_DAYS = "days";
+export const INVENTORY_PERIOD_CONTROL: PeriodControl = { mode: "any-week" };
+export const NO_UPCOMING_LABEL = "No upcoming games in this period";
+export const INVENTORY_MAX_RANGE_DAYS = 31;
+export type InventoryPeriodSettings = PeriodWindowSettings & { days: number };
+export const inventoryPeriodFields = (): ShareSettingField[] => [
+  { id: "days", label: "Days ahead", kind: "number", default: 7, min: 1, max: 14, step: 1, onlyForPeriod: INVENTORY_PERIOD_DAYS },
+  ...periodWindowFields({ mode: INVENTORY_PERIOD_CONTROL.mode, default: INVENTORY_PERIOD_DAYS, options: [{ value: INVENTORY_PERIOD_DAYS, label: "Days ahead" }, { value: "matchup", label: "Matchup week" }, { value: PERIOD_CUSTOM, label: "Custom range" }] }),
+];
+/** Refuses a range before any read. The length is the most the inventory reads at once. */
+export function inventoryPeriodReason(settings: Pick<InventoryPeriodSettings, "period" | "start" | "end">) {
+  if (settings.period !== PERIOD_CUSTOM) return null;
+  return customRangeReason(settings) ?? (spanDays(settings.start!, settings.end!) > INVENTORY_MAX_RANGE_DAYS ? `A custom range can cover at most ${INVENTORY_MAX_RANGE_DAYS} days.` : null);
+}
+export type InventoryPeriod = {
+  label: string;
+  /** The period as chosen. */
+  from: string; through: string;
+  /** The first date read: today once the period has begun. */
+  listedFrom: string;
+  /** The whole period is before today, so nothing is read. */
+  elapsed: boolean;
+  /** The matchup calendar was read, so it counts as a source. */
+  usedCalendar: boolean; season: number;
+};
+export type InventoryPeriodResult = { period: InventoryPeriod; reason?: undefined } | { period?: undefined; reason: string };
+export function resolveInventoryPeriod(settings: InventoryPeriodSettings, calendar: MatchupCalendar, cutoff: string, generatedAt: string): InventoryPeriodResult {
+  const today = inventoryWindow(generatedAt, settings.days);
+  const own = { [INVENTORY_PERIOD_DAYS]: () => { const label = periodDates(today.from, today.through); return { from: today.from, through: today.through, label: settings.days === 1 ? label.split(" to ")[0] : label }; } };
+  const { window, reason } = resolvePeriodWindow(settings, calendar, { ...INVENTORY_PERIOD_CONTROL, cutoff, own });
+  if (!window) return { reason };
+  return { period: { label: window.label, from: window.from, through: window.through, listedFrom: window.from > today.from ? window.from : today.from, elapsed: window.through < today.from, usedCalendar: settings.period !== INVENTORY_PERIOD_DAYS, season: today.season } };
+}
+/** The default reads no calendar, so it cannot fail on one. The server takes the pager's own cutoff, so both name the same week. */
+export async function loadInventoryPeriod(client: SharePostReadClient, settings: InventoryPeriodSettings, generatedAt: string): Promise<InventoryPeriodResult> {
+  if (settings.period === INVENTORY_PERIOD_DAYS) return resolveInventoryPeriod(settings, { weeks: [], reasons: [] }, "", generatedAt);
+  try {
+    const { loadMatchupWeeks } = await import("./periodWindow.sources");
+    const { rows, cutoff } = await loadMatchupWeeks(client, generatedAt), calendar = matchupCalendar(rows);
+    return !calendar.weeks.length && calendar.reasons.length ? { reason: calendar.reasons[calendar.reasons.length - 1] } : resolveInventoryPeriod(settings, calendar, cutoff, generatedAt);
+  } catch { return { reason: "Matchup weeks could not be read." }; }
+}
+export const inventoryPeriodRequest = ({ listedFrom, through, season }: InventoryPeriod, generatedAt: string) => ({ from: listedFrom, through, season, generatedAt });
+/** The dates printed on the card. Dates already gone are named, so a part-played week does not read as complete. */
+export const periodLine = ({ label, from, listedFrom }: InventoryPeriod) => listedFrom > from ? `${label} · games still to start` : label;
+export const periodSources = ({ usedCalendar }: InventoryPeriod): SharePostSource[] => usedCalendar ? [{ name: "Yahoo matchup weeks", tables: ["yahoo_matchup_weeks"], state: "ready", asOf: null, updatedAt: null }] : [];
+export const noUpcomingEvidence = (period: InventoryPeriod): SharePostEvidence => ({ sources: periodSources(period), sample: `${period.from} to ${period.through}: ${NO_UPCOMING_LABEL.toLowerCase()}, so no game data was read.`, strength: "All situations", cohort: "No teams in this period.", coverage: null });
 const teamById = new Map(Object.entries(teamsInfo).map(([abbreviation, team]) => [team.id, abbreviation]));
 
 /* Lenses */

@@ -1,8 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
-import { buildBshBoard, type BshBoardSettings, type SkaterSeason } from "../lib/socialShare/modules/bshBoard";
+import { bshBoardModule, buildBshBoard, type BshBoardSettings, type SkaterSeason } from "../lib/socialShare/modules/bshBoard";
 import { buildCategoryBlueprint, categoryBlueprintModule, type CategoryBlueprintSettings } from "../lib/socialShare/modules/categoryBlueprint";
-import { parseShareSettings, type SharePostLoadResult } from "../lib/socialShare/modules/contract";
-import { buildNightlyFloor, type NightlyFloorSettings } from "../lib/socialShare/modules/nightlyFloor";
+import { parseShareSettings, UNKNOWN_EVIDENCE, type AnyShareModule, type SharePostLoadResult } from "../lib/socialShare/modules/contract";
+import { buildNightlyFloor, nightlyFloorModule, type NightlyFloorSettings } from "../lib/socialShare/modules/nightlyFloor";
 import { ownershipOf } from "../lib/socialShare/modules/shared/definitions";
 import type { SkaterAppearance } from "../lib/socialShare/modules/shared/skaterAppearances";
 
@@ -46,10 +46,10 @@ const crowded: SkaterSeason = (() => {
   const teamGames = [...new Map(appearances.map(row => [`${row.team}:${row.gameId}`, { gameId: row.gameId, date: row.date, team: row.team! }])).values()];
   return { appearances, teamGames, scheduledGames: teamGames.length / 2, through: "2026-10-30" };
 })();
-const bshSettings = (over: Partial<BshBoardSettings> = {}): BshBoardSettings => ({ view: "leaders", window: "l10", comparison: "previous", minGp: 5, position: "all", ...over });
+const bshSettings = (over: Partial<BshBoardSettings> = {}): BshBoardSettings => ({ period: "rolling", week: null, start: null, end: null, minGpRange: null, view: "leaders", window: "l10", comparison: "previous", minGp: 5, position: "all", ...over });
 // The visible defaults, so the edition and the URL agree whatever the default is.
 const blueprintSettings = parseShareSettings(categoryBlueprintModule, {}) as CategoryBlueprintSettings;
-const floorSettings = (over: Partial<NightlyFloorSettings> = {}): NightlyFloorSettings => ({ view: "sog", xSog: 2, xHits: 2, xBlk: 1, zeroCategory: "shots", window: "l10", minGp: 5, position: "all", ownMin: 0, ownMax: 100, unknownOwnership: "exclude", minCoverage: 90, ...over });
+const floorSettings = (over: Partial<NightlyFloorSettings> = {}): NightlyFloorSettings => ({ period: "rolling", week: null, start: null, end: null, minGpRange: null, view: "sog", xSog: 2, xHits: 2, xBlk: 1, zeroCategory: "shots", window: "l10", minGp: 5, position: "all", ownMin: 0, ownMax: 100, unknownOwnership: "exclude", minCoverage: 90, ...over });
 const ownership = { byPlayer: new Map([[1, ownershipOf(40, "2026-10-31")], [2, ownershipOf(12, "2026-10-31")]]), updatedAt: "2026-10-31T08:00:00" };
 const edition = (post: string, settings: object, result: SharePostLoadResult<unknown>) => {
   const generatedAt = new Date().toISOString();
@@ -225,5 +225,72 @@ test("A failed or partial edition stays unexportable", async ({ page }) => {
   await open(page, "bsh-board", () => edition("bsh-board", bshSettings(), buildBshBoard(incomplete, bshSettings())));
   await expect(page.getByTestId("post-watermark")).toHaveText("PARTIAL · NOT FOR EXPORT");
   await expect(page.getByTestId("post-evidence")).toContainText("2 missing");
+  await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
+});
+
+/** The shared period control over a crowded board: the real builders over the dates the URL asks for. */
+const WEEK_LABEL = "Week 2 · Oct 5 to Oct 11", RANGE_LABEL = "Oct 2 to Oct 9";
+const periodOf = (query: URLSearchParams) => query.get("period") === "matchup" ? { label: WEEK_LABEL, from: "2026-10-05", through: "2026-10-11" } : query.get("period") === "custom" ? { label: RANGE_LABEL, from: query.get("start")!, through: query.get("end")! } : undefined;
+const inPeriod = (query: URLSearchParams): SkaterSeason => {
+  const period = periodOf(query);
+  if (!period) return crowded;
+  const inside = <Row extends { date: string }>(rows: readonly Row[]) => rows.filter(row => row.date >= period.from && row.date <= period.through);
+  const teamGames = inside(crowded.teamGames);
+  return { appearances: inside(crowded.appearances), teamGames, scheduledGames: teamGames.length / 2, through: period.through, period };
+};
+const fromQuery = <Settings>(module: AnyShareModule, query: URLSearchParams) => parseShareSettings(module, Object.fromEntries(query), "server") as Settings;
+const roster = { byPlayer: new Map(Array.from({ length: 24 }, (_, index) => [index + 1, ownershipOf(40, "2026-10-31")])), updatedAt: "2026-10-31T08:00:00" };
+const BOARDS: { post: string; body: (query: URLSearchParams) => object }[] = [
+  { post: "bsh-board", body: query => { const active = fromQuery<BshBoardSettings>(bshBoardModule, query); return edition("bsh-board", active, buildBshBoard(inPeriod(query), active)); } },
+  { post: "category-blueprint", body: query => { const active = fromQuery<CategoryBlueprintSettings>(categoryBlueprintModule, query); return edition("category-blueprint", active, buildCategoryBlueprint(inPeriod(query), active)); } },
+  { post: "nightly-floor", body: query => { const active = fromQuery<NightlyFloorSettings>(nightlyFloorModule, query); return edition("nightly-floor", active, buildNightlyFloor(inPeriod(query), active, roster)); } },
+];
+async function openPeriod(page: Page, post: string, body: (query: URLSearchParams) => object) {
+  await page.route("**/api/v1/social-share/matchup-weeks", route => route.fulfill({ json: { cutoff: "2026-10-30", rows: [{ week: 1, start_date: "2026-09-28", end_date: "2026-10-04" }, { week: 2, start_date: "2026-10-05", end_date: "2026-10-11" }, { week: 3, start_date: "2026-11-02", end_date: "2026-11-08" }] } }));
+  return open(page, post, body);
+}
+for (const { post, body } of BOARDS) {
+  test(`${post}: recent games stay the default, and a matchup week or custom dates print their dates and fit`, async ({ page }) => {
+    const requests = await openPeriod(page, post, body);
+    const control = page.getByTestId("period-control"), square = page.getByTestId("share-square"), period = control.locator("select");
+    await expect(period).toHaveValue("rolling");
+    await expect(page.getByLabel("Window")).toHaveValue("l10");
+    await expect(square).toContainText("L10");
+    await expectFits(page);
+
+    await period.selectOption("matchup");
+    await expect(square).toContainText(WEEK_LABEL);
+    await expect(square).not.toContainText("L10");
+    await expect(page.getByLabel("Window")).toHaveCount(0);
+    await expect(page.getByTestId("period-pager-label")).toContainText("Week 2");
+    await expect(page.getByRole("button", { name: /Next week/ })).toBeDisabled();
+    expect(requests[requests.length - 1]).toContain("period=matchup");
+    await expect(page.getByTestId("post-evidence")).toContainText(WEEK_LABEL);
+    await expectFits(page);
+
+    await period.selectOption("custom");
+    await expect(page.getByTestId("period-reason")).toContainText("needs a start date and an end date");
+    await control.getByLabel("Custom range start").fill("2026-10-02");
+    await control.getByLabel("Custom range end").fill("2026-10-09");
+    await page.getByRole("button", { name: "Refresh post" }).click();
+    await expect(square).toContainText(RANGE_LABEL);
+    await expectFits(page);
+    await page.reload();
+    await expect(square).toContainText(RANGE_LABEL);
+    await expect(period).toHaveValue("custom");
+  });
+}
+test("old URLs and landing links keep their recent window, and a board shows why a period has no dates", async ({ page }) => {
+  await openPeriod(page, "nightly-floor", query => {
+    const active = fromQuery<NightlyFloorSettings>(nightlyFloorModule, query);
+    return active.period === "matchup" ? edition("nightly-floor", active, { state: "missing", reasons: ["Week 3 has not started; data runs through 2026-10-30."], evidence: UNKNOWN_EVIDENCE, data: null }) : edition("nightly-floor", active, buildNightlyFloor(crowded, active, roster));
+  });
+  await page.goto("/social-share/posts?post=nightly-floor&view=cardio&window=l5");
+  const square = page.getByTestId("share-square");
+  await expect(square).toContainText("L5");
+  await expect(page.getByTestId("period-control").locator("select")).toHaveValue("rolling");
+  await expect(page.getByLabel("Window")).toHaveValue("l5");
+  await page.goto("/social-share/posts?post=nightly-floor&period=matchup&week=3");
+  await expect(page.getByTestId("post-unavailable")).toContainText("Week 3 has not started");
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
 });

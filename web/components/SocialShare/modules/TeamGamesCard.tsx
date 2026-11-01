@@ -11,5 +11,8 @@ export default function TeamGamesCard({ data, logos }: SharePostCardProps<TeamGa
   ];
   const half = Math.ceil(data.rows.length / 2);
   if (!data.rows.length) return <PostEmpty>No teams in this window</PostEmpty>;
-  return <div className={styles.columns}>{[data.rows.slice(0, half), data.rows.slice(half)].map((rows, index) => <PostTable key={index} columns={columns} rows={rows} rowKey={row => row.team} />)}</div>;
+  return <div className={styles.body}>
+    <p className={styles.period} data-testid="team-games-period">{data.label}</p>
+    <div className={styles.columns}>{[data.rows.slice(0, half), data.rows.slice(half)].map((rows, index) => <PostTable key={index} columns={columns} rows={rows} rowKey={row => row.team} />)}</div>
+  </div>;
 }

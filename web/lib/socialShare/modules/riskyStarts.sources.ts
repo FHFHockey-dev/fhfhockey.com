@@ -1,7 +1,7 @@
-import type { SharePostContext, SharePostLoadResult, SharePostReadClient, SharePostSource } from "./contract";
-import { riskyRows, riskyStartsResult, type RiskyGameLine, type RiskyMarketLines, type RiskyRow, type RiskyStartsData, type RiskyStartsSettings } from "./riskyStarts";
+import { UNKNOWN_EVIDENCE, type SharePostContext, type SharePostLoadResult, type SharePostReadClient, type SharePostSource } from "./contract";
+import { riskyRows, riskyStartsNoUpcoming, riskyStartsResult, type RiskyGameLine, type RiskyMarketLines, type RiskyRow, type RiskyStartsData, type RiskyStartsSettings } from "./riskyStarts";
 import { editionDate } from "./shared/definitions";
-import { inventoryWindow, loadGoalieInventoryDetail, serverObservationClient } from "./shared/goalieInventory.sources";
+import { inventoryPeriodRequest, loadGoalieInventoryDetail, loadInventoryPeriod, serverObservationClient } from "./shared/goalieInventory.sources";
 
 /*
  * Market lines. Each game takes one row from one source, so two books never meet in a game: the latest stored DraftKings snapshot
@@ -88,8 +88,11 @@ export async function loadRiskyMarketLines(rows: readonly RiskyRow[], generatedA
 }
 
 export async function loadRiskyStarts({ client, generatedAt }: SharePostContext, settings: RiskyStartsSettings): Promise<SharePostLoadResult<RiskyStartsData>> {
+  const { period, reason } = await loadInventoryPeriod(client, settings, generatedAt);
+  if (!period) return { state: "missing", reasons: [reason], evidence: UNKNOWN_EVIDENCE, data: null };
+  if (period.elapsed) return riskyStartsNoUpcoming(period);
   const observationClient = await serverObservationClient();
-  const detail = await loadGoalieInventoryDetail(client, { ...inventoryWindow(generatedAt, settings.days), generatedAt }, { observationClient });
+  const detail = await loadGoalieInventoryDetail(client, inventoryPeriodRequest(period, generatedAt), { observationClient });
   if (detail.inventory.state === "missing") return riskyStartsResult(detail);
-  return riskyStartsResult(detail, await loadRiskyMarketLines(riskyRows(detail.inventory, detail.conflicts, detail.lowFirstRanks), generatedAt, { client: observationClient }));
+  return riskyStartsResult(detail, await loadRiskyMarketLines(riskyRows(detail.inventory, detail.conflicts, detail.lowFirstRanks), generatedAt, { client: observationClient }), period);
 }

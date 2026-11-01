@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseShareSettings, sharePostExportBlock, type SharePostSnapshot } from "./contract";
-import { averageChange, buildLastNightsStandouts, goalieChangeText, goalieLastText, goalieRank, goalieRanking, goalieRankingText, goalieStdText, goalieTone, goalLine, lastNightsStandoutsModule, latestEarlierLines, lineChipText, lineRowsFromCombinations, parsePicks, ppContradicted, percentChange, percentLabel, ppChipText, rankingText, slateCoverage, sortStandouts, STANDOUT_AVERAGE_FLOORS, STANDOUT_AVERAGE_RULE, STANDOUT_GOALIE_ROWS, STANDOUT_MAX_ROWS, standoutPool, standoutRows, statText, stdText, togglePick, type GoalieStat, type LastNightsStandoutsData, type LastNightsStandoutsInput, type LastNightsStandoutsSettings, type StandoutGoalie, type StandoutSkater } from "./lastNightsStandouts";
+import { averageChange, buildLastNightsStandouts, goalieChangeText, goalieLastText, goalieRank, goalieRanking, goalieRankingText, goalieStdText, goalieTone, goalLine, isOlderSlate, lastNightsStandoutsModule, latestEarlierLines, slateWord, standoutsCurrent, standoutsHeadline, lineChipText, lineRowsFromCombinations, parsePicks, ppContradicted, percentChange, percentLabel, ppChipText, rankingText, slateCoverage, sortStandouts, STANDOUT_AVERAGE_FLOORS, STANDOUT_AVERAGE_RULE, STANDOUT_GOALIE_ROWS, STANDOUT_MAX_ROWS, standoutPool, standoutRows, statText, stdText, togglePick, type GoalieStat, type LastNightsStandoutsData, type LastNightsStandoutsInput, type LastNightsStandoutsSettings, type StandoutGoalie, type StandoutSkater } from "./lastNightsStandouts";
 import { loadLastNightsStandouts } from "./lastNightsStandouts.sources";
 import { ownershipOf } from "./shared/definitions";
 import type { GoalieAppearance } from "./shared/goalieLedger";
@@ -436,7 +436,7 @@ describe("slate coverage and evidence", () => {
   });
   it("says last night is excluded and uses no forecast wording", () => {
     const { evidence } = built();
-    expect(evidence.sample).toContain("last night excluded");
+    expect(evidence.sample).toContain("that slate and later games excluded");
     expect(`${evidence.sample} ${evidence.cohort}`).not.toMatch(/forecast|project|expect|monstrous/i);
     expect(lastNightsStandoutsModule.basis).toBe("observed");
   });
@@ -448,13 +448,20 @@ describe("slate coverage and evidence", () => {
 });
 
 describe("loader", () => {
+  /** Applies a read's date filters and direction, so a slate lookup answers as the table would. */
+  const byDate = (rows: unknown[], filters: unknown[][]) => {
+    const test: Record<string, (date: string, bound: string) => boolean> = { gte: (date, bound) => date >= bound, lte: (date, bound) => date <= bound, lt: (date, bound) => date < bound, gt: (date, bound) => date > bound };
+    const dated = rows.filter(row => filters.every(([method, column, bound]) => column !== "date" || !test[method as string] || test[method as string]((row as { date: string }).date, bound as string)));
+    const order = filters.find(([method, column]) => method === "order" && column === "date")?.[2] as { ascending?: boolean } | undefined;
+    return order?.ascending === false ? [...dated].reverse() : dated;
+  };
   /** Exact-count PostgREST fake that records each table's filters. */
   function fakeClient(tables: Record<string, unknown[]>) {
     const calls: { table: string; filters: unknown[][] }[] = [];
     return { calls, client: { from(table: string) {
       const filters: unknown[][] = [], rows = tables[table] ?? [];
-      const chain: any = { then: (resolve: (value: unknown) => void) => resolve({ data: rows, error: null, count: rows.length }) };
-      for (const method of ["select", "eq", "gte", "lte", "in", "not", "order", "limit", "range"]) chain[method] = (...args: unknown[]) => { filters.push([method, ...args]); return chain; };
+      const chain: any = { then: (resolve: (value: unknown) => void) => { const kept = byDate(rows, filters); resolve({ data: kept, error: null, count: kept.length }); } };
+      for (const method of ["select", "eq", "gte", "lte", "lt", "gt", "in", "not", "order", "limit", "range"]) chain[method] = (...args: unknown[]) => { filters.push([method, ...args]); return chain; };
       calls.push({ table, filters });
       return chain;
     } } };
@@ -512,5 +519,78 @@ describe("loader", () => {
     const result = await loadLastNightsStandouts(ctx, settings());
     expect(result.state).toBe("missing");
     expect(result.data).toBeNull();
+  });
+  describe("a chosen slate", () => {
+    const LATER = "2026-11-01", EARLIER = "2026-10-20", NO_GAMES = "2026-10-25";
+    /** Three slates, and player 1 played all of them. The middle one is chosen. */
+    const tables = { wgo_skater_stats: [row(1, 1, EARLIER), row(1, 9, SLATE)], games: [{ id: 9 }], wgo_team_stats: [], nst_gamelog_as_counts: [], nst_gamelog_as_counts_oi: [], lineCombinations: [], powerPlayCombinations: [], yahoo_players: [], yahoo_nhl_player_map_read: [] };
+    const atNoon = (date: string) => `${date}T14:00:00Z`;
+    it("defaults to the latest completed slate, with nothing read after it", async () => {
+      const { fake, context: ctx } = context(tables);
+      const { data } = await loadLastNightsStandouts(ctx, settings());
+      expect(data).toMatchObject({ slate: SLATE, slates: { previous: EARLIER, next: null } });
+      expect(fake.calls.filter(call => call.filters.some(([method]) => method === "gt"))).toHaveLength(0);
+    });
+    it("reads through the chosen slate only, and finds its neighbours", async () => {
+      const { fake, context: ctx } = context({ ...tables, wgo_skater_stats: [...tables.wgo_skater_stats, row(1, 12, "2026-10-31"), row(1, 20, LATER)] });
+      const { data } = await loadLastNightsStandouts({ ...ctx, generatedAt: atNoon("2026-11-02") }, settings({ slate: SLATE }));
+      expect(data).toMatchObject({ slate: SLATE, slates: { previous: EARLIER, next: LATER } });
+      const seasonRead = fake.calls.filter(call => call.table === "wgo_skater_stats").find(call => call.filters.some(([method]) => method === "in"))!;
+      expect(seasonRead.filters).toContainEqual(["lte", "date", SLATE]);
+      expect(isOlderSlate(data!)).toBe(true);
+      expect(slateWord(data!)).toBe("Oct 31");
+      expect(standoutsHeadline({ slate: SLATE }, data)).toBe("Oct 31 Standouts");
+    });
+    it("gives a date with no games a clear reason and keeps the chooser's data", async () => {
+      const { fake, context: ctx } = context(tables);
+      const result = await loadLastNightsStandouts(ctx, settings({ slate: NO_GAMES }));
+      expect(result.state).toBe("missing");
+      expect(result.reasons).toEqual(["No completed games on Oct 25. Choose another slate."]);
+      expect(result.data).toMatchObject({ slate: NO_GAMES, skaters: [], slates: { previous: EARLIER, next: SLATE } });
+      expect(fake.calls.some(call => call.table === "yahoo_players")).toBe(false);
+    });
+    it("refuses a date past the completed slates or outside the season", async () => {
+      for (const slate of ["2026-11-01", "2026-06-01"]) {
+        const result = await loadLastNightsStandouts(context(tables).context, settings({ slate }));
+        expect(result.state).toBe("missing");
+        expect(result.reasons?.[0]).toContain("outside this season's completed slates");
+      }
+    });
+    it("fails visibly when a neighbour read fails", async () => {
+      const { fake } = context(tables);
+      const client = { from: (table: string) => { const chain = fake.client.from(table); const lt = chain.lt; chain.lt = (...args: unknown[]) => { lt(...args); chain.then = (resolve: (value: unknown) => void) => resolve({ data: null, error: { message: "nope" } }); return chain; }; return chain; } };
+      await expect(loadLastNightsStandouts({ client, generatedAt: "2026-11-01T14:00:00Z" }, settings())).rejects.toThrow("neighbouring slates");
+    });
+  });
+});
+
+describe("a slate's baseline and URLs", () => {
+  it("excludes that slate and every later game from the baseline, and the card's date follows it", () => {
+    const older = "2026-10-24", games = [game(1, "2026-10-20", 1), game(1, "2026-10-22", 2), game(1, "2026-10-23", 3), game(1, older, 4, { shots: 8 }), game(1, SLATE, 9, { shots: 40 })];
+    const { data } = buildLastNightsStandouts(shared({ slate: older, slates: { previous: "2026-10-23", next: SLATE, first: "2026-07-01", last: SLATE }, settings: settings({ slate: older }), appearances: games }));
+    const sog = stat(data!.skaters[0], "sog");
+    expect(data!.slate).toBe(older);
+    expect(sog).toMatchObject({ last: 8, baseline: 2, change: 300 });
+    expect(data!.skaters[0].priorGames).toBe(3);
+  });
+  it("calls the latest slate last night, even when it was chosen", () => {
+    const data = { slate: SLATE, slates: { previous: "2026-10-30", next: null, first: "2026-07-01", last: SLATE } };
+    expect(slateWord(data)).toBe("Last night");
+    expect(standoutsHeadline({ slate: SLATE }, data)).toBe("Last Nights Standouts");
+    expect(standoutsHeadline({ slate: null }, data)).toBe("Last Nights Standouts");
+  });
+  it("follows the settings until the new edition loads", () => {
+    expect(standoutsHeadline({ slate: "2026-10-20" }, { slate: SLATE, slates: { previous: null, next: null, first: SLATE, last: SLATE } })).toBe("Oct 20 Standouts");
+    expect(standoutsHeadline({ slate: "2026-10-20" }, null)).toBe("Oct 20 Standouts");
+  });
+  it("keeps old URLs on the latest slate and round trips an old slate with its picks", () => {
+    expect(parseShareSettings(lastNightsStandoutsModule, { view: "under", picks: "1,2" })).toMatchObject({ slate: null, picks: "1,2" });
+    expect(parseShareSettings(lastNightsStandoutsModule, { view: "all", slate: "2026-10-20", picks: "3" })).toMatchObject({ slate: "2026-10-20", picks: "3" });
+    expect(() => parseShareSettings(lastNightsStandoutsModule, { slate: "not-a-date" })).toThrow();
+  });
+  it("makes the slate a server setting, so changing it stops the export until it is refreshed", () => {
+    const { data } = buildLastNightsStandouts(shared({ settings: settings({ slate: SLATE }), appearances: season() }));
+    expect(standoutsCurrent(data!, settings({ slate: SLATE }))).toBe(true);
+    expect(standoutsCurrent(data!, settings({ slate: "2026-10-20" }))).toBe(false);
   });
 });

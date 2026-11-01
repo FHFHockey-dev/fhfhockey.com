@@ -12,10 +12,10 @@ const POSTS: readonly (readonly [string, string, string, string])[] = [
   ["FHFH Off-Night Edge, rest of week, 2026-11-05 to 2026-11-08. 1. TOR", "off-night-rest", `${MODULES}/offNightEdge.ts`, '`FHFH Off-Night Edge, ${data.dates === "weekly" ? "full week" : "rest of week"}'],
   ["FHFH Off-Night Edge, full week, 2026-11-02 to 2026-11-08. 1. TOR", "off-night-weekly", `${MODULES}/offNightEdge.ts`, '`FHFH Off-Night Edge, ${data.dates === "weekly" ? "full week" : "rest of week"}'],
   ["FHFH completed games per team, 2026-10-01 to 2026-11-01. 1. TOR: 12", "team-games", `${MODULES}/teamGames.ts`, "`FHFH completed games per team,"],
-  ["FHFH Top Multi-Cat Stars of the Week, fantasy week", "stars-total", `${MODULES}/multiCatStars.ts`, '"Multi-Cat"} Stars ${basis === "perGame" ? "Per Game" : "of the Week"}'],
-  ["FHFH Top Points-First Stars of the Week, fantasy week", "stars-total-points-first", `${MODULES}/multiCatStars.ts`, '`Top ${formula === "pointsFirst" ? "Points-First"'],
-  ["FHFH Top Multi-Cat Stars Per Game, fantasy week", "stars-per-game", `${MODULES}/multiCatStars.ts`, '"Multi-Cat"} Stars ${basis === "perGame" ? "Per Game" : "of the Week"}'],
-  ["FHFH Top Points-First Stars Per Game, fantasy week", "stars-per-game-points-first", `${MODULES}/multiCatStars.ts`, "`FHFH ${multiCatHeadline(data)},"],
+  ["FHFH Top Multi-Cat Stars of the Week, fantasy week", "stars-total", `${MODULES}/multiCatStars.ts`, '`Top ${settings.formula === "pointsFirst" ? "Points-First" : "Multi-Cat"} Stars`'],
+  ["FHFH Top Points-First Stars of the Week, fantasy week", "stars-total-points-first", `${MODULES}/multiCatStars.ts`, 'return noun ? `${name} of the ${noun}` : name;'],
+  ["FHFH Top Multi-Cat Stars Per Game, fantasy week", "stars-per-game", `${MODULES}/multiCatStars.ts`, '`${name} Per Game`'],
+  ["FHFH Top Points-First Stars Per Game, fantasy week", "stars-per-game-points-first", `${MODULES}/multiCatStars.ts`, "`FHFH ${multiCatHeadline(settings, data)},"],
   ["FHFH goalies, Week 5, 2026-10-26 to 2026-11-01, by category counts.", "goalie-of-week", `${MODULES}/shared/categoryCounts.ts`, "label: `Week ${week.week}, ${week.start} to ${week.end}"],
   ["FHFH goalies, October, by category counts.", "goalie-of-month", `${MODULES}/goaliePeriod.ts`, "`FHFH goalies, ${data.period.label},"],
   ["FHFH BSH leaders, last 10 games, through 2026-11-01.", "bsh-leaders", `${MODULES}/bshBoard.ts`, '`FHFH BSH ${data.view === "leaders" ? "leaders" : "risers and fallers"},'],
@@ -32,7 +32,7 @@ const POSTS: readonly (readonly [string, string, string, string])[] = [
   ["FHFH Last Nights Standouts, Under 25% rostered, Nov 1.", "standouts-under", `${MODULES}/lastNightsStandouts.ts`, "under: `Under ${settings.rosterMax}% rostered`"],
   ["FHFH Last Nights Standouts, Top forwards, Nov 1.", "standouts-forwards", `${MODULES}/lastNightsStandouts.ts`, 'forwards: "Top forwards"'],
   ["FHFH Last Nights Standouts, Top defensemen, Nov 1.", "standouts-defensemen", `${MODULES}/lastNightsStandouts.ts`, 'defensemen: "Top defensemen"'],
-  ["FHFH Last Nights Standouts, Goalies, Nov 1.", "standouts-goalies", `${MODULES}/lastNightsStandouts.ts`, "`FHFH Last Nights Standouts, ${viewTitle(settings)},"],
+  ["FHFH Last Nights Standouts, Goalies, Nov 1.", "standouts-goalies", `${MODULES}/lastNightsStandouts.ts`, "`FHFH ${STANDOUTS_TITLE}, ${viewTitle(settings)},"],
   ["FHFH Crease Shift: official start share over each team's last 5.", "crease-shift", `${MODULES}/creaseShift.ts`, "`FHFH Crease Shift: "],
   ["FHFH GSAx, NST model, all situations.", "goalie-gsax", `${MODULES}/goalieGsax.ts`, "`FHFH GSAx, NST model,"],
   ["FHFH busy and quiet goalies, last 10 games through 2026-11-01.", "busy-quiet", `${MODULES}/busyQuiet.ts`, "`FHFH busy and quiet goalies,"],
@@ -52,6 +52,11 @@ describe("matchPostedCard", () => {
 
   it("each rule's wording is still what the card's own alt text writes", () => {
     for (const [, card, file, wording] of POSTS) expect(readFileSync(join(process.cwd(), file), "utf8"), card).toContain(wording);
+  });
+
+  it("a Multi-Cat Stars total counts as that card whatever period its headline names", () => {
+    for (const alt of ["FHFH Top Multi-Cat Stars of the Matchup, ranked", "FHFH Top Multi-Cat Stars, ranked 2026-10-15 to 2026-10-25"]) expect(matchPostedCard(alt), alt).toBe("stars-total");
+    expect(matchPostedCard("FHFH Top Points-First Stars, ranked 2026-10-15 to 2026-10-25")).toBe("stars-total-points-first");
   });
 
   it("every landing card can be matched", () => {

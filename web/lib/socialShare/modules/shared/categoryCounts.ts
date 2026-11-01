@@ -157,7 +157,7 @@ export function weekMonth(week: MatchupWeek) {
 }
 
 export type SharePeriod = {
-  kind: "week" | "month"; key: string; label: string;
+  kind: "week" | "month" | "custom" | "season"; key: string; label: string;
   /** Past the cutoff: its label says "through <date>". */
   inProgress: boolean; through: string;
   /** Game cells cover starts dated here. */
@@ -177,6 +177,24 @@ export function monthPeriod(weeks: readonly MatchupWeek[], month: string, throug
   const touchedWeeks = weeks.filter(week => cellWeeks.includes(week) || (week.start <= end && week.end >= start));
   const inProgress = end > through || cellWeeks.some(week => week.end > through);
   return { kind: "month", key: month, label: `${monthName(month)}${inProgress ? `, through ${through}` : ""}`, inProgress, through, gameFrom: start, gameTo: end, cellWeeks, touchedWeeks };
+}
+const DAY_MS = 86400000;
+/** Days from `start` to `end`, both counted. */
+export const spanDays = (start: string, end: string) => Math.round((Date.parse(`${end}T00:00:00Z`) - Date.parse(`${start}T00:00:00Z`)) / DAY_MS) + 1;
+/** A week's cells belong to a range by the month rule: most of its days inside, and an even split goes to the side holding the week's later days. */
+function rangeHoldsWeek(week: MatchupWeek, start: string, end: string) {
+  const from = start > week.start ? start : week.start, to = end < week.end ? end : week.end, inside = to < from ? 0 : spanDays(from, to) * 2, days = spanDays(week.start, week.end);
+  return inside > days || (inside === days && end >= week.end);
+}
+/** Any dates, by the month's rules: game cells for the range's starts, each against its own whole week's baseline, and the week cells of the weeks it mostly holds. */
+export function rangePeriod(weeks: readonly MatchupWeek[], start: string, end: string, through: string): SharePeriod {
+  const touchedWeeks = weeks.filter(week => week.start <= end && week.end >= start);
+  return { kind: "custom", key: `${start}_${end}`, label: `${start} to ${end}`, inProgress: false, through, gameFrom: start, gameTo: end, cellWeeks: touchedWeeks.filter(week => rangeHoldsWeek(week, start, end)), touchedWeeks };
+}
+/** Every matchup week started, the one under way counted through the cutoff as a selected week is. */
+export function seasonPeriod(weeks: readonly MatchupWeek[], through: string): SharePeriod {
+  const started = weeks.filter(week => week.start <= through);
+  return { kind: "season", key: "season", label: `Season to date, through ${through}`, inProgress: true, through, gameFrom: started[0]?.start ?? through, gameTo: through, cellWeeks: started, touchedWeeks: started };
 }
 /** The last completed week; before any completes, the first one under way, which its label marks as in progress. */
 export const defaultWeek = (weeks: readonly MatchupWeek[], through: string) => [...weeks].reverse().find(week => week.end <= through) ?? weeks.find(week => week.start <= through) ?? null;

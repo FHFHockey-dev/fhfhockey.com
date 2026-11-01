@@ -2,11 +2,13 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { createElement } from "react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import BusyQuietCard from "components/SocialShare/modules/BusyQuietCard";
-import { busyQuietModule, buildBusyQuiet, dangerZoneShots, goalieLedgerScope, goalieWindows, ledgerCoverage, nstToiSeconds, shotScale, shotsOnBasis, teamChances, VOLUME_NOTE, workloadLevel, type BusyQuietData, type BusyQuietSettings, type NstGoalieRow, type NstTeamRow } from "./busyQuiet";
+import { busyQuietModule, buildBusyQuiet, dangerZoneShots, goalieDatesLine, goalieLedgerScope, goalieMinStarts, goalieWindows, ledgerCoverage, MIN_STARTS_RANGE_RULE, nstToiSeconds, resolveGoalieRange, shotScale, shotsOnBasis, teamChances, VOLUME_NOTE, workloadLevel, type BusyQuietData, type BusyQuietSettings, type GoalieDateRange, type NstGoalieRow, type NstTeamRow } from "./busyQuiet";
 import { parseShareSettings, UNKNOWN_EVIDENCE, type SharePostSnapshot } from "./contract";
+import { loadBusyQuiet } from "./busyQuiet.sources";
 import type { CompletedTeamGame, GoalieAppearance } from "./shared/goalieLedger";
+import { matchupCalendar } from "./shared/periodWindow";
 
 const appearance = (over: Partial<GoalieAppearance> & { goalieId: number; gameId: number; date: string }): GoalieAppearance => ({ name: `G${over.goalieId}`, team: "NJD", opponent: "NYR", home: true, started: true, wins: 1, losses: 0, otLosses: 0, saves: 27, shotsAgainst: 30, goalsAgainst: 3, toiSeconds: 3600, shutouts: 0, qualityStart: 1, ...over });
 const date = (day: number) => `2026-10-${String(day).padStart(2, "0")}`;
@@ -18,7 +20,7 @@ const rows: GoalieAppearance[] = [
 ];
 const games: CompletedTeamGame[] = [...[1, 2, 3, 4].map(id => ({ gameId: id, date: date(id), team: "NJD" })), ...[5, 6, 7].map(id => ({ gameId: id, date: date(id), team: "NYR" }))];
 const scheduled = (count: number) => Array.from({ length: count }, (_, index) => date(index + 1));
-const settings = (over: Partial<BusyQuietSettings> = {}): BusyQuietSettings => ({ basis: "start", window: "l10", minStarts: 3, ...over });
+const settings = (over: Partial<BusyQuietSettings> = {}): BusyQuietSettings => ({ basis: "start", window: "l10", minStarts: 3, minStartsWeek: 2, minStartsRange: 2, period: "rolling", week: null, start: null, end: null, ...over });
 const nstGoalie = (goalieId: number, day: number, hd = 10): NstGoalieRow => ({ player_id: goalieId, date_scraped: date(day), toi: "60", hd_shots_against: hd, md_shots_against: 5, ld_shots_against: 5 });
 const build = (over: Partial<Parameters<typeof buildBusyQuiet>[0]> = {}) => buildBusyQuiet({ settings: settings(), appearances: rows, teamGames: games, scheduledDates: [], nstGoalie: [], nstTeam: [], through: date(30), ...over });
 
@@ -146,7 +148,7 @@ describe("the list", () => {
     expect(evidence.sources.flatMap(source => source.tables)).toEqual(["wgo_goalie_stats", "wgo_team_stats", "games", "nst_gamelog_goalie_all_counts", "nst_team_gamelogs_as_counts"]);
   });
   it("defaults to the contract's settings and refuses others", () => {
-    expect(parseShareSettings(busyQuietModule, {})).toEqual({ basis: "start", window: "l10", minStarts: 3 });
+    expect(parseShareSettings(busyQuietModule, {})).toEqual({ basis: "start", window: "l10", minStarts: 3, minStartsWeek: 2, minStartsRange: 2, period: "rolling", week: null, start: null, end: null });
     expect(() => parseShareSettings(busyQuietModule, { basis: "good" })).toThrow();
     expect(() => parseShareSettings(busyQuietModule, { minStarts: "0" })).toThrow();
     expect(busyQuietModule).toMatchObject({ basis: "observed", group: "goalies", suggestedUse: "Works for a Thursday or Friday post." });
@@ -271,5 +273,103 @@ describe("busy and quiet card", () => {
   it("says why an empty pool is empty, with no filler", () => {
     const active = settings({ minStarts: 20 }), empty = build({ settings: active }).data!;
     expect(renderCard(empty, active).container.textContent).toBe("No goalie has 20 official starts in this window");
+  });
+});
+
+describe("busy and quiet period", () => {
+  const calendar = matchupCalendar([{ week: 1, start_date: date(1), end_date: date(4) }, { week: 2, start_date: date(5), end_date: date(11) }, { week: 3, start_date: date(12), end_date: date(18) }, { week: 4, start_date: date(19), end_date: date(25) }]);
+  const chosen = (over: Partial<BusyQuietSettings>, cutoff = date(30)) => { const picked = resolveGoalieRange(settings(over), calendar, cutoff); return picked.range!; };
+  const week1 = () => chosen({ period: "matchup", week: 1 });
+  it("keeps a link from before the control meaning what it meant, and adds the two new periods", () => {
+    expect(parseShareSettings(busyQuietModule, { window: "std", basis: "per60" })).toMatchObject({ window: "std", period: "rolling", basis: "per60" });
+    const rolling = build({ settings: settings({ window: "std" }) }).data!;
+    expect(rolling).toMatchObject({ ranged: false, dates: "Season to date, Oct 1 to Oct 7" });
+    const fields = busyQuietModule.fields.filter(field => field.id === "period" || field.id === "window");
+    expect(fields.map(field => [field.id, field.default, field.onlyForPeriod])).toEqual([["period", "rolling", undefined], ["window", "l10", "rolling"]]);
+    expect(busyQuietModule.periodControl).toEqual({ mode: "past-only" });
+  });
+  it("reads a chosen matchup's games only, and prints its dates", () => {
+    const result = build({ settings: settings({ period: "matchup", week: 1, minStartsWeek: 3 }), range: week1(), scheduledDates: scheduled(4) });
+    expect(result.data!.dates).toBe("Week 1 · Oct 1 to Oct 4");
+    expect(result.data!.ranged).toBe(true);
+    expect(result.data!.busy.map(row => row.goalieId)).toEqual([1]);
+    expect(result.data!.busy[0]).toMatchObject({ appearances: 4, requested: null, short: false, starts: 3, relief: 1 });
+    expect(result.evidence.cohort).toBe("1 of 2 goalies with at least 3 official starts in these dates");
+    expect(result.evidence.sample).toContain("Week 1 · Oct 1 to Oct 4:");
+    const { container } = renderCard(result.data!, settings({ period: "matchup", week: 1 }));
+    expect(container.textContent).toContain("Week 1 · Oct 1 to Oct 4. Min 3 GS. Line:");
+  });
+  it("stops a week under way at the last completed games, and says so", () => {
+    const range = chosen({ period: "matchup", week: 2 }, date(6));
+    expect(range).toEqual({ from: date(5), through: date(6), line: "Week 2 · Oct 5 to Oct 11, games through Oct 6", past: false });
+  });
+  it("refuses a week not started, a custom end past the games, and a bad range before any read", () => {
+    expect(resolveGoalieRange(settings({ period: "matchup", week: 4 }), calendar, date(6)).reason).toBe(`Week 4 has not started; data runs through ${date(6)}.`);
+    expect(resolveGoalieRange(settings({ period: "custom", start: date(2), end: date(9) }), calendar, date(6)).reason).toBe(`The end date ${date(9)} is past the last completed games, ${date(6)}.`);
+    expect(() => parseShareSettings(busyQuietModule, { period: "custom", start: date(9), end: date(2) })).toThrow("The start date must be before the end date.");
+    expect(() => parseShareSettings(busyQuietModule, { period: "custom" })).toThrow("A custom range needs a start date and an end date.");
+    expect(parseShareSettings(busyQuietModule, { period: "custom", start: date(1), end: date(2) })).toMatchObject({ period: "custom", start: date(1), end: date(2) });
+  });
+  it("applies min starts to the chosen dates and never lowers it for a short range", () => {
+    const short = chosen({ period: "custom", start: date(1), end: date(2) }), active = settings({ period: "custom", start: date(1), end: date(2), minStartsRange: 3 });
+    const empty = build({ settings: active, range: short, scheduledDates: scheduled(2) });
+    expect(empty.data!.busy).toEqual([]);
+    expect(renderCard(empty.data!, active).container.textContent).toBe(`No goalie has 3 official starts in Oct 1 to Oct 2. ${MIN_STARTS_RANGE_RULE}`);
+    cleanup();
+    const lower = settings({ period: "custom", start: date(1), end: date(2) });
+    expect(build({ settings: lower, range: short, scheduledDates: scheduled(2) }).data!.busy.map(row => [row.goalieId, row.starts])).toEqual([[1, 2]]);
+    expect(build({ settings: lower, range: short }).evidence.sample).toContain(MIN_STARTS_RANGE_RULE);
+  });
+  it("defaults min starts by period, lets an explicit value win, and leaves old links as they were", () => {
+    const parsed = (query: Record<string, string>) => goalieMinStarts(parseShareSettings<BusyQuietSettings>(busyQuietModule as never, query));
+    expect([parsed({}), parsed({ period: "matchup" }), parsed({ period: "custom", start: date(1), end: date(2) })]).toEqual([3, 2, 2]);
+    expect([parsed({ minStarts: "5" }), parsed({ period: "matchup", minStartsWeek: "1" }), parsed({ period: "custom", start: date(1), end: date(2), minStartsRange: "4" })]).toEqual([5, 1, 4]);
+    expect(parsed({ window: "std", minStarts: "7" })).toBe(7);
+    expect(parsed({ period: "matchup", minStarts: "7" })).toBe(2);
+    expect(busyQuietModule.fields.filter(field => field.id.startsWith("minStarts")).map(field => [field.id, field.default, field.onlyForPeriod])).toEqual([["minStarts", 3, "rolling"], ["minStartsWeek", 2, "matchup"], ["minStartsRange", 2, "custom"]]);
+    expect(build({ settings: settings({ period: "matchup", week: 1 }), range: week1() }).data!.busy.map(row => row.goalieId)).toEqual([1]);
+    expect(build({ settings: settings({ period: "matchup", week: 1 }), range: week1() }).evidence.cohort).toContain("at least 2 official starts in these dates");
+    expect(renderCard(build({ settings: settings() }).data!, settings()).container.textContent).not.toContain("Min 3 GS");
+  });
+  it("checks every scheduled game in the chosen dates and none outside them", () => {
+    expect(build({ settings: settings({ period: "matchup", week: 1 }), range: week1(), scheduledDates: scheduled(4), teamGames: games.slice(0, 3) }).state).toBe("partial");
+    const later = [...scheduled(4), date(20)];
+    expect(build({ settings: settings({ period: "matchup", week: 1 }), range: week1(), scheduledDates: later, teamGames: games.slice(0, 4), appearances: rows.filter(row => row.date <= date(4)) }).evidence.coverage!.expected).toBe(8);
+  });
+  it("judges HD coverage per goalie over the chosen dates, and still prints a dash below it", () => {
+    const range = week1(), nst = (days: number[]) => days.map(day => nstGoalie(1, day));
+    const row = (days: number[]) => build({ settings: settings({ period: "matchup", week: 1, minStartsWeek: 3 }), range, nstGoalie: nst(days) }).data!.busy[0];
+    expect(row([1, 2, 3]).danger).toMatchObject({ admitted: true, covered: 3, expected: 3, hd: 10 });
+    expect(row([1, 2]).danger).toMatchObject({ admitted: false, covered: 2, expected: 3, hd: null });
+    const thin = build({ settings: settings({ period: "matchup", week: 1, minStartsWeek: 3 }), range, nstGoalie: nst([1, 2]) });
+    expect(thin.evidence.sample).toContain("HD coverage behind a dash: G1 2 of 3 games");
+    expect(renderCard(thin.data!, settings({ period: "matchup", week: 1 })).container.querySelector('[data-stat="hd"]')!.hasAttribute("data-missing")).toBe(true);
+  });
+  it("keeps the sparkline readable over a long range", () => {
+    const long = Array.from({ length: 40 }, (_, index) => appearance({ goalieId: 1, gameId: 100 + index, date: `2026-1${index < 20 ? "0" : "1"}-${String(index % 20 + 1).padStart(2, "0")}`, shotsAgainst: 20 + index % 10 }));
+    const range: GoalieDateRange = { from: "2026-10-01", through: "2026-11-20", line: "Oct 1 to Nov 20", past: true }, active = settings({ period: "custom", start: range.from, end: range.through });
+    const { container } = renderCard(build({ settings: active, range, appearances: long }).data!, active);
+    expect(container.querySelectorAll("[data-segment]")).toHaveLength(39);
+    expect(container.querySelectorAll("[data-point]")).toHaveLength(0);
+    expect(container.querySelector("svg[data-sparkline]")!.getAttribute("width")).toBe("90");
+  });
+  it("names the dates behind a rolling window, and the through date when there are none", () => {
+    expect(goalieDatesLine("l10", null, goalieWindows(rows, "l10"), date(30))).toBe("Last 10 appearances, Oct 1 to Oct 7");
+    expect(goalieDatesLine("l10", null, [], date(30))).toBe(`Last 10 appearances through ${date(30)}`);
+  });
+  it("reads no calendar for a rolling window, and refuses a week before reading the ledger", async () => {
+    const tables: string[] = [];
+    const client = { from: (table: string) => { tables.push(table); const chain: Record<string, unknown> = {}; for (const method of ["select", "eq", "gte", "lte", "in", "order"]) chain[method] = () => chain; chain.range = async () => ({ data: table === "yahoo_matchup_weeks" ? [{ week: 1, start_date: date(1), end_date: date(4) }] : [], count: table === "yahoo_matchup_weeks" ? 1 : 0, error: null }); return chain; } };
+    const rolling = await loadBusyQuiet({ client, generatedAt: "2026-10-31T18:00:00Z" }, settings());
+    expect(tables).not.toContain("yahoo_matchup_weeks");
+    expect(rolling.data!.ranged).toBe(false);
+    tables.length = 0;
+    const refused = await loadBusyQuiet({ client, generatedAt: "2026-10-31T18:00:00Z" }, settings({ period: "matchup", week: 9 }));
+    expect(refused).toMatchObject({ state: "missing", data: null, reasons: ["Week 9 is not on the matchup calendar."] });
+    expect(tables).toEqual(["yahoo_matchup_weeks"]);
+  });
+  it("fails visibly when the matchup calendar can't be read", async () => {
+    const failing = { from: vi.fn(() => { throw new Error("Matchup weeks read failed."); }) };
+    await expect(loadBusyQuiet({ client: failing, generatedAt: "2026-10-31T18:00:00Z" }, settings({ period: "matchup" }))).rejects.toThrow("Matchup weeks read failed.");
   });
 });

@@ -1,7 +1,8 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 import { parseShareSettings, type SharePostLoadResult } from "../lib/socialShare/modules/contract";
-import { buildMultiCatStars, multiCatStarsModule, type MultiCatGame, type MultiCatSeason, type MultiCatSettings } from "../lib/socialShare/modules/multiCatStars";
+import { buildMultiCatStars, MULTI_CAT_CONTROL, MULTI_CAT_OWN, multiCatStarsModule, type MultiCatGame, type MultiCatSeason, type MultiCatSettings } from "../lib/socialShare/modules/multiCatStars";
+import { matchupCalendar, resolvePeriodWindow } from "../lib/socialShare/modules/shared/periodWindow";
 
 /**
  * Top Multi-Cat Stars of the Week. Fictional skaters through the real builder, with the same fictional editor session
@@ -26,16 +27,19 @@ async function signIn(page: Page) {
   });
 }
 const WEEK = ["2026-10-26", "2026-10-28", "2026-10-30"];
+const CUTOFF = "2026-10-31";
+/** Week 3 runs 14 days over a fictional break. */
+const CALENDAR = [{ week: 3, start_date: "2026-10-05", end_date: "2026-10-18" }, { week: 4, start_date: "2026-10-19", end_date: "2026-10-25" }, { week: 5, start_date: "2026-10-26", end_date: "2026-11-01" }];
 const game = (playerId: number, date: string, stats: Partial<MultiCatGame> = {}): MultiCatGame => ({
   playerId, name: `Fictional Long Name ${playerId}`, position: playerId % 3 ? "C" : "D", group: playerId % 3 ? "F" : "D", gameId: Number(date.replace(/-/g, "")) * 100 + (playerId % 2), date, team: playerId % 2 ? "NYR" : "NJD", opponent: null, home: null,
   goals: playerId % 3, assists: playerId % 4, points: playerId % 3 + playerId % 4, shots: 1 + playerId % 6, hits: 1 + playerId % 5, blocks: 1 + playerId % 4, ppPoints: playerId % 2, toiSeconds: 900, ppToiSeconds: 0, penaltyMinutes: playerId % 3, plusMinus: playerId % 5 - 2, ...stats,
 });
 const seasonOf = (appearances: MultiCatGame[]): MultiCatSeason => {
   const teamGames = [...new Map(appearances.map(row => [`${row.team}:${row.gameId}`, { gameId: row.gameId, date: row.date, team: row.team! }])).values()];
-  return { appearances, teamGames, scheduledGames: teamGames.length / 2, through: "2026-10-31" };
+  return { appearances, teamGames, scheduledGames: teamGames.length / 2, through: CUTOFF };
 };
 /** More skaters than the board holds, all with the widest values a real week could plausibly print. */
-const crowded = seasonOf(Array.from({ length: 12 }, (_, player) => ["2026-10-10", ...WEEK].map(date => game(player + 1, date))).flat());
+const crowded = seasonOf(Array.from({ length: 12 }, (_, player) => ["2026-10-10", "2026-10-14", "2026-10-20", "2026-10-22", ...WEEK].map(date => game(player + 1, date))).flat());
 const defaults = parseShareSettings(multiCatStarsModule, {}) as MultiCatSettings;
 const edition = (settings: object, result: SharePostLoadResult<unknown>) => {
   const generatedAt = new Date().toISOString();
@@ -46,9 +50,11 @@ async function open(page: Page, season: MultiCatSeason) {
   await page.route("**/api/v1/social-share/posts/**", route => {
     const query = new URL(route.request().url()).searchParams;
     expect(route.request().headers().authorization).toBe(`Bearer ${editorToken}`);
-    const active = { basis: query.get("basis") ?? defaults.basis, formula: query.get("formula") ?? defaults.formula } as MultiCatSettings;
-    return route.fulfill({ json: edition(active, buildMultiCatStars(season, active)) });
+    const active = { ...defaults, basis: query.get("basis") ?? defaults.basis, formula: query.get("formula") ?? defaults.formula, period: query.get("period") ?? defaults.period, week: query.get("week") ? Number(query.get("week")) : null, start: query.get("start"), end: query.get("end") } as MultiCatSettings;
+    const { window } = resolvePeriodWindow(active, matchupCalendar(CALENDAR), { ...MULTI_CAT_CONTROL, cutoff: CUTOFF, own: MULTI_CAT_OWN });
+    return route.fulfill({ json: edition(active, buildMultiCatStars({ ...season, through: window!.through < CUTOFF ? window!.through : CUTOFF }, active, window!)) });
   });
+  await page.route("**/api/v1/social-share/matchup-weeks", route => route.fulfill({ json: { rows: CALENDAR, cutoff: CUTOFF } }));
   await page.goto("/social-share/posts?post=multi-cat-stars");
   await expect(page.getByTestId("share-square")).toBeVisible();
 }
@@ -78,8 +84,8 @@ test("all four views rank, retitle, fit the square and can export", async ({ pag
   await open(page, crowded);
   const square = page.getByTestId("share-square");
   const views = [
-    { basis: "Fantasy Week Total", formula: "Standard", headline: "TOP MULTI-CAT STARS OF THE WEEK", rule: "PTS + BLK + SOG + HIT, total" },
-    { basis: "Fantasy Week Total", formula: "Points-First", headline: "TOP POINTS-FIRST STARS OF THE WEEK", rule: "2 x PTS + BLK + SOG + HIT, total" },
+    { basis: "Period Total", formula: "Standard", headline: "TOP MULTI-CAT STARS OF THE WEEK", rule: "PTS + BLK + SOG + HIT, total" },
+    { basis: "Period Total", formula: "Points-First", headline: "TOP POINTS-FIRST STARS OF THE WEEK", rule: "2 x PTS + BLK + SOG + HIT, total" },
     { basis: "Per Game", formula: "Standard", headline: "TOP MULTI-CAT STARS PER GAME", rule: "PTS + BLK + SOG + HIT, per game, 2+ GP" },
     { basis: "Per Game", formula: "Points-First", headline: "TOP POINTS-FIRST STARS PER GAME", rule: "2 x PTS + BLK + SOG + HIT, per game, 2+ GP" },
   ];
@@ -99,7 +105,7 @@ test("all four views rank, retitle, fit the square and can export", async ({ pag
 test("each window is labelled, and radar colours are attributes the PNG capture keeps", async ({ page }) => {
   await open(page, crowded);
   const square = page.getByTestId("share-square");
-  for (const text of ["RANKED", "fantasy week Oct 26-Nov 1, through Oct 31", "last 7 days, Oct 25-Oct 31", "season per-game percentile among 12 skaters", "Ties share a rank"]) await expect(square).toContainText(text);
+  for (const text of ["RANKED", "fantasy week 5 · Oct 26 to Nov 1, through Oct 31", "last 7 days, Oct 25-Oct 31", "season per-game percentile through Oct 31 among 12 skaters", "Ties share a rank"]) await expect(square).toContainText(text);
   await expect(square.getByText("LAST 7 DAYS", { exact: true })).toHaveCount(4);
   await expect(square.getByText("SEASON PERCENTILE", { exact: true })).toHaveCount(4);
   const shape = square.getByTestId("multi-cat-shape").first();
@@ -160,4 +166,51 @@ test("an odd board leaves no empty quadrant, and an empty one says why and canno
   await page.getByRole("button", { name: "Refresh post", exact: true }).click();
   await expect(page.getByTestId("share-square")).toContainText("No skater has 2 GP this fantasy week yet");
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
+});
+
+test("the period control ranks a past matchup, a long matchup and a custom range, each with a true headline and table label", async ({ page }) => {
+  await open(page, crowded);
+  const square = page.getByTestId("share-square"), panels = square.getByTestId("multi-cat-panel");
+  const period = page.getByTestId("period-control");
+  await expect(square.locator("h2")).toHaveText("TOP MULTI-CAT STARS OF THE WEEK");
+  await expect(square.getByText("LAST 7 DAYS", { exact: true })).toHaveCount(4);
+
+  await period.locator("select").selectOption({ label: "Matchup week" });
+  await expect(page.getByTestId("period-pager-label")).toHaveText("Week 4 · Oct 19 to Oct 25"); // A blank past-only week is the last completed.
+  await expect(square.locator("h2")).toHaveText("TOP MULTI-CAT STARS OF THE WEEK");
+  await expect(square).toContainText("fantasy week 4 · Oct 19 to Oct 25");
+  await expect(square).toContainText("same dates as the ranking");
+  await expect(square).toContainText("through Oct 25 among 12 skaters");
+  await expect(square.getByText("SAME DATES", { exact: true })).toHaveCount(4);
+  await expect(panels.first().getByTestId("multi-cat-table").locator("b").first()).toHaveText("2");
+  await expectFits(page);
+  if (process.env.MULTI_CAT_SHOTS) await square.screenshot({ path: `${process.env.MULTI_CAT_SHOTS}/matchup.png` });
+
+  await page.getByRole("button", { name: /^Prior week/ }).click();
+  await expect(square.locator("h2")).toHaveText("TOP MULTI-CAT STARS OF THE MATCHUP");
+  await expect(square).toContainText("fantasy week 3 · Oct 5 to Oct 18");
+  await expect(panels.first().getByTestId("multi-cat-score")).toContainText("MATCHUP");
+  await expectFits(page);
+
+  await period.locator("select").selectOption({ label: "Custom range" });
+  await period.locator("label", { hasText: "start" }).locator("input").fill("2026-10-14");
+  await period.locator("label", { hasText: "end" }).locator("input").fill("2026-10-28");
+  await page.getByRole("button", { name: "Refresh post", exact: true }).click();
+  await expect(square.locator("h2")).toHaveText("TOP MULTI-CAT STARS");
+  await expect(square).toContainText("Oct 14 to Oct 28");
+  await expect(panels.first().getByTestId("multi-cat-score")).toContainText("TOTAL");
+  await expect(panels.first().getByTestId("multi-cat-table").locator("b").first()).toHaveText("5"); // Oct 14, 20, 22, 26 and 28.
+  await expectFits(page);
+  if (process.env.MULTI_CAT_SHOTS) await square.screenshot({ path: `${process.env.MULTI_CAT_SHOTS}/custom.png` });
+  await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeEnabled();
+});
+
+test("a landing link naming only the view still opens on the current fantasy week", async ({ page }) => {
+  await open(page, crowded);
+  await page.goto("/social-share/posts?post=multi-cat-stars&basis=perGame&formula=pointsFirst");
+  const square = page.getByTestId("share-square");
+  await expect(square.locator("h2")).toHaveText("TOP POINTS-FIRST STARS PER GAME");
+  await expect(square.getByText("LAST 7 DAYS", { exact: true })).toHaveCount(4);
+  await expect(square).toContainText("fantasy week 5 · Oct 26 to Nov 1");
+  await expectFits(page);
 });

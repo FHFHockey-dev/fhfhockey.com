@@ -2,6 +2,15 @@
 
 .fields { display: flex; flex-wrap: wrap; gap: v.$space-sm; align-items: flex-end; margin-top: v.$space-sm; }
 .defaultNote { display: block; color: v.$text-secondary; font-size: v.$font-size-sm; }
+.period { display: flex; flex-wrap: wrap; gap: v.$space-sm; align-items: flex-end; margin-top: v.$space-sm; min-width: 0;
+  label { display: grid; gap: v.$space-xs; min-width: 0; max-width: 100%; }
+}
+.pagerBlock { display: grid; gap: v.$space-xs; min-width: 0; max-width: 100%; }
+.pager { display: flex; align-items: center; gap: v.$space-xs; min-width: 0;
+  button { flex: none; width: v.$touch-target-min; padding: 0; }
+  button:focus-visible { outline: 2px solid v.$primary-color; outline-offset: 2px; }
+}
+.pagerLabel { min-width: 0; text-align: center; color: v.$color-white; font-size: v.$font-size-sm; font-weight: 600; font-variant-numeric: tabular-nums; }
 .postBody { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; font-family: "Share Roboto Condensed", sans-serif; }
 .unavailable { margin: auto; display: grid; gap: v.$space-sm; text-align: center; padding: 0 v.$space-xxl; font-size: 26px; strong { font-size: 38px; } p { margin: 0; color: v.$text-secondary; } }
 .evidence { display: grid; gap: 2px; overflow-wrap: anywhere; margin: v.$space-sm 0 0; font-size: 14px; line-height: 1.25; color: v.$text-secondary; b { color: v.$color-white; font-weight: 600; } }

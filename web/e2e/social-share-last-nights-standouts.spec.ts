@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 import { parseShareSettings } from "../lib/socialShare/modules/contract";
-import { buildLastNightsStandouts, lastNightsStandoutsModule, type LastNightsStandoutsInput, type LastNightsStandoutsSettings } from "../lib/socialShare/modules/lastNightsStandouts";
+import { buildLastNightsStandouts, lastNightsStandoutsModule, standoutsNoSlate, type LastNightsStandoutsInput, type LastNightsStandoutsSettings } from "../lib/socialShare/modules/lastNightsStandouts";
 import { ownershipOf } from "../lib/socialShare/modules/shared/definitions";
 import type { GoalieAppearance } from "../lib/socialShare/modules/shared/goalieLedger";
 import type { SkaterAppearance } from "../lib/socialShare/modules/shared/skaterAppearances";
@@ -310,4 +310,66 @@ test("a full goalie card fills the body with its 8 goalies", async ({ page }) =>
   await expect.poll(() => page.getByTestId("stat-tile").evaluateAll(tiles => new Set(tiles.map(tile => Math.round(tile.getBoundingClientRect().width))).size)).toBe(1);
   await expect(page.getByTestId("nst-goalie-note")).toHaveCount(0);
   await expectFits(page);
+});
+
+/** Three slates: the latest, an older one, and a date between them with no games. */
+const OLD_SLATE = PRIOR[3], NO_GAME_DATE = "2026-10-28";
+const slateBody = (query: URLSearchParams) => {
+  const settings = settingsFromQuery(query), slate = settings.slate ?? SLATE, latest = slate === SLATE, slates = { previous: latest ? OLD_SLATE : PRIOR[2], next: latest ? null : SLATE, first: PRIOR[0], last: SLATE };
+  if (slate === NO_GAME_DATE) return editionOf(settings, standoutsNoSlate(slate, settings, { ...slates, previous: OLD_SLATE, next: SLATE }));
+  const rows = appearances.filter(row => row.date <= slate), onSlate = rows.filter(row => row.date === slate), gameId = onSlate[0].gameId;
+  return editionOf(settings, buildLastNightsStandouts({ ...shared(settings), slate, slates, completedTeamGames: [{ gameId, team: "NJD" }, { gameId, team: "NYR" }], scheduledGameIds: [gameId], appearances: rows, nstCounts: nstDates.flatMap(date => ids.map(id => nst(date, id))), nstOnIce: nstDates.flatMap(date => ids.map(id => ({ player_id: id, date_scraped: date, season: SEASON, xgf: 1, xga: 1 }))), role: { rolling: ids.map(id => ({ player_id: id, game_id: gameId, line_combo_slot: 1, line_combo_group: id % 3 ? "forward" : "defense" })), pp: [] } }));
+};
+test("the slate chooser steps back, clears picks, and the card's date and wording follow", async ({ page }) => {
+  await open(page, "&view=all&picks=1,2", slateBody);
+  const square = page.getByTestId("share-square"), refresh = page.getByRole("button", { name: "Refresh post" });
+  await expect(page.getByTestId("slate-label")).toHaveText("Oct 31");
+  await expect(page.getByTestId("slate-next")).toBeDisabled();
+  await expect(page.getByTestId("standouts-legend")).toContainText("Last night, then STD");
+  await expect(page.getByTestId("standouts-legend")).not.toContainText("ROST is current");
+  await expect(square.locator("h2")).toHaveText("LAST NIGHTS STANDOUTS");
+
+  await page.getByTestId("slate-previous").click();
+  await expect(page.getByTestId("slate-label")).toHaveText("Oct 26");
+  await expect(page).not.toHaveURL(/picks=\d/);
+  await expect(page).toHaveURL(new RegExp(`slate=${OLD_SLATE}`));
+  await expect(page.getByTestId("slate-previous")).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
+  await refresh.click();
+
+  await expect(page.getByTestId("standouts-blank")).toBeVisible();
+  await expect(page.getByTestId("standouts-view")).toContainText("Oct 26");
+  await expect(square.locator("h2")).toHaveText("OCT 26 STANDOUTS");
+  for (const id of [1, 2, 3, 4, 5, 6, 7, 8]) await option(page, id).click();
+  await expect(page.getByTestId("standout-row")).toHaveCount(8);
+  await expect(page.getByTestId("standouts-legend")).toContainText("Oct 26, then STD");
+  await expect(page.getByTestId("standouts-legend")).toContainText("ROST is current");
+  await expect(square).not.toContainText("Last night");
+  await expectFits(page);
+  await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeEnabled();
+
+  await page.reload();
+  await expect(page.getByTestId("standout-row")).toHaveCount(8);
+  await expect(page.getByTestId("slate-date")).toHaveValue(OLD_SLATE);
+  await expect(square.locator("h2")).toHaveText("OCT 26 STANDOUTS");
+});
+test("a date with no games shows the reason, cannot export, and keeps the chooser", async ({ page }) => {
+  await open(page, "&view=all", slateBody);
+  await page.getByTestId("slate-date").fill(NO_GAME_DATE);
+  await page.getByRole("button", { name: "Refresh post" }).click();
+  await expect(page.getByTestId("post-unavailable")).toContainText("No completed games on Oct 28");
+  await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
+  await expect(page.getByTestId("slate-next")).toBeEnabled();
+  await page.getByTestId("slate-next").click();
+  await page.getByRole("button", { name: "Refresh post" }).click();
+  await expect(page.getByTestId("slate-label")).toHaveText("Oct 31");
+  await expect(page.getByTestId("standouts-blank")).toBeVisible();
+  await expect(page.getByTestId("share-square").locator("h2")).toHaveText("LAST NIGHTS STANDOUTS");
+});
+test("the chooser stays inside a phone's width", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 800 });
+  await open(page, "&view=all", slateBody);
+  const box = await page.getByTestId("standouts-slate").boundingBox();
+  expect(box!.x + box!.width).toBeLessThanOrEqual(375);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
 });

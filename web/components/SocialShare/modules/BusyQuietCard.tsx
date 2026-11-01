@@ -1,4 +1,4 @@
-import { BASIS_LABELS, formatVolume, shotScale, VOLUME_NOTE, windowLabel, workloadLevel, type BusyQuietData, type BusyQuietRow, type BusyQuietSettings, type ShotPoint } from "lib/socialShare/modules/busyQuiet";
+import { BASIS_LABELS, formatVolume, MIN_STARTS_RANGE_RULE, shotScale, VOLUME_NOTE, workloadLevel, type BusyQuietData, type BusyQuietRow, type BusyQuietSettings, type ShotPoint } from "lib/socialShare/modules/busyQuiet";
 import type { SharePostCardProps } from "lib/socialShare/modules/contract";
 import { GoalieIdent } from "./GoalieBoards";
 import { PostEmpty } from "./kit";
@@ -43,8 +43,8 @@ function StatTile({ id, label, value }: { id: string; label: string; value: numb
 /** Rows share the height left in the body, so the boards fill it however many goalies qualify; a small pool stops short of oversized rows. */
 const FILL_FROM_ROWS = 4;
 
-export default function BusyQuietCard({ data, settings, logos }: SharePostCardProps<BusyQuietSettings, BusyQuietData>) {
-  if (!data.busy.length && !data.quiet.length) return <PostEmpty>No goalie has {settings.minStarts} official starts in this window</PostEmpty>;
+export default function BusyQuietCard({ data, logos }: SharePostCardProps<BusyQuietSettings, BusyQuietData>) {
+  if (!data.busy.length && !data.quiet.length) return <PostEmpty>No goalie has {data.minStarts} official starts in {data.ranged ? <>{data.dates}. {MIN_STARTS_RANGE_RULE}</> : "this window"}</PostEmpty>;
   const suffix = BASIS_LABELS[data.basis], shown = [...data.busy, ...data.quiet], scale = shotScale(shown);
   const volumes = shown.flatMap(row => row.volume.value === null ? [] : [row.volume.value]), low = Math.min(...volumes), high = Math.max(...volumes);
   const sides = ([["busy", "Busy", data.busy], ["quiet", "Quiet", data.quiet]] as const).filter(([, , rows]) => rows.length);
@@ -64,7 +64,7 @@ export default function BusyQuietCard({ data, settings, logos }: SharePostCardPr
     </>;
   };
   return <div className={styles.card} data-testid="busy-quiet-card">
-    <p className={styles.note}>{VOLUME_NOTE} {windowLabel(data.window)} through {data.through}. Line: SA by game{shown.some(row => row.series.some(point => point.relief)) ? ", open dot relief" : ""}.</p>
+    <p className={styles.note}>{VOLUME_NOTE} {data.dates}.{data.ranged ? ` Min ${data.minStarts} GS.` : ""} Line: SA by game{shown.some(row => row.series.some(point => point.relief)) ? ", open dot relief" : ""}.</p>
     <div className={styles.boards} data-sides={sides.length}>
       {sides.map(([kind, title, rows]) => {
         const track = rows.length >= FILL_FROM_ROWS ? "minmax(min-content, 1fr)" : "minmax(min-content, 130px)";

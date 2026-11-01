@@ -2,12 +2,13 @@
 import { createElement } from "react";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { BSH_BAR_PX, BSH_LEADER_ROWS, BSH_LETTER_PX, BSH_MOVER_ROWS, bshBar, bshBoardModule, buildBshBoard, skaterSeasonEvidence, skaterSeasonScope, type BshBoardData, type BshBoardSettings, type SkaterSeason } from "./bshBoard";
+import { BSH_BAR_PX, BSH_LEADER_ROWS, BSH_LETTER_PX, BSH_MOVER_ROWS, bshBar, bshBoardModule, buildBshBoard, rangeMinGp, skaterSeasonEvidence, skaterSeasonScope, type BshBoardData, type BshBoardSettings, type SkaterSeason } from "./bshBoard";
+import { loadBshBoard } from "./bshBoard.sources";
 import { parseShareSettings, sharePostExportBlock, type SharePostSnapshot } from "./contract";
 import { skaterBoardModules } from "./lanes/skaterBoards";
 import type { SkaterAppearance } from "./shared/skaterAppearances";
 
-const settings = (over: Partial<BshBoardSettings> = {}): BshBoardSettings => ({ view: "leaders", window: "l5", comparison: "previous", minGp: 1, position: "all", ...over });
+const settings = (over: Partial<BshBoardSettings> = {}): BshBoardSettings => ({ period: "rolling", week: null, start: null, end: null, minGpRange: null, view: "leaders", window: "l5", comparison: "previous", minGp: 1, position: "all", ...over });
 const game = (playerId: number, index: number, stats: Partial<SkaterAppearance> = {}): SkaterAppearance => ({
   playerId, name: `Skater ${playerId}`, position: "C", group: "F", gameId: 1000 + index, date: `2026-10-${String(index + 1).padStart(2, "0")}`, team: "NJD", opponent: "NYR", home: true,
   goals: 0, assists: 0, points: 0, shots: 1, hits: 1, blocks: 1, ppPoints: 0, toiSeconds: 900, ppToiSeconds: 0, penaltyMinutes: 0, ...stats,
@@ -144,7 +145,7 @@ describe("BSH risers and fallers", () => {
   });
   it("refuses risers or fallers without a recent window", () => {
     expect(() => parseShareSettings(bshBoardModule, { view: "movers", window: "std" })).toThrow(/recent window/);
-    expect(parseShareSettings(bshBoardModule, {})).toEqual({ view: "leaders", window: "l10", comparison: "previous", minGp: 5, position: "all" });
+    expect(parseShareSettings(bshBoardModule, {})).toEqual({ period: "rolling", week: null, start: null, end: null, minGpRange: null, view: "leaders", window: "l10", comparison: "previous", minGp: 5, position: "all" });
   });
 });
 
@@ -252,6 +253,100 @@ describe("BSH card", () => {
   });
   it("is registered with no calendar and states its basis", () => {
     expect(skaterBoardModules.map(entry => entry.id)).toEqual(["bsh-board", "category-blueprint", "nightly-floor", "multi-cat-stars", "last-nights-standouts"]);
-    for (const entry of skaterBoardModules) { expect(entry.basis).toBe("observed"); expect(entry.suggestedUse).toMatch(/any day/); expect(entry.fields.some(field => field.kind === "date")).toBe(false); }
+    for (const entry of skaterBoardModules) { expect(entry.basis).toBe("observed"); expect(entry.suggestedUse).toMatch(/any day/); expect(entry.fields.some(field => field.kind === "date" && !field.panelOnly)).toBe(false); }
+  });
+});
+
+describe("the period control", () => {
+  const seasonOf = (appearances: SkaterAppearance[], period?: SkaterSeason["period"]): SkaterSeason => {
+    const teamGames = [...new Map(appearances.map(row => [`${row.team}:${row.gameId}`, { gameId: row.gameId, date: row.date, team: row.team! }])).values()];
+    return { appearances, teamGames, scheduledGames: teamGames.length / 2, through: appearances[appearances.length - 1]?.date ?? "2026-10-25", period };
+  };
+  const WEEK = { label: "Week 2 · Oct 19 to Oct 25", from: "2026-10-19", through: "2026-10-25" };
+  const week = [18, 20, 22, 24].flatMap(index => [game(1, index, { shots: 5 }), game(2, index, { team: "NYR", shots: 1 })]);
+  const CALENDAR = [{ week: 1, start_date: "2026-10-05", end_date: "2026-10-11" }, { week: 2, start_date: "2026-10-12", end_date: "2026-10-18" }, { week: 3, start_date: "2026-10-19", end_date: "2026-11-01" }, { week: 4, start_date: "2026-11-02", end_date: "2026-11-08" }];
+  /** Exact-count PostgREST fake that records each table's filters. */
+  function fakeClient(tables: Record<string, unknown[]>) {
+    const calls: { table: string; filters: unknown[][] }[] = [];
+    return { calls, client: { from(table: string) {
+      const filters: unknown[][] = [], rows = tables[table] ?? [];
+      const chain: any = { then: (resolve: (value: unknown) => void) => resolve({ data: rows, error: null, count: rows.length }) };
+      for (const method of ["select", "eq", "gte", "lte", "in", "not", "order", "limit", "range"]) chain[method] = (...args: unknown[]) => { filters.push([method, ...args]); return chain; };
+      calls.push({ table, filters });
+      return chain;
+    } } };
+  }
+  const GENERATED = "2026-10-29T14:00:00Z";
+
+  it("halves the most games played for default min GP, and never goes above 5", () => {
+    expect([0, 1, 2, 3, 4, 7, 9, 10, 60].map(rangeMinGp)).toEqual([1, 1, 1, 2, 2, 4, 5, 5, 5]);
+  });
+  it("ranks a period over its own games, with its min GP, and prints its dates", () => {
+    const short = [game(3, 18, { team: "BOS", shots: 9 })];
+    const { data, evidence } = buildBshBoard(seasonOf([...week, ...short], WEEK), settings({ period: "matchup", minGp: 50 }));
+    // Most played is 4, so 2 GP: the one-game skater is out, and the season min GP does not apply.
+    expect(data!.rows.map(row => row.playerId)).toEqual([1, 2]);
+    expect(data!.periodLabel).toBe(WEEK.label);
+    expect(data!.rows[0].recent.games).toBe(4);
+    expect(evidence.cohort).toContain("2+ GP in these dates");
+    expect(evidence.sample).toContain(WEEK.label);
+  });
+  it("honours an explicit min GP for the period", () => {
+    const { data } = buildBshBoard(seasonOf(week, WEEK), settings({ period: "matchup", minGpRange: 5 }));
+    expect(data!.rows).toEqual([]);
+  });
+  it("counts coverage over the period's games", () => {
+    const { state, evidence } = buildBshBoard({ ...seasonOf(week, WEEK), scheduledGames: 5 }, settings({ period: "matchup" }));
+    expect(state).toBe("partial");
+    expect(evidence.coverage).toMatchObject({ expected: 10, missing: 2 });
+  });
+  it("keeps every old URL on recent games", () => {
+    expect(parseShareSettings(bshBoardModule, { view: "leaders", window: "l5", minGp: "3" })).toMatchObject({ period: "rolling", window: "l5", minGp: 3, week: null, start: null, end: null, minGpRange: null });
+    expect(parseShareSettings(bshBoardModule, { view: "movers" })).toMatchObject({ period: "rolling", window: "l10" });
+  });
+  it("defaults to L10 recent games, and leaves risers and fallers on their windows", () => {
+    expect(parseShareSettings(bshBoardModule, {})).toMatchObject({ period: "rolling", window: "l10" });
+    expect(() => parseShareSettings(bshBoardModule, { view: "movers", period: "matchup" })).toThrow("Risers and fallers keep their recent windows");
+    expect(() => parseShareSettings(bshBoardModule, { period: "custom", start: "2026-10-20" })).toThrow("needs a start date and an end date");
+    expect(() => parseShareSettings(bshBoardModule, { period: "custom", start: "2026-10-20", end: "2026-10-20" })).toThrow("must be before");
+  });
+  it("reads nothing extra on recent games", async () => {
+    const fake = fakeClient({});
+    const result = await loadBshBoard({ client: fake.client, generatedAt: GENERATED }, settings());
+    expect(fake.calls.some(call => call.table === "yahoo_matchup_weeks")).toBe(false);
+    expect(fake.calls.find(call => call.table === "wgo_skater_stats")!.filters).toContainEqual(["gte", "date", "2026-07-01"]);
+    expect(result.data!.periodLabel).toBeNull();
+  });
+  it("reads a matchup week's dates only, and counts a week under way through the last completed games", async () => {
+    const fake = fakeClient({ yahoo_matchup_weeks: CALENDAR });
+    const result = await loadBshBoard({ client: fake.client, generatedAt: GENERATED }, settings({ period: "matchup", week: 3 }));
+    for (const table of ["wgo_skater_stats", "wgo_team_stats", "games"]) {
+      const { filters } = fake.calls.find(call => call.table === table)!;
+      expect(filters).toContainEqual(["gte", "date", "2026-10-19"]);
+      expect(filters).toContainEqual(["lte", "date", "2026-10-28"]);
+    }
+    expect(result.data!.periodLabel).toBe("Week 3 · Oct 19 to Oct 28 so far");
+  });
+  it("takes the last completed week for a blank, and reads a custom range's dates", async () => {
+    const blank = await loadBshBoard({ client: fakeClient({ yahoo_matchup_weeks: CALENDAR }).client, generatedAt: GENERATED }, settings({ period: "matchup" }));
+    expect(blank.data!.periodLabel).toBe("Week 2 · Oct 12 to Oct 18");
+    const fake = fakeClient({ yahoo_matchup_weeks: CALENDAR });
+    const custom = await loadBshBoard({ client: fake.client, generatedAt: GENERATED }, settings({ period: "custom", start: "2026-10-14", end: "2026-10-16" }));
+    expect(custom.data!.periodLabel).toBe("Oct 14 to Oct 16");
+    expect(fake.calls.find(call => call.table === "wgo_skater_stats")!.filters).toContainEqual(["lte", "date", "2026-10-16"]);
+  });
+  it("is missing with the reason for a week not started, or dates past the last games, and reads no games", async () => {
+    for (const [over, reason] of [[{ period: "matchup", week: 4 }, "Week 4 has not started"], [{ period: "matchup", week: 9 }, "Week 9 is not on the matchup calendar"], [{ period: "custom", start: "2026-10-14", end: "2026-10-30" }, "past the last completed games"], [{ period: "custom", start: "2026-09-01", end: "2026-09-05" }, "must fall inside the season"]] as const) {
+      const fake = fakeClient({ yahoo_matchup_weeks: CALENDAR });
+      const result = await loadBshBoard({ client: fake.client, generatedAt: GENERATED }, settings(over));
+      expect(result.state).toBe("missing");
+      expect(result.data).toBeNull();
+      expect(result.reasons?.join(" ")).toContain(reason);
+      expect(fake.calls.some(call => call.table === "wgo_skater_stats")).toBe(false);
+    }
+  });
+  it("fails visibly when the calendar cannot be read", async () => {
+    const client = { from: () => { const chain: any = { then: (resolve: (value: unknown) => void) => resolve({ data: null, error: { message: "nope" }, count: null }) }; for (const method of ["select", "eq", "order", "range"]) chain[method] = () => chain; return chain; } };
+    await expect(loadBshBoard({ client, generatedAt: GENERATED }, settings({ period: "matchup" }))).rejects.toThrow();
   });
 });
