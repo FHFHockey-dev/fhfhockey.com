@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseShareSettings, sharePostExportBlock, type SharePostSnapshot } from "./contract";
-import { averageChange, buildLastNightsStandouts, goalieChangeText, goalieLastText, goalieRanking, goalieStdText, goalieTone, goalLine, lastNightsStandoutsModule, latestEarlierLines, lineChipText, lineRowsFromCombinations, parsePicks, ppContradicted, percentChange, percentLabel, ppChipText, rankingText, slateCoverage, sortStandouts, STANDOUT_AVERAGE_RULE, STANDOUT_GOALIE_ROWS, STANDOUT_MAX_ROWS, standoutPool, standoutRows, statText, stdText, togglePick, type GoalieStat, type LastNightsStandoutsData, type LastNightsStandoutsInput, type LastNightsStandoutsSettings, type StandoutGoalie, type StandoutSkater } from "./lastNightsStandouts";
+import { averageChange, buildLastNightsStandouts, goalieChangeText, goalieLastText, goalieRanking, goalieStdText, goalieTone, goalLine, lastNightsStandoutsModule, latestEarlierLines, lineChipText, lineRowsFromCombinations, parsePicks, ppContradicted, percentChange, percentLabel, ppChipText, rankingText, slateCoverage, sortStandouts, STANDOUT_AVERAGE_FLOORS, STANDOUT_AVERAGE_RULE, STANDOUT_GOALIE_ROWS, STANDOUT_MAX_ROWS, standoutPool, standoutRows, statText, stdText, togglePick, type GoalieStat, type LastNightsStandoutsData, type LastNightsStandoutsInput, type LastNightsStandoutsSettings, type StandoutGoalie, type StandoutSkater } from "./lastNightsStandouts";
 import { loadLastNightsStandouts } from "./lastNightsStandouts.sources";
 import { ownershipOf } from "./shared/definitions";
 import type { GoalieAppearance } from "./shared/goalieLedger";
@@ -97,28 +97,52 @@ describe("STD on every chip", () => {
 });
 
 describe("average % change", () => {
-  const changes = (...values: (number | null)[]) => values.map(change => ({ change }));
+  const IDS = ["sog", "toi", "icf", "iscf", "xg", "xgPct", "ppToi"] as const;
+  /** Baselines well above every floor unless a test sets one. */
+  const changes = (...values: (number | null)[]) => values.map((change, index) => ({ id: IDS[index], baseline: 1000, change }));
   it("is the mean across the stats that have a change", () => {
     expect(averageChange(changes(10, 20, 30, 40, null, null, null))).toBe(25);
   });
   it("needs 4 of the 7 stats", () => {
     expect(averageChange(changes(10, 20, 30, null, null, null, null))).toBeNull();
     expect(averageChange(changes(10, 20, 30, 0, null, null, null))).toBe(15);
-    expect(STANDOUT_AVERAGE_RULE).toContain("at least 4 of 7");
+    expect(STANDOUT_AVERAGE_RULE).toContain("at least 4 of 7 left");
   });
-  it("caps each stat at 200% either way, so a tiny baseline cannot carry it", () => {
+  it("caps each stat at 200% either way", () => {
     expect(averageChange(changes(5000, 0, 0, 0))).toBe(50);
     expect(averageChange(changes(-5000, 0, 0, 0))).toBe(-50);
-    expect(averageChange(changes(5000, -10, -10, -10, -10, -10, -10))! < 25).toBe(true);
   });
-  const skater = (playerId: number, values: (number | null)[]) => {
+  it.each([["sog", 0.75], ["toi", 600], ["icf", 2], ["iscf", 0.75], ["xg", 0.05], ["xgPct", 35], ["ppToi", 30]] as const)("counts %s at its floor of %s and leaves it out just below", (id, floor) => {
+    const others = IDS.filter(entry => entry !== id).slice(0, 4).map(entry => ({ id: entry, baseline: 1000, change: 0 }));
+    expect(STANDOUT_AVERAGE_FLOORS[id]).toBe(floor);
+    expect(averageChange([...others, { id, baseline: floor, change: 100 }])).toBe(20);
+    expect(averageChange([...others, { id, baseline: floor - 0.001, change: 100 }])).toBe(0);
+  });
+  it("states every floor in the rule", () => {
+    for (const text of ["SOG 0.75", "TOI 10:00", "iCF 2.0", "iSCF 0.75", "xG 0.05", "xG% 35.0%", "PPTOI 0:30"]) expect(STANDOUT_AVERAGE_RULE).toContain(text);
+  });
+  it("needs 4 stats after the floor, not before", () => {
+    const stats = [{ id: "sog" as const, baseline: 2, change: 50 }, { id: "toi" as const, baseline: 900, change: 10 }, { id: "icf" as const, baseline: 4, change: 20 }, { id: "xg" as const, baseline: 0.01, change: 300 }, { id: "ppToi" as const, baseline: 5, change: 400 }];
+    expect(stats.filter(stat => stat.change !== null)).toHaveLength(5);
+    expect(averageChange(stats)).toBeNull();
+    expect(averageChange([...stats, { id: "iscf" as const, baseline: 1, change: 40 }])).toBe(30);
+  });
+  const skater = (playerId: number, values: (number | null)[], baselines: Partial<Record<typeof IDS[number], number>> = {}) => {
     const base = person({ playerId });
-    return { ...base, playerId, stats: base.stats.map((entry, index) => ({ ...entry, change: values[index] ?? null })) };
+    return { ...base, playerId, stats: base.stats.map((entry, index) => ({ ...entry, baseline: baselines[entry.id] ?? 1000, change: values[index] ?? null })) };
   };
   it("sorts a mostly negative player low, even with one big value and a big night by value", () => {
     const anderson = { ...skater(1, [-7, 4, -49, -23, -60, 4, -7]), points: 3 }, above = { ...skater(2, [30, 20, 40, 10, 25, 5, 0]), points: 0 }, thin = skater(3, [500, 500, null, null, null, null, null]);
     expect(sortStandouts([anderson, thin, above], "points", "average").map(row => row.playerId)).toEqual([2, 1, 3]);
     expect(sortStandouts([anderson, thin, above], "points", "value")[0].playerId).toBe(1);
+  });
+  it("drops a Carrick-style player whose jumps sit on tiny baselines, while the true % still prints", () => {
+    const carrick = skater(1, [200, 5, 150, 150, 2000, 10, 300], { xg: 0.01, ppToi: 4, icf: 1, iscf: 0.4 }), steady = skater(2, [40, 10, 30, 30, 40, 10, 20]);
+    expect(averageChange(carrick.stats.map(stat => ({ ...stat, baseline: 1000 })))).toBeGreaterThan(averageChange(steady.stats)!);
+    // Only SOG, TOI and xG% clear their floors: three stats, so no average.
+    expect(averageChange(carrick.stats)).toBeNull();
+    expect(sortStandouts([carrick, steady], "points", "average").map(row => row.playerId)).toEqual([2, 1]);
+    expect(percentLabel(carrick.stats.find(stat => stat.id === "xg")!.change)).toBe("+2000%");
   });
 });
 
@@ -313,6 +337,11 @@ describe("goalies", () => {
     expect(ranking.rows.map(row => row.goalieId)).toEqual([2, 1, 5, 4]);
     expect(ranking.qualified).toBe(4);
   });
+  it("has six chips and no TOI, and keeps TOI on the row for evidence", () => {
+    const [row] = statsOf({ goalies: [...season(1), goalie(1, 29, 30)] });
+    expect(row.stats.map(entry => entry.label)).toEqual(["SV", "SA", "GA", "SV%", "GAA", "GSAx"]);
+    expect(row.toiSeconds).toBe(3600);
+  });
   it("holds the card to its row limit", () => {
     const { data } = buildLastNightsStandouts(shared({ settings: active, goalies: Array.from({ length: 12 }, (_, index) => goalie(index + 1, 25, 26)) }));
     expect(goalieRanking(data!, { minShotsAgainst: 15 }).rows).toHaveLength(STANDOUT_GOALIE_ROWS);
@@ -345,7 +374,6 @@ describe("goalies", () => {
   it("leaves workload and no change uncoloured", () => {
     expect(goalieTone(one({ id: "shotsAgainst", direction: "neutral", change: 50 }))).toBe("neutral");
     expect(goalieTone(one({ id: "shotsAgainst", direction: "neutral", change: -50 }))).toBe("neutral");
-    expect(goalieTone(one({ id: "toi", direction: "neutral", change: 20 }))).toBe("neutral");
     expect(goalieTone(one({ change: null }))).toBe("neutral");
     expect(goalieTone(one({ change: 0.2 }))).toBe("neutral");
   });
@@ -358,7 +386,6 @@ describe("goalies", () => {
     expect(goalieChangeText(one({ id: "gsax", change: null }))).toBe("—");
     expect(goalieLastText(one({ id: "savePct", last: 0.917 }))).toBe(".917");
     expect(goalieStdText(one({ id: "saves", baseline: 24.33 }))).toBe("24.3");
-    expect(goalieStdText(one({ id: "toi", baseline: 3540 }))).toBe("59:00");
     expect(goalieLastText(one({ id: "gsax", last: -0.5 }))).toBe("−0.50");
   });
 });

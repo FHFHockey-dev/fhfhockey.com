@@ -291,3 +291,17 @@ R9, for the default: Crosby 1G-2A-3P-1PPP, Anderson 2G-1A-3P, Kucherov 0G-3A-3P,
 | --- | --- | --- | --- | --- |
 | R15 | Average % change under the rule, top 8 and 3 named skaters, slate of 2026-10-31, through MCP `execute_sql` on 2026-11-01 | `wgo_skater_stats`, `nst_gamelog_as_counts`, `nst_gamelog_as_counts_oi` | 10 per-player rows | Passed. SQL with the same rule; the builder has not run on it |
 | R16 | Goalie counts for the slate | `wgo_goalie_stats`, `nst_gamelog_goalie_all_counts` | 0 sample rows (1 aggregate row) | Passed |
+
+### Last Nights Standouts: average floors and six goalie chips
+
+- **Floors, inclusive, against each skater's STD:** SOG 0.75 (about P10), TOI 10:00 (about P5), iCF 2.0 (between P10 1.6 and P25 2.1), iSCF 0.75 (between P10 0.50 and P25 0.83), xG 0.05 (between P10 0.04 and P25 0.07), xG% 35.0 (about P10), PPTOI 0:30. Percentiles are across the 349 slate skaters with 3+ prior GP. PPTOI's P25 is 4 seconds, since most skaters barely see the power play, so its floor is the 0:30 used for a PP unit, not a percentile.
+- **Rule:** the ±200% cap and the 4-of-7 minimum stay, and the minimum applies after the floor. Chips and the sidebar still print the true %.
+- **Under-50% top 8, before:** Frondell +149, Vlasic +145, Perry +144, Kolesar +128, Christiansen +125, Carrick +125, Kreider +107, Rossi +94.
+- **After:** Frondell +149, Perry +144, Kreider +107, Girard +99, Rossi +94, Holmstrom +79, Novak +79, then Misa and Del Mastro tied at +77.
+- **Who left:** Carrick has no stat above a floor (xG 0.01, TOI 7:39). Vlasic has 3 stats left, Kolesar 2 and Christiansen 1, so none has an average and all sort last. No average rises from 18 to 44 of 233 skaters under 50%. Vlasic is a top-pair defenseman with 6 SOG last night: he misses by staying low in chances, not by low minutes.
+- **Goalie card:** TOI chip removed, six chips share the width. TOI stays on the row and in the alt text. Ranking and the 15+ shots rule are unchanged.
+
+| # | Statement | Tables read | Rows returned | Result |
+| --- | --- | --- | --- | --- |
+| R17 | Baseline percentiles per stat; Under-50% top 8 before and after, through MCP `execute_sql` on 2026-11-01 | `wgo_skater_stats`, `nst_gamelog_as_counts`, `nst_gamelog_as_counts_oi`, `yahoo_nhl_player_map_read`, `yahoo_players` | 0 sample rows (7 aggregate rows), then 19 ranked rows | Passed. SQL with the same rule; the builder has not run on it |
+| R18 | Baselines for 4 named skaters | same skater tables | 4 per-player rows | Passed |

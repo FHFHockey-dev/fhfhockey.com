@@ -46,7 +46,7 @@ function GoalieCard({ data, settings, logos }: Pick<SharePostCardProps<LastNight
   if (!rows.length) return <div className={styles.board}><Banner settings={settings} slate={data.slate} /><div className={styles.blank}>No goalie on this slate meets the shots-against minimum.</div></div>;
   return <div className={styles.board}>
     <Banner settings={settings} slate={data.slate} />
-    <p className={styles.legend} style={{ color: QUIET }} data-testid="standouts-legend">Top {rows.length} of {qualified} by GSAx, with {settings.minShotsAgainst}+ shots against. Last night, then STD per appearance before it. SV% changes in points of save percentage, GAA and GSAx in goals, the rest in %. SA and TOI are workload, so uncoloured.{missing ? <span data-testid="nst-goalie-note" style={{ color: "#ffcc33" }}> NST has no row yet for {missing} of {rows.length}: GSAx prints — and they rank last.</span> : null}</p>
+    <p className={styles.legend} style={{ color: QUIET }} data-testid="standouts-legend">Top {rows.length} of {qualified} by GSAx, with {settings.minShotsAgainst}+ shots against. Last night, then STD per appearance before it. SV% changes in points of save percentage, GAA and GSAx in goals, the rest in %. SA is workload, so uncoloured.{missing ? <span data-testid="nst-goalie-note" style={{ color: "#ffcc33" }}> NST has no row yet for {missing} of {rows.length}: GSAx prints — and they rank last.</span> : null}</p>
     <div className={styles.rows} style={{ fontSize: type }} data-few={rows.length <= 4 || undefined}>{rows.map((row, index) => <div key={row.goalieId} className={styles.row} data-testid="standout-row">
       <div className={styles.who}>
         <span className={styles.rank} style={{ color: QUIET }}>{index + 1}</span>
@@ -54,7 +54,7 @@ function GoalieCard({ data, settings, logos }: Pick<SharePostCardProps<LastNight
         <span className={styles.name} style={{ color: "#ffffff" }}>{row.name ?? `Goalie ${row.goalieId}`}</span>
         <span className={styles.owned} style={{ color: QUIET, marginLeft: "auto" }}>{ownershipLabel(row.ownership)} ROST</span>
       </div>
-      <div className={styles.tiles}>{row.stats.map(stat => <Tile key={stat.id} id={stat.id} label={stat.label} value={goalieLastText(stat)} std={goalieStdText(stat)} change={goalieChangeText(stat)} tone={goalieTone(stat)} />)}</div>
+      <div className={styles.tiles} data-goalie>{row.stats.map(stat => <Tile key={stat.id} id={stat.id} label={stat.label} value={goalieLastText(stat)} std={goalieStdText(stat)} change={goalieChangeText(stat)} tone={goalieTone(stat)} />)}</div>
     </div>)}</div>
   </div>;
 }

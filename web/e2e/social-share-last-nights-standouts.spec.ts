@@ -230,7 +230,7 @@ test("goalies say when NST lags, and a missing GSAx stays a dash", async ({ page
   const square = page.getByTestId("share-square");
   await expect(page.getByTestId("standouts-view")).toContainText("Goalies");
   await expect(square.locator("[class*=gridTitle] p")).toHaveText("Goalies", { ignoreCase: true });
-  for (const label of ["SV", "SA", "GA", "SV%", "GAA", "TOI", "GSAx"]) await expect(square.getByTestId("standout-row").first()).toContainText(label);
+  for (const label of ["SV", "SA", "GA", "SV%", "GAA", "GSAx"]) await expect(square.getByTestId("standout-row").first()).toContainText(label);
   const rows = page.getByTestId("standout-row");
   await expect(rows).toHaveCount(2);
   // Goalie 1 has a GSAx row; goalie 2 has none and has the better SV%, and still ranks below.
@@ -244,7 +244,8 @@ test("goalies say when NST lags, and a missing GSAx stays a dash", async ({ page
   await expect(top.locator("[data-stat=goalsAgainst]")).toHaveAttribute("data-tone", "good");
   await expect(top.locator("[data-stat=gaa]")).toHaveAttribute("data-tone", "good");
   await expect(top.locator("[data-stat=shotsAgainst]")).toHaveAttribute("data-tone", "neutral");
-  await expect(top.locator("[data-stat=toi]")).toHaveAttribute("data-tone", "neutral");
+  await expect(top.getByTestId("stat-tile")).toHaveCount(6);
+  await expect(top.locator("[data-stat=toi]")).toHaveCount(0);
   await expect(top.locator("[data-stat=gsax]")).toHaveCSS("background-color", "rgba(0, 255, 153, 0.14)");
   await expect(rows.nth(1).locator("[data-stat=gsax]")).toContainText("—");
   await expect(page.getByTestId("nst-goalie-note")).toContainText("NST has no row yet for 1 of 2");
@@ -270,6 +271,8 @@ test("a full goalie card fills the body with its 8 goalies", async ({ page }) =>
   });
   await expect(page.getByTestId("standout-row")).toHaveCount(8);
   await expect(page.getByTestId("standouts-legend")).toContainText("Top 8 of 12 by GSAx, with 15+ shots against.");
+  await expect(page.getByTestId("stat-tile")).toHaveCount(48);
+  await expect.poll(() => page.getByTestId("stat-tile").evaluateAll(tiles => new Set(tiles.map(tile => Math.round(tile.getBoundingClientRect().width))).size)).toBe(1);
   await expect(page.getByTestId("nst-goalie-note")).toHaveCount(0);
   await expectFits(page);
 });

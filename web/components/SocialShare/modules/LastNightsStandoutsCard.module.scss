@@ -19,6 +19,10 @@
 /* Up to four rows: the larger type needs wider chips, and the rows have the height for two lines of them. */
 .rows[data-few] .tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .rows[data-few] .tile:last-child { grid-column: span 2; }
+/* A goalie has six chips: six across at full size, three and three when the type is larger. */
+.tiles[data-goalie] { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.rows[data-few] .tiles[data-goalie] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.rows[data-few] .tiles[data-goalie] .tile:last-child { grid-column: auto; }
 /* Equal chips: the label and change on one line, last night and STD on the next. At 8 rows that is about 16 + 26px in a 55px chip. */
 .tile { min-width: 0; min-height: 0; display: grid; align-content: center; gap: 1px; padding: 0 6px; border-radius: 4px; line-height: 1.1; }
 .tileLine { min-width: 0; display: flex; align-items: baseline; justify-content: space-between; gap: 4px; white-space: nowrap; b { font-weight: 800; } small { font-size: 0.56em; font-weight: 600; } i { font-size: 0.68em; font-style: normal; font-weight: 700; } }

@@ -77,13 +77,17 @@ export function stdText(stat: Pick<StandoutStat, "id" | "baseline">) {
   return stat.id === "xg" ? stat.baseline.toFixed(2) : stat.baseline.toFixed(1);
 }
 /**
- * The sidebar's default order: the mean % change across the stats that have one, each capped at ±200% so one tiny baseline
- * cannot carry the average, and only with at least 4 of the 7 stats available. Fewer means no average, sorted last.
+ * The sidebar's default order: the mean % change across the stats that have one and a meaningful STD, each capped at ±200%,
+ * and only with at least 4 of the 7 left. Fewer means no average, sorted last. The floors leave out a baseline too small to
+ * mean much, however true its %; chips still print that %. Set from every skater's baseline on 2026-10-31: about the 10th
+ * percentile for SOG, iSCF and xG%, between the 10th and 25th for iCF and xG. PPTOI's percentiles are near zero, since most
+ * skaters barely see the power play, so its floor is the 0:30 a PP unit needs. TOI's is about the 5th, because no skater's is tiny.
  */
 export const STANDOUT_AVERAGE_CAP = 200, STANDOUT_AVERAGE_MIN_STATS = 4;
-export const STANDOUT_AVERAGE_RULE = `Avg is the mean % change across the stats with a baseline, each capped at ±${STANDOUT_AVERAGE_CAP}%, with at least ${STANDOUT_AVERAGE_MIN_STATS} of 7 available.`;
-export function averageChange(stats: readonly Pick<StandoutStat, "change">[]) {
-  const changes = stats.flatMap(stat => stat.change === null ? [] : [Math.max(-STANDOUT_AVERAGE_CAP, Math.min(STANDOUT_AVERAGE_CAP, stat.change))]);
+export const STANDOUT_AVERAGE_FLOORS: Record<StandoutStatId, number> = { sog: 0.75, toi: 600, icf: 2, iscf: 0.75, xg: 0.05, xgPct: 35, ppToi: 30 };
+export const STANDOUT_AVERAGE_RULE = `Avg is the mean % change, each capped at ±${STANDOUT_AVERAGE_CAP}%, across stats with an STD of at least SOG 0.75, TOI 10:00, iCF 2.0, iSCF 0.75, xG 0.05, xG% 35.0%, PPTOI 0:30, with at least ${STANDOUT_AVERAGE_MIN_STATS} of 7 left.`;
+export function averageChange(stats: readonly Pick<StandoutStat, "id" | "baseline" | "change">[]) {
+  const changes = stats.flatMap(stat => stat.change === null || stat.baseline === null || stat.baseline < STANDOUT_AVERAGE_FLOORS[stat.id] ? [] : [Math.max(-STANDOUT_AVERAGE_CAP, Math.min(STANDOUT_AVERAGE_CAP, stat.change))]);
   return changes.length < STANDOUT_AVERAGE_MIN_STATS ? null : changes.reduce((total, change) => total + change, 0) / changes.length;
 }
 /** Exactly `1G-2A-3P-2PPP`, with PPP only above zero. A missing goal, assist or point is no line at all. */
@@ -120,7 +124,7 @@ export type StandoutSkater = {
  * A goalie's chip. Direction sets the colour: more is better, less is better, or workload with no good or bad. SV%, GAA and
  * GSAx change in their own units, because a percent of a rate misleads; the rest change in %.
  */
-export type GoalieStatId = "saves" | "shotsAgainst" | "goalsAgainst" | "savePct" | "gaa" | "toi" | "gsax";
+export type GoalieStatId = "saves" | "shotsAgainst" | "goalsAgainst" | "savePct" | "gaa" | "gsax";
 export type GoalieDirection = "higher" | "lower" | "neutral";
 export type GoalieStat = { id: GoalieStatId; label: string; direction: GoalieDirection; last: number | null; baseline: number | null; change: number | null };
 const GOALIE_RATES: readonly GoalieStatId[] = ["savePct", "gaa", "gsax"];
@@ -133,7 +137,6 @@ function goalieNumber(id: GoalieStatId, value: number | null, std: boolean) {
     case "savePct": return savePctText(value);
     case "gaa": return value.toFixed(2);
     case "gsax": return signedDecimal(value, 2);
-    case "toi": return formatSeconds(value);
     default: return std ? value.toFixed(1) : String(value);
   }
 }
@@ -168,7 +171,6 @@ function goalieStats(row: GoalieAppearance, gsax: number | null, prior: readonly
     percent("goalsAgainst", "GA", "lower", row.goalsAgainst, perGame(goals)),
     units("savePct", "SV%", "higher", pooledSavePct(row.saves, row.shotsAgainst), pooledSavePct(saves, shots), 3),
     units("gaa", "GAA", "lower", pooledGaa(row.goalsAgainst, row.toiSeconds), pooledGaa(goals, seconds), 2),
-    percent("toi", "TOI", "neutral", row.toiSeconds, perGame(seconds)),
     units("gsax", "GSAx", "higher", gsax, baselineGsax, 2),
   ];
 }
@@ -351,7 +353,7 @@ export function buildLastNightsStandouts(input: LastNightsStandoutsInput): Share
 }
 
 const altSkater = (row: StandoutSkater) => `${row.name ?? `Player ${row.playerId}`} ${row.goalLine}, ${lineChipText(row)}, ${ppChipText(row.role)}: ${row.stats.map(stat => `${stat.label} ${statText(stat)}, STD ${stdText(stat)}, ${percentLabel(stat.change)}`).join(", ")}`;
-const altGoalie = (row: StandoutGoalie) => `${row.name ?? `Goalie ${row.goalieId}`}: ${row.stats.map(stat => `${stat.label} ${goalieLastText(stat)}, STD ${goalieStdText(stat)}, change ${goalieChangeText(stat)}`).join("; ")}`;
+const altGoalie = (row: StandoutGoalie) => `${row.name ?? `Goalie ${row.goalieId}`}: ${row.stats.map(stat => `${stat.label} ${goalieLastText(stat)}, STD ${goalieStdText(stat)}, change ${goalieChangeText(stat)}`).join("; ")}; TOI ${formatSeconds(row.toiSeconds)}`;
 export const lastNightsStandoutsModule = defineShareModule<LastNightsStandoutsSettings, LastNightsStandoutsData>({
   id: "last-nights-standouts", title: "Last Nights Standouts", summary: "Observed results from the latest completed slate, each against that player's own season per game before it. Two views are built by hand.", group: "skaters", basis: "observed",
   kicker: settings => isGoalieView(settings.view) ? "Goalies" : "Skaters",
