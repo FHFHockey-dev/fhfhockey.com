@@ -102,3 +102,9 @@ None. No frozen file needed a change. No fan-out sessions were started.
 - **Row layout:** the tiles moved from a horizontal strip into a stack beside the chart, each one line high with its group and metric labels. All three What Changed group tiles stay. Role Watch's stack holds Before and Latest and the other-measure tile.
 - **Rows:** boards now show 5 rows a side, down from 6, to make the height. Ties past the last row are still counted in the legend. Role Watch's read ceilings fall to 200 rolling rows and 800 PP rows.
 - **Fit, estimated from CSS, not measured:** about 150 px a row against 145 px of content in the 860 px body, assuming a two-line legend. No browser run; the lead renders.
+
+## F5: skater coverage per team game
+
+- **Fix:** `gameCoverage` now checks skater rows by game id plus team, so one team's missing rows give the reason "N of M completed team games have no skater rows." and the post goes partial with its board kept. Evidence coverage counts stay as reported team games. Role Watch uses the same helper.
+- **Real read R-F5:** one aggregate, SELECT only, 0 sample rows, `wgo_skater_stats` and `wgo_team_stats`, season 20262027. All 32 `team_abbrev` values match `teamsInfo`, 0 null, and all 226 games have two team rows and both teams' skater rows. The fix adds no false partial today.
+- **Not changed:** `slateCoverage` in `lastNightsStandouts.ts` has the same defect, outside this ticket.

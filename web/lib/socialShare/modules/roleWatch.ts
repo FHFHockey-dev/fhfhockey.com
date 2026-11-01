@@ -87,7 +87,7 @@ export function roleWatchShown(appearances: readonly SkaterAppearance[], setting
   return { playerIds: [...new Set(listed.map(player => player.playerId))], gameIds: [...new Set(listed.flatMap(player => [player.latest.gameId, ...(player.before ? [player.before.gameId] : [])]))] };
 }
 
-export type RoleWatchInput = { appearances: readonly SkaterAppearance[]; evidence: RoleEvidence; completedTeamGames: readonly { gameId: number }[]; scheduledGameIds: readonly number[]; through: string; settings: RoleWatchSettings };
+export type RoleWatchInput = { appearances: readonly SkaterAppearance[]; evidence: RoleEvidence; completedTeamGames: readonly { gameId: number; team: string }[]; scheduledGameIds: readonly number[]; through: string; settings: RoleWatchSettings };
 export function buildRoleWatch(input: RoleWatchInput): SharePostLoadResult<RoleWatchData> {
   const { appearances, settings } = input, requested = windowSize(settings.window), entries = comparePlayers(appearances, settings), players = comparable(entries);
   const { up, down } = movers(players, settings.board), slot = roleSlotReader(input.evidence), gamesOf = new Map(entries.map(entry => [entry.player.playerId, entry.games]));

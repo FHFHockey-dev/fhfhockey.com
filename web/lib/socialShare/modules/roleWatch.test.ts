@@ -16,6 +16,28 @@ function games(playerId: number, count: number, toi: (index: number) => number |
 }
 const base = (over: Partial<RoleWatchInput> & { appearances: SkaterAppearance[] }): RoleWatchInput => ({ evidence: { rolling: [], pp: [] }, completedTeamGames: [], scheduledGameIds: [], through: "2026-10-30", settings, ...over });
 
+describe("Role Watch coverage", () => {
+  const home = games(1, 12, index => index >= 7 ? 1200 : 1000), appearances = [...home, ...games(2, 12, () => 1000, () => 120, { team: "NYR" })];
+  const completedTeamGames = home.flatMap(game => [{ gameId: game.gameId, team: "NJD" }, { gameId: game.gameId, team: "NYR" }]), scheduledGameIds = home.map(game => game.gameId);
+  it("is ready when both teams have skater rows in every completed game", () => {
+    const result = buildRoleWatch(base({ appearances, completedTeamGames, scheduledGameIds }));
+    expect(result.state).toBe("ready");
+    expect(result.reasons ?? []).toEqual([]);
+  });
+  it("is partial and says so when one team's skater rows are missing from a game, and keeps the board", () => {
+    const result = buildRoleWatch(base({ appearances: appearances.filter(game => !(game.team === "NYR" && game.gameId === 1011)), completedTeamGames, scheduledGameIds }));
+    expect(result.state).toBe("partial");
+    expect(result.reasons).toEqual(["1 of 24 completed team games have no skater rows."]);
+    expect(result.evidence.coverage).toEqual({ observed: 24, expected: 24, missing: 0, unit: "team games" });
+    expect(result.data!.risers[0]).toMatchObject({ playerId: 1 });
+  });
+  it("names a scheduled game with no reported result", () => {
+    const result = buildRoleWatch(base({ appearances, completedTeamGames, scheduledGameIds: [...scheduledGameIds, 9999] }));
+    expect(result.state).toBe("partial");
+    expect(result.reasons).toEqual(["2 of 26 scheduled team games have no reported result."]);
+  });
+});
+
 describe("Role Watch changes", () => {
   it("compares in seconds against a baseline that shares no game, with direction and magnitude", () => {
     const data = buildRoleWatch(base({ appearances: games(1, 12, index => index >= 7 ? 1200 : 1080) })).data!;

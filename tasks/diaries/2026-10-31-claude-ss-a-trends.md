@@ -10,4 +10,5 @@
 - **What Changed boards:** Up and Down at 6 rows, group tiles, last-10 sparkline; a WGO ranking now reads NST for the boards' players. Role Watch untouched. No browser run; lead renders on real data.
 - **Role Watch boards:** same layout, new Board field picks TOI or PP TOI. Sparkline gaps can't occur on listed rows today, since windows must be complete. No browser run.
 - **Larger sparklines:** 280×84 with value and date axes, tiles stacked beside the chart, boards at 5 rows. No browser run.
+- **F5:** `gameCoverage` checks skater rows per team game; one aggregate read shows 226 of 226 games with both sides, so no false partial today. `slateCoverage` in Standouts still has the defect.
 - **Blockers:** none.

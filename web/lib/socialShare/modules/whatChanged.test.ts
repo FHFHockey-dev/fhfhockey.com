@@ -122,17 +122,24 @@ describe("NST coverage admission", () => {
 });
 
 describe("game completeness and identity", () => {
-  it("is partial when a scheduled game has no result or a completed game no skater rows", () => {
-    const appearances = games(1, 10, index => index >= 5 ? 1 : 0);
-    const completed = appearances.flatMap(game => [{ gameId: game.gameId }, { gameId: game.gameId }]);
-    const complete = buildWhatChanged(base({ appearances, completedTeamGames: completed, scheduledGameIds: appearances.map(game => game.gameId) }));
+  it("is partial when a scheduled game has no result or a completed team game no skater rows", () => {
+    const home = games(1, 10, index => index >= 5 ? 1 : 0), appearances = [...home, ...games(2, 10, () => 0, { team: "NYR" })];
+    const completed = home.flatMap(game => [{ gameId: game.gameId, team: "NJD" }, { gameId: game.gameId, team: "NYR" }]);
+    const scheduledGameIds = home.map(game => game.gameId);
+    const complete = buildWhatChanged(base({ appearances, completedTeamGames: completed, scheduledGameIds }));
     expect(complete.state).toBe("ready");
     expect(complete.evidence.coverage).toEqual({ observed: 20, expected: 20, missing: 0, unit: "team games" });
-    const short = buildWhatChanged(base({ appearances, completedTeamGames: completed, scheduledGameIds: [...appearances.map(game => game.gameId), 9999] }));
+    const short = buildWhatChanged(base({ appearances, completedTeamGames: completed, scheduledGameIds: [...scheduledGameIds, 9999] }));
     expect(short.state).toBe("partial");
     expect(short.reasons![0]).toMatch(/2 of 22/);
-    const silent = buildWhatChanged(base({ appearances, completedTeamGames: [...completed, { gameId: 8888 }, { gameId: 8888 }], scheduledGameIds: [...appearances.map(game => game.gameId), 8888] }));
-    expect(silent.reasons![0]).toMatch(/1 completed games have no skater rows/);
+    expect(short.reasons).toHaveLength(1);
+    const silent = buildWhatChanged(base({ appearances, completedTeamGames: [...completed, { gameId: 8888, team: "NJD" }, { gameId: 8888, team: "NYR" }], scheduledGameIds: [...scheduledGameIds, 8888] }));
+    expect(silent.reasons![0]).toMatch(/2 of 22 completed team games have no skater rows/);
+    const oneTeam = buildWhatChanged(base({ appearances: appearances.filter(game => !(game.team === "NYR" && game.gameId === 1009)), completedTeamGames: completed, scheduledGameIds }));
+    expect(oneTeam.state).toBe("partial");
+    expect(oneTeam.reasons).toEqual(["1 of 20 completed team games have no skater rows."]);
+    expect(oneTeam.evidence.coverage).toEqual({ observed: 20, expected: 20, missing: 0, unit: "team games" });
+    expect(oneTeam.data!.risers[0]).toMatchObject({ playerId: 1 });
   });
   it("selects one player by id or a unique name, and never guesses between two", () => {
     const appearances = [...games(1, 3, () => 1), ...games(2, 3, () => 1, { name: "Skater 12" })];

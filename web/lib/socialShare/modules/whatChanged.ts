@@ -174,13 +174,13 @@ export function joinNst<Row extends { player_id: number; date_scraped: string }>
   };
 }
 
-/** Completed games read against the schedule, and whether every completed game has skater rows. Anything short is partial. */
-export function gameCoverage(input: { appearances: readonly SkaterAppearance[]; completedTeamGames: readonly { gameId: number }[]; scheduledGameIds: readonly number[] }) {
-  const scheduled = new Set(input.scheduledGameIds), withSkaters = new Set(input.appearances.map(game => game.gameId));
+/** Completed team games read against the schedule, and whether each one has skater rows for that team. Anything short is partial. */
+export function gameCoverage(input: { appearances: readonly SkaterAppearance[]; completedTeamGames: readonly { gameId: number; team: string }[]; scheduledGameIds: readonly number[] }) {
+  const scheduled = new Set(input.scheduledGameIds), withSkaters = new Set(input.appearances.map(game => `${game.gameId}:${game.team}`));
   const completed = input.completedTeamGames.filter(game => scheduled.has(game.gameId));
-  const noSkaterRows = new Set(completed.filter(game => !withSkaters.has(game.gameId)).map(game => game.gameId)).size;
+  const noSkaterRows = completed.filter(game => !withSkaters.has(`${game.gameId}:${game.team}`)).length;
   const expected = scheduled.size * 2, observed = completed.length, missing = Math.max(0, expected - observed);
-  return { observed, expected, missing, noSkaterRows, reasons: [...(missing ? [`${missing} of ${expected} scheduled team games have no reported result.`] : []), ...(noSkaterRows ? [`${noSkaterRows} completed games have no skater rows.`] : [])] };
+  return { observed, expected, missing, noSkaterRows, reasons: [...(missing ? [`${missing} of ${expected} scheduled team games have no reported result.`] : []), ...(noSkaterRows ? [`${noSkaterRows} of ${observed} completed team games have no skater rows.`] : [])] };
 }
 export const newestDate = (dates: Iterable<string>) => { let newest: string | null = null; for (const date of dates) if (!newest || date > newest) newest = date; return newest; };
 
@@ -204,7 +204,7 @@ export function changeWindows<T extends { gameId: number }>(games: readonly T[],
 
 export type WhatChangedInput = {
   appearances: readonly SkaterAppearance[]; nstCounts: readonly NstCountRow[] | null; nstOnIce: readonly NstOnIceRow[] | null;
-  completedTeamGames: readonly { gameId: number }[]; scheduledGameIds: readonly number[]; through: string; settings: WhatChangedSettings;
+  completedTeamGames: readonly { gameId: number; team: string }[]; scheduledGameIds: readonly number[]; through: string; settings: WhatChangedSettings;
 };
 export function buildWhatChanged(input: WhatChangedInput): SharePostLoadResult<WhatChangedData> {
   const { settings, appearances } = input, requested = windowSize(settings.window), metric = metricOf(settings.metric);
