@@ -115,7 +115,7 @@ test("the exported PNG is the 1080 square with the radar's colours in it", async
   const file = await (await download).path();
   const png = readFileSync(file);
   expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1080, 1080]);
-  if (process.env.MULTI_CAT_SHOTS) writeFileSync(`${process.env.MULTI_CAT_SHOTS}/export.png`, png);
+  if (process.env.MULTI_CAT_SHOTS) writeFileSync(`${process.env.MULTI_CAT_SHOTS}/export.png`, new Uint8Array(png));
   const hasRadarBlue = await page.evaluate(async bytes => {
     const image = new Image();
     image.src = `data:image/png;base64,${bytes}`;

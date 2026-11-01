@@ -36,7 +36,7 @@ Wigo's radar is `CategoryCoverageChart` (Chart.js canvas), fed by `usePercentile
 - `multiCatStars.test.ts`: 23 passed. All `lib/socialShare/modules` tests: 603 passed in 23 files.
 - `e2e/social-share-multi-cat-stars.spec.ts`: 6 passed in Chromium on fictional data, isolated dev server on port 3117. Covers the four views' headline and fit at 860px, a traded skater's longest line, three panels, the empty state, missing values, and a real downloaded PNG: 1080 by 1080, with the radar fill present by pixel count. Fit is measured in the node's own pixels.
 - eslint on the post's TypeScript files and the barrel: clean. Pure-selector check: passed.
-- `tsc --noEmit` (8 GB heap; the default heap ran out of memory): no error in these files. It exits 2 on one error in `lib/rosterScheduleOptimizer/planningReproducibility.test.ts`, which this work did not touch.
+- `tsc --noEmit` (8 GB heap; the default heap ran out of memory): exit 0 for the whole app, run after the follow-up commit's spec fix. The first commit carried a type error in the spec's `writeFileSync`; the follow-up fixes it.
 
 ## Not verified
 
