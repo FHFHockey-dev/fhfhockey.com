@@ -3,6 +3,7 @@
 @use "sass:color";
 @use "styles/vars" as v; // Import variables from vars.scss
 @use "sass:math";
+@use "components/WiGO/scale" as s;
 
 .opponentLogContainer {
   background-color: v.$background-light; // Use a theme variable or default
@@ -10,7 +11,7 @@
   width: 100%;
   display: flex;
   flex-direction: column;
-  border-radius: v.$border-radius;
+  border-radius: s.$radius-card;
 }
 
 .scheduleTable {
@@ -18,7 +19,7 @@
   height: 100%;
   border-collapse: collapse;
   table-layout: fixed; // Helps with column widths
-  font-size: v.$font-size-small * 0.85;
+  font-size: s.$text-12;
   font-family: v.$font-family-primary;
   overflow-y: auto; // Allow scrolling if content overflows
 
@@ -28,48 +29,44 @@
     width: 30%;
     text-align: left;
     padding-left: v.$space-md;
-    font-weight: 900;
-    color: v.$text-primary-color;
+    font-weight: s.$weight-regular;
+    color: s.$ink;
 
     th,
     td {
       font-family: v.$font-family-primary;
-      text-transform: uppercase;
       padding: v.$space-xs * 0.8;
-      text-align: center;
-      font-size: v.$font-size-base * 0.8;
+      text-align: left;
+      font-size: s.$text-12;
       white-space: nowrap;
     }
 
     &:not(:first-child) {
-      color: v.$text-color-primary;
-      text-align: center;
+      color: s.$ink;
+      text-align: left;
       font-family: "roboto-condensed" sans-serif;
-      font-size: v.$font-size-small * 0.8;
-      letter-spacing: 0.15em;
+      font-size: s.$text-11;
       width: 35%;
     }
 
     font-family: v.$font-family-primary;
-    text-transform: uppercase;
     padding: v.$space-xs * 0.8;
-    text-align: center;
-    font-size: v.$font-size-small * 0.9;
+    text-align: left;
+    font-size: s.$text-12;
     white-space: nowrap;
   }
 
   thead th {
     // Column Headers (Metric, Per/GP, Per/82)
     padding: v.$space-sm;
-    font-size: v.$font-size-small * 0.9;
-    letter-spacing: 0.25em;
+    font-size: s.$text-12;
     background-color: color.adjust(v.$background-dark, $lightness: -5%);
-    color: v.$text-primary-color;
-    font-weight: 900;
+    color: s.$ink-muted;
+    font-weight: s.$weight-bold;
     position: sticky; // Make header row sticky
     top: 0;
     z-index: 1;
-    border-bottom: 3px solid v.$primary-color; // Stronger border below headers
+    border-bottom: v.$border-subtle;
     &:last-child {
       border-right: none; // Remove border from last header
     }
@@ -108,4 +105,11 @@
     th:nth-child(3) { width: 33%; }
     thead th { position: static; text-transform: none; }
   }
+}
+
+.emptyPrompt {
+  align-items: center;
+  justify-content: center;
+  color: s.$ink-muted;
+  font-size: s.$text-12;
 }

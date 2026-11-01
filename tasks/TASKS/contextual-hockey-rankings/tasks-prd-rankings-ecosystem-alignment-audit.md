@@ -143,7 +143,7 @@ npm run check:rankings-matrix-performance
 
 - [x] 4.0 Make durable ranking snapshots the default read path for skater leaderboards
   - [x] 4.1 Refactor skater matrix reads so all visible non-composite matrix cells for populated contexts are loaded from `entity_metric_rankings` in bounded, batched queries.
-  - [x] 4.2 Refactor overall and deployment rank scopes to read only needed entity ids/metric keys instead of rebuilding full ranking surfaces.
+  - [x] 4.2 Refactor overall and deployment rank scopes to read only needed entity ids/metric keys instead of rebuilding full ranking surfaces. _(Superseded by 2026-10-17 audit row NEW 21.0.)_
   - [x] 4.3 Keep rolling-player fallback only for missing snapshot contexts and expose the fallback reason in API metadata and the methodology panel.
   - [x] 4.4 Add a snapshot-source badge or methodology line that clearly states when a matrix is using durable snapshots versus rolling fallback.
   - [x] 4.5 Add tests for durable snapshot success, missing snapshot fallback, fallback metadata, and no-fake-data unavailable states.
@@ -260,3 +260,5 @@ npm run check:rankings-matrix-performance
   - [x] 20.3 Define the PP unit aggregation rule from `powerPlayCombinations` and `getPowerPlayBlocks` so PP1/PP2 unit seconds are not confused with summed player PPTOI.
   - [x] 20.4 Add source-health coverage checks for team/game coverage, unit counts, and incomplete-game/source gaps before wiring metrics into the team matrix.
   - [x] 20.5 Use the durable aggregate to replace source-pending Forward Top Load, Defense Pair Top Load, and PP1/PP2 Usage Share contracts with live team metrics.
+
+- [ ] NEW 21.0 **P3 ranking reader lost entity and limit pushdown (2026-10-17 completion audit):** `a5ba66196` (in production) removed the `entityIds` DB filter and `limit` pushdown from `web/lib/rankings/entityMetricRankingReader.ts:233-252`; the reader now pages the full snapshot per metric and re-ranks in process. This is a deliberate full-cohort correctness fix, but it contradicts "read only needed entity ids" and the 6.1/6.2 sub-2-second budgets need re-measuring. Supersedes 4.2. Close by re-measuring and recording the accepted cost model, or restoring a correct pushdown. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G3-rankings-rolling.md`. _(Local progress 2026-10-19: the actual-reader synthetic envelope now records100/1,000/10,000entities and up to8metrics with cold/warm and hydrated/unhydrated cases. Metadata hydration reuses the already-ranked output; Chef24reader tests plus16complete response comparisons and36unchanged workload pairs pass. Full-cohort query/rank semantics remain intact. This is local measurement, not accepted hosted cost or a production latency budget; the row stays open.)_ [Measured limits](/Users/tim/Code/fhfhockey.com/tasks/codex-sprint-2026-10-19/continuation-cost/R-COST-HANDOFF.md).

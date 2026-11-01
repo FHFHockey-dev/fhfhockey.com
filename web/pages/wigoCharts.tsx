@@ -99,6 +99,7 @@ const WigoCharts: React.FC = () => {
         <button
           key={t}
           className={t === activeTab ? styles.activeTab : styles.tabBtn}
+          aria-current={t === activeTab ? "page" : undefined}
           onClick={() => {
             updateUrlWith({ tab: t });
           }}
@@ -122,6 +123,7 @@ const WigoCharts: React.FC = () => {
       )}
     >
       <div className={styles.wigoDashboardContainer}>
+        <h1 className={styles.visuallyHidden}>WiGO player dashboard</h1>
         {playerDataError && <p role="alert">{playerDataError}</p>}
         {onePage && <div
           className={styles.wigoDashboardContent}

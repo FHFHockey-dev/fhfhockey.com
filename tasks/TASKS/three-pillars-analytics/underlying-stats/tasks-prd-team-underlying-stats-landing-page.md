@@ -40,6 +40,8 @@
 - Treat `Team` and `Opponent` as one aggregate-query surface for v1: `againstTeamId` alone means league-wide results against that opponent, while `teamId + againstTeamId` means the selected team's aggregate against that opponent. Do not introduce a separate matchup or detail experience.
 - Use the repo’s current test stack for targeted verification. Prefer `npx vitest run [optional/path/to/test/file]`.
 
+> **Freshness note (2026-10-17).** Until this date no scheduled job wrote `team_underlying_stats_summary`; the catch-up and backfill routes below were admin-only and manual, so team summaries stopped at 2026-04-07. The daily `update-player-underlying-stats` job now rebuilds team summaries for the same games (effective once released), and a bounded catch-up filled 2025-26 through 2026-04-16 and the 65 fully normalized 2026-27 games.
+
 ## Tasks
 
 - [x] 1.0 Reset the incorrect first pass and lock the v1 assumptions before implementation starts
@@ -134,3 +136,5 @@ Validation note: local Chrome route verification returned `200` for the default 
 
 - [x] NEW 15.0 **P1 — Redact public team landing dependency failures.** The team API now preserves bounded unsupported-filter details on 400 responses while returning only `TEAM_UNDERLYING_STATS_UNAVAILABLE` on dependency/runtime 500s; server logs retain the original diagnostic and a direct route regression proves the boundary (discovered and completed 2026-07-29).
 - [x] NEW 15.1 **P3 — Reconcile the team PRD with shipped landing-only ownership.** The PRD now records completed dynamic-audit status, the canonical task path, `web/`-qualified routes, and the explicit detail-route deferral already frozen by source task 1.2; no detail implementation or legacy-route promotion is inferred (discovered and completed 2026-07-29).
+
+- [x] NEW 16.0 **P2 league-wide team summary pages tie across page boundaries (2026-10-17 completion audit):** `web/lib/underlying-stats/teamStatsQueries.ts:838-839` pages `team_underlying_stats_summary` with `ORDER BY game_date DESC, game_id DESC`; the PK is `(game_id, team_id, strength, score_state)`, so the two team rows per game tie and can be skipped or duplicated at a 1,000-row boundary (about 2,600 rows per season). Supersedes the "complete paginated summary reads" claim in master 5.3.2. Close by appending `.order("team_id")` with a boundary regression. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G4-underlying-site-ux.md`. _(Closed locally 2026-10-19: Existing unique team_id tie-break independently checked; Chef reran the tie-aware league-wide 1,000-row page-boundary regression and it passes. No runtime change or hosted check.)_ [Local reconciliation](/Users/tim/Code/fhfhockey.com/tasks/codex-sprint-2026-10-19/master-local/MASTER-RECONCILIATION.md).

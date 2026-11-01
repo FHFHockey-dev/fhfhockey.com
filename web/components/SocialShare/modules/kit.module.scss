@@ -1,0 +1,8 @@
+@use "styles/vars" as v;
+
+.teamFallback { display: inline-grid; place-items: center; min-width: 40px; font-size: 16px; color: v.$color-white; }
+.table { display: grid; column-gap: v.$space-md; align-items: center; font-size: 22px; line-height: 1.2; }
+.head { font-size: 15px; letter-spacing: v.$mobile-letter-spacing-wide; color: v.$text-secondary; padding-bottom: v.$space-xxs; border-bottom: 1px solid v.$border-soft; }
+.cell { padding: 3px 0; border-bottom: 1px solid v.$border-soft; min-width: 0; }
+.head[data-numeric], .cell[data-numeric] { text-align: right; }
+.empty { margin: auto; text-align: center; font-size: 28px; color: v.$text-secondary; }

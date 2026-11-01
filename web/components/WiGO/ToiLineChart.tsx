@@ -317,7 +317,7 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
   };
 
   // ---  Title based on view ---
-  const chartTitle = chartView === "toi" ? "Time On Ice" : "Power Play TOI %";
+  const chartTitle = chartView === "toi" ? "Time on ice" : "PP TOI %";
   const chartData = getChartData();
   const chartOptions = getChartOptions();
 
@@ -327,7 +327,7 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
       toolbar={
         <div className={styles.toggleButtons}>
           <span className="wigo-trend-legend">{chartView === "toi" ? <><span style={{ color: CHART_COLORS.BAR_PRIMARY }}>━Total</span> · <span style={{ color: CHART_COLORS.PP_TOI }}>━PP</span> · Avg (min)</> : "PP share · Avg (%)"}</span>
-          <button type="button" title="Drag to zoom; Shift+drag to pan; Reset restores all games" onClick={() => chartRef.current?.resetZoom()}>Reset</button>
+          <button type="button" aria-label="Reset" title="Drag to zoom; Shift+drag to pan; Reset restores all games" onClick={() => chartRef.current?.resetZoom()}>↺</button>
           <button
             onClick={() => setChartView("toi")}
             disabled={chartView === "toi"}
@@ -346,7 +346,7 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
       {/* Render the chart structure if NO error */}
       {/* It will show the empty state (with dummy labels) while loading */}
       {!error && (
-        <Line ref={chartRef} options={chartOptions} data={chartData} />
+        <Line ref={chartRef} options={chartOptions} data={chartData} role="img" aria-label={chartView === "toi" ? "Total and power play time on ice by game" : "Power play share of time on ice by game"} />
       )}
 
       {/* --- Overlapping Status Indicators --- */}
@@ -367,7 +367,7 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
 
       {/* "Select Player" Placeholder (overlaps empty chart if !isLoading, !error, !playerId) */}
       {!isLoading && !error && !playerId && (
-        <div style={placeholderStyle}>Select a player to view chart.</div>
+        <div style={placeholderStyle}>Select a player</div>
       )}
 
       {!isLoading && !error && playerId && !seasonId && (

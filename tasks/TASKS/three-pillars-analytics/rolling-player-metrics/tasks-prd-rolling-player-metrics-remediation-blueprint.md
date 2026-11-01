@@ -74,7 +74,7 @@
   - [x] 4.3 Create the new migration file for required schema changes and decide whether the existing `20260310_remediate_rolling_player_metrics_gp_pct.sql` migration should be amended, superseded, or left as historical context.
   - [x] 4.4 Update generated Supabase types to match the new schema surface after migrations are finalized.
   - [x] 4.5 Update row-writing logic in `fetchRollingPlayerAverages.ts` so all new or renamed fields are populated consistently and any deprecated alias behavior is intentional.
-  - [x] 4.6 Update downstream consumers of `rolling_player_game_metrics` that rely on renamed, deprecated, or newly canonical fields, including trends pages, debug views, and projection queries.
+  - [x] 4.6 Update downstream consumers of `rolling_player_game_metrics` that rely on renamed, deprecated, or newly canonical fields, including trends pages, debug views, and projection queries. _(Superseded by 2026-10-17 audit row NEW 7.0 in tasks-rolling-player-pass-2-main-audit.md.)_
   - [x] 4.7 Add migration and compatibility tests or validation scripts that prove legacy consumers still work where backward compatibility is promised.
 
 - [x] 5.0 Harden PP-share, PP-role, TOI, and helper-specific semantic dependencies

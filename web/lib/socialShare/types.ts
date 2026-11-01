@@ -149,7 +149,11 @@ export type SharePlayerLayer = {
 
 /** Tuesday sections (CONTRACT.md in tasks/artifacts/tuesday-trends-2026-10-26). */
 export type ShareTrendKind = "hot" | "deployment" | "rates" | "movers";
-export type ShareTrendWho = { nhlId: number; name: string; /** Team of the player's latest game (per-game team_id). */ team: string; position: string };
+export type ShareTrendWho = { nhlId: number; name: string; /** Team of the player's latest game (per-game team_id). */ team: string; position: string;
+  /** TT-10: Yahoo rostered % at ownershipLatestDate; null = no single observation (never 0%); absent = not computed. */
+  rostered?: number | null;
+  /** TT-10: latest game's line/pair (null = unknown) and PP unit (number, "none" = off PP, null = unknown). */
+  role?: { line: string | null; pp: SharePpState } };;
 /** Edition rule for the form card. A different window needs a new id and a documented transition (CONTRACT.md). */
 export const RECENT_FORM_RULE = "recent-form-v1-early" as const;
 /** Recent Form (recent-form-v1-early): P/GP over the last 5 appearances vs the preceding 5, all in the current season. */
@@ -188,6 +192,8 @@ export type ShareTrendLayer = {
   ownershipPreviousDate: string | null;
   /** The movers sparkline's dates (comparison date to latest, inclusive); absent or null when not available. */
   ownershipSeriesDates?: string[] | null;
+  /** TT-10: the date behind every tile's rostered % (null when ownership is stale or missing). */
+  rosteredAsOf?: string | null;
   /** Each section is gated on its own sources; only the players a card shows are present. */
   sections: {
     hot: ShareTrendSectionState & { rule: typeof RECENT_FORM_RULE; qualifiers: number; hot: ShareHotRow[]; cold: ShareHotRow[] };

@@ -14,12 +14,61 @@ import { buildPowerPlayCombinationRows } from "lib/supabase/Upserts/powerPlayCom
 
 type ToiRawData = Awaited<ReturnType<typeof fetchTOIRawData>>;
 
+// A team on the power play has at least four skaters on the ice, so far fewer than that means its shifts are incomplete.
+const MIN_SKATERS_PER_PP_SECOND = 3;
+// On four real games, 143 of 144 skaters' shifts summed to their boxscore time to the second.
+const SHIFT_TOI_TOLERANCE_SECONDS = 2;
+
 type PowerPlayCombinationUpdateSummary = {
   gameId: number;
   rowCount: number;
   teamCount: number;
   shiftSource: string;
+  /** Stored rows of players with no PP time this run, kept because nothing proves the player had none. */
+  keptUnproven: number;
 };
+
+/**
+ * The stored players a run may remove. The boxscore has to show that a player's shifts are all there before their
+ * lack of PP time means anything, so a player with an even-strength shift and a missing PP shift keeps their row.
+ *  - Played: shift time must match boxscore time within the tolerance.
+ *  - Did not play: absent from the boxscore or 0 TOI, with no shift time saying otherwise.
+ * If the boxscore is unreadable for any player or team, nothing is proven.
+ */
+function getProvenNoPpPlayerIds(
+  rawData: ToiRawData,
+  candidateIds: number[]
+): number[] {
+  const [, { rostersMap, teams }] = rawData;
+  const roster = Object.values(rostersMap);
+  const boxscoreReadable =
+    teams.every((team) => roster.some((player) => player.teamId === team.id)) &&
+    roster.length > 0 &&
+    roster.every((player) => /^\d+:\d{2}$/.test(player.toi ?? ""));
+  if (!boxscoreReadable) return [];
+
+  const shiftSecondsByPlayerId = new Map<number, number>();
+  for (const shift of getShiftRows(rawData) as Array<{
+    playerId?: number;
+    duration?: string | null;
+  }>) {
+    if (!shift.playerId) continue;
+    shiftSecondsByPlayerId.set(
+      shift.playerId,
+      (shiftSecondsByPlayerId.get(shift.playerId) ?? 0) +
+        parseClockToSeconds(shift.duration ?? "00:00")
+    );
+  }
+
+  return candidateIds.filter((playerId) => {
+    const boxscoreToi = rostersMap[playerId]?.toi;
+    const boxscoreSeconds = boxscoreToi ? parseClockToSeconds(boxscoreToi) : 0;
+    const shiftSeconds = shiftSecondsByPlayerId.get(playerId) ?? 0;
+    return boxscoreSeconds === 0
+      ? shiftSeconds === 0
+      : Math.abs(shiftSeconds - boxscoreSeconds) <= SHIFT_TOI_TOLERANCE_SECONDS;
+  });
+}
 
 function getShiftRows(rawData: ToiRawData): unknown[] {
   const rows = rawData[0]?.data;
@@ -67,11 +116,12 @@ export default adminOnly(withCronJobAudit(async (req, res) => {
   }
 
   try {
-    await updatePowerPlayCombinations(gameId, supabase);
+    const { keptUnproven } = await updatePowerPlayCombinations(gameId, supabase);
     res.json({
       message:
         "Successfully updated the power play combinations for game " + gameId,
-      success: true
+      success: true,
+      keptUnproven
     });
   } catch (e: any) {
     res.status(400).json({
@@ -117,6 +167,8 @@ export async function updatePowerPlayCombinations(
     playerId: number;
   }> = [];
 
+  const playerSecondsByTeamId: Record<number, number> = {};
+
   teams.forEach((team) => {
     const toiData = toi[team.id] ?? [];
     const table: Record<string, TOIData> = {};
@@ -145,11 +197,28 @@ export async function updatePowerPlayCombinations(
         teamPpToiSeconds: teamPpToiByTeamId[team.id] ?? null
       });
       rows.push(...unitRows);
+      playerSecondsByTeamId[team.id] =
+        (playerSecondsByTeamId[team.id] ?? 0) +
+        unitRows.reduce((sum, row) => sum + row.PPTOI, 0);
     });
   });
 
-  if (rows.length === 0) {
+  if (getShiftRows(rawData).length === 0) {
     throw new Error("No power play combinations found");
+  }
+  // A team with no power play needs no rows, but one with PP time must show players on the ice for it. This catches a
+  // grossly incomplete feed before any write. It cannot prove a feed complete, so the delete below has its own rule.
+  const incompleteTeamIds = Object.entries(teamPpToiByTeamId)
+    .filter(
+      ([teamId, ppSeconds]) =>
+        (playerSecondsByTeamId[Number(teamId)] ?? 0) <
+        ppSeconds * MIN_SKATERS_PER_PP_SECOND
+    )
+    .map(([teamId]) => teamId);
+  if (incompleteTeamIds.length > 0) {
+    throw new Error(
+      `Incomplete shift data for game ${gameId}: team(s) ${incompleteTeamIds.join(", ")} have PP time without enough players on the ice. Stored rows were kept.`
+    );
   }
   console.log("[updatePowerPlayCombinations] summary", {
     gameId,
@@ -158,12 +227,34 @@ export async function updatePowerPlayCombinations(
     shiftSource
   });
 
-  await supabase.from("powerPlayCombinations").upsert(rows).throwOnError();
+  if (rows.length > 0) {
+    await supabase.from("powerPlayCombinations").upsert(rows).throwOnError();
+  }
+  // The key is game and player, so a player who no longer has PP time would otherwise keep their old row.
+  const writtenPlayerIds = new Set(rows.map((row) => row.playerId));
+  const { data: storedRows } = await supabase
+    .from("powerPlayCombinations")
+    .select("playerId")
+    .eq("gameId", gameId)
+    .throwOnError();
+  const candidateIds = (storedRows ?? [])
+    .map((row) => row.playerId)
+    .filter((playerId) => !writtenPlayerIds.has(playerId));
+  const provenNoPpPlayerIds = getProvenNoPpPlayerIds(rawData, candidateIds);
+  if (provenNoPpPlayerIds.length > 0) {
+    await supabase
+      .from("powerPlayCombinations")
+      .delete()
+      .eq("gameId", gameId)
+      .in("playerId", provenNoPpPlayerIds)
+      .throwOnError();
+  }
   return {
     gameId,
     rowCount: rows.length,
     teamCount: teams.length,
-    shiftSource
+    shiftSource,
+    keptUnproven: candidateIds.length - provenNoPpPlayerIds.length
   };
 }
 

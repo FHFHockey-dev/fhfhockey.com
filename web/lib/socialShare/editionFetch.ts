@@ -13,8 +13,8 @@ const inflight = new Map<string, Promise<EditionResponse>>();
  * an explicit refresh still fetches a new edition.
  */
 export async function fetchEdition(url: string, fetcher: typeof fetch = fetch): Promise<EditionResponse> {
-  const path = url.match(/^\/api\/v1\/social-share\/([a-z-]+)(?:\?[^#\s\\]*)?$/);
-  if (!path || !isSocialShareFormat(path[1])) throw new Error("Invalid share studio request.");
+  const path = url.match(/^\/api\/v1\/social-share\/([a-z-]+|posts\/[a-z][a-z0-9-]*)(?:\?[^#\s\\]*)?$/);
+  if (!path || !(path[1].startsWith("posts/") || isSocialShareFormat(path[1]))) throw new Error("Invalid share studio request.");
   const { data, error } = await supabase.auth.getSession();
   const session = data.session;
   if (error || !session?.user.id || !session.access_token) throw new Error("Sign in to use the share studio.");

@@ -53,7 +53,7 @@ const TimeframeComparison: React.FC<TimeframeComparisonProps> = ({
 
   return (
     <div className={styles.timeframeContainer}>
-      <div className={styles.countsTableTitle}>COMPARE</div>
+      <div className={styles.countsTableTitle}>Compare</div>
       <div className={styles.timeframeSelectContainer}>
         <select
           className={clsx(styles.timeframeSelect, styles.selectHighlightedLeft)}
@@ -68,7 +68,7 @@ const TimeframeComparison: React.FC<TimeframeComparisonProps> = ({
           ))}
         </select>
 
-        <span className={styles.vsText}>TO:</span>
+        <span className={styles.vsText}>vs</span>
 
         <select
           className={clsx(

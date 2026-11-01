@@ -23,6 +23,50 @@ vi.mock("lib/projections/starterBoardQueue", () => ({ dispatchStarterBoardJobs: 
 import { createLineSourceIftttReceiver } from "lib/sources/lineSourceIftttReceiver";
 import scheduler from "../../pages/api/internal/starter-board";
 
+describe("IFTTT webhook secret resolution", () => {
+  const ownVar = "IFTTT_DFOFANTASY_WEBHOOK_SECRET";
+  const deliver = async (secret: string) => {
+    const handler = createLineSourceIftttReceiver({ sourceGroup: "dfo", sourceKey: "dfofantasy", sourceAccount: "DFOFantasy",
+      enforceSourceAccount: true, secretEnvVar: ownVar });
+    const res = createMockRes();
+    await handler(createMockReq({ headers: { "x-fhfh-ifttt-secret": secret },
+      body: { source_account: "DFOFantasy", text: "Lines", link_to_tweet: "https://x.com/DFOFantasy/status/1" } }), res);
+    return res;
+  };
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.stubEnv("IFTTT_RECEIPT_VARIANTS_ENABLED", "false");
+    vi.stubEnv("IFTTT_INTAKE_POLICY", undefined);
+    vi.stubEnv("IFTTT_INTAKE_STOP", undefined);
+    upsertMock.mockResolvedValue({ error: null });
+    fromMock.mockReturnValue({ insert: insertMock, upsert: upsertMock });
+  });
+  afterEach(() => vi.unstubAllEnvs());
+
+  it("prefers the route's own secret and rejects the shared one when it is set", async () => {
+    vi.stubEnv(ownVar, "own-secret"); vi.stubEnv("X_FHFH_IFTTT_SECRET", "shared-secret");
+    expect((await deliver("own-secret")).statusCode).toBe(200);
+    expect((await deliver("shared-secret")).statusCode).toBe(401);
+  });
+  it("falls back to the shared secret when the route has none", async () => {
+    vi.stubEnv(ownVar, ""); vi.stubEnv("X_FHFH_IFTTT_SECRET", "shared-secret");
+    expect((await deliver("shared-secret")).statusCode).toBe(200);
+    expect(upsertMock).toHaveBeenCalledOnce();
+  });
+  it("returns 401 for a wrong secret before storing", async () => {
+    vi.stubEnv(ownVar, ""); vi.stubEnv("X_FHFH_IFTTT_SECRET", "shared-secret");
+    expect((await deliver("wrong")).statusCode).toBe(401);
+    expect(fromMock).not.toHaveBeenCalled();
+  });
+  it("returns 500 naming the route's variable when neither secret is set", async () => {
+    vi.stubEnv(ownVar, ""); vi.stubEnv("X_FHFH_IFTTT_SECRET", "");
+    const res = await deliver("anything");
+    expect(res.statusCode).toBe(500);
+    expect(res.body.error).toBe(`${ownVar} is not configured`);
+    expect(fromMock).not.toHaveBeenCalled();
+  });
+});
+
 function createMockReq(overrides: Record<string, unknown> = {}) {
   return {
     method: "POST",

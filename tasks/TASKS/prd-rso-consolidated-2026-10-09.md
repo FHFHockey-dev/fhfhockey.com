@@ -21,6 +21,18 @@ The first controlled daily-lineup beta must include both free/manual and premium
 
 All recommendations are advisory. Yahoo integration is read-only; the manager performs any lineup change, acquisition, waiver claim or FAAB action in Yahoo.
 
+### Owner clarification — October 13, 2026, 17:52 UTC
+
+TJ reaffirmed the full-roster weekly product scope. Yahoo supplies the current roster, eligible positions and league rules; its currently selected starters are inputs, not the optimization target. Re-optimize every legal daily lineup across the selected week while preserving actual game locks and explicit manager constraints. Present the maximum-AGP and best-supported-points lineups, with their AGP-versus-points tradeoff when one lineup cannot maximize both. Keep the previously confirmed comparison preferences; do not introduce a fixed blend or infer new weights.
+
+Each roster player needs a weekly ledger of available scheduled GP, legal AGP and DUST/bench games, including the dates and players or constraints responsible for missed starts. GP remains a scheduled opportunity, not proof of participation. Distinguish congestion from locks, reserves, timing, ineligibility and missing evidence. Use low usable active-game and supported projected contribution to surface advisory drop candidates; **LVRP (Least Valuable Roster Players)** is TJ's proposed name. Never automatically drop players or treat missing forecasts as low or zero value, and continue to respect protections and legal vacant/reserve capacity.
+
+Feed the roster ledger and drop candidates into available-player and streamer evaluation. Evaluate each complete, legal drop/add by re-optimizing the affected daily lineups and comparing with the optimized original roster under the same horizon, scoring and constraints. Report **net AGP and net projected points**, including the dropped player's lost contribution, positional reshuffling, displaced starts and acquisition-effective timing. Rank **Best Fit Available** using these actual complete-plan net gains and explicit tradeoffs; standalone projections, team schedules and hypothetical extra roster places are supporting context, not verified swap rankings.
+
+Include a top-five weekly team-schedule overview as supporting context. Prefer reuse of Game Grid's established schedule data and scoring where its horizon and coverage match; do not let team schedule score substitute for roster-specific net benefit or fabricate missing matchup inputs.
+
+The two-player, one-game, one-supported-head forecast packet is a shared integration checkpoint, not the full product or a requirement to build a manual pair-specific roster. Current forecasts remain limited or unqualified until their original issuance, permitted uses and matching consumer evidence are established. This clarification updates FR3–FR8; it changes no completion marker, forecast qualification, beta/release decision or external-action authorization.
+
 ### Definitions
 
 | Term | Meaning |

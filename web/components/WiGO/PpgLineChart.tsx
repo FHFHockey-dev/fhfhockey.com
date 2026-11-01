@@ -270,7 +270,7 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId, seasonId }) => {
   const chartData = getChartData();
   const chartOptions = getChartOptions();
   return (
-    <WigoSectionCard title="Points / Game" toolbar={<><span className="wigo-trend-legend"><span style={{ color: CHART_COLORS.BAR_PRIMARY }}>▮Pts</span> · <span style={{ color: CHART_COLORS.LINE_PRIMARY }}>━5-GM</span> · <span style={{ color: CHART_COLORS.PP_TOI }}>━10-GM</span> · <span style={{ color: CHART_COLORS.AVG_LINE_PRIMARY }}>┄Avg</span></span><button type="button" title="Drag to zoom; Shift+drag to pan; Reset restores all games" onClick={() => chartRef.current?.resetZoom()}>Reset</button></>}>
+    <WigoSectionCard title="Points / game" toolbar={<><span className="wigo-trend-legend"><span style={{ color: CHART_COLORS.BAR_PRIMARY }}>▮Pts</span> · <span style={{ color: CHART_COLORS.LINE_PRIMARY }}>━5-GM</span> · <span style={{ color: CHART_COLORS.PP_TOI }}>━10-GM</span> · <span style={{ color: CHART_COLORS.AVG_LINE_PRIMARY }}>┄Avg</span></span><button type="button" aria-label="Reset" title="Drag to zoom; Shift+drag to pan; Reset restores all games" onClick={() => chartRef.current?.resetZoom()}>↺</button></>}>
       {/* Render the chart structure if NO error */}
       {/* Shows empty state (with dummy labels) while loading */}
       {!error && (
@@ -279,6 +279,8 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId, seasonId }) => {
           type="bar" // Base type is bar, lines override in datasets
           options={chartOptions}
           data={chartData}
+          role="img"
+          aria-label="Points per game by game, with 5-game and 10-game averages"
         />
       )}
 
@@ -298,7 +300,7 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId, seasonId }) => {
 
       {/* "Select Player" Placeholder */}
       {!isLoading && !error && !playerId && (
-        <div style={placeholderStyle}>Select a player to view chart.</div>
+        <div style={placeholderStyle}>Select a player</div>
       )}
 
       {!isLoading && !error && playerId && !seasonId && (

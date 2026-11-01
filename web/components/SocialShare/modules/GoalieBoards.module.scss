@@ -1,0 +1,21 @@
+@use "styles/vars" as v;
+
+.boards { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 20px; }
+.boards[data-sides="1"] { grid-template-columns: minmax(0, 1fr); }
+.side { min-width: 0; min-height: 0; display: grid; }
+.sideHead { display: flex; justify-content: space-between; align-items: baseline; margin: 0; padding-bottom: 2px; border-bottom: 2px solid currentColor; font-size: 24px; line-height: 1.1; font-weight: 800; }
+.sideHead small { font-size: 12px; font-weight: 400; color: v.$text-secondary; }
+.sideHead[data-kind="best"] { color: v.$success-color; }
+.sideHead[data-kind="worst"] { color: v.$danger-color; }
+.row { display: flex; align-items: center; min-width: 0; padding: 3px 0; border-bottom: 1px solid v.$border-soft; }
+.row > * { flex: 1; min-width: 0; }
+.rank { text-align: right; font-size: 22px; font-weight: 700; }
+.logo { display: inline-flex; width: 34px; height: 34px; align-items: center; justify-content: center; }
+.ident { min-width: 0; }
+.ident b { display: block; font-size: 20px; line-height: 1.1; font-weight: 600; }
+.ident small { display: block; margin-top: 2px; font-size: 14px; line-height: 1.15; color: v.$text-secondary; }
+.heat { display: grid; justify-items: center; align-content: center; min-height: 50px; padding: 2px; border-radius: 5px; color: v.$color-white; background: rgba(v.$color-white, 0.06);
+  b { font-size: 26px; line-height: 1; font-weight: 800; }
+  small { font-size: 12px; line-height: 1.1; white-space: nowrap; }
+}
+.more { margin: 0; font-size: 14px; line-height: 1.2; color: v.$text-secondary; }

@@ -63,7 +63,7 @@
   - [x] 4.1 Apply consistent panel framing/title treatment to Opponent Metrics, Four Week Grid, and Player Pickup containers.
   - [x] 4.2 Normalize table headers, row heights, zebra/hover, sortable controls, selected metrics, numeric columns, pagination, and empty/loading/error states.
   - [x] 4.3 Normalize selects, inputs, filters, buttons, chips, and metric selectors with shared backgrounds, borders, typography, focus rings, and disabled states.
-  - [x] 4.4 Replace raw colors and WebKit-only scrollbar fragments with tokens and the shared scrollbar mixin (verified 2026-07-25: all literal white/black alpha sources in the three side-table modules use shared tokens, no WebKit-only scrollbar fragment remains, and all three modules compile directly).
+  - [x] 4.4 Replace raw colors and WebKit-only scrollbar fragments with tokens and the shared scrollbar mixin (verified 2026-07-25: all literal white/black alpha sources in the three side-table modules use shared tokens, no WebKit-only scrollbar fragment remains, and all three modules compile directly). _(Superseded by 2026-10-17 audit row NEW 15.0.)_
   - [x] 4.5 Verify dense data remains readable and controls do not wrap or overflow destructively on mobile/tablet.
 
 - [x] 5.0 Modernize Transposed Grid without changing its behavior
@@ -85,7 +85,7 @@
   - [x] 7.4 Avoid canonicalizing feature-specific heatmap/tooltip internals that do not belong in the shared modal shell.
 
 - [x] 8.0 Reconcile token drift and responsive/accessibility quality
-  - [x] 8.1 Re-run raw-color and token-usage scans; document intentional literals and remove duplicate local design tokens where a canonical value exists.
+  - [x] 8.1 Re-run raw-color and token-usage scans; document intentional literals and remove duplicate local design tokens where a canonical value exists. _(Superseded by 2026-10-17 audit row NEW 15.0.)_
   - [x] 8.2 Add shared tokens/mixins only when at least two consumers need the same semantic value and update style documentation if behavior changes.
   - [x] 8.3 Verify text/icon/control/table contrast, focus visibility, color-independent state, reduced motion, zoom/reflow, touch targets, and screen-reader semantics.
   - [x] 8.4 Compare desktop/tablet/mobile screenshots against the Draft Dashboard reference grammar and correct material inconsistencies without broad unrelated churn.
@@ -105,6 +105,8 @@
 - [x] NEW 12.0 **P2 desktop legacy-vertical rail compression:** representative 1440×900 populated browser evidence shows the seven-column Opponent Metrics rail and wide transposed schedule compressed/clipped without an owning horizontal scroller. Preserve the named legacy fallback while giving the three-rail composition a container-owned minimum width and internal horizontal scrolling; re-prove readable cells, intact side panels, zero body overflow, and touch/trackpad reachability.
 - [x] NEW 13.0 **P1 offseason Player Pickup season-identity mismatch:** the 2025–26 UI derives Yahoo season `2026` after the season end, while Production stores all 1,494 scoped `yahoo_players` rows under start-year season `2025`, including 599 default-eligible ownership rows. Establish one start-year Yahoo season contract, preserve the corresponding `20252026` NHL aggregate identity, add regression coverage, and re-prove populated pickup filtering/pagination across desktop/mobile without changing data.
 - [x] NEW 14.0 **P2 Player Pickup control/table semantics:** populated browser accessibility evidence shows the ownership range and team select lack programmatic labels, while clickable sortable column headers are pointer-only `<th>` elements. Preserve the exact filter/sort contract while adding native label association, button semantics, sort state, keyboard focus, and regression/browser proof.
+
+- [ ] NEW 15.0 **P3 Player Pickup reintroduced raw colors (2026-10-17 completion audit):** `web/components/GameGrid/PlayerPickupTable/PlayerPickupTable.module.scss:1748-1763` (`.yahooContext`, from `f90bb13cd`, 2026-09-17, in production) uses `rgba(255,255,255,0.16/0.25)`, `#77cfff`, `#20252d` and `#10384e`, so the zero-literal-white/black and empty raw-color scans no longer hold. Supersedes 4.4 (C0023), 8.1 (C0041) and the raw-color clauses of master 4.10 and 5.7.19. Close by moving the colors to shared tokens and re-running the scoped scan. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G4-underlying-site-ux.md`.
 
 ## Completion Reconciliation — July 2026
 

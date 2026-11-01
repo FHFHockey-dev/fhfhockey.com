@@ -154,7 +154,7 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({
   // will automatically pick up the new colors stored in processedData
   return (
     <WigoSectionCard
-      title="Point Consistency"
+      title="Point consistency"
       toolbar={<span className={styles.consistencyGp}>{gameLogs.length} GP</span>}
       bodyClassName={styles.sectionCardBodyFlush}
     >
@@ -223,7 +223,7 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({
                     {/* Color applied to label text via inline style */}
                     <span
                       className={styles.consistencyLabel}
-                      style={{ color: item.color }} // Uses the color stored in processedData
+                      style={{ color: item.color === WIGO_COLORS.GREY_MEDIUM ? "#999999" : item.color }} // The donut's grey is too dim for text
                     >
                       {item.label}:
                     </span>

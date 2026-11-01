@@ -2,6 +2,7 @@
 @use "sass:color";
 @use "styles/vars" as v; // Variable imports from vars.scss
 @use "sass:math";
+@use "components/WiGO/scale" as s;
 @import url("https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Train+One&display=swap");
 
@@ -15,10 +16,10 @@
 
 .spanColorBlue {
   display: inline-block;
-  color: v.$primary-color;
+  color: s.$accent;
   font-family: "Train One", sans-serif;
   font-size: v.$font-size-base * 1.8;
-  font-weight: 900;
+  font-weight: s.$weight-bold;
   vertical-align: baseline;
 }
 
@@ -44,7 +45,7 @@
   min-width: 0;
   padding: v.$space-sm;
   border: 1px solid color.adjust(v.$background-dark, $lightness: 8%);
-  border-radius: v.$border-radius * 1.5;
+  border-radius: s.$radius-card;
   background-color: color.adjust(v.$background-dark, $lightness: -3%);
 }
 
@@ -73,10 +74,6 @@
     flex-direction: column;
     gap: v.$space-sm;
     padding: 0 v.$space-md;
-
-    .wigoHeader {
-      display: none;
-    }
   }
   .mobileTabsBar {
     position: sticky;
@@ -91,23 +88,23 @@
   }
   .tabBtn {
     background: transparent;
-    color: v.$text-color-secondary;
+    color: s.$ink-muted;
     border: 1px solid v.$border-color-secondary;
-    border-radius: v.$border-radius-sm;
+    border-radius: s.$radius-small;
     padding: 6px 10px;
     white-space: nowrap;
     font-family: v.$font-family-primary;
-    font-size: v.$font-size-small;
+    font-size: s.$text-14;
   }
   .activeTab {
     background: var(--primary-color, v.$primary-color);
-    color: v.$color-white;
+    color: s.$ink-strong;
     border: 1px solid color.adjust(v.$primary-color, $lightness: -10%);
-    border-radius: v.$border-radius-sm;
+    border-radius: s.$radius-small;
     padding: 6px 10px;
     white-space: nowrap;
     font-family: v.$font-family-primary;
-    font-size: v.$font-size-small;
+    font-size: s.$text-14;
   }
   .mobilePanel {
     display: flex;
@@ -116,22 +113,9 @@
     padding: 0 v.$space-md;
   }
   // Tweak some heights for better mobile fit
-  .playerHeaderContainer,
-  .toiChartContainer,
-  .ppgChartContainer,
-  .gameScoreContainer {
+  .playerHeaderContainer {
     height: auto;
     min-height: 180px;
-  }
-  .consistencyAndCategoryWrapper {
-    flex-direction: column;
-    height: auto;
-    gap: v.$space-md;
-  }
-  .consistencyRatingContainer,
-  .percentileChartContainer {
-    flex: initial;
-    min-height: 220px;
   }
   .combinedStatsTableContainer {
     overflow-x: auto;
@@ -166,7 +150,7 @@
   width: 100%;
   overflow: hidden;
   border: 1px solid color.adjust(v.$background-dark, $lightness: 9%);
-  border-radius: v.$border-radius;
+  border-radius: s.$radius-card;
   background: color.adjust(v.$background-dark, $lightness: -1%);
 }
 
@@ -193,14 +177,14 @@
 .headerRowWrapper {
   grid-area: context;
   display: grid;
-  grid-template-columns: minmax(245px, 0.8fr) minmax(260px, 0.9fr) minmax(260px, 1fr) auto;
+  grid-template-columns: auto minmax(260px, 340px) minmax(0, 1fr);
   align-items: center;
   gap: v.$space-sm;
   min-height: 52px;
   width: 100%;
   padding: v.$space-xs v.$space-sm;
   border: 1px solid color.adjust(v.$background-dark, $lightness: 9%);
-  border-radius: v.$border-radius;
+  border-radius: s.$radius-card;
   background: color.adjust(v.$background-dark, $lightness: -1%);
 }
 
@@ -213,11 +197,11 @@
 
 .wigoContextTagline {
   overflow: hidden;
-  color: v.$text-color-secondary;
+  color: s.$ink-muted;
   font-family: v.$font-family-primary;
-  font-size: 10px;
+  font-size: s.$text-11;
   font-style: italic;
-  font-weight: 700;
+  font-weight: s.$weight-bold;
   letter-spacing: 0.3em;
   text-overflow: ellipsis;
   text-transform: uppercase;
@@ -241,49 +225,27 @@
   }
 }
 
-.wigoHeader {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-
-  .headerText {
-    color: v.$text-color-secondary;
-    font-family: v.$font-family-primary;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-  }
-}
-
 .selectedPlayerControl {
   display: flex;
   align-items: center;
   gap: v.$space-sm;
   min-width: 0;
   height: 38px;
-  padding: 0 v.$space-sm;
-  border: 1px solid v.$border-color-secondary;
-  border-radius: v.$border-radius-sm;
-  background: color.adjust(v.$background-dark, $lightness: 2%);
+  padding: 0 v.$space-xs;
+  justify-self: end;
 
   button {
     margin-left: auto;
     padding: 4px 6px;
     border: 0;
     background: transparent;
-    color: v.$text-color-secondary;
+    color: s.$ink-muted;
     cursor: pointer;
-    font-size: 9px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    font-size: s.$text-12;
 
     &:hover,
     &:focus-visible {
-      color: v.$primary-color;
+      color: s.$accent;
     }
 
     &:focus-visible {
@@ -310,29 +272,18 @@
   flex-direction: column;
   min-width: 0;
 
-  strong,
   span {
     overflow: hidden;
+    color: s.$ink-muted;
+    font-size: s.$text-12;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-
-  strong {
-    color: v.$text-color-primary;
-    font-size: 12px;
-  }
-
-  span {
-    color: v.$text-color-secondary;
-    font-size: 9px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
   }
 }
 
 .noSelectedPlayer {
-  color: v.$text-color-secondary;
-  font-size: 11px;
+  color: s.$ink-muted;
+  font-size: s.$text-11;
 }
 
 .playerIdentityCard {
@@ -366,8 +317,8 @@
 
 .playerTeam,
 .playerRole {
-  color: v.$text-color-secondary;
-  font-size: 10px;
+  color: s.$ink-muted;
+  font-size: s.$text-11;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -376,23 +327,23 @@
   display: flex;
   flex-direction: column;
   margin: 5px 0;
-  color: v.$text-color-primary;
+  color: s.$ink;
   font-family: "Roboto Condensed", v.$font-family-primary;
   font-size: clamp(20px, 1.6vw, 28px);
-  font-weight: 700;
+  font-weight: s.$weight-bold;
   line-height: 0.92;
   text-transform: uppercase;
 
   span {
     font-size: 0.58em;
-    font-weight: 400;
+    font-weight: s.$weight-regular;
     letter-spacing: 0.08em;
   }
 }
 
 .playerMetaGrid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   min-height: 52px;
   border-bottom: 1px solid color.adjust(v.$background-dark, $lightness: 9%);
 
@@ -403,9 +354,9 @@
     justify-content: center;
     min-width: 0;
     border-right: 1px solid v.$border-color-secondary;
-    color: v.$text-color-primary;
+    color: s.$ink;
     font-family: v.$font-family-numbers;
-    font-size: 11px;
+    font-size: s.$text-11;
     white-space: nowrap;
 
     &:last-child {
@@ -414,9 +365,9 @@
   }
 
   small {
-    color: v.$text-color-secondary;
+    color: s.$ink-muted;
     font-family: v.$font-family-primary;
-    font-size: 8px;
+    font-size: s.$text-11;
     letter-spacing: 0.1em;
     text-transform: uppercase;
   }
@@ -487,11 +438,11 @@
     text-transform: uppercase;
     h3 {
       margin: 0;
-      font-size: 12px;
-      font-weight: 600;
+      font-size: s.$text-12;
+      font-weight: s.$weight-bold;
       letter-spacing: 12px;
       font-family: "Lucida Sans", "Lucida Grande", sans-serif;
-      color: v.$text-color-primary;
+      color: s.$ink;
     }
   }
   .consistencyContent {
@@ -512,7 +463,7 @@
   .consistencyListArea {
     flex: 1 1 30%;
     overflow-y: auto;
-    font-size: 12px;
+    font-size: s.$text-12;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -543,14 +494,14 @@
     display: inline-block;
     width: 10px;
     height: 10px;
-    border-radius: 50%;
+    border-radius: s.$radius-round;
     margin-right: 8px;
     flex-shrink: 0;
     background-color: color.adjust(v.$background-dark, $lightness: -1%);
     border: 1px solid #777;
   }
   .consistencyLabel {
-    color: #ccc;
+    color: s.$ink;
     margin-right: 10px;
     white-space: nowrap;
     width: 50%;
@@ -558,14 +509,14 @@
   }
 
   .consistencyValue {
-    color: #fff;
-    font-weight: bold;
+    color: s.$ink-strong;
+    font-weight: s.$weight-bold;
     text-align: right;
     width: 50%;
   }
   .consistencyCount {
-    color: #888;
-    font-size: 10px;
+    color: s.$ink-muted;
+    font-size: s.$text-11;
     margin-left: 5px;
     white-space: nowrap;
     width: 50%;
@@ -578,14 +529,14 @@
     align-items: center;
     height: 100%;
     width: 100%;
-    color: #aaa;
-    font-size: 12px;
+    color: s.$ink-muted;
+    font-size: s.$text-12;
     text-align: center;
     padding: 10px;
     box-sizing: border-box;
   }
   .chartErrorPlaceholder {
-    color: #ff6b6b;
+    color: s.$bad;
   }
   // Consistency Chart Internal Styles
 }
@@ -612,11 +563,11 @@
     text-transform: uppercase;
     h3 {
       margin: 0;
-      font-size: 12px;
-      font-weight: 600;
+      font-size: s.$text-12;
+      font-weight: s.$weight-bold;
       letter-spacing: 12px;
       font-family: "Lucida Sans", "Lucida Grande", sans-serif;
-      color: v.$text-color-primary;
+      color: s.$ink;
     }
   }
 }
@@ -697,7 +648,7 @@
   }
   &::-webkit-scrollbar-thumb {
     background-color: v.$primary-color;
-    border-radius: 3px;
+    border-radius: s.$radius-small;
   }
   &::-webkit-scrollbar-track {
     background-color: v.$background-medium;
@@ -724,9 +675,9 @@
   th,
   td {
     padding: 0 v.$space-sm * 0.5;
-    font-size: v.$font-size-small * 0.95;
+    font-size: s.$text-12;
     height: 34px;
-    font-weight: 100;
+    font-weight: s.$weight-regular;
     font-family: v.$font-family-numbers, "Roboto Condensed", sans-serif;
     font-variant-numeric: tabular-nums;
     vertical-align: middle;
@@ -750,9 +701,9 @@
       v.$background-dark,
       $lightness: -5%
     ); // Darkened for visual separation  box-sizing: border-box;
-    color: v.$text-color-secondary;
-    font-weight: 600;
-    font-size: v.$font-size-small * 0.9;
+    color: s.$ink-muted;
+    font-weight: s.$weight-bold;
+    font-size: s.$text-12;
     border-bottom: 3px solid v.$primary-color; // Default thick primary bottom border
     position: sticky;
     top: 0;
@@ -765,8 +716,8 @@
     width: 100px;
     min-width: 75px;
     text-align: left;
-    font-weight: 600;
-    color: v.$text-color-primary;
+    font-weight: s.$weight-bold;
+    color: s.$ink;
     position: sticky;
     left: 0;
     border-right: 2px solid v.$border-color; // Specific thick right border
@@ -781,22 +732,22 @@
   td:last-child {
     width: 65px;
     min-width: 65px;
-    font-weight: bold;
+    font-weight: s.$weight-bold;
   }
 
   // DIFF Cell Content Styles
   .diffCell span {
     display: block;
-    font-weight: bold;
+    font-weight: s.$weight-bold;
   }
   .diffPositive {
-    color: rgb(18, 193, 126);
+    color: s.$good;
   }
   .diffNegative {
-    color: rgb(240, 85, 118);
+    color: s.$bad;
   }
   .diffNeutral {
-    color: #ccc;
+    color: s.$ink;
   }
 
   // Highlight Styles
@@ -836,7 +787,7 @@
     border-bottom: 3px solid v.$primary-color !important; // Important used for specificity if needed
     z-index: 5; // Higher or equivalent to base th
     background-color: color.adjust($left-highlight-color, $lightness: -30%);
-    color: v.$color-white;
+    color: s.$ink-strong;
   }
   th.highlightedRight {
     border-top: $highlight-border-width solid $right-highlight-color;
@@ -844,7 +795,7 @@
     border-bottom: 3px solid v.$primary-color !important; // Important used for specificity if needed
     z-index: 5; // Higher or equivalent to base th
     background-color: color.adjust($right-highlight-color, $lightness: -47%);
-    color: v.$color-white;
+    color: s.$ink-strong;
   }
 
   // Bottom Border Override (Applied to highlighted cells in the LAST ROW - Requires isLastRow logic in React)
@@ -921,7 +872,7 @@
     border-bottom: 1px solid v.$focus-color;
     cursor: default;
     color: v.$focus-color;
-    font-weight: 900;
+    font-weight: s.$weight-bold;
   }
   .statLabelCell {
     vertical-align: middle;
@@ -935,12 +886,12 @@
   }
   button.expandButton {
     background: color.adjust(v.$border-color-primary, $lightness: -10%);
-    color: v.$primary-color;
+    color: s.$accent;
     border: 2px solid color.adjust(v.$border-color-primary, $lightness: -2%);
-    border-radius: 4px; // Button radius maintained
+    border-radius: s.$radius-small; // Button radius maintained
     cursor: pointer;
-    font-size: 10px;
-    font-weight: 900;
+    font-size: s.$text-11;
+    font-weight: s.$weight-bold;
     line-height: 1;
     padding: 1px 2px;
     min-width: 16px;
@@ -952,11 +903,11 @@
     &[aria-expanded="true"] {
       background-color: v.$primary-color;
       border-color: color.adjust(v.$primary-color, $lightness: -15%);
-      color: white;
-      border-radius: 4px; // Button radius maintained
+      color: s.$ink-strong;
+      border-radius: s.$radius-small; // Button radius maintained
       cursor: pointer;
-      font-size: 12px;
-      font-weight: 900;
+      font-size: s.$text-12;
+      font-weight: s.$weight-bold;
       line-height: 1.2;
       padding: 1px 4px;
       min-width: 21px;
@@ -1004,9 +955,9 @@
       margin-top: 0;
       margin-bottom: v.$space-sm;
       text-align: center;
-      color: #ccc;
-      font-size: v.$font-size-base * 0.9;
-      font-weight: 600;
+      color: s.$ink;
+      font-size: s.$text-14;
+      font-weight: s.$weight-bold;
       letter-spacing: 1px;
       text-transform: uppercase;
     }
@@ -1027,13 +978,13 @@
   .avgButton {
     background-color: color.adjust(v.$background-dark, $lightness: -5%);
     border: 1px solid v.$border-color-secondary;
-    color: v.$text-color-button;
+    color: s.$ink-strong;
     padding: 4px 6px; // Smaller padding
-    border-radius: v.$border-radius-sm;
+    border-radius: s.$radius-small;
     cursor: pointer;
     font-family: v.$font-family-primary;
-    font-size: v.$font-size-small * 0.85;
-    font-weight: 100;
+    font-size: s.$text-12;
+    font-weight: s.$weight-regular;
     letter-spacing: 0.5px; // Smaller font
     transition:
       background-color 0.2s ease,
@@ -1044,8 +995,8 @@
       border-color: v.$focus-color;
     }
     &.active {
-      color: white;
-      font-weight: bold;
+      color: s.$ink-strong;
+      font-weight: s.$weight-bold;
       outline: 1px solid white;
       outline-offset: 1px;
     }
@@ -1054,8 +1005,8 @@
 .chartStatus {
   padding: v.$space-md; // Reduced padding
   text-align: center;
-  color: v.$text-color-secondary;
-  font-style: italic;
+  color: s.$ink-muted;
+  font-size: s.$text-12;
   background-color: inherit; // Inherits from parent td
   min-height: 100px; // Minimum height specification
   display: flex;
@@ -1066,9 +1017,9 @@
   background-color: rgba(v.$background-dark, 0.95);
   border: 1px solid v.$border-color-primary;
   padding: v.$space-sm;
-  border-radius: v.$border-radius-sm;
-  color: v.$text-color-primary;
-  font-size: v.$font-size-small;
+  border-radius: s.$radius-small;
+  color: s.$ink;
+  font-size: s.$text-14;
   box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
   p {
     margin: 4px 0;
@@ -1082,7 +1033,7 @@
   height: 100%;
   position: relative;
   background-color: var(--primary-color);
-  border-radius: v.$border-radius; // Rounded corners
+  border-radius: s.$radius-card; // Rounded corners
 }
 .headshotContainer {
   position: relative; // For absolute positioning of children
@@ -1090,7 +1041,7 @@
   height: 100%;
   display: flex;
   border: 1px solid color.adjust(v.$background-dark, $lightness: 15%);
-  border-radius: v.$border-radius; // Rounded corners
+  border-radius: s.$radius-card; // Rounded corners
   overflow: hidden; // Prevents overflow of children
   background-color: none; // Allows background to show through if needed
 }
@@ -1108,8 +1059,8 @@
   transform: translateX(24%);
   opacity: 0.25; // Semi-transparent appearance
   p {
-    color: #ccc;
-    font-size: 14px;
+    color: s.$ink;
+    font-size: s.$text-14;
     text-align: center;
   }
 }
@@ -1176,17 +1127,16 @@
 .chartStatus {
   padding: v.$space-lg;
   text-align: center;
-  color: v.$text-color-secondary;
-  font-style: italic;
+  color: s.$ink-muted;
   background-color: inherit;
 }
 .chartTooltip {
   background-color: rgba(v.$background-dark, 0.95);
   border: 1px solid v.$border-color-primary;
   padding: v.$space-sm;
-  border-radius: v.$border-radius-sm;
-  color: v.$text-color-primary;
-  font-size: v.$font-size-small;
+  border-radius: s.$radius-small;
+  color: s.$ink;
+  font-size: s.$text-14;
   box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
   p {
     margin: 4px 0;
@@ -1211,21 +1161,21 @@
   border-bottom: 3px solid color.adjust(v.$background-dark, $lightness: 3%);
   h3 {
     margin: 0;
-    font-size: 12px;
-    font-weight: 700;
-    color: #ccc;
+    font-size: s.$text-12;
+    font-weight: s.$weight-bold;
+    color: s.$ink;
     padding: 3px 0 3.5px 0;
     text-transform: uppercase;
     letter-spacing: 2px;
   }
   .toggleButtons button {
     padding: 3px 5px;
-    font-size: 10px;
+    font-size: s.$text-11;
     cursor: pointer;
-    color: v.$text-color-secondary;
+    color: s.$ink-muted;
     background-color: color.adjust(v.$background-dark, $lightness: -10%);
     border: 1px solid v.$border-color;
-    border-radius: v.$border-radius-sm;
+    border-radius: s.$radius-small;
     margin-left: 5px;
     transition:
       background-color 0.2s ease,
@@ -1270,8 +1220,8 @@
   width: 100%;
   height: 100%;
   min-height: 100px;
-  color: v.$text-color-secondary;
-  font-size: v.$font-size-small;
+  color: s.$ink-muted;
+  font-size: s.$text-12;
   flex-grow: 1;
   background-color: inherit;
 }
@@ -1311,9 +1261,9 @@
 
 .filtersTitle {
   margin: 0;
-  font-size: 12px;
-  font-weight: 700;
-  color: #ccc;
+  font-size: s.$text-12;
+  font-weight: s.$weight-bold;
+  color: s.$ink;
   padding: 3px 0 3.5px 0;
   text-transform: uppercase;
   letter-spacing: 2px;
@@ -1348,12 +1298,12 @@
   button {
     @include v.button-style;
     padding: 3px 5px;
-    font-size: 10px;
+    font-size: s.$text-11;
     cursor: pointer;
-    color: v.$text-color-secondary;
+    color: s.$ink-muted;
     background-color: color.adjust(v.$background-dark, $lightness: -10%);
     border: 1px solid v.$border-color;
-    color: v.$text-color-secondary;
+    color: s.$ink-muted;
     width: 100%;
     text-align: center;
     transition:
@@ -1362,9 +1312,9 @@
 
     &.active {
       background-color: v.$primary-color;
-      color: v.$text-color-primary;
+      color: s.$ink;
       border-color: v.$primary-color;
-      font-weight: bold;
+      font-weight: s.$weight-bold;
     }
     &:disabled {
       opacity: 0.6;
@@ -1376,19 +1326,19 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  color: v.$text-color-secondary;
-  font-size: v.$font-size-small;
+  color: s.$ink-muted;
+  font-size: s.$text-14;
   height: 100%;
   width: 100%;
   padding: v.$space-sm;
   label {
     white-space: nowrap;
-    font-size: v.$font-size-small;
+    font-size: s.$text-14;
     font-family: v.$font-family-primary;
-    font-weight: bold;
+    font-weight: s.$weight-bold;
     text-align: center;
     .minGpValue {
-      color: v.$primary-color;
+      color: s.$accent;
       padding-left: v.$space-xs;
     }
   }
@@ -1413,13 +1363,13 @@
     }
     &::-webkit-slider-runnable-track {
       background: color.adjust(v.$background-medium, $lightness: 10%);
-      border-radius: 10px;
+      border-radius: s.$radius-card;
       height: 100%;
       outline: 1px solid v.$border-color;
     }
     &::-moz-range-track {
       background: v.$background-medium;
-      border-radius: 3px;
+      border-radius: s.$radius-small;
       height: 100%;
       outline: 1px solid v.$border-color;
     }
@@ -1429,7 +1379,7 @@
       height: 16px;
       width: 16px;
       background: v.$primary-color;
-      border-radius: 50%;
+      border-radius: s.$radius-round;
       cursor: pointer;
       margin-top: 0px;
     }
@@ -1437,24 +1387,17 @@
       height: 16px;
       width: 16px;
       background: v.$primary-color;
-      border-radius: 50%;
+      border-radius: s.$radius-round;
       border: none;
       cursor: pointer;
     }
   }
-  .gpSliderMaxLabel,
-  .gpSliderMinLabel {
-    font-size: v.$font-size-small;
-    color: v.$primary-color;
+  .gpSliderMaxLabel {
+    font-size: s.$text-14;
+    color: s.$accent;
     width: 20%;
     text-align: center;
-    order: 0;
-  }
-  .gpSliderMaxLabel {
     order: 2;
-  }
-  .gpSliderMinLabel {
-    order: 0;
   }
 }
 .thresholdMessagesContainer {
@@ -1466,12 +1409,12 @@
   gap: v.$space-xs;
 }
 .thresholdMessage {
-  color: v.$warning-color;
-  font-size: v.$font-size-small * 0.9;
+  color: s.$warn;
+  font-size: s.$text-12;
   padding: v.$space-xs;
   background-color: rgba(v.$warning-color, 0.1);
   border: 1px solid rgba(v.$warning-color, 0.3);
-  border-radius: v.$border-radius-sm;
+  border-radius: s.$radius-small;
   text-align: left;
   width: 100%;
 }
@@ -1565,7 +1508,7 @@
     height: auto;
     max-height: none;
     border: v.$border-subtle;
-    border-radius: v.$radius-sm;
+    border-radius: s.$radius-small;
     background: v.$background-medium;
     overflow: visible;
   }
@@ -1582,24 +1525,24 @@
     padding: 0;
   }
   .playerName {
-    font-size: 20px;
+    font-size: s.$text-20;
     overflow-wrap: anywhere;
     span {
-      font-size: 16px;
+      font-size: s.$text-16;
     }
   }
   .playerTeam,
   .playerRole {
-    font-size: 12px;
+    font-size: s.$text-12;
   }
   .playerMetaGrid {
     padding: 6px;
     span {
-      font-size: 13px;
+      font-size: s.$text-12;
       padding: 0 3px;
     }
     small {
-      font-size: 12px;
+      font-size: s.$text-12;
     }
   }
   .ratingsContainer {
@@ -1613,7 +1556,7 @@
   .percentileChartContainer .chartTitle {
     padding: 6px;
     h3 {
-      font-size: 12px;
+      font-size: s.$text-12;
       letter-spacing: 0;
     }
   }
@@ -1636,14 +1579,14 @@
     padding: 4px 6px;
   }
   .selectedStatPanel h3 {
-    font-size: 12px;
+    font-size: s.$text-12;
     margin: 0 0 2px;
-    color: v.$primary-color;
+    color: s.$accent;
     letter-spacing: 0.04em;
     text-transform: uppercase;
     span {
-      color: v.$text-secondary;
-      font-size: 11px;
+      color: s.$ink-muted;
+      font-size: s.$text-11;
       letter-spacing: 0;
       text-transform: none;
     }
@@ -1670,18 +1613,18 @@
     padding: 3px 6px;
     border-bottom-width: 1px;
     h3 {
-      font-size: 12px;
+      font-size: s.$text-12;
       letter-spacing: 0.04em;
       padding: 0;
     }
   }
   .chartHeader .toggleButtons button {
-    font-size: 12px;
+    font-size: s.$text-12;
     padding: 1px 4px;
   }
   .chartLoadingPlaceholder {
     min-height: 0;
-    font-size: 12px;
+    font-size: s.$text-12;
   }
   .matrixToolbar {
     height: 40px;
@@ -1689,7 +1632,7 @@
     align-items: center;
     gap: 16px;
     padding: 4px 8px;
-    font-size: 12px;
+    font-size: s.$text-12;
     > div {
       width: 410px;
     }
@@ -1721,8 +1664,8 @@
     thead th {
       height: 18px;
       background: v.$background-header;
-      color: v.$text-secondary;
-      font-weight: 700;
+      color: s.$ink-muted;
+      font-weight: s.$weight-bold;
       text-align: right;
     }
     thead th:first-child,
@@ -1734,32 +1677,41 @@
       padding: 0;
       background: none;
       border: 0;
-      color: v.$text-primary;
+      color: s.$ink;
       font: inherit;
-      font-weight: 700;
       text-align: left;
       cursor: pointer;
     }
+    tbody th {
+      font-weight: s.$weight-regular;
+    }
     th button:hover,
     th button[aria-pressed="true"] {
-      color: v.$primary-color;
+      color: s.$accent;
+    }
+    th button[aria-pressed="true"] {
+      color: color.adjust(v.$primary-color, $lightness: 8%);
+      font-weight: s.$weight-bold;
     }
     th button:focus-visible {
       outline: 2px solid v.$focus-color;
       outline-offset: -2px;
     }
+    // The header carries the strong colour; a light tint is enough to follow the column down.
     [data-left] {
-      background: rgba(v.$primary-color, 0.16);
+      background: rgba(v.$primary-color, 0.06);
     }
     [data-right] {
-      background: rgba(v.$warning-color, 0.13);
+      background: rgba(v.$warning-color, 0.06);
     }
     thead [data-left] {
-      color: v.$primary-color;
+      background: rgba(v.$primary-color, 0.16);
+      color: s.$accent;
       box-shadow: inset 0 -2px v.$primary-color;
     }
     thead [data-right] {
-      color: v.$warning-color;
+      background: rgba(v.$warning-color, 0.16);
+      color: s.$warn;
       box-shadow: inset 0 -2px v.$warning-color;
     }
     tr[data-selected] > * {
@@ -1782,8 +1734,11 @@
     margin-left: 3px;
     font-size: inherit;
   }
+  .matrixCaption {
+    color: s.$ink-muted;
+  }
   .matrixDiffCell {
-    border-left: 2px solid v.$primary-color;
+    border-left: v.$border-subtle;
     // Fixed scale: white at 0%, full red/green at -100%/+100% and beyond.
     &[data-diff-sign] {
       color: color-mix(in srgb, var(--diff-color) var(--diff-strength), white);
@@ -1802,7 +1757,7 @@
     flex-wrap: wrap;
   }
   .selectedStatPanel .avgButton {
-    font-size: 12px;
+    font-size: s.$text-12;
     padding: 2px 4px;
   }
 }
@@ -1835,7 +1790,7 @@
       gap: 4px;
     }
     .filtersTitle {
-      font-size: 12px;
+      font-size: s.$text-12;
       margin: 0;
       padding: 0;
     }
@@ -1843,11 +1798,11 @@
       gap: 12px;
     }
     .strengthSelector button {
-      font-size: 12px;
+      font-size: s.$text-12;
       padding: 2px 10px;
     }
     .gpSliderContainer {
-      font-size: 12px;
+      font-size: s.$text-12;
       flex: 1;
       min-width: 0;
     }
@@ -1855,13 +1810,13 @@
       margin: 0;
     }
     .thresholdMessage {
-      font-size: 12px;
+      font-size: s.$text-12;
       padding: 3px;
       line-height: 1.2;
     }
   }
   .percentileContext {
-    font-size: 12px;
+    font-size: s.$text-12;
   }
   .percentileTileGrid {
     flex: 1;
@@ -1874,18 +1829,18 @@
   }
   .percentileTile {
     border: v.$border-subtle;
-    border-radius: v.$radius-sm;
+    border-radius: s.$radius-small;
     padding: 2px 6px;
     display: grid;
     grid-template-columns: 1fr auto;
     align-items: center;
-    font-size: 12px;
+    font-size: s.$text-12;
     strong {
-      font-size: 14px;
-      color: v.$primary-color;
+      font-size: s.$text-14;
+      color: s.$accent;
     }
     small {
-      font-size: 12px;
+      font-size: s.$text-12;
       grid-column: 1 / -1;
     }
     meter {
@@ -1921,7 +1876,7 @@
     .consistencyLabel,
     .consistencyValue,
     .consistencyCount {
-      font-size: 12px;
+      font-size: s.$text-12;
       width: auto;
       margin: 0;
     }
@@ -1929,12 +1884,6 @@
       gap: 3px;
       padding: 2px 0;
     }
-  }
-  .selectedPlayerText span,
-  .selectedPlayerControl button,
-  .wigoContextTagline,
-  .headerText {
-    font-size: 12px;
   }
   .playerMetaGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1950,11 +1899,11 @@
     height: 198px;
   }
   .chartToolbar button {
-    font-size: 12px;
+    font-size: s.$text-12;
     background: v.$background-dark;
-    color: v.$text-primary;
+    color: s.$ink;
     border: v.$border-subtle;
-    border-radius: v.$radius-sm;
+    border-radius: s.$radius-small;
   }
 }
 
@@ -1989,14 +1938,13 @@
       gap: 6px;
       width: auto;
       label {
-        font-size: 12px;
+        font-size: s.$text-12;
       }
     }
-    .gpSliderMaxLabel,
-    .gpSliderMinLabel {
+    .gpSliderMaxLabel {
       width: auto;
       flex: none;
-      font-size: 12px;
+      font-size: s.$text-12;
     }
     .gpSlider {
       min-width: 50px;
@@ -2004,7 +1952,7 @@
   }
   .radarContext,
   .consistencyGp {
-    font-size: 12px;
+    font-size: s.$text-12;
     letter-spacing: 0;
     text-transform: none;
   }
@@ -2013,42 +1961,9 @@
     flex-direction: column;
   }
   &.wigoDashHeader :global(.wigo-trend-legend) {
-    font-size: 12px;
+    font-size: s.$text-12;
     text-transform: none;
     white-space: nowrap;
-  }
-  &.wigoDashHeader :global(.wigo-chart-help) {
-    position: relative;
-    font-size: 12px;
-    summary {
-      cursor: pointer;
-    }
-    p {
-      position: absolute;
-      right: 0;
-      bottom: 20px;
-      z-index: 20;
-      width: 260px;
-      background: v.$background-header;
-      border: v.$border-subtle;
-      padding: 12px;
-    }
-  }
-}
-
-.matrixHelp {
-  position: relative;
-  font-size: 12px;
-  summary {
-    cursor: pointer;
-  }
-  p {
-    position: absolute;
-    z-index: 20;
-    width: 320px;
-    padding: 12px;
-    background: v.$background-header;
-    border: v.$border-subtle;
   }
 }
 
@@ -2058,8 +1973,8 @@
 
 :global(.wigo-one-page) {
   .noSelectedPlayer,
-  .wigoHeader .headerText {
-    font-size: 12px;
+  .wigoContextTagline {
+    font-size: s.$text-12;
   }
   .percentileTile meter::-webkit-meter-bar {
     background: v.$background-dark;
@@ -2070,13 +1985,6 @@
   }
   .percentileTile meter::-moz-meter-bar {
     background: v.$primary-color;
-  }
-}
-
-:global(.wigo-one-page) {
-  .ratingsContainer :global(.wigo-chart-help) p {
-    bottom: auto;
-    top: 20px;
   }
 }
 
@@ -2096,7 +2004,7 @@
 :global(.wigo-one-page) {
   &.wigoDashHeader {
     --wigo-data-size: 11px;
-    --wigo-emphasis-size: 15px;
+    --wigo-emphasis-size: 16px;
   }
   .wigoDashboardContent {
     grid-template-areas:
@@ -2131,7 +2039,7 @@
     min-height: 28px;
     gap: 10px;
     padding: 2px 8px;
-    font-size: 11px;
+    font-size: s.$text-11;
     > div {
       width: 300px;
     }
@@ -2144,7 +2052,7 @@
       position: absolute;
       inset: 0 0 auto;
       height: 3px;
-      border-radius: v.$radius-sm v.$radius-sm 0 0;
+      border-radius: s.$radius-small s.$radius-small 0 0;
       background: var(--primary-color, #{v.$primary-color});
       pointer-events: none;
     }
@@ -2167,7 +2075,7 @@
 @media (min-width: 1400px) and (min-height: 860px) {
   .wigoDashHeader:global(.wigo-one-page.wigo-fit) {
     --wigo-data-size: 12px;
-    --wigo-emphasis-size: 17px;
+    --wigo-emphasis-size: 16px;
   }
 }
 
@@ -2252,14 +2160,14 @@
     }
     // Long names wrap to two lines at a smaller size instead of pushing the biography out of the card.
     &[data-name-length="long"] {
-      font-size: 11px;
+      font-size: s.$text-11;
       letter-spacing: 0;
       overflow-wrap: anywhere;
     }
   }
   .playerTeam,
   .playerRole {
-    font-size: 11px;
+    font-size: s.$text-11;
     line-height: 1.2;
     letter-spacing: 0.02em;
   }
@@ -2281,9 +2189,9 @@
       line-height: 1.15;
     }
     small {
-      font-size: 11px;
+      font-size: s.$text-11;
       letter-spacing: 0;
-      color: v.$text-secondary;
+      color: s.$ink-muted;
     }
   }
 }
@@ -2297,7 +2205,7 @@
     border-bottom-width: 1px;
     h3 {
       padding: 0;
-      font-size: 11px;
+      font-size: s.$text-11;
       letter-spacing: 0.06em;
       white-space: nowrap;
     }
@@ -2305,11 +2213,11 @@
   .chartToolbar {
     flex-wrap: wrap;
     gap: 2px 4px;
-    font-size: 11px;
+    font-size: s.$text-11;
   }
   .chartToolbar button,
   .chartHeader .toggleButtons button {
-    font-size: 11px;
+    font-size: s.$text-11;
     padding: 0 4px;
     line-height: 1.4;
   }
@@ -2335,16 +2243,16 @@
     flex-direction: column;
     .mainContentWrapper { flex: 1; min-height: 0; }
     .percentileFiltersContainer { padding: 2px 6px 0; gap: 1px; }
-    .filtersTitle { font-size: 11px; letter-spacing: 0.06em; }
+    .filtersTitle { font-size: s.$text-11; letter-spacing: 0.06em; }
     .filterControlsWrapper { flex-wrap: wrap; gap: 2px 10px; }
     .strengthSelector { flex: 0 0 auto; }
     .gpSliderContainer { flex: 1 1 120px; min-width: 0; }
     .gpSlider { min-width: 0; flex: 1; }
-    .strengthSelector button { font-size: 11px; padding: 0 8px; line-height: 1.5; }
-    .gpSliderContainer, .gpSliderContainer label, .gpSliderMaxLabel, .gpSliderMinLabel { font-size: 11px; }
-    .thresholdMessage { font-size: 11px; padding: 1px 4px; line-height: 1.2; }
+    .strengthSelector button { font-size: s.$text-11; padding: 0 8px; line-height: 1.5; }
+    .gpSliderContainer, .gpSliderContainer label, .gpSliderMaxLabel { font-size: s.$text-11; }
+    .thresholdMessage { font-size: s.$text-11; padding: 1px 4px; line-height: 1.2; }
   }
-  .percentileContext { font-size: 11px; line-height: 1.2; }
+  .percentileContext { font-size: s.$text-11; line-height: 1.2; }
   .percentileTileGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-template-rows: repeat(8, minmax(0, 1fr));
@@ -2359,10 +2267,10 @@
     padding: 0 2px 2px;
     border: 0;
     border-radius: 0;
-    font-size: 11px;
+    font-size: s.$text-11;
     line-height: 1.2;
     strong { font-size: var(--wigo-data-size); }
-    small { grid-column: auto; font-size: 11px; color: v.$text-secondary; }
+    small { grid-column: auto; font-size: s.$text-11; color: s.$ink-muted; }
     meter { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; }
   }
 }
@@ -2377,8 +2285,8 @@
       width: auto;
       margin: 0;
       padding: 0 5px;
-      border-radius: v.$radius-sm;
-      font-size: 11px;
+      border-radius: s.$radius-small;
+      font-size: s.$text-11;
       line-height: 1.35;
     }
   }
@@ -2387,7 +2295,7 @@
     margin-bottom: 2px;
   }
   .selectedStatPanel .avgButton {
-    font-size: 11px;
+    font-size: s.$text-11;
     padding: 0 3px;
     line-height: 1.45;
   }
@@ -2405,7 +2313,7 @@
     height: 30px;
   }
   .spanColorBlue {
-    font-size: 20px;
+    font-size: s.$text-20;
     line-height: 30px;
   }
   .nameSearchBarContainer,
@@ -2415,13 +2323,6 @@
   .selectedPlayerThumb {
     width: 28px;
     flex-basis: 28px;
-  }
-  .selectedPlayerText strong {
-    font-size: 12px;
-  }
-  .selectedPlayerText span,
-  .selectedPlayerControl button {
-    font-size: 11px;
   }
 }
 
@@ -2442,7 +2343,373 @@
 
 @media (min-width: 1800px) and (min-height: 1000px) {
   .wigoDashHeader:global(.wigo-one-page.wigo-fit) {
-    --wigo-data-size: 13px;
-    --wigo-emphasis-size: 19px;
+    --wigo-data-size: 14px;
+    --wigo-emphasis-size: 20px;
+  }
+}
+
+// Phone tabs. These sit last on purpose: they restyle base rules of equal specificity declared further up.
+@media (max-width: v.$breakpoint-tablet) {
+  .opponentLogContainer {
+    height: auto;
+  }
+  .consistencyAndCategoryWrapper {
+    flex-direction: column;
+    align-items: stretch;
+    height: auto;
+    min-height: 0;
+    gap: v.$space-md;
+    border-bottom: 0;
+  }
+  .consistencyRatingContainer,
+  .percentileChartContainer {
+    flex: none;
+    width: 100%;
+    border-left: 0;
+  }
+  .consistencyRatingContainer {
+    height: 240px;
+  }
+  .consistencyGp {
+    font-size: s.$text-12;
+  }
+  .percentileChartContainer {
+    height: 300px;
+    .chartTitle h3 {
+      letter-spacing: 0.06em;
+    }
+  }
+  .toiChartContainer,
+  .ppgChartContainer,
+  .gameScoreContainer {
+    height: 260px;
+    min-height: 0;
+  }
+  .chartHeader {
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    h3 {
+      letter-spacing: 0.06em;
+    }
+    :global(.wigo-trend-legend) {
+      font-size: s.$text-12;
+      white-space: nowrap;
+    }
+    .toggleButtons {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px;
+    }
+  }
+  .chartToolbar {
+    flex-wrap: wrap;
+    button,
+    .toggleButtons button {
+      min-height: 32px;
+      margin-left: 0;
+      padding: 2px 8px;
+      border: 1px solid v.$border-color;
+      border-radius: s.$radius-small;
+      background-color: color.adjust(v.$background-dark, $lightness: -10%);
+      color: s.$ink-muted;
+      font-size: s.$text-12;
+    }
+  }
+  .rateStatBarPercentilesContainer,
+  .rateStatPercentilesComponent,
+  .percentileFiltersContainer,
+  .chartAndRanksArea {
+    height: auto;
+    min-height: 0;
+    flex-basis: auto;
+  }
+  .percentileContext {
+    padding: 0 v.$space-sm;
+    color: s.$ink-muted;
+    font-size: s.$text-12;
+  }
+  .percentileChartsContainer {
+    flex: none;
+    height: 416px;
+  }
+  .statsTable {
+    td.highlightedLeft {
+      border-left-width: 1px;
+      border-right-width: 1px;
+      background-color: rgba(v.$primary-color, 0.08);
+    }
+    td.highlightedRight {
+      border-left-width: 1px;
+      border-right-width: 1px;
+      background-color: rgba(v.$warning-color, 0.08);
+    }
+    min-width: 700px;
+    th:first-child,
+    td:first-child {
+      width: 112px;
+    }
+  }
+}
+
+.statsTableNote {
+  flex-shrink: 0;
+  margin: 0;
+  padding: v.$space-xs v.$space-sm;
+  color: s.$ink-muted;
+  font-size: s.$text-12;
+  line-height: 1.35;
+}
+
+@media (max-width: v.$breakpoint-tablet) {
+  .selectedPlayerControl button {
+    min-height: 32px;
+  }
+}
+
+// One-page chart headers: title and small controls on one line, legend on its own line below, so the charts keep
+// the height. The wrappers dissolve so their children can be ordered inside the header.
+:global(.wigo-one-page) {
+  .chartHeader {
+    justify-content: flex-start;
+    gap: 0 4px;
+    .chartToolbar,
+    .toggleButtons {
+      display: contents;
+    }
+    :global(.wigo-trend-legend) {
+      order: 5;
+      flex: 1 0 100%;
+    }
+  }
+  .chartHeader .toggleButtons button,
+  .chartToolbar button {
+    margin: 0;
+    padding: 0 4px;
+    line-height: 16px;
+    &:disabled {
+      opacity: 1;
+      border-color: v.$primary-color;
+      background: rgba(v.$primary-color, 0.16);
+      color: s.$ink;
+      cursor: default;
+    }
+  }
+  .selectedStatPanel .averageToggleButtons {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    justify-items: start;
+    gap: 0 4px;
+  }
+  .selectedStatPanel .avgButton {
+    padding: 0;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    background: none;
+    color: s.$ink-muted;
+    font-weight: s.$weight-regular;
+    letter-spacing: 0;
+    white-space: nowrap;
+    &:hover {
+      background: none;
+      color: s.$ink;
+    }
+    &.active {
+      outline: 0;
+    }
+    &:focus-visible {
+      outline: 2px solid v.$focus-color;
+      outline-offset: 1px;
+    }
+  }
+}
+
+// One-page percentiles status: player GP and the notice chips share a line, so the tiles keep the height.
+:global(.wigo-one-page) {
+  .percentileStatusRow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1px 8px;
+    padding: 0 6px;
+  }
+  .percentileStatusRow .percentileContext {
+    color: s.$ink-muted;
+    white-space: nowrap;
+  }
+  .percentileStatusRow .thresholdChips {
+    margin: 0;
+  }
+}
+
+// One panel title style on every screen size. `.wigoDashHeader` lifts these above the older per-layout header rules.
+@mixin panel-title {
+  margin: 0;
+  padding: 0;
+  color: s.$ink-muted;
+  font-family: v.$font-family-primary;
+  font-size: s.$text-12;
+  font-weight: s.$weight-bold;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.wigoDashHeader {
+  .chartHeader h3,
+  .percentileChartContainer .chartTitle h3,
+  .selectedStatPanel h3,
+  .percentileFiltersContainer .filtersTitle {
+    @include panel-title;
+  }
+  .chartHeader h3 {
+    margin-right: auto;
+  }
+  .selectedStatPanel h3 span {
+    font-weight: s.$weight-regular;
+  }
+  .percentileFiltersContainer .filtersTitle {
+    border-bottom: 0;
+  }
+  .percentileChartContainer .chartTitle {
+    justify-content: space-between;
+    padding: 2px 6px;
+    border-bottom: 1px solid color.adjust(v.$background-dark, $lightness: 3%);
+    background-color: color.adjust(v.$background-dark, $lightness: -5%);
+    text-transform: none;
+  }
+  .radarContext {
+    color: s.$ink-muted;
+    white-space: nowrap;
+  }
+
+  .strengthSelector button {
+    border-radius: s.$radius-small;
+  }
+  .strengthSelector button.active {
+    color: s.$on-accent;
+  }
+
+  .helpButton,
+  .chartToolbar .helpButton {
+    flex: none;
+    min-height: 0;
+    margin: 0;
+    padding: 0 2px;
+    border: 0;
+    background: none;
+    color: s.$ink;
+    font-size: s.$text-14;
+    line-height: 16px;
+    cursor: help;
+    &:hover {
+      background: none;
+      color: s.$ink-strong;
+    }
+    &:focus-visible {
+      outline: 2px solid v.$primary-color;
+      outline-offset: 1px;
+    }
+  }
+}
+
+@media (max-width: v.$breakpoint-tablet) {
+  .wigoDashHeader {
+    .percentileFiltersContainer .filtersTitle {
+      padding: 6px 10px;
+    }
+    .gpSliderContainer {
+      gap: 6px;
+    }
+  }
+}
+
+// WigoHelp's note. Top layer, placed by the component; the browser's own centring is switched off.
+.helpPanel {
+  position: fixed;
+  inset: auto;
+  width: min(320px, calc(100vw - 16px));
+  max-height: calc(100vh - 16px);
+  margin: 0;
+  padding: 10px 12px;
+  overflow-y: auto;
+  border: v.$border-subtle;
+  border-radius: s.$radius-card;
+  background: v.$background-header;
+  color: s.$ink;
+  font-size: s.$text-12;
+  line-height: 1.4;
+  p {
+    margin: 0 0 8px;
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+}
+
+// The one "Select a player" line every empty panel shares.
+.wigoDashHeader .noPlayerMessage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: s.$ink-muted;
+  font-size: s.$text-12;
+}
+
+// Phone touch targets.
+@media (max-width: v.$breakpoint-tablet) {
+  .wigoDashHeader {
+    .strengthSelector button {
+      min-width: 40px;
+      min-height: 32px;
+    }
+    .filterControlsWrapper {
+      flex-wrap: wrap;
+    }
+    .strengthSelector {
+      flex: 0 0 auto;
+      width: auto;
+      justify-content: flex-start;
+    }
+    .gpSliderContainer {
+      flex: 1 1 100%;
+    }
+    .gpSliderContainer .gpSlider {
+      min-height: 28px;
+      &::-webkit-slider-runnable-track {
+        height: 8px;
+      }
+      &::-moz-range-track {
+        height: 8px;
+      }
+      &::-webkit-slider-thumb {
+        width: 20px;
+        height: 20px;
+        margin-top: -6px;
+      }
+      &::-moz-range-thumb {
+        width: 20px;
+        height: 20px;
+      }
+    }
+    .helpButton,
+    .chartToolbar .helpButton {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 28px;
+      min-height: 28px;
+    }
+    .statsTable button.expandButton {
+      min-width: 24px;
+      min-height: 24px;
+    }
+    .chartToolbar .toggleButtons button:disabled {
+      opacity: 1;
+      border-color: v.$primary-color;
+      background: rgba(v.$primary-color, 0.16);
+      color: v.$text-primary;
+    }
   }
 }

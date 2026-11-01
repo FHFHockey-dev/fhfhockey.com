@@ -1,0 +1,14 @@
+@use "styles/vars" as v;
+
+.fields { display: flex; flex-wrap: wrap; gap: v.$space-sm; align-items: flex-end; margin-top: v.$space-sm; }
+.defaultNote { display: block; color: v.$text-secondary; font-size: v.$font-size-sm; }
+.postBody { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; font-family: "Share Roboto Condensed", sans-serif; }
+.unavailable { margin: auto; display: grid; gap: v.$space-sm; text-align: center; padding: 0 v.$space-xxl; font-size: 26px; strong { font-size: 38px; } p { margin: 0; color: v.$text-secondary; } }
+.evidence { display: grid; gap: 2px; overflow-wrap: anywhere; margin: v.$space-sm 0 0; font-size: 14px; line-height: 1.25; color: v.$text-secondary; b { color: v.$color-white; font-weight: 600; } }
+.footer { font-size: 13px; p { margin: 0; } strong { white-space: nowrap; } }
+.warning { color: v.$warning-color; font-weight: 600; }
+
+/* A hand-built post: its sidebar beside the preview, stacked on narrow screens. */
+.builder { display: grid; grid-template-columns: minmax(280px, 380px) minmax(0, 1fr); gap: v.$space-md; align-items: start;
+  @media (max-width: 900px) { grid-template-columns: minmax(0, 1fr); }
+}

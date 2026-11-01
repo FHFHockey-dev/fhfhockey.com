@@ -80,7 +80,8 @@ async function getRostersMap(gameId: number, _teamId?: number) {
     teamId: teamId,
     sweaterNumber: item.sweaterNumber,
     position: item.position,
-    name: item.name.default
+    name: item.name.default,
+    toi: item.toi
   });
 
   const players: PlayerData[] = [];
@@ -162,6 +163,8 @@ export type PlayerData = {
   sweaterNumber: number;
   name: string;
   fullName?: string;
+  /** Boxscore time on ice as "MM:SS". */
+  toi?: string;
 };
 
 export type TOIData = {

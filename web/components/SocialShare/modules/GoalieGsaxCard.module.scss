@@ -1,0 +1,7 @@
+@use "styles/vars" as v;
+
+.card { flex: 1; display: flex; flex-direction: column; gap: 5px; min-height: 0; }
+.lead { margin: 0; font-size: 22px; line-height: 1.15; font-weight: 700; color: v.$color-white; }
+.lead small { font-size: 15px; font-weight: 400; color: v.$text-secondary; }
+.goalie { display: grid; grid-template-columns: 24px 34px minmax(0, 1fr) 84px; column-gap: 6px; align-items: center; }
+.legend { margin: 0; font-size: 15px; line-height: 1.2; color: v.$text-secondary; }

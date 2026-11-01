@@ -1,0 +1,52 @@
+@use "styles/vars" as v;
+
+/* Fills the post body: rows share whatever height the legend leaves, so a short board has no dead band. */
+.board { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: v.$space-xs; }
+.legend { margin: 0; font-size: 19px; line-height: 1.2; color: v.$text-secondary; }
+.fill { flex: 1; min-height: 0; }
+.fill > div { height: 100%; grid-template-rows: auto; grid-auto-rows: minmax(0, 1fr); align-items: stretch; font-size: 28px; }
+.fill[data-dense] > div { font-size: 24px; }
+.fill > div > span { display: flex; align-items: center; }
+.fill > div > span[data-numeric] { justify-content: flex-end; }
+.player { flex: 1; display: flex; align-items: center; gap: v.$space-xs; min-width: 0; }
+.name { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.pos { flex: none; font-size: 0.62em; color: v.$text-secondary; }
+.pair { white-space: nowrap; small { font-size: 0.72em; color: v.$text-secondary; } }
+.strong { font-weight: 700; color: v.$primary-color; white-space: nowrap; }
+.missing { color: v.$warning-color; }
+
+/* BSH leaders, 12 rows of about 67px: a 37px line of RK, SKATER, GP, BLK, SOG, HITS and BSH, then a 30px line for the bar across the whole row. */
+.fill[data-charted] > div { font-size: 24px; column-gap: 12px; grid-auto-rows: minmax(0, 1fr) 30px; }
+.fill[data-charted] > div > span:nth-child(8n + 7) { grid-column: 7 / -1; }
+.fill[data-charted] > div > span:nth-child(8) { display: none; }
+.fill[data-charted] > div > span:nth-child(n + 9) { padding-block: 1px; border-bottom: 0; }
+.fill[data-charted] > div > span:nth-child(n + 9):nth-child(8n) { grid-column: 1 / -1; align-items: flex-start; padding-block: 0 3px; border-bottom: 1px solid v.$border-soft; }
+.stat { flex: 1; align-self: stretch; display: flex; align-items: center; justify-content: flex-end; gap: 6px; padding-inline: 6px; border-radius: 3px; white-space: nowrap; small { font-size: 0.72em; color: v.$text-secondary; } }
+.tile { align-self: stretch; display: flex; }
+.tile > span { min-width: 136px; min-height: 0; grid-auto-flow: column; align-items: baseline; justify-content: center; column-gap: 8px; }
+.bar { display: flex; width: 100%; height: 26px; border-radius: 4px; overflow: hidden; }
+.section { box-sizing: border-box; display: flex; align-items: center; justify-content: center; min-width: 0; overflow: hidden; font-size: 16px; font-weight: 800; line-height: 1; }
+.section + .section { border-left: 2px solid #1a1d21; }
+.barMissing { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 14px; line-height: 1; color: v.$warning-color; border: 1px dashed v.$warning-color; border-radius: 4px; }
+.key { display: inline-flex; gap: 8px; color: v.$color-white; font-weight: 700; i { display: inline-block; width: 14px; height: 14px; margin-right: 4px; border-radius: 3px; vertical-align: -1px; } }
+/* Risers and fallers, 7 rows a side: about 114px a row, and a row's content needs about 110px: the 50px name line, the bar and the tile line. */
+.moverBar { grid-column: 1 / -1; display: flex; min-width: 0; .bar { height: 24px; } }
+.moverStrip { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 4px; }
+.part { display: flex; align-items: baseline; justify-content: center; gap: 6px; min-width: 0; padding: 1px 3px; border-radius: 4px; font-size: 17px; line-height: 1.15; white-space: nowrap; color: v.$color-white; small { font-size: 13px; color: v.$text-secondary; } }
+/* Multi Cat Monsters: one percentile scale for every category, with fills set inline. A missing cell has no fill, so it cannot read as weak. */
+/* Every chip is one width, so a P100 cannot widen its column: the value on the left, then a 32px percentile square that fits the 20-row board's 33px cell. */
+.band, .bandMissing { box-sizing: border-box; flex: none; width: 104px; align-self: stretch; display: flex; align-items: center; border-radius: 4px; white-space: nowrap; }
+.band { justify-content: space-between; padding: 0 1px 0 6px; }
+.bandMissing { justify-content: center; }
+.bandSquare { flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 3px; font-size: 12px; line-height: 1; font-weight: 700; }
+.score { font-size: 26px; font-weight: 800; }
+.bandMissing { color: v.$warning-color; font-size: 0.8em; outline: 1px dashed rgba(v.$warning-color, 0.6); outline-offset: -1px; }
+.bandKey { display: inline-flex; gap: 8px; color: v.$color-white; span { white-space: nowrap; } i { display: inline-block; width: 14px; height: 14px; margin-right: 3px; border-radius: 3px; vertical-align: -1px; } }
+/* Nightly Floor, 14 rows: the metric line and a smaller legend leave about 54px a row. The tile fills its cell instead of the goalie tile's 50px minimum. */
+.fill[data-compact] > div { font-size: 24px; column-gap: 12px; }
+.metricLabel { margin: 0; font-size: 34px; line-height: 1.15; font-weight: 800; }
+.legend[data-compact] { font-size: 15px; }
+.floorTile { align-self: stretch; display: flex; }
+.floorTile > span { min-height: 0; min-width: 76px; b { font-size: 24px; } }
+.strip { position: relative; align-self: stretch; width: 180px; margin-block: 4px; svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; } }
+.markKey { color: v.$color-white; i { display: inline-block; width: 12px; margin: 0 3px 0 8px; border-radius: 2px; vertical-align: -1px; } i:first-child { margin-left: 0; } i[data-mark="met"] { height: 14px; } i[data-mark="not"] { height: 5px; } i[data-mark="gap"] { height: 14px; box-sizing: border-box; } }

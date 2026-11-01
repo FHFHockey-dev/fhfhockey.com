@@ -77,6 +77,7 @@ export function formatGameMeanLabel(statLabel: string, mean: number): string {
 }
 
 const GameLogChart: React.FC<GameLogChartProps> = ({
+  playerId,
   statLabel,
   gameLogData,
   averages,
@@ -173,7 +174,7 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
   // Adjust chart height if needed for row layout, REMOVE fixed width
   const chartHeight = fill ? "100%" : height; // Increased height slightly for better visibility in a row
 
-  const status = isLoading ? "Loading game log..." : error || (gameLogData.length === 0 ? "No game log data available for this season." : null);
+  const status = isLoading ? "Loading game log..." : error || (!playerId ? "Select a player" : gameLogData.length === 0 ? "No game log data available for this season." : null);
 
   return (
     <div className={styles.gameLogChartContainer}>
@@ -219,7 +220,7 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
                 }`}
                 style={
                   isActive
-                    ? { backgroundColor: "#1a1d21", borderColor: buttonColor, color: "#fff", textDecoration: "underline", fontWeight: 700 }
+                    ? { backgroundColor: "#1a1d21", borderColor: buttonColor, color: "#fff", fontWeight: 700 }
                     : {}
                 }
               >
@@ -230,7 +231,7 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
           }
         })}
       </div>
-      {status ? <div className={styles.chartStatus} role="status">{status}</div> : <div className={fill ? styles.gameLogChartPlot : undefined}><ResponsiveContainer width="100%" height={chartHeight}>
+      {status ? <div className={styles.chartStatus} role="status">{status}</div> : <div className={fill ? styles.gameLogChartPlot : undefined} role="img" aria-label={`${statLabel} by game`}><ResponsiveContainer width="100%" height={chartHeight}>
         <LineChart
           data={chartData}
           margin={fill ? { top: 4, right: 6, left: 0, bottom: 0 } : { top: 5, right: 10, left: 0, bottom: 16 }}
@@ -296,8 +297,7 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
                 value: formatGameMeanLabel(statLabel, seasonAverageValue),
                 position: "insideBottomRight",
                 fill: "#FFF", // #ff7300
-                fontSize: 16,
-                fontWeight: "bolder"
+                fontSize: 11
               }}
               stroke="#ff6b6b" // #ff7300
               strokeDasharray="3 3"

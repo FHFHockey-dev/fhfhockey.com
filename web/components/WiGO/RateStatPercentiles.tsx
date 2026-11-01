@@ -21,6 +21,7 @@ import {
 } from "utils/calculatePercentiles";
 import { formatOrdinal } from "utils/formattingUtils";
 import { WIGO_ERROR_MESSAGES } from "./errorMessages";
+import { formatSeasonRange } from "./tableUtils";
 import useCurrentSeason from "hooks/useCurrentSeason";
 
 ChartJS.register(
@@ -114,27 +115,29 @@ const generateChartConfig = (
     ]
   };
 
+  // Phone tab only (one-page mode uses tiles): one row per stat so 16 labels fit a 390px screen.
   const options: ChartOptions<"bar"> = {
-    indexAxis: "x",
+    indexAxis: "y",
     responsive: true,
     maintainAspectRatio: false,
     scales: {
-      y: {
+      x: {
         beginAtZero: true,
         max: 100,
         ticks: {
-          color: "#ccc",
-          font: { size: 10 },
-          stepSize: 20
+          display: false,
+          stepSize: 25
         },
+        border: { display: false },
         grid: {
           color: "rgba(255, 255, 255, 0.1)"
         }
       },
-      x: {
+      y: {
         ticks: {
-          display: false,
-          color: "#ccc"
+          color: "#ccc",
+          autoSkip: false,
+          font: { size: 12, family: "Roboto Condensed, sans-serif" }
         },
         grid: {
           display: false
@@ -153,8 +156,8 @@ const generateChartConfig = (
             if (label) {
               label += ": ";
             }
-            if (context.parsed.y !== null) {
-              label += context.parsed.y + "%";
+            if (context.parsed.x !== null) {
+              label += context.parsed.x + "%";
             }
             return label;
           },
@@ -165,57 +168,29 @@ const generateChartConfig = (
       },
       datalabels: {
         labels: {
-          categoryLabel: {
-            display: true,
-            rotation: -90,
-            color: (context) => {
-              const value = context.dataset.data[context.dataIndex] as
-                | number
-                | null;
-              return value !== null && value > 50 ? "#ffffff" : "#dddddd";
-            },
-            font: {
-              size: 14,
-              weight: "bolder",
-              family: "Roboto Condensed",
-              lineHeight: 1.2
-            },
-            anchor: "center",
-            align: "center",
-            formatter: (value, context) =>
-              (context.chart.data.labels?.[context.dataIndex] as string) || ""
-          },
           valueLabel: {
             display: true,
-            color: "#fff",
+            // Dark on the light long bars, white on the page background beside short ones.
+            color: (context) =>
+              ((context.dataset.data[context.dataIndex] as number | null) ?? 0) >= 65
+                ? "#06202b"
+                : "#fff",
             anchor: "end",
-            align: "center",
-            offset: 6,
+            // Long bars carry the label inside so it cannot run off the canvas.
+            align: (context) =>
+              ((context.dataset.data[context.dataIndex] as number | null) ?? 0) >= 65
+                ? "start"
+                : "end",
             font: {
-              size: 16,
-              weight: "bolder",
-              family: "Roboto Condensed"
-            },
-            formatter: (value) => (value === null ? null : `${value}%`)
-          },
-          rankLabel: {
-            display: true,
-            color: "#FFF",
-            anchor: "start",
-            align: "center",
-            offset: 10,
-            font: {
-              size: 14,
-              weight: "bolder",
-              family: "Roboto Condensed"
+              size: 12,
+              weight: "bold",
+              family: "Roboto Condensed, sans-serif"
             },
             formatter: (value, context) => {
+              if (value === null) return null;
               const statKey = statsToDisplay[context.dataIndex]?.key;
-              if (!statKey || !ranks) {
-                return "-";
-              }
-              const rank = ranks[statKey];
-              return formatOrdinal(rank) ?? "-";
+              const rank = statKey && ranks ? formatOrdinal(ranks[statKey]) : null;
+              return `${value}% · ${rank ?? "-"}`;
             }
           }
         }
@@ -391,14 +366,13 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
   );
 
   const strengthLabel = selectedStrength.toUpperCase();
-  const formatSeason = (season: number) => `${String(season).slice(0, 4)}–${String(season).slice(6)}`;
   const thresholdMessages: Array<{ short: string; full: string }> = [];
   if (allPlayersStats.length === 0) {
     thresholdMessages.push({ short: `No ${strengthLabel} data`, full: `No player data available for ${strengthLabel}.` });
   }
   if (calculatedPercentiles !== null && percentileCohort?.fallbackReason) {
     thresholdMessages.push({
-      short: `Showing ${formatSeason(percentileCohort.appliedSeasonId)} values and cohort, not ${formatSeason(seasonId as number)}`,
+      short: `${formatSeasonRange(percentileCohort.appliedSeasonId)} values and cohort, not ${formatSeasonRange(seasonId as number)}`,
       full: percentileCohort.fallbackReason
     });
   }
@@ -429,13 +403,13 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
         <div className={styles.loadingMessage}>Loading season info...</div>
       )}
       {!isLoading && !error && !playerId && (
-        <div className={styles.noPlayerMessage}>Please select a player.</div>
+        <div className={styles.noPlayerMessage}>Select a player</div>
       )}
 
       {!isLoading && !error && playerId && seasonId && (
         <div className={styles.mainContentWrapper}>
           <div className={styles.percentileFiltersContainer}>
-            <h1 className={styles.filtersTitle}>Rate Stat Percentiles</h1>
+            <h3 className={styles.filtersTitle}>Rate stat percentiles</h3>
             <div className={styles.filterControlsWrapper}>
               <div className={styles.strengthSelector}>
                 {(["as", "es", "pp", "pk"] as PercentileStrength[]).map(
@@ -485,18 +459,27 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
                   }
                 />
 
-                <span className={styles.gpSliderMinLabel}>0</span>
               </div>
             </div>
 
-            <div className={styles.percentileContext}>Player GP: {selectedPlayerGp ?? "—"} · Requested {seasonId} · Applied {percentileCohort?.appliedSeasonId ?? seasonId}</div>
-            <div className={desktop ? styles.thresholdChips : styles.thresholdMessagesContainer}>
-              {thresholdMessages.map(message => desktop
-                // One-page mode keeps each notice to a short chip; the full sentence stays for screen readers and hover.
-                ? <div key={message.full} className={styles.thresholdMessage} title={message.full}>
-                    {message.short}<span className={styles.visuallyHidden}>: {message.full}</span>
-                  </div>
-                : <div key={message.full} className={styles.thresholdMessage}>{message.full}</div>)}
+            <div className={desktop ? styles.percentileStatusRow : undefined}>
+              {/* One-page mode keeps the requested and applied seasons for screen readers; the chip says when they differ. */}
+              {desktop ? (
+                <div className={styles.percentileContext}>
+                  Player GP: {selectedPlayerGp ?? "—"}
+                  <span className={styles.visuallyHidden}> · Requested {seasonId} · Applied {percentileCohort?.appliedSeasonId ?? seasonId}</span>
+                </div>
+              ) : (
+                <div className={styles.percentileContext}>Player GP: {selectedPlayerGp ?? "—"} · Requested {seasonId} · Applied {percentileCohort?.appliedSeasonId ?? seasonId}</div>
+              )}
+              <div className={desktop ? styles.thresholdChips : styles.thresholdMessagesContainer}>
+                {thresholdMessages.map(message => desktop
+                  // One-page mode keeps each notice to a short chip; the full sentence stays for screen readers and hover.
+                  ? <div key={message.full} className={styles.thresholdMessage} title={message.full}>
+                      {message.short}<span className={styles.visuallyHidden}>: {message.full}</span>
+                    </div>
+                  : <div key={message.full} className={styles.thresholdMessage}>{message.full}</div>)}
+              </div>
             </div>
           </div>
           {desktop ? <div className={styles.percentileTileGrid}>
@@ -518,6 +501,10 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
                   options={combinedChartConfig.options}
                   data={combinedChartConfig.data}
                   plugins={[ChartDataLabels]}
+                  role="img"
+                  aria-label={`Percentile by stat: ${(combinedChartConfig.data.labels ?? [])
+                    .map((statLabel, index) => `${statLabel} ${combinedChartConfig.data.datasets[0]?.data[index] ?? "unavailable"}%`)
+                    .join(", ")}`}
                 />
               ) : (
                 <div className={styles.chartLoadingPlaceholder}>

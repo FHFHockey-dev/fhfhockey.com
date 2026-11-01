@@ -82,7 +82,7 @@
   - [x] 3.6 Mark legacy or manual-only NST scripts clearly if they are not part of the production migration path, and document any follow-up cleanup candidates rather than silently leaving them ambiguous.
 
 - [x] 4.0 Replace legacy NST throttling assumptions with the new token-aware budget model
-  - [x] 4.1 Replace the old four-window NST limit assumptions in `nstRateLimitPolicy.ts` with a model aligned to the current published NST key rules and token budget behavior.
+  - [x] 4.1 Replace the old four-window NST limit assumptions in `nstRateLimitPolicy.ts` with a model aligned to the current published NST key rules and token budget behavior. _(Superseded by 2026-10-17 audit row NEW 10.0.)_
   - [x] 4.2 Update `nstBurstPlans.ts` so direct NST jobs select request pacing from the new token-aware ceilings instead of the legacy anti-bot intervals.
   - [x] 4.3 Review `nstClassification.ts`, cron coordination, and benchmark metadata so all direct NST jobs remain correctly classified and scheduled under the new shared-budget model.
   - [x] 4.4 Define how concurrent direct NST jobs coordinate the shared key budget across gamelog, goalies, team daily, team stats, player reports, current season, and last-ten workflows.
@@ -100,7 +100,7 @@
 - [x] 6.0 Resolve ambiguous direct-route ownership discovered during the NST audit
   - [x] 6.1 Decide whether `web/pages/api/v1/db/update-nst-player-reports.ts` remains an active migrated route or should be retired after confirming operational ownership.
   - [x] 6.2 Decide whether `web/pages/api/v1/db/update-nst-last-ten.ts` remains an active migrated route or should be retired after confirming operational ownership.
-  - [x] 6.3 Decide whether `web/pages/api/fetch_team_table.ts` remains a supported route or is retired in favor of `functions/api/fetch_team_table.py`.
+  - [x] 6.3 Decide whether `web/pages/api/fetch_team_table.ts` remains a supported route or is retired in favor of `functions/api/fetch_team_table.py`. _(Superseded by 2026-10-17 audit row NEW 9.0.)_
   - [x] 6.4 Decide whether `web/pages/api/Teams/[teamAbbreviation].ts` should be fixed, replaced, or retired because its current implementation does not match its file path contract.
 
 - [x] 7.0 Clean up stale NST route identity and contract drift during migration
@@ -111,3 +111,6 @@
 - [x] 8.0 Resolve unrelated full-suite test failures blocking NST parent-task closure
   - [x] 8.1 Investigate the failing assertions in `web/lib/underlying-stats/teamStatsQueries.test.ts` discovered during the mandatory `npm test` run for task `1.0`.
   - [x] 8.2 Decide whether the `teamStatsQueries` failures reflect expected upstream ongoing work or a real regression that must be fixed before later NST parent tasks are marked complete.
+
+- [x] NEW 9.0 **P2 `/api/fetch_team_table` is an unauthenticated proxy on the shared NST key (2026-10-17 completion audit):** `web/pages/api/fetch_team_table.ts:63-112` has no auth, interpolates unvalidated query values into the NST URL (L112), spends the shared `NST_KEY` budget on anonymous GETs and echoes the fetched URL under `debug.FetchingURL`. Nothing in the app calls it (`nst-team-stats` uses the external function). Supersedes 6.3 (C0038). Close with `adminOnly` or removal plus a denial test. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G2-cron-ops-lines.md`. _(Closed locally 2026-10-19: The compatibility route now requires existing admin/cron admission before any provider work; retained admitted parser behavior passes. Chef 22/22 operator/auth tests pass; route retained, no provider call.)_ [Local reconciliation](/Users/tim/Code/fhfhockey.com/tasks/codex-sprint-2026-10-19/master-local/MASTER-RECONCILIATION.md).
+- [ ] NEW 10.0 **P3 the four-window NST model is still the enforcement engine (2026-10-17 completion audit):** `web/lib/cron/nstRateLimitPolicy.ts:24-29` still defines the 40/80/100/180 windows that `assessNstRequestPlan` (L60-100), `canBurstNstRequests` and `requestBudget.ts:5,99-105` enforce; the token constants (L31-40) only feed `burstPageCap`. `nstBurstPlans.ts:170` (`7f094c8e6`) lets gamelog burst at 0 ms for up to 40 requests, past `NST_MAX_BURST_REQUESTS` = 39, and the cross-job ledger is a local `tmpdir()` file (`requestBudget.ts:68-70`) that does not coordinate Vercel instances. Supersedes 4.1 (C0022). Close by replacing the model or recording the retained design. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G2-cron-ops-lines.md`.

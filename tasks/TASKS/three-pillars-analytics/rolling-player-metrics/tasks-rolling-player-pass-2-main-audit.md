@@ -84,7 +84,7 @@
   - [x] 2.1 Populate server-authoritative formula metadata, helper-contract summaries, and rolling-window membership data in `rollingPlayerValidationPayload.ts` and the debug route.
   - [x] 2.2 Add per-row TOI source-trace output to the validation payload, including candidate sources, chosen source, trust tier, rejected candidates, fallback seed, and suspicious-value notes.
   - [x] 2.3 Add PP-share provenance output to the validation payload, including per-game builder versus WGO denominator source mix and mixed-source window flags.
-  - [x] 2.4 Add family-wide mismatch summaries and focused-row comparison matrices to the validation payload so `trendsDebug.tsx` can show all mismatches before drilling into one metric.
+  - [x] 2.4 Add family-wide mismatch summaries and focused-row comparison matrices to the validation payload so `trendsDebug.tsx` can show all mismatches before drilling into one metric. _(Superseded by 2026-10-17 audit row NEW 7.0.)_
   - [x] 2.5 Update `trendsDebug.tsx` to render the new server-authoritative formula, window, TOI, PP provenance, and mismatch summary sections instead of relying on browser heuristics.
   - [x] 2.6 Add readiness-state refinements in `trendsDebug.tsx` for `READY`, `READY WITH CAUTIONS`, and `BLOCKED`, driven by the richer payload output.
   - [x] 2.7 Extend debug-route and page tests to cover the richer payload contract, mismatch summaries, TOI trust panel data, mixed-source PP windows, and updated readiness states.
@@ -97,7 +97,7 @@
   - [x] 3.6 Add diagnostics regression coverage for PP caution states, ratio completeness states, and any new support-surface outputs or helper behavior.
 - [x] 4.0 Migrate downstream consumers toward canonical rolling surfaces and formalize compatibility cleanup
   - [x] 4.1 Audit and update `rollingPlayerMetricCompatibility.ts` so ratio, weighted-rate, and availability families resolve canonical-first while keeping additive and TOI legacy semantics intact where `avg` versus `total` still matters.
-  - [x] 4.2 Migrate `web/pages/trends/player/[playerId].tsx` off legacy-only suffix selection and onto canonical-first field resolution with compatibility fallback.
+  - [x] 4.2 Migrate `web/pages/trends/player/[playerId].tsx` off legacy-only suffix selection and onto canonical-first field resolution with compatibility fallback. _(Superseded by 2026-10-17 audit row NEW 7.0.)_
   - [x] 4.3 Review and update downstream projection readers in `skater-queries.ts`, `run-forge-projections.ts`, and `update-start-chart-projections.ts` so they follow the audited authoritative-field policy.
   - [x] 4.4 Add or update compatibility tests that protect canonical-first reads, legacy fallback behavior, and `gp_semantic_type`-aware GP interpretation.
   - [x] 4.5 Document and, if implementation-ready, add the first staged alias-freeze follow-up for compatibility-only ratio / weighted-rate / GP fields without breaking current readers.
@@ -112,3 +112,5 @@
   - [x] 6.2 Reduce validation-console overfetch by splitting stable summary data from heavy detail payload sections or caching scope-level data across metric pivots.
   - [x] 6.3 Reassess whether the legacy sustainability sandbox should stay on `trendsDebug.tsx` or move behind a secondary tab / route once the validation console is fully authoritative.
   - [x] 6.4 Run the full Vitest suite and targeted validation flows after the optimization work lands, then update any audit/runbook artifacts that depend on changed behavior.
+
+- [ ] NEW 7.0 **P1 Trends player page and validation console read compacted-null rolling fields (2026-10-17 completion audit):** Since `a8e1f5495d` (2026-06-11, in production) `splitRollingUpsertRowForDurableStorage` nulls every `_avg_`, `_last3`, `_all`, `_3ya`, `_career` key outside `ROLLING_RANKING_SELECT_FIELDS` in `rolling_player_game_metrics` (`web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts:380-403,445-482,736-757`) and moves them to `rolling_player_metric_support_payloads`, which only FORGE reads. The Trends player page still selects `goals/assists/points/shots/hits/blocks/pp_points_avg_*` from the wide row (`web/pages/trends/player/[playerId].tsx:440-492,748-753`), so those windows render empty, and `rollingPlayerValidationPayload.ts:2185-2193` with `compareValues` (`:600-630`) reports false mismatches. Page tests mock full rows. Supersedes 2.4 (C0011), 4.2 (C0024), remediation-blueprint 4.6 and master 5.2.7. Confirm with the read-only SQL in the evidence file, then close with a reader that rejoins the support payloads (or stops pruning those fields) plus a regression. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G3-rankings-rolling.md`.

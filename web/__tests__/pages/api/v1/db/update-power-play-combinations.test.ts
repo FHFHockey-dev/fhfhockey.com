@@ -11,11 +11,22 @@ vi.mock("utils/adminOnlyMiddleware", () => ({
   }
 }));
 
+vi.mock("lib/cron/withCronJobAudit", () => ({
+  withCronJobAudit: (handler: any) => handler
+}));
+
+vi.mock("lib/cron/nhlOffSeason", () => ({
+  withNhlOffSeasonSkip: (handler: any) => handler
+}));
+
 vi.mock("../../../../../pages/api/v1/db/update-power-play-combinations/[gameId]", () => ({
   updatePowerPlayCombinations: updatePowerPlayCombinationsMock
 }));
 
-import handler from "../../../../../pages/api/v1/db/update-power-play-combinations";
+import handler, {
+  MAX_CONCURRENT_GAMES,
+  MAX_GAMES_PER_CALL
+} from "../../../../../pages/api/v1/db/update-power-play-combinations";
 
 function createMockRes() {
   const res: any = {
@@ -53,12 +64,14 @@ function createGamesQueryBuilder(games: Array<{ id: number; date: string }>) {
       return builder;
     },
     order() {
-      return {
-        throwOnError: vi.fn().mockResolvedValue({
-          data: games
-        })
-      };
-    }
+      return builder;
+    },
+    limit() {
+      return builder;
+    },
+    throwOnError: vi.fn().mockResolvedValue({
+      data: games
+    })
   };
   return builder;
 }
@@ -199,6 +212,90 @@ describe("/api/v1/db/update-power-play-combinations", () => {
         }
       ]
     });
+  });
+
+  const gamesOf = (count: number) =>
+    Array.from({ length: count }, (_, index) => ({
+      id: 1000 + index,
+      date: "2026-03-14"
+    }));
+  const requestFor = (query: object, games: Array<{ id: number; date: string }>): any => ({
+    method: "GET",
+    query,
+    mockSupabase: {
+      from: vi.fn(() => ({
+        select: vi.fn(() => createGamesQueryBuilder(games))
+      }))
+    }
+  });
+
+  it("refuses a date range over the game limit before touching any game", async () => {
+    const res = createMockRes();
+
+    await handler(
+      requestFor(
+        { startDate: "2026-01-01", endDate: "2026-04-01" },
+        gamesOf(MAX_GAMES_PER_CALL + 1)
+      ),
+      res
+    );
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toContain(`limit of ${MAX_GAMES_PER_CALL} games per call`);
+    expect(updatePowerPlayCombinationsMock).not.toHaveBeenCalled();
+  });
+
+  it("refuses a game id list over the limit before reading games", async () => {
+    const res = createMockRes();
+    const req = requestFor(
+      { gameIds: gamesOf(MAX_GAMES_PER_CALL + 1).map((game) => game.id).join(",") },
+      []
+    );
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(400);
+    expect(req.mockSupabase.from).not.toHaveBeenCalled();
+    expect(updatePowerPlayCombinationsMock).not.toHaveBeenCalled();
+  });
+
+  it("accepts a call at the limit and never runs more than the concurrency bound", async () => {
+    let running = 0;
+    let peak = 0;
+    updatePowerPlayCombinationsMock.mockImplementation(async () => {
+      running++;
+      peak = Math.max(peak, running);
+      await new Promise((resolve) => setTimeout(resolve, 1));
+      running--;
+    });
+    const res = createMockRes();
+
+    await handler(
+      requestFor(
+        { startDate: "2026-03-14", endDate: "2026-03-20" },
+        gamesOf(MAX_GAMES_PER_CALL)
+      ),
+      res
+    );
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.processed).toBe(MAX_GAMES_PER_CALL);
+    expect(peak).toBe(MAX_CONCURRENT_GAMES);
+  });
+
+  it("adds up the rows each game kept without proof", async () => {
+    updatePowerPlayCombinationsMock
+      .mockResolvedValueOnce({ keptUnproven: 2 })
+      .mockResolvedValueOnce({ keptUnproven: 1 });
+    const res = createMockRes();
+
+    await handler(
+      requestFor({ startDate: "2026-03-14", endDate: "2026-03-14" }, gamesOf(2)),
+      res
+    );
+
+    expect(res.body.keptUnproven).toBe(3);
   });
 
   it("requires either gameIds or a date range", async () => {

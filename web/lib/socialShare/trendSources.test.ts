@@ -82,7 +82,12 @@ describe("Tuesday live loader", () => {
     const listed = [...layer.sections.hot.hot, ...layer.sections.deployment.up, ...layer.sections.rates.sogPer60, ...layer.sections.movers.risers];
     expect(listed.filter(row => row.series?.length).length).toBeGreaterThan(listed.length / 2);
     expect(tally("players")).toBe(1);
-    expect(tally("yahoo_nhl_player_map_read")).toBe(1);
+    // M1 (mover candidates by Yahoo id) and M3 (TT-10: shown non-mover players by NHL id, ≤ 27 ids, cap ids × 4).
+    expect(tally("yahoo_nhl_player_map_read")).toBe(2);
+    const m3 = statements.filter(statement => statement.table === "yahoo_nhl_player_map_read" && statement.filters.some(filter => filter.startsWith("nhl_player_id=in.")));
+    expect(m3).toHaveLength(1);
+    expect(Number(m3[0].filters.find(filter => filter.startsWith("nhl_player_id=in."))!.match(/\((\d+)\)/)![1])).toBeLessThanOrEqual(27);
+    expect(layer.rosteredAsOf).toBe("2026-10-27");
     expect(tally("powerPlayCombinations")).toBeLessThanOrEqual(Math.ceil(32 * 4 / TREND_LIMITS.ppcGamesPerChunk));
     // TJ's approved ceiling (READ-APPROVAL.md): ≤ 40 statements, ≤ 1,000 rows each, concurrency 2.
     expect(statements.length).toBeLessThanOrEqual(16);
@@ -97,7 +102,7 @@ describe("Tuesday live loader", () => {
     const sources = fictionalTrendSources(season, "2026-10-27", "2026-10-27T08:00:00Z"), { client, statements } = fakeClient(tablesOf(sources));
     const layer = await loadTrendLayer(context, client);
     expect(statements.filter(statement => statement.columns.includes("sog_per_60_shots_season") || statement.filters.some(filter => filter.startsWith("player_key=")))).toEqual([]);
-    expect(statements.length).toBeLessThanOrEqual(12);
+    expect(statements.length).toBeLessThanOrEqual(13);
     const listed = [...layer.sections.hot.hot, ...layer.sections.deployment.up, ...layer.sections.rates.sogPer60, ...layer.sections.movers.risers];
     expect(listed.length).toBeGreaterThan(0);
     expect(listed.every(row => row.series == null)).toBe(true);

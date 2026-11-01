@@ -1021,6 +1021,36 @@
       "migrationClass": "feature",
       "rolloutGate": "FORGE reserve pass (TJ pop-up 2026-10-26: separate table; commits 074694095, a02159b64): creates forge_reserve_projections, with RLS public read, SELECT only for anon/authenticated after revoke all, and service_role read/write. Written and read only behind forgeReservePassEnabled() (off). Apply before turning the flag on (C7 R43 N1). Hosted apply needs TJ's separate explicit approval; no migration command was run.",
       "stateEvidence": "Local source only; no hosted ledger or apply receipt. Receipt: tasks/artifacts/forge-week-coverage-2026-10-26/RESERVE-PASS-RECEIPT.md; review C7 R43."
+    },
+    {
+      "order": 102,
+      "path": "supabase/migrations/20261029235656_forge_v2_immutable_history.sql",
+      "sha256": "63de96ba1b44316ebd25028fc7149c0e04d9046af5ed1d90919a13a4aee9bfca",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "pending",
+      "migrationClass": "feature",
+      "rolloutGate": "Apply only with explicit approval before enabling FORGE v2; /forge/v2 returns not-found until then.",
+      "stateEvidence": "Not in production schema_migrations on 2026-11-01; no forge_v2 tables."
+    },
+    {
+      "order": 103,
+      "path": "supabase/migrations/20261101171113_social_share_x_posts.sql",
+      "sha256": "1502938fec170281009fc3ac5e6dc1e42fabfef5245a7e0aba5d2c3e98d822d4",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "Applied with TJ's explicit approval.",
+      "stateEvidence": "Production schema_migrations version 20261101171113; readback 2026-11-01."
+    },
+    {
+      "order": 104,
+      "path": "supabase/migrations/20261101174349_social_share_x_posts_undated.sql",
+      "sha256": "b66393e96ff2f3c74a34eea32c5d07880d6fab83f788d936f250584b516ee7ad",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "Applied with TJ's explicit approval.",
+      "stateEvidence": "Production schema_migrations version 20261101174349; readback 2026-11-01."
     }
   ],
   "sourceExtensionApproval": {
