@@ -128,7 +128,7 @@ describe("FHFHockey IFTTT post receiver", () => {
     const response = res();
     await handler(req({ body: { ...body, created_at } }), response);
     expect(response.statusCode).toBe(200);
-    expect(upsertMock.mock.calls[0][0]).toMatchObject({ posted_at: null, created_at_label: created_at ?? null });
+    expect(upsertMock.mock.calls[0][0]).toMatchObject({ posted_at: null, created_at_label: created_at === "not a date" ? created_at : null });
     expect(updateMock).not.toHaveBeenCalled();
   });
 
@@ -179,6 +179,55 @@ describe("FHFHockey IFTTT post receiver", () => {
     await handler(req({ body: { ...body, link_to_tweet, username } }), response);
     expect(response.statusCode).toBe(200);
     expect(upsertMock.mock.calls[0][0].tweet_id).toBe("789");
+  });
+
+  it("takes TJ's exact applet body, with every field wrapped and IFTTT's written date", async () => {
+    const exact = { source: "ifttt", source_account: "FHFHockey", text: "<<<Tonight's goalies>>>", alt_text: "<<<FHFH Start/Sit, 2010-08-23 to 2010-08-24>>>", username: "<<<FHFHockey>>>", link_to_tweet: "<<<https://x.com/FHFHockey/status/789>>>", created_at: "<<<August 23, 2010 at 11:01PM>>>", media_type: "<<<photo>>>" };
+    const response = res();
+    await handler(req({ body: exact }), response);
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toEqual({ success: true, tweetId: "789", matchedCard: "start-sit" });
+    expect(upsertMock.mock.calls[0][0]).toMatchObject({ tweet_id: "789", post_link: "https://x.com/FHFHockey/status/789", username: "FHFHockey", posted_at: "2010-08-24T03:01:00.000Z", created_at_label: "August 23, 2010 at 11:01PM", post_text: "Tonight's goalies", alt_text: exact.alt_text.slice(3, -3), raw_payload: exact });
+  });
+
+  it("takes the same body unwrapped, HTML-escaped, or URL-encoded", async () => {
+    for (const [link_to_tweet, created_at, alt_text] of [
+      ["https://x.com/FHFHockey/status/789", "August 23, 2010 at 11:01PM", "FHFH Role Watch, TOI."],
+      ["&lt;&lt;&lt;https://x.com/FHFHockey/status/789&gt;&gt;&gt;", "&lt;&lt;&lt;August 23, 2010 at 11:01PM&gt;&gt;&gt;", "&lt;&lt;&lt;FHFH Role Watch, TOI.&gt;&gt;&gt;"],
+      ["<<<https%3A%2F%2Fx.com%2FFHFHockey%2Fstatus%2F789>>>", "<<<August%2023%2C%202010%20at%2011%3A01PM>>>", "<<<FHFH%20Role%20Watch%2C%20TOI.>>>"],
+    ]) {
+      upsertMock.mockClear();
+      const response = res();
+      await handler(req({ body: { source: "ifttt", source_account: "FHFHockey", username: "FHFHockey", link_to_tweet, created_at, alt_text } }), response);
+      expect(response.statusCode, link_to_tweet).toBe(200);
+      expect(upsertMock.mock.calls[0][0], link_to_tweet).toMatchObject({ tweet_id: "789", posted_at: "2010-08-24T03:01:00.000Z", matched_card: "role-watch" });
+    }
+  });
+
+  it.each(["{{source_account}}", "<<<{{SourceAccount}}>>>", "&lt;&lt;&lt;{{source_account}}&gt;&gt;&gt;", "   ", ""])("an unresolved or empty source account of %j is absent, not a conflict", async (source_account) => {
+    const response = res();
+    await handler(req({ body: { ...body, source_account, link_to_tweet: "https://x.com/FHFHockey/status/789" } }), response);
+    expect(response.statusCode).toBe(200);
+  });
+
+  it.each(["{{UserName}}", "<<<{{UserName}}>>>", ""])("an unresolved or empty username of %j is absent, and the link's author is enough", async (username) => {
+    const response = res();
+    await handler(req({ body: { ...body, username, link_to_tweet: "https://x.com/FHFHockey/status/789" } }), response);
+    expect(response.statusCode).toBe(200);
+    expect(upsertMock.mock.calls[0][0].username).toBeNull();
+  });
+
+  it("an unresolved username proves nothing for a link that names no author", async () => {
+    const response = res();
+    await handler(req({ body: { ...body, username: "{{UserName}}", link_to_tweet: "https://x.com/i/web/status/789" } }), response);
+    expect(response.statusCode).toBe(400);
+  });
+
+  it.each([{ source_account: "<<<GameDayLines>>>" }, { username: "<<<GameDayLines>>>" }, { source_account: "GameDayLines" }])("still rejects an explicit conflict: %j", async (change) => {
+    const response = res();
+    await handler(req({ body: { ...body, ...change } }), response);
+    expect(response.statusCode).toBe(400);
+    expect(fromMock).not.toHaveBeenCalled();
   });
 
   it("answers 500 when the table cannot be written, without echoing the database error", async () => {

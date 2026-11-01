@@ -147,13 +147,14 @@ test("the week strip from real posts: today reads not yet, future days are neutr
   await page.addInitScript(key => window.localStorage.setItem(key, JSON.stringify({ week: "2026-11-02", done: ["tue"] })), DAYS_KEY);
   await page.goto("/social-share");
   const strip = page.getByTestId("landing-strip");
-  await expect(page.getByText(/From @FHFHockey's posts.*Last post received Nov 2\./)).toBeVisible();
+  await expect(page.getByText(/From @FHFHockey's posts.*Last live delivery Nov 2\./)).toBeVisible();
   await expect(page.getByText(/Marked by hand/)).toHaveCount(0);
   await expect(strip.getByTestId("landing-strip-mon")).toContainText("✅");
   await expect(strip.getByTestId("landing-strip-mon")).toHaveAttribute("aria-label", "Mon: posted, 2 posts");
   // A hand mark for Tuesday is ignored while the source answers.
   await expect(strip.getByTestId("landing-strip-tue")).toContainText("❌");
   await expect(strip.getByTestId("landing-strip-tue")).not.toContainText("not yet");
+  await expect(strip.getByTestId("landing-strip-tue")).toHaveAttribute("aria-label", "Tue: no post recorded");
   await expect(strip.getByTestId("landing-strip-wed")).toContainText("❌");
   await expect(strip.getByTestId("landing-strip-wed")).toContainText("not yet");
   await expect(strip.getByTestId("landing-strip-wed")).toHaveAttribute("aria-label", "Wed (today): not yet");
@@ -179,13 +180,23 @@ test("a stale source reads no record, not ❌, and says why", async ({ page }) =
     days: Object.entries(statuses).map(([id, status], index) => ({ id, date: `2026-11-0${index + 2}`, posts: 0, status })), cards: [], unmatched: 0,
   } }));
   await page.goto("/social-share");
-  await expect(page.getByText(/No post received since Oct 30, so later days have no record\./)).toBeVisible();
+  await expect(page.getByText(/No live delivery since Oct 30, so later days have no record\./)).toBeVisible();
   const strip = page.getByTestId("landing-strip");
   for (const day of ["mon", "tue", "wed"]) {
     await expect(strip.getByTestId(`landing-strip-${day}`)).not.toContainText("❌");
     await expect(strip.getByTestId(`landing-strip-${day}`)).toContainText("no record");
   }
   await expect(strip.getByTestId("landing-strip-wed")).toHaveAttribute("aria-label", "Wed (today): no record");
+});
+
+test("no dated posts: hand marking, with the undated count shown", async ({ page }) => {
+  await page.clock.setFixedTime(new Date("2026-11-04T16:00:00Z")); // Wednesday
+  await page.route("**/api/v1/social-share/posted-week", route => route.fulfill({ json: { available: false, undated: 2 } }));
+  await page.goto("/social-share");
+  await expect(page.getByText(/Marked by hand/)).toBeVisible();
+  await expect(page.getByTestId("landing-posted-undated")).toHaveText("Posts received with no date: 2");
+  await page.getByTestId("landing-strip-mon").click();
+  await expect(page.getByTestId("landing-strip-mon")).toContainText("✅");
 });
 
 test("a failed read says so and falls back to hand marking", async ({ page }) => {

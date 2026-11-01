@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { LANDING_CARDS, landingDayStatus } from "./landingCatalog";
-import { buildPostedWeek, matchPostedCard, POSTED_STALE_AFTER_HOURS, postedWeekRange } from "./postedWeek";
+import { buildPostedWeek, latestLiveDelivery, matchPostedCard, POSTED_LIVE_WINDOW_HOURS, POSTED_STALE_AFTER_HOURS, postedWeekRange } from "./postedWeek";
 
 const MODULES = "lib/socialShare/modules", OLD = "components/SocialShare/SocialShare.tsx";
 // [alt text as posted, card, the file that writes it, the wording that file must still contain]
@@ -44,6 +44,9 @@ const POSTS: readonly (readonly [string, string, string, string])[] = [
   ["FHFH Player Card, Skater One.", "player-cards", "lib/socialShare/postedWeek.ts", "Player Cards?"],
 ];
 
+// A delivery that arrived ten minutes after its post, which is what a working applet looks like.
+const live = (at: string) => ({ posted_at: new Date(new Date(at).getTime() - 600000).toISOString(), received_at: at });
+
 describe("matchPostedCard", () => {
   it.each(POSTS.map(([alt, card]) => [alt, card]))("%s is %s", (alt, card) => expect(matchPostedCard(alt)).toBe(card));
 
@@ -77,7 +80,7 @@ describe("New York weeks", () => {
     expect(postedWeekRange("2027-03-08")).toEqual({ from: "2027-03-08T05:00:00.000Z", to: "2027-03-15T04:00:00.000Z" });
   });
 
-  const WED = new Date("2026-11-04T16:00:00Z"), OLD_POST = "2026-10-01T16:00:00Z", LATEST = "2026-11-03T16:00:00Z";
+  const WED = new Date("2026-11-04T16:00:00Z"), OLD_POST = "2026-10-01T16:00:00Z", LATEST = [live("2026-11-04T15:00:00Z")];
   const status = (week: ReturnType<typeof buildPostedWeek>) => Object.fromEntries(week.days.map(day => [day.id, day.status]));
 
   it("a late evening post in New York counts for that New York day, though UTC is already tomorrow", () => {
@@ -110,7 +113,8 @@ describe("New York weeks", () => {
   it("today turns done on its first post, and not yet becomes missed when the day ends", () => {
     expect(status(buildPostedWeek([{ posted_at: "2026-11-04T15:00:00Z", matched_card: null }], WED, OLD_POST, LATEST)).wed).toBe("done");
     expect(status(buildPostedWeek([], new Date("2026-11-05T04:59:00Z"), OLD_POST, LATEST)).wed).toBe("notYet");
-    expect(status(buildPostedWeek([], new Date("2026-11-05T05:00:00Z"), OLD_POST, LATEST)).wed).toBe("missed");
+    expect(status(buildPostedWeek([], new Date("2026-11-05T05:00:00Z"), OLD_POST, [live("2026-11-05T05:00:00Z")])).wed).toBe("missed");
+    expect(status(buildPostedWeek([], new Date("2026-11-05T05:00:00Z"), OLD_POST, LATEST)).wed).toBe("noRecord");
   });
 
   it("days before the first post on record are untracked, not missed", () => {
@@ -118,36 +122,53 @@ describe("New York weeks", () => {
       .toMatchObject({ mon: "untracked", tue: "done", wed: "notYet" });
   });
 
-  describe("staleness", () => {
-    const delivered = (hoursAgo: number, now = WED) => new Date(now.getTime() - hoursAgo * 3600 * 1000).toISOString();
+  describe("what silence can prove", () => {
+    const hoursBefore = (at: Date, hours: number) => new Date(at.getTime() - hours * 3600 * 1000).toISOString();
 
-    it("a stopped applet leaves no record, not misses, from its last delivery's date on", () => {
-      const week = buildPostedWeek([], WED, OLD_POST, "2026-10-01T16:00:00Z");
-      expect(week.stale).toBe(true);
-      expect(status(week)).toEqual({ mon: "noRecord", tue: "noRecord", wed: "noRecord", thu: "upcoming", fri: "upcoming", sat: "upcoming", sun: "upcoming" });
-    });
-
-    it("the rule's edge: exactly 72 hours is still fresh, a moment later is stale", () => {
+    it("the rule's edges: a delivery is live from its own time to 6 hours after, and stale after 72 hours", () => {
+      expect(POSTED_LIVE_WINDOW_HOURS).toBe(6);
       expect(POSTED_STALE_AFTER_HOURS).toBe(72);
-      expect(buildPostedWeek([], WED, OLD_POST, delivered(72)).stale).toBe(false);
-      expect(buildPostedWeek([], WED, OLD_POST, delivered(72.01)).stale).toBe(true);
+      const received = "2026-11-04T15:00:00Z", at = new Date(received);
+      expect(latestLiveDelivery([{ posted_at: received, received_at: received }])).toBe(received);
+      expect(latestLiveDelivery([{ posted_at: hoursBefore(at, 6), received_at: received }])).toBe(received);
+      expect(latestLiveDelivery([{ posted_at: hoursBefore(at, 6.01), received_at: received }])).toBeNull();
+      expect(latestLiveDelivery([{ posted_at: "2026-11-04T15:01:00Z", received_at: received }])).toBeNull();
+      expect(latestLiveDelivery([])).toBeNull();
+      expect(buildPostedWeek([], WED, OLD_POST, [live(hoursBefore(WED, 72))]).stale).toBe(false);
+      expect(buildPostedWeek([], WED, OLD_POST, [live(hoursBefore(WED, 72.01))]).stale).toBe(true);
     });
 
-    it("a fresh delivery vouches for the quiet days before it", () => {
-      expect(status(buildPostedWeek([], WED, OLD_POST, delivered(2)))).toMatchObject({ mon: "missed", tue: "missed", wed: "notYet" });
+    it("a live delivery after a day makes that empty day missed, and the day it arrived and any later stay no record", () => {
+      const now = new Date("2026-11-07T14:00:00Z"), week = buildPostedWeek([{ posted_at: "2026-11-04T15:00:00Z", matched_card: null }], now, OLD_POST, [live("2026-11-04T15:10:00Z")]);
+      expect(week.latest).toBe("2026-11-04T15:10:00Z");
+      expect(week.stale).toBe(false);
+      expect(status(week)).toEqual({ mon: "missed", tue: "missed", wed: "done", thu: "noRecord", fri: "noRecord", sat: "notYet", sun: "upcoming" });
     });
 
-    it("when stale, an empty day before the last delivery's date stays missed, and posts stay done", () => {
-      const now = new Date("2026-11-08T16:00:00Z"), week = buildPostedWeek([{ posted_at: "2026-11-04T16:00:00Z", matched_card: null }], now, OLD_POST, "2026-11-04T17:00:00Z");
+    it("an October backfill received this week proves nothing about empty days", () => {
+      const week = buildPostedWeek([], WED, OLD_POST, [{ posted_at: "2026-10-20T16:00:00Z", received_at: "2026-11-04T15:00:00Z" }]);
+      expect(week.latest).toBeNull();
       expect(week.stale).toBe(true);
-      expect(status(week)).toEqual({ mon: "missed", tue: "missed", wed: "done", thu: "noRecord", fri: "noRecord", sat: "noRecord", sun: "noRecord" });
+      expect(status(week)).toMatchObject({ mon: "noRecord", tue: "noRecord", wed: "noRecord" });
     });
 
-    it("carries the undated count without marking a day or a card", () => {
-      const week = buildPostedWeek([], WED, OLD_POST, delivered(2), 3);
-      expect(week.undated).toBe(3);
+    it("an undated post proves nothing either: it is no delivery at all", () => {
+      const week = buildPostedWeek([], WED, OLD_POST, [], 1);
+      expect(week.undated).toBe(1);
+      expect(status(week)).toMatchObject({ mon: "noRecord", tue: "noRecord", wed: "noRecord" });
       expect(week.days.every(day => day.posts === 0)).toBe(true);
       expect(week.cards).toEqual([]);
+    });
+
+    it("a backfilled post still marks its own day done, and days before tracking stay untracked", () => {
+      const week = buildPostedWeek([{ posted_at: "2026-11-03T16:00:00Z", matched_card: null }], WED, "2026-11-03T16:00:00Z", [{ posted_at: "2026-11-03T16:00:00Z", received_at: "2026-11-04T15:00:00Z" }]);
+      expect(status(week)).toMatchObject({ mon: "untracked", tue: "done", wed: "noRecord" });
+    });
+
+    it("a stopped applet leaves no ❌ from its last live delivery on, and earlier empty days stay missed", () => {
+      const now = new Date("2026-11-08T16:00:00Z"), week = buildPostedWeek([{ posted_at: "2026-11-04T16:00:00Z", matched_card: null }], now, OLD_POST, [live("2026-11-04T16:10:00Z")]);
+      expect(week.stale).toBe(true);
+      expect(status(week)).toEqual({ mon: "missed", tue: "missed", wed: "done", thu: "noRecord", fri: "noRecord", sat: "noRecord", sun: "noRecord" });
     });
   });
 
@@ -164,7 +185,7 @@ describe("New York weeks", () => {
 });
 
 describe("the strip's status with and without the source", () => {
-  const posted = buildPostedWeek([{ posted_at: "2026-11-03T16:00:00Z", matched_card: null }], new Date("2026-11-04T16:00:00Z"), "2026-10-01T16:00:00Z", "2026-11-03T16:00:00Z");
+  const posted = buildPostedWeek([{ posted_at: "2026-11-03T16:00:00Z", matched_card: null }], new Date("2026-11-04T16:00:00Z"), "2026-10-01T16:00:00Z", [live("2026-11-04T15:00:00Z")]);
 
   it("the source decides when it answers, and hand marks do not count", () => {
     expect(landingDayStatus("mon", "wed", new Set(["mon"]), posted)).toBe("missed");

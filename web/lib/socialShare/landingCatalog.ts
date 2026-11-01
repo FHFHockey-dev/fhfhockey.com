@@ -119,14 +119,16 @@ export type LandingDayStatus = "done" | "missed" | "upcoming" | "notYet" | "untr
 /** The automatic source's answer for one New York week (lib/socialShare/postedWeek.ts builds it on the server). */
 export type PostedWeek = {
   available: true; week: string; today: string; trackedFrom: string;
-  /** The newest delivery, not the newest post. `stale` is true once it is too old to vouch for an empty day. */
-  latest: string; stale: boolean;
+  /** The newest live delivery's receipt time (lib/socialShare/postedWeek.ts defines live), and whether it is too old to trust. */
+  latest: string | null; stale: boolean;
   /** Posts delivered this week with no readable date: they mark no day and count for no card. */
   undated: number;
   days: readonly { id: string; date: string; posts: number; status: LandingDayStatus }[];
   cards: readonly { card: string; name: string; count: number }[];
   unmatched: number;
 };
+/** The source has no dated post to go on. Posts it received with no date still get counted, so they are not hidden. */
+export type PostedUnavailable = { available: false; undated: number };
 /**
  * One day's state in the top strip: the automatic source's answer when it has one for this week, otherwise the
  * hand-marked days, the fallback when the source is unavailable. A day that has not come yet is never "missed".

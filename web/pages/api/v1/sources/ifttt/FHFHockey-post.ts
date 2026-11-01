@@ -7,6 +7,20 @@ const ACCOUNT = "fhfhockey", SECRET_ENV_VAR = "IFTTT_FHFHOCKEY_WEBHOOK_SECRET";
 
 const isAccount = (name: string | null) => name?.replace(/^@/, "").toLowerCase() === ACCOUNT;
 
+/**
+ * An optional IFTTT field, or null. Bodies can arrive with <<<...>>> wrapping, literal or HTML-escaped, and wrapped values
+ * can arrive URL-encoded. A field left as {{Ingredient}} never resolved, which is the same as not being sent.
+ */
+export function iftttField(body: unknown, keys: string[]) {
+  const raw = getBodyValue(body, keys);
+  if (!raw) return null;
+  let value = raw.replace(/^(?:<<<|&lt;&lt;&lt;)([\s\S]*)(?:>>>|&gt;&gt;&gt;)$/, "$1").trim();
+  if (/%[0-9a-f]{2}/i.test(value) && !/\s/.test(value)) {
+    try { value = decodeURIComponent(value.replace(/\+/g, " ")); } catch { /* Not encoded after all. */ }
+  }
+  return !value || /^\{\{[\s\S]*\}\}$/.test(value) ? null : value;
+}
+
 /** The post id and author of an x.com or twitter.com post link. The author is null for an /i/ link, which names none. */
 export function parsePostLink(link: string | null) {
   let url: URL;
@@ -31,14 +45,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (!expectedSecret) return res.status(500).json({ success: false, error: `${SECRET_ENV_VAR} is not configured` });
   if (!secretsMatch(getSecretFromRequest(req), expectedSecret)) return res.status(401).json({ success: false, error: "Unauthorized" });
 
-  const username = getBodyValue(req.body, ["username", "UserName"]);
-  const postLink = getBodyValue(req.body, ["link_to_tweet", "linkToTweet", "LinkToTweet"]);
-  const createdAt = getBodyValue(req.body, ["created_at", "createdAt", "CreatedAt"]);
-  const altText = getBodyValue(req.body, ["alt_text", "altText", "AltText"]);
-  const sourceAccount = getBodyValue(req.body, ["source_account", "sourceAccount"]);
+  const username = iftttField(req.body, ["username", "UserName"]);
+  const postLink = iftttField(req.body, ["link_to_tweet", "linkToTweet", "LinkToTweet"]);
+  const createdAt = iftttField(req.body, ["created_at", "createdAt", "CreatedAt"]);
+  const altText = iftttField(req.body, ["alt_text", "altText", "AltText"]);
+  const sourceAccount = iftttField(req.body, ["source_account", "sourceAccount"]);
   const post = parsePostLink(postLink);
   if (!post) return res.status(400).json({ success: false, error: "Expected an x.com or twitter.com post link" });
-  // Every name given must be this account's, and at least one of the username or the link's author must be given.
+  // A field that never resolved is absent, not a conflict. Every name given must be this account's, and at least one of the username or the link's author must be given.
   const named = [username, post.author, sourceAccount].filter(Boolean) as string[];
   if (!named.every(isAccount) || !(username || post.author)) return res.status(400).json({ success: false, error: "Unexpected source account" });
 
@@ -51,7 +65,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     username,
     posted_at: postedAt,
     created_at_label: createdAt,
-    post_text: getBodyValue(req.body, ["text", "Text"]),
+    post_text: iftttField(req.body, ["text", "Text"]),
     alt_text: altText,
     matched_card: matchedCard,
     raw_payload: req.body && typeof req.body === "object" ? req.body : {},

@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element -- The examples are already optimized WebP files; next/image would add Vercel image optimization runs for no gain. */
 import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
 import Link from "next/link";
-import { LANDING_CATEGORIES, LANDING_DAYS, landingCard, landingCardHref, landingCardImage, landingDaySections, landingDayStatus, landingToday, landingWeekStart, readLandingChecklist, writeLandingChecklist, type LandingSection, type PostedWeek } from "lib/socialShare/landingCatalog";
+import { LANDING_CATEGORIES, LANDING_DAYS, landingCard, landingCardHref, landingCardImage, landingDaySections, landingDayStatus, landingToday, landingWeekStart, readLandingChecklist, writeLandingChecklist, type LandingSection, type PostedUnavailable, type PostedWeek } from "lib/socialShare/landingCatalog";
 import { fetchPostedWeek } from "lib/socialShare/postedWeekFetch";
 import { SHARE_TIME_ZONE } from "lib/socialShare/types";
 import styles from "./SocialShare.module.scss";
@@ -11,7 +11,7 @@ const SORT_KEY = "fhfh-social-share-landing-sort", DAYS_KEY = "fhfh-social-share
 const IMAGE_WIDTH = 540, IMAGE_HEIGHT = 540;
 const STATUS_MARK = { done: "✅", missed: "❌", notYet: "❌", upcoming: "–", untracked: "–", noRecord: "–" };
 const HAND_TEXT = { done: "marked done", missed: "not marked", notYet: "not marked", upcoming: "not here yet", untracked: "not here yet", noRecord: "not here yet" };
-const POSTED_TEXT = { done: "posted", missed: "no post", notYet: "not yet", upcoming: "not here yet", untracked: "before tracking began", noRecord: "no record" };
+const POSTED_TEXT = { done: "posted", missed: "no post recorded", notYet: "not yet", upcoming: "not here yet", untracked: "before tracking began", noRecord: "no record" };
 const seenDate = new Intl.DateTimeFormat("en-US", { timeZone: SHARE_TIME_ZONE, month: "short", day: "numeric" });
 type Sort = "category" | "day";
 
@@ -87,8 +87,8 @@ export default function ShareLanding() {
   const [week, setWeek] = useState("");
   const [today, setToday] = useState<string | null>(null);
   const [marked, setMarked] = useState<ReadonlySet<string>>(new Set());
-  // Undefined while the first answer is pending; null or "failed" leaves the strip on hand marking.
-  const [source, setSource] = useState<PostedWeek | "failed" | null | undefined>(undefined);
+  // Undefined while the first answer is pending; anything but a PostedWeek leaves the strip on hand marking.
+  const [source, setSource] = useState<PostedWeek | PostedUnavailable | "failed" | null | undefined>(undefined);
 
   const refreshWeek = useCallback(() => {
     const now = new Date(), current = landingWeekStart(now);
@@ -124,7 +124,8 @@ export default function ShareLanding() {
     setWeek(current); setMarked(next); writeStored(DAYS_KEY, writeLandingChecklist(current, next));
   };
   // An answer for another week (a tab left open past Sunday) is not used while the new one loads.
-  const posted = source && source !== "failed" && source.week === week ? source : null;
+  const posted = source && source !== "failed" && source.available && source.week === week ? source : null;
+  const undatedOnly = source && source !== "failed" && !source.available ? source.undated : 0;
   const sections = sort === "category" ? LANDING_CATEGORIES : landingDaySections(today);
   const shown = sections.filter(section => filter === "all" || section.id === filter);
   const toSection = (event: MouseEvent, id: string) => {
@@ -142,7 +143,7 @@ export default function ShareLanding() {
       <span className={styles.scope}>Nothing is scheduled or published from here.</span>
     </header>
     <section className={landing.week} aria-labelledby="landing-week">
-      <h2 id="landing-week">This week <small>{posted ? `From @FHFHockey's posts, New York days. ${posted.stale ? `No post received since ${seenDate.format(new Date(posted.latest))}, so later days have no record.` : `Last post received ${seenDate.format(new Date(posted.latest))}.`}` : source === undefined ? "Checking posts." : `${source === "failed" ? "Could not read posts. " : ""}Marked by hand. Click a day to mark it. Stays in this browser and clears each Monday.`}</small></h2>
+      <h2 id="landing-week">This week <small>{posted ? `From @FHFHockey's posts, New York days. ${!posted.latest ? "No live delivery yet, so empty days have no record." : posted.stale ? `No live delivery since ${seenDate.format(new Date(posted.latest))}, so later days have no record.` : `Last live delivery ${seenDate.format(new Date(posted.latest))}.`}` : source === undefined ? "Checking posts." : `${source === "failed" ? "Could not read posts. " : ""}Marked by hand. Click a day to mark it. Stays in this browser and clears each Monday.`}</small></h2>
       {posted ? <PostedStrip posted={posted} today={today} /> : <div className={landing.strip} role="group" aria-labelledby="landing-week" data-testid="landing-strip">
         {LANDING_DAYS.map(day => {
           const status = source === undefined ? "upcoming" : landingDayStatus(day.id, today, marked);
@@ -151,6 +152,7 @@ export default function ShareLanding() {
           </button>;
         })}
       </div>}
+      {undatedOnly > 0 && <p className={landing.postedCards} data-testid="landing-posted-undated"><span>Posts received with no date: {undatedOnly}</span></p>}
     </section>
     <nav className={landing.jump} aria-label="Jump to a section" data-testid="landing-jump">
       {sections.map(section => <a key={section.id} className={landing.chip} href={`#${sectionTarget(section.id)}`} aria-current={filter === section.id ? "true" : undefined} onClick={event => toSection(event, section.id)}>{section.today ? "Today" : section.label}</a>)}

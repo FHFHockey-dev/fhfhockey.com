@@ -19,8 +19,9 @@ describe("fetchPostedWeek", () => {
     expect(fetcher.mock.calls[0][1]).toMatchObject({ cache: "no-store", credentials: "omit", headers: { Authorization: "Bearer unit-token" } });
   });
 
-  it("a source with no posts yet is quiet", async () => {
-    await expect(fetchPostedWeek(json({ available: false }))).resolves.toBeNull();
+  it("a source with no dated posts passes on its undated count", async () => {
+    await expect(fetchPostedWeek(json({ available: false, undated: 2 }))).resolves.toEqual({ available: false, undated: 2 });
+    await expect(fetchPostedWeek(json({ available: false }))).resolves.toEqual({ available: false, undated: 0 });
   });
 
   it.each([

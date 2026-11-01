@@ -65,22 +65,38 @@ const addDays = (week: string, days: number) => new Date(Date.UTC(Number(week.sl
 const newYorkDate = (instant: Date) => moment(instant).tz(SHARE_TIME_ZONE).format("YYYY-MM-DD");
 
 /**
- * The staleness rule. The applet only speaks when a post is delivered, so silence alone cannot separate "no post" from
- * "applet stopped". With no delivery for more than this long, the source is stale: an empty day from the last delivery's
- * date onward, today included, reads "noRecord", not a miss. Earlier empty days had a later delivery, so they stay misses.
+ * What silence can prove. The applet only speaks when a post is delivered, so an empty day means either no post or a
+ * stopped applet. Only a live delivery shows the applet was working: a dated post received within POSTED_LIVE_WINDOW_HOURS
+ * after its own time. A backfill or an undated post proves nothing. An empty past day reads "missed" only if a live
+ * delivery arrived after that day; otherwise "noRecord". With no live delivery for POSTED_STALE_AFTER_HOURS the source is
+ * stale, and today reads "noRecord" rather than "notYet".
  */
+export const POSTED_LIVE_WINDOW_HOURS = 6;
 export const POSTED_STALE_AFTER_HOURS = 72;
+const HOUR = 3600 * 1000;
 
 export type PostedRow = { posted_at: string; matched_card: string | null };
+export type PostedDelivery = { posted_at: string; received_at: string };
+
+/** The newest live delivery's receipt time, or null if none of these is live. */
+export function latestLiveDelivery(deliveries: readonly PostedDelivery[]) {
+  let latest: string | null = null;
+  for (const { posted_at, received_at } of deliveries) {
+    const lag = new Date(received_at).getTime() - new Date(posted_at).getTime();
+    if (lag >= 0 && lag <= POSTED_LIVE_WINDOW_HOURS * HOUR && (!latest || new Date(received_at) > new Date(latest))) latest = received_at;
+  }
+  return latest;
+}
 
 /**
  * This week's Mon to Sun status from the week's rows. `earliest` is the oldest dated post on record: a day before it is
- * "untracked", because the source did not exist yet and silence there says nothing. Today with no post is "notYet".
- * `latestReceipt` is the newest delivery; see POSTED_STALE_AFTER_HOURS. A backfill counts as a delivery.
+ * "untracked", because the source did not exist yet and silence there says nothing. `deliveries` are the newest dated
+ * receipts, which only ever help a day read "missed", so a short list errs towards "noRecord".
  */
-export function buildPostedWeek(rows: readonly PostedRow[], now: Date, earliest: string, latestReceipt: string, undated = 0): PostedWeek {
+export function buildPostedWeek(rows: readonly PostedRow[], now: Date, earliest: string, deliveries: readonly PostedDelivery[], undated = 0): PostedWeek {
   const week = landingWeekStart(now), today = landingToday(now), todayDate = newYorkDate(now), trackedFrom = newYorkDate(new Date(earliest));
-  const receipt = new Date(latestReceipt), receiptDate = newYorkDate(receipt), stale = now.getTime() - receipt.getTime() > POSTED_STALE_AFTER_HOURS * 3600 * 1000;
+  const latest = latestLiveDelivery(deliveries), liveDate = latest ? newYorkDate(new Date(latest)) : "";
+  const stale = !latest || now.getTime() - new Date(latest).getTime() > POSTED_STALE_AFTER_HOURS * HOUR;
   const posts = new Map<string, number>(), cards = new Map<string, number>();
   let unmatched = 0;
   for (const row of rows) {
@@ -92,10 +108,10 @@ export function buildPostedWeek(rows: readonly PostedRow[], now: Date, earliest:
     else unmatched += 1;
   }
   return {
-    available: true, week, today, trackedFrom, latest: latestReceipt, stale, undated,
+    available: true, week, today, trackedFrom, latest, stale, undated,
     days: LANDING_DAYS.map((day, index) => {
       const date = addDays(week, index), count = posts.get(date) ?? 0;
-      const status = date > todayDate ? "upcoming" : count > 0 ? "done" : date < trackedFrom ? "untracked" : stale && date >= receiptDate ? "noRecord" : date === todayDate ? "notYet" : "missed";
+      const status = date > todayDate ? "upcoming" : count > 0 ? "done" : date < trackedFrom ? "untracked" : date === todayDate ? (stale ? "noRecord" : "notYet") : date < liveDate ? "missed" : "noRecord";
       return { id: day.id, date, posts: count, status };
     }),
     cards: [...cards].map(([card, count]) => ({ card, name: landingCard(card)?.name ?? card, count })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)),
