@@ -20,10 +20,11 @@ export const SkaterCell = ({ row, logo, size }: { row: { name: string; position:
   <span className={styles.name}>{row.name}</span>
   <span className={styles.pos}>{[row.position, row.teams.length > 1 ? row.teams.join("/") : null].filter(Boolean).join(" · ")}</span>
 </span>;
-/** One legend line over a table that takes the rest of the body. */
-export function SkaterBoard<Row>({ legend, columns, rows, rowKey, empty, charted, compact }: { legend: ReactNode; columns: readonly PostColumn<Row>[]; rows: readonly Row[]; rowKey: (row: Row) => string | number; empty: string | null; charted?: boolean; compact?: boolean }) {
+/** An optional banner, then one legend line over a table that takes the rest of the body. */
+export function SkaterBoard<Row>({ banner, legend, columns, rows, rowKey, empty, charted, compact }: { banner?: ReactNode; legend: ReactNode; columns: readonly PostColumn<Row>[]; rows: readonly Row[]; rowKey: (row: Row) => string | number; empty: string | null; charted?: boolean; compact?: boolean }) {
   return <div className={styles.board}>
-    <p className={styles.legend}>{legend}</p>
+    {banner}
+    <p className={styles.legend} data-compact={compact || undefined}>{legend}</p>
     {empty ? <PostEmpty>{empty}</PostEmpty> : <div className={styles.fill} data-dense={rows.length > DENSE_ROWS || undefined} data-charted={charted || undefined} data-compact={compact || undefined}><PostTable columns={columns} rows={rows} rowKey={rowKey} /></div>}
   </div>;
 }

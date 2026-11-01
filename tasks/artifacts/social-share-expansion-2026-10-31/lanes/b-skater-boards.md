@@ -159,3 +159,13 @@ Follow-up commit (Blueprint default): 50 tests in the lane's 3 files passed, esl
 - **Layout by CSS, not measured:** leaders about 67px a row, a 37px line then a 30px bar line; the BSH tile went to one line. Movers need about 110px of about 114px, so the three tiles went to one line each.
 - **Palette validator:** on the dark surface blue and amber fail the lightness band (0.694, 0.785); CVD, normal-vision and contrast checks pass. These are the ticket's colours and each section carries a direct letter, so I kept them.
 - **Checks:** 68 tests in the lane's 3 files passed, eslint clean, the pure check passed, `tsc` printed no errors, `--list` found 10 tests. No browser run.
+
+## Nightly Floor and Cardio Masters rework (TJ's review)
+
+- **Headline, not wired yet:** `floorHeadline(settings)` gives "GP% WITH 3+ SOG", "GP% WITH 5+ HITS", "GP% WITH 2+ BLK", "GP% WITH 1+ PTS", "GP% WITH 0 PPP" and "CARDIO MASTERS". A threshold that is not whole prints "OVER 2.5". The header still prints "NIGHTLY FLOOR" because the title comes from frozen `PostStudio.tsx` and `contract.ts`; the seam is requested from the lead.
+- **Metric label:** 34px line at the top of the board, such as "METRIC: SOG, 3+ per game" or "METRIC: POINTS, exactly 0". The legend went from 19px to 15px on this post only.
+- **Average column:** named per view (SOG/G, HITS/G, BLK/G, PTS/G), known games only, two decimals, "—" with no known game.
+- **MISSING column removed:** a missing game stays as the strip's outlined block and in the legend, MET / KNOWN keeps its denominator, and alt text and the row data keep the count.
+- **Width:** of the 82px freed, the new column takes about 72px and the strip 10px (170px to 180px). More for the strip would clip the 22-character fixture name by estimate.
+- **Not measured:** rows drop to about 54px by CSS; no browser run.
+- **Checks:** 75 tests in the lane's 3 files passed, eslint clean, the pure check passed, `tsc` printed no errors, `--list` found 10 tests.

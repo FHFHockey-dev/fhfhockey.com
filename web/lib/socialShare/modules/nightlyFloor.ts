@@ -10,10 +10,10 @@ export type NightlyFloorSettings = {
   window: SkaterWindowId; minGp: number; position: SkaterPositionId;
   ownMin: number; ownMax: number; unknownOwnership: "exclude" | "include"; minCoverage: number;
 };
-/** `numerator` of `denominator` known appearances met the test; `missing` appearances lack the stat and count as neither. `marks` holds each appearance's outcome, oldest first, and is what those counts are taken from. */
-export type FloorRow = SkaterIdentity & { rank: number; appearances: number; numerator: number; denominator: number; missing: number; pct: number; ownership: OwnershipState; marks: (boolean | null)[] };
+/** `numerator` of `denominator` known appearances met the test; `missing` appearances lack the stat and count as neither. `marks` holds each appearance's outcome, oldest first, and is what those counts are taken from. `average` is the view's stat per game over known games only. */
+export type FloorRow = SkaterIdentity & { rank: number; appearances: number; numerator: number; denominator: number; missing: number; pct: number; average: number | null; ownership: OwnershipState; marks: (boolean | null)[] };
 export type NightlyFloorData = {
-  applied: string; through: string; windowLabel: string; viewLabel: string; test: string; rows: FloorRow[];
+  applied: string; through: string; windowLabel: string; viewLabel: string; test: string; metricLabel: string; averageLabel: string; rows: FloorRow[];
   cohort: { pool: number; outOfOwnershipRange: number; unknownOwnershipExcluded: number; unadmitted: number; ranked: number };
   notShown: number; tiedBeyondCut: number;
 };
@@ -61,6 +61,34 @@ export function floorViewLabels(settings: NightlyFloorSettings) {
     case "zero": return { viewLabel: `Zero ${SKATER_CATEGORIES[settings.zeroCategory].name.toLowerCase()}`, test: `Appeared with exactly 0 ${SKATER_CATEGORIES[settings.zeroCategory].name.toLowerCase()}.` };
   }
 }
+/** Stats are whole numbers, so "more than X" is X+1 or more. A threshold that is not whole keeps its exact rule. */
+const atLeastAbove = (x: number) => Number.isInteger(x) ? `${x + 1}+` : `over ${x}`;
+function floorMetric(settings: NightlyFloorSettings): { name: string; short: string; rule: string; exact: boolean; pick: (row: SkaterAppearance) => number | null } {
+  const category = (id: SkaterCategoryId) => SKATER_CATEGORIES[id];
+  switch (settings.view) {
+    case "sog": return { name: "SOG", short: "SOG", rule: atLeastAbove(settings.xSog), exact: false, pick: category("shots").pick };
+    case "hits": return { name: "HITS", short: "HITS", rule: atLeastAbove(settings.xHits), exact: false, pick: category("hits").pick };
+    case "blk": return { name: "BLOCKS", short: "BLK", rule: atLeastAbove(settings.xBlk), exact: false, pick: category("blocks").pick };
+    case "point": return { name: "POINTS", short: "PTS", rule: "1+", exact: false, pick: category("points").pick };
+    case "cardio": return { name: "POINTS", short: "PTS", rule: "0", exact: true, pick: category("points").pick };
+    case "zero": { const chosen = category(settings.zeroCategory); return { name: chosen.name.toUpperCase(), short: chosen.label, rule: "0", exact: true, pick: chosen.pick }; }
+  }
+}
+/** The post's headline, always true for the setting. Short metric names keep it on one line of the header. */
+export function floorHeadline(settings: NightlyFloorSettings) {
+  if (settings.view === "cardio") return "CARDIO MASTERS";
+  const metric = floorMetric(settings);
+  return `GP% WITH ${metric.rule.toUpperCase()} ${metric.short}`;
+}
+export function floorMetricLabels(settings: NightlyFloorSettings) {
+  const metric = floorMetric(settings);
+  return { metricLabel: `METRIC: ${metric.name}, ${metric.exact ? `exactly ${metric.rule}` : `${metric.rule} per game`}`, averageLabel: `${metric.short}/G` };
+}
+/** The stat per game over games where it is known. No known game has no average, never a zero. */
+export function floorAverage(settings: NightlyFloorSettings, rows: readonly SkaterAppearance[]) {
+  const known = rows.flatMap(row => { const value = floorMetric(settings).pick(row); return value === null ? [] : [value]; });
+  return known.length ? known.reduce((total, value) => total + value, 0) / known.length : null;
+}
 /** Admitted at or above the minimum share of window appearances with a known value. An unadmitted skater is unranked, never zero-filled. */
 export const floorAdmitted = (denominator: number, appearances: number, minCoverage: number) => denominator > 0 && denominator * 100 >= minCoverage * appearances;
 
@@ -94,10 +122,10 @@ export function buildNightlyFloor(season: SkaterSeason, settings: NightlyFloorSe
     const denominator = outcomes.filter(outcome => outcome !== null).length;
     if (!floorAdmitted(denominator, window.actual, settings.minCoverage)) { unadmitted++; return []; }
     const numerator = outcomes.filter(outcome => outcome === true).length;
-    return [{ id: skaterIdentity(window.rows), appearances: window.actual, numerator, denominator, missing: window.actual - denominator, pct: numerator / denominator, ownership: owned, marks: outcomes }];
+    return [{ id: skaterIdentity(window.rows), appearances: window.actual, numerator, denominator, missing: window.actual - denominator, pct: numerator / denominator, average: floorAverage(settings, window.rows), ownership: owned, marks: outcomes }];
   });
   const ranked = competitionRanks(admitted, row => row.pct, row => row.id.playerId);
-  const rows: FloorRow[] = ranked.slice(0, NIGHTLY_FLOOR_ROWS).map(({ row, rank }) => ({ ...row.id, rank, appearances: row.appearances, numerator: row.numerator, denominator: row.denominator, missing: row.missing, pct: row.pct, ownership: row.ownership, marks: row.marks }));
+  const rows: FloorRow[] = ranked.slice(0, NIGHTLY_FLOOR_ROWS).map(({ row, rank }) => ({ ...row.id, rank, appearances: row.appearances, numerator: row.numerator, denominator: row.denominator, missing: row.missing, pct: row.pct, average: row.average, ownership: row.ownership, marks: row.marks }));
   const lastRank = rows[rows.length - 1]?.rank, windowLabel = skaterWindowLabel(settings.window);
   const notShown = ranked.length - rows.length, tiedBeyondCut = ranked.slice(rows.length).filter(row => row.rank === lastRank).length;
   const excluded = [outOfOwnershipRange ? `${outOfOwnershipRange} outside the rostered range` : "", unknownOwnershipExcluded ? `${unknownOwnershipExcluded} unknown rostered % excluded` : "", unadmitted ? `${unadmitted} below min coverage` : "", belowTheCard(notShown, tiedBeyondCut)].filter(Boolean).join(", ");
@@ -107,7 +135,7 @@ export function buildNightlyFloor(season: SkaterSeason, settings: NightlyFloorSe
       extraSources: [{ name: "Yahoo rostered %", tables: ["yahoo_players", "yahoo_nhl_player_map_read"], state: "ready", asOf: ownership.updatedAt?.slice(0, 10) ?? null, updatedAt: ownership.updatedAt }],
     }),
     data: {
-      applied: shareSettingsKey(FIELDS, settings), through: season.through, windowLabel, ...floorViewLabels(settings), rows,
+      applied: shareSettingsKey(FIELDS, settings), through: season.through, windowLabel, ...floorViewLabels(settings), ...floorMetricLabels(settings), rows,
       cohort: { pool: pool.length, outOfOwnershipRange, unknownOwnershipExcluded, unadmitted, ranked: ranked.length },
       notShown, tiedBeyondCut,
     },
@@ -125,5 +153,5 @@ export const nightlyFloorModule = defineShareModule<NightlyFloorSettings, Nightl
   card: () => import("components/SocialShare/modules/NightlyFloorCard").then(card => card.default),
   // A board of nobody clearing the test has nothing to publish.
   hasRows: (data, settings) => data.rows.some(row => row.numerator > 0) && nightlyFloorCurrent(data, settings),
-  altText: (snapshot, data) => `FHFH Nightly Floor: ${data.viewLabel}, ${data.windowLabel}, through ${data.through}. ${data.test} ${data.rows.map(row => `${row.rank}. ${row.name}: ${row.numerator} of ${row.denominator} (${Math.round(row.pct * 100)}%), ${row.missing} missing`).join("; ")}. ${snapshot.evidence.cohort}.`,
+  altText: (snapshot, data) => `FHFH Nightly Floor: ${data.viewLabel}, ${data.windowLabel}, through ${data.through}. ${data.test} ${data.rows.map(row => `${row.rank}. ${row.name}: ${row.numerator} of ${row.denominator} (${Math.round(row.pct * 100)}%), ${row.missing} missing, ${data.averageLabel} ${row.average === null ? "missing" : row.average.toFixed(2)}`).join("; ")}. ${snapshot.evidence.cohort}.`,
 });

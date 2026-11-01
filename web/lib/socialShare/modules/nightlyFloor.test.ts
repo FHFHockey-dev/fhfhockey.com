@@ -4,7 +4,7 @@ import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import type { SkaterSeason } from "./bshBoard";
 import { parseShareSettings, type SharePostSnapshot } from "./contract";
-import { buildNightlyFloor, floorAdmitted, floorOutcome, nightlyFloorModule, ownershipByPlayer, type NightlyFloorData, type NightlyFloorSettings } from "./nightlyFloor";
+import { buildNightlyFloor, floorAdmitted, floorAverage, floorHeadline, floorMetricLabels, floorOutcome, nightlyFloorModule, ownershipByPlayer, type NightlyFloorData, type NightlyFloorSettings } from "./nightlyFloor";
 import { ownershipOf, type OwnershipState } from "./shared/definitions";
 import type { SkaterAppearance } from "./shared/skaterAppearances";
 
@@ -59,6 +59,43 @@ describe("Nightly Floor views", () => {
     const { data } = buildNightlyFloor(season(games(1, [{ blocks: 0 }, { blocks: null }, { blocks: 2 }])), active, none);
     expect(data!.rows[0]).toMatchObject({ numerator: 1, denominator: 2, missing: 1 });
     expect(data!.viewLabel).toBe("Zero blocks");
+  });
+});
+
+describe("Nightly Floor headline and metric", () => {
+  it("names the metric and the true threshold for each setting", () => {
+    expect(floorHeadline(settings({ view: "sog", xSog: 2 }))).toBe("GP% WITH 3+ SOG");
+    expect(floorHeadline(settings({ view: "sog", xSog: 0 }))).toBe("GP% WITH 1+ SOG");
+    expect(floorHeadline(settings({ view: "hits", xHits: 4 }))).toBe("GP% WITH 5+ HITS");
+    expect(floorHeadline(settings({ view: "blk", xBlk: 1 }))).toBe("GP% WITH 2+ BLK");
+    expect(floorHeadline(settings({ view: "point" }))).toBe("GP% WITH 1+ PTS");
+    expect(floorHeadline(settings({ view: "zero", zeroCategory: "ppPoints" }))).toBe("GP% WITH 0 PPP");
+  });
+  it("agrees with the strict test at its boundary", () => {
+    const active = settings({ xSog: 2 });
+    expect(floorOutcome(active, game(1, 0, { shots: 3 }))).toBe(true);
+    expect(floorOutcome(active, game(1, 0, { shots: 2 }))).toBe(false);
+  });
+  it("prints the exact rule when a threshold is not whole", () => {
+    expect(floorHeadline(settings({ xSog: 2.5 }))).toBe("GP% WITH OVER 2.5 SOG");
+    expect(floorMetricLabels(settings({ xSog: 2.5 })).metricLabel).toBe("METRIC: SOG, over 2.5 per game");
+  });
+  it("titles Cardio Masters by name", () => {
+    expect(floorHeadline(settings({ view: "cardio" }))).toBe("CARDIO MASTERS");
+  });
+  it("states the metric and the average's name", () => {
+    expect(floorMetricLabels(settings())).toEqual({ metricLabel: "METRIC: SOG, 3+ per game", averageLabel: "SOG/G" });
+    expect(floorMetricLabels(settings({ view: "blk" }))).toEqual({ metricLabel: "METRIC: BLOCKS, 2+ per game", averageLabel: "BLK/G" });
+    expect(floorMetricLabels(settings({ view: "cardio" }))).toEqual({ metricLabel: "METRIC: POINTS, exactly 0", averageLabel: "PTS/G" });
+    expect(floorMetricLabels(settings({ view: "zero", zeroCategory: "hits" }))).toEqual({ metricLabel: "METRIC: HITS, exactly 0", averageLabel: "HITS/G" });
+  });
+  it("averages known games only, and has no average with no known game", () => {
+    const rows = games(1, [{ shots: 4 }, { shots: null }, { shots: 1 }]);
+    expect(floorAverage(settings(), rows)).toBe(2.5);
+    expect(floorAverage(settings({ view: "cardio" }), games(1, [{ points: 2 }, { points: null }, { points: 0 }]))).toBe(1);
+    expect(floorAverage(settings(), games(1, [{ shots: null }]))).toBeNull();
+    expect(floorAverage(settings(), games(1, [{ shots: 0 }]))).toBe(0);
+    expect(buildNightlyFloor(season(rows), settings({ minCoverage: 50 }), none).data!.rows[0].average).toBe(2.5);
   });
 });
 
@@ -135,12 +172,21 @@ describe("Nightly Floor card", () => {
     render(createElement(Card, { snapshot: { settings: active } as unknown as SharePostSnapshot, data, settings: active, logos: {} }));
     return document.body.textContent!;
   };
-  it("prints the test, numerator, denominator, missing and unknown ownership", async () => {
+  it("prints the metric, test, average, numerator, denominator and unknown ownership, with no missing column", async () => {
     const active = settings({ minCoverage: 50 }), { data } = buildNightlyFloor(season(games(1, [{ shots: 3 }, { shots: 2 }, { shots: null }])), active, none);
     const text = await show(data!, active);
-    for (const label of ["More than 2 SOG.", "Exactly 2 fails.", "L10", "MET / KNOWN", "1 / 2", "MISSING", "50%", "—", "1 of 1 ranked"]) expect(text).toContain(label);
+    for (const label of ["More than 2 SOG.", "Exactly 2 fails.", "L10", "SOG/G", "2.50", "MET / KNOWN", "1 / 2", "missing", "50%", "—", "1 of 1 ranked"]) expect(text).toContain(label);
+    expect(text).not.toContain("MISSING");
+    expect(document.querySelector("[data-testid=floor-metric]")!.textContent).toBe("METRIC: SOG, 3+ per game");
+    expect(document.querySelector("[data-testid=floor-strip] [data-mark=gap]")!.getAttribute("stroke")).toBe("#ffcc33");
     expect(document.querySelectorAll("p")).toHaveLength(1);
     expect(buildNightlyFloor(season(games(1, [{ shots: 3 }])), active, none).evidence.sample).toContain("A DNP is not an appearance");
+  });
+  it("prints a dash for a skater with no known game", async () => {
+    const active = settings(), { data } = buildNightlyFloor(season(games(1, [{ shots: 3 }])), active, none);
+    const text = await show({ ...data!, rows: [{ ...data!.rows[0], average: null, ownership: ownershipOf(40) }] }, active);
+    expect(text).toContain("—");
+    expect(text).not.toContain("3.00");
   });
   describe("strip and tile", () => {
     const marks = () => [...document.querySelectorAll("[data-mark]")].filter(mark => mark.closest("[data-testid=floor-strip]")).map(mark => mark.getAttribute("data-mark"));

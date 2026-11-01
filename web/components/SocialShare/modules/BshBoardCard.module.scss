@@ -44,10 +44,11 @@
 .band[data-band="lower"], .bandKey i[data-band="lower"] { background: rgba(v.$danger-color, 0.42); }
 .bandMissing { color: v.$warning-color; font-size: 0.8em; outline: 1px dashed rgba(v.$warning-color, 0.6); outline-offset: -1px; }
 .bandKey { display: inline-flex; gap: 8px; color: v.$color-white; span { white-space: nowrap; } i { display: inline-block; width: 14px; height: 14px; margin-right: 3px; border-radius: 3px; vertical-align: -1px; } }
-/* Nightly Floor, 14 rows: about 57px a row. The tile fills its cell instead of the goalie tile's 50px minimum. */
+/* Nightly Floor, 14 rows: the metric line and a smaller legend leave about 54px a row. The tile fills its cell instead of the goalie tile's 50px minimum. */
 .fill[data-compact] > div { font-size: 24px; column-gap: 12px; }
+.metricLabel { margin: 0; font-size: 34px; line-height: 1.15; font-weight: 800; }
+.legend[data-compact] { font-size: 15px; }
 .floorTile { align-self: stretch; display: flex; }
 .floorTile > span { min-height: 0; min-width: 76px; b { font-size: 24px; } }
-.strip { position: relative; align-self: stretch; width: 170px; margin-block: 4px; svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; } }
-.markKey { color: v.$color-white; i { display: inline-block; width: 12px; margin: 0 3px 0 8px; border-radius: 2px; } i:first-child { margin-left: 0; } i[data-mark="met"] { height: 14px; background: v.$success-color; vertical-align: -1px; } i[data-mark="not"] { height: 5px; background: rgba(v.$color-white, 0.28); vertical-align: -1px; } i[data-mark="gap"] { height: 14px; box-sizing: border-box; border: 1.5px solid v.$warning-color; vertical-align: -1px; } }
-.markKey[data-unwanted] i[data-mark="met"] { background: v.$danger-color; }
+.strip { position: relative; align-self: stretch; width: 180px; margin-block: 4px; svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; } }
+.markKey { color: v.$color-white; i { display: inline-block; width: 12px; margin: 0 3px 0 8px; border-radius: 2px; vertical-align: -1px; } i:first-child { margin-left: 0; } i[data-mark="met"] { height: 14px; } i[data-mark="not"] { height: 5px; } i[data-mark="gap"] { height: 14px; box-sizing: border-box; } }
