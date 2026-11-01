@@ -49,7 +49,7 @@ function PostFrame({ entry, snapshot, settings, brandLogo, logos, Card }: { entr
   return <>
     <div className={`${styles.gridHeader} ${styles.compactHeader}`}>
       <div className={styles.gridBrand}>{brandLogo ? <img src={brandLogo} alt="FHFH" width="135" height="40" /> : <strong>FHFH</strong>}<span>FHFHOCKEY.COM</span></div>
-      <div className={styles.gridTitle}><p>{SHARE_POST_GROUP_LABELS[entry.group as SharePostGroup]}</p><h2 style={{ fontSize: shareHeadlineSize(headline) }}>{headline}</h2></div>
+      <div className={styles.gridTitle}><p>{entry.kicker?.(settings) ?? SHARE_POST_GROUP_LABELS[entry.group as SharePostGroup]}</p><h2 style={{ fontSize: shareHeadlineSize(headline) }}>{headline}</h2></div>
     </div>
     <div className={postStyles.postBody}>
       {shows && Card ? <Card snapshot={snapshot} data={snapshot.data} settings={settings} logos={logos} />

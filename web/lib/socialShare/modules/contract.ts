@@ -82,6 +82,8 @@ export type ShareModule<Settings extends ShareSettings = ShareSettings, Data = u
   id: string; title: string; summary: string; group: SharePostGroup; basis: SharePostBasis;
   /** The card's printed headline when it follows the settings or the edition; `title` still names the post in the studio. */
   headline?: (settings: Settings, data?: Data | null) => string;
+  /** The line above the headline, when one post's views cover more than its group. */
+  kicker?: (settings: Settings) => string;
   /** A suggestion shown beside the post; posts are chosen freely and nothing is scheduled. */
   suggestedUse?: string;
   fields: readonly ShareSettingField[];
