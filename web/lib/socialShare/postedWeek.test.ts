@@ -32,7 +32,7 @@ const POSTS: readonly (readonly [string, string, string, string])[] = [
   ["FHFH Last Nights Standouts, Under 25% rostered, Nov 1.", "standouts-under", `${MODULES}/lastNightsStandouts.ts`, "under: `Under ${settings.rosterMax}% rostered`"],
   ["FHFH Last Nights Standouts, Top forwards, Nov 1.", "standouts-forwards", `${MODULES}/lastNightsStandouts.ts`, 'forwards: "Top forwards"'],
   ["FHFH Last Nights Standouts, Top defensemen, Nov 1.", "standouts-defensemen", `${MODULES}/lastNightsStandouts.ts`, 'defensemen: "Top defensemen"'],
-  ["FHFH Last Nights Standouts, Goalies, Nov 1.", "standouts-goalies", `${MODULES}/lastNightsStandouts.ts`, "`FHFH Last Nights Standouts, ${viewTitle(settings)},"],
+  ["FHFH Last Nights Standouts, Goalies, Nov 1.", "standouts-goalies", `${MODULES}/lastNightsStandouts.ts`, "`FHFH ${STANDOUTS_TITLE}, ${viewTitle(settings)},"],
   ["FHFH Crease Shift: official start share over each team's last 5.", "crease-shift", `${MODULES}/creaseShift.ts`, "`FHFH Crease Shift: "],
   ["FHFH GSAx, NST model, all situations.", "goalie-gsax", `${MODULES}/goalieGsax.ts`, "`FHFH GSAx, NST model,"],
   ["FHFH busy and quiet goalies, last 10 games through 2026-11-01.", "busy-quiet", `${MODULES}/busyQuiet.ts`, "`FHFH busy and quiet goalies,"],
