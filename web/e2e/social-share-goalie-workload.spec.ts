@@ -50,16 +50,16 @@ const fromQuery = (url: URL) => Object.fromEntries(url.searchParams);
 const periodQuery = (query: Record<string, string>) => ({ period: query.period ?? "rolling", week: query.week ? Number(query.week) : null, start: query.start ?? null, end: query.end ?? null });
 /** Week 1 ended before the last games, and week 2 is under way. */
 const fixtureRange = (query: Record<string, string>): GoalieDateRange | null => query.period !== "matchup" ? null : query.week === "1" ? { from: date(2), through: date(3), line: "Week 1 · Oct 2 to Oct 3", past: true } : { from: date(1), through: date(4), line: "Week 2 · Oct 1 to Oct 7, games through Oct 4", past: false };
-/** minStarts=1 on a matchup week is the fullest card: every goalie tied, past the row caps, with long names. */
+/** minStartsWeek=1 on a matchup week is the fullest card: every goalie tied, past the row caps, with long names. */
 const fullPool = Array.from({ length: 34 }, (_, index) => index + 10), fullLedger = { ...ledger, appearances: fullPool.flatMap(goalieId => [1, 2, 3].map(day => appearance({ goalieId, gameId: goalieId * 10 + day, date: date(day), name: `Alexandar Georgiev-Hildeby ${goalieId}` }))) };
-const fullCard = (query: Record<string, string>) => query.minStarts === "1" && query.period === "matchup";
+const fullCard = (query: Record<string, string>) => query.minStartsWeek === "1" && query.period === "matchup";
 const busyQuiet = (url: URL) => {
-  const query = fromQuery(url), settings: BusyQuietSettings = { basis: (query.basis ?? "start") as BusyQuietSettings["basis"], window: (query.window ?? "l10") as BusyQuietSettings["window"], minStarts: Number(query.minStarts ?? 3), ...periodQuery(query) };
+  const query = fromQuery(url), settings: BusyQuietSettings = { basis: (query.basis ?? "start") as BusyQuietSettings["basis"], window: (query.window ?? "l10") as BusyQuietSettings["window"], minStarts: Number(query.minStarts ?? 3), minStartsWeek: Number(query.minStartsWeek ?? 2), minStartsRange: Number(query.minStartsRange ?? 2), ...periodQuery(query) };
   return edition("busy-quiet-goalies", settings, buildBusyQuiet({ settings, ...(fullCard(query) ? fullLedger : ledger), ...nst, range: fixtureRange(query) }));
 };
 const rescue = (url: URL) => {
-  const query = fromQuery(url), settings: GoalieRescueSettings = { category: (query.category ?? "wins") as GoalieRescueSettings["category"], window: (query.window ?? "l10") as GoalieRescueSettings["window"], ownershipCeiling: Number(query.ownershipCeiling ?? 50), includeUnknown: (query.includeUnknown ?? "off") as GoalieRescueSettings["includeUnknown"], minStarts: Number(query.minStarts ?? 3), ...periodQuery(query) };
-  return edition("goalie-rescue", settings, buildGoalieRescue({ settings, ...(fullCard(query) ? fullLedger : ledger), availability: new Map([[1, { ownership: ownershipOf(20, date(30)), status: "" }], [2, { ownership: ownershipOf(null), status: "" }], ...fullPool.map(id => [id, { ownership: ownershipOf(10, date(30)), status: "" }] as const)]), teamGamesLeft: new Map([["NJD", 2], ["NYR", 1]]), scheduleReasons: [], weekEnd: "2026-11-01", range: fixtureRange(query) }));
+  const query = fromQuery(url), settings: GoalieRescueSettings = { category: (query.category ?? "wins") as GoalieRescueSettings["category"], window: (query.window ?? "l10") as GoalieRescueSettings["window"], ownershipCeiling: Number(query.ownershipCeiling ?? 50), includeUnknown: (query.includeUnknown ?? "off") as GoalieRescueSettings["includeUnknown"], minStarts: Number(query.minStarts ?? 3), minStartsWeek: Number(query.minStartsWeek ?? 2), minStartsRange: Number(query.minStartsRange ?? 2), ...periodQuery(query) };
+  return edition("goalie-rescue", settings, buildGoalieRescue({ settings, ...(fullCard(query) ? fullLedger : ledger), availability: new Map([[1, { ownership: ownershipOf(20, date(30)), status: "" }], [2, { ownership: ownershipOf(null), status: "" }], ...fullPool.map((id, index) => [id, { ownership: ownershipOf(index < 11 ? 5 : 10, date(30)), status: "" }] as const)]), teamGamesLeft: new Map([["NJD", 2], ["NYR", 1]]), scheduleReasons: [], weekEnd: "2026-11-01", range: fixtureRange(query) }));
 };
 const ratio = (url: URL) => {
   const query = fromQuery(url), value = (key: string, fallback: number | null) => key in query ? Number(query[key]) : fallback;
@@ -172,12 +172,12 @@ test("Busy and Quiet takes a matchup week, and an old window link still works", 
   expect(requests[0]).toContain("window=std");
   await expect(page.getByTestId("period-control").getByLabel("Period")).toHaveValue("rolling");
   await expect(page.getByRole("combobox", { name: /^Window/ })).toHaveValue("std");
-  await page.goto("/social-share/posts?post=busy-quiet-goalies&period=matchup&week=1&minStarts=2");
+  await page.goto("/social-share/posts?post=busy-quiet-goalies&period=matchup&week=1");
   await expect(card).toContainText("Week 1 · Oct 2 to Oct 3");
   await expect(page.getByTestId("period-pager-label")).toContainText("Week 1");
   await expect(page.getByRole("combobox", { name: /^Window/ })).toHaveCount(0);
   expect(await overflowing(card)).toBe(0);
-  await page.goto("/social-share/posts?post=busy-quiet-goalies&period=matchup&week=1&minStarts=20");
+  await page.goto("/social-share/posts?post=busy-quiet-goalies&period=matchup&week=10");
   await expect(page.getByText("Min starts counts these dates only")).toBeVisible();
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
 });
@@ -186,16 +186,18 @@ test("Goalie Rescue hides GMS LEFT for a past week and labels ownership as curre
   await signIn(page);
   await matchupWeeks(page);
   await serve(page, rescue);
-  await page.goto("/social-share/posts?post=goalie-rescue&period=matchup&week=1&minStarts=2");
+  await page.goto("/social-share/posts?post=goalie-rescue&period=matchup&week=1");
   const card = page.getByTestId("goalie-rescue-card");
   await expect(card).toContainText("Rostered % and status are current and Yahoo-wide, not as of these dates.");
-  await expect(card).toContainText("Week 1 · Oct 2 to Oct 3");
+  await expect(card).toContainText("Week 1 · Oct 2 to Oct 3. Min 2 starts.");
+  await expect(page.getByRole("spinbutton", { name: /^Min starts in week/ })).toHaveValue("2");
+  await expect(page.getByRole("spinbutton", { name: /^Min starts in window/ })).toHaveCount(0);
   await expect(card).not.toContainText("GMS LEFT");
   await expect(card.locator("[data-column='left']")).toHaveCount(0);
   expect(await overflowing(card)).toBe(0);
   await expect(page.getByTestId("post-evidence")).toContainText("GMS LEFT is hidden");
   await downloadsPng(page, "goalie-rescue-past");
-  await page.goto("/social-share/posts?post=goalie-rescue&period=matchup&week=2&minStarts=2");
+  await page.goto("/social-share/posts?post=goalie-rescue&period=matchup&week=2");
   await expect(card).toContainText("GMS LEFT count the current week, through Nov 1.");
   await expect(card.locator("[data-column='left']").first()).toBeVisible();
   expect(await overflowing(card)).toBe(0);
@@ -205,7 +207,7 @@ test("the fullest cards fit with the period's longer legend", async ({ page }) =
   await signIn(page);
   await matchupWeeks(page);
   await serve(page, busyQuiet);
-  await page.goto("/social-share/posts?post=busy-quiet-goalies&period=matchup&week=2&minStarts=1");
+  await page.goto("/social-share/posts?post=busy-quiet-goalies&period=matchup&week=2&minStartsWeek=1");
   const quiet = page.getByTestId("busy-quiet-card");
   await expect(quiet).toContainText("Week 2 · Oct 1 to Oct 7, games through Oct 4");
   await expect(page.getByTestId("board-busy").locator("svg[data-sparkline]")).toHaveCount(12);
@@ -214,12 +216,19 @@ test("the fullest cards fit with the period's longer legend", async ({ page }) =
   await signIn(page);
   await matchupWeeks(page);
   await serve(page, rescue);
-  for (const [week, rows] of [[1, 28], [2, 27]]) {
-    await page.goto(`/social-share/posts?post=goalie-rescue&period=matchup&week=${week}&minStarts=1`);
+  for (const [week, rows] of [[1, 27], [2, 27]]) {
+    await page.goto(`/social-share/posts?post=goalie-rescue&period=matchup&week=${week}&minStartsWeek=1`);
     const card = page.getByTestId("goalie-rescue-card");
     await expect(card.locator("[data-goalie-name]")).toHaveCount(rows);
     expect(await overflowing(card)).toBe(0);
   }
+  // Week 4's real size: eleven goalies fill the card, with no blank area under them.
+  await page.goto("/social-share/posts?post=goalie-rescue&period=matchup&week=1&minStartsWeek=1&ownershipCeiling=5");
+  const short = page.getByTestId("goalie-rescue-card");
+  await expect(short.locator("[data-goalie-name]")).toHaveCount(11);
+  const blank = await short.evaluate(element => { const table = element.querySelector("[data-past]")!, cells = [...table.children]; return Math.abs(table.getBoundingClientRect().bottom - Math.max(...cells.map(cell => cell.getBoundingClientRect().bottom))); });
+  expect(blank).toBeLessThanOrEqual(1);
+  expect(await overflowing(short)).toBe(0);
 });
 
 test("Ratio Impact is hypothetical, works with no base and pools with one", async ({ page }) => {

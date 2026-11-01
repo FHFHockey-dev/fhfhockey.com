@@ -41,6 +41,8 @@ Project `fyhftlxokyjtpndbkfse`, Supabase MCP `execute_sql`, 2026-10-31. Every st
 | 10 | Games on 10-31 and 11-01, for F7 | `games` | 15 | Passed. `startTime` is real; the table has no state column |
 | 11 | Same-day game state candidate, for F7 | `pp_timeframes` | 10 | Passed. Only 10-31 rows, written overnight, so it has no state for today's games |
 | 12 | Yahoo goalie rows by `last_updated` date, for F6 | `yahoo_players` | 1 | Passed. All 181 dated 11-01, so no real goalie is stale today |
+| 13 | Matchup weeks 3 to 5 | `yahoo_matchup_weeks` | 3 | Passed. Week 4 is 10-19 to 10-25 |
+| 14 | Full loaders for Week 4, at min 3 and min 2, as the lead's ticket asked. Over the 50-row sample bound by request; SELECT only, public key, no NHL feed call | `wgo_goalie_stats`, `wgo_team_stats`, `games`, `yahoo_matchup_weeks`, `yahoo_players`, map, both NST tables | Not printed | Passed. Counts below |
 
 Findings:
 
@@ -175,3 +177,17 @@ None. No frozen file needs a change.
 - **Ownership:** a past period prints "Rostered % and status are current and Yahoo-wide, not as of these dates." It is in the evidence and alt text too. The ceiling and status filter also use today's values.
 - **Fit:** the spec's fullest cards found a real clip: a current week's two-line legend pushed Rescue's 28th row past the card. That case now caps at 27, and the evidence names who is left out. Busy and Quiet's 12 rows fit.
 - **Reads:** one bounded `yahoo_matchup_weeks` read; a failure or a refused week gives a visible missing edition, before the ledger is read. No real rows read by this lane for this ticket; the loaders ran on fake clients only.
+
+## Min starts by period
+
+- **Rule:** each period has its own visible field, and only the chosen period's shows: `minStarts` 3 for Recent appearances, `minStartsWeek` 2 for Matchup, `minStartsRange` 2 for Custom. An explicit value wins. Old links read `minStarts` as before. A `minStarts` on a Matchup link is ignored; that pairing only existed at the unpushed `ea01214aa`.
+- **Card:** on Matchup and Custom the legend states it ("Min 2 starts." on Rescue, "Min 2 GS." on Busy and Quiet).
+- **Real Week 4 (read 14), ready on both:**
+
+| Post | Min 3 | Min 2 |
+| --- | --- | --- |
+| Goalie Rescue rows | 1 (6 qualified, 4 above the ceiling, 1 by status) | 11 (33 qualified, 17 above the ceiling, 5 by status) |
+| Busy and Quiet rows | 6 busy, 0 quiet (6 eligible of 58) | 11 busy, 12 quiet (33 eligible of 58), no HD dashes |
+
+- **Rows:** Rescue rows now share the card's height, so 11 rows fill it. Under 4 rows they stop at 130px, as Busy and Quiet's boards do, so a list that small still leaves blank space below it.
+- **Row cap:** every Matchup and Custom card caps ties at 27, since the legend can reach two lines.

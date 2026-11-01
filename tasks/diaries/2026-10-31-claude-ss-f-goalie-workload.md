@@ -34,3 +34,7 @@ The lead found TS2322 on `date` in `657b6e699`. My `npx tsc --noEmit | grep` hid
 ## 2026-11-01: Period control
 
 Added Matchup week and Custom to Busy and Quiet and Rescue; rolling stays the default and `window` stays a field for old links. Past dates hide GMS LEFT. Spec run: PLAYWRIGHT_PORT=3147 PLAYWRIGHT_ISOLATED_NEXT=1, invalid Supabase URL, fictional keys. Gotcha: a dense fixture found a clip the small fixture hid. Other lanes' uncommitted edits can add tsc noise, so re-run before reporting. Next: real-data render by the lead.
+
+## 2026-11-01: Min starts by period
+
+Lead's real Week 4 render showed 1 goalie. Added `minStartsWeek` and `minStartsRange`, default 2; rolling keeps 3. Real Week 4: Rescue 11 rows, Busy and Quiet 11 and 12. Rows fill from 4 up. A temporary loader test ran the real read and was deleted, uncommitted. Next: the lead's real render.

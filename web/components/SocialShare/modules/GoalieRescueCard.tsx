@@ -9,6 +9,9 @@ import styles from "./GoalieRescueCard.module.scss";
 const SHADE = { better: "0, 255, 153", worse: "255, 99, 132" };
 const LEAD_HEADS = ["RK", "GOALIE", "OWN", "GS", "RELIEF"], LEAD_COLUMNS = LEAD_HEADS.length;
 
+/** A small pool stops short of oversized rows, as Busy and Quiet's boards do. */
+const FILL_FROM_ROWS = 4;
+
 const columnText = (row: RescueRow, column: RescueColumn) => column.id === "savePct" ? formatSavePct(row.savePct) : column.id === "gaa" ? formatGaa(row.gaa) : row[column.id] ?? "—";
 
 function MetricCell({ row, rows, column, group, first, selected }: { row: RescueRow; rows: readonly RescueRow[]; column: RescueColumn; group: string; first: boolean; selected: boolean }) {
@@ -18,10 +21,10 @@ function MetricCell({ row, rows, column, group, first, selected }: { row: Rescue
 }
 
 export default function GoalieRescueCard({ data, settings, logos }: SharePostCardProps<GoalieRescueSettings, RescueData>) {
-  if (!data.rows.length) return <PostEmpty>No goalie with {settings.minStarts} official starts is at or under {settings.ownershipCeiling}% rostered in {data.ranged ? <>{data.dates}. {MIN_STARTS_RANGE_RULE}</> : "this window"}</PostEmpty>;
+  if (!data.rows.length) return <PostEmpty>No goalie with {data.minStarts} official starts is at or under {settings.ownershipCeiling}% rostered in {data.ranged ? <>{data.dates}. {MIN_STARTS_RANGE_RULE}</> : "this window"}</PostEmpty>;
   return <div className={styles.card} data-testid="goalie-rescue-card">
     <p className={styles.note}>{rescueNote(data)} Colour compares this list, by column.</p>
-    <div className={styles.fill}><div className={styles.table} data-past={data.past || undefined}>
+    <div className={styles.fill}><div className={styles.table} data-past={data.past || undefined} data-few={data.rows.length < FILL_FROM_ROWS || undefined}>
       <span style={{ gridColumn: `span ${LEAD_COLUMNS}` }} />
       {RESCUE_GROUPS.map(group => <span key={group.id} className={styles.groupHead} data-group-head="" style={{ gridColumn: `span ${group.columns.length}` }}>{group.label}</span>)}
       {data.past ? null : <span />}

@@ -1,4 +1,4 @@
-import { GOALIE_PERIOD_CONTROL, GOALIE_PERIOD_FIELDS, goalieDatesLine, goalieShortDate, goalieWindows, ledgerCoverage, MIN_STARTS_RANGE_RULE, rangeLedger, validateGoaliePeriodChoice, type GoalieDateRange, type GoalieWindowKey } from "./busyQuiet";
+import { GOALIE_MIN_STARTS_FIELDS, GOALIE_PERIOD_CONTROL, GOALIE_PERIOD_FIELDS, goalieDatesLine, goalieMinStarts, goalieShortDate, goalieWindows, ledgerCoverage, MIN_STARTS_RANGE_RULE, rangeLedger, validateGoaliePeriodChoice, type GoalieDateRange, type GoalieMinStarts, type GoalieWindowKey } from "./busyQuiet";
 import { defineShareModule, type SharePostLoadResult } from "./contract";
 import { competitionRanks, ownershipInRange, ownershipLabel, ownershipOf, pooledGaa, pooledSavePct, type OwnershipState } from "./shared/definitions";
 import type { CompletedTeamGame, GoalieAppearance } from "./shared/goalieLedger";
@@ -10,13 +10,13 @@ import type { PeriodWindowSettings } from "./shared/periodWindow";
  */
 export type RescueCategory = "wins" | "saves" | "savePct" | "gaa";
 export const RESCUE_CATEGORY_OPTIONS = [{ value: "wins", label: "Wins" }, { value: "saves", label: "Saves" }, { value: "savePct", label: "SV%" }, { value: "gaa", label: "GAA" }] as const;
-export type GoalieRescueSettings = PeriodWindowSettings & { category: RescueCategory; window: GoalieWindowKey; ownershipCeiling: number; includeUnknown: "off" | "on"; minStarts: number };
+export type GoalieRescueSettings = PeriodWindowSettings & GoalieMinStarts & { category: RescueCategory; window: GoalieWindowKey; ownershipCeiling: number; includeUnknown: "off" | "on" };
 
 /** Fills the card's 860px body. Ties may run past the size; the hard cap keeps them from clipping, and the sample names any left out. */
 export const RESCUE_LIST_SIZE = 20;
 /** (845px body - 28 legend - 40 group and column heads) / 27px minimum row. */
 const RESCUE_MAX_ROWS = 28;
-/** Chosen dates still under way add the GMS LEFT label, which takes the legend to a second line. */
+/** Chosen dates add the min starts and GMS LEFT labels, which can take the legend to a second line. */
 const RESCUE_MAX_ROWS_LONG_LEGEND = 27;
 /** Same rule as the pickup cards: anything but healthy or day to day is not a candidate. */
 const AVAILABLE_STATUSES = new Set(["", "DTD"]);
@@ -62,7 +62,7 @@ export type RescueRow = {
   /** Ratio exposure, pooled from the summed parts. */ goalsAgainst: number | null; toiSeconds: number | null; savePct: number | null; gaa: number | null;
   /** Team of the latest appearance, today through Sunday. Null when that team is unknown to the schedule read. */ teamGamesLeft: number | null;
 };
-export type RescueData = { category: RescueCategory; window: GoalieWindowKey; through: string; dates: string; ranged: boolean; past: boolean; weekEnd: string; rows: RescueRow[]; qualified: number; aboveCeiling: number; unknownExcluded: number; unavailableStatus: number; unranked: number };
+export type RescueData = { category: RescueCategory; window: GoalieWindowKey; through: string; dates: string; ranged: boolean; past: boolean; minStarts: number; weekEnd: string; rows: RescueRow[]; qualified: number; aboveCeiling: number; unknownExcluded: number; unavailableStatus: number; unranked: number };
 
 const sumOrNull = (values: readonly (number | null)[]) => values.some(value => value === null) ? null : values.reduce<number>((total, value) => total + value!, 0);
 const categoryValue = (row: Omit<RescueRow, "rank">, category: RescueCategory) => row[category];
@@ -74,7 +74,7 @@ export function buildGoalieRescue(input: {
   range?: GoalieDateRange | null;
 }): SharePostLoadResult<RescueData> {
   const { settings, range } = input, { appearances, teamGames, scheduledDates } = rangeLedger(input, range), past = !!range?.past, scheduleReasons = past ? [] : input.scheduleReasons;
-  const windows = goalieWindows(appearances, range ? "std" : settings.window), qualified = windows.filter(window => window.starts >= settings.minStarts);
+  const windows = goalieWindows(appearances, range ? "std" : settings.window), minStarts = goalieMinStarts(settings), qualified = windows.filter(window => window.starts >= minStarts);
   const since = range ? range.from : qualified.reduce<string | null>((oldest, window) => !oldest || window.firstDate < oldest ? window.firstDate : oldest, null);
   const ledger = ledgerCoverage({ scheduledDates, teamGames, appearances, since });
   const dates = goalieDatesLine(settings.window, range, qualified, input.through);
@@ -90,7 +90,7 @@ export function buildGoalieRescue(input: {
   });
   const ranked = competitionRanks(candidates, row => categoryValue(row, settings.category), row => row.goalieId, settings.category === "gaa" ? "low" : "high");
   const listed = ranked.filter(entry => entry.rank <= RESCUE_LIST_SIZE).map(({ row, rank }): RescueRow => ({ ...row, rank }));
-  const rows = listed.slice(0, range && !past ? RESCUE_MAX_ROWS_LONG_LEGEND : RESCUE_MAX_ROWS), tiedOut = listed.length - rows.length;
+  const rows = listed.slice(0, range ? RESCUE_MAX_ROWS_LONG_LEGEND : RESCUE_MAX_ROWS), tiedOut = listed.length - rows.length;
   const unranked = candidates.length - ranked.length;
   const admittedDates = candidates.flatMap(row => row.ownership.state === "known" && row.ownership.asOf ? [row.ownership.asOf] : []).sort(), oldestAdmitted = admittedDates[0] ?? null, newestAdmitted = admittedDates[admittedDates.length - 1] ?? null;
   const ownershipReasons = [
@@ -101,7 +101,7 @@ export function buildGoalieRescue(input: {
   const complete = reasons.length === 0, asOf = appearances[appearances.length - 1]?.date ?? null;
   return {
     state: complete ? "ready" : "partial", reasons, teams: [...new Set(rows.map(row => row.team))],
-    data: { category: settings.category, window: settings.window, through: input.through, dates, ranged: !!range, past, weekEnd: input.weekEnd, rows, qualified: qualified.length, aboveCeiling, unknownExcluded, unavailableStatus, unranked },
+    data: { category: settings.category, window: settings.window, through: input.through, dates, ranged: !!range, past, minStarts, weekEnd: input.weekEnd, rows, qualified: qualified.length, aboveCeiling, unknownExcluded, unavailableStatus, unranked },
     evidence: {
       sources: [
         { name: "NHL.com goalie and team game stats", tables: ["wgo_goalie_stats", "wgo_team_stats"], state: ledger.complete ? "ready" : "partial", asOf, updatedAt: null, reasons: ledger.reasons },
@@ -110,14 +110,17 @@ export function buildGoalieRescue(input: {
       ],
       sample: `${dates}: ${candidates.length} candidates, ${candidates.reduce((total, row) => total + row.starts, 0)} starts, ${candidates.reduce((total, row) => total + row.relief, 0)} relief. Win support: W. Volume: SV, with SA as context. Ratio exposure: SV%, GA, GAA, pooled. One selected category orders the list. ${past ? RESCUE_LEFT_HIDDEN : `Team games left run through ${input.weekEnd} and count games not yet started or in progress at generation; a finished game drops out.`}${range ? ` ${MIN_STARTS_RANGE_RULE}` : ""}${tiedOut ? ` ${tiedOut} more tied ${tiedOut === 1 ? "goalie is" : "goalies are"} not listed.` : ""}`,
       strength: "All situations",
-      cohort: `${candidates.length} of ${qualified.length} goalies with at least ${settings.minStarts} official starts${range ? " in these dates" : ""} at or under ${settings.ownershipCeiling}% rostered${past ? " now" : ""}${settings.includeUnknown === "on" ? ", unknown ownership included" : `; ${unknownExcluded} unknown ownership excluded`}; ${aboveCeiling} above the ceiling; ${unavailableStatus} excluded by Yahoo status`,
+      cohort: `${candidates.length} of ${qualified.length} goalies with at least ${minStarts} official starts${range ? " in these dates" : ""} at or under ${settings.ownershipCeiling}% rostered${past ? " now" : ""}${settings.includeUnknown === "on" ? ", unknown ownership included" : `; ${unknownExcluded} unknown ownership excluded`}; ${aboveCeiling} above the ceiling; ${unavailableStatus} excluded by Yahoo status`,
       coverage: ledger.coverage,
     },
   };
 }
 
 /** The card's one legend line, past periods apart: the dates, and what is current rather than of those dates. */
-export const rescueNote = (data: Pick<RescueData, "dates" | "ranged" | "past" | "weekEnd">) => data.past ? `${RESCUE_PAST_NOTE} ${data.dates}.` : `${RESCUE_NOTE} ${data.dates}.${data.ranged ? ` GMS LEFT count the current week, through ${goalieShortDate(data.weekEnd)}.` : ""}`;
+export const rescueNote = (data: Pick<RescueData, "dates" | "ranged" | "past" | "minStarts" | "weekEnd">) => {
+  const period = data.ranged ? ` Min ${data.minStarts} ${data.minStarts === 1 ? "start" : "starts"}.` : "";
+  return data.past ? `${RESCUE_PAST_NOTE} ${data.dates}.${period}` : `${RESCUE_NOTE} ${data.dates}.${period}${data.ranged ? ` GMS LEFT count the current week, through ${goalieShortDate(data.weekEnd)}.` : ""}`;
+};
 
 export const formatSavePct = (value: number | null) => value === null ? "—" : value.toFixed(3).replace(/^0/, "");
 export const formatGaa = (value: number | null) => value === null ? "—" : value.toFixed(2);
@@ -151,7 +154,7 @@ export const goalieRescueModule = defineShareModule<GoalieRescueSettings, Rescue
     ...GOALIE_PERIOD_FIELDS,
     { id: "ownershipCeiling", label: "Ownership ceiling %", kind: "number", default: 50, min: 0, max: 100, step: 1 },
     { id: "includeUnknown", label: "Include unknown ownership", kind: "select", default: "off", options: [{ value: "off", label: "Off" }, { value: "on", label: "On" }] },
-    { id: "minStarts", label: "Min starts in period", kind: "number", default: 3, min: 1, max: 82, step: 1 },
+    ...GOALIE_MIN_STARTS_FIELDS,
   ],
   periodControl: GOALIE_PERIOD_CONTROL,
   validate: validateGoaliePeriodChoice,
