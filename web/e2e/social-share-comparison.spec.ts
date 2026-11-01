@@ -77,6 +77,10 @@ test.describe("Player vs Player post", () => {
     await expect(page.getByTestId("pvp-legend")).toContainText("not a market price");
     await expect(page.getByTestId("share-square")).toHaveAttribute("aria-label", /comments\/fake3/);
     await expect(page.getByTestId("post-evidence")).toContainText("Beta Fake 6 of 10");
+    await expect(discussion.getByRole("heading")).toHaveCSS("font-size", "34px");
+    const [left, right] = await page.getByTestId("pvp-bar").all();
+    const widths = [(await left.boundingBox())!.width, (await right.boundingBox())!.width];
+    expect(widths[0] / widths[1], "bars are sized by each side's share").toBeCloseTo(1.25 / 0.75, 1);
     await expectFills(page);
   });
   test("no discussion on file still prints no consensus, and the stats fill the body", async ({ page }) => {
@@ -84,6 +88,7 @@ test.describe("Player vs Player post", () => {
     const discussion = page.getByTestId("pvp-discussion");
     await expect(discussion).toHaveAttribute("data-kind", "empty");
     await expect(discussion).toContainText("No consensus established");
+    await expect(discussion.getByRole("heading")).toHaveCSS("font-size", "17px");
     await expect(page.getByTestId("pvp-legend")).toContainText("No posts on file");
     await expectFills(page);
   });

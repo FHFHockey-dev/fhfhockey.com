@@ -1,7 +1,9 @@
 import type { SharePostCardProps } from "lib/socialShare/modules/contract";
-import { pvpDataMatches, pvpHasRows, pvpLegend, type CandidateRecord, type PlayerVsPlayerData, type PlayerVsPlayerSettings, type PvpMetricRow, type PvpSide } from "lib/socialShare/modules/playerVsPlayer";
+import { pvpBarShares, pvpDataMatches, pvpHasRows, pvpLegend, type CandidateRecord, type PlayerVsPlayerData, type PlayerVsPlayerSettings, type PvpMetricRow, type PvpSide } from "lib/socialShare/modules/playerVsPlayer";
 import { PostEmpty, PostTeamMark } from "./kit";
 import styles from "./PlayerVsPlayerCard.module.scss";
+
+const BRIGHT = "#14a2d2", DIM = "rgba(255, 255, 255, 0.28)", TRACK = "rgba(255, 255, 255, 0.06)";
 
 function Player({ player, logo, side }: { player: PvpSide; logo: string | null | undefined; side: "a" | "b" }) {
   return <div className={styles.player} data-side={side}>
@@ -10,8 +12,16 @@ function Player({ player, logo, side }: { player: PvpSide; logo: string | null |
       <span>{[player.group, player.team].filter(Boolean).join(" · ")}{player.group || player.team ? " · " : ""}{player.appearances}{player.short ? ` of ${player.requested}` : ""} GP</span></div>
   </div>;
 }
+const isHigher = (row: PvpMetricRow, side: "a" | "b") => row.higher === side || row.higher === "tie";
 function Value({ row, side }: { row: PvpMetricRow; side: "a" | "b" }) {
-  return <span className={styles.value} data-higher={row.higher === side || row.higher === "tie" || undefined}>{row[side].shown}</span>;
+  return <span className={styles.value} data-higher={isHigher(row, side) || undefined}>{row[side].shown}</span>;
+}
+/* Grows outward from the centre label. Colours are inline so the PNG keeps them. */
+function Track({ row, side }: { row: PvpMetricRow; side: "a" | "b" }) {
+  const share = pvpBarShares(row)[side], missing = row[side].value === null;
+  return <span className={styles.track} aria-hidden="true" data-side={side} data-missing={missing || undefined} style={{ backgroundColor: missing ? "transparent" : TRACK }}>
+    {share !== null && <span className={styles.bar} data-testid="pvp-bar" data-side={side} style={{ width: `${(share * 100).toFixed(3)}%`, backgroundColor: isHigher(row, side) ? BRIGHT : DIM }} />}
+  </span>;
 }
 function Claim({ claim }: { claim: CandidateRecord }) {
   return <li className={styles.claim}>
@@ -33,11 +43,11 @@ export default function PlayerVsPlayerCard({ data, settings, logos }: SharePostC
       <Player player={data.b} logo={data.b.team ? logos[data.b.team] : null} side="b" />
     </div>
     <div className={styles.stats} data-testid="pvp-stats">
-      {data.metrics.map(row => <div key={row.id} className={styles.row}><Value row={row} side="a" /><span className={styles.label}>{row.label}</span><Value row={row} side="b" /></div>)}
+      {data.metrics.map(row => <div key={row.id} className={styles.row} data-metric={row.id}><Value row={row} side="a" /><Track row={row} side="a" /><span className={styles.label}>{row.label}</span><Track row={row} side="b" /><Value row={row} side="b" /></div>)}
     </div>
     <p className={styles.legend} data-testid="pvp-legend">{pvpLegend(data)}</p>
     <section className={styles.discussion} data-testid="pvp-discussion" data-kind={discussion.kind}>
-      <h3>{discussion.headline}</h3>
+      <h3 data-size={discussion.shown.length ? "full" : "small"}>{discussion.headline}</h3>
       {discussion.shown.length > 0 && <ul className={styles.claims} data-count={discussion.shown.length}>{discussion.shown.map(claim => <Claim key={claim.id} claim={claim} />)}</ul>}
     </section>
   </div>;

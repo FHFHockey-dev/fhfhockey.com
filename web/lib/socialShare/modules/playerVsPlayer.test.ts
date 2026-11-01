@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import PlayerVsPlayerCard from "components/SocialShare/modules/PlayerVsPlayerCard";
 import { parseShareSettings, sharePostExportBlock, type AnyShareModule, type SharePostSnapshot } from "./contract";
 import shippedCandidates from "./playerVsPlayer.candidates.json";
-import { buildPlayerVsPlayer, claimsForPair, comparePlayerWindows, joinNst, NO_CONSENSUS, playerVsPlayerModule, playerWindow, pvpAltText, pvpHasRows, pvpLegend, summarizeDiscussion, validateCandidate, validateCandidateFile, type CandidateRecord, type PlayerVsPlayerData, type PlayerVsPlayerSettings, type PvpNstRow, type PvpStrength } from "./playerVsPlayer";
+import { buildPlayerVsPlayer, claimsForPair, comparePlayerWindows, joinNst, NO_CONSENSUS, playerVsPlayerModule, playerWindow, pvpAltText, pvpBarShares, pvpHasRows, pvpLegend, summarizeDiscussion, validateCandidate, validateCandidateFile, type CandidateRecord, type PlayerVsPlayerData, type PlayerVsPlayerSettings, type PvpNstRow, type PvpStrength } from "./playerVsPlayer";
 import type { SkaterAppearance } from "./shared/skaterAppearances";
 
 const entry = playerVsPlayerModule as AnyShareModule;
@@ -189,6 +189,59 @@ describe("card and alt text (5.4)", () => {
     show(data, current);
     expect(screen.getByTestId("pvp-stats").querySelectorAll("[data-higher]").length).toBe(0);
     expect(pvpLegend(data)).toBe("Totals not compared: samples differ. No posts on file.");
+  });
+  const metricSide = (value: number | null, shown = value === null ? "—" : String(value)) => ({ value, shown, observed: 1, expected: 1, missing: 0, admitted: true });
+  it("sizes each bar by that side's share of the pair's combined value", () => {
+    expect(pvpBarShares({ a: metricSide(3), b: metricSide(1), higher: "a" })).toEqual({ a: 0.75, b: 0.25 });
+    expect(pvpBarShares({ a: metricSide(0.5), b: metricSide(1.5), higher: "b" })).toEqual({ a: 0.25, b: 0.75 });
+  });
+  it("splits a printed tie evenly, even when the unrounded values differ", () => {
+    expect(pvpBarShares({ a: metricSide(1.251, "1.25"), b: metricSide(1.249, "1.25"), higher: "tie" })).toEqual({ a: 0.5, b: 0.5 });
+  });
+  it("gives a zero no width, on one side or both", () => {
+    expect(pvpBarShares({ a: metricSide(0), b: metricSide(2), higher: "b" })).toEqual({ a: 0, b: 1 });
+    expect(pvpBarShares({ a: metricSide(0), b: metricSide(0), higher: "tie" })).toEqual({ a: 0, b: 0 });
+    expect(pvpBarShares({ a: metricSide(0.001, "0.00"), b: metricSide(0.002, "0.00"), higher: "tie" })).toEqual({ a: 0, b: 0 });
+  });
+  it("has no share for a missing value or an uncompared row", () => {
+    expect(pvpBarShares({ a: metricSide(2), b: metricSide(null), higher: null })).toEqual({ a: null, b: null });
+    expect(pvpBarShares({ a: metricSide(10), b: metricSide(6), higher: null })).toEqual({ a: null, b: null });
+  });
+  it("draws the bars from the shares and keeps every printed value", () => {
+    const data = build({ appearances: [...games(A, 10, { goals: 3, assists: 0, shots: 2 }), ...games(B, 10, { goals: 1, assists: 0, shots: 2 })] }).data!;
+    show(data);
+    const row = (id: string) => screen.getByTestId("pvp-stats").querySelector(`[data-metric="${id}"]`) as HTMLElement;
+    const bars = (id: string) => [...row(id).querySelectorAll<HTMLElement>("[data-testid=pvp-bar]")];
+    const widths = (id: string) => bars(id).map(bar => parseFloat(bar.style.width));
+    expect(widths("goals")).toEqual([75, 25]);
+    expect(bars("goals")[0].style.backgroundColor).not.toBe(bars("goals")[1].style.backgroundColor);
+    expect(row("goals").textContent).toContain("3.00");
+    expect(row("goals").textContent).toContain("1.00");
+    expect(widths("shots")).toEqual([50, 50]);
+    expect(bars("shots")[0].style.backgroundColor).toBe(bars("shots")[1].style.backgroundColor);
+    expect(widths("assists")).toEqual([0, 0]);
+    expect(row("assists").textContent?.match(/0\.00/g)).toHaveLength(2);
+  });
+  it("shows a missing value as a marked gap with no bar on either side, never zero", () => {
+    const appearances = [...games(A, 10), ...games(B, 10)];
+    show(build({ appearances, nst: [...nstFor(games(A, 10)), ...nstFor(games(B, 8))] }).data!);
+    const row = screen.getByTestId("pvp-stats").querySelector('[data-metric="ixg"]') as HTMLElement;
+    expect(row.querySelectorAll("[data-testid=pvp-bar]")).toHaveLength(0);
+    expect(row.querySelectorAll("[data-missing]")).toHaveLength(1);
+    expect(row.textContent).toContain("—");
+    expect(row.textContent).toContain("0.50");
+  });
+  it("draws no bars for totals over differing samples, which stay uncompared", () => {
+    const current = settings({ basis: "total" });
+    show(build({ settings: current, appearances: [...games(A, 10), ...games(B, 6)] }).data!, current);
+    expect(screen.queryAllByTestId("pvp-bar")).toHaveLength(0);
+  });
+  it("shrinks the headline to a small line with no posts, and keeps it full with posts", () => {
+    const { unmount } = show(build().data!);
+    expect(screen.getByRole("heading", { name: NO_CONSENSUS }).dataset.size).toBe("small");
+    unmount();
+    show(build({ candidates }).data!);
+    expect(screen.getByRole("heading", { name: NO_CONSENSUS }).dataset.size).toBe("full");
   });
   it("sends the disclosures to the evidence, off the card", () => {
     const result = build({ candidates, appearances: [...games(A, 10), ...games(B, 6)] });

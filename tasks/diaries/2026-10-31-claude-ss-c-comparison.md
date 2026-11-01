@@ -10,7 +10,8 @@
   - `hasRows` also checks the loaded data against current settings, because the shell prints current settings after a change with no refresh.
 - **Gotchas:** Gemini grounded results may not be cached, syndicated, analyzed or shown beyond the prompting user, which rules out the route as proposed. redditinc.com and the Reddit help pages refused the fetch, so Reddit terms are cited through secondary sources and flagged as such.
   - Layout pass after TJ's review: full-width stat block, one legend line, disclosures moved to `evidence.cohort` and alt text. The legend keeps a short "hand-picked" warning. URLs capped at 200 characters.
-- **State:** 5.1-5.5 built, layout pass done. 52 tests, eslint, pure check and tsc pass; E2E `--list` shows 4 tests, not run in a browser, so the fill is unproven.
+  - Bars after TJ's real-pair review: `pvpBarShares` sizes them, a missing value or uncompared row draws none, and the headline is one small line with no posts.
+- **State:** 5.1-5.5 built, layout pass and bars done. 61 tests, eslint, pure check and tsc pass; E2E `--list` shows 4 tests, not run in a browser, so the fit at 860px is unproven.
 - **Next step:** the lead runs the E2E at 13.0, which includes the fill check.
 - **Blockers:** none. TJ decided 5.6 stays open until TJ adds candidates, and discovery stays blocked.
 - **Gotcha:** default-heap `tsc` crashes; use `NODE_OPTIONS=--max-old-space-size=8192`.

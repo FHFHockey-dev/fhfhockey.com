@@ -283,6 +283,18 @@ export function buildPlayerVsPlayer(input: BuildPvpInput): SharePostLoadResult<P
 export const pvpDataMatches = (data: PlayerVsPlayerData, settings: PlayerVsPlayerSettings) => data.settingsKey === pvpSettingsKey(settings);
 export const pvpHasRows = (data: PlayerVsPlayerData, settings: PlayerVsPlayerSettings) => pvpDataMatches(data, settings) && data.a.appearances > 0 && data.b.appearances > 0 && data.metrics.some(row => row.a.value !== null && row.b.value !== null);
 
+/**
+ * Each side's share of the pair's combined value, for the head-to-head bars. Null means no bar: a missing value has no share,
+ * and neither does its opponent, and an uncompared row (totals over differing samples) stays uncompared. A printed tie is an even split.
+ */
+export function pvpBarShares({ a, b, higher }: Pick<PvpMetricRow, "a" | "b" | "higher">): { a: number | null; b: number | null } {
+  if (higher === null || a.value === null || b.value === null) return { a: null, b: null };
+  const total = a.value + b.value;
+  if (total <= 0) return { a: 0, b: 0 };
+  if (higher === "tie") { const even = Number(a.shown) === 0 ? 0 : 0.5; return { a: even, b: even }; }
+  return { a: a.value / total, b: b.value / total };
+}
+
 /** The card's one line under the stats: how to read the marks, and what the posts are. */
 export function pvpLegend(data: PlayerVsPlayerData) {
   const marks = data.metrics.some(row => row.higher !== null) ? "Bright = higher." : data.a.appearances !== data.b.appearances && data.basisLabel === PVP_BASIS_LABELS.total ? "Totals not compared: samples differ." : "Not compared.";

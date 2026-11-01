@@ -24,11 +24,25 @@ Base `7bddeaf0d`. Commit: see the commit that adds this file on `octoberBranch`.
 - Per-post limitations and the claims the card doesn't show are in the alt text only.
 - New refusal: a URL over 200 characters. URLs had no limit, and an unbounded one could clip the card.
 
+## Head-to-head bars (TJ's review of a real pair, 2026-11-01)
+
+This replaces the filled tiles and type sizes described above.
+
+- Each stat row is value, bar, label, bar, value. Bars grow outward from the centre label, sized by `pvpBarShares`: that side's share of the pair's combined value.
+- The higher side is bright, and a printed tie is an even split with both sides bright, even if the unrounded values differ.
+- A zero has no width but still prints. A missing value is a dashed gap printing "—", and its opponent gets no bar either, because a share of an unknown total means nothing.
+- **Judgment call:** totals over differing samples draw no bars. They stay uncompared, as `comparePlayerWindows` already rules, and the legend says so.
+- With no posts, "No consensus established" is one 17px line. With posts it stays 34px.
+- `playerVsPlayer.candidates.json` is unchanged. TJ gave the pair with no URL, so it has no sourced record.
+- Value type is now 30px, 46px or 84px, so a value column leaves room for the bar.
+
 ## Checks
+
+These are the latest run, after the bars.
 
 | Check | Result |
 | --- | --- |
-| `playerVsPlayer.test.ts`, `contract.test.ts`, `server.test.ts`, `PostStudio.test.tsx` | Passed, 52 tests |
+| `playerVsPlayer.test.ts`, `contract.test.ts`, `server.test.ts`, `PostStudio.test.tsx` | Passed, 61 tests |
 | eslint on my TypeScript files | Clean |
 | CSS-module pure check on `PlayerVsPlayerCard.module.scss` | Passed |
 | `npx tsc --noEmit` (with an 8 GB heap; the default heap crashed) | 0 errors, repo-wide |
