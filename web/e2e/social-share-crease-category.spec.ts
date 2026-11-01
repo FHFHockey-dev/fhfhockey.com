@@ -166,6 +166,98 @@ test("goalie of the period: a custom range shows its dates and headline", async 
   await expect(page.getByTestId("post-evidence")).toContainText("Custom range uses Category Counts' month rules");
 });
 
+/** Weeks 3 to 6 and an edition per week. Only week 4 has fictional games; week 6 has not started. */
+async function servePeriods(page: Page) {
+  const calendar = [{ week: 3, start_date: "2026-10-12", end_date: "2026-10-18" }, { week: 4, start_date: week.start, end_date: week.end }, { week: 5, start_date: "2026-10-26", end_date: "2026-11-01" }, { week: 6, start_date: "2026-11-02", end_date: "2026-11-08" }];
+  await page.route("**/api/v1/social-share/matchup-weeks", route => route.fulfill({ json: { rows: calendar, cutoff: "2026-10-28" } }));
+  const requested: (string | null)[] = [];
+  await page.route("**/api/v1/social-share/posts/**", route => {
+    const query = new URL(route.request().url()).searchParams, number = Number(query.get("week") ?? 4), row = calendar.find(entry => entry.week === number)!, chosen = { week: row.week, start: row.start_date, end: row.end_date };
+    requested.push(query.get("week"));
+    const settings = { ...periodSettings, week: query.get("week") ? number : null, period: query.get("period") ?? "week", start: query.get("start"), end: query.get("end") };
+    const games = number === 4 ? { appearances, reported, scheduled } : { appearances: [], reported: [], scheduled: [] };
+    return route.fulfill({ json: edition("goalie-period", settings, buildGoaliePeriod({ settings, period: weekPeriod(chosen, "2026-10-28"), tgv, adp, ...games })) });
+  });
+  return requested;
+}
+
+test("period control: the pager pages matchups by keyboard, updates the URL and loads each edition without Refresh", async ({ page }) => {
+  await install(page);
+  const requested = await servePeriods(page);
+  await page.goto("/social-share/posts?post=goalie-period&week=4");
+  const label = page.getByTestId("period-pager-label"), prior = page.getByRole("button", { name: /^Prior week/ }), next = page.getByRole("button", { name: /^Next week/ }), evidence = page.getByTestId("post-evidence");
+  await expect(label).toHaveText("Week 4 · Oct 19 to Oct 25");
+  await expect(page.getByRole("spinbutton", { name: /^Week/ })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeEnabled();
+
+  await prior.focus();
+  await page.keyboard.press("Enter");
+  await expect(label).toHaveText("Week 3 · Oct 12 to Oct 18");
+  await expect(evidence).toContainText("Week 3, 2026-10-12 to 2026-10-18");
+  await expect(page).toHaveURL(/[?&]week=3(&|$)/);
+  expect(requested.at(-1)).toBe("3");
+  // The first week here: nothing before it, and the keyboard stays on the pager.
+  await expect(prior).toBeDisabled();
+  await expect(next).toBeFocused();
+  // No games that week, so nothing to export.
+  await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
+
+  await page.keyboard.press("Enter");
+  await expect(label).toHaveText("Week 4 · Oct 19 to Oct 25");
+  await expect(page.getByTestId("goalie-period-winners")).toContainText("Fictional Goalie");
+  await download(page);
+
+  await next.click();
+  await expect(label).toHaveText("Week 5 · Oct 26 to Nov 1");
+  // Results stop at the week under way: week 6 has not started.
+  await expect(next).toBeDisabled();
+  await expect(prior).toBeEnabled();
+
+  await page.reload();
+  await expect(label).toHaveText("Week 5 · Oct 26 to Nov 1");
+});
+
+test("period control: custom dates show only for Custom, and export waits for a Refresh", async ({ page }) => {
+  await install(page);
+  await servePeriods(page);
+  await page.goto("/social-share/posts?post=goalie-period&week=4");
+  const start = page.getByLabel("Custom range start"), end = page.getByLabel("Custom range end"), downloadButton = page.getByRole("button", { name: "Download PNG", exact: true });
+  await expect(downloadButton).toBeEnabled();
+  await expect(start).toHaveCount(0);
+  await page.getByTestId("period-control").locator("select").selectOption("custom");
+  await expect(page.getByTestId("period-pager-label")).toHaveCount(0);
+  await expect(page.getByTestId("period-reason")).toHaveText("A custom range needs a start date and an end date.");
+  // The loaded edition is a week's, so the mismatched settings block its export.
+  await expect(downloadButton).toBeDisabled();
+  await start.fill("2026-10-22");
+  await end.fill("2026-10-19");
+  await expect(page.getByTestId("period-reason")).toHaveText("The start date must be before the end date.");
+  await end.fill("2026-10-25");
+  await expect(page.getByTestId("period-reason")).toHaveCount(0);
+  await expect(page).toHaveURL(/period=custom/);
+  await expect(page).toHaveURL(/start=2026-10-22/);
+  await expect(page).toHaveURL(/end=2026-10-25/);
+  await expect(downloadButton).toBeDisabled();
+  await page.getByTestId("period-control").locator("select").selectOption("week");
+  await expect(page.getByTestId("period-pager-label")).toHaveText("Week 4 · Oct 19 to Oct 25");
+  await expect(downloadButton).toBeEnabled();
+});
+
+test("period control: fits a 375 phone with no page overflow", async ({ page }) => {
+  await install(page);
+  await servePeriods(page);
+  await page.setViewportSize({ width: 375, height: 800 });
+  await page.goto("/social-share/posts?post=goalie-period&week=4");
+  await expect(page.getByTestId("period-pager-label")).toHaveText("Week 4 · Oct 19 to Oct 25");
+  const overflow = () => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(await overflow()).toBeLessThanOrEqual(0);
+  const control = await page.getByTestId("period-control").boundingBox();
+  expect(control!.x + control!.width).toBeLessThanOrEqual(375);
+  await page.getByTestId("period-control").locator("select").selectOption("custom");
+  await expect(page.getByLabel("Custom range end")).toBeVisible();
+  expect(await overflow()).toBeLessThanOrEqual(0);
+});
+
 test("GSAx: ten rows a side fill the body", async ({ page }) => {
   await install(page);
   const goalies = Array.from({ length: 24 }, (_, index) => index + 1);

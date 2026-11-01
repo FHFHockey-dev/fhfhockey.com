@@ -3,9 +3,10 @@ import type { GoalieWeeklyAggregate, LeagueWeeklyAverage, NumericGoalieStatKey, 
 import { teamsInfo } from "lib/teamsInfo";
 import { defineShareModule, type SharePostLoadResult } from "./contract";
 import { reconcileSchedule, type ScheduledGame } from "./creaseShift";
-import { buildWeekLedgers, CATEGORIES, categoryById, CATEGORY_COUNTS_LABEL, DEFAULT_CATEGORY_IDS, defaultMonth, defaultWeek, monthPeriod, periodGoalies, rangePeriod, rankPeriodGoalies, seasonPeriod, spanDays, weekPeriod, type CategoryId, type CellCounts, type MatchupWeek, type PeriodGoalie, type SharePeriod } from "./shared/categoryCounts";
+import { buildWeekLedgers, CATEGORIES, categoryById, CATEGORY_COUNTS_LABEL, DEFAULT_CATEGORY_IDS, defaultMonth, monthPeriod, periodGoalies, rangePeriod, rankPeriodGoalies, seasonPeriod, spanDays, weekPeriod, type CategoryId, type CellCounts, type MatchupWeek, type PeriodGoalie, type SharePeriod } from "./shared/categoryCounts";
 import { BOARD_FIELD_OPTIONS, boardChoice, boardSides, countOf, type BoardChoice, type BoardSide } from "./shared/goalieBoards";
 import { teamStartShare, type CompletedTeamGame, type GoalieAppearance } from "./shared/goalieLedger";
+import { customRangeReason, periodWindowFields, resolvePeriodWindow, type PeriodControl } from "./shared/periodWindow";
 import type { YahooMapRow } from "./goalieRescue";
 
 /** Goalie of the Week and Month, with best and worst (SS 9.0), by Category Counts. TGV grades sit beside it under their own label. */
@@ -57,25 +58,17 @@ const CATEGORY_ID_SET = new Set<string>(CATEGORIES.map(category => category.id))
 export const parseCategories = (value: string) => [...new Set(value.split(",").map(part => part.trim()).filter(Boolean))] as CategoryId[];
 export function validateGoaliePeriod(settings: GoaliePeriodSettings) {
   if (settings.month && !/^[1-9]\d{3}-(0[1-9]|1[0-2])$/.test(settings.month)) return "Month must look like 2026-10.";
-  if (settings.period === "custom") {
-    if (!settings.start || !settings.end) return "A custom range needs a start date and an end date.";
-    if (settings.start >= settings.end) return "The start date must be before the end date.";
-  }
+  const range = settings.period === "custom" ? customRangeReason(settings) : null;
+  if (range) return range;
   const categories = parseCategories(settings.categories);
   if (!categories.length) return "Choose at least one category.";
   return categories.every(id => CATEGORY_ID_SET.has(id)) ? null : `Categories must come from: ${CATEGORIES.map(category => category.id).join(", ")}.`;
 }
 
+const GOALIE_PERIOD_CONTROL: PeriodControl = { mode: "past-only", matchupValue: "week" };
 /** The chosen period, or why there is none. A blank choice is the last completed one. */
 export function resolvePeriod(settings: Pick<GoaliePeriodSettings, "period" | "week" | "month"> & Partial<Pick<GoaliePeriodSettings, "start" | "end">>, weeks: readonly MatchupWeek[], through: string): { period: SharePeriod } | { reason: string } {
   if (settings.period === "season") return weeks.some(week => week.start <= through) ? { period: seasonPeriod(weeks, through) } : { reason: "No matchup week has started." };
-  if (settings.period === "custom") {
-    const { start, end } = settings, first = weeks[0]?.start, last = weeks[weeks.length - 1]?.end;
-    if (!start || !end || start >= end) return { reason: "The start date must be before the end date." };
-    if (!first || start < first || end > last) return { reason: `The range must fall inside the season, ${first ?? "not started"} to ${last ?? "not started"}.` };
-    if (end > through) return { reason: `The end date ${end} is past the last completed games, ${through}.` };
-    return { period: rangePeriod(weeks, start, end, through) };
-  }
   if (settings.period === "month") {
     const month = settings.month || defaultMonth(weeks, through);
     if (!month) return { reason: "No matchup month has started." };
@@ -83,9 +76,9 @@ export function resolvePeriod(settings: Pick<GoaliePeriodSettings, "period" | "w
     if (!period.touchedWeeks.length) return { reason: `${month} has no matchup weeks.` };
     return period.gameFrom > through ? { reason: `${month} has not started; data runs through ${through}.` } : { period };
   }
-  const week = settings.week === null ? defaultWeek(weeks, through) : weeks.find(entry => entry.week === settings.week) ?? null;
-  if (!week) return { reason: settings.week === null ? "No matchup week has started." : `Week ${settings.week} is not on the matchup calendar.` };
-  return week.start > through ? { reason: `Week ${week.week} has not started; data runs through ${through}.` } : { period: weekPeriod(week, through) };
+  const { window, reason } = resolvePeriodWindow({ period: settings.period, week: settings.week, start: settings.start ?? null, end: settings.end ?? null }, { weeks: [...weeks], reasons: [] }, { ...GOALIE_PERIOD_CONTROL, cutoff: through });
+  if (!window) return { reason };
+  return { period: window.week === null ? rangePeriod(weeks, window.from, window.through, through) : weekPeriod(weeks.find(entry => entry.week === window.week)!, through) };
 }
 /** The dates a period's read must cover: its baselines use every game in every week it touches. */
 export const periodReadRange = (period: SharePeriod) => ({
@@ -224,11 +217,8 @@ const tgvAlt = (tgv: TgvResult) => tgv.counts ? `${tgv.label}: ${TGV_GRADES.map(
 export const goaliePeriodModule = defineShareModule<GoaliePeriodSettings, GoaliePeriodData>({
   id: "goalie-period", title: "Goalie of the Period", headline: goaliePeriodHeadline, summary: "Goalie of the Week or Month, Best and Worst, by how often each goalie beat the league average category by category, beside existing TGV grades.", group: "goalies", basis: "observed",
   fields: [
-    { id: "period", label: "Period", kind: "select", default: "week", options: [{ value: "week", label: "Matchup week" }, { value: "month", label: "Calendar month" }, { value: "custom", label: "Custom range" }, { value: "season", label: "Season to date" }] },
-    { id: "week", label: "Week (blank is the last completed)", kind: "number", default: null, min: 1, max: 30, step: 1 },
-    { id: "month", label: "Month, YYYY-MM (blank is the last completed)", kind: "text", default: "", maxLength: 7 },
-    { id: "start", label: "Custom range start", kind: "date", default: null },
-    { id: "end", label: "Custom range end", kind: "date", default: null },
+    ...periodWindowFields({ mode: GOALIE_PERIOD_CONTROL.mode, default: "week", options: [{ value: "week", label: "Matchup week" }, { value: "month", label: "Calendar month" }, { value: "custom", label: "Custom range" }, { value: "season", label: "Season to date" }] }),
+    { id: "month", label: "Month, YYYY-MM (blank is the last completed)", kind: "text", default: "", maxLength: 7, onlyForPeriod: "month" },
     { id: "minStartsWeek", label: "Min starts, week", kind: "number", default: 2, min: 1, max: 7, step: 1 },
     { id: "minStartsMonth", label: "Min starts, month", kind: "number", default: 5, min: 1, max: 20, step: 1 },
     { id: "minStartsRange", label: "Min starts, custom range", kind: "number", default: 2, min: 1, max: 82, step: 1 },
@@ -236,6 +226,7 @@ export const goaliePeriodModule = defineShareModule<GoaliePeriodSettings, Goalie
     { id: "board", label: "Board", kind: "select", default: "both", options: BOARD_FIELD_OPTIONS },
     { id: "categories", label: "Categories", kind: "text", default: DEFAULT_CATEGORY_IDS.join(","), maxLength: 80 },
   ],
+  periodControl: GOALIE_PERIOD_CONTROL,
   validate: validateGoaliePeriod,
   load: () => import("./goaliePeriod.sources").then(sources => sources.loadGoaliePeriod),
   card: () => import("components/SocialShare/modules/GoaliePeriodCard").then(card => card.default),

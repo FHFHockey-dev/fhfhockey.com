@@ -1,5 +1,6 @@
 import { SHARE_TIME_ZONE, type ShareDataState } from "lib/socialShare/types";
 import type { ComponentType } from "react";
+import type { PeriodControl } from "./shared/periodWindow";
 
 /**
  * The post-module seam (CONTRACT.md in tasks/artifacts/social-share-expansion-2026-10-31). A new post is its own files:
@@ -26,6 +27,8 @@ type FieldBase = {
   clientOnly?: boolean;
   /** Set through the post's `panel`, so the settings form leaves it out; it still round-trips through the URL and the token. */
   panelOnly?: boolean;
+  /** Drawn on the settings form only while the post's `period` field holds this value. */
+  onlyForPeriod?: string;
 };
 /** Every configurable threshold is a field, so its default and active value are visible in the studio and the export. */
 export type ShareSettingField =
@@ -87,6 +90,8 @@ export type ShareModule<Settings extends ShareSettings = ShareSettings, Data = u
   /** A suggestion shown beside the post; posts are chosen freely and nothing is scheduled. */
   suggestedUse?: string;
   fields: readonly ShareSettingField[];
+  /** Draws the shared period control over the fields from `periodWindowFields` (shared/periodWindow.ts). */
+  periodControl?: PeriodControl;
   /** Cross-field checks on already typed settings; return a reason to refuse them. */
   validate?: (settings: Settings) => string | null;
   /** Server only and lazy, so a definition file stays free of Supabase imports. A failure becomes a "missing" snapshot. */

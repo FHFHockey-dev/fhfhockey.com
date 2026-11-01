@@ -6,6 +6,7 @@ import { readScheduledGames } from "./creaseShift.sources";
 import { buildGoaliePeriod, periodReadRange, resolvePeriod, tgvSeasonWeeks, type GoalieAdpRows, type GoaliePeriodData, type GoaliePeriodSettings, type TgvRows, type YahooAdpGoalieRow } from "./goaliePeriod";
 import type { YahooMapRow } from "./goalieRescue";
 import { toMatchupWeeks, type MatchupWeek } from "./shared/categoryCounts";
+import { readMatchupRows } from "./shared/periodWindow.sources";
 import type { CompletedTeamGame, GoalieAppearance } from "./shared/goalieLedger";
 import { readCompletedTeamGames, readGoalieAppearances } from "./shared/goalieLedger.sources";
 
@@ -53,8 +54,7 @@ export async function readPeriodAdp(client: SharePostReadClient, yahooSeason: nu
 
 export async function loadGoaliePeriod({ client, generatedAt }: SharePostContext, settings: GoaliePeriodSettings): Promise<SharePostLoadResult<GoaliePeriodData>> {
   const { through, season } = seasonScope(generatedAt), matchupSeason = String(season).slice(0, 4);
-  const weekRows = await bounded<{ week: number; start_date: string | null; end_date: string | null }>("Matchup weeks", WEEK_LIMIT, (start, end) => client.from("yahoo_matchup_weeks").select("week,start_date,end_date", { count: "exact" }).eq("season", matchupSeason).order("week").range(start, end));
-  const weeks = toMatchupWeeks(weekRows), resolved = resolvePeriod(settings, weeks, through);
+  const weeks = toMatchupWeeks(await readMatchupRows(client, matchupSeason)), resolved = resolvePeriod(settings, weeks, through);
   const missing = (reason: string): SharePostLoadResult<GoaliePeriodData> => ({ state: "missing", reasons: [reason], data: null, evidence: { sources: [{ name: "Yahoo matchup weeks", tables: ["yahoo_matchup_weeks"], state: "ready", asOf: null, updatedAt: null }], sample: reason, strength: "All situations", cohort: "Not available", coverage: null } });
   if ("reason" in resolved) return missing(resolved.reason);
   const { period } = resolved, range = { season, ...periodReadRange(period) }, long = period.kind === "custom" || period.kind === "season";
