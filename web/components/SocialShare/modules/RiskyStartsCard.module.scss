@@ -5,10 +5,13 @@
 .grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(4, auto); gap: v.$space-xs; align-content: start; flex: 1; min-height: 0; }
 .grid[data-full] { grid-template-rows: none; grid-auto-rows: 1fr; align-content: stretch; }
 .tile { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: v.$space-xs; padding: v.$space-xs; border: 1px solid v.$border-soft; min-width: 0; min-height: 0; }
-.head { display: grid; grid-template-columns: minmax(0, 1fr) 130px minmax(0, 1fr); align-items: center; column-gap: v.$space-xs; }
-.teamHead { display: grid; grid-template-columns: auto 1fr; justify-items: center; align-items: center; font-size: 15px; letter-spacing: v.$mobile-letter-spacing-wide; }
-.teamHead[data-side="away"] { grid-template-columns: 1fr auto; }
-.when { font-size: 12px; line-height: 1.15; text-align: center; color: v.$text-secondary; }
+.head { display: grid; grid-template-columns: minmax(0, 1fr) 150px minmax(0, 1fr); align-items: center; column-gap: v.$space-xs; }
+.teamHead { display: grid; grid-template-columns: auto 1fr auto; justify-items: center; align-items: center; font-size: 15px; letter-spacing: v.$mobile-letter-spacing-wide; }
+.teamHead[data-side="away"] { grid-template-columns: auto 1fr auto; }
+.moneyline { font-size: 15px; letter-spacing: 0; color: v.$color-white; }
+.when { font-size: 12px; line-height: 1.15; text-align: center; color: v.$text-secondary;
+  em { display: block; font-style: normal; color: v.$color-white; }
+}
 .pairs { display: grid; grid-auto-rows: minmax(20px, 1fr); gap: 2px; min-height: 0; }
 .pair { display: grid; grid-template-columns: minmax(0, 1fr) 84px minmax(0, 1fr); column-gap: v.$space-xs; align-items: stretch; min-height: 0; }
 .label { display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 14px; white-space: nowrap; color: v.$text-secondary; }

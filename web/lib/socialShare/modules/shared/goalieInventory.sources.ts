@@ -266,7 +266,10 @@ export const confirmationSourceLabel = (source: string | null) => source === "va
 /** How old the claim is at the edition. Absent for an unknown, which has no claim to age. */
 export function confirmationFreshness(confirmation: GoalieConfirmation, generatedAt: string) {
   if (confirmation.state === "none") return null;
-  const minutes = Math.max(0, Math.floor((Date.parse(generatedAt) - Date.parse(confirmation.observedAt)) / 60000));
+  return ageLabel(confirmation.observedAt, generatedAt);
+}
+export function ageLabel(at: string, generatedAt: string) {
+  const minutes = Math.max(0, Math.floor((Date.parse(generatedAt) - Date.parse(at)) / 60000));
   return minutes < 60 ? `${minutes}m ago` : minutes < 2880 ? `${Math.floor(minutes / 60)}h ago` : `${Math.floor(minutes / 1440)}d ago`;
 }
 export const forecastLabel = (forecast: GoalieForecast) => forecast.state === "qualified" ? `Conditional forecast ${Math.round(forecast.startProbability * 100)}%` : "Forecast unavailable";

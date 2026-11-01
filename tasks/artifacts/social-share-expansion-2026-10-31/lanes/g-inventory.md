@@ -116,3 +116,20 @@ Project `fyhftlxokyjtpndbkfse`, Supabase MCP `execute_sql`, 2026-10-31. Every st
 - **Opposing goalies:** read from the other team's row in the inventory. If there are none, the side shows "No goalie listed". The tile's own team has white names; the opponent's are muted.
 - **Start/Sit:** winner green, loser red, tie and missing plain. Logos and triangle sit between the chips. Goalie, status and forecast columns narrowed.
 - **Checks:** see the commit report. **Browser not run; fit at 860px is estimated.** About 206px per tile; 4 pairings get at least 20px each even with 4 wrapped goalie lines. Start/Sit lens cells take about 165px, leaving about 460px for the other five columns.
+
+## Market lines on Risky Starts (TJ chose stored DraftKings plus NHL.com partner odds)
+
+- **Precedence, per game:** the latest stored row captured before puck drop and by the edition, otherwise NHL.com `/now`. A line comes whole from one row or one feed entry, so books never mix. The feed is read at most once per load, 4s timeout, only if a game still has no line.
+- **`normalizeNhlScheduleOdds` not reused:** it reads the schedule's provider-keyed odds and files ledger rows, while this feed has description-keyed odds. The feed's own parser is in `riskyStarts.sources.ts`.
+- **Feed guard:** `/now` keeps live prices, -100000 on one game in the sample read, so an update at or after puck drop is refused.
+- **Coverage gap:** most of a 7-day window will print "No line yet". Stored rows exist only for same-day games and the feed held one slate. At the time read, it still showed the previous night's slate.
+- **Read log, 2026-11-01:**
+
+| # | Statement | Source | Rows returned | Result |
+| --- | --- | --- | --- | --- |
+| 13 | Coverage by provider (SELECT, aggregate) | `game_prediction_market_odds_snapshots` | 1 | Passed; 0 sample rows |
+| 14 | Coverage by game date (SELECT, aggregate) | Same | 8 | Passed; 0 sample rows |
+| 15 | Anon privilege, policy count, games next week (SELECT) | Same, `pg_policies`, `games` | 1 | Passed; anon can select, but this post reads with the server client |
+| 16 | 4 single GETs, no retries | `partner-game/US/now`, `/US/2026-11-03`, `/US/2026-11-01`, `/US/2026-10-31` | | 200, then 404, 404, 404 |
+
+- **Checks:** see the commit report. Tests use mocks only. **Browser not run; head row grows to about 42px when the date wraps, leaving at least about 90px for 4 pairings, against the 86px minimum.**

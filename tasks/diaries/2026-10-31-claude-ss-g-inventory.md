@@ -14,3 +14,6 @@ Bars on Risky Starts and rank chips plus status colours on Start/Sit, one-hue th
 
 ## TJ review rework
 Shared winner rule, Risky Starts to the mockup (`~/Desktop/Untitled-1.png`), Start/Sit green and red chips with logos and triangle. Removed the blue `RANK_BANDS`. Fit needs the lead's real-data render.
+
+## Market lines
+Stored DraftKings first, NHL `/now` fallback, in `riskyStarts.sources.ts`. Dated NHL paths 404. Expect "No line yet" for most of a 7-day window. Fit is tight on a 4-pairing tile with wrapped goalies; check the lead's render.

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
@@ -5,6 +6,7 @@ import RiskyStartsCard from "components/SocialShare/modules/RiskyStartsCard";
 import { resolveDailyBoardEvidence, type BoardGoalieEvidence } from "lib/projections/dailyBoardEvidence";
 import { sharePostExportToken } from "./contract";
 import { ordinalRank, RISKY_CORRELATION_NOTE, riskyFlags, riskyGameSides, riskyPairs, riskyRows, riskyRowsForLens, riskyStartsModule, riskyStartsResult, type RiskyPair, type RiskyRow, type RiskySide, type RiskyStartsData, type RiskyStartsSettings } from "./riskyStarts";
+import { loadRiskyMarketLines, MARKET_LINES_NOTE, NHL_FAILED_NOTE, NHL_PARTNER_URL, partnerLine, storedLine, STORED_FAILED_NOTE, type PartnerFeed, type StoredLineRow } from "./riskyStarts.sources";
 import { gameSignals, buildTeamLenses, buildGoalieInventory, CONFIRMATION_LINK_GAP, CONFIRMATION_REPORTER_GAP, rankBand } from "./shared/goalieInventory.sources";
 import { FIXTURE_GENERATED_AT, FIXTURE_INPUT, FIXTURE_TEAMS, GOALIE_INVENTORY_FIXTURE, GOALIE_INVENTORY_FIXTURE_DETAIL } from "./shared/goalieInventory.fixture";
 
@@ -228,5 +230,130 @@ describe("Risky Starts post", () => {
     expect(field.clientOnly).toBe(true);
     const snapshot = { id: "e", post: "risky-starts" };
     expect(sharePostExportToken(riskyStartsModule.fields, snapshot, settings("ratio"))).not.toBe(sharePostExportToken(riskyStartsModule.fields, snapshot, settings("win")));
+  });
+});
+
+describe("Risky Starts market lines", () => {
+  const game = { gameId: 900010, home: "NYR", away: "NJD", startTimeUtc: "2026-11-02T23:00:00Z" };
+  const stored = (over: Partial<StoredLineRow> = {}): StoredLineRow => ({ game_id: 900010, provider: "DraftKings", captured_at: "2026-11-02T12:00:00Z", event_start_at: "2026-11-02T23:00:00Z", home_team_abbreviation: "NYR", away_team_abbreviation: "NJD", home_moneyline: -132, away_moneyline: 112, total_line: 6.5, ...over });
+  const team = (abbrev: string, moneyline: number | null, total = "O6.5") => ({ abbrev, odds: [{ description: "MONEY_LINE_3_WAY", value: 999, qualifier: "" }, ...(moneyline === null ? [] : [{ description: "MONEY_LINE_2_WAY", value: moneyline, qualifier: "" }]), { description: "OVER_UNDER", value: -110, qualifier: total }] });
+  const feed = (over: Partial<PartnerFeed> = {}): PartnerFeed => ({ lastUpdatedUTC: "2026-11-02T14:00:00Z", bettingPartner: { name: "OtherBook" }, games: [{ gameId: 900010, startTimeUTC: "2026-11-02T23:00:00Z", homeTeam: team("NYR", -140), awayTeam: team("NJD", 120, "U6.5") }], ...over });
+  const client = (rows: StoredLineRow[] | null, error: unknown = null) => {
+    const query = { select: vi.fn(() => query), in: vi.fn(() => query), lte: vi.fn(() => query), order: vi.fn(() => query), limit: vi.fn(async () => ({ data: rows, error })) };
+    return { from: vi.fn(() => query), query };
+  };
+  const ok = (body: PartnerFeed) => vi.fn(async () => new Response(JSON.stringify(body), { status: 200 })) as unknown as typeof fetch;
+  const rows = data.rows.filter(row => row.gameId === 900010);
+
+  it("takes the latest stored row captured before puck drop", () => {
+    const line = storedLine(game, [stored({ captured_at: "2026-11-02T09:00:00Z", home_moneyline: -101 }), stored(), stored({ captured_at: "2026-11-02T10:00:00Z", home_moneyline: -102 })], FIXTURE_GENERATED_AT);
+    expect(line).toMatchObject({ source: "stored", book: "DraftKings", capturedAt: "2026-11-02T12:00:00Z", home: "NYR", away: "NJD", homeMoneyline: -132, awayMoneyline: 112, total: 6.5 });
+  });
+  it("ignores a row captured at or after puck drop, and one captured after the edition", () => {
+    const late = "2026-11-02T23:30:00.000Z";
+    expect(storedLine(game, [stored({ captured_at: "2026-11-02T23:00:00Z" })], late)).toBeNull();
+    expect(storedLine(game, [stored({ captured_at: "2026-11-02T23:10:00Z" })], late)).toBeNull();
+    expect(storedLine(game, [stored({ captured_at: "2026-11-02T15:30:00Z" })], FIXTURE_GENERATED_AT)).toBeNull();
+    expect(storedLine(game, [stored({ captured_at: "2026-11-02T23:10:00Z", home_moneyline: -999 }), stored()], late)?.homeMoneyline).toBe(-132);
+  });
+  it("refuses a stored row for other teams or with no puck drop to compare", () => {
+    expect(storedLine(game, [stored({ home_team_abbreviation: "NJD", away_team_abbreviation: "NYR" })], FIXTURE_GENERATED_AT)).toBeNull();
+    expect(storedLine({ ...game, startTimeUtc: null }, [stored({ event_start_at: null })], FIXTURE_GENERATED_AT)).toBeNull();
+  });
+  it("prefers the stored row and makes no NHL request when every game has one", async () => {
+    const fetchImpl = ok(feed()), result = await loadRiskyMarketLines(rows, FIXTURE_GENERATED_AT, { client: client([stored()]) as never, fetchImpl });
+    expect(result.lines["900010"]).toMatchObject({ source: "stored", book: "DraftKings", homeMoneyline: -132 });
+    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(result.sources.map(source => source.name)).toEqual(["DraftKings market lines (stored)"]);
+    expect(result.notes).toEqual([MARKET_LINES_NOTE]);
+  });
+  it("reads narrow columns only, up to the edition, and through the client it is given", async () => {
+    const reader = client([stored()]);
+    await loadRiskyMarketLines(rows, FIXTURE_GENERATED_AT, { client: reader as never, fetchImpl: ok(feed()) });
+    expect(reader.from).toHaveBeenCalledWith("game_prediction_market_odds_snapshots");
+    expect(reader.query.select.mock.calls[0]).toEqual([expect.not.stringContaining("no_vig")]);
+    expect(reader.query.lte).toHaveBeenCalledWith("captured_at", FIXTURE_GENERATED_AT);
+  });
+  it("falls back to NHL.com with one request when a game has no stored row", async () => {
+    const fetchImpl = ok(feed()), result = await loadRiskyMarketLines(rows, FIXTURE_GENERATED_AT, { client: client([]) as never, fetchImpl });
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect((fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0]).toBe(NHL_PARTNER_URL);
+    expect((fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls[0][1].signal).toBeInstanceOf(AbortSignal);
+    expect(result.lines["900010"]).toMatchObject({ source: "nhl", book: "OtherBook", capturedAt: "2026-11-02T14:00:00Z", homeMoneyline: -140, awayMoneyline: 120, total: 6.5 });
+    expect(result.sources.map(source => source.name)).toEqual(["DraftKings market lines (stored)", "NHL.com partner odds"]);
+  });
+  it("never mixes books within a game: each line is whole from one source", async () => {
+    const twoGames = data.rows.filter(row => row.gameId === 900010 || row.gameId === 900011);
+    const result = await loadRiskyMarketLines(twoGames, FIXTURE_GENERATED_AT, { client: client([stored()]) as never, fetchImpl: ok(feed({ games: [...feed().games!, { gameId: 900011, startTimeUTC: "2026-11-02T23:30:00Z", homeTeam: team("TOR", -150), awayTeam: team("MTL", 130, "U6") }] })) });
+    expect(result.lines["900010"]).toMatchObject({ source: "stored", book: "DraftKings", homeMoneyline: -132, awayMoneyline: 112, total: 6.5 });
+    expect(result.lines["900011"]).toMatchObject({ source: "nhl", book: "OtherBook", homeMoneyline: -150, awayMoneyline: 130 });
+    // The stored row lacking a total takes no total from the feed.
+    const noTotal = await loadRiskyMarketLines(rows, FIXTURE_GENERATED_AT, { client: client([stored({ total_line: null })]) as never, fetchImpl: ok(feed()) });
+    expect(noTotal.lines["900010"]).toMatchObject({ book: "DraftKings", total: null });
+    // Two books at the same second still give one row.
+    const tied = storedLine(game, [stored({ provider: "Zed", home_moneyline: -500, away_moneyline: 400 }), stored()], FIXTURE_GENERATED_AT);
+    expect(tied).toMatchObject({ book: "DraftKings", homeMoneyline: -132, awayMoneyline: 112 });
+  });
+  it("refuses a feed updated after puck drop, a one-sided moneyline and mismatched teams", () => {
+    expect(partnerLine(game, feed({ lastUpdatedUTC: "2026-11-02T23:00:00Z" }))).toBeNull();
+    expect(partnerLine(game, feed({ games: [{ gameId: 900010, homeTeam: team("NYR", -140), awayTeam: team("NJD", null) }] }))).toBeNull();
+    expect(partnerLine(game, feed({ games: [{ gameId: 900010, homeTeam: team("NJD", -140), awayTeam: team("NYR", 120) }] }))).toBeNull();
+    expect(partnerLine(game, feed({ games: [] }))).toBeNull();
+    expect(partnerLine(game, feed({ bettingPartner: {} }))).toBeNull();
+    expect(partnerLine(game, feed({ games: [{ gameId: 900010, homeTeam: team("NYR", -140, "O6"), awayTeam: team("NJD", 120, "U6.5") }] }))?.total).toBeNull();
+  });
+  it.each([
+    ["a rejected request", vi.fn(async () => { throw new Error("timeout"); })],
+    ["a bad status", vi.fn(async () => new Response("nope", { status: 404 }))],
+    ["unreadable JSON", vi.fn(async () => new Response("<html>", { status: 200 }))],
+  ])("survives NHL failure from %s: no line, and the evidence says so", async (_name, fetchImpl) => {
+    const market = await loadRiskyMarketLines(rows, FIXTURE_GENERATED_AT, { client: client([]) as never, fetchImpl: fetchImpl as unknown as typeof fetch });
+    expect(market.lines).toEqual({});
+    expect(market.notes).toContain(NHL_FAILED_NOTE);
+    const result = riskyStartsResult(GOALIE_INVENTORY_FIXTURE_DETAIL, market);
+    expect(result.state).toBe("ready");
+    expect(result.evidence.sample).toContain(NHL_FAILED_NOTE);
+    expect(result.evidence.sources.map(source => source.name)).not.toContain("NHL.com partner odds");
+  });
+  it("survives a stored read failure, still trying the feed, and a missing server client", async () => {
+    const failed = await loadRiskyMarketLines(rows, FIXTURE_GENERATED_AT, { client: client(null, new Error("denied")) as never, fetchImpl: ok(feed()) });
+    expect(failed.notes).toContain(STORED_FAILED_NOTE);
+    expect(failed.lines["900010"].source).toBe("nhl");
+    const noClient = await loadRiskyMarketLines(rows, FIXTURE_GENERATED_AT, { fetchImpl: ok(feed({ games: [] })) });
+    expect(noClient.notes).toContain(STORED_FAILED_NOTE);
+    expect(noClient.lines).toEqual({});
+  });
+  it("makes no reads without games", async () => {
+    const reader = client([]), fetchImpl = ok(feed());
+    expect((await loadRiskyMarketLines([], FIXTURE_GENERATED_AT, { client: reader as never, fetchImpl })).lines).toEqual({});
+    expect(reader.from).not.toHaveBeenCalled();
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+  it("prints each moneyline on its own team's side, the total and book in the centre, with no derived number", async () => {
+    const market = await loadRiskyMarketLines(data.rows, FIXTURE_GENERATED_AT, { client: client([stored()]) as never, fetchImpl: ok(feed({ games: [] })) });
+    const result = riskyStartsResult(GOALIE_INVENTORY_FIXTURE_DETAIL, market), only = (result.data as RiskyStartsData).rows.filter(row => row.gameId === 900010 && row.team === "NYR");
+    const html = card({ ...result, data: { ...(result.data as RiskyStartsData), rows: only } }, "volume");
+    expect(html.indexOf("HOME")).toBeLessThan(html.indexOf('data-team="NYR">-132'));
+    expect(html.indexOf('data-team="NYR">-132')).toBeLessThan(html.indexOf("O/U 6.5 · DK · 3h ago"));
+    expect(html.indexOf("O/U 6.5 · DK · 3h ago")).toBeLessThan(html.indexOf('data-team="NJD">+112'));
+    expect(html.indexOf('data-team="NJD">+112')).toBeLessThan(html.indexOf("AWAY"));
+    expect(html).not.toContain("No line yet");
+    expect(html).toContain("No win or start odds");
+    expect(html).toContain("market lines");
+    expect(html).not.toMatch(/\d%(?! PP)|implied|probab|no.vig/i);
+    expect(JSON.stringify(market.lines)).not.toMatch(/probability|overround|vig/i);
+    expect(riskyStartsModule.altText({ evidence: { sample: "s" } } as never, { ...(result.data as RiskyStartsData), rows: only }, settings("volume"))).toContain("Market line, DraftKings: NYR -132, NJD +112, total 6.5");
+  });
+  it("prints No line yet for a game with none, and no moneylines", () => {
+    const row = data.rows.find(item => item.gameId === 900010 && item.team === "NYR")!;
+    const html = card({ ...riskyStartsResult(GOALIE_INVENTORY_FIXTURE_DETAIL), data: { ...data, rows: [row] } }, "volume");
+    expect(html).toContain("No line yet");
+    expect(html).not.toContain("risky-moneyline");
+  });
+  it("lists the source it used in the evidence, with its capture time", async () => {
+    const market = await loadRiskyMarketLines(rows, FIXTURE_GENERATED_AT, { client: client([stored()]) as never, fetchImpl: ok(feed()) });
+    const { evidence } = riskyStartsResult(GOALIE_INVENTORY_FIXTURE_DETAIL, market);
+    expect(evidence.sources.find(source => source.tables.includes("game_prediction_market_odds_snapshots"))).toMatchObject({ state: "ready", asOf: "2026-11-02", updatedAt: "2026-11-02T12:00:00Z" });
+    expect(evidence.sample).toContain(MARKET_LINES_NOTE);
   });
 });

@@ -1,6 +1,6 @@
 import type { SharePostCardProps } from "lib/socialShare/modules/contract";
-import { ordinalRank, RISKY_LENS_LABELS, RISKY_TILE_LIMIT, riskyGameSides, riskyLensMeaning, riskyRowsForLens, type RiskyPair, type RiskyRow, type RiskySide, type RiskyStartsData, type RiskyStartsSettings } from "lib/socialShare/modules/riskyStarts";
-import { confirmationFreshness, confirmationLabel, strengthShare } from "lib/socialShare/modules/shared/goalieInventory.sources";
+import { bookLabel, moneylineLabel, NO_LINE_LABEL, ordinalRank, RISKY_LENS_LABELS, RISKY_TILE_LIMIT, riskyGameSides, riskyLensMeaning, riskyRowsForLens, type RiskyGameLine, type RiskyPair, type RiskyRow, type RiskySide, type RiskyStartsData, type RiskyStartsSettings } from "lib/socialShare/modules/riskyStarts";
+import { ageLabel, confirmationFreshness, confirmationLabel, strengthShare } from "lib/socialShare/modules/shared/goalieInventory.sources";
 import { PostEmpty, PostTeamMark } from "./kit";
 import styles from "./RiskyStartsCard.module.scss";
 
@@ -34,13 +34,16 @@ function Goalies({ side, placement, generatedAt }: { side: ReturnType<typeof ris
     {side.goalies.length ? side.goalies.slice(0, 2).map(goalie => <span key={goalie.goalieId}><b>{goalie.name}</b> {goalie.starts === null ? "—" : goalie.starts}/{goalie.teamGames} GS · {[confirmationLabel(goalie.confirmation, side.conflicting), confirmationFreshness(goalie.confirmation, generatedAt)].filter(Boolean).join(" ")}</span>) : <span data-testid="risky-goalies-empty">No goalie listed</span>}
   </p>;
 }
-function Tile({ row, rows, lens, logos, generatedAt }: { row: RiskyRow; rows: readonly RiskyRow[]; lens: RiskyStartsSettings["lens"]; logos: Record<string, string | null>; generatedAt: string }) {
+function Moneyline({ team, price }: { team: string; price: number }) {
+  return <strong className={styles.moneyline} data-testid="risky-moneyline" data-team={team}>{moneylineLabel(price)}</strong>;
+}
+function Tile({ row, rows, line, lens, logos, generatedAt }: { row: RiskyRow; rows: readonly RiskyRow[]; line: RiskyGameLine | undefined; lens: RiskyStartsSettings["lens"]; logos: Record<string, string | null>; generatedAt: string }) {
   const { home, away } = riskyGameSides(rows, row);
   return <div className={styles.tile} data-testid="risky-row" data-team={row.team} data-game={row.gameId}>
     <div className={styles.head}>
-      <span className={styles.teamHead}><b style={{ color: COLORS.home }}>HOME</b><PostTeamMark team={home.team} logo={logos[home.team]} size={32} /></span>
-      <span className={styles.when}>{dayLabel(row.date)} · {restLabel(row)}</span>
-      <span className={styles.teamHead} data-side="away"><PostTeamMark team={away.team} logo={logos[away.team]} size={32} /><b style={{ color: COLORS.away }}>AWAY</b></span>
+      <span className={styles.teamHead}><b style={{ color: COLORS.home }}>HOME</b><PostTeamMark team={home.team} logo={logos[home.team]} size={32} />{line && <Moneyline team={line.home} price={line.homeMoneyline} />}</span>
+      <span className={styles.when}>{dayLabel(row.date)} · {restLabel(row)}<em data-testid="risky-line" data-source={line?.source}>{line ? `${line.total === null ? "" : `O/U ${line.total} · `}${bookLabel(line.book)} · ${ageLabel(line.capturedAt, generatedAt)}` : NO_LINE_LABEL}</em></span>
+      <span className={styles.teamHead} data-side="away">{line ? <Moneyline team={line.away} price={line.awayMoneyline} /> : <span />}<PostTeamMark team={away.team} logo={logos[away.team]} size={32} /><b style={{ color: COLORS.away }}>AWAY</b></span>
     </div>
     <div className={styles.pairs}>{row.lenses[lens].map(pair => <Pair key={pair.id} pair={pair} home={home.team} away={away.team} />)}</div>
     <div className={styles.goalieSides}><Goalies side={home} placement="home" generatedAt={generatedAt} /><Goalies side={away} placement="away" generatedAt={generatedAt} /></div>
@@ -49,8 +52,8 @@ function Tile({ row, rows, lens, logos, generatedAt }: { row: RiskyRow; rows: re
 export default function RiskyStartsCard({ snapshot, data, settings, logos }: SharePostCardProps<RiskyStartsSettings, RiskyStartsData>) {
   const rows = riskyRowsForLens(data.rows, settings.lens), shown = rows.slice(0, RISKY_TILE_LIMIT);
   return <div className={styles.card}>
-    <p className={styles.legend} data-testid="risky-legend"><b>{RISKY_LENS_LABELS[settings.lens]}</b> · Blue: {riskyLensMeaning(settings.lens)} · {shown.length} of {rows.length} · Longer bar = stronger · 1ST = highest · No win or start odds · {data.confirmationLegend}</p>
-    {shown.length ? <div className={styles.grid} data-full={shown.length > 4 || undefined}>{shown.map(row => <Tile key={`${row.gameId}:${row.team}`} row={row} rows={data.rows} lens={settings.lens} logos={logos} generatedAt={snapshot.generatedAt} />)}</div>
+    <p className={styles.legend} data-testid="risky-legend"><b>{RISKY_LENS_LABELS[settings.lens]}</b> · Blue: {riskyLensMeaning(settings.lens)} · {shown.length} of {rows.length} · Longer bar = stronger · 1ST = highest · No win or start odds · Moneylines, O/U: market lines · {data.confirmationLegend}</p>
+    {shown.length ? <div className={styles.grid} data-full={shown.length > 4 || undefined}>{shown.map(row => <Tile key={`${row.gameId}:${row.team}`} row={row} rows={data.rows} line={data.lines[row.gameId]} lens={settings.lens} logos={logos} generatedAt={snapshot.generatedAt} />)}</div>
       : <PostEmpty>No team-night has a flagged pairing in this lens</PostEmpty>}
   </div>;
 }
