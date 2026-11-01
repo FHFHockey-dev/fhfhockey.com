@@ -3,7 +3,7 @@ import { createElement } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import RatioImpactCard from "components/SocialShare/modules/RatioImpactCard";
 import { parseShareSettings, sharePostExportBlock, SharePostRequestError, UNKNOWN_EVIDENCE, type SharePostSnapshot } from "./contract";
-import { addTotals, buildRatioImpact, formatGaaChange, formatRatioSavePct, formatSavePctChange, formatToi, goalieBase, lineTotals, manualBase, minutesToSeconds, RATIO_LEGEND, RATIO_NOTE, ratesOf, ratioImpact, ratioImpactModule, validateRatioSettings, type RatioImpactData, type RatioImpactSettings } from "./ratioImpact";
+import { addTotals, buildRatioImpact, formatGaaChange, formatRatioGaa, formatRatioSavePct, formatSavePctChange, formatToi, goalieBase, lineTotals, manualBase, minutesToSeconds, RATIO_BAD_GOALS, RATIO_LEGEND, RATIO_NOTE, ratesOf, ratioHeadline, ratioImpact, ratioImpactModule, ratioSentence, validateRatioSettings, type RatioImpactData, type RatioImpactSettings } from "./ratioImpact";
 import { loadRatioImpact } from "./ratioImpact.sources";
 import type { GoalieAppearance } from "./shared/goalieLedger";
 
@@ -54,6 +54,7 @@ describe("zero and missing safeguards", () => {
     const zero = ratioImpact(manualBase(settings()), settings({ scenarioShots: 0, scenarioGoals: 0, scenarioMinutes: 0 }));
     expect(zero.afterRates).toEqual({ savePct: null, gaa: null });
     expect(ratioImpactModule.hasRows(zero, settings())).toBe(false);
+    expect(ratioImpactModule.hasRows(ratioImpact(manualBase(withBase), withBase), withBase)).toBe(true);
   });
   it("keeps one rate when only the other denominator is zero", () => {
     expect(ratesOf(lineTotals(30, 3, 0))).toEqual({ savePct: 0.9, gaa: null });
@@ -119,12 +120,12 @@ describe("sensitivity", () => {
 describe("loader", () => {
   it("reads nothing without a goalie id and still has its source label", async () => {
     const client = { from: vi.fn() };
-    const result = await loadRatioImpact({ client, generatedAt: "2026-10-31T12:00:00Z" }, settings());
+    const result = await loadRatioImpact({ client, generatedAt: "2026-10-31T12:00:00Z" }, withBase);
     expect(client.from).not.toHaveBeenCalled();
     expect(result.state).toBe("ready");
     expect(result.evidence.sources.map(source => source.name)).toEqual(["Entered hypothetical inputs"]);
-    const snap = { schemaVersion: 1 as const, id: "e", post: "ratio-impact", state: result.state, reasons: [], generatedAt: "2026-10-31T12:00:00Z", expiresAt: "2026-10-31T12:15:00Z", timeZone: "America/New_York" as const, settings: settings(), evidence: result.evidence, data: result.data, teams: [], fixture: false };
-    expect(sharePostExportBlock(ratioImpactModule, snap, settings(), Date.parse("2026-10-31T12:05:00Z"))).toBeNull();
+    const snap = { schemaVersion: 1 as const, id: "e", post: "ratio-impact", state: result.state, reasons: [], generatedAt: "2026-10-31T12:00:00Z", expiresAt: "2026-10-31T12:15:00Z", timeZone: "America/New_York" as const, settings: withBase, evidence: result.evidence, data: result.data, teams: [], fixture: false };
+    expect(sharePostExportBlock(ratioImpactModule, snap, withBase, Date.parse("2026-10-31T12:05:00Z"))).toBeNull();
   });
   it("reads one goalie's season, through yesterday, when an id is given", async () => {
     const calls: { table: string; filters: unknown[][] }[] = [];
@@ -156,81 +157,110 @@ const renderCard = (active: RatioImpactSettings) => renderDom(active).textConten
 const FORBIDDEN = /forecast|project(ed|ion)|expected|likely|odds|will (start|win|save)|\btrade\b|transaction|add\/drop|\bdrop\b|pickup|waiver|recommend/i;
 
 describe("ratio impact card", () => {
-  it("has the hypothetical basis, and shows denominators, units and sensitivity", () => {
+  const goalie = (name: string | null, goals = 3) => { const active = settings({ baseGoalieId: 8476945, scenarioGoals: goals }), base = goalieBase(8476945, [appearance({ name: name ?? null, saves: 920, shotsAgainst: 1000, goalsAgainst: 80, toiSeconds: 120000 })], "2026-10-30"); return { active, data: ratioImpact(base, active) }; };
+  it("has the hypothetical basis and keeps denominators, units and the labelling", () => {
     expect(ratioImpactModule.basis).toBe("hypothetical");
     const text = renderCard(withBase);
-    for (const label of ["Before: Entered base", RATIO_LEGEND, "After, pooled", "920 SV ÷ 1000 SA", "80 GA in 2000:00 TOI", "83 GA in 2060:00 TOI", "27 SV ÷ 30 SA = .900", "3 GA in 60:00 TOI = 3.00", ".920", "2.40", "Sensitivity at 30 SA and 60:00 TOI", "HYPOTHETICAL GA"]) expect(text).toContain(label);
+    for (const label of ["Before: Entered base", RATIO_LEGEND, "After, pooled", "920 SV ÷ 1000 SA", "80 GA in 2000:00 TOI", "83 GA in 2060:00 TOI", ".920", "2.40", "Hypothetical: SV% and GAA after that start, by goals allowed on 30 shots in 60:00"]) expect(text).toContain(label);
     const { sample } = buildRatioImpact(withBase, manualBase(withBase), null).evidence;
     for (const label of [RATIO_NOTE, "SV% = saves ÷ SA", "GAA = GA × 3600 ÷ TOI seconds"]) expect(sample).toContain(label);
     expect(formatRatioSavePct(0.92)).toBe(".920");
   });
+  it("words the headline by goal count and says bad only at the threshold", () => {
+    const { active, data } = goalie("Stuart Skinner");
+    expect(ratioHeadline(active, data)).toBe("WHAT ONE START DOES TO SKINNER'S RATIOS");
+    expect(ratioHeadline(settings({ ...active, scenarioGoals: RATIO_BAD_GOALS - 1 }), data)).not.toContain("BAD");
+    expect(ratioHeadline(settings({ ...active, scenarioGoals: 0 }), data)).not.toContain("BAD");
+    expect(ratioHeadline(settings({ ...active, scenarioGoals: RATIO_BAD_GOALS }), data)).toBe("WHAT ONE BAD START DOES TO SKINNER'S RATIOS");
+    expect(ratioHeadline(active, goalie("Jet Greaves").data)).toBe("WHAT ONE START DOES TO GREAVES' RATIOS");
+  });
+  it("names only the goalie the settings still ask for, and stays neutral with no name", () => {
+    const { active, data } = goalie("Stuart Skinner");
+    expect(ratioHeadline(settings({ ...active, baseGoalieId: 5 }), data)).toBe("WHAT ONE START DOES TO A GOALIE'S RATIOS");
+    expect(ratioHeadline(active)).toBe("WHAT ONE START DOES TO A GOALIE'S RATIOS");
+    expect(ratioHeadline(settings())).toBe("WHAT ONE START DOES TO A GOALIE'S RATIOS");
+    expect(ratioHeadline(withBase)).toBe("WHAT ONE START DOES TO THESE RATIOS");
+    expect(ratioHeadline(active, goalie(null).data)).toBe("WHAT ONE START DOES TO A GOALIE'S RATIOS");
+    expect(ratioImpactModule.headline).toBe(ratioHeadline);
+  });
+  it("states the line and both rates in one plain sentence, with no gendered pronoun", () => {
+    const { data } = goalie("Stuart Skinner");
+    expect(ratioSentence(data)).toBe(`If Skinner allows 3 goals on 30 shots, SV% goes .920 to ${formatRatioSavePct(data.afterRates.savePct)} and GAA goes 2.40 to ${formatRatioGaa(data.afterRates.gaa)}.`);
+    expect(ratioSentence(data)).not.toMatch(/\b(he|his|him|she|her)\b/i);
+    const one = settings({ ...withBase, scenarioShots: 1, scenarioGoals: 1 });
+    expect(ratioSentence(ratioImpact(manualBase(one), one))).toContain("If this goalie allows 1 goal on 1 shot,");
+    expect(ratioSentence(ratioImpact(goalieBase(8476945, [appearance({ name: null })], "2026-10-30"), settings()))).toContain("If Goalie 8476945 allows");
+    const noMinutes = settings({ baseShots: 100, baseGoals: 5 });
+    expect(ratioSentence(ratioImpact(manualBase(noMinutes), noMinutes))).toContain("and GAA is unknown.");
+    expect(render(createElement(RatioImpactCard, { snapshot: snapshot(data, settings()), data, settings: settings(), logos: {} })).container.querySelector("[data-testid='ratio-sentence']")!.textContent).toBe(ratioSentence(data));
+  });
   it("uses no forecast or transaction wording anywhere", () => {
     const data = ratioImpact(manualBase(withBase), withBase), built = buildRatioImpact(withBase, manualBase(withBase), null);
-    for (const text of [renderCard(withBase), RATIO_LEGEND, RATIO_NOTE, ratioImpactModule.summary, ratioImpactModule.title, JSON.stringify(ratioImpactModule.fields), built.evidence.sample, ratioImpactModule.altText({ ...snapshot(data, withBase), evidence: built.evidence }, data, withBase)]) expect(text).not.toMatch(FORBIDDEN);
+    for (const text of [renderCard(withBase), RATIO_LEGEND, RATIO_NOTE, ratioSentence(data), ratioHeadline(withBase, data), ratioImpactModule.summary, ratioImpactModule.title, JSON.stringify(ratioImpactModule.fields), built.evidence.sample, ratioImpactModule.altText({ ...snapshot(data, withBase), evidence: built.evidence }, data, withBase)]) expect(text).not.toMatch(FORBIDDEN);
     expect(ratioImpactModule).not.toHaveProperty("suggestedUse");
   });
-  it("shows an empty base as unknown rather than zero", () => {
-    const container = renderDom(settings());
-    expect(container.textContent).toContain("Before: No base entered.");
-    const before = [...container.querySelectorAll("[data-tile='before']")];
-    expect(before.map(tile => tile.querySelector("b")!.textContent)).toEqual(["—", "—"]);
-    expect(before.map(tile => tile.textContent)).toEqual(["Before—", "Before—"]);
-    expect([...container.querySelectorAll("[data-tile='after'] b")].map(value => value.textContent)).toEqual([".900", "3.00"]);
+  it("asks for a goalie with no base, draws nothing and cannot publish", () => {
+    const container = renderDom(settings()), data = ratioImpact(manualBase(settings()), settings());
+    expect(container.textContent).toBe("Choose a base goalie by goalie id to see what one start does to the ratios");
+    for (const selector of ["[data-testid='ratio-change']", "[data-tile]", "svg"]) expect(container.querySelectorAll(selector)).toHaveLength(0);
+    expect(ratioImpactModule.hasRows(data, settings())).toBe(false);
   });
-  it("draws no change without a base, and a tile change with one", () => {
-    expect(renderDom(settings()).querySelectorAll("[data-testid='ratio-change']")).toHaveLength(0);
-    cleanup();
+  it("says so when the goalie has no games, with no invented base", () => {
+    const active = settings({ baseGoalieId: 1 }), data = ratioImpact(goalieBase(1, [], "2026-10-30"), active);
+    expect(render(createElement(RatioImpactCard, { snapshot: snapshot(data, active), data, settings: active, logos: {} })).container.textContent).toBe("Goalie 1 has no games this season. Choose another goalie");
+    expect(ratioImpactModule.hasRows(data, active)).toBe(false);
+  });
+  it("draws a tile change only when both sides are known", () => {
     const data = ratioImpact(manualBase(withBase), withBase), changes = [...renderDom(withBase).querySelectorAll("[data-testid='ratio-change']")];
     expect(changes.map(change => change.textContent)).toEqual([formatSavePctChange(data.savePctChange), formatGaaChange(data.gaaChange)]);
-  });
-  it("draws no reference line and no sensitivity change without a base", () => {
-    const container = renderDom(settings());
-    expect(container.querySelectorAll("[data-before-line]")).toHaveLength(0);
-    expect([...container.querySelectorAll("[data-row='savePctChange']")].every(cell => cell.textContent === "—")).toBe(true);
     cleanup();
-    expect(renderDom(withBase).querySelectorAll("[data-before-line]")).toHaveLength(2);
+    const zero = settings({ baseShots: 0, baseGoals: 0, baseMinutes: 0 }), container = renderDom(zero);
+    expect(container.querySelectorAll("[data-testid='ratio-change']")).toHaveLength(0);
+    expect(container.querySelectorAll("[data-before-line]")).toHaveLength(0);
+    expect([...container.querySelectorAll("[data-tile='before'] b")].map(value => value.textContent)).toEqual(["—", "—"]);
+    expect(container.textContent).toContain("SV% is unknown and GAA is unknown.");
   });
-  const points = (container: HTMLElement, chart: string) => [...container.querySelectorAll<SVGCircleElement>(`svg[data-chart="${chart}"] circle`)];
-  const cellsOf = (container: HTMLElement, row: string) => [...container.querySelectorAll(`[data-row="${row}"]`)].map(cell => cell.textContent);
-  it("plots the same values the table prints, one point per goal count, in its columns", () => {
+  const points = (container: HTMLElement, series: string) => [...container.querySelectorAll<SVGCircleElement>(`svg[data-chart="whatIf"] circle[data-series="${series}"]`)];
+  it("replaces the tables and stacked charts with one chart, one point per goal count", () => {
     const container = renderDom(withBase), { sensitivity } = ratioImpact(manualBase(withBase), withBase);
-    expect(cellsOf(container, "goals")).toEqual(["0", "1", "2", "3", "4", "5", "6"]);
-    expect(cellsOf(container, "saves")).toEqual(["30", "29", "28", "27", "26", "25", "24"]);
-    for (const [chart, format, pick] of [["savePct", formatRatioSavePct, (row: typeof sensitivity[0]) => row.after.savePct], ["gaa", (value: number | null) => value!.toFixed(2), (row: typeof sensitivity[0]) => row.after.gaa]] as const) {
-      const drawn = points(container, chart);
+    expect(container.querySelectorAll("svg[data-chart]")).toHaveLength(1);
+    expect(container.querySelectorAll("[data-row]")).toHaveLength(0);
+    expect(container.textContent).not.toMatch(/sensitivity/i);
+    expect([...container.querySelectorAll("[data-goal-label]")].map(label => label.textContent)).toEqual(["0", "1", "2", "3", "4", "5", "6"]);
+    for (const [series, format, pick] of [["savePct", formatRatioSavePct, (row: typeof sensitivity[0]) => row.after.savePct], ["gaa", (value: number | null) => value!.toFixed(2), (row: typeof sensitivity[0]) => row.after.gaa]] as const) {
+      const drawn = points(container, series);
       expect(drawn.map(point => Number(point.dataset.goals))).toEqual(sensitivity.map(row => row.goals));
       expect(drawn.map(point => Number(point.dataset.value))).toEqual(sensitivity.map(pick));
-      expect(drawn.map(point => format(Number(point.dataset.value)))).toEqual(cellsOf(container, chart));
-      expect(drawn.map(point => Number(point.getAttribute("cx")))).toEqual(sensitivity.map((_, index) => Number(((index + 0.5) * 880 / 7).toFixed(1))));
+      expect([...container.querySelectorAll(`[data-point-label="${series}"]`)].map(label => label.textContent)).toEqual(sensitivity.map(row => format(pick(row))));
+      expect(drawn.map(point => Number(point.getAttribute("cx")))).toEqual(sensitivity.map((_, index) => Number((110 + (index + 0.5) * 896 / 7).toFixed(1))));
     }
-    const heights = (chart: string) => points(container, chart).map(point => Number(point.getAttribute("cy")));
+    const heights = (series: string) => points(container, series).map(point => Number(point.getAttribute("cy")));
     expect(heights("savePct")[0]).toBeLessThan(heights("savePct")[6]);
     expect(heights("gaa")[0]).toBeGreaterThan(heights("gaa")[6]);
+    expect(Math.max(...heights("savePct"))).toBeLessThan(Math.min(...heights("gaa")));
   });
-  it("marks the entered line in both charts and its table column", () => {
+  it("marks the entered line in the chart, and says so when it is outside the range", () => {
     const container = renderDom(withBase);
-    for (const chart of ["savePct", "gaa"]) {
-      const marked = points(container, chart).filter(point => point.hasAttribute("data-entered"));
-      expect(marked.map(point => point.dataset.goals)).toEqual(["3"]);
-      expect(container.querySelector(`svg[data-chart="${chart}"] [data-entered-band]`)).toBeTruthy();
-    }
-    expect([...container.querySelectorAll("[data-row='goals'][data-entered]")].map(cell => cell.textContent)).toEqual(["3"]);
+    for (const series of ["savePct", "gaa"]) expect(points(container, series).filter(point => point.hasAttribute("data-entered")).map(point => point.dataset.goals)).toEqual(["3"]);
+    expect(container.querySelectorAll("svg [data-entered-band]")).toHaveLength(1);
+    expect(container.querySelector("svg[data-chart]")!.textContent).toContain("ENTERED");
+    expect(container.querySelectorAll("[data-before-line]")).toHaveLength(2);
     cleanup();
     const outside = settings({ ...withBase, sensitivityGoalsFrom: 5, sensitivityGoalsTo: 6 }), away = renderDom(outside);
-    expect(away.querySelectorAll("[data-entered]")).toHaveLength(0);
-    expect(away.textContent).toContain("Entered 3 GA is outside this range");
+    expect(away.querySelectorAll("[data-entered], [data-entered-band]")).toHaveLength(0);
+    expect(away.textContent).toContain("Entered 3 goals is outside this range");
   });
   it("leaves a gap, never a zero point, for a zero denominator", () => {
-    const zero = settings({ scenarioMinutes: 0 }), container = renderDom(zero);
+    const zero = settings({ ...withBase, baseMinutes: 0, scenarioMinutes: 0 }), container = renderDom(zero);
     expect(points(container, "gaa")).toHaveLength(0);
-    expect(container.querySelectorAll('svg[data-chart="gaa"] [data-gap]')).toHaveLength(7);
-    expect(container.querySelectorAll('svg[data-chart="gaa"] [data-segment]')).toHaveLength(0);
-    expect(new Set(cellsOf(container, "gaa"))).toEqual(new Set(["—"]));
+    expect(container.querySelectorAll('[data-gap][data-series="gaa"]')).toHaveLength(7);
+    expect(container.querySelectorAll('[data-segment][data-series="gaa"]')).toHaveLength(0);
+    expect(container.querySelectorAll('[data-point-label="gaa"]')).toHaveLength(0);
     expect(points(container, "savePct")).toHaveLength(7);
-    expect(container.querySelectorAll('svg[data-chart="savePct"] [data-segment]')).toHaveLength(6);
+    expect(container.querySelectorAll('[data-segment][data-series="savePct"]')).toHaveLength(6);
     cleanup();
-    const noShots = renderDom(settings({ scenarioShots: 0, scenarioGoals: 0, sensitivityGoalsFrom: 0, sensitivityGoalsTo: 0 }));
-    expect(noShots.querySelectorAll('svg[data-chart="savePct"] [data-gap]')).toHaveLength(1);
+    const noShots = renderDom(settings({ baseShots: 0, baseGoals: 0, baseMinutes: 100, scenarioShots: 0, scenarioGoals: 0, sensitivityGoalsFrom: 0, sensitivityGoalsTo: 0 }));
+    expect(noShots.querySelectorAll('[data-gap][data-series="savePct"]')).toHaveLength(1);
     expect(points(noShots, "savePct")).toHaveLength(0);
   });
   it("sets every chart colour as an attribute, because PNG capture drops stylesheet fills", () => {
@@ -243,17 +273,20 @@ describe("ratio impact card", () => {
     }
   });
   it("says so when the stated range holds no goal count", () => {
-    const text = renderCard(settings({ scenarioShots: 2, scenarioGoals: 0, sensitivityGoalsFrom: 5, sensitivityGoalsTo: 6 }));
+    const text = renderCard(settings({ ...withBase, scenarioShots: 2, scenarioGoals: 0, sensitivityGoalsFrom: 5, sensitivityGoalsTo: 6 }));
     expect(text).toContain("No goal count in this range fits the entered shots");
   });
-  it("names the charted values in the alt text", () => {
-    const data = ratioImpact(manualBase(withBase), withBase), built = buildRatioImpact(withBase, manualBase(withBase), null);
-    expect(ratioImpactModule.altText({ ...snapshot(data, withBase), evidence: built.evidence }, data, withBase)).toContain(`3: SV% ${formatRatioSavePct(data.afterRates.savePct)}, GAA ${data.afterRates.gaa!.toFixed(2)}`);
+  it("keeps the charted values in the evidence and alt text", () => {
+    const data = ratioImpact(manualBase(withBase), withBase), built = buildRatioImpact(withBase, manualBase(withBase), null), value = `3: SV% ${formatRatioSavePct(data.afterRates.savePct)}, GAA ${data.afterRates.gaa!.toFixed(2)}`;
+    expect(built.evidence.sample).toContain(value);
+    const alt = ratioImpactModule.altText({ ...snapshot(data, withBase), evidence: built.evidence }, data, withBase);
+    expect(alt).toContain(value);
+    expect(alt).toContain(ratioSentence(data));
   });
   it("says why both rates are unknown, with no filler", () => {
-    expect(renderCard(settings({ scenarioShots: 0, scenarioGoals: 0, scenarioMinutes: 0 }))).toBe("These inputs leave both SV% and GAA unknown");
+    expect(renderCard(settings({ baseShots: 100, scenarioShots: 0, scenarioGoals: 0, scenarioMinutes: 0 }))).toBe("These inputs leave both SV% and GAA unknown");
   });
-  it("defaults every input visibly and leaves the base optional", () => {
+  it("defaults every input visibly and reads the goalie id", () => {
     expect(parseShareSettings(ratioImpactModule, {})).toEqual(settings());
     expect(parseShareSettings(ratioImpactModule, { baseGoalieId: "8476945" })).toMatchObject({ baseGoalieId: 8476945 });
   });

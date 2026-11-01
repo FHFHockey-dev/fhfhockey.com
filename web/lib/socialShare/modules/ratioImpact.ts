@@ -17,7 +17,7 @@ export type RatioBase = { kind: "none" | "manual" | "goalie"; goalieId: number |
 export type RatioSensitivityRow = { goals: number; saves: number; after: RatioRates; savePctChange: number | null; gaaChange: number | null };
 export type RatioImpactData = { base: RatioBase; line: RatioTotals; lineRates: RatioRates; before: RatioRates; after: RatioTotals; afterRates: RatioRates; savePctChange: number | null; gaaChange: number | null; sensitivity: RatioSensitivityRow[] };
 
-/** The most goal counts the card's chart columns hold with their values still printed. */
+/** The most goal counts the card's chart holds with each value still printed over its point. */
 export const SENSITIVITY_MAX_STEPS = 12;
 export const RATIO_LEGEND = "Hypothetical, pooled from totals.";
 export const RATIO_NOTE = "Arithmetic on the numbers entered, pooled from summed totals rather than averaged percentages. It predicts nothing and changes no roster.";
@@ -30,8 +30,8 @@ export function validateRatioSettings(settings: RatioImpactSettings): string | n
   if (![settings.baseGoalieId, settings.baseShots, settings.baseGoals, settings.scenarioShots, settings.scenarioGoals, settings.sensitivityGoalsFrom, settings.sensitivityGoalsTo].every(isCount)) return "Goalie id, shots and goals must be whole numbers.";
   if (settings.baseShots !== null && settings.baseGoals !== null && settings.baseGoals > settings.baseShots) return "Base goals against cannot exceed base shots against.";
   if (settings.scenarioGoals > settings.scenarioShots) return "Hypothetical goals against cannot exceed hypothetical shots against.";
-  if (settings.sensitivityGoalsFrom > settings.sensitivityGoalsTo) return "The sensitivity range must run from low to high.";
-  if (settings.sensitivityGoalsTo - settings.sensitivityGoalsFrom >= SENSITIVITY_MAX_STEPS) return `The sensitivity range can hold at most ${SENSITIVITY_MAX_STEPS} steps.`;
+  if (settings.sensitivityGoalsFrom > settings.sensitivityGoalsTo) return "The chart range must run from low to high.";
+  if (settings.sensitivityGoalsTo - settings.sensitivityGoalsFrom >= SENSITIVITY_MAX_STEPS) return `The chart range can hold at most ${SENSITIVITY_MAX_STEPS} steps.`;
   return null;
 }
 
@@ -73,6 +73,21 @@ const sign = (value: number) => value >= 0 ? "+" : "−";
 export const formatSavePctChange = (value: number | null) => value === null ? "—" : `${sign(value)}${Math.abs(value).toFixed(3).replace(/^0/, "")}`;
 export const formatGaaChange = (value: number | null) => value === null ? "—" : `${sign(value)}${Math.abs(value).toFixed(2)}`;
 export const baseLabel = (base: RatioBase) => base.kind === "none" ? "No base entered" : base.kind === "manual" ? "Entered base" : `${base.name ?? `Goalie ${base.goalieId}`} season to date`;
+/** At this many goals the headline may call the start bad; below it the wording stays neutral. */
+export const RATIO_BAD_GOALS = 4;
+const surname = (name: string) => name.trim().split(/\s+/).at(-1)!;
+const goalieShort = (base: RatioBase) => base.kind === "manual" ? "this goalie" : base.name ? surname(base.name) : `Goalie ${base.goalieId}`;
+const possessive = (name: string) => /s$/i.test(name) ? `${name}'` : `${name}'s`;
+/** Follows the entered line. The name comes from the edition, and only while it still matches the goalie in the settings. */
+export function ratioHeadline(settings: RatioImpactSettings, data?: RatioImpactData | null) {
+  const name = data?.base.kind === "goalie" && data.base.goalieId === settings.baseGoalieId ? data.base.name : null;
+  const whose = name ? `${possessive(surname(name))} ratios` : settings.baseGoalieId === null && !emptyNumbers(settings.baseShots, settings.baseGoals, settings.baseMinutes) ? "these ratios" : "a goalie's ratios";
+  return `What one ${settings.scenarioGoals >= RATIO_BAD_GOALS ? "bad " : ""}start does to ${whose}`.toUpperCase();
+}
+const countOf = (count: number | null, noun: string) => `${count ?? "—"} ${count === 1 ? noun : `${noun}s`}`;
+const rateChange = (label: string, before: number | null, after: number | null, format: (value: number | null) => string) => before === null || after === null ? `${label} is unknown` : `${label} goes ${format(before)} to ${format(after)}`;
+/** The card's one plain statement of the hypothetical. */
+export const ratioSentence = (data: RatioImpactData) => `If ${goalieShort(data.base)} allows ${countOf(data.line.goalsAgainst, "goal")} on ${countOf(data.line.shotsAgainst, "shot")}, ${rateChange("SV%", data.before.savePct, data.afterRates.savePct, formatRatioSavePct)} and ${rateChange("GAA", data.before.gaa, data.afterRates.gaa, formatRatioGaa)}.`;
 
 export function buildRatioImpact(settings: RatioImpactSettings, base: RatioBase, source: SharePostSource | null): SharePostLoadResult<RatioImpactData> {
   const data = ratioImpact(base, settings), reasons: string[] = [];
@@ -80,7 +95,7 @@ export function buildRatioImpact(settings: RatioImpactSettings, base: RatioBase,
   if (base.totals && Object.values(base.totals).some(value => value === null)) reasons.push("A base total is missing, so a rate that needs it is unknown.");
   const evidence: SharePostEvidence = {
     sources: [{ name: "Entered hypothetical inputs", tables: [], state: "ready", asOf: null, updatedAt: null }, ...(source ? [source] : [])],
-    sample: `Hypothetical line: ${settings.scenarioShots} SA, ${settings.scenarioGoals} GA, ${formatToi(data.line.toiSeconds)} TOI. Base: ${baseLabel(base)}${base.appearances === null ? "" : `, ${base.appearances} appearances through ${base.through}`}. ${RATIO_NOTE} SV% = saves ÷ SA. GAA = GA × 3600 ÷ TOI seconds. A zero or missing denominator shows —.`,
+    sample: `Hypothetical line: ${settings.scenarioShots} SA, ${settings.scenarioGoals} GA, ${formatToi(data.line.toiSeconds)} TOI. Base: ${baseLabel(base)}${base.appearances === null ? "" : `, ${base.appearances} appearances through ${base.through}`}. ${RATIO_NOTE} SV% = saves ÷ SA. GAA = GA × 3600 ÷ TOI seconds. A zero or missing denominator shows —. After by goals allowed: ${data.sensitivity.map(row => `${row.goals}: SV% ${formatRatioSavePct(row.after.savePct)}, GAA ${formatRatioGaa(row.after.gaa)}`).join("; ")}.`,
     strength: base.kind === "goalie" ? "All situations (base); line as entered" : "As entered",
     cohort: base.kind === "goalie" ? "One goalie" : "Entered totals only",
     coverage: null,
@@ -89,21 +104,22 @@ export function buildRatioImpact(settings: RatioImpactSettings, base: RatioBase,
 }
 
 export const ratioImpactModule = defineShareModule<RatioImpactSettings, RatioImpactData>({
-  id: "ratio-impact", title: "Ratio Impact", summary: "Before and after SV% and GAA for an entered hypothetical line, pooled from totals.", group: "goalies", basis: "hypothetical",
+  id: "ratio-impact", title: "Ratio Impact", summary: "What one hypothetical start does to a goalie's SV% and GAA, pooled from totals.", group: "goalies", basis: "hypothetical",
+  headline: ratioHeadline,
   fields: [
-    { id: "baseGoalieId", label: "Base goalie id (optional)", kind: "number", default: null, min: 1, max: 9999999, step: 1 },
+    { id: "baseGoalieId", label: "Base goalie id", kind: "number", default: null, min: 1, max: 9999999, step: 1 },
     { id: "baseShots", label: "Base shots against (optional)", kind: "number", default: null, min: 0, max: 5000, step: 1 },
     { id: "baseGoals", label: "Base goals against (optional)", kind: "number", default: null, min: 0, max: 1000, step: 1 },
     { id: "baseMinutes", label: "Base minutes (optional)", kind: "number", default: null, min: 0, max: 10000, step: 1 },
     { id: "scenarioShots", label: "Hypothetical shots against", kind: "number", default: 30, min: 0, max: 500, step: 1 },
     { id: "scenarioGoals", label: "Hypothetical goals against", kind: "number", default: 3, min: 0, max: 100, step: 1 },
     { id: "scenarioMinutes", label: "Hypothetical minutes", kind: "number", default: 60, min: 0, max: 1000, step: 0.5 },
-    { id: "sensitivityGoalsFrom", label: "Sensitivity: goals from", kind: "number", default: 0, min: 0, max: 100, step: 1 },
-    { id: "sensitivityGoalsTo", label: "Sensitivity: goals to", kind: "number", default: 6, min: 0, max: 100, step: 1 },
+    { id: "sensitivityGoalsFrom", label: "Chart: goals from", kind: "number", default: 0, min: 0, max: 100, step: 1 },
+    { id: "sensitivityGoalsTo", label: "Chart: goals to", kind: "number", default: 6, min: 0, max: 100, step: 1 },
   ],
   validate: validateRatioSettings,
   load: () => import("./ratioImpact.sources").then(sources => sources.loadRatioImpact),
   card: () => import("components/SocialShare/modules/RatioImpactCard").then(card => card.default),
-  hasRows: data => data.afterRates.savePct !== null || data.afterRates.gaa !== null,
-  altText: (snapshot, data) => `FHFH hypothetical ratio scenario. ${snapshot.evidence.sample} Before: SV% ${formatRatioSavePct(data.before.savePct)}, GAA ${formatRatioGaa(data.before.gaa)}. After: SV% ${formatRatioSavePct(data.afterRates.savePct)}, GAA ${formatRatioGaa(data.afterRates.gaa)}. After by hypothetical goals against: ${data.sensitivity.map(row => `${row.goals}: SV% ${formatRatioSavePct(row.after.savePct)}, GAA ${formatRatioGaa(row.after.gaa)}`).join("; ")}.`,
+  hasRows: data => data.base.totals !== null && (data.afterRates.savePct !== null || data.afterRates.gaa !== null),
+  altText: (snapshot, data) => `FHFH hypothetical ratio scenario. ${ratioSentence(data)} ${snapshot.evidence.sample}`,
 });

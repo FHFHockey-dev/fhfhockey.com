@@ -18,3 +18,7 @@ Replaced the HD SHOTS / TEAM SCA / HDCA text line with three tiles. Thin HD cove
 ## 2026-11-01: Rescue column balance
 
 Name column is `minmax(0, max-content)`, RK is `max-content`, and the ten `auto` columns take the stretch. Checks: Vitest, pure CSS, eslint, tsc filter, spec `--list`. Next: the lead's render runs the spec's name, overflow and alignment checks.
+
+## 2026-11-01: Ratio Impact plain rewrite
+
+Added headline, sentence, one what-if chart and the no-goalie state; removed tables and stacked charts. Blocker for the named headline: the frozen `contract.ts` and `PostStudio.tsx` must pass data to `headline`; the lead owns those. Checks: Vitest, pure CSS, eslint, tsc filter, spec `--list`. Next: lead's frozen change and render.

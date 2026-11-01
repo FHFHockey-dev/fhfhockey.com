@@ -141,3 +141,14 @@ None. No frozen file needs a change.
 - **Kept:** group headers, the highlighted column and the colours are unchanged. `data-goalie-name` was added to the name span so the spec can check it.
 - **Spec:** fails if a name is cut, the table passes the card edge, or a group head does not span its columns (`--list` only).
 - **Not verified:** no browser run. Whether "Dennis Hildeby DTD" and "Daniil Tarasov DTD" show whole depends on the lead's render running those checks.
+
+## Follow-up: Ratio Impact plain rewrite (TJ, 2026-11-01)
+
+- **Message:** what one start does to a real goalie's ratios, using the existing goalie id setting.
+- **Headline:** `ratioHeadline`. It says BAD from 4 goals allowed (`RATIO_BAD_GOALS`, my threshold), and is neutral below that. The name comes from the edition, and only while it still matches the goalie id in the settings.
+- **Needs the lead:** the frozen `headline(settings)` gets no data, so today's header prints "A GOALIE'S RATIOS". `ratioHeadline` already takes an optional second argument. It needs `headline?: (settings: Settings, data: Data | null) => string` in `contract.ts` and `entry.headline?.(settings, snapshot.data)` in `PostStudio.tsx`.
+- **Headline length:** at the 52px header, about 22 characters fit per line, so these headlines wrap to 2 or 3 lines. By arithmetic, three lines leave a 741px body and the tiles still have about 260px.
+- **Layout:** sentence, legend line, large before and after tiles, then one what-if chart. SV% and GAA each have their own lane and scale, over one goals-allowed axis. Each point prints its value, and the entered column is marked. The printed tables and two stacked charts are gone; their values are in `evidence.sample` and the alt text.
+- **No goalie:** the card asks for one and draws nothing, and `hasRows` is false, so there is no export. A goalie with no games says so. Entered manual base totals still work and read "this goalie".
+- **Labels:** the chart range fields now read "Chart: goals from" and "Chart: goals to". The setting ids are unchanged.
+- **Not verified:** no browser run. The spec checks the headline start, sentence, chart points and overflow (`--list` only).

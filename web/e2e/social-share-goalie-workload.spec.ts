@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { buildBusyQuiet, type BusyQuietSettings } from "../lib/socialShare/modules/busyQuiet";
 import type { SharePostLoadResult } from "../lib/socialShare/modules/contract";
 import { buildGoalieRescue, type GoalieRescueSettings } from "../lib/socialShare/modules/goalieRescue";
-import { buildRatioImpact, manualBase, type RatioImpactSettings } from "../lib/socialShare/modules/ratioImpact";
+import { buildRatioImpact, goalieBase, manualBase, type RatioImpactSettings } from "../lib/socialShare/modules/ratioImpact";
 import { ownershipOf } from "../lib/socialShare/modules/shared/definitions";
 import type { GoalieAppearance } from "../lib/socialShare/modules/shared/goalieLedger";
 
@@ -58,7 +58,8 @@ const rescue = (url: URL) => {
 const ratio = (url: URL) => {
   const query = fromQuery(url), value = (key: string, fallback: number | null) => key in query ? Number(query[key]) : fallback;
   const settings: RatioImpactSettings = { baseGoalieId: value("baseGoalieId", null), baseShots: value("baseShots", null), baseGoals: value("baseGoals", null), baseMinutes: value("baseMinutes", null), scenarioShots: value("scenarioShots", 30)!, scenarioGoals: value("scenarioGoals", 3)!, scenarioMinutes: value("scenarioMinutes", 60)!, sensitivityGoalsFrom: value("sensitivityGoalsFrom", 0)!, sensitivityGoalsTo: value("sensitivityGoalsTo", 6)! };
-  return edition("ratio-impact", settings, buildRatioImpact(settings, manualBase(settings), null));
+  const base = settings.baseGoalieId === null ? manualBase(settings) : goalieBase(settings.baseGoalieId, appearances.filter(row => row.goalieId === settings.baseGoalieId), date(30));
+  return edition("ratio-impact", settings, buildRatioImpact(settings, base, null));
 };
 async function serve(page: Page, build: (url: URL) => object) {
   const requests: string[] = [];
@@ -158,11 +159,19 @@ test("Ratio Impact is hypothetical, works with no base and pools with one", asyn
   await page.goto("/social-share/posts?post=ratio-impact");
   const card = page.getByTestId("ratio-impact-card");
   await expect(page.getByTestId("post-watermark")).toHaveText("HYPOTHETICAL SCENARIO");
-  await expect(card).toContainText("Before: No base entered");
-  await expect(card).toContainText("Sensitivity at 30 SA and 60:00 TOI");
-  await expect(card.locator('svg[data-chart="savePct"] circle')).toHaveCount(7);
-  await expect(card.getByTestId("ratio-change")).toHaveCount(0);
-  await expect(card).not.toContainText(/forecast|transaction/i);
+  await expect(page.getByText("Choose a base goalie by goalie id")).toBeVisible();
+  await expect(card).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
+  await page.goto("/social-share/posts?post=ratio-impact&baseGoalieId=1");
+  await expect(page.getByRole("heading", { level: 2 })).toHaveText(/^WHAT ONE START DOES TO /);
+  await expect(card.getByTestId("ratio-sentence")).toContainText("If 1 allows 3 goals on 30 shots, SV% goes");
+  await expect(card).toContainText("Hypothetical");
+  await expect(card.locator('svg[data-chart="whatIf"] circle[data-series="savePct"]')).toHaveCount(7);
+  await expect(card.getByTestId("ratio-change")).toHaveCount(2);
+  await expect(card).not.toContainText(/forecast|transaction|sensitivity/i);
+  // Nothing in the fitted card runs past it.
+  const overflow = await card.evaluate(element => { const edge = element.getBoundingClientRect(); return [...element.querySelectorAll("*")].filter(node => { const box = node.getBoundingClientRect(); return box.right > edge.right + 0.5 || box.bottom > edge.bottom + 0.5; }).length; });
+  expect(overflow).toBe(0);
   await page.goto("/social-share/posts?post=ratio-impact&baseShots=1000&baseGoals=80&baseMinutes=2000");
   await expect(card).toContainText("Before: Entered base");
   await expect(card).toContainText("2060:00");

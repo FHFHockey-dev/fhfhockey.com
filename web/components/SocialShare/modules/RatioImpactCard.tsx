@@ -1,12 +1,11 @@
 import type { SharePostCardProps } from "lib/socialShare/modules/contract";
-import { baseLabel, formatGaaChange, formatRatioGaa, formatRatioSavePct, formatSavePctChange, formatToi, RATIO_LEGEND, type RatioImpactData, type RatioImpactSettings, type RatioSensitivityRow, type RatioTotals } from "lib/socialShare/modules/ratioImpact";
+import { baseLabel, formatGaaChange, formatRatioGaa, formatRatioSavePct, formatSavePctChange, formatToi, RATIO_LEGEND, ratioSentence, type RatioImpactData, type RatioImpactSettings, type RatioSensitivityRow, type RatioTotals } from "lib/socialShare/modules/ratioImpact";
 import { PostEmpty } from "./kit";
 import styles from "./RatioImpactCard.module.scss";
 
 /* html-to-image does not carry class styles onto SVG children, so the marks set their colours as attributes. */
-const LINE = "#63D2F5", MARK = "#ffffff";
-/** The chart spans the table's value columns, 1006px less the 126px label column, so each point sits over its printed values. */
-const CHART_WIDTH = 880, CHART_HEIGHT = 170, CHART_PAD = 26;
+const LINE = "#63D2F5", MARK = "#ffffff", MUTED = "#a9b4bd";
+const CHART_WIDTH = 1006, CHART_HEIGHT = 340, LABEL_WIDTH = 110, LANE_HEIGHT = 134, LANE_ROOM = 26, LANE_FOOT = 10;
 
 const saveCaption = (totals: RatioTotals | null) => totals && `${totals.saves ?? "—"} SV ÷ ${totals.shotsAgainst ?? "—"} SA`;
 const gaaCaption = (totals: RatioTotals | null) => totals && `${totals.goalsAgainst ?? "—"} GA in ${formatToi(totals.toiSeconds)} TOI`;
@@ -29,60 +28,61 @@ function RatioMetric({ id, title, before, change, after, caption, data }: { id: 
   </section>;
 }
 
-/** After rates across the stated goals. Lines join consecutive known values only: a zero or missing denominator is a gap, never 0. */
-function SensitivityChart({ id, label, rows, value, before, entered, format }: { id: string; label: string; rows: readonly RatioSensitivityRow[]; value: (row: RatioSensitivityRow) => number | null; before: number | null; entered: number | null; format: (value: number | null) => string }) {
-  const known = [...rows.map(value), before].filter((entry): entry is number => entry !== null), low = Math.min(...known), high = Math.max(...known);
-  const step = CHART_WIDTH / rows.length, x = (index: number) => (index + 0.5) * step;
-  const y = (entry: number) => high === low ? CHART_HEIGHT / 2 : CHART_HEIGHT - CHART_PAD - (entry - low) / (high - low) * (CHART_HEIGHT - 2 * CHART_PAD);
-  const enteredAt = rows.findIndex(row => row.goals === entered);
-  return <svg className={styles.chart} viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`} role="img" data-chart={id}
-    aria-label={`${label} by hypothetical goals against: ${rows.map(row => `${row.goals}: ${format(value(row))}`).join(", ")}`}>
+type Lane = { id: string; label: string; top: number; value: (row: RatioSensitivityRow) => number | null; before: number | null; format: (value: number | null) => string };
+/** One goal count per column, with SV% and GAA each on its own scale in its own lane. Lines join consecutive known values only: a zero or missing denominator is a gap, never 0. */
+function WhatIfChart({ rows, entered, lanes }: { rows: readonly RatioSensitivityRow[]; entered: number | null; lanes: readonly Lane[] }) {
+  const step = (CHART_WIDTH - LABEL_WIDTH) / rows.length, x = (index: number) => LABEL_WIDTH + (index + 0.5) * step, enteredAt = rows.findIndex(row => row.goals === entered);
+  return <svg className={styles.chart} viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`} role="img" data-chart="whatIf"
+    aria-label={`Hypothetical SV% and GAA after the start, by goals allowed: ${rows.map(row => `${row.goals}: SV% ${formatRatioSavePct(row.after.savePct)}, GAA ${formatRatioGaa(row.after.gaa)}`).join("; ")}`}>
     {enteredAt >= 0 && <>
-      <rect x={(enteredAt * step).toFixed(1)} y="0" width={step.toFixed(1)} height={CHART_HEIGHT} fill={MARK} fillOpacity="0.09" data-entered-band="" />
+      <rect x={(LABEL_WIDTH + enteredAt * step).toFixed(1)} y="0" width={step.toFixed(1)} height={CHART_HEIGHT} fill={MARK} fillOpacity="0.09" data-entered-band="" />
       <text x={x(enteredAt).toFixed(1)} y="15" textAnchor="middle" fontSize="13" fontWeight="700" fill={MARK}>ENTERED</text>
     </>}
-    {before !== null && <path d={`M0 ${y(before).toFixed(1)}H${CHART_WIDTH}`} fill="none" stroke={MARK} strokeOpacity="0.5" strokeWidth="1.5" strokeDasharray="5 5" data-before-line="" />}
-    {rows.map((row, index) => {
-      const current = value(row), next = rows[index + 1] ? value(rows[index + 1]) : null;
-      return current !== null && next !== null ? <path key={`s${row.goals}`} d={`M${x(index).toFixed(1)} ${y(current).toFixed(1)}L${x(index + 1).toFixed(1)} ${y(next).toFixed(1)}`} fill="none" stroke={LINE} strokeWidth="3" strokeLinecap="round" data-segment="" /> : null;
+    {lanes.map(lane => {
+      const known = [...rows.map(lane.value), lane.before].filter((entry): entry is number => entry !== null), low = Math.min(...known), high = Math.max(...known), bottom = lane.top + LANE_HEIGHT - LANE_FOOT;
+      const y = (entry: number) => high === low ? lane.top + LANE_ROOM + (LANE_HEIGHT - LANE_ROOM - LANE_FOOT) / 2 : bottom - (entry - low) / (high - low) * (LANE_HEIGHT - LANE_ROOM - LANE_FOOT);
+      return [
+        <path key="rule" d={`M0 ${lane.top + LANE_HEIGHT + 4}H${CHART_WIDTH}`} fill="none" stroke={MARK} strokeOpacity="0.14" strokeWidth="1" />,
+        <text key="label" x="0" y={lane.top + LANE_HEIGHT / 2} fontSize="22" fontWeight="800" fill={LINE}>{lane.label}</text>,
+        lane.before !== null && <text key="beforeLabel" x="0" y={lane.top + LANE_HEIGHT / 2 + 20} fontSize="14" fill={MUTED}>Dashed: before {lane.format(lane.before)}</text>,
+        lane.before !== null && <path key="before" d={`M${LABEL_WIDTH} ${y(lane.before).toFixed(1)}H${CHART_WIDTH}`} fill="none" stroke={MARK} strokeOpacity="0.5" strokeWidth="1.5" strokeDasharray="5 5" data-before-line="" data-series={lane.id} />,
+        ...rows.map((row, index) => {
+          const current = lane.value(row), next = rows[index + 1] ? lane.value(rows[index + 1]) : null;
+          return current !== null && next !== null ? <path key={`s${row.goals}`} d={`M${x(index).toFixed(1)} ${y(current).toFixed(1)}L${x(index + 1).toFixed(1)} ${y(next).toFixed(1)}`} fill="none" stroke={LINE} strokeWidth="3" strokeLinecap="round" data-segment="" data-series={lane.id} /> : null;
+        }),
+        ...rows.flatMap((row, index) => {
+          const current = lane.value(row), marked = index === enteredAt;
+          if (current === null) return [<path key={`g${row.goals}`} d={`M${(x(index) - 6).toFixed(1)} ${bottom}H${(x(index) + 6).toFixed(1)}`} fill="none" stroke={LINE} strokeOpacity="0.5" strokeWidth="2" data-gap="" data-series={lane.id} />];
+          return [
+            <circle key={`p${row.goals}`} cx={x(index).toFixed(1)} cy={y(current).toFixed(1)} r={marked ? 7 : 4.5} fill={marked ? MARK : LINE} data-series={lane.id} data-goals={row.goals} data-value={current} data-entered={marked ? "" : undefined} />,
+            <text key={`v${row.goals}`} x={x(index).toFixed(1)} y={(y(current) - 11).toFixed(1)} textAnchor="middle" fontSize="16" fontWeight={marked ? 800 : 600} fill={MARK} data-point-label={lane.id}>{lane.format(current)}</text>,
+          ];
+        }),
+      ];
     })}
-    {rows.map((row, index) => {
-      const current = value(row), marked = index === enteredAt;
-      if (current === null) return <path key={row.goals} d={`M${(x(index) - 6).toFixed(1)} ${CHART_HEIGHT - 3}H${(x(index) + 6).toFixed(1)}`} fill="none" stroke={LINE} strokeOpacity="0.5" strokeWidth="2" data-gap="" />;
-      return <circle key={row.goals} cx={x(index).toFixed(1)} cy={y(current).toFixed(1)} r={marked ? 7 : 4.5} fill={marked ? MARK : LINE} data-goals={row.goals} data-value={current} data-entered={marked ? "" : undefined} />;
-    })}
+    <text x="0" y={CHART_HEIGHT - 12} fontSize="13" fontWeight="700" fill={MUTED}>GOALS ALLOWED</text>
+    {rows.map((row, index) => <text key={row.goals} x={x(index).toFixed(1)} y={CHART_HEIGHT - 10} textAnchor="middle" fontSize="18" fontWeight={index === enteredAt ? 800 : 600} fill={MARK} data-goal-label="">{row.goals}</text>)}
   </svg>;
 }
 
 export default function RatioImpactCard({ data }: SharePostCardProps<RatioImpactSettings, RatioImpactData>) {
+  if (data.base.kind === "none") return <PostEmpty>Choose a base goalie by goalie id to see what one start does to the ratios</PostEmpty>;
+  if (data.base.totals === null) return <PostEmpty>Goalie {data.base.goalieId} has no games this season. Choose another goalie</PostEmpty>;
   if (data.afterRates.savePct === null && data.afterRates.gaa === null) return <PostEmpty>These inputs leave both SV% and GAA unknown</PostEmpty>;
   const rows = data.sensitivity, entered = data.line.goalsAgainst, line = data.line;
-  const row = (id: string, label: string, cell: (row: RatioSensitivityRow) => string | number) => <>
-    <span className={styles.rowLabel}>{label}</span>
-    {rows.map(entry => <span key={entry.goals} className={styles.value} data-row={id} data-entered={entry.goals === entered ? "" : undefined}>{cell(entry)}</span>)}
-  </>;
-  const chartLabel = (label: string, before: number | null, format: (value: number | null) => string) => <span className={styles.chartLabel}>{label}{before !== null && <small>Dashed: before {format(before)}</small>}</span>;
   return <div className={styles.card} data-testid="ratio-impact-card">
+    <p className={styles.sentence} data-testid="ratio-sentence">{ratioSentence(data)}</p>
     <p className={styles.note}>{RATIO_LEGEND} Before: {baseLabel(data.base)}.</p>
     <div className={styles.tiles}>
       <RatioMetric id="savePct" title="SV%" before={formatRatioSavePct(data.before.savePct)} change={data.savePctChange === null ? null : formatSavePctChange(data.savePctChange)} after={formatRatioSavePct(data.afterRates.savePct)} caption={saveCaption} data={data} />
       <RatioMetric id="gaa" title="GAA" before={formatRatioGaa(data.before.gaa)} change={data.gaaChange === null ? null : formatGaaChange(data.gaaChange)} after={formatRatioGaa(data.afterRates.gaa)} caption={gaaCaption} data={data} />
     </div>
-    <p className={styles.line}>Hypothetical line: {saveCaption(line)} = {formatRatioSavePct(data.lineRates.savePct)} · {gaaCaption(line)} = {formatRatioGaa(data.lineRates.gaa)}</p>
-    <section className={styles.sensitivity}>
-      <h3 className={styles.title}>Sensitivity at {line.shotsAgainst} SA and {formatToi(line.toiSeconds)} TOI{rows.length && !rows.some(entry => entry.goals === entered) ? <small> Entered {entered} GA is outside this range</small> : null}</h3>
-      {rows.length ? <div className={styles.table} style={{ gridTemplateColumns: `126px repeat(${rows.length}, minmax(0, 1fr))` }}>
-        {row("goals", "HYPOTHETICAL GA", entry => entry.goals)}
-        {row("saves", "SV", entry => entry.saves)}
-        {chartLabel("SV% AFTER", data.before.savePct, formatRatioSavePct)}
-        <SensitivityChart id="savePct" label="SV% after" rows={rows} value={entry => entry.after.savePct} before={data.before.savePct} entered={entered} format={formatRatioSavePct} />
-        {row("savePct", "SV% AFTER", entry => formatRatioSavePct(entry.after.savePct))}
-        {row("savePctChange", "CHANGE", entry => formatSavePctChange(entry.savePctChange))}
-        {chartLabel("GAA AFTER", data.before.gaa, formatRatioGaa)}
-        <SensitivityChart id="gaa" label="GAA after" rows={rows} value={entry => entry.after.gaa} before={data.before.gaa} entered={entered} format={formatRatioGaa} />
-        {row("gaa", "GAA AFTER", entry => formatRatioGaa(entry.after.gaa))}
-        {row("gaaChange", "CHANGE", entry => formatGaaChange(entry.gaaChange))}
-      </div> : <p className={styles.note}>No goal count in this range fits the entered shots</p>}
+    <section className={styles.whatIf}>
+      <h3 className={styles.title}>Hypothetical: SV% and GAA after that start, by goals allowed on {line.shotsAgainst} shots in {formatToi(line.toiSeconds)}{rows.length && !rows.some(entry => entry.goals === entered) ? <small> Entered {entered} goals is outside this range</small> : null}</h3>
+      {rows.length ? <WhatIfChart rows={rows} entered={entered} lanes={[
+        { id: "savePct", label: "SV%", top: 22, value: entry => entry.after.savePct, before: data.before.savePct, format: formatRatioSavePct },
+        { id: "gaa", label: "GAA", top: 166, value: entry => entry.after.gaa, before: data.before.gaa, format: formatRatioGaa },
+      ]} /> : <p className={styles.note}>No goal count in this range fits the entered shots</p>}
     </section>
   </div>;
 }
