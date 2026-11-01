@@ -330,6 +330,31 @@ Project `fyhftlxokyjtpndbkfse`, Supabase MCP `execute_sql`, single `SELECT` stat
 
 **Fit: calculated, not rendered.** Fixed parts drop from 137 to about 105: section out about 55, line in about 23. Eight rows a side get about 94 each, against 82 of content. The spec checks the band and overflow.
 
+## Follow-up from TJ: headlines, custom range and season to date
+
+**Headline**, through the module's `headline`: "Goalie of the Week" for a matchup of up to 7 days and "Goalie of the Matchup" past that, from `yahoo_matchup_weeks` dates. Month, custom and season print "Goalie of the Month", "Period" and "Season". The shell uppercases them.
+
+**Method choice: no new method. Both new views use §3's month rules on other dates.**
+
+- **Custom range:** game cells cover starts dated in the range, each against its own matchup week's game baseline. That baseline uses every game in the week through the data's last date, in the range or not, so a partial week's baseline matches the whole week's. Week cells cover the weeks with most of their days in the range, using whole-week totals, as the month does, so a week cell can include games outside the range. An even split goes to the side with the week's later days. A short range can hold no week's cells, and week net is then 0.
+- **Season to date:** every matchup week started. Every start gets game cells, every started week gets week cells, and the week under way counts through the cutoff.
+- Both are stated in the evidence cohort.
+
+**Settings:** `start`, `end`, `minStartsRange` (default 2, my choice) and `minStartsSeason` (default 1). Both are visible fields, printed in the card's lead as "Min 1 start." CONTRACT §2 needs these defaults added. The format and start before end are checked at parsing. Season bounds and "not past the completed games" are checked at load, and a refusal shows its reason.
+
+**Read bounds:** week and month keep 1,800 rows. Custom and season allow 3,600 appearance or team-game rows and 1,400 schedule rows, against about 2,624 team rows and starts plus relief in a full season. Over a ceiling, the post is `missing` and says which read was too large.
+
+**Long ranges:**
+- Over 10 weeks the sparkline becomes thin bars on the same points scale, with a low mark for a gap, because a joined line and a dot per week blur in 78px.
+- Over 6 selected weeks the grade chip prints graded weeks, such as "25 wks". With no selected week it prints a dash.
+- Weeks and months keep their line and letters.
+
+**Landing catalog:** unchanged. Existing week and month links work, and their settings default the new fields. No catalog card opens the new views yet.
+
+**Fit: calculated, not rendered.** The season view only adds the min note to the lead, so rows stay about 94px. The new spec test renders 26 weeks and 60 goalies and checks overflow, the band and the PNG. No new real reads were made for this change.
+
+**Partial risk:** a season view is partial, and cannot export, if any game all season lacks one labeled starter or a result. That rule is unchanged, but a long window is more likely to hit it.
+
 ## Blockers
 
 None for building. Open: TJ's first real-output review (9.7) and the browser run of the spec.

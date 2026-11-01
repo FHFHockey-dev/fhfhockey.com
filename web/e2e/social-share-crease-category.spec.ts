@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { buildCreaseShift, reconcileSchedule } from "../lib/socialShare/modules/creaseShift";
 import { buildGoalieGsax } from "../lib/socialShare/modules/goalieGsax";
 import { buildGoaliePeriod } from "../lib/socialShare/modules/goaliePeriod";
-import { weekPeriod } from "../lib/socialShare/modules/shared/categoryCounts";
+import { rangePeriod, seasonPeriod, weekPeriod } from "../lib/socialShare/modules/shared/categoryCounts";
 import type { GoalieAppearance } from "../lib/socialShare/modules/shared/goalieLedger";
 import { teamsInfo } from "../lib/teamsInfo";
 
@@ -25,7 +25,7 @@ const appearances = scheduled.flatMap((game, index) => [
 ]);
 const week = { week: 4, start: "2026-10-19", end: "2026-10-25" };
 const adp = { goalies: [{ player_key: "465.p.1", player_id: "1", average_pick: "84.3" }, { player_key: "465.p.2", player_id: "2", average_pick: "-" }], map: [{ yahoo_player_id: "465.p.1", nhl_player_id: "1" }, { yahoo_player_id: "465.p.2", nhl_player_id: "2" }], averagePicks: ["192.0", "84.3"] };
-const periodSettings = { period: "week", week: 4, month: "", minStartsWeek: 2, minStartsMonth: 5, board: "both", categories: "wins,saves,svPct,gaa,shutouts" };
+const periodSettings = { period: "week", week: 4, month: "", start: null, end: null, minStartsWeek: 2, minStartsMonth: 5, minStartsRange: 2, minStartsSeason: 1, board: "both", categories: "wins,saves,svPct,gaa,shutouts" };
 const tgv = { goalies: [{ goalie_id: 1, week: 4, weekly_gs: 2, weekly_toi_seconds: 7200, weekly_wins: 2, weekly_saves: 68, weekly_sv_pct: 0.97 }], league: [{ week: 4, avg_league_weekly_wins: 1, avg_league_weekly_saves: 40, avg_league_weekly_sv_pct: 0.9 }], weeks: [week] } as never;
 
 function edition(post: string, settings: Record<string, unknown>, result: { state: string; reasons?: string[]; evidence: unknown; data: unknown; teams?: string[] }) {
@@ -130,6 +130,40 @@ test("goalie of the period: eight rows a side fill the body at five categories",
   await expect(page.getByTestId("goalie-period-adp")).toContainText("Avg ADP: Best");
   await expectBodyFilled(page, "goalie-period-card");
   await download(page);
+});
+
+test("goalie of the season: a full season fits the body with readable bars", async ({ page }) => {
+  await install(page);
+  const seasonWeeks = Array.from({ length: 26 }, (_, index) => ({ week: index + 1, start: new Date(Date.UTC(2026, 9, 5 + index * 7)).toISOString().slice(0, 10), end: new Date(Date.UTC(2026, 9, 11 + index * 7)).toISOString().slice(0, 10) }));
+  const shapes = ["Ukko-Pekka Luukkonen", "Sergei Bobrovsky", "Andrei Vasilevskiy", "Connor Hellebuyck"];
+  const fit = seasonWeeks.flatMap(entry => Array.from({ length: 30 }, (_, game) => ({ id: entry.week * 100 + game, date: entry.start, homeTeamId: teamsInfo.NJD.id, awayTeamId: teamsInfo.NYR.id })));
+  const rows = fit.flatMap(game => [{ gameId: game.id, date: game.date, team: "NJD" }, { gameId: game.id, date: game.date, team: "NYR" }]);
+  const stats = rows.map((game, index) => stat(index % 60 + 1, game.team, game.gameId, game.date, { name: shapes[index % 4], wins: index % 3 === 0 ? 1 : 0, saves: 15 + index % 30, shotsAgainst: 20 + index % 30, goalsAgainst: index % 5 }));
+  const season = { weeks: seasonWeeks, league: seasonWeeks.map(entry => ({ week: entry.week, avg_league_weekly_wins: 1, avg_league_weekly_saves: 40, avg_league_weekly_sv_pct: 0.9 })),
+    goalies: Array.from({ length: 60 }, (_, goalie) => seasonWeeks.filter(entry => entry.week % 7).map(entry => ({ goalie_id: goalie + 1, week: entry.week, weekly_gs: 2, weekly_toi_seconds: 7200, weekly_wins: goalie % 3, weekly_saves: 30 + goalie, weekly_sv_pct: 0.88 + (goalie % 10) * 0.005 }))).flat() } as never;
+  const settings = { ...periodSettings, period: "season", week: null };
+  const result = buildGoaliePeriod({ settings, period: seasonPeriod(seasonWeeks, "2027-04-04"), appearances: stats, reported: rows, scheduled: fit, tgv: season, adp });
+  await page.route("**/api/v1/social-share/posts/**", route => route.fulfill({ json: edition("goalie-period", settings, result) }));
+  await page.goto("/social-share/posts?post=goalie-period&period=season");
+  await expect(page.getByTestId("share-square")).toContainText("GOALIE OF THE SEASON");
+  await expect(page.getByTestId("goalie-period-card")).toContainText("Season to date, through 2027-04-04. Min 1 start.");
+  await expect(page.getByTestId("board-best").getByTestId("goalie-period-row")).toHaveCount(8);
+  await expect(page.getByTestId("board-worst").getByTestId("goalie-period-row")).toHaveCount(8);
+  await expect(page.getByTestId("goalie-period-row").first().locator("svg[data-bars]")).toBeVisible();
+  await expect(page.getByTestId("goalie-period-adp")).toContainText("Avg ADP: Best");
+  await expectBodyFilled(page, "goalie-period-card");
+  await download(page);
+});
+
+test("goalie of the period: a custom range shows its dates and headline", async ({ page }) => {
+  await install(page);
+  const settings = { ...periodSettings, period: "custom", week: null, start: "2026-10-19", end: "2026-10-22", minStartsRange: 1 };
+  const result = buildGoaliePeriod({ settings, period: rangePeriod([week], "2026-10-19", "2026-10-22", "2026-10-30"), appearances, reported, scheduled, tgv, adp });
+  await page.route("**/api/v1/social-share/posts/**", route => route.fulfill({ json: edition("goalie-period", settings, result) }));
+  await page.goto("/social-share/posts?post=goalie-period&period=custom&start=2026-10-19&end=2026-10-22&minStartsRange=1");
+  await expect(page.getByTestId("share-square")).toContainText("GOALIE OF THE PERIOD");
+  await expect(page.getByTestId("goalie-period-card")).toContainText("2026-10-19 to 2026-10-22. Min 1 start.");
+  await expect(page.getByTestId("post-evidence")).toContainText("Custom range uses Category Counts' month rules");
 });
 
 test("GSAx: ten rows a side fill the body", async ({ page }) => {

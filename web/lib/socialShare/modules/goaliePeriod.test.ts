@@ -4,14 +4,14 @@ import { describe, expect, it } from "vitest";
 import type { GoalieWeeklyAggregate, LeagueWeeklyAverage } from "components/GoaliePage/goalieTypes";
 import { teamsInfo } from "lib/teamsInfo";
 import { parseShareSettings } from "./contract";
-import { adpLine, buildGoaliePeriod, goaliePeriodModule, goaliePicks, numericPick, periodReadRange, resolvePeriod, TGV_LABEL, tgvSeasonWeeks, undraftedAdp, type GoalieAdpRows, type GoaliePeriodData, type GoaliePeriodSettings } from "./goaliePeriod";
-import { readPeriodAdp } from "./goaliePeriod.sources";
-import { cellTone, monthPeriod, weekPeriod, type MatchupWeek } from "./shared/categoryCounts";
+import { adpLine, buildGoaliePeriod, goaliePeriodHeadline, goaliePeriodModule, goaliePicks, numericPick, periodReadRange, resolvePeriod, TGV_LABEL, tgvSeasonWeeks, undraftedAdp, type GoalieAdpRows, type GoaliePeriodData, type GoaliePeriodSettings } from "./goaliePeriod";
+import { LONG_PERIOD_ROW_LIMIT, loadGoaliePeriod, readPeriodAdp } from "./goaliePeriod.sources";
+import { cellTone, monthPeriod, rangePeriod, seasonPeriod, spanDays, weekPeriod, type MatchupWeek } from "./shared/categoryCounts";
 import { heatLevel } from "./shared/goalieBoards";
 import type { GoalieAppearance } from "./shared/goalieLedger";
 
 const weeks: MatchupWeek[] = [{ week: 4, start: "2026-10-19", end: "2026-10-25" }, { week: 5, start: "2026-10-26", end: "2026-11-01" }];
-const settings: GoaliePeriodSettings = { period: "week", week: 4, month: "", minStartsWeek: 2, minStartsMonth: 5, board: "both", categories: "wins,saves,svPct,gaa,shutouts" };
+const settings: GoaliePeriodSettings = { period: "week", week: 4, month: "", start: null, end: null, minStartsWeek: 2, minStartsMonth: 5, minStartsRange: 2, minStartsSeason: 1, board: "both", categories: "wins,saves,svPct,gaa,shutouts" };
 const stat = (goalieId: number, team: string, gameId: number, date: string, values: Partial<GoalieAppearance> = {}): GoalieAppearance => ({ goalieId, name: `G${goalieId}`, gameId, date, team, opponent: null, home: null, started: true, wins: 0, losses: 0, otLosses: 0, saves: 25, shotsAgainst: 28, goalsAgainst: 3, toiSeconds: 3600, shutouts: 0, qualityStart: 0, ...values });
 const NJD = teamsInfo.NJD.id, NYR = teamsInfo.NYR.id;
 const games = [{ id: 1, date: "2026-10-20" }, { id: 2, date: "2026-10-22" }];
@@ -95,7 +95,7 @@ describe("goalie of the period", () => {
     expect(resolvePeriod({ period: "month", week: null, month: "2026-10" }, weeks, "2026-10-30")).toMatchObject({ period: { inProgress: true, label: "October 2026, through 2026-10-30" } });
   });
   it("validates its settings, with the contract's defaults", () => {
-    expect(parseShareSettings(goaliePeriodModule, {})).toEqual({ period: "week", week: null, month: "", minStartsWeek: 2, minStartsMonth: 5, board: "both", categories: "wins,saves,svPct,gaa,shutouts" });
+    expect(parseShareSettings(goaliePeriodModule, {})).toEqual({ period: "week", week: null, month: "", start: null, end: null, minStartsWeek: 2, minStartsMonth: 5, minStartsRange: 2, minStartsSeason: 1, board: "both", categories: "wins,saves,svPct,gaa,shutouts" });
     expect(() => parseShareSettings(goaliePeriodModule, { categories: "wins,grit" })).toThrow(/Categories must come from/);
     expect(() => parseShareSettings(goaliePeriodModule, { categories: " " })).toThrow(/at least one/);
     expect(() => parseShareSettings(goaliePeriodModule, { month: "2026-13" })).toThrow(/Month/);
@@ -406,6 +406,131 @@ describe("TGV beside Category Counts", () => {
     it("reads as unavailable when any Yahoo read fails", async () => {
       expect(await readPeriodAdp(fakeClient({}, "yahoo_players").client, 2026)).toBeNull();
       expect(await readPeriodAdp(fakeClient({ yahoo_players: [{ player_key: "465.p.1", player_id: "1", average_pick: "1" }] }, "yahoo_nhl_player_map_read").client, 2026)).toBeNull();
+    });
+  });
+  describe("custom range and season to date", () => {
+    const week = (number: number, start: string, end: string): MatchupWeek => ({ week: number, start, end });
+    const calendar = [week(1, "2026-10-05", "2026-10-11"), week(2, "2026-10-12", "2026-10-18"), week(3, "2026-10-19", "2026-10-25"), week(4, "2026-10-26", "2026-11-01")];
+    const at = (start: string, end: string) => ({ period: weekPeriod(week(9, start, end), "2027-01-01") });
+    const headlineOf = (period: Parameters<typeof goaliePeriodHeadline>[1]) => goaliePeriodHeadline(settings, period);
+    it("prints the headline for each view, from the matchup's real dates", () => {
+      expect(spanDays("2026-10-05", "2026-10-11")).toBe(7);
+      expect(headlineOf(at("2026-10-05", "2026-10-10"))).toBe("Goalie of the Week");
+      expect(headlineOf(at("2026-10-05", "2026-10-11"))).toBe("Goalie of the Week");
+      expect(headlineOf(at("2026-10-05", "2026-10-12"))).toBe("Goalie of the Matchup");
+      expect(headlineOf({ period: monthPeriod(calendar, "2026-10", "2026-11-08") })).toBe("Goalie of the Month");
+      expect(headlineOf({ period: rangePeriod(calendar, "2026-10-08", "2026-10-20", "2026-11-01") })).toBe("Goalie of the Period");
+      expect(headlineOf({ period: seasonPeriod(calendar, "2026-10-30") })).toBe("Goalie of the Season");
+      expect(goaliePeriodHeadline({ period: "season" }, null)).toBe("Goalie of the Season");
+      expect(goaliePeriodHeadline({ period: "week" }, null)).toBe("Goalie of the Week");
+    });
+    it("validates a custom range before reading", () => {
+      const parse = (query: Record<string, string>) => parseShareSettings(goaliePeriodModule, { period: "custom", ...query });
+      expect(() => parse({})).toThrow(/needs a start date and an end date/);
+      expect(() => parse({ start: "2026-10-08" })).toThrow(/needs a start date/);
+      expect(() => parse({ start: "2026-10-20", end: "2026-10-08" })).toThrow(/before the end date/);
+      expect(() => parse({ start: "2026-10-20", end: "2026-10-20" })).toThrow(/before the end date/);
+      expect(() => parse({ start: "2026-02-31", end: "2026-10-20" })).toThrow();
+      expect(parse({ start: "2026-10-08", end: "2026-10-20" })).toMatchObject({ start: "2026-10-08", end: "2026-10-20" });
+    });
+    it("refuses a range outside the season or past the completed games", () => {
+      const resolve = (start: string, end: string, through = "2026-10-20") => resolvePeriod({ period: "custom", week: null, month: "", start, end }, calendar, through);
+      expect(resolve("2026-10-08", "2026-10-20")).toMatchObject({ period: { kind: "custom", label: "2026-10-08 to 2026-10-20" } });
+      expect(resolve("2026-09-01", "2026-10-20")).toEqual({ reason: "The range must fall inside the season, 2026-10-05 to 2026-11-01." });
+      expect(resolve("2026-10-08", "2026-11-20", "2026-12-01")).toEqual({ reason: "The range must fall inside the season, 2026-10-05 to 2026-11-01." });
+      expect(resolve("2026-10-08", "2026-10-21")).toEqual({ reason: "The end date 2026-10-21 is past the last completed games, 2026-10-20." });
+      expect(resolvePeriod({ period: "season", week: null, month: "" }, calendar, "2026-10-01")).toEqual({ reason: "No matchup week has started." });
+    });
+    it("gives a range the month's rules: baselines from whole weeks, week cells by most days", () => {
+      const range = rangePeriod(calendar, "2026-10-08", "2026-10-22", "2026-11-01");
+      // Oct 8-11 is 4 of 7 days of week 1, week 2 is whole, and Oct 19-22 is 4 of 7 of week 3.
+      expect(range.touchedWeeks.map(entry => entry.week)).toEqual([1, 2, 3]);
+      expect(range.cellWeeks.map(entry => entry.week)).toEqual([1, 2, 3]);
+      expect(rangePeriod(calendar, "2026-10-10", "2026-10-20", "2026-11-01").cellWeeks.map(entry => entry.week)).toEqual([2]);
+      expect(rangePeriod(calendar, "2026-10-06", "2026-10-07", "2026-11-01").cellWeeks).toEqual([]);
+      expect(periodReadRange(range)).toEqual({ from: "2026-10-05", through: "2026-10-25" });
+      // An even split goes to the side with the later days.
+      const six = [week(1, "2026-10-05", "2026-10-10")];
+      expect(rangePeriod(six, "2026-10-08", "2026-10-10", "2026-11-01").cellWeeks).toHaveLength(1);
+      expect(rangePeriod(six, "2026-10-05", "2026-10-07", "2026-11-01").cellWeeks).toHaveLength(0);
+    });
+    const twoWeeks = [week(1, "2026-10-05", "2026-10-11"), week(2, "2026-10-12", "2026-10-18")];
+    /** Goalie 1 wins on Oct 6 and 13, in two different weeks. Goalies 2 and 3 have one start each, on Oct 6 and Oct 13. */
+    const fixture = () => {
+      const games = [{ id: 11, date: "2026-10-06" }, { id: 12, date: "2026-10-13" }];
+      return {
+        scheduled: games.map(game => ({ ...game, homeTeamId: NJD, awayTeamId: NYR })),
+        reported: games.flatMap(game => [{ gameId: game.id, date: game.date, team: "NJD" }, { gameId: game.id, date: game.date, team: "NYR" }]),
+        appearances: [stat(1, "NJD", 11, "2026-10-06", { wins: 1, saves: 40, shotsAgainst: 41, goalsAgainst: 1 }), stat(2, "NYR", 11, "2026-10-06", { losses: 1, saves: 20, shotsAgainst: 25, goalsAgainst: 5 }), stat(1, "NJD", 12, "2026-10-13", { wins: 1, saves: 35, shotsAgainst: 36, goalsAgainst: 1 }), stat(3, "NYR", 12, "2026-10-13", { losses: 1, saves: 18, shotsAgainst: 24, goalsAgainst: 6 })],
+      };
+    };
+    it("ranks every goalie with a start for the season at the default minimum of 1, and states it", async () => {
+      const season = { ...settings, period: "season" };
+      const result = buildGoaliePeriod({ ...base, ...fixture(), settings: season, period: seasonPeriod(twoWeeks, "2026-10-18"), tgv: null, adp: base.adp });
+      expect(result.data!.minStarts).toBe(1);
+      expect(result.data!.rows.map(row => [row.goalieId, row.categoryCounts.starts, row.categoryCounts.rank !== null])).toEqual(expect.arrayContaining([[1, 2, true], [2, 1, true], [3, 1, true]]));
+      expect(result.data!.ranked).toBe(3);
+      expect(buildGoaliePeriod({ ...base, ...fixture(), settings: { ...season, minStartsSeason: 2 }, period: seasonPeriod(twoWeeks, "2026-10-18") }).data!.ranked).toBe(1);
+      const root = await render(result.data!);
+      expect(root.body.textContent).toContain("Season to date, through 2026-10-18. Min 1 start.");
+      expect(root.body.textContent).toContain("Goalie of the Season");
+      expect(result.evidence.cohort).toContain("Season to date uses Category Counts' month rules");
+      expect(result.data!.adp).not.toBeNull();
+    });
+    it("keeps a range's game cells to its dates, against the same baselines as the whole week", async () => {
+      const range = rangePeriod(twoWeeks, "2026-10-07", "2026-10-14", "2026-10-18");
+      const result = buildGoaliePeriod({ ...base, ...fixture(), settings: { ...settings, period: "custom", start: "2026-10-07", end: "2026-10-14", minStartsRange: 1 }, period: range, tgv: null });
+      const one = (id: number, data = result.data!) => data.rows.find(row => row.goalieId === id)!.categoryCounts;
+      expect(one(1).starts).toBe(1);
+      expect(result.data!.rows.some(row => row.goalieId === 2)).toBe(false);
+      const whole = buildGoaliePeriod({ ...base, ...fixture(), period: weekPeriod(twoWeeks[1], "2026-10-18"), settings: { ...settings, minStartsWeek: 1 }, tgv: null }).data!;
+      expect(one(1).game).toEqual(one(1, whole).game);
+      expect(result.evidence.cohort).toContain("in the range or not");
+      const text = (await render(result.data!)).body.textContent!;
+      expect(text).toContain("2026-10-07 to 2026-10-14. Min 1 start.");
+      expect(text).toContain("Goalie of the Period");
+    });
+    it("draws a long season as readable bars with its gaps, and a short range's chip as a dash", async () => {
+      const weeks26 = Array.from({ length: 26 }, (_, index) => { const start = new Date(Date.UTC(2026, 9, 5 + index * 7)).toISOString().slice(0, 10), end = new Date(Date.UTC(2026, 9, 11 + index * 7)).toISOString().slice(0, 10); return week(index + 1, start, end); });
+      const league = weeks26.map(entry => ({ ...tgv.league[0], week: entry.week }));
+      const goalies = weeks26.filter(entry => entry.week !== 5).flatMap(entry => [{ ...tgv.goalies[0], week: entry.week }, { ...tgv.goalies[1], week: entry.week }]);
+      const data = buildGoaliePeriod({ ...base, ...fixture(), settings: { ...settings, period: "season" }, period: seasonPeriod(weeks26, "2027-04-04"), tgv: { weeks: weeks26, league, goalies } }).data!;
+      const row = (await render(data)).querySelector('[data-testid="goalie-period-row"]')!, spark = row.querySelector("svg[data-sparkline]")!;
+      expect(spark.hasAttribute("data-bars")).toBe(true);
+      expect(spark.querySelectorAll("[data-point]")).toHaveLength(25);
+      expect(spark.querySelectorAll("[data-gap]")).toHaveLength(1);
+      expect(spark.querySelector("[data-selected-week]")).toBeNull();
+      expect(spark.querySelector("[data-point]")!.getAttribute("fill")).toBe("#63D2F5");
+      expect(row.querySelector("[data-selected-grade]")!.textContent).toBe("25 wks");
+      const short = rangePeriod(twoWeeks, "2026-10-06", "2026-10-07", "2026-10-18");
+      const dash = (await render(buildGoaliePeriod({ ...base, ...fixture(), settings: { ...settings, period: "custom", minStartsRange: 1 }, period: short, tgv: { weeks: tgvSeasonWeeks(twoWeeks, short), league: [{ ...tgv.league[0], week: 1 }], goalies: [{ ...tgv.goalies[0], week: 1 }] } }).data!)).querySelector("[data-selected-grade]")!;
+      expect(dash.textContent).toBe("–");
+      expect(tgvSeasonWeeks(twoWeeks, short).map(entry => entry.week)).toEqual([1]);
+    });
+    it("keeps a week's and a month's minimums where they were", () => {
+      expect(buildGoaliePeriod(base).data!.minStarts).toBe(2);
+      expect(buildGoaliePeriod({ ...base, settings: { ...settings, period: "month" }, period: monthPeriod(calendar, "2026-10", "2026-11-08") }).data!.minStarts).toBe(5);
+    });
+    /** Every table's rows through `range`, with the exact count `bounded` needs. */
+    const pagedClient = (rows: Record<string, unknown[]>) => ({ from: (table: string) => {
+      const chain: Record<string, unknown> = {};
+      for (const method of ["select", "eq", "neq", "gte", "lte", "in", "order"]) chain[method] = () => chain;
+      chain.range = async (start: number, end: number) => ({ data: (rows[table] ?? []).slice(start, end + 1), error: null, count: (rows[table] ?? []).length });
+      return chain;
+    } });
+    const matchups = [{ week: 1, start_date: "2026-10-05", end_date: "2026-10-11" }];
+    const loadSeason = (rows: Record<string, unknown[]>) => loadGoaliePeriod({ client: pagedClient({ yahoo_matchup_weeks: matchups, ...rows }), generatedAt: "2026-10-20T16:00:00Z" }, { ...settings, period: "season" });
+    it("fails visibly when a season read is over its ceiling", async () => {
+      const over = Array.from({ length: LONG_PERIOD_ROW_LIMIT + 1 }, (_, index) => ({ goalie_id: index }));
+      const result = await loadSeason({ wgo_goalie_stats: over });
+      expect(result.state).toBe("missing");
+      expect(result.data).toBeNull();
+      expect(result.reasons![0]).toBe(`Season to date, through 2026-10-19 is too large to read: Goalie appearances response was incomplete or over its ${LONG_PERIOD_ROW_LIMIT}-row limit.`);
+    });
+    it("explains a refused range through the same state", async () => {
+      const result = await loadGoaliePeriod({ client: pagedClient({ yahoo_matchup_weeks: matchups }), generatedAt: "2026-10-20T16:00:00Z" }, { ...settings, period: "custom", start: "2026-10-06", end: "2026-11-20" });
+      expect(result).toMatchObject({ state: "missing", data: null });
+      expect(result.reasons![0]).toMatch(/inside the season/);
     });
   });
 });

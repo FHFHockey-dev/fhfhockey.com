@@ -35,3 +35,7 @@ Line is now `runningShare`: starts so far ÷ team games so far, with TJ's VAN ex
 ## Period ADP (TJ, 2026-11-01)
 
 Removed the TGV league section and added the Avg ADP line. Gotcha: `yahoo_players` holds three seasons and the 192 max is a null-season row; goalie values must filter to the current season. The aliased JSON select has not run through PostgREST here. Next: lead's render.
+
+## Period headline, custom range, season (TJ, 2026-11-01)
+
+ADP ticket committed as 529e8abdb. Added headline, custom range and season by the month rules. Gotcha: `npx tsc --noEmit` runs out of memory at the default heap, and piping it through a filter hides that; use NODE_OPTIONS=--max-old-space-size=12288. Next: lead's render.
