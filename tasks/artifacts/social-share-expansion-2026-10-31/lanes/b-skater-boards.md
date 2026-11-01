@@ -208,6 +208,6 @@ Points-First top 15, L10 (SQL using the same formula; the builder itself has not
 | 14 | Jake Neighbours L | 78.6 | 0.80 | 83 | 77 | 96 | 55 | 13 |
 | 15 | Evan Bouchard D | 78.5 | 1.20 | 95 | 90 | 30 | 82 | 23 |
 
-**Verdict: 2x helps but does not fully deliver what TJ described.** It swaps 4 of the standard top 15 and leaves the top 3 alone. 12 of 15 are P85+ in points, but 8 of 15 are defensemen, and only 8 are P50+ in all four. Tkachuk (P5 blocks) and Bouchard (P30 hits) rank on two or three strong categories. A points floor at P70 changes none of this top 15, because the lowest here is P73; about P85 would remove Seider, Werenski and Neighbours. None added.
+**Verdict: 2x helps but does not fully deliver what TJ described.** It swaps 4 of the standard top 15 and keeps the same top 3, with 2 and 3 reversed. 12 of 15 are P85+ in points, but 8 of 15 are defensemen, and only 8 are P50+ in all four. Tkachuk (P5 blocks) and Bouchard (P30 hits) rank on two or three strong categories. A points floor at P70 changes none of this top 15, because the lowest here is P73; about P85 would remove Seider, Werenski and Neighbours. None added.
 
 **Checks:** 84 tests in the lane's 3 files passed, eslint clean, the pure check passed, `tsc` printed no errors, `--list` found 11 tests. No browser run.
