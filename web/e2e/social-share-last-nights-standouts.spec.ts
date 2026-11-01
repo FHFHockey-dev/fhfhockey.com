@@ -96,7 +96,7 @@ test("the sidebar lists only who meets the roster limit, at its boundary", async
   await expect(page.getByTestId("standout-option")).toHaveCount(9);
   await expect(option(page, 9)).toBeVisible();
   await expect(option(page, 10)).toHaveCount(0);
-  await page.getByLabel("Under X% rostered").fill("51");
+  await page.locator("label", { hasText: /^Under X% rostered/ }).locator("input").fill("51");
   await expect(option(page, 10)).toBeVisible();
 });
 
@@ -142,6 +142,16 @@ test("the sidebar sorts by the night's value and by the jump, and stops at the c
   await expectFits(page);
 });
 
+test("the sidebar stays inside a phone's width with picks made", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await open(page, "&view=all");
+  await option(page, 1).click();
+  await option(page, 2).click();
+  await expect(page.getByTestId("standouts-count")).toContainText("2 of 8");
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
+  await expect.poll(() => page.getByTestId("standouts-list").evaluate(list => list.scrollWidth <= list.clientWidth)).toBe(true);
+});
+
 test("a skater row prints the goal line, chips, every stat and a dash for a zero baseline", async ({ page }) => {
   await open(page, "&view=all&picks=1,2");
   const [one, two] = [page.getByTestId("standout-row").first(), page.getByTestId("standout-row").nth(1)];
@@ -164,7 +174,7 @@ test("top forwards and top defensemen rank themselves and state the sort", async
   await expect(page.getByTestId("standouts-view")).toContainText("Top forwards");
   await expect(page.getByTestId("standout-row")).toHaveCount(8);
   await expect(page.getByTestId("standout-row").first()).toContainText("Fictional Long Name 1");
-  await expect(page.getByTestId("standouts-legend")).toContainText("Top 8 of 8 by points");
+  await expect(page.getByTestId("standouts-legend")).toContainText("Top 8 of 8 by points, then SOG, xG, TOI.");
   await expect(page.getByTestId("standouts-auto-note")).toBeVisible();
   await expect(download(page)).toBeEnabled();
   await expectFits(page);
@@ -178,6 +188,7 @@ test("goalies say when NST lags, and a missing GSAx stays a dash", async ({ page
   await open(page, "&view=goalies");
   const square = page.getByTestId("share-square");
   await expect(page.getByTestId("standouts-view")).toContainText("Goalies");
+  await expect(square.locator("[class*=gridTitle] p")).toHaveText("Goalies", { ignoreCase: true });
   for (const label of ["SV", "SA", "GA", "SV%", "TOI", "GSAx"]) await expect(square).toContainText(label);
   await expect(page.getByTestId("goalie-gsax")).toHaveText("+2.50");
   await expect(page.getByTestId("nst-goalie-note")).toContainText("NST has no row yet for 2 of 3 goalies");

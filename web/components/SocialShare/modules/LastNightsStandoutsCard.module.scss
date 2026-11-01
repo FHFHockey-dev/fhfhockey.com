@@ -23,14 +23,14 @@
 .tileSide { flex: none; display: grid; justify-items: end; line-height: 1.05; small { font-size: 0.56em; font-weight: 600; } i { font-size: 0.68em; font-style: normal; font-weight: 700; white-space: nowrap; } }
 
 /* The sidebar, in the studio's own theme. */
-.panel { display: grid; gap: v.$space-xs; }
+.panel { display: grid; grid-template-columns: minmax(0, 1fr); gap: v.$space-xs; min-width: 0; }
 .panelNote { margin: 0; font-size: 13px; color: v.$text-secondary; }
 .panelCount { margin: 0; font-size: 14px; button { margin-left: v.$space-xs; } }
-.panelSort { display: flex; flex-wrap: wrap; gap: v.$space-xs; align-items: flex-end; font-size: 13px; label { display: grid; gap: 2px; } button[data-active] { font-weight: 700; color: v.$primary-color; } }
-.panelList { display: grid; gap: 4px; max-height: 1000px; overflow-y: auto; }
-.option { display: grid; gap: 3px; width: 100%; padding: 6px; text-align: left; font-size: 13px; color: v.$color-white; background: transparent; border: 1px solid v.$border-soft; border-radius: 4px; cursor: pointer; }
+.panelSort { display: flex; flex-wrap: wrap; gap: v.$space-xs; align-items: flex-end; min-width: 0; font-size: 13px; label { display: grid; gap: 2px; min-width: 0; } select { max-width: 100%; } button[data-active] { font-weight: 700; color: v.$primary-color; } }
+.panelList { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; min-width: 0; max-height: 1000px; overflow-y: auto; }
+.option { display: grid; grid-template-columns: minmax(0, 1fr); gap: 3px; width: 100%; min-width: 0; box-sizing: border-box; padding: 6px; text-align: left; font-size: 13px; color: v.$color-white; background: transparent; border: 1px solid v.$border-soft; border-radius: 4px; cursor: pointer; }
 .option[data-picked] { border-color: v.$primary-color; }
 .option:disabled { opacity: 0.5; cursor: not-allowed; }
 .optionHead { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; small { color: v.$text-secondary; } }
 .optionOrder { flex: none; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 3px; font-weight: 700; border: 1px solid v.$border-soft; }
-.optionStats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 8px; white-space: nowrap; small { color: v.$text-secondary; } i { font-style: normal; color: v.$text-secondary; } }
+.optionStats { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); column-gap: 8px; white-space: nowrap; small { color: v.$text-secondary; } i { font-style: normal; color: v.$text-secondary; } }

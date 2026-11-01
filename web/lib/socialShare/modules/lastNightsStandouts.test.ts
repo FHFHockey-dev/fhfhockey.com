@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseShareSettings, sharePostExportBlock, type SharePostSnapshot } from "./contract";
-import { buildLastNightsStandouts, goalieRanking, goalLine, lastNightsStandoutsModule, parsePicks, percentChange, percentLabel, slateCoverage, sortStandouts, STANDOUT_MAX_ROWS, standoutPool, standoutRows, statText, togglePick, type LastNightsStandoutsData, type LastNightsStandoutsInput, type LastNightsStandoutsSettings, type StandoutSkater } from "./lastNightsStandouts";
+import { buildLastNightsStandouts, goalieRanking, goalLine, lastNightsStandoutsModule, latestEarlierLines, lineChipText, lineRowsFromCombinations, parsePicks, percentChange, percentLabel, rankingText, slateCoverage, sortStandouts, STANDOUT_MAX_ROWS, standoutPool, standoutRows, statText, togglePick, type LastNightsStandoutsData, type LastNightsStandoutsInput, type LastNightsStandoutsSettings, type StandoutSkater } from "./lastNightsStandouts";
 import { loadLastNightsStandouts } from "./lastNightsStandouts.sources";
 import { ownershipOf } from "./shared/definitions";
 import type { GoalieAppearance } from "./shared/goalieLedger";
@@ -95,6 +95,33 @@ describe("goal line", () => {
   });
 });
 
+describe("lines", () => {
+  it("reads forwards in threes and defensemen in pairs from the game's own row", () => {
+    const rows = lineRowsFromCombinations([{ gameId: 9, forwards: [1, 2, 3, 4], defensemen: [5, 6, 7] }]);
+    expect(rows.map(row => [row.player_id, row.line_combo_group, row.line_combo_slot])).toEqual([[1, "forward", 1], [2, "forward", 1], [3, "forward", 1], [4, "forward", 2], [5, "defense", 1], [6, "defense", 1], [7, "defense", 2]]);
+    expect(lineRowsFromCombinations([{ gameId: 9, forwards: null, defensemen: null }])).toEqual([]);
+  });
+  const older = (date: string, slot: number | null) => ({ player_id: 1, game_date: date, line_combo_slot: slot, line_combo_group: "forward" });
+  it("keeps last night's line undated, even with an older one known", () => {
+    const row = dataOf({ role: { rolling: [{ player_id: 1, game_id: 9, line_combo_slot: 1, line_combo_group: "forward" }], pp: [] }, earlierLines: [older("2026-10-24", 3)] }).skaters[0];
+    expect(row.role.line).toBe("L1");
+    expect(row.lineAsOf).toBeNull();
+    expect(lineChipText(row)).toBe("L1");
+  });
+  it("uses the newest earlier line when last night's is absent, and prints its date", () => {
+    const row = dataOf({ earlierLines: [older("2026-10-20", 3), older("2026-10-24", 2), older("2026-10-22", 1)] }).skaters[0];
+    expect(row.role.line).toBe("L2");
+    expect(row.lineAsOf).toBe("2026-10-24");
+    expect(lineChipText(row)).toBe("L2 · Oct 24");
+  });
+  it("never takes a line from the slate or later as an earlier one, and never guesses", () => {
+    expect(latestEarlierLines([older(SLATE, 1), older("2026-11-02", 1), older("2026-10-24", null)], SLATE).size).toBe(0);
+    const row = dataOf({ earlierLines: [] }).skaters[0];
+    expect(lineChipText(row)).toBe("Line —");
+    expect(built({ earlierLines: [older("2026-10-24", 2)] }).evidence.sources.find(source => source.name === "FHFH lines and PP units")?.reasons?.join(" ")).toContain("1 of 1 lines are from an earlier game");
+  });
+});
+
 describe("picks", () => {
   const data: LastNightsStandoutsData = { ...dataOf(), skaters: [person({ playerId: 1 }), person({ playerId: 2 }), person({ playerId: 3 })] };
   it("follows pick order, not sort order, and drops an id not on the slate", () => {
@@ -169,6 +196,15 @@ describe("sorting and auto-ranked views", () => {
     expect(standoutRows(data, settings({ view: "defensemen" })).map(row => row.playerId)).toEqual([13]);
     expect(standoutRows(data, settings({ view: "forwards", rankBy: "sog" })).map(row => row.playerId)).toEqual([11, 10, 12]);
   });
+  it("states the ranking with each key once", () => {
+    expect(rankingText("points")).toBe("points, then SOG, xG, TOI");
+    expect(rankingText("sog")).toBe("SOG, then points, xG, TOI");
+    expect(rankingText("iscf")).toBe("iSCF, then points, SOG, xG, TOI");
+  });
+  it("names the goalie view in the kicker", () => {
+    expect(lastNightsStandoutsModule.kicker?.(settings({ view: "goalies" }))).toBe("Goalies");
+    expect(lastNightsStandoutsModule.kicker?.(settings({ view: "forwards" }))).toBe("Skaters");
+  });
   it("holds to the card's limit", () => {
     const many = Array.from({ length: STANDOUT_MAX_ROWS + 4 }, (_, index) => ({ ...a, playerId: 100 + index }));
     expect(standoutRows({ ...dataOf(), skaters: many }, settings({ view: "forwards" }))).toHaveLength(STANDOUT_MAX_ROWS);
@@ -224,7 +260,7 @@ describe("loader", () => {
     return { calls, client: { from(table: string) {
       const filters: unknown[][] = [], rows = tables[table] ?? [];
       const chain: any = { then: (resolve: (value: unknown) => void) => resolve({ data: rows, error: null, count: rows.length }) };
-      for (const method of ["select", "eq", "gte", "lte", "in", "order", "limit", "range"]) chain[method] = (...args: unknown[]) => { filters.push([method, ...args]); return chain; };
+      for (const method of ["select", "eq", "gte", "lte", "in", "not", "order", "limit", "range"]) chain[method] = (...args: unknown[]) => { filters.push([method, ...args]); return chain; };
       calls.push({ table, filters });
       return chain;
     } } };
@@ -232,13 +268,43 @@ describe("loader", () => {
   const row = (playerId: number, gameId: number, date: string) => ({ player_id: playerId, player_name: `Fictional ${playerId}`, position_code: "D", date, season_id: SEASON, game_id: gameId, team_abbrev: "NJD", opponent_team_abbrev: "NYR", home_road: "H", games_played: 1, goals: 1, assists: 0, points: 1, shots: 3, hits: 1, blocked_shots: 1, pp_points: 0, toi_per_game: 1200, pp_toi: 60, penalty_minutes: 0 });
   const context = (tables: Record<string, unknown[]>) => { const fake = fakeClient(tables); return { fake, context: { client: fake.client, generatedAt: "2026-11-01T14:00:00Z" } }; };
   it("reads the newest slate, then the season for those players only", async () => {
-    const { fake, context: ctx } = context({ wgo_skater_stats: [row(1, 9, SLATE)], games: [{ id: 9 }], wgo_team_stats: [], nst_gamelog_as_counts: [counts(1, SLATE)], nst_gamelog_as_counts_oi: [onIce(1, SLATE)], rolling_player_game_metrics: [], powerPlayCombinations: [], yahoo_players: [], yahoo_nhl_player_map_read: [] });
+    const { fake, context: ctx } = context({ wgo_skater_stats: [row(1, 9, SLATE)], games: [{ id: 9 }], wgo_team_stats: [], nst_gamelog_as_counts: [counts(1, SLATE)], nst_gamelog_as_counts_oi: [onIce(1, SLATE)], lineCombinations: [{ gameId: 9, forwards: [], defensemen: [1] }], powerPlayCombinations: [], yahoo_players: [], yahoo_nhl_player_map_read: [] });
     const result = await loadLastNightsStandouts(ctx, settings({ view: "defensemen" }));
     expect(result.data?.slate).toBe(SLATE);
     expect(result.data?.skaters.map(skater => skater.playerId)).toEqual([1]);
     const nst = fake.calls.find(call => call.table === "nst_gamelog_as_counts")!;
     expect(nst.filters).toContainEqual(["in", "player_id", [1]]);
     expect(fake.calls.some(call => call.table === "wgo_goalie_stats")).toBe(false);
+    // Everyone has last night's line, so the slow rolling table is not read.
+    expect(fake.calls.some(call => call.table === "rolling_player_game_metrics")).toBe(false);
+    expect(result.data?.skaters[0].role.line).toBe("P1");
+  });
+  const skaterTables = { wgo_skater_stats: [row(1, 9, SLATE)], games: [{ id: 9 }], wgo_team_stats: [], nst_gamelog_as_counts: [], nst_gamelog_as_counts_oi: [], lineCombinations: [], powerPlayCombinations: [], yahoo_players: [], yahoo_nhl_player_map_read: [] };
+  /** Answers rolling from a queue of results; every other table comes from the fake. */
+  function withRolling(results: object[]) {
+    const { fake } = context(skaterTables);
+    let reads = 0;
+    const client = { from(table: string) {
+      if (table !== "rolling_player_game_metrics") return fake.client.from(table);
+      const chain: any = { then: (resolve: (value: unknown) => void) => resolve(results[Math.min(reads++, results.length - 1)]) };
+      for (const method of ["select", "eq", "lte", "in", "not", "order", "range"]) chain[method] = () => chain;
+      return chain;
+    } };
+    return { reads: () => reads, ctx: { client, generatedAt: "2026-11-01T14:00:00Z" } };
+  }
+  const timedOut = { data: null, error: { code: "57014", message: "statement timeout" }, count: null };
+  it("retries rolling once after a statement timeout", async () => {
+    const line = { player_id: 1, game_date: "2026-10-24", line_combo_slot: 2, line_combo_group: "defense" };
+    const { ctx, reads } = withRolling([timedOut, { data: [line], error: null, count: 1 }]);
+    const result = await loadLastNightsStandouts(ctx, settings({ view: "defensemen" }));
+    expect(reads()).toBe(2);
+    expect(result.data?.skaters[0]).toMatchObject({ role: { line: "P2" }, lineAsOf: "2026-10-24" });
+  });
+  it("keeps the post when rolling keeps failing, with the line unknown", async () => {
+    const { ctx, reads } = withRolling([timedOut, timedOut]);
+    const result = await loadLastNightsStandouts(ctx, settings({ view: "defensemen" }));
+    expect(reads()).toBe(2);
+    expect(result.data?.skaters[0].role.line).toBe("unknown");
   });
   it("reads only goalie tables for the goalie view's players", async () => {
     const { fake, context: ctx } = context({ wgo_skater_stats: [row(1, 9, SLATE)], games: [{ id: 9 }], wgo_team_stats: [], wgo_goalie_stats: [], nst_gamelog_goalie_all_counts: [], yahoo_players: [], yahoo_nhl_player_map_read: [] });

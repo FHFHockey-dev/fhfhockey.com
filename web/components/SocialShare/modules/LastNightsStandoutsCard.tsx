@@ -1,6 +1,6 @@
 import type { SharePostCardProps } from "lib/socialShare/modules/contract";
 import { STALE_SETTINGS_NOTE } from "lib/socialShare/modules/bshBoard";
-import { goalieRanking, isGoalieView, isHandBuilt, lineChipText, percentLabel, ppChipText, slateLabel, sortLabel, STANDOUT_MAX_ROWS, standoutPool, standoutRows, standoutsCurrent, statText, viewTitle, type LastNightsStandoutsData, type LastNightsStandoutsSettings, type StandoutGoalie, type StandoutSkater, type StandoutStat } from "lib/socialShare/modules/lastNightsStandouts";
+import { goalieRanking, isGoalieView, isHandBuilt, lineChipText, percentLabel, ppChipText, rankingText, slateLabel, STANDOUT_MAX_ROWS, standoutPool, standoutRows, standoutsCurrent, statText, viewTitle, type LastNightsStandoutsData, type LastNightsStandoutsSettings, type StandoutGoalie, type StandoutSkater, type StandoutStat } from "lib/socialShare/modules/lastNightsStandouts";
 import { ownershipLabel } from "lib/socialShare/modules/shared/definitions";
 import { formatSeconds } from "lib/socialShare/modules/whatChanged";
 import { SkaterBoard, SkaterCell, skaterLogoSize } from "./BshBoardCard";
@@ -17,8 +17,8 @@ const ppTint = (pp: StandoutSkater["role"]["pp"]) => pp === 1 ? "rgba(229,174,91
 /** Fewer skaters get larger type, so a short card has no dead band. */
 const rowType = (rows: number) => rows >= 7 ? 24 : rows >= 5 ? 28 : rows >= 3 ? 34 : 42;
 
-export const StandoutChips = ({ row }: { row: Pick<StandoutSkater, "role"> }) => <span className={styles.chips}>
-  <span className={styles.chip} data-testid="line-chip" style={{ backgroundColor: chipTint(row.role.line !== "unknown"), color: "#ffffff" }}>{lineChipText(row.role)}</span>
+export const StandoutChips = ({ row }: { row: Pick<StandoutSkater, "role" | "lineAsOf"> }) => <span className={styles.chips}>
+  <span className={styles.chip} data-testid="line-chip" style={{ backgroundColor: chipTint(row.role.line !== "unknown" && !row.lineAsOf), color: "#ffffff" }}>{lineChipText(row)}</span>
   <span className={styles.chip} data-testid="pp-chip" style={{ backgroundColor: ppTint(row.role.pp), color: "#ffffff" }}>{ppChipText(row.role)}</span>
 </span>;
 const Tile = ({ stat }: { stat: StandoutStat }) => <span className={styles.tile} data-testid="stat-tile" data-stat={stat.id} style={{ backgroundColor: tileTint(stat.change) }}>
@@ -65,10 +65,10 @@ export default function LastNightsStandoutsCard({ data, settings, logos }: Share
   const rows = standoutRows(data, settings), hand = isHandBuilt(settings.view), type = rowType(rows.length);
   if (!rows.length) return <div className={styles.board}><Banner settings={settings} slate={data.slate} /><div className={styles.blank} data-testid="standouts-blank">{hand ? `Pick up to ${STANDOUT_MAX_ROWS} skaters in the sidebar to build this card.` : "No skater played on this slate in this view."}</div></div>;
   const pool = standoutPool(data, settings).length;
-  const legend = hand ? "Picked by hand, in this order." : `Top ${rows.length} of ${pool} by ${sortLabel(settings.rankBy).replace("Points", "points")}, then points, SOG, xG, TOI.`;
+  const legend = hand ? "Picked by hand, in this order." : `Top ${rows.length} of ${pool} by ${rankingText(settings.rankBy)}.`;
   return <div className={styles.board}>
     <Banner settings={settings} slate={data.slate} />
-    <p className={styles.legend} style={{ color: QUIET }} data-testid="standouts-legend">{legend} % is against the player&apos;s own season per game before this slate; — means no baseline or value.</p>
+    <p className={styles.legend} style={{ color: QUIET }} data-testid="standouts-legend">{legend} % is against the player&apos;s own season per game before this slate; — means no baseline or value.{rows.some(row => row.lineAsOf) ? " A dated line is from that earlier game." : ""}</p>
     <div className={styles.rows} style={{ fontSize: type }} data-few={rows.length <= 2 || undefined}>{rows.map((row, index) => <SkaterRow key={row.playerId} row={row} rank={hand ? null : index + 1} logo={row.team ? logos[row.team] : null} logoSize={Math.round(type * 1.3)} />)}</div>
   </div>;
 }

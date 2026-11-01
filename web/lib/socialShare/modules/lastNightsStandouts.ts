@@ -1,6 +1,7 @@
+import { normalizeEvDeploymentBucket } from "lib/rankings/skaterDeploymentAggregation";
 import { defineShareModule, shareSettingsKey, type ShareSettingField, type SharePostLoadResult, type SharePostSource } from "./contract";
 import { toNstGoalieGames, type NstGsaxRow } from "./goalieGsax";
-import { roleSlotReader, type RoleEvidence, type RoleSlot } from "./roleWatch";
+import { roleSlotReader, type RoleEvidence, type RoleRollingRow, type RoleSlot } from "./roleWatch";
 import { ownershipOf, pooledSavePct, type OwnershipState } from "./shared/definitions";
 import type { GoalieAppearance } from "./shared/goalieLedger";
 import { appearancesByPlayer, type SkaterAppearance } from "./shared/skaterAppearances";
@@ -73,12 +74,17 @@ export function goalLine(game: { goals: number | null; assists: number | null; p
   if (game.goals === null || game.assists === null || game.points === null) return "—";
   return `${game.goals}G-${game.assists}A-${game.points}P${game.ppPoints !== null && game.ppPoints > 0 ? `-${game.ppPoints}PPP` : ""}`;
 }
-export const lineChipText = (role: RoleSlot) => role.line === "unknown" ? "Line —" : role.line;
+export const slateLabel = (slate: string) => new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(`${slate}T12:00:00Z`));
+/** A line from an earlier game carries that game's date, so it cannot read as last night's. */
+export const lineChipText = ({ role, lineAsOf }: { role: RoleSlot; lineAsOf: string | null }) => role.line === "unknown" ? "Line —" : lineAsOf ? `${role.line} · ${slateLabel(lineAsOf)}` : role.line;
 export const ppChipText = (role: RoleSlot) => role.pp === "unknown" ? "PP —" : role.pp === "off" ? "Off PP" : `PP${role.pp}`;
 
 export type StandoutSkater = {
   playerId: number; name: string | null; position: string | null; group: "F" | "D" | null; team: string | null; opponent: string | null;
-  ownership: OwnershipState; role: RoleSlot; goalLine: string; points: number | null; priorGames: number; stats: StandoutStat[];
+  ownership: OwnershipState; role: RoleSlot;
+  /** Null when `role.line` is from last night's game; otherwise the date of the earlier game it comes from. */
+  lineAsOf: string | null;
+  goalLine: string; points: number | null; priorGames: number; stats: StandoutStat[];
 };
 export type StandoutGoalie = {
   goalieId: number; name: string | null; team: string; opponent: string | null; started: boolean | null; ownership: OwnershipState;
@@ -142,7 +148,11 @@ const SERVER_FIELDS = FIELDS.filter(field => !field.clientOnly);
 export const standoutsCurrent = (data: LastNightsStandoutsData, settings: LastNightsStandoutsSettings) => data.applied === shareSettingsKey(SERVER_FIELDS, settings);
 export const viewTitle = (settings: Pick<LastNightsStandoutsSettings, "view" | "rosterMax">) => ({ under: `Under ${settings.rosterMax}% rostered`, all: "No roster limit", goalies: "Goalies", forwards: "Top forwards", defensemen: "Top defensemen" })[settings.view];
 export const sortLabel = (key: StandoutSortKey) => STANDOUT_SORT_OPTIONS.find(option => option.value === key)!.label;
-export const slateLabel = (slate: string) => new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(`${slate}T12:00:00Z`));
+/** How an auto-ranked view orders its players, each key once. */
+export const rankingText = (key: StandoutSortKey) => {
+  const [first, ...rest] = [key, "points", "sog", "xg", "toi"].filter((entry, index, keys) => keys.indexOf(entry) === index).map(entry => sortLabel(entry as StandoutSortKey));
+  return `${first === "Points" ? "points" : first}, then ${rest.map(entry => entry === "Points" ? "points" : entry).join(", ")}`;
+};
 
 /** Every scheduled game on the slate needs both teams reported and player rows. Anything short is partial, so it cannot export. */
 export function slateCoverage(input: { playerGameIds: readonly number[]; completedTeamGames: readonly { gameId: number }[]; scheduledGameIds: readonly number[] }) {
@@ -153,12 +163,35 @@ export function slateCoverage(input: { playerGameIds: readonly number[]; complet
   return { observed, expected, missing, reasons: [...(missing ? [`${missing} of ${expected} scheduled team games on this slate have no reported result.`] : []), ...(noPlayerRows ? [`${noPlayerRows} games on this slate have no player rows.`] : [])] };
 }
 
+/**
+ * Last night's lines from the game's own Gamecenter row, which the rolling writer also reads: forwards in threes and
+ * defensemen in pairs, in order. It matched rolling on all 1,764 rows of 2026-10-24 to 10-30 and is there before rolling is.
+ */
+export const LINE_COMBO_COLUMNS = ["gameId", "forwards", "defensemen"] as const;
+export type LineComboRow = { gameId: number; forwards: number[] | null; defensemen: number[] | null };
+export function lineRowsFromCombinations(rows: readonly LineComboRow[]): RoleRollingRow[] {
+  const slots = (row: LineComboRow, ids: number[] | null, size: number, group: string) => (ids ?? []).map((id, index) => ({ player_id: id, game_id: row.gameId, line_combo_slot: Math.floor(index / size) + 1, line_combo_group: group }));
+  return rows.flatMap(row => [...slots(row, row.forwards, 3, "forward"), ...slots(row, row.defensemen, 2, "defense")]);
+}
+export type EarlierLineRow = { player_id: number; game_date: string; line_combo_slot: number | null; line_combo_group: string | null };
+/** The newest known line for each player, from before the slate. Never a guess: no earlier line stays unknown. */
+export function latestEarlierLines(rows: readonly EarlierLineRow[], slate: string) {
+  const latest = new Map<number, { line: string; date: string }>();
+  for (const row of rows) {
+    const line = normalizeEvDeploymentBucket({ lineComboGroup: row.line_combo_group, lineComboSlot: row.line_combo_slot });
+    if (line && row.game_date < slate && row.game_date > (latest.get(row.player_id)?.date ?? "")) latest.set(row.player_id, { line, date: row.game_date });
+  }
+  return latest;
+}
+
 const STRENGTH = "All situations; PP TOI on the power play; xG% on ice (NST)";
 export type LastNightsStandoutsInput = {
   slate: string; season: number; settings: LastNightsStandoutsSettings; completedTeamGames: readonly { gameId: number }[]; scheduledGameIds: readonly number[];
   ownership: { byPlayer: ReadonlyMap<number, OwnershipState>; updatedAt: string | null };
   /** Skater views: every game this season of everyone on the slate, the slate included. */
   appearances?: readonly SkaterAppearance[]; nstCounts?: readonly NstCountRow[]; nstOnIce?: readonly NstOnIceRow[]; role?: RoleEvidence;
+  /** Rolling rows for players with no line in last night's game. */
+  earlierLines?: readonly EarlierLineRow[];
   /** Goalie view: this slate's rows only. */
   goalies?: readonly GoalieAppearance[]; nstGoalies?: readonly NstGsaxRow[];
 };
@@ -190,14 +223,15 @@ function buildGoalieView(input: LastNightsStandoutsInput, applied: string): Shar
 
 function buildSkaterViews(input: LastNightsStandoutsInput, applied: string): SharePostLoadResult<LastNightsStandoutsData> {
   const { slate, settings } = input, appearances = input.appearances ?? [], role = roleSlotReader(input.role ?? { rolling: [], pp: [] });
+  const earlier = latestEarlierLines(input.earlierLines ?? [], slate);
   const counts = joinNst(appearances, input.nstCounts ?? []), onIce = joinNst(appearances, input.nstOnIce ?? []);
   const skaters = [...appearancesByPlayer(appearances)].flatMap(([playerId, games]): StandoutSkater[] => {
     const joined = games.map((game): JoinedGame => ({ ...game, nst: counts(game), onIce: onIce(game) }));
     const last = joined.find(game => game.date === slate);
     if (!last) return [];
     // Last night is never in its own baseline.
-    const prior = joined.filter(game => game.date < slate);
-    return [{ playerId, name: last.name, position: last.position, group: last.group, team: last.team, opponent: last.opponent, ownership: input.ownership.byPlayer.get(playerId) ?? ownershipOf(null), role: role(playerId, last.gameId), goalLine: goalLine(last), points: last.points, priorGames: prior.length,
+    const prior = joined.filter(game => game.date < slate), slot = role(playerId, last.gameId), fallback = slot.line === "unknown" ? earlier.get(playerId) : undefined;
+    return [{ playerId, name: last.name, position: last.position, group: last.group, team: last.team, opponent: last.opponent, ownership: input.ownership.byPlayer.get(playerId) ?? ownershipOf(null), role: fallback ? { ...slot, line: fallback.line } : slot, lineAsOf: fallback?.date ?? null, goalLine: goalLine(last), points: last.points, priorGames: prior.length,
       stats: STAT_METRICS.map(stat => {
         const metric = metricOf(stat.metric), value = gameValue(metric, last), baseline = baselineOf(metric, prior, settings);
         return { id: stat.id, label: stat.label, last: value, baseline, change: percentChange(value, baseline) };
@@ -208,12 +242,12 @@ function buildSkaterViews(input: LastNightsStandoutsInput, applied: string): Sha
   const wgoGaps = slateGames.filter(game => [game.goals, game.assists, game.points, game.shots, game.toiSeconds, game.ppToiSeconds].some(value => value === null)).length;
   const reasons = [...coverage.reasons, ...(wgoGaps ? [`${wgoGaps} skaters on this slate have a missing NHL.com stat.`] : [])];
   const nstGaps = skaters.filter(row => (["icf", "iscf", "xg", "xgPct"] as const).some(id => statOf(row, id).last === null)).length;
-  const unknownLines = skaters.filter(row => row.role.line === "unknown").length, unknownPp = skaters.filter(row => row.role.pp === "unknown").length;
+  const unknownLines = skaters.filter(row => row.role.line === "unknown").length, unknownPp = skaters.filter(row => row.role.pp === "unknown").length, olderLines = skaters.filter(row => row.lineAsOf !== null).length;
   const knownOwned = skaters.filter(row => row.ownership.state === "known").length;
   const sources: SharePostSource[] = [
     { name: "NHL.com", tables: ["wgo_skater_stats", "wgo_team_stats", "games"], state: reasons.length ? "partial" : "ready", asOf: slate, updatedAt: null },
     { name: "Natural Stat Trick", tables: ["nst_gamelog_as_counts", "nst_gamelog_as_counts_oi"], state: nstGaps ? "partial" : "ready", asOf: nstGaps === skaters.length ? null : slate, updatedAt: null, reasons: nstGaps ? [`${nstGaps} of ${skaters.length} skaters have a missing NST value on this slate.`] : [] },
-    { name: "FHFH lines and PP units", tables: ["rolling_player_game_metrics", "powerPlayCombinations"], state: unknownLines || unknownPp ? "partial" : "ready", asOf: slate, updatedAt: null, reasons: [...(unknownLines ? [`${unknownLines} of ${skaters.length} line slots are not written yet.`] : []), ...(unknownPp ? [`${unknownPp} of ${skaters.length} PP slots have no rows.`] : [])] },
+    { name: "FHFH lines and PP units", tables: ["lineCombinations", ...(olderLines ? ["rolling_player_game_metrics"] : []), "powerPlayCombinations"], state: unknownLines || unknownPp || olderLines ? "partial" : "ready", asOf: slate, updatedAt: null, reasons: [...(unknownLines ? [`${unknownLines} of ${skaters.length} skaters have no known line.`] : []), ...(olderLines ? [`${olderLines} of ${skaters.length} lines are from an earlier game, and the chip prints its date.`] : []), ...(unknownPp ? [`${unknownPp} of ${skaters.length} PP slots have no rows.`] : [])] },
     yahooSource(input, knownOwned, skaters.length),
   ];
   return {
@@ -228,10 +262,11 @@ export function buildLastNightsStandouts(input: LastNightsStandoutsInput): Share
   return isGoalieView(input.settings.view) ? buildGoalieView(input, applied) : buildSkaterViews(input, applied);
 }
 
-const altSkater = (row: StandoutSkater) => `${row.name ?? `Player ${row.playerId}`} ${row.goalLine}, ${lineChipText(row.role)}, ${ppChipText(row.role)}: ${row.stats.map(stat => `${stat.label} ${statText(stat)} (${percentLabel(stat.change)})`).join(", ")}`;
+const altSkater = (row: StandoutSkater) => `${row.name ?? `Player ${row.playerId}`} ${row.goalLine}, ${lineChipText(row)}, ${ppChipText(row.role)}: ${row.stats.map(stat => `${stat.label} ${statText(stat)} (${percentLabel(stat.change)})`).join(", ")}`;
 const altGoalie = (row: StandoutGoalie) => `${row.name ?? `Goalie ${row.goalieId}`}: ${row.saves ?? "—"} saves on ${row.shotsAgainst ?? "—"} shots, ${row.goalsAgainst ?? "—"} GA, GSAx ${row.gsax ?? "—"}`;
 export const lastNightsStandoutsModule = defineShareModule<LastNightsStandoutsSettings, LastNightsStandoutsData>({
   id: "last-nights-standouts", title: "Last Nights Standouts", summary: "Observed results from the latest completed slate, each against that player's own season per game before it. Two views are built by hand.", group: "skaters", basis: "observed",
+  kicker: settings => isGoalieView(settings.view) ? "Goalies" : "Skaters",
   suggestedUse: "Fits any day after a slate.",
   fields: FIELDS,
   load: () => import("./lastNightsStandouts.sources").then(sources => sources.loadLastNightsStandouts),

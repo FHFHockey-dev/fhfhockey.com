@@ -38,3 +38,5 @@
 **Blockers:** none.
 
 - Last Nights Standouts: new module, sources, test, card, panel, scss, E2E spec, plus the barrel. Reads are R8 and R9 in the receipt. Browser run and full-slate loader are the lead's. Rolling had 72 of 360 line slots for 10-31 at read time, so Line chips depend on that writer finishing.
+
+- Standouts defects: lines now come from `lineCombinations`, rolling only as a dated fallback. NST holes on 10-05 and 10-06 explain the dashes. Spec run on port 3110 with the isolated build: 8 passed.

@@ -253,3 +253,15 @@ Top 15 now (SQL using the same formula; the builder has not run on the full seas
 | R9 | Top 8 forwards by the default sort, with the SOG baseline before the slate | `wgo_skater_stats` | 8 per-player rows | Passed. Baseline and percent arithmetic behave as the builder's on real rows |
 
 R9, for the default: Crosby 1G-2A-3P-1PPP, Anderson 2G-1A-3P, Kucherov 0G-3A-3P, Frondell 2G-0A-2P-1PPP (9 SOG, +484%), Thompson, Stützle, Bedard, Kreider. The loader has not run on the full slate; it is the lead's to run at the render step.
+
+### Last Nights Standouts: defects from the lead's render
+
+- **Lines:** rolling had 92 of 360 rows for 10-31, last written 2026-11-01 08:18 UTC, so that writer had not reached most of the slate. `lineCombinations` (Gamecenter) has all 10 games and all 360 skaters, and matched rolling on 1,764 of 1,764 rows for 10-24 to 10-30. The post now reads last night's line from it. If a game's row is absent, the chip uses the newest earlier rolling line and prints its date, "L2 · Oct 24"; with none it stays "Line —". 353 of 360 skaters had an earlier rolling line.
+- **Load failure:** rolling is read only for players with no line in last night's game, with one retry on 57014. If it still fails those lines stay unknown and the post still loads.
+- **NST dashes:** correct under the rule. NST has 0 rows for 10-05 (144 skater rows, 4 games) and 10-06 (324 rows, 9 games); it has every other date checked from 09-29 to 10-09. Stützle and Cozens have 12 of 14 prior games, 85.7%, under the 90% default. On this slate 27 of the 349 skaters with 3+ prior GP fall short; 26 of them clear at 80%. Thompson has 12 of 13 and passes. Nothing changed; the Min NST coverage field can be lowered, and a backfill of those two dates would close it.
+
+| # | Statement | Tables read | Rows returned | Result |
+| --- | --- | --- | --- | --- |
+| R10 | Rolling, line and earlier-line coverage for the 10-31 slate, through MCP `execute_sql` on 2026-11-01 | `wgo_skater_stats`, `rolling_player_game_metrics`, `lineCombinations` | 0 sample rows (1 aggregate row, then 3 aggregate rows) | Passed |
+| R11 | NST coverage for 5 named skaters | `wgo_skater_stats`, `nst_gamelog_as_counts`, `nst_gamelog_as_counts_oi`, `rolling_player_game_metrics` | 5 per-player rows | Passed |
+| R12 | NST coverage for the slate, and rows per night 09-29 to 10-09 | `wgo_skater_stats`, `nst_gamelog_as_counts`, `games` | 0 sample rows (12 aggregate rows) | Passed |
