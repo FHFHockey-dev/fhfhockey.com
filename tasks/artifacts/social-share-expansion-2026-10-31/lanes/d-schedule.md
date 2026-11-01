@@ -59,3 +59,20 @@ Project `fyhftlxokyjtpndbkfse`, Supabase MCP `execute_sql`, 2026-10-31. Every st
 - **Fill pass (TJ, 2026-10-31):** the card now uses its own grid instead of `PostTable`, so rows share the body's height in equal `1fr` tracks and cannot leave a dead band. Off-night tint runs the full column. League games per day moved into the day headers. On-card text is one legend line (dates, shading, ceiling) plus the per-team gap reasons. Ownership counts and the pick rule moved to `evidence.sample`; tied teams moved to `evidence.cohort`; the alt text carries the cohort and games by day.
 - By arithmetic only, not measured: about 50px per row at 16 rows, from the lead's 860px body, and about 250px per pick column on the weekly card. At 10 rows or fewer (a late-week rest-of-week post) type and logos enlarge. Layout at 1080 × 1080 has not been seen; the lead measures on real data.
 - A postponed game stays in `games` with no status, so it would hold the post at `partial` until it leaves the 21-day window. The reason prints; Team Games has the same limit.
+
+## Period control (Chef's ticket, seam at `884b4839d`)
+
+Off-Night Edge is any-week and Team Games is past-only. Both use `shared/periodWindow.ts`.
+
+- **Off-Night Edge options:** This week (the default, keeping the `dates` choice), Matchup week and Custom range. `dates=weekly` and `dates=rest-of-week` load as before, with no matchup read. Anything other than this week counts every game on its dates, played or not, as one horizon through `calcWeekScore`, using one NHL schedule call per Monday week touched.
+- **Past dates:** the legend prints "Past dates: picks and ownership are current, not as of then". L5 form and Yahoo ownership are always today's. The alt text says the same.
+- **Team Games options:** Recent days (the default), Matchup week and Custom range. `days=N` works as before, with no matchup read. A week under way counts through the last completed games and is labelled "so far". The read limits rose to 2,700 and 1,400 rows, because a custom range can cover the season.
+- **Fit:** 14 day columns use a compact table. Custom ranges on Off-Night Edge stop at 14 days, because wider ones do not fit beside the picks. The longest week on the 2026 calendar is 14 days (read 4).
+
+**Read 4.** 2026-11-01, Supabase MCP `execute_sql`, one `SELECT` on `yahoo_matchup_weeks`, 5 rows. Week 19 runs Feb 1 to Feb 14, 14 days; the other four rows are 7 days, all starting on a Monday.
+
+**Checks.** Vitest on `offNightEdge` (29), `teamGames` (7), `PostStudio` (16), `server`, `contract`, `periodWindow` and `landingCatalog`: passed. `postedWeek.test.ts` has one failure on another lane's `stars-total` wording; its Off-Night Edge and Team Games rules pass. eslint on my files is clean. The pure check passed on both cards. `tsc`: no errors in my files, and `retainedBlsh.test.ts:134` as expected; other lanes' uncommitted files showed errors in the same run. Browser, `next dev` on port 3123 with a separate dist dir: `social-share-schedule.spec.ts` 5 passed and the `social-share.spec.ts` post library test 1 passed, all on fictional editions.
+
+**Measured on a fictional 14-day card with 16 long rows:** no cell or table overflow, 0px dead band, minimum row 48px, legend 36px (two lines with the past label).
+
+**Not run:** the real loader for a chosen matchup, which calls the NHL schedule API once per week touched. No real matchup card has been rendered.

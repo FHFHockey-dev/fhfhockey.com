@@ -6,5 +6,6 @@
 - **Decisions:** `selectScheduleDates` counts future games only, so mid-week a seven-day selection equals rest of week. Weekly therefore counts all regular non-postponed games Mon-Sun through `calcWeekScore` with the same inputs; parity with edition rows is tested. Unready schedule publishes no order (data null).
 - **Gotcha:** `buildScheduleSnapshot` marks a read `missing` if `retrievedAt` is after `generatedAt`, so the loader stamps generatedAt after `getSchedule`, like `server.ts`.
 - **Fill pass (TJ's whitespace note):** card moved off `PostTable` to its own `1fr` row grid; notes moved to evidence and alt text; one legend line remains.
+- **Period control:** both posts use the shared seam. Default periods make no matchup read. Off-Night windows score across Monday weeks; custom capped at 14 days. Run specs on a dist dir of their own: several sessions share `.next-playwright`.
 - **Next:** lead renders the post and runs the spec at 13.0; check layout of the weekly card.
 - **Blockers:** none. Full loader render is the lead's (needs more than 50 rows, plus the NHL schedule call).

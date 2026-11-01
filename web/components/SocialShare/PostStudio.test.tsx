@@ -11,13 +11,15 @@ const router = vi.hoisted(() => ({ query: { post: "team-games" } as Record<strin
 vi.mock("next/router", () => ({ useRouter: () => router }));
 
 const edition = (over: Partial<SharePostSnapshot> = {}): SharePostSnapshot => ({
-  schemaVersion: 1, id: "team-games-1", post: "team-games", state: "ready", reasons: [], generatedAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 600000).toISOString(), timeZone: "America/New_York", settings: { days: 7 },
+  schemaVersion: 1, id: "team-games-1", post: "team-games", state: "ready", reasons: [], generatedAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 600000).toISOString(), timeZone: "America/New_York", settings: { days: 7, period: "rolling", week: null, start: null, end: null },
   evidence: { sources: [{ name: "NHL.com team game stats", tables: ["wgo_team_stats"], state: "ready", asOf: "2026-10-30", updatedAt: null }], sample: "21 completed team games", strength: "Not applicable", cohort: "All 32 teams", coverage: { observed: 21, expected: 21, missing: 0, unit: "team games" } },
-  data: { from: "2026-10-24", through: "2026-10-30", rows: [{ team: "NJD", games: 4, lastGame: "2026-10-30", rank: 1 }] }, teams: ["NJD"], fixture: false, ...over,
+  data: { from: "2026-10-24", through: "2026-10-30", label: "Last 7 days · Oct 24 to Oct 30", rows: [{ team: "NJD", games: 4, lastGame: "2026-10-30", rank: 1 }] }, teams: ["NJD"], fixture: false, ...over,
 });
 
 describe("PostStudio", () => {
   const fetchMock = vi.fn();
+  /** Edition requests only: a post with a period control also reads the matchup calendar. */
+  const postCalls = () => fetchMock.mock.calls.map(call => String(call[0])).filter(url => url.includes("/posts/"));
   const serve = (body: SharePostSnapshot) => fetchMock.mockImplementation(async () => ({ ok: true, status: 200, json: async () => body }) as unknown as Response);
   beforeEach(() => {
     fetchMock.mockReset(); router.query = { post: "team-games" }; router.replace = vi.fn(async () => true);
@@ -34,7 +36,7 @@ describe("PostStudio", () => {
     serve(edition());
     render(<PostStudio />);
     await waitFor(() => expect(screen.getByTestId("share-square")).toBeTruthy());
-    expect(fetchMock.mock.calls[0][0]).toBe("/api/v1/social-share/posts/team-games?days=7");
+    expect(postCalls()[0]).toBe("/api/v1/social-share/posts/team-games?days=7&period=rolling");
     const evidence = screen.getByTestId("post-evidence").textContent!;
     for (const label of ["NHL.com team game stats through 2026-10-30", "21 completed team games", "Not applicable", "All 32 teams", "21 of 21 team games", "Days: 7"]) expect(evidence).toContain(label);
     expect(screen.getByText("Default: 7")).toBeTruthy();
@@ -43,7 +45,7 @@ describe("PostStudio", () => {
     expect(screen.getByTestId("post-evidence-line").textContent).toBe("NHL.com team game stats through 2026-10-30 · Not applicable · 21 of 21 team games");
     expect(square.contains(screen.getByTestId("post-evidence-line"))).toBe(true);
     expect(screen.getByTestId("post-watermark").textContent).toBe("OBSERVED RESULTS");
-    expect(screen.getByTestId("share-square").getAttribute("data-export-token")).toBe('team-games-1|team-games|[["days",7]]');
+    expect(screen.getByTestId("share-square").getAttribute("data-export-token")).toBe('team-games-1|team-games|[["days",7],["period","rolling"],["week",null],["start",null],["end",null]]');
   });
 
   it("keeps export off and asks for a refresh when a setting changes the edition's data", async () => {
@@ -53,7 +55,7 @@ describe("PostStudio", () => {
     fireEvent.change(screen.getByLabelText(/^Days/), { target: { value: "14" } });
     await waitFor(() => expect(screen.getByText(/Refresh the post to apply/)).toBeTruthy());
     expect((screen.getByRole("button", { name: "Download PNG" }) as HTMLButtonElement).disabled).toBe(true);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(postCalls().length).toBe(1);
   });
 
   it("gives a post's panel its fields without a refetch, and leaves panel-only fields off the form", async () => {
@@ -68,7 +70,7 @@ describe("PostStudio", () => {
       fireEvent.click(await screen.findByRole("button", { name: "Pick two" }));
       await waitFor(() => expect(screen.getByTestId("share-square").getAttribute("data-export-token")).toContain('["picks","7,9"]'));
       expect(screen.queryByLabelText(/^Picks/)).toBeNull();
-      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(postCalls().length).toBe(1);
     } finally { Object.assign(entry, { fields, panel: undefined }); }
   });
 
@@ -130,11 +132,15 @@ describe("PostStudio", () => {
 
     it("leaves a post without the flag on its own form", async () => {
       router.query = { post: "team-games" };
-      serve(edition());
-      render(<PostStudio />);
-      await screen.findByTestId("share-square");
-      expect(screen.queryByTestId("period-control")).toBeNull();
-      expect(fetchMock.mock.calls.some(call => String(call[0]).includes("matchup-weeks"))).toBe(false);
+      const entry = SHARE_MODULES.get("team-games")!, { periodControl } = entry;
+      Object.assign(entry, { periodControl: undefined });
+      try {
+        serve(edition());
+        render(<PostStudio />);
+        await screen.findByTestId("share-square");
+        expect(screen.queryByTestId("period-control")).toBeNull();
+        expect(fetchMock.mock.calls.some(call => String(call[0]).includes("matchup-weeks"))).toBe(false);
+      } finally { Object.assign(entry, { periodControl }); }
     });
 
     it("reads the week from the URL, and a pager click updates the URL and loads the edition without Refresh", async () => {

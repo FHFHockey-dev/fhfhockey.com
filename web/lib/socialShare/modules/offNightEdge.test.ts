@@ -1,3 +1,4 @@
+import calcWeekScore from "components/GameGrid/utils/calcWeekScore";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -7,7 +8,7 @@ import { buildScheduleSnapshot, calendarWeekStart } from "lib/socialShare/schedu
 import type { SocialScheduleData, SocialScheduleGame } from "lib/socialShare/types";
 import { activeTeamAbbreviations, teamsInfo } from "lib/teamsInfo";
 import { parseShareSettings, sharePostExportBlock, SharePostRequestError, type SharePostSnapshot } from "./contract";
-import { buildOffNightEdge, offNightEdgeModule, offNightSchedule, offNightSelectedDates, type OffNightData, type OffNightSettings, type OffNightYahooRow } from "./offNightEdge";
+import { buildOffNightEdge, OFF_NIGHT_THIS_WEEK, offNightEdgeModule, offNightSchedule, offNightSelectedDates, offNightWeeks, resolveOffNightWindow, type OffNightData, type OffNightSettings, type OffNightYahooRow } from "./offNightEdge";
 import { loadOffNightEdge } from "./offNightEdge.sources";
 import { shareModule } from "./registry";
 import type { SkaterAppearance } from "./shared/skaterAppearances";
@@ -16,13 +17,14 @@ const upstream = vi.hoisted(() => ({ getSchedule: vi.fn() }));
 vi.mock("lib/NHL/server", () => upstream);
 
 const WEEK = "2026-10-26", THURSDAY = "2026-10-29T12:00:00Z", MONDAY = "2026-10-26T12:00:00Z";
-const settings = (over: Partial<OffNightSettings> = {}): OffNightSettings => ({ ownershipCeiling: 50, includeUnknown: "off", dates: "rest-of-week", ...over });
+const settings = (over: Partial<OffNightSettings> = {}): OffNightSettings => ({ ownershipCeiling: 50, includeUnknown: "off", dates: "rest-of-week", period: OFF_NIGHT_THIS_WEEK, week: null, start: null, end: null, ...over });
 /** The fictional league week as of a moment: earlier days are final. */
 function week(at: string): SocialScheduleData {
   const schedule = fictionalLeagueWeek(WEEK, new Date(Date.parse(at) - 60000).toISOString());
   return { ...schedule, games: schedule.games!.map(game => game.gameDate! < at.slice(0, 10) ? { ...game, gameState: "OFF" } : game) };
 }
 const edition = (at: string, dates: OffNightSettings["dates"], schedule = week(at)) => buildScheduleSnapshot({ format: dates === "weekly" ? "game-grid" : "remaining-week", weekStart: WEEK, schedule, generatedAt: at, selectedDates: offNightSelectedDates(WEEK, at.slice(0, 10), dates) });
+const weekOf = (monday: string) => offNightWeeks(monday, new Date(Date.parse(`${monday}T12:00:00Z`) + 6 * 86400000).toISOString().slice(0, 10))[0].dates;
 const topTeam = (at = THURSDAY, dates: OffNightSettings["dates"] = "rest-of-week") => offNightSchedule(edition(at, dates), dates).rows[0].team;
 
 type Skater = { id: number; team: string; position?: string; pct?: number | null; status?: string | null; updated?: string | null; games?: number; shots?: number | null; yahooKey?: string };
@@ -37,9 +39,14 @@ function world(skaters: readonly Skater[]) {
   const map = skaters.map(skater => ({ yahoo_player_id: skater.yahooKey ?? `465.p.${skater.id}`, nhl_player_id: String(skater.id) }));
   return { appearances: [...appearances, ...opponents], yahoo, map, gameIds, from: "2026-10-08", through: "2026-10-28" };
 }
+/** The default period's window, for the cases that are about the rest of the post. */
+const edge = (input: Omit<Parameters<typeof buildOffNightEdge>[0], "window">) => {
+  const { window } = resolveOffNightWindow(input.settings, { weeks: [], reasons: [] }, (input.edition as { generatedAt: string }).generatedAt);
+  return buildOffNightEdge({ ...input, window: window! });
+};
 const build = (skaters: readonly Skater[], over: Partial<OffNightSettings> = {}, at = THURSDAY) => {
   const active = settings(over);
-  return buildOffNightEdge({ edition: edition(at, active.dates), settings: active, ...world(skaters) });
+  return edge({ edition: edition(at, active.dates), settings: active, ...world(skaters) });
 };
 const rowOf = (data: OffNightData | null, team: string) => data!.rows.find(row => row.team === team)!;
 const snapshotOf = (result: ReturnType<typeof build>, active = settings()): SharePostSnapshot => ({ schemaVersion: 1, id: "e", post: "off-night-edge", generatedAt: THURSDAY, expiresAt: new Date(Date.now() + 60000).toISOString(), timeZone: "America/New_York", settings: active, fixture: false, state: result.state, reasons: result.reasons ?? [], evidence: result.evidence, data: result.data, teams: result.teams ?? [] });
@@ -79,16 +86,16 @@ describe("6.1 schedule: GP by day and top 16 by actual Week Score", () => {
     expect(result.rows.length).toBe(16);
     expect(result.rows.every(row => row.rank === 1)).toBe(true);
     expect(result.tiedOut.length).toBe(16);
-    const built = buildOffNightEdge({ edition: edition(THURSDAY, "rest-of-week", schedule), settings: settings(), ...world([{ id: 1, team: teams[0].abbrev }]) });
+    const built = edge({ edition: edition(THURSDAY, "rest-of-week", schedule), settings: settings(), ...world([{ id: 1, team: teams[0].abbrev }]) });
     for (const team of result.tiedOut) expect(built.evidence.cohort).toContain(team);
   });
   it("publishes no order from a schedule that is not ready", () => {
     const partial = week(THURSDAY); partial.numGamesPerDay = [1, 1, 1, 1, 1, 1, 1];
-    const unready = buildOffNightEdge({ edition: edition(THURSDAY, "rest-of-week", partial), settings: settings(), ...world([{ id: 1, team: "NJD" }]) });
+    const unready = edge({ edition: edition(THURSDAY, "rest-of-week", partial), settings: settings(), ...world([{ id: 1, team: "NJD" }]) });
     expect(unready.state).toBe("partial");
     expect(unready.data).toBeNull();
     const old = { ...week(THURSDAY), fetchedAt: "2026-10-28T12:00:00Z" };
-    const stale = buildOffNightEdge({ edition: edition(THURSDAY, "rest-of-week", old), settings: settings(), ...world([{ id: 1, team: "NJD" }]) });
+    const stale = edge({ edition: edition(THURSDAY, "rest-of-week", old), settings: settings(), ...world([{ id: 1, team: "NJD" }]) });
     expect(stale.state).toBe("stale");
     expect(stale.data).toBeNull();
     expect(stale.reasons?.join(" ")).toMatch(/older than/);
@@ -125,27 +132,27 @@ describe("6.2 candidates: at most one F and one D, with reasons and no filler", 
     expect(rowOf(build([{ id: 1, team, games: 4 }]).data, team).gaps.F).toBe("No F: 1 short sample");
     expect(rowOf(build([{ id: 1, team, shots: null }]).data, team).gaps.F).toBe("No F: 1 short sample");
     const noMap = world([{ id: 1, team }]);
-    expect(rowOf(buildOffNightEdge({ edition: edition(THURSDAY, "rest-of-week"), settings: settings(), ...noMap, map: [] }).data, team).gaps.F).toBe("No F: 1 no identity");
+    expect(rowOf(edge({ edition: edition(THURSDAY, "rest-of-week"), settings: settings(), ...noMap, map: [] }).data, team).gaps.F).toBe("No F: 1 no identity");
     const twoIds = world([{ id: 1, team }]);
-    expect(rowOf(buildOffNightEdge({ edition: edition(THURSDAY, "rest-of-week"), settings: settings(), ...twoIds, map: [...twoIds.map, { yahoo_player_id: "465.p.1", nhl_player_id: "777" }] }).data, team).gaps.F).toBe("No F: 1 no identity");
+    expect(rowOf(edge({ edition: edition(THURSDAY, "rest-of-week"), settings: settings(), ...twoIds, map: [...twoIds.map, { yahoo_player_id: "465.p.1", nhl_player_id: "777" }] }).data, team).gaps.F).toBe("No F: 1 no identity");
     const moved = world([{ id: 1, team }]);
     moved.yahoo[0].editorial_team_abbreviation = "ZZZ";
-    expect(rowOf(buildOffNightEdge({ edition: edition(THURSDAY, "rest-of-week"), settings: settings(), ...moved }).data, team).gaps.F).toBe("No F: 1 no identity");
+    expect(rowOf(edge({ edition: edition(THURSDAY, "rest-of-week"), settings: settings(), ...moved }).data, team).gaps.F).toBe("No F: 1 no identity");
   });
   it("binds a traded skater to the latest game's team, not a former one", () => {
     const [newTeam, oldTeam] = offNightSchedule(edition(THURSDAY, "rest-of-week"), "rest-of-week").rows.map(row => row.team);
     const fixture = world([{ id: 1, team: newTeam }]);
     fixture.appearances.filter(row => row.playerId === 1).slice(0, 3).forEach(row => { row.team = oldTeam; });
-    const result = buildOffNightEdge({ edition: edition(THURSDAY, "rest-of-week"), settings: settings(), ...fixture });
+    const result = edge({ edition: edition(THURSDAY, "rest-of-week"), settings: settings(), ...fixture });
     expect(rowOf(result.data, newTeam).picks.F?.nhlId).toBe(1);
     expect(rowOf(result.data, oldTeam).picks.F).toBeNull();
   });
   it("ignores non-regular games and is partial when a team game has no skater rows", () => {
     const team = topTeam(), fixture = world([{ id: 1, team }]);
-    const preseason = buildOffNightEdge({ edition: edition(THURSDAY, "rest-of-week"), settings: settings(), ...fixture, gameIds: fixture.gameIds.slice(1) });
+    const preseason = edge({ edition: edition(THURSDAY, "rest-of-week"), settings: settings(), ...fixture, gameIds: fixture.gameIds.slice(1) });
     expect(preseason.state).toBe("ready");
     expect(rowOf(preseason.data, team).gaps.F).toBe("No F: 1 short sample");
-    const gap = buildOffNightEdge({ edition: edition(THURSDAY, "rest-of-week"), settings: settings(), ...fixture, gameIds: [...fixture.gameIds, 999] });
+    const gap = edge({ edition: edition(THURSDAY, "rest-of-week"), settings: settings(), ...fixture, gameIds: [...fixture.gameIds, 999] });
     expect(gap.state).toBe("partial");
     expect(gap.evidence.coverage).toEqual({ observed: 10, expected: 12, missing: 2, unit: "team games" });
     expect(sharePostExportBlock(offNightEdgeModule, snapshotOf(gap), settings())).toMatch(/2 of 12/);
@@ -190,7 +197,7 @@ describe("6.3 ownership states", () => {
   });
   it("is missing with no ownership rows, and not exportable with nothing to pick", () => {
     const team = topTeam(), fixture = world([{ id: 1, team }]);
-    expect(buildOffNightEdge({ edition: edition(THURSDAY, "rest-of-week"), settings: settings(), ...fixture, yahoo: [] }).state).toBe("missing");
+    expect(edge({ edition: edition(THURSDAY, "rest-of-week"), settings: settings(), ...fixture, yahoo: [] }).state).toBe("missing");
     const empty = build([{ id: 1, team, pct: 90 }]);
     expect(empty.state).toBe("ready");
     expect(sharePostExportBlock(offNightEdgeModule, snapshotOf(empty), settings())).toBe("Nothing qualifies with these settings.");
@@ -200,7 +207,7 @@ describe("6.3 ownership states", () => {
 describe("6.4 card and registration", () => {
   it("is registered with visible, validated settings", () => {
     expect(shareModule("off-night-edge")).toBe(offNightEdgeModule);
-    expect(parseShareSettings(offNightEdgeModule, {})).toEqual({ ownershipCeiling: 50, includeUnknown: "off", dates: "rest-of-week" });
+    expect(parseShareSettings(offNightEdgeModule, {})).toEqual({ ownershipCeiling: 50, includeUnknown: "off", dates: "rest-of-week", period: OFF_NIGHT_THIS_WEEK, week: null, start: null, end: null });
     expect(() => parseShareSettings(offNightEdgeModule, { ownershipCeiling: "101" })).toThrow(SharePostRequestError);
     expect(() => parseShareSettings(offNightEdgeModule, { dates: "someday" })).toThrow(SharePostRequestError);
   });
@@ -224,7 +231,7 @@ describe("6.4 card and registration", () => {
     expect(alt).toContain(result.evidence.cohort);
   });
   it("says so when no team has games left", () => {
-    const data: OffNightData = { dates: "rest-of-week", weekStart: WEEK, weekEnd: "2026-11-01", days: [], rows: [], teamsWithGames: 0, countedGames: 0, tiedOut: [], ownership: { known: 0, unknown: 0, stale: 0, asOf: null } };
+    const data: OffNightData = { dates: "rest-of-week", window: { kind: OFF_NIGHT_THIS_WEEK, week: null, from: WEEK, through: "2026-11-01", label: "Rest of week", past: false, playedIncluded: false }, weekStart: WEEK, weekEnd: "2026-11-01", days: [], rows: [], teamsWithGames: 0, countedGames: 0, tiedOut: [], ownership: { known: 0, unknown: 0, stale: 0, asOf: null } };
     expect(renderToStaticMarkup(createElement(OffNightEdgeCard, { data, settings: settings(), logos: {} }))).toContain("No team has a game left");
     expect(offNightEdgeModule.hasRows(data, settings())).toBe(false);
   });
@@ -261,5 +268,94 @@ describe("loader", () => {
     expect(calls.map(call => call.table).sort()).toEqual(["games", "wgo_skater_stats", "yahoo_nhl_player_map_read", "yahoo_players"]);
     expect(calls.find(call => call.table === "yahoo_players")!.filters).toEqual(["eq:season"]);
     expect(result.data?.days.length).toBe(7);
+  });
+});
+
+describe("period control", () => {
+  const shift = (date: string, days: number) => new Date(Date.parse(`${date}T12:00:00Z`) + days * 86400000).toISOString().slice(0, 10);
+  const now = new Date().toISOString(), thisMonday = calendarWeekStart(now), lastMonday = shift(thisMonday, -7), twoAgo = shift(thisMonday, -14);
+  /** A matchup calendar around now, with a 14-day week over the two before this one. */
+  const matchups = [{ week: 1, start_date: twoAgo, end_date: shift(lastMonday, 6) }, { week: 2, start_date: thisMonday, end_date: shift(thisMonday, 6) }, { week: 3, start_date: shift(thisMonday, 7), end_date: shift(thisMonday, 13) }];
+  /** Each Monday's slate is seeded differently, so an order can only come from the week asked for. */
+  const slate = (monday: string) => {
+    const schedule = fictionalLeagueWeek(monday, now, Number(monday.replaceAll("-", "")));
+    return { ...schedule, fetchedAt: new Date().toISOString(), games: schedule.games!.map(game => ({ ...game, gameState: game.gameDate! < now.slice(0, 10) ? "OFF" : "FUT", startTimeUTC: `${game.gameDate}T23:59:00-04:00` })) };
+  };
+  const client = (tables: Record<string, unknown[]> = { yahoo_matchup_weeks: matchups, yahoo_players: [{ player_key: "465.p.1", player_id: null, percent_ownership: 10, season: 2026, last_updated: now }] }) => ({ tables: [] as string[], from(table: string) {
+    (this as { tables: string[] }).tables.push(table);
+    const query: Record<string, unknown> = {};
+    for (const method of ["select", "eq", "gte", "lte", "order"]) query[method] = () => query;
+    query.range = async () => ({ data: tables[table] ?? [], error: null, count: (tables[table] ?? []).length });
+    return query;
+  } });
+  beforeEach(() => { upstream.getSchedule.mockReset(); upstream.getSchedule.mockImplementation(async (monday: string) => slate(monday)); });
+
+  it("recomputes score, order and days for the chosen matchup, from that week's schedule only", async () => {
+    const chosen = await loadOffNightEdge({ client: client(), generatedAt: now }, settings({ period: "matchup", week: 3 }));
+    expect(upstream.getSchedule.mock.calls.map(call => call[0])).toEqual([shift(thisMonday, 7)]);
+    const edition = buildScheduleSnapshot({ format: "game-grid", weekStart: shift(thisMonday, 7), schedule: slate(shift(thisMonday, 7)), generatedAt: new Date().toISOString(), selectedDates: weekOf(shift(thisMonday, 7)) });
+    expect(chosen.data!.rows.map(row => [row.team, row.score])).toEqual(offNightSchedule(edition, "weekly").rows.map(row => [row.team, row.score]));
+    expect(chosen.data!.days.map(day => day.date)).toEqual(weekOf(shift(thisMonday, 7)));
+    expect(chosen.data!.window).toMatchObject({ kind: "matchup", week: 3, past: false, playedIncluded: false });
+    upstream.getSchedule.mockClear();
+    const current = await loadOffNightEdge({ client: client(), generatedAt: now }, settings({ dates: "weekly" }));
+    expect(current.data!.rows.map(row => row.team)).not.toEqual(chosen.data!.rows.map(row => row.team));
+  });
+  it("scores a 14-day week as one horizon, across both schedule weeks, and fits its days on the card", async () => {
+    const active = settings({ period: "matchup", week: 1 }), result = await loadOffNightEdge({ client: client(), generatedAt: now }, active);
+    expect(upstream.getSchedule.mock.calls.map(call => call[0])).toEqual([twoAgo, lastMonday]);
+    const data = result.data!, row = data.rows[0];
+    expect(data.days.length).toBe(14);
+    expect(data.countedGames).toBe(data.days.reduce((total, day) => total + day.leagueGames, 0));
+    expect(row.games).toBe(row.gamesByDay.reduce((total, count) => total + count, 0));
+    expect(row.score).toBe(calcWeekScore([], row.offNightGames, data.countedGames, row.games, data.days.flatMap((day, index) => Array<number>(row.gamesByDay[index]).fill(day.leagueGames)), true));
+    expect(data.days[0].date).toBe(twoAgo);
+    const html = renderToStaticMarkup(createElement(OffNightEdgeCard, { data, settings: active, logos: {} }));
+    expect(html).toContain("data-compact");
+    expect(html).toContain(`<i>${Number(shift(lastMonday, 6).slice(8))}</i>`);
+  });
+  it("labels past dates, and says picks and ownership are today's", async () => {
+    const active = settings({ period: "matchup", week: 1 }), result = await loadOffNightEdge({ client: client(), generatedAt: now }, active);
+    expect(result.data!.window.past).toBe(true);
+    const html = renderToStaticMarkup(createElement(OffNightEdgeCard, { data: result.data!, settings: active, logos: {} }));
+    expect(html).toContain("Week 1");
+    expect(html).toContain("Past dates: picks and ownership are current, not as of then");
+    expect(offNightEdgeModule.altText(snapshotOf(result as never, active) as never, result.data!, active)).toContain("past dates; picks and ownership are current");
+    const upcoming = await loadOffNightEdge({ client: client(), generatedAt: now }, settings({ period: "matchup", week: 3 }));
+    expect(renderToStaticMarkup(createElement(OffNightEdgeCard, { data: upcoming.data!, settings: active, logos: {} }))).not.toContain("off-night-past");
+  });
+  it("validates a custom range before any read, and keeps it to what fits", () => {
+    const parse = (query: Record<string, string>) => parseShareSettings(offNightEdgeModule, { period: "custom", ...query });
+    expect(() => parse({})).toThrow(/start date and an end date/);
+    expect(() => parse({ start: "2026-10-20", end: "2026-10-20" })).toThrow(/must be before/);
+    expect(() => parse({ start: "2026-10-20", end: "2026-11-03" })).toThrow(/at most 14 days/);
+    expect(parse({ start: "2026-10-20", end: "2026-11-02" })).toMatchObject({ period: "custom", start: "2026-10-20", end: "2026-11-02" });
+    expect(offNightWeeks("2026-10-20", "2026-11-02").map(week => [week.weekStart, week.dates.length])).toEqual([["2026-10-19", 6], ["2026-10-26", 7], ["2026-11-02", 1]]);
+  });
+  it("counts a custom range's dates, played or not, across its schedule weeks", async () => {
+    const start = shift(thisMonday, -3), end = shift(thisMonday, 2), result = await loadOffNightEdge({ client: client(), generatedAt: now }, settings({ period: "custom", start, end }));
+    expect(upstream.getSchedule.mock.calls.map(call => call[0])).toEqual([lastMonday, thisMonday]);
+    expect(result.data!.days.map(day => day.date)).toEqual(Array.from({ length: 6 }, (_, index) => shift(start, index)));
+    expect(result.data!.dates).toBe("weekly");
+  });
+  it("fails visibly with no schedule call when the dates cannot be resolved", async () => {
+    const off = await loadOffNightEdge({ client: client(), generatedAt: now }, settings({ period: "matchup", week: 9 }));
+    expect(off.state).toBe("missing");
+    expect(off.data).toBeNull();
+    expect(off.reasons?.[0]).toMatch(/Week 9 is not on the matchup calendar/);
+    const outside = await loadOffNightEdge({ client: client(), generatedAt: now }, settings({ period: "custom", start: shift(twoAgo, -20), end: shift(twoAgo, -18) }));
+    expect(outside.reasons?.[0]).toMatch(/inside the season/);
+    expect(upstream.getSchedule).not.toHaveBeenCalled();
+  });
+  it("keeps old links as they were: dates alone is this week, with no matchup read", async () => {
+    for (const dates of ["weekly", "rest-of-week"] as const) {
+      const parsed = parseShareSettings<OffNightSettings>(offNightEdgeModule, { dates }), fake = client();
+      expect(parsed).toMatchObject({ dates, period: OFF_NIGHT_THIS_WEEK });
+      const result = await loadOffNightEdge({ client: fake, generatedAt: now }, parsed);
+      expect(fake.tables).not.toContain("yahoo_matchup_weeks");
+      expect(result.data!.dates).toBe(dates);
+      expect(offNightEdgeModule.altText(snapshotOf(result as never, parsed) as never, result.data!, parsed)).toMatch(dates === "weekly" ? /^FHFH Off-Night Edge, full week, / : /^FHFH Off-Night Edge, rest of week, /);
+    }
+    expect(upstream.getSchedule.mock.calls.every(call => call[0] === thisMonday)).toBe(true);
   });
 });
