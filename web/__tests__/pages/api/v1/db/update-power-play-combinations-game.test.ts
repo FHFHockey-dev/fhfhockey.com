@@ -26,7 +26,7 @@ vi.mock("components/LinemateMatrix", () => ({
   getTOIData: getTOIDataMock,
   sortByPPTOI: (table: Record<string, { toi: number; p1: any; p2: any }>) =>
     Object.values(table)
-      .filter((row) => row.p1.id === row.p2.id)
+      .filter((row) => row.p1.id === row.p2.id && row.toi > 0)
       .sort((a, b) => b.toi - a.toi)
       .map((row) => row.p1)
 }));
@@ -54,8 +54,8 @@ import { updatePowerPlayCombinations } from "../../../../../pages/api/v1/db/upda
 function createSupabaseMock() {
   const throwOnError = vi.fn().mockResolvedValue({ data: null });
   const upsert = vi.fn(() => ({ throwOnError }));
-  const not = vi.fn(() => ({ throwOnError }));
-  const eq = vi.fn(() => ({ not, throwOnError }));
+  const inPlayers = vi.fn(() => ({ throwOnError }));
+  const eq = vi.fn(() => ({ in: inPlayers }));
   const del = vi.fn(() => ({ eq }));
   return {
     supabase: {
@@ -64,9 +64,13 @@ function createSupabaseMock() {
     upsert,
     del,
     eq,
-    not,
+    inPlayers,
     throwOnError
   };
+}
+
+function shift(playerId: number, teamId = 1) {
+  return { id: playerId, playerId, teamId, duration: "00:45" };
 }
 
 function player(id: number) {
@@ -172,30 +176,78 @@ describe("updatePowerPlayCombinations", () => {
     expect(summary.shiftSource).toBe("json-api");
   });
 
-  it("removes the rows of players who no longer have power-play time", async () => {
+  it("deletes the row of a player whose shifts prove zero power-play time", async () => {
     const players = [10, 11, 12, 13, 14].map(player);
     const supabaseMock = createSupabaseMock();
     fetchTOIRawDataMock.mockResolvedValue([
-      { data: [{ id: 1, playerId: 10, teamId: 1 }] },
+      { data: [10, 11, 12, 13, 14, 15].map((id) => shift(id)) },
       { rostersMap: {}, teams: [{ id: 1, name: "Home" }] },
       { plays: [] }
     ]);
     getTOIDataMock.mockReturnValue({
-      toi: { 1: players.map((entry) => ({ toi: 120, p1: entry, p2: entry })) },
+      toi: {
+        1: [
+          ...players.map((entry) => ({ toi: 120, p1: entry, p2: entry })),
+          { toi: 0, p1: player(15), p2: player(15) }
+        ]
+      },
       teams: [{ id: 1, name: "Home" }]
     });
 
     await updatePowerPlayCombinations(2025021302, supabaseMock.supabase as any);
 
     expect(supabaseMock.eq).toHaveBeenCalledWith("gameId", 2025021302);
-    expect(supabaseMock.not).toHaveBeenCalledWith("playerId", "in", "(10,11,12,13,14)");
+    expect(supabaseMock.inPlayers).toHaveBeenCalledWith("playerId", [15]);
   });
 
-  it("writes nothing and clears the game when neither team had a power play", async () => {
+  it.each([3, 4])(
+    "keeps the stored rows of players a partial feed omits, with %i skaters on one team",
+    async (skaters) => {
+      const home = [10, 11, 12, 13, 14];
+      const away = [20, 21, 22, 23, 24].slice(0, skaters);
+      const supabaseMock = createSupabaseMock();
+      getPowerPlayBlocksMock.mockReturnValue([
+        {
+          teamId: 1,
+          start: { period: 1, timeInPeriod: "00:00" },
+          end: { period: 1, timeInPeriod: "02:00" }
+        },
+        {
+          teamId: 2,
+          start: { period: 1, timeInPeriod: "05:00" },
+          end: { period: 1, timeInPeriod: "07:00" }
+        }
+      ]);
+      fetchTOIRawDataMock.mockResolvedValue([
+        { data: [...home.map((id) => shift(id)), ...away.map((id) => shift(id, 2))] },
+        { rostersMap: {}, teams: [] },
+        { plays: [] }
+      ]);
+      const toiRows = (ids: number[]) =>
+        ids.map(player).map((entry) => ({ toi: 120, p1: entry, p2: entry }));
+      getTOIDataMock.mockReturnValue({
+        toi: { 1: toiRows(home), 2: toiRows(away) },
+        teams: [
+          { id: 1, name: "Home" },
+          { id: 2, name: "Away" }
+        ]
+      });
+
+      const summary = await updatePowerPlayCombinations(
+        2025021308,
+        supabaseMock.supabase as any
+      );
+
+      expect(summary.rowCount).toBe(5 + skaters);
+      expect(supabaseMock.del).not.toHaveBeenCalled();
+    }
+  );
+
+  it("writes nothing and removes rows shifts disprove when neither team had a power play", async () => {
     const supabaseMock = createSupabaseMock();
     getPowerPlayBlocksMock.mockReturnValue([]);
     fetchTOIRawDataMock.mockResolvedValue([
-      { data: [{ id: 1, playerId: 10, teamId: 1 }] },
+      { data: [shift(10)] },
       { rostersMap: {}, teams: [{ id: 1, name: "Home" }] },
       { plays: [] }
     ]);
@@ -212,14 +264,32 @@ describe("updatePowerPlayCombinations", () => {
     expect(summary.rowCount).toBe(0);
     expect(supabaseMock.upsert).not.toHaveBeenCalled();
     expect(supabaseMock.eq).toHaveBeenCalledWith("gameId", 2025021303);
-    expect(supabaseMock.not).not.toHaveBeenCalled();
+    expect(supabaseMock.inPlayers).toHaveBeenCalledWith("playerId", [10]);
+  });
+
+  it("does not treat a shift row with no duration as proof", async () => {
+    const supabaseMock = createSupabaseMock();
+    getPowerPlayBlocksMock.mockReturnValue([]);
+    fetchTOIRawDataMock.mockResolvedValue([
+      { data: [{ id: 1, playerId: 10, teamId: 1, duration: null }] },
+      { rostersMap: {}, teams: [{ id: 1, name: "Home" }] },
+      { plays: [] }
+    ]);
+    getTOIDataMock.mockReturnValue({
+      toi: { 1: [] },
+      teams: [{ id: 1, name: "Home" }]
+    });
+
+    await updatePowerPlayCombinations(2025021309, supabaseMock.supabase as any);
+
+    expect(supabaseMock.del).not.toHaveBeenCalled();
   });
 
   it("writes the team that had a power play when the other had none", async () => {
     const players = [10, 11, 12, 13, 14].map(player);
     const supabaseMock = createSupabaseMock();
     fetchTOIRawDataMock.mockResolvedValue([
-      { data: [{ id: 1, playerId: 10, teamId: 1 }] },
+      { data: [10, 11, 12, 13, 14].map((id) => shift(id)).concat(shift(20, 2)) },
       { rostersMap: {}, teams: [] },
       { plays: [] }
     ]);
@@ -240,7 +310,7 @@ describe("updatePowerPlayCombinations", () => {
     );
 
     expect(summary.rowCount).toBe(5);
-    expect(supabaseMock.not).toHaveBeenCalledWith("playerId", "in", "(10,11,12,13,14)");
+    expect(supabaseMock.inPlayers).toHaveBeenCalledWith("playerId", [20]);
   });
 
   it("refuses the game when a team with PP time has no shifts, and keeps stored rows", async () => {

@@ -159,8 +159,8 @@ export async function updatePowerPlayCombinations(
   if (getShiftRows(rawData).length === 0) {
     throw new Error("No power play combinations found");
   }
-  // A team with no power play needs no rows, but one with PP time must show players on the ice for it. Refuse before
-  // any write, because the delete below would otherwise remove valid rows the partial feed left out.
+  // A team with no power play needs no rows, but one with PP time must show players on the ice for it. This catches a
+  // grossly incomplete feed before any write. It cannot prove a feed complete, so the delete below has its own rule.
   const incompleteTeamIds = Object.entries(teamPpToiByTeamId)
     .filter(
       ([teamId, ppSeconds]) =>
@@ -183,12 +183,24 @@ export async function updatePowerPlayCombinations(
   if (rows.length > 0) {
     await supabase.from("powerPlayCombinations").upsert(rows).throwOnError();
   }
-  // The key is game and player, so a player who no longer has PP time would otherwise keep their old row.
-  const staleRows = supabase.from("powerPlayCombinations").delete().eq("gameId", gameId);
-  await (rows.length > 0
-    ? staleRows.not("playerId", "in", `(${rows.map((row) => row.playerId).join(",")})`)
-    : staleRows
-  ).throwOnError();
+  // The key is game and player, so a player who no longer has PP time would otherwise keep their old row. Only shifts
+  // prove that: a player missing from the feed may just be missing from a partial feed, so their stored row stays.
+  const writtenPlayerIds = new Set(rows.map((row) => row.playerId));
+  const provenZeroPpPlayerIds = [
+    ...new Set(
+      (getShiftRows(rawData) as Array<{ playerId?: number; duration?: string | null }>)
+        .filter((shift) => shift.playerId && parseClockToSeconds(shift.duration ?? "00:00") > 0)
+        .map((shift) => shift.playerId as number)
+    )
+  ].filter((playerId) => !writtenPlayerIds.has(playerId));
+  if (provenZeroPpPlayerIds.length > 0) {
+    await supabase
+      .from("powerPlayCombinations")
+      .delete()
+      .eq("gameId", gameId)
+      .in("playerId", provenZeroPpPlayerIds)
+      .throwOnError();
+  }
   return {
     gameId,
     rowCount: rows.length,
