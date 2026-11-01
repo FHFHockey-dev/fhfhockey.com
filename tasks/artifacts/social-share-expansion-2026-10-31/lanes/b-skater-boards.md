@@ -305,3 +305,15 @@ R9, for the default: Crosby 1G-2A-3P-1PPP, Anderson 2G-1A-3P, Kucherov 0G-3A-3P,
 | --- | --- | --- | --- | --- |
 | R17 | Baseline percentiles per stat; Under-50% top 8 before and after, through MCP `execute_sql` on 2026-11-01 | `wgo_skater_stats`, `nst_gamelog_as_counts`, `nst_gamelog_as_counts_oi`, `yahoo_nhl_player_map_read`, `yahoo_players` | 0 sample rows (7 aggregate rows), then 19 ranked rows | Passed. SQL with the same rule; the builder has not run on it |
 | R18 | Baselines for 4 named skaters | same skater tables | 4 per-player rows | Passed |
+
+### Last Nights Standouts: audit findings F4, F5, F9 (part)
+
+- **F4:** an unknown GSAx has no rank. Ranked goalies come first; unranked ones only fill what is left of the 8 rows, by SV%, then saves, with no rank number. The count line covers every qualified goalie, shown or not, and is in the alt text.
+- **No GSAx at all:** the card keeps its goalies, unranked, by SV%, then saves, and says "GSAx isn't available for this slate". It claims no GSAx ranking and can still export, because the other five chips are observed and the wording is honest.
+- **F5:** coverage counts team games (game id plus team). A completed team game with no skater rows, or no goalie rows in the goalie view, makes the post partial with a reason and counts as missing. What Changed's helper is not touched; lane A has it.
+- **Team codes checked:** all 32 `team_id` values map through `teamsInfo` to the same codes as `wgo_skater_stats` and `wgo_goalie_stats`, so real slates do not read as missing. R19.
+- **F9, part:** the spec now downloads a real PNG for a built view and for Goalies, and checks the signature, 1080 x 1080, over 50 KB, and the studio's confirmation. Fictional data only.
+
+| # | Statement | Tables read | Rows returned | Result |
+| --- | --- | --- | --- | --- |
+| R19 | Distinct team codes and ids this season, through MCP `execute_sql` on 2026-11-01 | `wgo_skater_stats`, `wgo_goalie_stats`, `wgo_team_stats` | 0 sample rows (3 aggregate rows) | Passed |

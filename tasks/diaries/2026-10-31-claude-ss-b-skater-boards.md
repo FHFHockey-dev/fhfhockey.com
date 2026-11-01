@@ -46,3 +46,5 @@
 - Standouts review: average % default in the sidebar, last/STD/change on every chip, goalie chips ranked by GSAx (top 8). The loader now reads goalie season rows and NST for the goalies on the slate. Real render is the lead's.
 
 - Standouts: per-stat STD floors in the average, stated in the rule and printed in the sidebar. Goalie TOI chip removed. Real render is the lead's.
+
+- Standouts audit: unknown GSAx is unranked, coverage is per team game, and the spec downloads real PNGs. Real render and the freeze are the lead's.

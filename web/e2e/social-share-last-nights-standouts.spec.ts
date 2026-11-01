@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 import { parseShareSettings } from "../lib/socialShare/modules/contract";
 import { buildLastNightsStandouts, lastNightsStandoutsModule, type LastNightsStandoutsInput, type LastNightsStandoutsSettings } from "../lib/socialShare/modules/lastNightsStandouts";
@@ -46,7 +47,7 @@ const ids = Array.from({ length: PLAYERS }, (_, index) => index + 1);
 const goalie = (goalieId: number, saves: number, shots: number): GoalieAppearance => ({ goalieId, name: `Fictional Goalie ${goalieId}`, gameId: 900, date: SLATE, team: goalieId % 2 ? "NJD" : "NYR", opponent: goalieId % 2 ? "NYR" : "NJD", home: true, started: true, wins: 1, losses: 0, otLosses: 0, saves, shotsAgainst: shots, goalsAgainst: shots - saves, toiSeconds: 3600, shutouts: 0, qualityStart: 1 });
 const settingsFromQuery = (query: URLSearchParams) => parseShareSettings(lastNightsStandoutsModule, Object.fromEntries(query), "server") as LastNightsStandoutsSettings;
 const shared = (settings: LastNightsStandoutsSettings): LastNightsStandoutsInput => ({
-  slate: SLATE, season: SEASON, settings, completedTeamGames: [{ gameId: 900 }, { gameId: 900 }], scheduledGameIds: [900],
+  slate: SLATE, season: SEASON, settings, completedTeamGames: [{ gameId: 900, team: "NJD" }, { gameId: 900, team: "NYR" }], scheduledGameIds: [900],
   // Rostered 5%, 10%, 15%...: player 10 sits exactly on 50 and is out of "Under 50%".
   ownership: { byPlayer: new Map(ids.map(id => [id, ownershipOf(id * 5, SLATE)])), updatedAt: `${SLATE}T08:00:00` },
 });
@@ -92,6 +93,17 @@ const optionLayout = (page: Page) => page.getByTestId("standouts-list").evaluate
   return "clear";
 });
 const option = (page: Page, id: number) => page.locator(`[data-testid=standout-option][data-player="${id}"]`);
+/** A real download: a valid 1080 x 1080 PNG with a card's worth of content, reported as done by the studio. */
+async function expectPngDownload(page: Page) {
+  const [file] = await Promise.all([page.waitForEvent("download"), download(page).click()]);
+  expect(await file.failure()).toBeNull();
+  expect(file.suggestedFilename()).toMatch(/^fhfh-post-last-nights-standouts-.*\.png$/);
+  const bytes = readFileSync(await file.path());
+  expect(bytes.subarray(1, 4).toString()).toBe("PNG");
+  expect([bytes.readUInt32BE(16), bytes.readUInt32BE(20)]).toEqual([1080, 1080]);
+  expect(bytes.length).toBeGreaterThan(50000);
+  await expect(page.getByRole("status")).toContainText("PNG downloaded: 1080 × 1080.");
+}
 const download = (page: Page) => page.getByRole("button", { name: "Download PNG", exact: true });
 
 test.beforeEach(({ page }) => page.setDefaultTimeout(10000));
@@ -248,10 +260,33 @@ test("goalies say when NST lags, and a missing GSAx stays a dash", async ({ page
   await expect(top.locator("[data-stat=toi]")).toHaveCount(0);
   await expect(top.locator("[data-stat=gsax]")).toHaveCSS("background-color", "rgba(0, 255, 153, 0.14)");
   await expect(rows.nth(1).locator("[data-stat=gsax]")).toContainText("—");
-  await expect(page.getByTestId("nst-goalie-note")).toContainText("NST has no row yet for 1 of 2");
+  await expect(page.getByTestId("standouts-legend")).toContainText("Top 1 of 1 by GSAx");
+  await expect(page.getByTestId("nst-goalie-note")).toHaveText("1 of 2 qualified goalies have no GSAx yet, so no rank; 1 shown last.");
+  await expect(rows.first().getByTestId("goalie-rank")).toHaveText("1");
+  await expect(rows.nth(1).getByTestId("goalie-rank")).toHaveCount(0);
   await expect(square).not.toContainText("Fictional Goalie 3");
   await expect(download(page)).toBeEnabled();
   await expectFits(page);
+});
+
+test("a slate with no GSAx claims no GSAx ranking", async ({ page }) => {
+  await open(page, "&view=goalies", query => {
+    const settings = settingsFromQuery(query);
+    return editionOf(settings, buildLastNightsStandouts({ ...shared(settings), goalies: [goalie(1, 29, 30), goalie(2, 20, 20)] }));
+  });
+  await expect(page.getByTestId("standouts-legend")).toContainText("GSAx isn't available for this slate");
+  await expect(page.getByTestId("standouts-legend")).not.toContainText("by GSAx");
+  await expect(page.getByTestId("goalie-rank")).toHaveCount(0);
+  await expect(page.getByTestId("standout-row").first()).toContainText("Fictional Goalie 2");
+});
+
+test("a built view and Goalies download a real PNG", async ({ page }) => {
+  await open(page, "&view=all&picks=3,1,2");
+  await expect(page.getByTestId("standout-row")).toHaveCount(3);
+  await expectPngDownload(page);
+  await page.goto(`/social-share/posts?post=${lastNightsStandoutsModule.id}&view=goalies`);
+  await expect(page.getByTestId("standout-row")).toHaveCount(2);
+  await expectPngDownload(page);
 });
 
 test("every card size fits, with no clipped chip or dead band", async ({ page }) => {

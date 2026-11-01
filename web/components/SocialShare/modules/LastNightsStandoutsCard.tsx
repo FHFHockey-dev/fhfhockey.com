@@ -1,6 +1,6 @@
 import type { SharePostCardProps } from "lib/socialShare/modules/contract";
 import { STALE_SETTINGS_NOTE } from "lib/socialShare/modules/bshBoard";
-import { goalieChangeText, goalieLastText, goalieRanking, goalieStdText, goalieTone, isGoalieView, isHandBuilt, lineChipText, percentLabel, ppChipText, rankingText, slateLabel, STANDOUT_MAX_ROWS, standoutPool, standoutRows, standoutsCurrent, statText, stdText, viewTitle, type LastNightsStandoutsData, type LastNightsStandoutsSettings, type StandoutSkater } from "lib/socialShare/modules/lastNightsStandouts";
+import { goalieChangeText, goalieLastText, goalieRank, goalieRanking, goalieRankingText, goalieStdText, goalieTone, isGoalieView, isHandBuilt, lineChipText, percentLabel, ppChipText, rankingText, slateLabel, STANDOUT_MAX_ROWS, standoutPool, standoutRows, standoutsCurrent, statText, stdText, viewTitle, type LastNightsStandoutsData, type LastNightsStandoutsSettings, type StandoutSkater } from "lib/socialShare/modules/lastNightsStandouts";
 import { ownershipLabel } from "lib/socialShare/modules/shared/definitions";
 import { PostEmpty, PostTeamMark } from "./kit";
 import styles from "./LastNightsStandoutsCard.module.scss";
@@ -42,14 +42,14 @@ function SkaterRow({ row, rank, logo, logoSize }: { row: StandoutSkater; rank: n
 const Banner = ({ settings, slate }: { settings: LastNightsStandoutsSettings; slate: string }) => <h3 className={styles.banner} data-testid="standouts-view" style={{ color: "#ffffff" }}>{viewTitle(settings)}<span style={{ color: QUIET }}>{slateLabel(slate)}</span></h3>;
 
 function GoalieCard({ data, settings, logos }: Pick<SharePostCardProps<LastNightsStandoutsSettings, LastNightsStandoutsData>, "data" | "settings" | "logos">) {
-  const { rows, qualified } = goalieRanking(data, settings), type = rowType(rows.length), missing = rows.filter(row => row.gsax === null).length;
+  const ranking = goalieRanking(data, settings), { rows } = ranking, type = rowType(rows.length), order = goalieRankingText(ranking, settings.minShotsAgainst);
   if (!rows.length) return <div className={styles.board}><Banner settings={settings} slate={data.slate} /><div className={styles.blank}>No goalie on this slate meets the shots-against minimum.</div></div>;
   return <div className={styles.board}>
     <Banner settings={settings} slate={data.slate} />
-    <p className={styles.legend} style={{ color: QUIET }} data-testid="standouts-legend">Top {rows.length} of {qualified} by GSAx, with {settings.minShotsAgainst}+ shots against. Last night, then STD per appearance before it. SV% changes in points of save percentage, GAA and GSAx in goals, the rest in %. SA is workload, so uncoloured.{missing ? <span data-testid="nst-goalie-note" style={{ color: "#ffcc33" }}> NST has no row yet for {missing} of {rows.length}: GSAx prints — and they rank last.</span> : null}</p>
+    <p className={styles.legend} style={{ color: QUIET }} data-testid="standouts-legend">{order.lead} Last night, then STD per appearance before it. SV% changes in points of save percentage, GAA and GSAx in goals, the rest in %. SA is workload, so uncoloured.{order.note ? <span data-testid="nst-goalie-note" style={{ color: "#ffcc33" }}> {order.note}</span> : null}</p>
     <div className={styles.rows} style={{ fontSize: type }} data-few={rows.length <= 4 || undefined}>{rows.map((row, index) => <div key={row.goalieId} className={styles.row} data-testid="standout-row">
       <div className={styles.who}>
-        <span className={styles.rank} style={{ color: QUIET }}>{index + 1}</span>
+        {goalieRank(row, index) !== null && <span className={styles.rank} data-testid="goalie-rank" style={{ color: QUIET }}>{goalieRank(row, index)}</span>}
         <PostTeamMark team={row.team} logo={logos[row.team]} size={Math.round(type * 1.3)} />
         <span className={styles.name} style={{ color: "#ffffff" }}>{row.name ?? `Goalie ${row.goalieId}`}</span>
         <span className={styles.owned} style={{ color: QUIET, marginLeft: "auto" }}>{ownershipLabel(row.ownership)} ROST</span>

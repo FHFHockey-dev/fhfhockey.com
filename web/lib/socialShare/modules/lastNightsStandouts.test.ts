@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseShareSettings, sharePostExportBlock, type SharePostSnapshot } from "./contract";
-import { averageChange, buildLastNightsStandouts, goalieChangeText, goalieLastText, goalieRanking, goalieStdText, goalieTone, goalLine, lastNightsStandoutsModule, latestEarlierLines, lineChipText, lineRowsFromCombinations, parsePicks, ppContradicted, percentChange, percentLabel, ppChipText, rankingText, slateCoverage, sortStandouts, STANDOUT_AVERAGE_FLOORS, STANDOUT_AVERAGE_RULE, STANDOUT_GOALIE_ROWS, STANDOUT_MAX_ROWS, standoutPool, standoutRows, statText, stdText, togglePick, type GoalieStat, type LastNightsStandoutsData, type LastNightsStandoutsInput, type LastNightsStandoutsSettings, type StandoutGoalie, type StandoutSkater } from "./lastNightsStandouts";
+import { averageChange, buildLastNightsStandouts, goalieChangeText, goalieLastText, goalieRank, goalieRanking, goalieRankingText, goalieStdText, goalieTone, goalLine, lastNightsStandoutsModule, latestEarlierLines, lineChipText, lineRowsFromCombinations, parsePicks, ppContradicted, percentChange, percentLabel, ppChipText, rankingText, slateCoverage, sortStandouts, STANDOUT_AVERAGE_FLOORS, STANDOUT_AVERAGE_RULE, STANDOUT_GOALIE_ROWS, STANDOUT_MAX_ROWS, standoutPool, standoutRows, statText, stdText, togglePick, type GoalieStat, type LastNightsStandoutsData, type LastNightsStandoutsInput, type LastNightsStandoutsSettings, type StandoutGoalie, type StandoutSkater } from "./lastNightsStandouts";
 import { loadLastNightsStandouts } from "./lastNightsStandouts.sources";
 import { ownershipOf } from "./shared/definitions";
 import type { GoalieAppearance } from "./shared/goalieLedger";
@@ -15,7 +15,7 @@ const game = (playerId: number, date: string, gameId: number, over: Partial<Skat
 });
 const counts = (playerId: number, date: string, ixg: number | null = 0.5) => ({ player_id: playerId, date_scraped: date, season: SEASON, ixg, iscfs: 2, icf: 4 });
 const onIce = (playerId: number, date: string, xgf = 1, xga = 1) => ({ player_id: playerId, date_scraped: date, season: SEASON, xgf, xga });
-const shared = (over: Partial<LastNightsStandoutsInput> = {}): LastNightsStandoutsInput => ({ slate: SLATE, season: SEASON, settings: settings(), completedTeamGames: [{ gameId: 9 }, { gameId: 9 }], scheduledGameIds: [9], ownership: { byPlayer: new Map(), updatedAt: null }, ...over });
+const shared = (over: Partial<LastNightsStandoutsInput> = {}): LastNightsStandoutsInput => ({ slate: SLATE, season: SEASON, settings: settings(), completedTeamGames: [{ gameId: 9, team: "NJD" }, { gameId: 9, team: "NJD" }], scheduledGameIds: [9], ownership: { byPlayer: new Map(), updatedAt: null }, ...over });
 const stat = (row: StandoutSkater, id: StandoutSkater["stats"][number]["id"]) => row.stats.find(entry => entry.id === id)!;
 
 /** One skater: three earlier games at 2 SOG, then 6 SOG on the slate. */
@@ -330,12 +330,32 @@ describe("goalies", () => {
     expect(result.evidence.sources.find(source => source.name === "Natural Stat Trick")?.state).toBe("partial");
     expect(result.evidence.cohort).toBe("2 goalies on the slate, 1 with NST GSAx");
   });
-  it("ranks by GSAx over the shots minimum, with no NST row below every row", () => {
-    const { data } = buildLastNightsStandouts(shared({ settings: active, goalies: [goalie(1, 29, 30), goalie(2, 19, 20), goalie(3, 5, 5, 0), goalie(4, 38, 40), goalie(5, 25, 26), goalie(6, null, null)], nstGoalies: [nstRow(1, 0.5, 1), nstRow(2, 3, 1), nstRow(3, 9, 0)] }));
-    const ranking = goalieRanking(data!, { minShotsAgainst: 15 });
-    // GSAx +2.00, then -0.50; goalies 4 and 5 have no row and fall back to SV%. Goalie 3 faced too few shots, however good.
-    expect(ranking.rows.map(row => row.goalieId)).toEqual([2, 1, 5, 4]);
-    expect(ranking.qualified).toBe(4);
+  const rankingOf = (goalies: GoalieAppearance[], nstGoalies: ReturnType<typeof nstRow>[]) => goalieRanking(buildLastNightsStandouts(shared({ settings: active, goalies, nstGoalies })).data!, { minShotsAgainst: 15 });
+  it("ranks known GSAx, and an unknown GSAx is unranked rather than worst", () => {
+    const ranking = rankingOf([goalie(1, 29, 30), goalie(2, 19, 20), goalie(3, 5, 5, 0), goalie(4, 38, 40), goalie(5, 25, 26), goalie(6, null, null), goalie(7, 40, 41)], [nstRow(1, 0.5, 1), nstRow(2, 3, 1), nstRow(3, 9, 0), nstRow(7, 1, 4)]);
+    // +2.00, -0.50, then -3.00 with a rank; goalies 4 and 5 have no row, so no rank, by SV%. Goalie 3 faced too few shots, however good.
+    expect(ranking.rows.map(row => row.goalieId)).toEqual([2, 1, 7, 5, 4]);
+    expect(ranking.rows.map(goalieRank)).toEqual([1, 2, 3, null, null]);
+    expect(ranking).toMatchObject({ qualified: 5, ranked: 3, withoutGsax: 2 });
+    expect(goalieRankingText(ranking, 15)).toEqual({ lead: "Top 3 of 3 by GSAx, with 15+ shots against.", note: "2 of 5 qualified goalies have no GSAx yet, so no rank; 2 shown last." });
+  });
+  it("still counts unknown goalies when ranked ones fill the card", () => {
+    const ids = Array.from({ length: 10 }, (_, index) => index + 1);
+    const ranking = rankingOf(ids.map(id => goalie(id, 25, 26)), ids.slice(0, 9).map(id => nstRow(id, id, 1)));
+    expect(ranking.rows).toHaveLength(STANDOUT_GOALIE_ROWS);
+    expect(ranking.rows.every(row => row.gsax !== null)).toBe(true);
+    expect(goalieRankingText(ranking, 15)).toEqual({ lead: "Top 8 of 9 by GSAx, with 15+ shots against.", note: "1 of 10 qualified goalies have no GSAx yet, so no rank; none shown." });
+  });
+  it("claims no GSAx ranking when no goalie has one, and the card can still export", () => {
+    const ranking = rankingOf([goalie(1, 29, 30), goalie(2, 19, 20), goalie(3, 4, 5)], []);
+    expect(ranking.rows.map(row => row.goalieId)).toEqual([1, 2]);
+    expect(ranking.rows.map(goalieRank)).toEqual([null, null]);
+    const text = goalieRankingText(ranking, 15);
+    expect(text.lead).toBe("GSAx isn't available for this slate, so these 2 of 2 goalies with 15+ shots against are unranked, by SV%, then saves.");
+    expect(text.note).toBeNull();
+    expect(text.lead).not.toMatch(/by GSAx|Top/);
+    const data = buildLastNightsStandouts(shared({ settings: active, goalies: [goalie(1, 29, 30)] })).data!;
+    expect(lastNightsStandoutsModule.hasRows(data, active)).toBe(true);
   });
   it("has six chips and no TOI, and keeps TOI on the row for evidence", () => {
     const [row] = statsOf({ goalies: [...season(1), goalie(1, 29, 30)] });
@@ -391,12 +411,28 @@ describe("goalies", () => {
 });
 
 describe("slate coverage and evidence", () => {
-  it("is partial when a scheduled game has no result or no player rows", () => {
-    expect(slateCoverage({ playerGameIds: [9], completedTeamGames: [{ gameId: 9 }, { gameId: 9 }], scheduledGameIds: [9] }).reasons).toEqual([]);
-    const short = slateCoverage({ playerGameIds: [9], completedTeamGames: [{ gameId: 9 }, { gameId: 9 }], scheduledGameIds: [9, 10] });
+  const both = [{ gameId: 9, team: "NJD" }, { gameId: 9, team: "NYR" }];
+  it("is complete only with both team games reported and holding player rows", () => {
+    expect(slateCoverage({ playerTeamGames: both, completedTeamGames: both, scheduledGameIds: [9] })).toEqual({ observed: 2, expected: 2, missing: 0, reasons: [] });
+  });
+  it("is partial when one team's rows are missing from a completed game", () => {
+    const short = slateCoverage({ playerTeamGames: [both[0]], completedTeamGames: both, scheduledGameIds: [9] });
+    expect(short).toMatchObject({ observed: 1, expected: 2, missing: 1 });
+    expect(short.reasons).toEqual(["1 completed team games on this slate have no player rows."]);
+    const result = buildLastNightsStandouts(shared({ appearances: season(), ...nstFor(DATES), completedTeamGames: both }));
+    expect(result.state).toBe("partial");
+    expect(result.reasons).toEqual(["1 completed team games on this slate have no player rows."]);
+    expect(result.evidence.coverage).toMatchObject({ observed: 1, expected: 2, missing: 1 });
+  });
+  it("is partial when a scheduled game has no result", () => {
+    const short = slateCoverage({ playerTeamGames: both, completedTeamGames: both, scheduledGameIds: [9, 10] });
     expect(short).toMatchObject({ observed: 2, expected: 4, missing: 2 });
-    expect(short.reasons).toHaveLength(2);
+    expect(short.reasons).toEqual(["2 of 4 scheduled team games on this slate have no reported result."]);
     expect(built({ scheduledGameIds: [9, 10] }).state).toBe("partial");
+  });
+  it("is partial for the goalie view by team game too", () => {
+    const appearance = { goalieId: 1, name: "Fictional", gameId: 9, date: SLATE, team: "NJD", opponent: "NYR", home: true, started: true, wins: 1, losses: 0, otLosses: 0, saves: 20, shotsAgainst: 21, goalsAgainst: 1, toiSeconds: 3600, shutouts: 0, qualityStart: 1 };
+    expect(buildLastNightsStandouts(shared({ settings: settings({ view: "goalies" }), goalies: [appearance], completedTeamGames: both })).state).toBe("partial");
   });
   it("says last night is excluded and uses no forecast wording", () => {
     const { evidence } = built();
