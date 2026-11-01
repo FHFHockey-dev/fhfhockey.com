@@ -5,9 +5,13 @@ Post id `multi-cat-stars`, at `/social-share/posts?post=multi-cat-stars`. Regist
 ## Decisions
 
 - **Board:** 4 skaters in a 2 by 2 grid, each panel with a radar beside a one-column last 7 days table. Stacked rows would have left each radar about 200px; this gives about 320 by 292. Three skaters: the last panel takes the whole row. More than four are counted in `evidence.cohort`.
-- **Fantasy week:** CONTRACT §2 for skater posts, Monday to Sunday through `calendarWeekStart`, not `yahoo_matchup_weeks`. It is the week holding the cutoff (yesterday in New York), so a Monday post shows the week just ended. The two calendars differ at least in week 1, which `yahoo_matchup_weeks` starts on 2026-09-29. Not compared for other weeks.
-- **Last 7 days:** 7 calendar days ending at the cutoff. It always contains the week so far, so a ranked skater always has table games.
-- **Views:** default Fantasy Week Total, Standard. Headlines: "Top Multi-Cat Stars of the Week", "Top Multi-Cat Stars Per Game", "Top Points-First Stars of the Week", "Top Points-First Stars Per Game". The ticket set no default; I chose the total because its headline is the post's name and it is not empty early in the week.
+- **Period control (shared `periodWindow`, past-only):** Current fantasy week (default), Matchup week, Custom range. Links naming only `basis` and `formula` open on the default.
+- **Fantasy week:** now the `yahoo_matchup_weeks` week holding the cutoff (yesterday in New York), so a Monday post still shows the week just ended. This replaces the first version's Monday to Sunday week from CONTRACT §2: the pager uses the matchup calendar, and a Monday to Sunday default would rank half of a 14-day matchup while calling it the fantasy week. Past the last week it takes the last completed one; before the first it is missing with the reason.
+- **Table window:** default keeps the last 7 days ending at the last date read. A chosen matchup or range shows the ranking's dates, captioned SAME DATES, and the legend says so.
+- **Radar window:** season through the period's last date, printed on the card. A past card does not move with later games. The skater read stops at that date too.
+- **Headline:** "of the Week" only for one matchup of 7 days or fewer, "of the Matchup" for a longer one, plain "Top Multi-Cat Stars" for a custom range with the dates in the legend's first line. Per Game headlines are true over any dates and do not change.
+- **Last 7 days:** 7 calendar days ending at the last date read. It contains a normal week so far; in a long matchup a ranked skater can show 0 table GP.
+- **Views:** default Period Total (first version: Fantasy Week Total), Standard. Headlines: "Top Multi-Cat Stars of the Week", "Top Multi-Cat Stars Per Game", "Top Points-First Stars of the Week", "Top Points-First Stars Per Game". The ticket set no default; I chose the total because its headline is the post's name and it is not empty early in the week.
 - **Min GP:** fixed by the view (2 or none), printed on the card, not a separate field.
 - **Ties:** one rule, `competitionRanks` (1, 2, 2, 4), with id ordering display only. A tie past the fourth panel is printed on the card.
 - **Missing:** any null component in the week leaves a skater unranked and counted. A null in the table prints an amber `—`. A null radar spoke prints `—` with a dashed marker, the shape does not close, and only neighbouring known spokes join. A season with one null game in a category has no percentile for that category, the same strict rule as `skaterCategoryTotal`.
@@ -33,12 +37,12 @@ Wigo's radar is `CategoryCoverageChart` (Chart.js canvas), fed by `usePercentile
 
 ## Checks
 
-- `multiCatStars.test.ts`: 23 passed. All `lib/socialShare/modules` tests: 603 passed in 23 files.
-- `e2e/social-share-multi-cat-stars.spec.ts`: 6 passed in Chromium on fictional data, isolated dev server on port 3117. Covers the four views' headline and fit at 860px, a traded skater's longest line, three panels, the empty state, missing values, and a real downloaded PNG: 1080 by 1080, with the radar fill present by pixel count. Fit is measured in the node's own pixels.
-- eslint on the post's TypeScript files and the barrel: clean. Pure-selector check: passed.
-- `tsc --noEmit` (8 GB heap; the default heap ran out of memory): exit 0 for the whole app, run after the follow-up commit's spec fix. The first commit carried a type error in the spec's `writeFileSync`; the follow-up fixes it.
+- `multiCatStars.test.ts`, `bshBoard.test.ts`, `periodWindow.test.ts`: 95 passed, with another session's uncommitted `bshBoard.test.ts` edit (it exempts `panelOnly` date fields) in the working tree.
+- `e2e/social-share-multi-cat-stars.spec.ts`: 8 passed in Chromium on fictional data, isolated dev server on port 3117. Adds a past matchup, a 14-day matchup, a custom range, and a landing link naming only the view. Fit at 860px asserted in each.
+- eslint on the post's TypeScript files: clean. Pure-selector check: passed; the SCSS did not change.
+- `npm run typecheck`: exit 2, one error, the known `lib/player-cards/retainedBlsh.test.ts:134`.
 
 ## Not verified
 
-- No real data: Chef does that render. The `plus_minus` null rate this season is unread, and a real name or stat line wider than the fictional 22 characters is untested.
-- The read is tested with a fake client only.
+- No real data, including the real calendar. The read is tested with a fake client only. The `plus_minus` null rate this season is unread.
+- A real name or stat line wider than the fictional 22 characters is untested.

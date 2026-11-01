@@ -16,4 +16,7 @@
 - Whole-app `tsc` runs out of memory at the default heap; use `NODE_OPTIONS=--max-old-space-size=8192`.
 - `bshBoard.test.ts` pins the barrel's id list, so a new post in that barrel must update it.
 
+**Period control ticket:** shared control added at seam 884b4839d, default is the matchup week holding the cutoff; details in the receipt.
+- Two isolated servers share `.next-playwright`, so they destroy each other's build: 500s and goto timeouts, not test failures. Run when no other `next dev -p 3000 -p 31xx` is up.
+
 **Next:** Chef renders on real data.
