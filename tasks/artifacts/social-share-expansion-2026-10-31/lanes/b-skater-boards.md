@@ -211,3 +211,12 @@ Points-First top 15, L10 (SQL using the same formula; the builder itself has not
 **Verdict: 2x helps but does not fully deliver what TJ described.** It swaps 4 of the standard top 15 and keeps the same top 3, with 2 and 3 reversed. 12 of 15 are P85+ in points, but 8 of 15 are defensemen, and only 8 are P50+ in all four. Tkachuk (P5 blocks) and Bouchard (P30 hits) rank on two or three strong categories. A points floor at P70 changes none of this top 15, because the lowest here is P73; about P85 would remove Seider, Werenski and Neighbours. None added.
 
 **Checks:** 84 tests in the lane's 3 files passed, eslint clean, the pure check passed, `tsc` printed no errors, `--list` found 11 tests. No browser run.
+
+## Multi Cat chips (TJ's review)
+
+- **Chips:** every chip is 104px wide, including a missing one, with the value on the left and a 32px percentile square on the right, so P100 cannot widen a column. Squares line up down each column.
+- **Colour:** the square is a black overlay at 22% on the chip, so it is a darker shade of whichever band it sits on. All set inline.
+- **Changed beyond the ticket:** the 85+ band went from 48% to 42% green, because white text was just under 4.5:1 on it. Dark text on 95+, white on the rest; a test checks both chip and square at 4.5:1 or better against `#1a1d21`.
+- **Legend:** "P = percentile" is now "Square = percentile". Ranking, scoring and the 2x weight are unchanged.
+- **Not measured:** the 32px square fits a cell of about 33px by CSS. The crowded E2E test now checks chip width, square shape and column alignment; not run here.
+- **Checks:** 86 tests in the lane's 3 files passed, eslint clean, the pure check passed, `tsc` printed no errors, `--list` found 11 tests.

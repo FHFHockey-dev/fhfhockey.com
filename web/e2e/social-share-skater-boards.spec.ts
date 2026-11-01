@@ -199,6 +199,15 @@ for (const [post, build] of Object.entries(crowdedEditions)) test(`${post} fills
   await open(page, post, build);
   await expect(page.getByTestId("share-square").getByText("Fictional Long Name", { exact: false })).toHaveCount(crowdedRows[post]);
   await expectFits(page);
+  if (post !== "category-blueprint") return;
+  // One chip width everywhere, each square inside its chip and square, and squares lined up down each column.
+  const layout = await page.getByTestId("rank-cell").evaluateAll(chips => chips.map(chip => {
+    const box = chip.getBoundingClientRect(), square = chip.querySelector("[data-testid=rank-percentile]")!.getBoundingClientRect(), text = chip.querySelector("[data-testid=rank-percentile]")!;
+    return { width: box.width, inside: square.left >= box.left && square.right <= box.right && square.top >= box.top && square.bottom <= box.bottom, square: square.width === square.height, fits: text.scrollWidth <= text.clientWidth, left: square.left };
+  }));
+  expect(new Set(layout.map(chip => chip.width)).size).toBe(1);
+  expect(layout.every(chip => chip.inside && chip.square && chip.fits)).toBe(true);
+  for (let column = 0; column < 4; column++) expect(new Set(layout.filter((_, index) => index % 4 === column).map(chip => chip.left)).size).toBe(1);
 });
 
 test("A board nobody clears says so and cannot export", async ({ page }) => {

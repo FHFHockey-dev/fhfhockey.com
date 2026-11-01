@@ -4,6 +4,7 @@ import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import type { SkaterSeason } from "./bshBoard";
 import { buildCategoryBlueprint, categoryBlueprintModule, categoryPercentileBand, categoryPercentiles, multiCatScore, type CategoryBlueprintData, type CategoryBlueprintSettings } from "./categoryBlueprint";
+import { BAND_FILL, bandText, SQUARE_SHADE } from "components/SocialShare/modules/CategoryBlueprintCard";
 import { parseShareSettings, type SharePostSnapshot } from "./contract";
 import type { SkaterAppearance } from "./shared/skaterAppearances";
 
@@ -120,6 +121,7 @@ describe("Multi Cat percentile bands", () => {
   });
 });
 
+const POST_SURFACE = "#1a1d21"; // $background-dark, the post's background.
 describe("Multi Cat card", () => {
   afterEach(cleanup);
   const show = async (data: CategoryBlueprintData, active: CategoryBlueprintSettings) => {
@@ -146,6 +148,32 @@ describe("Multi Cat card", () => {
     expect(first.map(cell => [cell.textContent, cell.getAttribute("data-band")])).toEqual([["1.00 P0", "lower"], ["3.00 P100", "p95"], ["3.00 P100", "p95"], ["3.00 P100", "p95"]]);
     expect(first[0].style.backgroundColor).toBe("rgba(255, 99, 132, 0.42)");
     expect(first[1].style.backgroundColor).toBe("rgba(0, 255, 153, 0.8)");
+  });
+  it("puts the percentile in its own square, in a shade of the chip's colour, on every band", async () => {
+    const active = settings(), { data } = buildCategoryBlueprint(season(Array.from({ length: 21 }, (_, index) => games(index + 1, 5, { points: index, shots: index, hits: index, blocks: index })).flat()), active);
+    await show(data!, active);
+    const chips = [...document.querySelectorAll<HTMLElement>("[data-testid=rank-cell]")];
+    expect(new Set(chips.map(chip => chip.getAttribute("data-band")))).toEqual(new Set(["p95", "p85", "p70", "p50", "lower"]));
+    for (const chip of chips) {
+      const square = chip.querySelector<HTMLElement>("[data-testid=rank-percentile]")!;
+      expect(chip.firstElementChild!.textContent).toMatch(/^\d+\.\d\d$/); // The value comes first, on the left.
+      expect(chip.lastElementChild).toBe(square);
+      expect(square.textContent).toMatch(/^P\d+$/);
+      expect(square.style.backgroundColor).toBe(SQUARE_SHADE);
+      expect(square.style.color).toBe(chip.style.color);
+    }
+  });
+  it("keeps text readable on the chip and its square, on every band", () => {
+    const parse = (color: string) => { const hex = color.match(/^#(..)(..)(..)$/); if (hex) return [...hex.slice(1).map(part => parseInt(part, 16)), 1]; return color.match(/[\d.]+/g)!.map(Number); };
+    const over = (top: string, under: number[]) => { const [r, g, b, a] = parse(top); return [r, g, b].map((channel, index) => channel * a + under[index] * (1 - a)); };
+    const luminance = (rgb: number[]) => { const [r, g, b] = rgb.map(value => { const unit = value / 255; return unit <= 0.03928 ? unit / 12.92 : ((unit + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+    const contrast = (a: number[], b: number[]) => { const [high, low] = [luminance(a), luminance(b)].sort((x, y) => y - x); return (high + 0.05) / (low + 0.05); };
+    const surface = parse(POST_SURFACE).slice(0, 3);
+    for (const band of ["p95", "p85", "p70", "p50", "lower"] as const) {
+      const chip = over(BAND_FILL[band], surface), square = over(SQUARE_SHADE, chip), text = parse(bandText(band)).slice(0, 3);
+      expect(contrast(text, chip)).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(text, square)).toBeGreaterThanOrEqual(4.5);
+    }
   });
   it("draws a missing cell with no fill", async () => {
     const active = settings(), { data } = buildCategoryBlueprint(trio(), active), row = data!.rows[0];
