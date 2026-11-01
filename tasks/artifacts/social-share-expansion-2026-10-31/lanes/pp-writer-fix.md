@@ -47,7 +47,8 @@ Every reader found with `rg` was read for how it uses the rows. None needs a cod
 
 | Reader | Uses | Result |
 |---|---|---|
-| Role Watch, Last Nights Standouts, What Changed (`socialShare/trends.ts`, tested) | `unit` | A missing row reads as off the PP when the game has rows, and unknown when it has none. A team with no PP in a game whose opponent had one reads off the PP, which is true. |
+| Role Watch, Last Nights Standouts, Trends boards (`socialShare/trends.ts`), all tested | `unit` | A missing row reads as off the PP when the game has rows, and unknown when it has none. A team with no PP in a game whose opponent had one reads off the PP, which is true. |
+| What Changed (tested) | Nothing | Does not read this table. It only imports a paging helper from `trendSources.ts`. |
 | Lane B "PP —" contradiction rule (tested) | `unit` against NHL.com | Unchanged, and should fire less after the backfill. |
 | `PowerPlayCombos` (tested) | `unit`, `PPTOI` | Reads rows as they are. |
 | Rolling metrics and PP share contract (tested) | `PPTOI`, `pp_share_of_team`, usage fields | Share becomes truthful. Rolling rows hold old values until rebuilt. |
