@@ -25,3 +25,9 @@ TJ approves each card individually (2026-10-31). Status is TJ's own answer, reco
 | Top Multi-Cat Stars of the Week | **Approved** | fbfaec133 | All four views. Ranking uses the fantasy week; table uses the last 7 days, as TJ asked |
 | Player vs Player | Needs work | 435695923 | TJ's pair: Dahlin (8480839) vs Hughes (8480800), no source URL, so no candidate record. Add head-to-head bars, shrink "No consensus established" (ticket sent to lane C) |
 | Team Games (example) | Not for review unless asked; about 190px empty | | |
+
+## Last Nights Standouts (TJ, 2026-11-01; after the audit pin, not in that candidate)
+
+Five cards, read as: under-X% rostered, no roster limit, goalies, top forwards, top defensemen. TJ listed four numbered items and said five, with item 4 naming forwards and defensemen. Cards 1 and 2 start blank and are built from a sidebar. Ticket to lane B; panel seam by Chef.
+
+Reviewed so far: Forwards and Defensemen approved (points first). Goalies rank by GSAx, chips show last night, STD and change; TOI chip removed by TJ (ticket to lane B). Sidebar defaults to average % change: ±200% cap plus per-stat baseline floor, TJ's choice (ticket to lane B). PP writer fix at d793446f9; TJ will run the 2026-27 backfill locally.
