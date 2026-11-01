@@ -66,7 +66,7 @@ Other users of `getPowerPlayBlocks`:
 
 Stored rows stay wrong until this runs. Needs the fix on the host that runs the route, so run it from local dev or after release.
 
-**Bounds.** `GET /api/v1/db/update-power-play-combinations?startDate=…&endDate=…`, one calendar day per call, one call at a time. The route runs all games in its range at once, so do not give it a wide range. Each game costs 3 NHL requests (shifts, boxscore, play-by-play), plus the shift-report fallback when JSON shifts are empty. No NST or Yahoo calls. Each game writes one upsert and one delete, and row counts will drop where stale rows go.
+**Bounds.** `GET /api/v1/db/update-power-play-combinations?startDate=…&endDate=…`, one calendar day per call, one call at a time. The route now enforces this much itself: more than 60 games in a call gets a 400 before any game is touched, and it runs at most 4 games at once, so at most about 12 NHL requests at a time. One day per call stays the plan, because it keeps a failure easy to place and retry. Each game costs 3 NHL requests (shifts, boxscore, play-by-play), plus the shift-report fallback when JSON shifts are empty. No NST or Yahoo calls. Each game writes one upsert and one delete, and row counts will drop where stale rows go. A game whose shift feed is incomplete now fails visibly and keeps its stored rows: any team with PP time must show at least 3 players on the ice per PP second on average (the 8 teams compared here ran 4.89 to 5.0). Note those games, inspect them and rerun them; do not expect every game to write.
 
 | Phase | Scope | Games | Rows today | NHL requests |
 |---|---|---|---|---|
@@ -75,6 +75,8 @@ Stored rows stay wrong until this runs. Needs the fix on the host that runs the 
 | 3, optional | Before 2025-26 | 97 | | about 291 |
 
 Phase 1 alone corrects this season's cards. Whether to run 2 and 3 depends on how far back rolling baselines and Role Watch reach. Stop on a failed day and inspect it before going on.
+
+**Other callers.** The nightly pipeline passes one completed day, at most about 16 games, so it is unaffected. A manual `run-rolling-forge-pipeline` with an explicit window over 60 games now gets a failed PP step with that 400 message, instead of starting every game at once. The single-game route the database trigger calls has no ceiling to hit.
 
 **Check after the first day.** Compare with the query below for 2026-10-31. Expect close to 100% against today's 112 of 268.
 

@@ -1,9 +1,17 @@
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
+import pLimit from "p-limit";
 import adminOnly from "utils/adminOnlyMiddleware";
 import { SupabaseType } from "lib/supabase/client";
 
 import { updatePowerPlayCombinations } from "./[gameId]";
+
+// About a week of games, which still finishes well inside the 240 s function limit at this concurrency.
+export const MAX_GAMES_PER_CALL = 60;
+export const MAX_CONCURRENT_GAMES = 4;
+
+const tooManyGamesMessage = (scope: string) =>
+  `${scope} exceeds the limit of ${MAX_GAMES_PER_CALL} games per call. Split the repair into smaller calls.`;
 
 type GameRow = {
   id: number;
@@ -38,6 +46,7 @@ async function listGamesInRange(args: {
     .gte("date", args.startDate)
     .lte("date", args.endDate)
     .order("date", { ascending: true })
+    .limit(MAX_GAMES_PER_CALL + 1)
     .throwOnError();
 
   return (data ?? []) as GameRow[];
@@ -59,7 +68,7 @@ async function listGamesByIds(args: {
 
 export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(async (req, res) => {
   const { supabase } = req;
-  const gameIds = parseGameIdsParam(req.query.gameIds);
+  const gameIds = [...new Set(parseGameIdsParam(req.query.gameIds))];
   const startDate =
     typeof req.query.startDate === "string" ? req.query.startDate.slice(0, 10) : null;
   const endDate =
@@ -72,6 +81,13 @@ export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(async (req, res) 
       success: false,
       message:
         "Provide gameIds or a startDate/endDate range for bulk power-play combination repair."
+    });
+  }
+
+  if (gameIds.length > MAX_GAMES_PER_CALL) {
+    return res.status(400).json({
+      success: false,
+      message: tooManyGamesMessage(`The list of ${gameIds.length} game ids`)
     });
   }
 
@@ -99,8 +115,18 @@ export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(async (req, res) 
       });
     }
 
+    if (games.length > MAX_GAMES_PER_CALL) {
+      return res.status(400).json({
+        success: false,
+        message: tooManyGamesMessage(`The range ${startDate} to ${endDate}`)
+      });
+    }
+
+    const limit = pLimit(MAX_CONCURRENT_GAMES);
     const results = await Promise.allSettled(
-      games.map((game) => updatePowerPlayCombinations(game.id, supabase))
+      games.map((game) =>
+        limit(() => updatePowerPlayCombinations(game.id, supabase))
+      )
     );
     const succeededGameIds: number[] = [];
     const failures: PowerPlayFailure[] = [];

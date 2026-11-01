@@ -14,6 +14,9 @@ import { buildPowerPlayCombinationRows } from "lib/supabase/Upserts/powerPlayCom
 
 type ToiRawData = Awaited<ReturnType<typeof fetchTOIRawData>>;
 
+// A team on the power play has at least four skaters on the ice, so far fewer than that means its shifts are incomplete.
+const MIN_SKATERS_PER_PP_SECOND = 3;
+
 type PowerPlayCombinationUpdateSummary = {
   gameId: number;
   rowCount: number;
@@ -117,6 +120,8 @@ export async function updatePowerPlayCombinations(
     playerId: number;
   }> = [];
 
+  const playerSecondsByTeamId: Record<number, number> = {};
+
   teams.forEach((team) => {
     const toiData = toi[team.id] ?? [];
     const table: Record<string, TOIData> = {};
@@ -145,12 +150,28 @@ export async function updatePowerPlayCombinations(
         teamPpToiSeconds: teamPpToiByTeamId[team.id] ?? null
       });
       rows.push(...unitRows);
+      playerSecondsByTeamId[team.id] =
+        (playerSecondsByTeamId[team.id] ?? 0) +
+        unitRows.reduce((sum, row) => sum + row.PPTOI, 0);
     });
   });
 
-  // A game with no power plays is real. Power plays with no rows mean the shifts are missing, so keep what is stored.
-  if (rows.length === 0 && (ppBlocks.length > 0 || getShiftRows(rawData).length === 0)) {
+  if (getShiftRows(rawData).length === 0) {
     throw new Error("No power play combinations found");
+  }
+  // A team with no power play needs no rows, but one with PP time must show players on the ice for it. Refuse before
+  // any write, because the delete below would otherwise remove valid rows the partial feed left out.
+  const incompleteTeamIds = Object.entries(teamPpToiByTeamId)
+    .filter(
+      ([teamId, ppSeconds]) =>
+        (playerSecondsByTeamId[Number(teamId)] ?? 0) <
+        ppSeconds * MIN_SKATERS_PER_PP_SECOND
+    )
+    .map(([teamId]) => teamId);
+  if (incompleteTeamIds.length > 0) {
+    throw new Error(
+      `Incomplete shift data for game ${gameId}: team(s) ${incompleteTeamIds.join(", ")} have PP time without enough players on the ice. Stored rows were kept.`
+    );
   }
   console.log("[updatePowerPlayCombinations] summary", {
     gameId,
