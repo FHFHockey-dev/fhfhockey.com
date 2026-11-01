@@ -9,7 +9,7 @@ import { buildNightlyFloor, floorAdmitted, floorAverage, floorHeadline, floorMet
 import { ownershipOf, type OwnershipState } from "./shared/definitions";
 import type { SkaterAppearance } from "./shared/skaterAppearances";
 
-const settings = (over: Partial<NightlyFloorSettings> = {}): NightlyFloorSettings => ({ view: "sog", xSog: 2, xHits: 2, xBlk: 1, zeroCategory: "hits", window: "l10", minGp: 1, position: "all", ownMin: 0, ownMax: 100, unknownOwnership: "include", minCoverage: 90, ...over });
+const settings = (over: Partial<NightlyFloorSettings> = {}): NightlyFloorSettings => ({ period: "rolling", week: null, start: null, end: null, minGpRange: null, view: "sog", xSog: 2, xHits: 2, xBlk: 1, zeroCategory: "hits", window: "l10", minGp: 1, position: "all", ownMin: 0, ownMax: 100, unknownOwnership: "include", minCoverage: 90, ...over });
 const game = (playerId: number, index: number, stats: Partial<SkaterAppearance> = {}): SkaterAppearance => ({
   playerId, name: `Skater ${playerId}`, position: "L", group: "F", gameId: 1000 + index, date: `2026-10-${String(index + 1).padStart(2, "0")}`, team: "NJD", opponent: "NYR", home: true,
   goals: 0, assists: 0, points: 0, shots: 0, hits: 0, blocks: 0, ppPoints: 0, toiSeconds: 900, ppToiSeconds: 0, penaltyMinutes: 0, ...stats,
@@ -160,7 +160,7 @@ describe("Nightly Floor filters", () => {
     expect(nightlyFloorModule.hasRows(zero.data, nobody)).toBe(false);
   });
   it("has the contract's visible defaults and refuses an inverted range", () => {
-    expect(parseShareSettings(nightlyFloorModule, {})).toEqual({ view: "sog", xSog: 2, xHits: 2, xBlk: 1, zeroCategory: "shots", window: "l10", minGp: 5, position: "all", ownMin: 0, ownMax: 100, unknownOwnership: "exclude", minCoverage: 90 });
+    expect(parseShareSettings(nightlyFloorModule, {})).toEqual({ period: "rolling", week: null, start: null, end: null, minGpRange: null, view: "sog", xSog: 2, xHits: 2, xBlk: 1, zeroCategory: "shots", window: "l10", minGp: 5, position: "all", ownMin: 0, ownMax: 100, unknownOwnership: "exclude", minCoverage: 90 });
     expect(() => parseShareSettings(nightlyFloorModule, { ownMin: "60", ownMax: "50" })).toThrow(/rostered/);
     expect(() => parseShareSettings(nightlyFloorModule, { minCoverage: "49" })).toThrow();
   });
@@ -248,5 +248,23 @@ describe("Nightly Floor card", () => {
     expect(text).toContain("No skater meets this test");
     cleanup();
     expect(await show(data!, settings({ view: "point" }))).toContain("Refresh this post");
+  });
+});
+
+describe("a period", () => {
+  const appearance = (playerId: number, day: number, points: number): SkaterAppearance => ({ playerId, name: `Skater ${playerId}`, position: "C", group: "F", gameId: 1000 + day, date: `2026-10-${day}`, team: "NJD", opponent: "NYR", home: true, goals: 0, assists: points, points, shots: 3, hits: 1, blocks: 1, ppPoints: 0, toiSeconds: 900, ppToiSeconds: 0, penaltyMinutes: 0 });
+  const period = { label: "Week 3 · Oct 19 to Oct 25", from: "2026-10-19", through: "2026-10-25" };
+  const appearances = [19, 21, 23, 25].flatMap(day => [appearance(1, day, 0), appearance(2, day, day === 19 ? 0 : 1)]);
+  const owned = { byPlayer: new Map<number, OwnershipState>(), updatedAt: null };
+  it("counts Cardio Masters over every game in the dates, oldest first, and prints them", () => {
+    const { data, evidence } = buildNightlyFloor({ appearances, teamGames: [], scheduledGames: 0, through: period.through, period }, settings({ view: "cardio", period: "matchup", window: "l5", minGp: 50 }), owned);
+    expect(data!.periodLabel).toBe(period.label);
+    expect(data!.rows.map(row => [row.playerId, row.numerator, row.denominator])).toEqual([[1, 4, 4], [2, 1, 4]]);
+    expect(data!.rows[1].marks).toEqual([true, false, false, false]);
+    expect(evidence.cohort).toContain("2+ GP in these dates");
+  });
+  it("keeps old URLs and the Cardio Masters landing link on recent games", () => {
+    expect(parseShareSettings(nightlyFloorModule, { view: "cardio" })).toMatchObject({ view: "cardio", period: "rolling", window: "l10", minGp: 5 });
+    expect(() => parseShareSettings(nightlyFloorModule, { period: "custom" })).toThrow("needs a start date and an end date");
   });
 });

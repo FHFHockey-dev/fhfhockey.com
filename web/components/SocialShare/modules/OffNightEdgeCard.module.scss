@@ -7,14 +7,24 @@
 .head[data-numeric], .cell[data-numeric] { justify-content: flex-end; }
 .head[data-off], .cell[data-off] { background: rgba(v.$success-color, 0.3); color: v.$color-white; }
 .head[data-off], .cell[data-off], .dayHead { justify-content: center; text-align: center; }
-.dayHead { display: grid; min-width: 22px; small { font-size: 15px; letter-spacing: 0; color: v.$color-white; } }
+.dayHead { display: grid; min-width: 22px; small { font-size: 15px; letter-spacing: 0; color: v.$color-white; } i { font-style: normal; letter-spacing: 0; } }
 .team { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
 .score { font-weight: 700; color: v.$color-white; }
 .pick { display: grid; gap: 1px; min-width: 0; b { font-size: 23px; font-weight: 600; } small { font-size: 16px; color: v.$text-secondary; } }
 .gap { display: block; font-size: 15px; line-height: 1.1; color: v.$text-secondary; }
-.legend { margin: 0; font-size: 15px; line-height: 1.2; color: v.$text-secondary; }
+.legend { margin: 0; font-size: 15px; line-height: 1.2; color: v.$text-secondary; b { font-weight: 600; color: v.$color-white; } strong { font-weight: 600; color: v.$warning-color; } }
 .table[data-roomy] { font-size: 34px;
   .pick b { font-size: 30px; }
   .pick small { font-size: 20px; }
   .gap { font-size: 20px; }
+}
+.table[data-compact] { font-size: 21px;
+  .head { padding: 0 3px 4px; font-size: 13px; }
+  .cell { padding: 0 3px; }
+  .head[data-numeric], .cell[data-numeric] { min-width: 25px; }
+  .dayHead { min-width: 19px; small { font-size: 13px; } }
+  .team { gap: 3px; }
+  .pick b { font-size: 19px; }
+  .pick small { font-size: 14px; }
+  .gap { font-size: 13px; }
 }

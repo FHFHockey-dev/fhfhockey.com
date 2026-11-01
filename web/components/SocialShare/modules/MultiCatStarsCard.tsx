@@ -1,6 +1,6 @@
 import { STALE_SETTINGS_NOTE } from "lib/socialShare/modules/bshBoard";
 import type { SharePostCardProps } from "lib/socialShare/modules/contract";
-import { multiCatCurrent, multiCatFormulaLabel, multiCatScoreText, radarRuns, type MultiCatData, type MultiCatPercentile, type MultiCatRow, type MultiCatSettings } from "lib/socialShare/modules/multiCatStars";
+import { multiCatCurrent, multiCatFormulaLabel, multiCatNoun, multiCatScoreText, MULTI_CAT_CURRENT, radarRuns, type MultiCatData, type MultiCatPercentile, type MultiCatRow, type MultiCatSettings } from "lib/socialShare/modules/multiCatStars";
 import { PostEmpty, PostTeamMark } from "./kit";
 import styles from "./MultiCatStarsCard.module.scss";
 
@@ -43,23 +43,23 @@ function Radar({ spokes }: { spokes: readonly MultiCatPercentile[] }) {
 }
 
 function Panel({ row, data, logo }: { row: MultiCatRow; data: MultiCatData; logo: string | null | undefined }) {
-  const { week } = row;
+  const { ranked } = row;
   return <article className={styles.panel} data-testid="multi-cat-panel">
     <header className={styles.ident}>
       <b className={styles.rank}>{row.rank}</b>
       {row.team && <PostTeamMark team={row.team} logo={logo} size={44} />}
       <span className={styles.who}>
         <b className={styles.name}>{row.name}</b>
-        <small>{[row.position, row.teams.length > 1 ? row.teams.join("/") : null, `${week.games} GP`].filter(Boolean).join(" · ")} · {count(week.points)} PTS {count(week.blocks)} BLK {count(week.shots)} SOG {count(week.hits)} HIT</small>
+        <small>{[row.position, row.teams.length > 1 ? row.teams.join("/") : null, `${ranked.games} GP`].filter(Boolean).join(" · ")} · {count(ranked.points)} PTS {count(ranked.blocks)} BLK {count(ranked.shots)} SOG {count(ranked.hits)} HIT</small>
       </span>
-      <span className={styles.score} data-testid="multi-cat-score"><b>{multiCatScoreText(row.score, data.basis)}</b><small>{data.basis === "perGame" ? "PER GAME" : "WEEK"}</small></span>
+      <span className={styles.score} data-testid="multi-cat-score"><b>{multiCatScoreText(row.score, data.basis)}</b><small>{data.basis === "perGame" ? "PER GAME" : multiCatNoun(data.period)?.toUpperCase() ?? "TOTAL"}</small></span>
     </header>
     <div className={styles.body}>
       <div className={styles.chart}><p className={styles.caption}>SEASON PERCENTILE</p><Radar spokes={row.radar} /></div>
       <div className={styles.stats} data-testid="multi-cat-table">
-        <p className={styles.caption}>LAST 7 DAYS</p>
-        <div className={styles.line}><span>GP</span><b>{row.last7.games}</b></div>
-        {row.last7.values.map(value => <div key={value.id} className={styles.line}><span>{value.label}</span>{value.total === null ? <b className={styles.missing}>{MISSING}</b> : <b>{value.id === "plusMinus" && value.total > 0 ? `+${value.total}` : value.total}</b>}</div>)}
+        <p className={styles.caption}>{data.tableWindow === "last7" ? "LAST 7 DAYS" : "SAME DATES"}</p>
+        <div className={styles.line}><span>GP</span><b>{row.table.games}</b></div>
+        {row.table.values.map(value => <div key={value.id} className={styles.line}><span>{value.label}</span>{value.total === null ? <b className={styles.missing}>{MISSING}</b> : <b>{value.id === "plusMinus" && value.total > 0 ? `+${value.total}` : value.total}</b>}</div>)}
       </div>
     </div>
   </article>;
@@ -67,12 +67,13 @@ function Panel({ row, data, logo }: { row: MultiCatRow; data: MultiCatData; logo
 
 export default function MultiCatStarsCard({ data, settings, logos }: SharePostCardProps<MultiCatSettings, MultiCatData>) {
   if (!multiCatCurrent(data, settings)) return <PostEmpty>{STALE_SETTINGS_NOTE}</PostEmpty>;
-  if (!data.rows.length) return <PostEmpty>{data.basis === "perGame" ? `No skater has ${data.minGp} GP this fantasy week yet` : "No skater qualifies this fantasy week"}</PostEmpty>;
-  const inProgress = data.through < data.weekEnd ? `, through ${shortDate(data.through)}` : "";
+  const when = data.period.kind === MULTI_CAT_CURRENT ? "this fantasy week" : `in ${data.period.label}`;
+  if (!data.rows.length) return <PostEmpty>{data.basis === "perGame" ? `No skater has ${data.minGp} GP ${when}${data.period.kind === MULTI_CAT_CURRENT ? " yet" : ""}` : `No skater qualifies ${when}`}</PostEmpty>;
+  const inProgress = data.through < data.period.to ? `, through ${shortDate(data.through)}` : "";
   return <div className={styles.board}>
     <p className={styles.legend}>
-      <b>RANKED</b> fantasy week {span(data.weekStart, data.weekEnd)}{inProgress}: {multiCatFormulaLabel(data.formula)}, {data.basis === "perGame" ? `per game, ${data.minGp}+ GP` : "total"}. Ties share a rank.{data.tiedBeyondCut ? ` ${data.tiedBeyondCut} more tied at #${data.rows[data.rows.length - 1].rank}.` : ""}<br />
-      <b>TABLE</b> last 7 days, {span(data.last7From, data.last7To)}. <b>RADAR</b> season per-game percentile among {data.cohort.percentile} skaters.
+      <b>RANKED</b> {data.period.label}{inProgress}: {multiCatFormulaLabel(data.formula)}, {data.basis === "perGame" ? `per game, ${data.minGp}+ GP` : "total"}. Ties share a rank.{data.tiedBeyondCut ? ` ${data.tiedBeyondCut} more tied at #${data.rows[data.rows.length - 1].rank}.` : ""}<br />
+      <b>TABLE</b> {data.tableWindow === "last7" ? `last 7 days, ${span(data.tableFrom, data.tableTo)}` : "same dates as the ranking"}. <b>RADAR</b> season per-game percentile through {shortDate(data.through)} among {data.cohort.percentile} skaters.
     </p>
     <div className={styles.grid}>{data.rows.map(row => <Panel key={row.playerId} row={row} data={data} logo={row.team ? logos[row.team] : null} />)}</div>
   </div>;

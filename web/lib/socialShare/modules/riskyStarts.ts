@@ -1,6 +1,7 @@
 import { UNKNOWN_EVIDENCE, defineShareModule, type SharePostEvidence, type SharePostLoadResult, type SharePostSource } from "./contract";
+import { periodDates } from "./shared/periodWindow";
 import type { GoalieConfirmation, GoalieGameSignals, GoalieInventory, InventoryMetric } from "./shared/goalieInventory";
-import { confirmationLabel, confirmationLegend, inventoryEvidence, isUpcomingGame, headToHeadWinner, metricLabel, puckDropTtlSeconds, rankBand, rankedSide, type GoalieInventoryDetail, type InventoryConflict, type InventoryLowFirstRanks, type RankedSide, type TeamLensMetric } from "./shared/goalieInventory.sources";
+import { confirmationLabel, confirmationLegend, inventoryEvidence, inventoryPeriodFields, inventoryPeriodReason, INVENTORY_PERIOD_CONTROL, isUpcomingGame, noUpcomingEvidence, periodLine, periodSources, type InventoryPeriod, type InventoryPeriodSettings, headToHeadWinner, metricLabel, puckDropTtlSeconds, rankBand, rankedSide, type GoalieInventoryDetail, type InventoryConflict, type InventoryLowFirstRanks, type RankedSide, type TeamLensMetric } from "./shared/goalieInventory.sources";
 
 /**
  * Risky Starts (SS 11.0, SS-R14) mirrors Cherry-Picked Matchups from the goalie's chair: one tile per team-night, a pairing
@@ -13,7 +14,7 @@ const LENS_MEANINGS: Record<RiskyLens, string> = { volume: "more shots to save",
 export const RISKY_CORRELATION_NOTE = "These signals are correlated: shots, xG and chances overlap, and penalties feed all three. Each lens stands alone, flags are never added across lenses, and no win or start odds are given.";
 export const RISKY_TILE_LIMIT = 8;
 
-export type RiskyStartsSettings = { days: number; lens: RiskyLens };
+export type RiskyStartsSettings = InventoryPeriodSettings & { lens: RiskyLens };
 export type RiskySide = RankedSide & { team: string; label: string; digits: number };
 /** `winner` is the team with the stronger rank, null when equal, missing or one-sided. */
 export type RiskyPair = { id: string; label: string; sides: RiskySide[]; flagged: boolean; winner: string | null };
@@ -22,7 +23,7 @@ export type RiskyRow = { gameId: number; date: string; startTimeUtc: string | nu
 /** A market line from one source and one book, by the game's home and away teams. These are the book's prices and nothing is derived from them. */
 export type RiskyGameLine = { gameId: number; source: "stored" | "nhl"; book: string; capturedAt: string; home: string; away: string; homeMoneyline: number; awayMoneyline: number; total: number | null };
 export type RiskyMarketLines = { lines: Record<string, RiskyGameLine>; sources: readonly SharePostSource[]; notes: readonly string[] };
-export type RiskyStartsData = { from: string; through: string; rows: RiskyRow[]; lines: Record<string, RiskyGameLine>; confirmationLegend: string };
+export type RiskyStartsData = { from: string; through: string; periodLabel: string; rows: RiskyRow[]; lines: Record<string, RiskyGameLine>; confirmationLegend: string };
 export const NO_LINE_LABEL = "No line yet";
 export const moneylineLabel = (price: number) => price > 0 ? `+${price}` : `${price}`;
 const BOOK_SHORT: Record<string, string> = { DraftKings: "DK" };
@@ -79,7 +80,7 @@ export function ordinalRank(rank: number) {
 }
 export const riskyLensMeaning = (lens: RiskyLens) => LENS_MEANINGS[lens];
 
-const SOURCE_PUBLISHERS: readonly (readonly [string, string])[] = [["NHL.com", "NHL.com"], ["NST", "NST"], ["Goalie start", "goalie reports"], ["DraftKings", "DraftKings"]];
+const SOURCE_PUBLISHERS: readonly (readonly [string, string])[] = [["NHL.com", "NHL.com"], ["NST", "NST"], ["Goalie start", "goalie reports"], ["DraftKings", "DraftKings"], ["Yahoo", "Yahoo"]];
 const publisher = (name: string) => SOURCE_PUBLISHERS.find(([prefix]) => name.startsWith(prefix))?.[1] ?? name;
 const updatedLabel = (at: string) => new Date(at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/New_York" });
 const sourceDetail = ({ name, asOf, updatedAt }: SharePostSource) => `${name}${asOf ? ` through ${asOf}` : ""}${updatedAt ? ` (updated ${updatedLabel(updatedAt)} ET)` : ""}`;
@@ -97,26 +98,30 @@ export function compactRiskyEvidence(evidence: SharePostEvidence): SharePostEvid
     sources: [{ name: [...new Set(sources.map(source => publisher(source.name)))].join(", "), tables: [...new Set(sources.flatMap(source => source.tables))], state: sources.some(source => source.state === "partial") ? "partial" : "ready", asOf: dates[0] ?? null, updatedAt: null, reasons: sources.flatMap(source => source.reasons ?? []) }],
   };
 }
-export function riskyStartsResult({ inventory, coverage, conflicts, lowFirstRanks }: GoalieInventoryDetail, market: RiskyMarketLines = { lines: {}, sources: [], notes: [] }): SharePostLoadResult<RiskyStartsData> {
+export function riskyStartsResult({ inventory, coverage, conflicts, lowFirstRanks }: GoalieInventoryDetail, market: RiskyMarketLines = { lines: {}, sources: [], notes: [] }, period?: InventoryPeriod): SharePostLoadResult<RiskyStartsData> {
   if (inventory.state === "missing") return { state: "missing", reasons: [...inventory.reasons], evidence: UNKNOWN_EVIDENCE, data: null };
   const rows = riskyRows(inventory, conflicts, lowFirstRanks), cohort = rows[0]?.lenses.volume[0].sides[0].metric.leagueCohort ?? null;
   const evidence = inventoryEvidence({ inventory, coverage }, `${rows.length} team-nights in the window; ranks ${cohort === null ? "withheld without a complete league" : `over all ${cohort} teams`}. ${RISKY_CORRELATION_NOTE}`, rows.length, market.notes);
   return {
     state: inventory.state, reasons: inventory.state === "ready" ? [] : [...inventory.reasons], ttlSeconds: puckDropTtlSeconds(rows.map(row => row.startTimeUtc), inventory.generatedAt),
-    data: { from: inventory.from, through: inventory.through, rows, lines: market.lines, confirmationLegend: confirmationLegend(inventory) },
+    data: { from: inventory.from, through: inventory.through, periodLabel: period ? periodLine(period) : periodDates(inventory.from, inventory.through), rows, lines: market.lines, confirmationLegend: confirmationLegend(inventory) },
     teams: [...new Set(rows.flatMap(row => [row.team, row.opponent]))].sort(),
-    evidence: compactRiskyEvidence({ ...evidence, sources: [...evidence.sources, ...market.sources] }),
+    evidence: compactRiskyEvidence({ ...evidence, sources: [...evidence.sources, ...market.sources, ...period ? periodSources(period) : []] }),
   };
 }
+/** A period wholly past: nothing to advise on, and with no rows nothing to export. */
+export const riskyStartsNoUpcoming = (period: InventoryPeriod): SharePostLoadResult<RiskyStartsData> => ({ state: "ready", reasons: [], teams: [], evidence: noUpcomingEvidence(period), data: { from: period.from, through: period.through, periodLabel: period.label, rows: [], lines: {}, confirmationLegend: "" } });
 
 const lineAlt = (line: RiskyGameLine | undefined) => line ? `Market line, ${line.book}: ${line.home} ${moneylineLabel(line.homeMoneyline)}, ${line.away} ${moneylineLabel(line.awayMoneyline)}${line.total === null ? "" : `, total ${line.total}`}` : NO_LINE_LABEL;
 export const riskyStartsModule = defineShareModule<RiskyStartsSettings, RiskyStartsData>({
   id: "risky-starts", title: "Risky Starts", summary: "Goalie matchups by volume upside, ratio exposure and win support, as three separate lenses.", group: "goalies", basis: "observed",
   suggestedUse: "Works before a busy night, or for a week's goalie planning.",
   fields: [
-    { id: "days", label: "Days ahead", kind: "number", default: 7, min: 1, max: 14, step: 1 },
+    ...inventoryPeriodFields(),
     { id: "lens", label: "Lens", kind: "select", default: "ratio", clientOnly: true, options: RISKY_LENSES.map(value => ({ value, label: RISKY_LENS_LABELS[value] })) },
   ],
+  periodControl: INVENTORY_PERIOD_CONTROL,
+  validate: inventoryPeriodReason,
   load: () => import("./riskyStarts.sources").then(sources => sources.loadRiskyStarts),
   card: () => import("components/SocialShare/modules/RiskyStartsCard").then(card => card.default),
   hasRows: (data, settings) => riskyRowsForLens(data.rows, settings.lens).length > 0,

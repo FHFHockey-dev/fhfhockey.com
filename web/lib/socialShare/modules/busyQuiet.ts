@@ -1,7 +1,8 @@
 import { currentSeason } from "lib/socialShare/schedule";
-import { defineShareModule, type SharePostEvidence, type SharePostLoadResult, type SharePostSource } from "./contract";
+import { defineShareModule, UNKNOWN_EVIDENCE, type ShareSettingField, type SharePostEvidence, type SharePostLoadResult, type SharePostSource } from "./contract";
 import { competitionRanks, editionDate, lastN, per60 } from "./shared/definitions";
 import type { CompletedTeamGame, GoalieAppearance } from "./shared/goalieLedger";
+import { customRangeReason, periodDates, periodWindowFields, PERIOD_CUSTOM, resolvePeriodWindow, type MatchupCalendar, type PeriodControl, type PeriodWindowSettings } from "./shared/periodWindow";
 
 /** Busy and Quiet goalies (SS 10.0, SS-R12): how much work each goalie faced, kept apart from how well he played. */
 export type GoalieWindowKey = "l5" | "l10" | "std";
@@ -9,7 +10,7 @@ export const GOALIE_WINDOW_OPTIONS = [{ value: "l5", label: "Last 5 appearances"
 export type BusyQuietBasis = "start" | "appearance" | "per60";
 export const BUSY_QUIET_BASIS_OPTIONS = [{ value: "start", label: "Per start" }, { value: "appearance", label: "Per appearance" }, { value: "per60", label: "Per 60" }] as const;
 export const BASIS_LABELS: Record<BusyQuietBasis, string> = { start: "/GS", appearance: "/GP", per60: "/60" };
-export type BusyQuietSettings = { basis: BusyQuietBasis; window: GoalieWindowKey; minStarts: number };
+export type BusyQuietSettings = PeriodWindowSettings & GoalieMinStarts & { basis: BusyQuietBasis; window: GoalieWindowKey };
 
 /** Fills the card's 860px body per side. Ties may run past the size; the hard cap keeps them from clipping, and the sample names any left out. */
 export const BUSY_QUIET_LIST_SIZE = 11;
@@ -33,6 +34,56 @@ export function goalieWindows(appearances: readonly GoalieAppearance[], window: 
   });
 }
 export const windowLabel = (window: GoalieWindowKey) => GOALIE_WINDOW_OPTIONS.find(option => option.value === window)!.label;
+
+/**
+ * Which games a goalie post reads. `rolling` is the default and is each goalie's own last appearances, not one set of dates, so it needs no calendar
+ * read. `window` stays a field of its own, so a link from before the period control still means what it meant.
+ */
+export const GOALIE_PERIOD_ROLLING = "rolling";
+export const GOALIE_PERIOD_CONTROL: PeriodControl = { mode: "past-only" };
+export const GOALIE_PERIOD_FIELDS: readonly ShareSettingField[] = [
+  ...periodWindowFields({ mode: GOALIE_PERIOD_CONTROL.mode, default: GOALIE_PERIOD_ROLLING, options: [{ value: GOALIE_PERIOD_ROLLING, label: "Recent appearances" }, { value: "matchup", label: "Matchup week" }, { value: PERIOD_CUSTOM, label: "Custom range" }] }),
+  { id: "window", label: "Window", kind: "select", default: "l10", options: GOALIE_WINDOW_OPTIONS, onlyForPeriod: GOALIE_PERIOD_ROLLING },
+];
+/**
+ * One matchup week holds about 3 starts for a team's top goalie, so 3 leaves almost nobody, while L10 and season windows hold plenty. Each period has its own
+ * visible field and default, as Goalie of the Period does, and only the chosen period's field shows.
+ */
+export type GoalieMinStarts = { minStarts: number; minStartsWeek: number; minStartsRange: number };
+export const GOALIE_MIN_STARTS_FIELDS: readonly ShareSettingField[] = [
+  { id: "minStarts", label: "Min starts in window", kind: "number", default: 3, min: 1, max: 82, step: 1, onlyForPeriod: GOALIE_PERIOD_ROLLING },
+  { id: "minStartsWeek", label: "Min starts in week", kind: "number", default: 2, min: 1, max: 14, step: 1, onlyForPeriod: "matchup" },
+  { id: "minStartsRange", label: "Min starts in range", kind: "number", default: 2, min: 1, max: 82, step: 1, onlyForPeriod: PERIOD_CUSTOM },
+];
+export const goalieMinStarts = (settings: GoalieMinStarts & Pick<PeriodWindowSettings, "period">) => settings.period === "matchup" ? settings.minStartsWeek : settings.period === PERIOD_CUSTOM ? settings.minStartsRange : settings.minStarts;
+export const validateGoaliePeriodChoice = (settings: PeriodWindowSettings) => settings.period === PERIOD_CUSTOM ? customRangeReason(settings) : null;
+/** The chosen dates. `through` stops at the last completed games; `past` means the dates ended before them. */
+export type GoalieDateRange = { from: string; through: string; line: string; past: boolean };
+const SHORT_DATE = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+export const goalieShortDate = (date: string) => SHORT_DATE.format(new Date(`${date}T12:00:00Z`));
+export function resolveGoalieRange(settings: PeriodWindowSettings, calendar: MatchupCalendar, cutoff: string): { range: GoalieDateRange; reason?: undefined } | { range?: undefined; reason: string } {
+  const { window, reason } = resolvePeriodWindow(settings, calendar, { ...GOALIE_PERIOD_CONTROL, cutoff });
+  if (!window) return { reason: [reason, ...calendar.reasons].join(" ") };
+  const underWay = window.through > cutoff;
+  return { range: { from: window.from, through: underWay ? cutoff : window.through, line: underWay ? `${window.label}, games through ${goalieShortDate(cutoff)}` : window.label, past: window.through < cutoff } };
+}
+export const goalieRangeMissing = <Data>(reason: string): SharePostLoadResult<Data> => ({ state: "missing", reasons: [reason], data: null, evidence: { ...UNKNOWN_EVIDENCE, sources: [{ name: "Yahoo matchup weeks", tables: ["yahoo_matchup_weeks"], state: "ready", asOf: null, updatedAt: null }], sample: reason, strength: "All situations" } });
+/** The ledger cut to the chosen dates, so a game outside them can neither count nor hold the post back. */
+export function rangeLedger(ledger: { appearances: readonly GoalieAppearance[]; teamGames: readonly CompletedTeamGame[]; scheduledDates: readonly string[] }, range: GoalieDateRange | null | undefined) {
+  if (!range) return ledger;
+  const inside = (date: string) => date >= range.from && date <= range.through;
+  return { appearances: ledger.appearances.filter(row => inside(row.date)), teamGames: ledger.teamGames.filter(game => inside(game.date)), scheduledDates: ledger.scheduledDates.filter(inside) };
+}
+/** Chosen dates hold every appearance in them. Min starts counts those same appearances and is never lowered for a short range. */
+export const rangeWindows = (appearances: readonly GoalieAppearance[], window: GoalieWindowKey, range: GoalieDateRange | null | undefined) => goalieWindows(rangeLedger({ appearances, teamGames: [], scheduledDates: [] }, range).appearances, range ? "std" : window);
+/** The dates a card prints: the chosen ones, or the oldest and newest game behind a rolling window. */
+export function goalieDatesLine(window: GoalieWindowKey, range: GoalieDateRange | null | undefined, windows: readonly GoalieWindow[], through: string) {
+  if (range) return range.line;
+  if (!windows.length) return `${windowLabel(window)} through ${through}`;
+  return `${windowLabel(window)}, ${periodDates(windows.map(entry => entry.firstDate).sort()[0], windows.map(entry => entry.lastDate).sort().at(-1)!)}`;
+}
+export const MIN_STARTS_RANGE_RULE = "Min starts counts these dates only and is not lowered for a short range.";
+
 /** Season to date through yesterday in New York: today's games may not be final. */
 export function goalieLedgerScope(generatedAt: string) {
   const today = editionDate(generatedAt), through = new Date(Date.parse(`${today}T00:00:00Z`) - 86400000).toISOString().slice(0, 10), season = currentSeason(through);
@@ -112,18 +163,21 @@ export type BusyQuietRow = {
   /** Every shot in the window, and the part of it faced in relief. */
   totalShots: number | null; reliefShots: number | null; series: ShotPoint[]; volume: BasisVolume; danger: DangerZoneShots; teamChances: TeamChances;
 };
-export type BusyQuietData = { basis: BusyQuietBasis; window: GoalieWindowKey; through: string; busy: BusyQuietRow[]; quiet: BusyQuietRow[]; eligible: number; appeared: number; unranked: number; dangerUnadmitted: number; teamChancesUnadmitted: number };
+export type BusyQuietData = { basis: BusyQuietBasis; window: GoalieWindowKey; through: string; dates: string; ranged: boolean; minStarts: number; busy: BusyQuietRow[]; quiet: BusyQuietRow[]; eligible: number; appeared: number; unranked: number; dangerUnadmitted: number; teamChancesUnadmitted: number };
 
 const knownSum = (values: readonly (number | null)[]) => values.some(value => value === null) ? null : sum(values as number[]);
 export function buildBusyQuiet(input: {
   settings: BusyQuietSettings; appearances: readonly GoalieAppearance[]; teamGames: readonly CompletedTeamGame[]; scheduledDates: readonly string[];
   /** Null means that read failed: shots still stand, and these columns say unknown. */
   nstGoalie: readonly NstGoalieRow[] | null; nstTeam: readonly NstTeamRow[] | null; through: string;
+  /** The chosen dates; absent for a rolling window. */
+  range?: GoalieDateRange | null;
 }): SharePostLoadResult<BusyQuietData> {
-  const { settings, appearances } = input;
-  const windows = goalieWindows(appearances, settings.window), eligible = windows.filter(window => window.starts >= settings.minStarts);
-  const since = eligible.reduce<string | null>((oldest, window) => !oldest || window.firstDate < oldest ? window.firstDate : oldest, null);
-  const ledger = ledgerCoverage({ scheduledDates: input.scheduledDates, teamGames: input.teamGames, appearances, since });
+  const { settings, range } = input, { appearances, teamGames, scheduledDates } = rangeLedger(input, range), minStarts = goalieMinStarts(settings);
+  const windows = goalieWindows(appearances, range ? "std" : settings.window), eligible = windows.filter(window => window.starts >= minStarts);
+  const since = range ? range.from : eligible.reduce<string | null>((oldest, window) => !oldest || window.firstDate < oldest ? window.firstDate : oldest, null);
+  const ledger = ledgerCoverage({ scheduledDates, teamGames, appearances, since });
+  const dates = goalieDatesLine(settings.window, range, eligible, input.through);
   const nstGoalie = input.nstGoalie && new Map(input.nstGoalie.map(row => [`${row.player_id}:${row.date_scraped}`, row]));
   const nstTeam = input.nstTeam && new Map(input.nstTeam.map(row => [`${row.team_abbreviation}:${row.date}`, row]));
   const built = eligible.map(window => ({
@@ -154,13 +208,13 @@ export function buildBusyQuiet(input: {
       nstSource("Natural Stat Trick goalie shots by danger zone", "nst_gamelog_goalie_all_counts", input.nstGoalie, newest((input.nstGoalie ?? []).map(row => row.date_scraped)), dangerUnadmitted, "danger-zone shots"),
       nstSource("Natural Stat Trick team chances against", "nst_team_gamelogs_as_counts", input.nstTeam, newest((input.nstTeam ?? []).map(row => row.date)), teamChancesUnadmitted, "team chances"),
     ],
-    sample: `${windowLabel(settings.window)} through ${input.through}: ${built.reduce((total, row) => total + row.appearances, 0)} appearances, ${built.reduce((total, row) => total + row.starts, 0)} starts, ${built.reduce((total, row) => total + row.relief, 0)} relief. ${settings.basis === "start" ? "Per start reads official starts only; relief is counted apart. " : ""}HD counts shots from the high-danger zone, not chances, shown at ${NST_MIN_COVERAGE * 100}% coverage, otherwise as a dash.${thinDanger.length ? ` HD coverage behind a dash: ${thinDanger.join(", ")}.` : ""} ${TEAM_CHANCES_NOTE}${shared ? ` ${shared} listed ${shared === 1 ? "appearance" : "appearances"} shared the net.` : ""}${tiedOut ? ` ${tiedOut} more tied ${tiedOut === 1 ? "goalie is" : "goalies are"} not listed.` : ""}`,
+    sample: `${dates}: ${built.reduce((total, row) => total + row.appearances, 0)} appearances, ${built.reduce((total, row) => total + row.starts, 0)} starts, ${built.reduce((total, row) => total + row.relief, 0)} relief. ${settings.basis === "start" ? "Per start reads official starts only; relief is counted apart. " : ""}HD counts shots from the high-danger zone, not chances, shown at ${NST_MIN_COVERAGE * 100}% coverage, otherwise as a dash.${thinDanger.length ? ` HD coverage behind a dash: ${thinDanger.join(", ")}.` : ""} ${TEAM_CHANCES_NOTE}${shared ? ` ${shared} listed ${shared === 1 ? "appearance" : "appearances"} shared the net.` : ""}${tiedOut ? ` ${tiedOut} more tied ${tiedOut === 1 ? "goalie is" : "goalies are"} not listed.` : ""}${range ? ` ${MIN_STARTS_RANGE_RULE}` : ""}`,
     strength: "All situations",
-    cohort: `${eligible.length} of ${windows.length} goalies with at least ${settings.minStarts} official starts in the window`,
+    cohort: `${eligible.length} of ${windows.length} goalies with at least ${minStarts} official starts in ${range ? "these dates" : "the window"}`,
     coverage: ledger.coverage,
   };
   return { state: complete ? "ready" : "partial", reasons, evidence, teams: [...new Set([...busy, ...quiet].map(row => row.team))],
-    data: { basis: settings.basis, window: settings.window, through: input.through, busy, quiet, eligible: eligible.length, appeared: windows.length, unranked, dangerUnadmitted, teamChancesUnadmitted } };
+    data: { basis: settings.basis, window: settings.window, through: input.through, dates, ranged: !!range, minStarts, busy, quiet, eligible: eligible.length, appeared: windows.length, unranked, dangerUnadmitted, teamChancesUnadmitted } };
 }
 
 export const formatVolume = (value: number | null) => value === null ? "—" : value.toFixed(1);
@@ -181,11 +235,13 @@ export const busyQuietModule = defineShareModule<BusyQuietSettings, BusyQuietDat
   suggestedUse: "Works for a Thursday or Friday post.",
   fields: [
     { id: "basis", label: "Basis", kind: "select", default: "start", options: BUSY_QUIET_BASIS_OPTIONS },
-    { id: "window", label: "Window", kind: "select", default: "l10", options: GOALIE_WINDOW_OPTIONS },
-    { id: "minStarts", label: "Min starts in window", kind: "number", default: 3, min: 1, max: 82, step: 1 },
+    ...GOALIE_PERIOD_FIELDS,
+    ...GOALIE_MIN_STARTS_FIELDS,
   ],
+  periodControl: GOALIE_PERIOD_CONTROL,
+  validate: validateGoaliePeriodChoice,
   load: () => import("./busyQuiet.sources").then(sources => sources.loadBusyQuiet),
   card: () => import("components/SocialShare/modules/BusyQuietCard").then(card => card.default),
   hasRows: data => data.busy.length + data.quiet.length > 0,
-  altText: (snapshot, data) => `FHFH busy and quiet goalies, ${windowLabel(data.window)} through ${data.through}. Busy: ${data.busy.map(row => altRow(row, data.basis)).join("; ")}. Quiet: ${data.quiet.map(row => altRow(row, data.basis)).join("; ")}. ${VOLUME_NOTE} ${snapshot.evidence.cohort}.`,
+  altText: (snapshot, data) => `FHFH busy and quiet goalies, ${data.dates}. Busy: ${data.busy.map(row => altRow(row, data.basis)).join("; ")}. Quiet: ${data.quiet.map(row => altRow(row, data.basis)).join("; ")}. ${VOLUME_NOTE} ${snapshot.evidence.cohort}.`,
 });

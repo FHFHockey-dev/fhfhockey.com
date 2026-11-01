@@ -5,8 +5,24 @@ import { ownershipLabel } from "lib/socialShare/modules/shared/definitions";
 import { CHANGE_COLOUR, changeTone, StandoutChips } from "./LastNightsStandoutsCard";
 import styles from "./LastNightsStandoutsCard.module.scss";
 
+type PanelProps = SharePostPanelProps<LastNightsStandoutsSettings, LastNightsStandoutsData>;
+
+/** Picks belong to one slate, so choosing another clears them. The buttons wait for Refresh, because the neighbours they step to come from the loaded edition. */
+function SlateChooser({ data, settings, change, disabled }: Pick<PanelProps, "data" | "settings" | "change" | "disabled">) {
+  const shown = settings.slate ?? data.slate, loaded = standoutsCurrent(data, settings), { previous, next, first, last } = data.slates;
+  const choose = (slate: string | null) => { if (slate === shown) return; change("slate", slate); change("picks", ""); };
+  return <div className={styles.slateChooser} data-testid="standouts-slate">
+    <div className={styles.slatePager} role="group" aria-label="Slate">
+      <button type="button" aria-label={previous ? `Previous slate, ${slateLabel(previous)}` : "Previous slate"} data-testid="slate-previous" disabled={disabled || !loaded || !previous} onClick={() => choose(previous)}>◀</button>
+      <span data-testid="slate-label" aria-live="polite">{slateLabel(shown)}</span>
+      <button type="button" aria-label={next ? `Next slate, ${slateLabel(next)}` : "Next slate"} data-testid="slate-next" disabled={disabled || !loaded || !next} onClick={() => choose(next)}>▶</button>
+    </div>
+    <label>Slate date<input type="date" data-testid="slate-date" min={first} max={last} value={shown} disabled={disabled} onChange={event => choose(event.target.value || null)} /></label>
+  </div>;
+}
+
 /** Everyone who meets the view, sortable by the night's value or by the jump against the player's own season. Clicks set the `picks` field only. */
-export default function LastNightsStandoutsPanel({ data, settings, change, disabled }: SharePostPanelProps<LastNightsStandoutsSettings, LastNightsStandoutsData>) {
+function StandoutPicker({ data, settings, change, disabled }: Pick<PanelProps, "data" | "settings" | "change" | "disabled">) {
   const [key, setKey] = useState<StandoutSortKey>("points");
   const [mode, setMode] = useState<StandoutSortMode>("average");
   const pool = useMemo(() => standoutPool(data, settings), [data, settings]);
@@ -16,7 +32,7 @@ export default function LastNightsStandoutsPanel({ data, settings, change, disab
   const onCard = standoutRows(data, settings), order = onCard.map(row => row.playerId), atMax = order.length >= STANDOUT_MAX_ROWS;
   const hidden = parsePicks(settings.picks).length - order.length;
   const chooseMode = (next: StandoutSortMode) => { setMode(next); if (next === "jump" && key === "points") setKey("sog"); };
-  return <div className={styles.panel}>
+  return <>
     <p className={styles.panelCount} data-testid="standouts-count"><b>{order.length} of {STANDOUT_MAX_ROWS}</b> on the card. The card holds {STANDOUT_MAX_ROWS}, in the order you click.{order.length > 0 && <button type="button" disabled={disabled} onClick={() => change("picks", "")}>Clear</button>}</p>
     {hidden > 0 && <p className={styles.panelNote} data-testid="standouts-hidden">{hidden} {hidden === 1 ? "pick no longer meets" : "picks no longer meet"} this view and {hidden === 1 ? "is" : "are"} off the card.</p>}
     <div className={styles.panelSort}>
@@ -40,5 +56,12 @@ export default function LastNightsStandoutsPanel({ data, settings, change, disab
       })}
       {!sorted.length && <p className={styles.panelNote}>No skater on this slate meets this view.</p>}
     </div>
+  </>;
+}
+
+export default function LastNightsStandoutsPanel({ data, settings, change, disabled }: PanelProps) {
+  return <div className={styles.panel}>
+    <SlateChooser data={data} settings={settings} change={change} disabled={disabled} />
+    <StandoutPicker data={data} settings={settings} change={change} disabled={disabled} />
   </div>;
 }

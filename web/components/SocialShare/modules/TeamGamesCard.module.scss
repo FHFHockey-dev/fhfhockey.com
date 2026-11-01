@@ -1,4 +1,6 @@
 @use "styles/vars" as v;
 
+.body { display: flex; flex-direction: column; gap: v.$space-xs; min-height: 0; }
+.period { margin: 0; font-size: 20px; font-weight: 600; color: v.$color-white; }
 .columns { display: grid; grid-template-columns: 1fr 1fr; gap: v.$space-lg; align-items: start; }
 .team { display: inline-flex; align-items: center; gap: v.$space-xs; }

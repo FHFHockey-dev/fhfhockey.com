@@ -1,5 +1,5 @@
 import type { SharePostCardProps } from "lib/socialShare/modules/contract";
-import { goalieGsaxRanks, GSAX_SHOWN, type GoalieGsaxData, type GoalieGsaxRow, type GoalieGsaxSettings } from "lib/socialShare/modules/goalieGsax";
+import { goalieGsaxRanks, gsaxLagLabel, GSAX_SHOWN, type GoalieGsaxData, type GoalieGsaxRow, type GoalieGsaxSettings } from "lib/socialShare/modules/goalieGsax";
 import { boardSides, bothSidesNote, countOf, largestShown } from "lib/socialShare/modules/shared/goalieBoards";
 import { PostEmpty } from "./kit";
 import { GoalieBoards, GoalieIdent, HeatTile } from "./GoalieBoards";
@@ -17,8 +17,8 @@ export default function GoalieGsaxCard({ data, logos }: SharePostCardProps<Goali
     </div>;
   };
   return <div className={styles.card} data-testid="goalie-gsax-card">
-    <h3 className={styles.lead}><small>{data.windowLabel}.</small> NST model, {data.strengthLabel}, through {data.nstThrough}</h3>
-    {data.ranked ? <GoalieBoards sides={sides} rowKey={row => row.goalieId} renderRow={renderRow} note={bothSidesNote(onBoth.length, data.ranked)} /> : <PostEmpty>No goalie has {countOf(data.minAppearances, "appearance")} at {data.minCoverage}% NST coverage</PostEmpty>}
+    <h3 className={styles.lead}><small>{data.windowLabel}.</small> NST model, {data.strengthLabel}, through {data.nstThrough}{data.lagDays ? `, ${gsaxLagLabel(data.lagDays)} behind NHL.com` : ""}</h3>
+    {data.ranked ? <GoalieBoards sides={sides} rowKey={row => row.goalieId} renderRow={renderRow} note={bothSidesNote(onBoth.length, data.ranked)} /> : <PostEmpty>No goalie has {countOf(data.minAppearances, "appearance")} at {data.minCoverage}% NST coverage{data.window !== null && typeof data.window === "object" ? ` in ${data.windowLabel}` : ""}</PostEmpty>}
     <p className={styles.legend}>GSAx = NST expected goals against − goals against. Above 0: fewer goals allowed than this model expected.</p>
   </div>;
 }

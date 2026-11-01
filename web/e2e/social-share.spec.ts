@@ -121,6 +121,8 @@ async function install(page: Page, access: Access = { role: "social_editor", sig
     if (route.request().headers().authorization !== `Bearer ${editorToken}`) return route.fulfill({ status: 401, json: { error: "Sign in to use the share studio." } });
     if (controller.fail) return route.fulfill({ status: 503, json: { error: "NHL schedule is unavailable. Refresh to retry." } });
     const url = new URL(route.request().url());
+    // A post library post with a period control reads the calendar; it is not a schedule format.
+    if (url.pathname.endsWith("/matchup-weeks")) return route.fulfill({ json: { rows: [], cutoff: "2026-10-30" } });
     let next = fixture(url.pathname.split("/").pop() as SocialShareFormat, url.searchParams.get("weekStart")!, controller.mode, controller.pinnedAt, controller.rates, controller.players, controller.trends, controller.recentRead, controller.ownershipStale);
     if (url.searchParams.has("selectedDates")) next = selectScheduleDates(next, url.searchParams.get("selectedDates")?.split(",").filter(Boolean) || []);
     if (controller.longName) {
@@ -1399,9 +1401,9 @@ test("Tuesday GENUINE DATA render: captured layer, offline, export token per car
 test("post library: a post's edition previews with its evidence and exports the same snapshot; an unavailable edition cannot", async ({ page }) => {
   await install(page);
   const generatedAt = new Date().toISOString();
-  const edition = { schemaVersion: 1, id: "team-games-e2e", post: "team-games", state: "ready", reasons: [] as string[], generatedAt, expiresAt: new Date(Date.parse(generatedAt) + 600000).toISOString(), timeZone: "America/New_York", settings: { days: 7 }, fixture: false, teams: ["NJD", "NYR"],
+  const edition = { schemaVersion: 1, id: "team-games-e2e", post: "team-games", state: "ready", reasons: [] as string[], generatedAt, expiresAt: new Date(Date.parse(generatedAt) + 600000).toISOString(), timeZone: "America/New_York", settings: { days: 7, period: "rolling", week: null, start: null, end: null }, fixture: false, teams: ["NJD", "NYR"],
     evidence: { sources: [{ name: "NHL.com team game stats", tables: ["wgo_team_stats", "games"], state: "ready", asOf: "2026-10-30", updatedAt: null }], sample: "2026-10-24 to 2026-10-30: 2 completed team games", strength: "Not applicable (game counts)", cohort: "All 2 teams", coverage: { observed: 2, expected: 2, missing: 0, unit: "team games" } },
-    data: { from: "2026-10-24", through: "2026-10-30", rows: [{ team: "NJD", games: 1, lastGame: "2026-10-30", rank: 1 }, { team: "NYR", games: 1, lastGame: "2026-10-30", rank: 1 }] } };
+    data: { from: "2026-10-24", through: "2026-10-30", label: "Last 7 days · Oct 24 to Oct 30", rows: [{ team: "NJD", games: 1, lastGame: "2026-10-30", rank: 1 }, { team: "NYR", games: 1, lastGame: "2026-10-30", rank: 1 }] } };
   let requests = 0, unavailable = false;
   await page.route("**/api/v1/social-share/posts/**", route => {
     requests++;
@@ -1415,7 +1417,7 @@ test("post library: a post's edition previews with its evidence and exports the 
   await expect(page.getByTestId("post-evidence")).toContainText("NHL.com team game stats through 2026-10-30");
   await expect(page.getByTestId("post-evidence")).toContainText("Days: 7");
   await expect(page.getByTestId("post-watermark")).toHaveText("OBSERVED RESULTS");
-  await expect(square).toHaveAttribute("data-export-token", 'team-games-e2e|team-games|[["days",7]]');
+  await expect(square).toHaveAttribute("data-export-token", 'team-games-e2e|team-games|[["days",7],["period","rolling"],["week",null],["start",null],["end",null]]');
   const before = requests;
   await downloadedPng(page, "post-library-team-games");
   expect(requests).toBe(before);

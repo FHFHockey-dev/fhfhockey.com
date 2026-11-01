@@ -7,6 +7,7 @@ import { fetchEdition } from "lib/socialShare/editionFetch";
 import { SHARE_BASIS_LABELS, SHARE_POST_GROUP_LABELS, parseShareSettings, shareSettingLines, sharePostExportBlock, sharePostExportToken, sharePostShowsCard, shareHeadlineSize, type AnyShareModule, type ShareSettings, type ShareSettingField, type SharePostGroup, type SharePostSnapshot } from "lib/socialShare/modules/contract";
 import { SHARE_MODULES } from "lib/socialShare/modules/registry";
 import { SHARE_TIME_ZONE } from "lib/socialShare/types";
+import PeriodControl from "./PeriodControl";
 import styles from "./SocialShare.module.scss";
 import postStyles from "./PostStudio.module.scss";
 
@@ -157,6 +158,7 @@ export default function PostStudio() {
     if (field.kind === "date" && text === "") value = field.default;
     setSettings(current => ({ ...current, [field.id]: value })); setFeedback("");
   };
+  const apply = (changes: ShareSettings) => { const next = { ...settings, ...changes }; setSettings(next); void load(next); };
   const pick = (id: string) => { void router.replace({ pathname: router.pathname, query: { post: id } }, undefined, { shallow: true, scroll: false }); };
 
   return <div className={styles.page}>
@@ -167,7 +169,8 @@ export default function PostStudio() {
         <button type="button" disabled={loading || exporting} onClick={() => void load(settings)}>Refresh post</button>
       </div>
       <p>{entry.summary}{entry.suggestedUse ? ` ${entry.suggestedUse}` : ""}</p>
-      {entry.fields.length > 0 && <div className={postStyles.fields}>{entry.fields.filter(field => !field.panelOnly).map(field => <label key={field.id}>{field.label}
+      {entry.periodControl && <PeriodControl entry={entry} control={entry.periodControl} settings={settings} disabled={exporting} edition={snapshot} change={change} apply={apply} />}
+      {entry.fields.length > 0 && <div className={postStyles.fields}>{entry.fields.filter(field => !field.panelOnly && (!field.onlyForPeriod || settings.period === field.onlyForPeriod)).map(field => <label key={field.id}>{field.label}
         {field.kind === "select" ? <select value={fieldText(settings[field.id])} disabled={exporting} onChange={event => change(field, event.target.value)}>{field.options.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
           : <input type={field.kind === "number" ? "number" : field.kind === "date" ? "date" : "text"} min={field.kind === "number" ? field.min : undefined} max={field.kind === "number" ? field.max : undefined} step={field.kind === "number" ? field.step : undefined} value={fieldText(settings[field.id])} disabled={exporting} onChange={event => change(field, event.target.value)} />}
         <small className={postStyles.defaultNote}>Default: {defaultNote(field)}</small></label>)}</div>}

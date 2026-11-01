@@ -1,4 +1,4 @@
-import { SKATER_BOARD_ROWS, belowTheCard, SKATER_POSITION_OPTIONS, SKATER_WINDOW_OPTIONS, STALE_SETTINGS_NOTE, perGame, shownTeams, skaterCategoryTotal, skaterCohort, skaterCohortLabel, skaterIdentity, skaterSeasonEvidence, skaterWindowLabel, skaterWindowOf, type SkaterIdentity, type SkaterPositionId, type SkaterSeason, type SkaterWindowId } from "./bshBoard";
+import { PERIOD_ROLLING, SKATER_BOARD_ROWS, SKATER_PERIOD_CONTROL, SKATER_PERIOD_FIELDS, belowTheCard, SKATER_POSITION_OPTIONS, SKATER_WINDOW_OPTIONS, STALE_SETTINGS_NOTE, perGame, shownTeams, skaterCategoryTotal, skaterCohort, skaterCohortLabel, skaterIdentity, skaterPeriodReason, skaterPeriodRules, skaterSeasonEvidence, skaterWindowOf, type SkaterIdentity, type SkaterPeriodSettings, type SkaterPositionId, type SkaterSeason, type SkaterWindowId } from "./bshBoard";
 import { defineShareModule, shareSettingsKey, type SharePostLoadResult, type ShareSettingField } from "./contract";
 import { competitionRanks } from "./shared/definitions";
 import type { SkaterAppearance } from "./shared/skaterAppearances";
@@ -28,20 +28,21 @@ export const MULTI_CAT_FORMULA: Record<MultiCatView, string> = { standard: "aver
 export const POINTS_FIRST_FLOOR = 85;
 const HEADLINES: Record<MultiCatView, string> = { standard: "MULTI CAT MONSTERS", "points-first": "POINTS-FIRST MULTI CAT MONSTERS" };
 
-export type CategoryBlueprintSettings = { view: MultiCatView; window: SkaterWindowId; minGp: number; position: SkaterPositionId };
+export type CategoryBlueprintSettings = SkaterPeriodSettings & { view: MultiCatView; window: SkaterWindowId; minGp: number; position: SkaterPositionId };
 /** Null values mean a game in the window lacks this stat: no percentile, never a zero. */
 export type CategoryCell = { category: MultiCatCategory; total: number | null; perGame: number | null; percentile: number | null };
 export type CategoryRow = SkaterIdentity & { rank: number; score: number; games: number; cells: CategoryCell[] };
 export type CategoryBlueprintData = {
-  applied: string; view: MultiCatView; through: string; windowLabel: string; cohortSize: number;
+  applied: string; view: MultiCatView; through: string; windowLabel: string; periodLabel: string | null; cohortSize: number;
   categories: { id: MultiCatCategory; label: string; name: string; missing: number }[];
   rows: CategoryRow[]; ranked: number; unranked: number; belowFloor: number; notShown: number; tiedBeyondCut: number;
 };
 
 const FIELDS: readonly ShareSettingField[] = [
   { id: "view", label: "View", kind: "select", default: "standard", options: [{ value: "standard", label: "Multi Cat Monsters" }, { value: "points-first", label: "Points-First" }] },
-  { id: "window", label: "Window", kind: "select", default: "l10", options: SKATER_WINDOW_OPTIONS },
-  { id: "minGp", label: "Min season GP", kind: "number", default: 5, min: 1, max: 82, step: 1 },
+  ...SKATER_PERIOD_FIELDS,
+  { id: "window", label: "Window", kind: "select", default: "l10", options: SKATER_WINDOW_OPTIONS, onlyForPeriod: PERIOD_ROLLING },
+  { id: "minGp", label: "Min season GP", kind: "number", default: 5, min: 1, max: 82, step: 1, onlyForPeriod: PERIOD_ROLLING },
   { id: "position", label: "Position", kind: "select", default: "all", options: SKATER_POSITION_OPTIONS },
 ];
 
@@ -74,9 +75,9 @@ export function categoryPercentileBand(percentile: number | null): CategoryPerce
 
 /** Every value is per game over the same window, and every percentile is among the same eligible skaters. */
 export function buildCategoryBlueprint(season: SkaterSeason, settings: CategoryBlueprintSettings): SharePostLoadResult<CategoryBlueprintData> {
-  const pool = skaterCohort(season.appearances, settings);
+  const rules = skaterPeriodRules(season, settings), cohortRule = { position: settings.position, minGp: rules.minGp }, pool = skaterCohort(season.appearances, cohortRule);
   const players = pool.map(rows => {
-    const window = skaterWindowOf(rows, settings.window);
+    const window = skaterWindowOf(rows, rules.window);
     return { id: skaterIdentity(window.rows), games: window.actual, cells: MULTI_CAT_CATEGORIES.map((category): CategoryCell => {
       const total = skaterCategoryTotal(window.rows, SKATER_CATEGORIES[category].pick);
       return { category, total, perGame: perGame(total, window.actual), percentile: null };
@@ -92,10 +93,10 @@ export function buildCategoryBlueprint(season: SkaterSeason, settings: CategoryB
   const rows: CategoryRow[] = ranked.slice(0, SKATER_BOARD_ROWS).map(({ row, rank, score }) => ({ ...row.id, rank, score, games: row.games, cells: row.cells }));
   const lastRank = rows[rows.length - 1]?.rank, notShown = ranked.length - rows.length, tiedBeyondCut = ranked.slice(rows.length).filter(row => row.rank === lastRank).length, unranked = pool.length - complete.length, belowFloor = complete.length - ranked.length;
   const categories = MULTI_CAT_CATEGORIES.map((id, at) => ({ id, label: SKATER_CATEGORIES[id].label, name: SKATER_CATEGORIES[id].name, missing: players.filter(player => player.cells[at].perGame === null).length }));
-  const windowLabel = skaterWindowLabel(settings.window), notes = [belowFloor ? `${belowFloor} below points P${POINTS_FIRST_FLOOR}` : "", unranked ? `${unranked} unranked for a missing category` : "", ...categories.filter(category => category.missing).map(category => `${category.name} missing for ${category.missing}`), belowTheCard(notShown, tiedBeyondCut)].filter(Boolean).join(", ");
+  const { windowLabel, periodLabel } = rules, notes = [belowFloor ? `${belowFloor} below points P${POINTS_FIRST_FLOOR}` : "", unranked ? `${unranked} unranked for a missing category` : "", ...categories.filter(category => category.missing).map(category => `${category.name} missing for ${category.missing}`), belowTheCard(notShown, tiedBeyondCut)].filter(Boolean).join(", ");
   return {
-    ...skaterSeasonEvidence(season, { windowLabel: `${windowLabel}, per game`, note: `Each cell's percentile is the share of the other eligible skaters it beats in that category, with a tie counting as half. The score is ${settings.view === "standard" ? "the average of the four percentiles" : "the percentiles averaged with points counted twice"}, and it sets the order.${settings.view === "points-first" ? ` Only skaters at P${POINTS_FIRST_FLOOR} or better in points are ranked: ${ranked.length} of ${pool.length} eligible; percentiles stay over all ${pool.length}.` : ""} A missing category leaves a skater unranked, never a zero.`, cohort: `${skaterCohortLabel(settings)}: ${pool.length} eligible, ${ranked.length} ranked${notes ? `, ${notes}` : ""}` }),
-    data: { applied: shareSettingsKey(FIELDS, settings), view: settings.view, through: season.through, windowLabel, cohortSize: pool.length, categories, rows, ranked: ranked.length, unranked, belowFloor, notShown, tiedBeyondCut },
+    ...skaterSeasonEvidence(season, { windowLabel: `${windowLabel}, per game`, note: `Each cell's percentile is the share of the other eligible skaters it beats in that category, with a tie counting as half. The score is ${settings.view === "standard" ? "the average of the four percentiles" : "the percentiles averaged with points counted twice"}, and it sets the order.${settings.view === "points-first" ? ` Only skaters at P${POINTS_FIRST_FLOOR} or better in points are ranked: ${ranked.length} of ${pool.length} eligible; percentiles stay over all ${pool.length}.` : ""} A missing category leaves a skater unranked, never a zero.`, cohort: `${skaterCohortLabel(cohortRule, !!periodLabel)}: ${pool.length} eligible, ${ranked.length} ranked${notes ? `, ${notes}` : ""}` }),
+    data: { applied: shareSettingsKey(FIELDS, settings), view: settings.view, through: season.through, windowLabel, periodLabel, cohortSize: pool.length, categories, rows, ranked: ranked.length, unranked, belowFloor, notShown, tiedBeyondCut },
     teams: shownTeams(rows),
   };
 }
@@ -106,9 +107,11 @@ export const categoryBlueprintModule = defineShareModule<CategoryBlueprintSettin
   id: "category-blueprint", title: "Multi Cat Monsters", summary: "Skaters ranked on their percentiles in points, shots, hits and blocks, with a Points-First view that counts points twice.", group: "skaters", basis: "observed",
   suggestedUse: "Works for a category-focused post; choose it on any day.",
   fields: FIELDS,
+  periodControl: SKATER_PERIOD_CONTROL,
+  validate: skaterPeriodReason,
   headline: settings => HEADLINES[settings.view],
   load: () => import("./categoryBlueprint.sources").then(sources => sources.loadCategoryBlueprint),
   card: () => import("components/SocialShare/modules/CategoryBlueprintCard").then(card => card.default),
   hasRows: (data, settings) => data.rows.length > 0 && categoryBlueprintCurrent(data, settings),
-  altText: (snapshot, data) => `FHFH ${data.view === "standard" ? "Multi Cat Monsters" : "Points-First Multi Cat Monsters"}, per game over the ${data.windowLabel}, through ${data.through}. Score is ${MULTI_CAT_FORMULA[data.view]} category percentiles.${data.view === "points-first" ? ` Only skaters at points percentile ${POINTS_FIRST_FLOOR} or better are ranked.` : ""} ${data.rows.map(row => `${row.rank}. ${row.name}, score ${row.score.toFixed(1)}: ${row.cells.map(cell => `${SKATER_CATEGORIES[cell.category].label} ${cell.perGame === null ? "missing" : `${cell.perGame.toFixed(2)}, percentile ${Math.round(cell.percentile!)}`}`).join(", ")}`).join("; ")}. ${snapshot.evidence.cohort}.`,
+  altText: (snapshot, data) => `FHFH ${data.view === "standard" ? "Multi Cat Monsters" : "Points-First Multi Cat Monsters"}, per game over ${data.periodLabel ?? `the ${data.windowLabel}`}, through ${data.through}. Score is ${MULTI_CAT_FORMULA[data.view]} category percentiles.${data.view === "points-first" ? ` Only skaters at points percentile ${POINTS_FIRST_FLOOR} or better are ranked.` : ""} ${data.rows.map(row => `${row.rank}. ${row.name}, score ${row.score.toFixed(1)}: ${row.cells.map(cell => `${SKATER_CATEGORIES[cell.category].label} ${cell.perGame === null ? "missing" : `${cell.perGame.toFixed(2)}, percentile ${Math.round(cell.percentile!)}`}`).join(", ")}`).join("; ")}. ${snapshot.evidence.cohort}.`,
 });

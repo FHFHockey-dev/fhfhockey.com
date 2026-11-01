@@ -5,13 +5,14 @@ import { defaultWeek, type MatchupWeek } from "./shared/categoryCounts";
 import { competitionRanks, lastN, per60 } from "./shared/definitions";
 import { BOARD_FIELD_OPTIONS, boardSides, countOf, type BoardChoice } from "./shared/goalieBoards";
 import type { CompletedTeamGame, GoalieAppearance } from "./shared/goalieLedger";
+import { customRangeReason, periodWindowFields, type PeriodControl } from "./shared/periodWindow";
 import { teamsInfo } from "lib/teamsInfo";
 
 /**
  * GSAx (SS 9.0): complementary context from one named model, kept apart from Category Counts and TGV. NST-model GSAx is
  * `xg_against − goals_against`, never NST's `gsaa`, which is goals saved above average. It is not a start forecast.
  */
-export type GoalieGsaxSettings = { window: string; strength: string; board: string; minAppearances: number; minCoverage: number };
+export type GoalieGsaxSettings = { period: string; week: number | null; start: string | null; end: string | null; window: string; strength: string; board: string; minAppearances: number; minCoverage: number };
 export type GsaxStrength = "all" | "5v5";
 type NstGoalieRow = Database["public"]["Tables"]["nst_gamelog_goalie_all_counts"]["Row"];
 export const NST_GSAX_COLUMNS = ["player_id", "player_name", "date_scraped", "season", "toi", "xg_against", "goals_against", "shots_against"] as const satisfies readonly (keyof NstGoalieRow)[];
@@ -67,8 +68,10 @@ export function fhfhModelStatus(rows: number | null): FhfhModelStatus {
 export const gsaxLagLabel = (days: number) => `${days} day${days === 1 ? "" : "s"}`;
 const dayDifference = (later: string, earlier: string) => Math.round((Date.parse(`${later}T00:00:00Z`) - Date.parse(`${earlier}T00:00:00Z`)) / 86400000);
 
-/** Last N appearances, season to date (null), or the last completed matchup week. */
-export type GsaxWindow = number | null | "week";
+/** Chosen dates, from the period control. `through` can run past the data: the card counts only what NST has. */
+export type GsaxDates = { from: string; through: string; label: string; week: number | null };
+/** Last N appearances, season to date (null), the last completed matchup week, or chosen dates. */
+export type GsaxWindow = number | null | "week" | GsaxDates;
 export type GoalieGsaxInput = {
   appearances: readonly GoalieAppearance[]; nstGames: readonly NstGoalieGame[]; strength: GsaxStrength; window: GsaxWindow; weeks: readonly MatchupWeek[]; board: BoardChoice; minAppearances: number; minCoverage: number;
   reported: readonly CompletedTeamGame[]; scheduled: readonly ScheduledGame[]; fhfhRows: number | null;
@@ -79,17 +82,21 @@ export function buildGoalieGsax(input: GoalieGsaxInput): SharePostLoadResult<Goa
   const nstThrough = latest(input.nstGames.map(game => game.date)), wgoThrough = latest(input.appearances.map(row => row.date));
   const lagDays = nstThrough && wgoThrough ? Math.max(0, dayDifference(wgoThrough, nstThrough)) : null;
   // The last week NST fully covers, so a lagging source gives an older complete week rather than part of a newer one.
-  const week = input.window === "week" && nstThrough ? defaultWeek(input.weeks, nstThrough) : null;
-  const inWindowDates = (date: string) => !!nstThrough && date <= nstThrough && (input.window !== "week" || (!!week && date >= week.start && date <= week.end));
+  const dates = typeof input.window === "object" ? input.window : null, chosen = (date: string) => !!dates && date >= dates.from && date <= dates.through;
+  const week = dates ? input.weeks.find(entry => entry.week === dates.week) ?? null : input.window === "week" && nstThrough ? defaultWeek(input.weeks, nstThrough) : null;
+  const inWindowDates = (date: string) => !!nstThrough && date <= nstThrough && (dates ? chosen(date) : input.window !== "week" || (!!week && date >= week.start && date <= week.end));
   const inScope = input.appearances.filter(row => inWindowDates(row.date));
   const appearancesBehindNst = nstThrough ? input.appearances.filter(row => row.date > nstThrough).length : 0;
-  const windowLabel = input.window === "week" ? week ? `Week ${week.week}, ${week.start} to ${week.end}${week.end > nstThrough! ? `, through ${nstThrough}` : ""}` : "No matchup week covered" : input.window === null ? "Season to date" : `Last ${input.window} appearances per goalie`;
+  // Only games NST lacks count as behind: a chosen week still under way, or a day with no games, has nothing missing.
+  const pastNst = (date: string) => chosen(date) && (!nstThrough || date > nstThrough);
+  const appearancesPastNst = input.appearances.filter(row => pastNst(row.date)).length, gamesPastNst = input.scheduled.filter(game => pastNst(game.date)).length;
+  const windowLabel = dates ? dates.label : input.window === "week" ? week ? `Week ${week.week}, ${week.start} to ${week.end}${week.end > nstThrough! ? `, through ${nstThrough}` : ""}` : "No matchup week covered" : input.window === null ? "Season to date" : `Last ${input.window} appearances per goalie`;
   const nstByKey = new Map(input.nstGames.map(game => [`${game.goalieId}:${game.date}`, game]));
   const appearanceKeys = new Set(input.appearances.map(row => `${row.goalieId}:${row.date}`));
   const byGoalie = new Map<number, GoalieAppearance[]>();
   for (const row of inScope) byGoalie.set(row.goalieId, [...byGoalie.get(row.goalieId) ?? [], row]);
   const rows = [...byGoalie.entries()].map(([goalieId, own]): GoalieGsaxRow => {
-    const window = input.window === null || input.window === "week" ? { rows: own, actual: own.length, short: false } : lastN(own, input.window);
+    const window = typeof input.window !== "number" ? { rows: own, actual: own.length, short: false } : lastN(own, input.window);
     const games = window.rows.map(row => nstByKey.get(`${goalieId}:${row.date}`)).filter(usable);
     const covered = games.length, appearances = window.actual, coveragePct = appearances ? covered * 100 / appearances : 0;
     const admitted = appearances >= input.minAppearances && covered > 0 && coveragePct >= input.minCoverage;
@@ -111,13 +118,14 @@ export function buildGoalieGsax(input: GoalieGsaxInput): SharePostLoadResult<Goa
   const order = (row: GoalieGsaxRow) => input.board === "worst" ? row.worstRank : row.rank;
   const finished = rows.map(row => ({ ...row, rank: ranks.get(row.goalieId) ?? null, worstRank: worstRanks.get(row.goalieId) ?? null })).sort((a, b) => (order(a) ?? Infinity) - (order(b) ?? Infinity) || a.goalieId - b.goalieId);
   // A week window answers only for that week's games, so a gap elsewhere in the season does not touch it.
-  const proven = (date: string) => input.window !== "week" || (!!week && date >= week.start && date <= week.end);
+  const proven = (date: string) => dates ? chosen(date) : input.window !== "week" || (!!week && date >= week.start && date <= week.end);
   const schedule = reconcileSchedule(input.scheduled.filter(game => proven(game.date)), input.reported.filter(game => proven(game.date)));
   const shownTeams = boardSides(finished, goalieGsaxRanks, input.board, GSAX_SHOWN).sides.flatMap(side => side.entries.map(({ row }) => row.teams[row.teams.length - 1]));
   const covered = rows.reduce((total, row) => total + row.covered, 0), expected = rows.reduce((total, row) => total + row.appearances, 0);
   const reasons = [
     ...nstThrough ? [] : [`NST ${strengthLabel} goalie rows are missing this season.`],
-    ...schedule.missing ? [`${schedule.missing} of ${schedule.expected} scheduled team games through NST's date have no reported result.`] : [],
+    ...schedule.missing ? [`${schedule.missing} of ${schedule.expected} scheduled team games ${dates ? "in these dates" : "through NST's date"} have no reported result.`] : [],
+    ...nstThrough && (appearancesPastNst || gamesPastNst) ? [`${dates!.label} runs past NST's newest date, ${nstThrough}: ${countOf(appearancesPastNst, "appearance")} after it ${appearancesPastNst === 1 ? "is" : "are"} not counted.`] : [],
   ];
   const lagNote = lagDays ? [`${gsaxLagLabel(lagDays)} behind NHL.com`] : [];
   return {
@@ -134,7 +142,7 @@ export function buildGoalieGsax(input: GoalieGsaxInput): SharePostLoadResult<Goa
         { name: "FHFH xG model", tables: ["nhl_xg_goalie_game_aggregates"], state: fhfhModel.state === "unavailable" ? "missing" : "ready", asOf: null, updatedAt: null, reasons: [fhfhModel.reason] },
       ],
       sample: `${windowLabel}, NST through ${nstThrough ?? "no date"}${lagDays ? `, ${gsaxLagLabel(lagDays)} behind NHL.com (${wgoThrough})` : ""}: ${covered} of ${countOf(expected, "appearance")} with NST rows. Later appearances not counted: ${appearancesBehindNst}. NST rows dropped for no NHL.com appearance that date: ${input.nstGames.filter(game => !appearanceKeys.has(`${game.goalieId}:${game.date}`)).length}`,
-      strength: strengthLabel, cohort: `${countOf(ranked.length, "goalie")} with at least ${countOf(input.minAppearances, "appearance")} and ${input.minCoverage}% NST coverage; ${rows.length - ranked.length} unranked. Above 0 means fewer goals allowed than this model expected; one model's context beside SV% and GAA, not comparable across models or strengths, and nothing about the next start. ${fhfhModel.reason}`,
+      strength: strengthLabel, cohort: `${countOf(ranked.length, "goalie")} with at least ${countOf(input.minAppearances, "appearance")} and ${input.minCoverage}% NST coverage; ${rows.length - ranked.length} unranked.${dates ? ` Appearances and coverage count only games in the chosen dates through NST's newest date, so a short range ranks on a small sample: at ${countOf(input.minAppearances, "appearance")} that many games qualifies a goalie. Raise Min appearances for a firmer list.` : ""} Above 0 means fewer goals allowed than this model expected; one model's context beside SV% and GAA, not comparable across models or strengths, and nothing about the next start. ${fhfhModel.reason}`,
       coverage: { observed: covered, expected, missing: expected - covered, unit: "goalie appearances" },
     },
   };
@@ -143,15 +151,21 @@ export function buildGoalieGsax(input: GoalieGsaxInput): SharePostLoadResult<Goa
 /** Goalies shown per side; the rest stay in the snapshot and are counted on it. */
 export const GSAX_SHOWN = 10;
 export const goalieGsaxRanks = { id: (row: GoalieGsaxRow) => row.goalieId, best: (row: GoalieGsaxRow) => row.rank, worst: (row: GoalieGsaxRow) => row.worstRank };
+const GSAX_PERIOD_CONTROL: PeriodControl = { mode: "past-only" };
+/** The `period` option that keeps the post's own windows, and so every URL from before the control. */
+export const GSAX_PERIOD_WINDOW = "window";
 export const goalieGsaxModule = defineShareModule<GoalieGsaxSettings, GoalieGsaxData>({
   id: "goalie-gsax", title: "GSAx (NST model)", summary: "Goals saved above expected from NST's model only, with sign, strength, sample and through-date. Context, not a ranking method or a start forecast.", group: "goalies", basis: "observed",
   fields: [
-    { id: "window", label: "Window", kind: "select", default: "week", options: [{ value: "week", label: "Last completed matchup week" }, { value: "5", label: "L5 appearances" }, { value: "10", label: "L10 appearances" }, { value: "std", label: "Season to date" }] },
+    ...periodWindowFields({ mode: GSAX_PERIOD_CONTROL.mode, default: GSAX_PERIOD_WINDOW, options: [{ value: GSAX_PERIOD_WINDOW, label: "Preset window" }, { value: "matchup", label: "Matchup week" }, { value: "custom", label: "Custom range" }] }),
+    { id: "window", label: "Window", kind: "select", onlyForPeriod: GSAX_PERIOD_WINDOW, default: "week", options: [{ value: "week", label: "Last completed matchup week" }, { value: "5", label: "L5 appearances" }, { value: "10", label: "L10 appearances" }, { value: "std", label: "Season to date" }] },
     { id: "strength", label: "Strength", kind: "select", default: "all", options: [{ value: "all", label: "All situations" }, { value: "5v5", label: "5 on 5" }] },
     { id: "board", label: "Board", kind: "select", default: "both", options: BOARD_FIELD_OPTIONS },
     { id: "minAppearances", label: "Min appearances", kind: "number", default: 1, min: 1, max: 82, step: 1 },
     { id: "minCoverage", label: "Min NST coverage %", kind: "number", default: 90, min: 50, max: 100, step: 5 },
   ],
+  periodControl: GSAX_PERIOD_CONTROL,
+  validate: settings => settings.period === "custom" ? customRangeReason(settings) : null,
   load: () => import("./goalieGsax.sources").then(sources => sources.loadGoalieGsax),
   card: () => import("components/SocialShare/modules/GoalieGsaxCard").then(card => card.default),
   hasRows: data => data.ranked > 0,

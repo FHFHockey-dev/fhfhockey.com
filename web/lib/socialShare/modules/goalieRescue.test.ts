@@ -5,8 +5,10 @@ import { createElement } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import GoalieRescueCard from "components/SocialShare/modules/GoalieRescueCard";
 import { parseShareSettings, UNKNOWN_EVIDENCE, type SharePostSnapshot } from "./contract";
-import { buildGoalieRescue, cellShade, goalieAvailability, goalieRescueModule, RESCUE_GROUPS, RESCUE_NOTE, type GoalieAvailability, type GoalieRescueSettings, type RescueData, type ScheduledGame } from "./goalieRescue";
-import { gameLeft, scheduledGames, teamGamesLeft } from "./goalieRescue.sources";
+import { buildGoalieRescue, cellShade, goalieAvailability, goalieRescueModule, RESCUE_GROUPS, RESCUE_LEFT_HIDDEN, RESCUE_NOTE, RESCUE_PAST_NOTE, rescueNote, type GoalieAvailability, type GoalieRescueSettings, type RescueData, type ScheduledGame } from "./goalieRescue";
+import { gameLeft, loadGoalieRescue, scheduledGames, teamGamesLeft } from "./goalieRescue.sources";
+import { getSchedule } from "lib/NHL/server";
+import { MIN_STARTS_RANGE_RULE, type GoalieDateRange } from "./busyQuiet";
 import { ownershipOf } from "./shared/definitions";
 import type { CompletedTeamGame, GoalieAppearance } from "./shared/goalieLedger";
 
@@ -23,7 +25,7 @@ const rows = [
   ...three(4, "BOS", { saves: 19, shotsAgainst: 20, goalsAgainst: 1 }), // Same SV% as G3 with lower GAA.
 ];
 const own = (entries: Record<number, number | null>, status: Record<number, string> = {}) => new Map<number, GoalieAvailability>(Object.entries(entries).map(([id, pct]) => [Number(id), { ownership: ownershipOf(pct, "2026-10-31"), status: status[Number(id)] ?? "" }]));
-const settings = (over: Partial<GoalieRescueSettings> = {}): GoalieRescueSettings => ({ category: "wins", window: "l10", ownershipCeiling: 50, includeUnknown: "off", minStarts: 3, ...over });
+const settings = (over: Partial<GoalieRescueSettings> = {}): GoalieRescueSettings => ({ category: "wins", window: "l10", ownershipCeiling: 50, includeUnknown: "off", minStarts: 3, minStartsWeek: 2, minStartsRange: 2, period: "rolling", week: null, start: null, end: null, ...over });
 const build = (over: Partial<Parameters<typeof buildGoalieRescue>[0]> = {}) => buildGoalieRescue({ settings: settings(), appearances: rows, teamGames: [], scheduledDates: [], availability: own({ 1: 10, 2: 20, 3: 30, 4: 40 }), teamGamesLeft: new Map([["NJD", 2], ["NYR", 3]]), scheduleReasons: [], through: date(30), weekEnd: "2026-11-01", ...over });
 const ids = (result: ReturnType<typeof build>) => result.data!.rows.map(row => row.goalieId);
 
@@ -40,7 +42,7 @@ describe("goalie category rescue", () => {
     const first = (category: GoalieRescueSettings["category"]) => build({ settings: settings({ category }) }).data!.rows[0].goalieId;
     expect([first("wins"), first("saves"), first("savePct"), first("gaa")]).toEqual([1, 2, 3, 4]);
     expect(Object.keys(build().data!.rows[0]).filter(key => /score|index|composite|blend|total|overall/i.test(key))).toEqual([]);
-    expect(goalieRescueModule.fields.map(field => field.id)).toEqual(["category", "window", "ownershipCeiling", "includeUnknown", "minStarts"]);
+    expect(goalieRescueModule.fields.map(field => field.id)).toEqual(["category", "period", "week", "start", "end", "window", "ownershipCeiling", "includeUnknown", "minStarts", "minStartsWeek", "minStartsRange"]);
     expect(JSON.stringify(goalieRescueModule.fields)).not.toMatch(/score|composite/i);
   });
   it("gives GAA the low direction and shares tied ranks", () => {
@@ -201,7 +203,8 @@ describe("pool and schedule", () => {
     expect(build().evidence.sample).toContain("count games not yet started or in progress at generation; a finished game drops out.");
   });
   it("defaults to the contract's settings", () => {
-    expect(parseShareSettings(goalieRescueModule, {})).toEqual({ category: "wins", window: "l10", ownershipCeiling: 50, includeUnknown: "off", minStarts: 3 });
+    expect(parseShareSettings(goalieRescueModule, {})).toEqual({ category: "wins", window: "l10", ownershipCeiling: 50, includeUnknown: "off", minStarts: 3, minStartsWeek: 2, minStartsRange: 2, period: "rolling", week: null, start: null, end: null });
+    expect(parseShareSettings(goalieRescueModule, { window: "std", category: "gaa" })).toMatchObject({ window: "std", category: "gaa", period: "rolling" });
     expect(goalieRescueModule).toMatchObject({ basis: "observed", suggestedUse: "Works for a Thursday or Friday post." });
     expect(goalieRescueModule).not.toHaveProperty("schedule");
   });
@@ -299,5 +302,103 @@ describe("goalie rescue card", () => {
     const active = settings({ category: "savePct" }), data = build({ settings: active }).data!;
     expect(goalieRescueModule.altText(snapshot(data, active), data, active)).toContain("by SV%, Last 10 appearances");
     expect(goalieRescueModule.altText(snapshot(data, active), data, active)).toContain("G3 (PHI): .950, 30% rostered");
+  });
+});
+
+describe("goalie rescue period", () => {
+  const past: GoalieDateRange = { from: date(2), through: date(3), line: "Week 1 · Oct 2 to Oct 3", past: true };
+  const current: GoalieDateRange = { from: date(1), through: date(3), line: "Week 5 · Oct 1 to Oct 7, games through Oct 3", past: false };
+  const active = (over: Partial<GoalieRescueSettings> = {}) => settings({ period: "matchup", week: 1, ...over });
+  const card = (range: GoalieDateRange, over: Partial<GoalieRescueSettings> = {}) => render(createElement(GoalieRescueCard, { snapshot: snapshot(build({ settings: active(over), range }).data!, active(over)), data: build({ settings: active(over), range }).data!, settings: active(over), logos: {} })).container;
+  it("reads a chosen matchup's games only, and prints its dates", () => {
+    const result = build({ settings: active(), range: past }), row = result.data!.rows[0];
+    expect(result.data!.rows).toHaveLength(4);
+    expect(row).toMatchObject({ appearances: 2, starts: 2, requested: null });
+    expect(result.data!.dates).toBe("Week 1 · Oct 2 to Oct 3");
+    expect(result.evidence.sample).toContain("Week 1 · Oct 2 to Oct 3:");
+    expect(card(past).textContent).toContain("Week 1 · Oct 2 to Oct 3.");
+  });
+  it("applies min starts to the chosen dates and never lowers it for a short range", () => {
+    const three = active({ minStartsWeek: 3 }), empty = build({ settings: three, range: past });
+    expect(empty.data!.rows).toEqual([]);
+    expect(renderCard(empty.data!, three)).toBe(`No goalie with 3 official starts is at or under 50% rostered in Week 1 · Oct 2 to Oct 3. ${MIN_STARTS_RANGE_RULE}`);
+    expect(empty.evidence.sample).toContain(MIN_STARTS_RANGE_RULE);
+  });
+  it("defaults min starts by period, lets an explicit value win, states it, and leaves old links as they were", () => {
+    const parsed = (query: Record<string, string>) => parseShareSettings<GoalieRescueSettings>(goalieRescueModule as never, query);
+    expect([parsed({}).minStarts, parsed({ period: "matchup" }).minStartsWeek, parsed({ period: "custom", start: date(1), end: date(2) }).minStartsRange]).toEqual([3, 2, 2]);
+    expect(build({ settings: parsed({ period: "matchup", minStartsWeek: "3" }), range: past }).data!.rows).toEqual([]);
+    expect(build({ settings: parsed({ period: "matchup" }), range: past }).data!.minStarts).toBe(2);
+    expect(build({ settings: parsed({ window: "std", minStarts: "4" }) }).data!).toMatchObject({ minStarts: 4, rows: [] });
+    expect(card(past).textContent).toContain("Week 1 · Oct 2 to Oct 3. Min 2 starts.");
+    expect(card(past, { minStartsWeek: 1 }).textContent).toContain("Min 1 start.");
+    cleanup();
+    expect(renderCard(build().data!, settings())).not.toContain("Min 3");
+  });
+  it("gives every row a share of the card, so a short list fills it", () => {
+    expect(readFileSync(resolve(process.cwd(), "components/SocialShare/modules/GoalieRescueCard.module.scss"), "utf8")).toContain("grid-auto-rows: minmax(27px, 1fr);");
+    expect(card(past).querySelector("[data-few]")).toBeNull();
+    cleanup();
+    expect(render(createElement(GoalieRescueCard, { snapshot: snapshot(build({ settings: active(), range: past, availability: own({ 1: 10 }) }).data!, active()), data: build({ settings: active(), range: past, availability: own({ 1: 10 }) }).data!, settings: active(), logos: {} })).container.querySelector("[data-few]")).not.toBeNull();
+  });
+  it("hides GMS LEFT when the dates have ended, gives its width back, and says why", () => {
+    const result = build({ settings: active(), range: past, scheduleReasons: ["The NHL schedule could not be read, so GMS LEFT prints a dash."] });
+    expect(result.data!.past).toBe(true);
+    expect(result.data!.rows.every(row => row.teamGamesLeft === null)).toBe(true);
+    expect(result.state).toBe("ready");
+    expect(result.evidence.sample).toContain(RESCUE_LEFT_HIDDEN);
+    expect(result.evidence.sources[2].reasons).toEqual([RESCUE_LEFT_HIDDEN]);
+    const container = card(past);
+    expect(container.textContent).not.toContain("GMS LEFT");
+    expect(container.querySelectorAll('[data-column="left"]')).toHaveLength(0);
+    expect(container.querySelector("[data-past]")).not.toBeNull();
+    expect(readFileSync(resolve(process.cwd(), "components/SocialShare/modules/GoalieRescueCard.module.scss"), "utf8")).toContain(".table[data-past] { grid-template-columns: max-content minmax(0, max-content) repeat(9, auto); }");
+  });
+  it("keeps GMS LEFT for dates reaching the last games, labelled as the current week", () => {
+    const result = build({ settings: active(), range: current });
+    expect(result.data!.rows.find(row => row.team === "NJD")!.teamGamesLeft).toBe(2);
+    const text = card(current).textContent!;
+    expect(text).toContain("GMS LEFT");
+    expect(text).toContain("GMS LEFT count the current week, through Nov 1.");
+    expect(text).toContain("Week 5 · Oct 1 to Oct 7, games through Oct 3.");
+    expect(result.evidence.sample).toContain("Team games left run through 2026-11-01");
+  });
+  it("caps a tie one row sooner when the legend runs to a second line, and names who is left out", () => {
+    const pool = Array.from({ length: 34 }, (_, index) => index + 10), appearances = pool.flatMap(id => three(id, "PHI", {})), availability = own(Object.fromEntries(pool.map(id => [id, 10])));
+    const under = build({ settings: active(), range: current, appearances, availability });
+    expect(under.data!.rows).toHaveLength(27);
+    expect(under.evidence.sample).toContain("7 more tied goalies are not listed.");
+    expect(build({ settings: active(), range: past, appearances, availability }).data!.rows).toHaveLength(27);
+    expect(build({ appearances, availability }).data!.rows).toHaveLength(28);
+  });
+  it("labels ownership and status as current when the dates have ended, and not otherwise", () => {
+    const pastData = build({ settings: active(), range: past }), text = card(past).textContent!;
+    expect(text).toContain(RESCUE_PAST_NOTE);
+    expect(text).not.toContain(RESCUE_NOTE);
+    expect(pastData.evidence.sources[1].reasons).toContain(RESCUE_PAST_NOTE);
+    expect(pastData.evidence.cohort).toContain("at or under 50% rostered now");
+    expect(goalieRescueModule.altText(snapshot(pastData.data!, active()), pastData.data!, active())).toContain(RESCUE_PAST_NOTE);
+    const live = build({ settings: active(), range: current }).data!;
+    expect(rescueNote(live)).toContain(RESCUE_NOTE);
+    expect(rescueNote(live)).not.toContain(RESCUE_PAST_NOTE);
+    expect(rescueNote(build().data!)).toBe(`${RESCUE_NOTE} Last 10 appearances, Oct 1 to Oct 3.`);
+  });
+  const client = () => ({ from: (table: string) => { const chain: Record<string, unknown> = {}; for (const method of ["select", "eq", "gte", "lte", "in", "order"]) chain[method] = () => chain; const rows = table === "yahoo_matchup_weeks" ? [{ week: 1, start_date: "2026-10-05", end_date: "2026-10-11" }, { week: 2, start_date: "2026-10-26", end_date: "2026-11-01" }] : []; chain.range = async () => ({ data: rows, count: rows.length, error: null }); return chain; } });
+  it("reads the NHL feed only when GMS LEFT will show", async () => {
+    const feed = vi.mocked(getSchedule);
+    feed.mockReset();
+    feed.mockRejectedValue(new Error("offline"));
+    const ended = await loadGoalieRescue({ client: client(), generatedAt: "2026-11-01T18:00:00Z" }, active({ week: 1 }));
+    expect(feed).not.toHaveBeenCalled();
+    expect(ended.data!.past).toBe(true);
+    expect(ended.reasons).not.toContain("The NHL schedule could not be read, so GMS LEFT prints a dash.");
+    const underWay = await loadGoalieRescue({ client: client(), generatedAt: "2026-11-01T18:00:00Z" }, active({ week: 2 }));
+    expect(feed).toHaveBeenCalledTimes(1);
+    expect(underWay.data).toMatchObject({ past: false, dates: "Week 2 · Oct 26 to Nov 1, games through Oct 31" });
+    expect(underWay.reasons).toContain("The NHL schedule could not be read, so GMS LEFT prints a dash.");
+  });
+  it("refuses a week not started with the reason", async () => {
+    const refused = await loadGoalieRescue({ client: client(), generatedAt: "2026-10-20T18:00:00Z" }, active({ week: 2 }));
+    expect(refused).toMatchObject({ state: "missing", data: null, reasons: ["Week 2 has not started; data runs through 2026-10-19."] });
   });
 });

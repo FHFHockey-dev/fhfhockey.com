@@ -1,6 +1,6 @@
 import type { SharePostCardProps } from "lib/socialShare/modules/contract";
 import { STALE_SETTINGS_NOTE } from "lib/socialShare/modules/bshBoard";
-import { goalieChangeText, goalieLastText, goalieRank, goalieRanking, goalieRankingText, goalieStdText, goalieTone, isGoalieView, isHandBuilt, lineChipText, percentLabel, ppChipText, rankingText, slateLabel, STANDOUT_MAX_ROWS, standoutPool, standoutRows, standoutsCurrent, statText, stdText, viewTitle, type LastNightsStandoutsData, type LastNightsStandoutsSettings, type StandoutSkater } from "lib/socialShare/modules/lastNightsStandouts";
+import { goalieChangeText, goalieLastText, goalieRank, goalieRanking, goalieRankingText, goalieStdText, goalieTone, isGoalieView, isHandBuilt, isOlderSlate, lineChipText, percentLabel, ppChipText, rankingText, slateLabel, slateWord, STANDOUT_MAX_ROWS, standoutPool, standoutRows, standoutsCurrent, statText, stdText, viewTitle, type LastNightsStandoutsData, type LastNightsStandoutsSettings, type StandoutSkater } from "lib/socialShare/modules/lastNightsStandouts";
 import { ownershipLabel } from "lib/socialShare/modules/shared/definitions";
 import { PostEmpty, PostTeamMark } from "./kit";
 import styles from "./LastNightsStandoutsCard.module.scss";
@@ -46,7 +46,7 @@ function GoalieCard({ data, settings, logos }: Pick<SharePostCardProps<LastNight
   if (!rows.length) return <div className={styles.board}><Banner settings={settings} slate={data.slate} /><div className={styles.blank}>No goalie on this slate meets the shots-against minimum.</div></div>;
   return <div className={styles.board}>
     <Banner settings={settings} slate={data.slate} />
-    <p className={styles.legend} style={{ color: QUIET }} data-testid="standouts-legend">{order.lead} Last night, then STD per appearance before it. SV% changes in points of save percentage, GAA and GSAx in goals, the rest in %. SA is workload, so uncoloured.{order.note ? <span data-testid="nst-goalie-note" style={{ color: "#ffcc33" }}> {order.note}</span> : null}</p>
+    <p className={styles.legend} style={{ color: QUIET }} data-testid="standouts-legend">{order.lead} {slateWord(data)}, then STD per appearance before it. SV% changes in points of save percentage, GAA and GSAx in goals, the rest in %. SA is workload, so uncoloured.{isOlderSlate(data) ? " ROST is current." : ""}{order.note ? <span data-testid="nst-goalie-note" style={{ color: "#ffcc33" }}> {order.note}</span> : null}</p>
     <div className={styles.rows} style={{ fontSize: type }} data-few={rows.length <= 4 || undefined}>{rows.map((row, index) => <div key={row.goalieId} className={styles.row} data-testid="standout-row">
       <div className={styles.who}>
         {goalieRank(row, index) !== null && <span className={styles.rank} data-testid="goalie-rank" style={{ color: QUIET }}>{goalieRank(row, index)}</span>}
@@ -68,7 +68,7 @@ export default function LastNightsStandoutsCard({ data, settings, logos }: Share
   const legend = hand ? "Picked by hand, in this order." : `Top ${rows.length} of ${pool} by ${rankingText(settings.rankBy)}.`;
   return <div className={styles.board}>
     <Banner settings={settings} slate={data.slate} />
-    <p className={styles.legend} style={{ color: QUIET }} data-testid="standouts-legend">{legend} Last night, then STD: the player&apos;s season per game before this slate. % compares them; — means no baseline or value.{rows.some(row => row.lineAsOf) ? " A dated line is from that earlier game." : ""}</p>
+    <p className={styles.legend} style={{ color: QUIET }} data-testid="standouts-legend">{legend} {slateWord(data)}, then STD: the player&apos;s season per game before this slate. % compares them; — means no baseline or value.{rows.some(row => row.lineAsOf) ? " A dated line is from that earlier game." : ""}{isOlderSlate(data) ? " ROST is current." : ""}</p>
     <div className={styles.rows} style={{ fontSize: type }} data-few={rows.length <= 4 || undefined}>{rows.map((row, index) => <SkaterRow key={row.playerId} row={row} rank={hand ? null : index + 1} logo={row.team ? logos[row.team] : null} logoSize={Math.round(type * 1.3)} />)}</div>
   </div>;
 }

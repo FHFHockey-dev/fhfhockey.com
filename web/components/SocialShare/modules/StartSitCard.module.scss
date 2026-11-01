@@ -1,7 +1,7 @@
 @use "styles/vars" as v;
 
 .card { display: flex; flex-direction: column; gap: v.$space-xs; flex: 1; min-height: 0; }
-.legend { margin: 0; font-size: 14px; line-height: 1.2; color: v.$text-secondary; }
+.legend { margin: 0; font-size: 14px; line-height: 1.2; color: v.$text-secondary; b { color: v.$color-white; } }
 .table { display: grid; grid-template-columns: auto minmax(0, 1fr) auto 104px repeat(3, minmax(max-content, 1.3fr)); grid-template-rows: auto; column-gap: v.$space-xs; align-items: center; align-content: start; font-size: 14px; line-height: 1.2; color: v.$text-secondary; }
 .table[data-full] { flex: 1; min-height: 0; grid-auto-rows: 1fr; align-content: stretch; }
 .head { display: grid; align-self: end; font-size: 12px; letter-spacing: v.$mobile-letter-spacing-wide; padding-bottom: v.$space-xxs; border-bottom: 1px solid v.$border-soft;

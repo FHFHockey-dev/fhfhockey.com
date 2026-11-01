@@ -1,8 +1,9 @@
 import { calculateRankingResult } from "utils/calculatePercentiles";
-import { calendarWeekStart } from "lib/socialShare/schedule";
 import { belowTheCard, perGame, shownTeams, skaterCategoryTotal, skaterIdentity, skaterSeasonEvidence, type SkaterIdentity, type SkaterSeason } from "./bshBoard";
 import { defineShareModule, shareSettingsKey, type SharePostLoadResult, type ShareSettingField } from "./contract";
+import { defaultWeek } from "./shared/categoryCounts";
 import { competitionRanks } from "./shared/definitions";
+import { customRangeReason, matchupLabel, periodWindowFields, type OwnPeriod, type PeriodControl, type PeriodWindow } from "./shared/periodWindow";
 import { appearancesByPlayer, type SkaterAppearance } from "./shared/skaterAppearances";
 import { shiftDays } from "./teamGames";
 
@@ -11,7 +12,7 @@ export type MultiCatGame = SkaterAppearance & { plusMinus: number | null };
 export type MultiCatSeason = Omit<SkaterSeason, "appearances"> & { appearances: readonly MultiCatGame[] };
 export type MultiCatBasis = "total" | "perGame";
 export type MultiCatFormula = "standard" | "pointsFirst";
-export type MultiCatSettings = { basis: MultiCatBasis; formula: MultiCatFormula };
+export type MultiCatSettings = { basis: MultiCatBasis; formula: MultiCatFormula; period: string; week: number | null; start: string | null; end: string | null };
 
 /** Spoke order and categories of Wigo's Category percentiles radar (CategoryCoverageChart), clockwise from the top. */
 export const MULTI_CAT_CATEGORIES = [
@@ -32,16 +33,30 @@ const POINTS_WEIGHT: Record<MultiCatFormula, number> = { standard: 1, pointsFirs
 export const multiCatMinGp = (basis: MultiCatBasis) => MIN_GP[basis];
 export const multiCatFormulaLabel = (formula: MultiCatFormula) => `${formula === "pointsFirst" ? "2 x PTS" : "PTS"} + BLK + SOG + HIT`;
 
+export const MULTI_CAT_CURRENT = "current";
+export const MULTI_CAT_CONTROL: PeriodControl = { mode: "past-only" };
+/** The matchup week holding the cutoff, so a Monday post shows the week just ended; past the last week, the last one completed. */
+export const MULTI_CAT_OWN: Record<string, OwnPeriod> = {
+  [MULTI_CAT_CURRENT]: (cutoff, { weeks }) => {
+    const week = weeks.find(entry => entry.start <= cutoff && entry.end >= cutoff) ?? defaultWeek(weeks, cutoff);
+    return week ? { from: week.start, through: week.end, label: matchupLabel(week) } : { reason: "No matchup week has started." };
+  },
+};
 const FIELDS: readonly ShareSettingField[] = [
-  { id: "basis", label: "Ranking", kind: "select", default: "total", options: [{ value: "total", label: "Fantasy Week Total" }, { value: "perGame", label: "Per Game (min 2 GP)" }] },
+  ...periodWindowFields({ mode: MULTI_CAT_CONTROL.mode, default: MULTI_CAT_CURRENT, options: [{ value: MULTI_CAT_CURRENT, label: "Current fantasy week" }, { value: "matchup", label: "Matchup week" }, { value: "custom", label: "Custom range" }] }),
+  { id: "basis", label: "Ranking", kind: "select", default: "total", options: [{ value: "total", label: "Period Total" }, { value: "perGame", label: "Per Game (min 2 GP)" }] },
   { id: "formula", label: "Formula", kind: "select", default: "standard", options: [{ value: "standard", label: "Standard: PTS + BLK + SOG + HIT" }, { value: "pointsFirst", label: "Points-First: 2 x PTS + BLK + SOG + HIT" }] },
 ];
-export const multiCatHeadline = ({ basis, formula }: MultiCatSettings) => `Top ${formula === "pointsFirst" ? "Points-First" : "Multi-Cat"} Stars ${basis === "perGame" ? "Per Game" : "of the Week"}`;
+export const validateMultiCat = (settings: MultiCatSettings) => settings.period === "custom" ? customRangeReason(settings) : null;
 
-/** CONTRACT §2: skater posts use the Monday to Sunday week. It is the week holding the cutoff, so a Monday post shows the week just ended. */
-export function multiCatDates(through: string) {
-  const weekStart = calendarWeekStart(`${through}T12:00:00Z`);
-  return { weekStart, weekEnd: shiftDays(weekStart, 6), last7From: shiftDays(through, -6), last7To: through };
+type PeriodShape = Pick<PeriodWindow, "kind" | "days">;
+/** What one matchup is called: a Week, or a Matchup when it runs longer over a break. A custom range is neither. */
+export const multiCatNoun = ({ kind, days }: PeriodShape) => kind === "custom" ? null : days > 7 ? "Matchup" : "Week";
+export function multiCatHeadline(settings: MultiCatSettings, data?: MultiCatData | null) {
+  const name = `Top ${settings.formula === "pointsFirst" ? "Points-First" : "Multi-Cat"} Stars`;
+  if (settings.basis === "perGame") return `${name} Per Game`;
+  const noun = multiCatNoun(data && multiCatCurrent(data, settings) ? data.period : { kind: settings.period, days: 7 });
+  return noun ? `${name} of the ${noun}` : name;
 }
 
 export type MultiCatScoreParts = { games: number; points: number | null; blocks: number | null; shots: number | null; hits: number | null };
@@ -84,41 +99,46 @@ export function radarRuns(values: readonly (number | null)[]): { closed: boolean
   return { closed: false, runs };
 }
 
-export type MultiCatLast7 = { games: number; values: { id: MultiCatCategoryId; label: string; total: number | null }[] };
-export type MultiCatRow = SkaterIdentity & { rank: number; score: number; week: MultiCatScoreParts; radar: MultiCatPercentile[]; last7: MultiCatLast7 };
+export type MultiCatTable = { games: number; values: { id: MultiCatCategoryId; label: string; total: number | null }[] };
+export type MultiCatRow = SkaterIdentity & { rank: number; score: number; ranked: MultiCatScoreParts; radar: MultiCatPercentile[]; table: MultiCatTable };
 export type MultiCatData = {
-  applied: string; through: string; weekStart: string; weekEnd: string; last7From: string; last7To: string;
+  /** `through` is the last date read: the period's end, or the cutoff while it is under way. It also ends the radar's season. */
+  applied: string; through: string; period: PeriodShape & { label: string; from: string; to: string };
+  /** The current fantasy week keeps the last 7 days; a chosen matchup or range shows the ranking's own dates. */
+  tableWindow: "last7" | "period"; tableFrom: string; tableTo: string;
   basis: MultiCatBasis; formula: MultiCatFormula; minGp: number; rows: MultiCatRow[];
-  cohort: { percentile: number; weekSkaters: number; belowMinGp: number; missingComponent: number; ranked: number };
+  cohort: { percentile: number; periodSkaters: number; belowMinGp: number; missingComponent: number; ranked: number };
   notShown: number; tiedBeyondCut: number;
 };
 
-/** Ranks the fantasy week; the radar reads the whole season and the table reads the last 7 days. Equal scores share a rank (1, 2, 2, 4). */
-export function buildMultiCatStars(season: MultiCatSeason, settings: MultiCatSettings): SharePostLoadResult<MultiCatData> {
-  const dates = multiCatDates(season.through), minGp = multiCatMinGp(settings.basis);
-  const players = appearancesByPlayer(season.appearances) as Map<number, MultiCatGame[]>;
+/** Ranks the period; the radar reads the season through its last date. Equal scores share a rank (1, 2, 2, 4). */
+export function buildMultiCatStars(season: MultiCatSeason, settings: MultiCatSettings, window: PeriodWindow): SharePostLoadResult<MultiCatData> {
+  const through = window.through < season.through ? window.through : season.through, minGp = multiCatMinGp(settings.basis);
+  const tableWindow = settings.period === MULTI_CAT_CURRENT ? "last7" as const : "period" as const;
+  const tableFrom = tableWindow === "last7" ? shiftDays(through, -6) : window.from;
+  const players = appearancesByPlayer(season.appearances.filter(row => row.date <= through)) as Map<number, MultiCatGame[]>;
   const percentiles = multiCatPercentiles(players);
-  let weekSkaters = 0, belowMinGp = 0, missingComponent = 0;
+  let periodSkaters = 0, belowMinGp = 0, missingComponent = 0;
   const candidates = [...players].flatMap(([playerId, rows]) => {
-    const week = rows.filter(row => row.date >= dates.weekStart);
-    if (!week.length) return [];
-    weekSkaters++;
-    if (week.length < minGp) { belowMinGp++; return []; }
-    const parts = scoreParts(week), score = multiCatScore(parts, settings);
+    const inPeriod = rows.filter(row => row.date >= window.from);
+    if (!inPeriod.length) return [];
+    periodSkaters++;
+    if (inPeriod.length < minGp) { belowMinGp++; return []; }
+    const parts = scoreParts(inPeriod), score = multiCatScore(parts, settings);
     if (score === null) { missingComponent++; return []; }
-    return [{ playerId, rows, week, parts, score }];
+    return [{ playerId, rows, inPeriod, parts, score }];
   });
   const ranked = competitionRanks(candidates, entry => entry.score, entry => entry.playerId);
-  const rows: MultiCatRow[] = ranked.slice(0, MULTI_CAT_ROWS).map(({ row: { playerId, rows: games, week, parts, score }, rank }) => {
-    const last7 = games.filter(row => row.date >= dates.last7From);
-    return { ...skaterIdentity(week), rank, score, week: parts, radar: percentiles(playerId), last7: { games: last7.length, values: MULTI_CAT_CATEGORIES.map(({ id, label, pick }) => ({ id, label, total: categoryTotal(last7, pick) })) } };
+  const rows: MultiCatRow[] = ranked.slice(0, MULTI_CAT_ROWS).map(({ row: { playerId, rows: games, inPeriod, parts, score }, rank }) => {
+    const table = games.filter(row => row.date >= tableFrom);
+    return { ...skaterIdentity(inPeriod), rank, score, ranked: parts, radar: percentiles(playerId), table: { games: table.length, values: MULTI_CAT_CATEGORIES.map(({ id, label, pick }) => ({ id, label, total: categoryTotal(table, pick) })) } };
   });
   const lastRank = rows[rows.length - 1]?.rank, notShown = ranked.length - rows.length, tiedBeyondCut = ranked.slice(rows.length).filter(entry => entry.rank === lastRank).length;
   const excluded = [belowMinGp ? `${belowMinGp} under ${minGp} GP` : "", missingComponent ? `${missingComponent} unranked for a missing component` : "", belowTheCard(notShown, tiedBeyondCut)].filter(Boolean).join(", ");
-  const cohortLine = `Ranking: ${weekSkaters} skaters played this week, ${ranked.length} ranked${excluded ? `, ${excluded}` : ""}. Radar: ${players.size} skaters with 1+ season GP.`;
+  const cohortLine = `Ranking: ${periodSkaters} skaters played in the period, ${ranked.length} ranked${excluded ? `, ${excluded}` : ""}. Radar: ${players.size} skaters with 1+ season GP.`;
   return {
-    ...skaterSeasonEvidence(season, { windowLabel: `ranking ${dates.weekStart} to ${dates.weekEnd}, table ${dates.last7From} to ${dates.last7To}, radar full season`, cohort: cohortLine, note: `Ranked by ${multiCatFormulaLabel(settings.formula)}, ${settings.basis === "perGame" ? `per game, min ${minGp} GP` : "fantasy week total"}. Equal scores share a rank. Radar is each skater's season per-game percentile, higher is better on every spoke, PIM included.` }),
-    data: { applied: shareSettingsKey(FIELDS, settings), through: season.through, ...dates, basis: settings.basis, formula: settings.formula, minGp, rows, cohort: { percentile: players.size, weekSkaters, belowMinGp, missingComponent, ranked: ranked.length }, notShown, tiedBeyondCut },
+    ...skaterSeasonEvidence(season, { windowLabel: `ranking ${window.from} to ${window.through}, table ${tableFrom} to ${through}, radar season through ${through}`, cohort: cohortLine, note: `Ranked by ${multiCatFormulaLabel(settings.formula)}, ${settings.basis === "perGame" ? `per game, min ${minGp} GP` : "period total"}. Equal scores share a rank. Radar is each skater's season per-game percentile through the period's last date, higher is better on every spoke, PIM included.`, extraSources: [{ name: "Yahoo matchup weeks", tables: ["yahoo_matchup_weeks"], state: "ready", asOf: null, updatedAt: null }] }),
+    data: { applied: shareSettingsKey(FIELDS, settings), through, period: { kind: window.kind, days: window.days, label: window.label.replace(/^Week /, "fantasy week "), from: window.from, to: window.through }, tableWindow, tableFrom, tableTo: through, basis: settings.basis, formula: settings.formula, minGp, rows, cohort: { percentile: players.size, periodSkaters, belowMinGp, missingComponent, ranked: ranked.length }, notShown, tiedBeyondCut },
     teams: shownTeams(rows),
   };
 }
@@ -127,12 +147,14 @@ export const multiCatCurrent = (data: MultiCatData, settings: MultiCatSettings) 
 const missingText = (value: number | null, text = String(value)) => value === null ? "missing" : text;
 export const multiCatScoreText = (score: number, basis: MultiCatBasis) => basis === "perGame" ? score.toFixed(2) : String(score);
 export const multiCatStarsModule = defineShareModule<MultiCatSettings, MultiCatData>({
-  id: "multi-cat-stars", title: "Top Multi-Cat Stars of the Week", summary: "The fantasy week's top skaters by points, blocks, shots and hits, each with a season percentile radar and last 7 days stats.", group: "skaters", basis: "observed",
+  id: "multi-cat-stars", title: "Top Multi-Cat Stars of the Week", summary: "The fantasy week's, or chosen dates', top skaters by points, blocks, shots and hits, each with a season percentile radar and a stats table.", group: "skaters", basis: "observed",
   headline: multiCatHeadline,
   suggestedUse: "Works for a weekend or Monday recap of the fantasy week; choose it on any day.",
   fields: FIELDS,
+  periodControl: MULTI_CAT_CONTROL,
+  validate: validateMultiCat,
   load: () => import("./multiCatStars.sources").then(sources => sources.loadMultiCatStars),
   card: () => import("components/SocialShare/modules/MultiCatStarsCard").then(card => card.default),
   hasRows: (data, settings) => data.rows.length > 0 && multiCatCurrent(data, settings),
-  altText: (snapshot, data) => `FHFH ${multiCatHeadline(data)}, fantasy week ${data.weekStart} to ${data.weekEnd} through ${data.through}, ${multiCatFormulaLabel(data.formula)}. ${data.rows.map(row => `${row.rank}. ${row.name}: ${multiCatScoreText(row.score, data.basis)} in ${row.week.games} week GP. Last 7 days, ${data.last7From} to ${data.last7To}, ${row.last7.games} GP: ${row.last7.values.map(value => `${value.label} ${missingText(value.total)}`).join(", ")}. Season percentile: ${row.radar.map(spoke => `${spoke.label} ${missingText(spoke.percentile, spoke.percentile?.toFixed(0))}`).join(", ")}`).join(". ")}. ${snapshot.evidence.cohort}`,
+  altText: (snapshot, data, settings) => `FHFH ${multiCatHeadline(settings, data)}, ranked ${data.period.from} to ${data.period.to} through ${data.through}, ${multiCatFormulaLabel(data.formula)}. ${data.rows.map(row => `${row.rank}. ${row.name}: ${multiCatScoreText(row.score, data.basis)} in ${row.ranked.games} ranked GP. ${data.tableWindow === "last7" ? "Last 7 days" : "Same dates"}, ${data.tableFrom} to ${data.tableTo}, ${row.table.games} GP: ${row.table.values.map(value => `${value.label} ${missingText(value.total)}`).join(", ")}. Season percentile through ${data.through}: ${row.radar.map(spoke => `${spoke.label} ${missingText(spoke.percentile, spoke.percentile?.toFixed(0))}`).join(", ")}`).join(". ")}. ${snapshot.evidence.cohort}`,
 });
