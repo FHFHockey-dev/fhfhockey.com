@@ -4,7 +4,7 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import { bounded, captureSharePng, readyShareFonts, SHARE_SIZE, teamLogoDataUrl } from "lib/socialShare/export";
 import { fetchEdition } from "lib/socialShare/editionFetch";
-import { SHARE_BASIS_LABELS, SHARE_POST_GROUP_LABELS, parseShareSettings, shareSettingLines, sharePostExportBlock, sharePostExportToken, sharePostShowsCard, type AnyShareModule, type ShareSettings, type ShareSettingField, type SharePostGroup, type SharePostSnapshot } from "lib/socialShare/modules/contract";
+import { SHARE_BASIS_LABELS, SHARE_POST_GROUP_LABELS, parseShareSettings, shareSettingLines, sharePostExportBlock, sharePostExportToken, sharePostShowsCard, shareHeadlineSize, type AnyShareModule, type ShareSettings, type ShareSettingField, type SharePostGroup, type SharePostSnapshot } from "lib/socialShare/modules/contract";
 import { SHARE_MODULES } from "lib/socialShare/modules/registry";
 import { SHARE_TIME_ZONE } from "lib/socialShare/types";
 import styles from "./SocialShare.module.scss";
@@ -44,11 +44,12 @@ export function postEvidenceLine({ sources, strength, coverage }: SharePostSnaps
 
 function PostFrame({ entry, snapshot, settings, brandLogo, logos, Card }: { entry: AnyShareModule; snapshot: SharePostSnapshot; settings: ShareSettings; brandLogo: string | null; logos: Record<string, string | null>; Card: ComponentType<any> | null }) {
   const shows = sharePostShowsCard(snapshot);
+  const headline = (entry.headline?.(settings, snapshot.data ?? null) ?? entry.title).toUpperCase();
   const watermark = snapshot.fixture ? "OFFLINE FIXTURE" : snapshot.state === "ready" ? SHARE_BASIS_LABELS[entry.basis] : snapshot.state === "partial" ? "PARTIAL · NOT FOR EXPORT" : "UNAVAILABLE";
   return <>
     <div className={`${styles.gridHeader} ${styles.compactHeader}`}>
       <div className={styles.gridBrand}>{brandLogo ? <img src={brandLogo} alt="FHFH" width="135" height="40" /> : <strong>FHFH</strong>}<span>FHFHOCKEY.COM</span></div>
-      <div className={styles.gridTitle}><p>{SHARE_POST_GROUP_LABELS[entry.group as SharePostGroup]}</p><h2>{(entry.headline?.(settings) ?? entry.title).toUpperCase()}</h2></div>
+      <div className={styles.gridTitle}><p>{SHARE_POST_GROUP_LABELS[entry.group as SharePostGroup]}</p><h2 style={{ fontSize: shareHeadlineSize(headline) }}>{headline}</h2></div>
     </div>
     <div className={postStyles.postBody}>
       {shows && Card ? <Card snapshot={snapshot} data={snapshot.data} settings={settings} logos={logos} />

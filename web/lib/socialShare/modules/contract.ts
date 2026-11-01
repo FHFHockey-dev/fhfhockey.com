@@ -73,8 +73,8 @@ export type SharePostCardProps<Settings extends ShareSettings = ShareSettings, D
 
 export type ShareModule<Settings extends ShareSettings = ShareSettings, Data = unknown> = {
   id: string; title: string; summary: string; group: SharePostGroup; basis: SharePostBasis;
-  /** The card's printed headline when it follows the settings; `title` still names the post in the studio. */
-  headline?: (settings: Settings) => string;
+  /** The card's printed headline when it follows the settings or the edition; `title` still names the post in the studio. */
+  headline?: (settings: Settings, data?: Data | null) => string;
   /** A suggestion shown beside the post; posts are chosen freely and nothing is scheduled. */
   suggestedUse?: string;
   fields: readonly ShareSettingField[];
@@ -133,6 +133,9 @@ export function shareSettingLines(fields: readonly ShareSettingField[], settings
   });
 }
 /** Why this snapshot cannot be exported right now, or null when it can. Checked before and after capture. */
+/** Header type shrinks past 22 characters, the most the 52px header holds on one line, so a long headline keeps to one line where it can. */
+export const shareHeadlineSize = (headline: string) => headline.length <= 22 ? undefined : Math.max(32, Math.floor(52 * 22 / headline.length));
+
 export function sharePostExportBlock(module: Pick<AnyShareModule, "hasRows" | "fields">, snapshot: SharePostSnapshot, settings: ShareSettings, now = Date.now()): string | null {
   if (snapshot.fixture) return "Offline fixture data cannot be exported.";
   if (snapshot.state !== "ready" || snapshot.data === null) return snapshot.reasons[0] ?? "This post's sources are not ready.";

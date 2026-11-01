@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { UNKNOWN_EVIDENCE, defineShareModule, parseShareSettings, shareSettingLines, sharePostExportBlock, sharePostExportToken, sharePostShowsCard, SharePostRequestError, type SharePostSnapshot } from "./contract";
+import { UNKNOWN_EVIDENCE, defineShareModule, parseShareSettings, shareSettingLines, sharePostExportBlock, sharePostExportToken, sharePostShowsCard, shareHeadlineSize, SharePostRequestError, type SharePostSnapshot } from "./contract";
 import { buildRegistry, LANE_MODULES, SHARE_MODULES } from "./registry";
 
 const entry = defineShareModule<{ x: number; pos: string; search: string; since: string | null }, { rows: number[] }>({
@@ -71,5 +71,13 @@ describe("registry", () => {
     expect(() => buildRegistry([[{ ...entry, id: "Bad Id" }]])).toThrow("Invalid");
     expect(SHARE_MODULES.has("team-games")).toBe(true);
     expect(LANE_MODULES).toHaveLength(8);
+  });
+});
+
+describe("shareHeadlineSize", () => {
+  it("leaves a headline that fits at the header size and shrinks a longer one to a floor", () => {
+    expect(shareHeadlineSize("GOALIE CATEGORY RESCUE")).toBeUndefined();
+    expect(shareHeadlineSize("POINTS-FIRST MULTI CAT MONSTERS")).toBe(36);
+    expect(shareHeadlineSize("X".repeat(80))).toBe(32);
   });
 });
