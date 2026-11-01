@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseShareSettings, sharePostExportBlock, type SharePostSnapshot } from "./contract";
-import { buildLastNightsStandouts, goalieRanking, goalLine, lastNightsStandoutsModule, latestEarlierLines, lineChipText, lineRowsFromCombinations, parsePicks, ppContradicted, percentChange, percentLabel, ppChipText, rankingText, slateCoverage, sortStandouts, STANDOUT_MAX_ROWS, standoutPool, standoutRows, statText, togglePick, type LastNightsStandoutsData, type LastNightsStandoutsInput, type LastNightsStandoutsSettings, type StandoutSkater } from "./lastNightsStandouts";
+import { averageChange, buildLastNightsStandouts, goalieChangeText, goalieLastText, goalieRanking, goalieStdText, goalieTone, goalLine, lastNightsStandoutsModule, latestEarlierLines, lineChipText, lineRowsFromCombinations, parsePicks, ppContradicted, percentChange, percentLabel, ppChipText, rankingText, slateCoverage, sortStandouts, STANDOUT_AVERAGE_RULE, STANDOUT_GOALIE_ROWS, STANDOUT_MAX_ROWS, standoutPool, standoutRows, statText, stdText, togglePick, type GoalieStat, type LastNightsStandoutsData, type LastNightsStandoutsInput, type LastNightsStandoutsSettings, type StandoutGoalie, type StandoutSkater } from "./lastNightsStandouts";
 import { loadLastNightsStandouts } from "./lastNightsStandouts.sources";
 import { ownershipOf } from "./shared/definitions";
 import type { GoalieAppearance } from "./shared/goalieLedger";
@@ -76,6 +76,49 @@ describe("Last Nights Standouts baseline", () => {
     expect(percentLabel(59.6)).toBe("+60%");
     expect(percentLabel(-20.4)).toBe("−20%");
     expect(percentLabel(0.2)).toBe("0%");
+  });
+});
+
+describe("STD on every chip", () => {
+  it("is the per-game value without last night, and it is the base of the %", () => {
+    const sog = stat(dataOf().skaters[0], "sog");
+    expect(stdText(sog)).toBe("2.0");
+    expect(statText(sog)).toBe("6");
+    expect(percentLabel(sog.change)).toBe("+200%");
+  });
+  it("prints each stat in its own form, and a dash with no baseline", () => {
+    const row = dataOf().skaters[0];
+    expect(stdText(stat(row, "toi"))).toBe("16:40");
+    expect(stdText(stat(row, "xg"))).toBe("0.50");
+    expect(stdText(stat(row, "xgPct"))).toBe("50.0%");
+    expect(stdText(stat(row, "icf"))).toBe("4.0");
+    expect(stdText({ id: "sog", baseline: null })).toBe("—");
+  });
+});
+
+describe("average % change", () => {
+  const changes = (...values: (number | null)[]) => values.map(change => ({ change }));
+  it("is the mean across the stats that have a change", () => {
+    expect(averageChange(changes(10, 20, 30, 40, null, null, null))).toBe(25);
+  });
+  it("needs 4 of the 7 stats", () => {
+    expect(averageChange(changes(10, 20, 30, null, null, null, null))).toBeNull();
+    expect(averageChange(changes(10, 20, 30, 0, null, null, null))).toBe(15);
+    expect(STANDOUT_AVERAGE_RULE).toContain("at least 4 of 7");
+  });
+  it("caps each stat at 200% either way, so a tiny baseline cannot carry it", () => {
+    expect(averageChange(changes(5000, 0, 0, 0))).toBe(50);
+    expect(averageChange(changes(-5000, 0, 0, 0))).toBe(-50);
+    expect(averageChange(changes(5000, -10, -10, -10, -10, -10, -10))! < 25).toBe(true);
+  });
+  const skater = (playerId: number, values: (number | null)[]) => {
+    const base = person({ playerId });
+    return { ...base, playerId, stats: base.stats.map((entry, index) => ({ ...entry, change: values[index] ?? null })) };
+  };
+  it("sorts a mostly negative player low, even with one big value and a big night by value", () => {
+    const anderson = { ...skater(1, [-7, 4, -49, -23, -60, 4, -7]), points: 3 }, above = { ...skater(2, [30, 20, 40, 10, 25, 5, 0]), points: 0 }, thin = skater(3, [500, 500, null, null, null, null, null]);
+    expect(sortStandouts([anderson, thin, above], "points", "average").map(row => row.playerId)).toEqual([2, 1, 3]);
+    expect(sortStandouts([anderson, thin, above], "points", "value")[0].playerId).toBe(1);
   });
 });
 
@@ -246,9 +289,14 @@ describe("sorting and auto-ranked views", () => {
 });
 
 describe("goalies", () => {
-  const goalie = (goalieId: number, saves: number | null, shotsAgainst: number | null, goalsAgainst = 1): GoalieAppearance => ({ goalieId, name: `Fictional Goalie ${goalieId}`, gameId: 9, date: SLATE, team: "NJD", opponent: "NYR", home: true, started: true, wins: 1, losses: 0, otLosses: 0, saves, shotsAgainst, goalsAgainst, toiSeconds: 3600, shutouts: 0, qualityStart: 1 });
+  const goalie = (goalieId: number, saves: number | null, shotsAgainst: number | null, goalsAgainst: number | null = 1, date = SLATE, gameId = 9): GoalieAppearance => ({ goalieId, name: `Fictional Goalie ${goalieId}`, gameId, date, team: "NJD", opponent: "NYR", home: true, started: true, wins: 1, losses: 0, otLosses: 0, saves, shotsAgainst, goalsAgainst, toiSeconds: 3600, shutouts: 0, qualityStart: 1 });
   const nstRow = (playerId: number, xg: number, ga: number, date = SLATE) => ({ player_id: playerId, player_name: "Fictional", date_scraped: date, season: SEASON, toi: 60, xg_against: xg, goals_against: ga, shots_against: 30 });
   const active = settings({ view: "goalies" });
+  const EARLIER = ["2026-10-20", "2026-10-22", "2026-10-24"];
+  /** Three earlier games at 18 saves on 20 shots. */
+  const season = (id: number) => EARLIER.map((date, index) => goalie(id, 18, 20, 2, date, index + 1));
+  const statsOf = (over: Partial<LastNightsStandoutsInput>) => buildLastNightsStandouts(shared({ settings: active, ...over })).data!.goalies;
+  const stat = (row: StandoutGoalie, id: GoalieStat["id"]) => row.stats.find(entry => entry.id === id)!;
   it("computes GSAx from NST for that slate only, and leaves a lagging row missing", () => {
     const result = buildLastNightsStandouts(shared({ settings: active, goalies: [goalie(1, 29, 30), goalie(2, 19, 20)], nstGoalies: [nstRow(1, 3.25, 1), nstRow(2, 9, 1, "2026-10-30")] }));
     const [first, second] = result.data!.goalies;
@@ -258,11 +306,60 @@ describe("goalies", () => {
     expect(result.evidence.sources.find(source => source.name === "Natural Stat Trick")?.state).toBe("partial");
     expect(result.evidence.cohort).toBe("2 goalies on the slate, 1 with NST GSAx");
   });
-  it("ranks by SV% over the shots minimum, then saves", () => {
-    const { data } = buildLastNightsStandouts(shared({ settings: active, goalies: [goalie(1, 29, 30), goalie(2, 19, 20), goalie(3, 5, 5, 0), goalie(4, 38, 40), goalie(5, null, null)] }));
+  it("ranks by GSAx over the shots minimum, with no NST row below every row", () => {
+    const { data } = buildLastNightsStandouts(shared({ settings: active, goalies: [goalie(1, 29, 30), goalie(2, 19, 20), goalie(3, 5, 5, 0), goalie(4, 38, 40), goalie(5, 25, 26), goalie(6, null, null)], nstGoalies: [nstRow(1, 0.5, 1), nstRow(2, 3, 1), nstRow(3, 9, 0)] }));
     const ranking = goalieRanking(data!, { minShotsAgainst: 15 });
-    expect(ranking.rows.map(row => row.goalieId)).toEqual([1, 4, 2]);
-    expect(ranking.qualified).toBe(3);
+    // GSAx +2.00, then -0.50; goalies 4 and 5 have no row and fall back to SV%. Goalie 3 faced too few shots, however good.
+    expect(ranking.rows.map(row => row.goalieId)).toEqual([2, 1, 5, 4]);
+    expect(ranking.qualified).toBe(4);
+  });
+  it("holds the card to its row limit", () => {
+    const { data } = buildLastNightsStandouts(shared({ settings: active, goalies: Array.from({ length: 12 }, (_, index) => goalie(index + 1, 25, 26)) }));
+    expect(goalieRanking(data!, { minShotsAgainst: 15 }).rows).toHaveLength(STANDOUT_GOALIE_ROWS);
+  });
+  it("keeps last night out of every STD", () => {
+    const [row] = statsOf({ goalies: [...season(1), goalie(1, 40, 41, 1)], nstGoalies: [...EARLIER.map(date => nstRow(1, 3, 2, date)), nstRow(1, 9, 1)] });
+    expect(row.priorGames).toBe(3);
+    expect(stat(row, "saves")).toMatchObject({ last: 40, baseline: 18 });
+    expect(stat(row, "shotsAgainst").baseline).toBe(20);
+    expect(stat(row, "savePct").baseline).toBe(0.9);
+    expect(stat(row, "gaa").baseline).toBe(2);
+    expect(stat(row, "gsax")).toMatchObject({ last: 8, baseline: 1, change: 7 });
+  });
+  it("needs prior games and NST coverage for an STD", () => {
+    expect(stat(statsOf({ goalies: [goalie(1, 18, 20, 2, EARLIER[0], 1), goalie(1, 29, 30)] })[0], "saves").baseline).toBeNull();
+    const thin = statsOf({ goalies: [...season(1), goalie(1, 29, 30)], nstGoalies: [nstRow(1, 3, 1, EARLIER[0]), nstRow(1, 3, 1)] })[0];
+    expect(stat(thin, "gsax")).toMatchObject({ last: 2, baseline: null, change: null });
+  });
+  const one = (over: Partial<GoalieStat>): GoalieStat => ({ id: "saves", label: "SV", direction: "higher", last: 1, baseline: 1, change: 10, ...over });
+  it("colours each change by what is better", () => {
+    const [row] = statsOf({ goalies: [...season(1), goalie(1, 39, 40, 1)], nstGoalies: [...EARLIER.map(date => nstRow(1, 2, 2, date)), nstRow(1, 3, 1)] });
+    expect(goalieTone(stat(row, "saves"))).toBe("good");
+    expect(goalieTone(stat(row, "goalsAgainst"))).toBe("good");
+    expect(goalieTone(stat(row, "gaa"))).toBe("good");
+    expect(goalieTone(stat(row, "savePct"))).toBe("good");
+    expect(goalieTone(stat(row, "gsax"))).toBe("good");
+    const [worse] = statsOf({ goalies: [...season(1), goalie(1, 10, 15, 5)], nstGoalies: [...EARLIER.map(date => nstRow(1, 2, 2, date)), nstRow(1, 2, 5)] });
+    for (const id of ["saves", "goalsAgainst", "gaa", "savePct", "gsax"] as const) expect(goalieTone(stat(worse, id))).toBe("bad");
+  });
+  it("leaves workload and no change uncoloured", () => {
+    expect(goalieTone(one({ id: "shotsAgainst", direction: "neutral", change: 50 }))).toBe("neutral");
+    expect(goalieTone(one({ id: "shotsAgainst", direction: "neutral", change: -50 }))).toBe("neutral");
+    expect(goalieTone(one({ id: "toi", direction: "neutral", change: 20 }))).toBe("neutral");
+    expect(goalieTone(one({ change: null }))).toBe("neutral");
+    expect(goalieTone(one({ change: 0.2 }))).toBe("neutral");
+  });
+  it("prints rates in their own units, never a percent", () => {
+    expect(goalieChangeText(one({ id: "savePct", change: 0.012 }))).toBe("+.012");
+    expect(goalieChangeText(one({ id: "savePct", change: -0.04 }))).toBe("−.040");
+    expect(goalieChangeText(one({ id: "gaa", change: -0.85 }))).toBe("−0.85");
+    expect(goalieChangeText(one({ id: "gsax", change: 1.25 }))).toBe("+1.25");
+    expect(goalieChangeText(one({ change: 12.4 }))).toBe("+12%");
+    expect(goalieChangeText(one({ id: "gsax", change: null }))).toBe("—");
+    expect(goalieLastText(one({ id: "savePct", last: 0.917 }))).toBe(".917");
+    expect(goalieStdText(one({ id: "saves", baseline: 24.33 }))).toBe("24.3");
+    expect(goalieStdText(one({ id: "toi", baseline: 3540 }))).toBe("59:00");
+    expect(goalieLastText(one({ id: "gsax", last: -0.5 }))).toBe("−0.50");
   });
 });
 
@@ -341,11 +438,11 @@ describe("loader", () => {
     expect(result.data?.skaters[0].role.line).toBe("unknown");
   });
   it("reads only goalie tables for the goalie view's players", async () => {
-    const { fake, context: ctx } = context({ wgo_skater_stats: [row(1, 9, SLATE)], games: [{ id: 9 }], wgo_team_stats: [], wgo_goalie_stats: [], nst_gamelog_goalie_all_counts: [], yahoo_players: [], yahoo_nhl_player_map_read: [] });
+    const { fake, context: ctx } = context({ wgo_skater_stats: [row(1, 9, SLATE)], games: [{ id: 9 }], wgo_team_stats: [], wgo_goalie_stats: [{ goalie_id: 7, goalie_name: "Fictional", date: SLATE, season_id: SEASON, game_id: 9, team_abbreviation: "NJD", opponent_team_abbrev: "NYR", home_road: "H", games_played: 1, games_started: 1, wins: 1, losses: 0, ot_losses: 0, saves: 20, shots_against: 21, goals_against: 1, time_on_ice: 3600, shutouts: 0, quality_start: 1 }], nst_gamelog_goalie_all_counts: [], yahoo_players: [], yahoo_nhl_player_map_read: [] });
     const result = await loadLastNightsStandouts(ctx, settings({ view: "goalies" }));
-    expect(result.data?.goalies).toEqual([]);
+    expect(result.data?.goalies.map(row => row.goalieId)).toEqual([7]);
     expect(fake.calls.some(call => call.table === "nst_gamelog_as_counts")).toBe(false);
-    expect(fake.calls.find(call => call.table === "nst_gamelog_goalie_all_counts")!.filters).toContainEqual(["eq", "date_scraped", SLATE]);
+    expect(fake.calls.find(call => call.table === "nst_gamelog_goalie_all_counts")!.filters).toContainEqual(["in", "player_id", [7]]);
   });
   it("is missing, not empty, before the season's first slate", async () => {
     const { context: ctx } = context({ wgo_skater_stats: [] });

@@ -16,11 +16,12 @@
 .goalLine { flex: none; margin-left: auto; white-space: nowrap; font-weight: 800; }
 .owned { flex: none; font-size: 0.68em; white-space: nowrap; }
 .tiles { min-height: 0; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
-/* One or two skaters: seven tiles would be wide and tall, so they wrap to fill the row. */
+/* Up to four rows: the larger type needs wider chips, and the rows have the height for two lines of them. */
 .rows[data-few] .tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .rows[data-few] .tile:last-child { grid-column: span 2; }
-.tile { min-width: 0; min-height: 0; display: flex; align-items: center; justify-content: space-between; gap: 4px; padding: 0 6px; border-radius: 4px; b { font-weight: 800; white-space: nowrap; } }
-.tileSide { flex: none; display: grid; justify-items: end; line-height: 1.05; small { font-size: 0.56em; font-weight: 600; } i { font-size: 0.68em; font-style: normal; font-weight: 700; white-space: nowrap; } }
+/* Equal chips: the label and change on one line, last night and STD on the next. At 8 rows that is about 16 + 26px in a 55px chip. */
+.tile { min-width: 0; min-height: 0; display: grid; align-content: center; gap: 1px; padding: 0 6px; border-radius: 4px; line-height: 1.1; }
+.tileLine { min-width: 0; display: flex; align-items: baseline; justify-content: space-between; gap: 4px; white-space: nowrap; b { font-weight: 800; } small { font-size: 0.56em; font-weight: 600; } i { font-size: 0.68em; font-style: normal; font-weight: 700; } }
 
 /* The sidebar, in the studio's own theme. */
 .panel { display: grid; grid-template-columns: minmax(0, 1fr); gap: v.$space-xs; min-width: 0; }
@@ -33,5 +34,6 @@
 .panelList .option[data-picked] { background: rgba(v.$primary-color, 0.22); border-color: v.$primary-color; }
 .panelList .option:disabled { opacity: 0.5; cursor: not-allowed; }
 .optionHead { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; b, small, strong { min-width: 0; overflow-wrap: anywhere; } small { color: v.$text-secondary; } }
+.optionAverage { margin-left: auto; white-space: nowrap; }
 .optionOrder { flex: none; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 3px; font-weight: 700; border: 1px solid v.$border-soft; }
-.optionStats { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); column-gap: 8px; min-width: 0; small { color: v.$text-secondary; } i { font-style: normal; color: v.$text-secondary; } }
+.optionStats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); column-gap: 8px; min-width: 0; small { color: v.$text-secondary; } i { font-style: normal; color: v.$text-secondary; } }

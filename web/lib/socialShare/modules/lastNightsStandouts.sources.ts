@@ -13,7 +13,7 @@ import { NST_COUNT_COLUMNS, NST_ON_ICE_COLUMNS, shareThrough, type NstCountRow, 
  * Ceilings, all failing closed. A full 16-game slate is about 576 skaters and 36 goalies, and each skater has at most
  * 84 games. NST and season reads ask only for the players on the slate; role reads only for the slate's games.
  */
-export const STANDOUT_LIMITS = { slateSkaters: 700, slateGoalies: 60, seasonRows: 60000, teamGames: 40, schedule: 20, lineCombos: 80, earlierLines: 5000, pp: 800 } as const;
+export const STANDOUT_LIMITS = { slateSkaters: 700, slateGoalies: 60, seasonGoalieRows: 6000, seasonRows: 60000, teamGames: 40, schedule: 20, lineCombos: 80, earlierLines: 5000, pp: 800 } as const;
 const STATEMENT_TIMEOUT = "57014";
 
 /** The newest date with skater rows, through yesterday in New York: on an off day this is still the latest completed slate. */
@@ -58,9 +58,11 @@ export async function loadLastNightsStandouts({ client, generatedAt }: SharePost
   ]);
   const shared = { slate, season, settings, completedTeamGames, scheduledGameIds: schedule.map(game => game.id), ownership };
   if (isGoalieView(settings.view)) {
+    const onNight = await readGoalieAppearances(client, { season, from: slate, through: slate, limit: STANDOUT_LIMITS.slateGoalies }), goalieIds = onNight.map(row => row.goalieId);
+    if (!goalieIds.length) return buildLastNightsStandouts({ ...shared, goalies: [] });
     const [goalies, nstGoalies] = await Promise.all([
-      readGoalieAppearances(client, { season, from: slate, through: slate, limit: STANDOUT_LIMITS.slateGoalies }),
-      bounded<NstGsaxRow>("NST goalie logs", STANDOUT_LIMITS.slateGoalies, (start, end) => client.from(NST_GSAX_TABLES.all).select(NST_GSAX_COLUMNS.join(","), { count: "exact" }).eq("season", season).eq("date_scraped", slate).order("player_id").range(start, end)),
+      readGoalieAppearances(client, { season, from, through: slate, goalieIds, limit: STANDOUT_LIMITS.seasonGoalieRows }),
+      bounded<NstGsaxRow>("NST goalie logs", STANDOUT_LIMITS.seasonGoalieRows, (start, end) => client.from(NST_GSAX_TABLES.all).select(NST_GSAX_COLUMNS.join(","), { count: "exact" }).eq("season", season).lte("date_scraped", slate).in("player_id", goalieIds).order("date_scraped").order("player_id").range(start, end)),
     ]);
     return buildLastNightsStandouts({ ...shared, goalies, nstGoalies });
   }

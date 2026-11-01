@@ -279,3 +279,15 @@ R9, for the default: Crosby 1G-2A-3P-1PPP, Anderson 2G-1A-3P, Kucherov 0G-3A-3P,
 | --- | --- | --- | --- | --- |
 | R13 | PP unit against NHL.com PP time per team and overall, slate of 2026-10-31, through MCP `execute_sql` on 2026-11-01 | `wgo_skater_stats`, `powerPlayCombinations` | 0 sample rows (20 + 1 + 20 aggregate rows) | Passed |
 | R14 | Unit rows for Ottawa's game | `wgo_skater_stats`, `powerPlayCombinations` | 18, then 29 rows | Passed |
+
+### Last Nights Standouts: TJ's review
+
+- **Sidebar default:** "Avg % vs STD". The rule: the mean % change across the stats with a baseline, each capped at ±200%, with at least 4 of 7 available; fewer has no average and sorts last. Value and jump sorts stay selectable.
+- **Real order, R15:** Frondell +149, Vlasic +145, Perry +144, Stastney +143, Kolesar +128. Anderson averages −20 and ranks 197 of 321. The cap matters: Carrick's raw mean is +1439, capped +125. 31 of 352 skaters have too few stats, including Stützle (only 3, because of the NST gap on 10-05 and 10-06), so they sort last.
+- **Skater chips:** label and %, then last night and STD. With 5 or more rows all chips are one width. With up to 4 rows they wrap to 4 + 3 and the seventh spans two columns, so it is wider there.
+- **Goalie card:** the same chips, top 8 by GSAx, 15+ shots against; 20 of 20 goalies qualify on 10-31. No NST row ranks below every row. STD is per appearance before the slate, with SV% and GAA pooled. SV% changes in points of save percentage (+.012), GAA and GSAx in goals, the rest in %. Lower GA and GAA are good; SA and TOI are workload and uncoloured. STD needs 3+ prior GP: 17 of 20 goalies have it, so 3 print "—" for STD and change. 19 of 20 meet 90% NST coverage for the GSAx STD.
+
+| # | Statement | Tables read | Rows returned | Result |
+| --- | --- | --- | --- | --- |
+| R15 | Average % change under the rule, top 8 and 3 named skaters, slate of 2026-10-31, through MCP `execute_sql` on 2026-11-01 | `wgo_skater_stats`, `nst_gamelog_as_counts`, `nst_gamelog_as_counts_oi` | 10 per-player rows | Passed. SQL with the same rule; the builder has not run on it |
+| R16 | Goalie counts for the slate | `wgo_goalie_stats`, `nst_gamelog_goalie_all_counts` | 0 sample rows (1 aggregate row) | Passed |

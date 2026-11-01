@@ -42,3 +42,5 @@
 - Standouts defects: lines now come from `lineCombinations`, rolling only as a dated fallback. NST holes on 10-05 and 10-06 explain the dashes. Spec run on port 3110 with the isolated build: 8 passed.
 
 - Standouts sidebar: the studio's button style set a height and nowrap, which caused the overlap and phone width; a two-class selector overrides them. New assertions fail on the old CSS. PP: the source's unit is a rank of a wrong time on some teams, so a contradicted chip prints "PP —". The writer is the real fix and is outside this lane.
+
+- Standouts review: average % default in the sidebar, last/STD/change on every chip, goalie chips ranked by GSAx (top 8). The loader now reads goalie season rows and NST for the goalies on the slate. Real render is the lead's.

@@ -44,26 +44,29 @@ const nst = (date: string, playerId: number) => ({ player_id: playerId, date_scr
 const nstDates = [...PRIOR, SLATE];
 const ids = Array.from({ length: PLAYERS }, (_, index) => index + 1);
 const goalie = (goalieId: number, saves: number, shots: number): GoalieAppearance => ({ goalieId, name: `Fictional Goalie ${goalieId}`, gameId: 900, date: SLATE, team: goalieId % 2 ? "NJD" : "NYR", opponent: goalieId % 2 ? "NYR" : "NJD", home: true, started: true, wins: 1, losses: 0, otLosses: 0, saves, shotsAgainst: shots, goalsAgainst: shots - saves, toiSeconds: 3600, shutouts: 0, qualityStart: 1 });
-const settingsFrom = (query: URLSearchParams) => parseShareSettings(lastNightsStandoutsModule, Object.fromEntries(query), "server") as LastNightsStandoutsSettings;
+const settingsFromQuery = (query: URLSearchParams) => parseShareSettings(lastNightsStandoutsModule, Object.fromEntries(query), "server") as LastNightsStandoutsSettings;
 const shared = (settings: LastNightsStandoutsSettings): LastNightsStandoutsInput => ({
   slate: SLATE, season: SEASON, settings, completedTeamGames: [{ gameId: 900 }, { gameId: 900 }], scheduledGameIds: [900],
   // Rostered 5%, 10%, 15%...: player 10 sits exactly on 50 and is out of "Under 50%".
   ownership: { byPlayer: new Map(ids.map(id => [id, ownershipOf(id * 5, SLATE)])), updatedAt: `${SLATE}T08:00:00` },
 });
 const body = (query: URLSearchParams) => {
-  const settings = settingsFrom(query), input = shared(settings);
+  const settings = settingsFromQuery(query), input = shared(settings);
   const result = settings.view === "goalies"
-    ? buildLastNightsStandouts({ ...input, goalies: [goalie(1, 29, 30), goalie(2, 19, 20), goalie(3, 4, 5)], nstGoalies: [{ player_id: 1, player_name: "Fictional", date_scraped: SLATE, season: SEASON, toi: 60, xg_against: 3.5, goals_against: 1, shots_against: 30 }] })
+    ? buildLastNightsStandouts({ ...input, goalies: [...PRIOR.flatMap(date => [1, 2, 3].map(id => ({ ...goalie(id, 18, 20), date, gameId: 100 + PRIOR.indexOf(date) }))), goalie(1, 29, 30), goalie(2, 20, 20), goalie(3, 4, 5)], nstGoalies: [...PRIOR.map(date => ({ player_id: 1, player_name: "Fictional", date_scraped: date, season: SEASON, toi: 60, xg_against: 2.5, goals_against: 2, shots_against: 20 })), { player_id: 1, player_name: "Fictional", date_scraped: SLATE, season: SEASON, toi: 60, xg_against: 3.5, goals_against: 1, shots_against: 30 }] })
     : buildLastNightsStandouts({ ...input, appearances, nstCounts: nstDates.flatMap(date => ids.map(id => nst(date, id))), nstOnIce: nstDates.flatMap(date => ids.map(id => ({ player_id: id, date_scraped: date, season: SEASON, xgf: 1, xga: 1 }))), role: { rolling: ids.map(id => ({ player_id: id, game_id: 900, line_combo_slot: 1 + (id % 3), line_combo_group: id % 3 ? "forward" : "defense" })), pp: [{ gameId: 900, playerId: 1, unit: 1 }] } });
+  return editionOf(settings, result);
+};
+function editionOf(settings: LastNightsStandoutsSettings, result: ReturnType<typeof buildLastNightsStandouts>) {
   const generatedAt = new Date().toISOString();
   return { schemaVersion: 1, id: "standouts-e2e", post: lastNightsStandoutsModule.id, generatedAt, expiresAt: new Date(Date.parse(generatedAt) + 600000).toISOString(), timeZone: "America/New_York", settings, fixture: false, state: result.state, reasons: result.reasons ?? [], evidence: result.evidence, data: result.data, teams: result.teams ?? [] };
-};
-async function open(page: Page, query = "") {
+}
+async function open(page: Page, query = "", make: (query: URLSearchParams) => object = body) {
   await signIn(page);
   await page.route("**/api/v1/social-share/posts/**", route => {
     const url = new URL(route.request().url());
     expect(route.request().headers().authorization).toBe(`Bearer ${editorToken}`);
-    return route.fulfill({ json: body(url.searchParams) });
+    return route.fulfill({ json: make(url.searchParams) });
   });
   await page.goto(`/social-share/posts?post=${lastNightsStandoutsModule.id}${query}`);
   await expect(page.getByTestId("share-square")).toBeVisible();
@@ -139,6 +142,13 @@ test("the card follows pick order, a click removes, and picks unlock the export"
 test("the sidebar sorts by the night's value and by the jump, and stops at the card's maximum", async ({ page }) => {
   await open(page, "&view=all");
   const first = page.getByTestId("standout-option").first();
+  // The default surfaces who is above their norm: player 2's capped SOG jump averages +34%, while player 12 falls below.
+  await expect(page.getByRole("button", { name: "Avg % vs STD" })).toHaveAttribute("aria-pressed", "true");
+  await expect(first).toHaveAttribute("data-player", "2");
+  await expect(first.getByTestId("option-average")).toHaveText("Avg +34%");
+  await expect(page.getByTestId("standout-option").last()).toHaveAttribute("data-player", "12");
+  await expect(page.getByTestId("standouts-sort")).toBeDisabled();
+  await page.getByRole("button", { name: "Value" }).click();
   await page.getByTestId("standouts-sort").selectOption("sog");
   await expect(first).toHaveAttribute("data-player", "1");
   await page.getByTestId("standouts-sort").selectOption("ppToi");
@@ -188,6 +198,9 @@ test("a skater row prints the goal line, chips, every stat and a dash for a zero
   await expect(one.getByTestId("line-chip")).toHaveText("L2");
   await expect(one.getByTestId("stat-tile")).toHaveCount(7);
   await expect(one.locator("[data-stat=sog]")).toContainText("+500%");
+  await expect(one.locator("[data-stat=sog] [data-testid=tile-std]")).toHaveText("STD 2.0");
+  await expect(one.locator("[data-stat=toi] [data-testid=tile-std]")).toHaveText("STD 16:40");
+  await expect(one.getByTestId("tile-std")).toHaveCount(7);
   await expect(two.locator("[data-stat=ppToi]")).toContainText("—");
   await expect(two.locator("[data-stat=ppToi]")).not.toContainText("%");
   await expect(one.locator("[data-stat=sog]")).toHaveCSS("background-color", "rgba(0, 255, 153, 0.14)");
@@ -201,6 +214,8 @@ test("top forwards and top defensemen rank themselves and state the sort", async
   await expect(page.getByTestId("standout-row")).toHaveCount(8);
   await expect(page.getByTestId("standout-row").first()).toContainText("Fictional Long Name 1");
   await expect(page.getByTestId("standouts-legend")).toContainText("Top 8 of 8 by points, then SOG, xG, TOI.");
+  // Equal chips at full size, however long their values.
+  await expect.poll(() => page.getByTestId("stat-tile").evaluateAll(tiles => new Set(tiles.map(tile => Math.round(tile.getBoundingClientRect().width))).size)).toBe(1);
   await expect(page.getByTestId("standouts-auto-note")).toBeVisible();
   await expect(download(page)).toBeEnabled();
   await expectFits(page);
@@ -215,9 +230,46 @@ test("goalies say when NST lags, and a missing GSAx stays a dash", async ({ page
   const square = page.getByTestId("share-square");
   await expect(page.getByTestId("standouts-view")).toContainText("Goalies");
   await expect(square.locator("[class*=gridTitle] p")).toHaveText("Goalies", { ignoreCase: true });
-  for (const label of ["SV", "SA", "GA", "SV%", "TOI", "GSAx"]) await expect(square).toContainText(label);
-  await expect(page.getByTestId("goalie-gsax")).toHaveText("+2.50");
-  await expect(page.getByTestId("nst-goalie-note")).toContainText("NST has no row yet for 2 of 3 goalies");
+  for (const label of ["SV", "SA", "GA", "SV%", "GAA", "TOI", "GSAx"]) await expect(square.getByTestId("standout-row").first()).toContainText(label);
+  const rows = page.getByTestId("standout-row");
+  await expect(rows).toHaveCount(2);
+  // Goalie 1 has a GSAx row; goalie 2 has none and has the better SV%, and still ranks below.
+  await expect(rows.first()).toContainText("Fictional Goalie 1");
+  const top = rows.first();
+  await expect(top.locator("[data-stat=gsax]")).toContainText("+2.50");
+  await expect(top.locator("[data-stat=gsax]")).toContainText("STD +0.50");
+  await expect(top.locator("[data-stat=gsax] [data-testid=tile-change]")).toHaveText("+2.00");
+  await expect(top.locator("[data-stat=savePct] [data-testid=tile-change]")).toHaveText("+.067");
+  await expect(top.locator("[data-stat=saves]")).toHaveAttribute("data-tone", "good");
+  await expect(top.locator("[data-stat=goalsAgainst]")).toHaveAttribute("data-tone", "good");
+  await expect(top.locator("[data-stat=gaa]")).toHaveAttribute("data-tone", "good");
+  await expect(top.locator("[data-stat=shotsAgainst]")).toHaveAttribute("data-tone", "neutral");
+  await expect(top.locator("[data-stat=toi]")).toHaveAttribute("data-tone", "neutral");
+  await expect(top.locator("[data-stat=gsax]")).toHaveCSS("background-color", "rgba(0, 255, 153, 0.14)");
+  await expect(rows.nth(1).locator("[data-stat=gsax]")).toContainText("—");
+  await expect(page.getByTestId("nst-goalie-note")).toContainText("NST has no row yet for 1 of 2");
   await expect(square).not.toContainText("Fictional Goalie 3");
   await expect(download(page)).toBeEnabled();
+  await expectFits(page);
+});
+
+test("every card size fits, with no clipped chip or dead band", async ({ page }) => {
+  await open(page, "&view=all&picks=1");
+  await expectFits(page);
+  for (const picks of ["1,2", "1,2,3", "1,2,3,4", "1,2,3,4,5", "1,2,3,4,5,6", "1,2,3,4,5,6,7"]) {
+    await page.goto(`/social-share/posts?post=${lastNightsStandoutsModule.id}&view=all&picks=${picks}`);
+    await expect(page.getByTestId("standout-row")).toHaveCount(picks.split(",").length);
+    await expectFits(page);
+  }
+});
+
+test("a full goalie card fills the body with its 8 goalies", async ({ page }) => {
+  await open(page, "&view=goalies", query => {
+    const settings = settingsFromQuery(query), ids = Array.from({ length: 12 }, (_, index) => index + 1);
+    return editionOf(settings, buildLastNightsStandouts({ ...shared(settings), goalies: [...PRIOR.flatMap(date => ids.map(id => ({ ...goalie(id, 18, 20), date, gameId: 100 + PRIOR.indexOf(date), name: LONG_NAME }))), ...ids.map(id => ({ ...goalie(id, 18 + id, 20 + id), name: LONG_NAME }))], nstGoalies: [...PRIOR, SLATE].flatMap(date => ids.map(id => ({ player_id: id, player_name: "Fictional", date_scraped: date, season: SEASON, toi: 60, xg_against: 2.5 + id / 10, goals_against: 2, shots_against: 20 }))) }));
+  });
+  await expect(page.getByTestId("standout-row")).toHaveCount(8);
+  await expect(page.getByTestId("standouts-legend")).toContainText("Top 8 of 12 by GSAx, with 15+ shots against.");
+  await expect(page.getByTestId("nst-goalie-note")).toHaveCount(0);
+  await expectFits(page);
 });
