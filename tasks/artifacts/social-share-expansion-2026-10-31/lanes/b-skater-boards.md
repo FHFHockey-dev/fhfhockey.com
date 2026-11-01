@@ -220,3 +220,17 @@ Points-First top 15, L10 (SQL using the same formula; the builder itself has not
 - **Legend:** "P = percentile" is now "Square = percentile". Ranking, scoring and the 2x weight are unchanged.
 - **Not measured:** the 32px square fits a cell of about 33px by CSS. The crowded E2E test now checks chip width, square shape and column alignment; not run here.
 - **Checks:** 86 tests in the lane's 3 files passed, eslint clean, the pure check passed, `tsc` printed no errors, `--list` found 11 tests.
+
+## Points-First P85 points floor (TJ approved)
+
+- **Rule:** the Points-First view ranks only skaters at P85 or better in points, from rank 1 among them. Percentiles stay over the whole eligible cohort, and the score formula and the straight view are unchanged. Missing categories stay unranked and are counted apart from those below the floor.
+- **Printed:** "Points P85+ only." in the legend, with the floor and the counts in the evidence and the floor in the alt text.
+- **Real cohort, R7 below:** 96 of 644 eligible skaters clear the floor at L10 through 2026-10-31, which works out to about 0.89+ PTS/G. None of the 644 is missing a category. The highest below the floor is P82.9.
+
+| # | Statement | Tables read | Rows returned | Result |
+| --- | --- | --- | --- | --- |
+| R7 | L10 percentiles, floor count and top 15 at the floor, through MCP `execute_sql` on 2026-11-01 | `wgo_skater_stats` | 0 sample rows (15 per-player aggregate rows) | Passed |
+
+Top 15 now (SQL using the same formula; the builder has not run on the full season): Dahlin, Jones, Pionk, Suzuki, Stützle, Batherson, Hagel, Tuch, McAvoy (P85.2), Tkachuk, Sanderson, Bouchard, Schaefer, Holloway, Benson. Seider, Werenski and Neighbours leave; Schaefer, Holloway and Benson come in. 7 of 15 are defensemen, and 5 of the 15 are below P50 in hits or blocks.
+
+**Checks:** tests in the lane's 3 files passed, eslint clean, `tsc` printed no errors, `--list` found 11 tests. No browser run.

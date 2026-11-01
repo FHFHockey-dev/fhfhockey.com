@@ -145,6 +145,7 @@ test("Multi Cat Monsters prints percentiles and a score, and Points-First is its
   expect(await title.evaluate(heading => heading.getBoundingClientRect().height <= parseFloat(getComputedStyle(heading).lineHeight) * 1.2)).toBe(true);
   await page.getByRole("button", { name: "Refresh post", exact: true }).click();
   await expect(square).toContainText("(2×PTS + SOG + HITS + BLK) / 5");
+  await expect(square).toContainText("Points P85+ only.");
   await expectFits(page);
 });
 

@@ -57,12 +57,47 @@ describe("Multi Cat Monsters", () => {
     expect(scores(data!)).toEqual([[2, 1, 75], [3, 2, 50], [1, 3, 25]]);
     expect(data!.rows[0].cells.map(cell => [cell.category, cell.perGame, cell.percentile])).toEqual([["points", 1, 0], ["shots", 3, 100], ["hits", 3, 100], ["blocks", 3, 100]]);
   });
-  it("re-ranks on Points-First with points counted twice", () => {
-    const { data } = buildCategoryBlueprint(pool(), settings({ view: "points-first" }));
-    expect(scores(data!)).toEqual([[2, 1, 60], [3, 2, 50], [1, 3, 40]]);
-    const scorers = buildCategoryBlueprint(season([...games(1, 5, { points: 3, shots: 2, hits: 2, blocks: 2 }), ...games(2, 5, { points: 1, shots: 3, hits: 3, blocks: 1 }), ...games(3, 5, { points: 2, shots: 1, hits: 1, blocks: 3 })]), settings({ view: "points-first" }));
-    expect(scorers.data!.rows.map(row => row.playerId)).toEqual([1, 2, 3]);
-    expect(buildCategoryBlueprint(season([...games(1, 5, { points: 3, shots: 2, hits: 2, blocks: 2 }), ...games(2, 5, { points: 1, shots: 3, hits: 3, blocks: 1 }), ...games(3, 5, { points: 2, shots: 1, hits: 1, blocks: 3 })]), settings()).data!.rows.map(row => row.score)).toEqual([62.5, 50, 37.5]);
+  it("re-ranks on Points-First with points counted twice, from 1 among those who clear the floor", () => {
+    // Points percentile is index × 5, so 17 and up clear P85. The others run the other way, so the lowest of those four leads.
+    const ladder = season(Array.from({ length: 21 }, (_, index) => games(index + 1, 5, { points: index, shots: 20 - index, hits: 20 - index, blocks: 20 - index })).flat());
+    const { data } = buildCategoryBlueprint(ladder, settings({ view: "points-first" }));
+    expect(data!.rows.map(row => [row.playerId, row.rank, row.score])).toEqual([[18, 1, 43], [19, 2, 42], [20, 3, 41], [21, 4, 40]]);
+  });
+  describe("Points-First floor", () => {
+    const ladder = (over: (index: number) => Partial<SkaterAppearance> = () => ({})) => season(Array.from({ length: 21 }, (_, index) => games(index + 1, 5, { points: index, ...over(index) })).flat());
+    it("ranks a skater at exactly P85 and leaves out the one just below", () => {
+      const { data, evidence } = buildCategoryBlueprint(ladder(), settings({ view: "points-first" }));
+      const points = (id: number) => categoryPercentiles(Array.from({ length: 21 }, (_, index) => index))[id - 1];
+      expect([points(18), points(17)]).toEqual([85, 80]);
+      expect(data!.rows.map(row => row.playerId).sort((a, b) => a - b)).toEqual([18, 19, 20, 21]);
+      expect(data).toMatchObject({ cohortSize: 21, ranked: 4, belowFloor: 17, unranked: 0, notShown: 0 });
+      expect(evidence.cohort).toContain("21 eligible, 4 ranked, 17 below points P85");
+      expect(evidence.sample).toContain("Only skaters at P85 or better in points are ranked: 4 of 21 eligible; percentiles stay over all 21.");
+    });
+    it("takes percentiles over the whole cohort, not those who clear the floor", () => {
+      const floored = buildCategoryBlueprint(ladder(index => ({ shots: 20 - index })), settings({ view: "points-first" })).data!.rows;
+      const points = categoryPercentiles(Array.from({ length: 21 }, (_, index) => index));
+      for (const row of floored) expect(row.cells[0].percentile).toBe(points[row.playerId - 1]);
+      // Over only the four who clear the floor, this skater would be last in points and first in shots.
+      expect(floored.find(row => row.playerId === 18)!.cells.map(cell => cell.percentile)).toEqual([85, 15, 50, 50]);
+    });
+    it("leaves the straight view unaffected", () => {
+      const { data } = buildCategoryBlueprint(ladder(), settings());
+      expect(data).toMatchObject({ ranked: 21, belowFloor: 0, unranked: 0, notShown: 1 });
+      expect(data!.rows.map(row => row.playerId)).toContain(2); // P5 in points, well below the floor.
+    });
+    it("keeps missing points unranked and apart from the floor's count", () => {
+      const { data, evidence } = buildCategoryBlueprint(ladder(index => index === 20 ? { points: null } : {}), settings({ view: "points-first" }));
+      expect(data!.rows.map(row => row.playerId)).not.toContain(21);
+      expect(data).toMatchObject({ cohortSize: 21, unranked: 1 });
+      expect(data!.ranked + data!.belowFloor + data!.unranked).toBe(21);
+      expect(evidence.cohort).toContain("1 unranked for a missing category");
+    });
+    it("has nothing to export when nobody clears the floor", () => {
+      const active = settings({ view: "points-first" }), { data } = buildCategoryBlueprint(season([...games(1, 5), ...games(2, 5)]), active);
+      expect(data!.rows).toEqual([]);
+      expect(categoryBlueprintModule.hasRows(data, active)).toBe(false);
+    });
   });
   it("shares a rank on an equal score", () => {
     const { data } = buildCategoryBlueprint(season([...games(1, 5, { points: 2, shots: 1 }), ...games(2, 5, { points: 1, shots: 2 })]), settings());
@@ -107,7 +142,7 @@ describe("Multi Cat Monsters", () => {
     const active = settings({ view: "points-first" }), result = buildCategoryBlueprint(pool(), active);
     expect(result.evidence.sample).toContain("points counted twice");
     const alt = categoryBlueprintModule.altText({ evidence: result.evidence } as unknown as SharePostSnapshot, result.data, active);
-    for (const text of ["Points-First Multi Cat Monsters", "(2×PTS + SOG + HITS + BLK) / 5", "score 60.0", "percentile 100"]) expect(alt).toContain(text);
+    for (const text of ["Points-First Multi Cat Monsters", "(2×PTS + SOG + HITS + BLK) / 5", "percentile 85 or better", "score 40.0", "percentile 100"]) expect(alt).toContain(text);
   });
 });
 
@@ -137,9 +172,15 @@ describe("Multi Cat card", () => {
     expect(text).not.toContain("no combined score");
     expect(document.querySelectorAll("p")).toHaveLength(1);
   });
-  it("states the 2x weight on Points-First", async () => {
-    const active = settings({ view: "points-first" }), { data } = buildCategoryBlueprint(trio(), active);
-    expect(await show(data!, active)).toContain("(2×PTS + SOG + HITS + BLK) / 5");
+  it("states the 2x weight and the floor on Points-First only", async () => {
+    const active = settings({ view: "points-first" }), { data } = buildCategoryBlueprint(trio(), active), text = await show(data!, active);
+    expect(text).toContain("(2×PTS + SOG + HITS + BLK) / 5");
+    expect(text).toContain("Points P85+ only.");
+    cleanup();
+    expect(await show(buildCategoryBlueprint(trio(), settings()).data!, settings())).not.toContain("P85");
+    cleanup();
+    const tied = settings({ view: "points-first" });
+    expect(await show(buildCategoryBlueprint(season([...games(1, 5), ...games(2, 5)]), tied).data!, tied)).toContain("points P85+");
   });
   it("colours each cell by its own percentile, with the colour on the element", async () => {
     const active = settings(), { data } = buildCategoryBlueprint(trio(), active);
