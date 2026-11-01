@@ -72,6 +72,14 @@ describe("PostStudio", () => {
     } finally { Object.assign(entry, { fields, panel: undefined }); }
   });
 
+  it("prints a source's failure and its reason beside the preview, and nothing extra for a healthy source", async () => {
+    const base = edition();
+    serve(edition({ evidence: { ...base.evidence, sources: [...base.evidence.sources, { name: "Natural Stat Trick", tables: ["nst"], state: "missing", asOf: null, updatedAt: null, reasons: ["NST read failed."] }] } }));
+    render(<PostStudio />);
+    const issues = await screen.findAllByTestId("post-source-issue");
+    expect(issues.map(issue => issue.textContent)).toEqual(["Natural Stat Trick missing: NST read failed."]);
+  });
+
   it("waits out a font that is not declared yet, and offers a retry if it never loads", async () => {
     serve(edition());
     const load = vi.fn(async () => [] as unknown[]);

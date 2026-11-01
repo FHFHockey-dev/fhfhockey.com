@@ -30,6 +30,7 @@ export function PostEvidence({ entry, snapshot, settings }: { entry: AnyShareMod
   const { evidence } = snapshot, coverage = evidence.coverage;
   return <div className={postStyles.evidence} data-testid="post-evidence">
     <span><b>Source</b> {evidence.sources.length ? evidence.sources.map(source => `${source.name}${source.asOf ? ` through ${source.asOf}` : ""}${source.updatedAt ? ` (updated ${timeLabel(source.updatedAt)})` : ""}`).join(" · ") : "Not available"}</span>
+    {evidence.sources.filter(source => source.state !== "ready" || source.reasons?.length).map(source => <span key={source.name} data-testid="post-source-issue"><b>{source.name}</b> {source.state}{source.reasons?.length ? `: ${source.reasons.join(" ")}` : ""}</span>)}
     <span><b>Sample</b> {evidence.sample} · <b>Strength</b> {evidence.strength} · <b>Cohort</b> {evidence.cohort}</span>
     {coverage && <span><b>Coverage</b> {coverage.observed}{coverage.expected === null ? "" : ` of ${coverage.expected}`} {coverage.unit}{coverage.missing ? ` · ${coverage.missing} missing` : ""}</span>}
     {entry.fields.length > 0 && <span><b>Settings</b> {shareSettingLines(entry.fields, settings).map(line => `${line.label}: ${line.value}`).join(" · ")}</span>}
