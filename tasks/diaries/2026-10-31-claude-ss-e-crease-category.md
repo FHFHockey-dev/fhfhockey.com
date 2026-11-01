@@ -39,3 +39,7 @@ Removed the TGV league section and added the Avg ADP line. Gotcha: `yahoo_player
 ## Period headline, custom range, season (TJ, 2026-11-01)
 
 ADP ticket committed as 529e8abdb. Added headline, custom range and season by the month rules. Gotcha: `npx tsc --noEmit` runs out of memory at the default heap, and piping it through a filter hides that; use NODE_OPTIONS=--max-old-space-size=12288. Next: lead's render.
+
+## GSAx period control (TJ, 2026-11-01)
+
+Added Preset window, Matchup week and Custom. Spec run command: PLAYWRIGHT_PORT=3147 PLAYWRIGHT_ISOLATED_NEXT=1 with NEXT_PUBLIC_SUPABASE_URL=http://supabase.e2e.invalid and fictional keys. Gotcha: a field's accessible name includes its "Default:" note, so exact label locators find nothing.

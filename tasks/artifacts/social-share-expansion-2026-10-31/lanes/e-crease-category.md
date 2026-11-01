@@ -355,6 +355,27 @@ Project `fyhftlxokyjtpndbkfse`, Supabase MCP `execute_sql`, single `SELECT` stat
 
 **Partial risk:** a season view is partial, and cannot export, if any game all season lacks one labeled starter or a result. That rule is unchanged, but a long window is more likely to hit it.
 
+## Follow-up from TJ: the period control on GSAx
+
+Past-only, with the shared control. `period` defaults to a new `window` option, "Preset window", which keeps the `window` field, so every old URL such as `?window=5` behaves as before. The field shows only under that option. Added "Matchup week" and "Custom range". A refused choice returns `missing` with its reason, before the NST read.
+
+**Rule for chosen dates:**
+- Appearances and NST coverage count only games in the chosen dates through NST's newest date.
+- The thresholds don't change, so a short range ranks on a small sample: at the default minimum of 1, one game qualifies a goalie. The evidence cohort says so.
+- Season coverage can't rescue a range: a goalie with 1 of 2 games covered in the dates is 50% and unranked at 90%.
+
+**NST lag:** the card's lead now prints the lag in every view, for example "through 2026-10-21, 2 days behind NHL.com". This is the one change to the approved card for preset windows.
+
+**Past NST's newest date:** a range is partial, with a reason naming the date and the appearances not counted, when an appearance or scheduled game falls in the range after that date.
+- I did not make it partial on the dates alone. A chosen week still under way, or a last day with no games, has nothing missing, and would otherwise be blocked from export.
+- A preset week still falls back to the last week NST covers. A chosen matchup does not, because the editor named it.
+
+**Schedule proof:** chosen dates prove only their own games, up to the cutoff.
+
+**Reads:** the same bounded season reads, now with the shared matchup read first. No new real reads were made.
+
+**Fit:** rendered at 860px in Chromium with 10 rows a side in a chosen matchup: no overflow, and a band under 40px.
+
 ## Blockers
 
 None for building. Open: TJ's first real-output review (9.7) and the browser run of the spec.

@@ -24,6 +24,7 @@ const appearances = scheduled.flatMap((game, index) => [
   stat(3, "NYR", game.id, game.date, { losses: 1, saves: 20, shotsAgainst: 24, goalsAgainst: 4 }),
 ]);
 const week = { week: 4, start: "2026-10-19", end: "2026-10-25" };
+const gsaxSettings = { period: "window", week: null, start: null, end: null, window: "week", strength: "all", board: "both", minAppearances: 1, minCoverage: 90 };
 const adp = { goalies: [{ player_key: "465.p.1", player_id: "1", average_pick: "84.3" }, { player_key: "465.p.2", player_id: "2", average_pick: "-" }], map: [{ yahoo_player_id: "465.p.1", nhl_player_id: "1" }, { yahoo_player_id: "465.p.2", nhl_player_id: "2" }], averagePicks: ["192.0", "84.3"] };
 const periodSettings = { period: "week", week: 4, month: "", start: null, end: null, minStartsWeek: 2, minStartsMonth: 5, minStartsRange: 2, minStartsSeason: 1, board: "both", categories: "wins,saves,svPct,gaa,shutouts" };
 const tgv = { goalies: [{ goalie_id: 1, week: 4, weekly_gs: 2, weekly_toi_seconds: 7200, weekly_wins: 2, weekly_saves: 68, weekly_sv_pct: 0.97 }], league: [{ week: 4, avg_league_weekly_wins: 1, avg_league_weekly_saves: 40, avg_league_weekly_sv_pct: 0.9 }], weeks: [week] } as never;
@@ -266,7 +267,7 @@ test("GSAx: ten rows a side fill the body", async ({ page }) => {
   const stats = rows.map((game, index) => stat(index % 24 + 1, game.team, game.gameId, game.date, { name: "Ukko-Pekka Luukkonen" }));
   const nstGames = stats.map((row, index) => ({ goalieId: row.goalieId, date: row.date, toiSeconds: 3600, xgAgainst: 1 + index % 7, goalsAgainst: 3, shotsAgainst: 30 })).filter((row, index, all) => all.findIndex(other => other.goalieId === row.goalieId && other.date === row.date) === index);
   const result = buildGoalieGsax({ appearances: stats, nstGames, strength: "all", window: "week", weeks: [week], board: "both", minAppearances: 1, minCoverage: 50, reported: rows, scheduled: games, fhfhRows: 0 });
-  const settings = { window: "week", strength: "all", board: "both", minAppearances: 1, minCoverage: 50 };
+  const settings = { ...gsaxSettings, minCoverage: 50 };
   await page.route("**/api/v1/social-share/posts/**", route => route.fulfill({ json: edition("goalie-gsax", settings, result) }));
   await page.goto("/social-share/posts?post=goalie-gsax&minCoverage=50");
   await expect(page.getByTestId("board-best").getByTestId("goalie-gsax-row")).toHaveCount(10);
@@ -313,11 +314,57 @@ test("goalie of the period: a game without one labeled starter cannot export", a
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
 });
 
+test("GSAx: a chosen matchup prints its dates and fills the body, and its pager follows the week", async ({ page }) => {
+  await install(page);
+  const calendar = [{ week: 3, start_date: "2026-10-12", end_date: "2026-10-18" }, { week: 4, start_date: week.start, end_date: week.end }];
+  await page.route("**/api/v1/social-share/matchup-weeks", route => route.fulfill({ json: { rows: calendar, cutoff: "2026-10-28" } }));
+  const goalies = Array.from({ length: 24 }, (_, index) => index + 1);
+  const games = goalies.map((_, index) => ({ id: index + 1, date: `2026-10-${19 + index % 7}`, homeTeamId: teamsInfo.NJD.id, awayTeamId: teamsInfo.NYR.id }));
+  const rows = games.flatMap(game => [{ gameId: game.id, date: game.date, team: "NJD" }, { gameId: game.id, date: game.date, team: "NYR" }]);
+  const stats = rows.map((game, index) => stat(index % 24 + 1, game.team, game.gameId, game.date, { name: "Ukko-Pekka Luukkonen" }));
+  const nstGames = stats.map((row, index) => ({ goalieId: row.goalieId, date: row.date, toiSeconds: 3600, xgAgainst: 1 + index % 7, goalsAgainst: 3, shotsAgainst: 30 })).filter((row, index, all) => all.findIndex(other => other.goalieId === row.goalieId && other.date === row.date) === index);
+  const settings = { ...gsaxSettings, period: "matchup", week: 4, minCoverage: 50 };
+  const result = buildGoalieGsax({ appearances: stats, nstGames, strength: "all", window: { from: week.start, through: week.end, label: "Week 4 · Oct 19 to Oct 25", week: 4 }, weeks: [week], board: "both", minAppearances: 1, minCoverage: 50, reported: rows, scheduled: games, fhfhRows: 0 });
+  await page.route("**/api/v1/social-share/posts/**", route => route.fulfill({ json: edition("goalie-gsax", settings, result) }));
+  await page.goto("/social-share/posts?post=goalie-gsax&period=matchup&week=4&minCoverage=50");
+  await expect(page.getByTestId("period-pager-label")).toHaveText("Week 4 · Oct 19 to Oct 25");
+  await expect(page.getByTestId("goalie-gsax-card")).toContainText("Week 4 · Oct 19 to Oct 25.");
+  await expect(page.getByRole("combobox", { name: /^Window/ })).toHaveCount(0);
+  await expect(page.getByTestId("board-best").getByTestId("goalie-gsax-row")).toHaveCount(10);
+  await expectBodyFilled(page, "goalie-gsax-card");
+  await download(page);
+});
+
+test("GSAx: a custom range past NST's newest date shows the lag and cannot export", async ({ page }) => {
+  await install(page);
+  const nstGames = appearances.filter(row => row.date <= days[1]).map(row => ({ goalieId: row.goalieId, date: row.date, toiSeconds: 3600, xgAgainst: 3, goalsAgainst: row.goalsAgainst, shotsAgainst: row.shotsAgainst }));
+  const settings = { ...gsaxSettings, period: "custom", start: days[0], end: days[3] };
+  const result = buildGoalieGsax({ appearances, nstGames, strength: "all", window: { from: days[0], through: days[3], label: "Oct 19 to Oct 22", week: null }, weeks: [week], board: "both", minAppearances: 1, minCoverage: 90, reported, scheduled, fhfhRows: 0 });
+  await page.route("**/api/v1/social-share/posts/**", route => route.fulfill({ json: edition("goalie-gsax", settings, result) }));
+  await page.goto(`/social-share/posts?post=goalie-gsax&period=custom&start=${days[0]}&end=${days[3]}`);
+  await expect(page.getByTestId("goalie-gsax-card")).toContainText("Oct 19 to Oct 22.");
+  await expect(page.getByTestId("goalie-gsax-card")).toContainText(`through ${days[1]}, 2 days behind NHL.com`);
+  await expect(page.getByTestId("post-evidence-line")).toContainText("runs past NST's newest date");
+  await expect(page.getByTestId("post-watermark")).toHaveText("PARTIAL · NOT FOR EXPORT");
+  await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
+});
+
+test("GSAx: an old window URL keeps its window and shows the field", async ({ page }) => {
+  await install(page);
+  const nstGames = appearances.map(row => ({ goalieId: row.goalieId, date: row.date, toiSeconds: 3600, xgAgainst: 3, goalsAgainst: row.goalsAgainst, shotsAgainst: row.shotsAgainst }));
+  const settings = { ...gsaxSettings, window: "5" };
+  const result = buildGoalieGsax({ appearances, nstGames, strength: "all", window: 5, weeks: [week], board: "both", minAppearances: 1, minCoverage: 90, reported, scheduled, fhfhRows: 0 });
+  await page.route("**/api/v1/social-share/posts/**", route => route.fulfill({ json: edition("goalie-gsax", settings, result) }));
+  await page.goto("/social-share/posts?post=goalie-gsax&window=5");
+  await expect(page.getByTestId("goalie-gsax-card")).toContainText("Last 5 appearances per goalie.");
+  await expect(page.getByRole("combobox", { name: /^Window/ })).toHaveValue("5");
+});
+
 test("GSAx: Best and Worst, NST model and through-date", async ({ page }) => {
   await install(page);
   const nstGames = appearances.filter(row => row.date <= days[2]).map(row => ({ goalieId: row.goalieId, date: row.date, toiSeconds: 3600, xgAgainst: 3, goalsAgainst: row.goalsAgainst, shotsAgainst: row.shotsAgainst }));
   const result = buildGoalieGsax({ appearances, nstGames, strength: "all", window: "week", weeks: [week], board: "both", minAppearances: 1, minCoverage: 90, reported: reported.filter(game => game.date <= days[2]), scheduled: scheduled.filter(game => game.date <= days[2]), fhfhRows: 0 });
-  const settings = { window: "week", strength: "all", board: "both", minAppearances: 1, minCoverage: 90 };
+  const settings = gsaxSettings;
   await page.route("**/api/v1/social-share/posts/**", route => route.fulfill({ json: edition("goalie-gsax", settings, result) }));
   await page.goto("/social-share/posts?post=goalie-gsax");
   const square = page.getByTestId("share-square");

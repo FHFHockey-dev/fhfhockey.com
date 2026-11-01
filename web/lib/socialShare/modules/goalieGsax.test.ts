@@ -3,6 +3,8 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { parseShareSettings } from "./contract";
+import { SEASON_GOALIE_LIMIT } from "./creaseShift.sources";
+import { loadGoalieGsax } from "./goalieGsax.sources";
 import { buildGoalieGsax, fhfhModelStatus, goalieGsaxModule, NST_GSAX_COLUMNS, NST_GSAX_TABLES, toNstGoalieGames, type GoalieGsaxData, type GoalieGsaxInput, type NstGoalieGame, type NstGsaxRow } from "./goalieGsax";
 import type { GoalieAppearance } from "./shared/goalieLedger";
 
@@ -93,7 +95,7 @@ describe("NST-model GSAx", () => {
     expect(evidence.sources.find(source => source.name === "FHFH xG model")).toMatchObject({ state: "missing", reasons: [data!.fhfhModel.reason] });
   });
   it("has visible defaults", () => {
-    expect(parseShareSettings(goalieGsaxModule, {})).toEqual({ window: "week", strength: "all", board: "both", minAppearances: 1, minCoverage: 90 });
+    expect(parseShareSettings(goalieGsaxModule, {})).toEqual({ period: "window", week: null, start: null, end: null, window: "week", strength: "all", board: "both", minAppearances: 1, minCoverage: 90 });
     for (const window of ["5", "10", "std"]) expect(parseShareSettings(goalieGsaxModule, { window }).window).toBe(window);
   });
 });
@@ -125,6 +127,96 @@ describe("the last completed matchup week", () => {
     const appearances = Array.from({ length: 6 }, (_, index) => appearance(1, index)), nstGames = appearances.map((_, index) => nst(1, index));
     expect(buildGoalieGsax({ ...base, appearances, nstGames, window: 5 }).data!.rows[0]).toMatchObject({ appearances: 5 });
     expect(buildGoalieGsax({ ...base, appearances, nstGames, window: null }).data!).toMatchObject({ windowLabel: "Season to date", rows: [{ appearances: 6 }] });
+  });
+});
+
+describe("the period control", () => {
+  const weeks = [{ week: 1, start: "2026-10-01", end: "2026-10-07" }, { week: 2, start: "2026-10-08", end: "2026-10-14" }];
+  const dates = (from: string, through: string, label = `${from} to ${through}`, week: number | null = null) => ({ from, through, label, week });
+  const input = { ...base, weeks, minAppearances: 1 };
+  /** Goalie 1 plays Oct 1 to 3, goalie 2 on Oct 9. NST has them all. */
+  const played = { appearances: [...three(1), appearance(2, 8)], nstGames: [...[0, 1, 2].map(index => nst(1, index)), nst(2, 8)] };
+  it("keeps old URLs on their own windows", () => {
+    const parsed = parseShareSettings(goalieGsaxModule, { window: "5" });
+    expect(parsed).toMatchObject({ period: "window", window: "5", week: null });
+    expect(goalieGsaxModule.fields.find(field => field.id === "window")!.onlyForPeriod).toBe("window");
+    expect(goalieGsaxModule.periodControl).toEqual({ mode: "past-only" });
+  });
+  it("refuses a bad custom range before reading", () => {
+    expect(() => parseShareSettings(goalieGsaxModule, { period: "custom" })).toThrow(/needs a start date/);
+    expect(() => parseShareSettings(goalieGsaxModule, { period: "custom", start: "2026-10-09", end: "2026-10-02" })).toThrow(/before the end date/);
+    expect(parseShareSettings(goalieGsaxModule, { period: "custom", start: "2026-10-02", end: "2026-10-09" })).toMatchObject({ start: "2026-10-02", end: "2026-10-09" });
+  });
+  it("covers a chosen matchup, an older one included, and prints its dates", async () => {
+    const { data, state } = buildGoalieGsax({ ...input, ...played, window: dates("2026-10-01", "2026-10-07", "Week 1 · Oct 1 to Oct 7", 1) });
+    expect(state).toBe("ready");
+    expect(data).toMatchObject({ week: weeks[0], windowLabel: "Week 1 · Oct 1 to Oct 7", nstThrough: "2026-10-09" });
+    expect(data!.rows.map(row => [row.goalieId, row.appearances])).toEqual([[1, 3]]);
+    const Card = await goalieGsaxModule.card();
+    expect(renderToStaticMarkup(createElement(Card, { data: data!, logos: {}, settings: {} as never, snapshot: {} as never }))).toContain("Week 1 · Oct 1 to Oct 7.");
+  });
+  it("applies min appearances and coverage to the dates of a short range, and says so", () => {
+    const range = dates("2026-10-02", "2026-10-03");
+    const short = buildGoalieGsax({ ...input, ...played, window: range });
+    expect(short.data!.rows[0]).toMatchObject({ goalieId: 1, appearances: 2, covered: 2, admitted: true, rank: 1 });
+    expect(short.evidence.cohort).toContain("so a short range ranks on a small sample");
+    expect(buildGoalieGsax({ ...input, ...played, window: range, minAppearances: 3 }).data!).toMatchObject({ ranked: 0, unadmitted: 1 });
+    // Season coverage does not rescue the dates: NST misses one of the two games in them.
+    const gap = buildGoalieGsax({ ...input, appearances: three(1), nstGames: [nst(1, 0), nst(1, 1)], window: range });
+    expect(gap.data!.rows[0]).toMatchObject({ appearances: 1, covered: 1 });
+    const hole = buildGoalieGsax({ ...input, appearances: three(1), nstGames: [nst(1, 0), nst(1, 2)], window: range });
+    expect(hole.data!.rows[0]).toMatchObject({ appearances: 2, covered: 1, coveragePct: 50, admitted: false, gsax: null });
+    expect(buildGoalieGsax({ ...base, appearances: three(1), nstGames: [0, 1, 2].map(index => nst(1, index)) }).evidence.cohort).not.toContain("short range");
+  });
+  it("reads as partial with a reason when the range runs past NST's newest date, and counts only what NST has", async () => {
+    const result = buildGoalieGsax({ ...input, appearances: [...three(1), appearance(1, 5), appearance(2, 5)], nstGames: [0, 1, 2].map(index => nst(1, index)), window: dates("2026-10-02", "2026-10-06", "Oct 2 to Oct 6") });
+    expect(result.state).toBe("partial");
+    expect(result.reasons).toContain("Oct 2 to Oct 6 runs past NST's newest date, 2026-10-03: 2 appearances after it are not counted.");
+    expect(result.data).toMatchObject({ nstThrough: "2026-10-03", lagDays: 3 });
+    expect(result.data!.rows.map(row => [row.goalieId, row.appearances])).toEqual([[1, 2]]);
+    const Card = await goalieGsaxModule.card();
+    expect(renderToStaticMarkup(createElement(Card, { data: result.data!, logos: {}, settings: {} as never, snapshot: {} as never }))).toContain("through 2026-10-03, 3 days behind NHL.com");
+  });
+  it("also reads as partial when a scheduled game past NST has no appearance yet", () => {
+    const result = buildGoalieGsax({ ...input, appearances: three(1), nstGames: [0, 1, 2].map(index => nst(1, index)), window: dates("2026-10-02", "2026-10-06"), scheduled: [{ id: 5, date: "2026-10-05", homeTeamId: 1, awayTeamId: 2 }] });
+    expect(result.state).toBe("partial");
+    expect(result.reasons!.join(" ")).toContain("0 appearances after it are not counted");
+  });
+  it("stays ready when the dates outrun NST but no game was played after it", () => {
+    const result = buildGoalieGsax({ ...input, appearances: three(1), nstGames: [0, 1, 2].map(index => nst(1, index)), window: dates("2026-10-01", "2026-10-07", "Week 1 · Oct 1 to Oct 7", 1) });
+    expect(result.state).toBe("ready");
+  });
+  it("proves only the chosen dates' games", () => {
+    const window = dates("2026-10-02", "2026-10-03"), played2 = { appearances: three(1), nstGames: [0, 1, 2].map(index => nst(1, index)) };
+    expect(buildGoalieGsax({ ...input, ...played2, window, scheduled: [{ id: 5, date: "2026-10-01", homeTeamId: 1, awayTeamId: 2 }] }).state).toBe("ready");
+    const gap = buildGoalieGsax({ ...input, ...played2, window, scheduled: [{ id: 5, date: "2026-10-02", homeTeamId: 1, awayTeamId: 2 }] });
+    expect(gap.state).toBe("partial");
+    expect(gap.reasons![0]).toContain("in these dates");
+  });
+  /** Serves each table's rows through `range`, with the exact count `bounded` needs, and records what was read. */
+  const client = (rows: Record<string, unknown[]>) => {
+    const reads: string[] = [];
+    return { reads, client: { from: (table: string) => {
+      reads.push(table);
+      const chain: Record<string, unknown> = {};
+      for (const method of ["select", "eq", "gte", "lte", "in", "order"]) chain[method] = () => chain;
+      chain.range = async (start: number, end: number) => ({ data: (rows[table] ?? []).slice(start, end + 1), error: null, count: (rows[table] ?? []).length });
+      chain.then = (resolve: (value: unknown) => void) => resolve({ count: 0, error: null });
+      return chain;
+    } } };
+  };
+  const matchups = [{ week: 1, start_date: "2026-10-01", end_date: "2026-10-07" }, { week: 2, start_date: "2026-10-08", end_date: "2026-10-14" }];
+  const settings = { period: "matchup", week: 2, start: null, end: null, window: "week", strength: "all", board: "both", minAppearances: 1, minCoverage: 90 };
+  const load = (source: ReturnType<typeof client>, values: Partial<typeof settings> | Record<string, unknown>) => loadGoalieGsax({ client: source.client, generatedAt: "2026-10-12T16:00:00Z" }, { ...settings, ...values } as never);
+  it("returns missing with the reason for a week not started or dates past the cutoff, before reading the logs", async () => {
+    const source = client({ yahoo_matchup_weeks: [...matchups, { week: 3, start_date: "2026-10-15", end_date: "2026-10-21" }] });
+    expect(await load(source, { week: 3 })).toMatchObject({ state: "missing", data: null, reasons: ["Week 3 has not started; data runs through 2026-10-11."] });
+    expect(await load(source, { period: "custom", start: "2026-10-02", end: "2026-10-13" })).toMatchObject({ state: "missing", reasons: ["The end date 2026-10-13 is past the last completed games, 2026-10-11."] });
+    expect(source.reads).not.toContain("nst_gamelog_goalie_all_counts");
+  });
+  it("fails closed when a read is over its ceiling", async () => {
+    const over = Array.from({ length: SEASON_GOALIE_LIMIT + 1 }, () => ({}));
+    await expect(load(client({ yahoo_matchup_weeks: matchups, nst_gamelog_goalie_all_counts: over }), {})).rejects.toThrow(/over its \d+-row limit/);
   });
 });
 
