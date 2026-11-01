@@ -49,3 +49,8 @@
 
 ## Audit never ran (2026-11-01)
 Codex job task-mvxxzsdc-nhy96e stopped after 1m 26s: its sandbox couldn't write AUDIT-REPORT.md from the worktree. I reported it as running for hours without checking. Rerun from the main checkout, re-pinned to include Standouts and the PP writer, after lane B's last ticket. Audit worktree stays locked by the harness; it holds no changes. Check job status directly next time, not only the report file.
+
+## Production and release state (2026-11-01)
+- TJ approved and I applied `social_share_x_posts` via MCP, version 20261101171113, single statement set only. Readback: 10 columns, RLS on, 0 policies, service_role only, 0 rows. The other pending migration, 20261101161622_nst_goalie_catchup_v1, is Codex's and was NOT applied; never run `db push`.
+- TJ said "Release the code". Before pushing: gate and audit recheck, inventory the 4 Vercel projects and their preview settings, confirm exact SHA and expected builds with TJ.
+- Health lane adding shared-secret fallback X_FHFH_IFTTT_SECRET and downstream filters.
