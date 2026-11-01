@@ -23,3 +23,7 @@
 ## Blocks and rolling line (TJ's second Crease Shift review)
 
 Replaced the running share with per-game starter blocks and a rolling share line (5 games, 3 for L5). Removed RELIEF and GS / GP. Vitest, eslint, tsc on Crease files and the CSS pure check pass; spec lists 10, no browser run. Next: lead's render checks fit and PNG.
+
+## Span 1, full width, PREV N GP (TJ's third Crease Shift review)
+
+Line is now per game (`byGame`), blocks and line reach the chart's edges, legend is one line with the method in evidence, PREV prints its real GP in the header or per team. Next: lead's render checks fit and PNG.

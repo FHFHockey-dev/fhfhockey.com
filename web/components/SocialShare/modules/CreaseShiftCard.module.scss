@@ -12,7 +12,8 @@
 .team small { display: block; font-size: 13px; color: v.$text-secondary; }
 .lines { display: grid; gap: 1px; line-height: 1.15; }
 .chart { display: block; }
-.note { margin: 0; font-size: 14px; line-height: 1.2; color: v.$text-secondary; }
+.span { margin-right: 6px; font-size: 13px; color: v.$text-secondary; }
+.note { margin: 0; font-size: 14px; line-height: 1.2; white-space: nowrap; color: v.$text-secondary; }
 .card[data-size="large"] .cell { font-size: 22px; }
 .card[data-size="medium"] .cell { font-size: 19px; }
 .card[data-size="small"] .cell { font-size: 17px; }

@@ -63,7 +63,8 @@ test("crease shift: official share over team games, labeled comparison, and it e
   await page.route("**/api/v1/social-share/posts/**", route => { requests++; return route.fulfill({ json: edition("crease-shift", settings, result) }); });
   await page.goto("/social-share/posts?post=crease-shift&minComparisonGames=2");
   const square = page.getByTestId("share-square");
-  await expect(square).toContainText("Official starts ÷ completed team games");
+  await expect(page.getByTestId("post-evidence")).toContainText("Official starts ÷ completed team games");
+  await expect(square).toContainText("PREV 2 GP");
   await expect(square).toContainText("Fictional Goalie 2");
   await expect(square).not.toContainText(/probab|likely|odds/i);
   await expect(page.getByTestId("post-watermark")).toHaveText("OBSERVED RESULTS");
@@ -154,7 +155,7 @@ for (const teamCount of [6, 12]) test(`crease shift: ${teamCount} ranked teams f
   await page.route("**/api/v1/social-share/posts/**", route => route.fulfill({ json: edition("crease-shift", settings, result) }));
   await page.goto("/social-share/posts?post=crease-shift&minComparisonGames=2");
   await expect(page.getByTestId("crease-shift-rank")).toHaveCount(teamCount);
-  // Ten blocks and a rolling line per starter in each row, in the PNG's own attributes.
+  // Ten blocks and a line per starter in each row, in the PNG's own attributes.
   await expect(page.locator('[data-testid="crease-shift-card"] svg rect[data-block="started"]')).toHaveCount(teamCount * 10);
   await expect(page.locator('[data-testid="crease-shift-card"] svg rect[data-block="started"]').first()).toHaveAttribute("fill", /^#/);
   await expect(page.locator('[data-testid="crease-shift-card"] svg g[data-goalie]')).toHaveCount(teamCount * 2);

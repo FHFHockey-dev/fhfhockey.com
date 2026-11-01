@@ -269,6 +269,25 @@ This replaces the running-share line above; the colour rules above still apply.
 
 Names up to about 20 characters fit by estimate. Three goalie lines fit at 12 teams, but 4 or more on many rows would still clip, which is the case to measure. No new real reads were made.
 
+## Follow-up from TJ's third Crease Shift review: span 1, full width, one legend line, PREV N GP
+
+This replaces the 5-game rolling line above. TJ asked for span 1 knowing the line follows the blocks.
+
+- **Line:** `goalie.byGame` holds 1 if that goalie started the game, 0 if not, null if the game has no resolved starter. It starts at game 1, with a dot over each block. It breaks at a gap and picks up at the next game. Relief is 0. `rollingSpan` and `creaseRollingSpan` are gone.
+- **Full width:** the first and last blocks touch the chart's edges. Points stay at block centres, so the line runs flat from each edge to the first and last points.
+- **Legend:** one line of 143 characters, about 830px by estimate. The note is set not to wrap, so an overflow would show in the spec's width check. The full method moved to `evidence.sample`, including "Official starts ÷ completed team games", the empty block, guides, relief and PREV's span.
+- **PREV N GP:** N is `team.comparisonGames`. If all shown teams share N, the header reads "PREV 10 GP". If N varies, the header reads "PREV" and each team's cell prints "8 GP", with the chart 36px narrower to pay for it. STD follows the same rule, and its N includes the recent games.
+
+**Fit: calculated, not rendered.** The one-line note frees 17px, so 820 for rows. Chart height is `min(200, floor(820 / rows) - 8)`.
+
+| Teams | Chart (px) | Goalie name room (px) | Row after stretch (px) |
+| --- | --- | --- | --- |
+| Up to 6 | 410 wide, 128 high at 6 | about 200 | about 136 at 6 |
+| 7 to 9 | 450 wide, 83 high at 9 | about 185 | about 91 at 9 |
+| 10 to 12 | 480 wide, 60 high at 12 | about 175 | about 68 at 12 |
+
+Four or more listed goalies on many rows at 12 teams would still clip. No new real reads were made.
+
 ## Blockers
 
 None for building. Open: TJ's first real-output review (9.7) and the browser run of the spec.
