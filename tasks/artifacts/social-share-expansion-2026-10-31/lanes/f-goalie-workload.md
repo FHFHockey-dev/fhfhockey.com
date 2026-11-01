@@ -164,3 +164,14 @@ None. No frozen file needs a change.
 - **Failed schedule read:** every count prints a dash and the edition is partial; the rest of the card stands.
 - **Not verified:** the loader was not run, so no real NHL feed read happened here. The lead's render should cover it, and Goalie Rescue now makes one NHL API call per generation. No browser run; spec `--list` only.
 - **Correction to the F6 and F7 check:** `657b6e699` did not type-check. Its `tsc` run was piped through a filter with no exit status read, so that pass was not evidence. Fixed next commit: a game with no date is unknown unless its state is live, final, postponed or cancelled, and is never guessed into the week. Use whole-project `tsc` and read the exit code.
+
+## Period control on Busy and Quiet and Goalie Rescue
+
+- **Period:** Recent appearances stays the default and is each goalie's own L5, L10 or STD, so it reads no calendar. Matchup week and Custom range are new, mode past-only. `window` stays its own field, so an old `window=std` link means what it did.
+- **Dates:** each card prints them. A rolling window names its oldest and newest game. A week under way reads "Week 2 · Oct 26 to Nov 1, games through Oct 31".
+- **Min starts:** counts official starts in the chosen dates only and is never lowered for a short range. An empty short range says so and can't export.
+- **Coverage:** chosen dates check every scheduled game inside them and none outside. NST HD/GS coverage stays per goalie over the chosen games, and "—" still prints.
+- **GMS LEFT (decision):** hidden when the dates ended before the last completed games, because beside them it reads as games left in them. Its track goes too, and the feed isn't read. Shown when the dates reach the last completed games, labelled "GMS LEFT count the current week, through ...".
+- **Ownership:** a past period prints "Rostered % and status are current and Yahoo-wide, not as of these dates." It is in the evidence and alt text too. The ceiling and status filter also use today's values.
+- **Fit:** the spec's fullest cards found a real clip: a current week's two-line legend pushed Rescue's 28th row past the card. That case now caps at 27, and the evidence names who is left out. Busy and Quiet's 12 rows fit.
+- **Reads:** one bounded `yahoo_matchup_weeks` read; a failure or a refused week gives a visible missing edition, before the ledger is read. No real rows read by this lane for this ticket; the loaders ran on fake clients only.

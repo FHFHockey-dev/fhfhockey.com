@@ -4,8 +4,8 @@ import { calendarWeekStart } from "lib/socialShare/schedule";
 import { bounded } from "lib/socialShare/trendSources";
 import type { SocialScheduleData, SocialScheduleGame } from "lib/socialShare/types";
 import { teamsInfo } from "lib/teamsInfo";
-import { goalieLedgerScope } from "./busyQuiet";
-import { readGoalieLedger } from "./busyQuiet.sources";
+import { goalieLedgerScope, goalieRangeMissing } from "./busyQuiet";
+import { readGoalieLedger, readGoalieRange } from "./busyQuiet.sources";
 import type { SharePostContext, SharePostLoadResult } from "./contract";
 import { buildGoalieRescue, goalieAvailability, YAHOO_GOALIE_COLUMNS, type GoalieRescueSettings, type RescueData, type ScheduledGame, type YahooGoalieRow, type YahooMapRow } from "./goalieRescue";
 
@@ -53,11 +53,13 @@ export function teamGamesLeft(games: readonly ScheduledGame[], today: string, ge
 
 export async function loadGoalieRescue({ client, generatedAt }: SharePostContext, settings: GoalieRescueSettings): Promise<SharePostLoadResult<RescueData>> {
   const scope = goalieLedgerScope(generatedAt), weekEnd = addDays(calendarWeekStart(generatedAt), 6), yahooSeason = Math.floor(scope.season / 10000);
-  // GMS LEFT is context: a failed schedule read leaves the rest of the card standing and says so.
+  const { range, reason } = await readGoalieRange(client, settings, scope);
+  if (reason !== undefined) return goalieRangeMissing(reason);
+  // GMS LEFT is context: a failed schedule read leaves the rest of the card standing and says so. Dates that have ended hide it, so they don't read the feed.
   const [ledger, yahoo, week] = await Promise.all([
     readGoalieLedger(client, scope),
     bounded<YahooGoalieRow>("Yahoo goalies", YAHOO_GOALIE_LIMIT, (start, end) => client.from("yahoo_players").select(YAHOO_GOALIE_COLUMNS, { count: "exact" }).eq("season", yahooSeason).eq("display_position", "G").order("player_key").range(start, end)),
-    getSchedule(calendarWeekStart(generatedAt), { includeOdds: false }).then(scheduledGames).catch(() => null),
+    range?.past ? null : getSchedule(calendarWeekStart(generatedAt), { includeOdds: false }).then(scheduledGames).catch(() => null),
   ]);
   const keys = [...new Set(yahoo.flatMap(row => row.player_id ? [row.player_key, row.player_id] : [row.player_key]))], map: YahooMapRow[] = [];
   for (let index = 0; index < keys.length; index += MAP_CHUNK) {
@@ -66,5 +68,5 @@ export async function loadGoalieRescue({ client, generatedAt }: SharePostContext
   }
   const games = teamGamesLeft(week ?? [], scope.today, generatedAt);
   const scheduleReasons = !week ? ["The NHL schedule could not be read, so GMS LEFT prints a dash."] : games.unresolved ? [`${games.unresolved === 1 ? "1 game has" : `${games.unresolved} games have`} no usable date, state or start time, so those teams' GMS LEFT print a dash.`] : [];
-  return buildGoalieRescue({ settings, ...ledger, availability: goalieAvailability(yahoo, map, scope.through), teamGamesLeft: week ? games.left : new Map(), scheduleReasons, through: scope.through, weekEnd });
+  return buildGoalieRescue({ settings, ...ledger, availability: goalieAvailability(yahoo, map, scope.through), teamGamesLeft: week ? games.left : new Map(), scheduleReasons, through: scope.through, weekEnd, range });
 }

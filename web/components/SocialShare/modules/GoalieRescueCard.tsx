@@ -1,7 +1,7 @@
 import { Fragment } from "react";
-import { windowLabel } from "lib/socialShare/modules/busyQuiet";
+import { MIN_STARTS_RANGE_RULE } from "lib/socialShare/modules/busyQuiet";
 import type { SharePostCardProps } from "lib/socialShare/modules/contract";
-import { cellShade, formatGaa, formatSavePct, RESCUE_GROUPS, RESCUE_NOTE, type GoalieRescueSettings, type RescueColumn, type RescueData, type RescueRow } from "lib/socialShare/modules/goalieRescue";
+import { cellShade, formatGaa, formatSavePct, RESCUE_GROUPS, rescueNote, type GoalieRescueSettings, type RescueColumn, type RescueData, type RescueRow } from "lib/socialShare/modules/goalieRescue";
 import { ownershipLabel } from "lib/socialShare/modules/shared/definitions";
 import { PostEmpty, PostTeamMark } from "./kit";
 import styles from "./GoalieRescueCard.module.scss";
@@ -18,16 +18,16 @@ function MetricCell({ row, rows, column, group, first, selected }: { row: Rescue
 }
 
 export default function GoalieRescueCard({ data, settings, logos }: SharePostCardProps<GoalieRescueSettings, RescueData>) {
-  if (!data.rows.length) return <PostEmpty>No goalie with {settings.minStarts} official starts is at or under {settings.ownershipCeiling}% rostered in this window</PostEmpty>;
+  if (!data.rows.length) return <PostEmpty>No goalie with {settings.minStarts} official starts is at or under {settings.ownershipCeiling}% rostered in {data.ranged ? <>{data.dates}. {MIN_STARTS_RANGE_RULE}</> : "this window"}</PostEmpty>;
   return <div className={styles.card} data-testid="goalie-rescue-card">
-    <p className={styles.note}>{RESCUE_NOTE} {windowLabel(data.window)} through {data.through}. Colour compares this list, by column.</p>
-    <div className={styles.fill}><div className={styles.table}>
+    <p className={styles.note}>{rescueNote(data)} Colour compares this list, by column.</p>
+    <div className={styles.fill}><div className={styles.table} data-past={data.past || undefined}>
       <span style={{ gridColumn: `span ${LEAD_COLUMNS}` }} />
       {RESCUE_GROUPS.map(group => <span key={group.id} className={styles.groupHead} data-group-head="" style={{ gridColumn: `span ${group.columns.length}` }}>{group.label}</span>)}
-      <span />
+      {data.past ? null : <span />}
       {LEAD_HEADS.map(label => <span key={label} className={styles.head} data-numeric={label === "GOALIE" ? undefined : ""}>{label}</span>)}
       {RESCUE_GROUPS.flatMap(group => group.columns.map((column, index) => <span key={column.id} className={styles.head} data-head="" data-numeric="" data-column={column.id} data-group={group.id} data-first={index === 0 || undefined} data-selected={column.id === data.category || undefined}>{column.label}</span>))}
-      <span className={styles.head} data-numeric="" data-first="">GMS LEFT</span>
+      {data.past ? null : <span className={styles.head} data-numeric="" data-first="" data-left-head="">GMS LEFT</span>}
       {data.rows.map(row => <Fragment key={row.goalieId}>
         <span className={styles.cell} data-numeric="">{row.rank}</span>
         <span className={styles.cell}><span className={styles.goalie}><PostTeamMark team={row.team} logo={logos[row.team]} size={26} /><span className={styles.name} data-goalie-name="">{row.name ?? `Goalie ${row.goalieId}`}</span>{row.status ? <small>{row.status}</small> : null}</span></span>
@@ -35,10 +35,10 @@ export default function GoalieRescueCard({ data, settings, logos }: SharePostCar
         <span className={styles.cell} data-numeric="">{row.starts}</span>
         <span className={styles.cell} data-numeric="">{row.relief}</span>
         {RESCUE_GROUPS.flatMap(group => group.columns.map((column, index) => <MetricCell key={column.id} row={row} rows={data.rows} column={column} group={group.id} first={index === 0} selected={column.id === data.category} />))}
-        <span className={styles.cell} data-numeric="" data-column="left" data-first="">
+        {data.past ? null : <span className={styles.cell} data-numeric="" data-column="left" data-first="">
           {row.teamGamesLeft ? <span className={styles.dots} aria-hidden="true">{Array.from({ length: row.teamGamesLeft }, (_, index) => <i key={index} className={styles.dot} data-dot="" />)}</span> : null}
           {row.teamGamesLeft ?? "—"}
-        </span>
+        </span>}
       </Fragment>)}
     </div></div>
   </div>;

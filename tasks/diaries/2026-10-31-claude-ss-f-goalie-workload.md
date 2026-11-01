@@ -30,3 +30,7 @@ Ownership freshness is per goalie; stale reads as unknown. GMS LEFT comes from t
 ## 2026-11-01: tsc correction
 
 The lead found TS2322 on `date` in `657b6e699`. My `npx tsc --noEmit | grep` hid whatever happened and the exit status was never read. Gotcha: run `node --max-old-space-size=8192 node_modules/typescript/bin/tsc --noEmit --incremental false` and read the exit code. Added the no-date rule.
+
+## 2026-11-01: Period control
+
+Added Matchup week and Custom to Busy and Quiet and Rescue; rolling stays the default and `window` stays a field for old links. Past dates hide GMS LEFT. Spec run: PLAYWRIGHT_PORT=3147 PLAYWRIGHT_ISOLATED_NEXT=1, invalid Supabase URL, fictional keys. Gotcha: a dense fixture found a clip the small fixture hid. Other lanes' uncommitted edits can add tsc noise, so re-run before reporting. Next: real-data render by the lead.
