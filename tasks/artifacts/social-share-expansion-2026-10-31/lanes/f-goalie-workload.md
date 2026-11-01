@@ -38,6 +38,9 @@ Project `fyhftlxokyjtpndbkfse`, Supabase MCP `execute_sql`, 2026-10-31. Every st
 | 7 | L10 workload sample, at least 3 starts, top 12 by SA per start | `wgo_goalie_stats`, `yahoo_players`, map | 12 | Passed |
 | 8 | Integrity aggregates and one goalie's base totals | `wgo_goalie_stats`, `yahoo_players`, map, `nst_team_gamelogs_as_counts`, `games` | 1 | Passed |
 | 9 | Yahoo status of goalies with at least 3 L10 starts | `wgo_goalie_stats`, `yahoo_players`, map | 6 | Passed |
+| 10 | Games on 10-31 and 11-01, for F7 | `games` | 15 | Passed. `startTime` is real; the table has no state column |
+| 11 | Same-day game state candidate, for F7 | `pp_timeframes` | 10 | Passed. Only 10-31 rows, written overnight, so it has no state for today's games |
+| 12 | Yahoo goalie rows by `last_updated` date, for F6 | `yahoo_players` | 1 | Passed. All 181 dated 11-01, so no real goalie is stale today |
 
 Findings:
 
@@ -152,3 +155,11 @@ None. No frozen file needs a change.
 - **No goalie:** the card asks for one and draws nothing, and `hasRows` is false, so there is no export. A goalie with no games says so. Entered manual base totals still work and read "this goalie".
 - **Labels:** the chart range fields now read "Chart: goals from" and "Chart: goals to". The setting ids are unchanged.
 - **Not verified:** no browser run. The spec checks the headline start, sentence, chart points and overflow (`--list` only).
+
+## Audit findings F6 and F7
+
+- **F6, ownership freshness:** each goalie's own `last_updated` now decides. A percentage last observed before yesterday, or undated, becomes unknown: excluded unless "Include unknown ownership" is on, then printed as a dash, never the old value. The reason counts them and names the oldest date, and the edition is partial. The Yahoo source's `asOf` is now the oldest date among listed goalies, and its reasons give the oldest and newest. A stale row's Yahoo status is still applied; the finding covers ownership only.
+- **F7, GMS LEFT:** `games` has a start time but no state, and `pp_timeframes` has no same-day rows, so the week's games now come from the NHL schedule feed (`getSchedule`, as Off-Night Edge does).
+- **F7 rule:** NHL state decides. Live counts, including a game past midnight on yesterday's date. Scheduled counts. Final, postponed and cancelled don't. With no usable state, a future start counts. Anything else, including a null start time with no state, is unknown: that team's count prints a dash and the edition is partial. A null start time with a usable state follows the state.
+- **Failed schedule read:** every count prints a dash and the edition is partial; the rest of the card stands.
+- **Not verified:** the loader was not run, so no real NHL feed read happened here. The lead's render should cover it, and Goalie Rescue now makes one NHL API call per generation. No browser run; spec `--list` only.

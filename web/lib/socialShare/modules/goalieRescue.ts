@@ -22,11 +22,14 @@ export const RESCUE_NOTE = "Rostered % is Yahoo-wide. GMS LEFT are team games, n
 export type YahooGoalieRow = { player_key: string; player_id: string | null; percent_ownership: number | null; status: string | null; last_updated: string | null };
 export type YahooMapRow = { yahoo_player_id: string | null; nhl_player_id: string | null };
 export const YAHOO_GOALIE_COLUMNS = "player_key,player_id,percent_ownership,status,last_updated";
-export type ScheduledGame = { date: string; homeTeamId: number; awayTeamId: number };
+export type ScheduledGame = { id: number; date: string; gameType: number | null; startTimeUtc: string | null; state: string | null; scheduleState: string | null; homeTeamId: number; awayTeamId: number };
 
-export type GoalieAvailability = { ownership: OwnershipState; status: string };
-/** Yahoo joins only through the map. A Yahoo id with two NHL ids, or an NHL id claimed twice, is dropped to unknown. */
-export function goalieAvailability(yahoo: readonly YahooGoalieRow[], map: readonly YahooMapRow[]): Map<number, GoalieAvailability> {
+export type GoalieAvailability = { ownership: OwnershipState; status: string; stale?: { lastObserved: string | null } };
+/**
+ * Yahoo joins only through the map. A Yahoo id with two NHL ids, or an NHL id claimed twice, is dropped to unknown.
+ * Freshness is each goalie's own: a percentage last observed before `freshSince`, or undated, is unknown, so it can't qualify anyone under the ceiling.
+ */
+export function goalieAvailability(yahoo: readonly YahooGoalieRow[], map: readonly YahooMapRow[], freshSince: string): Map<number, GoalieAvailability> {
   const nhlIds = new Map<string, Set<number>>();
   for (const row of map) {
     const id = Number(row.nhl_player_id);
@@ -37,7 +40,8 @@ export function goalieAvailability(yahoo: readonly YahooGoalieRow[], map: readon
     const ids = new Set([...(nhlIds.get(row.player_key) ?? []), ...(row.player_id ? nhlIds.get(row.player_id) ?? [] : [])]);
     if (ids.size !== 1) continue;
     const [id] = ids;
-    byGoalie.set(id, byGoalie.has(id) ? null : { ownership: ownershipOf(row.percent_ownership, row.last_updated?.slice(0, 10) ?? null), status: row.status ?? "" });
+    const lastObserved = row.last_updated?.slice(0, 10) ?? null, ownership = ownershipOf(row.percent_ownership, lastObserved), stale = ownership.state === "known" && (!lastObserved || lastObserved < freshSince);
+    byGoalie.set(id, byGoalie.has(id) ? null : stale ? { ownership: ownershipOf(null), status: row.status ?? "", stale: { lastObserved } } : { ownership, status: row.status ?? "" });
   }
   return new Map([...byGoalie].flatMap(([id, entry]) => entry ? [[id, entry] as const] : []));
 }
@@ -58,16 +62,17 @@ const categoryValue = (row: Omit<RescueRow, "rank">, category: RescueCategory) =
 
 export function buildGoalieRescue(input: {
   settings: GoalieRescueSettings; appearances: readonly GoalieAppearance[]; teamGames: readonly CompletedTeamGame[]; scheduledDates: readonly string[];
-  availability: ReadonlyMap<number, GoalieAvailability>; ownershipAsOf: string | null; ownershipFresh: boolean; teamGamesLeft: ReadonlyMap<string, number>; through: string; weekEnd: string;
+  availability: ReadonlyMap<number, GoalieAvailability>; teamGamesLeft: ReadonlyMap<string, number | null>; scheduleReasons: readonly string[]; through: string; weekEnd: string;
 }): SharePostLoadResult<RescueData> {
   const { settings } = input;
   const windows = goalieWindows(input.appearances, settings.window), qualified = windows.filter(window => window.starts >= settings.minStarts);
   const since = qualified.reduce<string | null>((oldest, window) => !oldest || window.firstDate < oldest ? window.firstDate : oldest, null);
   const ledger = ledgerCoverage({ scheduledDates: input.scheduledDates, teamGames: input.teamGames, appearances: input.appearances, since });
-  let aboveCeiling = 0, unknownExcluded = 0, unavailableStatus = 0;
+  let aboveCeiling = 0, unknownExcluded = 0, unavailableStatus = 0, staleOwnership = 0, oldestStale: string | null = null;
   const candidates = qualified.flatMap(window => {
-    const { ownership, status } = input.availability.get(window.goalieId) ?? UNKNOWN_AVAILABILITY;
+    const { ownership, status, stale } = input.availability.get(window.goalieId) ?? UNKNOWN_AVAILABILITY;
     if (!AVAILABLE_STATUSES.has(status)) { unavailableStatus++; return []; }
+    if (stale) { staleOwnership++; if (stale.lastObserved && (!oldestStale || stale.lastObserved < oldestStale)) oldestStale = stale.lastObserved; }
     if (!ownershipInRange(ownership, 0, settings.ownershipCeiling, settings.includeUnknown === "on")) { if (ownership.state === "known") aboveCeiling++; else unknownExcluded++; return []; }
     const saves = sumOrNull(window.rows.map(row => row.saves)), shotsAgainst = sumOrNull(window.rows.map(row => row.shotsAgainst)), goalsAgainst = sumOrNull(window.rows.map(row => row.goalsAgainst)), toiSeconds = sumOrNull(window.rows.map(row => row.toiSeconds));
     return [{ goalieId: window.goalieId, name: window.name, team: window.team, ownership, status, appearances: window.actual, requested: window.requested, short: window.short, starts: window.starts, relief: window.relief,
@@ -77,7 +82,12 @@ export function buildGoalieRescue(input: {
   const listed = ranked.filter(entry => entry.rank <= RESCUE_LIST_SIZE).map(({ row, rank }): RescueRow => ({ ...row, rank }));
   const rows = listed.slice(0, RESCUE_MAX_ROWS), tiedOut = listed.length - rows.length;
   const unranked = candidates.length - ranked.length;
-  const reasons = [...ledger.reasons, ...(unranked ? [`${unranked} candidates have no recorded value for this category and are unranked.`] : []), ...(input.ownershipFresh ? [] : [`Yahoo ownership was last observed ${input.ownershipAsOf ?? "at an unknown date"}, older than yesterday.`])];
+  const admittedDates = candidates.flatMap(row => row.ownership.state === "known" && row.ownership.asOf ? [row.ownership.asOf] : []).sort(), oldestAdmitted = admittedDates[0] ?? null, newestAdmitted = admittedDates[admittedDates.length - 1] ?? null;
+  const ownershipReasons = [
+    ...(staleOwnership ? [`${staleOwnership === 1 ? "1 goalie's" : `${staleOwnership} goalies'`} Yahoo ownership is older than ${input.through}${oldestStale ? `, the oldest from ${oldestStale}` : ""}: treated as unknown and ${settings.includeUnknown === "on" ? "shown as a dash" : "excluded"}.`] : []),
+    ...(input.availability.size ? [] : ["No Yahoo goalie ownership could be read."]),
+  ];
+  const reasons = [...ledger.reasons, ...(unranked ? [`${unranked} candidates have no recorded value for this category and are unranked.`] : []), ...ownershipReasons, ...input.scheduleReasons];
   const complete = reasons.length === 0, asOf = input.appearances[input.appearances.length - 1]?.date ?? null;
   return {
     state: complete ? "ready" : "partial", reasons, teams: [...new Set(rows.map(row => row.team))],
@@ -85,10 +95,10 @@ export function buildGoalieRescue(input: {
     evidence: {
       sources: [
         { name: "NHL.com goalie and team game stats", tables: ["wgo_goalie_stats", "wgo_team_stats"], state: ledger.complete ? "ready" : "partial", asOf, updatedAt: null, reasons: ledger.reasons },
-        { name: "Yahoo rostered %", tables: ["yahoo_players", "yahoo_nhl_player_map_read"], state: input.ownershipFresh ? "ready" : "stale", asOf: input.ownershipAsOf, updatedAt: null, reasons: ["Candidate availability is Yahoo-wide rostered %, never a league's own roster."] },
-        { name: "NHL schedule", tables: ["games"], state: "ready", asOf: input.weekEnd, updatedAt: null },
+        { name: "Yahoo rostered %", tables: ["yahoo_players", "yahoo_nhl_player_map_read"], state: ownershipReasons.length ? "stale" : "ready", asOf: oldestAdmitted, updatedAt: null, reasons: ["Candidate availability is Yahoo-wide rostered %, never a league's own roster.", ...(oldestAdmitted ? [`Listed ownership was last observed ${oldestAdmitted === newestAdmitted ? oldestAdmitted : `${oldestAdmitted} at the oldest, ${newestAdmitted} at the newest`}.`] : []), ...ownershipReasons] },
+        { name: "NHL schedule", tables: ["api-web.nhle.com/v1/schedule", "games"], state: input.scheduleReasons.length ? "partial" : "ready", asOf: input.weekEnd, updatedAt: null, reasons: [...input.scheduleReasons] },
       ],
-      sample: `${windowLabel(settings.window)} through ${input.through}: ${candidates.length} candidates, ${candidates.reduce((total, row) => total + row.starts, 0)} starts, ${candidates.reduce((total, row) => total + row.relief, 0)} relief. Win support: W. Volume: SV, with SA as context. Ratio exposure: SV%, GA, GAA, pooled. One selected category orders the list. Team games left run through ${input.weekEnd}.${tiedOut ? ` ${tiedOut} more tied ${tiedOut === 1 ? "goalie is" : "goalies are"} not listed.` : ""}`,
+      sample: `${windowLabel(settings.window)} through ${input.through}: ${candidates.length} candidates, ${candidates.reduce((total, row) => total + row.starts, 0)} starts, ${candidates.reduce((total, row) => total + row.relief, 0)} relief. Win support: W. Volume: SV, with SA as context. Ratio exposure: SV%, GA, GAA, pooled. One selected category orders the list. Team games left run through ${input.weekEnd} and count games not yet started or in progress at generation; a finished game drops out.${tiedOut ? ` ${tiedOut} more tied ${tiedOut === 1 ? "goalie is" : "goalies are"} not listed.` : ""}`,
       strength: "All situations",
       cohort: `${candidates.length} of ${qualified.length} goalies with at least ${settings.minStarts} official starts at or under ${settings.ownershipCeiling}% rostered${settings.includeUnknown === "on" ? ", unknown ownership included" : `; ${unknownExcluded} unknown ownership excluded`}; ${aboveCeiling} above the ceiling; ${unavailableStatus} excluded by Yahoo status`,
       coverage: ledger.coverage,

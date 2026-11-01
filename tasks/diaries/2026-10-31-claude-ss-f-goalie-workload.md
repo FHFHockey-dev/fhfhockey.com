@@ -22,3 +22,7 @@ Name column is `minmax(0, max-content)`, RK is `max-content`, and the ten `auto`
 ## 2026-11-01: Ratio Impact plain rewrite
 
 Added headline, sentence, one what-if chart and the no-goalie state; removed tables and stacked charts. Blocker for the named headline: the frozen `contract.ts` and `PostStudio.tsx` must pass data to `headline`; the lead owns those. Checks: Vitest, pure CSS, eslint, tsc filter, spec `--list`. Next: lead's frozen change and render.
+
+## 2026-11-01: Audit F6 and F7 on Rescue
+
+Ownership freshness is per goalie; stale reads as unknown. GMS LEFT comes from the NHL feed because `games` has no state column. A test caught `null ?? 0` resetting a team's unknown count. Next: the lead's render exercises the loader's feed read, which this lane did not run.

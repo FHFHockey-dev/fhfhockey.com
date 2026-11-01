@@ -53,7 +53,7 @@ const busyQuiet = (url: URL) => {
 };
 const rescue = (url: URL) => {
   const query = fromQuery(url), settings: GoalieRescueSettings = { category: (query.category ?? "wins") as GoalieRescueSettings["category"], window: (query.window ?? "l10") as GoalieRescueSettings["window"], ownershipCeiling: Number(query.ownershipCeiling ?? 50), includeUnknown: (query.includeUnknown ?? "off") as GoalieRescueSettings["includeUnknown"], minStarts: Number(query.minStarts ?? 3) };
-  return edition("goalie-rescue", settings, buildGoalieRescue({ settings, ...ledger, availability: new Map([[1, { ownership: ownershipOf(20, date(30)), status: "" }], [2, { ownership: ownershipOf(null), status: "" }]]), ownershipAsOf: date(30), ownershipFresh: true, teamGamesLeft: new Map([["NJD", 2], ["NYR", 1]]), weekEnd: "2026-11-01" }));
+  return edition("goalie-rescue", settings, buildGoalieRescue({ settings, ...ledger, availability: new Map([[1, { ownership: ownershipOf(20, date(30)), status: "" }], [2, { ownership: ownershipOf(null), status: "" }]]), teamGamesLeft: new Map([["NJD", 2], ["NYR", 1]]), scheduleReasons: [], weekEnd: "2026-11-01" }));
 };
 const ratio = (url: URL) => {
   const query = fromQuery(url), value = (key: string, fallback: number | null) => key in query ? Number(query[key]) : fallback;

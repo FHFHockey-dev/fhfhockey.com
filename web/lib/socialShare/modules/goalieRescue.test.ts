@@ -2,13 +2,15 @@ import { cleanup, render } from "@testing-library/react";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { createElement } from "react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import GoalieRescueCard from "components/SocialShare/modules/GoalieRescueCard";
 import { parseShareSettings, UNKNOWN_EVIDENCE, type SharePostSnapshot } from "./contract";
-import { buildGoalieRescue, cellShade, goalieAvailability, goalieRescueModule, RESCUE_GROUPS, RESCUE_NOTE, type GoalieAvailability, type GoalieRescueSettings, type RescueData } from "./goalieRescue";
-import { teamGamesLeft } from "./goalieRescue.sources";
+import { buildGoalieRescue, cellShade, goalieAvailability, goalieRescueModule, RESCUE_GROUPS, RESCUE_NOTE, type GoalieAvailability, type GoalieRescueSettings, type RescueData, type ScheduledGame } from "./goalieRescue";
+import { gameLeft, scheduledGames, teamGamesLeft } from "./goalieRescue.sources";
 import { ownershipOf } from "./shared/definitions";
 import type { CompletedTeamGame, GoalieAppearance } from "./shared/goalieLedger";
+
+vi.mock("lib/NHL/server", () => ({ getSchedule: vi.fn() }));
 
 const date = (day: number) => `2026-10-${String(day).padStart(2, "0")}`;
 const appearance = (over: Partial<GoalieAppearance> & { goalieId: number; gameId: number; date: string }): GoalieAppearance => ({ name: `G${over.goalieId}`, team: "NJD", opponent: "NYR", home: true, started: true, wins: 0, losses: 1, otLosses: 0, saves: 27, shotsAgainst: 30, goalsAgainst: 3, toiSeconds: 3600, shutouts: 0, qualityStart: 0, ...over });
@@ -22,7 +24,7 @@ const rows = [
 ];
 const own = (entries: Record<number, number | null>, status: Record<number, string> = {}) => new Map<number, GoalieAvailability>(Object.entries(entries).map(([id, pct]) => [Number(id), { ownership: ownershipOf(pct, "2026-10-31"), status: status[Number(id)] ?? "" }]));
 const settings = (over: Partial<GoalieRescueSettings> = {}): GoalieRescueSettings => ({ category: "wins", window: "l10", ownershipCeiling: 50, includeUnknown: "off", minStarts: 3, ...over });
-const build = (over: Partial<Parameters<typeof buildGoalieRescue>[0]> = {}) => buildGoalieRescue({ settings: settings(), appearances: rows, teamGames: [], scheduledDates: [], availability: own({ 1: 10, 2: 20, 3: 30, 4: 40 }), ownershipAsOf: "2026-10-31", ownershipFresh: true, teamGamesLeft: new Map([["NJD", 2], ["NYR", 3]]), through: date(30), weekEnd: "2026-11-01", ...over });
+const build = (over: Partial<Parameters<typeof buildGoalieRescue>[0]> = {}) => buildGoalieRescue({ settings: settings(), appearances: rows, teamGames: [], scheduledDates: [], availability: own({ 1: 10, 2: 20, 3: 30, 4: 40 }), teamGamesLeft: new Map([["NJD", 2], ["NYR", 3]]), scheduleReasons: [], through: date(30), weekEnd: "2026-11-01", ...over });
 const ids = (result: ReturnType<typeof build>) => result.data!.rows.map(row => row.goalieId);
 
 afterEach(cleanup);
@@ -89,6 +91,7 @@ describe("ownership states", () => {
     const map = goalieAvailability(
       [yahoo("477.p.1", "1", 10), yahoo("477.p.2", "2", 20), yahoo("477.p.3", "3", 30), yahoo("477.p.4", "4", 40), yahoo("477.p.5", "5", 50), yahoo("477.p.6", "6", null)],
       [{ yahoo_player_id: "477.p.1", nhl_player_id: "8000001" }, { yahoo_player_id: "2", nhl_player_id: "8000002" }, { yahoo_player_id: "477.p.3", nhl_player_id: "8000003" }, { yahoo_player_id: "3", nhl_player_id: "8000033" }, { yahoo_player_id: "477.p.4", nhl_player_id: "8000004" }, { yahoo_player_id: "477.p.5", nhl_player_id: "8000004" }, { yahoo_player_id: "477.p.6", nhl_player_id: "8000006" }],
+      "2026-10-30",
     );
     expect(map.get(8000001)?.ownership).toEqual({ state: "known", pct: 10, asOf: "2026-10-31" });
     expect(map.get(8000002)?.ownership.state).toBe("known");
@@ -97,11 +100,39 @@ describe("ownership states", () => {
     expect(map.has(8000004)).toBe(false);
     expect(map.get(8000006)?.ownership).toEqual({ state: "unknown", pct: null, asOf: null });
   });
-  it("is partial and stale when ownership is old", () => {
-    const result = build({ ownershipFresh: false, ownershipAsOf: "2026-10-20" });
+  const yahooRow = (id: number, pct: number | null, lastUpdated: string | null) => ({ player_key: `477.p.${id}`, player_id: String(id), percent_ownership: pct, status: null, last_updated: lastUpdated });
+  const mapRow = (id: number) => ({ yahoo_player_id: `477.p.${id}`, nhl_player_id: String(id) });
+  it("judges each goalie's own date, so one fresh row can't vouch for a stale one", () => {
+    const availability = goalieAvailability([yahooRow(1, 1, "2026-10-01 08:00:00"), yahooRow(2, 90, "2026-11-01 08:00:00"), yahooRow(3, 5, null), yahooRow(4, null, "2026-10-01 08:00:00")], [1, 2, 3, 4].map(mapRow), "2026-10-31");
+    expect(availability.get(1)).toEqual({ ownership: { state: "unknown", pct: null, asOf: null }, status: "", stale: { lastObserved: "2026-10-01" } });
+    expect(availability.get(2)?.ownership).toEqual({ state: "known", pct: 90, asOf: "2026-11-01" });
+    expect(availability.get(3)?.stale).toEqual({ lastObserved: null });
+    expect(availability.get(4)?.stale).toBeUndefined();
+    const result = build({ availability, through: "2026-10-31" });
+    expect(ids(result)).toEqual([]);
+    expect(result.data!).toMatchObject({ aboveCeiling: 1, unknownExcluded: 3 });
     expect(result.state).toBe("partial");
-    expect(result.reasons?.[0]).toContain("2026-10-20");
+    expect(result.reasons).toContain("2 goalies' Yahoo ownership is older than 2026-10-31, the oldest from 2026-10-01: treated as unknown and excluded.");
     expect(result.evidence.sources[1].state).toBe("stale");
+  });
+  it("lists a stale goalie as unknown, never at the old percentage, when the setting includes unknown", () => {
+    const availability = goalieAvailability([yahooRow(1, 1, "2026-10-01 08:00:00"), yahooRow(2, 20, "2026-10-31 08:00:00")], [1, 2].map(mapRow), "2026-10-31");
+    const result = build({ settings: settings({ includeUnknown: "on" }), availability, through: "2026-10-31" });
+    expect(result.data!.rows.find(row => row.goalieId === 1)!.ownership.state).toBe("unknown");
+    expect(result.reasons).toContain("1 goalie's Yahoo ownership is older than 2026-10-31, the oldest from 2026-10-01: treated as unknown and shown as a dash.");
+  });
+  it("gives the oldest listed ownership date as the evidence date, not the newest", () => {
+    const availability = goalieAvailability([yahooRow(1, 10, "2026-10-31 08:00:00"), yahooRow(2, 20, "2026-11-01 08:00:00")], [1, 2].map(mapRow), "2026-10-31");
+    const result = build({ availability, through: "2026-10-31" }), yahoo = result.evidence.sources[1];
+    expect(result.state).toBe("ready");
+    expect([yahoo.state, yahoo.asOf]).toEqual(["ready", "2026-10-31"]);
+    expect(yahoo.reasons).toContain("Listed ownership was last observed 2026-10-31 at the oldest, 2026-11-01 at the newest.");
+  });
+  it("is partial and stale when no ownership could be read", () => {
+    const result = build({ availability: new Map() });
+    expect(result.state).toBe("partial");
+    expect(result.reasons).toContain("No Yahoo goalie ownership could be read.");
+    expect(result.evidence.sources[1]).toMatchObject({ state: "stale", asOf: null });
   });
 });
 
@@ -119,9 +150,46 @@ describe("pool and schedule", () => {
     const teamGames: CompletedTeamGame[] = [{ gameId: 1, date: date(1), team: "NJD" }];
     expect(build({ teamGames, scheduledDates: [date(1)] }).state).toBe("partial");
   });
-  it("counts each team's scheduled games", () => {
-    const left = teamGamesLeft([{ date: date(31), homeTeamId: 1, awayTeamId: 3 }, { date: "2026-11-01", homeTeamId: 1, awayTeamId: 2 }]);
-    expect([left.get("NJD"), left.get("NYR"), left.get("NYI"), left.get("PHI")]).toEqual([2, 1, 1, 0]);
+  const SUNDAY = "2026-11-01", EVENING = "2026-11-02T01:30:00Z";
+  const game = (over: Partial<ScheduledGame> = {}): ScheduledGame => ({ id: 1, date: SUNDAY, gameType: 2, startTimeUtc: "2026-11-01T23:00:00Z", state: "OFF", scheduleState: "OK", homeTeamId: 1, awayTeamId: 3, ...over });
+  it("gives 0 on Sunday evening after a team's final game", () => {
+    const { left, unresolved } = teamGamesLeft([game()], SUNDAY, EVENING);
+    expect([left.get("NJD"), left.get("NYI"), unresolved]).toEqual([0, 0, 0]);
+  });
+  it("counts games not yet started or in progress, and no finished, postponed or cancelled game", () => {
+    const left = (over: Partial<ScheduledGame>) => gameLeft(game(over), SUNDAY, EVENING);
+    expect([left({ state: "FUT", startTimeUtc: "2026-11-02T02:00:00Z" }), left({ state: "PRE" }), left({ state: "LIVE" }), left({ state: "CRIT" })]).toEqual([true, true, true, true]);
+    expect([left({ state: "FINAL" }), left({ state: "OFF" }), left({ state: "FUT", scheduleState: "PPD" }), left({ state: "FUT", scheduleState: "CNCL" })]).toEqual([false, false, false, false]);
+  });
+  it("keeps a game running past midnight, and drops anything else from an earlier date", () => {
+    expect(gameLeft(game({ date: "2026-10-31", state: "LIVE" }), SUNDAY, EVENING)).toBe(true);
+    expect(gameLeft(game({ date: "2026-10-31", state: "FUT" }), SUNDAY, EVENING)).toBe(false);
+  });
+  it("lets the state decide when the start time is null, and calls the game unknown when there is no state either", () => {
+    expect(gameLeft(game({ startTimeUtc: null, state: "FUT" }), SUNDAY, EVENING)).toBe(true);
+    expect(gameLeft(game({ startTimeUtc: null, state: "OFF" }), SUNDAY, EVENING)).toBe(false);
+    expect(gameLeft(game({ startTimeUtc: null, state: null }), SUNDAY, EVENING)).toBeNull();
+  });
+  it("uses the start time only when the state is unusable", () => {
+    expect(gameLeft(game({ state: null, startTimeUtc: "2026-11-02T03:00:00Z" }), SUNDAY, EVENING)).toBe(true);
+    expect(gameLeft(game({ state: null, startTimeUtc: "2026-11-01T23:00:00Z" }), SUNDAY, EVENING)).toBeNull();
+  });
+  it("prints an unknown count rather than a smaller number, for both teams, in any order", () => {
+    const { left, unresolved } = teamGamesLeft([game({ id: 1, state: "FUT" }), game({ id: 2, state: null, startTimeUtc: null }), game({ id: 3, state: "FUT", awayTeamId: 2 })], SUNDAY, EVENING);
+    expect([left.get("NJD"), left.get("NYR"), left.get("NYI"), left.get("PHI"), unresolved]).toEqual([null, null, 1, 0, 1]);
+  });
+  it("counts regular season games only, each once though the feed lists it per team", () => {
+    const record = { id: 9, season: 20262027, gameDate: SUNDAY, gameType: 2, gameState: "FUT", gameScheduleState: "OK", startTimeUTC: "2026-11-02T02:00:00Z", homeTeam: { id: 1 }, awayTeam: { id: 3 } };
+    const games = scheduledGames({ data: { 1: { SUN: record }, 3: { SUN: record } } } as never);
+    expect(games).toEqual([{ id: 9, date: SUNDAY, gameType: 2, startTimeUtc: "2026-11-02T02:00:00Z", state: "FUT", scheduleState: "OK", homeTeamId: 1, awayTeamId: 3 }]);
+    expect(teamGamesLeft(games, SUNDAY, EVENING).left.get("NJD")).toBe(1);
+    expect(teamGamesLeft([game({ gameType: 1, state: "FUT" })], SUNDAY, EVENING).left.get("NJD")).toBe(0);
+  });
+  it("is partial when the schedule can't say, and states the counting rule", () => {
+    const result = build({ scheduleReasons: ["The NHL schedule could not be read, so GMS LEFT prints a dash."] });
+    expect(result.state).toBe("partial");
+    expect(result.evidence.sources[2].state).toBe("partial");
+    expect(build().evidence.sample).toContain("count games not yet started or in progress at generation; a finished game drops out.");
   });
   it("defaults to the contract's settings", () => {
     expect(parseShareSettings(goalieRescueModule, {})).toEqual({ category: "wins", window: "l10", ownershipCeiling: 50, includeUnknown: "off", minStarts: 3 });
