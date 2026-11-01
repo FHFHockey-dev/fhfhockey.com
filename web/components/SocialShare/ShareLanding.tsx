@@ -1,13 +1,18 @@
 /* eslint-disable @next/next/no-img-element -- The examples are already optimized WebP files; next/image would add Vercel image optimization runs for no gain. */
 import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
 import Link from "next/link";
-import { LANDING_CATEGORIES, LANDING_DAYS, landingCard, landingCardHref, landingCardImage, landingDaySections, landingDayStatus, landingToday, landingWeekStart, readLandingChecklist, writeLandingChecklist, type LandingSection } from "lib/socialShare/landingCatalog";
+import { LANDING_CATEGORIES, LANDING_DAYS, landingCard, landingCardHref, landingCardImage, landingDaySections, landingDayStatus, landingToday, landingWeekStart, readLandingChecklist, writeLandingChecklist, type LandingSection, type PostedWeek } from "lib/socialShare/landingCatalog";
+import { fetchPostedWeek } from "lib/socialShare/postedWeekFetch";
+import { SHARE_TIME_ZONE } from "lib/socialShare/types";
 import styles from "./SocialShare.module.scss";
 import landing from "./ShareLanding.module.scss";
 
 const SORT_KEY = "fhfh-social-share-landing-sort", DAYS_KEY = "fhfh-social-share-landing-days";
 const IMAGE_WIDTH = 540, IMAGE_HEIGHT = 540;
-const STATUS_MARK = { done: "✅", missed: "❌", upcoming: "–" }, STATUS_TEXT = { done: "marked done", missed: "not marked", upcoming: "not here yet" };
+const STATUS_MARK = { done: "✅", missed: "❌", notYet: "❌", upcoming: "–", untracked: "–" };
+const HAND_TEXT = { done: "marked done", missed: "not marked", notYet: "not marked", upcoming: "not here yet", untracked: "not here yet" };
+const POSTED_TEXT = { done: "posted", missed: "no post", notYet: "not yet", upcoming: "not here yet", untracked: "before tracking began" };
+const seenDate = new Intl.DateTimeFormat("en-US", { timeZone: SHARE_TIME_ZONE, month: "short", day: "numeric" });
 type Sort = "category" | "day";
 
 // Storage can be blocked or empty; the page works without it and simply remembers nothing.
@@ -32,6 +37,27 @@ function Tile({ id, section }: { id: string; section: string }) {
       <span className={landing.purpose}>{card.purpose}</span>
     </Link>
   </article>;
+}
+
+/** The week strip when the automatic source answers: a read-only status, since there is nothing to mark. */
+function PostedStrip({ posted, today }: { posted: PostedWeek; today: string | null }) {
+  return <>
+    <div className={landing.strip} role="list" aria-labelledby="landing-week" data-testid="landing-strip">
+      {LANDING_DAYS.map(day => {
+        const status = landingDayStatus(day.id, today, new Set(), posted), count = posted.days.find(entry => entry.id === day.id)?.posts ?? 0;
+        return <div key={day.id} role="listitem" className={`${landing.stripDay} ${landing.postedDay}`} data-testid={`landing-strip-${day.id}`} data-status={status} data-today={day.id === today || undefined} aria-label={`${day.label}${day.id === today ? " (today)" : ""}: ${POSTED_TEXT[status]}${count > 1 ? `, ${count} posts` : ""}`}>
+          <span>{day.label}</span><span aria-hidden="true">{STATUS_MARK[status]}</span>
+          {status === "notYet" && <span className={landing.dayNote} aria-hidden="true">not yet</span>}
+        </div>;
+      })}
+    </div>
+    <p className={landing.postedCards} data-testid="landing-posted-cards">
+      <span>Posts by card, this week:</span>
+      {posted.cards.map(card => <span key={card.card}>{card.name} {card.count}</span>)}
+      {posted.unmatched > 0 && <span>Unmatched {posted.unmatched}</span>}
+      {!posted.cards.length && !posted.unmatched && <span>None yet</span>}
+    </p>
+  </>;
 }
 
 function Section({ section }: { section: LandingSection }) {
@@ -60,10 +86,13 @@ export default function ShareLanding() {
   const [week, setWeek] = useState("");
   const [today, setToday] = useState<string | null>(null);
   const [marked, setMarked] = useState<ReadonlySet<string>>(new Set());
+  // Undefined while the first answer is pending; null is "unavailable", which leaves the strip on hand marking.
+  const [source, setSource] = useState<PostedWeek | null | undefined>(undefined);
 
   const refreshWeek = useCallback(() => {
     const now = new Date(), current = landingWeekStart(now);
     setWeek(current); setToday(landingToday(now)); setMarked(readLandingChecklist(readStored(DAYS_KEY), current));
+    fetchPostedWeek().then(setSource);
   }, []);
   // Stored choices and today load after mount so the server and first client render agree. A tab left open picks up a new day on return.
   useEffect(() => {
@@ -80,6 +109,8 @@ export default function ShareLanding() {
     if (!next.delete(day)) next.add(day);
     setWeek(current); setMarked(next); writeStored(DAYS_KEY, writeLandingChecklist(current, next));
   };
+  // An answer for another week (a tab left open past Sunday) is not used while the new one loads.
+  const posted = source && source.week === week ? source : null;
   const sections = sort === "category" ? LANDING_CATEGORIES : landingDaySections(today);
   const shown = sections.filter(section => filter === "all" || section.id === filter);
   const toSection = (event: MouseEvent, id: string) => {
@@ -97,15 +128,15 @@ export default function ShareLanding() {
       <span className={styles.scope}>Nothing is scheduled or published from here.</span>
     </header>
     <section className={landing.week} aria-labelledby="landing-week">
-      <h2 id="landing-week">This week <small>Marked by hand. Click a day to mark it. Stays in this browser and clears each Monday.</small></h2>
-      <div className={landing.strip} role="group" aria-labelledby="landing-week" data-testid="landing-strip">
+      <h2 id="landing-week">This week <small>{posted ? `From @FHFHockey's posts, New York days. Last post seen ${seenDate.format(new Date(posted.latest))}.` : source === undefined ? "Checking posts." : "Marked by hand. Click a day to mark it. Stays in this browser and clears each Monday."}</small></h2>
+      {posted ? <PostedStrip posted={posted} today={today} /> : <div className={landing.strip} role="group" aria-labelledby="landing-week" data-testid="landing-strip">
         {LANDING_DAYS.map(day => {
-          const status = landingDayStatus(day.id, today, marked);
-          return <button key={day.id} type="button" className={landing.stripDay} data-testid={`landing-strip-${day.id}`} data-status={status} data-today={day.id === today || undefined} aria-pressed={status === "done"} aria-label={`${day.label}${day.id === today ? " (today)" : ""}: ${STATUS_TEXT[status]}`} disabled={status === "upcoming"} onClick={() => toggleDay(day.id)}>
+          const status = source === undefined ? "upcoming" : landingDayStatus(day.id, today, marked);
+          return <button key={day.id} type="button" className={landing.stripDay} data-testid={`landing-strip-${day.id}`} data-status={status} data-today={day.id === today || undefined} aria-pressed={status === "done"} aria-label={`${day.label}${day.id === today ? " (today)" : ""}: ${source === undefined ? "checking" : HAND_TEXT[status]}`} disabled={status === "upcoming"} onClick={() => toggleDay(day.id)}>
             <span>{day.label}</span><span aria-hidden="true">{STATUS_MARK[status]}</span>
           </button>;
         })}
-      </div>
+      </div>}
     </section>
     <nav className={landing.jump} aria-label="Jump to a section" data-testid="landing-jump">
       {sections.map(section => <a key={section.id} className={landing.chip} href={`#${sectionTarget(section.id)}`} aria-current={filter === section.id ? "true" : undefined} onClick={event => toSection(event, section.id)}>{section.today ? "Today" : section.label}</a>)}

@@ -25,6 +25,8 @@ test.beforeEach(async ({ page }) => {
     if (url.pathname === "/rest/v1/users") return route.fulfill({ json: /vnd\.pgrst\.object/.test(request.headers().accept ?? "") ? { role: "social_editor" } : [{ role: "social_editor" }] });
     return route.fulfill({ json: [] });
   });
+  // The default: the automatic source is unavailable, so the strip stays on hand marking. A test overrides this.
+  await page.route("**/api/v1/social-share/posted-week", route => route.fulfill({ status: 503, json: { error: "Posted status unavailable." } }));
 });
 
 test("by category: daily sections first, with picture, name and description inside each bordered card", async ({ page }) => {
@@ -132,6 +134,56 @@ test("the week strip: marked by hand, future days neutral, one click per day, an
   await expect(strip.getByTestId("landing-strip-mon")).toHaveAttribute("data-today", "true");
   await expect(strip.getByTestId("landing-strip-mon")).toContainText("❌");
   await expect(strip.getByTestId("landing-strip-tue")).toHaveAttribute("data-status", "upcoming");
+});
+
+test("the week strip from real posts: today reads not yet, future days are neutral, nothing to click, and counts by card", async ({ page }) => {
+  await page.clock.setFixedTime(new Date("2026-11-04T16:00:00Z")); // Wednesday
+  const statuses = { mon: ["done", 2], tue: ["missed", 0], wed: ["notYet", 0], thu: ["upcoming", 0], fri: ["upcoming", 0], sat: ["upcoming", 0], sun: ["upcoming", 0] } as const;
+  await page.route("**/api/v1/social-share/posted-week", route => route.fulfill({ json: {
+    available: true, week: "2026-11-02", today: "wed", trackedFrom: "2026-10-01", latest: "2026-11-02T17:00:00Z",
+    days: Object.entries(statuses).map(([id, [status, posts]], index) => ({ id, date: `2026-11-0${index + 2}`, posts, status })),
+    cards: [{ card: "game-grid", name: "Game Grid", count: 1 }], unmatched: 1,
+  } }));
+  await page.addInitScript(key => window.localStorage.setItem(key, JSON.stringify({ week: "2026-11-02", done: ["tue"] })), DAYS_KEY);
+  await page.goto("/social-share");
+  const strip = page.getByTestId("landing-strip");
+  await expect(page.getByText(/From @FHFHockey's posts.*Last post seen Nov 2\./)).toBeVisible();
+  await expect(page.getByText(/Marked by hand/)).toHaveCount(0);
+  await expect(strip.getByTestId("landing-strip-mon")).toContainText("✅");
+  await expect(strip.getByTestId("landing-strip-mon")).toHaveAttribute("aria-label", "Mon: posted, 2 posts");
+  // A hand mark for Tuesday is ignored while the source answers.
+  await expect(strip.getByTestId("landing-strip-tue")).toContainText("❌");
+  await expect(strip.getByTestId("landing-strip-tue")).not.toContainText("not yet");
+  await expect(strip.getByTestId("landing-strip-wed")).toContainText("❌");
+  await expect(strip.getByTestId("landing-strip-wed")).toContainText("not yet");
+  await expect(strip.getByTestId("landing-strip-wed")).toHaveAttribute("aria-label", "Wed (today): not yet");
+  await expect(strip.getByTestId("landing-strip-thu")).not.toContainText("❌");
+  await expect(strip.getByRole("button")).toHaveCount(0);
+  await expect(page.getByTestId("landing-posted-cards")).toHaveText(/Posts by card, this week:\s*Game Grid 1\s*Unmatched 1/);
+
+  await page.setViewportSize({ width: 375, height: 812 });
+  await noPageOverflow(page);
+  for (const day of ["mon", "sun"]) { const box = (await page.getByTestId(`landing-strip-${day}`).boundingBox())!; expect(box.x).toBeGreaterThanOrEqual(0); expect(box.x + box.width).toBeLessThanOrEqual(375); }
+  await page.waitForTimeout(800);
+  await page.screenshot({ path: "test-results/social-share-landing/phone-posted-strip.png" });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.waitForTimeout(800);
+  await page.screenshot({ path: "test-results/social-share-landing/desktop-posted-strip.png" });
+});
+
+test("the week strip falls back to hand marking when the source has no posts, or answers for another week", async ({ page }) => {
+  await page.clock.setFixedTime(new Date("2026-11-04T16:00:00Z")); // Wednesday
+  await page.route("**/api/v1/social-share/posted-week", route => route.fulfill({ json: { available: false } }));
+  await page.goto("/social-share");
+  await expect(page.getByText(/Marked by hand/)).toBeVisible();
+  await page.getByTestId("landing-strip-mon").click();
+  await expect(page.getByTestId("landing-strip-mon")).toContainText("✅");
+  await expect(page.getByTestId("landing-posted-cards")).toHaveCount(0);
+
+  await page.route("**/api/v1/social-share/posted-week", route => route.fulfill({ json: { available: true, week: "2026-10-26", today: "sun", trackedFrom: "2026-10-01", latest: "2026-10-30T17:00:00Z", days: [], cards: [], unmatched: 0 } }));
+  await page.reload();
+  await expect(page.getByText(/Marked by hand/)).toBeVisible();
+  await expect(page.getByTestId("landing-strip-mon")).toContainText("✅");
 });
 
 test("quick links: a section jump, a card chip that scrolls its row by keyboard, and the filter", async ({ page }) => {

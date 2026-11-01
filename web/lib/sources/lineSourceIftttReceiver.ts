@@ -38,7 +38,7 @@ type ResponseBody =
       outcome?: "unknown";
     };
 
-function getSecretFromRequest(req: NextApiRequest): string {
+export function getSecretFromRequest(req: NextApiRequest): string {
   const headerSecret = req.headers["x-fhfh-ifttt-secret"];
   if (typeof headerSecret === "string") return headerSecret;
   const querySecret = req.query.secret;
@@ -46,7 +46,7 @@ function getSecretFromRequest(req: NextApiRequest): string {
   return "";
 }
 
-function secretsMatch(received: string, expected: string): boolean {
+export function secretsMatch(received: string, expected: string): boolean {
   const encoder = new TextEncoder();
   const receivedBuffer = encoder.encode(received);
   const expectedBuffer = encoder.encode(expected);
@@ -56,7 +56,7 @@ function secretsMatch(received: string, expected: string): boolean {
   );
 }
 
-function getBodyValue(body: unknown, keys: string[]): string | null {
+export function getBodyValue(body: unknown, keys: string[]): string | null {
   if (!body || typeof body !== "object") return null;
   const record = body as Record<string, unknown>;
   for (const key of keys) {
@@ -68,7 +68,7 @@ function getBodyValue(body: unknown, keys: string[]): string | null {
   return null;
 }
 
-function extractTweetId(value: string | null): string | null {
+export function extractTweetId(value: string | null): string | null {
   if (!value) return null;
   return value.match(/\/status(?:es)?\/(\d+)/i)?.[1] ?? null;
 }

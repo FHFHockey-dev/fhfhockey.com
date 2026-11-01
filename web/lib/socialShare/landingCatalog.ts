@@ -115,15 +115,22 @@ export function landingDaySections(today: string | null): readonly LandingSectio
   return [{ ...LANDING_DAYS[at], today: true }, LANDING_MISC, ...LANDING_DAYS.slice(at + 1), ...LANDING_DAYS.slice(0, at)];
 }
 
-export type LandingDayStatus = "done" | "missed" | "upcoming";
+export type LandingDayStatus = "done" | "missed" | "upcoming" | "notYet" | "untracked";
+/** The automatic source's answer for one New York week (lib/socialShare/postedWeek.ts builds it on the server). */
+export type PostedWeek = {
+  available: true; week: string; today: string; trackedFrom: string; latest: string;
+  days: readonly { id: string; date: string; posts: number; status: LandingDayStatus }[];
+  cards: readonly { card: string; name: string; count: number }[];
+  unmatched: number;
+};
 /**
- * One day's state in the top strip. Today this reads only the hand-marked days; an automatic source replaces this one
- * function later. A day that has not come yet is never "missed".
+ * One day's state in the top strip: the automatic source's answer when it has one for this week, otherwise the
+ * hand-marked days, the fallback when the source is unavailable. A day that has not come yet is never "missed".
  */
-export function landingDayStatus(day: string, today: string | null, marked: ReadonlySet<string>): LandingDayStatus {
+export function landingDayStatus(day: string, today: string | null, marked: ReadonlySet<string>, posted?: PostedWeek | null): LandingDayStatus {
   const ids = LANDING_DAYS.map(entry => entry.id), now = today ? ids.indexOf(today) : -1;
   if (now < 0 || ids.indexOf(day) > now) return "upcoming";
-  return marked.has(day) ? "done" : "missed";
+  return posted?.days.find(entry => entry.id === day)?.status ?? (marked.has(day) ? "done" : "missed");
 }
 
 /** The days marked for `week`. Another week's marks, or anything unreadable, count as none. */
