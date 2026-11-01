@@ -313,10 +313,14 @@ test("a full goalie card fills the body with its 8 goalies", async ({ page }) =>
 });
 
 /** Three slates: the latest, an older one, and a date between them with no games. */
-const OLD_SLATE = PRIOR[3], NO_GAME_DATE = "2026-10-28";
+const OLD_SLATE = PRIOR[3], NO_GAME_DATE = "2026-10-28", MISSING_FEED = "2026-10-29";
 const slateBody = (query: URLSearchParams) => {
   const settings = settingsFromQuery(query), slate = settings.slate ?? SLATE, latest = slate === SLATE, slates = { previous: latest ? OLD_SLATE : PRIOR[2], next: latest ? null : SLATE, first: PRIOR[0], last: SLATE };
   if (slate === NO_GAME_DATE) return editionOf(settings, standoutsNoSlate(slate, settings, { ...slates, previous: OLD_SLATE, next: SLATE }));
+  if (slate === MISSING_FEED) {
+    const played = { ...shared(settings), slate, slates: { ...slates, previous: OLD_SLATE, next: SLATE }, completedTeamGames: [{ gameId: 950, team: "NJD" }, { gameId: 950, team: "NYR" }], scheduledGameIds: [950] };
+    return editionOf(settings, buildLastNightsStandouts(settings.view === "goalies" ? { ...played, goalies: [1, 2].map(id => ({ ...goalie(id, 25, 27), date: slate, gameId: 950 })), nstGoalies: [] } : { ...played, appearances: [] }));
+  }
   const rows = appearances.filter(row => row.date <= slate), onSlate = rows.filter(row => row.date === slate), gameId = onSlate[0].gameId;
   return editionOf(settings, buildLastNightsStandouts({ ...shared(settings), slate, slates, completedTeamGames: [{ gameId, team: "NJD" }, { gameId, team: "NYR" }], scheduledGameIds: [gameId], appearances: rows, nstCounts: nstDates.flatMap(date => ids.map(id => nst(date, id))), nstOnIce: nstDates.flatMap(date => ids.map(id => ({ player_id: id, date_scraped: date, season: SEASON, xgf: 1, xga: 1 }))), role: { rolling: ids.map(id => ({ player_id: id, game_id: gameId, line_combo_slot: 1, line_combo_group: id % 3 ? "forward" : "defense" })), pp: [] } }));
 };
@@ -357,7 +361,7 @@ test("a date with no games shows the reason, cannot export, and keeps the choose
   await open(page, "&view=all", slateBody);
   await page.getByTestId("slate-date").fill(NO_GAME_DATE);
   await page.getByRole("button", { name: "Refresh post" }).click();
-  await expect(page.getByTestId("post-unavailable")).toContainText("No completed games on Oct 28");
+  await expect(page.getByTestId("post-unavailable")).toContainText("No games on Oct 28");
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
   await expect(page.getByTestId("slate-next")).toBeEnabled();
   await page.getByTestId("slate-next").click();
@@ -372,4 +376,18 @@ test("the chooser stays inside a phone's width", async ({ page }) => {
   const box = await page.getByTestId("standouts-slate").boundingBox();
   expect(box!.x + box!.width).toBeLessThanOrEqual(375);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
+});
+test("a played slate with no skater rows names the missing feed, blocks export and stays on the pager, and Goalies still works", async ({ page }) => {
+  await open(page, `&view=all&slate=${MISSING_FEED}`, slateBody);
+  await expect(page.getByTestId("standouts-blank")).toHaveText("Skater data is missing for this slate.");
+  await expect(page.getByText("Skater data is missing for Oct 29", { exact: false }).first()).toBeVisible();
+  await expect(page.getByTestId("post-watermark")).toHaveText("PARTIAL · NOT FOR EXPORT");
+  await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
+  await expect(page.getByTestId("slate-label")).toHaveText("Oct 29");
+  await expect(page.getByTestId("slate-previous")).toBeEnabled();
+  await expect(page.getByTestId("slate-next")).toBeEnabled();
+  await page.goto(`/social-share/posts?post=${lastNightsStandoutsModule.id}&view=goalies&slate=${MISSING_FEED}`);
+  await expect(page.getByTestId("standout-row")).toHaveCount(2);
+  await expect(page.getByTestId("post-watermark")).toHaveText("OBSERVED RESULTS");
+  await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeEnabled();
 });

@@ -54,7 +54,7 @@ function StandoutPicker({ data, settings, change, disabled }: Pick<PanelProps, "
           <span className={styles.optionStats}>{row.stats.map(stat => <span key={stat.id}><small>{stat.label}</small> {statText(stat)} <small>STD {stdText(stat)}</small> <i>{percentLabel(stat.change)}</i></span>)}</span>
         </button>;
       })}
-      {!sorted.length && <p className={styles.panelNote}>No skater on this slate meets this view.</p>}
+      {!sorted.length && <p className={styles.panelNote}>{data.skaters.length ? "No skater on this slate meets this view." : "No skater rows for this slate."}</p>}
     </div>
   </>;
 }

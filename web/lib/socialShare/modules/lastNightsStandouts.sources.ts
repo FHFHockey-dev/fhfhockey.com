@@ -1,7 +1,8 @@
 import { bounded } from "lib/socialShare/trendSources";
+import { SKATER_SEASON_LIMITS } from "./bshBoard.sources";
 import { UNKNOWN_EVIDENCE, type SharePostContext, type SharePostLoadResult, type SharePostReadClient } from "./contract";
 import { NST_GSAX_COLUMNS, NST_GSAX_TABLES, type NstGsaxRow } from "./goalieGsax";
-import { buildLastNightsStandouts, isGoalieView, LINE_COMBO_COLUMNS, lineRowsFromCombinations, standoutsNoSlate, type EarlierLineRow, type LastNightsStandoutsData, type LastNightsStandoutsSettings, type LineComboRow, type StandoutSlates } from "./lastNightsStandouts";
+import { buildLastNightsStandouts, completedSlateDates, isGoalieView, LINE_COMBO_COLUMNS, lineRowsFromCombinations, slateNeighbours, standoutsNoSlate, type EarlierLineRow, type LastNightsStandoutsData, type LastNightsStandoutsSettings, type LineComboRow, type SlateScheduleRow } from "./lastNightsStandouts";
 import { ownershipByPlayer, type OwnershipMapRow, type YahooOwnershipRow } from "./nightlyFloor";
 import { OWNERSHIP_LIMITS } from "./nightlyFloor.sources";
 import { ROLE_PP_COLUMNS, type RolePpRow } from "./roleWatch";
@@ -13,24 +14,19 @@ import { NST_COUNT_COLUMNS, NST_ON_ICE_COLUMNS, shareThrough, type NstCountRow, 
  * Ceilings, all failing closed. A full 16-game slate is about 576 skaters and 36 goalies, and each skater has at most
  * 84 games. NST and season reads ask only for the players on the slate; role reads only for the slate's games.
  */
-export const STANDOUT_LIMITS = { slateSkaters: 700, slateGoalies: 60, seasonGoalieRows: 6000, seasonRows: 60000, teamGames: 40, schedule: 20, lineCombos: 80, earlierLines: 5000, pp: 800 } as const;
+export const STANDOUT_LIMITS = { slateSkaters: 700, slateGoalies: 60, seasonGoalieRows: 6000, seasonRows: 60000, lineCombos: 80, earlierLines: 5000, pp: 800 } as const;
 const STATEMENT_TIMEOUT = "57014";
 
-/** The newest date with skater rows, through yesterday in New York: on an off day this is still the latest completed slate. */
-async function readSlateDate(client: SharePostReadClient, scope: { season: number; from: string; through: string }) {
-  const { data, error } = await client.from("wgo_skater_stats").select("date").eq("season_id", scope.season).gte("date", scope.from).lte("date", scope.through).order("date", { ascending: false }).limit(1);
-  if (error) throw new Error("The latest slate could not be read.");
-  return (data?.[0]?.date as string | undefined) ?? null;
-}
-/** The nearest slates either side, for the sidebar's buttons. The default is already the latest, so it has nothing after it to read. */
-async function readSlateNeighbours(client: SharePostReadClient, scope: { season: number; from: string; through: string; slate: string; chosen: boolean }): Promise<StandoutSlates> {
-  const nearest = async (query: (rows: any) => any, ascending: boolean) => {
-    const { data, error } = await query(client.from("wgo_skater_stats").select("date").eq("season_id", scope.season).gte("date", scope.from).lte("date", scope.through)).order("date", { ascending }).limit(1);
-    if (error) throw new Error("The neighbouring slates could not be read.");
-    return (data?.[0]?.date as string | undefined) ?? null;
-  };
-  const [previous, next] = await Promise.all([nearest(rows => rows.lt("date", scope.slate), false), scope.chosen ? nearest(rows => rows.gt("date", scope.slate), true) : null]);
-  return { previous, next, first: scope.from, last: scope.through };
+/**
+ * Regular-season games and the team results reported for them, this season through the cutoff, which is all the slate
+ * chooser needs. Whether a date is a slate never depends on the player feeds, so a missing feed cannot hide one.
+ */
+async function readSlateEvidence(client: SharePostReadClient, scope: { season: number; from: string; through: string }) {
+  const [schedule, completedTeamGames] = await Promise.all([
+    bounded<SlateScheduleRow>("Schedule", SKATER_SEASON_LIMITS.scheduledGames, (start, end) => client.from("games").select("id,date", { count: "exact" }).eq("seasonId", scope.season).eq("type", 2).gte("date", scope.from).lte("date", scope.through).order("date").order("id").range(start, end)),
+    readCompletedTeamGames(client, { ...scope, limit: SKATER_SEASON_LIMITS.teamGames }),
+  ]);
+  return { schedule, completedTeamGames };
 }
 const readNstSeason = <Row>(what: string, table: string, columns: readonly string[], client: SharePostReadClient, scope: { season: number; through: string; playerIds: readonly number[] }) =>
   bounded<Row>(what, STANDOUT_LIMITS.seasonRows, (from, to) => client.from(table).select(columns.join(","), { count: "exact" }).eq("season", scope.season).lte("date_scraped", scope.through).in("player_id", [...scope.playerIds]).order("date_scraped", { ascending: true }).order("player_id", { ascending: true }).range(from, to));
@@ -59,18 +55,13 @@ async function readEarlierLines(client: SharePostReadClient, scope: { season: nu
 
 export async function loadLastNightsStandouts({ client, generatedAt }: SharePostContext, settings: LastNightsStandoutsSettings): Promise<SharePostLoadResult<LastNightsStandoutsData>> {
   const { through, season, from } = shareThrough(generatedAt);
-  const chosen = settings.slate;
-  // A chosen date only reads its own day, so a date with no games says so instead of landing on another slate.
-  const slate = chosen ? chosen >= from && chosen <= through ? await readSlateDate(client, { season, from: chosen, through: chosen }) : null : await readSlateDate(client, { season, from, through });
+  const chosen = settings.slate, evidence = await readSlateEvidence(client, { season, from, through }), dates = completedSlateDates(evidence.schedule, evidence.completedTeamGames);
+  const slate = chosen ? dates.includes(chosen) ? chosen : null : dates[dates.length - 1] ?? null;
   if (!slate && !chosen) return { state: "missing", reasons: ["No completed slate this season yet."], evidence: UNKNOWN_EVIDENCE, data: null };
-  const slates = await readSlateNeighbours(client, { season, from, through, slate: slate ?? chosen!, chosen: !!chosen });
-  if (!slate) return standoutsNoSlate(chosen!, settings, slates);
-  const [completedTeamGames, schedule, ownership] = await Promise.all([
-    readCompletedTeamGames(client, { season, from: slate, through: slate, limit: STANDOUT_LIMITS.teamGames }),
-    bounded<{ id: number }>("Schedule", STANDOUT_LIMITS.schedule, (start, end) => client.from("games").select("id", { count: "exact" }).eq("seasonId", season).eq("type", 2).eq("date", slate).order("id").range(start, end)),
-    readOwnership(client, season),
-  ]);
-  const shared = { slate, slates, season, settings, completedTeamGames, scheduledGameIds: schedule.map(game => game.id), ownership };
+  const slates = slateNeighbours(dates, slate ?? chosen!, { first: from, last: through }), scheduledGameIds = evidence.schedule.filter(game => game.date === (slate ?? chosen)).map(game => game.id);
+  if (!slate) return standoutsNoSlate(chosen!, settings, slates, scheduledGameIds.length);
+  const ownership = await readOwnership(client, season), scheduled = new Set(scheduledGameIds), completedTeamGames = evidence.completedTeamGames.filter(game => scheduled.has(game.gameId));
+  const shared = { slate, slates, season, settings, completedTeamGames, scheduledGameIds, ownership };
   if (isGoalieView(settings.view)) {
     const onNight = await readGoalieAppearances(client, { season, from: slate, through: slate, limit: STANDOUT_LIMITS.slateGoalies }), goalieIds = onNight.map(row => row.goalieId);
     if (!goalieIds.length) return buildLastNightsStandouts({ ...shared, goalies: [] });

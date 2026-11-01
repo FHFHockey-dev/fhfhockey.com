@@ -467,9 +467,11 @@ describe("loader", () => {
     } } };
   }
   const row = (playerId: number, gameId: number, date: string) => ({ player_id: playerId, player_name: `Fictional ${playerId}`, position_code: "D", date, season_id: SEASON, game_id: gameId, team_abbrev: "NJD", opponent_team_abbrev: "NYR", home_road: "H", games_played: 1, goals: 1, assists: 0, points: 1, shots: 3, hits: 1, blocked_shots: 1, pp_points: 0, toi_per_game: 1200, pp_toi: 60, penalty_minutes: 0 });
+  /** Both teams' results for a game: the evidence a slate happened. */
+  const teamRows = (gameId: number, date: string) => [1, 3].map(team_id => ({ team_id, game_id: gameId, date, season_id: SEASON, opponent_id: team_id === 1 ? 3 : 1 }));
   const context = (tables: Record<string, unknown[]>) => { const fake = fakeClient(tables); return { fake, context: { client: fake.client, generatedAt: "2026-11-01T14:00:00Z" } }; };
   it("reads the newest slate, then the season for those players only", async () => {
-    const { fake, context: ctx } = context({ wgo_skater_stats: [row(1, 9, SLATE)], games: [{ id: 9 }], wgo_team_stats: [], nst_gamelog_as_counts: [counts(1, SLATE)], nst_gamelog_as_counts_oi: [onIce(1, SLATE)], lineCombinations: [{ gameId: 9, forwards: [], defensemen: [1] }], powerPlayCombinations: [], yahoo_players: [], yahoo_nhl_player_map_read: [] });
+    const { fake, context: ctx } = context({ wgo_skater_stats: [row(1, 9, SLATE)], games: [{ id: 9, date: SLATE }], wgo_team_stats: teamRows(9, SLATE), nst_gamelog_as_counts: [counts(1, SLATE)], nst_gamelog_as_counts_oi: [onIce(1, SLATE)], lineCombinations: [{ gameId: 9, forwards: [], defensemen: [1] }], powerPlayCombinations: [], yahoo_players: [], yahoo_nhl_player_map_read: [] });
     const result = await loadLastNightsStandouts(ctx, settings({ view: "defensemen" }));
     expect(result.data?.slate).toBe(SLATE);
     expect(result.data?.skaters.map(skater => skater.playerId)).toEqual([1]);
@@ -480,7 +482,7 @@ describe("loader", () => {
     expect(fake.calls.some(call => call.table === "rolling_player_game_metrics")).toBe(false);
     expect(result.data?.skaters[0].role.line).toBe("P1");
   });
-  const skaterTables = { wgo_skater_stats: [row(1, 9, SLATE)], games: [{ id: 9 }], wgo_team_stats: [], nst_gamelog_as_counts: [], nst_gamelog_as_counts_oi: [], lineCombinations: [], powerPlayCombinations: [], yahoo_players: [], yahoo_nhl_player_map_read: [] };
+  const skaterTables = { wgo_skater_stats: [row(1, 9, SLATE)], games: [{ id: 9, date: SLATE }], wgo_team_stats: teamRows(9, SLATE), nst_gamelog_as_counts: [], nst_gamelog_as_counts_oi: [], lineCombinations: [], powerPlayCombinations: [], yahoo_players: [], yahoo_nhl_player_map_read: [] };
   /** Answers rolling from a queue of results; every other table comes from the fake. */
   function withRolling(results: object[]) {
     const { fake } = context(skaterTables);
@@ -508,7 +510,7 @@ describe("loader", () => {
     expect(result.data?.skaters[0].role.line).toBe("unknown");
   });
   it("reads only goalie tables for the goalie view's players", async () => {
-    const { fake, context: ctx } = context({ wgo_skater_stats: [row(1, 9, SLATE)], games: [{ id: 9 }], wgo_team_stats: [], wgo_goalie_stats: [{ goalie_id: 7, goalie_name: "Fictional", date: SLATE, season_id: SEASON, game_id: 9, team_abbreviation: "NJD", opponent_team_abbrev: "NYR", home_road: "H", games_played: 1, games_started: 1, wins: 1, losses: 0, ot_losses: 0, saves: 20, shots_against: 21, goals_against: 1, time_on_ice: 3600, shutouts: 0, quality_start: 1 }], nst_gamelog_goalie_all_counts: [], yahoo_players: [], yahoo_nhl_player_map_read: [] });
+    const { fake, context: ctx } = context({ wgo_skater_stats: [row(1, 9, SLATE)], games: [{ id: 9, date: SLATE }], wgo_team_stats: teamRows(9, SLATE), wgo_goalie_stats: [{ goalie_id: 7, goalie_name: "Fictional", date: SLATE, season_id: SEASON, game_id: 9, team_abbreviation: "NJD", opponent_team_abbrev: "NYR", home_road: "H", games_played: 1, games_started: 1, wins: 1, losses: 0, ot_losses: 0, saves: 20, shots_against: 21, goals_against: 1, time_on_ice: 3600, shutouts: 0, quality_start: 1 }], nst_gamelog_goalie_all_counts: [], yahoo_players: [], yahoo_nhl_player_map_read: [] });
     const result = await loadLastNightsStandouts(ctx, settings({ view: "goalies" }));
     expect(result.data?.goalies.map(row => row.goalieId)).toEqual([7]);
     expect(fake.calls.some(call => call.table === "nst_gamelog_as_counts")).toBe(false);
@@ -523,16 +525,17 @@ describe("loader", () => {
   describe("a chosen slate", () => {
     const LATER = "2026-11-01", EARLIER = "2026-10-20", NO_GAMES = "2026-10-25";
     /** Three slates, and player 1 played all of them. The middle one is chosen. */
-    const tables = { wgo_skater_stats: [row(1, 1, EARLIER), row(1, 9, SLATE)], games: [{ id: 9 }], wgo_team_stats: [], nst_gamelog_as_counts: [], nst_gamelog_as_counts_oi: [], lineCombinations: [], powerPlayCombinations: [], yahoo_players: [], yahoo_nhl_player_map_read: [] };
+    const tables = { wgo_skater_stats: [row(1, 1, EARLIER), row(1, 9, SLATE)], games: [{ id: 1, date: EARLIER }, { id: 9, date: SLATE }], wgo_team_stats: [...teamRows(1, EARLIER), ...teamRows(9, SLATE)], nst_gamelog_as_counts: [], nst_gamelog_as_counts_oi: [], lineCombinations: [], powerPlayCombinations: [], yahoo_players: [], yahoo_nhl_player_map_read: [] };
     const atNoon = (date: string) => `${date}T14:00:00Z`;
-    it("defaults to the latest completed slate, with nothing read after it", async () => {
+    it("defaults to the latest completed slate, and reads the schedule and team results once", async () => {
       const { fake, context: ctx } = context(tables);
       const { data } = await loadLastNightsStandouts(ctx, settings());
-      expect(data).toMatchObject({ slate: SLATE, slates: { previous: EARLIER, next: null } });
-      expect(fake.calls.filter(call => call.filters.some(([method]) => method === "gt"))).toHaveLength(0);
+      expect(data).toMatchObject({ slate: SLATE, games: 1, slates: { previous: EARLIER, next: null } });
+      expect(fake.calls.filter(call => call.table === "games")).toHaveLength(1);
+      expect(fake.calls.filter(call => call.table === "wgo_team_stats")).toHaveLength(1);
     });
     it("reads through the chosen slate only, and finds its neighbours", async () => {
-      const { fake, context: ctx } = context({ ...tables, wgo_skater_stats: [...tables.wgo_skater_stats, row(1, 12, "2026-10-31"), row(1, 20, LATER)] });
+      const { fake, context: ctx } = context({ ...tables, wgo_skater_stats: [...tables.wgo_skater_stats, row(1, 20, LATER)], games: [...tables.games, { id: 20, date: LATER }], wgo_team_stats: [...tables.wgo_team_stats, ...teamRows(20, LATER)] });
       const { data } = await loadLastNightsStandouts({ ...ctx, generatedAt: atNoon("2026-11-02") }, settings({ slate: SLATE }));
       expect(data).toMatchObject({ slate: SLATE, slates: { previous: EARLIER, next: LATER } });
       const seasonRead = fake.calls.filter(call => call.table === "wgo_skater_stats").find(call => call.filters.some(([method]) => method === "in"))!;
@@ -545,7 +548,7 @@ describe("loader", () => {
       const { fake, context: ctx } = context(tables);
       const result = await loadLastNightsStandouts(ctx, settings({ slate: NO_GAMES }));
       expect(result.state).toBe("missing");
-      expect(result.reasons).toEqual(["No completed games on Oct 25. Choose another slate."]);
+      expect(result.reasons).toEqual(["No games on Oct 25. Choose another slate."]);
       expect(result.data).toMatchObject({ slate: NO_GAMES, skaters: [], slates: { previous: EARLIER, next: SLATE } });
       expect(fake.calls.some(call => call.table === "yahoo_players")).toBe(false);
     });
@@ -556,10 +559,64 @@ describe("loader", () => {
         expect(result.reasons?.[0]).toContain("outside this season's completed slates");
       }
     });
-    it("fails visibly when a neighbour read fails", async () => {
+    it("fails visibly when the schedule cannot be read", async () => {
       const { fake } = context(tables);
-      const client = { from: (table: string) => { const chain = fake.client.from(table); const lt = chain.lt; chain.lt = (...args: unknown[]) => { lt(...args); chain.then = (resolve: (value: unknown) => void) => resolve({ data: null, error: { message: "nope" } }); return chain; }; return chain; } };
-      await expect(loadLastNightsStandouts({ client, generatedAt: "2026-11-01T14:00:00Z" }, settings())).rejects.toThrow("neighbouring slates");
+      const client = { from: (table: string) => { const chain = fake.client.from(table); if (table === "games") chain.then = (resolve: (value: unknown) => void) => resolve({ data: null, error: { message: "nope" }, count: null }); return chain; } };
+      await expect(loadLastNightsStandouts({ client, generatedAt: "2026-11-01T14:00:00Z" }, settings())).rejects.toThrow();
+    });
+    it("says a scheduled date with no team result is not an off day, and keeps it off the pager", async () => {
+      const result = await loadLastNightsStandouts(context({ ...tables, games: [...tables.games, { id: 5, date: NO_GAMES }] }).context, settings({ slate: NO_GAMES }));
+      expect(result.state).toBe("missing");
+      expect(result.reasons).toEqual(["1 game was scheduled on Oct 25, but no team result has been reported."]);
+      expect(result.data).toMatchObject({ games: 1, slates: { previous: EARLIER, next: SLATE } });
+    });
+    it("ignores team results for games outside the regular-season schedule", async () => {
+      const { data } = await loadLastNightsStandouts(context({ ...tables, wgo_team_stats: [...tables.wgo_team_stats, ...teamRows(77, NO_GAMES)] }).context, settings({ slate: SLATE }));
+      expect(data!.slates.previous).toBe(EARLIER);
+    });
+  });
+  describe("a played slate with a missing feed", () => {
+    const EARLIER = "2026-10-29", GAP = "2026-10-30", OFF_DAY = "2026-10-28", FIRST = "2026-10-27";
+    const goalieRow = (goalieId: number, gameId: number, date: string) => ({ goalie_id: goalieId, goalie_name: `Fictional ${goalieId}`, date, season_id: SEASON, game_id: gameId, team_abbreviation: goalieId % 2 ? "NJD" : "NYR", opponent_team_abbrev: goalieId % 2 ? "NYR" : "NJD", home_road: "H", games_played: 1, games_started: 1, wins: 1, losses: 0, ot_losses: 0, saves: 25, shots_against: 27, goals_against: 2, time_on_ice: 3600, shutouts: 0, quality_start: 1 });
+    /** Reviewer's case: Oct 31 has a completed game, two team rows and goalie rows, and no skater row at all. */
+    const gap = { wgo_skater_stats: [row(1, 1, FIRST)], games: [{ id: 1, date: FIRST }, { id: 9, date: SLATE }], wgo_team_stats: [...teamRows(1, FIRST), ...teamRows(9, SLATE)], wgo_goalie_stats: [goalieRow(7, 9, SLATE), goalieRow(8, 9, SLATE)], nst_gamelog_goalie_all_counts: [], yahoo_players: [], yahoo_nhl_player_map_read: [] };
+    it("is partial and blocked in a skater view, naming the missing feed, not an off day", async () => {
+      for (const options of [{ view: "all", slate: SLATE }, { view: "forwards", slate: null }] as const) {
+        const result = await loadLastNightsStandouts(context(gap).context, settings(options));
+        expect(result.state).toBe("partial");
+        expect(result.reasons?.[0]).toBe("Skater data is missing for Oct 31: games were played, but no skater rows have been reported.");
+        expect(result.reasons?.join(" ")).not.toContain("No games");
+        expect(result.data).toMatchObject({ slate: SLATE, games: 1, skaters: [], slates: { previous: FIRST, next: null } });
+        expect(result.evidence.coverage).toMatchObject({ observed: 0, expected: 2, missing: 2 });
+        expect(result.evidence.sources).toEqual([expect.objectContaining({ state: "partial", asOf: null })]);
+      }
+    });
+    it("keeps the goalie view working from its own complete sources", async () => {
+      for (const slate of [SLATE, null]) {
+        const result = await loadLastNightsStandouts(context(gap).context, settings({ view: "goalies", slate }));
+        expect(result.state).toBe("ready");
+        expect(result.data!.slate).toBe(SLATE);
+        expect(result.data!.goalies.map(row => row.goalieId)).toEqual([7, 8]);
+      }
+    });
+    it("is partial and blocked in the goalie view when goalie rows are the missing feed", async () => {
+      const result = await loadLastNightsStandouts(context({ ...gap, wgo_goalie_stats: [] }).context, settings({ view: "goalies" }));
+      expect(result.state).toBe("partial");
+      expect(result.reasons?.[0]).toBe("Goalie data is missing for Oct 31: games were played, but no goalie rows have been reported.");
+    });
+    it("still counts one missing team on a slate that has skater rows", async () => {
+      const result = await loadLastNightsStandouts(context({ ...gap, wgo_skater_stats: [row(1, 9, SLATE)], lineCombinations: [], powerPlayCombinations: [], nst_gamelog_as_counts: [], nst_gamelog_as_counts_oi: [] }).context, settings({ view: "all" }));
+      expect(result.state).toBe("partial");
+      expect(result.reasons).toEqual(["1 completed team games on this slate have no player rows."]);
+    });
+    it("walks neighbours over a true off day but stops on a missing-feed day", async () => {
+      const tables = { wgo_skater_stats: [row(1, 1, FIRST), row(1, 2, EARLIER), row(1, 9, SLATE)], games: [{ id: 1, date: FIRST }, { id: 2, date: EARLIER }, { id: 3, date: GAP }, { id: 9, date: SLATE }], wgo_team_stats: [...teamRows(1, FIRST), ...teamRows(2, EARLIER), ...teamRows(3, GAP), ...teamRows(9, SLATE)], nst_gamelog_as_counts: [], nst_gamelog_as_counts_oi: [], lineCombinations: [], powerPlayCombinations: [], yahoo_players: [], yahoo_nhl_player_map_read: [] };
+      expect((await loadLastNightsStandouts(context(tables).context, settings({ slate: SLATE }))).data!.slates).toMatchObject({ previous: GAP, next: null });
+      expect((await loadLastNightsStandouts(context(tables).context, settings({ slate: GAP }))).data!.slates).toMatchObject({ previous: EARLIER, next: SLATE });
+      expect((await loadLastNightsStandouts(context(tables).context, settings({ slate: EARLIER }))).data!.slates).toMatchObject({ previous: FIRST, next: GAP });
+      const off = await loadLastNightsStandouts(context(tables).context, settings({ slate: OFF_DAY }));
+      expect(off.reasons).toEqual(["No games on Oct 28. Choose another slate."]);
+      expect(off.data!.slates).toMatchObject({ previous: FIRST, next: EARLIER });
     });
   });
 });

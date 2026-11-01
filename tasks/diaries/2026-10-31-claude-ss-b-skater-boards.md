@@ -50,3 +50,5 @@
 - Standouts audit: unknown GSAx is unranked, coverage is per team game, and the spec downloads real PNGs. Real render and the freeze are the lead's.
 
 - Period control (2026-11-01): BSH Leaders, Multi Cat Monsters, Nightly Floor and Cardio Masters take matchup and custom dates; `period=rolling` is the default so old `window` URLs keep their meaning. Min GP in a period: `minGpRange`, or blank is half the most played, rounded up, at most 5. Movers refuse a period. Standouts: own `slate` field, neighbours read from wgo, no-game date is `missing` with data so the chooser stays. Gotcha: the panel's `change` cannot load, so slate buttons wait for Refresh post; a one-line `apply` on the panel props would fix it, PostStudio and contract are frozen. Rostered % on an older slate is today's, and the card says so. Real render is the lead's.
+
+- Review F3: slate existence and neighbours now come from scheduled games with team results, not skater rows. Off day, scheduled with no result and missing feed read differently. R20: same 33 dates on real data. Local only; TJ batches it with the next release.

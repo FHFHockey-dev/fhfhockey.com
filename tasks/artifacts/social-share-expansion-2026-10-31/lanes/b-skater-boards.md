@@ -317,3 +317,28 @@ R9, for the default: Crosby 1G-2A-3P-1PPP, Anderson 2G-1A-3P, Kucherov 0G-3A-3P,
 | # | Statement | Tables read | Rows returned | Result |
 | --- | --- | --- | --- | --- |
 | R19 | Distinct team codes and ids this season, through MCP `execute_sql` on 2026-11-01 | `wgo_skater_stats`, `wgo_goalie_stats`, `wgo_team_stats` | 0 sample rows (3 aggregate rows) | Passed |
+
+### Period control and Standouts slate chooser, `cdd927cfb`, released in 295b384da
+
+- **Boards:** BSH Leaders, Multi Cat Monsters (both views), Nightly Floor and Cardio Masters add Matchup week and Custom range to the shared period control. Recent games stays the default, with L5, L10 or season in `window` and L10 still the default, so old URLs and landing links keep their meaning.
+- **Over chosen dates:** appearances, team games and schedule read those dates only, so percentiles, the P85 floor, min GP and coverage all follow them. The card prints the dates. A week under way counts through the cutoff and says "so far".
+- **Min GP in a period:** `minGpRange` when set. Blank is half the most games anyone played in the dates, rounded up, at most 5.
+- **Movers:** keep their windows. A period on Movers is refused with a reason.
+- **Standouts:** own `slate` field, previous and next buttons and a date field; default is the latest completed slate. Baseline is season per game before the slate. Picks clear on a change, and an old-slate URL round trips. Headline and legend print the date for an older slate, and the legend says ROST is current.
+- **Limit:** the slate buttons and date wait for Refresh post, because a panel's `change` cannot load an edition.
+
+### Review F3: slates come from completed games
+
+- **Evidence:** a date is a slate when `wgo_team_stats` has a result for a regular-season game in `games`. Latest, chosen and neighbouring slates all come from this, never from player rows. Two bounded reads replace the per-date reads and fail closed: at most 1,400 scheduled games and 2,700 team rows, through the cutoff.
+- **True off day:** "No games on Oct 28. Choose another slate." `missing`, off the pager.
+- **Scheduled, no team result:** "1 game was scheduled on Oct 25, but no team result has been reported." `missing`, off the pager, and not called an off day.
+- **Played, no skater rows:** partial, first reason "Skater data is missing for Oct 31: games were played, but no skater rows have been reported." The card says so, export is blocked, the date stays on the pager, and no other source claims a date.
+- **Goalie view:** uses its own rows, so it is ready on that same slate when its sources are complete. No goalie rows gives the same wording for goalies.
+- **Kept:** one missing team on a slate with rows is still partial through per-team-game coverage.
+- **Behaviour change:** a date with skater rows but no team result is no longer a slate. R20 found none this season.
+- **Real result, R20:** through 2026-10-31, team-result evidence and skater rows give the same 33 dates and the same latest slate, 2026-10-31. All 452 team rows are for scheduled regular-season games, with matching dates. No loader or card was rendered on real data for this.
+
+| # | Statement | Tables read | Rows returned | Result |
+| --- | --- | --- | --- | --- |
+| R20 | Slate dates from team results against skater dates, this season through 2026-10-31, through MCP `execute_sql` on 2026-11-01 | `games`, `wgo_team_stats`, `wgo_skater_stats` | 0 sample rows (1 aggregate row) | Passed. 33 and 33, none on one side only |
+
