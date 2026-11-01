@@ -17,17 +17,18 @@ const teamById = new Map(Object.entries(teamsInfo).map(([abbreviation, team]) =>
 /** The `games` table has a start time but no state, so the state comes from the NHL schedule feed, as on the other schedule posts. The feed lists a game once per team. */
 export function scheduledGames(schedule: Pick<SocialScheduleData, "data" | "games">): ScheduledGame[] {
   const records = schedule.games ?? Object.values(schedule.data).flatMap(week => Object.values(week)).filter((game): game is SocialScheduleGame => !!game);
-  return [...new Map(records.map(game => [game.id, { id: game.id, date: game.gameDate, gameType: game.gameType ?? null, startTimeUtc: game.startTimeUTC ?? null, state: game.gameState ?? null, scheduleState: game.gameScheduleState ?? null, homeTeamId: game.homeTeam.id, awayTeamId: game.awayTeam.id }])).values()];
+  return [...new Map(records.map(game => [game.id, { id: game.id, date: game.gameDate ?? null, gameType: game.gameType ?? null, startTimeUtc: game.startTimeUTC ?? null, state: game.gameState ?? null, scheduleState: game.gameScheduleState ?? null, homeTeamId: game.homeTeam.id, awayTeamId: game.awayTeam.id }])).values()];
 }
 
 /**
  * Whether a game is still to come at generation. NHL state decides, whatever the start time says: live counts, even past midnight on
  * yesterday's date; final, postponed and cancelled don't; scheduled does. With no usable state, a future start counts and anything else,
- * a null start time included, is unknown (null).
+ * a null start time included, is unknown (null). A game with no date can't be placed in the week: only a finished, postponed or cancelled state settles it.
  */
 export function gameLeft(game: ScheduledGame, today: string, generatedAt: string): boolean | null {
   const status = planningScheduleStatus(game.state ?? "", game.scheduleState ?? "");
   if (status === "live") return true;
+  if (!game.date) return status && status !== "scheduled" ? false : null;
   if (game.date < today) return false;
   if (status) return status === "scheduled";
   return game.startTimeUtc && Date.parse(game.startTimeUtc) > Date.parse(generatedAt) ? true : null;
@@ -64,6 +65,6 @@ export async function loadGoalieRescue({ client, generatedAt }: SharePostContext
     map.push(...await bounded<YahooMapRow>("Yahoo to NHL id map", chunk.length * 2, (start, end) => client.from("yahoo_nhl_player_map_read").select("yahoo_player_id,nhl_player_id", { count: "exact" }).in("yahoo_player_id", chunk).order("yahoo_player_id").order("nhl_player_id").range(start, end)));
   }
   const games = teamGamesLeft(week ?? [], scope.today, generatedAt);
-  const scheduleReasons = !week ? ["The NHL schedule could not be read, so GMS LEFT prints a dash."] : games.unresolved ? [`${games.unresolved === 1 ? "1 game has" : `${games.unresolved} games have`} no usable state or start time, so those teams' GMS LEFT print a dash.`] : [];
+  const scheduleReasons = !week ? ["The NHL schedule could not be read, so GMS LEFT prints a dash."] : games.unresolved ? [`${games.unresolved === 1 ? "1 game has" : `${games.unresolved} games have`} no usable date, state or start time, so those teams' GMS LEFT print a dash.`] : [];
   return buildGoalieRescue({ settings, ...ledger, availability: goalieAvailability(yahoo, map, scope.through), teamGamesLeft: week ? games.left : new Map(), scheduleReasons, through: scope.through, weekEnd });
 }

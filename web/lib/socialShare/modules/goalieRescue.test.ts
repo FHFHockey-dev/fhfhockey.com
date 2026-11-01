@@ -174,6 +174,15 @@ describe("pool and schedule", () => {
     expect(gameLeft(game({ state: null, startTimeUtc: "2026-11-02T03:00:00Z" }), SUNDAY, EVENING)).toBe(true);
     expect(gameLeft(game({ state: null, startTimeUtc: "2026-11-01T23:00:00Z" }), SUNDAY, EVENING)).toBeNull();
   });
+  it("fails closed on a game with no date: unknown unless its state already rules it out, and never guessed into the week", () => {
+    const noDate = (over: Partial<ScheduledGame>) => game({ date: null, ...over });
+    expect([noDate({ state: "FUT" }), noDate({ state: null, startTimeUtc: "2026-11-02T03:00:00Z" })].map(entry => gameLeft(entry, SUNDAY, EVENING))).toEqual([null, null]);
+    expect([noDate({ state: "OFF" }), noDate({ state: "FUT", scheduleState: "PPD" }), noDate({ state: "LIVE" })].map(entry => gameLeft(entry, SUNDAY, EVENING))).toEqual([false, false, true]);
+    const { left, unresolved } = teamGamesLeft([noDate({ state: "FUT" })], SUNDAY, EVENING);
+    expect([left.get("NJD"), left.get("NYR"), unresolved]).toEqual([null, null, 1]);
+    const record = { id: 9, gameType: 2, gameState: "FUT", gameScheduleState: "OK", homeTeam: { id: 1 }, awayTeam: { id: 3 } };
+    expect(scheduledGames({ data: { 1: { SUN: record } } } as never)[0].date).toBeNull();
+  });
   it("prints an unknown count rather than a smaller number, for both teams, in any order", () => {
     const { left, unresolved } = teamGamesLeft([game({ id: 1, state: "FUT" }), game({ id: 2, state: null, startTimeUtc: null }), game({ id: 3, state: "FUT", awayTeamId: 2 })], SUNDAY, EVENING);
     expect([left.get("NJD"), left.get("NYR"), left.get("NYI"), left.get("PHI"), unresolved]).toEqual([null, null, 1, 0, 1]);

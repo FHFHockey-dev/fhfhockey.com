@@ -22,7 +22,7 @@ export const RESCUE_NOTE = "Rostered % is Yahoo-wide. GMS LEFT are team games, n
 export type YahooGoalieRow = { player_key: string; player_id: string | null; percent_ownership: number | null; status: string | null; last_updated: string | null };
 export type YahooMapRow = { yahoo_player_id: string | null; nhl_player_id: string | null };
 export const YAHOO_GOALIE_COLUMNS = "player_key,player_id,percent_ownership,status,last_updated";
-export type ScheduledGame = { id: number; date: string; gameType: number | null; startTimeUtc: string | null; state: string | null; scheduleState: string | null; homeTeamId: number; awayTeamId: number };
+export type ScheduledGame = { id: number; date: string | null; gameType: number | null; startTimeUtc: string | null; state: string | null; scheduleState: string | null; homeTeamId: number; awayTeamId: number };
 
 export type GoalieAvailability = { ownership: OwnershipState; status: string; stale?: { lastObserved: string | null } };
 /**

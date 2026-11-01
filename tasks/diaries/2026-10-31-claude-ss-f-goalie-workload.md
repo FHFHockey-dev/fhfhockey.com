@@ -26,3 +26,7 @@ Added headline, sentence, one what-if chart and the no-goalie state; removed tab
 ## 2026-11-01: Audit F6 and F7 on Rescue
 
 Ownership freshness is per goalie; stale reads as unknown. GMS LEFT comes from the NHL feed because `games` has no state column. A test caught `null ?? 0` resetting a team's unknown count. Next: the lead's render exercises the loader's feed read, which this lane did not run.
+
+## 2026-11-01: tsc correction
+
+The lead found TS2322 on `date` in `657b6e699`. My `npx tsc --noEmit | grep` hid whatever happened and the exit status was never read. Gotcha: run `node --max-old-space-size=8192 node_modules/typescript/bin/tsc --noEmit --incremental false` and read the exit code. Added the no-date rule.
