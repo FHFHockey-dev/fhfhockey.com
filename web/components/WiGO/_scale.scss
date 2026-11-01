@@ -1,0 +1,28 @@
+// WiGO type, colour and radius scale (UI pass step 9), built on styles/vars tokens. Steps are named by size so
+// they can't be confused with the global $font-size-* names. Data colours (DIFF heat, ratings, team colours, chart
+// series) don't belong here: they stay with the data.
+@use "styles/vars" as v;
+
+// Type: five sizes, two weights.
+$text-11: 11px; // captions, dense data floor
+$text-12: 12px; // panel titles, controls, data
+$text-14: 14px; // desktop search, body text
+$text-16: 16px; // key values, phone search (below 16px iOS zooms on tap)
+$text-20: 20px; // headline values
+$weight-regular: 400;
+$weight-bold: 700;
+
+// Shape: a small radius for controls, chips and cells, the card radius for cards, and round.
+$radius-small: v.$radius-control;
+$radius-card: v.$radius-card;
+$radius-round: 50%;
+
+// Text colour roles.
+$ink: v.$text-primary;
+$ink-muted: v.$text-secondary;
+$ink-strong: v.$color-white;
+$accent: v.$primary-color;
+$on-accent: v.$color-neutral-950;
+$good: v.$color-mint-300;
+$warn: v.$warning-color;
+$bad: v.$color-coral-500;

@@ -57,6 +57,8 @@ export type ShareTrendSources = {
   series?: SourceRead<ShareSeriesRow>;
   /** Sparklines (TT-4): the shown movers' daily observations from the comparison date to the latest. */
   ownershipSeries?: SourceRead<ShareOwnershipRow>;
+  /** TT-10 (READ-PLAN v3 M3): Yahoo↔NHL id map rows for the shown non-mover players (rostered % on every tile). */
+  rosterMap?: SourceRead<ShareMapRow>;
 };
 
 export const TREND_WINDOW_GAMES = 5;
@@ -284,18 +286,52 @@ export function ownershipSeriesDates(previous: string | null, latest: string | n
   return days < 1 || days > OWNERSHIP_SERIES_MAX_DAYS ? null : Array.from({ length: days + 1 }, (_, day) => shiftDate(previous, day));
 }
 
+/** A known sum of games `from`..`to` (season appearance numbers, inclusive): a season total or a last-N window. */
+export type GameRange = { from: number; to: number; total: number };
 /**
- * One skater's last SERIES_GAMES per-game values, oldest first, from season-to-date values on contiguous rows. A game
- * whose own row, previous row or value is missing is null (a gap), never interpolated.
+ * One skater's last SERIES_GAMES per-game values, oldest first. TT-17: solved exactly from sums the read already
+ * holds, never interpolated:
+ * - every stored row's season-to-date total (games 1..n); two rows with the same n that disagree give no sum;
+ * - `windows`, the last-N totals on the rows of the rolling read (games n−N+1..n).
+ * Nested sums sharing an end are subtracted into new sums, and a sum with exactly one unknown game solves it. So a
+ * game whose own or previous row is missing from the table (run-3: early-season rows absent for some players) is
+ * still a point when a window pins it; a game no sum isolates stays null (a gap). `valid` rejects impossible values.
+ * `nonNegative` (points): a sum of 0 makes every game in it 0, since no game can be negative.
  */
-function gameSeries(rows: ShareSeriesRow[], latestSgp: number, cumulative: (row: ShareSeriesRow) => number | null) {
-  const bySgp = new Map<number, ShareSeriesRow | null>();
-  for (const row of rows) if (num(row.season_games_played)) bySgp.set(row.season_games_played, bySgp.has(row.season_games_played) ? null : row);
-  const at = (sgp: number) => { const row = bySgp.get(sgp); return row ? cumulative(row) : null; };
-  return Array.from({ length: SERIES_GAMES }, (_, k) => {
-    const sgp = latestSgp - (SERIES_GAMES - 1 - k), now = sgp >= 1 ? at(sgp) : null, before = sgp === 1 ? 0 : at(sgp - 1);
-    return now === null || before === null ? null : now - before;
-  });
+export function gameSeries(rows: ShareSeriesRow[], latestSgp: number, cumulative: (row: ShareSeriesRow) => number | null, windows: GameRange[] = [], valid: (value: number) => boolean = () => true, nonNegative = false) {
+  const totals = new Map<number, number | null>();
+  for (const row of rows) {
+    const sgp = row.season_games_played, value = cumulative(row);
+    if (!num(sgp) || sgp < 1) continue;
+    totals.set(sgp, value === null || (totals.has(sgp) && totals.get(sgp) !== value) ? null : value);
+  }
+  const ranges = new Map<string, GameRange>(), add = (range: GameRange) => {
+    if (range.from < 1 || range.to < range.from || range.to > latestSgp || ranges.size > 400) return false;
+    const key = `${range.from}-${range.to}`;
+    if (ranges.has(key)) return false;
+    ranges.set(key, range);
+    return true;
+  };
+  for (const [sgp, total] of totals) if (total !== null) add({ from: 1, to: sgp, total });
+  for (const window of windows) add({ ...window, from: Math.max(1, window.from) });
+  const known = new Map<number, number>();
+  for (let progress = true, rounds = 0; progress && rounds < 12; rounds++) {
+    progress = false;
+    const list = [...ranges.values()];
+    for (const a of list) for (const b of list) {
+      if (a.to - a.from >= b.to - b.from) continue;
+      if (a.from === b.from) progress = add({ from: a.to + 1, to: b.to, total: b.total - a.total }) || progress;
+      else if (a.to === b.to) progress = add({ from: b.from, to: a.from - 1, total: b.total - a.total }) || progress;
+    }
+    for (const range of ranges.values()) {
+      const unknown: number[] = [];
+      let rest = range.total;
+      for (let game = range.from; game <= range.to; game++) if (known.has(game)) rest -= known.get(game)!; else unknown.push(game);
+      if (unknown.length === 1 && valid(rest)) { known.set(unknown[0], rest); progress = true; }
+      else if (nonNegative && unknown.length > 1 && rest === 0) { for (const game of unknown) known.set(game, 0); progress = true; }
+    }
+  }
+  return Array.from({ length: SERIES_GAMES }, (_, k) => known.get(latestSgp - (SERIES_GAMES - 1 - k)) ?? null);
 }
 const complete = (values: (number | null)[]): values is number[] => values.every(num);
 
@@ -316,13 +352,36 @@ export function buildTrendLayer(sources: ShareTrendSources | null, context: Tren
   const base = { name: "FHFH rolling game metrics + Yahoo ownership" as const, version: 2 as const, season: context.season, fetchedAt: context.fetchedAt };
   if (!sources) {
     const empty = { state: "missing" as const, reasons: [notReadReason] };
-    return { ...base, metricsThrough: null, metricsUpdatedAt: null, ownershipLatestDate: null, ownershipPreviousDate: null, ownershipSeriesDates: null,
+    return { ...base, metricsThrough: null, metricsUpdatedAt: null, ownershipLatestDate: null, ownershipPreviousDate: null, ownershipSeriesDates: null, rosteredAsOf: null,
       sections: { hot: { ...empty, rule: RECENT_FORM_RULE, qualifiers: 0, hot: [], cold: [] }, deployment: { ...empty, up: [], down: [] }, rates: { ...empty, sogPer60: [], icfPer60: [], ixgPer60: [] }, movers: { ...empty, risers: [], fallers: [] } } };
   }
   const lists = trendShortlists(sources, context), names = skaterNames(rowsOf(sources.players) ?? []);
+  // TT-10: rostered % for every shown player from the ownership rows already read at the latest date D (O3), mapped
+  // NHL → Yahoo by M3. Only fresh ownership counts; no observation, or Yahoo ids that disagree, is null ("—"), never 0%.
+  const ownershipRows = rowsOf(sources.ownership) ?? [], rosteredFresh = !!lists.latestDate && lists.latestDate <= lists.today && lists.latestDate >= shiftDate(lists.today, -OWNERSHIP_MAX_AGE_DAYS);
+  const atLatest = new Map<string, number>();
+  for (const row of ownershipRows) if (row.ownership_date === lists.latestDate && num(row.ownership_pct) && row.ownership_pct >= 0 && row.ownership_pct <= 100) {
+    const value = round(row.ownership_pct, 1);
+    atLatest.set(row.player_key, value);
+    if (row.player_id !== null) atLatest.set(String(row.player_id), value);
+  }
+  const yahooIds = new Map<number, string[]>();
+  for (const row of rowsOf(sources.rosterMap) ?? []) {
+    const id = Number(row.nhl_player_id);
+    if (row.yahoo_player_id && Number.isInteger(id)) yahooIds.set(id, [...(yahooIds.get(id) ?? []), row.yahoo_player_id]);
+  }
+  const rosteredOf = (nhlId: number) => {
+    if (!rosteredFresh || !sources.rosterMap || !("rows" in sources.rosterMap)) return null;
+    const values = new Set((yahooIds.get(nhlId) ?? []).flatMap(key => atLatest.has(key) ? [atLatest.get(key)!] : []));
+    return values.size === 1 ? [...values][0] : null;
+  };
+  // TT-10: the latest game's line/pair and PP unit, from the rolling row and the PP rows already read (two-unit rule).
+  const ppOf = ppEvidence(rowsOf(sources.ppc) ?? []), ppKnown = !!sources.ppc && "rows" in sources.ppc;
   const who = (nhlId: number): ShareTrendWho | null => {
     const name = names.get(nhlId), active = lists.active.get(nhlId);
-    return name && active ? { nhlId, name: name.fullName, team: active.team, position: name.position } : null;
+    if (!name || !active) return null;
+    const line = normalizeEvDeploymentBucket({ lineComboGroup: active.latest.line_combo_group, lineComboSlot: active.latest.line_combo_slot });
+    return { nhlId, name: name.fullName, team: active.team, position: name.position, rostered: rosteredOf(nhlId), role: { line, pp: ppKnown ? ppOf(active.latest) : null } };
   };
   const shown = <T extends { nhlId: number }, R>(list: T[], size: number, make: (row: T, person: ShareTrendWho) => R) => list.flatMap(row => { const person = who(row.nhlId); return person ? [make(row, person)] : []; }).slice(0, size);
   // Sparklines (TT-4): per-game series for listed rows only, each checked against the row's own L5 window. A failed
@@ -332,20 +391,30 @@ export function buildTrendLayer(sources: ShareTrendSources | null, context: Tren
     if (row.season !== context.season || row.strength_state !== "all" || !isDate(row.game_date) || row.game_date < oldestGame || row.game_date > lists.today) continue;
     seriesRows.set(row.player_id, [...(seriesRows.get(row.player_id) ?? []), row]);
   }
-  const seriesFor = (nhlId: number, cumulative: (row: ShareSeriesRow) => number | null) => {
+  // TT-17: the rolling read's own last-5 / last-10 totals (rows of the last week, already read in R1) pin games whose
+  // stored rows are missing; see gameSeries.
+  const windowRows = new Map<number, ShareRollingRow[]>();
+  for (const row of rowsOf(sources.rolling) ?? []) if (row.season === context.season && row.strength_state === "all" && num(row.season_games_played)) windowRows.set(row.player_id, [...(windowRows.get(row.player_id) ?? []), row]);
+  const windowsOf = (nhlId: number, columns: [keyof ShareRollingRow, number][]) => (windowRows.get(nhlId) ?? []).flatMap(row => columns.flatMap(([column, size]) => {
+    const total = row[column], to = row.season_games_played!;
+    return num(total) ? [{ from: to - size + 1, to, total }] : [];
+  }));
+  const seriesFor = (nhlId: number, cumulative: (row: ShareSeriesRow) => number | null, windows: GameRange[] = [], valid?: (value: number) => boolean, nonNegative?: boolean) => {
     const latest = lists.active.get(nhlId)?.latest, rows = seriesRows.get(nhlId);
     if (!latest || !rows || !num(latest.season_games_played) || !rows.some(row => row.game_date === latest.game_date && row.season_games_played === latest.season_games_played)) return null;
-    return gameSeries(rows, latest.season_games_played, cumulative);
+    return gameSeries(rows, latest.season_games_played, cumulative, windows, valid, nonNegative);
   };
   const pointsSeries = (nhlId: number) => {
-    const values = seriesFor(nhlId, row => { const total = num(row.points_avg_season) && num(row.season_games_played) ? row.points_avg_season * row.season_games_played : null; return total !== null && Math.abs(total - Math.round(total)) <= 0.01 ? Math.round(total) : null; });
+    const values = seriesFor(nhlId, row => { const total = num(row.points_avg_season) && num(row.season_games_played) ? row.points_avg_season * row.season_games_played : null; return total !== null && Math.abs(total - Math.round(total)) <= 0.01 ? Math.round(total) : null; },
+      windowsOf(nhlId, [["points_total_last5", 5], ["points_total_last10", 10]]), value => Number.isInteger(value) && value >= 0, true);
     const latest = lists.active.get(nhlId)!.latest, sum = (list: (number | null)[]) => complete(list) ? list.reduce((a, b) => a + b, 0) : null;
     if (!values || values.some(value => value !== null && value < 0)) return null;
     const last5 = sum(values.slice(-5)), last10 = sum(values);
     return (last5 !== null && last5 !== latest.points_total_last5) || (last10 !== null && last10 !== latest.points_total_last10) ? null : values;
   };
   const toiSeries = (nhlId: number) => {
-    const values = seriesFor(nhlId, row => num(row.toi_seconds_avg_season) && num(row.season_games_played) ? row.toi_seconds_avg_season * row.season_games_played : null)?.map(value => value === null ? null : Math.round(value));
+    const values = seriesFor(nhlId, row => num(row.toi_seconds_avg_season) && num(row.season_games_played) ? row.toi_seconds_avg_season * row.season_games_played : null,
+      windowsOf(nhlId, [["toi_seconds_total_last5", 5]]), value => value > 0)?.map(value => value === null ? null : Math.round(value));
     const latest = lists.active.get(nhlId)!.latest, last5 = values?.slice(-5);
     if (!values || values.some(value => value !== null && value <= 0)) return null;
     return last5 && complete(last5) && num(latest.toi_seconds_avg_last5) && Math.abs(last5.reduce((a, b) => a + b, 0) / 5 - latest.toi_seconds_avg_last5) > 2 ? null : values;
@@ -393,10 +462,10 @@ export function buildTrendLayer(sources: ShareTrendSources | null, context: Tren
   }
   const moversState = section([sources.ownership, sources.map, sources.rolling, sources.players], ["Yahoo ownership", "Yahoo to NHL id map", "Rolling game metrics", "Player names"], ownershipGate);
   const moversReady = moversState.state === "ready";
-  const moverRow = (row: TrendShortlists["risers"][number], person: ShareTrendWho): ShareMoverRow => ({ ...person, latest: row.latest, previous: row.previous, delta: row.delta, series: moverSeries(row) });
+  const moverRow = (row: TrendShortlists["risers"][number], person: ShareTrendWho): ShareMoverRow => ({ ...person, rostered: row.latest, latest: row.latest, previous: row.previous, delta: row.delta, series: moverSeries(row) });
 
   return { ...base, metricsThrough: lists.skaters?.through ?? null, metricsUpdatedAt: lists.skaters?.updatedAt ?? null,
-    ownershipLatestDate: lists.latestDate, ownershipPreviousDate: lists.previousDate, ownershipSeriesDates: seriesDates,
+    ownershipLatestDate: lists.latestDate, ownershipPreviousDate: lists.previousDate, ownershipSeriesDates: seriesDates, rosteredAsOf: rosteredFresh ? lists.latestDate : null,
     sections: {
       hot: { ...hotState, reasons: [...hotState.reasons, ...(hotReady ? seriesNote : [])], rule: RECENT_FORM_RULE, qualifiers: hotReady ? lists.formQualifiers : 0, hot: hotReady ? shown(lists.hot, TREND_LIST, hotRow) : [], cold: hotReady ? shown(lists.cold, TREND_LIST, hotRow) : [] },
       deployment: { ...deployState, reasons: [...deployState.reasons, ...(deployReady ? seriesNote : [])], up: deployReady ? shown(lists.up, DEPLOYMENT_LIST, deployRow) : [], down: deployReady ? shown(lists.down, DEPLOYMENT_LIST, deployRow) : [] },

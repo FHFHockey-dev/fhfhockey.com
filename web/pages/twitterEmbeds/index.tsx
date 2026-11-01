@@ -8,6 +8,7 @@ import { useRouter } from "next/router";
 import { useEffect } from "react";
 
 import {
+  FIRST_ARRIVAL_SOURCE_GROUPS,
   selectFirstArrivalBuckets,
   type FirstArrivalCandidate,
 } from "lib/sources/lineSourceFirstArrival";
@@ -56,6 +57,8 @@ const retweetingSourceHandles = new Set([
   "gamedaygoalies",
   "gamedaynewsnhl",
   "gamedaylines",
+  "dfofantasy",
+  "nhl_rosters",
 ]);
 
 type LinesCccPageRow = {
@@ -616,7 +619,7 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async ({
       .select(
         "capture_key, snapshot_date, team_id, team_abbreviation, game_id, classification, tweet_posted_at, source_key, source_account, tweet_id, tweet_url, source_url, quoted_tweet_id, quoted_tweet_url, author_name, source_handle, quoted_author_name, quoted_author_handle, tweet_posted_label, raw_text, enriched_text, quoted_raw_text, quoted_enriched_text, nhl_filter_status, observed_at, status",
       )
-      .eq("source_group", "gdl_suite")
+      .in("source_group", FIRST_ARRIVAL_SOURCE_GROUPS)
       .eq("status", "observed")
       .eq("nhl_filter_status", "accepted")
       .order("observed_at", { ascending: false })

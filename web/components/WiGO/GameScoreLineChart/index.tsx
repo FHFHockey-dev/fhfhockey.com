@@ -287,7 +287,7 @@ export default function GameScoreLineChart({
         <div style={placeholderStyle}>{WIGO_ERROR_MESSAGES.chart}</div>
       )}
       {!isLoading && !error && !playerId && (
-        <div style={placeholderStyle}>Select a player to view chart.</div>
+        <div style={placeholderStyle}>Select a player</div>
       )}
       {/* Show message if waiting for season ID */}
       {!isLoading &&

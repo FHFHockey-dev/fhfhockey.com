@@ -1,0 +1,30 @@
+@use "styles/vars" as v;
+
+/* Fits the 1080 square: see the budget in lanes/e-crease-category.md. */
+.card { flex: 1; display: flex; flex-direction: column; gap: 5px; min-height: 0; font-size: 16px; }
+.lead h3 { margin: 0; font-size: 22px; line-height: 1.15; font-weight: 700; color: v.$color-white; }
+.lead small { font-size: 15px; font-weight: 400; color: v.$text-secondary; }
+.goalie { display: grid; gap: 4px; }
+.top { display: grid; grid-template-columns: 24px 34px minmax(0, 1fr) auto 72px; column-gap: 6px; align-items: center; }
+.tgv { display: grid; grid-template-columns: 54px 78px; column-gap: 3px; align-items: center; }
+.chip { display: grid; justify-items: center; }
+.chip small { font-size: 11px; color: v.$text-secondary; }
+.grade { padding: 0 3px; border: 1px solid v.$color-white; border-radius: 3px; font-size: 12px; line-height: 1.3; font-weight: 700; white-space: nowrap; color: v.$color-white; }
+.spark { display: block; }
+.unavailable { grid-column: 1 / -1; text-align: center; font-size: 13px; color: v.$text-secondary; }
+.tiles { display: flex; gap: 3px; }
+.tile { flex: 1 1 0; min-width: 0; padding: 2px 0; border-radius: 3px; text-align: center; white-space: nowrap; font-size: 14px; line-height: 1.2; font-weight: 600; color: v.$color-white; background: rgba(v.$color-white, 0.06); }
+.tile[data-tone="better"] { background: rgba(v.$success-color, 0.24); }
+.tile[data-tone="worse"] { background: rgba(v.$danger-color, 0.24); }
+.tile[data-tone="none"] { color: v.$text-secondary; }
+.tiles[data-many] { flex-wrap: wrap; }
+.tiles[data-many] .tile { flex: 0 1 calc(25% - 3px); font-size: 12px; }
+.strip { padding: 3px 0 4px; border-bottom: 1px solid v.$border-soft; }
+.strip h4 { margin: 0 0 2px; font-size: 14px; font-weight: 700; color: v.$color-white; }
+.stripCells { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); column-gap: 4px; }
+.stripCell { display: grid; grid-template-columns: auto auto auto; column-gap: 8px; justify-content: center; align-items: baseline; padding: 1px 0; border-radius: 3px; background: rgba(v.$color-white, 0.06);
+  b { font-size: 20px; line-height: 1.1; font-weight: 800; color: v.$color-white; }
+  small { font-size: 12px; color: v.$text-secondary; }
+}
+.stripEmpty { margin: 0; font-size: 14px; color: v.$text-secondary; }
+.legend { margin: 0; font-size: 15px; line-height: 1.2; color: v.$text-secondary; }

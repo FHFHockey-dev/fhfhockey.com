@@ -1,0 +1,4 @@
+@use "styles/vars" as v;
+
+.columns { display: grid; grid-template-columns: 1fr 1fr; gap: v.$space-lg; align-items: start; }
+.team { display: inline-flex; align-items: center; gap: v.$space-xs; }

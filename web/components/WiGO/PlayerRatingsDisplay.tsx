@@ -84,7 +84,7 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
     if (error)
       return <div className={styles.error}>{WIGO_ERROR_MESSAGES.ratings}</div>;
     if (!playerId)
-      return <div className={styles.noPlayer}>Select player for ratings</div>;
+      return <div className={styles.noPlayer}>Select a player</div>;
     if (!seasonId)
       return <div className={styles.loading}>Loading season info...</div>;
     if (!ratings)

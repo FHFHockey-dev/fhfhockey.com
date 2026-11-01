@@ -166,7 +166,7 @@
   - [x] 3.4 Document artifact promotion steps from training output to production config.
   - [x] 3.5 Smoke-test `/api/v1/db/update-nhl-xg-shot-predictions?action=health` over HTTP once the local dev server is no longer occupied by long-running backfill requests.
 
-- [x] 4.0 Add daily xG feature and prediction scheduling
+- [x] 4.0 Add daily xG feature and prediction scheduling _(Superseded by 2026-10-17 audit row 30.0.)_
   - [x] 4.1 Decide the daily refresh order: normalized game data, shifts, `update-nhl-xg-shot-features`, then `update-nhl-xg-shot-predictions`.
   - [x] 4.2 Add Supabase cron SQL for the xG feature refresh endpoint.
   - [x] 4.3 Add Supabase cron SQL for the xG prediction refresh endpoint after feature refresh.
@@ -531,3 +531,6 @@
   - [x] 27.3 **NEW:** Correct offline bounded-time evidence to use persisted `period_seconds_elapsed` when parser-only `game_seconds_elapsed` is unavailable. The initial fail-closed run trained no heads; the corrected same-period rerun produced the valid 145,050-label artifact, and 12 focused tests plus TypeScript pass (2026-07-12).
 
 - [x] 28.0 **NEW P1:** Fail closed on registry lifecycle query overrides discovered by the dynamic Wave-C audit. An artifact that is not approval-eligible can no longer be labeled approved; activation/champion requests require approved status plus `confirmPromotion=true`, and champion requires active state. The guarded route returns a bounded 409 lifecycle error before any registry write. The corrected candidate and richer-rebound heads remain unpromoted; 13 files/64 tests, TypeScript, scoped lint, and diff integrity pass (2026-07-28).
+
+- [ ] 29.0 **NEW P2 leakage fix does not gate promotion; the serving champion predates it (2026-10-17 completion audit):** `missReasonBucket` and `isShortSideMiss` are blocked only in `buildEncodedBaselineDataset` (`web/lib/xg/baselineDataset.ts:239-244,324`); `buildApprovalGradeEligibility` (`web/scripts/train-nhl-xg-baseline.ts:471+`) and `auditXgArtifactFeatureContract` (`web/lib/xg/shotFeaturePersistence.ts:261+`) never check them, so the approved 2026-05-22 artifacts `cfg9bac2706` and `cfgf81a5112` stay eligible and a future `active=true&champion=true&confirmPromotion=true` registration would pass the 28.0 guards; 25.4 left the champion unchanged. Supersedes the leakage-remediation and promotion-safeguard clauses of master 5.7.12. Close with a forbidden-feature check in the artifact audit and the read-only registry check. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G7-xg-prediction.md`.
+- [ ] 30.0 **NEW P2 daily xG feature and prediction scheduling was never enabled (2026-10-17 completion audit):** The only scheduling SQL is a commented block (`tasks/TASKS/cron-operations/cron-schedule.md:1569-1599`); no `update-nhl-xg-*` job is in the active inventory or `web/vercel.json`, so new games need manual runs. Supersedes 4.0 (C0020). Close by scheduling the jobs or recording the manual-run decision. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G7-xg-prediction.md`.

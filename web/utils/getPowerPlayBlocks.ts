@@ -185,13 +185,16 @@ function getIntervalInSeconds(start: Time, end: Time) {
 }
 
 /**
+ * One block per penalty, as written to `pp_timeframes`. It is not manpower: blocks overlap, it reads `play.period`
+ * (which the play-by-play no longer sends, so goals end nothing unless the caller adds it) and it treats misconducts
+ * as power plays. Use the default export for power-play time.
  *  - Minor penalties end either after the duration has completed, or a goal is scored during the duration.
  *  - Double Minors If opponent scores goal Reduces to multiple of 2 min. A maximum of 2 goals can be scored during a double minor.
  *  - A Major penalty will always run the duration, with no goal limit.
  * @param plays
  * @returns
  */
-export default function getPowerPlayBlocks(plays: any[]): Block[] {
+export function getPenaltyPowerPlayBlocks(plays: any[]): Block[] {
   const [teamA, teamB] = getTeamIds(plays);
 
   var penalties = plays.filter(
@@ -283,6 +286,197 @@ export default function getPowerPlayBlocks(plays: any[]): Block[] {
   processedPenalties.forEach((penalty) => {
     result.push(process(penalty));
   });
+  return result;
+}
+
+type PenaltySegment = { seconds: number; endsOnGoal: boolean };
+type ServedPenalty = { segments: PenaltySegment[]; remaining: number };
+type TeamPenaltyBox = { serving: ServedPenalty[]; waiting: PenaltySegment[][] };
+
+const MINOR_SECONDS = 2 * 60;
+const MAJOR_SECONDS = 5 * 60;
+const MAX_PENALTIES_SERVING = 2;
+
+function getGameSecond(play: any) {
+  return (
+    (play.periodDescriptor.number - 1) * NORMAL_PERIOD_IN_SECONDS +
+    parseTime(play.timeInPeriod)
+  );
+}
+
+function getTimeAtGameSecond(gameSecond: number): Time {
+  const period = Math.floor(gameSecond / NORMAL_PERIOD_IN_SECONDS) + 1;
+  return {
+    period: period as Time["period"],
+    type: period > 3 ? "OT" : "REG",
+    timeInPeriod: formatTime(gameSecond % NORMAL_PERIOD_IN_SECONDS)
+  };
+}
+
+/** Misconducts and game misconducts carry a duration but leave the team at full strength. */
+function getManpowerSegments(penalty: any): PenaltySegment[] {
+  const { typeCode, duration } = penalty.details;
+  if (typeCode === "MIS" || typeCode === "GAM" || typeCode === "GMIS") return [];
+  if (duration === 2) return [{ seconds: MINOR_SECONDS, endsOnGoal: true }];
+  if (duration === 4) {
+    return [
+      { seconds: MINOR_SECONDS, endsOnGoal: true },
+      { seconds: MINOR_SECONDS, endsOnGoal: true }
+    ];
+  }
+  if (duration === 5) return [{ seconds: MAJOR_SECONDS, endsOnGoal: false }];
+  return [];
+}
+
+/**
+ * Coinciding penalties cancel minor for minor and major for major across the two teams. What survives is grouped by
+ * player, because one player's penalties run one after another while two players' run together.
+ */
+function getPenaltiesAfterCancelling(
+  stoppagePenalties: any[],
+  teamIds: number[]
+): Record<number, PenaltySegment[][]> {
+  const units = teamIds.map((teamId) =>
+    stoppagePenalties
+      .filter((penalty) => penalty.details.eventOwnerTeamId === teamId)
+      .flatMap((penalty) =>
+        getManpowerSegments(penalty).map((segment) => ({
+          ...segment,
+          server: penalty.details.committedByPlayerId ?? `event-${penalty.eventId}`
+        }))
+      )
+  );
+  const countOf = (teamIndex: number, endsOnGoal: boolean) =>
+    units[teamIndex].filter((unit) => unit.endsOnGoal === endsOnGoal).length;
+  const result: Record<number, PenaltySegment[][]> = {};
+  teamIds.forEach((teamId, teamIndex) => {
+    const remove = {
+      minor: Math.min(countOf(0, true), countOf(1, true)),
+      major: Math.min(countOf(0, false), countOf(1, false))
+    };
+    const byServer = new Map<unknown, PenaltySegment[]>();
+    for (const { server, ...segment } of units[teamIndex]) {
+      const kind = segment.endsOnGoal ? "minor" : "major";
+      if (remove[kind] > 0) {
+        remove[kind]--;
+        continue;
+      }
+      // A major is served ahead of a minor assessed with it.
+      const segments = byServer.get(server) ?? [];
+      if (segment.endsOnGoal) segments.push(segment);
+      else segments.unshift(segment);
+      byServer.set(server, segments);
+    }
+    result[teamId] = [...byServer.values()];
+  });
+  return result;
+}
+
+function startWaitingPenalties(box: TeamPenaltyBox) {
+  while (box.serving.length < MAX_PENALTIES_SERVING && box.waiting.length > 0) {
+    const segments = box.waiting.shift() as PenaltySegment[];
+    box.serving.push({ segments, remaining: segments[0].seconds });
+  }
+}
+
+function endCurrentSegment(box: TeamPenaltyBox, penalty: ServedPenalty) {
+  penalty.segments = penalty.segments.slice(1);
+  if (penalty.segments.length > 0) {
+    penalty.remaining = penalty.segments[0].seconds;
+    return;
+  }
+  box.serving.splice(box.serving.indexOf(penalty), 1);
+  startWaitingPenalties(box);
+}
+
+/**
+ * The stretches of game clock in which a team has more skaters because of penalties, one block per stretch. Blocks
+ * for a game never overlap, so a 5-on-3 is counted once and 4-on-4 not at all.
+ *  - A minor ends early when the team with the advantage scores. A double minor loses its current two minutes.
+ *  - A major always runs its full length.
+ *  - Coinciding penalties cancel, and a team serves at most two at once while the rest wait.
+ * @param plays
+ * @returns
+ */
+export default function getPowerPlayBlocks(plays: any[]): Block[] {
+  const clockPlays = plays.filter(
+    (play) => play.periodDescriptor?.periodType !== "SO"
+  );
+  if (clockPlays.length === 0) return [];
+  const [teamA, teamB] = getTeamIds(clockPlays);
+  const teamIds = [teamA, teamB];
+  const boxes: Record<number, TeamPenaltyBox> = {
+    [teamA]: { serving: [], waiting: [] },
+    [teamB]: { serving: [], waiting: [] }
+  };
+
+  const eventsBySecond = new Map<number, any[]>();
+  for (const play of clockPlays) {
+    if (play.typeDescKey !== "goal" && play.typeDescKey !== "penalty") continue;
+    const second = getGameSecond(play);
+    eventsBySecond.set(second, [...(eventsBySecond.get(second) ?? []), play]);
+  }
+  const gameEnd = Math.max(...clockPlays.map(getGameSecond));
+
+  const result: Block[] = [];
+  let openTeamId: number | null = null;
+  let openStart = 0;
+  const closeBlock = (end: number) => {
+    if (openTeamId === null) return;
+    result.push({
+      teamId: openTeamId,
+      start: getTimeAtGameSecond(openStart),
+      end: getTimeAtGameSecond(end)
+    });
+  };
+
+  for (let second = 0; second < gameEnd; second++) {
+    for (const teamId of teamIds) {
+      const box = boxes[teamId];
+      for (const penalty of [...box.serving]) {
+        if (penalty.remaining === 0) endCurrentSegment(box, penalty);
+      }
+    }
+
+    const events = eventsBySecond.get(second) ?? [];
+    for (const event of events) {
+      if (event.typeDescKey !== "goal") continue;
+      const scorer = event.details.eventOwnerTeamId;
+      const opponent = scorer === teamA ? teamB : teamA;
+      if (boxes[scorer].serving.length >= boxes[opponent].serving.length) continue;
+      const box = boxes[opponent];
+      const firstToExpire = box.serving
+        .filter((penalty) => penalty.segments[0].endsOnGoal)
+        .sort((a, b) => a.remaining - b.remaining)[0];
+      if (firstToExpire) endCurrentSegment(box, firstToExpire);
+    }
+    const stoppagePenalties = events.filter(
+      (event) => event.typeDescKey === "penalty"
+    );
+    if (stoppagePenalties.length > 0) {
+      const penalties = getPenaltiesAfterCancelling(stoppagePenalties, teamIds);
+      for (const teamId of teamIds) {
+        boxes[teamId].waiting.push(...penalties[teamId]);
+        startWaitingPenalties(boxes[teamId]);
+      }
+    }
+
+    const servingA = boxes[teamA].serving.length;
+    const servingB = boxes[teamB].serving.length;
+    const teamWithAdvantage =
+      servingA === servingB ? null : servingA < servingB ? teamA : teamB;
+    if (teamWithAdvantage !== openTeamId) {
+      closeBlock(second);
+      openTeamId = teamWithAdvantage;
+      openStart = second;
+    }
+
+    for (const teamId of teamIds) {
+      for (const penalty of boxes[teamId].serving) penalty.remaining--;
+    }
+  }
+  closeBlock(gameEnd);
+
   return result;
 }
 

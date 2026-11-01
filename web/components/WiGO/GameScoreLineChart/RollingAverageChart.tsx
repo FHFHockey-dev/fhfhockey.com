@@ -69,6 +69,8 @@ const RollingAverageChart: React.FC<RollingAverageChartProps> = ({
       type={chartType} // Use the passed base type
       data={chartData}
       options={chartOptions}
+      role="img"
+      aria-label="Game score by game, with 5-game and 10-game averages"
     />
   );
 };

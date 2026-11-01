@@ -7,8 +7,9 @@ import {
   WigoStatLabel,
   isWigoCountChartStat
 } from "./statMetadata";
-import { formatCell, formatDiffPercent } from "./tableUtils";
+import { formatCell, formatDiffPercent, formatSeasonRange } from "./tableUtils";
 import TimeframeComparison from "./TimeframeComparison";
+import WigoHelp from "./WigoHelp";
 import GameLogChart from "./StatsTableRowChart";
 import styles from "styles/wigoCharts.module.scss";
 
@@ -93,14 +94,10 @@ export default function WigoComparisonMatrix({
             initialRight={rightTimeframe}
             onCompare={onCompare}
           />
-          <span>
-            DIFF: {leftTimeframe} vs {rightTimeframe} · relative % · counts per
-            game
+          <span className={styles.matrixCaption}>
+            DIFF: % change · counts per game
           </span>
-          <details className={styles.matrixHelp}>
-            <summary aria-label="How comparison differences are calculated">
-              ⓘ
-            </summary>
+          <WigoHelp label="How comparison differences are calculated">
             <p>
               DIFF = (left − right) / absolute right × 100. Counting stats use
               per-game rates; rates, times and percentages are compared
@@ -109,14 +106,10 @@ export default function WigoComparisonMatrix({
               better.
             </p>
             <p>L5/L10/L20 use up to the latest 5/10/20 played games, including prior seasons. GP shows the actual sample. Aggregate date bounds and metric coverage are unavailable; a numeric value does not establish complete source coverage.</p>
-          </details>
+          </WigoHelp>
           <span role="status">
             {aggDataError ||
-              (isLoadingAggData
-                ? "Loading stats…"
-                : !playerId
-                  ? "Select a player"
-                  : "")}
+              (isLoadingAggData ? "Loading stats…" : "")}
           </span>
         </div>
         <div className={styles.matrixHalves}>
@@ -215,7 +208,7 @@ export default function WigoComparisonMatrix({
           {selectedMetric} game log{" "}
           <span>
             {currentSeasonId
-              ? `${String(currentSeasonId).slice(0, 4)}–${String(currentSeasonId).slice(6)}`
+              ? formatSeasonRange(currentSeasonId)
               : "Season unavailable"}{" "}
             games
           </span>

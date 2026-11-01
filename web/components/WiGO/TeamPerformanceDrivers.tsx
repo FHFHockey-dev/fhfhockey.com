@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import PanelStatus from "components/common/PanelStatus";
 import WigoSectionCard from "components/WiGO/WigoSectionCard";
+import WigoHelp from "./WigoHelp";
 import { fetchTeamDriverSnapshots } from "./fetchTeamDriverSnapshots";
 import styles from "./TeamPerformanceDrivers.module.scss";
 import {
@@ -39,14 +40,15 @@ const TeamPerformanceDrivers: React.FC<TeamPerformanceDriversProps> = ({
 
   return (
     <WigoSectionCard
-      title={`${teamAbbreviation || "Team"} Performance Drivers`}
-      toolbar={result ? <details className={styles.driverHelp}><summary aria-label="Team driver definitions and source context">ⓘ</summary><div>{result.drivers.map(driver => <p key={driver.key}><strong>{driver.label}:</strong> {driver.explanation}</p>)}<p>League sample: {result.leagueSample} teams. Five-on-five rows {result.fiveOnFiveOldestDate}–{result.fiveOnFiveDate}; special teams rows {result.specialTeamsOldestDate}–{result.specialTeamsDate}.</p></div></details> : undefined}
+      title={`${teamAbbreviation || "Team"} performance drivers`}
+      toolbar={result ? <WigoHelp label="Team driver definitions and source context">{result.drivers.map(driver => <p key={driver.key}><strong>{driver.label}:</strong> {driver.explanation}</p>)}<p>League sample: {result.leagueSample} teams. Five-on-five rows {result.fiveOnFiveOldestDate}–{result.fiveOnFiveDate}; special teams rows {result.specialTeamsOldestDate}–{result.specialTeamsDate}.</p></WigoHelp> : undefined}
       bodyClassName={styles.body}
     >
       {state === "idle" ? (
         <PanelStatus
           state="empty"
-          message="Select a player to load team drivers."
+          message="Select a player"
+          className={styles.emptyPrompt}
         />
       ) : state === "loading" ? (
         <PanelStatus state="loading" message="Loading team driver context..." />

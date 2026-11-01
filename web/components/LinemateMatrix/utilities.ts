@@ -64,13 +64,13 @@ export function getPairwiseTOI(
   };
 
   let totalDuration = 0;
-  const periods = Object.keys(p1Groups) as ("1" | "2" | "3" | "4")[];
+  const periods = Object.keys(p1Groups);
 
   periods.forEach((period) => {
     totalDuration += getTogetherDuration(
       p1Groups[period] ?? [],
       p2Groups[period] ?? [],
-      allPPTimeArray !== null ? allPPTimeArray[period] : []
+      allPPTimeArray?.[period] ?? []
     );
   });
   return totalDuration;
@@ -96,16 +96,18 @@ function convertToTimeArray(data: Shift[], size: number = 1200) {
 function createTimeArrayForPP(
   teamId: number,
   ppBlocks: Block[]
-): Record<"1" | "2" | "3" | "4", boolean[]> {
-  const PERIODS = ["1", "2", "3", "4"] as const;
+): Record<string, boolean[]> {
   const NORMAL_GAME_DURATION_IN_SECONDS = 1200;
-  const OT_GAME_DURATION_IN_SECONDS = 300;
-  const result: Record<"1" | "2" | "3" | "4", boolean[]> = {
-    "1": new Array(NORMAL_GAME_DURATION_IN_SECONDS).fill(false),
-    "2": new Array(NORMAL_GAME_DURATION_IN_SECONDS).fill(false),
-    "3": new Array(NORMAL_GAME_DURATION_IN_SECONDS).fill(false),
-    "4": new Array(OT_GAME_DURATION_IN_SECONDS).fill(false),
-  };
+  // Playoff overtimes run past a fourth period, so the periods come from the blocks.
+  const PERIODS = [
+    ...new Set(
+      ppBlocks.flatMap((block) => [`${block.start.period}`, `${block.end.period}`])
+    ),
+  ];
+  const result: Record<string, boolean[]> = {};
+  PERIODS.forEach((period) => {
+    result[period] = new Array(NORMAL_GAME_DURATION_IN_SECONDS).fill(false);
+  });
   for (let i = 0; i < PERIODS.length; i++) {
     const period = PERIODS[i];
     const ppTimeArray = result[period];

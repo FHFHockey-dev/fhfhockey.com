@@ -74,7 +74,7 @@
   - [x] 6.2 Add API diagnostics for empty results (requested date/run vs fallback date/run, games scheduled, run metrics).
   - [x] 6.3 Add UI display blocks for starter confidence drivers (recency, l10 starts, B2B, opponent strength).
   - [x] 6.4 Add visual indicators for confidence tier and volatility/risk classes with tooltips for definitions.
-  - [x] 6.5 Add disclosure panel in FORGE goalie view for model limitations and data source caveats.
+  - [x] 6.5 Add disclosure panel in FORGE goalie view for model limitations and data source caveats. _(Superseded by 2026-10-17 audit row NEW 11.0.)_
   - [x] 6.6 Add regression tests/snapshots for API response shape and key UI rendering states.
 - [x] 7.0 Integrate additional Supabase goalie/team context signals discovered during schema audit
   - [x] 7.1 Add goalie rest-split performance features from `wgo_goalie_stats` (`save_pct_days_rest_*`, `games_played_days_rest_*`) into save% adjustments.
@@ -84,12 +84,15 @@
   - [x] 7.5 Add NST team expected-goals context (`nst_team_stats` / `nst_team_all`: `xga`, `xga_per_60`) to opponent shot-danger adjustments.
   - [x] 7.6 Add recency-weighted `lineCombinations.goalies` prior as a soft candidate boost (never hard-include stale/non-roster goalies).
 - [x] 8.0 Additional FORGE polish and probability consistency updates
-  - [x] 8.1 Add a game ticker above `.goalieDisclosure` showing all games for the selected day, modeled after `.gameStrip` in `web/pages/start-chart.tsx`.
-  - [x] 8.2 Ensure opposing goalies' likely-starter `proj_win_prob` sums to 100% per game (or explicitly allocate residual starter mass to backup scenarios).
-  - [x] 8.3 Rename uncertainty label text from `(Low/Typical/High)` to `(Floor/Typical/Ceiling)` in goalie and skater uncertainty blocks.
+  - [x] 8.1 Add a game ticker above `.goalieDisclosure` showing all games for the selected day, modeled after `.gameStrip` in `web/pages/start-chart.tsx`. _(Superseded by 2026-10-17 audit row NEW 11.0.)_
+  - [x] 8.2 Ensure opposing goalies' likely-starter `proj_win_prob` sums to 100% per game (or explicitly allocate residual starter mass to backup scenarios). _(Superseded by 2026-10-17 audit row NEW 10.0.)_
+  - [x] 8.3 Rename uncertainty label text from `(Low/Typical/High)` to `(Floor/Typical/Ceiling)` in goalie and skater uncertainty blocks. _(Superseded by 2026-10-17 audit row NEW 11.0.)_
 
 - [x] NEW 9.0 **P1 public goalie-dashboard error containment:** the legacy FORGE dashboard goalie-risk card now renders a stable unavailable message instead of exposing fetch URLs, HTTP status text, or dependency details.
-- [x] NEW 9.1 **P3 implementation/runbook ownership reconciliation:** the implementation plan records shipped phases and bounded research exclusions; source-task and runbook links now resolve to canonical repository paths, with planning-era handoff/cron material explicitly historical.
+- [x] NEW 9.1 **P3 implementation/runbook ownership reconciliation:** the implementation plan records shipped phases and bounded research exclusions; source-task and runbook links now resolve to canonical repository paths, with planning-era handoff/cron material explicitly historical. _(Superseded by 2026-10-17 audit row NEW 11.0.)_
+
+- [ ] NEW 10.0 **P2 a null goalie win probability is fabricated into a number (2026-10-17 completion audit):** `web/pages/api/v1/forge/goalies.ts:438` coerces `proj_win_prob ?? 0` and `normalizeLikelyStarterWinProbabilities` (L150-210) renormalizes to 100%, so after `7f094c8e6` started emitting null when team goals are unavailable (`goalie-stage.ts:616,635,755`; `goalieModel.ts:193`) an all-null matchup falls back to starter-probability weights and invents win probabilities. `forge/goalies.test.ts` has no null case. Supersedes 8.2. Close by preserving null, with a test. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G5a-forge-model-startchart.md`.
+- [ ] NEW 11.0 **P3 goalie disclosure UI was removed and two source paths are wrong (2026-10-17 completion audit):** `be1aaa0b06` (2026-03-18) rewrote `web/pages/FORGE.tsx` and removed the goalie disclosure panel, the ticker above `.goalieDisclosure` and the floor/typical/ceiling blocks; `GoalieRiskCard.tsx` has no limitation copy. NEW 9.1 still lists `web/pages/FORGE.test.tsx` and `web/pages/api/v1/forge/goalies.test.ts`, which live under `web/__tests__/`. Supersedes 6.5, 8.1, 8.3 and NEW 9.1. Close by restoring or formally superseding the UI rows and fixing the paths. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G5a-forge-model-startchart.md`.
 
 ## Progress Snapshot (For Next Codex Chat)
 

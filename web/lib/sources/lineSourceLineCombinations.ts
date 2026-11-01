@@ -1,6 +1,7 @@
 import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import { tweetPipelineFlags } from "./tweetInterpretation";
 import {
+  FIRST_ARRIVAL_SOURCE_GROUPS,
   selectFirstArrivalBuckets,
   type FirstArrivalCandidate,
 } from "lib/sources/lineSourceFirstArrival";
@@ -172,7 +173,7 @@ export async function fetchLineCombinationSourceRowsForDate(args: {
       args.supabase
         .from("line_source_snapshots" as any)
         .select(`source_key, source_account, ${SOURCE_SELECT}`)
-        .eq("source_group", "gdl_suite")
+        .in("source_group", FIRST_ARRIVAL_SOURCE_GROUPS)
         .eq("snapshot_date", args.date)
         .eq("status", "observed")
         .eq("nhl_filter_status", "accepted")

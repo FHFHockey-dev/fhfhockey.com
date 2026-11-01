@@ -1,0 +1,22 @@
+@use "styles/vars" as v;
+
+/* 845px body less a wrapped headline: the tiles take what the sentence, legend, title and 340px chart leave. */
+.card { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 6px; }
+.sentence { margin: 0; font-size: 32px; line-height: 1.15; font-weight: 700; text-align: center; color: v.$color-white; }
+.note { margin: 0; font-size: 16px; line-height: 1.25; text-align: center; color: v.$text-secondary; }
+.tiles { flex: 1 1 0; min-height: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); column-gap: 16px; }
+.metric { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 4px; }
+.metricTitle { margin: 0; padding-bottom: 2px; border-bottom: 2px solid #63d2f5; font-size: 24px; line-height: 1.1; font-weight: 800; color: #63d2f5; }
+.pair { flex: 1 1 0; min-height: 0; display: flex; align-items: stretch; gap: 6px; }
+.tile { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border-radius: 6px; color: v.$color-white; background: rgba(v.$color-white, 0.06);
+  b { font-size: 72px; line-height: 1; font-weight: 800; }
+  small { font-size: 17px; line-height: 1.15; white-space: nowrap; color: v.$text-secondary; }
+}
+.tile[data-tile="after"] { background: rgba(#63d2f5, 0.22); }
+.tile[data-tile="after"] small { color: v.$color-white; }
+.change { flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; width: 76px; }
+.change b { font-size: 24px; line-height: 1; font-weight: 800; white-space: nowrap; color: v.$color-white; }
+.whatIf { flex: none; display: flex; flex-direction: column; gap: 2px; }
+.title { margin: 0; font-size: 22px; line-height: 1.2; }
+.title small { font-size: 15px; font-weight: 400; color: v.$text-secondary; }
+.chart { display: block; width: 100%; height: auto; }

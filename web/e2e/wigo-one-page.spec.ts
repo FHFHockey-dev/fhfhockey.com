@@ -158,6 +158,26 @@ test("a team-driver card at 95% coverage shows its N-of-M label and still fits 1
   expect(result.overflowing).toEqual([]);
 });
 
+test("every help note opens fully inside the 1280×800 screen and Escape closes it", async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await open(page);
+  const buttons = page.locator('[class*="wigoDashboardContent"] [popovertarget]');
+  await expect(buttons).toHaveCount(5);
+  for (const button of await buttons.all()) {
+    await button.click();
+    const panel = page.locator(`[id="${await button.getAttribute("popovertarget")}"]`);
+    await expect(panel).toBeVisible();
+    const bounds = (await panel.boundingBox())!;
+    expect(bounds.x).toBeGreaterThanOrEqual(0);
+    expect(bounds.y).toBeGreaterThanOrEqual(0);
+    expect(bounds.x + bounds.width).toBeLessThanOrEqual(1280);
+    expect(bounds.y + bounds.height).toBeLessThanOrEqual(800);
+    await page.keyboard.press("Escape");
+    await expect(panel).toBeHidden();
+  }
+});
+
 for (const [width, height] of [[1024, 768], [1280, 700]]) {
   test(`${width}×${height} flows every panel without clipping instead of fitting one screen`, async ({ page }) => {
     test.setTimeout(120_000);

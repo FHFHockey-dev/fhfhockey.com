@@ -97,7 +97,7 @@
   - [x] 1.5 Define the click-routing map for logos, rows, headshots, and cards so team clicks, player clicks, and nav actions resolve to the correct destinations.
   - [x] 1.6 Document section-specific stale-data behavior and warning treatment so the implementation does not improvise inconsistent blocked or stale states.
 - [x] 2.0 Build the slate-first dashboard shell and shared control system in `web/pages/forge/dashboard.tsx`
-  - [x] 2.1 Recompose `web/pages/forge/dashboard.tsx` into the new dashboard band structure instead of the existing isolated-card grid.
+  - [x] 2.1 Recompose `web/pages/forge/dashboard.tsx` into the new dashboard band structure instead of the existing isolated-card grid. _(Superseded by 2026-10-17 audit row NEW 10.0.)_
   - [x] 2.2 Add the shared dashboard control surface, including date context, compact secondary nav, and any global filters that should affect multiple sections.
   - [x] 2.3 Implement the top-level layout so Tonight's Slate is visually dominant and the Top Player Adds rail remains visible without burying team context.
   - [x] 2.4 Add the global section wrappers, loading shells, error shells, and stale-warning containers needed by every major dashboard band.
@@ -132,10 +132,13 @@
 - [x] 7.0 Add responsive behavior, stale-state handling, and verification coverage for the new dashboard system
   - [x] 7.1 Implement desktop and mobile layout behavior, including accordion treatment for heavier mobile sections and the default expanded mobile sections required by the PRD.
   - [x] 7.2 Add section-specific stale-state and missing-data handling so stale sections can warn without collapsing the entire dashboard experience.
-  - [x] 7.3 Add or update tests for `web/pages/forge/dashboard.tsx`, `web/pages/FORGE.tsx`, and any new team/player detail routes.
+  - [x] 7.3 Add or update tests for `web/pages/forge/dashboard.tsx`, `web/pages/FORGE.tsx`, and any new team/player detail routes. _(Superseded by 2026-10-17 audit row NEW 10.0.)_
   - [x] 7.4 Add tests or contract coverage for the dashboard data dependencies most likely to drift, including ownership, slate, team context, goalie, and sustainability payloads.
   - [x] 7.5 Verify the dashboard nav, card click-throughs, mobile accordions, and ownership filters behave correctly under realistic initial-load states.
   - [x] 7.6 Run full regression coverage for the affected dashboard, trends, start-chart, and supporting API/page surfaces before closeout.
 
-- [x] NEW 8.0 **P1 dashboard-wide dependency-detail containment:** Team Power, Trust or Fade, player movement, game slate, Goalie Starts, and Top Adds failure states now use stable surface copy rather than rendering fetch URLs, HTTP status text, or dependency details.
+- [x] NEW 8.0 **P1 dashboard-wide dependency-detail containment:** Team Power, Trust or Fade, player movement, game slate, Goalie Starts, and Top Adds failure states now use stable surface copy rather than rendering fetch URLs, HTTP status text, or dependency details. _(Superseded by 2026-10-17 audit row NEW 9.0.)_
 - [x] NEW 8.1 **P3 current route/status reconciliation:** the PRD/list now record the shipped preview/full-dashboard/Command-Center ownership and treat absolute planning paths as historical while preserving the implemented refresh contract.
+
+- [ ] NEW 9.0 **P3 the canonical Command Center renders raw request details (2026-10-17 completion audit):** `web/lib/dashboard/clientFetchCache.ts:36` throws `Request failed (${status}) for ${url}`, `commandCenterData.ts:173-176` returns it as `module.error` and `components/forge-command-center/CommandCenterShell.tsx:155,172` renders it; `web/__tests__/pages/forge/command-center.test.tsx:420-455` asserts it. NEW 8.0's stable copy exists only on the legacy cards, which are now unreachable. Supersedes NEW 8.0 (C0048) and master 5.4.3. Close with stable module copy on the canonical surface and an updated test. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G5b-forge-dashboards-trends.md`.
+- [ ] NEW 10.0 **P3 the full dashboard these rows describe is now a redirect (2026-10-17 completion audit):** `4929392498` (2026-07-30, owner-approved) replaced the `web/pages/forge/dashboard.tsx` band composition with a 40-line redirect (-578 lines) and cut `dashboard.test.tsx` by about 2,365 lines; the six `components/forge-dashboard/*Card.tsx` files have no page-level tests. Supersedes 2.1 (C0009) and 7.3 (C0044). Close by recording the redirect disposition on the rows. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G5b-forge-dashboards-trends.md`.

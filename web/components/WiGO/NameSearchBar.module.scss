@@ -1,6 +1,7 @@
 /* /web/components/WiGO/NameSearchBar.module.scss */
 @use "styles/vars" as v; // Import variables
 @use "sass:color";
+@use "components/WiGO/scale" as s;
 
 .searchBarContainer {
   position: relative;
@@ -13,19 +14,19 @@
   height: 100%;
   padding: v.$space-sm v.$space-md;
   border: 1px solid v.$border-color-secondary;
-  border-top-left-radius: v.$border-radius-sm * 1.5; // Keep if desired
+  border-radius: s.$radius-small;
 
-  font-size: v.$font-size-base * 1.1;
+  font-size: s.$text-16;
   box-sizing: border-box;
   background-color: v.$background-light;
   font-family: v.$font-family-primary;
-  color: v.$text-color-primary;
+  color: s.$ink;
   transition:
     border-color v.$transition-duration v.$transition-easing,
     box-shadow v.$transition-duration v.$transition-easing;
 
   &::placeholder {
-    color: v.$text-color-secondary;
+    color: s.$ink-muted;
     opacity: 0.7;
   }
 
@@ -45,7 +46,7 @@
   background-color: v.$background-dark;
   border: 1px solid v.$border-color-primary;
   border-top: none;
-  border-radius: 0 0 v.$border-radius-sm v.$border-radius-sm;
+  border-radius: 0 0 s.$radius-small s.$radius-small;
   max-height: 250px;
   overflow-y: auto;
   z-index: 1000; // Ensure dropdown is on top
@@ -57,7 +58,7 @@
   }
   &::-webkit-scrollbar-thumb {
     background-color: v.$primary-color;
-    border-radius: 3px;
+    border-radius: s.$radius-small;
   }
   &::-webkit-scrollbar-track {
     background-color: v.$background-medium;
@@ -70,7 +71,7 @@
 .dropdownItem {
   padding: v.$space-sm v.$space-md;
   cursor: pointer;
-  color: v.$text-color-secondary;
+  color: s.$ink-muted;
   transition:
     background-color v.$transition-duration v.$transition-easing,
     color v.$transition-duration v.$transition-easing;
@@ -81,24 +82,24 @@
   &:focus {
     // These apply directly to .dropdownItem
     background-color: v.$background-light;
-    color: v.$text-color-primary;
+    color: s.$ink;
     outline: none;
   }
 
   &.active {
     background-color: color.adjust(v.$primary-color, $lightness: -35%);
-    color: v.$text-color-primary;
+    color: s.$ink;
     // red for testing:
     // background-color: red !important;
     // color: white !important;
-    // font-weight: bold !important;
+    // font-weight: s.$weight-bold !important;
     outline: none;
   }
 }
 
 .noResults {
   padding: v.$space-sm v.$space-md;
-  color: v.$text-color-secondary;
+  color: s.$ink-muted;
   font-style: italic;
   text-align: center;
 }
@@ -110,19 +111,19 @@
   right: v.$space-md;
   top: 50%;
   transform: translateY(-50%);
-  font-size: v.$font-size-small;
-  color: v.$text-color-secondary;
+  font-size: s.$text-14;
+  color: s.$ink-muted;
   pointer-events: none; // Don't interfere with input clicks
 }
 
 .error {
-  color: #ff6b6b; // Standard error color
+  color: s.$bad; // Standard error color
 }
 
 :global(.wigo-one-page) {
   .searchInput {
     padding: 0 10px;
-    font-size: 14px;
+    font-size: s.$text-14;
   }
   // Status lines float under the 28px input like the results list instead of growing the toolbar.
   .loadingIndicator,
@@ -135,6 +136,12 @@
     padding: 2px 10px;
     border: 1px solid v.$border-color-secondary;
     background: v.$background-dark;
-    font-size: 11px;
+    font-size: s.$text-11;
+  }
+}
+
+:global(.wigo-one-page) {
+  .searchInput {
+    font-size: s.$text-14;
   }
 }

@@ -5,6 +5,8 @@ import {
   SkaterTotalsData
 } from "utils/fetchWigoPlayerStats";
 import { formatWigoStatValue } from "./statMetadata";
+import { formatSeasonRange } from "./tableUtils";
+import WigoHelp from "./WigoHelp";
 import { WIGO_ERROR_MESSAGES } from "./errorMessages";
 import styles from "./PerGameStatsTable.module.scss";
 
@@ -145,12 +147,12 @@ const PerGameStatsTable: React.FC<PerGameStatsTableProps> = ({
     ];
   }, [totalsData]);
 
-  const status = !playerId ? "Select a player to view stats." : !seasonId ? "Loading season info..." : isLoading ? "Loading Stats..." : errorMessage;
+  const status = !playerId ? "Select a player" : !seasonId ? "Loading season info..." : isLoading ? "Loading Stats..." : errorMessage;
   const visibleRows = statRows.length ? statRows : ["GP", "G", "A", "PTS", "SOG", "S%", "PPP", "HIT", "BLK", "PIM"].map(stat => ({ stat, perGame: "-", per84: "-" }));
   return (
     <div className={`${styles.perGameTableContainer} ${desktop ? styles.desktopSummary : ""}`}>
       <section className={styles.productionSnapshot} data-coverage="C04">
-        <h3>Season production <span>{totalsData?.season || seasonId || "Season unavailable"}</span></h3>
+        <h3>Season production <span>{(totalsData?.season || seasonId) ? formatSeasonRange((totalsData?.season || seasonId)!) : "Season unavailable"}</span></h3>
         {status ? <p className={styles.summaryStatus} role="status">{status}</p> : <div className={styles.productionGrid}>
           {productionSnapshot.map(stat => <div key={stat.label} className={styles.productionStat}>
             <span>{stat.label}</span><strong>{stat.value ?? "-"}</strong><small>{formatStatValue(stat.perGame)} / GP</small>
@@ -158,10 +160,10 @@ const PerGameStatsTable: React.FC<PerGameStatsTableProps> = ({
         </div>}
       </section>
       <section className={styles.projectionTableSection} data-coverage="C05">
-        <details className={styles.paceHelp}>
-          <summary><h3>Per-game / 84-game pace</h3></summary>
-          <p>Observed counting rate × 84, rounded to a whole count. Constant-rate pace, not a remaining-game, availability or health prediction.</p>
-        </details>
+        <div className={styles.paceTitle}>
+          <h3>Per-game / 84-game pace</h3>
+          <WigoHelp label="How pace is calculated"><p>Observed counting rate × 84, rounded to a whole count. Constant-rate pace, not a remaining-game, availability or health prediction.</p></WigoHelp>
+        </div>
         {/* The one-page dashboard shows the ten rows as two five-row halves side by side. */}
         <div className={styles.paceTables}>
           {(desktop ? [visibleRows.slice(0, 5), visibleRows.slice(5)] : [visibleRows]).map(rows => <table key={rows[0]?.stat} className={styles.verticalStatsTable}>
