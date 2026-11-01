@@ -2,6 +2,7 @@ import { currentSeason } from "lib/socialShare/schedule";
 import { defineShareModule, shareSettingsKey, type SharePostEvidence, type SharePostLoadResult, type SharePostSource, type ShareSettingField } from "./contract";
 import { bsh, competitionRanks, editionDate, lastN, previousN, versusSeason, type ShareWindow } from "./shared/definitions";
 import type { CompletedTeamGame } from "./shared/goalieLedger";
+import { customRangeReason, PERIOD_CUSTOM, PERIOD_MATCHUP, periodWindowFields, type PeriodControl, type PeriodWindowSettings } from "./shared/periodWindow";
 import { appearancesByPlayer, type SkaterAppearance } from "./shared/skaterAppearances";
 import { shiftDays } from "./teamGames";
 
@@ -34,7 +35,29 @@ export function skaterSeasonScope(generatedAt: string) {
   const through = shiftDays(editionDate(generatedAt), -1), season = currentSeason(through);
   return { season, from: `${Math.floor(season / 10000)}-07-01`, through };
 }
-export type SkaterSeason = { appearances: readonly SkaterAppearance[]; teamGames: readonly CompletedTeamGame[]; scheduledGames: number; through: string };
+/** A matchup week or custom dates. Appearances, team games and the schedule then cover these dates alone. */
+export type SkaterPeriod = { label: string; from: string; through: string };
+export type SkaterSeason = { appearances: readonly SkaterAppearance[]; teamGames: readonly CompletedTeamGame[]; scheduledGames: number; through: string; period?: SkaterPeriod };
+
+/** The recent-games windows stay the default. Their option is the post's own, so old URLs with only `window` keep their meaning. */
+export const PERIOD_ROLLING = "rolling";
+export const SKATER_PERIOD_CONTROL: PeriodControl = { mode: "past-only" };
+export const SKATER_PERIOD_FIELDS: readonly ShareSettingField[] = [
+  ...periodWindowFields({ mode: SKATER_PERIOD_CONTROL.mode, default: PERIOD_ROLLING, options: [{ value: PERIOD_ROLLING, label: "Recent games (L5, L10, season)" }, { value: PERIOD_MATCHUP, label: "Matchup week" }, { value: PERIOD_CUSTOM, label: "Custom range" }] }),
+  { id: "minGpRange", label: "Min GP in a week or range (blank is half the most played, at most 5)", kind: "number", default: null, min: 1, max: 82, step: 1 },
+];
+export type SkaterPeriodSettings = PeriodWindowSettings & { minGpRange: number | null };
+export const skaterPeriodReason = (settings: Pick<PeriodWindowSettings, "period" | "start" | "end">) => settings.period === PERIOD_CUSTOM ? customRangeReason(settings) : null;
+/** Season-style min GP would empty a week. Half the most games anyone played there, rounded up, and never above the season default of 5. */
+export const RANGE_MIN_GP_CEILING = 5;
+export const rangeMinGp = (mostGames: number) => Math.min(RANGE_MIN_GP_CEILING, Math.max(1, Math.ceil(mostGames / 2)));
+/** What a board ranks over. Inside a period every game read counts, so the whole-window rule applies to those dates alone. */
+export function skaterPeriodRules(season: Pick<SkaterSeason, "appearances" | "period">, settings: { window: SkaterWindowId; minGp: number; minGpRange: number | null }) {
+  const { period } = season;
+  if (!period) return { periodLabel: null, window: settings.window, minGp: settings.minGp, windowLabel: skaterWindowLabel(settings.window) };
+  const mostGames = Math.max(0, ...[...appearancesByPlayer(season.appearances).values()].map(rows => rows.length));
+  return { periodLabel: period.label, window: "std" as const, minGp: settings.minGpRange ?? rangeMinGp(mostGames), windowLabel: period.label };
+}
 
 /** A scheduled team game counts only once the team feed has it and skater rows exist for that team in that game. */
 export function skaterSeasonEvidence(season: SkaterSeason, input: { windowLabel: string; cohort: string; note?: string; extraSources?: readonly SharePostSource[] }): { state: "ready" | "partial"; reasons: string[]; evidence: SharePostEvidence } {
@@ -46,7 +69,7 @@ export function skaterSeasonEvidence(season: SkaterSeason, input: { windowLabel:
     state, reasons: complete ? [] : [`${observed} of ${expected} scheduled team games have reported skater results.`],
     evidence: {
       sources: [{ name: "NHL.com skater game stats", tables: ["wgo_skater_stats", "wgo_team_stats", "games"], state, asOf, updatedAt: null }, ...(input.extraSources ?? [])],
-      sample: `Season through ${season.through}: ${season.appearances.length} appearances. Window: ${input.windowLabel}.${input.note ? ` ${input.note}` : ""}`, strength: "All situations", cohort: input.cohort,
+      sample: `${season.period ? `${season.period.label}, through ${season.through}` : `Season through ${season.through}`}: ${season.appearances.length} appearances. Window: ${input.windowLabel}.${input.note ? ` ${input.note}` : ""}`, strength: "All situations", cohort: input.cohort,
       coverage: { observed, expected, missing: Math.max(0, expected - observed), unit: "team games" },
     },
   };
@@ -62,17 +85,19 @@ export function skaterIdentity(rows: readonly SkaterAppearance[]): SkaterIdentit
 export function skaterCohort(appearances: readonly SkaterAppearance[], settings: { position: SkaterPositionId; minGp: number }) {
   return [...appearancesByPlayer(appearances).values()].filter(rows => rows.length >= settings.minGp && (settings.position === "all" || rows[rows.length - 1].group === settings.position));
 }
-export const skaterCohortLabel = (settings: { position: SkaterPositionId; minGp: number }) => `${SKATER_POSITION_OPTIONS.find(option => option.value === settings.position)!.label}, ${settings.minGp}+ season GP`;
+export const skaterCohortLabel = (settings: { position: SkaterPositionId; minGp: number }, inPeriod = false) => `${SKATER_POSITION_OPTIONS.find(option => option.value === settings.position)!.label}, ${settings.minGp}+ ${inPeriod ? "GP in these dates" : "season GP"}`;
 export const shownTeams = (rows: readonly { team: string | null }[]) => [...new Set(rows.flatMap(row => row.team ? [row.team] : []))].sort();
 
 export type BshView = "leaders" | "movers";
 export type BshComparison = "previous" | "std";
-export type BshBoardSettings = { view: BshView; window: SkaterWindowId; comparison: BshComparison; minGp: number; position: SkaterPositionId };
+export type BshBoardSettings = SkaterPeriodSettings & { view: BshView; window: SkaterWindowId; comparison: BshComparison; minGp: number; position: SkaterPositionId };
 /** A null component total means a game in the window lacks that stat. Shot attempts never stand in for shots. */
 export type BshTotals = { games: number; blocks: number | null; shots: number | null; hits: number | null; bsh: number | null; blocksPerGame: number | null; shotsPerGame: number | null; hitsPerGame: number | null; bshPerGame: number | null };
 export type BshRow = SkaterIdentity & { rank: number; recent: BshTotals; baseline: BshTotals | null; delta: number | null };
 export type BshBoardData = {
   applied: string; view: BshView; through: string; windowLabel: string; comparisonLabel: string | null;
+  /** The dates a matchup week or custom range covers; null on the recent-games windows. */
+  periodLabel: string | null;
   /** Leaders view. The movers view fills `risers` and `fallers`. */
   rows: BshRow[]; risers: BshRow[]; fallers: BshRow[];
   cohort: { eligible: number; comparable: number; ranked: number; risers: number; fallers: number; missingComponent: number; shortWindow: number; flat: number };
@@ -113,18 +138,19 @@ export const bshComparisonLabel = (settings: Pick<BshBoardSettings, "view" | "wi
 
 const BSH_FIELDS: readonly ShareSettingField[] = [
   { id: "view", label: "View", kind: "select", default: "leaders", options: [{ value: "leaders", label: "Leaders" }, { value: "movers", label: "Risers and fallers" }] },
-  { id: "window", label: "Window", kind: "select", default: "l10", options: SKATER_WINDOW_OPTIONS },
+  ...SKATER_PERIOD_FIELDS,
+  { id: "window", label: "Window", kind: "select", default: "l10", options: SKATER_WINDOW_OPTIONS, onlyForPeriod: PERIOD_ROLLING },
   { id: "comparison", label: "Comparison (risers, fallers)", kind: "select", default: "previous", options: [{ value: "previous", label: "Previous N" }, { value: "std", label: "Season excl. recent" }] },
-  { id: "minGp", label: "Min season GP", kind: "number", default: 5, min: 1, max: 82, step: 1 },
+  { id: "minGp", label: "Min season GP", kind: "number", default: 5, min: 1, max: 82, step: 1, onlyForPeriod: PERIOD_ROLLING },
   { id: "position", label: "Position", kind: "select", default: "all", options: SKATER_POSITION_OPTIONS },
 ];
 
 /** Leaders rank BSH per game in the window. Risers and fallers need a full recent window and a baseline at least as long. */
 export function buildBshBoard(season: SkaterSeason, settings: BshBoardSettings): SharePostLoadResult<BshBoardData> {
-  const pool = skaterCohort(season.appearances, settings), leaders = settings.view === "leaders";
+  const rules = skaterPeriodRules(season, settings), pool = skaterCohort(season.appearances, { position: settings.position, minGp: rules.minGp }), leaders = settings.view === "leaders";
   let missingComponent = 0, shortWindow = 0;
   const candidates = pool.flatMap((rows): (Omit<BshRow, "rank" | keyof SkaterIdentity> & { id: SkaterIdentity })[] => {
-    const recent = skaterWindowOf(rows, settings.window);
+    const recent = skaterWindowOf(rows, rules.window);
     if (leaders) {
       const totals = bshTotals(recent.rows);
       if (totals.bsh === null) { missingComponent++; return []; }
@@ -149,11 +175,11 @@ export function buildBshBoard(season: SkaterSeason, settings: BshBoardSettings):
   const counted = top ? `${top.ranked} ranked` : `${candidates.length} comparable, ${up!.ranked} risers, ${down!.ranked} fallers`;
   const below = top ? [belowTheCard(top.notShown, top.tied)] : [up!.notShown ? `risers: ${belowTheCard(up!.notShown, up!.tied)}` : "", down!.notShown ? `fallers: ${belowTheCard(down!.notShown, down!.tied)}` : ""];
   const excluded = [missingComponent ? `${missingComponent} unranked for a missing component` : "", shortWindow ? `${shortWindow} short of a full comparison` : "", flat ? `${flat} unchanged` : "", ...below].filter(Boolean).join(", ");
-  const windowLabel = skaterWindowLabel(settings.window), shown = top ? top.rows : [...up!.rows, ...down!.rows];
+  const { windowLabel, periodLabel } = rules, shown = top ? top.rows : [...up!.rows, ...down!.rows];
   return {
-    ...skaterSeasonEvidence(season, { windowLabel: comparisonLabel ? `${windowLabel} vs ${comparisonLabel}` : windowLabel, cohort: `${skaterCohortLabel(settings)}: ${pool.length} eligible, ${counted}${excluded ? `, ${excluded}` : ""}`, note: leaders ? "Ranked by BSH per game. A missing component leaves a skater unranked; shot attempts never stand in. The bar splits each skater's BSH per game into blocks, shots and hits." : "Ranked by the change in BSH per game. Both windows must be full. The bar splits each skater's recent-window BSH per game into blocks, shots and hits." }),
+    ...skaterSeasonEvidence(season, { windowLabel: comparisonLabel ? `${windowLabel} vs ${comparisonLabel}` : windowLabel, cohort: `${skaterCohortLabel({ position: settings.position, minGp: rules.minGp }, !!periodLabel)}: ${pool.length} eligible, ${counted}${excluded ? `, ${excluded}` : ""}`, note: leaders ? "Ranked by BSH per game. A missing component leaves a skater unranked; shot attempts never stand in. The bar splits each skater's BSH per game into blocks, shots and hits." : "Ranked by the change in BSH per game. Both windows must be full. The bar splits each skater's recent-window BSH per game into blocks, shots and hits." }),
     data: {
-      applied: shareSettingsKey(BSH_FIELDS, settings), view: settings.view, through: season.through, windowLabel, comparisonLabel,
+      applied: shareSettingsKey(BSH_FIELDS, settings), view: settings.view, through: season.through, windowLabel, comparisonLabel, periodLabel,
       rows: top?.rows ?? [], risers: up?.rows ?? [], fallers: down?.rows ?? [],
       cohort: { eligible: pool.length, comparable: candidates.length, ranked: top ? top.ranked : up!.ranked + down!.ranked, risers: up?.ranked ?? 0, fallers: down?.ranked ?? 0, missingComponent, shortWindow, flat },
       notShown: top ? top.notShown : up!.notShown + down!.notShown, tiedBeyondCut: top ? top.tied : up!.tied + down!.tied,
@@ -169,7 +195,12 @@ export const bshBoardModule = defineShareModule<BshBoardSettings, BshBoardData>(
   id: "bsh-board", title: "BSH Board", summary: "BLK + SOG + HITS leaders, risers and fallers, with all three components per game.", group: "skaters", basis: "observed",
   suggestedUse: "Works for a midweek category post; choose it on any day.",
   fields: BSH_FIELDS,
-  validate: settings => settings.view !== "leaders" && settings.window === "std" ? "Risers and fallers compare a recent window: choose L5 or L10." : null,
+  periodControl: SKATER_PERIOD_CONTROL,
+  validate: settings => {
+    if (settings.view === "leaders") return skaterPeriodReason(settings);
+    if (settings.period !== PERIOD_ROLLING) return "Risers and fallers keep their recent windows: set Period to Recent games, or choose Leaders.";
+    return settings.window === "std" ? "Risers and fallers compare a recent window: choose L5 or L10." : null;
+  },
   load: () => import("./bshBoard.sources").then(sources => sources.loadBshBoard),
   card: () => import("components/SocialShare/modules/BshBoardCard").then(card => card.default),
   hasRows: (data, settings) => data.rows.length + data.risers.length + data.fallers.length > 0 && bshBoardCurrent(data, settings),

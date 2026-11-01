@@ -94,6 +94,6 @@ export default function BshBoardCard({ data, settings, snapshot, logos }: ShareP
     { id: "bsh", label: "BSH /G", numeric: true, cell: row => <span className={styles.tile}><HeatTile value={row.recent.bshPerGame} text={rate(row.recent.bshPerGame)} caption={`${row.recent.bsh} total`} largest={largestRate} /></span> },
     { id: "bar", label: "", numeric: true, cell: row => <BshBarView totals={row.recent} barPx={BSH_BAR_PX.leaders} /> },
   ];
-  const legend = <><Key /> = share of BSH/G. {windowShort(settings.window)}: total, then per game. {cohort.ranked} of {cohort.eligible} ranked.</>;
+  const legend = <><Key /> = share of BSH/G. {data.periodLabel ?? windowShort(settings.window)}: total, then per game. {cohort.ranked} of {cohort.eligible} ranked.</>;
   return <SkaterBoard legend={legend} columns={columns} rows={data.rows} rowKey={row => row.playerId} empty={data.rows.length ? null : "No skater qualifies with these settings"} charted />;
 }

@@ -1,5 +1,5 @@
 import { normalizeEvDeploymentBucket } from "lib/rankings/skaterDeploymentAggregation";
-import { defineShareModule, shareSettingsKey, type ShareSettingField, type SharePostLoadResult, type SharePostSource } from "./contract";
+import { defineShareModule, shareSettingsKey, UNKNOWN_EVIDENCE, type ShareSettingField, type SharePostLoadResult, type SharePostSource } from "./contract";
 import { toNstGoalieGames, type NstGsaxRow } from "./goalieGsax";
 import { roleSlotReader, type RoleEvidence, type RoleRollingRow, type RoleSlot } from "./roleWatch";
 import { ownershipOf, pooledGaa, pooledSavePct, type OwnershipState } from "./shared/definitions";
@@ -15,7 +15,7 @@ export type StandoutView = "under" | "all" | "goalies" | "forwards" | "defenseme
 export type StandoutStatId = "sog" | "toi" | "icf" | "iscf" | "xg" | "xgPct" | "ppToi";
 export type StandoutSortKey = "points" | StandoutStatId;
 export type StandoutSortMode = "average" | "value" | "jump";
-export type LastNightsStandoutsSettings = { view: StandoutView; rosterMax: number; rankBy: StandoutSortKey; minShotsAgainst: number; minPriorGp: number; minCoverage: number; picks: string };
+export type LastNightsStandoutsSettings = { view: StandoutView; slate: string | null; rosterMax: number; rankBy: StandoutSortKey; minShotsAgainst: number; minPriorGp: number; minCoverage: number; picks: string };
 
 /** What fits the 860px body: two lines a skater, and one table line a goalie. The sidebar prints the skater limit. */
 export const STANDOUT_MAX_ROWS = 8;
@@ -181,10 +181,20 @@ export type StandoutGoalie = {
   gsax: number | null;
   priorGames: number; stats: GoalieStat[];
 };
+/** The nearest slates with games, and the dates the chooser can open. A null `next` means this is the latest completed slate. */
+export type StandoutSlates = { previous: string | null; next: string | null; first: string; last: string };
 export type LastNightsStandoutsData = {
-  applied: string; view: StandoutView; slate: string; games: number;
+  applied: string; view: StandoutView; slate: string; slates: StandoutSlates; games: number;
   skaters: StandoutSkater[]; goalies: StandoutGoalie[];
 };
+export const STANDOUTS_TITLE = "Last Nights Standouts";
+/** "Last night" is only true of the latest slate. A chosen older one prints its date instead. */
+export const isOlderSlate = (data: Pick<LastNightsStandoutsData, "slates">) => data.slates.next !== null;
+export const slateWord = (data: Pick<LastNightsStandoutsData, "slate" | "slates">) => isOlderSlate(data) ? slateLabel(data.slate) : "Last night";
+export function standoutsHeadline(settings: Pick<LastNightsStandoutsSettings, "slate">, data?: Pick<LastNightsStandoutsData, "slate" | "slates"> | null) {
+  if (!settings.slate || (data?.slate === settings.slate && !isOlderSlate(data))) return STANDOUTS_TITLE;
+  return `${slateLabel(settings.slate)} Standouts`;
+}
 
 export const parsePicks = (picks: string) => [...new Set(picks.split(",").map(text => text.trim()).filter(text => /^\d+$/.test(text)).map(Number))];
 /** Adds at the end or removes in place. A pick past the card's limit is refused. */
@@ -239,6 +249,8 @@ export function goalieRankingText(ranking: ReturnType<typeof goalieRanking>, min
 
 const FIELDS: readonly ShareSettingField[] = [
   { id: "view", label: "View", kind: "select", default: "under", options: [{ value: "under", label: "Under X% rostered (by hand)" }, { value: "all", label: "No roster limit (by hand)" }, { value: "goalies", label: "Goalies" }, { value: "forwards", label: "Top forwards" }, { value: "defensemen", label: "Top defensemen" }] },
+  // Blank is the latest completed slate. It has its own field because the shared period control refuses a one-day range.
+  { id: "slate", label: "Slate", kind: "date", default: null, panelOnly: true },
   { id: "rosterMax", label: "Under X% rostered", kind: "number", default: 50, min: 1, max: 100, step: 1, clientOnly: true },
   { id: "rankBy", label: "Rank forwards and defensemen by", kind: "select", default: "points", options: STANDOUT_SORT_OPTIONS, clientOnly: true },
   { id: "minShotsAgainst", label: "Min shots against (goalies)", kind: "number", default: 15, min: 0, max: 60, step: 1, clientOnly: true },
@@ -286,9 +298,11 @@ export function latestEarlierLines(rows: readonly EarlierLineRow[], slate: strin
   return latest;
 }
 
+const slatesOf = (input: LastNightsStandoutsInput): StandoutSlates => input.slates ?? { previous: null, next: null, first: input.slate, last: input.slate };
+const OLD_ROSTER = "Rostered % is the current figure, not as of this slate.";
 const STRENGTH = "All situations; PP TOI on the power play; xG% on ice (NST)";
 export type LastNightsStandoutsInput = {
-  slate: string; season: number; settings: LastNightsStandoutsSettings; completedTeamGames: readonly TeamGame[]; scheduledGameIds: readonly number[];
+  slate: string; slates?: StandoutSlates; season: number; settings: LastNightsStandoutsSettings; completedTeamGames: readonly TeamGame[]; scheduledGameIds: readonly number[];
   ownership: { byPlayer: ReadonlyMap<number, OwnershipState>; updatedAt: string | null };
   /** Skater views: every game this season of everyone on the slate, the slate included. */
   appearances?: readonly SkaterAppearance[]; nstCounts?: readonly NstCountRow[]; nstOnIce?: readonly NstOnIceRow[]; role?: RoleEvidence;
@@ -318,9 +332,9 @@ function buildGoalieView(input: LastNightsStandoutsInput, applied: string): Shar
   ];
   return {
     state: reasons.length ? "partial" : "ready", reasons,
-    data: { applied, view: settings.view, slate, games: input.scheduledGameIds.length, skaters: [], goalies },
+    data: { applied, view: settings.view, slate, slates: slatesOf(input), games: input.scheduledGameIds.length, skaters: [], goalies },
     teams: [...new Set(goalies.map(row => row.team))].sort(),
-    evidence: { sources, sample: `Slate of ${slate}, ${input.scheduledGameIds.length} games. STD is each goalie's appearances before that slate, last night excluded, with ${settings.minPriorGp}+ prior GP: per appearance, with SV% and GAA pooled. SV% changes in points of save percentage, GAA and GSAx in goals, the rest in %. GSAx is NST xG against less NST goals against; it prints — until NST has that goalie's row`, strength: "All situations", cohort: `${goalies.length} goalies on the slate, ${withGsax} with NST GSAx`, coverage: { observed: coverage.observed, expected: coverage.expected, missing: coverage.missing, unit: "team games" } },
+    evidence: { sources, sample: `Slate of ${slate}, ${input.scheduledGameIds.length} games. STD is each goalie's appearances before that slate, that slate and later games excluded, with ${settings.minPriorGp}+ prior GP: per appearance, with SV% and GAA pooled. SV% changes in points of save percentage, GAA and GSAx in goals, the rest in %. GSAx is NST xG against less NST goals against; it prints — until NST has that goalie's row`, strength: "All situations", cohort: `${goalies.length} goalies on the slate, ${withGsax} with NST GSAx`, coverage: { observed: coverage.observed, expected: coverage.expected, missing: coverage.missing, unit: "team games" } },
   };
 }
 
@@ -355,10 +369,15 @@ function buildSkaterViews(input: LastNightsStandoutsInput, applied: string): Sha
   ];
   return {
     state: reasons.length ? "partial" : "ready", reasons,
-    data: { applied, view: settings.view, slate, games: input.scheduledGameIds.length, skaters, goalies: [] },
+    data: { applied, view: settings.view, slate, slates: slatesOf(input), games: input.scheduledGameIds.length, skaters, goalies: [] },
     teams: [...new Set(skaters.flatMap(row => row.team ? [row.team] : []))].sort(),
-    evidence: { sources, sample: `Slate of ${slate}, ${input.scheduledGameIds.length} games. Each % compares that game with the skater's own season per game before it, last night excluded, with ${settings.minPriorGp}+ prior GP; xG% is pooled. A zero or missing baseline prints —. PP units are ranked from shift data; PP — means no rows, or NHL.com PP time contradicts the unit${isHandBuilt(settings.view) ? ". Skaters on this card are chosen by hand" : ""}`, strength: STRENGTH, cohort: `${skaters.length} skaters on the slate: ${skaters.filter(row => row.group === "F").length} F, ${skaters.filter(row => row.group === "D").length} D`, coverage: { observed: coverage.observed, expected: coverage.expected, missing: coverage.missing, unit: "team games" } },
+    evidence: { sources, sample: `Slate of ${slate}, ${input.scheduledGameIds.length} games. Each % compares that game with the skater's own season per game before it, that slate and later games excluded, with ${settings.minPriorGp}+ prior GP; xG% is pooled. A zero or missing baseline prints —. PP units are ranked from shift data; PP — means no rows, or NHL.com PP time contradicts the unit${isHandBuilt(settings.view) ? ". Skaters on this card are chosen by hand" : ""}`, strength: STRENGTH, cohort: `${skaters.length} skaters on the slate: ${skaters.filter(row => row.group === "F").length} F, ${skaters.filter(row => row.group === "D").length} D`, coverage: { observed: coverage.observed, expected: coverage.expected, missing: coverage.missing, unit: "team games" } },
   };
+}
+/** A chosen date with no games: a clear reason, and data so the sidebar keeps its chooser. It never shows a card or exports. */
+export function standoutsNoSlate(date: string, settings: LastNightsStandoutsSettings, slates: StandoutSlates): SharePostLoadResult<LastNightsStandoutsData> {
+  const inSeason = date >= slates.first && date <= slates.last;
+  return { state: "missing", reasons: [inSeason ? `No completed games on ${slateLabel(date)}. Choose another slate.` : `${date} is outside this season's completed slates, ${slates.first} to ${slates.last}.`], evidence: UNKNOWN_EVIDENCE, data: { applied: shareSettingsKey(SERVER_FIELDS, settings), view: settings.view, slate: date, slates, games: 0, skaters: [], goalies: [] }, teams: [] };
 }
 export function buildLastNightsStandouts(input: LastNightsStandoutsInput): SharePostLoadResult<LastNightsStandoutsData> {
   const applied = shareSettingsKey(SERVER_FIELDS, input.settings);
@@ -368,7 +387,8 @@ export function buildLastNightsStandouts(input: LastNightsStandoutsInput): Share
 const altSkater = (row: StandoutSkater) => `${row.name ?? `Player ${row.playerId}`} ${row.goalLine}, ${lineChipText(row)}, ${ppChipText(row.role)}: ${row.stats.map(stat => `${stat.label} ${statText(stat)}, STD ${stdText(stat)}, ${percentLabel(stat.change)}`).join(", ")}`;
 const altGoalie = (row: StandoutGoalie, index: number) => `${goalieRank(row, index) ?? "Unranked"}. ${row.name ?? `Goalie ${row.goalieId}`}: ${row.stats.map(stat => `${stat.label} ${goalieLastText(stat)}, STD ${goalieStdText(stat)}, change ${goalieChangeText(stat)}`).join("; ")}; TOI ${formatSeconds(row.toiSeconds)}`;
 export const lastNightsStandoutsModule = defineShareModule<LastNightsStandoutsSettings, LastNightsStandoutsData>({
-  id: "last-nights-standouts", title: "Last Nights Standouts", summary: "Observed results from the latest completed slate, each against that player's own season per game before it. Two views are built by hand.", group: "skaters", basis: "observed",
+  id: "last-nights-standouts", title: STANDOUTS_TITLE, summary: "Observed results from the latest completed slate, each against that player's own season per game before it. Two views are built by hand.", group: "skaters", basis: "observed",
+  headline: standoutsHeadline,
   kicker: settings => isGoalieView(settings.view) ? "Goalies" : "Skaters",
   suggestedUse: "Fits any day after a slate.",
   fields: FIELDS,
@@ -379,6 +399,6 @@ export const lastNightsStandoutsModule = defineShareModule<LastNightsStandoutsSe
   altText: (snapshot, data, settings) => {
     const goalies = isGoalieView(settings.view) ? goalieRanking(data, settings) : null, order = goalies ? goalieRankingText(goalies, settings.minShotsAgainst) : null;
     const rows = goalies ? goalies.rows.map(altGoalie) : standoutRows(data, settings).map(altSkater);
-    return `FHFH Last Nights Standouts, ${viewTitle(settings)}, ${data.slate}. ${order ? `${order.lead} ${order.note ?? ""} ` : ""}${rows.join("; ") || "No one on the card yet"}. ${snapshot.evidence.sample}. ${snapshot.evidence.cohort}.`;
+    return `FHFH ${STANDOUTS_TITLE}, ${viewTitle(settings)}, ${data.slate}.${isOlderSlate(data) ? ` ${OLD_ROSTER}` : ""} ${order ? `${order.lead} ${order.note ?? ""} ` : ""}${rows.join("; ") || "No one on the card yet"}. ${snapshot.evidence.sample}. ${snapshot.evidence.cohort}.`;
   },
 });

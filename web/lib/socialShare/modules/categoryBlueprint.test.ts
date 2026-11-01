@@ -8,7 +8,7 @@ import { BAND_FILL, bandText, SQUARE_SHADE } from "components/SocialShare/module
 import { parseShareSettings, type SharePostSnapshot } from "./contract";
 import type { SkaterAppearance } from "./shared/skaterAppearances";
 
-const settings = (over: Partial<CategoryBlueprintSettings> = {}): CategoryBlueprintSettings => ({ view: "standard", window: "l5", minGp: 1, position: "all", ...over });
+const settings = (over: Partial<CategoryBlueprintSettings> = {}): CategoryBlueprintSettings => ({ period: "rolling", week: null, start: null, end: null, minGpRange: null, view: "standard", window: "l5", minGp: 1, position: "all", ...over });
 const game = (playerId: number, index: number, stats: Partial<SkaterAppearance> = {}): SkaterAppearance => ({
   playerId, name: `Skater ${playerId}`, position: "D", group: "D", gameId: 1000 + index, date: `2026-10-${String(index + 1).padStart(2, "0")}`, team: "NJD", opponent: "NYR", home: true,
   goals: 0, assists: 0, points: 0, shots: 0, hits: 0, blocks: 0, ppPoints: 0, toiSeconds: 900, ppToiSeconds: 0, penaltyMinutes: 0, ...stats,
@@ -126,7 +126,7 @@ describe("Multi Cat Monsters", () => {
     expect(evidence.cohort).toContain("3 more below the card");
   });
   it("has one view setting, no category or top-N settings, and an empty pool cannot export", () => {
-    expect(parseShareSettings(categoryBlueprintModule, {})).toEqual({ view: "standard", window: "l10", minGp: 5, position: "all" });
+    expect(parseShareSettings(categoryBlueprintModule, {})).toEqual({ period: "rolling", week: null, start: null, end: null, minGpRange: null, view: "standard", window: "l10", minGp: 5, position: "all" });
     expect(parseShareSettings(categoryBlueprintModule, { view: "points-first" })).toMatchObject({ view: "points-first" });
     expect(() => parseShareSettings(categoryBlueprintModule, { view: "other" })).toThrow();
     const active = settings({ minGp: 9 }), { data } = buildCategoryBlueprint(pool(), active);
@@ -228,5 +228,37 @@ describe("Multi Cat card", () => {
     expect(await show(data!, active)).toContain("No skater has all four categories");
     cleanup();
     expect(await show(data!, settings({ minGp: 8 }))).toContain("Refresh this post");
+  });
+});
+
+describe("a period's cohort", () => {
+  const skater = (playerId: number, games: number, points: number): SkaterAppearance[] => Array.from({ length: games }, (_, index) => ({ playerId, name: `Skater ${playerId}`, position: "C", group: "F", gameId: 1000 + index, date: `2026-10-${String(index + 19).padStart(2, "0")}`, team: "NJD", opponent: "NYR", home: true, goals: 0, assists: points, points, shots: 1, hits: 1, blocks: 1, ppPoints: 0, toiSeconds: 900, ppToiSeconds: 0, penaltyMinutes: 0 }));
+  const period = { label: "Oct 19 to Oct 22", from: "2026-10-19", through: "2026-10-22" };
+  const seasonOf = (appearances: SkaterAppearance[]): SkaterSeason => ({ appearances, teamGames: [], scheduledGames: 0, through: period.through, period });
+  // Most played is 4, so 2 GP: skater 21 is out of the cohort and of its percentiles.
+  const players = [...Array.from({ length: 20 }, (_, index) => skater(index + 1, 4, index)).flat(), ...skater(21, 1, 50)];
+  it("takes percentiles over the skaters eligible in those dates", () => {
+    const { data } = buildCategoryBlueprint(seasonOf(players), settings({ period: "custom", start: period.from, end: period.through }));
+    expect(data!.cohortSize).toBe(20);
+    expect(data!.periodLabel).toBe(period.label);
+    expect(data!.rows.some(row => row.playerId === 21)).toBe(false);
+    expect(data!.rows[0].playerId).toBe(20);
+    expect(data!.rows[0].cells[0].percentile).toBe(100);
+  });
+  it("sets the points P85 floor from the same dates", () => {
+    const { data, evidence } = buildCategoryBlueprint(seasonOf(players), settings({ view: "points-first", period: "custom", start: period.from, end: period.through }));
+    // Of 20 skaters with distinct points, the top 3 beat at least 85% of the other 19.
+    expect(data!.rows.map(row => row.playerId)).toEqual([20, 19, 18]);
+    expect(data!.belowFloor).toBe(17);
+    expect(evidence.sample).toContain("3 of 20 eligible");
+  });
+  it("prints the dates in the legend and alt text in place of a window", () => {
+    const { data } = buildCategoryBlueprint(seasonOf(players), settings({ period: "custom", start: period.from, end: period.through }));
+    expect(categoryBlueprintModule.altText({ evidence: { cohort: "c" } } as unknown as SharePostSnapshot, data!, settings())).toContain("per game over Oct 19 to Oct 22, through");
+  });
+  it("keeps old URLs and both landing views on recent games", () => {
+    for (const view of ["standard", "points-first"]) expect(parseShareSettings(categoryBlueprintModule, { view, window: "std" })).toMatchObject({ view, window: "std", period: "rolling" });
+    expect(parseShareSettings(categoryBlueprintModule, {})).toMatchObject({ window: "l10", period: "rolling", minGp: 5 });
+    expect(categoryBlueprintModule.periodControl?.mode).toBe("past-only");
   });
 });

@@ -1,11 +1,11 @@
-import { belowTheCard, SKATER_POSITION_OPTIONS, SKATER_WINDOW_OPTIONS, shownTeams, skaterCohort, skaterCohortLabel, skaterIdentity, skaterSeasonEvidence, skaterWindowLabel, skaterWindowOf, type SkaterIdentity, type SkaterPositionId, type SkaterSeason, type SkaterWindowId } from "./bshBoard";
+import { belowTheCard, PERIOD_ROLLING, SKATER_PERIOD_CONTROL, SKATER_PERIOD_FIELDS, SKATER_POSITION_OPTIONS, SKATER_WINDOW_OPTIONS, shownTeams, skaterCohort, skaterCohortLabel, skaterIdentity, skaterPeriodReason, skaterPeriodRules, skaterSeasonEvidence, skaterWindowOf, type SkaterIdentity, type SkaterPeriodSettings, type SkaterPositionId, type SkaterSeason, type SkaterWindowId } from "./bshBoard";
 import { SKATER_CATEGORIES, type SkaterCategoryId } from "./categoryBlueprint";
 import { defineShareModule, shareSettingsKey, type SharePostLoadResult, type ShareSettingField } from "./contract";
 import { competitionRanks, ownershipInRange, ownershipOf, strictlyAbove, type OwnershipState } from "./shared/definitions";
 import type { SkaterAppearance } from "./shared/skaterAppearances";
 
 export type FloorView = "sog" | "hits" | "blk" | "point" | "cardio" | "zero";
-export type NightlyFloorSettings = {
+export type NightlyFloorSettings = SkaterPeriodSettings & {
   view: FloorView; xSog: number; xHits: number; xBlk: number; zeroCategory: SkaterCategoryId;
   window: SkaterWindowId; minGp: number; position: SkaterPositionId;
   ownMin: number; ownMax: number; unknownOwnership: "exclude" | "include"; minCoverage: number;
@@ -13,7 +13,7 @@ export type NightlyFloorSettings = {
 /** `numerator` of `denominator` known appearances met the test; `missing` appearances lack the stat and count as neither. `marks` holds each appearance's outcome, oldest first, and is what those counts are taken from. `average` is the view's stat per game over known games only. */
 export type FloorRow = SkaterIdentity & { rank: number; appearances: number; numerator: number; denominator: number; missing: number; pct: number; average: number | null; ownership: OwnershipState; marks: (boolean | null)[] };
 export type NightlyFloorData = {
-  applied: string; through: string; windowLabel: string; viewLabel: string; test: string; metricLabel: string; averageLabel: string; rows: FloorRow[];
+  applied: string; through: string; windowLabel: string; periodLabel: string | null; viewLabel: string; test: string; metricLabel: string; averageLabel: string; rows: FloorRow[];
   cohort: { pool: number; outOfOwnershipRange: number; unknownOwnershipExcluded: number; unadmitted: number; ranked: number };
   notShown: number; tiedBeyondCut: number;
 };
@@ -31,8 +31,9 @@ const FIELDS: readonly ShareSettingField[] = [
   { id: "xHits", label: "Hits X", kind: "number", default: 2, min: 0, max: 10, step: 1 },
   { id: "xBlk", label: "Blocks X", kind: "number", default: 1, min: 0, max: 10, step: 1 },
   { id: "zeroCategory", label: "Zero category", kind: "select", default: "shots", options: (Object.keys(SKATER_CATEGORIES) as SkaterCategoryId[]).map(id => ({ value: id, label: SKATER_CATEGORIES[id].name })) },
-  { id: "window", label: "Window", kind: "select", default: "l10", options: SKATER_WINDOW_OPTIONS },
-  { id: "minGp", label: "Min season GP", kind: "number", default: 5, min: 1, max: 82, step: 1 },
+  ...SKATER_PERIOD_FIELDS,
+  { id: "window", label: "Window", kind: "select", default: "l10", options: SKATER_WINDOW_OPTIONS, onlyForPeriod: PERIOD_ROLLING },
+  { id: "minGp", label: "Min season GP", kind: "number", default: 5, min: 1, max: 82, step: 1, onlyForPeriod: PERIOD_ROLLING },
   { id: "position", label: "Position", kind: "select", default: "all", options: SKATER_POSITION_OPTIONS },
   { id: "ownMin", label: "Min rostered %", kind: "number", default: 0, min: 0, max: 100, step: 1 },
   { id: "ownMax", label: "Max rostered %", kind: "number", default: 100, min: 0, max: 100, step: 1 },
@@ -110,7 +111,7 @@ export function ownershipByPlayer(map: readonly OwnershipMapRow[], yahoo: readon
 }
 
 export function buildNightlyFloor(season: SkaterSeason, settings: NightlyFloorSettings, ownership: { byPlayer: ReadonlyMap<number, OwnershipState>; updatedAt: string | null }): SharePostLoadResult<NightlyFloorData> {
-  const pool = skaterCohort(season.appearances, settings), includeUnknown = settings.unknownOwnership === "include";
+  const rules = skaterPeriodRules(season, settings), cohortRule = { position: settings.position, minGp: rules.minGp }, pool = skaterCohort(season.appearances, cohortRule), includeUnknown = settings.unknownOwnership === "include";
   let outOfOwnershipRange = 0, unknownOwnershipExcluded = 0, unadmitted = 0;
   const admitted = pool.flatMap(rows => {
     const owned = ownership.byPlayer.get(rows[0].playerId) ?? ownershipOf(null);
@@ -118,7 +119,7 @@ export function buildNightlyFloor(season: SkaterSeason, settings: NightlyFloorSe
       if (owned.state === "known") outOfOwnershipRange++; else unknownOwnershipExcluded++;
       return [];
     }
-    const window = skaterWindowOf(rows, settings.window), outcomes = window.rows.map(row => floorOutcome(settings, row));
+    const window = skaterWindowOf(rows, rules.window), outcomes = window.rows.map(row => floorOutcome(settings, row));
     const denominator = outcomes.filter(outcome => outcome !== null).length;
     if (!floorAdmitted(denominator, window.actual, settings.minCoverage)) { unadmitted++; return []; }
     const numerator = outcomes.filter(outcome => outcome === true).length;
@@ -126,16 +127,16 @@ export function buildNightlyFloor(season: SkaterSeason, settings: NightlyFloorSe
   });
   const ranked = competitionRanks(admitted, row => row.pct, row => row.id.playerId);
   const rows: FloorRow[] = ranked.slice(0, NIGHTLY_FLOOR_ROWS).map(({ row, rank }) => ({ ...row.id, rank, appearances: row.appearances, numerator: row.numerator, denominator: row.denominator, missing: row.missing, pct: row.pct, average: row.average, ownership: row.ownership, marks: row.marks }));
-  const lastRank = rows[rows.length - 1]?.rank, windowLabel = skaterWindowLabel(settings.window);
+  const lastRank = rows[rows.length - 1]?.rank, { windowLabel, periodLabel } = rules;
   const notShown = ranked.length - rows.length, tiedBeyondCut = ranked.slice(rows.length).filter(row => row.rank === lastRank).length;
   const excluded = [outOfOwnershipRange ? `${outOfOwnershipRange} outside the rostered range` : "", unknownOwnershipExcluded ? `${unknownOwnershipExcluded} unknown rostered % excluded` : "", unadmitted ? `${unadmitted} below min coverage` : "", belowTheCard(notShown, tiedBeyondCut)].filter(Boolean).join(", ");
   return {
     ...skaterSeasonEvidence(season, {
-      windowLabel, note: "A DNP is not an appearance. A missing stat counts as neither a pass nor a fail. The strip shows each appearance oldest to newest, using the same test as the count.", cohort: `${skaterCohortLabel(settings)}, ${settings.ownMin}-${settings.ownMax}% rostered: ${pool.length} eligible, ${ranked.length} ranked${excluded ? `, ${excluded}` : ""}`,
+      windowLabel, note: "A DNP is not an appearance. A missing stat counts as neither a pass nor a fail. The strip shows each appearance oldest to newest, using the same test as the count.", cohort: `${skaterCohortLabel(cohortRule, !!periodLabel)}, ${settings.ownMin}-${settings.ownMax}% rostered: ${pool.length} eligible, ${ranked.length} ranked${excluded ? `, ${excluded}` : ""}`,
       extraSources: [{ name: "Yahoo rostered %", tables: ["yahoo_players", "yahoo_nhl_player_map_read"], state: "ready", asOf: ownership.updatedAt?.slice(0, 10) ?? null, updatedAt: ownership.updatedAt }],
     }),
     data: {
-      applied: shareSettingsKey(FIELDS, settings), through: season.through, windowLabel, ...floorViewLabels(settings), ...floorMetricLabels(settings), rows,
+      applied: shareSettingsKey(FIELDS, settings), through: season.through, windowLabel, periodLabel, ...floorViewLabels(settings), ...floorMetricLabels(settings), rows,
       cohort: { pool: pool.length, outOfOwnershipRange, unknownOwnershipExcluded, unadmitted, ranked: ranked.length },
       notShown, tiedBeyondCut,
     },
@@ -149,7 +150,8 @@ export const nightlyFloorModule = defineShareModule<NightlyFloorSettings, Nightl
   suggestedUse: "Works for a streaming or waiver post; choose it on any day.",
   fields: FIELDS,
   headline: floorHeadline,
-  validate: settings => settings.ownMin > settings.ownMax ? "Min rostered % cannot be above max rostered %." : null,
+  periodControl: SKATER_PERIOD_CONTROL,
+  validate: settings => settings.ownMin > settings.ownMax ? "Min rostered % cannot be above max rostered %." : skaterPeriodReason(settings),
   load: () => import("./nightlyFloor.sources").then(sources => sources.loadNightlyFloor),
   card: () => import("components/SocialShare/modules/NightlyFloorCard").then(card => card.default),
   // A board of nobody clearing the test has nothing to publish.
