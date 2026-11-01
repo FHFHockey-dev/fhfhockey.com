@@ -127,13 +127,25 @@ test("BSH Board risers and fallers state their comparison side by side, and stal
   await expectMoversFit(page);
 });
 
-test("Category Blueprint keeps categories separate with their own ranks", async ({ page }) => {
-  await open(page, "category-blueprint", () => edition("category-blueprint", blueprintSettings, buildCategoryBlueprint(fictional, blueprintSettings)));
+test("Multi Cat Monsters prints percentiles and a score, and Points-First is its own card", async ({ page }) => {
+  await open(page, "category-blueprint", query => {
+    const active = { ...blueprintSettings, view: (query.get("view") ?? "standard") as CategoryBlueprintSettings["view"] };
+    return edition("category-blueprint", active, buildCategoryBlueprint(fictional, active));
+  });
   const square = page.getByTestId("share-square");
-  for (const text of ["PTS/G", "SOG/G", "HITS/G", "BLK/G", "#1", "no combined score", "among 2"]) await expect(square).toContainText(text);
-  await expect(square.getByTestId("rank-cell").first()).toHaveAttribute("data-band", "top5");
+  await expect(square.getByRole("heading", { level: 2 })).toHaveText("MULTI CAT MONSTERS");
+  for (const text of ["PTS/G", "SOG/G", "HITS/G", "BLK/G", "SCORE", "P100", "percentile of 2", "average of the four"]) await expect(square).toContainText(text);
+  await expect(square.getByTestId("rank-cell").first()).toHaveAttribute("data-band", "p95");
+  await expect(square.getByTestId("rank-cell").first()).toHaveCSS("background-color", "rgba(0, 255, 153, 0.8)");
   await expectFits(page);
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeEnabled();
+  await page.locator("label", { hasText: /^View/ }).locator("select").selectOption("points-first");
+  const title = square.getByRole("heading", { level: 2 });
+  await expect(title).toHaveText("POINTS-FIRST MULTI CAT MONSTERS");
+  expect(await title.evaluate(heading => heading.getBoundingClientRect().height <= parseFloat(getComputedStyle(heading).lineHeight) * 1.2)).toBe(true);
+  await page.getByRole("button", { name: "Refresh post", exact: true }).click();
+  await expect(square).toContainText("(2×PTS + SOG + HITS + BLK) / 5");
+  await expectFits(page);
 });
 
 test("Nightly Floor prints numerator, denominator, missing and its strict test", async ({ page }) => {

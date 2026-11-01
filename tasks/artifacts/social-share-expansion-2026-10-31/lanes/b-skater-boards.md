@@ -171,3 +171,43 @@ Follow-up commit (Blueprint default): 50 tests in the lane's 3 files passed, esl
 - **Checks:** 75 tests in the lane's 3 files passed, eslint clean, the pure check passed, `tsc` printed no errors, `--list` found 10 tests.
 - **Headline length (from `54ed1bd11`):** the longest whole-number headline is "GP% WITH 11+ HITS" (17 characters). The field accepts a value like 9.5, which gives "GP% WITH OVER 9.5 HITS" (22), the same length as the longest post title. A new E2E test measures that form on one line; not run here.
 - **Column rename:** "MET / KNOWN" is now "# GP" (values unchanged, such as 9 / 10; the GP column stays). Earlier notes in this receipt use the old name. No other text printed on the PNG says "known".
+
+## Multi Cat Monsters (TJ's rework of Category Blueprint)
+
+**TJ's decision overrides the earlier "no combined score" rule for this card only.** The post id stays `category-blueprint`, so links and the registry hold; the picker now says "Multi Cat Monsters".
+
+- **Headlines:** "MULTI CAT MONSTERS" and "POINTS-FIRST MULTI CAT MONSTERS", from one `view` setting. The category pickers and the top-N gate are gone; min season GP, window and position stay.
+- **Percentile:** the share of the other eligible skaters beaten in that category, with a tie counting as half. Every category averages 50 however many skaters tie, so a category full of ties weighs the same. A lone skater is 50.
+- **Score:** the average of the four percentiles; Points-First is (2×PTS + SOG + HITS + BLK) / 5. A missing category leaves the skater unranked and counted, never zero.
+- **Colour:** inline fills on one scale, 95+, 85+, 70+, 50+, below.
+- **Header risk, by estimate:** the 31-character Points-First headline is about 1,000px at the header's 52px, against about 776px available. It needs a smaller size for long headlines in frozen `PostStudio.tsx`. The E2E test fails if it wraps.
+
+Read for the real-data check, one `SELECT` through MCP `execute_sql` on 2026-11-01:
+
+| # | Statement | Tables read | Rows returned | Result |
+| --- | --- | --- | --- | --- |
+| R6 | L10 percentiles and both scores, top 15 per list, three lists | `wgo_skater_stats` | 0 sample rows (45 per-player aggregate rows) | Passed. 644 eligible at 5+ GP through 2026-10-31 |
+
+Points-First top 15, L10 (SQL using the same formula; the builder itself has not run on the full season):
+
+| RK | Skater | Score | PTS/G | P PTS | P SOG | P HITS | P BLK | Standard rank |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | Rasmus Dahlin D | 86.2 | 0.90 | 87 | 94 | 72 | 91 | 1 |
+| 2 | Seth Jones D | 84.8 | 1.70 | 100 | 93 | 60 | 72 | 3 |
+| 3 | Neal Pionk D | 84.5 | 0.90 | 87 | 87 | 89 | 72 | 2 |
+| 4 | Nick Suzuki C | 84.0 | 1.33 | 98 | 94 | 71 | 59 | 5 |
+| 5 | Tim Stützle C | 81.9 | 1.30 | 97 | 82 | 86 | 47 | 9 |
+| 6 | Drake Batherson R | 80.6 | 1.30 | 97 | 87 | 75 | 47 | 15 |
+| 7 | Brandon Hagel L | 80.3 | 1.30 | 97 | 100 | 40 | 68 | 17 |
+| 8 | Alex Tuch R | 80.2 | 1.00 | 90 | 93 | 60 | 68 | 11 |
+| 9 | Charlie McAvoy D | 80.1 | 0.89 | 85 | 73 | 63 | 94 | 7 |
+| 10 | Brady Tkachuk L | 79.8 | 1.50 | 99 | 98 | 97 | 5 | 18 |
+| 11 | Moritz Seider D | 79.2 | 0.60 | 73 | 71 | 79 | 100 | 4 |
+| 12 | Zach Werenski D | 78.8 | 0.80 | 83 | 94 | 36 | 98 | 10 |
+| 13 | Jake Sanderson D | 78.6 | 1.14 | 94 | 73 | 42 | 90 | 20 |
+| 14 | Jake Neighbours L | 78.6 | 0.80 | 83 | 77 | 96 | 55 | 13 |
+| 15 | Evan Bouchard D | 78.5 | 1.20 | 95 | 90 | 30 | 82 | 23 |
+
+**Verdict: 2x helps but does not fully deliver what TJ described.** It swaps 4 of the standard top 15 and leaves the top 3 alone. 12 of 15 are P85+ in points, but 8 of 15 are defensemen, and only 8 are P50+ in all four. Tkachuk (P5 blocks) and Bouchard (P30 hits) rank on two or three strong categories. A points floor at P70 changes none of this top 15, because the lowest here is P73; about P85 would remove Seider, Werenski and Neighbours. None added.
+
+**Checks:** 84 tests in the lane's 3 files passed, eslint clean, the pure check passed, `tsc` printed no errors, `--list` found 11 tests. No browser run.

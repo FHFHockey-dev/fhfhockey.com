@@ -26,6 +26,8 @@
 
 - Nightly Floor rework: metric label, average column, MISSING column removed. `floorHeadline` is wired through the lead's `headline` seam in `contract.ts` and `PostStudio.tsx`.
 
+- Multi Cat Monsters replaces Category Blueprint (id unchanged); TJ overrode the no-combined-score rule for this card. The Points-First headline probably needs a smaller header size in frozen `PostStudio.tsx`.
+
 **Gotchas:**
 - PostStudio shows old data under new labels until Refresh and lets it export. The lead fixed the export side at `839aa7af4`. These posts keep `data.applied` so the card also asks for a refresh.
 - `yahoo_nhl_player_map_read` joins on `player_key`, not `player_id`; many NHL ids hold several Yahoo ids.

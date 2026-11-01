@@ -3,145 +3,160 @@ import { createElement } from "react";
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import type { SkaterSeason } from "./bshBoard";
-import { buildCategoryBlueprint, categoryBlueprintModule, categoryRankBand, chosenCategories, type CategoryBlueprintData, type CategoryBlueprintSettings } from "./categoryBlueprint";
+import { buildCategoryBlueprint, categoryBlueprintModule, categoryPercentileBand, categoryPercentiles, multiCatScore, type CategoryBlueprintData, type CategoryBlueprintSettings } from "./categoryBlueprint";
 import { parseShareSettings, type SharePostSnapshot } from "./contract";
 import type { SkaterAppearance } from "./shared/skaterAppearances";
 
-const settings = (over: Partial<CategoryBlueprintSettings> = {}): CategoryBlueprintSettings => ({ cat1: "points", cat2: "shots", cat3: "hits", cat4: "none", window: "l5", minGp: 1, position: "all", topIn: 1000, ...over });
+const settings = (over: Partial<CategoryBlueprintSettings> = {}): CategoryBlueprintSettings => ({ view: "standard", window: "l5", minGp: 1, position: "all", ...over });
 const game = (playerId: number, index: number, stats: Partial<SkaterAppearance> = {}): SkaterAppearance => ({
   playerId, name: `Skater ${playerId}`, position: "D", group: "D", gameId: 1000 + index, date: `2026-10-${String(index + 1).padStart(2, "0")}`, team: "NJD", opponent: "NYR", home: true,
   goals: 0, assists: 0, points: 0, shots: 0, hits: 0, blocks: 0, ppPoints: 0, toiSeconds: 900, ppToiSeconds: 0, penaltyMinutes: 0, ...stats,
 });
 const games = (playerId: number, count: number, stats: Partial<SkaterAppearance> | ((index: number) => Partial<SkaterAppearance>) = {}) => Array.from({ length: count }, (_, index) => game(playerId, index, typeof stats === "function" ? stats(index) : stats));
 const season = (appearances: SkaterAppearance[]): SkaterSeason => ({ appearances, teamGames: [], scheduledGames: 0, through: "2026-10-30" });
-const cells = (data: CategoryBlueprintData, playerId: number) => data.rows.find(row => row.playerId === playerId)!.cells.map(cell => [cell.category, cell.perGame, cell.rank]);
+const scores = (data: CategoryBlueprintData) => data.rows.map(row => [row.playerId, row.rank, row.score]);
 
-describe("Category Blueprint", () => {
-  const pool = () => season([...games(1, 5, { points: 2, shots: 1, hits: 0, blocks: 3 }), ...games(2, 5, { points: 1, shots: 3, hits: 4, blocks: 0 }), ...games(3, 5, { points: 1, shots: 2, hits: 4, blocks: 1 })]);
-  it("gives each chosen category its own per-game value and rank", () => {
+describe("Multi Cat percentiles", () => {
+  it("is the share of the others beaten, from 0 to 100", () => {
+    expect(categoryPercentiles([1, 2, 3, 4, 5])).toEqual([0, 25, 50, 75, 100]);
+  });
+  it("counts a tie as half, so tied skaters share one percentile", () => {
+    expect(categoryPercentiles([1, 1, 2, 3, 3])).toEqual([12.5, 12.5, 50, 87.5, 87.5]);
+    expect(categoryPercentiles([0, 0, 0])).toEqual([50, 50, 50]);
+  });
+  it("averages 50 however many skaters tie", () => {
+    const percentiles = categoryPercentiles([0, 0, 0, 0, 1, 1, 2, 5]) as number[];
+    expect(percentiles.reduce((total, value) => total + value, 0) / percentiles.length).toBeCloseTo(50);
+  });
+  it("leaves a missing value out of the pool and gives it no percentile", () => {
+    expect(categoryPercentiles([1, null, 3])).toEqual([0, null, 100]);
+    expect(categoryPercentiles([7])).toEqual([50]);
+  });
+});
+
+describe("Multi Cat score", () => {
+  const percentiles = { points: 90, shots: 50, hits: 30, blocks: 10 };
+  it("averages the four percentiles", () => {
+    expect(multiCatScore(percentiles, "standard")).toBe(45);
+  });
+  it("counts points twice on Points-First", () => {
+    expect(multiCatScore(percentiles, "points-first")).toBe(54);
+  });
+  it("has no score with a missing category, on either view", () => {
+    for (const view of ["standard", "points-first"] as const) expect(multiCatScore({ ...percentiles, hits: null }, view)).toBeNull();
+    expect(multiCatScore({ ...percentiles, hits: 0 }, "standard")).toBe(37.5);
+  });
+});
+
+describe("Multi Cat Monsters", () => {
+  // 1 scores only, 2 does everything but score, and 3 is middling everywhere.
+  const pool = () => season([...games(1, 5, { points: 3, shots: 1, hits: 1, blocks: 1 }), ...games(2, 5, { points: 1, shots: 3, hits: 3, blocks: 3 }), ...games(3, 5, { points: 2, shots: 2, hits: 2, blocks: 2 })]);
+  it("ranks by the average percentile and prints per-game values with them", () => {
     const { data } = buildCategoryBlueprint(pool(), settings());
-    expect(data!.rows.map(row => row.playerId)).toEqual([1, 2, 3]);
-    expect(cells(data!, 1)).toEqual([["points", 2, 1], ["shots", 1, 3], ["hits", 0, 3]]);
-    expect(cells(data!, 2)).toEqual([["points", 1, 2], ["shots", 3, 1], ["hits", 4, 1]]);
-    expect(cells(data!, 3)).toEqual([["points", 1, 2], ["shots", 2, 2], ["hits", 4, 1]]);
+    expect(scores(data!)).toEqual([[2, 1, 75], [3, 2, 50], [1, 3, 25]]);
+    expect(data!.rows[0].cells.map(cell => [cell.category, cell.perGame, cell.percentile])).toEqual([["points", 1, 0], ["shots", 3, 100], ["hits", 3, 100], ["blocks", 3, 100]]);
   });
-  it("honours the chosen combination and order", () => {
-    const active = settings({ cat1: "blocks", cat2: "points", cat3: "none" }), { data } = buildCategoryBlueprint(pool(), active);
-    expect(chosenCategories(active)).toEqual(["blocks", "points"]);
-    expect(data!.categories.map(category => category.label)).toEqual(["BLK", "PTS"]);
-    expect(data!.rows.map(row => row.playerId)).toEqual([1, 3, 2]);
-    expect(data!.rows[0].cells).toHaveLength(2);
+  it("re-ranks on Points-First with points counted twice", () => {
+    const { data } = buildCategoryBlueprint(pool(), settings({ view: "points-first" }));
+    expect(scores(data!)).toEqual([[2, 1, 60], [3, 2, 50], [1, 3, 40]]);
+    const scorers = buildCategoryBlueprint(season([...games(1, 5, { points: 3, shots: 2, hits: 2, blocks: 2 }), ...games(2, 5, { points: 1, shots: 3, hits: 3, blocks: 1 }), ...games(3, 5, { points: 2, shots: 1, hits: 1, blocks: 3 })]), settings({ view: "points-first" }));
+    expect(scorers.data!.rows.map(row => row.playerId)).toEqual([1, 2, 3]);
+    expect(buildCategoryBlueprint(season([...games(1, 5, { points: 3, shots: 2, hits: 2, blocks: 2 }), ...games(2, 5, { points: 1, shots: 3, hits: 3, blocks: 1 }), ...games(3, 5, { points: 2, shots: 1, hits: 1, blocks: 3 })]), settings()).data!.rows.map(row => row.score)).toEqual([62.5, 50, 37.5]);
   });
-  it("keeps one basis and cohort for every category", () => {
-    const { data, evidence } = buildCategoryBlueprint(season([...games(1, 7, index => ({ points: index >= 2 ? 1 : 9, shots: index >= 2 ? 2 : 9 })), ...games(2, 3, { points: 1 }), ...games(3, 5, { position: "C", group: "F", points: 5 })]), settings({ position: "D", minGp: 3 }));
-    expect(data!.cohortSize).toBe(2);
-    expect(evidence.cohort).toContain("Defensemen, 3+ season GP: 2 skaters");
-    expect(data!.rows.find(row => row.playerId === 1)!.games).toBe(5);
-    expect(cells(data!, 1).slice(0, 2)).toEqual([["points", 1, 1], ["shots", 2, 1]]);
-    expect(data!.rows.find(row => row.playerId === 2)!.games).toBe(3);
+  it("shares a rank on an equal score", () => {
+    const { data } = buildCategoryBlueprint(season([...games(1, 5, { points: 2, shots: 1 }), ...games(2, 5, { points: 1, shots: 2 })]), settings());
+    expect(data!.rows.map(row => row.rank)).toEqual([1, 1]);
   });
-  it("shows a missing category as missing, not zero, and counts it", () => {
-    const { data } = buildCategoryBlueprint(season([...games(1, 5, index => index === 2 ? { hits: null, points: 1 } : { hits: 3, points: 1 }), ...games(2, 5, { hits: 0 })]), settings());
-    expect(data!.rows[0].cells.find(cell => cell.category === "hits")).toEqual({ category: "hits", total: null, perGame: null, rank: null });
-    expect(data!.rows[1].cells.find(cell => cell.category === "hits")).toMatchObject({ total: 0, perGame: 0, rank: 1 });
+  it("leaves a missing category unranked, not zero, and counts it", () => {
+    const { data, evidence } = buildCategoryBlueprint(season([...games(1, 5, index => index === 2 ? { hits: null, points: 9 } : { hits: 3, points: 9 }), ...games(2, 5, { hits: 0 }), ...games(3, 5, { hits: 1 })]), settings());
+    expect(data!.rows.map(row => row.playerId)).toEqual([3, 2]);
+    expect(data).toMatchObject({ cohortSize: 3, ranked: 2, unranked: 1 });
     expect(data!.categories.find(category => category.id === "hits")!.missing).toBe(1);
+    // The missing skater still counts in the categories it has, and is out of the hits pool.
+    expect(data!.rows.find(row => row.playerId === 2)!.cells.map(cell => cell.percentile)).toEqual([25, 50, 0, 50]);
+    expect(evidence.cohort).toContain("1 unranked for a missing category");
+    expect(evidence.cohort).toContain("Hits missing for 1");
   });
-  it("filters on every category's own rank, and a missing category neither passes nor fails", () => {
-    const { data } = buildCategoryBlueprint(pool(), settings({ topIn: 2 }));
-    expect(data!.rows.map(row => row.playerId)).toEqual([2, 3]);
-    expect(data!.qualifying).toBe(2);
-    const withMissing = buildCategoryBlueprint(season([...games(1, 5, { points: 2, hits: null }), ...games(2, 5, { points: 1, hits: 1 })]), settings({ topIn: 1, cat2: "goals" }));
-    expect(withMissing.data!.rows.map(row => row.playerId)).toEqual([1]);
+  it("takes percentiles among the eligible skaters only, and needs no category gate", () => {
+    const { data, evidence } = buildCategoryBlueprint(season([...games(1, 7, index => ({ points: index >= 2 ? 1 : 9 })), ...games(2, 3, { points: 0 }), ...games(3, 5, { position: "C", group: "F", points: 5 })]), settings({ position: "D", minGp: 3 }));
+    expect(data!.cohortSize).toBe(2);
+    expect(evidence.cohort).toContain("Defensemen, 3+ season GP: 2 eligible, 2 ranked");
+    expect(data!.rows.map(row => [row.playerId, row.games, row.cells[0].perGame, row.cells[0].percentile])).toEqual([[1, 5, 1, 100], [2, 3, 0, 0]]);
   });
-  it("has no universal score, rating or overall rank", () => {
-    const { data } = buildCategoryBlueprint(pool(), settings());
-    expect(JSON.stringify(data)).not.toMatch(/score|rating|overall|composite|total_?rank/i);
-    expect(Object.keys(data!.rows[0]).sort()).toEqual(["cells", "games", "name", "playerId", "position", "team", "teams"]);
+  it("counts what falls below the card", () => {
+    const { data, evidence } = buildCategoryBlueprint(season(Array.from({ length: 23 }, (_, index) => games(index + 1, 5, { points: index })).flat()), settings());
+    expect(data!.rows).toHaveLength(20);
+    expect(data).toMatchObject({ ranked: 23, notShown: 3 });
+    expect(evidence.cohort).toContain("3 more below the card");
   });
-  it("refuses a repeated category and an empty pool cannot export", () => {
-    expect(() => parseShareSettings(categoryBlueprintModule, { cat2: "points" })).toThrow(/only once/);
-    expect(parseShareSettings(categoryBlueprintModule, {})).toMatchObject({ cat1: "points", cat2: "shots", cat3: "hits", cat4: "blocks", window: "l10", minGp: 5, position: "all", topIn: 250 });
+  it("has one view setting, no category or top-N settings, and an empty pool cannot export", () => {
+    expect(parseShareSettings(categoryBlueprintModule, {})).toEqual({ view: "standard", window: "l10", minGp: 5, position: "all" });
+    expect(parseShareSettings(categoryBlueprintModule, { view: "points-first" })).toMatchObject({ view: "points-first" });
+    expect(() => parseShareSettings(categoryBlueprintModule, { view: "other" })).toThrow();
     const active = settings({ minGp: 9 }), { data } = buildCategoryBlueprint(pool(), active);
     expect(data!.rows).toEqual([]);
     expect(categoryBlueprintModule.hasRows(data, active)).toBe(false);
   });
-});
-
-describe("Category Blueprint default on a specialist-heavy pool", () => {
-  // Shaped like 2026-10-31: 120 specialists lead each category, 20 all-rounders sit just behind them in all four, and the rest spread out.
-  const categories = ["points", "shots", "hits", "blocks"] as const;
-  const steps = { points: 7, shots: 11, hits: 13, blocks: 17 };
-  const specialists = categories.flatMap((specialty, group) => Array.from({ length: 120 }, (_, index) => {
-    const id = 1000 + group * 1000 + index, stats = Object.fromEntries(categories.map(category => [category, category === specialty ? 3 : 1 - ((id * steps[category]) % 360) / 400]));
-    return games(id, 5, stats);
-  })).flat();
-  const allRounders = Array.from({ length: 20 }, (_, index) => games(index + 1, 5, { points: 2, shots: 2, hits: 2, blocks: 2 })).flat();
-  const pool = season([...specialists, ...allRounders]);
-  const defaults = parseShareSettings(categoryBlueprintModule, {}) as CategoryBlueprintSettings;
-
-  it("publishes rows on the visible default, led by the skaters who contribute everywhere", () => {
-    const { data } = buildCategoryBlueprint(pool, defaults);
-    expect(data!.cohortSize).toBe(500);
-    expect(data!.qualifying).toBeGreaterThanOrEqual(20);
-    expect(data!.qualifying).toBeLessThan(250);
-    expect(data!.rows.every(row => row.cells.every(cell => cell.rank !== null && cell.rank <= defaults.topIn))).toBe(true);
-    expect(categoryBlueprintModule.hasRows(data, defaults)).toBe(true);
-    expect(JSON.stringify(data)).not.toMatch(/score|rating|overall|composite/i);
+  it("titles each view for the header and the post for the studio", () => {
+    expect(categoryBlueprintModule.title).toBe("Multi Cat Monsters");
+    expect(categoryBlueprintModule.headline?.(settings())).toBe("MULTI CAT MONSTERS");
+    expect(categoryBlueprintModule.headline?.(settings({ view: "points-first" }))).toBe("POINTS-FIRST MULTI CAT MONSTERS");
   });
-  it("finds the all-rounders by each category's own rank, with no combined value", () => {
-    const { data } = buildCategoryBlueprint(pool, { ...defaults, topIn: 121 });
-    expect(data!.qualifying).toBe(20);
-    expect(data!.rows.every(row => row.playerId <= 20 && row.cells.every(cell => cell.rank === 121 && cell.perGame === 2))).toBe(true);
-  });
-  it("keeps the honest empty state where nobody qualifies", () => {
-    const strict = { ...defaults, topIn: 100 }, { data } = buildCategoryBlueprint(pool, strict);
-    expect(data!.qualifying).toBe(0);
-    expect(data!.rows).toEqual([]);
-    expect(categoryBlueprintModule.hasRows(data, strict)).toBe(false);
+  it("says what the score is in its evidence and alt text", () => {
+    const active = settings({ view: "points-first" }), result = buildCategoryBlueprint(pool(), active);
+    expect(result.evidence.sample).toContain("points counted twice");
+    const alt = categoryBlueprintModule.altText({ evidence: result.evidence } as unknown as SharePostSnapshot, result.data, active);
+    for (const text of ["Points-First Multi Cat Monsters", "(2×PTS + SOG + HITS + BLK) / 5", "score 60.0", "percentile 100"]) expect(alt).toContain(text);
   });
 });
 
-describe("Category Blueprint rank bands", () => {
+describe("Multi Cat percentile bands", () => {
   it("changes band exactly at each boundary", () => {
-    const bands = [[1, "top5"], [5, "top5"], [6, "top15"], [15, "top15"], [16, "top30"], [30, "top30"], [31, "top50"], [50, "top50"], [51, "lower"], [100, "lower"]] as const;
-    for (const [rank, band] of bands) expect(categoryRankBand(rank, 100)).toBe(band);
-  });
-  it("uses the same scale at any cohort size, with rank 1 always on top", () => {
-    expect([categoryRankBand(31, 633), categoryRankBand(32, 633)]).toEqual(["top5", "top15"]);
-    expect([categoryRankBand(1, 1), categoryRankBand(1, 2), categoryRankBand(2, 2)]).toEqual(["top5", "top5", "lower"]);
+    const bands = [[100, "p95"], [95, "p95"], [94.99, "p85"], [85, "p85"], [84.99, "p70"], [70, "p70"], [69.99, "p50"], [50, "p50"], [49.99, "lower"], [0, "lower"]] as const;
+    for (const [percentile, band] of bands) expect(categoryPercentileBand(percentile)).toBe(band);
   });
   it("gives a missing category no band", () => {
-    expect(categoryRankBand(null, 100)).toBeNull();
+    expect(categoryPercentileBand(null)).toBeNull();
   });
 });
 
-describe("Category Blueprint card", () => {
+describe("Multi Cat card", () => {
   afterEach(cleanup);
   const show = async (data: CategoryBlueprintData, active: CategoryBlueprintSettings) => {
     const Card = await categoryBlueprintModule.card();
     render(createElement(Card, { snapshot: { settings: active } as unknown as SharePostSnapshot, data, settings: active, logos: {} }));
     return document.body.textContent!;
   };
-  it("prints each category, rank, window, cohort and missing", async () => {
-    const active = settings(), { data } = buildCategoryBlueprint(season([...games(1, 5, { points: 2, hits: null }), ...games(2, 5, { points: 1, hits: 2 })]), active);
+  const trio = () => season([...games(1, 5, { points: 3, shots: 1, hits: 1, blocks: 1 }), ...games(2, 5, { points: 1, shots: 3, hits: 3, blocks: 3 }), ...games(3, 5, { points: 2, shots: 2, hits: 2, blocks: 2 })]);
+  it("prints each category's value and percentile, the score, the window and the formula", async () => {
+    const active = settings(), { data } = buildCategoryBlueprint(trio(), active);
     const text = await show(data!, active);
-    for (const label of ["PTS/G", "SOG/G", "HITS/G", "2.00 #1", "missing", "L5", "among 2", "no combined score"]) expect(text).toContain(label);
-    expect(document.querySelectorAll("p")).toHaveLength(1);
-    expect(buildCategoryBlueprint(season([...games(1, 5, { hits: null }), ...games(2, 5)]), active).evidence.cohort).toContain("Hits missing for 1");
-  });
-  it("colours each cell by its own rank, keeps value and rank printed, and leaves missing uncoloured", async () => {
-    const active = settings({ cat3: "none" }), { data } = buildCategoryBlueprint(season([...games(1, 5, { points: 3, shots: 0 }), ...games(2, 5, { points: 2, shots: 2 }), ...games(3, 5, { points: 1, shots: null }), ...games(4, 5, { points: 0, shots: 1 })]), active);
-    const text = await show(data!, active), cells = [...document.querySelectorAll("[data-testid=rank-cell]")];
-    // Rows stay in Category 1 order; each row pairs its PTS cell with its SOG cell, and neither colour depends on the other.
-    expect(cells.map(cell => cell.getAttribute("data-band"))).toEqual(["top5", "lower", "top50", "top5", "lower", "missing", "lower", "top50"]);
-    expect(cells.map(cell => cell.textContent)).toEqual(["3.00 #1", "0.00 #3", "2.00 #2", "2.00 #1", "1.00 #3", "missing", "0.00 #4", "1.00 #2"]);
-    expect(document.querySelector("[data-band=missing]")!.getAttribute("style")).toBeNull();
-    for (const label of ["Rank among 4", "top 5%", "15%", "30%", "50%", "lower", "no combined score"]) expect(text).toContain(label);
+    for (const label of ["RK", "PTS/G", "SOG/G", "HITS/G", "BLK/G", "SCORE", "3.00 P100", "75.0", "L5", "percentile of 3", "ties half", "average of the four"]) expect(text).toContain(label);
+    expect(text).not.toContain("no combined score");
     expect(document.querySelectorAll("p")).toHaveLength(1);
   });
-  it("says why nobody qualifies and asks for a refresh after a settings change", async () => {
+  it("states the 2x weight on Points-First", async () => {
+    const active = settings({ view: "points-first" }), { data } = buildCategoryBlueprint(trio(), active);
+    expect(await show(data!, active)).toContain("(2×PTS + SOG + HITS + BLK) / 5");
+  });
+  it("colours each cell by its own percentile, with the colour on the element", async () => {
+    const active = settings(), { data } = buildCategoryBlueprint(trio(), active);
+    await show(data!, active);
+    const first = [...document.querySelectorAll<HTMLElement>("[data-testid=rank-cell]")].slice(0, 4);
+    expect(first.map(cell => [cell.textContent, cell.getAttribute("data-band")])).toEqual([["1.00 P0", "lower"], ["3.00 P100", "p95"], ["3.00 P100", "p95"], ["3.00 P100", "p95"]]);
+    expect(first[0].style.backgroundColor).toBe("rgba(255, 99, 132, 0.42)");
+    expect(first[1].style.backgroundColor).toBe("rgba(0, 255, 153, 0.8)");
+  });
+  it("draws a missing cell with no fill", async () => {
+    const active = settings(), { data } = buildCategoryBlueprint(trio(), active), row = data!.rows[0];
+    await show({ ...data!, rows: [{ ...row, cells: [{ ...row.cells[0], total: null, perGame: null, percentile: null }, ...row.cells.slice(1)] }] }, active);
+    const missing = document.querySelector("[data-band=missing]")!;
+    expect(missing.textContent).toBe("missing");
+    expect(missing.getAttribute("style")).toBeNull();
+  });
+  it("says why nobody ranks and asks for a refresh after a settings change", async () => {
     const active = settings({ minGp: 9 }), { data } = buildCategoryBlueprint(season(games(1, 2)), active);
-    expect(await show(data!, active)).toContain("No skater is in the top");
+    expect(await show(data!, active)).toContain("No skater has all four categories");
     cleanup();
     expect(await show(data!, settings({ minGp: 8 }))).toContain("Refresh this post");
   });
