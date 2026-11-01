@@ -19,8 +19,8 @@ export type CreaseShiftGoalie = {
   change: number | null;
   /** Other teams this goalie appeared for this season. Each game binds to the team he played for. */
   otherTeams: string[];
-  /** Share of each `CreaseShiftTeam.series` game: 1 if this goalie started it, 0 if not, null if the game has no resolved starter. Never interpolated. */
-  byGame: (0 | 1 | null)[];
+  /** Running start share at each `CreaseShiftTeam.series` game: starts so far ÷ team games so far, ending at `share` when the window is complete. */
+  runningShare: (number | null)[];
 };
 export type CreaseShiftTeam = {
   team: string; rank: number | null;
@@ -82,6 +82,16 @@ function shareSeries(team: string, recent: TeamStartShare, input: { games: reado
   return points.sort((a, b) => a.date.localeCompare(b.date) || a.gameId - b.gameId);
 }
 
+/** A completed game with no resolved starter counts as a team game and credits no one. A game with no report is not in SHARE's denominator either, so the value holds across it. */
+function runningShare(points: readonly CreaseShiftPoint[], goalieId: number) {
+  let games = 0, starts = 0;
+  return points.map(point => {
+    if (point.state !== "missing") games++;
+    if (point.starterId === goalieId) starts++;
+    return games ? starts / games : null;
+  });
+}
+
 function teamRow(team: string, input: { games: readonly CompletedTeamGame[]; appearances: readonly GoalieAppearance[]; window: number; comparison: "previous" | "std"; minComparisonGames: number }, gaps: readonly ScheduleGap[]): Omit<CreaseShiftTeam, "rank"> {
   const recent: TeamStartShare = teamStartShare(team, input.games, input.appearances, input.window);
   const base: TeamStartShare = input.comparison === "std" ? teamStartShare(team, input.games, input.appearances, null) : teamStartShare(team, input.games, input.appearances, input.window, input.window);
@@ -100,7 +110,7 @@ function teamRow(team: string, input: { games: readonly CompletedTeamGame[]; app
       change: recent.complete && base.complete && !shortComparison ? shareChange(starts, recent.teamGames, baseStarts, base.teamGames) : null,
       otherTeams: [...new Set(input.appearances.filter(row => row.goalieId === goalieId && row.team !== team).map(row => row.team))].sort(),
       // Official starts only, on this team only: relief and a traded goalie's other team never move this line.
-      byGame: points.map(point => point.state !== "resolved" ? null : point.starterId === goalieId ? 1 : 0),
+      runningShare: runningShare(points, goalieId),
     };
   }).sort((a, b) => b.starts - a.starts || (b.comparisonStarts ?? 0) - (a.comparisonStarts ?? 0) || a.goalieId - b.goalieId);
   const changes = goalies.flatMap(goalie => goalie.change === null ? [] : [Math.abs(goalie.change)]);
@@ -142,7 +152,7 @@ export function buildCreaseShift(input: { reported: readonly CompletedTeamGame[]
         { name: "NHL.com team game stats", tables: ["wgo_team_stats", "games"], state: schedule.missing ? "partial" : "ready", asOf, updatedAt: null },
         { name: "NHL.com goalie game stats", tables: ["wgo_goalie_stats"], state: unresolved ? "partial" : "ready", asOf: input.appearances.reduce<string | null>((latest, row) => !latest || row.date > latest ? row.date : latest, null), updatedAt: null },
       ],
-      sample: `Official starts ÷ completed team games: last ${input.window} per team through ${input.through}, compared with ${compared}, with the games behind that comparison printed as GP. PTS is share change in percentage points. Blocks show who started each game, oldest to newest, and an empty block has no resolved starter. The line is 100% when that goalie started the game and 0% when not, and breaks at a game with no resolved starter, with guides at 0, 50 and 100%; relief is not a start; describes past starts only${others.length ? `. Unranked: ${others.join(", ")}` : ""}`,
+      sample: `Official starts ÷ completed team games: last ${input.window} per team through ${input.through}, compared with ${compared}, with the games behind that comparison printed as GP. PTS is share change in percentage points. Blocks show who started each game, oldest to newest, and an empty block has no resolved starter. The line is the running start share, starts so far ÷ team games so far, ending at SHARE, with guides at 0, 50 and 100%; a game with no resolved starter counts as a team game and credits no one; relief is not a start; describes past starts only${others.length ? `. Unranked: ${others.join(", ")}` : ""}`,
       strength: "All situations (official starter labels)", cohort: `${ranked.length} of ${input.teams.length} teams ranked; ${rows.filter(row => row.shortComparison).length} short comparison`,
       coverage: { observed: schedule.observed, expected: schedule.expected, missing: schedule.missing, unit: "team games" },
     },

@@ -288,6 +288,15 @@ This replaces the 5-game rolling line above. TJ asked for span 1 knowing the lin
 
 Four or more listed goalies on many rows at 12 teams would still clip. No new real reads were made.
 
+## Follow-up from TJ's fourth Crease Shift review: running start share
+
+This replaces the per-game line above. TJ's VAN example, LMMLMLMMMM, is a test fixture and matches at all 10 games.
+
+- **Line:** `goalie.runningShare`, starts so far ÷ team games so far, from game 1. Points sit over block centres and the line runs flat to the chart's edges. The last point equals SHARE. Relief is not a start, and G3 stays dashed grey.
+- **Completed game with no resolved starter:** it counts as a team game and credits no one, and its block stays empty. The team's SHARE is still withheld under the existing rule, and the team is unranked, so this row does not reach the card. The line's arithmetic ends at starts ÷ games.
+- **Scheduled game with no report:** SHARE's denominator leaves it out, so counting it would break "ends at SHARE". The value holds flat across its empty block instead. That post is partial and cannot export.
+- **Legend:** "Line: running start share, ending at SHARE." One line of 139 characters. PREV N GP and PTS are unchanged. Chart sizes are unchanged from the table above, so fit is still calculated, not rendered. No new real reads were made.
+
 ## Blockers
 
 None for building. Open: TJ's first real-output review (9.7) and the browser run of the spec.

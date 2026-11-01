@@ -27,3 +27,7 @@ Replaced the running share with per-game starter blocks and a rolling share line
 ## Span 1, full width, PREV N GP (TJ's third Crease Shift review)
 
 Line is now per game (`byGame`), blocks and line reach the chart's edges, legend is one line with the method in evidence, PREV prints its real GP in the header or per team. Next: lead's render checks fit and PNG.
+
+## Running start share (TJ's fourth Crease Shift review)
+
+Line is now `runningShare`: starts so far ÷ team games so far, with TJ's VAN example as a fixture. A no-report game holds flat because SHARE leaves it out. Next: lead's render checks fit and PNG.

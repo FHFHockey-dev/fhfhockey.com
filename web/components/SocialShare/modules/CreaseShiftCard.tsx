@@ -21,7 +21,7 @@ function goalieColor(team: CreaseShiftTeam, goalie: CreaseShiftGoalie) {
 }
 
 const PAD = 5, BLOCK_GAP = 3, SPAN_WIDTH = 36;
-/** One block per game edge to edge, and each starter's share of that game above it on a fixed 0 to 100% scale, so a point sits over its block. Colours are attributes: html-to-image drops class styles on SVG children. */
+/** One block per game edge to edge, and each starter's running start share above it on a fixed 0 to 100% scale, so a point sits over its block. Colours are attributes: html-to-image drops class styles on SVG children. */
 function CreaseChart({ team, width, height }: { team: CreaseShiftTeam; width: number; height: number }) {
   const count = team.series.length, slot = width / Math.max(count, 1), blockHeight = Math.min(30, Math.max(11, Math.round(height * 0.2))), blockTop = height - blockHeight, plotHeight = blockTop - BLOCK_GAP;
   const x = (index: number) => (index + 0.5) * slot, y = (share: number) => plotHeight - PAD - share * (plotHeight - 2 * PAD);
@@ -29,13 +29,13 @@ function CreaseChart({ team, width, height }: { team: CreaseShiftTeam; width: nu
   return <svg className={styles.chart} width={width} height={height} viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`${team.team}, starter by game, oldest to newest: ${team.series.map(point => name(point.starterId)).join(", ")}`}>
     {[1, 0.5, 0].map(share => <line key={share} x1={0} x2={width} y1={y(share)} y2={y(share)} stroke="#ffffff" strokeOpacity="0.14" strokeWidth="1" strokeDasharray={share === 0.5 ? "2 3" : undefined} />)}
     {starters.map(goalie => {
-      const color = goalieColor(team, goalie)!, plotted = goalie.byGame.flatMap((value, index) => value === null ? [] : [{ value, index }]);
-      // A break in the values is a break in the line: nothing bridges a game with no resolved starter. The first and last games run on to the chart's edges.
+      const color = goalieColor(team, goalie)!, plotted = goalie.runningShare.flatMap((value, index) => value === null ? [] : [{ value, index }]);
+      // The first and last games run on to the chart's edges, and a null value is a break in the line.
       const d = plotted.map(({ value, index }, order) => {
         const point = `${x(index).toFixed(1)} ${y(value).toFixed(1)}`;
         return `${index === 0 ? `M0 ${y(value).toFixed(1)}L${point}` : `${order && plotted[order - 1].index === index - 1 ? "L" : "M"}${point}`}${index === count - 1 ? `L${width} ${y(value).toFixed(1)}` : ""}`;
       }).join("");
-      return <g key={goalie.goalieId} data-goalie={goalie.goalieId} data-values={goalie.byGame.map(value => value ?? "gap").join(",")} data-color={color}>
+      return <g key={goalie.goalieId} data-goalie={goalie.goalieId} data-values={goalie.runningShare.map(value => value ?? "gap").join(",")} data-color={color}>
         <path d={d} fill="none" stroke={color} strokeWidth="2.5" strokeLinejoin="round" strokeDasharray={color === OTHER_STARTER ? "4 3" : undefined} />
         {plotted.map(({ value, index }) => <circle key={index} cx={x(index)} cy={y(value)} r="3" fill={color} />)}
       </g>;
@@ -75,6 +75,6 @@ export default function CreaseShiftCard({ data, logos }: SharePostCardProps<Crea
         <span className={styles.cell}><CreaseChart team={team} width={size.chartWidth - (sharedSpan === null ? SPAN_WIDTH : 0)} height={size.chartHeight} /></span>
       </Fragment>)}
     </div>
-    <p className={styles.note}>Blocks: who started each game, oldest to newest. Line: 100% if that goalie started, 0% if not. PTS: share change. Describes past starts only.</p>
+    <p className={styles.note}>Blocks: who started each game, oldest to newest. Line: running start share, ending at SHARE. PTS: share change. Describes past starts only.</p>
   </div>;
 }

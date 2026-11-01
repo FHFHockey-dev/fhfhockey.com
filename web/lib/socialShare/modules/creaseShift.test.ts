@@ -88,10 +88,10 @@ describe("crease shift", () => {
   });
 });
 
-describe("blocks and share by game", () => {
+describe("blocks and running share", () => {
   /** Ten games in the window, ten before, so the window's values stand alone. */
   const twentyGames = Array.from({ length: 20 }, (_, index) => game("NJD", index));
-  const goalie = (team: { goalies: { goalieId: number; byGame: (number | null)[]; share: number | null }[] }, id: number) => team.goalies.find(entry => entry.goalieId === id)!;
+  const goalie = (team: { goalies: { goalieId: number; runningShare: (number | null)[]; share: number | null }[] }, id: number) => team.goalies.find(entry => entry.goalieId === id)!;
   const run = (starter: (index: number) => number, extra: GoalieAppearance[] = [], overrides: Partial<Parameters<typeof buildCreaseShift>[0]> = {}) => buildCreaseShift({ ...base, window: 10, minComparisonGames: 1, reported: reportBoth(twentyGames), appearances: [...twentyGames.map((_, index) => row(starter(index), "NJD", index)), ...extra], scheduled: schedule(twentyGames), ...overrides }).data!;
   const render = async (data: CreaseShiftData) => {
     const Card = await creaseShiftModule.card();
@@ -103,16 +103,26 @@ describe("blocks and share by game", () => {
     expect(team.series.map(point => point.date)).toEqual(twentyGames.slice(10).map(entry => entry.date));
     expect(team.series.map(point => point.starterId)).toEqual([1, 1, 1, 2, 2, 2, 2, 2, 2, 2]);
   });
-  it("gives 100% or 0% at every game, starting at game 1", () => {
-    const team = run(index => index === 11 || index >= 15 ? 2 : 1).teams[0];
-    expect(goalie(team, 1).byGame).toEqual([1, 0, 1, 1, 1, 0, 0, 0, 0, 0]);
-    expect(goalie(team, 2).byGame).toEqual([0, 1, 0, 0, 0, 1, 1, 1, 1, 1]);
+  it("matches TJ's VAN example, LMMLMLMMMM, at every game", async () => {
+    const earlier = Array.from({ length: 10 }, (_, index) => game("VAN", index)), order = [..."LMMLMLMMMM"], games = [...earlier, ...order.map((_, index) => game("VAN", index + 10))];
+    const appearances = games.map((entry, index) => row(index < 10 || order[index - 10] === "L" ? 1 : 2, "VAN", index));
+    const scheduled = games.map(entry => ({ id: entry.gameId, date: entry.date, homeTeamId: teamsInfo.VAN.id, awayTeamId: null }));
+    const data = buildCreaseShift({ ...base, teams: ["VAN"], window: 10, minComparisonGames: 5, reported: games, appearances, scheduled }).data!, team = data.teams[0];
+    const percents = (id: number) => goalie(team, id).runningShare.map(value => Number((value! * 100).toFixed(1)));
+    expect(percents(1)).toEqual([100, 50, 33.3, 50, 40, 50, 42.9, 37.5, 33.3, 30]);
+    expect(percents(2)).toEqual([0, 50, 66.7, 50, 60, 50, 57.1, 62.5, 66.7, 70]);
+    expect(goalie(team, 1).runningShare.at(-1)).toBe(goalie(team, 1).share);
+    expect(goalie(team, 2).runningShare.at(-1)).toBe(goalie(team, 2).share);
+    const root = await render(data);
+    expect(root.querySelectorAll('g[data-goalie="2"] circle')).toHaveLength(10);
+    expect(root.body.textContent).toContain("30%");
+    expect(root.body.textContent).toContain("70%");
   });
   it("does not count relief as a start", () => {
     const team = run(() => 1, [row(2, "NJD", 12, false), row(2, "NJD", 13, false)]).teams[0];
     expect(goalie(team, 2)).toMatchObject({ starts: 0, relief: 2 });
-    expect(goalie(team, 2).byGame.every(value => value === 0)).toBe(true);
-    expect(goalie(team, 1).byGame.every(value => value === 1)).toBe(true);
+    expect(goalie(team, 2).runningShare.every(value => value === 0)).toBe(true);
+    expect(goalie(team, 1).runningShare.every(value => value === 1)).toBe(true);
     expect(team.series.every(point => point.starterId === 1)).toBe(true);
   });
   it("binds a traded goalie's games to the team in that row", () => {
@@ -122,29 +132,33 @@ describe("blocks and share by game", () => {
     expect(both.teams.find(entry => entry.team === "NJD")!.series.map(point => point.gameId)).toEqual([1002, 1003]);
     expect(both.teams.find(entry => entry.team === "NYR")!.series.map(point => point.gameId)).toEqual([5000]);
   });
-  it("never guesses: a game with no resolved starter is a gap at that game only", () => {
+  it("counts a game with no resolved starter as a team game, credits no one, and leaves its block empty", async () => {
     for (const appearances of [
       twentyGames.map((_, index) => row(1, "NJD", index)).filter((_, index) => index !== 12),
       [...twentyGames.map((_, index) => row(1, "NJD", index)), row(2, "NJD", 12)],
     ]) {
-      const team = run(() => 1, [], { appearances }).teams[0];
+      const data = run(() => 1, [], { appearances }), team = data.teams[0];
       expect(team.series[2]).toMatchObject({ state: "unresolved", starterId: null });
-      expect(goalie(team, 1).byGame).toEqual([1, 1, null, 1, 1, 1, 1, 1, 1, 1]);
+      expect(goalie(team, 1).runningShare).toEqual([1, 1, 2 / 3, 3 / 4, 4 / 5, 5 / 6, 6 / 7, 7 / 8, 8 / 9, 9 / 10]);
       expect(goalie(team, 1).share).toBeNull();
+      const blocks = [...(await render({ ...data, teams: [{ ...team, rank: 1 }] })).querySelectorAll("rect[data-block]")];
+      expect(blocks[2].getAttribute("data-block")).toBe("empty");
+      expect(blocks.filter(block => block.getAttribute("data-block") === "empty")).toHaveLength(1);
     }
   });
-  it("marks a scheduled game with no report as an empty block, and breaks the line there", async () => {
-    const data = run(() => 1, [], { reported: reportBoth(twentyGames).filter(entry => !(entry.team === "NJD" && entry.gameId === 1015)) });
+  it("holds across a scheduled game with no report, which SHARE does not count, so the line still ends at SHARE", async () => {
+    const data = run(index => index === 9 ? 2 : 1, [], { reported: reportBoth(twentyGames).filter(entry => !(entry.team === "NJD" && entry.gameId === 1015)) });
     const team = data.teams.find(entry => entry.team === "NJD")!, point = team.series.findIndex(entry => entry.state === "missing");
     expect(team.series[point]).toMatchObject({ gameId: 1015, starterId: null });
-    expect(team.goalies[0].byGame[point]).toBeNull();
+    expect(goalie(team, 2).runningShare[point]).toBe(goalie(team, 2).runningShare[point - 1]);
+    for (const id of [1, 2]) expect(goalie(team, id).runningShare.at(-1)).toBe(goalie(team, id).share);
     const root = await render({ ...data, teams: [team] }), blocks = [...root.querySelectorAll("rect[data-block]")];
     expect(blocks).toHaveLength(team.series.length);
     expect(blocks[point].getAttribute("data-block")).toBe("empty");
     expect(blocks[point].getAttribute("fill")).toBe("none");
     const line = root.querySelector('g[data-goalie="1"]')!;
-    expect(line.querySelector("path")!.getAttribute("d")!.match(/M/g)).toHaveLength(2);
-    expect(line.querySelectorAll("circle")).toHaveLength(team.series.length - 1);
+    expect(line.querySelector("path")!.getAttribute("d")!.match(/M/g)).toHaveLength(1);
+    expect(line.querySelectorAll("circle")).toHaveLength(team.series.length);
   });
   it("colours each block by its starter with SVG attributes: G1, G2, then grey", async () => {
     const root = await render(run(index => index % 10 < 5 ? 1 : index % 10 < 8 ? 2 : 3)), colors = creaseColors("NJD");
@@ -153,7 +167,9 @@ describe("blocks and share by game", () => {
     expect(line(1).querySelector("path")!.getAttribute("stroke")).toBe(colors.g1);
     expect(line(2).querySelector("path")!.getAttribute("stroke")).toBe(colors.g2);
     expect(line(3).querySelector("path")!.getAttribute("stroke-dasharray")).toBe("4 3");
-    expect(line(1).getAttribute("data-values")).toBe("1,1,1,1,1,0,0,0,0,0");
+    expect(line(1).getAttribute("data-values")!.split(",").at(0)).toBe("1");
+    expect(line(1).getAttribute("data-values")!.split(",").at(-1)).toBe("0.5");
+    expect(line(3).getAttribute("data-values")!.split(",").at(-1)).toBe("0.2");
     expect([...root.querySelectorAll(`[data-goalie-color="${colors.g1}"]`)].map(entry => entry.textContent)).toEqual(["G1", "50%"]);
     expect(root.querySelector("svg [class]")).toBeNull();
   });
@@ -178,8 +194,9 @@ describe("blocks and share by game", () => {
     expect(root.querySelectorAll("p")).toHaveLength(1);
     // About 5.8px a character at 14px condensed, in 1008px.
     expect(note.textContent!.length).toBeLessThanOrEqual(170);
+    expect(note.textContent).toContain("Line: running start share, ending at SHARE");
     expect(note.textContent).toContain("Describes past starts only");
-    for (const method of ["Official starts ÷ completed team games", "no resolved starter", "relief is not a start", "guides at 0, 50 and 100%", "describes past starts only"]) expect(result.evidence.sample).toContain(method);
+    for (const method of ["Official starts ÷ completed team games", "no resolved starter", "starts so far ÷ team games so far", "relief is not a start", "guides at 0, 50 and 100%", "describes past starts only"]) expect(result.evidence.sample).toContain(method);
     expect(root.body.textContent).not.toContain("RELIEF");
     expect(root.body.textContent).not.toMatch(/probab|likely|odds|will start/i);
   });
