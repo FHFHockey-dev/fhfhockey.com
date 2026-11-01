@@ -4,7 +4,7 @@ import type { ShareMapRow } from "lib/socialShare/players";
 import { bounded } from "lib/socialShare/trendSources";
 import type { SharePostContext, SharePostLoadResult } from "./contract";
 import { seasonScope } from "./creaseShift";
-import { buildOffNightEdge, OFF_NIGHT_LOOKBACK_DAYS, OFF_NIGHT_MAX_SCHEDULE_WEEKS, OFF_NIGHT_THIS_WEEK, offNightPeriodMissing, offNightScheduleGate, offNightWeeks, resolveOffNightWindow, type OffNightData, type OffNightSettings, type OffNightYahooRow } from "./offNightEdge";
+import { buildOffNightEdge, OFF_NIGHT_LOOKBACK_DAYS, OFF_NIGHT_MAX_SCHEDULE_WEEKS, OFF_NIGHT_THIS_WEEK, offNightEmptyWindow, offNightPeriodMissing, offNightScheduleGate, offNightUpcoming, offNightWeeks, resolveOffNightWindow, type OffNightData, type OffNightSettings, type OffNightYahooRow } from "./offNightEdge";
 import { editionDate } from "./shared/definitions";
 import { matchupCalendar } from "./shared/periodWindow";
 import { readMatchupRows } from "./shared/periodWindow.sources";
@@ -23,12 +23,20 @@ export async function loadOffNightEdge({ client, generatedAt }: SharePostContext
   if (!window) return offNightPeriodMissing([reason, ...calendar.reasons]);
   const weeks = offNightWeeks(window.from, window.through);
   if (weeks.length > OFF_NIGHT_MAX_SCHEDULE_WEEKS) return offNightPeriodMissing([`${window.label} touches ${weeks.length} schedule weeks; this post reads at most ${OFF_NIGHT_MAX_SCHEDULE_WEEKS}.`]);
-  const schedules = await Promise.all(weeks.map(week => getSchedule(week.weekStart, { includeOdds: false })));
+  const upcoming = offNightUpcoming(window, generatedAt);
+  // A date ahead of today can fail only because it is not out yet, which the default's generic failure would not say.
+  const schedules = await Promise.all(weeks.map(week => getSchedule(week.weekStart, { includeOdds: false }))).catch((cause: unknown) => {
+    if (upcoming) return null;
+    throw cause;
+  });
+  if (!schedules) return offNightPeriodMissing([`The NHL schedule for ${window.label} could not be read. It may not be published yet.`]);
   // The edition refuses a read newer than its own time, so it is stamped after the schedule answers, as in socialShare/server.ts.
   const stamped = new Date().toISOString();
   const edition = weeks.map((week, index) => buildScheduleSnapshot({ format: thisWeek && settings.dates === "rest-of-week" ? "remaining-week" : "game-grid", weekStart: week.weekStart, schedule: schedules[index], generatedAt: stamped, selectedDates: week.dates }));
   const gated = offNightScheduleGate(edition);
-  if (gated) return gated;
+  if (gated) return upcoming ? { ...gated, reasons: [`The NHL schedule for ${window.label} is not fully published, so there is no ranking.`, ...gated.reasons ?? []] } : gated;
+  const empty = offNightEmptyWindow(edition, window, settings);
+  if (empty) return empty;
   const through = shiftDays(today, -1), from = shiftDays(through, 1 - OFF_NIGHT_LOOKBACK_DAYS), season = currentSeason(through);
   const [appearances, games, yahoo, map] = await Promise.all([
     readSkaterAppearances(client, { season, from, through, limit: LIMITS.skaters }),

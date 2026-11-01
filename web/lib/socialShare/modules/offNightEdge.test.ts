@@ -275,7 +275,7 @@ describe("period control", () => {
   const shift = (date: string, days: number) => new Date(Date.parse(`${date}T12:00:00Z`) + days * 86400000).toISOString().slice(0, 10);
   const now = new Date().toISOString(), thisMonday = calendarWeekStart(now), lastMonday = shift(thisMonday, -7), twoAgo = shift(thisMonday, -14);
   /** A matchup calendar around now, with a 14-day week over the two before this one. */
-  const matchups = [{ week: 1, start_date: twoAgo, end_date: shift(lastMonday, 6) }, { week: 2, start_date: thisMonday, end_date: shift(thisMonday, 6) }, { week: 3, start_date: shift(thisMonday, 7), end_date: shift(thisMonday, 13) }];
+  const matchups = [{ week: 1, start_date: twoAgo, end_date: shift(lastMonday, 6) }, { week: 2, start_date: thisMonday, end_date: shift(thisMonday, 6) }, { week: 3, start_date: shift(thisMonday, 7), end_date: shift(thisMonday, 13) }, { week: 4, start_date: shift(thisMonday, 14), end_date: shift(thisMonday, 20) }];
   /** Each Monday's slate is seeded differently, so an order can only come from the week asked for. */
   const slate = (monday: string) => {
     const schedule = fictionalLeagueWeek(monday, now, Number(monday.replaceAll("-", "")));
@@ -323,6 +323,48 @@ describe("period control", () => {
     expect(offNightEdgeModule.altText(snapshotOf(result as never, active) as never, result.data!, active)).toContain("past dates; picks and ownership are current");
     const upcoming = await loadOffNightEdge({ client: client(), generatedAt: now }, settings({ period: "matchup", week: 3 }));
     expect(renderToStaticMarkup(createElement(OffNightEdgeCard, { data: upcoming.data!, settings: active, logos: {} }))).not.toContain("off-night-past");
+  });
+  it("shows next week's full schedule whatever the dates setting says, labelled and with today's picks", async () => {
+    const nextMonday = shift(thisMonday, 7), active = settings({ dates: "rest-of-week", period: "matchup", week: 3 }), result = await loadOffNightEdge({ client: client(), generatedAt: now }, active), data = result.data!;
+    const full = slate(nextMonday);
+    expect(data.days.map(day => day.date)).toEqual(weekOf(nextMonday));
+    expect(data.countedGames).toBe(full.games.length);
+    expect(data.rows.length).toBe(16);
+    expect(data.dates).toBe("weekly");
+    expect(data.window).toMatchObject({ upcoming: "next-week", past: false, playedIncluded: false });
+    const row = data.rows[0];
+    expect(row.score).toBe(calcWeekScore([], row.offNightGames, data.countedGames, row.games, data.days.flatMap((day, index) => Array<number>(row.gamesByDay[index]).fill(day.leagueGames)), true));
+    expect(result.evidence.sample).toContain(`to ${shift(now.slice(0, 10), -1)}:`);
+    const html = renderToStaticMarkup(createElement(OffNightEdgeCard, { data, settings: active, logos: {} }));
+    expect(html).toContain("Next week · Week 3 · ");
+    expect(html).toContain("Picks use recent form and ownership as of today");
+    expect(html).not.toContain("off-night-past");
+    expect(offNightEdgeModule.altText(snapshotOf(result as never, active) as never, data, active)).toContain("next week; picks use recent form and ownership as of today");
+  });
+  it("calls a later matchup upcoming, and neither label on this week", async () => {
+    const later = await loadOffNightEdge({ client: client(), generatedAt: now }, settings({ period: "matchup", week: 4 }));
+    expect(later.data!.window.upcoming).toBe("upcoming");
+    expect(renderToStaticMarkup(createElement(OffNightEdgeCard, { data: later.data!, settings: settings(), logos: {} }))).toContain("Upcoming · Week 4 · ");
+    const current = await loadOffNightEdge({ client: client(), generatedAt: now }, settings());
+    expect(current.data!.window.upcoming).toBeNull();
+  });
+  it("gives a clear reason, not an empty ranking, for a schedule not yet published, and reads no players", async () => {
+    const unpublished = (monday: string) => ({ ...slate(monday), games: [], numGamesPerDay: [0, 0, 0, 0, 0, 0, 0] });
+    upstream.getSchedule.mockImplementation(async (monday: string) => unpublished(monday));
+    const fake = client(), empty = await loadOffNightEdge({ client: fake, generatedAt: now }, settings({ period: "matchup", week: 3 }));
+    expect(empty.state).toBe("missing");
+    expect(empty.data).toBeNull();
+    expect(empty.reasons?.[0]).toMatch(/^The NHL schedule shows no games yet for Week 3 .*It may not be published\.$/);
+    expect(fake.tables).toEqual(["yahoo_matchup_weeks"]);
+    upstream.getSchedule.mockImplementation(async (monday: string) => ({ ...unpublished(monday), coveredDates: [] }));
+    const partial = await loadOffNightEdge({ client: client(), generatedAt: now }, settings({ period: "matchup", week: 3 }));
+    expect(partial.data).toBeNull();
+    expect(partial.reasons?.[0]).toMatch(/is not fully published/);
+    upstream.getSchedule.mockRejectedValue(new Error("NHL 404"));
+    const failed = await loadOffNightEdge({ client: client(), generatedAt: now }, settings({ period: "matchup", week: 3 }));
+    expect(failed.state).toBe("missing");
+    expect(failed.reasons?.[0]).toMatch(/could not be read\. It may not be published yet\.$/);
+    await expect(loadOffNightEdge({ client: client(), generatedAt: now }, settings())).rejects.toThrow("NHL 404");
   });
   it("validates a custom range before any read, and keeps it to what fits", () => {
     const parse = (query: Record<string, string>) => parseShareSettings(offNightEdgeModule, { period: "custom", ...query });

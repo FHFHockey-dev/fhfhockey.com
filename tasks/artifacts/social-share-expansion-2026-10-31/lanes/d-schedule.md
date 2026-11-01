@@ -66,6 +66,7 @@ Off-Night Edge is any-week and Team Games is past-only. Both use `shared/periodW
 
 - **Off-Night Edge options:** This week (the default, keeping the `dates` choice), Matchup week and Custom range. `dates=weekly` and `dates=rest-of-week` load as before, with no matchup read. Anything other than this week counts every game on its dates, played or not, as one horizon through `calcWeekScore`, using one NHL schedule call per Monday week touched.
 - **Past dates:** the legend prints "Past dates: picks and ownership are current, not as of then". L5 form and Yahoo ownership are always today's. The alt text says the same.
+- **Future matchups:** none of the days have passed, so the full schedule counts and the `dates` setting does not apply. The card and alt text say "Next week" when the dates start next Monday and "Upcoming" otherwise, plus "Picks use recent form and ownership as of today". Form runs through yesterday, because today's games may not be final. No games, a schedule that does not cover the dates, or a failed schedule read on future dates each give `missing` with a reason, and no player tables are read.
 - **Team Games options:** Recent days (the default), Matchup week and Custom range. `days=N` works as before, with no matchup read. A week under way counts through the last completed games and is labelled "so far". The read limits rose to 2,700 and 1,400 rows, because a custom range can cover the season.
 - **Fit:** 14 day columns use a compact table. Custom ranges on Off-Night Edge stop at 14 days, because wider ones do not fit beside the picks. The longest week on the 2026 calendar is 14 days (read 4).
 
@@ -74,5 +75,7 @@ Off-Night Edge is any-week and Team Games is past-only. Both use `shared/periodW
 **Checks.** Vitest on `offNightEdge` (29), `teamGames` (7), `PostStudio` (16), `server`, `contract`, `periodWindow` and `landingCatalog`: passed. `postedWeek.test.ts` has one failure on another lane's `stars-total` wording; its Off-Night Edge and Team Games rules pass. eslint on my files is clean. The pure check passed on both cards. `tsc`: no errors in my files, and `retainedBlsh.test.ts:134` as expected; other lanes' uncommitted files showed errors in the same run. Browser, `next dev` on port 3123 with a separate dist dir: `social-share-schedule.spec.ts` 5 passed and the `social-share.spec.ts` post library test 1 passed, all on fictional editions.
 
 **Measured on a fictional 14-day card with 16 long rows:** no cell or table overflow, 0px dead band, minimum row 48px, legend 36px (two lines with the past label).
+
+**Checks after the future-matchup addition:** `offNightEdge.test.ts` 32 passed, eslint clean, `tsc` no errors in my files, `social-share-schedule.spec.ts` 6 passed on the isolated port. The "not published" cases are simulated: what the NHL API really returns for an unpublished week has not been observed.
 
 **Not run:** the real loader for a chosen matchup, which calls the NHL schedule API once per week touched. No real matchup card has been rendered.

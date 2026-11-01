@@ -91,6 +91,30 @@ test("off-night edge: a past 14-day matchup prints its dates and past label, and
   expect(fit.deadBand).toBeLessThanOrEqual(40);
 });
 
+test("off-night edge: the pager opens next week's matchup, labelled, and a week not published gives its reason", async ({ page }) => {
+  const requested: string[] = [];
+  await page.route("**/api/v1/social-share/matchup-weeks", route => route.fulfill({ json: { cutoff: "2026-10-31", rows: [{ week: 5, start_date: "2026-10-26", end_date: "2026-11-01" }, { week: 6, start_date: "2026-11-02", end_date: "2026-11-08" }, { week: 7, start_date: "2026-11-09", end_date: "2026-11-15" }] } }));
+  await page.route("**/api/v1/social-share/posts/**", route => {
+    const url = new URL(route.request().url()), week = url.searchParams.get("week"), base = edition("weekly"), settings = { ...base.settings, period: "matchup", week: week ? Number(week) : null };
+    requested.push(url.search);
+    if (week === "7") return route.fulfill({ json: { ...base, id: "off-night-week-7", state: "missing", data: null, teams: [], settings, reasons: ["The NHL schedule shows no games yet for Week 7 · Nov 9 to Nov 15, so there is no ranking. It may not be published."] } });
+    const next = week === "6";
+    return route.fulfill({ json: { ...base, id: `off-night-week-${week ?? "blank"}`, settings, data: { ...base.data, window: { kind: "matchup", week: next ? 6 : 5, from: next ? "2026-11-02" : "2026-10-26", through: next ? "2026-11-08" : "2026-11-01", label: next ? "Week 6 · Nov 2 to Nov 8" : "Week 5 · Oct 26 to Nov 1", past: false, playedIncluded: !next, upcoming: next ? "next-week" : null } } } });
+  });
+  await page.goto("/social-share/posts?post=off-night-edge&period=matchup");
+  const square = page.getByTestId("share-square"), next = page.getByRole("button", { name: /^Next week/ });
+  await expect(page.getByTestId("period-pager-label")).toHaveText("Week 5 · Oct 26 to Nov 1");
+  await expect(square.getByTestId("off-night-legend")).toContainText("Week 5");
+  await next.click();
+  await expect(square.getByTestId("off-night-legend")).toContainText("Next week · Week 6 · Nov 2 to Nov 8");
+  await expect(square.getByTestId("off-night-upcoming")).toHaveText("Picks use recent form and ownership as of today");
+  await expect(page.getByTestId("period-pager-label")).toHaveText("Week 6 · Nov 2 to Nov 8");
+  expect(requested[requested.length - 1]).toContain("week=6");
+  await next.click();
+  await expect(page.getByTestId("post-unavailable")).toContainText("It may not be published");
+  await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
+});
+
 test("off-night edge: old links load as this week, and the period control offers matchup and custom", async ({ page }) => {
   const requested: string[] = [];
   await page.route("**/api/v1/social-share/posts/**", route => {

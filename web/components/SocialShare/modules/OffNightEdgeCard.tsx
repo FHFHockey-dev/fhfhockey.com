@@ -38,7 +38,7 @@ export default function OffNightEdgeCard({ data, settings, logos }: Pick<SharePo
       </Fragment>)}
     </div>
     <p className={styles.legend} data-testid="off-night-legend">
-      <b>{window.label}{window.playedIncluded ? ", played games included" : ""}</b>{window.past && <> · <strong data-testid="off-night-past">Past dates: picks and ownership are current, not as of then</strong></>} · Shaded: 8 or fewer NHL games (count under each day) · Picks at or under {settings.ownershipCeiling}% rostered{settings.includeUnknown === "on" ? " · — unknown %" : ""}
+      <b>{window.upcoming === "next-week" ? "Next week · " : window.upcoming ? "Upcoming · " : ""}{window.label}{window.playedIncluded ? ", played games included" : ""}</b>{window.past && <> · <strong data-testid="off-night-past">Past dates: picks and ownership are current, not as of then</strong></>}{window.upcoming && <> · <span data-testid="off-night-upcoming">Picks use recent form and ownership as of today</span></>} · Shaded: 8 or fewer NHL games (count under each day) · Picks at or under {settings.ownershipCeiling}% rostered{settings.includeUnknown === "on" ? " · — unknown %" : ""}
     </p>
   </div>;
 }
