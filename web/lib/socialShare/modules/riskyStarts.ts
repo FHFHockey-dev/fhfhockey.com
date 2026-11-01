@@ -1,4 +1,4 @@
-import { UNKNOWN_EVIDENCE, defineShareModule, type SharePostLoadResult, type SharePostSource } from "./contract";
+import { UNKNOWN_EVIDENCE, defineShareModule, type SharePostEvidence, type SharePostLoadResult, type SharePostSource } from "./contract";
 import type { GoalieConfirmation, GoalieGameSignals, GoalieInventory, InventoryMetric } from "./shared/goalieInventory";
 import { confirmationLabel, confirmationLegend, inventoryEvidence, isUpcomingGame, headToHeadWinner, metricLabel, rankBand, type GoalieInventoryDetail, type InventoryConflict, type TeamLensMetric } from "./shared/goalieInventory.sources";
 
@@ -79,6 +79,24 @@ export function ordinalRank(rank: number) {
 }
 export const riskyLensMeaning = (lens: RiskyLens) => LENS_MEANINGS[lens];
 
+const SOURCE_PUBLISHERS: readonly (readonly [string, string])[] = [["NHL.com", "NHL.com"], ["NST", "NST"], ["Goalie start", "goalie reports"], ["DraftKings", "DraftKings"]];
+const publisher = (name: string) => SOURCE_PUBLISHERS.find(([prefix]) => name.startsWith(prefix))?.[1] ?? name;
+const updatedLabel = (at: string) => new Date(at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/New_York" });
+const sourceDetail = ({ name, asOf, updatedAt }: SharePostSource) => `${name}${asOf ? ` through ${asOf}` : ""}${updatedAt ? ` (updated ${updatedLabel(updatedAt)} ET)` : ""}`;
+/**
+ * The shell prints `evidence.sources` on the PNG's footer, so this post files one combined source there, through the oldest
+ * date any of them reaches, and spells out each source in the cohort line of the panel beside the preview. Tables and reasons carry over.
+ */
+export function compactRiskyEvidence(evidence: SharePostEvidence): SharePostEvidence {
+  const { sources } = evidence;
+  if (!sources.length) return evidence;
+  const dates = sources.flatMap(source => source.asOf ? [source.asOf] : []).sort();
+  return {
+    ...evidence, strength: "All situations",
+    cohort: `${evidence.cohort} ${evidence.strength}. Sources: ${sources.map(sourceDetail).join(" · ")}.`,
+    sources: [{ name: [...new Set(sources.map(source => publisher(source.name)))].join(", "), tables: [...new Set(sources.flatMap(source => source.tables))], state: sources.some(source => source.state === "partial") ? "partial" : "ready", asOf: dates[0] ?? null, updatedAt: null, reasons: sources.flatMap(source => source.reasons ?? []) }],
+  };
+}
 export function riskyStartsResult({ inventory, coverage, conflicts }: GoalieInventoryDetail, market: RiskyMarketLines = { lines: {}, sources: [], notes: [] }): SharePostLoadResult<RiskyStartsData> {
   if (inventory.state === "missing") return { state: "missing", reasons: [...inventory.reasons], evidence: UNKNOWN_EVIDENCE, data: null };
   const rows = riskyRows(inventory, conflicts), cohort = rows[0]?.lenses.volume[0].sides[0].metric.leagueCohort ?? null;
@@ -87,7 +105,7 @@ export function riskyStartsResult({ inventory, coverage, conflicts }: GoalieInve
     state: inventory.state, reasons: inventory.state === "ready" ? [] : [...inventory.reasons],
     data: { from: inventory.from, through: inventory.through, rows, lines: market.lines, confirmationLegend: confirmationLegend(inventory) },
     teams: [...new Set(rows.flatMap(row => [row.team, row.opponent]))].sort(),
-    evidence: { ...evidence, sources: [...evidence.sources, ...market.sources] },
+    evidence: compactRiskyEvidence({ ...evidence, sources: [...evidence.sources, ...market.sources] }),
   };
 }
 

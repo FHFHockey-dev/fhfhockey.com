@@ -3,9 +3,10 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import RiskyStartsCard from "components/SocialShare/modules/RiskyStartsCard";
+import { postEvidenceLine } from "components/SocialShare/PostStudio";
 import { resolveDailyBoardEvidence, type BoardGoalieEvidence } from "lib/projections/dailyBoardEvidence";
 import { sharePostExportToken } from "./contract";
-import { ordinalRank, RISKY_CORRELATION_NOTE, riskyFlags, riskyGameSides, riskyPairs, riskyRows, riskyRowsForLens, riskyStartsModule, riskyStartsResult, type RiskyPair, type RiskyRow, type RiskySide, type RiskyStartsData, type RiskyStartsSettings } from "./riskyStarts";
+import { compactRiskyEvidence, ordinalRank, RISKY_CORRELATION_NOTE, riskyFlags, riskyGameSides, riskyPairs, riskyRows, riskyRowsForLens, riskyStartsModule, riskyStartsResult, type RiskyPair, type RiskyRow, type RiskySide, type RiskyStartsData, type RiskyStartsSettings } from "./riskyStarts";
 import { loadRiskyMarketLines, MARKET_LINES_NOTE, NHL_FAILED_NOTE, NHL_PARTNER_URL, partnerLine, storedLine, STORED_FAILED_NOTE, type PartnerFeed, type StoredLineRow } from "./riskyStarts.sources";
 import { gameSignals, buildTeamLenses, buildGoalieInventory, CONFIRMATION_LINK_GAP, CONFIRMATION_REPORTER_GAP, rankBand } from "./shared/goalieInventory.sources";
 import { FIXTURE_GENERATED_AT, FIXTURE_INPUT, FIXTURE_TEAMS, GOALIE_INVENTORY_FIXTURE, GOALIE_INVENTORY_FIXTURE_DETAIL } from "./shared/goalieInventory.fixture";
@@ -221,7 +222,8 @@ describe("Risky Starts post", () => {
     expect(missing).toMatchObject({ state: "missing", data: null, reasons: ["could not be read"] });
     const closed = riskyStartsResult(buildGoalieInventory({ ...FIXTURE_INPUT, confirmations: null, forecasts: null }));
     expect(closed.state).toBe("ready");
-    expect(closed.evidence.sources.map(source => source.name)).not.toContain("Goalie start observations");
+    expect(closed.evidence.cohort).not.toContain("Goalie start observations");
+    expect(closed.evidence.sources[0].tables).not.toContain("player_forecast_goalie_start_observations");
     expect(closed.evidence.sample).toMatch(/could not be read/);
     expect(closed.data!.confirmationLegend).toBe("Unknown = reports unreadable.");
   });
@@ -313,7 +315,7 @@ describe("Risky Starts market lines", () => {
     const result = riskyStartsResult(GOALIE_INVENTORY_FIXTURE_DETAIL, market);
     expect(result.state).toBe("ready");
     expect(result.evidence.sample).toContain(NHL_FAILED_NOTE);
-    expect(result.evidence.sources.map(source => source.name)).not.toContain("NHL.com partner odds");
+    expect(result.evidence.cohort).not.toContain("NHL.com partner odds");
   });
   it("survives a stored read failure, still trying the feed, and a missing server client", async () => {
     const failed = await loadRiskyMarketLines(rows, FIXTURE_GENERATED_AT, { client: client(null, new Error("denied")) as never, fetchImpl: ok(feed()) });
@@ -353,7 +355,41 @@ describe("Risky Starts market lines", () => {
   it("lists the source it used in the evidence, with its capture time", async () => {
     const market = await loadRiskyMarketLines(rows, FIXTURE_GENERATED_AT, { client: client([stored()]) as never, fetchImpl: ok(feed()) });
     const { evidence } = riskyStartsResult(GOALIE_INVENTORY_FIXTURE_DETAIL, market);
-    expect(evidence.sources.find(source => source.tables.includes("game_prediction_market_odds_snapshots"))).toMatchObject({ state: "ready", asOf: "2026-11-02", updatedAt: "2026-11-02T12:00:00Z" });
+    expect(evidence.sources[0].tables).toContain("game_prediction_market_odds_snapshots");
+    expect(evidence.cohort).toContain("DraftKings market lines (stored) through 2026-11-02 (updated Nov 2, 7:00 AM ET)");
     expect(evidence.sample).toContain(MARKET_LINES_NOTE);
+  });
+});
+
+describe("Risky Starts footer and tile edge", () => {
+  const source = (name: string, asOf: string | null, tables: string[], state: "ready" | "partial" = "ready", reasons?: string[]) => ({ name, tables, state, asOf, updatedAt: asOf && `${asOf}T12:00:00Z`, reasons });
+  const full = [source("NHL.com schedule", "2026-11-06", ["games"]), source("NHL.com team game stats", "2026-10-30", ["wgo_team_stats"]), source("NST team game logs (all situations)", "2026-10-30", ["nst_team_gamelogs_as_counts"]), source("NHL.com goalie game stats", "2026-10-30", ["wgo_goalie_stats"]), source("Goalie start observations", "2026-10-31", ["player_forecast_goalie_start_observations"], "partial", ["gap"]), source("DraftKings market lines (stored)", "2026-11-01", ["game_prediction_market_odds_snapshots"]), source("NHL.com partner odds", null, ["api-web.nhle.com/v1/partner-game/US/now"])];
+  const evidence = { sources: full, sample: "s", strength: "All situations (shots, xG, chances); PP and PK as labeled", cohort: "c.", coverage: { observed: 432, expected: 432, missing: 0, unit: "completed team games" } };
+  it("gives the footer one line with every source at its fullest, using the shell's own line", () => {
+    const line = postEvidenceLine(compactRiskyEvidence(evidence));
+    expect(line).toBe("NHL.com, NST, goalie reports, DraftKings through 2026-10-30 · All situations · 432 of 432 completed team games");
+    // The footer is 984px less the watermark, about 115 characters at 15px.
+    expect(line.length).toBeLessThanOrEqual(115);
+  });
+  it("keeps every source's date and update in the panel, and its tables and reasons on the record", () => {
+    const compact = compactRiskyEvidence(evidence);
+    expect(compact.cohort).toContain("All situations (shots, xG, chances); PP and PK as labeled");
+    for (const name of full.map(item => item.name)) expect(compact.cohort).toContain(name);
+    expect(compact.cohort).toContain("NHL.com schedule through 2026-11-06 (updated Nov 6, 7:00 AM ET)");
+    expect(compact.sources).toHaveLength(1);
+    expect(compact.sources[0]).toMatchObject({ state: "partial", asOf: "2026-10-30", reasons: ["gap"] });
+    expect(compact.sources[0].tables).toEqual(full.flatMap(item => item.tables));
+  });
+  it("still has no source when none was readable, so the post cannot export", () => {
+    expect(compactRiskyEvidence({ ...evidence, sources: [] }).sources).toEqual([]);
+  });
+  it("leaves other posts' shared evidence alone", () => {
+    expect(postEvidenceLine(evidence)).toContain("NHL.com team game stats through 2026-10-30");
+  });
+  it("sets the tile's edge inline, so the PNG keeps it", () => {
+    const html = card(riskyStartsResult(GOALIE_INVENTORY_FIXTURE_DETAIL), "volume"), tile = html.match(/<div class="[^"]*" style="([^"]*)" data-testid="risky-row"/)![1];
+    expect(tile).toContain("border:1.5px solid");
+    expect(tile).toContain("border-radius:10px");
+    expect(tile).toContain("box-shadow:");
   });
 });

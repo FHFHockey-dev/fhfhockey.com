@@ -141,3 +141,11 @@ Project `fyhftlxokyjtpndbkfse`, Supabase MCP `execute_sql`, 2026-10-31. Every st
 - Evidence and alt text say "Quality, quantity and win". Shared field names (`volume`, `ratioExposure`) are unchanged.
 - **Old names still printed elsewhere, not changed:** Risky Starts ("Volume upside", "Ratio exposure"), Player Cards' goalie outlook (`lib/player-cards/goalieOutlook.ts`, `sharedGoalieOutlook.ts`), Goalie Rescue ("Volume" group, and a "ratio exposure" comment).
 - **Browser not run; fit at 860px not measured.** The lens cells are unchanged in width and the game column is narrower.
+
+## Risky Starts footer and tile edge (TJ's final review)
+
+- **Footer, no shell change:** the shell prints `evidence.sources` on the PNG, so `compactRiskyEvidence` files one combined source for this post only. Example: "NHL.com, NST, goalie reports, DraftKings through 2026-10-30 · All situations · 432 of 432 completed team games", 110 characters; 115 estimated to fit on one line.
+- **Full list:** each source, its date and its update time now print in the panel's **Cohort** line, because the panel's Source line prints the same field as the footer. Tables and reasons carry over on the combined source. The shell has no field for footer-only text, so a separate one would need a shell change.
+- **Combined date:** the oldest date any source reaches.
+- **Tile edge:** inline `TILE_EDGE`, 1.5px lighter border, 10px radius, light shadow. Grid gap 4px to 6px, tile padding 4px to 5px.
+- **Browser not run; one line and fit at 860px not measured.**

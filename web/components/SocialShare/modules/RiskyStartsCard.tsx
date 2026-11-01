@@ -6,6 +6,8 @@ import styles from "./RiskyStartsCard.module.scss";
 
 const dayLabel = (date: string) => new Date(`${date}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
 const restLabel = (row: RiskyRow) => row.teamSecondNight === null || row.opponentSecondNight === null ? "Back-to-back unknown" : row.teamSecondNight && row.opponentSecondNight ? "Both on a back-to-back" : row.teamSecondNight ? `${row.team} on a back-to-back` : row.opponentSecondNight ? `${row.opponent} on a back-to-back` : "Both rested";
+/** Inline so the PNG keeps the tile's edge. */
+const TILE_EDGE = { border: "1.5px solid rgba(255,255,255,0.3)", borderRadius: 10, boxShadow: "0 2px 6px rgba(0,0,0,0.45)" } as const;
 const COLORS = { home: "#4be08f", away: "#ff6b6b", flagged: "#2a7fb8", plain: "#3a4a57", track: "rgba(255,255,255,0.07)", missing: "#ffcc33", triangle: "#ffffff" } as const;
 
 /** One team's half of a row, its value printed over a bar that grows out from the centre label. Longer is stronger. No rank gives a dashed empty track. */
@@ -39,7 +41,7 @@ function Moneyline({ team, price }: { team: string; price: number }) {
 }
 function Tile({ row, rows, line, lens, logos, generatedAt }: { row: RiskyRow; rows: readonly RiskyRow[]; line: RiskyGameLine | undefined; lens: RiskyStartsSettings["lens"]; logos: Record<string, string | null>; generatedAt: string }) {
   const { home, away } = riskyGameSides(rows, row);
-  return <div className={styles.tile} data-testid="risky-row" data-team={row.team} data-game={row.gameId}>
+  return <div className={styles.tile} style={TILE_EDGE} data-testid="risky-row" data-team={row.team} data-game={row.gameId}>
     <div className={styles.head}>
       <span className={styles.teamHead}><b style={{ color: COLORS.home }}>HOME</b><PostTeamMark team={home.team} logo={logos[home.team]} size={32} />{line && <Moneyline team={line.home} price={line.homeMoneyline} />}</span>
       <span className={styles.when}>{dayLabel(row.date)} · {restLabel(row)}<em data-testid="risky-line" data-source={line?.source}>{line ? `${line.total === null ? "" : `O/U ${line.total} · `}${bookLabel(line.book)} · ${ageLabel(line.capturedAt, generatedAt)}` : NO_LINE_LABEL}</em></span>
