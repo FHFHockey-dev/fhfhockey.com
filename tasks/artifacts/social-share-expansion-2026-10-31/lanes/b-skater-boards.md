@@ -231,6 +231,6 @@ Points-First top 15, L10 (SQL using the same formula; the builder itself has not
 | --- | --- | --- | --- | --- |
 | R7 | L10 percentiles, floor count and top 15 at the floor, through MCP `execute_sql` on 2026-11-01 | `wgo_skater_stats` | 0 sample rows (15 per-player aggregate rows) | Passed |
 
-Top 15 now (SQL using the same formula; the builder has not run on the full season): Dahlin, Jones, Pionk, Suzuki, Stützle, Batherson, Hagel, Tuch, McAvoy (P85.2), Tkachuk, Sanderson, Bouchard, Schaefer, Holloway, Benson. Seider, Werenski and Neighbours leave; Schaefer, Holloway and Benson come in. 7 of 15 are defensemen, and 5 of the 15 are below P50 in hits or blocks.
+Top 15 now (SQL using the same formula; the builder has not run on the full season): Dahlin, Jones, Pionk, Suzuki, Stützle, Batherson, Hagel, Tuch, McAvoy (P85.2), Tkachuk, Sanderson, Bouchard, Schaefer, Holloway, Benson. Seider, Werenski and Neighbours leave; Schaefer, Holloway and Benson come in. 7 of 15 are defensemen, and 8 of the 15 are below P50 in hits or blocks.
 
-**Checks:** tests in the lane's 3 files passed, eslint clean, `tsc` printed no errors, `--list` found 11 tests. No browser run.
+**Checks:** 91 tests in the lane's 3 files passed, eslint clean, `tsc` printed no errors, `--list` found 11 tests. No browser run.
