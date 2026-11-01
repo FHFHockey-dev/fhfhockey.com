@@ -6,6 +6,8 @@ import styles from "./PostStudio.module.scss";
 
 type Props = {
   entry: AnyShareModule; control: PeriodControlConfig; settings: ShareSettings; disabled: boolean;
+  /** The loaded edition: each new one rereads the calendar, so the pager's blank week and limits match the same cutoff. */
+  edition: unknown;
   /** Sets a field and waits for Refresh, as the settings form does. */
   change: (field: ShareSettingField, text: string) => void;
   /** Sets fields and loads their edition at once. */
@@ -13,16 +15,15 @@ type Props = {
 };
 
 /** Period select, a pager over this season's matchup weeks, and date fields for a custom range. */
-export default function PeriodControl({ entry, control, settings, disabled, change, apply }: Props) {
+export default function PeriodControl({ entry, control, settings, disabled, edition, change, apply }: Props) {
   const [source, setSource] = useState<Awaited<ReturnType<typeof fetchMatchupWeeks>> | undefined>();
   const [attempt, setAttempt] = useState(0);
   const priorButton = useRef<HTMLButtonElement>(null), nextButton = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     let live = true;
-    setSource(undefined);
-    void fetchMatchupWeeks().then(result => { if (live) setSource(result); });
+    void fetchMatchupWeeks().then(result => { if (live) setSource(current => result ?? current ?? null); });
     return () => { live = false; };
-  }, [attempt]);
+  }, [attempt, edition]);
   const calendar = useMemo(() => source ? matchupCalendar(source.rows) : null, [source]);
   const field = (id: string) => entry.fields.find(item => item.id === id)!;
   const period = field("period"), matchupValue = control.matchupValue ?? PERIOD_MATCHUP, current = periodSettings(settings);

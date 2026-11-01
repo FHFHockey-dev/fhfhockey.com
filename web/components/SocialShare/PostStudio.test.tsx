@@ -130,6 +130,17 @@ describe("PostStudio", () => {
     const lastQuery = () => (vi.mocked(router.replace).mock.lastCall![0] as { query: Record<string, string> }).query;
     beforeEach(() => { router.query = { post: "goalie-period", week: "4" }; });
 
+    it("rereads the calendar with each edition, so a blank week's pager follows Refresh over midnight", async () => {
+      router.query = { post: "goalie-period" };
+      let cutoff = "2026-10-25";
+      serveGoalie({}, () => json({ ...matchups, cutoff }));
+      render(<PostStudio />);
+      await waitFor(() => expect(screen.getByTestId("period-pager-label").textContent).toBe("Week 4 · Oct 19 to Oct 25"));
+      cutoff = "2026-11-01";
+      fireEvent.click(screen.getByRole("button", { name: "Refresh post" }));
+      await waitFor(() => expect(screen.getByTestId("period-pager-label").textContent).toBe("Week 5 · Oct 26 to Nov 1"));
+    });
+
     it("leaves a post without the flag on its own form", async () => {
       router.query = { post: "team-games" };
       const entry = SHARE_MODULES.get("team-games")!, { periodControl } = entry;
