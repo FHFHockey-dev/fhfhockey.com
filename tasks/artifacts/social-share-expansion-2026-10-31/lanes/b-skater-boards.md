@@ -150,3 +150,12 @@ Follow-up commit (Blueprint default): 50 tests in the lane's 3 files passed, esl
 - **Spec fixture:** crowded names changed from "Fictional Longname Skater N" to "Fictional Long Name N". 21 to 22 characters is longer than real NHL names as far as I know, but the old 28 no longer fit this card's narrower name column by estimate.
 - **Not measured:** no browser run; the lead renders on real data.
 - **Checks:** 67 tests in the lane's 3 files passed, including met marks equal to the numerator on every view, scoreless marks, the equality boundary and the missing gap. eslint clean, the pure check passed, `--list` found 10 tests, `tsc` printed no errors. The last test expectation was corrected after those three ran.
+
+## BSH segmented bar (TJ's reference; replaces the stacked charts above)
+
+- **Bar:** every leader and riser/faller row has one full-width bar, B then S then H, each section as wide as its share of the total, with its letter centred. Colours `#4DA6DE`, `#E5AE5B`, `#C75B52` are inline on the element, and the BLK, SOG and HITS tiles wear the same tints inline.
+- **Data:** leaders use the shown per-game values; risers and fallers use the recent-window values, and the earlier values stay in the tiles. The per-game series, `recentFrom`, the dashes and their legend wording are gone.
+- **Edges:** a section under 18px hides its letter (at 982px on leaders, 481px on movers). A zero has no section, all zeros give a neutral empty bar, and a missing value gives a dashed amber "missing" bar with no split.
+- **Layout by CSS, not measured:** leaders about 67px a row, a 37px line then a 30px bar line; the BSH tile went to one line. Movers need about 110px of about 114px, so the three tiles went to one line each.
+- **Palette validator:** on the dark surface blue and amber fail the lightness band (0.694, 0.785); CVD, normal-vision and contrast checks pass. These are the ticket's colours and each section carries a direct letter, so I kept them.
+- **Checks:** 68 tests in the lane's 3 files passed, eslint clean, the pure check passed, `tsc` printed no errors, `--list` found 10 tests. No browser run.

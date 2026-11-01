@@ -2,7 +2,7 @@
 import { createElement } from "react";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { BSH_LEADER_ROWS, BSH_MOVER_ROWS, bshBoardModule, bshGameStacks, bshStackTops, buildBshBoard, skaterSeasonEvidence, skaterSeasonScope, type BshBoardData, type BshBoardSettings, type SkaterSeason } from "./bshBoard";
+import { BSH_BAR_PX, BSH_LEADER_ROWS, BSH_LETTER_PX, BSH_MOVER_ROWS, bshBar, bshBoardModule, buildBshBoard, skaterSeasonEvidence, skaterSeasonScope, type BshBoardData, type BshBoardSettings, type SkaterSeason } from "./bshBoard";
 import { parseShareSettings, sharePostExportBlock, type SharePostSnapshot } from "./contract";
 import { skaterBoardModules } from "./lanes/skaterBoards";
 import type { SkaterAppearance } from "./shared/skaterAppearances";
@@ -64,30 +64,30 @@ describe("BSH leaderboard", () => {
   });
 });
 
-describe("BSH game stacks", () => {
-  it("stacks blocks, shots and hits per game, with BSH on top", () => {
-    const [stack] = bshGameStacks([game(1, 0, { blocks: 2, shots: 3, hits: 1 })]);
-    expect(stack).toEqual({ date: "2026-10-01", blocks: 2, shots: 3, hits: 1, bsh: 6 });
-    expect(bshStackTops(stack)).toEqual([2, 5, 6]);
+describe("BSH bar", () => {
+  const rates = (blocksPerGame: number | null, shotsPerGame: number | null, hitsPerGame: number | null) => ({ blocksPerGame, shotsPerGame, hitsPerGame });
+  it("gives each section its share of the total, B then S then H", () => {
+    const bar = bshBar(rates(2, 3, 1), BSH_BAR_PX.leaders);
+    expect(bar.state).toBe("split");
+    expect(bar.sections.map(section => section.layer)).toEqual(["b", "s", "h"]);
+    expect(bar.sections.map(section => section.value)).toEqual([2, 3, 1]);
+    expect(bar.sections.map(section => section.share)).toEqual([2 / 6, 3 / 6, 1 / 6]);
+    expect(bar.sections.reduce((total, section) => total + section.share, 0)).toBeCloseTo(1);
   });
-  it("makes a missing component a gap and keeps a known 0", () => {
-    expect(bshStackTops(bshGameStacks([game(1, 0, { shots: null })])[0])).toBeNull();
-    expect(bshStackTops(bshGameStacks([game(1, 0, { blocks: 0, shots: 0, hits: 0 })])[0])).toEqual([0, 0, 0]);
+  it("hides a letter only when its section is too narrow at that bar's width", () => {
+    const letters = (barPx: number, blocks: number) => (bshBar(rates(blocks, 6 - blocks, 0), barPx).sections as { letter: boolean }[]).map(section => section.letter);
+    expect(letters(BSH_BAR_PX.movers, 0.1)).toEqual([false, true]);
+    expect(letters(BSH_BAR_PX.leaders, 0.1)).toEqual([false, true]);
+    expect(letters(BSH_BAR_PX.movers, 0.15)).toEqual([false, true]);
+    expect(letters(BSH_BAR_PX.leaders, 0.15)).toEqual([true, true]);
+    expect(letters(BSH_LETTER_PX * 6, 1)).toEqual([true, true]); // Exactly the letter's width holds it.
   });
-  it("carries the leaders' window oldest to newest", () => {
-    const { data } = buildBshBoard(season(games(1, 12, index => ({ shots: index }))), settings());
-    expect(data!.rows[0].games.map(entry => entry.date)).toEqual(["2026-10-08", "2026-10-09", "2026-10-10", "2026-10-11", "2026-10-12"]);
-    expect(data!.rows[0].games.map(entry => entry.shots)).toEqual([7, 8, 9, 10, 11]);
-    expect(data!.rows[0].recentFrom).toBe(0);
+  it("gives a zero no section, and all zeros no split", () => {
+    expect(bshBar(rates(0, 3, 1), BSH_BAR_PX.leaders).sections.map(section => section.layer)).toEqual(["s", "h"]);
+    expect(bshBar(rates(0, 0, 0), BSH_BAR_PX.leaders)).toEqual({ state: "empty", sections: [] });
   });
-  it("spans both comparison windows for movers and says where the recent one starts", () => {
-    const rows = games(1, 12, index => ({ shots: index }));
-    const previous = buildBshBoard(season(rows), settings({ view: "movers" })).data!.risers[0];
-    expect(previous.games.map(entry => entry.shots)).toEqual([2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
-    expect(previous.recentFrom).toBe(5);
-    const earlier = buildBshBoard(season(rows), settings({ view: "movers", comparison: "std" })).data!.risers[0];
-    expect(earlier.games.map(entry => entry.shots)).toEqual(rows.map((_, index) => index));
-    expect(earlier.recentFrom).toBe(7);
+  it("never shares out a missing value", () => {
+    for (const missing of [rates(null, 3, 1), rates(2, null, 1), rates(2, 3, null)]) expect(bshBar(missing, BSH_BAR_PX.leaders)).toEqual({ state: "missing", sections: [] });
   });
   it("holds 12 leaders and 7 risers and fallers a side", () => {
     const moving = (id: number, up: boolean) => games(id, 10, entry => ({ shots: entry >= 5 === up ? 4 : 1 }));
@@ -178,7 +178,7 @@ describe("BSH card", () => {
   it("prints components, per-game values, window and cohort", async () => {
     const active = settings(), { data } = buildBshBoard(season([...games(1, 5, { blocks: 2, shots: 3, hits: 1 }), ...games(2, 5, index => index === 0 ? { hits: null } : {})]), active);
     const text = await show(data!, active);
-    for (const label of ["BLK /G", "SOG /G", "HITS /G", "BSH /G", "Skater 1", "10 2.00", "15 3.00", "5 1.00", "6.00", "30 total", "BY GAME", "L5", "1 of 2 ranked"]) expect(text).toContain(label);
+    for (const label of ["BLK /G", "SOG /G", "HITS /G", "BSH /G", "Skater 1", "10 2.00", "15 3.00", "5 1.00", "6.00", "30 total", "share of BSH/G", "L5", "1 of 2 ranked"]) expect(text).toContain(label);
     expect(text).not.toContain("Skater 2");
     expect(document.querySelectorAll("p")).toHaveLength(1);
   });
@@ -192,46 +192,52 @@ describe("BSH card", () => {
     expect(evidence.sample).toContain("last 5 appearances vs the previous 5 appearances");
     expect(evidence.cohort).toContain("1 short of a full comparison");
   });
-  describe("chart and tile", () => {
-    const chart = () => document.querySelector("[data-testid=bsh-stack]")!;
-    it("draws one shape of three layers oldest first, with a tile scaling with value", async () => {
-      const active = settings(), { data } = buildBshBoard(season([...games(1, 5, index => ({ blocks: index, shots: 2, hits: 1 })), ...games(2, 5, { blocks: 0, shots: 1, hits: 0 })]), active);
+  describe("bar and tile", () => {
+    const sections = (bar: Element) => [...bar.querySelectorAll<HTMLElement>("[data-layer]")];
+    it("draws one bar per leader from the shown per-game values, with colours on the element", async () => {
+      const active = settings(), { data } = buildBshBoard(season([...games(1, 5, { blocks: 2, shots: 3, hits: 1 }), ...games(2, 5, { blocks: 0, shots: 1, hits: 0 })]), active);
       await show(data!, active);
-      expect(chart().getAttribute("data-stack")).toBe("0+2+1,1+2+1,2+2+1,3+2+1,4+2+1");
-      expect([...chart().querySelectorAll("[data-layer]")].map(path => path.getAttribute("data-layer"))).toEqual(["b", "s", "h"]);
-      // A stylesheet fill is lost in the PNG capture and draws black, so colours must be attributes.
-      expect([...chart().querySelectorAll("[data-layer]")].map(path => path.getAttribute("fill"))).toEqual(["#3f9bdc", "#c88120", "#cf5cad"]);
-      expect(chart().querySelector("[data-edge]")!.getAttribute("fill")).toBe("none");
-      expect(chart().querySelectorAll("[data-edge]")).toHaveLength(1);
+      const bars = screen.getAllByTestId("bsh-bar");
+      expect(bars).toHaveLength(2);
+      expect(sections(bars[0]).map(section => [section.textContent, section.style.width, section.style.backgroundColor])).toEqual([["B", "33.333%", "rgb(77, 166, 222)"], ["S", "50.000%", "rgb(229, 174, 91)"], ["H", "16.667%", "rgb(199, 91, 82)"]]);
+      expect(sections(bars[1]).map(section => [section.textContent, section.style.width])).toEqual([["S", "100.000%"]]);
+      expect(document.querySelector("svg")).toBeNull();
       const alphas = screen.getAllByTestId("heat-tile").map(tile => Number(tile.getAttribute("data-alpha")));
       expect(alphas[0]).toBe(0.8);
       expect(alphas[1]).toBeLessThan(alphas[0]);
     });
-    it("breaks the shape at a missing game and draws a known 0 on the baseline", async () => {
-      const active = settings(), { data } = buildBshBoard(season(games(1, 5, { blocks: 1, shots: 1, hits: 1 })), active), row = data!.rows[0];
-      const gapped = { ...data!, rows: [{ ...row, games: [row.games[0], row.games[1], { ...row.games[2], shots: null, bsh: null }, { ...row.games[3], blocks: 0, shots: 0, hits: 0, bsh: 0 }, row.games[4]] }] };
-      await show(gapped, active);
-      expect(chart().getAttribute("data-stack")).toBe("1+1+1,1+1+1,gap,0+0+0,1+1+1");
-      const edges = [...chart().querySelectorAll("[data-edge]")].map(path => path.getAttribute("d")!);
-      expect(edges).toHaveLength(2);
-      expect(edges[1]).toContain("L"); // The 0 joins the next game, so it is drawn, not dropped.
-      expect(edges[1].startsWith("M126.00 46.00")).toBe(true); // Fourth of five games, on the chart's baseline.
-    });
-    it("marks where the recent window starts, and scales the change tile on both sides", async () => {
-      const active = settings({ view: "movers" }), { data } = buildBshBoard(season([...games(1, 10, index => ({ shots: index >= 5 ? 4 : 1 })), ...games(2, 10, index => ({ shots: index >= 5 ? 1 : 2 }))]), active);
+    it("hides a letter too narrow for its section instead of clipping it", async () => {
+      const active = settings(), { data } = buildBshBoard(season(games(1, 5, { blocks: 1, shots: 99, hits: 0 })), active);
       await show(data!, active);
-      const charts = screen.getAllByTestId("bsh-stack");
-      expect(charts[0].getAttribute("data-stack")).toBe("1+1+1,1+1+1,1+1+1,1+1+1,1+1+1,1+4+1,1+4+1,1+4+1,1+4+1,1+4+1");
-      expect(charts[0].getAttribute("data-recent-from")).toBe("5");
-      expect(charts[0].querySelector("[data-recent-mark]")!.getAttribute("d")).toBe("M90.00 0V48");
+      expect(sections(screen.getByTestId("bsh-bar")).map(section => [section.getAttribute("data-layer"), section.textContent])).toEqual([["b", ""], ["s", "S"]]);
+    });
+    it("draws an all-zero skater as a neutral empty bar", async () => {
+      const active = settings(), { data } = buildBshBoard(season(games(1, 5, { blocks: 0, shots: 0, hits: 0 })), active);
+      await show(data!, active);
+      const bar = screen.getByTestId("bsh-bar");
+      expect(bar.getAttribute("data-state")).toBe("empty");
+      expect(bar.style.backgroundColor).toBe("rgba(255, 255, 255, 0.08)");
+      expect(sections(bar)).toEqual([]);
+    });
+    it("keeps a missing value visibly missing", async () => {
+      const active = settings(), { data } = buildBshBoard(season(games(1, 5)), active), row = data!.rows[0];
+      await show({ ...data!, rows: [{ ...row, recent: { ...row.recent, shots: null, shotsPerGame: null } }] }, active);
+      const bar = screen.getByTestId("bsh-bar");
+      expect(bar.getAttribute("data-state")).toBe("missing");
+      expect(bar.textContent).toBe("missing");
+      expect(sections(bar)).toEqual([]);
+    });
+    it("splits risers and fallers on the recent values, keeps the earlier ones in the tiles, and scales the change tile", async () => {
+      const active = settings({ view: "movers" }), { data } = buildBshBoard(season([...games(1, 10, index => ({ shots: index >= 5 ? 4 : 1 })), ...games(2, 10, index => ({ shots: index >= 5 ? 1 : 2 }))]), active);
+      const text = await show(data!, active);
+      const bars = screen.getAllByTestId("bsh-bar");
+      expect(sections(bars[0]).map(section => section.style.width)).toEqual(["16.667%", "66.667%", "16.667%"]);
+      expect(sections(bars[1]).map(section => section.style.width)).toEqual(["33.333%", "33.333%", "33.333%"]);
+      expect(text).toContain("SOG/G4.00 1.00");
+      expect(document.querySelector("[data-recent-mark]")).toBeNull();
       const tiles = screen.getAllByTestId("heat-tile");
       expect(tiles.map(tile => tile.getAttribute("data-tone"))).toEqual(["better", "worse"]);
       expect(Number(tiles[1].getAttribute("data-alpha"))).toBeLessThan(Number(tiles[0].getAttribute("data-alpha")));
-    });
-    it("has no window mark on leaders", async () => {
-      const active = settings(), { data } = buildBshBoard(season(games(1, 5)), active);
-      await show(data!, active);
-      expect(document.querySelector("[data-recent-mark]")).toBeNull();
     });
   });
   it("says why an empty board is empty", async () => {

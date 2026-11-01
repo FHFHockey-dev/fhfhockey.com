@@ -18,9 +18,9 @@ export const skaterWindowOf = (rows: readonly SkaterAppearance[], window: Skater
 };
 /** Rows the 860px post body holds at the dense type size. What falls below is counted in the evidence. */
 export const SKATER_BOARD_ROWS = 20;
-/** BSH leaders carry a chart and a tile in each row, which need the height of 12 rows. */
+/** BSH leaders carry a bar under each row, which needs the height of 12 rows. */
 export const BSH_LEADER_ROWS = 12;
-/** Risers and fallers sit side by side, with a chart row under each skater: 7 rows a side fit the body. */
+/** Risers and fallers sit side by side, with a bar and a tile line under each skater: 7 rows a side fit the body. */
 export const BSH_MOVER_ROWS = 7;
 /** The cohort line's count of ranked rows the card has no room for. */
 export const belowTheCard = (notShown: number, tied = 0) => notShown ? `${notShown} more below the card${tied ? `, ${tied} tied with the last row` : ""}` : "";
@@ -70,9 +70,7 @@ export type BshComparison = "previous" | "std";
 export type BshBoardSettings = { view: BshView; window: SkaterWindowId; comparison: BshComparison; minGp: number; position: SkaterPositionId };
 /** A null component total means a game in the window lacks that stat. Shot attempts never stand in for shots. */
 export type BshTotals = { games: number; blocks: number | null; shots: number | null; hits: number | null; bsh: number | null; blocksPerGame: number | null; shotsPerGame: number | null; hitsPerGame: number | null; bshPerGame: number | null };
-/** One appearance in a row's chart, oldest first. A null component makes the game a gap, never a zero. */
-export type BshGameStack = { date: string; blocks: number | null; shots: number | null; hits: number | null; bsh: number | null };
-export type BshRow = SkaterIdentity & { rank: number; recent: BshTotals; baseline: BshTotals | null; delta: number | null; games: BshGameStack[]; recentFrom: number };
+export type BshRow = SkaterIdentity & { rank: number; recent: BshTotals; baseline: BshTotals | null; delta: number | null };
 export type BshBoardData = {
   applied: string; view: BshView; through: string; windowLabel: string; comparisonLabel: string | null;
   /** Leaders view. The movers view fills `risers` and `fallers`. */
@@ -87,9 +85,20 @@ export function bshTotals(rows: readonly SkaterAppearance[]): BshTotals {
   const total = known ? rows.reduce((sum, row) => sum + bsh(row)!, 0) : null;
   return { games, blocks, shots, hits, bsh: total, blocksPerGame: perGame(blocks, games), shotsPerGame: perGame(shots, games), hitsPerGame: perGame(hits, games), bshPerGame: perGame(total, games) };
 }
-export const bshGameStacks = (rows: readonly SkaterAppearance[]): BshGameStack[] => rows.map(row => ({ date: row.date, blocks: row.blocks, shots: row.shots, hits: row.hits, bsh: bsh(row) }));
-/** Top of the B, S and H layers for one game, bottom to top. Null is a gap. */
-export const bshStackTops = (game: BshGameStack): [number, number, number] | null => game.bsh === null ? null : [game.blocks!, game.blocks! + game.shots!, game.bsh];
+export type BshLayer = "b" | "s" | "h";
+export type BshBarSection = { layer: BshLayer; value: number; share: number; letter: boolean };
+export type BshBar = { state: "missing" | "empty"; sections: [] } | { state: "split"; sections: BshBarSection[] };
+/** Drawn width of a full bar, by view, and the width a section needs to hold its letter without clipping. */
+export const BSH_BAR_PX = { leaders: 982, movers: 481 } as const;
+export const BSH_LETTER_PX = 18;
+/** Each section's width is its share of the total. A zero has no section, all zeros split nothing, and a missing value is never shared out. */
+export function bshBar(totals: Pick<BshTotals, "blocksPerGame" | "shotsPerGame" | "hitsPerGame">, barPx: number): BshBar {
+  const values = [["b", totals.blocksPerGame], ["s", totals.shotsPerGame], ["h", totals.hitsPerGame]] as const;
+  if (values.some(([, value]) => value === null)) return { state: "missing", sections: [] };
+  const known = values.map(([layer, value]) => ({ layer, value: value! })), sum = known.reduce((total, entry) => total + entry.value, 0);
+  if (sum === 0) return { state: "empty", sections: [] };
+  return { state: "split", sections: known.filter(entry => entry.value > 0).map(entry => ({ ...entry, share: entry.value / sum, letter: entry.value / sum * barPx >= BSH_LETTER_PX })) };
+}
 /** Differences of per-game rates, rounded so two equal changes tie instead of parting on floating-point noise. */
 const tieSafe = (value: number) => Math.round(value * 1e6) / 1e6;
 
@@ -119,13 +128,13 @@ export function buildBshBoard(season: SkaterSeason, settings: BshBoardSettings):
     if (leaders) {
       const totals = bshTotals(recent.rows);
       if (totals.bsh === null) { missingComponent++; return []; }
-      return [{ id: skaterIdentity(recent.rows), recent: totals, baseline: null, delta: null, games: bshGameStacks(recent.rows), recentFrom: 0 }];
+      return [{ id: skaterIdentity(recent.rows), recent: totals, baseline: null, delta: null }];
     }
     const base = baselineOf(rows, settings.window, settings.comparison);
     if (recent.short || base.actual < recent.requested!) { shortWindow++; return []; }
     const totals = bshTotals(recent.rows), baseline = bshTotals(base.rows);
     if (totals.bshPerGame === null || baseline.bshPerGame === null) { missingComponent++; return []; }
-    return [{ id: skaterIdentity(recent.rows), recent: totals, baseline, delta: tieSafe(totals.bshPerGame - baseline.bshPerGame), games: bshGameStacks([...base.rows, ...recent.rows]), recentFrom: base.rows.length }];
+    return [{ id: skaterIdentity(recent.rows), recent: totals, baseline, delta: tieSafe(totals.bshPerGame - baseline.bshPerGame) }];
   });
   const board = (entries: typeof candidates, limit: number, value: (row: typeof candidates[number]) => number | null, direction: "high" | "low") => {
     const ranked = competitionRanks(entries, value, row => row.id.playerId, direction);
@@ -142,7 +151,7 @@ export function buildBshBoard(season: SkaterSeason, settings: BshBoardSettings):
   const excluded = [missingComponent ? `${missingComponent} unranked for a missing component` : "", shortWindow ? `${shortWindow} short of a full comparison` : "", flat ? `${flat} unchanged` : "", ...below].filter(Boolean).join(", ");
   const windowLabel = skaterWindowLabel(settings.window), shown = top ? top.rows : [...up!.rows, ...down!.rows];
   return {
-    ...skaterSeasonEvidence(season, { windowLabel: comparisonLabel ? `${windowLabel} vs ${comparisonLabel}` : windowLabel, cohort: `${skaterCohortLabel(settings)}: ${pool.length} eligible, ${counted}${excluded ? `, ${excluded}` : ""}`, note: leaders ? "Ranked by BSH per game. A missing component leaves a skater unranked; shot attempts never stand in. The chart stacks blocks, shots and hits by appearance, oldest to newest, on one scale across rows." : "Ranked by the change in BSH per game. Both windows must be full. The chart stacks blocks, shots and hits by appearance across both windows, oldest to newest, on one scale across rows; the dashed line marks where the recent window starts." }),
+    ...skaterSeasonEvidence(season, { windowLabel: comparisonLabel ? `${windowLabel} vs ${comparisonLabel}` : windowLabel, cohort: `${skaterCohortLabel(settings)}: ${pool.length} eligible, ${counted}${excluded ? `, ${excluded}` : ""}`, note: leaders ? "Ranked by BSH per game. A missing component leaves a skater unranked; shot attempts never stand in. The bar splits each skater's BSH per game into blocks, shots and hits." : "Ranked by the change in BSH per game. Both windows must be full. The bar splits each skater's recent-window BSH per game into blocks, shots and hits." }),
     data: {
       applied: shareSettingsKey(BSH_FIELDS, settings), view: settings.view, through: season.through, windowLabel, comparisonLabel,
       rows: top?.rows ?? [], risers: up?.rows ?? [], fallers: down?.rows ?? [],

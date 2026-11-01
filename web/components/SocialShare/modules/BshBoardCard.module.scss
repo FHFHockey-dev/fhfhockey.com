@@ -1,9 +1,5 @@
 @use "styles/vars" as v;
 
-$layer-b: #3f9bdc;
-$layer-s: #c88120;
-$layer-h: #cf5cad;
-
 /* Fills the post body: rows share whatever height the legend leaves, so a short board has no dead band. */
 .board { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: v.$space-xs; }
 .legend { margin: 0; font-size: 19px; line-height: 1.2; color: v.$text-secondary; }
@@ -19,23 +15,24 @@ $layer-h: #cf5cad;
 .strong { font-weight: 700; color: v.$primary-color; white-space: nowrap; }
 .missing { color: v.$warning-color; }
 
-/* BSH leaders, eight columns: RK, SKATER, GP, BLK, SOG, HITS, BY GAME, BSH. Each component column wears its chart layer's tint. */
-.fill[data-charted] > div { font-size: 24px; column-gap: 12px; }
-.fill[data-charted] > div > span:nth-child(8n + 4), .fill[data-charted] > div > span:nth-child(8n + 5), .fill[data-charted] > div > span:nth-child(8n + 6) { padding-inline: 6px; }
-.fill[data-charted] > div > span:nth-child(8n + 4) { background: rgba($layer-b, 0.16); }
-.fill[data-charted] > div > span:nth-child(8n + 5) { background: rgba($layer-s, 0.16); }
-.fill[data-charted] > div > span:nth-child(8n + 6) { background: rgba($layer-h, 0.16); }
-.stat { display: grid; justify-items: end; line-height: 1.1; small { font-size: 0.72em; color: v.$text-secondary; } }
-.chart { position: relative; align-self: stretch; width: 180px; svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; } }
-.tile > span { min-width: 92px; }
-.key { color: v.$color-white; font-weight: 700; i { display: inline-block; width: 14px; height: 14px; margin: 0 4px 0 8px; border-radius: 3px; vertical-align: -1px; } i:first-child { margin-left: 0; } i[data-layer="b"] { background: $layer-b; } i[data-layer="s"] { background: $layer-s; } i[data-layer="h"] { background: $layer-h; } }
-/* Risers and fallers, 7 rows a side: about 114px a row, and a row's content needs about 107px. */
-.moverStrip { min-height: 46px; }
-.moverStrip > .chart { width: auto; }
-.part { display: grid; align-content: center; justify-items: center; min-width: 0; padding: 2px 3px; border-radius: 4px; font-size: 19px; line-height: 1.15; color: v.$color-white; small { font-size: 13px; color: v.$text-secondary; } }
-.part[data-layer="b"] { background: rgba($layer-b, 0.16); }
-.part[data-layer="s"] { background: rgba($layer-s, 0.16); }
-.part[data-layer="h"] { background: rgba($layer-h, 0.16); }
+/* BSH leaders, 12 rows of about 67px: a 37px line of RK, SKATER, GP, BLK, SOG, HITS and BSH, then a 30px line for the bar across the whole row. */
+.fill[data-charted] > div { font-size: 24px; column-gap: 12px; grid-auto-rows: minmax(0, 1fr) 30px; }
+.fill[data-charted] > div > span:nth-child(8n + 7) { grid-column: 7 / -1; }
+.fill[data-charted] > div > span:nth-child(8) { display: none; }
+.fill[data-charted] > div > span:nth-child(n + 9) { padding-block: 1px; border-bottom: 0; }
+.fill[data-charted] > div > span:nth-child(n + 9):nth-child(8n) { grid-column: 1 / -1; align-items: flex-start; padding-block: 0 3px; border-bottom: 1px solid v.$border-soft; }
+.stat { flex: 1; align-self: stretch; display: flex; align-items: center; justify-content: flex-end; gap: 6px; padding-inline: 6px; border-radius: 3px; white-space: nowrap; small { font-size: 0.72em; color: v.$text-secondary; } }
+.tile { align-self: stretch; display: flex; }
+.tile > span { min-width: 136px; min-height: 0; grid-auto-flow: column; align-items: baseline; justify-content: center; column-gap: 8px; }
+.bar { display: flex; width: 100%; height: 26px; border-radius: 4px; overflow: hidden; }
+.section { box-sizing: border-box; display: flex; align-items: center; justify-content: center; min-width: 0; overflow: hidden; font-size: 16px; font-weight: 800; line-height: 1; }
+.section + .section { border-left: 2px solid #1a1d21; }
+.barMissing { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 14px; line-height: 1; color: v.$warning-color; border: 1px dashed v.$warning-color; border-radius: 4px; }
+.key { display: inline-flex; gap: 8px; color: v.$color-white; font-weight: 700; i { display: inline-block; width: 14px; height: 14px; margin-right: 4px; border-radius: 3px; vertical-align: -1px; } }
+/* Risers and fallers, 7 rows a side: about 114px a row, and a row's content needs about 110px: the 50px name line, the bar and the tile line. */
+.moverBar { grid-column: 1 / -1; display: flex; min-width: 0; .bar { height: 24px; } }
+.moverStrip { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 4px; }
+.part { display: flex; align-items: baseline; justify-content: center; gap: 6px; min-width: 0; padding: 1px 3px; border-radius: 4px; font-size: 17px; line-height: 1.15; white-space: nowrap; color: v.$color-white; small { font-size: 13px; color: v.$text-secondary; } }
 /* Category Blueprint: one rank scale for every category. A missing cell has no fill, so it cannot read as weak. */
 .band, .bandMissing { align-self: stretch; display: flex; align-items: center; justify-content: flex-end; padding-inline: 8px; border-radius: 4px; white-space: nowrap; }
 .band .pair small { color: inherit; opacity: 0.85; }

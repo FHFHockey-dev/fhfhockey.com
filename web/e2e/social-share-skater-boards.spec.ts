@@ -95,8 +95,9 @@ test.beforeEach(({ page }) => page.setDefaultTimeout(10000));
 test("BSH Board leaders print components, per-game values and cohort, then export", async ({ page }) => {
   await open(page, "bsh-board", () => edition("bsh-board", bshSettings(), buildBshBoard(fictional, bshSettings())));
   const square = page.getByTestId("share-square");
-  for (const text of ["BLK /G", "SOG /G", "HITS /G", "BSH /G", "BY GAME", "total", "oldest to newest", "Fictional Riser", "L10"]) await expect(square).toContainText(text);
-  await expect(square.getByTestId("bsh-stack")).toHaveCount(2);
+  for (const text of ["BLK /G", "SOG /G", "HITS /G", "BSH /G", "total", "share of BSH/G", "Fictional Riser", "L10"]) await expect(square).toContainText(text);
+  await expect(square.getByTestId("bsh-bar")).toHaveCount(2);
+  await expect(square.getByTestId("bsh-bar").first().locator("[data-layer=b]")).toHaveCSS("background-color", "rgb(77, 166, 222)");
   await expect(square.getByTestId("heat-tile")).toHaveCount(2);
   await expect(page.getByTestId("post-evidence")).toContainText("All situations");
   await expect(page.getByTestId("post-evidence")).toContainText("last 10 appearances");
@@ -121,7 +122,7 @@ test("BSH Board risers and fallers state their comparison side by side, and stal
   await expect(page.getByTestId("post-evidence")).toContainText("the previous 10 appearances");
   await expect(square.getByTestId("board-up")).toContainText("Fictional Riser");
   await expect(square.getByTestId("board-down")).toContainText("Fictional Faller");
-  await expect(square.getByTestId("bsh-stack").first()).toHaveAttribute("data-recent-from", "10");
+  await expect(square.getByTestId("bsh-bar").first()).toHaveAttribute("data-state", "split");
   await expect(square.getByTestId("heat-tile")).toHaveCount(2);
   await expectMoversFit(page);
 });
