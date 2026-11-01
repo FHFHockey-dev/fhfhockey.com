@@ -172,7 +172,7 @@ test("Nightly Floor's headline follows its settings and its longest form stays o
   await page.locator("label", { hasText: /^Hits X/ }).locator("input").fill("9.5");
   await expect(title).toHaveText("GP% WITH OVER 9.5 HITS");
   expect(await title.evaluate(heading => heading.getBoundingClientRect().height <= parseFloat(getComputedStyle(heading).lineHeight) * 1.2)).toBe(true);
-  await expect(page.getByLabel("Post")).toContainText("Nightly Floor");
+  await expect(page.locator("label", { hasText: /^Post/ }).locator("select")).toContainText("Nightly Floor");
 });
 
 const crowdedOwnership = { byPlayer: new Map(Array.from({ length: 24 }, (_, index) => [index + 1, ownershipOf(10 + index, "2026-10-31")])), updatedAt: "2026-10-31T08:00:00" };

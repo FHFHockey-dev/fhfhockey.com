@@ -163,7 +163,7 @@ test("Ratio Impact is hypothetical, works with no base and pools with one", asyn
   await expect(card).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
   await page.goto("/social-share/posts?post=ratio-impact&baseGoalieId=1");
-  await expect(page.getByRole("heading", { level: 2 })).toHaveText(/^WHAT ONE START DOES TO /);
+  await expect(page.getByTestId("share-square").getByRole("heading", { level: 2 })).toHaveText(/^WHAT ONE START DOES TO /);
   await expect(card.getByTestId("ratio-sentence")).toContainText("If 1 allows 3 goals on 30 shots, SV% goes");
   await expect(card).toContainText("Hypothetical");
   await expect(card.locator('svg[data-chart="whatIf"] circle[data-series="savePct"]')).toHaveCount(7);
