@@ -57,3 +57,6 @@ Codex job task-mvxxzsdc-nhy96e stopped after 1m 26s: its sandbox couldn't write 
 
 ## Released (2026-11-01)
 f17bea20d, PR #402, code-only release branch from octoberBranch 9f0c4dbec. fhfhockey READY; other three CANCELED. Smoke: / 200, /social-share 200, webhook GETs 405, posted-week 401, example image 200. Open for TJ: PP rerun 09-29 to 10-30 on production, derived rebuilds unsized, FHFH applet. 5.0 and 5.6 open.
+
+## Second release (2026-11-01)
+295b384da, PR #403: period control on 13 posts, Standouts slate chooser, Goalie of the Period titles, ranges and ADP. Release tree checks: 15,715 unit, tsc, lint, build, 134 browser. Codex: 0 blockers, 0 high, 1 medium fixed.
