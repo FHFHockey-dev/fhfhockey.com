@@ -115,10 +115,14 @@ export function landingDaySections(today: string | null): readonly LandingSectio
   return [{ ...LANDING_DAYS[at], today: true }, LANDING_MISC, ...LANDING_DAYS.slice(at + 1), ...LANDING_DAYS.slice(0, at)];
 }
 
-export type LandingDayStatus = "done" | "missed" | "upcoming" | "notYet" | "untracked";
+export type LandingDayStatus = "done" | "missed" | "upcoming" | "notYet" | "untracked" | "noRecord";
 /** The automatic source's answer for one New York week (lib/socialShare/postedWeek.ts builds it on the server). */
 export type PostedWeek = {
-  available: true; week: string; today: string; trackedFrom: string; latest: string;
+  available: true; week: string; today: string; trackedFrom: string;
+  /** The newest delivery, not the newest post. `stale` is true once it is too old to vouch for an empty day. */
+  latest: string; stale: boolean;
+  /** Posts delivered this week with no readable date: they mark no day and count for no card. */
+  undated: number;
   days: readonly { id: string; date: string; posts: number; status: LandingDayStatus }[];
   cards: readonly { card: string; name: string; count: number }[];
   unmatched: number;

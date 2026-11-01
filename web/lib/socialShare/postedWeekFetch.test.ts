@@ -19,14 +19,17 @@ describe("fetchPostedWeek", () => {
     expect(fetcher.mock.calls[0][1]).toMatchObject({ cache: "no-store", credentials: "omit", headers: { Authorization: "Bearer unit-token" } });
   });
 
+  it("a source with no posts yet is quiet", async () => {
+    await expect(fetchPostedWeek(json({ available: false }))).resolves.toBeNull();
+  });
+
   it.each([
     ["a failed read", json({ error: "x" }, 503)],
     ["a refused read", json({ error: "x" }, 403)],
-    ["a table with no posts yet", json({ available: false })],
     ["a malformed answer", json({ available: true })],
     ["a network failure", vi.fn().mockRejectedValue(new Error("down"))],
-  ])("falls back on %s", async (_name, fetcher) => {
-    await expect(fetchPostedWeek(fetcher)).resolves.toBeNull();
+  ])("reports %s as failed", async (_name, fetcher) => {
+    await expect(fetchPostedWeek(fetcher)).resolves.toBe("failed");
   });
 
   it("falls back with no session, without asking", async () => {

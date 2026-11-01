@@ -64,14 +64,23 @@ export function postedWeekRange(week: string) {
 const addDays = (week: string, days: number) => new Date(Date.UTC(Number(week.slice(0, 4)), Number(week.slice(5, 7)) - 1, Number(week.slice(8, 10)) + days)).toISOString().slice(0, 10);
 const newYorkDate = (instant: Date) => moment(instant).tz(SHARE_TIME_ZONE).format("YYYY-MM-DD");
 
+/**
+ * The staleness rule. The applet only speaks when a post is delivered, so silence alone cannot separate "no post" from
+ * "applet stopped". With no delivery for more than this long, the source is stale: an empty day from the last delivery's
+ * date onward, today included, reads "noRecord", not a miss. Earlier empty days had a later delivery, so they stay misses.
+ */
+export const POSTED_STALE_AFTER_HOURS = 72;
+
 export type PostedRow = { posted_at: string; matched_card: string | null };
 
 /**
- * This week's Mon to Sun status from the week's rows. `earliest` is the oldest post on record: a day before it is
+ * This week's Mon to Sun status from the week's rows. `earliest` is the oldest dated post on record: a day before it is
  * "untracked", because the source did not exist yet and silence there says nothing. Today with no post is "notYet".
+ * `latestReceipt` is the newest delivery; see POSTED_STALE_AFTER_HOURS. A backfill counts as a delivery.
  */
-export function buildPostedWeek(rows: readonly PostedRow[], now: Date, earliest: string, latest: string): PostedWeek {
+export function buildPostedWeek(rows: readonly PostedRow[], now: Date, earliest: string, latestReceipt: string, undated = 0): PostedWeek {
   const week = landingWeekStart(now), today = landingToday(now), todayDate = newYorkDate(now), trackedFrom = newYorkDate(new Date(earliest));
+  const receipt = new Date(latestReceipt), receiptDate = newYorkDate(receipt), stale = now.getTime() - receipt.getTime() > POSTED_STALE_AFTER_HOURS * 3600 * 1000;
   const posts = new Map<string, number>(), cards = new Map<string, number>();
   let unmatched = 0;
   for (const row of rows) {
@@ -83,10 +92,10 @@ export function buildPostedWeek(rows: readonly PostedRow[], now: Date, earliest:
     else unmatched += 1;
   }
   return {
-    available: true, week, today, trackedFrom, latest,
+    available: true, week, today, trackedFrom, latest: latestReceipt, stale, undated,
     days: LANDING_DAYS.map((day, index) => {
       const date = addDays(week, index), count = posts.get(date) ?? 0;
-      const status = date > todayDate ? "upcoming" : count > 0 ? "done" : date === todayDate ? "notYet" : date < trackedFrom ? "untracked" : "missed";
+      const status = date > todayDate ? "upcoming" : count > 0 ? "done" : date < trackedFrom ? "untracked" : stale && date >= receiptDate ? "noRecord" : date === todayDate ? "notYet" : "missed";
       return { id: day.id, date, posts: count, status };
     }),
     cards: [...cards].map(([card, count]) => ({ card, name: landingCard(card)?.name ?? card, count })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)),

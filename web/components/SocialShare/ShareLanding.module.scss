@@ -16,9 +16,9 @@
 }
 .strip .postedDay { align-content: start; border: v.$border-subtle; border-radius: v.$radius-control; background: v.$background-dark;
   &[data-today] { border-color: v.$primary-color; }
-  &[data-status="upcoming"], &[data-status="untracked"] { color: v.$text-secondary; }
+  &[data-status="upcoming"], &[data-status="untracked"], &[data-status="noRecord"] { color: v.$text-secondary; }
 }
-.dayNote { color: v.$text-secondary; font-size: v.$font-size-xs; line-height: 1.1; }
+.dayNote { color: v.$text-secondary; font-size: v.$font-size-xs; line-height: 1.1; text-align: center; }
 .postedCards { display: flex; flex-wrap: wrap; gap: v.$space-xxs v.$space-sm; margin: v.$space-xs 0 0 !important; color: v.$text-secondary; font-size: v.$font-size-xs;
   span:first-child { color: v.$text-primary; }
 }

@@ -9,9 +9,9 @@ import landing from "./ShareLanding.module.scss";
 
 const SORT_KEY = "fhfh-social-share-landing-sort", DAYS_KEY = "fhfh-social-share-landing-days";
 const IMAGE_WIDTH = 540, IMAGE_HEIGHT = 540;
-const STATUS_MARK = { done: "✅", missed: "❌", notYet: "❌", upcoming: "–", untracked: "–" };
-const HAND_TEXT = { done: "marked done", missed: "not marked", notYet: "not marked", upcoming: "not here yet", untracked: "not here yet" };
-const POSTED_TEXT = { done: "posted", missed: "no post", notYet: "not yet", upcoming: "not here yet", untracked: "before tracking began" };
+const STATUS_MARK = { done: "✅", missed: "❌", notYet: "❌", upcoming: "–", untracked: "–", noRecord: "–" };
+const HAND_TEXT = { done: "marked done", missed: "not marked", notYet: "not marked", upcoming: "not here yet", untracked: "not here yet", noRecord: "not here yet" };
+const POSTED_TEXT = { done: "posted", missed: "no post", notYet: "not yet", upcoming: "not here yet", untracked: "before tracking began", noRecord: "no record" };
 const seenDate = new Intl.DateTimeFormat("en-US", { timeZone: SHARE_TIME_ZONE, month: "short", day: "numeric" });
 type Sort = "category" | "day";
 
@@ -47,7 +47,7 @@ function PostedStrip({ posted, today }: { posted: PostedWeek; today: string | nu
         const status = landingDayStatus(day.id, today, new Set(), posted), count = posted.days.find(entry => entry.id === day.id)?.posts ?? 0;
         return <div key={day.id} role="listitem" className={`${landing.stripDay} ${landing.postedDay}`} data-testid={`landing-strip-${day.id}`} data-status={status} data-today={day.id === today || undefined} aria-label={`${day.label}${day.id === today ? " (today)" : ""}: ${POSTED_TEXT[status]}${count > 1 ? `, ${count} posts` : ""}`}>
           <span>{day.label}</span><span aria-hidden="true">{STATUS_MARK[status]}</span>
-          {status === "notYet" && <span className={landing.dayNote} aria-hidden="true">not yet</span>}
+          {(status === "notYet" || status === "noRecord") && <span className={landing.dayNote} aria-hidden="true">{POSTED_TEXT[status]}</span>}
         </div>;
       })}
     </div>
@@ -55,7 +55,8 @@ function PostedStrip({ posted, today }: { posted: PostedWeek; today: string | nu
       <span>Posts by card, this week:</span>
       {posted.cards.map(card => <span key={card.card}>{card.name} {card.count}</span>)}
       {posted.unmatched > 0 && <span>Unmatched {posted.unmatched}</span>}
-      {!posted.cards.length && !posted.unmatched && <span>None yet</span>}
+      {posted.undated > 0 && <span>No date {posted.undated}</span>}
+      {!posted.cards.length && !posted.unmatched && !posted.undated && <span>None yet</span>}
     </p>
   </>;
 }
@@ -86,8 +87,8 @@ export default function ShareLanding() {
   const [week, setWeek] = useState("");
   const [today, setToday] = useState<string | null>(null);
   const [marked, setMarked] = useState<ReadonlySet<string>>(new Set());
-  // Undefined while the first answer is pending; null is "unavailable", which leaves the strip on hand marking.
-  const [source, setSource] = useState<PostedWeek | null | undefined>(undefined);
+  // Undefined while the first answer is pending; null or "failed" leaves the strip on hand marking.
+  const [source, setSource] = useState<PostedWeek | "failed" | null | undefined>(undefined);
 
   const refreshWeek = useCallback(() => {
     const now = new Date(), current = landingWeekStart(now);
@@ -103,14 +104,27 @@ export default function ShareLanding() {
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, [refreshWeek]);
 
+  // A tab left visible across midnight moves on by itself. refreshWeek is what changes `today` and `week`.
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      const now = new Date();
+      if (landingToday(now) !== today || landingWeekStart(now) !== week) refreshWeek();
+    }, 60000);
+    return () => window.clearInterval(timer);
+  }, [refreshWeek, today, week]);
+
   const chooseSort = (next: Sort) => { setSort(next); setFilter("all"); writeStored(SORT_KEY, next); };
   const toggleDay = (day: string) => {
-    const current = landingWeekStart(new Date()), next = new Set(current === week ? marked : []);
+    // The page may be up to a minute behind the clock. Go by the clock, and a day that has not come yet cannot be marked.
+    const now = new Date(), current = landingWeekStart(now), currentToday = landingToday(now);
+    if (current !== week || currentToday !== today) refreshWeek();
+    if (landingDayStatus(day, currentToday, new Set()) === "upcoming") return;
+    const next = new Set(current === week ? marked : readLandingChecklist(readStored(DAYS_KEY), current));
     if (!next.delete(day)) next.add(day);
     setWeek(current); setMarked(next); writeStored(DAYS_KEY, writeLandingChecklist(current, next));
   };
   // An answer for another week (a tab left open past Sunday) is not used while the new one loads.
-  const posted = source && source.week === week ? source : null;
+  const posted = source && source !== "failed" && source.week === week ? source : null;
   const sections = sort === "category" ? LANDING_CATEGORIES : landingDaySections(today);
   const shown = sections.filter(section => filter === "all" || section.id === filter);
   const toSection = (event: MouseEvent, id: string) => {
@@ -128,7 +142,7 @@ export default function ShareLanding() {
       <span className={styles.scope}>Nothing is scheduled or published from here.</span>
     </header>
     <section className={landing.week} aria-labelledby="landing-week">
-      <h2 id="landing-week">This week <small>{posted ? `From @FHFHockey's posts, New York days. Last post seen ${seenDate.format(new Date(posted.latest))}.` : source === undefined ? "Checking posts." : "Marked by hand. Click a day to mark it. Stays in this browser and clears each Monday."}</small></h2>
+      <h2 id="landing-week">This week <small>{posted ? `From @FHFHockey's posts, New York days. ${posted.stale ? `No post received since ${seenDate.format(new Date(posted.latest))}, so later days have no record.` : `Last post received ${seenDate.format(new Date(posted.latest))}.`}` : source === undefined ? "Checking posts." : `${source === "failed" ? "Could not read posts. " : ""}Marked by hand. Click a day to mark it. Stays in this browser and clears each Monday.`}</small></h2>
       {posted ? <PostedStrip posted={posted} today={today} /> : <div className={landing.strip} role="group" aria-labelledby="landing-week" data-testid="landing-strip">
         {LANDING_DAYS.map(day => {
           const status = source === undefined ? "upcoming" : landingDayStatus(day.id, today, marked);

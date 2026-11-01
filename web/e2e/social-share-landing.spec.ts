@@ -140,14 +140,14 @@ test("the week strip from real posts: today reads not yet, future days are neutr
   await page.clock.setFixedTime(new Date("2026-11-04T16:00:00Z")); // Wednesday
   const statuses = { mon: ["done", 2], tue: ["missed", 0], wed: ["notYet", 0], thu: ["upcoming", 0], fri: ["upcoming", 0], sat: ["upcoming", 0], sun: ["upcoming", 0] } as const;
   await page.route("**/api/v1/social-share/posted-week", route => route.fulfill({ json: {
-    available: true, week: "2026-11-02", today: "wed", trackedFrom: "2026-10-01", latest: "2026-11-02T17:00:00Z",
+    available: true, week: "2026-11-02", today: "wed", trackedFrom: "2026-10-01", latest: "2026-11-02T17:00:00Z", stale: false, undated: 1,
     days: Object.entries(statuses).map(([id, [status, posts]], index) => ({ id, date: `2026-11-0${index + 2}`, posts, status })),
     cards: [{ card: "game-grid", name: "Game Grid", count: 1 }], unmatched: 1,
   } }));
   await page.addInitScript(key => window.localStorage.setItem(key, JSON.stringify({ week: "2026-11-02", done: ["tue"] })), DAYS_KEY);
   await page.goto("/social-share");
   const strip = page.getByTestId("landing-strip");
-  await expect(page.getByText(/From @FHFHockey's posts.*Last post seen Nov 2\./)).toBeVisible();
+  await expect(page.getByText(/From @FHFHockey's posts.*Last post received Nov 2\./)).toBeVisible();
   await expect(page.getByText(/Marked by hand/)).toHaveCount(0);
   await expect(strip.getByTestId("landing-strip-mon")).toContainText("✅");
   await expect(strip.getByTestId("landing-strip-mon")).toHaveAttribute("aria-label", "Mon: posted, 2 posts");
@@ -159,7 +159,7 @@ test("the week strip from real posts: today reads not yet, future days are neutr
   await expect(strip.getByTestId("landing-strip-wed")).toHaveAttribute("aria-label", "Wed (today): not yet");
   await expect(strip.getByTestId("landing-strip-thu")).not.toContainText("❌");
   await expect(strip.getByRole("button")).toHaveCount(0);
-  await expect(page.getByTestId("landing-posted-cards")).toHaveText(/Posts by card, this week:\s*Game Grid 1\s*Unmatched 1/);
+  await expect(page.getByTestId("landing-posted-cards")).toHaveText(/Posts by card, this week:\s*Game Grid 1\s*Unmatched 1\s*No date 1/);
 
   await page.setViewportSize({ width: 375, height: 812 });
   await noPageOverflow(page);
@@ -171,6 +171,60 @@ test("the week strip from real posts: today reads not yet, future days are neutr
   await page.screenshot({ path: "test-results/social-share-landing/desktop-posted-strip.png" });
 });
 
+test("a stale source reads no record, not ❌, and says why", async ({ page }) => {
+  await page.clock.setFixedTime(new Date("2026-11-04T16:00:00Z")); // Wednesday
+  const statuses = { mon: "noRecord", tue: "noRecord", wed: "noRecord", thu: "upcoming", fri: "upcoming", sat: "upcoming", sun: "upcoming" };
+  await page.route("**/api/v1/social-share/posted-week", route => route.fulfill({ json: {
+    available: true, week: "2026-11-02", today: "wed", trackedFrom: "2026-10-01", latest: "2026-10-30T17:00:00Z", stale: true, undated: 0,
+    days: Object.entries(statuses).map(([id, status], index) => ({ id, date: `2026-11-0${index + 2}`, posts: 0, status })), cards: [], unmatched: 0,
+  } }));
+  await page.goto("/social-share");
+  await expect(page.getByText(/No post received since Oct 30, so later days have no record\./)).toBeVisible();
+  const strip = page.getByTestId("landing-strip");
+  for (const day of ["mon", "tue", "wed"]) {
+    await expect(strip.getByTestId(`landing-strip-${day}`)).not.toContainText("❌");
+    await expect(strip.getByTestId(`landing-strip-${day}`)).toContainText("no record");
+  }
+  await expect(strip.getByTestId("landing-strip-wed")).toHaveAttribute("aria-label", "Wed (today): no record");
+});
+
+test("a failed read says so and falls back to hand marking", async ({ page }) => {
+  await page.clock.setFixedTime(new Date("2026-11-04T16:00:00Z")); // Wednesday
+  await page.goto("/social-share");
+  await expect(page.getByText(/Could not read posts\. Marked by hand/)).toBeVisible();
+  await page.getByTestId("landing-strip-mon").click();
+  await expect(page.getByTestId("landing-strip-mon")).toContainText("✅");
+});
+
+test("crossing midnight with the tab visible: today and the week move on with no reload", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-11-09T04:59:00Z") }); // Sunday 23:59 in New York
+  await page.addInitScript(key => window.localStorage.setItem(key, JSON.stringify({ week: "2026-11-02", done: ["mon"] })), DAYS_KEY);
+  await page.goto("/social-share");
+  const strip = page.getByTestId("landing-strip");
+  await expect(strip.getByTestId("landing-strip-sun")).toHaveAttribute("data-today", "true");
+  await expect(strip.getByTestId("landing-strip-mon")).toContainText("✅");
+
+  await page.clock.fastForward("02:00"); // Monday 00:01
+  await expect(strip.getByTestId("landing-strip-mon")).toHaveAttribute("data-today", "true");
+  await expect(strip.getByTestId("landing-strip-mon")).toContainText("❌");
+  await expect(strip.getByTestId("landing-strip-sun")).toHaveAttribute("data-status", "upcoming");
+  await expect(strip.getByTestId("landing-strip-tue")).toBeDisabled();
+});
+
+test("a click in the minute before the page catches up cannot mark a day that has not come", async ({ page }) => {
+  await page.clock.setFixedTime(new Date("2026-11-09T04:59:00Z")); // Sunday 23:59 in New York
+  await page.goto("/social-share");
+  const strip = page.getByTestId("landing-strip");
+  await expect(strip.getByTestId("landing-strip-tue")).toBeEnabled();
+
+  await page.clock.setFixedTime(new Date("2026-11-09T05:00:30Z")); // Monday 00:00:30, and the page has not ticked yet
+  await strip.getByTestId("landing-strip-tue").click();
+  await expect(strip.getByTestId("landing-strip-mon")).toHaveAttribute("data-today", "true");
+  await expect(strip.getByTestId("landing-strip-tue")).toHaveAttribute("data-status", "upcoming");
+  await expect(strip.getByTestId("landing-strip-tue")).not.toContainText("✅");
+  expect(await page.evaluate(key => window.localStorage.getItem(key), DAYS_KEY)).toBeNull();
+});
+
 test("the week strip falls back to hand marking when the source has no posts, or answers for another week", async ({ page }) => {
   await page.clock.setFixedTime(new Date("2026-11-04T16:00:00Z")); // Wednesday
   await page.route("**/api/v1/social-share/posted-week", route => route.fulfill({ json: { available: false } }));
@@ -180,7 +234,7 @@ test("the week strip falls back to hand marking when the source has no posts, or
   await expect(page.getByTestId("landing-strip-mon")).toContainText("✅");
   await expect(page.getByTestId("landing-posted-cards")).toHaveCount(0);
 
-  await page.route("**/api/v1/social-share/posted-week", route => route.fulfill({ json: { available: true, week: "2026-10-26", today: "sun", trackedFrom: "2026-10-01", latest: "2026-10-30T17:00:00Z", days: [], cards: [], unmatched: 0 } }));
+  await page.route("**/api/v1/social-share/posted-week", route => route.fulfill({ json: { available: true, week: "2026-10-26", today: "sun", trackedFrom: "2026-10-01", latest: "2026-10-30T17:00:00Z", stale: false, undated: 0, days: [], cards: [], unmatched: 0 } }));
   await page.reload();
   await expect(page.getByText(/Marked by hand/)).toBeVisible();
   await expect(page.getByTestId("landing-strip-mon")).toContainText("✅");
