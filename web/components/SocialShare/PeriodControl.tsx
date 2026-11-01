@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchMatchupWeeks } from "lib/socialShare/matchupWeeksFetch";
-import type { AnyShareModule, ShareSettingField, ShareSettings } from "lib/socialShare/modules/contract";
-import { customRangeLimits, customRangeReason, matchupCalendar, matchupPager, PERIOD_CUSTOM, PERIOD_MATCHUP, periodSettings, resolvePeriodWindow, type PeriodControl as PeriodControlConfig } from "lib/socialShare/modules/shared/periodWindow";
+import type { AnyShareModule, ShareSettingField, SharePostSnapshot, ShareSettings } from "lib/socialShare/modules/contract";
+import { customRangeLimits, customRangeReason, editionCutoff, matchupCalendar, matchupPager, PERIOD_CUSTOM, PERIOD_MATCHUP, periodSettings, resolvePeriodWindow, type PeriodControl as PeriodControlConfig } from "lib/socialShare/modules/shared/periodWindow";
 import styles from "./PostStudio.module.scss";
 
 type Props = {
   entry: AnyShareModule; control: PeriodControlConfig; settings: ShareSettings; disabled: boolean;
-  /** The loaded edition: each new one rereads the calendar, so the pager's blank week and limits match the same cutoff. */
-  edition: unknown;
+  /** The loaded edition: each new one rereads the calendar, and the pager's blank week and limits use the cutoff it was built against. */
+  edition: SharePostSnapshot | null;
   /** Sets a field and waits for Refresh, as the settings form does. */
   change: (field: ShareSettingField, text: string) => void;
   /** Sets fields and loads their edition at once. */
@@ -18,16 +18,17 @@ type Props = {
 export default function PeriodControl({ entry, control, settings, disabled, edition, change, apply }: Props) {
   const [source, setSource] = useState<Awaited<ReturnType<typeof fetchMatchupWeeks>> | undefined>();
   const [attempt, setAttempt] = useState(0);
+  const [refreshFailed, setRefreshFailed] = useState(false);
   const priorButton = useRef<HTMLButtonElement>(null), nextButton = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     let live = true;
-    void fetchMatchupWeeks().then(result => { if (live) setSource(current => result ?? current ?? null); });
+    void fetchMatchupWeeks().then(result => { if (live) { setSource(current => result ?? current ?? null); setRefreshFailed(result === null); } });
     return () => { live = false; };
   }, [attempt, edition]);
   const calendar = useMemo(() => source ? matchupCalendar(source.rows) : null, [source]);
   const field = (id: string) => entry.fields.find(item => item.id === id)!;
   const period = field("period"), matchupValue = control.matchupValue ?? PERIOD_MATCHUP, current = periodSettings(settings);
-  const options = source ? { mode: control.mode, cutoff: source.cutoff } : null;
+  const options = source ? { mode: control.mode, cutoff: edition?.post === entry.id ? editionCutoff(edition.generatedAt) : source.cutoff } : null;
   const pager = calendar && options ? matchupPager(current.week, calendar, options) : null;
   const limits = calendar && options ? customRangeLimits(calendar, options) : null;
   const customReason = current.period !== PERIOD_CUSTOM ? null : calendar && options ? resolvePeriodWindow(current, calendar, { ...control, ...options }).reason ?? null : customRangeReason(current);
@@ -52,6 +53,7 @@ export default function PeriodControl({ entry, control, settings, disabled, edit
         <button type="button" ref={nextButton} aria-label={pager?.next ? `Next week, week ${pager.next.week}` : "Next week"} disabled={disabled || !pager?.next} onClick={() => go("next")}>▶</button>
       </div>
       {source === null && <p role="alert" className={styles.defaultNote}>Matchup weeks could not be read. <button type="button" onClick={() => setAttempt(value => value + 1)}>Retry weeks</button></p>}
+      {source && refreshFailed && <p role="alert" className={styles.defaultNote} data-testid="period-refresh-failed">Matchup weeks could not be refreshed, so these are from the last read. <button type="button" onClick={() => setAttempt(value => value + 1)}>Retry weeks</button></p>}
       {calendar?.reasons.map(reason => <p key={reason} className={styles.defaultNote} data-testid="period-skipped">{reason}</p>)}
     </div>}
     {current.period === PERIOD_CUSTOM && <>

@@ -116,7 +116,7 @@ describe("PostStudio", () => {
       { week: 3, start_date: "2026-10-12", end_date: "2026-10-18" }, { week: 4, start_date: "2026-10-19", end_date: "2026-10-25" },
       { week: 5, start_date: "2026-10-26", end_date: "2026-11-01" }, { week: 6, start_date: "2026-11-02", end_date: "2026-11-08" },
     ] };
-    const goalie = (week: string | null) => edition({ id: `goalie-${week}`, post: "goalie-period", state: "missing", data: null, teams: [], reasons: [`Edition for week ${week}.`], settings: { week: week === null ? null : Number(week) } });
+    const goalie = (week: string | null) => edition({ id: `goalie-${week}`, post: "goalie-period", state: "missing", data: null, teams: [], reasons: [`Edition for week ${week}.`], settings: { week: week === null ? null : Number(week) }, generatedAt: "2026-10-29T16:00:00.000Z" });
     const json = (body: unknown, ok = true) => ({ ok, status: ok ? 200 : 503, json: async () => body }) as unknown as Response;
     /** Serves the calendar, and an edition per week; a week in `held` waits until it is released. */
     const serveGoalie = (held: Record<string, Promise<void>> = {}, calendar: () => Response = () => json(matchups)) => fetchMock.mockImplementation(async (url: string) => {
@@ -130,15 +130,39 @@ describe("PostStudio", () => {
     const lastQuery = () => (vi.mocked(router.replace).mock.lastCall![0] as { query: Record<string, string> }).query;
     beforeEach(() => { router.query = { post: "goalie-period", week: "4" }; });
 
-    it("rereads the calendar with each edition, so a blank week's pager follows Refresh over midnight", async () => {
-      router.query = { post: "goalie-period" };
-      let cutoff = "2026-10-25";
-      serveGoalie({}, () => json({ ...matchups, cutoff }));
-      render(<PostStudio />);
-      await waitFor(() => expect(screen.getByTestId("period-pager-label").textContent).toBe("Week 4 · Oct 19 to Oct 25"));
-      cutoff = "2026-11-01";
-      fireEvent.click(screen.getByRole("button", { name: "Refresh post" }));
-      await waitFor(() => expect(screen.getByTestId("period-pager-label").textContent).toBe("Week 5 · Oct 26 to Nov 1"));
+    describe("a blank week follows the loaded edition", () => {
+      const before = "2026-11-02T04:30:00.000Z", after = "2026-11-02T05:30:00.000Z"; // 23:30 and 00:30 in New York, Nov 1 to Nov 2 (EST).
+      const label = () => screen.getByTestId("period-pager-label").textContent;
+      const refreshed = async () => { await waitFor(() => expect((screen.getByRole("button", { name: "Refresh post" }) as HTMLButtonElement).disabled).toBe(false)); fireEvent.click(screen.getByRole("button", { name: "Refresh post" })); };
+      const serveAt = (at: () => string, calendar: () => Response) => fetchMock.mockImplementation(async (url: string) => url.endsWith("/matchup-weeks") ? calendar() : json({ ...goalie(null), generatedAt: at() }));
+      beforeEach(() => { router.query = { post: "goalie-period" }; });
+
+      it("moves on when Refresh loads an edition from after midnight", async () => {
+        let at = before;
+        serveAt(() => at, () => json(matchups));
+        render(<PostStudio />);
+        await waitFor(() => expect(label()).toBe("Week 4 · Oct 19 to Oct 25"));
+        at = after;
+        await refreshed();
+        await waitFor(() => expect(label()).toBe("Week 5 · Oct 26 to Nov 1"));
+      });
+
+      it("still moves on, and says so, when the calendar refresh fails", async () => {
+        let at = before, ok = true;
+        serveAt(() => at, () => json(ok ? matchups : {}, ok));
+        render(<PostStudio />);
+        await waitFor(() => expect(label()).toBe("Week 4 · Oct 19 to Oct 25"));
+        at = after; ok = false;
+        await refreshed();
+        await waitFor(() => expect(label()).toBe("Week 5 · Oct 26 to Nov 1"));
+        expect(screen.getByTestId("period-refresh-failed").textContent).toContain("could not be refreshed");
+      });
+
+      it("keeps the edition's week when the calendar is read after midnight but the edition before it", async () => {
+        serveAt(() => before, () => json({ ...matchups, cutoff: "2026-11-01" }));
+        render(<PostStudio />);
+        await waitFor(() => expect(label()).toBe("Week 4 · Oct 19 to Oct 25"));
+      });
     });
 
     it("leaves a post without the flag on its own form", async () => {
