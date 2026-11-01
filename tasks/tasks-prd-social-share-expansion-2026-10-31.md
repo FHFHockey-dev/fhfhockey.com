@@ -113,9 +113,9 @@ PRD: [prd-social-share-expansion-2026-10-31.md](TASKS/prd-social-share-expansion
   - [x] 13.5 Decide disposition of the `player-spotlight` and `category-rescue` stubs and the `team-games` example, with TJ. **Evidence:** TJ, 2026-10-31: leave all three as they are.
   - [x] 13.6 Freeze hashes, checks and coverage for the candidate. **Evidence:** freeze file.
   - [ ] 13.7 Independent fresh-context Astra audit of every requirement and blocker, then bounded corrections and rechecks; lead records the final disposition. **Evidence:** audit report with severities.
-  - [ ] 13.8 Ask the Yahoo writer's owner whether null `percent_ownership` means below 1%. Source has no stated 0 and 757 null players; changing the writer is out of this lane. **Evidence:** answer recorded in SOURCES. **Open:** asked in the Codex mailbox 2026-11-01, no answer yet.
+  - [x] 13.8 Ask the Yahoo writer's owner whether null `percent_ownership` means below 1%. Source has no stated 0 and 757 null players; changing the writer is out of this lane. **Evidence:** answer recorded in SOURCES. **Answered 2026-11-01:** null means unknown; recorded in SOURCES.
   - [x] 13.9 Report the 937 first-week appearances missing from `rolling_player_game_metrics` to its owner, and the two June-dated `wgo_goalie_stats` rows. No backfill here. **Evidence:** `CLAUDE-SS-HANDOFFS-20261101` in the Codex mailbox.
 
 ## Checkpoint and open actions
 
-**Frozen for audit, 2026-11-01:** see [FREEZE.md](artifacts/social-share-expansion-2026-10-31/FREEZE.md). Lanes' subtasks are checked from their receipts and the lead's integrated checks. Still open: 5.0 and 5.6 (sourced discovery blocked, no sourced candidate), 13.7 (audit), 13.8 (Yahoo owner's answer). No remote build, deployment, production write, migration or push has happened. Card approvals are per card in [CARD-REVIEW.md](artifacts/social-share-expansion-2026-10-31/CARD-REVIEW.md).
+**Frozen for audit, 2026-11-01:** see [FREEZE.md](artifacts/social-share-expansion-2026-10-31/FREEZE.md). Lanes' subtasks are checked from their receipts and the lead's integrated checks. Still open: 5.0 and 5.6 (sourced discovery blocked, no sourced candidate), 13.7 (audit). No remote build, deployment, production write, migration or push has happened. Card approvals are per card in [CARD-REVIEW.md](artifacts/social-share-expansion-2026-10-31/CARD-REVIEW.md).

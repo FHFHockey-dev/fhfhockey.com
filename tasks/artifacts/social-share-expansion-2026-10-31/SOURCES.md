@@ -64,3 +64,7 @@ The anon role, which the post route's reads use, can read all the other tables i
 | Ratio Impact (SS 12.0) | Manual inputs; optional base totals from `wgo_goalie_stats` | **Qualified**: no source needed for hypothetical inputs | Hypothetical basis |
 
 Nothing in this table is a blocker for building. Blocked rows gate only the named claim: discovery, the FHFH GSAx model for this season, the conditional forecast, and live goalie confirmation.
+
+## Yahoo null ownership (SS 13.8, answered 2026-11-01)
+
+Codex, from the writer source (`CODEX-NST-GOALIE-WRITER-20261101-POST-BACKFILL` §4): a null `percent_ownership` means unknown, not below 1%. The writer keeps a valid numeric 0 and returns null for omitted, empty or non-numeric input. Posts keep the existing rule: unknown is excluded unless a visible setting includes it.
