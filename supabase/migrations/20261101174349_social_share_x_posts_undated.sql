@@ -1,5 +1,5 @@
 -- Social Share posted source: a post's time can be unknown, and unknown is not the receipt time.
--- LOCAL CANDIDATE: not applied anywhere. Apply only with TJ's explicit approval, BEFORE the release that writes nulls.
+-- Applied to production 2026-11-01 with TJ's approval, version 20261101174349.
 -- Without it, a delivery with a missing or unreadable CreatedAt fails its insert and stores nothing.
 --
 -- A null posted_at marks no day done. A later delivery of the same post with a real date fills it in.
