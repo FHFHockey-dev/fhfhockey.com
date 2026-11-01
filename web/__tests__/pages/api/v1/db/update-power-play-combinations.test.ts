@@ -284,6 +284,20 @@ describe("/api/v1/db/update-power-play-combinations", () => {
     expect(peak).toBe(MAX_CONCURRENT_GAMES);
   });
 
+  it("adds up the rows each game kept without proof", async () => {
+    updatePowerPlayCombinationsMock
+      .mockResolvedValueOnce({ keptUnproven: 2 })
+      .mockResolvedValueOnce({ keptUnproven: 1 });
+    const res = createMockRes();
+
+    await handler(
+      requestFor({ startDate: "2026-03-14", endDate: "2026-03-14" }, gamesOf(2)),
+      res
+    );
+
+    expect(res.body.keptUnproven).toBe(3);
+  });
+
   it("requires either gameIds or a date range", async () => {
     const req: any = {
       method: "GET",

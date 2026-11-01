@@ -129,6 +129,7 @@ export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(async (req, res) 
       )
     );
     const succeededGameIds: number[] = [];
+    let keptUnproven = 0;
     const failures: PowerPlayFailure[] = [];
     const skippedGames: PowerPlayFailure[] = [];
 
@@ -137,6 +138,7 @@ export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(async (req, res) 
       if (!game) return;
       if (result.status === "fulfilled") {
         succeededGameIds.push(game.id);
+        keptUnproven += result.value?.keptUnproven ?? 0;
         return;
       }
       const failure = {
@@ -170,6 +172,7 @@ export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(async (req, res) 
       processed: succeededGameIds.length,
       skipped: skippedGames.length,
       failed: failures.length,
+      keptUnproven,
       requestedScope:
         gameIds.length > 0
           ? { gameIds }
