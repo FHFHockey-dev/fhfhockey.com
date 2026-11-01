@@ -265,3 +265,17 @@ R9, for the default: Crosby 1G-2A-3P-1PPP, Anderson 2G-1A-3P, Kucherov 0G-3A-3P,
 | R10 | Rolling, line and earlier-line coverage for the 10-31 slate, through MCP `execute_sql` on 2026-11-01 | `wgo_skater_stats`, `rolling_player_game_metrics`, `lineCombinations` | 0 sample rows (1 aggregate row, then 3 aggregate rows) | Passed |
 | R11 | NST coverage for 5 named skaters | `wgo_skater_stats`, `nst_gamelog_as_counts`, `nst_gamelog_as_counts_oi`, `rolling_player_game_metrics` | 5 per-player rows | Passed |
 | R12 | NST coverage for the slate, and rows per night 09-29 to 10-09 | `wgo_skater_stats`, `nst_gamelog_as_counts`, `games` | 0 sample rows (12 aggregate rows) | Passed |
+
+### Last Nights Standouts: PP chips against NHL.com PP time
+
+- **Not a join bug or the wrong game:** all 268 rows for the slate belong to skaters in that game, written 2026-11-01 00:25 to 08:05 UTC.
+- **`unit` is a rank, not a lineup:** `update-power-play-combinations` sorts a team's skaters by its shift-derived PP time; the top 5 are unit 1, the next 5 unit 2, the rest unit 3.
+- **That time is wrong for some teams:** it is within 2 seconds of NHL.com on 112 of 268 rows. Ottawa's source team PP total is 600s, with no skater above 2:54 on NHL.com; Zub has 3:42 in the source and 0:00 on NHL.com. Edmonton's is 1,380s against a 7:46 NHL.com high. Team totals are whole multiples of 2:00, which suggests full penalty lengths with no early end; that is an inference, not traced in the writer.
+- **Slate counts:** 171 of 360 print Off PP as sourced, and 7 of them have over 1:00 (all unit 3: OTT 2, DET 2, CHI, EDM, SJS). 189 print PP1 or PP2, and 28 have under 0:30 (26 PP2, 2 PP1: Pinto and Zub, both OTT). PP1 holds the team's NHL.com top 5 on 18 teams; OTT has 2 of 5, and CGY has no rows because it had no PP time.
+- **Rule:** a skater's chip prints "PP —" when Off PP has over 1:00 or PP1/PP2 has under 0:30, boundaries allowed. 35 of 360 chips change. No unit is inferred from time.
+- **Left wrong by this rule:** it judges one skater at a time, so a unit that looks plausible stays. Ottawa's Greig still prints PP1 at 1:05 and Giroux PP2 at 2:54. Only a fix in the writer corrects those.
+
+| # | Statement | Tables read | Rows returned | Result |
+| --- | --- | --- | --- | --- |
+| R13 | PP unit against NHL.com PP time per team and overall, slate of 2026-10-31, through MCP `execute_sql` on 2026-11-01 | `wgo_skater_stats`, `powerPlayCombinations` | 0 sample rows (20 + 1 + 20 aggregate rows) | Passed |
+| R14 | Unit rows for Ottawa's game | `wgo_skater_stats`, `powerPlayCombinations` | 18, then 29 rows | Passed |

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseShareSettings, sharePostExportBlock, type SharePostSnapshot } from "./contract";
-import { buildLastNightsStandouts, goalieRanking, goalLine, lastNightsStandoutsModule, latestEarlierLines, lineChipText, lineRowsFromCombinations, parsePicks, percentChange, percentLabel, rankingText, slateCoverage, sortStandouts, STANDOUT_MAX_ROWS, standoutPool, standoutRows, statText, togglePick, type LastNightsStandoutsData, type LastNightsStandoutsInput, type LastNightsStandoutsSettings, type StandoutSkater } from "./lastNightsStandouts";
+import { buildLastNightsStandouts, goalieRanking, goalLine, lastNightsStandoutsModule, latestEarlierLines, lineChipText, lineRowsFromCombinations, parsePicks, ppContradicted, percentChange, percentLabel, ppChipText, rankingText, slateCoverage, sortStandouts, STANDOUT_MAX_ROWS, standoutPool, standoutRows, statText, togglePick, type LastNightsStandoutsData, type LastNightsStandoutsInput, type LastNightsStandoutsSettings, type StandoutSkater } from "./lastNightsStandouts";
 import { loadLastNightsStandouts } from "./lastNightsStandouts.sources";
 import { ownershipOf } from "./shared/definitions";
 import type { GoalieAppearance } from "./shared/goalieLedger";
@@ -92,6 +92,40 @@ describe("goal line", () => {
     expect(row.goalLine).toBe("1G-2A-3P-2PPP");
     expect(row.role).toEqual({ line: "L2", pp: 1 });
     expect(dataOf().skaters[0].role).toEqual({ line: "unknown", pp: "unknown" });
+  });
+});
+
+describe("PP chip against NHL.com time", () => {
+  it("flags Off PP above 1:00 and PP1 or PP2 under 0:30, each boundary allowed", () => {
+    expect(ppContradicted("off", 61)).toBe(true);
+    expect(ppContradicted("off", 60)).toBe(false);
+    expect(ppContradicted(1, 29)).toBe(true);
+    expect(ppContradicted(2, 29)).toBe(true);
+    expect(ppContradicted(1, 30)).toBe(false);
+    expect(ppContradicted(2, 0)).toBe(true);
+  });
+  it("never flags an unknown unit or an unknown time", () => {
+    expect(ppContradicted("unknown", 200)).toBe(false);
+    expect(ppContradicted("off", null)).toBe(false);
+    expect(ppContradicted(1, null)).toBe(false);
+  });
+  const withUnit = (unit: number | null, ppToiSeconds: number, others: object[] = []) => dataOf({ appearances: season().map(row => row.date === SLATE ? { ...row, ppToiSeconds } : row), role: { rolling: [], pp: [...(unit === null ? [] : [{ gameId: 9, playerId: 1, unit }]), ...others] as { gameId: number; playerId: number; unit: number }[] } }).skaters[0];
+  const teammate = { gameId: 9, playerId: 2, unit: 1 };
+  it("prints a contradicted unit as unknown and says why, never swapping in another unit", () => {
+    const off = withUnit(3, 174);
+    expect(off.role.pp).toBe("unknown");
+    expect(off.ppConflict).toBe(true);
+    expect(ppChipText(off.role)).toBe("PP —");
+    expect(ppChipText(withUnit(1, 3).role)).toBe("PP —");
+  });
+  it("keeps a unit the time agrees with, and a truthful Off PP", () => {
+    expect(withUnit(1, 174)).toMatchObject({ role: { pp: 1 }, ppConflict: false });
+    expect(withUnit(3, 12)).toMatchObject({ role: { pp: "off" }, ppConflict: false });
+    expect(withUnit(null, 0, [teammate])).toMatchObject({ role: { pp: "off" }, ppConflict: false });
+  });
+  it("counts conflicts apart from games with no rows", () => {
+    const { evidence } = built({ appearances: season().map(row => row.date === SLATE ? { ...row, ppToiSeconds: 174 } : row), role: { rolling: [], pp: [{ gameId: 9, playerId: 1, unit: 3 }] } });
+    expect(evidence.sources.find(source => source.name === "FHFH lines and PP units")?.reasons?.join(" ")).toContain("1 because NHL.com PP time contradicts the unit, 0 with no rows");
   });
 });
 

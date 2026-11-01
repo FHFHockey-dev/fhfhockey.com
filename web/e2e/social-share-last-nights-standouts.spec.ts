@@ -33,9 +33,12 @@ const game = (playerId: number, date: string, gameId: number, over: Partial<Skat
   playerId, name: `Fictional Long Name ${playerId}`, position: playerId % 3 ? "C" : "D", group: playerId % 3 ? "F" : "D", gameId, date, team: playerId % 2 ? "NJD" : "NYR", opponent: playerId % 2 ? "NYR" : "NJD", home: true,
   goals: 0, assists: 0, points: 0, shots: 2, hits: 1, blocks: 1, ppPoints: 0, toiSeconds: 1000, ppToiSeconds: playerId === 2 ? 0 : 100, penaltyMinutes: 0, ...over,
 });
+const LONG_NAME = "Maximilian Fictional-Vanderlongname Abdelkader-Ekman-Larsson";
 const appearances = Array.from({ length: PLAYERS }, (_, index) => {
   const id = index + 1;
-  return [...PRIOR.map((date, day) => game(id, date, 100 + day)), game(id, SLATE, 900, { shots: 12 - index, goals: index === 0 ? 1 : 0, assists: index === 0 ? 2 : 0, points: index === 0 ? 3 : index % 3, ppPoints: index === 0 ? 2 : 0, toiSeconds: 1000 + index * 60, ppToiSeconds: index === 1 ? 240 : 100 })];
+  // Player 12 carries real-world extremes: the longest name and goal line the sidebar has to hold.
+  if (id === 12) return [...PRIOR.map((date, day) => game(id, date, 100 + day, { name: LONG_NAME })), game(id, SLATE, 900, { name: LONG_NAME, shots: 1, goals: 10, assists: 10, points: 20, ppPoints: 10, toiSeconds: 1800, ppToiSeconds: 20 })];
+  return [...PRIOR.map((date, day) => game(id, date, 100 + day)), game(id, SLATE, 900, { shots: 12 - index, goals: index === 0 ? 1 : 0, assists: index === 0 ? 2 : 0, points: index === 0 ? 3 : index % 3, ppPoints: index === 0 ? 2 : 0, toiSeconds: 1000 + index * 60, ppToiSeconds: index === 1 ? 240 : index === 0 ? 100 : 20 })];
 }).flat();
 const nst = (date: string, playerId: number) => ({ player_id: playerId, date_scraped: date, season: SEASON, ixg: 0.5 + playerId / 10, iscfs: 2, icf: 4 });
 const nstDates = [...PRIOR, SLATE];
@@ -75,6 +78,16 @@ const expectFits = (page: Page) => expect.poll(() => page.getByTestId("share-squ
   const band = body.getBoundingClientRect().bottom - rows[rows.length - 1].getBoundingClientRect().bottom;
   return band > 40 ? `dead band ${band}` : "fits";
 })).toBe("fits");
+/** Every option's box is clear of the next one, and everything it prints stays inside it. */
+const optionLayout = (page: Page) => page.getByTestId("standouts-list").evaluate(list => {
+  const options = [...list.querySelectorAll("[data-testid=standout-option]")], boxes = options.map(node => node.getBoundingClientRect());
+  for (let index = 1; index < boxes.length; index++) if (boxes[index].top < boxes[index - 1].bottom - 0.5) return `option ${index} overlaps the one before`;
+  for (const [index, node] of options.entries()) for (const child of node.querySelectorAll("*")) {
+    const box = child.getBoundingClientRect();
+    if (box.width && (box.left < boxes[index].left - 0.5 || box.right > boxes[index].right + 0.5 || box.top < boxes[index].top - 0.5 || box.bottom > boxes[index].bottom + 0.5)) return `option ${index}: ${child.tagName} "${child.textContent}" leaves its box`;
+  }
+  return "clear";
+});
 const option = (page: Page, id: number) => page.locator(`[data-testid=standout-option][data-player="${id}"]`);
 const download = (page: Page) => page.getByRole("button", { name: "Download PNG", exact: true });
 
@@ -142,23 +155,36 @@ test("the sidebar sorts by the night's value and by the jump, and stops at the c
   await expectFits(page);
 });
 
-test("the sidebar stays inside a phone's width with picks made", async ({ page }) => {
+test("sidebar rows take their natural height, in a list that scrolls", async ({ page }) => {
+  await open(page, "&view=all");
+  await option(page, 12).click();
+  await option(page, 1).click();
+  await expect(page.getByTestId("standouts-count")).toContainText("2 of 8");
+  await expect.poll(() => optionLayout(page)).toBe("clear");
+  await expect.poll(() => page.getByTestId("standouts-list").evaluate(list => getComputedStyle(list).overflowY)).toBe("auto");
+  expect(await option(page, 12).evaluate(node => node.getBoundingClientRect().height)).toBeGreaterThan(60);
+});
+
+test("the sidebar stays inside a phone's width with long values and picks made", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await open(page, "&view=all");
-  await option(page, 1).click();
+  await option(page, 12).click();
   await option(page, 2).click();
   await expect(page.getByTestId("standouts-count")).toContainText("2 of 8");
+  await expect.poll(() => optionLayout(page)).toBe("clear");
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
   await expect.poll(() => page.getByTestId("standouts-list").evaluate(list => list.scrollWidth <= list.clientWidth)).toBe(true);
 });
 
 test("a skater row prints the goal line, chips, every stat and a dash for a zero baseline", async ({ page }) => {
-  await open(page, "&view=all&picks=1,2");
+  await open(page, "&view=all&picks=1,2,3");
   const [one, two] = [page.getByTestId("standout-row").first(), page.getByTestId("standout-row").nth(1)];
   await expect(one.getByTestId("goal-line")).toHaveText("1G-2A-3P-2PPP");
   await expect(two.getByTestId("goal-line")).toHaveText("0G-0A-1P");
   await expect(one.getByTestId("pp-chip")).toHaveText("PP1");
-  await expect(two.getByTestId("pp-chip")).toHaveText("Off PP");
+  // Player 2 has no unit but 4:00 of NHL.com PP time, so "Off PP" would contradict it. Player 3 has 0:20 and really is off.
+  await expect(two.getByTestId("pp-chip")).toHaveText("PP —");
+  await expect(page.getByTestId("standout-row").nth(2).getByTestId("pp-chip")).toHaveText("Off PP");
   await expect(one.getByTestId("line-chip")).toHaveText("L2");
   await expect(one.getByTestId("stat-tile")).toHaveCount(7);
   await expect(one.locator("[data-stat=sog]")).toContainText("+500%");

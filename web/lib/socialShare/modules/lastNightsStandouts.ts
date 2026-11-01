@@ -79,9 +79,22 @@ export const slateLabel = (slate: string) => new Intl.DateTimeFormat("en-US", { 
 export const lineChipText = ({ role, lineAsOf }: { role: RoleSlot; lineAsOf: string | null }) => role.line === "unknown" ? "Line —" : lineAsOf ? `${role.line} · ${slateLabel(lineAsOf)}` : role.line;
 export const ppChipText = (role: RoleSlot) => role.pp === "unknown" ? "PP —" : role.pp === "off" ? "Off PP" : `PP${role.pp}`;
 
+/**
+ * `powerPlayCombinations.unit` is a rank by the writer's own shift-derived PP time, and that time is wrong for some teams:
+ * on 2026-10-31 Ottawa's was 10:00 of team PP against 2:54 at most on NHL.com. So a unit the skater's NHL.com PP time
+ * contradicts prints as unknown. No unit is ever inferred from time, and an unknown time contradicts nothing.
+ */
+export const PP_OFF_MAX_SECONDS = 60, PP_ON_MIN_SECONDS = 30;
+export function ppContradicted(pp: RoleSlot["pp"], ppToiSeconds: number | null) {
+  if (ppToiSeconds === null || pp === "unknown") return false;
+  return pp === "off" ? ppToiSeconds > PP_OFF_MAX_SECONDS : ppToiSeconds < PP_ON_MIN_SECONDS;
+}
+
 export type StandoutSkater = {
   playerId: number; name: string | null; position: string | null; group: "F" | "D" | null; team: string | null; opponent: string | null;
   ownership: OwnershipState; role: RoleSlot;
+  /** The source's unit was dropped because this skater's NHL.com PP time contradicts it. */
+  ppConflict: boolean;
   /** Null when `role.line` is from last night's game; otherwise the date of the earlier game it comes from. */
   lineAsOf: string | null;
   goalLine: string; points: number | null; priorGames: number; stats: StandoutStat[];
@@ -230,8 +243,8 @@ function buildSkaterViews(input: LastNightsStandoutsInput, applied: string): Sha
     const last = joined.find(game => game.date === slate);
     if (!last) return [];
     // Last night is never in its own baseline.
-    const prior = joined.filter(game => game.date < slate), slot = role(playerId, last.gameId), fallback = slot.line === "unknown" ? earlier.get(playerId) : undefined;
-    return [{ playerId, name: last.name, position: last.position, group: last.group, team: last.team, opponent: last.opponent, ownership: input.ownership.byPlayer.get(playerId) ?? ownershipOf(null), role: fallback ? { ...slot, line: fallback.line } : slot, lineAsOf: fallback?.date ?? null, goalLine: goalLine(last), points: last.points, priorGames: prior.length,
+    const prior = joined.filter(game => game.date < slate), slot = role(playerId, last.gameId), fallback = slot.line === "unknown" ? earlier.get(playerId) : undefined, ppConflict = ppContradicted(slot.pp, last.ppToiSeconds);
+    return [{ playerId, name: last.name, position: last.position, group: last.group, team: last.team, opponent: last.opponent, ownership: input.ownership.byPlayer.get(playerId) ?? ownershipOf(null), role: { line: fallback?.line ?? slot.line, pp: ppConflict ? "unknown" : slot.pp }, ppConflict, lineAsOf: fallback?.date ?? null, goalLine: goalLine(last), points: last.points, priorGames: prior.length,
       stats: STAT_METRICS.map(stat => {
         const metric = metricOf(stat.metric), value = gameValue(metric, last), baseline = baselineOf(metric, prior, settings);
         return { id: stat.id, label: stat.label, last: value, baseline, change: percentChange(value, baseline) };
@@ -242,19 +255,19 @@ function buildSkaterViews(input: LastNightsStandoutsInput, applied: string): Sha
   const wgoGaps = slateGames.filter(game => [game.goals, game.assists, game.points, game.shots, game.toiSeconds, game.ppToiSeconds].some(value => value === null)).length;
   const reasons = [...coverage.reasons, ...(wgoGaps ? [`${wgoGaps} skaters on this slate have a missing NHL.com stat.`] : [])];
   const nstGaps = skaters.filter(row => (["icf", "iscf", "xg", "xgPct"] as const).some(id => statOf(row, id).last === null)).length;
-  const unknownLines = skaters.filter(row => row.role.line === "unknown").length, unknownPp = skaters.filter(row => row.role.pp === "unknown").length, olderLines = skaters.filter(row => row.lineAsOf !== null).length;
+  const unknownLines = skaters.filter(row => row.role.line === "unknown").length, unknownPp = skaters.filter(row => row.role.pp === "unknown").length, olderLines = skaters.filter(row => row.lineAsOf !== null).length, ppConflicts = skaters.filter(row => row.ppConflict).length;
   const knownOwned = skaters.filter(row => row.ownership.state === "known").length;
   const sources: SharePostSource[] = [
     { name: "NHL.com", tables: ["wgo_skater_stats", "wgo_team_stats", "games"], state: reasons.length ? "partial" : "ready", asOf: slate, updatedAt: null },
     { name: "Natural Stat Trick", tables: ["nst_gamelog_as_counts", "nst_gamelog_as_counts_oi"], state: nstGaps ? "partial" : "ready", asOf: nstGaps === skaters.length ? null : slate, updatedAt: null, reasons: nstGaps ? [`${nstGaps} of ${skaters.length} skaters have a missing NST value on this slate.`] : [] },
-    { name: "FHFH lines and PP units", tables: ["lineCombinations", ...(olderLines ? ["rolling_player_game_metrics"] : []), "powerPlayCombinations"], state: unknownLines || unknownPp || olderLines ? "partial" : "ready", asOf: slate, updatedAt: null, reasons: [...(unknownLines ? [`${unknownLines} of ${skaters.length} skaters have no known line.`] : []), ...(olderLines ? [`${olderLines} of ${skaters.length} lines are from an earlier game, and the chip prints its date.`] : []), ...(unknownPp ? [`${unknownPp} of ${skaters.length} PP slots have no rows.`] : [])] },
+    { name: "FHFH lines and PP units", tables: ["lineCombinations", ...(olderLines ? ["rolling_player_game_metrics"] : []), "powerPlayCombinations"], state: unknownLines || unknownPp || olderLines ? "partial" : "ready", asOf: slate, updatedAt: null, reasons: [...(unknownLines ? [`${unknownLines} of ${skaters.length} skaters have no known line.`] : []), ...(olderLines ? [`${olderLines} of ${skaters.length} lines are from an earlier game, and the chip prints its date.`] : []), ...(unknownPp ? [`${unknownPp} of ${skaters.length} PP chips are unknown: ${ppConflicts} because NHL.com PP time contradicts the unit, ${unknownPp - ppConflicts} with no rows for the game.`] : [])] },
     yahooSource(input, knownOwned, skaters.length),
   ];
   return {
     state: reasons.length ? "partial" : "ready", reasons,
     data: { applied, view: settings.view, slate, games: input.scheduledGameIds.length, skaters, goalies: [] },
     teams: [...new Set(skaters.flatMap(row => row.team ? [row.team] : []))].sort(),
-    evidence: { sources, sample: `Slate of ${slate}, ${input.scheduledGameIds.length} games. Each % compares that game with the skater's own season per game before it, last night excluded, with ${settings.minPriorGp}+ prior GP; xG% is pooled. A zero or missing baseline prints —${isHandBuilt(settings.view) ? ". Skaters on this card are chosen by hand" : ""}`, strength: STRENGTH, cohort: `${skaters.length} skaters on the slate: ${skaters.filter(row => row.group === "F").length} F, ${skaters.filter(row => row.group === "D").length} D`, coverage: { observed: coverage.observed, expected: coverage.expected, missing: coverage.missing, unit: "team games" } },
+    evidence: { sources, sample: `Slate of ${slate}, ${input.scheduledGameIds.length} games. Each % compares that game with the skater's own season per game before it, last night excluded, with ${settings.minPriorGp}+ prior GP; xG% is pooled. A zero or missing baseline prints —. PP units are ranked from shift data; PP — means no rows, or NHL.com PP time contradicts the unit${isHandBuilt(settings.view) ? ". Skaters on this card are chosen by hand" : ""}`, strength: STRENGTH, cohort: `${skaters.length} skaters on the slate: ${skaters.filter(row => row.group === "F").length} F, ${skaters.filter(row => row.group === "D").length} D`, coverage: { observed: coverage.observed, expected: coverage.expected, missing: coverage.missing, unit: "team games" } },
   };
 }
 export function buildLastNightsStandouts(input: LastNightsStandoutsInput): SharePostLoadResult<LastNightsStandoutsData> {
