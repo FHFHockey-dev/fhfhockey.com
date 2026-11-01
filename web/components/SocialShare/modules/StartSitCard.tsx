@@ -14,10 +14,10 @@ function Chip({ side, digits, result }: { side: LensSide; digits: number; result
   const missing = side.metric.value === null || side.metric.leagueRank === null;
   return <span data-testid="lens-chip" data-result={result ?? (missing ? "missing" : "neutral")} className={styles.chip} style={result ? { background: HEAD_TO_HEAD_COLORS[result], color: HEAD_TO_HEAD_COLORS.ink } : undefined}>{rate(side.metric, digits)}</span>;
 }
-/** Each chip with its team's logo beside it, and between the logos a triangle at the stronger team. */
-function LensCell({ first, second, digits, logos }: { first: LensSide; second: LensSide; digits: number; logos: Record<string, string | null> }) {
+/** The goalie's team on the left and the opponent on the right in every lens, each chip beside its logo, with a triangle between the logos at the stronger team. */
+function LensCell({ lens, first, second, digits, logos }: { lens: "quality" | "quantity" | "win"; first: LensSide; second: LensSide; digits: number; logos: Record<string, string | null> }) {
   const winner = headToHeadWinner(first, second), result = (index: 0 | 1) => winner === null ? null : winner === index ? "winner" : "loser";
-  return <span className={styles.lens} data-testid="lens-cell" data-winner={winner === null ? undefined : [first, second][winner].team}>
+  return <span className={styles.lens} data-testid="lens-cell" data-lens={lens} data-winner={winner === null ? undefined : [first, second][winner].team}>
     <Chip side={first} digits={digits} result={result(0)} />
     <PostTeamMark team={first.team} logo={logos[first.team]} size={18} />
     <svg className={styles.edge} viewBox="0 0 8 10" width="8" height="10" aria-hidden="true">{winner !== null && <polygon data-testid="lens-edge" data-points={winner === 0 ? "left" : "right"} fill={HEAD_TO_HEAD_COLORS.ink} points={winner === 0 ? "8,0 8,10 0,5" : "0,0 0,10 8,5"} />}</svg>
@@ -25,7 +25,7 @@ function LensCell({ first, second, digits, logos }: { first: LensSide; second: L
     <Chip side={second} digits={digits} result={result(1)} />
   </span>;
 }
-const HEADS: readonly (readonly [string, string?])[] = [["DATE"], ["GOALIE", "L10 STARTS"], ["GAME"], ["SOURCE STATUS"], ["FORECAST"], ["VOLUME", "OPP SF / SA"], ["RATIO", "OPP xGF / xGA"], ["WIN", "GF / OPP GA"]];
+const HEADS: readonly (readonly [string, string?])[] = [["DATE"], ["GOALIE", "L10 STARTS"], ["GAME"], ["SOURCE STATUS"], ["FORECAST"], ["QUALITY", "xGA / OPP xGF"], ["QUANTITY", "SA / OPP SF"], ["WIN", "GF / OPP GA"]];
 
 export default function StartSitCard({ snapshot, data, settings, logos }: SharePostCardProps<StartSitSettings, StartSitData>) {
   const rows = startSitRows(data, settings.search), shown = rows.slice(0, START_SIT_ROW_LIMIT);
@@ -36,17 +36,17 @@ export default function StartSitCard({ snapshot, data, settings, logos }: ShareP
     <div className={styles.table} data-full={shown.length >= 10 || undefined}>
       {HEADS.map(([label, detail]) => <span key={label} className={styles.head}>{label}{detail && <small>{detail}</small>}</span>)}
       {shown.map(({ key, goalie, game }) => {
-        const { volume, ratioExposure: ratio, winSupport: win } = game.signals;
+        const { volume: quantity, ratioExposure: quality, winSupport: win } = game.signals;
         const conflicting = startSitConflicting(data, game), freshness = confirmationFreshness(game.confirmation, snapshot.generatedAt), state = conflicting ? "conflicting" : game.confirmation.state, tone = state === "none" ? null : CONFIRMATION_TONES[state];
         return <div key={key} className={styles.row} data-testid="start-sit-row" data-goalie={goalie.goalieId} data-game={game.gameId}>
           <span>{dayLabel(game.date)}</span>
           <span className={styles.goalie}><b>{goalie.name}</b><small>{goalie.recentStarts.starts === null ? "—" : goalie.recentStarts.starts}/{goalie.recentStarts.teamGames} GS{goalie.recentStarts.reliefAppearances ? ` · ${goalie.recentStarts.reliefAppearances} relief` : ""}</small></span>
-          <span className={styles.game}><PostTeamMark team={game.team} logo={logos[game.team]} size={24} />{game.home ? "vs" : "@"} {game.opponent}</span>
+          <span className={styles.game} data-testid="start-sit-game"><PostTeamMark team={game.team} logo={logos[game.team]} size={24} />{game.home ? "vs" : "@"}<PostTeamMark team={game.opponent} logo={logos[game.opponent]} size={24} /></span>
           <span data-testid="start-sit-confirmation" data-state={state} className={styles.status} style={tone ? { background: tone.fill, color: tone.ink, border: tone.border ?? undefined } : undefined}>{confirmationLabel(game.confirmation, conflicting)}{freshness && <small>{confirmationSourceLabel(game.confirmation.source)} · {freshness}</small>}</span>
           <span data-testid="start-sit-forecast" data-state={game.forecast.state}>{forecastLabel(game.forecast)}</span>
-          <LensCell first={{ team: game.opponent, metricId: "shotsFor", metric: volume.opponentShotsForPerGame }} second={{ team: game.team, metricId: "shotsAgainst", metric: volume.teamShotsAgainstPerGame }} digits={1} logos={logos} />
-          <LensCell first={{ team: game.opponent, metricId: "xgf", metric: ratio.opponentXgfPerGame }} second={{ team: game.team, metricId: "xga", metric: ratio.teamXgaPerGame }} digits={2} logos={logos} />
-          <LensCell first={{ team: game.team, metricId: "goalsFor", metric: win.teamGoalsForPerGame }} second={{ team: game.opponent, metricId: "goalsAgainst", metric: win.opponentGoalsAgainstPerGame }} digits={2} logos={logos} />
+          <LensCell lens="quality" first={{ team: game.team, metricId: "xga", metric: quality.teamXgaPerGame }} second={{ team: game.opponent, metricId: "xgf", metric: quality.opponentXgfPerGame }} digits={2} logos={logos} />
+          <LensCell lens="quantity" first={{ team: game.team, metricId: "shotsAgainst", metric: quantity.teamShotsAgainstPerGame }} second={{ team: game.opponent, metricId: "shotsFor", metric: quantity.opponentShotsForPerGame }} digits={1} logos={logos} />
+          <LensCell lens="win" first={{ team: game.team, metricId: "goalsFor", metric: win.teamGoalsForPerGame }} second={{ team: game.opponent, metricId: "goalsAgainst", metric: win.opponentGoalsAgainstPerGame }} digits={2} logos={logos} />
         </div>;
       })}
     </div>

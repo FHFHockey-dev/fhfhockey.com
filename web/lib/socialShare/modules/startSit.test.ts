@@ -63,51 +63,81 @@ describe("Start/Sit card, through the real resolver", () => {
 
 describe("Start/Sit colour", () => {
   const cell = (html: string, testid: string, state: string) => html.match(new RegExp(`<span[^>]*data-testid="${testid}"[^>]*data-state="${state}"[^>]*>`))?.[0];
-  const firstRow = (html: string) => html.match(/data-testid="start-sit-row".*?(?=data-testid="start-sit-row"|$)/)![0];
-  const lensCells = (html: string) => [...firstRow(html).matchAll(/<span class="[^"]*" data-testid="lens-cell"[^>]*>.*?<\/span><\/span>|<span class="[^"]*" data-testid="lens-cell"[^>]*>(?:(?!data-testid="lens-cell").)*/g)].map(match => match[0]);
-  const withSignals = (edit: (game: StartSitData["inventory"]["goalies"][number]["games"][number]) => object) => {
+  const withSignals = (edit: (signals: StartSitData["inventory"]["goalies"][number]["games"][number]["signals"]) => object, logos: Record<string, string> = {}) => {
     const result = startSitResult(GOALIE_INVENTORY_FIXTURE_DETAIL), row = startSitRows(result.data as StartSitData, "")[0];
-    const goalie = { ...row.goalie, games: [{ ...row.game, ...edit(row.game) }] };
-    return card({ ...result, data: { ...(result.data as StartSitData), inventory: { ...(result.data as StartSitData).inventory, goalies: [goalie] } } });
+    const goalie = { ...row.goalie, games: [{ ...row.game, signals: { ...row.game.signals, ...edit(row.game.signals) } }] };
+    return renderToStaticMarkup(createElement(StartSitCard, { snapshot: { generatedAt: FIXTURE_GENERATED_AT } as never, data: { ...(result.data as StartSitData), inventory: { ...(result.data as StartSitData).inventory, goalies: [goalie] } }, settings: settings(""), logos }));
   };
   const metric = (value: number | null, leagueRank: number | null, leagueCohort: number | null = 32) => ({ value, unit: "per game", window: "", sampleGames: 10, leagueRank, leagueCohort });
-  const volume = (game: { signals: object }, sf: ReturnType<typeof metric>, sa: ReturnType<typeof metric>) => ({ signals: { ...game.signals, volume: { opponentShotsForPerGame: sf, teamShotsAgainstPerGame: sa } } });
-  const chips = (html: string) => [...html.matchAll(/<span data-testid="lens-chip" data-result="(\w+)"([^>]*)>([^<]*)</g)].map(match => ({ result: match[1], attrs: match[2], text: match[3] }));
-  it("colours the winner green and the loser red through the shared rule, keeping value and rank", () => {
-    const html = withSignals(game => volume(game as never, metric(33.1, 10), metric(30.2, 5))), [attack, defence] = chips(html);
-    // SF #10 against the 5th-most shots allowed, the 28th-strongest defence.
-    expect(headToHeadWinner({ metricId: "shotsFor", metric: metric(33.1, 10) }, { metricId: "shotsAgainst", metric: metric(30.2, 5) })).toBe(0);
-    expect(attack.result).toBe("winner");
-    expect(attack.attrs).toContain(`background:${HEAD_TO_HEAD_COLORS.winner}`);
-    expect(attack.text).toBe("33.1 #10");
-    expect(defence.result).toBe("loser");
-    expect(defence.attrs).toContain(`background:${HEAD_TO_HEAD_COLORS.loser}`);
-    expect(defence.text).toBe("30.2 #5");
+  type Metric = ReturnType<typeof metric>;
+  // In each lens the first metric is the goalie's team and the second the opponent's.
+  const lensEdits = {
+    quality: (team: Metric, opponent: Metric) => (signals: never) => ({ ratioExposure: { ...(signals as { ratioExposure: object }).ratioExposure, teamXgaPerGame: team, opponentXgfPerGame: opponent } }),
+    quantity: (team: Metric, opponent: Metric) => (signals: never) => ({ volume: { ...(signals as { volume: object }).volume, teamShotsAgainstPerGame: team, opponentShotsForPerGame: opponent } }),
+    win: (team: Metric, opponent: Metric) => (signals: never) => ({ winSupport: { ...(signals as { winSupport: object }).winSupport, teamGoalsForPerGame: team, opponentGoalsAgainstPerGame: opponent } }),
+  };
+  const lensCell = (html: string, lens: string) => html.match(new RegExp(`data-testid="lens-cell" data-lens="${lens}".*?(?=data-testid="lens-cell"|$)`))![0];
+  const chips = (cell: string) => [...cell.matchAll(/<span data-testid="lens-chip" data-result="(\w+)"([^>]*)>([^<]*)</g)].map(match => ({ result: match[1], attrs: match[2], text: match[3] }));
+  // Fixture row: NJD's goalie at NYR.
+  it.each([
+    // The fewest allowed is the strongest defence, against a weak attack: the goalie's team wins.
+    ["quality", metric(2.1, 32), metric(2.5, 20), "left", "winner", "loser", "NJD"],
+    // The 5th-most allowed is the 28th-strongest defence, against the 10th attack: the opponent wins.
+    ["quality", metric(3.4, 5), metric(3.1, 10), "right", "loser", "winner", "NYR"],
+    ["quantity", metric(24.1, 32), metric(27.5, 20), "left", "winner", "loser", "NJD"],
+    ["quantity", metric(33.4, 5), metric(33.1, 10), "right", "loser", "winner", "NYR"],
+    // A strong attack against a leaky defence: the goalie's team wins. Against the fewest allowed, the opponent does.
+    ["win", metric(3.6, 3), metric(3.5, 5), "left", "winner", "loser", "NJD"],
+    ["win", metric(3.6, 3), metric(2.1, 32), "right", "loser", "winner", "NYR"],
+  ] as const)("%s: team %#, colours and triangle follow the winner, with the team left", (lens, team, opponent, points, left, right, winner) => {
+    const html = withSignals(lensEdits[lens](team, opponent) as never), cell = lensCell(html, lens), [first, second] = chips(cell);
+    const digits = lens === "quantity" ? 1 : 2;
+    expect(first.text).toBe(`${team.value!.toFixed(digits)} #${team.leagueRank}`);
+    expect(second.text).toBe(`${opponent.value!.toFixed(digits)} #${opponent.leagueRank}`);
+    expect([first.result, second.result]).toEqual([left, right]);
+    expect(first.attrs).toContain(`background:${HEAD_TO_HEAD_COLORS[left]}`);
+    expect(second.attrs).toContain(`background:${HEAD_TO_HEAD_COLORS[right]}`);
+    expect(cell).toContain(`data-points="${points}"`);
+    expect(cell.match(/data-winner="(\w+)"/)![1]).toBe(winner);
+    expect(cell.indexOf("NJD")).toBeLessThan(cell.lastIndexOf("NYR"));
   });
-  it("points the triangle at the winner's logo, on whichever side it sits", () => {
-    expect(withSignals(game => volume(game as never, metric(33, 10), metric(30, 5)))).toContain('data-testid="lens-edge" data-points="left"');
-    expect(withSignals(game => volume(game as never, metric(33, 20), metric(30, 32)))).toContain('data-testid="lens-edge" data-points="right"');
+  it("agrees with the shared rule", () => {
+    expect(headToHeadWinner({ metricId: "xga", metric: metric(3.4, 5) }, { metricId: "xgf", metric: metric(3.1, 10) })).toBe(1);
   });
-  it("draws both logos between the chips, the stronger team named on the cell", () => {
-    const html = card(startSitResult(GOALIE_INVENTORY_FIXTURE_DETAIL)), row = startSitRows(data, "")[0];
-    const first = lensCells(html)[0];
-    expect(first.indexOf(row.game.opponent)).toBeLessThan(first.lastIndexOf(row.game.team));
-    expect(first.split('data-testid="lens-chip"')).toHaveLength(3);
+  it("runs the columns Quality, Quantity, Win, with the headers in the same order as the chips", () => {
+    const html = card(startSitResult(GOALIE_INVENTORY_FIXTURE_DETAIL));
+    const heads = ["QUALITY", "xGA / OPP xGF", "QUANTITY", "SA / OPP SF", "WIN", "GF / OPP GA"].map(text => html.indexOf(text));
+    expect(heads).toEqual([...heads].sort((a, b) => a - b));
+    expect(heads).not.toContain(-1);
+    expect([...html.matchAll(/data-lens="(\w+)"/g)].slice(0, 3).map(match => match[1])).toEqual(["quality", "quantity", "win"]);
+    expect(html).not.toMatch(/VOLUME|RATIO|OPP SF \/ SA|OPP xGF \/ xGA/);
+    const result = startSitResult(GOALIE_INVENTORY_FIXTURE_DETAIL);
+    expect(result.evidence.sample).toContain("Quality, quantity and win");
+    expect(result.evidence.sample).not.toMatch(/Volume|ratio and/);
+    expect(startSitModule.altText({ evidence: { sample: "s" } } as never, data, settings(""))).toContain("Quality, quantity and win");
+  });
+  it("prints the game as two logos with no opponent text", () => {
+    const logos = { NJD: "/njd.svg", NYR: "/nyr.svg", MTL: "/mtl.svg", TOR: "/tor.svg" };
+    const away = withSignals(() => ({}), logos).match(/data-testid="start-sit-game">(.*?)<\/span>/)![1];
+    expect(away).toMatch(/<img src="\/njd\.svg"[^>]*>@<img src="\/nyr\.svg"[^>]*>/);
+    expect(away.replace(/<[^>]*>/g, "")).toBe("@");
+    const home = renderToStaticMarkup(createElement(StartSitCard, { snapshot: { generatedAt: FIXTURE_GENERATED_AT } as never, data, settings: settings("søgaard"), logos })).match(/data-testid="start-sit-game">(.*?)<\/span>/)![1];
+    expect(home).toMatch(/<img src="\/nyr\.svg"[^>]*>vs<img src="\/njd\.svg"[^>]*>/);
   });
   it("leaves a tie plain, with no triangle", () => {
-    const html = withSignals(game => volume(game as never, metric(33, 8), metric(30, 25))), [attack, defence] = chips(html);
-    expect([attack.result, defence.result]).toEqual(["neutral", "neutral"]);
-    expect(attack.attrs).not.toContain("style=");
-    expect(defence.attrs).not.toContain("style=");
-    expect(lensCells(html)[0]).not.toContain("lens-edge");
+    const cell = lensCell(withSignals(lensEdits.quantity(metric(30, 25), metric(33, 8)) as never), "quantity"), [first, second] = chips(cell);
+    expect([first.result, second.result]).toEqual(["neutral", "neutral"]);
+    expect(first.attrs).not.toContain("style=");
+    expect(second.attrs).not.toContain("style=");
+    expect(cell).not.toContain("lens-edge");
   });
   it("leaves a missing metric dashed and plain, its partner plain too", () => {
-    const html = withSignals(game => volume(game as never, metric(null, null, null), metric(30, 5))), [attack, defence] = chips(html);
-    expect([attack.result, defence.result]).toEqual(["missing", "neutral"]);
-    expect(attack.attrs).not.toContain("style=");
-    expect(attack.text).toBe("—");
-    expect(defence.text).toBe("30.0 #5");
-    expect(lensCells(html)[0]).not.toContain("lens-edge");
+    const cell = lensCell(withSignals(lensEdits.quality(metric(3, 5), metric(null, null, null)) as never), "quality"), [first, second] = chips(cell);
+    expect([first.result, second.result]).toEqual(["neutral", "missing"]);
+    expect(second.attrs).not.toContain("style=");
+    expect(second.text).toBe("—");
+    expect(first.text).toBe("3.00 #5");
+    expect(cell).not.toContain("lens-edge");
   });
   it("never adds blue chips or band fills", () => {
     expect(card(startSitResult(GOALIE_INVENTORY_FIXTURE_DETAIL))).not.toContain("#3f9bdc");

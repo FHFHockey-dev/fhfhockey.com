@@ -7,7 +7,7 @@ import { confirmationLabel, confirmationLegend, forecastLabel, inventoryEvidence
  * conditional forecast are separate columns, neither implies the other, and the three lenses stay three columns.
  */
 export const START_SIT_ROW_LIMIT = 18;
-export const START_SIT_LENS_NOTE = "Rates are season to date and #1 is the highest value. Volume, ratio and win are separate, correlated lenses, never added, and no win odds are given.";
+export const START_SIT_LENS_NOTE = "Rates are season to date and #1 is the highest value. Quality, quantity and win are separate, correlated lenses, never added, and no win odds are given.";
 const START_CHART_SOURCE = "Start Chart start participation";
 export const FORECAST_ADMITTED_NOTE = "A forecast is a conditional, uncalibrated Start Chart value, separate from source status.";
 export type StartSitSettings = { days: number; search: string };

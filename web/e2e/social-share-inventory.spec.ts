@@ -79,6 +79,9 @@ test("Start/Sit: accent-free search narrows in the browser, status and forecast 
   await page.getByLabel("Search goalie or team").fill("eric");
   await expect(page.getByTestId("start-sit-row")).toHaveCount(2);
   await expect(page.getByTestId("start-sit-row").first()).toContainText("Éric Testeur");
+  await expect(square).toContainText("xGA / OPP xGF");
+  await expect(square).toContainText("SA / OPP SF");
+  await expect(square).toContainText("GF / OPP GA");
   await expect(square).not.toHaveAttribute("data-export-token", allToken!);
   await expect(page.getByTestId("start-sit-confirmation").first()).toHaveAttribute("data-state", "confirmed");
   await expect(page.getByTestId("start-sit-forecast").first()).toHaveText("Forecast unavailable");

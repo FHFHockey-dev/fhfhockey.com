@@ -133,3 +133,11 @@ Project `fyhftlxokyjtpndbkfse`, Supabase MCP `execute_sql`, 2026-10-31. Every st
 | 16 | 4 single GETs, no retries | `partner-game/US/now`, `/US/2026-11-03`, `/US/2026-11-01`, `/US/2026-10-31` | | 200, then 404, 404, 404 |
 
 - **Checks:** see the commit report. Tests use mocks only. **Browser not run; head row grows to about 42px when the date wraps, leaving at least about 90px for 4 pairings, against the 86px minimum.**
+
+## Start/Sit sides and names (TJ's review)
+
+- Game column prints team logo, vs or @, opponent logo. With no logo URL, the kit's fallback still prints that team's abbreviation.
+- Every lens has the goalie's team left and the opponent right, for chips, logos and triangle. Columns run Quality (`xGA / OPP xGF`), Quantity (`SA / OPP SF`), Win (`GF / OPP GA`). Each lens is tested with the winner on each side.
+- Evidence and alt text say "Quality, quantity and win". Shared field names (`volume`, `ratioExposure`) are unchanged.
+- **Old names still printed elsewhere, not changed:** Risky Starts ("Volume upside", "Ratio exposure"), Player Cards' goalie outlook (`lib/player-cards/goalieOutlook.ts`, `sharedGoalieOutlook.ts`), Goalie Rescue ("Volume" group, and a "ratio exposure" comment).
+- **Browser not run; fit at 860px not measured.** The lens cells are unchanged in width and the game column is narrower.
