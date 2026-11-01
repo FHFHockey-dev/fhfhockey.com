@@ -21,6 +21,6 @@ Status words: **verified locally** means built, tested, and rendered from real d
 | SS-R15 | Verified locally | Ratio Impact plain rewrite; TJ approved. Sensitivity is one what-if chart, tables removed from the PNG at TJ's request |
 | SS-R16 | Verified locally, **source gates** | Start/Sit approved. Forecast unavailable. IFTTT rows have null `source_account`, so reporter conflicts can't be detected; writer change is TJ's decision |
 | SS-R17 | Verified locally, **with TJ's steer** | PNG carries a one-line evidence footer and full evidence sits beside the preview (TJ, 2026-10-31: less fine print) |
-| SS-R18 | **Open** | Regressions and PNG parity done; independent audit pending (13.7) |
+| SS-R18 | Audited | Independent audit and three rechecks: 0 blockers, 0 high; 2 mediums accepted by TJ. Released as f17bea20d |
 
 Added by TJ beyond the PRD: **Top Multi-Cat Stars of the Week**, four views, approved. `wgo_skater_stats` hit a 3s statement timeout three times; the shared read retries once (435695923), which reduces failures but doesn't fix the query.

@@ -54,3 +54,6 @@ Codex job task-mvxxzsdc-nhy96e stopped after 1m 26s: its sandbox couldn't write 
 - TJ approved and I applied `social_share_x_posts` via MCP, version 20261101171113, single statement set only. Readback: 10 columns, RLS on, 0 policies, service_role only, 0 rows. The other pending migration, 20261101161622_nst_goalie_catchup_v1, is Codex's and was NOT applied; never run `db push`.
 - TJ said "Release the code". Before pushing: gate and audit recheck, inventory the 4 Vercel projects and their preview settings, confirm exact SHA and expected builds with TJ.
 - Health lane adding shared-secret fallback X_FHFH_IFTTT_SECRET and downstream filters.
+
+## Released (2026-11-01)
+f17bea20d, PR #402, code-only release branch from octoberBranch 9f0c4dbec. fhfhockey READY; other three CANCELED. Smoke: / 200, /social-share 200, webhook GETs 405, posted-week 401, example image 200. Open for TJ: PP rerun 09-29 to 10-30 on production, derived rebuilds unsized, FHFH applet. 5.0 and 5.6 open.
