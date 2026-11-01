@@ -148,6 +148,7 @@ export const nightlyFloorModule = defineShareModule<NightlyFloorSettings, Nightl
   id: "nightly-floor", title: "Nightly Floor", summary: "How often skaters clear a strict threshold, score a point, or post a zero (Cardio Masters), counted over real appearances.", group: "skaters", basis: "observed",
   suggestedUse: "Works for a streaming or waiver post; choose it on any day.",
   fields: FIELDS,
+  headline: floorHeadline,
   validate: settings => settings.ownMin > settings.ownMax ? "Min rostered % cannot be above max rostered %." : null,
   load: () => import("./nightlyFloor.sources").then(sources => sources.loadNightlyFloor),
   card: () => import("components/SocialShare/modules/NightlyFloorCard").then(card => card.default),

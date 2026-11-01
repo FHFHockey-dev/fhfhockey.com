@@ -24,7 +24,7 @@
 
 - BSH: stacked per-game charts replaced by one segmented B, S, H bar on leaders and movers (TJ's reference). Fit by CSS only until the lead renders.
 
-- Nightly Floor rework: metric label, average column, MISSING column removed. `floorHeadline` is exported but waits on a frozen-file seam (`contract.ts`, `PostStudio.tsx:51`) requested from the lead.
+- Nightly Floor rework: metric label, average column, MISSING column removed. `floorHeadline` is wired through the lead's `headline` seam in `contract.ts` and `PostStudio.tsx`.
 
 **Gotchas:**
 - PostStudio shows old data under new labels until Refresh and lets it export. The lead fixed the export side at `839aa7af4`. These posts keep `data.applied` so the card also asks for a refresh.

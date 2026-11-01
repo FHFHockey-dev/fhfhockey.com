@@ -83,6 +83,10 @@ describe("Nightly Floor headline and metric", () => {
   it("titles Cardio Masters by name", () => {
     expect(floorHeadline(settings({ view: "cardio" }))).toBe("CARDIO MASTERS");
   });
+  it("gives the post header its headline and keeps the post's name for the studio", () => {
+    expect(nightlyFloorModule.headline?.(settings())).toBe("GP% WITH 3+ SOG");
+    expect(nightlyFloorModule.title).toBe("Nightly Floor");
+  });
   it("states the metric and the average's name", () => {
     expect(floorMetricLabels(settings())).toEqual({ metricLabel: "METRIC: SOG, 3+ per game", averageLabel: "SOG/G" });
     expect(floorMetricLabels(settings({ view: "blk" }))).toEqual({ metricLabel: "METRIC: BLOCKS, 2+ per game", averageLabel: "BLK/G" });

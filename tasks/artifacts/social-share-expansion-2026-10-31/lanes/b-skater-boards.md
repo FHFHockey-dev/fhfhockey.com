@@ -162,7 +162,7 @@ Follow-up commit (Blueprint default): 50 tests in the lane's 3 files passed, esl
 
 ## Nightly Floor and Cardio Masters rework (TJ's review)
 
-- **Headline, not wired yet:** `floorHeadline(settings)` gives "GP% WITH 3+ SOG", "GP% WITH 5+ HITS", "GP% WITH 2+ BLK", "GP% WITH 1+ PTS", "GP% WITH 0 PPP" and "CARDIO MASTERS". A threshold that is not whole prints "OVER 2.5". The header still prints "NIGHTLY FLOOR" because the title comes from frozen `PostStudio.tsx` and `contract.ts`; the seam is requested from the lead.
+- **Headline:** `floorHeadline(settings)` gives "GP% WITH 3+ SOG", "GP% WITH 5+ HITS", "GP% WITH 2+ BLK", "GP% WITH 1+ PTS", "GP% WITH 0 PPP" and "CARDIO MASTERS". A threshold that is not whole prints "OVER 2.5". It is wired through the module's `headline`, using the lead's seam in `contract.ts` and `PostStudio.tsx`. The picker and panel keep "Nightly Floor".
 - **Metric label:** 34px line at the top of the board, such as "METRIC: SOG, 3+ per game" or "METRIC: POINTS, exactly 0". The legend went from 19px to 15px on this post only.
 - **Average column:** named per view (SOG/G, HITS/G, BLK/G, PTS/G), known games only, two decimals, "—" with no known game.
 - **MISSING column removed:** a missing game stays as the strip's outlined block and in the legend, MET / KNOWN keeps its denominator, and alt text and the row data keep the count.
