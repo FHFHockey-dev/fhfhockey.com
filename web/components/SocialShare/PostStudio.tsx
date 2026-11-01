@@ -68,6 +68,7 @@ export default function PostStudio() {
   const [settings, setSettings] = useState<ShareSettings>(() => settingsFromQuery(entry, router.query));
   const [snapshot, setSnapshot] = useState<SharePostSnapshot | null>(null);
   const [Card, setCard] = useState<ComponentType<any> | null>(null);
+  const [Panel, setPanel] = useState<ComponentType<any> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [feedback, setFeedback] = useState("");
@@ -91,9 +92,9 @@ export default function PostStudio() {
       const query = serverQuery(current).toString();
       const response = await bounded(fetchEdition(`/api/v1/social-share/posts/${entry.id}${query ? `?${query}` : ""}`), "This post's request timed out. Retry this edition.", 20000);
       if (!response.ok) throw new Error(response.body.error || "This post could not be loaded.");
-      const [next, loaded] = [response.body as unknown as SharePostSnapshot, await entry.card()];
+      const [next, loaded, panel] = [response.body as unknown as SharePostSnapshot, await entry.card(), await entry.panel?.() ?? null];
       if (id !== requestId.current) return;
-      setCard(() => loaded); setSnapshot(next);
+      setCard(() => loaded); setPanel(() => panel); setSnapshot(next);
     } catch (cause) { if (id === requestId.current) setError(cause instanceof Error ? cause.message : "This post is unavailable."); }
     finally { if (id === requestId.current) setLoading(false); }
   }, [entry, serverQuery]);
@@ -165,7 +166,7 @@ export default function PostStudio() {
         <button type="button" disabled={loading || exporting} onClick={() => void load(settings)}>Refresh post</button>
       </div>
       <p>{entry.summary}{entry.suggestedUse ? ` ${entry.suggestedUse}` : ""}</p>
-      {entry.fields.length > 0 && <div className={postStyles.fields}>{entry.fields.map(field => <label key={field.id}>{field.label}
+      {entry.fields.length > 0 && <div className={postStyles.fields}>{entry.fields.filter(field => !field.panelOnly).map(field => <label key={field.id}>{field.label}
         {field.kind === "select" ? <select value={fieldText(settings[field.id])} disabled={exporting} onChange={event => change(field, event.target.value)}>{field.options.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
           : <input type={field.kind === "number" ? "number" : field.kind === "date" ? "date" : "text"} min={field.kind === "number" ? field.min : undefined} max={field.kind === "number" ? field.max : undefined} step={field.kind === "number" ? field.step : undefined} value={fieldText(settings[field.id])} disabled={exporting} onChange={event => change(field, event.target.value)} />}
         <small className={postStyles.defaultNote}>Default: {defaultNote(field)}</small></label>)}</div>}
@@ -177,6 +178,8 @@ export default function PostStudio() {
       {snapshot && !loading && exportBlock && snapshot.state === "ready" && <p>{exportBlock}</p>}
       {assetError && <p role="alert">{assetError} <button type="button" onClick={() => setAssetAttempt(current => current + 1)}>Retry</button></p>}
     </div>
+    <div className={Panel && snapshot?.data != null && snapshot.post === entry.id ? postStyles.builder : undefined}>
+    {Panel && snapshot?.data != null && snapshot.post === entry.id && <aside className={styles.panel} aria-label="Build this post"><Panel snapshot={snapshot} data={snapshot.data} settings={settings} logos={logos} change={(fieldId: string, value: ShareSettings[string]) => { setSettings(current => ({ ...current, [fieldId]: value })); setFeedback(""); }} disabled={exporting} /></aside>}
     <section className={styles.panel} aria-label="Graphic preview">
       <div className={styles.panelHeader}><h2>1080 × 1080 preview</h2><span>{entry.title}</span></div>
       <div className={styles.previewFrame} ref={frame} style={{ height: scale * SHARE_SIZE }}>
@@ -206,5 +209,6 @@ export default function PostStudio() {
       {snapshot && <p className={postStyles.defaultNote}>Edition {timeLabel(snapshot.generatedAt)}</p>}
       {snapshot && <details><summary>Suggested alt text</summary><p>{alt}</p></details>}
     </section>
+    </div>
   </div>;
 }

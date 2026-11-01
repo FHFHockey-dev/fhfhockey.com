@@ -1,7 +1,8 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import PostStudio from "./PostStudio";
-import type { SharePostSnapshot } from "lib/socialShare/modules/contract";
+import type { SharePostPanelProps, SharePostSnapshot } from "lib/socialShare/modules/contract";
+import { SHARE_MODULES } from "lib/socialShare/modules/registry";
 
 vi.mock("lib/supabase/client", () => ({ default: { auth: {
   getSession: vi.fn(async () => ({ data: { session: { user: { id: "social-editor" }, access_token: "synthetic-token" } }, error: null })),
@@ -53,6 +54,22 @@ describe("PostStudio", () => {
     await waitFor(() => expect(screen.getByText(/Refresh the post to apply/)).toBeTruthy());
     expect((screen.getByRole("button", { name: "Download PNG" }) as HTMLButtonElement).disabled).toBe(true);
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("gives a post's panel its fields without a refetch, and leaves panel-only fields off the form", async () => {
+    const entry = SHARE_MODULES.get("team-games")!, { fields } = entry;
+    Object.assign(entry, {
+      fields: [...fields, { id: "picks", label: "Picks", kind: "text", default: "", clientOnly: true, panelOnly: true }],
+      panel: async () => ({ change }: SharePostPanelProps) => <button type="button" onClick={() => change("picks", "7,9")}>Pick two</button>,
+    });
+    try {
+      serve(edition());
+      render(<PostStudio />);
+      fireEvent.click(await screen.findByRole("button", { name: "Pick two" }));
+      await waitFor(() => expect(screen.getByTestId("share-square").getAttribute("data-export-token")).toContain('["picks","7,9"]'));
+      expect(screen.queryByLabelText(/^Picks/)).toBeNull();
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    } finally { Object.assign(entry, { fields, panel: undefined }); }
   });
 
   it("waits out a font that is not declared yet, and offers a retry if it never loads", async () => {

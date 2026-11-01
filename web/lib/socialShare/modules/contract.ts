@@ -24,6 +24,8 @@ type FieldBase = {
   id: string; label: string;
   /** Applied in the browser to the loaded snapshot: changing it never refetches, and the export token still covers it. */
   clientOnly?: boolean;
+  /** Set through the post's `panel`, so the settings form leaves it out; it still round-trips through the URL and the token. */
+  panelOnly?: boolean;
 };
 /** Every configurable threshold is a field, so its default and active value are visible in the studio and the export. */
 export type ShareSettingField =
@@ -71,6 +73,11 @@ export type SharePostCardProps<Settings extends ShareSettings = ShareSettings, D
   snapshot: SharePostSnapshot<Settings, Data>; data: Data; settings: Settings; logos: Record<string, string | null>;
 };
 
+/** A sidebar beside the preview for posts built by hand from the loaded edition. It sets fields through `change`, never the data. */
+export type SharePostPanelProps<Settings extends ShareSettings = ShareSettings, Data = unknown> = SharePostCardProps<Settings, Data> & {
+  change: (fieldId: string, value: ShareSettingValue) => void; disabled: boolean;
+};
+
 export type ShareModule<Settings extends ShareSettings = ShareSettings, Data = unknown> = {
   id: string; title: string; summary: string; group: SharePostGroup; basis: SharePostBasis;
   /** The card's printed headline when it follows the settings or the edition; `title` still names the post in the studio. */
@@ -83,6 +90,7 @@ export type ShareModule<Settings extends ShareSettings = ShareSettings, Data = u
   /** Server only and lazy, so a definition file stays free of Supabase imports. A failure becomes a "missing" snapshot. */
   load: () => Promise<(context: SharePostContext, settings: Settings) => Promise<SharePostLoadResult<Data>>>;
   card: () => Promise<ComponentType<SharePostCardProps<Settings, Data>>>;
+  panel?: () => Promise<ComponentType<SharePostPanelProps<Settings, Data>>>;
   /** True when this data and these settings have something to publish. An empty pool stays empty and is not exportable. */
   hasRows: (data: Data, settings: Settings) => boolean;
   altText: (snapshot: SharePostSnapshot<Settings, Data>, data: Data, settings: Settings) => string;
