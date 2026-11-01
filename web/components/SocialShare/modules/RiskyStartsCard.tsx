@@ -1,6 +1,6 @@
 import type { SharePostCardProps } from "lib/socialShare/modules/contract";
 import { bookLabel, moneylineLabel, NO_LINE_LABEL, ordinalRank, RISKY_LENS_LABELS, RISKY_TILE_LIMIT, riskyGameSides, riskyLensMeaning, riskyRowsForLens, type RiskyGameLine, type RiskyPair, type RiskyRow, type RiskySide, type RiskyStartsData, type RiskyStartsSettings } from "lib/socialShare/modules/riskyStarts";
-import { ageLabel, confirmationFreshness, confirmationLabel, strengthShare } from "lib/socialShare/modules/shared/goalieInventory.sources";
+import { ageLabel, confirmationFreshness, confirmationLabel, NO_UPCOMING_LABEL, strengthShare } from "lib/socialShare/modules/shared/goalieInventory.sources";
 import { PostEmpty, PostTeamMark } from "./kit";
 import styles from "./RiskyStartsCard.module.scss";
 
@@ -53,8 +53,9 @@ function Tile({ row, rows, line, lens, logos, generatedAt }: { row: RiskyRow; ro
 }
 export default function RiskyStartsCard({ snapshot, data, settings, logos }: SharePostCardProps<RiskyStartsSettings, RiskyStartsData>) {
   const rows = riskyRowsForLens(data.rows, settings.lens), shown = rows.slice(0, RISKY_TILE_LIMIT);
+  if (!data.rows.length) return <PostEmpty>{NO_UPCOMING_LABEL}: {data.periodLabel}</PostEmpty>;
   return <div className={styles.card}>
-    <p className={styles.legend} data-testid="risky-legend"><b>{RISKY_LENS_LABELS[settings.lens]}</b> · Blue: {riskyLensMeaning(settings.lens)} · {shown.length} of {rows.length} · Longer bar = stronger · 1ST = highest · No win or start odds · Moneylines, O/U: market lines · {data.confirmationLegend}</p>
+    <p className={styles.legend} data-testid="risky-legend"><b data-testid="risky-period">{data.periodLabel}</b> · <b>{RISKY_LENS_LABELS[settings.lens]}</b> · Blue: {riskyLensMeaning(settings.lens)} · {shown.length} of {rows.length} · Longer bar = stronger · 1ST = highest · No win or start odds · Moneylines, O/U: market lines · {data.confirmationLegend}</p>
     {shown.length ? <div className={styles.grid} data-full={shown.length > 4 || undefined}>{shown.map(row => <Tile key={`${row.gameId}:${row.team}`} row={row} rows={data.rows} line={data.lines[row.gameId]} lens={settings.lens} logos={logos} generatedAt={snapshot.generatedAt} />)}</div>
       : <PostEmpty>No team-night has a flagged pairing in this lens</PostEmpty>}
   </div>;

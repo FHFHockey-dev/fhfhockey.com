@@ -1,15 +1,18 @@
 import { expect, test, type Page } from "@playwright/test";
 import { readFile, mkdir } from "node:fs/promises";
-import { riskyStartsResult } from "../lib/socialShare/modules/riskyStarts";
+import { riskyStartsNoUpcoming, riskyStartsResult } from "../lib/socialShare/modules/riskyStarts";
 import { buildGoalieInventory } from "../lib/socialShare/modules/shared/goalieInventory.sources";
 import { FIXTURE_INPUT, GOALIE_INVENTORY_FIXTURE_DETAIL } from "../lib/socialShare/modules/shared/goalieInventory.fixture";
-import { startSitResult } from "../lib/socialShare/modules/startSit";
+import { startSitNoUpcoming, startSitResult } from "../lib/socialShare/modules/startSit";
 import type { SharePostLoadResult } from "../lib/socialShare/modules/contract";
 
 /** SS 11.0 posts on the handoff fixture, against the real studio. A fictional session and answered routes: no real project is read. */
 const supabaseOrigin = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || "http://supabase.e2e.invalid");
 const editorToken = "e2e-fictional-editor-token";
 const evidence = "test-results/social-share-inventory";
+const PERIOD_DEFAULTS = { days: 7, period: "days", week: null, start: null, end: null };
+const LONG_WEEK = { label: "Week 6 · Nov 9 to Nov 22", from: "2026-11-09", through: "2026-11-22", listedFrom: "2026-11-09", elapsed: false, usedCalendar: true, season: 20262027 };
+const PAST_WEEK = { label: "Week 3 · Oct 19 to Oct 25", from: "2026-10-19", through: "2026-10-25", listedFrom: "2026-11-02", elapsed: true, usedCalendar: true, season: 20262027 };
 
 async function signIn(page: Page) {
   expect(supabaseOrigin.hostname.endsWith(".invalid")).toBe(true);
@@ -52,7 +55,7 @@ async function downloadedPng(page: Page, name: string) {
 
 test("Risky Starts: a lens switch needs no refetch, changes the token and stays one lens, and the PNG exports", async ({ page }) => {
   await signIn(page);
-  const served = await serve(page, "risky-starts", edition("risky-starts", { days: 7, lens: "ratio" }, riskyStartsResult(GOALIE_INVENTORY_FIXTURE_DETAIL)));
+  const served = await serve(page, "risky-starts", edition("risky-starts", { ...PERIOD_DEFAULTS, lens: "ratio" }, riskyStartsResult(GOALIE_INVENTORY_FIXTURE_DETAIL)));
   await page.goto("/social-share/posts?post=risky-starts");
   const square = page.getByTestId("share-square");
   await expect(square).toBeVisible();
@@ -71,7 +74,7 @@ test("Risky Starts: a lens switch needs no refetch, changes the token and stays 
 
 test("Start/Sit: accent-free search narrows in the browser, status and forecast stay apart, and the PNG exports", async ({ page }) => {
   await signIn(page);
-  const served = await serve(page, "start-sit", edition("start-sit", { days: 7, search: "" }, startSitResult(GOALIE_INVENTORY_FIXTURE_DETAIL)));
+  const served = await serve(page, "start-sit", edition("start-sit", { ...PERIOD_DEFAULTS, search: "" }, startSitResult(GOALIE_INVENTORY_FIXTURE_DETAIL)));
   await page.goto("/social-share/posts?post=start-sit");
   const square = page.getByTestId("share-square");
   await expect(square).toBeVisible();
@@ -96,7 +99,7 @@ test("Start/Sit: accent-free search narrows in the browser, status and forecast 
 
 test("Start/Sit: with confirmation unreadable every goalie is unknown and the reason is on the card", async ({ page }) => {
   await signIn(page);
-  await serve(page, "start-sit", edition("start-sit", { days: 7, search: "" }, startSitResult(buildGoalieInventory({ ...FIXTURE_INPUT, confirmations: null, forecasts: null }))));
+  await serve(page, "start-sit", edition("start-sit", { ...PERIOD_DEFAULTS, search: "" }, startSitResult(buildGoalieInventory({ ...FIXTURE_INPUT, confirmations: null, forecasts: null }))));
   await page.goto("/social-share/posts?post=start-sit");
   await expect(page.getByTestId("start-sit-legend")).toContainText("Unknown = reports unreadable.");
   await expect(page.getByTestId("post-evidence")).toContainText("does not mean not starting");
@@ -107,8 +110,54 @@ test("Start/Sit: with confirmation unreadable every goalie is unknown and the re
 
 test("A partial inventory previews under its warning and cannot export", async ({ page }) => {
   await signIn(page);
-  await serve(page, "risky-starts", edition("risky-starts", { days: 7, lens: "ratio" }, riskyStartsResult(buildGoalieInventory({ ...FIXTURE_INPUT, nst: FIXTURE_INPUT.nst.filter(row => row.date !== "2026-11-01") }))));
+  await serve(page, "risky-starts", edition("risky-starts", { ...PERIOD_DEFAULTS, lens: "ratio" }, riskyStartsResult(buildGoalieInventory({ ...FIXTURE_INPUT, nst: FIXTURE_INPUT.nst.filter(row => row.date !== "2026-11-01") }))));
   await page.goto("/social-share/posts?post=risky-starts");
   await expect(page.getByTestId("post-watermark")).toHaveText("PARTIAL · NOT FOR EXPORT");
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
 });
+
+/** Nothing in the post body runs past it, and nothing in the square past the square. */
+async function expectFit(page: Page) {
+  const square = page.getByTestId("share-square");
+  await expect(square).toBeVisible();
+  const overflow = await square.evaluate(root => {
+    const body = root.querySelector('[class*="postBody"]')!, past = (node: Element, box: Element) => node.getBoundingClientRect().bottom > box.getBoundingClientRect().bottom + 1 || node.getBoundingClientRect().right > box.getBoundingClientRect().right + 1;
+    return [...[...body.querySelectorAll("*")].filter(node => past(node, body)), ...[...root.querySelectorAll("*")].filter(node => past(node, root))].map(node => node.getAttribute("data-testid") ?? node.className ?? node.tagName);
+  });
+  expect(overflow).toEqual([]);
+}
+function longWeekDetail() {
+  const { schedule } = FIXTURE_INPUT, more = Array.from({ length: 30 }, (_, index) => ({ ...schedule[index % schedule.length], id: 910000 + index, date: `2026-11-${String(9 + (index % 14)).padStart(2, "0")}`, startTime: `2026-11-${String(9 + (index % 14)).padStart(2, "0")}T23:00:00.000Z` }));
+  return buildGoalieInventory({ ...FIXTURE_INPUT, schedule: [...schedule, ...more], request: { ...FIXTURE_INPUT.request, from: "2026-11-02", through: "2026-11-22" } });
+}
+async function answerCalendar(page: Page) {
+  await page.route("**/api/v1/social-share/matchup-weeks", route => route.fulfill({ json: { cutoff: "2026-11-01", rows: [{ week: 3, start_date: "2026-10-19", end_date: "2026-10-25" }, { week: 5, start_date: "2026-11-02", end_date: "2026-11-08" }, { week: 6, start_date: "2026-11-09", end_date: "2026-11-22" }] } }));
+}
+
+for (const [post, settings, testid, card] of [
+  ["start-sit", { search: "" }, "start-sit-period", "start-sit"],
+  ["risky-starts", { lens: "volume" }, "risky-period", "risky"],
+] as const) {
+  test(`${post}: a 14-day matchup prints its dates and fits with no clipping`, async ({ page }) => {
+    await signIn(page);
+    await answerCalendar(page);
+    const detail = longWeekDetail(), result = post === "start-sit" ? startSitResult(detail, LONG_WEEK) : riskyStartsResult(detail, undefined, LONG_WEEK);
+    await serve(page, post, edition(post, { ...PERIOD_DEFAULTS, period: "matchup", week: 6, ...settings }, result));
+    await page.goto(`/social-share/posts?post=${post}&period=matchup&week=6${post === "risky-starts" ? "&lens=volume" : ""}`);
+    await expect(page.getByTestId(testid)).toContainText("Week 6 · Nov 9 to Nov 22");
+    await expect(page.getByTestId("period-pager-label")).toContainText("Week 6");
+    await expect(page.getByRole("button", { name: "Prior week, week 5" })).toBeEnabled();
+    await expectFit(page);
+    await mkdir(evidence, { recursive: true });
+    await page.getByTestId("share-square").screenshot({ path: `${evidence}/${card}-14-day.png` });
+  });
+  test(`${post}: a past matchup says no upcoming games and cannot export`, async ({ page }) => {
+    await signIn(page);
+    await answerCalendar(page);
+    const result = post === "start-sit" ? startSitNoUpcoming(PAST_WEEK, new Date().toISOString()) : riskyStartsNoUpcoming(PAST_WEEK);
+    await serve(page, post, edition(post, { ...PERIOD_DEFAULTS, period: "matchup", week: 3, ...post === "start-sit" ? { search: "" } : { lens: "ratio" } }, result));
+    await page.goto(`/social-share/posts?post=${post}&period=matchup&week=3`);
+    await expect(page.getByTestId("share-square")).toContainText("No upcoming games in this period: Week 3 · Oct 19 to Oct 25");
+    await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
+  });
+}

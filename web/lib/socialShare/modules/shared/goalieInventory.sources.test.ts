@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { resolveDailyBoardEvidence, type BoardConflict, type BoardGoalieEvidence } from "lib/projections/dailyBoardEvidence";
 import { GOALIE_INVENTORY_VERSION, type GoalieInventory, type LoadGoalieInventory, type SearchGoalieInventory } from "./goalieInventory";
 import { FIXTURE_GENERATED_AT, FIXTURE_INPUT, FIXTURE_TEAMS, GOALIE_INVENTORY_FIXTURE } from "./goalieInventory.fixture";
-import { admitStartParticipation, buildGoalieInventory, buildTeamLenses, CONFIRMATION_ABSENT_NOTE, CONFIRMATION_CLOSED_REASON, CONFIRMATION_LINK_GAP, CONFIRMATION_REPORTER_GAP, confirmationFreshness, confirmationLabel, FORECAST_CLOSED_REASON, INVENTORY_OBSERVATION_COLUMNS, inventoryWindow, loadGoalieInventory, loadGoalieInventoryDetail, mapBoardEvidence, observationGaps, searchGoalieInventory, type InventoryForecastInput , headToHeadWinner, puckDropTtlSeconds, rankedSide, strengthRank, strengthShare, type InventoryTeamGameRow, type TeamLensMetric } from "./goalieInventory.sources";
+import { admitStartParticipation, buildGoalieInventory, buildTeamLenses, resolveInventoryPeriod, CONFIRMATION_ABSENT_NOTE, CONFIRMATION_CLOSED_REASON, CONFIRMATION_LINK_GAP, CONFIRMATION_REPORTER_GAP, confirmationFreshness, confirmationLabel, FORECAST_CLOSED_REASON, INVENTORY_OBSERVATION_COLUMNS, inventoryWindow, loadGoalieInventory, loadGoalieInventoryDetail, mapBoardEvidence, observationGaps, searchGoalieInventory, type InventoryForecastInput , headToHeadWinner, puckDropTtlSeconds, rankedSide, strengthRank, strengthShare, type InventoryTeamGameRow, type TeamLensMetric } from "./goalieInventory.sources";
 
 vi.mock("lib/supabase/public-client", () => ({ default: { from: () => { throw new Error("The inventory test must never reach Supabase."); } } }));
 const serverRead = vi.hoisted(() => ({ tables: [] as string[], from: null as null | ((table: string) => unknown) }));
@@ -65,6 +65,12 @@ describe("inventory mapping (11.1)", () => {
     expect(coverage).toEqual({ observed: 8, expected: 10, missing: 2 });
   });
   it("derives its window from the New York date and season", () => {
+    const weeks = { weeks: [{ week: 4, start: "2026-10-26", end: "2026-11-01" }, { week: 5, start: "2026-11-02", end: "2026-11-08" }], reasons: [] }, base = { days: 7, period: "matchup", start: null, end: null };
+    expect(resolveInventoryPeriod({ ...base, week: 5 }, weeks, "2026-10-28", "2026-10-29T16:00:00Z").period).toMatchObject({ from: "2026-11-02", listedFrom: "2026-11-02", elapsed: false, usedCalendar: true });
+    // A part-played week reads from today, so a past game with no start time is never listed; the card keeps the week's dates.
+    expect(resolveInventoryPeriod({ ...base, week: 4 }, weeks, "2026-10-28", "2026-10-29T16:00:00Z").period).toMatchObject({ from: "2026-10-26", listedFrom: "2026-10-29", through: "2026-11-01", elapsed: false });
+    expect(resolveInventoryPeriod({ ...base, week: 4 }, weeks, "2026-11-02", "2026-11-03T16:00:00Z").period).toMatchObject({ elapsed: true });
+    expect(resolveInventoryPeriod({ ...base, period: "days", days: 1, week: null }, { weeks: [], reasons: [] }, "", "2026-11-02T16:00:00Z").period).toMatchObject({ label: "Nov 2", from: "2026-11-02", through: "2026-11-02", usedCalendar: false });
     expect(inventoryWindow("2026-11-01T02:00:00Z", 7)).toEqual({ from: "2026-10-31", through: "2026-11-06", season: 20262027 });
   });
 });

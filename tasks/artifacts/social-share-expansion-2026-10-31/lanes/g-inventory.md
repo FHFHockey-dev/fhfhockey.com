@@ -162,3 +162,13 @@ Project `fyhftlxokyjtpndbkfse`, Supabase MCP `execute_sql`, 2026-10-31. Every st
 - **F2 (tied ranks):** `buildTeamLenses` computes low-first competition ranks for SA, xGA, SCA, GA and TSH/GP from the values. They travel as `lowFirstRanks` on `GoalieInventoryDetail`, beside `conflicts`, so `goalie-inventory-v1` keeps its frozen shape. Both posts carry them in their own data. A high-is-weak side with no low-first rank has no strength and no winner.
 - **F3 (puck drop):** both posts set `ttlSeconds` with `puckDropTtlSeconds`, so an edition expires by its earliest listed puck drop. A later puck drop or a null start time keeps the 15-minute default. Shared contract code unchanged.
 - **F8 (DraftKings):** `storedLine` and the stored read take DraftKings only; other stored books are ignored and the NHL fallback follows. The stored source is named from the lines it supplied and is left out when it supplied none. The NHL source names its book, such as "NHL.com partner odds (DraftKings)".
+
+## Period control
+
+- **Control:** both posts spread the shared fields with mode any-week. `days` stays the default, so `?post=start-sit` and `?post=risky-starts` read the same dates as before and read no calendar. `days` is drawn only while that period is chosen.
+- **Windows:** a matchup week uses `yahoo_matchup_weeks`' own dates, including a 14-day week. A custom range is refused before any read when incomplete, reversed or over 31 days, and when it falls outside the season.
+- **Forward only:** reads start at today once a period has begun, and the card prints the chosen dates plus "games still to start". A period wholly past reads only the calendar, and the card says "No upcoming games in this period" with no export.
+- **Failure:** a week off the calendar, or an unreadable calendar, is missing with the reason.
+- **Unchanged:** expiry at the earliest listed puck drop, and "No line yet" where no line exists.
+- **Browser:** 8 of 8 specs passed on isolated port 3197 against fixtures, twice, including 860px fit on a 14-day week with 18 rows and 8 tiles. One earlier run timed out on 5 Start/Sit specs while page reloads repeated; the same specs then passed in two full runs and were not reproduced. No real data was read.
+- **Open, shared code:** on the day after a matchup week ends, a blank week resolves to the week just ended on both pager and server, because any-week compares `week.end >= cutoff` and the cutoff is yesterday. For these posts that is every Monday. `week.end > cutoff` for any-week would fix it, in `shared/periodWindow.ts`, which this lane does not own.

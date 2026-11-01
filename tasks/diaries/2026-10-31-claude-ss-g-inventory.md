@@ -20,3 +20,6 @@ Stored DraftKings first, NHL `/now` fallback, in `riskyStarts.sources.ts`. Dated
 
 ## Audit F2, F3, F8
 Tied ranks, puck-drop expiry and DraftKings-only stored lines. Gotcha: a high-first competition rank can't be reversed across a tie, so `lowFirstRanks` sits on the detail, outside v1. Full `tsc` reports one error in `goalieRescue.sources.ts`, not this lane's file; reported to the lead.
+
+## Period control
+Risky Starts and Start/Sit take the shared control, any-week, with `days` still the default and no calendar read on it. Past dates are never read: a part-played week reads from today, so a past game with no start time can't list. Gotcha: a blank matchup uses the pager's cutoff, yesterday, so on the day after a week ends a blank week names the week just ended and shows the no-upcoming state until ▶. The fix is in `shared/periodWindow.ts`, not this lane; reported to the lead. Gotcha: `edition()` settings in the spec must carry the period fields, or the export block reads them as changed settings.
