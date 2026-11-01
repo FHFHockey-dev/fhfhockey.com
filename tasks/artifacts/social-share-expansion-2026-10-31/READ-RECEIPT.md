@@ -22,3 +22,63 @@ Project `fyhftlxokyjtpndbkfse`, read through the Supabase MCP `execute_sql` tool
 | 14 | Anon read privilege and policies for 18 post sources | `pg_class`, `pg_policies` | 18 | Passed |
 
 No provider (NST, Yahoo, NHL) was called and no Vercel request was made. Findings are in [SOURCES.md](SOURCES.md).
+
+## Lead render reads, 2026-10-31 (authority: TJ pop-up: local dev renders; Start/Sit server-only read)
+
+One sequential local run of each post's real loader through `loadPostSnapshot`, from `.env.local`, with `fetch` counted per table. GET only, no writes, no NST or Yahoo provider calls, no Vercel. The route's sign-in was not used: snapshots were then rendered in the isolated browser from saved JSON with a fictional session. One NHL schedule GET per Off-Night edition. Rows are returned rows; the anon client read everything except the goalie observation and conflict tables, which went through the server credential.
+
+| Edition | Requests | Rows | Tables | State |
+| --- | --- | --- | --- | --- |
+| team-games | 2 | 147 | wgo_team_stats, games | ready |
+| what-changed | 10 | 8423 | wgo_skater_stats, wgo_team_stats, games | ready |
+| role-watch | 12 | 9021 | wgo_skater_stats, wgo_team_stats, games, rolling_player_game_metrics, powerPlayCombinations | ready |
+| bsh-board | 10 | 8423 | wgo_team_stats, games, wgo_skater_stats | ready |
+| bsh-risers | 10 | 8423 | wgo_team_stats, games, wgo_skater_stats | ready |
+| category-blueprint | 10 | 8423 | wgo_team_stats, games, wgo_skater_stats | ready |
+| nightly-floor | 15 | 12404 | wgo_team_stats, games, yahoo_players, wgo_skater_stats, yahoo_nhl_player_map_read | ready |
+| cardio-masters | 15 | 12404 | games, yahoo_players, wgo_team_stats, wgo_skater_stats, yahoo_nhl_player_map_read | ready |
+| off-night-rest | 13 | 9419 | /v1/schedule/2026-10-26, yahoo_players, games, wgo_skater_stats, yahoo_nhl_player_map_read | ready |
+| off-night-weekly | 13 | 9419 | /v1/schedule/2026-10-26, yahoo_players, games, yahoo_nhl_player_map_read, wgo_skater_stats | ready |
+| crease-shift | 3 | 1103 | games, wgo_team_stats, wgo_goalie_stats | ready |
+| goalie-week4 | 6 | 329 | yahoo_matchup_weeks, games, wgo_team_stats, wgo_goalie_stats, goalie_weekly_aggregates, league_weekly_goalie_averages | ready |
+| goalie-month-oct | 6 | 1389 | yahoo_matchup_weeks, wgo_goalie_stats, wgo_team_stats, games, goalie_weekly_aggregates, league_weekly_goalie_averages | ready |
+| goalie-gsax | 5 | 1466 | wgo_goalie_stats, nst_gamelog_goalie_all_counts, nhl_xg_goalie_game_aggregates, wgo_team_stats, games | ready |
+| busy-quiet | 5 | 1939 | wgo_team_stats, wgo_goalie_stats, games, nst_team_gamelogs_as_counts, nst_gamelog_goalie_all_counts | ready |
+| goalie-rescue | 8 | 1449 | wgo_team_stats, games, yahoo_players, wgo_goalie_stats, yahoo_nhl_player_map_read | ready |
+| ratio-impact | 0 | 0 |  | ready |
+| risky-starts | 6 | 1561 | games, wgo_team_stats, nst_team_gamelogs_as_counts, wgo_goalie_stats, player_forecast_goalie_start_observations, player_forecast_observation_conflicts | ready |
+| start-sit | 6 | 1561 | games, wgo_team_stats, nst_team_gamelogs_as_counts, wgo_goalie_stats, player_forecast_goalie_start_observations, player_forecast_observation_conflicts | ready |
+| player-vs-player | 0 | 0 |  | blocked |
+
+## Final real render, 2026-11-01
+
+Local test process through each post's real loader, sequentially, SELECT only, public client. These loads read whole windows to compute the cards, so they exceed the 50-row sample limit that applied to coverage queries; nothing was printed or committed except computed snapshots' PNGs. TJ asked for real-data card reviews throughout. Risky Starts also made one GET of the NHL partner odds endpoint. Earlier review renders ran the same loaders; `wgo_skater_stats` timed out on three of them, each clean on retry. No writes.
+
+| Post | Requests | Rows | State |
+| --- | --- | --- | --- |
+| team-games | 2 | 141 | ready |
+| what-changed | 12 | 8948 | ready |
+| role-watch | 13 | 9363 | ready |
+| bsh-board | 11 | 8813 | ready |
+| bsh-risers | 11 | 8813 | ready |
+| mcm | 11 | 8813 | ready |
+| mcm-points-first | 11 | 8813 | ready |
+| nightly-floor | 16 | 12794 | ready |
+| cardio-masters | 16 | 12794 | ready |
+| stars-total | 11 | 8813 | ready |
+| stars-total-pf | 11 | 8813 | ready |
+| stars-pergame | 11 | 8813 | ready |
+| stars-pergame-pf | 11 | 8813 | ready |
+| off-night-rest | 13 | 9271 | ready |
+| off-night-weekly | 13 | 9271 | ready |
+| crease-shift | 3 | 1153 | ready |
+| goalie-week4 | 6 | 499 | ready |
+| goalie-month-oct | 6 | 1439 | ready |
+| goalie-gsax | 6 | 1513 | ready |
+| busy-quiet | 5 | 2013 | ready |
+| goalie-rescue | 8 | 1489 | ready |
+| ratio-impact | 1 | 9 | ready |
+| risky-starts | 8 | 1582 | ready |
+| start-sit | 6 | 1567 | ready |
+| player-vs-player | 0 | 0 | blocked |
+| pvp-dahlin-hughes | 4 | 107 | ready |
