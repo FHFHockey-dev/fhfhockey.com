@@ -174,13 +174,13 @@ export function joinNst<Row extends { player_id: number; date_scraped: string }>
   };
 }
 
-/** Completed team games read against the schedule, and whether each one has skater rows for that team. Anything short is partial. */
+/** Scheduled team games observed only once they have a result and skater rows for that team. Anything short is partial. */
 export function gameCoverage(input: { appearances: readonly SkaterAppearance[]; completedTeamGames: readonly { gameId: number; team: string }[]; scheduledGameIds: readonly number[] }) {
   const scheduled = new Set(input.scheduledGameIds), withSkaters = new Set(input.appearances.map(game => `${game.gameId}:${game.team}`));
   const completed = input.completedTeamGames.filter(game => scheduled.has(game.gameId));
   const noSkaterRows = completed.filter(game => !withSkaters.has(`${game.gameId}:${game.team}`)).length;
-  const expected = scheduled.size * 2, observed = completed.length, missing = Math.max(0, expected - observed);
-  return { observed, expected, missing, noSkaterRows, reasons: [...(missing ? [`${missing} of ${expected} scheduled team games have no reported result.`] : []), ...(noSkaterRows ? [`${noSkaterRows} of ${observed} completed team games have no skater rows.`] : [])] };
+  const expected = scheduled.size * 2, noResult = Math.max(0, expected - completed.length), observed = completed.length - noSkaterRows, missing = Math.max(0, expected - observed);
+  return { observed, expected, missing, noResult, noSkaterRows, reasons: [...(noResult ? [`${noResult} of ${expected} scheduled team games have no reported result.`] : []), ...(noSkaterRows ? [`${noSkaterRows} of ${completed.length} completed team games have no skater rows.`] : [])] };
 }
 export const newestDate = (dates: Iterable<string>) => { let newest: string | null = null; for (const date of dates) if (!newest || date > newest) newest = date; return newest; };
 
@@ -250,7 +250,7 @@ export function buildWhatChanged(input: WhatChangedInput): SharePostLoadResult<W
   const nstState = (usedNst && usedNst.observed < usedNst.expected) || focusGaps || tileGaps ? "partial" as const : "ready" as const;
   const sources: SharePostSource[] = [
     { name: "NHL.com skater game stats", tables: ["wgo_skater_stats"], state: reasons.length ? "partial" : "ready", asOf: newestDate(appearances.map(game => game.date)), updatedAt: null },
-    { name: "NHL.com team game stats", tables: ["wgo_team_stats", "games"], state: games.missing ? "partial" : "ready", asOf: input.through, updatedAt: null },
+    { name: "NHL.com team game stats", tables: ["wgo_team_stats", "games"], state: games.noResult ? "partial" : "ready", asOf: input.through, updatedAt: null },
     ...(input.nstCounts ? [{ name: "Natural Stat Trick individual counts", tables: ["nst_gamelog_as_counts"], state: nstState, asOf: newestDate(input.nstCounts.map(row => row.date_scraped)), updatedAt: null }] : []),
     ...(input.nstOnIce ? [{ name: "Natural Stat Trick on-ice counts", tables: ["nst_gamelog_as_counts_oi"], state: nstState, asOf: newestDate(input.nstOnIce.map(row => row.date_scraped)), updatedAt: null }] : []),
   ];

@@ -135,10 +135,12 @@ describe("game completeness and identity", () => {
     expect(short.reasons).toHaveLength(1);
     const silent = buildWhatChanged(base({ appearances, completedTeamGames: [...completed, { gameId: 8888, team: "NJD" }, { gameId: 8888, team: "NYR" }], scheduledGameIds: [...scheduledGameIds, 8888] }));
     expect(silent.reasons![0]).toMatch(/2 of 22 completed team games have no skater rows/);
+    expect(silent.evidence.coverage).toEqual({ observed: 20, expected: 22, missing: 2, unit: "team games" });
     const oneTeam = buildWhatChanged(base({ appearances: appearances.filter(game => !(game.team === "NYR" && game.gameId === 1009)), completedTeamGames: completed, scheduledGameIds }));
     expect(oneTeam.state).toBe("partial");
     expect(oneTeam.reasons).toEqual(["1 of 20 completed team games have no skater rows."]);
-    expect(oneTeam.evidence.coverage).toEqual({ observed: 20, expected: 20, missing: 0, unit: "team games" });
+    expect(oneTeam.evidence.coverage).toEqual({ observed: 19, expected: 20, missing: 1, unit: "team games" });
+    expect(oneTeam.evidence.sources.find(source => source.tables.includes("wgo_team_stats"))!.state).toBe("ready");
     expect(oneTeam.data!.risers[0]).toMatchObject({ playerId: 1 });
   });
   it("selects one player by id or a unique name, and never guesses between two", () => {

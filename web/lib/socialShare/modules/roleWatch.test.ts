@@ -23,18 +23,22 @@ describe("Role Watch coverage", () => {
     const result = buildRoleWatch(base({ appearances, completedTeamGames, scheduledGameIds }));
     expect(result.state).toBe("ready");
     expect(result.reasons ?? []).toEqual([]);
+    expect(result.evidence.coverage).toEqual({ observed: 24, expected: 24, missing: 0, unit: "team games" });
   });
   it("is partial and says so when one team's skater rows are missing from a game, and keeps the board", () => {
     const result = buildRoleWatch(base({ appearances: appearances.filter(game => !(game.team === "NYR" && game.gameId === 1011)), completedTeamGames, scheduledGameIds }));
     expect(result.state).toBe("partial");
     expect(result.reasons).toEqual(["1 of 24 completed team games have no skater rows."]);
-    expect(result.evidence.coverage).toEqual({ observed: 24, expected: 24, missing: 0, unit: "team games" });
+    expect(result.evidence.coverage).toEqual({ observed: 23, expected: 24, missing: 1, unit: "team games" });
+    expect(result.evidence.sources.find(source => source.tables.includes("wgo_team_stats"))!.state).toBe("ready");
     expect(result.data!.risers[0]).toMatchObject({ playerId: 1 });
   });
   it("names a scheduled game with no reported result", () => {
     const result = buildRoleWatch(base({ appearances, completedTeamGames, scheduledGameIds: [...scheduledGameIds, 9999] }));
     expect(result.state).toBe("partial");
     expect(result.reasons).toEqual(["2 of 26 scheduled team games have no reported result."]);
+    expect(result.evidence.coverage).toEqual({ observed: 24, expected: 26, missing: 2, unit: "team games" });
+    expect(result.evidence.sources.find(source => source.tables.includes("wgo_team_stats"))!.state).toBe("partial");
   });
 });
 

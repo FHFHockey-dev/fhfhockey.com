@@ -104,7 +104,7 @@ export function buildRoleWatch(input: RoleWatchInput): SharePostLoadResult<RoleW
   const unknownLines = slots.filter(role => role.line === "unknown").length, unknownPp = slots.filter(role => role.pp === "unknown").length;
   const sources: SharePostSource[] = [
     { name: "NHL.com skater game stats", tables: ["wgo_skater_stats"], state: reasons.length ? "partial" : "ready", asOf: newestDate(appearances.map(game => game.date)), updatedAt: null },
-    { name: "NHL.com team game stats", tables: ["wgo_team_stats", "games"], state: games.missing ? "partial" : "ready", asOf: input.through, updatedAt: null },
+    { name: "NHL.com team game stats", tables: ["wgo_team_stats", "games"], state: games.noResult ? "partial" : "ready", asOf: input.through, updatedAt: null },
     { name: "FHFH rolling line combinations", tables: ["rolling_player_game_metrics"], state: unknownLines ? "partial" : "ready", asOf: null, updatedAt: null, reasons: unknownLines ? [`${unknownLines} line slots are unknown; rolling has no first-week rows.`] : [] },
     { name: "Power-play combinations", tables: ["powerPlayCombinations"], state: unknownPp ? "partial" : "ready", asOf: null, updatedAt: null, reasons: unknownPp ? [`${unknownPp} PP slots are unknown: those games have no PP rows.`] : [] },
   ];

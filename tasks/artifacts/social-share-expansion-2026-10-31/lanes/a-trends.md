@@ -105,6 +105,6 @@ None. No frozen file needed a change. No fan-out sessions were started.
 
 ## F5: skater coverage per team game
 
-- **Fix:** `gameCoverage` now checks skater rows by game id plus team, so one team's missing rows give the reason "N of M completed team games have no skater rows." and the post goes partial with its board kept. Evidence coverage counts stay as reported team games. Role Watch uses the same helper.
+- **Fix:** `gameCoverage` now checks skater rows by game id plus team, so one team's missing rows give the reason "N of M completed team games have no skater rows." and the post goes partial with its board kept. Evidence coverage observes a team game only once it has a result and skater rows, so the counts agree with the reason (recheck finding 6). The team stats source stays ready unless a result is missing. Role Watch uses the same helper.
 - **Real read R-F5:** one aggregate, SELECT only, 0 sample rows, `wgo_skater_stats` and `wgo_team_stats`, season 20262027. All 32 `team_abbrev` values match `teamsInfo`, 0 null, and all 226 games have two team rows and both teams' skater rows. The fix adds no false partial today.
 - **Not changed:** `slateCoverage` in `lastNightsStandouts.ts` has the same defect, outside this ticket.
