@@ -1,7 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+const { fromMock } = vi.hoisted(() => ({ fromMock: vi.fn() }));
+vi.mock("lib/supabase/server", () => ({ default: { from: fromMock } }));
 
 import {
   dedupeTweetCards,
+  getServerSideProps,
   mapLineSourceSnapshotRowToCard,
   mapLinesCccRowToCard,
   sanitizeTwitterEmbedCardForPublic,
@@ -104,6 +108,35 @@ function buildLineSourceSnapshotRow(
     ...overrides,
   };
 }
+
+describe("twitterEmbeds source groups", () => {
+  it("reads DFO and NHL_Rosters alongside GameDay, and an earlier relay post wins with its original author", async () => {
+    const inCalls: unknown[][] = [];
+    fromMock.mockImplementation((table: string) => {
+      const query: any = {
+        select: () => query, eq: () => query, order: () => query,
+        in: (...args: unknown[]) => { inCalls.push(args); return query; },
+        limit: async () => ({ error: null, data: table === "lines_ccc" ? [] : [
+          buildLineSourceSnapshotRow(),
+          buildLineSourceSnapshotRow({
+            capture_key: "dfofantasy:row", source_key: "dfofantasy", source_account: "DFOFantasy", tweet_id: "500",
+            tweet_url: "https://twitter.com/DFOFantasy/status/500", source_url: "https://twitter.com/DFOFantasy/status/500",
+            author_name: "DFOFantasy", source_handle: "DFOFantasy", quoted_tweet_id: "600",
+            quoted_tweet_url: "https://twitter.com/BeatWriter/status/600", tweet_posted_at: "2026-04-30T11:00:00.000Z",
+          }),
+        ] }),
+      };
+      return query;
+    });
+
+    const result: any = await getServerSideProps({ res: { setHeader: vi.fn() } } as any);
+
+    expect(inCalls).toEqual([["source_group", ["gdl_suite", "dfo", "nhl_rosters"]]]);
+    expect(result.props.localTweetCards).toHaveLength(1);
+    expect(result.props.localTweetCards[0]).toMatchObject({ tweetId: "600", authorHandle: "BeatWriter" });
+    expect(JSON.stringify(result.props)).not.toContain("DFOFantasy");
+  });
+});
 
 describe("twitterEmbeds source attribution", () => {
   it("promotes CcCMiddleton retweets to the retweeted tweet author", () => {

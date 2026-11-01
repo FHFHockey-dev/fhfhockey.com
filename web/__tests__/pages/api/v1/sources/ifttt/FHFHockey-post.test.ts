@@ -46,8 +46,22 @@ describe("FHFHockey IFTTT post receiver", () => {
     expect(fromMock).not.toHaveBeenCalled();
   });
 
+  it("uses the shared secret when the route has none, and its own secret when it does", async () => {
+    vi.stubEnv("IFTTT_FHFHOCKEY_WEBHOOK_SECRET", "");
+    vi.stubEnv("X_FHFH_IFTTT_SECRET", "unit-shared-secret");
+    const shared = res();
+    await handler(req({ headers: { "x-fhfh-ifttt-secret": "unit-shared-secret" } }), shared);
+    expect(shared.statusCode).toBe(200);
+
+    vi.stubEnv("IFTTT_FHFHOCKEY_WEBHOOK_SECRET", "unit-fhfh-secret");
+    const notOwn = res();
+    await handler(req({ headers: { "x-fhfh-ifttt-secret": "unit-shared-secret" } }), notOwn);
+    expect(notOwn.statusCode).toBe(401);
+  });
+
   it("fails closed if the secret is not configured, naming the variable and not a value", async () => {
     vi.stubEnv("IFTTT_FHFHOCKEY_WEBHOOK_SECRET", "");
+    vi.stubEnv("X_FHFH_IFTTT_SECRET", "");
     const response = res();
     await handler(req(), response);
     expect(response.statusCode).toBe(500);

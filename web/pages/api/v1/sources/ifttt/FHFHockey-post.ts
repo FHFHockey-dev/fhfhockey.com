@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { matchPostedCard } from "lib/socialShare/postedWeek";
-import { extractTweetId, getBodyValue, getSecretFromRequest, parseIftttDateToIso, secretsMatch } from "lib/sources/lineSourceIftttReceiver";
+import { extractTweetId, getBodyValue, getSecretFromRequest, parseIftttDateToIso, resolveIftttWebhookSecret, secretsMatch } from "lib/sources/lineSourceIftttReceiver";
 import supabase from "lib/supabase/server";
 
 const ACCOUNT = "fhfhockey", SECRET_ENV_VAR = "IFTTT_FHFHOCKEY_WEBHOOK_SECRET";
@@ -15,7 +15,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.setHeader("Allow", "POST");
     return res.status(405).json({ success: false, error: "Method not allowed" });
   }
-  const expectedSecret = process.env[SECRET_ENV_VAR];
+  const expectedSecret = resolveIftttWebhookSecret(SECRET_ENV_VAR);
   if (!expectedSecret) return res.status(500).json({ success: false, error: `${SECRET_ENV_VAR} is not configured` });
   if (!secretsMatch(getSecretFromRequest(req), expectedSecret)) return res.status(401).json({ success: false, error: "Unauthorized" });
 

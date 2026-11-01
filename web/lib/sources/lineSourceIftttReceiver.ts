@@ -46,6 +46,11 @@ export function getSecretFromRequest(req: NextApiRequest): string {
   return "";
 }
 
+/** A route's own secret wins; routes without one use the secret shared across IFTTT applets. */
+export function resolveIftttWebhookSecret(secretEnvVar: string): string | null {
+  return process.env[secretEnvVar] || process.env.X_FHFH_IFTTT_SECRET || null;
+}
+
 export function secretsMatch(received: string, expected: string): boolean {
   const encoder = new TextEncoder();
   const receivedBuffer = encoder.encode(received);
@@ -225,7 +230,7 @@ export function createLineSourceIftttReceiver(
       });
     }
 
-    const expectedSecret = process.env[config.secretEnvVar];
+    const expectedSecret = resolveIftttWebhookSecret(config.secretEnvVar);
     if (!expectedSecret) {
       return res.status(500).json({
         success: false,

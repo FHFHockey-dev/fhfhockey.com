@@ -1,3 +1,6 @@
+/** line_source_snapshots groups that compete for first arrival, as set by the IFTTT routes. */
+export const FIRST_ARRIVAL_SOURCE_GROUPS = ["gdl_suite", "dfo", "nhl_rosters"];
+
 export type FirstArrivalCandidate<T> = {
   value: T;
   captureKey: string;

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   buildLineCombinationSourceMutation,
+  fetchLineCombinationSourceRowsForDate,
   selectLineCombinationSourceMutations,
   syncLineCombinationSourceWinners,
   type LineCombinationSourceRow,
@@ -87,6 +88,40 @@ describe("tweet-derived lineCombinations mutations", () => {
     expect(mutations[0]?.sourceCaptureKey).toBe("first");
   });
 
+  it("lets an earlier DFO or NHL_Rosters row win the bucket over a later GameDayLines row", () => {
+    const mutations = selectLineCombinationSourceMutations([
+      row({ source_key: "gamedaylines", capture_key: "gdl-later", tweet_id: "200", tweet_posted_at: "2026-07-11T12:05:00Z" }),
+      row({ source_key: "dfofantasy", capture_key: "dfo-first", tweet_id: "100", tweet_posted_at: "2026-07-11T12:00:00Z" }),
+    ]);
+    expect(mutations.map((mutation) => mutation.sourceCaptureKey)).toEqual(["dfo-first"]);
+  });
+
+  it("writes nothing for a bucket whose earliest new-source row is an incomplete lineup", () => {
+    const mutations = selectLineCombinationSourceMutations([
+      row({ source_key: "gamedaylines", capture_key: "gdl-complete", tweet_id: "200", tweet_posted_at: "2026-07-11T12:05:00Z" }),
+      row({ source_key: "nhl_rosters", capture_key: "rosters-partial", tweet_id: "100", tweet_posted_at: "2026-07-11T12:00:00Z", line_4_player_ids: null }),
+    ]);
+    expect(mutations).toEqual([]);
+  });
+
+  it("reads the GameDay, DFO and NHL_Rosters groups, with GameDay kept", async () => {
+    const inCalls: unknown[][] = [];
+    const supabase = {
+      from: vi.fn(() => {
+        const query: any = {
+          select: vi.fn(() => query),
+          eq: vi.fn(() => query),
+          in: vi.fn((...args: unknown[]) => { inCalls.push(args); return query; }),
+          order: vi.fn(() => query),
+          range: vi.fn(async () => ({ data: [], error: null })),
+        };
+        return query;
+      }),
+    };
+    await fetchLineCombinationSourceRowsForDate({ supabase, date: "2026-07-11" });
+    expect(inCalls).toEqual([["source_group", ["gdl_suite", "dfo", "nhl_rosters"]]]);
+  });
+
   it("paginates both source tables and calls the atomic provenance RPC for the winner", async () => {
     const rangeCalls: Array<{ table: string; from: number; to: number }> = [];
     const rpc = vi.fn(() => ({
@@ -97,6 +132,7 @@ describe("tweet-derived lineCombinations mutations", () => {
         const query: any = {
           select: vi.fn(() => query),
           eq: vi.fn(() => query),
+          in: vi.fn(() => query),
           order: vi.fn(() => query),
           range: vi.fn(async (from: number, to: number) => {
             rangeCalls.push({ table, from, to });
