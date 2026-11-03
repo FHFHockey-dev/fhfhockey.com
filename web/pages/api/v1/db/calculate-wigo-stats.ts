@@ -160,39 +160,41 @@ const safeAverage = (values: (number | null | undefined)[]): number | null => {
 
 // Pagination helper for fetching player IDs
 const PAGE_SIZE = 1000;
-async function fetchAllPlayerIds(
-  client: SupabaseClient<Database>
+// Stop short of the 240 s platform limit so the final flush and the audit row
+// always happen; a killed run records nothing (B-01).
+const RUN_BUDGET_MS = 200_000;
+// Only skaters with a totals row this season or last can change a WiGO row.
+// Walking every non-goalie in `players` (3,906) outran the platform limit and
+// starved the highest ids every night.
+async function fetchActivePlayerIds(
+  client: SupabaseClient<Database>,
+  seasonIds: number[]
 ): Promise<number[]> {
-  console.log(
-    "Fetching relevant player IDs from 'players' table with pagination..."
-  );
   let allPlayerIds: number[] = [];
   let keepFetching = true;
   let page = 0;
   while (keepFetching) {
     const from = page * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
-    const { data, error, count } = await client
-      .from("players")
-      .select("id", { count: "exact", head: false })
-      .neq("position", "G")
+    const { data, error } = await client
+      .from("wgo_skater_stats_totals")
+      .select("player_id")
+      .in("season", seasonIds.map(String))
       // Range pages are only disjoint and complete under a stable order.
-      .order("id", { ascending: true })
+      .order("player_id", { ascending: true })
+      .order("season", { ascending: true })
       .range(from, to);
     if (error) {
-      console.error(`Error fetching player IDs page ${page}:`, error.message);
       throw new Error(
-        `Error fetching player IDs from players table: ${error.message}`
+        `Error fetching player IDs from wgo_skater_stats_totals: ${error.message}`
       );
     }
     if (data && data.length > 0) {
-      const playerIdsFromPage = data
-        .map((p) => p.id)
-        .filter((id): id is number => id != null);
-      allPlayerIds = allPlayerIds.concat(playerIdsFromPage);
+      allPlayerIds = allPlayerIds.concat(
+        data.map((p) => p.player_id).filter((id): id is number => id != null)
+      );
     }
-    const totalCount = count ?? Infinity;
-    if (!data || data.length < PAGE_SIZE || allPlayerIds.length >= totalCount) {
+    if (!data || data.length < PAGE_SIZE) {
       keepFetching = false;
     } else {
       page++;
@@ -200,7 +202,7 @@ async function fetchAllPlayerIds(
   }
   const uniqueIds = [...new Set(allPlayerIds)];
   console.log(
-    `Workspaceed ${allPlayerIds.length} player ID rows from 'players', found ${uniqueIds.length} unique non-goalie IDs.`
+    `Found ${uniqueIds.length} skaters with a totals row in ${seasonIds.join(" or ")}.`
   );
   return uniqueIds;
 }
@@ -233,11 +235,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     );
 
     // 2. Get Player IDs
-    const uniquePlayerIds = await fetchAllPlayerIds(supabase);
+    const uniquePlayerIds = await fetchActivePlayerIds(supabase, [
+      currentSeasonId,
+      lastSeasonId
+    ]);
     if (!uniquePlayerIds || uniquePlayerIds.length === 0) {
       return res.status(404).json({
         success: false,
-        message: "No relevant player IDs found from 'players' table."
+        message: "No skaters with a totals row this season or last."
       });
     }
     console.log(
@@ -251,9 +256,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     const allCareerUpsertData: WigoCareerData[] = [];
     const allRecentUpsertData: WigoRecentData[] = [];
     const UPSERT_BATCH_SIZE = 200;
+    let rowsUpserted = 0;
+    let firstNotReachedIndex: number | null = null;
 
     // 3. Process Each Player
-    for (const playerId of uniquePlayerIds) {
+    for (const [playerIndex, playerId] of uniquePlayerIds.entries()) {
+      if (Date.now() - startTime > RUN_BUDGET_MS) {
+        firstNotReachedIndex = playerIndex;
+        break;
+      }
       // --- Fetch Seasonal Data ---
       const wgoSelect =
         "season, games_played, goals, assists, points, total_primary_assists, shots, pp_goals, pp_assists, pp_points, hits, blocked_shots, penalty_minutes, pp_toi_pct_per_game, pp_toi";
@@ -1296,6 +1307,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
                 `Error upserting ${tableName} batch: ${result.error.message}`
               );
               writeErrors.push(`${tableName}: ${result.error.message}`);
+            } else {
+              rowsUpserted +=
+                index === 0 && currentCareerBatch.length > 0
+                  ? currentCareerBatch.length
+                  : currentRecentBatch.length;
             }
           });
         }
@@ -1346,6 +1362,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
               index === 0 && finalCareerBatch.length > 0
                 ? "wigo_career"
                 : "wigo_recent";
+            rowsUpserted +=
+              tableName === "wigo_career"
+                ? finalCareerBatch.length
+                : finalRecentBatch.length;
             console.log(`Final ${tableName} batch upsert successful.`);
           }
         });
@@ -1355,14 +1375,35 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
     const durationSec = ((Date.now() - startTime) / 1000).toFixed(2);
     console.log(`Finished player stats update in ${durationSec}s.`);
+    // Counts come before the id list so the audit preview keeps them.
+    const runCounts = {
+      playersListed: uniquePlayerIds.length,
+      playersProcessed: processedCount,
+      rowsUpserted,
+      rejectedCount: rejectedPlayerIds.length
+    };
     // A rejected upsert must fail the run; earlier batches may already be written.
     if (writeErrors.length > 0) {
       return res.status(500).json({
         success: false,
         error: `WiGO upsert failed for ${writeErrors.length} batch(es): ${writeErrors.slice(0, 5).join("; ")}`,
+        ...runCounts,
         writeErrors,
         rejectedPlayerIds,
         message: `Processed ${processedCount} of ${uniquePlayerIds.length} players; some rows may not have been written.`,
+        duration: `${durationSec} s`
+      });
+    }
+    if (firstNotReachedIndex != null) {
+      const notReachedCount = uniquePlayerIds.length - firstNotReachedIndex;
+      return res.status(207).json({
+        success: false,
+        error: `Stopped at the ${RUN_BUDGET_MS / 1000} s run budget; ${notReachedCount} player(s) not reached, from id ${uniquePlayerIds[firstNotReachedIndex]}.`,
+        ...runCounts,
+        notReachedCount,
+        firstNotReachedPlayerId: uniquePlayerIds[firstNotReachedIndex],
+        rejectedPlayerIds,
+        message: `Processed ${processedCount} of ${uniquePlayerIds.length} players before the run budget; rows written so far were flushed.`,
         duration: `${durationSec} s`
       });
     }
@@ -1370,6 +1411,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       return res.status(207).json({
         success: false,
         error: `Invalid or duplicate regular-season NHL appearance for ${rejectedPlayerIds.length} player(s): ${rejectedPlayerIds.slice(0, 10).join(", ")}.`,
+        ...runCounts,
         rejectedPlayerIds,
         message: `Processed ${processedCount} of ${uniquePlayerIds.length} players; rejected players were not written.`,
         duration: `${durationSec} s`
@@ -1377,6 +1419,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     }
     return res.status(200).json({
       success: true,
+      ...runCounts,
       message: `Successfully processed ${processedCount} of ${uniquePlayerIds.length} players.`,
       duration: `${durationSec} s`
     });

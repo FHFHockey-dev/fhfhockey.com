@@ -58,7 +58,8 @@ function installRecentFrameMock(
   const writes: Record<string, any[]> = {};
   const traces: Array<{ table: string; calls: any[][] }> = [];
   const tables: Record<string, any[]> = {
-    players,
+    // The writer lists skaters from current-season totals rows.
+    wgo_skater_stats_totals: players.map(({ id }) => ({ player_id: id, season: "20262027" })),
     wgo_skater_stats: nhl,
     nst_gamelog_as_counts: individual,
     nst_gamelog_as_counts_oi: onIce
@@ -183,8 +184,7 @@ describe("/api/v1/db/calculate-wigo-stats route", () => {
         season: index === 0 && coverage === "wrong season" ? 20242025 : index === 0 && coverage === "missing season" ? null : game.season,
         date_scraped: index === 0 && coverage === "wrong date" ? "2026-04-16" : game.date_scraped,
       }));
-      const rows = table === "players" ? [{ id: 1 }]
-        : table === "wgo_skater_stats_totals" ? seasonal.map(row => ({ ...row, season: String(row.season) }))
+      const rows = table === "wgo_skater_stats_totals" ? seasonal.map(row => ({ ...row, player_id: 1, season: String(row.season) }))
         : table.startsWith("nst_seasonal") ? seasonal
         : table === "nst_gamelog_as_counts" ? coverage === "absent" ? []
           : nstGames.map((game, index) => ({ ...game, toi: coverage === "zero" ? 0 : index === 0 && coverage === "partial" ? null : index === 0 && coverage === "nonfinite" ? NaN : game.toi }))
@@ -358,7 +358,7 @@ describe("/api/v1/db/calculate-wigo-stats route", () => {
           return Promise.resolve({ error: null });
         },
         then: (resolve: (value: unknown) => unknown) => {
-          const data = table === "players" ? ids.map(id => ({ id }))
+          const data = table === "wgo_skater_stats_totals" && playerId == null ? ids.map(id => ({ player_id: id }))
             : table === "wgo_skater_stats" ? [{ ...recentGame("2026-10-23"), player_id: playerId }] : [];
           return Promise.resolve({ data, error: null, count: data.length }).then(resolve);
         },
@@ -389,10 +389,10 @@ describe("/api/v1/db/calculate-wigo-stats route", () => {
           if (table === "wgo_skater_stats") {
             return Promise.resolve({ data: [{ ...recentGame("2026-10-23"), player_id: playerId }], error: null }).then(resolve);
           }
-          if (table !== "players") return Promise.resolve({ data: [], error: null }).then(resolve);
+          if (table !== "wgo_skater_stats_totals" || playerId != null) return Promise.resolve({ data: [], error: null }).then(resolve);
           // Without ORDER BY, Postgres may return each page query in a different order.
           const scan = ordered ? ids : unorderedPlayerReads++ % 2 ? [...ids].reverse() : ids;
-          const data = scan.slice(from, to + 1).map(id => ({ id }));
+          const data = scan.slice(from, to + 1).map(id => ({ player_id: id }));
           return Promise.resolve({ data, error: null, count: ids.length }).then(resolve);
         },
       };
@@ -402,5 +402,50 @@ describe("/api/v1/db/calculate-wigo-stats route", () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.message).toBe("Successfully processed 1500 of 1500 players.");
     expect([...written].sort()).toEqual(ids);
+  });
+
+  it("lists only skaters with a totals row this season or last, so high ids are reached", async () => {
+    getCurrentSeasonMock.mockResolvedValue({ seasonId: 20262027, lastSeasonId: 20252026 });
+    const ids = [8478402, 8484144, 8486067];
+    const nhl = ids.map(id => ({ ...recentGame("2026-10-23"), player_id: id }));
+    const { writes, traces } = installRecentFrameMock(nhl, nhl, nhl, undefined, ids.map(id => ({ id, position: "C" })));
+    const res = await runRecentFixture();
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({ success: true, playersListed: 3, playersProcessed: 3, rowsUpserted: 6, rejectedCount: 0 });
+    expect(writes.wigo_recent.map(row => row.player_id)).toEqual(ids);
+    expect(traces.some(trace => trace.table === "players")).toBe(false);
+    const list = traces.find(trace => trace.table === "wgo_skater_stats_totals")!;
+    expect(list.calls).toContainEqual(["in", "season", ["20262027", "20252026"]]);
+  });
+
+  it("stops at the run budget, flushes what it wrote and reports counts and rejects", async () => {
+    getCurrentSeasonMock.mockResolvedValue({ seasonId: 20262027, lastSeasonId: 20252026 });
+    const ids = [8470001, 8470002, 8470003, 8470004, 8470005, 8470006];
+    const nhl = ids.map(id => ({ ...recentGame("2026-10-23"), player_id: id, ...(id === 8470002 ? { game_id: null } : {}) }));
+    installRecentFrameMock(nhl, nhl, nhl, undefined, ids.map(id => ({ id, position: "C" })));
+    let clock = 1_000_000;
+    const nowSpy = vi.spyOn(Date, "now").mockImplementation(() => clock);
+    const base = fromMock.getMockImplementation()!;
+    const written: Record<string, number[]> = {};
+    fromMock.mockImplementation((table: string) => {
+      const query = base(table);
+      // Each player's game-log read costs a simulated minute.
+      if (table === "wgo_skater_stats") clock += 60_000;
+      query.upsert = (rows: any[]) => {
+        written[table] = rows.map(row => row.player_id);
+        return Promise.resolve({ error: null });
+      };
+      return query;
+    });
+    const res = await runRecentFixture();
+    nowSpy.mockRestore();
+    expect(res.statusCode).toBe(207);
+    expect(res.body).toMatchObject({
+      success: false, playersListed: 6, playersProcessed: 3, rowsUpserted: 6, rejectedCount: 1,
+      notReachedCount: 2, firstNotReachedPlayerId: 8470005, rejectedPlayerIds: [8470002]
+    });
+    expect(res.body.error).toContain("2 player(s) not reached, from id 8470005");
+    expect(written.wigo_recent).toEqual([8470001, 8470003, 8470004]);
+    expect(written.wigo_career).toEqual([8470001, 8470003, 8470004]);
   });
 });
