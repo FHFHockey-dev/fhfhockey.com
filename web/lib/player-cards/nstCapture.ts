@@ -1,7 +1,7 @@
 import type { LocalCardInput } from "./adapter";
 import type { Components, GameMetricRecord } from "./aggregation";
 import type { CardSettings } from "./contracts";
-import { instant, settingsError, validDate, type AppearanceFrame } from "./windows";
+import { instant, completionBounds, settingsError, validDate, type AppearanceFrame } from "./windows";
 
 export type NstCaptureBatch = {
   table: string;
@@ -62,18 +62,22 @@ export function mapNstCapture(capture: NstCapture): NstCaptureResult {
   });
 
   const players = capture.frames.map(frame => {
-    const appearances = frame.appearances.map(game => ({ ...game, completion: { ...game.completion } }));
+    const appearances = frame.appearances.map(game => ({ ...game, completion: { ...game.completion, ...(game.completion.status === "verified-final" && game.completion.completedDuring ? { completedDuring: { ...game.completion.completedDuring } } : {}) } }));
     const eligible = appearances.filter(game => game.playerId === frame.playerId && game.season === capture.settings.season && game.gameType === capture.settings.gameType && game.played !== false);
     const dates = new Map<string, Set<number>>();
-    for (const game of eligible) dates.set(game.date, new Set([...(dates.get(game.date) || []), game.gameId]));
+    for (const game of eligible) {
+      const sourceDate = game.sourceDate ?? game.date;
+      dates.set(sourceDate, new Set([...(dates.get(sourceDate) || []), game.gameId]));
+    }
     const records: GameMetricRecord[] = eligible.map(game => {
       const components: Components = { toiUnit: "seconds", individual: {}, onIce: {} };
       const times: number[] = [];
-      const ambiguous = (dates.get(game.date)?.size || 0) > 1;
+      const sourceDate = game.sourceDate ?? game.date;
+      const ambiguous = !validDate(sourceDate) || (dates.get(sourceDate)?.size || 0) > 1;
       if (ambiguous) issues.push({ group: "both", playerId: frame.playerId, gameId: game.gameId, reason: "Multiple official games share one date; NST date rows cannot identify the game" });
       if (!ambiguous) (["individual", "onIce"] as const).forEach((group, index) => {
-        const batch = indexed[index], matches = batch.rows.get(key(frame.playerId, game.season, game.date)) || [];
-        const completed = game.completion.status === "verified-final" ? instant(game.completion.completedAt) : null;
+        const batch = indexed[index], matches = batch.rows.get(key(frame.playerId, game.season, sourceDate)) || [];
+        const completed = completionBounds(game.completion)?.safeAfter ?? null;
         const issue = (reason: string) => issues.push({ group, playerId: frame.playerId, gameId: game.gameId, reason });
         if (batch.time === null) return;
         if (matches.length !== 1) { issue(matches.length ? "Duplicate NST date rows; no row chosen or pooled" : "No captured NST row for this official appearance"); return; }
