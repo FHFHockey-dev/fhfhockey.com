@@ -296,7 +296,10 @@ describe("/api/v1/db/calculate-wigo-stats route", () => {
     expect(writes.wigo_recent[0]).toMatchObject({ l5_gp: 1, l5_sog: 0, l5_sog_per_60: 0, l5_atoi: 20 });
   });
 
-  it.each(["duplicate", "missing identity", "wrong season", "playoff identity"])("rejects an invalid NHL appearance frame (%s)", async (problem) => {
+  it.each([
+    ["duplicate", "duplicate_game_id"], ["missing identity", "missing_identity"],
+    ["wrong season", "game_id_season_mismatch"], ["playoff identity", "not_regular_season_game"]
+  ])("rejects an invalid NHL appearance frame (%s) and names the rule", async (problem, rule) => {
     getCurrentSeasonMock.mockResolvedValue({ seasonId: 20262027, lastSeasonId: 20252026 });
     const game = recentGame("2026-10-23");
     const bad = problem === "missing identity" ? { ...game, game_id: null }
@@ -308,6 +311,8 @@ describe("/api/v1/db/calculate-wigo-stats route", () => {
     expect(res.statusCode).toBe(207);
     expect(res.body).toMatchObject({ success: false, rejectedPlayerIds: [8476453] });
     expect(res.body.error).toBe("Invalid or duplicate regular-season NHL appearance for 1 player(s): 8476453.");
+    expect(res.body.rejectedByRule).toEqual({ [rule]: 1 });
+    expect(res.body.rejections).toEqual([expect.objectContaining({ playerId: 8476453, rule })]);
     expect(writes).toEqual({});
   });
 
@@ -579,7 +584,8 @@ describe("/api/v1/db/calculate-wigo-stats route", () => {
     expect(res.statusCode).toBe(207);
     expect(res.body).toMatchObject({
       success: false, playersListed: 6, playersProcessed: 3, rowsUpserted: 6, rejectedCount: 1,
-      notReachedCount: 2, firstNotReachedPlayerId: 8470005, rejectedPlayerIds: [8470002]
+      notReachedCount: 2, firstNotReachedPlayerId: 8470005, rejectedPlayerIds: [8470002],
+      rejectedByRule: { missing_identity: 1 }
     });
     expect(res.body.error).toContain("2 player(s) not reached, from id 8470005");
     expect(written.wigo_recent).toEqual([8470001, 8470003, 8470004]);

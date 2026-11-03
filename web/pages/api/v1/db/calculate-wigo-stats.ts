@@ -71,6 +71,15 @@ type SelectedNstOiGamelog = Pick<
   "date_scraped" | "season" | "gf" | "sf" | "off_zone_starts" | "def_zone_starts"
 >;
 
+// Why a player's last-20 frame was withheld
+type RejectionRule =
+  | "missing_identity"
+  | "game_id_season_mismatch"
+  | "not_regular_season_game"
+  | "invalid_season_id"
+  | "not_an_appearance"
+  | "duplicate_game_id";
+
 // Aggregated data interfaces for seasonal and game data
 interface AggregatedSeasonData {
   season: number;
@@ -258,6 +267,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
     let processedCount = 0;
     const rejectedPlayerIds: number[] = [];
+    const rejectedByRule: Partial<Record<RejectionRule, number>> = {};
+    const rejections: Array<{
+      playerId: number;
+      rule: RejectionRule;
+      gameId: number | null;
+      date: string;
+    }> = [];
     const writeErrors: string[] = [];
     // Define batch arrays with non-partial types
     const allCareerUpsertData: WigoCareerData[] = [];
@@ -326,24 +342,45 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       const wgoLogs = (wgoGamelogRes.data || []) as SelectedWgoGamelog[];
       const gameIds = new Set<number>();
       const recentSeasons = new Set<number>();
-      const invalidFrame = wgoLogs.some(game => {
+      // Name the first rule a game breaks, so the run reports why (B-02).
+      const frameRule = (game: SelectedWgoGamelog): RejectionRule | null => {
         const seasonStart = Math.floor((game.season_id ?? 0) / 10000);
+        if (game.game_id == null || game.season_id == null) return "missing_identity";
+        if (!Number.isSafeInteger(game.game_id)) return "game_id_season_mismatch";
+        if (!new RegExp(`^${seasonStart}02\\d{4}$`).test(String(game.game_id))) {
+          return new RegExp(`^${seasonStart}\\d{6}$`).test(String(game.game_id))
+            ? "not_regular_season_game"
+            : "game_id_season_mismatch";
+        }
         if (
-          game.game_id == null || game.season_id == null ||
-          !Number.isSafeInteger(game.game_id) ||
-          !new RegExp(`^${seasonStart}02\\d{4}$`).test(String(game.game_id)) ||
           !Number.isSafeInteger(game.season_id) ||
-          game.season_id !== seasonStart * 10000 + seasonStart + 1 ||
-          game.games_played !== 1 ||
-          gameIds.has(game.game_id)
-        ) return true;
-        gameIds.add(game.game_id);
-        recentSeasons.add(game.season_id);
-        return false;
-      });
+          game.season_id !== seasonStart * 10000 + seasonStart + 1
+        ) return "invalid_season_id";
+        if (game.games_played !== 1) return "not_an_appearance";
+        if (gameIds.has(game.game_id)) return "duplicate_game_id";
+        return null;
+      };
+      let rejection: { rule: RejectionRule; game: SelectedWgoGamelog } | null = null;
+      for (const game of wgoLogs) {
+        const rule = frameRule(game);
+        if (rule) {
+          rejection = { rule, game };
+          break;
+        }
+        // frameRule has ruled out null ids.
+        gameIds.add(game.game_id as number);
+        recentSeasons.add(game.season_id as number);
+      }
       // Withhold every write for this player only; the run still reports failure.
-      if (invalidFrame) {
+      if (rejection) {
         rejectedPlayerIds.push(playerId);
+        rejectedByRule[rejection.rule] = (rejectedByRule[rejection.rule] ?? 0) + 1;
+        rejections.push({
+          playerId,
+          rule: rejection.rule,
+          gameId: rejection.game.game_id,
+          date: rejection.game.date
+        });
         continue;
       }
 
@@ -1125,7 +1162,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       playersListed: uniquePlayerIds.length,
       playersProcessed: processedCount,
       rowsUpserted,
-      rejectedCount: rejectedPlayerIds.length
+      rejectedCount: rejectedPlayerIds.length,
+      rejectedByRule
     };
     // A rejected upsert must fail the run; earlier batches may already be written.
     if (writeErrors.length > 0) {
@@ -1135,6 +1173,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         ...runCounts,
         writeErrors,
         rejectedPlayerIds,
+        rejections,
         message: `Processed ${processedCount} of ${uniquePlayerIds.length} players; some rows may not have been written.`,
         duration: `${durationSec} s`
       });
@@ -1148,6 +1187,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         notReachedCount,
         firstNotReachedPlayerId: uniquePlayerIds[firstNotReachedIndex],
         rejectedPlayerIds,
+        rejections,
         message: `Processed ${processedCount} of ${uniquePlayerIds.length} players before the run budget; rows written so far were flushed.`,
         duration: `${durationSec} s`
       });
@@ -1158,6 +1198,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         error: `Invalid or duplicate regular-season NHL appearance for ${rejectedPlayerIds.length} player(s): ${rejectedPlayerIds.slice(0, 10).join(", ")}.`,
         ...runCounts,
         rejectedPlayerIds,
+        rejections,
         message: `Processed ${processedCount} of ${uniquePlayerIds.length} players; rejected players were not written.`,
         duration: `${durationSec} s`
       });
