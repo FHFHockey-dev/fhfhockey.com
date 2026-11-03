@@ -28,7 +28,7 @@ describe("StatsTableRowChart", () => {
       />
     );
 
-    expect(screen.getByText("STD: 12.5%")).toBeTruthy();
+    expect(screen.getByTitle("STD: 12.5%")).toBeTruthy();
   });
 
   it("formats TOI averages in mm:ss instead of raw seconds", () => {
@@ -46,7 +46,7 @@ describe("StatsTableRowChart", () => {
       />
     );
 
-    expect(screen.getByText("STD: 15:00")).toBeTruthy();
+    expect(screen.getByTitle("STD: 15:00")).toBeTruthy();
   });
 
   it("labels the dashed line as a game mean formatted like its stat", () => {

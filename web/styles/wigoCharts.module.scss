@@ -2521,19 +2521,31 @@
   }
 }
 
-// One-page chart headers: title and small controls on one line, legend on its own line below, so the charts keep
-// the height. The wrappers dissolve so their children can be ordered inside the header.
+// One-page chart headers (U6): title, then the legend, then the controls on the
+// right, all on one line, so the plot keeps the height. The wrappers dissolve
+// so their children can be ordered inside the header.
 :global(.wigo-one-page) {
   .chartHeader {
     justify-content: flex-start;
+    flex-wrap: nowrap;
     gap: 0 4px;
     .chartToolbar,
     .toggleButtons {
       display: contents;
     }
     :global(.wigo-trend-legend) {
-      order: 5;
-      flex: 1 0 100%;
+      order: 1;
+      margin-right: auto;
+      min-width: 0;
+      white-space: nowrap;
+    }
+    > button,
+    .chartToolbar button,
+    .toggleButtons button,
+    .chartToolbar details {
+      order: 2;
+      flex: none;
+      white-space: nowrap;
     }
   }
   .chartHeader .toggleButtons button,
@@ -2549,10 +2561,11 @@
       cursor: default;
     }
   }
+  // One row of plain toggles; the values sit in each chip's title (U6).
   .selectedStatPanel .averageToggleButtons {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    justify-items: start;
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: space-between;
     gap: 0 4px;
   }
   .selectedStatPanel .avgButton {

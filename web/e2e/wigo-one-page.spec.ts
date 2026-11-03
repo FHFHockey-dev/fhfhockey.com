@@ -50,7 +50,7 @@ async function measure(page: Page) {
           visible(element) && !ignored(element) && getComputedStyle(element).display !== "inline" &&
           ((element.scrollWidth > element.clientWidth + 1 && getComputedStyle(element).overflowX !== "auto") ||
             element.scrollHeight > element.clientHeight + 1))
-        .map((element) => `${element.closest<HTMLElement>("[data-coverage]")?.dataset.coverage} ${element.className} "${element.innerText.slice(0, 40)}"`),
+        .map((element) => `${element.closest<HTMLElement>("[data-coverage]")?.dataset.coverage} ${element.className} "${(element.innerText ?? element.textContent ?? "").slice(0, 40)}"`),
       clippedCells: Array.from(root.querySelectorAll("th, td"))
         .filter((cell) => {
           const bounds = cell.getBoundingClientRect();

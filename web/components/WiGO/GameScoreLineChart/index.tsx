@@ -9,7 +9,7 @@ import {
   formatDateToMMDD
 } from "utils/formattingUtils";
 import { ChartOptions, ChartData, ChartDataset } from "chart.js";
-import { WIGO_COLORS, addAlpha, CHART_COLORS } from "styles/wigoColors";
+import { WIGO_COLORS, addAlpha, CHART_COLORS, CHART_TICK_FONT } from "styles/wigoColors";
 import { WIGO_ERROR_MESSAGES } from "../errorMessages";
 import useWigoGameLog from "hooks/useWigoGameLog";
 import { useSeasonPendingMessage } from "hooks/useCurrentSeason";
@@ -192,20 +192,21 @@ export default function GameScoreLineChart({
           title: {
             display: false,
             text: "Game Score",
-            font: { size: 12 },
+            font: CHART_TICK_FONT,
             color: "#ccc"
           },
-          ticks: { color: "#ccc", font: { size: 12 }, maxTicksLimit: 3, precision: 1 }, // Allow decimals?
+          ticks: { color: "#ccc", font: CHART_TICK_FONT, maxTicksLimit: 3, precision: 1 }, // Allow decimals?
           grid: { color: "rgba(255, 255, 255, 0.1)" }
         },
         x: {
           title: { display: false },
           ticks: {
             color: "#ccc",
-            font: { size: 12 },
+            font: CHART_TICK_FONT,
             maxRotation: 0,
             minRotation: 0,
             autoSkip: true,
+            autoSkipPadding: 8,
             maxTicksLimit: 6
           },
           grid: { display: false }

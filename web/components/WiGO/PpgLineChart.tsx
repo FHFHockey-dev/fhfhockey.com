@@ -24,7 +24,7 @@ import { calculateRollingAverage } from "utils/formattingUtils";
 import styles from "styles/wigoCharts.module.scss";
 import Spinner from "components/Spinner";
 import Zoom from "chartjs-plugin-zoom";
-import { WIGO_COLORS, CHART_COLORS, addAlpha } from "styles/wigoColors";
+import { WIGO_COLORS, CHART_COLORS, addAlpha, CHART_TICK_FONT } from "styles/wigoColors";
 import WigoSectionCard from "./WigoSectionCard";
 import { WIGO_ERROR_MESSAGES } from "./errorMessages";
 import { useSeasonPendingMessage } from "hooks/useCurrentSeason";
@@ -180,12 +180,12 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId, seasonId }) => {
           title: {
             display: false,
             text: "Points",
-            font: { size: 12 },
+            font: CHART_TICK_FONT,
             color: "#ccc"
           },
           ticks: {
             color: "#ccc",
-            font: { size: 12 },
+            font: CHART_TICK_FONT,
             maxTicksLimit: 3,
             stepSize: 1,
             precision: 0 // Display ticks as whole numbers
@@ -196,10 +196,11 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId, seasonId }) => {
           title: { display: false },
           ticks: {
             color: "#ccc",
-            font: { size: 12 },
+            font: CHART_TICK_FONT,
             maxRotation: 0,
             minRotation: 0,
             autoSkip: true,
+            autoSkipPadding: 8,
             maxTicksLimit: 6
           },
           grid: { display: false }
@@ -210,7 +211,7 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId, seasonId }) => {
           display: false,
           position: "top" as const,
           align: "end" as const,
-          labels: { color: "#ccc", boxWidth: 12, font: { size: 12 } }
+          labels: { color: "#ccc", boxWidth: 12, font: CHART_TICK_FONT }
         },
         datalabels: {
           display: false // Explicitly disable the plugin for this chart

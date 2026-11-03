@@ -21,7 +21,7 @@ import { formatSecondsToMMSS, formatDateToMMDD } from "utils/formattingUtils";
 import styles from "styles/wigoCharts.module.scss";
 import zoomPlugin from "chartjs-plugin-zoom";
 import Spinner from "components/Spinner";
-import { WIGO_COLORS, CHART_COLORS, addAlpha } from "styles/wigoColors";
+import { WIGO_COLORS, CHART_COLORS, addAlpha, CHART_TICK_FONT } from "styles/wigoColors";
 import WigoSectionCard from "./WigoSectionCard";
 import { WIGO_ERROR_MESSAGES } from "./errorMessages";
 import { useSeasonPendingMessage } from "hooks/useCurrentSeason";
@@ -211,7 +211,7 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
           title: { display: false },
           ticks: {
             color: CHART_COLORS.TICK_LABEL,
-            font: { size: 12 },
+            font: CHART_TICK_FONT,
             maxRotation: 0,
             minRotation: 0,
             autoSkip: true,
@@ -234,12 +234,14 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
           title: {
             display: false,
             text: "Time On Ice (Minutes)",
-            font: { size: 12 },
+            font: CHART_TICK_FONT,
             color: CHART_COLORS.TICK_LABEL
           },
           ticks: {
             color: CHART_COLORS.TICK_LABEL,
-            font: { size: 12 },
+            font: CHART_TICK_FONT,
+            // Whole 5-minute steps, not 500-second ones (33:20, 25:00, 16:40).
+            stepSize: 300,
             callback: (value) =>
               typeof value === "number" ? formatSecondsToMMSS(value) : value
           },
@@ -254,12 +256,12 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
           title: {
             display: false,
             text: "PP TOI Percentage (%)",
-            font: { size: 12 },
+            font: CHART_TICK_FONT,
             color: CHART_COLORS.TICK_LABEL
           },
           ticks: {
             color: CHART_COLORS.TICK_LABEL,
-            font: { size: 12 },
+            font: CHART_TICK_FONT,
             callback: (value) =>
               typeof value === "number" ? `${value}%` : value // Format as percentage
           },
@@ -275,7 +277,7 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
           labels: {
             color: CHART_COLORS.TICK_LABEL,
             boxWidth: 12,
-            font: { size: 12 }
+            font: CHART_TICK_FONT
           }
         },
         datalabels: { display: false },
@@ -334,7 +336,7 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
       title={chartTitle}
       toolbar={
         <div className={styles.toggleButtons}>
-          <span className="wigo-trend-legend">{chartView === "toi" ? <><span style={{ color: CHART_COLORS.BAR_PRIMARY }}>━Total</span> · <span style={{ color: CHART_COLORS.PP_TOI }}>━PP</span> · Avg (min)</> : "PP share · Avg (%)"}</span>
+          <span className="wigo-trend-legend">{chartView === "toi" ? <><span style={{ color: CHART_COLORS.BAR_PRIMARY }}>━Total</span> · <span style={{ color: CHART_COLORS.PP_TOI }}>━PP</span> · ┄Avg</> : "PP share · ┄Avg"}</span>
           <button type="button" aria-label="Reset" title="Drag to zoom; Shift+drag to pan; Reset restores all games" onClick={() => chartRef.current?.resetZoom()}>↺</button>
           <button
             onClick={() => setChartView("toi")}
@@ -346,7 +348,7 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
             onClick={() => setChartView("pp_pct")}
             disabled={chartView === "pp_pct"}
           >
-            PP TOI %
+            PP%
           </button>
         </div>
       }

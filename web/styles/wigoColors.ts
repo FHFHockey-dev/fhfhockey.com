@@ -130,4 +130,11 @@ export const CONSISTENCY_CHART_COLORS = [
   CHART_COLORS.CONSISTENCY_6
 ];
 
+// One tick font for the chart row (U6): the SVG game log inherits Roboto
+// Condensed, so the canvas charts name it, with the generic fallback.
+export const CHART_TICK_FONT = {
+  size: 12,
+  family: "Roboto Condensed, sans-serif"
+} as const;
+
 // 5. Helper Function (Keep addAlpha)

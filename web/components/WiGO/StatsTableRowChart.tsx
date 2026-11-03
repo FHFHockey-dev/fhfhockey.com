@@ -214,6 +214,8 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
                 key={key}
                 aria-pressed={isActive}
                 aria-label={`Toggle ${key} reference`}
+                // The value is in the band already; the chip names the line only.
+                title={`${key}: ${formatDisplayValue(valueForButton, formattingType)}${suffix ? ` ${suffix}` : ""}`}
                 onClick={() => handleAverageToggle(key)}
                 className={`${styles.avgButton} ${
                   isActive ? styles.active : ""
@@ -224,8 +226,7 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
                     : {}
                 }
               >
-                {key}: {formatDisplayValue(valueForButton, formattingType)}{" "}
-                {suffix}
+                {key}
               </button>
             );
           }
@@ -238,11 +239,12 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
         >
           {" "}
           {/* Adjusted margins */}
-          <CartesianGrid strokeDasharray="3 3" />
+          {/* Solid hairline grid, as on the other three charts (U6). */}
+          <CartesianGrid stroke="rgba(255, 255, 255, 0.1)" vertical={false} />
           <XAxis
             dataKey="game"
             minTickGap={40}
-            tickFormatter={(game) => chartData[Number(game) - 1]?.date.slice(5) ?? String(game)}
+            tickFormatter={(game) => chartData[Number(game) - 1]?.date.slice(5).replace("-", "/") ?? String(game)}
             label={fill ? undefined : {
               value: "Game date",
               position: "insideBottom",
@@ -256,7 +258,7 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
                 textTransform: "uppercase"
               }
             }}
-            tick={{ fontSize: fill ? 11 : 12, fill: "#aaa" }}
+            tick={{ fontSize: 12, fill: "#ccc" }}
             height={fill ? 18 : 40} // Increased height for label
           />
           <YAxis
@@ -266,8 +268,8 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
                 isTOIStat ? "TOI" : isPercentStat ? "Percent" : "Other"
               )
             }
-            tick={{ fontSize: fill ? 11 : 12, fill: "#aaa" }}
-            width={fill ? 42 : 65} // Slightly increased width
+            tick={{ fontSize: 12, fill: "#ccc" }}
+            width={fill ? 48 : 65} // Slightly increased width
 
           />
           <Tooltip content={<CustomTooltip />} />
