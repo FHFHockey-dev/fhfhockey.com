@@ -1722,11 +1722,12 @@
       font-weight: s.$weight-regular;
       cursor: pointer;
     }
+    // White on the selected column's tint: the blue alone was 4.38:1 there.
     th button[aria-pressed="true"] {
+      color: s.$ink-strong;
       font-weight: s.$weight-bold;
     }
-    th button:hover,
-    th button[aria-pressed="true"] {
+    th button:hover {
       color: s.$accent;
     }
     th button:focus-visible {
@@ -2857,6 +2858,7 @@
       }
       th button {
         min-height: 28px;
+        min-width: 24px; // touch target; the phone band scrolls anyway
       }
     }
     .matrixPeriodCell {

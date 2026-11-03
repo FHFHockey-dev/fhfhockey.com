@@ -43,6 +43,20 @@ export const COMPARISON_PERIODS = [
 // accessible name, so Totals "G" and Per 60 "G" stay distinct.
 // Spoken names: a column header is read with every cell, so it names the
 // metric only, in full (E-02). The action is one shared description.
+// Hover definitions (U12) for the metrics whose label does not say what the
+// source column means (A-06). The spoken name stays the short full name.
+const WIGO_METRIC_DEFINITIONS: Partial<Record<WigoStatLabel, string>> = {
+  "PP%": "Share of the team's power-play time the player was on the ice",
+  "PTS1%": "Share of points that were goals or primary assists",
+  "PTS1/60": "Goals plus primary assists per 60 minutes",
+  "OZS%": "Offensive-zone share of offensive and defensive zone starts, all strengths",
+  "PPP/60": "Per 60 minutes of power-play time, not all ice time",
+  "PPG/60": "Per 60 minutes of power-play time, not all ice time",
+  "PPA/60": "Per 60 minutes of power-play time, not all ice time",
+  IPP: "Share of on-ice goals the player scored or assisted",
+  "oiSH%": "Shooting percentage of the player's team while they were on the ice"
+};
+
 export const WIGO_METRIC_NAMES: Record<WigoStatLabel, string> = {
   GP: "Games played",
   ATOI: "Average time on ice",
@@ -265,6 +279,15 @@ export default function WigoComparisonMatrix({
               better.
             </p>
             <p>L5/L10/L20 use up to the latest 5/10/20 played games, including prior seasons. GP shows the actual sample. Aggregate date bounds and metric coverage are unavailable; a numeric value does not establish complete source coverage.</p>
+            <p>
+              <strong>CA</strong> is the career average: a per-season average of
+              every past season, excluding this one. <strong>3YA</strong> is the
+              three seasons before this one. <strong>PP%</strong> is the share
+              of the team&apos;s power-play time the player was on the ice.
+              <strong> PTS1%</strong> is the share of points that were goals or
+              primary assists. <strong>OZS%</strong> counts all strengths.
+              PPP, PPG and PPA per 60 use power-play time, not all ice time.
+            </p>
           </WigoHelp>
           {asOf && data.length > 0 && (
             <span className={styles.matrixCaption}>As of {shortDay(asOf)}</span>
@@ -352,7 +375,9 @@ export default function WigoComparisonMatrix({
                           }}
                           data-metric={label}
                           aria-label={WIGO_METRIC_NAMES[label]}
-                          title={WIGO_METRIC_NAMES[label]}
+                          title={WIGO_METRIC_DEFINITIONS[label]
+                            ? `${WIGO_METRIC_NAMES[label]}: ${WIGO_METRIC_DEFINITIONS[label]}`
+                            : WIGO_METRIC_NAMES[label]}
                           aria-pressed={label === selectedMetric}
                           aria-controls="wigo-selected-stat"
                           aria-describedby="wigo-band-action"
@@ -472,7 +497,7 @@ export default function WigoComparisonMatrix({
           isLoading={gameLog.isFetching}
           error={
             gameLog.error
-              ? `Failed to load game log for ${selectedMetric}.`
+              ? `Couldn't load the ${selectedMetric} game log.`
               : null
           }
           tableType={isWigoCountChartStat(selectedMetric) ? "COUNTS" : "RATES"}

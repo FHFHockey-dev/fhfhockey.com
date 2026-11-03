@@ -127,7 +127,7 @@ test("the comparison band shows 36 metric columns by period with a DIFF row, and
   for (const [metric, name] of [["Goals", "Goals"], ["ATOI", "Average time on ice"], ["S%", "Shooting percentage"], ["PPP/60", "Power-play points per 60 power-play minutes"]]) {
     await table.getByRole("button", { name, exact: true }).click();
     await expect(selected.locator("h3")).toContainText(metric);
-    await expect(selected).not.toContainText("Failed to load");
+    await expect(selected).not.toContainText("Couldn't load");
     expect(await selected.boundingBox()).toEqual(before);
   }
   await expect(page.getByRole("button", { name: /^Toggle .* reference$/ })).toHaveCount(PERIODS.length);

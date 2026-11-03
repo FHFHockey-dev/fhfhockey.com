@@ -222,6 +222,8 @@ function CategoryCoverageChart({
         data={chartData}
         options={OPTIONS}
         plugins={[LABEL_PLUGIN]}
+        role="img"
+        aria-label={`Category percentiles, 0 to 100: ${LABELS.map(({ key, label }) => `${label} ${hasData ? Math.round(data[key]) : "unavailable"}`).join(", ")}`}
       />
     </Chart>
   );

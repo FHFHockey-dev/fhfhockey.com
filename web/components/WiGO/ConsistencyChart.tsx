@@ -206,7 +206,7 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({
               className={styles.chartLoadingPlaceholder}
               style={{ width: "100%" }}
             >
-              {incompleteData ? "Consistency unavailable: incomplete game data." : "No game data found..."}
+              {incompleteData ? "Consistency unavailable: incomplete game data." : "No games found for this season."}
             </div>
           )}
 

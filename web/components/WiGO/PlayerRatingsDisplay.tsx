@@ -106,7 +106,7 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
 
   const renderContent = () => {
     if (isLoading)
-      return <div className={styles.loading}>Loading Ratings...</div>;
+      return <div className={styles.loading}>Loading ratings…</div>;
     if (error)
       return <div className={styles.error}>{WIGO_ERROR_MESSAGES.ratings}</div>;
     if (!playerId)

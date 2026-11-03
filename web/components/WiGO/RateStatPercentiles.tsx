@@ -416,7 +416,7 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
   return (
     <div className={`${styles.rateStatPercentilesComponent} ${desktop ? styles.percentileDesktop : ""}`}>
       {isLoading && (
-        <div className={styles.loadingMessage}>Loading Player Data...</div>
+        <div className={styles.loadingMessage}>Loading percentiles…</div>
       )}
       {!isLoading && error && (
         <div className={styles.errorMessage}>
@@ -495,7 +495,12 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
                   <span className={styles.visuallyHidden}> · Requested {seasonId} · Applied {percentileCohort?.appliedSeasonId ?? seasonId}</span>
                 </div>
               ) : (
-                <div className={styles.percentileContext}>Player GP: {selectedPlayerGp ?? "—"} · Requested {seasonId} · Applied {percentileCohort?.appliedSeasonId ?? seasonId}</div>
+                <div className={styles.percentileContext}>
+                  Player GP: {selectedPlayerGp ?? "—"} ·{" "}
+                  {percentileCohort && percentileCohort.appliedSeasonId !== percentileCohort.requestedSeasonId
+                    ? `${formatSeasonRange(percentileCohort.appliedSeasonId)} values, not ${formatSeasonRange(seasonId)}`
+                    : "all skaters"}
+                </div>
               )}
               <div className={desktop ? styles.thresholdChips : styles.thresholdMessagesContainer}>
                 {thresholdMessages.map(message => desktop
@@ -534,7 +539,7 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
                 />
               ) : (
                 <div className={styles.chartLoadingPlaceholder}>
-                  Calculating...
+                  Calculating…
                 </div>
               )}
             </div>

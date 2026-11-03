@@ -63,13 +63,13 @@ describe("StatsTableRowChart", () => {
         averages={{}} height={200} />
     );
     // Recharts renders no SVG without a measured size in jsdom, so check what each form asks for.
-    expect(container.querySelector('[aria-label="Goals by game"]')).toBeTruthy();
+    expect(container.querySelector('[aria-label^="Goals by game: 2 of 3 games with a value, from 0 to 1"]')).toBeTruthy();
     rerender(
       <StatsTableRowChart playerId={1} seasonId={20252026} statLabel="SOG/60" tableType="RATES" isLoading={false} error={null}
         gameLogData={[{ date: "2026-01-01", value: 9 }, { date: "2026-01-03", value: null }]}
         averages={{}} height={200} />
     );
-    expect(container.querySelector('[aria-label="SOG/60 by game"]')).toBeTruthy();
+    expect(container.querySelector('[aria-label^="SOG/60 by game: 1 of 2 games"]')).toBeTruthy();
     expect(gameLogMean([{ date: "a", value: 9 }, { date: "b", value: null }, { date: "c", value: 3 }])).toBe(6);
   });
 

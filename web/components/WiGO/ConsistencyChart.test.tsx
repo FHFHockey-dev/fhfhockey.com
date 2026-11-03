@@ -59,7 +59,7 @@ describe("Point Consistency", () => {
   it("shows an empty state for no games", async () => {
     fetchLogs.mockResolvedValue([]);
     mount();
-    await screen.findByText("No game data found...");
+    await screen.findByText("No games found for this season.");
     expect(screen.queryByTestId("distribution")).toBeNull();
   });
 });

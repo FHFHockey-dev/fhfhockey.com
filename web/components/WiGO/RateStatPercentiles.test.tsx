@@ -307,7 +307,7 @@ describe("RateStatPercentiles", () => {
       ).toBeTruthy();
     });
 
-    expect(screen.getByText("Player GP: 78 · Requested 20252026 · Applied 20242025")).toBeTruthy();
+    expect(screen.getByText(/Player GP: 78 · 2024–25 values, not 2025–26/)).toBeTruthy();
     expect(screen.getByText(/Selected Player GP \(78\) below threshold \(80\)/)).toBeTruthy();
   });
 

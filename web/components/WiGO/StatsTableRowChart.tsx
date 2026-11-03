@@ -130,6 +130,15 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
 
   const seasonAverageValue = useMemo(() => gameLogMean(gameLogData), [gameLogData]);
 
+  // A one-line text alternative for the plot (E, a11y #7): sample, range, mean.
+  const gameLogSummary = useMemo(() => {
+    const values = gameLogData
+      .map((d) => d.value)
+      .filter((v): v is number => typeof v === "number" && Number.isFinite(v));
+    if (values.length === 0) return `${statLabel} by game: no values`;
+    const fmt = (v: number) => formatWigoStatValue(statLabel, v);
+    return `${statLabel} by game: ${values.length} of ${gameLogData.length} games with a value, from ${fmt(Math.min(...values))} to ${fmt(Math.max(...values))}; ${formatGameMeanLabel(statLabel, gameLogMean(gameLogData)!).toLowerCase()}`;
+  }, [gameLogData, statLabel]);
   const yTicks = useMemo(() => {
     const plotted = chartData
       .map((d) => d.value)
@@ -243,7 +252,7 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
           }
         })}
       </div>
-      {status ? <div className={styles.chartStatus} role="status">{status}</div> : <div className={fill ? styles.gameLogChartPlot : undefined} role="img" aria-label={`${statLabel} by game`}><ResponsiveContainer width="100%" height={chartHeight}>
+      {status ? <div className={styles.chartStatus} role="status">{status}</div> : <div className={fill ? styles.gameLogChartPlot : undefined} role="img" aria-label={gameLogSummary}><ResponsiveContainer width="100%" height={chartHeight}>
         <ComposedChart
           data={chartData}
           margin={fill ? { top: 4, right: 6, left: 0, bottom: 0 } : { top: 5, right: 10, left: 0, bottom: 16 }}
