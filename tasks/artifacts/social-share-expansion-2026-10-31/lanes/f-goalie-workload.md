@@ -191,3 +191,12 @@ None. No frozen file needs a change.
 
 - **Rows:** Rescue rows now share the card's height, so 11 rows fill it. Under 4 rows they stop at 130px, as Busy and Quiet's boards do, so a list that small still leaves blank space below it.
 - **Row cap:** every Matchup and Custom card caps ties at 27, since the legend can reach two lines.
+
+## Late feed (SS-1103-F)
+
+- **Rule:** Busy and Quiet and Goalie Rescue run `completeThrough` over the ledger's nights: expected is scheduled games × 2, observed is reported team results. Newest incomplete nights are cut, the window is rebuilt to the last complete night, the card stays ready, and `pageNotes` carries the helper's note. Nothing reaches the PNG.
+- **Older gaps:** still block. They are left in after the cut and `ledgerCoverage` reports them as before, over the window's own nights only. That is the helper's `olderMissing`, without the season's older nights that no window reads, which never blocked.
+- **Chosen dates:** the cut applies inside them, and the line ends ", games through Oct 2". No complete night gives a missing edition with the reason.
+- **Labelled starters:** only missing team results are cut. A team game reported without exactly one labelled starter still blocks, wherever it falls.
+- **Ratio Impact:** skipped. It reads one goalie's rows with no schedule or team-games check, so it has no missing-team-games reason.
+- **Busy and Quiet loader:** the NST reads follow the cut window, so its oldest game keeps its danger-zone row.

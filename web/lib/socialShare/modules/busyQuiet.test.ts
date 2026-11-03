@@ -19,6 +19,8 @@ const rows: GoalieAppearance[] = [
   ...[5, 6, 7].map(day => appearance({ goalieId: 3, gameId: day, date: date(day), team: "NYR", shotsAgainst: 20, saves: 18, goalsAgainst: 2 })),
 ];
 const games: CompletedTeamGame[] = [...[1, 2, 3, 4].map(id => ({ gameId: id, date: date(id), team: "NJD" })), ...[5, 6, 7].map(id => ({ gameId: id, date: date(id), team: "NYR" }))];
+/** Both teams' results for each night, which makes those nights complete. */
+const bothTeams = (days: number[]): CompletedTeamGame[] => days.flatMap(day => ["NJD", "NYR"].map(team => ({ gameId: day, date: date(day), team })));
 const scheduled = (count: number) => Array.from({ length: count }, (_, index) => date(index + 1));
 const settings = (over: Partial<BusyQuietSettings> = {}): BusyQuietSettings => ({ basis: "start", window: "l10", minStarts: 3, minStartsWeek: 2, minStartsRange: 2, period: "rolling", week: null, start: null, end: null, ...over });
 const nstGoalie = (goalieId: number, day: number, hd = 10): NstGoalieRow => ({ player_id: goalieId, date_scraped: date(day), toi: "60", hd_shots_against: hd, md_shots_against: 5, ld_shots_against: 5 });
@@ -111,7 +113,8 @@ describe("completeness", () => {
     expect(ledgerCoverage({ scheduledDates: scheduled(1), teamGames: [{ gameId: 1, date: date(1), team: "NJD" }], appearances: [appearance({ goalieId: 1, gameId: 1, date: date(1) })], since: null }).reasons[0]).toMatch(/1 of 2 scheduled/);
     const both = [{ gameId: 1, date: date(1), team: "NJD" }, { gameId: 1, date: date(1), team: "NYR" }];
     expect(ledgerCoverage({ scheduledDates: scheduled(1), teamGames: both, appearances: [appearance({ goalieId: 1, gameId: 1, date: date(1) }), appearance({ goalieId: 2, gameId: 1, date: date(1), team: "NYR", started: null })], since: null }).reasons[0]).toMatch(/1 of 2 team games lack/);
-    expect(build({ scheduledDates: scheduled(9) }).state).toBe("partial");
+    // A gap before the newest complete night still blocks; only a late end is cut (see "late feed").
+    expect(build({ scheduledDates: scheduled(3), teamGames: [...bothTeams([1, 3]), { gameId: 2, date: date(2), team: "NJD" }] }).state).toBe("partial");
   });
   it("ignores older games no window reads", () => {
     expect(ledgerCoverage({ scheduledDates: [date(1), date(9)], teamGames: [{ gameId: 9, date: date(9), team: "NJD" }, { gameId: 9, date: date(9), team: "NYR" }], appearances: [appearance({ goalieId: 1, gameId: 9, date: date(9) }), appearance({ goalieId: 2, gameId: 9, date: date(9), team: "NYR" })], since: date(9) }).complete).toBe(true);
@@ -289,7 +292,7 @@ describe("busy and quiet period", () => {
     expect(busyQuietModule.periodControl).toEqual({ mode: "past-only" });
   });
   it("reads a chosen matchup's games only, and prints its dates", () => {
-    const result = build({ settings: settings({ period: "matchup", week: 1, minStartsWeek: 3 }), range: week1(), scheduledDates: scheduled(4) });
+    const result = build({ settings: settings({ period: "matchup", week: 1, minStartsWeek: 3 }), range: week1(), scheduledDates: scheduled(4), teamGames: bothTeams([1, 2, 3, 4]) });
     expect(result.data!.dates).toBe("Week 1 · Oct 1 to Oct 4");
     expect(result.data!.ranged).toBe(true);
     expect(result.data!.busy.map(row => row.goalieId)).toEqual([1]);
@@ -301,7 +304,7 @@ describe("busy and quiet period", () => {
   });
   it("stops a week under way at the last completed games, and says so", () => {
     const range = chosen({ period: "matchup", week: 2 }, date(6));
-    expect(range).toEqual({ from: date(5), through: date(6), line: "Week 2 · Oct 5 to Oct 11, games through Oct 6", past: false });
+    expect(range).toEqual({ from: date(5), through: date(6), line: "Week 2 · Oct 5 to Oct 11, games through Oct 6", label: "Week 2 · Oct 5 to Oct 11", past: false });
   });
   it("refuses a week not started, a custom end past the games, and a bad range before any read", () => {
     expect(resolveGoalieRange(settings({ period: "matchup", week: 4 }), calendar, date(6)).reason).toBe(`Week 4 has not started; data runs through ${date(6)}.`);
@@ -312,12 +315,12 @@ describe("busy and quiet period", () => {
   });
   it("applies min starts to the chosen dates and never lowers it for a short range", () => {
     const short = chosen({ period: "custom", start: date(1), end: date(2) }), active = settings({ period: "custom", start: date(1), end: date(2), minStartsRange: 3 });
-    const empty = build({ settings: active, range: short, scheduledDates: scheduled(2) });
+    const empty = build({ settings: active, range: short, scheduledDates: scheduled(2), teamGames: bothTeams([1, 2]) });
     expect(empty.data!.busy).toEqual([]);
     expect(renderCard(empty.data!, active).container.textContent).toBe(`No goalie has 3 official starts in Oct 1 to Oct 2. ${MIN_STARTS_RANGE_RULE}`);
     cleanup();
     const lower = settings({ period: "custom", start: date(1), end: date(2) });
-    expect(build({ settings: lower, range: short, scheduledDates: scheduled(2) }).data!.busy.map(row => [row.goalieId, row.starts])).toEqual([[1, 2]]);
+    expect(build({ settings: lower, range: short, scheduledDates: scheduled(2), teamGames: bothTeams([1, 2]) }).data!.busy.map(row => [row.goalieId, row.starts])).toEqual([[1, 2]]);
     expect(build({ settings: lower, range: short }).evidence.sample).toContain(MIN_STARTS_RANGE_RULE);
   });
   it("defaults min starts by period, lets an explicit value win, and leaves old links as they were", () => {
@@ -332,9 +335,9 @@ describe("busy and quiet period", () => {
     expect(renderCard(build({ settings: settings() }).data!, settings()).container.textContent).not.toContain("Min 3 GS");
   });
   it("checks every scheduled game in the chosen dates and none outside them", () => {
-    expect(build({ settings: settings({ period: "matchup", week: 1 }), range: week1(), scheduledDates: scheduled(4), teamGames: games.slice(0, 3) }).state).toBe("partial");
+    expect(build({ settings: settings({ period: "matchup", week: 1 }), range: week1(), scheduledDates: scheduled(4), teamGames: [...bothTeams([1, 3, 4]), { gameId: 2, date: date(2), team: "NJD" }] }).state).toBe("partial");
     const later = [...scheduled(4), date(20)];
-    expect(build({ settings: settings({ period: "matchup", week: 1 }), range: week1(), scheduledDates: later, teamGames: games.slice(0, 4), appearances: rows.filter(row => row.date <= date(4)) }).evidence.coverage!.expected).toBe(8);
+    expect(build({ settings: settings({ period: "matchup", week: 1 }), range: week1(), scheduledDates: later, teamGames: bothTeams([1, 2, 3, 4]), appearances: rows.filter(row => row.date <= date(4)) }).evidence.coverage!.expected).toBe(8);
   });
   it("judges HD coverage per goalie over the chosen dates, and still prints a dash below it", () => {
     const range = week1(), nst = (days: number[]) => days.map(day => nstGoalie(1, day));
@@ -371,5 +374,43 @@ describe("busy and quiet period", () => {
   it("fails visibly when the matchup calendar can't be read", async () => {
     const failing = { from: vi.fn(() => { throw new Error("Matchup weeks read failed."); }) };
     await expect(loadBusyQuiet({ client: failing, generatedAt: "2026-10-31T18:00:00Z" }, settings({ period: "matchup" }))).rejects.toThrow("Matchup weeks read failed.");
+  });
+});
+
+describe("late feed", () => {
+  // The fixture's games each have one scheduled game a night; both teams' results make a complete night.
+  const night = (day: number, teams = ["NJD", "NYR"]) => teams.map(team => ({ gameId: day, date: date(day), team }));
+  const nights = (days: number[], late: Record<number, string[]> = {}) => days.flatMap(day => night(day, late[day]));
+  const starts = (days: number[]) => days.flatMap(day => [appearance({ goalieId: 1, gameId: day, date: date(day) }), appearance({ goalieId: 2, gameId: day, date: date(day), team: "NYR", shotsAgainst: 20 })]);
+  it("ends at the last complete night when only the newest is late, stays ready, and says so on the page", () => {
+    const result = build({ appearances: starts([1, 2, 3, 4]), teamGames: nights([1, 2, 3, 4], { 4: ["NJD"] }), scheduledDates: [1, 2, 3, 4].map(date), through: date(4) });
+    expect(result.state).toBe("ready");
+    expect(result.pageNotes).toEqual(["Oct 4 is not fully reported yet, so this card ends Oct 3."]);
+    expect(result.data!.through).toBe(date(3));
+    expect([...result.data!.busy, ...result.data!.quiet].every(row => row.series.map(point => point.date).every(day => day <= date(3)))).toBe(true);
+    expect(JSON.stringify(result.data)).not.toContain("not fully reported");
+  });
+  it("cuts several late nights at the end, and a chosen week's line says where it stops", () => {
+    const range = { from: date(1), through: date(4), line: "Week 1 · Oct 1 to Oct 4", label: "Week 1 · Oct 1 to Oct 4", past: true };
+    const result = build({ appearances: starts([1, 2, 3, 4]), teamGames: nights([1, 2, 3, 4], { 3: [], 4: ["NYR"] }), scheduledDates: [1, 2, 3, 4].map(date), through: date(30), range, settings: settings({ period: "matchup", week: 1, minStartsWeek: 2 }) });
+    expect(result.state).toBe("ready");
+    expect(result.pageNotes).toEqual(["Oct 3 and Oct 4 are not fully reported yet, so this card ends Oct 2."]);
+    expect(result.data!.dates).toBe("Week 1 · Oct 1 to Oct 4, games through Oct 2");
+  });
+  it("keeps an older gap blocking, with no page note", () => {
+    const result = build({ appearances: starts([1, 2, 3, 4]), teamGames: nights([1, 2, 3, 4], { 2: ["NJD"] }), scheduledDates: [1, 2, 3, 4].map(date), through: date(4) });
+    expect(result.state).toBe("partial");
+    expect(result.pageNotes).toBeUndefined();
+    expect(result.reasons).toContain("1 of 8 scheduled team games have no reported result.");
+  });
+  it("cuts the late end and still blocks a gap before it", () => {
+    const result = build({ appearances: starts([1, 2, 3, 4]), teamGames: nights([1, 2, 3, 4], { 2: ["NJD"], 4: [] }), scheduledDates: [1, 2, 3, 4].map(date), through: date(4) });
+    expect(result.state).toBe("partial");
+    expect(result.data!.through).toBe(date(3));
+    expect(result.reasons).toContain("1 of 6 scheduled team games have no reported result.");
+  });
+  it("is unavailable when no night is complete", () => {
+    const result = build({ appearances: starts([1]), teamGames: [], scheduledDates: [date(1)], through: date(1) });
+    expect(result).toMatchObject({ state: "missing", data: null, reasons: ["No night is fully reported yet, so there is nothing to show."] });
   });
 });

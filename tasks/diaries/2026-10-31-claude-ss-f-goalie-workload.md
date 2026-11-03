@@ -38,3 +38,7 @@ Added Matchup week and Custom to Busy and Quiet and Rescue; rolling stays the de
 ## 2026-11-01: Min starts by period
 
 Lead's real Week 4 render showed 1 goalie. Added `minStartsWeek` and `minStartsRange`, default 2; rolling keeps 3. Real Week 4: Rescue 11 rows, Busy and Quiet 11 and 12. Rows fill from 4 up. A temporary loader test ran the real read and was deleted, uncommitted. Next: the lead's real render.
+
+## 2026-11-03: Late feed rule
+
+Applied `completeThrough` to Busy and Quiet and Rescue through a shared `cutLateNights`; Ratio Impact has no team-games reason. Six old tests had their gap on the newest night, so they now use an older gap. Gotcha: another session's Playwright run shares `.next-playwright` and killed my server on 3147; wait for it to finish. The spec's Refresh lines belong to ss-contract.

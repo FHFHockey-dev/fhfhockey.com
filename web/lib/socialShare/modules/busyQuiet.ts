@@ -2,6 +2,7 @@ import { currentSeason } from "lib/socialShare/schedule";
 import { defineShareModule, UNKNOWN_EVIDENCE, type ShareSettingField, type SharePostEvidence, type SharePostLoadResult, type SharePostSource } from "./contract";
 import { competitionRanks, editionDate, lastN, per60 } from "./shared/definitions";
 import type { CompletedTeamGame, GoalieAppearance } from "./shared/goalieLedger";
+import { completeThrough, completeThroughNote } from "./shared/completeThrough";
 import { customRangeReason, periodDates, periodWindowFields, PERIOD_CUSTOM, resolvePeriodWindow, type MatchupCalendar, type PeriodControl, type PeriodWindowSettings } from "./shared/periodWindow";
 
 /** Busy and Quiet goalies (SS 10.0, SS-R12): how much work each goalie faced, kept apart from how well he played. */
@@ -58,22 +59,43 @@ export const GOALIE_MIN_STARTS_FIELDS: readonly ShareSettingField[] = [
 export const goalieMinStarts = (settings: GoalieMinStarts & Pick<PeriodWindowSettings, "period">) => settings.period === "matchup" ? settings.minStartsWeek : settings.period === PERIOD_CUSTOM ? settings.minStartsRange : settings.minStarts;
 export const validateGoaliePeriodChoice = (settings: PeriodWindowSettings) => settings.period === PERIOD_CUSTOM ? customRangeReason(settings) : null;
 /** The chosen dates. `through` stops at the last completed games; `past` means the dates ended before them. */
-export type GoalieDateRange = { from: string; through: string; line: string; past: boolean };
+export type GoalieDateRange = { from: string; through: string; line: string; past: boolean;
+  /** The period's own name, without any "games through" ending. */
+  label?: string };
 const SHORT_DATE = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 export const goalieShortDate = (date: string) => SHORT_DATE.format(new Date(`${date}T12:00:00Z`));
 export function resolveGoalieRange(settings: PeriodWindowSettings, calendar: MatchupCalendar, cutoff: string): { range: GoalieDateRange; reason?: undefined } | { range?: undefined; reason: string } {
   const { window, reason } = resolvePeriodWindow(settings, calendar, { ...GOALIE_PERIOD_CONTROL, cutoff });
   if (!window) return { reason: [reason, ...calendar.reasons].join(" ") };
   const underWay = window.through > cutoff;
-  return { range: { from: window.from, through: underWay ? cutoff : window.through, line: underWay ? `${window.label}, games through ${goalieShortDate(cutoff)}` : window.label, past: window.through < cutoff } };
+  return { range: { from: window.from, through: underWay ? cutoff : window.through, line: underWay ? `${window.label}, games through ${goalieShortDate(cutoff)}` : window.label, label: window.label, past: window.through < cutoff } };
 }
 export const goalieRangeMissing = <Data>(reason: string): SharePostLoadResult<Data> => ({ state: "missing", reasons: [reason], data: null, evidence: { ...UNKNOWN_EVIDENCE, sources: [{ name: "Yahoo matchup weeks", tables: ["yahoo_matchup_weeks"], state: "ready", asOf: null, updatedAt: null }], sample: reason, strength: "All situations" } });
+export type GoalieLedger = { appearances: readonly GoalieAppearance[]; teamGames: readonly CompletedTeamGame[]; scheduledDates: readonly string[] };
 /** The ledger cut to the chosen dates, so a game outside them can neither count nor hold the post back. */
-export function rangeLedger(ledger: { appearances: readonly GoalieAppearance[]; teamGames: readonly CompletedTeamGame[]; scheduledDates: readonly string[] }, range: GoalieDateRange | null | undefined) {
+export function rangeLedger(ledger: GoalieLedger, range: GoalieDateRange | null | undefined) {
   if (!range) return ledger;
   const inside = (date: string) => date >= range.from && date <= range.through;
   return { appearances: ledger.appearances.filter(row => inside(row.date)), teamGames: ledger.teamGames.filter(game => inside(game.date)), scheduledDates: ledger.scheduledDates.filter(inside) };
 }
+/**
+ * TJ's late-feed rule (2026-11-03). Newest nights still missing team results are cut, so the card ends at its last complete night and stays
+ * exportable, with a page note. Only those trailing nights go: a gap before them stays in, and `ledgerCoverage` still blocks it as before.
+ */
+export function cutLateNights(ledger: GoalieLedger, range: GoalieDateRange | null | undefined, through: string): { ledger: GoalieLedger; range: GoalieDateRange | null; through: string; pageNotes?: string[]; reason?: undefined } | { ledger?: undefined; reason: string } {
+  const expected = new Map<string, number>(), observed = new Map<string, number>();
+  for (const date of ledger.scheduledDates) expected.set(date, (expected.get(date) ?? 0) + 2);
+  for (const game of ledger.teamGames) observed.set(game.date, (observed.get(game.date) ?? 0) + 1);
+  const result = completeThrough([...expected].map(([date, count]) => ({ date, expected: count, observed: observed.get(date) ?? 0 })), range?.through ?? through);
+  if (result.through === null) return { reason: `No night ${range ? "in these dates " : ""}is fully reported yet, so there is nothing to show.` };
+  if (!result.trimmed.length) return { ledger, range: range ?? null, through };
+  const end = result.through, note = completeThroughNote(result);
+  return {
+    ledger: { appearances: ledger.appearances.filter(row => row.date <= end), teamGames: ledger.teamGames.filter(game => game.date <= end), scheduledDates: ledger.scheduledDates.filter(date => date <= end) },
+    range: range ? { ...range, through: end, line: `${range.label ?? range.line}, games through ${goalieShortDate(end)}` } : null, through: end, pageNotes: note ? [note] : undefined,
+  };
+}
+export const lateFeedUnavailable = <Data>(reason: string): SharePostLoadResult<Data> => ({ state: "missing", reasons: [reason], data: null, evidence: { ...UNKNOWN_EVIDENCE, sources: [{ name: "NHL.com goalie and team game stats", tables: ["wgo_goalie_stats", "wgo_team_stats", "games"], state: "missing", asOf: null, updatedAt: null, reasons: [reason] }], sample: reason, strength: "All situations" } });
 /** Chosen dates hold every appearance in them. Min starts counts those same appearances and is never lowered for a short range. */
 export const rangeWindows = (appearances: readonly GoalieAppearance[], window: GoalieWindowKey, range: GoalieDateRange | null | undefined) => goalieWindows(rangeLedger({ appearances, teamGames: [], scheduledDates: [] }, range).appearances, range ? "std" : window);
 /** The dates a card prints: the chosen ones, or the oldest and newest game behind a rolling window. */
@@ -173,11 +195,13 @@ export function buildBusyQuiet(input: {
   /** The chosen dates; absent for a rolling window. */
   range?: GoalieDateRange | null;
 }): SharePostLoadResult<BusyQuietData> {
-  const { settings, range } = input, { appearances, teamGames, scheduledDates } = rangeLedger(input, range), minStarts = goalieMinStarts(settings);
+  const cut = cutLateNights(rangeLedger(input, input.range), input.range, input.through);
+  if (!cut.ledger) return lateFeedUnavailable(cut.reason);
+  const { settings } = input, { range, through, pageNotes } = cut, { appearances, teamGames, scheduledDates } = cut.ledger, minStarts = goalieMinStarts(settings);
   const windows = goalieWindows(appearances, range ? "std" : settings.window), eligible = windows.filter(window => window.starts >= minStarts);
   const since = range ? range.from : eligible.reduce<string | null>((oldest, window) => !oldest || window.firstDate < oldest ? window.firstDate : oldest, null);
   const ledger = ledgerCoverage({ scheduledDates, teamGames, appearances, since });
-  const dates = goalieDatesLine(settings.window, range, eligible, input.through);
+  const dates = goalieDatesLine(settings.window, range, eligible, through);
   const nstGoalie = input.nstGoalie && new Map(input.nstGoalie.map(row => [`${row.player_id}:${row.date_scraped}`, row]));
   const nstTeam = input.nstTeam && new Map(input.nstTeam.map(row => [`${row.team_abbreviation}:${row.date}`, row]));
   const built = eligible.map(window => ({
@@ -213,8 +237,8 @@ export function buildBusyQuiet(input: {
     cohort: `${eligible.length} of ${windows.length} goalies with at least ${minStarts} official starts in ${range ? "these dates" : "the window"}`,
     coverage: ledger.coverage,
   };
-  return { state: complete ? "ready" : "partial", reasons, evidence, teams: [...new Set([...busy, ...quiet].map(row => row.team))],
-    data: { basis: settings.basis, window: settings.window, through: input.through, dates, ranged: !!range, minStarts, busy, quiet, eligible: eligible.length, appeared: windows.length, unranked, dangerUnadmitted, teamChancesUnadmitted } };
+  return { state: complete ? "ready" : "partial", reasons, evidence, ...(pageNotes ? { pageNotes } : {}), teams: [...new Set([...busy, ...quiet].map(row => row.team))],
+    data: { basis: settings.basis, window: settings.window, through, dates, ranged: !!range, minStarts, busy, quiet, eligible: eligible.length, appeared: windows.length, unranked, dangerUnadmitted, teamChancesUnadmitted } };
 }
 
 export const formatVolume = (value: number | null) => value === null ? "—" : value.toFixed(1);

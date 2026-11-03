@@ -1,4 +1,4 @@
-import { GOALIE_MIN_STARTS_FIELDS, GOALIE_PERIOD_CONTROL, GOALIE_PERIOD_FIELDS, goalieDatesLine, goalieMinStarts, goalieShortDate, goalieWindows, ledgerCoverage, MIN_STARTS_RANGE_RULE, rangeLedger, validateGoaliePeriodChoice, type GoalieDateRange, type GoalieMinStarts, type GoalieWindowKey } from "./busyQuiet";
+import { cutLateNights, GOALIE_MIN_STARTS_FIELDS, GOALIE_PERIOD_CONTROL, GOALIE_PERIOD_FIELDS, goalieDatesLine, goalieMinStarts, goalieShortDate, goalieWindows, lateFeedUnavailable, ledgerCoverage, MIN_STARTS_RANGE_RULE, rangeLedger, validateGoaliePeriodChoice, type GoalieDateRange, type GoalieMinStarts, type GoalieWindowKey } from "./busyQuiet";
 import { defineShareModule, type SharePostLoadResult } from "./contract";
 import { competitionRanks, ownershipInRange, ownershipLabel, ownershipOf, pooledGaa, pooledSavePct, type OwnershipState } from "./shared/definitions";
 import type { CompletedTeamGame, GoalieAppearance } from "./shared/goalieLedger";
@@ -73,11 +73,13 @@ export function buildGoalieRescue(input: {
   /** The chosen dates; absent for a rolling window. */
   range?: GoalieDateRange | null;
 }): SharePostLoadResult<RescueData> {
-  const { settings, range } = input, { appearances, teamGames, scheduledDates } = rangeLedger(input, range), past = !!range?.past, scheduleReasons = past ? [] : input.scheduleReasons;
+  const cut = cutLateNights(rangeLedger(input, input.range), input.range, input.through);
+  if (!cut.ledger) return lateFeedUnavailable(cut.reason);
+  const { settings } = input, { range, through, pageNotes } = cut, { appearances, teamGames, scheduledDates } = cut.ledger, past = !!range?.past, scheduleReasons = past ? [] : input.scheduleReasons;
   const windows = goalieWindows(appearances, range ? "std" : settings.window), minStarts = goalieMinStarts(settings), qualified = windows.filter(window => window.starts >= minStarts);
   const since = range ? range.from : qualified.reduce<string | null>((oldest, window) => !oldest || window.firstDate < oldest ? window.firstDate : oldest, null);
   const ledger = ledgerCoverage({ scheduledDates, teamGames, appearances, since });
-  const dates = goalieDatesLine(settings.window, range, qualified, input.through);
+  const dates = goalieDatesLine(settings.window, range, qualified, through);
   let aboveCeiling = 0, unknownExcluded = 0, unavailableStatus = 0, staleOwnership = 0, oldestStale: string | null = null;
   const candidates = qualified.flatMap(window => {
     const { ownership, status, stale } = input.availability.get(window.goalieId) ?? UNKNOWN_AVAILABILITY;
@@ -100,8 +102,8 @@ export function buildGoalieRescue(input: {
   const reasons = [...ledger.reasons, ...(unranked ? [`${unranked} candidates have no recorded value for this category and are unranked.`] : []), ...ownershipReasons, ...scheduleReasons];
   const complete = reasons.length === 0, asOf = appearances[appearances.length - 1]?.date ?? null;
   return {
-    state: complete ? "ready" : "partial", reasons, teams: [...new Set(rows.map(row => row.team))],
-    data: { category: settings.category, window: settings.window, through: input.through, dates, ranged: !!range, past, minStarts, weekEnd: input.weekEnd, rows, qualified: qualified.length, aboveCeiling, unknownExcluded, unavailableStatus, unranked },
+    state: complete ? "ready" : "partial", reasons, ...(pageNotes ? { pageNotes } : {}), teams: [...new Set(rows.map(row => row.team))],
+    data: { category: settings.category, window: settings.window, through, dates, ranged: !!range, past, minStarts, weekEnd: input.weekEnd, rows, qualified: qualified.length, aboveCeiling, unknownExcluded, unavailableStatus, unranked },
     evidence: {
       sources: [
         { name: "NHL.com goalie and team game stats", tables: ["wgo_goalie_stats", "wgo_team_stats"], state: ledger.complete ? "ready" : "partial", asOf, updatedAt: null, reasons: ledger.reasons },

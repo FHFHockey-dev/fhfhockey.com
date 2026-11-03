@@ -149,8 +149,9 @@ describe("pool and schedule", () => {
     expect(build({ appearances: relief, availability: own({ 7: 10 }) }).data!.qualified).toBe(0);
   });
   it("is partial when team games are unresolved", () => {
-    const teamGames: CompletedTeamGame[] = [{ gameId: 1, date: date(1), team: "NJD" }];
-    expect(build({ teamGames, scheduledDates: [date(1)] }).state).toBe("partial");
+    // Night 1 is missing a team and night 2 is complete, so the gap is older than the end and still blocks.
+    const teamGames: CompletedTeamGame[] = [{ gameId: 1, date: date(1), team: "NJD" }, { gameId: 2, date: date(2), team: "NJD" }, { gameId: 2, date: date(2), team: "NYR" }];
+    expect(build({ teamGames, scheduledDates: [date(1), date(2)] }).state).toBe("partial");
   });
   const SUNDAY = "2026-11-01", EVENING = "2026-11-02T01:30:00Z";
   const game = (over: Partial<ScheduledGame> = {}): ScheduledGame => ({ id: 1, date: SUNDAY, gameType: 2, startTimeUtc: "2026-11-01T23:00:00Z", state: "OFF", scheduleState: "OK", homeTeamId: 1, awayTeamId: 3, ...over });
@@ -400,5 +401,43 @@ describe("goalie rescue period", () => {
   it("refuses a week not started with the reason", async () => {
     const refused = await loadGoalieRescue({ client: client(), generatedAt: "2026-10-20T18:00:00Z" }, active({ week: 2 }));
     expect(refused).toMatchObject({ state: "missing", data: null, reasons: ["Week 2 has not started; data runs through 2026-10-19."] });
+  });
+});
+
+describe("late feed", () => {
+  // The fixture's games each have one scheduled game a night; both teams' results make a complete night.
+  const night = (day: number, teams = ["NJD", "NYR"]) => teams.map(team => ({ gameId: day, date: date(day), team }));
+  const nights = (days: number[], late: Record<number, string[]> = {}) => days.flatMap(day => night(day, late[day]));
+  const starts = (days: number[]) => days.flatMap(day => [appearance({ goalieId: 1, gameId: day, date: date(day), team: "NJD" }), appearance({ goalieId: 2, gameId: day, date: date(day), team: "NYR" })]);
+  it("ends at the last complete night when only the newest is late, stays ready, and says so on the page", () => {
+    const result = build({ appearances: starts([1, 2, 3, 4]), teamGames: nights([1, 2, 3, 4], { 4: ["NJD"] }), scheduledDates: [1, 2, 3, 4].map(date), through: date(4) });
+    expect(result.state).toBe("ready");
+    expect(result.pageNotes).toEqual(["Oct 4 is not fully reported yet, so this card ends Oct 3."]);
+    expect(result.data!.through).toBe(date(3));
+    expect(result.data!.rows.every(row => [row.appearances === 3 ? date(3) : date(9)].every(day => day <= date(3)))).toBe(true);
+    expect(JSON.stringify(result.data)).not.toContain("not fully reported");
+  });
+  it("cuts several late nights at the end, and a chosen week's line says where it stops", () => {
+    const range = { from: date(1), through: date(4), line: "Week 1 · Oct 1 to Oct 4", label: "Week 1 · Oct 1 to Oct 4", past: true };
+    const result = build({ appearances: starts([1, 2, 3, 4]), teamGames: nights([1, 2, 3, 4], { 3: [], 4: ["NYR"] }), scheduledDates: [1, 2, 3, 4].map(date), through: date(30), range, settings: settings({ period: "matchup", week: 1, minStartsWeek: 2 }) });
+    expect(result.state).toBe("ready");
+    expect(result.pageNotes).toEqual(["Oct 3 and Oct 4 are not fully reported yet, so this card ends Oct 2."]);
+    expect(result.data!.dates).toBe("Week 1 · Oct 1 to Oct 4, games through Oct 2");
+  });
+  it("keeps an older gap blocking, with no page note", () => {
+    const result = build({ appearances: starts([1, 2, 3, 4]), teamGames: nights([1, 2, 3, 4], { 2: ["NJD"] }), scheduledDates: [1, 2, 3, 4].map(date), through: date(4) });
+    expect(result.state).toBe("partial");
+    expect(result.pageNotes).toBeUndefined();
+    expect(result.reasons).toContain("1 of 8 scheduled team games have no reported result.");
+  });
+  it("cuts the late end and still blocks a gap before it", () => {
+    const result = build({ appearances: starts([1, 2, 3, 4]), teamGames: nights([1, 2, 3, 4], { 2: ["NJD"], 4: [] }), scheduledDates: [1, 2, 3, 4].map(date), through: date(4) });
+    expect(result.state).toBe("partial");
+    expect(result.data!.through).toBe(date(3));
+    expect(result.reasons).toContain("1 of 6 scheduled team games have no reported result.");
+  });
+  it("is unavailable when no night is complete", () => {
+    const result = build({ appearances: starts([1]), teamGames: [], scheduledDates: [date(1)], through: date(1) });
+    expect(result).toMatchObject({ state: "missing", data: null, reasons: ["No night is fully reported yet, so there is nothing to show."] });
   });
 });
