@@ -7,6 +7,7 @@ import { isWigoCountChartStat } from "./statMetadata";
 import { fetchPlayerGameLogForStat } from "utils/fetchWigoPlayerStats";
 import clsx from "clsx";
 import { diffDirection, formatDiffPercent } from "./tableUtils";
+import { WIGO_QUERY_DEFAULTS } from "components/WiGO/queryDefaults";
 
 interface StatsTableProps {
   data: TableAggregateData[];
@@ -72,7 +73,7 @@ const StatsTable: React.FC<StatsTableProps> = ({
     queryFn: () =>
       fetchPlayerGameLogForStat(playerId, currentSeasonId, expandedStatLabel!),
     enabled: playerId > 0 && currentSeasonId > 0 && expandedStatLabel !== null,
-    staleTime: 60_000
+    ...WIGO_QUERY_DEFAULTS
   });
   const gameLogData = gameLog.data ?? [];
   const isLoadingGameLog = gameLog.isLoading;

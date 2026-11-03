@@ -28,6 +28,7 @@ import { WIGO_COLORS, CHART_COLORS, addAlpha } from "styles/wigoColors";
 import WigoSectionCard from "./WigoSectionCard";
 import { WIGO_ERROR_MESSAGES } from "./errorMessages";
 import { useSeasonPendingMessage } from "hooks/useCurrentSeason";
+import { WIGO_QUERY_DEFAULTS } from "components/WiGO/queryDefaults";
 
 ChartJS.register(
   CategoryScale,
@@ -69,7 +70,7 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
     queryKey: ["wigoToiGameLog", playerId, seasonId],
     queryFn: () => fetchPlayerGameLogStats(playerId!, String(seasonId)),
     enabled: !!playerId && !!seasonId,
-    staleTime: 60_000
+    ...WIGO_QUERY_DEFAULTS
   });
   const isLoading = totals.isLoading || logs.isLoading;
   const error = totals.error || logs.error;

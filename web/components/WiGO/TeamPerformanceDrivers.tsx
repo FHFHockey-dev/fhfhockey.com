@@ -12,6 +12,7 @@ import {
   formatPercentileOrdinal,
   type TeamDriverCoverage,
 } from "./teamPerformanceDriverModel";
+import { WIGO_QUERY_DEFAULTS } from "components/WiGO/queryDefaults";
 
 const coverageLabel = ({ coveredGames, expectedGames }: TeamDriverCoverage) =>
   `${coveredGames} of ${expectedGames} games`;
@@ -36,7 +37,7 @@ const TeamPerformanceDrivers: React.FC<TeamPerformanceDriversProps> = ({
     queryKey: ["wigoTeamDriverSnapshots", seasonId],
     queryFn: () => fetchTeamDriverSnapshots(seasonId!),
     enabled,
-    staleTime: 60_000
+    ...WIGO_QUERY_DEFAULTS
   });
   const result = useMemo(() => snapshots.data && enabled ? buildTeamPerformanceDrivers({
     teamAbbreviation: teamAbbreviation!, teamId: teamId!, ...snapshots.data

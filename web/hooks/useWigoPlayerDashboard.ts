@@ -21,6 +21,7 @@ import {
   WigoAggregatedStatsResult
 } from "utils/fetchWigoPlayerStats";
 import useCurrentSeason from "./useCurrentSeason";
+import { WIGO_QUERY_DEFAULTS } from "components/WiGO/queryDefaults";
 
 export interface WigoSelectedPlayerDetails {
   player: Player;
@@ -195,21 +196,24 @@ export default function useWigoPlayerDashboard(): UseWigoPlayerDashboardResult {
   const selectedPlayerQuery = useQuery<WigoSelectedPlayerDetails | null>({
     queryKey: getWigoPlayerDetailsQueryKey(selectedPlayerId),
     queryFn: () => fetchWigoPlayerDetails(selectedPlayerId as number),
-    enabled: typeof selectedPlayerId === "number"
+    enabled: typeof selectedPlayerId === "number",
+    ...WIGO_QUERY_DEFAULTS
   });
 
   const aggregatedStatsQuery = useQuery<WigoAggregatedStatsResult>({
     queryKey: getWigoAggregatedStatsQueryKey(selectedPlayerId, currentSeasonId),
     queryFn: () => fetchPlayerAggregatedStats(selectedPlayerId as number, currentSeasonId),
     // Wait for the season so STD's totals fallback is season-checked and the read happens once.
-    enabled: typeof selectedPlayerId === "number" && currentSeasonId !== null
+    enabled: typeof selectedPlayerId === "number" && currentSeasonId !== null,
+    ...WIGO_QUERY_DEFAULTS
   });
 
   const latestTeamQuery = useQuery<number | null>({
     queryKey: ["wigoLatestGameTeam", selectedPlayerId, currentSeasonId],
     queryFn: () =>
       fetchWigoLatestGameTeamId(selectedPlayerId as number, currentSeasonId as number),
-    enabled: typeof selectedPlayerId === "number" && currentSeasonId !== null
+    enabled: typeof selectedPlayerId === "number" && currentSeasonId !== null,
+    ...WIGO_QUERY_DEFAULTS
   });
 
   const updateUrlWith = useCallback(

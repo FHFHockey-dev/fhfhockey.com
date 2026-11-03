@@ -18,6 +18,7 @@ import WigoHelp from "./WigoHelp";
 import GameLogChart from "./StatsTableRowChart";
 import styles from "styles/wigoCharts.module.scss";
 import { useSeasonPendingMessage } from "hooks/useCurrentSeason";
+import { WIGO_QUERY_DEFAULTS } from "components/WiGO/queryDefaults";
 
 export const COMPARISON_PERIODS = [
   "STD",
@@ -84,7 +85,8 @@ export default function WigoComparisonMatrix({
     ],
     queryFn: () =>
       fetchPlayerGameLogForStat(playerId!, currentSeasonId!, selectedMetric),
-    enabled: !!playerId && !!currentSeasonId
+    enabled: !!playerId && !!currentSeasonId,
+    ...WIGO_QUERY_DEFAULTS
   });
   const metricsByLabel = new Map(data.map((row) => [row.label, row]));
   const selectedRow = data.find((row) => row.label === selectedMetric);

@@ -11,6 +11,7 @@ import styles from "./PlayerRatingsDisplay.module.scss";
 import { WIGO_ERROR_MESSAGES } from "./errorMessages";
 import { formatSeasonRange } from "./tableUtils";
 import { useSeasonPendingMessage } from "hooks/useCurrentSeason";
+import { WIGO_QUERY_DEFAULTS } from "components/WiGO/queryDefaults";
 
 interface PlayerRatingsProps {
   playerId: number | null | undefined;
@@ -68,7 +69,7 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
     queryKey: ["wigoRatingCohort", seasonId],
     queryFn: () => fetchRawStatsForAllStrengths(seasonId!),
     enabled: !!playerId && !!seasonId,
-    staleTime: 60_000,
+    ...WIGO_QUERY_DEFAULTS,
     // The pager already retries blips per page and gives a timeout one
     // attempt; a query retry would repeat all eight reads (S1, D-01).
     retry: false

@@ -13,6 +13,7 @@ import { WIGO_COLORS, addAlpha, CHART_COLORS } from "styles/wigoColors";
 import { WIGO_ERROR_MESSAGES } from "../errorMessages";
 import useWigoGameLog from "hooks/useWigoGameLog";
 import { useSeasonPendingMessage } from "hooks/useCurrentSeason";
+import { WIGO_QUERY_DEFAULTS } from "components/WiGO/queryDefaults";
 
 // --- Define props and dummy labels ---
 type GameScoreLineChartProps = {
@@ -70,7 +71,7 @@ export default function GameScoreLineChart({
     },
     // Enable query only when both IDs are valid numbers
     enabled: Number.isSafeInteger(playerId) && Number.isSafeInteger(seasonId) && playerId! > 0 && seasonId! > 0,
-    staleTime: 60_000
+    ...WIGO_QUERY_DEFAULTS
     // Keep previous data while loading new player/season? Optional.
     // keepPreviousData: true,
   });

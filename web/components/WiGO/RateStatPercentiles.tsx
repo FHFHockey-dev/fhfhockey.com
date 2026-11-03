@@ -23,6 +23,7 @@ import { formatOrdinal } from "utils/formattingUtils";
 import { WIGO_ERROR_MESSAGES } from "./errorMessages";
 import { formatSeasonRange } from "./tableUtils";
 import useCurrentSeason, { useSeasonPendingMessage } from "hooks/useCurrentSeason";
+import { WIGO_QUERY_DEFAULTS } from "components/WiGO/queryDefaults";
 
 ChartJS.register(
   CategoryScale,
@@ -226,7 +227,7 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
         playerId as number,
         queryClient
       ),
-    staleTime: 60_000,
+    ...WIGO_QUERY_DEFAULTS,
     enabled: typeof seasonId === "number" && typeof playerId === "number"
   });
   const allPlayersStats = useMemo<PlayerRawStats[]>(

@@ -7,6 +7,7 @@ import {
   DefensePercentileTable,
   PlayerRawStats
 } from "components/WiGO/types";
+import { WIGO_QUERY_DEFAULTS } from "components/WiGO/queryDefaults";
 
 const PAGE_SIZE = 500;
 // A fallback season is used only if it reached the panel's default minimum
@@ -251,7 +252,7 @@ export async function fetchPercentileCohortForPlayer(
       ? queryClient.fetchQuery({
           queryKey: ["wigoPercentileCohort", strength, requestedSeason],
           queryFn: () => fetchAllPlayerStatsForStrength(strength, requestedSeason),
-          staleTime: 60_000
+          staleTime: WIGO_QUERY_DEFAULTS.staleTime
         })
       : fetchAllPlayerStatsForStrength(strength, requestedSeason);
   const fetchPlayerGp = (requestedSeason: number) =>
@@ -259,7 +260,7 @@ export async function fetchPercentileCohortForPlayer(
       ? queryClient.fetchQuery({
           queryKey: ["wigoPercentilePlayerGp", requestedSeason, playerId],
           queryFn: () => fetchCanonicalPlayerGp(playerId, requestedSeason),
-          staleTime: 60_000
+          staleTime: WIGO_QUERY_DEFAULTS.staleTime
         })
       : fetchCanonicalPlayerGp(playerId, requestedSeason);
   const fetchSeasonMaxGp = (requestedSeason: number) =>
@@ -267,7 +268,7 @@ export async function fetchPercentileCohortForPlayer(
       ? queryClient.fetchQuery({
           queryKey: ["wigoPercentileSeasonMaxGp", requestedSeason],
           queryFn: () => fetchCanonicalSeasonMaxGp(requestedSeason),
-          staleTime: 60_000
+          staleTime: WIGO_QUERY_DEFAULTS.staleTime
         })
       : fetchCanonicalSeasonMaxGp(requestedSeason);
   const [rawRequestedStats, canonicalPlayerGp, canonicalSeasonMaxGp] =

@@ -164,6 +164,12 @@ describe("useWigoPlayerDashboard", () => {
     expect(result.current.rawCombinedData).toEqual(aggregates);
     expect(result.current.aggFreshness).toEqual(freshness);
     expect(result.current.aggDataError).toBeNull();
+    // WiGO-scoped defaults (S2): long freshness, no refetch on focus.
+    for (const key of ["wigoPlayerDetails", "wigoPlayerAggregatedStats", "wigoLatestGameTeam"]) {
+      const options = queryClient.getQueryCache().find({ queryKey: [key] })?.options as any;
+      expect(options?.staleTime).toBe(30 * 60_000);
+      expect(options?.refetchOnWindowFocus).toBe(false);
+    }
   });
 
   it("surfaces aggregate query failures without preserving stale table data", async () => {
