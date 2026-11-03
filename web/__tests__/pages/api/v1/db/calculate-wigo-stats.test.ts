@@ -489,6 +489,36 @@ describe("/api/v1/db/calculate-wigo-stats route", () => {
     expect(career.ca_pts_per_60).toBeCloseTo(4 / (200 / 60));
   });
 
+  it("GP-weights PP% across seasons in 3YA and CA", async () => {
+    getCurrentSeasonMock.mockResolvedValue({ seasonId: 20262027, lastSeasonId: 20252026 });
+    const game = recentGame("2026-10-23");
+    installRecentFrameMock([game], [game]);
+    const base = fromMock.getMockImplementation()!;
+    // A full season on the first unit beside a 6-game call-up with no PP time.
+    const totals = [
+      { season: "20262027", games_played: 10, pp_toi_pct_per_game: 0.5 },
+      { season: "20252026", games_played: 70, pp_toi_pct_per_game: 0.6 },
+      { season: "20242025", games_played: 6, pp_toi_pct_per_game: 0 }
+    ].map(row => ({ player_id: 8476453, ...row }));
+    const written: Record<string, any[]> = {};
+    fromMock.mockImplementation((table: string) => {
+      const query = base(table);
+      let perPlayer = false;
+      const eq = query.eq;
+      query.eq = (key: string, value: any) => { if (key === "player_id") perPlayer = true; return eq(key, value); };
+      const listThen = query.then;
+      if (table === "wgo_skater_stats_totals") query.then = (resolve: (value: unknown) => unknown) =>
+        perPlayer ? Promise.resolve({ data: totals, error: null }).then(resolve) : listThen(resolve);
+      query.upsert = (rows: any[]) => { written[table] = rows; return Promise.resolve({ error: null }); };
+      return query;
+    });
+    expect((await runRecentFixture()).statusCode).toBe(200);
+    const career = written.wigo_career[0];
+    expect(career.std_pp_pct).toBe(0.5);
+    expect(career.ya3_pp_pct).toBeCloseTo((0.6 * 70) / 76);
+    expect(career.ca_pp_pct).toBeCloseTo((0.6 * 70) / 76);
+  });
+
   it("keeps L-window ATOI and WGO-count rates when NST has not loaded the latest game", async () => {
     getCurrentSeasonMock.mockResolvedValue({ seasonId: 20262027, lastSeasonId: 20252026 });
     // McDavid's 10-31 shape: 6,966 s over five games, 2 G, 11 PTS; NST lacks 10-31.

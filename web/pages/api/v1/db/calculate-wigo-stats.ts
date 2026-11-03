@@ -610,9 +610,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           "pptoi",
           safeDivide(ppToi, sum(pp, (season) => season.gp))
         );
+        // GP-weighted, so a short season does not count as much as a full
+        // one (C-30).
+        const ppPct = wgo.filter((season) => season.wgo_pp_toi_pct != null);
         set(
           "pp_pct",
-          safeAverage(wgo.map((season) => season.wgo_pp_toi_pct))
+          safeDivide(
+            sum(ppPct, (season) => (season.wgo_pp_toi_pct ?? 0) * season.wgo_gp),
+            sum(ppPct, (season) => season.wgo_gp)
+          )
         );
         const wgoCounts = [
           ["g", "wgo_g"],
