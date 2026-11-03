@@ -57,9 +57,11 @@ vi.mock("lib/supabase", () => ({
 }));
 
 // The mocked sources are already the built result, so building passes them through.
+const mockGameLog = vi.hoisted(() => vi.fn());
 vi.mock("utils/fetchWigoPlayerStats", () => ({
   fetchPlayerAggregateSources: mockFetchPlayerAggregatedStats,
-  buildWigoAggregatedStatsResult: (sources: unknown) => sources
+  buildWigoAggregatedStatsResult: (sources: unknown) => sources,
+  fetchPlayerGameLogConsistencyData: mockGameLog
 }));
 
 vi.mock("lib/NHL/client", () => ({
@@ -137,6 +139,8 @@ describe("useWigoPlayerDashboard", () => {
     eqMock.mockClear();
     singleMock.mockReset();
     mockFetchPlayerAggregatedStats.mockReset();
+    mockGameLog.mockReset();
+    mockGameLog.mockResolvedValue([]);
     mockGetCurrentSeason.mockReset();
     mockGetCurrentSeason.mockResolvedValue({ seasonId: 20242025 });
   });
@@ -167,7 +171,7 @@ describe("useWigoPlayerDashboard", () => {
     expect(result.current.aggFreshness).toEqual(freshness);
     expect(result.current.aggDataError).toBeNull();
     // WiGO-scoped defaults (S2): long freshness, no refetch on focus.
-    for (const key of ["wigoPlayerDetails", "wigoPlayerAggregatedStats", "wigoLatestGameTeam"]) {
+    for (const key of ["wigoPlayerDetails", "wigoPlayerAggregatedStats", "wigoGameLog", "wigoPerGameTotals"]) {
       // staleTime and refetchOnWindowFocus are observer options in TanStack v5;
       // the pre-season key has no observer, so take the live one.
       const options = queryClient.getQueryCache().findAll({ queryKey: [key] })
@@ -298,18 +302,10 @@ describe("useWigoPlayerDashboard", () => {
   it("brands a traded player with the team of their latest game this season", async () => {
     // Mercer's shape: players.team_id still NJD (1), latest 2026-27 game for WPG.
     const player = createPlayer({ id: 8482110, fullName: "Dawson Mercer", team_id: 1 });
-    const latestGameQuery = { calls: [] as unknown[][] };
-    fromMock.mockImplementation((table?: string) => {
-      if (table !== "wgo_skater_stats") return { select: selectMock };
-      const chain: any = {
-        select: (...args: unknown[]) => { latestGameQuery.calls.push(["select", ...args]); return chain; },
-        eq: (...args: unknown[]) => { latestGameQuery.calls.push(["eq", ...args]); return chain; },
-        order: () => chain,
-        limit: () => chain,
-        maybeSingle: () => Promise.resolve({ data: { team_abbrev: "WPG" }, error: null })
-      };
-      return chain;
-    });
+    mockGameLog.mockResolvedValue([
+      { game_id: 2026020010, date: "2026-10-20", team_abbrev: "NJD" },
+      { game_id: 2026020099, date: "2026-10-30", team_abbrev: "WPG" }
+    ]);
     mockGetCurrentSeason.mockResolvedValue({ seasonId: 20262027 });
     mockRouter.query = { playerId: String(player.id) };
     singleMock.mockResolvedValue({ data: player, error: null });
@@ -322,9 +318,7 @@ describe("useWigoPlayerDashboard", () => {
     await waitFor(() => expect(result.current.teamAbbreviation).toBe("WPG"));
     expect(result.current.teamName).toBe("Winnipeg Jets");
     expect(result.current.teamIdForLog).toBe(52);
-    expect(latestGameQuery.calls).toContainEqual(["eq", "season_id", 20262027]);
-    expect(latestGameQuery.calls).toContainEqual(["eq", "games_played", 1]);
-    fromMock.mockImplementation(() => ({ select: selectMock }));
+    expect(mockGameLog).toHaveBeenCalledWith(player.id, "20262027");
   });
 
   it("starts the aggregate read before the season resolves, and builds the table once it does", async () => {

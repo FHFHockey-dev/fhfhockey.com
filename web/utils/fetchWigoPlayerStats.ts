@@ -40,6 +40,12 @@ export interface SkaterGameLogConsistencyData {
   shots: number | null;
   hits: number | null;
   blocked_shots: number | null;
+  // Seconds; PP share as a 0-1 fraction. One game-log read serves every chart
+  // and the dashboard's latest-team check (S5).
+  toi_per_game: number | null;
+  pp_toi_per_game: number | null;
+  pp_toi_pct_per_game: number | null;
+  team_abbrev: string | null;
 }
 
 // Interface for the raw points game log data
@@ -648,13 +654,13 @@ type WigoAggregateTotals =
 export interface WigoAggregateSources {
   careerData: WigoCareerRow | null;
   recentData: WigoRecentRow | null;
-  totalsData: WigoAggregateTotals;
 }
 
 /**
  * The player's aggregate rows. They do not depend on the season, so the read
  * starts without waiting for /api/v1/season; the season check happens when
- * the rows are built (S4).
+ * the rows are built (S4). This season's totals row comes from the shared
+ * per-game totals query instead of a second totals read (S5).
  */
 export async function fetchPlayerAggregateSources(
   playerId: number
@@ -662,7 +668,7 @@ export async function fetchPlayerAggregateSources(
 
   // wigo_career and wigo_recent are the aggregate sources. The legacy wigo_rates table has no writer
   // (0 rows) and is not read: if anything refilled it, it would silently override these per-60 values.
-  const [careerRes, recentRes, totalsRes] = await Promise.all([
+  const [careerRes, recentRes] = await Promise.all([
     supabase
       .from("wigo_career")
       .select("*")
@@ -672,15 +678,6 @@ export async function fetchPlayerAggregateSources(
       .from("wigo_recent")
       .select("*")
       .eq("player_id", playerId)
-      .maybeSingle(),
-    supabase
-      .from("wgo_skater_stats_totals")
-      .select(
-        `goals,assists,points,shots,hits,blocked_shots,penalty_minutes,pp_points,season,games_played,toi_per_game,pp_toi_pct_per_game`
-      )
-      .eq("player_id", playerId)
-      .order("season", { ascending: false })
-      .limit(1)
       .maybeSingle()
   ]);
 
@@ -692,23 +689,20 @@ export async function fetchPlayerAggregateSources(
     console.error("Error fetching wigo_recent data:", recentRes.error);
     throw new Error(`Failed to fetch recent stats: ${recentRes.error.message}`);
   }
-  if (totalsRes.error) {
-    // Non-fatal: totals are only used as an optional fallback for some STD counts
-    console.warn("Totals fallback unavailable:", totalsRes.error.message);
-  }
-
   return {
     careerData: careerRes.data as WigoCareerRow | null,
-    recentData: recentRes.data as WigoRecentRow | null,
-    totalsData: (totalsRes && !totalsRes.error
-      ? (totalsRes.data as any | null)
-      : null) as WigoAggregateTotals
+    recentData: recentRes.data as WigoRecentRow | null
   };
 }
 
-/** Table rows and freshness for one season, from the season-free sources. */
+/**
+ * Table rows and freshness for one season, from the season-free sources and
+ * that season's totals row (null when absent or unavailable: totals only feed
+ * the STD count fallback and the stale check).
+ */
 export function buildWigoAggregatedStatsResult(
-  { careerData, recentData, totalsData }: WigoAggregateSources,
+  { careerData, recentData }: WigoAggregateSources,
+  totalsData: WigoAggregateTotals,
   stdSeasonId: number | null
 ): WigoAggregatedStatsResult {
   const freshness = getWigoAggregateFreshness({
@@ -738,10 +732,11 @@ export async function fetchPlayerAggregatedStats(
   playerId: number,
   stdSeasonId: number | null = null
 ): Promise<WigoAggregatedStatsResult> {
-  return buildWigoAggregatedStatsResult(
-    await fetchPlayerAggregateSources(playerId),
-    stdSeasonId
-  );
+  const [sources, totalsData] = await Promise.all([
+    fetchPlayerAggregateSources(playerId),
+    fetchPlayerPerGameTotals(playerId, stdSeasonId).catch(() => null)
+  ]);
+  return buildWigoAggregatedStatsResult(sources, totalsData, stdSeasonId);
 }
 
 // A statement timeout (57014) is the slow view itself, not a blip: retrying it
@@ -893,66 +888,6 @@ export const fetchPlayerGameLogPoints = async (
   }
 };
 
-export const fetchPlayerGameLogStats = async (
-  playerId: number,
-  season: string // Keep accepting the string identifier from the totals data
-): Promise<SkaterGameLogStatsData[]> => {
-  // <<< UPDATE Return Type
-  if (!playerId || !season) return []; // Return empty array if no player or season
-
-  const seasonIdNumber = parseInt(season, 10);
-  if (isNaN(seasonIdNumber)) {
-    console.error(`Failed to parse season string "${season}" into a number.`);
-    return [];
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from("wgo_skater_stats") // Query the game log table
-      .select(
-        `
-        date,
-        toi_per_game,
-        pp_toi_per_game,
-        pp_toi_pct_per_game
-      `
-      )
-      .eq("player_id", playerId)
-      .eq("season_id", seasonIdNumber)
-      .order("date", { ascending: true }); // Order chronologically
-
-    if (error) {
-      console.error(
-        `Error fetching game log stats for player ${playerId}, season ID ${seasonIdNumber}:`,
-        error
-      );
-      throw error;
-    }
-
-    // --- Convert pp_toi_pct_per_game from decimal to percentage ---
-    const processedData =
-      data?.map((item) => ({
-        ...item,
-        // Assuming pp_toi_pct_per_game is stored as a decimal (e.g., 0.25 for 25%)
-        // Multiply by 100 if it's not null, otherwise keep it null
-        pp_toi_pct_per_game:
-          item.pp_toi_pct_per_game !== null
-            ? item.pp_toi_pct_per_game * 100
-            : null
-      })) || [];
-
-    // console.log(`Workspaceed Game Log Stats for player ${playerId}, season ${seasonIdNumber}:`, processedData); // Optional Debug Log
-
-    return (processedData as SkaterGameLogStatsData[]) || []; // Ensure result is an array
-  } catch (err) {
-    console.error(
-      `Unexpected error in fetchPlayerGameLogStats for player ${playerId}, season ID ${seasonIdNumber}:`,
-      err
-    );
-    throw err; // Re-throw
-  }
-};
-
 // --- NEW Function to fetch game-by-game data for Consistency ---
 export const fetchPlayerGameLogConsistencyData = async (
   playerId: number,
@@ -978,7 +913,11 @@ export const fetchPlayerGameLogConsistencyData = async (
         points,
         shots,
         hits,
-        blocked_shots
+        blocked_shots,
+        toi_per_game,
+        pp_toi_per_game,
+        pp_toi_pct_per_game,
+        team_abbrev
       ` // Select fields needed for calculation
       )
       .eq("player_id", playerId)

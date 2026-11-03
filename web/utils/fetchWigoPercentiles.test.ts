@@ -62,7 +62,11 @@ const {
       const totalsEqMock = vi.fn((column: string) => {
         if (column === "player_id") {
           return {
-            eq: totalsEqMock
+            eq: totalsEqMock,
+            // The shared per-game totals query: order, limit, then the season.
+            order: vi.fn(() => ({
+              limit: vi.fn(() => ({ eq: totalsEqMock }))
+            }))
           };
         }
 
@@ -113,32 +117,22 @@ describe("fetchWigoPercentiles", () => {
     totalsMaybeSingleMock.mockReset();
   });
 
-  it("filters both percentile tables to the requested season and merges gp/toi fallbacks", async () => {
+  it("reads only the offense table for the requested season, which carries GP and TOI", async () => {
     offenseRangeMock.mockResolvedValueOnce({
       data: [
         {
           player_id: 1,
           season: 20242025,
-          gp: null,
-          toi_seconds: null,
-          goals_per_60: 2.1
-        }
-      ],
-      error: null
-    } satisfies QueryResponse);
-    defenseRangeMock.mockResolvedValueOnce({
-      data: [
-        {
-          player_id: 1,
-          season: 20242025,
           gp: 14,
-          toi_seconds: 900
+          toi_seconds: 900,
+          goals_per_60: 2.1
         }
       ],
       error: null
     } satisfies QueryResponse);
 
     const rows = await fetchAllPlayerStatsForStrength("as", 20242025);
+    expect(fromMock.mock.calls.some(([table]) => String(table).includes("_defense"))).toBe(false);
 
     expect(rows).toEqual([
       expect.objectContaining({
@@ -345,7 +339,9 @@ describe("fetchWigoPercentiles", () => {
     await fetchPercentileCohortForPlayer("as", 20252026, 1, client);
     await fetchPercentileCohortForPlayer("as", 20252026, 2, client);
     expect(offenseRangeMock).toHaveBeenCalledTimes(1);
-    expect(defenseRangeMock).toHaveBeenCalledTimes(1);
+    expect(defenseRangeMock).not.toHaveBeenCalled();
+    // The player GP lookup shares the dashboard's per-game totals key.
+    expect(client.getQueryData(["wigoPerGameTotals", 1, 20252026])).toMatchObject({ games_played: 72 });
     // One season maximum and one canonical lookup for each selected player.
     expect(totalsMaybeSingleMock).toHaveBeenCalledTimes(3);
 
@@ -380,7 +376,7 @@ describe("fetchWigoPercentiles", () => {
     expect(second.appliedSeasonId).toBe(20252026);
     expect(revisit.appliedSeasonId).toBe(20242025);
     expect(offenseRangeMock).toHaveBeenCalledTimes(2);
-    expect(defenseRangeMock).toHaveBeenCalledTimes(2);
+    expect(defenseRangeMock).not.toHaveBeenCalled();
     client.clear();
   });
 

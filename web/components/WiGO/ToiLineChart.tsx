@@ -1,6 +1,6 @@
-import React, { useState, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
+import React, { useMemo, useState, useRef } from "react";
 import useWigoPlayerTotals from "hooks/useWigoPlayerTotals";
+import useWigoGameLog from "hooks/useWigoGameLog";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -16,10 +16,7 @@ import {
   ChartOptions,
   ChartData
 } from "chart.js";
-import {
-  SkaterGameLogStatsData,
-  fetchPlayerGameLogStats
-} from "utils/fetchWigoPlayerStats";
+import { SkaterGameLogStatsData } from "utils/fetchWigoPlayerStats";
 import { formatSecondsToMMSS, formatDateToMMDD } from "utils/formattingUtils";
 import styles from "styles/wigoCharts.module.scss";
 import zoomPlugin from "chartjs-plugin-zoom";
@@ -28,7 +25,6 @@ import { WIGO_COLORS, CHART_COLORS, addAlpha } from "styles/wigoColors";
 import WigoSectionCard from "./WigoSectionCard";
 import { WIGO_ERROR_MESSAGES } from "./errorMessages";
 import { useSeasonPendingMessage } from "hooks/useCurrentSeason";
-import { WIGO_QUERY_DEFAULTS } from "components/WiGO/queryDefaults";
 
 ChartJS.register(
   CategoryScale,
@@ -66,15 +62,22 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
   // --- State to control which chart is displayed ---
   const [chartView, setChartView] = useState<ChartView>("toi"); // Default to 'toi'
   const totals = useWigoPlayerTotals(playerId, seasonId);
-  const logs = useQuery({
-    queryKey: ["wigoToiGameLog", playerId, seasonId],
-    queryFn: () => fetchPlayerGameLogStats(playerId!, String(seasonId)),
-    enabled: !!playerId && !!seasonId,
-    ...WIGO_QUERY_DEFAULTS
-  });
+  // The shared appearance log (games_played = 1): a scratch has no ice time.
+  const logs = useWigoGameLog(playerId, seasonId);
   const isLoading = totals.isLoading || logs.isLoading;
   const error = totals.error || logs.error;
-  const gameLogData = logs.data ?? [];
+  const gameLogData = useMemo<SkaterGameLogStatsData[]>(
+    () =>
+      (logs.data ?? []).map((game) => ({
+        date: game.date,
+        toi_per_game: game.toi_per_game,
+        pp_toi_per_game: game.pp_toi_per_game,
+        // Stored as a 0-1 fraction; the chart uses 0-100.
+        pp_toi_pct_per_game:
+          game.pp_toi_pct_per_game !== null ? game.pp_toi_pct_per_game * 100 : null
+      })),
+    [logs.data]
+  );
   const averageToi = totals.data?.toi_per_game ?? null;
   const averagePpToiPct = totals.data?.pp_toi_pct_per_game ?? null;
 

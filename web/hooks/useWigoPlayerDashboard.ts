@@ -22,6 +22,8 @@ import {
   WigoAggregateSources
 } from "utils/fetchWigoPlayerStats";
 import useCurrentSeason from "./useCurrentSeason";
+import useWigoPlayerTotals from "./useWigoPlayerTotals";
+import useWigoGameLog from "./useWigoGameLog";
 import { WIGO_QUERY_DEFAULTS } from "components/WiGO/queryDefaults";
 
 export interface WigoSelectedPlayerDetails {
@@ -132,33 +134,6 @@ export async function fetchWigoPlayerDetails(
   };
 }
 
-/**
- * The team of the player's latest appearance this season. `players.team_id`
- * lags trades (Mercer still read NJD after joining WPG, B-10), so branding,
- * the schedule list and the team drivers follow the games instead.
- */
-export async function fetchWigoLatestGameTeamId(
-  playerId: number,
-  seasonId: number
-): Promise<number | null> {
-  const { data, error } = await supabase
-    .from("wgo_skater_stats")
-    .select("team_abbrev")
-    .eq("player_id", playerId)
-    .eq("season_id", seasonId)
-    .eq("games_played", 1)
-    .order("date", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (error) {
-    throw error;
-  }
-
-  const abbreviation = data?.team_abbrev;
-  return abbreviation ? teamsInfo[abbreviation]?.id ?? null : null;
-}
-
 export interface UseWigoPlayerDashboardResult {
   selectedPlayerId: number | null;
   selectedPlayer: Player | null;
@@ -207,21 +182,30 @@ export default function useWigoPlayerDashboard(): UseWigoPlayerDashboardResult {
     enabled: typeof selectedPlayerId === "number",
     ...WIGO_QUERY_DEFAULTS
   });
+  // The same totals query the season panels use, so it is read once (S5).
+  const totalsQuery = useWigoPlayerTotals(selectedPlayerId, currentSeasonId);
   const aggregatedStats = useMemo(
     () =>
-      aggregatedStatsQuery.data && currentSeasonId !== null
-        ? buildWigoAggregatedStatsResult(aggregatedStatsQuery.data, currentSeasonId)
+      aggregatedStatsQuery.data && currentSeasonId !== null && !totalsQuery.isPending
+        ? buildWigoAggregatedStatsResult(
+            aggregatedStatsQuery.data,
+            totalsQuery.data ?? null,
+            currentSeasonId
+          )
         : null,
-    [aggregatedStatsQuery.data, currentSeasonId]
+    [aggregatedStatsQuery.data, currentSeasonId, totalsQuery.isPending, totalsQuery.data]
   );
 
-  const latestTeamQuery = useQuery<number | null>({
-    queryKey: ["wigoLatestGameTeam", selectedPlayerId, currentSeasonId],
-    queryFn: () =>
-      fetchWigoLatestGameTeamId(selectedPlayerId as number, currentSeasonId as number),
-    enabled: typeof selectedPlayerId === "number" && currentSeasonId !== null,
-    ...WIGO_QUERY_DEFAULTS
-  });
+  // The team of the player's latest appearance this season, from the shared
+  // game log. players.team_id lags trades (Mercer still read NJD after joining
+  // WPG, B-10), so branding, the schedule list and the team drivers follow the
+  // games instead.
+  const gameLogQuery = useWigoGameLog(selectedPlayerId, currentSeasonId);
+  const latestGameTeamId = useMemo(() => {
+    const games = gameLogQuery.data ?? [];
+    const abbreviation = games[games.length - 1]?.team_abbrev;
+    return abbreviation ? teamsInfo[abbreviation]?.id ?? null : null;
+  }, [gameLogQuery.data]);
 
   const updateUrlWith = useCallback(
     (updates: Record<string, string | number | undefined>) => {
@@ -262,7 +246,7 @@ export default function useWigoPlayerDashboard(): UseWigoPlayerDashboardResult {
   const headshotUrl = selectedPlayerQuery.data?.headshotUrl ?? null;
 
   // A failed or empty lookup keeps the players-table team.
-  const teamId = latestTeamQuery.data ?? selectedPlayer?.team_id;
+  const teamId = latestGameTeamId ?? selectedPlayer?.team_id;
   const branding = useMemo(() => buildWigoBranding(teamId), [teamId]);
 
   return {
