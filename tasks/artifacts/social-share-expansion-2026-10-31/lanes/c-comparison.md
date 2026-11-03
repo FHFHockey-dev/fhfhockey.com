@@ -36,9 +36,25 @@ This replaces the filled tiles and type sizes described above.
 - `playerVsPlayer.candidates.json` is unchanged. TJ gave the pair with no URL, so it has no sourced record.
 - Value type is now 30px, 46px or 84px, so a value column leaves room for the bar.
 
+## Late newest night (SS-1103-C, TJ's rule of 2026-11-03)
+
+- The build adds up the two players' latest teams' scheduled games by night and calls `completeThrough` from `shared/completeThrough.ts`.
+- When only the newest nights are late, it drops appearances and NST rows after the last complete night. The card ends that night, stays ready, and returns `pageNotes: [completeThroughNote(...)]`. The note is never on the PNG.
+- The per-team "N of M scheduled games" reason now counts games through that night only, so it fires only for older gaps. An older gap is still partial, so export stays blocked.
+- With no complete night at all, the post is blocked ("No night in this window is fully reported yet.").
+- The loader now reads `games.date` to build the nights. Read limits are unchanged.
+- Tests cover:
+  - one late newest night: ready, ends the night before, with the page note;
+  - two late newest nights;
+  - an older gap, alone and together with a late newest night: partial, as before;
+  - every night reported: no note;
+  - no complete night: blocked;
+  - a loader-level late night.
+- The E2E spec never clicks "Refresh post", so the shell change doesn't affect it.
+
 ## Checks
 
-These are the latest run, after the bars.
+The bar-layout checks are below. SS-1103-C run: 91 tests pass across `playerVsPlayer`, `completeThrough`, `contract`, `server` and `PostStudio`, and eslint is clean on my files. `tsc --noEmit` reports 51 errors, all in files from other work: in-progress files under `lib/buyLowSellHigh/currentProcessEvidence*` and `lib/player-cards/retainedBlsh.test.ts`. None are in Player vs Player files.
 
 | Check | Result |
 | --- | --- |

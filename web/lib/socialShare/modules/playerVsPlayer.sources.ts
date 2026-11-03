@@ -29,13 +29,12 @@ export async function loadPlayerVsPlayer({ client, generatedAt }: SharePostConte
   if (teamIds.length) {
     const list = teamIds.map(team => team.id);
     const [scheduled, completed] = await Promise.all([
-      bounded<{ id: number; homeTeamId: number; awayTeamId: number }>("Schedule", SCHEDULE_LIMIT, (start, end) => client.from("games").select("id,homeTeamId,awayTeamId", { count: "exact" }).eq("seasonId", season).eq("type", 2).lte("date", through).or(`homeTeamId.in.(${list.join(",")}),awayTeamId.in.(${list.join(",")})`).order("id").range(start, end)),
+      bounded<{ id: number; date: string; homeTeamId: number; awayTeamId: number }>("Schedule", SCHEDULE_LIMIT, (start, end) => client.from("games").select("id,date,homeTeamId,awayTeamId", { count: "exact" }).eq("seasonId", season).eq("type", 2).lte("date", through).or(`homeTeamId.in.(${list.join(",")}),awayTeamId.in.(${list.join(",")})`).order("id").range(start, end)),
       bounded<{ team_id: number; game_id: number | null }>("Team game stats", TEAM_GAME_LIMIT, (start, end) => client.from("wgo_team_stats").select("team_id,game_id", { count: "exact" }).eq("season_id", season).lte("date", through).in("team_id", list).order("game_id").order("team_id").range(start, end)),
     ]);
     teamCoverage = teamIds.map(({ team, id }) => {
       const done = new Set(completed.flatMap(row => row.team_id === id && row.game_id !== null ? [row.game_id] : []));
-      const expected = scheduled.filter(game => game.homeTeamId === id || game.awayTeamId === id);
-      return { team, scheduled: expected.length, completed: expected.filter(game => done.has(game.id)).length };
+      return { team, games: scheduled.flatMap(game => game.homeTeamId === id || game.awayTeamId === id ? [{ date: game.date.slice(0, 10), completed: done.has(game.id) }] : []) };
     });
   }
   return buildPlayerVsPlayer({ ...base, appearances, nst, teamCoverage });
