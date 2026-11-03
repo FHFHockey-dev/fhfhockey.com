@@ -1,0 +1,32 @@
+[
+  {
+    "path": "tasks/artifacts/forge-v2-remediation-2026-10-30/intake_check.py",
+    "sha256": "fd75d523d63ed1a8c26ef99a29359a2cd11f613c812e693f0e5daf01e3d729df",
+    "bytes": 11737,
+    "matchesHEAD": true
+  },
+  {
+    "path": "tasks/artifacts/forge-v2-remediation-2026-10-30/test_intake_check.py",
+    "sha256": "ff48a260216642c64e6e619e77015fba7dd09523c9d5393889d08a993dc670e7",
+    "bytes": 7980,
+    "matchesHEAD": true
+  },
+  {
+    "path": "tasks/artifacts/forge-v2-remediation-2026-10-30/intake-template.json",
+    "sha256": "f6825994f3a3cb78334e3a8217450bc401e39fb3d0fa1dcc8185250f46a92ab4",
+    "bytes": 5782,
+    "matchesHEAD": true
+  },
+  {
+    "path": "tasks/artifacts/forge-v2-remediation-2026-10-30/run_continuation.py",
+    "sha256": "f5430770f7ed84f337fcfb6c15ce20577786c61e66feddcf2b1ecaf6a3eb9143",
+    "bytes": 3851,
+    "matchesHEAD": true
+  },
+  {
+    "path": "tasks/artifacts/forge-v2-remediation-2026-10-30/chronology-check.ts",
+    "sha256": "15cb5f15cb5714fb315572a2295d833918d8a215234203508f6c9386134fed55",
+    "bytes": 6529,
+    "matchesHEAD": true
+  }
+]

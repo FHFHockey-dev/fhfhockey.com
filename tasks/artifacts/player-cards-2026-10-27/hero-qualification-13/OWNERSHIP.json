@@ -1,0 +1,45 @@
+{
+  "id": "CODEX-PLAYER-CARDS-HERO13-20261027",
+  "at": "2026-10-27T02:38:10.989984+00:00",
+  "owner_thread": "01a16ec2-f81c-717b-8961-8c3832fdc00f",
+  "status": "FROZEN delivered locallyqualifiedKucherov13/5sourcepins/30tests/TS/lint0warn/3nativeHTTPgroups/5PNGs+manifest+shareparity;parentindependentreviewpending",
+  "authority": "Scout explicit ordinarylocalQA ofexistingKuchasset and smallqualifiedbinding; noownerapprovalgateforroutineQA",
+  "source_paths": [
+    "web/lib/player-cards/reviewedHeroSamples.ts",
+    "web/lib/player-cards/teamLogo.ts",
+    "web/lib/player-cards/currentArtwork.test.ts",
+    "web/components/player-cards/CurrentPlayerCardStudio.test.tsx",
+    "web/public/player-cards/hero-samples/8476453.png"
+  ],
+  "baseline": [
+    {
+      "path": "web/lib/player-cards/reviewedHeroSamples.ts",
+      "sha256": "1e8fe079c5a29b5d4355b7dfa729acabacb6ff8164a0c52c6ef93b7e2e16af18",
+      "absent": false
+    },
+    {
+      "path": "web/lib/player-cards/teamLogo.ts",
+      "sha256": "ea27905c906262947faebf75dcc24a9ca42a623b431ed48d20bede3bfafca186",
+      "absent": false
+    },
+    {
+      "path": "web/lib/player-cards/currentArtwork.test.ts",
+      "sha256": "3791a3dfc175cdfd01201cd185ee75b70dad791756e1ef4bf1d5723f14a8fe37",
+      "absent": false
+    },
+    {
+      "path": "web/components/player-cards/CurrentPlayerCardStudio.test.tsx",
+      "sha256": "73ead9e4855fa036b802be391cf22c760f9a5a45c0c1ca63c723ad41d4f873fb",
+      "absent": false
+    },
+    {
+      "path": "web/public/player-cards/hero-samples/8476453.png",
+      "sha256": null,
+      "absent": true
+    }
+  ],
+  "artifact_root": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13",
+  "head": "7da3e8663338f624564b2bb570e146b4f0b3f2de",
+  "limits": "Existinglocalassets only; no batchpromotion/originalwrites/newfetches/generation/deps/DB/Git/deploy/deletion; preserve12renderer/controls/source/receipts; oneheavyjob",
+  "completedAt": "2026-10-27T02:45:25.749500+00:00"
+}

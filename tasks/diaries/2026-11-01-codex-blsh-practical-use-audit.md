@@ -1,0 +1,15 @@
+# BLSH practical-use comparison independent audit
+
+- Scope: independently inspect practical-use comparison chronology/leakage/baselines/overlaps and cached PPP179/466 accounting from named November1 checkpoint. Artifact-only review; no source edits, production/provider calls, holdout access or writes to original packet.
+- Where: canonical octoberBranch, HEAD50f4e9aaede4b2b40b673ea16b73e2be17d6c057; packet /Users/tim/Documents/Codex/2026-10-27/task-3/practical-use-comparison-20261101-01. Prior January/current-box audit findings reused; no reopening of sealed seasons.
+- Start: checkpoint claims retrospective corrected-data comparison, 12 unjudged method-blinded cases, and179 matching current PPP rows from645 prior unknowns. Claims explicitly exclude predictive usefulness and capture-time availability.
+- Plan: inspect contracts/code and pinned chronology, independently reproduce rankings/overlaps/PPP partitions against retained inputs, inspect review integrity, then report severity-ranked findings and unresolved gates.
+- Staffing/budget: single-agent bounded audit; actual model/reasoning settings not independently exposed for compliant hierarchy. One focused test pass and targeted deterministic reconciliation; no broad app checks.
+- Blockers: none for reads; no runtime source mutation authorized. New audit scripts/reports only under repository audit artifact directory.
+
+- Checkpoint: inspected comparator/PPP code, contracts, tests, original January audit closure and actual pinned artifacts.20/20 artifact-local tests pass with network denial. Independent reconciliation verified84 unique pins/10shared files, all824 FP60/bridge calculations and fit target-exclusion/source-ID receipts,816 saved index transforms,six ranked lists,12 unjudged hash-selected/shuffled cases and entire645PPP partition.
+- Result: no substantive findings so far. Exact overlaps and179match/466unknown accounting reproduced;116zeros and15other-count-discrepant matches preserved. All21PPP receipt timestamps November1 after October29 snapshot. No source refresh or predictive/practical utility claim supported or made.
+- Next: write final independent disposition and methodological limits; prior raw-history/source audit reused without rereading original catalogs or sealed seasons. No production/network operation, source edits or approval blocker.
+
+- Final/handoff: no substantive findings. Report `tasks/artifacts/blsh-practical-use-audit-2026-11-01/REVIEW.md` records exact verified overlaps/PPP partition,20passing tests,84unchanged pins and limitations. All six selected strata and12Markdown case displays also independently reconciled. No practical judgments inferred; new reviewer must receive only BLINDED packet because checkpoint/key reveal case selection groups.
+- Remaining: practical-use judgments/utility protocol and current source/reference qualification; no technical audit blocker. No production/provider calls, original-packet/source edits, sealed-season reads or uncertain actions. Diary retained for parent handoff.

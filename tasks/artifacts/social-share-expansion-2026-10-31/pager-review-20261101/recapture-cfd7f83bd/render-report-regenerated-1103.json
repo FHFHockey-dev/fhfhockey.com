@@ -1,0 +1,179 @@
+[
+ {
+  "name": "off-night-next",
+  "post": "off-night-edge",
+  "editionCutoff": "2026-11-02",
+  "weekCalls": [
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   }
+  ],
+  "pager": {
+   "initial": {
+    "label": "Week 6 · Nov 2 to Nov 8",
+    "prior": "Prior week, week 5",
+    "priorEnabled": true,
+    "next": "Next week, week 7",
+    "nextEnabled": true,
+    "urlWeek": "6",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   },
+   "afterPrior": {
+    "label": "Week 5 · Oct 26 to Nov 1",
+    "prior": "Prior week, week 4",
+    "priorEnabled": true,
+    "next": "Next week, week 6",
+    "nextEnabled": true,
+    "urlWeek": "5",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   },
+   "thenBackNext": {
+    "label": "Week 6 · Nov 2 to Nov 8",
+    "prior": "Prior week, week 5",
+    "priorEnabled": true,
+    "next": "Next week, week 7",
+    "nextEnabled": true,
+    "urlWeek": "6",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   }
+  },
+  "enabled": true,
+  "png": true
+ },
+ {
+  "name": "off-night-w4",
+  "post": "off-night-edge",
+  "editionCutoff": "2026-11-02",
+  "weekCalls": [
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   }
+  ],
+  "pager": {
+   "initial": {
+    "label": "Week 4 · Oct 19 to Oct 25",
+    "prior": "Prior week, week 3",
+    "priorEnabled": true,
+    "next": "Next week, week 5",
+    "nextEnabled": true,
+    "urlWeek": "4",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   },
+   "afterPrior": {
+    "label": "Week 3 · Oct 12 to Oct 18",
+    "prior": "Prior week, week 2",
+    "priorEnabled": true,
+    "next": "Next week, week 4",
+    "nextEnabled": true,
+    "urlWeek": "3",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   },
+   "thenBackNext": {
+    "label": "Week 4 · Oct 19 to Oct 25",
+    "prior": "Prior week, week 3",
+    "priorEnabled": true,
+    "next": "Next week, week 5",
+    "nextEnabled": true,
+    "urlWeek": "4",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   }
+  },
+  "enabled": true,
+  "png": true
+ },
+ {
+  "name": "risky-next",
+  "post": "risky-starts",
+  "editionCutoff": "2026-11-02",
+  "weekCalls": [
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   }
+  ],
+  "pager": {
+   "initial": {
+    "label": "Week 6 · Nov 2 to Nov 8",
+    "prior": "Prior week, week 5",
+    "priorEnabled": true,
+    "next": "Next week, week 7",
+    "nextEnabled": true,
+    "urlWeek": "6",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   },
+   "afterPrior": {
+    "label": "Week 5 · Oct 26 to Nov 1",
+    "prior": "Prior week, week 4",
+    "priorEnabled": true,
+    "next": "Next week, week 6",
+    "nextEnabled": true,
+    "urlWeek": "5",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   },
+   "thenBackNext": {
+    "label": "Week 6 · Nov 2 to Nov 8",
+    "prior": "Prior week, week 5",
+    "priorEnabled": true,
+    "next": "Next week, week 7",
+    "nextEnabled": true,
+    "urlWeek": "6",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   }
+  },
+  "enabled": true,
+  "png": true
+ }
+]

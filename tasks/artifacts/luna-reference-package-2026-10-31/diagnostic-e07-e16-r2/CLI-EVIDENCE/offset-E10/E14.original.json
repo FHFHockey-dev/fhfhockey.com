@@ -1,0 +1,52 @@
+{
+  "version": "ifttt-luna-review-v1",
+  "canPublish": false,
+  "canWriteAliases": false,
+  "canChangeStatus": false,
+  "canExecuteReplacement": false,
+  "status": "review_only",
+  "holds": [
+    "human_review_required",
+    "no_publication_authority"
+  ],
+  "referencePackage": {
+    "version": "luna-hockey-reference-v4",
+    "mode": "rules-and-synthetic-only",
+    "hash": "9b8a10fd458596b75ba2c0900dea1b72b9ec446d5e0e660ca5c18341920abdb3",
+    "rulesVersion": "luna-hockey-rules-v4",
+    "libraryVersion": null
+  },
+  "responsesRequestHash": "f0700f0185a6067289710dd200c043f59bd872e24b2467f460902719064cac9d",
+  "lineage": {
+    "originalPostId": "910013",
+    "author": "lunafixture",
+    "url": "https://x.com/LunaFixture/status/910013",
+    "textVersion": "tweet-source-claim-v1:text:5af3575d0b3f07e90a9ea6f6a9252bbd1922f1cdb133722f9add839ff9aa071f",
+    "packetHash": "dd81d2d60c764ed43cc80bd3e287062a4f2903c0aad66b03a4bfb4a3056b7c65"
+  },
+  "identity": {
+    "version": "tweet-identity-proposal-v1",
+    "requestHash": "75d9e3509648187fb6219060f76b736c5de8f21f6193c0d8564438c3be23c0ee",
+    "directoryHash": "88dbd1e19c22a04fba95f07d049c38af533b548723bd17106f639191667ae16f",
+    "occurrences": [
+      {
+        "occurrenceId": "subject-4",
+        "canonicalId": "nhl:900002",
+        "status": "matched",
+        "evidence": {
+          "start": 4,
+          "end": 16,
+          "text": "Riley Skater"
+        },
+        "identityConfidence": "tentative"
+      }
+    ]
+  },
+  "goalieStatuses": [],
+  "decisionReview": null,
+  "attempts": 1,
+  "requestIds": [
+    "offline-cli-E14-responses"
+  ],
+  "reviewQueueKey": "398095a388ce966d22a431a40f08b7ac9c4ec87c2259b6a80ac32af5ed3d859f"
+}

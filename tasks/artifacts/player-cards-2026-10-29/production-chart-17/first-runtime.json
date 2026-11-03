@@ -1,0 +1,314 @@
+{
+  "at": "2026-10-29T19:28:04.621282+00:00",
+  "pid": 23153,
+  "stoppedOwnPid": 22117,
+  "verifiedOwnCommand": "/usr/local/bin/node /Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-29/live-load-16/serve-preview.mjs",
+  "bind": "127.0.0.1:3125",
+  "startNewSession": true,
+  "automaticRestart": false,
+  "upstreamRequests": 0,
+  "readbacks": [
+    {
+      "route": "/player-cards/recent",
+      "sha256": "1e38ea3a5438cf0df82978daa537818fa4c667904e60ab79fd8d1c0e167c139c",
+      "bytes": 457878
+    },
+    {
+      "route": "/player-cards/current-16",
+      "sha256": "619ea133c6fb72018f3740881c516c98f5059be313997a745a411464f38f48e7",
+      "bytes": 451179
+    }
+  ],
+  "inputs": [
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-28/name-search-14/serve-preview.mjs",
+      "bytes": 9881,
+      "sha256": "2a10412c892052ba273c97b0b53fc2da7e3dbdb8e7983b3de9ed6df283f2cedb"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-04/comparison.html",
+      "bytes": 2970642,
+      "sha256": "7312a49a98b2edc111c1b298db9e68e0d4bad166df906a5227c1e8240e299dd5"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-04/preview.html",
+      "bytes": 3426994,
+      "sha256": "64e7157b24935152a6c761a8a858fd6eb0d9bc408f532dfa1cfef47f64a8a002"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-05/comparison.html",
+      "bytes": 3011124,
+      "sha256": "7feabe950f22f4aae229b0b28362a824793902b87c9084bea9ce0c8c12a06a93"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-05/preview.html",
+      "bytes": 3427192,
+      "sha256": "c4b67da6bd5d7a786f0b46e4bb522e406fee543ba614b5d4a5db424c0746e57e"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/outline-06/comparison.html",
+      "bytes": 3055347,
+      "sha256": "b873b3f1167b1d16d31553cc364817e219a91c96c4823c3735758d0b83efeed3"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/outline-06/preview.html",
+      "bytes": 3434993,
+      "sha256": "601d0ba667a5fbdacb2194d7f742bb2f3fde73249c043057473b3a0536ac0ea1"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/outline-colors-07/comparison.html",
+      "bytes": 3220292,
+      "sha256": "9252e96763b5c3e8219c2f2ee3deb3f3934e5425c98a498e910ed39dafa9a624"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/outline-colors-07/preview.html",
+      "bytes": 3437503,
+      "sha256": "b0ce6b1e2879ca222305ca9878959b7548a988f34317911687a78b2d575f360b"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/outline-editor-09/preview.html",
+      "bytes": 3455216,
+      "sha256": "ca75a7448351ce85abcd833f6f0f40cd54f85911c6ad06a087a81ed6f5b543d9"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/preview.html",
+      "bytes": 3123706,
+      "sha256": "ecd560310b358ebd0521574967a480cab1521946c9d42d5f33341fcc57a5187a"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/comparison.html",
+      "bytes": 2440289,
+      "sha256": "5f5dc01034d10b0314317ed3dca3fdf8c5bcb0274761eec6ec8fa9201fe2dd3f"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/preview.html",
+      "bytes": 318626,
+      "sha256": "6c29f6eb3dc6ffc9a6a8a546423f78ac3e6e5e1e7265129475724422d3aad9b5"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/preview.html",
+      "bytes": 314484,
+      "sha256": "f65ce654f1e1e7ab226aa01e95617d925608d8d590fbd65d5bbaa85b324e05a5"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/stacked-outline-08/comparison.html",
+      "bytes": 1553491,
+      "sha256": "afe6c60d78b71ef3aa8fa6ce79066da3932e13d206dc410a2cffc0b3d84b7f3b"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/stacked-outline-08/preview.html",
+      "bytes": 3440212,
+      "sha256": "d696c72e27e4081dab9ca445fcd645e278a431dfa79cee921878f28826a687ff"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/current-data-01/approved-snapshot-02/preview.html",
+      "bytes": 523724,
+      "sha256": "3b6ff7d783576dda860386c0fb47af8c64e6b42fcb1d0b9cecefee98f02a2777"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/preview.html",
+      "bytes": 3132147,
+      "sha256": "e2b037f6b82d444f099e9cbfefbc555a673e1131496bea084158771830625c5f"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/observed-view-01/preview.html",
+      "bytes": 9655,
+      "sha256": "b2ece36cf4c62e41562495fcabe4e6f36d02d6d159523b0364b8fc455607fbd6"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/comparison.html",
+      "bytes": 1597171,
+      "sha256": "391232bc2d2e845dad2f407e55365f40d971249a5b7416abc0d3aa8eaa4f983b"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/preview.html",
+      "bytes": 3424357,
+      "sha256": "7867690db0776f1d2ec34fc42860d0d5a48ef478ec7d8d1e06163be4c6045f2b"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/comparison.html",
+      "bytes": 1597033,
+      "sha256": "5a65a4cf33e2ab86db9b8365179a1e44c559a8fa74dad065e888c9efa31d569c"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/preview.html",
+      "bytes": 3424343,
+      "sha256": "49e287071b186b7c1c1c5387243d04f182fb6d829747c91fe46acb79c8d9c705"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/comparison.html",
+      "bytes": 2186609,
+      "sha256": "6ab6b59a6ad34e193e73348b54cf96fcd73b2116f1d07110f32b2433a43d4ff1"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/preview.html",
+      "bytes": 3426931,
+      "sha256": "996b67587180c64282152d53abd953ae66b9e115549896eeab591e198533d954"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-27/current-flow-11/preview.html",
+      "bytes": 311416,
+      "sha256": "6c35e68f8f55766d01e311c30ba6f5448d67b6fe633ad9821f5aba5bbfb8f8f9"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-27/styled-current-12/preview.html",
+      "bytes": 373774,
+      "sha256": "24d677cdeae2c6d56daf1fe719394664aa9d81059c44d796348da662805d9144"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/preview.html",
+      "bytes": 374804,
+      "sha256": "85ebc3dffaa72e01e7c7518ec066450a78d4bf7e48a42bd62cb2d8e5ae01f86b"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-28/name-search-14/preview.html",
+      "bytes": 445507,
+      "sha256": "5e27d049689a04f74916bfbf94c8696122a778b2d53449df5e858444f534302b"
+    },
+    {
+      "path": "web/public/player-cards/hero-samples/8479318.png",
+      "bytes": 1152357,
+      "sha256": "713a4923cf4742cefbbc09a647a249f98c095edea8eb92f7bda028929e0db065"
+    },
+    {
+      "path": "web/public/player-cards/hero-samples/8478864.png",
+      "bytes": 929229,
+      "sha256": "4199308c2f56a9ac0244697e7162f42283f1a5c247b656fb7c9278597b3ee18c"
+    },
+    {
+      "path": "web/public/teamLogos/TOR.png",
+      "bytes": 122296,
+      "sha256": "b88d6edb92e4bcca291f7d3a37c1265fee39e1f5ef41650aaa19d8a39ad7e01d"
+    },
+    {
+      "path": "web/public/teamLogos/MIN.png",
+      "bytes": 89553,
+      "sha256": "430c6a4073da40b9d2e147c2528dba317f019273390ef2bdd43363895c5e0fc2"
+    },
+    {
+      "path": "web/public/player-cards/hero-samples/8476453.png",
+      "bytes": 1302004,
+      "sha256": "2010d97f1e1c631f7ccf154d991517f3b6923df7739d756e39ed06140aa1f278"
+    },
+    {
+      "path": "web/public/teamLogos/TBL.png",
+      "bytes": 34962,
+      "sha256": "51a484101a24be2f33145a58d1c7855bfc5b408bec39a7195a29aec7aaa6332c"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-28/name-search-14/provider.mjs",
+      "bytes": 11847,
+      "sha256": "7977097213b9ccece34716332a36e4710dbc33fd353717f954a236387d26a7b3"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-28/name-search-14/provider-contract.mjs",
+      "bytes": 9911,
+      "sha256": "02fb4b7c52d700d5f95d6b9e42dce2d60237be2f0e72d1f8ba39e40b274b6234"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/current-data-01/approved-snapshot-02/landing.json",
+      "bytes": 26221,
+      "sha256": "7649c48e6e665288ba88e8679b3e57a08944f2157e6446aa9d7942c0a0675e66"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/current-data-01/approved-snapshot-02/game-log.json",
+      "bytes": 4932,
+      "sha256": "f32faa520f8f0bcff4e4e40f2db0eb27fa4ac81a70bfc026c930450cd6a1ad43"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/current-data-01/approved-snapshot-02/team-schedule.json",
+      "bytes": 177781,
+      "sha256": "5667c3bc07e9088c024e007513898d24bb0ff380a702dcaf79116656baf3a695"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/current-data-01/approved-snapshot-02/RECEIPT.json",
+      "bytes": 2127,
+      "sha256": "138e559c38fac00c1bcd3fe8503746acd0ebe1bc09a87721ba4d79b15666eadb"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/preview.html",
+      "bytes": 450915,
+      "sha256": "95b467b8d4984bb7fc81713c99680b76eec79a8628c18bacf4c57f405d6c61ce"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/provider.mjs",
+      "bytes": 12644,
+      "sha256": "8face738f596cde5aa4b91c801beb2571be8f87c7a27870305d3e08780d43e00"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/provider-contract.mjs",
+      "bytes": 10923,
+      "sha256": "5456c96b3f0dc3c7f95ba7fc58063a70b2ae244f6355c8f5ceaee4b697490fd0"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/serve-preview.mjs",
+      "bytes": 10604,
+      "sha256": "4867dfd314c1461d3d9edad7ab05dd061e427e23d8195f5ed1696f5aec53b9e3"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/current-snapshot-15/landing.json",
+      "bytes": 26221,
+      "sha256": "7649c48e6e665288ba88e8679b3e57a08944f2157e6446aa9d7942c0a0675e66"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/current-snapshot-15/game-log.json",
+      "bytes": 4932,
+      "sha256": "9a0cefaa9aade51cf190c0a1bec8493a86759971d3e5aa0cbbe91cdb5d808da2"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/current-snapshot-15/team-schedule.json",
+      "bytes": 177781,
+      "sha256": "805f9b3a7cbb898d4896a3ebbf144870a1e812ced44eea1ef49f5e68735a3e14"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/current-snapshot-15/RECEIPT.json",
+      "bytes": 2123,
+      "sha256": "cacca1c2bce3d730a429ead8ff2cafd0a671a247ede7aceb2fd5822594683f23"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-29/live-load-16/preview.html",
+      "bytes": 451179,
+      "sha256": "619ea133c6fb72018f3740881c516c98f5059be313997a745a411464f38f48e7"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-29/live-load-16/provider.mjs",
+      "bytes": 12644,
+      "sha256": "8face738f596cde5aa4b91c801beb2571be8f87c7a27870305d3e08780d43e00"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-29/live-load-16/provider-contract.mjs",
+      "bytes": 10923,
+      "sha256": "5456c96b3f0dc3c7f95ba7fc58063a70b2ae244f6355c8f5ceaee4b697490fd0"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-29/live-load-16/serve-preview.mjs",
+      "bytes": 12929,
+      "sha256": "6d48fdb80c7979362a87b8fc69cc68942e26fea3baeda60ad6bdf120d24ed25f"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-29/live-load-16/live-source.mjs",
+      "bytes": 4749,
+      "sha256": "6366e158284af54276cde583b1e91febc669792f0f6f4481bf398bf18aea747c"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/preview.html",
+      "bytes": 457878,
+      "sha256": "1e38ea3a5438cf0df82978daa537818fa4c667904e60ab79fd8d1c0e167c139c"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/provider.mjs",
+      "bytes": 12644,
+      "sha256": "8face738f596cde5aa4b91c801beb2571be8f87c7a27870305d3e08780d43e00"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/provider-contract.mjs",
+      "bytes": 11065,
+      "sha256": "0d856b8b785183a5b20c9683649119768a2d95928a64a2373b69f3c754feba52"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/serve-preview.mjs",
+      "bytes": 13136,
+      "sha256": "c0c17b7c31102ff2e7741349e409f56fe2d3ca961aeb84569366139144a743a3"
+    }
+  ]
+}

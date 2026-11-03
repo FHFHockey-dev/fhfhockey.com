@@ -1,0 +1,286 @@
+{
+  "cases": [
+    {
+      "playerId": 8470613,
+      "name": "Brent Burns",
+      "appearances": 5,
+      "minutes": 80.51666666666667,
+      "personalReferenceGames": 50,
+      "score": -27.776168327078658,
+      "list": null,
+      "tablePresent": true,
+      "caption": "5 recorded appearances · 80.52 total minutes. All values are totals in each row’s units.",
+      "fp": {
+        "track": "fantasy_points",
+        "label": "FP",
+        "observed": 9.100000000000001,
+        "referenceAtCurrentTOI": 8.600809697791394,
+        "supportConditioned": 7.545367015461775,
+        "gap": -1.5546329845382267,
+        "components": [
+          {
+            "id": "production_vs_reference",
+            "kind": "reference_gap",
+            "kindLabel": "Reference vs recorded",
+            "value": -0.49919030220860705,
+            "note": "Reference production at the score window's total ice time minus recorded production. Reference rate blends the player's 50 recorded games (weight 0.80) with the position cohort. Power-play share, role and linemates are not modelled separately.",
+            "processDelta": null,
+            "referenceKind": null
+          },
+          {
+            "id": "process:individual_xG60",
+            "kind": "model_sensitivity",
+            "kindLabel": "Process change × frozen sensitivity",
+            "value": -0.4254346146655932,
+            "note": "Change in the player's own expected goals per 60 versus their reference, times the frozen sensitivity.",
+            "processDelta": -0.15827351324471423,
+            "referenceKind": "personal"
+          },
+          {
+            "id": "process:shared_onice_xGF60",
+            "kind": "model_sensitivity",
+            "kindLabel": "Process change × frozen sensitivity",
+            "value": -0.6310666107667379,
+            "note": "Change in on-ice expected goals for per 60 versus the reference, times the frozen sensitivity.",
+            "processDelta": -2.520390662091122,
+            "referenceKind": "personal"
+          },
+          {
+            "id": "process:shared_onice_xGA60",
+            "kind": "model_sensitivity",
+            "kindLabel": "Process change × frozen sensitivity",
+            "value": 0.0010585431027110672,
+            "note": "Change in on-ice expected goals against per 60 versus the reference, times the frozen sensitivity.",
+            "processDelta": 1.0890840532450867,
+            "referenceKind": "personal"
+          }
+        ],
+        "componentSum": -1.554632984538227,
+        "normalizationMultiplier": 0.11815742695613556,
+        "normalizedGapContribution": -0.18369143331417453,
+        "baselineNormalizedGapContribution": -0.05898304167042472
+      }
+    },
+    {
+      "playerId": 8475413,
+      "name": "Justin Dowling",
+      "appearances": 4,
+      "minutes": 29.983333333333334,
+      "personalReferenceGames": 2,
+      "score": 19.294004647103595,
+      "list": "BL",
+      "tablePresent": true,
+      "caption": "4 recorded appearances · 29.98 total minutes. All values are totals in each row’s units.",
+      "fp": {
+        "track": "fantasy_points",
+        "label": "FP",
+        "observed": 3.0999999999999996,
+        "referenceAtCurrentTOI": 4.141295426013922,
+        "supportConditioned": 3.827167896871021,
+        "gap": 0.7271678968710216,
+        "components": [
+          {
+            "id": "production_vs_reference",
+            "kind": "reference_gap",
+            "kindLabel": "Reference vs recorded",
+            "value": 1.0412954260139227,
+            "note": "Reference production at the score window's total ice time minus recorded production. Reference rate blends the player's 2 recorded games (weight 0.09) with the position cohort. Power-play share, role and linemates are not modelled separately.",
+            "processDelta": null,
+            "referenceKind": null
+          },
+          {
+            "id": "process:individual_xG60",
+            "kind": "model_sensitivity",
+            "kindLabel": "Process change × frozen sensitivity",
+            "value": -0.4738306613762286,
+            "note": "Change in the player's own expected goals per 60 versus their reference, times the frozen sensitivity.",
+            "processDelta": -0.7659837412972899,
+            "referenceKind": "personal"
+          },
+          {
+            "id": "process:shared_onice_xGF60",
+            "kind": "model_sensitivity",
+            "kindLabel": "Process change × frozen sensitivity",
+            "value": 0.15941816688811905,
+            "note": "Change in on-ice expected goals for per 60 versus the reference, times the frozen sensitivity.",
+            "processDelta": 1.1937431589732492,
+            "referenceKind": "personal"
+          },
+          {
+            "id": "process:shared_onice_xGA60",
+            "kind": "model_sensitivity",
+            "kindLabel": "Process change × frozen sensitivity",
+            "value": 0.0002849653452082299,
+            "note": "Change in on-ice expected goals against per 60 versus the reference, times the frozen sensitivity.",
+            "processDelta": 0.13540380707677446,
+            "referenceKind": "personal"
+          }
+        ],
+        "componentSum": 0.7271678968710213,
+        "normalizationMultiplier": 0.12031805297003575,
+        "normalizedGapContribution": 0.08749142553383707,
+        "baselineNormalizedGapContribution": 0.1252866382245991
+      }
+    },
+    {
+      "playerId": 8473994,
+      "name": "Jamie Benn",
+      "appearances": 5,
+      "minutes": 60.833333333333336,
+      "personalReferenceGames": 50,
+      "score": null,
+      "list": null,
+      "tablePresent": false,
+      "caption": null,
+      "fp": null
+    },
+    {
+      "playerId": 8476891,
+      "name": "Matthew Grzelcyk",
+      "appearances": 1,
+      "minutes": 14.45,
+      "personalReferenceGames": 50,
+      "score": 32.962033833367414,
+      "list": null,
+      "tablePresent": true,
+      "caption": "1 recorded appearance · 14.45 total minutes. All values are totals in each row’s units.",
+      "fp": {
+        "track": "fantasy_points",
+        "label": "FP",
+        "observed": 0.25,
+        "referenceAtCurrentTOI": 0.9495041707294007,
+        "supportConditioned": 0.8124930835282843,
+        "gap": 0.5624930835282843,
+        "components": [
+          {
+            "id": "production_vs_reference",
+            "kind": "reference_gap",
+            "kindLabel": "Reference vs recorded",
+            "value": 0.6995041707294007,
+            "note": "Reference production at the score window's total ice time minus recorded production. Reference rate blends the player's 50 recorded games (weight 0.77) with the position cohort. Power-play share, role and linemates are not modelled separately.",
+            "processDelta": null,
+            "referenceKind": null
+          },
+          {
+            "id": "process:individual_xG60",
+            "kind": "model_sensitivity",
+            "kindLabel": "Process change × frozen sensitivity",
+            "value": -0.05300440122714018,
+            "note": "Change in the player's own expected goals per 60 versus their reference, times the frozen sensitivity.",
+            "processDelta": -0.10992468123693026,
+            "referenceKind": "personal"
+          },
+          {
+            "id": "process:shared_onice_xGF60",
+            "kind": "model_sensitivity",
+            "kindLabel": "Process change × frozen sensitivity",
+            "value": -0.08458985337691542,
+            "note": "Change in on-ice expected goals for per 60 versus the reference, times the frozen sensitivity.",
+            "processDelta": -1.8632277653149745,
+            "referenceKind": "personal"
+          },
+          {
+            "id": "process:shared_onice_xGA60",
+            "kind": "model_sensitivity",
+            "kindLabel": "Process change × frozen sensitivity",
+            "value": 0.0005831674029391624,
+            "note": "Change in on-ice expected goals against per 60 versus the reference, times the frozen sensitivity.",
+            "processDelta": -1.7915775126014197,
+            "referenceKind": "personal"
+          }
+        ],
+        "componentSum": 0.5624930835282843,
+        "normalizationMultiplier": 0.2843801578371728,
+        "normalizedGapContribution": 0.1599618718760915,
+        "baselineNormalizedGapContribution": 0.19892510647978764
+      }
+    },
+    {
+      "playerId": 8475253,
+      "name": "Garrett Wilson",
+      "appearances": 2,
+      "minutes": 19.616666666666667,
+      "personalReferenceGames": 0,
+      "score": 43.86735762626921,
+      "list": null,
+      "tablePresent": true,
+      "caption": "2 recorded appearances · 19.62 total minutes. All values are totals in each row’s units.",
+      "fp": {
+        "track": "fantasy_points",
+        "label": "FP",
+        "observed": 1.85,
+        "referenceAtCurrentTOI": 2.5982026939264635,
+        "supportConditioned": 2.0213323164886536,
+        "gap": 0.17133231648865355,
+        "components": [
+          {
+            "id": "production_vs_reference",
+            "kind": "reference_gap",
+            "kindLabel": "Reference vs recorded",
+            "value": 0.7482026939264634,
+            "note": "Reference production at the score window's total ice time minus recorded production. No personal production history: the reference is the position cohort's rate. Power-play share, role and linemates are not modelled separately.",
+            "processDelta": null,
+            "referenceKind": null
+          },
+          {
+            "id": "process:individual_xG60",
+            "kind": "model_sensitivity",
+            "kindLabel": "Process change × frozen sensitivity",
+            "value": -0.3365418013197993,
+            "note": "Change in the player's own expected goals per 60 versus their reference, times the frozen sensitivity. Reference is not the player's own measured history.",
+            "processDelta": -0.8315533290735515,
+            "referenceKind": "cohort"
+          },
+          {
+            "id": "process:shared_onice_xGF60",
+            "kind": "model_sensitivity",
+            "kindLabel": "Process change × frozen sensitivity",
+            "value": -0.24226595698969244,
+            "note": "Change in on-ice expected goals for per 60 versus the reference, times the frozen sensitivity. Reference is not the player's own measured history.",
+            "processDelta": -2.772810417513917,
+            "referenceKind": "cohort"
+          },
+          {
+            "id": "process:shared_onice_xGA60",
+            "kind": "model_sensitivity",
+            "kindLabel": "Process change × frozen sensitivity",
+            "value": 0.001937380871681889,
+            "note": "Change in on-ice expected goals against per 60 versus the reference, times the frozen sensitivity. Reference is not the player's own measured history.",
+            "processDelta": 1.4070467744607895,
+            "referenceKind": "cohort"
+          }
+        ],
+        "componentSum": 0.17133231648865355,
+        "normalizationMultiplier": 0.1510619584831007,
+        "normalizedGapContribution": 0.025881795280222452,
+        "baselineNormalizedGapContribution": 0.11302496428686351
+      }
+    }
+  ],
+  "totalProfiles": 729,
+  "numeric": 551,
+  "counts": {
+    "profiles": 729,
+    "numeric": 551,
+    "BL": 264,
+    "SH": 184,
+    "withheld": 281,
+    "unavailableTier": 178,
+    "referenceContextAbsent": 152,
+    "zeroShotWindows": 19,
+    "zeroShotNumeric": 14,
+    "zeroShotListed": 7,
+    "personalReference1to4": 36,
+    "referenceAgeDays": {
+      "n": 577,
+      "min": 894,
+      "max": 1451
+    }
+  },
+  "allNumericExposuresAndGapSignsChecked": true,
+  "maxNativeGapResidual": 0,
+  "snapshotObjectUnchanged": true,
+  "visibility": "Production explanation and caption outside disclosures; comparison remains optional native details",
+  "accessibility": "Scoped headers, caption, equivalent text and decorative nonfocusable SVG verified; no live assistive-technology session",
+  "harnessCorrection": "Initial ad hoc verifier used Document.textContent (null); corrected to document.body.textContent. No product change."
+}

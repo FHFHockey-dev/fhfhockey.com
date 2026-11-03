@@ -1,0 +1,36 @@
+{
+  "at": "2026-11-01T16:32:32.293442+00:00",
+  "owner_thread": "01a19764-091f-763d-a983-8c692d79200b",
+  "parent_thread": "01a189f6-9a3a-7235-a989-e1af4f47b014",
+  "scope": "Artifact-only isolated release verification; canonical application and admission files read-only",
+  "selectedCommittedBase": "4965a872a9746b6129c9ac589c200560d01a1e23",
+  "baseTree": "4a0a6b012a6a547309058672ca5f062d56fcfef3",
+  "candidateTree": "3dfa4f910b36dad47ea265cef9f1041b794ee915",
+  "candidateCommit": null,
+  "candidateState": "EXACT_TREE_PREPARED_NOT_COMMITTED",
+  "exportRoot": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-rso-release-20261101-r33fu3cl",
+  "exportKind": "Verification export, not an editing checkout/worktree",
+  "excludedEnvironmentFiles": [
+    "web/.env.development",
+    "web/.env.production",
+    "web/.env.test"
+  ],
+  "overlayFiles": [
+    {
+      "path": "web/lib/player-forecasts/rsoUsePolicy.ts",
+      "sha256": "8299f6ff97d1ae8bf3836f1202b0eb82586cea4abf70b642a612e03c861d7aad"
+    },
+    {
+      "path": "web/lib/player-forecasts/rsoUsePolicy.test.ts",
+      "sha256": "bda984e71954a157f644e84e8a7fbb5b89b27a3b7f790e18c633e51b5f9f6a90"
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/planningReproducibility.test.ts",
+      "sha256": "7aa609b962ce392342bb272c57bc1609225ac686ad93e1807428906fce381198"
+    }
+  ],
+  "localMaster": "457435eb3010c5b3dd92d2e1a46d9c75d851780a",
+  "localMasterState": "October 15 ancestor; not selected as current release baseline",
+  "remoteState": "Saved origin/master ref and prior release receipt only; no remote check or fetch",
+  "limits": "No producer/allowlist/canonical source/index/ref writes, build, network, deploy or activation"
+}

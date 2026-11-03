@@ -1,0 +1,27 @@
+{
+  "extends": "../../../web/tsconfig.json",
+  "compilerOptions": {
+    "incremental": false
+  },
+  "include": [
+    "../../../web/next-env.d.ts",
+    "../../../web/lib/player-cards/analysisSnapshot.ts",
+    "../../../web/lib/player-cards/analysisSnapshot.test.ts",
+    "../../../web/lib/player-cards/analysisEvidence.ts",
+    "../../../web/lib/player-cards/analysisEvidence.test.ts",
+    "../../../web/lib/player-cards/goalieOutlook.ts",
+    "../../../web/lib/player-cards/goalieOutlook.test.ts",
+    "../../../web/lib/player-cards/analysisExport.ts",
+    "../../../web/lib/player-cards/analysisFixtures.ts",
+    "../../../web/components/player-cards/PlayerAnalysisCard.tsx",
+    "../../../web/components/player-cards/PlayerAnalysisStudio.tsx",
+    "../../../web/components/player-cards/PlayerAnalysisStudio.test.tsx",
+    "../../../web/lib/player-cards/sharedGoalieOutlook.ts",
+    "../../../web/lib/player-cards/sharedGoalieOutlook.test.ts",
+    "../../../web/lib/player-cards/retainedBlsh.ts",
+    "../../../web/lib/player-cards/retainedBlsh.test.ts"
+  ],
+  "exclude": [
+    "../../../web/node_modules"
+  ]
+}

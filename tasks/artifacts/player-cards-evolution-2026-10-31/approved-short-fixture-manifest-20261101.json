@@ -1,0 +1,677 @@
+{
+  "version": "fhfh-analysis-export-v1",
+  "dimensions": {
+    "width": 1200,
+    "height": 1020
+  },
+  "presentation": {
+    "snapshot": {
+      "version": "fhfh-card-analysis-v1",
+      "capture": {
+        "version": "fhfh-card-analysis-v1",
+        "id": "synthetic-12",
+        "player": {
+          "id": 8476453,
+          "name": "Fixture skater",
+          "team": "TBL",
+          "position": "R"
+        },
+        "season": 20262027,
+        "gameType": "regular",
+        "source": "synthetic",
+        "observedAt": "2026-10-31T12:00:00Z",
+        "strength": "all",
+        "history": {
+          "complete": true,
+          "seasonAppearances": 3,
+          "reason": null
+        },
+        "fields": {
+          "goals": {
+            "provider": "synthetic",
+            "field": "goals",
+            "revision": "fixture-v1",
+            "model": null,
+            "strength": "all",
+            "updatedAt": null,
+            "unit": "count"
+          },
+          "assists": {
+            "provider": "synthetic",
+            "field": "assists",
+            "revision": "fixture-v1",
+            "model": null,
+            "strength": "all",
+            "updatedAt": null,
+            "unit": "count"
+          },
+          "points": {
+            "provider": "synthetic",
+            "field": "points",
+            "revision": "fixture-v1",
+            "model": null,
+            "strength": "all",
+            "updatedAt": null,
+            "unit": "count"
+          },
+          "shots": {
+            "provider": "synthetic",
+            "field": "shots",
+            "revision": "fixture-v1",
+            "model": null,
+            "strength": "all",
+            "updatedAt": null,
+            "unit": "count"
+          },
+          "blocks": {
+            "provider": "synthetic",
+            "field": "blocks",
+            "revision": "fixture-v1",
+            "model": null,
+            "strength": "all",
+            "updatedAt": null,
+            "unit": "count"
+          },
+          "hits": {
+            "provider": "synthetic",
+            "field": "hits",
+            "revision": "fixture-v1",
+            "model": null,
+            "strength": "all",
+            "updatedAt": null,
+            "unit": "count"
+          },
+          "ppPoints": {
+            "provider": "synthetic",
+            "field": "ppPoints",
+            "revision": "fixture-v1",
+            "model": null,
+            "strength": "all",
+            "updatedAt": null,
+            "unit": "count"
+          },
+          "toiSeconds": {
+            "provider": "synthetic",
+            "field": "toiSeconds",
+            "revision": "fixture-v1",
+            "model": null,
+            "strength": "all",
+            "updatedAt": null,
+            "unit": "seconds"
+          },
+          "ppToiSeconds": {
+            "provider": "synthetic",
+            "field": "ppToiSeconds",
+            "revision": "fixture-v1",
+            "model": null,
+            "strength": "all",
+            "updatedAt": null,
+            "unit": "seconds"
+          },
+          "ixg": {
+            "provider": "synthetic",
+            "field": "ixg",
+            "revision": "fixture-v1",
+            "model": "fixture-xG",
+            "strength": "all",
+            "updatedAt": null,
+            "unit": "xG"
+          },
+          "xgf": {
+            "provider": "synthetic",
+            "field": "xgf",
+            "revision": "fixture-v1",
+            "model": "fixture-xG",
+            "strength": "all",
+            "updatedAt": null,
+            "unit": "xG"
+          },
+          "xga": {
+            "provider": "synthetic",
+            "field": "xga",
+            "revision": "fixture-v1",
+            "model": "fixture-xG",
+            "strength": "all",
+            "updatedAt": null,
+            "unit": "xG"
+          }
+        },
+        "finality": "Synthetic final status, no exact end times.",
+        "games": [
+          {
+            "gameId": 2026020001,
+            "date": "2026-10-01",
+            "utcStart": "2026-10-01T12:00:00Z",
+            "team": "TBL",
+            "finalAtObservation": true,
+            "played": true,
+            "values": {
+              "goals": 0,
+              "assists": 1,
+              "points": 1,
+              "shots": 0,
+              "blocks": 2,
+              "hits": 3,
+              "ppPoints": 0,
+              "toiSeconds": 600,
+              "ppToiSeconds": 60,
+              "ixg": 0.5,
+              "xgf": 2,
+              "xga": 1
+            }
+          },
+          {
+            "gameId": 2026020002,
+            "date": "2026-10-02",
+            "utcStart": "2026-10-02T12:00:00Z",
+            "team": "TBL",
+            "finalAtObservation": true,
+            "played": true,
+            "values": {
+              "goals": 1,
+              "assists": 1,
+              "points": 2,
+              "shots": 1,
+              "blocks": 2,
+              "hits": 3,
+              "ppPoints": 0,
+              "toiSeconds": 660,
+              "ppToiSeconds": 60,
+              "ixg": 0.5,
+              "xgf": 2,
+              "xga": 1
+            }
+          },
+          {
+            "gameId": 2026020003,
+            "date": "2026-10-03",
+            "utcStart": "2026-10-03T12:00:00Z",
+            "team": "TBL",
+            "finalAtObservation": true,
+            "played": true,
+            "values": {
+              "goals": 0,
+              "assists": 1,
+              "points": 1,
+              "shots": 2,
+              "blocks": 2,
+              "hits": 3,
+              "ppPoints": 0,
+              "toiSeconds": 720,
+              "ppToiSeconds": 60,
+              "ixg": 0.5,
+              "xgf": 2,
+              "xga": 1
+            }
+          }
+        ]
+      },
+      "settings": {
+        "period": {
+          "mode": "appearances",
+          "count": 5
+        },
+        "baseline": "season",
+        "basis": "per-game",
+        "visual": "bars"
+      },
+      "recent": {
+        "label": "Last 5",
+        "gameIds": [
+          2026020003,
+          2026020002,
+          2026020001
+        ],
+        "dates": [
+          "2026-10-03",
+          "2026-10-02",
+          "2026-10-01"
+        ],
+        "gp": 3,
+        "requestedAppearances": 5,
+        "knownShort": true,
+        "sampleWarning": "3 of 5 appearances: verified complete season history, small sample. Per-field gaps remain unavailable.",
+        "reason": null,
+        "readings": [
+          {
+            "metric": "goals",
+            "value": 0.3333333333333333,
+            "state": "valid",
+            "reason": null,
+            "gp": 3,
+            "unit": "goals/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",\"fhfh-card-rank-policy-2026-11-01\",20262027,\"regular\",\"2026-10-31T12:00:00Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"goals\",\"per-game\",[{\"provider\":\"synthetic\",\"field\":\"goals\",\"revision\":\"fixture-v1\",\"model\":null,\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"count\"}]]"
+          },
+          {
+            "metric": "assists",
+            "value": 1,
+            "state": "valid",
+            "reason": null,
+            "gp": 3,
+            "unit": "assists/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",\"fhfh-card-rank-policy-2026-11-01\",20262027,\"regular\",\"2026-10-31T12:00:00Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"assists\",\"per-game\",[{\"provider\":\"synthetic\",\"field\":\"assists\",\"revision\":\"fixture-v1\",\"model\":null,\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"count\"}]]"
+          },
+          {
+            "metric": "points",
+            "value": 1.3333333333333333,
+            "state": "valid",
+            "reason": null,
+            "gp": 3,
+            "unit": "points/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",\"fhfh-card-rank-policy-2026-11-01\",20262027,\"regular\",\"2026-10-31T12:00:00Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"points\",\"per-game\",[{\"provider\":\"synthetic\",\"field\":\"points\",\"revision\":\"fixture-v1\",\"model\":null,\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"count\"}]]"
+          },
+          {
+            "metric": "ppPoints",
+            "value": 0,
+            "state": "valid",
+            "reason": null,
+            "gp": 3,
+            "unit": "points/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",\"fhfh-card-rank-policy-2026-11-01\",20262027,\"regular\",\"2026-10-31T12:00:00Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"ppPoints\",\"per-game\",[{\"provider\":\"synthetic\",\"field\":\"ppPoints\",\"revision\":\"fixture-v1\",\"model\":null,\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"count\"}]]"
+          },
+          {
+            "metric": "shots",
+            "value": 1,
+            "state": "valid",
+            "reason": null,
+            "gp": 3,
+            "unit": "shots/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",\"fhfh-card-rank-policy-2026-11-01\",20262027,\"regular\",\"2026-10-31T12:00:00Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"shots\",\"per-game\",[{\"provider\":\"synthetic\",\"field\":\"shots\",\"revision\":\"fixture-v1\",\"model\":null,\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"count\"}]]"
+          },
+          {
+            "metric": "blocks",
+            "value": 2,
+            "state": "valid",
+            "reason": null,
+            "gp": 3,
+            "unit": "blocks/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",\"fhfh-card-rank-policy-2026-11-01\",20262027,\"regular\",\"2026-10-31T12:00:00Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"blocks\",\"per-game\",[{\"provider\":\"synthetic\",\"field\":\"blocks\",\"revision\":\"fixture-v1\",\"model\":null,\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"count\"}]]"
+          },
+          {
+            "metric": "hits",
+            "value": 3,
+            "state": "valid",
+            "reason": null,
+            "gp": 3,
+            "unit": "hits/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",\"fhfh-card-rank-policy-2026-11-01\",20262027,\"regular\",\"2026-10-31T12:00:00Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"hits\",\"per-game\",[{\"provider\":\"synthetic\",\"field\":\"hits\",\"revision\":\"fixture-v1\",\"model\":null,\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"count\"}]]"
+          },
+          {
+            "metric": "bsh",
+            "value": 6,
+            "state": "valid",
+            "reason": null,
+            "gp": 3,
+            "unit": "events/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",\"fhfh-card-rank-policy-2026-11-01\",20262027,\"regular\",\"2026-10-31T12:00:00Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"bsh\",\"per-game\",[{\"provider\":\"synthetic\",\"field\":\"blocks\",\"revision\":\"fixture-v1\",\"model\":null,\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"count\"},{\"provider\":\"synthetic\",\"field\":\"shots\",\"revision\":\"fixture-v1\",\"model\":null,\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"count\"},{\"provider\":\"synthetic\",\"field\":\"hits\",\"revision\":\"fixture-v1\",\"model\":null,\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"count\"}]]"
+          },
+          {
+            "metric": "toiSeconds",
+            "value": 11,
+            "state": "valid",
+            "reason": null,
+            "gp": 3,
+            "unit": "min/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",\"fhfh-card-rank-policy-2026-11-01\",20262027,\"regular\",\"2026-10-31T12:00:00Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"toiSeconds\",\"per-game\",[{\"provider\":\"synthetic\",\"field\":\"toiSeconds\",\"revision\":\"fixture-v1\",\"model\":null,\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"seconds\"}]]"
+          },
+          {
+            "metric": "ppToiSeconds",
+            "value": 1,
+            "state": "valid",
+            "reason": null,
+            "gp": 3,
+            "unit": "min/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",\"fhfh-card-rank-policy-2026-11-01\",20262027,\"regular\",\"2026-10-31T12:00:00Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"ppToiSeconds\",\"per-game\",[{\"provider\":\"synthetic\",\"field\":\"ppToiSeconds\",\"revision\":\"fixture-v1\",\"model\":null,\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"seconds\"},{\"provider\":\"synthetic\",\"field\":\"toiSeconds\",\"revision\":\"fixture-v1\",\"model\":null,\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"seconds\"}]]"
+          },
+          {
+            "metric": "ixg",
+            "value": 0.5,
+            "state": "valid",
+            "reason": null,
+            "gp": 3,
+            "unit": "xG/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",\"fhfh-card-rank-policy-2026-11-01\",20262027,\"regular\",\"2026-10-31T12:00:00Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"ixg\",\"per-game\",[{\"provider\":\"synthetic\",\"field\":\"ixg\",\"revision\":\"fixture-v1\",\"model\":\"fixture-xG\",\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"xG\"}]]"
+          },
+          {
+            "metric": "xgf",
+            "value": 2,
+            "state": "valid",
+            "reason": null,
+            "gp": 3,
+            "unit": "xG/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",\"fhfh-card-rank-policy-2026-11-01\",20262027,\"regular\",\"2026-10-31T12:00:00Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"xgf\",\"per-game\",[{\"provider\":\"synthetic\",\"field\":\"xgf\",\"revision\":\"fixture-v1\",\"model\":\"fixture-xG\",\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"xG\"}]]"
+          },
+          {
+            "metric": "xga",
+            "value": 1,
+            "state": "valid",
+            "reason": null,
+            "gp": 3,
+            "unit": "xG/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",\"fhfh-card-rank-policy-2026-11-01\",20262027,\"regular\",\"2026-10-31T12:00:00Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"xga\",\"per-game\",[{\"provider\":\"synthetic\",\"field\":\"xga\",\"revision\":\"fixture-v1\",\"model\":\"fixture-xG\",\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"xG\"}]]"
+          },
+          {
+            "metric": "xgPct",
+            "value": 66.66666666666667,
+            "state": "valid",
+            "reason": null,
+            "gp": 3,
+            "unit": "%",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",\"fhfh-card-rank-policy-2026-11-01\",20262027,\"regular\",\"2026-10-31T12:00:00Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"xgPct\",\"pooled-percentage\",[{\"provider\":\"synthetic\",\"field\":\"xgf\",\"revision\":\"fixture-v1\",\"model\":\"fixture-xG\",\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"xG\"},{\"provider\":\"synthetic\",\"field\":\"xga\",\"revision\":\"fixture-v1\",\"model\":\"fixture-xG\",\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"xG\"}]]"
+          }
+        ]
+      },
+      "baseline": {
+        "label": "Season to date",
+        "gameIds": [
+          2026020003,
+          2026020002,
+          2026020001
+        ],
+        "dates": [
+          "2026-10-03",
+          "2026-10-02",
+          "2026-10-01"
+        ],
+        "gp": 3,
+        "requestedAppearances": null,
+        "knownShort": false,
+        "sampleWarning": null,
+        "reason": null,
+        "readings": [
+          {
+            "metric": "goals",
+            "value": 0.3333333333333333,
+            "state": "valid",
+            "reason": null,
+            "gp": 3,
+            "unit": "goals/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",\"fhfh-card-rank-policy-2026-11-01\",20262027,\"regular\",\"2026-10-31T12:00:00Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Season to date\",\"goals\",\"per-game\",[{\"provider\":\"synthetic\",\"field\":\"goals\",\"revision\":\"fixture-v1\",\"model\":null,\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"count\"}]]"
+          },
+          {
+            "metric": "assists",
+            "value": 1,
+            "state": "valid",
+            "reason": null,
+            "gp": 3,
+            "unit": "assists/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",\"fhfh-card-rank-policy-2026-11-01\",20262027,\"regular\",\"2026-10-31T12:00:00Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Season to date\",\"assists\",\"per-game\",[{\"provider\":\"synthetic\",\"field\":\"assists\",\"revision\":\"fixture-v1\",\"model\":null,\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"count\"}]]"
+          },
+          {
+            "metric": "points",
+            "value": 1.3333333333333333,
+            "state": "valid",
+            "reason": null,
+            "gp": 3,
+            "unit": "points/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",\"fhfh-card-rank-policy-2026-11-01\",20262027,\"regular\",\"2026-10-31T12:00:00Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Season to date\",\"points\",\"per-game\",[{\"provider\":\"synthetic\",\"field\":\"points\",\"revision\":\"fixture-v1\",\"model\":null,\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"count\"}]]"
+          },
+          {
+            "metric": "ppPoints",
+            "value": 0,
+            "state": "valid",
+            "reason": null,
+            "gp": 3,
+            "unit": "points/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",\"fhfh-card-rank-policy-2026-11-01\",20262027,\"regular\",\"2026-10-31T12:00:00Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Season to date\",\"ppPoints\",\"per-game\",[{\"provider\":\"synthetic\",\"field\":\"ppPoints\",\"revision\":\"fixture-v1\",\"model\":null,\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"count\"}]]"
+          },
+          {
+            "metric": "shots",
+            "value": 1,
+            "state": "valid",
+            "reason": null,
+            "gp": 3,
+            "unit": "shots/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",\"fhfh-card-rank-policy-2026-11-01\",20262027,\"regular\",\"2026-10-31T12:00:00Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Season to date\",\"shots\",\"per-game\",[{\"provider\":\"synthetic\",\"field\":\"shots\",\"revision\":\"fixture-v1\",\"model\":null,\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"count\"}]]"
+          },
+          {
+            "metric": "blocks",
+            "value": 2,
+            "state": "valid",
+            "reason": null,
+            "gp": 3,
+            "unit": "blocks/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",\"fhfh-card-rank-policy-2026-11-01\",20262027,\"regular\",\"2026-10-31T12:00:00Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Season to date\",\"blocks\",\"per-game\",[{\"provider\":\"synthetic\",\"field\":\"blocks\",\"revision\":\"fixture-v1\",\"model\":null,\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"count\"}]]"
+          },
+          {
+            "metric": "hits",
+            "value": 3,
+            "state": "valid",
+            "reason": null,
+            "gp": 3,
+            "unit": "hits/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",\"fhfh-card-rank-policy-2026-11-01\",20262027,\"regular\",\"2026-10-31T12:00:00Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Season to date\",\"hits\",\"per-game\",[{\"provider\":\"synthetic\",\"field\":\"hits\",\"revision\":\"fixture-v1\",\"model\":null,\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"count\"}]]"
+          },
+          {
+            "metric": "bsh",
+            "value": 6,
+            "state": "valid",
+            "reason": null,
+            "gp": 3,
+            "unit": "events/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",\"fhfh-card-rank-policy-2026-11-01\",20262027,\"regular\",\"2026-10-31T12:00:00Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Season to date\",\"bsh\",\"per-game\",[{\"provider\":\"synthetic\",\"field\":\"blocks\",\"revision\":\"fixture-v1\",\"model\":null,\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"count\"},{\"provider\":\"synthetic\",\"field\":\"shots\",\"revision\":\"fixture-v1\",\"model\":null,\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"count\"},{\"provider\":\"synthetic\",\"field\":\"hits\",\"revision\":\"fixture-v1\",\"model\":null,\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"count\"}]]"
+          },
+          {
+            "metric": "toiSeconds",
+            "value": 11,
+            "state": "valid",
+            "reason": null,
+            "gp": 3,
+            "unit": "min/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",\"fhfh-card-rank-policy-2026-11-01\",20262027,\"regular\",\"2026-10-31T12:00:00Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Season to date\",\"toiSeconds\",\"per-game\",[{\"provider\":\"synthetic\",\"field\":\"toiSeconds\",\"revision\":\"fixture-v1\",\"model\":null,\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"seconds\"}]]"
+          },
+          {
+            "metric": "ppToiSeconds",
+            "value": 1,
+            "state": "valid",
+            "reason": null,
+            "gp": 3,
+            "unit": "min/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",\"fhfh-card-rank-policy-2026-11-01\",20262027,\"regular\",\"2026-10-31T12:00:00Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Season to date\",\"ppToiSeconds\",\"per-game\",[{\"provider\":\"synthetic\",\"field\":\"ppToiSeconds\",\"revision\":\"fixture-v1\",\"model\":null,\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"seconds\"},{\"provider\":\"synthetic\",\"field\":\"toiSeconds\",\"revision\":\"fixture-v1\",\"model\":null,\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"seconds\"}]]"
+          },
+          {
+            "metric": "ixg",
+            "value": 0.5,
+            "state": "valid",
+            "reason": null,
+            "gp": 3,
+            "unit": "xG/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",\"fhfh-card-rank-policy-2026-11-01\",20262027,\"regular\",\"2026-10-31T12:00:00Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Season to date\",\"ixg\",\"per-game\",[{\"provider\":\"synthetic\",\"field\":\"ixg\",\"revision\":\"fixture-v1\",\"model\":\"fixture-xG\",\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"xG\"}]]"
+          },
+          {
+            "metric": "xgf",
+            "value": 2,
+            "state": "valid",
+            "reason": null,
+            "gp": 3,
+            "unit": "xG/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",\"fhfh-card-rank-policy-2026-11-01\",20262027,\"regular\",\"2026-10-31T12:00:00Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Season to date\",\"xgf\",\"per-game\",[{\"provider\":\"synthetic\",\"field\":\"xgf\",\"revision\":\"fixture-v1\",\"model\":\"fixture-xG\",\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"xG\"}]]"
+          },
+          {
+            "metric": "xga",
+            "value": 1,
+            "state": "valid",
+            "reason": null,
+            "gp": 3,
+            "unit": "xG/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",\"fhfh-card-rank-policy-2026-11-01\",20262027,\"regular\",\"2026-10-31T12:00:00Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Season to date\",\"xga\",\"per-game\",[{\"provider\":\"synthetic\",\"field\":\"xga\",\"revision\":\"fixture-v1\",\"model\":\"fixture-xG\",\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"xG\"}]]"
+          },
+          {
+            "metric": "xgPct",
+            "value": 66.66666666666667,
+            "state": "valid",
+            "reason": null,
+            "gp": 3,
+            "unit": "%",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",\"fhfh-card-rank-policy-2026-11-01\",20262027,\"regular\",\"2026-10-31T12:00:00Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Season to date\",\"xgPct\",\"pooled-percentage\",[{\"provider\":\"synthetic\",\"field\":\"xgf\",\"revision\":\"fixture-v1\",\"model\":\"fixture-xG\",\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"xG\"},{\"provider\":\"synthetic\",\"field\":\"xga\",\"revision\":\"fixture-v1\",\"model\":\"fixture-xG\",\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"xG\"}]]"
+          }
+        ]
+      },
+      "overlap": 3,
+      "disclosure": "Season includes recent games: 3 overlapping appearances. This is not an independent baseline.",
+      "rankPolicy": {
+        "version": "fhfh-card-rank-policy-2026-11-01",
+        "status": "approved",
+        "ordering": "highest-numeric-first",
+        "ties": "competition",
+        "percentile": "midrank",
+        "shortSeason": "include-verified-complete",
+        "additionalQualifiers": "none"
+      }
+    },
+    "view": "comparison",
+    "blsh": {
+      "status": "unavailable",
+      "heading": "BLSH evidence unavailable",
+      "lines": [
+        "An owner-qualified current method and snapshot receipt has not been supplied."
+      ],
+      "direction": "unknown",
+      "receipt": null,
+      "market": "Market reference unavailable"
+    },
+    "trades": {
+      "status": "unavailable",
+      "records": [],
+      "lines": [
+        "No qualified trades matched this NHL player ID.",
+        "Market reference unavailable. No trade collection was attempted."
+      ]
+    }
+  },
+  "comparison": [
+    {
+      "metric": "goals",
+      "value": 0,
+      "reason": null
+    },
+    {
+      "metric": "assists",
+      "value": 0,
+      "reason": null
+    },
+    {
+      "metric": "points",
+      "value": 0,
+      "reason": null
+    },
+    {
+      "metric": "ppPoints",
+      "value": 0,
+      "reason": null
+    },
+    {
+      "metric": "shots",
+      "value": 0,
+      "reason": null
+    },
+    {
+      "metric": "blocks",
+      "value": 0,
+      "reason": null
+    },
+    {
+      "metric": "hits",
+      "value": 0,
+      "reason": null
+    },
+    {
+      "metric": "bsh",
+      "value": 0,
+      "reason": null
+    },
+    {
+      "metric": "toiSeconds",
+      "value": 0,
+      "reason": null
+    },
+    {
+      "metric": "ppToiSeconds",
+      "value": 0,
+      "reason": null
+    },
+    {
+      "metric": "ixg",
+      "value": 0,
+      "reason": null
+    },
+    {
+      "metric": "xgf",
+      "value": 0,
+      "reason": null
+    },
+    {
+      "metric": "xga",
+      "value": 0,
+      "reason": null
+    },
+    {
+      "metric": "xgPct",
+      "value": 0,
+      "reason": null
+    }
+  ],
+  "artwork": {
+    "state": "unavailable",
+    "reason": "No qualified matching artwork supplied."
+  },
+  "artworkKey": "image-unavailable",
+  "key": "[{\"snapshot\":{\"version\":\"fhfh-card-analysis-v1\",\"capture\":{\"version\":\"fhfh-card-analysis-v1\",\"id\":\"synthetic-12\",\"player\":{\"id\":8476453,\"name\":\"Fixture skater\",\"team\":\"TBL\",\"position\":\"R\"},\"season\":20262027,\"gameType\":\"regular\",\"source\":\"synthetic\",\"observedAt\":\"2026-10-31T12:00:00Z\",\"strength\":\"all\",\"history\":{\"complete\":true,\"seasonAppearances\":3,\"reason\":null},\"fields\":{\"goals\":{\"provider\":\"synthetic\",\"field\":\"goals\",\"revision\":\"fixture-v1\",\"model\":null,\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"count\"},\"assists\":{\"provider\":\"synthetic\",\"field\":\"assists\",\"revision\":\"fixture-v1\",\"model\":null,\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"count\"},\"points\":{\"provider\":\"synthetic\",\"field\":\"points\",\"revision\":\"fixture-v1\",\"model\":null,\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"count\"},\"shots\":{\"provider\":\"synthetic\",\"field\":\"shots\",\"revision\":\"fixture-v1\",\"model\":null,\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"count\"},\"blocks\":{\"provider\":\"synthetic\",\"field\":\"blocks\",\"revision\":\"fixture-v1\",\"model\":null,\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"count\"},\"hits\":{\"provider\":\"synthetic\",\"field\":\"hits\",\"revision\":\"fixture-v1\",\"model\":null,\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"count\"},\"ppPoints\":{\"provider\":\"synthetic\",\"field\":\"ppPoints\",\"revision\":\"fixture-v1\",\"model\":null,\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"count\"},\"toiSeconds\":{\"provider\":\"synthetic\",\"field\":\"toiSeconds\",\"revision\":\"fixture-v1\",\"model\":null,\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"seconds\"},\"ppToiSeconds\":{\"provider\":\"synthetic\",\"field\":\"ppToiSeconds\",\"revision\":\"fixture-v1\",\"model\":null,\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"seconds\"},\"ixg\":{\"provider\":\"synthetic\",\"field\":\"ixg\",\"revision\":\"fixture-v1\",\"model\":\"fixture-xG\",\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"xG\"},\"xgf\":{\"provider\":\"synthetic\",\"field\":\"xgf\",\"revision\":\"fixture-v1\",\"model\":\"fixture-xG\",\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"xG\"},\"xga\":{\"provider\":\"synthetic\",\"field\":\"xga\",\"revision\":\"fixture-v1\",\"model\":\"fixture-xG\",\"strength\":\"all\",\"updatedAt\":null,\"unit\":\"xG\"}},\"finality\":\"Synthetic final status, no exact end times.\",\"games\":[{\"gameId\":2026020001,\"date\":\"2026-10-01\",\"utcStart\":\"2026-10-01T12:00:00Z\",\"team\":\"TBL\",\"finalAtObservation\":true,\"played\":true,\"values\":{\"goals\":0,\"assists\":1,\"points\":1,\"shots\":0,\"blocks\":2,\"hits\":3,\"ppPoints\":0,\"toiSeconds\":600,\"ppToiSeconds\":60,\"ixg\":0.5,\"xgf\":2,\"xga\":1}},{\"gameId\":2026020002,\"date\":\"2026-10-02\",\"utcStart\":\"2026-10-02T12:00:00Z\",\"team\":\"TBL\",\"finalAtObservation\":true,\"played\":true,\"values\":{\"goals\":1,\"assists\":1,\"points\":2,\"shots\":1,\"blocks\":2,\"hits\":3,\"ppPoints\":0,\"toiSeconds\":660,\"ppToiSeconds\":60,\"ixg\":0.5,\"xgf\":2,\"xga\":1}},{\"gameId\":2026020003,\"date\":\"2026-10-03\",\"utcStart\":\"2026-10-03T12:00:00Z\",\"team\":\"TBL\",\"finalAtObservation\":true,\"played\":true,\"values\":{\"goals\":0,\"assists\":1,\"points\":1,\"shots\":2,\"blocks\":2,\"hits\":3,\"ppPoints\":0,\"toiSeconds\":720,\"ppToiSeconds\":60,\"ixg\":0.5,\"xgf\":2,\"xga\":1}}]},\"settings\":{\"period\":{\"mode\":\"appearances\",\"count\":5},\"baseline\":\"season\",\"basis\":\"per-game\",\"visual\":\"bars\"},\"recent\":{\"label\":\"Last 5\",\"gameIds\":[2026020003,2026020002,2026020001],\"dates\":[\"2026-10-03\",\"2026-10-02\",\"2026-10-01\"],\"gp\":3,\"requestedAppearances\":5,\"knownShort\":true,\"sampleWarning\":\"3 of 5 appearances: verified complete season history, small sample. Per-field gaps remain unavailable.\",\"reason\":null,\"readings\":[{\"metric\":\"goals\",\"value\":0.3333333333333333,\"state\":\"valid\",\"reason\":null,\"gp\":3,\"unit\":\"goals/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",\\\"fhfh-card-rank-policy-2026-11-01\\\",20262027,\\\"regular\\\",\\\"2026-10-31T12:00:00Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"goals\\\",\\\"per-game\\\",[{\\\"provider\\\":\\\"synthetic\\\",\\\"field\\\":\\\"goals\\\",\\\"revision\\\":\\\"fixture-v1\\\",\\\"model\\\":null,\\\"strength\\\":\\\"all\\\",\\\"updatedAt\\\":null,\\\"unit\\\":\\\"count\\\"}]]\"},{\"metric\":\"assists\",\"value\":1,\"state\":\"valid\",\"reason\":null,\"gp\":3,\"unit\":\"assists/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",\\\"fhfh-card-rank-policy-2026-11-01\\\",20262027,\\\"regular\\\",\\\"2026-10-31T12:00:00Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"assists\\\",\\\"per-game\\\",[{\\\"provider\\\":\\\"synthetic\\\",\\\"field\\\":\\\"assists\\\",\\\"revision\\\":\\\"fixture-v1\\\",\\\"model\\\":null,\\\"strength\\\":\\\"all\\\",\\\"updatedAt\\\":null,\\\"unit\\\":\\\"count\\\"}]]\"},{\"metric\":\"points\",\"value\":1.3333333333333333,\"state\":\"valid\",\"reason\":null,\"gp\":3,\"unit\":\"points/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",\\\"fhfh-card-rank-policy-2026-11-01\\\",20262027,\\\"regular\\\",\\\"2026-10-31T12:00:00Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"points\\\",\\\"per-game\\\",[{\\\"provider\\\":\\\"synthetic\\\",\\\"field\\\":\\\"points\\\",\\\"revision\\\":\\\"fixture-v1\\\",\\\"model\\\":null,\\\"strength\\\":\\\"all\\\",\\\"updatedAt\\\":null,\\\"unit\\\":\\\"count\\\"}]]\"},{\"metric\":\"ppPoints\",\"value\":0,\"state\":\"valid\",\"reason\":null,\"gp\":3,\"unit\":\"points/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",\\\"fhfh-card-rank-policy-2026-11-01\\\",20262027,\\\"regular\\\",\\\"2026-10-31T12:00:00Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"ppPoints\\\",\\\"per-game\\\",[{\\\"provider\\\":\\\"synthetic\\\",\\\"field\\\":\\\"ppPoints\\\",\\\"revision\\\":\\\"fixture-v1\\\",\\\"model\\\":null,\\\"strength\\\":\\\"all\\\",\\\"updatedAt\\\":null,\\\"unit\\\":\\\"count\\\"}]]\"},{\"metric\":\"shots\",\"value\":1,\"state\":\"valid\",\"reason\":null,\"gp\":3,\"unit\":\"shots/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",\\\"fhfh-card-rank-policy-2026-11-01\\\",20262027,\\\"regular\\\",\\\"2026-10-31T12:00:00Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"shots\\\",\\\"per-game\\\",[{\\\"provider\\\":\\\"synthetic\\\",\\\"field\\\":\\\"shots\\\",\\\"revision\\\":\\\"fixture-v1\\\",\\\"model\\\":null,\\\"strength\\\":\\\"all\\\",\\\"updatedAt\\\":null,\\\"unit\\\":\\\"count\\\"}]]\"},{\"metric\":\"blocks\",\"value\":2,\"state\":\"valid\",\"reason\":null,\"gp\":3,\"unit\":\"blocks/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",\\\"fhfh-card-rank-policy-2026-11-01\\\",20262027,\\\"regular\\\",\\\"2026-10-31T12:00:00Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"blocks\\\",\\\"per-game\\\",[{\\\"provider\\\":\\\"synthetic\\\",\\\"field\\\":\\\"blocks\\\",\\\"revision\\\":\\\"fixture-v1\\\",\\\"model\\\":null,\\\"strength\\\":\\\"all\\\",\\\"updatedAt\\\":null,\\\"unit\\\":\\\"count\\\"}]]\"},{\"metric\":\"hits\",\"value\":3,\"state\":\"valid\",\"reason\":null,\"gp\":3,\"unit\":\"hits/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",\\\"fhfh-card-rank-policy-2026-11-01\\\",20262027,\\\"regular\\\",\\\"2026-10-31T12:00:00Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"hits\\\",\\\"per-game\\\",[{\\\"provider\\\":\\\"synthetic\\\",\\\"field\\\":\\\"hits\\\",\\\"revision\\\":\\\"fixture-v1\\\",\\\"model\\\":null,\\\"strength\\\":\\\"all\\\",\\\"updatedAt\\\":null,\\\"unit\\\":\\\"count\\\"}]]\"},{\"metric\":\"bsh\",\"value\":6,\"state\":\"valid\",\"reason\":null,\"gp\":3,\"unit\":\"events/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",\\\"fhfh-card-rank-policy-2026-11-01\\\",20262027,\\\"regular\\\",\\\"2026-10-31T12:00:00Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"bsh\\\",\\\"per-game\\\",[{\\\"provider\\\":\\\"synthetic\\\",\\\"field\\\":\\\"blocks\\\",\\\"revision\\\":\\\"fixture-v1\\\",\\\"model\\\":null,\\\"strength\\\":\\\"all\\\",\\\"updatedAt\\\":null,\\\"unit\\\":\\\"count\\\"},{\\\"provider\\\":\\\"synthetic\\\",\\\"field\\\":\\\"shots\\\",\\\"revision\\\":\\\"fixture-v1\\\",\\\"model\\\":null,\\\"strength\\\":\\\"all\\\",\\\"updatedAt\\\":null,\\\"unit\\\":\\\"count\\\"},{\\\"provider\\\":\\\"synthetic\\\",\\\"field\\\":\\\"hits\\\",\\\"revision\\\":\\\"fixture-v1\\\",\\\"model\\\":null,\\\"strength\\\":\\\"all\\\",\\\"updatedAt\\\":null,\\\"unit\\\":\\\"count\\\"}]]\"},{\"metric\":\"toiSeconds\",\"value\":11,\"state\":\"valid\",\"reason\":null,\"gp\":3,\"unit\":\"min/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",\\\"fhfh-card-rank-policy-2026-11-01\\\",20262027,\\\"regular\\\",\\\"2026-10-31T12:00:00Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"toiSeconds\\\",\\\"per-game\\\",[{\\\"provider\\\":\\\"synthetic\\\",\\\"field\\\":\\\"toiSeconds\\\",\\\"revision\\\":\\\"fixture-v1\\\",\\\"model\\\":null,\\\"strength\\\":\\\"all\\\",\\\"updatedAt\\\":null,\\\"unit\\\":\\\"seconds\\\"}]]\"},{\"metric\":\"ppToiSeconds\",\"value\":1,\"state\":\"valid\",\"reason\":null,\"gp\":3,\"unit\":\"min/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",\\\"fhfh-card-rank-policy-2026-11-01\\\",20262027,\\\"regular\\\",\\\"2026-10-31T12:00:00Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"ppToiSeconds\\\",\\\"per-game\\\",[{\\\"provider\\\":\\\"synthetic\\\",\\\"field\\\":\\\"ppToiSeconds\\\",\\\"revision\\\":\\\"fixture-v1\\\",\\\"model\\\":null,\\\"strength\\\":\\\"all\\\",\\\"updatedAt\\\":null,\\\"unit\\\":\\\"seconds\\\"},{\\\"provider\\\":\\\"synthetic\\\",\\\"field\\\":\\\"toiSeconds\\\",\\\"revision\\\":\\\"fixture-v1\\\",\\\"model\\\":null,\\\"strength\\\":\\\"all\\\",\\\"updatedAt\\\":null,\\\"unit\\\":\\\"seconds\\\"}]]\"},{\"metric\":\"ixg\",\"value\":0.5,\"state\":\"valid\",\"reason\":null,\"gp\":3,\"unit\":\"xG/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",\\\"fhfh-card-rank-policy-2026-11-01\\\",20262027,\\\"regular\\\",\\\"2026-10-31T12:00:00Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"ixg\\\",\\\"per-game\\\",[{\\\"provider\\\":\\\"synthetic\\\",\\\"field\\\":\\\"ixg\\\",\\\"revision\\\":\\\"fixture-v1\\\",\\\"model\\\":\\\"fixture-xG\\\",\\\"strength\\\":\\\"all\\\",\\\"updatedAt\\\":null,\\\"unit\\\":\\\"xG\\\"}]]\"},{\"metric\":\"xgf\",\"value\":2,\"state\":\"valid\",\"reason\":null,\"gp\":3,\"unit\":\"xG/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",\\\"fhfh-card-rank-policy-2026-11-01\\\",20262027,\\\"regular\\\",\\\"2026-10-31T12:00:00Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"xgf\\\",\\\"per-game\\\",[{\\\"provider\\\":\\\"synthetic\\\",\\\"field\\\":\\\"xgf\\\",\\\"revision\\\":\\\"fixture-v1\\\",\\\"model\\\":\\\"fixture-xG\\\",\\\"strength\\\":\\\"all\\\",\\\"updatedAt\\\":null,\\\"unit\\\":\\\"xG\\\"}]]\"},{\"metric\":\"xga\",\"value\":1,\"state\":\"valid\",\"reason\":null,\"gp\":3,\"unit\":\"xG/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",\\\"fhfh-card-rank-policy-2026-11-01\\\",20262027,\\\"regular\\\",\\\"2026-10-31T12:00:00Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"xga\\\",\\\"per-game\\\",[{\\\"provider\\\":\\\"synthetic\\\",\\\"field\\\":\\\"xga\\\",\\\"revision\\\":\\\"fixture-v1\\\",\\\"model\\\":\\\"fixture-xG\\\",\\\"strength\\\":\\\"all\\\",\\\"updatedAt\\\":null,\\\"unit\\\":\\\"xG\\\"}]]\"},{\"metric\":\"xgPct\",\"value\":66.66666666666667,\"state\":\"valid\",\"reason\":null,\"gp\":3,\"unit\":\"%\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",\\\"fhfh-card-rank-policy-2026-11-01\\\",20262027,\\\"regular\\\",\\\"2026-10-31T12:00:00Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"xgPct\\\",\\\"pooled-percentage\\\",[{\\\"provider\\\":\\\"synthetic\\\",\\\"field\\\":\\\"xgf\\\",\\\"revision\\\":\\\"fixture-v1\\\",\\\"model\\\":\\\"fixture-xG\\\",\\\"strength\\\":\\\"all\\\",\\\"updatedAt\\\":null,\\\"unit\\\":\\\"xG\\\"},{\\\"provider\\\":\\\"synthetic\\\",\\\"field\\\":\\\"xga\\\",\\\"revision\\\":\\\"fixture-v1\\\",\\\"model\\\":\\\"fixture-xG\\\",\\\"strength\\\":\\\"all\\\",\\\"updatedAt\\\":null,\\\"unit\\\":\\\"xG\\\"}]]\"}]},\"baseline\":{\"label\":\"Season to date\",\"gameIds\":[2026020003,2026020002,2026020001],\"dates\":[\"2026-10-03\",\"2026-10-02\",\"2026-10-01\"],\"gp\":3,\"requestedAppearances\":null,\"knownShort\":false,\"sampleWarning\":null,\"reason\":null,\"readings\":[{\"metric\":\"goals\",\"value\":0.3333333333333333,\"state\":\"valid\",\"reason\":null,\"gp\":3,\"unit\":\"goals/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",\\\"fhfh-card-rank-policy-2026-11-01\\\",20262027,\\\"regular\\\",\\\"2026-10-31T12:00:00Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Season to date\\\",\\\"goals\\\",\\\"per-game\\\",[{\\\"provider\\\":\\\"synthetic\\\",\\\"field\\\":\\\"goals\\\",\\\"revision\\\":\\\"fixture-v1\\\",\\\"model\\\":null,\\\"strength\\\":\\\"all\\\",\\\"updatedAt\\\":null,\\\"unit\\\":\\\"count\\\"}]]\"},{\"metric\":\"assists\",\"value\":1,\"state\":\"valid\",\"reason\":null,\"gp\":3,\"unit\":\"assists/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",\\\"fhfh-card-rank-policy-2026-11-01\\\",20262027,\\\"regular\\\",\\\"2026-10-31T12:00:00Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Season to date\\\",\\\"assists\\\",\\\"per-game\\\",[{\\\"provider\\\":\\\"synthetic\\\",\\\"field\\\":\\\"assists\\\",\\\"revision\\\":\\\"fixture-v1\\\",\\\"model\\\":null,\\\"strength\\\":\\\"all\\\",\\\"updatedAt\\\":null,\\\"unit\\\":\\\"count\\\"}]]\"},{\"metric\":\"points\",\"value\":1.3333333333333333,\"state\":\"valid\",\"reason\":null,\"gp\":3,\"unit\":\"points/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",\\\"fhfh-card-rank-policy-2026-11-01\\\",20262027,\\\"regular\\\",\\\"2026-10-31T12:00:00Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Season to date\\\",\\\"points\\\",\\\"per-game\\\",[{\\\"provider\\\":\\\"synthetic\\\",\\\"field\\\":\\\"points\\\",\\\"revision\\\":\\\"fixture-v1\\\",\\\"model\\\":null,\\\"strength\\\":\\\"all\\\",\\\"updatedAt\\\":null,\\\"unit\\\":\\\"count\\\"}]]\"},{\"metric\":\"ppPoints\",\"value\":0,\"state\":\"valid\",\"reason\":null,\"gp\":3,\"unit\":\"points/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",\\\"fhfh-card-rank-policy-2026-11-01\\\",20262027,\\\"regular\\\",\\\"2026-10-31T12:00:00Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Season to date\\\",\\\"ppPoints\\\",\\\"per-game\\\",[{\\\"provider\\\":\\\"synthetic\\\",\\\"field\\\":\\\"ppPoints\\\",\\\"revision\\\":\\\"fixture-v1\\\",\\\"model\\\":null,\\\"strength\\\":\\\"all\\\",\\\"updatedAt\\\":null,\\\"unit\\\":\\\"count\\\"}]]\"},{\"metric\":\"shots\",\"value\":1,\"state\":\"valid\",\"reason\":null,\"gp\":3,\"unit\":\"shots/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",\\\"fhfh-card-rank-policy-2026-11-01\\\",20262027,\\\"regular\\\",\\\"2026-10-31T12:00:00Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Season to date\\\",\\\"shots\\\",\\\"per-game\\\",[{\\\"provider\\\":\\\"synthetic\\\",\\\"field\\\":\\\"shots\\\",\\\"revision\\\":\\\"fixture-v1\\\",\\\"model\\\":null,\\\"strength\\\":\\\"all\\\",\\\"updatedAt\\\":null,\\\"unit\\\":\\\"count\\\"}]]\"},{\"metric\":\"blocks\",\"value\":2,\"state\":\"valid\",\"reason\":null,\"gp\":3,\"unit\":\"blocks/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",\\\"fhfh-card-rank-policy-2026-11-01\\\",20262027,\\\"regular\\\",\\\"2026-10-31T12:00:00Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Season to date\\\",\\\"blocks\\\",\\\"per-game\\\",[{\\\"provider\\\":\\\"synthetic\\\",\\\"field\\\":\\\"blocks\\\",\\\"revision\\\":\\\"fixture-v1\\\",\\\"model\\\":null,\\\"strength\\\":\\\"all\\\",\\\"updatedAt\\\":null,\\\"unit\\\":\\\"count\\\"}]]\"},{\"metric\":\"hits\",\"value\":3,\"state\":\"valid\",\"reason\":null,\"gp\":3,\"unit\":\"hits/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",\\\"fhfh-card-rank-policy-2026-11-01\\\",20262027,\\\"regular\\\",\\\"2026-10-31T12:00:00Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Season to date\\\",\\\"hits\\\",\\\"per-game\\\",[{\\\"provider\\\":\\\"synthetic\\\",\\\"field\\\":\\\"hits\\\",\\\"revision\\\":\\\"fixture-v1\\\",\\\"model\\\":null,\\\"strength\\\":\\\"all\\\",\\\"updatedAt\\\":null,\\\"unit\\\":\\\"count\\\"}]]\"},{\"metric\":\"bsh\",\"value\":6,\"state\":\"valid\",\"reason\":null,\"gp\":3,\"unit\":\"events/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",\\\"fhfh-card-rank-policy-2026-11-01\\\",20262027,\\\"regular\\\",\\\"2026-10-31T12:00:00Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Season to date\\\",\\\"bsh\\\",\\\"per-game\\\",[{\\\"provider\\\":\\\"synthetic\\\",\\\"field\\\":\\\"blocks\\\",\\\"revision\\\":\\\"fixture-v1\\\",\\\"model\\\":null,\\\"strength\\\":\\\"all\\\",\\\"updatedAt\\\":null,\\\"unit\\\":\\\"count\\\"},{\\\"provider\\\":\\\"synthetic\\\",\\\"field\\\":\\\"shots\\\",\\\"revision\\\":\\\"fixture-v1\\\",\\\"model\\\":null,\\\"strength\\\":\\\"all\\\",\\\"updatedAt\\\":null,\\\"unit\\\":\\\"count\\\"},{\\\"provider\\\":\\\"synthetic\\\",\\\"field\\\":\\\"hits\\\",\\\"revision\\\":\\\"fixture-v1\\\",\\\"model\\\":null,\\\"strength\\\":\\\"all\\\",\\\"updatedAt\\\":null,\\\"unit\\\":\\\"count\\\"}]]\"},{\"metric\":\"toiSeconds\",\"value\":11,\"state\":\"valid\",\"reason\":null,\"gp\":3,\"unit\":\"min/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",\\\"fhfh-card-rank-policy-2026-11-01\\\",20262027,\\\"regular\\\",\\\"2026-10-31T12:00:00Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Season to date\\\",\\\"toiSeconds\\\",\\\"per-game\\\",[{\\\"provider\\\":\\\"synthetic\\\",\\\"field\\\":\\\"toiSeconds\\\",\\\"revision\\\":\\\"fixture-v1\\\",\\\"model\\\":null,\\\"strength\\\":\\\"all\\\",\\\"updatedAt\\\":null,\\\"unit\\\":\\\"seconds\\\"}]]\"},{\"metric\":\"ppToiSeconds\",\"value\":1,\"state\":\"valid\",\"reason\":null,\"gp\":3,\"unit\":\"min/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",\\\"fhfh-card-rank-policy-2026-11-01\\\",20262027,\\\"regular\\\",\\\"2026-10-31T12:00:00Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Season to date\\\",\\\"ppToiSeconds\\\",\\\"per-game\\\",[{\\\"provider\\\":\\\"synthetic\\\",\\\"field\\\":\\\"ppToiSeconds\\\",\\\"revision\\\":\\\"fixture-v1\\\",\\\"model\\\":null,\\\"strength\\\":\\\"all\\\",\\\"updatedAt\\\":null,\\\"unit\\\":\\\"seconds\\\"},{\\\"provider\\\":\\\"synthetic\\\",\\\"field\\\":\\\"toiSeconds\\\",\\\"revision\\\":\\\"fixture-v1\\\",\\\"model\\\":null,\\\"strength\\\":\\\"all\\\",\\\"updatedAt\\\":null,\\\"unit\\\":\\\"seconds\\\"}]]\"},{\"metric\":\"ixg\",\"value\":0.5,\"state\":\"valid\",\"reason\":null,\"gp\":3,\"unit\":\"xG/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",\\\"fhfh-card-rank-policy-2026-11-01\\\",20262027,\\\"regular\\\",\\\"2026-10-31T12:00:00Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Season to date\\\",\\\"ixg\\\",\\\"per-game\\\",[{\\\"provider\\\":\\\"synthetic\\\",\\\"field\\\":\\\"ixg\\\",\\\"revision\\\":\\\"fixture-v1\\\",\\\"model\\\":\\\"fixture-xG\\\",\\\"strength\\\":\\\"all\\\",\\\"updatedAt\\\":null,\\\"unit\\\":\\\"xG\\\"}]]\"},{\"metric\":\"xgf\",\"value\":2,\"state\":\"valid\",\"reason\":null,\"gp\":3,\"unit\":\"xG/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",\\\"fhfh-card-rank-policy-2026-11-01\\\",20262027,\\\"regular\\\",\\\"2026-10-31T12:00:00Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Season to date\\\",\\\"xgf\\\",\\\"per-game\\\",[{\\\"provider\\\":\\\"synthetic\\\",\\\"field\\\":\\\"xgf\\\",\\\"revision\\\":\\\"fixture-v1\\\",\\\"model\\\":\\\"fixture-xG\\\",\\\"strength\\\":\\\"all\\\",\\\"updatedAt\\\":null,\\\"unit\\\":\\\"xG\\\"}]]\"},{\"metric\":\"xga\",\"value\":1,\"state\":\"valid\",\"reason\":null,\"gp\":3,\"unit\":\"xG/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",\\\"fhfh-card-rank-policy-2026-11-01\\\",20262027,\\\"regular\\\",\\\"2026-10-31T12:00:00Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Season to date\\\",\\\"xga\\\",\\\"per-game\\\",[{\\\"provider\\\":\\\"synthetic\\\",\\\"field\\\":\\\"xga\\\",\\\"revision\\\":\\\"fixture-v1\\\",\\\"model\\\":\\\"fixture-xG\\\",\\\"strength\\\":\\\"all\\\",\\\"updatedAt\\\":null,\\\"unit\\\":\\\"xG\\\"}]]\"},{\"metric\":\"xgPct\",\"value\":66.66666666666667,\"state\":\"valid\",\"reason\":null,\"gp\":3,\"unit\":\"%\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",\\\"fhfh-card-rank-policy-2026-11-01\\\",20262027,\\\"regular\\\",\\\"2026-10-31T12:00:00Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Season to date\\\",\\\"xgPct\\\",\\\"pooled-percentage\\\",[{\\\"provider\\\":\\\"synthetic\\\",\\\"field\\\":\\\"xgf\\\",\\\"revision\\\":\\\"fixture-v1\\\",\\\"model\\\":\\\"fixture-xG\\\",\\\"strength\\\":\\\"all\\\",\\\"updatedAt\\\":null,\\\"unit\\\":\\\"xG\\\"},{\\\"provider\\\":\\\"synthetic\\\",\\\"field\\\":\\\"xga\\\",\\\"revision\\\":\\\"fixture-v1\\\",\\\"model\\\":\\\"fixture-xG\\\",\\\"strength\\\":\\\"all\\\",\\\"updatedAt\\\":null,\\\"unit\\\":\\\"xG\\\"}]]\"}]},\"overlap\":3,\"disclosure\":\"Season includes recent games: 3 overlapping appearances. This is not an independent baseline.\",\"rankPolicy\":{\"version\":\"fhfh-card-rank-policy-2026-11-01\",\"status\":\"approved\",\"ordering\":\"highest-numeric-first\",\"ties\":\"competition\",\"percentile\":\"midrank\",\"shortSeason\":\"include-verified-complete\",\"additionalQualifiers\":\"none\"}},\"view\":\"comparison\",\"blsh\":{\"status\":\"unavailable\",\"heading\":\"BLSH evidence unavailable\",\"lines\":[\"An owner-qualified current method and snapshot receipt has not been supplied.\"],\"direction\":\"unknown\",\"receipt\":null,\"market\":\"Market reference unavailable\"},\"trades\":{\"status\":\"unavailable\",\"records\":[],\"lines\":[\"No qualified trades matched this NHL player ID.\",\"Market reference unavailable. No trade collection was attempted.\"]}},\"image-unavailable\"]",
+  "disclosure": "Local consumer presentation; qualification and unavailable reasons are retained per field. No source refresh or deployment implied."
+}

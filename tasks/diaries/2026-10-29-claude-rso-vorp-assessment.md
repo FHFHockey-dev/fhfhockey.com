@@ -30,3 +30,5 @@
 - Alt-tidy committed c96c353d1. UI pass session rso-ui-pass local_c6323285 started (lease RSO-UI-PASS, 51 files; per-step commits + approve/edit pop-ups; Axe parked).
 - UI pass verified: 7 commits dc4f705fb..c368c679e inside lease; 1,447 unit tests, eslint 0 err, pure all; e2e rso-continuity+acceptance 17/19 then the 2 failures pass on rerun (dev-server first-compile ENOENT). Committing STEPS.md + diaries.
 - UI pass steps 8-10 (TJ-approved direct) verified: 422 RSO unit, pure, e2e rso-continuity+acceptance 19/19 on final code. RC16 next.
+- RC16 refs/rc/rso-rc16 = 77234b790 (origin/master 69ec142bd + 24 RSO files; base = master; 93 imports identical). Gate running. Push needs TJ pop-up.
+- Release #400 live: master d80e3f296 (tree = RC16). Deploy dpl_B8FWvaQu4fsjKNTo8vvLjJXqLX6Z fhfhockey READY; cms/functions/fhfhockey.com CANCELED. Smoke 3 GETs 200; RSO chunk 4ab3cbbf has no-adds / Other drop / goal labels. octoberBranch sync 18e52a481 pushed; 90 s no-build check running.

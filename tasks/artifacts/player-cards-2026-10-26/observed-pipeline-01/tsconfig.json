@@ -1,0 +1,14 @@
+{
+  "extends": "../../../../web/tsconfig.json",
+  "compilerOptions": {
+    "incremental": false
+  },
+  "include": [
+    "../../../../web/lib/player-cards/cardEvidenceVerdict.ts",
+    "../../../../web/lib/player-cards/cardEvidenceVerdict.test.ts",
+    "../../../../web/next-env.d.ts"
+  ],
+  "exclude": [
+    "../../../../web/node_modules"
+  ]
+}

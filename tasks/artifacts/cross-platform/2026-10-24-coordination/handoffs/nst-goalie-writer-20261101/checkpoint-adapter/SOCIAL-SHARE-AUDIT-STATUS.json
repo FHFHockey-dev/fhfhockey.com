@@ -1,0 +1,29 @@
+{
+  "checkedAt": "2026-11-01T16:33:27.943437+00:00",
+  "jobPath": "/Users/tim/.claude/plugins/data/codex-openai-codex/state/fhfhockey.com-c7e5da37d977f360/jobs/task-mvy1nmhp-12z7mu.json",
+  "jobSha256": "820eb3a5d7d13431f8888e537b8b4090238c95f55efbf4f246d8216fb2fda1f1",
+  "job": {
+    "id": "task-mvy1nmhp-12z7mu",
+    "status": "running",
+    "phase": "running",
+    "startedAt": "2026-11-01T16:28:14.450Z",
+    "completedAt": null,
+    "pid": 82004,
+    "threadId": "01a197f0-ac5e-7d43-8bef-00e6fcb106a9",
+    "turnId": "01a197f0-b081-7a81-9d92-9f6dcf833923",
+    "workspaceRoot": "/Users/tim/Code/fhfhockey.com"
+  },
+  "logPath": "/Users/tim/.claude/plugins/data/codex-openai-codex/state/fhfhockey.com-c7e5da37d977f360/jobs/task-mvy1nmhp-12z7mu.log",
+  "logBytes": 12575,
+  "reportExists": false,
+  "candidate": "a398781fd34721632206d3136129620be98b1fe3",
+  "newJobStarted": false,
+  "codexThreadStatus": "notLoaded",
+  "codexTurnStatus": "interrupted",
+  "finalAuditMessageVisible": false,
+  "jobRecordDisagreesWithThreadStatus": true,
+  "lastLogActivityUtc": "2026-11-01T16:32:00.763Z",
+  "reportDeliveryContract": "Read-only auditor; whole report in final message, not a file.",
+  "processLiveness": "ps unavailable in sandbox; not inferred from job JSON",
+  "action": "Existing job unchanged; no duplicate, restart, watch or audit created."
+}

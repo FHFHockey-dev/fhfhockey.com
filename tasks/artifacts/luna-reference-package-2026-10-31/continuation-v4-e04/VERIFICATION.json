@@ -1,0 +1,70 @@
+{
+  "version": "luna-e04-continuation-preparation-verification-v1",
+  "state": "offline_preparation_pending_independent_review",
+  "branch": "octoberBranch",
+  "head": "eafe4ac5f5d9bff0917bb41b81fe9c2534481fc7",
+  "applicationPinsUnchanged": 18,
+  "preservedArtifacts": [
+    {
+      "directory": "binding-review-integration",
+      "manifestSha256": "ae33006bf89340dd6e66e5cd334316037bb542a40abfc278a11f75cc4e6b2c01",
+      "artifactCount": 28,
+      "allArtifactsUnchanged": true
+    },
+    {
+      "directory": "span-binding-review",
+      "manifestSha256": "189039ec57eadfd7ee4fa997770a3c01054da39d8b8575640bd81ee104bc81be",
+      "artifactCount": 16,
+      "allArtifactsUnchanged": true
+    },
+    {
+      "directory": "continuation-e03-execution",
+      "manifestSha256": "bb539ba18fa7d816cfeb3609c9c79d45ed9de77603d514153c4d4c10cdd140cf",
+      "artifactCount": 14,
+      "allArtifactsUnchanged": true
+    },
+    {
+      "directory": "continuation-v4-e03",
+      "manifestSha256": "6dedfd949dee759838498f8792093a6e33021d4cf5979948a5f3a17c0b46f22b",
+      "artifactCount": 26,
+      "allArtifactsUnchanged": true
+    },
+    {
+      "directory": "continuation-execution",
+      "manifestSha256": "b0630b486392f7bde2930b986268210b375cf79920c51dd004b532a75f4bc6ed",
+      "artifactCount": 13,
+      "allArtifactsUnchanged": true
+    },
+    {
+      "directory": "e02-boundary-diagnosis",
+      "manifestSha256": "8cbdea71b237c429db2eb47943901abdd6fefe824a92a965ce0e68123cf782ad",
+      "artifactCount": 14,
+      "allArtifactsUnchanged": true
+    }
+  ],
+  "realLedger": {
+    "sha256": "fc59014d3ff7f3abdfdec0703ffa77f80e5d02ef764f19d21cb85fc08adbd8f2",
+    "enabled": false,
+    "attempts": 4,
+    "aggregateExposureNanoUsd": 263950397
+  },
+  "historicalLedgerSha256": "e8418735afaeff893177e550df6774600c6c6fec4f49c2b01c183712cdc064f2",
+  "planSha256": "32d4048054109b84258c70800f679809077e3bf7ffe03b2e85a833ee487d3ab1",
+  "checks": {
+    "offlineScenarios": 10,
+    "offlineVerifierExitCode": 0,
+    "scopedTypeScriptExitCode": 0,
+    "networkDenialPreload": true,
+    "inheritedEnvironmentEmpty": true,
+    "jsonFilesParsed": 22,
+    "localMarkdownLinksExist": true,
+    "trailingWhitespaceCheck": "passed",
+    "secretPatternScan": "passed_no_secret_contents_output"
+  },
+  "actualProviderCalls": 0,
+  "retries": 0,
+  "realLedgerActivation": false,
+  "credentialAccess": false,
+  "productionAction": false,
+  "independentReview": "pending"
+}

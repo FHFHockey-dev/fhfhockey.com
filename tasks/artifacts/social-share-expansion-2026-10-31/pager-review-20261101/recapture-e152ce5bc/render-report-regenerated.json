@@ -1,0 +1,80 @@
+[
+ {
+  "name": "busy-custom",
+  "post": "busy-quiet-goalies",
+  "editionCutoff": "2026-11-02",
+  "weekCalls": [
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   }
+  ],
+  "pager": null,
+  "enabled": true,
+  "png": true
+ },
+ {
+  "name": "rescue-w4",
+  "post": "goalie-rescue",
+  "editionCutoff": "2026-11-02",
+  "weekCalls": [
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   }
+  ],
+  "pager": {
+   "initial": {
+    "label": "Week 4 · Oct 19 to Oct 25",
+    "prior": "Prior week, week 3",
+    "priorEnabled": true,
+    "next": "Next week, week 5",
+    "nextEnabled": true,
+    "urlWeek": "4",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   },
+   "afterPrior": {
+    "label": "Week 3 · Oct 12 to Oct 18",
+    "prior": "Prior week, week 2",
+    "priorEnabled": true,
+    "next": "Next week, week 4",
+    "nextEnabled": true,
+    "urlWeek": "3",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   },
+   "thenBackNext": {
+    "label": "Week 4 · Oct 19 to Oct 25",
+    "prior": "Prior week, week 3",
+    "priorEnabled": true,
+    "next": "Next week, week 5",
+    "nextEnabled": true,
+    "urlWeek": "4",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   }
+  },
+  "enabled": true,
+  "png": true
+ }
+]

@@ -1,0 +1,12 @@
+{
+  "snapshot": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-autopsy-snapshot-acnu4bx8",
+  "port": 3135,
+  "serverStarted": true,
+  "browserStarted": true,
+  "serverStopped": true,
+  "browserStopped": true,
+  "productionCallsAuthorized": false,
+  "result": "passed",
+  "browserExitCode": 0,
+  "preservedLockReceipt": "/private/tmp/fhfh-autopsy-usability-browser-released-cf931716-c35e-4cf8-b176-f1a8ad8760fb"
+}

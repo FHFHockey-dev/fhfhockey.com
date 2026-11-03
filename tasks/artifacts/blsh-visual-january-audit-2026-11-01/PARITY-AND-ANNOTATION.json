@@ -1,0 +1,11 @@
+{
+  "currentProfilesExactSavedScoreWindowAndTrackParity": 729,
+  "currentTrackComparisons": 1653,
+  "januaryProposedMaterial": {
+    "BL": 93,
+    "SH": 80
+  },
+  "januaryConditionallyStable": 137,
+  "januaryDirectionSensitive": 36,
+  "zeroShotProposedMaterial": 1
+}

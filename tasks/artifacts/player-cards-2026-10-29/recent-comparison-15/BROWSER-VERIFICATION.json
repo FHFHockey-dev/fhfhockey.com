@@ -1,0 +1,65 @@
+{
+  "checks": [
+    "Actual name→load→one retained provider capture→recent and prior5 independent arithmetic→two combined portrait PNGs; unchanged player/logo/5px stack geometry; native share exact PNG bytes",
+    "L10 insufficient baseline exports explicit missingness; current data retained, format/window transitions reuse capture and clear prepared PNG; ordinary manifests exclude comparison inputs",
+    "390/320 responsive layout, native category control≥44px; another named selection clears comparison/artwork without fetching"
+  ],
+  "exports": [
+    {
+      "style": "posterized-team-colors",
+      "sha256": "5e9d457f89de9eaa5920e9bc7076941f8810b17aed83b58413a644c0ef6bd88d"
+    },
+    {
+      "style": "pixelated-team-colors",
+      "sha256": "0a0c528588267d93dc0a3e50d42af66958d74f970d78c9299bb1a0af2121b649"
+    }
+  ],
+  "recent": {
+    "values": {
+      "goals": 3,
+      "assists": 3,
+      "points": 6,
+      "shots": 22,
+      "atoi": 20.4,
+      "shots60": 12.941176470588236,
+      "goals60": 1.7647058823529411,
+      "points60": 3.5294117647058822,
+      "shootingPct": 13.636363636363635
+    },
+    "seconds": 6120,
+    "ids": [
+      2026020177,
+      2026020167,
+      2026020151,
+      2026020123,
+      2026020111
+    ]
+  },
+  "previous": {
+    "values": {
+      "goals": 0,
+      "assists": 7,
+      "points": 7,
+      "shots": 8,
+      "atoi": 21.336666666666666,
+      "shots60": 4.499296984846118,
+      "goals60": 0,
+      "points60": 3.936884861740353,
+      "shootingPct": 0
+    },
+    "seconds": 6401,
+    "ids": [
+      2026020095,
+      2026020081,
+      2026020060,
+      2026020040,
+      2026020024
+    ]
+  },
+  "apiCalls": [
+    "?playerId=8476453&season=20262027&count=5"
+  ],
+  "externalAttempts": [],
+  "pageErrors": [],
+  "newLiveRequests": 0
+}

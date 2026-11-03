@@ -1,0 +1,35 @@
+{
+  "fixedFiles": [
+    {
+      "path": "web/components/player-cards/PlayerAnalysisCard.tsx",
+      "sha256": "cf9579abfa92b946b541172ee2bb762ee595101ad27466bd90fbf036b2b72382"
+    },
+    {
+      "path": "web/lib/player-cards/analysisExport.ts",
+      "sha256": "3a1a068fa3398f3d9b9a2b81550f9dfa3917e1f3f44f39b9dd466f2a3bcacc93"
+    },
+    {
+      "path": "web/components/player-cards/PlayerAnalysisStudio.test.tsx",
+      "sha256": "37e057ce7c65e3c73bd7a6160e65e2dae5fa25b90b13dd475db322c8b7adc74f"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-evolution-2026-10-31/preview-entry.tsx",
+      "sha256": "d04db4ace09288daeccb845e7ed70573ef6a6a7297474b0491547c86bf10a19e"
+    }
+  ],
+  "candidateFilesMatched": 16,
+  "protectedFilesMatched": 78,
+  "onlyApplicationDelta": [
+    "web/components/player-cards/PlayerAnalysisCard.tsx",
+    "web/components/player-cards/PlayerAnalysisStudio.test.tsx",
+    "web/lib/player-cards/analysisExport.ts"
+  ],
+  "compiledNoticeMatches": true,
+  "browserReceiptPNGsVerified": [
+    "audit-fix-normal-20261101.png",
+    "audit-fix-wrapped-wide-20261101.png",
+    "audit-fix-retained-20261101.png",
+    "audit-fix-retained-sasson-20261101.png"
+  ],
+  "all94PinsUnchangedAtFinish": true
+}

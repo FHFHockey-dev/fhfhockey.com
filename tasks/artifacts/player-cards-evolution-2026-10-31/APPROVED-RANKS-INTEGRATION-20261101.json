@@ -1,0 +1,125 @@
+{
+  "at": "2026-11-01T17:48:29.379394+00:00",
+  "authority": "Trusted parent-delivered transcript: TJ yes to both ranking policies and both named owner contacts",
+  "policy": {
+    "ties": "competition1,2,2,4",
+    "percentile": "empirical midrank",
+    "knownShort": "include verified complete within-season samples with explicit actual/requestedGP; missing source rows remain unavailable"
+  },
+  "sourceChanges": [
+    {
+      "path": "web/lib/player-cards/analysisSnapshot.ts",
+      "beforeSHA256": "d42dd329a4510f9899618f8509cec6feddcdca9d8c7f07a2c93a6e91bb2cfe24",
+      "afterSHA256": "aca542f523cec0bfa2a3f66932db38815712f4986781bfeca797a321e7d49804"
+    },
+    {
+      "path": "web/lib/player-cards/analysisSnapshot.test.ts",
+      "beforeSHA256": "bdba55e1c118c67a048e068c89d17829ed26f2d90be90ab482acaed5dd7257bd",
+      "afterSHA256": "2b1d0e8077bf8c59c29e171991d66e25c35a30dab057e396c13ccf7a51674378"
+    },
+    {
+      "path": "web/components/player-cards/PlayerAnalysisCard.tsx",
+      "beforeSHA256": "f713ece18bab6f99b2d68e5492cd9199936d02bc45db0602f27e5691b740c5e1",
+      "afterSHA256": "a46c3979c3dc81eda03bb5c101d5c4c98508e103499fa5f5edf0600da0a162b6"
+    },
+    {
+      "path": "web/components/player-cards/PlayerAnalysisStudio.tsx",
+      "beforeSHA256": "b7562f5cd5f0ad2e79ead9e40c4637da47fda6949642bf251499e08429118e50",
+      "afterSHA256": "107278c3bd3bbebf6fd28f2940b46658d90ac1037ce9103e4aa342a29cf5a06b"
+    },
+    {
+      "path": "web/components/player-cards/PlayerAnalysisStudio.test.tsx",
+      "beforeSHA256": "ccfdf4b77dd5722b7dd4fb2c4fc07fe21047e21587afca9ddea944514606e60d",
+      "afterSHA256": "2e73505476533015ea471b6a416f44ccef0972405fe142629bf3c9db7797f5ef"
+    }
+  ],
+  "checks": [
+    {
+      "check": "tests",
+      "command": [
+        "npm",
+        "test",
+        "--",
+        "--run",
+        "lib/player-cards/analysisSnapshot.test.ts",
+        "lib/player-cards/ranking.test.ts",
+        "components/player-cards/PlayerAnalysisStudio.test.tsx"
+      ],
+      "exitCode": 0,
+      "log": "approved-ranks-tests-20261101.log"
+    },
+    {
+      "check": "types",
+      "command": [
+        "/usr/local/bin/node",
+        "node_modules/typescript/bin/tsc",
+        "--noEmit",
+        "--project",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-evolution-2026-10-31/tsconfig.json"
+      ],
+      "exitCode": 0,
+      "log": "approved-ranks-types-20261101.log"
+    },
+    {
+      "check": "lint",
+      "command": [
+        "/usr/local/bin/node",
+        "node_modules/eslint/bin/eslint.js",
+        "lib/player-cards/analysisSnapshot.ts",
+        "lib/player-cards/analysisSnapshot.test.ts",
+        "components/player-cards/PlayerAnalysisCard.tsx",
+        "components/player-cards/PlayerAnalysisStudio.tsx",
+        "components/player-cards/PlayerAnalysisStudio.test.tsx"
+      ],
+      "exitCode": 0,
+      "log": "approved-ranks-lint-20261101.log"
+    },
+    {
+      "check": "preview",
+      "command": [
+        "/usr/local/bin/node",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-evolution-2026-10-31/render-preview.mjs"
+      ],
+      "exitCode": 0,
+      "log": "approved-ranks-preview-20261101.log"
+    }
+  ],
+  "testCount": 22,
+  "browserReceipt": "APPROVED-RANKS-BROWSER-20261101.json",
+  "visualInspection": "Retained Kucherov11/20 PNG inspected; warning and unsupported fields readable/unclipped at export size. Mobile HTML reflow checked at320px; fine-print PNG requires zoom.",
+  "review": "Focused five-file delta reviewed; missing actual rows and missing field measurements remain distinct. Reused held ranking arithmetic without editing held files.",
+  "sourceAdmission": "Observed ranks remain unavailable; no qualified full-population source supplied. Approved convention is not coverage evidence.",
+  "contactReceipt": "APPROVED-POLICY-CONTACTS-20261101.json",
+  "editorCustody": "Read owner thread: idle checkpoint17, no transfer. CurrentPlayerCardStudio preimage remains9806acf539365419c4afae21b53b7186feb1eb8ae5e5ad4227d8162d11104021.",
+  "goalieRequest": "Retained inventory/source receipt requested via authorized mailbox; no acknowledgement/payload at latest incoming-tail check.",
+  "preservation": {
+    "originalCardFilesUnchanged": 78,
+    "ownedSourceFilesPinned": 16
+  },
+  "fullProjectTypes": "Historical8GiB full-project pass retained; this change verified by scoped TypeScript only.",
+  "browserScheduling": "First browser attempt did not execute while another owner held heavy slot; bounded wait acquired free slot, actual check passed, own lock released. No takeover.",
+  "operations": {
+    "providerOrDatabaseRequests": 0,
+    "productionChanges": 0,
+    "newCollections": 0,
+    "credentials": 0,
+    "pushes": 0,
+    "deployments": 0,
+    "deniedActions": 0,
+    "uncertainMutations": 0
+  },
+  "remainingTasks": [
+    "1.2",
+    "2.4",
+    "2.5",
+    "3.5",
+    "4.1",
+    "5.4",
+    "6.1",
+    "6.3",
+    "6.4",
+    "7.2",
+    "7.5",
+    "8.1"
+  ]
+}

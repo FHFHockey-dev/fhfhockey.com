@@ -1,0 +1,273 @@
+{
+  "at": "2026-10-26T17:35:38.838531+00:00",
+  "sourceEdits": false,
+  "frozenSourcePinChecks": [
+    {
+      "path": "web/lib/player-cards/aggregation.ts",
+      "sha256": "87559ceb96773a757ff359a6cf4705d1f89b73f8c96cd068e0eeb194c1cf329b",
+      "matchesFrozenSource": true
+    },
+    {
+      "path": "web/lib/player-cards/domain.test.ts",
+      "sha256": "240b4c192c386d672c5af505a90355787ca43b8f95dc7ce1d57dbba46addbb91",
+      "matchesFrozenSource": true
+    },
+    {
+      "path": "web/lib/player-cards/evidenceBundle.test.ts",
+      "sha256": "1a19a42d9bba637a07ad4370d0d5ebe105c22c5e3a432d8c933ee7146066c0af",
+      "matchesFrozenSource": true
+    },
+    {
+      "path": "web/lib/player-cards/evidenceBundle.ts",
+      "sha256": "054308dc7e87ba78c014e91b433225cc63a3a2783a0492881e5e8af688cc4314",
+      "matchesFrozenSource": true
+    },
+    {
+      "path": "web/lib/player-cards/evidenceLoader.test.ts",
+      "sha256": "9feaa0046e15b5cc94bb8506958aaf222f028aecc70d63b7aa2c11880af0d122",
+      "matchesFrozenSource": true
+    },
+    {
+      "path": "web/lib/player-cards/evidenceLoader.ts",
+      "sha256": "9fee76955b1f5c98bea4c9b638facc68185de8d3cb3e826bdcc848bbad5837d7",
+      "matchesFrozenSource": true
+    },
+    {
+      "path": "web/lib/player-cards/nstCapture.test.ts",
+      "sha256": "4d4acef017c15c6c21df2faa46f0037ec3ea83e7918275d15b3c3df141eff012",
+      "matchesFrozenSource": true
+    },
+    {
+      "path": "web/lib/player-cards/nstCapture.ts",
+      "sha256": "ddaa8604b6a50f7f6ebe9511899724ab0ade9b7db1235b417903b5b2f6e523ec",
+      "matchesFrozenSource": true
+    },
+    {
+      "path": "web/lib/player-cards/windows.ts",
+      "sha256": "0ba442eb512f309131c1f3b5a45534ccf7687a1cf7a84d570b40ce49f95dfb30",
+      "matchesFrozenSource": true
+    },
+    {
+      "path": "web/components/player-cards/ObservedPlayerCard.test.tsx",
+      "sha256": "e217c9edad47ae3e84b6743e261e3dccd990869565e65fc85d09390d12c538eb",
+      "matchesFrozenSource": true
+    },
+    {
+      "path": "web/components/player-cards/ObservedPlayerCard.tsx",
+      "sha256": "05e3389c018f5e38f54b54cde5eb15a9686a13b601624d556c9d3a2a64b8abe2",
+      "matchesFrozenSource": true
+    },
+    {
+      "path": "web/lib/player-cards/cardEvidenceVerdict.ts",
+      "sha256": "9b6f71f71d2eb5baef64509f30d0e12f3c34e08f6ef745c6cbcdb08b5161b88f",
+      "matchesFrozenSource": true
+    },
+    {
+      "path": "web/lib/player-cards/observedExport.test.ts",
+      "sha256": "7fe0983a3d0f85479301b050b175055c583319de57f02689f8b1f3f7a9568a7a",
+      "matchesFrozenSource": true
+    },
+    {
+      "path": "web/lib/player-cards/observedExport.ts",
+      "sha256": "6ec078118974d42028619b0f000f642feb1460503d4ed49220db788e0c9856fd",
+      "matchesFrozenSource": true
+    },
+    {
+      "path": "web/lib/player-cards/observedView.ts",
+      "sha256": "3c1623d0162e780281e21b0bd18b1430b4e177669a6fd964e241cc32fa9c5110",
+      "matchesFrozenSource": true
+    },
+    {
+      "path": "web/lib/player-cards/shareExport.ts",
+      "sha256": "4ba56a5b7a907cfc38b2dcbcd10dd6d4b32697aca8e4d03b83e2bea11a74747d",
+      "matchesFrozenSource": true
+    },
+    {
+      "path": "web/lib/player-cards/portraitTreatment.ts",
+      "sha256": "ec23203f003317efedc2f80b380518548c2306c3384b9f276fda2e9a94b92657",
+      "matchesFrozenSource": true
+    },
+    {
+      "path": "web/lib/player-cards/portraitTreatment.test.ts",
+      "sha256": "90b205e1710b0c59e180e6467323b4a2affb951f43b3c7ff13c751d60e336cec",
+      "matchesFrozenSource": true
+    },
+    {
+      "path": "web/components/player-cards/HeroPlayerCard.tsx",
+      "sha256": "2b104f9554ad8812e713561166d76d70fb4ab4b52e54ae4a2982b9c30a79ce75",
+      "matchesFrozenSource": true
+    },
+    {
+      "path": "web/lib/player-cards/shareExport.test.ts",
+      "sha256": "a84f39f56f39c8333b4f973b57f4cd90f3ac6611a1cc40b5059784f913ba4661",
+      "matchesFrozenSource": true
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardShareStudio.tsx",
+      "sha256": "f7c17b8cc5614d9b67e9882fe6c6835168faeb622128d4b510245e2790addc52",
+      "matchesFrozenSource": true
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardShareStudio.test.tsx",
+      "sha256": "fb5287eabc81abd2a521f0c9442633548a5121f01877a2cbab250b2e71fcfe1a",
+      "matchesFrozenSource": true
+    },
+    {
+      "path": "web/lib/player-cards/teamLogo.ts",
+      "sha256": "ea27905c906262947faebf75dcc24a9ca42a623b431ed48d20bede3bfafca186",
+      "matchesFrozenSource": true
+    }
+  ],
+  "artifactPins": [
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/report-qualification-01/validate-reports.mjs",
+      "bytes": 8838,
+      "sha256": "334de4e85f5b6722c6fa647fa4b6a492245fa02631e040a47109886521a0d3c8"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/report-qualification-01/real-report-contract.test.ts",
+      "bytes": 5224,
+      "sha256": "238aa01f1c1e00fcb96d582c9e180691cb9ce8449452baed009cf7bf3bcaaaa4"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/report-qualification-01/REPORT-VALIDATION.json",
+      "bytes": 11993,
+      "sha256": "be44283a3db2dedadf75e47d6c921f85d4c860442866f8f835390240d64ab732"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/report-qualification-01/tests.log",
+      "bytes": 944,
+      "sha256": "1bfe4f936c434a75140f4cd443669adc1af41848f008e0f577f5f6cc8e068fc5"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/report-qualification-01/tests-command.json",
+      "bytes": 684,
+      "sha256": "37e6fea196285014578931719ccae4dbadb5ae014244da37b49dd2b87f539193"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/date-finality-01/APPROVED-REPORT-READ-20261026.json",
+      "bytes": 995,
+      "sha256": "58bccefbf348058cc6428dad22457026d0ebf2e5b60e191aab49462ce0d6f191"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/date-finality-01/PUBLIC-REPORT-BATCH-RECEIPT.json",
+      "bytes": 3818,
+      "sha256": "6a73f00bae45ce3d3e2695cfc980ae03d526df311f2fb6ba5ccabb2b00a21774"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/date-finality-01/APPROVED-EXECUTION-RECEIPT.json",
+      "bytes": 280,
+      "sha256": "90fc759d47ba10a91c558bf729e6f51f36f23a5979d08f4bc47c67a8a2922ff1"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/date-finality-01/reports/GS020024.html",
+      "bytes": 35130,
+      "sha256": "53b258ca8bbdb48db0a003ee164fe75f8713df2bb2d70e924bd7b6d832530256"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/date-finality-01/reports/GS020151.html",
+      "bytes": 38222,
+      "sha256": "aee30e0fa80004269377f0c23b4bfc2643ba49aaae375e7e355db61de9a1fad6"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/date-finality-01/reports/GS020111.html",
+      "bytes": 36384,
+      "sha256": "3c91b1645252b49a64df1eed59386f0bfc60ce8b76b663e9b37dc8243216f584"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/date-finality-01/reports/GS020081.html",
+      "bytes": 38083,
+      "sha256": "d3c5f047b907a9cb17f619aead5b034ffddb35f9090c34eb41f3f372e8480cfb"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/date-finality-01/reports/GS020095.html",
+      "bytes": 36000,
+      "sha256": "720bdce5a38b6dc067de9ca9840ea7d085b475e2f49aa35c55fe206d64d719df"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/date-finality-01/reports/GS020040.html",
+      "bytes": 34766,
+      "sha256": "7fc79e40c757d14f5c7867ec5649afbd04b86edb7b466514d5df34040ac30a5c"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/date-finality-01/reports/GS020060.html",
+      "bytes": 34087,
+      "sha256": "cd8fe0406fbfdf122fb83c676289d0eadffd8921f44c1187afd0c35b6f9ed1b6"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/date-finality-01/reports/GS020010.html",
+      "bytes": 36952,
+      "sha256": "9c9f65ef6a1b6e6a3afde3a285003fb84952d3c30f126181d40fa5f7a12608ff"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/date-finality-01/reports/GS020123.html",
+      "bytes": 35280,
+      "sha256": "c9ff67fc8f29a39a308776ac266c6c8234f04d7aad824cfc86f41b2bf9bb2e9e"
+    }
+  ],
+  "network": {
+    "executions": 1,
+    "requests": 9,
+    "concurrency": 1,
+    "retries": 0,
+    "redirects": 0,
+    "bytes": 324904,
+    "elapsedSeconds": 1.858,
+    "allHttp200": true,
+    "privateDatabaseReads": 0,
+    "otherNetworkRequests": 0
+  },
+  "qualification": {
+    "reportIdentityMatches": 10,
+    "batchReports": 9,
+    "reusedLocalReports": 1,
+    "endMinutesBeforeCutoff": 9,
+    "nextOrdinal10AfterCutoff": true,
+    "matchedCompletedTeamAndPlayerHistoryIds": 11,
+    "reportedTeamOrdinalsBeforeCutoff": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "exactSecondClaims": false,
+    "clockAssumptionsAccepted": false,
+    "historyCompletenessAdmitted": false,
+    "admissionsChanged": false
+  },
+  "checks": {
+    "focusedVitestCasesPassed": 10,
+    "files": 2,
+    "appSourceTypeLintRerun": "not warranted; no application source edits",
+    "networkStubbed": true,
+    "testCommand": {
+      "action": "tests",
+      "command": [
+        "npm",
+        "test",
+        "--",
+        "--run",
+        "--config",
+        "../tasks/artifacts/player-cards-2026-10-26/report-qualification-01/vitest.config.mts"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 1.004,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/report-qualification-01/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/report-qualification-01/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    }
+  },
+  "liveActivation": false,
+  "premiumActivation": false,
+  "independentReviewPending": true
+}

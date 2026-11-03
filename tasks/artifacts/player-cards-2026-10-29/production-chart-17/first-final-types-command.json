@@ -1,0 +1,13 @@
+{
+  "command": [
+    "npx",
+    "--no-install",
+    "tsc",
+    "--noEmit",
+    "--project",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-29/production-chart-17/tsconfig.json"
+  ],
+  "exitCode": 2,
+  "elapsedSeconds": 2.019,
+  "sharedSlot": "parent verify token"
+}

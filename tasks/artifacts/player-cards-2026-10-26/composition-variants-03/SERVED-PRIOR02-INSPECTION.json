@@ -1,0 +1,26 @@
+{
+  "url": "http://127.0.0.1:3125/player-cards/compositions?checkpoint=inspect-prior02",
+  "httpStatus": 200,
+  "bytes": 1597033,
+  "sha256": "5a65a4cf33e2ab86db9b8365179a1e44c559a8fa74dad065e888c9efa31d569c",
+  "title": "FHFH two composition experiments",
+  "headings": [
+    "Posterization + Team Colors",
+    "Pixelated + Team Colors"
+  ],
+  "images": [
+    {
+      "alt": "Auston Matthews artwork experiment; identical fabricated statistical profile",
+      "width": 1200,
+      "height": 1020,
+      "pngSha256": "01b4a965cda4cf61c80f94eed0348b12a5888e8a4944d1dca4d021ff7426caff"
+    },
+    {
+      "alt": "Auston Matthews artwork experiment; identical fabricated statistical profile",
+      "width": 1200,
+      "height": 1020,
+      "pngSha256": "355b050e74fafd946333bd37eb7e1fe8faff5e999dafe0a997149cc2d32fe939"
+    }
+  ],
+  "blocked": []
+}

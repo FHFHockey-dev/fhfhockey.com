@@ -1,0 +1,123 @@
+{
+  "dst": [
+    {
+      "date": "2026-10-31",
+      "beforeNoonRejected": true,
+      "atNoonAcceptedUTC": "2026-11-01T17:00:00Z"
+    },
+    {
+      "date": "2027-03-13",
+      "beforeNoonRejected": true,
+      "atNoonAcceptedUTC": "2027-03-14T16:00:00Z"
+    },
+    {
+      "date": "2027-01-15",
+      "beforeNoonRejected": true,
+      "atNoonAcceptedUTC": "2027-01-16T17:00:00Z"
+    },
+    {
+      "date": "2027-07-01",
+      "beforeNoonRejected": true,
+      "atNoonAcceptedUTC": "2027-07-02T16:00:00Z"
+    }
+  ],
+  "missingComponentKeysRemainUnknown": true,
+  "booleanFractionalAndOverflowCountsRejected": true,
+  "canonicalDuplicateIdsRejected": true,
+  "invalidCliExitWithoutRows": true,
+  "timezoneDependence": [
+    {
+      "TZ": "UTC",
+      "acceptedCapture": true,
+      "observedAt": "2026-11-02T18:00:00",
+      "interpretedUTC": "2026-11-02T18:00:00.000Z",
+      "summary": {
+        "pass": false,
+        "issued": 1,
+        "coverage": {
+          "start_chart": {
+            "issued": 1,
+            "matched": 1,
+            "readbacks": 1
+          }
+        },
+        "settled": 0,
+        "sealedRows": 0,
+        "sealed": {
+          "from": "2026-10-23",
+          "to": "2026-10-30"
+        },
+        "tolerance": 0.0001,
+        "findingCodes": {
+          "readback_before_issue": 1
+        }
+      }
+    },
+    {
+      "TZ": "America/New_York",
+      "acceptedCapture": true,
+      "observedAt": "2026-11-02T18:00:00",
+      "interpretedUTC": "2026-11-02T23:00:00.000Z",
+      "summary": {
+        "pass": true,
+        "issued": 1,
+        "coverage": {
+          "start_chart": {
+            "issued": 1,
+            "matched": 1,
+            "readbacks": 1
+          }
+        },
+        "settled": 0,
+        "sealedRows": 0,
+        "sealed": {
+          "from": "2026-10-23",
+          "to": "2026-10-30"
+        },
+        "tolerance": 0.0001,
+        "findingCodes": {}
+      }
+    }
+  ],
+  "impossibleCalendarTimestamp": {
+    "rows": [
+      {
+        "playerId": "1",
+        "gameId": "2026020232",
+        "target": "SHOTS_ON_GOAL",
+        "gameDate": "2026-11-30",
+        "actual": 3,
+        "recordedAt": "2026-11-31T03:00:00Z",
+        "observedAt": "2026-11-31T17:00:00Z",
+        "settlementVersion": 1,
+        "settlementStatus": "observed",
+        "exclusionReason": null
+      }
+    ],
+    "interpretedCaptureUTC": "2026-12-01T17:00:00.000Z",
+    "checker": {
+      "pass": true,
+      "issued": 1,
+      "coverage": {
+        "rso": {
+          "issued": 1,
+          "matched": 1,
+          "readbacks": 1
+        },
+        "start_chart": {
+          "issued": 1,
+          "matched": 1,
+          "readbacks": 1
+        }
+      },
+      "settled": 1,
+      "sealedRows": 0,
+      "sealed": {
+        "from": "2026-10-23",
+        "to": "2026-10-30"
+      },
+      "tolerance": 0.0001,
+      "findingCodes": {}
+    }
+  }
+}

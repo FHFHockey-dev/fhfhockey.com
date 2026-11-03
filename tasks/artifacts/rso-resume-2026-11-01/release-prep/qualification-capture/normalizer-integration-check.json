@@ -1,0 +1,17 @@
+{
+  "at": "2026-11-01T20:39:55.281146+00:00",
+  "command": [
+    "node",
+    "-r",
+    "ts-node/register",
+    "-r",
+    "tsconfig-paths/register",
+    "--test",
+    "../tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-readbacks.test.ts"
+  ],
+  "cwd": "/Users/tim/Code/fhfhockey.com/web",
+  "exitCode": 0,
+  "log": "normalizer-integration-tests.log",
+  "network": "outbound guard; no production environment",
+  "scope": "synthetic temporary pinned scope; retained scope unchanged"
+}

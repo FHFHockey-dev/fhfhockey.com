@@ -1,0 +1,22 @@
+{
+  "id": "CODEX-NST-GOALIE-CHECKPOINT-SQL-20261101",
+  "owner_thread": "01a19780-b73c-7334-9e53-4b7fda61201c",
+  "parent_thread": "01a189f6-9a3a-7235-a989-e1af4f47b014",
+  "status": "FROZEN_LOCAL_CHECKPOINT \u2014 custody retained; SQL/explicit route/runner integration verified locally; automatic producer/lifecycle/report work and rollout pending",
+  "started_at_utc": "2026-11-01T16:16:19.262964+00:00",
+  "paths": [
+    "supabase/migrations/20261101161622_nst_goalie_catchup_v1.sql",
+    "supabase/tests/nst_goalie_catchup_v1.py",
+    "supabase/tests/nst_goalie_catchup_v1.sql"
+  ],
+  "authority": "Parent explicit local SQL allocation instruction after conflict check, 2026-11-01. Generate canonical filename with Supabase CLI, replace reserved narrow pattern with exact generated path.",
+  "scope": "New checkpoint tables/RPCs and isolated PostgreSQL fixtures only; no production migration, requests, schedule, push or deployment. Existing WGO SQL and shared admission SQL read only.",
+  "conflicts": [],
+  "checkpoint_at_utc": "2026-11-01T16:35:48.577751+00:00",
+  "frozen_sha256": {
+    "supabase/migrations/20261101161622_nst_goalie_catchup_v1.sql": "e0a14daec09b80332574952869319a45ed5159f812d56ebe66d14676de3a86fd",
+    "supabase/tests/nst_goalie_catchup_v1.py": "96a32ed45fd7f8f9a3036a3c01fa71affbcf0764c14843a84da65dd3db52279a",
+    "supabase/tests/nst_goalie_catchup_v1.sql": "35ff9a2f49bfc8f109790fc6fbeeb19a253fe0e3f2966386edf8141301fcca80"
+  },
+  "current_evidence": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/LOCAL-CANDIDATE.json"
+}

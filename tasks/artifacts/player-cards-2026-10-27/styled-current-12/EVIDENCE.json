@@ -1,0 +1,261 @@
+{
+  "at": "2026-10-27T02:32:16.352290+00:00",
+  "head": "7da3e8663338f624564b2bb570e146b4f0b3f2de",
+  "branch": "octoberBranch",
+  "sourceFiles": 12,
+  "commands": {
+    "tests": {
+      "action": "tests",
+      "command": [
+        "npm",
+        "test",
+        "--",
+        "--run",
+        "--config",
+        "../tasks/artifacts/player-cards-2026-10-27/styled-current-12/vitest.config.mts"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 3.564,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-27/styled-current-12/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-27/styled-current-12/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    },
+    "types": {
+      "action": "types",
+      "command": [
+        "npx",
+        "--no-install",
+        "tsc",
+        "--noEmit",
+        "--project",
+        "../tasks/artifacts/player-cards-2026-10-27/styled-current-12/tsconfig.json"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 1.674,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-27/styled-current-12/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-27/styled-current-12/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    },
+    "lint": {
+      "action": "lint",
+      "command": [
+        "npx",
+        "--no-install",
+        "eslint",
+        "components/player-cards/HeroPlayerCard.tsx",
+        "components/player-cards/PlayerCardShareStudio.tsx",
+        "components/player-cards/CurrentPlayerCard.tsx",
+        "components/player-cards/CurrentPlayerCardStudio.tsx",
+        "components/player-cards/CurrentPlayerCardStudio.test.tsx",
+        "components/player-cards/PlayerHeroHeader.tsx",
+        "components/player-cards/PlayerArtworkControls.tsx",
+        "components/player-cards/usePlayerArtwork.ts",
+        "lib/player-cards/currentNhlExport.ts",
+        "lib/player-cards/currentArtwork.ts",
+        "lib/player-cards/currentArtwork.test.ts",
+        "lib/player-cards/shareExport.ts"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 0.781,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-27/styled-current-12/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-27/styled-current-12/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    },
+    "render": {
+      "action": "render",
+      "command": [
+        "node",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-27/styled-current-12/render-preview.mjs"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 0.187,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-27/styled-current-12/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-27/styled-current-12/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    },
+    "served": {
+      "action": "served",
+      "command": [
+        "node",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-27/styled-current-12/verify-served.mjs"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 4.533,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-27/styled-current-12/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-27/styled-current-12/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    }
+  },
+  "tests": {
+    "files": 4,
+    "passed": 29,
+    "failed": 0
+  },
+  "browser": {
+    "checks": [
+      "Defaultclient\u2192nativeHTTPloopbackAPI\u2192actualprovider with3capturedreadpaths; noautoload, pastedFHFHURL/Enter;5/10/20andbothformatsreuseonecapture;4selected-onlyPNG/manifestsagreewithindependentrawsums",
+      "NativefilefallbackPNGparity; browserBack/Forwardrestorescontrolsandinvalidatesoldcard/preparedfilewithoutfetch; explicitreloadrequired",
+      "Invalid/foreignURLzeroAPIcalls; uncapturedplayeridentityfailsbeforehistory/schedulefanout; no stalevalues/export/researchUI;390pxnooverflow",
+      "Accepted Matthews ID/team only: shared6styles, sequential2pass metadata, sameplayer600/4/600/337.5,logo840/-100/480/480 and exactleftquartermask; customreorder/add/remove/7px,3rings,2nativePNG+manifest+sharesamebytes",
+      "Accepted artwork survives samecapturewindow/category changes withoutfetch; reset/mobile390/nooverflow; selectedKucherovclearsMatthewsimage/controls immediately and returns exactreal5GPstats with explicitfallback"
+    ],
+    "exports": [
+      {
+        "count": 10,
+        "format": "rates-opportunity",
+        "sha256": "f6729dbdc6f95cdbcfce64c9cc76e3f8c2d94ad9053da53443cdbaf71b0b8755",
+        "selectedGp": 10
+      },
+      {
+        "count": 10,
+        "format": "results-milestones",
+        "sha256": "e84bf29b2b063672ce8aa72bbb4f41885b575e6045bd565469c16a082fb1c79e",
+        "selectedGp": 10
+      },
+      {
+        "count": 5,
+        "format": "results-milestones",
+        "sha256": "5c4532f38fa5a933b234713d81ff919ed4d7d2fb3d19d7a59e0ec1bc96ca5b3e",
+        "selectedGp": 5
+      },
+      {
+        "count": 20,
+        "format": "results-milestones",
+        "sha256": "a8908c1d37c0913a73003cd008c9a905f08d83f12c78462c8bee846e83fa1515",
+        "selectedGp": 11
+      },
+      {
+        "kind": "accepted-artwork/synthetic-stats",
+        "style": "posterized-team-colors",
+        "sha256": "512b1c1c53093c5b615e61d897b0d557f3996a255e00d4203e392ac31e227a0a",
+        "outlineWidths": [
+          5,
+          7,
+          5
+        ]
+      },
+      {
+        "kind": "accepted-artwork/synthetic-stats",
+        "style": "pixelated-team-colors",
+        "sha256": "eae27c207dbc522c1b44639f5d17f976dc29bc9795d104cc19733c192195c00e",
+        "outlineWidths": [
+          5,
+          7,
+          5
+        ]
+      }
+    ],
+    "retainedCalls": [
+      "?playerId=8476453&season=20262027&count=10",
+      "?playerId=8476453&season=20262027&count=20",
+      "?playerId=8479318&season=20262027&count=20"
+    ],
+    "nativeLocalApiCalls": [
+      "?playerId=8476453&season=20262027&count=5"
+    ],
+    "fixtureProviderPaths": [
+      "/player/8476453/landing",
+      "/player/8476453/game-log/20262027/2",
+      "/club-schedule-season/TBL/20262027"
+    ],
+    "externalAttempts": [],
+    "pageErrors": [],
+    "liveRequests": 0,
+    "source": "approved retained official capture; nativeHTTPloopbackfixtureendpoint; serveroutboundfetchblocked",
+    "appRoute": "/player-cards",
+    "apiRoute": "/api/v1/player-cards"
+  },
+  "runtime": {
+    "pid": 77983,
+    "bind": "127.0.0.1:3125",
+    "readbacks": [
+      {
+        "route": "/player-cards/current",
+        "status": 200,
+        "path": "tasks/artifacts/player-cards-2026-10-27/styled-current-12/preview.html",
+        "bytes": 373774,
+        "sha256": "24d677cdeae2c6d56daf1fe719394664aa9d81059c44d796348da662805d9144"
+      },
+      {
+        "route": "/player-cards",
+        "status": 200,
+        "path": "tasks/artifacts/player-cards-2026-10-27/styled-current-12/preview.html",
+        "bytes": 373774,
+        "sha256": "24d677cdeae2c6d56daf1fe719394664aa9d81059c44d796348da662805d9144"
+      },
+      {
+        "route": "/player-cards/customizer",
+        "status": 200,
+        "path": "tasks/artifacts/player-cards-2026-10-26/outline-editor-09/preview.html",
+        "bytes": 3455216,
+        "sha256": "ca75a7448351ce85abcd833f6f0f40cd54f85911c6ad06a087a81ed6f5b543d9"
+      },
+      {
+        "route": "/player-cards/nhl-retained",
+        "status": 200,
+        "path": "tasks/artifacts/player-cards-2026-10-26/current-data-01/approved-snapshot-02/preview.html",
+        "bytes": 523724,
+        "sha256": "3b6ff7d783576dda860386c0fb47af8c64e6b42fcb1d0b9cecefee98f02a2777"
+      },
+      {
+        "route": "/player-cards/functional",
+        "status": 200,
+        "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/preview.html",
+        "bytes": 318626,
+        "sha256": "6c29f6eb3dc6ffc9a6a8a546423f78ac3e6e5e1e7265129475724422d3aad9b5"
+      }
+    ],
+    "lifecycle": "Detached POSIX session independent of launcher; host/environment shutdown or explicit stop ends it. No automatic restart/system startup; post-turn survival not yet observed."
+  },
+  "scope": "No new upstream/image/DB reads or writes; fixture endpoint invokes actual provider with retained3raw JSON only; exact4local assetbytes verified before serverstart",
+  "assetQualification": {
+    "realDataPlayer": "8476453/TBL",
+    "imageState": "unavailable",
+    "reason": "805 candidate has NOT_VISUALLY_REVIEWED and product_acceptance null; registry contains only8479318/TOR and8478864/MIN",
+    "acceptedArtworkTest": "8479318/TOR with explicit synthetic contract fixture, never labeled his results"
+  },
+  "checkLimitations": [
+    "NativeHTTPisolatedprovider/studio verified; globalNext/Auth route not hydrated",
+    "ActualKucherovportrait not accepted, no substitute",
+    "No new advanced/rankpopulation/historyfinality/milestone acceptance"
+  ],
+  "initialFailures": [
+    "TS testliteral version widened to string; explicitPreparedHerotestannotationfixed, firstreceiptpreserved",
+    "First sandbox handoff denied /bin/ps EPERM before any signal; normal authorizedescalated sameownershipcheck succeeded, no bypass"
+  ],
+  "manualPixelInspection": {
+    "at": "2026-10-27T02:34:01.738199+00:00",
+    "viewed": [
+      "rates-opportunity-L10-served.png",
+      "posterized-team-colors.png",
+      "pixelated-team-colors.png",
+      "styled-contract-phone.png"
+    ],
+    "observations": "Native actualcard shows correct20:52/8.63/0.86/3.74/10.0%, explicitunavailableimage/rank/source/capture; bothactualexporttreatmentsvisible with3contourbands and croppedrightlogo. Phonefullpagetoolresized390x3690\u2192216x2048; controlsstack/nohorizontaloverflow, fineprintneedszoom atfitwidth. No claimcompletephoneimagelegibility."
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "source": "GitHub get_pr_info, read-only connector",
+  "url": "https://github.com/FHFHockey-dev/fhfhockey.com/pull/402",
+  "number": 402,
+  "merged": true,
+  "merged_at": "2026-11-01T18:20:47Z",
+  "base": "master",
+  "base_sha": "4965a872a9746b6129c9ac589c200560d01a1e23",
+  "head": "chef/release-social-share-2026-11-01",
+  "head_sha": "9d22c11ab8fd93db4a339242381182d87c82e7d4",
+  "merge_commit_sha": "f17bea20d8caa2b6268c318bdb2152d7e2a3b57d",
+  "changed_files": 376,
+  "releaseDescription": "Releases all code on `octoberBranch` at `9f0c4dbec`, without diaries or artifacts, as TJ approved.\n\n**Includes**\n- Social Share post library (34 cards) and the `/social-share` landing page\n- `powerPlayCombinations` writer fix: PP time follows manpower. 10-31 matched NHL.com on 224 of 224 rows after a local run\n- IFTTT: shared secret fallback, NHL_Rosters and DFOFantasy in downstream readers, FHFHockey post webhook\n- FORGE v2 code (`/forge/v2` returns not-found; its migration isn't applied) and the WIGO UI pass, neither covered by this audit\n\n**Verification**\n- Clean copy of the code: 15,558 unit tests passed, with one migration-list failure since fixed and retested; type-check and lint had no errors; production build passed; Social Share browser suite 106 passed, 1 skipped\n- Independent Codex audit and three rechecks: 0 blockers, 0 high. TJ accepted 2 remaining mediums; see `AUDIT-RECHECK-3.md` on `octoberBranch`\n\n**Production so far:** migrations `social_share_x_posts` and `social_share_x_posts_undated` applied with approval.\n\n**After merge:** rerun PP for 09-29 to 10-30, then rebuild derived PP tables; turn on the FHFH applet; confirm first tweet rows.\n\n\ud83e\udd16 Generated with [Claude Code](https://claude.com/claude-code)\n",
+  "scopeLimit": "Merge metadata only; no Vercel/runtime/activation verification by this RSO task",
+  "recordedAt": "2026-11-01T19:18:05.576528+00:00"
+}

@@ -1,0 +1,55 @@
+{
+  "fixtureOnly": true,
+  "checks": [
+    {
+      "name": "desktop: route HTTP 200",
+      "result": true
+    },
+    {
+      "name": "desktop: fresh manual player added",
+      "result": true
+    },
+    {
+      "name": "desktop: multi-position player fills one of two simultaneous slots",
+      "result": true
+    },
+    {
+      "name": "desktop: manual player survives reload",
+      "result": true
+    },
+    {
+      "name": "desktop: slot counts and coverage survive reload",
+      "result": true
+    }
+  ],
+  "externalRequestsBlocked": [
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://img.buymeacoffee.com/button-api/",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://cdn.vercel-insights.com/v1/script.debug.js",
+    "GET https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://img.buymeacoffee.com/button-api/",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://cdn.vercel-insights.com/v1/script.debug.js",
+    "GET https://va.vercel-scripts.com/v1/speed-insights/script.debug.js"
+  ],
+  "localApiRequestsBlocked": [],
+  "pageErrors": [],
+  "result": "failed",
+  "error": "locator.waitFor: Error: strict mode violation: getByRole('alert') resolved to 2 elements:\n    1) <p role=\"alert\" class=\"RosterAutopsy_warning__Sr0rh\">This roster changed in another tab. Your current …</p> aka getByText('This roster changed in')\n    2) <p role=\"alert\" aria-live=\"assertive\" id=\"__next-route-announcer__\"></p> aka locator('[id=\"__next-route-announcer__\"]')\n\nCall log:\n  - waiting for getByRole('alert') to be visible\n"
+}

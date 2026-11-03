@@ -1,0 +1,9 @@
+{
+  "at": "2026-10-26T16:47:28.972177+00:00",
+  "url": "http://127.0.0.1:3125/player-cards",
+  "status": 200,
+  "bytes": 3424357,
+  "sha256": "7867690db0776f1d2ec34fc42860d0d5a48ef478ec7d8d1e06163be4c6045f2b",
+  "remoteAvailabilityClaimed": false,
+  "publicRequests": 0
+}

@@ -1,0 +1,9 @@
+import {createRequire} from 'node:module';import {fileURLToPath} from 'node:url';import path from 'node:path';import {writeFile} from 'node:fs/promises';import assert from 'node:assert/strict';
+const here=path.dirname(fileURLToPath(import.meta.url)),require=createRequire(path.resolve(here,'../../../../web/package.json')),{chromium}=require('@playwright/test');
+console.log('launching Chromium');
+const browser=await chromium.launch({executablePath:'/Applications/Chromium.app/Contents/MacOS/Chromium',headless:true,timeout:10000});
+console.log('browser launched');
+try{const context=await browser.newContext({viewport:{width:1200,height:1000}});await context.route(/^https?:/,r=>r.request().url().startsWith('http://127.0.0.1:3125/')?r.continue():r.abort());const page=await context.newPage();page.setDefaultTimeout(7000);
+const url='http://127.0.0.1:3125/player-cards/recent?playerId=8484387&season=20262027&count=10';await page.goto(url,{timeout:10000});console.log("page loaded");const pending=page.waitForResponse(r=>r.url().includes('/api/v1/player-cards-15'));await page.getByRole('button',{name:'Load NHL results',exact:true}).click();const response=await pending;assert.equal(response.status(),502);await page.getByText('NHL inputs are unavailable. No substitute values or ranks were loaded.',{exact:true}).waitFor();
+await page.screenshot({path:path.join(here,'before-failure.png'),fullPage:true});await writeFile(path.join(here,'REPRODUCTION.json'),JSON.stringify({url,playerId:8484387,status:response.status(),body:await response.json(),visibleError:'NHL inputs are unavailable. No substitute values or ranks were loaded.',cause:'Saved Kucherov-only local adapter: identity mismatch, no NHL request',upstreamRequests:0},null,2)+'\n');console.log('Reproduced actual Michkov502 at served URL');
+}finally{await browser.close();}

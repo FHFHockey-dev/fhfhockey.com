@@ -1,0 +1,15 @@
+{
+  "url": "http://127.0.0.1:3125/player-cards/compositions?checkpoint=refinement05",
+  "checkpoint": "refinement05",
+  "comparisonBytes": 3011124,
+  "comparisonSha256": "7feabe950f22f4aae229b0b28362a824793902b87c9084bea9ce0c8c12a06a93",
+  "latestExportHashesVerified": 2,
+  "servedComparisonScreenshots": [
+    "served-comparison-desktop.png",
+    "served-comparison-phone.png"
+  ],
+  "servedInteractivePipelineAndLogoVerified": 2,
+  "externalAttempts": [],
+  "pageErrors": [],
+  "remoteAvailabilityClaimed": false
+}

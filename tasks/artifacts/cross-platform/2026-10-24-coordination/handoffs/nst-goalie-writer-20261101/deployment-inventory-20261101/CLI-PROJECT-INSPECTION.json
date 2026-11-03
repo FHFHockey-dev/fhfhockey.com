@@ -1,0 +1,49 @@
+{
+  "version": "48.1.6",
+  "scope": "team_KVFicHhQJARTbO6wRD2x6jpq",
+  "method": "project inspect, explicit named targets; read-only CLI tool outputs",
+  "projects": [
+    {
+      "name": "fhfhockey",
+      "id": "prj_LV0wbwH5gRjOsZlowzEFNGRuX7Lw",
+      "rootDirectory": "web",
+      "nodeVersion": "22.x",
+      "framework": "Next.js",
+      "buildCommand": "npm run build",
+      "installCommand": "npm install"
+    },
+    {
+      "name": "functions-fhfhockey",
+      "id": "prj_q9tnoe1pF6WAe9zPcBzBLBPZx5mQ",
+      "rootDirectory": "functions",
+      "nodeVersion": "20.x",
+      "framework": "Other",
+      "buildCommand": "default inference",
+      "installCommand": "default inference"
+    },
+    {
+      "name": "cms-fhfhockey",
+      "id": "prj_gG8SHX7C5GbCDJoind7trh9bj6dK",
+      "rootDirectory": "cms",
+      "nodeVersion": "20.x",
+      "framework": "Sanity",
+      "buildCommand": "npm run build",
+      "installCommand": "npm install"
+    },
+    {
+      "name": "fhfhockey.com",
+      "id": "prj_3X6goi9DxqUnD0sHChwEwaRakquG",
+      "rootDirectory": ".",
+      "nodeVersion": "22.x",
+      "framework": "Other",
+      "buildCommand": "default inference",
+      "installCommand": "default inference"
+    }
+  ],
+  "limitations": [
+    "CLI api subcommand unavailable at48.1.6; help only, no api/deploy command executed",
+    "Initial sandbox CLI inspect failed DNS; approved read-only escalation succeeded for all4projects",
+    "Project inspect omits live Git trigger and ignored-build overrides; source config is separate evidence",
+    "Two MCP undecrypted environment-metadata lookups errored; no usable flag metadata retained, no values requested or decrypted"
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "state": "verified_retained_research_only",
+  "snapshotSHA256": "2f380c2539390f6931ec92ab1d0b1d8cced2b55f5f4cefb8c6e88a694909f2c8",
+  "profiles": 729,
+  "season": 20262027,
+  "asOfUTC": "2026-10-29T18:41:12.798646+00:00",
+  "through": "2026-10-28",
+  "sourceRowsAreNotNhlGameIds": [
+    5594206,
+    5589185,
+    5595230,
+    5597058,
+    5597269
+  ],
+  "playerId": 8476453,
+  "team": "TBL",
+  "window": {
+    "games": 5,
+    "spanDays": 9,
+    "dates": [
+      "2026-10-15",
+      "2026-10-17",
+      "2026-10-20",
+      "2026-10-23",
+      "2026-10-24"
+    ],
+    "sourceIds": [
+      5594206,
+      5589185,
+      5595230,
+      5597058,
+      5597269
+    ],
+    "seconds": 6120,
+    "minutes": 102,
+    "lastGameDaysBeforeRecordedThrough": 4,
+    "recordedThroughDate": "2026-10-28",
+    "fresh": true,
+    "freshnessText": "Last game 4 days before the recorded-through date (2026-10-28)"
+  },
+  "tracks": [
+    {
+      "label": "FP",
+      "observed": 22.85,
+      "supportConditioned": 24.943053112231073,
+      "gap": 2.093053112231072
+    },
+    {
+      "label": "G+A",
+      "observed": 6,
+      "supportConditioned": 7.958946279553675,
+      "gap": 1.9589462795536754
+    },
+    {
+      "label": "FHFH WiGO Game Score",
+      "observed": 5.85,
+      "supportConditioned": 7.365683679094249,
+      "gap": 1.5156836790942494
+    }
+  ],
+  "currentBinding": false,
+  "reason": "Reviewed sidecar now supplies exact source-row/game joins; Kucherov five games match retained NHL input. Captures have different clocks and BLSH exceeds24h; only separately dated stale research is admitted. Canonical editor wiring remains pending custody.",
+  "reviewedProvenance": "BLSH-PROVENANCE-INTEGRATION-20261101.json"
+}

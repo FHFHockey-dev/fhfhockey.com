@@ -1,0 +1,10 @@
+{
+  "action": "render",
+  "command": [
+    "node",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/stacked-outline-08/render-preview.mjs"
+  ],
+  "exitCode": 0,
+  "elapsedSeconds": 0.231,
+  "heldBy": "qualify parent resource slot"
+}

@@ -1,0 +1,18 @@
+{
+  "command": [
+    "npx",
+    "--no-install",
+    "eslint",
+    "lib/player-cards/windows.ts",
+    "lib/player-cards/domain.test.ts",
+    "lib/player-cards/nstCapture.ts",
+    "lib/player-cards/nstCapture.test.ts",
+    "lib/player-cards/aggregation.ts",
+    "lib/player-cards/evidenceBundle.ts",
+    "lib/player-cards/evidenceBundle.test.ts",
+    "lib/player-cards/evidenceLoader.ts",
+    "lib/player-cards/evidenceLoader.test.ts"
+  ],
+  "exitCode": 0,
+  "seconds": 0.875
+}

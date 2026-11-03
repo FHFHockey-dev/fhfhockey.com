@@ -1,0 +1,37 @@
+{
+  "checks": [
+    "Dated805catalogwithoutnetwork/autoselection:duplicateEliasIDs/C-D,accentStutzle,noresults,unsupportedgoalieexplicit;nativeEnterdoesnotload,Tab-result-Enter-Loadfocus;44pxtargets/focus/lookup-onlyaxe0violations",
+    "Keyboardname-ID-nativeHTTPactualprovider/retained3inputs-ownKucherovhero/realstats;2PNGsbyteidentical13/treatments+outlinesunchanged;manifest/share/windowcategorynostalefiles/noadditionalcapture",
+    "390px/320pxreflow/search44pxtouch;namedselectionclearspriorart/stats/sharewithoutfetch;BackrestoresIDandrequiresLoad"
+  ],
+  "exports": [
+    {
+      "style": "team-colors",
+      "sha256": "6b98142939329b8c8333565f74b5eba3a41c4dfce3c2fc3cded2ecfe38811527",
+      "byteIdenticalToCheckpoint13": true
+    },
+    {
+      "style": "pixelated-team-colors",
+      "sha256": "35b4d61650c5dbe120259e274397ebc41ac4091424e72979c6a390247d224aa7",
+      "byteIdenticalToCheckpoint13": true
+    }
+  ],
+  "axe": {
+    "scope": "PlayerLookup fieldset only",
+    "violations": 0,
+    "passes": 18,
+    "incomplete": [],
+    "screenReaderNotRun": true
+  },
+  "apiCalls": [
+    "?playerId=8476453&season=20262027&count=10"
+  ],
+  "providerPaths": [
+    "/player/8476453/landing",
+    "/player/8476453/game-log/20262027/2",
+    "/club-schedule-season/TBL/20262027"
+  ],
+  "externalAttempts": [],
+  "pageErrors": [],
+  "newLiveRequests": 0
+}

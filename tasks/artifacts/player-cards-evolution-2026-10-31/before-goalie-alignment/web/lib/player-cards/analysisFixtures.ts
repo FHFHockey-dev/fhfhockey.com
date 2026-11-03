@@ -1,0 +1,11 @@
+import { CARD_ANALYSIS_VERSION, type AnalysisCapture, type AnalysisField } from "./analysisSnapshot";
+
+/** Deterministic synthetic data; never an observed player result. */
+export function captureFixture(count = 12): AnalysisCapture {
+  const fields: AnalysisCapture["fields"] = {};
+  for (const field of ["goals", "assists", "points", "shots", "blocks", "hits", "ppPoints", "toiSeconds", "ppToiSeconds", "ixg", "xgf", "xga"] as AnalysisField[]) fields[field] = { provider: "synthetic", field, revision: "fixture-v1", model: field.includes("xg") ? "fixture-xG" : null, strength: "all", updatedAt: null, unit: field.endsWith("Seconds") ? "seconds" : field.includes("xg") ? "xG" : "count" };
+  return { version: CARD_ANALYSIS_VERSION, id: "synthetic-12", player: { id: 8476453, name: "Fixture skater", team: "TBL", position: "R" }, season: 20262027, gameType: "regular", source: "synthetic", observedAt: "2026-10-31T12:00:00Z", strength: "all", history: { complete: true, seasonAppearances: count, reason: null }, fields, finality: "Synthetic final status, no exact end times.", games: Array.from({ length: count }, (_, i) => ({ gameId: 2026020001 + i, date: `2026-10-${String(i + 1).padStart(2, "0")}`, utcStart: `2026-10-${String(i + 1).padStart(2, "0")}T12:00:00Z`, team: "TBL", finalAtObservation: true, played: true, values: { goals: i % 2, assists: 1, points: i % 2 + 1, shots: i, blocks: 2, hits: 3, ppPoints: 0, toiSeconds: 600 + i * 60, ppToiSeconds: 60, ixg: 0.5, xgf: 2, xga: 1 } })) };
+}
+
+import { GOALIE_CARD_CONTRACT, type GoalieInventory } from "./goalieOutlook";
+export const goalieFixture = (): GoalieInventory => ({ version: GOALIE_CARD_CONTRACT, source: "synthetic", sourceVersion: "fixture-v1", observedAt: "2026-10-31T12:00:00Z", player: { id: 8476883, name: "Fixture goalie", team: "TBL", season: 20262027 }, games: [{ id: 2026020200, start: "2026-11-01T23:00:00Z", team: "TBL", opponent: "TOR", status: "scheduled", confirmation: { status: "probable", source: "Synthetic source", updatedAt: "2026-10-31T11:00:00Z", stale: false, appearanceKind: "start" }, dimensions: { opponentShotsFor: { value: 31, unit: "shots/GP", basis: "last 5 team games", strength: "all", source: "Synthetic matchup", model: null, updatedAt: "2026-10-31T11:00:00Z", stale: false } }, forecast: null }] });

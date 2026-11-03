@@ -1,0 +1,9 @@
+{
+  "at": "2026-10-29T17:39:25.885321+00:00",
+  "url": "http://127.0.0.1:3125/player-cards/current-14?checkpoint=search14",
+  "status": 200,
+  "bytes": 445507,
+  "sha256": "5e27d049689a04f74916bfbf94c8696122a778b2d53449df5e858444f534302b",
+  "matchesFrozen14": true,
+  "newUpstreamRequests": 0
+}

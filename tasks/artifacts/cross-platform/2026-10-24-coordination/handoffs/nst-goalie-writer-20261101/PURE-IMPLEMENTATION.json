@@ -1,0 +1,77 @@
+{
+  "atUtc": "2026-11-01T14:48:03.953097+00:00",
+  "branch": "octoberBranch",
+  "head": "0a7fb68427d8ad81e4dfb4e99e0fd8e233ddf66e",
+  "files": {
+    "web/lib/nst/goalieCatchup.ts": "5e371ce0807553ccedd5250d905fd406a597edb92a57c185c8996d72d16b8f51",
+    "web/lib/nst/goalieCatchup.test.ts": "f245b2946915df49b7dd8e1bed460a951b7388e0290976b0d1655392df25d9a4",
+    "web/lib/nst/goalieFreshness.ts": "265f8762c4809f99e33e0d2739545f299b68fbafc8547c8482b87d67d4c547cf",
+    "web/lib/nst/goalieFreshness.test.ts": "0c89578c9e3bd8e2f3d3405e145e66e791bba170be74aaec0bee7bcc90eab2c6"
+  },
+  "checks": {
+    "atUtc": "2026-11-01T14:46:12.870302+00:00",
+    "checks": [
+      {
+        "name": "tests",
+        "command": [
+          "npm",
+          "test",
+          "--",
+          "--run",
+          "lib/nst/goalieCatchup.test.ts",
+          "lib/nst/goalieFreshness.test.ts",
+          "--maxWorkers=1",
+          "--minWorkers=1"
+        ],
+        "exitCode": 0
+      },
+      {
+        "name": "types",
+        "command": [
+          "node",
+          "node_modules/typescript/bin/tsc",
+          "--project",
+          "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/tsconfig.pure.json"
+        ],
+        "exitCode": 0
+      },
+      {
+        "name": "lint",
+        "command": [
+          "node",
+          "node_modules/eslint/bin/eslint.js",
+          "lib/nst/goalieCatchup.ts",
+          "lib/nst/goalieCatchup.test.ts",
+          "lib/nst/goalieFreshness.ts",
+          "lib/nst/goalieFreshness.test.ts"
+        ],
+        "exitCode": 0
+      }
+    ],
+    "networkGuard": "offline.cjs",
+    "scope": "Four new pure modules/tests only; no route, database or production verification."
+  },
+  "retainedSourcePinsUnchanged": 19,
+  "ownerReconciliation": {
+    "status": "PENDING_OWNER_ACKNOWLEDGEMENT",
+    "owner_thread": "01a17d95-8833-7618-ab3c-93e40feaf0dd",
+    "owner_title": "Repair cron reporting pipeline",
+    "first_slice_paths": [
+      "web/pages/api/v1/db/update-nst-goalies.ts",
+      "web/__tests__/pages/api/v1/db/update-nst-goalies.route.test.ts",
+      "web/lib/cron/nstBurstPlans.ts",
+      "web/lib/cron/nstBurstPlans.test.ts"
+    ],
+    "current_sha256": {
+      "web/pages/api/v1/db/update-nst-goalies.ts": "37dfd69a5a98e49e5489e23d58c6a91d95a622ff2c6d87204a959e12ef2d3c5e",
+      "web/__tests__/pages/api/v1/db/update-nst-goalies.route.test.ts": "261d23fb2f8e8027c961810b6816f57bc95a3e7315286bfdcdbac416552e3a34",
+      "web/lib/cron/nstBurstPlans.ts": "a31d3bb8e598f76a4b21fecb6bdea99eb79d79670d49865657d775ee45b0d214",
+      "web/lib/cron/nstBurstPlans.test.ts": "f64e032d85059098b513297ed0a866309eabada6d03b8b282c4be9e24fe8a741"
+    },
+    "ownerStatusObserved": "idle; not permission to edit retained frozen files",
+    "requestedVia": "CODEX-NST-GOALIE-WRITER-20261101-CUSTODY mailbox",
+    "directMessageStatus": "not attempted; tool requires direct human authorization, not an orchestrator request alone"
+  },
+  "runtimeIntegration": "not installed; no existing production caller imports these new modules",
+  "productionActions": 0
+}

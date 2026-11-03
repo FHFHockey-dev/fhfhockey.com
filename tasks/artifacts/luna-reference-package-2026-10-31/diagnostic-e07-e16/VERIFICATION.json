@@ -1,0 +1,69 @@
+{
+  "version": "luna-e07-e16-diagnostic-proposal-verification-v1",
+  "state": "inactive_pending_independent_review",
+  "applicationPinsUnchanged": 18,
+  "priorArtifactsPreserved": [
+    {
+      "directory": "binding-review-integration",
+      "count": 28,
+      "manifestSha256": "ae33006bf89340dd6e66e5cd334316037bb542a40abfc278a11f75cc4e6b2c01"
+    },
+    {
+      "directory": "span-binding-review",
+      "count": 16,
+      "manifestSha256": "189039ec57eadfd7ee4fa997770a3c01054da39d8b8575640bd81ee104bc81be"
+    },
+    {
+      "directory": "continuation-e03-execution",
+      "count": 14,
+      "manifestSha256": "bb539ba18fa7d816cfeb3609c9c79d45ed9de77603d514153c4d4c10cdd140cf"
+    },
+    {
+      "directory": "continuation-v4-e03",
+      "count": 26,
+      "manifestSha256": "6dedfd949dee759838498f8792093a6e33021d4cf5979948a5f3a17c0b46f22b"
+    },
+    {
+      "directory": "continuation-execution",
+      "count": 13,
+      "manifestSha256": "b0630b486392f7bde2930b986268210b375cf79920c51dd004b532a75f4bc6ed"
+    },
+    {
+      "directory": "e02-boundary-diagnosis",
+      "count": 14,
+      "manifestSha256": "8cbdea71b237c429db2eb47943901abdd6fefe824a92a965ce0e68123cf782ad"
+    },
+    {
+      "directory": "continuation-v4-e04",
+      "count": 29,
+      "manifestSha256": "dac5a4041ca57cb571fe4360952526475bcdc7b4b873488f1bda3509ba83018a"
+    },
+    {
+      "directory": "continuation-e04-execution",
+      "count": 40,
+      "manifestSha256": "a984a5b9c96b3e648e07095feab0f543ae17e2976d79be60f56ae6a70350ca94"
+    }
+  ],
+  "preservedArtifactCount": 180,
+  "realLedgerSha256": "2bf56d754b1f98888785b8d7e759d1c701b5541b0fb9e91ade63eff041ff3ceb",
+  "realLedgerEnabled": false,
+  "callsPreserved": 7,
+  "exposureNanoUsdPreserved": 265263690,
+  "historicalLedgerSha256": "e8418735afaeff893177e550df6774600c6c6fec4f49c2b01c183712cdc064f2",
+  "scenariosPassed": 25,
+  "verifierExitCode": 0,
+  "scopedTypeScriptExitCode": 0,
+  "emptyInheritedEnvironment": true,
+  "networkDenied": true,
+  "applicationConsumerSearch": "none in web/lib/sources or web/scripts",
+  "jsonFilesParsed": 31,
+  "markdownLinks": "passed",
+  "whitespace": "passed",
+  "secretPatternScan": "passed; no content output",
+  "newPaidCalls": 0,
+  "credentialAccess": false,
+  "policyActivation": false,
+  "applicationChanges": false,
+  "productionActions": 0,
+  "independentReview": "pending"
+}

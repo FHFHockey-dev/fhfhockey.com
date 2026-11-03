@@ -1,0 +1,32 @@
+{
+  "at": "2026-11-01T19:20:29.128491+00:00",
+  "status": "ARTIFACT_ONLY_PROPOSED_ADMISSION_FOR_ALREADY_MERGED_RELEASE",
+  "entry": {
+    "closureSha256": "f87dd7079506915fbdb9602d35c3a97270865ae0f4b8813c4456d6d09e96dc92",
+    "commit": "f17bea20d8caa2b6268c318bdb2152d7e2a3b57d",
+    "receipt": "tasks/artifacts/rso-resume-2026-11-01/release-prep/after402-committed-release.json",
+    "receiptSha256": "a9674d30f42b32d88b604a33672e311c74470075da3c9219c1bb613bb2b43b3a",
+    "verifierVersion": "forge-release-sha-verifier-v1",
+    "note": "Released PR #402 PP/IFTTT producer closure, commit f17bea20d: 195-module closure, 0 findings. This does not grant native forecast-use approval."
+  },
+  "receiptCommitTree": "92517944c869baef86f6d9a869c5a5ab2992e24a",
+  "verification": "real committed SHA; no tree-only receipt",
+  "testCandidateTree": "9820a239181765a7eae2597c32c0f380c0260b5a",
+  "testOverlay": "two proposed admission source files plus exact referenced receipt files",
+  "testExitCode": 0,
+  "testCommand": [
+    "node",
+    "node_modules/vitest/vitest.mjs",
+    "run",
+    "lib/projections/verifiedForgeReleases.test.ts",
+    "lib/projections/externalInputProof.test.ts",
+    "lib/projections/apiHelpers.runAdmission.test.ts",
+    "--maxWorkers=1",
+    "--minWorkers=1"
+  ],
+  "patchApplyCheck": "passed, check-only",
+  "canonicalAdmissionChanged": false,
+  "gitMutations": 0,
+  "notTheFourFileCandidateReceipt": true,
+  "nextAction": "Retained owner reviews/allocates this proposal for a deliberate future batch. RSO four-file candidate still needs its own committed receipt/entry."
+}

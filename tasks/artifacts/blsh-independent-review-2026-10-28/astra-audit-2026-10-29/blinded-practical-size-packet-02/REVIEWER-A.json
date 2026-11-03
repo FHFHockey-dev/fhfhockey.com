@@ -1,0 +1,235 @@
+{
+  "reviewerId": "A",
+  "priorExposureDisclosure": "Before this review I had general repository instructions and the coordinator's assignment, but no exposure to these cards' combined scores, thresholds, identities, proposal annotations, selection keys, or another reviewer's judgments. I read only the two assigned filesystem inputs.",
+  "readOnlyInputs": [
+    "/Users/tim/Documents/Codex/2026-10-27/task-3/practical-size-review-20261029-01/packet-02/BLINDED/REVIEW-INSTRUCTIONS.md",
+    "/Users/tim/Documents/Codex/2026-10-27/task-3/practical-size-review-20261029-01/packet-02/BLINDED/CASES-A.json"
+  ],
+  "judgments": [
+    {
+      "caseId": "405a2d3e65b3",
+      "practicalSize": "moderate",
+      "meaningfullyDifferentAtObservedExposure": "yes",
+      "nativeDirection": "below_reference",
+      "reason": "The baseline shortfall is 3.02 points total and 3.58 points per 60; the support shortfall is 3.59 total and 4.26 per 60. Roughly a goal's scoring value across 50.53 actual minutes is noticeable. Only two personal reference appearances, aged 327 days and carrying little estimator weight, weaken its interpretation as a personal departure without shrinking the supplied effect.",
+      "reasonCodes": ["total_size", "rate_size", "exposure_quantity", "thin_personal_reference", "old_reference", "reference_uncertainty"],
+      "smallestComparableDifferenceYouWouldNotice": null
+    },
+    {
+      "caseId": "1bb891f6cfa2",
+      "practicalSize": "moderate",
+      "meaningfullyDifferentAtObservedExposure": "yes",
+      "nativeDirection": "above_reference",
+      "reason": "The baseline gap is -3.76 points total and -3.99 per 60; support gives -3.07 total and -3.26 per 60. An excess exceeding a goal's scoring value in 56.52 minutes is meaningful at the recorded exposure. The 50-appearance reference is 205 days old, and removal rates approach zero in one variant, limiting reliability rather than changing the observed effect's size.",
+      "reasonCodes": ["total_size", "rate_size", "exposure_quantity", "old_reference", "conditional_sensitivity"],
+      "smallestComparableDifferenceYouWouldNotice": null
+    },
+    {
+      "caseId": "faf475dea119",
+      "practicalSize": "moderate",
+      "meaningfullyDifferentAtObservedExposure": "yes",
+      "nativeDirection": "above_reference",
+      "reason": "This hypothetical retains gaps of -3.30 points total and -3.68 per 60 against baseline, or -2.91 total and -3.25 per 60 against support. That is a noticeable excess across 53.73 actual minutes. Assuming one process component was estimated adds uncertainty about explanation and trustworthiness; it does not alter the deliberately fixed native effect. Removal variants crossing zero are conditional sensitivity, not confidence.",
+      "reasonCodes": ["total_size", "rate_size", "exposure_quantity", "old_reference", "imputed_process", "conditional_sensitivity"],
+      "smallestComparableDifferenceYouWouldNotice": null
+    },
+    {
+      "caseId": "3412524f2041",
+      "practicalSize": "small",
+      "meaningfullyDifferentAtObservedExposure": "no",
+      "nativeDirection": "below_reference",
+      "reason": "The shortfall is 0.43 points total and 1.86 per 60 against baseline, or 0.28 total and 1.18 per 60 against support. The rate is visible, but only 14.03 minutes were recorded, leaving an accumulated difference of roughly one or two minor scoring events. A two-appearance personal reference aged 386 days and unavailable numeric removal variants further limit interpretation.",
+      "reasonCodes": ["total_size", "rate_size", "exposure_quantity", "thin_personal_reference", "old_reference", "reference_uncertainty"],
+      "smallestComparableDifferenceYouWouldNotice": null
+    },
+    {
+      "caseId": "7e9b3e3d96df",
+      "practicalSize": "moderate",
+      "meaningfullyDifferentAtObservedExposure": "yes",
+      "nativeDirection": "below_reference",
+      "reason": "Baseline and support shortfalls are 2.55 and 2.18 points total, with corresponding rates of 2.38 and 2.04 per 60. Across 64.08 actual minutes, this exceeds an assist's scoring value and represents a substantial portion of the supplied expectation. Zero observed shots is recorded production, not missingness. The 43-appearance reference is 220 days old, and directionally consistent removal variants do not establish confidence.",
+      "reasonCodes": ["total_size", "rate_size", "exposure_quantity", "old_reference", "conditional_sensitivity"],
+      "smallestComparableDifferenceYouWouldNotice": null
+    },
+    {
+      "caseId": "bd08a5552d68",
+      "practicalSize": "moderate",
+      "meaningfullyDifferentAtObservedExposure": "yes",
+      "nativeDirection": "above_reference",
+      "reason": "The baseline gap is -2.83 points total and -3.06 per 60; support gives -2.56 total and -2.76 per 60. This is a noticeable excess approaching a goal's scoring value in 55.53 minutes. The 32-appearance reference aged 204 days offers some personal context, but removal rates vary substantially and the retrospective source timing remains unverified.",
+      "reasonCodes": ["total_size", "rate_size", "exposure_quantity", "old_reference", "conditional_sensitivity", "scope_or_source_unknown"],
+      "smallestComparableDifferenceYouWouldNotice": null
+    },
+    {
+      "caseId": "9f42d4c01793",
+      "practicalSize": "small",
+      "meaningfullyDifferentAtObservedExposure": "no",
+      "nativeDirection": "below_reference",
+      "reason": "The shortfall is 0.86 points total and 1.84 per 60 against baseline, or 0.64 total and 1.38 per 60 against support. Over 28.02 actual minutes this remains a modest accumulated difference, below an assist's scoring value. With no personal reference appearances it is a cohort comparison, and removal variants crossing zero further weaken any claim of a personal departure.",
+      "reasonCodes": ["total_size", "rate_size", "exposure_quantity", "cohort_reference", "conditional_sensitivity"],
+      "smallestComparableDifferenceYouWouldNotice": null
+    },
+    {
+      "caseId": "bea8f8f72b6a",
+      "practicalSize": "large",
+      "meaningfullyDifferentAtObservedExposure": "yes",
+      "nativeDirection": "below_reference",
+      "reason": "The shortfall is 3.36 points total and 4.79 per 60 against baseline, or 3.13 total and 4.47 per 60 against support. Losing more than a goal's scoring value from an expectation of only 4.18–4.41 total points, with 1.05 actually produced in 42.03 minutes, is a large relative production difference. Zero shots is an observed value. Reference age of 204 days and unverified source timing constrain trustworthiness; stable removal direction is not calibrated confidence.",
+      "reasonCodes": ["total_size", "rate_size", "exposure_quantity", "old_reference", "conditional_sensitivity", "scope_or_source_unknown"],
+      "smallestComparableDifferenceYouWouldNotice": null
+    },
+    {
+      "caseId": "a01b008175fd",
+      "practicalSize": "moderate",
+      "meaningfullyDifferentAtObservedExposure": "yes",
+      "nativeDirection": "below_reference",
+      "reason": "The baseline shortfall is 3.31 points total and 3.76 per 60; support gives 2.74 total and 3.11 per 60. A difference near a goal's scoring value across 52.72 recorded minutes is meaningful. The personal reference has 50 appearances but is 276 days old, and removal rates range widely, so this size judgment does not establish a persistent ability change.",
+      "reasonCodes": ["total_size", "rate_size", "exposure_quantity", "old_reference", "conditional_sensitivity"],
+      "smallestComparableDifferenceYouWouldNotice": null
+    },
+    {
+      "caseId": "33da71c94b95",
+      "practicalSize": "small",
+      "meaningfullyDifferentAtObservedExposure": "no",
+      "nativeDirection": "below_reference",
+      "reason": "The shortfall is 0.54 points total and 1.40 per 60 against baseline, or 0.97 total and 2.51 per 60 against support. Only 23.08 minutes were actually recorded, so the support rate does not imply a multi-point accumulated loss. The total remains modest, and three personal reference appearances aged 322 days provide a thin basis for personal interpretation. Zero observed shots is not missing data.",
+      "reasonCodes": ["total_size", "rate_size", "exposure_quantity", "thin_personal_reference", "old_reference", "reference_uncertainty"],
+      "smallestComparableDifferenceYouWouldNotice": null
+    },
+    {
+      "caseId": "9d8056561177",
+      "practicalSize": "moderate",
+      "meaningfullyDifferentAtObservedExposure": "yes",
+      "nativeDirection": "below_reference",
+      "reason": "The baseline shortfall is 3.73 points total and 4.19 per 60; support gives 2.88 total and 3.24 per 60. With 1.90 points actually produced in 53.47 minutes, this is a substantial, roughly goal-sized accumulated deficit under either supplied expectation. Reference choice changes its magnitude appreciably, and the 28-appearance personal reference is 209 days old; neither limitation removes the visible practical difference.",
+      "reasonCodes": ["total_size", "rate_size", "exposure_quantity", "old_reference", "reference_uncertainty"],
+      "smallestComparableDifferenceYouWouldNotice": null
+    },
+    {
+      "caseId": "12e39c4f11a7",
+      "practicalSize": "moderate",
+      "meaningfullyDifferentAtObservedExposure": "yes",
+      "nativeDirection": "below_reference",
+      "reason": "The shortfall is 3.41 points total and 3.36 per 60 against baseline, or 2.98 total and 2.94 per 60 against support. Across 60.88 actual minutes this is approximately a goal's scoring value, a meaningful difference. There are no personal reference appearances, so the conclusion is a meaningful shortfall against the cohort expectation, not demonstrated underperformance against this individual's ability.",
+      "reasonCodes": ["total_size", "rate_size", "exposure_quantity", "cohort_reference", "reference_uncertainty"],
+      "smallestComparableDifferenceYouWouldNotice": null
+    },
+    {
+      "caseId": "b73ce408dd99",
+      "practicalSize": "moderate",
+      "meaningfullyDifferentAtObservedExposure": "yes",
+      "nativeDirection": "above_reference",
+      "reason": "The baseline gap is -2.94 points total and -2.77 per 60; support gives -3.09 total and -2.92 per 60. An excess near a goal's scoring value across 63.55 minutes is noticeable. The 50-appearance reference is 244 days old, and removal variants approach a much smaller excess, limiting robustness without changing the supplied accumulated difference.",
+      "reasonCodes": ["total_size", "rate_size", "exposure_quantity", "old_reference", "conditional_sensitivity"],
+      "smallestComparableDifferenceYouWouldNotice": null
+    },
+    {
+      "caseId": "3d9fd8a56457",
+      "practicalSize": "moderate",
+      "meaningfullyDifferentAtObservedExposure": "yes",
+      "nativeDirection": "above_reference",
+      "reason": "The gaps are -3.42 points total and -3.13 per 60 against baseline, or -3.40 total and -3.11 per 60 against support. Producing 8.20 rather than about 4.80 points over 65.48 recorded minutes is a meaningful excess exceeding a goal's scoring value. The two supplied expectations agree closely, but a 225-day-old reference and conditional removal diagnostics cannot establish a durable personal improvement.",
+      "reasonCodes": ["total_size", "rate_size", "exposure_quantity", "old_reference", "conditional_sensitivity"],
+      "smallestComparableDifferenceYouWouldNotice": null
+    },
+    {
+      "caseId": "e6c2b12055c7",
+      "practicalSize": "trivial",
+      "meaningfullyDifferentAtObservedExposure": "no",
+      "nativeDirection": "above_reference",
+      "reason": "The baseline gap is -0.06 points total and -0.63 per 60; support gives -0.20 total and -1.91 per 60. In only 6.15 actual minutes, even the support excess is about one shot's scoring value, so the observed accumulated difference is trivial despite the more visible normalized rate. Two old personal appearances and an outside-prior-component-range flag weaken the reference interpretation, not the size classification.",
+      "reasonCodes": ["total_size", "rate_size", "exposure_quantity", "thin_personal_reference", "old_reference", "extrapolation"],
+      "smallestComparableDifferenceYouWouldNotice": null
+    },
+    {
+      "caseId": "6282840b21be",
+      "practicalSize": "moderate",
+      "meaningfullyDifferentAtObservedExposure": "yes",
+      "nativeDirection": "above_reference",
+      "reason": "The baseline gap is -2.54 points total and -2.27 per 60; support gives -2.97 total and -2.65 per 60. Across 67.27 minutes this is an excess between an assist's and a goal's scoring value and is practically noticeable. The 50-appearance reference is 233 days old, and removal variants cross zero, so the observed excess should not be mistaken for strong evidence of persistent superiority.",
+      "reasonCodes": ["total_size", "rate_size", "exposure_quantity", "old_reference", "conditional_sensitivity"],
+      "smallestComparableDifferenceYouWouldNotice": null
+    },
+    {
+      "caseId": "0146c00e120e",
+      "practicalSize": "moderate",
+      "meaningfullyDifferentAtObservedExposure": "yes",
+      "nativeDirection": "below_reference",
+      "reason": "The shortfall is 3.80 points total and 3.75 per 60 against baseline, or 3.12 total and 3.08 per 60 against support. Both represent more than a goal's scoring value across 60.77 actual minutes, a meaningful accumulated loss. The 50-appearance reference is 236 days old; the broad removal-rate range shows conditional sensitivity rather than a confidence interval.",
+      "reasonCodes": ["total_size", "rate_size", "exposure_quantity", "old_reference", "conditional_sensitivity"],
+      "smallestComparableDifferenceYouWouldNotice": null
+    },
+    {
+      "caseId": "2b346e9805c1",
+      "practicalSize": "moderate",
+      "meaningfullyDifferentAtObservedExposure": "yes",
+      "nativeDirection": "above_reference",
+      "reason": "The baseline gap is -3.30 points total and -3.68 per 60; support gives -2.91 total and -3.25 per 60. This is approximately a goal's scoring value above expectation in 53.73 actual minutes, a noticeable difference. A 50-appearance reference aged 196 days provides personal context, but removal variants cross zero and therefore caution against treating the observed size as reliable evidence of a continuing departure.",
+      "reasonCodes": ["total_size", "rate_size", "exposure_quantity", "old_reference", "conditional_sensitivity"],
+      "smallestComparableDifferenceYouWouldNotice": null
+    },
+    {
+      "caseId": "064125d83c4c",
+      "practicalSize": "moderate",
+      "meaningfullyDifferentAtObservedExposure": "yes",
+      "nativeDirection": "below_reference",
+      "reason": "The baseline shortfall is 2.97 points total and 2.99 per 60; support gives 2.92 total and 2.95 per 60. Across 59.45 recorded minutes, a roughly goal-sized deficit and about half the supplied expected production are meaningful. The reference has 50 appearances but is 223 days old; similar supplied expectations and consistently positive removal variants do not themselves establish confidence.",
+      "reasonCodes": ["total_size", "rate_size", "exposure_quantity", "old_reference", "conditional_sensitivity"],
+      "smallestComparableDifferenceYouWouldNotice": null
+    },
+    {
+      "caseId": "d046a3d418f4",
+      "practicalSize": "trivial",
+      "meaningfullyDifferentAtObservedExposure": "no",
+      "nativeDirection": "above_reference",
+      "reason": "The baseline gap is -0.12 points total and -0.14 per 60; support gives -0.46 total and -0.54 per 60. Across 50.95 actual minutes this is near parity, with even the larger excess worth only about two shots. Removal variants spanning both directions and a 184-day-old reference limit reliability, but uncertainty does not make this small supplied effect practically large.",
+      "reasonCodes": ["total_size", "rate_size", "exposure_quantity", "old_reference", "conditional_sensitivity"],
+      "smallestComparableDifferenceYouWouldNotice": null
+    },
+    {
+      "caseId": "38090fea2ca2",
+      "practicalSize": "small",
+      "meaningfullyDifferentAtObservedExposure": "yes",
+      "nativeDirection": "below_reference",
+      "reason": "The baseline shortfall is 1.75 points total and 5.20 per 60; support gives 1.34 total and 3.99 per 60. In 20.17 actual minutes the accumulated loss remains smaller than an assist's scoring value, so I classify its overall practical size as small; nevertheless, losing 1.34–1.75 points against an expectation of 1.94–2.35 is noticeable at that exposure. Only two current appearances and nine personal reference appearances aged 189 days strongly limit reliability and extrapolation.",
+      "reasonCodes": ["total_size", "rate_size", "exposure_quantity", "thin_personal_reference", "old_reference", "reference_uncertainty"],
+      "smallestComparableDifferenceYouWouldNotice": null
+    },
+    {
+      "caseId": "09d750faf133",
+      "practicalSize": "moderate",
+      "meaningfullyDifferentAtObservedExposure": "yes",
+      "nativeDirection": "above_reference",
+      "reason": "The baseline gap is -2.68 points total and -1.97 per 60; support gives -2.93 total and -2.15 per 60. The rate is less dramatic than in some cards, but 81.83 actual minutes accumulate an excess approaching a goal's scoring value. With no personal reference appearances this is meaningful relative to the cohort expectation, not proof that the individual exceeded their own established ability.",
+      "reasonCodes": ["total_size", "rate_size", "exposure_quantity", "cohort_reference", "reference_uncertainty"],
+      "smallestComparableDifferenceYouWouldNotice": null
+    },
+    {
+      "caseId": "ec9ad3f642b0",
+      "practicalSize": "moderate",
+      "meaningfullyDifferentAtObservedExposure": "yes",
+      "nativeDirection": "below_reference",
+      "reason": "The baseline shortfall is 3.87 points total and 3.91 per 60; support gives 3.02 total and 3.05 per 60. Both exceed a goal's scoring value across 59.27 actual minutes and are meaningful accumulated differences. The 50-appearance reference is 203 days old, while the broad removal-rate range cautions against interpreting the current size as a stable effect.",
+      "reasonCodes": ["total_size", "rate_size", "exposure_quantity", "old_reference", "conditional_sensitivity"],
+      "smallestComparableDifferenceYouWouldNotice": null
+    },
+    {
+      "caseId": "9d5cd3d7900c",
+      "practicalSize": "moderate",
+      "meaningfullyDifferentAtObservedExposure": "yes",
+      "nativeDirection": "below_reference",
+      "reason": "This hypothetical retains a baseline shortfall of 3.31 points total and 3.76 per 60, or 2.74 total and 3.11 per 60 against support. Across 52.72 actual minutes the roughly goal-sized difference remains meaningful. An assumed estimated process component changes uncertainty about the process interpretation, not these fixed native values. The 276-day-old personal reference and removal sensitivity also constrain reliability; the vignette cannot validate imputation accuracy.",
+      "reasonCodes": ["total_size", "rate_size", "exposure_quantity", "old_reference", "imputed_process", "conditional_sensitivity"],
+      "smallestComparableDifferenceYouWouldNotice": null
+    }
+  ],
+  "overallConcerns": [
+    "These are judgments of retrospective differences relative to the supplied expectations. A meaningful observed difference does not establish statistical significance, persistence, personal ability change, trade profitability, or future production.",
+    "I used total differences, rates, recorded exposure, and the supplied scoring values together. Goal and assist equivalents describe fantasy-point magnitude only; they do not identify which events caused a gap or define a hidden decision threshold.",
+    "The packet supplies no standings margins, roster alternatives, decision horizon, or explicit practical tolerance. I therefore provide no numerical smallest-noticeable-difference rule, and adjacent practical-size categories remain judgment calls.",
+    "All cards disclose unverified source publication and revision timing. Reference estimator weights are not confidence values, and fixed-reference removal diagnostics are not calibrated confidence intervals.",
+    "Cards without personal reference appearances permit cohort comparisons only. Thin or old personal references weaken personal interpretations without automatically changing the native effect's practical size.",
+    "The two explicitly hypothetical vignettes preserve their native effect judgments while adding process uncertainty. They supply no empirical evidence about estimation accuracy.",
+    "I could not independently confirm the actual runtime model or reasoning setting from the permitted inputs. I make no claim that the requested GPT-6.1 Sol high settings were verified, and have no runtime-confirmed mismatch to report."
+  ]
+}

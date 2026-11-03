@@ -1,0 +1,63 @@
+{
+  "version": "ifttt-luna-review-v1",
+  "canPublish": false,
+  "canWriteAliases": false,
+  "canChangeStatus": false,
+  "canExecuteReplacement": false,
+  "status": "review_only",
+  "holds": [
+    "human_review_required",
+    "no_publication_authority"
+  ],
+  "referencePackage": {
+    "version": "luna-hockey-reference-v4",
+    "mode": "rules-and-synthetic-only",
+    "hash": "9b8a10fd458596b75ba2c0900dea1b72b9ec446d5e0e660ca5c18341920abdb3",
+    "rulesVersion": "luna-hockey-rules-v4",
+    "libraryVersion": null
+  },
+  "responsesRequestHash": "641f76f69a086fc5004b12694d3be6a33b42da17cd5efc9c919b742e80677483",
+  "lineage": {
+    "originalPostId": "910011",
+    "author": "lunafixture",
+    "url": "https://x.com/LunaFixture/status/910011",
+    "textVersion": "tweet-source-claim-v1:text:37f0f8de00ad43b5683fb46bcfc428af525e19aae8fb312ac4136a9d5f14c303",
+    "packetHash": "3e55f47dc517e987715d7a4df81405845b9179167680f79509ae62ad2f3b07af"
+  },
+  "identity": {
+    "version": "tweet-identity-proposal-v1",
+    "requestHash": "57093205abaa9f03319c8587a99ebbb6b4a36733e28866c7a8b47b904ebc81b5",
+    "directoryHash": "88dbd1e19c22a04fba95f07d049c38af533b548723bd17106f639191667ae16f",
+    "occurrences": [
+      {
+        "occurrenceId": "subject-4",
+        "canonicalId": "nhl:900001",
+        "status": "matched",
+        "evidence": {
+          "start": 4,
+          "end": 16,
+          "text": "Avery Keeper"
+        },
+        "identityConfidence": "tentative"
+      },
+      {
+        "occurrenceId": "subject-45",
+        "canonicalId": "nhl:900001",
+        "status": "matched",
+        "evidence": {
+          "start": 45,
+          "end": 57,
+          "text": "Avery Keeper"
+        },
+        "identityConfidence": "tentative"
+      }
+    ]
+  },
+  "goalieStatuses": [],
+  "decisionReview": null,
+  "attempts": 1,
+  "requestIds": [
+    "offline-cli-E12-responses"
+  ],
+  "reviewQueueKey": "fa144a5fca7c582865fb9d780cbba9c65eb8dfe4066aaee03576d3b9be62f389"
+}

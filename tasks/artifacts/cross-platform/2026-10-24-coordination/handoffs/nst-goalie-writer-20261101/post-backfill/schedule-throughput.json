@@ -1,0 +1,214 @@
+[
+  {
+    "checked_at": "2026-11-01 15:39:01.970892+00",
+    "schedule": [
+      {
+        "jobid": 99,
+        "active": true,
+        "jobname": "update-nst-goalies",
+        "schedule": "30 8 * * *"
+      },
+      {
+        "jobid": 234,
+        "active": false,
+        "jobname": "daily-cron-report",
+        "schedule": "15 21 * * *"
+      },
+      {
+        "jobid": 399,
+        "active": true,
+        "jobname": "route-runner-tick",
+        "schedule": "* * * * *"
+      }
+    ],
+    "writer_receipts": [
+      {
+        "status": "success",
+        "outcome": {
+          "nextStartDate": "2026-10-27"
+        },
+        "job_name": "/api/v1/db/update-nst-goalies",
+        "run_time": "2026-10-30T08:33:52.217231+00:00",
+        "duration_ms": "229886",
+        "interval_ms": "21000",
+        "status_code": "200",
+        "dates_queued": "5",
+        "rows_affected": null,
+        "next_start_date": "2026-10-27",
+        "max_pending_urls": "6",
+        "total_queued_urls": "50",
+        "pending_urls_processed": "6"
+      },
+      {
+        "status": "success",
+        "outcome": {
+          "nextStartDate": "2026-10-28"
+        },
+        "job_name": "/api/v1/db/update-nst-goalies",
+        "run_time": "2026-11-01T14:42:12.761565+00:00",
+        "duration_ms": "130159",
+        "interval_ms": "21000",
+        "status_code": "200",
+        "dates_queued": "4",
+        "rows_affected": null,
+        "next_start_date": "2026-10-28",
+        "max_pending_urls": "6",
+        "total_queued_urls": "40",
+        "pending_urls_processed": "6"
+      },
+      {
+        "status": "success",
+        "outcome": {
+          "nextStartDate": "2026-10-29"
+        },
+        "job_name": "/api/v1/db/update-nst-goalies",
+        "run_time": "2026-11-01T14:45:14.334702+00:00",
+        "duration_ms": "132879",
+        "interval_ms": "21000",
+        "status_code": "200",
+        "dates_queued": "4",
+        "rows_affected": null,
+        "next_start_date": "2026-10-29",
+        "max_pending_urls": "6",
+        "total_queued_urls": "40",
+        "pending_urls_processed": "6"
+      },
+      {
+        "status": "success",
+        "outcome": {
+          "nextStartDate": "2026-10-30"
+        },
+        "job_name": "/api/v1/db/update-nst-goalies",
+        "run_time": "2026-11-01T14:48:15.397351+00:00",
+        "duration_ms": "134481",
+        "interval_ms": "21000",
+        "status_code": "200",
+        "dates_queued": "4",
+        "rows_affected": null,
+        "next_start_date": "2026-10-30",
+        "max_pending_urls": "6",
+        "total_queued_urls": "40",
+        "pending_urls_processed": "6"
+      },
+      {
+        "status": "success",
+        "outcome": {
+          "nextStartDate": "2026-10-30"
+        },
+        "job_name": "/api/v1/db/update-nst-goalies",
+        "run_time": "2026-11-01T14:51:09.658454+00:00",
+        "duration_ms": "128645",
+        "interval_ms": "21000",
+        "status_code": "200",
+        "dates_queued": "3",
+        "rows_affected": null,
+        "next_start_date": "2026-10-30",
+        "max_pending_urls": "6",
+        "total_queued_urls": "30",
+        "pending_urls_processed": "6"
+      },
+      {
+        "status": "success",
+        "outcome": {
+          "nextStartDate": "2026-10-31"
+        },
+        "job_name": "/api/v1/db/update-nst-goalies",
+        "run_time": "2026-11-01T14:54:13.771584+00:00",
+        "duration_ms": "130245",
+        "interval_ms": "21000",
+        "status_code": "200",
+        "dates_queued": "3",
+        "rows_affected": null,
+        "next_start_date": "2026-10-31",
+        "max_pending_urls": "6",
+        "total_queued_urls": "30",
+        "pending_urls_processed": "6"
+      },
+      {
+        "status": "success",
+        "outcome": {
+          "nextStartDate": "2026-10-31"
+        },
+        "job_name": "/api/v1/db/update-nst-goalies",
+        "run_time": "2026-11-01T14:57:13.067068+00:00",
+        "duration_ms": "131338",
+        "interval_ms": "21000",
+        "status_code": "200",
+        "dates_queued": "2",
+        "rows_affected": null,
+        "next_start_date": "2026-10-31",
+        "max_pending_urls": "6",
+        "total_queued_urls": "20",
+        "pending_urls_processed": "6"
+      },
+      {
+        "status": "success",
+        "outcome": {
+          "nextStartDate": "2026-11-01"
+        },
+        "job_name": "/api/v1/db/update-nst-goalies",
+        "run_time": "2026-11-01T15:00:13.0866+00:00",
+        "duration_ms": "130152",
+        "interval_ms": "21000",
+        "status_code": "200",
+        "dates_queued": "2",
+        "rows_affected": null,
+        "next_start_date": "2026-11-01",
+        "max_pending_urls": "6",
+        "total_queued_urls": "20",
+        "pending_urls_processed": "6"
+      },
+      {
+        "status": "success",
+        "outcome": {
+          "nextStartDate": "2026-11-01"
+        },
+        "job_name": "/api/v1/db/update-nst-goalies",
+        "run_time": "2026-11-01T15:03:32.771755+00:00",
+        "duration_ms": "148871",
+        "interval_ms": "21000",
+        "status_code": "200",
+        "dates_queued": "1",
+        "rows_affected": null,
+        "next_start_date": "2026-11-01",
+        "max_pending_urls": "6",
+        "total_queued_urls": "10",
+        "pending_urls_processed": "6"
+      },
+      {
+        "status": "success",
+        "outcome": {
+          "nextStartDate": "2026-11-01"
+        },
+        "job_name": "/api/v1/db/update-nst-goalies",
+        "run_time": "2026-11-01T15:06:10.819539+00:00",
+        "duration_ms": "128150",
+        "interval_ms": "21000",
+        "status_code": "200",
+        "dates_queued": "1",
+        "rows_affected": null,
+        "next_start_date": "2026-11-01",
+        "max_pending_urls": "6",
+        "total_queued_urls": "10",
+        "pending_urls_processed": "6"
+      },
+      {
+        "status": "success",
+        "outcome": {
+          "nextStartDate": "2026-11-01"
+        },
+        "job_name": "/api/v1/db/update-nst-goalies",
+        "run_time": "2026-11-01T15:09:08.670742+00:00",
+        "duration_ms": "126936",
+        "interval_ms": "21000",
+        "status_code": "200",
+        "dates_queued": "1",
+        "rows_affected": null,
+        "next_start_date": "2026-11-01",
+        "max_pending_urls": "6",
+        "total_queued_urls": "10",
+        "pending_urls_processed": "6"
+      }
+    ]
+  }
+]

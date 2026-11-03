@@ -1,0 +1,144 @@
+{
+  "checkedAtUtc": "2026-11-01T14:32:16.292189+00:00",
+  "branch": "octoberBranch",
+  "head": "435695923b2f37336f2b06abb5d6af77817e16d0",
+  "lease": {
+    "id": "CODEX-CRON-TRIAGE-20261027-01",
+    "status": "ACTIVE_FROZEN_ACCEPTED_LOCAL \u2014 independent v4 ACCEPT;54-file pins retained; no source writer release or rollout",
+    "owner": "Codex cron-report triage worker; parent task 01a16eed-60f6-7096-879f-696c469db015",
+    "activeCorrectionPaths": []
+  },
+  "pins": [
+    {
+      "path": "web/__tests__/pages/api/v1/db/cron-report.test.ts",
+      "sha256": "edbc2c56116f2b8710f9fd86d6389471ef65d94f488f32947ceb703afc21dd02",
+      "matchesFrozenV4": true
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/update-nst-goalies.route.test.ts",
+      "sha256": "261d23fb2f8e8027c961810b6816f57bc95a3e7315286bfdcdbac416552e3a34",
+      "matchesFrozenV4": true
+    },
+    {
+      "path": "web/components/CronReportEmail/CronAuditEmail.tsx",
+      "sha256": "ae64203df4e5f97493600c7f3ab666c7e0f09ec8197559f7af7f0155edbcb70b",
+      "matchesFrozenV4": true
+    },
+    {
+      "path": "web/lib/cron/nstBurstPlans.test.ts",
+      "sha256": "f64e032d85059098b513297ed0a866309eabada6d03b8b282c4be9e24fe8a741",
+      "matchesFrozenV4": true
+    },
+    {
+      "path": "web/lib/cron/nstBurstPlans.ts",
+      "sha256": "a31d3bb8e598f76a4b21fecb6bdea99eb79d79670d49865657d775ee45b0d214",
+      "matchesFrozenV4": true
+    },
+    {
+      "path": "web/lib/cron/reportSource.test.ts",
+      "sha256": "2ae352f0007c348ef09a8c2215314c683af6aeb50da03170fedfc244249fb545",
+      "matchesFrozenV4": true
+    },
+    {
+      "path": "web/lib/cron/reportSource.ts",
+      "sha256": "24d69a665896c198e0d68335df9392714a8e57e16b6f158fb08f8e0292a5f5cd",
+      "matchesFrozenV4": true
+    },
+    {
+      "path": "web/lib/nst/client.test.ts",
+      "sha256": "e5bd6b585d7e0c7a2229726116c2ff6534236660e35a3845ba8864675b0a952d",
+      "matchesFrozenV4": true
+    },
+    {
+      "path": "web/lib/nst/client.ts",
+      "sha256": "f0978a2ad0bcbb8dc6d8ed8074dce627e94c38d3ebbbb758c6d552b145e904d0",
+      "matchesFrozenV4": true
+    },
+    {
+      "path": "web/lib/nst/requestBudget.test.ts",
+      "sha256": "8bdc68777001bc9ee6b79bdb6dacbc173090f83e752f736f664a274562ded34a",
+      "matchesFrozenV4": true
+    },
+    {
+      "path": "web/lib/nst/requestBudget.ts",
+      "sha256": "ccbab70aee15aba93818df4ef42d41195eceb39757af0ad3eef3b3dd15437e5a",
+      "matchesFrozenV4": true
+    },
+    {
+      "path": "web/lib/nst/sharedAdmission.test.ts",
+      "sha256": "b3c4adeec26b9528c8cd993069dfed01c741502506f4e2574197a1b50e9cd5db",
+      "matchesFrozenV4": true
+    },
+    {
+      "path": "web/lib/nst/sharedAdmission.ts",
+      "sha256": "c93354c62a3493d119014d2a4e0e9518241a84c30c7cd14794b1561b595af10f",
+      "matchesFrozenV4": true
+    },
+    {
+      "path": "web/lib/routeRunner/core.test.ts",
+      "sha256": "bfedcbac2fbc712abb9f17ef69f56fce4968bcf85a42c90b0614f46869794079",
+      "matchesFrozenV4": true
+    },
+    {
+      "path": "web/lib/routeRunner/core.ts",
+      "sha256": "295dffbf92abb8f134e7b5c4f3745368e29ac07d9621f93cdfb3a85c34b2a1c8",
+      "matchesFrozenV4": true
+    },
+    {
+      "path": "web/lib/routeRunner/registry.ts",
+      "sha256": "969a7bece181e4d6c069d2629795be3e75f4fa128e5073973945a87bfc6e59c3",
+      "matchesFrozenV4": true
+    },
+    {
+      "path": "web/lib/routeRunner/tick.ts",
+      "sha256": "07362d17947ef02c0a989b7df8089c552b3627cbe83840ecdd277afe96e9eb30",
+      "matchesFrozenV4": true
+    },
+    {
+      "path": "web/pages/api/v1/db/cron-report.ts",
+      "sha256": "f3acf1f65d8632316cfb5aa3fe256a4a6e389b25f6fe78abddc12be80abe748a",
+      "matchesFrozenV4": true
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nst-goalies.ts",
+      "sha256": "37dfd69a5a98e49e5489e23d58c6a91d95a622ff2c6d87204a959e12ef2d3c5e",
+      "matchesFrozenV4": true
+    }
+  ],
+  "databasePrerequisite": {
+    "path": "/Users/tim/Documents/Codex/2026-10-27/task/accepted-local-handoff/sql/20261027_nst_shared_admission_v1.sql",
+    "sha256": "aefd3c20f2ff76328ef8b27e19244e438ad69a22ea1f9b5ef3cc1d6068784dce",
+    "foundInRegisteredMigrationTree": false,
+    "hostedState": "not read; unknown"
+  },
+  "checks": {
+    "plannerProbe": {
+      "command": "node ../tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/planner-probe.cjs",
+      "cwd": "web",
+      "node": "v22.11.0",
+      "passed": 5,
+      "scope": "actual pure planner modules only"
+    },
+    "applicationTests": "not run; frozen scope unchanged",
+    "typecheck": "not run; Claude pass acknowledgement is owner-reported",
+    "productionReads": 0,
+    "nstRequests": 0,
+    "migrationsApplied": 0,
+    "pushes": 0,
+    "buildsDeployments": 0
+  },
+  "inputs": [
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/NST-GOALIE-HD-GAP-DIAGNOSIS-20261101.md",
+      "sha256": "87826ecfd4f50db6b638e4f512edf8dd1f72430cbe340aa68773889d49a065a6"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/planner-probe.cjs",
+      "sha256": "e7b59b0645a93583598b965c781871cd26af06678f3a30ea7fadf6fdbfa6b3bf"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/planner-probe.log",
+      "sha256": "0676919d844371a74ea199af4081069c7265d393ac54a7af109ceff2177acc0f"
+    }
+  ]
+}

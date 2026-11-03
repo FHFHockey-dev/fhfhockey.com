@@ -1,0 +1,42 @@
+{
+  "at": "2026-11-01T17:50:06.012872+00:00",
+  "originalFilesPreserved": 78,
+  "sourceCopiesVerified": 16,
+  "whitespaceCheckedPaths": [
+    "web/components/player-cards/PlayerAnalysisCard.tsx",
+    "web/components/player-cards/PlayerAnalysisStudio.module.scss",
+    "web/components/player-cards/PlayerAnalysisStudio.test.tsx",
+    "web/components/player-cards/PlayerAnalysisStudio.tsx",
+    "web/lib/player-cards/analysisEvidence.test.ts",
+    "web/lib/player-cards/analysisEvidence.ts",
+    "web/lib/player-cards/analysisExport.ts",
+    "web/lib/player-cards/analysisFixtures.ts",
+    "web/lib/player-cards/analysisSnapshot.test.ts",
+    "web/lib/player-cards/analysisSnapshot.ts",
+    "web/lib/player-cards/goalieOutlook.test.ts",
+    "web/lib/player-cards/goalieOutlook.ts",
+    "web/lib/player-cards/retainedBlsh.test.ts",
+    "web/lib/player-cards/retainedBlsh.ts",
+    "web/lib/player-cards/sharedGoalieOutlook.test.ts",
+    "web/lib/player-cards/sharedGoalieOutlook.ts",
+    "tasks/tasks-prd-player-cards-evolution-2026-10-31.md",
+    "tasks/diaries/2026-10-31-codex-player-cards-evolution.md",
+    "tasks/artifacts/player-cards-evolution-2026-10-31/HANDOFF.md",
+    "tasks/artifacts/player-cards-evolution-2026-10-31/IMPLEMENTATION.md",
+    "tasks/artifacts/player-cards-evolution-2026-10-31/APPROVED-RANKS-INTEGRATION-20261101.json",
+    "tasks/artifacts/player-cards-evolution-2026-10-31/APPROVED-POLICY-CONTACTS-20261101.json",
+    "tasks/artifacts/player-cards-evolution-2026-10-31/BLOCKERS.json",
+    "tasks/artifacts/player-cards-evolution-2026-10-31/TASK-VALIDATION.json"
+  ],
+  "mailboxDiffWhitespacePassed": true,
+  "originalSubtasks": 46,
+  "completedOriginalSubtasks": 34,
+  "remainingOriginalSubtasks": 12,
+  "newRegressionsComplete": [
+    "NEW-PC-01",
+    "NEW-PC-02",
+    "NEW-PC-03"
+  ],
+  "allEightParentsRemainOpen": true,
+  "mutationsOutsideOwnedSources": "Own task artifacts/status/diary and authorized append-only outgoing mailbox only; no held app/editor/producer files changed."
+}

@@ -1,0 +1,27 @@
+{
+  "fixtureOnly": true,
+  "checks": [
+    {
+      "name": "desktop: route HTTP 200",
+      "result": true
+    }
+  ],
+  "externalRequestsBlocked": [
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://img.buymeacoffee.com/button-api/",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://cdn.vercel-insights.com/v1/script.debug.js",
+    "GET https://va.vercel-scripts.com/v1/speed-insights/script.debug.js"
+  ],
+  "localApiRequestsBlocked": [],
+  "pageErrors": [],
+  "result": "failed",
+  "error": "locator.fill: Error: strict mode violation: getByLabel('League positions') resolved to 2 elements:\n    1) <input value=\"\" maxlength=\"100\" placeholder=\"C/LW\"/> aka getByRole('textbox', { name: 'League positions' })\n    2) <input disabled type=\"checkbox\"/> aka getByRole('checkbox', { name: 'I reviewed this roster and' })\n\nCall log:\n  - waiting for getByLabel('League positions')\n"
+}

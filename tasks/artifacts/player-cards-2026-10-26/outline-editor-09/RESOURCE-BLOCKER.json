@@ -1,0 +1,40 @@
+{
+  "at": "2026-10-27T00:49:35.170813+00:00",
+  "lock": "/private/tmp/fhfh-heavy.lock",
+  "type": "regular file",
+  "content": "tuesday-rc chef 61075 2026-10-27T00:36:44Z\n",
+  "reportedPid": 61075,
+  "freshPsFoundReportedPid": false,
+  "altered": false,
+  "guardedAttempts": 2,
+  "attemptExitCodes": [
+    75,
+    75
+  ],
+  "unitTypeLintBrowserStarted": false,
+  "coordination": "Own mailbox plus direct coordinator task01a16e23-72b5-76ee-8ade-2d209d0e7002; awaiting owner release; no repeated polling planned",
+  "preview": {
+    "pid": 45849,
+    "port": 3125,
+    "ownedCommand": "/usr/local/bin/node tasks/artifacts/player-cards-2026-10-26/stacked-outline-08/serve-preview.mjs",
+    "candidate09Served": false
+  },
+  "coordinatorUpdate": {
+    "at": "2026-10-27T00:48:00Z",
+    "activeForeignPlaywrightBatch": [
+      65875,
+      65896
+    ],
+    "lockInode": 215707084,
+    "lockSha256": "a9ee8dc706b0d15a62ae6d404ced3fe15037a6ff958f3036b76b7b8c6d517737",
+    "instruction": "RecordedPIDabsence does NOT establish resource availability; wait actual foreign batch owner release"
+  },
+  "latestCheckpointAt": "2026-10-27T00:55:46.366315+00:00",
+  "latestActualBatchPidsAbsent": [
+    65875,
+    65896
+  ],
+  "ownerReleaseReceived": false,
+  "foreignLockStillPresent": true,
+  "coordinationWait": "Coordinator notified of actual batch exit;30s supported thread wait timed out, no response/transfer. No tests/browser started and no lock altered."
+}

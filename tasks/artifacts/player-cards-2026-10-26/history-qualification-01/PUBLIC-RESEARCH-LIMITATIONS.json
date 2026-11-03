@@ -1,0 +1,19 @@
+{
+  "nstDefinitions": {
+    "url": "https://www.naturalstattrick.com/glossary.php",
+    "result": "Web tool Fetch denied by robots.txt, non-retryable",
+    "rawDownloadAttempted": false,
+    "thirdPartyDefinitionsUsed": false
+  },
+  "nhlLanding": {
+    "url": "https://api-web.nhle.com/v1/gamecenter/2026020167/landing",
+    "webResult": "Not accessible via web tool",
+    "boundedLocalRead": "Succeeded; public JSON retained once; no permission denial or security setting changed"
+  },
+  "nhlReport": {
+    "url": "https://www.nhl.com/scores/htmlreports/20262027/GS020167.HTM",
+    "source": "Published NHL HTML game-summary URL convention; identity checked against returned report, history, landing and retained game",
+    "webResearchReference": "https://www.nhl.com/scores/htmlreports/20212022/GS030414.HTM",
+    "result": "Current report captured; parse/minute precision/timezone and admission still pending"
+  }
+}

@@ -1,0 +1,49 @@
+[
+  {
+    "checked_at": "2026-11-01 18:38:55.729975+00",
+    "database_name": "postgres",
+    "execution_role": "postgres",
+    "admission_relation": null,
+    "goalie_control_relation": null,
+    "job_control_relation": null,
+    "admission_routines": [],
+    "postgres_defaults": [
+      {
+        "defaclacl": [
+          "postgres=X/postgres"
+        ],
+        "schema_name": "GLOBAL",
+        "defaclobjtype": "f"
+      },
+      {
+        "defaclacl": [
+          "postgres=rwU/postgres"
+        ],
+        "schema_name": "public",
+        "defaclobjtype": "S"
+      },
+      {
+        "defaclacl": [
+          "postgres=X/postgres"
+        ],
+        "schema_name": "public",
+        "defaclobjtype": "f"
+      },
+      {
+        "defaclacl": [
+          "postgres=arwdDxt/postgres"
+        ],
+        "schema_name": "public",
+        "defaclobjtype": "r"
+      }
+    ],
+    "service_schema_usage": true,
+    "plpgsql_available": true,
+    "matching_history": [
+      {
+        "name": "data_api_explicit_default_privileges",
+        "version": "20261101183548"
+      }
+    ]
+  }
+]

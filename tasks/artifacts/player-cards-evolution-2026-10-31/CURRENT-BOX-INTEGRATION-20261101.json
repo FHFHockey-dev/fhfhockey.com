@@ -1,0 +1,86 @@
+{
+  "at": "2026-11-01T17:32:17.672423+00:00",
+  "scope": "Reviewed current-box extension attached separately to retained BLSH research; no score/current/advanced admission",
+  "changedSourceFiles": [
+    {
+      "path": "web/components/player-cards/PlayerAnalysisCard.tsx",
+      "beforeSHA256": "2d705ef3df7851e54a52668a614eb72e70b321a147f16b97efb6cbd33186b7d5",
+      "afterSHA256": "f713ece18bab6f99b2d68e5492cd9199936d02bc45db0602f27e5691b740c5e1"
+    },
+    {
+      "path": "web/components/player-cards/PlayerAnalysisStudio.test.tsx",
+      "beforeSHA256": "0ba20372d191f55dd5398af9854f98d30e85edf0df513124b4f3c61809be76bb",
+      "afterSHA256": "ccfdf4b77dd5722b7dd4fb2c4fc07fe21047e21587afca9ddea944514606e60d"
+    },
+    {
+      "path": "web/components/player-cards/PlayerAnalysisStudio.tsx",
+      "beforeSHA256": "aa1f1751a5826e66026c1ef8dbf9b30fb1c560075cd7139be734df77cbf6116f",
+      "afterSHA256": "b7562f5cd5f0ad2e79ead9e40c4637da47fda6949642bf251499e08429118e50"
+    },
+    {
+      "path": "web/lib/player-cards/analysisEvidence.ts",
+      "beforeSHA256": "0d051d6e2dea02c5f39c10962e0cc508d83cc9d797042e60d540744956f17a56",
+      "afterSHA256": "c44f8d606b72daec5cd7b8d816b53c69d97dcf47c82c02a4f90341527d56ce68"
+    },
+    {
+      "path": "web/lib/player-cards/analysisExport.ts",
+      "beforeSHA256": "2c24fca5de8a7f9f42cfe411722140282c01c94158a7dc917daa1e3df3018ea9",
+      "afterSHA256": "ff5babdfb11862b390f9eb10fa4762860880a1000a7c985a0fa5169f68529b2f"
+    },
+    {
+      "path": "web/lib/player-cards/retainedBlsh.test.ts",
+      "beforeSHA256": "0c8e3e5a60ff946d66603d784782b1c286ae378b2fe4d2000c5eafb83981e351",
+      "afterSHA256": "97a399efa0b137cec57968f1e3d88b36d452d363a89c345f91cce65e704dc353"
+    },
+    {
+      "path": "web/lib/player-cards/retainedBlsh.ts",
+      "beforeSHA256": "c90be0b59c68fcc0392e45a95305b148caa5ea6a1cf43669bdd69e47ef562b14",
+      "afterSHA256": "328d56eceec9248568f5fb1b08397ede0a7ee6d64d9bbc5facb061d6449f80be"
+    }
+  ],
+  "sourceDelta": "current-box-integration-20261101.patch",
+  "review": {
+    "path": "tasks/artifacts/rso-blsh-independent-review-2026-11-01/CURRENT-BOX-REVIEW.md",
+    "sha256": "166b65ff7be1a16883d2546c4a1a03b54f286963324e494b1ebba0a41aeb2ce9"
+  },
+  "accounting": {
+    "rows": 3407,
+    "exposureQualifiedRows": 2774,
+    "exposureQualifiedWithCountDifferences": 46,
+    "matchExposureAndFiveCounts": 2728,
+    "differentExposureOrCounts": 99,
+    "unavailable": 580
+  },
+  "implemented": [
+    "Separate exact-pin comparison attachment, preserving original lineage sidecar and complete profile",
+    "Field match/mismatch/unknown states plus both dated WGO/box values, hashes and capture times retained in immutable manifest",
+    "Matching exposure never promotes differing counts; original research values and scores remain unchanged",
+    "Visible PNG scope is TOI plus five counts, with differing fields/unknown rows and stale-research labels",
+    "Qualified retained-research PNG does not require a separate NHL capture; unsupported NHL analysis remains blocked"
+  ],
+  "checks": {
+    "unit": "26/26 across retainedBlsh, analysisEvidence and PlayerAnalysisStudio; current-box-final-tests-20261101.log. Final scope-label-only change:10/10 retainedBlsh rerun, overlapping tests not additive.",
+    "types": "PASS current-box-corrected-types-20261101.log; first pass caught intentionally minimal unit-fixture type cast, corrected with no runtime change",
+    "lint": "PASS seven changed files; final labels also pass scoped lint",
+    "browser": "PASS CURRENT-BOX-BROWSER-20261101.json:two actual1200x1020PNG+manifest pairs,320px,zeroHTTP/errors,no truncation; final discrepancy PNG visually inspected",
+    "sourceBinding": "Pinned reviewed ROW/BOX/receipt/review;3407row identities reconciled, selected original profiles and all per-field comparisons equal source payloads",
+    "originalCardFilesUnchanged": 78,
+    "fullProjectTypes": "not repeated; previous full-project pass is historical"
+  },
+  "resource": "Initial browser attempt did not start under BLSH lock; bounded wait acquired free slot, checks passed, own slot released. No competing server/job.",
+  "remainingGates": [
+    "Existing-editor/lookup/source custody and canonical integration",
+    "Observed ranking policy and full per-metric population proof",
+    "Observed goalie payload/source qualification",
+    "Qualified actual Yahoo trade records",
+    "NST model/publication/native strength and remaining source gaps; current boxes do not qualify advanced metrics"
+  ],
+  "sourceRequests": 0,
+  "databaseRequests": 0,
+  "repairs": 0,
+  "deployments": 0,
+  "pushes": 0,
+  "deniedOrUncertainActions": [],
+  "originalApprovedSubtasksRemaining": 12,
+  "additionalCompletedRegression": "NEW-PC-02"
+}

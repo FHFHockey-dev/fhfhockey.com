@@ -1,0 +1,1747 @@
+[
+  {
+    "table_name": "nst_gamelog_goalie_5v5_counts",
+    "columns": [
+      {
+        "type": "integer",
+        "column": "player_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "column": "player_name",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "column": "team",
+        "nullable": "YES"
+      },
+      {
+        "type": "date",
+        "column": "date_scraped",
+        "nullable": "NO"
+      },
+      {
+        "type": "integer",
+        "column": "season",
+        "nullable": "NO"
+      },
+      {
+        "type": "integer",
+        "column": "gp",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "toi",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "shots_against",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "saves",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "goals_against",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "sv_percentage",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "gaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "gsaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "xg_against",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "hd_shots_against",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "hd_saves",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "hd_sv_percentage",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "hd_gaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "hd_gsaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "md_shots_against",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "md_saves",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "md_goals_against",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "md_sv_percentage",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "md_gaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "md_gsaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "ld_shots_against",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "ld_sv_percentage",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "ld_gaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "ld_gsaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "rush_attempts_against",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "rebound_attempts_against",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "avg_shot_distance",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "avg_goal_distance",
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "nst_gamelog_goalie_5v5_rates",
+    "columns": [
+      {
+        "type": "integer",
+        "column": "player_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "column": "player_name",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "column": "team",
+        "nullable": "YES"
+      },
+      {
+        "type": "date",
+        "column": "date_scraped",
+        "nullable": "NO"
+      },
+      {
+        "type": "integer",
+        "column": "season",
+        "nullable": "NO"
+      },
+      {
+        "type": "integer",
+        "column": "gp",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "toi",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "toi_per_gp",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "shots_against_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "saves_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "sv_percentage",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "gaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "gsaa_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "xg_against_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "hd_shots_against_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "hd_saves_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "hd_sv_percentage",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "hd_gaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "hd_gsaa_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "md_shots_against_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "md_saves_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "md_sv_percentage",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "md_gaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "md_gsaa_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "ld_shots_against_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "ld_saves_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "ld_sv_percentage",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "ld_gaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "ld_gsaa_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "rush_attempts_against_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "rebound_attempts_against_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "avg_shot_distance",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "avg_goal_distance",
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "nst_gamelog_goalie_all_rates",
+    "columns": [
+      {
+        "type": "integer",
+        "column": "player_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "column": "player_name",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "column": "team",
+        "nullable": "YES"
+      },
+      {
+        "type": "date",
+        "column": "date_scraped",
+        "nullable": "NO"
+      },
+      {
+        "type": "integer",
+        "column": "season",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "gp",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "toi",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "toi_per_gp",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "shots_against_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "saves_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "sv_percentage",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "gaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "gsaa_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "xg_against_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "hd_shots_against_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "hd_saves_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "hd_sv_percentage",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "hd_gaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "hd_gsaa_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "md_shots_against_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "md_saves_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "md_sv_percentage",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "md_gaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "md_gsaa_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "ld_shots_against_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "ld_saves_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "ld_sv_percentage",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "ld_gaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "ld_gsaa_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "rush_attempts_against_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "rebound_attempts_against_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "avg_shot_distance",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "avg_goal_distance",
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "nst_gamelog_goalie_ev_counts",
+    "columns": [
+      {
+        "type": "integer",
+        "column": "player_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "column": "player_name",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "column": "team",
+        "nullable": "YES"
+      },
+      {
+        "type": "date",
+        "column": "date_scraped",
+        "nullable": "NO"
+      },
+      {
+        "type": "integer",
+        "column": "season",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "gp",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "toi",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "shots_against",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "saves",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "goals_against",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "sv_percentage",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "gaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "gsaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "xg_against",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "hd_shots_against",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "hd_saves",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "hd_sv_percentage",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "hd_gaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "hd_gsaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "md_shots_against",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "md_saves",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "md_goals_against",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "md_sv_percentage",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "md_gaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "md_gsaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "ld_shots_against",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "ld_sv_percentage",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "ld_gaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "ld_gsaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "rush_attempts_against",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "rebound_attempts_against",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "avg_shot_distance",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "avg_goal_distance",
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "nst_gamelog_goalie_ev_rates",
+    "columns": [
+      {
+        "type": "integer",
+        "column": "player_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "column": "player_name",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "column": "team",
+        "nullable": "YES"
+      },
+      {
+        "type": "date",
+        "column": "date_scraped",
+        "nullable": "NO"
+      },
+      {
+        "type": "integer",
+        "column": "season",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "gp",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "toi",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "toi_per_gp",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "shots_against_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "saves_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "sv_percentage",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "gaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "gsaa_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "xg_against_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "hd_shots_against_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "hd_saves_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "hd_sv_percentage",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "hd_gaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "hd_gsaa_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "md_shots_against_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "md_saves_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "md_sv_percentage",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "md_gaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "md_gsaa_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "ld_shots_against_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "ld_saves_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "ld_sv_percentage",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "ld_gaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "ld_gsaa_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "rush_attempts_against_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "rebound_attempts_against_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "avg_shot_distance",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "avg_goal_distance",
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "nst_gamelog_goalie_pk_counts",
+    "columns": [
+      {
+        "type": "integer",
+        "column": "player_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "column": "player_name",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "column": "team",
+        "nullable": "YES"
+      },
+      {
+        "type": "date",
+        "column": "date_scraped",
+        "nullable": "NO"
+      },
+      {
+        "type": "integer",
+        "column": "season",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "gp",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "toi",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "shots_against",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "saves",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "goals_against",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "sv_percentage",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "gaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "gsaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "xg_against",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "hd_shots_against",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "hd_saves",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "hd_sv_percentage",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "hd_gaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "hd_gsaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "md_shots_against",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "md_saves",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "md_goals_against",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "md_sv_percentage",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "md_gaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "md_gsaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "ld_shots_against",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "ld_sv_percentage",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "ld_gaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "ld_gsaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "rush_attempts_against",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "rebound_attempts_against",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "avg_shot_distance",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "avg_goal_distance",
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "nst_gamelog_goalie_pk_rates",
+    "columns": [
+      {
+        "type": "integer",
+        "column": "player_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "column": "player_name",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "column": "team",
+        "nullable": "YES"
+      },
+      {
+        "type": "date",
+        "column": "date_scraped",
+        "nullable": "NO"
+      },
+      {
+        "type": "integer",
+        "column": "season",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "gp",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "toi",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "toi_per_gp",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "shots_against_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "saves_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "sv_percentage",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "gaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "gsaa_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "xg_against_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "hd_shots_against_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "hd_saves_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "hd_sv_percentage",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "hd_gaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "hd_gsaa_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "md_shots_against_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "md_saves_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "md_sv_percentage",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "md_gaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "md_gsaa_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "ld_shots_against_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "ld_saves_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "ld_sv_percentage",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "ld_gaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "ld_gsaa_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "rush_attempts_against_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "rebound_attempts_against_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "avg_shot_distance",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "avg_goal_distance",
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "nst_gamelog_goalie_pp_counts",
+    "columns": [
+      {
+        "type": "integer",
+        "column": "player_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "column": "player_name",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "column": "team",
+        "nullable": "YES"
+      },
+      {
+        "type": "date",
+        "column": "date_scraped",
+        "nullable": "NO"
+      },
+      {
+        "type": "integer",
+        "column": "season",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "gp",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "toi",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "shots_against",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "saves",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "goals_against",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "sv_percentage",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "gaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "gsaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "xg_against",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "hd_shots_against",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "hd_saves",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "hd_sv_percentage",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "hd_gaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "hd_gsaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "md_shots_against",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "md_saves",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "md_goals_against",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "md_sv_percentage",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "md_gaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "md_gsaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "ld_shots_against",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "ld_sv_percentage",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "ld_gaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "ld_gsaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "rush_attempts_against",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "rebound_attempts_against",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "avg_shot_distance",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "avg_goal_distance",
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "nst_gamelog_goalie_pp_rates",
+    "columns": [
+      {
+        "type": "integer",
+        "column": "player_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "column": "player_name",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "column": "team",
+        "nullable": "YES"
+      },
+      {
+        "type": "date",
+        "column": "date_scraped",
+        "nullable": "NO"
+      },
+      {
+        "type": "integer",
+        "column": "season",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "gp",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "toi",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "toi_per_gp",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "shots_against_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "saves_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "sv_percentage",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "gaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "gsaa_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "xg_against_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "hd_shots_against_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "hd_saves_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "hd_sv_percentage",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "hd_gaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "hd_gsaa_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "md_shots_against_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "md_saves_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "md_sv_percentage",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "md_gaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "md_gsaa_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "ld_shots_against_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "ld_saves_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "ld_sv_percentage",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "ld_gaa",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "ld_gsaa_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "rush_attempts_against_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "rebound_attempts_against_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "avg_shot_distance",
+        "nullable": "YES"
+      },
+      {
+        "type": "numeric",
+        "column": "avg_goal_distance",
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "wgo_goalie_stats",
+    "columns": [
+      {
+        "type": "integer",
+        "column": "goalie_id",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "column": "goalie_name",
+        "nullable": "NO"
+      },
+      {
+        "type": "date",
+        "column": "date",
+        "nullable": "NO"
+      },
+      {
+        "type": "text",
+        "column": "shoots_catches",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "column": "position_code",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "games_played",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "games_started",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "wins",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "losses",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "ot_losses",
+        "nullable": "YES"
+      },
+      {
+        "type": "double precision",
+        "column": "save_pct",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "saves",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "goals_against",
+        "nullable": "YES"
+      },
+      {
+        "type": "double precision",
+        "column": "goals_against_avg",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "shots_against",
+        "nullable": "YES"
+      },
+      {
+        "type": "double precision",
+        "column": "time_on_ice",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "shutouts",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "goals",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "assists",
+        "nullable": "YES"
+      },
+      {
+        "type": "double precision",
+        "column": "complete_game_pct",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "complete_games",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "incomplete_games",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "quality_start",
+        "nullable": "YES"
+      },
+      {
+        "type": "double precision",
+        "column": "quality_starts_pct",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "regulation_losses",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "regulation_wins",
+        "nullable": "YES"
+      },
+      {
+        "type": "double precision",
+        "column": "shots_against_per_60",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "games_played_days_rest_0",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "games_played_days_rest_1",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "games_played_days_rest_2",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "games_played_days_rest_3",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "games_played_days_rest_4_plus",
+        "nullable": "YES"
+      },
+      {
+        "type": "double precision",
+        "column": "save_pct_days_rest_0",
+        "nullable": "YES"
+      },
+      {
+        "type": "double precision",
+        "column": "save_pct_days_rest_1",
+        "nullable": "YES"
+      },
+      {
+        "type": "double precision",
+        "column": "save_pct_days_rest_2",
+        "nullable": "YES"
+      },
+      {
+        "type": "double precision",
+        "column": "save_pct_days_rest_3",
+        "nullable": "YES"
+      },
+      {
+        "type": "double precision",
+        "column": "save_pct_days_rest_4_plus",
+        "nullable": "YES"
+      },
+      {
+        "type": "integer",
+        "column": "season_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "column": "team_abbreviation",
+        "nullable": "YES"
+      },
+      {
+        "type": "bigint",
+        "column": "game_id",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "column": "opponent_team_abbrev",
+        "nullable": "YES"
+      },
+      {
+        "type": "text",
+        "column": "home_road",
+        "nullable": "YES"
+      }
+    ]
+  }
+]

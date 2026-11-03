@@ -1,0 +1,26 @@
+{
+  "atUtc": "2026-11-01T15:25:50.856794+00:00",
+  "checks": [
+    {
+      "name": "tests",
+      "command": [
+        "npm",
+        "test",
+        "--",
+        "--run",
+        "__tests__/pages/api/v1/db/update-nst-goalies.route.test.ts",
+        "lib/cron/nstBurstPlans.test.ts",
+        "lib/routeRunner/core.test.ts",
+        "lib/routeRunner/tick.test.ts",
+        "lib/routeRunner/store.test.ts",
+        "__tests__/pages/api/v1/db/cron-report.test.ts",
+        "__tests__/components/CronReportEmail/CronAuditEmail.test.tsx",
+        "--maxWorkers=1",
+        "--minWorkers=1"
+      ],
+      "exitCode": 1
+    }
+  ],
+  "networkGuard": "offline.cjs",
+  "scope": "Transferred route/runner/report closure with mocked IO and offline guard. No production verification."
+}

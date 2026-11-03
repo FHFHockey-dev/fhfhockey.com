@@ -1,0 +1,269 @@
+{
+  "renderVersion": "fhfh-current-card-v2",
+  "card": {
+    "id": "nhl-8476453-20262027-10-2026-10-27T00:42:33.268Z-2026020177.2026020167.2026020151.2026020123.2026020111.2026020095.2026020081.2026020060.2026020040.2026020024",
+    "source": "nhl-retained",
+    "state": "ready",
+    "player": {
+      "id": 8476453,
+      "name": "Nikita Kucherov",
+      "team": "TBL",
+      "position": "R"
+    },
+    "request": {
+      "playerId": 8476453,
+      "season": 20262027,
+      "count": 10
+    },
+    "observedAt": "2026-10-27T00:42:33.268Z",
+    "sample": {
+      "gp": 10,
+      "toiSeconds": 12521,
+      "sourceDates": [
+        "2026-10-24",
+        "2026-10-23",
+        "2026-10-20",
+        "2026-10-17",
+        "2026-10-15",
+        "2026-10-13",
+        "2026-10-10",
+        "2026-10-08",
+        "2026-10-05",
+        "2026-10-03"
+      ],
+      "utcDates": [
+        "2026-10-25",
+        "2026-10-24",
+        "2026-10-21",
+        "2026-10-17",
+        "2026-10-15",
+        "2026-10-13",
+        "2026-10-10",
+        "2026-10-08",
+        "2026-10-05",
+        "2026-10-03"
+      ],
+      "gameIds": [
+        2026020177,
+        2026020167,
+        2026020151,
+        2026020123,
+        2026020111,
+        2026020095,
+        2026020081,
+        2026020060,
+        2026020040,
+        2026020024
+      ]
+    },
+    "values": {
+      "atoi": 20.868333333333332,
+      "shots60": 8.62550914463701,
+      "goals60": 0.862550914463701,
+      "points60": 3.737720629342704,
+      "goals": 3,
+      "assists": 10,
+      "points": 13,
+      "shots": 30,
+      "shootingPct": 10
+    },
+    "issues": [],
+    "rankReason": "Rank and percentile unavailable: no verified all-NHL same-definition population for this window.",
+    "evidence": {
+      "version": "nhl-basic-skater-v1",
+      "sourcePaths": [
+        "/v1/player/8476453/landing",
+        "/v1/player/8476453/game-log/20262027/2",
+        "/v1/club-schedule-season/TBL/20262027"
+      ],
+      "seasonGp": 11,
+      "selectedGames": [
+        {
+          "gameId": 2026020177,
+          "providerDate": "2026-10-24",
+          "utcStart": "2026-10-25T01:00:00Z",
+          "team": "TBL",
+          "finalStatusAtObservation": "OFF",
+          "toiSeconds": 1202,
+          "goals": 0,
+          "assists": 1,
+          "points": 1,
+          "shots": 3
+        },
+        {
+          "gameId": 2026020167,
+          "providerDate": "2026-10-23",
+          "utcStart": "2026-10-24T01:00:00Z",
+          "team": "TBL",
+          "finalStatusAtObservation": "OFF",
+          "toiSeconds": 1243,
+          "goals": 0,
+          "assists": 0,
+          "points": 0,
+          "shots": 2
+        },
+        {
+          "gameId": 2026020151,
+          "providerDate": "2026-10-20",
+          "utcStart": "2026-10-21T02:30:00Z",
+          "team": "TBL",
+          "finalStatusAtObservation": "OFF",
+          "toiSeconds": 1099,
+          "goals": 1,
+          "assists": 2,
+          "points": 3,
+          "shots": 2
+        },
+        {
+          "gameId": 2026020123,
+          "providerDate": "2026-10-17",
+          "utcStart": "2026-10-17T20:00:00Z",
+          "team": "TBL",
+          "finalStatusAtObservation": "OFF",
+          "toiSeconds": 1240,
+          "goals": 2,
+          "assists": 0,
+          "points": 2,
+          "shots": 7
+        },
+        {
+          "gameId": 2026020111,
+          "providerDate": "2026-10-15",
+          "utcStart": "2026-10-15T23:00:00Z",
+          "team": "TBL",
+          "finalStatusAtObservation": "OFF",
+          "toiSeconds": 1336,
+          "goals": 0,
+          "assists": 0,
+          "points": 0,
+          "shots": 8
+        },
+        {
+          "gameId": 2026020095,
+          "providerDate": "2026-10-13",
+          "utcStart": "2026-10-13T23:15:00Z",
+          "team": "TBL",
+          "finalStatusAtObservation": "OFF",
+          "toiSeconds": 1395,
+          "goals": 0,
+          "assists": 0,
+          "points": 0,
+          "shots": 2
+        },
+        {
+          "gameId": 2026020081,
+          "providerDate": "2026-10-10",
+          "utcStart": "2026-10-10T23:30:00Z",
+          "team": "TBL",
+          "finalStatusAtObservation": "OFF",
+          "toiSeconds": 1066,
+          "goals": 0,
+          "assists": 2,
+          "points": 2,
+          "shots": 1
+        },
+        {
+          "gameId": 2026020060,
+          "providerDate": "2026-10-08",
+          "utcStart": "2026-10-08T23:00:00Z",
+          "team": "TBL",
+          "finalStatusAtObservation": "OFF",
+          "toiSeconds": 1255,
+          "goals": 0,
+          "assists": 2,
+          "points": 2,
+          "shots": 1
+        },
+        {
+          "gameId": 2026020040,
+          "providerDate": "2026-10-05",
+          "utcStart": "2026-10-05T23:00:00Z",
+          "team": "TBL",
+          "finalStatusAtObservation": "OFF",
+          "toiSeconds": 1319,
+          "goals": 0,
+          "assists": 2,
+          "points": 2,
+          "shots": 1
+        },
+        {
+          "gameId": 2026020024,
+          "providerDate": "2026-10-03",
+          "utcStart": "2026-10-03T23:00:00Z",
+          "team": "TBL",
+          "finalStatusAtObservation": "OFF",
+          "toiSeconds": 1366,
+          "goals": 0,
+          "assists": 1,
+          "points": 1,
+          "shots": 3
+        }
+      ],
+      "actualEndTimesSupplied": false
+    },
+    "historyStatement": "Season game-log appearance count reconciled with NHL season totals; no career-history claim.",
+    "finalityStatement": "NHL FINAL/OFF at observation; actual game-end timestamps are not supplied. Current window only; no historical cutoff claim."
+  },
+  "format": "results-milestones",
+  "artwork": {
+    "state": "unavailable",
+    "reason": "A verified matching player image is unavailable.",
+    "playerId": 8476453,
+    "team": "TBL"
+  },
+  "selectedMetrics": [
+    "goals",
+    "assists",
+    "points",
+    "shots",
+    "shootingPct"
+  ],
+  "definitions": {
+    "atoi": {
+      "label": "Ice time / game",
+      "unit": "time",
+      "definition": "NHL game-log TOI seconds / appearances / 60"
+    },
+    "shots60": {
+      "label": "Shots /60",
+      "unit": "rate",
+      "definition": "NHL shots on goal × 3600 / NHL game-log TOI seconds"
+    },
+    "goals60": {
+      "label": "Goals /60",
+      "unit": "rate",
+      "definition": "NHL goals × 3600 / NHL game-log TOI seconds"
+    },
+    "points60": {
+      "label": "Points /60",
+      "unit": "rate",
+      "definition": "NHL points × 3600 / NHL game-log TOI seconds"
+    },
+    "goals": {
+      "label": "Goals",
+      "unit": "count",
+      "definition": "Sum of NHL game-log goals in selected appearances"
+    },
+    "assists": {
+      "label": "Assists",
+      "unit": "count",
+      "definition": "Sum of NHL game-log assists in selected appearances"
+    },
+    "points": {
+      "label": "Points",
+      "unit": "count",
+      "definition": "Sum of NHL game-log points in selected appearances"
+    },
+    "shots": {
+      "label": "Shots on goal",
+      "unit": "count",
+      "definition": "Sum of NHL game-log shots in selected appearances"
+    },
+    "shootingPct": {
+      "label": "Shooting% · actual",
+      "unit": "percent",
+      "definition": "NHL goals / shots on goal × 100; zero shots is undefined"
+    }
+  },
+  "inputHashScope": "Source paths and selected normalized game inputs; no raw-response hash or exact end-time claim"
+}

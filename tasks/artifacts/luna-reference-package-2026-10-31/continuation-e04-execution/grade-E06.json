@@ -1,0 +1,53 @@
+{
+  "caseId": "E06",
+  "cliExitCode": 2,
+  "candidateArtifactSha256": "b39fec3122db564a9699eeb35c611d0e2fa023705aa24769f3971f7ea616b4b6",
+  "candidateVersion": null,
+  "originalReviewAloneScored": true,
+  "scoredAt": "2026-10-31T22:26:32.838Z",
+  "status": "held",
+  "score": {
+    "identity": true,
+    "goalie": false,
+    "decisions": false,
+    "labelMatch": false
+  },
+  "holds": [
+    "goalie_subject_binding_invalid"
+  ],
+  "proceed": false,
+  "callsThisReport": 1,
+  "cumulativeCalls": 7,
+  "aggregateExposureNanoUsd": 265263690,
+  "usagePricedCeilingNanoUsd": 458591,
+  "requestIds": [
+    "req_284566fb7592479eb04c18bfe57c47b1"
+  ],
+  "providerUsage": [
+    {
+      "hash": "a3f5c84126412a9d3e070017013f03152caeeb776aa488be61c0a4a64d82ab7e",
+      "state": "settled",
+      "endpoint": "responses",
+      "requestId": "req_284566fb7592479eb04c18bfe57c47b1",
+      "model": "gpt-6-luna",
+      "usage": {
+        "input_tokens": 3144,
+        "input_tokens_details": {
+          "cache_write_tokens": 0,
+          "cache_write_tokens_details": {
+            "ttl_12h_tokens": 0,
+            "ttl_30m_tokens": 0
+          },
+          "cached_tokens": 0
+        },
+        "output_tokens": 205,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 3349
+      }
+    }
+  ],
+  "ledgerEnabled": false,
+  "ledgerBlockedReason": "bounded_continuation_stopped"
+}

@@ -1,0 +1,27 @@
+--- a/web/lib/projections/verifiedForgeReleases.ts
++++ b/web/lib/projections/verifiedForgeReleases.ts
+@@ -86,6 +86,14 @@
+     verifierVersion: "forge-release-sha-verifier-v1",
+     note: "P1 release: RSO bridge labelled conservative 0 (bridgeForecastWire.ts), commit eff1b377a: 194-module closure, 0 findings.",
+   },
++  {
++    closureSha256: "f87dd7079506915fbdb9602d35c3a97270865ae0f4b8813c4456d6d09e96dc92",
++    commit: "f17bea20d8caa2b6268c318bdb2152d7e2a3b57d",
++    receipt: "tasks/artifacts/rso-resume-2026-11-01/release-prep/after402-committed-release.json",
++    receiptSha256: "a9674d30f42b32d88b604a33672e311c74470075da3c9219c1bb613bb2b43b3a",
++    verifierVersion: "forge-release-sha-verifier-v1",
++    note: "Released PR #402 PP/IFTTT producer closure, commit f17bea20d: 195-module closure, 0 findings. This does not grant native forecast-use approval.",
++  },
+ ];
+ 
+ const FULL_SHA = /^[0-9a-f]{40}$/, SHA256 = /^[0-9a-f]{64}$/;
+--- a/web/lib/projections/verifiedForgeReleases.test.ts
++++ b/web/lib/projections/verifiedForgeReleases.test.ts
+@@ -57,6 +57,7 @@
+       ["87edd78f5dfa96eded8a32927ef184d9266995edf52f395cf5ac6b8565c64f97", "5aa9ba5e0e9e86abf515fd7a30db441f6f5b1592"],
+       ["5644e3fdb1e230e0a063a27b52519cc8e70b88272e92f27ca5aadc8f53d1dea4", "02153acbaf1ed02c0c294ba14a75e8af195354f3"],
+       ["bf23edfea5b5c9301fcedd2b5c3fa86016ceecd86d1d2d49c0a6d6c687e7ab3b", "eff1b377ae8c831705710758979cc67e9d38846b"],
++      ["f87dd7079506915fbdb9602d35c3a97270865ae0f4b8813c4456d6d09e96dc92", "f17bea20d8caa2b6268c318bdb2152d7e2a3b57d"],
+     ]);
+   });
+ 

@@ -1,0 +1,14 @@
+{
+  "id": "CODEX-PLAYER-CARDS-LIVELOAD16-20261029",
+  "at": "2026-10-29T19:09:42.280064+00:00",
+  "owner_thread": "01a16ec2-f81c-717b-8961-8c3832fdc00f",
+  "source_paths": [
+    "web/components/player-cards/CurrentPlayerCardStudio.tsx",
+    "web/components/player-cards/CurrentPlayerCardStudio.test.tsx"
+  ],
+  "artifact_root": "tasks/artifacts/player-cards-2026-10-29/live-load-16",
+  "base_head": "8088df32f05eab90f50efde9ba713814c6942e36",
+  "authority": "TJ current-data request and immediate local load-failure correction via Scout",
+  "scope": "Bounded selected-player local current provider wiring; readable bounded error response; preserve15/14 replay routes and all artwork",
+  "status": "FROZEN_LOCAL_CHECKPOINT16"
+}

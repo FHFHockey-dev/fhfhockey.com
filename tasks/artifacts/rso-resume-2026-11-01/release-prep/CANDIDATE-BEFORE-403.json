@@ -1,0 +1,60 @@
+{
+  "at": "2026-11-01T19:15:16.719332+00:00",
+  "state": "SELECTED_REPLACEMENT_PENDING_OWNER_HANDOFF",
+  "selectedCommittedBase": "f17bea20d8caa2b6268c318bdb2152d7e2a3b57d",
+  "baseTree": "92517944c869baef86f6d9a869c5a5ab2992e24a",
+  "candidateTree": "9820a239181765a7eae2597c32c0f380c0260b5a",
+  "candidateCommit": null,
+  "overlayFiles": [
+    {
+      "path": "web/lib/player-forecasts/rsoUsePolicy.ts",
+      "sha256": "8299f6ff97d1ae8bf3836f1202b0eb82586cea4abf70b642a612e03c861d7aad"
+    },
+    {
+      "path": "web/lib/player-forecasts/rsoUsePolicy.test.ts",
+      "sha256": "bda984e71954a157f644e84e8a7fbb5b89b27a3b7f790e18c633e51b5f9f6a90"
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/planningReproducibility.test.ts",
+      "sha256": "7aa609b962ce392342bb272c57bc1609225ac686ad93e1807428906fce381198"
+    },
+    {
+      "path": "web/e2e/roster-schedule-optimizer.spec.ts",
+      "sha256": "fb096e6a413c6e4e79111cfffd9fb69974672133e2d46ae41d584592e0665be9"
+    }
+  ],
+  "exportRoot": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-rso-pr402-pqt3kenq",
+  "exportCurrently": "candidate",
+  "excludedEnvironmentFiles": [
+    "web/.env.development",
+    "web/.env.production",
+    "web/.env.test"
+  ],
+  "predecessorCandidateTree": "a77527cdc29fd994bc0e28a4b2d5ec1b87acbe14",
+  "predecessorBase": "4965a872a9746b6129c9ac589c200560d01a1e23",
+  "supersessionReason": "PR402 merged; preserve all newly released code",
+  "limits": "Artifact-only export and Git-free hashes; no checkout/index/ref/admission writes or replacement custody request",
+  "closureChecks": [
+    {
+      "stage": "baseline",
+      "exitCode": 0,
+      "receipt": "after402-baseline-closure.json",
+      "receiptSha256": "3b7e3d81f8ea80650cbc94ca8380207aa1f47daf0627d4210b3161e5aeb03df2",
+      "closureSha256": "f87dd7079506915fbdb9602d35c3a97270865ae0f4b8813c4456d6d09e96dc92",
+      "moduleCount": 195,
+      "findings": []
+    },
+    {
+      "stage": "candidate",
+      "exitCode": 0,
+      "receipt": "after402-candidate-closure.json",
+      "receiptSha256": "4e6dab63aee4d2119a65e03859f88eba2945fe20e2d8b091c6dde89c973bcca0",
+      "closureSha256": "ec5bdab6593f58ec19ad9b250fb645aa377616542e98205150e22f085914968c",
+      "moduleCount": 195,
+      "findings": []
+    }
+  ],
+  "verifiedAt": "2026-11-01T19:15:46.557609+00:00",
+  "selectedBy": "Parent delegation explicitly updating the previously TJ-authorized custody request to exact #402 base/tree",
+  "selectedAt": "2026-11-01T19:24:57.985134+00:00"
+}

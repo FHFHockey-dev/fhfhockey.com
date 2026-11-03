@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-28T04:00:10.689602+00:00",
+  "allOwnTokensReleased": true,
+  "lastBrowserBatchExitCode": 0,
+  "lastBrowserBatchSeconds": 2.458,
+  "staticPreviewHoldsNoHeavySlot": true,
+  "coordinatorMessageDelivered": {
+    "threadId": "01a16e23-72b5-76ee-8ade-2d209d0e7002",
+    "purpose": "InformwaitingcronandUnity thatourchecksarefinished/recheckandacquire normally; no newslotreservation"
+  },
+  "otherHoldersNotDisturbed": true
+}

@@ -1,0 +1,7 @@
+.editor { margin: 20px 0 28px; border-top: 1px solid #555; border-bottom: 1px solid #555; padding: 18px 0; }
+.heading { display: flex; gap: 12px; align-items: center; justify-content: space-between; h2 { font-size: 21px; margin: 0; } }
+.hint { color: #b6b9bc; font-size: 14px; }
+.ring { min-width: 0; margin: 18px 0; padding: 12px 0 0; border: 0; border-top: 1px solid #41464b; legend { padding-right: 12px; color: #80dfff; font-weight: 700; } }
+.fields { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; label { display: grid; gap: 6px; font-size: 14px; } input, select { font: inherit; min-height: 44px; border: 1px solid #62666b; border-radius: 3px; background: #25292e; color: #f2f1eb; padding: 8px; } input { width: 96px; } input[type=color] { width: 60px; } select { max-width: 100%; } }
+.moves { display: flex; flex-wrap: wrap; gap: 6px; }
+@media(max-width: 760px) { .heading { flex-wrap: wrap; } .fields { label:first-child { width: 100%; } } }

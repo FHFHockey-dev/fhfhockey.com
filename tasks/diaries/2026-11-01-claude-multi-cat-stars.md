@@ -19,4 +19,6 @@
 **Period control ticket:** shared control added at seam 884b4839d, default is the matchup week holding the cutoff; details in the receipt.
 - Two isolated servers share `.next-playwright`, so they destroy each other's build: 500s and goto timeouts, not test failures. Run when no other `next dev -p 3000 -p 31xx` is up.
 
+**SS-1103-H (2026-11-03):** the pager now takes its cutoff from the edition's `generatedAt`, so the spec's fixture edition is pinned to 2026-11-01 (cutoff Oct 31, the calendar mock's CUTOFF), with expiry still ten minutes from now. 8 of 8 passed on isolated port 3110 after the other session's schedule spec finished. Spec-only commit; this diary note is uncommitted by the ticket's rule.
+
 **Next:** Chef renders on real data.

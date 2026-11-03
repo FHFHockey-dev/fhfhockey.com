@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-31T21:36:37.842394+00:00",
+  "beforeSha256": "112b1763f21d3c953386498fd44d0627731625de4c53b34d8e154358baed8b26",
+  "afterSha256": "dfc5831fa049008f97c52cdd1e2d18cc046459c4f8d4e653cc3ad8e4994a0584",
+  "changedFields": [
+    "approvedPolicyId",
+    "enabled",
+    "blockedReason"
+  ],
+  "allThreeAttemptsPreserved": true,
+  "authorization": "Parent authorizes exact independently accepted E03-E16 continuation under existing bounded testing authority."
+}

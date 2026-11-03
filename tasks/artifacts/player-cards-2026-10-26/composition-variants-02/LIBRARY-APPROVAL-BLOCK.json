@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-26T17:50:10.041138+00:00",
+  "status": "automatic-approval-rejected-before-execution",
+  "action": "Save exactly two current synthetic-stat card PNGs to owner ChatGPT Library with supported prepared-upload workflow",
+  "reason": "Uploads create an external side effect; trusted user text asks for a status update but does not explicitly authorize sharing these files or identify the destination",
+  "helperStarted": false,
+  "createdLibraryIds": [],
+  "uploadsExecuted": 0,
+  "retryPerformed": false,
+  "nextAction": "Ask owner explicit permission to save these two files to their ChatGPT Library; no alternate upload route"
+}

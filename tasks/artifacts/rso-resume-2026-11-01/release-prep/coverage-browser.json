@@ -1,0 +1,27 @@
+{
+  "startedAt": "2026-11-01T19:27:39.664388+00:00",
+  "finishedAt": "2026-11-01T19:27:50.041967+00:00",
+  "exitCode": 0,
+  "timedOut": false,
+  "command": [
+    "node",
+    "node_modules/@playwright/test/cli.js",
+    "test",
+    "--config",
+    "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-rso-pr402-pqt3kenq/web/.rso-verification-playwright.config.ts",
+    "e2e/rso-continuity.spec.ts",
+    "e2e/roster-schedule-optimizer.spec.ts",
+    "--grep",
+    "mixed Kaprizov coverage stays unresolved",
+    "--workers=1",
+    "--retries=0",
+    "--reporter=line",
+    "--output",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-resume-2026-11-01/release-prep/coverage-browser-output"
+  ],
+  "cwd": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-rso-pr402-pqt3kenq/web",
+  "candidateTree": null,
+  "environment": "curated inert values; no environment files",
+  "network": "Node loopback-only guard plus test browser interception",
+  "log": "coverage-browser.log"
+}

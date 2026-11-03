@@ -1,0 +1,43 @@
+{
+  "version": "luna-v4-e03-execution-evidence-v1",
+  "state": "stopped_after_E03_evidence_binding_failure",
+  "applicationPins": {
+    "web/lib/sources/tweetLunaReview.test.ts": "04a38c8ddb5c75d32fbb6cd41d69bce088002592fd879988ed7866e9a59c19b2",
+    "web/lib/sources/tweetLunaReference.ts": "9070da4a660da3240ffca1cbe55d0b8e4d411b895ba679d6c24d49695afb4927",
+    "web/lib/sources/tweetLunaReference.md": "0421aeeefa558e38895c4da5d8fe7879972b4328b6f72e1d943b32ce768b1110",
+    "web/lib/sources/tweetLunaReview.ts": "0aca5d80fd409eb8b1840df65dff37aa5f659dcab664c22b8e14fcc77358b2ce",
+    "web/lib/sources/fixtures/tweetLunaSyntheticCases.ts": "9bc96553a92bdfcfd63ba1ab2235025026e8d88726846183da88d6a31ff52013",
+    "web/lib/sources/tweetLunaGoalieWording.ts": "eb2ceadb1db0d5d16fcab03f2c835ac2d9dce44e4e97853d9fd3159c610b949a",
+    "web/lib/sources/fixtures/tweetLunaEvaluation.ts": "6f441f341627a8296ad0bf7810ee9c72e076bc16b2e9a67ac7afcd92c4dfac09",
+    "web/scripts/rehearse-luna-evaluation.ts": "f510038e837a24ce88df5fe6a9aa00e2e17ed873d871ddcaa3f03456904d6e66",
+    "web/lib/sources/tweetLunaEvaluationScoring.ts": "22797d003c321c3e52ef31945bbc5a4dfb7365ff4dfcfc93454c5bf041f6363d",
+    "web/lib/sources/tweetLunaTransport.ts": "6f67f0e819766eb8b7e712114f063681833ea87266b08443701231461e4d12d1",
+    "web/lib/sources/tweetLunaLocalStore.ts": "52977c7949d2f60ee4274da0c7d1e0583bc8c5c1324bb6ffb187a32037a2d543",
+    "web/scripts/review-ifttt-luna.ts": "b3407da148f11fe4dd3185e8521f3c1c9b4688232acbff675c9d104902cec8e8",
+    "web/lib/sources/fixtures/tweetLunaAdjudicatedLibrary.json": "e787036b54c89f8fa06e4b28032c8895fbbed81feef1fa04e357435f3229726a",
+    "web/lib/sources/decisionsReference/adapter.mjs": "055bc80ccf9874de8a976da6106bc34af15e424d6b905d39fccf57ecfd2b92a1",
+    "web/lib/sources/tweetIdentityProposal.ts": "a73df0483313bc75e94b36bc3fcf9087e1adb7d96afd0895db7a9c8bad7c9a27",
+    "web/lib/sources/tweetPlayerEvents.ts": "14c421d37506f33df08cac5914e30c38a578b2588ae46f3c6e461b70efadc88c"
+  },
+  "frozenPlanSha256": "4714db6b50a246bc05ca2b7cd8f6f90a45e01d39e3a8627e0fece91da9016946",
+  "frozenPreparationManifestSha256": "6dedfd949dee759838498f8792093a6e33021d4cf5979948a5f3a17c0b46f22b",
+  "finalRealLedgerSha256": "fc59014d3ff7f3abdfdec0703ffa77f80e5d02ef764f19d21cb85fc08adbd8f2",
+  "files": {
+    "ACTIVATION.json": "b5cc447f4812ce59e3b8833defbd473e2138f1731e28318c81922641c5827705",
+    "E03-EVIDENCE-CHECK.json": "b65d11197b354f2f938fd3163cd80aa9616bccfa1b743376da09f12eb5f8f4e1",
+    "E03-observed-proposal.json": "34a895140d5f577253d1fe1fc7455ffe3369258fe175e2c291d200b3b2d4ef3b",
+    "E03.cli.log": "8795daead1e29c2dd09843cb07beb7d9419059ed0e4462969c55b7aed1f75b8d",
+    "E03.time.log": "aae21e1e48060cd61c970e390c8e47c2206abcb244d2c4b41999521c008640be",
+    "HANDOFF.md": "e7abcf6276f74e454921569bffaeecdb889b3a6262914e57c5bc9878e56acd30",
+    "LIVE-PREFLIGHT.json": "048c344eead3cc92c21fe7c0e7df488f848e53d7db9b290d68d1a310c1671923",
+    "POST-RUN-BILLING.json": "69377ed83f5fa9afcebbdb7ba084950c4e816a71301f0e1b10826fe241ba24c0",
+    "RESULTS.json": "3a5ad32344ee47f25b55c498fb36cf0ffda3cab1c8179e45a92fa534350ce044",
+    "START-LEDGER.json": "112b1763f21d3c953386498fd44d0627731625de4c53b34d8e154358baed8b26",
+    "control.ts": "35aa8d6433b2f5356d6124905f740b04a1b2c3ba13dc2fb08d928fededf071bf",
+    "grade-E03.json": "00ff753314ac3153e48518aef9b6a0f7d0552514a3e08ed627065715fad8c600",
+    "preflight-E03.json": "9817ab85eaf64c2a14e09434b420d4af70fde2c282b8274feabd22ad6bbaaf26",
+    "reviews/E03.json": "63f759be4ea3d30e9e9be720f0019f690e1e15683dff8f5ccfeeb4e325513022"
+  },
+  "publicReferencePackage": false,
+  "diaryExcluded": true
+}

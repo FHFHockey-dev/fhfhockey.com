@@ -1,0 +1,33 @@
+{
+  "recordedAt": "2026-10-26T17:26:41.261423+00:00",
+  "authority": "Direct TJ approval relayed with trusted transcript evidence",
+  "askedAt": "2026-10-26T16:44:47Z",
+  "questionMessageId": "Sentinel_e55b25539fc081918b7f4bbb0363e8aa",
+  "answeredAt": "2026-10-26T17:24:52Z",
+  "answerMessageId": "Sentinel_d73ce5b855248191b2dacf5a7729add6",
+  "answer": "yes",
+  "maxRequests": 9,
+  "method": "GET",
+  "gameIds": [
+    2026020151,
+    2026020123,
+    2026020111,
+    2026020095,
+    2026020081,
+    2026020060,
+    2026020040,
+    2026020024,
+    2026020010
+  ],
+  "concurrency": 1,
+  "perRequestSeconds": 5,
+  "overallSeconds": 50,
+  "perResponseBytes": 262144,
+  "totalBytes": 2097152,
+  "retries": 0,
+  "redirects": 0,
+  "knownPreviousExecution": false,
+  "previousDenialPreserved": "PUBLIC-REPORTS-APPROVAL-BLOCK.json",
+  "scriptSha256": "f9cc9f49abb5f1079f73f588d243021e4aa2141ae023c9c1fb0726dbb56bdd66",
+  "mapSha256": "21017e8f1d540f5dadd4e19dd4520a45539e8a40c82887309977bd9889698b90"
+}

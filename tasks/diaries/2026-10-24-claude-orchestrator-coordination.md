@@ -158,3 +158,72 @@
 - RC gate: tsc 0; lint 0 errors / 69 warnings; CSS pure pass. 46 vitest files fail in the export, all export-only (pass in the checkout).
 - Vercel: all 4 projects previewDeploymentsDisabled=true, production branch master; last release had fhfhockey READY and the other 3 CANCELED.
 - TJ pop-up: ship after C7 accepts b9206fe31 (R44 requested). An earlier mismatched answer about moving evidence files was not treated as approval; re-asked.
+
+## 2026-10-26 18:31Z RELEASED (#387)
+- master 0b21422db (tree = RC6 7741612); deploy dpl_3D6G3xpm2sCLgkykWGSw3ozFPt9d READY; the other 3 projects CANCELED. Build log: 882 events, no closure-hash failure warning.
+- Smoke (5 GETs, all 200): /, forge/players (95 players, runProof verified_release 538100d41, run a6e69bed), start-chart (same proof), RSO data, RSO page.
+- octoberBranch ours-merge 08fbaf4ba pushed; 90 s no-build check running.
+- Watch: the first post-release FORGE run should be stamped with closure c1f0129a and admitted as verified_closure (confirm on the next read-only check).
+- Open (separate approvals): Yahoo window 2 (R2–R4), D4 and reserve migrations apply, flags on, capture activation, native SOG qualification.
+- 18:36Z TJ approved: after the next FORGE run, at most 2 read-only GETs (forge/players, start-chart) to confirm verified_closure c1f0129a. Background check armed for 2026-10-27T11:30Z (task bwk5iq43w; output in scratchpad/postrun/). It dies if this session ends; then rerun the same 2 GETs by hand.
+- ~18:50Z TJ: restart idle lanes. Dispatched:
+  - reserve pass: N2, N4 and bridge runProof;
+  - rso-flake: selectionMethod label and FR18 re-verification;
+  - rso-manual: FR9/FR10 categories and goalie acceptance packet;
+  - rso-yahoo-diet: REAL-ACCOUNT-PLAN-2b docs.
+- prov-guard and C7 idle (no remaining owned work; C7 reviews as slices land). Leases pinned.
+- The Vercel file tree isn't available for git deploys (404). The fingerprint stays checked by build log, closure verification and the local bundle proof until the 11:30Z check.
+- ~19:00Z TJ pop-ups:
+  - TJ runs ONE manual run-projection-v2 from /db/runner (date=2026-10-26, maxDurationMs=210000);
+  - afterwards Claude may make exactly 2 read-only GETs (forge/players, start-chart for 2026-10-26) to confirm verified_closure c1f0129a;
+  - tomorrow's 11:30Z check stays armed.
+- ~19:20Z TJ live RSO test on production. The saved smoke response shows the bridge serving only 2 admitted runs (a6e69bed, cbd0ee87; 538100d41, 10:16Z), so later-week games lack lines (10-28: 97 players, 10-30: 99). Older pre-538100d41 runs are now correctly refused, so Best Fit is empty and no drop is suggested.
+- TJ pop-up: REPLACE the single-date run with a full-week run-projection-v2 (startDate=2026-10-26, endDate=2026-11-01, maxDurationMs=210000) by TJ from /db/runner. Then: forge/players, start-chart, plus one RSO data GET.
+- Follow-ups: the daily week-ahead coverage design (prov-guard); Yahoo settings import gaps, waiver/FAAB (rso-yahoo-diet, queued after provider proofs).
+- ~20:00Z commits:
+  - 08e583311, week-ahead: bridge reads runs through today+7; FORGE_PROJECTION_DAYS_AHEAD env, unset = 1. The bridge test is a newer version than the overlay checked, verified separately at 300/300 in both TZs.
+  - 5aa3f8711: capacity label plus FR18 Playwright re-verification (5/5).
+- Closure is now 87edd78f; it needs listing at the next RC.
+- Pending: rso-yahoo-diet provider proofs plus the settings import (same files, in progress); rso-manual FR9 fix (waiting on tsc); TJ's single-date FORGE run, then 2 GETs.
+- Lesson: commit scripts must abort when the verified copy differs (fixed for later commits with exit 1).
+- 19:39Z TJ's manual run-projection-v2?date=2026-10-26 via /db/runner: 1 step, HTTP 200, 3 games, 48.3 s.
+- 2 approved GETs: forge/players and start-chart both serve run f31c971c with basis verified_producer_closure, releaseSha 0b21422db, closure c1f0129a. PASS; release confirmed end to end.
+- Tomorrow's 11:30Z check is re-armed (bgtidw9eo) with the correct basis label (the old one checked "verified_closure" by mistake).
+
+## 2026-10-26 ~20:15Z RELEASED #388 (RC7, RSO/FORGE only)
+- TJ pop-ups: ship RC7 (RSO/FORGE files only, Tuesday Trends excluded); set FORGE_PROJECTION_DAYS_AHEAD=6 in Production before the deploy. Env var id ANWH4KCxJIQM0ff8 was created and read back.
+- master 65a02acb1 (tree = RC7 da53bf311); deploy dpl_JAih8gXe… READY, other 3 CANCELED; no closure warning.
+- Smoke (5 GETs, all 200): proof still verified_producer_closure (f31c971c); RSO wire now carries 2 run proofs. Coverage unchanged until tomorrow's 10:05Z pipeline writes runs through +6.
+- octoberBranch ours-merge 38ca8bcce pushed; no-build check running.
+- Watch tomorrow: the 11:30Z check (bgtidw9eo) and whether RSO has lines for every date of the week.
+- TJ pop-up: the next step is Yahoo window 2b, AFTER tomorrow's 11:30Z check confirms full-week lines. Plan: tasks/artifacts/rso-wave2-2026-10-25/YAHOO/REAL-ACCOUNT-PLAN-2b.md. Its approvals (read budget, diet comparison) come as pop-ups then. The reserve pass and capture are not asked.
+- ~20:25Z TJ pop-up: fill this week now. TJ queues in /db/runner:
+  1. update-goalie-projections-v2?endDate=2026-11-01&limit=7;
+  2. FORGE one-date jobs for 10-28, 10-29, 10-30, 10-31 and 11-01.
+  Then Claude makes 1 RSO data GET to confirm coverage.
+- ~21:40Z Goalie priors via /db: 202 rows. FORGE 10-27 and 10-28 succeeded run in sequence; 11-01 got 422 preflight freshness (windows anchored at asOfDate, so future dates fail). Ticket to prov-guard to anchor at the execution date (no bypass); the next RC needs a closure re-verify.
+- TJ asked for a copy-all button on the /db/runner terminal: session runner-copy-all (local_ff0ed8e3…) started.
+- ~21:50Z TJ /db/runner results: 10-27, 10-28 and 10-29 OK (11, 4 and 11 games); 10-30, 10-31 and 11-01 got 422 preflight freshness (confirms the anchoring bug).
+- 1 approved RSO GET: 4 runs, all verified_producer_closure. Lines per date: 117, 434, 157, 433, 119, 393, 195, about 20 per team-game, so the week is near full.
+- 2d1798003: route runner copy-all (verified in an overlay: 8/8 in both TZs, eslint, pure CSS; tsc left for the next gate). Not released.
+- 02153acba: preflight anchoring fix; closure 5644e3fd (needs listing). C7 R48 and the prov-guard allowlist were requested. Next RC: 2d1798003 copy-all + 02153acba + allowlist (RSO/FORGE + runner files only); then a release pop-up.
+
+## 2026-10-26 ~21:15Z RELEASED #390 (RC8)
+- TJ pop-up approved. master 04dca892c (tree = RC8 1c54b0eab: preflight anchoring 02153acba, allowlist fec7ad725, runner copy-all 2d1798003, on top of the Tuesday Trends #389 release 74a6e7d04).
+- Deploy dpl_2MG973pU… READY, other 3 CANCELED. Smoke (5 GETs, all 200): /, forge/players and start-chart (f31c971c verified_producer_closure), RSO data (4 runs, 1848 rows), /db/runner.
+- octoberBranch ours-merge 1290c1a61 pushed; no-build check running.
+- Tomorrow 10:05Z: pipeline with DAYS_AHEAD=6 should project 10-27..11-02 (new build closure 5644e3fd). The 11:30Z check (bgtidw9eo) expects closure c1f0129a, but the new runs will be 5644e3fd. Re-arm it.
+
+## 2026-10-26 ~22:00Z TJ live RSO findings (P1: Best Fit candidates unprojected)
+- Root cause (a): D6 add-timing inference is gated behind RSO_YAHOO_DIET (off) at rosterPlanning.ts:534, so timing is unknown and no candidate plan evaluates. rso-yahoo-diet is ungating it (URGENT). TJ workaround: pick add timing in League rules.
+- Possible cause (b): whether candidate forecasts reach the provider path or get trimmed by budget. FORGE-RESERVE is investigating read-only.
+- UI batch to rso-flake: reload-on-app-switch bug (first), Bench Days tab, goalie cell stacking, Top-5 team schedules redesign (logos, off-days green, teamsInfo colours).
+- TJ confirmed: setting add timing manually makes Best Fit show projections, so the D6 gate is the P1 cause. Cause (b) is not blocking (the reserve lane finishes a brief trim-risk answer).
+- TJ pop-up: unlined players get a labelled conservative 0 (option B); FORGE-RESERVE implements it in the bridge.
+- 107673704 D6 ungate; eff1b377a no_forge_line labelled 0 (budget 6 MB for all users). Overlay clean; closure bf23edfe. Requested: prov-guard allowlist, C7 R49. Next: RC9 + release pop-up (mention the budget change).
+
+## 2026-10-26 ~23:00Z RELEASED #393 (RC9)
+- master 598942a78 (tree = RC9 35d3e090a): D6 ungate 107673704, no_forge_line 0 eff1b377a, allowlist fea39c3e3 (closure bf23edfe), UI batch 1 5e8043d6d. Deploy dpl_wkKh4o3Y… READY, other 3 CANCELED.
+- Smoke (5 GETs, all 200): verified_producer_closure; RSO wire has 983 skater:no_forge_line and 118 goalie:start_unknown_team_line rows.
+- octoberBranch ours-merge bc4a1c24d pushed; no-build check running.
+- Tomorrow's 11:30Z check (bc7o33sl8) expects closure 5644e3fd, but the new build is bf23edfe. Re-arm.

@@ -1,0 +1,289 @@
+--- a/web/components/player-cards/PlayerAnalysisCard.tsx
++++ b/web/components/player-cards/PlayerAnalysisCard.tsx
+@@ -35,7 +35,7 @@
+   const game = goalie ? p.goalie.games[p.gameIndex] : null;
+   const confirmationWarnings = goalie ? p.goalie.sharedProvenance?.confirmationWarnings || [] : [];
+   const warningLines = lines(confirmationWarnings.join(" "), 120);
+-  const explanation = research && "snapshot" in p ? `${p.blsh.heading}. ${p.blsh.lines.join(" ")}. Observed ${research.asOfUTC}; method ${research.methodVersion}. ${research.provenance?.message || ""}` : goalie ? [game?.heading, game?.confirmation, game?.forecast, ...confirmationWarnings, ...(game?.dimensions.map(d => `${d.group}: ${d.label}: ${d.text}`) || []), p.goalie.reason].filter(Boolean).join(". ") : `${snapshot!.recent.label}, ${snapshot!.recent.gp} GP, ${snapshot!.settings.basis}, strength ${snapshot!.capture.strength}. ${snapshot!.recent.readings.map(r => `${ANALYSIS_FIELDS[r.metric].label}: ${number(r.value)} ${r.unit}${r.reason ? ` (${r.reason})` : ""}`).join(". ")}. ${snapshot!.disclosure}`;
++  const explanation = research && "snapshot" in p ? `${p.blsh.heading}. ${p.blsh.lines.join(" ")}. Observed ${research.asOfUTC}; method ${research.methodVersion}. ${research.provenance?.message || ""} ${research.currentBoxes?.summary || ""}. ${research.currentBoxes?.lines.join(" ") || ""}` : goalie ? [game?.heading, game?.confirmation, game?.forecast, ...confirmationWarnings, ...(game?.dimensions.map(d => `${d.group}: ${d.label}: ${d.text}`) || []), p.goalie.reason].filter(Boolean).join(". ") : `${snapshot!.recent.label}, ${snapshot!.recent.gp} GP, ${snapshot!.settings.basis}, strength ${snapshot!.capture.strength}. ${snapshot!.recent.readings.map(r => `${ANALYSIS_FIELDS[r.metric].label}: ${number(r.value)} ${r.unit}${r.reason ? ` (${r.reason})` : ""}`).join(". ")}. ${snapshot!.disclosure}`;
+   const rows = snapshot ? categoryMetrics.map(m => snapshot.recent.readings.find(r => r.metric === m)!) : [];
+   const maximum = Math.max(1, ...rows.map(r => r.value || 0));
+   return <svg ref={svgRef} xmlns="http://www.w3.org/2000/svg" width="1200" height="1020" viewBox="0 0 1200 1020" role="img" aria-label={`${player.name}. ${source}. ${title}. ${explanation}`} data-analysis-key={analysisPresentationKey(p, hero)} data-portrait-key={hero ? portraitKey(hero) : undefined} data-pipeline-key={hero ? compositionKey(hero) : undefined} data-team-logo-hash={hero?.teamLogo?.sha256} data-outline-key={outlineKey(hero?.outline)} data-outline-settings={hero?.outlineSettings ? outlineStackKey(hero.outlineSettings) : undefined}>
+@@ -68,7 +68,7 @@
+       </> : p.view === "evidence" ? <TextLines text={`${p.blsh.heading}. ${p.blsh.lines.join(" ")} ${p.blsh.market}`} y={420} maxLines={14} /> : <TextLines text={`${p.trades.lines.join(" ")} ${p.trades.records.map(r => `${r.attribution}; observed ${r.observedAt}; trade date ${r.tradedAt || "unknown"}; ${r.give.map(a => a.kind === "player" ? a.name : `${a.season} ${a.description}`).join(" + ")} for ${r.receive.map(a => a.kind === "player" ? a.name : `${a.season} ${a.description}`).join(" + ")}; scoring ${r.context.scoring || "unknown"}, roster ${r.context.roster || "unknown"}.`).join(" ")}`} y={420} maxLines={14} />}
+       <rect x="0" y="864" width="1200" height="156" fill="#1A1D21" />
+       <g fill="#F2F1EB" fontSize="18">{warningLines.length ? <text x="40" y="894" fontSize="17" data-confirmation-warnings="true" data-evidence-truncated={warningLines.length > 2 ? "true" : undefined}>{warningLines.slice(0, 2).map((line, i) => <tspan key={i} x="40" dy={i ? 28 : 0}>{line}{i === 1 && warningLines.length > 2 ? " … (too long to export)" : ""}</tspan>)}</text> : <><text x="40" y="894">{research ? `Saved BLSH window ${research.dates[0]} → ${research.dates.at(-1)} · ${research.dates.length} GP · separate from NHL controls` : goalie ? "Volume upside, ratio exposure and win support are separate dimensions; no combined score." : `${snapshot!.recent.gp} GP · dates ${[...snapshot!.recent.dates].sort().at(0) || "—"} → ${[...snapshot!.recent.dates].sort().at(-1) || "—"} · basis ${snapshot!.settings.basis} · strength ${snapshot!.capture.strength}`}</text>
+-        <text x="40" y="922">{research ? "Stale development reference · exploratory support evidence · no calibrated confidence or trade advice" : goalie ? "Source confirmation and conditional forecast are separate. Partial inputs are not live/complete." : p.view === "comparison" ? snapshot!.disclosure : "BSH = blocks + shots on goal + hits. Missing component → unavailable BSH."}</text></>}
++        <text x="40" y="922">{research ? research.currentBoxes ? `Stale research · ${research.currentBoxes.summary} · saved values unchanged` : "Stale development reference · exploratory support evidence · no calibrated confidence or trade advice" : goalie ? "Source confirmation and conditional forecast are separate. Partial inputs are not live/complete." : p.view === "comparison" ? snapshot!.disclosure : "BSH = blocks + shots on goal + hits. Missing component → unavailable BSH."}</text></>}
+         <text x="40" y="950">{research ? `BLSH observed: ${research.asOfUTC} · recorded through ${research.eventThroughDate}` : goalie ? `Inventory observed: ${p.goalie.observedAt}` : `Observed: ${snapshot!.capture.observedAt} · rank/N unavailable · all NHL valid values; no GP/TOI/position filter`}</text>
+         <text x="40" y="979">{research ? research.provenance ? `${research.methodVersion} · ${research.provenance.state !== "unavailable" ? `${research.provenance.state === "pending-review" ? "mapping review pending" : "retained mapping reviewed"} · ${research.provenance.captureStale ? "stale capture" : "retained capture"}` : "source mapping unavailable"}` : `Method: ${research.methodVersion} · retained source and complete profile in manifest` : goalie ? p.goalie.sharedProvenance ? `${p.goalie.sharedProvenance.version} fixture · ${p.goalie.sharedProvenance.sourceState} inputs · live producer admission pending.` : "Synthetic consumer proposal; producer interface and real inputs pending." : "Final status at observation; exact end time unavailable. Field reasons and source definitions in manifest."}</text><text x="40" y="1007" fontSize="16">FHFHOCKEY.COM · {source}</text>
+       </g>
+--- a/web/components/player-cards/PlayerAnalysisStudio.test.tsx
++++ b/web/components/player-cards/PlayerAnalysisStudio.test.tsx
+@@ -4,14 +4,33 @@
+ import PlayerAnalysisStudio from "./PlayerAnalysisStudio";
+ import { captureFixture, goalieFixture, sharedGoalieFixture } from "../../lib/player-cards/analysisFixtures";
+ import { sharedGoalieOutlook } from "../../lib/player-cards/sharedGoalieOutlook";
+-import { assertAnalysisExport, analysisManifest } from "../../lib/player-cards/analysisExport";
++import { assertAnalysisExport, analysisManifest, canExportAnalysis } from "../../lib/player-cards/analysisExport";
+ import { buildAnalysisSnapshot } from "../../lib/player-cards/analysisSnapshot";
+-import { cardBlshEvidence, cardTradeContext } from "../../lib/player-cards/analysisEvidence";
++import { cardBlshEvidence, cardTradeContext, type CardEvidence } from "../../lib/player-cards/analysisEvidence";
+ import PlayerAnalysisCard, { type AnalysisPresentation } from "./PlayerAnalysisCard";
+ afterEach(cleanup);
+ const skater = () => ({ id: "skater", label: "Fixture skater · TBL · 2026–27", capture: captureFixture() });
+ const goalie = { id: "goalie", label: "Fixture goalie · TBL · 2026–27", goalie: { id: 8476883, name: "Fixture goalie", team: "TBL", season: 20262027 }, inventory: null };
+ describe("analysis studio", () => {
++  it("exports separate retained research while keeping unsupported NHL analysis blocked", () => {
++    const capture = captureFixture(); capture.history.complete = false;
++    const snapshot = buildAnalysisSnapshot(capture, { period: { mode: "appearances", count: 5 }, baseline: "previous", basis: "per-game", visual: "bars" });
++    const p: AnalysisPresentation = { snapshot, view: "categories", blsh: cardBlshEvidence(snapshot, null, null), trades: cardTradeContext(capture.player.id, [], { fixture: true, ownerReceipt: null, asOf: capture.observedAt }) };
++    expect(canExportAnalysis(p)).toBe(false);
++    p.view = "evidence";
++    expect(canExportAnalysis(p)).toBe(false);
++    p.blsh = { status: "exploratory", heading: "Synthetic retained-research export fixture", lines: ["Separate dated research; source comparisons do not change saved values."], direction: "unknown", receipt: null, market: "Market reference unavailable", retained: { snapshotSHA256: "unit-test-only", reviewReference: "Synthetic unit receipt", asOfUTC: capture.observedAt, eventThroughDate: "2026-10-24", dates: ["2026-10-24"], methodVersion: "test-only", profile: { playerId: capture.player.id, team: capture.player.team }, limits: [] } as unknown as NonNullable<CardEvidence["retained"]> };
++    const { rerender } = render(<PlayerAnalysisCard presentation={p} />);
++    const svg = screen.getByRole("img") as unknown as SVGSVGElement;
++    expect(canExportAnalysis(p)).toBe(true); expect(() => assertAnalysisExport(svg, p)).not.toThrow();
++    expect(analysisManifest(p).presentation.snapshot.recent.reason).toBeTruthy();
++    p.view = "comparison"; rerender(<PlayerAnalysisCard presentation={p} />);
++    expect(canExportAnalysis(p)).toBe(false); expect(() => assertAnalysisExport(svg, p)).toThrow(/Unqualified capture/);
++    p.view = "evidence"; p.blsh.retained!.profile.playerId = 1;
++    expect(canExportAnalysis(p)).toBe(false);
++    p.blsh.retained!.profile.playerId = capture.player.id; p.blsh.status = "unavailable";
++    expect(canExportAnalysis(p)).toBe(false);
++  });
+   it("prints confirmation gaps on the card and refuses an export that omits long warnings", () => {
+     const input = sharedGoalieFixture();
+     const warnings = ["Reports aren't separated by reporter, so conflicts between sources can't be detected.", "No source link or expiry exists for these reports."];
+--- a/web/components/player-cards/PlayerAnalysisStudio.tsx
++++ b/web/components/player-cards/PlayerAnalysisStudio.tsx
+@@ -8,7 +8,7 @@
+ import { goalieOutlook, type GoalieInventory } from "../../lib/player-cards/goalieOutlook";
+ import { sharedGoalieOutlook } from "../../lib/player-cards/sharedGoalieOutlook";
+ import type { GoalieInventory as SharedGoalieInventory } from "../../lib/socialShare/modules/shared/goalieInventory";
+-import { analysisManifest, rasterizeAnalysis } from "../../lib/player-cards/analysisExport";
++import { analysisManifest, canExportAnalysis, rasterizeAnalysis } from "../../lib/player-cards/analysisExport";
+ import { saveCardFile } from "../../lib/player-cards/shareExport";
+ import styles from "./PlayerAnalysisStudio.module.scss";
+ 
+@@ -26,7 +26,7 @@
+   const key = p ? analysisPresentationKey(p, hero) : "", keyRef = useRef(key); keyRef.current = key;
+   const changed = () => { generation.current++; setPrepared(null); setStatus(""); };
+   const change = (patch: Partial<AnalysisSettings>) => { changed(); setSettings(s => ({ ...s, ...patch })); };
+-  const exportable = p && ("snapshot" in p ? !p.snapshot.recent.reason : p.goalie.state === "fixture");
++  const exportable = p && canExportAnalysis(p);
+   async function image(share: boolean) {
+     if (!p || !svg.current || !exportable || busyRef.current) return;
+     const run = generation.current, savedKey = key; busyRef.current = true; setBusy(true);
+@@ -63,7 +63,7 @@
+       <button disabled={!exportable || busy} onClick={() => void image(false)}>Download analysis PNG</button><button disabled={!exportable || busy} onClick={() => void image(true)}>Prepare analysis share</button><button disabled={!prepared || prepared.key !== key || busy} onClick={() => void share()}>Share prepared image</button>
+       <button onClick={() => { const file = new File([JSON.stringify(analysisManifest(p, hero), null, 2)], `fhfh-analysis-${selected}.json`, { type: "application/json" }); saveCardFile(file, file.name); }}>Download analysis manifest</button>
+     </div><div className={styles.details} aria-label="Readable card details">
+-      {"snapshot" in p ? <><p>{p.snapshot.disclosure}</p><p>{p.snapshot.capture.finality}</p><p>{p.snapshot.recent.reason || p.snapshot.baseline.reason}</p><ul className={styles.metrics}>{p.snapshot.recent.readings.map(r => <li key={r.metric}><strong>{ANALYSIS_FIELDS[r.metric].label}</strong>{r.value === null ? "Unavailable" : r.value.toFixed(2)} {r.unit} · {r.gp} GP<p>{r.reason || "Measured value"}</p><small>{r.rankReason}</small></li>)}</ul><h2>{p.blsh.heading}</h2>{p.blsh.retained && <p>Separate saved research observed {p.blsh.retained.asOfUTC}, recorded through {p.blsh.retained.eventThroughDate}; method {p.blsh.retained.methodVersion}. This evidence is not current or bound to the NHL window above.</p>}{p.blsh.retained?.provenance && <><p>{p.blsh.retained.provenance.message}</p>{p.blsh.retained.provenance.sourceMap?.limitations.map((limit, i) => <p key={`provenance-${i}`}>{limit}</p>)}</>}{p.blsh.lines.map((t, i) => <p key={i}>{t}</p>)}<p>{p.blsh.market}</p><h2>Trade context</h2>{p.trades.lines.map((t, i) => <p key={i}>{t}</p>)}</> : <><p>{p.goalie.reason}</p>{p.goalie.sharedProvenance && <><h2>Shared inventory provenance</h2><p>{p.goalie.sharedProvenance.version} · {p.goalie.sharedProvenance.sourceState}</p>{p.goalie.sharedProvenance.sourceNotes.map((note, i) => <p key={i}>{note}</p>)}<p>Recent starts: {p.goalie.sharedProvenance.recentStarts.starts ?? "unavailable"} in {p.goalie.sharedProvenance.recentStarts.teamGames} team games; {p.goalie.sharedProvenance.recentStarts.reliefAppearances} relief appearances. {p.goalie.sharedProvenance.recentStarts.complete ? "Complete supplied L10 sample." : "Incomplete supplied L10 sample."} Descriptive workload, not start probability.</p></>}{p.goalie.games.map(g => <article key={g.id}><h2>{g.heading}</h2><p>{g.confirmation}</p><p>{g.forecast}</p>{g.dimensions.map(d => <p key={d.label}><strong>{d.group} · {d.label}:</strong> {d.text}</p>)}</article>)}</>}
++      {"snapshot" in p ? <><p>{p.snapshot.disclosure}</p><p>{p.snapshot.capture.finality}</p><p>{p.snapshot.recent.reason || p.snapshot.baseline.reason}</p><ul className={styles.metrics}>{p.snapshot.recent.readings.map(r => <li key={r.metric}><strong>{ANALYSIS_FIELDS[r.metric].label}</strong>{r.value === null ? "Unavailable" : r.value.toFixed(2)} {r.unit} · {r.gp} GP<p>{r.reason || "Measured value"}</p><small>{r.rankReason}</small></li>)}</ul><h2>{p.blsh.heading}</h2>{p.blsh.retained && <p>Separate saved research observed {p.blsh.retained.asOfUTC}, recorded through {p.blsh.retained.eventThroughDate}; method {p.blsh.retained.methodVersion}. This evidence is not current or bound to the NHL window above.</p>}{p.blsh.retained?.provenance && <><p>{p.blsh.retained.provenance.message}</p>{p.blsh.retained.provenance.sourceMap?.limitations.map((limit, i) => <p key={`provenance-${i}`}>{limit}</p>)}</>}{p.blsh.retained?.currentBoxes && <><h3>{p.blsh.retained.currentBoxes.summary}</h3>{p.blsh.retained.currentBoxes.lines.map((line, i) => <p key={`box-${i}`}>{line}</p>)}</>}{p.blsh.lines.map((t, i) => <p key={i}>{t}</p>)}<p>{p.blsh.market}</p><h2>Trade context</h2>{p.trades.lines.map((t, i) => <p key={i}>{t}</p>)}</> : <><p>{p.goalie.reason}</p>{p.goalie.sharedProvenance && <><h2>Shared inventory provenance</h2><p>{p.goalie.sharedProvenance.version} · {p.goalie.sharedProvenance.sourceState}</p>{p.goalie.sharedProvenance.sourceNotes.map((note, i) => <p key={i}>{note}</p>)}<p>Recent starts: {p.goalie.sharedProvenance.recentStarts.starts ?? "unavailable"} in {p.goalie.sharedProvenance.recentStarts.teamGames} team games; {p.goalie.sharedProvenance.recentStarts.reliefAppearances} relief appearances. {p.goalie.sharedProvenance.recentStarts.complete ? "Complete supplied L10 sample." : "Incomplete supplied L10 sample."} Descriptive workload, not start probability.</p></>}{p.goalie.games.map(g => <article key={g.id}><h2>{g.heading}</h2><p>{g.confirmation}</p><p>{g.forecast}</p>{g.dimensions.map(d => <p key={d.label}><strong>{d.group} · {d.label}:</strong> {d.text}</p>)}</article>)}</>}
+     </div></>}
+     <p role="status" aria-live="polite">{status}</p>
+   </section>;
+--- a/web/lib/player-cards/analysisEvidence.ts
++++ b/web/lib/player-cards/analysisEvidence.ts
+@@ -3,6 +3,23 @@
+ import type { AnalysisSnapshot } from "./analysisSnapshot";
+ 
+ export type EvidenceReceipt = { status: "fixture" | "owner-reviewed"; reference: string; snapshotSHA256: string; methodVersion: string; season: number; observedAt: string; strength: string; gameIds: number[]; sourceRows: { sourceId: number; gameId: number }[] };
++export type BoxCount = "goals" | "assists" | "shots" | "hits" | "blocked_shots";
++export type BoxMeasurement = { wgo: number; official: number; state: "match" | "mismatch" };
++/** Separate dated comparisons; exposure qualification never certifies counting stats. */
++export type RetainedBlshBoxes = {
++  version: "fhfh.card-retained-box-comparison.v1"; rowsSHA256: string; boxEvidenceSHA256: string; receiptSHA256: string;
++  sourceSidecarSHA256: string; snapshotSHA256: string; wgoCapturedAt: string;
++  review: { reference: string; sha256: string; scope: "dated-source-comparison-only" };
++  rows: {
++    sourceId: number; playerId: number; gameId: number; date: string; wgoTeam: string; sourceRowSHA256: string;
++    state: "identity_team_exposure_qualified" | "held"; gameFinality: "final" | "unknown"; appearance: "positive_official_TOI" | "unknown"; team: "match" | "unknown";
++    TOI: BoxMeasurement | null; counts: Partial<Record<BoxCount, BoxMeasurement>>;
++    PPP: BoxMeasurement | { wgo: number; official: null; state: "unknown_PP_assists_not_supplied" } | null;
++    reasons: string[]; officialTeam?: string; officialTeamId?: number; evidenceGameId: number | null;
++    box: { url: string; bodySHA256: string; receiptSHA256: string; retrievedAtUTC: string; originalPublicationUTC: null } | null;
++  }[];
++};
++export type RetainedBoxEvidence = { state: "reviewed-comparison-only" | "unavailable"; summary: string; lines: string[]; evidence: RetainedBlshBoxes | null; currentBinding: false };
+ export type RetainedBlshSourceMap = {
+   version: "fhfh.blsh.player-card-research-provenance.v1"; sidecarSHA256: string; snapshotSHA256: string; independentReviewPending: true;
+   generatedAtUTC: string; asOfUTC: string; eventThroughDate: string; maxCaptureAgeHours: number;
+@@ -11,7 +28,7 @@
+   limitations: string[];
+   review?: { reference: string; sha256: string; sidecarSHA256: string; scope: "dated-stale-research-only" };
+ };
+-export type CardEvidence = { status: "unavailable" | "exploratory"; heading: string; lines: string[]; direction: "positive" | "negative" | "level" | "unknown"; receipt: EvidenceReceipt | null; market: string; retained?: { snapshotSHA256: string; reviewReference: string; asOfUTC: string; eventThroughDate: string; dates: string[]; methodVersion: string; profile: DisplayProfile; limits: string[]; provenance?: { state: "pending-review" | "reviewed-retained-only" | "unavailable"; message: string; currentBinding: false; captureStale: boolean | null; sourceMap: RetainedBlshSourceMap | null } } };
++export type CardEvidence = { status: "unavailable" | "exploratory"; heading: string; lines: string[]; direction: "positive" | "negative" | "level" | "unknown"; receipt: EvidenceReceipt | null; market: string; retained?: { snapshotSHA256: string; reviewReference: string; asOfUTC: string; eventThroughDate: string; dates: string[]; methodVersion: string; profile: DisplayProfile; limits: string[]; currentBoxes?: RetainedBoxEvidence; provenance?: { state: "pending-review" | "reviewed-retained-only" | "unavailable"; message: string; currentBinding: false; captureStale: boolean | null; sourceMap: RetainedBlshSourceMap | null } } };
+ const hash = (s: string) => /^[0-9a-f]{64}$/.test(s);
+ const sameIds = (a: number[], b: number[]) => a.length === b.length && new Set(a).size === a.length && [...a].sort((x, y) => x - y).every((id, i) => id === [...b].sort((x, y) => x - y)[i]);
+ 
+--- a/web/lib/player-cards/analysisExport.ts
++++ b/web/lib/player-cards/analysisExport.ts
+@@ -8,12 +8,18 @@
+   const artwork = hero ? { ...hero, dataUrl: undefined, teamLogo: hero.teamLogo ? { ...hero.teamLogo, dataUrl: undefined } : undefined, outline: hero.outline ? { ...hero.outline, dataUrl: undefined } : undefined } : { state: "unavailable", reason: "No qualified matching artwork supplied." };
+   return JSON.parse(JSON.stringify({ version: "fhfh-analysis-export-v1", dimensions: { width: 1200, height: 1020 }, presentation, comparison: "snapshot" in presentation ? presentation.snapshot.recent.readings.map(r => ({ metric: r.metric, ...analysisDifference(presentation.snapshot, r.metric) })) : null, artwork, artworkKey: currentArtworkKey(hero), key: analysisPresentationKey(presentation, hero), disclosure: "Local consumer presentation; qualification and unavailable reasons are retained per field. No source refresh or deployment implied." }));
+ }
++/** A separately qualified research card does not certify the unrelated NHL capture. */
++export function canExportAnalysis(p: AnalysisPresentation): boolean {
++  if ("goalie" in p) return p.goalie.state === "fixture";
++  const research = p.blsh.retained;
++  if (p.view === "evidence" && research) return p.blsh.status === "exploratory" && research.profile.playerId === p.snapshot.capture.player.id && research.profile.team === p.snapshot.capture.player.team;
++  return !p.snapshot.recent.reason;
++}
+ export function assertAnalysisExport(svg: SVGSVGElement, p: AnalysisPresentation, hero?: PreparedHero | null) {
+   if (!svg.isConnected || svg.dataset.analysisKey !== analysisPresentationKey(p, hero)) throw new Error("Displayed analysis changed; prepare the current snapshot again.");
+   if (svg.querySelector('[data-evidence-truncated="true"]')) throw new Error("Full evidence will not fit in this card. Narrow the supplied evidence before exporting.");
+   if (hero) assertReviewedArtwork(svg, hero);
+   else if (svg.querySelector("image") || !svg.querySelector('[data-artwork-unavailable="true"]')) throw new Error("Unavailable artwork cannot contain a substitute image.");
+-  if ("snapshot" in p && p.snapshot.recent.reason) throw new Error("Unqualified capture cannot be exported as analysis.");
+-  if ("goalie" in p && p.goalie.state === "unavailable") throw new Error("Qualified goalie inventory is unavailable.");
++  if (!canExportAnalysis(p)) throw new Error("snapshot" in p ? "Unqualified capture cannot be exported as analysis." : "Qualified goalie inventory is unavailable.");
+ }
+ export const rasterizeAnalysis = (svg: SVGSVGElement, p: AnalysisPresentation, hero?: PreparedHero | null) => rasterizeCardSvg(svg, () => assertAnalysisExport(svg, p, hero), 1200, 1020);
+--- a/web/lib/player-cards/retainedBlsh.test.ts
++++ b/web/lib/player-cards/retainedBlsh.test.ts
+@@ -1,5 +1,5 @@
+ import { describe, expect, it } from "vitest";
+-import { RETAINED_BLSH_SHA256, RETAINED_BLSH_SIDECAR_SHA256, RETAINED_BLSH_PROVENANCE_REVIEW_SHA256, retainedBlshEvidence, type RetainedBlshInput } from "./retainedBlsh";
++import { RETAINED_BLSH_SHA256, RETAINED_BLSH_SIDECAR_SHA256, RETAINED_BLSH_PROVENANCE_REVIEW_SHA256, RETAINED_BLSH_BOX_PINS, retainedBlshEvidence, type RetainedBlshInput } from "./retainedBlsh";
+ const player = { id: 8476453, team: "TBL" };
+ const fixture = (): RetainedBlshInput => ({ snapshotSHA256: RETAINED_BLSH_SHA256, reviewReference: "Synthetic unit contract; actual bytes verified separately by owner reader", metadata: { schemaVersion: "fhfh.blsh.current-research-snapshot.v2", scoreVersion: "support-conditioned-production-gap-v1", seasonId: 20262027, provisional: true, exploratory: true, productionAdopted: false, trusted: false, confidenceProbability: null, issuedAtUTC: null, asOfUTC: "2026-10-29T18:41:12Z", eventThroughDate: "2026-10-28", limits: ["Synthetic test; stale development reference"] }, profile: { playerId: player.id, team: player.team, score: { version: "support-conditioned-production-gap-v1", gapSign: "buy_low_evidence", statusLabel: "Direction agrees", calibratedProbability: null }, evidence: { window: { games: 1, dates: ["2026-10-24"], sourceIds: [123], minutes: 20 }, reference: { personalGames: 50, ageDays: 900 }, tierNote: "Coverage is not confidence" }, tracks: ["FP", "G+A", "Game Score"].map(label => ({ label, observed: 2, supportConditioned: 3, gap: 1 })), coverage: { notes: [{ text: "Source revision unverified" }] }, context: { opportunity: [{ label: "TOI", current: 1200, units: "seconds/appearance" }] }, claims: { forecast: false, marketValue: false, trusted: false } } } as unknown as RetainedBlshInput);
+ describe("retained BLSH card evidence", () => {
+@@ -8,6 +8,62 @@
+     f.provenance = { version: "fhfh.blsh.player-card-research-provenance.v1", sidecarSHA256: RETAINED_BLSH_SIDECAR_SHA256, snapshotSHA256: RETAINED_BLSH_SHA256, independentReviewPending: true, generatedAtUTC: "2026-11-01T16:32:16.987Z", asOfUTC: f.metadata.asOfUTC, eventThroughDate: f.metadata.eventThroughDate, maxCaptureAgeHours: 24, playerId: player.id, team: player.team, season: 20262027, rows: [{ sourceId: 123, gameId: 2026020177, playerId: player.id, season: 20262027, date: "2026-10-24", team: "TBL", regularSeasonCalendarMatched: true, finalityEstablished: false }], limitations: ["No NST model revision receipt"] };
+     return f;
+   };
++  const withBoxes = () => {
++    const f = withProvenance();
++    f.provenance!.review = { reference: "Original review fixture", sha256: RETAINED_BLSH_PROVENANCE_REVIEW_SHA256, sidecarSHA256: RETAINED_BLSH_SIDECAR_SHA256, scope: "dated-stale-research-only" };
++    f.currentBoxes = { version: "fhfh.card-retained-box-comparison.v1", rowsSHA256: RETAINED_BLSH_BOX_PINS.rows, boxEvidenceSHA256: RETAINED_BLSH_BOX_PINS.boxes, receiptSHA256: RETAINED_BLSH_BOX_PINS.receipt, sourceSidecarSHA256: RETAINED_BLSH_SIDECAR_SHA256, snapshotSHA256: RETAINED_BLSH_SHA256, wgoCapturedAt: f.metadata.asOfUTC, review: { reference: "Box review fixture", sha256: RETAINED_BLSH_BOX_PINS.review, scope: "dated-source-comparison-only" }, rows: [{ sourceId: 123, playerId: player.id, gameId: 2026020177, date: "2026-10-24", wgoTeam: "TBL", sourceRowSHA256: "a".repeat(64), state: "identity_team_exposure_qualified", gameFinality: "final", appearance: "positive_official_TOI", team: "match", TOI: { wgo: 1200, official: 1200, state: "match" }, counts: { goals: { wgo: 0, official: 0, state: "match" }, assists: { wgo: 1, official: 1, state: "match" }, shots: { wgo: 2, official: 2, state: "match" }, hits: { wgo: 0, official: 0, state: "match" }, blocked_shots: { wgo: 0, official: 0, state: "match" } }, PPP: { wgo: 0, official: null, state: "unknown_PP_assists_not_supplied" }, reasons: [], officialTeam: "TBL", officialTeamId: 14, evidenceGameId: 2026020177, box: { url: "https://api-web.nhle.com/v1/gamecenter/2026020177/boxscore", bodySHA256: "b".repeat(64), receiptSHA256: "c".repeat(64), retrievedAtUTC: "2026-10-27T20:15:08Z", originalPublicationUTC: null } }] };
++    return f;
++  };
++  it("preserves count discrepancies even when identity, team and exposure qualify", () => {
++    const f = withBoxes(), row = f.currentBoxes!.rows[0];
++    row.counts.goals = { wgo: 1, official: 0, state: "mismatch" };
++    const r = retainedBlshEvidence(player, 20262027, f), boxes = r.retained!.currentBoxes!;
++    expect(boxes).toMatchObject({ state: "reviewed-comparison-only", currentBinding: false });
++    expect(boxes.summary).toContain("0 match / 1 differ / 0 unknown");
++    expect(boxes.summary).toContain("G differ");
++    expect(boxes.lines.join(" ")).toContain("G differs: WGO 1, box 0");
++    expect(boxes.evidence!.rows[0].state).toBe("identity_team_exposure_qualified");
++    expect(r.retained!.profile).toEqual(f.profile); expect(r.receipt).toBeNull();
++    row.counts.goals.wgo = 8;
++    expect(boxes.evidence!.rows[0].counts.goals!.wgo).toBe(1);
++  });
++  it("limits full matches to exposure and the five counts while preserving unknown PPP", () => {
++    const r = retainedBlshEvidence(player, 20262027, withBoxes()), boxes = r.retained!.currentBoxes!;
++    expect(boxes.summary).toContain("1 match / 0 differ / 0 unknown");
++    expect(boxes.summary).toContain("TOI + 5 counts");
++    expect(boxes.summary).toContain("PPP 1 unknown");
++    expect(boxes.lines.join(" ")).toContain("Match covers TOI plus G/A/SOG/HIT/BLK only");
++    expect(boxes.lines.join(" ")).toContain("no current or advanced-metric admission");
++    expect(boxes.evidence!.rows[0].PPP!.official).toBeNull();
++    expect(r.retained!.provenance!.sourceMap!.rows[0].finalityEstablished).toBe(false);
++  });
++  it("retains missing boxes as unknown and exposure mismatches as differences", () => {
++    const f = withBoxes(), row = f.currentBoxes!.rows[0];
++    row.state = "held"; row.TOI = { wgo: 1200, official: 1199, state: "mismatch" };
++    expect(retainedBlshEvidence(player, 20262027, f).retained!.currentBoxes!.summary).toContain("TOI differ");
++    Object.assign(row, { gameFinality: "unknown", appearance: "unknown", team: "unknown", TOI: null, counts: {}, PPP: null, evidenceGameId: null, box: null, reasons: ["no_pinned_cached_official_box"] });
++    const boxes = retainedBlshEvidence(player, 20262027, f).retained!.currentBoxes!;
++    expect(boxes.summary).toContain("0 match / 0 differ / 1 unknown");
++    expect(boxes.lines.join(" ")).toContain("Missing boxes are not DNP or zero");
++    expect(boxes.evidence!.rows[0].counts).toEqual({});
++  });
++  it("withholds invalid or promoted box attachments without replacing saved research", () => {
++    for (const change of [
++      (f: RetainedBlshInput) => { f.currentBoxes!.review.sha256 = "d".repeat(64); },
++      (f: RetainedBlshInput) => { f.currentBoxes!.rowsSHA256 = "d".repeat(64); },
++      (f: RetainedBlshInput) => { f.currentBoxes!.rows[0].playerId = 1; },
++      (f: RetainedBlshInput) => { f.currentBoxes!.rows[0].officialTeam = "TOR"; },
++      (f: RetainedBlshInput) => { f.currentBoxes!.rows[0].counts.goals!.wgo = 1; },
++      (f: RetainedBlshInput) => { f.currentBoxes!.rows[0].PPP = { wgo: 0, official: 0, state: "match" }; },
++      (f: RetainedBlshInput) => { f.currentBoxes!.rows[0].box!.retrievedAtUTC = "2026-11-01T00:00:00Z"; },
++      (f: RetainedBlshInput) => { f.currentBoxes!.rows.push(f.currentBoxes!.rows[0]); },
++      (f: RetainedBlshInput) => { f.currentBoxes!.rows[0].gameFinality = "unknown"; },
++    ]) {
++      const f = withBoxes(); change(f); const r = retainedBlshEvidence(player, 20262027, f);
++      expect(r.retained!.currentBoxes).toMatchObject({ state: "unavailable", evidence: null, currentBinding: false });
++      expect(r.retained!.profile).toEqual(f.profile); expect(r.status).toBe("exploratory"); expect(r.receipt).toBeNull();
++    }
++  });
+   it("attaches pending source lineage without admitting stale research as current input", () => {
+     const f = withProvenance(), r = retainedBlshEvidence(player, 20262027, f);
+     expect(r.retained?.provenance).toMatchObject({ state: "pending-review", captureStale: true, currentBinding: false });
+--- a/web/lib/player-cards/retainedBlsh.ts
++++ b/web/lib/player-cards/retainedBlsh.ts
+@@ -1,11 +1,54 @@
+ import type { DisplayProfile, DisplaySnapshot } from "../buyLowSellHigh/displayProfile";
+-import type { CardEvidence, RetainedBlshSourceMap } from "./analysisEvidence";
++import type { BoxCount, BoxMeasurement, CardEvidence, RetainedBlshBoxes, RetainedBlshSourceMap, RetainedBoxEvidence } from "./analysisEvidence";
+ 
+ /** Frozen local research handoff, not live input admission or a scoring implementation. */
+ export const RETAINED_BLSH_SHA256 = "2f380c2539390f6931ec92ab1d0b1d8cced2b55f5f4cefb8c6e88a694909f2c8";
+ export const RETAINED_BLSH_SIDECAR_SHA256 = "0b98ebc0fa2bbf0554b781d6c7548b820c37768b4868d11784ca837dad070d57";
+ export const RETAINED_BLSH_PROVENANCE_REVIEW_SHA256 = "54fbf0418908263ce5a0ed3e2b4812c78d70d152aacc818df0568567aa265701";
+-export type RetainedBlshInput = { profile: DisplayProfile; metadata: Omit<DisplaySnapshot, "profiles">; snapshotSHA256: string; reviewReference: string; provenance?: RetainedBlshSourceMap };
++export const RETAINED_BLSH_BOX_PINS = {
++  rows: "314a48ef45dbad11b48192bdbada730ccc82fb355895e2dde56b484ece0a6d36",
++  boxes: "b83fc6bff7bd470bb245f1053a489aeebab6b17f1f734a2ed18d5753f715447f",
++  receipt: "e51173a80e5f0f55e45abf7e914b127b2c8d0cf6f7543a38aa18a9df4f4190a0",
++  review: "166b65ff7be1a16883d2546c4a1a03b54f286963324e494b1ebba0a41aeb2ce9",
++} as const;
++export type RetainedBlshInput = { profile: DisplayProfile; metadata: Omit<DisplaySnapshot, "profiles">; snapshotSHA256: string; reviewReference: string; provenance?: RetainedBlshSourceMap; currentBoxes?: RetainedBlshBoxes };
++const boxCounts: Record<BoxCount, string> = { goals: "G", assists: "A", shots: "SOG", hits: "HIT", blocked_shots: "BLK" };
++const countKeys = Object.keys(boxCounts) as BoxCount[];
++const count = (v: unknown): v is number => typeof v === "number" && Number.isSafeInteger(v) && v >= 0;
++const hash = (v: string) => /^[a-f0-9]{64}$/.test(v);
++const compared = (v: BoxMeasurement | null | undefined): v is BoxMeasurement => !!v && count(v.wgo) && count(v.official) && v.state === (v.wgo === v.official ? "match" : "mismatch");
++
++function retainedBoxEvidence(input: RetainedBlshInput, provenance: NonNullable<CardEvidence["retained"]>["provenance"]): RetainedBoxEvidence | undefined {
++  const b = input.currentBoxes;
++  if (!b) return undefined;
++  const unavailable = (): RetainedBoxEvidence => ({ state: "unavailable", currentBinding: false, evidence: null, summary: "Box comparison unavailable", lines: ["Comparison receipt, identity, window, dates or field states do not match. Saved research values remain unchanged."] });
++  const map = provenance?.sourceMap;
++  if (provenance?.state !== "reviewed-retained-only" || !map || b.version !== "fhfh.card-retained-box-comparison.v1" || b.rowsSHA256 !== RETAINED_BLSH_BOX_PINS.rows || b.boxEvidenceSHA256 !== RETAINED_BLSH_BOX_PINS.boxes || b.receiptSHA256 !== RETAINED_BLSH_BOX_PINS.receipt || b.sourceSidecarSHA256 !== map.sidecarSHA256 || b.snapshotSHA256 !== input.snapshotSHA256 || b.wgoCapturedAt !== input.metadata.asOfUTC || b.review?.sha256 !== RETAINED_BLSH_BOX_PINS.review || !b.review.reference.trim() || b.review.scope !== "dated-source-comparison-only" || !Array.isArray(b.rows) || b.rows.length !== map.rows.length) return unavailable();
++  const valid = b.rows.every((r, i) => {
++    const m = map.rows[i];
++    if (r.sourceId !== m.sourceId || r.playerId !== m.playerId || r.gameId !== m.gameId || r.date !== m.date || r.wgoTeam !== m.team || !hash(r.sourceRowSHA256) || !Array.isArray(r.reasons) || !r.reasons.every(t => typeof t === "string")) return false;
++    if (r.gameFinality === "unknown") return r.state === "held" && r.appearance === "unknown" && r.team === "unknown" && r.TOI === null && !!r.counts && Object.keys(r.counts).length === 0 && r.PPP === null && r.evidenceGameId === null && r.box === null;
++    if (r.gameFinality !== "final" || r.appearance !== "positive_official_TOI" || r.team !== "match" || r.officialTeam !== r.wgoTeam || !count(r.officialTeamId) || r.officialTeamId <= 0 || r.evidenceGameId !== r.gameId || !compared(r.TOI) || r.TOI.wgo <= 0 || r.TOI.official <= 0 || r.state !== (r.TOI.state === "match" ? "identity_team_exposure_qualified" : "held")) return false;
++    if (!r.counts || Object.keys(r.counts).length !== countKeys.length || !countKeys.every(k => compared(r.counts[k]))) return false;
++    const pp = r.PPP;
++    if (!pp || (pp.state === "unknown_PP_assists_not_supplied" ? !count(pp.wgo) || pp.official !== null || r.counts.assists!.official === 0 : !compared(pp) || r.counts.assists!.official !== 0)) return false;
++    const box = r.box, at = Date.parse(box?.retrievedAtUTC || "");
++    return !!box && box.url === `https://api-web.nhle.com/v1/gamecenter/${r.gameId}/boxscore` && hash(box.bodySHA256) && hash(box.receiptSHA256) && box.originalPublicationUTC === null && Number.isFinite(at) && at <= Date.parse(b.wgoCapturedAt);
++  });
++  if (!valid) return unavailable();
++  const covered = b.rows.filter(r => r.gameFinality === "final");
++  const differs = covered.filter(r => r.TOI!.state === "mismatch" || countKeys.some(k => r.counts[k]!.state === "mismatch"));
++  const fields = [...(differs.some(r => r.TOI!.state === "mismatch") ? ["TOI"] : []), ...countKeys.filter(k => differs.some(r => r.counts[k]!.state === "mismatch")).map(k => boxCounts[k])];
++  const ppUnknown = covered.filter(r => r.PPP?.state === "unknown_PP_assists_not_supplied").length;
++  const summary = `Box TOI + 5 counts: ${covered.length - differs.length} match / ${differs.length} differ / ${b.rows.length - covered.length} unknown${fields.length ? ` · ${fields.join("/")} differ` : ppUnknown ? ` · PPP ${ppUnknown} unknown` : ""}`;
++  const measurement = (label: string, v: BoxMeasurement) => `${label} ${v.state === "mismatch" ? "differs" : "matches"}: WGO ${v.wgo}, box ${v.official}`;
++  return { state: "reviewed-comparison-only", currentBinding: false, summary, evidence: JSON.parse(JSON.stringify(b)), lines: [
++    `${covered.length}/${b.rows.length} rows have later-attached final-game/player/team box evidence. Match covers TOI plus G/A/SOG/HIT/BLK only; exposure qualification alone does not certify counts.`,
++    `PPP: ${covered.length - ppUnknown} compared, ${ppUnknown} unknown without PP assists, ${b.rows.length - covered.length} without a box. Missing boxes are not DNP or zero.`,
++    "These are dated source comparisons, not repairs or a verdict on the later capture. Saved research scores and values are unchanged; no current or advanced-metric admission. Original publication/revision time remains unknown.",
++    ...b.rows.map(r => r.box ? `${r.date} · game ${r.gameId} · source row ${r.sourceId}: ${r.state === "identity_team_exposure_qualified" ? "identity, team and exposure match; counts checked separately" : "identity and team match; exposure differs"}. WGO captured ${b.wgoCapturedAt}; box captured ${r.box.retrievedAtUTC}. ${measurement("TOI seconds", r.TOI!)}; ${countKeys.map(k => measurement(boxCounts[k], r.counts[k]!)).join("; ")}; ${r.PPP!.state === "unknown_PP_assists_not_supplied" ? `PPP unknown: WGO ${r.PPP!.wgo}, box PP assists unavailable` : measurement("PPP", r.PPP!)}.` : `${r.date} · game ${r.gameId} · source row ${r.sourceId}: no pinned box in the reviewed bundle; finality, appearance, team and fields unknown.`),
++  ] };
++}
+ export function retainedBlshEvidence(player: { id: number; team: string }, season: number, input: RetainedBlshInput): CardEvidence {
+   const p = input.profile, s = input.metadata;
+   const unavailable = (reason: string): CardEvidence => ({ status: "unavailable", heading: "Retained BLSH evidence unavailable", direction: "unknown", lines: [reason], receipt: null, market: "Market reference unavailable" });
+@@ -27,10 +70,10 @@
+       && m.rows.every((r, i) => Number.isSafeInteger(r.sourceId) && r.sourceId > 0 && Number.isSafeInteger(r.gameId) && r.gameId > 0 && r.sourceId === w.sourceIds[i] && r.date === w.dates[i] && r.playerId === p.playerId && r.season === season && !!r.team && r.regularSeasonCalendarMatched === true && typeof r.finalityEstablished === "boolean");
+     provenance = valid ? {
+       state: m.review ? "reviewed-retained-only" : "pending-review", currentBinding: false, captureStale: age > m.maxCaptureAgeHours, sourceMap: JSON.parse(JSON.stringify(m)),
+-      message: `${m.rows.length} recorded source rows mapped. ${m.review ? "Independently reviewed for dated stale research only." : "Independent sidecar review pending."} Capture ${age > m.maxCaptureAgeHours ? "stale" : "within the original age budget only"} at sidecar build (${age.toFixed(1)} hours; ${m.maxCaptureAgeHours}-hour budget). Finality evidence for ${m.rows.filter(r => r.finalityEstablished).length}/${m.rows.length} rows. This mapping does not admit current binding or advanced metrics.`,
++      message: `${m.rows.length} recorded source rows mapped. ${m.review ? "Independently reviewed for dated stale research only." : "Independent sidecar review pending."} Capture ${age > m.maxCaptureAgeHours ? "stale" : "within the original age budget only"} at sidecar build (${age.toFixed(1)} hours; ${m.maxCaptureAgeHours}-hour budget). Finality evidence for ${m.rows.filter(r => r.finalityEstablished).length}/${m.rows.length} rows in this original sidecar. This mapping does not admit current binding or advanced metrics.`,
+     } : { state: "unavailable", currentBinding: false, captureStale: null, sourceMap: null, message: "Source mapping unavailable: sidecar identity, bytes reference, window, time or review status does not match. Previously qualified retained research remains separate." };
+   }
+-  return { status: "exploratory", heading: "BLSH · retained provisional research", direction, receipt: null, market: "Market reference unavailable", retained: { snapshotSHA256: input.snapshotSHA256, reviewReference: input.reviewReference, asOfUTC: s.asOfUTC, eventThroughDate: s.eventThroughDate, dates: [...w.dates], methodVersion: s.scoreVersion, profile: JSON.parse(JSON.stringify(p)), limits: [...s.limits], provenance }, lines: [
++  return { status: "exploratory", heading: "BLSH · retained provisional research", direction, receipt: null, market: "Market reference unavailable", retained: { snapshotSHA256: input.snapshotSHA256, reviewReference: input.reviewReference, asOfUTC: s.asOfUTC, eventThroughDate: s.eventThroughDate, dates: [...w.dates], methodVersion: s.scoreVersion, profile: JSON.parse(JSON.stringify(p)), limits: [...s.limits], provenance, currentBoxes: retainedBoxEvidence(input, provenance) }, lines: [
+     `Separate saved window: ${w.dates[0]} to ${w.dates.at(-1)}; ${w.games} recorded game rows, ${w.minutes ?? "unknown"} minutes. NHL controls do not change this evidence window.`,
+     `${p.score.statusLabel}; ${direction} support gap.`,
+     ...p.tracks.map(t => `${t.label}: recorded ${t.observed.toFixed(2)}; support-conditioned ${t.supportConditioned.toFixed(2)}; gap ${t.gap.toFixed(2)} (window totals).`),

@@ -1,0 +1,60 @@
+{
+  "at": "2026-11-01T21:25:39.281816+00:00",
+  "checks": [
+    {
+      "name": "checker",
+      "exitCode": 1,
+      "counts": {
+        "tests": 6,
+        "pass": 0,
+        "fail": 6,
+        "skipped": 0
+      },
+      "log": "checker-before.log",
+      "command": [
+        "/usr/local/bin/node",
+        "--test",
+        "--test-name-pattern=microsecond|raw readback",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/tooling/check-readbacks.test.mjs"
+      ]
+    },
+    {
+      "name": "readback",
+      "exitCode": 1,
+      "counts": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "skipped": 0
+      },
+      "log": "readback-before.log",
+      "command": [
+        "/usr/local/bin/node",
+        "-r",
+        "ts-node/register",
+        "-r",
+        "tsconfig-paths/register",
+        "--test",
+        "--test-name-pattern=microsecond issue",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-readbacks.test.ts"
+      ]
+    },
+    {
+      "name": "settlement",
+      "exitCode": 1,
+      "counts": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "skipped": 0
+      },
+      "log": "settlement-before.log",
+      "command": [
+        "/usr/local/bin/node",
+        "--test",
+        "--test-name-pattern=one microsecond after start",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-settlement.test.mjs"
+      ]
+    }
+  ]
+}

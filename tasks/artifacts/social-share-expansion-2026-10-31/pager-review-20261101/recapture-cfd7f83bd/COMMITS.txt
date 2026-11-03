@@ -1,0 +1,24 @@
+cfd7f83bdd feat(social-share): Options start collapsed, with a count of changed options
+bd83418e2b fix(social-share): skater board specs pin their period editions' date, and a stale card says Updating…
+154757b278 fix(wgo): stop the run at the first NHL.com date that still fails
+04a20ed91d test(social-share): Multi-Cat Stars spec pins its edition's date to its calendar cutoff
+76a1b10520 fix(social-share): late newest nights end Busy and Quiet and Goalie Rescue at their last complete night
+23c3641918 test(social-share): pin the Off-Night Edge pager fixture to its calendar's cutoff
+59bb2d95ca fix(wgo): time out, retry and continue past failed NHL.com dates
+e7e1eda359 fix(social-share): late newest nights end Standouts and the skater boards at their last complete night, with a page note
+e8de2a3fa8 fix(social-share): Risky Starts goalie labels print as coloured text, with no chip
+ed0d26c3c7 feat(social-share): Off-Night Edge's HOT chip is red, AA over the card
+3665e335ed feat(social-share): post settings apply on their own, in a cleaner settings panel
+e0afb17c67 fix(social-share): Off-Night Edge is unavailable when no form night is fully reported
+832eab6a34 feat(social-share): Off-Night Edge ends its form window at the last complete night
+a3357e88a8 feat(social-share): goalie posts end at the last complete night when the newest is late
+79a9af1fda fix(social-share): Crease Shift, GSAx and Goalie of the Period end at the last complete night when the newest is late
+b0cce10116 feat(social-share): Off-Night Edge prefers HOT pickups, fills slots and shows opponent logos
+d731a79445 feat(social-share): What Changed and Role Watch end at the last complete night
+4700603bec fix(social-share): Player vs Player ends at the last complete night when the newest team feed is late
+575d61df21 feat(social-share): Risky Starts labels each goalie instead of Unknown and keeps fine print off the image
+27e2a09b1d docs(social-share): Standouts Nov 2 real and fixture renders after the late team feed
+e9a2c8b2db fix(social-share): Standouts takes slates from the schedule and its own rows, so a late team feed no longer blanks a night
+387a6df7fd feat(social-share): a card can end at its last complete night, with page notes beside the card
+e152ce5bca fix(social-share): Standouts finds slates from completed games, so a missing skater feed is not an off day
+f56ba565cd fix(social-share): the matchup pager uses its edition's cutoff and says when a refresh fails

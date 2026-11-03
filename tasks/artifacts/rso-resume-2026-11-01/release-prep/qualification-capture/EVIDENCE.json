@@ -1,0 +1,246 @@
+{
+  "at": "2026-11-01T19:58:55.371053+00:00",
+  "state": "DISCOVERY_EXECUTED_IDENTITY_UNAVAILABLE",
+  "actualIssuedIdentity": null,
+  "candidateTreeUnchanged": "9820a239181765a7eae2597c32c0f380c0260b5a",
+  "sourcePins": [
+    {
+      "path": "web/lib/projections/run-forge-projections.ts",
+      "releasedSha256": "a9de1e2600d2c375c3a3dd42bccc8806a5fca63a5d1a8b02e7d306d81edac9a2",
+      "workingSha256": "a9de1e2600d2c375c3a3dd42bccc8806a5fca63a5d1a8b02e7d306d81edac9a2",
+      "workingMatchesRelease": true
+    },
+    {
+      "path": "web/lib/projections/gameRevisions.ts",
+      "releasedSha256": "52228ce0a762b2770fd256b79787b32966e41b95d8a852fcea084dfb81a8c18a",
+      "workingSha256": "52228ce0a762b2770fd256b79787b32966e41b95d8a852fcea084dfb81a8c18a",
+      "workingMatchesRelease": true
+    },
+    {
+      "path": "web/lib/projections/externalInputProof.ts",
+      "releasedSha256": "c285ef41369a3eadc97e96e2b4d5184eee35c869c3605ee392ef25da28679d74",
+      "workingSha256": "c285ef41369a3eadc97e96e2b4d5184eee35c869c3605ee392ef25da28679d74",
+      "workingMatchesRelease": true
+    },
+    {
+      "path": "web/lib/projections/starterBoardFlags.ts",
+      "releasedSha256": "f6f0bea6cedda71bb43f41f7aa0235232178524b9bf9271c0a1b3567ae251e2d",
+      "workingSha256": "f6f0bea6cedda71bb43f41f7aa0235232178524b9bf9271c0a1b3567ae251e2d",
+      "workingMatchesRelease": true
+    },
+    {
+      "path": "web/lib/rosterScheduleData/planning.ts",
+      "releasedSha256": "be7919f534eab6278a7874be4bc8a6fce5db560d9b6ad8aa57e1fe633c0ebf81",
+      "workingSha256": "be7919f534eab6278a7874be4bc8a6fce5db560d9b6ad8aa57e1fe633c0ebf81",
+      "workingMatchesRelease": true
+    },
+    {
+      "path": "web/lib/rosterScheduleData/planningInputs.ts",
+      "releasedSha256": "dc165605bef18537ae5e5bac23156e38b8e74d423da2ee4d718faa3cb67adb85",
+      "workingSha256": "dc165605bef18537ae5e5bac23156e38b8e74d423da2ee4d718faa3cb67adb85",
+      "workingMatchesRelease": true
+    },
+    {
+      "path": "web/lib/rosterScheduleData/planningDataTransport.ts",
+      "releasedSha256": "8d92ae6d13e4b10947c189a10fe095a06e25e63974d64b41e2c38303992f3947",
+      "workingSha256": "8d92ae6d13e4b10947c189a10fe095a06e25e63974d64b41e2c38303992f3947",
+      "workingMatchesRelease": true
+    },
+    {
+      "path": "web/pages/api/v1/roster-schedule-optimizer/data.ts",
+      "releasedSha256": "d605311bb06704c9a7bb738572de7215e0280cebe2cc9ba3869ee6ab96e57cb5",
+      "workingSha256": "d605311bb06704c9a7bb738572de7215e0280cebe2cc9ba3869ee6ab96e57cb5",
+      "workingMatchesRelease": true
+    },
+    {
+      "path": "web/pages/api/v1/start-chart.ts",
+      "releasedSha256": "b5bbe2e5b3a64f8368dc409ad11207420af36811c0342e9cbfd49220c3d3f98e",
+      "workingSha256": "b5bbe2e5b3a64f8368dc409ad11207420af36811c0342e9cbfd49220c3d3f98e",
+      "workingMatchesRelease": true
+    },
+    {
+      "path": "supabase/migrations/20260916012353_starter_board_game_revisions.sql",
+      "releasedSha256": "b9010cce9b65ce587903e8a7ac489ffe706492f502b0d7b34bbd61ec18b18cde",
+      "workingSha256": "b9010cce9b65ce587903e8a7ac489ffe706492f502b0d7b34bbd61ec18b18cde",
+      "workingMatchesRelease": true
+    },
+    {
+      "path": "supabase/migrations/20261004181455_forge_public_revision_reader.sql",
+      "releasedSha256": "dbf2f1cc43adbf79a497e81ae7bff0ef2d2b8d194dc63451b78aa28571edf46a",
+      "workingSha256": "dbf2f1cc43adbf79a497e81ae7bff0ef2d2b8d194dc63451b78aa28571edf46a",
+      "workingMatchesRelease": true
+    }
+  ],
+  "files": {
+    "inspect-identity.mjs": "5f562165df446c276824d1b7ed5d2f07e84d25570ee316e1317c37ad52c1312b",
+    "tests.log": "130b52dc8d83835629109591c6be858d25aaed9db98bbf40383a3a657797efc2",
+    "inspect-identity.test.mjs": "d503d7ff210d0a2d6145cf110cd2a472987c22edce4e0a8ad6c03fde15ef5b82",
+    "identity-discovery.sql": "cc01904da2ff1ee7864570c9ee2874f9e4e38ffc9e7a57c66aabc6fbdbf3732a",
+    "PROTOCOL.md": "dd4f057c5c7c04f61d1233e13952d8c69215649701c0a0ce02703ce65e708aec",
+    "RETAINED-EVIDENCE.md": "99fb27a904db6eb7e45f9bc5c484337bbce3a48b962c9613f3346eb6c2dd4d75",
+    "normalize-readbacks.ts": "70047390e3ff235582d982960b28d8f7ef2aa172eabcba624a2bdd1b2fb08805",
+    "normalize-readbacks.test.ts": "19cfa0e00459e8f3251489fd3916b6f5c2323021b7569a94d09e1293955af0ab",
+    "retained-evidence.json": "3ee98220e711522a51609de8d7168a1efc9a7792f637d2ef20cea17fceb3a9e8",
+    "normalize-settlement.mjs": "47fb525903fbb24da2d280669fad8f3a3964b8b8d588b407a9135b6e8d032880",
+    "normalize-settlement.test.mjs": "2b948522e473d184c93d0a540daf1858e558656bf54b73060fcf9c0a0865f858",
+    "timestamp-parser.cjs": "fe98301ad8b5ee3ce54dec29370087f0f54eac794684e87605da756692e3c16b",
+    "inspect-issued-packet.mjs": "a2e003361d75cee8b768f8bc46cd0bcd6d4bbb05f946604193c201ecf8564730",
+    "inspect-issued-packet.test.mjs": "f4cc19fc4be359cadf432be62a10163275d88ede4bbf9a820f3453f6b27ff74d",
+    "SETTLEMENT-HANDOFF.md": "2f2664fcc994aa36b76d40bc7e173893b042e5b6c59cd13119ccd5a417da038d",
+    "ISSUED-PACKET-HANDOFF.md": "a8b12550484268c8d1b0dd97676100f5932468ab9a5a857d909b2d46372cc80f"
+  },
+  "checks": {
+    "identityTests": {
+      "passed": 10,
+      "failed": 0,
+      "log": "tests.log"
+    },
+    "sql": "reviewed against repository schema; not executed or database-validated"
+  },
+  "productionReadProposal": {
+    "projectRef": "fyhftlxokyjtpndbkfse",
+    "selectCount": 2,
+    "maximumReturnedRowsPerSelect": 17,
+    "statementTimeoutSeconds": 5,
+    "lockTimeoutSeconds": 1,
+    "retries": 0,
+    "applicationRequests": 0,
+    "approval": "executed under explicit parent/TJ authorization"
+  },
+  "actions": {
+    "productionDatabaseReads": 2,
+    "applicationRequests": 0,
+    "providerRequests": 0,
+    "gitMutations": 0,
+    "builds": 0,
+    "deployments": 0,
+    "documentationBrowses": 3
+  },
+  "discoveryReceipt": "discovery-20261101/RECEIPT.json",
+  "discoveryReceiptSha256": "73ce4dc4862db357ec2b3a3b25642588f82c472ce9dae62273836f4cc4bcfee9",
+  "retainedReconciliation": "RETAINED-EVIDENCE.md",
+  "readbackNormalizer": {
+    "testsPassed": 19,
+    "types": "checked during ts-node tests",
+    "installedInRuntime": false,
+    "timezoneMatrix": [
+      "UTC",
+      "America/New_York"
+    ],
+    "latestEvidence": "../qualification-readbacks/microseconds-review/after.json",
+    "sourceSha256": "70047390e3ff235582d982960b28d8f7ef2aa172eabcba624a2bdd1b2fb08805"
+  },
+  "after403Reconciliation": {
+    "at": "2026-11-01T20:26:23.994587+00:00",
+    "candidateTree": "394e3cb70d3e9995e8a1f02f75ba13973320df34",
+    "priorCandidateTree": "9820a239181765a7eae2597c32c0f380c0260b5a",
+    "fourSourcePinsChanged": false,
+    "releasedCommit": "295b384da47f2a4665a76d841d3d1aa701912d8c",
+    "releasedClosureChanged": false,
+    "configurationAccessReceipt": "configuration-access-20261101.json",
+    "configurationAccessStatus": "403 denied; values not read; no installed CLI fallback",
+    "actualIssuedModelIdentity": null,
+    "nextHandoff": "OWNER-DECISION.md",
+    "protocolMdSha256": "70bd598bbda37123e5558937abb43b84767e0c8eb3929fd96136e997d74a5678",
+    "frozenScientificScopeChanged": false,
+    "newDatabaseReads": 0,
+    "newApplicationReads": 0,
+    "newProviderReads": 0
+  },
+  "normalizerIntegrityIntegration": {
+    "at": "2026-11-01T20:40:20.724813+00:00",
+    "testFile": "normalize-readbacks.test.ts",
+    "testSha256": "cf82ee4315282e7d2c8119e8a110ad6f22a1ca7c5a125b6a2ddb506306fdd567",
+    "testsPassed": 12,
+    "typechecked": true,
+    "evidence": "normalizer-integration-check.json",
+    "log": "normalizer-integration-tests.log",
+    "assertions": [
+      "Actual RSO transport decoder and Start Chart normalizer feed the integrity CLI",
+      "Unknown SOG remains null",
+      "Denied uses remain denied",
+      "Changed Start Chart revision fails identity comparison",
+      "Replacing unknown RSO SOG with zero fails value comparison"
+    ],
+    "scope": "Synthetic temporary scope only; no real pin or qualification",
+    "canonicalSourceChanged": false,
+    "candidateChanged": false,
+    "remoteRequests": 0
+  },
+  "settlementNormalization": {
+    "at": "2026-11-01T20:49:36.290779+00:00",
+    "evidence": "settlement-evidence.json",
+    "handoff": "SETTLEMENT-HANDOFF.md",
+    "testsPassed": 12,
+    "sourceSha256": "ed4b33a04806ca7702d6611decc12f09ace270d7528c5f3c0caf886fb5c555ab",
+    "testSha256": "a9a1f7f1cda5b1a14a9952f5943799798f4e0a00bd95ebf46a5fce9ff477080b"
+  },
+  "currentCandidate": {
+    "commit": "c3897d3273ca46ea25a9f2737f09c835e5ec7325",
+    "tree": "394e3cb70d3e9995e8a1f02f75ba13973320df34",
+    "admissionState": "INSTALLED_AWAITING_OWNER_COMMIT"
+  },
+  "timestampReviewRepair": {
+    "at": "2026-11-01T21:06:28.105550+00:00",
+    "status": "IMPLEMENTED_TESTED_AWAITING_INDEPENDENT_REREVIEW",
+    "findings": [
+      "P2 offset-free capture timestamps",
+      "P3 impossible calendar timestamps"
+    ],
+    "evidence": "timestamp-review-fix/after.json",
+    "before": "timestamp-review-fix/before.json",
+    "pins": "timestamp-review-fix/SOURCE-PINS.json",
+    "handoff": "timestamp-review-fix/REVIEW-RESPONSE.md",
+    "distinctTestsPassed": 68,
+    "executedCasesPassed": 104,
+    "timezoneMatrix": [
+      "UTC",
+      "America/New_York"
+    ],
+    "typecheckedReadback": true,
+    "productionParserChanged": false,
+    "newRemoteRequests": 0
+  },
+  "issuedPacketPreflight": {
+    "at": "2026-11-01T21:06:28.105550+00:00",
+    "state": "OFFLINE_BINDING_PREFLIGHT_TESTED_NO_REAL_INPUTS",
+    "source": "inspect-issued-packet.mjs",
+    "sourceSha256": "a2e003361d75cee8b768f8bc46cd0bcd6d4bbb05f946604193c201ecf8564730",
+    "test": "inspect-issued-packet.test.mjs",
+    "testSha256": "f4cc19fc4be359cadf432be62a10163275d88ede4bbf9a820f3453f6b27ff74d",
+    "parserBridgeSha256": "fe98301ad8b5ee3ce54dec29370087f0f54eac794684e87605da756692e3c16b",
+    "testsPassed": 11,
+    "checks": "timestamp-review-fix/after.json",
+    "log": "timestamp-review-fix/issued-packet.log",
+    "handoff": "ISSUED-PACKET-HANDOFF.md",
+    "actualIssuedIdentity": null,
+    "forecastsCalculated": false,
+    "releaseAttributionProved": false,
+    "qualificationGranted": false,
+    "newLiveDataReads": 0
+  },
+  "downstreamPrecisionRepair": {
+    "at": "2026-11-01T21:28:46.482359+00:00",
+    "state": "TESTED_AWAITING_INDEPENDENT_REREVIEW",
+    "before": "microseconds-review/before.json",
+    "after": "microseconds-review/after.json",
+    "evidence": "microseconds-review/EVIDENCE.json",
+    "checkerTestsPassedPerTimezone": 28,
+    "timezones": [
+      "UTC",
+      "America/New_York"
+    ],
+    "allAffectedDistinctTestsPassed": 87,
+    "allAffectedExecutionsPassed": 153,
+    "canonicalSourceChanged": false,
+    "runtimeFilesChanged": false,
+    "parser": "web/lib/projections/evidenceTime.ts (unchanged)",
+    "dependency": "existing installed web/ts-node; discovers repository from module location"
+  },
+  "independentTimestampReview": {
+    "path": "tasks/artifacts/rso-settlement-audit-2026-11-01/timestamp-rereview/REVIEW.md",
+    "originalP2": "closed",
+    "originalP3": "closed",
+    "newDownstreamP2": "isolated fix tested; re-review pending"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "version": "ifttt-luna-review-v1",
+  "canPublish": false,
+  "canWriteAliases": false,
+  "canChangeStatus": false,
+  "canExecuteReplacement": false,
+  "status": "held",
+  "holds": [
+    "luna_attempt_held_no_retry"
+  ],
+  "referencePackage": {
+    "version": "luna-hockey-reference-v4",
+    "mode": "rules-and-synthetic-only",
+    "hash": "9b8a10fd458596b75ba2c0900dea1b72b9ec446d5e0e660ca5c18341920abdb3",
+    "rulesVersion": "luna-hockey-rules-v4",
+    "libraryVersion": null
+  },
+  "responsesRequestHash": "293625fe83c949c430df2a7d100fde9bc2099da2fade5cca12269773f5d5bdca",
+  "lineage": {
+    "originalPostId": "910006",
+    "author": "lunafixture",
+    "url": "https://x.com/LunaFixture/status/910006",
+    "textVersion": "tweet-source-claim-v1:text:a5a3e71af4b83e3866d7bf2fe4162b05012bbd13b68e423d53a01f3526e70811",
+    "packetHash": "dc01084a14ea2ef29db4095769a2784855c22262baff10e3ad4dab8250b3515b"
+  },
+  "identity": null,
+  "goalieStatuses": [],
+  "decisionReview": null,
+  "attempts": 1,
+  "requestIds": [],
+  "reviewQueueKey": "ed1caf32ee0c42d2e9890c27969a7db3e630ce56ce3d7cf8785edc6342cdb790"
+}

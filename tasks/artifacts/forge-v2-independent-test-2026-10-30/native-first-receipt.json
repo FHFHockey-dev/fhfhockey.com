@@ -1,0 +1,15 @@
+{
+  "check": "native",
+  "command": [
+    "node",
+    "node_modules/vitest/vitest.mjs",
+    "run",
+    "lib/forge-v2/history.test.ts",
+    "--reporter=verbose"
+  ],
+  "cwd": "/tmp/forge-v2-independent-hkh8ulbm/web",
+  "exit": 1,
+  "durationSeconds": 1.1675939559936523,
+  "environment": "allowlisted; no inherited credentials; no env files copied",
+  "log": "native.log"
+}

@@ -1,0 +1,22 @@
+{
+  "version": "luna-offline-rehearsal-v2",
+  "batchHash": "c4043a5ef36ffeb1ad5aa5ee9a45e1d34e249b1ad5477b129e14c9276e24a840",
+  "requestsHash": "e29967521c54117023b422e40ddaa8602e55ed152595184f592eed55ca961472",
+  "status": "passed",
+  "completedReports": 16,
+  "matchedReports": 16,
+  "responsesCalls": 16,
+  "decisionsCalls": 4,
+  "maxCalls": 20,
+  "maxRetries": 0,
+  "concurrency": 1,
+  "estimatedNewCostNanoUsd": 48315313,
+  "estimateBasis": "Diagnostic only: serialized UTF-8 bytes plus 1024 as input tokens, maximum output; not a proven provider token bound. Full-context reservations and aggregate admission govern.",
+  "syntheticReceiptChargesNanoUsd": 660000,
+  "actualPaidRequests": 0,
+  "actualPaidCostNanoUsd": 0,
+  "ledgerBlockedReason": null,
+  "meaning": "Prescribed synthetic responses through real caller/transport/local admission; not model accuracy, billing evidence or independent holdout.",
+  "expectedLabels": "Frozen assistant-authored labels pending independent review; no human-ground-truth claim.",
+  "scenario": null
+}

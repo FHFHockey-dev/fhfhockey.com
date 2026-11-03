@@ -1,0 +1,4 @@
+{
+  "extends": "../tsconfig.json",
+  "include": ["./control.ts", "./verify-control.ts"]
+}

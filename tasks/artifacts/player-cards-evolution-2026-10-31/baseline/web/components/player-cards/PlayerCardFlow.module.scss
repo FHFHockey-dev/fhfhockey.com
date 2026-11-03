@@ -1,0 +1,27 @@
+@use "../../styles/vars" as v;
+.flowPage { max-width: 1440px; margin: auto; padding: 32px 24px 60px; color: v.$color-brand-white; font-family: Arial,sans-serif; }
+.flowTitle { font-size: clamp(30px,4vw,48px); margin: 12px 0; letter-spacing: -.03em; }
+.flowIntro { max-width: 850px; color: v.$color-neutral-400; line-height: 1.6; }
+.flowBadge { color: v.$color-blue-300; font-size: 13px; font-weight: 700; letter-spacing: .1em; }
+.flowStudio { display: grid; grid-template-columns: 300px minmax(0,850px); gap: 28px; align-items: start; margin-top: 28px; }
+.flowControls { background: v.$color-brand-dark; border-radius: 18px; padding: 22px; box-shadow: 0 0 0 1px rgba(255,255,255,.12); }
+.flowControls label { display: block; font-size: 14px; font-weight: 600; margin: 14px 0 7px; }
+.flowControls :is(input,select,button) { box-sizing: border-box; width: 100%; min-height: 44px; color: v.$color-brand-white; background: v.$color-neutral-900; border: 1px solid v.$color-neutral-400; border-radius: 7px; padding: 9px; font: inherit; }
+.flowControls button { margin-top: 10px; cursor: pointer; }
+.flowControls button:hover { background: v.$color-neutral-800; }
+.flowControls :is(input,select,button):focus-visible, .flowReadings summary:focus-visible { outline: 3px solid v.$color-gold-400; outline-offset: 3px; }
+.flowControls :disabled { opacity: .55; cursor: default; }
+.flowControls .flowDownload { color: v.$color-neutral-950; background: v.$color-blue-300; font-weight: 700; }
+.flowSmall { color: v.$color-neutral-400; font-size: 13px; line-height: 1.5; }
+.flowResults { padding: 0; list-style: none; }
+.flowResults button { text-align: left; }
+.flowPreview { min-width: 0; }
+.flowPreview > button { min-height: 44px; padding: 10px 16px; border: 1px solid v.$color-neutral-400; border-radius: 7px; color: v.$color-brand-white; background: v.$color-neutral-900; font: inherit; cursor: pointer; }
+.flowPreview > button:focus-visible { outline: 3px solid v.$color-gold-400; outline-offset: 3px; }
+.flowCard { width: 100%; height: auto; display: block; font-variant-numeric: tabular-nums; box-shadow: 0 0 0 1px rgba(255,255,255,.1); border-radius: 7px; }
+.flowStatus { min-height: 24px; color: v.$color-gold-400; line-height: 1.5; }
+.flowReadings { margin-top: 18px; color: v.$color-neutral-400; line-height: 1.6; }
+.flowReadings summary { min-height: 44px; padding: 12px 0; cursor: pointer; color: v.$color-brand-white; }
+.flowReadings h2 { font-size: 16px; color: v.$color-blue-300; }
+.flowReadings dl { margin: 0; font-variant-numeric: tabular-nums; }.flowReadings dl > div { display: flex; justify-content: space-between; gap: 16px; border-bottom: 1px solid v.$color-neutral-800; padding: 12px 0; }.flowReadings dt { color: v.$color-brand-white; }.flowReadings dd { margin: 0; text-align: right; }
+@media(max-width:820px) { .flowPage { padding: 24px 16px 40px; }.flowStudio { grid-template-columns: minmax(0,1fr); gap: 24px; } }

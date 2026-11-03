@@ -1,0 +1,4070 @@
+{
+  "version": "luna-e07-e16-offline-diagnostic-verification-v2",
+  "planSha256": "af1499f51ffd1baba22aee3fbefd20a0bc1919b12bbc972289bcf0f7d5d431b5",
+  "actualProviderRequests": 0,
+  "retries": 0,
+  "realLedgerUnchangedDisabledSevenCalls": true,
+  "historicalLedgerUnchanged": true,
+  "originalGradesPreserved": true,
+  "applicationUnchanged": true,
+  "scenarios": [
+    {
+      "scenario": "all-pass",
+      "reportsRecorded": 10,
+      "newMockCalls": 12,
+      "totalMockAttempts": 19,
+      "operationalStop": false,
+      "stopReason": null,
+      "blockedReason": "diagnostic_collection_completed",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 10,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 0,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265670690,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E16",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "2684229df0c1221e9ec9e7772c26b50194e585d4f2eb3ccfbf56bea65887c79b",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "identity_abstention_or_widening_requires_review",
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "7308c16d8d1b5c68a6db90c1d4be843203390ba20c5a47c62eb15cecc14cf3b7"
+        ],
+        "persisted": true,
+        "integrityVerified": true,
+        "diagnosticResultHash": "3f148e85532044a4ad8dc3fed1415e526fba2005e39a332eeb5ce6630baa7d90"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        },
+        {
+          "caseId": "E08",
+          "endpoint": "responses",
+          "hash": "9d1a891a46a38128e08f272045e5ec9d95a656d413ac5fbb1574e01230c9dec9"
+        },
+        {
+          "caseId": "E09",
+          "endpoint": "responses",
+          "hash": "fbe771b131918b3cf739b357ce324baaf38dac818b98fc3100b33b6498c7846c"
+        },
+        {
+          "caseId": "E10",
+          "endpoint": "responses",
+          "hash": "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d"
+        },
+        {
+          "caseId": "E10",
+          "endpoint": "decisions",
+          "hash": "6d44c708b3e1173a25d906f2348bd28ac47f20ec262ece430ffda3430754183e"
+        },
+        {
+          "caseId": "E11",
+          "endpoint": "responses",
+          "hash": "9841ce0f388de9ca206cf22abe7dbd82afb5a3f9500fe6f7a1215e72ad758cba"
+        },
+        {
+          "caseId": "E11",
+          "endpoint": "decisions",
+          "hash": "5781feae2b9115b7068461d20b8cb0fcb34746baa4cbd2df0b1790702c951740"
+        },
+        {
+          "caseId": "E12",
+          "endpoint": "responses",
+          "hash": "e344741ac77450ec7be9655f6ea7ca57933d26d6b185450ee9df473776a77b2f"
+        },
+        {
+          "caseId": "E13",
+          "endpoint": "responses",
+          "hash": "7270c5fa8947367d749d52bb2b0917adc03760b9785b59b7fdbb3e9d5955576d"
+        },
+        {
+          "caseId": "E14",
+          "endpoint": "responses",
+          "hash": "102d9692c07022f282ba3c3c29aed0636aced6adce77164ddb5545a851bccafa"
+        },
+        {
+          "caseId": "E15",
+          "endpoint": "responses",
+          "hash": "06fe01bba0cb4d29d1967fc072951c2ce42cf76dc9059c825b04ea0f728233f2"
+        },
+        {
+          "caseId": "E16",
+          "endpoint": "responses",
+          "hash": "7308c16d8d1b5c68a6db90c1d4be843203390ba20c5a47c62eb15cecc14cf3b7"
+        }
+      ]
+    },
+    {
+      "scenario": "explicit-complete",
+      "reportsRecorded": 10,
+      "newMockCalls": 12,
+      "totalMockAttempts": 19,
+      "operationalStop": false,
+      "stopReason": null,
+      "blockedReason": "diagnostic_collection_completed",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 10,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 0,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265670690,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E16",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "2684229df0c1221e9ec9e7772c26b50194e585d4f2eb3ccfbf56bea65887c79b",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "identity_abstention_or_widening_requires_review",
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "7308c16d8d1b5c68a6db90c1d4be843203390ba20c5a47c62eb15cecc14cf3b7"
+        ],
+        "persisted": true,
+        "integrityVerified": true,
+        "diagnosticResultHash": "3f148e85532044a4ad8dc3fed1415e526fba2005e39a332eeb5ce6630baa7d90"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        },
+        {
+          "caseId": "E08",
+          "endpoint": "responses",
+          "hash": "9d1a891a46a38128e08f272045e5ec9d95a656d413ac5fbb1574e01230c9dec9"
+        },
+        {
+          "caseId": "E09",
+          "endpoint": "responses",
+          "hash": "fbe771b131918b3cf739b357ce324baaf38dac818b98fc3100b33b6498c7846c"
+        },
+        {
+          "caseId": "E10",
+          "endpoint": "responses",
+          "hash": "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d"
+        },
+        {
+          "caseId": "E10",
+          "endpoint": "decisions",
+          "hash": "6d44c708b3e1173a25d906f2348bd28ac47f20ec262ece430ffda3430754183e"
+        },
+        {
+          "caseId": "E11",
+          "endpoint": "responses",
+          "hash": "9841ce0f388de9ca206cf22abe7dbd82afb5a3f9500fe6f7a1215e72ad758cba"
+        },
+        {
+          "caseId": "E11",
+          "endpoint": "decisions",
+          "hash": "5781feae2b9115b7068461d20b8cb0fcb34746baa4cbd2df0b1790702c951740"
+        },
+        {
+          "caseId": "E12",
+          "endpoint": "responses",
+          "hash": "e344741ac77450ec7be9655f6ea7ca57933d26d6b185450ee9df473776a77b2f"
+        },
+        {
+          "caseId": "E13",
+          "endpoint": "responses",
+          "hash": "7270c5fa8947367d749d52bb2b0917adc03760b9785b59b7fdbb3e9d5955576d"
+        },
+        {
+          "caseId": "E14",
+          "endpoint": "responses",
+          "hash": "102d9692c07022f282ba3c3c29aed0636aced6adce77164ddb5545a851bccafa"
+        },
+        {
+          "caseId": "E15",
+          "endpoint": "responses",
+          "hash": "06fe01bba0cb4d29d1967fc072951c2ce42cf76dc9059c825b04ea0f728233f2"
+        },
+        {
+          "caseId": "E16",
+          "endpoint": "responses",
+          "hash": "7308c16d8d1b5c68a6db90c1d4be843203390ba20c5a47c62eb15cecc14cf3b7"
+        }
+      ]
+    },
+    {
+      "scenario": "identity-label-E07",
+      "reportsRecorded": 10,
+      "newMockCalls": 12,
+      "totalMockAttempts": 19,
+      "operationalStop": false,
+      "stopReason": null,
+      "blockedReason": "diagnostic_collection_completed",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 9,
+      "originalFailures": 1,
+      "operationallyStoppedReports": 0,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265670690,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E16",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "2684229df0c1221e9ec9e7772c26b50194e585d4f2eb3ccfbf56bea65887c79b",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "identity_abstention_or_widening_requires_review",
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "7308c16d8d1b5c68a6db90c1d4be843203390ba20c5a47c62eb15cecc14cf3b7"
+        ],
+        "persisted": true,
+        "integrityVerified": true,
+        "diagnosticResultHash": "3f148e85532044a4ad8dc3fed1415e526fba2005e39a332eeb5ce6630baa7d90"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        },
+        {
+          "caseId": "E08",
+          "endpoint": "responses",
+          "hash": "9d1a891a46a38128e08f272045e5ec9d95a656d413ac5fbb1574e01230c9dec9"
+        },
+        {
+          "caseId": "E09",
+          "endpoint": "responses",
+          "hash": "fbe771b131918b3cf739b357ce324baaf38dac818b98fc3100b33b6498c7846c"
+        },
+        {
+          "caseId": "E10",
+          "endpoint": "responses",
+          "hash": "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d"
+        },
+        {
+          "caseId": "E10",
+          "endpoint": "decisions",
+          "hash": "6d44c708b3e1173a25d906f2348bd28ac47f20ec262ece430ffda3430754183e"
+        },
+        {
+          "caseId": "E11",
+          "endpoint": "responses",
+          "hash": "9841ce0f388de9ca206cf22abe7dbd82afb5a3f9500fe6f7a1215e72ad758cba"
+        },
+        {
+          "caseId": "E11",
+          "endpoint": "decisions",
+          "hash": "5781feae2b9115b7068461d20b8cb0fcb34746baa4cbd2df0b1790702c951740"
+        },
+        {
+          "caseId": "E12",
+          "endpoint": "responses",
+          "hash": "e344741ac77450ec7be9655f6ea7ca57933d26d6b185450ee9df473776a77b2f"
+        },
+        {
+          "caseId": "E13",
+          "endpoint": "responses",
+          "hash": "7270c5fa8947367d749d52bb2b0917adc03760b9785b59b7fdbb3e9d5955576d"
+        },
+        {
+          "caseId": "E14",
+          "endpoint": "responses",
+          "hash": "102d9692c07022f282ba3c3c29aed0636aced6adce77164ddb5545a851bccafa"
+        },
+        {
+          "caseId": "E15",
+          "endpoint": "responses",
+          "hash": "06fe01bba0cb4d29d1967fc072951c2ce42cf76dc9059c825b04ea0f728233f2"
+        },
+        {
+          "caseId": "E16",
+          "endpoint": "responses",
+          "hash": "7308c16d8d1b5c68a6db90c1d4be843203390ba20c5a47c62eb15cecc14cf3b7"
+        }
+      ]
+    },
+    {
+      "scenario": "unsupported-goalie-E07",
+      "reportsRecorded": 10,
+      "newMockCalls": 12,
+      "totalMockAttempts": 19,
+      "operationalStop": false,
+      "stopReason": null,
+      "blockedReason": "diagnostic_collection_completed",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 9,
+      "originalFailures": 1,
+      "operationallyStoppedReports": 0,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265670690,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E16",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "2684229df0c1221e9ec9e7772c26b50194e585d4f2eb3ccfbf56bea65887c79b",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "identity_abstention_or_widening_requires_review",
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "7308c16d8d1b5c68a6db90c1d4be843203390ba20c5a47c62eb15cecc14cf3b7"
+        ],
+        "persisted": true,
+        "integrityVerified": true,
+        "diagnosticResultHash": "3f148e85532044a4ad8dc3fed1415e526fba2005e39a332eeb5ce6630baa7d90"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        },
+        {
+          "caseId": "E08",
+          "endpoint": "responses",
+          "hash": "9d1a891a46a38128e08f272045e5ec9d95a656d413ac5fbb1574e01230c9dec9"
+        },
+        {
+          "caseId": "E09",
+          "endpoint": "responses",
+          "hash": "fbe771b131918b3cf739b357ce324baaf38dac818b98fc3100b33b6498c7846c"
+        },
+        {
+          "caseId": "E10",
+          "endpoint": "responses",
+          "hash": "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d"
+        },
+        {
+          "caseId": "E10",
+          "endpoint": "decisions",
+          "hash": "6d44c708b3e1173a25d906f2348bd28ac47f20ec262ece430ffda3430754183e"
+        },
+        {
+          "caseId": "E11",
+          "endpoint": "responses",
+          "hash": "9841ce0f388de9ca206cf22abe7dbd82afb5a3f9500fe6f7a1215e72ad758cba"
+        },
+        {
+          "caseId": "E11",
+          "endpoint": "decisions",
+          "hash": "5781feae2b9115b7068461d20b8cb0fcb34746baa4cbd2df0b1790702c951740"
+        },
+        {
+          "caseId": "E12",
+          "endpoint": "responses",
+          "hash": "e344741ac77450ec7be9655f6ea7ca57933d26d6b185450ee9df473776a77b2f"
+        },
+        {
+          "caseId": "E13",
+          "endpoint": "responses",
+          "hash": "7270c5fa8947367d749d52bb2b0917adc03760b9785b59b7fdbb3e9d5955576d"
+        },
+        {
+          "caseId": "E14",
+          "endpoint": "responses",
+          "hash": "102d9692c07022f282ba3c3c29aed0636aced6adce77164ddb5545a851bccafa"
+        },
+        {
+          "caseId": "E15",
+          "endpoint": "responses",
+          "hash": "06fe01bba0cb4d29d1967fc072951c2ce42cf76dc9059c825b04ea0f728233f2"
+        },
+        {
+          "caseId": "E16",
+          "endpoint": "responses",
+          "hash": "7308c16d8d1b5c68a6db90c1d4be843203390ba20c5a47c62eb15cecc14cf3b7"
+        }
+      ]
+    },
+    {
+      "scenario": "decision-label-E10",
+      "reportsRecorded": 10,
+      "newMockCalls": 12,
+      "totalMockAttempts": 19,
+      "operationalStop": false,
+      "stopReason": null,
+      "blockedReason": "diagnostic_collection_completed",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 9,
+      "originalFailures": 1,
+      "operationallyStoppedReports": 0,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265670690,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E16",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "2684229df0c1221e9ec9e7772c26b50194e585d4f2eb3ccfbf56bea65887c79b",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "identity_abstention_or_widening_requires_review",
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "7308c16d8d1b5c68a6db90c1d4be843203390ba20c5a47c62eb15cecc14cf3b7"
+        ],
+        "persisted": true,
+        "integrityVerified": true,
+        "diagnosticResultHash": "3f148e85532044a4ad8dc3fed1415e526fba2005e39a332eeb5ce6630baa7d90"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        },
+        {
+          "caseId": "E08",
+          "endpoint": "responses",
+          "hash": "9d1a891a46a38128e08f272045e5ec9d95a656d413ac5fbb1574e01230c9dec9"
+        },
+        {
+          "caseId": "E09",
+          "endpoint": "responses",
+          "hash": "fbe771b131918b3cf739b357ce324baaf38dac818b98fc3100b33b6498c7846c"
+        },
+        {
+          "caseId": "E10",
+          "endpoint": "responses",
+          "hash": "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d"
+        },
+        {
+          "caseId": "E10",
+          "endpoint": "decisions",
+          "hash": "6d44c708b3e1173a25d906f2348bd28ac47f20ec262ece430ffda3430754183e"
+        },
+        {
+          "caseId": "E11",
+          "endpoint": "responses",
+          "hash": "9841ce0f388de9ca206cf22abe7dbd82afb5a3f9500fe6f7a1215e72ad758cba"
+        },
+        {
+          "caseId": "E11",
+          "endpoint": "decisions",
+          "hash": "5781feae2b9115b7068461d20b8cb0fcb34746baa4cbd2df0b1790702c951740"
+        },
+        {
+          "caseId": "E12",
+          "endpoint": "responses",
+          "hash": "e344741ac77450ec7be9655f6ea7ca57933d26d6b185450ee9df473776a77b2f"
+        },
+        {
+          "caseId": "E13",
+          "endpoint": "responses",
+          "hash": "7270c5fa8947367d749d52bb2b0917adc03760b9785b59b7fdbb3e9d5955576d"
+        },
+        {
+          "caseId": "E14",
+          "endpoint": "responses",
+          "hash": "102d9692c07022f282ba3c3c29aed0636aced6adce77164ddb5545a851bccafa"
+        },
+        {
+          "caseId": "E15",
+          "endpoint": "responses",
+          "hash": "06fe01bba0cb4d29d1967fc072951c2ce42cf76dc9059c825b04ea0f728233f2"
+        },
+        {
+          "caseId": "E16",
+          "endpoint": "responses",
+          "hash": "7308c16d8d1b5c68a6db90c1d4be843203390ba20c5a47c62eb15cecc14cf3b7"
+        }
+      ]
+    },
+    {
+      "scenario": "offset-E10",
+      "reportsRecorded": 10,
+      "newMockCalls": 11,
+      "totalMockAttempts": 18,
+      "operationalStop": false,
+      "stopReason": null,
+      "blockedReason": "diagnostic_collection_completed",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 9,
+      "originalFailures": 1,
+      "operationallyStoppedReports": 0,
+      "separateCandidates": 1,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265659690,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E16",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "2684229df0c1221e9ec9e7772c26b50194e585d4f2eb3ccfbf56bea65887c79b",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "identity_abstention_or_widening_requires_review",
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "7308c16d8d1b5c68a6db90c1d4be843203390ba20c5a47c62eb15cecc14cf3b7"
+        ],
+        "persisted": true,
+        "integrityVerified": true,
+        "diagnosticResultHash": "3f148e85532044a4ad8dc3fed1415e526fba2005e39a332eeb5ce6630baa7d90"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        },
+        {
+          "caseId": "E08",
+          "endpoint": "responses",
+          "hash": "9d1a891a46a38128e08f272045e5ec9d95a656d413ac5fbb1574e01230c9dec9"
+        },
+        {
+          "caseId": "E09",
+          "endpoint": "responses",
+          "hash": "fbe771b131918b3cf739b357ce324baaf38dac818b98fc3100b33b6498c7846c"
+        },
+        {
+          "caseId": "E10",
+          "endpoint": "responses",
+          "hash": "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d"
+        },
+        {
+          "caseId": "E11",
+          "endpoint": "responses",
+          "hash": "9841ce0f388de9ca206cf22abe7dbd82afb5a3f9500fe6f7a1215e72ad758cba"
+        },
+        {
+          "caseId": "E11",
+          "endpoint": "decisions",
+          "hash": "5781feae2b9115b7068461d20b8cb0fcb34746baa4cbd2df0b1790702c951740"
+        },
+        {
+          "caseId": "E12",
+          "endpoint": "responses",
+          "hash": "e344741ac77450ec7be9655f6ea7ca57933d26d6b185450ee9df473776a77b2f"
+        },
+        {
+          "caseId": "E13",
+          "endpoint": "responses",
+          "hash": "7270c5fa8947367d749d52bb2b0917adc03760b9785b59b7fdbb3e9d5955576d"
+        },
+        {
+          "caseId": "E14",
+          "endpoint": "responses",
+          "hash": "102d9692c07022f282ba3c3c29aed0636aced6adce77164ddb5545a851bccafa"
+        },
+        {
+          "caseId": "E15",
+          "endpoint": "responses",
+          "hash": "06fe01bba0cb4d29d1967fc072951c2ce42cf76dc9059c825b04ea0f728233f2"
+        },
+        {
+          "caseId": "E16",
+          "endpoint": "responses",
+          "hash": "7308c16d8d1b5c68a6db90c1d4be843203390ba20c5a47c62eb15cecc14cf3b7"
+        }
+      ]
+    },
+    {
+      "scenario": "three-offsets",
+      "reportsRecorded": 10,
+      "newMockCalls": 10,
+      "totalMockAttempts": 17,
+      "operationalStop": false,
+      "stopReason": null,
+      "blockedReason": "diagnostic_collection_completed",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 7,
+      "originalFailures": 3,
+      "operationallyStoppedReports": 0,
+      "separateCandidates": 3,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265648690,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E16",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "2684229df0c1221e9ec9e7772c26b50194e585d4f2eb3ccfbf56bea65887c79b",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "identity_abstention_or_widening_requires_review",
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "7308c16d8d1b5c68a6db90c1d4be843203390ba20c5a47c62eb15cecc14cf3b7"
+        ],
+        "persisted": true,
+        "integrityVerified": true,
+        "diagnosticResultHash": "3f148e85532044a4ad8dc3fed1415e526fba2005e39a332eeb5ce6630baa7d90"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        },
+        {
+          "caseId": "E08",
+          "endpoint": "responses",
+          "hash": "9d1a891a46a38128e08f272045e5ec9d95a656d413ac5fbb1574e01230c9dec9"
+        },
+        {
+          "caseId": "E09",
+          "endpoint": "responses",
+          "hash": "fbe771b131918b3cf739b357ce324baaf38dac818b98fc3100b33b6498c7846c"
+        },
+        {
+          "caseId": "E10",
+          "endpoint": "responses",
+          "hash": "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d"
+        },
+        {
+          "caseId": "E11",
+          "endpoint": "responses",
+          "hash": "9841ce0f388de9ca206cf22abe7dbd82afb5a3f9500fe6f7a1215e72ad758cba"
+        },
+        {
+          "caseId": "E12",
+          "endpoint": "responses",
+          "hash": "e344741ac77450ec7be9655f6ea7ca57933d26d6b185450ee9df473776a77b2f"
+        },
+        {
+          "caseId": "E13",
+          "endpoint": "responses",
+          "hash": "7270c5fa8947367d749d52bb2b0917adc03760b9785b59b7fdbb3e9d5955576d"
+        },
+        {
+          "caseId": "E14",
+          "endpoint": "responses",
+          "hash": "102d9692c07022f282ba3c3c29aed0636aced6adce77164ddb5545a851bccafa"
+        },
+        {
+          "caseId": "E15",
+          "endpoint": "responses",
+          "hash": "06fe01bba0cb4d29d1967fc072951c2ce42cf76dc9059c825b04ea0f728233f2"
+        },
+        {
+          "caseId": "E16",
+          "endpoint": "responses",
+          "hash": "7308c16d8d1b5c68a6db90c1d4be843203390ba20c5a47c62eb15cecc14cf3b7"
+        }
+      ]
+    },
+    {
+      "scenario": "schema-escape-E07",
+      "reportsRecorded": 1,
+      "newMockCalls": 1,
+      "totalMockAttempts": 8,
+      "operationalStop": true,
+      "stopReason": "noncollectible_validation_or_protocol_failure",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 0,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265302190,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E07",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "8cb96b548c41cb4a0615856ac1ab73f82823b729f2a1cd5abe9020c984f12c62",
+        "rawGrade": {
+          "identity": false,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": false
+        },
+        "originalStatus": "held",
+        "originalHolds": [
+          "invalid_or_unavailable_review"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "operational_stop",
+        "mayAdvanceDiagnosticSequence": false,
+        "reason": "noncollectible_validation_or_protocol_failure",
+        "decisionsDisposition": "unresolved_do_not_dispatch",
+        "originalPassed": false,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "7da91c5ea8f6a810f66d2d27edf34d79a90efed680d1ff8d8f09fe3a0e121ee7"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        }
+      ]
+    },
+    {
+      "scenario": "invalid-json-E07",
+      "reportsRecorded": 1,
+      "newMockCalls": 1,
+      "totalMockAttempts": 8,
+      "operationalStop": true,
+      "stopReason": "noncollectible_validation_or_protocol_failure",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 0,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265302190,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E07",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "8cb96b548c41cb4a0615856ac1ab73f82823b729f2a1cd5abe9020c984f12c62",
+        "rawGrade": {
+          "identity": false,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": false
+        },
+        "originalStatus": "held",
+        "originalHolds": [
+          "invalid_or_unavailable_review"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "operational_stop",
+        "mayAdvanceDiagnosticSequence": false,
+        "reason": "noncollectible_validation_or_protocol_failure",
+        "decisionsDisposition": "unresolved_do_not_dispatch",
+        "originalPassed": false,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "7da91c5ea8f6a810f66d2d27edf34d79a90efed680d1ff8d8f09fe3a0e121ee7"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        }
+      ]
+    },
+    {
+      "scenario": "incomplete-E07",
+      "reportsRecorded": 1,
+      "newMockCalls": 1,
+      "totalMockAttempts": 8,
+      "operationalStop": true,
+      "stopReason": "receipt_or_usage_invalid",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 0,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265302190,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E07",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "389ece3f4f6f43aa1f77a4140c5b23653a243581c1a832feffd726fef424723b",
+        "rawGrade": {
+          "identity": false,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": false
+        },
+        "originalStatus": "held",
+        "originalHolds": [
+          "luna_response_incomplete"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "operational_stop",
+        "mayAdvanceDiagnosticSequence": false,
+        "reason": "receipt_or_usage_invalid",
+        "decisionsDisposition": "unresolved_do_not_dispatch",
+        "originalPassed": false,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "02cacfea9adce1761f3b8ca75019074ad8d6f9e77abd6b42012853578e89129f"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        }
+      ]
+    },
+    {
+      "scenario": "invalid-usage-E07",
+      "reportsRecorded": 1,
+      "newMockCalls": 1,
+      "totalMockAttempts": 8,
+      "operationalStop": true,
+      "stopReason": "unsettled_or_uncertain_outcome",
+      "blockedReason": "unknown_billed_outcome",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 0,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 498263690,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E07",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "cbc659e2bbf91e6d5b512aeb32bd77b7be697525a63624d3c4a76a41eb45439a",
+        "rawGrade": {
+          "identity": false,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": false
+        },
+        "originalStatus": "held",
+        "originalHolds": [
+          "luna_attempt_held_no_retry"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "operational_stop",
+        "mayAdvanceDiagnosticSequence": false,
+        "reason": "unsettled_or_uncertain_outcome",
+        "decisionsDisposition": "unresolved_do_not_dispatch",
+        "originalPassed": false,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "47fb4769e01f18b409ce7e06d33192eedc5ca9bbd5d2017984f980706be0bb29"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        }
+      ]
+    },
+    {
+      "scenario": "transport-error-E07",
+      "reportsRecorded": 1,
+      "newMockCalls": 1,
+      "totalMockAttempts": 8,
+      "operationalStop": true,
+      "stopReason": "unsettled_or_uncertain_outcome",
+      "blockedReason": "unknown_billed_outcome",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 0,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 498263690,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E07",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "cbc659e2bbf91e6d5b512aeb32bd77b7be697525a63624d3c4a76a41eb45439a",
+        "rawGrade": {
+          "identity": false,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": false
+        },
+        "originalStatus": "held",
+        "originalHolds": [
+          "luna_attempt_held_no_retry"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "operational_stop",
+        "mayAdvanceDiagnosticSequence": false,
+        "reason": "unsettled_or_uncertain_outcome",
+        "decisionsDisposition": "unresolved_do_not_dispatch",
+        "originalPassed": false,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "47fb4769e01f18b409ce7e06d33192eedc5ca9bbd5d2017984f980706be0bb29"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        }
+      ]
+    },
+    {
+      "scenario": "decision-transport-E10",
+      "reportsRecorded": 4,
+      "newMockCalls": 5,
+      "totalMockAttempts": 12,
+      "operationalStop": true,
+      "stopReason": "unsettled_or_uncertain_outcome",
+      "blockedReason": "unknown_billed_outcome",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 3,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 498417690,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E10",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "3f0b30d9cdc6575869ea3d3afd20c02dad64eca867ec79a5e6e2609f8b7e79e7",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": false,
+          "labelMatch": false
+        },
+        "originalStatus": "held",
+        "originalHolds": [
+          "decisions_unresolved",
+          "luna_attempt_held_no_retry"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "operational_stop",
+        "mayAdvanceDiagnosticSequence": false,
+        "reason": "unsettled_or_uncertain_outcome",
+        "decisionsDisposition": "unresolved_do_not_dispatch",
+        "originalPassed": false,
+        "calls": 2,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d",
+          "6d44c708b3e1173a25d906f2348bd28ac47f20ec262ece430ffda3430754183e"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "db1f5ba7548515062da57867ad73309858e601702b7e4e46212734d756e02415"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        },
+        {
+          "caseId": "E08",
+          "endpoint": "responses",
+          "hash": "9d1a891a46a38128e08f272045e5ec9d95a656d413ac5fbb1574e01230c9dec9"
+        },
+        {
+          "caseId": "E09",
+          "endpoint": "responses",
+          "hash": "fbe771b131918b3cf739b357ce324baaf38dac818b98fc3100b33b6498c7846c"
+        },
+        {
+          "caseId": "E10",
+          "endpoint": "responses",
+          "hash": "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d"
+        },
+        {
+          "caseId": "E10",
+          "endpoint": "decisions",
+          "hash": "6d44c708b3e1173a25d906f2348bd28ac47f20ec262ece430ffda3430754183e"
+        }
+      ]
+    },
+    {
+      "scenario": "decision-unresolved-E10",
+      "reportsRecorded": 4,
+      "newMockCalls": 5,
+      "totalMockAttempts": 12,
+      "operationalStop": true,
+      "stopReason": "review_or_decisions_unresolved",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 3,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265428690,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E10",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "a73cae34d96b3d805990e50c5882f2bb01fed7b8cd72bc5f45ba0170cc35127b",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": false,
+          "labelMatch": false
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "decisions_unresolved",
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "operational_stop",
+        "mayAdvanceDiagnosticSequence": false,
+        "reason": "review_or_decisions_unresolved",
+        "decisionsDisposition": "unresolved_do_not_dispatch",
+        "originalPassed": false,
+        "calls": 2,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d",
+          "6d44c708b3e1173a25d906f2348bd28ac47f20ec262ece430ffda3430754183e"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "2c039ac798896bde9c92fa40bb9ffae67486a5fcb125471550a74dcbdc50528a"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        },
+        {
+          "caseId": "E08",
+          "endpoint": "responses",
+          "hash": "9d1a891a46a38128e08f272045e5ec9d95a656d413ac5fbb1574e01230c9dec9"
+        },
+        {
+          "caseId": "E09",
+          "endpoint": "responses",
+          "hash": "fbe771b131918b3cf739b357ce324baaf38dac818b98fc3100b33b6498c7846c"
+        },
+        {
+          "caseId": "E10",
+          "endpoint": "responses",
+          "hash": "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d"
+        },
+        {
+          "caseId": "E10",
+          "endpoint": "decisions",
+          "hash": "6d44c708b3e1173a25d906f2348bd28ac47f20ec262ece430ffda3430754183e"
+        }
+      ]
+    },
+    {
+      "scenario": "decision-budget-E10",
+      "reportsRecorded": 4,
+      "newMockCalls": 4,
+      "totalMockAttempts": 11,
+      "operationalStop": true,
+      "stopReason": "original_review_receipt_binding_mismatch",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 3,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265417690,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E10",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "c219ac6f4360fdb58d727506b54e63158875fe7abb51468cc715c3e292ee6563",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": false,
+          "labelMatch": false
+        },
+        "originalStatus": "held",
+        "originalHolds": [
+          "decisions_unresolved",
+          "luna_budget_exhausted"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "operational_stop",
+        "mayAdvanceDiagnosticSequence": false,
+        "reason": "original_review_receipt_binding_mismatch",
+        "decisionsDisposition": "unresolved_do_not_dispatch",
+        "originalPassed": false,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "3c524bab88b5d181ad5de6e714596afba08f5e577752922d5e7263491bfae6a7"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        },
+        {
+          "caseId": "E08",
+          "endpoint": "responses",
+          "hash": "9d1a891a46a38128e08f272045e5ec9d95a656d413ac5fbb1574e01230c9dec9"
+        },
+        {
+          "caseId": "E09",
+          "endpoint": "responses",
+          "hash": "fbe771b131918b3cf739b357ce324baaf38dac818b98fc3100b33b6498c7846c"
+        },
+        {
+          "caseId": "E10",
+          "endpoint": "responses",
+          "hash": "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d"
+        }
+      ]
+    },
+    {
+      "scenario": "tampered-review-E07",
+      "reportsRecorded": 1,
+      "newMockCalls": 1,
+      "totalMockAttempts": 8,
+      "operationalStop": true,
+      "stopReason": "original_review_receipt_binding_mismatch",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 0,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265302190,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E07",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "00b65a927a9d8e49307450f730dc2099fde4ca72291d675a237898be4bc593bc",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "operational_stop",
+        "mayAdvanceDiagnosticSequence": false,
+        "reason": "original_review_receipt_binding_mismatch",
+        "decisionsDisposition": "unresolved_do_not_dispatch",
+        "originalPassed": false,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "7d0de85a9a905ea972b11638f5eaf88e4087b5a36c57f380f00e875bf337a322"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        }
+      ]
+    },
+    {
+      "scenario": "substituted-receipt-E07",
+      "reportsRecorded": 1,
+      "newMockCalls": 1,
+      "totalMockAttempts": 8,
+      "operationalStop": true,
+      "stopReason": "original_review_receipt_binding_mismatch",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 0,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265302190,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E07",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "f0e6efff322a99ad382102a9079ca94866bbe190c99536222d25d9bde765c9d5",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "operational_stop",
+        "mayAdvanceDiagnosticSequence": false,
+        "reason": "original_review_receipt_binding_mismatch",
+        "decisionsDisposition": "unresolved_do_not_dispatch",
+        "originalPassed": false,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "3e448806aff80ee7d66b2fe2067ddf6484adebc73416858163b632379673e446"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        }
+      ]
+    },
+    {
+      "scenario": "cli-error-E07",
+      "reportsRecorded": 1,
+      "newMockCalls": 1,
+      "totalMockAttempts": 8,
+      "operationalStop": true,
+      "stopReason": "cli_error",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 0,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265302190,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E07",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "f0e6efff322a99ad382102a9079ca94866bbe190c99536222d25d9bde765c9d5",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "operational_stop",
+        "mayAdvanceDiagnosticSequence": false,
+        "reason": "cli_error",
+        "decisionsDisposition": "unresolved_do_not_dispatch",
+        "originalPassed": false,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "567abbf28adbbe83a7c5936184783aa756dc010611306e477e40e5e0185a561e"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        }
+      ]
+    },
+    {
+      "scenario": "pin-mismatch",
+      "reportsRecorded": 0,
+      "newMockCalls": 0,
+      "totalMockAttempts": 7,
+      "operationalStop": true,
+      "stopReason": "pre_invocation_operational_gate",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 0,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 0,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265263690,
+      "postStopAdmissionRejected": true,
+      "lastRecord": null,
+      "dispatched": []
+    },
+    {
+      "scenario": "source-mismatch",
+      "reportsRecorded": 0,
+      "newMockCalls": 0,
+      "totalMockAttempts": 7,
+      "operationalStop": true,
+      "stopReason": "pre_invocation_operational_gate",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 0,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 0,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265263690,
+      "postStopAdmissionRejected": true,
+      "lastRecord": null,
+      "dispatched": []
+    },
+    {
+      "scenario": "clock-invalid",
+      "reportsRecorded": 1,
+      "newMockCalls": 0,
+      "totalMockAttempts": 7,
+      "operationalStop": true,
+      "stopReason": "request_count_or_sequence_invalid",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 0,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265263690,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E07",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "d32dad4c86c33ff500ddd5c4de9579d024ca7639eed07d8be30b2f0d1b80e626",
+        "rawGrade": {
+          "identity": false,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": false
+        },
+        "originalStatus": "held",
+        "originalHolds": [
+          "review_clock_invalid"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "operational_stop",
+        "mayAdvanceDiagnosticSequence": false,
+        "reason": "request_count_or_sequence_invalid",
+        "decisionsDisposition": "unresolved_do_not_dispatch",
+        "originalPassed": false,
+        "calls": 0,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "b42fb30f3a9545db55a4f008f9eab47a37ea564847846410948aea28ec934ab7"
+      },
+      "dispatched": []
+    },
+    {
+      "scenario": "disabled-ledger",
+      "reportsRecorded": 0,
+      "newMockCalls": 0,
+      "totalMockAttempts": 7,
+      "operationalStop": true,
+      "stopReason": "pre_invocation_operational_gate",
+      "blockedReason": "bounded_continuation_stopped",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 0,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 0,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265263690,
+      "postStopAdmissionRejected": true,
+      "lastRecord": null,
+      "dispatched": []
+    },
+    {
+      "scenario": "insufficient-reservation",
+      "reportsRecorded": 0,
+      "newMockCalls": 0,
+      "totalMockAttempts": 7,
+      "operationalStop": true,
+      "stopReason": "pre_invocation_operational_gate",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 0,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 0,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265263690,
+      "postStopAdmissionRejected": true,
+      "lastRecord": null,
+      "dispatched": []
+    },
+    {
+      "scenario": "expired-ledger",
+      "reportsRecorded": 0,
+      "newMockCalls": 0,
+      "totalMockAttempts": 7,
+      "operationalStop": true,
+      "stopReason": "pre_invocation_operational_gate",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 0,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 0,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265263690,
+      "postStopAdmissionRejected": true,
+      "lastRecord": null,
+      "dispatched": []
+    },
+    {
+      "scenario": "preexisting-unsettled",
+      "reportsRecorded": 0,
+      "newMockCalls": 0,
+      "totalMockAttempts": 8,
+      "operationalStop": true,
+      "stopReason": "pre_invocation_operational_gate",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 0,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 0,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 498263690,
+      "postStopAdmissionRejected": true,
+      "lastRecord": null,
+      "dispatched": []
+    },
+    {
+      "scenario": "artifact-write-failure-E07",
+      "reportsRecorded": 1,
+      "newMockCalls": 1,
+      "totalMockAttempts": 8,
+      "operationalStop": true,
+      "stopReason": "artifact_persistence_failed",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 0,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265302190,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E07",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "f0e6efff322a99ad382102a9079ca94866bbe190c99536222d25d9bde765c9d5",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        ],
+        "persisted": false,
+        "integrityVerified": false,
+        "diagnosticResultHash": "1c43910e6abe1951fe31eef1c44d5645d8aac30e05a4e8dce9506c29f1039a8a"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        }
+      ]
+    },
+    {
+      "scenario": "response-error-E07",
+      "reportsRecorded": 1,
+      "newMockCalls": 1,
+      "totalMockAttempts": 8,
+      "operationalStop": true,
+      "stopReason": "receipt_or_usage_invalid",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 0,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265302190,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E07",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "f0e6efff322a99ad382102a9079ca94866bbe190c99536222d25d9bde765c9d5",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "operational_stop",
+        "mayAdvanceDiagnosticSequence": false,
+        "reason": "receipt_or_usage_invalid",
+        "decisionsDisposition": "unresolved_do_not_dispatch",
+        "originalPassed": false,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "707b516fde3a0c10246b2529cf2723211b6c6d0f192e40f1349e875ae6bd27ee"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        }
+      ]
+    },
+    {
+      "scenario": "response-details-E07",
+      "reportsRecorded": 1,
+      "newMockCalls": 1,
+      "totalMockAttempts": 8,
+      "operationalStop": true,
+      "stopReason": "receipt_or_usage_invalid",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 0,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265302190,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E07",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "f0e6efff322a99ad382102a9079ca94866bbe190c99536222d25d9bde765c9d5",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "operational_stop",
+        "mayAdvanceDiagnosticSequence": false,
+        "reason": "receipt_or_usage_invalid",
+        "decisionsDisposition": "unresolved_do_not_dispatch",
+        "originalPassed": false,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "707b516fde3a0c10246b2529cf2723211b6c6d0f192e40f1349e875ae6bd27ee"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        }
+      ]
+    },
+    {
+      "scenario": "message-error-E07",
+      "reportsRecorded": 1,
+      "newMockCalls": 1,
+      "totalMockAttempts": 8,
+      "operationalStop": true,
+      "stopReason": "response_protocol_invalid",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 0,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265302190,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E07",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "f0e6efff322a99ad382102a9079ca94866bbe190c99536222d25d9bde765c9d5",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "operational_stop",
+        "mayAdvanceDiagnosticSequence": false,
+        "reason": "response_protocol_invalid",
+        "decisionsDisposition": "unresolved_do_not_dispatch",
+        "originalPassed": false,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "10db5b0406eefd9181633346ddd2727449efa584d34512e3e364ece9aca31fa2"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        }
+      ]
+    },
+    {
+      "scenario": "message-details-E07",
+      "reportsRecorded": 1,
+      "newMockCalls": 1,
+      "totalMockAttempts": 8,
+      "operationalStop": true,
+      "stopReason": "response_protocol_invalid",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 0,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265302190,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E07",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "f0e6efff322a99ad382102a9079ca94866bbe190c99536222d25d9bde765c9d5",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "operational_stop",
+        "mayAdvanceDiagnosticSequence": false,
+        "reason": "response_protocol_invalid",
+        "decisionsDisposition": "unresolved_do_not_dispatch",
+        "originalPassed": false,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "10db5b0406eefd9181633346ddd2727449efa584d34512e3e364ece9aca31fa2"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        }
+      ]
+    },
+    {
+      "scenario": "message-incomplete-E07",
+      "reportsRecorded": 1,
+      "newMockCalls": 1,
+      "totalMockAttempts": 8,
+      "operationalStop": true,
+      "stopReason": "response_protocol_invalid",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 0,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265302190,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E07",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "f0e6efff322a99ad382102a9079ca94866bbe190c99536222d25d9bde765c9d5",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "operational_stop",
+        "mayAdvanceDiagnosticSequence": false,
+        "reason": "response_protocol_invalid",
+        "decisionsDisposition": "unresolved_do_not_dispatch",
+        "originalPassed": false,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "10db5b0406eefd9181633346ddd2727449efa584d34512e3e364ece9aca31fa2"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        }
+      ]
+    },
+    {
+      "scenario": "decision-incomplete-E10",
+      "reportsRecorded": 4,
+      "newMockCalls": 5,
+      "totalMockAttempts": 12,
+      "operationalStop": true,
+      "stopReason": "receipt_or_usage_invalid",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 3,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265428690,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E10",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "cac00291da065e92f737ae8ef25c2342ac43c710284a58812af908dc79dbdc02",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "operational_stop",
+        "mayAdvanceDiagnosticSequence": false,
+        "reason": "receipt_or_usage_invalid",
+        "decisionsDisposition": "unresolved_do_not_dispatch",
+        "originalPassed": false,
+        "calls": 2,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d",
+          "6d44c708b3e1173a25d906f2348bd28ac47f20ec262ece430ffda3430754183e"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "bb6513b832671bfcead906dcf7c117b3db32101da48c389ab26bdf15333b44a2"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        },
+        {
+          "caseId": "E08",
+          "endpoint": "responses",
+          "hash": "9d1a891a46a38128e08f272045e5ec9d95a656d413ac5fbb1574e01230c9dec9"
+        },
+        {
+          "caseId": "E09",
+          "endpoint": "responses",
+          "hash": "fbe771b131918b3cf739b357ce324baaf38dac818b98fc3100b33b6498c7846c"
+        },
+        {
+          "caseId": "E10",
+          "endpoint": "responses",
+          "hash": "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d"
+        },
+        {
+          "caseId": "E10",
+          "endpoint": "decisions",
+          "hash": "6d44c708b3e1173a25d906f2348bd28ac47f20ec262ece430ffda3430754183e"
+        }
+      ]
+    },
+    {
+      "scenario": "decision-failed-E10",
+      "reportsRecorded": 4,
+      "newMockCalls": 5,
+      "totalMockAttempts": 12,
+      "operationalStop": true,
+      "stopReason": "receipt_or_usage_invalid",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 3,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265428690,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E10",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "cac00291da065e92f737ae8ef25c2342ac43c710284a58812af908dc79dbdc02",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "operational_stop",
+        "mayAdvanceDiagnosticSequence": false,
+        "reason": "receipt_or_usage_invalid",
+        "decisionsDisposition": "unresolved_do_not_dispatch",
+        "originalPassed": false,
+        "calls": 2,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d",
+          "6d44c708b3e1173a25d906f2348bd28ac47f20ec262ece430ffda3430754183e"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "bb6513b832671bfcead906dcf7c117b3db32101da48c389ab26bdf15333b44a2"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        },
+        {
+          "caseId": "E08",
+          "endpoint": "responses",
+          "hash": "9d1a891a46a38128e08f272045e5ec9d95a656d413ac5fbb1574e01230c9dec9"
+        },
+        {
+          "caseId": "E09",
+          "endpoint": "responses",
+          "hash": "fbe771b131918b3cf739b357ce324baaf38dac818b98fc3100b33b6498c7846c"
+        },
+        {
+          "caseId": "E10",
+          "endpoint": "responses",
+          "hash": "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d"
+        },
+        {
+          "caseId": "E10",
+          "endpoint": "decisions",
+          "hash": "6d44c708b3e1173a25d906f2348bd28ac47f20ec262ece430ffda3430754183e"
+        }
+      ]
+    },
+    {
+      "scenario": "decision-cancelled-E10",
+      "reportsRecorded": 4,
+      "newMockCalls": 5,
+      "totalMockAttempts": 12,
+      "operationalStop": true,
+      "stopReason": "receipt_or_usage_invalid",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 3,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265428690,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E10",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "cac00291da065e92f737ae8ef25c2342ac43c710284a58812af908dc79dbdc02",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "operational_stop",
+        "mayAdvanceDiagnosticSequence": false,
+        "reason": "receipt_or_usage_invalid",
+        "decisionsDisposition": "unresolved_do_not_dispatch",
+        "originalPassed": false,
+        "calls": 2,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d",
+          "6d44c708b3e1173a25d906f2348bd28ac47f20ec262ece430ffda3430754183e"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "bb6513b832671bfcead906dcf7c117b3db32101da48c389ab26bdf15333b44a2"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        },
+        {
+          "caseId": "E08",
+          "endpoint": "responses",
+          "hash": "9d1a891a46a38128e08f272045e5ec9d95a656d413ac5fbb1574e01230c9dec9"
+        },
+        {
+          "caseId": "E09",
+          "endpoint": "responses",
+          "hash": "fbe771b131918b3cf739b357ce324baaf38dac818b98fc3100b33b6498c7846c"
+        },
+        {
+          "caseId": "E10",
+          "endpoint": "responses",
+          "hash": "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d"
+        },
+        {
+          "caseId": "E10",
+          "endpoint": "decisions",
+          "hash": "6d44c708b3e1173a25d906f2348bd28ac47f20ec262ece430ffda3430754183e"
+        }
+      ]
+    },
+    {
+      "scenario": "decision-in-progress-E10",
+      "reportsRecorded": 4,
+      "newMockCalls": 5,
+      "totalMockAttempts": 12,
+      "operationalStop": true,
+      "stopReason": "receipt_or_usage_invalid",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 3,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265428690,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E10",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "cac00291da065e92f737ae8ef25c2342ac43c710284a58812af908dc79dbdc02",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "operational_stop",
+        "mayAdvanceDiagnosticSequence": false,
+        "reason": "receipt_or_usage_invalid",
+        "decisionsDisposition": "unresolved_do_not_dispatch",
+        "originalPassed": false,
+        "calls": 2,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d",
+          "6d44c708b3e1173a25d906f2348bd28ac47f20ec262ece430ffda3430754183e"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "bb6513b832671bfcead906dcf7c117b3db32101da48c389ab26bdf15333b44a2"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        },
+        {
+          "caseId": "E08",
+          "endpoint": "responses",
+          "hash": "9d1a891a46a38128e08f272045e5ec9d95a656d413ac5fbb1574e01230c9dec9"
+        },
+        {
+          "caseId": "E09",
+          "endpoint": "responses",
+          "hash": "fbe771b131918b3cf739b357ce324baaf38dac818b98fc3100b33b6498c7846c"
+        },
+        {
+          "caseId": "E10",
+          "endpoint": "responses",
+          "hash": "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d"
+        },
+        {
+          "caseId": "E10",
+          "endpoint": "decisions",
+          "hash": "6d44c708b3e1173a25d906f2348bd28ac47f20ec262ece430ffda3430754183e"
+        }
+      ]
+    },
+    {
+      "scenario": "decision-queued-E10",
+      "reportsRecorded": 4,
+      "newMockCalls": 5,
+      "totalMockAttempts": 12,
+      "operationalStop": true,
+      "stopReason": "receipt_or_usage_invalid",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 3,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265428690,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E10",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "cac00291da065e92f737ae8ef25c2342ac43c710284a58812af908dc79dbdc02",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "operational_stop",
+        "mayAdvanceDiagnosticSequence": false,
+        "reason": "receipt_or_usage_invalid",
+        "decisionsDisposition": "unresolved_do_not_dispatch",
+        "originalPassed": false,
+        "calls": 2,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d",
+          "6d44c708b3e1173a25d906f2348bd28ac47f20ec262ece430ffda3430754183e"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "bb6513b832671bfcead906dcf7c117b3db32101da48c389ab26bdf15333b44a2"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        },
+        {
+          "caseId": "E08",
+          "endpoint": "responses",
+          "hash": "9d1a891a46a38128e08f272045e5ec9d95a656d413ac5fbb1574e01230c9dec9"
+        },
+        {
+          "caseId": "E09",
+          "endpoint": "responses",
+          "hash": "fbe771b131918b3cf739b357ce324baaf38dac818b98fc3100b33b6498c7846c"
+        },
+        {
+          "caseId": "E10",
+          "endpoint": "responses",
+          "hash": "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d"
+        },
+        {
+          "caseId": "E10",
+          "endpoint": "decisions",
+          "hash": "6d44c708b3e1173a25d906f2348bd28ac47f20ec262ece430ffda3430754183e"
+        }
+      ]
+    },
+    {
+      "scenario": "decision-details-E10",
+      "reportsRecorded": 4,
+      "newMockCalls": 5,
+      "totalMockAttempts": 12,
+      "operationalStop": true,
+      "stopReason": "receipt_or_usage_invalid",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 3,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265428690,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E10",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "cac00291da065e92f737ae8ef25c2342ac43c710284a58812af908dc79dbdc02",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "operational_stop",
+        "mayAdvanceDiagnosticSequence": false,
+        "reason": "receipt_or_usage_invalid",
+        "decisionsDisposition": "unresolved_do_not_dispatch",
+        "originalPassed": false,
+        "calls": 2,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d",
+          "6d44c708b3e1173a25d906f2348bd28ac47f20ec262ece430ffda3430754183e"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "bb6513b832671bfcead906dcf7c117b3db32101da48c389ab26bdf15333b44a2"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        },
+        {
+          "caseId": "E08",
+          "endpoint": "responses",
+          "hash": "9d1a891a46a38128e08f272045e5ec9d95a656d413ac5fbb1574e01230c9dec9"
+        },
+        {
+          "caseId": "E09",
+          "endpoint": "responses",
+          "hash": "fbe771b131918b3cf739b357ce324baaf38dac818b98fc3100b33b6498c7846c"
+        },
+        {
+          "caseId": "E10",
+          "endpoint": "responses",
+          "hash": "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d"
+        },
+        {
+          "caseId": "E10",
+          "endpoint": "decisions",
+          "hash": "6d44c708b3e1173a25d906f2348bd28ac47f20ec262ece430ffda3430754183e"
+        }
+      ]
+    },
+    {
+      "scenario": "decision-error-E10",
+      "reportsRecorded": 4,
+      "newMockCalls": 5,
+      "totalMockAttempts": 12,
+      "operationalStop": true,
+      "stopReason": "receipt_or_usage_invalid",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 3,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265428690,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E10",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "cac00291da065e92f737ae8ef25c2342ac43c710284a58812af908dc79dbdc02",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "operational_stop",
+        "mayAdvanceDiagnosticSequence": false,
+        "reason": "receipt_or_usage_invalid",
+        "decisionsDisposition": "unresolved_do_not_dispatch",
+        "originalPassed": false,
+        "calls": 2,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d",
+          "6d44c708b3e1173a25d906f2348bd28ac47f20ec262ece430ffda3430754183e"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "bb6513b832671bfcead906dcf7c117b3db32101da48c389ab26bdf15333b44a2"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        },
+        {
+          "caseId": "E08",
+          "endpoint": "responses",
+          "hash": "9d1a891a46a38128e08f272045e5ec9d95a656d413ac5fbb1574e01230c9dec9"
+        },
+        {
+          "caseId": "E09",
+          "endpoint": "responses",
+          "hash": "fbe771b131918b3cf739b357ce324baaf38dac818b98fc3100b33b6498c7846c"
+        },
+        {
+          "caseId": "E10",
+          "endpoint": "responses",
+          "hash": "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d"
+        },
+        {
+          "caseId": "E10",
+          "endpoint": "decisions",
+          "hash": "6d44c708b3e1173a25d906f2348bd28ac47f20ec262ece430ffda3430754183e"
+        }
+      ]
+    },
+    {
+      "scenario": "decision-answer-error-E10",
+      "reportsRecorded": 4,
+      "newMockCalls": 5,
+      "totalMockAttempts": 12,
+      "operationalStop": true,
+      "stopReason": "decision_answer_incomplete_or_error",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 3,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265428690,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E10",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "cac00291da065e92f737ae8ef25c2342ac43c710284a58812af908dc79dbdc02",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "operational_stop",
+        "mayAdvanceDiagnosticSequence": false,
+        "reason": "decision_answer_incomplete_or_error",
+        "decisionsDisposition": "unresolved_do_not_dispatch",
+        "originalPassed": false,
+        "calls": 2,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d",
+          "6d44c708b3e1173a25d906f2348bd28ac47f20ec262ece430ffda3430754183e"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "c7574192f2fc9786e8cee32947d37fb7950d3e84d9357d8f76c86efaae70d3dd"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        },
+        {
+          "caseId": "E08",
+          "endpoint": "responses",
+          "hash": "9d1a891a46a38128e08f272045e5ec9d95a656d413ac5fbb1574e01230c9dec9"
+        },
+        {
+          "caseId": "E09",
+          "endpoint": "responses",
+          "hash": "fbe771b131918b3cf739b357ce324baaf38dac818b98fc3100b33b6498c7846c"
+        },
+        {
+          "caseId": "E10",
+          "endpoint": "responses",
+          "hash": "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d"
+        },
+        {
+          "caseId": "E10",
+          "endpoint": "decisions",
+          "hash": "6d44c708b3e1173a25d906f2348bd28ac47f20ec262ece430ffda3430754183e"
+        }
+      ]
+    },
+    {
+      "scenario": "decision-answer-details-E10",
+      "reportsRecorded": 4,
+      "newMockCalls": 5,
+      "totalMockAttempts": 12,
+      "operationalStop": true,
+      "stopReason": "decision_answer_incomplete_or_error",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 3,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265428690,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E10",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "cac00291da065e92f737ae8ef25c2342ac43c710284a58812af908dc79dbdc02",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "operational_stop",
+        "mayAdvanceDiagnosticSequence": false,
+        "reason": "decision_answer_incomplete_or_error",
+        "decisionsDisposition": "unresolved_do_not_dispatch",
+        "originalPassed": false,
+        "calls": 2,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d",
+          "6d44c708b3e1173a25d906f2348bd28ac47f20ec262ece430ffda3430754183e"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "c7574192f2fc9786e8cee32947d37fb7950d3e84d9357d8f76c86efaae70d3dd"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        },
+        {
+          "caseId": "E08",
+          "endpoint": "responses",
+          "hash": "9d1a891a46a38128e08f272045e5ec9d95a656d413ac5fbb1574e01230c9dec9"
+        },
+        {
+          "caseId": "E09",
+          "endpoint": "responses",
+          "hash": "fbe771b131918b3cf739b357ce324baaf38dac818b98fc3100b33b6498c7846c"
+        },
+        {
+          "caseId": "E10",
+          "endpoint": "responses",
+          "hash": "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d"
+        },
+        {
+          "caseId": "E10",
+          "endpoint": "decisions",
+          "hash": "6d44c708b3e1173a25d906f2348bd28ac47f20ec262ece430ffda3430754183e"
+        }
+      ]
+    },
+    {
+      "scenario": "between-original-corrupt",
+      "reportsRecorded": 1,
+      "newMockCalls": 1,
+      "totalMockAttempts": 8,
+      "operationalStop": true,
+      "stopReason": "pre_invocation_operational_gate",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 0,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265302190,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E07",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "f0e6efff322a99ad382102a9079ca94866bbe190c99536222d25d9bde765c9d5",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "1c43910e6abe1951fe31eef1c44d5645d8aac30e05a4e8dce9506c29f1039a8a"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        }
+      ]
+    },
+    {
+      "scenario": "between-original-delete",
+      "reportsRecorded": 1,
+      "newMockCalls": 1,
+      "totalMockAttempts": 8,
+      "operationalStop": true,
+      "stopReason": "pre_invocation_operational_gate",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 0,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265302190,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E07",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "f0e6efff322a99ad382102a9079ca94866bbe190c99536222d25d9bde765c9d5",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "1c43910e6abe1951fe31eef1c44d5645d8aac30e05a4e8dce9506c29f1039a8a"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        }
+      ]
+    },
+    {
+      "scenario": "between-receipts-corrupt",
+      "reportsRecorded": 1,
+      "newMockCalls": 1,
+      "totalMockAttempts": 8,
+      "operationalStop": true,
+      "stopReason": "pre_invocation_operational_gate",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 0,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265302190,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E07",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "f0e6efff322a99ad382102a9079ca94866bbe190c99536222d25d9bde765c9d5",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "1c43910e6abe1951fe31eef1c44d5645d8aac30e05a4e8dce9506c29f1039a8a"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        }
+      ]
+    },
+    {
+      "scenario": "between-receipts-delete",
+      "reportsRecorded": 1,
+      "newMockCalls": 1,
+      "totalMockAttempts": 8,
+      "operationalStop": true,
+      "stopReason": "pre_invocation_operational_gate",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 0,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265302190,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E07",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "f0e6efff322a99ad382102a9079ca94866bbe190c99536222d25d9bde765c9d5",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "1c43910e6abe1951fe31eef1c44d5645d8aac30e05a4e8dce9506c29f1039a8a"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        }
+      ]
+    },
+    {
+      "scenario": "between-candidate-corrupt",
+      "reportsRecorded": 1,
+      "newMockCalls": 1,
+      "totalMockAttempts": 8,
+      "operationalStop": true,
+      "stopReason": "pre_invocation_operational_gate",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 0,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265302190,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E07",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "f0e6efff322a99ad382102a9079ca94866bbe190c99536222d25d9bde765c9d5",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "1c43910e6abe1951fe31eef1c44d5645d8aac30e05a4e8dce9506c29f1039a8a"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        }
+      ]
+    },
+    {
+      "scenario": "between-candidate-delete",
+      "reportsRecorded": 1,
+      "newMockCalls": 1,
+      "totalMockAttempts": 8,
+      "operationalStop": true,
+      "stopReason": "pre_invocation_operational_gate",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 0,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265302190,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E07",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "f0e6efff322a99ad382102a9079ca94866bbe190c99536222d25d9bde765c9d5",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "1c43910e6abe1951fe31eef1c44d5645d8aac30e05a4e8dce9506c29f1039a8a"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        }
+      ]
+    },
+    {
+      "scenario": "between-diagnostic-corrupt",
+      "reportsRecorded": 1,
+      "newMockCalls": 1,
+      "totalMockAttempts": 8,
+      "operationalStop": true,
+      "stopReason": "pre_invocation_operational_gate",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 0,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265302190,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E07",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "f0e6efff322a99ad382102a9079ca94866bbe190c99536222d25d9bde765c9d5",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "1c43910e6abe1951fe31eef1c44d5645d8aac30e05a4e8dce9506c29f1039a8a"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        }
+      ]
+    },
+    {
+      "scenario": "between-diagnostic-delete",
+      "reportsRecorded": 1,
+      "newMockCalls": 1,
+      "totalMockAttempts": 8,
+      "operationalStop": true,
+      "stopReason": "pre_invocation_operational_gate",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 0,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265302190,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E07",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "f0e6efff322a99ad382102a9079ca94866bbe190c99536222d25d9bde765c9d5",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "1c43910e6abe1951fe31eef1c44d5645d8aac30e05a4e8dce9506c29f1039a8a"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        }
+      ]
+    },
+    {
+      "scenario": "between-checkpoint-corrupt",
+      "reportsRecorded": 1,
+      "newMockCalls": 1,
+      "totalMockAttempts": 8,
+      "operationalStop": true,
+      "stopReason": "pre_invocation_operational_gate",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 0,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265302190,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E07",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "f0e6efff322a99ad382102a9079ca94866bbe190c99536222d25d9bde765c9d5",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "1c43910e6abe1951fe31eef1c44d5645d8aac30e05a4e8dce9506c29f1039a8a"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        }
+      ]
+    },
+    {
+      "scenario": "between-checkpoint-delete",
+      "reportsRecorded": 1,
+      "newMockCalls": 1,
+      "totalMockAttempts": 8,
+      "operationalStop": true,
+      "stopReason": "pre_invocation_operational_gate",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 0,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265302190,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E07",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "f0e6efff322a99ad382102a9079ca94866bbe190c99536222d25d9bde765c9d5",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "1c43910e6abe1951fe31eef1c44d5645d8aac30e05a4e8dce9506c29f1039a8a"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        }
+      ]
+    },
+    {
+      "scenario": "between-ledger-receipt",
+      "reportsRecorded": 1,
+      "newMockCalls": 1,
+      "totalMockAttempts": 8,
+      "operationalStop": true,
+      "stopReason": "pre_invocation_operational_gate",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 0,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265302190,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E07",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "f0e6efff322a99ad382102a9079ca94866bbe190c99536222d25d9bde765c9d5",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "1c43910e6abe1951fe31eef1c44d5645d8aac30e05a4e8dce9506c29f1039a8a"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        }
+      ]
+    },
+    {
+      "scenario": "between-ledger-delete",
+      "reportsRecorded": 1,
+      "newMockCalls": 1,
+      "totalMockAttempts": 7,
+      "operationalStop": true,
+      "stopReason": "pre_invocation_operational_gate",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 0,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265263690,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E07",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "f0e6efff322a99ad382102a9079ca94866bbe190c99536222d25d9bde765c9d5",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "1c43910e6abe1951fe31eef1c44d5645d8aac30e05a4e8dce9506c29f1039a8a"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        }
+      ]
+    },
+    {
+      "scenario": "between-starting-receipt",
+      "reportsRecorded": 1,
+      "newMockCalls": 1,
+      "totalMockAttempts": 8,
+      "operationalStop": true,
+      "stopReason": "pre_invocation_operational_gate",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": false,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": true,
+      "originalPasses": 0,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265302190,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E07",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "f0e6efff322a99ad382102a9079ca94866bbe190c99536222d25d9bde765c9d5",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "1c43910e6abe1951fe31eef1c44d5645d8aac30e05a4e8dce9506c29f1039a8a"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        }
+      ]
+    },
+    {
+      "scenario": "between-ledger-policy",
+      "reportsRecorded": 1,
+      "newMockCalls": 1,
+      "totalMockAttempts": 8,
+      "operationalStop": true,
+      "stopReason": "pre_invocation_operational_gate",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 0,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265302190,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E07",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "f0e6efff322a99ad382102a9079ca94866bbe190c99536222d25d9bde765c9d5",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "1c43910e6abe1951fe31eef1c44d5645d8aac30e05a4e8dce9506c29f1039a8a"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        }
+      ]
+    },
+    {
+      "scenario": "audit-combined-E07",
+      "reportsRecorded": 1,
+      "newMockCalls": 1,
+      "totalMockAttempts": 8,
+      "operationalStop": true,
+      "stopReason": "pre_invocation_operational_gate",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 0,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 1,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265302190,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E07",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "f0e6efff322a99ad382102a9079ca94866bbe190c99536222d25d9bde765c9d5",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "1c43910e6abe1951fe31eef1c44d5645d8aac30e05a4e8dce9506c29f1039a8a"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        }
+      ]
+    },
+    {
+      "scenario": "bound-candidate-corrupt-E10",
+      "reportsRecorded": 4,
+      "newMockCalls": 4,
+      "totalMockAttempts": 11,
+      "operationalStop": true,
+      "stopReason": "pre_invocation_operational_gate",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 0,
+      "originalFailures": 1,
+      "operationallyStoppedReports": 4,
+      "separateCandidates": 1,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265417690,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E10",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "97983f887f68e767bd72bfbf7c20b44b687590522dfcb2eabd5da0020792e00a",
+        "rawGrade": {
+          "identity": true,
+          "goalie": false,
+          "decisions": false,
+          "labelMatch": false
+        },
+        "originalStatus": "held",
+        "originalHolds": [
+          "goalie_subject_binding_invalid"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_model_failure",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "goalie_subject_binding_invalid",
+        "decisionsDisposition": "not_run_original_responses_held",
+        "originalPassed": false,
+        "calls": 1,
+        "candidateHash": "ab92ddc043aa247a40b80dde661b1fc756685682ef72215911179148a2f8cf46",
+        "candidateStatus": "candidate_for_human_review",
+        "candidateApplied": false,
+        "requestHashes": [
+          "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "36c6e16b9cc0303c8bbdf4f8b1aefab38a8d9036de32fda39f2b930c0269b020"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        },
+        {
+          "caseId": "E08",
+          "endpoint": "responses",
+          "hash": "9d1a891a46a38128e08f272045e5ec9d95a656d413ac5fbb1574e01230c9dec9"
+        },
+        {
+          "caseId": "E09",
+          "endpoint": "responses",
+          "hash": "fbe771b131918b3cf739b357ce324baaf38dac818b98fc3100b33b6498c7846c"
+        },
+        {
+          "caseId": "E10",
+          "endpoint": "responses",
+          "hash": "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d"
+        }
+      ]
+    },
+    {
+      "scenario": "bound-candidate-delete-E10",
+      "reportsRecorded": 4,
+      "newMockCalls": 4,
+      "totalMockAttempts": 11,
+      "operationalStop": true,
+      "stopReason": "pre_invocation_operational_gate",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 0,
+      "originalFailures": 1,
+      "operationallyStoppedReports": 4,
+      "separateCandidates": 1,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265417690,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E10",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "97983f887f68e767bd72bfbf7c20b44b687590522dfcb2eabd5da0020792e00a",
+        "rawGrade": {
+          "identity": true,
+          "goalie": false,
+          "decisions": false,
+          "labelMatch": false
+        },
+        "originalStatus": "held",
+        "originalHolds": [
+          "goalie_subject_binding_invalid"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_model_failure",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "goalie_subject_binding_invalid",
+        "decisionsDisposition": "not_run_original_responses_held",
+        "originalPassed": false,
+        "calls": 1,
+        "candidateHash": "ab92ddc043aa247a40b80dde661b1fc756685682ef72215911179148a2f8cf46",
+        "candidateStatus": "candidate_for_human_review",
+        "candidateApplied": false,
+        "requestHashes": [
+          "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "36c6e16b9cc0303c8bbdf4f8b1aefab38a8d9036de32fda39f2b930c0269b020"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        },
+        {
+          "caseId": "E08",
+          "endpoint": "responses",
+          "hash": "9d1a891a46a38128e08f272045e5ec9d95a656d413ac5fbb1574e01230c9dec9"
+        },
+        {
+          "caseId": "E09",
+          "endpoint": "responses",
+          "hash": "fbe771b131918b3cf739b357ce324baaf38dac818b98fc3100b33b6498c7846c"
+        },
+        {
+          "caseId": "E10",
+          "endpoint": "responses",
+          "hash": "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d"
+        }
+      ]
+    },
+    {
+      "scenario": "during-E08-ledger-corruption",
+      "reportsRecorded": 2,
+      "newMockCalls": 2,
+      "totalMockAttempts": 9,
+      "operationalStop": true,
+      "stopReason": "ledger_extension_integrity_failed",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 0,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 2,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265340690,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E08",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "17dc19b3d5d6549ea992fd73f6999ad4dd4c51501184d7684e6e04ab56c8f694",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "operational_stop",
+        "mayAdvanceDiagnosticSequence": false,
+        "reason": "ledger_extension_integrity_failed",
+        "decisionsDisposition": "unresolved_do_not_dispatch",
+        "originalPassed": false,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "9d1a891a46a38128e08f272045e5ec9d95a656d413ac5fbb1574e01230c9dec9"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "6f199135892f10950a3274804d28fb050ad201cb244ff6f1c6116e1aa2375fdf"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        },
+        {
+          "caseId": "E08",
+          "endpoint": "responses",
+          "hash": "9d1a891a46a38128e08f272045e5ec9d95a656d413ac5fbb1574e01230c9dec9"
+        }
+      ]
+    },
+    {
+      "scenario": "completion-artifact-deletion",
+      "reportsRecorded": 10,
+      "newMockCalls": 12,
+      "totalMockAttempts": 19,
+      "operationalStop": true,
+      "stopReason": "completion_integrity_failed",
+      "blockedReason": "diagnostic_operational_stop",
+      "ledgerEnabled": false,
+      "priorSevenPreserved": true,
+      "deliberatelyCorruptedSyntheticPriorReceiptDetected": false,
+      "originalPasses": 0,
+      "originalFailures": 0,
+      "operationallyStoppedReports": 10,
+      "separateCandidates": 0,
+      "candidateApplied": false,
+      "aggregateExposureNanoUsd": 265670690,
+      "postStopAdmissionRejected": true,
+      "lastRecord": {
+        "caseId": "E16",
+        "policy": "luna-exposed-diagnostic-collection-v2",
+        "originalReviewHash": "2684229df0c1221e9ec9e7772c26b50194e585d4f2eb3ccfbf56bea65887c79b",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "identity_abstention_or_widening_requires_review",
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "7308c16d8d1b5c68a6db90c1d4be843203390ba20c5a47c62eb15cecc14cf3b7"
+        ],
+        "persisted": true,
+        "integrityVerified": false,
+        "diagnosticResultHash": "3f148e85532044a4ad8dc3fed1415e526fba2005e39a332eeb5ce6630baa7d90"
+      },
+      "dispatched": [
+        {
+          "caseId": "E07",
+          "endpoint": "responses",
+          "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        },
+        {
+          "caseId": "E08",
+          "endpoint": "responses",
+          "hash": "9d1a891a46a38128e08f272045e5ec9d95a656d413ac5fbb1574e01230c9dec9"
+        },
+        {
+          "caseId": "E09",
+          "endpoint": "responses",
+          "hash": "fbe771b131918b3cf739b357ce324baaf38dac818b98fc3100b33b6498c7846c"
+        },
+        {
+          "caseId": "E10",
+          "endpoint": "responses",
+          "hash": "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d"
+        },
+        {
+          "caseId": "E10",
+          "endpoint": "decisions",
+          "hash": "6d44c708b3e1173a25d906f2348bd28ac47f20ec262ece430ffda3430754183e"
+        },
+        {
+          "caseId": "E11",
+          "endpoint": "responses",
+          "hash": "9841ce0f388de9ca206cf22abe7dbd82afb5a3f9500fe6f7a1215e72ad758cba"
+        },
+        {
+          "caseId": "E11",
+          "endpoint": "decisions",
+          "hash": "5781feae2b9115b7068461d20b8cb0fcb34746baa4cbd2df0b1790702c951740"
+        },
+        {
+          "caseId": "E12",
+          "endpoint": "responses",
+          "hash": "e344741ac77450ec7be9655f6ea7ca57933d26d6b185450ee9df473776a77b2f"
+        },
+        {
+          "caseId": "E13",
+          "endpoint": "responses",
+          "hash": "7270c5fa8947367d749d52bb2b0917adc03760b9785b59b7fdbb3e9d5955576d"
+        },
+        {
+          "caseId": "E14",
+          "endpoint": "responses",
+          "hash": "102d9692c07022f282ba3c3c29aed0636aced6adce77164ddb5545a851bccafa"
+        },
+        {
+          "caseId": "E15",
+          "endpoint": "responses",
+          "hash": "06fe01bba0cb4d29d1967fc072951c2ce42cf76dc9059c825b04ea0f728233f2"
+        },
+        {
+          "caseId": "E16",
+          "endpoint": "responses",
+          "hash": "7308c16d8d1b5c68a6db90c1d4be843203390ba20c5a47c62eb15cecc14cf3b7"
+        }
+      ]
+    }
+  ]
+}

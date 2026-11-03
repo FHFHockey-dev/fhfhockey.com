@@ -101,3 +101,30 @@ Lane PROV-GUARD (CLAUDE-LEASES.json). Shared helper `web/lib/projections/externa
 - Stamped runs admitted when every invocation stamped the same verified closure and the count matches resume.invocations;
   legacy exact-SHA stays single-invocation. Null code_versions allowed (only run-forge-local sets FORGE_CODE_VERSION);
   local:* denies. Closure c1f0129a unchanged. Files: externalInputProof.ts + test.
+
+## Week-ahead FORGE lines (after f98312c9b) — DONE, uncommitted, flag off
+- Pipeline FORGE_PROJECTION_DAYS_AHEAD (unset=1, today behaviour; 6 = today..+6); bridge reads runs through today+7.
+  Design note tasks/artifacts/forge-week-coverage-2026-10-26/WEEK-AHEAD-DESIGN.md. Closure moves to 87edd78f (pipeline
+  route is a closure root) — RC must re-verify. TJ approvals: release, env, maybe extra cron slots.
+
+## Days-ahead preflight anchoring (after 9b462e9c9) — DONE, uncommitted
+- Live: run-projection-v2?date=2026-11-01 got a 422 preflight. Reproduced offline, on an in-memory Supabase fixture,
+  with today-fresh inputs. On the old code, skater_derived_freshness FAILS at +4, +5 and +6 days (a team that last
+  played 4 days ago drops out of asOf-7). projection_derived_v2 also FAILS at +6 after a league off-day.
+- Fix: preflightFreshnessAnchorDate = min(asOfDate, UTC today, which is the route's default date). The line-combo fetch
+  and age, the derived windows (team and global), the ingest window and the 30-day goalie window all end at the anchor.
+  Scheduled games/teams, goalie_start_priors_v2 and the season lookup stay on asOfDate. The summary gains
+  freshnessAnchorDate. No bypassPreflight.
+- Tests: new __tests__/pages/api/v1/db/run-projection-v2.preflight.test.ts (fixture; the existing file's global
+  supabase mock returns errors). It passes 31/31 together with the old file, in UTC and America/New_York. eslint is clean.
+- Export tsc passed; closure 87edd78f → 5644e3fd…dea4 (VERIFIED, 194 modules, 0 findings), not listed until committed. Receipt: forge-week-coverage-2026-10-26/PREFLIGHT-ANCHOR-RECEIPT.md. Follow-up: skater-stage.ts line-combination recency is also anchored at asOf (another lease).
+
+## Allowlist 5644e3fd (after 02153acba) — DONE, uncommitted
+- verify 02153acba → 5644e3fd…dea4, 194 modules, 0 findings; receipt release-verification/02153acba….json (e46edefb…).
+  Entry + test row added. HEAD export plus allowlist files still gives 5644e3fd (closure unchanged). Focused tests
+  pass 94/94 in UTC and New York; eslint 0.
+
+## Allowlist bf23edfe (after eff1b377a, P1 release) — DONE, uncommitted
+- verify eff1b377a → bf23edfe…7ab3b, 194 modules, 0 findings; receipt release-verification/eff1b377a….json (bec39018…).
+  The only closure module changed since 5644e3fd is lib/rosterScheduleData/bridgeForecastWire.ts. Entry + test row added;
+  HEAD export plus allowlist files still gives bf23edfe. Focused tests pass 95/95 in UTC and New York; eslint 0.

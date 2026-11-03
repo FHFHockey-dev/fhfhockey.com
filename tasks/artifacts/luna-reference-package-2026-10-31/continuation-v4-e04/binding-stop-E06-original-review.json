@@ -1,0 +1,51 @@
+{
+  "version": "ifttt-luna-review-v1",
+  "canPublish": false,
+  "canWriteAliases": false,
+  "canChangeStatus": false,
+  "canExecuteReplacement": false,
+  "status": "held",
+  "holds": [
+    "goalie_subject_binding_invalid"
+  ],
+  "referencePackage": {
+    "version": "luna-hockey-reference-v4",
+    "mode": "rules-and-synthetic-only",
+    "hash": "9b8a10fd458596b75ba2c0900dea1b72b9ec446d5e0e660ca5c18341920abdb3",
+    "rulesVersion": "luna-hockey-rules-v4",
+    "libraryVersion": null
+  },
+  "responsesRequestHash": "78398a271d89d4e09238112faecceb6b1bdcd7d1efe066276fb7b8afd93ade02",
+  "lineage": {
+    "originalPostId": "910005",
+    "author": "lunafixture",
+    "url": "https://x.com/LunaFixture/status/910005",
+    "textVersion": "tweet-source-claim-v1:text:7332aeea609b6b72b53ca26c2eb347e00fd7f59022f847b9cac87c2a9f3ceaee",
+    "packetHash": "691be91b8043ece6cef4b5b7a58cfc4a80cc887483d1fcaa1f49fafad9df0df4"
+  },
+  "identity": {
+    "version": "tweet-identity-proposal-v1",
+    "requestHash": "78dfee451d97ca1194482377bcd2cdbd49088baa94d57cc78091b94af910a9ed",
+    "directoryHash": "88dbd1e19c22a04fba95f07d049c38af533b548723bd17106f639191667ae16f",
+    "occurrences": [
+      {
+        "occurrenceId": "subject-4",
+        "canonicalId": "nhl:900001",
+        "status": "matched",
+        "evidence": {
+          "start": 4,
+          "end": 16,
+          "text": "Avery Keeper"
+        },
+        "identityConfidence": "tentative"
+      }
+    ]
+  },
+  "goalieStatuses": [],
+  "decisionReview": null,
+  "attempts": 1,
+  "requestIds": [
+    "offline-continuation-E06-responses"
+  ],
+  "reviewQueueKey": "5dff6fba4b3168944ca1be048d1bd44cdaf1df1b95c4c2a9361b6a4f42c136b0"
+}

@@ -1,0 +1,59 @@
+{
+  "observedAtUtc": "2026-11-01T19:17:39.003Z",
+  "pullRequest": {
+    "url": "https://github.com/FHFHockey-dev/fhfhockey.com/pull/402",
+    "number": 402,
+    "state": "closed",
+    "merged": true,
+    "title": "Release: Social Share suite, PP writer fix and IFTTT routes",
+    "base": "master",
+    "base_sha": "4965a872a9746b6129c9ac589c200560d01a1e23",
+    "head": "chef/release-social-share-2026-11-01",
+    "head_sha": "9d22c11ab8fd93db4a339242381182d87c82e7d4",
+    "merge_commit_sha": "f17bea20d8caa2b6268c318bdb2152d7e2a3b57d",
+    "merged_at": "2026-11-01T18:20:47Z",
+    "changed_files": 376
+  },
+  "remoteMaster": "f17bea20d8caa2b6268c318bdb2152d7e2a3b57d",
+  "aliases": [
+    {
+      "alias": "fhfhockey.com",
+      "deploymentId": "dpl_FMD1YuNiLpg3eYYT8ZYE7VXRDAoj",
+      "projectId": "prj_LV0wbwH5gRjOsZlowzEFNGRuX7Lw",
+      "updatedAt": 1793557519348
+    },
+    {
+      "alias": "functions-fhfhockey.vercel.app",
+      "deploymentId": "dpl_87T83RYKhKFvZLHyCHNZTf8A561d",
+      "projectId": "prj_q9tnoe1pF6WAe9zPcBzBLBPZx5mQ",
+      "updatedAt": 1792903282861
+    }
+  ],
+  "deployments": [
+    {
+      "alias": "fhfhockey.com",
+      "id": "dpl_FMD1YuNiLpg3eYYT8ZYE7VXRDAoj",
+      "url": "fhfhockey-kxf1gs8nm-fhfhockeydevs-projects.vercel.app",
+      "readyState": "READY",
+      "target": "production",
+      "createdAt": 1793557252449,
+      "ready": 1793557519160,
+      "gitCommitSha": "f17bea20d8caa2b6268c318bdb2152d7e2a3b57d",
+      "gitCommitRef": "master",
+      "gitRepo": "fhfhockey.com"
+    },
+    {
+      "alias": "functions-fhfhockey.vercel.app",
+      "id": "dpl_87T83RYKhKFvZLHyCHNZTf8A561d",
+      "url": "functions-fhfhockey-4m4a5iwyq-fhfhockeydevs-projects.vercel.app",
+      "readyState": "READY",
+      "target": "production",
+      "createdAt": 1792903264177,
+      "ready": 1792903282679,
+      "gitCommitSha": "b3f9a7e25c5e1b82bc74aead8337302177274c9f",
+      "gitCommitRef": "master",
+      "gitRepo": "fhfhockey.com"
+    }
+  ],
+  "limits": "Control-plane reads only. No application endpoint, NST/provider request, environment value read, build, deployment or setting mutation."
+}

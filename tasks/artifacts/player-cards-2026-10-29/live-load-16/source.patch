@@ -1,0 +1,33 @@
+--- before/web/components/player-cards/CurrentPlayerCardStudio.tsx
++++ after/web/components/player-cards/CurrentPlayerCardStudio.tsx
+@@ -16,10 +16,12 @@
+ 
+ async function loadCurrentCard(request: CurrentNhlRequest, signal: AbortSignal): Promise<CurrentNhlCard> {
+   const response = await fetch(`/api/v1/player-cards?${new URLSearchParams(Object.fromEntries(Object.entries(request).map(([key, value]) => [key, String(value)])))}`, { signal, credentials: "omit", redirect: "error", cache: "no-store" });
+-  if (!response.ok) throw new Error("NHL inputs are unavailable. No substitute values or ranks were loaded.");
+   const text = await response.text();
+   if (text.length > 128 * 1024) throw new Error("NHL card response exceeded its bound.");
+-  return JSON.parse(text);
++  let body;
++  try { body = JSON.parse(text); } catch { throw new Error("The card server returned an unreadable response. No values were loaded."); }
++  if (!response.ok) throw new Error(typeof body?.error === "string" && body.error.length <= 240 ? body.error : "NHL inputs are unavailable. No substitute values or ranks were loaded.");
++  return body;
+ }
+ export default function CurrentPlayerCardStudio({ initialCard = null, load = loadCurrentCard, rasterize = rasterizeCurrentNhlCard, loadArtwork = prepareHero, treatArtwork = prepareOutlinedPortrait }: { initialCard?: CurrentNhlCard | null; load?: typeof loadCurrentCard; rasterize?: typeof rasterizeCurrentNhlCard; loadArtwork?: typeof prepareHero; treatArtwork?: typeof prepareOutlinedPortrait }) {
+   const initial = useRef(selectionFromCard(initialCard)).current;
+--- before/web/components/player-cards/CurrentPlayerCardStudio.test.tsx
++++ after/web/components/player-cards/CurrentPlayerCardStudio.test.tsx
+@@ -123,3 +123,13 @@
+   expect(screen.queryByRole("button", { name: "Share prepared image" })).toBeNull(); expect(load).not.toHaveBeenCalled();
+   expect(window.location.search).toContain("cardFormat=recent-previous");
+ });
++
++it("shows the bounded server explanation instead of hiding a local/provider failure", async () => {
++  const fetchMock=vi.fn(async()=>({ok:false,text:async()=>JSON.stringify({error:"Another player is loading. Wait for it to finish, then try again."})}));
++  vi.stubGlobal("fetch",fetchMock);
++  render(<CurrentPlayerCardStudio />);
++  fireEvent.change(screen.getByLabelText("Player NHL ID"),{target:{value:"8484387"}});
++  fireEvent.click(screen.getByRole("button",{name:"Load NHL results"}));
++  await screen.findByText("Another player is loading. Wait for it to finish, then try again.");
++  expect(screen.queryByRole("img")).toBeNull();expect(fetchMock).toHaveBeenCalledTimes(1);vi.unstubAllGlobals();
++});

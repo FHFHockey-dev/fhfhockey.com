@@ -1,0 +1,98 @@
+{
+  "version": "luna-three-offset-failures-offline-diagnosis-v1",
+  "startingLedgerSha256": "2bf56d754b1f98888785b8d7e759d1c701b5541b0fb9e91ade63eff041ff3ceb",
+  "modelRawOutputComparedToRetainedObservedProposal": true,
+  "cases": [
+    {
+      "caseId": "E02",
+      "requestHash": "a008002a2f52e504b17262b7907edc00494d834e58c9420c7a3450406dfd3ed2",
+      "rawOutputSha256": "152916c970409b56ed1d1e3ac754b0bc1b78d98e12a194d890a00e2350d85c3d",
+      "source": "SYN Avery Keeper will not start tonight.",
+      "asciiAndUtf16OffsetsAgree": true,
+      "modelStatus": "ruled_out",
+      "modelEvidence": {
+        "start": 4,
+        "end": 38,
+        "text": "Avery Keeper will not start tonight."
+      },
+      "actualSlice": "Avery Keeper will not start tonigh",
+      "uniqueExactQuote": {
+        "start": 4,
+        "end": 40,
+        "text": "Avery Keeper will not start tonight."
+      },
+      "endError": -2,
+      "alreadyAllowedByFrozenLabels": true,
+      "originalGrade": {
+        "identity": true,
+        "goalie": false,
+        "decisions": true,
+        "labelMatch": false
+      },
+      "originalGradePath": "tasks/artifacts/luna-reference-package-2026-10-31/continuation-execution/grade-E02.json",
+      "originalGradeSha256": "76de544bd01f8c0d659043bc167225080cb993459c1155c261fb1d0034f9f019"
+    },
+    {
+      "caseId": "E03",
+      "requestHash": "cb4ebd599a52911bd995fd7089baf7062544dabdf3efd093e05d7782cf540084",
+      "rawOutputSha256": "9301d6141995488d2a2c50988d26ccbeda6a82279f923c57c4180927218dac80",
+      "source": "SYN Avery Keeper was first goalie off the ice.",
+      "asciiAndUtf16OffsetsAgree": true,
+      "modelStatus": "projected",
+      "modelEvidence": {
+        "start": 4,
+        "end": 45,
+        "text": "Avery Keeper was first goalie off the ice."
+      },
+      "actualSlice": "Avery Keeper was first goalie off the ice",
+      "uniqueExactQuote": {
+        "start": 4,
+        "end": 46,
+        "text": "Avery Keeper was first goalie off the ice."
+      },
+      "endError": -1,
+      "alreadyAllowedByFrozenLabels": true,
+      "originalGrade": {
+        "identity": true,
+        "goalie": false,
+        "decisions": true,
+        "labelMatch": false
+      },
+      "originalGradePath": "tasks/artifacts/luna-reference-package-2026-10-31/continuation-e03-execution/grade-E03.json",
+      "originalGradeSha256": "00ff753314ac3153e48518aef9b6a0f7d0552514a3e08ed627065715fad8c600"
+    },
+    {
+      "caseId": "E06",
+      "requestHash": "a3f5c84126412a9d3e070017013f03152caeeb776aa488be61c0a4a64d82ab7e",
+      "rawOutputSha256": "80d2188fd970f119c89314c298e849df2acd68dcfee604ff98687e76bf0329bb",
+      "source": "SYN Avery Keeper starts tonight, as confirmed during warmups.",
+      "asciiAndUtf16OffsetsAgree": true,
+      "modelStatus": "confirmed",
+      "modelEvidence": {
+        "start": 4,
+        "end": 57,
+        "text": "Avery Keeper starts tonight, as confirmed during warmups."
+      },
+      "actualSlice": "Avery Keeper starts tonight, as confirmed during warm",
+      "uniqueExactQuote": {
+        "start": 4,
+        "end": 61,
+        "text": "Avery Keeper starts tonight, as confirmed during warmups."
+      },
+      "endError": -4,
+      "alreadyAllowedByFrozenLabels": true,
+      "originalGrade": {
+        "identity": true,
+        "goalie": false,
+        "decisions": false,
+        "labelMatch": false
+      },
+      "originalGradePath": "tasks/artifacts/luna-reference-package-2026-10-31/continuation-e04-execution/grade-E06.json",
+      "originalGradeSha256": "fc7805584f1f18f2298b0e96eb4e904bfe82ca076fbd1173391c35a0d180a71b"
+    }
+  ],
+  "inference": "Model-supplied numeric end offsets disagree with exact unique quotes. Different errors (-2,-1,-4) do not support a single fixed-offset correction. No source truncation or scoring-variant defect is supported by these retained receipts. Internal model cause is unknown.",
+  "originalGradesUnchanged": true,
+  "noCounterfactualRegrade": true,
+  "paidCalls": 0
+}

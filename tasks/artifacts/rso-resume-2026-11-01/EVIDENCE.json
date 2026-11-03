@@ -1,0 +1,56 @@
+{
+  "at": "2026-11-01T14:01:30.575930+00:00",
+  "branch": "octoberBranch",
+  "head": "85017934faf199bc33d45d065c5cfe8bd9cdddfc",
+  "checks": {
+    "focusedTests": {
+      "status": "passed",
+      "files": 2,
+      "tests": 74,
+      "log": "focused-tests.log"
+    },
+    "integrationTests": {
+      "status": "passed",
+      "files": 5,
+      "tests": 324,
+      "log": "integration-tests.log"
+    },
+    "scopedTypes": {
+      "status": "passed",
+      "config": "tsconfig.json",
+      "log": "types.log"
+    },
+    "scopedEslint": {
+      "status": "passed",
+      "log": "lint.log"
+    },
+    "scopedDiffCheck": {
+      "status": "passed"
+    },
+    "regressionBeforeFix": {
+      "status": "failed as expected",
+      "tests": 5,
+      "log": "reproduction.log"
+    },
+    "browserRuntime": "not run",
+    "wholeRepositoryTypes": "not run",
+    "wholeRepositorySuite": "not run",
+    "remoteBuilds": 0,
+    "deployments": 0,
+    "productionRequests": 0
+  },
+  "files": [
+    {
+      "path": "web/lib/player-forecasts/rsoUsePolicy.ts",
+      "sha256": "dd5d0c48e32d77ab7b3bf0b7a44e7dcd5dfde26314bfe6cc1788831742eb2c8b"
+    },
+    {
+      "path": "web/lib/player-forecasts/rsoUsePolicy.test.ts",
+      "sha256": "bda984e71954a157f644e84e8a7fbb5b89b27a3b7f790e18c633e51b5f9f6a90"
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/planningReproducibility.test.ts",
+      "sha256": "5e6a5857e1955b12f11a26af4d1e9e1e75d11a0b00c4b4ff0c1202e1b0eb93c6"
+    }
+  ]
+}

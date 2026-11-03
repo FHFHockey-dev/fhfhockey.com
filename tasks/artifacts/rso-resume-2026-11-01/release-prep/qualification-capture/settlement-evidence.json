@@ -1,0 +1,47 @@
+{
+  "at": "2026-11-01T20:49:36.290779+00:00",
+  "task": "consolidated task2.3 chronological settlement preparation / FORGE-QUAL E3",
+  "implementation": "normalize-settlement.mjs",
+  "sourceSha256": "ed4b33a04806ca7702d6611decc12f09ace270d7528c5f3c0caf886fb5c555ab",
+  "tests": "normalize-settlement.test.mjs",
+  "testSha256": "a9a1f7f1cda5b1a14a9952f5943799798f4e0a00bd95ebf46a5fce9ff477080b",
+  "testsPassed": 12,
+  "log": "settlement-tests.log",
+  "command": "node --test tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-settlement.test.mjs",
+  "realInputsRead": false,
+  "scientificScopePinned": false,
+  "qualificationApproved": false,
+  "runtimeFilesChanged": false,
+  "canonicalHeldToolingChanged": false,
+  "networkRequests": 0,
+  "gitMutations": 0,
+  "builds": 0,
+  "deployments": 0,
+  "limitations": [
+    "No proof of final game status",
+    "No inferred non-dresser zero",
+    "Read-window lower bound only, not scheduled-execution acceptance",
+    "Explicit input version is preserved; operator must retain immutable original files",
+    "No model/comparator accuracy calculation or release/forecast-use admission"
+  ],
+  "finalCheckedAt": "2026-11-01T20:50:29.064330+00:00",
+  "deliveryPinsUnchanged": true,
+  "sourceCandidatePinsUnchanged": true,
+  "scientificScopeHashUnchanged": true,
+  "ownerFinalCommitResponseReceived": false,
+  "currentRepair": {
+    "at": "2026-11-01T21:06:28.105550+00:00",
+    "sourceSha256": "47fb525903fbb24da2d280669fad8f3a3964b8b8d588b407a9135b6e8d032880",
+    "testSha256": "a3b66b18923ed9026c6638f6f5a1a5c9c5542900700e8bb6ed7e2781ef17a31c",
+    "parserBridgeSha256": "fe98301ad8b5ee3ce54dec29370087f0f54eac794684e87605da756692e3c16b",
+    "testsPassedPerTimezone": 18,
+    "timezones": [
+      "UTC",
+      "America/New_York"
+    ],
+    "evidence": "timestamp-review-fix/after.json",
+    "before": "timestamp-review-fix/before.json",
+    "handoff": "timestamp-review-fix/REVIEW-RESPONSE.md",
+    "independentAcceptance": "pending"
+  }
+}

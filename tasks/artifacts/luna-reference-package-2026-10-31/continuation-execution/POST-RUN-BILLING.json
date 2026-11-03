@@ -1,0 +1,18 @@
+{
+  "observedAt": "2026-10-31T21:20:45.402007+00:00",
+  "promotionalBalanceDisplayedUsd": 85,
+  "promotionalExpiry": "2026-11-13",
+  "purchasedBalanceDisplayedUsd": 10,
+  "responsesUsageDisplayed": {
+    "requests": 1,
+    "inputTokens": 2954
+  },
+  "decisionsUsageDisplayed": {
+    "requests": 1,
+    "inputTokens": 891,
+    "outputTokens": 0
+  },
+  "totalSpendDisplayedUsd": 0,
+  "basis": "One post-run reload of credit-grants and organization usage pages, no settings changed.",
+  "interpretation": "E02 not yet reflected; rounded balances/usage lag do not mean zero cost. Provider receipt supplies actual usage; posted attribution unreconciled."
+}

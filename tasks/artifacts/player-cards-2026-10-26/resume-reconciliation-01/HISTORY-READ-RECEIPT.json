@@ -1,0 +1,26 @@
+{
+  "startedAt": "2026-10-26T15:23:42.976Z",
+  "url": "https://api-web.nhle.com/v1/player/8476453/game-log/20262027/2",
+  "method": "GET",
+  "requests": 1,
+  "maxRequests": 1,
+  "concurrency": 1,
+  "retries": 0,
+  "maxRows": 100,
+  "maxBytes": 2097152,
+  "requestTimeoutMs": 5000,
+  "processTimeoutMs": 15000,
+  "status": "captured-unadmitted",
+  "admissionsChanged": false,
+  "httpStatus": 200,
+  "bytes": 4932,
+  "sha256": "9a0cefaa9aade51cf190c0a1bec8493a86759971d3e5aa0cbbe91cdb5d808da2",
+  "rows": 11,
+  "responseKeys": [
+    "seasonId",
+    "gameTypeId",
+    "playerStatsSeasons",
+    "gameLog"
+  ],
+  "finishedAt": "2026-10-26T15:23:43.239Z"
+}

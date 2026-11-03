@@ -1,0 +1,33 @@
+{
+  "capturedAtUtc": "2026-10-29T18:14:22.393442+00:00",
+  "sourceHeadBefore": "9d70700ab37e24300c711a22c640ab66f40b24d2",
+  "sourceHeadAfter": "9d70700ab37e24300c711a22c640ab66f40b24d2",
+  "snapshotPath": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-autopsy-snapshot-acnu4bx8",
+  "manifestPath": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/roster-autopsy-usability-2026-10-29/SOURCE-MANIFEST.sha256",
+  "manifestSha256": "0111139d32376cc99466cd4ae5793bbba59fd83f03621a959141eff070628964",
+  "sourceFileCount": 4334,
+  "autopsyFilesMatchCheckoutAtCapture": {
+    "pages/roster-autopsy.tsx": true,
+    "lib/rosterAutopsy/manual.ts": true,
+    "lib/rosterAutopsy/manual.test.ts": true,
+    "components/RosterAutopsy/RosterAutopsy.tsx": true,
+    "components/RosterAutopsy/RosterAutopsy.module.scss": true,
+    "components/RosterAutopsy/RosterAutopsy.test.tsx": true
+  },
+  "excluded": [
+    "node_modules",
+    ".env*",
+    ".next*",
+    ".ms-playwright",
+    ".vercel",
+    ".pytest_cache",
+    ".DS_Store",
+    "test-results",
+    "playwright-report",
+    "coverage",
+    "*.tsbuildinfo",
+    ".temp",
+    "next-env.d.ts from manifest (Next-generated)"
+  ],
+  "dependencyBoundary": "node_modules is a read-only-use symlink to the existing installation; package-lock.json is included in source manifest."
+}

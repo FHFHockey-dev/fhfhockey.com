@@ -1,0 +1,14 @@
+[
+  {
+    "check": "actual route old-current: old",
+    "exitCode": 0
+  },
+  {
+    "check": "actual route old-current: current",
+    "exitCode": 0
+  },
+  {
+    "check": "Python regression",
+    "exitCode": 0
+  }
+]

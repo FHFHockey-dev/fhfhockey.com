@@ -1,0 +1,15 @@
+{
+  "url": "http://127.0.0.1:3125/player-cards/compositions?checkpoint=sequential03",
+  "checkpoint": "sequential03",
+  "comparisonBytes": 2186609,
+  "comparisonSha256": "6ab6b59a6ad34e193e73348b54cf96fcd73b2116f1d07110f32b2433a43d4ff1",
+  "latestExportHashesVerified": 2,
+  "servedComparisonScreenshots": [
+    "served-comparison-desktop.png",
+    "served-comparison-phone.png"
+  ],
+  "servedInteractivePipelineAndLogoVerified": 2,
+  "externalAttempts": [],
+  "pageErrors": [],
+  "remoteAvailabilityClaimed": false
+}

@@ -1,0 +1,11 @@
+{
+  "extends": "../../../../web/tsconfig.json",
+  "include": [
+    "../../../../web/next-bootstrap.d.ts",
+    "../../../../web/yahoo-fantasy.d.ts",
+    "../../../../web/lib/rosterScheduleOptimizer/dailyAcceptance.yahoo.test.ts"
+  ],
+  "compilerOptions": {
+    "incremental": false
+  }
+}

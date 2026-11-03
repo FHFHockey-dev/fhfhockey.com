@@ -1,0 +1,38 @@
+{
+  "state": "PASS",
+  "tests": 9,
+  "pins": 413,
+  "records": 150,
+  "perPlayer": {
+    "8478864": 50,
+    "8478398": 50,
+    "8479293": 50
+  },
+  "methods": {
+    "official_team_goal_census_unique_integer_value": 22,
+    "direct_official_native_ppPoints_report": 27,
+    "official_PP_goals_with_observed_zero_assists": 101
+  },
+  "zeroByMethod": {
+    "official_team_goal_census_unique_integer_value": 16,
+    "direct_official_native_ppPoints_report": 13,
+    "official_PP_goals_with_observed_zero_assists": 88
+  },
+  "zeros": 117,
+  "nonzero": 33,
+  "distinctBoxes": 146,
+  "retainedHoldIds": [
+    3085027,
+    3087408
+  ],
+  "fullLedgerExactlyRebuilt": true,
+  "baselineSummariesAndMembershipUnchanged": true,
+  "proofObservedMinimum": "2026-10-26T03:04:57.447067+00:00",
+  "proofObservedMaximum": "2026-11-02T00:19:08.185661+00:00",
+  "installedGateSHA256": "28bd6807e0ab103af6065c1bf5f6731320035d633b6f6ac359ff51c4f8a7d4f8",
+  "installedTestsSHA256": "7ec79313bb997b98ca62561c62177daae7cf3cff2e5b2f564fb21ccb628232f7",
+  "installedQualifierSHA256": "58a87ea119a98b33d7d67fb6849a269e375c22210610b607dfa30ba034c76232",
+  "networkRequests": 0,
+  "sourceEdits": 0,
+  "scorePromotion": false
+}

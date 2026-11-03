@@ -1,0 +1,17 @@
+{
+  "activatedAt": "2026-10-31T22:25:52.828821+00:00",
+  "parentAuthorizationThread": "01a189f6-9a3a-7235-a989-e1af4f47b014",
+  "independentReviewThread": "01a1936a-45ae-73d0-ae05-fe4339c5a022",
+  "planSha256": "32d4048054109b84258c70800f679809077e3bf7ffe03b2e85a833ee487d3ab1",
+  "startingLedgerSha256": "fc59014d3ff7f3abdfdec0703ffa77f80e5d02ef764f19d21cb85fc08adbd8f2",
+  "activatedLedgerSha256": "3b166a09ab655017ffacaf7128375fbe5dfd053f07353644e7b8c8e8e0d22c06",
+  "changedOnly": {
+    "approvedPolicyId": "owner-reviewed-v4-e04-e16-continuation-v1",
+    "enabled": true,
+    "blockedReason": null
+  },
+  "preservedCalls": 4,
+  "controlSha256": "75033e3c59387cb07bcda17b3f72c6fb93f3002873b577a5f3072334953c8d55",
+  "operatorSha256": "97fee2048ef6f5da607730c5bd06d7898c4b8073d75d45720cf13334489887e8",
+  "noReset": true
+}

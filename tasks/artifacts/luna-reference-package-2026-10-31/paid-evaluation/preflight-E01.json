@@ -1,0 +1,13 @@
+{
+  "caseId": "E01",
+  "checkedAt": "2026-10-31T20:52:51.732Z",
+  "approvedRequestHashes": [
+    "e462a1fdead8678a2fc4cf1991b0515f0b7b19d87954c8597ae427e163310423",
+    "fd281e98c460607c2e7b3c740c75a417ac86703eceaf8dfe45bc47f128143a38"
+  ],
+  "priorAdmittedRequests": 0,
+  "aggregateExposureNanoUsd": 262519843,
+  "maxTotalRequests": 20,
+  "maxRetries": 0,
+  "ready": true
+}

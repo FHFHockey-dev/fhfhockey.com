@@ -1,0 +1,7 @@
+# Date/finality01 — local contract checkpoint
+
+Provider sourceDate is now distinct from canonicalUTCdate. NST count rows stilljoin byproviderdate; selected records/windowdates remainUTC. Historyreceipts bind both dates; conflicting or invalid bindings failclosed. Exact-end compatibility remains. Officialminuteend receipts carry a one-minute range, timezone and explicit/schedule-bound/unresolved clockbasis. No unsupportedseconds are invented. Cutoffoverlap, unresolvedzone/AMPM and overlapping same-date order remainunknown. Sourcecaptures mustfollowthewholeendminute. A receipt capturedinsideitsendminute isincomplete, not falselyprecise. The trustedloader retainsstrictshape/hash/authority/WeakSethandles and ingestion-onlyformatceiling.
+
+Final101tests/6files includingthiscontractandobservedviewpassed; scopedTS/lintpass. Newpositiveandnegative testscoverintervalboundary/captureoverlap, exact/rangeconflicts, ambiguousclocks/zones/order, rawsourceDatelookup/UTCcalendarfilter andadmittedreceiptdatebinding. Realadmissionledger is unchanged; all publiccapturesremainunadmitted. Sourcepatch/before/finals preserved. New independentreviewpending.
+
+9officialreportcapturewasrejectedbyautomaticapprovalbeforeexecution;0requests/noalternate/no retry. PUBLIC-REPORTS-APPROVAL-BLOCK.json preservesscope/reason. Awaitdirectuserapproval for exactboundedbatch. No privateDBreads/writes/Git/deploy/deletes/imageprocessing. Runtimepage/previewserversnotchanged.

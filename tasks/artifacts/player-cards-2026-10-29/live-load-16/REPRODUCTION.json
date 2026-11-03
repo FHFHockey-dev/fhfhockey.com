@@ -1,0 +1,9 @@
+{
+  "url": "http://127.0.0.1:3125/player-cards/recent?playerId=8484387&season=20262027&count=10",
+  "status": 502,
+  "visibleError": "NHL inputs are unavailable. No substitute values or ranks were loaded.",
+  "screenshot": "before-failure.png",
+  "cause": "Saved Kucherov-only adapter returns mismatched landing identity for Michkov and Konecny; no upstream request",
+  "harnessLimitation": "Browser screenshot and visible error assertion completed; awaiting Playwright response.json subsequently timed out. No repeat source read was made.",
+  "process": "Both timed-out browser processes exited; verified no PID20234 remains."
+}

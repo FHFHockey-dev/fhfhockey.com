@@ -1,0 +1,33 @@
+[
+  {
+    "hash": "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d",
+    "reservedNanoUsd": 233000000,
+    "state": "settled",
+    "receipt": {
+      "body": {
+        "id": "synthetic-E10-responses",
+        "model": "gpt-6-luna",
+        "usage": {
+          "input_tokens": 100,
+          "output_tokens": 50
+        },
+        "status": "completed",
+        "output": [
+          {
+            "type": "message",
+            "role": "assistant",
+            "content": [
+              {
+                "type": "output_text",
+                "text": "{\"identity\":{\"version\":\"tweet-identity-proposal-v1\",\"requestHash\":\"613c8c36be12c964f4ef99ee4c37aabf03ddc2826b60f3acc67435c2208a913c\",\"directoryHash\":\"88dbd1e19c22a04fba95f07d049c38af533b548723bd17106f639191667ae16f\",\"occurrences\":[{\"occurrenceId\":\"subject-4\",\"status\":\"matched\",\"canonicalId\":\"nhl:900001\",\"evidence\":{\"start\":4,\"end\":16,\"text\":\"Avery Keeper\"},\"identityConfidence\":\"tentative\"}]},\"goalieStatuses\":[{\"occurrenceId\":\"subject-4\",\"canonicalId\":\"nhl:900001\",\"status\":\"confirmed\",\"evidence\":{\"start\":4,\"end\":31,\"text\":\"Avery Keeper starts tonight.\"}}]}"
+              }
+            ]
+          }
+        ]
+      },
+      "requestId": "offline-cli-E10-responses",
+      "endpoint": "responses",
+      "chargeNanoUsd": 38500
+    }
+  }
+]

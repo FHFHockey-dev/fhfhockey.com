@@ -1,0 +1,3 @@
+# Latest owner correction
+
+Three STACKED genuine5px contour bands, one of each verified teamcolor. MINinnergreen→middle red→outer tan,15px totaloutward. Non-overlapping dilationannuli inoneRGBAasset; notshadows/rectborder/threeoccludingopaqueimages. Preserve AA/transparency/playerposition/crop/logo/fade andolderwhite/separatecheckpoints. Clearselectorlabel andPNGparity. Keep heavyjobssequentialandbrief. No liveNHLsecure-retry approval inferred; no network/deps/Git/deploy/delete. All implemented/locallyverified, parentindependentreviewpending. Fresh global defaultwhite remains until finalownerchoice.

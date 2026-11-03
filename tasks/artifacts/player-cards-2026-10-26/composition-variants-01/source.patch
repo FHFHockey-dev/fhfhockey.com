@@ -1,0 +1,298 @@
+--- a/web/lib/player-cards/portraitTreatment.ts
++++ b/web/lib/player-cards/portraitTreatment.ts
+@@ -1,10 +1,12 @@
+ import { teamsInfo } from "../teamsInfo";
+ import type { PreparedHero } from "../../components/player-cards/HeroPlayerCard";
++import { prepareTeamLogo } from "./teamLogo";
+ 
+-export const PORTRAIT_STYLES = ["original", "posterized", "pixelated", "team-colors"] as const;
++export const PORTRAIT_STYLES = ["original", "posterized", "pixelated", "team-colors", "posterized-team-colors", "pixelated-team-colors"] as const;
+ export type PortraitStyle = typeof PORTRAIT_STYLES[number];
+ export const PORTRAIT_LABELS: Record<PortraitStyle, string> = {
+   original: "Original photo", posterized: "Posterized", pixelated: "Pixelated", "team-colors": "Team colors",
++  "posterized-team-colors": "Posterization + Team Colors", "pixelated-team-colors": "Pixelated + Team Colors",
+ };
+ export const PORTRAIT_VERSION = "fhfh-portrait-v1";
+ export const MAX_PORTRAIT_PIXELS = 2_000_000;
+@@ -16,6 +18,10 @@
+ 
+ export function isPortraitStyle(value: unknown): value is PortraitStyle {
+   return PORTRAIT_STYLES.some(style => style === value);
++}
++
++export function isCompositionStyle(style: PortraitStyle): boolean {
++  return style === "posterized-team-colors" || style === "pixelated-team-colors";
+ }
+ 
+ /** RGB-only transforms: the reviewed silhouette and every alpha byte are retained. */
+@@ -33,21 +39,23 @@
+   for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+     const i = (y * width + x) * 4;
+     if (input[i + 3] === 0) continue;
+-    if (style === "pixelated") {
++    if (style === "pixelated" || style === "pixelated-team-colors") {
+       const sx = Math.min(width - 1, Math.floor(x / block) * block + Math.floor(block / 2));
+       const sy = Math.min(height - 1, Math.floor(y / block) * block + Math.floor(block / 2));
+       const sample = (sy * width + sx) * 4;
+       // Never pull hidden background RGB into a visible silhouette-edge pixel.
+       const from = input[sample + 3] >= 128 ? sample : i;
+       for (let channel = 0; channel < 3; channel++) output[i + channel] = input[from + channel];
+-    } else if (style === "posterized") {
++    } else if (style === "posterized" || style === "posterized-team-colors") {
+       // Quantize lightness in six bands while retaining the photographed hue.
+       const light = Math.max(input[i], input[i + 1], input[i + 2]);
+       const band = light < 34 ? 15 : light < 74 ? 52 : light < 118 ? 96 : light < 164 ? 143 : light < 210 ? 190 : 240;
+       for (let channel = 0; channel < 3; channel++) output[i + channel] = light === 0 ? 0 : Math.round(input[i + channel] / light * band / 12) * 12;
+-    } else {
+-      const luminance = .2126 * input[i] + .7152 * input[i + 1] + .0722 * input[i + 2];
+-      const position = Math.min(3, Math.round(luminance / 255 * 6) / 2);
++    }
++    if (style === "team-colors" || isCompositionStyle(style)) {
++      const luminance = .2126 * output[i] + .7152 * output[i + 1] + .0722 * output[i + 2];
++      // Posterization uses four flat team-palette inks; pixelation retains seven tonal steps.
++      const position = style === "posterized-team-colors" ? Math.round(luminance / 255 * 3) : Math.min(3, Math.round(luminance / 255 * 6) / 2);
+       const low = Math.floor(position), high = Math.min(3, low + 1), weight = position - low;
+       for (let channel = 0; channel < 3; channel++) output[i + channel] = colors[low][channel] * (1 - weight) + colors[high][channel] * weight;
+     }
+@@ -56,7 +64,7 @@
+ }
+ 
+ export function portraitKey(hero: PreparedHero): string {
+-  return `${hero.treatment?.style || "original"}:${hero.treatment?.version || PORTRAIT_VERSION}:${hero.treatment?.renderedSha256 || hero.alphaSha256}`;
++  return `${hero.treatment?.style || "original"}:${hero.treatment?.version || PORTRAIT_VERSION}:${hero.treatment?.renderedSha256 || hero.alphaSha256}${hero.teamLogo ? `:logo:${hero.teamLogo.sha256}` : ""}`;
+ }
+ 
+ /** Always start from the verified original, never from a previously filtered derivative. */
+@@ -85,6 +93,7 @@
+     const dataUrl = await new Promise<string>((resolve, reject) => {
+       const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = () => reject(new Error("Portrait could not be read.")); reader.readAsDataURL(blob);
+     });
+-    return { ...hero, dataUrl, treatment };
++    const teamLogo = isCompositionStyle(style) ? await prepareTeamLogo(hero.team, signal) : undefined;
++    return { ...hero, dataUrl, treatment, teamLogo };
+   } finally { canvas.width = 0; canvas.height = 0; }
+ }
+--- a/web/lib/player-cards/portraitTreatment.test.ts
++++ b/web/lib/player-cards/portraitTreatment.test.ts
+@@ -1,6 +1,7 @@
+ import { expect, it } from "vitest";
+ import { portraitPixels, preparePortrait, MAX_PORTRAIT_PIXELS, PORTRAIT_STYLES } from "./portraitTreatment";
+ import { REVIEWED_HERO_SAMPLES } from "./reviewedHeroSamples";
++import { prepareTeamLogo } from "./teamLogo";
+ 
+ const palette = { primaryColor: "#154734", darkColor: "#0b2e21", secondaryColor: "#DDCBA4" };
+ it("preserves every alpha byte and original input for every deterministic treatment", () => {
+@@ -26,6 +27,20 @@
+   expect([...portraitPixels(input, 2, 1, "team-colors", palette)]).toEqual([11, 46, 33, 255, 242, 241, 235, 255]);
+   expect(portraitPixels(input, 2, 1, "posterized", palette)).not.toEqual(input);
+ });
++it("combines nearest-neighbor RGB with the team palette and uses flat palette inks for posterization", () => {
++  const input = new Uint8ClampedArray([12, 61, 35, 255, 192, 155, 103, 255, 86, 120, 90, 255, 222, 243, 211, 255]);
++  const pixelated = portraitPixels(input, 2, 2, "pixelated", palette);
++  expect(portraitPixels(input, 2, 2, "pixelated-team-colors", palette)).toEqual(portraitPixels(pixelated, 2, 2, "team-colors", palette));
++  const posterized = portraitPixels(input, 2, 2, "posterized-team-colors", palette);
++  expect(posterized).not.toEqual(portraitPixels(input, 2, 2, "team-colors", palette));
++  expect(posterized).not.toEqual(portraitPixels(input, 2, 2, "pixelated-team-colors", palette));
++  for (let i = 0; i < posterized.length; i += 4) expect([[11,46,33], [21,71,52], [221,203,164], [242,241,235]]).toContainEqual([...posterized.slice(i, i + 3)]);
++  const middle = new Uint8ClampedArray([120, 120, 120, 255]);
++  expect(portraitPixels(middle, 1, 1, "pixelated-team-colors", { primaryColor: "#00205B", secondaryColor: "#FFFFFF" })).not.toEqual(portraitPixels(middle, 1, 1, "pixelated-team-colors", palette));
++});
++it("does not request unreviewed or guessed team-logo paths", async () => {
++  await expect(prepareTeamLogo("unknown")).rejects.toThrow("reviewed local team logo");
++});
+ it("rejects oversized or malformed buffers before processing and bounds image decoding", async () => {
+   expect(() => portraitPixels(new Uint8ClampedArray(4), MAX_PORTRAIT_PIXELS + 1, 1, "posterized", palette)).toThrow("dimensions");
+   expect(() => portraitPixels(new Uint8ClampedArray(3), 1, 1, "posterized", palette)).toThrow("dimensions");
+--- a/web/components/player-cards/HeroPlayerCard.tsx
++++ b/web/components/player-cards/HeroPlayerCard.tsx
+@@ -3,7 +3,8 @@
+ import type { FlowSnapshot } from "../../lib/player-cards/interactionSnapshot";
+ import { periodLabel, strengthLabel } from "./InteractiveCard";
+ import EditorialPlayerCard from "./EditorialPlayerCard";
+-import { portraitKey, PORTRAIT_LABELS, type PortraitTreatment } from "../../lib/player-cards/portraitTreatment";
++import { portraitKey, PORTRAIT_LABELS, isCompositionStyle, type PortraitTreatment } from "../../lib/player-cards/portraitTreatment";
++import { isPreparedTeamLogo, type PreparedTeamLogo } from "../../lib/player-cards/teamLogo";
+ 
+ export type HeroSample = {
+   id: number; name: string; team: string; position: string; sweater: number;
+@@ -11,7 +12,7 @@
+   sourceSha256: string; alphaSha256: string; acceptance: "accepted";
+   localPath: string;
+ };
+-export type PreparedHero = HeroSample & { dataUrl: string; treatment?: PortraitTreatment };
++export type PreparedHero = HeroSample & { dataUrl: string; treatment?: PortraitTreatment; teamLogo?: PreparedTeamLogo };
+ export type CardShareFormat = "landscape" | "social-square";
+ 
+ export default function HeroPlayerCard({ snapshot, hero, format, svgRef }: {
+@@ -19,6 +20,8 @@
+ }) {
+   const uid = useId().replace(/:/g, ""), palette = teamsInfo[hero.team];
+   if (String(hero.id) !== snapshot.player.id || !palette || hero.acceptance !== "accepted") throw new Error("Artwork identity is not verified for this card.");
++  const composition = isCompositionStyle(hero.treatment?.style || "original");
++  if (composition && !isPreparedTeamLogo(hero.teamLogo, hero.team)) throw new Error("A matching reviewed team logo is required.");
+   const square = format === "social-square", height = square ? 1200 : 1020;
+   const names = hero.name.split(" "), first = names.shift()!, last = names.join(" ");
+   const header = <g>
+@@ -26,13 +29,18 @@
+       <linearGradient id={`${uid}-team`}><stop stopColor={palette.darkColor || palette.primaryColor} /><stop offset="1" stopColor={palette.primaryColor} /></linearGradient>
+       <linearGradient id={`${uid}-shade`}><stop stopColor="#101214" stopOpacity=".9" /><stop offset=".62" stopColor="#101214" stopOpacity=".2" /><stop offset="1" stopColor="#101214" stopOpacity="0" /></linearGradient>
+       <clipPath id={`${uid}-crop`}><rect width="1200" height="338" /></clipPath>
++      {composition && <>
++        <linearGradient id={`${uid}-logo-fade`}><stop stopColor="white" stopOpacity=".35" /><stop offset=".25" stopColor="white" /><stop offset="1" stopColor="white" /></linearGradient>
++        <mask id={`${uid}-logo-mask`} maskUnits="objectBoundingBox" maskContentUnits="objectBoundingBox" x="0" y="0" width="1" height="1"><rect width="1" height="1" fill={`url(#${uid}-logo-fade)`} /></mask>
++      </>}
+     </defs>
+     <g clipPath={`url(#${uid}-crop)`}>
+       <rect width="1200" height="338" fill={`url(#${uid}-team)`} />
+       <path d="M700 0H850L630 338H480Z" fill={palette.secondaryColor} opacity=".35" />
+       <path d="M1040 0H1090L870 338H820Z" fill={palette.jersey} opacity=".6" />
+       <rect width="1200" height="338" fill={`url(#${uid}-shade)`} />
+-      <image data-hero-image="true" href={hero.dataUrl} x="600" y="4" width="600" height={600 * hero.sourceHeight / hero.sourceWidth} preserveAspectRatio="xMidYMin meet" style={{ imageRendering: hero.treatment?.style === "pixelated" ? "pixelated" : "auto" }} />
++      {composition && <image data-team-logo="true" href={hero.teamLogo!.dataUrl} x="780" y="-74" width="520" height="520" preserveAspectRatio="xMidYMid meet" mask={`url(#${uid}-logo-mask)`} />}
++      <image data-hero-image="true" href={hero.dataUrl} x="600" y="4" width="600" height={600 * hero.sourceHeight / hero.sourceWidth} preserveAspectRatio="xMidYMin meet" style={{ imageRendering: hero.treatment?.style?.startsWith("pixelated") ? "pixelated" : "auto" }} />
+       <rect y="299" width="1200" height="39" fill="#101214" fillOpacity=".93" />
+     </g>
+     <g fill="#F2F1EB" fontFamily="Arial, sans-serif">
+@@ -43,14 +51,14 @@
+       <text x="40" y="225" fontSize="25">{palette.name} · {hero.position} · #{hero.sweater}</text>
+       <text x="40" y="268" fontSize="23" fill="#BEEFFF">{String(snapshot.settings.season).slice(0,4)}–{String(snapshot.settings.season).slice(6)} · {periodLabel(snapshot)} · {strengthLabel(snapshot)}</text>
+       <text x="40" y="325" fontSize="19" fontWeight="700" letterSpacing="1" fill="#80DFFF">ILLUSTRATIVE STATS · NOT {hero.name.toUpperCase()}’S RESULTS</text>
+-      <text x="1160" y="325" textAnchor="end" fontSize="16">NHL photo · {PORTRAIT_LABELS[hero.treatment?.style || "original"]}</text>
++      <text x="1160" y="325" textAnchor="end" fontSize={composition ? 14 : 16}>NHL photo · {PORTRAIT_LABELS[hero.treatment?.style || "original"]}</text>
+     </g>
+   </g>;
+   return <svg ref={svgRef} xmlns="http://www.w3.org/2000/svg" viewBox={`0 0 1200 ${height}`} width="1200" height={height} role="img"
+     aria-label={`${hero.name}. NHL action photo with locally removed background. Illustrative synthetic statistics, not this player's actual results. ${snapshot.sample.gp === null ? "GP unverified" : `${snapshot.sample.gp} fixture appearances`}. ${snapshot.readings.map(r => r.reason || "").filter(Boolean).join(". ")}`}
+-    data-snapshot-id={snapshot.id} data-artwork-hash={hero.alphaSha256} data-share-format={format} data-portrait-key={portraitKey(hero)}>
++    data-snapshot-id={snapshot.id} data-artwork-hash={hero.alphaSha256} data-share-format={format} data-portrait-key={portraitKey(hero)} data-team-logo-hash={composition ? hero.teamLogo!.sha256 : undefined}>
+     <title>{hero.name} · FHFH artwork study · illustrative statistics</title>
+-    <desc>Source photo: {hero.sourceUrl}. Captured {hero.capturedAt}. Treatment: {PORTRAIT_LABELS[hero.treatment?.style || "original"]}; original silhouette preserved. Team and jersey identity from that captured source. No live statistics or ranking coverage claimed.</desc>
++    <desc>Source photo: {hero.sourceUrl}. Captured {hero.capturedAt}. Treatment: {PORTRAIT_LABELS[hero.treatment?.style || "original"]}; original silhouette preserved. Team and jersey identity from that captured source. {composition ? `Team logo: ${hero.teamLogo!.localPath}, displayed behind the player with a fade on its leftmost quarter. ` : ""}No live statistics or ranking coverage claimed.</desc>
+     <rect width="1200" height={height} fill="#101214" />
+     {square && <g fill="#F2F1EB" fontFamily="Arial, sans-serif"><text x="40" y="48" fontSize="22" letterSpacing="2">FHFH / SOCIAL SHARE</text><text x="1160" y="48" textAnchor="end" fontSize="18" fill="#80DFFF">ARTWORK CHECKPOINT</text></g>}
+     <svg x="0" y={square ? 76 : 0} width="1200" height="1020" viewBox="0 0 1200 1020" aria-hidden="true">
+--- a/web/lib/player-cards/shareExport.ts
++++ b/web/lib/player-cards/shareExport.ts
+@@ -1,6 +1,7 @@
+ import type { FlowSnapshot } from "./interactionSnapshot";
+ import type { CardShareFormat, HeroSample, PreparedHero } from "../../components/player-cards/HeroPlayerCard";
+-import { portraitKey, PORTRAIT_VERSION, isPortraitStyle } from "./portraitTreatment";
++import { portraitKey, PORTRAIT_VERSION, isPortraitStyle, isCompositionStyle } from "./portraitTreatment";
++import { isPreparedTeamLogo } from "./teamLogo";
+ 
+ export async function prepareHero(sample: HeroSample): Promise<PreparedHero> {
+   if (sample.acceptance !== "accepted" || !/^\/player-cards\/hero-samples\/\d+\.png$/.test(sample.localPath)) throw new Error("Reviewed local artwork required.");
+@@ -23,7 +24,10 @@
+   if (treatment && (!isPortraitStyle(treatment.style) || treatment.version !== PORTRAIT_VERSION || treatment.sourceAlphaSha256 !== hero.alphaSha256 || treatment.width !== hero.sourceWidth || treatment.height !== hero.sourceHeight || !/^[a-f0-9]{64}$/.test(treatment.renderedSha256))) throw new Error("Portrait provenance changed. Retry this snapshot.");
+   if (snapshot.sample.gp === null || snapshot.sample.toiSeconds === null || !snapshot.readings.some(r => r.state === "valid")) throw new Error("Verified sample context is required to export.");
+   const images = [...svg.querySelectorAll("image")];
+-  if (images.length !== 1 || images[0].getAttribute("href") !== hero.dataUrl || !hero.dataUrl.startsWith("data:image/png;base64,")) throw new Error("Embedded reviewed artwork is required to export.");
++  const composition = isCompositionStyle(treatment?.style || "original");
++  const heroImage = svg.querySelector('[data-hero-image="true"]');
++  if (images.length !== (composition ? 2 : 1) || heroImage?.getAttribute("href") !== hero.dataUrl || !hero.dataUrl.startsWith("data:image/png;base64,")) throw new Error("Embedded reviewed artwork is required to export.");
++  if (composition && (!isPreparedTeamLogo(hero.teamLogo, hero.team) || svg.dataset.teamLogoHash !== hero.teamLogo.sha256 || svg.querySelector('[data-team-logo="true"]')?.getAttribute("href") !== hero.teamLogo.dataUrl)) throw new Error("Embedded matching team logo is required to export.");
+ }
+ 
+ export async function rasterizePlayerCard(svg: SVGSVGElement, snapshot: FlowSnapshot, hero: PreparedHero, format: CardShareFormat): Promise<Blob> {
+--- a/web/lib/player-cards/shareExport.test.ts
++++ b/web/lib/player-cards/shareExport.test.ts
+@@ -7,6 +7,8 @@
+ import { adaptLocalSnapshot } from "./adapter";
+ import { buildInteractionFixture } from "./interactionFixtures";
+ import HeroPlayerCard from "../../components/player-cards/HeroPlayerCard";
++import type { PreparedHero } from "../../components/player-cards/HeroPlayerCard";
++import { PORTRAIT_VERSION } from "./portraitTreatment";
+ 
+ afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
+ function card() {
+@@ -31,6 +33,21 @@
+   const fetcher = vi.fn(); vi.stubGlobal("fetch", fetcher);
+   await expect(prepareHero({ ...REVIEWED_HERO_SAMPLES[0], localPath: "https://example.invalid/hero.png" })).rejects.toThrow("Reviewed local artwork"); expect(fetcher).not.toHaveBeenCalled();
+ });
++it("exports only the matching pinned embedded logo behind a combined portrait, with the left-quarter fade", () => {
++  const { snapshot, hero } = card();
++  const combined: PreparedHero = { ...hero, teamLogo: { team: "TOR", dataUrl: "data:image/png;base64,logo", sha256: "b88d6edb92e4bcca291f7d3a37c1265fee39e1f5ef41650aaa19d8a39ad7e01d", localPath: "/teamLogos/TOR.png" }, treatment: { style: "posterized-team-colors", version: PORTRAIT_VERSION, sourceAlphaSha256: hero.alphaSha256, renderedSha256: "a".repeat(64), width: hero.sourceWidth, height: hero.sourceHeight } };
++  const { container } = render(React.createElement(HeroPlayerCard, { snapshot, hero: combined, format: "landscape" }));
++  const svg = container.querySelector("svg")!;
++  expect(() => assertCardExport(svg, snapshot, combined, "landscape")).not.toThrow();
++  expect([...svg.querySelectorAll("image")].map(n => n.dataset)).toMatchObject([{ teamLogo: "true" }, { heroImage: "true" }]);
++  expect([...svg.querySelectorAll('linearGradient[id$="logo-fade"] stop')].map(n => [n.getAttribute("offset"), n.getAttribute("stop-opacity")])).toEqual([[null, ".35"], [".25", null], ["1", null]]);
++  const logo = svg.querySelector('[data-team-logo="true"]')!;
++  expect(Number(logo.getAttribute("x")) + Number(logo.getAttribute("width"))).toBeGreaterThan(1200);
++  svg.dataset.teamLogoHash = "changed"; expect(() => assertCardExport(svg, snapshot, combined, "landscape")).toThrow("logo");
++  svg.dataset.teamLogoHash = combined.teamLogo!.sha256;
++  logo.setAttribute("href", "https://example.invalid/logo.png"); expect(() => assertCardExport(svg, snapshot, combined, "landscape")).toThrow("logo");
++  expect(() => assertCardExport(svg, snapshot, { ...combined, teamLogo: { ...combined.teamLogo!, team: "MIN" } }, "landscape")).toThrow("logo");
++});
+ it("opens only a supported native share and treats cancellation as cancellation without downloading", async () => {
+   const share = vi.fn().mockRejectedValue(new DOMException("cancelled", "AbortError"));
+   vi.stubGlobal("navigator", { canShare: () => true, share });
+--- a/web/components/player-cards/PlayerCardShareStudio.tsx
++++ b/web/components/player-cards/PlayerCardShareStudio.tsx
+@@ -93,6 +93,6 @@
+     {error ? <p role="alert">{error} <button onClick={() => setRetry(n => n + 1)}>Retry artwork</button></p> : !readyHero ? <p role="status">{treating ? "Applying portrait style…" : "Preparing reviewed artwork…"}</p> : null}
+     {snapshot && readyHero && <section className={styles.artwork} aria-label="Player card preview"><HeroPlayerCard snapshot={snapshot} hero={readyHero} format={format} svgRef={svgRef} /></section>}
+     <p role="status" aria-live="polite">{status || (snapshot?.sample.gp === null ? "GP unverified. Export unavailable until sample context is verified." : scenario === "metric-gap" ? "Missing metric inputs remain unavailable on the card and export." : "Live statistics and premium activation remain off.")}</p>
+-    {snapshot && readyHero && <details><summary>Card values and provenance</summary><p>Photo: NHL action-image URL captured {sample!.capturedAt.slice(0, 10)}. Team and jersey identity reflect that capture. Local background removal; no generated identity. Statistical source: fabricated fixture player1001, separate from the photographed player.</p><p><a href={sample!.sourceUrl} target="_blank" rel="noreferrer">Recorded photo source</a></p><ul>{EDITORIAL_METRICS.map(id => { const row = snapshot.readings.find(v => v.id === id)!; return <li key={id}>{METRICS.find(v => v.id === id)!.help}: {formatMetric(id, row.value)} · {row.rank ? `${row.rank.tied ? "T-" : ""}${row.rank.ordinal}/${row.rank.population} · ${row.rank.percentile.toFixed(1)} percentile` : row.reason || row.rankReason}</li>; })}</ul><button disabled={busy} onClick={() => saveCardFile(new Blob([JSON.stringify({ snapshot, selectedMetrics: EDITORIAL_METRICS, format, artwork: { ...readyHero, dataUrl: undefined }, statistics: { origin: "synthetic", fixturePlayerId: 1001, representsPicturedPlayer: false }, liveActivation: false, premiumActivation: false }, null, 2)], { type: "application/json" }), "fhfh-player-card-manifest.json")}>Download manifest</button></details>}
++    {snapshot && readyHero && <details><summary>Card values and provenance</summary><p>Photo: NHL action-image URL captured {sample!.capturedAt.slice(0, 10)}. Team and jersey identity reflect that capture. Local background removal; no generated identity. Statistical source: fabricated fixture player1001, separate from the photographed player.</p><p><a href={sample!.sourceUrl} target="_blank" rel="noreferrer">Recorded photo source</a></p><ul>{EDITORIAL_METRICS.map(id => { const row = snapshot.readings.find(v => v.id === id)!; return <li key={id}>{METRICS.find(v => v.id === id)!.help}: {formatMetric(id, row.value)} · {row.rank ? `${row.rank.tied ? "T-" : ""}${row.rank.ordinal}/${row.rank.population} · ${row.rank.percentile.toFixed(1)} percentile` : row.reason || row.rankReason}</li>; })}</ul><button disabled={busy} onClick={() => saveCardFile(new Blob([JSON.stringify({ snapshot, selectedMetrics: EDITORIAL_METRICS, format, artwork: { ...readyHero, dataUrl: undefined, teamLogo: readyHero.teamLogo ? { ...readyHero.teamLogo, dataUrl: undefined } : undefined }, statistics: { origin: "synthetic", fixturePlayerId: 1001, representsPicturedPlayer: false }, liveActivation: false, premiumActivation: false }, null, 2)], { type: "application/json" }), "fhfh-player-card-manifest.json")}>Download manifest</button></details>}
+   </main>;
+ }
+--- a/web/components/player-cards/PlayerCardShareStudio.test.tsx
++++ b/web/components/player-cards/PlayerCardShareStudio.test.tsx
+@@ -9,7 +9,7 @@
+ 
+ afterEach(() => { cleanup(); localStorage.clear(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
+ const loaded = async (sample: HeroSample): Promise<PreparedHero> => ({ ...sample, dataUrl: "data:image/png;base64,AA==" });
+-const treatment = async (hero: PreparedHero, style: PortraitStyle): Promise<PreparedHero> => ({ ...hero, dataUrl: `data:image/png;base64,${style}`, treatment: { style, version: PORTRAIT_VERSION, sourceAlphaSha256: hero.alphaSha256, renderedSha256: "a".repeat(64), width: hero.sourceWidth, height: hero.sourceHeight } });
++const treatment = async (hero: PreparedHero, style: PortraitStyle): Promise<PreparedHero> => ({ ...hero, dataUrl: `data:image/png;base64,${style}`, teamLogo: style.endsWith("-team-colors") ? { team: "TOR", localPath: "/teamLogos/TOR.png", dataUrl: "data:image/png;base64,logo", sha256: "b88d6edb92e4bcca291f7d3a37c1265fee39e1f5ef41650aaa19d8a39ad7e01d" } : undefined, treatment: { style, version: PORTRAIT_VERSION, sourceAlphaSha256: hero.alphaSha256, renderedSha256: "a".repeat(64), width: hero.sourceWidth, height: hero.sourceHeight } });
+ const ready = () => waitFor(() => expect(screen.getByRole("button", { name: "Social Share" }).hasAttribute("disabled")).toBe(false));
+ 
+ it("shows actual photo identity, explicit fictional statistics and same-snapshot landscape/square compositions", async () => {
+@@ -77,3 +77,14 @@
+   expect((screen.getByLabelText("Portrait style") as HTMLSelectElement).value).toBe("team-colors");
+   expect(container.querySelector("image")!.getAttribute("href")).toBe("data:image/png;base64,team-colors");
+ });
++it("offers both composition experiments without switching the default and persists an explicit selection", async () => {
++  const first = render(<PlayerCardShareStudio loadArtwork={loaded} treatArtwork={treatment} />); await ready();
++  expect((screen.getByLabelText("Portrait style") as HTMLSelectElement).value).toBe("team-colors");
++  expect(first.container.querySelector('[data-team-logo]')).toBeNull();
++  fireEvent.change(screen.getByLabelText("Portrait style"), { target: { value: "posterized-team-colors" } }); await ready();
++  expect(first.container.querySelector('[data-team-logo]')).toBeTruthy();
++  fireEvent.change(screen.getByLabelText("Portrait style"), { target: { value: "pixelated-team-colors" } }); await ready();
++  expect(first.container.querySelector('svg')!.dataset.portraitKey).toMatch(/^pixelated-team-colors:.*:logo:/);
++  first.unmount(); render(<PlayerCardShareStudio loadArtwork={loaded} treatArtwork={treatment} />); await ready();
++  expect((screen.getByLabelText("Portrait style") as HTMLSelectElement).value).toBe("pixelated-team-colors");
++});
+--- /dev/null
++++ b/web/lib/player-cards/teamLogo.ts
+@@ -0,0 +1,30 @@
++import { teamsInfo } from "../teamsInfo";
++
++// Existing local team assets inspected for this two-player composition checkpoint.
++const LOGOS: Record<string, { path: string; sha256: string; size: number }> = {
++  TOR: { path: "/teamLogos/TOR.png", sha256: "b88d6edb92e4bcca291f7d3a37c1265fee39e1f5ef41650aaa19d8a39ad7e01d", size: 1023 },
++  MIN: { path: "/teamLogos/MIN.png", sha256: "430c6a4073da40b9d2e147c2528dba317f019273390ef2bdd43363895c5e0fc2", size: 1280 },
++};
++export type PreparedTeamLogo = { team: string; dataUrl: string; sha256: string; localPath: string };
++
++export function isPreparedTeamLogo(logo: PreparedTeamLogo | undefined, team: string): logo is PreparedTeamLogo {
++  const source = LOGOS[team];
++  return !!source && !!teamsInfo[team] && !!logo && logo.team === team && logo.sha256 === source.sha256 && logo.localPath === source.path && logo.dataUrl.startsWith("data:image/png;base64,");
++}
++
++export async function prepareTeamLogo(team: string, signal?: AbortSignal): Promise<PreparedTeamLogo> {
++  const source = LOGOS[team];
++  if (!source || !teamsInfo[team]) throw new Error("A reviewed local team logo is unavailable.");
++  const response = await fetch(source.path, { signal });
++  if (!response.ok) throw new Error("Team logo unavailable. Please retry.");
++  const bytes = await response.arrayBuffer();
++  const sha256 = [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))].map(n => n.toString(16).padStart(2, "0")).join("");
++  if (sha256 !== source.sha256) throw new Error("Team logo changed since review. Export blocked.");
++  const dataUrl = await new Promise<string>((resolve, reject) => {
++    const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = () => reject(new Error("Team logo could not be read.")); reader.readAsDataURL(new Blob([bytes], { type: "image/png" }));
++  });
++  const image = new Image(); image.src = dataUrl; await image.decode();
++  if (signal?.aborted) throw new DOMException("Portrait rendering cancelled.", "AbortError");
++  if (image.naturalWidth !== source.size || image.naturalHeight !== source.size) throw new Error("Team logo dimensions changed.");
++  return { team, dataUrl, sha256, localPath: source.path };
++}

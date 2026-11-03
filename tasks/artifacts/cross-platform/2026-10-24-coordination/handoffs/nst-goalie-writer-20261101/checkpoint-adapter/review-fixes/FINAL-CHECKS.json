@@ -1,0 +1,35 @@
+{
+  "typescriptTests": {
+    "status": "PASS",
+    "files": 17,
+    "tests": 457,
+    "log": "preparation-tests.log"
+  },
+  "narrowRegression": {
+    "status": "PASS",
+    "files": 4,
+    "tests": 178,
+    "receipt": "NARROW-CHECKS.json"
+  },
+  "scopedTypes": {
+    "status": "PASS",
+    "receipt": "CHECKS.json"
+  },
+  "scopedLint": {
+    "status": "PASS",
+    "receipt": "CHECKS.json"
+  },
+  "pythonTests": {
+    "status": "PASS",
+    "tests": 107,
+    "receipt": "PYTHON-CHECKS.json"
+  },
+  "postgres": {
+    "status": "PASS",
+    "scenarios": 18,
+    "receipt": "pg-check-01/RESULT.json",
+    "migrationSha256": "d99730b43d2658861259e81f01c687217e161a38c293843de0192dc1fd69e291"
+  },
+  "fullProjectTypecheck": "NOT_RUN_SCOPED_ONLY",
+  "production": "NO_APPLICATION_OR_PROVIDER_REQUESTS_OR_MUTATIONS; inventory authorized read-only separately"
+}

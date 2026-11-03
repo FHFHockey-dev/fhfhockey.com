@@ -1,0 +1,12 @@
+{
+  "source": {
+    "path": "/Users/tim/Documents/Codex/2026-10-27/task/accepted-local-handoff/sql/20261027_nst_shared_admission_v1.sql",
+    "sha256": "aefd3c20f2ff76328ef8b27e19244e438ad69a22ea1f9b5ef3cc1d6068784dce",
+    "bytes": 3140
+  },
+  "envelope": {
+    "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/rollout-approval-20261101/PROPOSED-admission-install.sql",
+    "sha256": "c262a45040d5e090a0f9a6640cad899a2c7da299eae12de1be42cbe908f038b0",
+    "bytes": 3406
+  }
+}

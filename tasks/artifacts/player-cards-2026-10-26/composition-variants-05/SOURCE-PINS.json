@@ -1,0 +1,27 @@
+[
+  {
+    "path": "web/lib/player-cards/portraitTreatment.ts",
+    "bytes": 9533,
+    "sha256": "ec7ab891062d063358a5844bb9c1e967f36a203110bdb8102727dd8cbddf5fc1"
+  },
+  {
+    "path": "web/lib/player-cards/portraitTreatment.test.ts",
+    "bytes": 6254,
+    "sha256": "30606f5940e1e097c9bf7bb9e8581e9e8c9a8d31979e2cb688105fdbdea547c5"
+  },
+  {
+    "path": "web/components/player-cards/HeroPlayerCard.tsx",
+    "bytes": 7079,
+    "sha256": "1f2307ab601b1d9710ade32bc0fd6b7645e08287cc4fce11c9c1799b40bb34d1"
+  },
+  {
+    "path": "web/lib/player-cards/shareExport.test.ts",
+    "bytes": 6434,
+    "sha256": "78940cb4b308e0c6cb923021979de2b4fb55cfa679ff0e9c1a1d37592c752bcb"
+  },
+  {
+    "path": "web/components/player-cards/PlayerCardShareStudio.test.tsx",
+    "bytes": 8670,
+    "sha256": "28141c4c6f25f555f9b66f79a57fccfb6ea5a707fd8758444f60662587a43487"
+  }
+]

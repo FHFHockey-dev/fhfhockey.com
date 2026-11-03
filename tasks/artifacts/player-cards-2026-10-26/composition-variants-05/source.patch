@@ -1,0 +1,175 @@
+--- a/web/lib/player-cards/portraitTreatment.ts
++++ b/web/lib/player-cards/portraitTreatment.ts
+@@ -9,14 +9,14 @@
+   "posterized-team-colors": "Posterized → Team Colors", "pixelated-team-colors": "Pixelated → Team Colors",
+ };
+ export const PORTRAIT_VERSION = "fhfh-portrait-v1";
+-export const COMPOSITION_VERSION = "fhfh-sequential-v1";
++export const COMPOSITION_VERSION = "fhfh-sequential-v2";
+ export const MAX_PORTRAIT_PIXELS = 2_000_000;
+ export type PortraitTreatment = {
+   style: PortraitStyle; version: typeof PORTRAIT_VERSION; sourceAlphaSha256: string;
+   renderedSha256: string; width: number; height: number;
+-  composition?: { version: typeof COMPOSITION_VERSION; order: ["posterized" | "pixelated", "team-colors"]; firstStagePreset: "four-tone" | "coarse"; firstPixelSha256: string; finalPixelSha256: string };
++  composition?: { version: typeof COMPOSITION_VERSION; order: ["posterized" | "pixelated", "team-colors"]; firstStagePreset: "five-tone" | "fine"; firstPixelSha256: string; finalPixelSha256: string };
+ };
+-type Palette = { primaryColor: string; secondaryColor: string; darkColor?: string };
++type Palette = { primaryColor: string; secondaryColor: string; darkColor?: string; jersey?: string };
+ 
+ export function isPortraitStyle(value: unknown): value is PortraitStyle {
+   return PORTRAIT_STYLES.some(style => style === value);
+@@ -27,7 +27,7 @@
+ }
+ 
+ /** RGB-only transforms: the reviewed silhouette and every alpha byte are retained. */
+-export function portraitPixels(input: Uint8ClampedArray, width: number, height: number, style: PortraitStyle, palette: Palette, compositionFirstStage = false): Uint8ClampedArray {
++export function portraitPixels(input: Uint8ClampedArray, width: number, height: number, style: PortraitStyle, palette: Palette, compositionFirstStage = false, fullTeamPalette = false): Uint8ClampedArray {
+   if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1 || width * height > MAX_PORTRAIT_PIXELS || input.length !== width * height * 4 || !isPortraitStyle(style)) throw new Error("Unsupported portrait dimensions or treatment.");
+   if (isCompositionStyle(style)) return compositionPixels(input, width, height, style, palette).final;
+   const output = new Uint8ClampedArray(input);
+@@ -36,9 +36,9 @@
+     if (!/^#[\da-f]{6}$/i.test(hex)) throw new Error("Team palette is unavailable.");
+     return [1, 3, 5].map(start => parseInt(hex.slice(start, start + 2), 16));
+   };
+-  const colors = [rgb(palette.darkColor || palette.primaryColor), rgb(palette.primaryColor), rgb(palette.secondaryColor), [242, 241, 235]];
+-  // Seven source pixels at the reviewed 1296px width; scale with actual dimensions.
+-  const block = Math.max(2, Math.round(width / (compositionFirstStage ? 60 : 185)));
++  const colors = [rgb(palette.darkColor || palette.primaryColor), rgb(palette.primaryColor), ...(fullTeamPalette ? [rgb(palette.jersey || palette.secondaryColor)] : []), rgb(palette.secondaryColor), [242, 241, 235]];
++  // Combined: 11 source pixels at 1296px (formerly 22); standalone stays at seven.
++  const block = Math.max(2, Math.round(width / (compositionFirstStage ? 120 : 185)));
+   for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+     const i = (y * width + x) * 4;
+     if (input[i + 3] === 0) continue;
+@@ -51,9 +51,9 @@
+       for (let channel = 0; channel < 3; channel++) output[i + channel] = input[from + channel];
+     } else if (style === "posterized") {
+       if (compositionFirstStage) {
+-        // Four flat luminance regions make the first stage survive the later color mapping.
++        // Five flat regions retain the team's additional jersey ink in the second pass.
+         const luminance = .2126 * input[i] + .7152 * input[i + 1] + .0722 * input[i + 2];
+-        const band = Math.round(luminance / 85) * 85;
++        const band = Math.round(Math.round(luminance / 255 * 4) * 255 / 4);
+         output[i] = band; output[i + 1] = band; output[i + 2] = band;
+         continue;
+       }
+@@ -64,8 +64,9 @@
+     }
+     if (style === "team-colors") {
+       const luminance = .2126 * output[i] + .7152 * output[i + 1] + .0722 * output[i + 2];
+-      const position = Math.min(3, Math.round(luminance / 255 * 6) / 2);
+-      const low = Math.floor(position), high = Math.min(3, low + 1), weight = position - low;
++      const last = colors.length - 1;
++      const position = Math.min(last, Math.round(luminance / 255 * last * 2) / 2);
++      const low = Math.floor(position), high = Math.min(last, low + 1), weight = position - low;
+       for (let channel = 0; channel < 3; channel++) output[i + channel] = colors[low][channel] * (1 - weight) + colors[high][channel] * weight;
+     }
+   }
+@@ -76,7 +77,7 @@
+ export function compositionPixels(input: Uint8ClampedArray, width: number, height: number, style: "posterized-team-colors" | "pixelated-team-colors", palette: Palette) {
+   const firstStyle: "posterized" | "pixelated" = style === "posterized-team-colors" ? "posterized" : "pixelated";
+   const first = portraitPixels(input, width, height, firstStyle, palette, true);
+-  const final = portraitPixels(first, width, height, "team-colors", palette);
++  const final = portraitPixels(first, width, height, "team-colors", palette, false, true);
+   return { firstStyle, first, final };
+ }
+ 
+@@ -109,7 +110,7 @@
+     if (isCompositionStyle(style)) {
+       const stages = compositionPixels(frame.data, canvas.width, canvas.height, style, palette);
+       const pixelHash = async (data: Uint8ClampedArray) => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new Uint8Array(data)))].map(n => n.toString(16).padStart(2, "0")).join("");
+-      treatment.composition = { version: COMPOSITION_VERSION, order: [stages.firstStyle, "team-colors"], firstStagePreset: stages.firstStyle === "posterized" ? "four-tone" : "coarse", firstPixelSha256: await pixelHash(stages.first), finalPixelSha256: await pixelHash(stages.final) };
++      treatment.composition = { version: COMPOSITION_VERSION, order: [stages.firstStyle, "team-colors"], firstStagePreset: stages.firstStyle === "posterized" ? "five-tone" : "fine", firstPixelSha256: await pixelHash(stages.first), finalPixelSha256: await pixelHash(stages.final) };
+       frame.data.set(stages.final);
+     } else frame.data.set(portraitPixels(frame.data, canvas.width, canvas.height, style, palette));
+     context.putImageData(frame, 0, 0);
+--- a/web/lib/player-cards/portraitTreatment.test.ts
++++ b/web/lib/player-cards/portraitTreatment.test.ts
+@@ -3,7 +3,7 @@
+ import { REVIEWED_HERO_SAMPLES } from "./reviewedHeroSamples";
+ import { prepareTeamLogo } from "./teamLogo";
+ 
+-const palette = { primaryColor: "#154734", darkColor: "#0b2e21", secondaryColor: "#DDCBA4" };
++const palette = { primaryColor: "#154734", darkColor: "#0b2e21", secondaryColor: "#DDCBA4", jersey: "#A6192E" };
+ it("preserves every alpha byte and original input for every deterministic treatment", () => {
+   const input = new Uint8ClampedArray([19, 40, 80, 255, 240, 150, 90, 128, 66, 45, 33, 1, 220, 110, 44, 0]);
+   const before = new Uint8ClampedArray(input);
+@@ -30,28 +30,35 @@
+ it("combines nearest-neighbor RGB with the team palette and uses flat palette inks for posterization", () => {
+   const input = new Uint8ClampedArray([12, 61, 35, 255, 192, 155, 103, 255, 86, 120, 90, 255, 222, 243, 211, 255]);
+   const pixelated = portraitPixels(input, 2, 2, "pixelated", palette);
+-  expect(portraitPixels(input, 2, 2, "pixelated-team-colors", palette)).toEqual(portraitPixels(pixelated, 2, 2, "team-colors", palette));
++  expect(portraitPixels(input, 2, 2, "pixelated-team-colors", palette)).toEqual(portraitPixels(pixelated, 2, 2, "team-colors", palette, false, true));
+   const posterized = portraitPixels(input, 2, 2, "posterized-team-colors", palette);
+   expect(posterized).not.toEqual(portraitPixels(input, 2, 2, "team-colors", palette));
+   expect(posterized).not.toEqual(portraitPixels(input, 2, 2, "pixelated-team-colors", palette));
+-  for (let i = 0; i < posterized.length; i += 4) expect([[11,46,33], [21,71,52], [221,203,164], [242,241,235]]).toContainEqual([...posterized.slice(i, i + 3)]);
++  for (let i = 0; i < posterized.length; i += 4) expect([[11,46,33], [21,71,52], [166,25,46], [221,203,164], [242,241,235]]).toContainEqual([...posterized.slice(i, i + 3)]);
+   const middle = new Uint8ClampedArray([120, 120, 120, 255]);
+   expect(portraitPixels(middle, 1, 1, "pixelated-team-colors", { primaryColor: "#00205B", secondaryColor: "#FFFFFF" })).not.toEqual(portraitPixels(middle, 1, 1, "pixelated-team-colors", palette));
+ });
+-it("runs each first-stage buffer through the unchanged Team Colors mapper, with visible first-stage structure", () => {
++it("runs each first-stage buffer through the full team palette, with visible first-stage structure", () => {
+   const width = 240, height = 12;
+   const input = new Uint8ClampedArray(width * height * 4);
+   for (let i = 0; i < input.length; i += 4) { input[i] = i / 4 % 256; input[i + 1] = i / 8 % 256; input[i + 2] = 220 - i / 12 % 190; input[i + 3] = 255; }
+   for (const style of ["posterized-team-colors", "pixelated-team-colors"] as const) {
+     const stages = compositionPixels(input, width, height, style, palette);
+-    expect(stages.final).toEqual(portraitPixels(stages.first, width, height, "team-colors", palette));
++    expect(stages.final).toEqual(portraitPixels(stages.first, width, height, "team-colors", palette, false, true));
+     expect(stages.final).toEqual(portraitPixels(input, width, height, style, palette));
+     expect(stages.final).not.toEqual(stages.first);
+     expect(stages.final).not.toEqual(portraitPixels(input, width, height, "team-colors", palette));
+     expect([...stages.first].filter((_, i) => i % 4 === 3)).toEqual([...input].filter((_, i) => i % 4 === 3));
+-    if (style === "posterized-team-colors") expect(new Set([...stages.first].filter((_, i) => i % 4 !== 3))).toEqual(new Set([0, 85, 170, 255]));
++    if (style === "posterized-team-colors") expect(new Set([...stages.first].filter((_, i) => i % 4 !== 3))).toEqual(new Set([0, 64, 128, 191, 255]));
+     else expect([...stages.first.slice(0, 3)]).toEqual([...stages.first.slice(4, 7)]);
+   }
++});
++it("includes verified Minnesota red in a deliberate five-ink map and halves combined pixel size", () => {
++  const values = [0, 64, 128, 191, 255], tones = new Uint8ClampedArray(values.flatMap(value => [value, value, value, 255]));
++  expect([...compositionPixels(tones, 5, 1, "posterized-team-colors", palette).final]).toEqual([11,46,33,255,21,71,52,255,166,25,46,255,221,203,164,255,242,241,235,255]);
++  const input = new Uint8ClampedArray(1200 * 4); for (let x=0;x<1200;x++) input.set([x % 256, 10, 20, 255], x * 4);
++  const first = compositionPixels(input, 1200, 1, "pixelated-team-colors", palette).first;
++  expect(first[0]).toBe(5); expect(first[9 * 4]).toBe(5); expect(first[10 * 4]).toBe(15);
+ });
+ it("does not request unreviewed or guessed team-logo paths", async () => {
+   await expect(prepareTeamLogo("unknown")).rejects.toThrow("reviewed local team logo");
+--- a/web/components/player-cards/HeroPlayerCard.tsx
++++ b/web/components/player-cards/HeroPlayerCard.tsx
+@@ -31,7 +31,7 @@
+       <linearGradient id={`${uid}-shade`}><stop stopColor="#101214" stopOpacity=".9" /><stop offset=".62" stopColor="#101214" stopOpacity=".2" /><stop offset="1" stopColor="#101214" stopOpacity="0" /></linearGradient>
+       <clipPath id={`${uid}-crop`}><rect width="1200" height="338" /></clipPath>
+       {composition && <>
+-        <linearGradient id={`${uid}-logo-fade`}><stop stopColor="white" stopOpacity=".75" /><stop offset=".25" stopColor="white" /><stop offset="1" stopColor="white" /></linearGradient>
++        <linearGradient id={`${uid}-logo-fade`}><stop offset="0" stopColor="white" stopOpacity="0" /><stop offset=".25" stopColor="white" /><stop offset="1" stopColor="white" /></linearGradient>
+         <mask id={`${uid}-logo-mask`} maskUnits="objectBoundingBox" maskContentUnits="objectBoundingBox" x="0" y="0" width="1" height="1"><rect width="1" height="1" fill={`url(#${uid}-logo-fade)`} /></mask>
+       </>}
+     </defs>
+--- a/web/lib/player-cards/shareExport.test.ts
++++ b/web/lib/player-cards/shareExport.test.ts
+@@ -35,12 +35,12 @@
+ });
+ it("exports only the matching pinned embedded logo behind a combined portrait, with the left-quarter fade", () => {
+   const { snapshot, hero } = card();
+-  const combined: PreparedHero = { ...hero, teamLogo: { team: "TOR", dataUrl: "data:image/png;base64,logo", sha256: "b88d6edb92e4bcca291f7d3a37c1265fee39e1f5ef41650aaa19d8a39ad7e01d", localPath: "/teamLogos/TOR.png" }, treatment: { style: "posterized-team-colors", version: PORTRAIT_VERSION, sourceAlphaSha256: hero.alphaSha256, renderedSha256: "a".repeat(64), width: hero.sourceWidth, height: hero.sourceHeight, composition: { version: COMPOSITION_VERSION, order: ["posterized", "team-colors"], firstStagePreset: "four-tone", firstPixelSha256: "b".repeat(64), finalPixelSha256: "c".repeat(64) } } };
++  const combined: PreparedHero = { ...hero, teamLogo: { team: "TOR", dataUrl: "data:image/png;base64,logo", sha256: "b88d6edb92e4bcca291f7d3a37c1265fee39e1f5ef41650aaa19d8a39ad7e01d", localPath: "/teamLogos/TOR.png" }, treatment: { style: "posterized-team-colors", version: PORTRAIT_VERSION, sourceAlphaSha256: hero.alphaSha256, renderedSha256: "a".repeat(64), width: hero.sourceWidth, height: hero.sourceHeight, composition: { version: COMPOSITION_VERSION, order: ["posterized", "team-colors"], firstStagePreset: "five-tone", firstPixelSha256: "b".repeat(64), finalPixelSha256: "c".repeat(64) } } };
+   const { container } = render(React.createElement(HeroPlayerCard, { snapshot, hero: combined, format: "landscape" }));
+   const svg = container.querySelector("svg")!;
+   expect(() => assertCardExport(svg, snapshot, combined, "landscape")).not.toThrow();
+   expect([...svg.querySelectorAll("image")].map(n => n.dataset)).toMatchObject([{ teamLogo: "true" }, { heroImage: "true" }]);
+-  expect([...svg.querySelectorAll('linearGradient[id$="logo-fade"] stop')].map(n => [n.getAttribute("offset"), n.getAttribute("stop-opacity")])).toEqual([[null, ".75"], [".25", null], ["1", null]]);
++  expect([...svg.querySelectorAll('linearGradient[id$="logo-fade"] stop')].map(n => [n.getAttribute("offset"), n.getAttribute("stop-opacity")])).toEqual([["0", "0"], [".25", null], ["1", null]]);
+   const logo = svg.querySelector('[data-team-logo="true"]')!;
+   const player = svg.querySelector('[data-hero-image="true"]')!;
+   expect(["x", "y", "width", "height", "preserveAspectRatio"].map(key => player.getAttribute(key))).toEqual(["600", "4", "600", "337.5", "xMidYMin meet"]);
+--- a/web/components/player-cards/PlayerCardShareStudio.test.tsx
++++ b/web/components/player-cards/PlayerCardShareStudio.test.tsx
+@@ -9,7 +9,7 @@
+ 
+ afterEach(() => { cleanup(); localStorage.clear(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
+ const loaded = async (sample: HeroSample): Promise<PreparedHero> => ({ ...sample, dataUrl: "data:image/png;base64,AA==" });
+-const treatment = async (hero: PreparedHero, style: PortraitStyle): Promise<PreparedHero> => ({ ...hero, dataUrl: `data:image/png;base64,${style}`, teamLogo: style.endsWith("-team-colors") ? { team: "TOR", localPath: "/teamLogos/TOR.png", dataUrl: "data:image/png;base64,logo", sha256: "b88d6edb92e4bcca291f7d3a37c1265fee39e1f5ef41650aaa19d8a39ad7e01d" } : undefined, treatment: { style, version: PORTRAIT_VERSION, sourceAlphaSha256: hero.alphaSha256, renderedSha256: "a".repeat(64), width: hero.sourceWidth, height: hero.sourceHeight, composition: style.endsWith("-team-colors") ? { version: COMPOSITION_VERSION, order: [style === "posterized-team-colors" ? "posterized" : "pixelated", "team-colors"], firstStagePreset: style === "posterized-team-colors" ? "four-tone" : "coarse", firstPixelSha256: "b".repeat(64), finalPixelSha256: "c".repeat(64) } : undefined } });
++const treatment = async (hero: PreparedHero, style: PortraitStyle): Promise<PreparedHero> => ({ ...hero, dataUrl: `data:image/png;base64,${style}`, teamLogo: style.endsWith("-team-colors") ? { team: "TOR", localPath: "/teamLogos/TOR.png", dataUrl: "data:image/png;base64,logo", sha256: "b88d6edb92e4bcca291f7d3a37c1265fee39e1f5ef41650aaa19d8a39ad7e01d" } : undefined, treatment: { style, version: PORTRAIT_VERSION, sourceAlphaSha256: hero.alphaSha256, renderedSha256: "a".repeat(64), width: hero.sourceWidth, height: hero.sourceHeight, composition: style.endsWith("-team-colors") ? { version: COMPOSITION_VERSION, order: [style === "posterized-team-colors" ? "posterized" : "pixelated", "team-colors"], firstStagePreset: style === "posterized-team-colors" ? "five-tone" : "fine", firstPixelSha256: "b".repeat(64), finalPixelSha256: "c".repeat(64) } : undefined } });
+ const ready = () => waitFor(() => expect(screen.getByRole("button", { name: "Social Share" }).hasAttribute("disabled")).toBe(false));
+ 
+ it("shows actual photo identity, explicit fictional statistics and same-snapshot landscape/square compositions", async () => {

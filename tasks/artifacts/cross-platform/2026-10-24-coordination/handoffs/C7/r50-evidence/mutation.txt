@@ -1,0 +1,3 @@
+Mutation: useRosterPlanning.ts line 60, dropped "&& fallback?.key === key".
+At 5e8043d6d: controls 5/5 pass.
+Mutant: C1-C4 pass, C5 fails (old account stand-in shown after the new account lapse).

@@ -1,0 +1,17 @@
+{
+  "version": "luna-diagnostic-case-checkpoint-v2",
+  "serialization": "json-indent-2-trailing-newline-v1",
+  "caseId": "E07",
+  "previousCheckpointSha256": null,
+  "artifactSha256": {
+    "original": "7ce1e538632e853a2745dd8f7d13c0418c9c636e5948e9d6a6802009590ecf96",
+    "receipts": "e04e8e60e1d2c3177ff9c7987b097c2f87a059dfdf8200354799156c85ac2936",
+    "candidate": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+    "diagnostic": "7a108e70d1140a9fbad97cc766005639f637a4c9e3d4e3c519b58f715594afed"
+  },
+  "ledgerDigest": "0716c2acf0ebe9c8d3efb27994f0413a58ea3d39019c21ff97aaa63aee3a9fe1",
+  "ledgerAttemptCount": 8,
+  "requestHashes": [
+    "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+  ]
+}

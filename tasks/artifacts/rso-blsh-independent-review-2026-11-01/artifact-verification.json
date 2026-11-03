@@ -1,0 +1,47 @@
+{
+  "receipts": [
+    {
+      "scope": "cohort",
+      "bodies": 137,
+      "bytes": 1827391
+    },
+    {
+      "scope": "tanev",
+      "bodies": 16,
+      "bytes": 212435
+    }
+  ],
+  "scheduledUnion": 141,
+  "players": [
+    {
+      "player": 8479293,
+      "appearances": 2,
+      "misses": 14,
+      "baselineMean": 1.856,
+      "baselineSD": 1.6183148201579498,
+      "calendarKnown": 13,
+      "independentTraceArithmetic": "passed"
+    },
+    {
+      "player": 8478398,
+      "appearances": 10,
+      "misses": 16,
+      "baselineMean": 3.086,
+      "baselineSD": 2.5017349082227733,
+      "calendarKnown": 0,
+      "independentTraceArithmetic": "passed"
+    },
+    {
+      "player": 8478864,
+      "appearances": 10,
+      "misses": 7,
+      "baselineMean": 4.3950000000000005,
+      "baselineSD": 2.922925742806201,
+      "calendarKnown": 4,
+      "independentTraceArithmetic": "passed"
+    }
+  ],
+  "frozenHash": "matched",
+  "reservedSeasonReads": 0,
+  "remoteProviderAPICalls": 0
+}

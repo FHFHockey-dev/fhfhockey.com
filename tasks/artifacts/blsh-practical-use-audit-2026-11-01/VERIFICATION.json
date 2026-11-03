@@ -1,0 +1,96 @@
+{
+  "pinsVerified": 84,
+  "sharedPinsVerified": 10,
+  "profiles": 824,
+  "windowDateBounds": [
+    "2023-10-11",
+    "2024-01-14"
+  ],
+  "referenceDateBounds": [
+    "2022-10-07",
+    "2023-04-14"
+  ],
+  "productionTargetExcludedFits": 824,
+  "supportTargetExcludedFitsAndSourceIDHashes": 824,
+  "bridgeArithmeticChecked": 824,
+  "savedIndexTransformChecked": 816,
+  "states": {
+    "FP60": {
+      "directional": 635,
+      "age_held": 189
+    },
+    "production_only": {
+      "directional": 635,
+      "age_held": 189
+    },
+    "BLSH": {
+      "directional": 587,
+      "age_held": 187,
+      "conflicting": 42,
+      "unavailable": 8
+    }
+  },
+  "directionalCounts": {
+    "FP60": {
+      "SH": 285,
+      "BL": 350
+    },
+    "production_only": {
+      "SH": 274,
+      "BL": 361
+    },
+    "BLSH": {
+      "SH": 251,
+      "BL": 336
+    }
+  },
+  "overlaps": {
+    "FP60_vs_production_only": {
+      "BL": 11,
+      "SH": 13
+    },
+    "FP60_vs_BLSH": {
+      "BL": 10,
+      "SH": 12
+    },
+    "production_only_vs_BLSH": {
+      "BL": 13,
+      "SH": 15
+    }
+  },
+  "commonNumericUniverse": 629,
+  "commonOverlap": {
+    "BL": 10,
+    "SH": 13
+  },
+  "rankedListsReconciled": 6,
+  "uniqueUnjudgedCases": 12,
+  "PPP": {
+    "reports": 21,
+    "targets": 645,
+    "states": {
+      "unknown": 466,
+      "match": 179
+    },
+    "zeros": 116,
+    "matchesWithOtherCountDiscrepancy": 15,
+    "unknownReasons": {
+      "no_cached_official_summary_player": {
+        "rows": 447,
+        "games": 104
+      },
+      "prior_identity_exposure_or_finality_held": {
+        "rows": 19,
+        "games": 6
+      }
+    },
+    "receiptDateRange": [
+      "2026-11-01T17:25:28.851458+00:00",
+      "2026-11-01T17:28:16.830877+00:00"
+    ],
+    "originalCapture": "2026-10-29T18:41:12.798646+00:00"
+  },
+  "holdoutAccessed": false,
+  "rawHistoryOrOriginalBlockCatalogReread": false,
+  "networkCalls": 0
+}

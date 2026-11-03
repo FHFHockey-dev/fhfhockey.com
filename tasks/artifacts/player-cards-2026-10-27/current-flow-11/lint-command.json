@@ -1,0 +1,22 @@
+{
+  "action": "lint",
+  "command": [
+    "npx",
+    "--no-install",
+    "eslint",
+    "lib/player-cards/currentNhl.ts",
+    "lib/player-cards/currentNhl.test.ts",
+    "lib/player-cards/currentNhl.server.ts",
+    "lib/player-cards/currentNhl.server.test.ts",
+    "lib/player-cards/currentSelection.ts",
+    "lib/player-cards/currentSelection.test.ts",
+    "lib/player-cards/currentNhlExport.ts",
+    "components/player-cards/CurrentPlayerCard.tsx",
+    "components/player-cards/CurrentPlayerCardStudio.tsx",
+    "components/player-cards/CurrentPlayerCardStudio.test.tsx",
+    "pages/player-cards.tsx"
+  ],
+  "exitCode": 0,
+  "elapsedSeconds": 0.776,
+  "heldBy": "final-static shared slot after actual touch-target fix"
+}

@@ -1,0 +1,59 @@
+closure at bf23edfea5b5c9301fcedd2b5c3fa86016ceecd86d1d2d49c0a6d6c687e7ab3b 194 findings 0 touched in closure []
+closure p bf23edfea5b5c9301fcedd2b5c3fa86016ceecd86d1d2d49c0a6d6c687e7ab3b 194 findings 0 touched in closure []
+closureSha256: "4bf0fce7a4bf1e6ed7b5e8b28b8524836f4b6969adfe57e80ae373b2f847cbbb"
+closureSha256: "4c06fd9e2b5a5d880f594cb2668b81eaa0c54553de525a73f477d4eebf909993"
+closureSha256: "c1f0129aca9b2520cbd922cf81c292661b1499fa50b024f76ca6283d362cc4aa"
+closureSha256: "87edd78f5dfa96eded8a32927ef184d9266995edf52f395cf5ac6b8565c64f97"
+closureSha256: "5644e3fdb1e230e0a063a27b52519cc8e70b88272e92f27ca5aadc8f53d1dea4"
+closureSha256: "bf23edfea5b5c9301fcedd2b5c3fa86016ceecd86d1d2d49c0a6d6c687e7ab3b"
+head 315/315 skipped 0
+  file hooks/useRosterPlanning.test.tsx 9 passed  
+  file components/RosterScheduleOptimizer/ForecastPoints.test.tsx 3 passed  
+  file components/RosterScheduleOptimizer/RosterScheduleOptimizer.points.test.tsx 13 passed  
+  file components/RosterScheduleOptimizer/TeamScheduleContext.test.tsx 11 passed  
+  file lib/rosterScheduleOptimizer/executionAdapter.test.ts 52 passed  
+  file __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx 227 passed  
+p 290/315 skipped 0
+  file hooks/useRosterPlanning.test.tsx 9 failed fails=4 
+    FAIL keeps the plan on screen from public inputs when its Yahoo confirmations lapse, without a new Yahoo read :: AssertionError: expected [ MockWorker{ …(4) } ] to have a length of 2 but got 1
+    FAIL prepares the public stand-in only in the last 30 seconds before the Yahoo deadline :: AssertionError: expected [ MockWorker{ …(4) } ] to have a length of 2 but got 1
+    FAIL re-plans once the public stand-in lapses too :: TypeError: Cannot read properties of undefined (reading 'onmessage')
+    FAIL still withdraws an expired plan when no public stand-in is ready :: TypeError: Cannot read properties of undefined (reading 'onerror')
+  file components/RosterScheduleOptimizer/ForecastPoints.test.tsx 3 failed fails=2 
+    FAIL labels expected and if-starts FP separately, with explicit semantics :: AssertionError: expected '2.3 expected' to be '2.3 exp' // Object.is equality
+    FAIL keeps genuine zero expected FP visible while conditional FP is unavailable :: AssertionError: expected '0.0 expected' to be '0.0 exp' // Object.is equality
+  file components/RosterScheduleOptimizer/RosterScheduleOptimizer.points.test.tsx 13 failed fails=3 
+    FAIL renders goalie expected and if-starts FP with distinct semantics :: AssertionError: expected '2.3 expected' to be '2.3 exp' // Object.is equality
+    FAIL does not invent an if-starts estimate at start probability 0 :: AssertionError: expected '— if starts' to be '— if GS' // Object.is equality
+    FAIL does not invent an if-starts estimate at start probability null :: AssertionError: expected '— if starts' to be '— if GS' // Object.is equality
+  file components/RosterScheduleOptimizer/TeamScheduleContext.test.tsx 11 failed fails=2 
+    FAIL uses the exact clipped date range, retaining truthful home/away and neutral missing odds :: TestingLibraryElementError: Unable to find a label with the text of: Oct 13: Away at BBB · Off-night
+    FAIL shows each game as the opponent's logo, off-nights in green, the team band in team colours and GP/OFF beneath  :: TestingLibraryElementError: Unable to find a label with the text of: Oct 13: Away at BOS · Off-night
+  file lib/rosterScheduleOptimizer/executionAdapter.test.ts 52 failed fails=13 
+    FAIL uses verified current probability 1 through both actual worker and no-worker fallback, ignoring contradictory  :: AssertionError: expected undefined to be true // Object.is equality
+    FAIL uses verified current probability 0 through both actual worker and no-worker fallback, ignoring contradictory  :: AssertionError: expected undefined to be true // Object.is equality
+    FAIL uses verified current probability 0.3 through both actual worker and no-worker fallback, ignoring contradictor :: AssertionError: expected undefined to be true // Object.is equality
+    FAIL withdraws numeric forecasts for principal private receipts without public or old-provider fallback :: AssertionError: expected undefined to be false // Object.is equality
+    FAIL withdraws numeric forecasts for team private receipts without public or old-provider fallback :: AssertionError: expected undefined to be false // Object.is equality
+    FAIL withdraws numeric forecasts for league private receipts without public or old-provider fallback :: AssertionError: expected undefined to be false // Object.is equality
+    FAIL withdraws numeric forecasts for season private receipts without public or old-provider fallback :: AssertionError: expected undefined to be false // Object.is equality
+    FAIL withdraws numeric forecasts for range private receipts without public or old-provider fallback :: AssertionError: expected undefined to be false // Object.is equality
+    FAIL withdraws numeric forecasts for nonce private receipts without public or old-provider fallback :: AssertionError: expected undefined to be false // Object.is equality
+    FAIL withdraws numeric forecasts for expired private receipts without public or old-provider fallback :: AssertionError: expected undefined to be false // Object.is equality
+    FAIL withdraws numeric forecasts for failure private receipts without public or old-provider fallback :: AssertionError: expected undefined to be false // Object.is equality
+    FAIL withdraws numeric forecasts for revoked private receipts without public or old-provider fallback :: AssertionError: expected undefined to be false // Object.is equality
+    FAIL reports a public input, not the Yahoo window, when a forecast expires first :: AssertionError: expected undefined to be false // Object.is equality
+  file __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx 227 failed fails=1 
+    FAIL keeps Bench days as its own Current Roster tab, with Players shown by default :: TestingLibraryElementError: Unable to find an accessible element with the role "group" and name "Current Roster views"
+Listing tests:
+  [chromium] › rso-acceptance.spec.ts:25:7 › FR18 desktop 1440×900 keeps 19 roster slots in one workspace with at most 20 visible slot rows
+  [chromium] › rso-acceptance.spec.ts:25:7 › FR18 desktop 1440×900 keeps 20 roster slots in one workspace with at most 20 visible slot rows
+  [chromium] › rso-acceptance.spec.ts:25:7 › FR18 desktop 1440×900 keeps 29 roster slots in one workspace with at most 20 visible slot rows
+  [chromium] › rso-acceptance.spec.ts:58:5 › FR18 mobile tabs reach itinerary, roster, candidates and matchup without overflow
+  [chromium] › rso-acceptance.spec.ts:78:5 › FR18 continuity: refresh, Undo and reopen keep the selected move, locks and Undo visible
+  [chromium] › rso-acceptance.spec.ts:122:5 › returning to the tab keeps the page mounted, its view and selection (hide, wait, show, focus)
+  [chromium] › rso-acceptance.spec.ts:200:5 › UI batch 1 desktop: team schedule cards, Bench days tab and goalie cell height
+  [chromium] › rso-acceptance.spec.ts:236:5 › UI batch 1 mobile: team schedule cards and Bench days tab at 390 px
+Total: 8 tests in 1 file
+
+[exited with code 0]

@@ -1,0 +1,835 @@
+[
+ {
+  "name": "off-night-next",
+  "post": "off-night-edge",
+  "editionCutoff": "2026-10-31",
+  "weekCalls": [
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   }
+  ],
+  "pager": {
+   "initial": {
+    "label": "Week 6 · Nov 2 to Nov 8",
+    "prior": "Prior week, week 5",
+    "priorEnabled": true,
+    "next": "Next week, week 7",
+    "nextEnabled": true,
+    "urlWeek": "6",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   },
+   "afterPrior": {
+    "label": "Week 5 · Oct 26 to Nov 1",
+    "prior": "Prior week, week 4",
+    "priorEnabled": true,
+    "next": "Next week, week 6",
+    "nextEnabled": true,
+    "urlWeek": "5",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   },
+   "thenBackNext": {
+    "label": "Week 6 · Nov 2 to Nov 8",
+    "prior": "Prior week, week 5",
+    "priorEnabled": true,
+    "next": "Next week, week 7",
+    "nextEnabled": true,
+    "urlWeek": "6",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   }
+  },
+  "enabled": true,
+  "png": true
+ },
+ {
+  "name": "off-night-w4",
+  "post": "off-night-edge",
+  "editionCutoff": "2026-10-31",
+  "weekCalls": [
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   }
+  ],
+  "pager": {
+   "initial": {
+    "label": "Week 4 · Oct 19 to Oct 25",
+    "prior": "Prior week, week 3",
+    "priorEnabled": true,
+    "next": "Next week, week 5",
+    "nextEnabled": true,
+    "urlWeek": "4",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   },
+   "afterPrior": {
+    "label": "Week 3 · Oct 12 to Oct 18",
+    "prior": "Prior week, week 2",
+    "priorEnabled": true,
+    "next": "Next week, week 4",
+    "nextEnabled": true,
+    "urlWeek": "3",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   },
+   "thenBackNext": {
+    "label": "Week 4 · Oct 19 to Oct 25",
+    "prior": "Prior week, week 3",
+    "priorEnabled": true,
+    "next": "Next week, week 5",
+    "nextEnabled": true,
+    "urlWeek": "4",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   }
+  },
+  "enabled": true,
+  "png": true
+ },
+ {
+  "name": "team-games-w4",
+  "post": "team-games",
+  "editionCutoff": "2026-10-31",
+  "weekCalls": [
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   }
+  ],
+  "pager": {
+   "initial": {
+    "label": "Week 4 · Oct 19 to Oct 25",
+    "prior": "Prior week, week 3",
+    "priorEnabled": true,
+    "next": "Next week, week 5",
+    "nextEnabled": true,
+    "urlWeek": "4",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   },
+   "afterPrior": {
+    "label": "Week 3 · Oct 12 to Oct 18",
+    "prior": "Prior week, week 2",
+    "priorEnabled": true,
+    "next": "Next week, week 4",
+    "nextEnabled": true,
+    "urlWeek": "3",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   },
+   "thenBackNext": {
+    "label": "Week 4 · Oct 19 to Oct 25",
+    "prior": "Prior week, week 3",
+    "priorEnabled": true,
+    "next": "Next week, week 5",
+    "nextEnabled": true,
+    "urlWeek": "4",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   }
+  },
+  "enabled": true,
+  "png": true
+ },
+ {
+  "name": "risky-next",
+  "post": "risky-starts",
+  "editionCutoff": "2026-10-31",
+  "weekCalls": [
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   }
+  ],
+  "pager": {
+   "initial": {
+    "label": "Week 6 · Nov 2 to Nov 8",
+    "prior": "Prior week, week 5",
+    "priorEnabled": true,
+    "next": "Next week, week 7",
+    "nextEnabled": true,
+    "urlWeek": "6",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   },
+   "afterPrior": {
+    "label": "Week 5 · Oct 26 to Nov 1",
+    "prior": "Prior week, week 4",
+    "priorEnabled": true,
+    "next": "Next week, week 6",
+    "nextEnabled": true,
+    "urlWeek": "5",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   },
+   "thenBackNext": {
+    "label": "Week 6 · Nov 2 to Nov 8",
+    "prior": "Prior week, week 5",
+    "priorEnabled": true,
+    "next": "Next week, week 7",
+    "nextEnabled": true,
+    "urlWeek": "6",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   }
+  },
+  "enabled": true,
+  "png": true
+ },
+ {
+  "name": "risky-past",
+  "post": "risky-starts",
+  "editionCutoff": "2026-10-31",
+  "weekCalls": [
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   }
+  ],
+  "pager": {
+   "initial": {
+    "label": "Week 4 · Oct 19 to Oct 25",
+    "prior": "Prior week, week 3",
+    "priorEnabled": true,
+    "next": "Next week, week 5",
+    "nextEnabled": true,
+    "urlWeek": "4",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   },
+   "afterPrior": {
+    "label": "Week 3 · Oct 12 to Oct 18",
+    "prior": "Prior week, week 2",
+    "priorEnabled": true,
+    "next": "Next week, week 4",
+    "nextEnabled": true,
+    "urlWeek": "3",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   },
+   "thenBackNext": {
+    "label": "Week 4 · Oct 19 to Oct 25",
+    "prior": "Prior week, week 3",
+    "priorEnabled": true,
+    "next": "Next week, week 5",
+    "nextEnabled": true,
+    "urlWeek": "4",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   }
+  },
+  "enabled": false,
+  "png": false
+ },
+ {
+  "name": "start-sit-next",
+  "post": "start-sit",
+  "editionCutoff": "2026-10-31",
+  "weekCalls": [
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   }
+  ],
+  "pager": {
+   "initial": {
+    "label": "Week 6 · Nov 2 to Nov 8",
+    "prior": "Prior week, week 5",
+    "priorEnabled": true,
+    "next": "Next week, week 7",
+    "nextEnabled": true,
+    "urlWeek": "6",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   },
+   "afterPrior": {
+    "label": "Week 5 · Oct 26 to Nov 1",
+    "prior": "Prior week, week 4",
+    "priorEnabled": true,
+    "next": "Next week, week 6",
+    "nextEnabled": true,
+    "urlWeek": "5",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   },
+   "thenBackNext": {
+    "label": "Week 6 · Nov 2 to Nov 8",
+    "prior": "Prior week, week 5",
+    "priorEnabled": true,
+    "next": "Next week, week 7",
+    "nextEnabled": true,
+    "urlWeek": "6",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   }
+  },
+  "enabled": true,
+  "png": true
+ },
+ {
+  "name": "bsh-w4",
+  "post": "bsh-board",
+  "editionCutoff": "2026-10-31",
+  "weekCalls": [
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   }
+  ],
+  "pager": {
+   "initial": {
+    "label": "Week 4 · Oct 19 to Oct 25",
+    "prior": "Prior week, week 3",
+    "priorEnabled": true,
+    "next": "Next week, week 5",
+    "nextEnabled": true,
+    "urlWeek": "4",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   },
+   "afterPrior": {
+    "label": "Week 3 · Oct 12 to Oct 18",
+    "prior": "Prior week, week 2",
+    "priorEnabled": true,
+    "next": "Next week, week 4",
+    "nextEnabled": true,
+    "urlWeek": "3",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   },
+   "thenBackNext": {
+    "label": "Week 4 · Oct 19 to Oct 25",
+    "prior": "Prior week, week 3",
+    "priorEnabled": true,
+    "next": "Next week, week 5",
+    "nextEnabled": true,
+    "urlWeek": "4",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   }
+  },
+  "enabled": true,
+  "png": true
+ },
+ {
+  "name": "mcm-w4",
+  "post": "category-blueprint",
+  "editionCutoff": "2026-10-31",
+  "weekCalls": [
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   }
+  ],
+  "pager": {
+   "initial": {
+    "label": "Week 4 · Oct 19 to Oct 25",
+    "prior": "Prior week, week 3",
+    "priorEnabled": true,
+    "next": "Next week, week 5",
+    "nextEnabled": true,
+    "urlWeek": "4",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   },
+   "afterPrior": {
+    "label": "Week 3 · Oct 12 to Oct 18",
+    "prior": "Prior week, week 2",
+    "priorEnabled": true,
+    "next": "Next week, week 4",
+    "nextEnabled": true,
+    "urlWeek": "3",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   },
+   "thenBackNext": {
+    "label": "Week 4 · Oct 19 to Oct 25",
+    "prior": "Prior week, week 3",
+    "priorEnabled": true,
+    "next": "Next week, week 5",
+    "nextEnabled": true,
+    "urlWeek": "4",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   }
+  },
+  "enabled": true,
+  "png": true
+ },
+ {
+  "name": "nightly-custom",
+  "post": "nightly-floor",
+  "editionCutoff": "2026-10-31",
+  "weekCalls": [
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   }
+  ],
+  "pager": null,
+  "enabled": true,
+  "png": true
+ },
+ {
+  "name": "cardio-w4",
+  "post": "nightly-floor",
+  "editionCutoff": "2026-10-31",
+  "weekCalls": [
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   }
+  ],
+  "pager": {
+   "initial": {
+    "label": "Week 4 · Oct 19 to Oct 25",
+    "prior": "Prior week, week 3",
+    "priorEnabled": true,
+    "next": "Next week, week 5",
+    "nextEnabled": true,
+    "urlWeek": "4",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   },
+   "afterPrior": {
+    "label": "Week 3 · Oct 12 to Oct 18",
+    "prior": "Prior week, week 2",
+    "priorEnabled": true,
+    "next": "Next week, week 4",
+    "nextEnabled": true,
+    "urlWeek": "3",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   },
+   "thenBackNext": {
+    "label": "Week 4 · Oct 19 to Oct 25",
+    "prior": "Prior week, week 3",
+    "priorEnabled": true,
+    "next": "Next week, week 5",
+    "nextEnabled": true,
+    "urlWeek": "4",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   }
+  },
+  "enabled": true,
+  "png": true
+ },
+ {
+  "name": "stars-w4",
+  "post": "multi-cat-stars",
+  "editionCutoff": "2026-10-31",
+  "weekCalls": [
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   }
+  ],
+  "pager": {
+   "initial": {
+    "label": "Week 4 · Oct 19 to Oct 25",
+    "prior": "Prior week, week 3",
+    "priorEnabled": true,
+    "next": "Next week, week 5",
+    "nextEnabled": true,
+    "urlWeek": "4",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   },
+   "afterPrior": {
+    "label": "Week 3 · Oct 12 to Oct 18",
+    "prior": "Prior week, week 2",
+    "priorEnabled": true,
+    "next": "Next week, week 4",
+    "nextEnabled": true,
+    "urlWeek": "3",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   },
+   "thenBackNext": {
+    "label": "Week 4 · Oct 19 to Oct 25",
+    "prior": "Prior week, week 3",
+    "priorEnabled": true,
+    "next": "Next week, week 5",
+    "nextEnabled": true,
+    "urlWeek": "4",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   }
+  },
+  "enabled": true,
+  "png": true
+ },
+ {
+  "name": "gsax-w4",
+  "post": "goalie-gsax",
+  "editionCutoff": "2026-10-31",
+  "weekCalls": [
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   }
+  ],
+  "pager": {
+   "initial": {
+    "label": "Week 4 · Oct 19 to Oct 25",
+    "prior": "Prior week, week 3",
+    "priorEnabled": true,
+    "next": "Next week, week 5",
+    "nextEnabled": true,
+    "urlWeek": "4",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   },
+   "afterPrior": {
+    "label": "Week 3 · Oct 12 to Oct 18",
+    "prior": "Prior week, week 2",
+    "priorEnabled": true,
+    "next": "Next week, week 4",
+    "nextEnabled": true,
+    "urlWeek": "3",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   },
+   "thenBackNext": {
+    "label": "Week 4 · Oct 19 to Oct 25",
+    "prior": "Prior week, week 3",
+    "priorEnabled": true,
+    "next": "Next week, week 5",
+    "nextEnabled": true,
+    "urlWeek": "4",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   }
+  },
+  "enabled": true,
+  "png": true
+ },
+ {
+  "name": "busy-custom",
+  "post": "busy-quiet-goalies",
+  "editionCutoff": "2026-10-31",
+  "weekCalls": [
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   }
+  ],
+  "pager": null,
+  "enabled": false,
+  "png": false
+ },
+ {
+  "name": "rescue-w4",
+  "post": "goalie-rescue",
+  "editionCutoff": "2026-10-31",
+  "weekCalls": [
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   }
+  ],
+  "pager": {
+   "initial": {
+    "label": "Week 4 · Oct 19 to Oct 25",
+    "prior": "Prior week, week 3",
+    "priorEnabled": true,
+    "next": "Next week, week 5",
+    "nextEnabled": true,
+    "urlWeek": "4",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   },
+   "afterPrior": {
+    "label": "Week 3 · Oct 12 to Oct 18",
+    "prior": "Prior week, week 2",
+    "priorEnabled": true,
+    "next": "Next week, week 4",
+    "nextEnabled": true,
+    "urlWeek": "3",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   },
+   "thenBackNext": {
+    "label": "Week 4 · Oct 19 to Oct 25",
+    "prior": "Prior week, week 3",
+    "priorEnabled": true,
+    "next": "Next week, week 5",
+    "nextEnabled": true,
+    "urlWeek": "4",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   }
+  },
+  "enabled": false,
+  "png": false
+ },
+ {
+  "name": "goalie-week",
+  "post": "goalie-period",
+  "editionCutoff": "2026-10-31",
+  "weekCalls": [
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   }
+  ],
+  "pager": {
+   "initial": {
+    "label": "Week 4 · Oct 19 to Oct 25",
+    "prior": "Prior week, week 3",
+    "priorEnabled": true,
+    "next": "Next week, week 5",
+    "nextEnabled": true,
+    "urlWeek": "4",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   },
+   "afterPrior": {
+    "label": "Week 3 · Oct 12 to Oct 18",
+    "prior": "Prior week, week 2",
+    "priorEnabled": true,
+    "next": "Next week, week 4",
+    "nextEnabled": true,
+    "urlWeek": "3",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   },
+   "thenBackNext": {
+    "label": "Week 4 · Oct 19 to Oct 25",
+    "prior": "Prior week, week 3",
+    "priorEnabled": true,
+    "next": "Next week, week 5",
+    "nextEnabled": true,
+    "urlWeek": "4",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   }
+  },
+  "enabled": true,
+  "png": true
+ },
+ {
+  "name": "goalie-season",
+  "post": "goalie-period",
+  "editionCutoff": "2026-10-31",
+  "weekCalls": [
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   }
+  ],
+  "pager": null,
+  "enabled": true,
+  "png": true
+ },
+ {
+  "name": "standouts-1028",
+  "post": "last-nights-standouts",
+  "editionCutoff": "2026-10-31",
+  "weekCalls": [],
+  "pager": null,
+  "enabled": true,
+  "png": true
+ }
+]

@@ -1,0 +1,18 @@
+{
+  "captured_at": "2026-10-26T15:20:16.406829+00:00",
+  "branch": "octoberBranch",
+  "refs": {
+    "HEAD": "cd73cbd695347a04c0d217ca7535a87ca609f4fb",
+    "origin/master": "538100d41ee87e721d2764b694f7bac8c2f2bb34",
+    "origin/octoberBranch": "28335fd466ef5a989b7a223d47681cfe5db65723"
+  },
+  "ahead_of_saved_origin_october": "5",
+  "pinned_worktree_changes_since_start": [],
+  "staged_paths": [],
+  "product_status": [
+    " M web/next-env.d.ts",
+    " M web/public/teamLogos/OTT.png",
+    "?? web/public/teamLogos/OTT-2.png"
+  ],
+  "network_attempts_log_exists": false
+}

@@ -1,0 +1,11 @@
+{
+  "mailbox": "CODEX-20261026-002",
+  "source_paths": [
+    "web/lib/player-cards/cardEvidenceVerdict.ts",
+    "web/lib/player-cards/cardEvidenceVerdict.test.ts"
+  ],
+  "baseline_sha256": {
+    "web/lib/player-cards/cardEvidenceVerdict.test.ts": "dcc4551c540ff810aa789bd821bbe57708d38c5465302ed5e3d4b9cb14d15e61",
+    "web/lib/player-cards/cardEvidenceVerdict.ts": "fd5a2ccd681428c666505303b594405663a3f16f4d12688aa371d40675f36480"
+  }
+}

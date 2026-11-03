@@ -1,0 +1,23 @@
+{
+  "action": "lint",
+  "command": [
+    "npx",
+    "--no-install",
+    "eslint",
+    "lib/player-cards/outlineStack.ts",
+    "lib/player-cards/outlineStack.test.ts",
+    "components/player-cards/OutlineStackControls.tsx",
+    "components/player-cards/OutlineStackControls.test.tsx",
+    "lib/player-cards/shareExport.ts",
+    "lib/player-cards/alphaOutline.ts",
+    "lib/player-cards/alphaOutline.test.ts",
+    "lib/player-cards/portraitTreatment.ts",
+    "components/player-cards/HeroPlayerCard.tsx",
+    "components/player-cards/PlayerCardShareStudio.tsx",
+    "components/player-cards/PlayerCardShareStudio.test.tsx",
+    "lib/player-cards/shareExport.test.ts"
+  ],
+  "exitCode": 0,
+  "elapsedSeconds": 1.341,
+  "heldBy": "editor09 qualify parent resource slot"
+}

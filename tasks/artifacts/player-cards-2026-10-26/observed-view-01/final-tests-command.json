@@ -1,0 +1,16 @@
+{
+  "command": [
+    "npm",
+    "test",
+    "--",
+    "--run",
+    "lib/player-cards/domain.test.ts",
+    "lib/player-cards/nstCapture.test.ts",
+    "lib/player-cards/evidenceBundle.test.ts",
+    "lib/player-cards/evidenceLoader.test.ts",
+    "lib/player-cards/cardEvidenceVerdict.test.ts",
+    "components/player-cards/ObservedPlayerCard.test.tsx"
+  ],
+  "exitCode": 0,
+  "seconds": 1.404
+}

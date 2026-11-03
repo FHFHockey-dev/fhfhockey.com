@@ -1,0 +1,21 @@
+{
+  "origin": "Preserved original no-logo HeroPlayerCard source, not unseen reference pixels",
+  "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/before/web/components/player-cards/HeroPlayerCard.tsx",
+  "sha256": "4305ed15a9113022df9c8e4402d6ba2db1019871d6adfba580a7aa33c8c2e166",
+  "sourceSize": [
+    1296,
+    729
+  ],
+  "imageRect": {
+    "x": 600,
+    "y": 4,
+    "width": 600,
+    "height": 337.5
+  },
+  "preserveAspectRatio": "xMidYMin meet",
+  "headerClip": {
+    "width": 1200,
+    "height": 338
+  },
+  "newReferenceImagesViewed": false
+}

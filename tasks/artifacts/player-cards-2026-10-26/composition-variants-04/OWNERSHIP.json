@@ -1,0 +1,23 @@
+{
+  "id": "CODEX-PLAYER-CARDS-RIGHTEDGE-GEOMETRY-20261026",
+  "at": "2026-10-26T18:28:32.539831+00:00",
+  "owner_thread": "01a16ec2-f81c-717b-8961-8c3832fdc00f",
+  "source": "TJ precisecorrection:restoreoriginalplayerposition/scale/crop; independentlogo tight rightedge partlyoutside; preservebothsequentialtreatments",
+  "source_paths": [
+    "web/components/player-cards/HeroPlayerCard.tsx",
+    "web/lib/player-cards/shareExport.test.ts"
+  ],
+  "baseline": [
+    {
+      "path": "web/components/player-cards/HeroPlayerCard.tsx",
+      "sha256": "aec816cdf01282fe2865d1eab2ef4b4a69aa949a9956f75bedd7bc81acf7968d"
+    },
+    {
+      "path": "web/lib/player-cards/shareExport.test.ts",
+      "sha256": "8d6873c6c16b8ae7f3d2fbb8241ffcaf8ea202775c32f05f6fef79d647686e47"
+    }
+  ],
+  "status": "Active exact2file geometry correction",
+  "artifact_root": "tasks/artifacts/player-cards-2026-10-26/composition-variants-04",
+  "limits": "No portraitpipeline/default/data/sharedTuesday/Git/assets/deploy/delete/uploadchanges; refs unresolveddownloadfailure explicitlyunseen"
+}

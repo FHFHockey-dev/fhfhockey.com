@@ -1,0 +1,69 @@
+{
+  "reviewedThread": "01a18a10-68f8-7610-bec7-ccfe0f4d0ef5",
+  "threadTitle": "Read Codex goal objective",
+  "threadStatusObserved": "idle; one completed turn",
+  "base": "18e52a481589a314dc6a67663dd98d1fa8c48454",
+  "reviewedHead": "988423d385d76ecc2a59efea88d5391784060911",
+  "codeCandidate": "43d35f8020d2071e07d08da13f50f1f882277f26",
+  "branch": "octoberBranch",
+  "snapshot": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/forge-v2-outside-audit-htfcum1r",
+  "capturedAt": "2026-10-30T01:13:02.267287+00:00",
+  "headObservedAfterTests": "cfc785e75d093986c7ef23c0980f727e22b5cda0",
+  "candidateFiles": 49,
+  "candidatePathsStillMatch": true,
+  "node": "22.11.0",
+  "vitest": "3.2.7",
+  "existingTests": {
+    "files": 11,
+    "passed": 147,
+    "failed": 0,
+    "exit": 0
+  },
+  "independentContractChecks": {
+    "files": 4,
+    "checks": 5,
+    "failed": 5,
+    "exit": 1,
+    "meaning": "Expected PRD behavior is asserted; failures reproduce candidate defects, not tool/setup failures."
+  },
+  "notRerun": [
+    "native PostgreSQL tests (no database changes in this review)",
+    "browser tests",
+    "capacity benchmark",
+    "full build",
+    "full unit suite",
+    "type/lint (no implementation edits)"
+  ],
+  "reviewChanges": [
+    "this audit artifact directory",
+    "tasks/diaries/2026-10-30-codex-forge-v2-outside-audit.md"
+  ],
+  "externalActions": {
+    "pushes": 0,
+    "deployments": 0,
+    "databaseChanges": 0,
+    "productionRequests": 0,
+    "protectedDataAccess": 0
+  },
+  "remainingReviewBlockers": [],
+  "resourceNote": "One test attempt deferred by shared heavy lock held by Claude; resumed only after release. No denial bypass.",
+  "runnerSyntax": "Python AST parse passed; equivalent test invocation executed independently, runner not redundantly re-executed.",
+  "reviewArtifactHashes": {
+    "REVIEW.md": "a79f535dee860c95eef16e298262ee6a9f06414e1e2427800778221793e1313a",
+    "audit-regressions.log": "aeeca3f5d2facba8f3e879bf7d93f7f80c85f4c0ae9be1f8903ec9dc70403982",
+    "baseline-tests.log": "e4d3bd35df157353754727163d66f268a2a7fbf2a426333092bb1bfa13790303",
+    "pins.json": "018130827ecd8061e363b3f5bbe45d9dc2ef57ffe95702533974e0b3c4bdeeea",
+    "reproduce.py": "c13ab0a43b9b10cfa9facb3edd228b9284921cc8234a291ed2754fbea61f1458",
+    "reproductions/web/components/ForgeV2/outside-explorer.test.tsx": "6a62c698d7b926b0346cbc37f11e843608df1e9a279a1efa6e2e1c0a35d62549",
+    "reproductions/web/lib/forge-v2/outside-evaluation.test.ts": "85c0b468224aa28d2733e8ab76a4565e08d7ea8eb952646d97b9dca38df458df",
+    "reproductions/web/lib/forge-v2/outside-pipeline.test.ts": "3d5236a706fcda223f1a27c0ba2871ec13bed3a41d21e6b86fc5e794c4824d13",
+    "reproductions/web/lib/forge-v2/outside-uncertainty.test.ts": "0e0f9f0f7f040c641d1b5dfbee620ce3a7d83b88eef8dae6ff4692983fb50c70"
+  },
+  "sourceDocuments": {
+    "PLAN (11).md": "7fe25088be9797eb6976aed6fe30367e52c9bf7dc2b6720c8d329121609ae51c",
+    "PLAN (12).md": "b8747513e0114d1e90b04ecea32b05b8aa7623342461fa1e882dc1cce6a5d21f"
+  },
+  "finalBranch": "octoberBranch",
+  "finalHEAD": "cfc785e75d093986c7ef23c0980f727e22b5cda0",
+  "reviewCompletedAt": "2026-10-30T01:13:43.357935+00:00"
+}

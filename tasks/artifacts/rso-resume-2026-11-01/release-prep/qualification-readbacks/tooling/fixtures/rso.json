@@ -1,0 +1,32 @@
+[
+  {
+    "playerId": "fixture-player-1",
+    "gameId": "fixture-game-1",
+    "target": "SHOTS_ON_GOAL",
+    "revisionId": "fixture-rev-1",
+    "artifactHash": "fixture-artifact-1",
+    "participationRevisionId": "fixture-participation-1",
+    "scheduleRevision": "fixture-schedule-1",
+    "cutoffAt": "2026-11-03T15:00:00Z",
+    "value": {
+      "conditionalMean": 2.71828,
+      "unconditionalMean": 2.45678
+    },
+    "observedAt": "2026-11-03T17:00:00Z"
+  },
+  {
+    "playerId": "fixture-player-2",
+    "gameId": "fixture-game-1",
+    "target": "SHOTS_ON_GOAL",
+    "revisionId": "fixture-rev-2",
+    "artifactHash": "fixture-artifact-1",
+    "participationRevisionId": "fixture-participation-1",
+    "scheduleRevision": "fixture-schedule-1",
+    "cutoffAt": "2026-11-03T15:00:00Z",
+    "value": {
+      "conditionalMean": 1.5,
+      "unconditionalMean": 1.2
+    },
+    "observedAt": "2026-11-03T17:00:00Z"
+  }
+]

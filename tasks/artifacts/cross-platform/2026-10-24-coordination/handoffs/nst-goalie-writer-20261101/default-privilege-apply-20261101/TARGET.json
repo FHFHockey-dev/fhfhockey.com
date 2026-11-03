@@ -1,0 +1,12 @@
+{
+  "id": "fyhftlxokyjtpndbkfse",
+  "name": "fhfhockey.com",
+  "region": "us-east-1",
+  "status": "ACTIVE_HEALTHY",
+  "database": {
+    "host": "db.fyhftlxokyjtpndbkfse.supabase.co",
+    "version": "15.1.1.19",
+    "postgres_engine": "15",
+    "release_channel": "ga"
+  }
+}

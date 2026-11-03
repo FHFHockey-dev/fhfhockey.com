@@ -1,0 +1,372 @@
+{
+  "pass": true,
+  "pinsVerifiedAndUnchanged": 173,
+  "planRows": 200,
+  "planGames": 31,
+  "selectedExactlyFromUnresolvedAndRetainedGames": true,
+  "matched": 195,
+  "held": [
+    {
+      "sourceId": 5598688,
+      "gameId": 2026020192,
+      "reason": "prior_exposure_hold",
+      "sourceTOI": 1008,
+      "officialTOI": 1001
+    },
+    {
+      "sourceId": 5599832,
+      "gameId": 2026020206,
+      "reason": "prior_exposure_hold",
+      "sourceTOI": 1007,
+      "officialTOI": 1008
+    },
+    {
+      "sourceId": 5600780,
+      "gameId": 2026020224,
+      "reason": "unknown_or_goalie_credit_held",
+      "team": "VAN"
+    },
+    {
+      "sourceId": 5600805,
+      "gameId": 2026020224,
+      "reason": "unknown_or_goalie_credit_held",
+      "team": "VAN"
+    },
+    {
+      "sourceId": 5600831,
+      "gameId": 2026020224,
+      "reason": "unknown_or_goalie_credit_held",
+      "team": "VAN"
+    }
+  ],
+  "tallies": {
+    "skaterBoxOperands": 3348,
+    "reconciledGames": 30,
+    "qualifiedControlRows": 1080,
+    "qualifiedGoalEvents": 205,
+    "allGoalEvents": 211,
+    "excludedShootoutGoalEvents": 3,
+    "zeroMatches": 113,
+    "nonzeroMatches": 82
+  },
+  "goalieCredits": [
+    {
+      "gameId": 2026020224,
+      "eventNumber": 295,
+      "playerId": 8476932,
+      "team": "TOR",
+      "credit": "assist",
+      "strength": "EV",
+      "description": "TOR #73 BLUEGER(2), Wrist , Off. Zone, 38 ft. Assists: #88 NYLANDER(11); #41 STOLARZ(3)"
+    }
+  ],
+  "otherDifferencesRetained": [
+    {
+      "sourceId": 5599445,
+      "differentFields": [
+        "shots"
+      ]
+    },
+    {
+      "sourceId": 5599701,
+      "differentFields": [
+        "hits"
+      ]
+    },
+    {
+      "sourceId": 5599705,
+      "differentFields": [
+        "hits"
+      ]
+    },
+    {
+      "sourceId": 5599717,
+      "differentFields": [
+        "blocked_shots"
+      ]
+    },
+    {
+      "sourceId": 5599839,
+      "differentFields": [
+        "hits"
+      ]
+    }
+  ],
+  "coverage": {
+    "previousRows": 2950,
+    "hypotheticalRows": 3140,
+    "previousWindows": 379,
+    "hypotheticalWindows": 482,
+    "additionalWindows": 103,
+    "unresolvedBefore": 407,
+    "hypotheticalUnresolvedAfter": 212,
+    "outsideEventScopeUnresolved": 207,
+    "zeroShotWindows": 20
+  },
+  "namedExamples": [
+    {
+      "sourceId": 5598620,
+      "name": "Filip Forsberg",
+      "gameId": 2026020192,
+      "PPP": 1
+    },
+    {
+      "sourceId": 5598679,
+      "name": "Teuvo Teravainen",
+      "gameId": 2026020190,
+      "PPP": 1
+    },
+    {
+      "sourceId": 5598721,
+      "name": "Connor Bedard",
+      "gameId": 2026020190,
+      "PPP": 1
+    },
+    {
+      "sourceId": 5599412,
+      "name": "Brent Burns",
+      "gameId": 2026020201,
+      "PPP": 0
+    },
+    {
+      "sourceId": 5600722,
+      "name": "Connor Bedard",
+      "gameId": 2026020217,
+      "PPP": 1
+    },
+    {
+      "sourceId": 5600724,
+      "name": "Filip Forsberg",
+      "gameId": 2026020219,
+      "PPP": 1
+    }
+  ],
+  "sourceCaptureAtUTC": "2026-11-01T19:57:38.026058+00:00",
+  "eventThroughDate": "2026-10-31",
+  "sourceRowsUnchanged": true,
+  "sidecarUnchanged": true,
+  "metadataRenameOnly": true,
+  "separateGameScoreTrialUnchanged": true,
+  "networkDenied": true,
+  "scoresComputed": 0,
+  "productionActions": 0,
+  "games": [
+    {
+      "gameId": 2026020190,
+      "goals": 3,
+      "skaterControls": 36,
+      "goalieCredits": 0,
+      "targetRows": 4
+    },
+    {
+      "gameId": 2026020192,
+      "goals": 6,
+      "skaterControls": 36,
+      "goalieCredits": 0,
+      "targetRows": 10
+    },
+    {
+      "gameId": 2026020194,
+      "goals": 6,
+      "skaterControls": 36,
+      "goalieCredits": 0,
+      "targetRows": 4
+    },
+    {
+      "gameId": 2026020195,
+      "goals": 4,
+      "skaterControls": 36,
+      "goalieCredits": 0,
+      "targetRows": 3
+    },
+    {
+      "gameId": 2026020196,
+      "goals": 5,
+      "skaterControls": 36,
+      "goalieCredits": 0,
+      "targetRows": 7
+    },
+    {
+      "gameId": 2026020197,
+      "goals": 11,
+      "skaterControls": 36,
+      "goalieCredits": 0,
+      "targetRows": 12
+    },
+    {
+      "gameId": 2026020199,
+      "goals": 7,
+      "skaterControls": 36,
+      "goalieCredits": 0,
+      "targetRows": 8
+    },
+    {
+      "gameId": 2026020200,
+      "goals": 4,
+      "skaterControls": 36,
+      "goalieCredits": 0,
+      "targetRows": 4
+    },
+    {
+      "gameId": 2026020201,
+      "goals": 7,
+      "skaterControls": 36,
+      "goalieCredits": 0,
+      "targetRows": 8
+    },
+    {
+      "gameId": 2026020202,
+      "goals": 9,
+      "skaterControls": 36,
+      "goalieCredits": 0,
+      "targetRows": 11
+    },
+    {
+      "gameId": 2026020203,
+      "goals": 5,
+      "skaterControls": 36,
+      "goalieCredits": 0,
+      "targetRows": 5
+    },
+    {
+      "gameId": 2026020204,
+      "goals": 10,
+      "skaterControls": 36,
+      "goalieCredits": 0,
+      "targetRows": 7
+    },
+    {
+      "gameId": 2026020206,
+      "goals": 5,
+      "skaterControls": 36,
+      "goalieCredits": 0,
+      "targetRows": 5
+    },
+    {
+      "gameId": 2026020207,
+      "goals": 5,
+      "skaterControls": 36,
+      "goalieCredits": 0,
+      "targetRows": 5
+    },
+    {
+      "gameId": 2026020208,
+      "goals": 7,
+      "skaterControls": 36,
+      "goalieCredits": 0,
+      "targetRows": 2
+    },
+    {
+      "gameId": 2026020209,
+      "goals": 7,
+      "skaterControls": 36,
+      "goalieCredits": 0,
+      "targetRows": 1
+    },
+    {
+      "gameId": 2026020210,
+      "goals": 7,
+      "skaterControls": 36,
+      "goalieCredits": 0,
+      "targetRows": 5
+    },
+    {
+      "gameId": 2026020211,
+      "goals": 13,
+      "skaterControls": 36,
+      "goalieCredits": 0,
+      "targetRows": 13
+    },
+    {
+      "gameId": 2026020212,
+      "goals": 11,
+      "skaterControls": 36,
+      "goalieCredits": 0,
+      "targetRows": 10
+    },
+    {
+      "gameId": 2026020213,
+      "goals": 5,
+      "skaterControls": 36,
+      "goalieCredits": 0,
+      "targetRows": 6
+    },
+    {
+      "gameId": 2026020214,
+      "goals": 7,
+      "skaterControls": 36,
+      "goalieCredits": 0,
+      "targetRows": 1
+    },
+    {
+      "gameId": 2026020215,
+      "goals": 7,
+      "skaterControls": 36,
+      "goalieCredits": 0,
+      "targetRows": 9
+    },
+    {
+      "gameId": 2026020216,
+      "goals": 8,
+      "skaterControls": 36,
+      "goalieCredits": 0,
+      "targetRows": 10
+    },
+    {
+      "gameId": 2026020217,
+      "goals": 9,
+      "skaterControls": 36,
+      "goalieCredits": 0,
+      "targetRows": 7
+    },
+    {
+      "gameId": 2026020218,
+      "goals": 9,
+      "skaterControls": 36,
+      "goalieCredits": 0,
+      "targetRows": 5
+    },
+    {
+      "gameId": 2026020219,
+      "goals": 8,
+      "skaterControls": 36,
+      "goalieCredits": 0,
+      "targetRows": 11
+    },
+    {
+      "gameId": 2026020220,
+      "goals": 4,
+      "skaterControls": 36,
+      "goalieCredits": 0,
+      "targetRows": 6
+    },
+    {
+      "gameId": 2026020221,
+      "goals": 5,
+      "skaterControls": 36,
+      "goalieCredits": 0,
+      "targetRows": 8
+    },
+    {
+      "gameId": 2026020224,
+      "goals": 6,
+      "skaterControls": 36,
+      "goalieCredits": 1,
+      "targetRows": 3
+    },
+    {
+      "gameId": 2026020225,
+      "goals": 4,
+      "skaterControls": 36,
+      "goalieCredits": 0,
+      "targetRows": 5
+    },
+    {
+      "gameId": 2026020226,
+      "goals": 7,
+      "skaterControls": 36,
+      "goalieCredits": 0,
+      "targetRows": 5
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "REPORT.md": "0b1702a6edc735af7df79074407f3a71befe9b64a609d758af49e8d5c2062040",
+  "TRACEABILITY.md": "e65136ca7bddd1f3bc6c289000edc2bdf82d92c59a0099fe0e2017ddd62bd6db",
+  "OWNER-SUMMARY.md": "98986441dd19cf6c1544f0c4f9f73cb26dceb9ed55a2e73e3063462d278002d5",
+  "COMMANDS.md": "e4ccfc00075e112c391975aca0d6a42c4d3a285bdb4c46028881bb1ab4ced831",
+  "reproduction.test.ts": "a901eb30592762bb051d30420283e930fe5af8212cbafd2cca75a468d421417e",
+  "offline-tests-4.log": "041f4d23eecd1bdc993d47e8565a13220cf4786b936fc830e159c39ab2cb74bf",
+  "source-pin-verification.json": "1b96387e8813991e9ad094b14a7ec4e04295df1395fc2d3e5ec6a1e63fafa4e0",
+  "release-closure-verification.json": "4d30a16644bb6483a6b011af522b8369e610aaaf21db7dfbe5c9438d0dea746f",
+  "independent-closure-scan.json": "70ff2be253c37977e4d6a4257e870bbd95f9f00518166cd3edb558f1b6c643d8",
+  "identity-end.json": "bbeaaf59dcfcd0350a7c5ba56e47fae8ea598f0e60bd2c6c0476d92c27279305"
+}

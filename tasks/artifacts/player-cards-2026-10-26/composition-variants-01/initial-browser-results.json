@@ -1,0 +1,26 @@
+{
+  "checks": [
+    "Team Colors remains fresh default; existing four styles retained; logo composition is opt-in",
+    "Both combined treatments: same player/snapshot, pinned embedded TOR logo behind hero, left-quarter fade, landscape PNG/manifest/same-instance share parity, phone390 no overflow",
+    "Distinct portrait pixels; analytics region is byte-identical across two actual PNG exports",
+    "Explicit combined style persists; second team uses MIN asset/palette; square export; partial source explanation and unknown-GP export block retained"
+  ],
+  "exports": [
+    {
+      "style": "posterized-team-colors",
+      "pngSha256": "df50044a95d4d85eb4d4956bff76737b827720cfdc36e96de0193dca12861e60",
+      "portraitSha256": "5fb49df44fabcf1c4026fde1f2d18268a6fcaadab75ae93d124940f42d4d8c52",
+      "logoSha256": "b88d6edb92e4bcca291f7d3a37c1265fee39e1f5ef41650aaa19d8a39ad7e01d"
+    },
+    {
+      "style": "pixelated-team-colors",
+      "pngSha256": "a6f0d81a6b8900082be1162e461140adf62881845da1b22ca4f80b6c3f4b7efe",
+      "portraitSha256": "e7a98b553e33e29667da08460f2040f1099ed88dcf71d1b80aae9da4b4745b89",
+      "logoSha256": "b88d6edb92e4bcca291f7d3a37c1265fee39e1f5ef41650aaa19d8a39ad7e01d"
+    }
+  ],
+  "analyticsByteDifferences": 0,
+  "externalAttempts": [],
+  "pageErrors": [],
+  "referenceInspected": false
+}

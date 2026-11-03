@@ -1,0 +1,297 @@
+{
+  "status": "passed",
+  "focusedTests": 20,
+  "authenticatedFiles": 241,
+  "composition": {
+    "records": 3461,
+    "profiles": 740,
+    "PPPProofsComposed": 195,
+    "heldProofs": [
+      5598688,
+      5599832,
+      5600780,
+      5600805,
+      5600831
+    ],
+    "unresolvedPPP": 212,
+    "newCorroboratedFPRows": 190,
+    "corroboratedFPRows": 3140,
+    "FPWindowsBefore": 379,
+    "FPWindowsAfter": 482,
+    "newFPWindows": 103,
+    "otherDifferencesPreserved": [
+      {
+        "sourceId": 5599445,
+        "fields": [
+          "shots"
+        ]
+      },
+      {
+        "sourceId": 5599701,
+        "fields": [
+          "hits"
+        ]
+      },
+      {
+        "sourceId": 5599705,
+        "fields": [
+          "hits"
+        ]
+      },
+      {
+        "sourceId": 5599717,
+        "fields": [
+          "blocked_shots"
+        ]
+      },
+      {
+        "sourceId": 5599839,
+        "fields": [
+          "hits"
+        ]
+      }
+    ],
+    "zeroShotWindows": 20,
+    "allOriginalMetricsAndNonPPPFieldsUnchanged": true
+  },
+  "assistFaceoff": {
+    "records": 1080,
+    "informative": 249,
+    "nonzeroAssist": 269,
+    "zeroShots": 324,
+    "faceoffParticipants": 406,
+    "faceoffEvents": 1719,
+    "goalStrengths": {
+      "EV": 152,
+      "PP": 51,
+      "SH": 2
+    },
+    "exposureHeldSourceIds": [
+      5598839,
+      5598688,
+      5599762,
+      5599858,
+      5599832,
+      5599965
+    ],
+    "faceoffDifferentSourceIds": [
+      5599478,
+      5599416
+    ],
+    "discrepancyIndependentCounts": {
+      "5599478": {
+        "wins": 12,
+        "losses": 5,
+        "boxFraction": 0.705882
+      },
+      "5599416": {
+        "wins": 5,
+        "losses": 10,
+        "boxFraction": 0.333333
+      }
+    },
+    "headToHeadEvents": [
+      5,
+      20,
+      38,
+      112,
+      222,
+      239,
+      252
+    ],
+    "games": [
+      {
+        "gameId": 2026020190,
+        "goalEvents": 3,
+        "faceoffEvents": 57,
+        "records": 36
+      },
+      {
+        "gameId": 2026020192,
+        "goalEvents": 6,
+        "faceoffEvents": 56,
+        "records": 36
+      },
+      {
+        "gameId": 2026020194,
+        "goalEvents": 6,
+        "faceoffEvents": 56,
+        "records": 36
+      },
+      {
+        "gameId": 2026020195,
+        "goalEvents": 4,
+        "faceoffEvents": 71,
+        "records": 36
+      },
+      {
+        "gameId": 2026020196,
+        "goalEvents": 5,
+        "faceoffEvents": 53,
+        "records": 36
+      },
+      {
+        "gameId": 2026020197,
+        "goalEvents": 11,
+        "faceoffEvents": 57,
+        "records": 36
+      },
+      {
+        "gameId": 2026020199,
+        "goalEvents": 7,
+        "faceoffEvents": 52,
+        "records": 36
+      },
+      {
+        "gameId": 2026020200,
+        "goalEvents": 4,
+        "faceoffEvents": 53,
+        "records": 36
+      },
+      {
+        "gameId": 2026020201,
+        "goalEvents": 7,
+        "faceoffEvents": 67,
+        "records": 36
+      },
+      {
+        "gameId": 2026020202,
+        "goalEvents": 9,
+        "faceoffEvents": 59,
+        "records": 36
+      },
+      {
+        "gameId": 2026020203,
+        "goalEvents": 5,
+        "faceoffEvents": 52,
+        "records": 36
+      },
+      {
+        "gameId": 2026020204,
+        "goalEvents": 10,
+        "faceoffEvents": 70,
+        "records": 36
+      },
+      {
+        "gameId": 2026020206,
+        "goalEvents": 5,
+        "faceoffEvents": 66,
+        "records": 36
+      },
+      {
+        "gameId": 2026020207,
+        "goalEvents": 5,
+        "faceoffEvents": 63,
+        "records": 36
+      },
+      {
+        "gameId": 2026020208,
+        "goalEvents": 7,
+        "faceoffEvents": 56,
+        "records": 36
+      },
+      {
+        "gameId": 2026020209,
+        "goalEvents": 7,
+        "faceoffEvents": 56,
+        "records": 36
+      },
+      {
+        "gameId": 2026020210,
+        "goalEvents": 7,
+        "faceoffEvents": 58,
+        "records": 36
+      },
+      {
+        "gameId": 2026020211,
+        "goalEvents": 13,
+        "faceoffEvents": 67,
+        "records": 36
+      },
+      {
+        "gameId": 2026020212,
+        "goalEvents": 11,
+        "faceoffEvents": 62,
+        "records": 36
+      },
+      {
+        "gameId": 2026020213,
+        "goalEvents": 5,
+        "faceoffEvents": 43,
+        "records": 36
+      },
+      {
+        "gameId": 2026020214,
+        "goalEvents": 7,
+        "faceoffEvents": 57,
+        "records": 36
+      },
+      {
+        "gameId": 2026020215,
+        "goalEvents": 7,
+        "faceoffEvents": 59,
+        "records": 36
+      },
+      {
+        "gameId": 2026020216,
+        "goalEvents": 8,
+        "faceoffEvents": 64,
+        "records": 36
+      },
+      {
+        "gameId": 2026020217,
+        "goalEvents": 9,
+        "faceoffEvents": 62,
+        "records": 36
+      },
+      {
+        "gameId": 2026020218,
+        "goalEvents": 9,
+        "faceoffEvents": 53,
+        "records": 36
+      },
+      {
+        "gameId": 2026020219,
+        "goalEvents": 8,
+        "faceoffEvents": 49,
+        "records": 36
+      },
+      {
+        "gameId": 2026020220,
+        "goalEvents": 4,
+        "faceoffEvents": 47,
+        "records": 36
+      },
+      {
+        "gameId": 2026020221,
+        "goalEvents": 5,
+        "faceoffEvents": 53,
+        "records": 36
+      },
+      {
+        "gameId": 2026020225,
+        "goalEvents": 4,
+        "faceoffEvents": 50,
+        "records": 36
+      },
+      {
+        "gameId": 2026020226,
+        "goalEvents": 7,
+        "faceoffEvents": 51,
+        "records": 36
+      }
+    ]
+  },
+  "limits": [
+    "evidence-only composition; previous full sidecar acceptance not implied",
+    "assist credit agreement is observational, not normative definition evidence",
+    "later evidence; original publication/provider revision unknown",
+    "source/profile/scoring admission remains closed"
+  ],
+  "productionRequests": 0,
+  "providerRequests": 0,
+  "databaseCalls": 0,
+  "producerMainCalls": 0,
+  "sourceEdits": 0,
+  "holdoutAccess": 0
+}

@@ -1,0 +1,111 @@
+{
+  "at": "2026-10-26T15:29:02.138425+00:00",
+  "sources": [
+    {
+      "path": "web/lib/player-cards/cardEvidenceVerdict.ts",
+      "beforeSha256": "fd5a2ccd681428c666505303b594405663a3f16f4d12688aa371d40675f36480",
+      "afterSha256": "c181fe190e6831b4804f8ae4233eeeaab16aca0c4f7a7cd3465d61b0e51ecbec",
+      "bytes": 4605
+    },
+    {
+      "path": "web/lib/player-cards/cardEvidenceVerdict.test.ts",
+      "beforeSha256": "dcc4551c540ff810aa789bd821bbe57708d38c5465302ed5e3d4b9cb14d15e61",
+      "afterSha256": "8942ef62c9ecd4a0396301ed63437658c8b4fb0e9db9c122f35575d62a50985f",
+      "bytes": 15500
+    }
+  ],
+  "unchangedOtherCardSources": 40,
+  "history": {
+    "captureReceipt": "HISTORY-READ-RECEIPT.json",
+    "sha256": "9a0cefaa9aade51cf190c0a1bec8493a86759971d3e5aa0cbbe91cdb5d808da2",
+    "urlScopedPlayerId": 8476453,
+    "responseHasPlayerId": false,
+    "seasonId": 20262027,
+    "gameTypeId": 2,
+    "rows": 11,
+    "uniqueGameIds": true,
+    "firstProviderDate": "2026-10-01",
+    "lastProviderDate": "2026-10-24",
+    "rowsThroughProviderOct23": 10,
+    "rowKeys": [
+      "gameId",
+      "teamAbbrev",
+      "homeRoadFlag",
+      "gameDate",
+      "goals",
+      "assists",
+      "commonName",
+      "opponentCommonName",
+      "points",
+      "plusMinus",
+      "powerPlayGoals",
+      "powerPlayPoints",
+      "gameWinningGoals",
+      "otGoals",
+      "shots",
+      "shifts",
+      "shorthandedGoals",
+      "shorthandedPoints",
+      "pim",
+      "toi",
+      "opponentAbbrev"
+    ],
+    "dateBasis": "provider-game-date, not verified UTC",
+    "actualGameEndFieldPresent": false,
+    "sourceUpdateTimePresent": false,
+    "completenessAdmitted": false,
+    "admissionChanged": false,
+    "metricDefinitionVerified": false,
+    "populationVerified": false,
+    "liveActivation": false,
+    "premiumActivation": false
+  },
+  "checks": {
+    "tests": {
+      "command": [
+        "npm",
+        "test",
+        "--",
+        "--run",
+        "lib/player-cards/cardEvidenceVerdict.test.ts",
+        "lib/player-cards/nstCapture.test.ts"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "seconds": 1.477,
+      "noGitDir": true
+    },
+    "types": {
+      "command": [
+        "npx",
+        "--no-install",
+        "tsc",
+        "--noEmit",
+        "--project",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/observed-pipeline-01/tsconfig.json"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "seconds": 1.652,
+      "noGitDir": true
+    },
+    "lint": {
+      "command": [
+        "npx",
+        "--no-install",
+        "eslint",
+        "lib/player-cards/cardEvidenceVerdict.ts",
+        "lib/player-cards/cardEvidenceVerdict.test.ts"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "seconds": 1.207,
+      "noGitDir": true
+    }
+  },
+  "handoffSha256": "634343303f0cfad7498fb4fd6add99be902e45734fee3c1b78d19971601d47c4",
+  "sourcePatchSha256": "b3d8f647e1da85c6512838445dbf95bf5338d63b6500f02db45c5bddc5f26c54",
+  "independentAcceptance": "pending",
+  "liveActivation": false,
+  "premiumActivation": false
+}

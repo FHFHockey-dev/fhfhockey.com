@@ -1,0 +1,239 @@
+{
+  "source": "web/pages/api/v1/start-chart.ts",
+  "sourceSha256": "b5bbe2e5b3a64f8368dc409ad11207420af36811c0342e9cbfd49220c3d3f98e",
+  "helperOnly": true,
+  "fullRouteMeasured": false,
+  "syntheticInputsOnly": true,
+  "actualCostMeasured": false,
+  "databaseConnections": 0,
+  "networkRequests": 0,
+  "checks": [
+    {
+      "name": "CTPI eight teams/30 days/1 synthetic season keys",
+      "databaseCalls": 1,
+      "returnedRows": 240,
+      "filters": [
+        [
+          [
+            "from",
+            "team_ctpi_daily"
+          ],
+          [
+            "gte",
+            "date",
+            "2026-10-01"
+          ],
+          [
+            "lte",
+            "date",
+            "2026-10-30"
+          ],
+          [
+            "range",
+            0,
+            499
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "CTPI eight teams/30 days/3 synthetic season keys",
+      "databaseCalls": 2,
+      "returnedRows": 720,
+      "filters": [
+        [
+          [
+            "from",
+            "team_ctpi_daily"
+          ],
+          [
+            "gte",
+            "date",
+            "2026-10-01"
+          ],
+          [
+            "lte",
+            "date",
+            "2026-10-30"
+          ],
+          [
+            "range",
+            0,
+            499
+          ]
+        ],
+        [
+          [
+            "from",
+            "team_ctpi_daily"
+          ],
+          [
+            "gte",
+            "date",
+            "2026-10-01"
+          ],
+          [
+            "lte",
+            "date",
+            "2026-10-30"
+          ],
+          [
+            "range",
+            500,
+            999
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "Missing usable ownership scans all saved history",
+      "databaseCalls": 7,
+      "returnedRows": 0,
+      "filters": [
+        [
+          [
+            "from",
+            "yahoo_player_ownership_history"
+          ],
+          [
+            "eq",
+            "ownership_date",
+            "2026-11-02"
+          ]
+        ],
+        [
+          [
+            "from",
+            "yahoo_player_ownership_history"
+          ],
+          [
+            "lte",
+            "ownership_date",
+            "2026-11-02"
+          ],
+          [
+            "range",
+            0,
+            999
+          ]
+        ],
+        [
+          [
+            "from",
+            "yahoo_player_ownership_history"
+          ],
+          [
+            "lte",
+            "ownership_date",
+            "2026-11-02"
+          ],
+          [
+            "range",
+            1000,
+            1999
+          ]
+        ],
+        [
+          [
+            "from",
+            "yahoo_player_ownership_history"
+          ],
+          [
+            "lte",
+            "ownership_date",
+            "2026-11-02"
+          ],
+          [
+            "range",
+            2000,
+            2999
+          ]
+        ],
+        [
+          [
+            "from",
+            "yahoo_player_ownership_history"
+          ],
+          [
+            "lte",
+            "ownership_date",
+            "2026-11-02"
+          ],
+          [
+            "range",
+            3000,
+            3999
+          ]
+        ],
+        [
+          [
+            "from",
+            "yahoo_player_ownership_history"
+          ],
+          [
+            "lte",
+            "ownership_date",
+            "2026-11-02"
+          ],
+          [
+            "range",
+            4000,
+            4999
+          ]
+        ],
+        [
+          [
+            "from",
+            "yahoo_player_ownership_history"
+          ],
+          [
+            "lte",
+            "ownership_date",
+            "2026-11-02"
+          ],
+          [
+            "range",
+            5000,
+            5999
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "Exact-date ownership avoids historical pagination",
+      "databaseCalls": 1,
+      "returnedRows": 1,
+      "filters": [
+        [
+          [
+            "from",
+            "yahoo_player_ownership_history"
+          ],
+          [
+            "eq",
+            "ownership_date",
+            "2026-11-02"
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "Ownership error stops without retry",
+      "databaseCalls": 1,
+      "returnedRows": 0,
+      "filters": [
+        [
+          [
+            "from",
+            "yahoo_player_ownership_history"
+          ],
+          [
+            "eq",
+            "ownership_date",
+            "2026-11-02"
+          ]
+        ]
+      ]
+    }
+  ]
+}

@@ -1,0 +1,196 @@
+{
+  "id": "observed-history-9a0cefaa9aade51cf190c0a1bec8493a86759971d3e5aa0cbbe91cdb5d808da2-5667c3bc07e9088c024e007513898d24bb0ff380a702dcaf79116656baf3a695",
+  "capturedAt": "2026-10-26T15:42:14.608Z",
+  "settings": {
+    "season": 20262027,
+    "gameType": "regular",
+    "strength": "all",
+    "cutoff": "2026-10-24T00:00:00Z",
+    "period": {
+      "mode": "appearances",
+      "count": 5
+    },
+    "seasonPolicy": "season-only-proposed",
+    "shortSamplePolicy": "allow-known-short-proposed",
+    "rankPolicy": "competition-midrank-proposed"
+  },
+  "source": {
+    "definition": "NST count contract; definition unverified",
+    "version": "metric-capture-unavailable",
+    "definitionReference": "",
+    "verifiedMetrics": []
+  },
+  "population": {
+    "scope": "all-nhl",
+    "complete": false,
+    "reference": "",
+    "expectedPlayerIds": []
+  },
+  "frames": [
+    {
+      "playerId": 8476453,
+      "season": 20262027,
+      "gameType": "regular",
+      "dateBasis": "UTC",
+      "completeHistory": false,
+      "historyThrough": "2026-10-26T15:42:14.608Z",
+      "historyReference": "",
+      "appearances": [
+        {
+          "playerId": 8476453,
+          "gameId": 2026020177,
+          "season": 20262027,
+          "gameType": "regular",
+          "date": "2026-10-25",
+          "sourceDate": "2026-10-24",
+          "played": true,
+          "completion": {
+            "status": "unverified"
+          }
+        },
+        {
+          "playerId": 8476453,
+          "gameId": 2026020167,
+          "season": 20262027,
+          "gameType": "regular",
+          "date": "2026-10-24",
+          "sourceDate": "2026-10-23",
+          "played": true,
+          "completion": {
+            "status": "unverified"
+          }
+        },
+        {
+          "playerId": 8476453,
+          "gameId": 2026020151,
+          "season": 20262027,
+          "gameType": "regular",
+          "date": "2026-10-21",
+          "sourceDate": "2026-10-20",
+          "played": true,
+          "completion": {
+            "status": "unverified"
+          }
+        },
+        {
+          "playerId": 8476453,
+          "gameId": 2026020123,
+          "season": 20262027,
+          "gameType": "regular",
+          "date": "2026-10-17",
+          "sourceDate": "2026-10-17",
+          "played": true,
+          "completion": {
+            "status": "unverified"
+          }
+        },
+        {
+          "playerId": 8476453,
+          "gameId": 2026020111,
+          "season": 20262027,
+          "gameType": "regular",
+          "date": "2026-10-15",
+          "sourceDate": "2026-10-15",
+          "played": true,
+          "completion": {
+            "status": "unverified"
+          }
+        },
+        {
+          "playerId": 8476453,
+          "gameId": 2026020095,
+          "season": 20262027,
+          "gameType": "regular",
+          "date": "2026-10-13",
+          "sourceDate": "2026-10-13",
+          "played": true,
+          "completion": {
+            "status": "unverified"
+          }
+        },
+        {
+          "playerId": 8476453,
+          "gameId": 2026020081,
+          "season": 20262027,
+          "gameType": "regular",
+          "date": "2026-10-10",
+          "sourceDate": "2026-10-10",
+          "played": true,
+          "completion": {
+            "status": "unverified"
+          }
+        },
+        {
+          "playerId": 8476453,
+          "gameId": 2026020060,
+          "season": 20262027,
+          "gameType": "regular",
+          "date": "2026-10-08",
+          "sourceDate": "2026-10-08",
+          "played": true,
+          "completion": {
+            "status": "unverified"
+          }
+        },
+        {
+          "playerId": 8476453,
+          "gameId": 2026020040,
+          "season": 20262027,
+          "gameType": "regular",
+          "date": "2026-10-05",
+          "sourceDate": "2026-10-05",
+          "played": true,
+          "completion": {
+            "status": "unverified"
+          }
+        },
+        {
+          "playerId": 8476453,
+          "gameId": 2026020024,
+          "season": 20262027,
+          "gameType": "regular",
+          "date": "2026-10-03",
+          "sourceDate": "2026-10-03",
+          "played": true,
+          "completion": {
+            "status": "unverified"
+          }
+        },
+        {
+          "playerId": 8476453,
+          "gameId": 2026020010,
+          "season": 20262027,
+          "gameType": "regular",
+          "date": "2026-10-01",
+          "sourceDate": "2026-10-01",
+          "played": true,
+          "completion": {
+            "status": "unverified"
+          }
+        }
+      ]
+    }
+  ],
+  "individual": {
+    "toiUnit": "seconds",
+    "capturedAt": "2026-10-26T15:42:14.608Z",
+    "reference": "NST metric capture absent",
+    "readStatus": "error",
+    "identity": {
+      "mode": "row-player-id"
+    },
+    "rows": [],
+    "table": "nst_gamelog_as_counts"
+  },
+  "onIce": {
+    "toiUnit": "seconds",
+    "capturedAt": "2026-10-26T15:42:14.608Z",
+    "reference": "NST metric capture absent",
+    "readStatus": "error",
+    "identity": {
+      "mode": "row-player-id"
+    },
+    "rows": [],
+    "table": "nst_gamelog_as_counts_oi"
+  }
+}

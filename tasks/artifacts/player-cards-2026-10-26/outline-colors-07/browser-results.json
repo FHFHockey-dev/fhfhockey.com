@@ -1,0 +1,49 @@
+{
+  "checks": [
+    "Four verified distinct MIN palette colors; exactly one genuine5px ring; identical alpha/source/geometry/treatment/snapshot; white asset unchanged from06; PNG/manifest/share parity",
+    "390px no overflow; color/style/player changes invalidate prepared image; pixelated treatment and TOR use matching verified palette",
+    "Fresh default remains a single white5px outline; no paid/new dependencies or external processing"
+  ],
+  "exports": [
+    {
+      "ink": "white",
+      "label": "White · #FFFFFF",
+      "color": "#FFFFFF",
+      "pngSha256": "90c7b9acbc78e5c27f8b98408bd96b89d173bc7ee155a0ccb1839b53b5245089",
+      "outlineSha256": "860c1b2949082deffee1feb4a57b4428d472c4fd56afa664d1735d9968614745",
+      "alphaSha256": "d102a9e76ee4a2a47871b51244e4cc6a51ed205fd598fe7e949fd955b5d243e0",
+      "oneRing": true
+    },
+    {
+      "ink": "primary",
+      "label": "Primary · #154734",
+      "color": "#154734",
+      "pngSha256": "675f1890596bc24ac37bfd8d1bd4deb430cd7323f36d6545f2c7099a4f2aebbb",
+      "outlineSha256": "5eb58eea983412f44baa83e97efb5725b9e6ac97af91ae07c02e3a7c0bc415b7",
+      "alphaSha256": "d102a9e76ee4a2a47871b51244e4cc6a51ed205fd598fe7e949fd955b5d243e0",
+      "oneRing": true
+    },
+    {
+      "ink": "jersey",
+      "label": "Jersey · #A6192E",
+      "color": "#A6192E",
+      "pngSha256": "cf7f6a02a2ecd6e9c474b7e3fc5feee6649f417498f3292fb3513a6f528a1eb2",
+      "outlineSha256": "9dfbccdf3484c911271f2d97558b8488d1e784d5ff6d5bbf982401e7bd0c8da2",
+      "alphaSha256": "d102a9e76ee4a2a47871b51244e4cc6a51ed205fd598fe7e949fd955b5d243e0",
+      "oneRing": true
+    },
+    {
+      "ink": "secondary",
+      "label": "Secondary · #DDCBA4",
+      "color": "#DDCBA4",
+      "pngSha256": "b0d57d5646b929f52d6191caa455c37bfdbd2fe86e32e51d1708811ae5b811a7",
+      "outlineSha256": "afc390d89cc4fc02c8db7b0bc385e77a06dbea066788503c4bc5a9e0238b47a2",
+      "alphaSha256": "d102a9e76ee4a2a47871b51244e4cc6a51ed205fd598fe7e949fd955b5d243e0",
+      "oneRing": true
+    }
+  ],
+  "externalAttempts": [],
+  "pageErrors": [],
+  "liveActivation": false,
+  "premiumActivation": false
+}

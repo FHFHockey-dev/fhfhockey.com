@@ -1,0 +1,564 @@
+{
+  "schemaVersion": "fhfh.player-research-snapshot.v1",
+  "playerId": 9900001,
+  "fixtureKind": "synthetic_contract",
+  "usage": {
+    "researchOnly": true,
+    "productionDetectorSelected": false,
+    "trustedForActivation": false
+  },
+  "asOf": {
+    "eventThroughDate": "2023-10-14",
+    "sourceAvailableThroughUTC": null,
+    "retrievedAtUTC": null,
+    "issuedAtUTC": null,
+    "generatedAtUTC": "2026-10-27T00:59:40.135231+00:00",
+    "historicalIssuance": false,
+    "timePrecision": "game_date"
+  },
+  "streak": {
+    "version": "blsh-overnight-three-track-v2",
+    "researchOption": "block5",
+    "productionAdopted": false,
+    "availability": "available",
+    "parameters": {
+      "referenceSlots": 50,
+      "entryAbsZ": 2,
+      "confirmationFreshSlots": 5,
+      "confirmationAbsZ": 2,
+      "exitDirectionalAbsZ": 1,
+      "exitConsecutiveFreshBlocks": 2,
+      "compositeWeights": [
+        0.3333333333333333,
+        0.3333333333333333,
+        0.3333333333333333
+      ],
+      "gapResetDays": 30,
+      "cohortReferenceFallback": false,
+      "shootingGate": false
+    },
+    "tracks": {
+      "fantasy_points": {
+        "status": "normal",
+        "availability": "available",
+        "reason": null,
+        "reference": {
+          "kind": "frozen_previous_regular_season",
+          "seasonId": 20222023,
+          "requiredRecordedSlots": 50,
+          "observedRecordedSlots": 50,
+          "status": "ready",
+          "sourceIds": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31,
+            32,
+            33,
+            34,
+            35,
+            36,
+            37,
+            38,
+            39,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46,
+            47,
+            48,
+            49,
+            50
+          ],
+          "dates": [
+            "2023-01-01",
+            "2023-04-01"
+          ],
+          "rawMean": 1,
+          "rawSampleSD": 1,
+          "block5SampleSD": 0.5,
+          "cohortFallbackUsed": false
+        },
+        "observation": {
+          "gameDate": "2023-10-14",
+          "sourceId": 104,
+          "sourceIndex": 54,
+          "savedPhase": "normal",
+          "savedState": "normal",
+          "contextBoundary": null
+        },
+        "signal": {
+          "savedZ": 0,
+          "valuePerGame": 0,
+          "windowSourceIds": [
+            100,
+            101,
+            102,
+            103,
+            104
+          ],
+          "windowDates": [
+            "2023-10-10",
+            "2023-10-11",
+            "2023-10-12",
+            "2023-10-13",
+            "2023-10-14"
+          ],
+          "requiredSlots": 5
+        },
+        "episode": null,
+        "lastTransition": null,
+        "lastKnownFlag": null,
+        "issuedAtUTC": null,
+        "timePrecision": "game_date",
+        "retrospectivePhaseLabelsIncluded": false
+      },
+      "raw_points": {
+        "status": "normal",
+        "availability": "available",
+        "reason": null,
+        "reference": {
+          "kind": "frozen_previous_regular_season",
+          "seasonId": 20222023,
+          "requiredRecordedSlots": 50,
+          "observedRecordedSlots": 50,
+          "status": "ready",
+          "sourceIds": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31,
+            32,
+            33,
+            34,
+            35,
+            36,
+            37,
+            38,
+            39,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46,
+            47,
+            48,
+            49,
+            50
+          ],
+          "dates": [
+            "2023-01-01",
+            "2023-04-01"
+          ],
+          "rawMean": 1,
+          "rawSampleSD": 1,
+          "block5SampleSD": 0.5,
+          "cohortFallbackUsed": false
+        },
+        "observation": {
+          "gameDate": "2023-10-14",
+          "sourceId": 104,
+          "sourceIndex": 54,
+          "savedPhase": "normal",
+          "savedState": "normal",
+          "contextBoundary": null
+        },
+        "signal": {
+          "savedZ": 0,
+          "valuePerGame": 0,
+          "windowSourceIds": [
+            100,
+            101,
+            102,
+            103,
+            104
+          ],
+          "windowDates": [
+            "2023-10-10",
+            "2023-10-11",
+            "2023-10-12",
+            "2023-10-13",
+            "2023-10-14"
+          ],
+          "requiredSlots": 5
+        },
+        "episode": null,
+        "lastTransition": null,
+        "lastKnownFlag": null,
+        "issuedAtUTC": null,
+        "timePrecision": "game_date",
+        "retrospectivePhaseLabelsIncluded": false
+      },
+      "wigo_game_score": {
+        "status": "normal",
+        "availability": "available",
+        "reason": null,
+        "reference": {
+          "kind": "frozen_previous_regular_season",
+          "seasonId": 20222023,
+          "requiredRecordedSlots": 50,
+          "observedRecordedSlots": 50,
+          "status": "ready",
+          "sourceIds": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31,
+            32,
+            33,
+            34,
+            35,
+            36,
+            37,
+            38,
+            39,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46,
+            47,
+            48,
+            49,
+            50
+          ],
+          "dates": [
+            "2023-01-01",
+            "2023-04-01"
+          ],
+          "rawMean": 1,
+          "rawSampleSD": 1,
+          "block5SampleSD": 0.5,
+          "cohortFallbackUsed": false
+        },
+        "observation": {
+          "gameDate": "2023-10-14",
+          "sourceId": 104,
+          "sourceIndex": 54,
+          "savedPhase": "normal",
+          "savedState": "normal",
+          "contextBoundary": null
+        },
+        "signal": {
+          "savedZ": 0,
+          "valuePerGame": 0,
+          "windowSourceIds": [
+            100,
+            101,
+            102,
+            103,
+            104
+          ],
+          "windowDates": [
+            "2023-10-10",
+            "2023-10-11",
+            "2023-10-12",
+            "2023-10-13",
+            "2023-10-14"
+          ],
+          "requiredSlots": 5
+        },
+        "episode": null,
+        "lastTransition": null,
+        "lastKnownFlag": null,
+        "issuedAtUTC": null,
+        "timePrecision": "game_date",
+        "retrospectivePhaseLabelsIncluded": false
+      },
+      "composite": {
+        "status": "normal",
+        "availability": "available",
+        "reason": null,
+        "reference": {
+          "kind": "frozen_previous_regular_season",
+          "seasonId": 20222023,
+          "requiredRecordedSlots": 50,
+          "observedRecordedSlots": 50,
+          "status": "ready",
+          "sourceIds": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31,
+            32,
+            33,
+            34,
+            35,
+            36,
+            37,
+            38,
+            39,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46,
+            47,
+            48,
+            49,
+            50
+          ],
+          "dates": [
+            "2023-01-01",
+            "2023-04-01"
+          ],
+          "rawMean": 1,
+          "rawSampleSD": 1,
+          "block5SampleSD": 0.5,
+          "cohortFallbackUsed": false
+        },
+        "observation": {
+          "gameDate": "2023-10-14",
+          "sourceId": 104,
+          "sourceIndex": 54,
+          "savedPhase": "normal",
+          "savedState": "normal",
+          "contextBoundary": null
+        },
+        "signal": {
+          "savedZ": 0,
+          "valuePerGame": 0,
+          "windowSourceIds": [
+            100,
+            101,
+            102,
+            103,
+            104
+          ],
+          "windowDates": [
+            "2023-10-10",
+            "2023-10-11",
+            "2023-10-12",
+            "2023-10-13",
+            "2023-10-14"
+          ],
+          "requiredSlots": 5
+        },
+        "episode": null,
+        "lastTransition": null,
+        "lastKnownFlag": null,
+        "issuedAtUTC": null,
+        "timePrecision": "game_date",
+        "retrospectivePhaseLabelsIncluded": false
+      }
+    }
+  },
+  "blshResearch": {
+    "version": "support-conditioned-production-gap-v1",
+    "status": "provisional",
+    "reason": null,
+    "productionP": 10.0,
+    "supportDiscrepancy": 12.5,
+    "direction": "BL",
+    "includedInSavedResearchList": true,
+    "trustedForActivation": false,
+    "confidenceProbability": null,
+    "recommendation": null,
+    "sourceSnapshotDate": "2023-10-14",
+    "sourceCandidate": {
+      "version": "support-conditioned-production-gap-v1",
+      "value": 12.5,
+      "status": "concordant_research_candidate",
+      "evidence_tier": "provisional_estimated_or_extrapolated",
+      "normalized_gap": null,
+      "trusted_list_eligible": false,
+      "confidence_probability": null,
+      "recommendation": null,
+      "research_list": "BL",
+      "fresh_proxy": true,
+      "production_axis": {
+        "value": 10.0,
+        "personal_n": 1,
+        "personal_weight": 0.2,
+        "current_source_ids": [
+          104
+        ],
+        "personal_source_ids": [
+          1
+        ],
+        "prior_event_cutoff": "2023-10-14",
+        "last_current_record_age_days": 0
+      },
+      "process": {
+        "modes": [
+          "measured_current_personal_reference",
+          "missing_current_linear_estimate",
+          "missing_current_linear_estimate"
+        ],
+        "imputed_indices": [
+          1,
+          2
+        ]
+      }
+    },
+    "components": {
+      "families": {
+        "finishing": {
+          "status": "unavailable",
+          "reason": "zero_observed_shots"
+        },
+        "peripheral_activity": {
+          "status": "available",
+          "observed_hits": 2
+        }
+      },
+      "sharedOnice": {
+        "status": "partial"
+      },
+      "personalHistoryN": 1,
+      "personalWeight": 0.2,
+      "cohortWeight": 0.8,
+      "processModes": [
+        "measured_current_personal_reference",
+        "missing_current_linear_estimate",
+        "missing_current_linear_estimate"
+      ],
+      "imputedCurrentIndices": [
+        1,
+        2
+      ],
+      "appearanceAgeDays": 0,
+      "freshnessProxy": true,
+      "finishingState": "unavailable",
+      "noShootingGate": true
+    },
+    "windows": {
+      "current_ids": [
+        104
+      ],
+      "current_dates": [
+        "2023-10-14"
+      ],
+      "reference_ids": [
+        1
+      ],
+      "reference_dates": [
+        "2023-04-01"
+      ]
+    }
+  },
+  "limits": [
+    "retrospective source availability and revisions unproved",
+    "no live issue timestamp",
+    "measured process is not calibrated confidence",
+    "streak and BLSH references/scales are different",
+    "no causal luck, market value, forecast or production activation"
+  ]
+}

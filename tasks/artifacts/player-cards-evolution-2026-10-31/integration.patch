@@ -1,0 +1,25 @@
+--- a/web/components/player-cards/CurrentPlayerCardStudio.tsx
++++ b/web/components/player-cards/CurrentPlayerCardStudio.tsx
+@@ -1,4 +1,6 @@
+ import React, { useCallback, useEffect, useRef, useState } from "react";
++import PlayerAnalysisStudio from "./PlayerAnalysisStudio";
++import { analysisCaptureFromNhl } from "../../lib/player-cards/analysisSnapshot";
+ import PlayerLookup from "./PlayerLookup";
+ import PlayerArtworkControls from "./PlayerArtworkControls";
+ import { usePlayerArtwork } from "./usePlayerArtwork";
+@@ -27,6 +29,7 @@
+   const initial = useRef(selectionFromCard(initialCard)).current;
+   const [playerId, setPlayerId] = useState(initial.playerId), [season, setSeason] = useState(initial.season), [count, setCount] = useState(initial.count);
+   const [format, setFormat] = useState<CurrentNhlFormat>(initial.cardFormat), [card, setCard] = useState(initialCard), [loading, setLoading] = useState(false), [busy, setBusy] = useState(false), [status, setStatus] = useState("");
++  const [analysisOpen, setAnalysisOpen] = useState(false);
+   const [prepared, setPrepared] = useState<{ key: string; file: File } | null>(null);
+   const requestRef = useRef<AbortController | null>(null), svgRef = useRef<SVGSVGElement>(null), loadButtonRef = useRef<HTMLButtonElement>(null), busyRef = useRef(false), exportGeneration = useRef(0);
+   const sample = card ? reviewedHeroFor(card.player) : undefined;
+@@ -117,6 +120,7 @@
+     <p role="status" aria-live="polite">{status || (loading ? "Checking identity, game log and final-game schedule…" : card ? card.source === "contract-fixture" ? "Synthetic contract fixture. Not a real player’s results." : card.source === "nhl-retained" ? "Retained official NHL capture, not a current live response." : "NHL snapshot loaded at the observation time shown on the card." : "Choose a player and load a snapshot.")}</p>
+     {card && <><div className={styles.artwork}><CurrentPlayerCard card={card} format={format} hero={hero} svgRef={svgRef} /></div><div role="note"><p>{card.rankReason}</p>{card.issues.map(issue => <p key={issue}>{issue}</p>)}</div>
+       <details><summary>Source and metric definitions</summary><p>{card.historyStatement} {card.finalityStatement}</p><p>All Strengths only. Calendar-date windows and strength splits are unavailable in this source adapter.</p>{Object.entries(CURRENT_NHL_DEFINITIONS).map(([id, definition]) => <p key={id}>{definition.label}: {definition.definition}</p>)}<button disabled={busy || artworkBlocked} onClick={() => saveCardFile(new Blob([JSON.stringify(currentNhlManifest(card, format, hero), null, 2)], { type: "application/json" }), `fhfh-${card.player.id}-${format}-manifest.json`)}>Download snapshot manifest</button></details></>}
++    {card && <section aria-label="Extended player analysis"><button type="button" aria-expanded={analysisOpen} onClick={() => setAnalysisOpen(open => !open)}>{analysisOpen ? "Close category and season analysis" : "Explore category and season analysis"}</button>{analysisOpen && <PlayerAnalysisStudio key={`${card.player.id}:${card.observedAt}:${card.request.count}`} initialWindow={card.request.count} selections={[{ id: String(card.player.id), label: `${card.player.name} · ${card.player.team} · ${card.request.season}`, capture: analysisCaptureFromNhl(card), hero: artworkBlocked ? null : hero }]} />}</section>}
+     <p>Other stat suites remain in the work plan. Sustainability scores, isolated impact, on-ice chance metrics, goalie workload and milestone baselines are not inferred from these counts.</p>
+   </main>;
+ }

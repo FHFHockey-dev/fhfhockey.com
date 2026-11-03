@@ -1,0 +1,32 @@
+{
+  "identity": {
+    "version": "tweet-identity-proposal-v1",
+    "requestHash": "ee16592f1d004d415f6fa8aa7ae6f09f8eae39bb8bab3dffcf8783519d3f4b1b",
+    "directoryHash": "88dbd1e19c22a04fba95f07d049c38af533b548723bd17106f639191667ae16f",
+    "occurrences": [
+      {
+        "occurrenceId": "subject-4",
+        "canonicalId": "nhl:900001",
+        "status": "matched",
+        "evidence": {
+          "start": 4,
+          "end": 16,
+          "text": "Avery Keeper"
+        },
+        "identityConfidence": "strong"
+      }
+    ]
+  },
+  "goalieStatuses": [
+    {
+      "occurrenceId": "subject-4",
+      "canonicalId": "nhl:900001",
+      "status": "projected",
+      "evidence": {
+        "start": 4,
+        "end": 45,
+        "text": "Avery Keeper was first goalie off the ice."
+      }
+    }
+  ]
+}

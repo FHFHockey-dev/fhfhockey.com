@@ -1,0 +1,9 @@
+{
+  "web": {
+    "text": "## Runtime Log Counts\n\n**Project:** prj_LV0wbwH5gRjOsZlowzEFNGRuX7Lw\n**Grouped by:** requestPath\n**Showing:** Top 25 groups by log count; this may omit other groups.\n\n| requestPath | count |\n|---|---|\n| /api/v1/db/route-runner-tick | 171 |\n| /stats/player/8482248 | 63 |\n| /stats/player/8482250 | 63 |\n| /stats/player/8482251 | 63 |\n| /stats/player/8482259 | 63 |\n| /stats/player/8482369 | 63 |\n| /stats/player/8482399 | 63 |\n| /stats/player/8482408 | 63 |\n| /stats/player/8482438 | 63 |\n| /stats/player/8482440 | 63 |\n| /stats/player/8482441 | 63 |\n| /stats/player/8482448 | 63 |\n| /stats/player/8482449 | 63 |\n| /stats/player/8482451 | 63 |\n| /stats/player/8482452 | 63 |\n| /stats/player/8482453 | 63 |\n| /stats/player/8482454 | 63 |\n| /api/v1/db/run-rolling-forge-pipeline | 55 |\n| /api/Teams/nst-team-stats | 29 |\n| /api/v1/db/update-nst-goalies | 24 |\n| /api/v1/db/update-nst-current-season | 21 |\n| /stats/player/8478851 | 21 |\n| /stats/player/8479420 | 21 |\n| /api/v1/db/update-wgo-averages | 20 |\n| /api/v1/db/update-nst-team-daily | 18 |"
+  },
+  "functions": {
+    "text": "## Runtime Log Counts\n\n**Project:** prj_q9tnoe1pF6WAe9zPcBzBLBPZx5mQ\n**Grouped by:** requestPath\n**Showing:** Top 25 groups by log count; this may omit other groups.\n\n| requestPath | count |\n|---|---|\n| /api/fetch_team_table | 5 |"
+  },
+  "limits": "Two 24h reads failed retention; two corrected 12h reads succeeded. Counts are log events, top25 groups, not provider requests or invocation counts."
+}

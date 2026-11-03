@@ -1,0 +1,57 @@
+{
+  "status": "FAIL",
+  "hostedCalls": 0,
+  "checks": [
+    {
+      "name": "Missing shared admission prerequisite rolls back migration",
+      "status": "PASS"
+    },
+    {
+      "name": "Exact migration, RLS and least privileges",
+      "status": "PASS"
+    },
+    {
+      "name": "Default disabled control dispatches nothing",
+      "status": "PASS"
+    },
+    {
+      "name": "Idempotent enqueue, scope collision, aperture and missing finality",
+      "status": "PASS"
+    },
+    {
+      "name": "Two workers serialize on actual PostgreSQL lock; one reservation",
+      "status": "PASS"
+    },
+    {
+      "name": "Ten dataset commits, valid empty, idempotency and no unverified refund",
+      "status": "PASS"
+    },
+    {
+      "name": "Receipt failure rolls back output in same transaction",
+      "status": "PASS"
+    },
+    {
+      "name": "All-counts exact keys, missing fields, duplicates and unknown columns rejected",
+      "status": "PASS"
+    },
+    {
+      "name": "Expired/held claim survives day rollover and new cohort",
+      "status": "PASS"
+    },
+    {
+      "name": "Worker windows, conservative 24-unit/60-reservation cap and seven-step limit",
+      "status": "PASS"
+    },
+    {
+      "name": "Attested no-game day creates no job; changed WGO evidence blocks commit",
+      "status": "PASS"
+    }
+  ],
+  "migrationSha256": "a56384064e2e92ff497c61c8d9a6e8a35cfec2ff7c45403600c3a75c43f6bdc2",
+  "clockFixture": "Only clock_timestamp() in function bodies replaced for deterministic windows; exact definitions restored and compared.",
+  "postgresVersion": "15.19 (Homebrew)",
+  "error": "",
+  "serverStopped": true,
+  "disposableDataRemoved": true,
+  "ownedLockReleased": true
+}

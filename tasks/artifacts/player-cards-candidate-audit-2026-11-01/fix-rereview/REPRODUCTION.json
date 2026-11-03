@@ -1,0 +1,95 @@
+{
+  "results": [
+    {
+      "name": "normal",
+      "accepted": true,
+      "measurements": [
+        {
+          "warning": false,
+          "width": 891
+        },
+        {
+          "warning": true,
+          "width": 868
+        }
+      ],
+      "truncated": false,
+      "spans": [
+        "Reports aren't separated by reporter, so conflicts between sources can't be detected. No source link or expiry exists",
+        "for these reports."
+      ],
+      "fullWarningPreservedInAriaAndManifest": true,
+      "invalidGeometryRejected": [
+        "1121",
+        "Infinity",
+        "NaN",
+        "0",
+        "-1",
+        "missing getBBox"
+      ]
+    },
+    {
+      "name": "long-token",
+      "accepted": false,
+      "measurements": [
+        {
+          "warning": false,
+          "width": 891
+        },
+        {
+          "warning": true,
+          "width": 678
+        }
+      ],
+      "truncated": true,
+      "spans": [
+        "Source warnings are too long for this card. Read the full details; PNG export is unavailable."
+      ],
+      "fullWarningPreservedInAriaAndManifest": true,
+      "invalidGeometryRejected": []
+    },
+    {
+      "name": "wide-token",
+      "accepted": false,
+      "measurements": [
+        {
+          "warning": false,
+          "width": 891
+        },
+        {
+          "warning": true,
+          "width": 1926
+        }
+      ],
+      "truncated": false,
+      "spans": [
+        "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"
+      ],
+      "fullWarningPreservedInAriaAndManifest": true,
+      "invalidGeometryRejected": []
+    },
+    {
+      "name": "wrapped-wide",
+      "accepted": true,
+      "measurements": [
+        {
+          "warning": false,
+          "width": 891
+        },
+        {
+          "warning": true,
+          "width": 963
+        }
+      ],
+      "truncated": false,
+      "spans": [
+        "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+        "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"
+      ],
+      "fullWarningPreservedInAriaAndManifest": true,
+      "invalidGeometryRejected": []
+    }
+  ],
+  "measurementMethod": "sharp/libvips ink bounds supplied to DOM guard; native Chromium results separately inspected from pinned owner receipt",
+  "browserRerun": false
+}

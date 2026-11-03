@@ -1,0 +1,14 @@
+{
+  "uploads": [
+    {
+      "local_path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/composition-variants-01/posterized-team-colors-card.png",
+      "purpose": "create_library_file",
+      "library_artifact_type": "image"
+    },
+    {
+      "local_path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/composition-variants-01/pixelated-team-colors-card.png",
+      "purpose": "create_library_file",
+      "library_artifact_type": "image"
+    }
+  ]
+}

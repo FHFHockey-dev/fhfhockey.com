@@ -1,0 +1,121 @@
+{
+  "requestId": "CODEX-RSO-CUSTODY-REQUEST-20261101-TJ-APPROVED",
+  "sentAt": "2026-11-01T17:35:14.420996+00:00",
+  "status": "ADMISSION_INSTALLED_AWAITING_CLAUDE_COMMIT",
+  "recipient": "Claude orchestrator session1e668672 (PROV-GUARD originator); session799e2b6c was Social Share only",
+  "senderThread": "01a19764-091f-763d-a983-8c692d79200b",
+  "parentThread": "01a189f6-9a3a-7235-a989-e1af4f47b014",
+  "authority": "TJ yes to sending the exact prepared commit-or-transfer request, relayed in trusted parent delegation",
+  "outgoingMailbox": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-TO-CLAUDE.md",
+  "incomingMailbox": "tasks/artifacts/cross-platform/2026-10-24-coordination/CLAUDE-TO-CODEX.md",
+  "incomingBytesAtSend": 194553,
+  "incomingSha256AtSend": "cdfb1f7f597f83bc22122a33cf2de0f28188eeea96578fb9a3358f0ce3ea5206",
+  "requestedReplyHeading": "RSO-CUSTODY-REPLY-20261101",
+  "candidateTree": "394e3cb70d3e9995e8a1f02f75ba13973320df34",
+  "candidateCommit": "c3897d3273ca46ea25a9f2737f09c835e5ec7325",
+  "custodyTransferred": true,
+  "gitMutations": 0,
+  "lastCheckedAt": "2026-11-01T20:50:29.064330+00:00",
+  "incomingSha256LastChecked": "d7e241d1c560ecb64d6d6c3576ec2378dceecdba8dd995bcea25cbcd06d65852",
+  "incomingUnchangedSinceSend": false,
+  "ownerReplyReceived": true,
+  "watch": "Initial check plus bounded 45-second watch of incoming mailbox and both lease registries; no change observed",
+  "independentPreparation": "admission-render-checks.json passed; no real receipt or canonical patch created",
+  "continuousWatch": {
+    "startedAt": "2026-11-01T17:38:31Z",
+    "endedAt": "2026-11-01T18:18:03.154005+00:00",
+    "result": "No owner reply. Two CODEX-LEASES updates were inspected and contained no RSO transfer. Claude mailbox and PROV-GUARD custody remained unchanged.",
+    "processStopped": true
+  },
+  "heartbeat": {
+    "attempted": true,
+    "created": false,
+    "error": "Automations are only supported for local threads.",
+    "targetThread": "01a19764-091f-763d-a983-8c692d79200b",
+    "nextAction": "Parent must use a supported local-thread follow-up or relay the owner reply; no workaround cron/new task created."
+  },
+  "lastCheckKind": "Independent E3 settlement slice complete; no final admission commit response",
+  "candidateBaseStatus": "SELECTED_REPLACEMENT_PENDING_HANDOFF",
+  "releaseBaseHold": {
+    "at": "2026-11-01T20:21:45.328925+00:00",
+    "mergedCommit": "295b384da47f2a4665a76d841d3d1aa701912d8c",
+    "pr": "https://github.com/FHFHockey-dev/fhfhockey.com/pull/403",
+    "reason": "Supersede #402 candidate full tree to preserve #403; same 195-module closure and four pins",
+    "oldCandidateTree": "9820a239181765a7eae2597c32c0f380c0260b5a"
+  },
+  "replacementProposal": {
+    "base": "295b384da47f2a4665a76d841d3d1aa701912d8c",
+    "candidateTree": "394e3cb70d3e9995e8a1f02f75ba13973320df34",
+    "candidateCommit": "c3897d3273ca46ea25a9f2737f09c835e5ec7325",
+    "manifest": "CANDIDATE-AFTER-403.json",
+    "handoff": "AFTER403-HANDOFF.md",
+    "candidateClosure": "ec5bdab6593f58ec19ad9b250fb645aa377616542e98205150e22f085914968c",
+    "newCustodyRequestSent": true
+  },
+  "lastReconciledAt": "2026-11-01T20:21:45.328925+00:00",
+  "updatedRequestAt": "2026-11-01T20:35:49.254286+00:00",
+  "updatedRequestId": "RSO-ADMISSION-READY-20261101",
+  "activeManifest": "CANDIDATE.json",
+  "activeRequirements": "ADMISSION-REQUIREMENTS.json",
+  "qualificationSupplement": {
+    "coordinatedAt": "2026-11-01T19:58:55.371053+00:00",
+    "handoff": "qualification-readbacks/HANDOFF.md",
+    "captureProtocol": "qualification-capture/PROTOCOL.md",
+    "metadataReadApproval": "authorized and executed: 2 SELECTs, 0 identity rows, 4 schedule rows",
+    "actualIssuedIdentity": null,
+    "discoveryReceipt": "qualification-capture/discovery-20261101/RECEIPT.json",
+    "configurationAccess": "403 denied, no CLI fallback installed",
+    "ownerDecision": "qualification-capture/OWNER-DECISION.md",
+    "userAction": "qualification-capture/TJ-HANDOFF.md",
+    "integrityTests": 21,
+    "integritySupplement": "qualification-readbacks/HANDOFF.md",
+    "canonicalToolingChanged": false,
+    "settlementNormalizer": "qualification-capture/SETTLEMENT-HANDOFF.md"
+  },
+  "ownerReply": {
+    "heading": "RSO-CUSTODY-REPLY-20261101",
+    "at": "2026-11-01T20:29:21Z",
+    "session": "1e668672",
+    "commit": "c3897d3273ca46ea25a9f2737f09c835e5ec7325",
+    "tree": "394e3cb70d3e9995e8a1f02f75ba13973320df34",
+    "ref": "refs/rc/rso-after403-candidate",
+    "verified": true,
+    "allocatedFiles": [
+      "web/lib/projections/verifiedForgeReleases.ts",
+      "web/lib/projections/verifiedForgeReleases.test.ts"
+    ],
+    "gitCustodyTransferred": false,
+    "source": "CLAUDE-TO-CODEX.md + RSO-ADMISSION-FILES lease"
+  },
+  "admissionDelivery": {
+    "postedAt": "2026-11-01T20:35:49.254286+00:00",
+    "heading": "RSO-ADMISSION-READY-20261101",
+    "recipientSession": "1e668672",
+    "files": [
+      {
+        "path": "web/lib/projections/verifiedForgeReleases.ts",
+        "sha256": "70242a513aab76a69af41f4bdd4d64b82f345e4559f7f7014db5216752940325"
+      },
+      {
+        "path": "web/lib/projections/verifiedForgeReleases.test.ts",
+        "sha256": "e47a37977bca4582d431cc126b1e8ccb4ecb52e57f787ffba6e0b2f05f9639ca"
+      },
+      {
+        "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/after402-committed-release.json",
+        "sha256": "a9674d30f42b32d88b604a33672e311c74470075da3c9219c1bb613bb2b43b3a"
+      },
+      {
+        "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/admission/c3897d3273ca46ea25a9f2737f09c835e5ec7325/receipt.json",
+        "sha256": "fe424f17b66c82ca3232d9566a41a7dbafc76400d2f8ea4f007e9afc1758b924"
+      }
+    ],
+    "expectedFinalTree": "125279a5a50d661c4a01d585a4c593693e0ab2f6",
+    "commit": null,
+    "canonicalInstalled": true,
+    "gitOperationsByCodex": 0,
+    "relayRequired": "TJ to Claude session1e668672",
+    "lastCheckedAt": "2026-11-01T20:50:29.064330+00:00",
+    "commitResponseReceived": false,
+    "boundedWatchSeconds": 90
+  }
+}

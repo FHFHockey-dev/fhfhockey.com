@@ -1,0 +1,10 @@
+{
+  "action": "render",
+  "command": [
+    "node",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/outline-colors-07/render-preview.mjs"
+  ],
+  "exitCode": 0,
+  "elapsedSeconds": 0.289,
+  "heldBy": "qualify parent resource slot"
+}

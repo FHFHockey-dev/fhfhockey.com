@@ -1,0 +1,20 @@
+{
+  "at": "2026-10-31T21:25:53.692320+00:00",
+  "focusedTestsPassed": 143,
+  "scopedTypecheckExit": 0,
+  "testFileLintExit": 0,
+  "offlineReplayVariantsPassed": 4,
+  "originalRequestAndResultReproducedExactly": true,
+  "newPaidCalls": 0,
+  "newPaidCostNanoUsd": 0,
+  "realLedgerUnchangedAndDisabled": true,
+  "historicalLedgerUnchanged": true,
+  "originalExecutionArtifactsUnchanged": 13,
+  "unchangedRuntimeAndProtectedFiles": 15,
+  "changedApplicationFiles": [
+    "web/lib/sources/tweetLunaReview.test.ts"
+  ],
+  "frozenLabelsUnchanged": true,
+  "automaticCorrectionImplemented": false,
+  "counterfactualCorrectionApplied": false
+}

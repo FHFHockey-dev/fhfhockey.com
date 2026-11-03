@@ -1,0 +1,51 @@
+{
+  "id": "27e52882-1b62-45b8-ae89-70c0ac8b6494",
+  "startedAt": "2026-10-29T19:21:35.601Z",
+  "request": {
+    "playerId": 8484387,
+    "season": 20262027,
+    "count": 10
+  },
+  "limits": {
+    "requests": 3,
+    "requestMs": 5000,
+    "totalMs": 15000,
+    "bytesPerResponse": 524288,
+    "concurrency": 1,
+    "retries": 0,
+    "redirects": 0
+  },
+  "calls": [
+    {
+      "source": "/player/8484387/landing",
+      "status": "received",
+      "startedAt": "2026-10-29T19:21:35.602Z",
+      "finishedAt": "2026-10-29T19:21:35.805Z",
+      "bytes": 12672,
+      "sha256": "28a269cbe35b87cdb992150a4286cd92b6a65506295346090d5e0abac18c8287"
+    },
+    {
+      "source": "/player/8484387/game-log/20262027/2",
+      "status": "received",
+      "startedAt": "2026-10-29T19:21:35.807Z",
+      "finishedAt": "2026-10-29T19:21:35.923Z",
+      "bytes": 6088,
+      "sha256": "88f220948b2a11bcfdf59a1ddf851af89eadc6fd57ce469f9045c5d564b95720"
+    },
+    {
+      "source": "/club-schedule-season/PHI/20262027",
+      "status": "received",
+      "startedAt": "2026-10-29T19:21:35.925Z",
+      "finishedAt": "2026-10-29T19:21:36.019Z",
+      "bytes": 178250,
+      "sha256": "cb1872887d214a7c2e6e5311ee05d18c4a7795a1ffb87dcb3edc642c0403ba84"
+    }
+  ],
+  "status": "qualified-response",
+  "sourceReads": 3,
+  "remoteWrites": 0,
+  "observedAt": "2026-10-29T19:21:36.021Z",
+  "cardState": "ready",
+  "issues": [],
+  "finishedAt": "2026-10-29T19:21:36.023Z"
+}

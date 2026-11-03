@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-01T19:06:47.934823+00:00",
+  "command": [
+    "/usr/local/bin/node",
+    "node_modules/vitest/vitest.mjs",
+    "run",
+    "--config",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-candidate-audit-2026-11-01/audit.vitest.config.mts"
+  ],
+  "exitCode": 1,
+  "networkDenied": true
+}

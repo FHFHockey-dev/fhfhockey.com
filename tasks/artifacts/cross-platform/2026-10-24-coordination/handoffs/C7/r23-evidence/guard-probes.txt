@@ -1,0 +1,7 @@
+staticLoader           guardTestExit=1 lintRestricted=0
+dynamicLoader          guardTestExit=0 lintRestricted=0
+requireLoader          guardTestExit=0 lintRestricted=0
+dynamicRaw             guardTestExit=1 lintRestricted=0
+dynamicRawBracket      guardTestExit=0 lintRestricted=0
+verdictFromComp        guardTestExit=1 lintRestricted=0
+clean                  guardTestExit=0 lintRestricted=0

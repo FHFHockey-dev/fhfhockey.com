@@ -1,0 +1,21 @@
+{
+  "status": "PREPARED_NOT_ADMITTED",
+  "candidateTree": "a77527cdc29fd994bc0e28a4b2d5ec1b87acbe14",
+  "candidateCommit": null,
+  "expectedClosureSha256": "7083dee0a966654e413bbb673daa07a9b50d938312e9807276014921f2991368",
+  "moduleCount": 195,
+  "findings": 0,
+  "verifierSha256": "2da61a46b89df70669c454f08fbefd3a0803655a92226f0c8020aad9b9d3c456",
+  "closureWalkerSha256": "e33ccacb21dca88ef2d163dab5f16ec0c50bb817373b9ab000c2ac8e29df5bad",
+  "preparationReceipt": "candidate-closure.json",
+  "preparationReceiptSha256": "ea63386d69b67090cdc20e71d7851baa8ff18c58b3305250e3ca8e5911789d03",
+  "preparationReceiptIsCommitBacked": false,
+  "requiredEntry": {
+    "closureSha256": "7083dee0a966654e413bbb673daa07a9b50d938312e9807276014921f2991368",
+    "commit": null,
+    "receipt": null,
+    "receiptSha256": null,
+    "verifierVersion": "forge-release-sha-verifier-v1"
+  },
+  "nextAction": "Coordinated release/admission owner commits selected candidate, runs unchanged verifier on exact commit, records passing receipt and adds matching VERIFIED_FORGE_PRODUCER_CLOSURES entry. No native forecast use review is granted by this."
+}

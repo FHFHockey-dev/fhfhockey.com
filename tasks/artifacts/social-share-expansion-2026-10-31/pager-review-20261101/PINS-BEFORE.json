@@ -1,0 +1,315 @@
+{
+  "observedAt": "2026-11-01T19:42:53.083712+00:00",
+  "head": "07e044416754488ce4283299bfafde82bf324f13",
+  "classification": "Mutable working-tree observation; not an owner freeze or release candidate",
+  "files": [
+    {
+      "path": "tasks/artifacts/social-share-expansion-2026-10-31/FREEZE.md",
+      "sha256": "e85a8f5c31df1e79f28f22be294eeb12ce0fd52a312209031f746b1cc70159ad"
+    },
+    {
+      "path": "tasks/artifacts/social-share-expansion-2026-10-31/lanes/a-trends.md",
+      "sha256": "3d7d61615e90d272d21223299fc265db510f58e2e3698bd15e3850a1cbe4ba03"
+    },
+    {
+      "path": "tasks/artifacts/social-share-expansion-2026-10-31/lanes/b-skater-boards.md",
+      "sha256": "a6a067d28519fb93afb61ba86edfb2258b964caec0c496fdd331c48bc1aa1d2a"
+    },
+    {
+      "path": "tasks/artifacts/social-share-expansion-2026-10-31/lanes/c-comparison.md",
+      "sha256": "6033b0d48768ca56ba42dd08c615a23f79b30f4b5a0c15215ab96042b7470843"
+    },
+    {
+      "path": "tasks/artifacts/social-share-expansion-2026-10-31/lanes/d-schedule.md",
+      "sha256": "ffc3ad05301c53b47141f62fd30a676c45f785b4f62e54b2ac7166a888a4ba80"
+    },
+    {
+      "path": "tasks/artifacts/social-share-expansion-2026-10-31/lanes/e-crease-category.md",
+      "sha256": "de14148f72342f69da383ff3947087e81798a170f5f841abf471b80fc16142cb"
+    },
+    {
+      "path": "tasks/artifacts/social-share-expansion-2026-10-31/lanes/f-goalie-workload.md",
+      "sha256": "2d43aeadf8bd709670d6da3643476d3684ed7da64ae1015ff4b1e3d80b2f9dda"
+    },
+    {
+      "path": "tasks/artifacts/social-share-expansion-2026-10-31/lanes/g-inventory.md",
+      "sha256": "99c06905335ece44eb5670cb2ae0fac34c44df870a2b65dfdee37a44e5716448"
+    },
+    {
+      "path": "tasks/artifacts/social-share-expansion-2026-10-31/lanes/multi-cat-stars.md",
+      "sha256": "7a1b36de8603b8fa4b0957460909cf7e9ef7ec540fbddf6417e23ba9e5853bb8"
+    },
+    {
+      "path": "tasks/artifacts/social-share-expansion-2026-10-31/lanes/pp-writer-fix.md",
+      "sha256": "17be77c72f86cf6296aee004ca6f7639a5e6b608b3ebac896f3a60168c1a6814"
+    },
+    {
+      "path": "tasks/tasks-prd-social-share-expansion-2026-10-31.md",
+      "sha256": "10c77edc16fbc1ae3f5d6d83830cc1a1194e1ec8e754a9007926aebafd13735f"
+    },
+    {
+      "path": "web/components/SocialShare/PeriodControl.tsx",
+      "sha256": "dc1c09fd6307e3a7f9359b08cc64f5643d1cbcf783640f581f9442d9f2bb6a72"
+    },
+    {
+      "path": "web/components/SocialShare/PostStudio.module.scss",
+      "sha256": "f213e6a648199ebcfadeae0ef9d19487c8503f025c890e48821a23cfc0fab3ee"
+    },
+    {
+      "path": "web/components/SocialShare/PostStudio.test.tsx",
+      "sha256": "7f6ebec9924ce549397aeed8fa771f8c176748c3e9a4e2907fc5ec30a5a8daba"
+    },
+    {
+      "path": "web/components/SocialShare/PostStudio.tsx",
+      "sha256": "388afab8ed9ed37fc7bebf233e93a5073fbc258c5f4564568cddb70519670c36"
+    },
+    {
+      "path": "web/lib/socialShare/matchupWeeksFetch.ts",
+      "sha256": "89e79431e8543f680a25dcf0d141e8e419d262d371441fd5c74a7f157afb4a7f"
+    },
+    {
+      "path": "web/lib/socialShare/modules/bshBoard.sources.ts",
+      "sha256": "40b2341060a41582d22fa1b7f8ab254f2a5d4d7a3058404fd2e608439e5d4b6c"
+    },
+    {
+      "path": "web/lib/socialShare/modules/bshBoard.test.ts",
+      "sha256": "7b024b7882db4e09bac08039580ce5dcd3851268d4dd174d0c8c7e7d54cabc69"
+    },
+    {
+      "path": "web/lib/socialShare/modules/bshBoard.ts",
+      "sha256": "cc45fab00686b83bbfe5f7426b1aff873d0d7346a65de5d8b956235e324f3e0a"
+    },
+    {
+      "path": "web/lib/socialShare/modules/busyQuiet.sources.ts",
+      "sha256": "d9c0a057959e031bbb5f3c595d786e5afc9e6253b196f697ef0a834173aa698d"
+    },
+    {
+      "path": "web/lib/socialShare/modules/busyQuiet.test.ts",
+      "sha256": "29d28a360e8acfa4cbb9c8b5fca91ce3785671a5524c2efbabf1631917c122ef"
+    },
+    {
+      "path": "web/lib/socialShare/modules/busyQuiet.ts",
+      "sha256": "b90832a76988af73a4cc05e8df12483336084d3800fa9846546dfe1ab391ca9b"
+    },
+    {
+      "path": "web/lib/socialShare/modules/categoryBlueprint.sources.ts",
+      "sha256": "34a8a21e92f1c533f525fa1c38a5f35e9d846bfd8888e7a608cea5c044945042"
+    },
+    {
+      "path": "web/lib/socialShare/modules/categoryBlueprint.test.ts",
+      "sha256": "df96563ca10a84c26f6f1b9bf7e4522a11961c1ce725288b1a793f87effa61b2"
+    },
+    {
+      "path": "web/lib/socialShare/modules/categoryBlueprint.ts",
+      "sha256": "8b70c5c1fcd34f42ba69c0083e377432f8635a81452b24b919286821367350be"
+    },
+    {
+      "path": "web/lib/socialShare/modules/contract.test.ts",
+      "sha256": "c2e7d33fb2b53c2a1e31b59ec7dfe5b2773cf7c488fd1e8a89fd58bc47eca04a"
+    },
+    {
+      "path": "web/lib/socialShare/modules/contract.ts",
+      "sha256": "1ddfa1230204268382a11a728c24a81b2d928a72c309635c57ce2699b1a9c4bf"
+    },
+    {
+      "path": "web/lib/socialShare/modules/goalieGsax.sources.ts",
+      "sha256": "8447fe544d203828b8c0921ad9f2d34e806db61c1fc391e9418cfd4e0ccb27e7"
+    },
+    {
+      "path": "web/lib/socialShare/modules/goalieGsax.test.ts",
+      "sha256": "1a58cfbb4b8a36dabf87790efc10a8e4c86114a7e3a29ae498b05ac0378ad8e5"
+    },
+    {
+      "path": "web/lib/socialShare/modules/goalieGsax.ts",
+      "sha256": "6934cfbf7ff56ffc1700ac17569c9298a388b031cc0dfc7629e00f0d408eca9f"
+    },
+    {
+      "path": "web/lib/socialShare/modules/goaliePeriod.sources.ts",
+      "sha256": "b37c77bb60428452a514010f6b66ebe8de98e59cf035a72ee007ce9190642022"
+    },
+    {
+      "path": "web/lib/socialShare/modules/goaliePeriod.test.ts",
+      "sha256": "b92ef41d6bd7951a828549fc65335b7c722755ba52bdc2f43abdece71c802925"
+    },
+    {
+      "path": "web/lib/socialShare/modules/goaliePeriod.ts",
+      "sha256": "7ec3b2ac6f35cce4430649b6edebde7703aa7dd2a6c21fa8be11ef36a7b828e5"
+    },
+    {
+      "path": "web/lib/socialShare/modules/goalieRescue.sources.ts",
+      "sha256": "6efda57dc1797cea13e7bfec3f32b0972d7c88d973eb4432edffa9108c392bf1"
+    },
+    {
+      "path": "web/lib/socialShare/modules/goalieRescue.test.ts",
+      "sha256": "39206d8b6ed9c5d3eac16e12900c3c195ad36f5dbd7c3c45806e6c1c9607b22d"
+    },
+    {
+      "path": "web/lib/socialShare/modules/goalieRescue.ts",
+      "sha256": "8937fe9562cc0209c72d38572e4e5ca5697db9a4a2ecccb70dab7ec9f5f6f650"
+    },
+    {
+      "path": "web/lib/socialShare/modules/lastNightsStandouts.sources.ts",
+      "sha256": "c6b221bd21e1c3294219e123a32eab41eae8f5285726660afe8daede0503df0b"
+    },
+    {
+      "path": "web/lib/socialShare/modules/lastNightsStandouts.test.ts",
+      "sha256": "508507e77069becee5dc3c0aec76e375837b0f66dbd06f92da49fb638b57edbf"
+    },
+    {
+      "path": "web/lib/socialShare/modules/lastNightsStandouts.ts",
+      "sha256": "93c6b362623932f0ed6735d25cc4a72cda3feec76a5e4fb24f9942b01681186a"
+    },
+    {
+      "path": "web/lib/socialShare/modules/multiCatStars.sources.ts",
+      "sha256": "4ef583d3af24ad2cce999b8a33fd2268b0a12b806e0a11c54c607dcc527ffe93"
+    },
+    {
+      "path": "web/lib/socialShare/modules/multiCatStars.test.ts",
+      "sha256": "8b427250607603352886db52f963681f1f1fc043dbea64393e631ba74a20545c"
+    },
+    {
+      "path": "web/lib/socialShare/modules/multiCatStars.ts",
+      "sha256": "19aef9d2335c6291353083ccabe3c1c6d2d93495219cc7b5e56eeb6838b7cda2"
+    },
+    {
+      "path": "web/lib/socialShare/modules/nightlyFloor.sources.ts",
+      "sha256": "16b4aa89e15b79ed2c1a95f3a4236349b0cd8a053f04c6a699b4cc1f2ddf7c91"
+    },
+    {
+      "path": "web/lib/socialShare/modules/nightlyFloor.test.ts",
+      "sha256": "c1774670417ba9cf5aa411dd0adf5cbbb0dbd7b7f5f735c70413386eb03dd6b3"
+    },
+    {
+      "path": "web/lib/socialShare/modules/nightlyFloor.ts",
+      "sha256": "e838181f82cce577d9723c7c24f18d2bd75d2022625f9dcf6b6187100a31de8e"
+    },
+    {
+      "path": "web/lib/socialShare/modules/offNightEdge.sources.ts",
+      "sha256": "27c8e637437d9ec73d87d4213c15f6dc7011bba838b7711f8b9d5a21a1001295"
+    },
+    {
+      "path": "web/lib/socialShare/modules/offNightEdge.test.ts",
+      "sha256": "659f454988b576a40dce4cf0190a4fa445297596ee4c44771d257e7f5932a019"
+    },
+    {
+      "path": "web/lib/socialShare/modules/offNightEdge.ts",
+      "sha256": "ed933d33a42a5c2946368df7e4e9e7b2902e290e89333b466a94f83ed3f68e5c"
+    },
+    {
+      "path": "web/lib/socialShare/modules/riskyStarts.sources.ts",
+      "sha256": "a46de77bd3efc9be1249fe4ce6fe8073b56a504fc08a2261a63395cfa60a6149"
+    },
+    {
+      "path": "web/lib/socialShare/modules/riskyStarts.test.ts",
+      "sha256": "49296177d749e535a4b0e431eb6a104f038311beb4a455a9d36f1a1c44243562"
+    },
+    {
+      "path": "web/lib/socialShare/modules/riskyStarts.ts",
+      "sha256": "544075b4e196da915a0dfe5bf058e2986ebf82a48f78351bb85dcd0875b5d139"
+    },
+    {
+      "path": "web/lib/socialShare/modules/server.test.ts",
+      "sha256": "410d4ecaafce93ea227ff181332b6a5406f5767e0ff17011e709947caeb0b63f"
+    },
+    {
+      "path": "web/lib/socialShare/modules/server.ts",
+      "sha256": "ed828f0beb6d5e10545fbd5f8f8454ad1b4bdb1d26ea801ea064f0802bd264f7"
+    },
+    {
+      "path": "web/lib/socialShare/modules/shared/categoryCounts.test.ts",
+      "sha256": "17cd58d46023e259afa6f624a75e31f98558ae69080fcd35e7a3e9572a5b9385"
+    },
+    {
+      "path": "web/lib/socialShare/modules/shared/categoryCounts.ts",
+      "sha256": "92a4e82037e4a793e29f342dbc49d448ccf605b502d0e6152330ba6c36a6e890"
+    },
+    {
+      "path": "web/lib/socialShare/modules/shared/definitions.test.ts",
+      "sha256": "13cd8b9be23e1578df3501ce7cb35191eb2c397fbb3637cb5c23aa2b0696f6de"
+    },
+    {
+      "path": "web/lib/socialShare/modules/shared/definitions.ts",
+      "sha256": "c63abb0c32414dac8a683371b5f48a8e2b9c53d4cb5f612c9144b932e5466f85"
+    },
+    {
+      "path": "web/lib/socialShare/modules/shared/goalieInventory.fixture.ts",
+      "sha256": "eff494e85274d90f250aaa1ae0520b881b34fe71954b4e29f560ed4e5a8a39ec"
+    },
+    {
+      "path": "web/lib/socialShare/modules/shared/goalieInventory.sources.test.ts",
+      "sha256": "ab82bd9bd614353bc915e0af0ab7be6d3f24c9314b4984cfaffc6369c804ec51"
+    },
+    {
+      "path": "web/lib/socialShare/modules/shared/goalieInventory.sources.ts",
+      "sha256": "ed6c69a0b7c711377007b8d3fc7701f34f4be183052cb707dc7715153a680bee"
+    },
+    {
+      "path": "web/lib/socialShare/modules/shared/goalieInventory.ts",
+      "sha256": "71f91597d272dad777d01db09d1162e287c052d162c80de7bc9e3137197d14a8"
+    },
+    {
+      "path": "web/lib/socialShare/modules/shared/goalieLedger.sources.ts",
+      "sha256": "1baef2498457becafb501fab03ba75a6cd137f72aee25739df328375250291d0"
+    },
+    {
+      "path": "web/lib/socialShare/modules/shared/goalieLedger.ts",
+      "sha256": "6c0c05818e858596dd39ee38fb7d9a366a19c23a3021e9c2363a611edc31cdf8"
+    },
+    {
+      "path": "web/lib/socialShare/modules/shared/periodWindow.sources.ts",
+      "sha256": "c667a60dc1003d249474203074652e27c567aeacef08b0e91d4a87d38a3bbecb"
+    },
+    {
+      "path": "web/lib/socialShare/modules/shared/periodWindow.test.ts",
+      "sha256": "3a20fbc61f7f6408753becb4c4893094dd105693ac9d4792af93785fa5cd1b02"
+    },
+    {
+      "path": "web/lib/socialShare/modules/shared/periodWindow.ts",
+      "sha256": "109d69bf7e9e0fb4008b25c6d37ec274f38c40d3fbd3a43eba0d2733636a2c32"
+    },
+    {
+      "path": "web/lib/socialShare/modules/shared/skaterAppearances.sources.test.ts",
+      "sha256": "146d5b91c3eb9455c65f70c672f91e16169c3c1d84d954eafb392c68d289eacc"
+    },
+    {
+      "path": "web/lib/socialShare/modules/shared/skaterAppearances.sources.ts",
+      "sha256": "306ab4f91947a164e5b2c4b293e79348718c503d2c47577c38950e063d3da434"
+    },
+    {
+      "path": "web/lib/socialShare/modules/shared/skaterAppearances.ts",
+      "sha256": "378baa29124232cb8aecacdd2981e0a89c7b8115cb8bffe5e0433583dad94421"
+    },
+    {
+      "path": "web/lib/socialShare/modules/startSit.sources.ts",
+      "sha256": "069a8abc09d2d81f08c46f0e00c832e2e321fdfbe44831e9fb91bd5976e45cc0"
+    },
+    {
+      "path": "web/lib/socialShare/modules/startSit.test.ts",
+      "sha256": "1b36429b804d337d0df2a330703bb5e55b77fec47d0976c9b5397efd18f9d5a6"
+    },
+    {
+      "path": "web/lib/socialShare/modules/startSit.ts",
+      "sha256": "b7a64f0b03a285f4db7dc018408f77c36a8dfa908849dd8ed5c615fb3cfa363c"
+    },
+    {
+      "path": "web/lib/socialShare/modules/teamGames.sources.ts",
+      "sha256": "c624b2d1d982dbe2d7ed860543d84c73794f1147fb93191f48b7606a8ef82f4c"
+    },
+    {
+      "path": "web/lib/socialShare/modules/teamGames.test.ts",
+      "sha256": "3b3545a04cdcbfbeadc823480962fcb2b16a0a5d9fcf1c92fe499377be18f085"
+    },
+    {
+      "path": "web/lib/socialShare/modules/teamGames.ts",
+      "sha256": "5a3b0b626fedebb9512ecdc01c7ebaed1d9db494304c44abafec8a55e4a77b80"
+    },
+    {
+      "path": "web/lib/socialShare/schedule.ts",
+      "sha256": "f6047772763a790e6a052393debcde0b41e088936f450629c56986952ca2222a"
+    },
+    {
+      "path": "web/pages/api/v1/social-share/matchup-weeks.ts",
+      "sha256": "be2d912ec918814fa042b29df66e7ab7321496a14bbe844b5649fd05dab71a2b"
+    }
+  ]
+}

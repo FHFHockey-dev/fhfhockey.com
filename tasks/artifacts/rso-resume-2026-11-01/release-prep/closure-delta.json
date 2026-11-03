@@ -1,0 +1,22 @@
+{
+  "at": "2026-11-01T16:40:07.878687+00:00",
+  "selectedBase": "4965a872a9746b6129c9ac589c200560d01a1e23",
+  "baselineClosure": "cda1026d4113c98b87f7597ae2dc452549f69ae0e18f00017867ebfc799526d6",
+  "candidateClosure": "7083dee0a966654e413bbb673daa07a9b50d938312e9807276014921f2991368",
+  "moduleCount": 195,
+  "addedModules": [],
+  "removedModules": [],
+  "changedModules": [
+    {
+      "path": "web/lib/player-forecasts/rsoUsePolicy.ts",
+      "beforeSha256": "23fe44ea3d664f2303fea72caa748596fa7a7ef83de8be0bc59f909ad96c4375",
+      "afterSha256": "8299f6ff97d1ae8bf3836f1202b0eb82586cea4abf70b642a612e03c861d7aad"
+    }
+  ],
+  "baselineListed": false,
+  "candidateListed": false,
+  "note": "Neither closure is listed in current verifiedForgeReleases.ts. Captured-input admission remains an independent path; no live serving state inferred.",
+  "verifiedTree": "3dfa4f910b36dad47ea265cef9f1041b794ee915",
+  "currentCandidateTree": "a77527cdc29fd994bc0e28a4b2d5ec1b87acbe14",
+  "coverageNote": "Fourth overlay is an E2E test outside the 195-module producer closure. Every closure module remains byte-identical to the verified export."
+}

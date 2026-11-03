@@ -1,0 +1,14 @@
+{
+  "pythonVersion": "3.13.0",
+  "tlsVersion": "OpenSSL 3.0.15 3 Sep 2024",
+  "defaultVerifyPaths": {
+    "cafile": null,
+    "capath": null,
+    "openssl_cafile_env": "SSL_CERT_FILE",
+    "openssl_cafile": "/Library/Frameworks/Python.framework/Versions/3.13/etc/openssl/cert.pem",
+    "openssl_capath_env": "SSL_CERT_DIR",
+    "openssl_capath": "/Library/Frameworks/Python.framework/Versions/3.13/etc/openssl/certs"
+  },
+  "certificateValidationDisabled": false,
+  "noNetworkDiagnostic": true
+}

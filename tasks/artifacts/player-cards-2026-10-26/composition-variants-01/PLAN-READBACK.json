@@ -1,0 +1,22 @@
+{
+  "path": "tasks/tasks-prd-shareable-player-cards.md",
+  "section": "Proposed stat-suite backlog \u2014 owner-approved plan append, 2026-10-26",
+  "ids": "9.0\u20139.8",
+  "prior_content_prefix_preserved": true,
+  "seven_formats": [
+    "Sustainability",
+    "Offensive Impact",
+    "Two-Way Profile",
+    "Role & Opportunity",
+    "Results & Milestones",
+    "Player Identity",
+    "Goalie Workload & Performance"
+  ],
+  "rates_and_opportunity_retained": true,
+  "implementation_started": false,
+  "recommended_first_set": [
+    "Sustainability",
+    "Two-Way Profile",
+    "Results & Milestones"
+  ]
+}

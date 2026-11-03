@@ -1,0 +1,8 @@
+export sha check: 7b7fd6db4805c3fa82d589db1165aff25a7de6cb
+tsc exit 0
+eslint(changed dirs) exit 0
+css pure exit 0 :: PURE OK components/SocialShare/SocialShare.module.scss 53141 bytes css
+vitest social exit 0 :: 
+vitest full exit 1 :: 
+e2e list exit 0 :: Total: 34 tests in 1 file
+done

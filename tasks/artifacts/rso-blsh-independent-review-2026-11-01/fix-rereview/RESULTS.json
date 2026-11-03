@@ -1,0 +1,110 @@
+{
+  "allCurrentAndFinalReceiptPinsMatch": true,
+  "patchMatchesActualFiles": true,
+  "testsPassed": 32,
+  "regressionSensitivity": [
+    {
+      "test": "test_empty_proof_list_never_source_qualified",
+      "oldGuardRejectedByRegression": true,
+      "failures": 2,
+      "errors": 0
+    },
+    {
+      "test": "test_missing_or_malformed_proof_references_rejected",
+      "oldGuardRejectedByRegression": true,
+      "failures": 0,
+      "errors": 2
+    },
+    {
+      "test": "test_conflicting_metric_team_rejected",
+      "oldGuardRejectedByRegression": true,
+      "failures": 1,
+      "errors": 0
+    },
+    {
+      "test": "test_missing_metric_team_rejected",
+      "oldGuardRejectedByRegression": true,
+      "failures": 3,
+      "errors": 0
+    }
+  ],
+  "emptyProofOriginalProbe": "Missing explicit episode evidence",
+  "foreignTeamOriginalProbe": "Metric row identity mismatch",
+  "missingWholeRowStillUnavailable": true,
+  "independentExactComparisons": [
+    {
+      "file": "midseason-absence-cohort-20261101-01/SUMMARY.json",
+      "sha256": "d43c0e0734a90c532cf6463d8d831b327a120c7af83ba4541daccb7587a840e6",
+      "exactBytesEqual": true
+    },
+    {
+      "file": "midseason-absence-cohort-20261101-01/BASELINES.json",
+      "sha256": "450525cbcb437689d4397abc6348a6be321f6aa53a2f8a0c6aedae671855b059",
+      "exactBytesEqual": true
+    },
+    {
+      "file": "midseason-absence-cohort-20261101-01/TRACES.json",
+      "sha256": "984a8d80b96bae0e6bf7d2a32da4ef4bf66cb358f5676679431ea6da105b68c2",
+      "exactBytesEqual": true
+    },
+    {
+      "file": "absence-ledger-replay-20261101-01/SUMMARY.json",
+      "sha256": "6344e53ea4570da6b04837a03cd3c36f1c86bc07fefedcc73ee09f45ea6dd59f",
+      "exactBytesEqual": true
+    },
+    {
+      "file": "absence-ledger-replay-20261101-01/BASELINE.json",
+      "sha256": "a31782eac7468c34c3c518d18499a938abd378d20093ec0af1ff52f46237ef0a",
+      "exactBytesEqual": true
+    },
+    {
+      "file": "absence-ledger-replay-20261101-01/TRACES.json",
+      "sha256": "db7ef949b93c22cb72b40e1ab2f772e77876614977faae8fc3eb0252dccb134c",
+      "exactBytesEqual": true
+    },
+    {
+      "file": "absence-ledger-replay-20261101-01/VISUAL-CHECKS.json",
+      "sha256": "92b9ad4ed49e0d4d6427301c7c7bd43c2886cfbdbc76e4f819cbb71c3c728209",
+      "exactBytesEqual": true
+    },
+    {
+      "file": "cohort qualification",
+      "sha256": "8fcfe6388384c173756bdeae6876b4c84fc80cd9d6f7fef7e150d4a16088ba50",
+      "exactBytesEqual": true
+    }
+  ],
+  "eventsEqualExceptKnownAt": true,
+  "uniqueLedgerEvents": 59,
+  "absencesNull": 37,
+  "appearances": 22,
+  "policySteps": 295,
+  "implementerProcessReceipts": [
+    {
+      "folder": "/Users/tim/Documents/Codex/2026-10-27/task-3/midseason-absence-cohort-20261101-01/tests-02",
+      "exitCode": 0,
+      "elapsedSeconds": 0.12954816594719887
+    },
+    {
+      "folder": "/Users/tim/Documents/Codex/2026-10-27/task-3/midseason-absence-cohort-20261101-01/qualification-02",
+      "exitCode": 0,
+      "elapsedSeconds": 0.6195041669998318
+    },
+    {
+      "folder": "/Users/tim/Documents/Codex/2026-10-27/task-3/midseason-absence-cohort-20261101-01/replay-02",
+      "exitCode": 0,
+      "elapsedSeconds": 1.4818751249695197
+    },
+    {
+      "folder": "/Users/tim/Documents/Codex/2026-10-27/task-3/absence-ledger-replay-20261101-01/tests-02",
+      "exitCode": 0,
+      "elapsedSeconds": 0.08316620800178498
+    },
+    {
+      "folder": "/Users/tim/Documents/Codex/2026-10-27/task-3/absence-ledger-replay-20261101-01/replay-02",
+      "exitCode": 0,
+      "elapsedSeconds": 11.548015165957622
+    }
+  ],
+  "newProviderCalls": 0,
+  "reservedSeasonReads": 0
+}

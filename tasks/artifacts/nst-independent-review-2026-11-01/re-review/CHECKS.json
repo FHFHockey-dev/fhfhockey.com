@@ -1,0 +1,36 @@
+{
+  "atUtc": "2026-11-01T18:16:32.698175+00:00",
+  "checks": [
+    {
+      "name": "tests",
+      "command": [
+        "npm",
+        "test",
+        "--",
+        "--run",
+        "__tests__/pages/api/fetch_team_table.test.ts",
+        "__tests__/pages/api/SustainabilityStats/[playerId].test.ts",
+        "lib/nst/callerLifecycle.test.ts",
+        "__tests__/pages/api/v1/db/update-nst-gamelog.test.ts",
+        "lib/nst/jobLifecycle.server.test.ts",
+        "lib/nst/sharedAdmission.test.ts",
+        "lib/nst/client.test.ts",
+        "lib/nst/requestBudget.test.ts",
+        "lib/nst/goaliePreparation.server.test.ts",
+        "lib/nst/goalieFreshness.server.test.ts",
+        "__tests__/pages/api/v1/db/update-nst-goalies.route.test.ts",
+        "__tests__/pages/api/v1/db/cron-report.test.ts",
+        "__tests__/components/CronReportEmail/CronAuditEmail.test.tsx",
+        "lib/nst/goalieCatchup.server.test.ts",
+        "__tests__/pages/api/Teams/nst-team-stats.route.test.ts",
+        "__tests__/pages/api/v1/db/update-nst-current-season.test.ts",
+        "__tests__/pages/api/v1/db/update-nst-team-daily.test.ts",
+        "--maxWorkers=1",
+        "--minWorkers=1"
+      ],
+      "exitCode": 0
+    }
+  ],
+  "networkGuard": "offline.cjs",
+  "scope": "Owned route/runner/checkpoint adapter integration with mocked I/O; isolated PostgreSQL proof recorded separately. No provider or production verification."
+}

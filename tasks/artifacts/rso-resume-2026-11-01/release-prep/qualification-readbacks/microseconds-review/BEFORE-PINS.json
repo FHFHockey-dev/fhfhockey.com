@@ -1,0 +1,10 @@
+[
+  {
+    "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/tooling/check-readbacks.mjs",
+    "sha256": "0432b1455b0f5b7826ed9182d79e7a034b624520cd3f39af00572c166ea135c6"
+  },
+  {
+    "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/tooling/check-readbacks.test.mjs",
+    "sha256": "0bc5b8c50ac2736c2d025f0797984a6333b5eba797f94886dba6d6c7b2bb7e54"
+  }
+]

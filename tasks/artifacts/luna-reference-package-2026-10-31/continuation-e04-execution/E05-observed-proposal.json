@@ -1,0 +1,21 @@
+{
+  "identity": {
+    "version": "tweet-identity-proposal-v1",
+    "requestHash": "cb5f32997d173e7555c914cde412d97aa285d1718fd020896cf8427935f78d1d",
+    "directoryHash": "88dbd1e19c22a04fba95f07d049c38af533b548723bd17106f639191667ae16f",
+    "occurrences": [
+      {
+        "occurrenceId": "subject-4",
+        "canonicalId": "nhl:900001",
+        "status": "matched",
+        "evidence": {
+          "start": 4,
+          "end": 16,
+          "text": "Avery Keeper"
+        },
+        "identityConfidence": "strong"
+      }
+    ]
+  },
+  "goalieStatuses": []
+}

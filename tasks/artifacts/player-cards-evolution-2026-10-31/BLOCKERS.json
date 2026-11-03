@@ -1,0 +1,110 @@
+[
+  {
+    "task": "1.2",
+    "action": "Existing card custody",
+    "target": "CurrentPlayerCardStudio.tsx initial patch; later exact source/lookup paths",
+    "status": "pending",
+    "prerequisite": "Owner/lead acknowledgement of exact handoff; owner remains idle/frozen at17, which is not an explicit transfer.",
+    "deniedOperationThisSession": false,
+    "owner": "Existing card owner01a16ec2-f81c-717b-8961-8c3832fdc00f and parent lead"
+  },
+  {
+    "task": "2.4",
+    "action": "Observed ranks",
+    "target": "analysisSnapshot observed population admission",
+    "status": "pending",
+    "prerequisite": "TJ approved competition ranks 1,2,2,4 with midrank percentiles and verified complete short-season inclusion with explicit GP warnings. Implemented locally. Still requires complete qualified all-NHL valid per-metric population under one period/strength/cutoff; missing source rows are not short seasons. No extra GP/TOI/position threshold.",
+    "deniedOperationThisSession": false,
+    "owner": "Existing source owner through parent lead for complete population; numeric and short-season decisions are resolved"
+  },
+  {
+    "task": "2.5",
+    "action": "Full source binding",
+    "target": "currentNhl/currentNhl.server and advanced metric adapter",
+    "status": "pending",
+    "prerequisite": "Exact source custody plus qualified complete-season/advanced field inputs with sample/strength/source/model/finality proof. Current retained basic NHL adapter works; incomplete season rows cannot stand for STD.",
+    "deniedOperationThisSession": false,
+    "owner": "Existing card/source owner and NST/source producer through parent lead"
+  },
+  {
+    "task": "3.5",
+    "action": "Installed category view",
+    "target": "CurrentPlayerCardStudio.tsx",
+    "status": "pending",
+    "prerequisite": "Apply the preimage-pinned one-file integration after custody acknowledgement. Review copy already passes19tests, in-memory TS and offline browser; it is not installed.",
+    "deniedOperationThisSession": false,
+    "owner": "Existing card owner and parent lead; Player Cards worker after exact transfer"
+  },
+  {
+    "task": "4.1",
+    "action": "Installed opt-in season comparison",
+    "target": "CurrentPlayerCardStudio.tsx and complete-season source contract",
+    "status": "pending",
+    "prerequisite": "Same exact integration handoff, then apply verified opt-in control; qualify complete season where the three-window response cannot reconstruct it. Review copy already exports L10/STD.",
+    "deniedOperationThisSession": false,
+    "owner": "Existing card owner and qualified season-source owner"
+  },
+  {
+    "task": "5.4",
+    "action": "Canonical binding of reviewed retained BLSH evidence",
+    "target": "analysisEvidence sourceRows receipt and observed card integration",
+    "status": "pending",
+    "prerequisite": "Exact lineage review and later current-box comparison qualify dated stale research only; per-field discrepancies/unknowns and separate research PNG/manifest are now locally verified. Await existing-editor custody and owner-controlled payload wiring. Neither matching exposure nor matching TOI plus five counts admits current recommendations/advanced metrics; fresh data is not required merely for stale research display.",
+    "deniedOperationThisSession": false,
+    "owner": "Existing card owner; BLSH owner01a17e93-6d23-77b3-bb91-c200b28f80fc for retained payload delivery"
+  },
+  {
+    "task": "6.1",
+    "action": "Actual Trade Market records",
+    "target": "Existing collector owner retained source handoff",
+    "status": "pending",
+    "prerequisite": "Authorized owner contact answered2026-11-01: no successful retained Yahoo HTML, zero real observations/bundles; latest request429. Need already-authorized successful capture with body, date/source/player/season context and complete packages. No new collection authorized. Market coverage remains unknown, not empty.",
+    "deniedOperationThisSession": false,
+    "owner": "Trade Market owner01a17f54-333f-7689-8151-b63b4d84b0e2"
+  },
+  {
+    "task": "6.3",
+    "action": "Observed trades UI and export",
+    "target": "Trade context consumer/current editor",
+    "status": "pending",
+    "prerequisite": "Owner supplied specific Yahoo permission/logo receipt; no agreement-record gate. Still requires actual complete-bundle observations and verified canonical-to-NHL mapping (retained477.p.4681 maps only to canonical9923), then editor custody and verified Yahoo logo placement in UI/export.",
+    "deniedOperationThisSession": false,
+    "owner": "Trade Market source owner plus existing card owner"
+  },
+  {
+    "task": "6.4",
+    "action": "Qualified illustrative examples and optional anchors",
+    "target": "Trade ideas/preseason anchor consumer",
+    "status": "pending",
+    "prerequisite": "Admitted examples from6.3 and any actual dated preseason anchor; no fabricated fairness, acceptance, pick value or projection source.",
+    "deniedOperationThisSession": false,
+    "owner": "Trade Market source owner plus Player Cards consumer after admitted records"
+  },
+  {
+    "task": "7.2",
+    "action": "Existing goalie lookup",
+    "target": "PlayerLookup.tsx and current selection/editor flow",
+    "status": "pending",
+    "prerequisite": "Exact lookup/selection custody and qualified goalie/team/season inventory. Supplied fixture search clears prior skater state; existing lookup not modified.",
+    "deniedOperationThisSession": false,
+    "owner": "Existing card/lookup owner and Claude Social Share inventory producer"
+  },
+  {
+    "task": "7.5",
+    "action": "Observed goalie inventory binding",
+    "target": "Claude goalieInventory.sources producer \u2192 card consumer",
+    "status": "pending",
+    "prerequisite": "Runtime/real-render evidence exists; newer freeze a398781fd and audit/lead disposition reconciled. Raw goalie-inventory-v1 is unchanged; card does not use audited rank/winner/team-coverage helpers. Await an already-retained exact versioned inventory JSON/source receipt and card integration custody. Reviewed artifacts retain PNGs, not inventory JSON. Qualify per-field provenance/freshness; overall ready/partial state is not full source/population proof. Preserve reporter gaps and unavailable forecasts. No new query/credential/repair authority inferred. TJ-authorized retained-only request sent to Claude SS lead in CODEX-PC-AUTHORIZED-RETAINED-INVENTORY-REQUEST-20261101; acknowledgement/payload pending. Post-rereview check: no retainedJSON/reply supplied; rawDTO/fixture remain frozen while owner adds period-control helpers outside card imports. This code change is not source evidence.",
+    "deniedOperationThisSession": false,
+    "owner": "Claude Social Share SS-EXPANSION lead for retained payload; existing card owner for integration"
+  },
+  {
+    "task": "8.1",
+    "action": "Canonical integration and independent review",
+    "target": "Existing card editor/routes and accepted source handoffs",
+    "status": "pending",
+    "prerequisite": "Exact card handoff and outstanding source qualifications, then applied canonical integration/review. Independent candidate P2/P3 re-review is closed at player-cards-candidate-audit-2026-11-01/fix-rereview/REVIEW.md; this no longer blocks the local candidate. The16newsourcepaths and one-file unapplied integration patch remain ready. PR402 did not release these16paths or transfer editorcustody. No release/Git/deployment authority.",
+    "deniedOperationThisSession": false,
+    "owner": "Parent lead with existing card owner and independent reviewer"
+  }
+]

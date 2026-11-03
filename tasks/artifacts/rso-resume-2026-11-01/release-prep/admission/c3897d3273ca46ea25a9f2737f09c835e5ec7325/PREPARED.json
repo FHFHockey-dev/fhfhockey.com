@@ -1,0 +1,18 @@
+{
+  "commit": "c3897d3273ca46ea25a9f2737f09c835e5ec7325",
+  "tree": "394e3cb70d3e9995e8a1f02f75ba13973320df34",
+  "sourcePinsMatched": 4,
+  "expectedClosureSha256": "ec5bdab6593f58ec19ad9b250fb645aa377616542e98205150e22f085914968c",
+  "prepared": true,
+  "entry": {
+    "closureSha256": "ec5bdab6593f58ec19ad9b250fb645aa377616542e98205150e22f085914968c",
+    "commit": "c3897d3273ca46ea25a9f2737f09c835e5ec7325",
+    "receipt": "tasks/artifacts/rso-resume-2026-11-01/release-prep/admission/c3897d3273ca46ea25a9f2737f09c835e5ec7325/receipt.json",
+    "receiptSha256": "fe424f17b66c82ca3232d9566a41a7dbafc76400d2f8ea4f007e9afc1758b924",
+    "verifierVersion": "forge-release-sha-verifier-v1",
+    "note": "RSO issued-method lineage and retained participation replay, commit c3897d327: 195-module closure, 0 findings."
+  },
+  "canonicalSourceChanged": false,
+  "runtimeAdmissionTests": "pending isolated test of proposed files",
+  "gitMutations": 0
+}

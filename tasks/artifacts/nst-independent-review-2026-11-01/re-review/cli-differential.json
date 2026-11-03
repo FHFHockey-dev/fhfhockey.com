@@ -1,0 +1,55 @@
+{
+  "status": "PASS",
+  "cases": [
+    {
+      "variant": "old",
+      "outcome": "success",
+      "events": [],
+      "error": "NST lifecycle configuration or deadline unavailable."
+    },
+    {
+      "variant": "old",
+      "outcome": "loader-failure",
+      "events": [],
+      "error": "NST lifecycle configuration or deadline unavailable."
+    },
+    {
+      "variant": "old",
+      "outcome": "output-failure",
+      "events": [],
+      "error": "NST lifecycle configuration or deadline unavailable."
+    },
+    {
+      "variant": "current",
+      "outcome": "success",
+      "events": [
+        "bootstrap",
+        "nst_job_begin_v1",
+        "fetch-and-output",
+        "nst_job_finish_v1"
+      ],
+      "error": null
+    },
+    {
+      "variant": "current",
+      "outcome": "loader-failure",
+      "events": [
+        "bootstrap"
+      ],
+      "error": "fixture loader failure"
+    },
+    {
+      "variant": "current",
+      "outcome": "output-failure",
+      "events": [
+        "bootstrap",
+        "nst_job_begin_v1",
+        "fetch-and-output",
+        "nst_job_hold_v1"
+      ],
+      "error": "Team-table CLI outcome was not successful."
+    }
+  ],
+  "networkCalls": 0,
+  "envFilesRead": 0
+}

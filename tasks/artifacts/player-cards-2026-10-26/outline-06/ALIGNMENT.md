@@ -1,0 +1,9 @@
+# Genuine player outline alignment
+
+The visible thickness is5pixels in the1200px card’s design coordinate system. The original player image remains x600,y4,width600,height337.5 for the reviewed1296×729cutout. The new mask is rasterized at2×:1200×675content with11raster-pixel transparent padding on each side, producing1222×697. Its image is positioned x594.5,y−1.5,width611,height348.5. Content therefore lands exactly at the original player frame; padding does not shift or scale it.
+
+A two-pass squared Euclidean distance transform computes disk dilation outward from the50%alpha contour. The ring uses a one-raster-pixel antialias ramp (0.5designpx) and destination-out subtraction of original alpha. Every pixel inside the50%contour is excluded, including softly opaque interior pixels; no interior white underpaint. Original antialiased alpha/RGB is retained in the upper player layer. Internal holes are outlined toward their transparent side; holes wider than twice the5px stroke remain open, while narrow gaps may close as a genuine outward stroke normally does.
+
+Layer order: background/stripes → independent right-edge logo and its existing fade → white alpha ring → unchanged treated player → existing context band/text. No drop shadow, CSS filter, image border or rectangular contour. The padded mask stays transparent at its asset edges. The unchanged header/card clip still clips the player and outline where the artwork meets the frame; the player is not moved to expose clipped portions.
+
+Preview and PNG serialize the identical embedded ring asset in the same SVG. The immutable export key and manifest bind its source-alpha hash, generated PNG hash, version,scale,padding and5px thickness. RGB treatment passes/stage hashes remain unchanged. Intermediate work is bounded to two million mask pixels; only two completed outlines are cached, one per reviewed sample at present. Temporary canvases are released. No source photograph/cutout/logo is modified.

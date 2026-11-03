@@ -1,0 +1,15 @@
+{
+  "command": [
+    "npm",
+    "test",
+    "--",
+    "--run",
+    "--config",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/vitest.config.mts",
+    "web/lib/player-cards/currentNhl.test.ts"
+  ],
+  "cwd": "/Users/tim/Code/fhfhockey.com/web",
+  "exitCode": 0,
+  "elapsedSeconds": 0.879,
+  "sharedSlot": "parent run-check.py verify owns token"
+}

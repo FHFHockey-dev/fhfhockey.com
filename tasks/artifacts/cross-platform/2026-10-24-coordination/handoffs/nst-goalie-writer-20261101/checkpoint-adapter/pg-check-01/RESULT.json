@@ -1,0 +1,9 @@
+{
+  "status": "FAIL",
+  "hostedCalls": 0,
+  "checks": [],
+  "migrationSha256": "6c3dd5dd3c298f779f3a1448c7ea078299aa6e9302506ef5781ca04546a3f2bc",
+  "clockFixture": "Only clock_timestamp() in function bodies replaced for deterministic windows; exact definitions restored and compared.",
+  "error": "Command '['/opt/homebrew/opt/postgresql@15/bin/initdb', '-D', '/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/pg-check-01/pgdata', '-A', 'trust', '-U', 'fixture_owner', '--no-locale', '--encoding=UTF8']' returned non-zero exit status 1.",
+  "ownedLockReleased": true
+}

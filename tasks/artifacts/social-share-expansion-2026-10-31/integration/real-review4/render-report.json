@@ -1,0 +1,62 @@
+[
+ {
+  "space": {
+   "emptyPx": 10,
+   "bodyPx": 861,
+   "textOutside": 0,
+   "minFont": 12
+  },
+  "name": "nightly-floor",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "space": {
+   "emptyPx": 10,
+   "bodyPx": 861,
+   "textOutside": 0,
+   "minFont": 12
+  },
+  "name": "cardio-masters",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "space": {
+   "emptyPx": 5,
+   "bodyPx": 828,
+   "textOutside": 0,
+   "minFont": 12
+  },
+  "name": "risky-starts",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "space": {
+   "emptyPx": 7,
+   "bodyPx": 845,
+   "textOutside": 0,
+   "minFont": 11
+  },
+  "name": "start-sit",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ }
+]

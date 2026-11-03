@@ -1,0 +1,17 @@
+{
+  "at": "2026-10-26T18:55:41.386864+00:00",
+  "checkpoint03": {
+    "successfulUploads": 0,
+    "library_file_ids": [],
+    "error": "tools/list TLS before preparation"
+  },
+  "checkpoint04": {
+    "directApprovalAt": "2026-10-26T18:52:45Z",
+    "singleApprovedAttemptExecuted": true,
+    "successfulUploads": 0,
+    "library_file_ids": [],
+    "error": "library upload failed: hosted apps tools/list request failed: TLS",
+    "uncertainOutcome": false,
+    "actionStopped": true
+  }
+}

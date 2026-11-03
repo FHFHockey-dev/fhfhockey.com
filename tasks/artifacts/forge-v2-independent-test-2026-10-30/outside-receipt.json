@@ -1,0 +1,15 @@
+{
+  "check": "outside",
+  "command": [
+    "node",
+    "node_modules/vitest/vitest.mjs",
+    "run",
+    "outside-",
+    "--reporter=verbose"
+  ],
+  "cwd": "/tmp/forge-v2-independent-hkh8ulbm/web",
+  "exit": 1,
+  "durationSeconds": 1.5194509029388428,
+  "environment": "allowlisted; no inherited credentials; no env files copied",
+  "log": "outside.log"
+}

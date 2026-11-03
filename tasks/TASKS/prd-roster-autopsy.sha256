@@ -1,0 +1,17 @@
+8b7f3d3eca6426bbfb59876c27902549c850cbccec1a6503b9ba1e12ea2a59b2  tasks/TASKS/prd-roster-autopsy.md
+9043fe42b9b39d310056acfe9fd4b25503918421188f6cf2ba16c5816c60dff1  tasks/TASKS/prd-rso-consolidated-2026-10-09.md
+8ed2330cc8d85f9e0ec0c083a21ad7fccea2538087882c5005d5056f18acd163  tasks/TASKS/prd-buy-low-sell-high.md
+dacfff009388e1f0003ddaa3b6d68f212868318c4a77f5627cdd70529c334875  web/pages/api/v1/roster-schedule-optimizer/provider.ts
+c69fe7338e73d2581e68efd086d8ea64ba170f3eed5b85b281ebeace969e7c67  web/lib/integrations/yahoo/rosterPlanning.ts
+312cc3a7ef085038096a1c884db01dabfc1226c6b8dea422607ea18762a5bb0b  web/lib/integrations/fantrax/contracts.ts
+1ea5348dac87e044d00953ddacf50b386e0da0947a25e313c172e6aeed6b1935  web/lib/rosterScheduleOptimizer/planningTypes.ts
+5b11305f6d24cb70a1b886e380f5e088f2221a0a925705e3b805acbd4a39e9be  web/lib/rosterScheduleOptimizer/matching.ts
+744d37c2bb7a6ed98c28d3499153bda6ba532b99f23b6aabe394572dfd79e63a  web/lib/rosterScheduleData/forgeDailyBridge.ts
+23fe44ea3d664f2303fea72caa748596fa7a7ef83de8be0bc59f909ad96c4375  web/lib/player-forecasts/rsoUsePolicy.ts
+cafbfae310001084850704df9afd3cb0287d29a10709bed50e73cf219b67db79  web/lib/buyLowSellHigh/trade.ts
+05a0358ce2376c7cc9ecd6fdf6cc42c0df05e0688e1fb5ad4d07d39882c72ec1  tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-LEASES.json
+8d1683c7f0fd70f88117b891bcf591d673af4183c7f4b56258527e4ed73be7ca  tasks/artifacts/cross-platform/2026-10-24-coordination/CLAUDE-LEASES.json
+414544544450306102e016266cc7e1d3333dbe458f7046d067420933a390503f  /Users/tim/Documents/Codex/2026-10-27/task-5/README.md
+4743529a56a09817556505adc1d20dbf8fdaa40b8123fe8dc9ad0fe947ce5a5f  /Users/tim/Documents/Codex/2026-10-27/task-5/PERMISSION-AND-ATTRIBUTION.md
+ad37469069475dbad73ca1cb4a72779eb061a3cda07cfe119312a09d8ad9fb3a  /Users/tim/Documents/Codex/2026-10-27/task-5/integration_v1/HANDOFF.md
+2342d4b58756faa411c6fd2f771d12a1781c29131788a093e988dbc97724fab7  /Users/tim/Documents/Codex/2026-10-27/task-5/integration_v1/evidence/source-check-20261027T221208Z.json

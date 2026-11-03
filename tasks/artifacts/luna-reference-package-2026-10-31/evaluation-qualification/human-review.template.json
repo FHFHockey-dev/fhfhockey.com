@@ -1,0 +1,48 @@
+{
+  "version": "luna-independent-human-review-template-v1",
+  "status": "unfilled_not_ground_truth",
+  "isRuntimeResponse": false,
+  "familyId": null,
+  "recordId": null,
+  "sourceTextHash": null,
+  "sourceRevisionId": null,
+  "suppliedIdentitySnapshotHash": null,
+  "preparedPacketHash": null,
+  "policyAndRubricHash": null,
+  "reviewer": {
+    "id": null,
+    "reviewedAt": null,
+    "human": false,
+    "blindToPredictions": false,
+    "blindToAssistantExpectedAnswers": false,
+    "independenceLimitations": null
+  },
+  "identityOccurrences": [],
+  "goalieWordingLabels": [],
+  "allowedExactUtf16EvidenceVariants": [],
+  "omissionsAndUnknownsReviewed": false,
+  "allSuppliedOccurrencesAccountedFor": false,
+  "decisions": {
+    "eligibility": "unresolved",
+    "statementBindingHash": null,
+    "questionBindingHash": null,
+    "expectedRelevance": null,
+    "expectedSupport": null,
+    "expectedWording": null,
+    "notRunReason": null
+  },
+  "adjudication": {
+    "required": null,
+    "secondHumanReviewerId": null,
+    "reviewedAt": null,
+    "originalReviewHashes": [],
+    "disagreements": [],
+    "resolutionEvidenceReference": null,
+    "unresolvedFields": []
+  },
+  "complete": false,
+  "frozenBeforePredictions": false,
+  "canApply": false,
+  "canPublish": false,
+  "automaticTrainingAuthorized": false
+}

@@ -1,0 +1,6 @@
+{
+  "url": "http://127.0.0.1:3125/player-cards",
+  "error": "PermissionError: [Errno 1] Operation not permitted",
+  "phase": "connect blocked by local sandbox; no HTTP request executed",
+  "listener_observed": 40487
+}

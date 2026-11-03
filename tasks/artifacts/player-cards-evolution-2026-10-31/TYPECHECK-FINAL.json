@@ -1,0 +1,16 @@
+{
+  "command": "node --max-old-space-size=8192 node_modules/typescript/bin/tsc --noEmit --incremental false --extendedDiagnostics",
+  "exitCode": 2,
+  "heapFailureResolved": true,
+  "diagnostics": [
+    "lib/socialShare/modules/contract.test.ts(26,157): error TS2352: Conversion of type '{ x: string; pos?: undefined; since?: undefined; other?: undefined; } | { pos: string; x?: undefined; since?: undefined; other?: undefined; } | { since: string; x?: undefined; pos?: undefined; other?: undefined; } | { ...; }' to type 'Record<string, string>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.",
+    "lib/socialShare/modules/contract.test.ts(71,34): error TS2740: Type '{ id: string; isPreloading: boolean; exports: any; require: Require; filename: string; loaded: boolean; parent: Module | null | undefined; children: Module[]; path: string; paths: string[]; }' is missing the following properties from type 'AnyShareModule': title, summary, group, basis, and 5 more.",
+    "lib/socialShare/modules/server.ts(18,5): error TS2322: Type '{ state: ShareDataState; reasons: string[]; evidence: SharePostEvidence; data: any; teams: string[]; expiresAt: string; schemaVersion: 1; id: string; post: string; generatedAt: string; timeZone: string; settings: any; fixture: boolean; }' is not assignable to type 'SharePostSnapshot'.",
+    "lib/socialShare/modules/server.ts(21,5): error TS2322: Type '{ state: \"missing\"; reasons: string[]; evidence: SharePostEvidence; data: null; teams: never[]; expiresAt: null; schemaVersion: 1; id: string; post: string; generatedAt: string; timeZone: string; settings: any; fixture: boolean; }' is not assignable to type 'SharePostSnapshot'."
+  ],
+  "diagnosticCount": 4,
+  "cardDiagnostics": 0,
+  "memoryUsedKiB": 6650362,
+  "elapsedSeconds": 65.85,
+  "sourceLogSHA256": "cf3b627b2a3452e68a8bdf1e713952ae8138c702d6fa671e61fe66c6b8121320"
+}

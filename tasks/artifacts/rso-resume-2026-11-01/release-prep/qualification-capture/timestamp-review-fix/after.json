@@ -1,0 +1,110 @@
+{
+  "at": "2026-11-01T21:04:16.743492+00:00",
+  "checks": [
+    {
+      "name": "readback-UTC",
+      "timezone": "UTC",
+      "exitCode": 0,
+      "counts": {
+        "tests": 18,
+        "pass": 18,
+        "fail": 0
+      },
+      "log": "readback-UTC.log",
+      "command": [
+        "/usr/local/bin/node",
+        "-r",
+        "ts-node/register",
+        "-r",
+        "tsconfig-paths/register",
+        "--test",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-readbacks.test.ts"
+      ]
+    },
+    {
+      "name": "settlement-UTC",
+      "timezone": "UTC",
+      "exitCode": 0,
+      "counts": {
+        "tests": 18,
+        "pass": 18,
+        "fail": 0
+      },
+      "log": "settlement-UTC.log",
+      "command": [
+        "/usr/local/bin/node",
+        "--test",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-settlement.test.mjs"
+      ]
+    },
+    {
+      "name": "readback-America-New_York",
+      "timezone": "America/New_York",
+      "exitCode": 0,
+      "counts": {
+        "tests": 18,
+        "pass": 18,
+        "fail": 0
+      },
+      "log": "readback-America-New_York.log",
+      "command": [
+        "/usr/local/bin/node",
+        "-r",
+        "ts-node/register",
+        "-r",
+        "tsconfig-paths/register",
+        "--test",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-readbacks.test.ts"
+      ]
+    },
+    {
+      "name": "settlement-America-New_York",
+      "timezone": "America/New_York",
+      "exitCode": 0,
+      "counts": {
+        "tests": 18,
+        "pass": 18,
+        "fail": 0
+      },
+      "log": "settlement-America-New_York.log",
+      "command": [
+        "/usr/local/bin/node",
+        "--test",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-settlement.test.mjs"
+      ]
+    },
+    {
+      "name": "issued-packet",
+      "timezone": "UTC",
+      "exitCode": 0,
+      "counts": {
+        "tests": 11,
+        "pass": 11,
+        "fail": 0
+      },
+      "log": "issued-packet.log",
+      "command": [
+        "/usr/local/bin/node",
+        "--test",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-issued-packet.test.mjs"
+      ]
+    },
+    {
+      "name": "integrity",
+      "timezone": "UTC",
+      "exitCode": 0,
+      "counts": {
+        "tests": 21,
+        "pass": 21,
+        "fail": 0
+      },
+      "log": "integrity.log",
+      "command": [
+        "/usr/local/bin/node",
+        "--test",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/tooling/check-readbacks.test.mjs"
+      ]
+    }
+  ],
+  "environment": "curated, no production variables, loopback network guard; Node 22.11.0"
+}

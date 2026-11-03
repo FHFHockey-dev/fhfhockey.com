@@ -1,0 +1,22 @@
+{
+  "atUtc": "2026-11-01T16:26:41.080452+00:00",
+  "checks": [
+    {
+      "name": "tests",
+      "command": [
+        "npm",
+        "test",
+        "--",
+        "--run",
+        "lib/nst/goalieCatchup.server.test.ts",
+        "__tests__/pages/api/v1/db/update-nst-goalies.route.test.ts",
+        "lib/routeRunner/core.test.ts",
+        "--maxWorkers=1",
+        "--minWorkers=1"
+      ],
+      "exitCode": 1
+    }
+  ],
+  "networkGuard": "offline.cjs",
+  "scope": "Owned route/runner/checkpoint adapter integration with mocked I/O; isolated PostgreSQL proof recorded separately. No provider or production verification."
+}

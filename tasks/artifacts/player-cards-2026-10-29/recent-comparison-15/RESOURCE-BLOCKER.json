@@ -1,0 +1,25 @@
+{
+  "at": "2026-10-29T17:41:44.479104+00:00",
+  "owner": {
+    "absent": false
+  },
+  "testsRun": false,
+  "typeLintRun": false,
+  "browserRun": false,
+  "ownSlotHeld": false,
+  "acquisitionAttempts": [
+    {
+      "mode": "immediate",
+      "exitCode": 75
+    },
+    {
+      "mode": "bounded30s Unity",
+      "exitCode": 75
+    },
+    {
+      "mode": "bounded30s Claude S2",
+      "exitCode": 75
+    }
+  ],
+  "coordinatorRequest": "CODEX-20261029-PC15-RESOURCE-COORDINATOR-REQUEST"
+}

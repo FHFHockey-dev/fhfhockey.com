@@ -1,0 +1,13 @@
+{
+  "command": [
+    "npm",
+    "test",
+    "--",
+    "--run",
+    "--config",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-29/live-load-16/vitest.config.mts"
+  ],
+  "exitCode": 0,
+  "elapsedSeconds": 2.679,
+  "sharedSlot": "parent verify token"
+}

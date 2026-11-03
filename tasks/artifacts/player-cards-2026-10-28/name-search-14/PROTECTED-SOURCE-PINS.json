@@ -1,0 +1,67 @@
+[
+  {
+    "path": "web/components/player-cards/HeroPlayerCard.tsx",
+    "bytes": 5207,
+    "sha256": "12894428c08a893675d4b03f74b49e9f4e9a7e23bfe72dc2810f26d96f86055c"
+  },
+  {
+    "path": "web/components/player-cards/PlayerCardShareStudio.tsx",
+    "bytes": 9045,
+    "sha256": "f7e9b934edd88877d21c97497af057483befb2590731c2fc20863521d5d269f7"
+  },
+  {
+    "path": "web/components/player-cards/CurrentPlayerCard.tsx",
+    "bytes": 6132,
+    "sha256": "27b7a4de07a5e86ab001498f3b0f85338b244d7447c24fa05c52fdccdd69af43"
+  },
+  {
+    "path": "web/components/player-cards/PlayerHeroHeader.tsx",
+    "bytes": 4944,
+    "sha256": "c7997ab2d2f834d9d65cbefc27cbd72242ef228a9ff7e2a6834d38c468bf6873"
+  },
+  {
+    "path": "web/components/player-cards/PlayerArtworkControls.tsx",
+    "bytes": 2111,
+    "sha256": "360a3a03a35d0db7b40cd2ca414c6d5791b6ea6cbf8dbe2d5a4280bcb3558a82"
+  },
+  {
+    "path": "web/components/player-cards/usePlayerArtwork.ts",
+    "bytes": 4781,
+    "sha256": "ce852791cec30c0eb1b145bd1b31963456b9ec90d9fabcc050f5913544529ea9"
+  },
+  {
+    "path": "web/lib/player-cards/currentNhlExport.ts",
+    "bytes": 1768,
+    "sha256": "5bd3dec3130372066ebf487cf33bb9c4d8b1e928637d1d8b2660e8b477b5e666"
+  },
+  {
+    "path": "web/lib/player-cards/currentArtwork.ts",
+    "bytes": 2415,
+    "sha256": "c10d6c49d505ca0114c47a8dc1ac6f075e90f5ea0d118d24c38039c12efe8930"
+  },
+  {
+    "path": "web/lib/player-cards/currentArtwork.test.ts",
+    "bytes": 4274,
+    "sha256": "6bb47a0f84e5c2c983fd9e4155cc106771a1368da5fd3cfefb3c1a41156f2ae1"
+  },
+  {
+    "path": "web/lib/player-cards/shareExport.ts",
+    "bytes": 8327,
+    "sha256": "d09598ad242f990662de13fa355ea60f6b87f6d37259e44a7a6afc10b12e3d4b"
+  },
+  {
+    "path": "web/lib/player-cards/reviewedHeroSamples.ts",
+    "bytes": 2186,
+    "sha256": "b2ed3a541240d600dbbb9fcf10d1bac2ce2db6476484b908f0f3469210cec0cc"
+  },
+  {
+    "path": "web/lib/player-cards/teamLogo.ts",
+    "bytes": 2342,
+    "sha256": "8cc47f9f57feff380c4af32e9bf3b96b5506f1e1c75d29c42cbdbce43295aa47"
+  },
+  {
+    "path": "web/public/player-cards/hero-samples/8476453.png",
+    "bytes": 1302004,
+    "sha256": "2010d97f1e1c631f7ccf154d991517f3b6923df7739d756e39ed06140aa1f278"
+  }
+]

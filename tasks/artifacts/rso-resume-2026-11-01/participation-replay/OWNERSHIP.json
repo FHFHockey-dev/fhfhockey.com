@@ -1,0 +1,23 @@
+{
+  "status": "completed local slice; handed back to Codex RSO owner; no active writer",
+  "owner": "Codex RSO resume, parent 01a189f6-9a3a-7235-a989-e1af4f47b014",
+  "at": "2026-11-01T14:04:38.114486+00:00",
+  "head": "01e6c3bc04ed110d41c76daebe0111bba7e3dce7",
+  "scope": "Keep issued participation bound to its own revision on baseline contribution replay; preserve all forecast gates and prior missing-suffix repair",
+  "paths": [
+    {
+      "path": "web/lib/player-forecasts/rsoUsePolicy.ts",
+      "baseline_sha256": "dd5d0c48e32d77ab7b3bf0b7a44e7dcd5dfde26314bfe6cc1788831742eb2c8b"
+    },
+    {
+      "path": "web/lib/player-forecasts/rsoUsePolicy.test.ts",
+      "baseline_sha256": "bda984e71954a157f644e84e8a7fbb5b89b27a3b7f790e18c633e51b5f9f6a90"
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/planningReproducibility.test.ts",
+      "baseline_sha256": "5e6a5857e1955b12f11a26af4d1e9e1e75d11a0b00c4b4ff0c1202e1b0eb93c6"
+    }
+  ],
+  "authority": "Parent continuation of authorized RSO readiness work; same Codex owner and files as preceding slice; no competing current writer observed.",
+  "completed_at": "2026-11-01T14:07:50.844336+00:00"
+}

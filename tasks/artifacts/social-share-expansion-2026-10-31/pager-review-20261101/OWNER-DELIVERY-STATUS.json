@@ -1,0 +1,77 @@
+{
+  "checkedAt": "2026-11-01T20:43:22.136898+00:00",
+  "ownerSession": "799e2b6c-f303-4317-8af1-8a92ac6bcb75",
+  "transcriptPath": "/Users/tim/.claude/projects/-Users-tim-Code-fhfhockey-com/799e2b6c-f303-4317-8af1-8a92ac6bcb75.jsonl",
+  "transcriptSha256": "a3fb810d2b1fc35fae4cfe58861bc61814b7502586196e0eb19249494411ec65",
+  "markerOccurrences": {
+    "CODEX-SS-PAGER": 0,
+    "PR403-RECONCILIATION": 0,
+    "F2-REFRESH-RESULTS": 0,
+    "CODEX-TO-CLAUDE.md": 58
+  },
+  "recentRecordMetadata": [
+    {
+      "type": "attachment",
+      "timestamp": "2026-11-01T20:14:44.361Z",
+      "stopReason": null
+    },
+    {
+      "type": "api-request",
+      "timestamp": "2026-11-01T20:14:44.578Z",
+      "stopReason": null
+    },
+    {
+      "type": "last-prompt",
+      "timestamp": null,
+      "stopReason": null
+    },
+    {
+      "type": "custom-title",
+      "timestamp": null,
+      "stopReason": null
+    },
+    {
+      "type": "agent-name",
+      "timestamp": null,
+      "stopReason": null
+    },
+    {
+      "type": "mode",
+      "timestamp": null,
+      "stopReason": null
+    },
+    {
+      "type": "atis-latch",
+      "timestamp": null,
+      "stopReason": null
+    },
+    {
+      "type": "pr-link",
+      "timestamp": "2026-11-01T20:14:44.680Z",
+      "stopReason": null
+    },
+    {
+      "type": "bridge-session",
+      "timestamp": null,
+      "stopReason": null
+    },
+    {
+      "type": "pr-link",
+      "timestamp": "2026-11-01T20:14:44.984Z",
+      "stopReason": null
+    },
+    {
+      "type": "assistant",
+      "timestamp": "2026-11-01T20:14:50.426Z",
+      "stopReason": "end_turn"
+    },
+    {
+      "type": "system",
+      "timestamp": "2026-11-01T20:14:54.827Z",
+      "stopReason": null
+    }
+  ],
+  "latestRelevantAssistantAt": "2026-11-01T20:14:50.426Z",
+  "latestRelevantAssistantClaim": "Release completed at295b384da; Codex found no blockers or highs and its one medium was fixed.",
+  "interpretation": "Transcript contains no unique markers for this pager review or its residual reproductions and ends after the older-audit-based release report. No delivery/acknowledgement of this review can be established; owner needs an explicit relay. This is not proof about activity in another session."
+}

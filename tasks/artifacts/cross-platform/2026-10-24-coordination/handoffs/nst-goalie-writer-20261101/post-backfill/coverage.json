@@ -1,0 +1,616 @@
+[
+  {
+    "checked_at": "2026-11-01 15:36:48.498375+00",
+    "database_name": "postgres",
+    "wgo_rows_read": 82,
+    "wgo_expected_rows": 82,
+    "wgo_distinct_keys": 82,
+    "wgo_per_date": [
+      {
+        "date": "2026-10-27",
+        "rows": 22,
+        "nullGameIds": 0,
+        "gamesPlayedSum": 22,
+        "duplicateGameDayPossible": false
+      },
+      {
+        "date": "2026-10-28",
+        "rows": 9,
+        "nullGameIds": 0,
+        "gamesPlayedSum": 9,
+        "duplicateGameDayPossible": false
+      },
+      {
+        "date": "2026-10-29",
+        "rows": 24,
+        "nullGameIds": 0,
+        "gamesPlayedSum": 24,
+        "duplicateGameDayPossible": false
+      },
+      {
+        "date": "2026-10-30",
+        "rows": 7,
+        "nullGameIds": 0,
+        "gamesPlayedSum": 7,
+        "duplicateGameDayPossible": false
+      },
+      {
+        "date": "2026-10-31",
+        "rows": 20,
+        "nullGameIds": 0,
+        "gamesPlayedSum": 20,
+        "duplicateGameDayPossible": false
+      }
+    ],
+    "wgo_excluded_or_unknown": null,
+    "tables": [
+      {
+        "dataset": "nst_gamelog_goalie_5v5_counts",
+        "per_date": [
+          {
+            "date": "2026-10-27",
+            "rows": 22,
+            "matched": 22,
+            "nullToi": 0,
+            "zeroToi": 0
+          },
+          {
+            "date": "2026-10-28",
+            "rows": 9,
+            "matched": 9,
+            "nullToi": 0,
+            "zeroToi": 0
+          },
+          {
+            "date": "2026-10-29",
+            "rows": 24,
+            "matched": 24,
+            "nullToi": 0,
+            "zeroToi": 0
+          },
+          {
+            "date": "2026-10-30",
+            "rows": 7,
+            "matched": 7,
+            "nullToi": 0,
+            "zeroToi": 0
+          },
+          {
+            "date": "2026-10-31",
+            "rows": 20,
+            "matched": 20,
+            "nullToi": 0,
+            "zeroToi": 0
+          }
+        ],
+        "rows_read": 82,
+        "season_rows": 82,
+        "distinct_keys": 82,
+        "absent_wgo_keys": null,
+        "matched_wgo_keys": 82,
+        "null_field_counts": {
+          "hd_sv_percentage": 2,
+          "avg_goal_distance": 12
+        },
+        "missing_core_fields": null,
+        "absent_from_paired_table": null,
+        "invalid_identity_or_exposure": null,
+        "unmatched_or_invalid_season_rows": null
+      },
+      {
+        "dataset": "nst_gamelog_goalie_5v5_rates",
+        "per_date": [
+          {
+            "date": "2026-10-27",
+            "rows": 22,
+            "matched": 22,
+            "nullToi": 0,
+            "zeroToi": 0
+          },
+          {
+            "date": "2026-10-28",
+            "rows": 9,
+            "matched": 9,
+            "nullToi": 0,
+            "zeroToi": 0
+          },
+          {
+            "date": "2026-10-29",
+            "rows": 24,
+            "matched": 24,
+            "nullToi": 0,
+            "zeroToi": 0
+          },
+          {
+            "date": "2026-10-30",
+            "rows": 7,
+            "matched": 7,
+            "nullToi": 0,
+            "zeroToi": 0
+          },
+          {
+            "date": "2026-10-31",
+            "rows": 20,
+            "matched": 20,
+            "nullToi": 0,
+            "zeroToi": 0
+          }
+        ],
+        "rows_read": 82,
+        "season_rows": 82,
+        "distinct_keys": 82,
+        "absent_wgo_keys": null,
+        "matched_wgo_keys": 82,
+        "null_field_counts": {
+          "hd_sv_percentage": 2,
+          "avg_goal_distance": 12
+        },
+        "missing_core_fields": null,
+        "absent_from_paired_table": null,
+        "invalid_identity_or_exposure": null,
+        "unmatched_or_invalid_season_rows": null
+      },
+      {
+        "dataset": "nst_gamelog_goalie_all_rates",
+        "per_date": [
+          {
+            "date": "2026-10-27",
+            "rows": 22,
+            "matched": 22,
+            "nullToi": 0,
+            "zeroToi": 0
+          },
+          {
+            "date": "2026-10-28",
+            "rows": 9,
+            "matched": 9,
+            "nullToi": 0,
+            "zeroToi": 0
+          },
+          {
+            "date": "2026-10-29",
+            "rows": 24,
+            "matched": 24,
+            "nullToi": 0,
+            "zeroToi": 0
+          },
+          {
+            "date": "2026-10-30",
+            "rows": 7,
+            "matched": 7,
+            "nullToi": 0,
+            "zeroToi": 0
+          },
+          {
+            "date": "2026-10-31",
+            "rows": 20,
+            "matched": 20,
+            "nullToi": 0,
+            "zeroToi": 0
+          }
+        ],
+        "rows_read": 82,
+        "season_rows": 82,
+        "distinct_keys": 82,
+        "absent_wgo_keys": null,
+        "matched_wgo_keys": 82,
+        "null_field_counts": {
+          "hd_sv_percentage": 1,
+          "avg_goal_distance": 5
+        },
+        "missing_core_fields": null,
+        "absent_from_paired_table": null,
+        "invalid_identity_or_exposure": null,
+        "unmatched_or_invalid_season_rows": null
+      },
+      {
+        "dataset": "nst_gamelog_goalie_ev_counts",
+        "per_date": [
+          {
+            "date": "2026-10-27",
+            "rows": 22,
+            "matched": 22,
+            "nullToi": 0,
+            "zeroToi": 0
+          },
+          {
+            "date": "2026-10-28",
+            "rows": 9,
+            "matched": 9,
+            "nullToi": 0,
+            "zeroToi": 0
+          },
+          {
+            "date": "2026-10-29",
+            "rows": 24,
+            "matched": 24,
+            "nullToi": 0,
+            "zeroToi": 0
+          },
+          {
+            "date": "2026-10-30",
+            "rows": 7,
+            "matched": 7,
+            "nullToi": 0,
+            "zeroToi": 0
+          },
+          {
+            "date": "2026-10-31",
+            "rows": 20,
+            "matched": 20,
+            "nullToi": 0,
+            "zeroToi": 0
+          }
+        ],
+        "rows_read": 82,
+        "season_rows": 82,
+        "distinct_keys": 82,
+        "absent_wgo_keys": null,
+        "matched_wgo_keys": 82,
+        "null_field_counts": {
+          "hd_sv_percentage": 1,
+          "avg_goal_distance": 8
+        },
+        "missing_core_fields": null,
+        "absent_from_paired_table": null,
+        "invalid_identity_or_exposure": null,
+        "unmatched_or_invalid_season_rows": null
+      },
+      {
+        "dataset": "nst_gamelog_goalie_ev_rates",
+        "per_date": [
+          {
+            "date": "2026-10-27",
+            "rows": 22,
+            "matched": 22,
+            "nullToi": 0,
+            "zeroToi": 0
+          },
+          {
+            "date": "2026-10-28",
+            "rows": 9,
+            "matched": 9,
+            "nullToi": 0,
+            "zeroToi": 0
+          },
+          {
+            "date": "2026-10-29",
+            "rows": 24,
+            "matched": 24,
+            "nullToi": 0,
+            "zeroToi": 0
+          },
+          {
+            "date": "2026-10-30",
+            "rows": 7,
+            "matched": 7,
+            "nullToi": 0,
+            "zeroToi": 0
+          },
+          {
+            "date": "2026-10-31",
+            "rows": 20,
+            "matched": 20,
+            "nullToi": 0,
+            "zeroToi": 0
+          }
+        ],
+        "rows_read": 82,
+        "season_rows": 82,
+        "distinct_keys": 82,
+        "absent_wgo_keys": null,
+        "matched_wgo_keys": 82,
+        "null_field_counts": {
+          "hd_sv_percentage": 1,
+          "avg_goal_distance": 8
+        },
+        "missing_core_fields": null,
+        "absent_from_paired_table": null,
+        "invalid_identity_or_exposure": null,
+        "unmatched_or_invalid_season_rows": null
+      },
+      {
+        "dataset": "nst_gamelog_goalie_pk_counts",
+        "per_date": [
+          {
+            "date": "2026-10-27",
+            "rows": 21,
+            "matched": 21,
+            "nullToi": 0,
+            "zeroToi": 0
+          },
+          {
+            "date": "2026-10-28",
+            "rows": 9,
+            "matched": 9,
+            "nullToi": 0,
+            "zeroToi": 0
+          },
+          {
+            "date": "2026-10-29",
+            "rows": 24,
+            "matched": 24,
+            "nullToi": 0,
+            "zeroToi": 0
+          },
+          {
+            "date": "2026-10-30",
+            "rows": 6,
+            "matched": 6,
+            "nullToi": 0,
+            "zeroToi": 0
+          },
+          {
+            "date": "2026-10-31",
+            "rows": 19,
+            "matched": 19,
+            "nullToi": 0,
+            "zeroToi": 0
+          }
+        ],
+        "rows_read": 79,
+        "season_rows": 79,
+        "distinct_keys": 79,
+        "absent_wgo_keys": [
+          {
+            "date": "2026-10-27",
+            "name": "Connor Hellebuyck",
+            "goalieId": 8476945
+          },
+          {
+            "date": "2026-10-30",
+            "name": "Joey Daccord",
+            "goalieId": 8478916
+          },
+          {
+            "date": "2026-10-31",
+            "name": "Mackenzie Blackwood",
+            "goalieId": 8478406
+          }
+        ],
+        "matched_wgo_keys": 79,
+        "null_field_counts": {
+          "sv_percentage": 4,
+          "hd_sv_percentage": 23,
+          "ld_sv_percentage": 26,
+          "md_sv_percentage": 25,
+          "avg_goal_distance": 36,
+          "avg_shot_distance": 4
+        },
+        "missing_core_fields": null,
+        "absent_from_paired_table": null,
+        "invalid_identity_or_exposure": null,
+        "unmatched_or_invalid_season_rows": null
+      },
+      {
+        "dataset": "nst_gamelog_goalie_pk_rates",
+        "per_date": [
+          {
+            "date": "2026-10-27",
+            "rows": 21,
+            "matched": 21,
+            "nullToi": 0,
+            "zeroToi": 0
+          },
+          {
+            "date": "2026-10-28",
+            "rows": 9,
+            "matched": 9,
+            "nullToi": 0,
+            "zeroToi": 0
+          },
+          {
+            "date": "2026-10-29",
+            "rows": 24,
+            "matched": 24,
+            "nullToi": 0,
+            "zeroToi": 0
+          },
+          {
+            "date": "2026-10-30",
+            "rows": 6,
+            "matched": 6,
+            "nullToi": 0,
+            "zeroToi": 0
+          },
+          {
+            "date": "2026-10-31",
+            "rows": 19,
+            "matched": 19,
+            "nullToi": 0,
+            "zeroToi": 0
+          }
+        ],
+        "rows_read": 79,
+        "season_rows": 79,
+        "distinct_keys": 79,
+        "absent_wgo_keys": [
+          {
+            "date": "2026-10-27",
+            "name": "Connor Hellebuyck",
+            "goalieId": 8476945
+          },
+          {
+            "date": "2026-10-30",
+            "name": "Joey Daccord",
+            "goalieId": 8478916
+          },
+          {
+            "date": "2026-10-31",
+            "name": "Mackenzie Blackwood",
+            "goalieId": 8478406
+          }
+        ],
+        "matched_wgo_keys": 79,
+        "null_field_counts": {
+          "sv_percentage": 4,
+          "hd_sv_percentage": 23,
+          "ld_sv_percentage": 26,
+          "md_sv_percentage": 25,
+          "avg_goal_distance": 36,
+          "avg_shot_distance": 4
+        },
+        "missing_core_fields": null,
+        "absent_from_paired_table": null,
+        "invalid_identity_or_exposure": null,
+        "unmatched_or_invalid_season_rows": null
+      },
+      {
+        "dataset": "nst_gamelog_goalie_pp_counts",
+        "per_date": [
+          {
+            "date": "2026-10-27",
+            "rows": 21,
+            "matched": 21,
+            "nullToi": 0,
+            "zeroToi": 0
+          },
+          {
+            "date": "2026-10-28",
+            "rows": 9,
+            "matched": 9,
+            "nullToi": 0,
+            "zeroToi": 0
+          },
+          {
+            "date": "2026-10-29",
+            "rows": 22,
+            "matched": 22,
+            "nullToi": 0,
+            "zeroToi": 0
+          },
+          {
+            "date": "2026-10-30",
+            "rows": 7,
+            "matched": 7,
+            "nullToi": 0,
+            "zeroToi": 0
+          },
+          {
+            "date": "2026-10-31",
+            "rows": 19,
+            "matched": 19,
+            "nullToi": 0,
+            "zeroToi": 0
+          }
+        ],
+        "rows_read": 78,
+        "season_rows": 78,
+        "distinct_keys": 78,
+        "absent_wgo_keys": [
+          {
+            "date": "2026-10-27",
+            "name": "Casey DeSmith",
+            "goalieId": 8479193
+          },
+          {
+            "date": "2026-10-29",
+            "name": "Jonas Johansson",
+            "goalieId": 8477992
+          },
+          {
+            "date": "2026-10-29",
+            "name": "Nico Daws",
+            "goalieId": 8482076
+          },
+          {
+            "date": "2026-10-31",
+            "name": "Arsenii Sergeev",
+            "goalieId": 8482949
+          }
+        ],
+        "matched_wgo_keys": 78,
+        "null_field_counts": {
+          "sv_percentage": 43,
+          "hd_sv_percentage": 70,
+          "ld_sv_percentage": 68,
+          "md_sv_percentage": 69,
+          "avg_goal_distance": 74,
+          "avg_shot_distance": 43
+        },
+        "missing_core_fields": null,
+        "absent_from_paired_table": null,
+        "invalid_identity_or_exposure": null,
+        "unmatched_or_invalid_season_rows": null
+      },
+      {
+        "dataset": "nst_gamelog_goalie_pp_rates",
+        "per_date": [
+          {
+            "date": "2026-10-27",
+            "rows": 21,
+            "matched": 21,
+            "nullToi": 0,
+            "zeroToi": 0
+          },
+          {
+            "date": "2026-10-28",
+            "rows": 9,
+            "matched": 9,
+            "nullToi": 0,
+            "zeroToi": 0
+          },
+          {
+            "date": "2026-10-29",
+            "rows": 22,
+            "matched": 22,
+            "nullToi": 0,
+            "zeroToi": 0
+          },
+          {
+            "date": "2026-10-30",
+            "rows": 7,
+            "matched": 7,
+            "nullToi": 0,
+            "zeroToi": 0
+          },
+          {
+            "date": "2026-10-31",
+            "rows": 19,
+            "matched": 19,
+            "nullToi": 0,
+            "zeroToi": 0
+          }
+        ],
+        "rows_read": 78,
+        "season_rows": 78,
+        "distinct_keys": 78,
+        "absent_wgo_keys": [
+          {
+            "date": "2026-10-27",
+            "name": "Casey DeSmith",
+            "goalieId": 8479193
+          },
+          {
+            "date": "2026-10-29",
+            "name": "Jonas Johansson",
+            "goalieId": 8477992
+          },
+          {
+            "date": "2026-10-29",
+            "name": "Nico Daws",
+            "goalieId": 8482076
+          },
+          {
+            "date": "2026-10-31",
+            "name": "Arsenii Sergeev",
+            "goalieId": 8482949
+          }
+        ],
+        "matched_wgo_keys": 78,
+        "null_field_counts": {
+          "sv_percentage": 43,
+          "hd_sv_percentage": 70,
+          "ld_sv_percentage": 68,
+          "md_sv_percentage": 69,
+          "avg_goal_distance": 74,
+          "avg_shot_distance": 43
+        },
+        "missing_core_fields": null,
+        "absent_from_paired_table": null,
+        "invalid_identity_or_exposure": null,
+        "unmatched_or_invalid_season_rows": null
+      }
+    ]
+  }
+]

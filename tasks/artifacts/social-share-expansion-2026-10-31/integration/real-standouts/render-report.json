@@ -1,0 +1,77 @@
+[
+ {
+  "space": {
+   "emptyPx": 9,
+   "bodyPx": 845,
+   "textOutside": 0,
+   "minFont": 13.44
+  },
+  "name": "under",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "space": {
+   "emptyPx": 9,
+   "bodyPx": 845,
+   "textOutside": 0,
+   "minFont": 13.44
+  },
+  "name": "all",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "space": {
+   "emptyPx": 9,
+   "bodyPx": 861,
+   "textOutside": 0,
+   "minFont": 13.44
+  },
+  "name": "goalies",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "space": {
+   "emptyPx": 9,
+   "bodyPx": 845,
+   "textOutside": 0,
+   "minFont": 13.44
+  },
+  "name": "forwards",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "space": {
+   "emptyPx": 9,
+   "bodyPx": 845,
+   "textOutside": 0,
+   "minFont": 13.44
+  },
+  "name": "defensemen",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ }
+]

@@ -1,0 +1,82 @@
+[
+  {
+    "scenario": "fresh",
+    "key": "posterized-team-colors:fhfh-portrait-v1:4d1eb2d09934e9b5bf717f554dcfbd46ad6b17eee21c1cf4faca77fae64d3608:logo:430c6a4073da40b9d2e147c2528dba317f019273390ef2bdd43363895c5e0fc2:outline:fhfh-alpha-outline-v2:5:white:#FFFFFF:860c1b2949082deffee1feb4a57b4428d472c4fd56afa664d1735d9968614745",
+    "outlineKey": "fhfh-alpha-outline-v2:5:white:#FFFFFF:860c1b2949082deffee1feb4a57b4428d472c4fd56afa664d1735d9968614745",
+    "images": [
+      {
+        "kind": "logo",
+        "style": null,
+        "rect": [
+          "840",
+          "-100",
+          "480",
+          "480"
+        ],
+        "sha256": "430c6a4073da40b9d2e147c2528dba317f019273390ef2bdd43363895c5e0fc2"
+      },
+      {
+        "kind": "outline",
+        "style": null,
+        "rect": [
+          "594.5",
+          "-1.5",
+          "611",
+          "348.5"
+        ],
+        "sha256": "860c1b2949082deffee1feb4a57b4428d472c4fd56afa664d1735d9968614745"
+      },
+      {
+        "kind": "player",
+        "style": "image-rendering: auto;",
+        "rect": [
+          "600",
+          "4",
+          "600",
+          "337.5"
+        ],
+        "sha256": "4d1eb2d09934e9b5bf717f554dcfbd46ad6b17eee21c1cf4faca77fae64d3608"
+      }
+    ]
+  },
+  {
+    "scenario": "after-pixelated-stack",
+    "key": "posterized-team-colors:fhfh-portrait-v1:4d1eb2d09934e9b5bf717f554dcfbd46ad6b17eee21c1cf4faca77fae64d3608:logo:430c6a4073da40b9d2e147c2528dba317f019273390ef2bdd43363895c5e0fc2:outline:fhfh-alpha-outline-v2:5:white:#FFFFFF:860c1b2949082deffee1feb4a57b4428d472c4fd56afa664d1735d9968614745",
+    "outlineKey": "fhfh-alpha-outline-v2:5:white:#FFFFFF:860c1b2949082deffee1feb4a57b4428d472c4fd56afa664d1735d9968614745",
+    "images": [
+      {
+        "kind": "logo",
+        "style": null,
+        "rect": [
+          "840",
+          "-100",
+          "480",
+          "480"
+        ],
+        "sha256": "430c6a4073da40b9d2e147c2528dba317f019273390ef2bdd43363895c5e0fc2"
+      },
+      {
+        "kind": "outline",
+        "style": null,
+        "rect": [
+          "594.5",
+          "-1.5",
+          "611",
+          "348.5"
+        ],
+        "sha256": "860c1b2949082deffee1feb4a57b4428d472c4fd56afa664d1735d9968614745"
+      },
+      {
+        "kind": "player",
+        "style": "image-rendering: auto;",
+        "rect": [
+          "600",
+          "4",
+          "600",
+          "337.5"
+        ],
+        "sha256": "4d1eb2d09934e9b5bf717f554dcfbd46ad6b17eee21c1cf4faca77fae64d3608"
+      }
+    ]
+  }
+]

@@ -1,0 +1,432 @@
+[
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/BEFORE.json",
+    "bytes": 1535,
+    "sha256": "02b23bfad1af9c88763d722ec7c7c7081c859b803662c66d7128ebc595b6c590"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/insufficient-L10-manifest.json",
+    "bytes": 10392,
+    "sha256": "743cc2eef8a0ad32ee1a245989b0b4e47a1965bc8ac8a5ddd4ba229682e1bca1"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/EVIDENCE.json",
+    "bytes": 8867,
+    "sha256": "cbf9983353d52ce20653103df2fe7a870024ead96a1c302a47ef91c302b08f25"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/types.log",
+    "bytes": 156,
+    "sha256": "200c685a1d2a676dcedc0f76432d2848eac7dbec19ba24c39592f39ff755e3d4"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/SOURCE-PINS-PENDING.json",
+    "bytes": 1535,
+    "sha256": "3dc657fe4b7c1580929632ea64709edd56687e0f85010f8eae05fa3af1faed1f"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/verify-command.json",
+    "bytes": 654,
+    "sha256": "772d7801b41d12a167ccac5ea59526c2f0d26dacc1e5c0e79d73c9c70dccc3bc"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/vitest.config.mts",
+    "bytes": 712,
+    "sha256": "a04f897035d54e2a6e78c9a7b0f3a37295004dd80e3fc7f5a58d4c5b21f1f517"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/browser.log",
+    "bytes": 51,
+    "sha256": "8242e0f032710e5b8c85498ad2a4405c491ce59e3227264a1189e1674ac78ad5"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/preview.html",
+    "bytes": 450915,
+    "sha256": "95b467b8d4984bb7fc81713c99680b76eec79a8628c18bacf4c57f405d6c61ce"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/render.log",
+    "bytes": 259,
+    "sha256": "24be1a6785348bd10b5f4b8957f0ba50aedeb777f2b428f859cba639973dad22"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/runtime.json",
+    "bytes": 10977,
+    "sha256": "00714dbe720655e262c49e679613565bd2953e371b0a1c85d007d4fb82d389c4"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/OWNERSHIP.json",
+    "bytes": 1252,
+    "sha256": "81ed2e5504719a90835284d3f18c199cefe2df12118ff304f4e5be28bf1f105f"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/provider-contract.mjs",
+    "bytes": 10923,
+    "sha256": "5456c96b3f0dc3c7f95ba7fc58063a70b2ae244f6355c8f5ceaee4b697490fd0"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/render-preview.mjs",
+    "bytes": 2861,
+    "sha256": "e3c42d90e998d403e58e24be4fb09cad049913cd7128ae4adafd491522211d86"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/handoff-server.py",
+    "bytes": 3108,
+    "sha256": "d6f0745cbee3d8086a54bab712fa32728f1d89af757d115a0ee84d58cfa1b16f"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/tests-command.json",
+    "bytes": 675,
+    "sha256": "58dc7a41a4672a9737651e4f4ff12b489728bf6e03cb4f795bc438d06b6148df"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/verify.log",
+    "bytes": 53,
+    "sha256": "203e44811e03e83a9cbecb90deeeeade4a03eca02c3903c9b1c70301740ba260"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/desktop.png",
+    "bytes": 675060,
+    "sha256": "de1f95e323769346f45f1c87cf3e1fba5ee9f7d1452bd6a820bd50320aa01ac6"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/PRESERVED-PREVIEW.json",
+    "bytes": 296,
+    "sha256": "16c5065f48345c896fc0fac74636fbab6f879af77038d040b121ad8f2bf01acb"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/types-command.json",
+    "bytes": 684,
+    "sha256": "c65d43528716e293e01ea0dca58baedc32c522325925b36a8dd6f3e9cdcf7489"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/SOURCE-PINS.json",
+    "bytes": 1535,
+    "sha256": "09e4770ef04a120a6eade27db461a732c179597fe0bee83a7be7f7c8a6fa2274"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/source.patch",
+    "bytes": 35977,
+    "sha256": "00cc0f5a3698215adfae8c0240416859f77b6dce2a0372c71fc270d9c2c8f27e"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/serve-preview.mjs",
+    "bytes": 10604,
+    "sha256": "4867dfd314c1461d3d9edad7ab05dd061e427e23d8195f5ed1696f5aec53b9e3"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/BROWSER-VERIFICATION.json",
+    "bytes": 1799,
+    "sha256": "d387a6fa4b3db1035dd07f6df4b00b14a63d42872c299ad6772b80f1bff52f60"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/provider.mjs",
+    "bytes": 12644,
+    "sha256": "8face738f596cde5aa4b91c801beb2571be8f87c7a27870305d3e08780d43e00"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/preview.css",
+    "bytes": 177,
+    "sha256": "f4c0a5ab2c9608efbd2ff69935d9586a63d0c828743ddd28ea58ba6cc25bc196"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/results-manifest.json",
+    "bytes": 9898,
+    "sha256": "2081322214dcc3589d5b59e4131f4fe0fef3900a41735ab8fb91e904070e4789"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/first-browser-command.json",
+    "bytes": 653,
+    "sha256": "cd65d8db741d73238c106abc25d9a70d2a923f424590428a92499ec89e8c93de"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/pixelated-team-colors.png",
+    "bytes": 591086,
+    "sha256": "0a0c528588267d93dc0a3e50d42af66958d74f970d78c9299bb1a0af2121b649"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/run-check.py",
+    "bytes": 3468,
+    "sha256": "eb118bd8a2fe8ab4e8cc8086a4fc007ed2a7525b6f8fdc5362bf0c281cbd094e"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/verify-batch.py",
+    "bytes": 1253,
+    "sha256": "ac4d4ad76cbcb15877f18f633813c77e1ebc877f0c9037aa37a7b8ed65c69340"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/capture-current.mjs",
+    "bytes": 4841,
+    "sha256": "9635cb45c916a5c6c2755dcf7fd425318ad1051e96ba015bbdc08616da750570"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/comparison-card.png",
+    "bytes": 360984,
+    "sha256": "a7d47a029782b8c73a8caeed722b7fe2b29acfe4c1a629f2fec1422b2cfca85e"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/preview-entry.tsx",
+    "bytes": 2873,
+    "sha256": "df566f65bf29ec269fb834a9ae4c5f11581396a144382ca4e929f3d32ac6847a"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/focused-domain.log",
+    "bytes": 682,
+    "sha256": "2b51602ef6ce7b6d6c8a94e7716355db7b1ba8e9d785e274d6b77c4094446d06"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/final-lint-command.json",
+    "bytes": 608,
+    "sha256": "a1eb94539e7fda2a0152a1a4474d941596469eaf6cd574da757d7a5953875f39"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/KEEP-RUNTIME.json",
+    "bytes": 9783,
+    "sha256": "8612c9aed233ce11867b8669df55a77dffce4f1e93b1fa93f6fbe59e5592e013"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/posterized-team-colors.png",
+    "bytes": 639815,
+    "sha256": "5e9d457f89de9eaa5920e9bc7076941f8810b17aed83b58413a644c0ef6bd88d"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/browser-command.json",
+    "bytes": 654,
+    "sha256": "15583ed752f20af1cebb94e3e24e7953624d7ed98c0211a9f8303ad20a79f2a6"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/final-types.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/render-command.json",
+    "bytes": 298,
+    "sha256": "9a11c1b88c291ce27ca3938d3c5fa60821e49dd64eb86043194ef11ab3e139fc"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/posterized-team-colors-manifest.json",
+    "bytes": 10245,
+    "sha256": "02b4544dab0c2d9bafcc02de50b3c93b32d7b9e63095e8bb58499e8cef7ea4a6"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/offline.setup.ts",
+    "bytes": 392,
+    "sha256": "1f5f36af850464317c4dec5386d3c7bad39dbd625a2cafd5f4751055bbdfe928"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/first-types-command.json",
+    "bytes": 684,
+    "sha256": "c65d43528716e293e01ea0dca58baedc32c522325925b36a8dd6f3e9cdcf7489"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/first-browser.log",
+    "bytes": 452,
+    "sha256": "8d0190d8f55bad5ac577183e8405dafef84178674216b5ed25e1607a138e20d5"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/RESOURCE-RELEASE.json",
+    "bytes": 202,
+    "sha256": "180e78fefda0af6a61f0af35b4fed6a8cf3b4648b2f38b762796845354d0e8da"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/first-types.log",
+    "bytes": 156,
+    "sha256": "200c685a1d2a676dcedc0f76432d2848eac7dbec19ba24c39592f39ff755e3d4"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/focused-domain-command.json",
+    "bytes": 394,
+    "sha256": "abc31ed9427c083c73a89214c35184e0ce0bc9b6e75aeac23439e9f45dcc7674"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/INDEPENDENT-ARITHMETIC.json",
+    "bytes": 892,
+    "sha256": "a7841713377e950c994817a0be97a98d2c4963901fac78f5c2822a4dcbe90969"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/PROTECTED-SOURCE-PINS.json",
+    "bytes": 1867,
+    "sha256": "bde6f1b3ff37ae10cc6af618e5fbe6f3e3cf290371c6d22d4ece455361899079"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/source-pending.patch",
+    "bytes": 34426,
+    "sha256": "0331a24fb2bfa1b8be6febc22e2f6d9a6b8743cb02fe9724e385fb71aeb427f2"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/phone.png",
+    "bytes": 368858,
+    "sha256": "c01f3ec93f1916fa61e030e7c0cfbcb72724fbc65cb921898a7c9898f7243c97"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/insufficient-L10.png",
+    "bytes": 574192,
+    "sha256": "9bdf80b0bf1b6d97711346199ffb7e4d4b3ce41f6939cecd8aec1851a7ce952b"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/tsconfig.json",
+    "bytes": 2196,
+    "sha256": "ad8adf4b67a428cc1c76098c272d3e8a0c0e8679f360295445736485dbc1f892"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/tests.log",
+    "bytes": 1230,
+    "sha256": "1961c581ebe830473652be72a08fb89901617e2fdde5db8b65f66434ab5cc3e5"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/OWNER-READ-REQUEST.md",
+    "bytes": 1176,
+    "sha256": "7509f2568e77372321f6e451e657f554246352ac874a501fe0bef7c91bc74fce"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/final-types-command.json",
+    "bytes": 356,
+    "sha256": "d30c079abdcfaa78b2fd41747f500d84306d5038cffe2e7eab8ddc5cc85e27d7"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/pixelated-team-colors-manifest.json",
+    "bytes": 10238,
+    "sha256": "af7d8aa96e2d3be728867f6869a52e8a424bc925e61b8a218f6e5cc55873b966"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/browser-check.mjs",
+    "bytes": 9042,
+    "sha256": "a4ced67dd0f9b3e05e5f946f53b0d7a518cc73f8a1027f8df73afc11479cf360"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/final-lint.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/HANDOFF.md",
+    "bytes": 4558,
+    "sha256": "5848e53c6de605b184f5f7aebf5b13c7eaa05f9e790f282139954c6e8950b3a3"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/RESOURCE-BLOCKER.json",
+    "bytes": 485,
+    "sha256": "89ff46bf6c21d76777b8092ae2f80242a1dd54a8105a81a0eb33889d9ef989a3"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/HANDOFF-PENDING.md",
+    "bytes": 3403,
+    "sha256": "d0df275c5e729a4c1d7dbaa8618d750654f5e81962c0ceded272f677bca0442f"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/current-snapshot-15/landing.json",
+    "bytes": 26221,
+    "sha256": "7649c48e6e665288ba88e8679b3e57a08944f2157e6446aa9d7942c0a0675e66"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/current-snapshot-15/team-schedule.json",
+    "bytes": 177781,
+    "sha256": "805f9b3a7cbb898d4896a3ebbf144870a1e812ced44eea1ef49f5e68735a3e14"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/current-snapshot-15/game-log.json",
+    "bytes": 4932,
+    "sha256": "9a0cefaa9aade51cf190c0a1bec8493a86759971d3e5aa0cbbe91cdb5d808da2"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/current-snapshot-15/EXECUTION-INTENT.json",
+    "bytes": 343,
+    "sha256": "996a4e470bde5418470861ad60c3c4b696504639e19d56e802a81cc12b73c1c6"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/current-snapshot-15/RECEIPT.json",
+    "bytes": 2123,
+    "sha256": "cacca1c2bce3d730a429ead8ff2cafd0a671a247ede7aceb2fd5822594683f23"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/source-files/tasks/tasks-prd-shareable-player-cards.md",
+    "bytes": 33583,
+    "sha256": "34f21b8b30b88ccb9adce82f7815a53033a098e64fa211ecc36aa71bccde4aa2"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/source-files/web/lib/player-cards/currentNhl.test.ts",
+    "bytes": 8984,
+    "sha256": "a755776e200e95a18de618a20ccb6f0d5ffe59fff5a676eb254ebf81d527f626"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/source-files/web/lib/player-cards/currentSelection.test.ts",
+    "bytes": 3336,
+    "sha256": "61783cfa56e2bf7c2ef6ff0b326ee0e423911505a69bedc901f71f5a351f3a88"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/source-files/web/lib/player-cards/currentSelection.ts",
+    "bytes": 6064,
+    "sha256": "a539b049e99fdb7e3767a6f4106e72ecf5459cc5cd842291da252358e077813e"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/source-files/web/lib/player-cards/currentNhl.ts",
+    "bytes": 13188,
+    "sha256": "a1e05a7651d1725094de808eb1873ab94a1a0306ecb587e44ff19a918edb6f73"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/source-files/web/lib/player-cards/currentNhlExport.ts",
+    "bytes": 2255,
+    "sha256": "1cfb288e35fa053a5e001268db36d97e8084d6797066cfb6aed3a7c1089534d3"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/source-files/web/components/player-cards/CurrentPlayerCard.tsx",
+    "bytes": 8102,
+    "sha256": "215600dbd49dbc51cabe17b1521f76c615fdc91c3107e7384ce800f01b5e16cd"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/source-files/web/components/player-cards/CurrentPlayerCardStudio.test.tsx",
+    "bytes": 13312,
+    "sha256": "c228ac4609e13bd89754fcafb7f0e3788b55d4d01460fc3bf58ebdd02029e8ce"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/source-files/web/components/player-cards/CurrentPlayerCardStudio.tsx",
+    "bytes": 13336,
+    "sha256": "62c51a3b88d034a75211784f495bf735fbd962a72265492bec5aed4438f5774c"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/before/tasks/tasks-prd-shareable-player-cards.md",
+    "bytes": 31346,
+    "sha256": "08d915143321a154e441738ac80ad8a8466fe195e8b1d23aa4a44ac35a91452c"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/before/web/lib/player-cards/currentNhl.test.ts",
+    "bytes": 5999,
+    "sha256": "c3e329413ac256cf45e218b90fed2543f0453feefdb9fefb14a718ceadee0b97"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/before/web/lib/player-cards/currentSelection.test.ts",
+    "bytes": 3021,
+    "sha256": "b593f5e777b62fb1d2ff6453babff5c5d0508178e0e3cefddacf60d6c2393d2c"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/before/web/lib/player-cards/currentSelection.ts",
+    "bytes": 4833,
+    "sha256": "55ed1a56ff27c852f0fd8dc4fe036edfef5aed4c0fabba61fe00e069e924a2d4"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/before/web/lib/player-cards/currentNhl.ts",
+    "bytes": 11719,
+    "sha256": "5a24558df578c03c5eb059726f3bd526e70e42cb028f12e22bdc594846525dd9"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/before/web/lib/player-cards/currentNhlExport.ts",
+    "bytes": 1768,
+    "sha256": "5bd3dec3130372066ebf487cf33bb9c4d8b1e928637d1d8b2660e8b477b5e666"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/before/web/components/player-cards/CurrentPlayerCard.tsx",
+    "bytes": 6132,
+    "sha256": "27b7a4de07a5e86ab001498f3b0f85338b244d7447c24fa05c52fdccdd69af43"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/before/web/components/player-cards/CurrentPlayerCardStudio.test.tsx",
+    "bytes": 12309,
+    "sha256": "2c90c2a1c0ace36559ef67dfeae63cf5185ad56493d3f7ab8fff60068ec2521d"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/before/web/components/player-cards/CurrentPlayerCardStudio.tsx",
+    "bytes": 13355,
+    "sha256": "753e68ac47cec3f916eb2dd8d7e2ee2391999dccf1a18742d3b8ae4715601c39"
+  }
+]

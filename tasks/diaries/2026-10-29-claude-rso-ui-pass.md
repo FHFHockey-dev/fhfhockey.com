@@ -11,7 +11,8 @@ Presentation-only declutter of RSO per `tasks/artifacts/rso-wave2-2026-10-25/UI-
 ## State
 - 2026-10-29: lease baselines verified (51/51 match). Main JSX is `RosterScheduleOptimizer.tsx` ~L1148–1234.
 - Step 1 dc4f705fb, step 2 e982e1968 (TJ kept "Empty" boxes), step 3 da62093c2, step 4 f4e96126a, step 5 7499af689, step 6 25f44e002 (TJ checked 7-day strip), step 7 c368c679e (DROP chip contrast from a11y check). All approved by TJ pop-up. Each: RSO vitest 421/421 with no test edits, eslint 0 errors, pure check.
-- Final: tsc --noEmit under heavy lock passed (exit 0). A11y notes: UI-PASS/A11Y-2026-10-29.md. Dev server :3160 stopped. Nothing pushed.
+- Design review (design-critique, ux-copy, design-system): UI-PASS/DESIGN-REVIEW-2026-10-29.md. TJ picked fixes → step 8 ab4f9987e (streaming plan collapsed on desktop), step 9 64ac85ad1 (one-line drop notice; single confirm skipped: pinned 10-29 decision, phone needs it), step 10 f552d0f4c (phone ☰ row, sentence-case card labels, strip summary). Scale rename not chosen.
+- Final: tsc --noEmit under heavy lock passed (exit 0) after step 10; vitest 422/422. A11y notes: UI-PASS/A11Y-2026-10-29.md. Dev server :3160 stopped. Nothing pushed.
 
 ## Next
 Done. Orchestrator relays to TJ/release; e2e specs not run (rso-acceptance/roster-schedule-optimizer specs touch moved markup: refresh button text "Refresh"/"Refreshing…", toasts fade after ~7s).

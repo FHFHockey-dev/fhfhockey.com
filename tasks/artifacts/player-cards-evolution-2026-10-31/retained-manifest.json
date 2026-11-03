@@ -1,0 +1,707 @@
+{
+  "version": "fhfh-analysis-export-v1",
+  "dimensions": {
+    "width": 1200,
+    "height": 1020
+  },
+  "presentation": {
+    "snapshot": {
+      "version": "fhfh-card-analysis-v1",
+      "capture": {
+        "version": "fhfh-card-analysis-v1",
+        "id": "nhl-8476453-20262027-5-2026-10-29T17:43:32.793Z-2026020177.2026020167.2026020151.2026020123.2026020111",
+        "player": {
+          "id": 8476453,
+          "name": "Nikita Kucherov",
+          "team": "TBL",
+          "position": "R"
+        },
+        "season": 20262027,
+        "gameType": "regular",
+        "source": "retained",
+        "observedAt": "2026-10-29T17:43:32.793Z",
+        "strength": "all",
+        "history": {
+          "complete": true,
+          "seasonAppearances": 11,
+          "reason": null
+        },
+        "fields": {
+          "goals": {
+            "provider": "NHL",
+            "field": "gameLog.goals",
+            "model": null,
+            "revision": "nhl-basic-skater-v1",
+            "updatedAt": null,
+            "strength": "all",
+            "unit": "count"
+          },
+          "assists": {
+            "provider": "NHL",
+            "field": "gameLog.assists",
+            "model": null,
+            "revision": "nhl-basic-skater-v1",
+            "updatedAt": null,
+            "strength": "all",
+            "unit": "count"
+          },
+          "points": {
+            "provider": "NHL",
+            "field": "gameLog.points",
+            "model": null,
+            "revision": "nhl-basic-skater-v1",
+            "updatedAt": null,
+            "strength": "all",
+            "unit": "count"
+          },
+          "shots": {
+            "provider": "NHL",
+            "field": "gameLog.shots",
+            "model": null,
+            "revision": "nhl-basic-skater-v1",
+            "updatedAt": null,
+            "strength": "all",
+            "unit": "count"
+          },
+          "toiSeconds": {
+            "provider": "NHL",
+            "field": "gameLog.toi (mm:ss converted to seconds)",
+            "model": null,
+            "revision": "nhl-basic-skater-v1",
+            "updatedAt": null,
+            "strength": "all",
+            "unit": "seconds"
+          }
+        },
+        "finality": "NHL FINAL/OFF at observation; actual game-end timestamps are not supplied. Current window only; no historical cutoff claim.",
+        "games": [
+          {
+            "gameId": 2026020177,
+            "date": "2026-10-24",
+            "utcStart": "2026-10-25T01:00:00Z",
+            "team": "TBL",
+            "finalAtObservation": true,
+            "played": true,
+            "values": {
+              "goals": 0,
+              "assists": 1,
+              "points": 1,
+              "shots": 3,
+              "toiSeconds": 1202
+            }
+          },
+          {
+            "gameId": 2026020167,
+            "date": "2026-10-23",
+            "utcStart": "2026-10-24T01:00:00Z",
+            "team": "TBL",
+            "finalAtObservation": true,
+            "played": true,
+            "values": {
+              "goals": 0,
+              "assists": 0,
+              "points": 0,
+              "shots": 2,
+              "toiSeconds": 1243
+            }
+          },
+          {
+            "gameId": 2026020151,
+            "date": "2026-10-20",
+            "utcStart": "2026-10-21T02:30:00Z",
+            "team": "TBL",
+            "finalAtObservation": true,
+            "played": true,
+            "values": {
+              "goals": 1,
+              "assists": 2,
+              "points": 3,
+              "shots": 2,
+              "toiSeconds": 1099
+            }
+          },
+          {
+            "gameId": 2026020123,
+            "date": "2026-10-17",
+            "utcStart": "2026-10-17T20:00:00Z",
+            "team": "TBL",
+            "finalAtObservation": true,
+            "played": true,
+            "values": {
+              "goals": 2,
+              "assists": 0,
+              "points": 2,
+              "shots": 7,
+              "toiSeconds": 1240
+            }
+          },
+          {
+            "gameId": 2026020111,
+            "date": "2026-10-15",
+            "utcStart": "2026-10-15T23:00:00Z",
+            "team": "TBL",
+            "finalAtObservation": true,
+            "played": true,
+            "values": {
+              "goals": 0,
+              "assists": 0,
+              "points": 0,
+              "shots": 8,
+              "toiSeconds": 1336
+            }
+          },
+          {
+            "gameId": 2026020095,
+            "date": "2026-10-13",
+            "utcStart": "2026-10-13T23:15:00Z",
+            "team": "TBL",
+            "finalAtObservation": true,
+            "played": true,
+            "values": {
+              "goals": 0,
+              "assists": 0,
+              "points": 0,
+              "shots": 2,
+              "toiSeconds": 1395
+            }
+          },
+          {
+            "gameId": 2026020081,
+            "date": "2026-10-10",
+            "utcStart": "2026-10-10T23:30:00Z",
+            "team": "TBL",
+            "finalAtObservation": true,
+            "played": true,
+            "values": {
+              "goals": 0,
+              "assists": 2,
+              "points": 2,
+              "shots": 1,
+              "toiSeconds": 1066
+            }
+          },
+          {
+            "gameId": 2026020060,
+            "date": "2026-10-08",
+            "utcStart": "2026-10-08T23:00:00Z",
+            "team": "TBL",
+            "finalAtObservation": true,
+            "played": true,
+            "values": {
+              "goals": 0,
+              "assists": 2,
+              "points": 2,
+              "shots": 1,
+              "toiSeconds": 1255
+            }
+          },
+          {
+            "gameId": 2026020040,
+            "date": "2026-10-05",
+            "utcStart": "2026-10-05T23:00:00Z",
+            "team": "TBL",
+            "finalAtObservation": true,
+            "played": true,
+            "values": {
+              "goals": 0,
+              "assists": 2,
+              "points": 2,
+              "shots": 1,
+              "toiSeconds": 1319
+            }
+          },
+          {
+            "gameId": 2026020024,
+            "date": "2026-10-03",
+            "utcStart": "2026-10-03T23:00:00Z",
+            "team": "TBL",
+            "finalAtObservation": true,
+            "played": true,
+            "values": {
+              "goals": 0,
+              "assists": 1,
+              "points": 1,
+              "shots": 3,
+              "toiSeconds": 1366
+            }
+          },
+          {
+            "gameId": 2026020010,
+            "date": "2026-10-01",
+            "utcStart": "2026-10-01T23:00:00Z",
+            "team": "TBL",
+            "finalAtObservation": true,
+            "played": true,
+            "values": {
+              "goals": 1,
+              "assists": 0,
+              "points": 1,
+              "shots": 1,
+              "toiSeconds": 1447
+            }
+          }
+        ]
+      },
+      "settings": {
+        "period": {
+          "mode": "appearances",
+          "count": 5
+        },
+        "baseline": "previous",
+        "basis": "per-game",
+        "visual": "bars"
+      },
+      "recent": {
+        "label": "Last 5",
+        "gameIds": [
+          2026020177,
+          2026020167,
+          2026020151,
+          2026020123,
+          2026020111
+        ],
+        "dates": [
+          "2026-10-24",
+          "2026-10-23",
+          "2026-10-20",
+          "2026-10-17",
+          "2026-10-15"
+        ],
+        "gp": 5,
+        "reason": null,
+        "readings": [
+          {
+            "metric": "goals",
+            "value": 0.6,
+            "state": "valid",
+            "reason": null,
+            "gp": 5,
+            "unit": "goals/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T17:43:32.793Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"goals\",\"per-game\",[{\"provider\":\"NHL\",\"field\":\"gameLog.goals\",\"model\":null,\"revision\":\"nhl-basic-skater-v1\",\"updatedAt\":null,\"strength\":\"all\",\"unit\":\"count\"}]]"
+          },
+          {
+            "metric": "assists",
+            "value": 0.6,
+            "state": "valid",
+            "reason": null,
+            "gp": 5,
+            "unit": "assists/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T17:43:32.793Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"assists\",\"per-game\",[{\"provider\":\"NHL\",\"field\":\"gameLog.assists\",\"model\":null,\"revision\":\"nhl-basic-skater-v1\",\"updatedAt\":null,\"strength\":\"all\",\"unit\":\"count\"}]]"
+          },
+          {
+            "metric": "points",
+            "value": 1.2,
+            "state": "valid",
+            "reason": null,
+            "gp": 5,
+            "unit": "points/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T17:43:32.793Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"points\",\"per-game\",[{\"provider\":\"NHL\",\"field\":\"gameLog.points\",\"model\":null,\"revision\":\"nhl-basic-skater-v1\",\"updatedAt\":null,\"strength\":\"all\",\"unit\":\"count\"}]]"
+          },
+          {
+            "metric": "ppPoints",
+            "value": null,
+            "state": "missing",
+            "reason": "ppPoints: source, strength or revision unavailable/incompatible.",
+            "gp": 5,
+            "unit": "points/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T17:43:32.793Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"ppPoints\",\"per-game\",[null]]"
+          },
+          {
+            "metric": "shots",
+            "value": 4.4,
+            "state": "valid",
+            "reason": null,
+            "gp": 5,
+            "unit": "shots/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T17:43:32.793Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"shots\",\"per-game\",[{\"provider\":\"NHL\",\"field\":\"gameLog.shots\",\"model\":null,\"revision\":\"nhl-basic-skater-v1\",\"updatedAt\":null,\"strength\":\"all\",\"unit\":\"count\"}]]"
+          },
+          {
+            "metric": "blocks",
+            "value": null,
+            "state": "missing",
+            "reason": "blocks: source, strength or revision unavailable/incompatible.",
+            "gp": 5,
+            "unit": "blocks/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T17:43:32.793Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"blocks\",\"per-game\",[null]]"
+          },
+          {
+            "metric": "hits",
+            "value": null,
+            "state": "missing",
+            "reason": "hits: source, strength or revision unavailable/incompatible.",
+            "gp": 5,
+            "unit": "hits/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T17:43:32.793Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"hits\",\"per-game\",[null]]"
+          },
+          {
+            "metric": "bsh",
+            "value": null,
+            "state": "missing",
+            "reason": "blocks: source, strength or revision unavailable/incompatible.",
+            "gp": 5,
+            "unit": "events/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T17:43:32.793Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"bsh\",\"per-game\",[null,{\"provider\":\"NHL\",\"field\":\"gameLog.shots\",\"model\":null,\"revision\":\"nhl-basic-skater-v1\",\"updatedAt\":null,\"strength\":\"all\",\"unit\":\"count\"},null]]"
+          },
+          {
+            "metric": "toiSeconds",
+            "value": 20.4,
+            "state": "valid",
+            "reason": null,
+            "gp": 5,
+            "unit": "min/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T17:43:32.793Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"toiSeconds\",\"per-game\",[{\"provider\":\"NHL\",\"field\":\"gameLog.toi (mm:ss converted to seconds)\",\"model\":null,\"revision\":\"nhl-basic-skater-v1\",\"updatedAt\":null,\"strength\":\"all\",\"unit\":\"seconds\"}]]"
+          },
+          {
+            "metric": "ppToiSeconds",
+            "value": null,
+            "state": "missing",
+            "reason": "ppToiSeconds: source, strength or revision unavailable/incompatible.",
+            "gp": 5,
+            "unit": "min/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T17:43:32.793Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"ppToiSeconds\",\"per-game\",[null,{\"provider\":\"NHL\",\"field\":\"gameLog.toi (mm:ss converted to seconds)\",\"model\":null,\"revision\":\"nhl-basic-skater-v1\",\"updatedAt\":null,\"strength\":\"all\",\"unit\":\"seconds\"}]]"
+          },
+          {
+            "metric": "ixg",
+            "value": null,
+            "state": "missing",
+            "reason": "ixg: source, strength or revision unavailable/incompatible.",
+            "gp": 5,
+            "unit": "xG/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T17:43:32.793Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"ixg\",\"per-game\",[null]]"
+          },
+          {
+            "metric": "xgf",
+            "value": null,
+            "state": "missing",
+            "reason": "xgf: source, strength or revision unavailable/incompatible.",
+            "gp": 5,
+            "unit": "xG/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T17:43:32.793Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"xgf\",\"per-game\",[null]]"
+          },
+          {
+            "metric": "xga",
+            "value": null,
+            "state": "missing",
+            "reason": "xga: source, strength or revision unavailable/incompatible.",
+            "gp": 5,
+            "unit": "xG/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T17:43:32.793Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"xga\",\"per-game\",[null]]"
+          },
+          {
+            "metric": "xgPct",
+            "value": null,
+            "state": "missing",
+            "reason": "xgf: source, strength or revision unavailable/incompatible.",
+            "gp": 5,
+            "unit": "%",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T17:43:32.793Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"xgPct\",\"pooled-percentage\",[null,null]]"
+          }
+        ]
+      },
+      "baseline": {
+        "label": "Previous",
+        "gameIds": [
+          2026020095,
+          2026020081,
+          2026020060,
+          2026020040,
+          2026020024
+        ],
+        "dates": [
+          "2026-10-13",
+          "2026-10-10",
+          "2026-10-08",
+          "2026-10-05",
+          "2026-10-03"
+        ],
+        "gp": 5,
+        "reason": null,
+        "readings": [
+          {
+            "metric": "goals",
+            "value": 0,
+            "state": "valid",
+            "reason": null,
+            "gp": 5,
+            "unit": "goals/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T17:43:32.793Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Previous\",\"goals\",\"per-game\",[{\"provider\":\"NHL\",\"field\":\"gameLog.goals\",\"model\":null,\"revision\":\"nhl-basic-skater-v1\",\"updatedAt\":null,\"strength\":\"all\",\"unit\":\"count\"}]]"
+          },
+          {
+            "metric": "assists",
+            "value": 1.4,
+            "state": "valid",
+            "reason": null,
+            "gp": 5,
+            "unit": "assists/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T17:43:32.793Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Previous\",\"assists\",\"per-game\",[{\"provider\":\"NHL\",\"field\":\"gameLog.assists\",\"model\":null,\"revision\":\"nhl-basic-skater-v1\",\"updatedAt\":null,\"strength\":\"all\",\"unit\":\"count\"}]]"
+          },
+          {
+            "metric": "points",
+            "value": 1.4,
+            "state": "valid",
+            "reason": null,
+            "gp": 5,
+            "unit": "points/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T17:43:32.793Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Previous\",\"points\",\"per-game\",[{\"provider\":\"NHL\",\"field\":\"gameLog.points\",\"model\":null,\"revision\":\"nhl-basic-skater-v1\",\"updatedAt\":null,\"strength\":\"all\",\"unit\":\"count\"}]]"
+          },
+          {
+            "metric": "ppPoints",
+            "value": null,
+            "state": "missing",
+            "reason": "ppPoints: source, strength or revision unavailable/incompatible.",
+            "gp": 5,
+            "unit": "points/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T17:43:32.793Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Previous\",\"ppPoints\",\"per-game\",[null]]"
+          },
+          {
+            "metric": "shots",
+            "value": 1.6,
+            "state": "valid",
+            "reason": null,
+            "gp": 5,
+            "unit": "shots/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T17:43:32.793Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Previous\",\"shots\",\"per-game\",[{\"provider\":\"NHL\",\"field\":\"gameLog.shots\",\"model\":null,\"revision\":\"nhl-basic-skater-v1\",\"updatedAt\":null,\"strength\":\"all\",\"unit\":\"count\"}]]"
+          },
+          {
+            "metric": "blocks",
+            "value": null,
+            "state": "missing",
+            "reason": "blocks: source, strength or revision unavailable/incompatible.",
+            "gp": 5,
+            "unit": "blocks/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T17:43:32.793Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Previous\",\"blocks\",\"per-game\",[null]]"
+          },
+          {
+            "metric": "hits",
+            "value": null,
+            "state": "missing",
+            "reason": "hits: source, strength or revision unavailable/incompatible.",
+            "gp": 5,
+            "unit": "hits/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T17:43:32.793Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Previous\",\"hits\",\"per-game\",[null]]"
+          },
+          {
+            "metric": "bsh",
+            "value": null,
+            "state": "missing",
+            "reason": "blocks: source, strength or revision unavailable/incompatible.",
+            "gp": 5,
+            "unit": "events/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T17:43:32.793Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Previous\",\"bsh\",\"per-game\",[null,{\"provider\":\"NHL\",\"field\":\"gameLog.shots\",\"model\":null,\"revision\":\"nhl-basic-skater-v1\",\"updatedAt\":null,\"strength\":\"all\",\"unit\":\"count\"},null]]"
+          },
+          {
+            "metric": "toiSeconds",
+            "value": 21.336666666666666,
+            "state": "valid",
+            "reason": null,
+            "gp": 5,
+            "unit": "min/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T17:43:32.793Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Previous\",\"toiSeconds\",\"per-game\",[{\"provider\":\"NHL\",\"field\":\"gameLog.toi (mm:ss converted to seconds)\",\"model\":null,\"revision\":\"nhl-basic-skater-v1\",\"updatedAt\":null,\"strength\":\"all\",\"unit\":\"seconds\"}]]"
+          },
+          {
+            "metric": "ppToiSeconds",
+            "value": null,
+            "state": "missing",
+            "reason": "ppToiSeconds: source, strength or revision unavailable/incompatible.",
+            "gp": 5,
+            "unit": "min/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T17:43:32.793Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Previous\",\"ppToiSeconds\",\"per-game\",[null,{\"provider\":\"NHL\",\"field\":\"gameLog.toi (mm:ss converted to seconds)\",\"model\":null,\"revision\":\"nhl-basic-skater-v1\",\"updatedAt\":null,\"strength\":\"all\",\"unit\":\"seconds\"}]]"
+          },
+          {
+            "metric": "ixg",
+            "value": null,
+            "state": "missing",
+            "reason": "ixg: source, strength or revision unavailable/incompatible.",
+            "gp": 5,
+            "unit": "xG/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T17:43:32.793Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Previous\",\"ixg\",\"per-game\",[null]]"
+          },
+          {
+            "metric": "xgf",
+            "value": null,
+            "state": "missing",
+            "reason": "xgf: source, strength or revision unavailable/incompatible.",
+            "gp": 5,
+            "unit": "xG/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T17:43:32.793Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Previous\",\"xgf\",\"per-game\",[null]]"
+          },
+          {
+            "metric": "xga",
+            "value": null,
+            "state": "missing",
+            "reason": "xga: source, strength or revision unavailable/incompatible.",
+            "gp": 5,
+            "unit": "xG/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T17:43:32.793Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Previous\",\"xga\",\"per-game\",[null]]"
+          },
+          {
+            "metric": "xgPct",
+            "value": null,
+            "state": "missing",
+            "reason": "xgf: source, strength or revision unavailable/incompatible.",
+            "gp": 5,
+            "unit": "%",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T17:43:32.793Z\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Previous\",\"xgPct\",\"pooled-percentage\",[null,null]]"
+          }
+        ]
+      },
+      "overlap": 0,
+      "disclosure": "Equal, non-overlapping appearance windows; short preceding history is withheld.",
+      "rankPolicy": "proposal-only"
+    },
+    "view": "categories",
+    "blsh": {
+      "status": "unavailable",
+      "heading": "BLSH evidence unavailable",
+      "lines": [
+        "An owner-qualified current method and snapshot receipt has not been supplied."
+      ],
+      "direction": "unknown",
+      "receipt": null,
+      "market": "Market reference unavailable"
+    },
+    "trades": {
+      "status": "unavailable",
+      "records": [],
+      "lines": [
+        "Qualified Yahoo observed-trade records and owner review receipt unavailable.",
+        "Market reference unavailable. No trade collection was attempted."
+      ]
+    }
+  },
+  "comparison": [
+    {
+      "metric": "goals",
+      "value": 0.6,
+      "reason": null
+    },
+    {
+      "metric": "assists",
+      "value": -0.7999999999999999,
+      "reason": null
+    },
+    {
+      "metric": "points",
+      "value": -0.19999999999999996,
+      "reason": null
+    },
+    {
+      "metric": "ppPoints",
+      "value": null,
+      "reason": "A comparison value is unavailable."
+    },
+    {
+      "metric": "shots",
+      "value": 2.8000000000000003,
+      "reason": null
+    },
+    {
+      "metric": "blocks",
+      "value": null,
+      "reason": "A comparison value is unavailable."
+    },
+    {
+      "metric": "hits",
+      "value": null,
+      "reason": "A comparison value is unavailable."
+    },
+    {
+      "metric": "bsh",
+      "value": null,
+      "reason": "A comparison value is unavailable."
+    },
+    {
+      "metric": "toiSeconds",
+      "value": -0.9366666666666674,
+      "reason": null
+    },
+    {
+      "metric": "ppToiSeconds",
+      "value": null,
+      "reason": "A comparison value is unavailable."
+    },
+    {
+      "metric": "ixg",
+      "value": null,
+      "reason": "A comparison value is unavailable."
+    },
+    {
+      "metric": "xgf",
+      "value": null,
+      "reason": "A comparison value is unavailable."
+    },
+    {
+      "metric": "xga",
+      "value": null,
+      "reason": "A comparison value is unavailable."
+    },
+    {
+      "metric": "xgPct",
+      "value": null,
+      "reason": "A comparison value is unavailable."
+    }
+  ],
+  "artwork": {
+    "state": "unavailable",
+    "reason": "No qualified matching artwork supplied."
+  },
+  "artworkKey": "image-unavailable",
+  "key": "[{\"snapshot\":{\"version\":\"fhfh-card-analysis-v1\",\"capture\":{\"version\":\"fhfh-card-analysis-v1\",\"id\":\"nhl-8476453-20262027-5-2026-10-29T17:43:32.793Z-2026020177.2026020167.2026020151.2026020123.2026020111\",\"player\":{\"id\":8476453,\"name\":\"Nikita Kucherov\",\"team\":\"TBL\",\"position\":\"R\"},\"season\":20262027,\"gameType\":\"regular\",\"source\":\"retained\",\"observedAt\":\"2026-10-29T17:43:32.793Z\",\"strength\":\"all\",\"history\":{\"complete\":true,\"seasonAppearances\":11,\"reason\":null},\"fields\":{\"goals\":{\"provider\":\"NHL\",\"field\":\"gameLog.goals\",\"model\":null,\"revision\":\"nhl-basic-skater-v1\",\"updatedAt\":null,\"strength\":\"all\",\"unit\":\"count\"},\"assists\":{\"provider\":\"NHL\",\"field\":\"gameLog.assists\",\"model\":null,\"revision\":\"nhl-basic-skater-v1\",\"updatedAt\":null,\"strength\":\"all\",\"unit\":\"count\"},\"points\":{\"provider\":\"NHL\",\"field\":\"gameLog.points\",\"model\":null,\"revision\":\"nhl-basic-skater-v1\",\"updatedAt\":null,\"strength\":\"all\",\"unit\":\"count\"},\"shots\":{\"provider\":\"NHL\",\"field\":\"gameLog.shots\",\"model\":null,\"revision\":\"nhl-basic-skater-v1\",\"updatedAt\":null,\"strength\":\"all\",\"unit\":\"count\"},\"toiSeconds\":{\"provider\":\"NHL\",\"field\":\"gameLog.toi (mm:ss converted to seconds)\",\"model\":null,\"revision\":\"nhl-basic-skater-v1\",\"updatedAt\":null,\"strength\":\"all\",\"unit\":\"seconds\"}},\"finality\":\"NHL FINAL/OFF at observation; actual game-end timestamps are not supplied. Current window only; no historical cutoff claim.\",\"games\":[{\"gameId\":2026020177,\"date\":\"2026-10-24\",\"utcStart\":\"2026-10-25T01:00:00Z\",\"team\":\"TBL\",\"finalAtObservation\":true,\"played\":true,\"values\":{\"goals\":0,\"assists\":1,\"points\":1,\"shots\":3,\"toiSeconds\":1202}},{\"gameId\":2026020167,\"date\":\"2026-10-23\",\"utcStart\":\"2026-10-24T01:00:00Z\",\"team\":\"TBL\",\"finalAtObservation\":true,\"played\":true,\"values\":{\"goals\":0,\"assists\":0,\"points\":0,\"shots\":2,\"toiSeconds\":1243}},{\"gameId\":2026020151,\"date\":\"2026-10-20\",\"utcStart\":\"2026-10-21T02:30:00Z\",\"team\":\"TBL\",\"finalAtObservation\":true,\"played\":true,\"values\":{\"goals\":1,\"assists\":2,\"points\":3,\"shots\":2,\"toiSeconds\":1099}},{\"gameId\":2026020123,\"date\":\"2026-10-17\",\"utcStart\":\"2026-10-17T20:00:00Z\",\"team\":\"TBL\",\"finalAtObservation\":true,\"played\":true,\"values\":{\"goals\":2,\"assists\":0,\"points\":2,\"shots\":7,\"toiSeconds\":1240}},{\"gameId\":2026020111,\"date\":\"2026-10-15\",\"utcStart\":\"2026-10-15T23:00:00Z\",\"team\":\"TBL\",\"finalAtObservation\":true,\"played\":true,\"values\":{\"goals\":0,\"assists\":0,\"points\":0,\"shots\":8,\"toiSeconds\":1336}},{\"gameId\":2026020095,\"date\":\"2026-10-13\",\"utcStart\":\"2026-10-13T23:15:00Z\",\"team\":\"TBL\",\"finalAtObservation\":true,\"played\":true,\"values\":{\"goals\":0,\"assists\":0,\"points\":0,\"shots\":2,\"toiSeconds\":1395}},{\"gameId\":2026020081,\"date\":\"2026-10-10\",\"utcStart\":\"2026-10-10T23:30:00Z\",\"team\":\"TBL\",\"finalAtObservation\":true,\"played\":true,\"values\":{\"goals\":0,\"assists\":2,\"points\":2,\"shots\":1,\"toiSeconds\":1066}},{\"gameId\":2026020060,\"date\":\"2026-10-08\",\"utcStart\":\"2026-10-08T23:00:00Z\",\"team\":\"TBL\",\"finalAtObservation\":true,\"played\":true,\"values\":{\"goals\":0,\"assists\":2,\"points\":2,\"shots\":1,\"toiSeconds\":1255}},{\"gameId\":2026020040,\"date\":\"2026-10-05\",\"utcStart\":\"2026-10-05T23:00:00Z\",\"team\":\"TBL\",\"finalAtObservation\":true,\"played\":true,\"values\":{\"goals\":0,\"assists\":2,\"points\":2,\"shots\":1,\"toiSeconds\":1319}},{\"gameId\":2026020024,\"date\":\"2026-10-03\",\"utcStart\":\"2026-10-03T23:00:00Z\",\"team\":\"TBL\",\"finalAtObservation\":true,\"played\":true,\"values\":{\"goals\":0,\"assists\":1,\"points\":1,\"shots\":3,\"toiSeconds\":1366}},{\"gameId\":2026020010,\"date\":\"2026-10-01\",\"utcStart\":\"2026-10-01T23:00:00Z\",\"team\":\"TBL\",\"finalAtObservation\":true,\"played\":true,\"values\":{\"goals\":1,\"assists\":0,\"points\":1,\"shots\":1,\"toiSeconds\":1447}}]},\"settings\":{\"period\":{\"mode\":\"appearances\",\"count\":5},\"baseline\":\"previous\",\"basis\":\"per-game\",\"visual\":\"bars\"},\"recent\":{\"label\":\"Last 5\",\"gameIds\":[2026020177,2026020167,2026020151,2026020123,2026020111],\"dates\":[\"2026-10-24\",\"2026-10-23\",\"2026-10-20\",\"2026-10-17\",\"2026-10-15\"],\"gp\":5,\"reason\":null,\"readings\":[{\"metric\":\"goals\",\"value\":0.6,\"state\":\"valid\",\"reason\":null,\"gp\":5,\"unit\":\"goals/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T17:43:32.793Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"goals\\\",\\\"per-game\\\",[{\\\"provider\\\":\\\"NHL\\\",\\\"field\\\":\\\"gameLog.goals\\\",\\\"model\\\":null,\\\"revision\\\":\\\"nhl-basic-skater-v1\\\",\\\"updatedAt\\\":null,\\\"strength\\\":\\\"all\\\",\\\"unit\\\":\\\"count\\\"}]]\"},{\"metric\":\"assists\",\"value\":0.6,\"state\":\"valid\",\"reason\":null,\"gp\":5,\"unit\":\"assists/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T17:43:32.793Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"assists\\\",\\\"per-game\\\",[{\\\"provider\\\":\\\"NHL\\\",\\\"field\\\":\\\"gameLog.assists\\\",\\\"model\\\":null,\\\"revision\\\":\\\"nhl-basic-skater-v1\\\",\\\"updatedAt\\\":null,\\\"strength\\\":\\\"all\\\",\\\"unit\\\":\\\"count\\\"}]]\"},{\"metric\":\"points\",\"value\":1.2,\"state\":\"valid\",\"reason\":null,\"gp\":5,\"unit\":\"points/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T17:43:32.793Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"points\\\",\\\"per-game\\\",[{\\\"provider\\\":\\\"NHL\\\",\\\"field\\\":\\\"gameLog.points\\\",\\\"model\\\":null,\\\"revision\\\":\\\"nhl-basic-skater-v1\\\",\\\"updatedAt\\\":null,\\\"strength\\\":\\\"all\\\",\\\"unit\\\":\\\"count\\\"}]]\"},{\"metric\":\"ppPoints\",\"value\":null,\"state\":\"missing\",\"reason\":\"ppPoints: source, strength or revision unavailable/incompatible.\",\"gp\":5,\"unit\":\"points/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T17:43:32.793Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"ppPoints\\\",\\\"per-game\\\",[null]]\"},{\"metric\":\"shots\",\"value\":4.4,\"state\":\"valid\",\"reason\":null,\"gp\":5,\"unit\":\"shots/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T17:43:32.793Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"shots\\\",\\\"per-game\\\",[{\\\"provider\\\":\\\"NHL\\\",\\\"field\\\":\\\"gameLog.shots\\\",\\\"model\\\":null,\\\"revision\\\":\\\"nhl-basic-skater-v1\\\",\\\"updatedAt\\\":null,\\\"strength\\\":\\\"all\\\",\\\"unit\\\":\\\"count\\\"}]]\"},{\"metric\":\"blocks\",\"value\":null,\"state\":\"missing\",\"reason\":\"blocks: source, strength or revision unavailable/incompatible.\",\"gp\":5,\"unit\":\"blocks/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T17:43:32.793Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"blocks\\\",\\\"per-game\\\",[null]]\"},{\"metric\":\"hits\",\"value\":null,\"state\":\"missing\",\"reason\":\"hits: source, strength or revision unavailable/incompatible.\",\"gp\":5,\"unit\":\"hits/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T17:43:32.793Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"hits\\\",\\\"per-game\\\",[null]]\"},{\"metric\":\"bsh\",\"value\":null,\"state\":\"missing\",\"reason\":\"blocks: source, strength or revision unavailable/incompatible.\",\"gp\":5,\"unit\":\"events/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T17:43:32.793Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"bsh\\\",\\\"per-game\\\",[null,{\\\"provider\\\":\\\"NHL\\\",\\\"field\\\":\\\"gameLog.shots\\\",\\\"model\\\":null,\\\"revision\\\":\\\"nhl-basic-skater-v1\\\",\\\"updatedAt\\\":null,\\\"strength\\\":\\\"all\\\",\\\"unit\\\":\\\"count\\\"},null]]\"},{\"metric\":\"toiSeconds\",\"value\":20.4,\"state\":\"valid\",\"reason\":null,\"gp\":5,\"unit\":\"min/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T17:43:32.793Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"toiSeconds\\\",\\\"per-game\\\",[{\\\"provider\\\":\\\"NHL\\\",\\\"field\\\":\\\"gameLog.toi (mm:ss converted to seconds)\\\",\\\"model\\\":null,\\\"revision\\\":\\\"nhl-basic-skater-v1\\\",\\\"updatedAt\\\":null,\\\"strength\\\":\\\"all\\\",\\\"unit\\\":\\\"seconds\\\"}]]\"},{\"metric\":\"ppToiSeconds\",\"value\":null,\"state\":\"missing\",\"reason\":\"ppToiSeconds: source, strength or revision unavailable/incompatible.\",\"gp\":5,\"unit\":\"min/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T17:43:32.793Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"ppToiSeconds\\\",\\\"per-game\\\",[null,{\\\"provider\\\":\\\"NHL\\\",\\\"field\\\":\\\"gameLog.toi (mm:ss converted to seconds)\\\",\\\"model\\\":null,\\\"revision\\\":\\\"nhl-basic-skater-v1\\\",\\\"updatedAt\\\":null,\\\"strength\\\":\\\"all\\\",\\\"unit\\\":\\\"seconds\\\"}]]\"},{\"metric\":\"ixg\",\"value\":null,\"state\":\"missing\",\"reason\":\"ixg: source, strength or revision unavailable/incompatible.\",\"gp\":5,\"unit\":\"xG/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T17:43:32.793Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"ixg\\\",\\\"per-game\\\",[null]]\"},{\"metric\":\"xgf\",\"value\":null,\"state\":\"missing\",\"reason\":\"xgf: source, strength or revision unavailable/incompatible.\",\"gp\":5,\"unit\":\"xG/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T17:43:32.793Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"xgf\\\",\\\"per-game\\\",[null]]\"},{\"metric\":\"xga\",\"value\":null,\"state\":\"missing\",\"reason\":\"xga: source, strength or revision unavailable/incompatible.\",\"gp\":5,\"unit\":\"xG/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T17:43:32.793Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"xga\\\",\\\"per-game\\\",[null]]\"},{\"metric\":\"xgPct\",\"value\":null,\"state\":\"missing\",\"reason\":\"xgf: source, strength or revision unavailable/incompatible.\",\"gp\":5,\"unit\":\"%\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T17:43:32.793Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"xgPct\\\",\\\"pooled-percentage\\\",[null,null]]\"}]},\"baseline\":{\"label\":\"Previous\",\"gameIds\":[2026020095,2026020081,2026020060,2026020040,2026020024],\"dates\":[\"2026-10-13\",\"2026-10-10\",\"2026-10-08\",\"2026-10-05\",\"2026-10-03\"],\"gp\":5,\"reason\":null,\"readings\":[{\"metric\":\"goals\",\"value\":0,\"state\":\"valid\",\"reason\":null,\"gp\":5,\"unit\":\"goals/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T17:43:32.793Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Previous\\\",\\\"goals\\\",\\\"per-game\\\",[{\\\"provider\\\":\\\"NHL\\\",\\\"field\\\":\\\"gameLog.goals\\\",\\\"model\\\":null,\\\"revision\\\":\\\"nhl-basic-skater-v1\\\",\\\"updatedAt\\\":null,\\\"strength\\\":\\\"all\\\",\\\"unit\\\":\\\"count\\\"}]]\"},{\"metric\":\"assists\",\"value\":1.4,\"state\":\"valid\",\"reason\":null,\"gp\":5,\"unit\":\"assists/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T17:43:32.793Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Previous\\\",\\\"assists\\\",\\\"per-game\\\",[{\\\"provider\\\":\\\"NHL\\\",\\\"field\\\":\\\"gameLog.assists\\\",\\\"model\\\":null,\\\"revision\\\":\\\"nhl-basic-skater-v1\\\",\\\"updatedAt\\\":null,\\\"strength\\\":\\\"all\\\",\\\"unit\\\":\\\"count\\\"}]]\"},{\"metric\":\"points\",\"value\":1.4,\"state\":\"valid\",\"reason\":null,\"gp\":5,\"unit\":\"points/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T17:43:32.793Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Previous\\\",\\\"points\\\",\\\"per-game\\\",[{\\\"provider\\\":\\\"NHL\\\",\\\"field\\\":\\\"gameLog.points\\\",\\\"model\\\":null,\\\"revision\\\":\\\"nhl-basic-skater-v1\\\",\\\"updatedAt\\\":null,\\\"strength\\\":\\\"all\\\",\\\"unit\\\":\\\"count\\\"}]]\"},{\"metric\":\"ppPoints\",\"value\":null,\"state\":\"missing\",\"reason\":\"ppPoints: source, strength or revision unavailable/incompatible.\",\"gp\":5,\"unit\":\"points/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T17:43:32.793Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Previous\\\",\\\"ppPoints\\\",\\\"per-game\\\",[null]]\"},{\"metric\":\"shots\",\"value\":1.6,\"state\":\"valid\",\"reason\":null,\"gp\":5,\"unit\":\"shots/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T17:43:32.793Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Previous\\\",\\\"shots\\\",\\\"per-game\\\",[{\\\"provider\\\":\\\"NHL\\\",\\\"field\\\":\\\"gameLog.shots\\\",\\\"model\\\":null,\\\"revision\\\":\\\"nhl-basic-skater-v1\\\",\\\"updatedAt\\\":null,\\\"strength\\\":\\\"all\\\",\\\"unit\\\":\\\"count\\\"}]]\"},{\"metric\":\"blocks\",\"value\":null,\"state\":\"missing\",\"reason\":\"blocks: source, strength or revision unavailable/incompatible.\",\"gp\":5,\"unit\":\"blocks/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T17:43:32.793Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Previous\\\",\\\"blocks\\\",\\\"per-game\\\",[null]]\"},{\"metric\":\"hits\",\"value\":null,\"state\":\"missing\",\"reason\":\"hits: source, strength or revision unavailable/incompatible.\",\"gp\":5,\"unit\":\"hits/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T17:43:32.793Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Previous\\\",\\\"hits\\\",\\\"per-game\\\",[null]]\"},{\"metric\":\"bsh\",\"value\":null,\"state\":\"missing\",\"reason\":\"blocks: source, strength or revision unavailable/incompatible.\",\"gp\":5,\"unit\":\"events/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T17:43:32.793Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Previous\\\",\\\"bsh\\\",\\\"per-game\\\",[null,{\\\"provider\\\":\\\"NHL\\\",\\\"field\\\":\\\"gameLog.shots\\\",\\\"model\\\":null,\\\"revision\\\":\\\"nhl-basic-skater-v1\\\",\\\"updatedAt\\\":null,\\\"strength\\\":\\\"all\\\",\\\"unit\\\":\\\"count\\\"},null]]\"},{\"metric\":\"toiSeconds\",\"value\":21.336666666666666,\"state\":\"valid\",\"reason\":null,\"gp\":5,\"unit\":\"min/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T17:43:32.793Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Previous\\\",\\\"toiSeconds\\\",\\\"per-game\\\",[{\\\"provider\\\":\\\"NHL\\\",\\\"field\\\":\\\"gameLog.toi (mm:ss converted to seconds)\\\",\\\"model\\\":null,\\\"revision\\\":\\\"nhl-basic-skater-v1\\\",\\\"updatedAt\\\":null,\\\"strength\\\":\\\"all\\\",\\\"unit\\\":\\\"seconds\\\"}]]\"},{\"metric\":\"ppToiSeconds\",\"value\":null,\"state\":\"missing\",\"reason\":\"ppToiSeconds: source, strength or revision unavailable/incompatible.\",\"gp\":5,\"unit\":\"min/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T17:43:32.793Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Previous\\\",\\\"ppToiSeconds\\\",\\\"per-game\\\",[null,{\\\"provider\\\":\\\"NHL\\\",\\\"field\\\":\\\"gameLog.toi (mm:ss converted to seconds)\\\",\\\"model\\\":null,\\\"revision\\\":\\\"nhl-basic-skater-v1\\\",\\\"updatedAt\\\":null,\\\"strength\\\":\\\"all\\\",\\\"unit\\\":\\\"seconds\\\"}]]\"},{\"metric\":\"ixg\",\"value\":null,\"state\":\"missing\",\"reason\":\"ixg: source, strength or revision unavailable/incompatible.\",\"gp\":5,\"unit\":\"xG/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T17:43:32.793Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Previous\\\",\\\"ixg\\\",\\\"per-game\\\",[null]]\"},{\"metric\":\"xgf\",\"value\":null,\"state\":\"missing\",\"reason\":\"xgf: source, strength or revision unavailable/incompatible.\",\"gp\":5,\"unit\":\"xG/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T17:43:32.793Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Previous\\\",\\\"xgf\\\",\\\"per-game\\\",[null]]\"},{\"metric\":\"xga\",\"value\":null,\"state\":\"missing\",\"reason\":\"xga: source, strength or revision unavailable/incompatible.\",\"gp\":5,\"unit\":\"xG/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T17:43:32.793Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Previous\\\",\\\"xga\\\",\\\"per-game\\\",[null]]\"},{\"metric\":\"xgPct\",\"value\":null,\"state\":\"missing\",\"reason\":\"xgf: source, strength or revision unavailable/incompatible.\",\"gp\":5,\"unit\":\"%\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T17:43:32.793Z\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Previous\\\",\\\"xgPct\\\",\\\"pooled-percentage\\\",[null,null]]\"}]},\"overlap\":0,\"disclosure\":\"Equal, non-overlapping appearance windows; short preceding history is withheld.\",\"rankPolicy\":\"proposal-only\"},\"view\":\"categories\",\"blsh\":{\"status\":\"unavailable\",\"heading\":\"BLSH evidence unavailable\",\"lines\":[\"An owner-qualified current method and snapshot receipt has not been supplied.\"],\"direction\":\"unknown\",\"receipt\":null,\"market\":\"Market reference unavailable\"},\"trades\":{\"status\":\"unavailable\",\"records\":[],\"lines\":[\"Qualified Yahoo observed-trade records and owner review receipt unavailable.\",\"Market reference unavailable. No trade collection was attempted.\"]}},\"image-unavailable\"]",
+  "disclosure": "Local consumer presentation; qualification and unavailable reasons are retained per field. No source refresh or deployment implied."
+}

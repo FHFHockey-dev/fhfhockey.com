@@ -1,0 +1,18 @@
+{
+  "url": "https://www.nhl.com/scores/htmlreports/20262027/GS020167.HTM",
+  "gameId": 2026020167,
+  "startedAt": "2026-10-26T15:34:48.984Z",
+  "requests": 1,
+  "retries": 0,
+  "maxRequests": 1,
+  "maxBytes": 2097152,
+  "timeoutMs": 5000,
+  "processTimeoutMs": 15000,
+  "status": "captured-unadmitted",
+  "admissionsChanged": false,
+  "httpStatus": 200,
+  "bytes": 40457,
+  "sha256": "e9523ce8f9177fa87958e8f8c51ca1d4679bbb5070a5c316584763e05abd87a8",
+  "identityCheckPending": true,
+  "finishedAt": "2026-10-26T15:34:49.285Z"
+}

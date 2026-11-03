@@ -1,0 +1,58 @@
+{
+  "pass": true,
+  "pinsVerifiedAndUnchanged": 276,
+  "manifestChain": [
+    {
+      "manifest": "/Users/tim/Documents/Codex/2026-10-27/task-3/fresh-box-qualification-20261101-01/FINAL-RECEIPT.json",
+      "sha256": "b7b80ed3eefa36cc0496cedf395809136c92164dcd097be70f6c3a7729b1dc94",
+      "newChildPins": 121
+    },
+    {
+      "manifest": "/Users/tim/Documents/Codex/2026-10-27/task-3/fresh-source-qualification-20261101-01/FINAL-RECEIPT.json",
+      "sha256": "4093feac955b4b08e85f7ea7cf7c807b54e121277027c0046892403ef37dc02c",
+      "newChildPins": 93
+    }
+  ],
+  "reportPages": 16,
+  "strongReportPages": 15,
+  "weakReportPages": 1,
+  "games": 38,
+  "strongGames": 27,
+  "weakGames": 11,
+  "states": {
+    "withheld": 117,
+    "composed_for_offline_review": 163
+  },
+  "withheldReasons": {
+    "weaker_report_witness_retained": 116,
+    "prior_identity_exposure_or_finality_held": 1
+  },
+  "copies": 163,
+  "changedCells": 978,
+  "acceptedByDate": {
+    "2026-10-28": 22,
+    "2026-10-29": 66,
+    "2026-10-30": 21,
+    "2026-10-31": 54
+  },
+  "originalNullsPreserved": 1680,
+  "profiles": 740,
+  "selectedRecords": 3461,
+  "windowCounts": {
+    "rawComplete": 512,
+    "trialComplete": 624,
+    "zeroShot": 20
+  },
+  "newlyOperandCompleteWindows": 112,
+  "changedButStillIncompleteWindows": 36,
+  "remainingIncompleteWindows": 116,
+  "allFullRowsPreservedExceptSixCopyFields": true,
+  "pureEntrypointMatchesArtifact": true,
+  "realDataRepeatIdempotent": true,
+  "originalSourceAsOfUTC": "2026-11-01T19:57:38.026058+00:00",
+  "eventThroughDate": "2026-10-31",
+  "trialAsOfUTC": "2026-11-01T21:26:06.168944+00:00",
+  "networkDenied": true,
+  "scoreComputation": false,
+  "productionAdmission": false
+}

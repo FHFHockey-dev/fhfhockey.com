@@ -1,0 +1,27 @@
+[
+  {
+    "path": "web/lib/player-cards/reviewedHeroSamples.ts",
+    "bytes": 2186,
+    "sha256": "b2ed3a541240d600dbbb9fcf10d1bac2ce2db6476484b908f0f3469210cec0cc"
+  },
+  {
+    "path": "web/lib/player-cards/teamLogo.ts",
+    "bytes": 2342,
+    "sha256": "8cc47f9f57feff380c4af32e9bf3b96b5506f1e1c75d29c42cbdbce43295aa47"
+  },
+  {
+    "path": "web/lib/player-cards/currentArtwork.test.ts",
+    "bytes": 4274,
+    "sha256": "6bb47a0f84e5c2c983fd9e4155cc106771a1368da5fd3cfefb3c1a41156f2ae1"
+  },
+  {
+    "path": "web/components/player-cards/CurrentPlayerCardStudio.test.tsx",
+    "bytes": 9483,
+    "sha256": "c23571ab0d50f069c41dc793e64aa3c1d545d784e6346a0c2c9be857b0891f82"
+  },
+  {
+    "path": "web/public/player-cards/hero-samples/8476453.png",
+    "bytes": 1302004,
+    "sha256": "2010d97f1e1c631f7ccf154d991517f3b6923df7739d756e39ed06140aa1f278"
+  }
+]

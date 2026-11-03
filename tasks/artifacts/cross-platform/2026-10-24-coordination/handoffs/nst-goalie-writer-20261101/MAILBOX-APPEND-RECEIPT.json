@@ -1,0 +1,11 @@
+{
+  "atUtc": "2026-11-01T14:35:15.094866+00:00",
+  "mailbox": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-TO-CLAUDE.md",
+  "entryId": "CODEX-NST-GOALIE-WRITER-20261101-PLAN",
+  "previousBytes": 403119,
+  "previousSha256": "c182c930edf10de36ec6b943c6a95437eab8d947f62de740f2d906ab379b7277",
+  "preservedPrefix": true,
+  "entrySha256": "d18b5d25b19e14bf6df263766120dac3968914785d4bd7e4761e45deadcc4f61",
+  "mailboxSha256AfterAppend": "943262d031aef1869c806e9d081d2b56c8dc5d9c8d78cd3fac61377ec980e0db",
+  "acknowledgement": "pending; no other mailbox or lease edited"
+}

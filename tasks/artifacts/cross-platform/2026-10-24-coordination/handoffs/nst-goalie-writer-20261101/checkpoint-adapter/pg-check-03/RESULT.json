@@ -1,0 +1,29 @@
+{
+  "status": "FAIL",
+  "hostedCalls": 0,
+  "checks": [
+    {
+      "name": "Missing shared admission prerequisite rolls back migration",
+      "status": "PASS"
+    },
+    {
+      "name": "Exact migration, RLS and least privileges",
+      "status": "PASS"
+    },
+    {
+      "name": "Default disabled control dispatches nothing",
+      "status": "PASS"
+    },
+    {
+      "name": "Idempotent enqueue, scope collision, aperture and missing finality",
+      "status": "PASS"
+    }
+  ],
+  "migrationSha256": "6c3dd5dd3c298f779f3a1448c7ea078299aa6e9302506ef5781ca04546a3f2bc",
+  "clockFixture": "Only clock_timestamp() in function bodies replaced for deterministic windows; exact definitions restored and compared.",
+  "postgresVersion": "15.19 (Homebrew)",
+  "error": "",
+  "serverStopped": true,
+  "ownedLockReleased": true,
+  "disposableDataRemoved": true
+}

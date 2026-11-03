@@ -1,0 +1,26 @@
+{
+  "checks": [
+    "Actual captured NHL inputs produce ready10appearance card; all9values/exposure/IDs/providerdates/UTCdates match independently summed raw rows",
+    "Both functional formats use actual retained capture; PNG/manifest/share parity, source/capture/finality/rank caveats and390px nooverflow",
+    "Ownlast5/10/20 reload only captured inputs, snapshot invalidation and knownshort11/20 sample remain truthful",
+    "Dropped history/invalid game counts failclosed; uncaptured player cannot fanout or retain stale export"
+  ],
+  "exports": [
+    {
+      "format": "rates-opportunity",
+      "sha256": "a6f16f7973b1132b071e65d2bd16efbe23c5ebf14498d78426b7a883152b18d3",
+      "shareBytesMatch": true
+    },
+    {
+      "format": "results-milestones",
+      "sha256": "b66d2694c42faea6e49748b17781b6f784b535251866741c2a828d2c2ac545bc",
+      "shareBytesMatch": true
+    }
+  ],
+  "externalAttempts": [],
+  "pageErrors": [],
+  "actualSelectedPlayerBasicDataQualified": true,
+  "source": "nhl-retained",
+  "leagueRanksQualified": false,
+  "actualGameEndsQualified": false
+}

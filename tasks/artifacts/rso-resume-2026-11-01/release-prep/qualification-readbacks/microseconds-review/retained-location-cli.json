@@ -1,0 +1,30 @@
+{
+  "findings": [],
+  "summary": {
+    "pass": true,
+    "issued": 2,
+    "coverage": {
+      "rso": {
+        "issued": 2,
+        "matched": 2,
+        "readbacks": 2
+      },
+      "start_chart": {
+        "issued": 2,
+        "matched": 2,
+        "readbacks": 2
+      }
+    },
+    "settled": 2,
+    "sealedRows": 0,
+    "sealed": {
+      "from": "2026-10-23",
+      "to": "2026-10-30",
+      "rule": "no issued-row, readback or outcome reads for these dates; never used to choose target, threshold or method"
+    },
+    "tolerance": 0.0001,
+    "findingCodes": {},
+    "scopeHash": "5fd2a13809287b64aa1e9acdf1dd4ccfb9076c5d5656f4c73679f7a6d6e47ce9",
+    "protocolHash": "49ae034acc864a291393dc27e86cc745697ca83e18cc2f9666508f07db46a4ef"
+  }
+}

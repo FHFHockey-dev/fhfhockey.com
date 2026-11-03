@@ -1,0 +1,19 @@
+{
+  "observedAt": "2026-10-31T23:24:50.326439+00:00",
+  "promotionalDisplayedUsd": 85,
+  "promotionalExpiry": "2026-11-13",
+  "purchasedDisplayedUsd": 10,
+  "allProjectsAllKeysAllApiSources": true,
+  "usageDisplayed": {
+    "responsesRequests": 6,
+    "responsesInputTokens": 18518,
+    "decisionsRequests": 1,
+    "decisionsInputTokens": 891
+  },
+  "matchesPreRunSevenReceipts": true,
+  "newTenResponsesNotYetReflected": true,
+  "roundedAndLagging": true,
+  "additionalPolling": false,
+  "invoiceAndGrantAttributionUnverified": true,
+  "noAccountSettingsChanged": true
+}

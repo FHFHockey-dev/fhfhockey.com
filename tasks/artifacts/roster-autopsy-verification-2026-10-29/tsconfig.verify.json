@@ -1,0 +1,12 @@
+{
+  "extends": "../../../web/tsconfig.json",
+  "include": [],
+  "files": [
+    "../../../web/next-bootstrap.d.ts",
+    "../../../web/lib/rosterAutopsy/manual.ts",
+    "../../../web/lib/rosterAutopsy/manual.test.ts",
+    "../../../web/components/RosterAutopsy/RosterAutopsy.tsx",
+    "../../../web/components/RosterAutopsy/RosterAutopsy.test.tsx",
+    "../../../web/pages/roster-autopsy.tsx"
+  ]
+}

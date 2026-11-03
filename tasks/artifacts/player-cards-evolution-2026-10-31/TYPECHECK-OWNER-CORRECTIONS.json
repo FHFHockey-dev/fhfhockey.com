@@ -1,0 +1,20 @@
+{
+  "command": "node --max-old-space-size=8192 node_modules/typescript/bin/tsc --noEmit --incremental false --extendedDiagnostics",
+  "exitCode": 0,
+  "trigger": "Owner corrected the four previously reported errors after the prior run",
+  "startSourcePins": [
+    {
+      "path": "web/lib/socialShare/modules/contract.test.ts",
+      "sha256": "ff2f6ba6dccef331d9c7a2bc8240300ead793f2b71638706c74b16cf7a57a896"
+    },
+    {
+      "path": "web/lib/socialShare/modules/server.ts",
+      "sha256": "ed828f0beb6d5e10545fbd5f8f8454ad1b4bdb1d26ea801ea064f0802bd264f7"
+    }
+  ],
+  "sourceUnchangedDuringCheck": true,
+  "diagnosticCount": 0,
+  "memoryUsedKiB": 6628853,
+  "elapsedSeconds": 59.56,
+  "sourceLogSHA256": "0c7a124e676e4f2894b7fc8354058789f94b6685449aacd43daca52c6d3c6f77"
+}

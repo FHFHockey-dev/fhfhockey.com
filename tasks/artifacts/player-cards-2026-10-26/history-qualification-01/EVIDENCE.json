@@ -1,0 +1,135 @@
+{
+  "at": "2026-10-26T15:45:53.063289+00:00",
+  "artifacts": [
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/GAME-DATE-MAP.json",
+      "bytes": 5690,
+      "sha256": "21017e8f1d540f5dadd4e19dd4520a45539e8a40c82887309977bd9889698b90"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/HANDOFF.md",
+      "bytes": 3464,
+      "sha256": "aa688ffa56883033678dbad6cd1ace2a9cd37c05605d7d7e5273b546f17c84b8"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/HISTORY-RECONCILIATION.json",
+      "bytes": 1757,
+      "sha256": "34c2ac6b40a7a5fe678d72344ae4d8238d407d52217f0c1a607dca69a5c02391"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/LANDING-FACTS.json",
+      "bytes": 222,
+      "sha256": "3f0f65b68589efb5dc1797151a2a4af31b71dd20bbd321a76091aeeae71c250f"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/LANDING-RAW.json",
+      "bytes": 16962,
+      "sha256": "559a1232740357bb42d9311afeffd47dd0482aa5d379f985c3781602558cdca0"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/LANDING-RECEIPT.json",
+      "bytes": 494,
+      "sha256": "362676e317293c031b3a8da88a4e7edf5878bff7530430561bb20ef56548cdb6"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/METRIC-QUALIFICATION.json",
+      "bytes": 6652,
+      "sha256": "1452224adbf2cbad2180450444af25219fa1b4fbaf342c94d2f11e068694609e"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/NEXT-CONTRACT-AND-READ.md",
+      "bytes": 3485,
+      "sha256": "7e0ed7ffe8fe39c1c1a7fd82af55478538d845185ce48a4483e66ecd3c19559e"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/PUBLIC-RESEARCH-LIMITATIONS.json",
+      "bytes": 920,
+      "sha256": "c231d423001218054993e08e9ff32a794a61611580f25569210a158e1821a2cc"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/REPORT-QUALIFICATION.json",
+      "bytes": 1222,
+      "sha256": "1951871f322b74f9ea093c5bb79122cd6393ee968b6ff7c91475bb189399b233"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/REPORT-RAW.html",
+      "bytes": 40457,
+      "sha256": "e9523ce8f9177fa87958e8f8c51ca1d4679bbb5070a5c316584763e05abd87a8"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/REPORT-RECEIPT.json",
+      "bytes": 529,
+      "sha256": "d88d9b8cfcb5d1663bf24ab215281634c8865aa4ca27a91faff5cef14426293d"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/REVIEWED-SOURCE-PINS.json",
+      "bytes": 531,
+      "sha256": "0d2e26f5ba4f6fc28f8f5d7aeb176d660e9d7ed29e3cf667a2406a9bbfc555e1"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/SCHEDULE-RAW.json",
+      "bytes": 177781,
+      "sha256": "5667c3bc07e9088c024e007513898d24bb0ff380a702dcaf79116656baf3a695"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/SCHEDULE-RECEIPT.json",
+      "bytes": 552,
+      "sha256": "72b85e8dc834107165e53ffd631eceb968e77dac6019dd30da918096a5352263"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/capture-finality-source.mjs",
+      "bytes": 2460,
+      "sha256": "7ea123ca04d3d5ec2d71529c0067e333def5625bb0a95cca774cd6b2dcec0d5f"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/capture-game-report.mjs",
+      "bytes": 1918,
+      "sha256": "2257dd4e81e25e678016085ad0c59ac0a8fbe5885e7ebabe66cc968cb4900ffb"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/capture-schedule.mjs",
+      "bytes": 2130,
+      "sha256": "e2dd2f765f02be1dbaa38b9495f79b09ac3e877b4c1fd433e6de7d6e2467c72f"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/landing-read.log",
+      "bytes": 433,
+      "sha256": "f74eae682c69c21b734cb9060cdf86e822f2ce779e0f8501cc3d773463c14cc9"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/qualify-report.mjs",
+      "bytes": 3686,
+      "sha256": "97f786c0ef794fc0d105d6584e8c7a4261f7de23d68eddaecefd66d46413216d"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/report-read.log",
+      "bytes": 464,
+      "sha256": "9a4534aae4e5ce156d416e12a8e28daf8793c423119994b0efe7c53a4097cda1"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/schedule-read.log",
+      "bytes": 479,
+      "sha256": "f491636d10dc87570592d40a205ac21bba12f90b5a386af2663f018bcc8de488"
+    }
+  ],
+  "reviewedSourcesUnchanged": [
+    {
+      "path": "web/lib/player-cards/cardEvidenceVerdict.ts",
+      "beforeSha256": "fd5a2ccd681428c666505303b594405663a3f16f4d12688aa371d40675f36480",
+      "afterSha256": "c181fe190e6831b4804f8ae4233eeeaab16aca0c4f7a7cd3465d61b0e51ecbec",
+      "bytes": 4605
+    },
+    {
+      "path": "web/lib/player-cards/cardEvidenceVerdict.test.ts",
+      "beforeSha256": "dcc4551c540ff810aa789bd821bbe57708d38c5465302ed5e3d4b9cb14d15e61",
+      "afterSha256": "8942ef62c9ecd4a0396301ed63437658c8b4fb0e9db9c122f35575d62a50985f",
+      "bytes": 15500
+    }
+  ],
+  "newPublicDirectReads": 3,
+  "privateDatabaseReads": 0,
+  "sourceChanges": [],
+  "admissionChanges": [],
+  "liveActivation": false,
+  "premiumActivation": false
+}

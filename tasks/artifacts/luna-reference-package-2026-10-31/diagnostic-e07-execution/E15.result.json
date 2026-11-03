@@ -1,0 +1,25 @@
+{
+  "caseId": "E15",
+  "outcome": "recorded_model_failure",
+  "rawGrade": {
+    "identity": true,
+    "goalie": false,
+    "decisions": true,
+    "labelMatch": false
+  },
+  "reason": "goalie_subject_binding_invalid",
+  "decisionsDisposition": "not_scheduled",
+  "anchor": {
+    "caseId": "E15",
+    "sha256": "6bac0dbd6726b22decfdc6044963ccadacf180964389d95a88766f98aa214966"
+  },
+  "candidateAvailable": true,
+  "candidateApplied": false,
+  "callsThisReport": 1,
+  "cumulativeCalls": 16,
+  "exposureNanoUsd": 269362959,
+  "currentChargeNanoUsd": 449571,
+  "ledgerEnabled": true,
+  "blockedReason": null,
+  "proceed": true
+}

@@ -1,0 +1,33 @@
+{
+  "verifiedAt": "2026-10-31T22:06:57.327124+00:00",
+  "fullFocusedSuitePassed": 204,
+  "finalIntegrationTestsPassed": 31,
+  "finalIntegrationTestsSkipped": 175,
+  "distinctTestsPassed": 206,
+  "typecheck": "passed exit0 after test-only NODE_ENV typing correction",
+  "lint": "passed exit0",
+  "actualCliOfflineReplaysPassed": 2,
+  "originalResultsAndGradesUnchanged": true,
+  "separateReceiptBoundCandidates": true,
+  "actualHumanDecisionsRecorded": 0,
+  "unchangedApplicationPins": 13,
+  "priorArtifactPinsVerified": {
+    "span-binding-review": 16,
+    "continuation-e03-execution": 14,
+    "continuation-v4-e03": 26
+  },
+  "realLedgerUnchanged": true,
+  "realLedgerSha256": "fc59014d3ff7f3abdfdec0703ffa77f80e5d02ef764f19d21cb85fc08adbd8f2",
+  "historicalLedgerUnchanged": true,
+  "cumulativeCalls": 4,
+  "cumulativeMaxCalls": 20,
+  "aggregateExposureNanoUsd": 263950397,
+  "capNanoUsd": 1000000000,
+  "ledgerEnabled": false,
+  "actualProviderRequestsThisPhase": 0,
+  "realCredentialAccess": false,
+  "productionRequests": 0,
+  "builds": 0,
+  "deployments": 0,
+  "independentReview": "pending"
+}

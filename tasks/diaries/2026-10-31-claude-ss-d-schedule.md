@@ -10,6 +10,6 @@
 - **Future matchups:** labelled next week or upcoming; an unpublished schedule gives a reason, not an empty ranking.
 - **SS-1103-D:** HOT picks, short-sample fallback, Yahoo status override (sticky `coalesce` in the writer), unknown % is never-reported (not a join), gaps to pageNotes, opponent logos. Item 5 done: late newest night cuts the form window via completeThrough. Studio WIP by another session breaks Refresh-based specs.
 - **SS-1103-D2:** HOT chip red (danger color, 15% fill, 4.79:1), with a contrast test; after2 renders from fixtures.
-- **Pending:** Refresh-removal spec edits from ss-contract, via Chef.
+- **SS-1103-D3:** pager spec fixture pinned to generatedAt 2026-11-01T16:00Z (cutoff Oct 31, as its calendar mock); schedule spec 6 passed on 3110. No Refresh edits needed.
 - **Next:** lead renders the post and runs the spec at 13.0; check layout of the weekly card.
 - **Blockers:** none. Full loader render is the lead's (needs more than 50 rows, plus the NHL schedule call).

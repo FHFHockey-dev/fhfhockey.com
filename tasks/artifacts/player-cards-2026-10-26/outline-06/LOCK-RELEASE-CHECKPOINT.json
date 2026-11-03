@@ -1,0 +1,10 @@
+{
+  "at": "2026-10-26T23:27:10.168700+00:00",
+  "reportedTestPid": 22402,
+  "testPidPresent": false,
+  "previewPid": 22758,
+  "previewCommand": "/usr/local/bin/node /Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/outline-06/serve-preview.mjs",
+  "heavyLockExists": false,
+  "lockRemovedByThisCheck": false,
+  "processSignalled": false
+}

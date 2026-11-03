@@ -1,0 +1,20 @@
+{
+  "observedAt": "2026-11-01T19:48:50.021193+00:00",
+  "head": "2aa77ee0aa4c2a4866c7338be463200338bf3a4b",
+  "driftAfterFinalCapture": [
+    "web/lib/socialShare/modules/busyQuiet.sources.ts",
+    "web/lib/socialShare/modules/busyQuiet.test.ts",
+    "web/lib/socialShare/modules/busyQuiet.ts",
+    "web/lib/socialShare/modules/goalieRescue.test.ts",
+    "web/lib/socialShare/modules/goalieRescue.ts"
+  ],
+  "reviewSha256": "6dc6822156c3560717c0a5c7df3f74a766e6d8e916e425386e7309dff65a04c8",
+  "state": "pending owner fixes/freeze/real-period evidence",
+  "blockedAction": "final integrated candidate acceptance",
+  "reason": "two medium findings and absent integrated freeze/current real-data receipts",
+  "denied": false,
+  "uncertainMutation": false,
+  "remoteBuilds": 0,
+  "deployments": 0,
+  "productionRequests": 0
+}

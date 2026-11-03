@@ -29,25 +29,25 @@
 
 | ID | Finding (detail in audit-X.md) | Source |
 | --- | --- | --- |
-| A-01 / B-03 | The STD count fallback reads the latest `wgo_skater_stats_totals` row with **no season filter** (`fetchWigoPlayerStats.ts:603-611`). A player with no current-season games shows last season's totals as STD. | re-verified (network log) |
+| A-01 / B-03 | **FIXED in ticket 2 (RECEIPT-2.md):** the STD totals fallback is now season-checked. Originally: the STD count fallback read the latest `wgo_skater_stats_totals` row with **no season filter** (`fetchWigoPlayerStats.ts:603-611`). | re-verified; fixed |
 | A-02 / B-04 | The aggregate query key and fetch are player-only, and `wigo_career` has no season column. After rollover, STD can be last season until the writer runs, with no as-of label. | sweep |
 | B-10 | The writer's TOI unit fixes are in source, but in September production rows still had L-window per-60s about 60× too small, and `std_pptoi` was wrong. A recompute is needed and unverified (my before screenshot from the prior evidence shows L5 G/60 = 0.01). | sweep + prior evidence |
 | B-05 | 3YA and CA add WGO counts from seasons that have no NST TOI, which inflates per-60s and deflates ATOI and PPTOI. | sweep |
 | B-06 / B-07 | PP% in 3YA and CA is an unweighted mean of seasonal PP%, and 3YA/CA counts are per-season averages that include partial seasons. Neither is disclosed in the UI. | sweep |
-| B-08 | The chart's "Avg" line is an unweighted per-game mean, so it disagrees with the pooled STD line. | sweep |
+| B-08 | **FIXED in ticket 4:** the dashed line is labelled "Game mean" and formatted like its stat. | sweep; fixed |
 | B-11 / B-12 | Rating cohorts have no TOI floor, and ratings and the percentile panel can use different seasons. | sweep |
 | B-13 | NST chart rows join on `season + date_scraped` with no game identity. | sweep |
-| A-03 | Team drivers need every team-game row. One missing row blanks that team for the season, and if 9 or more teams have gaps the cards blank for everyone. The NST cutoff date is also applied to `wgo_team_stats`. | sweep (code confirmed while building fixtures: `fetchTeamDriverSnapshots.ts` completeness filter) |
-| A-05 | Search has no goalie or active filter and no ordering. A selected goalie gets empty panels with no explanation. | sweep |
+| A-03 | **FIXED (tickets 4 and 5):** cutoff shared by both sources (RECEIPT-4); TJ's 90% coverage rule with an "N of M games" label and covered-games-only rates (RECEIPT-5). Below 90% stays incomplete. | sweep; fixed |
+| A-05 | **FIXED in ticket 4:** search excludes goalies (unknown positions kept). Ordering and position/team in the options are still open (A-13). | sweep; fixed |
 | A-06 | A failed season lookup shows "Loading season info…" forever, and the drivers card says "Select a player" even after one is selected. | sweep |
-| C-01 | Game Score's goal-differential term counts all-strength on-ice GF/GA (PP and SH included); the published model uses 5v5. The help text doesn't say this. | sweep (`baseline.sql:1364-1365`) |
+| C-01 | **DISCLOSED in ticket 4:** the help text states the all-situation goal term. The model itself (RPC) is unchanged. | sweep; disclosed |
 | C-02 | The radar cohort is one **unpaged, unordered** RPC read under the 1000-row cap, with about 925–1000 skaters a season, so rows (possibly the selected player) can drop silently. Live, it also timed out in September. | re-verified (single unranged RPC) |
 | C-03 / C-04 | The radar has no min-GP filter, and both the radar and the rate percentiles pool forwards with defensemen. | sweep |
-| C-05 | Rate-percentile min GP, "Player GP" and the stale-season check use NST `gp`, which has been seen contaminated (GP 102). The correct WGO GP is already fetched. | sweep |
+| C-05 | **FIXED in ticket 3 (RECEIPT-3.md):** NST GP above canonical WGO GP is now clamped (selected player) or nulled (cohort) before filtering and the staleness check. Originally: rate-percentile min GP, "Player GP" and the stale-season check used contaminated NST `gp` (GP 102). | sweep; fixed with regression test |
 
 ## Open: performance (P2)
 - **A-07 / B-15:** a bare `new QueryClient()` means staleTime 0 and refetch on focus. Player details, the 4-request aggregate fetch and the matrix log all refetch on every tab focus.
-- **A-08 / B-14:** `wigo_rates` (0 rows, no writer) is still fetched for every player and would silently override `wigo_career` if it were ever filled.
+- **A-08 / B-14: FIXED in ticket 6 (RECEIPT-6.md).** The writerless `wigo_rates` table is no longer read.
 - **B-18:** `wgo_skater_stats_totals` is fetched twice for the same row.
 - **A-09:** the schedule polls the uncached `/api/cors` Vercel function every 5 minutes, even offseason. This is a runtime cost under AGENTS.md's Vercel controls.
 - **A-10 / B-16 / C-09:** the team-driver dataset (about 6–7k rows, about 9 requests), the ratings cohort and the rate-percentile cohorts are each re-downloaded after 60 s, and the cohorts aren't shared.

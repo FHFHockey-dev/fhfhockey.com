@@ -1,0 +1,30 @@
+{
+  "state": "REVIEW_COMPLETE_ONE_P2_TIMING_FINDING",
+  "files": {
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-provenance-gate-audit-2026-11-01/REVIEW.md": "934aaa1f90eba4445a9c4454d56e749d971c81867d89e806ed80704d32643157",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-provenance-gate-audit-2026-11-01/PINS.json": "e2a53c0e692098732866d595931cd06ba841a425fe03089bc27e4c2fc30ebe56",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-provenance-gate-audit-2026-11-01/CHECKS.json": "4802afa95d3cb30656e90eff4c8a3fed016eb2ebc053859c79233bdfa612b9d2",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-provenance-gate-audit-2026-11-01/TESTS.log": "b1419131c550f1e4de4fddcf2525adb7641f5297d55b88b0da0cd5b9fe9e6e1b",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-provenance-gate-audit-2026-11-01/TYPES.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-provenance-gate-audit-2026-11-01/TIMING-UTC.json": "75419a54bc7435706e6a0567828a2d1ec7e09eac98102ddf7a670059a49be61d",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-provenance-gate-audit-2026-11-01/TIMING-America-New_York.json": "cb8a13f42907554bb6cfc26a5a5b5f16d0a18d86249def13aacd0fe7fc988e99",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-provenance-gate-audit-2026-11-01/timing-probes.cjs": "2fb2d6bf83bd9440c3b052c1548a8c1f085cc853f4044072e620dacf1723d496",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-provenance-gate-audit-2026-11-01/run-checks.cjs": "2b0d575ed1394cf8f8735e2c86e4ee777c7e368986d5b14da6fc564d79e0bcc4",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-provenance-gate-audit-2026-11-01/REPLAY-INSPECTION.json": "23f1c5ad66d2da0c41b57c287c8586a7bea1e3fd25671abbd76ab5477cb99d4a"
+  },
+  "originalTestsPassed": 15,
+  "strictCompilePassed": true,
+  "timingBoundaryViolationsReproducedPerTimezone": 6,
+  "timingControlsPassedPerTimezone": 6,
+  "timezones": [
+    "UTC",
+    "America/New_York"
+  ],
+  "verifiedInputPins": 38,
+  "realAcceptances": 0,
+  "scoresComputed": 0,
+  "sourceEdits": 0,
+  "productionRequests": 0,
+  "holdoutAccess": 0,
+  "ownedLock": false
+}

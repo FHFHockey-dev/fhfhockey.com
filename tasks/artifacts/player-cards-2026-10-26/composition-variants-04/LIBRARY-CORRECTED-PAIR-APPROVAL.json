@@ -1,0 +1,29 @@
+{
+  "recordedAt": "2026-10-26T18:39:40.899842+00:00",
+  "authority": "TJ approved corrected PNG pair to his ChatGPT Library at2026-10-26T18:13:59UTC; parent explicitly applies same bounded purpose/destination to latest corrected04pair",
+  "destination": "Owner ChatGPT Library, for attachment in this chat",
+  "files": [
+    {
+      "file": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/composition-variants-04/posterized-team-colors-card.png",
+      "bytes": 590188,
+      "sha256": "8aaf0254b8818d0ece054107d97674f45c221451235d1afebe8a0eff7cae1e34",
+      "dimensions": [
+        1200,
+        1020
+      ]
+    },
+    {
+      "file": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/composition-variants-04/pixelated-team-colors-card.png",
+      "bytes": 531177,
+      "sha256": "51b7ac42acff12f4d4420a9d32abd6e79a7e5cdd15c7cc7df11bcaf4e76f28fc",
+      "dimensions": [
+        1200,
+        1020
+      ]
+    }
+  ],
+  "prior03KnownUploadWrites": 0,
+  "prior03Ids": [],
+  "uncertainPriorOutcome": false,
+  "otherTransmissionAuthorized": false
+}

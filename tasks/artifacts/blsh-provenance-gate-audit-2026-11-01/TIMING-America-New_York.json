@@ -1,0 +1,287 @@
+{
+  "timezone": "America/New_York",
+  "fixture": "explicitly synthetic original test fixture; no native evidence or real acceptance",
+  "unexpectedAdmissions": 6,
+  "controlsPassed": 6,
+  "records": [
+    {
+      "name": "native receipt 1us after evaluation",
+      "expected": "individual withheld",
+      "actualError": null,
+      "individualQualified": 1,
+      "onIceQualified": 1,
+      "unexpectedAdmission": true,
+      "requestAsOf": "2026-11-01T20:00:00Z",
+      "evaluatedAt": "2026-11-01T20:00:00Z",
+      "nativeAt": "2026-11-01T20:00:00.000001Z",
+      "officialAt": "2026-11-01T19:15:00Z",
+      "completedBy": "2026-10-31T23:00:00Z",
+      "individualCaptureAt": "2026-11-01T19:00:00Z",
+      "maxCaptureAgeHours": 24,
+      "provenance": {
+        "state": "exact_reviewed_row_provenance",
+        "reasons": [],
+        "availableAtUTC": "2026-11-01T20:00:00.000Z",
+        "oldestEvidenceAtUTC": "2026-11-01T19:15:00.000Z",
+        "originalPublicationUTC": null,
+        "acceptedReviewSHA256": "044d39332be85b17284d6d44b412c221581881673abd8a7c6fe76ad14508568d"
+      }
+    },
+    {
+      "name": "official frame 1us after evaluation",
+      "expected": "both groups withheld",
+      "actualError": null,
+      "individualQualified": 1,
+      "onIceQualified": 1,
+      "unexpectedAdmission": true,
+      "requestAsOf": "2026-11-01T20:00:00Z",
+      "evaluatedAt": "2026-11-01T20:00:00Z",
+      "nativeAt": "2026-11-01T19:10:00Z",
+      "officialAt": "2026-11-01T20:00:00.000001Z",
+      "completedBy": "2026-10-31T23:00:00Z",
+      "individualCaptureAt": "2026-11-01T19:00:00Z",
+      "maxCaptureAgeHours": 24,
+      "provenance": {
+        "state": "exact_reviewed_row_provenance",
+        "reasons": [],
+        "availableAtUTC": "2026-11-01T20:00:00.000Z",
+        "oldestEvidenceAtUTC": "2026-11-01T19:10:00.000Z",
+        "originalPublicationUTC": null,
+        "acceptedReviewSHA256": "044d39332be85b17284d6d44b412c221581881673abd8a7c6fe76ad14508568d"
+      }
+    },
+    {
+      "name": "receipt 1us before completion",
+      "expected": "both groups withheld",
+      "actualError": null,
+      "individualQualified": 1,
+      "onIceQualified": 1,
+      "unexpectedAdmission": true,
+      "requestAsOf": "2026-11-01T20:00:00Z",
+      "evaluatedAt": "2026-11-01T20:00:00Z",
+      "nativeAt": "2026-11-01T19:10:00Z",
+      "officialAt": "2026-11-01T19:15:00Z",
+      "completedBy": "2026-11-01T19:10:00.000001Z",
+      "individualCaptureAt": "2026-11-01T19:00:00Z",
+      "maxCaptureAgeHours": 24,
+      "provenance": {
+        "state": "exact_reviewed_row_provenance",
+        "reasons": [],
+        "availableAtUTC": "2026-11-01T19:15:00.000Z",
+        "oldestEvidenceAtUTC": "2026-11-01T19:10:00.000Z",
+        "originalPublicationUTC": null,
+        "acceptedReviewSHA256": "044d39332be85b17284d6d44b412c221581881673abd8a7c6fe76ad14508568d"
+      }
+    },
+    {
+      "name": "evaluation 1us before source request",
+      "expected": "evaluation rejected",
+      "actualError": null,
+      "individualQualified": 1,
+      "onIceQualified": 1,
+      "unexpectedAdmission": true,
+      "requestAsOf": "2026-11-01T20:00:00.000001Z",
+      "evaluatedAt": "2026-11-01T20:00:00Z",
+      "nativeAt": "2026-11-01T19:10:00Z",
+      "officialAt": "2026-11-01T19:15:00Z",
+      "completedBy": "2026-10-31T23:00:00Z",
+      "individualCaptureAt": "2026-11-01T19:00:00Z",
+      "maxCaptureAgeHours": 24,
+      "provenance": {
+        "state": "exact_reviewed_row_provenance",
+        "reasons": [],
+        "availableAtUTC": "2026-11-01T19:15:00.000Z",
+        "oldestEvidenceAtUTC": "2026-11-01T19:10:00.000Z",
+        "originalPublicationUTC": null,
+        "acceptedReviewSHA256": "044d39332be85b17284d6d44b412c221581881673abd8a7c6fe76ad14508568d"
+      }
+    },
+    {
+      "name": "source capture 1us after evaluation",
+      "expected": "individual withheld",
+      "actualError": null,
+      "individualQualified": 1,
+      "onIceQualified": 1,
+      "unexpectedAdmission": true,
+      "requestAsOf": "2026-11-01T20:00:00Z",
+      "evaluatedAt": "2026-11-01T20:00:00Z",
+      "nativeAt": "2026-11-01T19:10:00Z",
+      "officialAt": "2026-11-01T19:15:00Z",
+      "completedBy": "2026-10-31T23:00:00Z",
+      "individualCaptureAt": "2026-11-01T20:00:00.000001Z",
+      "maxCaptureAgeHours": 24,
+      "provenance": {
+        "state": "exact_reviewed_row_provenance",
+        "reasons": [],
+        "availableAtUTC": "2026-11-01T19:15:00.000Z",
+        "oldestEvidenceAtUTC": "2026-11-01T19:10:00.000Z",
+        "originalPublicationUTC": null,
+        "acceptedReviewSHA256": "044d39332be85b17284d6d44b412c221581881673abd8a7c6fe76ad14508568d"
+      }
+    },
+    {
+      "name": "capture age 1us over one-hour policy",
+      "expected": "both groups withheld",
+      "actualError": null,
+      "individualQualified": 1,
+      "onIceQualified": 1,
+      "unexpectedAdmission": true,
+      "requestAsOf": "2026-11-01T20:00:00Z",
+      "evaluatedAt": "2026-11-01T20:00:00.000001Z",
+      "nativeAt": "2026-11-01T19:10:00Z",
+      "officialAt": "2026-11-01T19:15:00Z",
+      "completedBy": "2026-10-31T23:00:00Z",
+      "individualCaptureAt": "2026-11-01T19:00:00Z",
+      "maxCaptureAgeHours": 1,
+      "provenance": {
+        "state": "exact_reviewed_row_provenance",
+        "reasons": [],
+        "availableAtUTC": "2026-11-01T19:15:00.000Z",
+        "oldestEvidenceAtUTC": "2026-11-01T19:10:00.000Z",
+        "originalPublicationUTC": null,
+        "acceptedReviewSHA256": "044d39332be85b17284d6d44b412c221581881673abd8a7c6fe76ad14508568d"
+      }
+    },
+    {
+      "name": "native receipt 1ms after evaluation control",
+      "expected": "individual withheld",
+      "actualError": null,
+      "individualQualified": 0,
+      "onIceQualified": 1,
+      "unexpectedAdmission": false,
+      "requestAsOf": "2026-11-01T20:00:00Z",
+      "evaluatedAt": "2026-11-01T20:00:00Z",
+      "nativeAt": "2026-11-01T20:00:00.001Z",
+      "officialAt": "2026-11-01T19:15:00Z",
+      "completedBy": "2026-10-31T23:00:00Z",
+      "individualCaptureAt": "2026-11-01T19:00:00Z",
+      "maxCaptureAgeHours": 24,
+      "provenance": {
+        "state": "withheld",
+        "reasons": [
+          "evidence_chronology_unqualified"
+        ],
+        "availableAtUTC": null,
+        "oldestEvidenceAtUTC": null,
+        "originalPublicationUTC": null,
+        "acceptedReviewSHA256": null
+      }
+    },
+    {
+      "name": "official frame 1ms after evaluation control",
+      "expected": "both groups withheld",
+      "actualError": null,
+      "individualQualified": 0,
+      "onIceQualified": 0,
+      "unexpectedAdmission": false,
+      "requestAsOf": "2026-11-01T20:00:00Z",
+      "evaluatedAt": "2026-11-01T20:00:00Z",
+      "nativeAt": "2026-11-01T19:10:00Z",
+      "officialAt": "2026-11-01T20:00:00.001Z",
+      "completedBy": "2026-10-31T23:00:00Z",
+      "individualCaptureAt": "2026-11-01T19:00:00Z",
+      "maxCaptureAgeHours": 24,
+      "provenance": {
+        "state": "withheld",
+        "reasons": [
+          "evidence_chronology_unqualified"
+        ],
+        "availableAtUTC": null,
+        "oldestEvidenceAtUTC": null,
+        "originalPublicationUTC": null,
+        "acceptedReviewSHA256": null
+      }
+    },
+    {
+      "name": "receipt 1ms before completion control",
+      "expected": "both groups withheld",
+      "actualError": null,
+      "individualQualified": 0,
+      "onIceQualified": 0,
+      "unexpectedAdmission": false,
+      "requestAsOf": "2026-11-01T20:00:00Z",
+      "evaluatedAt": "2026-11-01T20:00:00Z",
+      "nativeAt": "2026-11-01T19:10:00Z",
+      "officialAt": "2026-11-01T19:15:00Z",
+      "completedBy": "2026-11-01T19:10:00.001Z",
+      "individualCaptureAt": "2026-11-01T19:00:00Z",
+      "maxCaptureAgeHours": 24,
+      "provenance": {
+        "state": "withheld",
+        "reasons": [
+          "evidence_chronology_unqualified"
+        ],
+        "availableAtUTC": null,
+        "oldestEvidenceAtUTC": null,
+        "originalPublicationUTC": null,
+        "acceptedReviewSHA256": null
+      }
+    },
+    {
+      "name": "evaluation 1ms before source request control",
+      "expected": "evaluation rejected",
+      "actualError": "evaluation_precedes_source_request",
+      "individualQualified": 0,
+      "onIceQualified": 0,
+      "unexpectedAdmission": false,
+      "requestAsOf": "2026-11-01T20:00:00.001Z",
+      "evaluatedAt": "2026-11-01T20:00:00Z",
+      "nativeAt": "2026-11-01T19:10:00Z",
+      "officialAt": "2026-11-01T19:15:00Z",
+      "completedBy": "2026-10-31T23:00:00Z",
+      "individualCaptureAt": "2026-11-01T19:00:00Z",
+      "maxCaptureAgeHours": 24,
+      "provenance": null
+    },
+    {
+      "name": "source capture 1ms after evaluation control",
+      "expected": "individual withheld",
+      "actualError": null,
+      "individualQualified": 0,
+      "onIceQualified": 1,
+      "unexpectedAdmission": false,
+      "requestAsOf": "2026-11-01T20:00:00Z",
+      "evaluatedAt": "2026-11-01T20:00:00Z",
+      "nativeAt": "2026-11-01T19:10:00Z",
+      "officialAt": "2026-11-01T19:15:00Z",
+      "completedBy": "2026-10-31T23:00:00Z",
+      "individualCaptureAt": "2026-11-01T20:00:00.001Z",
+      "maxCaptureAgeHours": 24,
+      "provenance": {
+        "state": "withheld",
+        "reasons": [
+          "current_use_evidence_stale_or_unknown"
+        ],
+        "availableAtUTC": "2026-11-01T19:15:00.000Z",
+        "oldestEvidenceAtUTC": "2026-11-01T19:10:00.000Z",
+        "originalPublicationUTC": null,
+        "acceptedReviewSHA256": null
+      }
+    },
+    {
+      "name": "capture age 1ms over one-hour policy control",
+      "expected": "both groups withheld",
+      "actualError": null,
+      "individualQualified": 0,
+      "onIceQualified": 0,
+      "unexpectedAdmission": false,
+      "requestAsOf": "2026-11-01T20:00:00Z",
+      "evaluatedAt": "2026-11-01T20:00:00.001Z",
+      "nativeAt": "2026-11-01T19:10:00Z",
+      "officialAt": "2026-11-01T19:15:00Z",
+      "completedBy": "2026-10-31T23:00:00Z",
+      "individualCaptureAt": "2026-11-01T19:00:00Z",
+      "maxCaptureAgeHours": 1,
+      "provenance": {
+        "state": "withheld",
+        "reasons": [
+          "current_use_evidence_stale_or_unknown"
+        ],
+        "availableAtUTC": "2026-11-01T19:15:00.000Z",
+        "oldestEvidenceAtUTC": "2026-11-01T19:10:00.000Z",
+        "originalPublicationUTC": null,
+        "acceptedReviewSHA256": null
+      }
+    }
+  ]
+}

@@ -1,0 +1,194 @@
+{
+  "version": "luna-span-binding-offline-replay-v1",
+  "actualProviderRequests": 0,
+  "realLedgerUnchanged": true,
+  "provenance": "exposed-synthetic-development; no holdout or new prediction",
+  "results": [
+    {
+      "id": "E02",
+      "originalRequestHash": "a008002a2f52e504b17262b7907edc00494d834e58c9420c7a3450406dfd3ed2",
+      "originalReviewReproducedExactly": true,
+      "historicalScore": {
+        "identity": true,
+        "goalie": false,
+        "decisions": true,
+        "labelMatch": false
+      },
+      "candidateLabelFieldsMatch": true,
+      "originalModelFailureRemains": true,
+      "candidate": {
+        "version": "luna-unique-exact-quote-review-v1",
+        "canPublish": false,
+        "canWriteAliases": false,
+        "canChangeStatus": false,
+        "canExecuteReplacement": false,
+        "canApply": false,
+        "status": "candidate_for_human_review",
+        "reason": null,
+        "holds": [
+          "human_review_required",
+          "no_publication_authority",
+          "original_response_remains_held",
+          "evidence_binding_human_review_required"
+        ],
+        "requestHash": "0863c094821987d26fe02213191ee76b76e5a2a4bb41399684cd674ebea41349",
+        "sourceHash": "a065e677be7367a0dbe667836503e2380944aada277d2218bb9e245fe9acb67c",
+        "rawOutputText": "{\"identity\":{\"version\":\"tweet-identity-proposal-v1\",\"requestHash\":\"0863c094821987d26fe02213191ee76b76e5a2a4bb41399684cd674ebea41349\",\"directoryHash\":\"88dbd1e19c22a04fba95f07d049c38af533b548723bd17106f639191667ae16f\",\"occurrences\":[{\"occurrenceId\":\"subject-4\",\"canonicalId\":\"nhl:900001\",\"status\":\"matched\",\"evidence\":{\"start\":4,\"end\":16,\"text\":\"Avery Keeper\"},\"identityConfidence\":\"strong\"}]},\"goalieStatuses\":[{\"occurrenceId\":\"subject-4\",\"canonicalId\":\"nhl:900001\",\"status\":\"ruled_out\",\"evidence\":{\"start\":4,\"end\":38,\"text\":\"Avery Keeper will not start tonight.\"}}]}",
+        "rawOutputSha256": "152916c970409b56ed1d1e3ac754b0bc1b78d98e12a194d890a00e2350d85c3d",
+        "candidateHash": "a1a9287cca48a43aad64530180e82a5848a5cd5753a1014ede7f1d7395a98a55",
+        "corrections": [
+          {
+            "occurrenceId": "subject-4",
+            "before": {
+              "start": 4,
+              "end": 38,
+              "text": "Avery Keeper will not start tonight."
+            },
+            "proposed": {
+              "start": 4,
+              "end": 40,
+              "text": "Avery Keeper will not start tonight."
+            }
+          }
+        ],
+        "candidate": {
+          "identity": {
+            "version": "tweet-identity-proposal-v1",
+            "requestHash": "0863c094821987d26fe02213191ee76b76e5a2a4bb41399684cd674ebea41349",
+            "directoryHash": "88dbd1e19c22a04fba95f07d049c38af533b548723bd17106f639191667ae16f",
+            "occurrences": [
+              {
+                "occurrenceId": "subject-4",
+                "canonicalId": "nhl:900001",
+                "status": "matched",
+                "evidence": {
+                  "start": 4,
+                  "end": 16,
+                  "text": "Avery Keeper"
+                },
+                "identityConfidence": "strong"
+              }
+            ]
+          },
+          "goalieStatuses": [
+            {
+              "occurrenceId": "subject-4",
+              "canonicalId": "nhl:900001",
+              "status": "ruled_out",
+              "evidence": {
+                "start": 4,
+                "end": 40,
+                "text": "Avery Keeper will not start tonight."
+              },
+              "verified": false,
+              "gameId": null,
+              "teamId": null,
+              "appliedOverride": null,
+              "policyFloorAfterAcceptance": null,
+              "holds": [
+                "human_review_required",
+                "game_and_source_time_binding_required",
+                "conflict_retraction_check_required"
+              ]
+            }
+          ]
+        }
+      },
+      "mockCalls": 1,
+      "actualProviderRequests": 0
+    },
+    {
+      "id": "E03",
+      "originalRequestHash": "cb4ebd599a52911bd995fd7089baf7062544dabdf3efd093e05d7782cf540084",
+      "originalReviewReproducedExactly": true,
+      "historicalScore": {
+        "identity": true,
+        "goalie": false,
+        "decisions": true,
+        "labelMatch": false
+      },
+      "candidateLabelFieldsMatch": true,
+      "originalModelFailureRemains": true,
+      "candidate": {
+        "version": "luna-unique-exact-quote-review-v1",
+        "canPublish": false,
+        "canWriteAliases": false,
+        "canChangeStatus": false,
+        "canExecuteReplacement": false,
+        "canApply": false,
+        "status": "candidate_for_human_review",
+        "reason": null,
+        "holds": [
+          "human_review_required",
+          "no_publication_authority",
+          "original_response_remains_held",
+          "evidence_binding_human_review_required"
+        ],
+        "requestHash": "ee16592f1d004d415f6fa8aa7ae6f09f8eae39bb8bab3dffcf8783519d3f4b1b",
+        "sourceHash": "3321344371bd65d7faa5c5a82c0c46a52a4047ff2e45e041e1d15729f8e81fce",
+        "rawOutputText": "{\"identity\":{\"version\":\"tweet-identity-proposal-v1\",\"requestHash\":\"ee16592f1d004d415f6fa8aa7ae6f09f8eae39bb8bab3dffcf8783519d3f4b1b\",\"directoryHash\":\"88dbd1e19c22a04fba95f07d049c38af533b548723bd17106f639191667ae16f\",\"occurrences\":[{\"occurrenceId\":\"subject-4\",\"canonicalId\":\"nhl:900001\",\"status\":\"matched\",\"evidence\":{\"start\":4,\"end\":16,\"text\":\"Avery Keeper\"},\"identityConfidence\":\"strong\"}]},\"goalieStatuses\":[{\"occurrenceId\":\"subject-4\",\"canonicalId\":\"nhl:900001\",\"status\":\"projected\",\"evidence\":{\"start\":4,\"end\":45,\"text\":\"Avery Keeper was first goalie off the ice.\"}}]}",
+        "rawOutputSha256": "9301d6141995488d2a2c50988d26ccbeda6a82279f923c57c4180927218dac80",
+        "candidateHash": "84cabfa7c655ba40b94d41159c70969de64572c70517a0ffa6335b382b53b94d",
+        "corrections": [
+          {
+            "occurrenceId": "subject-4",
+            "before": {
+              "start": 4,
+              "end": 45,
+              "text": "Avery Keeper was first goalie off the ice."
+            },
+            "proposed": {
+              "start": 4,
+              "end": 46,
+              "text": "Avery Keeper was first goalie off the ice."
+            }
+          }
+        ],
+        "candidate": {
+          "identity": {
+            "version": "tweet-identity-proposal-v1",
+            "requestHash": "ee16592f1d004d415f6fa8aa7ae6f09f8eae39bb8bab3dffcf8783519d3f4b1b",
+            "directoryHash": "88dbd1e19c22a04fba95f07d049c38af533b548723bd17106f639191667ae16f",
+            "occurrences": [
+              {
+                "occurrenceId": "subject-4",
+                "canonicalId": "nhl:900001",
+                "status": "matched",
+                "evidence": {
+                  "start": 4,
+                  "end": 16,
+                  "text": "Avery Keeper"
+                },
+                "identityConfidence": "strong"
+              }
+            ]
+          },
+          "goalieStatuses": [
+            {
+              "occurrenceId": "subject-4",
+              "canonicalId": "nhl:900001",
+              "status": "projected",
+              "evidence": {
+                "start": 4,
+                "end": 46,
+                "text": "Avery Keeper was first goalie off the ice."
+              },
+              "verified": false,
+              "gameId": null,
+              "teamId": null,
+              "appliedOverride": null,
+              "policyFloorAfterAcceptance": 0.65,
+              "holds": [
+                "human_review_required",
+                "game_and_source_time_binding_required",
+                "conflict_retraction_check_required"
+              ]
+            }
+          ]
+        }
+      },
+      "mockCalls": 1,
+      "actualProviderRequests": 0
+    }
+  ]
+}

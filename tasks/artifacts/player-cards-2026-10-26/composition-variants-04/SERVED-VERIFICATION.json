@@ -1,0 +1,15 @@
+{
+  "url": "http://127.0.0.1:3125/player-cards/compositions?checkpoint=right-edge04",
+  "checkpoint": "right-edge04",
+  "comparisonBytes": 2970642,
+  "comparisonSha256": "7312a49a98b2edc111c1b298db9e68e0d4bad166df906a5227c1e8240e299dd5",
+  "latestExportHashesVerified": 2,
+  "servedComparisonScreenshots": [
+    "served-comparison-desktop.png",
+    "served-comparison-phone.png"
+  ],
+  "servedInteractivePipelineAndLogoVerified": 2,
+  "externalAttempts": [],
+  "pageErrors": [],
+  "remoteAvailabilityClaimed": false
+}

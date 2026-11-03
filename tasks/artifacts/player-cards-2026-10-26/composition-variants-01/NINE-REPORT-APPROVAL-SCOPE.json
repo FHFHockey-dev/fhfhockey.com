@@ -1,0 +1,53 @@
+{
+  "productionPublicRead": true,
+  "privateDatabaseRead": false,
+  "method": "GET",
+  "concurrency": 1,
+  "maxRequests": 9,
+  "perRequestSeconds": 5,
+  "overallSeconds": 50,
+  "perResponseBytes": 262144,
+  "totalBytes": 2097152,
+  "retries": 0,
+  "redirects": 0,
+  "executed": false,
+  "games": [
+    {
+      "gameId": 2026020151,
+      "url": "https://www.nhl.com/scores/htmlreports/20262027/GS020151.HTM"
+    },
+    {
+      "gameId": 2026020123,
+      "url": "https://www.nhl.com/scores/htmlreports/20262027/GS020123.HTM"
+    },
+    {
+      "gameId": 2026020111,
+      "url": "https://www.nhl.com/scores/htmlreports/20262027/GS020111.HTM"
+    },
+    {
+      "gameId": 2026020095,
+      "url": "https://www.nhl.com/scores/htmlreports/20262027/GS020095.HTM"
+    },
+    {
+      "gameId": 2026020081,
+      "url": "https://www.nhl.com/scores/htmlreports/20262027/GS020081.HTM"
+    },
+    {
+      "gameId": 2026020060,
+      "url": "https://www.nhl.com/scores/htmlreports/20262027/GS020060.HTM"
+    },
+    {
+      "gameId": 2026020040,
+      "url": "https://www.nhl.com/scores/htmlreports/20262027/GS020040.HTM"
+    },
+    {
+      "gameId": 2026020024,
+      "url": "https://www.nhl.com/scores/htmlreports/20262027/GS020024.HTM"
+    },
+    {
+      "gameId": 2026020010,
+      "url": "https://www.nhl.com/scores/htmlreports/20262027/GS020010.HTM"
+    }
+  ],
+  "denialReceipt": "tasks/artifacts/player-cards-2026-10-26/date-finality-01/PUBLIC-REPORTS-APPROVAL-BLOCK.json"
+}

@@ -1,0 +1,12 @@
+{
+  "selectedStrataReconciled": 6,
+  "markdownCasesReconciled": 12,
+  "hashShuffledDisplayOrder": true,
+  "zeroShotProfiles": 42,
+  "zeroShotDirectional": {
+    "FP60": 16,
+    "production_only": 16,
+    "BLSH": 16
+  },
+  "all84PinsUnchangedAtFinish": true
+}

@@ -1,0 +1,7 @@
+{
+  "status": "REPRODUCED",
+  "error": "NST lifecycle configuration or deadline unavailable.",
+  "fetchAndEnvLoaderCalls": [],
+  "networkCalls": 0,
+  "scope": "Actual CLI AST + lifecycle helper; env intentionally lacks credentials; no env file read."
+}

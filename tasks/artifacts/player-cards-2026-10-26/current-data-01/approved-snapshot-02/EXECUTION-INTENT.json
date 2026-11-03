@@ -1,0 +1,11 @@
+{
+  "startedAt": "2026-10-27T00:42:32.766Z",
+  "approval": {
+    "userReply": "Sentinel_f2d8ba6f19fc81918c158c55444a021d",
+    "assistantMessage": "Sentinel_6b7ca3ae1b0881919313f81e84bd319b",
+    "at": "2026-10-27T00:40:24Z",
+    "answer": "yes",
+    "scope": "ONE secure retry of same3publicGETs; no further retries"
+  },
+  "oneExecution": true
+}

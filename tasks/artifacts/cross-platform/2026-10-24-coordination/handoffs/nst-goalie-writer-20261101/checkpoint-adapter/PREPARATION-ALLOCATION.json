@@ -1,0 +1,18 @@
+{
+  "id": "CODEX-NST-GOALIE-PREPARATION-20261101",
+  "owner_thread": "01a19780-b73c-7334-9e53-4b7fda61201c",
+  "parent_thread": "01a189f6-9a3a-7235-a989-e1af4f47b014",
+  "paths": [
+    "web/lib/nst/goaliePreparation.server.ts",
+    "web/lib/nst/goaliePreparation.server.test.ts"
+  ],
+  "status": "ACTIVE_LOCAL_EVIDENCE_LIFECYCLE_REPORT_CONTINUATION",
+  "authority": "Parent continuation explicitly requests trusted finality/daily preparation and reporting. Conflict-free new exact paths.",
+  "baseline_sha256": {
+    "web/lib/nst/goaliePreparation.server.ts": null,
+    "web/lib/nst/goaliePreparation.server.test.ts": null
+  },
+  "started_at_utc": "2026-11-01T16:45:14.742023+00:00",
+  "scope": "Bounded official finality capture and checkpoint cohort preparation with offline fixtures. No production/provider call, schedule, migration application or activation.",
+  "conflict_check": "Only broad match is WIGO-UI-PASS read_only web/lib/**, not a competing write claim."
+}

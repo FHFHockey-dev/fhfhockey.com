@@ -1,0 +1,143 @@
+[
+  {
+    "checked_at": "2026-11-01 18:23:25.588785+00",
+    "migration_history": [
+      {
+        "name": "route_runner_tables",
+        "version": "20261022133743"
+      }
+    ],
+    "bounded_audits": [
+      {
+        "status": "success",
+        "job_name": "/api/v1/db/update-nst-goalies",
+        "run_time": "2026-11-01T15:09:08.670742+00:00",
+        "queued_urls": "10",
+        "status_code": "200",
+        "rows_affected": null,
+        "stopped_early": "true",
+        "next_start_date": "\"2026-11-01\"",
+        "response_truncated": "false",
+        "pending_urls_processed": "6",
+        "response_preview_redacted": "{\"message\":\"Processed a bounded chunk of NST goalie work. Re-run to continue.\",\"pendingUrlsProcessed\":6,\"totalQueuedUrls\":10,\"stoppedEarly\":true,\"datesQueued\":1,\"requestIntervalMs\":21000,\"maxPendingUrls\":6,\"runMode\":\"incremental\",\"seasonStartDate\":\"2026-09-29\",\"regularSeasonEndDate\":\"2027-04-10\",\"overwrite\":false,\"datasetType\":null,\"nextStartDate\":\"2026-11-01\",\"urlProgress\":[{\"datasetType\":\"5v5Counts\",\"date\":\"2026-11-01\",\"status\":\"processed\",\"startedAt\":\"2026-11-01T15:07:01.767Z\",\"finishedAt\":\"2026-11-01T15:07:22.939Z\",\"durationMs\":21172,\"rowCount\":0},{\"datasetType\":\"5v5Rates\",\"date\":\"2026-11-01\",\"status\":\"processed\",\"startedAt\":\"2026-11-01T15:07:22.939Z\",\"finishedAt\":\"2026-11-01T15:07:44.094Z\",\"durationMs\":21155,\"rowCount\":0},{\"datasetType\":\"evCounts\",\"date\":\"2026-11-01\",\"status\":\"processed\",\"startedAt\":\"2026-11-01T15:07:44.095Z\",\"finishedAt\":\"2026-11-01T15:08:05.269Z\",\"durationMs\":21174,\"rowCount\":0},{\"datasetType\":\"evRates\",\"date\":\"2026-11-01\",\"status\":\"processed\",\"startedAt\":\"2026-11-01T15:08:05.269Z\",\"finishedAt\":\"2026-11-01T15:08:26.397Z\",\"durationMs\":21128,\"rowCount\":0},{\"datasetType\":\"allCounts\",\"date\":\"2026-11-01\",\"status\":\"processed\",\"startedAt\":\"2026-11-01T15:08:26.398Z\",\"finishedAt\":\"2026-11-01T15:08:47.502Z\",\"durationMs\":21104,\"rowCount\":0},{\"datasetType\":\"allRates\",\"date\":\"2026-11-01\",\"status\":\"processed\",\"startedAt\":\"2026-11-01T15:08:47.503Z\",\"finishedAt\":\"2026-11-01T15:09:08.623Z\",\"durationMs\":21120,\"rowCount\":0}],\"nstRequestPlan\":{\"queuedDates\":1,\"totalQueuedUrls\":10,\"urlsPerDate\":10,\"requestCountBudget\":6,\"requestIntervalMs\":21000,\"burstAllowed\":false,\"burstEligibleByRequestCount\":true,\"scheduleClearance\":{\"allowed\":true,\"previousGapMs\":81300000,\"nextGapMs\":900000},\"usedExplicitInterval\":true,\"explicitIntervalRejected\":false,\"assessment\":{\"requestCount"
+      },
+      {
+        "status": "success",
+        "job_name": "/api/v1/db/update-nst-goalies",
+        "run_time": "2026-11-01T15:06:10.819539+00:00",
+        "queued_urls": "10",
+        "status_code": "200",
+        "rows_affected": null,
+        "stopped_early": "true",
+        "next_start_date": "\"2026-11-01\"",
+        "response_truncated": "false",
+        "pending_urls_processed": "6",
+        "response_preview_redacted": "{\"message\":\"Processed a bounded chunk of NST goalie work. Re-run to continue.\",\"pendingUrlsProcessed\":6,\"totalQueuedUrls\":10,\"stoppedEarly\":true,\"datesQueued\":1,\"requestIntervalMs\":21000,\"maxPendingUrls\":6,\"runMode\":\"incremental\",\"seasonStartDate\":\"2026-09-29\",\"regularSeasonEndDate\":\"2027-04-10\",\"overwrite\":false,\"datasetType\":null,\"nextStartDate\":\"2026-11-01\",\"urlProgress\":[{\"datasetType\":\"5v5Counts\",\"date\":\"2026-11-01\",\"status\":\"processed\",\"startedAt\":\"2026-11-01T15:04:02.903Z\",\"finishedAt\":\"2026-11-01T15:04:24.303Z\",\"durationMs\":21400,\"rowCount\":0},{\"datasetType\":\"5v5Rates\",\"date\":\"2026-11-01\",\"status\":\"processed\",\"startedAt\":\"2026-11-01T15:04:24.304Z\",\"finishedAt\":\"2026-11-01T15:04:45.529Z\",\"durationMs\":21225,\"rowCount\":0},{\"datasetType\":\"evCounts\",\"date\":\"2026-11-01\",\"status\":\"processed\",\"startedAt\":\"2026-11-01T15:04:45.529Z\",\"finishedAt\":\"2026-11-01T15:05:06.777Z\",\"durationMs\":21248,\"rowCount\":0},{\"datasetType\":\"evRates\",\"date\":\"2026-11-01\",\"status\":\"processed\",\"startedAt\":\"2026-11-01T15:05:06.778Z\",\"finishedAt\":\"2026-11-01T15:05:28.416Z\",\"durationMs\":21638,\"rowCount\":0},{\"datasetType\":\"allCounts\",\"date\":\"2026-11-01\",\"status\":\"processed\",\"startedAt\":\"2026-11-01T15:05:28.417Z\",\"finishedAt\":\"2026-11-01T15:05:49.613Z\",\"durationMs\":21196,\"rowCount\":0},{\"datasetType\":\"allRates\",\"date\":\"2026-11-01\",\"status\":\"processed\",\"startedAt\":\"2026-11-01T15:05:49.613Z\",\"finishedAt\":\"2026-11-01T15:06:10.808Z\",\"durationMs\":21195,\"rowCount\":0}],\"nstRequestPlan\":{\"queuedDates\":1,\"totalQueuedUrls\":10,\"urlsPerDate\":10,\"requestCountBudget\":6,\"requestIntervalMs\":21000,\"burstAllowed\":false,\"burstEligibleByRequestCount\":true,\"scheduleClearance\":{\"allowed\":true,\"previousGapMs\":81300000,\"nextGapMs\":900000},\"usedExplicitInterval\":true,\"explicitIntervalRejected\":false,\"assessment\":{\"requestCount"
+      },
+      {
+        "status": "success",
+        "job_name": "/api/v1/db/update-nst-goalies",
+        "run_time": "2026-11-01T15:03:32.771755+00:00",
+        "queued_urls": "10",
+        "status_code": "200",
+        "rows_affected": null,
+        "stopped_early": "true",
+        "next_start_date": "\"2026-11-01\"",
+        "response_truncated": "false",
+        "pending_urls_processed": "6",
+        "response_preview_redacted": "{\"message\":\"Processed a bounded chunk of NST goalie work. Re-run to continue.\",\"pendingUrlsProcessed\":6,\"totalQueuedUrls\":10,\"stoppedEarly\":true,\"datesQueued\":1,\"requestIntervalMs\":21000,\"maxPendingUrls\":6,\"runMode\":\"incremental\",\"seasonStartDate\":\"2026-09-29\",\"regularSeasonEndDate\":\"2027-04-10\",\"overwrite\":false,\"datasetType\":null,\"nextStartDate\":\"2026-11-01\",\"urlProgress\":[{\"datasetType\":\"5v5Counts\",\"date\":\"2026-11-01\",\"status\":\"processed\",\"startedAt\":\"2026-11-01T15:01:04.177Z\",\"finishedAt\":\"2026-11-01T15:01:25.589Z\",\"durationMs\":21412,\"rowCount\":0},{\"datasetType\":\"5v5Rates\",\"date\":\"2026-11-01\",\"status\":\"processed\",\"startedAt\":\"2026-11-01T15:01:25.589Z\",\"finishedAt\":\"2026-11-01T15:02:07.555Z\",\"durationMs\":41966,\"rowCount\":0},{\"datasetType\":\"evCounts\",\"date\":\"2026-11-01\",\"status\":\"processed\",\"startedAt\":\"2026-11-01T15:02:07.555Z\",\"finishedAt\":\"2026-11-01T15:02:28.802Z\",\"durationMs\":21247,\"rowCount\":0},{\"datasetType\":\"evRates\",\"date\":\"2026-11-01\",\"status\":\"processed\",\"startedAt\":\"2026-11-01T15:02:28.802Z\",\"finishedAt\":\"2026-11-01T15:02:50.191Z\",\"durationMs\":21389,\"rowCount\":0},{\"datasetType\":\"allCounts\",\"date\":\"2026-11-01\",\"status\":\"processed\",\"startedAt\":\"2026-11-01T15:02:50.191Z\",\"finishedAt\":\"2026-11-01T15:03:11.484Z\",\"durationMs\":21293,\"rowCount\":0},{\"datasetType\":\"allRates\",\"date\":\"2026-11-01\",\"status\":\"processed\",\"startedAt\":\"2026-11-01T15:03:11.484Z\",\"finishedAt\":\"2026-11-01T15:03:32.734Z\",\"durationMs\":21250,\"rowCount\":0}],\"nstRequestPlan\":{\"queuedDates\":1,\"totalQueuedUrls\":10,\"urlsPerDate\":10,\"requestCountBudget\":6,\"requestIntervalMs\":21000,\"burstAllowed\":false,\"burstEligibleByRequestCount\":true,\"scheduleClearance\":{\"allowed\":true,\"previousGapMs\":81300000,\"nextGapMs\":900000},\"usedExplicitInterval\":true,\"explicitIntervalRejected\":false,\"assessment\":{\"requestCount"
+      },
+      {
+        "status": "success",
+        "job_name": "/api/v1/db/update-nst-goalies",
+        "run_time": "2026-11-01T15:00:13.0866+00:00",
+        "queued_urls": "20",
+        "status_code": "200",
+        "rows_affected": null,
+        "stopped_early": "true",
+        "next_start_date": "\"2026-11-01\"",
+        "response_truncated": "false",
+        "pending_urls_processed": "6",
+        "response_preview_redacted": "{\"message\":\"Processed a bounded chunk of NST goalie work. Re-run to continue.\",\"pendingUrlsProcessed\":6,\"totalQueuedUrls\":20,\"stoppedEarly\":true,\"datesQueued\":2,\"requestIntervalMs\":21000,\"maxPendingUrls\":6,\"runMode\":\"incremental\",\"seasonStartDate\":\"2026-09-29\",\"regularSeasonEndDate\":\"2027-04-10\",\"overwrite\":false,\"datasetType\":null,\"nextStartDate\":\"2026-11-01\",\"urlProgress\":[{\"datasetType\":\"5v5Counts\",\"date\":\"2026-10-31\",\"status\":\"skipped\",\"startedAt\":\"2026-11-01T14:58:03.111Z\",\"finishedAt\":\"2026-11-01T14:58:03.146Z\",\"durationMs\":35,\"rowCount\":0},{\"datasetType\":\"5v5Rates\",\"date\":\"2026-10-31\",\"status\":\"skipped\",\"startedAt\":\"2026-11-01T14:58:03.146Z\",\"finishedAt\":\"2026-11-01T14:58:03.199Z\",\"durationMs\":53,\"rowCount\":0},{\"datasetType\":\"evCounts\",\"date\":\"2026-10-31\",\"status\":\"skipped\",\"startedAt\":\"2026-11-01T14:58:03.199Z\",\"finishedAt\":\"2026-11-01T14:58:03.238Z\",\"durationMs\":39,\"rowCount\":0},{\"datasetType\":\"evRates\",\"date\":\"2026-10-31\",\"status\":\"skipped\",\"startedAt\":\"2026-11-01T14:58:03.238Z\",\"finishedAt\":\"2026-11-01T14:58:03.275Z\",\"durationMs\":37,\"rowCount\":0},{\"datasetType\":\"allCounts\",\"date\":\"2026-10-31\",\"status\":\"skipped\",\"startedAt\":\"2026-11-01T14:58:03.276Z\",\"finishedAt\":\"2026-11-01T14:58:03.344Z\",\"durationMs\":68,\"rowCount\":0},{\"datasetType\":\"allRates\",\"date\":\"2026-10-31\",\"status\":\"skipped\",\"startedAt\":\"2026-11-01T14:58:03.344Z\",\"finishedAt\":\"2026-11-01T14:58:03.379Z\",\"durationMs\":35,\"rowCount\":0},{\"datasetType\":\"ppCounts\",\"date\":\"2026-10-31\",\"status\":\"skipped\",\"startedAt\":\"2026-11-01T14:58:03.379Z\",\"finishedAt\":\"2026-11-01T14:58:03.416Z\",\"durationMs\":37,\"rowCount\":0},{\"datasetType\":\"ppRates\",\"date\":\"2026-10-31\",\"status\":\"skipped\",\"startedAt\":\"2026-11-01T14:58:03.416Z\",\"finishedAt\":\"2026-11-01T14:58:03.450Z\",\"durationMs\":34,\"rowCount\":0},{\"datasetType\":\"pkCounts\",\"dat"
+      },
+      {
+        "status": "success",
+        "job_name": "/api/v1/db/update-nst-goalies",
+        "run_time": "2026-11-01T14:57:13.067068+00:00",
+        "queued_urls": "20",
+        "status_code": "200",
+        "rows_affected": null,
+        "stopped_early": "true",
+        "next_start_date": "\"2026-10-31\"",
+        "response_truncated": "false",
+        "pending_urls_processed": "6",
+        "response_preview_redacted": "{\"message\":\"Processed a bounded chunk of NST goalie work. Re-run to continue.\",\"pendingUrlsProcessed\":6,\"totalQueuedUrls\":20,\"stoppedEarly\":true,\"datesQueued\":2,\"requestIntervalMs\":21000,\"maxPendingUrls\":6,\"runMode\":\"incremental\",\"seasonStartDate\":\"2026-09-29\",\"regularSeasonEndDate\":\"2027-04-10\",\"overwrite\":false,\"datasetType\":null,\"nextStartDate\":\"2026-10-31\",\"urlProgress\":[{\"datasetType\":\"5v5Counts\",\"date\":\"2026-10-31\",\"status\":\"skipped\",\"startedAt\":\"2026-11-01T14:55:01.776Z\",\"finishedAt\":\"2026-11-01T14:55:01.803Z\",\"durationMs\":27,\"rowCount\":0},{\"datasetType\":\"5v5Rates\",\"date\":\"2026-10-31\",\"status\":\"skipped\",\"startedAt\":\"2026-11-01T14:55:01.804Z\",\"finishedAt\":\"2026-11-01T14:55:01.867Z\",\"durationMs\":63,\"rowCount\":0},{\"datasetType\":\"evCounts\",\"date\":\"2026-10-31\",\"status\":\"skipped\",\"startedAt\":\"2026-11-01T14:55:01.868Z\",\"finishedAt\":\"2026-11-01T14:55:01.912Z\",\"durationMs\":44,\"rowCount\":0},{\"datasetType\":\"evRates\",\"date\":\"2026-10-31\",\"status\":\"processed\",\"startedAt\":\"2026-11-01T14:55:01.912Z\",\"finishedAt\":\"2026-11-01T14:55:23.722Z\",\"durationMs\":21810,\"rowCount\":20},{\"datasetType\":\"allCounts\",\"date\":\"2026-10-31\",\"status\":\"processed\",\"startedAt\":\"2026-11-01T14:55:23.722Z\",\"finishedAt\":\"2026-11-01T14:55:45.713Z\",\"durationMs\":21991,\"rowCount\":20},{\"datasetType\":\"allRates\",\"date\":\"2026-10-31\",\"status\":\"processed\",\"startedAt\":\"2026-11-01T14:55:45.714Z\",\"finishedAt\":\"2026-11-01T14:56:07.656Z\",\"durationMs\":21942,\"rowCount\":20},{\"datasetType\":\"ppCounts\",\"date\":\"2026-10-31\",\"status\":\"processed\",\"startedAt\":\"2026-11-01T14:56:07.656Z\",\"finishedAt\":\"2026-11-01T14:56:29.518Z\",\"durationMs\":21862,\"rowCount\":19},{\"datasetType\":\"ppRates\",\"date\":\"2026-10-31\",\"status\":\"processed\",\"startedAt\":\"2026-11-01T14:56:29.518Z\",\"finishedAt\":\"2026-11-01T14:56:51.263Z\",\"durationMs\":21745,\"rowCount\":19},"
+      },
+      {
+        "status": "success",
+        "job_name": "/api/v1/db/update-nst-goalies",
+        "run_time": "2026-11-01T14:54:13.771584+00:00",
+        "queued_urls": "30",
+        "status_code": "200",
+        "rows_affected": null,
+        "stopped_early": "true",
+        "next_start_date": "\"2026-10-31\"",
+        "response_truncated": "false",
+        "pending_urls_processed": "6",
+        "response_preview_redacted": "{\"message\":\"Processed a bounded chunk of NST goalie work. Re-run to continue.\",\"pendingUrlsProcessed\":6,\"totalQueuedUrls\":30,\"stoppedEarly\":true,\"datesQueued\":3,\"requestIntervalMs\":21000,\"maxPendingUrls\":6,\"runMode\":\"incremental\",\"seasonStartDate\":\"2026-09-29\",\"regularSeasonEndDate\":\"2027-04-10\",\"overwrite\":false,\"datasetType\":null,\"nextStartDate\":\"2026-10-31\",\"urlProgress\":[{\"datasetType\":\"5v5Counts\",\"date\":\"2026-10-30\",\"status\":\"skipped\",\"startedAt\":\"2026-11-01T14:52:03.602Z\",\"finishedAt\":\"2026-11-01T14:52:03.629Z\",\"durationMs\":27,\"rowCount\":0},{\"datasetType\":\"5v5Rates\",\"date\":\"2026-10-30\",\"status\":\"skipped\",\"startedAt\":\"2026-11-01T14:52:03.629Z\",\"finishedAt\":\"2026-11-01T14:52:03.656Z\",\"durationMs\":27,\"rowCount\":0},{\"datasetType\":\"evCounts\",\"date\":\"2026-10-30\",\"status\":\"skipped\",\"startedAt\":\"2026-11-01T14:52:03.657Z\",\"finishedAt\":\"2026-11-01T14:52:03.694Z\",\"durationMs\":37,\"rowCount\":0},{\"datasetType\":\"evRates\",\"date\":\"2026-10-30\",\"status\":\"skipped\",\"startedAt\":\"2026-11-01T14:52:03.694Z\",\"finishedAt\":\"2026-11-01T14:52:03.722Z\",\"durationMs\":28,\"rowCount\":0},{\"datasetType\":\"allCounts\",\"date\":\"2026-10-30\",\"status\":\"skipped\",\"startedAt\":\"2026-11-01T14:52:03.722Z\",\"finishedAt\":\"2026-11-01T14:52:03.752Z\",\"durationMs\":30,\"rowCount\":0},{\"datasetType\":\"allRates\",\"date\":\"2026-10-30\",\"status\":\"skipped\",\"startedAt\":\"2026-11-01T14:52:03.752Z\",\"finishedAt\":\"2026-11-01T14:52:03.789Z\",\"durationMs\":37,\"rowCount\":0},{\"datasetType\":\"ppCounts\",\"date\":\"2026-10-30\",\"status\":\"skipped\",\"startedAt\":\"2026-11-01T14:52:03.789Z\",\"finishedAt\":\"2026-11-01T14:52:03.814Z\",\"durationMs\":25,\"rowCount\":0},{\"datasetType\":\"ppRates\",\"date\":\"2026-10-30\",\"status\":\"processed\",\"startedAt\":\"2026-11-01T14:52:03.815Z\",\"finishedAt\":\"2026-11-01T14:52:25.343Z\",\"durationMs\":21528,\"rowCount\":7},{\"datasetType\":\"pkCounts\""
+      },
+      {
+        "status": "success",
+        "job_name": "/api/v1/db/update-nst-goalies",
+        "run_time": "2026-11-01T14:51:09.658454+00:00",
+        "queued_urls": "30",
+        "status_code": "200",
+        "rows_affected": null,
+        "stopped_early": "true",
+        "next_start_date": "\"2026-10-30\"",
+        "response_truncated": "false",
+        "pending_urls_processed": "6",
+        "response_preview_redacted": "{\"message\":\"Processed a bounded chunk of NST goalie work. Re-run to continue.\",\"pendingUrlsProcessed\":6,\"totalQueuedUrls\":30,\"stoppedEarly\":true,\"datesQueued\":3,\"requestIntervalMs\":21000,\"maxPendingUrls\":6,\"runMode\":\"incremental\",\"seasonStartDate\":\"2026-09-29\",\"regularSeasonEndDate\":\"2027-04-10\",\"overwrite\":false,\"datasetType\":null,\"nextStartDate\":\"2026-10-30\",\"urlProgress\":[{\"datasetType\":\"5v5Counts\",\"date\":\"2026-10-30\",\"status\":\"skipped\",\"startedAt\":\"2026-11-01T14:49:01.094Z\",\"finishedAt\":\"2026-11-01T14:49:01.138Z\",\"durationMs\":44,\"rowCount\":0},{\"datasetType\":\"5v5Rates\",\"date\":\"2026-10-30\",\"status\":\"processed\",\"startedAt\":\"2026-11-01T14:49:01.138Z\",\"finishedAt\":\"2026-11-01T14:49:22.566Z\",\"durationMs\":21428,\"rowCount\":7},{\"datasetType\":\"evCounts\",\"date\":\"2026-10-30\",\"status\":\"processed\",\"startedAt\":\"2026-11-01T14:49:22.566Z\",\"finishedAt\":\"2026-11-01T14:49:43.971Z\",\"durationMs\":21405,\"rowCount\":7},{\"datasetType\":\"evRates\",\"date\":\"2026-10-30\",\"status\":\"processed\",\"startedAt\":\"2026-11-01T14:49:43.971Z\",\"finishedAt\":\"2026-11-01T14:50:05.396Z\",\"durationMs\":21425,\"rowCount\":7},{\"datasetType\":\"allCounts\",\"date\":\"2026-10-30\",\"status\":\"processed\",\"startedAt\":\"2026-11-01T14:50:05.396Z\",\"finishedAt\":\"2026-11-01T14:50:26.794Z\",\"durationMs\":21398,\"rowCount\":7},{\"datasetType\":\"allRates\",\"date\":\"2026-10-30\",\"status\":\"processed\",\"startedAt\":\"2026-11-01T14:50:26.794Z\",\"finishedAt\":\"2026-11-01T14:50:48.232Z\",\"durationMs\":21438,\"rowCount\":7},{\"datasetType\":\"ppCounts\",\"date\":\"2026-10-30\",\"status\":\"processed\",\"startedAt\":\"2026-11-01T14:50:48.232Z\",\"finishedAt\":\"2026-11-01T14:51:09.622Z\",\"durationMs\":21390,\"rowCount\":7}],\"nstRequestPlan\":{\"queuedDates\":3,\"totalQueuedUrls\":30,\"urlsPerDate\":10,\"requestCountBudget\":6,\"requestIntervalMs\":21000,\"burstAllowed\":false,\"burstEligibleByRequestCount\":"
+      },
+      {
+        "status": "success",
+        "job_name": "/api/v1/db/update-nst-goalies",
+        "run_time": "2026-11-01T14:48:15.397351+00:00",
+        "queued_urls": "40",
+        "status_code": "200",
+        "rows_affected": null,
+        "stopped_early": "true",
+        "next_start_date": "\"2026-10-30\"",
+        "response_truncated": "false",
+        "pending_urls_processed": "6",
+        "response_preview_redacted": "{\"message\":\"Processed a bounded chunk of NST goalie work. Re-run to continue.\",\"pendingUrlsProcessed\":6,\"totalQueuedUrls\":40,\"stoppedEarly\":true,\"datesQueued\":4,\"requestIntervalMs\":21000,\"maxPendingUrls\":6,\"runMode\":\"incremental\",\"seasonStartDate\":\"2026-09-29\",\"regularSeasonEndDate\":\"2027-04-10\",\"overwrite\":false,\"datasetType\":null,\"nextStartDate\":\"2026-10-30\",\"urlProgress\":[{\"datasetType\":\"5v5Counts\",\"date\":\"2026-10-29\",\"status\":\"skipped\",\"startedAt\":\"2026-11-01T14:46:00.955Z\",\"finishedAt\":\"2026-11-01T14:46:00.987Z\",\"durationMs\":32,\"rowCount\":0},{\"datasetType\":\"5v5Rates\",\"date\":\"2026-10-29\",\"status\":\"skipped\",\"startedAt\":\"2026-11-01T14:46:00.987Z\",\"finishedAt\":\"2026-11-01T14:46:01.023Z\",\"durationMs\":36,\"rowCount\":0},{\"datasetType\":\"evCounts\",\"date\":\"2026-10-29\",\"status\":\"skipped\",\"startedAt\":\"2026-11-01T14:46:01.023Z\",\"finishedAt\":\"2026-11-01T14:46:01.056Z\",\"durationMs\":33,\"rowCount\":0},{\"datasetType\":\"evRates\",\"date\":\"2026-10-29\",\"status\":\"skipped\",\"startedAt\":\"2026-11-01T14:46:01.056Z\",\"finishedAt\":\"2026-11-01T14:46:01.087Z\",\"durationMs\":31,\"rowCount\":0},{\"datasetType\":\"allCounts\",\"date\":\"2026-10-29\",\"status\":\"skipped\",\"startedAt\":\"2026-11-01T14:46:01.087Z\",\"finishedAt\":\"2026-11-01T14:46:01.120Z\",\"durationMs\":33,\"rowCount\":0},{\"datasetType\":\"allRates\",\"date\":\"2026-10-29\",\"status\":\"processed\",\"startedAt\":\"2026-11-01T14:46:01.120Z\",\"finishedAt\":\"2026-11-01T14:46:23.395Z\",\"durationMs\":22275,\"rowCount\":24},{\"datasetType\":\"ppCounts\",\"date\":\"2026-10-29\",\"status\":\"processed\",\"startedAt\":\"2026-11-01T14:46:23.395Z\",\"finishedAt\":\"2026-11-01T14:46:45.391Z\",\"durationMs\":21996,\"rowCount\":22},{\"datasetType\":\"ppRates\",\"date\":\"2026-10-29\",\"status\":\"processed\",\"startedAt\":\"2026-11-01T14:46:45.391Z\",\"finishedAt\":\"2026-11-01T14:47:09.699Z\",\"durationMs\":24308,\"rowCount\":22},{\"datasetTyp"
+      },
+      {
+        "status": "success",
+        "job_name": "/api/v1/db/update-nst-goalies",
+        "run_time": "2026-11-01T14:45:14.334702+00:00",
+        "queued_urls": "40",
+        "status_code": "200",
+        "rows_affected": null,
+        "stopped_early": "true",
+        "next_start_date": "\"2026-10-29\"",
+        "response_truncated": "false",
+        "pending_urls_processed": "6",
+        "response_preview_redacted": "{\"message\":\"Processed a bounded chunk of NST goalie work. Re-run to continue.\",\"pendingUrlsProcessed\":6,\"totalQueuedUrls\":40,\"stoppedEarly\":true,\"datesQueued\":4,\"requestIntervalMs\":21000,\"maxPendingUrls\":6,\"runMode\":\"incremental\",\"seasonStartDate\":\"2026-09-29\",\"regularSeasonEndDate\":\"2027-04-10\",\"overwrite\":false,\"datasetType\":null,\"nextStartDate\":\"2026-10-29\",\"urlProgress\":[{\"datasetType\":\"5v5Counts\",\"date\":\"2026-10-28\",\"status\":\"skipped\",\"startedAt\":\"2026-11-01T14:43:01.494Z\",\"finishedAt\":\"2026-11-01T14:43:01.530Z\",\"durationMs\":36,\"rowCount\":0},{\"datasetType\":\"5v5Rates\",\"date\":\"2026-10-28\",\"status\":\"skipped\",\"startedAt\":\"2026-11-01T14:43:01.530Z\",\"finishedAt\":\"2026-11-01T14:43:01.562Z\",\"durationMs\":32,\"rowCount\":0},{\"datasetType\":\"evCounts\",\"date\":\"2026-10-28\",\"status\":\"skipped\",\"startedAt\":\"2026-11-01T14:43:01.562Z\",\"finishedAt\":\"2026-11-01T14:43:01.595Z\",\"durationMs\":33,\"rowCount\":0},{\"datasetType\":\"evRates\",\"date\":\"2026-10-28\",\"status\":\"skipped\",\"startedAt\":\"2026-11-01T14:43:01.596Z\",\"finishedAt\":\"2026-11-01T14:43:01.625Z\",\"durationMs\":29,\"rowCount\":0},{\"datasetType\":\"allCounts\",\"date\":\"2026-10-28\",\"status\":\"skipped\",\"startedAt\":\"2026-11-01T14:43:01.625Z\",\"finishedAt\":\"2026-11-01T14:43:01.660Z\",\"durationMs\":35,\"rowCount\":0},{\"datasetType\":\"allRates\",\"date\":\"2026-10-28\",\"status\":\"skipped\",\"startedAt\":\"2026-11-01T14:43:01.660Z\",\"finishedAt\":\"2026-11-01T14:43:01.687Z\",\"durationMs\":27,\"rowCount\":0},{\"datasetType\":\"ppCounts\",\"date\":\"2026-10-28\",\"status\":\"skipped\",\"startedAt\":\"2026-11-01T14:43:01.687Z\",\"finishedAt\":\"2026-11-01T14:43:01.744Z\",\"durationMs\":57,\"rowCount\":0},{\"datasetType\":\"ppRates\",\"date\":\"2026-10-28\",\"status\":\"skipped\",\"startedAt\":\"2026-11-01T14:43:01.744Z\",\"finishedAt\":\"2026-11-01T14:43:01.774Z\",\"durationMs\":30,\"rowCount\":0},{\"datasetType\":\"pkCounts\",\"dat"
+      },
+      {
+        "status": "success",
+        "job_name": "/api/v1/db/update-nst-goalies",
+        "run_time": "2026-11-01T14:42:12.761565+00:00",
+        "queued_urls": "40",
+        "status_code": "200",
+        "rows_affected": null,
+        "stopped_early": "true",
+        "next_start_date": "\"2026-10-28\"",
+        "response_truncated": "false",
+        "pending_urls_processed": "6",
+        "response_preview_redacted": "{\"message\":\"Processed a bounded chunk of NST goalie work. Re-run to continue.\",\"pendingUrlsProcessed\":6,\"totalQueuedUrls\":40,\"stoppedEarly\":true,\"datesQueued\":4,\"requestIntervalMs\":21000,\"maxPendingUrls\":6,\"runMode\":\"incremental\",\"seasonStartDate\":\"2026-09-29\",\"regularSeasonEndDate\":\"2027-04-10\",\"overwrite\":false,\"datasetType\":null,\"nextStartDate\":\"2026-10-28\",\"urlProgress\":[{\"datasetType\":\"5v5Counts\",\"date\":\"2026-10-28\",\"status\":\"skipped\",\"startedAt\":\"2026-11-01T14:40:02.764Z\",\"finishedAt\":\"2026-11-01T14:40:02.827Z\",\"durationMs\":63,\"rowCount\":0},{\"datasetType\":\"5v5Rates\",\"date\":\"2026-10-28\",\"status\":\"skipped\",\"startedAt\":\"2026-11-01T14:40:02.827Z\",\"finishedAt\":\"2026-11-01T14:40:02.874Z\",\"durationMs\":47,\"rowCount\":0},{\"datasetType\":\"evCounts\",\"date\":\"2026-10-28\",\"status\":\"skipped\",\"startedAt\":\"2026-11-01T14:40:02.875Z\",\"finishedAt\":\"2026-11-01T14:40:02.926Z\",\"durationMs\":51,\"rowCount\":0},{\"datasetType\":\"evRates\",\"date\":\"2026-10-28\",\"status\":\"processed\",\"startedAt\":\"2026-11-01T14:40:02.927Z\",\"finishedAt\":\"2026-11-01T14:40:24.703Z\",\"durationMs\":21776,\"rowCount\":9},{\"datasetType\":\"allCounts\",\"date\":\"2026-10-28\",\"status\":\"processed\",\"startedAt\":\"2026-11-01T14:40:24.703Z\",\"finishedAt\":\"2026-11-01T14:40:46.381Z\",\"durationMs\":21678,\"rowCount\":9},{\"datasetType\":\"allRates\",\"date\":\"2026-10-28\",\"status\":\"processed\",\"startedAt\":\"2026-11-01T14:40:46.381Z\",\"finishedAt\":\"2026-11-01T14:41:08.041Z\",\"durationMs\":21660,\"rowCount\":9},{\"datasetType\":\"ppCounts\",\"date\":\"2026-10-28\",\"status\":\"processed\",\"startedAt\":\"2026-11-01T14:41:08.041Z\",\"finishedAt\":\"2026-11-01T14:41:29.618Z\",\"durationMs\":21577,\"rowCount\":9},{\"datasetType\":\"ppRates\",\"date\":\"2026-10-28\",\"status\":\"processed\",\"startedAt\":\"2026-11-01T14:41:29.618Z\",\"finishedAt\":\"2026-11-01T14:41:51.175Z\",\"durationMs\":21557,\"rowCount\":9},{\"dat"
+      }
+    ]
+  }
+]

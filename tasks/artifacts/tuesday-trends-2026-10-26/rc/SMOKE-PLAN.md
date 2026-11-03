@@ -11,3 +11,9 @@ Budget: **at most 3 application requests, sequential, concurrency 1**, plus **1 
 | L1 | Claude | One Vercel runtime-log read for the fhfhockey production deployment, filtered to `[social-share]`, since deploy time | No errors; any source failure is named | End of smoke test |
 
 Not included: cron, ETL or refresh endpoints; repeated refreshes; browser crawls; other routes; Monday re-checks (unchanged code).
+
+## Results (TJ approved 2026-10-26: "run SMOKE-PLAN.md… Stop at the first failure")
+- **S1 PASS** at 18:23:47Z (Claude, curl with no credentials, 1 request): `HTTP/2 401`, `cache-control: private, no-store, max-age=0`, `vary: Authorization`, `x-robots-tag: noindex, nofollow`, `x-vercel-cache: MISS`, body `{"error":"Sign in to use the share studio."}`. No data was returned.
+- **S2 PASS** (TJ, one signed-in load): "The data is all correct". TJ then asked for a visual pass (more social punch, Monday styling). That is a design follow-up, not a defect.
+- **L1 PASS** at about 18:25Z (Claude, one Vercel runtime-log read: deployment `dpl_BEb4ofmR…`, since 18:14Z, query `social-share`, limit 100). It returned 4 entries: `/api/v1/social-share/tuesday-trends` 401 (S1); `/social-share/tuesday-trends` 200 and `/api/v1/social-share/tuesday-trends` 200 (TJ's S2, exactly one API call); one unrelated `/social-share/player-cards` 200. No `[social-share]` error or warning lines. A first attempt failed locally before any request (macOS has no `timeout`).
+- **Smoke test complete.** Application requests: 1 by Claude plus TJ's 1 page load (1 API call). Log reads: 1.

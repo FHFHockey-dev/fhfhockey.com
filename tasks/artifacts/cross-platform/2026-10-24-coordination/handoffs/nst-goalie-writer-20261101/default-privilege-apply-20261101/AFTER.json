@@ -1,0 +1,97 @@
+{
+  "checked_at": "2026-11-01 18:36:05.678327+00",
+  "database_name": "postgres",
+  "execution_role": "postgres",
+  "session_user": "postgres",
+  "defaults": [
+    {
+      "defaclacl": [
+        "postgres=X/postgres"
+      ],
+      "schema_name": "GLOBAL",
+      "creator_role": "postgres",
+      "defaclobjtype": "f"
+    },
+    {
+      "defaclacl": [
+        "postgres=rwU/postgres"
+      ],
+      "schema_name": "public",
+      "creator_role": "postgres",
+      "defaclobjtype": "S"
+    },
+    {
+      "defaclacl": [
+        "postgres=X/postgres"
+      ],
+      "schema_name": "public",
+      "creator_role": "postgres",
+      "defaclobjtype": "f"
+    },
+    {
+      "defaclacl": [
+        "postgres=arwdDxt/postgres"
+      ],
+      "schema_name": "public",
+      "creator_role": "postgres",
+      "defaclobjtype": "r"
+    },
+    {
+      "defaclacl": [
+        "postgres=rwU/supabase_admin",
+        "anon=rwU/supabase_admin",
+        "authenticated=rwU/supabase_admin",
+        "service_role=rwU/supabase_admin"
+      ],
+      "schema_name": "public",
+      "creator_role": "supabase_admin",
+      "defaclobjtype": "S"
+    },
+    {
+      "defaclacl": [
+        "postgres=X/supabase_admin",
+        "anon=X/supabase_admin",
+        "authenticated=X/supabase_admin",
+        "service_role=X/supabase_admin"
+      ],
+      "schema_name": "public",
+      "creator_role": "supabase_admin",
+      "defaclobjtype": "f"
+    },
+    {
+      "defaclacl": [
+        "postgres=arwdDxt/supabase_admin",
+        "anon=arwdDxt/supabase_admin",
+        "authenticated=arwdDxt/supabase_admin",
+        "service_role=arwdDxt/supabase_admin"
+      ],
+      "schema_name": "public",
+      "creator_role": "supabase_admin",
+      "defaclobjtype": "r"
+    }
+  ],
+  "existing_public_object_acls": {
+    "count": 2006,
+    "acl_fingerprint": "c87c3b8f92f2925a3ae871fdd98eb88f"
+  },
+  "matching_history": [
+    {
+      "name": "data_api_explicit_default_privileges",
+      "version": "20261101183548"
+    }
+  ],
+  "nst_controls": [
+    {
+      "name": "nst_request_admission_state",
+      "relation": null
+    },
+    {
+      "name": "nst_goalie_control",
+      "relation": null
+    },
+    {
+      "name": "nst_job_control",
+      "relation": null
+    }
+  ]
+}

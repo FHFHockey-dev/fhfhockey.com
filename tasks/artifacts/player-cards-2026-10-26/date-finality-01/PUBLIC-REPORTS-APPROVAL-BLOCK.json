@@ -1,0 +1,12 @@
+{
+  "status": "automatic-approval-rejected-before-execution",
+  "newReportRequests": 0,
+  "retryPerformed": false,
+  "alternateRouteUsed": false,
+  "reason": "Expanded nine public external report requests lack direct user-authored authorization per approval review; assistant delegation does not supersede earlier prohibition",
+  "requestedMaxRequests": 9,
+  "perRequestTimeoutSeconds": 5,
+  "overallProcessSeconds": 50,
+  "totalBytesCap": 2097152,
+  "nextAction": "Finish unaffected offline work, then request direct user approval for exact bounded report capture"
+}

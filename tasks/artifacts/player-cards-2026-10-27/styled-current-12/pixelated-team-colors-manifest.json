@@ -1,0 +1,220 @@
+{
+  "renderVersion": "fhfh-current-card-v2",
+  "card": {
+    "id": "nhl-8479318-20262027-10-2026-10-27T00:00:00.000Z-2026020167",
+    "source": "contract-fixture",
+    "state": "ready",
+    "player": {
+      "id": 8479318,
+      "name": "Auston Matthews",
+      "team": "TOR",
+      "position": "C"
+    },
+    "request": {
+      "playerId": 8479318,
+      "season": 20262027,
+      "count": 10
+    },
+    "observedAt": "2026-10-27T00:00:00.000Z",
+    "sample": {
+      "gp": 1,
+      "toiSeconds": 1200,
+      "sourceDates": [
+        "2026-10-23"
+      ],
+      "utcDates": [
+        "2026-10-24"
+      ],
+      "gameIds": [
+        2026020167
+      ]
+    },
+    "values": {
+      "atoi": 20,
+      "shots60": 12,
+      "goals60": 3,
+      "points60": 3,
+      "goals": 1,
+      "assists": 0,
+      "points": 1,
+      "shots": 4,
+      "shootingPct": 25
+    },
+    "issues": [
+      "Known short season sample: 1/10 appearances."
+    ],
+    "rankReason": "Rank and percentile unavailable: no verified all-NHL same-definition population for this window.",
+    "evidence": {
+      "version": "nhl-basic-skater-v1",
+      "sourcePaths": [
+        "/v1/player/8479318/landing",
+        "/v1/player/8479318/game-log/20262027/2",
+        "/v1/club-schedule-season/TOR/20262027"
+      ],
+      "seasonGp": 1,
+      "selectedGames": [
+        {
+          "gameId": 2026020167,
+          "providerDate": "2026-10-23",
+          "utcStart": "2026-10-24T01:00:00Z",
+          "team": "TOR",
+          "finalStatusAtObservation": "OFF",
+          "toiSeconds": 1200,
+          "goals": 1,
+          "assists": 0,
+          "points": 1,
+          "shots": 4
+        }
+      ],
+      "actualEndTimesSupplied": false
+    },
+    "historyStatement": "Season game-log appearance count reconciled with NHL season totals; no career-history claim.",
+    "finalityStatement": "NHL FINAL/OFF at observation; actual game-end timestamps are not supplied. Current window only; no historical cutoff claim."
+  },
+  "format": "rates-opportunity",
+  "artwork": {
+    "state": "reviewed-local",
+    "id": 8479318,
+    "name": "Auston Matthews",
+    "team": "TOR",
+    "position": "C",
+    "sweater": 34,
+    "sourceUrl": "https://assets.nhle.com/mugs/actionshots/1296x729/8479318.jpg",
+    "sourceWidth": 1296,
+    "sourceHeight": 729,
+    "capturedAt": "2026-10-24T20:23:53.965681+00:00",
+    "sourceSha256": "8f91559bcfedf1b96eaa4a273c03b8ffd5357b3bc749dbabb5e0c40bfa706a04",
+    "alphaSha256": "713a4923cf4742cefbbc09a647a249f98c095edea8eb92f7bda028929e0db065",
+    "acceptance": "accepted",
+    "localPath": "/player-cards/hero-samples/8479318.png",
+    "treatment": {
+      "style": "pixelated-team-colors",
+      "version": "fhfh-portrait-v1",
+      "sourceAlphaSha256": "713a4923cf4742cefbbc09a647a249f98c095edea8eb92f7bda028929e0db065",
+      "renderedSha256": "b6795ec27c5e2e07bf806320af2d2b703c812dc7c1576c84d6223669e3898f59",
+      "width": 1296,
+      "height": 729,
+      "composition": {
+        "version": "fhfh-sequential-v2",
+        "order": [
+          "pixelated",
+          "team-colors"
+        ],
+        "firstStagePreset": "fine",
+        "firstPixelSha256": "a60a32ebddbbf8f32beed7b2df3178d9c69881c7a395c27afb9fde1196380434",
+        "finalPixelSha256": "78b0cf537e184650ab351b0864bf4044201565b384de67b1bde13f1e2464fc25"
+      }
+    },
+    "outlineSettings": [
+      {
+        "color": "#A2AAAD",
+        "width": 5
+      },
+      {
+        "color": "#00205B",
+        "width": 7
+      },
+      {
+        "color": "#FFFFFF",
+        "width": 5
+      }
+    ],
+    "teamLogo": {
+      "team": "TOR",
+      "sha256": "b88d6edb92e4bcca291f7d3a37c1265fee39e1f5ef41650aaa19d8a39ad7e01d",
+      "localPath": "/teamLogos/TOR.png"
+    },
+    "outline": {
+      "version": "fhfh-alpha-outline-v3",
+      "sourceAlphaSha256": "713a4923cf4742cefbbc09a647a249f98c095edea8eb92f7bda028929e0db065",
+      "sha256": "55505101d087a5eb33d21ac9768e9db66e3a31e55b056e3cff1eb441bb3607d3",
+      "thickness": 17,
+      "scale": 2,
+      "padding": 35,
+      "width": 1270,
+      "height": 745,
+      "ink": "custom",
+      "color": "#A2AAAD",
+      "rings": [
+        {
+          "color": "#A2AAAD",
+          "width": 5
+        },
+        {
+          "color": "#00205B",
+          "width": 7
+        },
+        {
+          "color": "#FFFFFF",
+          "width": 5
+        }
+      ]
+    },
+    "geometry": {
+      "playerX": 600,
+      "playerY": 4,
+      "playerWidth": 600,
+      "headerHeight": 338,
+      "logoX": 840,
+      "logoY": -100,
+      "logoSize": 480
+    },
+    "outlineAlignment": "outward; final export pixels; inner to outer",
+    "logoMask": "alpha 0 at left edge, 1 at 25%, 1 through right edge; logo only"
+  },
+  "selectedMetrics": [
+    "atoi",
+    "shots60",
+    "goals60",
+    "points60",
+    "shootingPct"
+  ],
+  "definitions": {
+    "atoi": {
+      "label": "Ice time / game",
+      "unit": "time",
+      "definition": "NHL game-log TOI seconds / appearances / 60"
+    },
+    "shots60": {
+      "label": "Shots /60",
+      "unit": "rate",
+      "definition": "NHL shots on goal × 3600 / NHL game-log TOI seconds"
+    },
+    "goals60": {
+      "label": "Goals /60",
+      "unit": "rate",
+      "definition": "NHL goals × 3600 / NHL game-log TOI seconds"
+    },
+    "points60": {
+      "label": "Points /60",
+      "unit": "rate",
+      "definition": "NHL points × 3600 / NHL game-log TOI seconds"
+    },
+    "goals": {
+      "label": "Goals",
+      "unit": "count",
+      "definition": "Sum of NHL game-log goals in selected appearances"
+    },
+    "assists": {
+      "label": "Assists",
+      "unit": "count",
+      "definition": "Sum of NHL game-log assists in selected appearances"
+    },
+    "points": {
+      "label": "Points",
+      "unit": "count",
+      "definition": "Sum of NHL game-log points in selected appearances"
+    },
+    "shots": {
+      "label": "Shots on goal",
+      "unit": "count",
+      "definition": "Sum of NHL game-log shots in selected appearances"
+    },
+    "shootingPct": {
+      "label": "Shooting% · actual",
+      "unit": "percent",
+      "definition": "NHL goals / shots on goal × 100; zero shots is undefined"
+    }
+  },
+  "inputHashScope": "Source paths and selected normalized game inputs; no raw-response hash or exact end-time claim"
+}

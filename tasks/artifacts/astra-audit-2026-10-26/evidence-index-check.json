@@ -1,0 +1,139 @@
+[
+  {
+    "indexed_path": "R/docs/roster-schedule-optimizer.md",
+    "path": "/Users/tim/Code/fhfhockey.com/docs/roster-schedule-optimizer.md",
+    "exists": true,
+    "expected_sha256": "92ca6de8ab3e027da95c465d9b7318feaf77a02cb43a9f90e40d41108f662e03",
+    "sha256": "92ca6de8ab3e027da95c465d9b7318feaf77a02cb43a9f90e40d41108f662e03",
+    "matches": true
+  },
+  {
+    "indexed_path": "R/tasks/prd-roster-schedule-optimizer.md",
+    "path": "/Users/tim/Code/fhfhockey.com/tasks/prd-roster-schedule-optimizer.md",
+    "exists": true,
+    "expected_sha256": "3767a836dbcef9aad6dbf56a149b7ae8b908aea2e1202fc974bf5ba57419f19a",
+    "sha256": "3767a836dbcef9aad6dbf56a149b7ae8b908aea2e1202fc974bf5ba57419f19a",
+    "matches": true
+  },
+  {
+    "indexed_path": "R/tasks/tasks-prd-roster-schedule-optimizer.md",
+    "path": "/Users/tim/Code/fhfhockey.com/tasks/tasks-prd-roster-schedule-optimizer.md",
+    "exists": true,
+    "expected_sha256": "ced28e5f557e3d17cd3a0adb56164cac0f0f79ad6494d72bf3fea0ad942b49f8",
+    "sha256": "ced28e5f557e3d17cd3a0adb56164cac0f0f79ad6494d72bf3fea0ad942b49f8",
+    "matches": true
+  },
+  {
+    "indexed_path": "R/tasks/TASKS/prd-rso.md",
+    "path": "/Users/tim/Code/fhfhockey.com/tasks/TASKS/prd-rso.md",
+    "exists": true,
+    "expected_sha256": "f8f3cfc3724cf18ee82c4eb88446dd626e42328cfb5420df213b214dc644cd3f",
+    "sha256": "f8f3cfc3724cf18ee82c4eb88446dd626e42328cfb5420df213b214dc644cd3f",
+    "matches": true
+  },
+  {
+    "indexed_path": "R/tasks/TASKS/rso-audit-2026-10-08.md",
+    "path": "/Users/tim/Code/fhfhockey.com/tasks/TASKS/rso-audit-2026-10-08.md",
+    "exists": true,
+    "expected_sha256": "aff8c61e855d776d60794f768a989de96981c3935cb43729e89ac0d4c140cb98",
+    "sha256": "aff8c61e855d776d60794f768a989de96981c3935cb43729e89ac0d4c140cb98",
+    "matches": true
+  },
+  {
+    "indexed_path": "R/tasks/TASKS/rso-implementation-2026-10-08.md",
+    "path": "/Users/tim/Code/fhfhockey.com/tasks/TASKS/rso-implementation-2026-10-08.md",
+    "exists": true,
+    "expected_sha256": "2c168201cff10b74dc9fadf70c2732c316995b3d71e9dc5bdb10b801f696de70",
+    "sha256": "2c168201cff10b74dc9fadf70c2732c316995b3d71e9dc5bdb10b801f696de70",
+    "matches": true
+  },
+  {
+    "indexed_path": "R/tasks/tasks-prd-rso.md",
+    "path": "/Users/tim/Code/fhfhockey.com/tasks/tasks-prd-rso.md",
+    "exists": true,
+    "expected_sha256": "7191ef3a8867e9049ea53c4b246baf85e429716d633d9ddfcf8ef0f15f86aacc",
+    "sha256": "7191ef3a8867e9049ea53c4b246baf85e429716d633d9ddfcf8ef0f15f86aacc",
+    "matches": true
+  },
+  {
+    "indexed_path": "R/tasks/TASKS/rso-compact-layout-amendment-2026-10-09.md",
+    "path": "/Users/tim/Code/fhfhockey.com/tasks/TASKS/rso-compact-layout-amendment-2026-10-09.md",
+    "exists": true,
+    "expected_sha256": "7e1ead65338212938b4cd9589f20fb105c40d36c3525670b0f1e860bb99da2a1",
+    "sha256": "7e1ead65338212938b4cd9589f20fb105c40d36c3525670b0f1e860bb99da2a1",
+    "matches": true
+  },
+  {
+    "indexed_path": "R/tasks/tasks-rso-compact-layout-2026-10-09.md",
+    "path": "/Users/tim/Code/fhfhockey.com/tasks/tasks-rso-compact-layout-2026-10-09.md",
+    "exists": true,
+    "expected_sha256": "414cecb45a5edf97cc4bed34f53d68d57c016f093972d15a7549c43372b03e6c",
+    "sha256": "414cecb45a5edf97cc4bed34f53d68d57c016f093972d15a7549c43372b03e6c",
+    "matches": true
+  },
+  {
+    "indexed_path": "R/tasks/TASKS/prd-rso-consolidated-2026-10-09.md",
+    "path": "/Users/tim/Code/fhfhockey.com/tasks/TASKS/prd-rso-consolidated-2026-10-09.md",
+    "exists": true,
+    "expected_sha256": "9043fe42b9b39d310056acfe9fd4b25503918421188f6cf2ba16c5816c60dff1",
+    "sha256": "9043fe42b9b39d310056acfe9fd4b25503918421188f6cf2ba16c5816c60dff1",
+    "matches": true
+  },
+  {
+    "indexed_path": "R/tasks/tasks-prd-rso-consolidated-2026-10-09.md",
+    "path": "/Users/tim/Code/fhfhockey.com/tasks/tasks-prd-rso-consolidated-2026-10-09.md",
+    "exists": true,
+    "expected_sha256": "4158fd9ccb740621305576607406d66cb860ee2b70b38aa15ec6ccd15d1ff2f8",
+    "sha256": "4158fd9ccb740621305576607406d66cb860ee2b70b38aa15ec6ccd15d1ff2f8",
+    "matches": true
+  },
+  {
+    "indexed_path": "R/tasks/rso-goal-handoff.md",
+    "path": "/Users/tim/Code/fhfhockey.com/tasks/rso-goal-handoff.md",
+    "exists": true,
+    "expected_sha256": "78838e5377ba8523bf8651dd23034130790c0f433ca64b6941344bb270703971",
+    "sha256": "78838e5377ba8523bf8651dd23034130790c0f433ca64b6941344bb270703971",
+    "matches": true
+  },
+  {
+    "indexed_path": "ARC/\u2026/handoffs/RSO-FREE/FREE-RSO-ANALYSIS.md",
+    "path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/clean-checkout-2026-10-25-1505/files/\u2026/handoffs/RSO-FREE/FREE-RSO-ANALYSIS.md",
+    "exists": true,
+    "expected_sha256": "c84a2488914bff0e54247b4d67167a2fa4dff6226c577052b3f25038d67ad640",
+    "resolved_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/clean-checkout-2026-10-25-1505/files/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/RSO-FREE/FREE-RSO-ANALYSIS.md",
+    "sha256": "c84a2488914bff0e54247b4d67167a2fa4dff6226c577052b3f25038d67ad640",
+    "matches": true
+  },
+  {
+    "indexed_path": "ARC/tasks/artifacts/free-rso-analysis-2026-10-24/FREE-RSO-RECOMMENDATION.md",
+    "path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/clean-checkout-2026-10-25-1505/files/tasks/artifacts/free-rso-analysis-2026-10-24/FREE-RSO-RECOMMENDATION.md",
+    "exists": true,
+    "expected_sha256": "bb25b9d83e374b33142f0ad5f2e9f2c0446192ef4934c90cfeb0f950d27d86f9",
+    "sha256": "bb25b9d83e374b33142f0ad5f2e9f2c0446192ef4934c90cfeb0f950d27d86f9",
+    "matches": true
+  },
+  {
+    "indexed_path": "T/RSO-CURRENT-STATUS.md",
+    "path": "/Users/tim/Documents/Codex/2026-10-25/task-4/RSO-CURRENT-STATUS.md",
+    "exists": true,
+    "expected_sha256": "538052f73de200c9f9f54e2919e09c8e5fc85d5c3f192d3f28ea5bfb74fc8354",
+    "sha256": "538052f73de200c9f9f54e2919e09c8e5fc85d5c3f192d3f28ea5bfb74fc8354",
+    "matches": true
+  },
+  {
+    "indexed_path": "T/RSO-FORGE-CONSOLIDATED-HANDOFF.md",
+    "path": "/Users/tim/Documents/Codex/2026-10-25/task-4/RSO-FORGE-CONSOLIDATED-HANDOFF.md",
+    "exists": true,
+    "expected_sha256": "0e2a8506b5657f9882b5342925d74240d6e2916309f8d6adc256dd5bc081269d",
+    "sha256": "0e2a8506b5657f9882b5342925d74240d6e2916309f8d6adc256dd5bc081269d",
+    "matches": true
+  },
+  {
+    "indexed_path": "T/RSO-FORGE-SOURCE-INVENTORY.csv",
+    "path": "/Users/tim/Documents/Codex/2026-10-25/task-4/RSO-FORGE-SOURCE-INVENTORY.csv",
+    "exists": true,
+    "expected_sha256": "200b864b3fb44d6a7822fd04afc05575f8c0fa4285c07b1d579f246cbe511a4b",
+    "sha256": "200b864b3fb44d6a7822fd04afc05575f8c0fa4285c07b1d579f246cbe511a4b",
+    "matches": true
+  }
+]
