@@ -9,6 +9,10 @@ import {
 } from "components/WiGO/types";
 
 const PAGE_SIZE = 500;
+// A fallback season is used only if it reached the panel's default minimum
+// GP and the selected player's own row did too. A 3-GP row in a stub season
+// with max GP 5 ranked McDavid 1st of 1 on every stat (C-23).
+const FALLBACK_MIN_GP = 10;
 
 const ALL_OFFENSE_COLUMNS_TO_SELECT = `
     player_id, season, gp, toi_seconds,
@@ -250,23 +254,27 @@ export async function fetchPercentileCohortForPlayer(
           staleTime: 60_000
         })
       : fetchAllPlayerStatsForStrength(strength, requestedSeason);
+  const fetchPlayerGp = (requestedSeason: number) =>
+    queryClient
+      ? queryClient.fetchQuery({
+          queryKey: ["wigoPercentilePlayerGp", requestedSeason, playerId],
+          queryFn: () => fetchCanonicalPlayerGp(playerId, requestedSeason),
+          staleTime: 60_000
+        })
+      : fetchCanonicalPlayerGp(playerId, requestedSeason);
+  const fetchSeasonMaxGp = (requestedSeason: number) =>
+    queryClient
+      ? queryClient.fetchQuery({
+          queryKey: ["wigoPercentileSeasonMaxGp", requestedSeason],
+          queryFn: () => fetchCanonicalSeasonMaxGp(requestedSeason),
+          staleTime: 60_000
+        })
+      : fetchCanonicalSeasonMaxGp(requestedSeason);
   const [rawRequestedStats, canonicalPlayerGp, canonicalSeasonMaxGp] =
     await Promise.all([
       fetchSeasonStats(seasonId),
-      queryClient
-        ? queryClient.fetchQuery({
-            queryKey: ["wigoPercentilePlayerGp", seasonId, playerId],
-            queryFn: () => fetchCanonicalPlayerGp(playerId, seasonId),
-            staleTime: 60_000
-          })
-        : fetchCanonicalPlayerGp(playerId, seasonId),
-      queryClient
-        ? queryClient.fetchQuery({
-            queryKey: ["wigoPercentileSeasonMaxGp", seasonId],
-            queryFn: () => fetchCanonicalSeasonMaxGp(seasonId),
-            staleTime: 60_000
-          })
-        : fetchCanonicalSeasonMaxGp(seasonId)
+      fetchPlayerGp(seasonId),
+      fetchSeasonMaxGp(seasonId)
     ]);
 
   const requestedStats = sanitizePercentileCohortGp(rawRequestedStats, {
@@ -299,18 +307,36 @@ export async function fetchPercentileCohortForPlayer(
   }
 
   const fallbackSeasonId = getPreviousSeasonId(seasonId);
-  const fallbackStats = await fetchSeasonStats(fallbackSeasonId);
-  const fallbackHasPlayer = fallbackStats.some(
-    (player) => player.player_id === playerId
+  const [rawFallbackStats, fallbackPlayerGp, fallbackSeasonMaxGp] =
+    await Promise.all([
+      fetchSeasonStats(fallbackSeasonId),
+      fetchPlayerGp(fallbackSeasonId),
+      fetchSeasonMaxGp(fallbackSeasonId)
+    ]);
+  // The fallback season gets the same GP check as the requested one (C-34).
+  const fallbackStats = sanitizePercentileCohortGp(rawFallbackStats, {
+    playerId,
+    canonicalPlayerGp: fallbackPlayerGp,
+    canonicalSeasonMaxGp: fallbackSeasonMaxGp
+  });
+  const fallbackRowGp =
+    fallbackStats.find((player) => player.player_id === playerId)?.gp ?? null;
+  const fallbackCohortMaxGp = fallbackStats.reduce(
+    (max, player) => Math.max(max, player.gp ?? 0),
+    0
   );
 
-  if (!fallbackStats.length || !fallbackHasPlayer) {
+  if (
+    fallbackRowGp === null ||
+    fallbackRowGp < FALLBACK_MIN_GP ||
+    fallbackCohortMaxGp < FALLBACK_MIN_GP
+  ) {
     return {
       stats: requestedStats,
       requestedSeasonId: seasonId,
       appliedSeasonId: seasonId,
       fallbackReason:
-        "Current-season percentile data appears incomplete and no fallback cohort was available.",
+        "Current-season percentile data appears incomplete and no usable fallback cohort was available.",
       canonicalPlayerGp
     };
   }

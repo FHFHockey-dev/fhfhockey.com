@@ -207,7 +207,9 @@ describe("fetchWigoPercentiles", () => {
       .mockResolvedValueOnce({
         data: { games_played: 80 },
         error: null
-      } satisfies QueryResponse);
+      } satisfies QueryResponse)
+      .mockResolvedValueOnce({ data: { games_played: 78 }, error: null } satisfies QueryResponse)
+      .mockResolvedValueOnce({ data: { games_played: 82 }, error: null } satisfies QueryResponse);
 
     const result = await fetchPercentileCohortForPlayer("as", 20252026, 8476453);
 
@@ -221,6 +223,55 @@ describe("fetchWigoPercentiles", () => {
       })
     );
   });
+  it("rejects a stub fallback season instead of ranking the player against themself", async () => {
+    // McDavid's AS shape: no 2026-27 rows; 2025-26 is a stub with max GP 5 and his row is 3 GP.
+    offenseRangeMock
+      .mockResolvedValueOnce({ data: [], error: null } satisfies QueryResponse)
+      .mockResolvedValueOnce({
+        data: [
+          { player_id: 8478402, season: 20252026, gp: 3, toi_seconds: 4000, goals_per_60: 2 },
+          { player_id: 2, season: 20252026, gp: 5, toi_seconds: 5000, goals_per_60: 1 }
+        ],
+        error: null
+      } satisfies QueryResponse);
+    defenseRangeMock.mockResolvedValue({ data: [], error: null } satisfies QueryResponse);
+    totalsMaybeSingleMock
+      .mockResolvedValueOnce({ data: { games_played: 14 }, error: null } satisfies QueryResponse)
+      .mockResolvedValueOnce({ data: { games_played: 15 }, error: null } satisfies QueryResponse)
+      .mockResolvedValueOnce({ data: { games_played: 82 }, error: null } satisfies QueryResponse)
+      .mockResolvedValueOnce({ data: { games_played: 82 }, error: null } satisfies QueryResponse);
+
+    const result = await fetchPercentileCohortForPlayer("as", 20262027, 8478402);
+
+    expect(result.appliedSeasonId).toBe(20262027);
+    expect(result.stats).toEqual([]);
+    expect(result.fallbackReason).toContain("no usable fallback cohort");
+  });
+
+  it("sanitizes fallback GP against the fallback season's WGO maximum", async () => {
+    offenseRangeMock
+      .mockResolvedValueOnce({ data: [], error: null } satisfies QueryResponse)
+      .mockResolvedValueOnce({
+        data: [
+          { player_id: 1, season: 20242025, gp: 78, toi_seconds: 7000 },
+          // Playoff-contaminated NST row, as in 2024-25 (max GP 119).
+          { player_id: 2, season: 20242025, gp: 119, toi_seconds: 9000 }
+        ],
+        error: null
+      } satisfies QueryResponse);
+    defenseRangeMock.mockResolvedValue({ data: [], error: null } satisfies QueryResponse);
+    totalsMaybeSingleMock
+      .mockResolvedValueOnce({ data: { games_played: 14 }, error: null } satisfies QueryResponse)
+      .mockResolvedValueOnce({ data: { games_played: 15 }, error: null } satisfies QueryResponse)
+      .mockResolvedValueOnce({ data: { games_played: 78 }, error: null } satisfies QueryResponse)
+      .mockResolvedValueOnce({ data: { games_played: 82 }, error: null } satisfies QueryResponse);
+
+    const result = await fetchPercentileCohortForPlayer("as", 20252026, 1);
+
+    expect(result.appliedSeasonId).toBe(20242025);
+    expect(result.stats.map((row) => row.gp)).toEqual([78, null]);
+  });
+
   it("treats NST GP above the canonical WGO GP as invalid", () => {
     const rows = [
       { player_id: 1, gp: 102, toi: 9000 },
@@ -252,7 +303,9 @@ describe("fetchWigoPercentiles", () => {
       .mockResolvedValueOnce({ data: [], error: null } satisfies QueryResponse);
     totalsMaybeSingleMock
       .mockResolvedValueOnce({ data: { games_played: 8 }, error: null } satisfies QueryResponse)
-      .mockResolvedValueOnce({ data: { games_played: 30 }, error: null } satisfies QueryResponse);
+      .mockResolvedValueOnce({ data: { games_played: 30 }, error: null } satisfies QueryResponse)
+      .mockResolvedValueOnce({ data: { games_played: 78 }, error: null } satisfies QueryResponse)
+      .mockResolvedValueOnce({ data: { games_played: 82 }, error: null } satisfies QueryResponse);
 
     // Player GP 8 matches WGO, so only the cohort rule (max NST GP vs WGO max 30) can flag staleness.
     const result = await fetchPercentileCohortForPlayer("es", 20252026, 8476453);

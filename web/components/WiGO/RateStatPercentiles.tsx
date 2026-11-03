@@ -284,7 +284,9 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
         (player.gp >= minGp || player.player_id === playerId)
     );
 
-    if (filteredPlayers.length === 0) {
+    // A cohort of the selected player alone ranks them 1st at 50% on every
+    // stat, which says nothing (C-23).
+    if (!filteredPlayers.some((player) => player.player_id !== playerId)) {
       return {
         calculatedPercentiles: {} as CalculatedData,
         calculatedRanks: {} as CalculatedData
@@ -353,7 +355,8 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
     return selectedPlayerGp !== null && selectedPlayerGp >= minGp;
   }, [selectedPlayerGp, minGp]);
 
-  const sliderMax = Math.max(selectedPlayerGp ?? 0, maxPossibleGp, 1);
+  // Never below the current minimum, so the thumb stays on the track.
+  const sliderMax = Math.max(selectedPlayerGp ?? 0, maxPossibleGp, minGp, 1);
 
   const combinedChartConfig = useMemo(
     () =>
@@ -367,10 +370,27 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
 
   const strengthLabel = selectedStrength.toUpperCase();
   const thresholdMessages: Array<{ short: string; full: string }> = [];
+  const seasonLabel = typeof seasonId === "number" ? formatSeasonRange(seasonId) : "this season";
   if (allPlayersStats.length === 0) {
-    thresholdMessages.push({ short: `No ${strengthLabel} data`, full: `No player data available for ${strengthLabel}.` });
+    thresholdMessages.push({ short: `No ${strengthLabel} data yet`, full: `No ${strengthLabel} percentile data for ${seasonLabel} yet.` });
+  } else if (
+    percentileCohort?.fallbackReason &&
+    percentileCohort.appliedSeasonId === percentileCohort.requestedSeasonId
+  ) {
+    thresholdMessages.push({ short: `${strengthLabel} data incomplete`, full: percentileCohort.fallbackReason });
   }
-  if (calculatedPercentiles !== null && percentileCohort?.fallbackReason) {
+  if (
+    calculatedPercentiles !== null &&
+    allPlayersStats.length > 0 &&
+    !allPlayersStats.some((player) => player.player_id !== playerId && player.gp !== null && player.gp >= minGp)
+  ) {
+    thresholdMessages.push({ short: `No others at ${minGp}+ GP`, full: `No other players have ${minGp}+ GP at ${strengthLabel}, so there is nothing to rank against.` });
+  }
+  if (
+    calculatedPercentiles !== null &&
+    percentileCohort?.fallbackReason &&
+    percentileCohort.appliedSeasonId !== percentileCohort.requestedSeasonId
+  ) {
     thresholdMessages.push({
       short: `${formatSeasonRange(percentileCohort.appliedSeasonId)} values and cohort, not ${formatSeasonRange(seasonId as number)}`,
       full: percentileCohort.fallbackReason

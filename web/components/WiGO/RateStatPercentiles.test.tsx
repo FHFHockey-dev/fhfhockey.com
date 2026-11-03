@@ -353,6 +353,41 @@ describe("RateStatPercentiles", () => {
     expect(mockFetchPercentileCohortForPlayer).toHaveBeenCalledTimes(1);
   });
 
+  it("shows no 50% wall when the selected player is the whole cohort, and keeps the slider max at or above min", async () => {
+    mockFetchPercentileCohortForPlayer.mockResolvedValue({
+      stats: [
+        { player_id: 1, gp: 3, toi: 4000, goals_per_60: 2, total_points_per_60: 4 },
+        { player_id: 2, gp: 5, toi: 5000, goals_per_60: 1, total_points_per_60: 2 }
+      ],
+      requestedSeasonId: 20262027,
+      appliedSeasonId: 20262027,
+      canonicalPlayerGp: 3,
+      fallbackReason: null
+    });
+    const { container } = renderWithClient(
+      <RateStatPercentiles playerId={1} seasonId={20262027} minGp={10} onMinGpChange={vi.fn()} desktop />
+    );
+    await waitFor(() => expect(screen.getByText("No others at 10+ GP")).toBeTruthy());
+    expect(screen.queryByText("50%")).toBeNull();
+    expect(screen.getAllByText("—").length).toBeGreaterThanOrEqual(16);
+    expect(Number(container.querySelector("#gpSlider")?.getAttribute("max"))).toBeGreaterThanOrEqual(10);
+  });
+
+  it("says plainly when a strength has no data yet", async () => {
+    mockFetchPercentileCohortForPlayer.mockResolvedValue({
+      stats: [],
+      requestedSeasonId: 20262027,
+      appliedSeasonId: 20262027,
+      canonicalPlayerGp: 14,
+      fallbackReason: "Current-season percentile data appears incomplete and no usable fallback cohort was available."
+    });
+    renderWithClient(
+      <RateStatPercentiles playerId={1} seasonId={20262027} minGp={10} onMinGpChange={vi.fn()} desktop />
+    );
+    await waitFor(() => expect(screen.getByText("No AS data yet")).toBeTruthy());
+    expect(screen.queryByText(/values and cohort, not/)).toBeNull();
+  });
+
   it("does not expose dependency details when percentile loading fails", async () => {
     mockFetchPercentileCohortForPlayer.mockRejectedValue(
       new Error("statement timeout on private_percentiles")
