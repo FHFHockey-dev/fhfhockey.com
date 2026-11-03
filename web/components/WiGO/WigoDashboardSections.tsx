@@ -12,10 +12,8 @@ import WigoSectionCard from "./WigoSectionCard";
 import WigoHelp from "./WigoHelp";
 import { WIGO_RATING_MIN_COHORT_PEERS } from "utils/calculateWigoRatings";
 import WigoComparisonMatrix from "./WigoComparisonMatrix";
-import StatsTable from "components/WiGO/StatsTable";
-import TimeframeComparison from "components/WiGO/TimeframeComparison";
 import TeamPerformanceDrivers from "components/WiGO/TeamPerformanceDrivers";
-import { formatCell as formatCellUtil, formatSeasonRange } from "components/WiGO/tableUtils";
+import { formatSeasonRange } from "components/WiGO/tableUtils";
 import { Player, TableAggregateData, TeamColors } from "components/WiGO/types";
 import styles from "styles/wigoCharts.module.scss";
 import type { WigoAggregateFreshness } from "utils/fetchWigoPlayerStats";
@@ -378,28 +376,9 @@ function WigoComparisonSectionBody({
   onCompare,
   desktop = false,
 }: WigoComparisonSectionProps) {
-  if (desktop) return <WigoComparisonMatrix {...{freshness, data, isLoadingAggData, aggDataError, playerId, currentSeasonId, leftTimeframe, rightTimeframe, onCompare}} />;
-  return (
-    <div className={styles.timeframeComparisonWrapper}>
-      <TimeframeComparison
-        initialLeft={leftTimeframe}
-        initialRight={rightTimeframe}
-        onCompare={onCompare}
-      />
-      <div className={styles.combinedStatsTableContainer}>
-        <StatsTable
-          data={data}
-          isLoading={isLoadingAggData && data.length === 0}
-          error={aggDataError}
-          formatCell={formatCellUtil}
-          playerId={playerId ?? 0}
-          currentSeasonId={currentSeasonId ?? 0}
-          leftTimeframe={leftTimeframe}
-          rightTimeframe={rightTimeframe}
-        />
-      </div>
-    </div>
-  );
+  // The phone tab draws the same band, side-scrolling (U10); it replaces the
+  // old transposed table with 35 expanders.
+  return <WigoComparisonMatrix {...{freshness, data, isLoadingAggData, aggDataError, playerId, currentSeasonId, leftTimeframe, rightTimeframe, onCompare}} phone={!desktop} />;
 }
 
 // Memoised so a compare change, a min-GP change or a resize re-renders only the

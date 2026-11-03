@@ -255,6 +255,7 @@ const WigoCharts: React.FC = () => {
             {activeTab === "comparison" && (
               <WigoComparisonSection
                 data={displayDataWithDiff}
+                freshness={aggFreshness}
                 isLoadingAggData={isLoadingAggData}
                 aggDataError={aggDataError}
                 playerId={selectedPlayer?.id}

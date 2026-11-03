@@ -231,6 +231,25 @@ test("every help note opens fully inside the 1280×800 screen and Escape closes 
   }
 });
 
+test("the phone comparison tab shows the band with a pinned period column, jump buttons and every period and DIFF", async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await installWigoFixtures(page, {});
+  await page.goto(`/wigoCharts?playerId=${WIGO_FIXTURE_PLAYER_ID}&tab=comparison`);
+  const band = page.getByRole("region", { name: "Comparison band, scrolls sideways" });
+  await expect(band).toBeVisible({ timeout: 60_000 });
+  await expect(band).toHaveAttribute("tabindex", "0");
+  expect(await band.locator('tbody th > [aria-hidden="true"]').allTextContents()).toEqual(["STDL", "LY", "CAR", "3YA", "L5", "L10", "L20", "DIFF"]);
+  expect(await band.locator("tbody td").first().evaluate(cell => getComputedStyle(cell).fontSize)).toBe("13px");
+  const pinned = band.locator("tbody th").first();
+  const before = (await pinned.boundingBox())!;
+  await page.getByRole("button", { name: "On-ice", exact: true }).click();
+  const lastHeader = band.getByRole("button", { name: "Primary share of points", exact: true });
+  await expect.poll(async () => (await lastHeader.boundingBox())!.x + (await lastHeader.boundingBox())!.width).toBeLessThanOrEqual(390);
+  expect((await pinned.boundingBox())!.x).toBeCloseTo(before.x, 0);
+  await expect(page.locator("#wigo-selected-stat")).toBeVisible();
+});
+
 for (const [width, height] of [[1024, 768], [1279, 800], [1280, 700]]) {
   test(`${width}×${height} flows every panel without clipping instead of fitting one screen`, async ({ page }) => {
     test.setTimeout(120_000);

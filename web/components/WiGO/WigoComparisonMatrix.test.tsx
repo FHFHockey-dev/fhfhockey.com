@@ -49,4 +49,18 @@ describe("WigoComparisonMatrix status", () => {
     mount({ data: [{ label: "GP", STD: 2, CA: null }, { label: "Goals", STD: 0, CA: null }] as any });
     expect(screen.getByRole("note").textContent).toBe("No CA data yet, so DIFF is blank");
   });
+
+  it("leaves out the as-of date when the stored value is not a date", () => {
+    mount({ data: [{ label: "GP", STD: 8, CA: 70 }] as any,
+      freshness: { careerUpdatedAt: "not-a-date", recentUpdatedAt: null, stdGp: 8, totalsGp: 8, stdStale: false } });
+    expect(screen.queryByText(/As of/)).toBeNull();
+  });
+
+  it("gives the phone band jump buttons and a focusable side-scrolling region", () => {
+    mount({ phone: true, data: [{ label: "GP", STD: 8, CA: 70 }] as any });
+    expect(screen.getByRole("group", { name: "Jump to a metric group" }).textContent).toBe("TotalsPer 60On-ice");
+    const region = screen.getByRole("region", { name: "Comparison band, scrolls sideways" });
+    expect(region.getAttribute("tabindex")).toBe("0");
+    expect(screen.getByText(/L5\/L10\/L20: up to the latest played games/)).toBeTruthy();
+  });
 });

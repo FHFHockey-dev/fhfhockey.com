@@ -1651,6 +1651,25 @@
       width: 410px;
     }
   }
+  .selectedStatPanel .gameLogChartContainer {
+    padding: 0;
+    height: auto;
+  }
+  .selectedStatPanel .averageToggleButtons {
+    gap: 4px;
+    margin-bottom: 4px;
+    display: flex;
+    flex-wrap: wrap;
+  }
+  .selectedStatPanel .avgButton {
+    font-size: s.$text-12;
+    padding: 2px 4px;
+  }
+}
+
+// The comparison band (one-page and phone). Scoped to its panel rather than to
+// the one-page class, so the phone tab draws the same band (U10).
+.comparisonMatrixPanel {
   // One band: periods as rows, 36 metric columns sized to content. The wrapper
   // scrolls sideways only if a freak value would otherwise overprint (E-01).
   .matrixBand {
@@ -1761,6 +1780,17 @@
   thead .matrixPeriodCell {
     background: v.$background-header;
   }
+  // Tints are translucent, so the pinned cell layers them over an opaque base;
+  // otherwise scrolled values show through it (U10).
+  .comparisonMatrix tr[data-left] > .matrixPeriodCell {
+    background: linear-gradient(rgba(v.$primary-color, 0.08), rgba(v.$primary-color, 0.08)), v.$background-medium;
+  }
+  .comparisonMatrix tr[data-right] > .matrixPeriodCell {
+    background: linear-gradient(rgba(v.$warning-color, 0.1), rgba(v.$warning-color, 0.1)), v.$background-medium;
+  }
+  .comparisonMatrix tbody tr:hover > .matrixPeriodCell {
+    background: linear-gradient(rgba(v.$focus-color, 0.2), rgba(v.$focus-color, 0.2)), v.$background-medium;
+  }
   .matrixDiffRow > * {
     border-top: 1px solid s.$ink-muted;
     border-bottom: 0;
@@ -1784,20 +1814,6 @@
     }
     &[data-diff-sign="negative"] { --diff-color: #{v.$danger-color}; }
     &[data-diff-sign="positive"] { --diff-color: #{v.$success-color}; }
-  }
-  .selectedStatPanel .gameLogChartContainer {
-    padding: 0;
-    height: auto;
-  }
-  .selectedStatPanel .averageToggleButtons {
-    gap: 4px;
-    margin-bottom: 4px;
-    display: flex;
-    flex-wrap: wrap;
-  }
-  .selectedStatPanel .avgButton {
-    font-size: s.$text-12;
-    padding: 2px 4px;
   }
 }
 
@@ -2784,6 +2800,104 @@
       border-color: v.$primary-color;
       background: rgba(v.$primary-color, 0.16);
       color: v.$text-primary;
+    }
+  }
+}
+
+// Phone comparison band (U10). Last on purpose, like the touch rules above:
+// it restyles the shared band for 390 px. 13 px text, 28 px rows, a 32 px
+// header, a 45 px pinned period column and an edge fade while more remains.
+@media (max-width: v.$breakpoint-tablet) {
+  .comparisonMatrixPanel {
+    display: block;
+    .matrixToolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px 10px;
+      padding: 6px 4px;
+      font-size: s.$text-12;
+    }
+    .bandJump {
+      display: flex;
+      gap: 6px;
+      padding: 0 4px 6px;
+      button {
+        min-height: 32px;
+        padding: 0 12px;
+        border: v.$border-subtle;
+        border-radius: s.$radius-small;
+        background: v.$background-dark;
+        color: s.$ink;
+        font-size: s.$text-12;
+      }
+    }
+    .matrixBand {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+      &[data-at-end] {
+        mask-image: none;
+      }
+      &:focus-visible {
+        outline: 2px solid v.$focus-color;
+        outline-offset: 2px;
+      }
+    }
+    .comparisonMatrix {
+      --wigo-band-pad: 6px;
+      width: auto;
+      font-size: 13px; // PLAN section 4: phone band at 13 px (no scale step)
+      th,
+      td {
+        height: 28px;
+      }
+      thead tr:last-child th {
+        height: 32px;
+      }
+      th button {
+        min-height: 28px;
+      }
+    }
+    .matrixPeriodCell {
+      min-width: 45px;
+    }
+    // A group title spans up to 17 columns; keep it in view beside the pinned
+    // period column instead of centred off-screen.
+    .comparisonMatrix .matrixGroupRow th {
+      text-align: left;
+    }
+    .matrixGroupTitle {
+      position: sticky;
+      left: 52px;
+    }
+  }
+  .selectedStatPanel {
+    height: 280px;
+    display: flex;
+    flex-direction: column;
+    padding: 4px;
+    margin-top: 8px;
+    h3 {
+      margin: 0 0 4px;
+      font-size: s.$text-12;
+    }
+    .gameLogChartContainer {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .gameLogChartPlot,
+    .chartStatus {
+      flex: 1;
+      min-height: 0;
+    }
+    .averageToggleButtons {
+      display: flex;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      gap: 4px;
     }
   }
 }

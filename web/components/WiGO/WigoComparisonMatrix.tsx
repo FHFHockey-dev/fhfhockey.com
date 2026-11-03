@@ -138,6 +138,9 @@ const shortDay = (iso: string) =>
   new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 
 interface Props {
+  // Phone tab (U10): jump buttons, a focusable side-scrolling band with the
+  // period column pinned, and the L-window note.
+  phone?: boolean;
   freshness?: WigoAggregateFreshness | null;
   data: TableAggregateData[];
   isLoadingAggData: boolean;
@@ -150,6 +153,7 @@ interface Props {
 }
 
 export default function WigoComparisonMatrix({
+  phone = false,
   freshness = null,
   data,
   isLoadingAggData,
@@ -165,6 +169,15 @@ export default function WigoComparisonMatrix({
   // only, Enter or Space selects, so focus alone never swaps the chart.
   const [focusMetric, setFocusMetric] = useState<WigoStatLabel>("SOG/60");
   const headerButtons = useRef(new Map<WigoStatLabel, HTMLButtonElement>());
+  const bandRef = useRef<HTMLDivElement>(null);
+  const groupHeaders = useRef(new Map<string, HTMLTableCellElement>());
+  const [bandAtEnd, setBandAtEnd] = useState(false);
+  const jumpToGroup = (title: string) => {
+    const band = bandRef.current;
+    const header = groupHeaders.current.get(title);
+    const pinned = band?.querySelector<HTMLElement>("tbody th")?.offsetWidth ?? 0;
+    if (band && header) band.scrollTo({ left: Math.max(0, header.offsetLeft - pinned), behavior: "smooth" });
+  };
   const moveHeaderFocus = (event: React.KeyboardEvent, label: WigoStatLabel) => {
     const labels = SELECTABLE_METRICS;
     const index = labels.indexOf(label);
@@ -204,7 +217,7 @@ export default function WigoComparisonMatrix({
   // Honest states (U9): how current the rows are, a stale STD row, and a
   // compared period with no data at all (a rookie's CA), which blanks DIFF.
   const asOf = [freshness?.careerUpdatedAt, freshness?.recentUpdatedAt]
-    .filter((value): value is string => !!value)
+    .filter((value): value is string => !!value && Number.isFinite(Date.parse(value)))
     .sort()[0];
   const stdStale = !!freshness?.stdStale && data.length > 0;
   const emptyPeriods = data.length === 0 ? [] : [leftTimeframe, rightTimeframe].filter(
@@ -261,7 +274,31 @@ export default function WigoComparisonMatrix({
             <span className={styles.matrixNotes} role="note">{matrixNotes.join(" · ")}</span>
           )}
         </div>
-        <div className={styles.matrixBand}>
+        {phone && (
+          <div className={styles.bandJump} role="group" aria-label="Jump to a metric group">
+            {MATRIX_GROUPS.map((group) => (
+              <button type="button" key={group.title} onClick={() => jumpToGroup(group.title)}>
+                {group.title}
+              </button>
+            ))}
+          </div>
+        )}
+        <div
+          className={styles.matrixBand}
+          ref={bandRef}
+          data-at-end={phone && bandAtEnd ? true : undefined}
+          {...(phone
+            ? {
+                tabIndex: 0,
+                role: "region",
+                "aria-label": "Comparison band, scrolls sideways",
+                onScroll: (event: React.UIEvent<HTMLDivElement>) => {
+                  const band = event.currentTarget;
+                  setBandAtEnd(band.scrollLeft + band.clientWidth >= band.scrollWidth - 2);
+                }
+              }
+            : {})}
+        >
           <table className={styles.comparisonMatrix}>
             <caption className={styles.visuallyHidden}>
               {MATRIX_METRICS.length} metrics by period. The last row is the
@@ -277,15 +314,18 @@ export default function WigoComparisonMatrix({
             ))}
             <thead>
               <tr className={styles.matrixGroupRow}>
-                <td />
+                <td className={styles.matrixPeriodCell} />
                 {MATRIX_GROUPS.map((group) => (
                   <th
                     scope="colgroup"
                     colSpan={group.metrics.length}
                     key={group.title}
                     className={styles.matrixGroupStart}
+                    ref={(element) => {
+                      if (element) groupHeaders.current.set(group.title, element);
+                    }}
                   >
-                    {group.title}
+                    <span className={styles.matrixGroupTitle}>{group.title}</span>
                   </th>
                 ))}
               </tr>
@@ -394,6 +434,12 @@ export default function WigoComparisonMatrix({
             Shows its game log below.
           </span>
         </div>
+        {phone && (
+          <p className={styles.statsTableNote}>
+            L5/L10/L20: up to the latest played games across seasons; see GP for
+            the actual samples.
+          </p>
+        )}
       </section>
       <section
         id="wigo-selected-stat"
