@@ -65,8 +65,10 @@ export type SharePostSnapshot<Settings extends ShareSettings = ShareSettings, Da
   teams: string[];
   /** Offline fixture data: the shell watermarks it and refuses every export. Real sources never set this. */
   fixture: boolean;
+  /** Notes for the editor, such as a window cut short by a late feed: printed beside the card, never on the PNG. */
+  pageNotes?: string[];
 };
-export type SharePostLoadResult<Data> = { state: ShareDataState; reasons?: string[]; evidence: SharePostEvidence; data: Data | null; teams?: string[]; ttlSeconds?: number };
+export type SharePostLoadResult<Data> = { state: ShareDataState; reasons?: string[]; evidence: SharePostEvidence; data: Data | null; teams?: string[]; ttlSeconds?: number; pageNotes?: string[] };
 
 /** Structural subset of the supabase-js client; tests pass a fake with the same methods. */
 export type SharePostReadClient = { from: (table: string) => any };

@@ -82,6 +82,16 @@ describe("PostStudio", () => {
     expect(issues.map(issue => issue.textContent)).toEqual(["Natural Stat Trick missing: NST read failed."]);
   });
 
+  it("prints the edition's page notes beside the card, never inside the captured frame, and still exports", async () => {
+    serve(edition({ pageNotes: ["Nov 2 is not fully reported yet, so this card ends Nov 1."] }));
+    render(<PostStudio />);
+    await waitFor(() => expect(screen.getByTestId("share-square")).toBeTruthy());
+    const notes = screen.getByTestId("post-page-notes");
+    expect(notes.textContent).toBe("Nov 2 is not fully reported yet, so this card ends Nov 1.");
+    expect(screen.getByTestId("share-square").contains(notes)).toBe(false);
+    await waitFor(() => expect((screen.getByRole("button", { name: "Download PNG" }) as HTMLButtonElement).disabled).toBe(false));
+  });
+
   it("waits out a font that is not declared yet, and offers a retry if it never loads", async () => {
     serve(edition());
     const load = vi.fn(async () => [] as unknown[]);

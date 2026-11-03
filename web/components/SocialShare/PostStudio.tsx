@@ -186,6 +186,9 @@ export default function PostStudio() {
     {Panel && snapshot?.data != null && snapshot.post === entry.id && <aside className={styles.panel} aria-label="Build this post"><Panel snapshot={snapshot} data={snapshot.data} settings={settings} logos={logos} change={(fieldId: string, value: ShareSettings[string]) => { setSettings(current => ({ ...current, [fieldId]: value })); setFeedback(""); }} disabled={exporting} /></aside>}
     <section className={styles.panel} aria-label="Graphic preview">
       <div className={styles.panelHeader}><h2>1080 × 1080 preview</h2><span>{entry.title}</span></div>
+      {snapshot?.post === entry.id && !!snapshot.pageNotes?.length && <div className={postStyles.pageNotes} data-testid="post-page-notes" role="note" aria-label="Notes for this edition, not on the PNG">
+        {snapshot.pageNotes.map(note => <p key={note}>{note}</p>)}
+      </div>}
       <div className={styles.previewFrame} ref={frame} style={{ height: scale * SHARE_SIZE }}>
         {snapshot && squareReady && <div ref={preview} className={`${styles.square} ${styles.gridSquare}`} style={{ transform: `scale(${scale})` }} data-testid="share-square" role="img" aria-label={alt} data-export-token={token}>
           <PostFrame entry={entry} snapshot={snapshot} settings={settings} brandLogo={brandLogo} logos={logos} Card={Card} />
