@@ -2,9 +2,10 @@ import { currentSeason } from "lib/socialShare/schedule";
 import { luminance, withNeonFloor } from "lib/socialShare/teamNeon";
 import { teamsInfo } from "lib/teamsInfo";
 import { defineShareModule, type SharePostLoadResult } from "./contract";
-import { competitionRanks, editionDate, lastN } from "./shared/definitions";
+import { competitionRanks, lastN } from "./shared/definitions";
+import { completeThrough, completeThroughNote, countNights, teamGameDates, type NightCoverage } from "./shared/completeThrough";
+import { editionCutoff } from "./shared/periodWindow";
 import { teamStartShare, type CompletedTeamGame, type GoalieAppearance, type TeamStartShare } from "./shared/goalieLedger";
-import { shiftDays } from "./teamGames";
 
 /**
  * Crease Shift (SS 8.0): official start share over a team's last N completed games, against a labeled comparison window.
@@ -50,8 +51,8 @@ export type ScheduleReconciliation = { scheduledGames: number; expected: number;
 
 const teamById = new Map(Object.entries(teamsInfo).map(([abbreviation, team]) => [team.id, abbreviation]));
 
-/** Through yesterday in New York: today's games may not be final. */
-export const editionCutoff = (generatedAt: string) => shiftDays(editionDate(generatedAt), -1);
+/** Through yesterday in New York: today's games may not be final. One definition, shared with the matchup pager. */
+export { editionCutoff };
 export function seasonScope(generatedAt: string) {
   const through = editionCutoff(generatedAt), season = currentSeason(through);
   return { through, season, from: `${String(season).slice(0, 4)}-07-01` };
@@ -67,6 +68,14 @@ export function reconcileSchedule(scheduled: readonly ScheduledGame[], reported:
   const expected = scheduled.length * 2;
   return { scheduledGames: scheduled.length, expected, observed: expected - gaps.length, missing: gaps.length, gaps, games: reported.filter(game => ids.has(game.gameId)) };
 }
+
+/** Each scheduled night's team games against those reported, for `completeThrough`: the same matching as `reconcileSchedule`. */
+export function scheduleNights(scheduled: readonly ScheduledGame[], reported: readonly CompletedTeamGame[]): NightCoverage[] {
+  const seen = new Set(reported.map(game => `${game.team}:${game.gameId}`));
+  return countNights(teamGameDates(scheduled), scheduled.flatMap(game => [game.homeTeamId, game.awayTeamId].flatMap(id => seen.has(`${teamById.get(id ?? -1) ?? "Unknown team"}:${game.id}`) ? [game.date] : [])));
+}
+/** Rows dated on or before `through`. */
+export const datedThrough = <Row extends { date: string }>(rows: readonly Row[], through: string) => rows.filter(row => row.date <= through);
 
 /** The exact share change, divided once, so equal changes on different denominators stay tied. */
 const shareChange = (starts: number, games: number, baseStarts: number, baseGames: number) => (starts * baseGames - baseStarts * games) * 100 / (games * baseGames);
@@ -130,7 +139,16 @@ function teamRow(team: string, input: { games: readonly CompletedTeamGame[]; app
   };
 }
 
-export function buildCreaseShift(input: { reported: readonly CompletedTeamGame[]; appearances: readonly GoalieAppearance[]; scheduled: readonly ScheduledGame[]; teams: readonly string[]; window: number; comparison: "previous" | "std"; minComparisonGames: number; through: string }): SharePostLoadResult<CreaseShiftData> {
+type CreaseShiftInput = { reported: readonly CompletedTeamGame[]; appearances: readonly GoalieAppearance[]; scheduled: readonly ScheduledGame[]; teams: readonly string[]; window: number; comparison: "previous" | "std"; minComparisonGames: number; through: string };
+/** A late newest night ends the windows at the last complete one, with a page note; an older gap still makes the post partial. */
+export function buildCreaseShift(input: CreaseShiftInput): SharePostLoadResult<CreaseShiftData> {
+  const cut = completeThrough(scheduleNights(input.scheduled, input.reported), input.through);
+  if (!cut.trimmed.length) return buildCreaseWindow(input);
+  if (!cut.through) return { ...buildCreaseWindow(input), state: "missing", reasons: ["No night this season is fully reported yet."], data: null };
+  const result = buildCreaseWindow({ ...input, reported: datedThrough(input.reported, cut.through), appearances: datedThrough(input.appearances, cut.through), scheduled: datedThrough(input.scheduled, cut.through), through: cut.through });
+  return { ...result, pageNotes: [completeThroughNote(cut)!] };
+}
+function buildCreaseWindow(input: CreaseShiftInput): SharePostLoadResult<CreaseShiftData> {
   const schedule = reconcileSchedule(input.scheduled, input.reported);
   const rows = input.teams.map(team => teamRow(team, { games: schedule.games, appearances: input.appearances, window: input.window, comparison: input.comparison, minComparisonGames: input.minComparisonGames }, schedule.gaps));
   const ranked = competitionRanks(rows, row => row.shift, row => row.team), ranks = new Map(ranked.map(entry => [entry.row.team, entry.rank]));

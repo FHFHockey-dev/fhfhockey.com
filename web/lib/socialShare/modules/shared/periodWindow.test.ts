@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { customRangeLimits, customRangeReason, matchupCalendar, matchupLabel, matchupPager, periodDates, periodWindowFields, resolvePeriodWindow, type MatchupRow, type PeriodMode, type PeriodWindowSettings } from "./periodWindow";
+import { customRangeLimits, customRangeReason, editionCutoff, matchupCalendar, matchupLabel, matchupPager, periodDates, periodWindowFields, resolvePeriodWindow, type MatchupRow, type PeriodMode, type PeriodWindowSettings } from "./periodWindow";
+import { shareThrough } from "../whatChanged";
 import { loadMatchupWeeks } from "./periodWindow.sources";
 
 /** This season's shape: a short first week, normal weeks, a 14-day break, and a row with no dates. */
@@ -44,6 +45,10 @@ describe("period window", () => {
     expect(resolvePeriodWindow(matchup(5), calendar, pastOnly).window?.week).toBe(5);
     expect(resolvePeriodWindow(matchup(6), calendar, anyWeek).window?.week).toBe(6);
   });
+  it("uses the same cutoff for an edition as the post loaders do", () => {
+    for (const at of ["2026-11-02T04:30:00.000Z", "2026-11-02T05:30:00.000Z", "2026-03-08T07:30:00.000Z", "2027-01-01T05:00:00.000Z"]) expect(editionCutoff(at), at).toBe(shareThrough(at).through);
+  });
+
   it("moves a schedule's blank week on once the week's last day is the cutoff, so Monday opens the new week", () => {
     const calendar = matchupCalendar([{ week: 1, start_date: "2026-10-19", end_date: "2026-10-25" }, { week: 2, start_date: "2026-10-26", end_date: "2026-11-01" }]);
     const blankWeekOn = (cutoff: string) => resolvePeriodWindow({ period: "matchup", week: null, start: null, end: null }, calendar, { mode: "any-week", cutoff }).window?.week;

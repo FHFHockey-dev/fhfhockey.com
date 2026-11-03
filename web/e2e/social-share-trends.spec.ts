@@ -33,7 +33,7 @@ const appearances = [
   ...skater(1, "Fictional Riser", "NJD", index => index >= 7 ? 2 : 0, index => index >= 7 ? 1300 : 1100, index => index >= 7 ? 200 : 100),
   ...skater(2, "Fictional Faller", "NYI", index => index >= 7 ? 0 : 1, index => index >= 7 ? 900 : 1100, () => 0),
 ];
-const completion = { completedTeamGames: appearances.map(game => ({ gameId: game.gameId, team: game.team! })), scheduledGameIds: [...new Set(appearances.map(game => game.gameId))], through: "2026-10-30" };
+const completion = { completedTeamGames: appearances.map(game => ({ gameId: game.gameId, team: game.team! })), scheduledGames: [...new Map(appearances.map(game => [game.gameId, { gameId: game.gameId, date: game.date }])).values()], through: "2026-10-30" };
 const edition = (post: string, settings: Record<string, string | number>, result: ReturnType<typeof buildWhatChanged> | ReturnType<typeof buildRoleWatch>, fixture: boolean) => {
   const generatedAt = new Date().toISOString();
   return { schemaVersion: 1, id: `${post}-e2e`, post, state: "ready", reasons: [], generatedAt, expiresAt: new Date(Date.parse(generatedAt) + 600000).toISOString(), timeZone: "America/New_York", settings, evidence: result.evidence, data: result.data, teams: result.teams ?? [], fixture };
@@ -70,7 +70,7 @@ test("What Changed prints side-by-side boards, tiles, samples and the overlap di
 });
 
 test("What Changed with offline fixture data and no ranked player refuses export", async ({ page }) => {
-  const empty = buildWhatChanged({ appearances: appearances.filter(game => game.date <= dateOf(3)), nstCounts: null, nstOnIce: null, completedTeamGames: [], scheduledGameIds: [], through: "2026-10-30", settings: whatChangedSettings });
+  const empty = buildWhatChanged({ appearances: appearances.filter(game => game.date <= dateOf(3)), nstCounts: null, nstOnIce: null, completedTeamGames: [], scheduledGames: [], through: "2026-10-30", settings: whatChangedSettings });
   await open(page, "what-changed", edition("what-changed", whatChangedSettings, empty, true));
   await expect(page.getByTestId("share-square")).toContainText("No player qualifies");
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();

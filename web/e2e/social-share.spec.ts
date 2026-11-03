@@ -1422,7 +1422,8 @@ test("post library: a post's edition previews with its evidence and exports the 
   await downloadedPng(page, "post-library-team-games");
   expect(requests).toBe(before);
   unavailable = true;
-  await page.getByRole("button", { name: "Refresh post", exact: true }).click();
+  // No setting changed, so a new edition comes from reopening the page.
+  await page.reload();
   await expect(page.getByTestId("post-unavailable")).toContainText("could not be read");
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
 });

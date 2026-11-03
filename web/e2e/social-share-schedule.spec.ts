@@ -1,22 +1,25 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 /** Off-Night Edge in the post library, against a fictional edition. The lead runs this serially at 13.0. */
 const supabaseOrigin = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || "http://supabase.e2e.invalid");
 const editorToken = "e2e-fictional-editor-token";
-const pick = (nhlId: number, name: string, pct: number | null) => ({ nhlId, name, positions: "C", ownership: pct === null ? { state: "unknown", pct: null, asOf: null } : { state: "known", pct, asOf: "2026-10-31" }, games: 5, fantasyPerGame: 3.2, score: 3.4 });
+const pick = (nhlId: number, name: string, pct: number | null, chips: { hot?: boolean; shortSample?: boolean } = {}) => ({ nhlId, name, positions: "C", ownership: pct === null ? { state: "unknown", pct: null, asOf: null } : { state: "known", pct, asOf: "2026-10-31" }, games: chips.shortSample ? 3 : 5, fantasyPerGame: 3.2, score: 3.4, hot: !!chips.hot, shortSample: !!chips.shortSample });
+/** Evidence harness only: set to a folder to save before and after renders of the cards below. Unset in normal runs. */
+const renders = process.env.OFF_NIGHT_RENDER_DIR, renderName = process.env.OFF_NIGHT_RENDER_PREFIX ?? "after";
+const OPPONENTS = ["BOS", "TOR", "MTL", "OTT", "DET", "BUF", "TBL", "FLA", "PIT", "PHI", "WSH", "CAR", "CBJ", "NYI"];
 
 function edition(dates: "rest-of-week" | "weekly", over: Record<string, unknown> = {}) {
   const generatedAt = new Date().toISOString(), weekly = dates === "weekly";
   return {
     schemaVersion: 1, id: `off-night-edge-${dates}`, post: "off-night-edge", state: "ready", reasons: [] as string[], generatedAt, expiresAt: new Date(Date.parse(generatedAt) + 600000).toISOString(), timeZone: "America/New_York",
-    settings: { ownershipCeiling: 50, includeUnknown: "off", dates, period: "this-week", week: null, start: null, end: null }, teams: ["NJD", "NYR"], fixture: false,
+    settings: { ownershipCeiling: 50, includeUnknown: "off", dates, period: "this-week", week: null, start: null, end: null }, teams: ["NJD", "NYR", "BOS", "TOR"], fixture: false, pageNotes: ["NJD No D: 2 over 50%, 1 unknown %.", "NYR No F: 3 over 50%."],
     evidence: { sources: [{ name: "NHL schedule (Game Grid edition)", tables: ["NHL schedule API"], state: "ready", asOf: "2026-11-01", updatedAt: null }, { name: "Yahoo ownership", tables: ["yahoo_players"], state: "ready", asOf: "2026-10-31", updatedAt: null }],
       sample: "Fictional sample", strength: "All situations", cohort: "Top 2 of 2 teams with games", coverage: { observed: 4, expected: 4, missing: 0, unit: "team games" } },
     data: { dates, window: { kind: "this-week", week: null, from: "2026-10-31", through: "2026-11-01", label: `${weekly ? "Full week" : "Rest of week"} · Oct 31 to Nov 1`, past: false, playedIncluded: false }, weekStart: "2026-10-26", weekEnd: "2026-11-01", countedGames: 2, teamsWithGames: 2, tiedOut: [], ownership: { known: 2, unknown: 1, stale: 0, asOf: "2026-10-31" },
       days: [{ date: "2026-10-31", label: "Sat", leagueGames: 12, offNight: false }, { date: "2026-11-01", label: "Sun", leagueGames: 3, offNight: true }],
       rows: [
-        { team: weekly ? "NYR" : "NJD", teamName: "First", rank: 1, score: 7.5, games: 2, offNightGames: 1, gamesByDay: [1, 1], picks: { F: pick(1, "Fictional Forward", 0), D: null }, gaps: { F: null, D: "No D: 2 over 50%, 1 unknown %" } },
-        { team: weekly ? "NJD" : "NYR", teamName: "Second", rank: 2, score: 1.5, games: 1, offNightGames: 0, gamesByDay: [1, 0], picks: { F: null, D: pick(2, "Fictional Defenseman", 12) }, gaps: { F: "No F: 3 over 50%", D: null } },
+        { team: weekly ? "NYR" : "NJD", teamName: "First", rank: 1, score: 7.5, games: 2, offNightGames: 1, gamesByDay: [1, 1], opponentsByDay: [["BOS"], ["TOR"]], picks: { F: pick(1, "Fictional Forward", 0, { hot: true }), D: null }, gaps: { F: null, D: "No D: 2 over 50%, 1 unknown %" } },
+        { team: weekly ? "NJD" : "NYR", teamName: "Second", rank: 2, score: 1.5, games: 1, offNightGames: 0, gamesByDay: [1, 0], opponentsByDay: [["TOR"], []], picks: { F: null, D: pick(2, "Fictional Defenseman", 12, { shortSample: true }) }, gaps: { F: "No F: 3 over 50%", D: null } },
       ] }, ...over,
   };
 }
@@ -34,7 +37,10 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test("off-night edge: dates refetch a recomputed order, gaps and 0% print, and export follows the settings", async ({ page }) => {
+/** The studio's Options group starts collapsed (SS-1103): open it before touching an option field. */
+const openOptions = async (page: Page) => { const toggle = page.getByRole("button", { name: /^Options/ }); if (await toggle.getAttribute("aria-expanded") !== "true") await toggle.click(); };
+
+test("off-night edge: dates refetch a recomputed order, chips and 0% print, gaps are page notes, and export follows the settings", async ({ page }) => {
   const requested: string[] = [];
   await page.route("**/api/v1/social-share/posts/**", route => {
     const url = new URL(route.request().url());
@@ -47,18 +53,24 @@ test("off-night edge: dates refetch a recomputed order, gaps and 0% print, and e
   await expect(square).toBeVisible();
   await expect(square).toContainText("Fictional Forward");
   await expect(square).toContainText("0%");
-  await expect(square.getByTestId("off-night-gap").first()).toContainText("No D: 2 over 50%, 1 unknown %");
+  await expect(square.getByTestId("off-night-gap").first()).toHaveText("No pick");
+  await expect(square).not.toContainText("over 50%");
+  await expect(page.getByTestId("post-page-notes")).toContainText("NJD No D: 2 over 50%, 1 unknown %.");
+  await expect(square).toContainText("HOT");
+  await expect(square).toContainText("Short Sample");
+  await expect(square.getByRole("img", { name: "BOS" })).toBeVisible();
   await expect(page.getByTestId("post-evidence")).toContainText("Ownership ceiling %: 50");
   await expect(page.getByTestId("post-evidence")).toContainText("Dates: Rest of week");
   await expect(square.getByTestId("off-night-legend")).toContainText("Rest of week");
   await expect(page.getByTestId("post-evidence")).toContainText("Top 2 of 2 teams with games");
   await expect(square).toHaveAttribute("data-export-token", /off-night-edge-rest-of-week\|off-night-edge\|/);
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeEnabled();
+  if (renders) await page.locator("main, body").first().screenshot({ path: `${renders}/${renderName}-rest-of-week-page.png` });
+  if (renders) await square.screenshot({ path: `${renders}/${renderName}-rest-of-week-card.png` });
 
-  // A changed setting applies on refresh; until then the old edition's data cannot export under the new label.
+  // A changed setting reloads the post on its own, and export follows the new edition.
+  await openOptions(page);
   await page.getByLabel("Dates").selectOption("weekly");
-  await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
-  await page.getByRole("button", { name: "Refresh post", exact: true }).click();
   await expect(square.getByTestId("off-night-legend")).toContainText("Full week");
   await expect(square).toHaveAttribute("data-export-token", /off-night-edge-weekly\|off-night-edge\|/);
   expect(requested.some(search => search.includes("dates=weekly"))).toBe(true);
@@ -66,12 +78,12 @@ test("off-night edge: dates refetch a recomputed order, gaps and 0% print, and e
 
 test("off-night edge: a past 14-day matchup prints its dates and past label, and 16 long rows fit the card unclipped", async ({ page }) => {
   const days = Array.from({ length: 14 }, (_, index) => { const date = `2027-02-${String(index + 1).padStart(2, "0")}`; return { date, label: ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"][index % 7], leagueGames: index % 3 ? 12 : 4, offNight: !(index % 3) }; });
-  const longGap = "No D: 12 over 50%, 3 unknown %, 2 stale %, 4 unavailable, 5 short sample, 1 no identity";
-  const rows = Array.from({ length: 16 }, (_, index) => ({ team: "NJD", teamName: "Long", rank: index + 1, score: 18.5 - index, games: 8, offNightGames: 3, gamesByDay: days.map((_, day) => (day + index) % 2), picks: { F: pick(index + 1, "Oliver Ekman-Larsson Jr", 12), D: index % 2 ? pick(index + 100, "Trevor van Riemsdyk", null) : null }, gaps: { F: null, D: index % 2 ? null : longGap } })).map((row, index) => ({ ...row, team: `T${String(index).padStart(2, "0")}` }));
+  const longGap = "No D: 12 over 50%, 3 unknown %, 2 stale %, 4 unavailable, 1 no identity";
+  const rows = Array.from({ length: 16 }, (_, index) => ({ team: "NJD", teamName: "Long", rank: index + 1, score: 18.5 - index, games: 8, offNightGames: 3, gamesByDay: days.map((_, day) => (day + index) % 2), opponentsByDay: days.map((_, day) => (day + index) % 2 ? [OPPONENTS[(day + index) % OPPONENTS.length]] : []), picks: { F: pick(index + 1, "Oliver Ekman-Larsson Jr", 12, { hot: index % 3 === 0, shortSample: index % 5 === 1 }), D: index % 2 ? pick(index + 100, "Trevor van Riemsdyk", null) : null }, gaps: { F: null, D: index % 2 ? null : longGap } })).map((row, index) => ({ ...row, team: `T${String(index).padStart(2, "0")}` }));
   await page.route("**/api/v1/social-share/posts/**", route => {
     const period = new URL(route.request().url()).searchParams.get("period"), past = period === "matchup";
     const base = edition("weekly"), data = base.data as Record<string, unknown>;
-    return route.fulfill({ json: !past ? base : { ...base, id: "off-night-edge-week-19", settings: { ...base.settings, period: "matchup", week: 19 }, data: { ...data, days, rows, window: { kind: "matchup", week: 19, from: "2027-02-01", through: "2027-02-14", label: "Week 19 · Feb 1 to Feb 14", past: true, playedIncluded: false } } } });
+    return route.fulfill({ json: !past ? base : { ...base, id: "off-night-edge-week-19", teams: [...base.teams, ...OPPONENTS], settings: { ...base.settings, period: "matchup", week: 19 }, data: { ...data, days, rows, window: { kind: "matchup", week: 19, from: "2027-02-01", through: "2027-02-14", label: "Week 19 · Feb 1 to Feb 14", past: true, playedIncluded: false } } } });
   });
   await page.goto("/social-share/posts?post=off-night-edge&dates=weekly&period=matchup&week=19");
   const square = page.getByTestId("share-square");
@@ -89,13 +101,15 @@ test("off-night edge: a past 14-day matchup prints its dates and past label, and
   expect(fit.wide).toBeLessThanOrEqual(1);
   expect(fit.overflow).toBeLessThanOrEqual(1);
   expect(fit.deadBand).toBeLessThanOrEqual(40);
+  if (renders) await square.screenshot({ path: `${renders}/${renderName}-14-day-card.png` });
 });
 
 test("off-night edge: the pager opens next week's matchup, labelled, and a week not published gives its reason", async ({ page }) => {
   const requested: string[] = [];
   await page.route("**/api/v1/social-share/matchup-weeks", route => route.fulfill({ json: { cutoff: "2026-10-31", rows: [{ week: 5, start_date: "2026-10-26", end_date: "2026-11-01" }, { week: 6, start_date: "2026-11-02", end_date: "2026-11-08" }, { week: 7, start_date: "2026-11-09", end_date: "2026-11-15" }] } }));
   await page.route("**/api/v1/social-share/posts/**", route => {
-    const url = new URL(route.request().url()), week = url.searchParams.get("week"), base = edition("weekly"), settings = { ...base.settings, period: "matchup", week: week ? Number(week) : null };
+    // Built on Nov 1, so the pager's cutoff is Oct 31, as the calendar mock says, whatever today is; it still expires ten minutes from now.
+    const url = new URL(route.request().url()), week = url.searchParams.get("week"), base = { ...edition("weekly"), generatedAt: "2026-11-01T16:00:00.000Z" }, settings = { ...base.settings, period: "matchup", week: week ? Number(week) : null };
     requested.push(url.search);
     if (week === "7") return route.fulfill({ json: { ...base, id: "off-night-week-7", state: "missing", data: null, teams: [], settings, reasons: ["The NHL schedule shows no games yet for Week 7 · Nov 9 to Nov 15, so there is no ranking. It may not be published."] } });
     const next = week === "6";
@@ -125,6 +139,7 @@ test("off-night edge: old links load as this week, and the period control offers
   await expect(page.getByTestId("share-square").getByTestId("off-night-legend")).toContainText("Full week · Oct 31 to Nov 1");
   expect(requested[0]).toContain("dates=weekly");
   expect(requested[0]).toContain("period=this-week");
+  await openOptions(page);
   await expect(page.getByLabel("Dates")).toHaveValue("weekly");
   const period = page.getByTestId("period-control").getByLabel("Period");
   await expect(period.locator("option")).toHaveText(["This week", "Matchup week", "Custom range"]);
@@ -159,7 +174,8 @@ test("off-night edge: partial previews without export, stale shows its reason an
   await expect(page.getByTestId("post-watermark")).toHaveText("PARTIAL · NOT FOR EXPORT");
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
   body = edition("rest-of-week", { state: "stale", data: null, teams: [], reasons: ["Most Yahoo ownership is older than a day (9 of 10 qualified skaters)."] });
-  await page.getByRole("button", { name: "Refresh post", exact: true }).click();
+  // No setting changed, so a new edition comes from reopening the page.
+  await page.reload();
   await expect(page.getByTestId("post-unavailable")).toContainText("older than a day");
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
 });

@@ -1,5 +1,6 @@
 import type { ShareSettingField, ShareSettings } from "../contract";
 import { defaultWeek, spanDays, toMatchupWeeks, type MatchupWeek } from "./categoryCounts";
+import { editionDate } from "./definitions";
 
 /**
  * The shared period control: which dates a post covers, chosen as a matchup week or custom dates, or by the post's own
@@ -27,6 +28,9 @@ export function periodWindowFields({ mode, options, default: chosen = PERIOD_MAT
     { id: "end", label: "Custom range end", kind: "date", default: null, panelOnly: true },
   ];
 }
+
+/** The last completed date an edition was built against: yesterday in New York when it was generated, as its loader read it. */
+export const editionCutoff = (generatedAt: string) => new Date(Date.parse(`${editionDate(generatedAt)}T00:00:00Z`) - 86400000).toISOString().slice(0, 10);
 
 export type MatchupRow = { week: number; start_date: string | null; end_date: string | null };
 export type MatchupCalendar = { weeks: MatchupWeek[]; reasons: string[] };

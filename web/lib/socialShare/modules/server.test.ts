@@ -29,8 +29,8 @@ describe("post snapshots", () => {
     expect(snapshot.reasons[0]).toMatch(/could not be read/);
   });
   it("stamps a real edition with its expiry", async () => {
-    const snapshot = await loadPostSnapshot("team-games", { days: "3" }, client({ wgo_team_stats: [{ team_id: 1, game_id: 10, date: "2026-10-30" }, { team_id: 2, game_id: 10, date: "2026-10-30" }], games: [{ id: 10 }] }), now);
-    expect(snapshot).toMatchObject({ state: "ready", expiresAt: "2026-10-31T16:15:00.000Z", settings: { days: 3 }, fixture: false });
+    const snapshot = await loadPostSnapshot("team-games", { days: "3" }, client({ wgo_team_stats: [{ team_id: 1, game_id: 10, date: "2026-10-30" }, { team_id: 2, game_id: 10, date: "2026-10-30" }], games: [{ id: 10, date: "2026-10-30" }] }), now);
+    expect(snapshot).toMatchObject({ state: "ready", expiresAt: "2026-10-31T16:15:00.000Z", settings: { days: 3 }, fixture: false, pageNotes: [] });
     expect(snapshot.evidence.coverage).toEqual({ observed: 2, expected: 2, missing: 0, unit: "team games" });
   });
 });

@@ -27,7 +27,7 @@ function StandoutPicker({ data, settings, change, disabled }: Pick<PanelProps, "
   const [mode, setMode] = useState<StandoutSortMode>("average");
   const pool = useMemo(() => standoutPool(data, settings), [data, settings]);
   const sorted = useMemo(() => sortStandouts(pool, key, mode), [pool, key, mode]);
-  if (!standoutsCurrent(data, settings)) return <p className={styles.panelNote}>Refresh this post to build from these settings.</p>;
+  if (!standoutsCurrent(data, settings)) return <p className={styles.panelNote}>Updating…</p>;
   if (!isHandBuilt(settings.view)) return <p className={styles.panelNote} data-testid="standouts-auto-note">{viewTitle(settings)} ranks itself. Change the ranking in the settings above. Only the two roster views are built by hand.</p>;
   const onCard = standoutRows(data, settings), order = onCard.map(row => row.playerId), atMax = order.length >= STANDOUT_MAX_ROWS;
   const hidden = parsePicks(settings.picks).length - order.length;
@@ -54,7 +54,7 @@ function StandoutPicker({ data, settings, change, disabled }: Pick<PanelProps, "
           <span className={styles.optionStats}>{row.stats.map(stat => <span key={stat.id}><small>{stat.label}</small> {statText(stat)} <small>STD {stdText(stat)}</small> <i>{percentLabel(stat.change)}</i></span>)}</span>
         </button>;
       })}
-      {!sorted.length && <p className={styles.panelNote}>No skater on this slate meets this view.</p>}
+      {!sorted.length && <p className={styles.panelNote}>{data.skaters.length ? "No skater on this slate meets this view." : "No skater rows for this slate."}</p>}
     </div>
   </>;
 }

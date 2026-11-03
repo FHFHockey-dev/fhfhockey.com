@@ -1,5 +1,5 @@
 import { bounded } from "lib/socialShare/trendSources";
-import { buildBusyQuiet, GOALIE_PERIOD_ROLLING, goalieLedgerScope, goalieMinStarts, goalieRangeMissing, NST_GOALIE_COLUMNS, NST_TEAM_COLUMNS, rangeWindows, resolveGoalieRange, type BusyQuietData, type BusyQuietSettings, type GoalieDateRange, type NstGoalieRow, type NstTeamRow } from "./busyQuiet";
+import { buildBusyQuiet, cutLateNights, GOALIE_PERIOD_ROLLING, goalieLedgerScope, goalieMinStarts, goalieRangeMissing, goalieWindows, NST_GOALIE_COLUMNS, NST_TEAM_COLUMNS, rangeLedger, resolveGoalieRange, type BusyQuietData, type BusyQuietSettings, type GoalieDateRange, type NstGoalieRow, type NstTeamRow } from "./busyQuiet";
 import type { SharePostContext, SharePostLoadResult, SharePostReadClient } from "./contract";
 import { readCompletedTeamGames, readGoalieAppearances } from "./shared/goalieLedger.sources";
 import { matchupCalendar, type PeriodWindowSettings } from "./shared/periodWindow";
@@ -27,13 +27,14 @@ const orNull = <T>(read: Promise<T[]>) => read.catch(() => null);
 export async function loadBusyQuiet({ client, generatedAt }: SharePostContext, settings: BusyQuietSettings): Promise<SharePostLoadResult<BusyQuietData>> {
   const scope = goalieLedgerScope(generatedAt), { range, reason } = await readGoalieRange(client, settings, scope);
   if (reason !== undefined) return goalieRangeMissing(reason);
-  const ledger = await readGoalieLedger(client, scope), lastDate = range?.through ?? scope.through;
-  const eligible = rangeWindows(ledger.appearances, settings.window, range).filter(window => window.starts >= goalieMinStarts(settings));
+  // The NST reads follow the window the builder will draw, late nights cut, so its oldest game has its danger-zone row too.
+  const ledger = await readGoalieLedger(client, scope), cut = cutLateNights(rangeLedger(ledger, range), range, scope.through), lastDate = cut.ledger ? cut.through : scope.through;
+  const eligible = cut.ledger ? goalieWindows(cut.ledger.appearances, range ? "std" : settings.window).filter(window => window.starts >= goalieMinStarts(settings)) : [];
   const since = eligible.reduce<string | null>((oldest, window) => !oldest || window.firstDate < oldest ? window.firstDate : oldest, null);
   // Danger-zone and team-chance columns are extra context: their failure leaves shots standing and says so on the card.
   const [nstGoalie, nstTeam] = since === null ? [[], []] : await Promise.all([
     orNull(bounded<NstGoalieRow>("NST goalie shots", LEDGER_LIMITS.nstGoalie, (start, end) => client.from("nst_gamelog_goalie_all_counts").select(NST_GOALIE_COLUMNS, { count: "exact" }).eq("season", scope.season).in("player_id", eligible.map(window => window.goalieId)).gte("date_scraped", since).lte("date_scraped", lastDate).order("date_scraped").order("player_id").range(start, end))),
     orNull(bounded<NstTeamRow>("NST team chances", LEDGER_LIMITS.nstTeam, (start, end) => client.from("nst_team_gamelogs_as_counts").select(NST_TEAM_COLUMNS, { count: "exact" }).eq("season_id", scope.season).eq("situation", "all").gte("date", since).lte("date", lastDate).order("date").order("team_abbreviation").range(start, end))),
   ]);
-  return buildBusyQuiet({ settings, ...ledger, nstGoalie, nstTeam, through: scope.through, range });
+  return buildBusyQuiet({ settings, ...ledger, nstGoalie, nstTeam, through: scope.through, range, cut });
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parseShareSettings, sharePostExportBlock, type SharePostSnapshot } from "./contract";
-import { averageChange, buildLastNightsStandouts, goalieChangeText, goalieLastText, goalieRank, goalieRanking, goalieRankingText, goalieStdText, goalieTone, goalLine, isOlderSlate, lastNightsStandoutsModule, latestEarlierLines, slateWord, standoutsCurrent, standoutsHeadline, lineChipText, lineRowsFromCombinations, parsePicks, ppContradicted, percentChange, percentLabel, ppChipText, rankingText, slateCoverage, sortStandouts, STANDOUT_AVERAGE_FLOORS, STANDOUT_AVERAGE_RULE, STANDOUT_GOALIE_ROWS, STANDOUT_MAX_ROWS, standoutPool, standoutRows, statText, stdText, togglePick, type GoalieStat, type LastNightsStandoutsData, type LastNightsStandoutsInput, type LastNightsStandoutsSettings, type StandoutGoalie, type StandoutSkater } from "./lastNightsStandouts";
-import { loadLastNightsStandouts } from "./lastNightsStandouts.sources";
+import { averageChange, buildLastNightsStandouts, goalieChangeText, goalieLastText, goalieRank, goalieRanking, goalieRankingText, goalieStdText, goalieTone, goalLine, isOlderSlate, lastNightsStandoutsModule, latestEarlierLines, scheduledTeamGames, slateWord, standoutsCurrent, standoutsHeadline, lineChipText, lineRowsFromCombinations, parsePicks, ppContradicted, percentChange, percentLabel, ppChipText, rankingText, slateCoverage, sortStandouts, STANDOUT_AVERAGE_FLOORS, STANDOUT_AVERAGE_RULE, STANDOUT_GOALIE_ROWS, STANDOUT_MAX_ROWS, standoutPool, standoutRows, statText, stdText, togglePick, type GoalieStat, type LastNightsStandoutsData, type LastNightsStandoutsInput, type LastNightsStandoutsSettings, type StandoutGoalie, type StandoutSkater } from "./lastNightsStandouts";
+import { FALLBACK_NIGHTS, loadLastNightsStandouts } from "./lastNightsStandouts.sources";
 import { ownershipOf } from "./shared/definitions";
 import type { GoalieAppearance } from "./shared/goalieLedger";
 import type { SkaterAppearance } from "./shared/skaterAppearances";
@@ -15,7 +15,7 @@ const game = (playerId: number, date: string, gameId: number, over: Partial<Skat
 });
 const counts = (playerId: number, date: string, ixg: number | null = 0.5) => ({ player_id: playerId, date_scraped: date, season: SEASON, ixg, iscfs: 2, icf: 4 });
 const onIce = (playerId: number, date: string, xgf = 1, xga = 1) => ({ player_id: playerId, date_scraped: date, season: SEASON, xgf, xga });
-const shared = (over: Partial<LastNightsStandoutsInput> = {}): LastNightsStandoutsInput => ({ slate: SLATE, season: SEASON, settings: settings(), completedTeamGames: [{ gameId: 9, team: "NJD" }, { gameId: 9, team: "NJD" }], scheduledGameIds: [9], ownership: { byPlayer: new Map(), updatedAt: null }, ...over });
+const shared = (over: Partial<LastNightsStandoutsInput> = {}): LastNightsStandoutsInput => ({ slate: SLATE, season: SEASON, settings: settings(), scheduledTeamGames: [{ gameId: 9, team: "NJD" }, { gameId: 9, team: "NJD" }], scheduledGameIds: [9], ownership: { byPlayer: new Map(), updatedAt: null }, ...over });
 const stat = (row: StandoutSkater, id: StandoutSkater["stats"][number]["id"]) => row.stats.find(entry => entry.id === id)!;
 
 /** One skater: three earlier games at 2 SOG, then 6 SOG on the slate. */
@@ -412,27 +412,27 @@ describe("goalies", () => {
 
 describe("slate coverage and evidence", () => {
   const both = [{ gameId: 9, team: "NJD" }, { gameId: 9, team: "NYR" }];
-  it("is complete only with both team games reported and holding player rows", () => {
-    expect(slateCoverage({ playerTeamGames: both, completedTeamGames: both, scheduledGameIds: [9] })).toEqual({ observed: 2, expected: 2, missing: 0, reasons: [] });
+  it("is complete when the card's own rows cover both sides of every scheduled game, with no team results needed", () => {
+    expect(slateCoverage({ playerTeamGames: both, scheduledTeamGames: both })).toEqual({ observed: 2, expected: 2, missing: 0, complete: true, reasons: [] });
   });
-  it("is partial when one team's rows are missing from a completed game", () => {
-    const short = slateCoverage({ playerTeamGames: [both[0]], completedTeamGames: both, scheduledGameIds: [9] });
-    expect(short).toMatchObject({ observed: 1, expected: 2, missing: 1 });
-    expect(short.reasons).toEqual(["1 completed team games on this slate have no player rows."]);
-    const result = buildLastNightsStandouts(shared({ appearances: season(), ...nstFor(DATES), completedTeamGames: both }));
+  it("is partial when one team's rows are missing from a scheduled game", () => {
+    const short = slateCoverage({ playerTeamGames: [both[0]], scheduledTeamGames: both });
+    expect(short).toMatchObject({ observed: 1, expected: 2, missing: 1, complete: false });
+    expect(short.reasons).toEqual(["1 of 2 scheduled team games on this slate have no skater rows."]);
+    const result = buildLastNightsStandouts(shared({ appearances: season(), ...nstFor(DATES), scheduledTeamGames: both }));
     expect(result.state).toBe("partial");
-    expect(result.reasons).toEqual(["1 completed team games on this slate have no player rows."]);
+    expect(result.reasons).toEqual(["1 of 2 scheduled team games on this slate have no skater rows."]);
     expect(result.evidence.coverage).toMatchObject({ observed: 1, expected: 2, missing: 1 });
   });
-  it("is partial when a scheduled game has no result", () => {
-    const short = slateCoverage({ playerTeamGames: both, completedTeamGames: both, scheduledGameIds: [9, 10] });
-    expect(short).toMatchObject({ observed: 2, expected: 4, missing: 2 });
-    expect(short.reasons).toEqual(["2 of 4 scheduled team games on this slate have no reported result."]);
-    expect(built({ scheduledGameIds: [9, 10] }).state).toBe("partial");
+  it("never counts a side whose team id has no code", () => {
+    expect(scheduledTeamGames([{ id: 9, date: SLATE, homeTeamId: 1, awayTeamId: 999 }])).toEqual([{ gameId: 9, date: SLATE, team: "NJD" }, { gameId: 9, date: SLATE, team: null }]);
+    expect(slateCoverage({ playerTeamGames: both, scheduledTeamGames: [{ gameId: 9, team: "NJD" }, { gameId: 9, team: null }] }).complete).toBe(false);
   });
   it("is partial for the goalie view by team game too", () => {
     const appearance = { goalieId: 1, name: "Fictional", gameId: 9, date: SLATE, team: "NJD", opponent: "NYR", home: true, started: true, wins: 1, losses: 0, otLosses: 0, saves: 20, shotsAgainst: 21, goalsAgainst: 1, toiSeconds: 3600, shutouts: 0, qualityStart: 1 };
-    expect(buildLastNightsStandouts(shared({ settings: settings({ view: "goalies" }), goalies: [appearance], completedTeamGames: both })).state).toBe("partial");
+    const result = buildLastNightsStandouts(shared({ settings: settings({ view: "goalies" }), goalies: [appearance], scheduledTeamGames: both }));
+    expect(result.state).toBe("partial");
+    expect(result.reasons).toEqual(["1 of 2 scheduled team games on this slate have no goalie rows."]);
   });
   it("says last night is excluded and uses no forecast wording", () => {
     const { evidence } = built();
@@ -467,9 +467,16 @@ describe("loader", () => {
     } } };
   }
   const row = (playerId: number, gameId: number, date: string) => ({ player_id: playerId, player_name: `Fictional ${playerId}`, position_code: "D", date, season_id: SEASON, game_id: gameId, team_abbrev: "NJD", opponent_team_abbrev: "NYR", home_road: "H", games_played: 1, goals: 1, assists: 0, points: 1, shots: 3, hits: 1, blocked_shots: 1, pp_points: 0, toi_per_game: 1200, pp_toi: 60, penalty_minutes: 0 });
+  /**
+   * A scheduled game for the loader fixtures. Both sides are NJD, so one fictional NJD skater or goalie covers it; the
+   * coverage tests below schedule NJD at NYR properly.
+   */
+  const sched = (id: number, date: string) => ({ id, date, homeTeamId: 1, awayTeamId: 1 });
+  /** Both teams' results for a game. The loader no longer reads them; fixtures keep them to show they change nothing. */
+  const teamRows = (gameId: number, date: string) => [1, 3].map(team_id => ({ team_id, game_id: gameId, date, season_id: SEASON, opponent_id: team_id === 1 ? 3 : 1 }));
   const context = (tables: Record<string, unknown[]>) => { const fake = fakeClient(tables); return { fake, context: { client: fake.client, generatedAt: "2026-11-01T14:00:00Z" } }; };
   it("reads the newest slate, then the season for those players only", async () => {
-    const { fake, context: ctx } = context({ wgo_skater_stats: [row(1, 9, SLATE)], games: [{ id: 9 }], wgo_team_stats: [], nst_gamelog_as_counts: [counts(1, SLATE)], nst_gamelog_as_counts_oi: [onIce(1, SLATE)], lineCombinations: [{ gameId: 9, forwards: [], defensemen: [1] }], powerPlayCombinations: [], yahoo_players: [], yahoo_nhl_player_map_read: [] });
+    const { fake, context: ctx } = context({ wgo_skater_stats: [row(1, 9, SLATE)], games: [sched(9, SLATE)], wgo_team_stats: teamRows(9, SLATE), nst_gamelog_as_counts: [counts(1, SLATE)], nst_gamelog_as_counts_oi: [onIce(1, SLATE)], lineCombinations: [{ gameId: 9, forwards: [], defensemen: [1] }], powerPlayCombinations: [], yahoo_players: [], yahoo_nhl_player_map_read: [] });
     const result = await loadLastNightsStandouts(ctx, settings({ view: "defensemen" }));
     expect(result.data?.slate).toBe(SLATE);
     expect(result.data?.skaters.map(skater => skater.playerId)).toEqual([1]);
@@ -480,7 +487,7 @@ describe("loader", () => {
     expect(fake.calls.some(call => call.table === "rolling_player_game_metrics")).toBe(false);
     expect(result.data?.skaters[0].role.line).toBe("P1");
   });
-  const skaterTables = { wgo_skater_stats: [row(1, 9, SLATE)], games: [{ id: 9 }], wgo_team_stats: [], nst_gamelog_as_counts: [], nst_gamelog_as_counts_oi: [], lineCombinations: [], powerPlayCombinations: [], yahoo_players: [], yahoo_nhl_player_map_read: [] };
+  const skaterTables = { wgo_skater_stats: [row(1, 9, SLATE)], games: [sched(9, SLATE)], wgo_team_stats: teamRows(9, SLATE), nst_gamelog_as_counts: [], nst_gamelog_as_counts_oi: [], lineCombinations: [], powerPlayCombinations: [], yahoo_players: [], yahoo_nhl_player_map_read: [] };
   /** Answers rolling from a queue of results; every other table comes from the fake. */
   function withRolling(results: object[]) {
     const { fake } = context(skaterTables);
@@ -508,7 +515,7 @@ describe("loader", () => {
     expect(result.data?.skaters[0].role.line).toBe("unknown");
   });
   it("reads only goalie tables for the goalie view's players", async () => {
-    const { fake, context: ctx } = context({ wgo_skater_stats: [row(1, 9, SLATE)], games: [{ id: 9 }], wgo_team_stats: [], wgo_goalie_stats: [{ goalie_id: 7, goalie_name: "Fictional", date: SLATE, season_id: SEASON, game_id: 9, team_abbreviation: "NJD", opponent_team_abbrev: "NYR", home_road: "H", games_played: 1, games_started: 1, wins: 1, losses: 0, ot_losses: 0, saves: 20, shots_against: 21, goals_against: 1, time_on_ice: 3600, shutouts: 0, quality_start: 1 }], nst_gamelog_goalie_all_counts: [], yahoo_players: [], yahoo_nhl_player_map_read: [] });
+    const { fake, context: ctx } = context({ wgo_skater_stats: [row(1, 9, SLATE)], games: [sched(9, SLATE)], wgo_team_stats: teamRows(9, SLATE), wgo_goalie_stats: [{ goalie_id: 7, goalie_name: "Fictional", date: SLATE, season_id: SEASON, game_id: 9, team_abbreviation: "NJD", opponent_team_abbrev: "NYR", home_road: "H", games_played: 1, games_started: 1, wins: 1, losses: 0, ot_losses: 0, saves: 20, shots_against: 21, goals_against: 1, time_on_ice: 3600, shutouts: 0, quality_start: 1 }], nst_gamelog_goalie_all_counts: [], yahoo_players: [], yahoo_nhl_player_map_read: [] });
     const result = await loadLastNightsStandouts(ctx, settings({ view: "goalies" }));
     expect(result.data?.goalies.map(row => row.goalieId)).toEqual([7]);
     expect(fake.calls.some(call => call.table === "nst_gamelog_as_counts")).toBe(false);
@@ -523,16 +530,18 @@ describe("loader", () => {
   describe("a chosen slate", () => {
     const LATER = "2026-11-01", EARLIER = "2026-10-20", NO_GAMES = "2026-10-25";
     /** Three slates, and player 1 played all of them. The middle one is chosen. */
-    const tables = { wgo_skater_stats: [row(1, 1, EARLIER), row(1, 9, SLATE)], games: [{ id: 9 }], wgo_team_stats: [], nst_gamelog_as_counts: [], nst_gamelog_as_counts_oi: [], lineCombinations: [], powerPlayCombinations: [], yahoo_players: [], yahoo_nhl_player_map_read: [] };
+    const tables = { wgo_skater_stats: [row(1, 1, EARLIER), row(1, 9, SLATE)], games: [sched(1, EARLIER), sched(9, SLATE)], wgo_team_stats: [...teamRows(1, EARLIER), ...teamRows(9, SLATE)], nst_gamelog_as_counts: [], nst_gamelog_as_counts_oi: [], lineCombinations: [], powerPlayCombinations: [], yahoo_players: [], yahoo_nhl_player_map_read: [] };
     const atNoon = (date: string) => `${date}T14:00:00Z`;
-    it("defaults to the latest completed slate, with nothing read after it", async () => {
+    it("defaults to the latest scheduled night, reading the schedule once and no team results", async () => {
       const { fake, context: ctx } = context(tables);
-      const { data } = await loadLastNightsStandouts(ctx, settings());
-      expect(data).toMatchObject({ slate: SLATE, slates: { previous: EARLIER, next: null } });
-      expect(fake.calls.filter(call => call.filters.some(([method]) => method === "gt"))).toHaveLength(0);
+      const { data, state } = await loadLastNightsStandouts(ctx, settings());
+      expect(state).toBe("ready");
+      expect(data).toMatchObject({ slate: SLATE, games: 1, fallback: null, slates: { previous: EARLIER, next: null } });
+      expect(fake.calls.filter(call => call.table === "games")).toHaveLength(1);
+      expect(fake.calls.some(call => call.table === "wgo_team_stats")).toBe(false);
     });
     it("reads through the chosen slate only, and finds its neighbours", async () => {
-      const { fake, context: ctx } = context({ ...tables, wgo_skater_stats: [...tables.wgo_skater_stats, row(1, 12, "2026-10-31"), row(1, 20, LATER)] });
+      const { fake, context: ctx } = context({ ...tables, wgo_skater_stats: [...tables.wgo_skater_stats, row(1, 20, LATER)], games: [...tables.games, sched(20, LATER)], wgo_team_stats: [...tables.wgo_team_stats, ...teamRows(20, LATER)] });
       const { data } = await loadLastNightsStandouts({ ...ctx, generatedAt: atNoon("2026-11-02") }, settings({ slate: SLATE }));
       expect(data).toMatchObject({ slate: SLATE, slates: { previous: EARLIER, next: LATER } });
       const seasonRead = fake.calls.filter(call => call.table === "wgo_skater_stats").find(call => call.filters.some(([method]) => method === "in"))!;
@@ -545,7 +554,7 @@ describe("loader", () => {
       const { fake, context: ctx } = context(tables);
       const result = await loadLastNightsStandouts(ctx, settings({ slate: NO_GAMES }));
       expect(result.state).toBe("missing");
-      expect(result.reasons).toEqual(["No completed games on Oct 25. Choose another slate."]);
+      expect(result.reasons).toEqual(["No games on Oct 25. Choose another slate."]);
       expect(result.data).toMatchObject({ slate: NO_GAMES, skaters: [], slates: { previous: EARLIER, next: SLATE } });
       expect(fake.calls.some(call => call.table === "yahoo_players")).toBe(false);
     });
@@ -556,10 +565,83 @@ describe("loader", () => {
         expect(result.reasons?.[0]).toContain("outside this season's completed slates");
       }
     });
-    it("fails visibly when a neighbour read fails", async () => {
+    it("fails visibly when the schedule cannot be read", async () => {
       const { fake } = context(tables);
-      const client = { from: (table: string) => { const chain = fake.client.from(table); const lt = chain.lt; chain.lt = (...args: unknown[]) => { lt(...args); chain.then = (resolve: (value: unknown) => void) => resolve({ data: null, error: { message: "nope" } }); return chain; }; return chain; } };
-      await expect(loadLastNightsStandouts({ client, generatedAt: "2026-11-01T14:00:00Z" }, settings())).rejects.toThrow("neighbouring slates");
+      const client = { from: (table: string) => { const chain = fake.client.from(table); if (table === "games") chain.then = (resolve: (value: unknown) => void) => resolve({ data: null, error: { message: "nope" }, count: null }); return chain; } };
+      await expect(loadLastNightsStandouts({ client, generatedAt: "2026-11-01T14:00:00Z" }, settings())).rejects.toThrow();
+    });
+    it("renders a night whose team results are late when its own rows cover every scheduled game", async () => {
+      // TJ, 11-03: Nov 2's team fetch failed, but its skater and goalie rows had landed.
+      const late = { ...tables, wgo_team_stats: teamRows(1, EARLIER) };
+      for (const slate of [SLATE, null]) {
+        const result = await loadLastNightsStandouts(context(late).context, settings({ view: "all", slate }));
+        expect(result.state).toBe("ready");
+        expect(result.data).toMatchObject({ slate: SLATE, fallback: null });
+        expect(result.data!.skaters.map(row => row.playerId)).toEqual([1]);
+      }
+    });
+  });
+  describe("a played slate with a missing feed", () => {
+    const EARLIER = "2026-10-29", GAP = "2026-10-30", OFF_DAY = "2026-10-28", FIRST = "2026-10-27";
+    const goalieRow = (goalieId: number, gameId: number, date: string) => ({ goalie_id: goalieId, goalie_name: `Fictional ${goalieId}`, date, season_id: SEASON, game_id: gameId, team_abbreviation: goalieId % 2 ? "NJD" : "NYR", opponent_team_abbrev: goalieId % 2 ? "NYR" : "NJD", home_road: "H", games_played: 1, games_started: 1, wins: 1, losses: 0, ot_losses: 0, saves: 25, shots_against: 27, goals_against: 2, time_on_ice: 3600, shutouts: 0, quality_start: 1 });
+    /** Reviewer's case: Oct 31 has a scheduled game, two team rows and goalie rows, and no skater row at all. */
+    const gap = { wgo_skater_stats: [row(1, 1, FIRST)], games: [sched(1, FIRST), sched(9, SLATE)], wgo_team_stats: [...teamRows(1, FIRST), ...teamRows(9, SLATE)], wgo_goalie_stats: [goalieRow(7, 9, SLATE), goalieRow(8, 9, SLATE)], nst_gamelog_goalie_all_counts: [], yahoo_players: [], yahoo_nhl_player_map_read: [] };
+    it("is not available on a chosen night with no skater rows, naming the missing feed, never an off day", async () => {
+      const result = await loadLastNightsStandouts(context(gap).context, settings({ view: "all", slate: SLATE }));
+      expect(result.state).toBe("missing");
+      expect(result.reasons).toEqual(["Skater data is missing for Oct 31: 1 game was scheduled, and no skater rows have been reported."]);
+      expect(result.reasons?.join(" ")).not.toContain("No games");
+      expect(result.data).toMatchObject({ slate: SLATE, games: 1, skaters: [], fallback: null, slates: { previous: FIRST, next: null } });
+      expect(result.pageNotes).toEqual([]);
+      expect(result.evidence.coverage).toMatchObject({ observed: 0, expected: 2, missing: 2 });
+      expect(result.evidence.sources).toEqual([expect.objectContaining({ state: "partial", asOf: null })]);
+    });
+    it("falls back from a blank date's incomplete night to the last complete one, which carries its date", async () => {
+      const { data, state, pageNotes, reasons } = await loadLastNightsStandouts(context(gap).context, settings({ view: "forwards" }));
+      expect(state).toBe("ready");
+      expect(reasons).toEqual([]);
+      expect(data).toMatchObject({ slate: FIRST, fallback: { trimmed: [SLATE] }, slates: { previous: null, next: SLATE } });
+      // Beside the card only: the PNG carries the date, not the note.
+      expect(pageNotes).toEqual(["Oct 31 is not fully reported yet, so this card ends Oct 27."]);
+      expect(slateWord(data!)).toBe("Oct 27");
+      expect(standoutsHeadline({ slate: null }, data)).toBe("Oct 27 Standouts");
+    });
+    it("looks back over at most a week of incomplete nights, then shows the latest as it is", async () => {
+      const dates = Array.from({ length: 10 }, (_, index) => `2026-10-${String(20 + index).padStart(2, "0")}`);
+      const { fake, context: ctx } = context({ ...gap, wgo_skater_stats: [row(1, 1, dates[0])], games: dates.map((date, index) => sched(index + 1, date)) });
+      const result = await loadLastNightsStandouts({ ...ctx, generatedAt: "2026-10-30T14:00:00Z" }, settings({ view: "all" }));
+      expect(result.state).toBe("missing");
+      expect(result.data).toMatchObject({ slate: dates[9], fallback: null });
+      expect(result.pageNotes).toEqual([]);
+      expect(fake.calls.filter(call => call.table === "wgo_skater_stats")).toHaveLength(1 + FALLBACK_NIGHTS);
+    });
+    it("keeps the goalie view working from its own complete sources", async () => {
+      for (const slate of [SLATE, null]) {
+        const result = await loadLastNightsStandouts(context(gap).context, settings({ view: "goalies", slate }));
+        expect(result.state).toBe("ready");
+        expect(result.data!.slate).toBe(SLATE);
+        expect(result.data!.goalies.map(row => row.goalieId)).toEqual([7, 8]);
+      }
+    });
+    it("is not available in the goalie view when goalie rows are the missing feed", async () => {
+      const result = await loadLastNightsStandouts(context({ ...gap, wgo_goalie_stats: [] }).context, settings({ view: "goalies" }));
+      expect(result.state).toBe("missing");
+      expect(result.reasons).toEqual(["Goalie data is missing for Oct 31: 1 game was scheduled, and no goalie rows have been reported."]);
+    });
+    it("still counts one missing team on a slate that has skater rows", async () => {
+      const result = await loadLastNightsStandouts(context({ ...gap, games: [sched(1, FIRST), { id: 9, date: SLATE, homeTeamId: 1, awayTeamId: 3 }], wgo_skater_stats: [row(1, 9, SLATE)], lineCombinations: [], powerPlayCombinations: [], nst_gamelog_as_counts: [], nst_gamelog_as_counts_oi: [] }).context, settings({ view: "all", slate: SLATE }));
+      expect(result.state).toBe("partial");
+      expect(result.reasons).toEqual(["1 of 2 scheduled team games on this slate have no skater rows."]);
+      expect(result.pageNotes).toEqual([]);
+    });
+    it("walks neighbours over a true off day but stops on a missing-feed day", async () => {
+      const tables = { wgo_skater_stats: [row(1, 1, FIRST), row(1, 2, EARLIER), row(1, 9, SLATE)], games: [sched(1, FIRST), sched(2, EARLIER), sched(3, GAP), sched(9, SLATE)], wgo_team_stats: [...teamRows(1, FIRST), ...teamRows(2, EARLIER), ...teamRows(3, GAP), ...teamRows(9, SLATE)], nst_gamelog_as_counts: [], nst_gamelog_as_counts_oi: [], lineCombinations: [], powerPlayCombinations: [], yahoo_players: [], yahoo_nhl_player_map_read: [] };
+      expect((await loadLastNightsStandouts(context(tables).context, settings({ slate: SLATE }))).data!.slates).toMatchObject({ previous: GAP, next: null });
+      expect((await loadLastNightsStandouts(context(tables).context, settings({ slate: GAP }))).data!.slates).toMatchObject({ previous: EARLIER, next: SLATE });
+      expect((await loadLastNightsStandouts(context(tables).context, settings({ slate: EARLIER }))).data!.slates).toMatchObject({ previous: FIRST, next: GAP });
+      const off = await loadLastNightsStandouts(context(tables).context, settings({ slate: OFF_DAY }));
+      expect(off.reasons).toEqual(["No games on Oct 28. Choose another slate."]);
+      expect(off.data!.slates).toMatchObject({ previous: FIRST, next: EARLIER });
     });
   });
 });

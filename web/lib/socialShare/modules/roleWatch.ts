@@ -2,7 +2,7 @@ import { normalizeEvDeploymentBucket } from "lib/rankings/skaterDeploymentAggreg
 import { defineShareModule, type SharePostLoadResult, type SharePostSource } from "./contract";
 import { competitionRanks, lastN, versusSeason } from "./shared/definitions";
 import { appearancesByPlayer, type SkaterAppearance } from "./shared/skaterAppearances";
-import { boardRanks, formatSeconds, gameCoverage, newestDate, teamChangeOf, WHAT_CHANGED_SERIES, windowLabel, windowSize, type SeriesPoint, type TeamChange, type WhatChangedWindow } from "./whatChanged";
+import { boardRanks, endAtCompleteNight, formatSeconds, gameCoverage, newestDate, teamChangeOf, WHAT_CHANGED_SERIES, windowLabel, windowSize, type ScheduledGame, type SeriesPoint, type TeamChange, type WhatChangedWindow } from "./whatChanged";
 
 /** Role Watch (SS 4.0): observed TOI and PP TOI change against a baseline that shares no game with the recent window. */
 export type RoleWatchBoard = "toi" | "pp";
@@ -87,8 +87,9 @@ export function roleWatchShown(appearances: readonly SkaterAppearance[], setting
   return { playerIds: [...new Set(listed.map(player => player.playerId))], gameIds: [...new Set(listed.flatMap(player => [player.latest.gameId, ...(player.before ? [player.before.gameId] : [])]))] };
 }
 
-export type RoleWatchInput = { appearances: readonly SkaterAppearance[]; evidence: RoleEvidence; completedTeamGames: readonly { gameId: number; team: string }[]; scheduledGameIds: readonly number[]; through: string; settings: RoleWatchSettings };
-export function buildRoleWatch(input: RoleWatchInput): SharePostLoadResult<RoleWatchData> {
+export type RoleWatchInput = { appearances: readonly SkaterAppearance[]; evidence: RoleEvidence; completedTeamGames: readonly { gameId: number; team: string }[]; scheduledGames: readonly ScheduledGame[]; through: string; settings: RoleWatchSettings };
+export function buildRoleWatch(full: RoleWatchInput): SharePostLoadResult<RoleWatchData> {
+  const { input, pageNotes } = endAtCompleteNight(full);
   const { appearances, settings } = input, requested = windowSize(settings.window), entries = comparePlayers(appearances, settings), players = comparable(entries);
   const { up, down } = movers(players, settings.board), slot = roleSlotReader(input.evidence), gamesOf = new Map(entries.map(entry => [entry.player.playerId, entry.games]));
   const toBoardRow = (row: RoleWatchPlayer & { rank: number }): RoleWatchRow => {
@@ -97,7 +98,7 @@ export function buildRoleWatch(input: RoleWatchInput): SharePostLoadResult<RoleW
       series: last.map(game => ({ gameId: game.gameId, date: game.date, value: settings.board === "toi" ? game.toiSeconds : game.ppToiSeconds })), recentFrom: Math.max(0, last.length - requested) };
   };
   const risers = up.listed.map(toBoardRow), fallers = down.listed.map(toBoardRow), shown = [...risers, ...fallers];
-  const games = gameCoverage({ appearances, completedTeamGames: input.completedTeamGames, scheduledGameIds: input.scheduledGameIds });
+  const games = gameCoverage(input);
   const unknownChange = players.filter(player => player.toi.direction === "unknown" || player.pp.direction === "unknown").length;
   const reasons = [...games.reasons, ...(unknownChange ? [`${unknownChange} skaters have a missing NHL.com TOI or PP TOI value in their windows.`] : [])];
   const slots = shown.flatMap(row => [row.latest.role, ...(row.before ? [row.before.role] : [])]);
@@ -111,7 +112,7 @@ export function buildRoleWatch(input: RoleWatchInput): SharePostLoadResult<RoleW
   const shortSample = entries.length - players.length, windowName = windowLabel(settings.window), unlisted = up.total + down.total - shown.length;
   const moves = [...new Set(shown.flatMap(row => row.teamChange ? [`${row.name ?? row.playerId} ${row.teamChange.from} to ${row.teamChange.to}, ${row.teamChange.recentGamesWithNewTeam} of ${row.recentGames} recent games`] : []))];
   return {
-    state: reasons.length ? "partial" : "ready", reasons,
+    state: reasons.length ? "partial" : "ready", reasons, ...(pageNotes.length ? { pageNotes } : {}),
     data: { through: input.through, window: settings.window, requested, board: settings.board, minimum: settings.board === "toi" ? settings.minToiChange : settings.minPpChange, risers, fallers, moreTied: { up: up.moreTied, down: down.moreTied },
       cohort: { players: entries.length, compared: players.length, shortSample, unknownChange, qualified: up.total + down.total, unlisted } },
     teams: [...new Set(shown.flatMap(row => row.team ? [row.team] : []))].sort(),

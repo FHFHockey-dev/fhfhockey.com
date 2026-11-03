@@ -3,7 +3,7 @@ import { activeTeamAbbreviations } from "lib/teamsInfo";
 import type { SharePostContext, SharePostLoadResult } from "./contract";
 import { matchupCalendar } from "./shared/periodWindow";
 import { readMatchupRows } from "./shared/periodWindow.sources";
-import { buildTeamGames, resolveTeamGamesWindow, TEAM_GAMES_ROLLING, teamGamesWindow, type TeamGameInput, type TeamGamesData, type TeamGamesSettings } from "./teamGames";
+import { buildTeamGames, resolveTeamGamesWindow, TEAM_GAMES_ROLLING, teamGamesWindow, type TeamGameInput, type TeamGamesData, type TeamGamesScheduled, type TeamGamesSettings } from "./teamGames";
 
 /** A custom range can cover the season: 32 teams × 82 games, and half that in games. Anything above fails closed. */
 const TEAM_GAME_LIMIT = 2700;
@@ -20,6 +20,6 @@ export async function loadTeamGames({ client, generatedAt }: SharePostContext, s
   }
   const { from, through, label } = window;
   const rows = await bounded<TeamGameInput>("Team game stats", TEAM_GAME_LIMIT, (start, end) => client.from("wgo_team_stats").select("team_id,game_id,date", { count: "exact" }).eq("season_id", season).gte("date", from).lte("date", through).order("date").order("game_id").order("team_id").range(start, end));
-  const scheduled = await bounded<{ id: number }>("Schedule", SCHEDULE_LIMIT, (start, end) => client.from("games").select("id", { count: "exact" }).eq("seasonId", season).eq("type", 2).gte("date", from).lte("date", through).order("id").range(start, end));
-  return buildTeamGames({ rows, scheduledGames: scheduled.length, from, through, label, teams: [...activeTeamAbbreviations].map(String).sort(), updatedAt: null });
+  const schedule = await bounded<TeamGamesScheduled>("Schedule", SCHEDULE_LIMIT, (start, end) => client.from("games").select("id,date", { count: "exact" }).eq("seasonId", season).eq("type", 2).gte("date", from).lte("date", through).order("id").range(start, end));
+  return buildTeamGames({ rows, schedule, from, through, label, teams: [...activeTeamAbbreviations].map(String).sort(), updatedAt: null });
 }

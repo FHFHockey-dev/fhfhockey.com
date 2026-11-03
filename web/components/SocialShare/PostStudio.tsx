@@ -6,12 +6,15 @@ import { bounded, captureSharePng, readyShareFonts, SHARE_SIZE, teamLogoDataUrl 
 import { fetchEdition } from "lib/socialShare/editionFetch";
 import { SHARE_BASIS_LABELS, SHARE_POST_GROUP_LABELS, parseShareSettings, shareSettingLines, sharePostExportBlock, sharePostExportToken, sharePostShowsCard, shareHeadlineSize, type AnyShareModule, type ShareSettings, type ShareSettingField, type SharePostGroup, type SharePostSnapshot } from "lib/socialShare/modules/contract";
 import { SHARE_MODULES } from "lib/socialShare/modules/registry";
+import { PERIOD_CUSTOM } from "lib/socialShare/modules/shared/periodWindow";
 import { SHARE_TIME_ZONE } from "lib/socialShare/types";
 import PeriodControl from "./PeriodControl";
 import styles from "./SocialShare.module.scss";
 import postStyles from "./PostStudio.module.scss";
 
 const FONT_ATTEMPTS = 3, FONT_RETRY_MS = 500;
+/** A pause in typing before a typed number, date or text reloads the post. */
+const TYPING_MS = 500;
 const queryText = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value) ?? "";
 const timeLabel = (value: string | null) => value ? new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: SHARE_TIME_ZONE, timeZoneName: "short" }).format(new Date(value)) : "Not available";
 
@@ -22,6 +25,18 @@ function settingsFromQuery(entry: AnyShareModule, query: Record<string, string |
 }
 const fieldText = (value: ShareSettings[string]) => value === null ? "" : String(value);
 const defaultNote = (field: ShareSettingField) => field.kind === "select" ? field.options.find(option => option.value === field.default)?.label ?? field.default : field.default === null || field.default === "" ? "any" : String(field.default);
+const STATE_LABELS: Record<SharePostSnapshot["state"], string> = { ready: "Ready", partial: "Partial data", stale: "Out of date", missing: "Not available", blocked: "Blocked" };
+/** What typed text means for a field: a value to use, nothing yet (a cleared number with a default), or why it can never be one. */
+function typedValue(field: ShareSettingField, text: string): { value: ShareSettings[string] } | { problem: string | null } {
+  if (field.kind === "number") {
+    if (text === "") return field.default === null ? { value: null } : { problem: null };
+    const value = Number(text);
+    return Number.isFinite(value) && value >= field.min && value <= field.max ? { value } : { problem: `Enter a number from ${field.min} to ${field.max}.` };
+  }
+  if (field.kind === "date") return { value: text === "" ? field.default : text };
+  if (field.kind === "text" && text.length > (field.maxLength ?? 80)) return { problem: `Use ${field.maxLength ?? 80} characters or fewer.` };
+  return { value: text };
+}
 
 /**
  * Full evidence every post inherits, printed beside the preview: sources with their as-of times, sample, strength,
@@ -81,9 +96,19 @@ export default function PostStudio() {
   const [brandLogo, setBrandLogo] = useState<string | null>(null);
   const [logos, setLogos] = useState<Record<string, string | null>>({});
   const [scale, setScale] = useState(0);
+  /** Typed text not yet a setting, and why, per field. */
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [problems, setProblems] = useState<Record<string, string>>({});
+  /** Why the current settings were not sent: the post's own cross-field check. */
+  const [held, setHeld] = useState("");
+  const [optionsOpen, setOptionsOpen] = useState(false);
   const preview = useRef<HTMLDivElement>(null);
   const frame = useRef<HTMLDivElement>(null);
   const requestId = useRef(0);
+  const typing = useRef<ReturnType<typeof setTimeout>>();
+  /** Settings as last set, so two changes in one event both land. */
+  const latest = useRef(settings);
+  latest.current = settings;
   const requestedLogos = useRef(new Set<string>());
 
   const serverQuery = useCallback((current: ShareSettings) => new URLSearchParams(entry.fields.flatMap(field => field.clientOnly || current[field.id] === null ? [] : [[field.id, String(current[field.id])]])), [entry]);
@@ -101,11 +126,23 @@ export default function PostStudio() {
     finally { if (id === requestId.current) setLoading(false); }
   }, [entry, serverQuery]);
 
+  /** Loads the post for these settings now or after a pause in typing; any response still out for older settings is dropped. */
+  const refresh = useCallback((next: ShareSettings, wait = 0) => {
+    clearTimeout(typing.current);
+    requestId.current++;
+    let reason = "";
+    try { parseShareSettings(entry, Object.fromEntries(serverQuery(next)), "server"); } catch (cause) { reason = cause instanceof Error ? cause.message : "These settings are not valid."; }
+    setHeld(reason);
+    if (reason) { setLoading(false); return; }
+    setLoading(true);
+    if (wait) typing.current = setTimeout(() => void load(next), wait); else void load(next);
+  }, [entry, serverQuery, load]);
+
   useEffect(() => {
-    const requests = requestId;
+    const requests = requestId, pending = typing;
     const next = settingsFromQuery(entry, router.query);
-    setSettings(next); setSnapshot(null); void load(next);
-    return () => { requests.current++; };
+    setSettings(next); setSnapshot(null); setDrafts({}); setProblems({}); setHeld(""); void load(next);
+    return () => { requests.current++; clearTimeout(pending.current); };
     // The URL mirrors settings below, so only a change of post starts a new edition here.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entry.id, router.isReady]);
@@ -148,44 +185,82 @@ export default function PostStudio() {
 
   const squareReady = assetsReady && !!snapshot && snapshot.post === entry.id && snapshot.teams.every(team => team in logos) && (!sharePostShowsCard(snapshot) || !!Card);
   const exportBlock = snapshot && snapshot.post === entry.id ? sharePostExportBlock(entry, snapshot, settings) : "This post is not loaded yet.";
-  const canExport = !exportBlock && squareReady && !loading && !error;
+  const formFields = entry.fields.filter(field => !field.panelOnly && (!field.onlyForPeriod || settings.period === field.onlyForPeriod));
+  /** A field hidden by the period no longer counts against the post. */
+  const blocking = formFields.some(field => problems[field.id]);
+  const canExport = !exportBlock && squareReady && !loading && !error && !blocking;
+  const isChanged = (field: ShareSettingField) => (settings[field.id] ?? null) !== field.default && !(field.default === "" && settings[field.id] === null);
+  const changedCount = formFields.filter(isChanged).length;
+  /** Options start collapsed so the card sits higher (TJ, 2026-11-03); a wrong value opens them so its reason shows. */
+  const optionsShown = optionsOpen || blocking;
   const token = snapshot ? sharePostExportToken(entry.fields, snapshot, settings) : "";
   const alt = snapshot?.data != null && snapshot.post === entry.id ? entry.altText(snapshot, snapshot.data, settings) : `FHFH ${entry.title}: not available.`;
   const groups = useMemo(() => [...new Set(modules.map(item => item.group as SharePostGroup))], [modules]);
-  const change = (field: ShareSettingField, text: string) => {
-    let value: ShareSettings[string] = text;
-    if (field.kind === "number") { value = text === "" ? field.default : Number(text); if (value !== null && (!Number.isFinite(value) || value < field.min || value > field.max)) return; }
-    if (field.kind === "date" && text === "") value = field.default;
-    setSettings(current => ({ ...current, [field.id]: value })); setFeedback("");
+  /** Sets fields, and reloads the post when any of them reaches the server. */
+  const edit = (changes: ShareSettings, wait = 0) => {
+    const next = { ...latest.current, ...changes };
+    latest.current = next; setSettings(next); setFeedback("");
+    if (Object.keys(changes).some(id => !entry.fields.find(field => field.id === id)?.clientOnly)) refresh(next, wait);
   };
-  const apply = (changes: ShareSettings) => { const next = { ...settings, ...changes }; setSettings(next); void load(next); };
+  /** A select applies at once; typed text waits for a pause and is only sent once it is a valid value. */
+  const change = (field: ShareSettingField, text: string) => {
+    const typed = typedValue(field, text);
+    if (field.kind !== "select") setDrafts(current => ({ ...current, [field.id]: text }));
+    setProblems(current => { const { [field.id]: _, ...rest } = current; return "problem" in typed && typed.problem ? { ...rest, [field.id]: typed.problem } : rest; });
+    if ("value" in typed) edit({ [field.id]: typed.value }, field.kind === "select" ? 0 : TYPING_MS);
+  };
+  /** Leaving a field shows its setting again, unless what was typed is wrong and still needs fixing. */
+  const settle = (field: ShareSettingField) => { if (!problems[field.id]) setDrafts(({ [field.id]: _, ...rest }) => rest); };
   const pick = (id: string) => { void router.replace({ pathname: router.pathname, query: { post: id } }, undefined, { shallow: true, scroll: false }); };
+  const shown = snapshot?.post === entry.id ? snapshot : null;
+  const sync = loading ? "Updating…" : held || blocking ? "Not updated" : error ? "Update failed" : shown ? "Up to date" : "";
 
   return <div className={styles.page}>
     <header className={styles.heading}><div><p className={styles.eyebrow}>FHFH / Share studio</p><h1>Post library</h1><p><Link href="/social-share" prefetch={false}>All cards</Link> · <Link href="/social-share/game-grid" prefetch={false}>Weekly schedule studio</Link> · <Link href="/social-share/tuesday-trends" prefetch={false}>Tuesday trends</Link></p></div><span className={styles.scope}>Choose any post on any day. Nothing is scheduled or published from here.</span></header>
-    <section className={styles.panel} aria-label="Post settings">
-      <div className={styles.controls}>
-        <label>Post<select value={entry.id} disabled={exporting} onChange={event => pick(event.target.value)}>{groups.map(group => <optgroup key={group} label={SHARE_POST_GROUP_LABELS[group]}>{modules.filter(item => item.group === group).map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</optgroup>)}</select></label>
-        <button type="button" disabled={loading || exporting} onClick={() => void load(settings)}>Refresh post</button>
+    <section className={`${styles.panel} ${postStyles.settings}`} aria-label="Post settings">
+      <div className={postStyles.postRow}>
+        <label className={postStyles.field}><span>Post</span>
+          <select value={entry.id} disabled={exporting} onChange={event => pick(event.target.value)}>{groups.map(group => <optgroup key={group} label={SHARE_POST_GROUP_LABELS[group]}>{modules.filter(item => item.group === group).map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</optgroup>)}</select>
+        </label>
+        <p className={postStyles.sync} aria-live="polite" data-testid="post-sync" data-state={loading ? "loading" : sync === "Up to date" ? "ready" : "held"}>{sync}</p>
       </div>
-      <p>{entry.summary}{entry.suggestedUse ? ` ${entry.suggestedUse}` : ""}</p>
-      {entry.periodControl && <PeriodControl entry={entry} control={entry.periodControl} settings={settings} disabled={exporting} edition={snapshot} change={change} apply={apply} />}
-      {entry.fields.length > 0 && <div className={postStyles.fields}>{entry.fields.filter(field => !field.panelOnly && (!field.onlyForPeriod || settings.period === field.onlyForPeriod)).map(field => <label key={field.id}>{field.label}
-        {field.kind === "select" ? <select value={fieldText(settings[field.id])} disabled={exporting} onChange={event => change(field, event.target.value)}>{field.options.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
-          : <input type={field.kind === "number" ? "number" : field.kind === "date" ? "date" : "text"} min={field.kind === "number" ? field.min : undefined} max={field.kind === "number" ? field.max : undefined} step={field.kind === "number" ? field.step : undefined} value={fieldText(settings[field.id])} disabled={exporting} onChange={event => change(field, event.target.value)} />}
-        <small className={postStyles.defaultNote}>Default: {defaultNote(field)}</small></label>)}</div>}
+      <p className={postStyles.summary}>{entry.summary}{entry.suggestedUse ? ` ${entry.suggestedUse}` : ""}</p>
+      {entry.periodControl && <fieldset className={postStyles.group}><legend>Timeframe</legend>
+        <PeriodControl entry={entry} control={entry.periodControl} settings={settings} disabled={exporting} edition={snapshot} change={change} apply={edit} />
+      </fieldset>}
+      {formFields.length > 0 && <fieldset className={postStyles.group} data-testid="post-options">
+        <legend><button type="button" className={postStyles.disclosure} aria-expanded={optionsShown} aria-controls="post-options-fields" onClick={() => setOptionsOpen(!optionsShown)}>
+          Options{changedCount > 0 && <span className={postStyles.count}> · {changedCount} changed</span>}
+        </button></legend>
+        <div id="post-options-fields" className={postStyles.fields} hidden={!optionsShown}>{formFields.map(field => {
+        const id = `post-field-${field.id}`, problem = problems[field.id], value = drafts[field.id] ?? fieldText(settings[field.id]);
+        const changed = isChanged(field);
+        return <div key={field.id} className={postStyles.field} data-wide={field.kind === "text" || undefined} data-roomy={(field.kind === "select" && field.options.some(option => option.label.length > 18)) || undefined}>
+          <label><span>{field.label}</span>
+            {field.kind === "select" ? <select value={fieldText(settings[field.id])} disabled={exporting} onChange={event => change(field, event.target.value)}>{field.options.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
+              : <input type={field.kind === "number" ? "number" : field.kind === "date" ? "date" : "text"} inputMode={field.kind === "number" && (field.step ?? 1) % 1 === 0 ? "numeric" : undefined} min={field.kind === "number" ? field.min : undefined} max={field.kind === "number" ? field.max : undefined} step={field.kind === "number" ? field.step : undefined} value={value} disabled={exporting} aria-invalid={problem ? true : undefined} aria-describedby={problem ? `${id}-problem` : undefined} onChange={event => change(field, event.target.value)} onBlur={() => settle(field)} />}
+          </label>
+          {problem ? <small id={`${id}-problem`} className={postStyles.problem}>{problem}</small>
+            : changed && <button type="button" className={postStyles.reset} disabled={exporting} onClick={() => { setDrafts(({ [field.id]: _, ...rest }) => rest); edit({ [field.id]: field.default }); }}>
+              {/* Named in its text, not aria-label, so finding a field by its label never finds this button too. */}
+              Reset<span className={postStyles.hidden}> {field.label}</span> to {defaultNote(field)}</button>}
+        </div>;
+      })}</div></fieldset>}
     </section>
     <div className={styles.status} aria-live="polite">
-      {loading && <p>Loading this post…</p>}
-      {error && <p role="alert">{error} <button type="button" disabled={loading || exporting} onClick={() => void load(settings)}>Retry</button></p>}
-      {snapshot && !loading && snapshot.state !== "ready" && <p>{snapshot.state}: {snapshot.reasons.join(" ")}</p>}
-      {snapshot && !loading && exportBlock && snapshot.state === "ready" && <p>{exportBlock}</p>}
+      {error && <p role="alert">{error} <button type="button" disabled={loading || exporting} onClick={() => refresh(settings)}>Retry</button></p>}
+      {held && !(entry.periodControl && settings.period === PERIOD_CUSTOM) && <p data-testid="settings-held">Not updated: {held}</p>}
+      {snapshot && !loading && snapshot.state !== "ready" && <p><b>{STATE_LABELS[snapshot.state]}</b>: {snapshot.reasons.join(" ")}</p>}
+      {snapshot && !loading && exportBlock && snapshot.state === "ready" && <p>{exportBlock}{shown && (!shown.expiresAt || Date.parse(shown.expiresAt) <= Date.now()) && <> <button type="button" disabled={exporting} onClick={() => refresh(settings)}>Load a new edition</button></>}</p>}
       {assetError && <p role="alert">{assetError} <button type="button" onClick={() => setAssetAttempt(current => current + 1)}>Retry</button></p>}
     </div>
     <div className={Panel && snapshot?.data != null && snapshot.post === entry.id ? postStyles.builder : undefined}>
-    {Panel && snapshot?.data != null && snapshot.post === entry.id && <aside className={styles.panel} aria-label="Build this post"><Panel snapshot={snapshot} data={snapshot.data} settings={settings} logos={logos} change={(fieldId: string, value: ShareSettings[string]) => { setSettings(current => ({ ...current, [fieldId]: value })); setFeedback(""); }} disabled={exporting} /></aside>}
+    {Panel && snapshot?.data != null && snapshot.post === entry.id && <aside className={styles.panel} aria-label="Build this post"><Panel snapshot={snapshot} data={snapshot.data} settings={settings} logos={logos} change={(fieldId: string, value: ShareSettings[string]) => edit({ [fieldId]: value })} disabled={exporting} /></aside>}
     <section className={styles.panel} aria-label="Graphic preview">
       <div className={styles.panelHeader}><h2>1080 × 1080 preview</h2><span>{entry.title}</span></div>
+      {snapshot?.post === entry.id && !!snapshot.pageNotes?.length && <div className={postStyles.pageNotes} data-testid="post-page-notes" role="note" aria-label="Notes for this edition, not on the PNG">
+        {snapshot.pageNotes.map(note => <p key={note}>{note}</p>)}
+      </div>}
       <div className={styles.previewFrame} ref={frame} style={{ height: scale * SHARE_SIZE }}>
         {snapshot && squareReady && <div ref={preview} className={`${styles.square} ${styles.gridSquare}`} style={{ transform: `scale(${scale})` }} data-testid="share-square" role="img" aria-label={alt} data-export-token={token}>
           <PostFrame entry={entry} snapshot={snapshot} settings={settings} brandLogo={brandLogo} logos={logos} Card={Card} />

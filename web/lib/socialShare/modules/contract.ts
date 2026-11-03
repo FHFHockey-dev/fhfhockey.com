@@ -65,8 +65,10 @@ export type SharePostSnapshot<Settings extends ShareSettings = ShareSettings, Da
   teams: string[];
   /** Offline fixture data: the shell watermarks it and refuses every export. Real sources never set this. */
   fixture: boolean;
+  /** Notes for the editor, such as a window cut short by a late feed: printed beside the card, never on the PNG. */
+  pageNotes?: string[];
 };
-export type SharePostLoadResult<Data> = { state: ShareDataState; reasons?: string[]; evidence: SharePostEvidence; data: Data | null; teams?: string[]; ttlSeconds?: number };
+export type SharePostLoadResult<Data> = { state: ShareDataState; reasons?: string[]; evidence: SharePostEvidence; data: Data | null; teams?: string[]; ttlSeconds?: number; pageNotes?: string[] };
 
 /** Structural subset of the supabase-js client; tests pass a fake with the same methods. */
 export type SharePostReadClient = { from: (table: string) => any };
@@ -154,11 +156,11 @@ export const shareHeadlineSize = (headline: string) => headline.length <= 22 ? u
 export function sharePostExportBlock(module: Pick<AnyShareModule, "hasRows" | "fields">, snapshot: SharePostSnapshot, settings: ShareSettings, now = Date.now()): string | null {
   if (snapshot.fixture) return "Offline fixture data cannot be exported.";
   if (snapshot.state !== "ready" || snapshot.data === null) return snapshot.reasons[0] ?? "This post's sources are not ready.";
-  if (!snapshot.expiresAt || Date.parse(snapshot.expiresAt) <= now) return "This edition expired. Refresh it before downloading.";
+  if (!snapshot.expiresAt || Date.parse(snapshot.expiresAt) <= now) return "This edition expired. Load a new one before downloading.";
   if (!snapshot.evidence.sources.length) return "This post has no source labels.";
   // The card and footer print the current settings, so data built under other server settings would export mislabeled.
   const serverFields = module.fields.filter(field => !field.clientOnly);
-  if (shareSettingsKey(serverFields, snapshot.settings) !== shareSettingsKey(serverFields, settings)) return "Settings changed. Refresh the post to apply them before downloading.";
+  if (shareSettingsKey(serverFields, snapshot.settings) !== shareSettingsKey(serverFields, settings)) return "Settings changed. Wait for the post to update before downloading.";
   return module.hasRows(snapshot.data, settings) ? null : "Nothing qualifies with these settings.";
 }
 /** Partial data may preview under its warning; stale, missing and blocked data never render as a card. */

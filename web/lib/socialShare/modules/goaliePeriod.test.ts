@@ -67,6 +67,28 @@ describe("goalie of the period", () => {
     expect(result.state).toBe("partial");
     expect(result.evidence.coverage).toEqual({ observed: 3, expected: 4, missing: 1, unit: "team games" });
   });
+  it("ends at the last complete night when only the newest is late, ready, with a page note", () => {
+    const result = buildGoaliePeriod({ ...base, settings: { ...settings, minStartsWeek: 1 }, reported: reported.filter(game => !(game.gameId === 2 && game.team === "NJD")) });
+    expect(result.state).toBe("ready");
+    expect(result.reasons).toEqual([]);
+    expect(result.pageNotes).toEqual(["Oct 22 is not fully reported yet, so this card ends Oct 20."]);
+    expect(result.data!.period).toMatchObject({ through: "2026-10-20", label: "Week 4, 2026-10-19 to 2026-10-25, through 2026-10-20" });
+    expect(result.data!.rows.map(row => [row.goalieId, row.categoryCounts.starts])).toEqual([[1, 1], [2, 1]]);
+    expect(result.evidence.coverage).toEqual({ observed: 2, expected: 2, missing: 0, unit: "team games" });
+    // A fixed past week follows the same rule, and a month and a custom range keep their choice and stop counting there.
+    const month = buildGoaliePeriod({ ...base, settings: { ...settings, period: "month", minStartsMonth: 1 }, period: monthPeriod(weeks, "2026-10", "2026-11-08"), reported: reported.filter(game => !(game.gameId === 2 && game.team === "NJD")) });
+    expect(month.data!.period).toMatchObject({ through: "2026-10-20", label: "October 2026, through 2026-10-20" });
+    const custom = buildGoaliePeriod({ ...base, settings: { ...settings, period: "custom", minStartsRange: 1 }, period: rangePeriod(weeks, "2026-10-19", "2026-10-23", "2026-10-30"), reported: reported.filter(game => !(game.gameId === 2 && game.team === "NJD")) });
+    expect(custom.data!.period).toMatchObject({ through: "2026-10-20", label: "2026-10-19 to 2026-10-23" });
+    expect(custom.pageNotes).toHaveLength(1);
+  });
+  it("still blocks an older gap, and is missing when no night is reported", () => {
+    const older = buildGoaliePeriod({ ...base, reported: reported.filter(game => !(game.gameId === 1 && game.team === "NYR")) });
+    expect(older.state).toBe("partial");
+    expect(older.reasons![0]).toBe("1 of 4 scheduled team games in this period's weeks have no reported result.");
+    expect(older.pageNotes).toBeUndefined();
+    expect(buildGoaliePeriod({ ...base, reported: [] })).toMatchObject({ state: "missing", data: null, reasons: ["No night in Week 4, 2026-10-19 to 2026-10-25 is fully reported yet."] });
+  });
   it("has nothing to export below the minimum starts", () => {
     const { data } = buildGoaliePeriod({ ...base, settings: { ...settings, minStartsWeek: 3 } });
     expect(data!.ranked).toBe(0);

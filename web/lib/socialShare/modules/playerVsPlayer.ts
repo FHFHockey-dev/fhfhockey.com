@@ -1,5 +1,6 @@
 import { defineShareModule, type SharePostEvidence, type SharePostLoadResult, type SharePostSource, UNKNOWN_EVIDENCE } from "./contract";
 import candidateFile from "./playerVsPlayer.candidates.json";
+import { completeThrough, completeThroughNote, countNights } from "./shared/completeThrough";
 import { bsh, lastN, per60, versusSeason, type ShareWindow } from "./shared/definitions";
 import type { SkaterAppearance } from "./shared/skaterAppearances";
 
@@ -226,7 +227,8 @@ export function validatePlayerVsPlayer(settings: PlayerVsPlayerSettings): string
   return players && players.a === players.b ? "Choose two different players." : null;
 }
 
-export type PvpTeamCoverage = { team: string; scheduled: number; completed: number };
+/** One team's scheduled games through the edition, each with whether its result is reported. */
+export type PvpTeamCoverage = { team: string; games: readonly { date: string; completed: boolean }[] };
 export type BuildPvpInput = {
   settings: PlayerVsPlayerSettings; season: number; through: string; today: string;
   appearances: readonly SkaterAppearance[];
@@ -246,7 +248,12 @@ export function buildPlayerVsPlayer(input: BuildPvpInput): SharePostLoadResult<P
   const { settings } = input, players = resolvePlayers(settings);
   const blocked = (reason: string): SharePostLoadResult<PlayerVsPlayerData> => ({ state: "blocked", reasons: [reason], evidence: UNKNOWN_EVIDENCE, data: null });
   if (!players) return blocked("Enter two NHL player ids, or choose a sourced pair.");
-  const nstRows = input.nst ?? [], games = joinNst(input.appearances, nstRows), view = { windowId: settings.window, basis: settings.basis, strength: settings.strength };
+  /* A late feed on the newest nights ends the card at the last complete night (TJ, 2026-11-03); an older gap still blocks export. */
+  const teamGames = input.teamCoverage.flatMap(team => team.games);
+  const cut = completeThrough(countNights(teamGames.map(game => game.date), teamGames.flatMap(game => game.completed ? [game.date] : [])), input.through), through = cut.through;
+  if (!through) return blocked("No night in this window is fully reported yet.");
+  const appearances = input.appearances.filter(game => game.date <= through);
+  const nstRows = (input.nst ?? []).filter(row => row.date_scraped <= through), games = joinNst(appearances, nstRows), view = { windowId: settings.window, basis: settings.basis, strength: settings.strength };
   const windowA = playerWindow(players.a, games.filter(game => game.playerId === players.a), view), windowB = playerWindow(players.b, games.filter(game => game.playerId === players.b), view);
   const comparison = comparePlayerWindows(windowA, windowB, settings.minCoverage);
   if (!comparison.ok) return blocked(comparison.reason);
@@ -254,14 +261,16 @@ export function buildPlayerVsPlayer(input: BuildPvpInput): SharePostLoadResult<P
   const { accepted, refused } = validateCandidateFile(input.candidates, input.today);
   const claims = claimsForPair(accepted, players.a, players.b), discussion = summarizeDiscussion(claims);
   const a = side(windowA), b = side(windowB), usesNst = settings.strength === "all";
-  const scheduled = input.teamCoverage.reduce((total, team) => total + team.scheduled, 0), completed = input.teamCoverage.reduce((total, team) => total + team.completed, 0);
+  const coverage = input.teamCoverage.map(team => { const kept = team.games.filter(game => game.date <= through); return { team: team.team, scheduled: kept.length, completed: kept.filter(game => game.completed).length }; });
+  const scheduled = coverage.reduce((total, team) => total + team.scheduled, 0), completed = coverage.reduce((total, team) => total + team.completed, 0);
   const reasons = [
-    ...input.teamCoverage.flatMap(team => team.scheduled > team.completed ? [`${team.team}: ${team.scheduled - team.completed} of ${team.scheduled} scheduled games have no reported result.`] : []),
+    /* Only older gaps are left by now: the cut removed every late newest night. */
+    ...coverage.flatMap(team => team.scheduled > team.completed ? [`${team.team}: ${team.scheduled - team.completed} of ${team.scheduled} scheduled games have no reported result.`] : []),
     ...comparison.metrics.flatMap(row => row.source === "wgo" && (row.a.missing || row.b.missing) ? [`${row.label} has missing game values.`] : []),
     ...(usesNst && input.nst === null ? ["Natural Stat Trick game logs could not be read."] : []),
     ...(refused.length ? [`Candidate records refused: ${refused.map(entry => entry.id ?? `#${entry.index + 1}`).join(", ")}.`] : []),
   ];
-  const wgoDates = input.appearances.map(game => game.date);
+  const wgoDates = appearances.map(game => game.date), note = completeThroughNote(cut);
   const sources: SharePostSource[] = [{ name: "NHL.com skater game stats", tables: ["wgo_skater_stats", "wgo_team_stats", "games"], state: scheduled > completed ? "partial" : "ready", asOf: newest(wgoDates), updatedAt: null }];
   if (usesNst) sources.push({ name: "Natural Stat Trick game logs", tables: ["nst_gamelog_as_counts"], state: input.nst === null ? "missing" : "ready", asOf: newest(nstRows.map(row => row.date_scraped)), updatedAt: null });
   if (claims.length) sources.push({ name: "Reviewed discussion posts", tables: [CANDIDATE_FILE], state: "ready", asOf: newest(claims.map(claim => claim.date)), updatedAt: null });
@@ -272,9 +281,9 @@ export function buildPlayerVsPlayer(input: BuildPvpInput): SharePostLoadResult<P
     coverage: { observed: completed, expected: scheduled, missing: Math.max(0, scheduled - completed), unit: "team games" },
   };
   return {
-    state: reasons.length ? "partial" : "ready", reasons, evidence, teams: [...new Set([a.team, b.team].flatMap(team => team ? [team] : []))],
+    state: reasons.length ? "partial" : "ready", reasons, evidence, ...(note ? { pageNotes: [note] } : {}), teams: [...new Set([a.team, b.team].flatMap(team => team ? [team] : []))],
     data: {
-      settingsKey: pvpSettingsKey(settings), through: input.through, season: input.season, windowLabel: PVP_WINDOW_LABELS[settings.window], basisLabel: PVP_BASIS_LABELS[settings.basis], strengthLabel: PVP_STRENGTH_LABELS[settings.strength],
+      settingsKey: pvpSettingsKey(settings), through, season: input.season, windowLabel: PVP_WINDOW_LABELS[settings.window], basisLabel: PVP_BASIS_LABELS[settings.basis], strengthLabel: PVP_STRENGTH_LABELS[settings.strength],
       a, b, metrics: comparison.metrics, notes: comparison.notes, discussion, selection: { sourced: claims.length > 0, rationales: discussion.rationales },
     },
   };
