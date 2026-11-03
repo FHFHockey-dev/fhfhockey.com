@@ -123,6 +123,10 @@ describe("useWigoPlayerDashboard", () => {
     expect(getPlayerIdFromQueryValue("8476453")).toBe(8476453);
     expect(getPlayerIdFromQueryValue(["8476453", "1"])).toBe(8476453);
   });
+  const freshness = {
+    careerUpdatedAt: "2026-11-01T08:52:00Z", recentUpdatedAt: "2026-11-01T08:52:00Z",
+    stdGp: 14, totalsGp: 14, stdStale: false
+  };
   beforeEach(() => {
     mockRouter.query = {};
     mockReplace.mockClear();
@@ -141,7 +145,7 @@ describe("useWigoPlayerDashboard", () => {
 
     mockRouter.query = { playerId: String(player.id) };
     singleMock.mockResolvedValue({ data: player, error: null });
-    mockFetchPlayerAggregatedStats.mockResolvedValue(aggregates);
+    mockFetchPlayerAggregatedStats.mockResolvedValue({ rows: aggregates, freshness });
 
     const queryClient = createQueryClient();
     const { result } = renderHook(() => useWigoPlayerDashboard(), {
@@ -158,6 +162,7 @@ describe("useWigoPlayerDashboard", () => {
     expect(result.current.teamAbbreviation).toBe("NJD");
     expect(result.current.teamIdForLog).toBe(1);
     expect(result.current.rawCombinedData).toEqual(aggregates);
+    expect(result.current.aggFreshness).toEqual(freshness);
     expect(result.current.aggDataError).toBeNull();
   });
 
@@ -198,14 +203,14 @@ describe("useWigoPlayerDashboard", () => {
       data: Player;
       error: null;
     }>();
-    const secondAggregateDeferred = createDeferred<TableAggregateData[]>();
+    const secondAggregateDeferred = createDeferred<{ rows: TableAggregateData[]; freshness: typeof freshness }>();
 
     mockRouter.query = { playerId: String(firstPlayer.id) };
     singleMock
       .mockResolvedValueOnce({ data: firstPlayer, error: null })
       .mockImplementationOnce(() => secondPlayerDeferred.promise);
     mockFetchPlayerAggregatedStats
-      .mockResolvedValueOnce([{ label: "Goals", STD: 31 }])
+      .mockResolvedValueOnce({ rows: [{ label: "Goals", STD: 31 }], freshness })
       .mockImplementationOnce(() => secondAggregateDeferred.promise);
 
     const queryClient = createQueryClient();
@@ -234,7 +239,7 @@ describe("useWigoPlayerDashboard", () => {
 
     act(() => {
       secondPlayerDeferred.resolve({ data: secondPlayer, error: null });
-      secondAggregateDeferred.resolve([{ label: "Goals", STD: 27 }]);
+      secondAggregateDeferred.resolve({ rows: [{ label: "Goals", STD: 27 }] as TableAggregateData[], freshness });
     });
 
     await waitFor(() => {
@@ -270,7 +275,7 @@ describe("useWigoPlayerDashboard", () => {
 
     mockRouter.query = { playerId: String(selectedPlayer.id) };
     singleMock.mockResolvedValue({ data: selectedPlayer, error: null });
-    mockFetchPlayerAggregatedStats.mockResolvedValue([]);
+    mockFetchPlayerAggregatedStats.mockResolvedValue({ rows: [], freshness });
     rerender();
 
     await waitFor(() => {

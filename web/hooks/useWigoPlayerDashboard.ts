@@ -11,7 +11,11 @@ import {
 import { WIGO_ERROR_MESSAGES } from "components/WiGO/errorMessages";
 import { getTeamInfoById, teamNameToAbbreviationMap } from "lib/teamsInfo";
 import supabase from "lib/supabase";
-import { fetchPlayerAggregatedStats } from "utils/fetchWigoPlayerStats";
+import {
+  fetchPlayerAggregatedStats,
+  WigoAggregateFreshness,
+  WigoAggregatedStatsResult
+} from "utils/fetchWigoPlayerStats";
 import useCurrentSeason from "./useCurrentSeason";
 
 export interface WigoSelectedPlayerDetails {
@@ -134,6 +138,8 @@ export interface UseWigoPlayerDashboardResult {
   teamAbbreviation: string | null;
   teamIdForLog: number | null;
   rawCombinedData: TableAggregateData[];
+  /** As-of dates and the STD stale check for the comparison table (D9). */
+  aggFreshness: WigoAggregateFreshness | null;
   isLoadingAggData: boolean;
   isLoadingPlayer: boolean;
   aggDataError: string | null;
@@ -161,7 +167,7 @@ export default function useWigoPlayerDashboard(): UseWigoPlayerDashboardResult {
     enabled: typeof selectedPlayerId === "number"
   });
 
-  const aggregatedStatsQuery = useQuery<TableAggregateData[]>({
+  const aggregatedStatsQuery = useQuery<WigoAggregatedStatsResult>({
     queryKey: getWigoAggregatedStatsQueryKey(selectedPlayerId, currentSeasonId),
     queryFn: () => fetchPlayerAggregatedStats(selectedPlayerId as number, currentSeasonId),
     // Wait for the season so STD's totals fallback is season-checked and the read happens once.
@@ -220,7 +226,8 @@ export default function useWigoPlayerDashboard(): UseWigoPlayerDashboardResult {
     teamName: branding.teamName,
     teamAbbreviation: branding.teamAbbreviation,
     teamIdForLog: branding.teamIdForLog,
-    rawCombinedData: aggregatedStatsQuery.data ?? [],
+    rawCombinedData: aggregatedStatsQuery.data?.rows ?? [],
+    aggFreshness: aggregatedStatsQuery.data?.freshness ?? null,
     isLoadingAggData: aggregatedStatsQuery.isLoading,
     isLoadingPlayer: selectedPlayerQuery.isLoading,
     aggDataError:

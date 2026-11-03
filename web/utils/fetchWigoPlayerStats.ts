@@ -416,6 +416,49 @@ export function buildPlayerAggregatedStats({
   return combinedStatsData;
 }
 
+export interface WigoAggregateFreshness {
+  careerUpdatedAt: string | null;
+  recentUpdatedAt: string | null;
+  stdGp: number | null;
+  totalsGp: number | null;
+  /**
+   * STD GP disagrees with this season's totals GP: the writer has not reached
+   * the player since recent games, or the row is still last season's (B-01:
+   * Bedard STD GP 69 against 8 played).
+   */
+  stdStale: boolean;
+}
+
+export interface WigoAggregatedStatsResult {
+  rows: TableAggregateData[];
+  freshness: WigoAggregateFreshness;
+}
+
+export function getWigoAggregateFreshness({
+  careerData,
+  recentData,
+  totalsData,
+  stdSeasonId = null
+}: Pick<BuildPlayerAggregatedStatsInput, "careerData" | "recentData" | "stdSeasonId"> & {
+  totalsData: { season?: string | null; games_played?: number | null } | null;
+}): WigoAggregateFreshness {
+  const stdGp = getAggregateValue(careerData, "std_gp");
+  const totalsGp =
+    totalsData &&
+    stdSeasonId != null &&
+    String(totalsData.season) === String(stdSeasonId) &&
+    typeof totalsData.games_played === "number"
+      ? totalsData.games_played
+      : null;
+  return {
+    careerUpdatedAt: careerData?.last_updated ?? null,
+    recentUpdatedAt: recentData?.last_updated ?? null,
+    stdGp,
+    totalsGp,
+    stdStale: totalsGp != null && totalsGp > 0 && stdGp !== totalsGp
+  };
+}
+
 export async function fetchPlayerGameLogForStat(
   playerId: number,
   seasonId: number,
@@ -621,7 +664,7 @@ export async function fetchPlayerGameLogForStat(
 export async function fetchPlayerAggregatedStats(
   playerId: number,
   stdSeasonId: number | null = null
-): Promise<TableAggregateData[]> {
+): Promise<WigoAggregatedStatsResult> {
   console.log(`Workspaceing pre-aggregated stats for Player ID: ${playerId}`);
 
   // wigo_career and wigo_recent are the aggregate sources. The legacy wigo_rates table has no writer
@@ -640,7 +683,7 @@ export async function fetchPlayerAggregatedStats(
     supabase
       .from("wgo_skater_stats_totals")
       .select(
-        `goals,assists,points,shots,hits,blocked_shots,penalty_minutes,pp_points,season,toi_per_game,pp_toi_pct_per_game`
+        `goals,assists,points,shots,hits,blocked_shots,penalty_minutes,pp_points,season,games_played,toi_per_game,pp_toi_pct_per_game`
       )
       .eq("player_id", playerId)
       .order("season", { ascending: false })
@@ -675,23 +718,33 @@ export async function fetchPlayerAggregatedStats(
         blocked_shots: number | null;
         penalty_minutes: number | null;
         pp_points: number | null;
+        games_played: number | null;
       }> & { season?: string | null })
     | null;
+  const freshness = getWigoAggregateFreshness({
+    careerData,
+    recentData,
+    totalsData,
+    stdSeasonId
+  });
 
   if (!careerData && !recentData) {
     console.warn(
       `No aggregated data found for player ${playerId} in wigo_career or wigo_recent.`
     );
-    return []; // Return empty array
+    return { rows: [], freshness };
   }
 
-  return buildPlayerAggregatedStats({
-    careerData,
-    recentData,
-    ratesData: null,
-    totalsData,
-    stdSeasonId
-  });
+  return {
+    rows: buildPlayerAggregatedStats({
+      careerData,
+      recentData,
+      ratesData: null,
+      totalsData,
+      stdSeasonId
+    }),
+    freshness
+  };
 }
 
 export async function fetchPaginatedData<T>(

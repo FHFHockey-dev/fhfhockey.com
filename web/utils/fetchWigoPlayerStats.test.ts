@@ -375,9 +375,28 @@ describe("fetchPlayerGameLogForStat units (selected-stat chart)", () => {
 describe("fetchPlayerAggregatedStats sources", () => {
   it("reads wigo_career, wigo_recent and season totals but never the writerless wigo_rates table", async () => {
     installGameLogQueryMock([{ player_id: 1, std_gp: 10, std_g: 4, season: "20252026" }]);
-    const rows = await fetchPlayerAggregatedStats(1, 20252026);
+    const { rows } = await fetchPlayerAggregatedStats(1, 20252026);
     expect(queryTraces.map(trace => trace.table)).toEqual(["wigo_career", "wigo_recent", "wgo_skater_stats_totals"]);
     expect(rows.find(row => row.label === "Goals")?.STD).toBe(4);
+  });
+
+  it("reads the as-of dates and flags an STD row whose GP disagrees with this season's totals", async () => {
+    // Bedard's shape: the 09-17 row still holds last season (STD GP 69); he has played 8.
+    installGameLogQueryMock([{ player_id: 8484144, std_gp: 69, season: "20262027", games_played: 8, last_updated: "2026-09-17T08:52:00Z" }]);
+    const { freshness } = await fetchPlayerAggregatedStats(8484144, 20262027);
+    expect(freshness).toEqual({
+      careerUpdatedAt: "2026-09-17T08:52:00Z", recentUpdatedAt: "2026-09-17T08:52:00Z",
+      stdGp: 69, totalsGp: 8, stdStale: true
+    });
+    const select = queryTraces.find(trace => trace.table === "wgo_skater_stats_totals")?.calls.find(call => call[0] === "select");
+    expect(String(select?.[1])).toContain("games_played");
+  });
+
+  it("does not flag STD when its GP matches, or when totals are another season's", async () => {
+    installGameLogQueryMock([{ player_id: 1, std_gp: 8, season: "20262027", games_played: 8 }]);
+    expect((await fetchPlayerAggregatedStats(1, 20262027)).freshness.stdStale).toBe(false);
+    installGameLogQueryMock([{ player_id: 1, std_gp: 69, season: "20252026", games_played: 82 }]);
+    expect((await fetchPlayerAggregatedStats(1, 20262027)).freshness).toMatchObject({ totalsGp: null, stdStale: false });
   });
 });
 
