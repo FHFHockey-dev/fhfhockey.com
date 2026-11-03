@@ -5,6 +5,7 @@ import type { Database } from "lib/supabase/database-generated.types";
 import { teamsInfo } from "lib/teamsInfo";
 import { SHARE_POST_DEFAULT_TTL_SECONDS, type ShareSettingField, type SharePostEvidence, type SharePostReadClient, type SharePostSource } from "../contract";
 import { spanDays } from "./categoryCounts";
+import { completeThrough, completeThroughNote } from "./completeThrough";
 import { competitionRanks, editionDate } from "./definitions";
 import { GOALIE_INVENTORY_VERSION, type GoalieConfirmation, type GoalieForecast, type GoalieGameSignals, type GoalieInventory, type GoalieInventoryEntry, type GoalieInventoryGame, type GoalieInventoryRequest, type GoalieInventorySource, type InventoryMetric, type LoadGoalieInventory, type SearchGoalieInventory } from "./goalieInventory";
 import { customRangeReason, matchupCalendar, periodDates, periodWindowFields, PERIOD_CUSTOM, resolvePeriodWindow, type MatchupCalendar, type PeriodControl, type PeriodWindowSettings } from "./periodWindow";
@@ -37,7 +38,13 @@ export type GoalieInventoryDetail = {
   backToBacks?: Readonly<Record<string, InventoryBackToBack>>;
   /** Not in v1. Starts in the team's last `TREND_GAMES` completed games, by `team:goalieId`; absent when a game there lacks one labeled starter. */
   recentTrend?: Readonly<Record<string, number>>;
+  /** The last date the rates use: the day before the edition, or the last complete night when the newest ones are late. */
+  ratesThrough?: string;
+  /** Printed beside the preview, never on the PNG. */
+  pageNotes?: readonly string[];
 };
+export const NO_COMPLETE_NIGHT_REASON = "No night this season is fully reported yet, so the goalie inventory has no rates.";
+const missingDetail = (request: GoalieInventoryRequest, reason: string): GoalieInventoryDetail => ({ coverage: null, conflicts: [], lowFirstRanks: {}, inventory: { version: GOALIE_INVENTORY_VERSION, season: request.season, generatedAt: request.generatedAt, from: request.from, through: request.through, state: "missing", reasons: [reason], sources: [], goalies: [] } });
 /** One game of a team's back-to-back. `weakerOpponent` compares the two opponents' season goal differential per game; null when either is unknown or they are equal. */
 export type InventoryBackToBack = { order: 1 | 2; otherGameId: number; otherOpponent: string; weakerOpponent: boolean | null };
 export const TREND_GAMES = 3;
@@ -245,7 +252,14 @@ export type GoalieInventoryInput = {
   forecasts: readonly InventoryForecastInput[] | null;
 };
 export function buildGoalieInventory(input: GoalieInventoryInput): GoalieInventoryDetail {
-  const { request } = input, cutoff = shiftDays(editionDate(request.generatedAt), -1), reasons: string[] = [];
+  const { request } = input, editionCutoff = shiftDays(editionDate(request.generatedAt), -1), reasons: string[] = [];
+  // A late newest night (TJ, 2026-11-03): the rates end at the last night with every team game reported, the card stays exportable, and a page note says so. An older gap still makes it partial, as does an NST lag.
+  const nights = new Map<string, { date: string; expected: number; observed: number }>();
+  for (const game of input.schedule) if (game.date <= editionCutoff) { const night = nights.get(game.date) ?? { date: game.date, expected: 0, observed: 0 }; night.expected += 2; nights.set(game.date, night); }
+  for (const game of toCompletedTeamGames(input.teamGames, { season: request.season, through: editionCutoff })) { const night = nights.get(game.date); if (night) night.observed++; }
+  const late = completeThrough([...nights.values()], editionCutoff);
+  if (late.through === null) return missingDetail(request, NO_COMPLETE_NIGHT_REASON);
+  const cutoff = late.through, lateNote = completeThroughNote(late);
   const ledger: CompletedTeamGame[] = toCompletedTeamGames(input.teamGames, { season: request.season, through: cutoff });
   const expected = input.schedule.filter(game => game.date <= cutoff).length * 2, observed = ledger.length;
   const coverage: InventoryCoverage = { observed, expected, missing: Math.max(0, expected - observed) };
@@ -322,7 +336,7 @@ export function buildGoalieInventory(input: GoalieInventoryInput): GoalieInvento
     { name: "Start Chart start participation", tables: [], state: input.forecasts ? "ready" : "blocked", asOf: null, updatedAt: null, reasons: forecastReasons },
   ];
   return {
-    coverage, conflicts: conflictList, lowFirstRanks, backToBacks, recentTrend,
+    coverage, conflicts: conflictList, lowFirstRanks, backToBacks, recentTrend, ratesThrough: cutoff, ...(lateNote ? { pageNotes: [lateNote] } : {}),
     inventory: { version: GOALIE_INVENTORY_VERSION, season: request.season, generatedAt: request.generatedAt, from: request.from, through: request.through, state: degraded ? "partial" : "ready", reasons: [...reasons, ...confirmationReasons, ...forecastReasons], sources, goalies },
   };
 }
@@ -393,10 +407,10 @@ export function confirmationLegend(inventory: GoalieInventory) {
 export const confirmationNote = (inventory: GoalieInventory) => inventory.sources.find(source => source.tables.includes("player_forecast_goalie_start_observations"))?.reasons.join(" ") ?? CONFIRMATION_ABSENT_NOTE;
 
 /** The shell's evidence block for a post built on the inventory. A blocked source was not read, so it is not listed as one. */
-export function inventoryEvidence({ inventory, coverage }: Pick<GoalieInventoryDetail, "inventory" | "coverage">, cohort: string, teamGames: number, notes: readonly string[] = []): SharePostEvidence {
+export function inventoryEvidence({ inventory, coverage, ratesThrough }: Pick<GoalieInventoryDetail, "inventory" | "coverage" | "ratesThrough">, cohort: string, teamGames: number, notes: readonly string[] = []): SharePostEvidence {
   return {
     sources: inventory.sources.filter(source => source.state === "ready" || source.state === "partial").map(({ name, tables, state, asOf, updatedAt, reasons }) => ({ name, tables, state, asOf, updatedAt, reasons })),
-    sample: `${inventory.from} to ${inventory.through}: ${teamGames} upcoming team games; rates are season to date through ${shiftDays(editionDate(inventory.generatedAt), -1)}. ${[confirmationNote(inventory), ...notes].join(" ")}`,
+    sample: `${inventory.from} to ${inventory.through}: ${teamGames} upcoming team games; rates are season to date through ${ratesThrough ?? shiftDays(editionDate(inventory.generatedAt), -1)}. ${[confirmationNote(inventory), ...notes].join(" ")}`,
     strength: "All situations (shots, xG, chances); PP and PK as labeled", cohort,
     coverage: coverage ? { observed: coverage.observed, expected: coverage.expected, missing: coverage.missing, unit: "completed team games" } : null,
   };
@@ -454,8 +468,7 @@ export async function loadGoalieInventoryDetail(client: { from: (table: string) 
     if (options.readStartParticipations) { try { forecasts = await options.readStartParticipations(request, gameIds); } catch { forecasts = null; } }
     return buildGoalieInventory({ request, teams, schedule, scheduleFrom: seasonStart, scheduleThrough, teamGames, nst, appearances, confirmations, observationReason, forecasts });
   } catch {
-    const reason = "The goalie inventory's sources could not be read.";
-    return { coverage: null, conflicts: [], lowFirstRanks: {}, inventory: { version: GOALIE_INVENTORY_VERSION, season: request.season, generatedAt: request.generatedAt, from: request.from, through: request.through, state: "missing", reasons: [reason], sources: [], goalies: [] } };
+    return missingDetail(request, "The goalie inventory's sources could not be read.");
   }
 }
 export const loadGoalieInventory: LoadGoalieInventory = async (client, request) => (await loadGoalieInventoryDetail(client as SharePostReadClient, request, { observationClient: await serverObservationClient() })).inventory;

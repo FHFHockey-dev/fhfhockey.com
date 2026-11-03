@@ -29,11 +29,12 @@ export function startSitRows(data: StartSitData, search: string): StartSitRow[] 
     .sort((a, b) => a.game.date.localeCompare(b.game.date) || a.game.gameId - b.game.gameId || a.goalie.team.localeCompare(b.goalie.team) || (b.goalie.recentStarts.starts ?? -1) - (a.goalie.recentStarts.starts ?? -1) || a.goalie.goalieId - b.goalie.goalieId);
 }
 export const startSitConflicting = (data: Pick<StartSitData, "conflicts">, game: Pick<GoalieInventoryGame, "gameId" | "team">) => data.conflicts.some(item => item.gameId === game.gameId && item.team === game.team);
-export function startSitResult({ inventory, coverage, conflicts, lowFirstRanks }: GoalieInventoryDetail, period?: InventoryPeriod): SharePostLoadResult<StartSitData> {
+export function startSitResult({ inventory, coverage, conflicts, lowFirstRanks, ratesThrough, pageNotes }: GoalieInventoryDetail, period?: InventoryPeriod): SharePostLoadResult<StartSitData> {
   if (inventory.state === "missing") return { state: "missing", reasons: [...inventory.reasons], evidence: UNKNOWN_EVIDENCE, data: null };
   const upcoming = upcomingInventory(inventory), teamGames = new Set(upcoming.goalies.flatMap(goalie => goalie.games.map(game => `${game.gameId}:${game.team}`))).size;
-  const evidence = inventoryEvidence({ inventory, coverage }, `${upcoming.goalies.length} goalies with an appearance in their team's last 10 games, on teams scheduled in the window`, teamGames, [inventory.sources.some(source => source.name === START_CHART_SOURCE && source.state === "ready") ? FORECAST_ADMITTED_NOTE : FORECAST_CLOSED_REASON, START_SIT_LENS_NOTE, START_SIT_STATUS_NOTE]);
+  const evidence = inventoryEvidence({ inventory, coverage, ratesThrough }, `${upcoming.goalies.length} goalies with an appearance in their team's last 10 games, on teams scheduled in the window`, teamGames, [inventory.sources.some(source => source.name === START_CHART_SOURCE && source.state === "ready") ? FORECAST_ADMITTED_NOTE : FORECAST_CLOSED_REASON, START_SIT_LENS_NOTE, START_SIT_STATUS_NOTE]);
   return {
+    ...(pageNotes?.length ? { pageNotes: [...pageNotes] } : {}),
     state: inventory.state, reasons: inventory.state === "ready" ? [] : [...inventory.reasons], ttlSeconds: puckDropTtlSeconds(upcoming.goalies.flatMap(goalie => goalie.games.map(game => game.startTimeUtc)), inventory.generatedAt),
     data: { from: inventory.from, through: inventory.through, periodLabel: period ? periodLine(period) : periodDates(inventory.from, inventory.through), inventory: upcoming, conflicts, lowFirstRanks, confirmationLegend: confirmationLegend(inventory) },
     teams: [...new Set(upcoming.goalies.flatMap(goalie => goalie.games.flatMap(game => [game.team, game.opponent])))].sort(),

@@ -143,11 +143,12 @@ export function compactRiskyEvidence(evidence: SharePostEvidence): SharePostEvid
 /** The detail's own role facts, which a records read adds to. */
 export const roleContext = ({ backToBacks, recentTrend }: GoalieInventoryDetail, records?: RoleContext["records"]): RoleContext => ({ backToBacks, recentTrend, records });
 export function riskyStartsResult(detail: GoalieInventoryDetail, market: RiskyMarketLines = { lines: {}, sources: [], notes: [] }, period?: InventoryPeriod, records?: RoleContext["records"]): SharePostLoadResult<RiskyStartsData> {
-  const { inventory, coverage, conflicts, lowFirstRanks } = detail;
+  const { inventory, coverage, conflicts, lowFirstRanks, ratesThrough, pageNotes } = detail;
   if (inventory.state === "missing") return { state: "missing", reasons: [...inventory.reasons], evidence: UNKNOWN_EVIDENCE, data: null };
   const rows = riskyRows(inventory, conflicts, lowFirstRanks, roleContext(detail, records)), cohort = rows[0]?.lenses.volume[0].sides[0].metric.leagueCohort ?? null;
-  const evidence = inventoryEvidence({ inventory, coverage }, `${rows.length} team-nights in the window; ranks ${cohort === null ? "withheld without a complete league" : `over all ${cohort} teams`}. ${RISKY_CORRELATION_NOTE}`, rows.length, [...market.notes, ROLE_PICK_NOTE, RISKY_READING_NOTE]);
+  const evidence = inventoryEvidence({ inventory, coverage, ratesThrough }, `${rows.length} team-nights in the window; ranks ${cohort === null ? "withheld without a complete league" : `over all ${cohort} teams`}. ${RISKY_CORRELATION_NOTE}`, rows.length, [...market.notes, ROLE_PICK_NOTE, RISKY_READING_NOTE]);
   return {
+    ...(pageNotes?.length ? { pageNotes: [...pageNotes] } : {}),
     state: inventory.state, reasons: inventory.state === "ready" ? [] : [...inventory.reasons], ttlSeconds: puckDropTtlSeconds(rows.map(row => row.startTimeUtc), inventory.generatedAt),
     data: { from: inventory.from, through: inventory.through, periodLabel: period ? periodLine(period) : periodDates(inventory.from, inventory.through), rows, lines: market.lines, confirmationLegend: confirmationLegend(inventory) },
     teams: [...new Set(rows.flatMap(row => [row.team, row.opponent]))].sort(),

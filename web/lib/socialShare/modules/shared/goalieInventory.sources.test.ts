@@ -1,10 +1,12 @@
 // @vitest-environment node
 import { teamsInfo } from "lib/teamsInfo";
+import { riskyStartsResult } from "../riskyStarts";
+import { startSitResult } from "../startSit";
 import { describe, expect, it, vi } from "vitest";
 import { resolveDailyBoardEvidence, type BoardConflict, type BoardGoalieEvidence } from "lib/projections/dailyBoardEvidence";
 import { GOALIE_INVENTORY_VERSION, type GoalieInventory, type LoadGoalieInventory, type SearchGoalieInventory } from "./goalieInventory";
 import { FIXTURE_GENERATED_AT, FIXTURE_INPUT, FIXTURE_TEAMS, GOALIE_INVENTORY_FIXTURE } from "./goalieInventory.fixture";
-import { admitStartParticipation, buildGoalieInventory, buildTeamLenses, resolveInventoryPeriod, CONFIRMATION_ABSENT_NOTE, CONFIRMATION_CLOSED_REASON, CONFIRMATION_LINK_GAP, CONFIRMATION_REPORTER_GAP, confirmationFreshness, confirmationLabel, FORECAST_CLOSED_REASON, INVENTORY_OBSERVATION_COLUMNS, inventoryWindow, loadGoalieInventory, loadGoalieInventoryDetail, mapBoardEvidence, observationGaps, searchGoalieInventory, type InventoryForecastInput , headToHeadWinner, puckDropTtlSeconds, rankedSide, strengthRank, strengthShare, type InventoryTeamGameRow, type TeamLensMetric } from "./goalieInventory.sources";
+import { admitStartParticipation, buildGoalieInventory, buildTeamLenses, NO_COMPLETE_NIGHT_REASON, resolveInventoryPeriod, CONFIRMATION_ABSENT_NOTE, CONFIRMATION_CLOSED_REASON, CONFIRMATION_LINK_GAP, CONFIRMATION_REPORTER_GAP, confirmationFreshness, confirmationLabel, FORECAST_CLOSED_REASON, INVENTORY_OBSERVATION_COLUMNS, inventoryWindow, loadGoalieInventory, loadGoalieInventoryDetail, mapBoardEvidence, observationGaps, searchGoalieInventory, type InventoryForecastInput , headToHeadWinner, puckDropTtlSeconds, rankedSide, strengthRank, strengthShare, type InventoryTeamGameRow, type TeamLensMetric } from "./goalieInventory.sources";
 
 vi.mock("lib/supabase/public-client", () => ({ default: { from: () => { throw new Error("The inventory test must never reach Supabase."); } } }));
 const serverRead = vi.hoisted(() => ({ tables: [] as string[], from: null as null | ((table: string) => unknown) }));
@@ -414,5 +416,36 @@ describe("edition lifetime", () => {
   it("ignores a null beside a real time, and never goes below zero", () => {
     expect(puckDropTtlSeconds([null, "2026-11-02T19:00:00.500Z"], at)).toBe(60);
     expect(puckDropTtlSeconds(["2026-11-02T18:00:00Z"], at)).toBe(0);
+  });
+});
+
+describe("a late newest night", () => {
+  const without = (date: string, rows: "teamGames" | "nst") => buildGoalieInventory({ ...FIXTURE_INPUT, [rows]: FIXTURE_INPUT[rows].filter(row => row.date !== date || ("team_id" in row ? row.team_id !== teamsInfo.NJD.id : row.team_abbreviation !== "NJD")) });
+  it("ends the rates the night before, stays ready and adds a page note to both posts", () => {
+    for (const rows of ["teamGames"] as const) {
+      const detail = without("2026-11-01", rows);
+      expect(detail.inventory.state).toBe("ready");
+      expect(detail.ratesThrough).toBe("2026-10-30");
+      expect(detail.pageNotes).toEqual(["Nov 1 is not fully reported yet, so this card ends Oct 30."]);
+      expect(detail.coverage).toEqual({ observed: 4, expected: 4, missing: 0 });
+      for (const result of [startSitResult(detail), riskyStartsResult(detail)]) {
+        expect(result).toMatchObject({ state: "ready", pageNotes: ["Nov 1 is not fully reported yet, so this card ends Oct 30."] });
+        expect(result.evidence.sample).toContain("season to date through 2026-10-30");
+      }
+    }
+  });
+  it("keeps an older gap partial, with no page note", () => {
+    const detail = without("2026-10-30", "teamGames");
+    expect(detail.inventory.state).toBe("partial");
+    expect(detail.pageNotes).toBeUndefined();
+    expect(startSitResult(detail).pageNotes).toBeUndefined();
+  });
+  it("is missing when no night is complete", () => {
+    const detail = buildGoalieInventory({ ...FIXTURE_INPUT, teamGames: [] });
+    expect(detail.inventory).toMatchObject({ state: "missing", reasons: [NO_COMPLETE_NIGHT_REASON] });
+  });
+  it("adds no note when every night is reported", () => {
+    expect(buildGoalieInventory(FIXTURE_INPUT)).toMatchObject({ ratesThrough: "2026-11-01" });
+    expect(buildGoalieInventory(FIXTURE_INPUT).pageNotes).toBeUndefined();
   });
 });

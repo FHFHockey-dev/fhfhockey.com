@@ -199,3 +199,11 @@ Project `fyhftlxokyjtpndbkfse`, Supabase MCP `execute_sql`, 2026-10-31. Every st
 | 18 | Source key and account counts | `player_forecast_goalie_start_observations` | 1 (aggregate) | Passed. 667 rows, one key, no account |
 
 Project `fyhftlxokyjtpndbkfse`, Supabase MCP `execute_sql`, 2026-11-03. SELECT only. Nothing was written, and no provider was called.
+
+## SS-1103-G item 6: late newest night
+
+- `buildGoalieInventory` builds each night from the schedule (expected is games × 2) and the reported team games (observed), then calls `completeThrough` from 387a6df7f.
+- **Newest night late:** when only the newest nights are late, the rates, L10 shares, coverage and lens ranks end at the last complete night. The detail carries `ratesThrough` and `pageNotes`, both posts return them, and the post stays ready and exportable. The evidence says "season to date through" that date.
+- **Older gap:** stays partial, as before.
+- **No complete night:** the post is missing, with `NO_COMPLETE_NIGHT_REASON`.
+- **NST:** completeness is judged on NHL.com team games only. An NST lag still makes the post partial, with its own reason. Folding NST in would make a team missing from NST all season (which a test covers) look like no complete night, and so make both posts unavailable.

@@ -34,7 +34,7 @@ async function signIn(page: Page) {
 }
 function edition(post: string, settings: Record<string, unknown>, result: SharePostLoadResult<unknown>) {
   const generatedAt = new Date().toISOString();
-  return { schemaVersion: 1, id: `${post}-e2e`, post, state: result.state, reasons: result.reasons ?? [], generatedAt, expiresAt: new Date(Date.parse(generatedAt) + 600000).toISOString(), timeZone: "America/New_York", settings, fixture: false, teams: result.teams ?? [], evidence: result.evidence, data: result.data };
+  return { schemaVersion: 1, id: `${post}-e2e`, post, state: result.state, reasons: result.reasons ?? [], generatedAt, expiresAt: new Date(Date.parse(generatedAt) + 600000).toISOString(), timeZone: "America/New_York", settings, fixture: false, teams: result.teams ?? [], evidence: result.evidence, data: result.data, pageNotes: result.pageNotes ?? [] };
 }
 async function serve(page: Page, post: string, body: object) {
   const state = { requests: 0 };
@@ -163,3 +163,14 @@ for (const [post, settings, testid, card] of [
     await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
   });
 }
+
+test("A late newest night ends the card the night before, notes it beside the preview, and still exports", async ({ page }) => {
+  await signIn(page);
+  const late = buildGoalieInventory({ ...FIXTURE_INPUT, teamGames: FIXTURE_INPUT.teamGames.filter(row => row.date !== "2026-11-01" || row.game_id !== 900003) });
+  await serve(page, "risky-starts", edition("risky-starts", { ...PERIOD_DEFAULTS, lens: "ratio" }, riskyStartsResult(late)));
+  await page.goto("/social-share/posts?post=risky-starts");
+  await expect(page.getByTestId("post-page-notes")).toContainText("Nov 1 is not fully reported yet, so this card ends Oct 30.");
+  await expect(page.getByTestId("share-square")).not.toContainText("not fully reported");
+  await expect(page.getByTestId("post-watermark")).toHaveText("OBSERVED RESULTS");
+  await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeEnabled();
+});
