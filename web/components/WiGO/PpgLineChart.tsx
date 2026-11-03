@@ -27,6 +27,7 @@ import Zoom from "chartjs-plugin-zoom";
 import { WIGO_COLORS, CHART_COLORS, addAlpha } from "styles/wigoColors";
 import WigoSectionCard from "./WigoSectionCard";
 import { WIGO_ERROR_MESSAGES } from "./errorMessages";
+import { useSeasonPendingMessage } from "hooks/useCurrentSeason";
 
 ChartJS.register(
   CategoryScale,
@@ -51,6 +52,7 @@ interface PpgLineChartProps {
 const dummyLabels = ["", "Start", "", "Mid", "", "End", ""];
 
 const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId, seasonId }) => {
+  const seasonPending = useSeasonPendingMessage();
   const chartRef = useRef<ChartJS<"bar" | "line"> | null>(null);
   const totals = useWigoPlayerTotals(playerId, seasonId);
   const logs = useWigoGameLog(playerId, seasonId);
@@ -304,7 +306,7 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId, seasonId }) => {
       )}
 
       {!isLoading && !error && playerId && !seasonId && (
-        <div style={placeholderStyle}>Loading season info...</div>
+        <div style={placeholderStyle}>{seasonPending}</div>
       )}
 
       {/* "No Data" Placeholder */}

@@ -9,6 +9,7 @@ import { formatSeasonRange } from "./tableUtils";
 import WigoHelp from "./WigoHelp";
 import { WIGO_ERROR_MESSAGES } from "./errorMessages";
 import styles from "./PerGameStatsTable.module.scss";
+import { useSeasonPendingMessage } from "hooks/useCurrentSeason";
 
 type NumericSkaterTotalsKeys = {
   [K in keyof SkaterTotalsData]: SkaterTotalsData[K] extends number | null
@@ -61,6 +62,7 @@ const PerGameStatsTable: React.FC<PerGameStatsTableProps> = ({
     error
   } = useWigoPlayerTotals(playerId, seasonId);
 
+  const seasonPending = useSeasonPendingMessage();
   const statRows = useMemo(() => {
     if (!totalsData?.games_played || totalsData.games_played <= 0) {
       return [];
@@ -147,7 +149,7 @@ const PerGameStatsTable: React.FC<PerGameStatsTableProps> = ({
     ];
   }, [totalsData]);
 
-  const status = !playerId ? "Select a player" : !seasonId ? "Loading season info..." : isLoading ? "Loading Stats..." : errorMessage;
+  const status = !playerId ? "Select a player" : !seasonId ? seasonPending : isLoading ? "Loading Stats..." : errorMessage;
   const visibleRows = statRows.length ? statRows : ["GP", "G", "A", "PTS", "SOG", "S%", "PPP", "HIT", "BLK", "PIM"].map(stat => ({ stat, perGame: "-", per84: "-" }));
   return (
     <div className={`${styles.perGameTableContainer} ${desktop ? styles.desktopSummary : ""}`}>

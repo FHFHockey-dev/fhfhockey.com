@@ -7,6 +7,7 @@ import Fetch from "lib/cors-fetch";
 
 import { getTeamAbbreviationById } from "lib/teamsInfo";
 import styles from "./OpponentGameLog.module.scss";
+import { useSeasonPendingMessage } from "hooks/useCurrentSeason";
 
 // Define the structure of a game object from the API (same as before)
 interface ApiGame {
@@ -42,6 +43,8 @@ interface OpponentGamelogProps {
   teamId: number | null | undefined;
   seasonId?: number | null;
   highlightColor?: string;
+  /** A player is selected; without a team that means no current team (A-05). */
+  hasPlayer?: boolean;
 }
 
 // Helper to get user's local timezone
@@ -58,8 +61,10 @@ const getLocalTimeZone = (): string => {
 const OpponentGamelog: React.FC<OpponentGamelogProps> = ({
   teamId,
   seasonId,
-  highlightColor = "#07aae2"
+  highlightColor = "#07aae2",
+  hasPlayer = false
 }) => {
+  const seasonPending = useSeasonPendingMessage();
   const [localTimeZone, setLocalTimeZone] = useState<string>("UTC"); // Initialize with UTC
   const teamAbbreviation = useMemo(
     () => (teamId ? getTeamAbbreviationById(teamId) : null),
@@ -195,14 +200,14 @@ const OpponentGamelog: React.FC<OpponentGamelogProps> = ({
   if (!teamId) {
     return (
       <div className={`${styles.opponentLogContainer} ${styles.emptyPrompt}`}>
-        Select a player
+        {hasPlayer ? "No current team, so no team schedule." : "Select a player"}
       </div>
     );
   }
 
   if (!seasonId) {
     return (
-      <div className={styles.opponentLogContainer}>Loading season info...</div>
+      <div className={styles.opponentLogContainer}>{seasonPending}</div>
     );
   }
 

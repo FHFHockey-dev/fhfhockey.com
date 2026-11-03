@@ -250,6 +250,7 @@ export function WigoOverviewSection({
           teamId={teamIdForLog}
           seasonId={currentSeasonId}
           highlightColor={teamColors.primaryColor || "#07aae2"}
+          hasPlayer={!!selectedPlayer}
         />
       </div>
       <div className={styles.ratingsContainer} data-coverage="C07">
@@ -272,6 +273,7 @@ export function WigoOverviewSection({
         teamId={teamIdForLog}
         teamAbbreviation={teamAbbreviation}
         seasonId={currentSeasonId}
+        hasPlayer={!!selectedPlayer}
       /></div>
     </>
   );

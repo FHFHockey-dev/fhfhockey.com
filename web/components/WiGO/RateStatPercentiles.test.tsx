@@ -9,7 +9,8 @@ const mockFetchPercentileCohortForPlayer = vi.hoisted(() => vi.fn());
 const mockUseCurrentSeason = vi.hoisted(() => vi.fn());
 
 vi.mock("hooks/useCurrentSeason", () => ({
-  default: mockUseCurrentSeason
+  default: mockUseCurrentSeason,
+  useSeasonPendingMessage: () => "Loading season info..."
 }));
 
 vi.mock("utils/fetchWigoPercentiles", () => ({

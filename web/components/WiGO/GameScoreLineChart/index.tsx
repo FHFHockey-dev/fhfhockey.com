@@ -12,6 +12,7 @@ import { ChartOptions, ChartData, ChartDataset } from "chart.js";
 import { WIGO_COLORS, addAlpha, CHART_COLORS } from "styles/wigoColors";
 import { WIGO_ERROR_MESSAGES } from "../errorMessages";
 import useWigoGameLog from "hooks/useWigoGameLog";
+import { useSeasonPendingMessage } from "hooks/useCurrentSeason";
 
 // --- Define props and dummy labels ---
 type GameScoreLineChartProps = {
@@ -82,6 +83,7 @@ export default function GameScoreLineChart({
 
   // Share the canonical game calendar with PPG. The score RPC omits games with
   // incomplete inputs; those games must still occupy their rolling-window slot.
+  const seasonPending = useSeasonPendingMessage();
   const logs = useWigoGameLog(playerId, seasonId);
   const scoresByDate = new Map<string, (number | null)[]>();
   for (const score of scoreData ?? []) {
@@ -294,7 +296,7 @@ export default function GameScoreLineChart({
         !error &&
         typeof playerId === "number" &&
         typeof seasonId !== "number" && (
-          <div style={placeholderStyle}>Loading season info...</div>
+          <div style={placeholderStyle}>{seasonPending}</div>
         )}
       {/* Show No Data message if player/season selected but data is empty */}
       {!isLoading &&

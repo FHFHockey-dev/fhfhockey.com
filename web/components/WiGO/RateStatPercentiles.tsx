@@ -22,7 +22,7 @@ import {
 import { formatOrdinal } from "utils/formattingUtils";
 import { WIGO_ERROR_MESSAGES } from "./errorMessages";
 import { formatSeasonRange } from "./tableUtils";
-import useCurrentSeason from "hooks/useCurrentSeason";
+import useCurrentSeason, { useSeasonPendingMessage } from "hooks/useCurrentSeason";
 
 ChartJS.register(
   CategoryScale,
@@ -210,6 +210,7 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
 }) => {
   const [selectedStrength, setSelectedStrength] =
     useState<PercentileStrength>("as");
+  const seasonPending = useSeasonPendingMessage();
   const queryClient = useQueryClient();
   const currentSeason = useCurrentSeason();
   const {
@@ -420,7 +421,7 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
         </div>
       )}
       {!isLoading && !error && !seasonId && playerId && (
-        <div className={styles.loadingMessage}>Loading season info...</div>
+        <div className={styles.loadingMessage}>{seasonPending}</div>
       )}
       {!isLoading && !error && !playerId && (
         <div className={styles.noPlayerMessage}>Select a player</div>

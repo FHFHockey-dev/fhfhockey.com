@@ -87,4 +87,12 @@ describe("opponent team schedule", () => {
     </QueryClientProvider>);
     await screen.findByText("Failed to load game log.");
   });
+
+  it("says the player has no current team instead of asking for a player", () => {
+    render(<QueryClientProvider client={new QueryClient()}>
+      <OpponentGamelog teamId={null} seasonId={20262027} hasPlayer />
+    </QueryClientProvider>);
+    expect(screen.getByText("No current team, so no team schedule.")).toBeTruthy();
+    expect(screen.queryByText("Select a player")).toBeNull();
+  });
 });

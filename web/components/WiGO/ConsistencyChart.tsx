@@ -11,6 +11,7 @@ import {
 } from "styles/wigoColors";
 import WigoSectionCard from "./WigoSectionCard";
 import { WIGO_ERROR_MESSAGES } from "./errorMessages";
+import { useSeasonPendingMessage } from "hooks/useCurrentSeason";
 
 ChartJS.register(ArcElement, Tooltip, Legend, Title);
 
@@ -44,6 +45,7 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({
       value == null || !Number.isInteger(value) || value < 0
     )
   );
+  const seasonPending = useSeasonPendingMessage();
   const { processedData, chartData } = useMemo(() => {
     if (!gameLogs || gameLogs.length === 0 || incompleteData) {
       return {
@@ -189,7 +191,7 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({
             className={styles.chartLoadingPlaceholder}
             style={{ width: "100%" }}
           >
-            Loading season info...
+            {seasonPending}
           </div>
         )}
         {!isLoading &&

@@ -12,6 +12,7 @@ import TimeframeComparison from "./TimeframeComparison";
 import WigoHelp from "./WigoHelp";
 import GameLogChart from "./StatsTableRowChart";
 import styles from "styles/wigoCharts.module.scss";
+import { useSeasonPendingMessage } from "hooks/useCurrentSeason";
 
 export const COMPARISON_PERIODS = [
   "STD",
@@ -60,6 +61,15 @@ export default function WigoComparisonMatrix({
   onCompare
 }: Props) {
   const [selectedMetric, setSelectedMetric] = useState<WigoStatLabel>("SOG/60");
+  const seasonPending = useSeasonPendingMessage();
+  // The aggregate query waits for the season and is not "loading" while it
+  // waits, so say why the table is blank rather than show bare dashes (A-04).
+  const matrixStatus = aggDataError
+    || (!playerId ? ""
+      : !currentSeasonId ? seasonPending
+      : isLoadingAggData ? "Loading stats…"
+      : data.length === 0 ? "No WiGO comparison rows for this player yet."
+      : "");
   const gameLog = useQuery({
     queryKey: [
       "wigoSelectedStatLog",
@@ -107,10 +117,7 @@ export default function WigoComparisonMatrix({
             </p>
             <p>L5/L10/L20 use up to the latest 5/10/20 played games, including prior seasons. GP shows the actual sample. Aggregate date bounds and metric coverage are unavailable; a numeric value does not establish complete source coverage.</p>
           </WigoHelp>
-          <span role="status">
-            {aggDataError ||
-              (isLoadingAggData ? "Loading stats…" : "")}
-          </span>
+          <span role="status">{matrixStatus}</span>
         </div>
         <div className={styles.matrixHalves}>
           {MATRIX_HALVES.map((half) => (

@@ -50,4 +50,18 @@ describe("TeamPerformanceDrivers coverage label", () => {
     expect(screen.queryByText(/games to/)).toBeNull();
     expect(screen.queryByText(/Partial coverage/)).toBeNull();
   });
+
+  it("says the player has no current team, and names a failed season lookup", async () => {
+    const view = (client: QueryClient, props: Partial<React.ComponentProps<typeof TeamPerformanceDrivers>>) =>
+      <QueryClientProvider client={client}>
+        <TeamPerformanceDrivers teamId={null} teamAbbreviation={null} seasonId={20262027} hasPlayer {...props} />
+      </QueryClientProvider>;
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const { rerender } = render(view(client, {}));
+    expect(screen.getByText("No current team, so no team drivers.")).toBeTruthy();
+    expect(screen.queryByText("Select a player")).toBeNull();
+    await client.prefetchQuery({ queryKey: ["currentSeason"], queryFn: () => Promise.reject(new Error("season down")) });
+    rerender(view(client, { teamId: 23, teamAbbreviation: "VAN", seasonId: null }));
+    expect(screen.getByText("Unable to load season info right now.")).toBeTruthy();
+  });
 });

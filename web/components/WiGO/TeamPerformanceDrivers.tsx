@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import PanelStatus from "components/common/PanelStatus";
 import WigoSectionCard from "components/WiGO/WigoSectionCard";
 import WigoHelp from "./WigoHelp";
+import { useSeasonPendingMessage } from "hooks/useCurrentSeason";
 import { fetchTeamDriverSnapshots } from "./fetchTeamDriverSnapshots";
 import styles from "./TeamPerformanceDrivers.module.scss";
 import {
@@ -19,13 +20,17 @@ interface TeamPerformanceDriversProps {
   teamId: number | null;
   teamAbbreviation: string | null;
   seasonId: number | null;
+  /** A player is selected; without a team that means no current team (A-05). */
+  hasPlayer?: boolean;
 }
 
 const TeamPerformanceDrivers: React.FC<TeamPerformanceDriversProps> = ({
   teamId,
   teamAbbreviation,
   seasonId,
+  hasPlayer = false,
 }) => {
+  const seasonPending = useSeasonPendingMessage();
   const enabled = !!teamId && !!teamAbbreviation && !!seasonId;
   const snapshots = useQuery({
     queryKey: ["wigoTeamDriverSnapshots", seasonId],
@@ -47,7 +52,11 @@ const TeamPerformanceDrivers: React.FC<TeamPerformanceDriversProps> = ({
       {state === "idle" ? (
         <PanelStatus
           state="empty"
-          message="Select a player"
+          message={!hasPlayer
+            ? "Select a player"
+            : !teamId || !teamAbbreviation
+              ? "No current team, so no team drivers."
+              : seasonPending}
           className={styles.emptyPrompt}
         />
       ) : state === "loading" ? (

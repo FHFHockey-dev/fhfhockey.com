@@ -10,6 +10,7 @@ import {
 import styles from "./PlayerRatingsDisplay.module.scss";
 import { WIGO_ERROR_MESSAGES } from "./errorMessages";
 import { formatSeasonRange } from "./tableUtils";
+import { useSeasonPendingMessage } from "hooks/useCurrentSeason";
 
 interface PlayerRatingsProps {
   playerId: number | null | undefined;
@@ -62,6 +63,7 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
   seasonId,
   minGp
 }) => {
+  const seasonPending = useSeasonPendingMessage();
   const { data: rawStats, isLoading, error } = useQuery({
     queryKey: ["wigoRatingCohort", seasonId],
     queryFn: () => fetchRawStatsForAllStrengths(seasonId!),
@@ -106,7 +108,7 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
     if (!playerId)
       return <div className={styles.noPlayer}>Select a player</div>;
     if (!seasonId)
-      return <div className={styles.loading}>Loading season info...</div>;
+      return <div className={styles.loading}>{seasonPending}</div>;
     if (!ratings)
       return (
         <div className={styles.noData}>
