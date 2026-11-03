@@ -437,6 +437,58 @@ describe("/api/v1/db/calculate-wigo-stats route", () => {
     expect(career.std_ozs_pct).toBeCloseTo(25 / 60);
   });
 
+  it("uses WGO ice time for ATOI and WGO-count rates, and stores null when NST is absent", async () => {
+    getCurrentSeasonMock.mockResolvedValue({ seasonId: 20262027, lastSeasonId: 20252026 });
+    const game = recentGame("2026-10-23");
+    installRecentFrameMock([game], [game]);
+    const base = fromMock.getMockImplementation()!;
+    const wgoSeason = (season: string, gp: number, toiPerGame: number | null) => ({
+      player_id: 8476453, season, games_played: gp, toi_per_game: toiPerGame,
+      goals: 1, assists: 1, points: 2, total_primary_assists: 1, shots: 3,
+      pp_goals: 0, pp_assists: 0, pp_points: 0, pp_toi: 60 * gp, pp_toi_pct_per_game: 0.2,
+      hits: 1, blocked_shots: 1, penalty_minutes: 0
+    });
+    const sources: Record<string, any[]> = {
+      // Bystedt's shape this season: 2 GP at 12:51, no NST seasonal row.
+      // Two past seasons: one with WGO ice time and NST, one with NST only.
+      wgo_skater_stats_totals: [
+        wgoSeason("20262027", 2, 771), wgoSeason("20252026", 10, 600), wgoSeason("20242025", 10, null)
+      ],
+      nst_seasonal_individual_counts: [
+        { season: 20242025, strength: "all", gp: 10, toi: 100, ixg: 4, icf: 40, ihdcf: 5, iscfs: 10 }
+      ],
+      nst_seasonal_on_ice_counts: []
+    };
+    const written: Record<string, any[]> = {};
+    fromMock.mockImplementation((table: string) => {
+      const query = base(table);
+      const eqPlayer = query.eq;
+      let perPlayer = false;
+      query.eq = (key: string, value: any) => { if (key === "player_id") perPlayer = true; return eqPlayer(key, value); };
+      const listThen = query.then;
+      if (sources[table]) query.then = (resolve: (value: unknown) => unknown) => perPlayer
+        ? Promise.resolve({ data: sources[table], error: null }).then(resolve)
+        : listThen(resolve);
+      query.upsert = (rows: any[]) => { written[table] = rows; return Promise.resolve({ error: null }); };
+      return query;
+    });
+    expect((await runRecentFixture()).statusCode).toBe(200);
+    const career = written.wigo_career[0];
+    expect(career.std_atoi).toBeCloseTo(12.85);
+    expect(career.std_pts_per_60).toBeCloseTo(2 / (25.7 / 60));
+    for (const metric of ["ixg", "icf", "ixg_per_60", "icf_per_60", "ihdcf_per_60", "iscf_per_60", "ipp", "oi_sh_pct", "ozs_pct"]) {
+      expect(career[`std_${metric}`]).toBeNull();
+    }
+    expect(career.ly_atoi).toBe(10);
+    expect(career.ly_ixg).toBeNull();
+    // CA: 100 WGO minutes plus 100 NST minutes over 20 games; ixG averages
+    // only the season that has NST, rather than counting the other as 0.
+    expect(career.ca_atoi).toBe(10);
+    expect(career.ca_ixg).toBe(4);
+    expect(career.ca_ixg_per_60).toBeCloseTo(2.4);
+    expect(career.ca_pts_per_60).toBeCloseTo(4 / (200 / 60));
+  });
+
   it("lists only skaters with a totals row this season or last, so high ids are reached", async () => {
     getCurrentSeasonMock.mockResolvedValue({ seasonId: 20262027, lastSeasonId: 20252026 });
     const ids = [8478402, 8484144, 8486067];
