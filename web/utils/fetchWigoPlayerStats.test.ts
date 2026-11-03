@@ -423,7 +423,7 @@ describe("fetchPaginatedData timeouts", () => {
       };
       return builder;
     });
-    await expect(fetchPaginatedData("nst_percentile_es_offense", "player_id", { column: "season", value: 20262027 }))
+    await expect(fetchPaginatedData("nst_percentile_as_offense", "player_id", { column: "season", value: 20262027 }))
       .rejects.toMatchObject({ code: "57014" });
     expect(attempts).toBe(1);
   });
