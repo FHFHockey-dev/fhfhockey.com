@@ -65,10 +65,12 @@ export const computeStatSummaries = (
 
 /**
  * Determines if each game is characteristic based on weighted squared z-scores.
+ * Each game is scored against the games before it only (gameLogs must be in
+ * date order); a whole-sample baseline would let later games leak in. The
+ * first game has no baseline and is reported as "Insufficient History".
  */
 export const computeCharacteristicResults = (
-  gameLogs: PlayerGameLog[],
-  statSummaries: PerGameStatSummaries
+  gameLogs: PlayerGameLog[]
 ): {
   results: CharacteristicResult[];
   T1: number;
@@ -87,7 +89,11 @@ export const computeCharacteristicResults = (
   const T1 = expectedValue;
   const T2 = expectedValue + 2 * stdDev;
 
-  const results = gameLogs.map((game) => {
+  const results = gameLogs.map((game, index) => {
+    // Copies keep computeStatSummaries from overwriting the capped ratio
+    // already stored on earlier games.
+    const priorGames = gameLogs.slice(0, index).map((prior) => ({ ...prior }));
+    const statSummaries = computeStatSummaries(priorGames);
     const statResults: Record<StatField, string> = {} as Record<
       StatField,
       string
@@ -143,7 +149,10 @@ export const computeCharacteristicResults = (
 
     // Determine overall characteristic status
     let overallStatus = "";
-    if (sumOfWeightedSquaredZScores <= T1) {
+    if (priorGames.length === 0) {
+      sumOfWeightedSquaredZScores = Number.NaN;
+      overallStatus = "Insufficient History";
+    } else if (sumOfWeightedSquaredZScores <= T1) {
       overallStatus = "Highly Characteristic";
     } else if (sumOfWeightedSquaredZScores <= T2) {
       overallStatus = "Moderately Characteristic";

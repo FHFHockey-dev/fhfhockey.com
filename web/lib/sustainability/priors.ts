@@ -15,7 +15,9 @@ import {
 export type StatCode = "shp" | "oishp" | "ipp" | "ppshp"; // ppshp = power play shooting %
 export type PosGroup = "F" | "D";
 
-const FORWARDS = new Set(["C", "LW", "RW"]);
+/** WGO records forwards as C/L/R; LW/RW are accepted for sources that spell them out. */
+export const FORWARD_POSITION_CODES = ["C", "L", "R", "LW", "RW"] as const;
+const FORWARDS = new Set<string>(FORWARD_POSITION_CODES);
 const EPS = 1e-9;
 export const ROOKIE_FALLBACK_MIN_TRIALS: Record<StatCode, number> = {
   shp: 100,
@@ -42,6 +44,12 @@ export function getPriorSeasonIds(seasonIdNow: number): number[] {
   );
 }
 
+/** The three completed seasons before `seasonIdNow`, most recent first: a player's own
+ * pre-season history, which never contains the current-season windows it is compared with. */
+export function getHistorySeasonIds(seasonIdNow: number): number[] {
+  return getPriorSeasonIds(seasonIdNow).map((seasonId) => seasonId - 10_001);
+}
+
 // Helper: aggregate league means (pooled) for a season + position group
 export async function fetchLeagueMeans(
   season_id: number,
@@ -49,7 +57,7 @@ export async function fetchLeagueMeans(
   options: { client?: any; pageSize?: number } = {},
 ): Promise<Record<StatCode, number>> {
   const client = options.client ?? supabase;
-  const posCodes = posGroup === "F" ? ["C", "LW", "RW"] : ["D"];
+  const posCodes = posGroup === "F" ? [...FORWARD_POSITION_CODES] : ["D"];
   const data = await fetchAllSupabasePages<any>(
     ({ from, to }) =>
       client
@@ -61,7 +69,7 @@ export async function fetchLeagueMeans(
             "shots",
             "nst_oi_gf",
             "nst_oi_sf",
-            "points_5v5",
+            "points",
             "pp_goals",
             "pp_shots",
             "season_id",
@@ -79,7 +87,7 @@ export async function fetchLeagueMeans(
     sh_sum = 0,
     gf_sum = 0,
     sf_sum = 0,
-    p5_sum = 0,
+    pts_sum = 0,
     ppg_sum = 0,
     pps_sum = 0;
   for (const r of data ?? []) {
@@ -87,14 +95,14 @@ export async function fetchLeagueMeans(
     sh_sum += Number(r.shots) || 0;
     gf_sum += Number(r.nst_oi_gf) || 0;
     sf_sum += Number(r.nst_oi_sf) || 0;
-    p5_sum += Number(r.points_5v5) || 0;
+    pts_sum += Number(r.points) || 0;
     ppg_sum += Number(r.pp_goals) || 0;
     pps_sum += Number(r.pp_shots) || 0;
   }
 
   const shp = sh_sum > 0 ? g_sum / sh_sum : 0;
   const oishp = sf_sum > 0 ? gf_sum / sf_sum : 0;
-  const ipp = gf_sum > 0 ? p5_sum / gf_sum : 0;
+  const ipp = gf_sum > 0 ? pts_sum / gf_sum : 0;
   const ppshp = pps_sum > 0 ? ppg_sum / pps_sum : 0;
   return { shp, oishp, ipp, ppshp } as Record<StatCode, number>;
 }
@@ -136,7 +144,8 @@ export async function fetchPlayerSeasonCounts(
   }>
 > {
   const client = options.client ?? supabase;
-  const seasonIds = getPriorSeasonIds(seasonIdNow);
+  // Current-season players, measured on their completed seasons only (no current-season games).
+  const seasonIds = getHistorySeasonIds(seasonIdNow);
   const identityRows = await fetchAllSupabasePages<any>(
     ({ from, to }) =>
       client
@@ -177,7 +186,7 @@ export async function fetchPlayerSeasonCounts(
             "shots",
             "nst_oi_gf",
             "nst_oi_sf",
-            "points_5v5",
+            "points",
             "pp_goals",
             "pp_shots",
           ].join(","),
@@ -240,15 +249,16 @@ export async function fetchPlayerSeasonCounts(
     const shots = Number(row.shots) || 0;
     const gf = Number(row.nst_oi_gf) || 0;
     const sf = Number(row.nst_oi_sf) || 0;
-    const p5 = Number(row.points_5v5) || 0;
+    const points = Number(row.points) || 0;
     const ppg = Number((row as any).pp_goals) || 0;
     const pps = Number((row as any).pp_shots) || 0;
     rec.shp.s += goals;
     rec.shp.n += shots;
     rec.oishp.s += gf;
     rec.oishp.n += sf;
-    rec.ipp.s += p5;
-    rec.ipp.n += gf; // denominator = on-ice goals for
+    // All-situations points over all-situations on-ice goals for (both NST/WGO "as" scope).
+    rec.ipp.s += points;
+    rec.ipp.n += gf;
     rec.ppshp.s += ppg;
     rec.ppshp.n += pps;
   }

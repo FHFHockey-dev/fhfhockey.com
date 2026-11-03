@@ -113,6 +113,11 @@ export const fetchLegacySkoGameLogs = async (
           pp_points: wgoGame.pp_points ?? 0,
           toi_per_game: wgoGame.toi_per_game ?? 0,
           shooting_percentage: wgoGame.shooting_percentage ?? 0,
+          // sko_skater_stats has no goals-against columns; reading them there
+          // always gave 0 and dropped the GameScore GA term.
+          es_goals_against: wgoGame.es_goals_against ?? 0,
+          pp_goals_against: wgoGame.pp_goals_against ?? 0,
+          sh_goals_against: wgoGame.sh_goals_against ?? 0,
 
           // Fields from sko_skater_stats
           ipp: skoGame?.ipp ?? null,
@@ -122,9 +127,6 @@ export const fetchLegacySkoGameLogs = async (
           es_goals_for: skoGame?.es_goals_for ?? 0,
           pp_goals_for: skoGame?.pp_goals_for ?? 0,
           sh_goals_for: skoGame?.sh_goals_for ?? 0,
-          es_goals_against: skoGame?.es_goals_against ?? 0,
-          pp_goals_against: skoGame?.pp_goals_against ?? 0,
-          sh_goals_against: skoGame?.sh_goals_against ?? 0,
 
           // Calculated fields (initialized, to be calculated later)
           gameScore: undefined,

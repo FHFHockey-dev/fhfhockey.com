@@ -47,7 +47,7 @@ const MAX_GAMES_PER_PLAYER = 60;
 const PLAYER_DISCOVERY_PAGE_SIZE = 1000;
 const UPSERT_BATCH_SIZE = 200;
 const MODEL_NAME = "baseline-moving-average";
-const MODEL_VERSION = "v0.2";
+const MODEL_VERSION = "v0.3";
 const MAX_SOURCE_LAG_DAYS = 3;
 
 function parseString(value: unknown): string | undefined {
@@ -302,7 +302,7 @@ function emptyDiagnostics(
   };
 }
 
-function buildPredictionRecord(
+export function buildPredictionRecord(
   playerId: number,
   asOfDate: string,
   horizon: number,
@@ -313,10 +313,11 @@ function buildPredictionRecord(
   const last10 = pointsSeries.slice(-10);
   const last20 = pointsSeries.slice(-20);
 
+  // Each window already holds every game a short series has, so a 0 average is
+  // a real scoreless stretch and must not fall back to a longer window (v0.2 did).
   const avg5 = mean(last5);
   const avg10 = mean(last10);
-  const avg20 = mean(last20);
-  const recentBlend = 0.6 * (avg10 || avg20) + 0.4 * (avg5 || avg10 || avg20);
+  const recentBlend = 0.6 * avg10 + 0.4 * avg5;
   const predPoints = recentBlend * horizon;
 
   const stdevWindow =

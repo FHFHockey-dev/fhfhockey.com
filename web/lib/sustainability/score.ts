@@ -2,7 +2,7 @@
 
 import supabase from "lib/supabase/server";
 import { fetchAllSupabasePages } from "lib/supabase/pagination";
-import { PosGroup } from "lib/sustainability/priors";
+import { FORWARD_POSITION_CODES, PosGroup } from "lib/sustainability/priors";
 import { WindowCode } from "lib/sustainability/windows";
 import { upsertRowsInChunks } from "./persist";
 import {
@@ -15,8 +15,6 @@ import {
   clampSustainabilityZScore
 } from "./guardrails";
 import { buildSustainabilityExtremeMetadata } from "./observability";
-
-const EPS = 1e-9;
 
 // Skill stabilizer codes
 export type SkillCode = "ixg60" | "icf60" | "hdcf60";
@@ -36,7 +34,7 @@ export async function fetchSkillLeagueRef(
           "player_id, position_code, nst_ixg_per_60, nst_icf_per_60, nst_hdcf_per_60, season_id"
         )
         .eq("season_id", season_id)
-        .in("position_code", pg === "F" ? ["C", "LW", "RW"] : ["D"])
+        .in("position_code", pg === "F" ? [...FORWARD_POSITION_CODES] : ["D"])
         .order("player_id", { ascending: true })
         .range(from, to),
     { pageSize: options.pageSize }
@@ -46,10 +44,14 @@ export async function fetchSkillLeagueRef(
     icf60: [] as number[],
     hdcf60: [] as number[]
   };
+  // A player without an NST rate is left out of the reference, not counted as zero.
+  const push = (arr: number[], value: unknown) => {
+    if (value != null && Number.isFinite(Number(value))) arr.push(Number(value));
+  };
   for (const r of data ?? []) {
-    vals.ixg60.push(Number(r.nst_ixg_per_60) || 0);
-    vals.icf60.push(Number(r.nst_icf_per_60) || 0);
-    vals.hdcf60.push(Number(r.nst_hdcf_per_60) || 0);
+    push(vals.ixg60, r.nst_ixg_per_60);
+    push(vals.icf60, r.nst_icf_per_60);
+    push(vals.hdcf60, r.nst_hdcf_per_60);
   }
   function muSig(arr: number[]) {
     if (!arr.length) return { mu: 0, sig: 1 };
@@ -72,9 +74,9 @@ export async function fetchSkillWindowRates(
   nGames: number,
   options: { client?: any } = {}
 ): Promise<{
-  ixg60: number;
-  icf60: number;
-  hdcf60: number;
+  ixg60: number | null;
+  icf60: number | null;
+  hdcf60: number | null;
   sourceDate: string | null;
   appearanceCount: number;
 }> {
@@ -91,17 +93,20 @@ export async function fetchSkillWindowRates(
     icf = 0,
     hdcf = 0,
     toi = 0;
+  // Only games with NST ice time count; with none, the rates are unavailable rather than zero.
   for (const r of data ?? []) {
+    const rowToi = Number(r.nst_toi);
+    if (r.nst_toi == null || !Number.isFinite(rowToi) || rowToi <= 0) continue;
     ixg += Number(r.nst_ixg) || 0;
     icf += Number(r.nst_icf) || 0;
     hdcf += Number(r.nst_hdcf) || 0;
-    toi += Number(r.nst_toi) || 0;
+    toi += rowToi;
   }
-  const denom = Math.max(toi, EPS);
+  const per60 = (count: number) => (toi > 0 ? (3600 * count) / toi : null);
   return {
-    ixg60: (3600 * ixg) / denom,
-    icf60: (3600 * icf) / denom,
-    hdcf60: (3600 * hdcf) / denom,
+    ixg60: per60(ixg),
+    icf60: per60(icf),
+    hdcf60: per60(hdcf),
     sourceDate:
       data?.[0]?.date == null ? null : String(data[0].date).slice(0, 10),
     appearanceCount: data?.length ?? 0
@@ -146,7 +151,8 @@ export function buildScoreSourceCutoffs(args: {
   };
 }
 
-function zClip(x: number, mu: number, sig: number, clip = 3) {
+function zClip(x: number | null, mu: number, sig: number, clip = 3): number | null {
+  if (x === null) return null;
   const z = (x - mu) / Math.max(sig, 1e-6);
   return Math.max(-clip, Math.min(clip, z));
 }
@@ -219,9 +225,14 @@ export async function buildScoreForPlayerWindow(
     weights.luck.oishp * (zmap["oishp"] ?? 0) +
     weights.luck.ipp * (zmap["ipp"] ?? 0) +
     weights.luck.ppshp * (zmap["ppshp"] ?? 0) +
-    weights.skill.ixg60 * z_ixg +
-    weights.skill.icf60 * z_icf +
-    weights.skill.hdcf60 * z_hdc;
+    weights.skill.ixg60 * (z_ixg ?? 0) +
+    weights.skill.icf60 * (z_icf ?? 0) +
+    weights.skill.hdcf60 * (z_hdc ?? 0);
+  const missingSkillStats = (
+    [["ixg60", z_ixg], ["icf60", z_icf], ["hdcf60", z_hdc]] as const
+  )
+    .filter(([, z]) => z === null)
+    .map(([stat]) => stat);
   const modelVersion =
     provenance?.modelVersion ?? SUSTAINABILITY_SCORE_MODEL_VERSION;
   const configHash =
@@ -236,11 +247,13 @@ export async function buildScoreForPlayerWindow(
     }),
     warnings: [
       ...missingLuckStats.map((stat) => `missing_window_z_${stat}`),
+      ...missingSkillStats.map((stat) => `missing_skill_window_${stat}`),
       ...(rates.sourceDate ? [] : ["missing_player_stats_source_date"]),
       ...guardrailWarnings
     ],
     fallbackFlags: {
-      missing_luck_stats: missingLuckStats.length > 0
+      missing_luck_stats: missingLuckStats.length > 0,
+      missing_skill_stats: missingSkillStats.length > 0
     },
     ...buildSustainabilityExtremeMetadata(rawZMap),
     z_shp: zmap["shp"] ?? 0,

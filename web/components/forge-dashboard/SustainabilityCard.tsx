@@ -89,15 +89,15 @@ const getReasonText = (
   const driver = getPrimaryDriver(row);
   if (!driver) {
     return direction === "sustainable"
-      ? "Low luck pressure keeps this rise closer to skill-backed than spike-backed."
-      : "The hot streak looks boosted even without one obvious reason.";
+      ? "Luck metrics are not running above normal for the position."
+      : "Luck metrics run above normal for the position without one dominant driver.";
   }
 
   if (direction === "sustainable") {
-    return `${driver.key} is not unusually inflated, so the rise looks steadier.`;
+    return `${driver.key} is the largest luck signal, and it is not running above normal.`;
   }
 
-  return `${driver.key} is the biggest reason this hot streak may cool off.`;
+  return `${driver.key} is the largest above-normal luck signal.`;
 };
 
 const toneClassForPressure = (pressure: number) => {

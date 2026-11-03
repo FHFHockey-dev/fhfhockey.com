@@ -10,9 +10,9 @@ describe("canonical Sustainability configuration", () => {
   it("matches the migration seed and preserves an order-independent hash", () => {
     const seed = canonicalSustainabilityConfigSeed()
     expect(seed).toMatchObject({
-      configRevision: 2,
-      modelVersion: "sustainability_score_v2",
-      configHash: "fnv1a_91691726",
+      configRevision: 3,
+      modelVersion: "sustainability_score_v3",
+      configHash: "fnv1a_e11d5c91",
       sdMode: "fixed",
       freshnessDays: 45,
     })

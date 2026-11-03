@@ -92,9 +92,9 @@ describe("/api/v1/sustainability/rebuild-priors", () => {
       sample: []
     });
     loadActiveSustainabilityConfigMock.mockResolvedValue({
-      configRevision: 2,
-      modelVersion: "sustainability_score_v2",
-      configHash: "fnv1a_91691726",
+      configRevision: 3,
+      modelVersion: "sustainability_score_v3",
+      configHash: "fnv1a_e11d5c91",
       weights: {
         luck: { shp: -1.2, oishp: -1, ipp: -0.8, ppshp: -0.4 },
         skill: { ixg60: 0.9, icf60: 0.7, hdcf60: 0.6 }
@@ -141,8 +141,8 @@ describe("/api/v1/sustainability/rebuild-priors", () => {
         offset: 250,
         limit: 125,
         provenance: {
-          modelVersion: "sustainability_score_v2",
-          configHash: "fnv1a_91691726"
+          modelVersion: "sustainability_score_v3",
+          configHash: "fnv1a_e11d5c91"
         }
       }
     );
@@ -150,9 +150,9 @@ describe("/api/v1/sustainability/rebuild-priors", () => {
       success: true,
       offset: 250,
       limit: 125,
-      config_revision: 2,
-      model_version: "sustainability_score_v2",
-      config_hash: "fnv1a_91691726",
+      config_revision: 3,
+      model_version: "sustainability_score_v3",
+      config_hash: "fnv1a_e11d5c91",
       inserted_player_rows: 500,
       write_chunks: 2
     });

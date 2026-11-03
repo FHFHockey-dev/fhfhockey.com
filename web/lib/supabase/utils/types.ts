@@ -150,6 +150,8 @@ export interface LegacySkoCombinedGameLog extends PlayerGameLog {
   es_goals_for: number;
   pp_goals_for: number;
   sh_goals_for: number;
+
+  // Goals against come from wgo_skater_stats (sko_skater_stats has none)
   es_goals_against: number;
   pp_goals_against: number;
   sh_goals_against: number;
