@@ -63,6 +63,76 @@ describe("fetchSkillLeagueRef", () => {
   });
 });
 
+describe("forwards and missing skill data", () => {
+  it("includes WGO wingers in the forward reference and leaves players without an NST rate out of it", async () => {
+    const query = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      in: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      range: vi.fn().mockResolvedValueOnce({
+        data: [
+          { player_id: 1, nst_ixg_per_60: 1, nst_icf_per_60: 2, nst_hdcf_per_60: 3 },
+          { player_id: 2, nst_ixg_per_60: null, nst_icf_per_60: null, nst_hdcf_per_60: null },
+          { player_id: 3, nst_ixg_per_60: 3, nst_icf_per_60: 4, nst_hdcf_per_60: 5 },
+        ],
+        error: null,
+      }),
+    };
+    const client = { from: vi.fn().mockReturnValue(query) };
+
+    const result = await fetchSkillLeagueRef(20252026, "F", { client, pageSize: 5 });
+
+    expect(query.in).toHaveBeenCalledWith("position_code", ["C", "L", "R", "LW", "RW"]);
+    // Without the skip, the null row would count as 0 and pull the mean to 4/3.
+    expect(result.ixg60).toEqual({ mu: 2, sig: Math.SQRT2 });
+  });
+
+  it("returns unavailable skill rates, not zero, when no game in the window has NST ice time", async () => {
+    const query = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      lte: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockResolvedValue({
+        data: [
+          { date: "2026-11-01", nst_ixg: null, nst_icf: null, nst_hdcf: null, nst_toi: null },
+          { date: "2026-10-30", nst_ixg: null, nst_icf: null, nst_hdcf: null, nst_toi: 0 },
+        ],
+        error: null,
+      }),
+    };
+    const client = { from: vi.fn().mockReturnValue(query) };
+
+    const rates = await fetchSkillWindowRates(1, "2026-11-02", 10, { client });
+
+    expect(rates).toMatchObject({ ixg60: null, icf60: null, hdcf60: null, appearanceCount: 2 });
+  });
+
+  it("computes per-60 rates only over games with NST ice time", async () => {
+    const query = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      lte: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockResolvedValue({
+        data: [
+          { date: "2026-11-01", nst_ixg: 0.5, nst_icf: 3, nst_hdcf: 1, nst_toi: 900 },
+          { date: "2026-10-30", nst_ixg: null, nst_icf: null, nst_hdcf: null, nst_toi: null },
+        ],
+        error: null,
+      }),
+    };
+    const client = { from: vi.fn().mockReturnValue(query) };
+
+    const rates = await fetchSkillWindowRates(1, "2026-11-02", 10, { client });
+
+    expect(rates.ixg60).toBeCloseTo(2);
+    expect(rates.icf60).toBeCloseTo(12);
+    expect(rates.hdcf60).toBeCloseTo(4);
+  });
+});
+
 describe("score source provenance", () => {
   it("reports the observed player-stat cutoff separately from the request", async () => {
     const limit = vi.fn().mockResolvedValue({

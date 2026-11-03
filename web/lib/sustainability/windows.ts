@@ -61,7 +61,7 @@ export async function fetchPriors(
 // We derive per-stat (successes, trials):
 //  - shp: goals / shots
 //  - oishp: nst_oi_gf / nst_oi_sf
-//  - ipp: points_5v5 / nst_oi_gf
+//  - ipp: points / nst_oi_gf (both all situations; only games with an NST on-ice row)
 //  - ppshp: pp_goals / pp_shots
 export async function fetchWindowCountsAll(
   player_id: number,
@@ -84,7 +84,7 @@ export async function fetchWindowCountsAll(
         "shots",
         "nst_oi_gf",
         "nst_oi_sf",
-        "points_5v5",
+        "points",
         "pp_goals",
         "pp_shots",
       ].join(","),
@@ -98,7 +98,8 @@ export async function fetchWindowCountsAll(
     sh = 0,
     gf = 0,
     sf = 0,
-    p5 = 0,
+    pts = 0,
+    ippGf = 0,
     ppg = 0,
     pps = 0;
   for (const r of data ?? []) {
@@ -106,14 +107,18 @@ export async function fetchWindowCountsAll(
     sh += Number(r.shots) || 0;
     gf += Number(r.nst_oi_gf) || 0;
     sf += Number(r.nst_oi_sf) || 0;
-    p5 += Number(r.points_5v5) || 0;
+    // A game without an NST on-ice row adds no IPP trial, so its points are not counted either.
+    if (r.nst_oi_gf != null && Number.isFinite(Number(r.nst_oi_gf))) {
+      pts += Number(r.points) || 0;
+      ippGf += Number(r.nst_oi_gf);
+    }
     ppg += Number((r as any).pp_goals) || 0;
     pps += Number((r as any).pp_shots) || 0;
   }
   return {
     shp: { s: g, n: sh },
     oishp: { s: gf, n: sf },
-    ipp: { s: p5, n: gf },
+    ipp: { s: pts, n: ippGf },
     ppshp: { s: ppg, n: pps },
   } as Record<StatCode, { s: number; n: number }>;
 }
