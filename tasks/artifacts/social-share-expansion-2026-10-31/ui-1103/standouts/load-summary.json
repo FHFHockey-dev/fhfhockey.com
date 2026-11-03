@@ -1,0 +1,137 @@
+[
+ {
+  "name": "real-forwards-blank",
+  "query": {
+   "view": "forwards"
+  },
+  "kind": "real",
+  "ms": 3458,
+  "requests": 15,
+  "errors": [],
+  "rows": {
+   "/rest/v1/games": 235,
+   "/rest/v1/wgo_skater_stats": 2135,
+   "/rest/v1/yahoo_players": 1608,
+   "/rest/v1/yahoo_nhl_player_map_read": 2373,
+   "/rest/v1/nst_gamelog_as_counts": 1900,
+   "/rest/v1/nst_gamelog_as_counts_oi": 1839,
+   "/rest/v1/lineCombinations": 8,
+   "/rest/v1/powerPlayCombinations": 92
+  },
+  "state": "ready",
+  "reasons": [],
+  "slate": "2026-11-02",
+  "fallback": null,
+  "skaters": 144,
+  "goalies": 0,
+  "coverage": {
+   "observed": 8,
+   "expected": 8,
+   "missing": 0,
+   "unit": "team games"
+  },
+  "sample": "Slate of 2026-11-02, 4 games. Each % compares that game with the skater's own season per game before it, that slate and later games excluded, with 3+ prior GP; xG% is pooled. A zero or missing baseline prints \u2014. PP units are ranked from shift data; PP \u2014 means no rows, or NHL.com PP time contradicts the unit"
+ },
+ {
+  "name": "real-goalies-blank",
+  "query": {
+   "view": "goalies"
+  },
+  "kind": "real",
+  "ms": 923,
+  "requests": 9,
+  "errors": [],
+  "rows": {
+   "/rest/v1/games": 235,
+   "/rest/v1/wgo_goalie_stats": 82,
+   "/rest/v1/yahoo_players": 1608,
+   "/rest/v1/yahoo_nhl_player_map_read": 2373,
+   "/rest/v1/nst_gamelog_goalie_all_counts": 66
+  },
+  "state": "ready",
+  "reasons": [],
+  "slate": "2026-11-02",
+  "fallback": null,
+  "skaters": 0,
+  "goalies": 8,
+  "coverage": {
+   "observed": 8,
+   "expected": 8,
+   "missing": 0,
+   "unit": "team games"
+  },
+  "sample": "Slate of 2026-11-02, 4 games. STD is each goalie's appearances before that slate, that slate and later games excluded, with 3+ prior GP: per appearance, with SV% and GAA pooled. SV% changes in points of save percentage, GAA and GSAx in goals, the rest in %. GSAx is NST xG against less NST goals against; it prints \u2014 until NST has that goalie's row"
+ },
+ {
+  "name": "real-all-nov2",
+  "query": {
+   "view": "all",
+   "slate": "2026-11-02"
+  },
+  "kind": "real",
+  "ms": 1737,
+  "requests": 15,
+  "errors": [],
+  "rows": {
+   "/rest/v1/games": 235,
+   "/rest/v1/wgo_skater_stats": 2135,
+   "/rest/v1/yahoo_players": 1608,
+   "/rest/v1/yahoo_nhl_player_map_read": 2373,
+   "/rest/v1/nst_gamelog_as_counts": 1900,
+   "/rest/v1/nst_gamelog_as_counts_oi": 1839,
+   "/rest/v1/lineCombinations": 8,
+   "/rest/v1/powerPlayCombinations": 92
+  },
+  "state": "ready",
+  "reasons": [],
+  "slate": "2026-11-02",
+  "fallback": null,
+  "skaters": 144,
+  "goalies": 0,
+  "coverage": {
+   "observed": 8,
+   "expected": 8,
+   "missing": 0,
+   "unit": "team games"
+  },
+  "sample": "Slate of 2026-11-02, 4 games. Each % compares that game with the skater's own season per game before it, that slate and later games excluded, with 3+ prior GP; xG% is pooled. A zero or missing baseline prints \u2014. PP units are ranked from shift data; PP \u2014 means no rows, or NHL.com PP time contradicts the unit. Skaters on this card are chosen by hand"
+ },
+ {
+  "name": "fixture-all-late-team-feed",
+  "query": {
+   "view": "all"
+  },
+  "kind": "fixture",
+  "state": "ready",
+  "reasons": [],
+  "slate": "2026-11-02",
+  "fallback": null,
+  "skaters": 16,
+  "goalies": 0,
+  "coverage": {
+   "observed": 4,
+   "expected": 4,
+   "missing": 0,
+   "unit": "team games"
+  }
+ },
+ {
+  "name": "fixture-goalies-late-team-feed",
+  "query": {
+   "view": "goalies"
+  },
+  "kind": "fixture",
+  "state": "ready",
+  "reasons": [],
+  "slate": "2026-11-02",
+  "fallback": null,
+  "skaters": 0,
+  "goalies": 4,
+  "coverage": {
+   "observed": 4,
+   "expected": 4,
+   "missing": 0,
+   "unit": "team games"
+  }
+ }
+]
