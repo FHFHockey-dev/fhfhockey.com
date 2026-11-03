@@ -14,19 +14,19 @@ const dateOf = (index: number) => new Date(Date.UTC(2026, 9, 1 + index)).toISOSt
 function games(playerId: number, count: number, toi: (index: number) => number | null, pp: (index: number) => number | null = () => 120, over: Partial<SkaterAppearance> = {}): SkaterAppearance[] {
   return Array.from({ length: count }, (_, index) => ({ playerId, name: `Skater ${playerId}`, position: "C", group: "F" as const, gameId: 1000 + index, date: dateOf(index), team: "NJD", opponent: "NYR", home: true, goals: 0, assists: 0, points: 0, shots: 2, hits: 1, blocks: 1, ppPoints: 0, toiSeconds: toi(index), ppToiSeconds: pp(index), penaltyMinutes: 0, ...over }));
 }
-const base = (over: Partial<RoleWatchInput> & { appearances: SkaterAppearance[] }): RoleWatchInput => ({ evidence: { rolling: [], pp: [] }, completedTeamGames: [], scheduledGameIds: [], through: "2026-10-30", settings, ...over });
+const base = (over: Partial<RoleWatchInput> & { appearances: SkaterAppearance[] }): RoleWatchInput => ({ evidence: { rolling: [], pp: [] }, completedTeamGames: [], scheduledGames: [], through: "2026-10-30", settings, ...over });
 
 describe("Role Watch coverage", () => {
   const home = games(1, 12, index => index >= 7 ? 1200 : 1000), appearances = [...home, ...games(2, 12, () => 1000, () => 120, { team: "NYR" })];
-  const completedTeamGames = home.flatMap(game => [{ gameId: game.gameId, team: "NJD" }, { gameId: game.gameId, team: "NYR" }]), scheduledGameIds = home.map(game => game.gameId);
+  const completedTeamGames = home.flatMap(game => [{ gameId: game.gameId, team: "NJD" }, { gameId: game.gameId, team: "NYR" }]), scheduledGames = home.map(game => ({ gameId: game.gameId, date: game.date }));
   it("is ready when both teams have skater rows in every completed game", () => {
-    const result = buildRoleWatch(base({ appearances, completedTeamGames, scheduledGameIds }));
+    const result = buildRoleWatch(base({ appearances, completedTeamGames, scheduledGames }));
     expect(result.state).toBe("ready");
     expect(result.reasons ?? []).toEqual([]);
     expect(result.evidence.coverage).toEqual({ observed: 24, expected: 24, missing: 0, unit: "team games" });
   });
   it("is partial and says so when one team's skater rows are missing from a game, and keeps the board", () => {
-    const result = buildRoleWatch(base({ appearances: appearances.filter(game => !(game.team === "NYR" && game.gameId === 1011)), completedTeamGames, scheduledGameIds }));
+    const result = buildRoleWatch(base({ appearances: appearances.filter(game => !(game.team === "NYR" && game.gameId === 1005)), completedTeamGames, scheduledGames }));
     expect(result.state).toBe("partial");
     expect(result.reasons).toEqual(["1 of 24 completed team games have no skater rows."]);
     expect(result.evidence.coverage).toEqual({ observed: 23, expected: 24, missing: 1, unit: "team games" });
@@ -34,11 +34,23 @@ describe("Role Watch coverage", () => {
     expect(result.data!.risers[0]).toMatchObject({ playerId: 1 });
   });
   it("names a scheduled game with no reported result", () => {
-    const result = buildRoleWatch(base({ appearances, completedTeamGames, scheduledGameIds: [...scheduledGameIds, 9999] }));
+    const result = buildRoleWatch(base({ appearances, completedTeamGames, scheduledGames: [...scheduledGames, { gameId: 9999, date: dateOf(3) }] }));
     expect(result.state).toBe("partial");
     expect(result.reasons).toEqual(["2 of 26 scheduled team games have no reported result."]);
     expect(result.evidence.coverage).toEqual({ observed: 24, expected: 26, missing: 2, unit: "team games" });
     expect(result.evidence.sources.find(source => source.tables.includes("wgo_team_stats"))!.state).toBe("partial");
+  });
+  it("ends at the last complete night when only the newest is late, and an older gap still blocks", () => {
+    const lateNight = completedTeamGames.filter(game => game.gameId !== 1011);
+    const late = buildRoleWatch(base({ appearances, completedTeamGames: lateNight, scheduledGames }));
+    expect(late.state).toBe("ready");
+    expect(late.pageNotes).toEqual(["Oct 12 is not fully reported yet, so this card ends Oct 11."]);
+    expect(late.data!.through).toBe(dateOf(10));
+    expect(late.data!.risers[0]).toMatchObject({ playerId: 1, recentGames: 5, baselineGames: 6, toi: { recentSeconds: 1160, baselineSeconds: 1000 } });
+    expect(late.evidence.coverage).toEqual({ observed: 22, expected: 22, missing: 0, unit: "team games" });
+    const older = buildRoleWatch(base({ appearances, completedTeamGames: lateNight, scheduledGames: [...scheduledGames, { gameId: 9999, date: dateOf(3) }] }));
+    expect(older.state).toBe("partial");
+    expect(older.reasons).toEqual(["2 of 24 scheduled team games have no reported result."]);
   });
 });
 

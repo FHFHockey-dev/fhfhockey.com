@@ -1,5 +1,6 @@
 import { currentSeason } from "lib/socialShare/schedule";
 import { defineShareModule, type SharePostLoadResult, type SharePostSource } from "./contract";
+import { completeThrough, completeThroughNote, type NightCoverage } from "./shared/completeThrough";
 import { competitionRanks, editionDate, lastN, per60, previousN, versusSeason } from "./shared/definitions";
 import { appearancesByPlayer, type SkaterAppearance } from "./shared/skaterAppearances";
 
@@ -175,12 +176,31 @@ export function joinNst<Row extends { player_id: number; date_scraped: string }>
 }
 
 /** Scheduled team games observed only once they have a result and skater rows for that team. Anything short is partial. */
-export function gameCoverage(input: { appearances: readonly SkaterAppearance[]; completedTeamGames: readonly { gameId: number; team: string }[]; scheduledGameIds: readonly number[] }) {
-  const scheduled = new Set(input.scheduledGameIds), withSkaters = new Set(input.appearances.map(game => `${game.gameId}:${game.team}`));
+export type ScheduledGame = { gameId: number; date: string };
+type GameCoverageInput = { appearances: readonly SkaterAppearance[]; completedTeamGames: readonly { gameId: number; team: string }[]; scheduledGames: readonly ScheduledGame[] };
+export function gameCoverage(input: GameCoverageInput) {
+  const scheduled = new Set(input.scheduledGames.map(game => game.gameId)), withSkaters = new Set(input.appearances.map(game => `${game.gameId}:${game.team}`));
   const completed = input.completedTeamGames.filter(game => scheduled.has(game.gameId));
   const noSkaterRows = completed.filter(game => !withSkaters.has(`${game.gameId}:${game.team}`)).length;
   const expected = scheduled.size * 2, noResult = Math.max(0, expected - completed.length), observed = completed.length - noSkaterRows, missing = Math.max(0, expected - observed);
   return { observed, expected, missing, noResult, noSkaterRows, reasons: [...(noResult ? [`${noResult} of ${expected} scheduled team games have no reported result.`] : []), ...(noSkaterRows ? [`${noSkaterRows} of ${completed.length} completed team games have no skater rows.`] : [])] };
+}
+/**
+ * TJ's late-feed rule (2026-11-03): when only the newest nights are short of results or skater rows, the card ends at the
+ * last complete night and says so in a page note. An older gap stays in the window, so it still makes the post partial.
+ */
+export function endAtCompleteNight<T extends GameCoverageInput & { through: string }>(input: T): { input: T; pageNotes: string[] } {
+  const withSkaters = new Set(input.appearances.map(game => `${game.gameId}:${game.team}`)), observed = new Map<number, number>(), nights = new Map<string, NightCoverage>();
+  for (const game of input.completedTeamGames) if (withSkaters.has(`${game.gameId}:${game.team}`)) observed.set(game.gameId, (observed.get(game.gameId) ?? 0) + 1);
+  for (const game of input.scheduledGames) {
+    const night = nights.get(game.date) ?? { date: game.date, expected: 0, observed: 0 };
+    nights.set(game.date, { ...night, expected: night.expected + 2, observed: night.observed + Math.min(2, observed.get(game.gameId) ?? 0) });
+  }
+  const result = completeThrough([...nights.values()], input.through), note = completeThroughNote(result);
+  // No complete night at all leaves the window whole, and its reasons keep the post partial.
+  if (!result.through || !note) return { input, pageNotes: [] };
+  const through = result.through, scheduledGames = input.scheduledGames.filter(game => game.date <= through), kept = new Set(scheduledGames.map(game => game.gameId));
+  return { input: { ...input, through, scheduledGames, appearances: input.appearances.filter(game => game.date <= through), completedTeamGames: input.completedTeamGames.filter(game => kept.has(game.gameId)) }, pageNotes: [note] };
 }
 export const newestDate = (dates: Iterable<string>) => { let newest: string | null = null; for (const date of dates) if (!newest || date > newest) newest = date; return newest; };
 
@@ -204,9 +224,11 @@ export function changeWindows<T extends { gameId: number }>(games: readonly T[],
 
 export type WhatChangedInput = {
   appearances: readonly SkaterAppearance[]; nstCounts: readonly NstCountRow[] | null; nstOnIce: readonly NstOnIceRow[] | null;
-  completedTeamGames: readonly { gameId: number; team: string }[]; scheduledGameIds: readonly number[]; through: string; settings: WhatChangedSettings;
+  completedTeamGames: readonly { gameId: number; team: string }[]; scheduledGames: readonly ScheduledGame[]; through: string; settings: WhatChangedSettings;
 };
-export function buildWhatChanged(input: WhatChangedInput): SharePostLoadResult<WhatChangedData> {
+export function buildWhatChanged(full: WhatChangedInput): SharePostLoadResult<WhatChangedData> {
+  const { input: trimmed, pageNotes } = endAtCompleteNight(full), through = trimmed.through;
+  const input = { ...trimmed, nstCounts: trimmed.nstCounts?.filter(row => row.date_scraped <= through) ?? null, nstOnIce: trimmed.nstOnIce?.filter(row => row.date_scraped <= through) ?? null };
   const { settings, appearances } = input, requested = windowSize(settings.window), metric = metricOf(settings.metric);
   const counts = joinNst(appearances, input.nstCounts), onIce = joinNst(appearances, input.nstOnIce);
   const { playerId: focusId, candidates } = matchPlayer(appearances, settings.player);
@@ -232,7 +254,7 @@ export function buildWhatChanged(input: WhatChangedInput): SharePostLoadResult<W
   const focusPlayer = focusId === null ? null : players.find(player => player.who.playerId === focusId) ?? null;
   const focus: WhatChangedFocus | null = focusPlayer && { ...focusPlayer.who, eligible: focusPlayer.who.seasonGames >= settings.minGp, changes: WHAT_CHANGED_METRICS.map(entry => metricChange(entry, settings.basis, focusPlayer.recent, focusPlayer.baseline, settings.minCoverage)) };
 
-  const games = gameCoverage({ appearances, completedTeamGames: input.completedTeamGames, scheduledGameIds: input.scheduledGameIds });
+  const games = gameCoverage(input);
   const eligibleIds = new Set(eligible.map(player => player.who.playerId));
   const wgoGaps = appearances.filter(game => eligibleIds.has(game.playerId) && [game.goals, game.assists, game.points, game.shots, game.ppPoints, game.toiSeconds, game.ppToiSeconds].some(value => value === null)).length;
   const reasons = [...games.reasons, ...(wgoGaps ? [`${wgoGaps} eligible skater appearances have a missing NHL.com stat.`] : [])];
@@ -256,7 +278,7 @@ export function buildWhatChanged(input: WhatChangedInput): SharePostLoadResult<W
   ];
   const rowTeams = [...risers, ...fallers, ...(focus ? [focus] : [])].flatMap(row => row.team ? [row.team] : []);
   return {
-    state: reasons.length ? "partial" : "ready", reasons,
+    state: reasons.length ? "partial" : "ready", reasons, ...(pageNotes.length ? { pageNotes } : {}),
     data: {
       through: input.through, window: settings.window, comparison: settings.comparison, requested, metricLabel: metric.label, unit: unitOf(metric, settings.basis), strength: metric.strength,
       risers, fallers, cohort: { eligible: eligible.length, ranked: admitted.length, shortSample, unadmitted, unchanged: admitted.length - up.length - down.length, listedLimit: WHAT_CHANGED_BOARD_ROWS, unlisted },

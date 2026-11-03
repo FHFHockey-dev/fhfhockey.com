@@ -11,4 +11,5 @@
 - **Role Watch boards:** same layout, new Board field picks TOI or PP TOI. Sparkline gaps can't occur on listed rows today, since windows must be complete. No browser run.
 - **Larger sparklines:** 280×84 with value and date axes, tiles stacked beside the chart, boards at 5 rows. No browser run.
 - **F5:** `gameCoverage` checks skater rows per team game; one aggregate read shows 226 of 226 games with both sides, so no false partial today. `slateCoverage` in Standouts still has the defect.
+- **SS-1103-A:** late newest nights end the card at the last complete night with a page note; older gaps stay partial. My tests pass; whole-project tsc fails only in files I did not touch.
 - **Blockers:** none.

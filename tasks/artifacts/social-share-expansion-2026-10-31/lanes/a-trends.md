@@ -108,3 +108,9 @@ None. No frozen file needed a change. No fan-out sessions were started.
 - **Fix:** `gameCoverage` now checks skater rows by game id plus team, so one team's missing rows give the reason "N of M completed team games have no skater rows." and the post goes partial with its board kept. Evidence coverage observes a team game only once it has a result and skater rows, so the counts agree with the reason (recheck finding 6). The team stats source stays ready unless a result is missing. Role Watch uses the same helper.
 - **Real read R-F5:** one aggregate, SELECT only, 0 sample rows, `wgo_skater_stats` and `wgo_team_stats`, season 20262027. All 32 `team_abbrev` values match `teamsInfo`, 0 null, and all 226 games have two team rows and both teams' skater rows. The fix adds no false partial today.
 - **Not changed:** `slateCoverage` in `lastNightsStandouts.ts` has the same defect, outside this ticket.
+
+## SS-1103-A: late newest night
+
+- **Rule:** both builders call `endAtCompleteNight`, built on `completeThrough`. Each night's expected count is two team games per scheduled game; it observes a team game once it has a result and skater rows. When only the newest nights fall short, the window ends at the last complete night: appearances, team games, schedule and NST rows past it are dropped, the post stays ready, and `pageNotes` carries the note. An older gap remains in the window and keeps the post partial. With no complete night, the window stays whole and partial.
+- **Input:** `scheduledGameIds` became `scheduledGames` with dates; the schedule read now selects `id,date`. Role Watch's loader picks role-context games from the trimmed window.
+- **Real read:** none new; one `information_schema` lookup confirmed `games.date` is a `date`.
