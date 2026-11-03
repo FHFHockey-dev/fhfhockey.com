@@ -404,6 +404,25 @@ describe("fetchPlayerAggregatedStats sources", () => {
   });
 });
 
+describe("fetchPaginatedData timeouts", () => {
+  it("makes one attempt on a statement timeout instead of three", async () => {
+    let attempts = 0;
+    fromMock.mockImplementation(() => {
+      const builder: any = {
+        select: () => builder, eq: () => builder, order: () => builder, range: () => builder,
+        then: (resolve: (value: unknown) => unknown) => {
+          attempts += 1;
+          return Promise.resolve({ data: null, error: { code: "57014", message: "statement timeout" } }).then(resolve);
+        }
+      };
+      return builder;
+    });
+    await expect(fetchPaginatedData("nst_percentile_es_offense", "player_id", { column: "season", value: 20262027 }))
+      .rejects.toMatchObject({ code: "57014" });
+    expect(attempts).toBe(1);
+  });
+});
+
 describe("fetchPaginatedData query contract", () => {
   it("uses stable player ordering through every page", async () => {
     const rows = Array.from({ length: 501 }, (_, index) => ({

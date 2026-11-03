@@ -386,4 +386,12 @@ describe("PlayerRatingsDisplay", () => {
     rerender(view(2, 20, 20262027));
     await waitFor(() => expect(mockFetchRawStatsForAllStrengths).toHaveBeenCalledTimes(2));
   });
+
+  it("does not retry the cohort query itself, so a timeout costs one read per page", async () => {
+    mockFetchRawStatsForAllStrengths.mockRejectedValue({ code: "57014", message: "canceling statement due to statement timeout" });
+    const client = new QueryClient();
+    render(<QueryClientProvider client={client}><PlayerRatingsDisplay playerId={1} seasonId={20262027} minGp={10} /></QueryClientProvider>);
+    await screen.findByText("Unable to calculate ratings right now.");
+    expect(mockFetchRawStatsForAllStrengths).toHaveBeenCalledTimes(1);
+  });
 });

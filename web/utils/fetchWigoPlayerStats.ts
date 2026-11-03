@@ -716,6 +716,13 @@ export async function fetchPlayerAggregatedStats(
   };
 }
 
+// A statement timeout (57014) is the slow view itself, not a blip: retrying it
+// only repeats the same 3 s wait (D-01: 48 failed reads per page view).
+export const isStatementTimeout = (error: unknown): boolean =>
+  !!error &&
+  typeof error === "object" &&
+  (error as { code?: unknown }).code === "57014";
+
 export async function fetchPaginatedData<T>(
   tableName: keyof Database["public"]["Tables"],
   selectColumns: string,
@@ -737,7 +744,8 @@ export async function fetchPaginatedData<T>(
       pageSize: 500,
       retry: {
         attempts: 3,
-        delayMs: (attempt) => Math.pow(2, attempt) * 1000
+        delayMs: (attempt) => Math.pow(2, attempt) * 1000,
+        shouldRetry: (error) => !isStatementTimeout(error)
       }
     }
   );

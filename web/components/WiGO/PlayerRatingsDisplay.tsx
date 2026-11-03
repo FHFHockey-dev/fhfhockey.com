@@ -68,7 +68,10 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
     queryKey: ["wigoRatingCohort", seasonId],
     queryFn: () => fetchRawStatsForAllStrengths(seasonId!),
     enabled: !!playerId && !!seasonId,
-    staleTime: 60_000
+    staleTime: 60_000,
+    // The pager already retries blips per page and gives a timeout one
+    // attempt; a query retry would repeat all eight reads (S1, D-01).
+    retry: false
   });
   const ratings = useMemo(
     () => playerId && rawStats
