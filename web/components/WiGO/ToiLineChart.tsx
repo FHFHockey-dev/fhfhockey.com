@@ -215,6 +215,8 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
             maxRotation: 0,
             minRotation: 0,
             autoSkip: true,
+            // Keep date labels apart once the wider 95% layout fits five.
+            autoSkipPadding: 8,
             maxTicksLimit: 6
           },
           grid: { display: false },

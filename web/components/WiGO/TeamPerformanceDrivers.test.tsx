@@ -37,16 +37,16 @@ describe("TeamPerformanceDrivers coverage label", () => {
   it("labels partial coverage with N of M games and says rates use covered games only", async () => {
     build.mockReturnValue(result({ fiveOnFiveCoverage: { coveredGames: 74, expectedGames: 78 }, specialTeamsCoverage: { coveredGames: 77, expectedGames: 78 } }));
     mount();
-    expect(await screen.findByText(/5v5: 74 of 78 games to 2026-04-04/)).toBeTruthy();
-    expect(screen.getByText(/Special teams: 77 of 78 games to 2026-04-03/)).toBeTruthy();
-    expect(screen.getByText("Partial coverage: rates use covered games only.")).toBeTruthy();
+    expect(await screen.findByText(/5v5: 74 of 78 games to Apr 4/)).toBeTruthy();
+    expect(screen.getByText(/Special teams: 77 of 78 games to Apr 3/)).toBeTruthy();
+    expect(screen.getByText("Partial: covered games only")).toBeTruthy();
   });
 
   it("keeps the complete display with no coverage label at 100%", async () => {
     build.mockReturnValue(result({}));
     mount();
-    expect(await screen.findByText(/Regular season · 5v5: 2026-04-04/)).toBeTruthy();
-    expect(screen.getByText(/Special teams through: 2026-04-03/)).toBeTruthy();
+    expect(await screen.findByText(/Regular season · 5v5: Apr 4/)).toBeTruthy();
+    expect(screen.getByText(/Special teams through: Apr 3/)).toBeTruthy();
     expect(screen.queryByText(/games to/)).toBeNull();
     expect(screen.queryByText(/Partial coverage/)).toBeNull();
   });

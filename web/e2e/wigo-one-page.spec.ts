@@ -44,10 +44,12 @@ async function measure(page: Page) {
           return bounds.left < -1 || bounds.top < -1 || bounds.right > innerWidth + 1 || bounds.bottom > innerHeight + 1;
         })
         .map((element) => element.dataset.coverage),
+      // The band's wrapper is a deliberate side-scroller below 1280 (flow layout), so its width is exempt.
       overflowing: Array.from(root.querySelectorAll<HTMLElement>("*"))
         .filter((element) =>
           visible(element) && !ignored(element) && getComputedStyle(element).display !== "inline" &&
-          (element.scrollWidth > element.clientWidth + 1 || element.scrollHeight > element.clientHeight + 1))
+          ((element.scrollWidth > element.clientWidth + 1 && getComputedStyle(element).overflowX !== "auto") ||
+            element.scrollHeight > element.clientHeight + 1))
         .map((element) => `${element.closest<HTMLElement>("[data-coverage]")?.dataset.coverage} ${element.className} "${element.innerText.slice(0, 40)}"`),
       clippedCells: Array.from(root.querySelectorAll("th, td"))
         .filter((cell) => {
@@ -74,7 +76,7 @@ async function measure(page: Page) {
   });
 }
 
-for (const [width, height] of [[1280, 800], [1440, 900], [1920, 1080]]) {
+for (const [width, height] of [[1280, 800], [1440, 900], [1440, 790], [1920, 1080]]) {
   test(`every WiGO component fits one ${width}×${height} screen`, async ({ page }) => {
     test.setTimeout(120_000);
     await page.setViewportSize({ width, height });
@@ -92,27 +94,28 @@ for (const [width, height] of [[1280, 800], [1440, 900], [1920, 1080]]) {
   });
 }
 
-test("the comparison matrix shows all 36 metrics in two transposed halves and drives the game log", async ({ page }) => {
+test("the comparison band shows 36 metric columns by period with a DIFF row, and drives the game log", async ({ page }) => {
   test.setTimeout(120_000);
   await page.setViewportSize({ width: 1280, height: 800 });
   await open(page);
   const matrix = page.locator('[data-coverage="C12"]');
-  const tables = matrix.locator("table");
-  await expect(tables).toHaveCount(2);
-  const labels: string[] = [];
-  for (const table of await tables.all()) {
-    await expect(table.locator("thead th")).toHaveCount(9);
-    await expect(table.locator("tbody tr")).toHaveCount(18);
-    labels.push(...(await table.getByRole("rowheader").allTextContents()));
-  }
-  expect([...labels].sort()).toEqual([...WIGO_STAT_ORDER].sort());
-  expect(await tables.first().locator("thead th").allTextContents()).toEqual(["Totals", "STDL", "LY", "CAR", "3YA", "L5", "L10", "L20", "DIFF"]);
-  await expect(matrix.getByRole("button", { name: "Show GP game log", exact: true })).toHaveCount(0);
+  const table = matrix.locator("table");
+  await expect(table).toHaveCount(1);
+  // TJ's band (2026-11-01): a group row, one header per metric, periods as rows, DIFF last.
+  expect(await table.locator('thead th[scope="colgroup"]').allTextContents()).toEqual(["Totals", "Per 60", "On-ice"]);
+  await expect(table.locator('thead th[scope="col"]')).toHaveCount(1 + WIGO_STAT_ORDER.length);
+  expect(await table.getByRole("rowheader").allTextContents()).toEqual(["STDL", "LY", "CAR", "3YA", "L5", "L10", "L20", "DIFF"]);
+  const names = await table.locator("thead button").evaluateAll(buttons => buttons.map(button => button.getAttribute("aria-label")));
+  expect(["GP", ...names].sort()).toEqual([...WIGO_STAT_ORDER].sort());
+  // Per 60 drops "/60" in the header text; PTS1 sits under Per 60.
+  await expect(table.getByRole("button", { name: "PTS1/60", exact: true })).toHaveText("PTS1");
+  // DIFF has no decimal.
+  for (const text of await table.locator("tbody tr").last().locator("td").allTextContents()) expect(text).not.toMatch(/\.\d%/);
 
   const selected = page.locator("#wigo-selected-stat");
   const before = await selected.boundingBox();
   for (const metric of ["Goals", "ATOI", "S%", "PPP/60"]) {
-    await matrix.getByRole("button", { name: `Show ${metric} game log`, exact: true }).click();
+    await table.getByRole("button", { name: metric, exact: true }).click();
     await expect(selected.locator("h3")).toContainText(metric);
     await expect(selected).not.toContainText("Failed to load");
     expect(await selected.boundingBox()).toEqual(before);
@@ -120,8 +123,13 @@ test("the comparison matrix shows all 36 metrics in two transposed halves and dr
   await expect(page.getByRole("button", { name: /^Toggle .* reference$/ })).toHaveCount(PERIODS.length);
 
   await page.getByLabel("Select left timeframe for comparison").selectOption("L10");
-  await expect(tables.first().locator('thead th[data-left]')).toHaveText("L10L");
-  await expect(tables.first().locator("tbody tr").first().locator("td[data-left]")).toHaveCount(1);
+  await expect(table.locator("tbody tr[data-left] th")).toHaveText("L10L");
+  // The worst case, +999% in every DIFF cell, still fits without side-scrolling at 1280.
+  await page.evaluate(() => {
+    for (const cell of document.querySelectorAll('[data-coverage="C12"] tbody tr:last-child td')) cell.textContent = "+999%";
+  });
+  const band = matrix.locator('[class*="matrixBand"]');
+  expect(await band.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
   expect((await measure(page)).overflowing).toEqual([]);
 });
 
@@ -151,7 +159,7 @@ test("a team-driver card at 95% coverage shows its N-of-M label and still fits 1
   const drivers = page.locator('[data-coverage="C08 C09 C10 C11"]');
   await expect(drivers).toContainText("5v5: 78 of 82 games to");
   await expect(drivers).toContainText("Special teams: 78 of 82 games to");
-  await expect(drivers).toContainText("Partial coverage: rates use covered games only.");
+  await expect(drivers).toContainText("Partial: covered games only");
   const result = await measure(page);
   expect(result.document).toEqual([1280, 800]);
   expect(result.outside).toEqual([]);
@@ -178,7 +186,7 @@ test("every help note opens fully inside the 1280×800 screen and Escape closes 
   }
 });
 
-for (const [width, height] of [[1024, 768], [1280, 700]]) {
+for (const [width, height] of [[1024, 768], [1279, 800], [1280, 700]]) {
   test(`${width}×${height} flows every panel without clipping instead of fitting one screen`, async ({ page }) => {
     test.setTimeout(120_000);
     await page.setViewportSize({ width, height });

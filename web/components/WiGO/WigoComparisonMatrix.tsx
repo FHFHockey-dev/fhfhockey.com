@@ -36,20 +36,46 @@ export const COMPARISON_PERIODS = [
   "L20"
 ] as const;
 
-// Transposed into two 18-metric halves so 36 metrics × 8 columns stay legible on one screen at 1280px.
-const MATRIX_SPLIT = WIGO_STAT_ORDER.indexOf("G/60");
-export const MATRIX_HALVES = [
+// One band (TJ, 2026-11-01): periods are rows, the 36 metrics are columns in
+// three groups. Per 60 headers drop "/60"; the full label stays the button's
+// accessible name, so Totals "G" and Per 60 "G" stay distinct.
+export const MATRIX_GROUPS: Array<{
+  title: string;
+  metrics: Array<{ label: WigoStatLabel; short: string }>;
+}> = [
   {
-    title: "Totals and shares",
-    short: "Totals",
-    labels: [...WIGO_STAT_ORDER.slice(0, MATRIX_SPLIT), "IPP"] as WigoStatLabel[]
+    title: "Totals",
+    metrics: ([
+      ["GP", "GP"], ["ATOI", "ATOI"], ["Points", "PTS"], ["Goals", "G"],
+      ["Assists", "A"], ["SOG", "SOG"], ["S%", "S%"], ["PPP", "PPP"],
+      ["PPG", "PPG"], ["PPA", "PPA"], ["PPTOI", "PPTOI"], ["PP%", "PP%"],
+      ["HIT", "HIT"], ["BLK", "BLK"], ["PIM", "PIM"], ["ixG", "ixG"],
+      ["iCF", "iCF"]
+    ] as const).map(([label, short]) => ({ label, short }))
   },
   {
-    title: "Per 60 and on-ice",
-    short: "Rates",
-    labels: WIGO_STAT_ORDER.slice(MATRIX_SPLIT).filter((label) => label !== "IPP") as WigoStatLabel[]
+    title: "Per 60",
+    metrics: ([
+      "G/60", "A/60", "PTS/60", "SOG/60", "ixG/60", "iCF/60", "PPP/60",
+      "PPG/60", "PPA/60", "iHDCF/60", "iSCF/60", "HIT/60", "BLK/60",
+      "PIM/60", "PTS1/60"
+    ] as const).map((label) => ({ label, short: label.replace("/60", "") }))
+  },
+  {
+    title: "On-ice",
+    metrics: (["IPP", "oiSH%", "OZS%", "PTS1%"] as const).map((label) => ({
+      label,
+      short: label
+    }))
   }
 ];
+const MATRIX_METRICS = MATRIX_GROUPS.flatMap((group) => group.metrics);
+const GROUP_STARTS = new Set(
+  MATRIX_GROUPS.slice(1).map((_, index) =>
+    MATRIX_GROUPS.slice(0, index + 1).reduce((sum, group) => sum + group.metrics.length, 0)
+  )
+);
+const isGroupStart = (index: number) => GROUP_STARTS.has(index);
 
 interface Props {
   data: TableAggregateData[];
@@ -132,88 +158,114 @@ export default function WigoComparisonMatrix({
           </WigoHelp>
           <span role="status">{matrixStatus}</span>
         </div>
-        <div className={styles.matrixHalves}>
-          {MATRIX_HALVES.map((half) => (
-            <table key={half.title} className={styles.comparisonMatrix}>
-              <caption className={styles.visuallyHidden}>
-                {half.title}: seven timeframes and relative difference for{" "}
-                {half.labels.length} metrics. L and R mark the selected
-                comparison periods.
-              </caption>
-              <colgroup>
-                <col className={styles.matrixLabelColumn} />
-                {COMPARISON_PERIODS.map((period) => (
-                  <col key={period} />
+        <div className={styles.matrixBand}>
+          <table className={styles.comparisonMatrix}>
+            <caption className={styles.visuallyHidden}>
+              {MATRIX_METRICS.length} metrics by period. L and R mark the
+              selected comparison periods; the last row is the difference
+              between them.
+            </caption>
+            <colgroup span={1} />
+            {MATRIX_GROUPS.map((group) => (
+              <colgroup
+                key={group.title}
+                span={group.metrics.length}
+                className={styles.matrixGroup}
+              />
+            ))}
+            <thead>
+              <tr className={styles.matrixGroupRow}>
+                <td />
+                {MATRIX_GROUPS.map((group) => (
+                  <th
+                    scope="colgroup"
+                    colSpan={group.metrics.length}
+                    key={group.title}
+                    className={styles.matrixGroupStart}
+                  >
+                    {group.title}
+                  </th>
                 ))}
-                <col />
-              </colgroup>
-              <thead>
-                <tr>
-                  <th scope="col">{half.short}</th>
-                  {COMPARISON_PERIODS.map((period) => (
+              </tr>
+              <tr>
+                <th scope="col" className={styles.matrixPeriodCell}>
+                  Period
+                </th>
+                {MATRIX_GROUPS.flatMap((group) =>
+                  group.metrics.map(({ label, short }, index) => (
                     <th
                       scope="col"
-                      key={period}
-                      data-left={period === leftTimeframe || undefined}
-                      data-right={period === rightTimeframe || undefined}
-                    >
-                      {period}
-                      <span className={styles.periodMarker}>
-                        {period === leftTimeframe ? "L" : ""}
-                        {period === rightTimeframe ? "R" : ""}
-                      </span>
-                    </th>
-                  ))}
-                  <th scope="col">DIFF</th>
-                </tr>
-              </thead>
-              <tbody>
-                {half.labels.map((label) => {
-                  const row = metricsByLabel.get(label) ?? { label };
-                  return (
-                    <tr
                       key={label}
+                      className={index === 0 ? styles.matrixGroupStart : undefined}
                       data-selected={label === selectedMetric || undefined}
                     >
-                      <th scope="row">
-                        {label === "GP" ? (
-                          label
-                        ) : (
-                          <button
-                            type="button"
-                            aria-label={`Show ${label} game log`}
-                            aria-pressed={label === selectedMetric}
-                            aria-controls="wigo-selected-stat"
-                            onClick={() => setSelectedMetric(label)}
-                          >
-                            {label}
-                          </button>
-                        )}
-                      </th>
-                      {COMPARISON_PERIODS.map((period) => (
-                        <td
-                          key={period}
-                          data-left={period === leftTimeframe || undefined}
-                          data-right={period === rightTimeframe || undefined}
+                      {label === "GP" ? (
+                        short
+                      ) : (
+                        <button
+                          type="button"
+                          aria-label={label}
+                          aria-pressed={label === selectedMetric}
+                          aria-controls="wigo-selected-stat"
+                          onClick={() => setSelectedMetric(label)}
                         >
-                          {formatCell(row, period)}
-                        </td>
-                      ))}
-                      <td
-                        className={styles.matrixDiffCell}
-                        data-diff-sign={diffDirection(row.DIFF)}
-                        style={typeof row.DIFF === "number" && Number.isFinite(row.DIFF)
-                          ? { "--diff-strength": `${Math.min(Math.abs(row.DIFF), 100)}%` } as React.CSSProperties
-                          : undefined}
-                      >
-                        {formatDiffPercent(row.DIFF)}
-                      </td>
-                    </tr>
+                          {short}
+                        </button>
+                      )}
+                    </th>
+                  ))
+                )}
+              </tr>
+            </thead>
+            <tbody>
+              {COMPARISON_PERIODS.map((period) => (
+                <tr
+                  key={period}
+                  data-left={period === leftTimeframe || undefined}
+                  data-right={period === rightTimeframe || undefined}
+                >
+                  <th scope="row" className={styles.matrixPeriodCell}>
+                    {period}
+                    <span className={styles.periodMarker}>
+                      {period === leftTimeframe ? "L" : ""}
+                      {period === rightTimeframe ? "R" : ""}
+                    </span>
+                  </th>
+                  {MATRIX_METRICS.map(({ label }, index) => (
+                    <td
+                      key={label}
+                      className={isGroupStart(index) ? styles.matrixGroupStart : undefined}
+                      data-selected={label === selectedMetric || undefined}
+                    >
+                      {formatCell(metricsByLabel.get(label) ?? { label }, period)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+              <tr className={styles.matrixDiffRow}>
+                <th scope="row" className={styles.matrixPeriodCell}>
+                  DIFF
+                </th>
+                {MATRIX_METRICS.map(({ label }, index) => {
+                  const diff = metricsByLabel.get(label)?.DIFF;
+                  return (
+                    <td
+                      key={label}
+                      className={`${styles.matrixDiffCell} ${isGroupStart(index) ? styles.matrixGroupStart : ""}`}
+                      data-selected={label === selectedMetric || undefined}
+                      data-diff-sign={diffDirection(diff, 0)}
+                      title={formatDiffPercent(diff)}
+                      style={typeof diff === "number" && Number.isFinite(diff)
+                        ? { "--diff-strength": `${Math.min(Math.abs(diff), 100)}%` } as React.CSSProperties
+                        : undefined}
+                    >
+                      {formatDiffPercent(diff, 0)}
+                    </td>
                   );
                 })}
-              </tbody>
-            </table>
-          ))}
+              </tr>
+            </tbody>
+          </table>
         </div>
       </section>
       <section

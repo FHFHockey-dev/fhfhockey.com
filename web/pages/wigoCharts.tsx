@@ -23,7 +23,8 @@ const VALID_TABS: TabKey[] = [
 ];
 
 // One-page dashboard: every panel on one screen when the viewport has room; otherwise the same panels flow and scroll.
-const WIGO_FIT_MIN_WIDTH = 1200;
+// 1280: the single 36-column band needs it (PLAN 2026-11-01); 1200-1279 flows.
+const WIGO_FIT_MIN_WIDTH = 1280;
 const WIGO_FIT_MIN_HEIGHT = 700;
 const WIGO_BOTTOM_GUTTER = 6;
 

@@ -102,25 +102,27 @@ export function computeDiffColumn(
 // Round to the shown precision before taking the sign, so +0.04 reads "0.0%"
 // rather than "+0.0%" (E-12). Four-digit and larger magnitudes drop the decimal
 // so the one-page matrix's DIFF column never needs more than seven characters.
-const roundDiff = (diff: number) => {
-  const digits = Math.abs(diff) >= 1000 ? 0 : 1;
+const roundDiff = (diff: number, maxDigits = 1) => {
+  const digits = Math.abs(diff) >= 1000 ? 0 : maxDigits;
   const rounded = Math.round(diff * 10 ** digits) / 10 ** digits;
   return { rounded: rounded === 0 ? 0 : rounded, digits };
 };
 
 // Signed relative difference; the one formatter for desktop and phone.
-export const formatDiffPercent = (diff: unknown): string => {
+// The one-page band's DIFF row shows no decimal (maxDigits 0).
+export const formatDiffPercent = (diff: unknown, maxDigits = 1): string => {
   if (typeof diff !== "number" || !Number.isFinite(diff)) return "-";
-  const { rounded, digits } = roundDiff(diff);
+  const { rounded, digits } = roundDiff(diff, maxDigits);
   return `${rounded > 0 ? "+" : ""}${rounded.toFixed(digits)}%`;
 };
 
 // Direction of the difference as displayed: none when it rounds to zero.
 export const diffDirection = (
-  diff: unknown
+  diff: unknown,
+  maxDigits = 1
 ): "positive" | "negative" | undefined => {
   if (typeof diff !== "number" || !Number.isFinite(diff)) return undefined;
-  const { rounded } = roundDiff(diff);
+  const { rounded } = roundDiff(diff, maxDigits);
   return rounded > 0 ? "positive" : rounded < 0 ? "negative" : undefined;
 };
 

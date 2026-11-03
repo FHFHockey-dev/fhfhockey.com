@@ -1464,11 +1464,13 @@
     margin: 0;
   }
   .wigoDashboardContainer {
-    max-width: v.$page-max-width;
+    // TJ's exception for this page only (2026-11-01): 95%, still centred.
+    // Other pages keep v.$page-max-width.
+    max-width: 95%;
     padding: 6px 0 0;
   }
   .wigoDashboardContent {
-    grid-template-columns: repeat(24, minmax(0, 1fr));
+    grid-template-columns: repeat(20, minmax(0, 1fr));
     gap: 6px;
     padding: 0;
     border: 0;
@@ -1597,7 +1599,8 @@
     display: flex;
     flex-direction: column;
   }
-  .gameLogChartPlot {
+  .gameLogChartPlot,
+  .selectedStatPanel .chartStatus {
     flex: 1;
     min-height: 0;
   }
@@ -1637,88 +1640,93 @@
       width: 410px;
     }
   }
-  .matrixHalves {
+  // One band: periods as rows, 36 metric columns sized to content. The wrapper
+  // scrolls sideways only if a freak value would otherwise overprint (E-01).
+  .matrixBand {
     flex: 1;
     min-height: 0;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-    padding: 0 6px 4px;
+    overflow-x: auto;
+    padding: 0 0 2px;
   }
   .comparisonMatrix {
+    --wigo-band-pad: 1.5px;
     width: 100%;
-    height: 100%;
-    table-layout: fixed;
-    border-collapse: collapse;
+    table-layout: auto;
+    border-collapse: separate;
+    border-spacing: 0;
     font-size: var(--wigo-data-size);
     line-height: 1.15;
     font-family: v.$font-family-primary;
     font-variant-numeric: tabular-nums;
     th,
     td {
-      padding: 0 3px;
+      padding: 1px var(--wigo-band-pad);
       text-align: right;
       border-bottom: v.$border-subtle;
       white-space: nowrap;
     }
     thead th {
-      height: 18px;
       background: v.$background-header;
       color: s.$ink-muted;
       font-weight: s.$weight-bold;
-      text-align: right;
     }
-    thead th:first-child,
-    tbody th {
-      text-align: left;
+    .matrixGroupRow th {
+      text-align: center;
+      color: s.$ink;
+      font-weight: s.$weight-bold;
+      border-bottom: 0;
+    }
+    .matrixGroupRow td {
+      border-bottom: 0;
+    }
+    .matrixGroupStart {
+      border-left: 2px solid v.$background-medium;
     }
     th button {
-      width: 100%;
       padding: 0;
       background: none;
       border: 0;
-      color: s.$ink;
+      color: s.$ink-muted;
       font: inherit;
-      text-align: left;
+      // Regular weight: header-limited columns (iHDCF, PPTOI) stay narrow.
+      font-weight: s.$weight-regular;
       cursor: pointer;
     }
-    tbody th {
-      font-weight: s.$weight-regular;
+    th button[aria-pressed="true"] {
+      font-weight: s.$weight-bold;
     }
     th button:hover,
     th button[aria-pressed="true"] {
       color: s.$accent;
     }
-    th button[aria-pressed="true"] {
-      color: color.adjust(v.$primary-color, $lightness: 8%);
-      font-weight: s.$weight-bold;
-    }
     th button:focus-visible {
       outline: 2px solid v.$focus-color;
       outline-offset: -2px;
     }
-    // The header carries the strong colour; a light tint is enough to follow the column down.
-    [data-left] {
-      background: rgba(v.$primary-color, 0.06);
+    tbody th {
+      font-weight: s.$weight-regular;
     }
-    [data-right] {
-      background: rgba(v.$warning-color, 0.06);
+    // The selected metric's column carries a light tint top to bottom.
+    [data-selected] {
+      background-color: rgba(v.$primary-color, 0.16);
     }
-    thead [data-left] {
-      background: rgba(v.$primary-color, 0.16);
-      color: s.$accent;
+    thead [data-selected] {
       box-shadow: inset 0 -2px v.$primary-color;
     }
-    thead [data-right] {
-      background: rgba(v.$warning-color, 0.16);
-      color: s.$warn;
-      box-shadow: inset 0 -2px v.$warning-color;
+    // The compared periods: tinted rows, with the L and R marks on the label.
+    tr[data-left] > * {
+      background-color: rgba(v.$primary-color, 0.08);
     }
-    tr[data-selected] > * {
-      background-color: rgba(v.$primary-color, 0.22);
+    tr[data-right] > * {
+      background-color: rgba(v.$warning-color, 0.1);
     }
-    tr[data-selected] > th {
+    tr[data-left] > th {
+      color: s.$accent;
       box-shadow: inset 3px 0 v.$primary-color;
+    }
+    tr[data-right] > th {
+      color: s.$warn;
+      box-shadow: inset 3px 0 v.$warning-color;
     }
     tbody tr:hover > * {
       background-color: color.change(
@@ -1727,8 +1735,21 @@
       );
     }
   }
-  .matrixLabelColumn {
-    width: 17%;
+  // The period column stays put if the band ever scrolls; it must be opaque.
+  .matrixPeriodCell {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    text-align: left !important;
+    background: v.$background-medium;
+  }
+  thead .matrixPeriodCell {
+    background: v.$background-header;
+  }
+  .matrixDiffRow > * {
+    border-top: 1px solid s.$ink-muted;
+    border-bottom: 0;
+    font-weight: s.$weight-bold;
   }
   .periodMarker {
     margin-left: 3px;
@@ -1738,7 +1759,6 @@
     color: s.$ink-muted;
   }
   .matrixDiffCell {
-    border-left: v.$border-subtle;
     // Fixed scale: white at 0%, full red/green at -100%/+100% and beyond.
     &[data-diff-sign] {
       color: color-mix(in srgb, var(--diff-color) var(--diff-strength), white);
@@ -2006,14 +2026,17 @@
     --wigo-data-size: 11px;
     --wigo-emphasis-size: 16px;
   }
+  // TJ's grid (2026-11-01): the radar is a near-square two rows tall on the
+  // right, the doughnut sits under identity, rate percentiles span pace and the
+  // list; then the full-width band and one row of four charts.
   .wigoDashboardContent {
     grid-template-areas:
-      "#{wigo-areas(context 24)}"
-      "#{wigo-areas(identity 5, pace 5, sched 4, ratings 4, drivers 6)}"
-      "#{wigo-areas(prod 5, pace 5, sched 4, ratings 4, drivers 6)}"
-      "#{wigo-areas(matrix 18, consist 6)}"
-      "#{wigo-areas(matrix 18, radar 6)}"
-      "#{wigo-areas(selected 5, toi 4, ppg 4, gs 4, pct 7)}";
+      "#{wigo-areas(context 20)}"
+      "#{wigo-areas(identity 4, pace 4, sched 3, ratings 4, radar 5)}"
+      "#{wigo-areas(prod 4, pace 4, sched 3, ratings 4, radar 5)}"
+      "#{wigo-areas(consist 4, pct 7, drivers 4, radar 5)}"
+      "#{wigo-areas(matrix 20)}"
+      "#{wigo-areas(selected 5, toi 5, ppg 5, gs 5)}";
   }
   .identitySummary,
   .opponentLogContainer,
@@ -2062,13 +2085,9 @@
 :global(.wigo-one-page.wigo-fit) {
   .wigoDashboardContent {
     height: calc(var(--wigo-fit-height) - 4px);
-    grid-template-rows:
-      auto
-      minmax(80px, 13fr)
-      minmax(56px, 9fr)
-      minmax(158px, 24fr)
-      minmax(158px, 24fr)
-      minmax(175px, 27fr);
+    // Tiers key off height as well as width: a 1440 laptop window is about
+    // 790 tall and keeps these 1280 rows.
+    grid-template-rows: auto 90px 66px 156px auto minmax(150px, 1fr);
   }
 }
 
@@ -2076,6 +2095,12 @@
   .wigoDashHeader:global(.wigo-one-page.wigo-fit) {
     --wigo-data-size: 12px;
     --wigo-emphasis-size: 16px;
+    .wigoDashboardContent {
+      grid-template-rows: auto 106px 72px 178px auto minmax(180px, 1fr);
+    }
+    .comparisonMatrix {
+      --wigo-band-pad: 2px;
+    }
   }
 }
 
@@ -2089,13 +2114,13 @@
       "context context"
       "identity sched"
       "prod sched"
-      "pace ratings"
-      "drivers drivers"
+      "consist pace"
+      "pct pct"
+      "ratings drivers"
+      "radar radar"
       "matrix matrix"
-      "selected selected"
-      "consist radar"
-      "toi ppg"
-      "gs pct";
+      "selected toi"
+      "ppg gs";
   }
   .selectedStatPanel,
   .toiChartContainer,
@@ -2109,14 +2134,11 @@
   .teamDriversSummary {
     align-self: stretch;
   }
-  .consistencyRatingContainer,
-  .percentileChartContainer {
+  .consistencyRatingContainer {
     height: 220px;
   }
-  @container (max-width: 700px) {
-    .matrixHalves {
-      grid-template-columns: minmax(0, 1fr);
-    }
+  .percentileChartContainer {
+    height: 320px;
   }
 }
 
@@ -2253,9 +2275,10 @@
     .thresholdMessage { font-size: s.$text-11; padding: 1px 4px; line-height: 1.2; }
   }
   .percentileContext { font-size: s.$text-11; line-height: 1.2; }
+  // 3x6, column-first so the order reads as before (6, 5, 5).
   .percentileTileGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-rows: repeat(8, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: repeat(6, minmax(0, 1fr));
     grid-auto-flow: column;
     gap: 1px 8px;
     padding: 1px 6px 3px;
@@ -2345,6 +2368,12 @@
   .wigoDashHeader:global(.wigo-one-page.wigo-fit) {
     --wigo-data-size: 14px;
     --wigo-emphasis-size: 20px;
+    .wigoDashboardContent {
+      grid-template-rows: auto 130px 102px 232px auto minmax(240px, 1fr);
+    }
+    .comparisonMatrix {
+      --wigo-band-pad: 3px;
+    }
   }
 }
 
