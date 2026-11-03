@@ -376,6 +376,21 @@ Past-only, with the shared control. `period` defaults to a new `window` option, 
 
 **Fit:** rendered at 860px in Chromium with 10 rows a side in a chosen matchup: no overflow, and a band under 40px.
 
+## SS-1103-E: TJ's late-feed rule on Crease Shift, GSAx and Goalie of the Period
+
+Each post builds per-night coverage from the schedule and the reported team games with `scheduleNights` in `creaseShift.ts`, then calls `completeThrough`.
+
+- **Newest nights only incomplete:** the card ends at the last complete night, stays ready and returns the note in `pageNotes`, never on the PNG. The "no reported result" reason then counts only older gaps.
+- **An older gap:** still partial, as before, and the page note is added if the newest night was also cut.
+- **No complete night:** `missing`.
+- **Crease Shift:** inputs and `through` are cut to the last complete night, and the windows are rebuilt from there.
+- **Goalie of the Period:** the period ends there. A week or month relabels "through <date>". A custom range keeps its label and stops counting at that date. A fixed past week follows the same rule.
+- **GSAx:** a chosen week or range keeps its label and ends at the last complete night.
+  - A preset "last completed week" keeps its week rather than falling back to an older one, which would happen if NST's date were cut first.
+  - NST's own lag is not a late feed, so a range past NST's newest date stays partial, as the earlier ticket asked. That one needs Chef's or TJ's call if they want it to follow the new rule.
+
+**Not covered:** a late NHL.com **goalie** feed, with team rows in but no starter labels, still reads as an unresolved starter and is partial. The rule here covers only the team-game reason.
+
 ## Blockers
 
 None for building. Open: TJ's first real-output review (9.7) and the browser run of the spec.

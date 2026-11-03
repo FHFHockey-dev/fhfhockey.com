@@ -43,3 +43,7 @@ ADP ticket committed as 529e8abdb. Added headline, custom range and season by th
 ## GSAx period control (TJ, 2026-11-01)
 
 Added Preset window, Matchup week and Custom. Spec run command: PLAYWRIGHT_PORT=3147 PLAYWRIGHT_ISOLATED_NEXT=1 with NEXT_PUBLIC_SUPABASE_URL=http://supabase.e2e.invalid and fictional keys. Gotcha: a field's accessible name includes its "Default:" note, so exact label locators find nothing.
+
+## SS-1103-E late-feed rule (2026-11-03)
+
+Applied `completeThrough` to Crease Shift, GSAx and Goalie of the Period. Gotcha: fixtures with one-sided schedules (`awayTeamId: null`) now have every night incomplete and read as missing; give them a reported opponent. The spec's pager test fails after f56ba565c, which takes the cutoff from the edition, so it isn't from this change; flagged to Chef.

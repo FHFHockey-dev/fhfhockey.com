@@ -7,12 +7,18 @@ import { SEASON_GOALIE_LIMIT } from "./creaseShift.sources";
 import { loadGoalieGsax } from "./goalieGsax.sources";
 import { buildGoalieGsax, fhfhModelStatus, goalieGsaxModule, NST_GSAX_COLUMNS, NST_GSAX_TABLES, toNstGoalieGames, type GoalieGsaxData, type GoalieGsaxInput, type NstGoalieGame, type NstGsaxRow } from "./goalieGsax";
 import type { GoalieAppearance } from "./shared/goalieLedger";
+import { teamsInfo } from "lib/teamsInfo";
 
 const date = (index: number) => `2026-10-${String(index + 1).padStart(2, "0")}`;
 const appearance = (goalieId: number, index: number, values: Partial<GoalieAppearance> = {}): GoalieAppearance => ({ goalieId, name: `G${goalieId}`, gameId: goalieId * 100 + index, date: date(index), team: "NJD", opponent: null, home: null, started: true, wins: 0, losses: 0, otLosses: 0, saves: 25, shotsAgainst: 28, goalsAgainst: 3, toiSeconds: 3600, shutouts: 0, qualityStart: 0, ...values });
 const nst = (goalieId: number, index: number, values: Partial<NstGoalieGame> = {}): NstGoalieGame => ({ goalieId, date: date(index), toiSeconds: 3600, xgAgainst: 3, goalsAgainst: 2, shotsAgainst: 28, ...values });
 const base: GoalieGsaxInput = { appearances: [], nstGames: [], strength: "all", window: 10, weeks: [], board: "both", minAppearances: 3, minCoverage: 90, reported: [], scheduled: [], fhfhRows: 0 };
 const three = (goalieId: number) => [0, 1, 2].map(index => appearance(goalieId, index));
+/** An unreported game on `gap` and a fully reported one on `complete`. Which is older decides the rule: a newest gap ends the card, an older one is partial. */
+const older = (gap: string, complete: string) => ({
+  scheduled: [{ id: 5, date: gap, homeTeamId: teamsInfo.NJD.id, awayTeamId: teamsInfo.NYR.id }, { id: 6, date: complete, homeTeamId: teamsInfo.NJD.id, awayTeamId: teamsInfo.NYR.id }],
+  reported: [{ gameId: 6, date: complete, team: "NJD" }, { gameId: 6, date: complete, team: "NYR" }],
+});
 
 describe("NST-model GSAx", () => {
   it("is xG against minus goals against, with a sign both ways", () => {
@@ -84,7 +90,7 @@ describe("NST-model GSAx", () => {
   });
   it("is missing with no NST rows, and partial on a schedule gap", () => {
     expect(buildGoalieGsax({ ...base, appearances: three(1) })).toMatchObject({ state: "missing", data: null });
-    const gap = buildGoalieGsax({ ...base, appearances: three(1), nstGames: [0, 1, 2].map(index => nst(1, index)), scheduled: [{ id: 5, date: "2026-10-01", homeTeamId: 1, awayTeamId: 2 }] });
+    const gap = buildGoalieGsax({ ...base, appearances: three(1), nstGames: [0, 1, 2].map(index => nst(1, index)), ...older("2026-10-01", "2026-10-03") });
     expect(gap.state).toBe("partial");
   });
   it("reports the FHFH model as unavailable this season, and does not mix it in", () => {
@@ -121,7 +127,7 @@ describe("the last completed matchup week", () => {
   it("is unaffected by a schedule gap outside the week", () => {
     const gap = buildGoalieGsax({ ...input, appearances: three(1), nstGames: [0, 1, 2].map(index => nst(1, index)), scheduled: [{ id: 5, date: "2026-09-30", homeTeamId: 1, awayTeamId: 2 }] });
     expect(gap.state).toBe("ready");
-    expect(buildGoalieGsax({ ...input, appearances: three(1), nstGames: [0, 1, 2].map(index => nst(1, index)), scheduled: [{ id: 5, date: "2026-10-02", homeTeamId: 1, awayTeamId: 2 }] }).state).toBe("partial");
+    expect(buildGoalieGsax({ ...input, appearances: three(1), nstGames: [0, 1, 2].map(index => nst(1, index)), ...older("2026-10-02", "2026-10-03") }).state).toBe("partial");
   });
   it("keeps the existing windows selectable", () => {
     const appearances = Array.from({ length: 6 }, (_, index) => appearance(1, index)), nstGames = appearances.map((_, index) => nst(1, index));
@@ -177,10 +183,29 @@ describe("the period control", () => {
     const Card = await goalieGsaxModule.card();
     expect(renderToStaticMarkup(createElement(Card, { data: result.data!, logos: {}, settings: {} as never, snapshot: {} as never }))).toContain("through 2026-10-03, 3 days behind NHL.com");
   });
-  it("also reads as partial when a scheduled game past NST has no appearance yet", () => {
-    const result = buildGoalieGsax({ ...input, appearances: three(1), nstGames: [0, 1, 2].map(index => nst(1, index)), window: dates("2026-10-02", "2026-10-06"), scheduled: [{ id: 5, date: "2026-10-05", homeTeamId: 1, awayTeamId: 2 }] });
-    expect(result.state).toBe("partial");
-    expect(result.reasons!.join(" ")).toContain("0 appearances after it are not counted");
+  it("reads a late NHL.com feed on the range's newest night as the end of the card, ready, with a page note", () => {
+    const result = buildGoalieGsax({ ...input, appearances: three(1), nstGames: [0, 1, 2].map(index => nst(1, index)), window: dates("2026-10-02", "2026-10-06"), ...older("2026-10-05", "2026-10-03") });
+    expect(result.state).toBe("ready");
+    expect(result.pageNotes).toEqual(["Oct 5 is not fully reported yet, so this card ends Oct 3."]);
+    expect(result.data).toMatchObject({ nstThrough: "2026-10-03" });
+  });
+  it("ends a chosen week at its last complete night when its last day is late, and keeps NST's lag apart", () => {
+    const window = dates("2026-10-01", "2026-10-07", "Week 1 · Oct 1 to Oct 7", 1);
+    const late = { scheduled: [0, 1, 2, 6].map(index => ({ id: 50 + index, date: date(index), homeTeamId: teamsInfo.NJD.id, awayTeamId: teamsInfo.NYR.id })), reported: [0, 1, 2].flatMap(index => ["NJD", "NYR"].map(team => ({ gameId: 50 + index, date: date(index), team }))) };
+    const result = buildGoalieGsax({ ...input, appearances: [...three(1), appearance(1, 6)], nstGames: [0, 1, 2, 6].map(index => nst(1, index)), window, ...late });
+    expect(result.state).toBe("ready");
+    expect(result.pageNotes).toEqual(["Oct 7 is not fully reported yet, so this card ends Oct 3."]);
+    expect(result.data).toMatchObject({ nstThrough: "2026-10-03", windowLabel: "Week 1 · Oct 1 to Oct 7" });
+    expect(result.data!.rows[0]).toMatchObject({ appearances: 3, lastDate: "2026-10-03" });
+    // NST's own lag is not a late feed: it stays partial with its reason.
+    expect(buildGoalieGsax({ ...input, appearances: [...three(1), appearance(1, 5)], nstGames: [0, 1, 2].map(index => nst(1, index)), window: dates("2026-10-02", "2026-10-06") }).state).toBe("partial");
+  });
+  it("trims a preset week's late last night without moving to an older week", () => {
+    const weekly = { ...input, window: "week" as const };
+    const late = { scheduled: [0, 6].map(index => ({ id: 50 + index, date: date(index), homeTeamId: teamsInfo.NJD.id, awayTeamId: teamsInfo.NYR.id })), reported: ["NJD", "NYR"].map(team => ({ gameId: 50, date: date(0), team })) };
+    const result = buildGoalieGsax({ ...weekly, appearances: [appearance(1, 0), appearance(1, 6)], nstGames: [nst(1, 0), nst(1, 6)], ...late });
+    expect(result).toMatchObject({ state: "ready", pageNotes: ["Oct 7 is not fully reported yet, so this card ends Oct 1."] });
+    expect(result.data).toMatchObject({ week: weeks[0], nstThrough: "2026-10-01", windowLabel: "Week 1, 2026-10-01 to 2026-10-07, through 2026-10-01" });
   });
   it("stays ready when the dates outrun NST but no game was played after it", () => {
     const result = buildGoalieGsax({ ...input, appearances: three(1), nstGames: [0, 1, 2].map(index => nst(1, index)), window: dates("2026-10-01", "2026-10-07", "Week 1 · Oct 1 to Oct 7", 1) });
@@ -188,8 +213,8 @@ describe("the period control", () => {
   });
   it("proves only the chosen dates' games", () => {
     const window = dates("2026-10-02", "2026-10-03"), played2 = { appearances: three(1), nstGames: [0, 1, 2].map(index => nst(1, index)) };
-    expect(buildGoalieGsax({ ...input, ...played2, window, scheduled: [{ id: 5, date: "2026-10-01", homeTeamId: 1, awayTeamId: 2 }] }).state).toBe("ready");
-    const gap = buildGoalieGsax({ ...input, ...played2, window, scheduled: [{ id: 5, date: "2026-10-02", homeTeamId: 1, awayTeamId: 2 }] });
+    expect(buildGoalieGsax({ ...input, ...played2, window, ...older("2026-10-01", "2026-10-03") }).state).toBe("ready");
+    const gap = buildGoalieGsax({ ...input, ...played2, window, ...older("2026-10-02", "2026-10-03") });
     expect(gap.state).toBe("partial");
     expect(gap.reasons![0]).toContain("in these dates");
   });

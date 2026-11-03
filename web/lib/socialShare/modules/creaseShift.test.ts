@@ -17,6 +17,8 @@ const row = (goalieId: number, team: string, index: number, started: boolean | n
 const schedule = (games: readonly CompletedTeamGame[]): ScheduledGame[] => games.map(entry => ({ id: entry.gameId, date: entry.date, homeTeamId: teamsInfo[entry.team as "NJD"].id, awayTeamId: null })).map(entry => ({ ...entry, awayTeamId: entry.homeTeamId === NJD ? NYR : NJD }));
 /** NJD games only, with NYR's side reported too, so the schedule reconciles. */
 const reportBoth = (games: readonly CompletedTeamGame[]) => games.flatMap(entry => [entry, { ...entry, team: entry.team === "NJD" ? "NYR" : "NJD" }]);
+/** Each game against PHI, with PHI's side reported too, so every night reconciles and none reads as late. */
+const vsPhi = (games: readonly CompletedTeamGame[]) => ({ scheduled: games.map(entry => ({ id: entry.gameId, date: entry.date, homeTeamId: teamsInfo[entry.team as "NJD"].id, awayTeamId: teamsInfo.PHI.id })), reported: [...games, ...games.map(entry => ({ ...entry, team: "PHI" }))] });
 const base = { teams: ["NJD"], window: 5, comparison: "previous" as const, minComparisonGames: 1, through: "2026-10-30" };
 const twenty = Array.from({ length: 10 }, (_, index) => game("NJD", index));
 
@@ -83,7 +85,7 @@ describe("crease shift", () => {
     const teamGames = (team: string, count: number, offset: number) => Array.from({ length: count }, (_, index) => game(team, index, offset + index));
     const njd = teamGames("NJD", 7, 3000), nyr = teamGames("NYR", 9, 4000);
     const appearances = [...njd.map((entry, index) => row(index === 0 ? 2 : 1, "NJD", index, true, entry.gameId)), ...nyr.map((entry, index) => row(index < 2 ? 4 : 3, "NYR", index, true, entry.gameId))];
-    const result = buildCreaseShift({ ...base, teams: ["NJD", "NYR"], reported: [...njd, ...nyr], appearances, scheduled: [...njd, ...nyr].map(entry => ({ id: entry.gameId, date: entry.date, homeTeamId: teamsInfo[entry.team as "NJD"].id, awayTeamId: null })) });
+    const result = buildCreaseShift({ ...base, teams: ["NJD", "NYR"], appearances, ...vsPhi([...njd, ...nyr]) });
     expect(result.data!.teams.map(team => [team.team, team.comparisonGames, team.shift, team.rank])).toEqual([["NJD", 2, 50, 1], ["NYR", 4, 50, 1]]);
   });
 });
@@ -106,8 +108,7 @@ describe("blocks and running share", () => {
   it("matches TJ's VAN example, LMMLMLMMMM, at every game", async () => {
     const earlier = Array.from({ length: 10 }, (_, index) => game("VAN", index)), order = [..."LMMLMLMMMM"], games = [...earlier, ...order.map((_, index) => game("VAN", index + 10))];
     const appearances = games.map((entry, index) => row(index < 10 || order[index - 10] === "L" ? 1 : 2, "VAN", index));
-    const scheduled = games.map(entry => ({ id: entry.gameId, date: entry.date, homeTeamId: teamsInfo.VAN.id, awayTeamId: null }));
-    const data = buildCreaseShift({ ...base, teams: ["VAN"], window: 10, minComparisonGames: 5, reported: games, appearances, scheduled }).data!, team = data.teams[0];
+    const data = buildCreaseShift({ ...base, teams: ["VAN"], window: 10, minComparisonGames: 5, appearances, ...vsPhi(games) }).data!, team = data.teams[0];
     const percents = (id: number) => goalie(team, id).runningShare.map(value => Number((value! * 100).toFixed(1)));
     expect(percents(1)).toEqual([100, 50, 33.3, 50, 40, 50, 42.9, 37.5, 33.3, 30]);
     expect(percents(2)).toEqual([0, 50, 66.7, 50, 60, 50, 57.1, 62.5, 66.7, 70]);
@@ -127,8 +128,7 @@ describe("blocks and running share", () => {
   });
   it("binds a traded goalie's games to the team in that row", () => {
     const other = game("NYR", 11, 5000);
-    const scheduled = [...twentyGames.slice(0, 4).map(entry => ({ id: entry.gameId, date: entry.date, homeTeamId: NJD, awayTeamId: null })), { id: 5000, date: other.date, homeTeamId: NYR, awayTeamId: null }];
-    const both = buildCreaseShift({ ...base, teams: ["NJD", "NYR"], window: 2, minComparisonGames: 1, reported: [...twentyGames.slice(0, 4), other], appearances: [...twentyGames.slice(0, 4).map((_, index) => row(1, "NJD", index)), row(1, "NYR", 11, true, 5000)], scheduled }).data!;
+    const both = buildCreaseShift({ ...base, teams: ["NJD", "NYR"], window: 2, minComparisonGames: 1, appearances: [...twentyGames.slice(0, 4).map((_, index) => row(1, "NJD", index)), row(1, "NYR", 11, true, 5000)], ...vsPhi([...twentyGames.slice(0, 4), other]) }).data!;
     expect(both.teams.find(entry => entry.team === "NJD")!.series.map(point => point.gameId)).toEqual([1002, 1003]);
     expect(both.teams.find(entry => entry.team === "NYR")!.series.map(point => point.gameId)).toEqual([5000]);
   });
@@ -305,8 +305,7 @@ describe("minimum comparison games", () => {
   it("shows short teams only as a count in the note", async () => {
     const list = games(10), other = Array.from({ length: 6 }, (_, index) => game("NYR", index, 2000 + index));
     const appearances = [...list.map((_, index) => row(index === 0 ? 2 : 1, "NJD", index)), ...other.map((entry, index) => row(9, "NYR", index, true, entry.gameId))];
-    const scheduled = [...list, ...other].map(entry => ({ id: entry.gameId, date: entry.date, homeTeamId: teamsInfo[entry.team as "NJD"].id, awayTeamId: null }));
-    const result = buildCreaseShift({ ...base, teams: ["NJD", "NYR"], minComparisonGames: 5, reported: [...list, ...other], appearances, scheduled });
+    const result = buildCreaseShift({ ...base, teams: ["NJD", "NYR"], minComparisonGames: 5, appearances, ...vsPhi([...list, ...other]) });
     const html = await render(result);
     expect(html).not.toContain("G9");
     expect(html).not.toContain("NYR");
@@ -332,13 +331,37 @@ describe("minimum comparison games", () => {
 });
 
 describe("schedule reconciliation", () => {
-  it("compares team games with the schedule, and one missing team game is partial", () => {
-    const appearances = twenty.map((_, index) => row(1, "NJD", index)), reported = reportBoth(twenty).slice(0, -1);
+  it("compares team games with the schedule, and one missing older team game is partial", () => {
+    const appearances = twenty.map((_, index) => row(1, "NJD", index)), reported = reportBoth(twenty).slice(1);
     expect(reconcileSchedule(schedule(twenty), reported)).toMatchObject({ scheduledGames: 10, expected: 20, observed: 19, missing: 1 });
     const result = buildCreaseShift({ ...base, reported, appearances, scheduled: schedule(twenty) });
     expect(result.state).toBe("partial");
     expect(result.reasons?.[0]).toMatch(/1 of 20 scheduled team games/);
     expect(result.evidence.coverage).toEqual({ observed: 19, expected: 20, missing: 1, unit: "team games" });
+  });
+  it("ends at the last complete night when only the newest is late, ready, with a page note", () => {
+    const appearances = twenty.map((_, index) => row(index < 9 ? 1 : 2, "NJD", index)), reported = reportBoth(twenty).filter(entry => !(entry.gameId === 1009 && entry.team === "NJD"));
+    const result = buildCreaseShift({ ...base, reported, appearances, scheduled: schedule(twenty) });
+    expect(result.state).toBe("ready");
+    expect(result.reasons).toEqual([]);
+    expect(result.pageNotes).toEqual(["Oct 10 is not fully reported yet, so this card ends Oct 9."]);
+    const njd = result.data!.teams[0];
+    expect(result.data!.through).toBe("2026-10-09");
+    expect(njd).toMatchObject({ games: 5, lastDate: "2026-10-09", missingGames: 0 });
+    expect(njd.goalies.map(goalie => goalie.goalieId)).toEqual([1]);
+    expect(result.evidence.coverage).toEqual({ observed: 18, expected: 18, missing: 0, unit: "team games" });
+    expect(creaseShiftModule.hasRows(result.data, { window: "5", comparison: "previous", minComparisonGames: 1 })).toBe(true);
+  });
+  it("still blocks an older gap when the newest night is also late", () => {
+    const reported = reportBoth(twenty).filter(entry => entry.gameId !== 1009 && !(entry.gameId === 1002 && entry.team === "NYR"));
+    const result = buildCreaseShift({ ...base, reported, appearances: twenty.map((_, index) => row(1, "NJD", index)), scheduled: schedule(twenty) });
+    expect(result.state).toBe("partial");
+    expect(result.reasons![0]).toMatch(/^1 of 18 scheduled team games have no reported result/);
+    expect(result.pageNotes).toEqual(["Oct 10 is not fully reported yet, so this card ends Oct 9."]);
+  });
+  it("is missing when no night is fully reported", () => {
+    const one = twenty.slice(0, 1);
+    expect(buildCreaseShift({ ...base, reported: [], appearances: [], scheduled: schedule(one) })).toMatchObject({ state: "missing", data: null, reasons: ["No night this season is fully reported yet."] });
   });
   it("drops a reported game the regular-season schedule does not list", () => {
     const preseason = { gameId: 9, date: "2026-09-20", team: "NJD" };
