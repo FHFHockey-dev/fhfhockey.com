@@ -42,8 +42,9 @@ const seasonOf = (appearances: MultiCatGame[]): MultiCatSeason => {
 const crowded = seasonOf(Array.from({ length: 12 }, (_, player) => ["2026-10-10", "2026-10-14", "2026-10-20", "2026-10-22", ...WEEK].map(date => game(player + 1, date))).flat());
 const defaults = parseShareSettings(multiCatStarsModule, {}) as MultiCatSettings;
 const edition = (settings: object, result: SharePostLoadResult<unknown>) => {
-  const generatedAt = new Date().toISOString();
-  return { schemaVersion: 1, id: "multi-cat-stars-e2e", post: "multi-cat-stars", generatedAt, expiresAt: new Date(Date.parse(generatedAt) + 600000).toISOString(), timeZone: "America/New_York", settings, fixture: false, state: result.state, reasons: result.reasons ?? [], evidence: result.evidence, data: result.data, teams: result.teams ?? [] };
+  // Built on Nov 1, so the pager's cutoff is CUTOFF whatever today is; it still expires ten minutes from now.
+  const generatedAt = "2026-11-01T16:00:00.000Z";
+  return { schemaVersion: 1, id: "multi-cat-stars-e2e", post: "multi-cat-stars", generatedAt, expiresAt: new Date(Date.now() + 600000).toISOString(), timeZone: "America/New_York", settings, fixture: false, state: result.state, reasons: result.reasons ?? [], evidence: result.evidence, data: result.data, teams: result.teams ?? [] };
 };
 async function open(page: Page, season: MultiCatSeason) {
   await signIn(page);
