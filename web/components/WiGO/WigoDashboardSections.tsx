@@ -167,7 +167,7 @@ function WigoPlayerIdentity({
   );
 }
 
-export function WigoDashboardHeader({
+function WigoDashboardHeaderBody({
   onPlayerSelect,
   selectedPlayer,
   headshotUrl,
@@ -216,7 +216,7 @@ export function WigoDashboardHeader({
   );
 }
 
-export function WigoOverviewSection({
+function WigoOverviewSectionBody({
   selectedPlayer,
   headshotUrl,
   teamName,
@@ -278,7 +278,7 @@ export function WigoOverviewSection({
   );
 }
 
-export function WigoTrendsSection({
+function WigoTrendsSectionBody({
   selectedPlayer,
   currentSeasonId,
   summaryOnly = false,
@@ -335,7 +335,7 @@ export function WigoTrendsSection({
   );
 }
 
-export function WigoPercentilesSection({
+function WigoPercentilesSectionBody({
   playerId,
   seasonId,
   minGp,
@@ -355,7 +355,7 @@ export function WigoPercentilesSection({
   );
 }
 
-export function WigoComparisonSection({
+function WigoComparisonSectionBody({
   data,
   isLoadingAggData,
   aggDataError,
@@ -389,3 +389,11 @@ export function WigoComparisonSection({
     </div>
   );
 }
+
+// Memoised so a compare change, a min-GP change or a resize re-renders only the
+// sections whose props changed; charts keep their zoom (S6).
+export const WigoDashboardHeader = React.memo(WigoDashboardHeaderBody);
+export const WigoOverviewSection = React.memo(WigoOverviewSectionBody);
+export const WigoTrendsSection = React.memo(WigoTrendsSectionBody);
+export const WigoPercentilesSection = React.memo(WigoPercentilesSectionBody);
+export const WigoComparisonSection = React.memo(WigoComparisonSectionBody);
