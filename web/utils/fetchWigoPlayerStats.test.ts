@@ -382,6 +382,12 @@ describe("fetchPlayerAggregatedStats sources", () => {
     const { rows } = await fetchPlayerAggregatedStats(1, 20252026);
     expect(queryTraces.map(trace => trace.table)).toEqual(["wigo_career", "wigo_recent", "wgo_skater_stats_totals"]);
     expect(rows.find(row => row.label === "Goals")?.STD).toBe(4);
+    const selected = (table: string) => String(queryTraces.find(trace => trace.table === table)?.calls.find(call => call[0] === "select")?.[1]);
+    expect(selected("wigo_career")).not.toContain("*");
+    expect(selected("wigo_career")).toContain("std_pts1_per_60");
+    expect(selected("wigo_career")).toContain("last_updated");
+    expect(selected("wigo_career")).not.toContain("seasons_used");
+    expect(selected("wigo_recent")).toContain("l20_ozs_pct");
   });
 
   it("reads the as-of dates and flags an STD row whose GP disagrees with this season's totals", async () => {

@@ -651,6 +651,22 @@ type WigoAggregateTotals =
     }> & { season?: string | null })
   | null;
 
+// Exactly the columns the table reads: each stat's base key per period, plus
+// the as-of date (S9). Only wigo_career's two seasons_used counts are left out:
+// the table uses almost every column, so this is about tightness, not bytes.
+const aggregateColumns = (prefixes: readonly string[]) =>
+  [
+    "player_id",
+    "last_updated",
+    ...prefixes.flatMap((prefix) =>
+      WIGO_STAT_ORDER.map(
+        (label) => `${prefix}_${getWigoStatMetadata(label)!.baseKey}`
+      )
+    )
+  ].join(",");
+const CAREER_COLUMNS = aggregateColumns(["std", "ly", "ya3", "ca"]);
+const RECENT_COLUMNS = aggregateColumns(["l5", "l10", "l20"]);
+
 export interface WigoAggregateSources {
   careerData: WigoCareerRow | null;
   recentData: WigoRecentRow | null;
@@ -671,12 +687,12 @@ export async function fetchPlayerAggregateSources(
   const [careerRes, recentRes] = await Promise.all([
     supabase
       .from("wigo_career")
-      .select("*")
+      .select(CAREER_COLUMNS)
       .eq("player_id", playerId)
       .maybeSingle(),
     supabase
       .from("wigo_recent")
-      .select("*")
+      .select(RECENT_COLUMNS)
       .eq("player_id", playerId)
       .maybeSingle()
   ]);
