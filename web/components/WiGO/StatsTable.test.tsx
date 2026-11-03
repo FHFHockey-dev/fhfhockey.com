@@ -172,8 +172,11 @@ describe("comparison band", () => {
     /></QueryClientProvider>);
     const table = screen.getByRole("table");
     expect([...BAND_METRICS].sort()).toEqual([...WIGO_STAT_ORDER].sort());
-    expect(within(table).getAllByRole("rowheader").map(cell => cell.textContent))
+    expect(within(table).getAllByRole("rowheader").map(cell => cell.querySelector("[aria-hidden]")?.textContent))
       .toEqual(["STDL", "LY", "CAR", "3YA", "L5", "L10", "L20", "DIFF"]);
+    // Periods and the compared pair are spoken in words, not as bare letters.
+    expect(within(table).getAllByRole("rowheader")[0].textContent).toContain("Season to date, left comparison period");
+    expect(within(table).getAllByRole("rowheader")[2].textContent).toContain("Career average, right comparison period");
     const rows = within(table).getAllByRole("row").slice(2);
     expect(rows).toHaveLength(8);
     COMPARISON_PERIODS.forEach((period, index) => {
@@ -193,13 +196,30 @@ describe("comparison band", () => {
       expect(Array.from((screen.getByLabelText(name) as HTMLSelectElement).options).map(option => option.value))
         .toEqual([...COMPARISON_PERIODS]);
     }
-    expect(screen.queryByRole("button", { name: "GP" })).toBeNull();
-    expect(screen.getByRole("button", { name: "SOG/60" }).getAttribute("aria-pressed")).toBe("true");
-    expect(screen.getByRole("button", { name: "SOG/60" }).textContent).toBe("SOG");
+    expect(screen.queryByRole("button", { name: "Games played" })).toBeNull();
+    const shots60 = screen.getByRole("button", { name: "Shots per 60" });
+    expect(shots60.getAttribute("aria-pressed")).toBe("true");
+    expect(shots60.textContent).toBe("SOG");
+    // One shared action description, not a verb in every header name.
+    expect(shots60.getAttribute("aria-describedby")).toBe("wigo-band-action");
+    expect(screen.queryAllByRole("button", { name: /game log/ })).toHaveLength(0);
+    // Roving tabindex: one button in the tab order; arrows move focus only, Enter selects.
+    expect(container.querySelectorAll('thead button[tabindex="0"]')).toHaveLength(1);
+    shots60.focus();
+    fireEvent.keyDown(shots60, { key: "ArrowRight" });
+    const ixg60 = screen.getByRole("button", { name: "Individual expected goals per 60" });
+    expect(document.activeElement).toBe(ixg60);
+    expect(ixg60.getAttribute("tabindex")).toBe("0");
+    expect(shots60.getAttribute("aria-pressed")).toBe("true");
+    fireEvent.keyDown(ixg60, { key: "Home" });
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Average time on ice" }));
+    fireEvent.keyDown(document.activeElement!, { key: "End" });
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Primary share of points" }));
     await waitFor(() => expect(mockFetchPlayerGameLogForStat).toHaveBeenCalledWith(1, 20252026, "SOG/60"));
     fireEvent.change(screen.getByLabelText("Select right timeframe for comparison"), { target: { value: "STD" } });
     expect(onCompare).toHaveBeenCalledWith("STD", "STD");
     fireEvent.click(screen.getByRole("button", { name: "Goals" }));
+    expect(container.querySelector("#wigo-selected-stat h3")?.getAttribute("aria-live")).toBe("polite");
     await waitFor(() => expect(mockFetchPlayerGameLogForStat).toHaveBeenCalledWith(1, 20252026, "Goals"));
     expect(container.querySelectorAll("#wigo-selected-stat")).toHaveLength(1);
     expect(screen.getAllByRole("button", { name: /^Toggle .* reference$/ })).toHaveLength(7);

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchPlayerGameLogForStat } from "utils/fetchWigoPlayerStats";
 import { TableAggregateData } from "./types";
@@ -39,6 +39,57 @@ export const COMPARISON_PERIODS = [
 // One band (TJ, 2026-11-01): periods are rows, the 36 metrics are columns in
 // three groups. Per 60 headers drop "/60"; the full label stays the button's
 // accessible name, so Totals "G" and Per 60 "G" stay distinct.
+// Spoken names: a column header is read with every cell, so it names the
+// metric only, in full (E-02). The action is one shared description.
+export const WIGO_METRIC_NAMES: Record<WigoStatLabel, string> = {
+  GP: "Games played",
+  ATOI: "Average time on ice",
+  Points: "Points",
+  Goals: "Goals",
+  Assists: "Assists",
+  SOG: "Shots on goal",
+  "S%": "Shooting percentage",
+  PPP: "Power-play points",
+  PPG: "Power-play goals",
+  PPA: "Power-play assists",
+  PPTOI: "Power-play time on ice per game",
+  "PP%": "Share of team power-play time",
+  HIT: "Hits",
+  BLK: "Blocked shots",
+  PIM: "Penalty minutes",
+  ixG: "Individual expected goals",
+  iCF: "Individual shot attempts",
+  "G/60": "Goals per 60",
+  "A/60": "Assists per 60",
+  "PTS/60": "Points per 60",
+  "SOG/60": "Shots per 60",
+  "ixG/60": "Individual expected goals per 60",
+  "iCF/60": "Individual shot attempts per 60",
+  "PPP/60": "Power-play points per 60 power-play minutes",
+  "PPG/60": "Power-play goals per 60 power-play minutes",
+  "PPA/60": "Power-play assists per 60 power-play minutes",
+  "iHDCF/60": "Individual high-danger chances per 60",
+  "iSCF/60": "Individual scoring chances per 60",
+  "HIT/60": "Hits per 60",
+  "BLK/60": "Blocked shots per 60",
+  "PIM/60": "Penalty minutes per 60",
+  IPP: "Individual points percentage",
+  "oiSH%": "On-ice shooting percentage",
+  "OZS%": "Offensive zone start percentage",
+  "PTS1%": "Primary share of points",
+  "PTS1/60": "Primary points per 60"
+};
+
+const PERIOD_NAMES: Record<string, string> = {
+  STD: "Season to date",
+  LY: "Last season",
+  CA: "Career average",
+  "3YA": "Three-year average",
+  L5: "Last 5 games",
+  L10: "Last 10 games",
+  L20: "Last 20 games"
+};
+
 export const MATRIX_GROUPS: Array<{
   title: string;
   metrics: Array<{ label: WigoStatLabel; short: string }>;
@@ -76,6 +127,9 @@ const GROUP_STARTS = new Set(
   )
 );
 const isGroupStart = (index: number) => GROUP_STARTS.has(index);
+const SELECTABLE_METRICS = MATRIX_METRICS.map((metric) => metric.label).filter(
+  (label) => label !== "GP"
+);
 
 interface Props {
   data: TableAggregateData[];
@@ -99,6 +153,24 @@ export default function WigoComparisonMatrix({
   onCompare
 }: Props) {
   const [selectedMetric, setSelectedMetric] = useState<WigoStatLabel>("SOG/60");
+  // Roving tabindex: one header button is in the tab order; arrows move focus
+  // only, Enter or Space selects, so focus alone never swaps the chart.
+  const [focusMetric, setFocusMetric] = useState<WigoStatLabel>("SOG/60");
+  const headerButtons = useRef(new Map<WigoStatLabel, HTMLButtonElement>());
+  const moveHeaderFocus = (event: React.KeyboardEvent, label: WigoStatLabel) => {
+    const labels = SELECTABLE_METRICS;
+    const index = labels.indexOf(label);
+    const target =
+      event.key === "ArrowRight" ? labels[Math.min(index + 1, labels.length - 1)]
+      : event.key === "ArrowLeft" ? labels[Math.max(index - 1, 0)]
+      : event.key === "Home" ? labels[0]
+      : event.key === "End" ? labels[labels.length - 1]
+      : null;
+    if (!target) return;
+    event.preventDefault();
+    setFocusMetric(target);
+    headerButtons.current.get(target)?.focus();
+  };
   const seasonPending = useSeasonPendingMessage();
   // The aggregate query waits for the season and is not "loading" while it
   // waits, so say why the table is blank rather than show bare dashes (A-04).
@@ -161,9 +233,8 @@ export default function WigoComparisonMatrix({
         <div className={styles.matrixBand}>
           <table className={styles.comparisonMatrix}>
             <caption className={styles.visuallyHidden}>
-              {MATRIX_METRICS.length} metrics by period. L and R mark the
-              selected comparison periods; the last row is the difference
-              between them.
+              {MATRIX_METRICS.length} metrics by period. The last row is the
+              difference between the left and right comparison periods.
             </caption>
             <colgroup span={1} />
             {MATRIX_GROUPS.map((group) => (
@@ -200,13 +271,23 @@ export default function WigoComparisonMatrix({
                       data-selected={label === selectedMetric || undefined}
                     >
                       {label === "GP" ? (
-                        short
+                        <abbr title={WIGO_METRIC_NAMES[label]}>{short}</abbr>
                       ) : (
                         <button
                           type="button"
-                          aria-label={label}
+                          ref={(element) => {
+                            if (element) headerButtons.current.set(label, element);
+                            else headerButtons.current.delete(label);
+                          }}
+                          data-metric={label}
+                          aria-label={WIGO_METRIC_NAMES[label]}
+                          title={WIGO_METRIC_NAMES[label]}
                           aria-pressed={label === selectedMetric}
                           aria-controls="wigo-selected-stat"
+                          aria-describedby="wigo-band-action"
+                          tabIndex={label === focusMetric ? 0 : -1}
+                          onFocus={() => setFocusMetric(label)}
+                          onKeyDown={(event) => moveHeaderFocus(event, label)}
                           onClick={() => setSelectedMetric(label)}
                         >
                           {short}
@@ -225,10 +306,17 @@ export default function WigoComparisonMatrix({
                   data-right={period === rightTimeframe || undefined}
                 >
                   <th scope="row" className={styles.matrixPeriodCell}>
-                    {period}
-                    <span className={styles.periodMarker}>
-                      {period === leftTimeframe ? "L" : ""}
-                      {period === rightTimeframe ? "R" : ""}
+                    <span aria-hidden="true">
+                      {period}
+                      <span className={styles.periodMarker}>
+                        {period === leftTimeframe ? "L" : ""}
+                        {period === rightTimeframe ? "R" : ""}
+                      </span>
+                    </span>
+                    <span className={styles.visuallyHidden}>
+                      {PERIOD_NAMES[period]}
+                      {period === leftTimeframe ? ", left comparison period" : ""}
+                      {period === rightTimeframe ? ", right comparison period" : ""}
                     </span>
                   </th>
                   {MATRIX_METRICS.map(({ label }, index) => (
@@ -244,7 +332,10 @@ export default function WigoComparisonMatrix({
               ))}
               <tr className={styles.matrixDiffRow}>
                 <th scope="row" className={styles.matrixPeriodCell}>
-                  DIFF
+                  <span aria-hidden="true">DIFF</span>
+                  <span className={styles.visuallyHidden}>
+                    Difference, left versus right, percent
+                  </span>
                 </th>
                 {MATRIX_METRICS.map(({ label }, index) => {
                   const diff = metricsByLabel.get(label)?.DIFF;
@@ -266,6 +357,9 @@ export default function WigoComparisonMatrix({
               </tr>
             </tbody>
           </table>
+          <span id="wigo-band-action" className={styles.visuallyHidden}>
+            Shows its game log below.
+          </span>
         </div>
       </section>
       <section
@@ -274,7 +368,7 @@ export default function WigoComparisonMatrix({
         aria-label="Selected-stat game log"
         data-coverage="C13"
       >
-        <h3>
+        <h3 aria-live="polite">
           {selectedMetric} game log{" "}
           <span>
             {currentSeasonId

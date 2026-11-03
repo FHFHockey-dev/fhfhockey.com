@@ -104,18 +104,28 @@ test("the comparison band shows 36 metric columns by period with a DIFF row, and
   // TJ's band (2026-11-01): a group row, one header per metric, periods as rows, DIFF last.
   expect(await table.locator('thead th[scope="colgroup"]').allTextContents()).toEqual(["Totals", "Per 60", "On-ice"]);
   await expect(table.locator('thead th[scope="col"]')).toHaveCount(1 + WIGO_STAT_ORDER.length);
-  expect(await table.getByRole("rowheader").allTextContents()).toEqual(["STDL", "LY", "CAR", "3YA", "L5", "L10", "L20", "DIFF"]);
+  expect(await table.locator('tbody th > [aria-hidden="true"]').allTextContents()).toEqual(["STDL", "LY", "CAR", "3YA", "L5", "L10", "L20", "DIFF"]);
+  const metrics = await table.locator("thead button").evaluateAll(buttons => buttons.map(button => button.getAttribute("data-metric")));
+  expect(["GP", ...metrics].sort()).toEqual([...WIGO_STAT_ORDER].sort());
+  // Per 60 drops "/60" in the header text; PTS1 sits under Per 60; names are full.
+  await expect(table.getByRole("button", { name: "Primary points per 60", exact: true })).toHaveText("PTS1");
   const names = await table.locator("thead button").evaluateAll(buttons => buttons.map(button => button.getAttribute("aria-label")));
-  expect(["GP", ...names].sort()).toEqual([...WIGO_STAT_ORDER].sort());
-  // Per 60 drops "/60" in the header text; PTS1 sits under Per 60.
-  await expect(table.getByRole("button", { name: "PTS1/60", exact: true })).toHaveText("PTS1");
+  expect(new Set(names).size).toBe(names.length);
+  // Keyboard: Tab reaches one header button, arrows move focus without swapping the chart.
+  const shots = table.getByRole("button", { name: "Shots per 60", exact: true });
+  await shots.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(table.getByRole("button", { name: "Individual expected goals per 60", exact: true })).toBeFocused();
+  await expect(shots).toHaveAttribute("aria-pressed", "true");
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#wigo-selected-stat h3")).toContainText("ixG/60");
   // DIFF has no decimal.
   for (const text of await table.locator("tbody tr").last().locator("td").allTextContents()) expect(text).not.toMatch(/\.\d%/);
 
   const selected = page.locator("#wigo-selected-stat");
   const before = await selected.boundingBox();
-  for (const metric of ["Goals", "ATOI", "S%", "PPP/60"]) {
-    await table.getByRole("button", { name: metric, exact: true }).click();
+  for (const [metric, name] of [["Goals", "Goals"], ["ATOI", "Average time on ice"], ["S%", "Shooting percentage"], ["PPP/60", "Power-play points per 60 power-play minutes"]]) {
+    await table.getByRole("button", { name, exact: true }).click();
     await expect(selected.locator("h3")).toContainText(metric);
     await expect(selected).not.toContainText("Failed to load");
     expect(await selected.boundingBox()).toEqual(before);
@@ -123,7 +133,7 @@ test("the comparison band shows 36 metric columns by period with a DIFF row, and
   await expect(page.getByRole("button", { name: /^Toggle .* reference$/ })).toHaveCount(PERIODS.length);
 
   await page.getByLabel("Select left timeframe for comparison").selectOption("L10");
-  await expect(table.locator("tbody tr[data-left] th")).toHaveText("L10L");
+  await expect(table.locator('tbody tr[data-left] th > [aria-hidden="true"]')).toHaveText("L10L");
   // The worst case, +999% in every DIFF cell, still fits without side-scrolling at 1280.
   await page.evaluate(() => {
     for (const cell of document.querySelectorAll('[data-coverage="C12"] tbody tr:last-child td')) cell.textContent = "+999%";
