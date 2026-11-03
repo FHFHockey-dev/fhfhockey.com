@@ -227,7 +227,7 @@ describe("Multi Cat card", () => {
     const active = settings({ minGp: 9 }), { data } = buildCategoryBlueprint(season(games(1, 2)), active);
     expect(await show(data!, active)).toContain("No skater has all four categories");
     cleanup();
-    expect(await show(data!, settings({ minGp: 8 }))).toContain("Refresh this post");
+    expect(await show(data!, settings({ minGp: 8 }))).toContain("Updating…");
   });
 });
 

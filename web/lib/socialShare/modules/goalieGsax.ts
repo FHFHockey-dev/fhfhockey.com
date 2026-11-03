@@ -1,6 +1,7 @@
 import type { Database } from "lib/supabase/database-generated.types";
 import { defineShareModule, type SharePostLoadResult } from "./contract";
-import { reconcileSchedule, type ScheduledGame } from "./creaseShift";
+import { reconcileSchedule, scheduleNights, type ScheduledGame } from "./creaseShift";
+import { completeThrough, completeThroughNote } from "./shared/completeThrough";
 import { defaultWeek, type MatchupWeek } from "./shared/categoryCounts";
 import { competitionRanks, lastN, per60 } from "./shared/definitions";
 import { BOARD_FIELD_OPTIONS, boardSides, countOf, type BoardChoice } from "./shared/goalieBoards";
@@ -79,16 +80,22 @@ export type GoalieGsaxInput = {
 export function buildGoalieGsax(input: GoalieGsaxInput): SharePostLoadResult<GoalieGsaxData> {
   const fhfhModel = fhfhModelStatus(input.fhfhRows), strengthLabel = GSAX_STRENGTH_LABELS[input.strength], table = NST_GSAX_TABLES[input.strength];
   const latest = (dates: readonly string[]) => dates.reduce<string | null>((max, date) => !max || date > max ? date : max, null);
-  const nstThrough = latest(input.nstGames.map(game => game.date)), wgoThrough = latest(input.appearances.map(row => row.date));
-  const lagDays = nstThrough && wgoThrough ? Math.max(0, dayDifference(wgoThrough, nstThrough)) : null;
+  const nstNewest = latest(input.nstGames.map(game => game.date)), wgoThrough = latest(input.appearances.map(row => row.date));
   // The last week NST fully covers, so a lagging source gives an older complete week rather than part of a newer one.
   const dates = typeof input.window === "object" ? input.window : null, chosen = (date: string) => !!dates && date >= dates.from && date <= dates.through;
-  const week = dates ? input.weeks.find(entry => entry.week === dates.week) ?? null : input.window === "week" && nstThrough ? defaultWeek(input.weeks, nstThrough) : null;
+  const week = dates ? input.weeks.find(entry => entry.week === dates.week) ?? null : input.window === "week" && nstNewest ? defaultWeek(input.weeks, nstNewest) : null;
+  const inWeek = (date: string) => input.window !== "week" || (!!week && date >= week.start && date <= week.end);
+  // A late NHL.com feed on the newest nights ends the card at the last complete one, chosen week or not; an older gap stays partial.
+  const nights = scheduleNights(input.scheduled.filter(game => (dates ? chosen(game.date) : inWeek(game.date)) && (dates || !nstNewest || game.date <= nstNewest)), input.reported);
+  const cut = completeThrough(nights, latest(nights.map(night => night.date)) ?? "");
+  const endDate = cut.trimmed.length ? cut.through : null, nstThrough = endDate && nstNewest && endDate < nstNewest ? endDate : nstNewest;
+  const lagDays = nstThrough && wgoThrough ? Math.max(0, dayDifference(wgoThrough, nstThrough)) : null;
+  const counted = (date: string) => !endDate || date <= endDate;
   const inWindowDates = (date: string) => !!nstThrough && date <= nstThrough && (dates ? chosen(date) : input.window !== "week" || (!!week && date >= week.start && date <= week.end));
   const inScope = input.appearances.filter(row => inWindowDates(row.date));
   const appearancesBehindNst = nstThrough ? input.appearances.filter(row => row.date > nstThrough).length : 0;
   // Only games NST lacks count as behind: a chosen week still under way, or a day with no games, has nothing missing.
-  const pastNst = (date: string) => chosen(date) && (!nstThrough || date > nstThrough);
+  const pastNst = (date: string) => chosen(date) && counted(date) && (!nstThrough || date > nstThrough);
   const appearancesPastNst = input.appearances.filter(row => pastNst(row.date)).length, gamesPastNst = input.scheduled.filter(game => pastNst(game.date)).length;
   const windowLabel = dates ? dates.label : input.window === "week" ? week ? `Week ${week.week}, ${week.start} to ${week.end}${week.end > nstThrough! ? `, through ${nstThrough}` : ""}` : "No matchup week covered" : input.window === null ? "Season to date" : `Last ${input.window} appearances per goalie`;
   const nstByKey = new Map(input.nstGames.map(game => [`${game.goalieId}:${game.date}`, game]));
@@ -118,7 +125,7 @@ export function buildGoalieGsax(input: GoalieGsaxInput): SharePostLoadResult<Goa
   const order = (row: GoalieGsaxRow) => input.board === "worst" ? row.worstRank : row.rank;
   const finished = rows.map(row => ({ ...row, rank: ranks.get(row.goalieId) ?? null, worstRank: worstRanks.get(row.goalieId) ?? null })).sort((a, b) => (order(a) ?? Infinity) - (order(b) ?? Infinity) || a.goalieId - b.goalieId);
   // A week window answers only for that week's games, so a gap elsewhere in the season does not touch it.
-  const proven = (date: string) => dates ? chosen(date) : input.window !== "week" || (!!week && date >= week.start && date <= week.end);
+  const proven = (date: string) => counted(date) && (dates ? chosen(date) : inWeek(date));
   const schedule = reconcileSchedule(input.scheduled.filter(game => proven(game.date)), input.reported.filter(game => proven(game.date)));
   const shownTeams = boardSides(finished, goalieGsaxRanks, input.board, GSAX_SHOWN).sides.flatMap(side => side.entries.map(({ row }) => row.teams[row.teams.length - 1]));
   const covered = rows.reduce((total, row) => total + row.covered, 0), expected = rows.reduce((total, row) => total + row.appearances, 0);
@@ -128,9 +135,10 @@ export function buildGoalieGsax(input: GoalieGsaxInput): SharePostLoadResult<Goa
     ...nstThrough && (appearancesPastNst || gamesPastNst) ? [`${dates!.label} runs past NST's newest date, ${nstThrough}: ${countOf(appearancesPastNst, "appearance")} after it ${appearancesPastNst === 1 ? "is" : "are"} not counted.`] : [],
   ];
   const lagNote = lagDays ? [`${gsaxLagLabel(lagDays)} behind NHL.com`] : [];
+  const note = completeThroughNote(cut), unreported = cut.trimmed.length > 0 && !cut.through;
   return {
-    state: !nstThrough ? "missing" : reasons.length ? "partial" : "ready", reasons, teams: [...new Set(shownTeams)].filter(team => team in teamsInfo),
-    data: nstThrough ? {
+    state: !nstThrough || unreported ? "missing" : reasons.length ? "partial" : "ready", reasons: unreported ? ["No night in this window is fully reported yet."] : reasons, ...note ? { pageNotes: [note] } : {}, teams: [...new Set(shownTeams)].filter(team => team in teamsInfo),
+    data: nstThrough && !unreported ? {
       model: "NST", strength: input.strength, strengthLabel, board: input.board, window: input.window, week, windowLabel, minAppearances: input.minAppearances, minCoverage: input.minCoverage,
       nstThrough, wgoThrough, lagDays, appearancesBehindNst, unmatchedNstRows: input.nstGames.filter(game => !appearanceKeys.has(`${game.goalieId}:${game.date}`)).length,
       rows: finished, ranked: ranked.length, unadmitted: rows.length - ranked.length, fhfhModel,

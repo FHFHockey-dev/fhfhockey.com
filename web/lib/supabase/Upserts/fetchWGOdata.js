@@ -56,24 +56,70 @@ function mapByFranchiseId(rows = []) {
   return new Map(rows.map((row) => [row.franchiseId, row]));
 }
 
+// NHL.com request limits. A hung request is aborted and retried, so one slow
+// response cannot use up the route's 240 s maxDuration (web/vercel.json).
+const NHL_FETCH_TIMEOUT_MS = 20_000;
+const NHL_FETCH_ATTEMPTS = 3;
+const NHL_FETCH_BACKOFF_MS = 1_000;
+// Longest one Fetch can take: every attempt times out, plus the backoffs.
+const NHL_FETCH_WORST_CASE_MS =
+  NHL_FETCH_ATTEMPTS * NHL_FETCH_TIMEOUT_MS +
+  NHL_FETCH_BACKOFF_MS * (2 ** (NHL_FETCH_ATTEMPTS - 1) - 1);
+// A date starts only if a worst-case date still ends inside this budget,
+// leaving time for upserts and the cron audit write.
+const RUN_BUDGET_MS = 210_000;
+
+function describeUrl(url) {
+  const { origin, pathname } = new URL(url);
+  return `${origin}${pathname}`;
+}
+
 // Helper fetch function
 async function Fetch(url) {
-  const response = await fetch(url, {
-    headers: {
-      Accept: "application/json",
-      "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)",
-    },
-  });
-  const contentType = response.headers.get("content-type") || "";
-  if (!response.ok) {
-    throw new Error(`Failed to fetch ${url}: HTTP ${response.status}`);
-  }
-  if (!contentType.includes("application/json")) {
-    throw new Error(
-      `Failed to fetch ${url}: expected JSON but got ${contentType || "unknown"}`,
+  for (let attempt = 1; ; attempt++) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), NHL_FETCH_TIMEOUT_MS);
+    // Network errors and timeouts are retried; HTTP status decides otherwise.
+    let retryable = true;
+    let failure;
+    try {
+      const response = await fetch(url, {
+        headers: {
+          Accept: "application/json",
+          "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)",
+        },
+        signal: controller.signal,
+      });
+      const contentType = response.headers.get("content-type") || "";
+      if (!response.ok) {
+        retryable = response.status === 429 || response.status >= 500;
+        throw new Error(`HTTP ${response.status}`);
+      }
+      if (!contentType.includes("application/json")) {
+        retryable = false;
+        throw new Error(`expected JSON but got ${contentType || "unknown"}`);
+      }
+      return await response.json();
+    } catch (error) {
+      failure = controller.signal.aborted
+        ? `no response within ${NHL_FETCH_TIMEOUT_MS} ms`
+        : error?.message || String(error);
+    } finally {
+      clearTimeout(timeout);
+    }
+
+    if (!retryable || attempt >= NHL_FETCH_ATTEMPTS) {
+      throw new Error(
+        `Failed to fetch ${describeUrl(url)}: ${failure}` +
+          (attempt > 1 ? ` after ${attempt} attempts` : ""),
+      );
+    }
+    const backoffMs = NHL_FETCH_BACKOFF_MS * 2 ** (attempt - 1);
+    console.warn(
+      `Attempt ${attempt}/${NHL_FETCH_ATTEMPTS} for ${describeUrl(url)} failed (${failure}); retrying in ${backoffMs} ms`,
     );
+    await new Promise((resolve) => setTimeout(resolve, backoffMs));
   }
-  return response.json();
 }
 
 async function fetchNHLSeasons() {
@@ -173,6 +219,7 @@ async function fetchNHLData(
   seasonId,
   lineageRecords,
   bar,
+  deadline,
 ) {
   const teamsInfo = createSeasonAwareWriterTeamsFromLineageRecords(
     seasonId,
@@ -181,10 +228,30 @@ async function fetchNHLData(
   const teamsByFranchiseId = new Map(
     Object.values(teamsInfo).map((team) => [team.franchiseId, team]),
   );
+  // Dates not written this run. A failed read stops the run, so recent mode
+  // resumes from the last stored date and retries it instead of leaving a gap.
+  const failedDates = [];
+  // Dates the run budget could not fit. Not failures: nothing was tried, and
+  // the next run starts from the last stored date, so it picks them up.
+  const deferredDates = [];
   let currentDate = parseISO(startDate);
 
   while (format(currentDate, "yyyy-MM-dd") <= effectiveEndDate) {
     const formattedDate = format(currentDate, "yyyy-MM-dd");
+
+    if (Date.now() + NHL_FETCH_WORST_CASE_MS > deadline) {
+      console.warn(
+        `Leaving ${formattedDate} onward (season ${seasonId}) for the next run: run time budget spent.`,
+      );
+      for (
+        let date = currentDate;
+        format(date, "yyyy-MM-dd") <= effectiveEndDate;
+        date = addDays(date, 1)
+      ) {
+        deferredDates.push(format(date, "yyyy-MM-dd"));
+      }
+      break;
+    }
 
     const { data: existing, error: existErr } = await supabase
       .from("wgo_team_stats")
@@ -210,19 +277,7 @@ async function fetchNHLData(
 
     console.time(`Processing ${formattedDate}`);
 
-    const [
-      statsResponse,
-      miscStatsResponse,
-      penaltyResponse,
-      penaltyKillResponse,
-      powerPlayResponse,
-      ppToiResponse,
-      pkToiResponse,
-      shootingResponse,
-      shPercentageResponse,
-      faceOffResponse,
-      faceOffWinLossResponse,
-    ] = await Promise.all([
+    const responses = await Promise.all([
       Fetch(
         `https://api.nhle.com/stats/rest/en/team/summary?isAggregate=true&isGame=true&sort=[{"property":"points","direction":"DESC"},{"property":"wins","direction":"DESC"},{"property":"franchiseId","direction":"ASC"}]&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=gameDate<='${formattedDate}' and gameDate>='${formattedDate}'`,
       ),
@@ -256,7 +311,33 @@ async function fetchNHLData(
       Fetch(
         `https://api.nhle.com/stats/rest/en/team/faceoffwins?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22faceoffsWon%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22faceoffWinPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22`,
       ),
-    ]);
+    ]).catch((error) => {
+      console.error(
+        `Failed to read NHL.com data for ${formattedDate} (season ${seasonId}); stopping before later dates:`,
+        error,
+      );
+      failedDates.push({ date: formattedDate, reason: error.message });
+      return null;
+    });
+
+    if (!responses) {
+      console.timeEnd(`Processing ${formattedDate}`);
+      break;
+    }
+
+    const [
+      statsResponse,
+      miscStatsResponse,
+      penaltyResponse,
+      penaltyKillResponse,
+      powerPlayResponse,
+      ppToiResponse,
+      pkToiResponse,
+      shootingResponse,
+      shPercentageResponse,
+      faceOffResponse,
+      faceOffWinLossResponse,
+    ] = responses;
 
     try {
       await capturePlayerForecastSourceObservation({
@@ -571,6 +652,8 @@ async function fetchNHLData(
     console.timeEnd(`Processing ${formattedDate}`);
     currentDate = addDays(currentDate, 1);
   }
+
+  return { failedDates, deferredDates };
 }
 
 async function main(options = {}) {
@@ -616,6 +699,9 @@ async function main(options = {}) {
     processAllSeasons,
   });
   console.time("Total Process Time");
+  const deadline = Date.now() + RUN_BUDGET_MS;
+  const failedDates = [];
+  const deferredDates = [];
 
   try {
     console.log("Fetching NHL seasons and franchise-team lineage...");
@@ -774,13 +860,22 @@ async function main(options = {}) {
             { total: totalDays, width: 40 },
           );
 
-          await fetchNHLData(
+          const seasonResult = await fetchNHLData(
             newStartDate,
             effectiveEndDate,
             season.id.toString(),
             lineageRecords,
             bar,
+            deadline,
           );
+          failedDates.push(...seasonResult.failedDates);
+          deferredDates.push(...seasonResult.deferredDates);
+          if (
+            seasonResult.failedDates.length > 0 ||
+            seasonResult.deferredDates.length > 0
+          ) {
+            break;
+          }
 
           console.log(
             `✓ Completed processing season ${season.formattedSeasonId}`,
@@ -797,7 +892,25 @@ async function main(options = {}) {
       }
     }
 
-    console.log("\n=== MAIN FUNCTION COMPLETED SUCCESSFULLY ===");
+    if (failedDates.length > 0) {
+      const listed = failedDates
+        .slice(0, 10)
+        .map(({ date, reason }) => `${date} (${reason})`);
+      if (failedDates.length > listed.length) {
+        listed.push(`and ${failedDates.length - listed.length} more`);
+      }
+      throw new Error(
+        `WGO team stats failed for ${failedDates.length} date(s): ${listed.join("; ")}`,
+      );
+    }
+
+    if (deferredDates.length > 0) {
+      console.warn(
+        `\n=== MAIN FUNCTION STOPPED AT ITS RUN BUDGET: ${deferredDates.length} date(s) from ${deferredDates[0]} left for the next run ===`,
+      );
+    } else {
+      console.log("\n=== MAIN FUNCTION COMPLETED SUCCESSFULLY ===");
+    }
   } catch (error) {
     console.error("=== ERROR IN MAIN FUNCTION ===");
     console.error("Error:", error);
@@ -805,6 +918,8 @@ async function main(options = {}) {
   }
 
   console.timeEnd("Total Process Time");
+  // Dates not attempted because the run budget ran out: a planned stop, not a failure.
+  return { deferredDates };
 }
 
 // Export the main function for use in API routes.

@@ -15,7 +15,7 @@ export async function loadPostSnapshot(post: string, query: Record<string, strin
   try {
     const load = await entry.load();
     const result = await load({ client, generatedAt }, settings);
-    return { ...base, state: result.state, reasons: result.reasons ?? [], evidence: result.evidence, data: result.data, teams: result.teams ?? [],
+    return { ...base, state: result.state, reasons: result.reasons ?? [], evidence: result.evidence, data: result.data, teams: result.teams ?? [], pageNotes: result.pageNotes ?? [],
       expiresAt: new Date(Date.parse(generatedAt) + (result.ttlSeconds ?? SHARE_POST_DEFAULT_TTL_SECONDS) * 1000).toISOString() };
   } catch {
     return { ...base, state: "missing", reasons: [`${entry.title} sources could not be read.`], evidence: UNKNOWN_EVIDENCE, data: null, teams: [], expiresAt: null };

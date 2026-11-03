@@ -91,6 +91,9 @@ async function downloadsPng(page: Page, name: string) {
 
 test.beforeEach(({ page }) => page.setDefaultTimeout(10000));
 
+/** The studio's Options group starts collapsed (SS-1103): open it before touching an option field. */
+const openOptions = async (page: Page) => { const toggle = page.getByRole("button", { name: /^Options/ }); if (await toggle.getAttribute("aria-expanded") !== "true") await toggle.click(); };
+
 test("Busy and Quiet keeps volume apart from performance, and basis changes the read", async ({ page }) => {
   await signIn(page);
   const requests = await serve(page, busyQuiet);
@@ -112,8 +115,8 @@ test("Busy and Quiet keeps volume apart from performance, and basis changes the 
   await expect(page.getByTestId("post-evidence")).toContainText("Basis: Per start");
   expect(requests[0]).toContain("basis=start");
   await expect(page.getByText("Works for a Thursday or Friday post.")).toBeVisible();
+  await openOptions(page);
   await page.getByLabel("Basis").selectOption("per60");
-  await page.getByRole("button", { name: "Refresh post" }).click();
   await expect(card).toContainText("SA/60");
   expect(requests.at(-1)).toContain("basis=per60");
   await downloadsPng(page, "busy-quiet");
@@ -152,12 +155,11 @@ test("Goalie Category Rescue orders by one category and shows ownership states",
   await expect(card).not.toContainText("Fictional Goalie 2");
   await expect(page.getByTestId("post-evidence")).toContainText("1 unknown ownership excluded");
   await expect(page.getByText("Works for a Thursday or Friday post.")).toBeVisible();
+  await openOptions(page);
   await page.getByLabel("Include unknown ownership").selectOption("on");
-  await page.getByRole("button", { name: "Refresh post" }).click();
   await expect(card).toContainText("Fictional Goalie 2");
   expect(requests.at(-1)).toContain("includeUnknown=on");
   await page.getByRole("combobox", { name: /^Category/ }).selectOption("gaa");
-  await page.getByRole("button", { name: "Refresh post" }).click();
   expect(new URL(page.url()).searchParams.get("category")).toBe("gaa");
   await downloadsPng(page, "goalie-rescue");
 });
@@ -171,6 +173,7 @@ test("Busy and Quiet takes a matchup week, and an old window link still works", 
   await expect(card).toContainText("Season to date, Oct 1 to Oct 4");
   expect(requests[0]).toContain("window=std");
   await expect(page.getByTestId("period-control").getByLabel("Period")).toHaveValue("rolling");
+  await openOptions(page);
   await expect(page.getByRole("combobox", { name: /^Window/ })).toHaveValue("std");
   await page.goto("/social-share/posts?post=busy-quiet-goalies&period=matchup&week=1");
   await expect(card).toContainText("Week 1 · Oct 2 to Oct 3");
@@ -190,6 +193,7 @@ test("Goalie Rescue hides GMS LEFT for a past week and labels ownership as curre
   const card = page.getByTestId("goalie-rescue-card");
   await expect(card).toContainText("Rostered % and status are current and Yahoo-wide, not as of these dates.");
   await expect(card).toContainText("Week 1 · Oct 2 to Oct 3. Min 2 starts.");
+  await openOptions(page);
   await expect(page.getByRole("spinbutton", { name: /^Min starts in week/ })).toHaveValue("2");
   await expect(page.getByRole("spinbutton", { name: /^Min starts in window/ })).toHaveCount(0);
   await expect(card).not.toContainText("GMS LEFT");

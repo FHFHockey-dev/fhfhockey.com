@@ -1,6 +1,6 @@
 import { bounded } from "lib/socialShare/trendSources";
 import { UNKNOWN_EVIDENCE, type SharePostContext, type SharePostLoadResult } from "./contract";
-import { buildBshBoard, PERIOD_ROLLING, SKATER_PERIOD_CONTROL, skaterSeasonScope, type BshBoardData, type BshBoardSettings, type SkaterPeriod, type SkaterSeason } from "./bshBoard";
+import { buildBshBoard, PERIOD_ROLLING, SKATER_PERIOD_CONTROL, skaterSeasonScope, trimLateNights, type BshBoardData, type BshBoardSettings, type SkaterPeriod, type SkaterSeason, type SlateScheduleRow } from "./bshBoard";
 import { readCompletedTeamGames } from "./shared/goalieLedger.sources";
 import { matchupCalendar, periodDates, resolvePeriodWindow, type PeriodWindowSettings } from "./shared/periodWindow";
 import { readMatchupRows } from "./shared/periodWindow.sources";
@@ -21,6 +21,11 @@ export async function readSkaterPeriod({ client, generatedAt }: SharePostContext
   const through = window.through < cutoff ? window.through : cutoff;
   return { period: { from: window.from, through, label: through === window.through ? window.label : `Week ${window.week} · ${periodDates(window.from, through)} so far` } };
 }
+/** Builds from the season with its incomplete newest nights cut, and says so beside the card. */
+export function lateFeedTrimmed<Data>(read: SkaterSeason, build: (season: SkaterSeason) => SharePostLoadResult<Data>): SharePostLoadResult<Data> {
+  const { season, pageNotes } = trimLateNights(read);
+  return { ...build(season), pageNotes };
+}
 /** A period with no dates is a reason on the card, not a read. */
 export const periodMissing = (reason: string) => ({ state: "missing" as const, reasons: [reason], evidence: UNKNOWN_EVIDENCE, data: null });
 
@@ -30,12 +35,12 @@ export async function readSkaterSeason({ client, generatedAt }: SharePostContext
   const [appearances, teamGames, scheduled] = await Promise.all([
     readSkaterAppearances(client, { season, from, through, limit: SKATER_SEASON_LIMITS.appearances }),
     readCompletedTeamGames(client, { season, from, through, limit: SKATER_SEASON_LIMITS.teamGames }),
-    bounded<{ id: number }>("Schedule", SKATER_SEASON_LIMITS.scheduledGames, (start, end) => client.from("games").select("id", { count: "exact" }).eq("seasonId", season).eq("type", 2).gte("date", from).lte("date", through).order("id").range(start, end)),
+    bounded<SlateScheduleRow>("Schedule", SKATER_SEASON_LIMITS.scheduledGames, (start, end) => client.from("games").select("id,date,homeTeamId,awayTeamId", { count: "exact" }).eq("seasonId", season).eq("type", 2).gte("date", from).lte("date", through).order("id").range(start, end)),
   ]);
-  return { appearances, teamGames, scheduledGames: scheduled.length, through, period };
+  return { appearances, teamGames, scheduledGames: scheduled.length, through, period, schedule: scheduled };
 }
 
 export async function loadBshBoard(context: SharePostContext, settings: BshBoardSettings): Promise<SharePostLoadResult<BshBoardData>> {
   const { period, reason } = await readSkaterPeriod(context, settings);
-  return reason ? periodMissing(reason) : buildBshBoard(await readSkaterSeason(context, period), settings);
+  return reason ? periodMissing(reason) : lateFeedTrimmed(await readSkaterSeason(context, period), season => buildBshBoard(season, settings));
 }

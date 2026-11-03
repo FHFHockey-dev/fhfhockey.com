@@ -16,7 +16,7 @@ function games(playerId: number, count: number, points: (index: number) => numbe
   return Array.from({ length: count }, (_, index) => ({ playerId, name: `Skater ${playerId}`, position: "C", group: "F" as const, gameId: 1000 + index, date: dateOf(index), team: "NJD", opponent: "NYR", home: true, goals: 0, assists: 0, points: points(index), shots: 2, hits: 1, blocks: 1, ppPoints: 0, toiSeconds: 1200, ppToiSeconds: 120, penaltyMinutes: 0, ...over }));
 }
 const nstRow = (playerId: number, index: number, ixg: number | null = 0.5): NstCountRow => ({ player_id: playerId, date_scraped: dateOf(index), season: 20262027, ixg, iscfs: 1, icf: 3 });
-const base = (over: Partial<WhatChangedInput> & { appearances: SkaterAppearance[] }): WhatChangedInput => ({ nstCounts: null, nstOnIce: null, completedTeamGames: [], scheduledGameIds: [], through: "2026-10-30", settings, ...over });
+const base = (over: Partial<WhatChangedInput> & { appearances: SkaterAppearance[] }): WhatChangedInput => ({ nstCounts: null, nstOnIce: null, completedTeamGames: [], scheduledGames: [], through: "2026-10-30", settings, ...over });
 
 describe("What Changed windows and samples", () => {
   it("reads through yesterday in New York", () => {
@@ -125,23 +125,41 @@ describe("game completeness and identity", () => {
   it("is partial when a scheduled game has no result or a completed team game no skater rows", () => {
     const home = games(1, 10, index => index >= 5 ? 1 : 0), appearances = [...home, ...games(2, 10, () => 0, { team: "NYR" })];
     const completed = home.flatMap(game => [{ gameId: game.gameId, team: "NJD" }, { gameId: game.gameId, team: "NYR" }]);
-    const scheduledGameIds = home.map(game => game.gameId);
-    const complete = buildWhatChanged(base({ appearances, completedTeamGames: completed, scheduledGameIds }));
+    const scheduledGames = home.map(game => ({ gameId: game.gameId, date: game.date }));
+    const complete = buildWhatChanged(base({ appearances, completedTeamGames: completed, scheduledGames }));
     expect(complete.state).toBe("ready");
     expect(complete.evidence.coverage).toEqual({ observed: 20, expected: 20, missing: 0, unit: "team games" });
-    const short = buildWhatChanged(base({ appearances, completedTeamGames: completed, scheduledGameIds: [...scheduledGameIds, 9999] }));
+    const short = buildWhatChanged(base({ appearances, completedTeamGames: completed, scheduledGames: [...scheduledGames, { gameId: 9999, date: dateOf(2) }] }));
     expect(short.state).toBe("partial");
     expect(short.reasons![0]).toMatch(/2 of 22/);
     expect(short.reasons).toHaveLength(1);
-    const silent = buildWhatChanged(base({ appearances, completedTeamGames: [...completed, { gameId: 8888, team: "NJD" }, { gameId: 8888, team: "NYR" }], scheduledGameIds: [...scheduledGameIds, 8888] }));
+    const silent = buildWhatChanged(base({ appearances, completedTeamGames: [...completed, { gameId: 8888, team: "NJD" }, { gameId: 8888, team: "NYR" }], scheduledGames: [...scheduledGames, { gameId: 8888, date: dateOf(3) }] }));
     expect(silent.reasons![0]).toMatch(/2 of 22 completed team games have no skater rows/);
     expect(silent.evidence.coverage).toEqual({ observed: 20, expected: 22, missing: 2, unit: "team games" });
-    const oneTeam = buildWhatChanged(base({ appearances: appearances.filter(game => !(game.team === "NYR" && game.gameId === 1009)), completedTeamGames: completed, scheduledGameIds }));
+    const oneTeam = buildWhatChanged(base({ appearances: appearances.filter(game => !(game.team === "NYR" && game.gameId === 1003)), completedTeamGames: completed, scheduledGames }));
     expect(oneTeam.state).toBe("partial");
     expect(oneTeam.reasons).toEqual(["1 of 20 completed team games have no skater rows."]);
     expect(oneTeam.evidence.coverage).toEqual({ observed: 19, expected: 20, missing: 1, unit: "team games" });
     expect(oneTeam.evidence.sources.find(source => source.tables.includes("wgo_team_stats"))!.state).toBe("ready");
     expect(oneTeam.data!.risers[0]).toMatchObject({ playerId: 1 });
+  });
+  it("ends at the last complete night when only the newest is late, with a page note, and an older gap still blocks", () => {
+    const home = games(1, 10, index => index >= 5 ? 1 : 0), appearances = [...home, ...games(2, 10, () => 0, { team: "NYR" })];
+    const completed = home.flatMap(game => [{ gameId: game.gameId, team: "NJD" }, { gameId: game.gameId, team: "NYR" }]), scheduledGames = home.map(game => ({ gameId: game.gameId, date: game.date }));
+    const lateNight = completed.filter(game => game.gameId !== 1009);
+    const late = buildWhatChanged(base({ appearances, completedTeamGames: lateNight, scheduledGames }));
+    expect(late.state).toBe("ready");
+    expect(late.reasons).toEqual([]);
+    expect(late.pageNotes).toEqual(["Oct 10 is not fully reported yet, so this card ends Oct 9."]);
+    expect(late.data!.through).toBe(dateOf(8));
+    expect(late.data!.cohort.eligible).toBe(0);
+    expect(late.evidence.coverage).toEqual({ observed: 18, expected: 18, missing: 0, unit: "team games" });
+    expect(late.evidence.sample).toContain(`through ${dateOf(8)}`);
+    expect(buildWhatChanged(base({ appearances, completedTeamGames: completed, scheduledGames })).pageNotes).toBeUndefined();
+    const older = buildWhatChanged(base({ appearances, completedTeamGames: lateNight, scheduledGames: [...scheduledGames, { gameId: 9999, date: dateOf(2) }] }));
+    expect(older.state).toBe("partial");
+    expect(older.reasons).toEqual(["2 of 20 scheduled team games have no reported result."]);
+    expect(older.data!.through).toBe(dateOf(8));
   });
   it("selects one player by id or a unique name, and never guesses between two", () => {
     const appearances = [...games(1, 3, () => 1), ...games(2, 3, () => 1, { name: "Skater 12" })];

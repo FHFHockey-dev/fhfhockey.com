@@ -48,7 +48,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
   try {
     // Pass the flags to main with the correct option names expected by fetchWGOdata.js
-    await main(options);
+    const { deferredDates } = await main(options);
+    if (deferredDates.length > 0) {
+      // Stopped at the run budget on purpose: the audit records "continued", and the next run starts from the last stored date.
+      return res.status(207).json({
+        message: `Data fetch/upsert stopped at the run budget; ${deferredDates.length} date(s) from ${deferredDates[0]} are left for the next run.`,
+        deferredDates,
+        termination: { state: "continuation_required" },
+      });
+    }
     res.status(200).json({ message: "Data fetch/upsert complete." });
   } catch (err: any) {
     console.error("Error in run-fetch-wgo-data API:", err);

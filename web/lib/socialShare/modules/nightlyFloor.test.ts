@@ -247,7 +247,7 @@ describe("Nightly Floor card", () => {
     expect(text).toContain("Cardio Masters: appeared with exactly 0 points.");
     expect(text).toContain("No skater meets this test");
     cleanup();
-    expect(await show(data!, settings({ view: "point" }))).toContain("Refresh this post");
+    expect(await show(data!, settings({ view: "point" }))).toContain("Updating…");
   });
 });
 

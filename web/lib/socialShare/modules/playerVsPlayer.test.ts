@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import PlayerVsPlayerCard from "components/SocialShare/modules/PlayerVsPlayerCard";
 import { parseShareSettings, sharePostExportBlock, type AnyShareModule, type SharePostSnapshot } from "./contract";
 import shippedCandidates from "./playerVsPlayer.candidates.json";
-import { buildPlayerVsPlayer, claimsForPair, comparePlayerWindows, joinNst, NO_CONSENSUS, playerVsPlayerModule, playerWindow, pvpAltText, pvpBarShares, pvpHasRows, pvpLegend, summarizeDiscussion, validateCandidate, validateCandidateFile, type CandidateRecord, type PlayerVsPlayerData, type PlayerVsPlayerSettings, type PvpNstRow, type PvpStrength } from "./playerVsPlayer";
+import { buildPlayerVsPlayer, claimsForPair, comparePlayerWindows, joinNst, NO_CONSENSUS, playerVsPlayerModule, playerWindow, pvpAltText, pvpBarShares, pvpHasRows, pvpLegend, summarizeDiscussion, validateCandidate, validateCandidateFile, type CandidateRecord, type PlayerVsPlayerData, type PlayerVsPlayerSettings, type PvpNstRow, type PvpStrength, type PvpTeamCoverage } from "./playerVsPlayer";
 import type { SkaterAppearance } from "./shared/skaterAppearances";
 
 const entry = playerVsPlayerModule as AnyShareModule;
@@ -16,9 +16,11 @@ const game = (playerId: number, index: number, over: Partial<SkaterAppearance> =
 const games = (playerId: number, count: number, over: Partial<SkaterAppearance> = {}) => Array.from({ length: count }, (_, index) => game(playerId, index, over));
 const nstFor = (rows: readonly SkaterAppearance[]): PvpNstRow[] => rows.map(row => ({ player_id: row.playerId, date_scraped: row.date, gp: 1, ixg: 0.5, iscfs: 2 }));
 const settings = (over: Partial<PlayerVsPlayerSettings> = {}): PlayerVsPlayerSettings => ({ pair: "manual", playerA: A, playerB: B, window: "l10", basis: "per-game", strength: "all", minCoverage: 90, ...over });
-const build = (input: { settings?: PlayerVsPlayerSettings; appearances?: SkaterAppearance[]; nst?: PvpNstRow[] | null; candidates?: unknown; coverage?: { team: string; scheduled: number; completed: number }[] } = {}) => {
+/** One team's scheduled nights, from Oct 1, each with whether its result is reported. */
+const nights = (count: number, late: number[] = []) => Array.from({ length: count }, (_, index) => ({ date: `2026-10-${String(index + 1).padStart(2, "0")}`, completed: !late.includes(index) }));
+const build = (input: { settings?: PlayerVsPlayerSettings; appearances?: SkaterAppearance[]; nst?: PvpNstRow[] | null; candidates?: unknown; coverage?: PvpTeamCoverage[] } = {}) => {
   const appearances = input.appearances ?? [...games(A, 10), ...games(B, 10, { goals: 0, points: 0 })];
-  return buildPlayerVsPlayer({ settings: input.settings ?? settings(), season: 20262027, through: "2026-10-30", today: "2026-10-31", appearances, nst: input.nst === undefined ? nstFor(appearances) : input.nst, teamCoverage: input.coverage ?? [{ team: "NJD", scheduled: 10, completed: 10 }], candidates: input.candidates ?? { candidates: [] } });
+  return buildPlayerVsPlayer({ settings: input.settings ?? settings(), season: 20262027, through: "2026-10-30", today: "2026-10-31", appearances, nst: input.nst === undefined ? nstFor(appearances) : input.nst, teamCoverage: input.coverage ?? [{ team: "NJD", games: nights(10) }], candidates: input.candidates ?? { candidates: [] } });
 };
 const windowOf = (playerId: number, count: number, strength: PvpStrength = "all", basis: "per-game" | "total" | "per-60" = "per-game", windowId: "l5" | "l10" | "std" = "l10") => playerWindow(playerId, joinNst(games(playerId, count), nstFor(games(playerId, count))), { windowId, basis, strength });
 
@@ -128,9 +130,39 @@ describe("comparable windows (5.2)", () => {
     expect(() => parseShareSettings(entry, { sentiment: "1" })).toThrow("Invalid query");
   });
   it("is partial and cannot export when a team's results lag, a source fails or a record is refused", () => {
-    expect(build({ coverage: [{ team: "NJD", scheduled: 11, completed: 10 }] })).toMatchObject({ state: "partial", reasons: [expect.stringContaining("1 of 11")] });
+    expect(build({ coverage: [{ team: "NJD", games: [...nights(10), { date: "2026-10-05", completed: false }] }] })).toMatchObject({ state: "partial", reasons: [expect.stringContaining("1 of 11")] });
     expect(build({ nst: null })).toMatchObject({ state: "partial", reasons: ["Natural Stat Trick game logs could not be read."] });
     expect(build({ candidates: { candidates: [claimInput({ url: "" })] } })).toMatchObject({ state: "partial", reasons: ["Candidate records refused: fake-1."] });
+  });
+});
+
+describe("late newest night (TJ, 2026-11-03)", () => {
+  /* Both players play Oct 1 to 11; Beta's team's Oct 11 result is not reported yet. */
+  const appearances = [...games(A, 11), ...games(B, 11, { team: "NYI" })];
+  const coverage = (lateNyi: number[]): PvpTeamCoverage[] => [{ team: "NJD", games: nights(11) }, { team: "NYI", games: nights(11, lateNyi) }];
+
+  it("ends the card the night before a late newest night, stays ready, and says so on the page", () => {
+    const result = build({ appearances, coverage: coverage([10]) });
+    expect(result).toMatchObject({ state: "ready", reasons: [], pageNotes: ["Oct 11 is not fully reported yet, so this card ends Oct 10."] });
+    expect(result.data).toMatchObject({ through: "2026-10-10", a: { appearances: 10, lastDate: "2026-10-10" }, b: { appearances: 10, lastDate: "2026-10-10" } });
+    expect(result.evidence.coverage).toEqual({ observed: 20, expected: 20, missing: 0, unit: "team games" });
+    expect(result.evidence.sources[0].asOf).toBe("2026-10-10");
+  });
+  it("cuts several late newest nights", () => {
+    expect(build({ appearances, coverage: coverage([9, 10]) })).toMatchObject({ state: "ready", data: { through: "2026-10-09" }, pageNotes: ["Oct 10 and Oct 11 are not fully reported yet, so this card ends Oct 9."] });
+  });
+  it("keeps an older gap partial, with the per-team reason, even when the newest night is also late", () => {
+    const result = build({ appearances, coverage: coverage([4, 10]) });
+    expect(result).toMatchObject({ state: "partial", reasons: ["NYI: 1 of 10 scheduled games have no reported result."], data: { through: "2026-10-10" } });
+    expect(build({ appearances, coverage: coverage([4]) })).toMatchObject({ state: "partial", reasons: ["NYI: 1 of 11 scheduled games have no reported result."] });
+  });
+  it("has no page note when every night is reported", () => {
+    const result = build({ appearances, coverage: coverage([]) });
+    expect(result).toMatchObject({ state: "ready", data: { through: "2026-10-30" } });
+    expect(result.pageNotes).toBeUndefined();
+  });
+  it("is unavailable when no night is complete", () => {
+    expect(build({ appearances, coverage: [{ team: "NYI", games: nights(11, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) }] })).toMatchObject({ state: "blocked", data: null, reasons: ["No night in this window is fully reported yet."] });
   });
 });
 
@@ -301,7 +333,7 @@ describe("loader", () => {
     return query;
   } });
   const wgo = (playerId: number, date: string, gameId: number) => ({ player_id: playerId, player_name: "Fake", position_code: "C", date, season_id: 20262027, game_id: gameId, team_abbrev: "NJD", opponent_team_abbrev: "NYR", home_road: "H", games_played: 1, goals: 1, assists: 0, points: 1, shots: 1, hits: 1, blocked_shots: 1, pp_points: 0, toi_per_game: 900, pp_toi: 60, penalty_minutes: 0 });
-  const tables = () => ({ wgo_skater_stats: { rows: [wgo(A, "2026-10-10", 1), wgo(B, "2026-10-10", 1)] }, nst_gamelog_as_counts: { rows: [] as unknown[] }, games: { rows: [{ id: 1, homeTeamId: 1, awayTeamId: 3 }, { id: 2, homeTeamId: 1, awayTeamId: 3 }] }, wgo_team_stats: { rows: [{ team_id: 1, game_id: 1 }] } });
+  const tables = () => ({ wgo_skater_stats: { rows: [wgo(A, "2026-10-10", 1), wgo(B, "2026-10-10", 1)] }, nst_gamelog_as_counts: { rows: [] as unknown[] }, games: { rows: [{ id: 2, date: "2026-10-08", homeTeamId: 1, awayTeamId: 3 }, { id: 1, date: "2026-10-10", homeTeamId: 1, awayTeamId: 3 }] }, wgo_team_stats: { rows: [{ team_id: 1, game_id: 1 }] } });
   const load = async () => (await import("./playerVsPlayer.sources")).loadPlayerVsPlayer;
 
   it("reads nothing until two players are chosen", async () => {
@@ -317,6 +349,12 @@ describe("loader", () => {
     expect(result.state).toBe("partial");
     expect(result.reasons).toEqual(expect.arrayContaining(["NJD: 1 of 2 scheduled games have no reported result.", "Natural Stat Trick game logs could not be read."]));
     expect(result.evidence.coverage).toEqual({ observed: 1, expected: 2, missing: 1, unit: "team games" });
+  });
+  it("ends at the last complete night when only the newest team result is late", async () => {
+    const reads: string[] = [];
+    const late = { ...tables(), games: { rows: [{ id: 1, date: "2026-10-10", homeTeamId: 1, awayTeamId: 3 }, { id: 2, date: "2026-10-12", homeTeamId: 1, awayTeamId: 3 }] } };
+    const result = await (await load())({ client: client(reads, late), generatedAt: "2026-10-31T16:00:00Z" }, settings());
+    expect(result).toMatchObject({ state: "ready", data: { through: "2026-10-10" }, pageNotes: ["Oct 12 is not fully reported yet, so this card ends Oct 10."] });
   });
   it("does not read NST for a power-play view", async () => {
     const reads: string[] = [];

@@ -12,15 +12,37 @@ describe("team games example post", () => {
     expect(teamGamesWindow("2026-11-01T02:00:00Z", 7)).toEqual({ from: "2026-10-24", through: "2026-10-30", season: 20262027 });
   });
   it("counts distinct games, shares tied ranks and keeps a proven zero", () => {
-    const result = buildTeamGames({ ...base, scheduledGames: 1, rows: [{ team_id: 1, game_id: 5, date: "2026-10-30" }, { team_id: 1, game_id: 5, date: "2026-10-30" }, { team_id: 2, game_id: 5, date: "2026-10-30" }] });
+    const result = buildTeamGames({ ...base, schedule: [{ id: 5, date: "2026-10-30" }], rows: [{ team_id: 1, game_id: 5, date: "2026-10-30" }, { team_id: 1, game_id: 5, date: "2026-10-30" }, { team_id: 2, game_id: 5, date: "2026-10-30" }] });
     expect(result.state).toBe("ready");
     expect(result.data?.rows.map(row => [row.team, row.games, row.rank])).toEqual([["NJD", 1, 1], ["NYI", 1, 1], ["NYR", 0, 3]]);
     expect(result.evidence.coverage).toEqual({ observed: 2, expected: 2, missing: 0, unit: "team games" });
   });
-  it("is partial, not ready, when scheduled games have no result", () => {
-    const result = buildTeamGames({ ...base, scheduledGames: 2, rows: [{ team_id: 1, game_id: 5, date: "2026-10-30" }, { team_id: 2, game_id: 5, date: "2026-10-30" }] });
-    expect(result.state).toBe("partial");
-    expect(result.reasons?.[0]).toMatch(/2 of 4/);
+  // NJD 1 v NYI 2 on Oct 28, NYI v NYR 3 on Oct 29, NJD v NYR on Oct 30.
+  const schedule = [{ id: 5, date: "2026-10-28" }, { id: 6, date: "2026-10-29" }, { id: 7, date: "2026-10-30" }];
+  const played = (id: number, date: string, home: number, away: number) => [{ team_id: home, game_id: id, date }, { team_id: away, game_id: id, date }];
+  it("ends at the last complete night when only the newest is late: ready, exportable, with a page note", () => {
+    const result = buildTeamGames({ ...base, label: "Last 7 days · Oct 24 to Oct 30", schedule, rows: [...played(5, "2026-10-28", 1, 2), ...played(6, "2026-10-29", 2, 3), { team_id: 1, game_id: 7, date: "2026-10-30" }] });
+    expect(result.state).toBe("ready");
+    expect(result.reasons).toEqual([]);
+    expect(result.pageNotes).toEqual(["Oct 30 is not fully reported yet, so this card ends Oct 29."]);
+    expect(result.data).toMatchObject({ from: "2026-10-24", through: "2026-10-29", label: "Oct 24 to Oct 29" });
+    expect(result.data?.rows.map(row => [row.team, row.games])).toEqual([["NYI", 2], ["NJD", 1], ["NYR", 1]]);
+    expect(result.evidence.coverage).toEqual({ observed: 4, expected: 4, missing: 0, unit: "team games" });
+    const week = buildTeamGames({ ...base, label: "Week 2 · Oct 24 to Oct 30 so far", schedule, rows: [...played(5, "2026-10-28", 1, 2), ...played(6, "2026-10-29", 2, 3)] });
+    expect(week.data?.label).toBe("Week 2 · Oct 24 to Oct 29");
+  });
+  it("is partial, not ready, when an older night has no result, even with the newest cut", () => {
+    const older = buildTeamGames({ ...base, schedule, rows: [{ team_id: 1, game_id: 5, date: "2026-10-28" }, ...played(6, "2026-10-29", 2, 3), ...played(7, "2026-10-30", 1, 3)] });
+    expect(older.state).toBe("partial");
+    expect(older.reasons?.[0]).toMatch(/1 of 6/);
+    expect(older.pageNotes).toBeUndefined();
+    const both = buildTeamGames({ ...base, schedule, rows: [{ team_id: 1, game_id: 5, date: "2026-10-28" }, ...played(6, "2026-10-29", 2, 3)] });
+    expect(both).toMatchObject({ state: "partial", data: { through: "2026-10-29" }, pageNotes: ["Oct 30 is not fully reported yet, so this card ends Oct 29."] });
+    expect(both.reasons?.[0]).toMatch(/1 of 4/);
+  });
+  it("is missing when no night in the window is fully reported", () => {
+    const none = buildTeamGames({ ...base, schedule, rows: [{ team_id: 1, game_id: 5, date: "2026-10-28" }] });
+    expect(none).toMatchObject({ state: "missing", data: null, reasons: ["No night from 2026-10-24 to 2026-10-30 is fully reported yet."] });
   });
 });
 

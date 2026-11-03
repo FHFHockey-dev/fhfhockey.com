@@ -50,7 +50,7 @@ describe("post export", () => {
     const built = snapshot({ settings: { x: 3, pos: "all", search: "", since: null } });
     expect(sharePostExportBlock(entry, built, { x: 3, pos: "all", search: "", since: null }, now)).toBeNull();
     expect(sharePostExportBlock(entry, built, { x: 3, pos: "all", search: "connor", since: null }, now)).toBeNull();
-    for (const changed of [{ x: 4 }, { pos: "D" }, { since: "2026-10-01" }]) expect(sharePostExportBlock(entry, built, { x: 3, pos: "all", search: "", since: null, ...changed }, now)).toMatch(/Refresh the post/);
+    for (const changed of [{ x: 4 }, { pos: "D" }, { since: "2026-10-01" }]) expect(sharePostExportBlock(entry, built, { x: 3, pos: "all", search: "", since: null, ...changed }, now)).toMatch(/Wait for the post to update/);
   });
   it("ties the token to the edition, post and every setting, including browser-only ones", () => {
     const a = sharePostExportToken(entry.fields, snapshot(), { x: 3, pos: "all", search: "", since: null });

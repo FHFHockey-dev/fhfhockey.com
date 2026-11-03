@@ -40,11 +40,11 @@ export async function loadOffNightEdge({ client, generatedAt }: SharePostContext
   const through = shiftDays(today, -1), from = shiftDays(through, 1 - OFF_NIGHT_LOOKBACK_DAYS), season = currentSeason(through);
   const [appearances, games, yahoo, map] = await Promise.all([
     readSkaterAppearances(client, { season, from, through, limit: LIMITS.skaters }),
-    bounded<{ id: number }>("Schedule", LIMITS.games, (start, end) => client.from("games").select("id", { count: "exact" }).eq("seasonId", season).eq("type", 2).gte("date", from).lte("date", through).order("id").range(start, end)),
+    bounded<{ id: number; date: string }>("Schedule", LIMITS.games, (start, end) => client.from("games").select("id,date", { count: "exact" }).eq("seasonId", season).eq("type", 2).gte("date", from).lte("date", through).order("id").range(start, end)),
     // No ownership filter in the read: a range filter would drop null, and unknown has to stay distinct from 0%.
     bounded<OffNightYahooRow>("Yahoo ownership", LIMITS.yahoo, (start, end) => client.from("yahoo_players").select(YAHOO_COLUMNS, { count: "exact" }).eq("season", Math.floor(season / 10000)).order("player_key").range(start, end)),
     // The whole map: only then can a Yahoo id on two NHL ids be seen and dropped.
     bounded<ShareMapRow>("Yahoo to NHL id map", LIMITS.map, (start, end) => client.from("yahoo_nhl_player_map_read").select("yahoo_player_id,nhl_player_id", { count: "exact" }).order("yahoo_player_id").order("nhl_player_id").range(start, end)),
   ]);
-  return buildOffNightEdge({ edition, window, settings, appearances, yahoo, map, gameIds: games.map(game => game.id), from, through });
+  return buildOffNightEdge({ edition, window, settings, appearances, yahoo, map, gameIds: games.map(game => game.id), scheduled: games, from, through });
 }

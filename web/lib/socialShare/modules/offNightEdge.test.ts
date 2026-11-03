@@ -1,5 +1,7 @@
 import calcWeekScore from "components/GameGrid/utils/calcWeekScore";
+import { readFileSync } from "node:fs";
 import { createElement } from "react";
+import { compileString } from "sass";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import OffNightEdgeCard from "components/SocialShare/modules/OffNightEdgeCard";
@@ -27,13 +29,14 @@ const edition = (at: string, dates: OffNightSettings["dates"], schedule = week(a
 const weekOf = (monday: string) => offNightWeeks(monday, new Date(Date.parse(`${monday}T12:00:00Z`) + 6 * 86400000).toISOString().slice(0, 10))[0].dates;
 const topTeam = (at = THURSDAY, dates: OffNightSettings["dates"] = "rest-of-week") => offNightSchedule(edition(at, dates), dates).rows[0].team;
 
-type Skater = { id: number; team: string; position?: string; pct?: number | null; status?: string | null; updated?: string | null; games?: number; shots?: number | null; yahooKey?: string };
+/** `games` are his newest games unless `out` drops that many of the team's newest, as for a scratch or an injury. */
+type Skater = { id: number; team: string; position?: string; pct?: number | null; status?: string | null; updated?: string | null; games?: number; out?: number; shots?: number | null; yahooKey?: string };
 const DATES = ["2026-10-20", "2026-10-22", "2026-10-24", "2026-10-26", "2026-10-28"];
 /** Each team gets its own five games, with an opposing row so team-game coverage reconciles. */
 function world(skaters: readonly Skater[]) {
   const teams = [...new Set(skaters.map(skater => skater.team))], gameIds = teams.flatMap((_, t) => DATES.map((__, i) => (t + 1) * 100 + i));
   const row = (playerId: number, team: string, gameId: number, date: string, group: "F" | "D", shots: number | null): SkaterAppearance => ({ playerId, name: `Skater ${playerId}`, position: group === "D" ? "D" : "C", group, gameId, date, team, opponent: null, home: true, goals: 1, assists: 1, points: 2, shots, hits: 1, blocks: 1, ppPoints: 0, toiSeconds: 960, ppToiSeconds: 0, penaltyMinutes: 0 });
-  const appearances = skaters.flatMap(skater => DATES.slice(-(skater.games ?? 5)).map(date => row(skater.id, skater.team, (teams.indexOf(skater.team) + 1) * 100 + DATES.indexOf(date), date, skater.position === "D" ? "D" : "F", skater.shots === undefined ? 3 : skater.shots)));
+  const appearances = skaters.flatMap(skater => DATES.slice(0, DATES.length - (skater.out ?? 0)).slice(-(skater.games ?? 5)).map(date => row(skater.id, skater.team, (teams.indexOf(skater.team) + 1) * 100 + DATES.indexOf(date), date, skater.position === "D" ? "D" : "F", skater.shots === undefined ? 3 : skater.shots)));
   const opponents = gameIds.map(id => row(9000 + id, "ZZZ", id, DATES[id % 100], "F", 1));
   const yahoo: OffNightYahooRow[] = skaters.map(skater => ({ player_key: skater.yahooKey ?? `465.p.${skater.id}`, player_id: null, player_name: `Skater ${skater.id}`, editorial_team_abbreviation: skater.team, display_position: skater.position ?? "C", eligible_positions: [{ position: skater.position ?? "C" }], position_type: "P", percent_ownership: skater.pct === undefined ? 10 : skater.pct, status: skater.status ?? null, season: 2026, last_updated: skater.updated === undefined ? "2026-10-29 08:40:00" : skater.updated } as OffNightYahooRow));
   const map = skaters.map(skater => ({ yahoo_player_id: skater.yahooKey ?? `465.p.${skater.id}`, nhl_player_id: String(skater.id) }));
@@ -127,10 +130,9 @@ describe("6.2 candidates: at most one F and one D, with reasons and no filler", 
   });
   it("needs availability, identity and sample, and says which failed", () => {
     const team = topTeam();
-    expect(rowOf(build([{ id: 1, team, status: "IR" }]).data, team).gaps.F).toBe("No F: 1 unavailable");
+    expect(rowOf(build([{ id: 1, team, status: "IR", games: 3, out: 2 }, { id: 2, team, position: "D" }]).data, team).gaps.F).toBe("No F: 1 unavailable");
     expect(rowOf(build([{ id: 1, team, status: "DTD" }]).data, team).picks.F?.nhlId).toBe(1);
-    expect(rowOf(build([{ id: 1, team, games: 4 }]).data, team).gaps.F).toBe("No F: 1 short sample");
-    expect(rowOf(build([{ id: 1, team, shots: null }]).data, team).gaps.F).toBe("No F: 1 short sample");
+    expect(rowOf(build([{ id: 1, team, shots: null }]).data, team).gaps.F).toBe("No F: 1 no complete game");
     const noMap = world([{ id: 1, team }]);
     expect(rowOf(edge({ edition: edition(THURSDAY, "rest-of-week"), settings: settings(), ...noMap, map: [] }).data, team).gaps.F).toBe("No F: 1 no identity");
     const twoIds = world([{ id: 1, team }]);
@@ -151,11 +153,113 @@ describe("6.2 candidates: at most one F and one D, with reasons and no filler", 
     const team = topTeam(), fixture = world([{ id: 1, team }]);
     const preseason = edge({ edition: edition(THURSDAY, "rest-of-week"), settings: settings(), ...fixture, gameIds: fixture.gameIds.slice(1) });
     expect(preseason.state).toBe("ready");
-    expect(rowOf(preseason.data, team).gaps.F).toBe("No F: 1 short sample");
+    expect(rowOf(preseason.data, team).picks.F).toMatchObject({ nhlId: 1, games: 4, shortSample: true });
     const gap = edge({ edition: edition(THURSDAY, "rest-of-week"), settings: settings(), ...fixture, gameIds: [...fixture.gameIds, 999] });
     expect(gap.state).toBe("partial");
     expect(gap.evidence.coverage).toEqual({ observed: 10, expected: 12, missing: 2, unit: "team games" });
     expect(sharePostExportBlock(offNightEdgeModule, snapshotOf(gap), settings())).toMatch(/2 of 12/);
+  });
+});
+
+describe("SS-1103-D pickups", () => {
+  /** Adds games before the fixture's five, with their opposing rows, so a skater has a rate to be hot against. */
+  function earlier(fixture: ReturnType<typeof world>, team: string, players: { id: number; position?: "F" | "D"; points: number }[]) {
+    const dates = ["2026-10-14", "2026-10-16", "2026-10-18"], base = 9000 + fixture.gameIds.length;
+    const ids = dates.map((_, index) => base + index), template = fixture.appearances.find(row => row.team === team)!;
+    const rows = players.flatMap(player => dates.map((date, index) => ({ ...template, playerId: player.id, name: `Skater ${player.id}`, group: player.position ?? "F", position: player.position === "D" ? "D" : "C", gameId: ids[index], date, goals: player.points, assists: 0, points: player.points, shots: 0, hits: 0, blocks: 0 })));
+    const opponents = ids.map((gameId, index) => ({ ...template, playerId: 99000 + index, team: "ZZZ", gameId, date: dates[index] }));
+    return { ...fixture, appearances: [...rows, ...opponents, ...fixture.appearances], gameIds: [...fixture.gameIds, ...ids] };
+  }
+  it("prefers a HOT skater over a better score, and falls back to the score when none is hot", () => {
+    const [team, other] = offNightSchedule(edition(THURSDAY, "rest-of-week"), "rest-of-week").rows.map(row => row.team);
+    const fixture = world([{ id: 1, team, shots: 6 }, { id: 2, team, shots: 4 }, { id: 3, team: other, shots: 0 }]);
+    // Skater 1 was this good before too; skater 2 has jumped from nothing.
+    const hot = edge({ edition: edition(THURSDAY, "rest-of-week"), settings: settings(), ...earlier(fixture, team, [{ id: 1, points: 2 }, { id: 2, points: 0 }]) });
+    expect(rowOf(hot.data, team).picks.F).toMatchObject({ nhlId: 2, hot: true, shortSample: false });
+    expect(hot.evidence.sample).toMatch(/HOT means L5 fantasy points per game at least 1\.25× his earlier games/);
+    const cold = edge({ edition: edition(THURSDAY, "rest-of-week"), settings: settings(), ...earlier(fixture, team, [{ id: 1, points: 2 }, { id: 2, points: 2 }]) });
+    expect(rowOf(cold.data, team).picks.F).toMatchObject({ nhlId: 1, hot: false });
+    const html = renderToStaticMarkup(createElement(OffNightEdgeCard, { data: hot.data!, settings: settings(), logos: {} }));
+    expect(html).toContain('data-chip="hot">HOT</em>');
+  });
+  it("draws the HOT chip in red text and border on a see-through red fill, AA over the card", () => {
+    const file = "components/SocialShare/modules/OffNightEdgeCard.module.scss";
+    const css = compileString(readFileSync(file, "utf8"), { loadPaths: [".", "styles"] }).css;
+    const rule = css.match(/\.chip\[data-chip=["']?hot["']?\]\s*{([^}]*)}/)![1];
+    const hex = (value: string) => [1, 3, 5].map(index => parseInt(value.slice(index, index + 2), 16));
+    const text = hex(rule.match(/(?:^|;|\s)color:\s*(#[0-9a-f]{6})/i)![1]), border = hex(rule.match(/border:\s*1px solid\s*(#[0-9a-f]{6})/i)![1]);
+    const [, r, g, b, alpha] = rule.match(/background:\s*rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)/)!.map(Number);
+    expect(border).toEqual(text);
+    expect([r, g, b]).toEqual(text);
+    expect(alpha).toBeGreaterThan(0);
+    expect(alpha).toBeLessThan(1);
+    // Over the square's background ($background-dark), as the PNG draws it.
+    const square = hex(readFileSync("styles/vars.scss", "utf8").match(/\$background-dark:\s*(#[0-9a-f]{6})/i)![1]), fill = [r, g, b].map((channel, index) => alpha * channel + (1 - alpha) * square[index]);
+    const luminance = (rgb: number[]) => rgb.map(channel => channel / 255).map(c => c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4).reduce((sum, c, index) => sum + c * [0.2126, 0.7152, 0.0722][index], 0);
+    const [light, dark] = [luminance(text), luminance(fill)].sort((x, y) => y - x);
+    expect((light + 0.05) / (dark + 0.05)).toBeGreaterThanOrEqual(4.5);
+  });
+  it("uses a short sample only when no full sample qualifies, and chips it", () => {
+    const team = topTeam();
+    expect(rowOf(build([{ id: 1, team, games: 2 }, { id: 2, team, shots: 0 }]).data, team).picks.F).toMatchObject({ nhlId: 2, shortSample: false });
+    const short = build([{ id: 1, team, games: 2 }, { id: 2, team, pct: 90 }]);
+    expect(rowOf(short.data, team).picks.F).toMatchObject({ nhlId: 1, games: 2, shortSample: true, hot: false });
+    expect(renderToStaticMarkup(createElement(OffNightEdgeCard, { data: short.data!, settings: settings(), logos: {} }))).toContain('data-chip="short">Short Sample</em>');
+  });
+  it("keeps a skater who played his team's last games pickable whatever Yahoo's status says, and notes it", () => {
+    const team = topTeam(), result = build([{ id: 1, team, status: "NA" }, { id: 2, team, position: "D", status: "IR", games: 4, out: 1 }]);
+    expect(rowOf(result.data, team).picks).toMatchObject({ F: { nhlId: 1 }, D: { nhlId: 2 } });
+    expect(result.pageNotes?.join(" ")).toMatch(/Yahoo marks 2 eligible skaters IR, O or NA although each played/);
+    expect(rowOf(result.data, team).picks.F).toMatchObject({ yahooStatus: "NA" });
+    expect(result.pageNotes?.join(" ")).toMatch(/F: .* is marked NA by Yahoo but played one of .* last 2 games, and no unflagged skater qualifies\. Check he is healthy/);
+  });
+  it("picks a flagged skater who played only when no unflagged skater qualifies, since the flag may be last night's injury", () => {
+    const team = topTeam(), result = build([{ id: 1, team, status: "O" }, { id: 2, team, shots: 0 }]);
+    expect(rowOf(result.data, team).picks.F).toMatchObject({ nhlId: 2, yahooStatus: null });
+    expect(result.pageNotes?.join(" ") ?? "").not.toMatch(/is marked O by Yahoo/);
+  });
+  it("says why a % rostered is unknown in a page note, and never calls it 0%", () => {
+    const team = topTeam(), result = build([{ id: 1, team, pct: null }, { id: 2, team }]);
+    expect(rowOf(result.data, team).picks.F?.nhlId).toBe(2);
+    expect(result.pageNotes?.join(" ")).toMatch(/1 eligible skaters have no Yahoo % rostered.*unknown, not 0%.*Off\./);
+  });
+  it("shows each day's opponent logo and lists opponents so export waits for their logos", () => {
+    const team = topTeam(), result = build([{ id: 1, team }]), row = rowOf(result.data, team);
+    const index = row.gamesByDay.findIndex(count => count > 0), opponent = row.opponentsByDay[index][0];
+    expect(row.opponentsByDay.map(list => list.length)).toEqual(row.gamesByDay);
+    expect(result.teams).toContain(opponent);
+    const html = renderToStaticMarkup(createElement(OffNightEdgeCard, { data: result.data!, settings: settings(), logos: { [opponent]: "data:image/png;base64,AA==" } }));
+    expect(html).toContain(`alt="${opponent}"`);
+  });
+});
+
+describe("SS-1103-D late feed", () => {
+  const scheduledOf = (fixture: ReturnType<typeof world>) => [...new Map(fixture.appearances.map(row => [row.gameId, { id: row.gameId, date: row.date }])).values()];
+  it("ends the form at the last complete night when the newest is late, stays exportable and says so", () => {
+    const team = topTeam(), fixture = world([{ id: 1, team }]), late = DATES[DATES.length - 1];
+    // The newest night's skater rows have not arrived for either team.
+    const result = edge({ edition: edition(THURSDAY, "rest-of-week"), settings: settings(), ...fixture, appearances: fixture.appearances.filter(row => row.date !== late), scheduled: scheduledOf(fixture) });
+    expect(result.state).toBe("ready");
+    expect(result.evidence.sample).toMatch(new RegExp(`to ${DATES[DATES.length - 2]}:`));
+    expect(result.pageNotes?.[0]).toBe("Oct 28 is not fully reported yet, so this card ends Oct 26.");
+    expect(rowOf(result.data, team).picks.F).toMatchObject({ nhlId: 1, games: 4, shortSample: true });
+    expect(sharePostExportBlock(offNightEdgeModule, snapshotOf(result), settings())).toBeNull();
+  });
+  it("keeps an older gap partial, and leaves a complete window alone", () => {
+    const team = topTeam(), fixture = world([{ id: 1, team }]), older = DATES[1];
+    const gap = edge({ edition: edition(THURSDAY, "rest-of-week"), settings: settings(), ...fixture, appearances: fixture.appearances.filter(row => !(row.date === older && row.team === "ZZZ")), scheduled: scheduledOf(fixture) });
+    expect(gap.state).toBe("partial");
+    expect(gap.pageNotes?.some(note => /not fully reported/.test(note))).toBe(false);
+    const whole = edge({ edition: edition(THURSDAY, "rest-of-week"), settings: settings(), ...fixture, scheduled: scheduledOf(fixture) });
+    expect(whole.state).toBe("ready");
+    expect(whole.evidence.sample).toMatch(/to 2026-10-28:/);
+  });
+  it("is unavailable, not partial, when no night in the form window is fully reported", () => {
+    const team = topTeam(), fixture = world([{ id: 1, team }]);
+    const none = edge({ edition: edition(THURSDAY, "rest-of-week"), settings: settings(), ...fixture, appearances: fixture.appearances.filter(row => row.team !== "ZZZ"), scheduled: scheduledOf(fixture) });
+    expect(none.state).toBe("missing");
+    expect(none.data).toBeNull();
+    expect(none.reasons?.[0]).toMatch(/^No night from 2026-10-08 to 2026-10-28 is fully reported/);
   });
 });
 
@@ -193,7 +297,7 @@ describe("6.3 ownership states", () => {
   });
   it("does not let a stale row for an unqualified skater block the post", () => {
     const team = topTeam();
-    expect(build([{ id: 1, team }, { id: 2, team, games: 2, updated: "2026-10-20 08:40:00" }]).state).toBe("ready");
+    expect(build([{ id: 1, team }, { id: 2, team, games: 2, out: 3, status: "O", updated: "2026-10-20 08:40:00" }]).state).toBe("ready");
   });
   it("is missing with no ownership rows, and not exportable with nothing to pick", () => {
     const team = topTeam(), fixture = world([{ id: 1, team }]);
@@ -211,7 +315,7 @@ describe("6.4 card and registration", () => {
     expect(() => parseShareSettings(offNightEdgeModule, { ownershipCeiling: "101" })).toThrow(SharePostRequestError);
     expect(() => parseShareSettings(offNightEdgeModule, { dates: "someday" })).toThrow(SharePostRequestError);
   });
-  it("prints GP by day, picks, 0%, unknown as a dash and the gap reason", () => {
+  it("prints opponents by day, picks, 0% and unknown as a dash, and keeps the gap reason off the card", () => {
     const team = topTeam(), active = settings({ includeUnknown: "on" });
     const result = build([{ id: 1, team, pct: 0 }, { id: 2, team, position: "D", pct: null }], { includeUnknown: "on" });
     const html = renderToStaticMarkup(createElement(OffNightEdgeCard, { data: result.data!, settings: active, logos: {} }));
@@ -219,7 +323,9 @@ describe("6.4 card and registration", () => {
     expect(html).toContain("0% ·");
     expect(html).toContain("— ·");
     expect(html).not.toContain("null");
-    expect(html).toContain("No F: no skaters played");
+    expect(html).not.toContain("No F:");
+    expect(html).toContain("No pick");
+    expect(result.pageNotes?.some(note => / No F: no skaters played\.$/.test(note))).toBe(true);
     expect(html).toContain("Rest of week");
     for (const day of result.data!.days) expect(html).toContain(`${day.label.slice(0, 2).toUpperCase()}<small>${day.leagueGames}</small>`);
     expect(html).toContain("— unknown %");
@@ -228,6 +334,7 @@ describe("6.4 card and registration", () => {
     expect(alt).toContain("Skater 1 0%");
     expect(alt).toContain("Skater 2 —");
     expect(alt).toContain("NHL games by day:");
+    expect(alt).not.toContain("No F:");
     expect(alt).toContain(result.evidence.cohort);
   });
   it("says so when no team has games left", () => {

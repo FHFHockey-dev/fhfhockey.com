@@ -2,7 +2,8 @@ import { calculateWeeklyRanking, isGoalieWeekEligible } from "components/GoalieP
 import type { GoalieWeeklyAggregate, LeagueWeeklyAverage, NumericGoalieStatKey, Ranking, StatColumn } from "components/GoaliePage/goalieTypes";
 import { teamsInfo } from "lib/teamsInfo";
 import { defineShareModule, type SharePostLoadResult } from "./contract";
-import { reconcileSchedule, type ScheduledGame } from "./creaseShift";
+import { datedThrough, reconcileSchedule, scheduleNights, type ScheduledGame } from "./creaseShift";
+import { completeThrough, completeThroughNote } from "./shared/completeThrough";
 import { buildWeekLedgers, CATEGORIES, categoryById, CATEGORY_COUNTS_LABEL, DEFAULT_CATEGORY_IDS, defaultMonth, monthPeriod, periodGoalies, rangePeriod, rankPeriodGoalies, seasonPeriod, spanDays, weekPeriod, type CategoryId, type CellCounts, type MatchupWeek, type PeriodGoalie, type SharePeriod } from "./shared/categoryCounts";
 import { BOARD_FIELD_OPTIONS, boardChoice, boardSides, countOf, type BoardChoice, type BoardSide } from "./shared/goalieBoards";
 import { teamStartShare, type CompletedTeamGame, type GoalieAppearance } from "./shared/goalieLedger";
@@ -159,7 +160,22 @@ export type GoaliePeriodInput = {
   /** Null when a Yahoo read failed: unread is unknown, so no goalie counts as undrafted. */
   adp: GoalieAdpRows | null;
 };
+/** The same period ending at `through`: a week or month says "through <date>", a custom range keeps its label and stops counting there. */
+function periodThrough(period: SharePeriod, through: string): SharePeriod {
+  if (period.kind === "week") return weekPeriod(period.cellWeeks[0], through);
+  if (period.kind === "month") return monthPeriod(period.touchedWeeks, period.key, through);
+  if (period.kind === "season") return seasonPeriod(period.touchedWeeks, through);
+  return { ...period, through, inProgress: true };
+}
+/** A late newest night ends the period at the last complete one, with a page note; an older gap still makes it partial. */
 export function buildGoaliePeriod(input: GoaliePeriodInput): SharePostLoadResult<GoaliePeriodData> {
+  const cut = completeThrough(scheduleNights(input.scheduled, input.reported), input.period.through);
+  if (!cut.trimmed.length) return buildPeriodResult(input);
+  if (!cut.through) return { ...buildPeriodResult(input), state: "missing", reasons: [`No night in ${input.period.label} is fully reported yet.`], data: null };
+  const result = buildPeriodResult({ ...input, period: periodThrough(input.period, cut.through), appearances: datedThrough(input.appearances, cut.through), reported: datedThrough(input.reported, cut.through), scheduled: datedThrough(input.scheduled, cut.through) });
+  return { ...result, pageNotes: [completeThroughNote(cut)!] };
+}
+function buildPeriodResult(input: GoaliePeriodInput): SharePostLoadResult<GoaliePeriodData> {
   const { settings, period } = input, categories = parseCategories(settings.categories);
   const schedule = reconcileSchedule(input.scheduled, input.reported);
   const unresolved = [...new Set(schedule.games.map(game => game.team))].flatMap(team => teamStartShare(team, schedule.games, input.appearances, null).unresolvedGames.map(gameId => `${team}:${gameId}`));

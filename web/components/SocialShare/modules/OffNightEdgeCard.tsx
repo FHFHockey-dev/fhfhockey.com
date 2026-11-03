@@ -8,11 +8,15 @@ import styles from "./OffNightEdgeCard.module.scss";
 /** At or below this many rows (late in a week) the rows are tall enough for larger type. */
 const ROOMY_ROWS = 10;
 
+/** An empty slot says only that; why it is empty is a page note beside the preview (TJ, 2026-11-03). */
 function PickCell({ row, group }: { row: OffNightRow; group: OffNightGroup }) {
   const pick = row.picks[group];
-  if (!pick) return <span className={styles.gap} data-testid="off-night-gap">{row.gaps[group]}</span>;
-  return <span className={styles.pick}><b>{pick.name}</b><small>{ownershipLabel(pick.ownership)} · {pick.fantasyPerGame.toFixed(1)} FP/G</small></span>;
+  if (!pick) return <span className={styles.gap} data-testid="off-night-gap">No pick</span>;
+  return <span className={styles.pick}><b>{pick.name}</b><small>{pick.hot && <em className={styles.chip} data-chip="hot">HOT</em>}{pick.shortSample && <em className={styles.chip} data-chip="short">Short Sample</em>}{ownershipLabel(pick.ownership)} · {pick.fantasyPerGame.toFixed(1)} FP/G</small></span>;
 }
+
+/* eslint-disable-next-line @next/next/no-img-element -- Native data URLs are embedded by html-to-image for exact PNG exports. */
+const OpponentMark = ({ team, logo }: { team: string; logo: string | null | undefined }) => logo ? <img className={styles.opponent} src={logo} alt={team} /> : <b className={styles.opponentText}>{team}</b>;
 
 const Head = ({ numeric, off, children }: { numeric?: boolean; off?: boolean; children: ReactNode }) => <span className={styles.head} data-numeric={numeric || undefined} data-off={off || undefined}>{children}</span>;
 const Cell = ({ numeric, off, children }: { numeric?: boolean; off?: boolean; children: ReactNode }) => <span className={styles.cell} data-numeric={numeric || undefined} data-off={off || undefined}>{children}</span>;
@@ -32,7 +36,7 @@ export default function OffNightEdgeCard({ data, settings, logos }: Pick<SharePo
         <Cell numeric><b className={styles.score}>{row.score.toFixed(1)}</b></Cell>
         <Cell numeric>{row.games}</Cell>
         <Cell numeric>{row.offNightGames}</Cell>
-        {data.days.map((day, index) => <Cell key={day.date} numeric off={day.offNight}>{row.gamesByDay[index] || "·"}</Cell>)}
+        {data.days.map((day, index) => <Cell key={day.date} numeric off={day.offNight}>{row.opponentsByDay[index]?.length ? <span className={styles.opponents}>{row.opponentsByDay[index].map((team, game) => <OpponentMark key={`${team}:${game}`} team={team} logo={logos[team]} />)}</span> : "·"}</Cell>)}
         <Cell><PickCell row={row} group="F" /></Cell>
         <Cell><PickCell row={row} group="D" /></Cell>
       </Fragment>)}

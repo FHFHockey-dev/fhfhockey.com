@@ -43,7 +43,7 @@ const Banner = ({ settings, slate }: { settings: LastNightsStandoutsSettings; sl
 
 function GoalieCard({ data, settings, logos }: Pick<SharePostCardProps<LastNightsStandoutsSettings, LastNightsStandoutsData>, "data" | "settings" | "logos">) {
   const ranking = goalieRanking(data, settings), { rows } = ranking, type = rowType(rows.length), order = goalieRankingText(ranking, settings.minShotsAgainst);
-  if (!rows.length) return <div className={styles.board}><Banner settings={settings} slate={data.slate} /><div className={styles.blank}>No goalie on this slate meets the shots-against minimum.</div></div>;
+  if (!rows.length) return <div className={styles.board}><Banner settings={settings} slate={data.slate} /><div className={styles.blank} data-testid="standouts-blank">{data.goalies.length ? "No goalie on this slate meets the shots-against minimum." : "Goalie data is missing for this slate."}</div></div>;
   return <div className={styles.board}>
     <Banner settings={settings} slate={data.slate} />
     <p className={styles.legend} style={{ color: QUIET }} data-testid="standouts-legend">{order.lead} {slateWord(data)}, then STD per appearance before it. SV% changes in points of save percentage, GAA and GSAx in goals, the rest in %. SA is workload, so uncoloured.{isOlderSlate(data) ? " ROST is current." : ""}{order.note ? <span data-testid="nst-goalie-note" style={{ color: "#ffcc33" }}> {order.note}</span> : null}</p>
@@ -63,7 +63,7 @@ export default function LastNightsStandoutsCard({ data, settings, logos }: Share
   if (!standoutsCurrent(data, settings)) return <PostEmpty>{STALE_SETTINGS_NOTE}</PostEmpty>;
   if (isGoalieView(settings.view)) return <GoalieCard data={data} settings={settings} logos={logos} />;
   const rows = standoutRows(data, settings), hand = isHandBuilt(settings.view), type = rowType(rows.length);
-  if (!rows.length) return <div className={styles.board}><Banner settings={settings} slate={data.slate} /><div className={styles.blank} data-testid="standouts-blank">{hand ? `Pick up to ${STANDOUT_MAX_ROWS} skaters in the sidebar to build this card.` : "No skater played on this slate in this view."}</div></div>;
+  if (!rows.length) return <div className={styles.board}><Banner settings={settings} slate={data.slate} /><div className={styles.blank} data-testid="standouts-blank">{!data.skaters.length ? "Skater data is missing for this slate." : hand ? `Pick up to ${STANDOUT_MAX_ROWS} skaters in the sidebar to build this card.` : "No skater played on this slate in this view."}</div></div>;
   const pool = standoutPool(data, settings).length;
   const legend = hand ? "Picked by hand, in this order." : `Top ${rows.length} of ${pool} by ${rankingText(settings.rankBy)}.`;
   return <div className={styles.board}>

@@ -34,7 +34,7 @@ async function signIn(page: Page) {
 }
 function edition(post: string, settings: Record<string, unknown>, result: SharePostLoadResult<unknown>) {
   const generatedAt = new Date().toISOString();
-  return { schemaVersion: 1, id: `${post}-e2e`, post, state: result.state, reasons: result.reasons ?? [], generatedAt, expiresAt: new Date(Date.parse(generatedAt) + 600000).toISOString(), timeZone: "America/New_York", settings, fixture: false, teams: result.teams ?? [], evidence: result.evidence, data: result.data };
+  return { schemaVersion: 1, id: `${post}-e2e`, post, state: result.state, reasons: result.reasons ?? [], generatedAt, expiresAt: new Date(Date.parse(generatedAt) + 600000).toISOString(), timeZone: "America/New_York", settings, fixture: false, teams: result.teams ?? [], evidence: result.evidence, data: result.data, pageNotes: result.pageNotes ?? [] };
 }
 async function serve(page: Page, post: string, body: object) {
   const state = { requests: 0 };
@@ -53,16 +53,22 @@ async function downloadedPng(page: Page, name: string) {
   expect([bytes.readUInt32BE(16), bytes.readUInt32BE(20)]).toEqual([1080, 1080]);
 }
 
+/** The studio's Options group starts collapsed (SS-1103): open it before touching an option field. */
+const openOptions = async (page: Page) => { const toggle = page.getByRole("button", { name: /^Options/ }); if (await toggle.getAttribute("aria-expanded") !== "true") await toggle.click(); };
+
 test("Risky Starts: a lens switch needs no refetch, changes the token and stays one lens, and the PNG exports", async ({ page }) => {
   await signIn(page);
   const served = await serve(page, "risky-starts", edition("risky-starts", { ...PERIOD_DEFAULTS, lens: "ratio" }, riskyStartsResult(GOALIE_INVENTORY_FIXTURE_DETAIL)));
   await page.goto("/social-share/posts?post=risky-starts");
   const square = page.getByTestId("share-square");
   await expect(square).toBeVisible();
-  await expect(page.getByTestId("risky-legend")).toContainText("No win or start odds");
+  await expect(page.getByTestId("risky-legend")).not.toContainText("No win or start odds");
+  await expect(page.locator('[data-testid="risky-role"][data-role="projected"]').first()).toHaveText("PROJECTED");
+  await expect(page.getByTestId("share-square")).not.toContainText(/Unknown|No line yet/);
   await expect(page.getByTestId("post-evidence")).toContainText("correlated");
   await expect(page.getByTestId("post-watermark")).toHaveText("OBSERVED RESULTS");
   const before = served.requests, ratioToken = await square.getAttribute("data-export-token");
+  await openOptions(page);
   await page.getByRole("combobox", { name: /^Lens/ }).selectOption("volume");
   await expect(page.getByTestId("risky-row").first()).toBeVisible();
   await expect(square).not.toHaveAttribute("data-export-token", ratioToken!);
@@ -79,6 +85,7 @@ test("Start/Sit: accent-free search narrows in the browser, status and forecast 
   const square = page.getByTestId("share-square");
   await expect(square).toBeVisible();
   const before = served.requests, allToken = await square.getAttribute("data-export-token");
+  await openOptions(page);
   await page.getByLabel("Search goalie or team").fill("eric");
   await expect(page.getByTestId("start-sit-row")).toHaveCount(2);
   await expect(page.getByTestId("start-sit-row").first()).toContainText("Éric Testeur");
@@ -161,3 +168,14 @@ for (const [post, settings, testid, card] of [
     await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
   });
 }
+
+test("A late newest night ends the card the night before, notes it beside the preview, and still exports", async ({ page }) => {
+  await signIn(page);
+  const late = buildGoalieInventory({ ...FIXTURE_INPUT, teamGames: FIXTURE_INPUT.teamGames.filter(row => row.date !== "2026-11-01" || row.game_id !== 900003) });
+  await serve(page, "risky-starts", edition("risky-starts", { ...PERIOD_DEFAULTS, lens: "ratio" }, riskyStartsResult(late)));
+  await page.goto("/social-share/posts?post=risky-starts");
+  await expect(page.getByTestId("post-page-notes")).toContainText("Nov 1 is not fully reported yet, so this card ends Oct 30.");
+  await expect(page.getByTestId("share-square")).not.toContainText("not fully reported");
+  await expect(page.getByTestId("post-watermark")).toHaveText("OBSERVED RESULTS");
+  await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeEnabled();
+});
