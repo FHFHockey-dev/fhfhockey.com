@@ -1,6 +1,7 @@
 // web/lib/sustainability/windows.ts
 
 import supabase from "lib/supabase/server";
+import { fetchAllSupabaseFilterChunks } from "lib/supabase/pagination";
 import { toPosGroup, PosGroup, StatCode } from "lib/sustainability/priors";
 import type { CanonicalSustainabilityWindowCode } from "lib/predictions/rollingWindows";
 import { upsertRowsInChunks } from "lib/sustainability/persist";
@@ -61,7 +62,7 @@ export async function fetchPriors(
 // We derive per-stat (successes, trials):
 //  - shp: goals / shots
 //  - oishp: nst_oi_gf / nst_oi_sf
-//  - ipp: points_5v5 / nst_oi_gf
+//  - ipp: points / nst_oi_gf (both all situations; only games with an NST on-ice row)
 //  - ppshp: pp_goals / pp_shots
 export async function fetchWindowCountsAll(
   player_id: number,
@@ -84,7 +85,7 @@ export async function fetchWindowCountsAll(
         "shots",
         "nst_oi_gf",
         "nst_oi_sf",
-        "points_5v5",
+        "points",
         "pp_goals",
         "pp_shots",
       ].join(","),
@@ -98,7 +99,8 @@ export async function fetchWindowCountsAll(
     sh = 0,
     gf = 0,
     sf = 0,
-    p5 = 0,
+    pts = 0,
+    ippGf = 0,
     ppg = 0,
     pps = 0;
   for (const r of data ?? []) {
@@ -106,28 +108,65 @@ export async function fetchWindowCountsAll(
     sh += Number(r.shots) || 0;
     gf += Number(r.nst_oi_gf) || 0;
     sf += Number(r.nst_oi_sf) || 0;
-    p5 += Number(r.points_5v5) || 0;
+    // A game without an NST on-ice row adds no IPP trial, so its points are not counted either.
+    if (r.nst_oi_gf != null && Number.isFinite(Number(r.nst_oi_gf))) {
+      pts += Number(r.points) || 0;
+      ippGf += Number(r.nst_oi_gf);
+    }
     ppg += Number((r as any).pp_goals) || 0;
     pps += Number((r as any).pp_shots) || 0;
   }
   return {
     shp: { s: g, n: sh },
     oishp: { s: gf, n: sf },
-    ipp: { s: p5, n: gf },
+    ipp: { s: pts, n: ippGf },
     ppshp: { s: ppg, n: pps },
   } as Record<StatCode, { s: number; n: number }>;
 }
 
+/** Each player's pre-season Beta posterior per stat (their last three completed seasons,
+ * shrunk to the league prior; see `upsertPlayerPosteriors`), keyed `player_id|stat_code`. */
+export async function fetchPlayerPosteriors(
+  season_id: number,
+  playerIds: number[],
+  statCodes: StatCode[],
+  options: { client?: any } = {},
+): Promise<Map<string, { alpha0: number; beta0: number; position_group: PosGroup }>> {
+  const client = options.client ?? (supabase as any);
+  const data = await fetchAllSupabaseFilterChunks<any, number>(playerIds, (chunk, { from, to }) =>
+    client
+      .from("sustainability_player_priors")
+      .select("player_id, position_group, stat_code, post_alpha, post_beta")
+      .eq("season_id", season_id)
+      .in("player_id", chunk)
+      .in("stat_code", statCodes)
+      .order("player_id", { ascending: true })
+      .order("stat_code", { ascending: true })
+      .range(from, to),
+  );
+  const out = new Map<string, { alpha0: number; beta0: number; position_group: PosGroup }>();
+  for (const r of data ?? []) {
+    const alpha0 = r.post_alpha == null ? Number.NaN : Number(r.post_alpha);
+    const beta0 = r.post_beta == null ? Number.NaN : Number(r.post_beta);
+    if (!Number.isFinite(alpha0) || !Number.isFinite(beta0) || alpha0 <= 0 || beta0 <= 0) continue;
+    out.set(`${r.player_id}|${r.stat_code}`, { alpha0, beta0, position_group: r.position_group });
+  }
+  return out;
+}
+
+/** z of a window rate s/n against a Beta(alpha0, beta0) baseline, using the beta-binomial
+ * predictive spread: binomial noise of n trials plus the baseline's own uncertainty. `shrink`
+ * is the weight the baseline mean would get against these n trials. With no trials there is
+ * no evidence, so z is 0. */
 export function ebZ_generic(
   s: number,
   n: number,
   alpha0: number,
   beta0: number,
-  k: number,
 ) {
-  const priorMean = alpha0 / (alpha0 + beta0);
-  const priorVar =
-    (alpha0 * beta0) / ((alpha0 + beta0) ** 2 * (alpha0 + beta0 + 1));
+  const strength = alpha0 + beta0;
+  const priorMean = alpha0 / strength;
+  const priorVar = (alpha0 * beta0) / (strength ** 2 * (strength + 1));
   if (!n || n <= 0) {
     return {
       p_hat: priorMean,
@@ -139,9 +178,8 @@ export function ebZ_generic(
     };
   }
   const p_hat = s / n;
-  const shrink = 1 / (1 + n / Math.max(k, EPS));
-  const sampleVar = (p_hat * (1 - p_hat)) / n;
-  const varMixed = priorVar * shrink + sampleVar * (1 - shrink);
+  const shrink = strength / (strength + n);
+  const varMixed = (priorMean * (1 - priorMean) * (strength + n)) / (n * (strength + 1));
   const z = (p_hat - priorMean) / Math.max(Math.sqrt(varMixed), Math.sqrt(EPS));
   return { p_hat, priorMean, priorVar, shrink, varMixed, z };
 }
@@ -163,6 +201,8 @@ export async function rebuildBetaWindowZForSnapshot(
     F: await fetchPriors(season_id, "F", statCodes),
     D: await fetchPriors(season_id, "D", statCodes),
   } as any;
+  // The player's own history is the baseline; the league prior covers players without one.
+  const playerPriors = await fetchPlayerPosteriors(season_id, playerIds, statCodes);
 
   const rows: any[] = [];
   for (const pid of playerIds) {
@@ -172,7 +212,11 @@ export async function rebuildBetaWindowZForSnapshot(
     for (const w of windows) {
       const counts = await fetchWindowCountsAll(pid, snapshot_date, w.n);
       for (const stat of statCodes) {
-        const prior = priors[stat];
+        const own = playerPriors.get(`${pid}|${stat}`);
+        const prior =
+          own && own.position_group === pg && priors[stat]
+            ? { alpha0: own.alpha0, beta0: own.beta0, k: own.alpha0 + own.beta0 }
+            : priors[stat];
         if (!prior) continue; // skip if prior row missing (e.g., not yet built)
         if (
           !Number.isFinite(prior.alpha0) ||
@@ -197,7 +241,6 @@ export async function rebuildBetaWindowZForSnapshot(
           trialsRaw,
           prior.alpha0,
           prior.beta0,
-          prior.k,
         );
         const rate = Number.isFinite(p_hat) ? Number(p_hat.toFixed(8)) : 0;
         const prior_mean = Number.isFinite(priorMean)

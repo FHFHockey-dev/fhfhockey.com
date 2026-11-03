@@ -147,7 +147,7 @@ especially strings that include `DATABASE_PASSWORD` or service-role keys.
 
 ### Sustainability version/config policy
 
-- `sustainability_score_v2` is the canonical TypeScript score model. Its compatible configuration revision uses stable recursive-key hashing; revision 2 is `fnv1a_91691726`.
+- `sustainability_score_v3` is the canonical TypeScript score model (L/R wingers count as forwards, all-situations IPP, missing NST skill rates stay null, and luck is measured against each player's own three completed seasons with a beta-binomial predictive z). Its compatible configuration revision uses stable recursive-key hashing; revision 3 is `fnv1a_e11d5c91`. Revision 2 (`sustainability_score_v2`, `fnv1a_91691726`) rows remain in history unchanged.
 - Every new `sustainability_scores` and `sustainability_player_priors` row carries first-class `model_version` and `config_hash`. Existing rows keep embedded component provenance where present; otherwise migration labels them `legacy_unversioned` without rewriting values.
 - Configuration changes use the service-role-only `activate_sustainability_config` RPC. It requires an exact +1 revision, validates the canonical nested weight shape, deactivates the previous row, activates one new row, and enqueues one recompute receipt transactionally.
 - `POST /api/v1/sustainability/process-recompute-queue` is the protected resumable worker. It claims at most one eligible job, runs one bounded canonical stage, transactionally finalizes complete score distributions/quintiles, and requeues, completes, or applies fixed-error capped exponential backoff. It is intentionally not scheduled while cross-provider ownership remains under review.

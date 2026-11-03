@@ -16,40 +16,43 @@ export const describeSustainabilityBand = (
 ) => {
   const tone = resolveInsightTone(row.luck_pressure);
 
+  // Luck pressure compares shooting, on-ice shooting and IPP with league norms for the
+  // position (not the player's own history). "Sustainable" rows run at or below those norms;
+  // "unsustainable" rows run above them. Neither side measures recent production itself.
   if (direction === "sustainable") {
     if (tone === "stable") {
       return {
-        title: "Looks repeatable",
-        detail: "Recent scoring is close to what the player usually earns from his chances."
+        title: "Luck near normal",
+        detail: "Shooting and on-ice luck are close to normal for the position, so recent results lean little on luck."
       };
     }
     if (tone === "watch") {
       return {
-        title: "Mostly believable",
-        detail: "The run still has support, but it is getting a little hot."
+        title: "Running unlucky",
+        detail: "Shooting and on-ice luck are below normal for the position; recent results are not inflated by luck."
       };
     }
     return {
-      title: "Good, but hot",
-      detail: "The rise has some skill support, but the scoring pace is still hotter than normal."
+      title: "Well below normal luck",
+      detail: "Shooting and on-ice luck are well below normal for the position; recent results may understate the underlying play."
     };
   }
 
   if (tone === "stable") {
     return {
-      title: "Could cool",
-      detail: "The streak is not extreme yet, but it still deserves skepticism."
+      title: "Slightly lucky",
+      detail: "Shooting and on-ice luck are only slightly above normal for the position."
     };
   }
   if (tone === "watch") {
     return {
-      title: "Running hot",
-      detail: "The current streak is moving beyond the player’s normal range."
+      title: "Running lucky",
+      detail: "Shooting and on-ice luck are above normal for the position."
     };
   }
   return {
-    title: "Likely to cool",
-    detail: "This run is well above normal and most exposed to a drop."
+    title: "Most luck-dependent",
+    detail: "Shooting and on-ice luck are well above normal for the position; recent results lean most on luck."
   };
 };
 
@@ -98,14 +101,14 @@ export const describePlayerSignalFrame = (frame: PlayerSignalFrame) => {
   if (frame === "trustworthy") {
     return {
       label: "Trustworthy",
-      detail: "The rise looks supported by more than luck."
+      detail: "Recent results are not inflated by shooting or on-ice luck."
     };
   }
 
   if (frame === "overheated") {
     return {
       label: "Overheated",
-      detail: "The hot streak may cool off."
+      detail: "Recent results lean on above-normal shooting or on-ice luck."
     };
   }
 

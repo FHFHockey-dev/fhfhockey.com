@@ -10,8 +10,8 @@ import {
 const queueRow = {
   attempts: 1,
   completed_at: null,
-  config_hash: "fnv1a_91691726",
-  config_revision: 2,
+  config_hash: "fnv1a_e11d5c91",
+  config_revision: 3,
   cursor: {
     stage: "priors",
     season: "current",
@@ -22,7 +22,7 @@ const queueRow = {
   enqueued_at: "2026-07-25T00:00:00.000Z",
   id: 7,
   last_error: null,
-  model_version: "sustainability_score_v2",
+  model_version: "sustainability_score_v3",
   next_attempt_at: "2026-07-25T00:00:00.000Z",
   reason: "config_change",
   started_at: "2026-07-25T00:00:00.000Z",
@@ -92,9 +92,9 @@ describe("Sustainability recompute queue", () => {
         snapshotDate: "2026-04-16",
       }),
       {
-        configRevision: 2,
-        modelVersion: "sustainability_score_v2",
-        configHash: "fnv1a_91691726",
+        configRevision: 3,
+        modelVersion: "sustainability_score_v3",
+        configHash: "fnv1a_e11d5c91",
       },
     );
     expect(rpc).toHaveBeenLastCalledWith(

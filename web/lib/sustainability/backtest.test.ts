@@ -37,7 +37,7 @@ describe("sustainability baseline backtest", () => {
       { precision: 4 }
     );
 
-    expect(result.modelVersion).toBe("sustainability_score_v2");
+    expect(result.modelVersion).toBe("sustainability_score_v3");
     expect(result.variants).toHaveLength(5);
     expect(result.bestByMae).toBe("sustainability_score");
     expect(

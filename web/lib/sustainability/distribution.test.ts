@@ -76,9 +76,9 @@ describe("sustainability distribution snapshot", () => {
     const client = { from: vi.fn(() => ({ upsert })) };
     const snapshot = buildSustainabilityDistributionSnapshot([20, 40, 60])!;
     const rows = toSustainabilityDistributionSnapshotRows({
-      configRevision: 2,
-      modelVersion: "sustainability_score_v2",
-      configHash: "fnv1a_91691726",
+      configRevision: 3,
+      modelVersion: "sustainability_score_v3",
+      configHash: "fnv1a_e11d5c91",
       seasonId: 20252026,
       snapshotDate: "2026-04-16",
       snapshots: { l10: snapshot, l20: null },

@@ -21,8 +21,8 @@ describe("sustainability read contracts", () => {
         window_code: "l10",
         s_raw: 1.2,
         s_100: 65,
-        model_version: "sustainability_score_v2",
-        config_hash: "fnv1a_91691726",
+        model_version: "sustainability_score_v3",
+        config_hash: "fnv1a_e11d5c91",
         sustainability_quintile: 3,
         components: { z_shp: 1.4, z_ixg60: -0.2 },
         computed_at: "2026-03-21T00:00:00.000Z"
@@ -114,10 +114,10 @@ describe("sustainability read contracts", () => {
       s_raw: 1,
       s_100: 73,
       components: {
-        modelVersion: "sustainability_score_v2",
+        modelVersion: "sustainability_score_v3",
         configHash: "fnv1a_test"
       },
-      model_version: "sustainability_score_v2",
+      model_version: "sustainability_score_v3",
       config_hash: "fnv1a_test",
       sustainability_quintile: 3,
       computed_at: "2026-03-21T00:00:00.000Z"
@@ -141,7 +141,7 @@ describe("sustainability read contracts", () => {
     ]);
     expect(payload?.windows[1]).toMatchObject({
       snapshot_date: "2026-03-20",
-      model_version: "sustainability_score_v2",
+      model_version: "sustainability_score_v3",
       config_hash: "fnv1a_test"
     });
   });
@@ -154,10 +154,10 @@ describe("sustainability read contracts", () => {
       window_code: "l10",
       s_raw: 1,
       components: {
-        modelVersion: "sustainability_score_v2",
+        modelVersion: "sustainability_score_v3",
         configHash: "fnv1a_test"
       },
-      model_version: "sustainability_score_v2",
+      model_version: "sustainability_score_v3",
       config_hash: "fnv1a_test",
       sustainability_quintile: 3,
       computed_at: "2026-03-21T00:00:00.000Z"
@@ -222,7 +222,7 @@ describe("sustainability read contracts", () => {
       player_name: "One",
       games_played: 8,
       rookie_status: true,
-      model_version: "sustainability_score_v2",
+      model_version: "sustainability_score_v3",
       config_hash: "fnv1a_test"
     });
     expect(payload.rows[0]).not.toHaveProperty("components");
