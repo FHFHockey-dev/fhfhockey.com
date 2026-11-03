@@ -5,6 +5,7 @@ import {
   betaFromMuK,
   fetchLeagueMeans,
   fetchPlayerSeasonCounts,
+  getHistorySeasonIds,
   getPriorSeasonIds,
   ROOKIE_FALLBACK_MIN_TRIALS,
   toPosGroup,
@@ -101,6 +102,7 @@ describe("toPosGroup", () => {
 describe("canonical prior reads", () => {
   it("derives the prior two concatenated NHL season identifiers", () => {
     expect(getPriorSeasonIds(20252026)).toEqual([20252026, 20242025, 20232024]);
+    expect(getHistorySeasonIds(20252026)).toEqual([20242025, 20232024, 20222023]);
     expect(() => getPriorSeasonIds(2025)).toThrow(
       "Invalid NHL season identifier",
     );
@@ -197,7 +199,9 @@ describe("canonical prior reads", () => {
     expect(result).toHaveLength(1);
     expect(result[0].player_id).toBe(2);
     expect(result[0].position_group).toBe("D");
-    expect(result[0].seasons.map((season) => season.shp.s)).toEqual([3, 4, 5]);
+    // Completed seasons only: the current season (3 goals) never enters the player's own baseline.
+    expect(result[0].seasons.map((season) => season.season_id)).toEqual([20242025, 20232024, 20222023]);
+    expect(result[0].seasons.map((season) => season.shp.s)).toEqual([4, 5, 0]);
     expect(
       client.requests
         .filter(({ filters }) => "player_id" in filters)

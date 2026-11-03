@@ -44,6 +44,12 @@ export function getPriorSeasonIds(seasonIdNow: number): number[] {
   );
 }
 
+/** The three completed seasons before `seasonIdNow`, most recent first: a player's own
+ * pre-season history, which never contains the current-season windows it is compared with. */
+export function getHistorySeasonIds(seasonIdNow: number): number[] {
+  return getPriorSeasonIds(seasonIdNow).map((seasonId) => seasonId - 10_001);
+}
+
 // Helper: aggregate league means (pooled) for a season + position group
 export async function fetchLeagueMeans(
   season_id: number,
@@ -138,7 +144,8 @@ export async function fetchPlayerSeasonCounts(
   }>
 > {
   const client = options.client ?? supabase;
-  const seasonIds = getPriorSeasonIds(seasonIdNow);
+  // Current-season players, measured on their completed seasons only (no current-season games).
+  const seasonIds = getHistorySeasonIds(seasonIdNow);
   const identityRows = await fetchAllSupabasePages<any>(
     ({ from, to }) =>
       client
