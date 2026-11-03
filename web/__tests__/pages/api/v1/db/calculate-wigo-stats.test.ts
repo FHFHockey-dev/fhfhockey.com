@@ -404,6 +404,39 @@ describe("/api/v1/db/calculate-wigo-stats route", () => {
     expect([...written].sort()).toEqual(ids);
   });
 
+  it("uses only the highest-GP seasonal row for a traded player, on both NST reads", async () => {
+    getCurrentSeasonMock.mockResolvedValue({ seasonId: 20262027, lastSeasonId: 20252026 });
+    const game = recentGame("2026-10-23");
+    installRecentFrameMock([game], [game]);
+    const base = fromMock.getMockImplementation()!;
+    // Mercer's shape: a stale N.J row beside the cumulative N.J, WPG row.
+    const seasonal: Record<string, any[]> = {
+      nst_seasonal_individual_counts: [
+        { season: 20262027, strength: "all", gp: 10, toi: 151.0, ixg: 2.17, icf: 35, ihdcf: 5, iscfs: 12 },
+        { season: 20262027, strength: "all", gp: 14, toi: 215.27, ixg: 2.89, icf: 45, ihdcf: 7, iscfs: 16 }
+      ],
+      nst_seasonal_on_ice_counts: [
+        { season: 20262027, strength: "all", gp: 10, toi: 151.0, gf: 7, sf: 77, off_zone_starts: 20, def_zone_starts: 30 },
+        { season: 20262027, strength: "all", gp: 14, toi: 215.27, gf: 9, sf: 101, off_zone_starts: 25, def_zone_starts: 35 }
+      ]
+    };
+    const written: Record<string, any[]> = {};
+    fromMock.mockImplementation((table: string) => {
+      const query = base(table);
+      if (seasonal[table]) query.then = (resolve: (value: unknown) => unknown) => Promise.resolve({ data: seasonal[table], error: null }).then(resolve);
+      query.upsert = (rows: any[]) => { written[table] = rows; return Promise.resolve({ error: null }); };
+      return query;
+    });
+    expect((await runRecentFixture()).statusCode).toBe(200);
+    const career = written.wigo_career[0];
+    expect(career.std_gp).toBe(14);
+    expect(career.std_atoi).toBeCloseTo(215.27 / 14);
+    expect(career.std_icf).toBe(45);
+    expect(career.std_ixg).toBeCloseTo(2.89);
+    expect(career.std_oi_sh_pct).toBeCloseTo(9 / 101);
+    expect(career.std_ozs_pct).toBeCloseTo(25 / 60);
+  });
+
   it("lists only skaters with a totals row this season or last, so high ids are reached", async () => {
     getCurrentSeasonMock.mockResolvedValue({ seasonId: 20262027, lastSeasonId: 20252026 });
     const ids = [8478402, 8484144, 8486067];

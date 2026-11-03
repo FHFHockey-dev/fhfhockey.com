@@ -488,9 +488,22 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         if ("def_zone_starts" in record)
           seasonData.def_zs_all += record.def_zone_starts ?? 0;
       };
+      // A traded player can hold a stale pre-trade row (`N.J`) beside the
+      // cumulative one (`N.J, WPG`). Summing them inflates TOI and counts, so
+      // keep only the highest-GP row per season (B-04, C-22).
+      const onePerSeason = <T extends { season: number; gp: number | null }>(
+        records: T[]
+      ): T[] => {
+        const bySeason = new Map<number, T>();
+        for (const rec of records) {
+          const kept = bySeason.get(rec.season);
+          if (!kept || (rec.gp ?? 0) > (kept.gp ?? 0)) bySeason.set(rec.season, rec);
+        }
+        return [...bySeason.values()];
+      };
       // **** Pass the flag when calling processNstRecord ****
-      nstIndCounts.forEach((rec) => processNstRecord(rec, rec.season, true)); // Pass true for individual records
-      nstOnIceCounts.forEach((rec) => processNstRecord(rec, rec.season, false)); // Pass false for on-ice records
+      onePerSeason(nstIndCounts).forEach((rec) => processNstRecord(rec, rec.season, true)); // Pass true for individual records
+      onePerSeason(nstOnIceCounts).forEach((rec) => processNstRecord(rec, rec.season, false)); // Pass false for on-ice records
 
       wgoTotals.forEach((rec) => {
         const seasonKey = parseInt(rec.season);
