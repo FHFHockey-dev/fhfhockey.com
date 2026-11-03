@@ -80,7 +80,9 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({
       const count = pointCounts[i] || 0;
       const percentage = totalGames > 0 ? count / totalGames : 0;
       const label = `${i} Pt${i !== 1 ? "s" : ""}`;
-      const color = CONSISTENCY_CHART_COLORS[i] ?? WIGO_COLORS.GREY_MEDIUM;
+      // 6+ points share the ramp's light end; the label tells them apart.
+      const color =
+        CONSISTENCY_CHART_COLORS[Math.min(i, CONSISTENCY_CHART_COLORS.length - 1)];
 
       displayData.push({ label, percentage, count, color });
       chartLabels.push(label);
@@ -104,8 +106,9 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({
             label: "Points per Game Distribution",
             data: chartPercentages,
             backgroundColor: chartBackgroundColors,
+            // A 2 px surface gap between segments.
             borderColor: CHART_COLORS.BORDER_DARK,
-            borderWidth: 1
+            borderWidth: 2
           }
         ]
       }
@@ -212,7 +215,15 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({
             <div className={styles.consistencyChartArea}>
               {chartData.datasets.length > 0 &&
               chartData.datasets[0]?.data?.length > 0 ? (
-                <Doughnut options={chartOptions} data={chartData} />
+                <Doughnut
+                  options={chartOptions}
+                  data={chartData}
+                  role="img"
+                  aria-label={`Share of games by points: ${processedData
+                    .filter((item) => item.label !== "Cardio")
+                    .map((item) => `${item.label} ${formatPercentage(item.percentage)}`)
+                    .join(", ")}`}
+                />
               ) : (
                 !isLoading && !error && <div>No chart data to display.</div>
               )}
@@ -222,11 +233,13 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({
               <ul>
                 {processedData.map((item) => (
                   <li key={item.label} className={styles.consistencyItem} title={item.label === "Cardio" ? "Games with zero points, shots, hits and blocks. These also count in the zero-point bucket; Cardio is not a separate doughnut segment." : undefined}>
-                    {/* Color applied to label text via inline style */}
-                    <span
-                      className={styles.consistencyLabel}
-                      style={{ color: item.color === WIGO_COLORS.GREY_MEDIUM ? "#999999" : item.color }} // The donut's grey is too dim for text
-                    >
+                    {/* Text stays in ink; a swatch carries the segment's colour (dataviz). */}
+                    <span className={styles.consistencyLabel}>
+                      <span
+                        className={styles.consistencySwatch}
+                        style={{ background: item.label === "Cardio" ? "transparent" : item.color }}
+                        aria-hidden="true"
+                      />
                       {item.label}:
                     </span>
                     <span className={styles.consistencyValue}>

@@ -500,6 +500,14 @@
     background-color: color.adjust(v.$background-dark, $lightness: -1%);
     border: 1px solid #777;
   }
+  .consistencySwatch {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 4px;
+    border-radius: 2px;
+    vertical-align: baseline;
+  }
   .consistencyLabel {
     color: s.$ink;
     margin-right: 10px;

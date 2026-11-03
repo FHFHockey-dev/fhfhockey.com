@@ -179,12 +179,21 @@ function CategoryCoverageChart({
   if (!hasData) return <p role="status">Category percentiles unavailable for this player and season.</p>;
 
   if (compact) {
-    return <div className={styles.compactFrame}><div className={styles.compactRadar}><Radar data={chartData} options={{
+    const values = hasData ? LABELS.map(({ key }) => Math.round(data[key])) : [];
+    // A lighter fill so the radar does not outrank the table, and each value
+    // printed under its label instead of hover only (E-03).
+    const compactData = { ...chartData, datasets: [{ ...chartData.datasets[0],
+      backgroundColor: "rgba(43, 168, 242, 0.28)", borderWidth: 2 }] };
+    return <div className={styles.compactFrame}><div className={styles.compactRadar}><Radar data={compactData}
+      role="img"
+      aria-label={`Category percentiles, 0 to 100: ${LABELS.map(({ label }, index) => `${label} ${values[index]}`).join(", ")}`}
+      options={{
       ...OPTIONS, maintainAspectRatio: false,
       layout: { padding: 6 },
       scales: { r: { ...OPTIONS.scales.r,
-        pointLabels: { color: "#ccc", font: { size: 12 }, callback: (label: string) => label },
-        ticks: { display: true, stepSize: 50, font: { size: 12 }, color: "#ccc", showLabelBackdrop: false }
+        pointLabels: { color: "#ccc", font: { size: 12, family: "Roboto Condensed, sans-serif" },
+          callback: (label: string, index: number) => [label, String(values[index] ?? "")] },
+        ticks: { display: true, stepSize: 50, font: { size: 12, family: "Roboto Condensed, sans-serif" }, color: "#ccc", showLabelBackdrop: false }
       } }
     }} /></div>
       {/* F and D are pooled by design; say so, with the player's own sample (C-28). */}
