@@ -56,6 +56,7 @@ vi.mock("../../../../../lib/NHL/server", () => ({
 }));
 
 import handler, {
+  buildPredictionRecord,
   fetchPlayerIdsPaginated,
   fetchPlayerSeries,
   predictionScopeDigest,
@@ -306,7 +307,7 @@ describe("/api/v1/ml/update-predictions-sko", () => {
       upserts: 1,
       rowsUpserted: 1,
       partial: true,
-      model: { name: "baseline-moving-average", version: "v0.2" },
+      model: { name: "baseline-moving-average", version: "v0.3" },
       coverage: {
         discoveredPlayers: 2,
         selectedPlayers: 1,
@@ -331,7 +332,7 @@ describe("/api/v1/ml/update-predictions-sko", () => {
       health: { status: "ok", alerts: [] },
       warnings: [],
       runManifest: {
-        runKey: "sko-predictions:baseline-moving-average:v0.2:2026-03-21:5",
+        runKey: "sko-predictions:baseline-moving-average:v0.3:2026-03-21:5",
         attempt: 3,
         state: "succeeded",
       },
@@ -418,7 +419,7 @@ describe("/api/v1/ml/update-predictions-sko", () => {
           as_of_date: "2026-03-22",
           horizon_games: 5,
           model_name: "baseline-moving-average",
-          model_version: "v0.2",
+          model_version: "v0.3",
         },
       ]),
     );
@@ -493,7 +494,7 @@ describe("/api/v1/ml/update-predictions-sko", () => {
     expect(res.body).toMatchObject({
       success: false,
       retryable: true,
-      runKey: "sko-predictions:baseline-moving-average:v0.2:2026-03-21:5",
+      runKey: "sko-predictions:baseline-moving-average:v0.3:2026-03-21:5",
       leaseExpiresAt: "2026-03-21T12:15:00Z",
     });
     expect(assertPredictionsSkoPrerequisitesMock).not.toHaveBeenCalled();
@@ -520,5 +521,26 @@ describe("/api/v1/ml/update-predictions-sko", () => {
         },
       ],
     });
+  });
+
+  it("keeps a real scoreless stretch instead of falling back to a longer window", () => {
+    // 15 games: 1 point in each of the first 10, then 5 scoreless games.
+    const coldStreak = [...Array(10).fill(1), ...Array(5).fill(0)];
+    const cold = buildPredictionRecord(2, "2026-03-21", 5, coldStreak, 10);
+    // avg5 = 0, avg10 = 0.5 -> 0.6 * 0.5 + 0.4 * 0 = 0.3 per game.
+    expect(cold.pred_points_per_game).toBeCloseTo(0.3, 10);
+    expect(cold.pred_points).toBeCloseTo(1.5, 10);
+    expect(cold.model_version).toBe("v0.3");
+
+    const scoreless = buildPredictionRecord(
+      2,
+      "2026-03-21",
+      5,
+      [...Array(10).fill(1), ...Array(10).fill(0)],
+      10,
+    );
+    // Ten scoreless games predict 0, not the 20-game average.
+    expect(scoreless.pred_points).toBe(0);
+    expect(scoreless.sko).toBe(0);
   });
 });

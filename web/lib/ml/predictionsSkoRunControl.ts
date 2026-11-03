@@ -59,7 +59,7 @@ export function predictionsSkoRunKey(req: NextApiRequest): string {
   return [
     "sko-predictions",
     "baseline-moving-average",
-    "v0.2",
+    "v0.3",
     asOfDate(requestValue(req, "asOfDate")),
     positiveInt(requestValue(req, "horizon"), 5),
   ].join(":");
