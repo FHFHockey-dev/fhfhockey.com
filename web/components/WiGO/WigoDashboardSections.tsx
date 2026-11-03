@@ -2,14 +2,12 @@ import React, { useState } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 
-import CategoryCoverageChart from "components/CategoryCoverageChart";
 import OpponentGamelog from "components/WiGO/OpponentGamelog";
 import PerGameStatsTable from "components/WiGO/PerGameStatsTable";
 import PlayerHeader from "components/WiGO/PlayerHeader";
 import { formatHeight, formatWeight, getAge, formatPosition } from "./playerBiography";
 import PlayerRatingsDisplay from "components/WiGO/PlayerRatingsDisplay";
 import NameSearchBar from "components/WiGO/NameSearchBar";
-import RateStatPercentiles from "components/WiGO/RateStatPercentiles";
 import WigoSectionCard from "./WigoSectionCard";
 import WigoHelp from "./WigoHelp";
 import { WIGO_RATING_MIN_COHORT_PEERS } from "utils/calculateWigoRatings";
@@ -38,6 +36,17 @@ const ToiLineChart = dynamic(() => import("components/WiGO/ToiLineChart"), {
 const PpgLineChart = dynamic(() => import("components/WiGO/PpgLineChart"), {
   ssr: false,
   loading: () => <ChartLoadingPlaceholder message="Loading points…" />,
+});
+
+// Chart libraries load with the panels that draw them, not with the page (S8).
+const RateStatPercentiles = dynamic(() => import("components/WiGO/RateStatPercentiles"), {
+  ssr: false,
+  loading: () => <ChartLoadingPlaceholder message="Loading percentiles…" />,
+});
+
+const CategoryCoverageChart = dynamic(() => import("components/CategoryCoverageChart"), {
+  ssr: false,
+  loading: () => <ChartLoadingPlaceholder message="Loading category percentiles…" />,
 });
 
 const ConsistencyChart = dynamic(

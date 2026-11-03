@@ -15,10 +15,16 @@ import {
 } from "./tableUtils";
 import TimeframeComparison from "./TimeframeComparison";
 import WigoHelp from "./WigoHelp";
-import GameLogChart from "./StatsTableRowChart";
+import dynamic from "next/dynamic";
 import styles from "styles/wigoCharts.module.scss";
 import { useSeasonPendingMessage } from "hooks/useCurrentSeason";
 import { WIGO_QUERY_DEFAULTS } from "components/WiGO/queryDefaults";
+
+// The game-log chart library loads with the chart, not with the page (S8).
+const GameLogChart = dynamic(() => import("./StatsTableRowChart"), {
+  ssr: false,
+  loading: () => <div className={styles.chartLoadingPlaceholder}>Loading game log…</div>
+});
 
 export const COMPARISON_PERIODS = [
   "STD",

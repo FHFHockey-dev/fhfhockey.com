@@ -2,12 +2,18 @@ import React, { useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { TableAggregateData } from "./types";
 import styles from "styles/wigoCharts.module.scss";
-import GameLogChart from "./StatsTableRowChart";
+import dynamic from "next/dynamic";
 import { isWigoCountChartStat } from "./statMetadata";
 import { fetchPlayerGameLogForStat } from "utils/fetchWigoPlayerStats";
 import clsx from "clsx";
 import { diffDirection, formatDiffPercent } from "./tableUtils";
 import { WIGO_QUERY_DEFAULTS } from "components/WiGO/queryDefaults";
+
+// The game-log chart library loads with the chart, not with the page (S8).
+const GameLogChart = dynamic(() => import("./StatsTableRowChart"), {
+  ssr: false,
+  loading: () => <div className={styles.chartLoadingPlaceholder}>Loading game log…</div>
+});
 
 interface StatsTableProps {
   data: TableAggregateData[];
