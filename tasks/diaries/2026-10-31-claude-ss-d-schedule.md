@@ -8,5 +8,6 @@
 - **Fill pass (TJ's whitespace note):** card moved off `PostTable` to its own `1fr` row grid; notes moved to evidence and alt text; one legend line remains.
 - **Period control:** both posts use the shared seam. Default periods make no matchup read. Off-Night windows score across Monday weeks; custom capped at 14 days. Run specs on a dist dir of their own: several sessions share `.next-playwright`.
 - **Future matchups:** labelled next week or upcoming; an unpublished schedule gives a reason, not an empty ranking.
+- **SS-1103-D:** HOT picks, short-sample fallback, Yahoo status override (sticky `coalesce` in the writer), unknown % is never-reported (not a join), gaps to pageNotes, opponent logos. Item 5 (completeThrough) next. Studio WIP by another session breaks Refresh-based specs.
 - **Next:** lead renders the post and runs the spec at 13.0; check layout of the weekly card.
 - **Blockers:** none. Full loader render is the lead's (needs more than 50 rows, plus the NHL schedule call).

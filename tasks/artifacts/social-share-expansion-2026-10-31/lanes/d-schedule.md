@@ -79,3 +79,34 @@ Off-Night Edge is any-week and Team Games is past-only. Both use `shared/periodW
 **Checks after the future-matchup addition:** `offNightEdge.test.ts` 32 passed, eslint clean, `tsc` no errors in my files, `social-share-schedule.spec.ts` 6 passed on the isolated port. The "not published" cases are simulated: what the NHL API really returns for an unpublished week has not been observed.
 
 **Not run:** the real loader for a chosen matchup, which calls the NHL schedule API once per week touched. No real matchup card has been rendered.
+
+## SS-1103-D: TJ's 2026-11-03 Off-Night Edge notes
+
+### Causes found (reads 5 to 9, 2026-11-03)
+
+All reads were single `SELECT`s through the Supabase MCP: aggregates, the writer function's definition, and two samples of at most 10 rows. Nothing was written, and no Yahoo or NST call was made.
+
+- **4 unavailable: Yahoo's status sticks.** The live `upsert_yahoo_players_atomic` merges with `status = coalesce(excluded.status, yahoo_players.status)`. Yahoo omits `status` for a healthy player, so once a player is flagged the flag never clears.
+  - Among 681 skaters who played in the last 21 days and have a Yahoo row, those who also played between Oct 27 and Nov 2 carry these statuses: NA 77, IR 39, O 30, IR-NR 7, IR-LT 3, DTD 103, none 351.
+  - Examples: Charlie McAvoy "Not Active" and Connor Bedard "Injured Reserve", each with 4 games in that span.
+  - **Fix here:** a skater who played in one of his team's last 2 games stays pickable, whatever the flag says, and a page note counts how many were affected. **The writer itself needs a data-lane fix: clear status when Yahoo omits it.** That is a migration, not done here.
+- **Unknown %: not a join miss.** Every active skater with a map row joins to exactly one 2026 `yahoo_players` row, and the map uses `player_key` throughout. 29 active skaters have no map row, which is the separate "no identity" count. 108 joined skaters, 56 of them with 5+ games, have `percent_ownership` null, no `ownership_timeline` points and no history row. Yahoo has never reported a % for them.
+  - Examples: Teddy Blueger (16 games), Barclay Goodrow, Dmitry Kulikov, Zach Bogosian.
+  - No stored value is ever below 1%, so Yahoo likely omits sub-1% players, but the rule keeps null as unknown. **It stays unknown and is excluded under "Include unknown ownership: Off"**, with a page note saying why. Recovering these needs a Yahoo request or writer change, outside this lane.
+- **2 short sample: the old rule needed 5 complete games.** Short samples are now pickable, after every full-sample skater, with a "Short Sample" chip. Only a skater with no complete game, or none in 14 days, is left out.
+
+### Changes
+
+- **HOT first:** L5 fantasy points per game at least 1.25× the same skater's rate over his earlier games in the 21-day read (at least 3 of them), and at or above his position's median L5 in this edition. It is defined from the appearances already read; there is no season-rate read. Then come the existing score, then a short sample. The card chips HOT.
+- **Gap reasons:** "No D: …" now appears as page notes (`pageNotes` from `387a6df7f`), never on the PNG; the card says "No pick". The alt text says "no pick".
+- **Day grid:** opponent logos replace "1". Opponents are added to `teams`, so the shell waits for their logos before export.
+
+### Checks
+
+- `offNightEdge.test.ts` 37 passed, including HOT against a better score, short-sample fallback and chip, the status override and its note, the unknown note, and opponent logos and teams. `contract`, `server` and `postedWeek` tests also passed (106 in all).
+- eslint is clean, the pure check passed, and `tsc` shows no errors in my files.
+- **Browser:** port 3110, `PLAYWRIGHT_ISOLATED_NEXT=1`, fictional editions. The 14-day fit test passed, with chips and logos in place. The default card test reached its render and page-note assertions, then failed at "Refresh post". Another session's uncommitted `PostStudio.tsx` work had removed that button, and the same churn broke the pager and old-link tests (duplicate "Dates" label, detached frames). Those runs are **blocked**, not failed on this change.
+- **Renders** in `ui-1103/off-night-edge/`: before and after of the rest-of-week card and page, and of the 14-day card. The 14-day before is from the 11-01 run of the same fixture.
+
+**Not run:** the real loader. No real card with these picks has been rendered.
+
