@@ -8,6 +8,7 @@ import type { ShareDataState, SocialShareSnapshot } from "lib/socialShare/types"
 import { defineShareModule, SHARE_POST_DEFAULT_TTL_SECONDS, type SharePostEvidence, type SharePostLoadResult, type SharePostSource } from "./contract";
 import { appearancesByPlayer, type SkaterAppearance } from "./shared/skaterAppearances";
 import { spanDays } from "./shared/categoryCounts";
+import { completeThrough, completeThroughNote, type NightCoverage } from "./shared/completeThrough";
 import { competitionRanks, editionDate, lastN, ownershipInRange, ownershipLabel, ownershipOf, type OwnershipState } from "./shared/definitions";
 import { customRangeReason, PERIOD_CUSTOM, periodDates, periodWindowFields, resolvePeriodWindow, type MatchupCalendar, type PeriodControl, type PeriodWindow, type PeriodWindowResult, type PeriodWindowSettings } from "./shared/periodWindow";
 import { shiftDays } from "./teamGames";
@@ -250,7 +251,28 @@ export function offNightEmptyWindow(editions: readonly SocialShareSnapshot[], wi
 /** The chosen dates could not be resolved: nothing is read, and the reason prints. */
 export const offNightPeriodMissing = (reasons: string[]) => unready("missing", reasons, [{ name: "Yahoo matchup weeks", tables: ["yahoo_matchup_weeks"], state: "ready", asOf: null, updatedAt: null }], reasons[0]);
 
-export function buildOffNightEdge(input: { edition: OffNightEditions; window: PeriodWindow; settings: OffNightSettings; appearances: readonly SkaterAppearance[]; yahoo: readonly OffNightYahooRow[]; map: readonly ShareMapRow[]; gameIds: readonly number[]; from: string; through: string }): SharePostLoadResult<OffNightData> {
+/**
+ * TJ's late-feed rule (2026-11-03): when only the newest nights lack skater rows, the form window ends at the last
+ * complete night and the post stays exportable, with a page note. An older gap stays in the window and keeps it partial.
+ */
+export function offNightCompleteThrough<T extends { appearances: readonly SkaterAppearance[]; gameIds: readonly number[]; through: string }>(input: T, scheduled: readonly { id: number; date: string }[]): { input: T; pageNotes: string[] } {
+  const teams = new Map<number, Set<string>>(), nights = new Map<string, NightCoverage>();
+  for (const row of input.appearances) if (row.team) teams.set(row.gameId, (teams.get(row.gameId) ?? new Set()).add(row.team));
+  for (const game of scheduled) {
+    const night = nights.get(game.date) ?? { date: game.date, expected: 0, observed: 0 };
+    nights.set(game.date, { ...night, expected: night.expected + 2, observed: night.observed + Math.min(2, teams.get(game.id)?.size ?? 0) });
+  }
+  const result = completeThrough([...nights.values()], input.through), note = completeThroughNote(result);
+  // No complete night at all leaves the window whole, and its coverage reason keeps the post partial.
+  if (!result.through || !note) return { input, pageNotes: [] };
+  const through = result.through, kept = new Set(scheduled.filter(game => game.date <= through).map(game => game.id));
+  return { input: { ...input, through, gameIds: input.gameIds.filter(id => kept.has(id)), appearances: input.appearances.filter(row => row.date <= through) }, pageNotes: [note] };
+}
+
+export function buildOffNightEdge(full: { edition: OffNightEditions; window: PeriodWindow; settings: OffNightSettings; appearances: readonly SkaterAppearance[]; yahoo: readonly OffNightYahooRow[]; map: readonly ShareMapRow[]; gameIds: readonly number[]; from: string; through: string;
+  /** The regular-season games behind `gameIds`, with dates: given, a late newest night is cut rather than blocking export. */
+  scheduled?: readonly { id: number; date: string }[] }): SharePostLoadResult<OffNightData> {
+  const { input, pageNotes: lateNotes } = full.scheduled ? offNightCompleteThrough(full, full.scheduled) : { input: full, pageNotes: [] };
   const { settings } = input, editions = editionsOf(input.edition), first = editions[0], last = editions[editions.length - 1];
   const gated = offNightScheduleGate(editions);
   if (gated) return gated;
@@ -282,7 +304,7 @@ export function buildOffNightEdge(input: { edition: OffNightEditions; window: Pe
       rows },
     // Opponents too: the day grid shows their logos, and the shell holds export until every listed logo is ready.
     teams: [...new Set(schedule.rows.flatMap(row => [row.team, ...row.opponentsByDay.flat()]))],
-    pageNotes: offNightPageNotes(rows, diagnostics, settings),
+    pageNotes: [...lateNotes, ...offNightPageNotes(rows, diagnostics, settings)],
     // A puck drop or the schedule's freshness window ends this edition sooner than the default.
     ttlSeconds: Math.min(SHARE_POST_DEFAULT_TTL_SECONDS, Math.floor((Math.min(...editions.map(edition => Date.parse(edition.expiresAt!))) - Date.parse(first.generatedAt)) / 1000)),
     evidence: { sources, sample, strength: "All situations", cohort: `Top ${schedule.rows.length} of ${schedule.teamsWithGames} teams with games${schedule.tiedOut.length ? ` (also tied at the last rank: ${schedule.tiedOut.join(", ")})` : ""}; skaters at or under ${settings.ownershipCeiling}% rostered, ${unknownNote}`,

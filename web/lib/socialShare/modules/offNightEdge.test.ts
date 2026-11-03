@@ -207,6 +207,29 @@ describe("SS-1103-D pickups", () => {
   });
 });
 
+describe("SS-1103-D late feed", () => {
+  const scheduledOf = (fixture: ReturnType<typeof world>) => [...new Map(fixture.appearances.map(row => [row.gameId, { id: row.gameId, date: row.date }])).values()];
+  it("ends the form at the last complete night when the newest is late, stays exportable and says so", () => {
+    const team = topTeam(), fixture = world([{ id: 1, team }]), late = DATES[DATES.length - 1];
+    // The newest night's skater rows have not arrived for either team.
+    const result = edge({ edition: edition(THURSDAY, "rest-of-week"), settings: settings(), ...fixture, appearances: fixture.appearances.filter(row => row.date !== late), scheduled: scheduledOf(fixture) });
+    expect(result.state).toBe("ready");
+    expect(result.evidence.sample).toMatch(new RegExp(`to ${DATES[DATES.length - 2]}:`));
+    expect(result.pageNotes?.[0]).toBe("Oct 28 is not fully reported yet, so this card ends Oct 26.");
+    expect(rowOf(result.data, team).picks.F).toMatchObject({ nhlId: 1, games: 4, shortSample: true });
+    expect(sharePostExportBlock(offNightEdgeModule, snapshotOf(result), settings())).toBeNull();
+  });
+  it("keeps an older gap partial, and leaves a complete window alone", () => {
+    const team = topTeam(), fixture = world([{ id: 1, team }]), older = DATES[1];
+    const gap = edge({ edition: edition(THURSDAY, "rest-of-week"), settings: settings(), ...fixture, appearances: fixture.appearances.filter(row => !(row.date === older && row.team === "ZZZ")), scheduled: scheduledOf(fixture) });
+    expect(gap.state).toBe("partial");
+    expect(gap.pageNotes?.some(note => /not fully reported/.test(note))).toBe(false);
+    const whole = edge({ edition: edition(THURSDAY, "rest-of-week"), settings: settings(), ...fixture, scheduled: scheduledOf(fixture) });
+    expect(whole.state).toBe("ready");
+    expect(whole.evidence.sample).toMatch(/to 2026-10-28:/);
+  });
+});
+
 describe("6.3 ownership states", () => {
   it("treats a stated 0% as known and eligible", () => {
     const team = topTeam(), result = build([{ id: 1, team, pct: 0 }]);
