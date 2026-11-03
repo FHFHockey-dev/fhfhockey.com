@@ -52,7 +52,7 @@ function parseWeights(value: Json): WeightConfig {
     !isObject(value.luck as Json) ||
     !isObject(value.skill as Json)
   ) {
-    throw new Error("Active Sustainability weights do not match score v2")
+    throw new Error("Active Sustainability weights do not match the score contract")
   }
   const luck = value.luck as Record<string, Json | undefined>
   const skill = value.skill as Record<string, Json | undefined>
@@ -109,7 +109,7 @@ export function canonicalSustainabilityConfigSeed() {
     throw new Error("Canonical Sustainability config hash constant drifted")
   }
   return {
-    configRevision: 2,
+    configRevision: 3,
     ...identity,
     configHash: SUSTAINABILITY_SCORE_CONFIG_HASH,
   }

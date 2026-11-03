@@ -1,5 +1,5 @@
-export const SUSTAINABILITY_SCORE_MODEL_VERSION = "sustainability_score_v2";
-export const SUSTAINABILITY_SCORE_CONFIG_HASH = "fnv1a_91691726";
+export const SUSTAINABILITY_SCORE_MODEL_VERSION = "sustainability_score_v3";
+export const SUSTAINABILITY_SCORE_CONFIG_HASH = "fnv1a_e11d5c91";
 export const SUSTAINABILITY_SCORE_PROVENANCE_VERSION =
   "sustainability_score_provenance_v2";
 export const SUSTAINABILITY_TREND_BAND_MODEL_VERSION = "sustainability_trend_bands_v2";
