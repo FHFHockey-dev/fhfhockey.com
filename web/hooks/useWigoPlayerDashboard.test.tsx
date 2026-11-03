@@ -166,7 +166,10 @@ describe("useWigoPlayerDashboard", () => {
     expect(result.current.aggDataError).toBeNull();
     // WiGO-scoped defaults (S2): long freshness, no refetch on focus.
     for (const key of ["wigoPlayerDetails", "wigoPlayerAggregatedStats", "wigoLatestGameTeam"]) {
-      const options = queryClient.getQueryCache().find({ queryKey: [key] })?.options as any;
+      // staleTime and refetchOnWindowFocus are observer options in TanStack v5;
+      // the pre-season key has no observer, so take the live one.
+      const options = queryClient.getQueryCache().findAll({ queryKey: [key] })
+        .flatMap((query) => query.observers)[0]?.options as any;
       expect(options?.staleTime).toBe(30 * 60_000);
       expect(options?.refetchOnWindowFocus).toBe(false);
     }
