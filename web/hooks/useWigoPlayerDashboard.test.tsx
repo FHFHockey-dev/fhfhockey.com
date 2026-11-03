@@ -30,9 +30,9 @@ const {
   const selectMock = vi.fn(() => ({
     eq: eqMock
   }));
-  const fromMock = vi.fn(() => ({
+  const fromMock = vi.fn((_table?: string) => ({
     select: selectMock
-  }));
+  }) as any);
 
   return {
     mockReplace,
@@ -282,5 +282,37 @@ describe("useWigoPlayerDashboard", () => {
       expect(result.current.selectedPlayer?.id).toBe(selectedPlayer.id);
       expect(result.current.headshotUrl).toBe("https://example.com/timo.png");
     });
+  });
+
+  it("brands a traded player with the team of their latest game this season", async () => {
+    // Mercer's shape: players.team_id still NJD (1), latest 2026-27 game for WPG.
+    const player = createPlayer({ id: 8482110, fullName: "Dawson Mercer", team_id: 1 });
+    const latestGameQuery = { calls: [] as unknown[][] };
+    fromMock.mockImplementation((table?: string) => {
+      if (table !== "wgo_skater_stats") return { select: selectMock };
+      const chain: any = {
+        select: (...args: unknown[]) => { latestGameQuery.calls.push(["select", ...args]); return chain; },
+        eq: (...args: unknown[]) => { latestGameQuery.calls.push(["eq", ...args]); return chain; },
+        order: () => chain,
+        limit: () => chain,
+        maybeSingle: () => Promise.resolve({ data: { team_abbrev: "WPG" }, error: null })
+      };
+      return chain;
+    });
+    mockGetCurrentSeason.mockResolvedValue({ seasonId: 20262027 });
+    mockRouter.query = { playerId: String(player.id) };
+    singleMock.mockResolvedValue({ data: player, error: null });
+    mockFetchPlayerAggregatedStats.mockResolvedValue({ rows: [], freshness });
+
+    const { result } = renderHook(() => useWigoPlayerDashboard(), {
+      wrapper: createWrapper(createQueryClient())
+    });
+
+    await waitFor(() => expect(result.current.teamAbbreviation).toBe("WPG"));
+    expect(result.current.teamName).toBe("Winnipeg Jets");
+    expect(result.current.teamIdForLog).toBe(52);
+    expect(latestGameQuery.calls).toContainEqual(["eq", "season_id", 20262027]);
+    expect(latestGameQuery.calls).toContainEqual(["eq", "games_played", 1]);
+    fromMock.mockImplementation(() => ({ select: selectMock }));
   });
 });

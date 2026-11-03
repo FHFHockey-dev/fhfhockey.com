@@ -9,7 +9,11 @@ import {
   TableAggregateData
 } from "components/WiGO/types";
 import { WIGO_ERROR_MESSAGES } from "components/WiGO/errorMessages";
-import { getTeamInfoById, teamNameToAbbreviationMap } from "lib/teamsInfo";
+import {
+  getTeamInfoById,
+  teamNameToAbbreviationMap,
+  teamsInfo
+} from "lib/teamsInfo";
 import supabase from "lib/supabase";
 import {
   fetchPlayerAggregatedStats,
@@ -128,6 +132,33 @@ export async function fetchWigoPlayerDetails(
   };
 }
 
+/**
+ * The team of the player's latest appearance this season. `players.team_id`
+ * lags trades (Mercer still read NJD after joining WPG, B-10), so branding,
+ * the schedule list and the team drivers follow the games instead.
+ */
+export async function fetchWigoLatestGameTeamId(
+  playerId: number,
+  seasonId: number
+): Promise<number | null> {
+  const { data, error } = await supabase
+    .from("wgo_skater_stats")
+    .select("team_abbrev")
+    .eq("player_id", playerId)
+    .eq("season_id", seasonId)
+    .eq("games_played", 1)
+    .order("date", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  const abbreviation = data?.team_abbrev;
+  return abbreviation ? teamsInfo[abbreviation]?.id ?? null : null;
+}
+
 export interface UseWigoPlayerDashboardResult {
   selectedPlayerId: number | null;
   selectedPlayer: Player | null;
@@ -174,6 +205,13 @@ export default function useWigoPlayerDashboard(): UseWigoPlayerDashboardResult {
     enabled: typeof selectedPlayerId === "number" && currentSeasonId !== null
   });
 
+  const latestTeamQuery = useQuery<number | null>({
+    queryKey: ["wigoLatestGameTeam", selectedPlayerId, currentSeasonId],
+    queryFn: () =>
+      fetchWigoLatestGameTeamId(selectedPlayerId as number, currentSeasonId as number),
+    enabled: typeof selectedPlayerId === "number" && currentSeasonId !== null
+  });
+
   const updateUrlWith = useCallback(
     (updates: Record<string, string | number | undefined>) => {
       const nextQuery = { ...router.query } as Record<string, string | number>;
@@ -212,10 +250,9 @@ export default function useWigoPlayerDashboard(): UseWigoPlayerDashboardResult {
   const selectedPlayer = selectedPlayerQuery.data?.player ?? null;
   const headshotUrl = selectedPlayerQuery.data?.headshotUrl ?? null;
 
-  const branding = useMemo(
-    () => buildWigoBranding(selectedPlayer?.team_id),
-    [selectedPlayer?.team_id]
-  );
+  // A failed or empty lookup keeps the players-table team.
+  const teamId = latestTeamQuery.data ?? selectedPlayer?.team_id;
+  const branding = useMemo(() => buildWigoBranding(teamId), [teamId]);
 
   return {
     selectedPlayerId,
