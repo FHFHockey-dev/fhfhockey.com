@@ -27,7 +27,8 @@ export const BSH_LEADER_ROWS = 12;
 export const BSH_MOVER_ROWS = 7;
 /** The cohort line's count of ranked rows the card has no room for. */
 export const belowTheCard = (notShown: number, tied = 0) => notShown ? `${notShown} more below the card${tied ? `, ${tied} tied with the last row` : ""}` : "";
-export const STALE_SETTINGS_NOTE = "Settings changed. Refresh this post to apply them.";
+/** The studio loads a new edition on every settings change, so a card built from older settings is only ever mid-load. */
+export const STALE_SETTINGS_NOTE = "Updating…";
 export const perGame = (total: number | null, games: number) => total === null || games === 0 ? null : total / games;
 const sumOf = (rows: readonly SkaterAppearance[], pick: (row: SkaterAppearance) => number | null) => rows.some(row => pick(row) === null) ? null : rows.reduce((total, row) => total + pick(row)!, 0);
 export const skaterCategoryTotal = sumOf;

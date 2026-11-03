@@ -247,7 +247,7 @@ describe("BSH card", () => {
   });
   it("refuses to show or export data built for other settings", async () => {
     const { data } = buildBshBoard(season(games(1, 5)), settings()), changed = settings({ window: "l10" });
-    expect(await show(data!, changed)).toContain("Refresh this post");
+    expect(await show(data!, changed)).toContain("Updating…");
     expect(sharePostExportBlock(bshBoardModule, snapshot(data!, changed), changed)).toMatch(/Nothing qualifies/);
     expect(sharePostExportBlock(bshBoardModule, snapshot(data!, settings()), settings())).toBeNull();
   });

@@ -234,13 +234,15 @@ const inPeriod = (query: URLSearchParams): SkaterSeason => {
 };
 const fromQuery = <Settings>(module: AnyShareModule, query: URLSearchParams) => parseShareSettings(module, Object.fromEntries(query), "server") as Settings;
 const roster = { byPlayer: new Map(Array.from({ length: 24 }, (_, index) => [index + 1, ownershipOf(40, "2026-10-31")])), updatedAt: "2026-10-31T08:00:00" };
+/** The pager takes its cutoff from the edition, so these editions are stamped to match the calendar mock's Oct 30 cutoff. */
+const pinned = (served: object) => ({ ...served, generatedAt: "2026-10-31T16:00:00.000Z" });
 const BOARDS: { post: string; body: (query: URLSearchParams) => object }[] = [
-  { post: "bsh-board", body: query => { const active = fromQuery<BshBoardSettings>(bshBoardModule, query); return edition("bsh-board", active, buildBshBoard(inPeriod(query), active)); } },
-  { post: "category-blueprint", body: query => { const active = fromQuery<CategoryBlueprintSettings>(categoryBlueprintModule, query); return edition("category-blueprint", active, buildCategoryBlueprint(inPeriod(query), active)); } },
-  { post: "nightly-floor", body: query => { const active = fromQuery<NightlyFloorSettings>(nightlyFloorModule, query); return edition("nightly-floor", active, buildNightlyFloor(inPeriod(query), active, roster)); } },
+  { post: "bsh-board", body: query => { const active = fromQuery<BshBoardSettings>(bshBoardModule, query); return pinned(edition("bsh-board", active, buildBshBoard(inPeriod(query), active))); } },
+  { post: "category-blueprint", body: query => { const active = fromQuery<CategoryBlueprintSettings>(categoryBlueprintModule, query); return pinned(edition("category-blueprint", active, buildCategoryBlueprint(inPeriod(query), active))); } },
+  { post: "nightly-floor", body: query => { const active = fromQuery<NightlyFloorSettings>(nightlyFloorModule, query); return pinned(edition("nightly-floor", active, buildNightlyFloor(inPeriod(query), active, roster))); } },
 ];
 async function openPeriod(page: Page, post: string, body: (query: URLSearchParams) => object) {
-  await page.route("**/api/v1/social-share/matchup-weeks", route => route.fulfill({ json: { cutoff: "2026-10-30", rows: [{ week: 1, start_date: "2026-09-28", end_date: "2026-10-04" }, { week: 2, start_date: "2026-10-05", end_date: "2026-10-11" }, { week: 3, start_date: "2027-03-01", end_date: "2027-03-07" }] } }));
+  await page.route("**/api/v1/social-share/matchup-weeks", route => route.fulfill({ json: { cutoff: "2026-10-30", rows: [{ week: 1, start_date: "2026-09-28", end_date: "2026-10-04" }, { week: 2, start_date: "2026-10-05", end_date: "2026-10-11" }, { week: 3, start_date: "2026-11-02", end_date: "2026-11-08" }] } }));
   return open(page, post, body);
 }
 for (const { post, body } of BOARDS) {
@@ -276,7 +278,7 @@ for (const { post, body } of BOARDS) {
 test("old URLs and landing links keep their recent window, and a board shows why a period has no dates", async ({ page }) => {
   await openPeriod(page, "nightly-floor", query => {
     const active = fromQuery<NightlyFloorSettings>(nightlyFloorModule, query);
-    return active.period === "matchup" ? edition("nightly-floor", active, { state: "missing", reasons: ["Week 3 has not started; data runs through 2026-10-30."], evidence: UNKNOWN_EVIDENCE, data: null }) : edition("nightly-floor", active, buildNightlyFloor(crowded, active, roster));
+    return pinned(active.period === "matchup" ? edition("nightly-floor", active, { state: "missing", reasons: ["Week 3 has not started; data runs through 2026-10-30."], evidence: UNKNOWN_EVIDENCE, data: null }) : edition("nightly-floor", active, buildNightlyFloor(crowded, active, roster)));
   });
   await page.goto("/social-share/posts?post=nightly-floor&view=cardio&window=l5");
   const square = page.getByTestId("share-square");
