@@ -60,6 +60,7 @@ type SelectedWgoGamelog = Pick<
   | "penalty_minutes"
   | "pp_toi_pct_per_game"
   | "pp_toi"
+  | "toi_per_game"
 >;
 type SelectedNstIndGamelog = Pick<
   NstIndGamelogCounts,
@@ -118,6 +119,7 @@ interface CombinedGameData {
   wgo_pim: number | null;
   wgo_pp_toi_pct: number | null;
   wgo_pp_toi: number | null; // Seconds
+  wgo_toi: number | null; // Seconds
   nst_toi_all: number | null; // Seconds in NST game logs
   nst_ixg: number | null;
   nst_icf: number | null;
@@ -306,7 +308,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
       // --- Fetch Game Log Data (Last 20) ---
       const wgoGamelogSelect =
-        "game_id, games_played, date, season_id, goals, assists, points, total_primary_assists, shots, pp_goals, pp_assists, pp_points, hits, blocked_shots, penalty_minutes, pp_toi_pct_per_game, pp_toi";
+        "game_id, games_played, date, season_id, goals, assists, points, total_primary_assists, shots, pp_goals, pp_assists, pp_points, hits, blocked_shots, penalty_minutes, pp_toi_pct_per_game, pp_toi, toi_per_game";
       const nstIndGamelogSelect = "date_scraped, season, toi, ixg, icf, iscfs, hdcf";
       const nstOiGamelogSelect =
         "date_scraped, season, gf, sf, off_zone_starts, def_zone_starts";
@@ -403,6 +405,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           wgo_pim: wgoGame.penalty_minutes ?? null,
           wgo_pp_toi_pct: wgoGame.pp_toi_pct_per_game,
           wgo_pp_toi: wgoGame.pp_toi,
+          wgo_toi: wgoGame.toi_per_game ?? null,
           // FIX: Use nullish coalescing operator ??
           nst_toi_all: nstIndGame?.toi ?? null,
           nst_ixg: nstIndGame?.ixg ?? null,
@@ -728,15 +731,22 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         (recentStats as any)[`${prefix}gp`] = numGames;
 
         if (numGames > 0) {
-          const completeTotalToi = gamesInInterval.every(game =>
-            typeof game.nst_toi_all === "number" && Number.isFinite(game.nst_toi_all) && game.nst_toi_all >= 0
-          );
+          // ATOI and WGO-count rates use WGO ice time (NST for a game without
+          // it), so a game NST has not loaded yet nulls only NST-only metrics
+          // (B-06, C-25). NST rates keep NST time.
+          const isToi = (value: number | null) =>
+            typeof value === "number" && Number.isFinite(value) && value >= 0;
+          const gameToi = (game: CombinedGameData) =>
+            isToi(game.wgo_toi) ? game.wgo_toi : game.nst_toi_all;
+          const completeTotalToi = gamesInInterval.every(game => isToi(gameToi(game)));
+          const completeNstToi = gamesInInterval.every(game => isToi(game.nst_toi_all));
           const completePpToi = gamesInInterval.every(game =>
             typeof game.wgo_pp_toi === "number" && Number.isFinite(game.wgo_pp_toi) && game.wgo_pp_toi >= 0
           );
           const totals = gamesInInterval.reduce(
             (acc, game) => {
-              // nst_toi_all is per-game ice time in seconds
+              // Both are per-game ice time in seconds
+              acc.toi_all += gameToi(game) ?? 0;
               acc.nst_toi_all += game.nst_toi_all ?? 0;
               acc.gp += 1;
               acc.wgo_g += game.wgo_g ?? 0;
@@ -763,6 +773,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
               return acc;
             },
             {
+              toi_all: 0,
               nst_toi_all: 0,
               gp: 0,
               wgo_g: 0,
@@ -789,9 +800,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             }
           );
 
-          // For recent stats, nst_toi_all is in seconds, so we need to convert to minutes
+          // Recent ice time is in seconds, so convert to minutes
           (recentStats as any)[`${prefix}atoi`] = safeDivide(
-            totals.nst_toi_all / 60, // Convert seconds to minutes
+            totals.toi_all / 60, // Convert seconds to minutes
             totals.gp
           );
           (recentStats as any)[`${prefix}pptoi`] = safeDivide(
@@ -835,23 +846,23 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           (recentStats as any)[`${prefix}pim`] = totals.wgo_pim;
           (recentStats as any)[`${prefix}g_per_60`] = calculatePer60FromSeconds(
             totals.wgo_g,
-            totals.nst_toi_all
+            totals.toi_all
           );
           (recentStats as any)[`${prefix}a_per_60`] = calculatePer60FromSeconds(
             totals.wgo_a,
-            totals.nst_toi_all
+            totals.toi_all
           );
           (recentStats as any)[`${prefix}pts_per_60`] = calculatePer60FromSeconds(
             totals.wgo_pts,
-            totals.nst_toi_all
+            totals.toi_all
           );
           (recentStats as any)[`${prefix}pts1_per_60`] = calculatePer60FromSeconds(
             totals.wgo_g + totals.wgo_a1,
-            totals.nst_toi_all
+            totals.toi_all
           );
           (recentStats as any)[`${prefix}sog_per_60`] = calculatePer60FromSeconds(
             totals.wgo_sog,
-            totals.nst_toi_all
+            totals.toi_all
           );
           (recentStats as any)[`${prefix}ixg_per_60`] = calculatePer60FromSeconds(
             totals.nst_ixg,
@@ -877,18 +888,23 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             calculatePer60FromSeconds(totals.wgo_ppp, totals.wgo_pp_toi);
           (recentStats as any)[`${prefix}hit_per_60`] = calculatePer60FromSeconds(
             totals.wgo_hit,
-            totals.nst_toi_all
+            totals.toi_all
           );
           (recentStats as any)[`${prefix}blk_per_60`] = calculatePer60FromSeconds(
             totals.wgo_blk,
-            totals.nst_toi_all
+            totals.toi_all
           );
           (recentStats as any)[`${prefix}pim_per_60`] = calculatePer60FromSeconds(
             totals.wgo_pim,
-            totals.nst_toi_all
+            totals.toi_all
           );
           if (!completeTotalToi) {
-            for (const metric of ["atoi", "g_per_60", "a_per_60", "pts_per_60", "pts1_per_60", "sog_per_60", "ixg_per_60", "icf_per_60", "ihdcf_per_60", "iscf_per_60", "hit_per_60", "blk_per_60", "pim_per_60"]) {
+            for (const metric of ["atoi", "g_per_60", "a_per_60", "pts_per_60", "pts1_per_60", "sog_per_60", "hit_per_60", "blk_per_60", "pim_per_60"]) {
+              (recentStats as any)[`${prefix}${metric}`] = null;
+            }
+          }
+          if (!completeNstToi) {
+            for (const metric of ["ixg_per_60", "icf_per_60", "ihdcf_per_60", "iscf_per_60"]) {
               (recentStats as any)[`${prefix}${metric}`] = null;
             }
           }

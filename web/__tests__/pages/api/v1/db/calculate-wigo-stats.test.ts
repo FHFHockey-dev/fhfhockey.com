@@ -489,6 +489,28 @@ describe("/api/v1/db/calculate-wigo-stats route", () => {
     expect(career.ca_pts_per_60).toBeCloseTo(4 / (200 / 60));
   });
 
+  it("keeps L-window ATOI and WGO-count rates when NST has not loaded the latest game", async () => {
+    getCurrentSeasonMock.mockResolvedValue({ seasonId: 20262027, lastSeasonId: 20252026 });
+    // McDavid's 10-31 shape: 6,966 s over five games, 2 G, 11 PTS; NST lacks 10-31.
+    const toi = [1500, 1380, 1366, 1360, 1360];
+    const goals = [1, 0, 1, 0, 0];
+    const points = [3, 2, 3, 1, 2];
+    const nhl = ["31", "29", "27", "25", "23"].map((day, index) => ({
+      ...recentGame(`2026-10-${day}`, 20262027, index + 1),
+      toi_per_game: toi[index], toi: toi[index], goals: goals[index], points: points[index]
+    }));
+    const { writes } = installRecentFrameMock(nhl, nhl.slice(1));
+    expect((await runRecentFixture()).statusCode).toBe(200);
+    const recent = writes.wigo_recent[0];
+    expect(recent.l5_atoi).toBeCloseTo(6966 / 5 / 60);
+    expect(recent.l5_g_per_60).toBeCloseTo(2 * 3600 / 6966);
+    expect(recent.l5_pts_per_60).toBeCloseTo(11 * 3600 / 6966);
+    expect(recent.l5_pts_per_60).toBeCloseTo(5.685, 2);
+    for (const metric of ["ixg", "ixg_per_60", "icf", "icf_per_60", "ihdcf_per_60", "iscf_per_60", "ipp", "oi_sh_pct"]) {
+      expect(recent[`l5_${metric}`]).toBeNull();
+    }
+  });
+
   it("lists only skaters with a totals row this season or last, so high ids are reached", async () => {
     getCurrentSeasonMock.mockResolvedValue({ seasonId: 20262027, lastSeasonId: 20252026 });
     const ids = [8478402, 8484144, 8486067];
