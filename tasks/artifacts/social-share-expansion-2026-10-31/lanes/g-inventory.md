@@ -207,3 +207,10 @@ Project `fyhftlxokyjtpndbkfse`, Supabase MCP `execute_sql`, 2026-11-03. SELECT o
 - **Older gap:** stays partial, as before.
 - **No complete night:** the post is missing, with `NO_COMPLETE_NIGHT_REASON`.
 - **NST:** completeness is judged on NHL.com team games only. An NST lag still makes the post partial, with its own reason. Folding NST in would make a team missing from NST all season (which a test covers) look like no complete night, and so make both posts unavailable.
+
+## SS-1103-G2: coloured text labels
+
+- Per TJ, "Colored text only, no chip." Every goalie label is now coloured text with no fill, border or pill, using `ROLE_COLORS`.
+- Contrast is now checked as text on the card's #1a1d21: CONFIRMED and PROJECTED 8.55:1, LIKELY STARTER 11.71, LIKELY BACKUP 9.00, Backup (Projected) 6.56, Backup and Split 10.83, B2B 9.61, conflicting 8.26, handle 9.36. None needed lightening.
+- **Start/Sit:** its status column (Confirmed, Projected, Conflicting, Unknown) uses its own `CONFIRMATION_TONES` chips, not these labels, so it is unchanged.
+- **Renders:** `ui-1103/risky-starts/after2-7-day-volume.png` and `after2-14-day-volume.png`, from fixtures on port 3110. These are not real data: building a real edition would read whole-season tables, well past this lane's 50-row sample cap.

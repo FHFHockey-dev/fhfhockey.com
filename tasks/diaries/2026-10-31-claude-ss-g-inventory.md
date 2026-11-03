@@ -27,3 +27,4 @@ Risky Starts and Start/Sit take the shared control, any-week, with `days` still 
 ## SS-1103-G (TJ 11-03 notes, section 2)
 Items 1 to 5 are built. Item 6, the late-feed note, waits on ss-contract's `completeThrough` and `pageNotes`; the lead will message. Gotcha: no observation names an account, so no handle shows; the receipt has the reads. Gotcha: the Start/Sit search spec fails with two "Search goalie or team" inputs, because of the uncommitted `PostStudio.tsx` edits in another lane, not this lane.
 Item 6 is done: late nights are judged on WGO team games only, and an NST lag stays partial. Gotcha: if the late-night check included NST, a team with no NST rows would make every night incomplete, and both posts would go unavailable.
+G2 (coloured text labels): done. Start/Sit status chips are its own, so unchanged. Renders are from fixtures, because a real edition reads past the 50-row cap.

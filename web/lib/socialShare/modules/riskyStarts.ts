@@ -53,13 +53,12 @@ export function goalieRoles(row: Pick<RiskyRow, "gameId" | "team" | "opponent" |
   const pick = likelyStarter(goalies, row.team, row.opponent, context);
   return new Map(goalies.map(goalie => [goalie.goalieId, pick === null ? { kind: "split", label: "Split", handle: null } : goalie.goalieId === pick ? { kind: "likely-starter", label: "LIKELY STARTER", handle: null } : { kind: "likely-backup", label: "LIKELY BACKUP", handle: null }]));
 }
-/** Fill and ink for each label. Dark ink on a light fill, each pair at least 4.5:1, so the PNG reads at AA. */
-export const ROLE_TONES: Record<GoalieRoleKind, { fill: string; ink: string }> = {
-  confirmed: { fill: "#3fd17a", ink: "#06180d" }, projected: { fill: "#3fd17a", ink: "#06180d" },
-  "likely-starter": { fill: "#c6e35a", ink: "#141d05" }, "likely-backup": { fill: "#f5b041", ink: "#201403" },
-  "backup-projected": { fill: "#ff7a4d", ink: "#200a02" }, backup: { fill: "#c7d0d8", ink: "#11161b" },
-  b2b: { fill: "#a9c7e0", ink: "#0d1620" }, split: { fill: "#c7d0d8", ink: "#11161b" }, conflicting: { fill: "#f29bc4", ink: "#2a0716" },
+/** Each label's text colour, with no fill (TJ, 2026-11-03). Each is at least 4.5:1 on the card's #1a1d21, so the PNG reads at AA. */
+export const ROLE_COLORS: Record<GoalieRoleKind, string> = {
+  confirmed: "#3fd17a", projected: "#3fd17a", "likely-starter": "#c6e35a", "likely-backup": "#f5b041",
+  "backup-projected": "#ff7a4d", backup: "#c7d0d8", b2b: "#a9c7e0", split: "#c7d0d8", conflicting: "#f29bc4",
 };
+export const ROLE_CARD_BACKGROUND = "#1a1d21";
 export const ROLE_HANDLE_INK = "#b8c2cc";
 export type RiskyRow = { gameId: number; date: string; startTimeUtc: string | null; team: string; opponent: string; home: boolean; teamSecondNight: boolean | null; opponentSecondNight: boolean | null; conflicting: boolean; goalies: RiskyGoalie[]; lenses: Record<RiskyLens, RiskyPair[]> };
 /** A market line from one source and one book, by the game's home and away teams. These are the book's prices and nothing is derived from them. */

@@ -1,5 +1,5 @@
 import type { SharePostCardProps } from "lib/socialShare/modules/contract";
-import { bookLabel, moneylineLabel, ordinalRank, ROLE_HANDLE_INK, ROLE_TONES, shownLine, RISKY_LENS_LABELS, RISKY_TILE_LIMIT, riskyGameSides, riskyLensMeaning, riskyRowsForLens, type RiskyGameLine, type RiskyPair, type RiskyRow, type RiskySide, type RiskyStartsData, type RiskyStartsSettings } from "lib/socialShare/modules/riskyStarts";
+import { bookLabel, moneylineLabel, ordinalRank, ROLE_COLORS, ROLE_HANDLE_INK, shownLine, RISKY_LENS_LABELS, RISKY_TILE_LIMIT, riskyGameSides, riskyLensMeaning, riskyRowsForLens, type RiskyGameLine, type RiskyPair, type RiskyRow, type RiskySide, type RiskyStartsData, type RiskyStartsSettings } from "lib/socialShare/modules/riskyStarts";
 import { NO_UPCOMING_LABEL, strengthShare } from "lib/socialShare/modules/shared/goalieInventory.sources";
 import { PostEmpty, PostTeamMark } from "./kit";
 import styles from "./RiskyStartsCard.module.scss";
@@ -35,7 +35,7 @@ function Pair({ pair, home, away }: { pair: RiskyPair; home: string; away: strin
 function Goalies({ side, placement }: { side: ReturnType<typeof riskyGameSides>["home"]; placement: "home" | "away" }) {
   return <p className={styles.goalies} data-testid="risky-goalies" data-side={placement} data-team={side.team} data-subject={side.subject || undefined}>
     {side.goalies.length ? side.goalies.slice(0, 2).map(goalie => <span key={goalie.goalieId}><b>{goalie.name}</b> {goalie.starts === null ? "—" : goalie.starts}/{goalie.teamGames}
-      <em data-testid="risky-role" data-role={goalie.role.kind} className={styles.role} style={{ background: ROLE_TONES[goalie.role.kind].fill, color: ROLE_TONES[goalie.role.kind].ink }}>{goalie.role.label}</em>
+      <em data-testid="risky-role" data-role={goalie.role.kind} className={styles.role} style={{ color: ROLE_COLORS[goalie.role.kind] }}>{goalie.role.label}</em>
       {goalie.role.handle && <small data-testid="risky-handle" style={{ color: ROLE_HANDLE_INK }}>{goalie.role.handle}</small>}</span>) : <span data-testid="risky-goalies-empty">No goalie listed</span>}
   </p>;
 }

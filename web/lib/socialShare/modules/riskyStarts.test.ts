@@ -9,7 +9,7 @@ import { resolveDailyBoardEvidence, type BoardGoalieEvidence } from "lib/project
 import { sharePostExportBlock, sharePostExportToken, parseShareSettings } from "./contract";
 import { shareModule } from "./registry";
 import { loadPostSnapshot } from "./server";
-import { compactRiskyEvidence, goalieRoles, likelyStarter, ordinalRank, RISKY_READING_NOTE, ROLE_PICK_NOTE, ROLE_TONES, sourceHandle, RISKY_CORRELATION_NOTE, type GoalieRole, type RiskyGoalie, riskyFlags, riskyGameSides, riskyPairs, riskyRows, riskyRowsForLens, riskyStartsModule, riskyStartsResult, type RiskyPair, type RiskyRow, type RiskySide, type RiskyStartsData, type RiskyStartsSettings } from "./riskyStarts";
+import { compactRiskyEvidence, goalieRoles, likelyStarter, ordinalRank, RISKY_READING_NOTE, ROLE_CARD_BACKGROUND, ROLE_COLORS, ROLE_PICK_NOTE, sourceHandle, RISKY_CORRELATION_NOTE, type GoalieRole, type RiskyGoalie, riskyFlags, riskyGameSides, riskyPairs, riskyRows, riskyRowsForLens, riskyStartsModule, riskyStartsResult, type RiskyPair, type RiskyRow, type RiskySide, type RiskyStartsData, type RiskyStartsSettings } from "./riskyStarts";
 import { loadOpponentRecords, loadRiskyMarketLines, MARKET_LINES_NOTE, NHL_FAILED_NOTE, NHL_PARTNER_URL, partnerLine, storedLine, STORED_FAILED_NOTE, type PartnerFeed, type StoredLineRow } from "./riskyStarts.sources";
 import { gameSignals, buildTeamLenses, buildGoalieInventory, CONFIRMATION_LINK_GAP, CONFIRMATION_REPORTER_GAP, rankBand, strengthShare } from "./shared/goalieInventory.sources";
 import { FIXTURE_GENERATED_AT, FIXTURE_INPUT, FIXTURE_TEAMS, GOALIE_INVENTORY_FIXTURE, GOALIE_INVENTORY_FIXTURE_DETAIL } from "./shared/goalieInventory.fixture";
@@ -558,11 +558,14 @@ describe("goalie labels", () => {
     expect(Object.values(roles(900010))).not.toContain("PROJECTED");
     expect(Object.values(roles(900010))).not.toContain("Backup (Projected)");
   });
-  it("keeps every label's ink at WCAG AA against its fill", () => {
+  it("prints every label as coloured text with no chip, each at WCAG AA on the card", () => {
     const luminance = (hex: string) => { const [r, g, b] = [1, 3, 5].map(index => parseInt(hex.slice(index, index + 2), 16) / 255).map(value => value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
     const ratio = (a: string, b: string) => { const [high, low] = [luminance(a), luminance(b)].sort((x, y) => y - x); return (high + 0.05) / (low + 0.05); };
-    for (const { fill, ink } of Object.values(ROLE_TONES)) expect(ratio(fill, ink)).toBeGreaterThanOrEqual(4.5);
-    expect(ratio("#b8c2cc", "#1a1d21")).toBeGreaterThanOrEqual(4.5);
+    for (const color of [...Object.values(ROLE_COLORS), "#b8c2cc"]) expect(ratio(color, ROLE_CARD_BACKGROUND)).toBeGreaterThanOrEqual(4.5);
+    const html = card(riskyStartsResult(GOALIE_INVENTORY_FIXTURE_DETAIL), "volume");
+    const styles = [...html.matchAll(/data-testid="risky-role"[^>]*style="([^"]*)"/g)].map(match => match[1]);
+    expect(styles.length).toBeGreaterThan(0);
+    for (const style of styles) expect(style).toMatch(/^color:#[0-9a-f]{6}$/);
   });
 });
 
