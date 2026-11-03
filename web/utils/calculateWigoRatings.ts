@@ -12,7 +12,10 @@ import {
   RATING_WEIGHTS,
   REGRESSION_CONFIG
 } from "components/WiGO/ratingWeights"; // Adjust path
-import { calculateRankingResult } from "./calculatePercentiles";
+import {
+  buildPercentileLookup,
+  calculateRankingResult
+} from "./calculatePercentiles";
 
 // --- Helper: Apply Regression ---
 // (Keep this function as is - it receives the threshold)
@@ -152,25 +155,20 @@ export function calculatePlayerRatings(
           targetPlayerRow &&
           targetPlayerGP < regressionConfig.minGPThreshold
         ) {
-          const cohortPercentiles = comparisonRows
-            .map((row) => ({
-              player_id: row.player_id,
-              gp: row.gp,
-              result: calculateRankingResult(
-                comparisonRows,
-                row.player_id,
-                higherIsBetter
-              )
-            }))
-            .filter(
-              (row): row is {
-                player_id: number;
-                gp: number;
-                result: NonNullable<ReturnType<typeof calculateRankingResult>>;
-              } => row.result !== null
-            );
+          // Rank the cohort once rather than rescanning it for every row.
+          // A repeated id ranks with its first value, as a find would.
+          const percentileOf = buildPercentileLookup(
+            comparisonRows.map((row) => row.value),
+            higherIsBetter
+          );
+          const firstValueById = new Map<number, number>();
+          for (const row of comparisonRows) {
+            if (!firstValueById.has(row.player_id)) {
+              firstValueById.set(row.player_id, row.value);
+            }
+          }
 
-          const regressionTargets = cohortPercentiles.filter(
+          const regressionTargets = comparisonRows.filter(
             (row) =>
               row.player_id !== playerId &&
               row.gp >= regressionConfig.minGPThreshold
@@ -179,7 +177,8 @@ export function calculatePlayerRatings(
           const regressionMeanPercentile =
             regressionTargets.length > 0
               ? regressionTargets.reduce(
-                  (sum, row) => sum + row.result.percentile * 100,
+                  (sum, row) =>
+                    sum + percentileOf(firstValueById.get(row.player_id)!) * 100,
                   0
                 ) / regressionTargets.length
               : 50;
