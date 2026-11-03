@@ -10,7 +10,7 @@ import { sharePostExportBlock, sharePostExportToken, parseShareSettings } from "
 import { shareModule } from "./registry";
 import { loadPostSnapshot } from "./server";
 import { compactRiskyEvidence, goalieRoles, likelyStarter, ordinalRank, RISKY_READING_NOTE, ROLE_CARD_BACKGROUND, ROLE_COLORS, ROLE_PICK_NOTE, sourceHandle, RISKY_CORRELATION_NOTE, type GoalieRole, type RiskyGoalie, riskyFlags, riskyGameSides, riskyPairs, riskyRows, riskyRowsForLens, riskyStartsModule, riskyStartsResult, type RiskyPair, type RiskyRow, type RiskySide, type RiskyStartsData, type RiskyStartsSettings } from "./riskyStarts";
-import { loadOpponentRecords, loadRiskyMarketLines, MARKET_LINES_NOTE, NHL_FAILED_NOTE, NHL_PARTNER_URL, partnerLine, storedLine, STORED_FAILED_NOTE, type PartnerFeed, type StoredLineRow } from "./riskyStarts.sources";
+import { loadOpponentRecords, loadRiskyMarketLines, MARKET_LINES_NOTE, RECORDS_FAILED_NOTE, riskyStartsWithRecords, NHL_FAILED_NOTE, NHL_PARTNER_URL, partnerLine, storedLine, STORED_FAILED_NOTE, type PartnerFeed, type StoredLineRow } from "./riskyStarts.sources";
 import { gameSignals, buildTeamLenses, buildGoalieInventory, CONFIRMATION_LINK_GAP, CONFIRMATION_REPORTER_GAP, rankBand, strengthShare } from "./shared/goalieInventory.sources";
 import { FIXTURE_GENERATED_AT, FIXTURE_INPUT, FIXTURE_TEAMS, GOALIE_INVENTORY_FIXTURE, GOALIE_INVENTORY_FIXTURE_DETAIL } from "./shared/goalieInventory.fixture";
 
@@ -591,5 +591,18 @@ describe("goalie records against an opponent", () => {
     expect(records["1:NYR"]).toEqual({ wins: 2, losses: 0, otLosses: 0 });
     expect(records["2:NYR"]).toEqual({ wins: 0, losses: 1, otLosses: 0 });
     expect(records["1:TOR"]).toBeUndefined();
+  });
+  const period = { label: "Week 4 · Oct 26 to Nov 8", from: "2026-10-26", through: "2026-11-08", listedFrom: "2026-11-02", elapsed: false, usedCalendar: true, season: 20262027 };
+  const market = { lines: {}, sources: [], notes: [] };
+  it("notes a failed records read and still builds the post", async () => {
+    const result = await riskyStartsWithRecords(GOALIE_INVENTORY_FIXTURE_DETAIL, market, period, () => Promise.reject(new Error("read failed")));
+    expect(result.state).not.toBe("missing");
+    expect(result.evidence.sample).toContain(RECORDS_FAILED_NOTE);
+    const read = await riskyStartsWithRecords(GOALIE_INVENTORY_FIXTURE_DETAIL, market, period, async () => ({}));
+    expect(read.evidence.sample).not.toContain(RECORDS_FAILED_NOTE);
+  });
+  it("does not catch an error building the post as a records failure", async () => {
+    const broken = { ...GOALIE_INVENTORY_FIXTURE_DETAIL, inventory: { ...GOALIE_INVENTORY_FIXTURE_DETAIL.inventory, goalies: null } } as never;
+    await expect(riskyStartsWithRecords(broken, market, period, async () => ({}))).rejects.toThrow(TypeError);
   });
 });

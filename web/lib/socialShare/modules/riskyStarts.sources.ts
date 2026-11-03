@@ -2,7 +2,7 @@ import { UNKNOWN_EVIDENCE, type SharePostContext, type SharePostLoadResult, type
 import { roleContext, riskyRows, riskyStartsNoUpcoming, riskyStartsResult, type OpponentRecord, type RiskyGameLine, type RiskyMarketLines, type RiskyRow, type RiskyStartsData, type RiskyStartsSettings } from "./riskyStarts";
 import { editionCutoff } from "./creaseShift";
 import { editionDate } from "./shared/definitions";
-import { inventoryPeriodRequest, loadGoalieInventoryDetail, loadInventoryPeriod, serverObservationClient } from "./shared/goalieInventory.sources";
+import { inventoryPeriodRequest, loadGoalieInventoryDetail, loadInventoryPeriod, serverObservationClient, type GoalieInventoryDetail, type InventoryPeriod } from "./shared/goalieInventory.sources";
 
 /*
  * Market lines. Each game takes one row from one source, so two books never meet in a game: the latest stored DraftKings snapshot
@@ -113,6 +113,11 @@ export async function loadRiskyStarts({ client, generatedAt }: SharePostContext,
   const detail = await loadGoalieInventoryDetail(client, inventoryPeriodRequest(period, generatedAt), { observationClient });
   if (detail.inventory.state === "missing") return riskyStartsResult(detail);
   const rows = riskyRows(detail.inventory, detail.conflicts, detail.lowFirstRanks, roleContext(detail)), market = await loadRiskyMarketLines(rows, generatedAt, { client: observationClient });
-  try { return riskyStartsResult(detail, market, period, await loadOpponentRecords(client, rows, detail.inventory.season, editionCutoff(generatedAt))); }
-  catch { return riskyStartsResult(detail, { ...market, notes: [...market.notes, RECORDS_FAILED_NOTE] }, period); }
+  return riskyStartsWithRecords(detail, market, period, () => loadOpponentRecords(client, rows, detail.inventory.season, editionCutoff(generatedAt)));
+}
+/** Only the records read is caught: a failed read leaves ties as Split with a note, and an error building the result still throws. */
+export async function riskyStartsWithRecords(detail: GoalieInventoryDetail, market: RiskyMarketLines, period: InventoryPeriod, readRecords: () => Promise<Record<string, OpponentRecord>>): Promise<SharePostLoadResult<RiskyStartsData>> {
+  let records: Record<string, OpponentRecord> | undefined, notes = market.notes;
+  try { records = await readRecords(); } catch { notes = [...market.notes, RECORDS_FAILED_NOTE]; }
+  return riskyStartsResult(detail, { ...market, notes }, period, records);
 }
