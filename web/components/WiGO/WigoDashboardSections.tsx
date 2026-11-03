@@ -253,7 +253,7 @@ export function WigoOverviewSection({
         />
       </div>
       <div className={styles.ratingsContainer} data-coverage="C07">
-        {desktop ? <WigoSectionCard title="Player ratings" toolbar={<WigoHelp label="Player rating methodology and cohort"><p>Weighted percentile composites, using the existing {currentSeasonId} cohorts and minimum {minGp} GP. Overall All/Even combines offense and defense. Special combines PP offense and PK defense with ice-time weighting. Adjust the rate panel’s minimum GP to change the cohort. A stat needs at least {WIGO_RATING_MIN_COHORT_PEERS} other qualifying players; with fewer, its rating shows “-”.</p></WigoHelp>}>
+        {desktop ? <WigoSectionCard title="Player ratings" toolbar={<WigoHelp label="Player rating methodology and cohort"><p>Weighted percentile composites, using the existing {currentSeasonId ? formatSeasonRange(currentSeasonId) : "current-season"} cohorts and minimum {minGp} GP. Overall All/Even combines offense and defense. Special combines PP offense and PK defense with ice-time weighting. Adjust the rate panel’s minimum GP to change the cohort. A stat needs at least {WIGO_RATING_MIN_COHORT_PEERS} other qualifying players; with fewer, its rating shows “-”. All needs all-situations data; while that is empty, All shows “-” and Overall uses Even and Special.</p></WigoHelp>}>
           <PlayerRatingsDisplay playerId={selectedPlayer?.id} seasonId={currentSeasonId} minGp={minGp} />
         </WigoSectionCard> : <>
         {selectedPlayer ? (

@@ -9,6 +9,7 @@ import {
 
 import styles from "./PlayerRatingsDisplay.module.scss";
 import { WIGO_ERROR_MESSAGES } from "./errorMessages";
+import { formatSeasonRange } from "./tableUtils";
 
 interface PlayerRatingsProps {
   playerId: number | null | undefined;
@@ -77,6 +78,25 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
   const formatRating = (rating: number | null): string => {
     return rating !== null && !isNaN(rating) ? rating.toFixed(1) : "-";
   };
+  // AS has no rows this season yet (no writer; P-2), so every All rating is
+  // blank. Say why rather than leaving a bare "-" (C-24).
+  const asEmpty =
+    !!rawStats?.as &&
+    (rawStats.as.offense?.length ?? 0) === 0 &&
+    (rawStats.as.defense?.length ?? 0) === 0;
+  const asEmptyReason = seasonId
+    ? `No all-situations data for ${formatSeasonRange(seasonId)} yet`
+    : "No all-situations data yet";
+  const renderAllValue = (rating: number | null, valueStyle: React.CSSProperties) => (
+    <span
+      className={styles.ratingValue}
+      style={valueStyle}
+      title={asEmpty ? asEmptyReason : undefined}
+    >
+      {formatRating(rating)}
+      {asEmpty && <span className={styles.visuallyHidden}>: {asEmptyReason}</span>}
+    </span>
+  );
 
   const renderContent = () => {
     if (isLoading)
@@ -109,6 +129,7 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
     };
 
     return (
+      <div className={styles.ratingsFrame}>
       <div className={styles.ratingsRoot}>
         <div className={styles.ratingSection}>
           <h3 className={styles.ratingTitle}>Offense</h3>
@@ -118,12 +139,7 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
               style={getRatingStyles(ratings.offense.as).boxStyle}
             >
               <span className={styles.ratingLabel}>All</span>
-              <span
-                className={styles.ratingValue}
-                style={getRatingStyles(ratings.offense.as).valueStyle}
-              >
-                {formatRating(ratings.offense.as)}
-              </span>
+              {renderAllValue(ratings.offense.as, getRatingStyles(ratings.offense.as).valueStyle)}
             </div>
             <div
               className={styles.ratingBox}
@@ -160,12 +176,7 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
               style={getRatingStyles(ratings.overall.as).boxStyle}
             >
               <span className={styles.ratingLabel}>All</span>
-              <span
-                className={styles.ratingValue}
-                style={getRatingStyles(ratings.overall.as).valueStyle}
-              >
-                {formatRating(ratings.overall.as)}
-              </span>
+              {renderAllValue(ratings.overall.as, getRatingStyles(ratings.overall.as).valueStyle)}
             </div>
             <div
               className={styles.ratingBox}
@@ -202,12 +213,7 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
               style={getRatingStyles(ratings.defense.as).boxStyle}
             >
               <span className={styles.ratingLabel}>All</span>
-              <span
-                className={styles.ratingValue}
-                style={getRatingStyles(ratings.defense.as).valueStyle}
-              >
-                {formatRating(ratings.defense.as)}
-              </span>
+              {renderAllValue(ratings.defense.as, getRatingStyles(ratings.defense.as).valueStyle)}
             </div>
             <div
               className={styles.ratingBox}
@@ -235,6 +241,12 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
             </div>
           </div>
         </div>
+      </div>
+      {asEmpty && (
+        <p className={styles.ratingsNote}>
+          {asEmptyReason}: All shows “-”, and Overall uses Even and Special.
+        </p>
+      )}
       </div>
     );
   };

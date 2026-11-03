@@ -3,6 +3,34 @@
 @use "sass:color";
 @use "components/WiGO/scale" as s;
 
+// Ratings plus the optional one-line data note under them
+.ratingsFrame {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  height: 100%;
+  min-height: 0;
+}
+
+.ratingsNote {
+  margin: 0;
+  padding: 0 4px;
+  font-size: s.$text-11;
+  line-height: 1.2;
+  color: s.$ink-muted;
+  flex-shrink: 0;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  clip-path: inset(50%);
+  overflow: hidden;
+}
+
 // Main container for the entire ratings display
 .ratingsRoot {
   display: flex; // Use flexbox to arrange the three main sections
@@ -14,7 +42,8 @@
     $lightness: -3%
   ); // Slightly darker background
   border-radius: s.$radius-small;
-  height: 100%; // Make it fill the container it's placed in
+  flex: 1 1 auto; // Fill the frame above the optional note
+  min-height: 0;
   box-sizing: border-box;
   overflow: hidden; // Prevent content overflow
 }
