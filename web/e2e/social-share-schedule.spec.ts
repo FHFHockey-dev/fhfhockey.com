@@ -104,7 +104,8 @@ test("off-night edge: the pager opens next week's matchup, labelled, and a week 
   const requested: string[] = [];
   await page.route("**/api/v1/social-share/matchup-weeks", route => route.fulfill({ json: { cutoff: "2026-10-31", rows: [{ week: 5, start_date: "2026-10-26", end_date: "2026-11-01" }, { week: 6, start_date: "2026-11-02", end_date: "2026-11-08" }, { week: 7, start_date: "2026-11-09", end_date: "2026-11-15" }] } }));
   await page.route("**/api/v1/social-share/posts/**", route => {
-    const url = new URL(route.request().url()), week = url.searchParams.get("week"), base = edition("weekly"), settings = { ...base.settings, period: "matchup", week: week ? Number(week) : null };
+    // Built on Nov 1, so the pager's cutoff is Oct 31, as the calendar mock says, whatever today is; it still expires ten minutes from now.
+    const url = new URL(route.request().url()), week = url.searchParams.get("week"), base = { ...edition("weekly"), generatedAt: "2026-11-01T16:00:00.000Z" }, settings = { ...base.settings, period: "matchup", week: week ? Number(week) : null };
     requested.push(url.search);
     if (week === "7") return route.fulfill({ json: { ...base, id: "off-night-week-7", state: "missing", data: null, teams: [], settings, reasons: ["The NHL schedule shows no games yet for Week 7 · Nov 9 to Nov 15, so there is no ranking. It may not be published."] } });
     const next = week === "6";
