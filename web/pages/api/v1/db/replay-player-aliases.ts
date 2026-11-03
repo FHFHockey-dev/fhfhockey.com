@@ -1,3 +1,4 @@
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { retryTweetAttribution } from "lib/sources/tweetAttribution";
 import { randomUUID } from "node:crypto";
 import adminOnly from "utils/adminOnlyMiddleware";
@@ -8,7 +9,7 @@ import { easternReportDate } from "lib/sources/projectedLineups";
 import { tweetPublicationFromUrl } from "lib/sources/linesCccIngestion";
 import { iftttIntakePilotConfigured } from "lib/sources/iftttIntakePolicy";
 
-export default adminOnly(async (req, res) => {
+export default adminOnly(withCronJobAudit(async (req, res) => {
   if (req.method !== "POST" && req.method !== "GET") return res.status(405).end();
   if (!tweetPipelineFlags().interpretation) return res.json({ skipped: true });
   const { data: jobs, error } = await (req.supabase as any).from("tweet_pipeline_jobs").select("job_key,payload")
@@ -83,4 +84,4 @@ export default adminOnly(async (req, res) => {
     if (pending.count) digest = await sendPlayerAliasReviewEmailForQueuedNames({ req, unresolvedNamesQueued: pending.count });
   }
   return res.json({ success: true, resolved, attribution, digest });
-});
+}, { jobName: "/api/v1/db/replay-player-aliases", recordRowMetrics: false, responsePreviewKeys: ["success", "resolved", "skipped", "error"] }));

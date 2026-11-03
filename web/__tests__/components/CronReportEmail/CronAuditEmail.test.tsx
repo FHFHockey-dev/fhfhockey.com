@@ -6,6 +6,19 @@ import { describe, expect, it } from "vitest";
 import { CronAuditEmail } from "components/CronReportEmail/CronAuditEmail";
 
 describe("CronAuditEmail", () => {
+  it("shows missing HD coverage independently from execution health", () => {
+    const html = renderToStaticMarkup(<CronAuditEmail audits={[]} sinceDate="2026-11-01T13:00:00Z"
+      summary={{ auditRuns: 0, auditSuccesses: 0, auditFailures: 0, auditUnknown: 0, totalRowsUpserted: 0, totalFailedRows: 0 }}
+      goalieFreshness={{ status: "critical", checkedAt: "2026-11-01T13:00:00Z", cutoffDate: "2026-10-31", expected: 60, matched: 59,
+        missing: [{ season: "20262027", goalieId: 1, date: "2026-10-28", reason: "missing_hd" }], oldestGap: "2026-10-28",
+        latestExpectedDate: "2026-10-31", latestCompleteDate: "2026-10-31", perDate: [], warnings: ["Writer audit is missing."], checkpoint: { status: "critical", pending: 2, held: 1, inFlight: 0, noProgressWindows: 2, lastCommitAt: null, datasets: [{ dataset: "ppRates", pending: 2, held: 1, inFlight: 0, complete: 0 }] } }} />);
+    expect(html).toContain("NST goalie coverage: CRITICAL");
+    expect(html).toContain("59 of 60 retained WGO goalie-games");
+    expect(html).toContain("oldest gap 2026-10-28");
+    expect(html).toContain("Writer audit is missing.");
+    expect(html).toContain("Catch-up: critical; 2 pending, 1 held; no-progress windows: 2");
+    expect(html).toContain("ppRates");
+  });
   it("keeps a planned continuation visible as in progress", () => {
     const html = renderToStaticMarkup(<CronAuditEmail sinceDate="2026-10-20T00:00:00Z"
       summary={{ auditRuns: 1, auditSuccesses: 0, auditFailures: 0, auditUnknown: 0, totalRowsUpserted: 1, totalFailedRows: 0 }}

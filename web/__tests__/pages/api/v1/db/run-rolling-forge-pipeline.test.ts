@@ -1,4 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { persistManualCronAudit, withManualCronAuditResponse } from "lib/cron/manualCronAudit";
 
 vi.mock("utils/adminOnlyMiddleware", () => ({
   default: (handler: any) => handler,
@@ -1007,7 +1009,7 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
         try {
           updateNstGamelogMock.mockImplementationOnce(continuation("7"));
           const first = await invokeScheduled("2026-10-19T10:05:00.000Z");
-          expect(first.body.termination).toMatchObject({ state: "continuation_required", reason: "state_error", nextStageId: "upstream_skater_sources" });
+          expect(first.body.termination).toMatchObject({ state: "stopped_on_blocking_failure", reason: "manual_review_required", resumeRequired: false, nextStageId: "upstream_skater_sources" });
           expect(updateWgoSkatersMock).not.toHaveBeenCalled();
           expect(nstStageRow()).toMatchObject({ status: "running", cursor_game_id: null });
 
@@ -1358,77 +1360,19 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
       });
     });
 
-    it("counts a death after a late checkpoint once per lease owner, preserving its cursor and the kill cap", async () => {
-      for (const stageId of ["core_entity_freshness", "upstream_skater_sources", "contextual_builders"]) {
-        seedStageRow(stageId, {});
+    it("preserves an expired checkpoint for review instead of treating it as a replay-safe handoff", async () => {
+      for (const id of ["core_entity_freshness","upstream_skater_sources","contextual_builders"]) seedStageRow(id,{});
+      const deadLease={revision:9,status:"running",cursor_game_id:8478402,lease_owner:"dead-invocation",
+        lease_expires_at:"2026-10-19T10:09:30.000Z",updated_at:"2026-10-19T10:08:35.000Z"};
+      seedStageRow("rolling_player_recompute",deadLease);
+      const before={...pipelineStateRows.get(stageKey("rolling_player_recompute"))};
+      for (const at of ["2026-10-19T10:10:00Z","2026-10-19T10:15:00Z"]) {
+        const result=await invokeScheduled(at);
+        expect(result.statusCode).toBe(207);expect(result.body.termination).toMatchObject({reason:"manual_review_required",resumeRequired:false});
+        expect(result.body.failureSummary.terminalStop).toEqual({code:"stage_handoff_unconfirmed",stageId:"rolling_player_recompute"});
       }
-      const deadLease = {
-        revision: 9,
-        status: "running",
-        cursor_game_id: 8478402,
-        lease_owner: "dead-invocation",
-        lease_expires_at: "2026-10-19T10:09:30.000Z",
-        updated_at: "2026-10-19T10:08:35.000Z"
-      };
-      seedStageRow("rolling_player_recompute", deadLease);
-
-      const res = await invokeScheduled("2026-10-19T10:10:00.000Z");
-
-      expect(res.statusCode).toBe(200);
-      expect(updateRollingPlayerAveragesMock.mock.calls[0]?.[0]?.query).toMatchObject({
-        resumeFrom: "8478402"
-      });
-      const db = { from: pipelineStateFrom, rpc: pipelineStateRpc } as any;
-      const args = { supabase: db, scopeKey: "daily_incremental:2026-10-19", stageId: "rolling_player_recompute" as const,
-        runDate: "2026-10-19", expiredLeaseOwner: "dead-invocation" };
-      expect(readRollingForgeStageKills(await readRollingForgeRunState(args), args.stageId)).toBe(1);
-      // Replayed/stale observers of the same death do not spend another retry.
-      expect(await Promise.all([recordRollingForgeStageKill(args), recordRollingForgeStageKill(args)])).toEqual([1, 1]);
-
-      // The third death closes the stage; later invocations stop without work.
-      seedStageRow("rolling_player_recompute", deadLease);
-      seedStageRow("rolling_player_recompute:kills", {
-        status: "failed",
-        cursor_game_id: 2,
-        last_error: "stage_killed:attempt-2"
-      });
-      vi.clearAllMocks();
-
-      const third = await invokeScheduled("2026-10-19T10:15:00.000Z");
-
-      expect(third.statusCode).toBe(207);
-      expect(third.body.termination).toMatchObject({
-        state: "stopped_on_blocking_failure",
-        reason: "attempts_exhausted",
-        nextStageId: "rolling_player_recompute",
-        detail: "Killed 3 time(s)."
-      });
-      expect(stageStatus(third, "rolling_player_recompute").status).toBe("failed");
       expect(updateRollingPlayerAveragesMock).not.toHaveBeenCalled();
-      expect(pipelineStateRows.get(stageKey("rolling_player_recompute"))).toMatchObject({
-        status: "failed",
-        cursor_game_id: 8478402,
-        last_error: "stage_failed:attempt-2"
-      });
-
-      const fourth = await invokeScheduled("2026-10-19T10:20:00.000Z");
-
-      expect(third.body.failureSummary).toMatchObject({
-        failedStepCount: 0,
-        firstFailure: { stageId: "rolling_player_recompute", stepId: null, code: "stage_killed",
-          error: "Killed 3 time(s)." },
-        terminalStop: { code: "stage_killed", stageId: "rolling_player_recompute" }
-      });
-
-      expect(fourth.body.termination).toMatchObject({ reason: "attempts_exhausted" });
-      // Later invocations keep naming the kills, not a generic exhaustion.
-      expect(fourth.body.failureSummary.terminalStop).toEqual({
-        code: "stage_killed",
-        stageId: "rolling_player_recompute"
-      });
-      expect(fourth.body.failureSummary.firstFailure).toMatchObject({ stepId: null, code: "stage_killed" });
-      expect(updateRollingPlayerAveragesMock).not.toHaveBeenCalled();
-      expect(readRollingForgeStageKills(await readRollingForgeRunState(args), args.stageId)).toBe(3);
+      expect(pipelineStateRows.get(stageKey("rolling_player_recompute"))).toEqual(before);
     });
 
     it("counts a kill receipt once across concurrent recorders and a recorder interrupted after acquisition", async () => {
@@ -1753,6 +1697,33 @@ describe("NST acquisition and uncertain-persistence regressions", () => {
     vi.useRealTimers();
   });
 
+  it.each(["manual-lost", "manual-rejected", "shared-missing", "shared-null", "shared-empty", "shared-rejected", "shared-thrown"])
+    ("holds %s after one child write and never replays on the second natural invocation", async (kind) => {
+    let writes = 0;
+    const operation = async (_req: any, out: any) => { writes++; out.json({ success: true, rowsUpserted: 2 }); };
+    if (kind.startsWith("manual")) {
+      updateWgoSkatersMock.mockImplementation(withManualCronAuditResponse(async (req, out) => {
+        await operation(req, out);
+        await persistManualCronAudit({ from: () => ({ insert: () => kind === "manual-lost"
+          ? Promise.reject(new Error("lost acknowledgement")) : Promise.resolve({ error: { message: "rejected" } }) }) }, {});
+      }));
+    } else {
+      const receipt = kind === "shared-null" ? null : kind === "shared-empty" ? {} : kind === "shared-rejected" ? { error: { message: "rejected" } } : undefined;
+      if (kind === "shared-thrown") auditInsertMock.mockRejectedValueOnce(new Error("lost acknowledgement"));
+      else auditInsertMock.mockResolvedValueOnce(receipt);
+      updateWgoSkatersMock.mockImplementation(withCronJobAudit(operation));
+    }
+    const first = await invoke();
+    const child = first.body.stages.find((stage: any) => stage.id === "upstream_skater_sources").steps.find((step: any) => step.id === "update-wgo-skaters");
+    expect(child.summary).toMatchObject({ rowsUpserted: 2, operationOutcome: { statusCode: 200, success: true }, finalAudit: { retrySafe: false } });
+    expect(first.body.termination).toMatchObject({ reason: "manual_review_required", resumeRequired: false });
+    expect(stageRow()).toMatchObject({ status: "failed", last_error: "audit_persistence_unconfirmed" });
+    expect(updateWgoTotalsMock).not.toHaveBeenCalled();
+    vi.setSystemTime(new Date("2026-10-19T10:10:00.000Z")); const second = await invoke();
+    expect(writes).toBe(1); expect(second.body.termination).toMatchObject({ reason: "manual_review_required", resumeRequired: false });
+    expect(second.body.failureSummary.terminalStop.code).toBe("audit_persistence_unconfirmed");
+  });
+
   it("must preserve a durable manual-review hold when another same-version invocation read state before the hold", async () => {
     const enteredNst = signal(), releaseNst = signal(), readSnapshot = signal(), releaseSnapshot = signal();
     updateNstGamelogMock.mockImplementationOnce(async (_req: any, res: any) => {
@@ -1809,6 +1780,25 @@ describe("NST acquisition and uncertain-persistence regressions", () => {
       termination: next.body.termination, row: stageRow() }));
     expect.soft(updateNstGamelogMock).toHaveBeenCalledTimes(1);
     expect.soft(updateWgoSkatersMock).not.toHaveBeenCalled();
+  });
+
+  it.each(["projection_relationship_build", "rolling_player_recompute"])("never replays %s when both child audit and review-hold persistence fail", async (stageId) => {
+    let writes=0;
+    const child=withManualCronAuditResponse(async(_req:any,out:any)=>{
+      writes++;out.json({success:true,rowsUpserted:2});
+      await persistManualCronAudit({from:()=>({insert:()=>Promise.reject(new Error("lost child audit"))})},{});
+    });
+    (stageId==="projection_relationship_build"?shiftChartsMock:updateRollingPlayerAveragesMock).mockImplementation(child);
+    pipelineStateRpc.mockImplementation(async(name:string,a:any)=>a.p_transition==="fail"&&a.p_last_error==="audit_persistence_unconfirmed"
+      ? {data:null,error:{message:"unavailable review-hold store"}} : originalRpc(name,a));
+    const first=await invoke();const before=pipelineStateRows.get(stageKey(stageId));
+    expect(writes).toBe(1);expect(before).toMatchObject({status:"running",last_error:null});
+    expect(first.body.termination).toMatchObject({reason:"manual_review_required",resumeRequired:false});
+    vi.setSystemTime(new Date("2026-10-19T10:10:00Z"));const second=await invoke();
+    expect(writes).toBe(1);expect(second.body.termination).toMatchObject({reason:"manual_review_required",resumeRequired:false,nextStageId:stageId});
+    expect(second.body.failureSummary.terminalStop.code).toBe("stage_handoff_unconfirmed");
+    expect(pipelineStateRows.get(stageKey(stageId))).toEqual(before);
+    expect(second.body.termination.detail).toContain("acknowledged handoff");
   });
 
 });

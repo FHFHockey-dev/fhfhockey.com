@@ -1,3 +1,4 @@
+import { currentNstJob, withNstJobLifecycle } from "lib/nst/jobLifecycle.server";
 import { NextApiResponse } from "next";
 import { addDays, format, isAfter, parseISO } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
@@ -310,6 +311,7 @@ async function fetchTeamTable(
     label: string;
     table: string;
     situation: string;
+    plannedRequestCount: number;
   }
 ): Promise<
   PythonScriptOutput & {
@@ -344,7 +346,10 @@ async function fetchTeamTable(
   try {
     const response = await fetch(fullUrl, {
       signal: controller.signal,
-      headers: { Authorization: `Bearer ${callerSecret}` },
+      headers: { Authorization: `Bearer ${callerSecret}`,
+        "X-NST-Planned-Requests": String(currentNstRequestIntervalMs === 0 ? context.plannedRequestCount : 0),
+        "X-NST-Admission-Budget-Ms": "7000",
+        ...(currentNstJob() ? { "X-NST-Job-Token": currentNstJob()!.token } : {}) },
     });
     const responseText = await response.text();
     lastNstRequestCompletedAt = Date.now();
@@ -863,6 +868,7 @@ const workHandler = withNhlOffSeasonSkip(async (req: any, res: NextApiResponse) 
           label: runLabel,
           table,
           situation,
+          plannedRequestCount: nstRequestPlan.requestCount,
         });
         if (!scriptOutput.data || scriptOutput.data.length === 0) {
           logNst(
@@ -982,6 +988,7 @@ const workHandler = withNhlOffSeasonSkip(async (req: any, res: NextApiResponse) 
             label: runLabel,
             table,
             situation,
+            plannedRequestCount: nstRequestPlan.requestCount,
           });
           if (!scriptOutput.data || scriptOutput.data.length === 0) {
             logNst(
@@ -1148,4 +1155,4 @@ async function handler(req: any, res: NextApiResponse) {
   return workHandler(req, res);
 }
 
-export default adminOnly(withCronJobAudit(handler));
+export default adminOnly(withNstJobLifecycle(withCronJobAudit(handler), "nst-team-stats", req => req.method !== "GET"));

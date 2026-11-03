@@ -1,3 +1,5 @@
+import { admitSharedNstAttempt } from "lib/nst/sharedAdmission";
+import { currentNstJob, withNstJobDispatch } from "lib/nst/jobLifecycle.server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -414,6 +416,7 @@ describe("update-nst-gamelog automatic season cursor", () => {
     vi.useRealTimers();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
   });
 
   async function run(query: Record<string, string> = {}, method = "GET") {
@@ -442,6 +445,46 @@ describe("update-nst-gamelog automatic season cursor", () => {
         db.tables.players.map((player) => `<tr><td>${player.fullName}</td><td>BOS</td><td>C</td><td>10:00</td></tr>`).join("")
       }</tbody></table>` });
   }
+
+  it.each(["complete", "partial", "lost-audit", "unresolved-source", "lost-write"])("settles lifecycle only after acknowledged gamelog I/O: %s", async outcome => {
+    vi.stubEnv("NST_JOB_LIFECYCLE_ENABLED", "true");
+    supplyThreePlayerRows();
+    const text = fetchNstTextByUrlMock.getMockImplementation()!;
+    fetchNstTextByUrlMock.mockImplementation((...args: any[]) => withNstJobDispatch(async () => {
+      expect(currentNstJob()?.kind).toBe("direct");
+      return text(...args);
+    }));
+    if (outcome === "lost-audit") db.auditWriteFailure = "lost_ack";
+    if (outcome === "unresolved-source") fetchNstTextByUrlMock.mockResolvedValue({ text: "gateway page", response: { status: 200 } });
+    if (outcome === "lost-write") db.upsertPlan = [{ reject: "transport lost", commit: true }];
+    const calls: string[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (url, init) => {
+      const name = String(url).split("/").at(-1)!; calls.push(name);
+      const args = JSON.parse(init!.body as string);
+      if (name.includes("finish") || name.includes("hold")) {
+        expect(db.upsertCalls).toHaveLength(outcome === "unresolved-source" ? 0 : 1);
+        expect(db.auditWriteCalls).toBeGreaterThan(0);
+      }
+      return new Response(JSON.stringify({ status: name.includes("begin") ? "started" : name.includes("finish") ? "finished" : "held", token: args.p_token }));
+    }));
+    const directory = mkdtempSync(join(tmpdir(), "nst-lifecycle-continuation-"));
+    const store = createNstFileBudgetStore(directory);
+    try {
+    // Actual request budget produces an acknowledged one-of-twenty continuation.
+    if (outcome === "partial") {
+      const source = await text();
+      fetchNstTextByUrlMock.mockImplementation((url, options) => withNstJobDispatch(() =>
+        withNstRequestBudget(url, options.requestControl, async () => source, store)));
+    }
+    const res = await run(outcome === "partial" ? { dates: "2026-10-03", maxRequests: "1" }
+      : { dates: "2026-10-03", datasetType: "fiveOnFiveCounts" });
+    const safe = outcome === "complete" || outcome === "partial";
+    expect(res.statusCode).toBe(safe ? outcome === "partial" ? 207 : 200 : 503);
+    expect(calls).toEqual(["nst_job_begin_v1", safe ? "nst_job_finish_v1" : "nst_job_hold_v1"]);
+    if (outcome === "partial") expect(res.body).toMatchObject({ success: false, operationStatus: "continuation_required",
+      resume: { required: true }, nstProgress: { auditPersistence: "confirmed", continuation: { nextIndex: 1, blocked: false } } });
+    } finally { rmSync(directory, { recursive: true, force: true }); }
+  });
 
   it.each(["timeout", "lost_ack", "malformed_ack", "null_ack"])(
     "stops after ambiguous %s batch acknowledgement without replaying rows or the source", async (failure) => {
@@ -640,8 +683,8 @@ describe("update-nst-gamelog automatic season cursor", () => {
       const second = await run(query);
       expect(second.statusCode).toBe(207);
       expect(starts[2]).toBe(stalledUrl);
-      expect(second.body.nstProgress.continuation.nextIndex).toBe(2);
-      expect(db.audits[1].details.nstProgress.continuation.nextIndex).toBe(2);
+      expect(second.body.nstProgress.continuation.nextIndex).toBe(38);
+      expect(db.audits[1].details.nstProgress.continuation.nextIndex).toBe(38);
     } finally { rmSync(directory, { recursive: true, force: true }); }
   });
 
@@ -706,26 +749,26 @@ describe("update-nst-gamelog automatic season cursor", () => {
           throw new NstResponseError({ status: 500, redactedUrl: url });
         }, store);
       });
-      // Two scheduled dates make a 40-URL plan, paced at 21 seconds per attempt.
+      // Two scheduled dates make a40-URL semi-burst; every retry is charged.
       const query = { runMode: "incremental", startDate: "2026-10-02", endDate: "2026-10-03" };
       const result = await run(query);
       // Default budget: 220 s, with the last five reserved for the audit.
       expect(Date.now() - startedAt).toBeLessThan(220_000);
-      expect(starts).toHaveLength(11);
-      expect(starts.at(-1)).toBe(210_000);
+      expect(starts).toHaveLength(40);
+      expect(starts.at(-1)).toBeGreaterThanOrEqual(60_001);
       expect(result.statusCode).toBe(200);
       expect(result.body).toMatchObject({ success: false, operationStatus: "blocked" });
       expect(result.body.resume).toBeUndefined();
       expect(result.body.nstProgress).toMatchObject({
-        networkAttempts: 11, stoppedEarly: true, sourceDown: null, plannedRequestCount: 40,
+        networkAttempts: 40, stoppedEarly: true, sourceDown: null, plannedRequestCount: 40,
         auditPersistence: "confirmed", continuation: { nextIndex: 0, totalUrls: 40, blocked: true }
       });
       expect(db.audits).toHaveLength(1);
       expect(db.audits[0]).toMatchObject({ status: "failure", details: {
-        failedRows: 5, stoppedEarly: true, sourceDown: null,
+        failedRows: 20, stoppedEarly: true, sourceDown: null,
         nstProgress: { continuation: { nextIndex: 0, blocked: true } }
       } });
-      expect(db.audits[0].details.failedUrls).toHaveLength(5);
+      expect(db.audits[0].details.failedUrls).toHaveLength(20);
     } finally { rmSync(directory, { recursive: true, force: true }); }
   });
 
@@ -763,20 +806,43 @@ describe("update-nst-gamelog automatic season cursor", () => {
     } finally { rmSync(directory, { recursive: true, force: true }); }
   });
 
-  it("preserves the forty-URL paced plan through its short final suffix", async () => {
+  it("preserves the complete forty-URL semi-burst plan through short resumed suffixes", async () => {
     supplyThreePlayerRows();
-    let query: Record<string, string> = { dates: "2026-10-02,2026-10-03" };
+    const source=await fetchNstTextByUrlMock();
+    const directory=mkdtempSync(join(tmpdir(),"nst-semi-suffix-"));const store=createNstFileBudgetStore(directory);
+    fetchNstTextByUrlMock.mockReset().mockImplementation((url,options)=>withNstRequestBudget(url,options.requestControl,async()=>source,store));
+    try {
+    let query: Record<string, string> = { dates: "2026-10-02,2026-10-03", maxRequests: "6" };
     for (let i = 0; i < 7; i++) {
       const response = await run(query);
       expect(response.body.nstProgress.plannedRequestCount).toBe(40);
-      expect(response.body.nstProgress.requestIntervalMs).toBe(21_000);
-      if (i < 6) {
-        expect(response.statusCode).toBe(207);
-        query = response.body.resume.request.query;
-      } else expect(response.body.success).toBe(true);
+      expect(response.body.nstProgress.requestIntervalMs).toBe(0);
+      if (i < 6) { expect(response.statusCode).toBe(207);query = response.body.resume.request.query; }
+      else expect(response.body.success).toBe(true);
     }
     expect(fetchNstTextByUrlMock).toHaveBeenCalledTimes(40);
     expect(new Set(fetchNstTextByUrlMock.mock.calls.map(([url]) => url)).size).toBe(40);
+    }finally{rmSync(directory,{recursive:true,force:true});}
+  });
+
+  it("finishes two full dates via39 rolling admissions then1 with durable audit and replay protection",async()=>{
+    supplyThreePlayerRows();const source=await fetchNstTextByUrlMock();
+    const directory=mkdtempSync(join(tmpdir(),"nst-semi-burst-test-"));const store=createNstFileBudgetStore(directory);
+    const origin=Date.now();const admissions:number[]=[];const dispatches:number[]=[];
+    vi.stubGlobal("fetch",vi.fn(async()=>{
+      const now=Date.now();const window=admissions.filter(t=>now-t<=61000);
+      if(window.length>=39)return new Response(JSON.stringify({version:1,scope:"global-nst",allowed:false,waitMs:window[0]+61001-now,permitTtlMs:1000}));
+      admissions.push(now);return new Response(JSON.stringify({version:1,scope:"global-nst",allowed:true,waitMs:0,permitTtlMs:1000}));
+    }));
+    fetchNstTextByUrlMock.mockReset().mockImplementation((url,options)=>withNstRequestBudget(url,options.requestControl,
+      ()=>admitSharedNstAttempt(options.requestControl.deadlineAt-35000,async()=>{dispatches.push(Date.now());await new Promise(r=>setTimeout(r,500));return source;},options.requestControl),store));
+    try{
+      const result=await run({dates:"2026-10-02,2026-10-03"});
+      expect(result.body.success).toBe(true);expect(result.body.nstProgress).toMatchObject({plannedRequestCount:40,networkAttempts:40,auditPersistence:"confirmed",continuation:{nextIndex:40}});
+      expect(dispatches).toHaveLength(40);expect(dispatches[38]-origin).toBe(19000);expect(dispatches[39]-origin).toBe(61001);
+      expect(Date.now()-origin).toBeLessThan(240000);expect(db.upsertCalls).toHaveLength(40);expect(db.audits.at(-1).status).toBe("success");
+      await run({dates:"2026-10-02,2026-10-03"});expect(dispatches).toHaveLength(40);expect(db.upsertCalls).toHaveLength(40);
+    }finally{rmSync(directory,{recursive:true,force:true});}
   });
 
   it("skips a positively known unstarted regular-season slate with zero NST requests", async () => {
@@ -796,7 +862,11 @@ describe("update-nst-gamelog automatic season cursor", () => {
     db.games = [{ date: "2026-10-03", seasonId: 20262027, type: 2 }];
     supplyThreePlayerRows();
     db.games.push({ date: "2026-10-02", seasonId: 20262027, type: 2 });
-    const chunk = await run({ dates: "2026-10-02,2026-10-03" });
+    const source=await fetchNstTextByUrlMock();
+    const directory=mkdtempSync(join(tmpdir(),"nst-missing-cursor-"));const store=createNstFileBudgetStore(directory);
+    fetchNstTextByUrlMock.mockReset().mockImplementation((url,options)=>withNstRequestBudget(url,options.requestControl,async()=>source,store));
+    try {
+    const chunk = await run({ dates: "2026-10-02,2026-10-03", maxRequests: "6" });
     const before = fetchNstTextByUrlMock.mock.calls.length;
     const mismatch = await run({ ...chunk.body.resume.request.query, datasetGroup: "fiveOnFive" });
     expect(mismatch.statusCode).toBe(500);
@@ -804,6 +874,7 @@ describe("update-nst-gamelog automatic season cursor", () => {
     const lost = await run(chunk.body.resume.request.query);
     expect(lost.statusCode).toBe(500);
     expect(fetchNstTextByUrlMock).toHaveBeenCalledTimes(before);
+    }finally{rmSync(directory,{recursive:true,force:true});}
   });
 
   it("returns continuation inside the caller deadline and leaves terminal audit headroom", async () => {
@@ -820,13 +891,13 @@ describe("update-nst-gamelog automatic season cursor", () => {
       vi.stubGlobal("fetch", databaseFetch);
       const result = await run({ dates: "2026-10-02,2026-10-03", deadlineAt: String(deadline) });
       expect(result.statusCode).toBe(207);
-      expect(result.body.nstProgress.networkAttempts).toBe(2);
+      expect(result.body.nstProgress.networkAttempts).toBe(39);
       expect(result.body.nstProgress.deadlineAt).toBe(deadline - 5_000);
       expect(Date.now()).toBeLessThan(deadline);
       expect(result.body.nstProgress.auditPersistence).toBe("confirmed");
       expect(databaseFetch).toHaveBeenCalledTimes(1);
-      expect(Date.now()).toBeGreaterThan(result.body.nstProgress.deadlineAt);
-      expect(result.body.resume.request.query).toEqual({ dates: "2026-10-02,2026-10-03", deadlineAt: String(deadline), cursor: "2" });
+      expect(Date.now()).toBeLessThan(result.body.nstProgress.deadlineAt);
+      expect(result.body.resume.request.query).toEqual({ dates: "2026-10-02,2026-10-03", deadlineAt: String(deadline), cursor: "39" });
       const calls = fetchNstTextByUrlMock.mock.calls.length;
       const stalled = await run({ dates: "2026-10-02,2026-10-03", cursor: "1", deadlineAt: String(Date.now() + 6_000) });
       expect(stalled.body.operationStatus).toBe("blocked");

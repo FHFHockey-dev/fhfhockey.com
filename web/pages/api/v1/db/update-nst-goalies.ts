@@ -1,3 +1,9 @@
+import { withNstJobLifecycle } from "lib/nst/jobLifecycle.server";
+import { createHash } from "node:crypto";
+import { NstExecutionLimitError, type NstRequestControl } from "lib/nst/requestBudget";
+import { completedGoalieDate } from "lib/nst/goalieCatchup";
+import { runGoalieCatchupStep, type GoalieSourceResult } from "lib/nst/goalieCatchup.server";
+import { prepareGoalieCatchup } from "lib/nst/goaliePreparation.server";
 // /Users/tim/Desktop/FHFH/fhfhockey.com/web/pages/api/v1/db/update-nst-goalies.ts
 
 /**
@@ -44,6 +50,11 @@
  *    Useful for debugging or targeting a specific table.
  *    Example: /api/v1/db/update-nst-goalies?runMode=forward&datasetType=ppRates
  *
+ * 5. `catchupScope`: Runs one bounded step of a previously persisted checkpoint
+ *    cohort. May only be combined with the runner's `deadlineAt`. Requires the
+ *    checkpoint SQL, final-day evidence and exclusive NST clearance; disabled
+ *    control or missing prerequisites never fall back to legacy provider work.
+ *
  * --- How It Works ---
  *
  * - The script initiates a connection to a Supabase database to store the scraped data.
@@ -60,7 +71,6 @@ import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import adminOnly from "utils/adminOnlyMiddleware";
 import {
   DEFAULT_MAX_PENDING_URLS_PER_RUN,
-  GOALIE_URLS_PER_DATE,
   NST_GOALIES_REQUEST_INTERVAL_MS,
   NST_STRICT_MAX_URLS_PER_RUN,
   resolveGoalieNstRequestPlan
@@ -258,9 +268,28 @@ function normalizeName(name: string): string {
 
 const troublesomePlayers: string[] = [];
 
+async function boundedGoalieQuery<T>(query: PromiseLike<T>, deadlineAt: number, timeoutMs = 5_000): Promise<T> {
+  const controller = new AbortController();
+  const remaining = Math.min(timeoutMs, deadlineAt - Date.now());
+  if (remaining <= 0) throw new Error("Goalie database deadline exhausted.");
+  const abortable = query as PromiseLike<T> & { abortSignal?: (signal: AbortSignal) => PromiseLike<T> };
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      abortable.abortSignal ? abortable.abortSignal(controller.signal) : query,
+      new Promise<never>((_, reject) => { timer = setTimeout(() => {
+        controller.abort();
+        reject(new Error("Goalie database acknowledgement timed out."));
+      }, remaining); }),
+    ]);
+  } finally { clearTimeout(timer); }
+}
+
 async function getGoalieIdByName(
   fullName: string,
-  position: string
+  position: string,
+  deadlineAt: number,
+  exactIdentity = false
 ): Promise<number | null> {
   const mappedName = goalieNameMapping[fullName]
     ? goalieNameMapping[fullName].fullName
@@ -268,13 +297,15 @@ async function getGoalieIdByName(
   const normalizedFullName = normalizeName(mappedName);
   const goaliePosition = "G"; // Force goalie position
 
-  const { data, error } = await supabase
+  const identityQuery = supabase
     .from("players")
-    .select("id")
-    .ilike("fullName", `%${mappedName}%`)
+    .select("id");
+  const { data, error } = await boundedGoalieQuery((exactIdentity
+    ? identityQuery.eq("fullName", mappedName)
+    : identityQuery.ilike("fullName", `%${mappedName}%`))
     .eq("position", goaliePosition)
-    .limit(1)
-    .maybeSingle();
+    .limit(exactIdentity ? 2 : 1)
+    .maybeSingle(), deadlineAt);
 
   if (error) return null;
   if (!data) {
@@ -321,30 +352,40 @@ async function fetchAndParseData(
   datasetType: string,
   date: string,
   seasonId: string,
-  retries: number = 1
+  retries: number = 1,
+  requestControl?: NstRequestControl,
+  proof?: { sourceFingerprint?: string }
 ): Promise<any[]> {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       console.log(`Fetching data from URL: ${url} (Attempt ${attempt})`);
-      const { text } = await fetchNstTextByUrl(url, { timeoutMs: 30000 });
+      const { text } = await fetchNstTextByUrl(url, { timeoutMs: 30000, requestControl });
       if (!text) {
-        console.warn(`No data received from URL: ${url}`);
-        return [];
+        throw new Error("NST returned no response body.");
       }
       const $ = cheerio.load(text);
       const table = $("table").first();
       if (table.length === 0) {
-        console.warn(`No table found in response from URL: ${url}`);
-        return [];
+        throw new Error("NST response did not contain a goalie table.");
       }
       const headers: string[] = [];
       table.find("thead tr th").each((_, th) => {
         headers.push($(th).text().trim());
       });
 
+      if (!headers.includes("Player") || !headers.includes("Team")) throw new Error("NST goalie table headers are invalid.");
       const mappedHeaders = headers.map((header) =>
         mapGoalieHeaderToColumn(header, datasetType)
       );
+      if (proof) {
+        const required = datasetType.endsWith("Counts")
+          ? ["gp", "toi", "shots_against", "saves", "goals_against", "xg_against", "hd_shots_against", "hd_saves"]
+          : ["gp", "toi", "toi_per_gp", "shots_against_per_60", "saves_per_60", "gaa", "xg_against_per_60", "hd_shots_against_per_60", "hd_saves_per_60"];
+        if (required.some(field => !mappedHeaders.includes(field)) || new Set(headers).size !== headers.length) {
+          throw new Error("NST checkpoint headers are incomplete or ambiguous.");
+        }
+        proof.sourceFingerprint = createHash("sha256").update(text).digest("hex");
+      }
 
       const dataRowsCollected: any[] = [];
       table.find("tbody tr").each((_, tr) => {
@@ -365,10 +406,12 @@ async function fetchAndParseData(
               return;
             }
             let cellText: string | null = $(td).text().trim();
+            if (proof && cellText === "") cellText = null;
             if (cellText === "-" || cellText === "\\-") {
               cellText = null;
             }
             if (cellText !== null) {
+              if (proof && !/^-?[\d,]+(?:\.\d+)?%?$/.test(cellText)) throw new Error("NST checkpoint numeric cell is invalid.");
               const num = Number(cellText.replace(/[^0-9.-]+/g, ""));
               rowData[column] = isNaN(num) ? cellText : num;
             } else {
@@ -387,12 +430,14 @@ async function fetchAndParseData(
         }
       });
 
+      if (dataRowsCollected.length !== table.find("tbody tr").length) throw new Error("NST goalie rows could not be completely parsed.");
       console.log(
         `Parsed ${dataRowsCollected.length} rows for datasetType "${datasetType}".`
       );
       return dataRowsCollected;
     } catch (error: any) {
       if (
+        error instanceof NstExecutionLimitError ||
         isNstAuthError(error) ||
         isNstConfigError(error) ||
         isNstRateLimitError(error)
@@ -407,7 +452,7 @@ async function fetchAndParseData(
         console.error(
           `Failed to fetch data from ${url} after ${retries} attempts.`
         );
-        return [];
+        throw error;
       }
       await delay(5000);
     }
@@ -415,22 +460,19 @@ async function fetchAndParseData(
   return [];
 }
 
-async function upsertData(datasetType: string, dataRows: any[]) {
+async function upsertData(datasetType: string, dataRows: any[], deadlineAt = Date.now() + 20_000) {
   if (dataRows.length === 0) {
     console.warn(`No data rows to upsert for datasetType "${datasetType}".`);
     return;
   }
   const tableName = getGoalieTableName(datasetType);
   if (tableName === "unknown_goalie_table") {
-    console.warn(
-      `Skipping upsert for unknown table with datasetType "${datasetType}".`
-    );
-    return;
+    throw new Error("Unknown goalie output table.");
   }
 
   const dataRowsWithPlayerIds: any[] = [];
   for (const row of dataRows) {
-    const goalieId = await getGoalieIdByName(row["player_name"], row["team"]);
+    const goalieId = await getGoalieIdByName(row["player_name"], row["team"], deadlineAt);
     if (!goalieId) {
       console.warn(
         `Player ID not found for ${row["player_name"]} (${row["team"]})`
@@ -441,25 +483,21 @@ async function upsertData(datasetType: string, dataRows: any[]) {
     dataRowsWithPlayerIds.push(row);
   }
 
+  if (dataRowsWithPlayerIds.length !== dataRows.length) throw new Error("Goalie identities are unresolved; no output write started.");
   console.log(
     `Upserting ${dataRowsWithPlayerIds.length} rows into table "${tableName}".`
   );
-  const { error } = await supabase
+  const receipt = await boundedGoalieQuery(supabase
     .from(tableName)
-    .upsert(dataRowsWithPlayerIds, { onConflict: "player_id,date_scraped" });
-  if (error) {
-    console.error(
-      `Error upserting into ${tableName}:`,
-      error.details || error.message
-    );
-  } else {
-    console.log(`Successfully upserted data into "${tableName}".`);
-  }
+    .upsert(dataRowsWithPlayerIds, { onConflict: "player_id,date_scraped" }), deadlineAt, 15_000);
+  if (!receipt || receipt.error !== null) throw new Error("Goalie output persistence was not acknowledged; inspect before replaying.");
+  console.log(`Successfully acknowledged goalie upsert into "${tableName}".`);
 }
 
 async function checkDataExists(
   datasetType: string,
-  date: string
+  date: string,
+  deadlineAt = Date.now() + 5_000
 ): Promise<boolean> {
   const tableName = getGoalieTableName(datasetType);
   if (tableName === "unknown_goalie_table") {
@@ -468,14 +506,13 @@ async function checkDataExists(
     );
     return false;
   }
-  const { data, error } = await supabase
+  const { data, error } = await boundedGoalieQuery(supabase
     .from(tableName)
     .select("player_id")
     .eq("date_scraped", date)
-    .limit(1);
+    .limit(1), deadlineAt);
   if (error) {
-    console.error(`Error checking data in ${tableName}:`, error.message);
-    return false;
+    throw new Error(`Goalie coverage read failed for ${tableName}; no missing-work assumption is safe.`);
   }
   const exists = data && data.length > 0;
   console.log(`Data existence check for "${tableName}" on ${date}: ${exists}`);
@@ -508,130 +545,54 @@ async function processSingleUrl({
 
 // Existing sequential processing function (kept for cases with more than 2 days of data)
 async function processUrlsSequentially(
-  urlsQueue: {
-    datasetType: string;
-    url: string;
-    date: string;
-    seasonId: string;
-  }[],
-  options: {
-    requestIntervalMs: number;
-    maxPendingUrls?: number;
-    overwrite: boolean;
-  }
+  urlsQueue: { datasetType: string; url: string; date: string; seasonId: string }[],
+  options: { requestIntervalMs: number; maxPendingUrls?: number; overwrite: boolean;
+    requestControl: NstRequestControl; startIndex: number; existing: readonly boolean[] }
 ) {
-  const totalUrls = urlsQueue.length;
-  let processedCount = 0;
   let pendingProcessedCount = 0;
-  let stoppedEarly = false;
-  const urlProgress: {
-    datasetType: string;
-    date: string;
-    status: "processed" | "skipped";
-    startedAt: string;
-    finishedAt: string;
-    durationMs: number;
-    rowCount: number;
-  }[] = [];
-  // Track unique dates and per-date totals so we can log a per-date summary
-  const uniqueDates = Array.from(new Set(urlsQueue.map((q) => q.date)));
-  const dateTotalUrls: Record<string, number> = {};
-  uniqueDates.forEach((d) => {
-    dateTotalUrls[d] = urlsQueue.filter((u) => u.date === d).length;
-  });
-  const dateProcessedCounts: Record<string, number> = {};
-  for (let i = 0; i < urlsQueue.length; i++) {
+  let nextCursor = options.startIndex;
+  let acknowledgedWriteUrls = 0;
+  let emptyValidUrls = 0;
+  let failed = false;
+  let requiresReview = false;
+  const urlProgress: Array<{ datasetType: string; date: string;
+    status: "processed" | "skipped" | "empty_valid" | "deferred" | "failed";
+    startedAt: string; finishedAt: string; durationMs: number; rowCount: number; reason?: string }> = [];
+  for (let i = options.startIndex; i < urlsQueue.length; i++) {
     const { datasetType, url, date, seasonId } = urlsQueue[i];
-    const urlStartedAt = Date.now();
-    const startedAtIso = new Date(urlStartedAt).toISOString();
-    console.log(
-      `\n[${startedAtIso}] Starting URL ${i + 1}/${totalUrls}: ${datasetType} for ${date}`
-    );
-    const dataExists = options.overwrite
-      ? false
-      : await checkDataExists(datasetType, date);
-    if (!dataExists || options.overwrite) {
-      if (options.requestIntervalMs > 0) {
-        const wakeAt = new Date(
-          Date.now() + options.requestIntervalMs
-        ).toISOString();
-        console.log(
-          `[${new Date().toISOString()}] Waiting ${options.requestIntervalMs / 1000} seconds before requesting ${datasetType} for ${date}. Next request at approximately ${wakeAt}.`
-        );
-        await delay(options.requestIntervalMs);
-        console.log(
-          `[${new Date().toISOString()}] Request window open for ${datasetType} on ${date}. Fetch starting now.`
-        );
+    const startedAt = Date.now();
+    let writeStarted = false;
+    try {
+      const exists = options.existing[i];
+      let rows: any[] = [];
+      if (!exists) {
+        if (Date.now() + options.requestIntervalMs + 35_000 >= options.requestControl.deadlineAt) {
+          throw new NstExecutionLimitError("NST goalie admission cannot fit provider and persistence headroom.");
+        }
+        if (options.requestIntervalMs > 0) await delay(options.requestIntervalMs);
+        rows = await fetchAndParseData(url, datasetType, date, seasonId, 1, options.requestControl);
+        if (rows.length) { writeStarted = true; await upsertData(datasetType, rows, options.requestControl.deadlineAt); acknowledgedWriteUrls++; }
+        else emptyValidUrls++;
+        pendingProcessedCount++;
       }
-      const dataRows = await fetchAndParseData(
-        url,
-        datasetType,
-        date,
-        seasonId
-      );
-      if (dataRows.length > 0) {
-        await upsertData(datasetType, dataRows);
-      }
-      const finishedAtIso = new Date().toISOString();
-      const durationMs = Date.now() - urlStartedAt;
-      pendingProcessedCount++;
-      console.log(
-        `[${finishedAtIso}] Finished ${datasetType} for ${date} in ${(durationMs / 1000).toFixed(1)}s.`
-      );
-      urlProgress.push({
-        datasetType,
-        date,
-        status: "processed",
-        startedAt: startedAtIso,
-        finishedAt: finishedAtIso,
-        durationMs,
-        rowCount: dataRows.length
-      });
-    } else {
-      const finishedAtIso = new Date().toISOString();
-      const durationMs = Date.now() - urlStartedAt;
-      console.log(
-        `Data already exists for ${datasetType} on ${date}. Skipping.`
-      );
-      console.log(
-        `[${finishedAtIso}] Skipped ${datasetType} for ${date} after ${(durationMs / 1000).toFixed(1)}s.`
-      );
-      urlProgress.push({
-        datasetType,
-        date,
-        status: "skipped",
-        startedAt: startedAtIso,
-        finishedAt: finishedAtIso,
-        durationMs,
-        rowCount: 0
-      });
-    }
-    processedCount++;
-    console.log(`Processed ${processedCount} out of ${totalUrls} URLs.`);
-
-    // Update per-date processed counter and log when a date's URLs are complete
-    dateProcessedCounts[date] = (dateProcessedCounts[date] || 0) + 1;
-    if (dateProcessedCounts[date] === dateTotalUrls[date]) {
-      const dateIndex = uniqueDates.indexOf(date) + 1;
-      console.log(
-        `[${new Date().toISOString()}] Completed ${dateProcessedCounts[date]} out of ${dateTotalUrls[date]} URLs for ${date} (date ${dateIndex} of ${uniqueDates.length}).`
-      );
-    }
-    if (
-      options.maxPendingUrls !== undefined &&
-      pendingProcessedCount >= options.maxPendingUrls
-    ) {
-      stoppedEarly = i < urlsQueue.length - 1;
+      urlProgress.push({ datasetType, date, status: exists ? "skipped" : rows.length ? "processed" : "empty_valid",
+        startedAt: new Date(startedAt).toISOString(), finishedAt: new Date().toISOString(),
+        durationMs: Date.now() - startedAt, rowCount: rows.length });
+      nextCursor = i + 1;
+    } catch (error) {
+      const deferred = !writeStarted && error instanceof NstExecutionLimitError && !error.dispatchStarted;
+      failed = !deferred;
+      requiresReview = writeStarted || (error instanceof NstExecutionLimitError && error.dispatchStarted);
+      urlProgress.push({ datasetType, date, status: deferred ? "deferred" : "failed",
+        startedAt: new Date(startedAt).toISOString(), finishedAt: new Date().toISOString(),
+        durationMs: Date.now() - startedAt, rowCount: 0,
+        reason: error instanceof Error ? error.message : "Unresolved goalie source or output." });
       break;
     }
+    if (options.maxPendingUrls !== undefined && pendingProcessedCount >= options.maxPendingUrls) break;
   }
-
-  return {
-    processedCount,
-    pendingProcessedCount,
-    stoppedEarly,
-    urlProgress
-  };
+  return { pendingProcessedCount, nextCursor, acknowledgedWriteUrls, emptyValidUrls, failed, requiresReview,
+    stoppedEarly: nextCursor < urlsQueue.length, unattemptedUrls: urlsQueue.length - nextCursor - (failed ? 1 : 0), urlProgress };
 }
 
 async function main(
@@ -643,14 +604,20 @@ async function main(
     runMode?: RunMode;
     overwrite?: boolean;
     datasetType?: string;
+    cursor?: number;
+    resumeScope?: string;
+    plannedUrls?: number;
+    deadlineAt?: number;
   } = {}
 ) {
+  const startedAt = Date.now();
+  const deadlineAt = Math.min(startedAt + 220_000, options.deadlineAt ?? Infinity);
   try {
     const runMode = options.runMode ?? "incremental";
     const overwrite =
       options.overwrite ?? (runMode === "incremental" ? false : true);
 
-    const seasonInfo = await fetchCurrentSeason();
+    const seasonInfo = await boundedGoalieQuery(fetchCurrentSeason(), deadlineAt);
     const seasonId = seasonInfo.id.toString();
     const seasonStartDate = parseISO(seasonInfo.startDate);
     const regularSeasonEndDateIso =
@@ -659,16 +626,16 @@ async function main(
       throw new Error("Current season is missing a regular-season end date.");
     }
     const regularSeasonEndDate = parseISO(regularSeasonEndDateIso);
-    const today = new Date();
+    const lastCompletedDate = parseISO(completedGoalieDate(new Date()));
     const scrapingEndDate =
-      today < regularSeasonEndDate ? today : regularSeasonEndDate;
+      lastCompletedDate < regularSeasonEndDate ? lastCompletedDate : regularSeasonEndDate;
 
     let startDate = seasonStartDate;
     if (options.startDate) {
       startDate = parseISO(options.startDate);
       console.log(`Using explicit startDate ${options.startDate}.`);
     } else if (runMode === "incremental") {
-      const latestDateStr = await getLatestDateSupabase();
+      const latestDateStr = await getLatestDateSupabase(deadlineAt);
       if (latestDateStr) {
         startDate = parseISO(latestDateStr);
         console.log(
@@ -692,6 +659,7 @@ async function main(
         `Start date ${startDate.toISOString().split("T")[0]} is after regular season end ${regularSeasonEndDateIso}. No regular-season NST goalie dates to scrape.`
       );
       return {
+        success: true, complete: true, operationStatus: "complete", requiresReview: false,
         message: "No regular-season NST goalie dates to scrape.",
         pendingUrlsProcessed: 0,
         totalQueuedUrls: 0,
@@ -731,6 +699,7 @@ async function main(
     if (datesToScrape.length === 0) {
       console.log("No new dates to scrape.");
       return {
+        success: true, complete: true, operationStatus: "complete", requiresReview: false,
         message: "No new dates to scrape.",
         pendingUrlsProcessed: 0,
         totalQueuedUrls: 0,
@@ -754,12 +723,35 @@ async function main(
       }
     });
 
+    const startIndex = options.cursor ?? 0;
+    if (!Number.isSafeInteger(startIndex) || startIndex < 0 || startIndex > urlsQueue.length ||
+        (startIndex > 0 && !options.resumeScope) ||
+        (options.resumeScope !== undefined && options.plannedUrls === undefined) ||
+        (options.resumeScope === undefined && options.plannedUrls !== undefined)) {
+      throw new Error("Goalie continuation needs its acknowledged whole-job request plan; reconcile legacy progress before resuming.");
+    }
+    const existing: boolean[] = Array(urlsQueue.length).fill(false);
+    for (let index = startIndex; index < urlsQueue.length; index++) {
+      if (Date.now() + 35_000 >= deadlineAt) throw new Error("Goalie coverage preflight exceeded its read budget; no provider request started.");
+      existing[index] = !overwrite && await checkDataExists(urlsQueue[index].datasetType, urlsQueue[index].date, deadlineAt);
+    }
+    const pendingUrlsAtStart = existing.slice(startIndex).filter(value => !value).length;
+    const plannedUrls = options.plannedUrls ?? pendingUrlsAtStart;
+    if (!Number.isSafeInteger(plannedUrls) || plannedUrls < pendingUrlsAtStart || plannedUrls > urlsQueue.length) {
+      throw new Error("Goalie pending work no longer fits its acknowledged whole-job plan.");
+    }
+    const scope = createHash("sha256").update(JSON.stringify({ runMode, overwrite, plannedUrls,
+      queue: urlsQueue.map(({date,datasetType})=>[date,datasetType]) })).digest("hex");
+    if (options.resumeScope !== undefined && options.resumeScope !== scope) {
+      throw new Error("Goalie resume cursor/scope does not match the complete queue and request plan.");
+    }
     const requestedMaxPendingUrls =
       options.maxPendingUrls ??
       (runMode === "forward" ? undefined : DEFAULT_MAX_PENDING_URLS_PER_RUN);
     const preliminaryNstRequestPlan = resolveGoalieNstRequestPlan({
       queuedDates: datesToScrape.length,
       totalQueuedUrls: urlsQueue.length,
+      plannedRequestCount: plannedUrls,
       maxPendingUrls: requestedMaxPendingUrls ?? urlsQueue.length,
       explicitRequestIntervalMs: options.requestIntervalMs
     });
@@ -772,6 +764,7 @@ async function main(
     const nstRequestPlan = resolveGoalieNstRequestPlan({
       queuedDates: datesToScrape.length,
       totalQueuedUrls: urlsQueue.length,
+      plannedRequestCount: plannedUrls,
       maxPendingUrls: maxPendingUrls ?? urlsQueue.length,
       explicitRequestIntervalMs: options.requestIntervalMs
     });
@@ -780,7 +773,11 @@ async function main(
     const result = await processUrlsSequentially(urlsQueue, {
       requestIntervalMs,
       maxPendingUrls,
-      overwrite
+      overwrite,
+      startIndex,
+      existing,
+      requestControl: { deadlineAt, maxAttempts: Math.max(1, plannedUrls * 3),
+        attemptsStarted: 0, minIntervalMs: requestIntervalMs, plannedRequestCount: plannedUrls }
     });
 
     if (troublesomePlayers.length > 0) {
@@ -791,15 +788,34 @@ async function main(
       );
     }
 
-    const urlsPerDate = options.datasetType ? 1 : GOALIE_URLS_PER_DATE;
-    const nextDateIndex = Math.floor(result.processedCount / urlsPerDate);
+    const canResume = result.stoppedEarly && !result.failed;
+    const resumeQuery: Record<string,string> = { runMode, overwrite: String(overwrite),
+      startDate: datesToScrape[0], maxDays: String(datesToScrape.length), cursor: String(result.nextCursor), resumeScope: scope,
+      plannedUrls: String(plannedUrls),
+      ...(options.datasetType ? {datasetType:options.datasetType}:{}),
+      ...(options.maxPendingUrls !== undefined ? {maxUrls:String(options.maxPendingUrls)}:{}),
+      ...(options.requestIntervalMs !== undefined ? {requestIntervalMs:String(options.requestIntervalMs)}:{}) };
 
     return {
-      message: result.stoppedEarly
-        ? "Processed a bounded chunk of NST goalie work. Re-run to continue."
-        : "Goalie data fetching and upsertion completed for queued work.",
+      success: !result.stoppedEarly && !result.failed,
+      complete: !result.stoppedEarly && !result.failed,
+      operationStatus: result.failed ? "failed" : canResume ? "partial" : "complete",
+      message: result.failed ? "Goalie work failed or remains uncertain; inspect source and output evidence."
+        : canResume ? "Goalie work is incomplete; resume the first unacknowledged URL with the bounded query."
+        : "Goalie queued execution completed; source coverage remains unverified.",
+      nextCursor: result.nextCursor,
+      acknowledgedWriteUrls: result.acknowledgedWriteUrls,
+      emptyValidUrls: result.emptyValidUrls,
+      unattemptedUrls: result.unattemptedUrls,
+      rowsUpserted: null,
+      sourceCoverage: "not_verified",
+      requiresReview: result.requiresReview,
+      retrySafe: canResume,
+      ...(canResume ? { resume: { required: true, request: { query: resumeQuery } } } : {}),
       pendingUrlsProcessed: result.pendingProcessedCount,
       totalQueuedUrls: urlsQueue.length,
+      plannedUrls,
+      pendingUrlsAtStart,
       stoppedEarly: result.stoppedEarly,
       datesQueued: datesToScrape.length,
       requestIntervalMs,
@@ -810,7 +826,7 @@ async function main(
       overwrite,
       datasetType: options.datasetType ?? null,
       nextStartDate: result.stoppedEarly
-        ? (datesToScrape[nextDateIndex] ?? null)
+        ? (urlsQueue[result.nextCursor]?.date ?? null)
         : null,
       urlProgress: result.urlProgress,
       nstRequestPlan
@@ -827,6 +843,52 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     return;
   }
   try {
+    if (req.query.prepareCatchup !== undefined) {
+      if (req.query.prepareCatchup !== "true" || Object.keys(req.query).some(key => !["prepareCatchup", "deadlineAt"].includes(key))) {
+        res.status(400).json({ error: "Invalid preparation request or mixed writer query." });
+        return;
+      }
+      const result = await prepareGoalieCatchup({ client: supabase,
+        deadlineAt: Math.min(Date.now() + 180_000, typeof req.query.deadlineAt === "string" && Number.isFinite(Number(req.query.deadlineAt))
+          ? Number(req.query.deadlineAt) : Infinity) });
+      const success = ["prepared", "existing", "not_due", "disabled"].includes(result.status);
+      res.status(result.requiresReview ? 409 : success ? 200 : 503).json({ ...result, success,
+        operationStatus: result.status === "disabled" || result.status === "not_due" ? "skipped" : success ? "success" : "failed" });
+      return;
+    }
+    if (req.query.catchupScope !== undefined) {
+      const scope = req.query.catchupScope;
+      if (typeof scope !== "string" || !/^[a-f0-9]{64}$/.test(scope) ||
+          Object.keys(req.query).some(key => !["catchupScope", "deadlineAt"].includes(key))) {
+        res.status(400).json({ error: "Invalid checkpoint scope or mixed legacy query." });
+        return;
+      }
+      const deadlineAt = Math.min(Date.now() + 220_000,
+        typeof req.query.deadlineAt === "string" && Number.isFinite(Number(req.query.deadlineAt))
+          ? Number(req.query.deadlineAt) : Infinity);
+      const result = await runGoalieCatchupStep({ client: supabase, scope, deadlineAt,
+        source: async (unit, control, signal): Promise<GoalieSourceResult> => {
+          if (signal.aborted) throw new NstExecutionLimitError("Checkpoint source deadline elapsed.");
+          const season = unit.key.split("/")[0];
+          const proof: { sourceFingerprint?: string } = {};
+          const rows = await fetchAndParseData(constructGoalieUrlsForDate(unit.date, season)[unit.dataset],
+            unit.dataset, unit.date, season, 1, control, proof);
+          for (const row of rows) {
+            if (signal.aborted) throw new Error("Checkpoint source deadline elapsed after dispatch.");
+            const id = await getGoalieIdByName(row.player_name, "G", control.deadlineAt - 20_000, true);
+            if (!id) throw new Error("Goalie identity is missing or ambiguous; review required.");
+            row.player_id = id;
+          }
+          return { rows, parsedRows: rows.length, mappedRows: rows.length, validatedEmpty: rows.length === 0,
+            sourceFingerprint: proof.sourceFingerprint ?? "" };
+        } });
+      const complete = result.status === "complete";
+      res.status(result.requiresReview ? 409 : complete ? 200 : 207).json({ ...result,
+        checkpointVersion: 1, success: complete, complete, operationStatus: result.requiresReview ? "failed" : complete ? "success" : "partial",
+        stoppedEarly: !complete, retrySafe: !result.requiresReview,
+        resume: { required: !complete && !result.requiresReview, request: { query: { catchupScope: scope } } } });
+      return;
+    }
     const runMode = parseRunMode(req.query.runMode);
     const overwriteParam = parseBooleanParam(req.query.overwrite);
     const overwrite =
@@ -841,18 +903,24 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       datasetType: Array.isArray(req.query.datasetType)
         ? req.query.datasetType[0]
         : req.query.datasetType,
+      cursor: req.query.cursor === undefined ? undefined : Number(req.query.cursor),
+      resumeScope: typeof req.query.resumeScope === "string" ? req.query.resumeScope : undefined,
+      plannedUrls: req.query.plannedUrls === undefined ? undefined : Number(req.query.plannedUrls),
+      deadlineAt: typeof req.query.deadlineAt === "string" && Number.isFinite(Number(req.query.deadlineAt))
+        ? Number(req.query.deadlineAt) : undefined,
       startDate: Array.isArray(req.query.startDate)
         ? req.query.startDate[0]
         : req.query.startDate
     });
-    res.status(200).json(result);
+    res.status("operationStatus" in result && result.operationStatus === "failed" ? 500
+      : result.stoppedEarly ? 207 : 200).json(result);
   } catch (error: any) {
     console.error("Error in API handler:", error.message);
     res.status(500).json({ message: "Internal Server Error" });
   }
 }
 
-async function getLatestDateSupabase(): Promise<string | null> {
+async function getLatestDateSupabase(deadlineAt: number): Promise<string | null> {
   const tableNames = [
     "nst_gamelog_goalie_5v5_counts",
     "nst_gamelog_goalie_5v5_rates",
@@ -867,13 +935,13 @@ async function getLatestDateSupabase(): Promise<string | null> {
   ];
   let latestDate: string | null = null;
   for (const table of tableNames) {
-    const { data, error } = await supabase
+    const { data, error } = await boundedGoalieQuery(supabase
       .from(table)
       .select("date_scraped")
       .order("date_scraped", { ascending: false })
       .limit(1)
-      .maybeSingle();
-    if (error) continue;
+      .maybeSingle(), deadlineAt);
+    if (error) throw new Error("Goalie high-water read failed; no provider request started.");
     if (data && data.date_scraped) {
       if (!latestDate || parseISO(data.date_scraped) > parseISO(latestDate)) {
         latestDate = data.date_scraped;
@@ -883,4 +951,18 @@ async function getLatestDateSupabase(): Promise<string | null> {
   return latestDate;
 }
 
-export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler as any)));
+export default adminOnly(withNstJobLifecycle(
+  withCronJobAudit(withNhlOffSeasonSkip(handler as any), { includeFinalAuditReceipt: true }),
+  "update-nst-goalies",
+  req => req.method !== "GET" || req.query.prepareCatchup === "true" || typeof req.query.catchupScope === "string",
+  { settled: (body, status) => {
+    if (body?.finalAudit?.owner !== "withCronJobAudit" || body.finalAudit.status !== "persisted") return false;
+    if (body.success === true && body.skipped === true && body.reason === "nhl_off_season") return true;
+    if (body.requiresReview !== false) return false;
+    if (status === 200 && body.success === true && body.complete === true && body.operationStatus === "complete") return true;
+    return status === 207 && body.success === false && body.complete === false && body.operationStatus === "partial" &&
+      body.retrySafe === true && body.resume?.required === true && body.stoppedEarly === true &&
+      Array.isArray(body.urlProgress) && body.urlProgress.every((url: { status: string }) =>
+        ["processed", "skipped", "empty_valid", "deferred"].includes(url.status));
+  } },
+));

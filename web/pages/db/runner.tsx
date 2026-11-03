@@ -71,6 +71,7 @@ const TOOLTIP_BG = "#1a1d21";
 
 const CONTRACT_LABELS: Record<RouteRunnerContract, string> = {
   nst_resume: "resumes",
+  goalie_url_cursor: "resumes by URL",
   rolling_resume_from: "resumes by player",
   next_start_date: "resumes by date",
   projection_resume: "resumes by game",

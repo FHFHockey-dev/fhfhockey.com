@@ -1,3 +1,14 @@
+# Shared NST admission: this manual/compatibility path uses the same global budget.
+from pathlib import Path as _NstPath
+import sys as _nst_sys
+_nst_root = next((_parent / "functions" for _parent in _NstPath(__file__).resolve().parents
+                  if (_parent / "functions/lib/nst_admission.py").is_file()), None)
+if _nst_root is None:
+    raise RuntimeError("NST shared admission helper unavailable")
+if str(_nst_root) not in _nst_sys.path:
+    _nst_sys.path.insert(0, str(_nst_root))
+from lib.nst_admission import nst_get, nst_job_scope, assert_nst_job_active, mark_nst_job_uncertain
+
 # scripts/fetch_team_table.py
 # /Users/tim/Desktop/FHFH/fhfhockey.com/web/scripts/fetch_team_table.py
 
@@ -35,6 +46,7 @@ def validate_percentage(value):
     except:
         return None
 
+@nst_job_scope("legacy/fetch_team_table", timeout_seconds=220)
 def fetch_team_table(from_season='20242025', thru_season='20242025',
                     stype='2', sit='pk', score='all', rate='n',
                     team='all', loc='B', gpf='410', fd='', td=''):
@@ -43,7 +55,7 @@ def fetch_team_table(from_season='20242025', thru_season='20242025',
         "data": []
     }
 
-    ensure_loaded_for(["NST_KEY"])
+    ensure_loaded_for(["NST_KEY", "NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"])
     nst_key = (os.environ.get("NST_KEY") or "").strip()
     if not nst_key:
         result["debug"]["Error"] = "NST_KEY missing"
@@ -70,7 +82,7 @@ def fetch_team_table(from_season='20242025', thru_season='20242025',
     try:
 
         # Fetch the team table page
-        response = requests.get(url, headers=headers, timeout=10)
+        response = nst_get(url, headers=headers, timeout=10)
         response.raise_for_status()
 
         # Parse the HTML content
@@ -148,6 +160,7 @@ def fetch_team_table(from_season='20242025', thru_season='20242025',
         sys.exit(1)  # Exit with non-zero status
 
 if __name__ == "__main__":
+    ensure_loaded_for(["NST_KEY", "NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"])
     parser = argparse.ArgumentParser(description='Fetch team table data.')
     parser.add_argument('--from_season', default='20242025', help='From season')
     parser.add_argument('--thru_season', default='20242025', help='Thru season')

@@ -1,3 +1,4 @@
+import { cronAuditFailureResponse } from "lib/cron/manualCronAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
 import {
   buildCronJobTiming,
@@ -359,7 +360,7 @@ export function withCronJobAudit(
       }
     }
 
-    let finalAuditStatus: "persisted" | "failed" = "persisted";
+    let finalAuditStatus: "persisted" | "failed" | "unverified" = "unverified";
 
     const auditBody = opts?.responsePreviewKeys == null
       ? capturedBody
@@ -376,6 +377,7 @@ export function withCronJobAudit(
           : "success",
       rows_affected: rowsUpserted,
       details: {
+        invocationSource: req.headers?.["user-agent"] === "vercel-cron/1.0" ? "vercel-cron-claimed" : "unspecified",
         method: req.method ?? null,
         url: req.url ?? null,
         statusCode,
@@ -404,10 +406,24 @@ export function withCronJobAudit(
 
     try {
       try {
-        const { error: auditInsertError } = await supabase
-          .from("cron_job_audit")
-          .insert(row as any);
-        if (auditInsertError) {
+        const controller = new AbortController();
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const query = supabase.from("cron_job_audit").insert(row as any);
+        const pending = typeof query?.abortSignal === "function" ? query.abortSignal(controller.signal) : query;
+        let acknowledgement: { error?: any };
+        try {
+          acknowledgement = await Promise.race([
+            Promise.resolve(pending),
+            new Promise<never>((_resolve, reject) => {
+              timer = setTimeout(() => { controller.abort(); reject(new Error("Audit acknowledgement timed out; persistence outcome unverified")); }, 5000);
+            }),
+          ]);
+        } finally { clearTimeout(timer); }
+        const auditInsertError = acknowledgement?.error;
+        if (acknowledgement && typeof acknowledgement === "object" && !Array.isArray(acknowledgement) &&
+            Object.prototype.hasOwnProperty.call(acknowledgement, "error") && acknowledgement.error === null) {
+          finalAuditStatus = "persisted";
+        } else if (auditInsertError) {
           finalAuditStatus = "failed";
           console.error(
             "cron_job_audit insert failed",
@@ -417,7 +433,7 @@ export function withCronJobAudit(
           );
         }
       } catch (e) {
-        finalAuditStatus = "failed";
+        finalAuditStatus = "unverified";
         console.error("cron_job_audit insert failed", (e as any)?.message ?? e);
       }
     } finally {
@@ -429,28 +445,20 @@ export function withCronJobAudit(
       if (originalSend) {
         res.send = originalSend as any;
       }
-      if (
-        opts?.includeFinalAuditReceipt &&
-        pendingResponse?.body &&
-        typeof pendingResponse.body === "object" &&
-        !Array.isArray(pendingResponse.body)
-      ) {
-        pendingResponse = {
-          ...pendingResponse,
-          body: {
-            ...(pendingResponse.body as Record<string, unknown>),
-            finalAudit: {
-              owner: "withCronJobAudit",
-              status: finalAuditStatus,
-            },
-          },
-        };
+      if (finalAuditStatus !== "persisted") {
+        // A failed/uncertain audit never hides behind a successful operation or
+        // an opt-out from positive receipts. Callers must hold, not replay.
+        res.status(503);
+        pendingResponse = { kind: "json", body: cronAuditFailureResponse(
+          responseToFlush?.body ?? capturedBody, statusCode, finalAuditStatus, "withCronJobAudit") };
+      } else if (opts?.includeFinalAuditReceipt && responseToFlush?.body &&
+          typeof responseToFlush.body === "object" && !Array.isArray(responseToFlush.body)) {
+        pendingResponse = { ...responseToFlush, body: { ...responseToFlush.body,
+          finalAudit: { owner: "withCronJobAudit", status: "persisted" } } };
       }
-      if (responseToFlush?.kind === "json") {
-        originalJson(pendingResponse?.body ?? responseToFlush.body);
-      } else if (responseToFlush?.kind === "send" && originalSend) {
-        originalSend(pendingResponse?.body ?? responseToFlush.body);
-      }
+      const outgoing = pendingResponse as { kind: "json" | "send"; body: unknown } | null;
+      if (outgoing?.kind === "json") originalJson(outgoing.body);
+      else if (outgoing?.kind === "send" && originalSend) originalSend(outgoing.body);
     }
   };
 }

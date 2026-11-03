@@ -2,6 +2,7 @@ import * as React from "react";
 
 import { formatExecutionDuration, isNearRepositoryLimit } from "lib/cron/reportMetrics";
 import { formatReportTime } from "lib/cron/reportSource";
+import type { GoalieFreshness } from "lib/nst/goalieFreshness";
 
 type BenchmarkAnnotation = { kind: string; note: string };
 
@@ -35,7 +36,9 @@ interface AuditEntry {
 }
 
 interface CronAuditEmailProps {
+  goalieFreshness?: GoalieFreshness;
   audits: AuditEntry[];
+  configuredVercelSchedules?: Array<{ route: string; schedule: string; activation: "unverified"; receiptCount?: number; latestReceiptStatus?: string; latestReceiptAt?: string | null }>;
   sinceDate: string;
   untilDate?: string;
   totalsComplete?: boolean;
@@ -85,7 +88,7 @@ const LABEL_ORDER = ["MISSING", "PARTIAL", "NEAR LIMIT", "NEAR BUDGET", "CONTINU
 
 type FailureGroup = { jobName: string; rows: AuditEntry[]; latest: AuditEntry; lastSuccess: string | null; recovered: boolean };
 
-export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({ audits, sinceDate, untilDate, totalsComplete = true, fetchErrors = [], successHistory, summary }) => {
+export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({ audits, sinceDate, untilDate, totalsComplete = true, fetchErrors = [], successHistory, summary, configuredVercelSchedules = [], goalieFreshness }) => {
   const globalWarnings = Array.from(new Set([
     ...fetchErrors,
     ...audits.flatMap((row) => row.missingObservationWarnings ?? []).filter((warning) => warning.includes("Telemetry source unavailable")),
@@ -155,7 +158,8 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({ audits, sinceDat
   const sectionTitle = (title: string) => <h2 style={{ fontSize: 16, margin: "22px 0 10px" }}>{title}</h2>;
   const hasFailures = summary.auditFailures > 0 || (summary.cronFailures ?? 0) > 0;
   const allRecovered = hasFailures && openFailures.length === 0 && recovered.length > 0 && !(summary.omittedFailureObservations ?? 0) && !(summary.cronFailures ?? 0);
-  const headline = allRecovered ? "Earlier failures have recovered." : hasFailures ? "Failures need attention." : audits.length === 0 ? "Execution health is unknown." : !totalsComplete ? "Coverage needs attention." : exceptionLines.length > 0 ? "A few jobs need a look." : "Runs look healthy.";
+  const goalieCoverageNeedsAttention = goalieFreshness && ["warning", "critical", "unknown"].includes(goalieFreshness.status);
+  const headline = hasFailures && !allRecovered ? "Failures need attention." : goalieCoverageNeedsAttention ? "Goalie coverage needs attention." : allRecovered ? "Earlier failures have recovered." : audits.length === 0 ? "Execution health is unknown." : !totalsComplete ? "Coverage needs attention." : exceptionLines.length > 0 ? "A few jobs need a look." : "Runs look healthy.";
 
   return <div style={{ backgroundColor: "#F7F7F2", fontFamily: "Arial, sans-serif", fontSize: 14, lineHeight: 1.5, color: "#202020", maxWidth: 640, margin: "0 auto", padding: 20 }}>
     <div style={{ borderTop: "4px solid #B45309", paddingTop: 16 }}>
@@ -172,6 +176,18 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({ audits, sinceDat
       <strong style={{ fontSize: 13 }}>Telemetry coverage incomplete; totals unknown.</strong>
       {globalWarnings.map((warning, index) => <div key={index} style={{ fontSize: 12, marginTop: 4 }}>{concise(warning)}</div>)}
       <div style={{ fontSize: 12, marginTop: 4 }}>Missing receipts do not establish success.</div>
+    </div> : null}
+
+    {goalieFreshness ? <div style={{ margin: "16px 0", fontSize: 13 }}>
+      <strong>NST goalie coverage: {goalieFreshness.status.replace("_", " ").toUpperCase()}</strong>
+      <div>Through {goalieFreshness.cutoffDate}: {number(goalieFreshness.matched)} of {number(goalieFreshness.expected)} retained WGO goalie-games have HD data.</div>
+      {goalieFreshness.missing.length > 0 ? <div style={{ color: red }}>{goalieFreshness.missing.length} missing or incomplete; oldest gap {goalieFreshness.oldestGap}.</div> : null}
+      {goalieFreshness.checkpoint ? <div>
+        <div>Catch-up: {goalieFreshness.checkpoint.status}; {number(goalieFreshness.checkpoint.pending)} pending, {number(goalieFreshness.checkpoint.held)} held; no-progress windows: {number(goalieFreshness.checkpoint.noProgressWindows)}.</div>
+        {goalieFreshness.checkpoint.datasets.filter(dataset => dataset.pending + dataset.held + dataset.inFlight > 0).map(dataset =>
+          <div key={dataset.dataset}>{dataset.dataset}: {dataset.pending} pending, {dataset.inFlight} in flight, {dataset.held} held.</div>)}
+      </div> : null}
+      {goalieFreshness.warnings.map((warning, index) => <div key={index} style={muted}>{warning}</div>)}
     </div> : null}
 
     {openFailures.length > 0 ? <>
@@ -199,6 +215,11 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({ audits, sinceDat
       </div>)}
     </> : null}
 
+    {configuredVercelSchedules.length > 0 ? <div style={{ ...muted, marginTop: 18 }}>
+      <strong>{configuredVercelSchedules.length} configured Vercel schedules; activation unverified.</strong>
+      <div>These callers are outside the pg_cron job denominator. Audit observations may appear above; configuration alone does not prove a scheduled run.</div>
+      {configuredVercelSchedules.map((entry) => <div key={`${entry.route}|${entry.schedule}`} style={{ overflowWrap: "anywhere" }}>{entry.route} · {entry.schedule} UTC · {entry.receiptCount ?? 0} matching receipts; {entry.latestReceiptStatus ?? "unknown"} observed, scheduled execution unverified</div>)}
+    </div> : null}
     <p style={{ ...muted, marginTop: 18 }}>{healthyCount} healthy job{healthyCount === 1 ? "" : "s"}; not listed individually.</p>
     {audits.length === 0 ? <p>No job observations available.</p> : null}
 

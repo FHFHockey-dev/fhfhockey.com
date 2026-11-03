@@ -1,3 +1,4 @@
+import { assertNstJobActive, markNstJobUncertain, withNstJobLifecycle } from "lib/nst/jobLifecycle.server";
 // pages/api/v1/db/update-nst-player-reports.ts
 
 // TO DO:
@@ -343,6 +344,7 @@ async function fetchActivePlayerIds(): Promise<number[]> {
       .range(offset, offset + PLAYER_FETCH_BATCH_SIZE - 1);
 
     if (error) {
+      markNstJobUncertain();
       console.error(`Error fetching from view ${VIEW_NAME}:`, error.message);
       throw error; // Stop execution on error
     }
@@ -451,6 +453,7 @@ async function fetchAndParsePlayerData(
         error.message
       );
       if (attempt === retries) {
+        markNstJobUncertain();
         console.error(
           `Failed to process Player ${playerId} from ${url} after ${retries} attempts.`
         );
@@ -611,6 +614,7 @@ function parseTableData(
  * Upserts parsed data into the appropriate Supabase table.
  */
 async function upsertData(tableName: string, dataRows: any[]): Promise<number> {
+  assertNstJobActive();
   if (!dataRows || dataRows.length === 0) {
     return 0;
   }
@@ -620,7 +624,9 @@ async function upsertData(tableName: string, dataRows: any[]): Promise<number> {
     count: "exact"
   });
 
+  if (process.env.NST_JOB_LIFECYCLE_ENABLED === "true" && error !== null) markNstJobUncertain();
   if (error) {
+    markNstJobUncertain();
     console.error(
       `Error upserting data into ${tableName}:`,
       error.details || error.message // Keep original error
@@ -755,6 +761,7 @@ async function main() {
         `Targeting current season: ${currentSeasonId} (for URL construction)`
       );
     } catch (seasonError: any) {
+      markNstJobUncertain();
       // Use today's date to determine the likely season as fallback
       currentSeasonId = "20242025";
       console.warn(
@@ -777,6 +784,7 @@ async function main() {
 
     // 3. Process each active player sequentially
     for (let i = 0; i < totalPlayers; i++) {
+      assertNstJobActive();
       const playerId = playerIds[i];
       const playerCount = { current: i + 1, total: totalPlayers };
 
@@ -792,6 +800,7 @@ async function main() {
       }
     } // End player loop
   } catch (error: any) {
+    markNstJobUncertain();
     console.error("\n--- SCRIPT FAILED ---");
   }
 }
@@ -813,6 +822,11 @@ async function handler(
     `API endpoint /api/v1/db/update-nst-player-reports triggered via ${req.method}.`
   );
 
+  if (process.env.NST_JOB_LIFECYCLE_ENABLED === "true") {
+    await main();
+    return res.status(200).json({ message: "Player report invocation settled." });
+  }
+
   // Run main function asynchronously - DO NOT await here for long-running tasks in serverless env
   main().catch((err) => {
     console.error("Error running main function triggered by API:", err);
@@ -827,6 +841,6 @@ async function handler(
 }
 
 export default withOperationalRouteAuth(
-  handler,
+  withNstJobLifecycle(handler, "update-nst-player-reports", req => !["GET", "POST"].includes(req.method ?? "")),
   operationalRouteContracts.updateNstPlayerReports,
 );

@@ -1,3 +1,4 @@
+import { assertNstJobActive, runNstJob } from "lib/nst/jobLifecycle.server";
 import * as cheerio from "cheerio";
 import dotenv from "dotenv";
 
@@ -821,6 +822,7 @@ async function main() {
 
   const seasonData: SeasonData[] = [];
   for (const season of seasons) {
+    assertNstJobActive();
     process.stderr.write(`Reading NST team-game rows for ${season}...\n`);
     seasonData.push(await fetchSeasonData(season));
   }
@@ -895,7 +897,7 @@ async function main() {
   process.stdout.write(`${JSON.stringify(output, null, 2)}\n`);
 }
 
-main().catch((error) => {
+runNstJob({ owner: "audit-ctpi-multiseason", deadlineAt: Date.now() + 3_600_000, settled: () => true }, main).catch((error) => {
   console.error(error instanceof Error ? error.message : String(error));
   process.exitCode = 1;
 });

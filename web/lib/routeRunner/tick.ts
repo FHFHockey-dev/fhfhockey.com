@@ -225,6 +225,16 @@ export async function runRouteRunnerTick(args: {
   const events: RouteRunnerEventInsert[] = [];
   let kills = job.kills;
 
+  const goalieJob = getRouteRunnerSpec(job.route_path)?.contract === "goalie_url_cursor";
+  const savedQuery = asQuery(job.next_query);
+  if (goalieJob && (candidate.status === "running" || job.kills > 0 ||
+      (job.steps > 0 && (!/^(0|[1-9]\d*)$/.test(savedQuery.cursor ?? "") || !/^[a-f0-9]{64}$/.test(savedQuery.resumeScope ?? ""))))) {
+    const reason = "Goalie job has unacknowledged or legacy date-only progress; reconcile outputs and its scoped cursor before resuming.";
+    await store.insertEvents([{job_id:job.id,level:"error",message:reason,step}]);
+    await store.updateLeasedJob(job.id,leaseUntil,{status:"failed",lease_until:null,finished_at:nowIso,last_error:reason});
+    return {success:true,action:"rejected",outcome:"fail",jobId:job.id,step,reason,expired};
+  }
+
   // `running` with a lapsed lease: the tick that held it died mid-step.
   if (candidate.status === "running") {
     kills += 1;
@@ -287,8 +297,10 @@ export async function runRouteRunnerTick(args: {
     // Counted as a kill. The lease stays until it lapses, after this
     // function is gone, so the abandoned call cannot overlap a retry.
     kills += 1;
-    const killedOut = kills >= ROUTE_RUNNER_MAX_KILLS;
-    const reason = `Step ${step} was still running after ${Math.round(result.durationMs / 1000)} s and was stopped (kill ${kills}/${ROUTE_RUNNER_MAX_KILLS}).${killedOut ? " Giving up." : " Retrying the same query."}`;
+    const killedOut = goalieJob || kills >= ROUTE_RUNNER_MAX_KILLS;
+    const reason = goalieJob
+      ? "Goalie step ended without an acknowledged response; reconcile outputs before resuming."
+      : `Step ${step} was still running after ${Math.round(result.durationMs / 1000)} s and was stopped (kill ${kills}/${ROUTE_RUNNER_MAX_KILLS}).${killedOut ? " Giving up." : " Retrying the same query."}`;
     events.push({
       job_id: job.id,
       level: killedOut ? "error" : "warn",
@@ -357,6 +369,7 @@ export async function runRouteRunnerTick(args: {
       : decision.kind === "wait"
         ? {
             status: "waiting",
+            ...(decision.nextQuery ? { next_query: decision.nextQuery } : {}),
             not_before: new Date(now() + decision.delayMs).toISOString(),
             last_error: decision.reason
           }

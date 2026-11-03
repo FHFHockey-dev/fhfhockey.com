@@ -1,8 +1,10 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
+import vercelConfiguration from "../../../../vercel.json";
 
 import { CronAuditEmail } from "components/CronReportEmail/CronAuditEmail";
+import { readGoalieFreshness } from "lib/nst/goalieFreshness.server";
 import {
   getBenchmarkAnnotations,
   hasBenchmarkAnnotationKind,
@@ -242,6 +244,7 @@ type CronScheduleJsonEntry = {
 };
 
 type ParsedAuditDetails = {
+  responseIncomplete: boolean;
   timing: CronJobTimingRecord | null;
   durationMs: number | null;
   statusCode: number | null;
@@ -466,7 +469,7 @@ function skippedOperationWarning(row: AuditRow): string | null {
     const result = receipt.result && typeof receipt.result === "object" ? receipt.result as Record<string, unknown> : receipt;
     if ((row.parsed.routePath === "/api/v1/db/cron/update-stats-cron" &&
           Array.isArray(receipt.attemptedGameIds) && receipt.attemptedGameIds.length === 0 &&
-          Array.isArray(receipt.updatedGameIds) && receipt.updatedGameIds.length === 0) || receipt.outcome === "skipped" || receipt.skipped === true ||
+          Array.isArray(receipt.updatedGameIds) && receipt.updatedGameIds.length === 0) || receipt.outcome === "skipped" || receipt.skipped === true || receipt.disabled === true || receipt.suspended === true ||
         /^skipped|^no[_-]?op/.test(String(receipt.status ?? receipt.outcome ?? "")) ||
         (result.processedGames === 0 && typeof result.skippedGames === "number" && result.skippedGames >= 0) ||
         ((row.parsed.routePath === "/api/v1/db/shift-charts" || row.parsed.routePath === "/api/v1/db/update-shifts") &&
@@ -522,13 +525,16 @@ function incompleteYahooReceiptWarning(row: AuditRow): string | null {
   return notes.join(" ");
 }
 
+function incompleteAuditResponseWarning(row: AuditRow): string | null {
+  return row.parsed.responseIncomplete ? "Audit response is truncated or malformed; operation outcome and durable output are unverified." : null;
+}
+
 function classifyAuditStatus(row: AuditRow): ReportStatus {
-  if (skippedOperationWarning(row) || incompleteYahooReceiptWarning(row) || row.expectedWorkWarning) return "unknown";
-  return row.status === "failure" &&
-    row.parsed.statusCode === 410 &&
-    isQuarantinedLegacyRoute(row.parsed.routePath)
-    ? "disabled"
-    : row.status;
+  // A known failure must survive skipped/partial/malformed response evidence.
+  if (row.status === "failure") return row.parsed.statusCode === 410 &&
+    isQuarantinedLegacyRoute(row.parsed.routePath) ? "disabled" : "failure";
+  if (incompleteAuditResponseWarning(row) || skippedOperationWarning(row) || incompleteYahooReceiptWarning(row) || row.expectedWorkWarning) return "unknown";
+  return row.status;
 }
 
 function classifyCronStatus(row: RunRow): ReportStatus {
@@ -850,6 +856,7 @@ function inferTargetTable(
 
 function parseAuditDetails(details: unknown): ParsedAuditDetails {
   const empty: ParsedAuditDetails = {
+    responseIncomplete: false,
     timing: null,
     durationMs: null,
     statusCode: null,
@@ -873,9 +880,10 @@ function parseAuditDetails(details: unknown): ParsedAuditDetails {
   if (!details) return empty;
 
   const parsedDetails = parseJsonMaybe(details);
-  if (!parsedDetails || typeof parsedDetails !== "object") {
+  if (!parsedDetails || typeof parsedDetails !== "object" || Array.isArray(parsedDetails)) {
     return {
       ...empty,
+      responseIncomplete: true,
       error: extractPrimaryMessage(parsedDetails),
       responseMessage: extractPrimaryMessage(parsedDetails),
     };
@@ -883,10 +891,15 @@ function parseAuditDetails(details: unknown): ParsedAuditDetails {
 
   const obj = parsedDetails as Record<string, unknown>;
   const response = parseJsonMaybe(obj.response);
+  // Legacy plain-text responses remain execution receipts, never write proof.
+  // JSON-shaped strings must parse structurally, including arrays/primitives.
+  let malformedResponse = false;
+  if (typeof obj.response === "string" && /^[{[\"]/.test(obj.response.trim())) {
+    try { JSON.parse(obj.response); } catch { malformedResponse = true; }
+  }
   // The bounded outcome is diagnostic evidence, not a substitute for the full
   // response or its write metrics. Use it only when that response is unavailable.
-  const missingResponse = response == null ||
-    (typeof response === "string" && /^[{[]\s*"/.test(response.trim()));
+  const missingResponse = response == null || malformedResponse;
   const outcome = missingResponse && obj.responseOutcome &&
     typeof obj.responseOutcome === "object" && !Array.isArray(obj.responseOutcome)
     ? obj.responseOutcome as Record<string, any> : null;
@@ -914,6 +927,7 @@ function parseAuditDetails(details: unknown): ParsedAuditDetails {
   const metrics = readReportMetrics(response, routePath);
 
   return {
+    responseIncomplete: obj.responseTruncated === true || malformedResponse,
     timing,
     durationMs: timing?.durationMs ?? toFiniteNumber(obj.durationMs),
     statusCode: toFiniteNumber(obj.statusCode),
@@ -1036,7 +1050,7 @@ function expectedRunAtWithinWindow(
     candidate.setUTCDate(candidate.getUTCDate() - 1);
   }
 
-  return candidate.getTime() >= since.getTime()
+  return candidate.getTime() >= since.getTime() && recurringSlotMatches({ cronExpression } as ScheduledCronJob, candidate.getTime())
     ? candidate.toISOString()
     : null;
 }
@@ -1143,7 +1157,7 @@ async function loadScheduledCronJobs(
     })
     .filter((job) => job.name && job.cronExpression);
 
-  const rawJobs = jsonJobs.length > 0 ? jsonJobs : sqlDefinitions;
+  const rawJobs = /```json\s*/i.test(markdown) ? jsonJobs : sqlDefinitions;
 
   const dedupedJobs = rawJobs.filter((job, index, jobs) => {
     const signature = [
@@ -1269,9 +1283,14 @@ function cronTimeFieldMatches(expression: string, value: number): boolean {
 }
 
 function recurringSlotMatches(job: ScheduledCronJob, slot: number): boolean {
-  const [minutes, hours] = job.cronExpression.split(/\s+/);
+  const [minutes, hours, monthDay = "*", month = "*", weekDay = "*"] = job.cronExpression.split(/\s+/);
   const date = new Date(slot);
-  return cronTimeFieldMatches(minutes, date.getUTCMinutes()) && cronTimeFieldMatches(hours, date.getUTCHours());
+  const dayMatches = cronTimeFieldMatches(monthDay, date.getUTCDate());
+  const weekMatches = cronTimeFieldMatches(weekDay, date.getUTCDay()) ||
+    (date.getUTCDay() === 0 && cronTimeFieldMatches(weekDay, 7));
+  const calendarMatches = monthDay === "*" || weekDay === "*" ? dayMatches && weekMatches : dayMatches || weekMatches;
+  return cronTimeFieldMatches(minutes, date.getUTCMinutes()) && cronTimeFieldMatches(hours, date.getUTCHours()) &&
+    cronTimeFieldMatches(month, date.getUTCMonth() + 1) && calendarMatches;
 }
 
 function latestRequiredRecurringSlot(job: ScheduledCronJob, since: Date, until: Date): string | null {
@@ -1375,6 +1394,7 @@ function buildRunDigestFromAudit(
       ? ["Observed audit run does not have reliable timing metadata yet."]
       : [];
   if (skippedOperationWarning(row)) missingObservationWarnings.push(skippedOperationWarning(row)!);
+  if (incompleteAuditResponseWarning(row)) missingObservationWarnings.push(incompleteAuditResponseWarning(row)!);
   if (incompleteYahooReceiptWarning(row)) missingObservationWarnings.push(incompleteYahooReceiptWarning(row)!);
   if (row.expectedWorkWarning) missingObservationWarnings.push(row.expectedWorkWarning);
 
@@ -1604,7 +1624,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   const sourceBudgetMs = Math.max(0, (repositoryLimitMs ?? 0) -
     Object.values(REPORT_PHASE_RESERVES_MS).reduce((sum, reserve) => sum + reserve, 0));
   const sourceDeadlineAt = now.getTime() + sourceBudgetMs;
-  const sourceOptions = { deadlineAt: sourceDeadlineAt, requestTimeoutMs: REPORT_REQUEST_TIMEOUT_MS };
+  const sourceOptions = { deadlineAt: sourceDeadlineAt, requestTimeoutMs: REPORT_REQUEST_TIMEOUT_MS, countMode: "per-pass" as const };
   const sinceDate = new Date(now.getTime() - REPORT_WINDOW_MS);
   const since = sinceDate.toISOString();
   // Read alongside the telemetry sources; a slow lookup degrades to "unknown",
@@ -1626,16 +1646,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   let auditEmailResult: any = null;
   const errors: string[] = [];
 
-  const runSource = await readReportSource<any>((from, to, signal) => supabase
+  const runSource = await readReportSource<any>((from, to, signal, query) => supabase
     .from("cron_job_report")
-    .select("jobid, runid, jobname, scheduled_time, status, return_message, end_time, sql_text", { count: "exact" })
+    .select("jobid, runid, jobname, scheduled_time, status, return_message, end_time, sql_text", { count: query.count })
     .gte("scheduled_time", since).lte("scheduled_time", until)
     .order("scheduled_time", { ascending: true }).order("runid", { ascending: true })
     .range(from, to).abortSignal(signal),
     (row) => String(row.runid), REPORT_PAGE_SIZE, 40, sourceBudgetMs, sourceOptions);
-  const auditSource = await readReportSource<any>((from, to, signal) => supabase
+  const auditSource = await readReportSource<any>((from, to, signal, query) => supabase
     .from("cron_job_audit")
-    .select("job_name, run_time, rows_affected, status, details", { count: "exact" })
+    .select("job_name, run_time, rows_affected, status, details", { count: query.count })
     .gte("run_time", since).lte("run_time", until)
     .order("run_time", { ascending: true }).order("job_name", { ascending: true })
     .order("status", { ascending: true }).order("rows_affected", { ascending: true })
@@ -1672,6 +1692,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     });
   }
 
+  const notDueJobs = scheduledJobs.filter((job) =>
+    !job.expectedRunAt && !latestRequiredRecurringSlot(job, sinceDate, now));
+  scheduledJobs = scheduledJobs.filter((job) => !notDueJobs.includes(job));
+  // Deployment activation is not established by a repository configuration file.
+  // Expose every configured caller without adding it to the active pg_cron denominator.
   const seasonWindow = await seasonWindowPromise;
   const gameDataRoutes = new Set(audits.flatMap((row) => {
     if (cronClassificationFromAuditDetails(row.details) !== NHL_SEASONAL_GAME_DATA) return [];
@@ -1694,15 +1719,31 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     return { ...auditRow, expectedWorkWarning: expectedWorkWarning(auditRow, seasonWindow, gameDataRoutes) };
   };
   const auditRows = audits.map(toAuditRow);
+  // Coverage is independent of writer audit success (or a missing audit).
+  const goalieFreshnessPromise = readGoalieFreshness({ client: supabase, now,
+    season: seasonWindow, sourceDeadlineAt,
+    writerAuditPresent: auditRows.some(row => row.parsed.routePath === "/api/v1/db/update-nst-goalies") });
+  const configuredVercelSchedules = Array.from(new Map(vercelConfiguration.crons.map((entry) => {
+    const route = canonicalRoute(entry.path);
+    const schedule = entry.schedule.trim().replace(/\s+/g, " ");
+    const observations = auditRows.filter((row) => row.parsed.route &&
+      canonicalRoute(row.parsed.route) === route && row.parsed.method === "GET")
+      .sort((left, right) => Date.parse(right.time) - Date.parse(left.time));
+    const latest = observations[0];
+    return [`${route}::${schedule}`, { route, schedule, activation: "unverified" as const,
+      receiptCount: observations.length, latestReceiptStatus: latest ? classifyAuditStatus(latest) : "unknown",
+      latestReceiptAt: latest?.time ?? null, invocationSource: "manual-or-scheduled-unverified" }];
+  })).values());
+
   // Historical receipts explain failures only; never add them to recent health,
   // write counts, schedule assignments, or the 24-hour telemetry denominator.
   const needsSuccessHistory = auditRows.some((row) => classifyAuditStatus(row) === "failure") ||
     runs.some((row) => normalizeStatus(row.status) === "failure");
   const successHistorySince = needsSuccessHistory
     ? new Date(now.getTime() - SUCCESS_HISTORY_WINDOW_MS).toISOString() : since;
-  const successHistorySource = needsSuccessHistory ? await readReportSource<any>((from, to, signal) => supabase
+  const successHistorySource = needsSuccessHistory ? await readReportSource<any>((from, to, signal, query) => supabase
     .from("cron_job_audit")
-    .select("job_name, run_time, rows_affected, status, details", { count: "exact" })
+    .select("job_name, run_time, rows_affected, status, details", { count: query.count })
     .gte("run_time", successHistorySince).lte("run_time", since)
     .in("status", ["success", "succeeded", "ok", "passed"])
     .order("run_time", { ascending: false }).order("job_name", { ascending: true })
@@ -1718,6 +1759,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   const lastKnownSuccessMap = buildLastKnownSuccessMap([
     ...auditRows, ...(successHistorySource?.rows ?? []).map(toAuditRow),
   ], successHistory.complete);
+  const goalieFreshness = await goalieFreshnessPromise;
   const sourceElapsedMs = Date.now() - now.getTime();
   const auditGapGraceStartedAt =
     auditRows
@@ -1934,6 +1976,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       if (!job.expectedRunAt && requiredSlot && !lastAudit && !lastRun) {
         notes.push(`Latest required recurring slot ${formatReportTime(requiredSlot)} has no observation after the five-minute completion grace.`);
       }
+      const incompleteResponse = lastAudit ? incompleteAuditResponseWarning(lastAudit) : null;
+      if (incompleteResponse) { notes.push(incompleteResponse); missingObservationWarnings.push(incompleteResponse); }
       const noOutputWarning = lastAudit ? skippedOperationWarning(lastAudit) : null;
       if (noOutputWarning) {
         notes.push(noOutputWarning);
@@ -2337,8 +2381,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
                 ? `⚠️ Daily Cron Report — ${counts.jobsUnknownLast} unknown`
                 : counts.jobsDisabledLast > 0
                   ? `⚠️ Daily Cron Report — ${counts.jobsDisabledLast} quarantined`
-                  : `✅ Daily Cron Report — ${counts.jobsOkLast}/${counts.scheduledJobs} jobs ok`,
+                  : ["warning", "critical", "unknown"].includes(goalieFreshness.status)
+                    ? `⚠️ Daily Cron Report — goalie coverage ${goalieFreshness.status}`
+                    : `✅ Daily Cron Report — ${counts.jobsOkLast}/${counts.scheduledJobs} jobs ok`,
         react: CronAuditEmail({
+          goalieFreshness,
+          configuredVercelSchedules,
           audits: [...auditBriefings, ...notableUnscheduledRuns],
           sinceDate: since,
           untilDate: until,
@@ -2448,7 +2496,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     },
     successHistory,
     totalsComplete: runSource.complete && auditSource.complete,
+    goalieFreshness,
     countScope: "observed",
+    scheduleInventory: { denominatorScope: "pg_cron entries enabled in repository inventory and due in this window; hosted activation separately reconciled",
+      notDueJobs: notDueJobs.map((job) => ({ name: job.name, schedule: job.cronExpression })),
+      configuredVercelSchedules, vercelActivationVerified: false },
     rowMetricScope: "Confirmed writes in latest scheduled receipts; partial coverage, never generic affected/attempted counts",
     totals: {
       auditRuns: auditSource.complete ? counts.auditRuns : null,

@@ -1,3 +1,4 @@
+import { withNstJobLifecycle } from "lib/nst/jobLifecycle.server";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import adminOnly from "utils/adminOnlyMiddleware";
@@ -372,7 +373,7 @@ function seasonIdFromDate(dateString: string): number {
   return Number(`${startYear}${endYear}`);
 }
 
-async function nstGet(url: string, deadlineAt: number): Promise<string> {
+async function nstGet(url: string, deadlineAt: number, plannedRequestCount: number): Promise<string> {
   const now = Date.now();
   const elapsed = now - lastNstRequestAt;
   if (currentRequestIntervalMs > 0 && elapsed < currentRequestIntervalMs) {
@@ -385,7 +386,8 @@ async function nstGet(url: string, deadlineAt: number): Promise<string> {
       deadlineAt,
       maxAttempts: NST_DEFAULT_RETRIES + 1,
       attemptsStarted: 0,
-      minIntervalMs: Math.max(currentRequestIntervalMs, NST_SAFE_INTERVAL_MS),
+      minIntervalMs: currentRequestIntervalMs,
+      plannedRequestCount,
     },
   });
   return response.text;
@@ -689,12 +691,13 @@ async function resolveIncrementalStartDate(seasonFloor: string): Promise<string>
 async function processDatasetForDate(
   date: string,
   dataset: DatasetConfig,
-  deadlineAt: number
+  deadlineAt: number,
+  plannedRequestCount: number
 ): Promise<{ inserted: number; table: string; teamGames: number }> {
   const seasonId = seasonIdFromDate(date).toString();
   const url = buildDatasetUrl(date, dataset, seasonId);
   console.log(`[NST] Fetching ${dataset.description} for ${date} -> ${url}`);
-  const html = await nstGet(url, deadlineAt);
+  const html = await nstGet(url, deadlineAt, plannedRequestCount);
   const rawRows = parseTeamTable(html);
   const teamGames = rawRows.filter(
     (raw) => parseNumeric(raw["gp"]) === 1
@@ -875,7 +878,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         }
         requestsUsed += 1;
         try {
-          const result = await processDatasetForDate(date, dataset, deadlineAt);
+          const result = await processDatasetForDate(date, dataset, deadlineAt, nstRequestPlan.requestCount);
           if (result.inserted > 0) {
             summary.datasetResults.push({
               date,
@@ -930,4 +933,4 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 };
 
-export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler as any)));
+export default adminOnly(withNstJobLifecycle(withCronJobAudit(withNhlOffSeasonSkip(handler as any)), "update-nst-team-daily", req => req.method !== "GET"));

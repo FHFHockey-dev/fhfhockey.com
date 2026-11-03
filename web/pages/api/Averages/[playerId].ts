@@ -1,3 +1,4 @@
+import { withNstJobLifecycle } from "lib/nst/jobLifecycle.server";
 // /Users/tim/Desktop/FHFH/fhfhockey.com/web/pages/api/Averages/[playerId].ts
 
 import type { NextApiRequest, NextApiResponse } from "next";
@@ -7,7 +8,7 @@ import {
   getAggregatedRatesData
 } from "lib/api/averages/statsService";
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse<Response>
 ) {
@@ -57,3 +58,5 @@ export default async function handler(
     });
   }
 }
+
+export default withNstJobLifecycle(handler, "Averages/[playerId]", undefined, { lazy: true });

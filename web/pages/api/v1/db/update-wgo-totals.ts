@@ -1,3 +1,4 @@
+import { persistManualCronAudit, withManualCronAuditResponse } from "lib/cron/manualCronAudit";
 import { NextApiRequest, NextApiResponse } from "next";
 import adminOnly from "utils/adminOnlyMiddleware";
 import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
@@ -829,7 +830,7 @@ async function handler(
     details = { ...details, processingTimeMs };
 
     try {
-      await supabase.from("cron_job_audit").insert([
+      await persistManualCronAudit(supabase, [
         {
           job_name: jobName,
           status,
@@ -848,8 +849,9 @@ async function handler(
       ]);
     } catch (auditErr) {
       console.error("Failed to write audit row:", auditErr);
+      throw auditErr;
     }
   }
 }
 
-export default adminOnly(withNhlOffSeasonSkip(handler as any));
+export default adminOnly(withNhlOffSeasonSkip(withManualCronAuditResponse(handler as any)));

@@ -12,7 +12,9 @@ const {
   readFileMock,
   cronAuditEmailMock,
   loadNhlSeasonWindowMock,
+  readGoalieFreshnessMock,
 } = vi.hoisted(() => ({
+  readGoalieFreshnessMock: vi.fn(),
   cronJobReportSelectMock: vi.fn(),
   cronJobAuditSelectMock: vi.fn(),
   cronJobAuditHistorySelectMock: vi.fn(),
@@ -20,7 +22,7 @@ const {
   cronJobAuditInsertMock: vi.fn(),
   resendSendMock: vi.fn(),
   readFileMock: vi.fn(),
-  cronAuditEmailMock: vi.fn((_props: any) => null),
+  cronAuditEmailMock: vi.fn((_props: any): any => null),
   loadNhlSeasonWindowMock: vi.fn(async (): Promise<any> => ({ state: "unknown", today: "2026-03-20", reason: "test default" })),
 }));
 
@@ -48,6 +50,8 @@ function reportQuery(mock: ReturnType<typeof vi.fn>, args: unknown[], cron = fal
   };
   return query;
 }
+
+vi.mock("lib/nst/goalieFreshness.server", () => ({ readGoalieFreshness: readGoalieFreshnessMock }));
 
 vi.mock("@supabase/supabase-js", () => ({
   createClient: vi.fn(() => ({
@@ -125,6 +129,110 @@ function createMockRes() {
 }
 
 describe("/api/v1/db/cron-report", () => {
+  it("reports goalie coverage independently when writer audit receipts are missing", async () => {
+    const coverage = { status: "critical", checkedAt: "2026-03-20T13:00:00Z", cutoffDate: "2026-03-19", expected: 60, matched: 0,
+      missing: [{ season: "20252026", goalieId: 1, date: "2026-03-17", reason: "missing_row" }], oldestGap: "2026-03-17", warnings: ["Writer audit is missing."] };
+    readGoalieFreshnessMock.mockResolvedValue(coverage);
+    const res = createMockRes();
+    await handler({ method: "GET" } as any, res);
+    expect(readGoalieFreshnessMock).toHaveBeenCalledWith(expect.objectContaining({ writerAuditPresent: false }));
+    expect(res.body.goalieFreshness).toEqual(coverage);
+    expect(cronAuditEmailMock).toHaveBeenCalledWith(expect.objectContaining({ goalieFreshness: coverage }));
+  });
+  it("excludes weekly and calendar jobs that are not due without inventing missing runs", async () => {
+    readFileMock.mockResolvedValue(`SELECT cron.schedule('weekly','15 8 * * 0',$$SELECT 1;$$);
+SELECT cron.schedule('daily','0 8 * * *',$$SELECT 1;$$);`);
+    const res = createMockRes();
+    await handler({ method: "GET", query: { preview: "json" } } as any, res);
+    expect(res.body.counts.scheduledJobs).toBe(1);
+    expect(res.body.scheduleInventory.notDueJobs).toEqual([{ name: "weekly", schedule: "15 8 * * 0" }]);
+    expect(resendSendMock).not.toHaveBeenCalled();
+  });
+
+  it("shows configured Vercel callers without claiming activation or duplicating the pg denominator", async () => {
+    const res = createMockRes();
+    await handler({ method: "GET", query: { preview: "json" } } as any, res);
+    expect(res.body.scheduleInventory.vercelActivationVerified).toBe(false);
+    expect(res.body.scheduleInventory.configuredVercelSchedules).toContainEqual(expect.objectContaining({
+      route: "/api/v1/db/cron-report", schedule: "0 13 * * *", activation: "unverified",
+    }));
+    const entries = res.body.scheduleInventory.configuredVercelSchedules;
+    expect(new Set(entries.map((entry: any) => `${entry.route}::${entry.schedule}`)).size).toBe(entries.length);
+  });
+
+  it("keeps disabled and suspended configured callers unknown rather than asserting output", async () => {
+    cronJobAuditSelectMock.mockResolvedValue({ data: [{ job_name: "/api/internal/yahoo-live-draft",
+      run_time: "2026-03-20T12:00:00.000Z", status: "success", details: { method: "GET", url: "/api/internal/yahoo-live-draft",
+      response: { suspended: true, resumesAt: "2027-01-01T00:00:00Z" } } }], error: null });
+    const res = createMockRes(); await handler({ method: "GET", query: { preview: "json" } } as any, res);
+    expect(res.body.scheduleInventory.configuredVercelSchedules.find((entry: any) => entry.route === "/api/internal/yahoo-live-draft"))
+      .toMatchObject({ activation: "unverified", receiptCount: 1, latestReceiptStatus: "unknown", invocationSource: "manual-or-scheduled-unverified" });
+  });
+
+  it.each(["success", "failure"])("keeps a truncated %s receipt truthful and preserves known failure", async (status) => {
+    cronJobAuditSelectMock.mockResolvedValue({ data: [{ job_name: "run-forge-projection-v2",
+      run_time: "2026-03-20T12:00:00.000Z", status, details: { method: "POST", url: "/api/v1/db/run-projection-v2",
+      response: '{"success":true,"skipped":true,"data":…', responseTruncated: true } }], error: null });
+    const res = createMockRes(); await handler({ method: "GET", query: { preview: "json" } } as any, res);
+    expect(res.body.counts.jobsOkLast).toBe(0);
+    expect(res.body.counts.jobsFailingLast).toBe(status === "failure" ? 1 : 0);
+    expect(res.body.counts.jobsUnknownLast).toBe(status === "success" ? 1 : 0);
+    expect(res.body.totals.rowsUpserted).toBeNull();
+  });
+
+  it("renders and mock-delivers the 3000-observation timeout as incomplete coverage end to end", async () => {
+    const { CronAuditEmail } = await vi.importActual<typeof import("components/CronReportEmail/CronAuditEmail")>("components/CronReportEmail/CronAuditEmail");
+    cronAuditEmailMock.mockImplementationOnce((props: any) => createElement(CronAuditEmail, props));
+    const rows = Array.from({ length: 3001 }, (_, index) => ({ job_name: `fixture-${index}`,
+      run_time: "2026-03-20T01:00:00.000Z", status: index < 2977 ? "success" : "continued", details: null }));
+    cronJobAuditSelectMock.mockResolvedValueOnce({ data: rows, error: null })
+      .mockResolvedValueOnce({ data: rows, error: null }).mockResolvedValueOnce({ data: rows, error: null })
+      .mockResolvedValue({ data: null, error: { message: "canceling statement due to statement timeout" }, count: null });
+    const res = createMockRes();await handler({ method: "GET" } as any, res);
+    expect(res.body).toMatchObject({ totalsComplete: false, counts: { auditRuns: 3000, auditSuccesses: 2977, auditFailures: 0, jobsMissingLast: 0 }, totals: { auditRuns: null, auditFailures: null, rowsUpserted: null } });
+    expect(resendSendMock).toHaveBeenCalledTimes(1);
+    const sent = resendSendMock.mock.calls[0][0];expect(sent.subject).toContain("incomplete telemetry");
+    const html = renderToStaticMarkup(sent.react);
+    expect(html).toContain("3000 observations retained; totals unknown");
+    expect(html).toContain("configured Vercel schedules; activation unverified");
+    expect(html).toContain("Failure total unknown (0 observed)");
+    expect(html).not.toContain("Runs look healthy");
+  });
+
+  it.each(['{bad', '[{"success":true}', '[1,2', '[true,false', '"unterminated'])
+    ("never accepts malformed JSON-shaped preview %s as health or last-known success", async (response) => {
+    cronJobAuditSelectMock.mockResolvedValue({ data: [{ job_name: "run-forge-projection-v2",
+      run_time: "2026-03-20T12:00:00.000Z", status: "success", details: { method: "POST", url: "/api/v1/db/run-projection-v2", response } }], error: null });
+    const res = createMockRes(); await handler({ method: "GET" } as any, res);
+    expect(res.body.counts).toMatchObject({ jobsOkLast: 0, jobsUnknownLast: 1, auditSuccesses: 0 });
+    const row = cronAuditEmailMock.mock.calls.at(-1)![0].audits.find((row: any) => row.jobName === "run-forge-projection-v2");
+    expect(row.lastKnownSuccessDisplay).toBeNull(); expect(row.status).toBe("unknown");
+  });
+
+  it.each(['{bad', '[{"invalid":true}', 17, []])("keeps corrupt details %j out of health and last-known-success", async (details) => {
+    cronJobAuditSelectMock.mockResolvedValue({ data: [{ job_name: "run-forge-projection-v2", run_time: "2026-03-20T12:00:00.000Z", status: "success", details }], error: null });
+    const res = createMockRes(); await handler({ method: "GET" } as any, res);
+    expect(res.body.counts.auditSuccesses).toBe(0); expect(res.body.counts.jobsOkLast).toBe(0);
+    expect(cronAuditEmailMock.mock.calls.at(-1)![0].audits.every((row: any) => row.lastKnownSuccessDisplay == null)).toBe(true);
+  });
+
+  it("accepts a plain-text legacy execution receipt without inferring durable writes", async () => {
+    cronJobAuditSelectMock.mockResolvedValue({ data: [{ job_name: "run-forge-projection-v2", run_time: "2026-03-20T12:00:00.000Z", status: "success",
+      details: { method: "POST", url: "/api/v1/db/run-projection-v2", response: "Completed legacy operation" } }], error: null });
+    const res = createMockRes(); await handler({ method: "GET" } as any, res);
+    expect(res.body.counts.auditSuccesses).toBe(1); expect(res.body.totals.rowsUpserted).toBeNull();
+  });
+
+  it("does not revive an inactive canonical JSON job from old SQL snippets", async () => {
+    readFileMock.mockResolvedValue('```json\n' + JSON.stringify([{ jobname: "inactive", active: false, schedule: "0 8 * * *" }]) + '\n```\n' +
+      "SELECT cron.schedule('inactive','0 8 * * *',$$SELECT 1;$$);");
+    const res = createMockRes();
+    await handler({ method: "GET" } as any, res);
+    expect(res.statusCode).toBe(500);
+    expect(res.body.code).toBe("CRON_SCHEDULE_INVENTORY_EMPTY");
+    expect(resendSendMock).not.toHaveBeenCalled();
+  });
+
   it("rejects admission before audit, telemetry, or email work", async () => {
     adminAdmissionMock.mockReturnValue(false);
     const res = createMockRes();
@@ -218,6 +326,7 @@ describe("/api/v1/db/cron-report", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    readGoalieFreshnessMock.mockResolvedValue({ status: "not_due", warnings: [], missing: [], cutoffDate: "2026-03-19", expected: null, matched: null });
     adminAdmissionMock.mockReturnValue(true);
     cronJobAuditHistorySelectMock.mockResolvedValue({ data: [], error: null });
     vi.stubGlobal("AbortSignal", { timeout: vi.fn(() => new AbortController().signal) });
@@ -279,7 +388,7 @@ SELECT cron.schedule(
 );
 `);
 
-    cronJobAuditInsertMock.mockResolvedValue({});
+    cronJobAuditInsertMock.mockResolvedValue({ error: null });
     resendSendMock.mockResolvedValue({
       data: { id: "email_123" },
       error: null,
