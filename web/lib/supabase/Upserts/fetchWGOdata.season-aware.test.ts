@@ -363,11 +363,13 @@ describe("fetchWGOdata NHL.com request resilience", () => {
     vi.restoreAllMocks();
   });
 
-  it("retries a 524 and writes the date once NHL.com answers", async () => {
+  it("retries a 524 and a hung request, then writes the date", async () => {
     let powerPlayCalls = 0;
-    installSources((endpoint) => {
-      if (endpoint === "powerplay" && ++powerPlayCalls === 1) {
-        return statusResponse(524);
+    installSources((endpoint, _date, init) => {
+      if (endpoint === "powerplay") {
+        powerPlayCalls++;
+        if (powerPlayCalls === 1) return statusResponse(524);
+        if (powerPlayCalls === 2) return hangUntilAborted(init);
       }
       return teamDay();
     });
@@ -377,7 +379,7 @@ describe("fetchWGOdata NHL.com request resilience", () => {
     );
 
     expect(error).toBeNull();
-    expect(teamCalls("powerplay", "2026-11-02")).toBe(2);
+    expect(teamCalls("powerplay", "2026-11-02")).toBe(3);
     expect(mocks.upsertedRows).toHaveLength(1);
     expect(mocks.upsertedRows[0]).toMatchObject({ date: "2026-11-02" });
   });
@@ -397,50 +399,53 @@ describe("fetchWGOdata NHL.com request resilience", () => {
     expect(mocks.upsertedRows).toHaveLength(0);
   });
 
-  it("keeps going past a date that still fails and rejects naming it", async () => {
+  it("stops at a date that still fails and rejects naming it", async () => {
     mocks.latestProcessedDate = "2026-11-01";
-    installSources((endpoint, date) => {
-      if (date === "2026-11-01" && endpoint === "powerplay") {
-        return statusResponse(524);
-      }
-      if (date === "2026-11-03") {
-        return jsonResponse({ data: [] });
-      }
-      return teamDay();
-    });
+    installSources((endpoint, date) =>
+      date === "2026-11-02" && endpoint === "powerplay"
+        ? statusResponse(524)
+        : teamDay(),
+    );
 
     const error = await settle(main({ recent: true }));
 
-    expect(teamCalls("powerplay", "2026-11-01")).toBe(3);
-    expect(mocks.upsertedRows.map((row) => row.date)).toEqual(["2026-11-02"]);
-    expect(error?.message).toMatch(/failed for 1 date\(s\): 2026-11-01 \(/);
-    expect(error?.message).toContain("HTTP 524 after 3 attempts");
-    expect(error?.message).not.toContain("2026-11-02");
+    expect(teamCalls("powerplay", "2026-11-02")).toBe(3);
+    expect(teamCalls("summary", "2026-11-03")).toBe(0);
+    expect(mocks.upsertedRows.map((row) => row.date)).toEqual(["2026-11-01"]);
+    expect(error?.message).toBe(
+      "WGO team stats failed for 1 date(s): 2026-11-02 (Failed to fetch " +
+        "https://api.nhle.com/stats/rest/en/team/powerplay: HTTP 524 after 3 attempts)",
+    );
   });
 
-  it("times out hung requests and reports dates the run budget cannot fit", async () => {
-    mocks.latestProcessedDate = "2026-10-30";
-    installSources((endpoint, date, init) =>
-      endpoint === "powerplay" ? hangUntilAborted(init) : teamDay(),
+  it("rejects naming the dates the run budget cannot fit", async () => {
+    mocks.latestProcessedDate = "2026-10-25";
+    // Slow but inside the timeout, so each date takes 19 s.
+    installSources((endpoint) =>
+      endpoint === "powerplay"
+        ? new Promise((resolve) => setTimeout(() => resolve(teamDay()), 19_000))
+        : teamDay(),
     );
 
     const error = await settle(main({ recent: true }));
 
-    // 63 s worst case per date inside a 210 s budget: three dates are tried.
-    for (const date of ["2026-10-30", "2026-10-31", "2026-11-01"]) {
-      expect(teamCalls("powerplay", date)).toBe(3);
-    }
-    for (const date of ["2026-11-02", "2026-11-03"]) {
-      expect(teamCalls("summary", date)).toBe(0);
-    }
-    expect(error?.message).toContain("failed for 5 date(s)");
-    expect(error?.message).toContain(
-      "no response within 20000 ms after 3 attempts",
+    // A date starts only while 63 s of worst case still fits 210 s.
+    expect(mocks.upsertedRows.map((row) => row.date)).toEqual([
+      "2026-10-25",
+      "2026-10-26",
+      "2026-10-27",
+      "2026-10-28",
+      "2026-10-29",
+      "2026-10-30",
+      "2026-10-31",
+      "2026-11-01",
+    ]);
+    expect(teamCalls("summary", "2026-11-02")).toBe(0);
+    expect(error?.message).toBe(
+      "WGO team stats failed for 2 date(s): " +
+        "2026-11-02 (not attempted, run time budget spent); " +
+        "2026-11-03 (not attempted, run time budget spent)",
     );
-    expect(error?.message).toContain(
-      "2026-11-02 (not attempted, run time budget spent)",
-    );
-    expect(mocks.upsertedRows).toHaveLength(0);
   });
 });
 

@@ -228,7 +228,8 @@ async function fetchNHLData(
   const teamsByFranchiseId = new Map(
     Object.values(teamsInfo).map((team) => [team.franchiseId, team]),
   );
-  // Dates whose NHL.com data could not be read; later dates still run.
+  // Dates not written this run. A failed read stops the run, so recent mode
+  // resumes from the last stored date and retries it instead of leaving a gap.
   const failedDates = [];
   let currentDate = parseISO(startDate);
 
@@ -308,7 +309,7 @@ async function fetchNHLData(
       ),
     ]).catch((error) => {
       console.error(
-        `Failed to read NHL.com data for ${formattedDate} (season ${seasonId}); continuing with later dates:`,
+        `Failed to read NHL.com data for ${formattedDate} (season ${seasonId}); stopping before later dates:`,
         error,
       );
       failedDates.push({ date: formattedDate, reason: error.message });
@@ -316,10 +317,8 @@ async function fetchNHLData(
     });
 
     if (!responses) {
-      bar.tick();
       console.timeEnd(`Processing ${formattedDate}`);
-      currentDate = addDays(currentDate, 1);
-      continue;
+      break;
     }
 
     const [
@@ -865,6 +864,9 @@ async function main(options = {}) {
             deadline,
           );
           failedDates.push(...seasonFailedDates);
+          if (seasonFailedDates.length > 0) {
+            break;
+          }
 
           console.log(
             `✓ Completed processing season ${season.formattedSeasonId}`,
@@ -882,8 +884,6 @@ async function main(options = {}) {
     }
 
     if (failedDates.length > 0) {
-      // Recent mode restarts from the latest stored date, so a failed date
-      // before a later successful one needs a manual ?date= rerun.
       const listed = failedDates
         .slice(0, 10)
         .map(({ date, reason }) => `${date} (${reason})`);
