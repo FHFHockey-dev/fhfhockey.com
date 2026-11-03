@@ -2,7 +2,7 @@ import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import OpponentGamelog from "./OpponentGamelog";
+import OpponentGamelog, { getScheduleRefetchInterval } from "./OpponentGamelog";
 
 const { fetchSchedule } = vi.hoisted(() => ({ fetchSchedule: vi.fn() }));
 vi.mock("lib/cors-fetch", () => ({ default: fetchSchedule }));
@@ -94,5 +94,25 @@ describe("opponent team schedule", () => {
     </QueryClientProvider>);
     expect(screen.getByText("No current team, so no team schedule.")).toBeTruthy();
     expect(screen.queryByText("Select a player")).toBeNull();
+  });
+});
+
+describe("schedule polling", () => {
+  const now = Date.parse("2026-11-03T18:00:00Z");
+  const at = (iso: string, extra: Record<string, unknown> = {}) => ({ ...game(1), startTimeUTC: iso, ...extra }) as any;
+
+  it("polls every 30 s while a game is live", () => {
+    expect(getScheduleRefetchInterval([at("2026-11-03T17:00:00Z", { gameState: "LIVE" })], now)).toBe(30_000);
+  });
+
+  it("polls every 5 min on a game day", () => {
+    expect(getScheduleRefetchInterval([at("2026-11-04T00:00:00Z")], now)).toBe(300_000);
+  });
+
+  it("does not poll with no game near, after a final, or for a postponed game", () => {
+    expect(getScheduleRefetchInterval([at("2026-11-06T00:00:00Z")], now)).toBe(false);
+    expect(getScheduleRefetchInterval([at("2026-11-03T15:00:00Z", { gameState: "OFF" })], now)).toBe(false);
+    expect(getScheduleRefetchInterval([at("2026-11-04T00:00:00Z", { gameScheduleState: "PPD" })], now)).toBe(false);
+    expect(getScheduleRefetchInterval([], now)).toBe(false);
   });
 });
