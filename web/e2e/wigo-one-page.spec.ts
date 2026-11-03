@@ -131,6 +131,15 @@ test("the comparison band shows 36 metric columns by period with a DIFF row, and
     expect(await selected.boundingBox()).toEqual(before);
   }
   await expect(page.getByRole("button", { name: /^Toggle .* reference$/ })).toHaveCount(PERIODS.length);
+  // Counts are bars; rates are straight segments (no curve commands) and the
+  // game mean sits in the title line, not over the marks (U7).
+  await table.getByRole("button", { name: "Goals", exact: true }).click();
+  await expect(selected.locator(".recharts-bar-rectangle").first()).toBeVisible();
+  await expect(selected.locator("h3")).toContainText("Game mean:");
+  await table.getByRole("button", { name: "Shots per 60", exact: true }).click();
+  await expect(selected.locator(".recharts-line-curve")).toHaveCount(1);
+  expect(await selected.locator(".recharts-line-curve").getAttribute("d")).not.toMatch(/C/);
+  await expect(selected.locator(".recharts-reference-line text")).toHaveCount(0);
 
   await page.getByLabel("Select left timeframe for comparison").selectOption("L10");
   await expect(table.locator('tbody tr[data-left] th > [aria-hidden="true"]')).toHaveText("L10L");

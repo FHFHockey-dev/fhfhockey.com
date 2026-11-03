@@ -1,24 +1,24 @@
 import React, { useState, useMemo } from "react";
 import {
-  LineChart,
+  ComposedChart,
+  Bar,
   Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  ReferenceLine,
-  Area
+  ReferenceLine
 } from "recharts";
 import { GameLogDataPoint } from "utils/fetchWigoPlayerStats";
 import styles from "styles/wigoCharts.module.scss";
 import { TableAggregateData } from "./types";
+import { formatGameMeanLabel, gameLogMean } from "./gameLogMean";
 import {
   formatWigoStatValue,
   isWigoPercentStat,
   isWigoTimeStat,
-  shouldUseGpForDiff,
-  isWigoCountChartStat
+  shouldUseGpForDiff
 } from "./statMetadata";
 
 interface GameLogChartProps {
@@ -65,15 +65,20 @@ const averageColors: Record<AverageKey, string> = {
   L20: "#cccccc" // Light Grey #cccccc
 };
 
-// The dashed line is the unweighted mean of the plotted games, not the pooled STD value
-// (rates and percentages pool numerators and denominators), so it is labelled as a game mean
-// and formatted like the stat itself; only counts read as per-game values.
-export function formatGameMeanLabel(statLabel: string, mean: number): string {
-  const value =
-    isWigoTimeStat(statLabel) || isWigoPercentStat(statLabel) || !isWigoCountChartStat(statLabel)
-      ? formatWigoStatValue(statLabel, mean)
-      : mean.toFixed(2);
-  return `Game mean: ${value}`;
+// Kept apart from the chart so the title line can show the mean without
+// loading Recharts with the page (S8).
+export { formatGameMeanLabel, gameLogMean };
+
+// Round ticks from zero: about four steps of 1, 2, 2.5 or 5 times a power of
+// ten, instead of quarters of the data maximum (3.40, 2.55, 1.70, 0.85).
+export function niceGameLogTicks(max: number, wholeNumbers: boolean): number[] {
+  if (!(max > 0)) return [0, 1];
+  const raw = max / 4;
+  const magnitude = 10 ** Math.floor(Math.log10(raw));
+  let step = [1, 2, 2.5, 5, 10].map((m) => m * magnitude).find((candidate) => candidate >= raw)!;
+  if (wholeNumbers) step = Math.max(1, Math.ceil(step));
+  const count = Math.ceil(max / step - 1e-9);
+  return Array.from({ length: count + 1 }, (_, index) => Number((index * step).toFixed(6)));
 }
 
 const GameLogChart: React.FC<GameLogChartProps> = ({
@@ -106,6 +111,7 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
 
   const isTOIStat = isWigoTimeStat(statLabel);
   const isPercentStat = isWigoPercentStat(statLabel);
+  const isCountStat = tableType === "COUNTS";
 
   const chartData = useMemo(() => {
     return gameLogData.map((d, index) => ({
@@ -115,16 +121,14 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
     }));
   }, [gameLogData, isTOIStat]);
 
-  const seasonAverageValue = useMemo(() => {
-    if (!gameLogData || gameLogData.length === 0) return null;
-    const validValues = gameLogData
-      .map((d) => d.value)
-      .filter((v) => typeof v === "number") as number[];
-    if (validValues.length === 0) return null;
-    const sum = validValues.reduce((acc, val) => acc + val, 0);
-    return sum / validValues.length;
-  }, [gameLogData]);
+  const seasonAverageValue = useMemo(() => gameLogMean(gameLogData), [gameLogData]);
 
+  const yTicks = useMemo(() => {
+    const plotted = chartData
+      .map((d) => d.value)
+      .filter((v): v is number => typeof v === "number" && Number.isFinite(v));
+    return niceGameLogTicks(Math.max(0, ...plotted), isCountStat);
+  }, [chartData, isCountStat]);
   const seasonAverageReference = useMemo(() => {
     if (seasonAverageValue === null) return null;
     return isTOIStat ? seasonAverageValue / 60 : seasonAverageValue;
@@ -233,7 +237,7 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
         })}
       </div>
       {status ? <div className={styles.chartStatus} role="status">{status}</div> : <div className={fill ? styles.gameLogChartPlot : undefined} role="img" aria-label={`${statLabel} by game`}><ResponsiveContainer width="100%" height={chartHeight}>
-        <LineChart
+        <ComposedChart
           data={chartData}
           margin={fill ? { top: 4, right: 6, left: 0, bottom: 0 } : { top: 5, right: 10, left: 0, bottom: 16 }}
         >
@@ -270,32 +274,42 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
             }
             tick={{ fontSize: 12, fill: "#ccc" }}
             width={fill ? 48 : 65} // Slightly increased width
-
+            // Round ticks from zero; counts take whole numbers only.
+            domain={[0, yTicks[yTicks.length - 1]]}
+            ticks={yTicks}
+            allowDataOverflow={false}
           />
           <Tooltip content={<CustomTooltip />} />
-          <Area
-            type="monotone" // Match the line's curve type
-            dataKey="value" // Use the same data
-            fill="#14a2d2" // The base blue color for the fill
-            fillOpacity={0.9} // Set the desired opacity
-            stroke="none" // No border needed for the area itself
-            connectNulls // Handle gaps consistently with the line
-          />
-          <Line
-            type="monotone"
-            dataKey="value"
-            name={statLabel}
-            stroke="#14a2d2" // #8884d8
-            strokeWidth={2}
-            activeDot={{ r: 6 }}
-            dot={false}
-            connectNulls
-          />
+          {/* Counts are discrete games, so bars; rates are straight segments
+              with a dot per game. A missing game stays a gap (E-08). */}
+          {isCountStat ? (
+            <Bar
+              dataKey="value"
+              name={statLabel}
+              fill="#14a2d2"
+              fillOpacity={0.75}
+              radius={[2, 2, 0, 0]}
+              isAnimationActive={false}
+            />
+          ) : (
+            <Line
+              type="linear"
+              dataKey="value"
+              name={statLabel}
+              stroke="#14a2d2"
+              strokeWidth={2}
+              dot={{ r: 2, strokeWidth: 0, fill: "#14a2d2" }}
+              activeDot={{ r: 5 }}
+              connectNulls={false}
+              isAnimationActive={false}
+            />
+          )}
           {/* Season Average Line */}
           {seasonAverageValue !== null && seasonAverageReference !== null && (
             <ReferenceLine
               y={seasonAverageReference}
-              label={{
+              // In the one-page panel the mean is in the title line, never over the marks.
+              label={fill ? undefined : {
                 value: formatGameMeanLabel(statLabel, seasonAverageValue),
                 position: "insideBottomRight",
                 fill: "#FFF", // #ff7300
@@ -337,12 +351,13 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
                   stroke={strokeColor}
                   strokeDasharray="4 4"
                   strokeWidth={1}
+                  ifOverflow="extendDomain"
                 />
               );
             }
             return null;
           })}
-        </LineChart>
+        </ComposedChart>
       </ResponsiveContainer></div>}
     </div>
   );

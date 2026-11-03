@@ -18,6 +18,7 @@ import WigoHelp from "./WigoHelp";
 import dynamic from "next/dynamic";
 import styles from "styles/wigoCharts.module.scss";
 import { useSeasonPendingMessage } from "hooks/useCurrentSeason";
+import { formatGameMeanLabel, gameLogMean } from "./gameLogMean";
 import { WIGO_QUERY_DEFAULTS } from "components/WiGO/queryDefaults";
 
 // The game-log chart library loads with the chart, not with the page (S8).
@@ -192,6 +193,7 @@ export default function WigoComparisonMatrix({
     enabled: !!playerId && !!currentSeasonId,
     ...WIGO_QUERY_DEFAULTS
   });
+  const gameMean = gameLogMean(gameLog.data ?? []);
   const metricsByLabel = new Map(data.map((row) => [row.label, row]));
   const selectedRow = data.find((row) => row.label === selectedMetric);
   const gp = data.find((row) => row.label === "GP");
@@ -376,6 +378,11 @@ export default function WigoComparisonMatrix({
               : "Season unavailable"}{" "}
             games
           </span>
+          {gameMean !== null && (
+            <span className={styles.gameLogMean}>
+              {" "}· {formatGameMeanLabel(selectedMetric, gameMean)}
+            </span>
+          )}
         </h3>
         <GameLogChart
           fill

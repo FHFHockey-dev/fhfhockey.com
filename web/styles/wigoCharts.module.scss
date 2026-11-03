@@ -1588,6 +1588,9 @@
     flex-direction: column;
     padding: 4px 6px;
   }
+  .selectedStatPanel h3 .gameLogMean {
+    color: s.$ink;
+  }
   .selectedStatPanel h3 {
     font-size: s.$text-12;
     margin: 0 0 2px;
