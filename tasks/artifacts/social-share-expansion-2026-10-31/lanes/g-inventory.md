@@ -172,3 +172,30 @@ Project `fyhftlxokyjtpndbkfse`, Supabase MCP `execute_sql`, 2026-10-31. Every st
 - **Unchanged:** expiry at the earliest listed puck drop, and "No line yet" where no line exists.
 - **Browser:** 8 of 8 specs passed on isolated port 3197 against fixtures, twice, including 860px fit on a 14-day week with 18 rows and 8 tiles. One earlier run timed out on 5 Start/Sit specs while page reloads repeated; the same specs then passed in two full runs and were not reproduced. No real data was read.
 - **Open, shared code:** on the day after a matchup week ends, a blank week resolves to the week just ended on both pager and server, because any-week compares `week.end >= cutoff` and the cutoff is yesterday. For these posts that is every Monday. `week.end > cutoff` for any-week would fix it, in `shared/periodWindow.ts`, which this lane does not own.
+
+## SS-1103-G: TJ's 2026-11-03 Risky Starts notes, items 1 to 5
+
+- **Less text on the image:** the legend is now just the period, the lens and what blue means. Gone from the image: the tile counts, the bar and rank key, "No win or start odds", the market-line note, the confirmation legend, report ages and "Both rested". A back-to-back shows only when it's known. All of this now prints in the evidence beside the preview (`RISKY_READING_NOTE`, `ROLE_PICK_NOTE`).
+- **Labels replace Unknown** (`goalieRoles` in `riskyStarts.ts`):
+    - A source's report for this exact game shows the goalie as green PROJECTED or CONFIRMED. The other goalie shows red-orange "Backup (Projected)" while the report is projected, or "Backup" once it is confirmed.
+    - Conflicting reports still show as conflicting.
+    - Otherwise, in a back-to-back where this game is against the weaker opponent, both goalies show "1st game of a B2B" or "2nd game of a B2B".
+    - Otherwise the goalie with the most L10 starts is yellow-green LIKELY STARTER, and the others are yellow-orange LIKELY BACKUP. A tie goes to the most starts in the last 3 team games, then to the better win share in decisions against this opponent, this season and last. If still tied, the label is "Split".
+- **Weaker opponent:** the lower season goal differential per game, from `wgo_team_stats`, which the inventory already reads. Equal or unknown gives no exception. The schedule read now runs one day past the range, so the last day's game can start a back-to-back. Back-to-backs and recent starts travel on the detail outside `goalie-inventory-v1`, which is unchanged.
+- **Records read:** `wgo_goalie_stats`, through `readGoalieAppearances`. It runs only for goalies still split after L10 and recent starts: two season reads, capped at 600 rows each, failing closed. A failure adds a note and leaves those goalies Split.
+- **Game match:** reports are keyed by game, team and goalie. A test shows a report for the team's next game never labels the game on the card, and a report naming a game the team isn't in shows nowhere. On real rows, 621 accepted observations over 21 days all agree with their game's date and id (read 15).
+- **Source handle: gap.** Every accepted observation has `source_key = validated_events` and a null `source_account`. The metadata's `originalTweetId` is null and attribution is "pending" (reads 13 to 17). No account exists to show, so the handle is printed only when a report names a real one. The pipeline key is never shown.
+- **Lines:** only a DraftKings line prints. With none, the tile shows nothing.
+- **Contrast:** every label is dark ink on a light fill, between 7.36:1 and 12.04:1. The gray handle is 9.36:1 on the card's #1a1d21. All pass WCAG AA, and a test asserts it.
+- **Renders:** `ui-1103/risky-starts/before-*.png` and `after-*.png` (7-day and 14-day volume), from fixtures on isolated port 3110.
+
+| # | Statement | Tables read | Rows returned | Result |
+| --- | --- | --- | --- | --- |
+| 13 | Latest accepted observations with their game | `player_forecast_goalie_start_observations`, `games` | 30 sample rows | Passed. Every row `validated_events`, `source_account` null |
+| 14 | Handle-like columns | `information_schema.columns` | 14 (metadata) | Passed. Handles live only in line-source tables, which have no link to observations |
+| 15 | Observation columns | `information_schema.columns` | 22 (metadata) | Passed |
+| 16 | Observation metadata sample | `player_forecast_goalie_start_observations` | 5 sample rows | Passed. Relay tweet ids only, `originalTweetId` null, attribution pending |
+| 17 | Report date and game against the stored game, 21 days | `player_forecast_goalie_start_observations`, `games` | 1 (aggregate) | Passed. 621 rows, 0 date or game mismatches |
+| 18 | Source key and account counts | `player_forecast_goalie_start_observations` | 1 (aggregate) | Passed. 667 rows, one key, no account |
+
+Project `fyhftlxokyjtpndbkfse`, Supabase MCP `execute_sql`, 2026-11-03. SELECT only. Nothing was written, and no provider was called.

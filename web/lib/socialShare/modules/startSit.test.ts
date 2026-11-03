@@ -293,18 +293,18 @@ describe("period control", () => {
     const table = periodClient(), snapshot = await periodEdition({}, table);
     expect(table.tables).not.toContain("yahoo_matchup_weeks");
     expect(snapshot.settings).toMatchObject({ days: 7, period: "days" });
-    expect(table.filters).toContainEqual(["games", "date", "2026-11-08"]);
+    expect(table.filters).toContainEqual(["games", "date", "2026-11-09"]);
   });
   it("reads a chosen matchup week's own dates", async () => {
     const table = periodClient();
     await periodEdition({ period: "matchup", week: "5" }, table);
     expect(table.tables[0]).toBe("yahoo_matchup_weeks");
-    expect(table.filters).toContainEqual(["games", "date", "2026-11-08"]);
+    expect(table.filters).toContainEqual(["games", "date", "2026-11-09"]);
   });
-  it("reads the whole of a 14-day week", async () => {
+  it("reads the whole of a 14-day week, and the schedule a day past it for back-to-backs", async () => {
     const table = periodClient();
     await periodEdition({ period: "matchup", week: "6" }, table);
-    expect(table.filters).toContainEqual(["games", "date", "2026-11-22"]);
+    expect(table.filters).toContainEqual(["games", "date", "2026-11-23"]);
   });
   it("shows a past matchup as no upcoming games, with no game reads and no export", async () => {
     const table = periodClient(), snapshot = await periodEdition({ period: "matchup", week: "3" }, table);
@@ -329,7 +329,7 @@ describe("period control", () => {
     expect(await periodEdition({ period: "custom", start: "2027-05-01", end: "2027-05-03" })).toMatchObject({ state: "missing", reasons: [expect.stringContaining("inside the season")] });
     const table = periodClient();
     await periodEdition({ period: "custom", start: "2026-11-03", end: "2026-11-06" }, table);
-    expect(table.filters).toContainEqual(["games", "date", "2026-11-06"]);
+    expect(table.filters).toContainEqual(["games", "date", "2026-11-07"]);
   });
 });
 

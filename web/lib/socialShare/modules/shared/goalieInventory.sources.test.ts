@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { teamsInfo } from "lib/teamsInfo";
 import { describe, expect, it, vi } from "vitest";
 import { resolveDailyBoardEvidence, type BoardConflict, type BoardGoalieEvidence } from "lib/projections/dailyBoardEvidence";
 import { GOALIE_INVENTORY_VERSION, type GoalieInventory, type LoadGoalieInventory, type SearchGoalieInventory } from "./goalieInventory";
@@ -71,6 +72,15 @@ describe("inventory mapping (11.1)", () => {
     expect(resolveInventoryPeriod({ ...base, week: 4 }, weeks, "2026-10-28", "2026-10-29T16:00:00Z").period).toMatchObject({ from: "2026-10-26", listedFrom: "2026-10-29", through: "2026-11-01", elapsed: false });
     expect(resolveInventoryPeriod({ ...base, week: 4 }, weeks, "2026-11-02", "2026-11-03T16:00:00Z").period).toMatchObject({ elapsed: true });
     expect(resolveInventoryPeriod({ ...base, period: "days", days: 1, week: null }, { weeks: [], reasons: [] }, "", "2026-11-02T16:00:00Z").period).toMatchObject({ label: "Nov 2", from: "2026-11-02", through: "2026-11-02", usedCalendar: false });
+    // Back-to-backs: NJD played MTL on Nov 1, so Nov 2 against NYR is its second night; NYR's goal differential is better, so NYR is not the weaker opponent.
+    const detail = buildGoalieInventory(FIXTURE_INPUT);
+    expect(detail.backToBacks?.["900010:NJD"]).toEqual({ order: 2, otherGameId: 900003, otherOpponent: "MTL", weakerOpponent: false });
+    expect(detail.backToBacks?.["900012:NJD"]).toBeUndefined();
+    const nextDay = buildGoalieInventory({ ...FIXTURE_INPUT, scheduleThrough: "2026-11-05", schedule: [...FIXTURE_INPUT.schedule, { id: 900013, date: "2026-11-05", startTime: null, homeTeamId: teamsInfo.MTL.id, awayTeamId: teamsInfo.NJD.id }] });
+    expect(nextDay.backToBacks?.["900012:NJD"]).toEqual({ order: 1, otherGameId: 900013, otherOpponent: "MTL", weakerOpponent: false });
+    expect(nextDay.backToBacks?.["900012:TOR"]).toBeUndefined();
+    // Recent starts cover the team's last three completed games.
+    expect(detail.recentTrend).toMatchObject({ "NJD:7001": 2, "NJD:7002": 0, "TOR:7005": 1, "TOR:7006": 1 });
     expect(inventoryWindow("2026-11-01T02:00:00Z", 7)).toEqual({ from: "2026-10-31", through: "2026-11-06", season: 20262027 });
   });
 });

@@ -1,5 +1,6 @@
 import { UNKNOWN_EVIDENCE, type SharePostContext, type SharePostLoadResult, type SharePostReadClient, type SharePostSource } from "./contract";
-import { riskyRows, riskyStartsNoUpcoming, riskyStartsResult, type RiskyGameLine, type RiskyMarketLines, type RiskyRow, type RiskyStartsData, type RiskyStartsSettings } from "./riskyStarts";
+import { roleContext, riskyRows, riskyStartsNoUpcoming, riskyStartsResult, type OpponentRecord, type RiskyGameLine, type RiskyMarketLines, type RiskyRow, type RiskyStartsData, type RiskyStartsSettings } from "./riskyStarts";
+import { editionCutoff } from "./creaseShift";
 import { editionDate } from "./shared/definitions";
 import { inventoryPeriodRequest, loadGoalieInventoryDetail, loadInventoryPeriod, serverObservationClient } from "./shared/goalieInventory.sources";
 
@@ -15,7 +16,10 @@ const STORED_COLUMNS = "game_id, provider, captured_at, event_start_at, home_tea
 const STORED_LIMIT = 1000;
 export const NHL_PARTNER_URL = "https://api-web.nhle.com/v1/partner-game/US/now";
 const NHL_PARTNER_TIMEOUT_MS = 4000;
-export const MARKET_LINES_NOTE = "Moneylines and totals are market lines, the book's own prices, not FHFH numbers. NHL.com's feed covers only its current odds date, so a later game shows No line yet.";
+export const MARKET_LINES_NOTE = "Moneylines and totals are market lines, the book's own prices, not FHFH numbers. NHL.com's feed covers only its current odds date, so a later game shows no line.";
+export const RECORDS_FAILED_NOTE = "Goalie records against opponents could not be read, so a tie after recent starts shows as Split.";
+/** Two seasons of one tied team's goalies is well under this; reaching it fails closed. */
+const RECORD_LIMIT = 600;
 export const STORED_FAILED_NOTE = "Stored market lines could not be read.";
 export const NHL_FAILED_NOTE = "NHL.com partner odds could not be read, so games without a stored line show No line yet.";
 
@@ -87,6 +91,20 @@ export async function loadRiskyMarketLines(rows: readonly RiskyRow[], generatedA
   return { lines, sources, notes };
 }
 
+/** Decisions against each opponent, this season and last, read only for goalies still split after L10 and recent starts. */
+export async function loadOpponentRecords(client: SharePostReadClient, rows: readonly RiskyRow[], season: number, cutoff: string): Promise<Record<string, OpponentRecord>> {
+  const tied = rows.filter(row => row.goalies.length > 1 && row.goalies.every(goalie => goalie.role.kind === "split")).flatMap(row => row.goalies.map(goalie => ({ goalieId: goalie.goalieId, opponent: row.opponent })));
+  if (!tied.length) return {};
+  const { readGoalieAppearances } = await import("./shared/goalieLedger.sources"), goalieIds = [...new Set(tied.map(item => item.goalieId))], wanted = new Set(tied.map(item => `${item.goalieId}:${item.opponent}`));
+  const seasons = [season, season - 10001], records: Record<string, OpponentRecord> = {};
+  for (const id of seasons) for (const row of await readGoalieAppearances(client, { season: id, from: `${String(id).slice(0, 4)}-08-01`, through: id === season ? cutoff : `${String(id).slice(4)}-07-31`, goalieIds, limit: RECORD_LIMIT })) {
+    const key = `${row.goalieId}:${row.opponent}`;
+    if (!wanted.has(key)) continue;
+    const record = records[key] ??= { wins: 0, losses: 0, otLosses: 0 };
+    record.wins += row.wins ?? 0; record.losses += row.losses ?? 0; record.otLosses += row.otLosses ?? 0;
+  }
+  return records;
+}
 export async function loadRiskyStarts({ client, generatedAt }: SharePostContext, settings: RiskyStartsSettings): Promise<SharePostLoadResult<RiskyStartsData>> {
   const { period, reason } = await loadInventoryPeriod(client, settings, generatedAt);
   if (!period) return { state: "missing", reasons: [reason], evidence: UNKNOWN_EVIDENCE, data: null };
@@ -94,5 +112,7 @@ export async function loadRiskyStarts({ client, generatedAt }: SharePostContext,
   const observationClient = await serverObservationClient();
   const detail = await loadGoalieInventoryDetail(client, inventoryPeriodRequest(period, generatedAt), { observationClient });
   if (detail.inventory.state === "missing") return riskyStartsResult(detail);
-  return riskyStartsResult(detail, await loadRiskyMarketLines(riskyRows(detail.inventory, detail.conflicts, detail.lowFirstRanks), generatedAt, { client: observationClient }), period);
+  const rows = riskyRows(detail.inventory, detail.conflicts, detail.lowFirstRanks, roleContext(detail)), market = await loadRiskyMarketLines(rows, generatedAt, { client: observationClient });
+  try { return riskyStartsResult(detail, market, period, await loadOpponentRecords(client, rows, detail.inventory.season, editionCutoff(generatedAt))); }
+  catch { return riskyStartsResult(detail, { ...market, notes: [...market.notes, RECORDS_FAILED_NOTE] }, period); }
 }

@@ -31,7 +31,17 @@ export type InventoryScheduleRow = { id: number; date: string; startTime: string
 /** One goalie-game from Start Chart. `startProbability` is that row's own head, which a participation must equal. */
 export type InventoryForecastInput = { gameId: number; goalieId: number; startProbability: number | null; startParticipation?: StartChartParticipation | null };
 export type InventoryCoverage = { observed: number; expected: number; missing: number };
-export type GoalieInventoryDetail = { inventory: GoalieInventory; coverage: InventoryCoverage | null; conflicts: readonly InventoryConflict[]; lowFirstRanks: InventoryLowFirstRanks };
+export type GoalieInventoryDetail = {
+  inventory: GoalieInventory; coverage: InventoryCoverage | null; conflicts: readonly InventoryConflict[]; lowFirstRanks: InventoryLowFirstRanks;
+  /** Not in `goalie-inventory-v1`. Team games played on consecutive days, by `gameId:team`. */
+  backToBacks?: Readonly<Record<string, InventoryBackToBack>>;
+  /** Not in v1. Starts in the team's last `TREND_GAMES` completed games, by `team:goalieId`; absent when a game there lacks one labeled starter. */
+  recentTrend?: Readonly<Record<string, number>>;
+};
+/** One game of a team's back-to-back. `weakerOpponent` compares the two opponents' season goal differential per game; null when either is unknown or they are equal. */
+export type InventoryBackToBack = { order: 1 | 2; otherGameId: number; otherOpponent: string; weakerOpponent: boolean | null };
+export const TREND_GAMES = 3;
+export const WEAKER_OPPONENT_SOURCE = "season goal differential per game, from NHL.com team game stats";
 
 export const CONFIRMATION_CLOSED_REASON = "Goalie start observations could not be read, so every goalie is unknown. That does not mean not starting.";
 export const CONFIRMATION_ABSENT_NOTE = "Unknown means no current observation, not that the goalie is not starting. Observations cover part of the slate.";
@@ -226,6 +236,8 @@ export type GoalieInventoryInput = {
   request: GoalieInventoryRequest; teams: readonly string[];
   /** Season schedule through `request.through`. Dates before `scheduleFrom` were not read, so back-to-backs there are unknown. */
   schedule: readonly InventoryScheduleRow[]; scheduleFrom: string;
+  /** The last date the schedule read covers, a day past the range so the range's last game can open a back-to-back. Defaults to `request.through`. */
+  scheduleThrough?: string;
   teamGames: readonly InventoryTeamGameRow[]; nst: readonly InventoryNstRow[]; appearances: readonly GoalieAppearance[];
   /** Null means the source could not be read; `observationReason` then says why. Empty evidence is a real read with none. */
   confirmations: InventoryConfirmationInput | null; observationReason?: string;
@@ -256,16 +268,26 @@ export function buildGoalieInventory(input: GoalieInventoryInput): GoalieInvento
     }
   }
   if (unknownTeams) reasons.push(`${unknownTeams} scheduled games name a team this inventory cannot place.`);
+  const scheduleThrough = input.scheduleThrough ?? request.through, teamDay = new Map(input.schedule.flatMap(game => [[`${game.homeTeamId}:${game.date}`, game], [`${game.awayTeamId}:${game.date}`, game]] as const));
+  const backToBacks: Record<string, InventoryBackToBack> = {};
+  for (const [team, games] of sides) for (const game of games) {
+    const teamId = teamsInfo[team].id, prior = teamDay.get(`${teamId}:${shiftDays(game.date, -1)}`), next = shiftDays(game.date, 1) <= scheduleThrough ? teamDay.get(`${teamId}:${shiftDays(game.date, 1)}`) : undefined;
+    const other = prior ?? next, otherOpponent = other && teamById.get(other.homeTeamId === teamId ? other.awayTeamId : other.homeTeamId);
+    if (!other || !otherOpponent) continue;
+    const here = lenses.get(game.opponent)?.goalDifferential.value ?? null, there = lenses.get(otherOpponent)?.goalDifferential.value ?? null;
+    backToBacks[`${game.gameId}:${team}`] = { order: prior ? 2 : 1, otherGameId: other.id, otherOpponent, weakerOpponent: here === null || there === null || here === there ? null : here < there };
+  }
 
   const { confirmations, conflicts } = input.confirmations ? mapBoardEvidence(input.confirmations) : { confirmations: new Map<string, GoalieConfirmation>(), conflicts: new Set<string>() };
   const forecasts = new Map((input.forecasts ?? []).map(row => [`${row.gameId}:${row.goalieId}`, row]));
   const latestTeam = new Map(input.appearances.map(row => [row.goalieId, row.team]));
-  const goalies: GoalieInventoryEntry[] = [];
+  const goalies: GoalieInventoryEntry[] = [], recentTrend: Record<string, number> = {};
   let incompleteShares = 0;
   for (const team of [...sides.keys()].sort()) {
     const games = sides.get(team)!.sort((a, b) => a.date.localeCompare(b.date) || a.gameId - b.gameId);
-    const share = teamStartShare(team, ledger, input.appearances, 10);
+    const share = teamStartShare(team, ledger, input.appearances, 10), trend = teamStartShare(team, ledger, input.appearances, TREND_GAMES);
     if (!share.complete) incompleteShares++;
+    if (trend.complete) for (const goalie of trend.goalies) recentTrend[`${team}:${goalie.goalieId}`] = goalie.starts;
     // A traded goalie is listed with the team of their latest game only.
     const roster = share.goalies.filter(goalie => latestTeam.get(goalie.goalieId) === team);
     if (!roster.length) reasons.push(`${team} has no goalie appearance in its last 10 games.`);
@@ -300,7 +322,7 @@ export function buildGoalieInventory(input: GoalieInventoryInput): GoalieInvento
     { name: "Start Chart start participation", tables: [], state: input.forecasts ? "ready" : "blocked", asOf: null, updatedAt: null, reasons: forecastReasons },
   ];
   return {
-    coverage, conflicts: conflictList, lowFirstRanks,
+    coverage, conflicts: conflictList, lowFirstRanks, backToBacks, recentTrend,
     inventory: { version: GOALIE_INVENTORY_VERSION, season: request.season, generatedAt: request.generatedAt, from: request.from, through: request.through, state: degraded ? "partial" : "ready", reasons: [...reasons, ...confirmationReasons, ...forecastReasons], sources, goalies },
   };
 }
@@ -414,14 +436,15 @@ export async function loadGoalieInventoryDetail(client: { from: (table: string) 
     if ((Date.parse(request.through) - Date.parse(request.from)) / DAY_MS >= MAX_RANGE_DAYS) throw new Error("Inventory range is too long.");
     const [{ bounded }, { readGoalieAppearances }, { activeTeamAbbreviations }] = await Promise.all([import("lib/socialShare/trendSources"), import("./goalieLedger.sources"), import("lib/teamsInfo")]);
     const cutoff = shiftDays(editionDate(request.generatedAt), -1), seasonStart = `${String(request.season).slice(0, 4)}-08-01`;
-    const schedule = await bounded<InventoryScheduleRow>("Schedule", LIMITS.schedule, (from, to) => client.from("games").select("id,date,startTime,homeTeamId,awayTeamId", { count: "exact" }).eq("seasonId", request.season).eq("type", 2).lte("date", request.through).order("date", { ascending: true }).order("id", { ascending: true }).range(from, to));
+    const scheduleThrough = shiftDays(request.through, 1);
+    const schedule = await bounded<InventoryScheduleRow>("Schedule", LIMITS.schedule, (from, to) => client.from("games").select("id,date,startTime,homeTeamId,awayTeamId", { count: "exact" }).eq("seasonId", request.season).eq("type", 2).lte("date", scheduleThrough).order("date", { ascending: true }).order("id", { ascending: true }).range(from, to));
     const teamGames = await bounded<InventoryTeamGameRow>("Team game stats", LIMITS.teamGames, (from, to) => client.from("wgo_team_stats").select([...TEAM_GAME_COLUMNS, ...INVENTORY_LENS_COLUMNS].join(","), { count: "exact" }).eq("season_id", request.season).lte("date", cutoff).order("date", { ascending: true }).order("game_id", { ascending: true }).order("team_id", { ascending: true }).range(from, to));
     const nst = await bounded<InventoryNstRow>("NST team logs", LIMITS.nst, (from, to) => client.from("nst_team_gamelogs_as_counts").select(INVENTORY_NST_COLUMNS.join(","), { count: "exact" }).eq("season_id", request.season).eq("situation", "all").lte("date", cutoff).order("date", { ascending: true }).order("team_abbreviation", { ascending: true }).range(from, to));
     const ledger = toCompletedTeamGames(teamGames, { season: request.season, through: cutoff });
     const teams = [...activeTeamAbbreviations].map(String).sort();
     const windowStart = teams.reduce((earliest, team) => { const games = ledger.filter(game => game.team === team), first = games[Math.max(0, games.length - 10)]?.date; return first && first < earliest ? first : earliest; }, cutoff);
     const appearances = await readGoalieAppearances(client, { season: request.season, from: windowStart, through: cutoff, limit: LIMITS.appearances });
-    const gameIds = schedule.filter(game => game.date >= request.from).map(game => game.id);
+    const gameIds = schedule.filter(game => game.date >= request.from && game.date <= request.through).map(game => game.id);
     let confirmations: InventoryConfirmationInput | null = null, observationReason: string | undefined;
     if (options.observationClient) {
       try { confirmations = await readBoardConfirmations(options.observationClient, gameIds, request.generatedAt, bounded); }
@@ -429,7 +452,7 @@ export async function loadGoalieInventoryDetail(client: { from: (table: string) 
     }
     let forecasts: readonly InventoryForecastInput[] | null = null;
     if (options.readStartParticipations) { try { forecasts = await options.readStartParticipations(request, gameIds); } catch { forecasts = null; } }
-    return buildGoalieInventory({ request, teams, schedule, scheduleFrom: seasonStart, teamGames, nst, appearances, confirmations, observationReason, forecasts });
+    return buildGoalieInventory({ request, teams, schedule, scheduleFrom: seasonStart, scheduleThrough, teamGames, nst, appearances, confirmations, observationReason, forecasts });
   } catch {
     const reason = "The goalie inventory's sources could not be read.";
     return { coverage: null, conflicts: [], lowFirstRanks: {}, inventory: { version: GOALIE_INVENTORY_VERSION, season: request.season, generatedAt: request.generatedAt, from: request.from, through: request.through, state: "missing", reasons: [reason], sources: [], goalies: [] } };

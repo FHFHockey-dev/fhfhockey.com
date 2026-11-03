@@ -59,7 +59,9 @@ test("Risky Starts: a lens switch needs no refetch, changes the token and stays 
   await page.goto("/social-share/posts?post=risky-starts");
   const square = page.getByTestId("share-square");
   await expect(square).toBeVisible();
-  await expect(page.getByTestId("risky-legend")).toContainText("No win or start odds");
+  await expect(page.getByTestId("risky-legend")).not.toContainText("No win or start odds");
+  await expect(page.locator('[data-testid="risky-role"][data-role="projected"]').first()).toHaveText("PROJECTED");
+  await expect(page.getByTestId("share-square")).not.toContainText(/Unknown|No line yet/);
   await expect(page.getByTestId("post-evidence")).toContainText("correlated");
   await expect(page.getByTestId("post-watermark")).toHaveText("OBSERVED RESULTS");
   const before = served.requests, ratioToken = await square.getAttribute("data-export-token");

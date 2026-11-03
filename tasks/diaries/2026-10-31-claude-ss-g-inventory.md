@@ -23,3 +23,6 @@ Tied ranks, puck-drop expiry and DraftKings-only stored lines. Gotcha: a high-fi
 
 ## Period control
 Risky Starts and Start/Sit take the shared control, any-week, with `days` still the default and no calendar read on it. Past dates are never read: a part-played week reads from today, so a past game with no start time can't list. Gotcha: a blank matchup uses the pager's cutoff, yesterday, so on the day after a week ends a blank week names the week just ended and shows the no-upcoming state until ▶. The fix is in `shared/periodWindow.ts`, not this lane; reported to the lead. Gotcha: `edition()` settings in the spec must carry the period fields, or the export block reads them as changed settings.
+
+## SS-1103-G (TJ 11-03 notes, section 2)
+Items 1 to 5 are built. Item 6, the late-feed note, waits on ss-contract's `completeThrough` and `pageNotes`; the lead will message. Gotcha: no observation names an account, so no handle shows; the receipt has the reads. Gotcha: the Start/Sit search spec fails with two "Search goalie or team" inputs, because of the uncommitted `PostStudio.tsx` edits in another lane, not this lane.

@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { teamsInfo } from "lib/teamsInfo";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -8,8 +9,8 @@ import { resolveDailyBoardEvidence, type BoardGoalieEvidence } from "lib/project
 import { sharePostExportBlock, sharePostExportToken, parseShareSettings } from "./contract";
 import { shareModule } from "./registry";
 import { loadPostSnapshot } from "./server";
-import { compactRiskyEvidence, ordinalRank, RISKY_CORRELATION_NOTE, riskyFlags, riskyGameSides, riskyPairs, riskyRows, riskyRowsForLens, riskyStartsModule, riskyStartsResult, type RiskyPair, type RiskyRow, type RiskySide, type RiskyStartsData, type RiskyStartsSettings } from "./riskyStarts";
-import { loadRiskyMarketLines, MARKET_LINES_NOTE, NHL_FAILED_NOTE, NHL_PARTNER_URL, partnerLine, storedLine, STORED_FAILED_NOTE, type PartnerFeed, type StoredLineRow } from "./riskyStarts.sources";
+import { compactRiskyEvidence, goalieRoles, likelyStarter, ordinalRank, RISKY_READING_NOTE, ROLE_PICK_NOTE, ROLE_TONES, sourceHandle, RISKY_CORRELATION_NOTE, type GoalieRole, type RiskyGoalie, riskyFlags, riskyGameSides, riskyPairs, riskyRows, riskyRowsForLens, riskyStartsModule, riskyStartsResult, type RiskyPair, type RiskyRow, type RiskySide, type RiskyStartsData, type RiskyStartsSettings } from "./riskyStarts";
+import { loadOpponentRecords, loadRiskyMarketLines, MARKET_LINES_NOTE, NHL_FAILED_NOTE, NHL_PARTNER_URL, partnerLine, storedLine, STORED_FAILED_NOTE, type PartnerFeed, type StoredLineRow } from "./riskyStarts.sources";
 import { gameSignals, buildTeamLenses, buildGoalieInventory, CONFIRMATION_LINK_GAP, CONFIRMATION_REPORTER_GAP, rankBand, strengthShare } from "./shared/goalieInventory.sources";
 import { FIXTURE_GENERATED_AT, FIXTURE_INPUT, FIXTURE_TEAMS, GOALIE_INVENTORY_FIXTURE, GOALIE_INVENTORY_FIXTURE_DETAIL } from "./shared/goalieInventory.fixture";
 
@@ -52,22 +53,22 @@ describe("Risky Starts card, through the real resolver", () => {
     expect(html).toContain("Conflicting reports");
     expect(html).not.toContain("Source: confirmed");
   });
-  it("keeps the short gap label on the card and moves the full notes to the evidence", () => {
+  it("keeps reading notes, gaps and the pick rule off the card and in the evidence", () => {
     const result = riskyStartsResult(throughResolver([], [CONFIRMATION_REPORTER_GAP, CONFIRMATION_LINK_GAP])), html = card(result, "volume");
-    expect(html).toContain("Unknown = no report yet. Reports aren&#x27;t split by reporter.");
-    expect(html).toContain("No win or start odds");
+    for (const text of ["Unknown", "No win or start odds", "Longer bar", "1ST = highest", "market lines", "ago"]) expect(html).not.toContain(text);
+    expect(result.evidence.sample).toContain(ROLE_PICK_NOTE);
+    expect(result.evidence.sample).toContain(RISKY_READING_NOTE);
     expect(html).not.toContain("correlated");
     expect(html).not.toContain("No source link or expiry exists");
     expect(result.evidence.sample).toContain(CONFIRMATION_REPORTER_GAP);
     expect(result.evidence.sample).toContain(CONFIRMATION_LINK_GAP);
     expect(result.evidence.cohort).toContain(RISKY_CORRELATION_NOTE);
   });
-  it("shows up to eight tiles and says how many it left out", () => {
+  it("shows up to eight tiles", () => {
     const row = data.rows.find(item => item.lenses.volume[0].flagged)!;
     const many = Array.from({ length: 11 }, (_, index) => ({ ...row, gameId: 800000 + index }));
     const html = card({ ...riskyStartsResult(GOALIE_INVENTORY_FIXTURE_DETAIL), data: { ...data, rows: many } }, "volume");
     expect(html.match(/data-testid="risky-row"/g)).toHaveLength(8);
-    expect(html).toContain("8 of 11");
   });
 });
 
@@ -149,24 +150,25 @@ describe("Risky Starts head-to-head tiles", () => {
     const html = card(riskyStartsResult(GOALIE_INVENTORY_FIXTURE_DETAIL), "volume");
     const block = (team: string) => html.match(new RegExp(`data-testid="risky-row" data-team="NYR" data-game="900010".*?data-testid="risky-goalies" data-side="${team === "NYR" ? "home" : "away"}" data-team="${team}"[^>]*>(.*?)</p>`))![1];
     expect(block("NYR")).toContain("Mikko Søgaard");
-    expect(block("NYR")).toContain("Source: projected");
+    expect(block("NYR")).toContain(">PROJECTED<");
     expect(block("NJD")).toContain("Éric Testeur");
-    expect(block("NJD")).toContain("Source: confirmed");
-    expect(block("NJD")).toMatch(/\d+\/\d+ GS/);
+    expect(block("NJD")).toContain(">CONFIRMED<");
+    expect(block("NJD")).toContain(">Backup<");
+    expect(block("NJD")).toMatch(/\d+\/\d+/);
   });
-  it("leaves a side visibly empty when the other team has no goalies, and keeps date and rest", () => {
+  it("leaves a side visibly empty when the other team has no goalies, and keeps the date and a known B2B", () => {
     expect(riskyGameSides([njdRow], njdRow).home.goalies).toEqual([]);
     const html = card({ ...riskyStartsResult(GOALIE_INVENTORY_FIXTURE_DETAIL), data: { ...data, rows: [nyrRow] } }, "volume");
     expect(html).toContain('data-testid="risky-goalies-empty"');
     expect(html).toContain("No goalie listed");
     expect(html).toContain("Mon, Nov 2");
-    expect(html).toMatch(/rested|back-to-back/);
+    expect(html).toContain("on a B2B");
+    expect(html).not.toMatch(/rested|unknown/i);
   });
   it("prints ordinals, and adds no combined score and no odds", () => {
     expect([1, 2, 3, 4, 11, 12, 13, 21, 22, 23, 32].map(ordinalRank)).toEqual(["1ST", "2ND", "3RD", "4TH", "11TH", "12TH", "13TH", "21ST", "22ND", "23RD", "32ND"]);
     const html = card(riskyStartsResult(GOALIE_INVENTORY_FIXTURE_DETAIL), "volume");
     expect(html).not.toMatch(/score|composite|probability/i);
-    expect(html).toContain("No win or start odds");
     expect(JSON.stringify(data.rows[0])).not.toMatch(/"(share|score|total|composite|odds)"/);
   });
 });
@@ -370,21 +372,22 @@ describe("Risky Starts market lines", () => {
     const result = riskyStartsResult(GOALIE_INVENTORY_FIXTURE_DETAIL, market), only = (result.data as RiskyStartsData).rows.filter(row => row.gameId === 900010 && row.team === "NYR");
     const html = card({ ...result, data: { ...(result.data as RiskyStartsData), rows: only } }, "volume");
     expect(html.indexOf("HOME")).toBeLessThan(html.indexOf('data-team="NYR">-132'));
-    expect(html.indexOf('data-team="NYR">-132')).toBeLessThan(html.indexOf("O/U 6.5 · DK · 3h ago"));
-    expect(html.indexOf("O/U 6.5 · DK · 3h ago")).toBeLessThan(html.indexOf('data-team="NJD">+112'));
+    expect(html.indexOf('data-team="NYR">-132')).toBeLessThan(html.indexOf("O/U 6.5 · DK<"));
+    expect(html.indexOf("O/U 6.5 · DK<")).toBeLessThan(html.indexOf('data-team="NJD">+112'));
     expect(html.indexOf('data-team="NJD">+112')).toBeLessThan(html.indexOf("AWAY"));
     expect(html).not.toContain("No line yet");
-    expect(html).toContain("No win or start odds");
-    expect(html).toContain("market lines");
+    expect(result.evidence.sample).toContain("DraftKings market lines");
     expect(html).not.toMatch(/\d%(?! PP)|implied|probab|no.vig/i);
     expect(JSON.stringify(market.lines)).not.toMatch(/probability|overround|vig/i);
     expect(riskyStartsModule.altText({ evidence: { sample: "s" } } as never, { ...(result.data as RiskyStartsData), rows: only }, settings("volume"))).toContain("Market line, DraftKings: NYR -132, NJD +112, total 6.5");
   });
-  it("prints No line yet for a game with none, and no moneylines", () => {
+  it("prints nothing for a game with no DraftKings line, including another book's", () => {
     const row = data.rows.find(item => item.gameId === 900010 && item.team === "NYR")!;
-    const html = card({ ...riskyStartsResult(GOALIE_INVENTORY_FIXTURE_DETAIL), data: { ...data, rows: [row] } }, "volume");
-    expect(html).toContain("No line yet");
-    expect(html).not.toContain("risky-moneyline");
+    const other = { gameId: 900010, source: "nhl" as const, book: "FanDuel", capturedAt: FIXTURE_GENERATED_AT, home: "NYR", away: "NJD", homeMoneyline: -120, awayMoneyline: 100, total: 6 };
+    for (const lines of [{}, { 900010: other }] as Record<string, RiskyStartsData["lines"][string]>[]) {
+      const html = card({ ...riskyStartsResult(GOALIE_INVENTORY_FIXTURE_DETAIL), data: { ...data, rows: [row], lines } }, "volume");
+      expect(html).not.toMatch(/No line|risky-moneyline|risky-line|FanDuel/);
+    }
   });
   it("lists the source it used in the evidence, with its capture time", async () => {
     const market = await loadRiskyMarketLines(rows, FIXTURE_GENERATED_AT, { client: client([stored()]) as never, fetchImpl: ok(feed()) });
@@ -454,18 +457,18 @@ describe("period control", () => {
     const table = periodClient(), snapshot = await periodEdition({}, table);
     expect(table.tables).not.toContain("yahoo_matchup_weeks");
     expect(snapshot.settings).toMatchObject({ days: 7, period: "days" });
-    expect(table.filters).toContainEqual(["games", "date", "2026-11-08"]);
+    expect(table.filters).toContainEqual(["games", "date", "2026-11-09"]);
   });
   it("reads a chosen matchup week's own dates", async () => {
     const table = periodClient();
     await periodEdition({ period: "matchup", week: "5" }, table);
     expect(table.tables[0]).toBe("yahoo_matchup_weeks");
-    expect(table.filters).toContainEqual(["games", "date", "2026-11-08"]);
+    expect(table.filters).toContainEqual(["games", "date", "2026-11-09"]);
   });
-  it("reads the whole of a 14-day week", async () => {
+  it("reads the whole of a 14-day week, and the schedule a day past it for back-to-backs", async () => {
     const table = periodClient();
     await periodEdition({ period: "matchup", week: "6" }, table);
-    expect(table.filters).toContainEqual(["games", "date", "2026-11-22"]);
+    expect(table.filters).toContainEqual(["games", "date", "2026-11-23"]);
   });
   it("shows a past matchup as no upcoming games, with no game reads and no export", async () => {
     const table = periodClient(), snapshot = await periodEdition({ period: "matchup", week: "3" }, table);
@@ -490,7 +493,7 @@ describe("period control", () => {
     expect(await periodEdition({ period: "custom", start: "2027-05-01", end: "2027-05-03" })).toMatchObject({ state: "missing", reasons: [expect.stringContaining("inside the season")] });
     const table = periodClient();
     await periodEdition({ period: "custom", start: "2026-11-03", end: "2026-11-06" }, table);
-    expect(table.filters).toContainEqual(["games", "date", "2026-11-06"]);
+    expect(table.filters).toContainEqual(["games", "date", "2026-11-07"]);
   });
 });
 
@@ -508,9 +511,82 @@ describe("the period on the card", () => {
     expect(card(empty, "volume")).toContain("No upcoming games in this period");
     expect(card(empty, "volume")).not.toContain("flagged pairing");
   });
-  it("keeps No line yet on a later week and expires at puck drop on a chosen period", () => {
+  it("shows no line on a later week and expires at puck drop on a chosen period", () => {
     const generatedAt = "2026-11-02T22:59:00.000Z", result = riskyStartsResult(buildGoalieInventory({ ...FIXTURE_INPUT, request: { ...FIXTURE_INPUT.request, generatedAt } }), undefined, period);
     expect(result.ttlSeconds).toBe(60);
-    expect(card(result, "volume")).toContain("No line yet");
+    expect(card(result, "volume")).not.toMatch(/No line|risky-line/);
+  });
+});
+
+describe("goalie labels", () => {
+  const none = { state: "none", source: null, observedAt: null, expiresAt: null, sourceUrl: null } as const;
+  const goalie = (goalieId: number, starts: number | null, confirmation: RiskyGoalie["confirmation"] = none): Omit<RiskyGoalie, "role"> => ({ goalieId, name: `G${goalieId}`, starts, teamGames: 10, confirmation });
+  const row = { gameId: 1, team: "NJD", opponent: "NYR", conflicting: false };
+  const labels = (roles: Map<number, GoalieRole>) => Object.fromEntries([...roles].map(([id, role]) => [id, role.label]));
+  it("labels the L10 leader Likely Starter and the other Likely Backup", () => {
+    expect(labels(goalieRoles(row, [goalie(1, 8), goalie(2, 2)], {}))).toEqual({ 1: "LIKELY STARTER", 2: "LIKELY BACKUP" });
+  });
+  it("breaks an L10 tie on recent starts, then the record against this opponent, and says Split when still tied", () => {
+    const tied = [goalie(1, 5), goalie(2, 5)];
+    expect(likelyStarter(tied, "NJD", "NYR", { recentTrend: { "NJD:1": 1, "NJD:2": 2 } })).toBe(2);
+    const even = { "NJD:1": 1, "NJD:2": 1 };
+    expect(likelyStarter(tied, "NJD", "NYR", { recentTrend: even, records: { "1:NYR": { wins: 3, losses: 1, otLosses: 0 }, "2:NYR": { wins: 1, losses: 2, otLosses: 1 } } })).toBe(1);
+    // A record for another opponent separates nothing.
+    expect(labels(goalieRoles(row, tied, { recentTrend: even, records: { "1:TOR": { wins: 3, losses: 0, otLosses: 0 } } }))).toEqual({ 1: "Split", 2: "Split" });
+  });
+  it("shows which game of a B2B it is, for both goalies, only against the weaker opponent", () => {
+    const pair = [goalie(1, 8), goalie(2, 2)];
+    expect(labels(goalieRoles(row, pair, { backToBacks: { "1:NJD": { order: 2, otherGameId: 2, otherOpponent: "TOR", weakerOpponent: true } } }))).toEqual({ 1: "2nd game of a B2B", 2: "2nd game of a B2B" });
+    expect(labels(goalieRoles(row, pair, { backToBacks: { "1:NJD": { order: 1, otherGameId: 2, otherOpponent: "TOR", weakerOpponent: true } } }))).toEqual({ 1: "1st game of a B2B", 2: "1st game of a B2B" });
+    for (const weakerOpponent of [false, null]) expect(labels(goalieRoles(row, pair, { backToBacks: { "1:NJD": { order: 2, otherGameId: 2, otherOpponent: "TOR", weakerOpponent } } }))).toEqual({ 1: "LIKELY STARTER", 2: "LIKELY BACKUP" });
+  });
+  it("puts a source's report first: Projected with its account, the other goalie Backup (Projected), and Backup once confirmed", () => {
+    const projected = { state: "projected", source: "GoalieReporter", observedAt: FIXTURE_GENERATED_AT, expiresAt: null, sourceUrl: null } as const;
+    const roles = goalieRoles(row, [goalie(1, 8), goalie(2, 2, projected)], { backToBacks: { "1:NJD": { order: 2, otherGameId: 2, otherOpponent: "TOR", weakerOpponent: true } } });
+    expect([...roles.values()]).toEqual([{ kind: "backup-projected", label: "Backup (Projected)", handle: null }, { kind: "projected", label: "PROJECTED", handle: "@GoalieReporter" }]);
+    expect(labels(goalieRoles(row, [goalie(1, 8, { ...projected, state: "confirmed" }), goalie(2, 2)], {}))).toEqual({ 1: "CONFIRMED", 2: "Backup" });
+    // The pipeline's own key names no account, so no handle is invented.
+    expect(sourceHandle({ ...projected, source: "validated_events" })).toBeNull();
+    expect(labels(goalieRoles({ ...row, conflicting: true }, [goalie(1, 8, projected), goalie(2, 2)], {}))).toEqual({ 1: "Conflicting reports", 2: "Conflicting reports" });
+  });
+  it("shows a projection only on the game it is for, never the team's other game", () => {
+    const base = FIXTURE_INPUT.confirmations!.evidence.assertions[1];
+    const nextGame = { ...base, gameId: 900012, teamId: teamsInfo.NJD.id, playerId: 7002, evidenceId: "obs-next" }, wrongGame = { ...base, gameId: 900011, teamId: teamsInfo.NJD.id, playerId: 7001, evidenceId: "obs-wrong" };
+    const { rows } = riskyStartsResult(buildGoalieInventory({ ...FIXTURE_INPUT, confirmations: { ...FIXTURE_INPUT.confirmations!, evidence: { assertions: [nextGame, wrongGame], conflicts: [] } } })).data as RiskyStartsData;
+    const roles = (gameId: number) => Object.fromEntries(rows.find(item => item.gameId === gameId && item.team === "NJD")!.goalies.map(entry => [entry.name, entry.role.label]));
+    expect(roles(900012)).toEqual({ "Éric Testeur": "Backup (Projected)", "Sam Relief": "PROJECTED" });
+    expect(Object.values(roles(900010))).not.toContain("PROJECTED");
+    expect(Object.values(roles(900010))).not.toContain("Backup (Projected)");
+  });
+  it("keeps every label's ink at WCAG AA against its fill", () => {
+    const luminance = (hex: string) => { const [r, g, b] = [1, 3, 5].map(index => parseInt(hex.slice(index, index + 2), 16) / 255).map(value => value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+    const ratio = (a: string, b: string) => { const [high, low] = [luminance(a), luminance(b)].sort((x, y) => y - x); return (high + 0.05) / (low + 0.05); };
+    for (const { fill, ink } of Object.values(ROLE_TONES)) expect(ratio(fill, ink)).toBeGreaterThanOrEqual(4.5);
+    expect(ratio("#b8c2cc", "#1a1d21")).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+describe("goalie records against an opponent", () => {
+  const tableClient = (rows: object[]) => {
+    const calls: string[] = [];
+    const chain: Record<string, unknown> = {};
+    for (const method of ["select", "eq", "gte", "lte", "in", "order", "range"]) chain[method] = () => chain;
+    chain.then = (resolve: (value: object) => void) => resolve({ data: rows, error: null, count: rows.length });
+    return { calls, from: (table: string) => { calls.push(table); return chain; } };
+  };
+  const split = (goalieId: number): RiskyGoalie => ({ goalieId, name: "", starts: 5, teamGames: 10, confirmation: { state: "none", source: null, observedAt: null, expiresAt: null, sourceUrl: null }, role: { kind: "split", label: "Split", handle: null } });
+  const appearance = (goalieId: number, opponent: string, wins: number, season = 20262027) => ({ goalie_id: goalieId, goalie_name: "", date: season === 20262027 ? "2026-10-20" : "2026-01-20", season_id: season, game_id: goalieId * 1000 + opponent.charCodeAt(0) + season % 7, team_abbreviation: "NJD", opponent_team_abbrev: opponent, home_road: "H", games_played: 1, games_started: 1, wins, losses: 1 - wins, ot_losses: 0 });
+  it("reads only for goalies still split, and sums decisions against that opponent only", async () => {
+    const decided = data.rows.map(entry => ({ ...entry, goalies: entry.goalies.map(item => ({ ...item, role: { kind: "likely-starter" as const, label: "LIKELY STARTER", handle: null } })) }));
+    const none = tableClient([]);
+    expect(await loadOpponentRecords(none as never, decided, 20262027, "2026-11-01")).toEqual({});
+    expect(none.calls).toEqual([]);
+    const reader = tableClient([appearance(1, "NYR", 1), appearance(1, "TOR", 1), appearance(2, "NYR", 0), appearance(1, "NYR", 1, 20252026)]);
+    const records = await loadOpponentRecords(reader as never, [{ ...data.rows[0], team: "NJD", opponent: "NYR", goalies: [split(1), split(2)] }], 20262027, "2026-11-01");
+    expect(reader.calls).toEqual(["wgo_goalie_stats", "wgo_goalie_stats"]);
+    // Last season counts too.
+    expect(records["1:NYR"]).toEqual({ wins: 2, losses: 0, otLosses: 0 });
+    expect(records["2:NYR"]).toEqual({ wins: 0, losses: 1, otLosses: 0 });
+    expect(records["1:TOR"]).toBeUndefined();
   });
 });
