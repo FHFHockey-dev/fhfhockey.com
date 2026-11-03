@@ -25,6 +25,7 @@ const mocks = vi.hoisted(() => {
   return {
     fetch: vi.fn(),
     expectedTeamId: 0,
+    latestProcessedDate: null as string | null,
     originalServiceRoleKey,
     originalSupabaseUrl,
     upsertedRows: [] as Array<Record<string, unknown>>,
@@ -62,7 +63,13 @@ vi.mock("@supabase/supabase-js", () => ({
         const builder = {
           select: () => builder,
           eq: () => builder,
-          limit: async () => ({ data: [], error: null }),
+          order: () => builder,
+          limit: async () => ({
+            data: mocks.latestProcessedDate
+              ? [{ date: mocks.latestProcessedDate }]
+              : [],
+            error: null,
+          }),
           upsert: async (
             rows: Record<string, unknown> | Array<Record<string, unknown>>,
           ) => {
@@ -249,6 +256,192 @@ describe("fetchWGOdata season-aware writer identity", () => {
       });
     },
   );
+});
+
+describe("fetchWGOdata NHL.com request resilience", () => {
+  const seasonId = 20262027;
+  const teamRecord = {
+    firstSeasonId: seasonId,
+    franchiseId: 40,
+    gameTypeId: 2,
+    lastSeasonId: seasonId,
+    teamId: 68,
+    teamName: "Utah Mammoth",
+    triCode: "UTA",
+  };
+  const season = {
+    id: seasonId,
+    formattedSeasonId: "2026-27",
+    startDate: "2026-10-07T00:00:00Z",
+    regularSeasonEndDate: "2027-04-15T00:00:00Z",
+    endDate: "2027-06-20T00:00:00Z",
+  };
+
+  function statusResponse(status: number) {
+    return {
+      ok: false,
+      status,
+      headers: { get: () => "text/html" },
+      json: async () => {
+        throw new Error("not JSON");
+      },
+    };
+  }
+
+  // Never answers; rejects only when the writer aborts the request.
+  function hangUntilAborted(init?: { signal?: AbortSignal }) {
+    return new Promise((_, reject) => {
+      init?.signal?.addEventListener("abort", () =>
+        reject(Object.assign(new Error("aborted"), { name: "AbortError" })),
+      );
+    });
+  }
+
+  type TeamResponder = (
+    endpoint: string,
+    date: string,
+    init?: { signal?: AbortSignal },
+  ) => unknown;
+
+  function installSources(teamResponder: TeamResponder) {
+    mocks.fetch.mockImplementation(
+      async (url: string, init?: { signal?: AbortSignal }) => {
+        if (url.includes("/season?")) {
+          return jsonResponse({ data: [season] });
+        }
+        if (url.includes("/franchise-team-totals")) {
+          return jsonResponse({ data: [teamRecord] });
+        }
+        const team = url.match(/\/team\/(\w+)\?/);
+        const date = url.match(/\d{4}-\d{2}-\d{2}/);
+        if (team && date) {
+          return teamResponder(team[1], date[0], init);
+        }
+        throw new Error(`Unexpected URL: ${url}`);
+      },
+    );
+  }
+
+  const teamDay = () =>
+    jsonResponse({
+      data: [{ franchiseId: teamRecord.franchiseId, gamesPlayed: 1 }],
+    });
+
+  function teamCalls(endpoint: string, date: string) {
+    return mocks.fetch.mock.calls.filter(
+      ([url]) => url.includes(`/team/${endpoint}?`) && url.includes(date),
+    ).length;
+  }
+
+  // Attach the expectation first so a rejection is never unhandled while
+  // the fake clock runs.
+  async function settle<T>(run: Promise<T>) {
+    const outcome = run.then(
+      () => null,
+      (error: Error) => error,
+    );
+    await vi.runAllTimersAsync();
+    return outcome;
+  }
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-11-03T12:00:00Z"));
+    vi.spyOn(console, "log").mockImplementation(() => undefined);
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    vi.spyOn(console, "time").mockImplementation(() => undefined);
+    vi.spyOn(console, "timeEnd").mockImplementation(() => undefined);
+    mocks.fetch.mockReset();
+    mocks.upsertedRows.length = 0;
+    mocks.expectedTeamId = teamRecord.teamId;
+  });
+
+  afterEach(() => {
+    mocks.latestProcessedDate = null;
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  it("retries a 524 and writes the date once NHL.com answers", async () => {
+    let powerPlayCalls = 0;
+    installSources((endpoint) => {
+      if (endpoint === "powerplay" && ++powerPlayCalls === 1) {
+        return statusResponse(524);
+      }
+      return teamDay();
+    });
+
+    const error = await settle(
+      main({ date: "2026-11-02", recent: false, allSeasons: true }),
+    );
+
+    expect(error).toBeNull();
+    expect(teamCalls("powerplay", "2026-11-02")).toBe(2);
+    expect(mocks.upsertedRows).toHaveLength(1);
+    expect(mocks.upsertedRows[0]).toMatchObject({ date: "2026-11-02" });
+  });
+
+  it("does not retry a 404", async () => {
+    installSources((endpoint) =>
+      endpoint === "powerplay" ? statusResponse(404) : teamDay(),
+    );
+
+    const error = await settle(
+      main({ date: "2026-11-02", recent: false, allSeasons: true }),
+    );
+
+    expect(teamCalls("powerplay", "2026-11-02")).toBe(1);
+    expect(error?.message).toContain("2026-11-02");
+    expect(error?.message).toContain("HTTP 404");
+    expect(mocks.upsertedRows).toHaveLength(0);
+  });
+
+  it("keeps going past a date that still fails and rejects naming it", async () => {
+    mocks.latestProcessedDate = "2026-11-01";
+    installSources((endpoint, date) => {
+      if (date === "2026-11-01" && endpoint === "powerplay") {
+        return statusResponse(524);
+      }
+      if (date === "2026-11-03") {
+        return jsonResponse({ data: [] });
+      }
+      return teamDay();
+    });
+
+    const error = await settle(main({ recent: true }));
+
+    expect(teamCalls("powerplay", "2026-11-01")).toBe(3);
+    expect(mocks.upsertedRows.map((row) => row.date)).toEqual(["2026-11-02"]);
+    expect(error?.message).toMatch(/failed for 1 date\(s\): 2026-11-01 \(/);
+    expect(error?.message).toContain("HTTP 524 after 3 attempts");
+    expect(error?.message).not.toContain("2026-11-02");
+  });
+
+  it("times out hung requests and reports dates the run budget cannot fit", async () => {
+    mocks.latestProcessedDate = "2026-10-30";
+    installSources((endpoint, date, init) =>
+      endpoint === "powerplay" ? hangUntilAborted(init) : teamDay(),
+    );
+
+    const error = await settle(main({ recent: true }));
+
+    // 63 s worst case per date inside a 210 s budget: three dates are tried.
+    for (const date of ["2026-10-30", "2026-10-31", "2026-11-01"]) {
+      expect(teamCalls("powerplay", date)).toBe(3);
+    }
+    for (const date of ["2026-11-02", "2026-11-03"]) {
+      expect(teamCalls("summary", date)).toBe(0);
+    }
+    expect(error?.message).toContain("failed for 5 date(s)");
+    expect(error?.message).toContain(
+      "no response within 20000 ms after 3 attempts",
+    );
+    expect(error?.message).toContain(
+      "2026-11-02 (not attempted, run time budget spent)",
+    );
+    expect(mocks.upsertedRows).toHaveLength(0);
+  });
 });
 
 describe("WGO franchise-team lineage contract", () => {
