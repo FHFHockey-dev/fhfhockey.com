@@ -143,7 +143,7 @@ const GROUP_STARTS = new Set(
   )
 );
 const isGroupStart = (index: number) => GROUP_STARTS.has(index);
-const SELECTABLE_METRICS = MATRIX_METRICS.map((metric) => metric.label).filter(
+const SELECTABLE_METRICS: WigoStatLabel[] = MATRIX_METRICS.map((metric) => metric.label).filter(
   (label) => label !== "GP"
 );
 

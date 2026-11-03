@@ -100,17 +100,15 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
 }) => {
   const [visibleAverages, setVisibleAverages] = useState<
     Record<AverageKey, boolean>
-  >(() => ({
-    STD: false,
-    LY: false,
-    "3YA": false,
-    CA: false,
-    L5: false,
-    L10: false,
-    L20: false,
+  >(() => {
     // The left comparison period starts on, as STD did.
-    ...(availableAverages.includes(leftTimeframe as AverageKey) ? { [leftTimeframe]: true } : { STD: true })
-  }));
+    const start = availableAverages.includes(leftTimeframe as AverageKey)
+      ? (leftTimeframe as AverageKey)
+      : "STD";
+    return Object.fromEntries(
+      availableAverages.map((key) => [key, key === start])
+    ) as Record<AverageKey, boolean>;
+  });
 
   const handleAverageToggle = (key: AverageKey) => {
     setVisibleAverages((prev) => ({ ...prev, [key]: !prev[key] }));
