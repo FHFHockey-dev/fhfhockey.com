@@ -522,7 +522,7 @@ export async function requestYahooSheetExport(args: {
   }
 }
 
-function getErrorStatus(error: any): number | null {
+export function getYahooErrorStatus(error: any): number | null {
   return (
     finiteNumber(error?.statusCode) ??
     finiteNumber(error?.status) ??
@@ -538,6 +538,10 @@ function getRetryAfterHeader(error: any): string | null {
 
   const value = headers?.["retry-after"] ?? headers?.["Retry-After"];
   return value == null ? null : String(value);
+}
+
+export function isYahooRateLimitError(error: unknown): boolean {
+  return getYahooErrorStatus(error) === 429;
 }
 
 export function getYahooRetryAfterMs(
@@ -557,7 +561,7 @@ export function getYahooRetryAfterMs(
 }
 
 export function isRetryableYahooError(error: unknown): boolean {
-  const status = getErrorStatus(error);
+  const status = getYahooErrorStatus(error);
   if (status === 429 || (status != null && status >= 500 && status <= 599)) {
     return true;
   }
@@ -591,6 +595,9 @@ export async function withYahooRetry<T>(
       }
 
       const retryAfterMs = getYahooRetryAfterMs(error);
+      // A local wait budget cannot shorten the provider's requested cooldown.
+      // Stop this operation when it cannot wait safely inside that budget.
+      if (retryAfterMs != null && retryAfterMs > maxDelayMs) throw error;
       const exponentialMs = Math.min(
         maxDelayMs,
         baseDelayMs * 2 ** (attempt - 1),
@@ -604,7 +611,7 @@ export async function withYahooRetry<T>(
       options.onRetry?.({
         attempt,
         delayMs,
-        rateLimited: getErrorStatus(error) === 429,
+        rateLimited: getYahooErrorStatus(error) === 429,
       });
       await sleep(delayMs);
     }

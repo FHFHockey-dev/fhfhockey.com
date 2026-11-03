@@ -1,10 +1,12 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
+  assessYahooPercentOwned,
   dedupeYahooPlayerPayloads,
+  persistYahooPlayerPayloadBatch,
   extractYahooPercentOwned,
   prepareYahooPlayerAtomicPayload,
 } from "./playerWriter";
@@ -391,5 +393,45 @@ describe("Yahoo player writer permissions", () => {
     expect(source).not.toContain('os.getenv("YFPY_LEAGUE_ID", "858")');
     expect(source).not.toContain("yahoo_api_credentials");
     expect(source).not.toContain("save_access_token_data_to_env_file");
+  });
+});
+
+
+describe("Yahoo ownership evidence and acknowledgment", () => {
+  it.each([
+    [undefined, "missing_percentage"], [null, "missing_percentage"],
+    [{ coverage_type: "week", week: 5, delta: "0" }, "missing_value"],
+    [[{ coverage_type: "week", week: 5 }, { delta: "0" }], "missing_value"],
+    [{ value: null }, "null_value"], [{ value: "" }, "invalid_value"],
+    [{ value: false }, "invalid_value"], [{ value: true }, "invalid_value"],
+    [{ value: "7garbage" }, "invalid_value"], [{ value: -1 }, "invalid_value"],
+    [{ value: 101 }, "invalid_value"], [{ value: Infinity }, "invalid_value"],
+    [[{ value: 0 }, { value: 10 }], "invalid_value"],
+  ])("keeps unavailable ownership %j distinct from observed zero", (input, reason) => {
+    expect(assessYahooPercentOwned(input)).toEqual({ value: null, reason });
+  });
+
+  it.each([0, "0", { value: 0 }, [{ value: "0" }], { Value: "37.5" }])
+    ("preserves explicit numeric ownership %j", input => {
+      expect(assessYahooPercentOwned(input).reason).toBe("observed");
+      expect(extractYahooPercentOwned(input)).toBe(input && typeof input === "object" && "Value" in input ? 37.5 : 0);
+    });
+
+  it.each([
+    { processed: 1, ownershipHistoryUpserted: 0, ownershipOmitted: 0, draftHistoryUpserted: 0 },
+    { processed: 1, ownershipHistoryUpserted: 1, ownershipOmitted: 1, draftHistoryUpserted: 0 },
+    { processed: 1, ownershipHistoryUpserted: 1, ownershipOmitted: 0, draftHistoryUpserted: -1 },
+    { processed: 1, ownershipHistoryUpserted: 1, ownershipOmitted: 0, draftHistoryUpserted: 0.5 },
+    { processed: 1, ownershipHistoryUpserted: 1, ownershipOmitted: 0, draftHistoryUpserted: 2 },
+  ])("rejects nonconserving or invalid RPC counts %j", async receipt => {
+    const rpc = vi.fn(async () => ({ data: receipt, error: null }));
+    const payload = prepareYahooPlayerAtomicPayload({ player_key: "477.p.1", percent_owned: { value: 0 } }, "2026-10-29", "477", 2026);
+    await expect(persistYahooPlayerPayloadBatch({ rpc } as any, [payload])).rejects.toThrow("receipt is invalid");
+  });
+
+  it("accepts acknowledged profile rows with genuinely unavailable ownership", async () => {
+    const rpc = vi.fn(async () => ({ data: { processed: 1, ownershipHistoryUpserted: 0, ownershipOmitted: 1, draftHistoryUpserted: 0 }, error: null }));
+    const payload = prepareYahooPlayerAtomicPayload({ player_key: "477.p.1", percent_owned: { delta: "0" } }, "2026-10-29", "477", 2026);
+    await expect(persistYahooPlayerPayloadBatch({ rpc } as any, [payload])).resolves.toMatchObject({ ownershipOmitted: 1 });
   });
 });

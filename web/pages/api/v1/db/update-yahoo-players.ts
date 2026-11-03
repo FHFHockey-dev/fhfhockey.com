@@ -11,6 +11,9 @@ import {
   extractYahooPlayerBatch,
   fetchCompleteYahooPlayerKeySnapshot,
   fetchYahooPublicJson,
+  getYahooRetryAfterMs,
+  getYahooErrorStatus,
+  isYahooRateLimitError,
   isYahooGameWeekSnapshotReceipt,
   isYahooSheetExportEligible,
   prepareYahooGameWeekSnapshot,
@@ -21,10 +24,12 @@ import {
 import { classifyYahooLifecycleError } from "lib/integrations/yahoo/lifecycleHealth";
 import type { Database } from "lib/supabase/database-generated.types";
 import {
+  assessYahooPercentOwned,
   dedupeYahooPlayerPayloads,
   persistYahooPlayerPayloadBatch,
   prepareYahooPlayerAtomicPayload,
   type YahooPlayerAtomicPayload,
+  type YahooOwnershipObservation,
 } from "lib/integrations/yahoo/playerWriter";
 
 async function getPlayerKeys(
@@ -47,6 +52,18 @@ async function getPlayerKeys(
   return Array.from(new Set(rows.map((row) => row.player_key).filter(Boolean)));
 }
 
+function yahooErrorCategory(error: unknown) {
+  const status = getYahooErrorStatus(error);
+  return status === 401 || status === 403 ? "token_failure" as const : classifyYahooLifecycleError(error);
+}
+
+function retryNotBeforeFrom(error: unknown): string | null {
+  const delay = getYahooRetryAfterMs(error);
+  if (delay == null) return null;
+  const date = new Date(Date.now() + delay);
+  return Number.isFinite(date.getTime()) ? date.toISOString() : null;
+}
+
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (!["GET", "POST"].includes(req.method || "")) {
     return res
@@ -63,6 +80,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
   let retries = 0;
   let rateLimitEvents = 0;
+  let acknowledgedPlayerRows = 0;
+  let ownershipHistoryUpserted = 0;
+  let draftHistoryUpserted = 0;
+  let ownershipOmitted = 0;
+  let unverifiedPlayerRows = 0;
+  let attemptedPlayerRows = 0;
+  let deferredRows = 0;
+  let retryNotBefore: string | null = null;
 
   try {
     // Allow explicit override of gameId via query or JSON body for one-off runs
@@ -241,6 +266,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     }
 
     const allRpcPayloads: YahooPlayerAtomicPayload[] = [];
+    const ownershipInputs = new Map<string, YahooOwnershipObservation>();
 
     const BATCH_SIZE = 25;
     const currentDate = format(new Date(), "yyyy-MM-dd");
@@ -261,6 +287,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       );
 
       try {
+        attemptedPlayerRows += batchKeys.length;
         const response = await withYahooRetry(
           () =>
             fetchYahooPublicJson(
@@ -291,6 +318,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           omitted += batchKeys.filter((key) => !returnedKeys.has(key)).length;
           players.forEach((playerData: any) => {
             if (!playerData?.player_key) return;
+            ownershipInputs.set(String(playerData.player_key), assessYahooPercentOwned(playerData.percent_owned));
             allRpcPayloads.push(
               prepareYahooPlayerAtomicPayload(
                 playerData,
@@ -313,9 +341,18 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         }
       } catch (error) {
         failedRows += batchKeys.length;
-        errorCategory ??= classifyYahooLifecycleError(error);
+        const category = yahooErrorCategory(error);
+        errorCategory ??= category;
         console.error(`Yahoo player batch failed at record ${i + 1}.`);
-        continue; // continue with next batch
+        const providerDelay = getYahooRetryAfterMs(error);
+        const rateLimited = isYahooRateLimitError(error);
+        if (rateLimited || (providerDelay != null && providerDelay > 0) || category === "token_failure") {
+          if (rateLimited) rateLimitEvents += 1;
+          deferredRows = playerKeys.length - i - batchKeys.length;
+          retryNotBefore = retryNotBeforeFrom(error);
+          break; // no new batches after a provider cooldown or denied access
+        }
+        continue;
       }
 
       await new Promise((r) =>
@@ -328,10 +365,25 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     // player_key (which includes the game/season prefix). This avoids
     // collapsing different-season entries that share the same player_id.
     const dedupedRpcPayloads = dedupeYahooPlayerPayloads(allRpcPayloads);
-    const providerComplete = failedRows === 0 && omitted === 0;
-    let ownershipHistoryUpserted = 0;
-    let draftHistoryUpserted = 0;
-    let ownershipOmitted = 0;
+    const providerComplete = failedRows === 0 && omitted === 0 && deferredRows === 0;
+    const ownershipDiagnostics = {
+      observed: 0, explicitZero: 0, unavailable: 0,
+      omissionReasons: { missing_percentage: 0, missing_value: 0, null_value: 0, invalid_value: 0 },
+      samples: [] as Array<{ playerKey: string; reason: string }>,
+    };
+    for (const payload of dedupedRpcPayloads) {
+      const observation = ownershipInputs.get(payload.player_key)!;
+      if (observation.reason === "observed") {
+        ownershipDiagnostics.observed += 1;
+        if (observation.value === 0) ownershipDiagnostics.explicitZero += 1;
+      } else {
+        ownershipDiagnostics.unavailable += 1;
+        ownershipDiagnostics.omissionReasons[observation.reason] += 1;
+        if (ownershipDiagnostics.samples.length < 5) ownershipDiagnostics.samples.push({
+          playerKey: payload.player_key, reason: observation.reason,
+        });
+      }
+    }
 
     if (dedupedRpcPayloads.length) {
       console.log(
@@ -346,7 +398,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           )}`,
         );
 
+        unverifiedPlayerRows = batch.length;
         const result = await persistYahooPlayerPayloadBatch(supabase, batch);
+        acknowledgedPlayerRows += result.processed;
+        unverifiedPlayerRows = 0;
         ownershipHistoryUpserted += result.ownershipHistoryUpserted;
         draftHistoryUpserted += result.draftHistoryUpserted;
         ownershipOmitted += result.ownershipOmitted;
@@ -386,21 +441,24 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
               },
             ]
           : [];
-      return res.status(200).json({
-        success: true,
+      return res.status(completeSnapshot ? 200 : 207).json({
+        success: completeSnapshot,
         status: completeSnapshot ? "success" : "partial",
         gameId,
         season: season ?? null,
         sourceRows: playerKeys.length,
-        processed: playerKeys.length,
+        processed: attemptedPlayerRows,
         succeeded: dedupedRpcPayloads.length,
         rowsUpserted: dedupedRpcPayloads.length,
         failedRows,
         omitted: omitted + ownershipOmitted,
         providerOmitted: omitted,
+        deferredRows,
+        retryNotBefore,
         ownershipOmitted,
         ownershipHistoryUpserted,
         draftHistoryUpserted,
+        ownershipDiagnostics,
         retries,
         rateLimitEvents,
         errorCategory,
@@ -415,25 +473,29 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         sheetExport,
         health,
         warnings,
-        message: `Processed ${dedupedRpcPayloads.length} players via RPC.`,
+        message: completeSnapshot ? `Processed ${dedupedRpcPayloads.length} players via RPC.`
+          : "Player profiles persisted, but Yahoo snapshot coverage is incomplete; omitted or deferred values remain unavailable.",
       });
     }
 
-    return res.status(failedRows > 0 ? 502 : 200).json({
-      success: failedRows === 0,
+    return res.status(failedRows > 0 ? 502 : 207).json({
+      success: false,
       status: failedRows > 0 ? "failure" : "partial",
       gameId,
       season: season ?? null,
       sourceRows: playerKeys.length,
-      processed: playerKeys.length,
+      processed: attemptedPlayerRows,
       succeeded: 0,
       rowsUpserted: 0,
       failedRows,
       omitted,
       providerOmitted: omitted,
+      deferredRows,
+      retryNotBefore,
       ownershipOmitted: 0,
       ownershipHistoryUpserted: 0,
       draftHistoryUpserted: 0,
+      ownershipDiagnostics,
       retries,
       rateLimitEvents,
       errorCategory,
@@ -453,7 +515,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     });
   } catch (error) {
     console.error("Yahoo player update failed.");
-    const errorCategory = classifyYahooLifecycleError(error);
+    const errorCategory = yahooErrorCategory(error);
+    if (isYahooRateLimitError(error)) rateLimitEvents += 1;
+    retryNotBefore ??= retryNotBeforeFrom(error);
     return res.status(500).json({
       success: false,
       status: "failure",
@@ -461,6 +525,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       retries,
       rateLimitEvents,
       message: "Yahoo player update failed",
+      retryNotBefore,
+      requiresReview: unverifiedPlayerRows > 0,
+      retrySafe: false,
+      persistenceAcknowledgement: {
+        state: unverifiedPlayerRows > 0 ? "unverified" : acknowledgedPlayerRows > 0 ? "partial_acknowledged" : "not_attempted",
+        acknowledgedPlayerRows, ownershipHistoryUpserted, draftHistoryUpserted, ownershipOmitted,
+        unverifiedPlayerRows,
+      },
     });
   }
 }
