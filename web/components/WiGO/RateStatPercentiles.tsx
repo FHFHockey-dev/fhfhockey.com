@@ -490,7 +490,8 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
               {/* One-page mode keeps the requested and applied seasons for screen readers; the chip says when they differ. */}
               {desktop ? (
                 <div className={styles.percentileContext}>
-                  Player GP: {selectedPlayerGp ?? "—"}
+                  {/* F and D are pooled by design (TJ, 2026-11-01); say so. */}
+                  Player GP: {selectedPlayerGp ?? "—"} · all skaters
                   <span className={styles.visuallyHidden}> · Requested {seasonId} · Applied {percentileCohort?.appliedSeasonId ?? seasonId}</span>
                 </div>
               ) : (
@@ -515,7 +516,8 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
                 <span>{stat.label}</span>
                 <strong>{available ? `${Math.round(percentile * 100)}%` : "—"}</strong>
                 <meter aria-label={`${stat.label} percentile`} min={0} max={100} value={available ? percentile * 100 : 0} />
-                <small>{rank != null ? <>{formatOrdinal(rank)}<span className={styles.visuallyHidden}> rank</span></> : "Rank unavailable"}</small>
+                {/* A sparse tile shows one dash, in the value; "Rank unavailable" overflows 3x6 at 1280 (E proto2). */}
+                <small>{rank != null ? <>{formatOrdinal(rank)}<span className={styles.visuallyHidden}> rank</span></> : <span className={styles.visuallyHidden}>Rank unavailable</span>}</small>
               </div>;
             })}
           </div> : <div className={styles.chartAndRanksArea}>

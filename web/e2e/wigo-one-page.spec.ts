@@ -143,6 +143,32 @@ test("the comparison band shows 36 metric columns by period with a DIFF row, and
   expect((await measure(page)).overflowing).toEqual([]);
 });
 
+test("the rate percentile slot holds two chips and sparse tiles on two filter lines at 1280×800", async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await open(page);
+  const panel = page.locator('[data-coverage="C19"]');
+  await expect(panel).toContainText("all skaters");
+  // Worst case (E, proto2): a second chip, and every tile sparse, as for a player with no rows.
+  await page.evaluate(() => {
+    const chips = document.querySelector('[data-coverage="C19"] [class*="thresholdChips"]')!;
+    const chip = chips.firstElementChild!.cloneNode(true) as HTMLElement;
+    chip.firstChild!.textContent = "GP 7 below min 10";
+    chips.appendChild(chip);
+    for (const tile of document.querySelectorAll('[data-coverage="C19"] [class*="percentileTile"]')) {
+      tile.querySelector("strong")!.textContent = "—";
+      tile.querySelector("small")!.innerHTML = '<span class="visuallyHidden-test" style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)">Rank unavailable</span>';
+    }
+  });
+  await expect(panel.locator("meter")).toHaveCount(16);
+  const title = await panel.locator("h3").boundingBox();
+  const slider = await panel.locator("#gpSlider").boundingBox();
+  expect(Math.abs(title!.y - slider!.y)).toBeLessThan(12);
+  const result = await measure(page);
+  expect(result.document).toEqual([1280, 800]);
+  expect(result.overflowing.filter(entry => entry.startsWith("C19"))).toEqual([]);
+});
+
 test("a long name and the no-player state stay on one 1280×800 screen", async ({ page }) => {
   test.setTimeout(120_000);
   await page.setViewportSize({ width: 1280, height: 800 });

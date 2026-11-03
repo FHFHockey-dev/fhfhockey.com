@@ -2268,9 +2268,22 @@
     display: flex;
     flex-direction: column;
     .mainContentWrapper { flex: 1; min-height: 0; }
-    .percentileFiltersContainer { padding: 2px 6px 0; gap: 1px; }
+    // Two lines: title, strength and a capped slider; then GP and chips.
+    .percentileFiltersContainer {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      column-gap: 10px;
+      row-gap: 1px;
+      padding: 2px 6px 0;
+    }
+    .filtersTitle { flex: 0 0 auto; width: auto; text-align: left; }
+    .filterControlsWrapper { flex: 1 1 0; flex-wrap: nowrap; min-width: 0; }
+    .gpSliderContainer { max-width: 180px; }
+    .percentileStatusRow { flex: 1 0 100%; }
     .filtersTitle { font-size: s.$text-11; letter-spacing: 0.06em; }
-    .filterControlsWrapper { flex-wrap: wrap; gap: 2px 10px; }
+    .filterControlsWrapper { gap: 2px 10px; }
     .strengthSelector { flex: 0 0 auto; }
     .gpSliderContainer { flex: 1 1 120px; min-width: 0; }
     .gpSlider { min-width: 0; flex: 1; }
