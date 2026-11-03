@@ -5,7 +5,7 @@ const supabaseOrigin = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || "http://s
 const editorToken = "e2e-fictional-editor-token";
 const pick = (nhlId: number, name: string, pct: number | null, chips: { hot?: boolean; shortSample?: boolean } = {}) => ({ nhlId, name, positions: "C", ownership: pct === null ? { state: "unknown", pct: null, asOf: null } : { state: "known", pct, asOf: "2026-10-31" }, games: chips.shortSample ? 3 : 5, fantasyPerGame: 3.2, score: 3.4, hot: !!chips.hot, shortSample: !!chips.shortSample });
 /** Evidence harness only: set to a folder to save before and after renders of the cards below. Unset in normal runs. */
-const renders = process.env.OFF_NIGHT_RENDER_DIR;
+const renders = process.env.OFF_NIGHT_RENDER_DIR, renderName = process.env.OFF_NIGHT_RENDER_PREFIX ?? "after";
 const OPPONENTS = ["BOS", "TOR", "MTL", "OTT", "DET", "BUF", "TBL", "FLA", "PIT", "PHI", "WSH", "CAR", "CBJ", "NYI"];
 
 function edition(dates: "rest-of-week" | "weekly", over: Record<string, unknown> = {}) {
@@ -62,8 +62,8 @@ test("off-night edge: dates refetch a recomputed order, chips and 0% print, gaps
   await expect(page.getByTestId("post-evidence")).toContainText("Top 2 of 2 teams with games");
   await expect(square).toHaveAttribute("data-export-token", /off-night-edge-rest-of-week\|off-night-edge\|/);
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeEnabled();
-  if (renders) await page.locator("main, body").first().screenshot({ path: `${renders}/after-rest-of-week-page.png` });
-  if (renders) await square.screenshot({ path: `${renders}/after-rest-of-week-card.png` });
+  if (renders) await page.locator("main, body").first().screenshot({ path: `${renders}/${renderName}-rest-of-week-page.png` });
+  if (renders) await square.screenshot({ path: `${renders}/${renderName}-rest-of-week-card.png` });
 
   // A changed setting reloads the post on its own, and export follows the new edition.
   await page.getByLabel("Dates").selectOption("weekly");
@@ -97,7 +97,7 @@ test("off-night edge: a past 14-day matchup prints its dates and past label, and
   expect(fit.wide).toBeLessThanOrEqual(1);
   expect(fit.overflow).toBeLessThanOrEqual(1);
   expect(fit.deadBand).toBeLessThanOrEqual(40);
-  if (renders) await square.screenshot({ path: `${renders}/after-14-day-card.png` });
+  if (renders) await square.screenshot({ path: `${renders}/${renderName}-14-day-card.png` });
 });
 
 test("off-night edge: the pager opens next week's matchup, labelled, and a week not published gives its reason", async ({ page }) => {

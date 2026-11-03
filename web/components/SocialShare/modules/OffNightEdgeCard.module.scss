@@ -13,7 +13,8 @@
 .pick { display: grid; gap: 1px; min-width: 0; b { font-size: 23px; font-weight: 600; } small { font-size: 16px; color: v.$text-secondary; } }
 .gap { display: block; font-size: 15px; line-height: 1.1; color: v.$text-secondary; }
 .chip { display: inline-block; margin-right: 5px; padding: 0 5px; border-radius: 3px; font-style: normal; font-weight: 700; font-size: 0.85em; letter-spacing: 0.03em; color: v.$background-dark; background: v.$text-secondary; }
-.chip[data-chip="hot"] { background: v.$warning-color; }
+/* TJ, 2026-11-03: red text and border on a see-through red fill. 15% keeps the text at 4.8:1 over the card (AA). */
+.chip[data-chip="hot"] { color: v.$danger-color; border: 1px solid v.$danger-color; background: rgba(v.$danger-color, 0.15); }
 .opponents { display: inline-flex; gap: 1px; }
 .opponent { display: block; width: 28px; height: 28px; object-fit: contain; }
 .opponentText { font-size: 11px; font-weight: 600; letter-spacing: 0; }

@@ -1,5 +1,7 @@
 import calcWeekScore from "components/GameGrid/utils/calcWeekScore";
+import { readFileSync } from "node:fs";
 import { createElement } from "react";
+import { compileString } from "sass";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import OffNightEdgeCard from "components/SocialShare/modules/OffNightEdgeCard";
@@ -179,6 +181,23 @@ describe("SS-1103-D pickups", () => {
     expect(rowOf(cold.data, team).picks.F).toMatchObject({ nhlId: 1, hot: false });
     const html = renderToStaticMarkup(createElement(OffNightEdgeCard, { data: hot.data!, settings: settings(), logos: {} }));
     expect(html).toContain('data-chip="hot">HOT</em>');
+  });
+  it("draws the HOT chip in red text and border on a see-through red fill, AA over the card", () => {
+    const file = "components/SocialShare/modules/OffNightEdgeCard.module.scss";
+    const css = compileString(readFileSync(file, "utf8"), { loadPaths: [".", "styles"] }).css;
+    const rule = css.match(/\.chip\[data-chip=["']?hot["']?\]\s*{([^}]*)}/)![1];
+    const hex = (value: string) => [1, 3, 5].map(index => parseInt(value.slice(index, index + 2), 16));
+    const text = hex(rule.match(/(?:^|;|\s)color:\s*(#[0-9a-f]{6})/i)![1]), border = hex(rule.match(/border:\s*1px solid\s*(#[0-9a-f]{6})/i)![1]);
+    const [, r, g, b, alpha] = rule.match(/background:\s*rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)/)!.map(Number);
+    expect(border).toEqual(text);
+    expect([r, g, b]).toEqual(text);
+    expect(alpha).toBeGreaterThan(0);
+    expect(alpha).toBeLessThan(1);
+    // Over the square's background ($background-dark), as the PNG draws it.
+    const square = hex(readFileSync("styles/vars.scss", "utf8").match(/\$background-dark:\s*(#[0-9a-f]{6})/i)![1]), fill = [r, g, b].map((channel, index) => alpha * channel + (1 - alpha) * square[index]);
+    const luminance = (rgb: number[]) => rgb.map(channel => channel / 255).map(c => c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4).reduce((sum, c, index) => sum + c * [0.2126, 0.7152, 0.0722][index], 0);
+    const [light, dark] = [luminance(text), luminance(fill)].sort((x, y) => y - x);
+    expect((light + 0.05) / (dark + 0.05)).toBeGreaterThanOrEqual(4.5);
   });
   it("uses a short sample only when no full sample qualifies, and chips it", () => {
     const team = topTeam();

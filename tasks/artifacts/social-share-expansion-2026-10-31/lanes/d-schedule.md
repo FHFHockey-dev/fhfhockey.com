@@ -112,3 +112,9 @@ All reads were single `SELECT`s through the Supabase MCP: aggregates, the writer
 
 **Not run:** the real loader. No real card with these picks has been rendered.
 
+## SS-1103-D2: red HOT chip (TJ, 2026-11-03)
+
+- **Chip:** solid `$danger-color` (#ff6384) text and a 1px border of the same color, on a 15% fill of it. Over the square's #1a1d21 the text measures 4.79:1, which passes AA for the chip's bold text at about 12 to 14px. A 20% fill would give 4.41:1, which fails.
+- **Test:** `offNightEdge.test.ts` compiles the card's SCSS and checks that the text, border and fill share one color, that the fill is translucent, and that the contrast over `$background-dark` is at least 4.5:1. 41 passed. eslint is clean and the pure check passed.
+- **Renders:** fixtures, not real data. A real render needs the full loader, which reads about 10,000 rows and calls the NHL schedule API, beyond bounded SELECTs. Port 3110 was already serving another session's isolated server, and Playwright reused it. Both tests passed: `ui-1103/off-night-edge/after2-rest-of-week-card.png`, `after2-rest-of-week-page.png` and `after2-14-day-card.png`. The spec's render hook now takes `OFF_NIGHT_RENDER_PREFIX`.
+
