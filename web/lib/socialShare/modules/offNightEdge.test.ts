@@ -228,6 +228,13 @@ describe("SS-1103-D late feed", () => {
     expect(whole.state).toBe("ready");
     expect(whole.evidence.sample).toMatch(/to 2026-10-28:/);
   });
+  it("is unavailable, not partial, when no night in the form window is fully reported", () => {
+    const team = topTeam(), fixture = world([{ id: 1, team }]);
+    const none = edge({ edition: edition(THURSDAY, "rest-of-week"), settings: settings(), ...fixture, appearances: fixture.appearances.filter(row => row.team !== "ZZZ"), scheduled: scheduledOf(fixture) });
+    expect(none.state).toBe("missing");
+    expect(none.data).toBeNull();
+    expect(none.reasons?.[0]).toMatch(/^No night from 2026-10-08 to 2026-10-28 is fully reported/);
+  });
 });
 
 describe("6.3 ownership states", () => {

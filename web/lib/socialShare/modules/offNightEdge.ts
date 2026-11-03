@@ -255,7 +255,7 @@ export const offNightPeriodMissing = (reasons: string[]) => unready("missing", r
  * TJ's late-feed rule (2026-11-03): when only the newest nights lack skater rows, the form window ends at the last
  * complete night and the post stays exportable, with a page note. An older gap stays in the window and keeps it partial.
  */
-export function offNightCompleteThrough<T extends { appearances: readonly SkaterAppearance[]; gameIds: readonly number[]; through: string }>(input: T, scheduled: readonly { id: number; date: string }[]): { input: T; pageNotes: string[] } {
+export function offNightCompleteThrough<T extends { appearances: readonly SkaterAppearance[]; gameIds: readonly number[]; through: string }>(input: T, scheduled: readonly { id: number; date: string }[]): { input: T; pageNotes: string[]; unavailable?: true } {
   const teams = new Map<number, Set<string>>(), nights = new Map<string, NightCoverage>();
   for (const row of input.appearances) if (row.team) teams.set(row.gameId, (teams.get(row.gameId) ?? new Set()).add(row.team));
   for (const game of scheduled) {
@@ -263,8 +263,9 @@ export function offNightCompleteThrough<T extends { appearances: readonly Skater
     nights.set(game.date, { ...night, expected: night.expected + 2, observed: night.observed + Math.min(2, teams.get(game.id)?.size ?? 0) });
   }
   const result = completeThrough([...nights.values()], input.through), note = completeThroughNote(result);
-  // No complete night at all leaves the window whole, and its coverage reason keeps the post partial.
-  if (!result.through || !note) return { input, pageNotes: [] };
+  // No complete night at all: there is no form to judge pickups by.
+  if (!result.through) return { input, pageNotes: [], unavailable: true };
+  if (!note) return { input, pageNotes: [] };
   const through = result.through, kept = new Set(scheduled.filter(game => game.date <= through).map(game => game.id));
   return { input: { ...input, through, gameIds: input.gameIds.filter(id => kept.has(id)), appearances: input.appearances.filter(row => row.date <= through) }, pageNotes: [note] };
 }
@@ -272,10 +273,14 @@ export function offNightCompleteThrough<T extends { appearances: readonly Skater
 export function buildOffNightEdge(full: { edition: OffNightEditions; window: PeriodWindow; settings: OffNightSettings; appearances: readonly SkaterAppearance[]; yahoo: readonly OffNightYahooRow[]; map: readonly ShareMapRow[]; gameIds: readonly number[]; from: string; through: string;
   /** The regular-season games behind `gameIds`, with dates: given, a late newest night is cut rather than blocking export. */
   scheduled?: readonly { id: number; date: string }[] }): SharePostLoadResult<OffNightData> {
-  const { input, pageNotes: lateNotes } = full.scheduled ? offNightCompleteThrough(full, full.scheduled) : { input: full, pageNotes: [] };
+  const { input, pageNotes: lateNotes, unavailable } = full.scheduled ? offNightCompleteThrough(full, full.scheduled) : { input: full, pageNotes: [] };
   const { settings } = input, editions = editionsOf(input.edition), first = editions[0], last = editions[editions.length - 1];
   const gated = offNightScheduleGate(editions);
   if (gated) return gated;
+  if (unavailable) {
+    const reason = `No night from ${input.from} to ${input.through} is fully reported, so recent form cannot pick anyone.`;
+    return unready("missing", [reason], [scheduleSource(editions), { name: "NHL.com game stats", tables: ["wgo_skater_stats", "games"], state: "missing", asOf: null, updatedAt: null }], reason);
+  }
   const dates: OffNightDates = settings.period === OFF_NIGHT_THIS_WEEK ? settings.dates : "weekly";
   const schedule = offNightSchedule(editions, dates), today = editionDate(first.generatedAt);
   const window: OffNightWindow = { kind: input.window.kind, week: input.window.week, from: input.window.from, through: input.window.through, label: input.window.label, past: input.window.through < today, playedIncluded: dates === "weekly" && input.window.from < today && input.window.through >= today, upcoming: offNightUpcoming(input.window, first.generatedAt) };

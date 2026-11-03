@@ -108,7 +108,7 @@ All reads were single `SELECT`s through the Supabase MCP: aggregates, the writer
 - **Browser:** port 3110, `PLAYWRIGHT_ISOLATED_NEXT=1`, fictional editions. The 14-day fit test passed, with chips and logos in place. The default card test reached its render and page-note assertions, then failed at "Refresh post". Another session's uncommitted `PostStudio.tsx` work had removed that button, and the same churn broke the pager and old-link tests (duplicate "Dates" label, detached frames). Those runs are **blocked**, not failed on this change.
 - **Renders** in `ui-1103/off-night-edge/`: before and after of the rest-of-week card and page, and of the 14-day card. The 14-day before is from the 11-01 run of the same fixture.
 
-- **Late feed (item 5, after `387a6df7f`):** when only the newest nights lack skater rows, the form window ends at the last complete night through `completeThrough`, stays exportable, and adds its page note. An older gap stays partial. The loader now reads `games` with `id,date`. 2 more tests pass, 39 in `offNightEdge.test.ts`.
+- **Late feed (item 5, after `387a6df7f`):** when only the newest nights lack skater rows, the form window ends at the last complete night through `completeThrough`, stays exportable, and adds its page note. An older gap stays partial. No complete night in the window gives `missing` with a reason (Chef, 11-03). The rule applies to the form window only, never to schedule weeks. The loader now reads `games` with `id,date`. `offNightEdge.test.ts`: 40 passed.
 
 **Not run:** the real loader. No real card with these picks has been rendered.
 
