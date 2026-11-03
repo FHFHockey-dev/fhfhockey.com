@@ -89,6 +89,10 @@ interface WigoPercentilesSectionProps {
   seasonId: number | null;
   minGp: number;
   onMinGpChange: (minGp: number) => void;
+  // Phone tab only: the radar, ratings and drivers join the rate percentiles.
+  selectedPlayer?: Player | null;
+  teamIdForLog?: number | null;
+  teamAbbreviation?: string | null;
 }
 
 interface WigoComparisonSectionProps {
@@ -225,6 +229,38 @@ function WigoDashboardHeaderBody({
   );
 }
 
+// Ratings and drivers sit in the desktop top block and on the phone's
+// Percentiles tab (PLAN section 4); one panel each, with the same help.
+function WigoRatingsPanel({
+  selectedPlayer,
+  currentSeasonId,
+  minGp
+}: Pick<WigoOverviewSectionProps, "selectedPlayer" | "currentSeasonId" | "minGp">) {
+  return (
+    <div className={styles.ratingsContainer} data-coverage="C07">
+      <WigoSectionCard title="Player ratings" toolbar={<WigoHelp label="Player rating methodology and cohort"><p>Weighted percentile composites, using the existing {currentSeasonId ? formatSeasonRange(currentSeasonId) : "current-season"} cohorts and minimum {minGp} GP. Overall All/Even combines offense and defense. Special combines PP offense and PK defense with ice-time weighting. Adjust the rate panel’s minimum GP to change the cohort. A stat needs at least {WIGO_RATING_MIN_COHORT_PEERS} other qualifying players; with fewer, its rating shows “-”. All needs all-situations data; while that is empty, All shows “-” and Overall uses Even and Special.</p></WigoHelp>}>
+        <PlayerRatingsDisplay playerId={selectedPlayer?.id} seasonId={currentSeasonId} minGp={minGp} />
+      </WigoSectionCard>
+    </div>
+  );
+}
+
+function WigoDriversPanel({
+  selectedPlayer,
+  teamIdForLog,
+  teamAbbreviation,
+  currentSeasonId
+}: Pick<WigoOverviewSectionProps, "selectedPlayer" | "teamIdForLog" | "teamAbbreviation" | "currentSeasonId">) {
+  return (
+    <div className={styles.teamDriversSummary} data-coverage="C08 C09 C10 C11"><TeamPerformanceDrivers
+      teamId={teamIdForLog}
+      teamAbbreviation={teamAbbreviation}
+      seasonId={currentSeasonId}
+      hasPlayer={!!selectedPlayer}
+    /></div>
+  );
+}
+
 function WigoOverviewSectionBody({
   selectedPlayer,
   headshotUrl,
@@ -261,28 +297,8 @@ function WigoOverviewSectionBody({
           hasPlayer={!!selectedPlayer}
         />
       </div>
-      <div className={styles.ratingsContainer} data-coverage="C07">
-        {desktop ? <WigoSectionCard title="Player ratings" toolbar={<WigoHelp label="Player rating methodology and cohort"><p>Weighted percentile composites, using the existing {currentSeasonId ? formatSeasonRange(currentSeasonId) : "current-season"} cohorts and minimum {minGp} GP. Overall All/Even combines offense and defense. Special combines PP offense and PK defense with ice-time weighting. Adjust the rate panel’s minimum GP to change the cohort. A stat needs at least {WIGO_RATING_MIN_COHORT_PEERS} other qualifying players; with fewer, its rating shows “-”. All needs all-situations data; while that is empty, All shows “-” and Overall uses Even and Special.</p></WigoHelp>}>
-          <PlayerRatingsDisplay playerId={selectedPlayer?.id} seasonId={currentSeasonId} minGp={minGp} />
-        </WigoSectionCard> : <>
-        {selectedPlayer ? (
-          <PlayerRatingsDisplay
-            playerId={selectedPlayer.id}
-            seasonId={currentSeasonId}
-            minGp={minGp}
-          />
-        ) : (
-          <div className={styles.chartLoadingPlaceholder}>
-            Select a player
-          </div>
-        )}</>}
-      </div>
-      <div className={styles.teamDriversSummary} data-coverage="C08 C09 C10 C11"><TeamPerformanceDrivers
-        teamId={teamIdForLog}
-        teamAbbreviation={teamAbbreviation}
-        seasonId={currentSeasonId}
-        hasPlayer={!!selectedPlayer}
-      /></div>
+      {desktop && <WigoRatingsPanel selectedPlayer={selectedPlayer} currentSeasonId={currentSeasonId} minGp={minGp} />}
+      {desktop && <WigoDriversPanel selectedPlayer={selectedPlayer} teamIdForLog={teamIdForLog} teamAbbreviation={teamAbbreviation} currentSeasonId={currentSeasonId} />}
     </>
   );
 }
@@ -306,7 +322,7 @@ function WigoTrendsSectionBody({
             <ChartLoadingPlaceholder message="Select a player" />
           )}
         </div>
-        <div className={styles.percentileChartContainer} data-coverage="C15">
+        {summaryOnly && <div className={styles.percentileChartContainer} data-coverage="C15">
           <div className={styles.chartTitle}>
             <h3 style={{ margin: 0 }}>Category percentiles</h3>
             {summaryOnly && <span className={styles.radarContext}>All skaters · {currentSeasonId ? formatSeasonRange(currentSeasonId) : "Season unavailable"} · 0–100</span>}
@@ -320,7 +336,7 @@ function WigoTrendsSectionBody({
           ) : (
             <ChartLoadingPlaceholder message="Select a player" />
           )}
-        </div>
+        </div>}
       </div>}
       {!summaryOnly && <><div className={styles.toiChartContainer} data-coverage="C16">
         <ToiLineChart
@@ -350,8 +366,11 @@ function WigoPercentilesSectionBody({
   minGp,
   onMinGpChange,
   desktop = false,
+  selectedPlayer = null,
+  teamIdForLog = null,
+  teamAbbreviation = null,
 }: WigoPercentilesSectionProps) {
-  return (
+  const ratePercentiles = (
     <div className={styles.rateStatBarPercentilesContainer} data-coverage="C19">
       <RateStatPercentiles
         playerId={playerId}
@@ -361,6 +380,25 @@ function WigoPercentilesSectionBody({
         desktop={desktop}
       />
     </div>
+  );
+  if (desktop) return ratePercentiles;
+  return (
+    <>
+      <div className={styles.percentileChartContainer} data-coverage="C15">
+        <div className={styles.chartTitle}>
+          <h3 style={{ margin: 0 }}>Category percentiles</h3>
+          <span className={styles.radarContext}>All skaters · {seasonId ? formatSeasonRange(seasonId) : "Season unavailable"} · 0–100</span>
+        </div>
+        {selectedPlayer ? (
+          <CategoryCoverageChart playerId={selectedPlayer.id} timeOption="SEASON" />
+        ) : (
+          <ChartLoadingPlaceholder message="Select a player" />
+        )}
+      </div>
+      {ratePercentiles}
+      <WigoRatingsPanel selectedPlayer={selectedPlayer} currentSeasonId={seasonId} minGp={minGp} />
+      <WigoDriversPanel selectedPlayer={selectedPlayer} teamIdForLog={teamIdForLog} teamAbbreviation={teamAbbreviation} currentSeasonId={seasonId} />
+    </>
   );
 }
 

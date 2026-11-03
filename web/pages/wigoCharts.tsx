@@ -249,6 +249,9 @@ const WigoCharts: React.FC = () => {
                 seasonId={currentSeasonId}
                 minGp={minGp}
                 onMinGpChange={setMinGp}
+                selectedPlayer={selectedPlayer}
+                teamIdForLog={teamIdForLog}
+                teamAbbreviation={teamAbbreviation}
               />
             )}
 

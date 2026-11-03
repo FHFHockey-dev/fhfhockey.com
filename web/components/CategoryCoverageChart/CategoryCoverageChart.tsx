@@ -109,16 +109,16 @@ function CategoryCoverageChart({
 
         chart.ctx.font =
           size.screen === BreakPoint.l
-            ? "700 16px Roboto Condensed"
-            : "100 10px Roboto";
+            ? "700 16px Roboto Condensed, sans-serif"
+            : "700 12px Roboto Condensed, sans-serif"; // 11 px floor; generic fallback
         chart.ctx.fillStyle = "white";
         chart.ctx.fillText(LABELS[i].label, x, y);
 
         // draw percentage
         chart.ctx.font =
           size.screen === BreakPoint.l
-            ? "400 14px Roboto Condensed"
-            : "700 12px Roboto";
+            ? "400 14px Roboto Condensed, sans-serif"
+            : "700 12px Roboto Condensed, sans-serif";
 
         chart.ctx.fillStyle = "rgba(76, 167, 221, 1)";
         dataset[i] && chart.ctx.fillText(`${dataset[i].toFixed(1)}`, x, y - 16);

@@ -2872,6 +2872,11 @@
       left: 52px;
     }
   }
+  // Phone Percentiles tab (U11): the ratings card has a header now, so it
+  // needs the room for three rows of boxes.
+  .ratingsContainer {
+    height: 260px;
+  }
   .selectedStatPanel {
     height: 280px;
     display: flex;
