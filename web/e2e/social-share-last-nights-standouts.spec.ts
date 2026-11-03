@@ -326,7 +326,7 @@ const slateBody = (query: URLSearchParams) => {
 };
 test("the slate chooser steps back, clears picks, and the card's date and wording follow", async ({ page }) => {
   await open(page, "&view=all&picks=1,2", slateBody);
-  const square = page.getByTestId("share-square"), refresh = page.getByRole("button", { name: "Refresh post" });
+  const square = page.getByTestId("share-square");
   await expect(page.getByTestId("slate-label")).toHaveText("Oct 31");
   await expect(page.getByTestId("slate-next")).toBeDisabled();
   await expect(page.getByTestId("standouts-legend")).toContainText("Last night, then STD");
@@ -339,7 +339,6 @@ test("the slate chooser steps back, clears picks, and the card's date and wordin
   await expect(page).toHaveURL(new RegExp(`slate=${OLD_SLATE}`));
   await expect(page.getByTestId("slate-previous")).toBeDisabled();
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
-  await refresh.click();
 
   await expect(page.getByTestId("standouts-blank")).toBeVisible();
   await expect(page.getByTestId("standouts-view")).toContainText("Oct 26");
@@ -360,12 +359,10 @@ test("the slate chooser steps back, clears picks, and the card's date and wordin
 test("a date with no games shows the reason, cannot export, and keeps the chooser", async ({ page }) => {
   await open(page, "&view=all", slateBody);
   await page.getByTestId("slate-date").fill(NO_GAME_DATE);
-  await page.getByRole("button", { name: "Refresh post" }).click();
   await expect(page.getByTestId("post-unavailable")).toContainText("No games on Oct 28");
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
   await expect(page.getByTestId("slate-next")).toBeEnabled();
   await page.getByTestId("slate-next").click();
-  await page.getByRole("button", { name: "Refresh post" }).click();
   await expect(page.getByTestId("slate-label")).toHaveText("Oct 31");
   await expect(page.getByTestId("standouts-blank")).toBeVisible();
   await expect(page.getByTestId("share-square").locator("h2")).toHaveText("LAST NIGHTS STANDOUTS");

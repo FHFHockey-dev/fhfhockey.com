@@ -8,9 +8,9 @@ type Props = {
   entry: AnyShareModule; control: PeriodControlConfig; settings: ShareSettings; disabled: boolean;
   /** The loaded edition: each new one rereads the calendar, and the pager's blank week and limits use the cutoff it was built against. */
   edition: SharePostSnapshot | null;
-  /** Sets a field and waits for Refresh, as the settings form does. */
+  /** Sets a typed field, as the settings form does: the post reloads after a pause, once the value is valid. */
   change: (field: ShareSettingField, text: string) => void;
-  /** Sets fields and loads their edition at once. */
+  /** Sets fields and loads their edition at once, unless the post refuses them. */
   apply: (changes: ShareSettings) => void;
 };
 
@@ -41,8 +41,8 @@ export default function PeriodControl({ entry, control, settings, disabled, edit
   };
 
   return <div className={styles.period} data-testid="period-control">
-    <label>{period.label}
-      <select value={current.period} disabled={disabled} onChange={event => event.target.value === PERIOD_CUSTOM ? change(period, event.target.value) : apply({ period: event.target.value })}>
+    <label className={styles.field}><span>{period.label}</span>
+      <select value={current.period} disabled={disabled} onChange={event => apply({ period: event.target.value })}>
         {period.kind === "select" && period.options.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
       </select>
     </label>
@@ -57,10 +57,10 @@ export default function PeriodControl({ entry, control, settings, disabled, edit
       {calendar?.reasons.map(reason => <p key={reason} className={styles.defaultNote} data-testid="period-skipped">{reason}</p>)}
     </div>}
     {current.period === PERIOD_CUSTOM && <>
-      {["start", "end"].map(id => <label key={id}>{field(id).label}
-        <input type="date" min={limits?.min} max={limits?.max} value={(settings[id] as string | null) ?? ""} disabled={disabled} onChange={event => change(field(id), event.target.value)} />
+      {["start", "end"].map(id => <label key={id} className={styles.field}><span>{field(id).label}</span>
+        <input type="date" min={limits?.min} max={limits?.max} value={(settings[id] as string | null) ?? ""} disabled={disabled} aria-invalid={customReason ? true : undefined} aria-describedby={customReason ? "period-reason" : undefined} onChange={event => change(field(id), event.target.value)} />
       </label>)}
-      {customReason && <p className={styles.defaultNote} data-testid="period-reason">{customReason}</p>}
+      {customReason && <p id="period-reason" className={styles.problem} data-testid="period-reason">{customReason}</p>}
     </>}
   </div>;
 }

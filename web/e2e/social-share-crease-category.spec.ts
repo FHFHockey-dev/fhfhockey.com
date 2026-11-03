@@ -177,7 +177,8 @@ async function servePeriods(page: Page) {
     requested.push(query.get("week"));
     const settings = { ...periodSettings, week: query.get("week") ? number : null, period: query.get("period") ?? "week", start: query.get("start"), end: query.get("end") };
     const games = number === 4 ? { appearances, reported, scheduled } : { appearances: [], reported: [], scheduled: [] };
-    return route.fulfill({ json: edition("goalie-period", settings, buildGoaliePeriod({ settings, period: weekPeriod(chosen, "2026-10-28"), tgv, adp, ...games })) });
+    // Built on Oct 29, so the pager's cutoff is Oct 28 whatever today is; it still expires ten minutes from now.
+    return route.fulfill({ json: { ...edition("goalie-period", settings, buildGoaliePeriod({ settings, period: weekPeriod(chosen, "2026-10-28"), tgv, adp, ...games })), generatedAt: "2026-10-29T16:00:00.000Z" } });
   });
   return requested;
 }
@@ -218,12 +219,13 @@ test("period control: the pager pages matchups by keyboard, updates the URL and 
   await expect(label).toHaveText("Week 5 · Oct 26 to Nov 1");
 });
 
-test("period control: custom dates show only for Custom, and export waits for a Refresh", async ({ page }) => {
+test("period control: custom dates show only for Custom, a bad range is never sent, and a good one loads on its own", async ({ page }) => {
   await install(page);
-  await servePeriods(page);
+  const requested = await servePeriods(page);
   await page.goto("/social-share/posts?post=goalie-period&week=4");
   const start = page.getByLabel("Custom range start"), end = page.getByLabel("Custom range end"), downloadButton = page.getByRole("button", { name: "Download PNG", exact: true });
   await expect(downloadButton).toBeEnabled();
+  const loads = requested.length;
   await expect(start).toHaveCount(0);
   await page.getByTestId("period-control").locator("select").selectOption("custom");
   await expect(page.getByTestId("period-pager-label")).toHaveCount(0);
@@ -233,12 +235,13 @@ test("period control: custom dates show only for Custom, and export waits for a 
   await start.fill("2026-10-22");
   await end.fill("2026-10-19");
   await expect(page.getByTestId("period-reason")).toHaveText("The start date must be before the end date.");
+  expect(requested).toHaveLength(loads);
   await end.fill("2026-10-25");
   await expect(page.getByTestId("period-reason")).toHaveCount(0);
   await expect(page).toHaveURL(/period=custom/);
   await expect(page).toHaveURL(/start=2026-10-22/);
   await expect(page).toHaveURL(/end=2026-10-25/);
-  await expect(downloadButton).toBeDisabled();
+  await expect.poll(() => requested.length).toBe(loads + 1);
   await page.getByTestId("period-control").locator("select").selectOption("week");
   await expect(page.getByTestId("period-pager-label")).toHaveText("Week 4 · Oct 19 to Oct 25");
   await expect(downloadButton).toBeEnabled();

@@ -92,7 +92,6 @@ test("all four views rank, retitle, fit the square and can export", async ({ pag
   for (const view of views) {
     await page.locator("label", { hasText: /^Ranking/ }).locator("select").selectOption({ label: view.basis === "Per Game" ? "Per Game (min 2 GP)" : view.basis });
     await page.locator("label", { hasText: /^Formula/ }).locator("select").selectOption({ label: `${view.formula}: ${view.formula === "Standard" ? "" : "2 x "}PTS + BLK + SOG + HIT` });
-    await page.getByRole("button", { name: "Refresh post", exact: true }).click();
     await expect(square.locator("h2")).toHaveText(view.headline);
     await expect(square).toContainText(view.rule);
     await expect(square.getByTestId("multi-cat-panel")).toHaveCount(4);
@@ -163,7 +162,6 @@ test("an odd board leaves no empty quadrant, and an empty one says why and canno
   await page.unrouteAll();
   await open(page, seasonOf([game(1, "2026-10-27")]));
   await page.locator("label", { hasText: /^Ranking/ }).locator("select").selectOption({ label: "Per Game (min 2 GP)" });
-  await page.getByRole("button", { name: "Refresh post", exact: true }).click();
   await expect(page.getByTestId("share-square")).toContainText("No skater has 2 GP this fantasy week yet");
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
 });
@@ -195,7 +193,6 @@ test("the period control ranks a past matchup, a long matchup and a custom range
   await period.locator("select").selectOption({ label: "Custom range" });
   await period.locator("label", { hasText: "start" }).locator("input").fill("2026-10-14");
   await period.locator("label", { hasText: "end" }).locator("input").fill("2026-10-28");
-  await page.getByRole("button", { name: "Refresh post", exact: true }).click();
   await expect(square.locator("h2")).toHaveText("TOP MULTI-CAT STARS");
   await expect(square).toContainText("Oct 14 to Oct 28");
   await expect(panels.first().getByTestId("multi-cat-score")).toContainText("TOTAL");

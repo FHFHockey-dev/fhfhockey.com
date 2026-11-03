@@ -113,10 +113,7 @@ test("BSH Board risers and fallers state their comparison side by side, and stal
     return edition("bsh-board", active, buildBshBoard(fictional, active));
   });
   await page.locator("label", { hasText: /^View/ }).locator("select").selectOption("movers");
-  // The view changed but the edition did not: the old data must not ship under the new label.
-  await expect(page.getByTestId("share-square")).toContainText("Refresh this post");
-  await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
-  await page.getByRole("button", { name: "Refresh post", exact: true }).click();
+  // The view reloads the post on its own.
   const square = page.getByTestId("share-square");
   await expect(square).toContainText("L10 vs previous 10");
   await expect(page.getByTestId("post-evidence")).toContainText("the previous 10 appearances");
@@ -143,7 +140,6 @@ test("Multi Cat Monsters prints percentiles and a score, and Points-First is its
   const title = square.getByRole("heading", { level: 2 });
   await expect(title).toHaveText("POINTS-FIRST MULTI CAT MONSTERS");
   expect(await title.evaluate(heading => heading.getBoundingClientRect().height <= parseFloat(getComputedStyle(heading).lineHeight) * 1.2)).toBe(true);
-  await page.getByRole("button", { name: "Refresh post", exact: true }).click();
   await expect(square).toContainText("(2×PTS + SOG + HITS + BLK) / 5");
   await expect(square).toContainText("Points P85+ only.");
   await expectFits(page);
@@ -185,7 +181,6 @@ test("BSH Board risers and fallers fill the body with no clipping at 7 rows a si
   const active = bshSettings({ view: "movers" });
   await open(page, "bsh-board", () => edition("bsh-board", active, buildBshBoard(moving, active)));
   await page.locator("label", { hasText: /^View/ }).locator("select").selectOption("movers");
-  await page.getByRole("button", { name: "Refresh post", exact: true }).click();
   await expect(page.getByTestId("change-row")).toHaveCount(14);
   await expectMoversFit(page);
 });
@@ -215,7 +210,6 @@ test("A board nobody clears says so and cannot export", async ({ page }) => {
   const nobody = floorSettings({ xSog: 10 });
   await open(page, "nightly-floor", () => edition("nightly-floor", nobody, buildNightlyFloor(fictional, nobody, ownership)));
   await page.locator("label", { hasText: /^SOG X/ }).locator("input").fill("10");
-  await page.getByRole("button", { name: "Refresh post", exact: true }).click();
   await expect(page.getByTestId("share-square")).toContainText("No skater meets this test");
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
 });
@@ -272,7 +266,6 @@ for (const { post, body } of BOARDS) {
     await expect(page.getByTestId("period-reason")).toContainText("needs a start date and an end date");
     await control.getByLabel("Custom range start").fill("2026-10-02");
     await control.getByLabel("Custom range end").fill("2026-10-09");
-    await page.getByRole("button", { name: "Refresh post" }).click();
     await expect(square).toContainText(RANGE_LABEL);
     await expectFits(page);
     await page.reload();

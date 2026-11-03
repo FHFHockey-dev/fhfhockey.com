@@ -1,9 +1,41 @@
 @use "styles/vars" as v;
 
-.fields { display: flex; flex-wrap: wrap; gap: v.$space-sm; align-items: flex-end; margin-top: v.$space-sm; }
+/* Settings: the post and its state, then Timeframe and Options groups. Labels sit above their controls. */
+.settings { display: grid; gap: v.$space-md; }
+.postRow { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: v.$space-sm;
+  .field { flex: 0 1 22rem; }
+}
+/* A field is its label (wrapping the control, so specs and screen readers find it by the label) and any note under it. */
+.field { display: grid; gap: v.$space-xs; align-content: start; min-width: 0;
+  > label { display: grid; gap: v.$space-xs; min-width: 0; }
+  > span, > label > span { color: v.$text-primary; font-size: v.$font-size-sm; font-weight: 600; }
+  input, select { width: 100%; }
+  input[aria-invalid="true"] { border-color: v.$warning-color; }
+}
+.field[data-wide] { grid-column: 1 / -1; max-width: 32rem; }
+/* A select with long option names takes two columns where two fit, so its choice is not cut off. */
+@media (min-width: 340px) { .field[data-roomy] { grid-column: span 2; } }
+.summary { max-width: 75ch; margin-top: -(v.$space-sm); color: v.$text-secondary; font-size: v.$font-size-sm; line-height: 1.4; }
+.sync { display: flex; align-items: center; gap: v.$space-xs; min-height: v.$touch-target-min; color: v.$text-secondary; font-size: v.$font-size-sm; font-variant-numeric: tabular-nums; }
+.sync:not(:empty)::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.sync[data-state="ready"]::before { background: v.$success-color; }
+.sync[data-state="loading"]::before { background: v.$primary-color; animation: syncPulse 1s ease-in-out infinite alternate; }
+.sync[data-state="held"] { color: v.$warning-color; }
+@keyframes syncPulse { to { opacity: 0.3; } }
+@media (prefers-reduced-motion: reduce) { .sync[data-state="loading"]::before { animation: none; } }
+.group { min-width: 0; margin: 0; padding: v.$space-md 0 0; border: 0; border-top: 1px solid v.$border-soft;
+  legend { float: left; width: 100%; padding: 0; margin-bottom: v.$space-sm; color: v.$color-blue-300; font-size: v.$font-size-xs; font-weight: 700; text-transform: uppercase; letter-spacing: v.$mobile-letter-spacing-wide; }
+  > :not(legend) { clear: both; }
+}
+.fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); gap: v.$space-md v.$space-sm; }
+.problem { margin: 0; color: v.$warning-color; font-size: v.$font-size-sm; }
+/* A quiet text button under a changed field; it outranks the page's 44px button rule but keeps a 24px target. */
+.field .reset { justify-self: start; min-height: 24px; padding: 0; border: 0; background: none; color: v.$color-blue-300; font-size: v.$font-size-xs; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+.field .reset:hover:not(:disabled) { background: none; color: v.$color-white; }
+.hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .defaultNote { display: block; color: v.$text-secondary; font-size: v.$font-size-sm; }
-.period { display: flex; flex-wrap: wrap; gap: v.$space-sm; align-items: flex-end; margin-top: v.$space-sm; min-width: 0;
-  label { display: grid; gap: v.$space-xs; min-width: 0; max-width: 100%; }
+.period { display: flex; flex-wrap: wrap; gap: v.$space-sm v.$space-md; align-items: flex-end; min-width: 0;
+  .field { flex: 0 1 14rem; }
 }
 .pagerBlock { display: grid; gap: v.$space-xs; min-width: 0; max-width: 100%; }
 .pager { display: flex; align-items: center; gap: v.$space-xs; min-width: 0;

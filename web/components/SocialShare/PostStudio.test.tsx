@@ -39,7 +39,9 @@ describe("PostStudio", () => {
     expect(postCalls()[0]).toBe("/api/v1/social-share/posts/team-games?days=7&period=rolling");
     const evidence = screen.getByTestId("post-evidence").textContent!;
     for (const label of ["NHL.com team game stats through 2026-10-30", "21 completed team games", "Not applicable", "All 32 teams", "21 of 21 team games", "Days: 7"]) expect(evidence).toContain(label);
-    expect(screen.getByText("Default: 7")).toBeTruthy();
+    expect(screen.getByTestId("post-sync").textContent).toBe("Up to date");
+    expect(screen.queryByRole("button", { name: /^Reset/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Refresh/ })).toBeNull();
     const square = screen.getByTestId("share-square");
     expect(square.contains(screen.getByTestId("post-evidence"))).toBe(false);
     expect(screen.getByTestId("post-evidence-line").textContent).toBe("NHL.com team game stats through 2026-10-30 · Not applicable · 21 of 21 team games");
@@ -48,14 +50,96 @@ describe("PostStudio", () => {
     expect(screen.getByTestId("share-square").getAttribute("data-export-token")).toBe('team-games-1|team-games|[["days",7],["period","rolling"],["week",null],["start",null],["end",null]]');
   });
 
-  it("keeps export off and asks for a refresh when a setting changes the edition's data", async () => {
-    serve(edition());
-    render(<PostStudio />);
-    await waitFor(() => expect(screen.getByTestId("share-square")).toBeTruthy());
-    fireEvent.change(screen.getByLabelText(/^Days/), { target: { value: "14" } });
-    await waitFor(() => expect(screen.getByText(/Refresh the post to apply/)).toBeTruthy());
-    expect((screen.getByRole("button", { name: "Download PNG" }) as HTMLButtonElement).disabled).toBe(true);
-    expect(postCalls().length).toBe(1);
+  describe("settings apply on their own", () => {
+    /** Serves an edition built with the requested days, so export opens once the reload lands. */
+    const serveDays = () => fetchMock.mockImplementation(async (url: string) => {
+      const days = Number(new URL(url, "http://fhfh.invalid").searchParams.get("days") ?? 7);
+      return { ok: true, status: 200, json: async () => edition({ id: `team-games-${days}`, settings: { days, period: "rolling", week: null, start: null, end: null } }) } as unknown as Response;
+    });
+    const download = () => screen.getByRole("button", { name: "Download PNG" }) as HTMLButtonElement;
+    const days = () => screen.getByLabelText("Days") as HTMLInputElement;
+
+    it("reloads once typing pauses, sending only the last value, and keeps export off until it lands", async () => {
+      serveDays();
+      render(<PostStudio />);
+      await waitFor(() => expect(download().disabled).toBe(false));
+      fireEvent.change(days(), { target: { value: "1" } });
+      fireEvent.change(days(), { target: { value: "14" } });
+      expect(screen.getByTestId("post-sync").textContent).toBe("Updating…");
+      expect(download().disabled).toBe(true);
+      await waitFor(() => expect(postCalls()).toHaveLength(2));
+      expect(postCalls()[1]).toContain("days=14");
+      await waitFor(() => expect(download().disabled).toBe(false));
+      expect(screen.getByTestId("share-square").getAttribute("data-export-token")).toContain('["days",14]');
+      expect(screen.getByRole("button", { name: "Reset Days to 7" })).toBeTruthy();
+    });
+
+    it("never sends a value out of range, says why, and lets a cleared field come back on blur", async () => {
+      serveDays();
+      render(<PostStudio />);
+      await waitFor(() => expect(download().disabled).toBe(false));
+      fireEvent.change(days(), { target: { value: "40" } });
+      expect(screen.getByText("Enter a number from 1 to 30.")).toBeTruthy();
+      expect(days().getAttribute("aria-invalid")).toBe("true");
+      expect(screen.getByTestId("post-sync").textContent).toBe("Not updated");
+      expect(download().disabled).toBe(true);
+      fireEvent.blur(days());
+      expect(days().value).toBe("40");
+      fireEvent.change(days(), { target: { value: "" } });
+      expect(screen.queryByText("Enter a number from 1 to 30.")).toBeNull();
+      fireEvent.blur(days());
+      expect(days().value).toBe("7");
+      await new Promise(resolve => setTimeout(resolve, 700));
+      expect(postCalls()).toHaveLength(1);
+      expect(download().disabled).toBe(false);
+    });
+
+    it("stops counting a wrong value once its field is hidden by the period", async () => {
+      serveDays();
+      render(<PostStudio />);
+      await waitFor(() => expect(download().disabled).toBe(false));
+      fireEvent.change(days(), { target: { value: "40" } });
+      expect(screen.getByTestId("post-sync").textContent).toBe("Not updated");
+      fireEvent.change(screen.getByTestId("period-control").querySelector("select")!, { target: { value: "matchup" } });
+      expect(screen.queryByLabelText("Days")).toBeNull();
+      await waitFor(() => expect(postCalls().at(-1)).toContain("period=matchup"));
+      await waitFor(() => expect(screen.getByTestId("post-sync").textContent).toBe("Up to date"));
+    });
+
+    it("applies a select at once and drops the response it replaced", async () => {
+      let release = () => {};
+      const slow = new Promise<void>(resolve => { release = resolve; });
+      fetchMock.mockImplementation(async (url: string) => {
+        const period = new URL(url, "http://fhfh.invalid").searchParams.get("period");
+        if (period === "rolling" && postCalls().length > 1) await slow;
+        return { ok: true, status: 200, json: async () => edition({ id: `team-games-${period}`, reasons: [], settings: { days: 7, period: period ?? "rolling", week: null, start: null, end: null } }) } as unknown as Response;
+      });
+      render(<PostStudio />);
+      await waitFor(() => expect(download().disabled).toBe(false));
+      fireEvent.change(days(), { target: { value: "8" } });
+      fireEvent.change(days(), { target: { value: "7" } });
+      await waitFor(() => expect(postCalls()).toHaveLength(2));
+      const select = screen.getByTestId("period-control").querySelector("select")!;
+      try {
+        fireEvent.change(select, { target: { value: "matchup" } });
+        await waitFor(() => expect(postCalls()).toHaveLength(3));
+        expect(postCalls()[2]).toContain("period=matchup");
+        await waitFor(() => expect(screen.getByTestId("share-square").getAttribute("data-export-token")).toContain("team-games-matchup"));
+      } finally { release(); }
+      await slow; await new Promise(resolve => setTimeout(resolve, 0));
+      expect(screen.getByTestId("share-square").getAttribute("data-export-token")).toContain("team-games-matchup");
+    });
+
+    it("holds settings the post refuses, and says why", async () => {
+      serveDays();
+      render(<PostStudio />);
+      await waitFor(() => expect(download().disabled).toBe(false));
+      fireEvent.change(screen.getByTestId("period-control").querySelector("select")!, { target: { value: "custom" } });
+      expect(postCalls()).toHaveLength(1);
+      expect(screen.getByTestId("post-sync").textContent).toBe("Not updated");
+      expect(screen.getByTestId("period-reason").textContent).toBe("A custom range needs a start date and an end date.");
+      expect(download().disabled).toBe(true);
+    });
   });
 
   it("gives a post's panel its fields without a refetch, and leaves panel-only fields off the form", async () => {
@@ -143,11 +227,12 @@ describe("PostStudio", () => {
     describe("a blank week follows the loaded edition", () => {
       const before = "2026-11-02T04:30:00.000Z", after = "2026-11-02T05:30:00.000Z"; // 23:30 and 00:30 in New York, Nov 1 to Nov 2 (EST).
       const label = () => screen.getByTestId("period-pager-label").textContent;
-      const refreshed = async () => { await waitFor(() => expect((screen.getByRole("button", { name: "Refresh post" }) as HTMLButtonElement).disabled).toBe(false)); fireEvent.click(screen.getByRole("button", { name: "Refresh post" })); };
+      /** Any setting change loads a new edition; Board is one that keeps the period. */
+      const refreshed = async () => { await waitFor(() => expect(screen.getByTestId("post-sync").textContent).not.toBe("Updating…")); fireEvent.change(screen.getByLabelText("Board"), { target: { value: "best" } }); };
       const serveAt = (at: () => string, calendar: () => Response) => fetchMock.mockImplementation(async (url: string) => url.endsWith("/matchup-weeks") ? calendar() : json({ ...goalie(null), generatedAt: at() }));
       beforeEach(() => { router.query = { post: "goalie-period" }; });
 
-      it("moves on when Refresh loads an edition from after midnight", async () => {
+      it("moves on when a new edition from after midnight loads", async () => {
         let at = before;
         serveAt(() => at, () => json(matchups));
         render(<PostStudio />);
@@ -248,7 +333,7 @@ describe("PostStudio", () => {
       expect(screen.getByTestId("period-pager-label").textContent).toContain("Week 3");
     });
 
-    it("shows date fields only for Custom, explains a bad range, and waits for Refresh", async () => {
+    it("shows date fields only for Custom, explains a bad range without sending it, and loads a good one after a pause", async () => {
       serveGoalie();
       render(<PostStudio />);
       await screen.findByText("Edition for week 4.");
@@ -263,11 +348,11 @@ describe("PostStudio", () => {
       fireEvent.change(start, { target: { value: "2026-10-20" } });
       fireEvent.change(screen.getByLabelText("Custom range end"), { target: { value: "2026-10-14" } });
       expect(screen.getByTestId("period-reason").textContent).toBe("The start date must be before the end date.");
+      expect(editionUrls()).toHaveLength(loads);
       fireEvent.change(screen.getByLabelText("Custom range end"), { target: { value: "2026-10-24" } });
       expect(screen.queryByTestId("period-reason")).toBeNull();
-      expect(editionUrls()).toHaveLength(loads);
-      fireEvent.click(screen.getByRole("button", { name: "Refresh post" }));
       await waitFor(() => expect(editionUrls().at(-1)).toContain("start=2026-10-20&end=2026-10-24"));
+      expect(editionUrls()).toHaveLength(loads + 1);
     });
 
     it("loads at once for a period that needs no dates, and draws the month field only for a month", async () => {
