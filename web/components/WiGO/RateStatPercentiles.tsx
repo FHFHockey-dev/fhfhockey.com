@@ -25,14 +25,16 @@ import { formatSeasonRange } from "./tableUtils";
 import useCurrentSeason, { useSeasonPendingMessage } from "hooks/useCurrentSeason";
 import { WIGO_QUERY_DEFAULTS } from "components/WiGO/queryDefaults";
 
+// Datalabels is passed to this chart only. Registered globally, it would join
+// charts created before this lazy panel loaded, whose plugin state it never
+// set up, and crash them on their next update (`_labels` of undefined).
 ChartJS.register(
   CategoryScale,
   LinearScale,
   BarElement,
   Title,
   Tooltip,
-  Legend,
-  ChartDataLabels
+  Legend
 );
 
 interface RateStatPercentilesProps {
