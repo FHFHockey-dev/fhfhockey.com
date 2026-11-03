@@ -21,7 +21,7 @@ import { formatSecondsToMMSS, formatDateToMMDD } from "utils/formattingUtils";
 import styles from "styles/wigoCharts.module.scss";
 import zoomPlugin from "chartjs-plugin-zoom";
 import Spinner from "components/Spinner";
-import { WIGO_COLORS, CHART_COLORS, addAlpha, CHART_TICK_FONT } from "styles/wigoColors";
+import { WIGO_COLORS, CHART_COLORS, addAlpha, CHART_TICK_FONT, WIGO_CHART_ROLES } from "styles/wigoColors";
 import WigoSectionCard from "./WigoSectionCard";
 import { WIGO_ERROR_MESSAGES } from "./errorMessages";
 import { useSeasonPendingMessage } from "hooks/useCurrentSeason";
@@ -112,10 +112,10 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
             data: getData("toi_per_game"),
             borderColor: useDummyData
               ? WIGO_COLORS.TRANSPARENT
-              : CHART_COLORS.BAR_PRIMARY,
+              : WIGO_CHART_ROLES.PRIMARY,
             backgroundColor: useDummyData
               ? WIGO_COLORS.TRANSPARENT
-              : addAlpha(CHART_COLORS.BAR_PRIMARY, 0.2),
+              : addAlpha(WIGO_CHART_ROLES.PRIMARY, 0.12),
             fill: !useDummyData,
             yAxisID: "yTime",
             pointRadius: useDummyData ? 0 : 2,
@@ -127,10 +127,10 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
             data: getData("pp_toi_per_game"),
             borderColor: useDummyData
               ? WIGO_COLORS.TRANSPARENT
-              : CHART_COLORS.PP_TOI,
+              : WIGO_CHART_ROLES.SECONDARY,
             backgroundColor: useDummyData
               ? WIGO_COLORS.TRANSPARENT
-              : addAlpha(CHART_COLORS.PP_TOI, 0.2),
+              : addAlpha(WIGO_CHART_ROLES.SECONDARY, 0.2),
             fill: false,
             yAxisID: "yTime",
             pointRadius: useDummyData ? 0 : 2,
@@ -144,7 +144,7 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
                   data: getAvgData(averageToi),
                   borderColor: useDummyData
                     ? WIGO_COLORS.TRANSPARENT
-                    : CHART_COLORS.AVG_LINE_PRIMARY,
+                    : WIGO_CHART_ROLES.AVERAGE,
                   borderDash: [3, 3],
                   fill: false,
                   pointRadius: 0,
@@ -166,10 +166,10 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
             data: getData("pp_toi_pct_per_game"),
             borderColor: useDummyData
               ? WIGO_COLORS.TRANSPARENT
-              : CHART_COLORS.LINE_TERTIARY, // Use semantic tertiary line color
+              : WIGO_CHART_ROLES.SECONDARY, // Power play: the second series
             backgroundColor: useDummyData
               ? WIGO_COLORS.TRANSPARENT
-              : addAlpha(CHART_COLORS.LINE_TERTIARY, 0.2),
+              : addAlpha(WIGO_CHART_ROLES.SECONDARY, 0.12),
             fill: !useDummyData,
             yAxisID: "yPercentage",
             pointRadius: useDummyData ? 0 : 2,
@@ -183,7 +183,7 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
                   data: getAvgData(averagePpToiPct),
                   borderColor: useDummyData
                     ? WIGO_COLORS.TRANSPARENT
-                    : CHART_COLORS.AVG_LINE_SECONDARY,
+                    : WIGO_CHART_ROLES.AVERAGE,
                   borderDash: [3, 3],
                   fill: false,
                   pointRadius: 0,
@@ -336,7 +336,7 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
       title={chartTitle}
       toolbar={
         <div className={styles.toggleButtons}>
-          <span className="wigo-trend-legend">{chartView === "toi" ? <><span style={{ color: CHART_COLORS.BAR_PRIMARY }}>━Total</span> · <span style={{ color: CHART_COLORS.PP_TOI }}>━PP</span> · ┄Avg</> : "PP share · ┄Avg"}</span>
+          <span className="wigo-trend-legend">{chartView === "toi" ? <><span style={{ color: WIGO_CHART_ROLES.PRIMARY }}>━</span>Total · <span style={{ color: WIGO_CHART_ROLES.SECONDARY }}>━</span>PP · <span style={{ color: WIGO_CHART_ROLES.AVERAGE }}>┄</span>Avg</> : <><span style={{ color: WIGO_CHART_ROLES.SECONDARY }}>━</span>PP share · <span style={{ color: WIGO_CHART_ROLES.AVERAGE }}>┄</span>Avg</>}</span>
           <button type="button" aria-label="Reset" title="Drag to zoom; Shift+drag to pan; Reset restores all games" onClick={() => chartRef.current?.resetZoom()}>↺</button>
           <button
             onClick={() => setChartView("toi")}

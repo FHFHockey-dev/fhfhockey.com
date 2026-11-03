@@ -9,7 +9,7 @@ import {
   formatDateToMMDD
 } from "utils/formattingUtils";
 import { ChartOptions, ChartData, ChartDataset } from "chart.js";
-import { WIGO_COLORS, addAlpha, CHART_COLORS, CHART_TICK_FONT } from "styles/wigoColors";
+import { WIGO_COLORS, CHART_TICK_FONT, WIGO_CHART_ROLES, withSurfaceRing, isSurfaceRing } from "styles/wigoColors";
 import { WIGO_ERROR_MESSAGES } from "../errorMessages";
 import useWigoGameLog from "hooks/useWigoGameLog";
 import { useSeasonPendingMessage } from "hooks/useCurrentSeason";
@@ -138,20 +138,21 @@ export default function GameScoreLineChart({
             (item) => item.game_score
           ); // Handle nulls in calculation
       const lineColor =
-        index === 0 ? CHART_COLORS.LINE_PRIMARY : CHART_COLORS.PP_TOI;
-      return {
+        index === 0 ? WIGO_CHART_ROLES.PRIMARY : WIGO_CHART_ROLES.SECONDARY;
+      return withSurfaceRing({
         type: "line" as const,
         label: `${windowSize}-Game Rolling Avg`,
         data: rollingAvgData,
         borderColor: useDummyData ? WIGO_COLORS.TRANSPARENT : lineColor,
-        backgroundColor: addAlpha(CHART_COLORS.LINE_PRIMARY, 0.2),
-        fill: true, // Typically don't fill rolling averages
+        backgroundColor: WIGO_COLORS.TRANSPARENT,
+        borderWidth: 2,
+        fill: false,
         tension: 0.2,
         pointRadius: 0, // No points on rolling average lines
         pointHoverRadius: 3,
         order: index + 1 // Render lines above bars (lower order renders later/on top)
-      };
-    });
+      });
+    }).flat();
 
     return {
       labels: labels,
@@ -161,12 +162,10 @@ export default function GameScoreLineChart({
           type: "bar" as const,
           label: "Game Score",
           data: gameScoreValues,
-          borderColor: useDummyData
-            ? WIGO_COLORS.TRANSPARENT
-            : CHART_COLORS.BAR_PRIMARY,
+          borderColor: WIGO_COLORS.TRANSPARENT,
           backgroundColor: useDummyData
             ? WIGO_COLORS.TRANSPARENT
-            : addAlpha(CHART_COLORS.BAR_PRIMARY, 0.7),
+            : WIGO_CHART_ROLES.BAR,
 
           order: windowSizes.length + 1 // Render bars behind all lines
         },
@@ -218,6 +217,7 @@ export default function GameScoreLineChart({
           enabled: true,
           mode: "index",
           intersect: false,
+          filter: (item) => !isSurfaceRing(item.dataset),
           // Add specific formatting if needed
           callbacks: {
             label: (context) => {

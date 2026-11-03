@@ -14,6 +14,7 @@ import { GameLogDataPoint } from "utils/fetchWigoPlayerStats";
 import styles from "styles/wigoCharts.module.scss";
 import { TableAggregateData } from "./types";
 import { formatGameMeanLabel, gameLogMean } from "./gameLogMean";
+import { WIGO_CHART_ROLES } from "styles/wigoColors";
 import {
   formatWigoStatValue,
   isWigoPercentStat,
@@ -42,6 +43,9 @@ interface GameLogChartProps {
   height?: number;
   // Fill the parent's height with tighter axes (one-page dashboard panel).
   fill?: boolean;
+  // The compared periods: their reference lines take the band's L and R colours.
+  leftTimeframe?: string;
+  rightTimeframe?: string;
 }
 
 type AverageKey = keyof GameLogChartProps["averages"];
@@ -55,15 +59,14 @@ const availableAverages: AverageKey[] = [
   "L20"
 ];
 
-const averageColors: Record<AverageKey, string> = {
-  STD: "#ff6b6b", // Red #ff6b6b
-  LY: "#98d8a8", // Green #98d8a8
-  "3YA": "#ff9f40", // Orange #ff9f40
-  CA: "#14a2d2", // Blue #14a2d2
-  L5: "#9b59b6", // Purple  #9b59b6
-  L10: "#ffcc33", // Yellow   #ffcc33
-  L20: "#cccccc" // Light Grey #cccccc
-};
+// One meaning per colour (U8): the left period is blue and the right amber,
+// as in the band; every other period is the same quiet grey.
+const referenceColor = (key: AverageKey, left?: string, right?: string) =>
+  key === left
+    ? WIGO_CHART_ROLES.PRIMARY
+    : key === right
+      ? WIGO_CHART_ROLES.RIGHT
+      : WIGO_CHART_ROLES.OTHER_PERIOD;
 
 // Kept apart from the chart so the title line can show the mean without
 // loading Recharts with the page (S8).
@@ -91,19 +94,23 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
   error,
   tableType,
   height = 230,
-  fill = false
+  fill = false,
+  leftTimeframe = "STD",
+  rightTimeframe
 }) => {
   const [visibleAverages, setVisibleAverages] = useState<
     Record<AverageKey, boolean>
-  >({
-    STD: true,
+  >(() => ({
+    STD: false,
     LY: false,
     "3YA": false,
     CA: false,
     L5: false,
     L10: false,
-    L20: false
-  });
+    L20: false,
+    // The left comparison period starts on, as STD did.
+    ...(availableAverages.includes(leftTimeframe as AverageKey) ? { [leftTimeframe]: true } : { STD: true })
+  }));
 
   const handleAverageToggle = (key: AverageKey) => {
     setVisibleAverages((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -210,7 +217,7 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
               formattingType = "Other";
             }
           }
-          const buttonColor = averageColors[key];
+          const buttonColor = referenceColor(key, leftTimeframe, rightTimeframe);
           const isActive = visibleAverages[key];
           {
             return (
@@ -286,8 +293,7 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
             <Bar
               dataKey="value"
               name={statLabel}
-              fill="#14a2d2"
-              fillOpacity={0.75}
+              fill={WIGO_CHART_ROLES.BAR}
               radius={[2, 2, 0, 0]}
               isAnimationActive={false}
             />
@@ -296,9 +302,10 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
               type="linear"
               dataKey="value"
               name={statLabel}
-              stroke="#14a2d2"
+              // Ink, so blue and amber stay free for the L and R references.
+              stroke={WIGO_CHART_ROLES.SERIES_INK}
               strokeWidth={2}
-              dot={{ r: 2, strokeWidth: 0, fill: "#14a2d2" }}
+              dot={{ r: 2, strokeWidth: 0, fill: WIGO_CHART_ROLES.SERIES_INK }}
               activeDot={{ r: 5 }}
               connectNulls={false}
               isAnimationActive={false}
@@ -315,9 +322,10 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
                 fill: "#FFF", // #ff7300
                 fontSize: 11
               }}
-              stroke="#ff6b6b" // #ff7300
-              strokeDasharray="3 3"
-              strokeWidth={1.5}
+              stroke={WIGO_CHART_ROLES.AVERAGE}
+              strokeOpacity={0.6}
+              strokeDasharray="2 3"
+              strokeWidth={1}
             />
           )}
           {/* Toggleable Average Lines */}
@@ -342,7 +350,7 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
                 referenceValue = avgValue;
               }
             }
-            const strokeColor = averageColors[key];
+            const strokeColor = referenceColor(key, leftTimeframe, rightTimeframe);
             if (visibleAverages[key] && referenceValue != null) {
               return (
                 <ReferenceLine

@@ -130,6 +130,45 @@ export const CONSISTENCY_CHART_COLORS = [
   CHART_COLORS.CONSISTENCY_6
 ];
 
+// Chart-row colour roles (U8), one meaning each. Bars are the per-game values
+// and stay recessive; blue is the primary series and the left comparison
+// period; amber is the right comparison period only; magenta is the second
+// series (10-game average, power play); dashed ink is an average. Lines vs
+// panel #15171a pass the dataviz checks in dark mode (blue/magenta: CVD dE 12.4,
+// normal 27.7; blue/amber: 22.5, 26.4). Lines that cross bars get a 2 px
+// surface ring, since magenta is 2.37:1 against the bars.
+export const WIGO_CHART_ROLES = {
+  BAR: "#34495a",
+  PRIMARY: "#14a2d2",
+  SECONDARY: "#d55181",
+  RIGHT: "#c98500",
+  AVERAGE: "#cfcfcf",
+  OTHER_PERIOD: "#7d8790",
+  SERIES_INK: "#e6e6e6",
+  SURFACE: "#15171a"
+} as const;
+
+// The dark ring drawn under a line so it reads where it crosses a bar.
+export const withSurfaceRing = <T extends { label?: string; order?: number; borderWidth?: number }>(
+  dataset: T
+) => [
+  {
+    ...dataset,
+    label: `${dataset.label ?? ""} ring`,
+    borderColor: WIGO_CHART_ROLES.SURFACE,
+    borderWidth: (dataset.borderWidth ?? 2) + 3,
+    backgroundColor: "transparent",
+    fill: false,
+    pointRadius: 0,
+    pointHoverRadius: 0,
+    order: (dataset.order ?? 0) + 0.5,
+    isSurfaceRing: true
+  },
+  dataset
+];
+export const isSurfaceRing = (dataset: unknown) =>
+  !!(dataset as { isSurfaceRing?: boolean } | undefined)?.isSurfaceRing;
+
 // One tick font for the chart row (U6): the SVG game log inherits Roboto
 // Condensed, so the canvas charts name it, with the generic fallback.
 export const CHART_TICK_FONT = {

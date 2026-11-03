@@ -399,6 +399,8 @@ export default function WigoComparisonMatrix({
               : null
           }
           tableType={isWigoCountChartStat(selectedMetric) ? "COUNTS" : "RATES"}
+          leftTimeframe={String(leftTimeframe)}
+          rightTimeframe={String(rightTimeframe)}
         />
       </section>
     </>

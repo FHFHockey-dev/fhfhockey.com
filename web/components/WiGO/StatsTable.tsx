@@ -316,6 +316,8 @@ const StatsTable: React.FC<StatsTableProps> = ({
                             isLoading={isLoadingGameLog}
                             error={gameLogError}
                             tableType={expandedStatType}
+                            leftTimeframe={String(leftTimeframe)}
+                            rightTimeframe={String(rightTimeframe)}
                           />
                         </div>
                       </td>
