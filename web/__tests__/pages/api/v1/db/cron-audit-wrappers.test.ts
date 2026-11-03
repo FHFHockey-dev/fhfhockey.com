@@ -143,7 +143,7 @@ describe("Vercel cron static source coverage", () => {
   ];
 
   it("represents all configured entries without merging query or schedule identities", () => {
-    expect(findings).toHaveLength(30);
+    expect(findings).toHaveLength(32);
     expect(findings.map(({ entryIndex, configuredPath, schedule }) => ({ entryIndex, configuredPath, schedule })))
       .toEqual(crons.map((entry: { path: string; schedule: string }, entryIndex: number) => ({
         entryIndex, configuredPath: entry.path, schedule: entry.schedule,
@@ -156,9 +156,10 @@ describe("Vercel cron static source coverage", () => {
     const windows = findings.filter((finding) => finding.routePath === "/api/v1/sustainability/rebuild-window-z");
     expect(windows.map((finding) => finding.queryString)).toEqual([
       "season=current&limit=250&offset=0", "season=current&limit=250&offset=250", "season=current&limit=250&offset=500",
+      "season=current&limit=250&offset=750",
     ]);
     expect(new Set(windows.map((finding) => finding.filePath)).size).toBe(1);
-    expect(new Set(windows.map((finding) => finding.schedule)).size).toBe(3);
+    expect(new Set(windows.map((finding) => finding.schedule)).size).toBe(4);
   });
 
   it("keeps every unresolved audit owner explicit rather than granting an exemption", () => {
