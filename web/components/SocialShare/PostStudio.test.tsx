@@ -264,6 +264,8 @@ describe("PostStudio", () => {
       const serveAt = (at: () => string, calendar: () => Response) => fetchMock.mockImplementation(async (url: string) => url.endsWith("/matchup-weeks") ? calendar() : json({ ...goalie(null), generatedAt: at() }));
       beforeEach(() => { router.query = { post: "goalie-period" }; });
 
+      const calendarReads = () => fetchMock.mock.calls.filter(call => String(call[0]).endsWith("/matchup-weeks")).length;
+
       it("moves on when a new edition from after midnight loads", async () => {
         let at = before;
         serveAt(() => at, () => json(matchups));
@@ -272,6 +274,23 @@ describe("PostStudio", () => {
         at = after;
         await refreshed();
         await waitFor(() => expect(label()).toBe("Week 5 · Oct 26 to Nov 1"));
+      });
+
+      it("rereads the calendar only when a new edition moves the cutoff, not on every settings change", async () => {
+        let at = before;
+        serveAt(() => at, () => json(matchups));
+        render(<PostStudio />);
+        await waitFor(() => expect(label()).toBe("Week 4 · Oct 19 to Oct 25"));
+        await waitFor(() => expect(screen.getByTestId("post-sync").textContent).toBe("Up to date"));
+        const reads = calendarReads(), editions = editionUrls().length;
+        fireEvent.change(screen.getByLabelText("Board"), { target: { value: "best" } });
+        await waitFor(() => expect(editionUrls()).toHaveLength(editions + 1));
+        await waitFor(() => expect(screen.getByTestId("post-sync").textContent).toBe("Up to date"));
+        expect(calendarReads()).toBe(reads);
+        at = after;
+        fireEvent.change(screen.getByLabelText("Board"), { target: { value: "worst" } });
+        await waitFor(() => expect(label()).toBe("Week 5 · Oct 26 to Nov 1"));
+        expect(calendarReads()).toBe(reads + 1);
       });
 
       it("still moves on, and says so, when the calendar refresh fails", async () => {

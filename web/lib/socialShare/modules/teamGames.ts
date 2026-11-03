@@ -1,6 +1,7 @@
 import { currentSeason } from "lib/socialShare/schedule";
 import { teamsInfo } from "lib/teamsInfo";
 import { defineShareModule, type SharePostLoadResult } from "./contract";
+import { completeThrough, completeThroughNote, type NightCoverage } from "./shared/completeThrough";
 import { competitionRanks, editionDate } from "./shared/definitions";
 import { customRangeReason, PERIOD_CUSTOM, periodDates, periodWindowFields, resolvePeriodWindow, type MatchupCalendar, type PeriodControl, type PeriodWindowResult, type PeriodWindowSettings } from "./shared/periodWindow";
 
@@ -27,27 +28,49 @@ export function resolveTeamGamesWindow(settings: TeamGamesSettings, calendar: Ma
 }
 const teamById = new Map(Object.entries(teamsInfo).map(([abbreviation, team]) => [team.id, abbreviation]));
 
-/** A team with no reported game in the window is a known 0 only when `scheduledGames` proves the feed is complete. */
-export function buildTeamGames(input: { rows: readonly TeamGameInput[]; scheduledGames: number; from: string; through: string; label: string; teams: readonly string[]; updatedAt: string | null }): SharePostLoadResult<TeamGamesData> {
+export type TeamGamesScheduled = { id: number; date: string };
+/** Each scheduled night's team games against those reported, for `completeThrough`. */
+function teamGameNights(rows: readonly TeamGameInput[], schedule: readonly TeamGamesScheduled[]): NightCoverage[] {
+  const nights = new Map<string, { expected: number; reported: Set<string> }>();
+  for (const game of schedule) { const night = nights.get(game.date) ?? { expected: 0, reported: new Set<string>() }; night.expected += 2; nights.set(game.date, night); }
+  for (const row of rows) if (row.game_id != null && teamById.has(row.team_id ?? -1)) nights.get(row.date)?.reported.add(`${row.team_id}:${row.game_id}`);
+  return [...nights].map(([date, night]) => ({ date, expected: night.expected, observed: night.reported.size }));
+}
+/** The window's label once late nights are cut: a week keeps its number, other periods name their dates, since "Last 7 days" would no longer be true. */
+const cutLabel = (label: string, from: string, through: string) => /^Week \d+/.test(label) ? `${label.split(" · ")[0]} · ${periodDates(from, through)}` : periodDates(from, through);
+
+/**
+ * A team with no reported game in the window is a known 0 only when the schedule proves the feed is complete. Late newest
+ * nights end the window at the last complete night (TJ, 2026-11-03), with a page note; an older gap stays partial.
+ */
+export function buildTeamGames(input: { rows: readonly TeamGameInput[]; schedule: readonly TeamGamesScheduled[]; from: string; through: string; label: string; teams: readonly string[]; updatedAt: string | null }): SharePostLoadResult<TeamGamesData> {
+  const cut = completeThrough(teamGameNights(input.rows, input.schedule), input.through), note = completeThroughNote(cut);
+  if (!cut.through) {
+    const reason = `No night from ${input.from} to ${input.through} is fully reported yet.`;
+    return { state: "missing", reasons: [reason], data: null, teams: [], evidence: { sources: [{ name: "NHL.com team game stats", tables: ["wgo_team_stats", "games"], state: "partial", asOf: null, updatedAt: input.updatedAt }], sample: reason, strength: "Not applicable (game counts)", cohort: `All ${input.teams.length} teams`, coverage: null } };
+  }
+  const through = cut.through, trimmed = cut.trimmed.length > 0, label = trimmed ? cutLabel(input.label, input.from, through) : input.label;
+  const rows = input.rows.filter(row => row.date <= through), scheduledGames = input.schedule.filter(game => game.date <= through).length;
   const games = new Map<string, { ids: Set<number>; last: string | null }>(input.teams.map(team => [team, { ids: new Set<number>(), last: null }]));
-  for (const row of input.rows) {
+  for (const row of rows) {
     const team = teamById.get(row.team_id ?? -1), entry = team ? games.get(team) : undefined;
     if (!entry || row.game_id == null) continue;
     entry.ids.add(row.game_id);
     if (!entry.last || row.date > entry.last) entry.last = row.date;
   }
-  const expected = input.scheduledGames * 2, observed = [...games.values()].reduce((total, entry) => total + entry.ids.size, 0), missing = Math.max(0, expected - observed);
+  const expected = scheduledGames * 2, observed = [...games.values()].reduce((total, entry) => total + entry.ids.size, 0), missing = Math.max(0, expected - observed);
   const complete = missing === 0 && observed === expected;
   const asOf = [...games.values()].reduce<string | null>((latest, entry) => entry.last && (!latest || entry.last > latest) ? entry.last : latest, null);
   const ranked = competitionRanks([...games.entries()], ([, entry]) => entry.ids.size, ([team]) => team);
   return {
     state: complete ? "ready" : "partial",
     reasons: complete ? [] : [`${missing} of ${expected} scheduled team games have no reported result.`],
-    data: { from: input.from, through: input.through, label: input.label, rows: ranked.map(({ row: [team, entry], rank }) => ({ team, games: entry.ids.size, lastGame: entry.last, rank })) },
+    data: { from: input.from, through, label, rows: ranked.map(({ row: [team, entry], rank }) => ({ team, games: entry.ids.size, lastGame: entry.last, rank })) },
     teams: [...input.teams],
+    ...(note && trimmed ? { pageNotes: [note] } : {}),
     evidence: {
       sources: [{ name: "NHL.com team game stats", tables: ["wgo_team_stats", "games"], state: complete ? "ready" : "partial", asOf, updatedAt: input.updatedAt }],
-      sample: `${input.from} to ${input.through}: ${observed} completed team games`, strength: "Not applicable (game counts)", cohort: `All ${input.teams.length} teams`,
+      sample: `${input.from} to ${through}: ${observed} completed team games`, strength: "Not applicable (game counts)", cohort: `All ${input.teams.length} teams`,
       coverage: { observed, expected, missing, unit: "team games" },
     },
   };

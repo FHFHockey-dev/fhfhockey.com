@@ -6,7 +6,7 @@ import styles from "./PostStudio.module.scss";
 
 type Props = {
   entry: AnyShareModule; control: PeriodControlConfig; settings: ShareSettings; disabled: boolean;
-  /** The loaded edition: each new one rereads the calendar, and the pager's blank week and limits use the cutoff it was built against. */
+  /** The loaded edition: a new cutoff rereads the calendar, and the pager's blank week and limits use the cutoff it was built against. */
   edition: SharePostSnapshot | null;
   /** Sets a typed field, as the settings form does: the post reloads after a pause, once the value is valid. */
   change: (field: ShareSettingField, text: string) => void;
@@ -20,15 +20,17 @@ export default function PeriodControl({ entry, control, settings, disabled, edit
   const [attempt, setAttempt] = useState(0);
   const [refreshFailed, setRefreshFailed] = useState(false);
   const priorButton = useRef<HTMLButtonElement>(null), nextButton = useRef<HTMLButtonElement>(null);
+  /** The cutoff the loaded edition was built against. Settings now reload the post on every change, so the calendar is reread only when this moves, as across midnight. */
+  const editionCutoffDate = edition?.post === entry.id ? editionCutoff(edition.generatedAt) : null;
   useEffect(() => {
     let live = true;
     void fetchMatchupWeeks().then(result => { if (live) { setSource(current => result ?? current ?? null); setRefreshFailed(result === null); } });
     return () => { live = false; };
-  }, [attempt, edition]);
+  }, [attempt, editionCutoffDate]);
   const calendar = useMemo(() => source ? matchupCalendar(source.rows) : null, [source]);
   const field = (id: string) => entry.fields.find(item => item.id === id)!;
   const period = field("period"), matchupValue = control.matchupValue ?? PERIOD_MATCHUP, current = periodSettings(settings);
-  const options = source ? { mode: control.mode, cutoff: edition?.post === entry.id ? editionCutoff(edition.generatedAt) : source.cutoff } : null;
+  const options = source ? { mode: control.mode, cutoff: editionCutoffDate ?? source.cutoff } : null;
   const pager = calendar && options ? matchupPager(current.week, calendar, options) : null;
   const limits = calendar && options ? customRangeLimits(calendar, options) : null;
   const customReason = current.period !== PERIOD_CUSTOM ? null : calendar && options ? resolvePeriodWindow(current, calendar, { ...control, ...options }).reason ?? null : customRangeReason(current);
