@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { bshBoardModule, buildBshBoard, type BshBoardSettings, type SkaterSeason } from "../lib/socialShare/modules/bshBoard";
+import { bshBoardModule, buildBshBoard, trimLateNights, type BshBoardSettings, type SkaterSeason } from "../lib/socialShare/modules/bshBoard";
 import { buildCategoryBlueprint, categoryBlueprintModule, type CategoryBlueprintSettings } from "../lib/socialShare/modules/categoryBlueprint";
 import { parseShareSettings, UNKNOWN_EVIDENCE, type AnyShareModule, type SharePostLoadResult } from "../lib/socialShare/modules/contract";
 import { buildNightlyFloor, nightlyFloorModule, type NightlyFloorSettings } from "../lib/socialShare/modules/nightlyFloor";
@@ -53,7 +53,7 @@ const floorSettings = (over: Partial<NightlyFloorSettings> = {}): NightlyFloorSe
 const ownership = { byPlayer: new Map([[1, ownershipOf(40, "2026-10-31")], [2, ownershipOf(12, "2026-10-31")]]), updatedAt: "2026-10-31T08:00:00" };
 const edition = (post: string, settings: object, result: SharePostLoadResult<unknown>) => {
   const generatedAt = new Date().toISOString();
-  return { schemaVersion: 1, id: `${post}-e2e`, post, generatedAt, expiresAt: new Date(Date.parse(generatedAt) + 600000).toISOString(), timeZone: "America/New_York", settings, fixture: false, state: result.state, reasons: result.reasons ?? [], evidence: result.evidence, data: result.data, teams: result.teams ?? [] };
+  return { schemaVersion: 1, id: `${post}-e2e`, post, generatedAt, expiresAt: new Date(Date.parse(generatedAt) + 600000).toISOString(), timeZone: "America/New_York", settings, fixture: false, state: result.state, reasons: result.reasons ?? [], evidence: result.evidence, data: result.data, teams: result.teams ?? [], pageNotes: result.pageNotes ?? [] };
 };
 async function open(page: Page, post: string, body: (query: URLSearchParams) => object) {
   await signIn(page);
@@ -240,7 +240,7 @@ const BOARDS: { post: string; body: (query: URLSearchParams) => object }[] = [
   { post: "nightly-floor", body: query => { const active = fromQuery<NightlyFloorSettings>(nightlyFloorModule, query); return edition("nightly-floor", active, buildNightlyFloor(inPeriod(query), active, roster)); } },
 ];
 async function openPeriod(page: Page, post: string, body: (query: URLSearchParams) => object) {
-  await page.route("**/api/v1/social-share/matchup-weeks", route => route.fulfill({ json: { cutoff: "2026-10-30", rows: [{ week: 1, start_date: "2026-09-28", end_date: "2026-10-04" }, { week: 2, start_date: "2026-10-05", end_date: "2026-10-11" }, { week: 3, start_date: "2026-11-02", end_date: "2026-11-08" }] } }));
+  await page.route("**/api/v1/social-share/matchup-weeks", route => route.fulfill({ json: { cutoff: "2026-10-30", rows: [{ week: 1, start_date: "2026-09-28", end_date: "2026-10-04" }, { week: 2, start_date: "2026-10-05", end_date: "2026-10-11" }, { week: 3, start_date: "2027-03-01", end_date: "2027-03-07" }] } }));
   return open(page, post, body);
 }
 for (const { post, body } of BOARDS) {
@@ -286,4 +286,14 @@ test("old URLs and landing links keep their recent window, and a board shows why
   await page.goto("/social-share/posts?post=nightly-floor&period=matchup&week=3");
   await expect(page.getByTestId("post-unavailable")).toContainText("Week 3 has not started");
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
+});
+test("a late newest night ends the board at its last complete night, exportable, with the note beside the card", async ({ page }) => {
+  // NJD at NYR each day; the last day has only the NJD skater, and no team results at all.
+  const schedule = fictional.appearances.filter(row => row.playerId === 1).map(row => ({ id: row.gameId, date: row.date, homeTeamId: 1, awayTeamId: 3 }));
+  const late: SkaterSeason = { ...fictional, teamGames: [], schedule, appearances: fictional.appearances.filter(row => !(row.playerId === 2 && row.date === "2026-10-20")) };
+  await open(page, "bsh-board", () => { const { season, pageNotes } = trimLateNights(late); return edition("bsh-board", bshSettings(), { ...buildBshBoard(season, bshSettings()), pageNotes }); });
+  await expect(page.getByTestId("post-page-notes")).toHaveText("Oct 20 is not fully reported yet, so this card ends Oct 19.");
+  await expect(page.getByTestId("share-square")).not.toContainText("not fully reported");
+  await expect(page.getByTestId("post-watermark")).toHaveText("OBSERVED RESULTS");
+  await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeEnabled();
 });

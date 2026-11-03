@@ -54,3 +54,5 @@
 - Review F3: slate existence and neighbours now come from scheduled games with team results, not skater rows. Off day, scheduled with no result and missing feed read differently. R20: same 33 dates on real data. Local only; TJ batches it with the next release.
 
 - SS-1103-B (11-03): slates now come from the schedule and the view's own player rows. A late team feed no longer blanks a night, and a blank date falls back to the last complete night, dated. Nov 2 renders from real reads (R21, R22). Pending: move the fallback note to `pageNotes` when ss-contract lands it.
+
+- SS-1103-B part 2 (11-03): Standouts fallback note is a page note via `completeThrough`; BSH, MCM and Nightly Floor cut late newest nights and count coverage from the schedule. Gotcha: another session ran the inventory spec on port 3110 at the same time; Playwright reuses an existing server, so my run died with theirs. Wait for the port to be free.

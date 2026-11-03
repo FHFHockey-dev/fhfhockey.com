@@ -1,6 +1,8 @@
 import { currentSeason } from "lib/socialShare/schedule";
 import { defineShareModule, shareSettingsKey, type SharePostEvidence, type SharePostLoadResult, type SharePostSource, type ShareSettingField } from "./contract";
 import { bsh, competitionRanks, editionDate, lastN, previousN, versusSeason, type ShareWindow } from "./shared/definitions";
+import { teamsInfo } from "lib/teamsInfo";
+import { completeThrough, completeThroughNote, type NightCoverage } from "./shared/completeThrough";
 import type { CompletedTeamGame } from "./shared/goalieLedger";
 import { customRangeReason, PERIOD_CUSTOM, PERIOD_MATCHUP, periodWindowFields, type PeriodControl, type PeriodWindowSettings } from "./shared/periodWindow";
 import { appearancesByPlayer, type SkaterAppearance } from "./shared/skaterAppearances";
@@ -37,7 +39,41 @@ export function skaterSeasonScope(generatedAt: string) {
 }
 /** A matchup week or custom dates. Appearances, team games and the schedule then cover these dates alone. */
 export type SkaterPeriod = { label: string; from: string; through: string };
-export type SkaterSeason = { appearances: readonly SkaterAppearance[]; teamGames: readonly CompletedTeamGame[]; scheduledGames: number; through: string; period?: SkaterPeriod };
+export type SkaterSeason = {
+  appearances: readonly SkaterAppearance[]; teamGames: readonly CompletedTeamGame[]; scheduledGames: number; through: string; period?: SkaterPeriod;
+  /** The scheduled games with both teams. With it, coverage is skater rows against the schedule and never waits for team results. */
+  schedule?: readonly SlateScheduleRow[];
+};
+
+export type SlateScheduleRow = { id: number; date: string; homeTeamId: number | null; awayTeamId: number | null };
+const TEAM_BY_ID = new Map(Object.entries(teamsInfo).map(([abbreviation, team]) => [team.id, abbreviation]));
+/** Both sides of each scheduled game. An id with no team code stays null, so that side can never read as covered. */
+export const scheduledTeamGames = (games: readonly SlateScheduleRow[]) => games.flatMap(game => [game.homeTeamId, game.awayTeamId].map(id => ({ gameId: game.id, date: game.date, team: id === null ? null : TEAM_BY_ID.get(id) ?? null })));
+/** Each scheduled night: its team games, and how many have skater rows. */
+export function skaterNights(season: Pick<SkaterSeason, "appearances" | "schedule">): NightCoverage[] {
+  const withSkaters = new Set(season.appearances.map(row => `${row.gameId}:${row.team}`)), nights = new Map<string, NightCoverage>();
+  for (const game of scheduledTeamGames(season.schedule ?? [])) {
+    const night = nights.get(game.date) ?? { date: game.date, expected: 0, observed: 0 };
+    night.expected++;
+    if (game.team !== null && withSkaters.has(`${game.gameId}:${game.team}`)) night.observed++;
+    nights.set(game.date, night);
+  }
+  return [...nights.values()];
+}
+/**
+ * TJ's late-feed rule (11-03): incomplete newest nights are cut, so the board ends at its last complete night and can export,
+ * with a page note; an older gap still blocks. Without a schedule, or when every night is late, the season is kept as read.
+ */
+export function trimLateNights(season: SkaterSeason): { season: SkaterSeason; pageNotes: string[] } {
+  if (!season.schedule) return { season, pageNotes: [] };
+  const result = completeThrough(skaterNights(season), season.through), through = result.through, note = completeThroughNote(result);
+  if (!through || !result.trimmed.length) return { season, pageNotes: [] };
+  const schedule = season.schedule.filter(game => game.date <= through);
+  return {
+    season: { ...season, through, schedule, scheduledGames: schedule.length, appearances: season.appearances.filter(row => row.date <= through), teamGames: season.teamGames.filter(game => game.date <= through) },
+    pageNotes: note ? [note] : [],
+  };
+}
 
 /** The recent-games windows stay the default. Their option is the post's own, so old URLs with only `window` keep their meaning. */
 export const PERIOD_ROLLING = "rolling";
@@ -61,8 +97,9 @@ export function skaterPeriodRules(season: Pick<SkaterSeason, "appearances" | "pe
 
 /** A scheduled team game counts only once the team feed has it and skater rows exist for that team in that game. */
 export function skaterSeasonEvidence(season: SkaterSeason, input: { windowLabel: string; cohort: string; note?: string; extraSources?: readonly SharePostSource[] }): { state: "ready" | "partial"; reasons: string[]; evidence: SharePostEvidence } {
-  const withSkaters = new Set(season.appearances.map(row => `${row.team}:${row.gameId}`));
-  const expected = season.scheduledGames * 2, observed = season.teamGames.filter(game => withSkaters.has(`${game.team}:${game.gameId}`)).length;
+  const withSkaters = new Set(season.appearances.map(row => `${row.team}:${row.gameId}`)), nights = season.schedule ? skaterNights(season) : null;
+  const expected = nights ? nights.reduce((total, night) => total + night.expected, 0) : season.scheduledGames * 2;
+  const observed = nights ? nights.reduce((total, night) => total + night.observed, 0) : season.teamGames.filter(game => withSkaters.has(`${game.team}:${game.gameId}`)).length;
   const complete = observed === expected, state = complete ? "ready" as const : "partial" as const;
   const asOf = season.appearances.reduce<string | null>((latest, row) => !latest || row.date > latest ? row.date : latest, null);
   return {

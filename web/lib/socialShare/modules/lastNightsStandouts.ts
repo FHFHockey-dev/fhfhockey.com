@@ -1,6 +1,6 @@
 import { normalizeEvDeploymentBucket } from "lib/rankings/skaterDeploymentAggregation";
+import { scheduledTeamGames, type SlateScheduleRow } from "./bshBoard";
 import { defineShareModule, shareSettingsKey, UNKNOWN_EVIDENCE, type ShareSettingField, type SharePostLoadResult, type SharePostSource } from "./contract";
-import { teamsInfo } from "lib/teamsInfo";
 import { toNstGoalieGames, type NstGsaxRow } from "./goalieGsax";
 import { roleSlotReader, type RoleEvidence, type RoleRollingRow, type RoleSlot } from "./roleWatch";
 import { ownershipOf, pooledGaa, pooledSavePct, type OwnershipState } from "./shared/definitions";
@@ -184,23 +184,16 @@ export type StandoutGoalie = {
 };
 /** The nearest slates with games, and the dates the chooser can open. A null `next` means this is the latest completed slate. */
 export type StandoutSlates = { previous: string | null; next: string | null; first: string; last: string };
-/** The latest night, shown in place of a blank date's night when that one is still incomplete. */
-export type StandoutFallback = { date: string; reason: string };
+/** A blank date's newest nights that are still incomplete, so an earlier complete night is shown; `note` goes beside the card. */
+export type StandoutFallback = { trimmed: string[]; note: string };
 export type LastNightsStandoutsData = {
   applied: string; view: StandoutView; slate: string; slates: StandoutSlates; games: number;
   skaters: StandoutSkater[]; goalies: StandoutGoalie[];
   /** Set only when the slate setting is blank and the latest night's own feed is incomplete. */
   fallback?: StandoutFallback | null;
 };
-export type SlateScheduleRow = { id: number; date: string; homeTeamId: number | null; awayTeamId: number | null };
-/**
- * Every date with a scheduled regular-season game, oldest first. A slate never waits for the team-results feed: TJ, 11-03,
- * after a failed team fetch left Nov 2 blank although its skater and goalie rows had landed.
- */
+export { scheduledTeamGames, type SlateScheduleRow };
 export const scheduledSlateDates = (schedule: readonly SlateScheduleRow[]) => [...new Set(schedule.map(game => game.date))].sort();
-const TEAM_BY_ID = new Map(Object.entries(teamsInfo).map(([abbreviation, team]) => [team.id, abbreviation]));
-/** Both sides of each scheduled game. An id with no team code stays null, so that side can never read as covered. */
-export const scheduledTeamGames = (games: readonly SlateScheduleRow[]): TeamGame[] => games.flatMap(game => [game.homeTeamId, game.awayTeamId].map(id => ({ gameId: game.id, team: id === null ? null : TEAM_BY_ID.get(id) ?? null })));
 export function slateNeighbours(dates: readonly string[], slate: string, range: Pick<StandoutSlates, "first" | "last">): StandoutSlates {
   return { previous: [...dates].reverse().find(date => date < slate) ?? null, next: dates.find(date => date > slate) ?? null, ...range };
 }
@@ -354,6 +347,7 @@ function buildGoalieView(input: LastNightsStandoutsInput, applied: string): Shar
     yahooSource(input, knownOwned, goalies.length),
   ];
   return {
+    pageNotes: input.fallback ? [input.fallback.note] : [],
     state: !appearances.length ? "missing" : reasons.length ? "partial" : "ready", reasons,
     data: { applied, view: settings.view, slate, slates: slatesOf(input), games: input.scheduledGameIds.length, skaters: [], goalies, fallback: input.fallback ?? null },
     teams: [...new Set(goalies.map(row => row.team))].sort(),
@@ -392,14 +386,13 @@ function buildSkaterViews(input: LastNightsStandoutsInput, applied: string): Sha
     yahooSource(input, knownOwned, skaters.length),
   ];
   return {
+    pageNotes: input.fallback ? [input.fallback.note] : [],
     state: !slateGames.length ? "missing" : reasons.length ? "partial" : "ready", reasons,
     data: { applied, view: settings.view, slate, slates: slatesOf(input), games: input.scheduledGameIds.length, skaters, goalies: [], fallback: input.fallback ?? null },
     teams: [...new Set(skaters.flatMap(row => row.team ? [row.team] : []))].sort(),
     evidence: { sources, sample: `Slate of ${slate}, ${input.scheduledGameIds.length} games. Each % compares that game with the skater's own season per game before it, that slate and later games excluded, with ${settings.minPriorGp}+ prior GP; xG% is pooled. A zero or missing baseline prints —. PP units are ranked from shift data; PP — means no rows, or NHL.com PP time contradicts the unit${isHandBuilt(settings.view) ? ". Skaters on this card are chosen by hand" : ""}`, strength: STRENGTH, cohort: `${skaters.length} skaters on the slate: ${skaters.filter(row => row.group === "F").length} F, ${skaters.filter(row => row.group === "D").length} D`, coverage: { observed: coverage.observed, expected: coverage.expected, missing: coverage.missing, unit: "team games" } },
   };
 }
-/** How a blank date's latest night is described when an earlier, complete one is shown instead. */
-export const fallbackReason = (latest: string, shown: string, coverage: { missing: number; expected: number }, kind: "skater" | "goalie") => `${slateLabel(latest)} is incomplete: ${coverage.missing} of ${coverage.expected} scheduled team games have no ${kind} rows yet. Showing ${slateLabel(shown)}, the last complete night.`;
 /** A chosen date that is not a slate: why, and data so the sidebar keeps its chooser. It never shows a card or exports. */
 export function standoutsNoSlate(date: string, settings: LastNightsStandoutsSettings, slates: StandoutSlates): SharePostLoadResult<LastNightsStandoutsData> {
   const inSeason = date >= slates.first && date <= slates.last;

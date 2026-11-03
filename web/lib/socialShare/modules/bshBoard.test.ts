@@ -2,7 +2,7 @@
 import { createElement } from "react";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { BSH_BAR_PX, BSH_LEADER_ROWS, BSH_LETTER_PX, BSH_MOVER_ROWS, bshBar, bshBoardModule, buildBshBoard, rangeMinGp, skaterSeasonEvidence, skaterSeasonScope, type BshBoardData, type BshBoardSettings, type SkaterSeason } from "./bshBoard";
+import { BSH_BAR_PX, BSH_LEADER_ROWS, BSH_LETTER_PX, BSH_MOVER_ROWS, bshBar, bshBoardModule, buildBshBoard, rangeMinGp, skaterNights, skaterSeasonEvidence, trimLateNights, skaterSeasonScope, type BshBoardData, type BshBoardSettings, type SkaterSeason } from "./bshBoard";
 import { loadBshBoard } from "./bshBoard.sources";
 import { parseShareSettings, sharePostExportBlock, type SharePostSnapshot } from "./contract";
 import { skaterBoardModules } from "./lanes/skaterBoards";
@@ -348,5 +348,56 @@ describe("the period control", () => {
   it("fails visibly when the calendar cannot be read", async () => {
     const client = { from: () => { const chain: any = { then: (resolve: (value: unknown) => void) => resolve({ data: null, error: { message: "nope" }, count: null }) }; for (const method of ["select", "eq", "order", "range"]) chain[method] = () => chain; return chain; } };
     await expect(loadBshBoard({ client, generatedAt: GENERATED }, settings({ period: "matchup" }))).rejects.toThrow();
+  });
+});
+
+describe("a late newest night", () => {
+  /** Oct 1 to Oct 3, NJD at NYR each night; Oct 3 has only the NJD skater, and no team results came in at all. */
+  const schedule = [1, 2, 3].map(day => ({ id: 1000 + day - 1, date: `2026-10-0${day}`, homeTeamId: 1, awayTeamId: 3 }));
+  const nights = (gaps: number[]): SkaterSeason => ({
+    appearances: [0, 1, 2].flatMap(index => [game(1, index, { shots: 4 }), ...gaps.includes(index) ? [] : [game(2, index, { team: "NYR" })]]),
+    teamGames: [], scheduledGames: 3, through: "2026-10-03", schedule,
+  });
+  it("counts coverage by skater rows against the schedule, with no team results needed", () => {
+    expect(skaterNights(nights([]))).toEqual([{ date: "2026-10-01", expected: 2, observed: 2 }, { date: "2026-10-02", expected: 2, observed: 2 }, { date: "2026-10-03", expected: 2, observed: 2 }]);
+    expect(skaterSeasonEvidence(nights([]), { windowLabel: "L5", cohort: "All" }).state).toBe("ready");
+  });
+  it("ends the board at its last complete night, exportable, with a page note", () => {
+    const { season, pageNotes } = trimLateNights(nights([2]));
+    expect(season).toMatchObject({ through: "2026-10-02", scheduledGames: 2 });
+    expect(season.appearances.every(row => row.date <= "2026-10-02")).toBe(true);
+    expect(pageNotes).toEqual(["Oct 3 is not fully reported yet, so this card ends Oct 2."]);
+    const built = buildBshBoard(season, settings());
+    expect(built.state).toBe("ready");
+    expect(built.data!.through).toBe("2026-10-02");
+    expect(built.data!.rows.find(row => row.playerId === 1)!.recent.games).toBe(2);
+  });
+  it("still blocks an older gap, and keeps a season where every night is late", () => {
+    const older = trimLateNights(nights([1]));
+    expect(older.pageNotes).toEqual([]);
+    expect(buildBshBoard(older.season, settings()).state).toBe("partial");
+    const allLate = trimLateNights(nights([0, 1, 2]));
+    expect(allLate).toMatchObject({ pageNotes: [], season: { through: "2026-10-03" } });
+  });
+  it("leaves a season with no schedule as read", () => {
+    const { schedule: _, ...noSchedule } = nights([2]);
+    expect(trimLateNights(noSchedule)).toEqual({ season: noSchedule, pageNotes: [] });
+  });
+  it("returns the note from the loader, and reads the schedule with both teams", async () => {
+    const appearance = (playerId: number, team: string, gameId: number, date: string) => ({ player_id: playerId, player_name: `Skater ${playerId}`, position_code: "C", date, season_id: 20262027, game_id: gameId, team_abbrev: team, opponent_team_abbrev: team === "NJD" ? "NYR" : "NJD", home_road: "H", games_played: 1, goals: 0, assists: 0, points: 0, shots: 2, hits: 1, blocked_shots: 1, pp_points: 0, toi_per_game: 900, pp_toi: 0, penalty_minutes: 0 });
+    const tables: Record<string, unknown[]> = { games: [{ id: 7, date: "2026-10-27", homeTeamId: 1, awayTeamId: 3 }, { id: 8, date: "2026-10-28", homeTeamId: 1, awayTeamId: 3 }], wgo_skater_stats: [appearance(1, "NJD", 7, "2026-10-27"), appearance(2, "NYR", 7, "2026-10-27"), appearance(1, "NJD", 8, "2026-10-28")], wgo_team_stats: [] };
+    const calls: { table: string; filters: unknown[][] }[] = [];
+    const client = { from(table: string) {
+      const filters: unknown[][] = [], rows = tables[table] ?? [];
+      const chain: any = { then: (resolve: (value: unknown) => void) => resolve({ data: rows, error: null, count: rows.length }) };
+      for (const method of ["select", "eq", "gte", "lte", "in", "not", "order", "limit", "range"]) chain[method] = (...args: unknown[]) => { filters.push([method, ...args]); return chain; };
+      calls.push({ table, filters });
+      return chain;
+    } };
+    const result = await loadBshBoard({ client, generatedAt: "2026-10-29T14:00:00Z" }, settings());
+    expect(result.state).toBe("ready");
+    expect(result.pageNotes).toEqual(["Oct 28 is not fully reported yet, so this card ends Oct 27."]);
+    expect(result.data!.through).toBe("2026-10-27");
+    expect(calls.find(call => call.table === "games")!.filters).toContainEqual(["select", "id,date,homeTeamId,awayTeamId", { count: "exact" }]);
   });
 });

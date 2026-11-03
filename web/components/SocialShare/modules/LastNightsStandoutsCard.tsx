@@ -39,8 +39,6 @@ function SkaterRow({ row, rank, logo, logoSize }: { row: StandoutSkater; rank: n
     <div className={styles.tiles}>{row.stats.map(stat => <Tile key={stat.id} id={stat.id} label={stat.label} value={statText(stat)} std={stdText(stat)} change={percentLabel(stat.change)} tone={changeTone(stat.change)} />)}</div>
   </div>;
 }
-/** A blank date whose latest night is still loading shows the last complete one, and says so on the card. */
-const FallbackNote = ({ data }: { data: LastNightsStandoutsData }) => data.fallback ? <span data-testid="standouts-fallback" style={{ color: "#ffcc33" }}> {slateLabel(data.fallback.date)} is still loading, so this is {slateLabel(data.slate)}.</span> : null;
 const Banner = ({ settings, slate }: { settings: LastNightsStandoutsSettings; slate: string }) => <h3 className={styles.banner} data-testid="standouts-view" style={{ color: "#ffffff" }}>{viewTitle(settings)}<span style={{ color: QUIET }}>{slateLabel(slate)}</span></h3>;
 
 function GoalieCard({ data, settings, logos }: Pick<SharePostCardProps<LastNightsStandoutsSettings, LastNightsStandoutsData>, "data" | "settings" | "logos">) {
@@ -48,7 +46,7 @@ function GoalieCard({ data, settings, logos }: Pick<SharePostCardProps<LastNight
   if (!rows.length) return <div className={styles.board}><Banner settings={settings} slate={data.slate} /><div className={styles.blank} data-testid="standouts-blank">{data.goalies.length ? "No goalie on this slate meets the shots-against minimum." : "Goalie data is missing for this slate."}</div></div>;
   return <div className={styles.board}>
     <Banner settings={settings} slate={data.slate} />
-    <p className={styles.legend} style={{ color: QUIET }} data-testid="standouts-legend">{order.lead} {slateWord(data)}, then STD per appearance before it. SV% changes in points of save percentage, GAA and GSAx in goals, the rest in %. SA is workload, so uncoloured.{isOlderSlate(data) ? " ROST is current." : ""}<FallbackNote data={data} />{order.note ? <span data-testid="nst-goalie-note" style={{ color: "#ffcc33" }}> {order.note}</span> : null}</p>
+    <p className={styles.legend} style={{ color: QUIET }} data-testid="standouts-legend">{order.lead} {slateWord(data)}, then STD per appearance before it. SV% changes in points of save percentage, GAA and GSAx in goals, the rest in %. SA is workload, so uncoloured.{isOlderSlate(data) ? " ROST is current." : ""}{order.note ? <span data-testid="nst-goalie-note" style={{ color: "#ffcc33" }}> {order.note}</span> : null}</p>
     <div className={styles.rows} style={{ fontSize: type }} data-few={rows.length <= 4 || undefined}>{rows.map((row, index) => <div key={row.goalieId} className={styles.row} data-testid="standout-row">
       <div className={styles.who}>
         {goalieRank(row, index) !== null && <span className={styles.rank} data-testid="goalie-rank" style={{ color: QUIET }}>{goalieRank(row, index)}</span>}
@@ -70,7 +68,7 @@ export default function LastNightsStandoutsCard({ data, settings, logos }: Share
   const legend = hand ? "Picked by hand, in this order." : `Top ${rows.length} of ${pool} by ${rankingText(settings.rankBy)}.`;
   return <div className={styles.board}>
     <Banner settings={settings} slate={data.slate} />
-    <p className={styles.legend} style={{ color: QUIET }} data-testid="standouts-legend">{legend} {slateWord(data)}, then STD: the player&apos;s season per game before this slate. % compares them; — means no baseline or value.{rows.some(row => row.lineAsOf) ? " A dated line is from that earlier game." : ""}{isOlderSlate(data) ? " ROST is current." : ""}<FallbackNote data={data} /></p>
+    <p className={styles.legend} style={{ color: QUIET }} data-testid="standouts-legend">{legend} {slateWord(data)}, then STD: the player&apos;s season per game before this slate. % compares them; — means no baseline or value.{rows.some(row => row.lineAsOf) ? " A dated line is from that earlier game." : ""}{isOlderSlate(data) ? " ROST is current." : ""}</p>
     <div className={styles.rows} style={{ fontSize: type }} data-few={rows.length <= 4 || undefined}>{rows.map((row, index) => <SkaterRow key={row.playerId} row={row} rank={hand ? null : index + 1} logo={row.team ? logos[row.team] : null} logoSize={Math.round(type * 1.3)} />)}</div>
   </div>;
 }

@@ -363,3 +363,13 @@ R9, for the default: Crosby 1G-2A-3P-1PPP, Anderson 2G-1A-3P, Kucherov 0G-3A-3P,
 | R22 | Real loader, three sequential loads through `loadPostSnapshot` with the public client, `generatedAt` 2026-11-03T14:00Z: Top forwards blank, Goalies blank, No roster limit on 2026-11-02 | `games`, `wgo_skater_stats`, `wgo_goalie_stats`, `nst_gamelog_as_counts`, `nst_gamelog_as_counts_oi`, `nst_gamelog_goalie_all_counts`, `lineCombinations`, `powerPlayCombinations`, `yahoo_players`, `yahoo_nhl_player_map_read` | 15, 9 and 15 requests; whole-window rows, in `ui-1103/standouts/load-summary.json`; nothing printed but computed snapshots | All ready on 2026-11-02, coverage 8 of 8, no fallback. GSAx is not on NST yet for Nov 2, so the goalie card says so and is unranked |
 
 Renders, `ui-1103/standouts/`, isolated Playwright on port 3110 with a fictional session: `real-forwards-blank.png`, `real-goalies-blank.png` and `real-all-nov2.png` (8 picks) are real downloads. The fixture previews `fixture-all-late-team-feed-preview.png` and `fixture-goalies-late-team-feed-preview.png` come from the real loader over a fictional Nov 2 with no team results; they are watermarked and refused export. Each also has a studio screenshot, and all five fit with no horizontal scroll at 375px (`render-report.json`).
+
+### SS-1103-B, part 2: page notes and the shared late-feed rule
+
+- **Standouts:** the blank-date fallback now uses `shared/completeThrough.ts` over the nights it read. The note is a page note beside the preview, "Oct 31 is not fully reported yet, so this card ends Oct 27.", never on the PNG; the card keeps the date in its headline, banner and legend. A chosen slate that is partial stays partial, with no note.
+- **BSH Board, Multi Cat Monsters, Nightly Floor:** the shared season read now takes the schedule with both teams. Coverage is skater rows against scheduled team games, so a late team-results feed no longer blocks.
+  - **Late newest nights:** incomplete newest nights are cut, so the board ends at its last complete night and can export, with the same page note.
+  - **Older gaps:** still partial.
+  - **Every night late, or no schedule:** the season is kept as read.
+  - All three boards share one loader path, so they follow one rule; Multi Cat Stars (lane H) reads its own season and is unchanged.
+- **Specs:** the Refresh clicks are gone, as ss-contract's PostStudio now loads on each change. The stale-only assertion after "previous slate" was removed. The skater-board fixture's week 3 moved to 2027, because the pager now takes its cutoff from the edition.

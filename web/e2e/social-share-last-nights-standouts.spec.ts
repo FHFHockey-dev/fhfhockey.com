@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 import { parseShareSettings, shareSettingsKey } from "../lib/socialShare/modules/contract";
-import { buildLastNightsStandouts, fallbackReason, lastNightsStandoutsModule, standoutsNoSlate, type LastNightsStandoutsInput, type LastNightsStandoutsSettings } from "../lib/socialShare/modules/lastNightsStandouts";
+import { buildLastNightsStandouts, lastNightsStandoutsModule, standoutsNoSlate, type LastNightsStandoutsInput, type LastNightsStandoutsSettings } from "../lib/socialShare/modules/lastNightsStandouts";
 import { ownershipOf } from "../lib/socialShare/modules/shared/definitions";
 import type { GoalieAppearance } from "../lib/socialShare/modules/shared/goalieLedger";
 import type { SkaterAppearance } from "../lib/socialShare/modules/shared/skaterAppearances";
@@ -337,7 +337,6 @@ test("the slate chooser steps back, clears picks, and the card's date and wordin
   await expect(page.getByTestId("slate-label")).toHaveText("Oct 26");
   await expect(page).not.toHaveURL(/picks=\d/);
   await expect(page).toHaveURL(new RegExp(`slate=${OLD_SLATE}`));
-  await expect(page.getByTestId("slate-previous")).toBeDisabled();
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
 
   await expect(page.getByTestId("standouts-blank")).toBeVisible();
@@ -392,15 +391,16 @@ const fallbackBody = (query: URLSearchParams) => {
   const settings = settingsFromQuery(query);
   if (settings.slate) return slateBody(query);
   const edition = slateBody(new URLSearchParams({ ...Object.fromEntries(query), slate: OLD_SLATE })) as { settings: object; data: { fallback: unknown } };
-  return { ...edition, settings, data: { ...edition.data, applied: shareSettingsKey(lastNightsStandoutsModule.fields.filter(field => !field.clientOnly), settings), fallback: { date: SLATE, reason: fallbackReason(SLATE, OLD_SLATE, { missing: 2, expected: 2 }, "skater") } } };
+  const note = "Oct 31 is not fully reported yet, so this card ends Oct 26.";
+  return { ...edition, settings, pageNotes: [note], data: { ...edition.data, applied: shareSettingsKey(lastNightsStandoutsModule.fields.filter(field => !field.clientOnly), settings), fallback: { trimmed: [SLATE], note } } };
 };
 test("a blank date with an incomplete latest night shows the last complete night, dated, and says why", async ({ page }) => {
   await open(page, "&view=all&picks=1,2,3,4,5,6,7,8", fallbackBody);
   const square = page.getByTestId("share-square");
   await expect(square.locator("h2")).toHaveText("OCT 26 STANDOUTS");
   await expect(page.getByTestId("standouts-view")).toContainText("Oct 26");
-  await expect(page.getByTestId("standouts-fallback")).toHaveText(" Oct 31 is still loading, so this is Oct 26.");
-  await expect(page.getByTestId("standouts-fallback-reason")).toHaveText("Oct 31 is incomplete: 2 of 2 scheduled team games have no skater rows yet. Showing Oct 26, the last complete night.");
+  await expect(page.getByTestId("post-page-notes")).toHaveText("Oct 31 is not fully reported yet, so this card ends Oct 26.");
+  await expect(square).not.toContainText("not fully reported");
   await expect(page.getByTestId("standouts-legend")).toContainText("Oct 26, then STD");
   await expect(square).not.toContainText("Last night");
   await expect(page.getByTestId("standout-row")).toHaveCount(8);

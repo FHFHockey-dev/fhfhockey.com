@@ -425,7 +425,7 @@ describe("slate coverage and evidence", () => {
     expect(result.evidence.coverage).toMatchObject({ observed: 1, expected: 2, missing: 1 });
   });
   it("never counts a side whose team id has no code", () => {
-    expect(scheduledTeamGames([{ id: 9, date: SLATE, homeTeamId: 1, awayTeamId: 999 }])).toEqual([{ gameId: 9, team: "NJD" }, { gameId: 9, team: null }]);
+    expect(scheduledTeamGames([{ id: 9, date: SLATE, homeTeamId: 1, awayTeamId: 999 }])).toEqual([{ gameId: 9, date: SLATE, team: "NJD" }, { gameId: 9, date: SLATE, team: null }]);
     expect(slateCoverage({ playerTeamGames: both, scheduledTeamGames: [{ gameId: 9, team: "NJD" }, { gameId: 9, team: null }] }).complete).toBe(false);
   });
   it("is partial for the goalie view by team game too", () => {
@@ -592,13 +592,17 @@ describe("loader", () => {
       expect(result.reasons).toEqual(["Skater data is missing for Oct 31: 1 game was scheduled, and no skater rows have been reported."]);
       expect(result.reasons?.join(" ")).not.toContain("No games");
       expect(result.data).toMatchObject({ slate: SLATE, games: 1, skaters: [], fallback: null, slates: { previous: FIRST, next: null } });
+      expect(result.pageNotes).toEqual([]);
       expect(result.evidence.coverage).toMatchObject({ observed: 0, expected: 2, missing: 2 });
       expect(result.evidence.sources).toEqual([expect.objectContaining({ state: "partial", asOf: null })]);
     });
     it("falls back from a blank date's incomplete night to the last complete one, which carries its date", async () => {
-      const { data, state } = await loadLastNightsStandouts(context(gap).context, settings({ view: "forwards" }));
+      const { data, state, pageNotes, reasons } = await loadLastNightsStandouts(context(gap).context, settings({ view: "forwards" }));
       expect(state).toBe("ready");
-      expect(data).toMatchObject({ slate: FIRST, fallback: { date: SLATE, reason: "Oct 31 is incomplete: 2 of 2 scheduled team games have no skater rows yet. Showing Oct 27, the last complete night." }, slates: { previous: null, next: SLATE } });
+      expect(reasons).toEqual([]);
+      expect(data).toMatchObject({ slate: FIRST, fallback: { trimmed: [SLATE] }, slates: { previous: null, next: SLATE } });
+      // Beside the card only: the PNG carries the date, not the note.
+      expect(pageNotes).toEqual(["Oct 31 is not fully reported yet, so this card ends Oct 27."]);
       expect(slateWord(data!)).toBe("Oct 27");
       expect(standoutsHeadline({ slate: null }, data)).toBe("Oct 27 Standouts");
     });
@@ -608,6 +612,7 @@ describe("loader", () => {
       const result = await loadLastNightsStandouts({ ...ctx, generatedAt: "2026-10-30T14:00:00Z" }, settings({ view: "all" }));
       expect(result.state).toBe("missing");
       expect(result.data).toMatchObject({ slate: dates[9], fallback: null });
+      expect(result.pageNotes).toEqual([]);
       expect(fake.calls.filter(call => call.table === "wgo_skater_stats")).toHaveLength(1 + FALLBACK_NIGHTS);
     });
     it("keeps the goalie view working from its own complete sources", async () => {
@@ -627,6 +632,7 @@ describe("loader", () => {
       const result = await loadLastNightsStandouts(context({ ...gap, games: [sched(1, FIRST), { id: 9, date: SLATE, homeTeamId: 1, awayTeamId: 3 }], wgo_skater_stats: [row(1, 9, SLATE)], lineCombinations: [], powerPlayCombinations: [], nst_gamelog_as_counts: [], nst_gamelog_as_counts_oi: [] }).context, settings({ view: "all", slate: SLATE }));
       expect(result.state).toBe("partial");
       expect(result.reasons).toEqual(["1 of 2 scheduled team games on this slate have no skater rows."]);
+      expect(result.pageNotes).toEqual([]);
     });
     it("walks neighbours over a true off day but stops on a missing-feed day", async () => {
       const tables = { wgo_skater_stats: [row(1, 1, FIRST), row(1, 2, EARLIER), row(1, 9, SLATE)], games: [sched(1, FIRST), sched(2, EARLIER), sched(3, GAP), sched(9, SLATE)], wgo_team_stats: [...teamRows(1, FIRST), ...teamRows(2, EARLIER), ...teamRows(3, GAP), ...teamRows(9, SLATE)], nst_gamelog_as_counts: [], nst_gamelog_as_counts_oi: [], lineCombinations: [], powerPlayCombinations: [], yahoo_players: [], yahoo_nhl_player_map_read: [] };

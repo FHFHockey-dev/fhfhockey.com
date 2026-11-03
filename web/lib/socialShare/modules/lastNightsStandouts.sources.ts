@@ -2,11 +2,12 @@ import { bounded } from "lib/socialShare/trendSources";
 import { SKATER_SEASON_LIMITS } from "./bshBoard.sources";
 import { UNKNOWN_EVIDENCE, type SharePostContext, type SharePostLoadResult, type SharePostReadClient } from "./contract";
 import { NST_GSAX_COLUMNS, NST_GSAX_TABLES, type NstGsaxRow } from "./goalieGsax";
-import { buildLastNightsStandouts, fallbackReason, isGoalieView, LINE_COMBO_COLUMNS, lineRowsFromCombinations, scheduledSlateDates, scheduledTeamGames, slateCoverage, slateNeighbours, standoutsNoSlate, type EarlierLineRow, type LastNightsStandoutsData, type LastNightsStandoutsSettings, type LineComboRow, type SlateScheduleRow, type StandoutFallback } from "./lastNightsStandouts";
+import { buildLastNightsStandouts, isGoalieView, LINE_COMBO_COLUMNS, lineRowsFromCombinations, scheduledSlateDates, scheduledTeamGames, slateCoverage, slateNeighbours, standoutsNoSlate, type EarlierLineRow, type LastNightsStandoutsData, type LastNightsStandoutsSettings, type LineComboRow, type SlateScheduleRow, type StandoutFallback } from "./lastNightsStandouts";
 import { ownershipByPlayer, type OwnershipMapRow, type YahooOwnershipRow } from "./nightlyFloor";
 import { OWNERSHIP_LIMITS } from "./nightlyFloor.sources";
 import { ROLE_PP_COLUMNS, type RolePpRow } from "./roleWatch";
 import type { GoalieAppearance } from "./shared/goalieLedger";
+import { completeThrough, completeThroughNote } from "./shared/completeThrough";
 import { readGoalieAppearances } from "./shared/goalieLedger.sources";
 import type { SkaterAppearance } from "./shared/skaterAppearances";
 import { readSkaterAppearances } from "./shared/skaterAppearances.sources";
@@ -62,12 +63,15 @@ export async function loadLastNightsStandouts({ client, generatedAt }: SharePost
   };
   let night = await readNight(chosen ?? dates[dates.length - 1]), fallback: StandoutFallback | null = null;
   // A blank date never shows a night still loading: it steps back to the last complete one, which then carries its date.
+  // The same rule as every late-feed card (shared/completeThrough.ts), read night by night so a complete latest night costs one read.
   if (!chosen && !night.coverage.complete) {
-    const latest = night;
+    const scanned = [night];
     for (const date of [...dates].reverse().slice(1, FALLBACK_NIGHTS + 1)) {
-      const earlier = await readNight(date);
-      if (earlier.coverage.complete) { night = earlier; fallback = { date: latest.date, reason: fallbackReason(latest.date, date, latest.coverage, goalieView ? "goalie" : "skater") }; break; }
+      scanned.push(await readNight(date));
+      if (scanned[scanned.length - 1].coverage.complete) break;
     }
+    const result = completeThrough(scanned.map(entry => ({ date: entry.date, expected: entry.coverage.expected, observed: entry.coverage.observed })), night.date), note = completeThroughNote(result);
+    if (result.through && note) { night = scanned.find(entry => entry.date === result.through)!; fallback = { trimmed: result.trimmed, note }; }
   }
   const slate = night.date, slates = slateNeighbours(dates, slate, { first: from, last: through }), scheduledGameIds = schedule.filter(game => game.date === slate).map(game => game.id);
   const ownership = night.rows.length ? await readOwnership(client, season) : { byPlayer: new Map(), updatedAt: null };
