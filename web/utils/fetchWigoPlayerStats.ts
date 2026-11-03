@@ -631,10 +631,34 @@ export async function fetchPlayerGameLogForStat(
  * Fetches pre-aggregated player stats from wigo_career and wigo_recent
  * and transforms them into the TableAggregateData format for display.
  */
-export async function fetchPlayerAggregatedStats(
-  playerId: number,
-  stdSeasonId: number | null = null
-): Promise<WigoAggregatedStatsResult> {
+type WigoAggregateTotals =
+  | (Partial<{
+      goals: number | null;
+      assists: number | null;
+      points: number | null;
+      shots: number | null;
+      hits: number | null;
+      blocked_shots: number | null;
+      penalty_minutes: number | null;
+      pp_points: number | null;
+      games_played: number | null;
+    }> & { season?: string | null })
+  | null;
+
+export interface WigoAggregateSources {
+  careerData: WigoCareerRow | null;
+  recentData: WigoRecentRow | null;
+  totalsData: WigoAggregateTotals;
+}
+
+/**
+ * The player's aggregate rows. They do not depend on the season, so the read
+ * starts without waiting for /api/v1/season; the season check happens when
+ * the rows are built (S4).
+ */
+export async function fetchPlayerAggregateSources(
+  playerId: number
+): Promise<WigoAggregateSources> {
 
   // wigo_career and wigo_recent are the aggregate sources. The legacy wigo_rates table has no writer
   // (0 rows) and is not read: if anything refilled it, it would silently override these per-60 values.
@@ -673,23 +697,20 @@ export async function fetchPlayerAggregatedStats(
     console.warn("Totals fallback unavailable:", totalsRes.error.message);
   }
 
-  const careerData = careerRes.data as WigoCareerRow | null;
-  const recentData = recentRes.data as WigoRecentRow | null;
-  const totalsData = (
-    totalsRes && !totalsRes.error ? (totalsRes.data as any | null) : null
-  ) as
-    | (Partial<{
-        goals: number | null;
-        assists: number | null;
-        points: number | null;
-        shots: number | null;
-        hits: number | null;
-        blocked_shots: number | null;
-        penalty_minutes: number | null;
-        pp_points: number | null;
-        games_played: number | null;
-      }> & { season?: string | null })
-    | null;
+  return {
+    careerData: careerRes.data as WigoCareerRow | null,
+    recentData: recentRes.data as WigoRecentRow | null,
+    totalsData: (totalsRes && !totalsRes.error
+      ? (totalsRes.data as any | null)
+      : null) as WigoAggregateTotals
+  };
+}
+
+/** Table rows and freshness for one season, from the season-free sources. */
+export function buildWigoAggregatedStatsResult(
+  { careerData, recentData, totalsData }: WigoAggregateSources,
+  stdSeasonId: number | null
+): WigoAggregatedStatsResult {
   const freshness = getWigoAggregateFreshness({
     careerData,
     recentData,
@@ -698,9 +719,6 @@ export async function fetchPlayerAggregatedStats(
   });
 
   if (!careerData && !recentData) {
-    console.warn(
-      `No aggregated data found for player ${playerId} in wigo_career or wigo_recent.`
-    );
     return { rows: [], freshness };
   }
 
@@ -714,6 +732,16 @@ export async function fetchPlayerAggregatedStats(
     }),
     freshness
   };
+}
+
+export async function fetchPlayerAggregatedStats(
+  playerId: number,
+  stdSeasonId: number | null = null
+): Promise<WigoAggregatedStatsResult> {
+  return buildWigoAggregatedStatsResult(
+    await fetchPlayerAggregateSources(playerId),
+    stdSeasonId
+  );
 }
 
 // A statement timeout (57014) is the slow view itself, not a blip: retrying it

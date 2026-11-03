@@ -16,9 +16,10 @@ import {
 } from "lib/teamsInfo";
 import supabase from "lib/supabase";
 import {
-  fetchPlayerAggregatedStats,
+  buildWigoAggregatedStatsResult,
+  fetchPlayerAggregateSources,
   WigoAggregateFreshness,
-  WigoAggregatedStatsResult
+  WigoAggregateSources
 } from "utils/fetchWigoPlayerStats";
 import useCurrentSeason from "./useCurrentSeason";
 import { WIGO_QUERY_DEFAULTS } from "components/WiGO/queryDefaults";
@@ -38,10 +39,8 @@ interface WigoBranding {
 export const getWigoPlayerDetailsQueryKey = (playerId: number | null) =>
   ["wigoPlayerDetails", playerId] as const;
 
-export const getWigoAggregatedStatsQueryKey = (
-  playerId: number | null,
-  seasonId: number | null = null
-) => ["wigoPlayerAggregatedStats", playerId, seasonId] as const;
+export const getWigoAggregatedStatsQueryKey = (playerId: number | null) =>
+  ["wigoPlayerAggregatedStats", playerId] as const;
 
 export const getPlayerIdFromQueryValue = (
   value: string | string[] | undefined
@@ -200,13 +199,21 @@ export default function useWigoPlayerDashboard(): UseWigoPlayerDashboardResult {
     ...WIGO_QUERY_DEFAULTS
   });
 
-  const aggregatedStatsQuery = useQuery<WigoAggregatedStatsResult>({
-    queryKey: getWigoAggregatedStatsQueryKey(selectedPlayerId, currentSeasonId),
-    queryFn: () => fetchPlayerAggregatedStats(selectedPlayerId as number, currentSeasonId),
-    // Wait for the season so STD's totals fallback is season-checked and the read happens once.
-    enabled: typeof selectedPlayerId === "number" && currentSeasonId !== null,
+  // The rows load in parallel with the season (S4); the table is built only
+  // once the season is known, so STD's totals fallback is always season-checked.
+  const aggregatedStatsQuery = useQuery<WigoAggregateSources>({
+    queryKey: getWigoAggregatedStatsQueryKey(selectedPlayerId),
+    queryFn: () => fetchPlayerAggregateSources(selectedPlayerId as number),
+    enabled: typeof selectedPlayerId === "number",
     ...WIGO_QUERY_DEFAULTS
   });
+  const aggregatedStats = useMemo(
+    () =>
+      aggregatedStatsQuery.data && currentSeasonId !== null
+        ? buildWigoAggregatedStatsResult(aggregatedStatsQuery.data, currentSeasonId)
+        : null,
+    [aggregatedStatsQuery.data, currentSeasonId]
+  );
 
   const latestTeamQuery = useQuery<number | null>({
     queryKey: ["wigoLatestGameTeam", selectedPlayerId, currentSeasonId],
@@ -267,8 +274,8 @@ export default function useWigoPlayerDashboard(): UseWigoPlayerDashboardResult {
     teamName: branding.teamName,
     teamAbbreviation: branding.teamAbbreviation,
     teamIdForLog: branding.teamIdForLog,
-    rawCombinedData: aggregatedStatsQuery.data?.rows ?? [],
-    aggFreshness: aggregatedStatsQuery.data?.freshness ?? null,
+    rawCombinedData: aggregatedStats?.rows ?? [],
+    aggFreshness: aggregatedStats?.freshness ?? null,
     isLoadingAggData: aggregatedStatsQuery.isLoading,
     isLoadingPlayer: selectedPlayerQuery.isLoading,
     aggDataError:

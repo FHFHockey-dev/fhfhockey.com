@@ -56,8 +56,10 @@ vi.mock("lib/supabase", () => ({
   }
 }));
 
+// The mocked sources are already the built result, so building passes them through.
 vi.mock("utils/fetchWigoPlayerStats", () => ({
-  fetchPlayerAggregatedStats: mockFetchPlayerAggregatedStats
+  fetchPlayerAggregateSources: mockFetchPlayerAggregatedStats,
+  buildWigoAggregatedStatsResult: (sources: unknown) => sources
 }));
 
 vi.mock("lib/NHL/client", () => ({
@@ -233,9 +235,9 @@ describe("useWigoPlayerDashboard", () => {
         { label: "Goals", STD: 31 }
       ]);
     });
-    // One aggregate read per player, made with the resolved dashboard season (never a season-less read).
+    // One aggregate read per player; it does not wait for the season (S4).
     expect(mockFetchPlayerAggregatedStats).toHaveBeenCalledTimes(1);
-    expect(mockFetchPlayerAggregatedStats).toHaveBeenCalledWith(firstPlayer.id, expect.any(Number));
+    expect(mockFetchPlayerAggregatedStats).toHaveBeenCalledWith(firstPlayer.id);
 
     mockRouter.query = { playerId: String(secondPlayer.id) };
     rerender();
@@ -323,5 +325,24 @@ describe("useWigoPlayerDashboard", () => {
     expect(latestGameQuery.calls).toContainEqual(["eq", "season_id", 20262027]);
     expect(latestGameQuery.calls).toContainEqual(["eq", "games_played", 1]);
     fromMock.mockImplementation(() => ({ select: selectMock }));
+  });
+
+  it("starts the aggregate read before the season resolves, and builds the table once it does", async () => {
+    const player = createPlayer();
+    const season = createDeferred<{ seasonId: number }>();
+    mockGetCurrentSeason.mockReturnValue(season.promise);
+    mockRouter.query = { playerId: String(player.id) };
+    singleMock.mockResolvedValue({ data: player, error: null });
+    mockFetchPlayerAggregatedStats.mockResolvedValue({ rows: [{ label: "Goals", STD: 8 }], freshness });
+
+    const { result } = renderHook(() => useWigoPlayerDashboard(), {
+      wrapper: createWrapper(createQueryClient())
+    });
+
+    await waitFor(() => expect(mockFetchPlayerAggregatedStats).toHaveBeenCalledWith(player.id));
+    expect(result.current.currentSeasonId).toBeNull();
+    expect(result.current.rawCombinedData).toEqual([]);
+    act(() => season.resolve({ seasonId: 20262027 }));
+    await waitFor(() => expect(result.current.rawCombinedData).toEqual([{ label: "Goals", STD: 8 }]));
   });
 });
