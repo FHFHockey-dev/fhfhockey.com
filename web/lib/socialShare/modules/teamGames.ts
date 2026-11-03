@@ -1,7 +1,7 @@
 import { currentSeason } from "lib/socialShare/schedule";
 import { teamsInfo } from "lib/teamsInfo";
 import { defineShareModule, type SharePostLoadResult } from "./contract";
-import { completeThrough, completeThroughNote, type NightCoverage } from "./shared/completeThrough";
+import { completeThrough, completeThroughNote, countNights, teamGameDates, type NightCoverage } from "./shared/completeThrough";
 import { competitionRanks, editionDate } from "./shared/definitions";
 import { customRangeReason, PERIOD_CUSTOM, periodDates, periodWindowFields, resolvePeriodWindow, type MatchupCalendar, type PeriodControl, type PeriodWindowResult, type PeriodWindowSettings } from "./shared/periodWindow";
 
@@ -31,10 +31,9 @@ const teamById = new Map(Object.entries(teamsInfo).map(([abbreviation, team]) =>
 export type TeamGamesScheduled = { id: number; date: string };
 /** Each scheduled night's team games against those reported, for `completeThrough`. */
 function teamGameNights(rows: readonly TeamGameInput[], schedule: readonly TeamGamesScheduled[]): NightCoverage[] {
-  const nights = new Map<string, { expected: number; reported: Set<string> }>();
-  for (const game of schedule) { const night = nights.get(game.date) ?? { expected: 0, reported: new Set<string>() }; night.expected += 2; nights.set(game.date, night); }
-  for (const row of rows) if (row.game_id != null && teamById.has(row.team_id ?? -1)) nights.get(row.date)?.reported.add(`${row.team_id}:${row.game_id}`);
-  return [...nights].map(([date, night]) => ({ date, expected: night.expected, observed: night.reported.size }));
+  // One entry per reported team game, so a repeated row cannot count twice.
+  const reported = new Map(rows.flatMap(row => row.game_id != null && teamById.has(row.team_id ?? -1) ? [[`${row.team_id}:${row.game_id}`, row.date] as const] : []));
+  return countNights(teamGameDates(schedule), reported.values());
 }
 /** The window's label once late nights are cut: a week keeps its number, other periods name their dates, since "Last 7 days" would no longer be true. */
 const cutLabel = (label: string, from: string, through: string) => /^Week \d+/.test(label) ? `${label.split(" · ")[0]} · ${periodDates(from, through)}` : periodDates(from, through);

@@ -8,7 +8,7 @@ import type { ShareDataState, SocialShareSnapshot } from "lib/socialShare/types"
 import { defineShareModule, SHARE_POST_DEFAULT_TTL_SECONDS, type SharePostEvidence, type SharePostLoadResult, type SharePostSource } from "./contract";
 import { appearancesByPlayer, type SkaterAppearance } from "./shared/skaterAppearances";
 import { spanDays } from "./shared/categoryCounts";
-import { completeThrough, completeThroughNote, type NightCoverage } from "./shared/completeThrough";
+import { completeThrough, completeThroughNote, countNights, teamGameDates } from "./shared/completeThrough";
 import { competitionRanks, editionDate, lastN, ownershipInRange, ownershipLabel, ownershipOf, type OwnershipState } from "./shared/definitions";
 import { customRangeReason, PERIOD_CUSTOM, periodDates, periodWindowFields, resolvePeriodWindow, type MatchupCalendar, type PeriodControl, type PeriodWindow, type PeriodWindowResult, type PeriodWindowSettings } from "./shared/periodWindow";
 import { shiftDays } from "./teamGames";
@@ -43,7 +43,12 @@ export type OffNightPick = { nhlId: number; name: string; positions: string; own
   /** L5 well above his own earlier rate and his position's median: preferred over a better score that is not. */
   hot: boolean;
   /** Fewer than five complete games: used only when no full-sample skater qualifies, and chipped on the card. */
-  shortSample: boolean };
+  shortSample: boolean;
+  /**
+   * Yahoo's IR, O or NA flag, kept although he played one of his team's last games: the flag may be stale or may be last
+   * night's injury, so he is picked only when no unflagged skater qualifies, and a page note names him. Null when unflagged.
+   */
+  yahooStatus: string | null };
 export type OffNightExclusions = { aboveCeiling: number; unknownOwnership: number; staleOwnership: number; unavailable: number; inactive: number; sample: number; identity: number };
 export type OffNightDay = { date: string; label: string; leagueGames: number; offNight: boolean };
 /** How many skaters' Yahoo flags were ignored because they played, and how many had no Yahoo % at all. */
@@ -71,9 +76,10 @@ export type OffNightData = {
   ownership: { known: number; unknown: number; stale: number; asOf: string | null };
 };
 /** Admin-only page notes: the empty slots and why, and the data problems found. Never on the PNG. */
-export function offNightPageNotes(rows: readonly Pick<OffNightRow, "team" | "gaps">[], diagnostics: OffNightDiagnostics, settings: Pick<OffNightSettings, "includeUnknown">) {
+export function offNightPageNotes(rows: readonly Pick<OffNightRow, "team" | "gaps" | "picks">[], diagnostics: OffNightDiagnostics, settings: Pick<OffNightSettings, "includeUnknown">) {
   return [
     ...rows.flatMap(row => (["F", "D"] as const).flatMap(group => row.gaps[group] ? [`${row.team} ${row.gaps[group]}.`] : [])),
+    ...rows.flatMap(row => (["F", "D"] as const).flatMap(group => { const pick = row.picks[group]; return pick?.yahooStatus ? [`${row.team} ${group}: ${pick.name} is marked ${pick.yahooStatus} by Yahoo but played one of ${row.team}'s last ${OFF_NIGHT_PLAYING_GAMES} games, and no unflagged skater qualifies. Check he is healthy before posting.`] : []; })),
     ...(diagnostics.statusOverridden ? [`Yahoo marks ${diagnostics.statusOverridden} eligible skaters IR, O or NA although each played in one of his team's last ${OFF_NIGHT_PLAYING_GAMES} games; they stay pickable. Yahoo's writer keeps an old status when Yahoo omits it.`] : []),
     ...(diagnostics.unknownOwnership ? [`${diagnostics.unknownOwnership} eligible skaters have no Yahoo % rostered: Yahoo has never reported one for them (no history row), so it is unknown, not 0%.${settings.includeUnknown === "on" ? "" : " They are left out while Include unknown ownership is Off."}`] : []),
   ];
@@ -180,8 +186,8 @@ function formOf(rows: readonly FormRow[], group: OffNightGroup) {
   return { recent, group };
 }
 const median = (values: number[]) => { const sorted = [...values].sort((a, b) => a - b), mid = Math.floor(sorted.length / 2); return sorted.length ? sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2 : Infinity; };
-/** HOT first, then the best score; a short sample only when no full sample is left. Ties: lower known %, then id. */
-const pickOrder = (a: OffNightPick, b: OffNightPick) => Number(a.shortSample) - Number(b.shortSample) || Number(b.hot) - Number(a.hot) || b.score - a.score || (a.ownership.pct ?? 101) - (b.ownership.pct ?? 101) || a.nhlId - b.nhlId;
+/** Unflagged first; then HOT, then the best score; a short sample only when no full sample is left. Ties: lower known %, then id. */
+const pickOrder = (a: OffNightPick, b: OffNightPick) => Number(a.yahooStatus !== null) - Number(b.yahooStatus !== null) || Number(a.shortSample) - Number(b.shortSample) || Number(b.hot) - Number(a.hot) || b.score - a.score || (a.ownership.pct ?? 101) - (b.ownership.pct ?? 101) || a.nhlId - b.nhlId;
 
 /** Latest game's team is the player's team now; earlier games stay bound to the team they were played for. */
 function selectPicks(input: { appearances: readonly SkaterAppearance[]; yahoo: readonly OffNightYahooRow[]; map: readonly ShareMapRow[]; teams: readonly string[]; settings: OffNightSettings; today: string }) {
@@ -218,7 +224,7 @@ function selectPicks(input: { appearances: readonly SkaterAppearance[]; yahoo: r
     if (flagged) diagnostics.statusOverridden++;
     const window = lastN(complete, MIN_SKATER_GAMES).rows, earlier = complete.slice(0, complete.length - window.length), player = formOf(window, group);
     const baseline = earlier.length >= OFF_NIGHT_HOT_BASE_GAMES ? fantasyPointsPerGame(formOf(earlier, group)) : null;
-    pool.picks[group].push({ nhlId, name: latest.name, positions: position.positions, ownership: owned, games: window.length, fantasyPerGame: fantasyPointsPerGame(player)!, score: playerScore(player)!, hot: false, shortSample: window.length < MIN_SKATER_GAMES, baseline });
+    pool.picks[group].push({ nhlId, name: latest.name, positions: position.positions, ownership: owned, games: window.length, fantasyPerGame: fantasyPointsPerGame(player)!, score: playerScore(player)!, hot: false, shortSample: window.length < MIN_SKATER_GAMES, yahooStatus: flagged ? yahoo.status : null, baseline });
   }
   const medians = Object.fromEntries((["F", "D"] as const).map(group => [group, median([...pools.values()].flatMap(pool => pool.picks[group].filter(pick => !pick.shortSample).map(pick => pick.fantasyPerGame)))]));
   const best = (group: OffNightGroup, picks: (OffNightPick & { baseline: number | null })[]) => picks.map(({ baseline, ...pick }): OffNightPick => ({ ...pick, hot: !pick.shortSample && baseline !== null && pick.fantasyPerGame >= OFF_NIGHT_HOT_RATIO * baseline && pick.fantasyPerGame >= medians[group] })).sort(pickOrder)[0] ?? null;
@@ -256,13 +262,11 @@ export const offNightPeriodMissing = (reasons: string[]) => unready("missing", r
  * complete night and the post stays exportable, with a page note. An older gap stays in the window and keeps it partial.
  */
 export function offNightCompleteThrough<T extends { appearances: readonly SkaterAppearance[]; gameIds: readonly number[]; through: string }>(input: T, scheduled: readonly { id: number; date: string }[]): { input: T; pageNotes: string[]; unavailable?: true } {
-  const teams = new Map<number, Set<string>>(), nights = new Map<string, NightCoverage>();
-  for (const row of input.appearances) if (row.team) teams.set(row.gameId, (teams.get(row.gameId) ?? new Set()).add(row.team));
-  for (const game of scheduled) {
-    const night = nights.get(game.date) ?? { date: game.date, expected: 0, observed: 0 };
-    nights.set(game.date, { ...night, expected: night.expected + 2, observed: night.observed + Math.min(2, teams.get(game.id)?.size ?? 0) });
-  }
-  const result = completeThrough([...nights.values()], input.through), note = completeThroughNote(result);
+  const dateOf = new Map(scheduled.map(game => [game.id, game.date]));
+  // One entry per team with skater rows in a scheduled game.
+  const reported = new Map(input.appearances.flatMap(row => row.team && dateOf.has(row.gameId) ? [[`${row.gameId}:${row.team}`, dateOf.get(row.gameId)!] as const] : []));
+  const nights = countNights(teamGameDates(scheduled), reported.values());
+  const result = completeThrough(nights, input.through), note = completeThroughNote(result);
   // No complete night at all: there is no form to judge pickups by.
   if (!result.through) return { input, pageNotes: [], unavailable: true };
   if (!note) return { input, pageNotes: [] };

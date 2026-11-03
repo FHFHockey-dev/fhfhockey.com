@@ -10,5 +10,8 @@ declare module "lib/supabase/Upserts/fetchWGOdata.js" {
     date?: string;
     /** Include all seasons (historical + current) */
     allSeasons?: boolean;
-  }): Promise<void>;
+  }): Promise<{
+    /** Dates the run budget left for the next run, oldest first: a planned stop, not a failure. */
+    deferredDates: string[];
+  }>;
 }

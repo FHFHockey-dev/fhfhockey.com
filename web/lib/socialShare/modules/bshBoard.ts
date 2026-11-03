@@ -2,7 +2,7 @@ import { currentSeason } from "lib/socialShare/schedule";
 import { defineShareModule, shareSettingsKey, type SharePostEvidence, type SharePostLoadResult, type SharePostSource, type ShareSettingField } from "./contract";
 import { bsh, competitionRanks, editionDate, lastN, previousN, versusSeason, type ShareWindow } from "./shared/definitions";
 import { teamsInfo } from "lib/teamsInfo";
-import { completeThrough, completeThroughNote, type NightCoverage } from "./shared/completeThrough";
+import { completeThrough, completeThroughNote, countNights, type NightCoverage } from "./shared/completeThrough";
 import type { CompletedTeamGame } from "./shared/goalieLedger";
 import { customRangeReason, PERIOD_CUSTOM, PERIOD_MATCHUP, periodWindowFields, type PeriodControl, type PeriodWindowSettings } from "./shared/periodWindow";
 import { appearancesByPlayer, type SkaterAppearance } from "./shared/skaterAppearances";
@@ -52,14 +52,8 @@ const TEAM_BY_ID = new Map(Object.entries(teamsInfo).map(([abbreviation, team]) 
 export const scheduledTeamGames = (games: readonly SlateScheduleRow[]) => games.flatMap(game => [game.homeTeamId, game.awayTeamId].map(id => ({ gameId: game.id, date: game.date, team: id === null ? null : TEAM_BY_ID.get(id) ?? null })));
 /** Each scheduled night: its team games, and how many have skater rows. */
 export function skaterNights(season: Pick<SkaterSeason, "appearances" | "schedule">): NightCoverage[] {
-  const withSkaters = new Set(season.appearances.map(row => `${row.gameId}:${row.team}`)), nights = new Map<string, NightCoverage>();
-  for (const game of scheduledTeamGames(season.schedule ?? [])) {
-    const night = nights.get(game.date) ?? { date: game.date, expected: 0, observed: 0 };
-    night.expected++;
-    if (game.team !== null && withSkaters.has(`${game.gameId}:${game.team}`)) night.observed++;
-    nights.set(game.date, night);
-  }
-  return [...nights.values()];
+  const withSkaters = new Set(season.appearances.map(row => `${row.gameId}:${row.team}`)), teamGames = scheduledTeamGames(season.schedule ?? []);
+  return countNights(teamGames.map(game => game.date), teamGames.flatMap(game => game.team !== null && withSkaters.has(`${game.gameId}:${game.team}`) ? [game.date] : []));
 }
 /**
  * TJ's late-feed rule (11-03): incomplete newest nights are cut, so the board ends at its last complete night and can export,

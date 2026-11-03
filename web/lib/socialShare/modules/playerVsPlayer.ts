@@ -1,6 +1,6 @@
 import { defineShareModule, type SharePostEvidence, type SharePostLoadResult, type SharePostSource, UNKNOWN_EVIDENCE } from "./contract";
 import candidateFile from "./playerVsPlayer.candidates.json";
-import { completeThrough, completeThroughNote, type NightCoverage } from "./shared/completeThrough";
+import { completeThrough, completeThroughNote, countNights } from "./shared/completeThrough";
 import { bsh, lastN, per60, versusSeason, type ShareWindow } from "./shared/definitions";
 import type { SkaterAppearance } from "./shared/skaterAppearances";
 
@@ -249,12 +249,8 @@ export function buildPlayerVsPlayer(input: BuildPvpInput): SharePostLoadResult<P
   const blocked = (reason: string): SharePostLoadResult<PlayerVsPlayerData> => ({ state: "blocked", reasons: [reason], evidence: UNKNOWN_EVIDENCE, data: null });
   if (!players) return blocked("Enter two NHL player ids, or choose a sourced pair.");
   /* A late feed on the newest nights ends the card at the last complete night (TJ, 2026-11-03); an older gap still blocks export. */
-  const nights = new Map<string, NightCoverage>();
-  for (const game of input.teamCoverage.flatMap(team => team.games)) {
-    const night = nights.get(game.date) ?? { date: game.date, expected: 0, observed: 0 };
-    nights.set(game.date, { ...night, expected: night.expected + 1, observed: night.observed + (game.completed ? 1 : 0) });
-  }
-  const cut = completeThrough([...nights.values()], input.through), through = cut.through;
+  const teamGames = input.teamCoverage.flatMap(team => team.games);
+  const cut = completeThrough(countNights(teamGames.map(game => game.date), teamGames.flatMap(game => game.completed ? [game.date] : [])), input.through), through = cut.through;
   if (!through) return blocked("No night in this window is fully reported yet.");
   const appearances = input.appearances.filter(game => game.date <= through);
   const nstRows = (input.nst ?? []).filter(row => row.date_scraped <= through), games = joinNst(appearances, nstRows), view = { windowId: settings.window, basis: settings.basis, strength: settings.strength };

@@ -231,22 +231,26 @@ async function fetchNHLData(
   // Dates not written this run. A failed read stops the run, so recent mode
   // resumes from the last stored date and retries it instead of leaving a gap.
   const failedDates = [];
+  // Dates the run budget could not fit. Not failures: nothing was tried, and
+  // the next run starts from the last stored date, so it picks them up.
+  const deferredDates = [];
   let currentDate = parseISO(startDate);
 
   while (format(currentDate, "yyyy-MM-dd") <= effectiveEndDate) {
     const formattedDate = format(currentDate, "yyyy-MM-dd");
 
     if (Date.now() + NHL_FETCH_WORST_CASE_MS > deadline) {
-      console.error(
-        `Not processing ${formattedDate} (season ${seasonId}): run time budget spent.`,
+      console.warn(
+        `Leaving ${formattedDate} onward (season ${seasonId}) for the next run: run time budget spent.`,
       );
-      failedDates.push({
-        date: formattedDate,
-        reason: "not attempted, run time budget spent",
-      });
-      bar.tick();
-      currentDate = addDays(currentDate, 1);
-      continue;
+      for (
+        let date = currentDate;
+        format(date, "yyyy-MM-dd") <= effectiveEndDate;
+        date = addDays(date, 1)
+      ) {
+        deferredDates.push(format(date, "yyyy-MM-dd"));
+      }
+      break;
     }
 
     const { data: existing, error: existErr } = await supabase
@@ -649,7 +653,7 @@ async function fetchNHLData(
     currentDate = addDays(currentDate, 1);
   }
 
-  return failedDates;
+  return { failedDates, deferredDates };
 }
 
 async function main(options = {}) {
@@ -697,6 +701,7 @@ async function main(options = {}) {
   console.time("Total Process Time");
   const deadline = Date.now() + RUN_BUDGET_MS;
   const failedDates = [];
+  const deferredDates = [];
 
   try {
     console.log("Fetching NHL seasons and franchise-team lineage...");
@@ -855,7 +860,7 @@ async function main(options = {}) {
             { total: totalDays, width: 40 },
           );
 
-          const seasonFailedDates = await fetchNHLData(
+          const seasonResult = await fetchNHLData(
             newStartDate,
             effectiveEndDate,
             season.id.toString(),
@@ -863,8 +868,12 @@ async function main(options = {}) {
             bar,
             deadline,
           );
-          failedDates.push(...seasonFailedDates);
-          if (seasonFailedDates.length > 0) {
+          failedDates.push(...seasonResult.failedDates);
+          deferredDates.push(...seasonResult.deferredDates);
+          if (
+            seasonResult.failedDates.length > 0 ||
+            seasonResult.deferredDates.length > 0
+          ) {
             break;
           }
 
@@ -895,7 +904,13 @@ async function main(options = {}) {
       );
     }
 
-    console.log("\n=== MAIN FUNCTION COMPLETED SUCCESSFULLY ===");
+    if (deferredDates.length > 0) {
+      console.warn(
+        `\n=== MAIN FUNCTION STOPPED AT ITS RUN BUDGET: ${deferredDates.length} date(s) from ${deferredDates[0]} left for the next run ===`,
+      );
+    } else {
+      console.log("\n=== MAIN FUNCTION COMPLETED SUCCESSFULLY ===");
+    }
   } catch (error) {
     console.error("=== ERROR IN MAIN FUNCTION ===");
     console.error("Error:", error);
@@ -903,6 +918,8 @@ async function main(options = {}) {
   }
 
   console.timeEnd("Total Process Time");
+  // Dates not attempted because the run budget ran out: a planned stop, not a failure.
+  return { deferredDates };
 }
 
 // Export the main function for use in API routes.

@@ -12,6 +12,19 @@ export type CompleteThrough = {
   olderMissing: string[];
 };
 
+/**
+ * The one way every late-feed card counts its nights: one date per scheduled team game, and one per team game whose feed is
+ * in. Each card decides which team games are in; a night never counts more than were scheduled, and a date with none is not a night.
+ */
+export function countNights(scheduled: Iterable<string>, reported: Iterable<string>): NightCoverage[] {
+  const nights = new Map<string, NightCoverage>();
+  for (const date of scheduled) { const night = nights.get(date) ?? { date, expected: 0, observed: 0 }; night.expected++; nights.set(date, night); }
+  for (const date of reported) { const night = nights.get(date); if (night && night.observed < night.expected) night.observed++; }
+  return [...nights.values()];
+}
+/** Both team games of each scheduled game, by date. */
+export const teamGameDates = (games: Iterable<{ date: string }>) => [...games].flatMap(game => [game.date, game.date]);
+
 /** A night with no games scheduled counts as complete, so it can end a card. Nights after `through` are ignored. */
 export function completeThrough(nights: readonly NightCoverage[], through: string): CompleteThrough {
   const window = nights.filter(night => night.date <= through).sort((a, b) => a.date.localeCompare(b.date));

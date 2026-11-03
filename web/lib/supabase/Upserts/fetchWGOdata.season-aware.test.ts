@@ -418,7 +418,7 @@ describe("fetchWGOdata NHL.com request resilience", () => {
     );
   });
 
-  it("rejects naming the dates the run budget cannot fit", async () => {
+  it("leaves the dates the run budget cannot fit for the next run, without calling them failures", async () => {
     mocks.latestProcessedDate = "2026-10-25";
     // Slow but inside the timeout, so each date takes 19 s.
     installSources((endpoint) =>
@@ -427,7 +427,9 @@ describe("fetchWGOdata NHL.com request resilience", () => {
         : teamDay(),
     );
 
-    const error = await settle(main({ recent: true }));
+    const run = main({ recent: true });
+    await vi.runAllTimersAsync();
+    const result = await run;
 
     // A date starts only while 63 s of worst case still fits 210 s.
     expect(mocks.upsertedRows.map((row) => row.date)).toEqual([
@@ -441,11 +443,7 @@ describe("fetchWGOdata NHL.com request resilience", () => {
       "2026-11-01",
     ]);
     expect(teamCalls("summary", "2026-11-02")).toBe(0);
-    expect(error?.message).toBe(
-      "WGO team stats failed for 2 date(s): " +
-        "2026-11-02 (not attempted, run time budget spent); " +
-        "2026-11-03 (not attempted, run time budget spent)",
-    );
+    expect(result).toEqual({ deferredDates: ["2026-11-02", "2026-11-03"] });
   });
 });
 

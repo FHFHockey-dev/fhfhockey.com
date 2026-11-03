@@ -5,10 +5,10 @@ import type { Database } from "lib/supabase/database-generated.types";
 import { teamsInfo } from "lib/teamsInfo";
 import { SHARE_POST_DEFAULT_TTL_SECONDS, type ShareSettingField, type SharePostEvidence, type SharePostReadClient, type SharePostSource } from "../contract";
 import { spanDays } from "./categoryCounts";
-import { completeThrough, completeThroughNote } from "./completeThrough";
+import { completeThrough, completeThroughNote, countNights, teamGameDates } from "./completeThrough";
 import { competitionRanks, editionDate } from "./definitions";
 import { GOALIE_INVENTORY_VERSION, type GoalieConfirmation, type GoalieForecast, type GoalieGameSignals, type GoalieInventory, type GoalieInventoryEntry, type GoalieInventoryGame, type GoalieInventoryRequest, type GoalieInventorySource, type InventoryMetric, type LoadGoalieInventory, type SearchGoalieInventory } from "./goalieInventory";
-import { customRangeReason, matchupCalendar, periodDates, periodWindowFields, PERIOD_CUSTOM, resolvePeriodWindow, type MatchupCalendar, type PeriodControl, type PeriodWindowSettings } from "./periodWindow";
+import { customRangeReason, editionCutoff, matchupCalendar, periodDates, periodWindowFields, PERIOD_CUSTOM, resolvePeriodWindow,type MatchupCalendar, type PeriodControl, type PeriodWindowSettings } from "./periodWindow";
 import { TEAM_GAME_COLUMNS, teamStartShare, toCompletedTeamGames, type CompletedTeamGame, type GoalieAppearance, type TeamGameRow } from "./goalieLedger";
 
 /**
@@ -252,12 +252,10 @@ export type GoalieInventoryInput = {
   forecasts: readonly InventoryForecastInput[] | null;
 };
 export function buildGoalieInventory(input: GoalieInventoryInput): GoalieInventoryDetail {
-  const { request } = input, editionCutoff = shiftDays(editionDate(request.generatedAt), -1), reasons: string[] = [];
+  const { request } = input, lastNight = editionCutoff(request.generatedAt), reasons: string[] = [];
   // A late newest night (TJ, 2026-11-03): the rates end at the last night with every team game reported, the card stays exportable, and a page note says so. An older gap still makes it partial, as does an NST lag.
-  const nights = new Map<string, { date: string; expected: number; observed: number }>();
-  for (const game of input.schedule) if (game.date <= editionCutoff) { const night = nights.get(game.date) ?? { date: game.date, expected: 0, observed: 0 }; night.expected += 2; nights.set(game.date, night); }
-  for (const game of toCompletedTeamGames(input.teamGames, { season: request.season, through: editionCutoff })) { const night = nights.get(game.date); if (night) night.observed++; }
-  const late = completeThrough([...nights.values()], editionCutoff);
+  const nights = countNights(teamGameDates(input.schedule.filter(game => game.date <= lastNight)), toCompletedTeamGames(input.teamGames, { season: request.season, through: lastNight }).map(game => game.date));
+  const late = completeThrough(nights, lastNight);
   if (late.through === null) return missingDetail(request, NO_COMPLETE_NIGHT_REASON);
   const cutoff = late.through, lateNote = completeThroughNote(late);
   const ledger: CompletedTeamGame[] = toCompletedTeamGames(input.teamGames, { season: request.season, through: cutoff });
@@ -410,7 +408,7 @@ export const confirmationNote = (inventory: GoalieInventory) => inventory.source
 export function inventoryEvidence({ inventory, coverage, ratesThrough }: Pick<GoalieInventoryDetail, "inventory" | "coverage" | "ratesThrough">, cohort: string, teamGames: number, notes: readonly string[] = []): SharePostEvidence {
   return {
     sources: inventory.sources.filter(source => source.state === "ready" || source.state === "partial").map(({ name, tables, state, asOf, updatedAt, reasons }) => ({ name, tables, state, asOf, updatedAt, reasons })),
-    sample: `${inventory.from} to ${inventory.through}: ${teamGames} upcoming team games; rates are season to date through ${ratesThrough ?? shiftDays(editionDate(inventory.generatedAt), -1)}. ${[confirmationNote(inventory), ...notes].join(" ")}`,
+    sample: `${inventory.from} to ${inventory.through}: ${teamGames} upcoming team games; rates are season to date through ${ratesThrough ?? editionCutoff(inventory.generatedAt)}. ${[confirmationNote(inventory), ...notes].join(" ")}`,
     strength: "All situations (shots, xG, chances); PP and PK as labeled", cohort,
     coverage: coverage ? { observed: coverage.observed, expected: coverage.expected, missing: coverage.missing, unit: "completed team games" } : null,
   };
@@ -449,7 +447,7 @@ export async function loadGoalieInventoryDetail(client: { from: (table: string) 
   try {
     if ((Date.parse(request.through) - Date.parse(request.from)) / DAY_MS >= MAX_RANGE_DAYS) throw new Error("Inventory range is too long.");
     const [{ bounded }, { readGoalieAppearances }, { activeTeamAbbreviations }] = await Promise.all([import("lib/socialShare/trendSources"), import("./goalieLedger.sources"), import("lib/teamsInfo")]);
-    const cutoff = shiftDays(editionDate(request.generatedAt), -1), seasonStart = `${String(request.season).slice(0, 4)}-08-01`;
+    const cutoff = editionCutoff(request.generatedAt), seasonStart = `${String(request.season).slice(0, 4)}-08-01`;
     const scheduleThrough = shiftDays(request.through, 1);
     const schedule = await bounded<InventoryScheduleRow>("Schedule", LIMITS.schedule, (from, to) => client.from("games").select("id,date,startTime,homeTeamId,awayTeamId", { count: "exact" }).eq("seasonId", request.season).eq("type", 2).lte("date", scheduleThrough).order("date", { ascending: true }).order("id", { ascending: true }).range(from, to));
     const teamGames = await bounded<InventoryTeamGameRow>("Team game stats", LIMITS.teamGames, (from, to) => client.from("wgo_team_stats").select([...TEAM_GAME_COLUMNS, ...INVENTORY_LENS_COLUMNS].join(","), { count: "exact" }).eq("season_id", request.season).lte("date", cutoff).order("date", { ascending: true }).order("game_id", { ascending: true }).order("team_id", { ascending: true }).range(from, to));

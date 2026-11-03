@@ -36,5 +36,5 @@ export async function loadBusyQuiet({ client, generatedAt }: SharePostContext, s
     orNull(bounded<NstGoalieRow>("NST goalie shots", LEDGER_LIMITS.nstGoalie, (start, end) => client.from("nst_gamelog_goalie_all_counts").select(NST_GOALIE_COLUMNS, { count: "exact" }).eq("season", scope.season).in("player_id", eligible.map(window => window.goalieId)).gte("date_scraped", since).lte("date_scraped", lastDate).order("date_scraped").order("player_id").range(start, end))),
     orNull(bounded<NstTeamRow>("NST team chances", LEDGER_LIMITS.nstTeam, (start, end) => client.from("nst_team_gamelogs_as_counts").select(NST_TEAM_COLUMNS, { count: "exact" }).eq("season_id", scope.season).eq("situation", "all").gte("date", since).lte("date", lastDate).order("date").order("team_abbreviation").range(start, end))),
   ]);
-  return buildBusyQuiet({ settings, ...ledger, nstGoalie, nstTeam, through: scope.through, range });
+  return buildBusyQuiet({ settings, ...ledger, nstGoalie, nstTeam, through: scope.through, range, cut });
 }

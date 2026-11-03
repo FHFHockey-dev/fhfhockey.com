@@ -1,6 +1,6 @@
 import { currentSeason } from "lib/socialShare/schedule";
 import { defineShareModule, type SharePostLoadResult, type SharePostSource } from "./contract";
-import { completeThrough, completeThroughNote, type NightCoverage } from "./shared/completeThrough";
+import { completeThrough, completeThroughNote, countNights, teamGameDates } from "./shared/completeThrough";
 import { competitionRanks, editionDate, lastN, per60, previousN, versusSeason } from "./shared/definitions";
 import { appearancesByPlayer, type SkaterAppearance } from "./shared/skaterAppearances";
 
@@ -190,13 +190,11 @@ export function gameCoverage(input: GameCoverageInput) {
  * last complete night and says so in a page note. An older gap stays in the window, so it still makes the post partial.
  */
 export function endAtCompleteNight<T extends GameCoverageInput & { through: string }>(input: T): { input: T; pageNotes: string[] } {
-  const withSkaters = new Set(input.appearances.map(game => `${game.gameId}:${game.team}`)), observed = new Map<number, number>(), nights = new Map<string, NightCoverage>();
-  for (const game of input.completedTeamGames) if (withSkaters.has(`${game.gameId}:${game.team}`)) observed.set(game.gameId, (observed.get(game.gameId) ?? 0) + 1);
-  for (const game of input.scheduledGames) {
-    const night = nights.get(game.date) ?? { date: game.date, expected: 0, observed: 0 };
-    nights.set(game.date, { ...night, expected: night.expected + 2, observed: night.observed + Math.min(2, observed.get(game.gameId) ?? 0) });
-  }
-  const result = completeThrough([...nights.values()], input.through), note = completeThroughNote(result);
+  const withSkaters = new Set(input.appearances.map(game => `${game.gameId}:${game.team}`)), dateOf = new Map(input.scheduledGames.map(game => [game.gameId, game.date]));
+  // One entry per team game with a result and skater rows, so a repeated row cannot count twice.
+  const reported = new Map(input.completedTeamGames.flatMap(game => withSkaters.has(`${game.gameId}:${game.team}`) ? [[`${game.gameId}:${game.team}`, game.gameId] as const] : []));
+  const nights = countNights(teamGameDates(input.scheduledGames), [...reported.values()].flatMap(gameId => dateOf.get(gameId) ?? []));
+  const result = completeThrough(nights, input.through), note = completeThroughNote(result);
   // No complete night at all leaves the window whole, and its reasons keep the post partial.
   if (!result.through || !note) return { input, pageNotes: [] };
   const through = result.through, scheduledGames = input.scheduledGames.filter(game => game.date <= through), kept = new Set(scheduledGames.map(game => game.gameId));

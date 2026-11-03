@@ -2,7 +2,7 @@ import { currentSeason } from "lib/socialShare/schedule";
 import { defineShareModule, UNKNOWN_EVIDENCE, type ShareSettingField, type SharePostEvidence, type SharePostLoadResult, type SharePostSource } from "./contract";
 import { competitionRanks, editionDate, lastN, per60 } from "./shared/definitions";
 import type { CompletedTeamGame, GoalieAppearance } from "./shared/goalieLedger";
-import { completeThrough, completeThroughNote } from "./shared/completeThrough";
+import { completeThrough, completeThroughNote, countNights } from "./shared/completeThrough";
 import { customRangeReason, periodDates, periodWindowFields, PERIOD_CUSTOM, resolvePeriodWindow, type MatchupCalendar, type PeriodControl, type PeriodWindowSettings } from "./shared/periodWindow";
 
 /** Busy and Quiet goalies (SS 10.0, SS-R12): how much work each goalie faced, kept apart from how well he played. */
@@ -83,10 +83,8 @@ export function rangeLedger(ledger: GoalieLedger, range: GoalieDateRange | null 
  * exportable, with a page note. Only those trailing nights go: a gap before them stays in, and `ledgerCoverage` still blocks it as before.
  */
 export function cutLateNights(ledger: GoalieLedger, range: GoalieDateRange | null | undefined, through: string): { ledger: GoalieLedger; range: GoalieDateRange | null; through: string; pageNotes?: string[]; reason?: undefined } | { ledger?: undefined; reason: string } {
-  const expected = new Map<string, number>(), observed = new Map<string, number>();
-  for (const date of ledger.scheduledDates) expected.set(date, (expected.get(date) ?? 0) + 2);
-  for (const game of ledger.teamGames) observed.set(game.date, (observed.get(game.date) ?? 0) + 1);
-  const result = completeThrough([...expected].map(([date, count]) => ({ date, expected: count, observed: observed.get(date) ?? 0 })), range?.through ?? through);
+  const nights = countNights(ledger.scheduledDates.flatMap(date => [date, date]), ledger.teamGames.map(game => game.date));
+  const result = completeThrough(nights, range?.through ?? through);
   if (result.through === null) return { reason: `No night ${range ? "in these dates " : ""}is fully reported yet, so there is nothing to show.` };
   if (!result.trimmed.length) return { ledger, range: range ?? null, through };
   const end = result.through, note = completeThroughNote(result);
@@ -194,8 +192,10 @@ export function buildBusyQuiet(input: {
   nstGoalie: readonly NstGoalieRow[] | null; nstTeam: readonly NstTeamRow[] | null; through: string;
   /** The chosen dates; absent for a rolling window. */
   range?: GoalieDateRange | null;
+  /** The loader's own cut, which sized its NST reads: given, the card is drawn from that same window. */
+  cut?: ReturnType<typeof cutLateNights>;
 }): SharePostLoadResult<BusyQuietData> {
-  const cut = cutLateNights(rangeLedger(input, input.range), input.range, input.through);
+  const cut = input.cut ?? cutLateNights(rangeLedger(input, input.range), input.range, input.through);
   if (!cut.ledger) return lateFeedUnavailable(cut.reason);
   const { settings } = input, { range, through, pageNotes } = cut, { appearances, teamGames, scheduledDates } = cut.ledger, minStarts = goalieMinStarts(settings);
   const windows = goalieWindows(appearances, range ? "std" : settings.window), eligible = windows.filter(window => window.starts >= minStarts);

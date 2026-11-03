@@ -210,6 +210,13 @@ describe("SS-1103-D pickups", () => {
     const team = topTeam(), result = build([{ id: 1, team, status: "NA" }, { id: 2, team, position: "D", status: "IR", games: 4, out: 1 }]);
     expect(rowOf(result.data, team).picks).toMatchObject({ F: { nhlId: 1 }, D: { nhlId: 2 } });
     expect(result.pageNotes?.join(" ")).toMatch(/Yahoo marks 2 eligible skaters IR, O or NA although each played/);
+    expect(rowOf(result.data, team).picks.F).toMatchObject({ yahooStatus: "NA" });
+    expect(result.pageNotes?.join(" ")).toMatch(/F: .* is marked NA by Yahoo but played one of .* last 2 games, and no unflagged skater qualifies\. Check he is healthy/);
+  });
+  it("picks a flagged skater who played only when no unflagged skater qualifies, since the flag may be last night's injury", () => {
+    const team = topTeam(), result = build([{ id: 1, team, status: "O" }, { id: 2, team, shots: 0 }]);
+    expect(rowOf(result.data, team).picks.F).toMatchObject({ nhlId: 2, yahooStatus: null });
+    expect(result.pageNotes?.join(" ") ?? "").not.toMatch(/is marked O by Yahoo/);
   });
   it("says why a % rostered is unknown in a page note, and never calls it 0%", () => {
     const team = topTeam(), result = build([{ id: 1, team, pct: null }, { id: 2, team }]);
