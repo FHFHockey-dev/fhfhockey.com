@@ -17,6 +17,7 @@ function SlateChooser({ data, settings, change, disabled }: Pick<PanelProps, "da
       <span data-testid="slate-label" aria-live="polite">{slateLabel(shown)}</span>
       <button type="button" aria-label={next ? `Next slate, ${slateLabel(next)}` : "Next slate"} data-testid="slate-next" disabled={disabled || !loaded || !next} onClick={() => choose(next)}>▶</button>
     </div>
+    {data.fallback && loaded && !settings.slate && <p className={styles.panelNote} data-testid="standouts-fallback-reason">{data.fallback.reason}</p>}
     <label>Slate date<input type="date" data-testid="slate-date" min={first} max={last} value={shown} disabled={disabled} onChange={event => choose(event.target.value || null)} /></label>
   </div>;
 }

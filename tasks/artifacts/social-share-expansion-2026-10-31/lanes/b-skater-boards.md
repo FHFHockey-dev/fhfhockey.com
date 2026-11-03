@@ -342,3 +342,24 @@ R9, for the default: Crosby 1G-2A-3P-1PPP, Anderson 2G-1A-3P, Kucherov 0G-3A-3P,
 | --- | --- | --- | --- | --- |
 | R20 | Slate dates from team results against skater dates, this season through 2026-10-31, through MCP `execute_sql` on 2026-11-01 | `games`, `wgo_team_stats`, `wgo_skater_stats` | 0 sample rows (1 aggregate row) | Passed. 33 and 33, none on one side only |
 
+
+### SS-1103-B: a late team feed no longer blanks Standouts
+
+- **Cause, R21:** the 11-03 `run-fetch-wgo-data` job failed on NHL.com's team power-play fetch, so `wgo_team_stats` had 0 rows for Nov 2. Its 4 scheduled games had 144 skater rows and 8 goalie rows covering all 8 team games, plus 144 NST rows. Since `e152ce5bc` slates came from team results, so Nov 2 read "4 games were scheduled on Nov 2, but no team result has been reported."
+- **Slates:** every date with a scheduled regular-season game in `games`, read once with home and away team ids. `wgo_team_stats` is no longer read.
+- **Available:** a night is complete when the view's own rows cover both sides of every scheduled game: skater rows for the skater views, goalie rows for Goalies. Team results play no part.
+- **Gaps:**
+  - **Some rows missing:** partial, "1 of 2 scheduled team games on this slate have no skater rows."
+  - **No rows:** not available (`missing`, data kept for the chooser), "Skater data is missing for Oct 31: 1 game was scheduled, and no skater rows have been reported." Never an off day, and the date stays on the pager. This is Codex's F3 case.
+  - **True off day:** "No games on Oct 28."
+- **Blank date, TJ's late-feed decision:** if the latest night is incomplete, the loader steps back to the last complete night, at most 7 nights, then shows the latest as it is.
+  - **Dating:** the fallback night carries its date in the headline ("Oct 27 Standouts"), the banner and the legend.
+  - **Notes:** the card says "Oct 31 is still loading, so this is Oct 27.", and the sidebar gives the full reason. It moves to `pageNotes` when ss-contract lands that field.
+- **Bounds:** schedule ≤ 1,400 rows, one night's skater rows ≤ 700 or goalie rows ≤ 60 per step, at most 8 nights read.
+
+| # | Statement | Tables read | Rows returned | Result |
+| --- | --- | --- | --- | --- |
+| R21 | Nov 2 counts: scheduled games, team rows, skater, goalie and NST rows and team games covered, through MCP `execute_sql` on 2026-11-03 | `games`, `wgo_team_stats`, `wgo_skater_stats`, `wgo_goalie_stats`, `nst_gamelog_as_counts` | 0 sample rows (1 aggregate row) | Passed: 4 games, 0 team rows, 144 skater and 8 goalie rows over 8 of 8 team games |
+| R22 | Real loader, three sequential loads through `loadPostSnapshot` with the public client, `generatedAt` 2026-11-03T14:00Z: Top forwards blank, Goalies blank, No roster limit on 2026-11-02 | `games`, `wgo_skater_stats`, `wgo_goalie_stats`, `nst_gamelog_as_counts`, `nst_gamelog_as_counts_oi`, `nst_gamelog_goalie_all_counts`, `lineCombinations`, `powerPlayCombinations`, `yahoo_players`, `yahoo_nhl_player_map_read` | 15, 9 and 15 requests; whole-window rows, in `ui-1103/standouts/load-summary.json`; nothing printed but computed snapshots | All ready on 2026-11-02, coverage 8 of 8, no fallback. GSAx is not on NST yet for Nov 2, so the goalie card says so and is unranked |
+
+Renders, `ui-1103/standouts/`, isolated Playwright on port 3110 with a fictional session: `real-forwards-blank.png`, `real-goalies-blank.png` and `real-all-nov2.png` (8 picks) are real downloads. The fixture previews `fixture-all-late-team-feed-preview.png` and `fixture-goalies-late-team-feed-preview.png` come from the real loader over a fictional Nov 2 with no team results; they are watermarked and refused export. Each also has a studio screenshot, and all five fit with no horizontal scroll at 375px (`render-report.json`).

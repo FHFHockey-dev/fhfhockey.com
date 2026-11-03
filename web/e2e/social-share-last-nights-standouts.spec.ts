@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
-import { parseShareSettings } from "../lib/socialShare/modules/contract";
-import { buildLastNightsStandouts, lastNightsStandoutsModule, standoutsNoSlate, type LastNightsStandoutsInput, type LastNightsStandoutsSettings } from "../lib/socialShare/modules/lastNightsStandouts";
+import { parseShareSettings, shareSettingsKey } from "../lib/socialShare/modules/contract";
+import { buildLastNightsStandouts, fallbackReason, lastNightsStandoutsModule, standoutsNoSlate, type LastNightsStandoutsInput, type LastNightsStandoutsSettings } from "../lib/socialShare/modules/lastNightsStandouts";
 import { ownershipOf } from "../lib/socialShare/modules/shared/definitions";
 import type { GoalieAppearance } from "../lib/socialShare/modules/shared/goalieLedger";
 import type { SkaterAppearance } from "../lib/socialShare/modules/shared/skaterAppearances";
@@ -47,7 +47,7 @@ const ids = Array.from({ length: PLAYERS }, (_, index) => index + 1);
 const goalie = (goalieId: number, saves: number, shots: number): GoalieAppearance => ({ goalieId, name: `Fictional Goalie ${goalieId}`, gameId: 900, date: SLATE, team: goalieId % 2 ? "NJD" : "NYR", opponent: goalieId % 2 ? "NYR" : "NJD", home: true, started: true, wins: 1, losses: 0, otLosses: 0, saves, shotsAgainst: shots, goalsAgainst: shots - saves, toiSeconds: 3600, shutouts: 0, qualityStart: 1 });
 const settingsFromQuery = (query: URLSearchParams) => parseShareSettings(lastNightsStandoutsModule, Object.fromEntries(query), "server") as LastNightsStandoutsSettings;
 const shared = (settings: LastNightsStandoutsSettings): LastNightsStandoutsInput => ({
-  slate: SLATE, season: SEASON, settings, completedTeamGames: [{ gameId: 900, team: "NJD" }, { gameId: 900, team: "NYR" }], scheduledGameIds: [900],
+  slate: SLATE, season: SEASON, settings, scheduledTeamGames: [{ gameId: 900, team: "NJD" }, { gameId: 900, team: "NYR" }], scheduledGameIds: [900],
   // Rostered 5%, 10%, 15%...: player 10 sits exactly on 50 and is out of "Under 50%".
   ownership: { byPlayer: new Map(ids.map(id => [id, ownershipOf(id * 5, SLATE)])), updatedAt: `${SLATE}T08:00:00` },
 });
@@ -318,11 +318,11 @@ const slateBody = (query: URLSearchParams) => {
   const settings = settingsFromQuery(query), slate = settings.slate ?? SLATE, latest = slate === SLATE, slates = { previous: latest ? OLD_SLATE : PRIOR[2], next: latest ? null : SLATE, first: PRIOR[0], last: SLATE };
   if (slate === NO_GAME_DATE) return editionOf(settings, standoutsNoSlate(slate, settings, { ...slates, previous: OLD_SLATE, next: SLATE }));
   if (slate === MISSING_FEED) {
-    const played = { ...shared(settings), slate, slates: { ...slates, previous: OLD_SLATE, next: SLATE }, completedTeamGames: [{ gameId: 950, team: "NJD" }, { gameId: 950, team: "NYR" }], scheduledGameIds: [950] };
+    const played = { ...shared(settings), slate, slates: { ...slates, previous: OLD_SLATE, next: SLATE }, scheduledTeamGames: [{ gameId: 950, team: "NJD" }, { gameId: 950, team: "NYR" }], scheduledGameIds: [950] };
     return editionOf(settings, buildLastNightsStandouts(settings.view === "goalies" ? { ...played, goalies: [1, 2].map(id => ({ ...goalie(id, 25, 27), date: slate, gameId: 950 })), nstGoalies: [] } : { ...played, appearances: [] }));
   }
   const rows = appearances.filter(row => row.date <= slate), onSlate = rows.filter(row => row.date === slate), gameId = onSlate[0].gameId;
-  return editionOf(settings, buildLastNightsStandouts({ ...shared(settings), slate, slates, completedTeamGames: [{ gameId, team: "NJD" }, { gameId, team: "NYR" }], scheduledGameIds: [gameId], appearances: rows, nstCounts: nstDates.flatMap(date => ids.map(id => nst(date, id))), nstOnIce: nstDates.flatMap(date => ids.map(id => ({ player_id: id, date_scraped: date, season: SEASON, xgf: 1, xga: 1 }))), role: { rolling: ids.map(id => ({ player_id: id, game_id: gameId, line_combo_slot: 1, line_combo_group: id % 3 ? "forward" : "defense" })), pp: [] } }));
+  return editionOf(settings, buildLastNightsStandouts({ ...shared(settings), slate, slates, scheduledTeamGames: [{ gameId, team: "NJD" }, { gameId, team: "NYR" }], scheduledGameIds: [gameId], appearances: rows, nstCounts: nstDates.flatMap(date => ids.map(id => nst(date, id))), nstOnIce: nstDates.flatMap(date => ids.map(id => ({ player_id: id, date_scraped: date, season: SEASON, xgf: 1, xga: 1 }))), role: { rolling: ids.map(id => ({ player_id: id, game_id: gameId, line_combo_slot: 1, line_combo_group: id % 3 ? "forward" : "defense" })), pp: [] } }));
 };
 test("the slate chooser steps back, clears picks, and the card's date and wording follow", async ({ page }) => {
   await open(page, "&view=all&picks=1,2", slateBody);
@@ -377,11 +377,10 @@ test("the chooser stays inside a phone's width", async ({ page }) => {
   expect(box!.x + box!.width).toBeLessThanOrEqual(375);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
 });
-test("a played slate with no skater rows names the missing feed, blocks export and stays on the pager, and Goalies still works", async ({ page }) => {
+test("a night with no skater rows is not available, cannot export and stays on the pager, and Goalies still works", async ({ page }) => {
   await open(page, `&view=all&slate=${MISSING_FEED}`, slateBody);
-  await expect(page.getByTestId("standouts-blank")).toHaveText("Skater data is missing for this slate.");
-  await expect(page.getByText("Skater data is missing for Oct 29", { exact: false }).first()).toBeVisible();
-  await expect(page.getByTestId("post-watermark")).toHaveText("PARTIAL · NOT FOR EXPORT");
+  await expect(page.getByTestId("post-unavailable")).toContainText("Skater data is missing for Oct 29: 1 game was scheduled");
+  await expect(page.getByTestId("post-watermark")).toHaveText("UNAVAILABLE");
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
   await expect(page.getByTestId("slate-label")).toHaveText("Oct 29");
   await expect(page.getByTestId("slate-previous")).toBeEnabled();
@@ -389,5 +388,25 @@ test("a played slate with no skater rows names the missing feed, blocks export a
   await page.goto(`/social-share/posts?post=${lastNightsStandoutsModule.id}&view=goalies&slate=${MISSING_FEED}`);
   await expect(page.getByTestId("standout-row")).toHaveCount(2);
   await expect(page.getByTestId("post-watermark")).toHaveText("OBSERVED RESULTS");
+  await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeEnabled();
+});
+/** A blank date whose latest night is still loading: the edition is the last complete night, with the reason. */
+const fallbackBody = (query: URLSearchParams) => {
+  const settings = settingsFromQuery(query);
+  if (settings.slate) return slateBody(query);
+  const edition = slateBody(new URLSearchParams({ ...Object.fromEntries(query), slate: OLD_SLATE })) as { settings: object; data: { fallback: unknown } };
+  return { ...edition, settings, data: { ...edition.data, applied: shareSettingsKey(lastNightsStandoutsModule.fields.filter(field => !field.clientOnly), settings), fallback: { date: SLATE, reason: fallbackReason(SLATE, OLD_SLATE, { missing: 2, expected: 2 }, "skater") } } };
+};
+test("a blank date with an incomplete latest night shows the last complete night, dated, and says why", async ({ page }) => {
+  await open(page, "&view=all&picks=1,2,3,4,5,6,7,8", fallbackBody);
+  const square = page.getByTestId("share-square");
+  await expect(square.locator("h2")).toHaveText("OCT 26 STANDOUTS");
+  await expect(page.getByTestId("standouts-view")).toContainText("Oct 26");
+  await expect(page.getByTestId("standouts-fallback")).toHaveText(" Oct 31 is still loading, so this is Oct 26.");
+  await expect(page.getByTestId("standouts-fallback-reason")).toHaveText("Oct 31 is incomplete: 2 of 2 scheduled team games have no skater rows yet. Showing Oct 26, the last complete night.");
+  await expect(page.getByTestId("standouts-legend")).toContainText("Oct 26, then STD");
+  await expect(square).not.toContainText("Last night");
+  await expect(page.getByTestId("standout-row")).toHaveCount(8);
+  await expectFits(page);
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeEnabled();
 });

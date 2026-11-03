@@ -1,5 +1,6 @@
 import { normalizeEvDeploymentBucket } from "lib/rankings/skaterDeploymentAggregation";
 import { defineShareModule, shareSettingsKey, UNKNOWN_EVIDENCE, type ShareSettingField, type SharePostLoadResult, type SharePostSource } from "./contract";
+import { teamsInfo } from "lib/teamsInfo";
 import { toNstGoalieGames, type NstGsaxRow } from "./goalieGsax";
 import { roleSlotReader, type RoleEvidence, type RoleRollingRow, type RoleSlot } from "./roleWatch";
 import { ownershipOf, pooledGaa, pooledSavePct, type OwnershipState } from "./shared/definitions";
@@ -183,16 +184,23 @@ export type StandoutGoalie = {
 };
 /** The nearest slates with games, and the dates the chooser can open. A null `next` means this is the latest completed slate. */
 export type StandoutSlates = { previous: string | null; next: string | null; first: string; last: string };
+/** The latest night, shown in place of a blank date's night when that one is still incomplete. */
+export type StandoutFallback = { date: string; reason: string };
 export type LastNightsStandoutsData = {
   applied: string; view: StandoutView; slate: string; slates: StandoutSlates; games: number;
   skaters: StandoutSkater[]; goalies: StandoutGoalie[];
+  /** Set only when the slate setting is blank and the latest night's own feed is incomplete. */
+  fallback?: StandoutFallback | null;
 };
-export type SlateScheduleRow = { id: number; date: string };
-/** The dates, oldest first, with a reported team result for a scheduled regular-season game. Player rows play no part. */
-export function completedSlateDates(schedule: readonly SlateScheduleRow[], completed: readonly { gameId: number; date: string }[]) {
-  const ids = new Set(schedule.map(game => game.id));
-  return [...new Set(completed.filter(game => ids.has(game.gameId)).map(game => game.date))].sort();
-}
+export type SlateScheduleRow = { id: number; date: string; homeTeamId: number | null; awayTeamId: number | null };
+/**
+ * Every date with a scheduled regular-season game, oldest first. A slate never waits for the team-results feed: TJ, 11-03,
+ * after a failed team fetch left Nov 2 blank although its skater and goalie rows had landed.
+ */
+export const scheduledSlateDates = (schedule: readonly SlateScheduleRow[]) => [...new Set(schedule.map(game => game.date))].sort();
+const TEAM_BY_ID = new Map(Object.entries(teamsInfo).map(([abbreviation, team]) => [team.id, abbreviation]));
+/** Both sides of each scheduled game. An id with no team code stays null, so that side can never read as covered. */
+export const scheduledTeamGames = (games: readonly SlateScheduleRow[]): TeamGame[] => games.flatMap(game => [game.homeTeamId, game.awayTeamId].map(id => ({ gameId: game.id, team: id === null ? null : TEAM_BY_ID.get(id) ?? null })));
 export function slateNeighbours(dates: readonly string[], slate: string, range: Pick<StandoutSlates, "first" | "last">): StandoutSlates {
   return { previous: [...dates].reverse().find(date => date < slate) ?? null, next: dates.find(date => date > slate) ?? null, ...range };
 }
@@ -200,9 +208,11 @@ export const STANDOUTS_TITLE = "Last Nights Standouts";
 /** "Last night" is only true of the latest slate. A chosen older one prints its date instead. */
 export const isOlderSlate = (data: Pick<LastNightsStandoutsData, "slates">) => data.slates.next !== null;
 export const slateWord = (data: Pick<LastNightsStandoutsData, "slate" | "slates">) => isOlderSlate(data) ? slateLabel(data.slate) : "Last night";
+/** A blank setting shows the latest night, or the last complete one when the latest is incomplete, which then carries its date. */
 export function standoutsHeadline(settings: Pick<LastNightsStandoutsSettings, "slate">, data?: Pick<LastNightsStandoutsData, "slate" | "slates"> | null) {
-  if (!settings.slate || (data?.slate === settings.slate && !isOlderSlate(data))) return STANDOUTS_TITLE;
-  return `${slateLabel(settings.slate)} Standouts`;
+  const slate = settings.slate ?? (data && isOlderSlate(data) ? data.slate : null);
+  if (!slate || (data?.slate === slate && !isOlderSlate(data))) return STANDOUTS_TITLE;
+  return `${slateLabel(slate)} Standouts`;
 }
 
 export const parsePicks = (picks: string) => [...new Set(picks.split(",").map(text => text.trim()).filter(text => /^\d+$/.test(text)).map(Number))];
@@ -278,12 +288,14 @@ export const rankingText = (key: StandoutSortKey) => {
 };
 
 type TeamGame = { gameId: number; team: string | null };
-/** Counted per team game: a game with rows from only one team is half covered. Anything short is partial, so it cannot export. */
-export function slateCoverage(input: { playerTeamGames: readonly TeamGame[]; completedTeamGames: readonly TeamGame[]; scheduledGameIds: readonly number[] }) {
-  const key = (game: TeamGame) => `${game.gameId}:${game.team}`, scheduled = new Set(input.scheduledGameIds), withPlayers = new Set(input.playerTeamGames.map(key));
-  const completed = input.completedTeamGames.filter(game => scheduled.has(game.gameId)), covered = completed.filter(game => withPlayers.has(key(game)));
-  const expected = scheduled.size * 2, observed = covered.length, unreported = Math.max(0, expected - completed.length), noPlayerRows = completed.length - covered.length;
-  return { observed, expected, missing: Math.max(0, expected - observed), reasons: [...(unreported ? [`${unreported} of ${expected} scheduled team games on this slate have no reported result.`] : []), ...(noPlayerRows ? [`${noPlayerRows} completed team games on this slate have no player rows.`] : [])] };
+/**
+ * The card's own feed against the schedule, per team game: a game with rows from only one team is half covered. Team
+ * results play no part. Anything short is partial and cannot export.
+ */
+export function slateCoverage(input: { playerTeamGames: readonly TeamGame[]; scheduledTeamGames: readonly TeamGame[] }, kind: "skater" | "goalie" = "skater") {
+  const key = (game: TeamGame) => `${game.gameId}:${game.team}`, withPlayers = new Set(input.playerTeamGames.map(key));
+  const expected = input.scheduledTeamGames.length, observed = input.scheduledTeamGames.filter(game => game.team !== null && withPlayers.has(key(game))).length, missing = expected - observed;
+  return { observed, expected, missing, complete: expected > 0 && missing === 0, reasons: missing ? [`${missing} of ${expected} scheduled team games on this slate have no ${kind} rows.`] : [] };
 }
 
 /**
@@ -308,12 +320,12 @@ export function latestEarlierLines(rows: readonly EarlierLineRow[], slate: strin
 }
 
 const slatesOf = (input: LastNightsStandoutsInput): StandoutSlates => input.slates ?? { previous: null, next: null, first: input.slate, last: input.slate };
-/** A played slate with none of this view's player rows: never an off day, so it stays on the pager and says what is missing. */
-const feedMissing = (kind: "Skater" | "Goalie", slate: string, coverage: { reasons: readonly string[] }) => [`${kind} data is missing for ${slateLabel(slate)}: games were played, but no ${kind.toLowerCase()} rows have been reported.`, ...coverage.reasons];
+/** A scheduled slate with none of this view's player rows: never an off day, so it stays on the pager and says what is missing. */
+const feedMissing = (kind: "Skater" | "Goalie", slate: string, coverage: { expected: number }) => [`${kind} data is missing for ${slateLabel(slate)}: ${coverage.expected / 2} ${coverage.expected === 2 ? "game was" : "games were"} scheduled, and no ${kind.toLowerCase()} rows have been reported.`];
 const OLD_ROSTER = "Rostered % is the current figure, not as of this slate.";
 const STRENGTH = "All situations; PP TOI on the power play; xG% on ice (NST)";
 export type LastNightsStandoutsInput = {
-  slate: string; slates?: StandoutSlates; season: number; settings: LastNightsStandoutsSettings; completedTeamGames: readonly TeamGame[]; scheduledGameIds: readonly number[];
+  slate: string; slates?: StandoutSlates; season: number; settings: LastNightsStandoutsSettings; scheduledTeamGames: readonly TeamGame[]; scheduledGameIds: readonly number[]; fallback?: StandoutFallback | null;
   ownership: { byPlayer: ReadonlyMap<number, OwnershipState>; updatedAt: string | null };
   /** Skater views: every game this season of everyone on the slate, the slate included. */
   appearances?: readonly SkaterAppearance[]; nstCounts?: readonly NstCountRow[]; nstOnIce?: readonly NstOnIceRow[]; role?: RoleEvidence;
@@ -332,18 +344,18 @@ function buildGoalieView(input: LastNightsStandoutsInput, applied: string): Shar
     return { goalieId: row.goalieId, name: row.name, team: row.team, opponent: row.opponent, started: row.started, ownership: input.ownership.byPlayer.get(row.goalieId) ?? ownershipOf(null), saves: row.saves, shotsAgainst: row.shotsAgainst, goalsAgainst: row.goalsAgainst, savePct: pooledSavePct(row.saves, row.shotsAgainst), toiSeconds: row.toiSeconds, gsax: gsax === null ? null : hundredths(gsax), priorGames: prior.length,
       stats: goalieStats(row, gsax, prior, prior.map(game => gsaxByGame.get(`${game.goalieId}:${game.date}`) ?? null), settings) };
   });
-  const coverage = slateCoverage({ playerTeamGames: appearances, completedTeamGames: input.completedTeamGames, scheduledGameIds: input.scheduledGameIds });
+  const coverage = slateCoverage({ playerTeamGames: appearances, scheduledTeamGames: input.scheduledTeamGames }, "goalie");
   const wgoGaps = appearances.filter(row => row.saves === null || row.shotsAgainst === null || row.goalsAgainst === null || row.toiSeconds === null).length;
   const reasons = appearances.length ? [...coverage.reasons, ...(wgoGaps ? [`${wgoGaps} goalies on this slate have a missing NHL.com stat.`] : [])] : feedMissing("Goalie", slate, coverage);
   const withGsax = goalies.filter(row => row.gsax !== null).length, knownOwned = goalies.filter(row => row.ownership.state === "known").length;
-  const sources: SharePostSource[] = !appearances.length ? [{ name: "NHL.com", tables: ["wgo_goalie_stats", "wgo_team_stats", "games"], state: "partial", asOf: null, updatedAt: null }] : [
-    { name: "NHL.com", tables: ["wgo_goalie_stats", "wgo_team_stats", "games"], state: reasons.length ? "partial" : "ready", asOf: appearances.length ? slate : null, updatedAt: null },
+  const sources: SharePostSource[] = !appearances.length ? [{ name: "NHL.com", tables: ["wgo_goalie_stats", "games"], state: "partial", asOf: null, updatedAt: null }] : [
+    { name: "NHL.com", tables: ["wgo_goalie_stats", "games"], state: reasons.length ? "partial" : "ready", asOf: appearances.length ? slate : null, updatedAt: null },
     { name: "Natural Stat Trick", tables: ["nst_gamelog_goalie_all_counts"], state: withGsax < goalies.length ? "partial" : "ready", asOf: withGsax ? slate : null, updatedAt: null, reasons: withGsax < goalies.length ? [`NST has no GSAx yet for ${goalies.length - withGsax} of ${goalies.length} goalies on this slate.`] : [] },
     yahooSource(input, knownOwned, goalies.length),
   ];
   return {
-    state: reasons.length ? "partial" : "ready", reasons,
-    data: { applied, view: settings.view, slate, slates: slatesOf(input), games: input.scheduledGameIds.length, skaters: [], goalies },
+    state: !appearances.length ? "missing" : reasons.length ? "partial" : "ready", reasons,
+    data: { applied, view: settings.view, slate, slates: slatesOf(input), games: input.scheduledGameIds.length, skaters: [], goalies, fallback: input.fallback ?? null },
     teams: [...new Set(goalies.map(row => row.team))].sort(),
     evidence: { sources, sample: `Slate of ${slate}, ${input.scheduledGameIds.length} games. STD is each goalie's appearances before that slate, that slate and later games excluded, with ${settings.minPriorGp}+ prior GP: per appearance, with SV% and GAA pooled. SV% changes in points of save percentage, GAA and GSAx in goals, the rest in %. GSAx is NST xG against less NST goals against; it prints — until NST has that goalie's row`, strength: "All situations", cohort: `${goalies.length} goalies on the slate, ${withGsax} with NST GSAx`, coverage: { observed: coverage.observed, expected: coverage.expected, missing: coverage.missing, unit: "team games" } },
   };
@@ -366,33 +378,33 @@ function buildSkaterViews(input: LastNightsStandoutsInput, applied: string): Sha
       }) }];
   });
   const slateGames = appearances.filter(game => game.date === slate);
-  const coverage = slateCoverage({ playerTeamGames: slateGames, completedTeamGames: input.completedTeamGames, scheduledGameIds: input.scheduledGameIds });
+  const coverage = slateCoverage({ playerTeamGames: slateGames, scheduledTeamGames: input.scheduledTeamGames });
   const wgoGaps = slateGames.filter(game => [game.goals, game.assists, game.points, game.shots, game.toiSeconds, game.ppToiSeconds].some(value => value === null)).length;
   const reasons = slateGames.length ? [...coverage.reasons, ...(wgoGaps ? [`${wgoGaps} skaters on this slate have a missing NHL.com stat.`] : [])] : feedMissing("Skater", slate, coverage);
   const nstGaps = skaters.filter(row => (["icf", "iscf", "xg", "xgPct"] as const).some(id => statOf(row, id).last === null)).length;
   const unknownLines = skaters.filter(row => row.role.line === "unknown").length, unknownPp = skaters.filter(row => row.role.pp === "unknown").length, olderLines = skaters.filter(row => row.lineAsOf !== null).length, ppConflicts = skaters.filter(row => row.ppConflict).length;
   const knownOwned = skaters.filter(row => row.ownership.state === "known").length;
   // With no skaters read, the other sources were never asked, so they claim nothing.
-  const sources: SharePostSource[] = !slateGames.length ? [{ name: "NHL.com", tables: ["wgo_skater_stats", "wgo_team_stats", "games"], state: "partial", asOf: null, updatedAt: null }] : [
-    { name: "NHL.com", tables: ["wgo_skater_stats", "wgo_team_stats", "games"], state: reasons.length ? "partial" : "ready", asOf: slateGames.length ? slate : null, updatedAt: null },
+  const sources: SharePostSource[] = !slateGames.length ? [{ name: "NHL.com", tables: ["wgo_skater_stats", "games"], state: "partial", asOf: null, updatedAt: null }] : [
+    { name: "NHL.com", tables: ["wgo_skater_stats", "games"], state: reasons.length ? "partial" : "ready", asOf: slateGames.length ? slate : null, updatedAt: null },
     { name: "Natural Stat Trick", tables: ["nst_gamelog_as_counts", "nst_gamelog_as_counts_oi"], state: nstGaps ? "partial" : "ready", asOf: nstGaps === skaters.length ? null : slate, updatedAt: null, reasons: nstGaps ? [`${nstGaps} of ${skaters.length} skaters have a missing NST value on this slate.`] : [] },
     { name: "FHFH lines and PP units", tables: ["lineCombinations", ...(olderLines ? ["rolling_player_game_metrics"] : []), "powerPlayCombinations"], state: unknownLines || unknownPp || olderLines ? "partial" : "ready", asOf: slate, updatedAt: null, reasons: [...(unknownLines ? [`${unknownLines} of ${skaters.length} skaters have no known line.`] : []), ...(olderLines ? [`${olderLines} of ${skaters.length} lines are from an earlier game, and the chip prints its date.`] : []), ...(unknownPp ? [`${unknownPp} of ${skaters.length} PP chips are unknown: ${ppConflicts} because NHL.com PP time contradicts the unit, ${unknownPp - ppConflicts} with no rows for the game.`] : [])] },
     yahooSource(input, knownOwned, skaters.length),
   ];
   return {
-    state: reasons.length ? "partial" : "ready", reasons,
-    data: { applied, view: settings.view, slate, slates: slatesOf(input), games: input.scheduledGameIds.length, skaters, goalies: [] },
+    state: !slateGames.length ? "missing" : reasons.length ? "partial" : "ready", reasons,
+    data: { applied, view: settings.view, slate, slates: slatesOf(input), games: input.scheduledGameIds.length, skaters, goalies: [], fallback: input.fallback ?? null },
     teams: [...new Set(skaters.flatMap(row => row.team ? [row.team] : []))].sort(),
     evidence: { sources, sample: `Slate of ${slate}, ${input.scheduledGameIds.length} games. Each % compares that game with the skater's own season per game before it, that slate and later games excluded, with ${settings.minPriorGp}+ prior GP; xG% is pooled. A zero or missing baseline prints —. PP units are ranked from shift data; PP — means no rows, or NHL.com PP time contradicts the unit${isHandBuilt(settings.view) ? ". Skaters on this card are chosen by hand" : ""}`, strength: STRENGTH, cohort: `${skaters.length} skaters on the slate: ${skaters.filter(row => row.group === "F").length} F, ${skaters.filter(row => row.group === "D").length} D`, coverage: { observed: coverage.observed, expected: coverage.expected, missing: coverage.missing, unit: "team games" } },
   };
 }
+/** How a blank date's latest night is described when an earlier, complete one is shown instead. */
+export const fallbackReason = (latest: string, shown: string, coverage: { missing: number; expected: number }, kind: "skater" | "goalie") => `${slateLabel(latest)} is incomplete: ${coverage.missing} of ${coverage.expected} scheduled team games have no ${kind} rows yet. Showing ${slateLabel(shown)}, the last complete night.`;
 /** A chosen date that is not a slate: why, and data so the sidebar keeps its chooser. It never shows a card or exports. */
-export function standoutsNoSlate(date: string, settings: LastNightsStandoutsSettings, slates: StandoutSlates, scheduledGames = 0): SharePostLoadResult<LastNightsStandoutsData> {
+export function standoutsNoSlate(date: string, settings: LastNightsStandoutsSettings, slates: StandoutSlates): SharePostLoadResult<LastNightsStandoutsData> {
   const inSeason = date >= slates.first && date <= slates.last;
-  const reason = !inSeason ? `${date} is outside this season's completed slates, ${slates.first} to ${slates.last}.`
-    : scheduledGames ? `${scheduledGames} ${scheduledGames === 1 ? "game was" : "games were"} scheduled on ${slateLabel(date)}, but no team result has been reported.`
-    : `No games on ${slateLabel(date)}. Choose another slate.`;
-  return { state: "missing", reasons: [reason], evidence: UNKNOWN_EVIDENCE, data: { applied: shareSettingsKey(SERVER_FIELDS, settings), view: settings.view, slate: date, slates, games: scheduledGames, skaters: [], goalies: [] }, teams: [] };
+  const reason = !inSeason ? `${date} is outside this season's completed slates, ${slates.first} to ${slates.last}.` : `No games on ${slateLabel(date)}. Choose another slate.`;
+  return { state: "missing", reasons: [reason], evidence: UNKNOWN_EVIDENCE, data: { applied: shareSettingsKey(SERVER_FIELDS, settings), view: settings.view, slate: date, slates, games: 0, skaters: [], goalies: [] }, teams: [] };
 }
 export function buildLastNightsStandouts(input: LastNightsStandoutsInput): SharePostLoadResult<LastNightsStandoutsData> {
   const applied = shareSettingsKey(SERVER_FIELDS, input.settings);
