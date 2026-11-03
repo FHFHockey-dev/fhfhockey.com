@@ -301,7 +301,7 @@ export function WigoTrendsSection({
         <div className={styles.percentileChartContainer} data-coverage="C15">
           <div className={styles.chartTitle}>
             <h3 style={{ margin: 0 }}>Category percentiles</h3>
-            {summaryOnly && <span className={styles.radarContext}>Skaters · {currentSeasonId ? formatSeasonRange(currentSeasonId) : "Season unavailable"} · 0–100</span>}
+            {summaryOnly && <span className={styles.radarContext}>All skaters · {currentSeasonId ? formatSeasonRange(currentSeasonId) : "Season unavailable"} · 0–100</span>}
           </div>
           {selectedPlayer ? (
             <CategoryCoverageChart

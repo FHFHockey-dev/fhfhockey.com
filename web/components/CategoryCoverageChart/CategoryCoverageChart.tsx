@@ -68,7 +68,7 @@ function CategoryCoverageChart({
 }: CategoryCoverageChartProps) {
   const size = useScreenSize();
 
-  const { data, loading, error, retry, retrying } = usePercentileRank(playerId, timeOption);
+  const { data, sample, loading, error, retry, retrying } = usePercentileRank(playerId, timeOption);
   const hasData = data && LABELS.every(({ key }) => Number.isFinite(data[key]));
   const chartData = { ...DATA, datasets: [{ ...DATA.datasets[0], data: hasData ? LABELS.map(({ key }) => data[key]) : [] }] };
 
@@ -179,14 +179,19 @@ function CategoryCoverageChart({
   if (!hasData) return <p role="status">Category percentiles unavailable for this player and season.</p>;
 
   if (compact) {
-    return <div className={styles.compactRadar}><Radar data={chartData} options={{
+    return <div className={styles.compactFrame}><div className={styles.compactRadar}><Radar data={chartData} options={{
       ...OPTIONS, maintainAspectRatio: false,
       layout: { padding: 6 },
       scales: { r: { ...OPTIONS.scales.r,
         pointLabels: { color: "#ccc", font: { size: 12 }, callback: (label: string) => label },
         ticks: { display: true, stepSize: 50, font: { size: 12 }, color: "#ccc", showLabelBackdrop: false }
       } }
-    }} /></div>;
+    }} /></div>
+      {/* F and D are pooled by design; say so, with the player's own sample (C-28). */}
+      {sample && <p className={styles.sampleNote}>
+        {sample.playerGames} GP · vs {sample.cohortSize} skaters with {sample.minGames}+ GP
+      </p>}
+    </div>;
   }
 
   return (
