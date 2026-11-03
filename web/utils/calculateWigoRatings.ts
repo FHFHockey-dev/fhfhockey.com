@@ -292,8 +292,5 @@ export function calculatePlayerRatings(
       ? validComponents.reduce((a, b) => a + b, 0) / validComponents.length
       : null;
 
-  console.log(
-    `[calculatePlayerRatings] Finished calculations for player ${playerId}.`
-  );
   return finalRatings as CalculatedPlayerRatings;
 }

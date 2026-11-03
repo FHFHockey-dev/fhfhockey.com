@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { TableAggregateData } from "./types";
 import styles from "styles/wigoCharts.module.scss";
@@ -6,9 +6,9 @@ import GameLogChart from "./StatsTableRowChart";
 import { isWigoCountChartStat } from "./statMetadata";
 import { fetchPlayerGameLogForStat } from "utils/fetchWigoPlayerStats";
 import clsx from "clsx";
+import { diffDirection, formatDiffPercent } from "./tableUtils";
 
 interface StatsTableProps {
-  tableTitle?: string;
   data: TableAggregateData[];
   isLoading: boolean;
   error: string | null;
@@ -20,9 +20,6 @@ interface StatsTableProps {
   currentSeasonId: number;
   leftTimeframe: keyof TableAggregateData;
   rightTimeframe: keyof TableAggregateData;
-  visibleColumns?: Array<
-    keyof Omit<TableAggregateData, "label" | "GP" | "DIFF">
-  >;
 }
 
 type DataColumnKey = keyof Omit<TableAggregateData, "label" | "GP" | "DIFF">;
@@ -50,7 +47,6 @@ const columnHeaders: { [key in DataColumnKey | "DIFF"]: string } = {
 
 // --- Component Start ---
 const StatsTable: React.FC<StatsTableProps> = ({
-  tableTitle = "Stat",
   data,
   isLoading,
   error,
@@ -58,8 +54,7 @@ const StatsTable: React.FC<StatsTableProps> = ({
   playerId,
   currentSeasonId,
   leftTimeframe,
-  rightTimeframe,
-  visibleColumns
+  rightTimeframe
 }) => {
   const [expansion, setExpansion] = useState<{
     playerId: number;
@@ -95,13 +90,7 @@ const StatsTable: React.FC<StatsTableProps> = ({
   // const gpRowData = useMemo(() => data.find((d) => d.label === "GP"), [data]);
 
   // --- Calculate highlight indices ---
-  // Determine which columns to render (allow caller to limit visible ones)
-  const renderColumnKeys: DataColumnKey[] = useMemo(() => {
-    if (!visibleColumns || visibleColumns.length === 0) return columnKeys;
-    // Keep original order from columnKeys, include only those specified, ensure uniqueness
-    const desired = new Set(visibleColumns as DataColumnKey[]);
-    return columnKeys.filter((k) => desired.has(k));
-  }, [visibleColumns]);
+  const renderColumnKeys = columnKeys;
 
   const leftIndex = renderColumnKeys.indexOf(leftTimeframe as DataColumnKey);
   const rightIndex = renderColumnKeys.indexOf(rightTimeframe as DataColumnKey);
@@ -173,7 +162,7 @@ const StatsTable: React.FC<StatsTableProps> = ({
             {/* Stat Header (No Highlight) */}
             <th>
               <div className={styles.headerContent}>
-                <span>{tableTitle}</span>
+                <span>Stat</span>
               </div>
             </th>
 
@@ -279,18 +268,14 @@ const StatsTable: React.FC<StatsTableProps> = ({
                           diffValue !== null &&
                           !isNaN(diffValue)
                         ) {
-                          const isPositive = diffValue > 0;
-                          const isNegative = diffValue < 0;
-                          const colorClass = isPositive
+                          const direction = diffDirection(diffValue);
+                          const colorClass = direction === "positive"
                             ? styles.diffPositive
-                            : isNegative
+                            : direction === "negative"
                               ? styles.diffNegative
                               : styles.diffNeutral;
-                          const displayValue = `${
-                            isPositive ? "+" : ""
-                          }${diffValue.toFixed(1)}%`; // Assuming DIFF is always percentage
                           return (
-                            <span className={colorClass}>{displayValue}</span>
+                            <span className={colorClass}>{formatDiffPercent(diffValue)}</span>
                           );
                         } else {
                           return "-";

@@ -7,7 +7,12 @@ import {
   WigoStatLabel,
   isWigoCountChartStat
 } from "./statMetadata";
-import { formatCell, formatDiffPercent, formatSeasonRange } from "./tableUtils";
+import {
+  diffDirection,
+  formatCell,
+  formatDiffPercent,
+  formatSeasonRange
+} from "./tableUtils";
 import TimeframeComparison from "./TimeframeComparison";
 import WigoHelp from "./WigoHelp";
 import GameLogChart from "./StatsTableRowChart";
@@ -188,9 +193,7 @@ export default function WigoComparisonMatrix({
                       ))}
                       <td
                         className={styles.matrixDiffCell}
-                        data-diff-sign={typeof row.DIFF === "number" && Number.isFinite(row.DIFF) && row.DIFF !== 0
-                          ? row.DIFF < 0 ? "negative" : "positive"
-                          : undefined}
+                        data-diff-sign={diffDirection(row.DIFF)}
                         style={typeof row.DIFF === "number" && Number.isFinite(row.DIFF)
                           ? { "--diff-strength": `${Math.min(Math.abs(row.DIFF), 100)}%` } as React.CSSProperties
                           : undefined}

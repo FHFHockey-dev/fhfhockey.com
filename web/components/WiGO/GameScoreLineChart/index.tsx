@@ -49,15 +49,9 @@ export default function GameScoreLineChart({
 
       // Only proceed if IDs are valid numbers
       if (typeof pId !== "number" || typeof sId !== "number") {
-        console.log(
-          "GameScoreLineChart: Player ID or Season ID invalid, skipping fetch."
-        );
         return []; // Return empty, query is disabled anyway but good practice
       }
 
-      console.log(
-        `GameScoreLineChart: Fetching game scores for player ${pId} in season ${sId}.`
-      );
       const { data: rpcData, error: rpcError } = await supabase
         .rpc("get_skater_game_scores_for_season", {
           p_player_id: pId,

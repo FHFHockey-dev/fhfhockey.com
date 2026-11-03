@@ -99,12 +99,29 @@ export function computeDiffColumn(
  * Assumes time values (ATOI, PPTOI) are consistently in average seconds per game.
  * Assumes percentage values (S%, PP%, etc.) are consistently scaled 0-100.
  */
-// Signed relative difference. Four-digit and larger magnitudes drop the decimal so the
-// one-page matrix's DIFF column never needs more than seven characters ("+3585%").
+// Round to the shown precision before taking the sign, so +0.04 reads "0.0%"
+// rather than "+0.0%" (E-12). Four-digit and larger magnitudes drop the decimal
+// so the one-page matrix's DIFF column never needs more than seven characters.
+const roundDiff = (diff: number) => {
+  const digits = Math.abs(diff) >= 1000 ? 0 : 1;
+  const rounded = Math.round(diff * 10 ** digits) / 10 ** digits;
+  return { rounded: rounded === 0 ? 0 : rounded, digits };
+};
+
+// Signed relative difference; the one formatter for desktop and phone.
 export const formatDiffPercent = (diff: unknown): string => {
   if (typeof diff !== "number" || !Number.isFinite(diff)) return "-";
-  const magnitude = Math.abs(diff) >= 1000 ? diff.toFixed(0) : diff.toFixed(1);
-  return `${diff > 0 ? "+" : ""}${magnitude}%`;
+  const { rounded, digits } = roundDiff(diff);
+  return `${rounded > 0 ? "+" : ""}${rounded.toFixed(digits)}%`;
+};
+
+// Direction of the difference as displayed: none when it rounds to zero.
+export const diffDirection = (
+  diff: unknown
+): "positive" | "negative" | undefined => {
+  if (typeof diff !== "number" || !Number.isFinite(diff)) return undefined;
+  const { rounded } = roundDiff(diff);
+  return rounded > 0 ? "positive" : rounded < 0 ? "negative" : undefined;
 };
 
 export const formatCell = (

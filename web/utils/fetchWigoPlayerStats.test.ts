@@ -342,10 +342,14 @@ describe("fetchPlayerGameLogForStat units (selected-stat chart)", () => {
     ]);
   });
 
-  it("reports PTS1% per game as a percentage", async () => {
-    installGameLogQueryMock([{ date: "2026-01-01", goals: 1, total_primary_assists: 0, points: 2 }]);
+  it("reports PTS1% per game as a percentage, with a gap for a pointless game as in the aggregates", async () => {
+    installGameLogQueryMock([
+      { date: "2026-01-01", goals: 1, total_primary_assists: 0, points: 2 },
+      { date: "2026-01-02", goals: 0, total_primary_assists: 0, points: 0 }
+    ]);
     await expect(fetchPlayerGameLogForStat(1, 20252026, "PTS1%")).resolves.toEqual([
-      { date: "2026-01-01", value: 50 }
+      { date: "2026-01-01", value: 50 },
+      { date: "2026-01-02", value: null }
     ]);
   });
 

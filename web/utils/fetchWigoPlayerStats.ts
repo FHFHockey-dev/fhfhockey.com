@@ -478,11 +478,6 @@ export async function fetchPlayerGameLogForStat(
       // **** Determine correct date column for the calculation source table ****
       const dateColumn = table === "wgo_skater_stats" ? "date" : "date_scraped"; // Use date_scraped for nst_*
 
-      console.log(
-        `Workspaceing game log for ${statLabel} calculation (Player ${playerId}, Season ${seasonId}) from ${table}, requires: ${requiredColumns.join(
-          ", "
-        )}`
-      );
 
       const selectString = `${dateColumn}, ${requiredColumns.join(", ")}`;
       const seasonColumn = "season_id"; // PTS1% uses wgo_skater_stats which has season_id
@@ -503,6 +498,8 @@ export async function fetchPlayerGameLogForStat(
           const points = item.points;
           let value: number | null = null;
 
+          // A pointless game has no share, as in the aggregates, so it is a
+          // gap rather than 0 and the game mean stays comparable (A-06).
           if (
             typeof goals === "number" &&
             typeof primaryAssists === "number" &&
@@ -511,10 +508,6 @@ export async function fetchPlayerGameLogForStat(
           ) {
             // Aggregates show PTS1% on a 0–100 scale; the chart's reference lines use the same scale.
             value = ((goals + primaryAssists) / points) * 100;
-          } else if (points === 0 && (goals > 0 || primaryAssists > 0)) {
-            value = null;
-          } else if (points === 0 && goals === 0 && primaryAssists === 0) {
-            value = 0;
           }
 
           return {
@@ -522,22 +515,12 @@ export async function fetchPlayerGameLogForStat(
             value: value
           };
         }) || [];
-      console.log(
-        `Workspaceed and calculated data for ${statLabel}:`,
-        calculatedData.length,
-        "rows"
-      ); // Log success/count
       return calculatedData;
     } else if ("calculation" in mapping && mapping.calculation === "PTS1/60") {
       const { table, requiredColumns } = mapping; // table is nst_gamelog_as_rates
       const dateColumn = "date_scraped"; // nst tables use date_scraped
       const seasonColumn = "season"; // nst tables use season
 
-      console.log(
-        `Workspaceing game log for ${statLabel} calculation (Player ${playerId}, Season ${seasonId}) from ${table}, requires: ${requiredColumns.join(
-          ", "
-        )}`
-      );
       const selectString = `${dateColumn}, ${requiredColumns.join(", ")}`; // Selects date, goals_per_60, first_assists_per_60
 
       const { data, error } = await supabase
@@ -564,11 +547,6 @@ export async function fetchPlayerGameLogForStat(
 
           return { date: item[dateColumn], value: value };
         }) || [];
-      console.log(
-        `Workspaceed and calculated data for ${statLabel}:`,
-        calculatedData.length,
-        "rows"
-      );
       return calculatedData;
     } else if ("calculation" in mapping && mapping.calculation === "PP_PER_60") {
       const { countColumn } = mapping;
@@ -600,9 +578,6 @@ export async function fetchPlayerGameLogForStat(
       const seasonColumn =
         table === "wgo_skater_stats" ? "season_id" : "season";
 
-      console.log(
-        `Workspaceing game log for ${statLabel} (Player ${playerId}, Season ${seasonId}) from ${table}.${statColumn} using date='${dateColumn}' and season='${seasonColumn}'` // Log which columns are used
-      );
 
       const { data, error } =
         table === "wgo_skater_stats"
@@ -636,11 +611,6 @@ export async function fetchPlayerGameLogForStat(
             value: typeof value === "number" ? value : null
           };
         }) || [];
-      console.log(
-        `Workspaceed data for ${statLabel}:`,
-        gameLogData.length,
-        "rows"
-      ); // Log success/count
       return gameLogData;
     } else {
       console.warn(
@@ -665,7 +635,6 @@ export async function fetchPlayerAggregatedStats(
   playerId: number,
   stdSeasonId: number | null = null
 ): Promise<WigoAggregatedStatsResult> {
-  console.log(`Workspaceing pre-aggregated stats for Player ID: ${playerId}`);
 
   // wigo_career and wigo_recent are the aggregate sources. The legacy wigo_rates table has no writer
   // (0 rows) and is not read: if anything refilled it, it would silently override these per-60 values.
@@ -1025,9 +994,6 @@ export async function fetchPercentilePlayerData(seasonId: number): Promise<{
   offense: (PlayerRawStats & { strength: string })[];
   defense: (PlayerRawStats & { strength: string })[];
 }> {
-  console.log(
-    `[fetchPercentilePlayerData] Starting fetch for season: ${seasonId}`
-  );
 
   const offenseSelect = `
     player_id,
@@ -1157,9 +1123,6 @@ export async function fetchPercentilePlayerData(seasonId: number): Promise<{
     const allOffense = [...asOffense, ...esOffense, ...ppOffense];
     const allDefense = [...asDefense, ...esDefense, ...pkDefense];
 
-    console.log(
-      `[fetchPercentilePlayerData] Concatenated ${allOffense.length} relevant offense rows and ${allDefense.length} relevant defense rows for season ${seasonId}`
-    );
 
     // Return matches the updated function signature - no casting needed
     return {

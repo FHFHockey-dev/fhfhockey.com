@@ -92,7 +92,6 @@ interface WigoComparisonSectionProps {
   leftTimeframe: keyof TableAggregateData;
   rightTimeframe: keyof TableAggregateData;
   onCompare: (left: string, right: string) => void;
-  visibleColumns?: Array<keyof TableAggregateData>;
   desktop?: boolean;
 }
 
@@ -365,7 +364,6 @@ export function WigoComparisonSection({
   leftTimeframe,
   rightTimeframe,
   onCompare,
-  visibleColumns,
   desktop = false,
 }: WigoComparisonSectionProps) {
   if (desktop) return <WigoComparisonMatrix {...{data, isLoadingAggData, aggDataError, playerId, currentSeasonId, leftTimeframe, rightTimeframe, onCompare}} />;
@@ -386,7 +384,6 @@ export function WigoComparisonSection({
           currentSeasonId={currentSeasonId ?? 0}
           leftTimeframe={leftTimeframe}
           rightTimeframe={rightTimeframe}
-          visibleColumns={visibleColumns as any}
         />
       </div>
     </div>
