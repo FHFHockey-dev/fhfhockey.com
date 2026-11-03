@@ -10,9 +10,11 @@ import { rankTwoLists, SUPPORT_GAP_EXPLANATION_VERSION, SUPPORT_GAP_VERSION, typ
 
 export const DISPLAY_SNAPSHOT_VERSION = "fhfh.blsh.current-research-snapshot.v2";
 export const DISPLAY_MAPPER_VERSION = "blsh-display-profile-v2";
-/** v2 list gate: the frozen score lists by direction alone, but a player with no personal history is
- * measured against the position-cohort average, not their own level, so the display withholds them. */
+/** v2 list gate: the frozen score lists by direction alone, but a player without usable personal history is
+ * measured against the position-cohort average, not their own level, so the display withholds them.
+ * Confirmed zero (no reference games) and unknown (history that could not be used) keep separate reasons. */
 export const NO_PERSONAL_HISTORY_LIST_WITHHELD = "no_personal_history_list_withheld";
+export const PERSONAL_HISTORY_UNAVAILABLE_LIST_WITHHELD = "personal_history_unavailable_list_withheld";
 export const DISPLAY_HANDOFF_VERSION = "blsh-display-handoff-v2";
 
 const TRACK_LABELS = ["FP", "G+A", "FHFH WiGO Game Score"];
@@ -45,6 +47,7 @@ const REASON_TEXT: Record<string, string> = {
   missing_measurement_or_exposure: "Personal history exists but a game lacks a track or ice time; the cohort reference is used",
   no_personal_history_cohort: "No personal history; the position-cohort reference is used",
   [NO_PERSONAL_HISTORY_LIST_WITHHELD]: "Withheld from lists: no personal history, so the gap is measured against the position-cohort average, not the player's own level",
+  [PERSONAL_HISTORY_UNAVAILABLE_LIST_WITHHELD]: "Withheld from lists: personal history could not be used (unknown, not zero), so the gap is measured against the position-cohort average",
   mixed_personal_position_cohort_reference: "Personal history spans positions; the position-cohort reference is used",
   no_personal_reference_cohort_mean_used: "Process reference is the cohort mean, not the player's own",
   reference_estimated_not_personal_measured: "Process reference is estimated, not the player's own measured history",
@@ -156,10 +159,14 @@ const comparison = (c: Comparison): DisplayComparison => ({
   revisionVerified: c.revisionVerified, revisionText: c.revisionVerified === false ? REASON_TEXT.provider_revision_unverified : null,
 });
 
-/** The v2 list gate's reason for withholding a profile the frozen rule would list, or null. */
+/** The v2 list gate's reason for withholding a profile the frozen rule would list, or null.
+ * Only zero reference games is confirmed zero; any other missing or unusable count is unknown history. */
 export function listWithheldReason(p: Profile): string | null {
-  check(Number.isSafeInteger(p.reference.personalN) && p.reference.personalN >= 0, p.playerId, "personal history count");
-  return p.result.researchList !== null && p.reference.personalN === 0 ? NO_PERSONAL_HISTORY_LIST_WITHHELD : null;
+  if (p.result.researchList === null) return null;
+  const n = p.reference.personalN, axisN = p.result.productionAxis.personal_n;
+  if (!Number.isSafeInteger(n) || n < 0 || (axisN !== undefined && axisN !== n)) return PERSONAL_HISTORY_UNAVAILABLE_LIST_WITHHELD;
+  if (n > 0) return null;
+  return p.reference.sourceIds.length === 0 ? NO_PERSONAL_HISTORY_LIST_WITHHELD : PERSONAL_HISTORY_UNAVAILABLE_LIST_WITHHELD;
 }
 
 /** Project one saved profile. `rank` is its 1-based position in its gated list (`rankTwoLists` order), or null. */
@@ -286,13 +293,14 @@ export function buildDisplaySnapshot(input: SnapshotInput) {
       "The reference is the 2022-24 development history and is stale; each profile shows its own reference age.",
       "Coverage tiers are not calibrated confidence; personal estimator weights are not confidence percentages.",
       "History process gate is a disclosed simplification, not the sealed v1 transport.",
-      "List membership is the frozen concordant-direction rule with no count or value cutoff, except that a player with no personal history (position-cohort reference only) is withheld; withheld and unavailable profiles stay inspectable.",
+      "List membership is the frozen concordant-direction rule with no count or value cutoff, except that a player with no or unusable personal history (position-cohort reference only) is withheld; withheld and unavailable profiles stay inspectable.",
       "No current-season streak is saved.",
     ],
     sourcePins: { ...input.sourcePins },
     counts: {
       profiles: out.length, numeric: out.filter(p => p.score.value !== null).length, BL: lists.BL.length, SH: lists.SH.length,
-      withheld: out.filter(p => p.score.list === null).length, withheldNoPersonalHistory: out.filter(p => p.score.reason === NO_PERSONAL_HISTORY_LIST_WITHHELD).length, unavailableTier: out.filter(p => p.evidence.tier === null).length,
+      withheld: out.filter(p => p.score.list === null).length, withheldNoPersonalHistory: out.filter(p => p.score.reason === NO_PERSONAL_HISTORY_LIST_WITHHELD).length,
+      withheldPersonalHistoryUnavailable: out.filter(p => p.score.reason === PERSONAL_HISTORY_UNAVAILABLE_LIST_WITHHELD).length, unavailableTier: out.filter(p => p.evidence.tier === null).length,
       referenceContextAbsent: out.filter(p => p.coverage.context.reference.reason === "reference_window_not_supplied").length,
       zeroShotWindows: zeroShot.length, zeroShotNumeric: zeroShot.filter(p => p.score.value !== null).length, zeroShotListed: zeroShot.filter(p => p.score.list !== null).length,
       personalReference1to4: out.filter(p => p.evidence.reference.personalGames >= 1 && p.evidence.reference.personalGames <= 4).length,

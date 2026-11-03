@@ -9,7 +9,8 @@ import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { Profile } from "./currentWindows";
-import { buildDisplaySnapshot, NO_PERSONAL_HISTORY_LIST_WITHHELD, reasonText, toDisplayProfile, type ReferencePolicy } from "./displayProfile";
+import { RETAINED_BLSH_SHA256, retainedBlshEvidence } from "../player-cards/retainedBlsh";
+import { buildDisplaySnapshot, NO_PERSONAL_HISTORY_LIST_WITHHELD, PERSONAL_HISTORY_UNAVAILABLE_LIST_WITHHELD, reasonText, toDisplayProfile, type ReferencePolicy } from "./displayProfile";
 import { currentResearchLists, currentStateLabel } from "./researchSnapshot";
 
 const ROOT = join(__dirname, "../../..");
@@ -131,24 +132,65 @@ describe("displayProfile: handoff v2 mapping on real saved profiles", () => {
     expect(snap.counts.profiles).toBe(fixtures.length);
     expect(snap).toMatchObject({ trusted: false, productionAdopted: false, confidenceProbability: null, issuedAtUTC: null, provisional: true, exploratory: true });
   });
-  it("withholds a would-be listed profile with no personal history and says why", () => {
+  // A copy of a listed profile with its personal history count replaced; the frozen score still lists it.
+  const withHistory = (personalN: number | null, keepReferenceGames: boolean) => {
     const p = byId(CASES.burns);
-    p.reference.personalN = 0;
-    (p.production as { personal_n?: number }).personal_n = 0;
-    expect(p.result.researchList).toBe("BL"); // The frozen score still lists it by direction alone.
+    (p.reference as { personalN: number | null }).personalN = personalN;
+    (p.result.productionAxis as { personal_n?: number | null }).personal_n = personalN;
+    if (!keepReferenceGames) Object.assign(p.reference, { sourceIds: [], dates: [], seasons: [], ageDays: null });
+    expect(p.result.researchList).toBe("BL");
+    return p;
+  };
+  const gatedSnapshot = (p: Profile) => snapshot([...fixtures.filter(f => f.playerId !== p.playerId), p]);
+  it("withholds a would-be listed profile with no personal history and says why", () => {
+    const p = withHistory(0, false);
     const text = reasonText(NO_PERSONAL_HISTORY_LIST_WITHHELD)!;
     expect(text).toMatch(/^Withheld from lists: no personal history/);
     expect(toDisplayProfile(p, null, RECORDED).score).toMatchObject({ list: null, rank: null, listLabel: "Withheld; inspect evidence", reason: NO_PERSONAL_HISTORY_LIST_WITHHELD, reasonText: text });
     expect(() => toDisplayProfile(p, 1, RECORDED)).toThrow("withheld profile has no rank");
-    const gated = snapshot([...fixtures.filter(f => f.playerId !== CASES.burns), p]);
+    const gated = gatedSnapshot(p);
     const shown = gated.profiles.find(x => x.playerId === CASES.burns)!;
     expect(currentResearchLists(gated).withheld).toContain(shown);
     expect(currentStateLabel(shown)).toMatch(/^Withheld from lists: no personal history/);
-    expect(gated.counts).toMatchObject({ BL: snap.counts.BL - 1, SH: snap.counts.SH, withheld: snap.counts.withheld + 1, withheldNoPersonalHistory: 1 });
+    expect(gated.counts).toMatchObject({ BL: snap.counts.BL - 1, SH: snap.counts.SH, withheld: snap.counts.withheld + 1, withheldNoPersonalHistory: 1, withheldPersonalHistoryUnavailable: 0 });
     const ranks = gated.profiles.filter(x => x.score.list === "BL").map(x => x.score.rank!).sort((a, b) => a - b);
     expect(ranks).toEqual(ranks.map((_, i) => i + 1));
-    expect(snap.counts.withheldNoPersonalHistory).toBe(0);
-    expect(get(CASES.burns).score).toMatchObject({ list: "BL", reason: null, reasonText: null });
+    expect(snap.counts).toMatchObject({ withheldNoPersonalHistory: 0, withheldPersonalHistoryUnavailable: 0 });
+  });
+  it("lists the same player again once they gain personal history", () => {
+    const before = gatedSnapshot(withHistory(0, false)).profiles.find(x => x.playerId === CASES.burns)!;
+    const after = gatedSnapshot(withHistory(50, true)).profiles.find(x => x.playerId === CASES.burns)!;
+    expect(before.score).toMatchObject({ list: null, rank: null, reason: NO_PERSONAL_HISTORY_LIST_WITHHELD });
+    expect(after.score).toMatchObject({ list: "BL", rank: get(CASES.burns).score.rank, reason: null, reasonText: null });
+    expect(get(CASES.burns).score).toMatchObject({ list: "BL", reason: null });
+  });
+  it("treats history that becomes unavailable as unknown, not as confirmed zero", () => {
+    const text = reasonText(PERSONAL_HISTORY_UNAVAILABLE_LIST_WITHHELD)!;
+    expect(text).toMatch(/^Withheld from lists: personal history could not be used \(unknown, not zero\)/);
+    // Reference games exist but no usable count, a missing count, or a count that disagrees with the scored axis.
+    const mismatched = withHistory(50, true);
+    (mismatched.result.productionAxis as { personal_n?: number }).personal_n = 0;
+    for (const p of [withHistory(0, true), withHistory(null, true), withHistory(null, false), mismatched]) {
+      const gated = gatedSnapshot(p);
+      const shown = gated.profiles.find(x => x.playerId === CASES.burns)!;
+      expect(shown.score).toMatchObject({ list: null, rank: null, reason: PERSONAL_HISTORY_UNAVAILABLE_LIST_WITHHELD, reasonText: text });
+      expect(gated.counts).toMatchObject({ BL: snap.counts.BL - 1, withheldNoPersonalHistory: 0, withheldPersonalHistoryUnavailable: 1 });
+    }
+  });
+  it("gives Player Cards the same saved list, rank and reason the preview reads", () => {
+    const gated = gatedSnapshot(withHistory(0, false));
+    const { profiles, ...metadata } = gated;
+    const lists = currentResearchLists(gated);
+    const preview = new Map([...lists.BL, ...lists.SH, ...lists.withheld].map(p => [p.playerId, p.score]));
+    const cards = profiles.filter(p => p.team !== null).map(p => retainedBlshEvidence({ id: p.playerId, team: p.team! }, gated.seasonId,
+      { profile: p, metadata, snapshotSHA256: RETAINED_BLSH_SHA256, reviewReference: "Synthetic unit contract: gated mapper snapshot" }));
+    const carried = cards.flatMap(c => (c.retained ? [c.retained.profile] : []));
+    expect(carried.map(p => p.playerId)).toEqual(expect.arrayContaining([CASES.burns, ...lists.BL.map(p => p.playerId), ...lists.SH.map(p => p.playerId)]));
+    for (const p of carried) {
+      const { list, rank, reason, reasonText } = preview.get(p.playerId)!;
+      expect({ list: p.score.list, rank: p.score.rank, reason: p.score.reason, reasonText: p.score.reasonText }).toEqual({ list, rank, reason, reasonText });
+    }
+    expect(carried.find(p => p.playerId === CASES.burns)!.score).toMatchObject({ list: null, rank: null, reason: NO_PERSONAL_HISTORY_LIST_WITHHELD });
   });
 });
 
@@ -187,7 +229,7 @@ describe.skipIf(!out)("displayProfile: provisional A + official-overlay candidat
       sourcePins: { profiles: PINS.source, dryRunSummary: PINS.summary, ...summary.pins } });
     // Exact counts of the pinned source (Astra re-review of CLAUDE-122/124).
     // Mapper v2 withholds the 117 listed no-personal-history profiles (76 BL, 41 SH; frozen rule alone: 360 BL, 223 SH).
-    expect(snap.counts).toEqual({ profiles: 725, numeric: 673, BL: 284, SH: 182, withheld: 259, withheldNoPersonalHistory: 117, unavailableTier: 52, referenceContextAbsent: 151,
+    expect(snap.counts).toEqual({ profiles: 725, numeric: 673, BL: 284, SH: 182, withheld: 259, withheldNoPersonalHistory: 117, withheldPersonalHistoryUnavailable: 0, unavailableTier: 52, referenceContextAbsent: 151,
       zeroShotWindows: 19, zeroShotNumeric: 15, zeroShotListed: 3, personalReference1to4: 36, referenceAgeDays: { n: 574, min: 894, max: 1451 } });
     const slotNotes = snap.profiles.flatMap(p => p.coverage.notes.filter(n => n.source === "slot"));
     expect(slotNotes.filter(n => n.component === "personal_reference" && n.games === null)).toHaveLength(151);
