@@ -27,6 +27,15 @@
   legend { float: left; width: 100%; padding: 0; margin-bottom: v.$space-sm; color: v.$color-blue-300; font-size: v.$font-size-xs; font-weight: 700; text-transform: uppercase; letter-spacing: v.$mobile-letter-spacing-wide; }
   > :not(legend) { clear: both; }
 }
+/* The Options header is its toggle: legend type with a chevron, outranking the page's boxed button rule. */
+.group legend .disclosure { display: inline-flex; align-items: center; gap: v.$space-xs; min-height: 24px; padding: 0; border: 0; background: none; color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer;
+  &::after { content: ""; width: 6px; height: 6px; margin-left: v.$space-xxs; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-45deg); transition: transform 0.15s ease; }
+  &[aria-expanded="true"]::after { transform: rotate(45deg); }
+}
+.group legend .disclosure:hover:not(:disabled) { background: none; color: v.$color-white; }
+@media (prefers-reduced-motion: reduce) { .group legend .disclosure::after { transition: none; } }
+.count { color: v.$text-secondary; text-transform: none; letter-spacing: normal; font-weight: 600; }
+.fields[hidden] { display: none; }
 .fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); gap: v.$space-md v.$space-sm; }
 .problem { margin: 0; color: v.$warning-color; font-size: v.$font-size-sm; }
 /* A quiet text button under a changed field; it outranks the page's 44px button rule but keeps a 24px target. */

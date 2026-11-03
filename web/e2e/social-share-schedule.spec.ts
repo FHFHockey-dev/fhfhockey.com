@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 /** Off-Night Edge in the post library, against a fictional edition. The lead runs this serially at 13.0. */
 const supabaseOrigin = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || "http://supabase.e2e.invalid");
@@ -37,6 +37,9 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
+/** The studio's Options group starts collapsed (SS-1103): open it before touching an option field. */
+const openOptions = async (page: Page) => { const toggle = page.getByRole("button", { name: /^Options/ }); if (await toggle.getAttribute("aria-expanded") !== "true") await toggle.click(); };
+
 test("off-night edge: dates refetch a recomputed order, chips and 0% print, gaps are page notes, and export follows the settings", async ({ page }) => {
   const requested: string[] = [];
   await page.route("**/api/v1/social-share/posts/**", route => {
@@ -66,6 +69,7 @@ test("off-night edge: dates refetch a recomputed order, chips and 0% print, gaps
   if (renders) await square.screenshot({ path: `${renders}/${renderName}-rest-of-week-card.png` });
 
   // A changed setting reloads the post on its own, and export follows the new edition.
+  await openOptions(page);
   await page.getByLabel("Dates").selectOption("weekly");
   await expect(square.getByTestId("off-night-legend")).toContainText("Full week");
   await expect(square).toHaveAttribute("data-export-token", /off-night-edge-weekly\|off-night-edge\|/);
@@ -135,6 +139,7 @@ test("off-night edge: old links load as this week, and the period control offers
   await expect(page.getByTestId("share-square").getByTestId("off-night-legend")).toContainText("Full week · Oct 31 to Nov 1");
   expect(requested[0]).toContain("dates=weekly");
   expect(requested[0]).toContain("period=this-week");
+  await openOptions(page);
   await expect(page.getByLabel("Dates")).toHaveValue("weekly");
   const period = page.getByTestId("period-control").getByLabel("Period");
   await expect(period.locator("option")).toHaveText(["This week", "Matchup week", "Custom range"]);

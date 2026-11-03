@@ -92,6 +92,9 @@ const expectMoversFit = (page: Page) => expect.poll(() => page.getByTestId("shar
 
 test.beforeEach(({ page }) => page.setDefaultTimeout(10000));
 
+/** The studio's Options group starts collapsed (SS-1103): open it before touching an option field. */
+const openOptions = async (page: Page) => { const toggle = page.getByRole("button", { name: /^Options/ }); if (await toggle.getAttribute("aria-expanded") !== "true") await toggle.click(); };
+
 test("BSH Board leaders print components, per-game values and cohort, then export", async ({ page }) => {
   await open(page, "bsh-board", () => edition("bsh-board", bshSettings(), buildBshBoard(fictional, bshSettings())));
   const square = page.getByTestId("share-square");
@@ -112,6 +115,7 @@ test("BSH Board risers and fallers state their comparison side by side, and stal
     const active = bshSettings({ view: (query.get("view") ?? "leaders") as BshBoardSettings["view"] });
     return edition("bsh-board", active, buildBshBoard(fictional, active));
   });
+  await openOptions(page);
   await page.locator("label", { hasText: /^View/ }).locator("select").selectOption("movers");
   // The view reloads the post on its own.
   const square = page.getByTestId("share-square");
@@ -136,6 +140,7 @@ test("Multi Cat Monsters prints percentiles and a score, and Points-First is its
   await expect(square.getByTestId("rank-cell").first()).toHaveCSS("background-color", "rgba(0, 255, 153, 0.8)");
   await expectFits(page);
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeEnabled();
+  await openOptions(page);
   await page.locator("label", { hasText: /^View/ }).locator("select").selectOption("points-first");
   const title = square.getByRole("heading", { level: 2 });
   await expect(title).toHaveText("POINTS-FIRST MULTI CAT MONSTERS");
@@ -161,6 +166,7 @@ test("Nightly Floor prints numerator, denominator, missing and its strict test",
 
 test("Nightly Floor's headline follows its settings and its longest form stays on one line", async ({ page }) => {
   await open(page, "nightly-floor", () => edition("nightly-floor", floorSettings(), buildNightlyFloor(fictional, floorSettings(), ownership)));
+  await openOptions(page);
   const title = page.getByTestId("share-square").getByRole("heading", { level: 2 }), view = page.locator("label", { hasText: /^View/ }).locator("select");
   await view.selectOption("cardio");
   await expect(title).toHaveText("CARDIO MASTERS");
@@ -180,6 +186,7 @@ test("BSH Board risers and fallers fill the body with no clipping at 7 rows a si
   })();
   const active = bshSettings({ view: "movers" });
   await open(page, "bsh-board", () => edition("bsh-board", active, buildBshBoard(moving, active)));
+  await openOptions(page);
   await page.locator("label", { hasText: /^View/ }).locator("select").selectOption("movers");
   await expect(page.getByTestId("change-row")).toHaveCount(14);
   await expectMoversFit(page);
@@ -209,6 +216,7 @@ for (const [post, build] of Object.entries(crowdedEditions)) test(`${post} fills
 test("A board nobody clears says so and cannot export", async ({ page }) => {
   const nobody = floorSettings({ xSog: 10 });
   await open(page, "nightly-floor", () => edition("nightly-floor", nobody, buildNightlyFloor(fictional, nobody, ownership)));
+  await openOptions(page);
   await page.locator("label", { hasText: /^SOG X/ }).locator("input").fill("10");
   await expect(page.getByTestId("share-square")).toContainText("No skater meets this test");
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
@@ -250,6 +258,7 @@ for (const { post, body } of BOARDS) {
     const requests = await openPeriod(page, post, body);
     const control = page.getByTestId("period-control"), square = page.getByTestId("share-square"), period = control.locator("select");
     await expect(period).toHaveValue("rolling");
+    await openOptions(page);
     await expect(page.getByLabel("Window")).toHaveValue("l10");
     await expect(square).toContainText("L10");
     await expectFits(page);
@@ -284,6 +293,7 @@ test("old URLs and landing links keep their recent window, and a board shows why
   const square = page.getByTestId("share-square");
   await expect(square).toContainText("L5");
   await expect(page.getByTestId("period-control").locator("select")).toHaveValue("rolling");
+  await openOptions(page);
   await expect(page.getByLabel("Window")).toHaveValue("l5");
   await page.goto("/social-share/posts?post=nightly-floor&period=matchup&week=3");
   await expect(page.getByTestId("post-unavailable")).toContainText("Week 3 has not started");

@@ -108,6 +108,9 @@ const download = (page: Page) => page.getByRole("button", { name: "Download PNG"
 
 test.beforeEach(({ page }) => page.setDefaultTimeout(10000));
 
+/** The studio's Options group starts collapsed (SS-1103): open it before touching an option field. */
+const openOptions = async (page: Page) => { const toggle = page.getByRole("button", { name: /^Options/ }); if (await toggle.getAttribute("aria-expanded") !== "true") await toggle.click(); };
+
 test("a hand-built view starts blank with a clear message and no export", async ({ page }) => {
   await open(page, "&view=under");
   await expect(page.getByTestId("standouts-blank")).toContainText("Pick up to 8 skaters");
@@ -124,6 +127,7 @@ test("the sidebar lists only who meets the roster limit, at its boundary", async
   await expect(page.getByTestId("standout-option")).toHaveCount(9);
   await expect(option(page, 9)).toBeVisible();
   await expect(option(page, 10)).toHaveCount(0);
+  await openOptions(page);
   await page.locator("label", { hasText: /^Under X% rostered/ }).locator("input").fill("51");
   await expect(option(page, 10)).toBeVisible();
 });

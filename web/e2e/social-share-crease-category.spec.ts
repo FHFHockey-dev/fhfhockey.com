@@ -57,6 +57,9 @@ const download = async (page: Page) => {
   expect((await readFile(path)).subarray(1, 4).toString()).toBe("PNG");
 };
 
+/** The studio's Options group starts collapsed (SS-1103): open it before touching an option field. */
+const openOptions = async (page: Page) => { const toggle = page.getByRole("button", { name: /^Options/ }); if (await toggle.getAttribute("aria-expanded") !== "true") await toggle.click(); };
+
 test("crease shift: official share over team games, labeled comparison, and it exports the same snapshot", async ({ page }) => {
   await install(page);
   const result = buildCreaseShift({ reported, appearances, scheduled, teams: ["NJD", "NYR"], window: 2, comparison: "previous", minComparisonGames: 2, through: "2026-10-30" });
@@ -360,6 +363,7 @@ test("GSAx: an old window URL keeps its window and shows the field", async ({ pa
   await page.route("**/api/v1/social-share/posts/**", route => route.fulfill({ json: edition("goalie-gsax", settings, result) }));
   await page.goto("/social-share/posts?post=goalie-gsax&window=5");
   await expect(page.getByTestId("goalie-gsax-card")).toContainText("Last 5 appearances per goalie.");
+  await openOptions(page);
   await expect(page.getByRole("combobox", { name: /^Window/ })).toHaveValue("5");
 });
 

@@ -53,6 +53,9 @@ async function downloadedPng(page: Page, name: string) {
   expect([bytes.readUInt32BE(16), bytes.readUInt32BE(20)]).toEqual([1080, 1080]);
 }
 
+/** The studio's Options group starts collapsed (SS-1103): open it before touching an option field. */
+const openOptions = async (page: Page) => { const toggle = page.getByRole("button", { name: /^Options/ }); if (await toggle.getAttribute("aria-expanded") !== "true") await toggle.click(); };
+
 test("Risky Starts: a lens switch needs no refetch, changes the token and stays one lens, and the PNG exports", async ({ page }) => {
   await signIn(page);
   const served = await serve(page, "risky-starts", edition("risky-starts", { ...PERIOD_DEFAULTS, lens: "ratio" }, riskyStartsResult(GOALIE_INVENTORY_FIXTURE_DETAIL)));
@@ -65,6 +68,7 @@ test("Risky Starts: a lens switch needs no refetch, changes the token and stays 
   await expect(page.getByTestId("post-evidence")).toContainText("correlated");
   await expect(page.getByTestId("post-watermark")).toHaveText("OBSERVED RESULTS");
   const before = served.requests, ratioToken = await square.getAttribute("data-export-token");
+  await openOptions(page);
   await page.getByRole("combobox", { name: /^Lens/ }).selectOption("volume");
   await expect(page.getByTestId("risky-row").first()).toBeVisible();
   await expect(square).not.toHaveAttribute("data-export-token", ratioToken!);
@@ -81,6 +85,7 @@ test("Start/Sit: accent-free search narrows in the browser, status and forecast 
   const square = page.getByTestId("share-square");
   await expect(square).toBeVisible();
   const before = served.requests, allToken = await square.getAttribute("data-export-token");
+  await openOptions(page);
   await page.getByLabel("Search goalie or team").fill("eric");
   await expect(page.getByTestId("start-sit-row")).toHaveCount(2);
   await expect(page.getByTestId("start-sit-row").first()).toContainText("Éric Testeur");

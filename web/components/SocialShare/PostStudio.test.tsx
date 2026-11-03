@@ -58,6 +58,7 @@ describe("PostStudio", () => {
     });
     const download = () => screen.getByRole("button", { name: "Download PNG" }) as HTMLButtonElement;
     const days = () => screen.getByLabelText("Days") as HTMLInputElement;
+    const options = () => screen.getByRole("button", { name: /^Options/ });
 
     it("reloads once typing pauses, sending only the last value, and keeps export off until it lands", async () => {
       serveDays();
@@ -71,7 +72,38 @@ describe("PostStudio", () => {
       expect(postCalls()[1]).toContain("days=14");
       await waitFor(() => expect(download().disabled).toBe(false));
       expect(screen.getByTestId("share-square").getAttribute("data-export-token")).toContain('["days",14]');
+      fireEvent.click(options());
       expect(screen.getByRole("button", { name: "Reset Days to 7" })).toBeTruthy();
+    });
+
+    it("starts with Options collapsed, counts changed options, and opens or closes without a reload", async () => {
+      router.query = { post: "team-games", days: "14" };
+      serveDays();
+      render(<PostStudio />);
+      await waitFor(() => expect(download().disabled).toBe(false));
+      expect(options().getAttribute("aria-expanded")).toBe("false");
+      expect(options().textContent).toBe("Options · 1 changed");
+      expect(document.getElementById(options().getAttribute("aria-controls")!)!.hidden).toBe(true);
+      fireEvent.click(options());
+      expect(options().getAttribute("aria-expanded")).toBe("true");
+      expect(days().closest("[hidden]")).toBeNull();
+      fireEvent.click(options());
+      expect(options().getAttribute("aria-expanded")).toBe("false");
+      expect(postCalls()).toHaveLength(1);
+    });
+
+    it("keeps Options open while a value is wrong, so its reason shows", async () => {
+      serveDays();
+      render(<PostStudio />);
+      await waitFor(() => expect(download().disabled).toBe(false));
+      expect(options().textContent).toBe("Options");
+      fireEvent.click(options());
+      fireEvent.change(days(), { target: { value: "40" } });
+      fireEvent.click(options());
+      expect(options().getAttribute("aria-expanded")).toBe("true");
+      expect(screen.getByText("Enter a number from 1 to 30.")).toBeTruthy();
+      fireEvent.change(days(), { target: { value: "12" } });
+      expect(options().getAttribute("aria-expanded")).toBe("false");
     });
 
     it("never sends a value out of range, says why, and lets a cleared field come back on blur", async () => {

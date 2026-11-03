@@ -101,6 +101,7 @@ export default function PostStudio() {
   const [problems, setProblems] = useState<Record<string, string>>({});
   /** Why the current settings were not sent: the post's own cross-field check. */
   const [held, setHeld] = useState("");
+  const [optionsOpen, setOptionsOpen] = useState(false);
   const preview = useRef<HTMLDivElement>(null);
   const frame = useRef<HTMLDivElement>(null);
   const requestId = useRef(0);
@@ -188,6 +189,10 @@ export default function PostStudio() {
   /** A field hidden by the period no longer counts against the post. */
   const blocking = formFields.some(field => problems[field.id]);
   const canExport = !exportBlock && squareReady && !loading && !error && !blocking;
+  const isChanged = (field: ShareSettingField) => (settings[field.id] ?? null) !== field.default && !(field.default === "" && settings[field.id] === null);
+  const changedCount = formFields.filter(isChanged).length;
+  /** Options start collapsed so the card sits higher (TJ, 2026-11-03); a wrong value opens them so its reason shows. */
+  const optionsShown = optionsOpen || blocking;
   const token = snapshot ? sharePostExportToken(entry.fields, snapshot, settings) : "";
   const alt = snapshot?.data != null && snapshot.post === entry.id ? entry.altText(snapshot, snapshot.data, settings) : `FHFH ${entry.title}: not available.`;
   const groups = useMemo(() => [...new Set(modules.map(item => item.group as SharePostGroup))], [modules]);
@@ -223,9 +228,13 @@ export default function PostStudio() {
       {entry.periodControl && <fieldset className={postStyles.group}><legend>Timeframe</legend>
         <PeriodControl entry={entry} control={entry.periodControl} settings={settings} disabled={exporting} edition={snapshot} change={change} apply={edit} />
       </fieldset>}
-      {formFields.length > 0 && <fieldset className={postStyles.group}><legend>Options</legend><div className={postStyles.fields}>{formFields.map(field => {
+      {formFields.length > 0 && <fieldset className={postStyles.group} data-testid="post-options">
+        <legend><button type="button" className={postStyles.disclosure} aria-expanded={optionsShown} aria-controls="post-options-fields" onClick={() => setOptionsOpen(!optionsShown)}>
+          Options{changedCount > 0 && <span className={postStyles.count}> · {changedCount} changed</span>}
+        </button></legend>
+        <div id="post-options-fields" className={postStyles.fields} hidden={!optionsShown}>{formFields.map(field => {
         const id = `post-field-${field.id}`, problem = problems[field.id], value = drafts[field.id] ?? fieldText(settings[field.id]);
-        const changed = (settings[field.id] ?? null) !== field.default && !(field.default === "" && settings[field.id] === null);
+        const changed = isChanged(field);
         return <div key={field.id} className={postStyles.field} data-wide={field.kind === "text" || undefined} data-roomy={(field.kind === "select" && field.options.some(option => option.label.length > 18)) || undefined}>
           <label><span>{field.label}</span>
             {field.kind === "select" ? <select value={fieldText(settings[field.id])} disabled={exporting} onChange={event => change(field, event.target.value)}>{field.options.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select>

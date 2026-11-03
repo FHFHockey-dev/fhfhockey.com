@@ -81,6 +81,9 @@ const expectFits = (page: Page) => expect.poll(() => page.getByTestId("share-squ
 
 test.beforeEach(({ page }) => page.setDefaultTimeout(10000));
 
+/** The studio's Options group starts collapsed (SS-1103): open it before touching an option field. */
+const openOptions = async (page: Page) => { const toggle = page.getByRole("button", { name: /^Options/ }); if (await toggle.getAttribute("aria-expanded") !== "true") await toggle.click(); };
+
 test("all four views rank, retitle, fit the square and can export", async ({ page }) => {
   await open(page, crowded);
   const square = page.getByTestId("share-square");
@@ -90,6 +93,7 @@ test("all four views rank, retitle, fit the square and can export", async ({ pag
     { basis: "Per Game", formula: "Standard", headline: "TOP MULTI-CAT STARS PER GAME", rule: "PTS + BLK + SOG + HIT, per game, 2+ GP" },
     { basis: "Per Game", formula: "Points-First", headline: "TOP POINTS-FIRST STARS PER GAME", rule: "2 x PTS + BLK + SOG + HIT, per game, 2+ GP" },
   ];
+  await openOptions(page);
   for (const view of views) {
     await page.locator("label", { hasText: /^Ranking/ }).locator("select").selectOption({ label: view.basis === "Per Game" ? "Per Game (min 2 GP)" : view.basis });
     await page.locator("label", { hasText: /^Formula/ }).locator("select").selectOption({ label: `${view.formula}: ${view.formula === "Standard" ? "" : "2 x "}PTS + BLK + SOG + HIT` });
@@ -162,6 +166,7 @@ test("an odd board leaves no empty quadrant, and an empty one says why and canno
   await expectFits(page);
   await page.unrouteAll();
   await open(page, seasonOf([game(1, "2026-10-27")]));
+  await openOptions(page);
   await page.locator("label", { hasText: /^Ranking/ }).locator("select").selectOption({ label: "Per Game (min 2 GP)" });
   await expect(page.getByTestId("share-square")).toContainText("No skater has 2 GP this fantasy week yet");
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
