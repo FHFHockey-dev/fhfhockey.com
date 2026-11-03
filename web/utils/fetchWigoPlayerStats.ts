@@ -737,7 +737,9 @@ export function buildWigoAggregatedStatsResult(
       careerData,
       recentData,
       ratesData: null,
-      totalsData,
+      // A stale STD row is another sample; filling its blanks from this
+      // season's totals would mix the two (U9: GP 69 beside 8-game counts).
+      totalsData: freshness.stdStale ? null : totalsData,
       stdSeasonId
     }),
     freshness

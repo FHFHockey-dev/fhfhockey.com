@@ -63,6 +63,7 @@ const WigoCharts: React.FC = () => {
     teamAbbreviation,
     teamIdForLog,
     rawCombinedData,
+    aggFreshness,
     isLoadingAggData,
     aggDataError,
     playerDataError,
@@ -167,6 +168,7 @@ const WigoCharts: React.FC = () => {
           <div className={styles.comparisonColumnWrapper}>
             <WigoComparisonSection
               data={displayDataWithDiff}
+              freshness={aggFreshness}
               isLoadingAggData={isLoadingAggData}
               aggDataError={aggDataError}
               playerId={selectedPlayer?.id}

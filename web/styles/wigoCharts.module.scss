@@ -1773,6 +1773,10 @@
   .matrixCaption {
     color: s.$ink-muted;
   }
+  .matrixNotes {
+    color: s.$ink;
+    font-style: italic;
+  }
   .matrixDiffCell {
     // Fixed scale: white at 0%, full red/green at -100%/+100% and beyond.
     &[data-diff-sign] {

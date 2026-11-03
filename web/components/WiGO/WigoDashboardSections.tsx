@@ -18,6 +18,7 @@ import TeamPerformanceDrivers from "components/WiGO/TeamPerformanceDrivers";
 import { formatCell as formatCellUtil, formatSeasonRange } from "components/WiGO/tableUtils";
 import { Player, TableAggregateData, TeamColors } from "components/WiGO/types";
 import styles from "styles/wigoCharts.module.scss";
+import type { WigoAggregateFreshness } from "utils/fetchWigoPlayerStats";
 
 const ChartLoadingPlaceholder = ({ message }: { message: string }) => (
   <div className={styles.chartLoadingPlaceholder}>{message}</div>
@@ -93,6 +94,7 @@ interface WigoPercentilesSectionProps {
 }
 
 interface WigoComparisonSectionProps {
+  freshness?: WigoAggregateFreshness | null;
   data: TableAggregateData[];
   isLoadingAggData: boolean;
   aggDataError: string | null;
@@ -365,6 +367,7 @@ function WigoPercentilesSectionBody({
 }
 
 function WigoComparisonSectionBody({
+  freshness = null,
   data,
   isLoadingAggData,
   aggDataError,
@@ -375,7 +378,7 @@ function WigoComparisonSectionBody({
   onCompare,
   desktop = false,
 }: WigoComparisonSectionProps) {
-  if (desktop) return <WigoComparisonMatrix {...{data, isLoadingAggData, aggDataError, playerId, currentSeasonId, leftTimeframe, rightTimeframe, onCompare}} />;
+  if (desktop) return <WigoComparisonMatrix {...{freshness, data, isLoadingAggData, aggDataError, playerId, currentSeasonId, leftTimeframe, rightTimeframe, onCompare}} />;
   return (
     <div className={styles.timeframeComparisonWrapper}>
       <TimeframeComparison

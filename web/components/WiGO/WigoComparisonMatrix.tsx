@@ -19,6 +19,7 @@ import dynamic from "next/dynamic";
 import styles from "styles/wigoCharts.module.scss";
 import { useSeasonPendingMessage } from "hooks/useCurrentSeason";
 import { formatGameMeanLabel, gameLogMean } from "./gameLogMean";
+import type { WigoAggregateFreshness } from "utils/fetchWigoPlayerStats";
 import { WIGO_QUERY_DEFAULTS } from "components/WiGO/queryDefaults";
 
 // The game-log chart library loads with the chart, not with the page (S8).
@@ -132,7 +133,12 @@ const SELECTABLE_METRICS = MATRIX_METRICS.map((metric) => metric.label).filter(
   (label) => label !== "GP"
 );
 
+// "Nov 1": the as-of and stale notes name a day, in UTC like the writer.
+const shortDay = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+
 interface Props {
+  freshness?: WigoAggregateFreshness | null;
   data: TableAggregateData[];
   isLoadingAggData: boolean;
   aggDataError: string | null;
@@ -144,6 +150,7 @@ interface Props {
 }
 
 export default function WigoComparisonMatrix({
+  freshness = null,
   data,
   isLoadingAggData,
   aggDataError,
@@ -194,6 +201,22 @@ export default function WigoComparisonMatrix({
     ...WIGO_QUERY_DEFAULTS
   });
   const gameMean = gameLogMean(gameLog.data ?? []);
+  // Honest states (U9): how current the rows are, a stale STD row, and a
+  // compared period with no data at all (a rookie's CA), which blanks DIFF.
+  const asOf = [freshness?.careerUpdatedAt, freshness?.recentUpdatedAt]
+    .filter((value): value is string => !!value)
+    .sort()[0];
+  const stdStale = !!freshness?.stdStale && data.length > 0;
+  const emptyPeriods = data.length === 0 ? [] : [leftTimeframe, rightTimeframe].filter(
+    (period, index, pair) => pair.indexOf(period) === index &&
+      data.every((row) => row.label === "GP" || row[period] == null)
+  );
+  const matrixNotes = [
+    stdStale
+      ? `STD is stale: its GP is ${freshness?.stdGp ?? "missing"}, this season ${freshness?.totalsGp} played`
+      : null,
+    ...emptyPeriods.map((period) => `No ${String(period)} data yet, so DIFF is blank`)
+  ].filter(Boolean);
   const metricsByLabel = new Map(data.map((row) => [row.label, row]));
   const selectedRow = data.find((row) => row.label === selectedMetric);
   const gp = data.find((row) => row.label === "GP");
@@ -230,7 +253,13 @@ export default function WigoComparisonMatrix({
             </p>
             <p>L5/L10/L20 use up to the latest 5/10/20 played games, including prior seasons. GP shows the actual sample. Aggregate date bounds and metric coverage are unavailable; a numeric value does not establish complete source coverage.</p>
           </WigoHelp>
+          {asOf && data.length > 0 && (
+            <span className={styles.matrixCaption}>As of {shortDay(asOf)}</span>
+          )}
           <span role="status">{matrixStatus}</span>
+          {matrixNotes.length > 0 && (
+            <span className={styles.matrixNotes} role="note">{matrixNotes.join(" · ")}</span>
+          )}
         </div>
         <div className={styles.matrixBand}>
           <table className={styles.comparisonMatrix}>
@@ -310,6 +339,7 @@ export default function WigoComparisonMatrix({
                   <th scope="row" className={styles.matrixPeriodCell}>
                     <span aria-hidden="true">
                       {period}
+                      {period === "STD" && stdStale ? "*" : ""}
                       <span className={styles.periodMarker}>
                         {period === leftTimeframe ? "L" : ""}
                         {period === rightTimeframe ? "R" : ""}
@@ -317,6 +347,7 @@ export default function WigoComparisonMatrix({
                     </span>
                     <span className={styles.visuallyHidden}>
                       {PERIOD_NAMES[period]}
+                      {period === "STD" && stdStale ? ", stale row" : ""}
                       {period === leftTimeframe ? ", left comparison period" : ""}
                       {period === rightTimeframe ? ", right comparison period" : ""}
                     </span>

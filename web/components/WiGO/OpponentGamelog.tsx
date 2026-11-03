@@ -270,7 +270,12 @@ const OpponentGamelog: React.FC<OpponentGamelogProps> = ({
 
   return (
     <div className={styles.opponentLogContainer}>
-      <table className={styles.scheduleTable} aria-label={`${teamAbbreviation} team schedule; player participation is not guaranteed`}>
+      {/* Visible, not just an aria-label: these are the team's games, which the player may not have played (A-09). */}
+      <table className={styles.scheduleTable}>
+        <caption className={styles.scheduleCaption}>
+          {teamAbbreviation} team schedule
+          <span className={styles.visuallyHidden}>; player participation is not guaranteed</span>
+        </caption>
         <thead>
           <tr>
             <th>Date</th>

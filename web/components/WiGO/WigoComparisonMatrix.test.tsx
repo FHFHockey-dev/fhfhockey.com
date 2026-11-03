@@ -33,4 +33,20 @@ describe("WigoComparisonMatrix status", () => {
     mount({ playerId: undefined });
     expect(screen.getByRole("status").textContent).toBe("");
   });
+
+  it("marks a stale STD row with its GP and shows how current the rows are (Bedard)", () => {
+    mount({
+      data: [{ label: "GP", STD: 69, CA: 70 }, { label: "Goals", STD: 39, CA: 30 }] as any,
+      freshness: { careerUpdatedAt: "2026-09-17T08:52:00Z", recentUpdatedAt: "2026-09-17T08:52:00Z", stdGp: 69, totalsGp: 8, stdStale: true }
+    });
+    expect(screen.getByText("As of Sep 17")).toBeTruthy();
+    expect(screen.getByRole("note").textContent).toBe("STD is stale: its GP is 69, this season 8 played");
+    expect(screen.getAllByRole("rowheader")[0].textContent).toContain("STD*");
+    expect(screen.getAllByRole("rowheader")[0].textContent).toContain("stale row");
+  });
+
+  it("says DIFF is blank when the compared career period has no data yet (Bystedt)", () => {
+    mount({ data: [{ label: "GP", STD: 2, CA: null }, { label: "Goals", STD: 0, CA: null }] as any });
+    expect(screen.getByRole("note").textContent).toBe("No CA data yet, so DIFF is blank");
+  });
 });

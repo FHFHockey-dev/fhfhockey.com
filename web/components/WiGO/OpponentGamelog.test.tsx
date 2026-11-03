@@ -59,6 +59,10 @@ describe("opponent team schedule", () => {
     await screen.findByText("Time TBD");
     expect(screen.getByText("Date TBD")).toBeTruthy();
   });
+  it("titles the list as the team's schedule on screen", async () => {
+    mount([game(1)]);
+    expect((await screen.findByRole("table")).querySelector("caption")?.textContent).toContain("NJD team schedule");
+  });
   it("shows an explicit empty state", async () => {
     mount([]);
     await screen.findByText("No schedule data available for this team and season.");

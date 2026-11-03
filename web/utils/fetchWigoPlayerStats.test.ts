@@ -402,6 +402,14 @@ describe("fetchPlayerAggregatedStats sources", () => {
     expect(String(select?.[1])).toContain("games_played");
   });
 
+  it("does not fill a stale STD row's blanks from this season's totals", async () => {
+    // Bedard's shape: the row holds last season's 69 GP with no PPP; totals say 8 played, 3 PPP.
+    installGameLogQueryMock([{ player_id: 8484144, std_gp: 69, std_ppp: null, season: "20262027", games_played: 8, pp_points: 3 }]);
+    const { rows, freshness } = await fetchPlayerAggregatedStats(8484144, 20262027);
+    expect(freshness.stdStale).toBe(true);
+    expect(rows.find(row => row.label === "PPP")?.STD).toBeNull();
+  });
+
   it("does not flag STD when its GP matches, or when totals are another season's", async () => {
     installGameLogQueryMock([{ player_id: 1, std_gp: 8, season: "20262027", games_played: 8 }]);
     expect((await fetchPlayerAggregatedStats(1, 20262027)).freshness.stdStale).toBe(false);
