@@ -3176,7 +3176,8 @@
         "GIT_DIR in tests",
         "ports :3000/:3105; a dev server only with PLAYWRIGHT_ISOLATED_NEXT=1"
       ],
-      "status": "active"
+      "status": "closed",
+      "closed": "2026-11-03: released to master in #406 (dcb917284); production steps P-1..P-10 still need TJ approval"
     },
     {
       "lane": "SS-EXPANSION",
