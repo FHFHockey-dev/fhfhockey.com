@@ -30,9 +30,9 @@ const lerp = (a: number, b: number, t: number): number => {
 
 const getColorForRating = (
   rating: number | null
-): { color: string; borderColor: string } => {
+): { color: string } => {
   if (rating === null || isNaN(rating)) {
-    return { color: "#e0e0e0", borderColor: "#4a4f5a" };
+    return { color: "#e0e0e0" };
   }
 
   const clampedRating = Math.max(0, Math.min(100, rating));
@@ -53,10 +53,7 @@ const getColorForRating = (
 
   const colorString = `rgb(${r}, ${g}, ${b})`;
 
-  return {
-    color: colorString,
-    borderColor: colorString
-  };
+  return { color: colorString };
 };
 
 const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
@@ -120,18 +117,27 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
         </div>
       );
 
-    const getRatingStyles = (ratingValue: number | null) => {
-      const { color, borderColor } = getColorForRating(ratingValue);
-      return {
-        boxStyle: {
-          borderColor: borderColor,
-          borderWidth: "3px",
-          borderStyle: "solid",
-          "--rating-width": `${ratingValue == null ? 0 : Math.max(0, Math.min(100, ratingValue))}%`,
-          "--rating-color": color
-        } as React.CSSProperties,
-        valueStyle: { color: color }
-      };
+    // Each rating is a 0–100 semicircle gauge; the notch at the top marks 50, the cohort middle.
+    const renderBox = (label: string, rating: number | null, isAll = false) => {
+      const { color } = getColorForRating(rating);
+      const fill = rating == null || isNaN(rating) ? 0 : Math.max(0, Math.min(100, rating));
+      return (
+        <div className={styles.ratingBox}>
+          <span className={styles.ratingGauge}>
+            <svg viewBox="0 0 100 54" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
+              <path className={styles.gaugeTrack} d="M 8 50 A 42 42 0 0 1 92 50" pathLength={100} />
+              {fill > 0 && (
+                <path d="M 8 50 A 42 42 0 0 1 92 50" pathLength={100} className={styles.gaugeFill} stroke={color} strokeDasharray={`${fill} 100`} />
+              )}
+              <line className={styles.gaugeMid} x1="50" y1="2" x2="50" y2="15" />
+            </svg>
+            {isAll ? renderAllValue(rating, { color }) : (
+              <span className={styles.ratingValue} style={{ color }}>{formatRating(rating)}</span>
+            )}
+          </span>
+          <span className={styles.ratingLabel}>{label}</span>
+        </div>
+      );
     };
 
     return (
@@ -140,111 +146,27 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
         <div className={styles.ratingSection}>
           <h3 className={styles.ratingTitle}>Offense</h3>
           <div className={styles.ratingsBoxes}>
-            <div
-              className={styles.ratingBox}
-              style={getRatingStyles(ratings.offense.as).boxStyle}
-            >
-              <span className={styles.ratingLabel}>All</span>
-              {renderAllValue(ratings.offense.as, getRatingStyles(ratings.offense.as).valueStyle)}
-            </div>
-            <div
-              className={styles.ratingBox}
-              style={getRatingStyles(ratings.offense.es).boxStyle}
-            >
-              <span className={styles.ratingLabel}>Even</span>
-              <span
-                className={styles.ratingValue}
-                style={getRatingStyles(ratings.offense.es).valueStyle}
-              >
-                {formatRating(ratings.offense.es)}
-              </span>
-            </div>
-            <div
-              className={styles.ratingBox}
-              style={getRatingStyles(ratings.offense.pp).boxStyle}
-            >
-              <span className={styles.ratingLabel}>PP</span>
-              <span
-                className={styles.ratingValue}
-                style={getRatingStyles(ratings.offense.pp).valueStyle}
-              >
-                {formatRating(ratings.offense.pp)}
-              </span>
-            </div>
+            {renderBox("All", ratings.offense.as, true)}
+            {renderBox("Even", ratings.offense.es)}
+            {renderBox("PP", ratings.offense.pp)}
           </div>
         </div>
 
         <div className={styles.ratingSection}>
           <h3 className={styles.ratingTitle}>Overall</h3>
           <div className={styles.ratingsBoxes}>
-            <div
-              className={styles.ratingBox}
-              style={getRatingStyles(ratings.overall.as).boxStyle}
-            >
-              <span className={styles.ratingLabel}>All</span>
-              {renderAllValue(ratings.overall.as, getRatingStyles(ratings.overall.as).valueStyle)}
-            </div>
-            <div
-              className={styles.ratingBox}
-              style={getRatingStyles(ratings.overall.es).boxStyle}
-            >
-              <span className={styles.ratingLabel}>Even</span>
-              <span
-                className={styles.ratingValue}
-                style={getRatingStyles(ratings.overall.es).valueStyle}
-              >
-                {formatRating(ratings.overall.es)}
-              </span>
-            </div>
-            <div
-              className={styles.ratingBox}
-              style={getRatingStyles(ratings.overall.st).boxStyle}
-            >
-              <span className={styles.ratingLabel}>Special</span>
-              <span
-                className={styles.ratingValue}
-                style={getRatingStyles(ratings.overall.st).valueStyle}
-              >
-                {formatRating(ratings.overall.st)}
-              </span>
-            </div>
+            {renderBox("All", ratings.overall.as, true)}
+            {renderBox("Even", ratings.overall.es)}
+            {renderBox("Special", ratings.overall.st)}
           </div>
         </div>
 
         <div className={styles.ratingSection}>
           <h3 className={styles.ratingTitle}>Defense</h3>
           <div className={styles.ratingsBoxes}>
-            <div
-              className={styles.ratingBox}
-              style={getRatingStyles(ratings.defense.as).boxStyle}
-            >
-              <span className={styles.ratingLabel}>All</span>
-              {renderAllValue(ratings.defense.as, getRatingStyles(ratings.defense.as).valueStyle)}
-            </div>
-            <div
-              className={styles.ratingBox}
-              style={getRatingStyles(ratings.defense.es).boxStyle}
-            >
-              <span className={styles.ratingLabel}>Even</span>
-              <span
-                className={styles.ratingValue}
-                style={getRatingStyles(ratings.defense.es).valueStyle}
-              >
-                {formatRating(ratings.defense.es)}
-              </span>
-            </div>
-            <div
-              className={styles.ratingBox}
-              style={getRatingStyles(ratings.defense.pk).boxStyle}
-            >
-              <span className={styles.ratingLabel}>PK</span>
-              <span
-                className={styles.ratingValue}
-                style={getRatingStyles(ratings.defense.pk).valueStyle}
-              >
-                {formatRating(ratings.defense.pk)}
-              </span>
-            </div>
+            {renderBox("All", ratings.defense.as, true)}
+            {renderBox("Even", ratings.defense.es)}
+            {renderBox("PK", ratings.defense.pk)}
           </div>
         </div>
       </div>

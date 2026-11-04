@@ -2880,10 +2880,9 @@
       left: 52px;
     }
   }
-  // Phone Percentiles tab (U11): the ratings card has a header now, so it
-  // needs the room for three rows of boxes.
+  // Phone Percentiles tab: header plus three rows of rating gauges.
   .ratingsContainer {
-    height: 260px;
+    height: 372px;
   }
   .selectedStatPanel {
     height: 280px;
