@@ -140,3 +140,74 @@ The trade lane's `web/components/blshTrade/fixtureEvidence.ts` (commit `a00151c3
 - on each track: `role` (`"headline"` for the FP track, otherwise `"supporting"`).
 
 That file is not in this lane's lease.
+
+## 7. Decision-3 opportunity mapping (commit `956de01e2`)
+
+Source: `web/lib/buyLowSellHigh/opportunity.ts` (`blsh-opportunity-split-v1`, commit `145b9d297`). Spec: `tasks/artifacts/blsh-opportunity-2026-11-04/REPORT.md` §6.
+
+**TJ (pop-up, 2026-11-04).** Opportunity is **provisional context, not a list gate** until its inputs, adjustment and classification are validated on historical cases.
+- Ranking stays on the league-scoring gap.
+- Do not withhold a player only because (b) is unavailable or because the two comparisons differ. Label the missing or conflicting context instead.
+- Mapper v3 therefore never changes `list`, `rank`, `positionRank` or `reason` because of opportunity. The test proves this for agreeing, contradicting and unavailable results.
+
+**Input.** The mapper accepts `MappedProfile = Profile & { opportunity?: OpportunityResult | null }`. The baseline lane attaches the field in `assembleProfiles`. The mapper only reads it and never recomputes it.
+
+**New `DisplayProfile.opportunity`** (every profile). It sits at the root, which is separate from the older `context.opportunity` list of TOI and PP comparisons.
+
+| Field | Meaning |
+|---|---|
+| `status` | `"available"`, or `"unavailable"` with `reason: "opportunity_not_attached"` and `reasonText`. When unavailable, `tracks: []` and `headline`, `changes` and `listCheck` are null. Never show zeros. |
+| `version` | `"blsh-opportunity-split-v1"`, or null |
+| `heading`, `provisional: true`, `affectsLists: false` | Label the section as provisional context |
+| `tracks[t]` (FP, G+A, Game Score) | `{ track, label, perGame, adjusted, assessment }` |
+| `perGame` / `adjusted` | `kind`, `label` (adjusted starts "Opportunity-adjusted: …"), `available`, `reason`, `reasonText`, `observed`, `expected`, `gap`, `scale`, `z`, `direction`, `directionLabel`. When unavailable: `expected`, `gap`, `z` and `direction` are null and `reasonText` is set. Game Score's adjusted comparison is always unavailable (`no_strength_split_for_track`). |
+| `assessment` | `direction` (buy_low_evidence / sell_high_evidence / balanced / withheld / unavailable), `directionLabel`, `qualified`, `conflict`, `reason`, `reasonText` (short), `text` (full sentence), `opportunityEffect`, `opportunityEffectSource`, `opportunityShift` |
+| `headline` | The FHFH Standard track's assessment; the mapper checks it equals `tracks[0].assessment` |
+| `changes.toi`, `changes.pp` | `baseline`, `current`, `delta`, `deltaPct` (s/game), `impact[3]` (null where unsupported), `impactReason`, `impactReasonText`, `text` |
+| `persistenceNote` | "A role change inside a short window is not evidence that the new role will persist." |
+| `listCheck` (listed profiles only, else null) | `{ state, applied: false, text }`. `state` is one of `agrees`, `qualified`, `balanced`, `contradicts`, `withheld`, `unavailable`; `text` starts "Provisional context, not yet validated and not applied to the list: " |
+| claims | `retrospective: true`, `forecast: false`, `trusted: false`, `calibratedProbability: null` |
+
+**New `counts`.** `opportunityAttached`, and `opportunityListCheck: { agrees, qualified, balanced, contradicts, withheld, unavailable }`. One more `limits` line says opportunity is provisional and does not change lists or rank.
+
+**Fail-closed checks in the mapper.** The mapper refuses a result that:
+- has the wrong version or claims;
+- has a headline track other than FHFH Standard, or tracks out of order;
+- has an incomplete available comparison;
+- has an unavailable comparison that carries values (for example a 0 gap);
+- has an `observed` value that differs from the scored track's `observed` (this check binds the result to the scored window);
+- has non-finite change values.
+
+**Export for fixtures.** Use `opportunityNotAttached()`. The trade lane's `web/components/blshTrade/fixtureEvidence.ts` (line 34) now fails typecheck only for the missing `opportunity` field; `opportunity: opportunityNotAttached()` fixes it.
+
+**Parser (`researchSnapshot.ts`).** Add these checks:
+- `affectsLists === false` and the claims flags;
+- the `status` / `reason` pairing;
+- unavailable comparisons with null values;
+- `headline` deep-equal to `tracks[0].assessment`;
+- `listCheck === null` exactly when `score.list === null`;
+- the two new counts.
+
+**UI.**
+- On each listed row, add a small, muted "Opportunity (provisional)" chip from `listCheck.state`:
+  - Agrees;
+  - Qualified;
+  - Balanced: "role change may explain";
+  - Contradicts;
+  - Withheld;
+  - Unavailable.
+
+  The chip's tooltip is `listCheck.text`. It never hides or reorders rows.
+- In the player detail, add a section titled from `heading`, marked "Provisional", with a per-track table:
+  - per-game (a) and opportunity-adjusted (b), side by side, each showing observed vs expected, gap and direction label, or `reasonText` when unavailable;
+  - the assessment `text`;
+  - under the table, `changes.toi.text`, `changes.pp.text` and `persistenceNote`.
+- When `status` is "unavailable", show `reasonText` alone.
+
+**On the 2026-10-28 snapshot**, from the opportunity lane's read-only application with unweighted 50-game references (not yet the baseline lane's weighted baseline), the `listCheck` states on the 281 v3-listed players would be:
+- agrees or qualified 208 (18 of them qualified);
+- balanced 70 (39 both balanced, 12 role change explains, 19 rates shifted);
+- contradicts 2;
+- withheld 1.
+
+These are context only.
