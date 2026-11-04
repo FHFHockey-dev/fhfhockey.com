@@ -248,14 +248,21 @@ function TeamRow(props: TeamRowProps) {
             {props.totalOffNights}
           </td>
           {/* Week Score - Apply rank color class */}
-          <td
-            className={clsx(
-              styles.weekScoreCell,
-              styles[`rank-color-${props.rank}`],
-            )}
-          >
-            {props.weekScore === -100 ? "-" : formatWeekScore(props.weekScore)}
-          </td>
+          {(() => {
+            const scoreText = props.weekScore === -100 ? "-" : formatWeekScore(props.weekScore);
+            return (
+              <td
+                className={clsx(
+                  styles.weekScoreCell,
+                  styles[`rank-color-${props.rank}`],
+                )}
+                // 5+ characters (e.g. "-11.7") step down a size on phones to stay inside the 33px cell
+                data-long={scoreText.length >= 5 || undefined}
+              >
+                {scoreText}
+              </td>
+            );
+          })()}
         </>
       )}
     </tr>

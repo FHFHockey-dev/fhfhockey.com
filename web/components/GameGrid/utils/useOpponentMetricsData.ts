@@ -253,12 +253,13 @@ export default function useOpponentMetricsData(
 
   const snapshotRows = sourceReady && !statsLoading && !statsError ? Object.values(allTeamStats) : [];
   const updateTimes = snapshotRows.map((row) => typeof row.updated_at === "string" ? Date.parse(row.updated_at) : NaN);
+  // Readable UTC stamp of the oldest team row (the conservative "updated" time), e.g. "Oct 10, 01:30 UTC"; still no claim about when the source observed it.
   const snapshotUpdate = updateTimes.length > 0 && updateTimes.every(Number.isFinite)
-    ? new Date(Math.min(...updateTimes)).toISOString().slice(0, 19).replace("T", " ")
+    ? `${new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(Math.min(...updateTimes)))} UTC`
     : null;
   const freshnessLabel = snapshotUpdate
-    ? `Database snapshot updated ${snapshotUpdate} UTC (oldest team row). Source observation freshness unknown.`
-    : "Snapshot freshness unknown.";
+    ? `Updated ${snapshotUpdate}. Source update time unknown.`
+    : "Update time unknown.";
 
   return {
     statsByAbbreviation: enabled && sourceReady && !statsLoading && !statsError ? allTeamStats : EMPTY_TEAM_STATS,
@@ -270,9 +271,9 @@ export default function useOpponentMetricsData(
     metricColumns: OPPONENT_METRIC_COLUMNS,
     statsLoading: enabled && (!sourceReady || statsLoading),
     statsError: sourceReady ? statsError : null,
-    sourceLabel: seasonId == null ? "Current-season totals unavailable. Snapshot freshness unknown."
+    sourceLabel: seasonId == null ? "Current-season totals unavailable. Update time unknown."
       : sourceReady && !statsLoading && !statsError && Object.keys(allTeamStats).length === 0
-        ? `No ${String(seasonId).slice(0, 4)}–${String(seasonId).slice(-2)} regular-season team totals are available. Snapshot freshness unknown.`
+        ? `No ${String(seasonId).slice(0, 4)}–${String(seasonId).slice(-2)} regular-season team totals are available. Update time unknown.`
         : `${String(seasonId).slice(0, 4)}–${String(seasonId).slice(-2)} regular-season totals. ${freshnessLabel}`
   };
 }

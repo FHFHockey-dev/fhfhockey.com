@@ -68,6 +68,12 @@ $matchup-colors: (
   opacity: 0.14;
 }
 
+// Banded fill is the phone version (see the mobile block); wider layouts keep the blended fill.
+.areaBands {
+  display: none;
+  opacity: 0.18;
+}
+
 .dot,
 .lastDot {
   stroke: none;
@@ -209,4 +215,18 @@ $matchup-colors: (
     background: currentColor;
     box-shadow: 0 0 6px currentColor;
   }
+}
+
+// Phones: the sparkline buttons share the 4px control corner.
+@media (max-width: v.$breakpoint-mobile-max) {
+  .trigger { border-radius: 4px; }
+  // No neon on phones: the matchup colours carry the meaning, so drop the blurred halo and the end-dot glow.
+  .glow { display: none; }
+  .lastDot { filter: none; }
+  // One neutral line; each week's matchup colour sits on its dot and its solid band of fill (no blending).
+  .line { stroke: rgba(v.$color-white, 0.5); }
+  .area { display: none; }
+  .areaBands { display: inline; }
+  .dot { r: 2.2px; }
+  .lastDot { r: 2.8px; }
 }

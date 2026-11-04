@@ -22,13 +22,30 @@
   line-height: 1;
 }
 
+.track {
+  position: relative;
+  width: 100%;
+}
+
 .rail {
   position: relative;
+  display: block;
   width: 100%;
   height: 3px;
   overflow: hidden;
   border-radius: 999px;
   background: rgba(v.$color-white, 0.08);
+}
+
+// League average marker: rows read above or below it at a glance.
+.averageTick {
+  position: absolute;
+  top: -2px;
+  width: 2px;
+  height: 7px;
+  border-radius: 1px;
+  background: rgba(v.$color-white, 0.75);
+  transform: translateX(-50%);
 }
 
 .fill {

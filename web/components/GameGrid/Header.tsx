@@ -7,6 +7,7 @@ import switchStyles from "./Switch/Switch.module.scss";
 
 import { addDays, formatDate, getDayStr } from "./utils/date-func";
 import Toggle from "./Toggle";
+import { getGamesPerDayIntensity } from "./TotalGamesPerDayRow";
 import { EXTENDED_DAY_ABBREVIATION, TeamDataWithTotals } from "lib/NHL/types";
 
 // Simple hook to detect mobile (<=480px)
@@ -47,13 +48,14 @@ type SortKey = {
   ascending: boolean;
 };
 
-function SortIndicator({ ascending }: { ascending: boolean }) {
+function SortIndicator({ ascending, active }: { ascending: boolean; active: boolean }) {
   return (
     <span
       className={`${switchStyles.switch} ${
         ascending ? switchStyles.unchecked : switchStyles.checked
       }`}
       data-sort-direction={ascending ? "ascending" : "descending"}
+      data-sort-active={active || undefined}
       aria-hidden="true"
     >
       <span className={switchStyles.arrow} />
@@ -62,12 +64,6 @@ function SortIndicator({ ascending }: { ascending: boolean }) {
 }
 
 // Function to determine intensity based on game count
-const getIntensity = (numGames: number): string => {
-  if (numGames <= 7) return "high"; // Green (Fewest games = highest intensity day for streaming)
-  if (numGames <= 8) return "medium-high"; // Yellow
-  if (numGames <= 9) return "low"; // red
-  return "low"; // Red (Most games = lowest intensity day for streaming)
-};
 
 // Add a mapping for mobile day abbreviations
 const MOBILE_DAY_ABBR: Record<string, string> = {
@@ -136,6 +132,7 @@ function Header({
                       ? currentSortKey.ascending
                       : false
                   }
+                  active={currentSortKey?.key === "totalGamesPlayed"}
                 />
               </span>
             </div>
@@ -154,6 +151,7 @@ function Header({
                       ? currentSortKey.ascending
                       : false
                   }
+                  active={currentSortKey?.key === "totalOffNights"}
                 />
               </span>
             </div>
@@ -176,6 +174,7 @@ function Header({
                       ? currentSortKey.ascending
                       : false
                   }
+                  active={currentSortKey?.key === "weekScore"}
                 />
               </span>
             </div>
@@ -240,6 +239,8 @@ function Header({
                       ? currentSortKey.ascending
                       : true
                   }
+                  // Unsorted grids list teams A–Z, so Team is the active order until another column is picked
+                  active={!currentSortKey || currentSortKey.key === "teamName"}
                 />
               </span>
             </button>
@@ -320,7 +321,8 @@ function getDayColumns(
     const day = getDayStr(startDate, current) as EXTENDED_DAY_ABBREVIATION;
     const dayLabel = String(day).replace(/^n/, "NEXT ");
     const numGames = gamesPerDay[i] ?? 0;
-    const intensity = getIntensity(numGames);
+    // Same bands as the day cells, the GP/DAY totals and the Tips sheet: 6 or fewer / 7–8 / 9+.
+    const intensity = getGamesPerDayIntensity(numGames);
 
     const onChange = () => {
       setExcludedDays((prev) => {
@@ -339,9 +341,11 @@ function getDayColumns(
         <div className={styles.dayHeaderLabel}>
           <div className={styles.dayAndDate}>
             <span className={styles.dayAbbreviation}>
-              {isMobile ? MOBILE_DAY_ABBR[day] || dayLabel : dayLabel}
+              {/* Next week's days use the same letters; their dates (9, 10, 11) tell them apart */}
+              {isMobile ? MOBILE_DAY_ABBR[String(day).replace(/^n/, "")] || dayLabel : dayLabel}
             </span>
-            <span className={styles.dayDate}>{formatDate(current)}</span>
+            {/* Phones: day of month only; the month is in the range under the title */}
+            <span className={styles.dayDate}>{isMobile ? current.getDate() : formatDate(current)}</span>
           </div>
           <div className={styles.dayToggle}>
             <Toggle
