@@ -57,6 +57,7 @@ export type YahooPlayerAtomicPayload = {
   snapshot_status: "observed" | "omitted";
   status: string | null;
   status_full: string | null;
+  status_observed: boolean;
   uniform_number: number | null;
 };
 
@@ -120,6 +121,14 @@ export function extractYahooPercentOwned(percentOwned: unknown): number | null {
   return assessYahooPercentOwned(percentOwned).value;
 }
 
+/** Yahoo's base player resource always carries these fields, and carries status,
+ * status_full and injury_note only while a flag is set. Only a source with that
+ * profile proves a missing status means the flag has cleared. */
+export function isYahooBasePlayerProfile(player: YahooPlayerSource): boolean {
+  return [player.player_key, player.name?.full, player.display_position, player.position_type]
+    .every((value) => typeof value === "string" && value.trim() !== "");
+}
+
 export function prepareYahooPlayerAtomicPayload(
   player: YahooPlayerSource,
   currentDate: string,
@@ -154,6 +163,7 @@ export function prepareYahooPlayerAtomicPayload(
     position_type: optionalString(player.position_type),
     status: optionalString(player.status),
     status_full: optionalString(player.status_full),
+    status_observed: isYahooBasePlayerProfile(player),
     last_updated: new Date().toISOString(),
     uniform_number: optionalInteger(player.uniform_number),
     current_date: currentDate,

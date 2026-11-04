@@ -1051,6 +1051,16 @@
       "migrationClass": "feature",
       "rolloutGate": "Applied with TJ's explicit approval.",
       "stateEvidence": "Production schema_migrations version 20261101174349; readback 2026-11-01."
+    },
+    {
+      "order": 105,
+      "path": "supabase/migrations/20261104012000_clear_stale_yahoo_player_status.sql",
+      "sha256": "e64b3bfddaf0ba0879be411f8a69804529ced36458c31fa3dd3881f110a34b9b",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "pending",
+      "migrationClass": "feature",
+      "rolloutGate": "Yahoo status sticky fix (CLAUDE-SS-YAHOO-STATUS-STICKY-20261103): clears status, status_full and injury_note only for payloads marked status_observed. Fails closed unless the live writer's pg_get_functiondef md5 is 178d877fe2e1d29c37b94832c5f42c60. Hosted apply needs TJ's separate explicit approval; no migration command was run.",
+      "stateEvidence": "Local source only; no hosted ledger or apply receipt. Verified on a scratch PostgreSQL 15 replay of 20260723113533 + 20260725200808 (same md5 as Production on 2026-11-04). Lane receipt: tasks/artifacts/yahoo-status-sticky-2026-11-03/."
     }
   ],
   "sourceExtensionApproval": {

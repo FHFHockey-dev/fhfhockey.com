@@ -238,7 +238,7 @@
         "releaseApproved": false
       },
       "yahoo_ownership_repair": {
-        "status": "FROZEN_LOCAL_QUALIFIED_REVIEW_PENDING",
+        "status": "TRANSFERRED_TO_CLAUDE",
         "startedAtUtc": "2026-10-29T13:35:18.698210+00:00",
         "baseHead": "5453d2ecaa9399d3161fd6a150331d08107f0e4f",
         "paths": [
@@ -283,7 +283,14 @@
         "releaseApproved": false,
         "runtimeResourceRetained": false,
         "custody": "Retained pending explicit coordinated handoff; no overlapping writer granted. Claude retains Git custody. Existing54-file candidate unchanged.",
-        "remaining": "Upstream percentages/full1027 omission causes and recovery unverified; do not impute0, blind-retry writes, deploy or replay. No hosted migration prerequisite for this six-file application slice."
+        "remaining": "Upstream percentages/full1027 omission causes and recovery unverified; do not impute0, blind-retry writes, deploy or replay. No hosted migration prerequisite for this six-file application slice.",
+        "transferredAtUtc": "2026-11-04T01:06:10Z",
+        "transfer": {
+          "to": "CLAUDE-LEASES.json lane YAHOO-WRITER",
+          "authority": "TJ decision, relayed by Claude session local_c4fd32c8 on 2026-11-03; Codex acknowledgement not required by TJ",
+          "quote": "Codex can not officially hand it off. I am out of weekly usage until tomorrow and all chats are halted. You may take it over completely per my permission, and Codex will be notified.",
+          "frozenCandidate": "committed as 1f7262c3e; all six files match frozenSha256"
+        }
       },
       "wgo_repair_coordination_20261029": {
         "atUtc": "2026-10-29T18:41:36.221486+00:00",

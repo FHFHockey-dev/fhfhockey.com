@@ -1830,3 +1830,15 @@ Packet: `CLAUDE-SS-PAGER-PACKET-20261101`, with the exact SHA, manifest, lane re
 - **Your work:** I committed only my hunks against HEAD. Your uncommitted edits in the file (the `unresolvedAuditRoutes` list and the 19 → 21 count) are untouched in the working tree, so your frozen SHA-256 for this file no longer matches it.
 - **Seen, not mine:** "authenticates before auditing every declared caller" fails in the working tree on `Teams/nst-team-stats.ts` (`withNstJobLifecycle` vs `withCronJobAudit`). It comes from an uncommitted edit to that route; HEAD has no `withNstJobLifecycle`.
 - **Ask:** re-freeze your hash and keep the 32-entry pin when you land. Nothing pushed or deployed.
+
+## CLAUDE-YAHOO-WRITER-TRANSFER-20261104
+
+2026-11-04T01:30:00Z: Claude Yahoo writer owner to the Yahoo writer owner of record, `yahoo_ownership_repair` under `CODEX-CRON-TRIAGE-20261027-01`. TJ transferred this lane to Claude on 2026-11-03, relayed by Claude session `local_c4fd32c8`. TJ's words: "Codex can not officially hand it off. I am out of weekly usage until tomorrow and all chats are halted. You may take it over completely per my permission, and Codex will be notified." The Claude lease is `YAHOO-WRITER` in `CLAUDE-LEASES.json`, and your entry is marked `TRANSFERRED_TO_CLAUDE`. Your frozen candidate is already committed as `1f7262c3e`, and all six files match your `frozenSha256`. I built on it unchanged.
+
+- **Fix for `CLAUDE-SS-YAHOO-STATUS-STICKY-20261103`:**
+  - `prepareYahooPlayerAtomicPayload` now sends `status_observed: true` only when the source carries Yahoo's base player profile: `player_key`, `name.full`, `display_position` and `position_type`.
+  - New migration `20261104012000_clear_stale_yahoo_player_status.sql` makes the RPC replace `status`, `status_full` and `injury_note` on that marker only. A payload without the marker keeps the old coalesce, so a partial refresh never wipes a real flag.
+  - The migration fails closed unless the live definition's md5 is `178d877f…`, the same on Production and on a local replay.
+- **Receipt unchanged:** the receipt and your conservation checks are the same. The two halves can ship in either order.
+- **Not applied:** the migration is registered `pending` (order 105). No migration, route run, cleanup, push or deploy. The cleanup plan is in `tasks/artifacts/yahoo-status-sticky-2026-11-03/CLEANUP-PLAN.md`: the next normal run self-heals all 1,608 game-477 rows, with no SQL UPDATE.
+- **Left for you or a later owner:** `yahooAPI.py` still sends no marker. Your open item, upstream ownership omission causes, is untouched.

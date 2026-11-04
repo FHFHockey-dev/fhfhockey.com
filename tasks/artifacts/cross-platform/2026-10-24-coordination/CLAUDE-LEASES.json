@@ -3240,6 +3240,74 @@
         "push, hosted build, deployment, activation, provider or database execution"
       ],
       "status": "active"
+    },
+    {
+      "lane": "YAHOO-WRITER",
+      "session": "local_c4fd32c8 side session (Yahoo status sticky fix); reports to local_799e2b6c",
+      "scope": "Yahoo player writer lane, transferred from Codex yahoo_ownership_repair. First task: CLAUDE-SS-YAHOO-STATUS-STICKY-20261103 (clear status when a full Yahoo read omits it): writer, tests, local migration (not applied), stale-row cleanup plan (not run)",
+      "authority": "TJ via local_c4fd32c8, 2026-11-03: \"Codex can not officially hand it off. I am out of weekly usage until tomorrow and all chats are halted. You may take it over completely per my permission, and Codex will be notified.\"",
+      "opened": "2026-11-04T01:06:10Z",
+      "transferred_from": "CODEX-LEASES.json current_codex_assignments CODEX-CRON-TRIAGE-20261027-01 yahoo_ownership_repair (FROZEN_LOCAL_QUALIFIED_REVIEW_PENDING); its frozen candidate is committed as 1f7262c3e and matches every frozenSha256",
+      "write_paths": [
+        {
+          "path": "web/lib/integrations/yahoo/playerWriter.ts",
+          "baseline_sha256": "4f48acb6f11dc451946c4f7757fff175ee28810b2453b33d1b564961ccc8c642"
+        },
+        {
+          "path": "web/lib/integrations/yahoo/writerPermissions.test.ts",
+          "baseline_sha256": "85142edca662ac80eabc39f78f1a432b276b53cca1bc8cee2b7636022569af23"
+        },
+        {
+          "path": "web/pages/api/v1/db/update-yahoo-players.ts",
+          "baseline_sha256": "5254c439ca883ea7babef394aa09f758d970122eb3a51a73c504a200e544d712"
+        },
+        {
+          "path": "web/__tests__/pages/api/v1/db/update-yahoo-players.route.test.ts",
+          "baseline_sha256": "30bc67f2eadd960ea0fbba8924dc8a614088ccb7b2d8afdc7e5eee63d203879d"
+        },
+        {
+          "path": "web/lib/integrations/yahoo/ingestionLifecycle.ts",
+          "baseline_sha256": "850ad8663c457f6abbc9d1017f21864b7f1d663f04f15911335aa0a750bfdb70"
+        },
+        {
+          "path": "web/lib/integrations/yahoo/discovery.test.ts",
+          "baseline_sha256": "a21867399aa701b68ba04874abe2d61d0e5a4707ed27e0878455f55a00074ef1"
+        },
+        {
+          "path": "supabase/migrations/<new>_clear_stale_yahoo_player_status.sql",
+          "baseline_sha256": null
+        },
+        {
+          "path": "tasks/TASKS/repository-audit-remediation/migration-authority.json",
+          "baseline_sha256": "71020e5ae2041015ffa16d857dcc125fd0dd481f5f92bb64ae815f71928e2d5b",
+          "note": "append this lane's row only"
+        },
+        {
+          "path": "web/lib/supabase/supportedBaselineMigration.test.ts",
+          "baseline_sha256": "a8a156410dff79b8de5570d52dbd4d3f8ed7405e23a301cf72ea7ef8233662b5",
+          "note": "registration counts only"
+        },
+        {
+          "path": "tasks/TASKS/super-goal/super-goal-final-summary.md",
+          "baseline_sha256": "5a541459be94c531568fb246832431f8bb36230d35fb1d1a2fa4b39c98ad90a6",
+          "note": "authority count line only"
+        },
+        {
+          "path": "tasks/artifacts/yahoo-status-sticky-2026-11-03/",
+          "baseline_sha256": null
+        },
+        {
+          "path": "tasks/diaries/2026-11-03-claude-yahoo-status-sticky.md",
+          "baseline_sha256": null
+        }
+      ],
+      "forbidden": [
+        "migration apply, stale-row cleanup, production writes, push, deploy or Vercel build without TJ pop-up approval",
+        "Yahoo or NST provider calls; database reads are SELECT only",
+        "web/lib/socialShare/modules/offNightEdge.ts (its owner decides on the workaround)",
+        "GIT_DIR in tests"
+      ],
+      "status": "active"
     }
   ],
   "held_or_blocked": [],
