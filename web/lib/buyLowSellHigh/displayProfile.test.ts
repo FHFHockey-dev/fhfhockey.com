@@ -12,8 +12,10 @@ import type { Profile } from "./currentWindows";
 import { RETAINED_BLSH_SHA256, retainedBlshEvidence } from "../player-cards/retainedBlsh";
 import {
   BLSH_LIST_TOP_N, buildDisplaySnapshot, HEADLINE_TRACK_CONFLICT_LIST_WITHHELD, HEADLINE_TRACK_UNAVAILABLE_LIST_WITHHELD, INSUFFICIENT_PERSONAL_HISTORY_LIST_WITHHELD,
-  listWithheldReason, NO_PERSONAL_HISTORY_LIST_WITHHELD, PERSONAL_HISTORY_UNAVAILABLE_LIST_WITHHELD, reasonText, SHORT_WINDOW_LIST_WITHHELD, toDisplayProfile, type ReferencePolicy,
+  listWithheldReason, NO_PERSONAL_HISTORY_LIST_WITHHELD, OPPORTUNITY_NOT_ATTACHED, PERSONAL_HISTORY_UNAVAILABLE_LIST_WITHHELD, reasonText, SHORT_WINDOW_LIST_WITHHELD, toDisplayProfile,
+  type MappedProfile, type ReferencePolicy,
 } from "./displayProfile";
+import { compareOpportunity, OPPORTUNITY_VERSION, PERSISTENCE_NOTE, summarizeOpportunityHistory, type OpportunityGame } from "./opportunity";
 import { currentResearchLists, currentStateLabel } from "./researchSnapshot";
 
 const ROOT = join(__dirname, "../../..");
@@ -269,6 +271,88 @@ describe("displayProfile: handoff v2 mapping on real saved profiles", () => {
   });
 });
 
+describe("displayProfile: decision-3 opportunity comparisons as provisional context", () => {
+  /** Attach a real `compareOpportunity` result whose window is the profile's own scored window (synthetic PP time).
+   * `level` scales the baseline per-game production: well above the window reads buy-low, well below sell-high. */
+  const attach = (id: number, level: number, games = 40): MappedProfile => {
+    const p: MappedProfile = byId(id), observed = p.explanation.tracks.map(t => t.actual);
+    const history: OpportunityGame[] = Array.from({ length: games }, (_, i) => ({ seconds: 1200, ppSeconds: 120, goals: 1, assists: 1, ppPoints: 0,
+      tracks: observed.map(v => (v / 5 + 1) * level * (1 + 0.3 * ((i % 3) - 1))) }));
+    p.opportunity = compareOpportunity(summarizeOpportunityHistory(history), { games: 5, seconds: p.window.seconds, ppSeconds: 600, observed }, { headlineTrack: 0 });
+    return p;
+  };
+  const shown = (p: MappedProfile) => snapshot([...fixtures.filter(f => f.playerId !== p.playerId), p]).profiles.find(x => x.playerId === p.playerId)!;
+  const base = snapshot(fixtures).profiles.find(x => x.playerId === CASES.burns)!;
+
+  it("shows an explicit unavailable state when nothing is attached, never zeros", () => {
+    const snap = snapshot(fixtures);
+    for (const p of snap.profiles) {
+      expect(p.opportunity).toMatchObject({ status: "unavailable", reason: OPPORTUNITY_NOT_ATTACHED, version: null, tracks: [], headline: null, changes: null, listCheck: null, affectsLists: false, forecast: false });
+      expect(p.opportunity.reasonText).toMatch(/^Opportunity comparisons unavailable: .*\(not zero\)$/);
+    }
+    expect(snap.counts.opportunityAttached).toBe(0);
+  });
+  it("maps both comparisons, the assessment, TOI and PP changes and the claims for each track", () => {
+    const p = shown(attach(CASES.burns, 3)), o = p.opportunity;
+    expect(o).toMatchObject({ status: "available", version: OPPORTUNITY_VERSION, provisional: true, affectsLists: false, persistenceNote: PERSISTENCE_NOTE,
+      retrospective: true, forecast: false, trusted: false, calibratedProbability: null });
+    expect(o.tracks.map(t => t.track)).toEqual(["fantasy_points", "goals_plus_assists", "wigo_game_score"]);
+    o.tracks.forEach((t, i) => expect(t.perGame.observed).toBe(p.tracks[i].observed));
+    const fp = o.tracks[0];
+    expect(fp.perGame).toMatchObject({ kind: "per_game_baseline", available: true, direction: "buy_low_evidence", directionLabel: "Buy-low evidence", reasonText: null });
+    expect(fp.adjusted).toMatchObject({ kind: "opportunity_adjusted", available: true, direction: "buy_low_evidence" });
+    expect(fp.adjusted.label).toMatch(/^Opportunity-adjusted: /);
+    // Game Score has no PP split: the adjusted comparison is unavailable with text, and has no values.
+    expect(o.tracks[2].adjusted).toMatchObject({ available: false, reason: "no_strength_split_for_track", expected: null, gap: null, z: null, direction: null,
+      reasonText: "Unavailable: this track has no power-play split" });
+    expect(o.headline).toEqual(fp.assessment);
+    expect(o.headline).toMatchObject({ direction: "buy_low_evidence", reason: "comparisons_agree", directionLabel: "Buy-low evidence", reasonText: "Both comparisons point the same way" });
+    expect(o.changes!.toi).toMatchObject({ baseline: 1200, current: 4581 / 5 });
+    expect(o.changes!.pp).toMatchObject({ baseline: 120, current: 120 });
+    expect(o.changes!.toi.text.length).toBeGreaterThan(0);
+    expect(o.listCheck).toMatchObject({ state: "agrees", applied: false });
+    expect(o.listCheck!.text).toMatch(/^Provisional context, not yet validated and not applied to the list: /);
+  });
+  it("never changes the list or the rank, even when the assessment contradicts or withholds", () => {
+    const against = shown(attach(CASES.burns, 0.05)), thin = shown(attach(CASES.burns, 3, 10));
+    expect(against.opportunity.headline!.direction).toBe("sell_high_evidence");
+    expect(against.opportunity.listCheck!.state).toBe("contradicts");
+    expect(thin.opportunity.headline).toMatchObject({ direction: "unavailable", reason: "per_game_unavailable" });
+    expect(thin.opportunity.tracks.every(t => t.perGame.reason === "insufficient_personal_history" && t.perGame.expected === null && t.adjusted.expected === null)).toBe(true);
+    expect(thin.opportunity.listCheck!.state).toBe("unavailable");
+    for (const p of [against, thin]) expect(p.score).toEqual(base.score);
+    // A profile outside the lists gets the comparisons but no list check.
+    expect(shown(attach(CASES.conflicting, 3)).opportunity).toMatchObject({ status: "available", listCheck: null });
+  });
+  it("gives every opportunity reason code a written text", () => {
+    const codes = ["no_personal_history", "insufficient_personal_history", "track_unavailable_in_history", "observed_production_unavailable", "window_games_unavailable", "unestimated_scale",
+      "no_strength_split_for_track", "window_toi_unavailable", "window_pp_toi_unavailable", "history_toi_unavailable", "pp_split_inputs_unavailable", "no_non_pp_exposure",
+      "pp_rate_unsupported_without_cohort", "split_rates_unavailable", "toi_unavailable", "comparisons_agree", "both_balanced", "opportunity_explains_per_game_gap",
+      "adjusted_within_balanced_band", "opposite_directions_role_persistence_unknown", "per_game_at_baseline_rates_shifted", "adjusted_unavailable_per_game_only",
+      "adjusted_unavailable_balanced", "adjusted_unavailable_opportunity_may_explain", "adjusted_unavailable_opportunity_unknown", "per_game_unavailable"];
+    expect(codes.filter(c => reasonText(c)!.startsWith("Unavailable: " + c))).toEqual([]);
+  });
+  it("fails closed on a result that does not match the scored window or claims a forecast", () => {
+    const moved = attach(CASES.burns, 3);
+    moved.opportunity!.tracks[0].perGame.observed! += 1;
+    expect(() => toDisplayProfile(moved, R1, RECORDED)).toThrow("opportunity window matches the scored window");
+    const forecast = attach(CASES.burns, 3);
+    (forecast.opportunity as { forecast: boolean }).forecast = true;
+    expect(() => toDisplayProfile(forecast, R1, RECORDED)).toThrow("opportunity version and claims");
+    const zeroed = attach(CASES.burns, 3);
+    Object.assign(zeroed.opportunity!.tracks[2].adjusted, { gap: 0 });
+    expect(() => toDisplayProfile(zeroed, R1, RECORDED)).toThrow("unavailable opportunity comparison has a reason and no values");
+  });
+  it("gives Player Cards the same opportunity the preview reads", () => {
+    const s = snapshot([...fixtures.filter(f => f.playerId !== CASES.burns), attach(CASES.burns, 3)]);
+    const { profiles, ...metadata } = s;
+    const p = profiles.find(x => x.playerId === CASES.burns)!;
+    const card = retainedBlshEvidence({ id: p.playerId, team: p.team! }, s.seasonId, { profile: p, metadata, snapshotSHA256: RETAINED_BLSH_SHA256, reviewReference: "Synthetic unit contract: opportunity" });
+    expect(card.retained!.profile.opportunity).toEqual(currentResearchLists(s).BL.find(x => x.playerId === CASES.burns)!.opportunity);
+    expect(s.counts).toMatchObject({ opportunityAttached: 1, opportunityListCheck: { agrees: 1, qualified: 0, balanced: 0, contradicts: 0, withheld: 0, unavailable: 0 } });
+  });
+});
+
 describe("displayProfile: fails closed instead of displaying drifted values", () => {
   it("refuses components that no longer add to the gap", () => {
     const p = byId(CASES.burns);
@@ -307,6 +391,7 @@ describe.skipIf(!out)("displayProfile: provisional A + official-overlay candidat
     // 21 short windows and 26 whose FHFH Standard gap points the other way (mapper v2 alone: 284 BL, 182 SH).
     expect(snap.counts).toEqual({ profiles: 725, numeric: 673, BL: 228, SH: 138, withheld: 359, withheldNoPersonalHistory: 117, withheldPersonalHistoryUnavailable: 0,
       withheldInsufficientPersonalHistory: 53, withheldShortWindow: 21, withheldHeadlineConflict: 26, withheldHeadlineUnavailable: 0, directionWithheld: 199,
+      opportunityAttached: 0, opportunityListCheck: { agrees: 0, qualified: 0, balanced: 0, contradicts: 0, withheld: 0, unavailable: 0 },
       byPosition: { F: { BL: 140, SH: 98 }, D: { BL: 88, SH: 40 } }, unavailableTier: 52, referenceContextAbsent: 151,
       zeroShotWindows: 19, zeroShotNumeric: 15, zeroShotListed: 0, personalReference1to4: 36, referenceAgeDays: { n: 574, min: 894, max: 1451 } });
     const slotNotes = snap.profiles.flatMap(p => p.coverage.notes.filter(n => n.source === "slot"));

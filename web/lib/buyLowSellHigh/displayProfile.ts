@@ -6,6 +6,7 @@
  * Research only: nothing here is trusted, adopted, a forecast or trade advice.
  */
 import type { Profile } from "./currentWindows";
+import { OPPORTUNITY_TRACKS, OPPORTUNITY_VERSION, PERSISTENCE_NOTE, type Assessment, type ComparisonResult, type OpportunityChange, type OpportunityResult } from "./opportunity";
 import { rankTwoLists, SUPPORT_GAP_EXPLANATION_VERSION, SUPPORT_GAP_VERSION, type Comparison, type ContextSignal, type CoverageNote } from "./supportGap";
 
 export const DISPLAY_SNAPSHOT_VERSION = "fhfh.blsh.current-research-snapshot.v2";
@@ -26,6 +27,11 @@ export const HEADLINE_TRACK_CONFLICT_LIST_WITHHELD = "headline_track_conflict_li
 export const HEADLINE_TRACK_UNAVAILABLE_LIST_WITHHELD = "headline_track_unavailable_list_withheld";
 /** The headline is the league-scoring track (FHFH Standard by default); G+A and Game Score are supporting tracks. */
 export const HEADLINE_TRACK = "fantasy_points";
+/** A saved profile, optionally carrying the decision-3 opportunity result (`opportunity.ts`) attached in `assembleProfiles`. */
+export type MappedProfile = Profile & { opportunity?: OpportunityResult | null };
+/** Decision 3 is provisional context (TJ, 2026-11-04): it never changes list membership or rank until its inputs,
+ * adjustment and classification are validated on historical cases. */
+export const OPPORTUNITY_NOT_ATTACHED = "opportunity_not_attached";
 export const DISPLAY_HANDOFF_VERSION = "blsh-display-handoff-v2";
 
 const TRACK_LABELS = ["FP", "G+A", "FHFH WiGO Game Score"];
@@ -63,6 +69,35 @@ const REASON_TEXT: Record<string, string> = {
   [SHORT_WINDOW_LIST_WITHHELD]: `Withheld from lists: fewer than ${BLSH_LIST_WINDOW_GAMES} games in the window`,
   [HEADLINE_TRACK_CONFLICT_LIST_WITHHELD]: "Withheld from lists: the FHFH Standard points gap points the other way from the combined evidence",
   [HEADLINE_TRACK_UNAVAILABLE_LIST_WITHHELD]: "Withheld from lists: the FHFH Standard points track is unavailable (not counted as zero)",
+  [OPPORTUNITY_NOT_ATTACHED]: "Opportunity comparisons unavailable: none is attached to this saved profile (not zero)",
+  // Opportunity comparisons, (a) per-game and (b) opportunity-adjusted (`opportunity.ts`).
+  no_personal_history: "Unavailable: no personal baseline games (confirmed zero)",
+  insufficient_personal_history: "Unavailable: fewer than 20 effective personal baseline games (provisional cutoff)",
+  track_unavailable_in_history: "Unavailable: this track is missing in the baseline games",
+  observed_production_unavailable: "Unavailable: window production for this track is missing",
+  window_games_unavailable: "Unavailable: the window's game count is missing",
+  unestimated_scale: "Unavailable: the baseline's game-to-game spread could not be estimated",
+  no_strength_split_for_track: "Unavailable: this track has no power-play split",
+  window_toi_unavailable: "Unavailable: window ice time is missing",
+  window_pp_toi_unavailable: "Unavailable: window power-play time is missing or exceeds total ice time",
+  history_toi_unavailable: "Unavailable: baseline ice time is missing",
+  pp_split_inputs_unavailable: "Unavailable: power-play split inputs are missing in the baseline games",
+  no_non_pp_exposure: "Unavailable: the baseline has no non-power-play ice time",
+  pp_rate_unsupported_without_cohort: "Unavailable: too little personal power-play time and no cohort rate to lean on",
+  split_rates_unavailable: "Unavailable: power-play and non-power-play rates could not be estimated",
+  toi_unavailable: "Effect not estimated: the ice-time change is unavailable",
+  // Opportunity assessments; each assessment also carries its own sentence.
+  comparisons_agree: "Both comparisons point the same way",
+  both_balanced: "Both comparisons are balanced",
+  opportunity_explains_per_game_gap: "A role change explains the per-game gap; not buy/sell evidence",
+  adjusted_within_balanced_band: "Qualified: the opportunity-adjusted gap points the same way but sits inside the balanced band",
+  opposite_directions_role_persistence_unknown: "Direction withheld: the comparisons point opposite ways, depending on whether the role persists",
+  per_game_at_baseline_rates_shifted: "Balanced: per-game output is at baseline while the opportunity-adjusted comparison moved",
+  adjusted_unavailable_per_game_only: "Qualified: per-game comparison only; the opportunity-adjusted comparison is unavailable",
+  adjusted_unavailable_balanced: "Balanced on the per-game comparison; the opportunity-adjusted comparison is unavailable",
+  adjusted_unavailable_opportunity_may_explain: "Direction withheld: a role change may explain the gap and the opportunity-adjusted comparison is unavailable",
+  adjusted_unavailable_opportunity_unknown: "Direction withheld: window ice time is unknown, so opportunity cannot be ruled out",
+  per_game_unavailable: "Per-game comparison unavailable; no direction",
   mixed_personal_position_cohort_reference: "Personal history spans positions; the position-cohort reference is used",
   no_personal_reference_cohort_mean_used: "Process reference is the cohort mean, not the player's own",
   reference_estimated_not_personal_measured: "Process reference is estimated, not the player's own measured history",
@@ -135,6 +170,19 @@ export type DisplayTrack = {
 };
 /** The headline track's own values; null when the track is missing, never a zero. */
 export type DisplayHeadline = { track: typeof HEADLINE_TRACK; scoring: "FHFH Standard"; label: string; observed: number; expected: number; referenceAtCurrentTOI: number; gap: number };
+export type DisplayOpportunityComparison = ComparisonResult & { reasonText: string | null; directionLabel: string | null };
+export type DisplayOpportunityAssessment = Assessment & { directionLabel: string; reasonText: string };
+/** Decision 3 comparisons as saved; never recomputed. Unavailable is a state with a reason, never zeros. */
+export type DisplayOpportunity = {
+  status: "available" | "unavailable"; reason: string | null; reasonText: string | null; version: typeof OPPORTUNITY_VERSION | null;
+  heading: "Opportunity: per-game and opportunity-adjusted comparisons"; provisional: true; affectsLists: false;
+  tracks: { track: string; label: string; perGame: DisplayOpportunityComparison; adjusted: DisplayOpportunityComparison; assessment: DisplayOpportunityAssessment }[];
+  headline: DisplayOpportunityAssessment | null;
+  changes: Record<"toi" | "pp", OpportunityChange & { impactReasonText: string | null }> | null; persistenceNote: string;
+  /** For a listed profile: how the headline assessment reads against the list side. Shown as context; not applied. */
+  listCheck: { state: "agrees" | "qualified" | "balanced" | "contradicts" | "withheld" | "unavailable"; applied: false; text: string } | null;
+  retrospective: true; forecast: false; trusted: false; calibratedProbability: null;
+};
 export type DisplayProfile = {
   playerId: number; name: string | null; displayName: string; team: string | null; position: "F" | "D" | null;
   score: {
@@ -162,6 +210,7 @@ export type DisplayProfile = {
     context: Record<"current" | "reference", { verified: boolean; reason: string | null; text: string | null }>;
   };
   context: { heading: "Context, not part of the score"; opportunity: DisplayComparison[]; signals: DisplayContextSignal[] };
+  opportunity: DisplayOpportunity;
   streak: null; streakText: string;
   claims: { luckIdentified: false; marketValue: false; forecast: false; trusted: false }; claimsText: string;
 };
@@ -205,10 +254,50 @@ export function listWithheldReason(p: Profile): string | null {
   return (p.result.researchList === "BL" ? gap > 0 : gap < 0) ? null : HEADLINE_TRACK_CONFLICT_LIST_WITHHELD;
 }
 
+const DIRECTION_LABELS: Record<Assessment["direction"], string> = {
+  buy_low_evidence: "Buy-low evidence", sell_high_evidence: "Sell-high evidence", balanced: "Balanced", withheld: "Direction withheld", unavailable: "Unavailable",
+};
+const OPPORTUNITY_BASE = { heading: "Opportunity: per-game and opportunity-adjusted comparisons", provisional: true, affectsLists: false, persistenceNote: PERSISTENCE_NOTE,
+  retrospective: true, forecast: false, trusted: false, calibratedProbability: null } as const;
+/** The display state of a profile with no attached opportunity result (also for fixtures built by hand). */
+export const opportunityNotAttached = (): DisplayOpportunity => ({ ...OPPORTUNITY_BASE, status: "unavailable", reason: OPPORTUNITY_NOT_ATTACHED,
+  reasonText: reasonText(OPPORTUNITY_NOT_ATTACHED), version: null, tracks: [], headline: null, changes: null, listCheck: null });
+/** Project the attached decision-3 result, checking it reconciles with the scored window; absent maps to an unavailable state. */
+function toDisplayOpportunity(o: OpportunityResult | null | undefined, tracks: DisplayTrack[], list: "BL" | "SH" | null, id: number): DisplayOpportunity {
+  if (o === null || o === undefined) return opportunityNotAttached();
+  const base = OPPORTUNITY_BASE;
+  check(o.version === OPPORTUNITY_VERSION && o.retrospective === true && o.forecast === false && o.trusted === false && o.calibratedProbability === null, id, "opportunity version and claims");
+  check(o.headlineTrack === 0 && o.tracks.length === 3 && o.tracks.every((t, i) => t.track === OPPORTUNITY_TRACKS[i]), id, "opportunity tracks with the league-scoring headline");
+  const comparison = (c: ComparisonResult, kind: ComparisonResult["kind"], t: number): DisplayOpportunityComparison => {
+    check(c.kind === kind && (c.observed === null || finite(c.observed)), id, `opportunity ${kind} comparison`);
+    if (c.available) check(c.reason === null && [c.observed, c.expected, c.gap, c.scale, c.z].every(finite) && c.direction !== null, id, "available opportunity comparison is complete");
+    else check(typeof c.reason === "string" && c.expected === null && c.gap === null && c.z === null && c.direction === null, id, "unavailable opportunity comparison has a reason and no values");
+    if (c.observed !== null && tracks.length) check(close(c.observed, tracks[t].observed, tracks[t].observed), id, "opportunity window matches the scored window");
+    return { ...c, reasonText: reasonText(c.reason), directionLabel: c.direction ? DIRECTION_LABELS[c.direction] : null };
+  };
+  const assessment = (a: Assessment): DisplayOpportunityAssessment => {
+    check(a.direction in DIRECTION_LABELS && typeof a.text === "string" && a.text.length > 0 && (a.opportunityEffect === null || finite(a.opportunityEffect)), id, "opportunity assessment");
+    return { ...a, directionLabel: DIRECTION_LABELS[a.direction], reasonText: reasonText(a.reason)! };
+  };
+  const shown = o.tracks.map((t, i) => ({ track: t.track, label: t.label, perGame: comparison(t.perGame, "per_game_baseline", i), adjusted: comparison(t.adjusted, "opportunity_adjusted", i), assessment: assessment(t.assessment) }));
+  const h = shown[0].assessment;
+  check(o.headline.direction === h.direction && o.headline.reason === h.reason && o.headline.text === h.text, id, "opportunity headline is the league-scoring track's assessment");
+  const change = (c: OpportunityChange) => {
+    check(c.impact.length === 3 && c.impact.every(v => v === null || finite(v)) && [c.baseline, c.current, c.delta].every(v => v === null || finite(v)), id, "opportunity change values");
+    return { ...c, impact: [...c.impact], impactReasonText: reasonText(c.impactReason) };
+  };
+  const want = list === "BL" ? "buy_low_evidence" : "sell_high_evidence";
+  const listCheck: DisplayOpportunity["listCheck"] = list === null ? null : {
+    state: h.direction === want ? (h.qualified ? "qualified" : "agrees") : h.direction === "buy_low_evidence" || h.direction === "sell_high_evidence" ? "contradicts" : h.direction,
+    applied: false, text: `Provisional context, not yet validated and not applied to the list: ${h.text}`,
+  };
+  return { ...base, status: "available", reason: null, reasonText: null, version: o.version, tracks: shown, headline: h, changes: { toi: change(o.changes.toi), pp: change(o.changes.pp) }, listCheck };
+}
+
 export type ListRanks = { rank: number; positionRank: number };
 /** Project one saved profile. `ranks` holds its 1-based place in its gated list (headline-gap order) and within
  * its position group on that side, or null when it is not listed. */
-export function toDisplayProfile(p: Profile, ranks: ListRanks | null, recordedThroughDate: string): DisplayProfile {
+export function toDisplayProfile(p: MappedProfile, ranks: ListRanks | null, recordedThroughDate: string): DisplayProfile {
   const e = p.explanation, r = p.result, id = p.playerId;
   check(e.version === SUPPORT_GAP_EXPLANATION_VERSION && e.scoreVersion === SUPPORT_GAP_VERSION && r.version === SUPPORT_GAP_VERSION, id, "version");
   check(e.claims.luckIdentified === false && e.claims.marketValue === false && e.claims.forecast === false && e.claims.trusted === false, id, "claims");
@@ -298,6 +387,7 @@ export function toDisplayProfile(p: Profile, ranks: ListRanks | null, recordedTh
     },
     coverage: { notes, imputedProcesses: [...c.imputedProcesses], physicalFloors: [...c.physicalFloors], context: { current: contextState("current"), reference: contextState("reference") } },
     context: { heading: "Context, not part of the score", opportunity: e.opportunity.map(comparison), signals },
+    opportunity: toDisplayOpportunity(p.opportunity, tracks, list, id),
     streak: null, streakText: "No current-season streak is saved; streak unavailable",
     claims: { luckIdentified: false, marketValue: false, forecast: false, trusted: false },
     claimsText: "Not a luck finding, a market value, a forecast or a trusted recommendation.",
@@ -309,7 +399,7 @@ export type ReferencePolicy = {
   stale: boolean; provisional: true; selectedBy: string; selectedAtUTC: string;
 };
 export type SnapshotInput = {
-  profiles: Profile[]; referencePolicy: ReferencePolicy; assemblerVersion: string; seasonId: number;
+  profiles: MappedProfile[]; referencePolicy: ReferencePolicy; assemblerVersion: string; seasonId: number;
   eventThroughDate: string; asOfUTC: string; packagedAtUTC: string; sourcePins: Record<string, string>;
 };
 export type DisplaySnapshot = ReturnType<typeof buildDisplaySnapshot>;
@@ -364,6 +454,7 @@ export function buildDisplaySnapshot(input: SnapshotInput) {
       `Lists use the frozen concordant-direction rule plus three gates: at least ${BLSH_MIN_PERSONAL_GAMES} personal reference games (provisional; below it the direction is withheld, and unknown history stays apart from confirmed zero), a ${BLSH_LIST_WINDOW_GAMES}-game window, and an FHFH Standard points gap in the list's direction. Withheld and unavailable profiles stay inspectable.`,
       `Lists are ordered by the FHFH Standard points gap; the top ${BLSH_LIST_TOP_N} per side and position group (F, D) lead, and the full ranked lists are kept. G+A and Game Score are supporting tracks; the combined index is not a validated headline. A missing track is unavailable, never zero.`,
       "League-specific scoring is not in this snapshot; FHFH Standard is the default league scoring.",
+      "Opportunity comparisons (per-game and opportunity-adjusted) are provisional context: they do not change list membership or rank until validated on historical cases. Missing comparisons are unavailable, never zero.",
       "No current-season streak is saved.",
     ],
     sourcePins: { ...input.sourcePins },
@@ -373,7 +464,8 @@ export function buildDisplaySnapshot(input: SnapshotInput) {
       withheldPersonalHistoryUnavailable: out.filter(p => p.score.reason === PERSONAL_HISTORY_UNAVAILABLE_LIST_WITHHELD).length,
       withheldInsufficientPersonalHistory: withheldFor(INSUFFICIENT_PERSONAL_HISTORY_LIST_WITHHELD), withheldShortWindow: withheldFor(SHORT_WINDOW_LIST_WITHHELD),
       withheldHeadlineConflict: withheldFor(HEADLINE_TRACK_CONFLICT_LIST_WITHHELD), withheldHeadlineUnavailable: withheldFor(HEADLINE_TRACK_UNAVAILABLE_LIST_WITHHELD),
-      directionWithheld: out.filter(p => p.score.directionWithheldReason !== null).length,
+      directionWithheld: out.filter(p => p.score.directionWithheldReason !== null).length, opportunityAttached: out.filter(p => p.opportunity.status === "available").length,
+      opportunityListCheck: Object.fromEntries((["agrees", "qualified", "balanced", "contradicts", "withheld", "unavailable"] as const).map(s => [s, out.filter(p => p.opportunity.listCheck?.state === s).length])),
       byPosition: { F: { BL: listed("BL", "F"), SH: listed("SH", "F") }, D: { BL: listed("BL", "D"), SH: listed("SH", "D") } },
       unavailableTier: out.filter(p => p.evidence.tier === null).length,
       referenceContextAbsent: out.filter(p => p.coverage.context.reference.reason === "reference_window_not_supplied").length,
