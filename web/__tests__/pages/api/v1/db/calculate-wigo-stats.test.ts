@@ -58,7 +58,8 @@ function installRecentFrameMock(
   const writes: Record<string, any[]> = {};
   const traces: Array<{ table: string; calls: any[][] }> = [];
   const tables: Record<string, any[]> = {
-    players,
+    // The writer lists skaters from current-season totals rows.
+    wgo_skater_stats_totals: players.map(({ id }) => ({ player_id: id, season: "20262027" })),
     wgo_skater_stats: nhl,
     nst_gamelog_as_counts: individual,
     nst_gamelog_as_counts_oi: onIce
@@ -183,8 +184,7 @@ describe("/api/v1/db/calculate-wigo-stats route", () => {
         season: index === 0 && coverage === "wrong season" ? 20242025 : index === 0 && coverage === "missing season" ? null : game.season,
         date_scraped: index === 0 && coverage === "wrong date" ? "2026-04-16" : game.date_scraped,
       }));
-      const rows = table === "players" ? [{ id: 1 }]
-        : table === "wgo_skater_stats_totals" ? seasonal.map(row => ({ ...row, season: String(row.season) }))
+      const rows = table === "wgo_skater_stats_totals" ? seasonal.map(row => ({ ...row, player_id: 1, season: String(row.season) }))
         : table.startsWith("nst_seasonal") ? seasonal
         : table === "nst_gamelog_as_counts" ? coverage === "absent" ? []
           : nstGames.map((game, index) => ({ ...game, toi: coverage === "zero" ? 0 : index === 0 && coverage === "partial" ? null : index === 0 && coverage === "nonfinite" ? NaN : game.toi }))
@@ -296,7 +296,10 @@ describe("/api/v1/db/calculate-wigo-stats route", () => {
     expect(writes.wigo_recent[0]).toMatchObject({ l5_gp: 1, l5_sog: 0, l5_sog_per_60: 0, l5_atoi: 20 });
   });
 
-  it.each(["duplicate", "missing identity", "wrong season", "playoff identity"])("rejects an invalid NHL appearance frame (%s)", async (problem) => {
+  it.each([
+    ["duplicate", "duplicate_game_id"], ["missing identity", "missing_identity"],
+    ["wrong season", "game_id_season_mismatch"], ["playoff identity", "not_regular_season_game"]
+  ])("rejects an invalid NHL appearance frame (%s) and names the rule", async (problem, rule) => {
     getCurrentSeasonMock.mockResolvedValue({ seasonId: 20262027, lastSeasonId: 20252026 });
     const game = recentGame("2026-10-23");
     const bad = problem === "missing identity" ? { ...game, game_id: null }
@@ -308,6 +311,8 @@ describe("/api/v1/db/calculate-wigo-stats route", () => {
     expect(res.statusCode).toBe(207);
     expect(res.body).toMatchObject({ success: false, rejectedPlayerIds: [8476453] });
     expect(res.body.error).toBe("Invalid or duplicate regular-season NHL appearance for 1 player(s): 8476453.");
+    expect(res.body.rejectedByRule).toEqual({ [rule]: 1 });
+    expect(res.body.rejections).toEqual([expect.objectContaining({ playerId: 8476453, rule })]);
     expect(writes).toEqual({});
   });
 
@@ -358,7 +363,7 @@ describe("/api/v1/db/calculate-wigo-stats route", () => {
           return Promise.resolve({ error: null });
         },
         then: (resolve: (value: unknown) => unknown) => {
-          const data = table === "players" ? ids.map(id => ({ id }))
+          const data = table === "wgo_skater_stats_totals" && playerId == null ? ids.map(id => ({ player_id: id }))
             : table === "wgo_skater_stats" ? [{ ...recentGame("2026-10-23"), player_id: playerId }] : [];
           return Promise.resolve({ data, error: null, count: data.length }).then(resolve);
         },
@@ -389,10 +394,10 @@ describe("/api/v1/db/calculate-wigo-stats route", () => {
           if (table === "wgo_skater_stats") {
             return Promise.resolve({ data: [{ ...recentGame("2026-10-23"), player_id: playerId }], error: null }).then(resolve);
           }
-          if (table !== "players") return Promise.resolve({ data: [], error: null }).then(resolve);
+          if (table !== "wgo_skater_stats_totals" || playerId != null) return Promise.resolve({ data: [], error: null }).then(resolve);
           // Without ORDER BY, Postgres may return each page query in a different order.
           const scan = ordered ? ids : unorderedPlayerReads++ % 2 ? [...ids].reverse() : ids;
-          const data = scan.slice(from, to + 1).map(id => ({ id }));
+          const data = scan.slice(from, to + 1).map(id => ({ player_id: id }));
           return Promise.resolve({ data, error: null, count: ids.length }).then(resolve);
         },
       };
@@ -402,5 +407,188 @@ describe("/api/v1/db/calculate-wigo-stats route", () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.message).toBe("Successfully processed 1500 of 1500 players.");
     expect([...written].sort()).toEqual(ids);
+  });
+
+  it("uses only the highest-GP seasonal row for a traded player, on both NST reads", async () => {
+    getCurrentSeasonMock.mockResolvedValue({ seasonId: 20262027, lastSeasonId: 20252026 });
+    const game = recentGame("2026-10-23");
+    installRecentFrameMock([game], [game]);
+    const base = fromMock.getMockImplementation()!;
+    // Mercer's shape: a stale N.J row beside the cumulative N.J, WPG row.
+    const seasonal: Record<string, any[]> = {
+      nst_seasonal_individual_counts: [
+        { season: 20262027, strength: "all", gp: 10, toi: 151.0, ixg: 2.17, icf: 35, ihdcf: 5, iscfs: 12 },
+        { season: 20262027, strength: "all", gp: 14, toi: 215.27, ixg: 2.89, icf: 45, ihdcf: 7, iscfs: 16 }
+      ],
+      nst_seasonal_on_ice_counts: [
+        { season: 20262027, strength: "all", gp: 10, toi: 151.0, gf: 7, sf: 77, off_zone_starts: 20, def_zone_starts: 30 },
+        { season: 20262027, strength: "all", gp: 14, toi: 215.27, gf: 9, sf: 101, off_zone_starts: 25, def_zone_starts: 35 }
+      ]
+    };
+    const written: Record<string, any[]> = {};
+    fromMock.mockImplementation((table: string) => {
+      const query = base(table);
+      if (seasonal[table]) query.then = (resolve: (value: unknown) => unknown) => Promise.resolve({ data: seasonal[table], error: null }).then(resolve);
+      query.upsert = (rows: any[]) => { written[table] = rows; return Promise.resolve({ error: null }); };
+      return query;
+    });
+    expect((await runRecentFixture()).statusCode).toBe(200);
+    const career = written.wigo_career[0];
+    expect(career.std_gp).toBe(14);
+    expect(career.std_atoi).toBeCloseTo(215.27 / 14);
+    expect(career.std_icf).toBe(45);
+    expect(career.std_ixg).toBeCloseTo(2.89);
+    expect(career.std_oi_sh_pct).toBeCloseTo(9 / 101);
+    expect(career.std_ozs_pct).toBeCloseTo(25 / 60);
+  });
+
+  it("uses WGO ice time for ATOI and WGO-count rates, and stores null when NST is absent", async () => {
+    getCurrentSeasonMock.mockResolvedValue({ seasonId: 20262027, lastSeasonId: 20252026 });
+    const game = recentGame("2026-10-23");
+    installRecentFrameMock([game], [game]);
+    const base = fromMock.getMockImplementation()!;
+    const wgoSeason = (season: string, gp: number, toiPerGame: number | null) => ({
+      player_id: 8476453, season, games_played: gp, toi_per_game: toiPerGame,
+      goals: 1, assists: 1, points: 2, total_primary_assists: 1, shots: 3,
+      pp_goals: 0, pp_assists: 0, pp_points: 0, pp_toi: 60 * gp, pp_toi_pct_per_game: 0.2,
+      hits: 1, blocked_shots: 1, penalty_minutes: 0
+    });
+    const sources: Record<string, any[]> = {
+      // Bystedt's shape this season: 2 GP at 12:51, no NST seasonal row.
+      // Two past seasons: one with WGO ice time and NST, one with NST only.
+      wgo_skater_stats_totals: [
+        wgoSeason("20262027", 2, 771), wgoSeason("20252026", 10, 600), wgoSeason("20242025", 10, null)
+      ],
+      nst_seasonal_individual_counts: [
+        { season: 20242025, strength: "all", gp: 10, toi: 100, ixg: 4, icf: 40, ihdcf: 5, iscfs: 10 }
+      ],
+      nst_seasonal_on_ice_counts: []
+    };
+    const written: Record<string, any[]> = {};
+    fromMock.mockImplementation((table: string) => {
+      const query = base(table);
+      const eqPlayer = query.eq;
+      let perPlayer = false;
+      query.eq = (key: string, value: any) => { if (key === "player_id") perPlayer = true; return eqPlayer(key, value); };
+      const listThen = query.then;
+      if (sources[table]) query.then = (resolve: (value: unknown) => unknown) => perPlayer
+        ? Promise.resolve({ data: sources[table], error: null }).then(resolve)
+        : listThen(resolve);
+      query.upsert = (rows: any[]) => { written[table] = rows; return Promise.resolve({ error: null }); };
+      return query;
+    });
+    expect((await runRecentFixture()).statusCode).toBe(200);
+    const career = written.wigo_career[0];
+    expect(career.std_atoi).toBeCloseTo(12.85);
+    expect(career.std_pts_per_60).toBeCloseTo(2 / (25.7 / 60));
+    for (const metric of ["ixg", "icf", "ixg_per_60", "icf_per_60", "ihdcf_per_60", "iscf_per_60", "ipp", "oi_sh_pct", "ozs_pct"]) {
+      expect(career[`std_${metric}`]).toBeNull();
+    }
+    expect(career.ly_atoi).toBe(10);
+    expect(career.ly_ixg).toBeNull();
+    // CA: 100 WGO minutes plus 100 NST minutes over 20 games; ixG averages
+    // only the season that has NST, rather than counting the other as 0.
+    expect(career.ca_atoi).toBe(10);
+    expect(career.ca_ixg).toBe(4);
+    expect(career.ca_ixg_per_60).toBeCloseTo(2.4);
+    expect(career.ca_pts_per_60).toBeCloseTo(4 / (200 / 60));
+  });
+
+  it("GP-weights PP% across seasons in 3YA and CA", async () => {
+    getCurrentSeasonMock.mockResolvedValue({ seasonId: 20262027, lastSeasonId: 20252026 });
+    const game = recentGame("2026-10-23");
+    installRecentFrameMock([game], [game]);
+    const base = fromMock.getMockImplementation()!;
+    // A full season on the first unit beside a 6-game call-up with no PP time.
+    const totals = [
+      { season: "20262027", games_played: 10, pp_toi_pct_per_game: 0.5 },
+      { season: "20252026", games_played: 70, pp_toi_pct_per_game: 0.6 },
+      { season: "20242025", games_played: 6, pp_toi_pct_per_game: 0 }
+    ].map(row => ({ player_id: 8476453, ...row }));
+    const written: Record<string, any[]> = {};
+    fromMock.mockImplementation((table: string) => {
+      const query = base(table);
+      let perPlayer = false;
+      const eq = query.eq;
+      query.eq = (key: string, value: any) => { if (key === "player_id") perPlayer = true; return eq(key, value); };
+      const listThen = query.then;
+      if (table === "wgo_skater_stats_totals") query.then = (resolve: (value: unknown) => unknown) =>
+        perPlayer ? Promise.resolve({ data: totals, error: null }).then(resolve) : listThen(resolve);
+      query.upsert = (rows: any[]) => { written[table] = rows; return Promise.resolve({ error: null }); };
+      return query;
+    });
+    expect((await runRecentFixture()).statusCode).toBe(200);
+    const career = written.wigo_career[0];
+    expect(career.std_pp_pct).toBe(0.5);
+    expect(career.ya3_pp_pct).toBeCloseTo((0.6 * 70) / 76);
+    expect(career.ca_pp_pct).toBeCloseTo((0.6 * 70) / 76);
+  });
+
+  it("keeps L-window ATOI and WGO-count rates when NST has not loaded the latest game", async () => {
+    getCurrentSeasonMock.mockResolvedValue({ seasonId: 20262027, lastSeasonId: 20252026 });
+    // McDavid's 10-31 shape: 6,966 s over five games, 2 G, 11 PTS; NST lacks 10-31.
+    const toi = [1500, 1380, 1366, 1360, 1360];
+    const goals = [1, 0, 1, 0, 0];
+    const points = [3, 2, 3, 1, 2];
+    const nhl = ["31", "29", "27", "25", "23"].map((day, index) => ({
+      ...recentGame(`2026-10-${day}`, 20262027, index + 1),
+      toi_per_game: toi[index], toi: toi[index], goals: goals[index], points: points[index]
+    }));
+    const { writes } = installRecentFrameMock(nhl, nhl.slice(1));
+    expect((await runRecentFixture()).statusCode).toBe(200);
+    const recent = writes.wigo_recent[0];
+    expect(recent.l5_atoi).toBeCloseTo(6966 / 5 / 60);
+    expect(recent.l5_g_per_60).toBeCloseTo(2 * 3600 / 6966);
+    expect(recent.l5_pts_per_60).toBeCloseTo(11 * 3600 / 6966);
+    expect(recent.l5_pts_per_60).toBeCloseTo(5.685, 2);
+    for (const metric of ["ixg", "ixg_per_60", "icf", "icf_per_60", "ihdcf_per_60", "iscf_per_60", "ipp", "oi_sh_pct"]) {
+      expect(recent[`l5_${metric}`]).toBeNull();
+    }
+  });
+
+  it("lists only skaters with a totals row this season or last, so high ids are reached", async () => {
+    getCurrentSeasonMock.mockResolvedValue({ seasonId: 20262027, lastSeasonId: 20252026 });
+    const ids = [8478402, 8484144, 8486067];
+    const nhl = ids.map(id => ({ ...recentGame("2026-10-23"), player_id: id }));
+    const { writes, traces } = installRecentFrameMock(nhl, nhl, nhl, undefined, ids.map(id => ({ id, position: "C" })));
+    const res = await runRecentFixture();
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({ success: true, playersListed: 3, playersProcessed: 3, rowsUpserted: 6, rejectedCount: 0 });
+    expect(writes.wigo_recent.map(row => row.player_id)).toEqual(ids);
+    expect(traces.some(trace => trace.table === "players")).toBe(false);
+    const list = traces.find(trace => trace.table === "wgo_skater_stats_totals")!;
+    expect(list.calls).toContainEqual(["in", "season", ["20262027", "20252026"]]);
+  });
+
+  it("stops at the run budget, flushes what it wrote and reports counts and rejects", async () => {
+    getCurrentSeasonMock.mockResolvedValue({ seasonId: 20262027, lastSeasonId: 20252026 });
+    const ids = [8470001, 8470002, 8470003, 8470004, 8470005, 8470006];
+    const nhl = ids.map(id => ({ ...recentGame("2026-10-23"), player_id: id, ...(id === 8470002 ? { game_id: null } : {}) }));
+    installRecentFrameMock(nhl, nhl, nhl, undefined, ids.map(id => ({ id, position: "C" })));
+    let clock = 1_000_000;
+    const nowSpy = vi.spyOn(Date, "now").mockImplementation(() => clock);
+    const base = fromMock.getMockImplementation()!;
+    const written: Record<string, number[]> = {};
+    fromMock.mockImplementation((table: string) => {
+      const query = base(table);
+      // Each player's game-log read costs a simulated minute.
+      if (table === "wgo_skater_stats") clock += 60_000;
+      query.upsert = (rows: any[]) => {
+        written[table] = rows.map(row => row.player_id);
+        return Promise.resolve({ error: null });
+      };
+      return query;
+    });
+    const res = await runRecentFixture();
+    nowSpy.mockRestore();
+    expect(res.statusCode).toBe(207);
+    expect(res.body).toMatchObject({
+      success: false, playersListed: 6, playersProcessed: 3, rowsUpserted: 6, rejectedCount: 1,
+      notReachedCount: 2, firstNotReachedPlayerId: 8470005, rejectedPlayerIds: [8470002],
+      rejectedByRule: { missing_identity: 1 }
+    });
+    expect(res.body.error).toContain("2 player(s) not reached, from id 8470005");
+    expect(written.wigo_recent).toEqual([8470001, 8470003, 8470004]);
+    expect(written.wigo_career).toEqual([8470001, 8470003, 8470004]);
   });
 });

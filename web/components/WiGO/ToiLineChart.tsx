@@ -1,6 +1,6 @@
-import React, { useState, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
+import React, { useMemo, useState, useRef } from "react";
 import useWigoPlayerTotals from "hooks/useWigoPlayerTotals";
+import useWigoGameLog from "hooks/useWigoGameLog";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -16,17 +16,15 @@ import {
   ChartOptions,
   ChartData
 } from "chart.js";
-import {
-  SkaterGameLogStatsData,
-  fetchPlayerGameLogStats
-} from "utils/fetchWigoPlayerStats";
+import { SkaterGameLogStatsData } from "utils/fetchWigoPlayerStats";
 import { formatSecondsToMMSS, formatDateToMMDD } from "utils/formattingUtils";
 import styles from "styles/wigoCharts.module.scss";
 import zoomPlugin from "chartjs-plugin-zoom";
 import Spinner from "components/Spinner";
-import { WIGO_COLORS, CHART_COLORS, addAlpha } from "styles/wigoColors";
+import { WIGO_COLORS, CHART_COLORS, addAlpha, CHART_TICK_FONT, WIGO_CHART_ROLES } from "styles/wigoColors";
 import WigoSectionCard from "./WigoSectionCard";
 import { WIGO_ERROR_MESSAGES } from "./errorMessages";
+import { useSeasonPendingMessage } from "hooks/useCurrentSeason";
 
 ChartJS.register(
   CategoryScale,
@@ -59,19 +57,27 @@ type NumericSkaterLogKeys = {
 }[keyof SkaterGameLogStatsData];
 
 const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
+  const seasonPending = useSeasonPendingMessage();
   const chartRef = useRef<ChartJS<"line">>(null);
   // --- State to control which chart is displayed ---
   const [chartView, setChartView] = useState<ChartView>("toi"); // Default to 'toi'
   const totals = useWigoPlayerTotals(playerId, seasonId);
-  const logs = useQuery({
-    queryKey: ["wigoToiGameLog", playerId, seasonId],
-    queryFn: () => fetchPlayerGameLogStats(playerId!, String(seasonId)),
-    enabled: !!playerId && !!seasonId,
-    staleTime: 60_000
-  });
+  // The shared appearance log (games_played = 1): a scratch has no ice time.
+  const logs = useWigoGameLog(playerId, seasonId);
   const isLoading = totals.isLoading || logs.isLoading;
   const error = totals.error || logs.error;
-  const gameLogData = logs.data ?? [];
+  const gameLogData = useMemo<SkaterGameLogStatsData[]>(
+    () =>
+      (logs.data ?? []).map((game) => ({
+        date: game.date,
+        toi_per_game: game.toi_per_game,
+        pp_toi_per_game: game.pp_toi_per_game,
+        // Stored as a 0-1 fraction; the chart uses 0-100.
+        pp_toi_pct_per_game:
+          game.pp_toi_pct_per_game !== null ? game.pp_toi_pct_per_game * 100 : null
+      })),
+    [logs.data]
+  );
   const averageToi = totals.data?.toi_per_game ?? null;
   const averagePpToiPct = totals.data?.pp_toi_pct_per_game ?? null;
 
@@ -106,10 +112,10 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
             data: getData("toi_per_game"),
             borderColor: useDummyData
               ? WIGO_COLORS.TRANSPARENT
-              : CHART_COLORS.BAR_PRIMARY,
+              : WIGO_CHART_ROLES.PRIMARY,
             backgroundColor: useDummyData
               ? WIGO_COLORS.TRANSPARENT
-              : addAlpha(CHART_COLORS.BAR_PRIMARY, 0.2),
+              : addAlpha(WIGO_CHART_ROLES.PRIMARY, 0.12),
             fill: !useDummyData,
             yAxisID: "yTime",
             pointRadius: useDummyData ? 0 : 2,
@@ -121,10 +127,10 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
             data: getData("pp_toi_per_game"),
             borderColor: useDummyData
               ? WIGO_COLORS.TRANSPARENT
-              : CHART_COLORS.PP_TOI,
+              : WIGO_CHART_ROLES.SECONDARY,
             backgroundColor: useDummyData
               ? WIGO_COLORS.TRANSPARENT
-              : addAlpha(CHART_COLORS.PP_TOI, 0.2),
+              : addAlpha(WIGO_CHART_ROLES.SECONDARY, 0.2),
             fill: false,
             yAxisID: "yTime",
             pointRadius: useDummyData ? 0 : 2,
@@ -138,7 +144,7 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
                   data: getAvgData(averageToi),
                   borderColor: useDummyData
                     ? WIGO_COLORS.TRANSPARENT
-                    : CHART_COLORS.AVG_LINE_PRIMARY,
+                    : WIGO_CHART_ROLES.AVERAGE,
                   borderDash: [3, 3],
                   fill: false,
                   pointRadius: 0,
@@ -160,10 +166,10 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
             data: getData("pp_toi_pct_per_game"),
             borderColor: useDummyData
               ? WIGO_COLORS.TRANSPARENT
-              : CHART_COLORS.LINE_TERTIARY, // Use semantic tertiary line color
+              : WIGO_CHART_ROLES.SECONDARY, // Power play: the second series
             backgroundColor: useDummyData
               ? WIGO_COLORS.TRANSPARENT
-              : addAlpha(CHART_COLORS.LINE_TERTIARY, 0.2),
+              : addAlpha(WIGO_CHART_ROLES.SECONDARY, 0.12),
             fill: !useDummyData,
             yAxisID: "yPercentage",
             pointRadius: useDummyData ? 0 : 2,
@@ -177,7 +183,7 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
                   data: getAvgData(averagePpToiPct),
                   borderColor: useDummyData
                     ? WIGO_COLORS.TRANSPARENT
-                    : CHART_COLORS.AVG_LINE_SECONDARY,
+                    : WIGO_CHART_ROLES.AVERAGE,
                   borderDash: [3, 3],
                   fill: false,
                   pointRadius: 0,
@@ -205,10 +211,12 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
           title: { display: false },
           ticks: {
             color: CHART_COLORS.TICK_LABEL,
-            font: { size: 12 },
+            font: CHART_TICK_FONT,
             maxRotation: 0,
             minRotation: 0,
             autoSkip: true,
+            // Keep date labels apart once the wider 95% layout fits five.
+            autoSkipPadding: 8,
             maxTicksLimit: 6
           },
           grid: { display: false },
@@ -226,12 +234,14 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
           title: {
             display: false,
             text: "Time On Ice (Minutes)",
-            font: { size: 12 },
+            font: CHART_TICK_FONT,
             color: CHART_COLORS.TICK_LABEL
           },
           ticks: {
             color: CHART_COLORS.TICK_LABEL,
-            font: { size: 12 },
+            font: CHART_TICK_FONT,
+            // Whole 5-minute steps, not 500-second ones (33:20, 25:00, 16:40).
+            stepSize: 300,
             callback: (value) =>
               typeof value === "number" ? formatSecondsToMMSS(value) : value
           },
@@ -246,12 +256,12 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
           title: {
             display: false,
             text: "PP TOI Percentage (%)",
-            font: { size: 12 },
+            font: CHART_TICK_FONT,
             color: CHART_COLORS.TICK_LABEL
           },
           ticks: {
             color: CHART_COLORS.TICK_LABEL,
-            font: { size: 12 },
+            font: CHART_TICK_FONT,
             callback: (value) =>
               typeof value === "number" ? `${value}%` : value // Format as percentage
           },
@@ -267,7 +277,7 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
           labels: {
             color: CHART_COLORS.TICK_LABEL,
             boxWidth: 12,
-            font: { size: 12 }
+            font: CHART_TICK_FONT
           }
         },
         datalabels: { display: false },
@@ -326,7 +336,7 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
       title={chartTitle}
       toolbar={
         <div className={styles.toggleButtons}>
-          <span className="wigo-trend-legend">{chartView === "toi" ? <><span style={{ color: CHART_COLORS.BAR_PRIMARY }}>━Total</span> · <span style={{ color: CHART_COLORS.PP_TOI }}>━PP</span> · Avg (min)</> : "PP share · Avg (%)"}</span>
+          <span className="wigo-trend-legend">{chartView === "toi" ? <><span style={{ color: WIGO_CHART_ROLES.PRIMARY }}>━</span>Total · <span style={{ color: WIGO_CHART_ROLES.SECONDARY }}>━</span>PP · <span style={{ color: WIGO_CHART_ROLES.AVERAGE }}>┄</span>Avg</> : <><span style={{ color: WIGO_CHART_ROLES.SECONDARY }}>━</span>PP share · <span style={{ color: WIGO_CHART_ROLES.AVERAGE }}>┄</span>Avg</>}</span>
           <button type="button" aria-label="Reset" title="Drag to zoom; Shift+drag to pan; Reset restores all games" onClick={() => chartRef.current?.resetZoom()}>↺</button>
           <button
             onClick={() => setChartView("toi")}
@@ -338,7 +348,7 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
             onClick={() => setChartView("pp_pct")}
             disabled={chartView === "pp_pct"}
           >
-            PP TOI %
+            PP%
           </button>
         </div>
       }
@@ -371,7 +381,7 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
       )}
 
       {!isLoading && !error && playerId && !seasonId && (
-        <div style={placeholderStyle}>Loading season info...</div>
+        <div style={placeholderStyle}>{seasonPending}</div>
       )}
 
       {/* "No Data" Placeholder (overlaps empty chart if !isLoading, !error, playerId, and gameLogData is empty) */}

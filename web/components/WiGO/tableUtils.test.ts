@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { TableAggregateData } from "./types";
-import { computeDiffColumn, formatCell, formatDiffPercent } from "./tableUtils";
+import { computeDiffColumn, diffDirection, formatCell, formatDiffPercent } from "./tableUtils";
 
 describe("computeDiffColumn", () => {
   it("computes per-game diffs for count stats using GP context", () => {
@@ -73,5 +73,16 @@ describe("formatDiffPercent", () => {
     expect(formatDiffPercent(-1021.7)).toBe("-1022%");
     expect(formatDiffPercent(null)).toBe("-");
     expect(formatDiffPercent(Number.POSITIVE_INFINITY)).toBe("-");
+  });
+
+  it("rounds before taking the sign, so a near-zero change is neither +0 nor -0 nor coloured", () => {
+    expect(formatDiffPercent(0.04)).toBe("0.0%");
+    expect(formatDiffPercent(-0.04)).toBe("0.0%");
+    expect(formatDiffPercent(0.06)).toBe("+0.1%");
+    expect(diffDirection(0.04)).toBeUndefined();
+    expect(diffDirection(-0.04)).toBeUndefined();
+    expect(diffDirection(0.06)).toBe("positive");
+    expect(diffDirection(-8.14)).toBe("negative");
+    expect(diffDirection(Number.NaN)).toBeUndefined();
   });
 });

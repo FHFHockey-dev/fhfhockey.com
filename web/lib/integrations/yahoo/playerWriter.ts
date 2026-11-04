@@ -82,25 +82,42 @@ function optionalInteger(value: unknown): number | null {
   return parsed == null ? null : Math.trunc(parsed);
 }
 
-export function extractYahooPercentOwned(percentOwned: unknown): number | null {
-  if (percentOwned == null) return null;
+export type YahooOwnershipObservation = {
+  value: number | null;
+  reason: "observed" | "missing_percentage" | "missing_value" | "null_value" | "invalid_value";
+};
 
+/** A missing Yahoo value is unavailable evidence, including metadata with delta0.
+ * Only an explicit, valid percentage can establish a real zero. */
+export function assessYahooPercentOwned(percentOwned: unknown): YahooOwnershipObservation {
+  if (percentOwned == null) return { value: null, reason: "missing_percentage" };
+  let raw: unknown = percentOwned;
   if (Array.isArray(percentOwned)) {
-    const item = percentOwned.find(
-      (entry) =>
-        entry &&
-        typeof entry === "object" &&
-        ("value" in entry || "Value" in entry),
-    ) as { value?: unknown; Value?: unknown } | undefined;
-    return optionalNumber(item?.value ?? item?.Value);
+    const values = percentOwned.filter((entry) => entry && typeof entry === "object" &&
+      ("value" in entry || "Value" in entry));
+    if (!values.length) return { value: null, reason: "missing_value" };
+    if (values.length !== 1) return { value: null, reason: "invalid_value" };
+    raw = values[0];
   }
-
-  if (typeof percentOwned === "object") {
-    const item = percentOwned as { value?: unknown; Value?: unknown };
-    return optionalNumber(item.value ?? item.Value);
+  if (raw !== null && typeof raw === "object") {
+    const item = raw as { value?: unknown; Value?: unknown };
+    if ("value" in item && "Value" in item && item.value !== item.Value) {
+      return { value: null, reason: "invalid_value" };
+    }
+    if (!("value" in item) && !("Value" in item)) return { value: null, reason: "missing_value" };
+    raw = "value" in item ? item.value : item.Value;
   }
+  if (raw === undefined) return { value: null, reason: "missing_value" };
+  if (raw === null) return { value: null, reason: "null_value" };
+  const value = typeof raw === "number" ? raw : typeof raw === "string" &&
+    /^(?:\d+(?:\.\d+)?|\.\d+)$/.test(raw.trim()) ? Number(raw) : NaN;
+  return Number.isFinite(value) && value >= 0 && value <= 100
+    ? { value, reason: "observed" }
+    : { value: null, reason: "invalid_value" };
+}
 
-  return optionalNumber(percentOwned);
+export function extractYahooPercentOwned(percentOwned: unknown): number | null {
+  return assessYahooPercentOwned(percentOwned).value;
 }
 
 export function prepareYahooPlayerAtomicPayload(
@@ -157,6 +174,13 @@ export async function persistYahooPlayerPayloadBatch(
   client: SupabaseClient<Database>,
   payloads: YahooPlayerAtomicPayload[],
 ): Promise<YahooPlayerAtomicReceipt> {
+  const expectedOwnership = payloads.filter((payload) => payload.percent_ownership !== null).length;
+  if (payloads.some((payload) => payload.percent_ownership === null
+    ? payload.snapshot_status !== "omitted"
+    : !Number.isFinite(payload.percent_ownership) || payload.percent_ownership < 0 ||
+      payload.percent_ownership > 100 || payload.snapshot_status !== "observed")) {
+    throw new Error("Yahoo player ownership payload is invalid.");
+  }
   const { data, error } = await client.rpc("upsert_yahoo_players_atomic", {
     players_data: payloads,
   });
@@ -168,9 +192,10 @@ export async function persistYahooPlayerPayloadBatch(
   const receipt = data as Partial<YahooPlayerAtomicReceipt> | null;
   if (
     receipt?.processed !== payloads.length ||
-    !Number.isFinite(receipt.ownershipHistoryUpserted) ||
-    !Number.isFinite(receipt.draftHistoryUpserted) ||
-    !Number.isFinite(receipt.ownershipOmitted)
+    receipt.ownershipHistoryUpserted !== expectedOwnership ||
+    receipt.ownershipOmitted !== payloads.length - expectedOwnership ||
+    !Number.isSafeInteger(receipt.draftHistoryUpserted) ||
+    receipt.draftHistoryUpserted! < 0 || receipt.draftHistoryUpserted! > payloads.length
   ) {
     throw new Error("Yahoo player persistence receipt is invalid.");
   }

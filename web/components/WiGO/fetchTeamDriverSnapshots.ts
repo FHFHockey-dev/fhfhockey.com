@@ -4,39 +4,43 @@ import { aggregateTeamFiveOnFive, aggregateTeamSpecialTeams, type TeamSpecialTea
 import { getTeamAbbreviationById } from "lib/teamsInfo";
 
 export async function fetchTeamDriverSnapshots(seasonId: number) {
+  const today = new Date().toISOString().slice(0, 10);
+  // No regular-season game precedes September of the season's first year.
+  const seasonFloor = `${Math.floor(seasonId / 10000)}-09-01`;
+  // One parallel stage (S4). The cutoff comes from the rows themselves rather
+  // than from two "latest date" probes run after the games, and both sources
+  // are cut to it afterwards: same rows, two fewer serial round trips.
   // Game metadata supplies authoritative season/type boundaries, including
   // shortened seasons. Do not infer regular-season status from calendar months.
-  const games = await fetchAllSupabasePages(({ from, to }) => supabase
-    .from("games").select("id,date,homeTeamId,awayTeamId")
-    .eq("seasonId", seasonId).eq("type", 2).order("id").range(from, to));
-  if (!games.length) return { fiveOnFiveRows: [], specialTeamsRows: [] };
-  const dates = games.map(game => game.date).sort();
-  const start = dates[0];
-  const today = new Date().toISOString().slice(0, 10);
-  const end = dates[dates.length - 1] < today ? dates[dates.length - 1] : today;
-  // Both sources must have reached the cutoff: a one-night lag in either writer would otherwise
-  // make every team that played that night look incomplete and blank the cards league-wide.
-  const [latest, latestTeamGame] = await Promise.all([
-    supabase.from("nst_team_5v5").select("date")
-      .gte("date", start).lte("date", end).order("date", { ascending: false }).limit(1).maybeSingle(),
-    supabase.from("wgo_team_stats").select("date")
-      .eq("season_id", seasonId).gte("date", start).lte("date", end)
-      .order("date", { ascending: false }).limit(1).maybeSingle()
-  ]);
-  if (latest.error) throw latest.error;
-  if (latestTeamGame.error) throw latestTeamGame.error;
-  if (!latest.data || !latestTeamGame.data) return { fiveOnFiveRows: [], specialTeamsRows: [] };
-  const cutoff = latest.data.date < latestTeamGame.data.date ? latest.data.date : latestTeamGame.data.date;
-  const [fiveOnFiveDailyRows, teamGames] = await Promise.all([
+  const [games, fiveOnFiveSeasonRows, teamSeasonGames] = await Promise.all([
+    fetchAllSupabasePages(({ from, to }) => supabase
+      .from("games").select("id,date,homeTeamId,awayTeamId")
+      .eq("seasonId", seasonId).eq("type", 2).order("id").range(from, to)),
     fetchAllSupabasePages(({ from, to }) => supabase.from("nst_team_5v5")
       .select("team_abbreviation,date,gp,xgf,xga,gf")
-      .gte("date", start).lte("date", cutoff)
+      .gte("date", seasonFloor).lte("date", today)
       .order("date", { ascending: false }).order("team_abbreviation").range(from, to)),
     fetchAllSupabasePages(({ from, to }) => supabase.from("wgo_team_stats")
       .select("team_id,game_id,date,pp_opportunities,power_play_goals_for,times_shorthanded,pp_goals_against")
-      .eq("season_id", seasonId).gte("date", start).lte("date", cutoff)
+      .eq("season_id", seasonId).gte("date", seasonFloor).lte("date", today)
       .order("game_id").order("team_id").range(from, to))
   ]);
+  if (!games.length) return { fiveOnFiveRows: [], specialTeamsRows: [] };
+  const dates = games.map(game => game.date).sort();
+  const start = dates[0];
+  const end = dates[dates.length - 1] < today ? dates[dates.length - 1] : today;
+  const latestIn = (rows: Array<{ date: string | null }>) => rows.reduce(
+    (latest, row) => row.date && row.date >= start && row.date <= end && row.date > latest ? row.date : latest, "");
+  // Both sources must have reached the cutoff: a one-night lag in either writer would otherwise
+  // make every team that played that night look incomplete and blank the cards league-wide.
+  const latest = latestIn(fiveOnFiveSeasonRows);
+  const latestTeamGame = latestIn(teamSeasonGames);
+  if (!latest || !latestTeamGame) return { fiveOnFiveRows: [], specialTeamsRows: [] };
+  const cutoff = latest < latestTeamGame ? latest : latestTeamGame;
+  const throughCutoff = <T extends { date: string | null }>(rows: T[]) =>
+    rows.filter(row => row.date != null && row.date >= start && row.date <= cutoff);
+  const fiveOnFiveDailyRows = throughCutoff(fiveOnFiveSeasonRows);
+  const teamGames = throughCutoff(teamSeasonGames);
   const expected = new Map<number, Set<number>>();
   const expectedDates = new Map<string, Map<string, number>>();
   for (const game of games.filter(game => game.date <= cutoff)) {

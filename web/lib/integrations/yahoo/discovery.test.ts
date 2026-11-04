@@ -619,3 +619,18 @@ describe("Yahoo discovery helpers", () => {
     });
   });
 });
+
+
+describe("Yahoo provider cooldown boundary", () => {
+  it.each(["120", new Date(Date.now() + 120000).toUTCString()])
+    ("does not shorten a long Retry-After %s to the local10second cap", async retryAfter => {
+      const error = { status: 429, response: { status: 429, headers: new Headers({ "Retry-After": retryAfter }) } };
+      const operation = vi.fn().mockRejectedValueOnce(error).mockResolvedValue("must not be requested");
+      const sleep = vi.fn(async () => {});
+      const onRetry = vi.fn();
+      await expect(withYahooRetry(operation, { maxDelayMs: 10000, sleep, onRetry })).rejects.toBe(error);
+      expect(operation).toHaveBeenCalledTimes(1);
+      expect(sleep).not.toHaveBeenCalled();
+      expect(onRetry).not.toHaveBeenCalled();
+    });
+});

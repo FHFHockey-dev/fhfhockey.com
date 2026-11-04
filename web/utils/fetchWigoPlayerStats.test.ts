@@ -342,10 +342,14 @@ describe("fetchPlayerGameLogForStat units (selected-stat chart)", () => {
     ]);
   });
 
-  it("reports PTS1% per game as a percentage", async () => {
-    installGameLogQueryMock([{ date: "2026-01-01", goals: 1, total_primary_assists: 0, points: 2 }]);
+  it("reports PTS1% per game as a percentage, with a gap for a pointless game as in the aggregates", async () => {
+    installGameLogQueryMock([
+      { date: "2026-01-01", goals: 1, total_primary_assists: 0, points: 2 },
+      { date: "2026-01-02", goals: 0, total_primary_assists: 0, points: 0 }
+    ]);
     await expect(fetchPlayerGameLogForStat(1, 20252026, "PTS1%")).resolves.toEqual([
-      { date: "2026-01-01", value: 50 }
+      { date: "2026-01-01", value: 50 },
+      { date: "2026-01-02", value: null }
     ]);
   });
 
@@ -375,9 +379,61 @@ describe("fetchPlayerGameLogForStat units (selected-stat chart)", () => {
 describe("fetchPlayerAggregatedStats sources", () => {
   it("reads wigo_career, wigo_recent and season totals but never the writerless wigo_rates table", async () => {
     installGameLogQueryMock([{ player_id: 1, std_gp: 10, std_g: 4, season: "20252026" }]);
-    const rows = await fetchPlayerAggregatedStats(1, 20252026);
+    const { rows } = await fetchPlayerAggregatedStats(1, 20252026);
     expect(queryTraces.map(trace => trace.table)).toEqual(["wigo_career", "wigo_recent", "wgo_skater_stats_totals"]);
     expect(rows.find(row => row.label === "Goals")?.STD).toBe(4);
+    const selected = (table: string) => String(queryTraces.find(trace => trace.table === table)?.calls.find(call => call[0] === "select")?.[1]);
+    expect(selected("wigo_career")).not.toContain("*");
+    expect(selected("wigo_career")).toContain("std_pts1_per_60");
+    expect(selected("wigo_career")).toContain("last_updated");
+    expect(selected("wigo_career")).not.toContain("seasons_used");
+    expect(selected("wigo_recent")).toContain("l20_ozs_pct");
+  });
+
+  it("reads the as-of dates and flags an STD row whose GP disagrees with this season's totals", async () => {
+    // Bedard's shape: the 09-17 row still holds last season (STD GP 69); he has played 8.
+    installGameLogQueryMock([{ player_id: 8484144, std_gp: 69, season: "20262027", games_played: 8, last_updated: "2026-09-17T08:52:00Z" }]);
+    const { freshness } = await fetchPlayerAggregatedStats(8484144, 20262027);
+    expect(freshness).toEqual({
+      careerUpdatedAt: "2026-09-17T08:52:00Z", recentUpdatedAt: "2026-09-17T08:52:00Z",
+      stdGp: 69, totalsGp: 8, stdStale: true
+    });
+    const select = queryTraces.find(trace => trace.table === "wgo_skater_stats_totals")?.calls.find(call => call[0] === "select");
+    expect(String(select?.[1])).toContain("games_played");
+  });
+
+  it("does not fill a stale STD row's blanks from this season's totals", async () => {
+    // Bedard's shape: the row holds last season's 69 GP with no PPP; totals say 8 played, 3 PPP.
+    installGameLogQueryMock([{ player_id: 8484144, std_gp: 69, std_ppp: null, season: "20262027", games_played: 8, pp_points: 3 }]);
+    const { rows, freshness } = await fetchPlayerAggregatedStats(8484144, 20262027);
+    expect(freshness.stdStale).toBe(true);
+    expect(rows.find(row => row.label === "PPP")?.STD).toBeNull();
+  });
+
+  it("does not flag STD when its GP matches, or when totals are another season's", async () => {
+    installGameLogQueryMock([{ player_id: 1, std_gp: 8, season: "20262027", games_played: 8 }]);
+    expect((await fetchPlayerAggregatedStats(1, 20262027)).freshness.stdStale).toBe(false);
+    installGameLogQueryMock([{ player_id: 1, std_gp: 69, season: "20252026", games_played: 82 }]);
+    expect((await fetchPlayerAggregatedStats(1, 20262027)).freshness).toMatchObject({ totalsGp: null, stdStale: false });
+  });
+});
+
+describe("fetchPaginatedData timeouts", () => {
+  it("makes one attempt on a statement timeout instead of three", async () => {
+    let attempts = 0;
+    fromMock.mockImplementation(() => {
+      const builder: any = {
+        select: () => builder, eq: () => builder, order: () => builder, range: () => builder,
+        then: (resolve: (value: unknown) => unknown) => {
+          attempts += 1;
+          return Promise.resolve({ data: null, error: { code: "57014", message: "statement timeout" } }).then(resolve);
+        }
+      };
+      return builder;
+    });
+    await expect(fetchPaginatedData("nst_percentile_as_offense", "player_id", { column: "season", value: 20262027 }))
+      .rejects.toMatchObject({ code: "57014" });
+    expect(attempts).toBe(1);
   });
 });
 

@@ -9,9 +9,11 @@ import {
   formatDateToMMDD
 } from "utils/formattingUtils";
 import { ChartOptions, ChartData, ChartDataset } from "chart.js";
-import { WIGO_COLORS, addAlpha, CHART_COLORS } from "styles/wigoColors";
+import { WIGO_COLORS, CHART_TICK_FONT, WIGO_CHART_ROLES, withSurfaceRing, isSurfaceRing } from "styles/wigoColors";
 import { WIGO_ERROR_MESSAGES } from "../errorMessages";
 import useWigoGameLog from "hooks/useWigoGameLog";
+import { useSeasonPendingMessage } from "hooks/useCurrentSeason";
+import { WIGO_QUERY_DEFAULTS } from "components/WiGO/queryDefaults";
 
 // --- Define props and dummy labels ---
 type GameScoreLineChartProps = {
@@ -48,15 +50,9 @@ export default function GameScoreLineChart({
 
       // Only proceed if IDs are valid numbers
       if (typeof pId !== "number" || typeof sId !== "number") {
-        console.log(
-          "GameScoreLineChart: Player ID or Season ID invalid, skipping fetch."
-        );
         return []; // Return empty, query is disabled anyway but good practice
       }
 
-      console.log(
-        `GameScoreLineChart: Fetching game scores for player ${pId} in season ${sId}.`
-      );
       const { data: rpcData, error: rpcError } = await supabase
         .rpc("get_skater_game_scores_for_season", {
           p_player_id: pId,
@@ -75,13 +71,14 @@ export default function GameScoreLineChart({
     },
     // Enable query only when both IDs are valid numbers
     enabled: Number.isSafeInteger(playerId) && Number.isSafeInteger(seasonId) && playerId! > 0 && seasonId! > 0,
-    staleTime: 60_000
+    ...WIGO_QUERY_DEFAULTS
     // Keep previous data while loading new player/season? Optional.
     // keepPreviousData: true,
   });
 
   // Share the canonical game calendar with PPG. The score RPC omits games with
   // incomplete inputs; those games must still occupy their rolling-window slot.
+  const seasonPending = useSeasonPendingMessage();
   const logs = useWigoGameLog(playerId, seasonId);
   const scoresByDate = new Map<string, (number | null)[]>();
   for (const score of scoreData ?? []) {
@@ -141,20 +138,21 @@ export default function GameScoreLineChart({
             (item) => item.game_score
           ); // Handle nulls in calculation
       const lineColor =
-        index === 0 ? CHART_COLORS.LINE_PRIMARY : CHART_COLORS.PP_TOI;
-      return {
+        index === 0 ? WIGO_CHART_ROLES.PRIMARY : WIGO_CHART_ROLES.SECONDARY;
+      return withSurfaceRing({
         type: "line" as const,
         label: `${windowSize}-Game Rolling Avg`,
         data: rollingAvgData,
         borderColor: useDummyData ? WIGO_COLORS.TRANSPARENT : lineColor,
-        backgroundColor: addAlpha(CHART_COLORS.LINE_PRIMARY, 0.2),
-        fill: true, // Typically don't fill rolling averages
+        backgroundColor: WIGO_COLORS.TRANSPARENT,
+        borderWidth: 2,
+        fill: false,
         tension: 0.2,
         pointRadius: 0, // No points on rolling average lines
         pointHoverRadius: 3,
         order: index + 1 // Render lines above bars (lower order renders later/on top)
-      };
-    });
+      });
+    }).flat();
 
     return {
       labels: labels,
@@ -164,12 +162,10 @@ export default function GameScoreLineChart({
           type: "bar" as const,
           label: "Game Score",
           data: gameScoreValues,
-          borderColor: useDummyData
-            ? WIGO_COLORS.TRANSPARENT
-            : CHART_COLORS.BAR_PRIMARY,
+          borderColor: WIGO_COLORS.TRANSPARENT,
           backgroundColor: useDummyData
             ? WIGO_COLORS.TRANSPARENT
-            : addAlpha(CHART_COLORS.BAR_PRIMARY, 0.7),
+            : WIGO_CHART_ROLES.BAR,
 
           order: windowSizes.length + 1 // Render bars behind all lines
         },
@@ -195,20 +191,21 @@ export default function GameScoreLineChart({
           title: {
             display: false,
             text: "Game Score",
-            font: { size: 12 },
+            font: CHART_TICK_FONT,
             color: "#ccc"
           },
-          ticks: { color: "#ccc", font: { size: 12 }, maxTicksLimit: 3, precision: 1 }, // Allow decimals?
+          ticks: { color: "#ccc", font: CHART_TICK_FONT, maxTicksLimit: 3, precision: 1 }, // Allow decimals?
           grid: { color: "rgba(255, 255, 255, 0.1)" }
         },
         x: {
           title: { display: false },
           ticks: {
             color: "#ccc",
-            font: { size: 12 },
+            font: CHART_TICK_FONT,
             maxRotation: 0,
             minRotation: 0,
             autoSkip: true,
+            autoSkipPadding: 8,
             maxTicksLimit: 6
           },
           grid: { display: false }
@@ -220,6 +217,7 @@ export default function GameScoreLineChart({
           enabled: true,
           mode: "index",
           intersect: false,
+          filter: (item) => !isSurfaceRing(item.dataset),
           // Add specific formatting if needed
           callbacks: {
             label: (context) => {
@@ -294,7 +292,7 @@ export default function GameScoreLineChart({
         !error &&
         typeof playerId === "number" &&
         typeof seasonId !== "number" && (
-          <div style={placeholderStyle}>Loading season info...</div>
+          <div style={placeholderStyle}>{seasonPending}</div>
         )}
       {/* Show No Data message if player/season selected but data is empty */}
       {!isLoading &&

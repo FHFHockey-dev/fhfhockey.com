@@ -8,9 +8,19 @@ import usePercentileRank from "./usePercentileRank";
 const mockRpc = vi.hoisted(() => vi.fn());
 const mockUseCurrentSeason = vi.hoisted(() => vi.fn());
 
+const rangeCalls = vi.hoisted(() => [] as unknown[][]);
+// The hook pages the RPC with order().range(); each page call runs mockRpc.
 vi.mock("lib/supabase/public-client", () => ({
   default: {
-    rpc: mockRpc,
+    rpc: (...args: unknown[]) => {
+      const result = mockRpc(...args);
+      const chain: any = {
+        ...result,
+        order: () => chain,
+        range: (...range: unknown[]) => { rangeCalls.push(range); return chain; },
+      };
+      return chain;
+    },
   },
 }));
 
@@ -215,5 +225,46 @@ describe("unavailable percentile players", () => {
     });
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.data).toBeUndefined();
+  });
+});
+
+describe("radar cohort", () => {
+  const row = (id: number, numgames: number, avggoals: number) => ({
+    id, numgames, avggoals, avgassists: 0, avgplusminus: 0, avgpim: 0,
+    avghits: 0, avgblockedshots: 0, avgpowerplaypoints: 0, avgshots: 0,
+  });
+
+  beforeEach(() => {
+    rangeCalls.length = 0;
+    mockRpc.mockReset();
+    mockUseCurrentSeason.mockReturnValue({
+      seasonId: 20262027,
+      regularSeasonStartDate: "2026-10-06",
+      regularSeasonEndDate: "2027-04-15",
+    });
+  });
+
+  it("pages the cohort past the 1,000-row cap in id order", async () => {
+    const firstPage = Array.from({ length: 1000 }, (_, index) => row(index + 1, 10, index / 1000));
+    mockRpc
+      .mockReturnValueOnce({ returns: vi.fn().mockResolvedValue({ data: firstPage, error: null }) })
+      .mockReturnValueOnce({ returns: vi.fn().mockResolvedValue({ data: [row(8486067, 16, 2)], error: null }) });
+    const { result } = renderHook(() => usePercentileRank(8486067, "SEASON"), { wrapper: createWrapper() });
+    await waitFor(() => expect(result.current.data?.goals).toBeGreaterThan(99));
+    expect(rangeCalls).toEqual([[0, 999], [1000, 1999]]);
+    expect(result.current.sample).toEqual({ playerGames: 16, cohortSize: 1001, minGames: 5 });
+  });
+
+  it("ranks against skaters with 5+ games but keeps a small-sample target", async () => {
+    // Bystedt's shape: 2 games. Two 1-game rows would otherwise sit below him.
+    mockRpc.mockReturnValue({ returns: vi.fn().mockResolvedValue({
+      data: [row(8483428, 2, 0.5), row(2, 1, 0), row(3, 1, 0), row(4, 12, 1), row(5, 14, 0.25)],
+      error: null,
+    }) });
+    const { result } = renderHook(() => usePercentileRank(8483428, "SEASON"), { wrapper: createWrapper() });
+    await waitFor(() => expect(result.current.data).toBeDefined());
+    // Cohort: the target plus ids 4 and 5. Midrank of 0.5 among [0.25, 0.5, 1] is 50.
+    expect(result.current.data?.goals).toBe(50);
+    expect(result.current.sample).toEqual({ playerGames: 2, cohortSize: 2, minGames: 5 });
   });
 });

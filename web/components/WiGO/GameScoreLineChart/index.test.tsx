@@ -34,8 +34,11 @@ describe("GameScoreLineChart game coverage", () => {
     await screen.findByText("Game Score unavailable for 1 of 10 games.");
     expect(chart().labels).toHaveLength(10);
     expect(chart().datasets[0].data).toEqual([-2, 1, null, 1, 1, 1, 1, 1, 1, 1]);
-    expect(chart().datasets[1].data).toEqual([null, null, null, null, null, null, null, 1, 1, 1]);
-    expect(chart().datasets[2].data).toEqual(Array(10).fill(null));
+    // Lines are found by label: each carries a surface ring dataset beside it (U8).
+    const line = (label: string) => chart().datasets.find((dataset: any) => dataset.label === label);
+    expect(line("5-Game Rolling Avg").data).toEqual([null, null, null, null, null, null, null, 1, 1, 1]);
+    expect(line("10-Game Rolling Avg").data).toEqual(Array(10).fill(null));
+    expect(line("5-Game Rolling Avg ring").isSurfaceRing).toBe(true);
   });
 
   it("does not choose arbitrarily between duplicate score dates", async () => {

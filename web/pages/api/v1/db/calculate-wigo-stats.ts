@@ -60,6 +60,7 @@ type SelectedWgoGamelog = Pick<
   | "penalty_minutes"
   | "pp_toi_pct_per_game"
   | "pp_toi"
+  | "toi_per_game"
 >;
 type SelectedNstIndGamelog = Pick<
   NstIndGamelogCounts,
@@ -69,6 +70,15 @@ type SelectedNstOiGamelog = Pick<
   NstOiGamelogCounts,
   "date_scraped" | "season" | "gf" | "sf" | "off_zone_starts" | "def_zone_starts"
 >;
+
+// Why a player's last-20 frame was withheld
+type RejectionRule =
+  | "missing_identity"
+  | "game_id_season_mismatch"
+  | "not_regular_season_game"
+  | "invalid_season_id"
+  | "not_an_appearance"
+  | "duplicate_game_id";
 
 // Aggregated data interfaces for seasonal and game data
 interface AggregatedSeasonData {
@@ -87,6 +97,11 @@ interface AggregatedSeasonData {
   wgo_pim: number;
   wgo_pp_toi_pct: number | null;
   wgo_pp_toi: number | null;
+  wgo_gp: number;
+  wgo_toi: number | null; // Minutes, from WGO toi_per_game (seconds) x games
+  has_wgo: boolean;
+  has_nst_ind: boolean;
+  has_nst_oi: boolean;
   toi_all: number;
   ixg_all: number;
   icf_all: number;
@@ -113,6 +128,7 @@ interface CombinedGameData {
   wgo_pim: number | null;
   wgo_pp_toi_pct: number | null;
   wgo_pp_toi: number | null; // Seconds
+  wgo_toi: number | null; // Seconds
   nst_toi_all: number | null; // Seconds in NST game logs
   nst_ixg: number | null;
   nst_icf: number | null;
@@ -160,39 +176,41 @@ const safeAverage = (values: (number | null | undefined)[]): number | null => {
 
 // Pagination helper for fetching player IDs
 const PAGE_SIZE = 1000;
-async function fetchAllPlayerIds(
-  client: SupabaseClient<Database>
+// Stop short of the 240 s platform limit so the final flush and the audit row
+// always happen; a killed run records nothing (B-01).
+const RUN_BUDGET_MS = 200_000;
+// Only skaters with a totals row this season or last can change a WiGO row.
+// Walking every non-goalie in `players` (3,906) outran the platform limit and
+// starved the highest ids every night.
+async function fetchActivePlayerIds(
+  client: SupabaseClient<Database>,
+  seasonIds: number[]
 ): Promise<number[]> {
-  console.log(
-    "Fetching relevant player IDs from 'players' table with pagination..."
-  );
   let allPlayerIds: number[] = [];
   let keepFetching = true;
   let page = 0;
   while (keepFetching) {
     const from = page * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
-    const { data, error, count } = await client
-      .from("players")
-      .select("id", { count: "exact", head: false })
-      .neq("position", "G")
+    const { data, error } = await client
+      .from("wgo_skater_stats_totals")
+      .select("player_id")
+      .in("season", seasonIds.map(String))
       // Range pages are only disjoint and complete under a stable order.
-      .order("id", { ascending: true })
+      .order("player_id", { ascending: true })
+      .order("season", { ascending: true })
       .range(from, to);
     if (error) {
-      console.error(`Error fetching player IDs page ${page}:`, error.message);
       throw new Error(
-        `Error fetching player IDs from players table: ${error.message}`
+        `Error fetching player IDs from wgo_skater_stats_totals: ${error.message}`
       );
     }
     if (data && data.length > 0) {
-      const playerIdsFromPage = data
-        .map((p) => p.id)
-        .filter((id): id is number => id != null);
-      allPlayerIds = allPlayerIds.concat(playerIdsFromPage);
+      allPlayerIds = allPlayerIds.concat(
+        data.map((p) => p.player_id).filter((id): id is number => id != null)
+      );
     }
-    const totalCount = count ?? Infinity;
-    if (!data || data.length < PAGE_SIZE || allPlayerIds.length >= totalCount) {
+    if (!data || data.length < PAGE_SIZE) {
       keepFetching = false;
     } else {
       page++;
@@ -200,7 +218,7 @@ async function fetchAllPlayerIds(
   }
   const uniqueIds = [...new Set(allPlayerIds)];
   console.log(
-    `Workspaceed ${allPlayerIds.length} player ID rows from 'players', found ${uniqueIds.length} unique non-goalie IDs.`
+    `Found ${uniqueIds.length} skaters with a totals row in ${seasonIds.join(" or ")}.`
   );
   return uniqueIds;
 }
@@ -233,11 +251,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     );
 
     // 2. Get Player IDs
-    const uniquePlayerIds = await fetchAllPlayerIds(supabase);
+    const uniquePlayerIds = await fetchActivePlayerIds(supabase, [
+      currentSeasonId,
+      lastSeasonId
+    ]);
     if (!uniquePlayerIds || uniquePlayerIds.length === 0) {
       return res.status(404).json({
         success: false,
-        message: "No relevant player IDs found from 'players' table."
+        message: "No skaters with a totals row this season or last."
       });
     }
     console.log(
@@ -246,17 +267,30 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
     let processedCount = 0;
     const rejectedPlayerIds: number[] = [];
+    const rejectedByRule: Partial<Record<RejectionRule, number>> = {};
+    const rejections: Array<{
+      playerId: number;
+      rule: RejectionRule;
+      gameId: number | null;
+      date: string;
+    }> = [];
     const writeErrors: string[] = [];
     // Define batch arrays with non-partial types
     const allCareerUpsertData: WigoCareerData[] = [];
     const allRecentUpsertData: WigoRecentData[] = [];
     const UPSERT_BATCH_SIZE = 200;
+    let rowsUpserted = 0;
+    let firstNotReachedIndex: number | null = null;
 
     // 3. Process Each Player
-    for (const playerId of uniquePlayerIds) {
+    for (const [playerIndex, playerId] of uniquePlayerIds.entries()) {
+      if (Date.now() - startTime > RUN_BUDGET_MS) {
+        firstNotReachedIndex = playerIndex;
+        break;
+      }
       // --- Fetch Seasonal Data ---
       const wgoSelect =
-        "season, games_played, goals, assists, points, total_primary_assists, shots, pp_goals, pp_assists, pp_points, hits, blocked_shots, penalty_minutes, pp_toi_pct_per_game, pp_toi";
+        "season, games_played, goals, assists, points, total_primary_assists, shots, pp_goals, pp_assists, pp_points, hits, blocked_shots, penalty_minutes, pp_toi_pct_per_game, pp_toi, toi_per_game";
       const nstIndSelect = "season, strength, toi, ixg, icf, ihdcf, iscfs, gp";
       const nstOnIceSelect =
         "season, strength, toi, gf, sf, off_zone_starts, def_zone_starts, gp";
@@ -290,7 +324,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
       // --- Fetch Game Log Data (Last 20) ---
       const wgoGamelogSelect =
-        "game_id, games_played, date, season_id, goals, assists, points, total_primary_assists, shots, pp_goals, pp_assists, pp_points, hits, blocked_shots, penalty_minutes, pp_toi_pct_per_game, pp_toi";
+        "game_id, games_played, date, season_id, goals, assists, points, total_primary_assists, shots, pp_goals, pp_assists, pp_points, hits, blocked_shots, penalty_minutes, pp_toi_pct_per_game, pp_toi, toi_per_game";
       const nstIndGamelogSelect = "date_scraped, season, toi, ixg, icf, iscfs, hdcf";
       const nstOiGamelogSelect =
         "date_scraped, season, gf, sf, off_zone_starts, def_zone_starts";
@@ -308,24 +342,45 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       const wgoLogs = (wgoGamelogRes.data || []) as SelectedWgoGamelog[];
       const gameIds = new Set<number>();
       const recentSeasons = new Set<number>();
-      const invalidFrame = wgoLogs.some(game => {
+      // Name the first rule a game breaks, so the run reports why (B-02).
+      const frameRule = (game: SelectedWgoGamelog): RejectionRule | null => {
         const seasonStart = Math.floor((game.season_id ?? 0) / 10000);
+        if (game.game_id == null || game.season_id == null) return "missing_identity";
+        if (!Number.isSafeInteger(game.game_id)) return "game_id_season_mismatch";
+        if (!new RegExp(`^${seasonStart}02\\d{4}$`).test(String(game.game_id))) {
+          return new RegExp(`^${seasonStart}\\d{6}$`).test(String(game.game_id))
+            ? "not_regular_season_game"
+            : "game_id_season_mismatch";
+        }
         if (
-          game.game_id == null || game.season_id == null ||
-          !Number.isSafeInteger(game.game_id) ||
-          !new RegExp(`^${seasonStart}02\\d{4}$`).test(String(game.game_id)) ||
           !Number.isSafeInteger(game.season_id) ||
-          game.season_id !== seasonStart * 10000 + seasonStart + 1 ||
-          game.games_played !== 1 ||
-          gameIds.has(game.game_id)
-        ) return true;
-        gameIds.add(game.game_id);
-        recentSeasons.add(game.season_id);
-        return false;
-      });
+          game.season_id !== seasonStart * 10000 + seasonStart + 1
+        ) return "invalid_season_id";
+        if (game.games_played !== 1) return "not_an_appearance";
+        if (gameIds.has(game.game_id)) return "duplicate_game_id";
+        return null;
+      };
+      let rejection: { rule: RejectionRule; game: SelectedWgoGamelog } | null = null;
+      for (const game of wgoLogs) {
+        const rule = frameRule(game);
+        if (rule) {
+          rejection = { rule, game };
+          break;
+        }
+        // frameRule has ruled out null ids.
+        gameIds.add(game.game_id as number);
+        recentSeasons.add(game.season_id as number);
+      }
       // Withhold every write for this player only; the run still reports failure.
-      if (invalidFrame) {
+      if (rejection) {
         rejectedPlayerIds.push(playerId);
+        rejectedByRule[rejection.rule] = (rejectedByRule[rejection.rule] ?? 0) + 1;
+        rejections.push({
+          playerId,
+          rule: rejection.rule,
+          gameId: rejection.game.game_id,
+          date: rejection.game.date
+        });
         continue;
       }
 
@@ -387,6 +442,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           wgo_pim: wgoGame.penalty_minutes ?? null,
           wgo_pp_toi_pct: wgoGame.pp_toi_pct_per_game,
           wgo_pp_toi: wgoGame.pp_toi,
+          wgo_toi: wgoGame.toi_per_game ?? null,
           // FIX: Use nullish coalescing operator ??
           nst_toi_all: nstIndGame?.toi ?? null,
           nst_ixg: nstIndGame?.ixg ?? null,
@@ -436,6 +492,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         wgo_pim: 0,
         wgo_pp_toi_pct: null,
         wgo_pp_toi: null,
+        wgo_gp: 0,
+        wgo_toi: null,
+        has_wgo: false,
+        has_nst_ind: false,
+        has_nst_oi: false,
         toi_all: 0,
         ixg_all: 0,
         icf_all: 0,
@@ -460,6 +521,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         // Always try to get the most accurate GP
         seasonData.gp = Math.max(seasonData.gp, record.gp ?? 0);
         // --- Only add TOI if it's from the individual counts record ---
+        if (isIndividualRecord) seasonData.has_nst_ind = true;
+        else seasonData.has_nst_oi = true;
         if (isIndividualRecord && "toi" in record) {
           const toi = record.toi ?? 0; // toi is in minutes here
           seasonData.toi_all += toi; // Add TOI (minutes) only once per season
@@ -477,9 +540,22 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         if ("def_zone_starts" in record)
           seasonData.def_zs_all += record.def_zone_starts ?? 0;
       };
+      // A traded player can hold a stale pre-trade row (`N.J`) beside the
+      // cumulative one (`N.J, WPG`). Summing them inflates TOI and counts, so
+      // keep only the highest-GP row per season (B-04, C-22).
+      const onePerSeason = <T extends { season: number; gp: number | null }>(
+        records: T[]
+      ): T[] => {
+        const bySeason = new Map<number, T>();
+        for (const rec of records) {
+          const kept = bySeason.get(rec.season);
+          if (!kept || (rec.gp ?? 0) > (kept.gp ?? 0)) bySeason.set(rec.season, rec);
+        }
+        return [...bySeason.values()];
+      };
       // **** Pass the flag when calling processNstRecord ****
-      nstIndCounts.forEach((rec) => processNstRecord(rec, rec.season, true)); // Pass true for individual records
-      nstOnIceCounts.forEach((rec) => processNstRecord(rec, rec.season, false)); // Pass false for on-ice records
+      onePerSeason(nstIndCounts).forEach((rec) => processNstRecord(rec, rec.season, true)); // Pass true for individual records
+      onePerSeason(nstOnIceCounts).forEach((rec) => processNstRecord(rec, rec.season, false)); // Pass false for on-ice records
 
       wgoTotals.forEach((rec) => {
         const seasonKey = parseInt(rec.season);
@@ -505,6 +581,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         seasonData.wgo_pim = rec.penalty_minutes ?? 0;
         seasonData.wgo_pp_toi_pct = rec.pp_toi_pct_per_game;
         seasonData.wgo_pp_toi = rec.pp_toi;
+        seasonData.has_wgo = true;
+        seasonData.wgo_gp = rec.games_played ?? 0;
+        seasonData.wgo_toi =
+          rec.toi_per_game != null && rec.games_played != null
+            ? (rec.toi_per_game * rec.games_played) / 60
+            : null;
       });
       const playerSeasons = Object.values(aggregatedDataBySeason).sort(
         (a, b) => a.season - b.season
@@ -517,470 +599,168 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       const recentStats: Partial<WigoRecentData> = { player_id: playerId };
 
       // --- Calculate STD / LY / 3YA / CA for careerStats ---
-      // [ STD Logic ]
+      // One builder for every period; a single season is the one-season case.
+      // Each metric's numerator and denominator come from the same seasons,
+      // and a source absent from every season gives null, not 0 (C-21, C-31).
+      // ATOI and per-60s of WGO counts use WGO ice time, falling back to NST
+      // only for a season without it; NST-only stats stay on NST.
+      const writePeriod = (
+        prefix: "std" | "ly" | "ya3" | "ca",
+        seasons: AggregatedSeasonData[]
+      ) => {
+        const set = (metric: string, value: number | null) => {
+          (careerStats as any)[`${prefix}_${metric}`] = value;
+        };
+        const sum = (
+          rows: AggregatedSeasonData[],
+          pick: (season: AggregatedSeasonData) => number
+        ) => rows.reduce((acc, season) => acc + pick(season), 0);
+        const perSeason = (
+          rows: AggregatedSeasonData[],
+          pick: (season: AggregatedSeasonData) => number
+        ) => safeDivide(sum(rows, pick), rows.length);
+        const toiMinutes = (season: AggregatedSeasonData) =>
+          season.wgo_toi ?? (season.has_nst_ind ? season.toi_all : null);
+        const toiGp = (season: AggregatedSeasonData) =>
+          season.wgo_toi != null ? season.wgo_gp : season.gp;
+
+        const wgo = seasons.filter((season) => season.has_wgo);
+        const timed = seasons.filter((season) => toiMinutes(season) != null);
+        const timedWgo = wgo.filter((season) => toiMinutes(season) != null);
+        const pp = wgo.filter((season) => season.wgo_pp_toi != null);
+        const nstInd = seasons.filter((season) => season.has_nst_ind);
+        const nstOi = seasons.filter((season) => season.has_nst_oi);
+        const wgoOi = wgo.filter((season) => season.has_nst_oi);
+        const timedToi = sum(timedWgo, (season) => toiMinutes(season) ?? 0);
+        const nstToi = sum(nstInd, (season) => season.toi_all);
+        const ppToi = sum(pp, (season) => season.wgo_pp_toi ?? 0);
+
+        set("gp", perSeason(seasons, (season) => season.gp));
+        set(
+          "atoi",
+          safeDivide(
+            sum(timed, (season) => toiMinutes(season) ?? 0),
+            sum(timed, toiGp)
+          )
+        );
+        set(
+          "pptoi",
+          safeDivide(ppToi, sum(pp, (season) => season.gp))
+        );
+        // GP-weighted, so a short season does not count as much as a full
+        // one (C-30).
+        const ppPct = wgo.filter((season) => season.wgo_pp_toi_pct != null);
+        set(
+          "pp_pct",
+          safeDivide(
+            sum(ppPct, (season) => (season.wgo_pp_toi_pct ?? 0) * season.wgo_gp),
+            sum(ppPct, (season) => season.wgo_gp)
+          )
+        );
+        const wgoCounts = [
+          ["g", "wgo_g"],
+          ["a", "wgo_a"],
+          ["pts", "wgo_pts"],
+          ["sog", "wgo_sog"],
+          ["ppg", "wgo_ppg"],
+          ["ppa", "wgo_ppa"],
+          ["ppp", "wgo_ppp"],
+          ["hit", "wgo_hit"],
+          ["blk", "wgo_blk"],
+          ["pim", "wgo_pim"]
+        ] as const;
+        for (const [metric, field] of wgoCounts) {
+          set(metric, wgo.length > 0 ? perSeason(wgo, (season) => season[field]) : null);
+        }
+        set(
+          "pts1_pct",
+          safeDivide(
+            sum(wgo, (season) => season.wgo_g + season.wgo_a1),
+            sum(wgo, (season) => season.wgo_pts)
+          )
+        );
+        set(
+          "s_pct",
+          safeDivide(
+            sum(wgo, (season) => season.wgo_g),
+            sum(wgo, (season) => season.wgo_sog)
+          )
+        );
+        set("ixg", nstInd.length > 0 ? perSeason(nstInd, (season) => season.ixg_all) : null);
+        set("icf", nstInd.length > 0 ? perSeason(nstInd, (season) => season.icf_all) : null);
+        set(
+          "ipp",
+          safeDivide(
+            sum(wgoOi, (season) => season.wgo_pts),
+            sum(wgoOi, (season) => season.gf_all)
+          )
+        );
+        set(
+          "oi_sh_pct",
+          safeDivide(
+            sum(nstOi, (season) => season.gf_all),
+            sum(nstOi, (season) => season.sf_all)
+          )
+        );
+        set(
+          "ozs_pct",
+          safeDivide(
+            sum(nstOi, (season) => season.off_zs_all),
+            sum(nstOi, (season) => season.off_zs_all + season.def_zs_all)
+          )
+        );
+        const wgoRates = [
+          ["g", (season: AggregatedSeasonData) => season.wgo_g],
+          ["a", (season: AggregatedSeasonData) => season.wgo_a],
+          ["pts", (season: AggregatedSeasonData) => season.wgo_pts],
+          ["pts1", (season: AggregatedSeasonData) => season.wgo_g + season.wgo_a1],
+          ["sog", (season: AggregatedSeasonData) => season.wgo_sog],
+          ["hit", (season: AggregatedSeasonData) => season.wgo_hit],
+          ["blk", (season: AggregatedSeasonData) => season.wgo_blk],
+          ["pim", (season: AggregatedSeasonData) => season.wgo_pim]
+        ] as const;
+        for (const [metric, pick] of wgoRates) {
+          set(`${metric}_per_60`, calculatePer60(sum(timedWgo, pick), timedToi));
+        }
+        const nstRates = [
+          ["ixg", "ixg_all"],
+          ["icf", "icf_all"],
+          ["ihdcf", "ihdcf_all"],
+          ["iscf", "iscfs_all"]
+        ] as const;
+        for (const [metric, field] of nstRates) {
+          set(
+            `${metric}_per_60`,
+            calculatePer60(sum(nstInd, (season) => season[field]), nstToi)
+          );
+        }
+        const ppRates = [
+          ["ppg", "wgo_ppg"],
+          ["ppa", "wgo_ppa"],
+          ["ppp", "wgo_ppp"]
+        ] as const;
+        for (const [metric, field] of ppRates) {
+          set(
+            `${metric}_per_60`,
+            calculatePer60FromSeconds(sum(pp, (season) => season[field]), ppToi)
+          );
+        }
+      };
+
       const stdData = playerSeasons.find((s) => s.season === currentSeasonId);
-      if (stdData) {
-        careerStats.std_gp = stdData.gp;
-        careerStats.std_atoi = safeDivide(stdData.toi_all, stdData.gp);
-        careerStats.std_pptoi = safeDivide(stdData.wgo_pp_toi, stdData.gp);
-        careerStats.std_pp_pct = stdData.wgo_pp_toi_pct;
-        careerStats.std_g = stdData.wgo_g;
-        careerStats.std_a = stdData.wgo_a;
-        careerStats.std_pts = stdData.wgo_pts;
-        careerStats.std_pts1_pct = safeDivide(
-          stdData.wgo_g + stdData.wgo_a1,
-          stdData.wgo_pts
-        );
-        careerStats.std_sog = stdData.wgo_sog;
-        careerStats.std_s_pct = safeDivide(stdData.wgo_g, stdData.wgo_sog);
-        careerStats.std_ixg = stdData.ixg_all;
-        careerStats.std_ipp = safeDivide(stdData.wgo_pts, stdData.gf_all);
-        careerStats.std_oi_sh_pct = safeDivide(stdData.gf_all, stdData.sf_all);
-        careerStats.std_ozs_pct = safeDivide(
-          stdData.off_zs_all,
-          stdData.off_zs_all + stdData.def_zs_all
-        );
-        careerStats.std_icf = stdData.icf_all;
-        careerStats.std_ppg = stdData.wgo_ppg;
-        careerStats.std_ppa = stdData.wgo_ppa;
-        careerStats.std_ppp = stdData.wgo_ppp;
-        careerStats.std_hit = stdData.wgo_hit;
-        careerStats.std_blk = stdData.wgo_blk;
-        careerStats.std_pim = stdData.wgo_pim;
-        careerStats.std_g_per_60 = calculatePer60(
-          stdData.wgo_g,
-          stdData.toi_all
-        );
-        careerStats.std_a_per_60 = calculatePer60(
-          stdData.wgo_a,
-          stdData.toi_all
-        );
-        careerStats.std_pts_per_60 = calculatePer60(
-          stdData.wgo_pts,
-          stdData.toi_all
-        );
-        careerStats.std_pts1_per_60 = calculatePer60(
-          stdData.wgo_g + stdData.wgo_a1,
-          stdData.toi_all
-        );
-        careerStats.std_sog_per_60 = calculatePer60(
-          stdData.wgo_sog,
-          stdData.toi_all
-        );
-        careerStats.std_ixg_per_60 = calculatePer60(
-          stdData.ixg_all,
-          stdData.toi_all
-        );
-        careerStats.std_icf_per_60 = calculatePer60(
-          stdData.icf_all,
-          stdData.toi_all
-        );
-        careerStats.std_ihdcf_per_60 = calculatePer60(
-          stdData.ihdcf_all,
-          stdData.toi_all
-        );
-        careerStats.std_iscf_per_60 = calculatePer60(
-          stdData.iscfs_all,
-          stdData.toi_all
-        );
-        careerStats.std_ppg_per_60 = calculatePer60FromSeconds(
-          stdData.wgo_ppg,
-          stdData.wgo_pp_toi
-        );
-        careerStats.std_ppa_per_60 = calculatePer60FromSeconds(
-          stdData.wgo_ppa,
-          stdData.wgo_pp_toi
-        );
-        careerStats.std_ppp_per_60 = calculatePer60FromSeconds(
-          stdData.wgo_ppp,
-          stdData.wgo_pp_toi
-        );
-        careerStats.std_hit_per_60 = calculatePer60(
-          stdData.wgo_hit,
-          stdData.toi_all
-        );
-        careerStats.std_blk_per_60 = calculatePer60(
-          stdData.wgo_blk,
-          stdData.toi_all
-        );
-        careerStats.std_pim_per_60 = calculatePer60(
-          stdData.wgo_pim,
-          stdData.toi_all
-        );
-      }
-      // [ LY Logic ]
+      if (stdData) writePeriod("std", [stdData]);
       const lyData = playerSeasons.find((s) => s.season === lastSeasonId);
-      if (lyData) {
-        careerStats.ly_gp = lyData.gp;
-        careerStats.ly_atoi = safeDivide(lyData.toi_all, lyData.gp);
-        careerStats.ly_pptoi = safeDivide(lyData.wgo_pp_toi, lyData.gp);
-        careerStats.ly_pp_pct = lyData.wgo_pp_toi_pct;
-        careerStats.ly_g = lyData.wgo_g;
-        careerStats.ly_a = lyData.wgo_a;
-        careerStats.ly_pts = lyData.wgo_pts;
-        careerStats.ly_pts1_pct = safeDivide(
-          lyData.wgo_g + lyData.wgo_a1,
-          lyData.wgo_pts
-        );
-        careerStats.ly_sog = lyData.wgo_sog;
-        careerStats.ly_s_pct = safeDivide(lyData.wgo_g, lyData.wgo_sog);
-        careerStats.ly_ixg = lyData.ixg_all;
-        careerStats.ly_ipp = safeDivide(lyData.wgo_pts, lyData.gf_all);
-        careerStats.ly_oi_sh_pct = safeDivide(lyData.gf_all, lyData.sf_all);
-        careerStats.ly_ozs_pct = safeDivide(
-          lyData.off_zs_all,
-          lyData.off_zs_all + lyData.def_zs_all
-        );
-        careerStats.ly_icf = lyData.icf_all;
-        careerStats.ly_ppg = lyData.wgo_ppg;
-        careerStats.ly_ppa = lyData.wgo_ppa;
-        careerStats.ly_ppp = lyData.wgo_ppp;
-        careerStats.ly_hit = lyData.wgo_hit;
-        careerStats.ly_blk = lyData.wgo_blk;
-        careerStats.ly_pim = lyData.wgo_pim;
-        careerStats.ly_g_per_60 = calculatePer60(lyData.wgo_g, lyData.toi_all);
-        careerStats.ly_a_per_60 = calculatePer60(lyData.wgo_a, lyData.toi_all);
-        careerStats.ly_pts_per_60 = calculatePer60(
-          lyData.wgo_pts,
-          lyData.toi_all
-        );
-        careerStats.ly_pts1_per_60 = calculatePer60(
-          lyData.wgo_g + lyData.wgo_a1,
-          lyData.toi_all
-        );
-        careerStats.ly_sog_per_60 = calculatePer60(
-          lyData.wgo_sog,
-          lyData.toi_all
-        );
-        careerStats.ly_ixg_per_60 = calculatePer60(
-          lyData.ixg_all,
-          lyData.toi_all
-        );
-        careerStats.ly_icf_per_60 = calculatePer60(
-          lyData.icf_all,
-          lyData.toi_all
-        );
-        careerStats.ly_ihdcf_per_60 = calculatePer60(
-          lyData.ihdcf_all,
-          lyData.toi_all
-        );
-        careerStats.ly_iscf_per_60 = calculatePer60(
-          lyData.iscfs_all,
-          lyData.toi_all
-        );
-        careerStats.ly_ppg_per_60 = calculatePer60FromSeconds(
-          lyData.wgo_ppg,
-          lyData.wgo_pp_toi
-        );
-        careerStats.ly_ppa_per_60 = calculatePer60FromSeconds(
-          lyData.wgo_ppa,
-          lyData.wgo_pp_toi
-        );
-        careerStats.ly_ppp_per_60 = calculatePer60FromSeconds(
-          lyData.wgo_ppp,
-          lyData.wgo_pp_toi
-        );
-        careerStats.ly_hit_per_60 = calculatePer60(
-          lyData.wgo_hit,
-          lyData.toi_all
-        );
-        careerStats.ly_blk_per_60 = calculatePer60(
-          lyData.wgo_blk,
-          lyData.toi_all
-        );
-        careerStats.ly_pim_per_60 = calculatePer60(
-          lyData.wgo_pim,
-          lyData.toi_all
-        );
-      }
-      // [ 3YA Logic ]
+      if (lyData) writePeriod("ly", [lyData]);
       const ya3RelevantSeasons = playerSeasons.filter((s) =>
         ya3Seasons.includes(s.season)
       );
       careerStats.ya3_seasons_used = ya3RelevantSeasons.length;
-      if (ya3RelevantSeasons.length > 0) {
-        const numSeasons = ya3RelevantSeasons.length;
-        const totals = ya3RelevantSeasons.reduce(
-          (acc, season) => {
-            acc.gp += season.gp;
-            acc.toi_all += season.toi_all;
-            acc.wgo_pp_toi += season.wgo_pp_toi ?? 0;
-            acc.wgo_g += season.wgo_g;
-            acc.wgo_a += season.wgo_a;
-            acc.wgo_pts += season.wgo_pts;
-            acc.wgo_a1 += season.wgo_a1;
-            acc.wgo_sog += season.wgo_sog;
-            acc.ixg_all += season.ixg_all;
-            acc.gf_all += season.gf_all;
-            acc.sf_all += season.sf_all;
-            acc.off_zs_all += season.off_zs_all;
-            acc.def_zs_all += season.def_zs_all;
-            acc.icf_all += season.icf_all;
-            acc.ihdcf_all += season.ihdcf_all;
-            acc.iscfs_all += season.iscfs_all;
-            acc.wgo_ppg += season.wgo_ppg;
-            acc.wgo_ppa += season.wgo_ppa;
-            acc.wgo_ppp += season.wgo_ppp;
-            acc.wgo_hit += season.wgo_hit;
-            acc.wgo_blk += season.wgo_blk;
-            acc.wgo_pim += season.wgo_pim;
-            if (season.wgo_pp_toi_pct != null) {
-              acc.pp_toi_pct_values.push(season.wgo_pp_toi_pct);
-            }
-            return acc;
-          },
-          {
-            gp: 0,
-            toi_all: 0,
-            wgo_pp_toi: 0,
-            wgo_g: 0,
-            wgo_a: 0,
-            wgo_pts: 0,
-            wgo_a1: 0,
-            wgo_sog: 0,
-            ixg_all: 0,
-            gf_all: 0,
-            sf_all: 0,
-            off_zs_all: 0,
-            def_zs_all: 0,
-            icf_all: 0,
-            ihdcf_all: 0,
-            iscfs_all: 0,
-            wgo_ppg: 0,
-            wgo_ppa: 0,
-            wgo_ppp: 0,
-            wgo_hit: 0,
-            wgo_blk: 0,
-            wgo_pim: 0,
-            pp_toi_pct_values: [] as number[]
-          }
-        );
-        careerStats.ya3_gp = safeDivide(totals.gp, numSeasons);
-        careerStats.ya3_atoi = safeDivide(totals.toi_all, totals.gp);
-        careerStats.ya3_pptoi = safeDivide(totals.wgo_pp_toi, totals.gp);
-        careerStats.ya3_pp_pct = safeAverage(totals.pp_toi_pct_values);
-        careerStats.ya3_g = safeDivide(totals.wgo_g, numSeasons);
-        careerStats.ya3_a = safeDivide(totals.wgo_a, numSeasons);
-        careerStats.ya3_pts = safeDivide(totals.wgo_pts, numSeasons);
-        careerStats.ya3_pts1_pct = safeDivide(
-          totals.wgo_g + totals.wgo_a1,
-          totals.wgo_pts
-        );
-        careerStats.ya3_sog = safeDivide(totals.wgo_sog, numSeasons);
-        careerStats.ya3_s_pct = safeDivide(totals.wgo_g, totals.wgo_sog);
-        careerStats.ya3_ixg = safeDivide(totals.ixg_all, numSeasons);
-        careerStats.ya3_ipp = safeDivide(totals.wgo_pts, totals.gf_all);
-        careerStats.ya3_oi_sh_pct = safeDivide(totals.gf_all, totals.sf_all);
-        careerStats.ya3_ozs_pct = safeDivide(
-          totals.off_zs_all,
-          totals.off_zs_all + totals.def_zs_all
-        );
-        careerStats.ya3_icf = safeDivide(totals.icf_all, numSeasons);
-        careerStats.ya3_ppg = safeDivide(totals.wgo_ppg, numSeasons);
-        careerStats.ya3_ppa = safeDivide(totals.wgo_ppa, numSeasons);
-        careerStats.ya3_ppp = safeDivide(totals.wgo_ppp, numSeasons);
-        careerStats.ya3_hit = safeDivide(totals.wgo_hit, numSeasons);
-        careerStats.ya3_blk = safeDivide(totals.wgo_blk, numSeasons);
-        careerStats.ya3_pim = safeDivide(totals.wgo_pim, numSeasons);
-        careerStats.ya3_g_per_60 = calculatePer60(totals.wgo_g, totals.toi_all);
-        careerStats.ya3_a_per_60 = calculatePer60(totals.wgo_a, totals.toi_all);
-        careerStats.ya3_pts_per_60 = calculatePer60(
-          totals.wgo_pts,
-          totals.toi_all
-        );
-        careerStats.ya3_pts1_per_60 = calculatePer60(
-          totals.wgo_g + totals.wgo_a1,
-          totals.toi_all
-        );
-        careerStats.ya3_sog_per_60 = calculatePer60(
-          totals.wgo_sog,
-          totals.toi_all
-        );
-        careerStats.ya3_ixg_per_60 = calculatePer60(
-          totals.ixg_all,
-          totals.toi_all
-        );
-        careerStats.ya3_icf_per_60 = calculatePer60(
-          totals.icf_all,
-          totals.toi_all
-        );
-        careerStats.ya3_ihdcf_per_60 = calculatePer60(
-          totals.ihdcf_all,
-          totals.toi_all
-        );
-        careerStats.ya3_iscf_per_60 = calculatePer60(
-          totals.iscfs_all,
-          totals.toi_all
-        );
-        careerStats.ya3_ppg_per_60 = calculatePer60FromSeconds(
-          totals.wgo_ppg,
-          totals.wgo_pp_toi
-        );
-        careerStats.ya3_ppa_per_60 = calculatePer60FromSeconds(
-          totals.wgo_ppa,
-          totals.wgo_pp_toi
-        );
-        careerStats.ya3_ppp_per_60 = calculatePer60FromSeconds(
-          totals.wgo_ppp,
-          totals.wgo_pp_toi
-        );
-        careerStats.ya3_hit_per_60 = calculatePer60(
-          totals.wgo_hit,
-          totals.toi_all
-        );
-        careerStats.ya3_blk_per_60 = calculatePer60(
-          totals.wgo_blk,
-          totals.toi_all
-        );
-        careerStats.ya3_pim_per_60 = calculatePer60(
-          totals.wgo_pim,
-          totals.toi_all
-        );
-      }
-      // [ CA Logic ]
+      if (ya3RelevantSeasons.length > 0) writePeriod("ya3", ya3RelevantSeasons);
       const caRelevantSeasons = playerSeasons.filter(
         (s) => s.season !== currentSeasonId
       );
       careerStats.ca_seasons_used = caRelevantSeasons.length;
-      if (caRelevantSeasons.length > 0) {
-        const numSeasons = caRelevantSeasons.length;
-        const totals = caRelevantSeasons.reduce(
-          (acc, season) => {
-            acc.gp += season.gp;
-            acc.toi_all += season.toi_all;
-            acc.wgo_pp_toi += season.wgo_pp_toi ?? 0;
-            acc.wgo_g += season.wgo_g;
-            acc.wgo_a += season.wgo_a;
-            acc.wgo_pts += season.wgo_pts;
-            acc.wgo_a1 += season.wgo_a1;
-            acc.wgo_sog += season.wgo_sog;
-            acc.ixg_all += season.ixg_all;
-            acc.gf_all += season.gf_all;
-            acc.sf_all += season.sf_all;
-            acc.off_zs_all += season.off_zs_all;
-            acc.def_zs_all += season.def_zs_all;
-            acc.icf_all += season.icf_all;
-            acc.ihdcf_all += season.ihdcf_all;
-            acc.iscfs_all += season.iscfs_all;
-            acc.wgo_ppg += season.wgo_ppg;
-            acc.wgo_ppa += season.wgo_ppa;
-            acc.wgo_ppp += season.wgo_ppp;
-            acc.wgo_hit += season.wgo_hit;
-            acc.wgo_blk += season.wgo_blk;
-            acc.wgo_pim += season.wgo_pim;
-            if (season.wgo_pp_toi_pct != null) {
-              acc.pp_toi_pct_values.push(season.wgo_pp_toi_pct);
-            }
-            return acc;
-          },
-          {
-            gp: 0,
-            toi_all: 0,
-            wgo_pp_toi: 0,
-            wgo_g: 0,
-            wgo_a: 0,
-            wgo_pts: 0,
-            wgo_a1: 0,
-            wgo_sog: 0,
-            ixg_all: 0,
-            gf_all: 0,
-            sf_all: 0,
-            off_zs_all: 0,
-            def_zs_all: 0,
-            icf_all: 0,
-            ihdcf_all: 0,
-            iscfs_all: 0,
-            wgo_ppg: 0,
-            wgo_ppa: 0,
-            wgo_ppp: 0,
-            wgo_hit: 0,
-            wgo_blk: 0,
-            wgo_pim: 0,
-            pp_toi_pct_values: [] as number[]
-          }
-        );
-        careerStats.ca_gp = safeDivide(totals.gp, numSeasons);
-        careerStats.ca_atoi = safeDivide(totals.toi_all, totals.gp);
-        careerStats.ca_pptoi = safeDivide(totals.wgo_pp_toi, totals.gp);
-        careerStats.ca_pp_pct = safeAverage(totals.pp_toi_pct_values);
-        careerStats.ca_g = safeDivide(totals.wgo_g, numSeasons);
-        careerStats.ca_a = safeDivide(totals.wgo_a, numSeasons);
-        careerStats.ca_pts = safeDivide(totals.wgo_pts, numSeasons);
-        careerStats.ca_pts1_pct = safeDivide(
-          totals.wgo_g + totals.wgo_a1,
-          totals.wgo_pts
-        );
-        careerStats.ca_sog = safeDivide(totals.wgo_sog, numSeasons);
-        careerStats.ca_s_pct = safeDivide(totals.wgo_g, totals.wgo_sog);
-        careerStats.ca_ixg = safeDivide(totals.ixg_all, numSeasons);
-        careerStats.ca_ipp = safeDivide(totals.wgo_pts, totals.gf_all);
-        careerStats.ca_oi_sh_pct = safeDivide(totals.gf_all, totals.sf_all);
-        careerStats.ca_ozs_pct = safeDivide(
-          totals.off_zs_all,
-          totals.off_zs_all + totals.def_zs_all
-        );
-        careerStats.ca_icf = safeDivide(totals.icf_all, numSeasons);
-        careerStats.ca_ppg = safeDivide(totals.wgo_ppg, numSeasons);
-        careerStats.ca_ppa = safeDivide(totals.wgo_ppa, numSeasons);
-        careerStats.ca_ppp = safeDivide(totals.wgo_ppp, numSeasons);
-        careerStats.ca_hit = safeDivide(totals.wgo_hit, numSeasons);
-        careerStats.ca_blk = safeDivide(totals.wgo_blk, numSeasons);
-        careerStats.ca_pim = safeDivide(totals.wgo_pim, numSeasons);
-        careerStats.ca_g_per_60 = calculatePer60(totals.wgo_g, totals.toi_all);
-        careerStats.ca_a_per_60 = calculatePer60(totals.wgo_a, totals.toi_all);
-        careerStats.ca_pts_per_60 = calculatePer60(
-          totals.wgo_pts,
-          totals.toi_all
-        );
-        careerStats.ca_pts1_per_60 = calculatePer60(
-          totals.wgo_g + totals.wgo_a1,
-          totals.toi_all
-        );
-        careerStats.ca_sog_per_60 = calculatePer60(
-          totals.wgo_sog,
-          totals.toi_all
-        );
-        careerStats.ca_ixg_per_60 = calculatePer60(
-          totals.ixg_all,
-          totals.toi_all
-        );
-        careerStats.ca_icf_per_60 = calculatePer60(
-          totals.icf_all,
-          totals.toi_all
-        );
-        careerStats.ca_ihdcf_per_60 = calculatePer60(
-          totals.ihdcf_all,
-          totals.toi_all
-        );
-        careerStats.ca_iscf_per_60 = calculatePer60(
-          totals.iscfs_all,
-          totals.toi_all
-        );
-        careerStats.ca_ppg_per_60 = calculatePer60FromSeconds(
-          totals.wgo_ppg,
-          totals.wgo_pp_toi
-        );
-        careerStats.ca_ppa_per_60 = calculatePer60FromSeconds(
-          totals.wgo_ppa,
-          totals.wgo_pp_toi
-        );
-        careerStats.ca_ppp_per_60 = calculatePer60FromSeconds(
-          totals.wgo_ppp,
-          totals.wgo_pp_toi
-        );
-        careerStats.ca_hit_per_60 = calculatePer60(
-          totals.wgo_hit,
-          totals.toi_all
-        );
-        careerStats.ca_blk_per_60 = calculatePer60(
-          totals.wgo_blk,
-          totals.toi_all
-        );
-        careerStats.ca_pim_per_60 = calculatePer60(
-          totals.wgo_pim,
-          totals.toi_all
-        );
-      }
+      if (caRelevantSeasons.length > 0) writePeriod("ca", caRelevantSeasons);
       // --- End Seasonal Calcs ---
 
       // --- Calculate L5, L10, L20 for recentStats ---
@@ -994,15 +774,22 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         (recentStats as any)[`${prefix}gp`] = numGames;
 
         if (numGames > 0) {
-          const completeTotalToi = gamesInInterval.every(game =>
-            typeof game.nst_toi_all === "number" && Number.isFinite(game.nst_toi_all) && game.nst_toi_all >= 0
-          );
+          // ATOI and WGO-count rates use WGO ice time (NST for a game without
+          // it), so a game NST has not loaded yet nulls only NST-only metrics
+          // (B-06, C-25). NST rates keep NST time.
+          const isToi = (value: number | null) =>
+            typeof value === "number" && Number.isFinite(value) && value >= 0;
+          const gameToi = (game: CombinedGameData) =>
+            isToi(game.wgo_toi) ? game.wgo_toi : game.nst_toi_all;
+          const completeTotalToi = gamesInInterval.every(game => isToi(gameToi(game)));
+          const completeNstToi = gamesInInterval.every(game => isToi(game.nst_toi_all));
           const completePpToi = gamesInInterval.every(game =>
             typeof game.wgo_pp_toi === "number" && Number.isFinite(game.wgo_pp_toi) && game.wgo_pp_toi >= 0
           );
           const totals = gamesInInterval.reduce(
             (acc, game) => {
-              // nst_toi_all is per-game ice time in seconds
+              // Both are per-game ice time in seconds
+              acc.toi_all += gameToi(game) ?? 0;
               acc.nst_toi_all += game.nst_toi_all ?? 0;
               acc.gp += 1;
               acc.wgo_g += game.wgo_g ?? 0;
@@ -1029,6 +816,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
               return acc;
             },
             {
+              toi_all: 0,
               nst_toi_all: 0,
               gp: 0,
               wgo_g: 0,
@@ -1055,9 +843,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             }
           );
 
-          // For recent stats, nst_toi_all is in seconds, so we need to convert to minutes
+          // Recent ice time is in seconds, so convert to minutes
           (recentStats as any)[`${prefix}atoi`] = safeDivide(
-            totals.nst_toi_all / 60, // Convert seconds to minutes
+            totals.toi_all / 60, // Convert seconds to minutes
             totals.gp
           );
           (recentStats as any)[`${prefix}pptoi`] = safeDivide(
@@ -1101,23 +889,23 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           (recentStats as any)[`${prefix}pim`] = totals.wgo_pim;
           (recentStats as any)[`${prefix}g_per_60`] = calculatePer60FromSeconds(
             totals.wgo_g,
-            totals.nst_toi_all
+            totals.toi_all
           );
           (recentStats as any)[`${prefix}a_per_60`] = calculatePer60FromSeconds(
             totals.wgo_a,
-            totals.nst_toi_all
+            totals.toi_all
           );
           (recentStats as any)[`${prefix}pts_per_60`] = calculatePer60FromSeconds(
             totals.wgo_pts,
-            totals.nst_toi_all
+            totals.toi_all
           );
           (recentStats as any)[`${prefix}pts1_per_60`] = calculatePer60FromSeconds(
             totals.wgo_g + totals.wgo_a1,
-            totals.nst_toi_all
+            totals.toi_all
           );
           (recentStats as any)[`${prefix}sog_per_60`] = calculatePer60FromSeconds(
             totals.wgo_sog,
-            totals.nst_toi_all
+            totals.toi_all
           );
           (recentStats as any)[`${prefix}ixg_per_60`] = calculatePer60FromSeconds(
             totals.nst_ixg,
@@ -1143,18 +931,23 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             calculatePer60FromSeconds(totals.wgo_ppp, totals.wgo_pp_toi);
           (recentStats as any)[`${prefix}hit_per_60`] = calculatePer60FromSeconds(
             totals.wgo_hit,
-            totals.nst_toi_all
+            totals.toi_all
           );
           (recentStats as any)[`${prefix}blk_per_60`] = calculatePer60FromSeconds(
             totals.wgo_blk,
-            totals.nst_toi_all
+            totals.toi_all
           );
           (recentStats as any)[`${prefix}pim_per_60`] = calculatePer60FromSeconds(
             totals.wgo_pim,
-            totals.nst_toi_all
+            totals.toi_all
           );
           if (!completeTotalToi) {
-            for (const metric of ["atoi", "g_per_60", "a_per_60", "pts_per_60", "pts1_per_60", "sog_per_60", "ixg_per_60", "icf_per_60", "ihdcf_per_60", "iscf_per_60", "hit_per_60", "blk_per_60", "pim_per_60"]) {
+            for (const metric of ["atoi", "g_per_60", "a_per_60", "pts_per_60", "pts1_per_60", "sog_per_60", "hit_per_60", "blk_per_60", "pim_per_60"]) {
+              (recentStats as any)[`${prefix}${metric}`] = null;
+            }
+          }
+          if (!completeNstToi) {
+            for (const metric of ["ixg_per_60", "icf_per_60", "ihdcf_per_60", "iscf_per_60"]) {
               (recentStats as any)[`${prefix}${metric}`] = null;
             }
           }
@@ -1296,6 +1089,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
                 `Error upserting ${tableName} batch: ${result.error.message}`
               );
               writeErrors.push(`${tableName}: ${result.error.message}`);
+            } else {
+              rowsUpserted +=
+                index === 0 && currentCareerBatch.length > 0
+                  ? currentCareerBatch.length
+                  : currentRecentBatch.length;
             }
           });
         }
@@ -1346,6 +1144,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
               index === 0 && finalCareerBatch.length > 0
                 ? "wigo_career"
                 : "wigo_recent";
+            rowsUpserted +=
+              tableName === "wigo_career"
+                ? finalCareerBatch.length
+                : finalRecentBatch.length;
             console.log(`Final ${tableName} batch upsert successful.`);
           }
         });
@@ -1355,14 +1157,38 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
     const durationSec = ((Date.now() - startTime) / 1000).toFixed(2);
     console.log(`Finished player stats update in ${durationSec}s.`);
+    // Counts come before the id list so the audit preview keeps them.
+    const runCounts = {
+      playersListed: uniquePlayerIds.length,
+      playersProcessed: processedCount,
+      rowsUpserted,
+      rejectedCount: rejectedPlayerIds.length,
+      rejectedByRule
+    };
     // A rejected upsert must fail the run; earlier batches may already be written.
     if (writeErrors.length > 0) {
       return res.status(500).json({
         success: false,
         error: `WiGO upsert failed for ${writeErrors.length} batch(es): ${writeErrors.slice(0, 5).join("; ")}`,
+        ...runCounts,
         writeErrors,
         rejectedPlayerIds,
+        rejections,
         message: `Processed ${processedCount} of ${uniquePlayerIds.length} players; some rows may not have been written.`,
+        duration: `${durationSec} s`
+      });
+    }
+    if (firstNotReachedIndex != null) {
+      const notReachedCount = uniquePlayerIds.length - firstNotReachedIndex;
+      return res.status(207).json({
+        success: false,
+        error: `Stopped at the ${RUN_BUDGET_MS / 1000} s run budget; ${notReachedCount} player(s) not reached, from id ${uniquePlayerIds[firstNotReachedIndex]}.`,
+        ...runCounts,
+        notReachedCount,
+        firstNotReachedPlayerId: uniquePlayerIds[firstNotReachedIndex],
+        rejectedPlayerIds,
+        rejections,
+        message: `Processed ${processedCount} of ${uniquePlayerIds.length} players before the run budget; rows written so far were flushed.`,
         duration: `${durationSec} s`
       });
     }
@@ -1370,13 +1196,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       return res.status(207).json({
         success: false,
         error: `Invalid or duplicate regular-season NHL appearance for ${rejectedPlayerIds.length} player(s): ${rejectedPlayerIds.slice(0, 10).join(", ")}.`,
+        ...runCounts,
         rejectedPlayerIds,
+        rejections,
         message: `Processed ${processedCount} of ${uniquePlayerIds.length} players; rejected players were not written.`,
         duration: `${durationSec} s`
       });
     }
     return res.status(200).json({
       success: true,
+      ...runCounts,
       message: `Successfully processed ${processedCount} of ${uniquePlayerIds.length} players.`,
       duration: `${durationSec} s`
     });

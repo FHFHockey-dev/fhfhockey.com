@@ -9,10 +9,22 @@ import {
   TableAggregateData
 } from "components/WiGO/types";
 import { WIGO_ERROR_MESSAGES } from "components/WiGO/errorMessages";
-import { getTeamInfoById, teamNameToAbbreviationMap } from "lib/teamsInfo";
+import {
+  getTeamInfoById,
+  teamNameToAbbreviationMap,
+  teamsInfo
+} from "lib/teamsInfo";
 import supabase from "lib/supabase";
-import { fetchPlayerAggregatedStats } from "utils/fetchWigoPlayerStats";
+import {
+  buildWigoAggregatedStatsResult,
+  fetchPlayerAggregateSources,
+  WigoAggregateFreshness,
+  WigoAggregateSources
+} from "utils/fetchWigoPlayerStats";
 import useCurrentSeason from "./useCurrentSeason";
+import useWigoPlayerTotals from "./useWigoPlayerTotals";
+import useWigoGameLog from "./useWigoGameLog";
+import { WIGO_QUERY_DEFAULTS } from "components/WiGO/queryDefaults";
 
 export interface WigoSelectedPlayerDetails {
   player: Player;
@@ -29,10 +41,8 @@ interface WigoBranding {
 export const getWigoPlayerDetailsQueryKey = (playerId: number | null) =>
   ["wigoPlayerDetails", playerId] as const;
 
-export const getWigoAggregatedStatsQueryKey = (
-  playerId: number | null,
-  seasonId: number | null = null
-) => ["wigoPlayerAggregatedStats", playerId, seasonId] as const;
+export const getWigoAggregatedStatsQueryKey = (playerId: number | null) =>
+  ["wigoPlayerAggregatedStats", playerId] as const;
 
 export const getPlayerIdFromQueryValue = (
   value: string | string[] | undefined
@@ -134,6 +144,8 @@ export interface UseWigoPlayerDashboardResult {
   teamAbbreviation: string | null;
   teamIdForLog: number | null;
   rawCombinedData: TableAggregateData[];
+  /** As-of dates and the STD stale check for the comparison table (D9). */
+  aggFreshness: WigoAggregateFreshness | null;
   isLoadingAggData: boolean;
   isLoadingPlayer: boolean;
   aggDataError: string | null;
@@ -158,15 +170,42 @@ export default function useWigoPlayerDashboard(): UseWigoPlayerDashboardResult {
   const selectedPlayerQuery = useQuery<WigoSelectedPlayerDetails | null>({
     queryKey: getWigoPlayerDetailsQueryKey(selectedPlayerId),
     queryFn: () => fetchWigoPlayerDetails(selectedPlayerId as number),
-    enabled: typeof selectedPlayerId === "number"
+    enabled: typeof selectedPlayerId === "number",
+    ...WIGO_QUERY_DEFAULTS
   });
 
-  const aggregatedStatsQuery = useQuery<TableAggregateData[]>({
-    queryKey: getWigoAggregatedStatsQueryKey(selectedPlayerId, currentSeasonId),
-    queryFn: () => fetchPlayerAggregatedStats(selectedPlayerId as number, currentSeasonId),
-    // Wait for the season so STD's totals fallback is season-checked and the read happens once.
-    enabled: typeof selectedPlayerId === "number" && currentSeasonId !== null
+  // The rows load in parallel with the season (S4); the table is built only
+  // once the season is known, so STD's totals fallback is always season-checked.
+  const aggregatedStatsQuery = useQuery<WigoAggregateSources>({
+    queryKey: getWigoAggregatedStatsQueryKey(selectedPlayerId),
+    queryFn: () => fetchPlayerAggregateSources(selectedPlayerId as number),
+    enabled: typeof selectedPlayerId === "number",
+    ...WIGO_QUERY_DEFAULTS
   });
+  // The same totals query the season panels use, so it is read once (S5).
+  const totalsQuery = useWigoPlayerTotals(selectedPlayerId, currentSeasonId);
+  const aggregatedStats = useMemo(
+    () =>
+      aggregatedStatsQuery.data && currentSeasonId !== null && !totalsQuery.isPending
+        ? buildWigoAggregatedStatsResult(
+            aggregatedStatsQuery.data,
+            totalsQuery.data ?? null,
+            currentSeasonId
+          )
+        : null,
+    [aggregatedStatsQuery.data, currentSeasonId, totalsQuery.isPending, totalsQuery.data]
+  );
+
+  // The team of the player's latest appearance this season, from the shared
+  // game log. players.team_id lags trades (Mercer still read NJD after joining
+  // WPG, B-10), so branding, the schedule list and the team drivers follow the
+  // games instead.
+  const gameLogQuery = useWigoGameLog(selectedPlayerId, currentSeasonId);
+  const latestGameTeamId = useMemo(() => {
+    const games = gameLogQuery.data ?? [];
+    const abbreviation = games[games.length - 1]?.team_abbrev;
+    return abbreviation ? teamsInfo[abbreviation]?.id ?? null : null;
+  }, [gameLogQuery.data]);
 
   const updateUrlWith = useCallback(
     (updates: Record<string, string | number | undefined>) => {
@@ -206,10 +245,9 @@ export default function useWigoPlayerDashboard(): UseWigoPlayerDashboardResult {
   const selectedPlayer = selectedPlayerQuery.data?.player ?? null;
   const headshotUrl = selectedPlayerQuery.data?.headshotUrl ?? null;
 
-  const branding = useMemo(
-    () => buildWigoBranding(selectedPlayer?.team_id),
-    [selectedPlayer?.team_id]
-  );
+  // A failed or empty lookup keeps the players-table team.
+  const teamId = latestGameTeamId ?? selectedPlayer?.team_id;
+  const branding = useMemo(() => buildWigoBranding(teamId), [teamId]);
 
   return {
     selectedPlayerId,
@@ -220,7 +258,8 @@ export default function useWigoPlayerDashboard(): UseWigoPlayerDashboardResult {
     teamName: branding.teamName,
     teamAbbreviation: branding.teamAbbreviation,
     teamIdForLog: branding.teamIdForLog,
-    rawCombinedData: aggregatedStatsQuery.data ?? [],
+    rawCombinedData: aggregatedStats?.rows ?? [],
+    aggFreshness: aggregatedStats?.freshness ?? null,
     isLoadingAggData: aggregatedStatsQuery.isLoading,
     isLoadingPlayer: selectedPlayerQuery.isLoading,
     aggDataError:

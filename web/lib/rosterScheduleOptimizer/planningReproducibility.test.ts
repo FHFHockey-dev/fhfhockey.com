@@ -126,6 +126,31 @@ describe("planning search reproducibility", () => {
     const stable = (result: ReturnType<typeof planRoster>) => ({ ...result, search: { ...result.search, elapsedMs: undefined } });
     expect(stable(planRoster(connected, intent, options))).toEqual(stable(planRoster(manual, intent, options)));
   });
+  it.each(["manual", "yahoo"] as const)("keeps %s schedule planning legal but forecast gains unknown after native issuance lineage is stripped", provider => {
+    vi.spyOn(Date, "now").mockReturnValue(CLOCK);
+    const snapshot = qualityFixture("detailed");
+    snapshot.context.provider = provider;
+    const method = `${rsoPolicy.ISSUED_PARTICIPATION_METHOD}:skater`;
+    const policy = fixtureRsoPolicy(["fixture-forge-v1"], ["GOALS", "ASSISTS"]);
+    policy.reviews = policy.reviews.map(review => ({ ...review, binding: { ...review.binding, participationLineage: method } }));
+    vi.spyOn(rsoPolicy, "currentRsoUsePolicy").mockReturnValue(policy);
+    for (const row of snapshot.forecasts) for (const binding of Object.values(row.rsoTargetBindings!)) {
+      binding.participationLineage = rsoPolicy.issuedParticipationLineage("skater", row.revisionId);
+    }
+    const admitted = evaluatePlan(snapshot, intent, "outcome");
+    expect(admitted.comparisonEligible).toBe(true);
+    expect(admitted.projectedValue).toBeGreaterThan(0);
+
+    const saved: PlanningSnapshot = JSON.parse(JSON.stringify(snapshot));
+    for (const row of saved.forecasts) for (const binding of Object.values(row.rsoTargetBindings!)) binding.participationLineage = method;
+    const replayed = evaluatePlan(saved, intent, "outcome");
+    expect(replayed.legal).toBe(true);
+    expect(replayed.activeGames).toBe(admitted.activeGames);
+    expect(replayed.projectedValue).toBeNull();
+    expect(replayed.assignmentValue).toBeNull();
+    expect(replayed.comparisonEligible).toBe(false);
+    expect(replayed.recommendation?.eligible).toBe(false);
+  });
   const reproducesAdmittedQuality = (source: "detailed" | "baseline" | "blended") => {
     for (const profile of ["points", "categories", "goalie"] as const) {
       const snapshot = qualityFixture(source, profile);
@@ -195,6 +220,59 @@ describe("planning search reproducibility", () => {
     expect(row.contributions?.[target].inputs?.participation?.cutoffAt).toBe("2026-10-03T00:00:00Z");
     const saved = JSON.parse(JSON.stringify(resolved));
     expect(resolvePlanningContributions(saved, { consumer: "rso" }).forecasts).toEqual(resolved.forecasts);
+  });
+
+  it.each(["points", "goalie"] as const)("preserves native %s participation approval through baseline save/replay", profile => {
+    vi.spyOn(Date, "now").mockReturnValue(CLOCK);
+    const snapshot = qualityFixture("baseline", profile);
+    const kind = profile === "goalie" ? "goalie" : "skater";
+    const targets = Object.keys(snapshot.forecasts[0].stats);
+    const policy = fixtureRsoPolicy(["fixture-forge-v1"], targets);
+    policy.reviews = policy.reviews.map(review => ({ ...review, binding: { ...review.binding,
+      participationLineage: `${rsoPolicy.ISSUED_PARTICIPATION_METHOD}:${kind}` } }));
+    vi.spyOn(rsoPolicy, "currentRsoUsePolicy").mockReturnValue(policy);
+    for (const row of snapshot.forecasts) for (const binding of Object.values(row.rsoTargetBindings!)) {
+      binding.participationLineage = rsoPolicy.issuedParticipationLineage(kind, row.revisionId);
+    }
+    snapshot.baselineSources = snapshot.baselineSources!.map(source => ({ ...source,
+      cutoffAt: "2026-10-03T02:00:00Z", issuedAt: "2026-10-03T03:00:00Z" }));
+    const resolved = resolvePlanningContributions(snapshot, { consumer: "rso" });
+    const target = profile === "goalie" ? "SAVES_GOALIE" : "GOALS";
+    expect(resolved.forecasts[0].stats[target]).toBeGreaterThan(0);
+    expect(resolved.forecasts[0].revisionId).not.toBe(snapshot.forecasts[0].revisionId);
+    const saved: PlanningSnapshot = JSON.parse(JSON.stringify(resolved));
+    const replayed = resolvePlanningContributions(saved, { consumer: "rso" });
+    expect(replayed.forecasts).toEqual(resolved.forecasts);
+    for (const provider of ["manual", "yahoo"] as const) {
+      const context = { ...saved.context, provider };
+      const result = evaluatePlan({ ...saved, context }, intent, profile === "goalie" ? "agp" : "outcome");
+      expect(result.legal).toBe(true);
+      expect(result.comparisonEligible).toBe(true);
+      expect(result.projectedStats[target]).toBeGreaterThan(0);
+    }
+    for (const failure of ["wrong_revision", "missing_suffix", "unknown_suffix", "foreign_player", "future_issuance", "expired_participation"] as const) {
+      const changed: PlanningSnapshot = JSON.parse(JSON.stringify(saved));
+      for (const row of changed.forecasts) for (const contribution of Object.values(row.contributions!)) {
+        const participation = contribution.inputs!.participation!;
+        if (failure === "wrong_revision") participation.revisionId = "another-revision:participation";
+        if (failure === "missing_suffix") participation.revisionId = participation.revisionId.replace(/:(appearance|start)$/, "");
+        if (failure === "unknown_suffix") participation.revisionId += ":unknown";
+        if (failure === "foreign_player") participation.nhlPlayerId++;
+        if (failure === "future_issuance") participation.issuedAt = "2026-10-04T01:00:00Z";
+        if (failure === "expired_participation") participation.expiresAt = changed.context.asOf;
+      }
+      const rejected = resolvePlanningContributions(changed, { consumer: "rso" });
+      for (const row of rejected.forecasts) {
+        expect(row.stats[target], failure).toBeNull();
+        expect(row.contributions?.[target].allowedUses.comparison, failure).toBe(false);
+      }
+    }
+    // A longer-lived rate/aggregate must not renew the participation's own issuance window.
+    const retained = { ...resolved.forecasts[0], expiresAt: "2100-01-01T00:00:00Z" };
+    expect(rsoPolicy.restrictRsoForecast(retained, undefined, "2026-10-16T00:00:00Z", policy)
+      .contributions?.[target].allowedUses.comparison).toBe(false);
+    const revoked = { ...policy, revokedReviewIds: policy.reviews.map(review => review.id) };
+    expect(resolvePlanningContributions(saved, { consumer: "rso", usePolicy: revoked }).forecasts[0].stats[target]).toBeNull();
   });
 
   it.each(["missing_review", "rate_review_only", "revoked_review", "expired_review", "missing_binding",

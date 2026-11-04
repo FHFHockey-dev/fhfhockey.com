@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import PanelStatus from "components/common/PanelStatus";
 import WigoSectionCard from "components/WiGO/WigoSectionCard";
 import WigoHelp from "./WigoHelp";
+import { useSeasonPendingMessage } from "hooks/useCurrentSeason";
 import { fetchTeamDriverSnapshots } from "./fetchTeamDriverSnapshots";
 import styles from "./TeamPerformanceDrivers.module.scss";
 import {
@@ -11,27 +12,40 @@ import {
   formatPercentileOrdinal,
   type TeamDriverCoverage,
 } from "./teamPerformanceDriverModel";
+import { WIGO_QUERY_DEFAULTS } from "components/WiGO/queryDefaults";
 
 const coverageLabel = ({ coveredGames, expectedGames }: TeamDriverCoverage) =>
   `${coveredGames} of ${expectedGames} games`;
+// "Apr 4": the season is on the page already, and the full date wraps the
+// note at the 240 px panel width.
+const shortDate = (isoDate: string) =>
+  new Date(`${isoDate}T12:00:00Z`).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC"
+  });
 
 interface TeamPerformanceDriversProps {
   teamId: number | null;
   teamAbbreviation: string | null;
   seasonId: number | null;
+  /** A player is selected; without a team that means no current team (A-05). */
+  hasPlayer?: boolean;
 }
 
 const TeamPerformanceDrivers: React.FC<TeamPerformanceDriversProps> = ({
   teamId,
   teamAbbreviation,
   seasonId,
+  hasPlayer = false,
 }) => {
+  const seasonPending = useSeasonPendingMessage();
   const enabled = !!teamId && !!teamAbbreviation && !!seasonId;
   const snapshots = useQuery({
     queryKey: ["wigoTeamDriverSnapshots", seasonId],
     queryFn: () => fetchTeamDriverSnapshots(seasonId!),
     enabled,
-    staleTime: 60_000
+    ...WIGO_QUERY_DEFAULTS
   });
   const result = useMemo(() => snapshots.data && enabled ? buildTeamPerformanceDrivers({
     teamAbbreviation: teamAbbreviation!, teamId: teamId!, ...snapshots.data
@@ -47,7 +61,11 @@ const TeamPerformanceDrivers: React.FC<TeamPerformanceDriversProps> = ({
       {state === "idle" ? (
         <PanelStatus
           state="empty"
-          message="Select a player"
+          message={!hasPlayer
+            ? "Select a player"
+            : !teamId || !teamAbbreviation
+              ? "No current team, so no team drivers."
+              : seasonPending}
           className={styles.emptyPrompt}
         />
       ) : state === "loading" ? (
@@ -92,15 +110,15 @@ const TeamPerformanceDrivers: React.FC<TeamPerformanceDriversProps> = ({
           </div>
           <p className={styles.sourceNote}>
             {result.fiveOnFiveCoverage
-              ? <>Regular season · 5v5: {coverageLabel(result.fiveOnFiveCoverage)} to {result.fiveOnFiveDate}</>
-              : <>Regular season · 5v5: {result.fiveOnFiveDate}</>}
+              ? <>Regular season · 5v5: {coverageLabel(result.fiveOnFiveCoverage)} to {shortDate(result.fiveOnFiveDate)}</>
+              : <>Regular season · 5v5: {shortDate(result.fiveOnFiveDate)}</>}
             <br />
             {result.specialTeamsCoverage
-              ? <>Special teams: {coverageLabel(result.specialTeamsCoverage)} to {result.specialTeamsDate}</>
-              : <>Special teams through: {result.specialTeamsDate}</>}
+              ? <>Special teams: {coverageLabel(result.specialTeamsCoverage)} to {shortDate(result.specialTeamsDate)}</>
+              : <>Special teams through: {shortDate(result.specialTeamsDate)}</>}
           </p>
           {(result.fiveOnFiveCoverage || result.specialTeamsCoverage) && (
-            <p className={styles.sourceNote}>Partial coverage: rates use covered games only.</p>
+            <p className={styles.sourceNote}>Partial: covered games only</p>
           )}
         </>
       )}

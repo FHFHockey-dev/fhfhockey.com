@@ -7,6 +7,8 @@ import Fetch from "lib/cors-fetch";
 
 import { getTeamAbbreviationById } from "lib/teamsInfo";
 import styles from "./OpponentGameLog.module.scss";
+import { useSeasonPendingMessage } from "hooks/useCurrentSeason";
+import { WIGO_QUERY_DEFAULTS } from "components/WiGO/queryDefaults";
 
 // Define the structure of a game object from the API (same as before)
 interface ApiGame {
@@ -42,6 +44,8 @@ interface OpponentGamelogProps {
   teamId: number | null | undefined;
   seasonId?: number | null;
   highlightColor?: string;
+  /** A player is selected; without a team that means no current team (A-05). */
+  hasPlayer?: boolean;
 }
 
 // Helper to get user's local timezone
@@ -55,11 +59,39 @@ const getLocalTimeZone = (): string => {
   }
 };
 
+const LIVE_POLL_MS = 30_000;
+const GAME_DAY_POLL_MS = 300_000;
+const HOUR_MS = 3_600_000;
+
+/**
+ * Poll the schedule only around a game: every 30 s while one is live, every
+ * 5 min when an unfinished game starts within 18 h or began within 6 h, and
+ * not at all otherwise (S3: it polled every 5 min forever, D-05).
+ */
+export function getScheduleRefetchInterval(
+  games: ApiGame[] | undefined,
+  now: number = Date.now()
+): number | false {
+  if (!games?.length) return false;
+  if (games.some((game) => ["LIVE", "CRIT"].includes(game.gameState))) {
+    return LIVE_POLL_MS;
+  }
+  const gameDay = games.some((game) => {
+    if (["OFF", "FINAL"].includes(game.gameState)) return false;
+    if (["PPD", "CNCL", "CANCELLED"].includes(game.gameScheduleState)) return false;
+    const start = Date.parse(game.startTimeUTC);
+    return Number.isFinite(start) && start - now <= 18 * HOUR_MS && now - start <= 6 * HOUR_MS;
+  });
+  return gameDay ? GAME_DAY_POLL_MS : false;
+}
+
 const OpponentGamelog: React.FC<OpponentGamelogProps> = ({
   teamId,
   seasonId,
-  highlightColor = "#07aae2"
+  highlightColor = "#07aae2",
+  hasPlayer = false
 }) => {
+  const seasonPending = useSeasonPendingMessage();
   const [localTimeZone, setLocalTimeZone] = useState<string>("UTC"); // Initialize with UTC
   const teamAbbreviation = useMemo(
     () => (teamId ? getTeamAbbreviationById(teamId) : null),
@@ -92,8 +124,8 @@ const OpponentGamelog: React.FC<OpponentGamelogProps> = ({
       typeof teamId === "number" &&
       Boolean(teamAbbreviation) &&
       typeof seasonId === "number",
-    staleTime: 60_000,
-    refetchInterval: query => query.state.data?.some(game => ["LIVE", "CRIT"].includes(game.gameState)) ? 30_000 : 300_000
+    ...WIGO_QUERY_DEFAULTS,
+    refetchInterval: (query) => getScheduleRefetchInterval(query.state.data)
   });
 
   // Data processing logic remains the same
@@ -195,14 +227,14 @@ const OpponentGamelog: React.FC<OpponentGamelogProps> = ({
   if (!teamId) {
     return (
       <div className={`${styles.opponentLogContainer} ${styles.emptyPrompt}`}>
-        Select a player
+        {hasPlayer ? "No current team, so no team schedule." : "Select a player"}
       </div>
     );
   }
 
   if (!seasonId) {
     return (
-      <div className={styles.opponentLogContainer}>Loading season info...</div>
+      <div className={styles.opponentLogContainer}>{seasonPending}</div>
     );
   }
 
@@ -238,7 +270,12 @@ const OpponentGamelog: React.FC<OpponentGamelogProps> = ({
 
   return (
     <div className={styles.opponentLogContainer}>
-      <table className={styles.scheduleTable} aria-label={`${teamAbbreviation} team schedule; player participation is not guaranteed`}>
+      {/* Visible, not just an aria-label: these are the team's games, which the player may not have played (A-09). */}
+      <table className={styles.scheduleTable}>
+        <caption className={styles.scheduleCaption}>
+          {teamAbbreviation} team schedule
+          <span className={styles.visuallyHidden}>; player participation is not guaranteed</span>
+        </caption>
         <thead>
           <tr>
             <th>Date</th>

@@ -14,6 +14,27 @@
   border-radius: s.$radius-card;
 }
 
+// The list is the team's schedule, not the player's games; say so on screen.
+.scheduleCaption {
+  caption-side: top;
+  padding: 1px 4px;
+  text-align: left;
+  font-size: s.$text-11;
+  font-weight: s.$weight-bold;
+  color: s.$ink-muted;
+  white-space: nowrap;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  clip-path: inset(50%);
+  overflow: hidden;
+}
+
 .scheduleTable {
   width: 100%;
   height: 100%;

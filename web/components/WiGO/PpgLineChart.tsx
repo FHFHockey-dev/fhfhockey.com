@@ -24,9 +24,10 @@ import { calculateRollingAverage } from "utils/formattingUtils";
 import styles from "styles/wigoCharts.module.scss";
 import Spinner from "components/Spinner";
 import Zoom from "chartjs-plugin-zoom";
-import { WIGO_COLORS, CHART_COLORS, addAlpha } from "styles/wigoColors";
+import { WIGO_COLORS, CHART_TICK_FONT, WIGO_CHART_ROLES, withSurfaceRing, isSurfaceRing } from "styles/wigoColors";
 import WigoSectionCard from "./WigoSectionCard";
 import { WIGO_ERROR_MESSAGES } from "./errorMessages";
+import { useSeasonPendingMessage } from "hooks/useCurrentSeason";
 
 ChartJS.register(
   CategoryScale,
@@ -51,6 +52,7 @@ interface PpgLineChartProps {
 const dummyLabels = ["", "Start", "", "Mid", "", "End", ""];
 
 const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId, seasonId }) => {
+  const seasonPending = useSeasonPendingMessage();
   const chartRef = useRef<ChartJS<"bar" | "line"> | null>(null);
   const totals = useWigoPlayerTotals(playerId, seasonId);
   const logs = useWigoGameLog(playerId, seasonId);
@@ -98,46 +100,44 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId, seasonId }) => {
           label: "Points per Game",
           data: pointsData,
           // Make transparent if dummy
-          borderColor: useDummyData
-            ? WIGO_COLORS.TRANSPARENT
-            : CHART_COLORS.BAR_PRIMARY,
+          borderColor: WIGO_COLORS.TRANSPARENT,
           backgroundColor: useDummyData
             ? WIGO_COLORS.TRANSPARENT
-            : addAlpha(CHART_COLORS.BAR_PRIMARY, 0.7),
+            : WIGO_CHART_ROLES.BAR,
           order: 4
         },
-        {
+        ...withSurfaceRing({
           // 5-Game Rolling Average Line
           type: "line" as const,
           label: "5-Game Rolling Avg",
           data: rollingAvg5,
           borderColor: useDummyData
             ? WIGO_COLORS.TRANSPARENT
-            : CHART_COLORS.LINE_PRIMARY,
-          backgroundColor: addAlpha(CHART_COLORS.LINE_PRIMARY, 0.2),
-          fill: true,
+            : WIGO_CHART_ROLES.PRIMARY,
+          backgroundColor: WIGO_COLORS.TRANSPARENT,
+          borderWidth: 2,
+          fill: false,
           tension: 0.2,
           pointRadius: 0,
           pointHoverRadius: 3,
           order: 2
-        },
-        {
+        }),
+        ...withSurfaceRing({
           // 10-Game Rolling Average Line
           type: "line" as const,
           label: "10-Game Rolling Avg",
           data: rollingAvg10,
           borderColor: useDummyData
             ? WIGO_COLORS.TRANSPARENT
-            : CHART_COLORS.PP_TOI,
-          backgroundColor: useDummyData
-            ? WIGO_COLORS.TRANSPARENT
-            : addAlpha(CHART_COLORS.PP_TOI, 0.2),
+            : WIGO_CHART_ROLES.SECONDARY,
+          backgroundColor: WIGO_COLORS.TRANSPARENT,
+          borderWidth: 2,
           fill: false,
           tension: 0.2,
           pointRadius: 0,
           pointHoverRadius: 3,
           order: 1
-        },
+        }),
         // Season Average Line (conditionally added)
         ...(averagePpg !== null
           ? [
@@ -147,7 +147,7 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId, seasonId }) => {
                 data: avgPpgData,
                 borderColor: useDummyData
                   ? WIGO_COLORS.TRANSPARENT
-                  : CHART_COLORS.AVG_LINE_PRIMARY,
+                  : WIGO_CHART_ROLES.AVERAGE,
                 borderDash: [3, 3],
                 // Keep fill transparent or remove if not desired for avg line
                 fill: false,
@@ -178,12 +178,12 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId, seasonId }) => {
           title: {
             display: false,
             text: "Points",
-            font: { size: 12 },
+            font: CHART_TICK_FONT,
             color: "#ccc"
           },
           ticks: {
             color: "#ccc",
-            font: { size: 12 },
+            font: CHART_TICK_FONT,
             maxTicksLimit: 3,
             stepSize: 1,
             precision: 0 // Display ticks as whole numbers
@@ -194,10 +194,11 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId, seasonId }) => {
           title: { display: false },
           ticks: {
             color: "#ccc",
-            font: { size: 12 },
+            font: CHART_TICK_FONT,
             maxRotation: 0,
             minRotation: 0,
             autoSkip: true,
+            autoSkipPadding: 8,
             maxTicksLimit: 6
           },
           grid: { display: false }
@@ -208,7 +209,7 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId, seasonId }) => {
           display: false,
           position: "top" as const,
           align: "end" as const,
-          labels: { color: "#ccc", boxWidth: 12, font: { size: 12 } }
+          labels: { color: "#ccc", boxWidth: 12, font: CHART_TICK_FONT }
         },
         datalabels: {
           display: false // Explicitly disable the plugin for this chart
@@ -217,6 +218,7 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId, seasonId }) => {
           enabled: true,
           mode: "index" as const,
           intersect: false,
+          filter: (item: any) => !isSurfaceRing(item.dataset),
           // Add callbacks if specific formatting is needed for points vs averages
           callbacks: {
             label: function (context: any) {
@@ -270,7 +272,7 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId, seasonId }) => {
   const chartData = getChartData();
   const chartOptions = getChartOptions();
   return (
-    <WigoSectionCard title="Points / game" toolbar={<><span className="wigo-trend-legend"><span style={{ color: CHART_COLORS.BAR_PRIMARY }}>▮Pts</span> · <span style={{ color: CHART_COLORS.LINE_PRIMARY }}>━5-GM</span> · <span style={{ color: CHART_COLORS.PP_TOI }}>━10-GM</span> · <span style={{ color: CHART_COLORS.AVG_LINE_PRIMARY }}>┄Avg</span></span><button type="button" aria-label="Reset" title="Drag to zoom; Shift+drag to pan; Reset restores all games" onClick={() => chartRef.current?.resetZoom()}>↺</button></>}>
+    <WigoSectionCard title="Points / game" toolbar={<><span className="wigo-trend-legend"><span style={{ color: WIGO_CHART_ROLES.BAR }}>▮</span>Pts · <span style={{ color: WIGO_CHART_ROLES.PRIMARY }}>━</span>5-GM · <span style={{ color: WIGO_CHART_ROLES.SECONDARY }}>━</span>10-GM · <span style={{ color: WIGO_CHART_ROLES.AVERAGE }}>┄</span>Avg</span><button type="button" aria-label="Reset" title="Drag to zoom; Shift+drag to pan; Reset restores all games" onClick={() => chartRef.current?.resetZoom()}>↺</button></>}>
       {/* Render the chart structure if NO error */}
       {/* Shows empty state (with dummy labels) while loading */}
       {!error && (
@@ -304,7 +306,7 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId, seasonId }) => {
       )}
 
       {!isLoading && !error && playerId && !seasonId && (
-        <div style={placeholderStyle}>Loading season info...</div>
+        <div style={placeholderStyle}>{seasonPending}</div>
       )}
 
       {/* "No Data" Placeholder */}

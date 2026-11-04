@@ -52,7 +52,7 @@ export const currentRsoUsePolicy = (): RsoUsePolicy => RSO_USE_POLICY;
 
 /** Native participation lineage is `<stable method>@<issued revision>` (Astra F3). A review approves the method, so the
  * next revision of the same method qualifies; each issued row must still carry its own revision, issued context and
- * unexpired issuance. A lineage without `@` is compared whole, as before. */
+ * unexpired issuance. Legacy lineages without `@` are compared whole; the native issued method requires a revision. */
 export const ISSUED_PARTICIPATION_METHOD = "forge-issued-participation-v1";
 export const issuedParticipationLineage = (sourceKind: string, revisionId: string) =>
   `${ISSUED_PARTICIPATION_METHOD}:${sourceKind}@${revisionId}`;
@@ -79,7 +79,8 @@ export function resolveRsoTargetUse(binding: RsoTargetUseBinding | undefined, no
     || !/^[a-f0-9]{64}$/.test(binding.artifactHash ?? "")
     || !Number.isSafeInteger(binding.horizonGames) || binding.horizonGames < 1) return denied;
   const lineage = lineageParts(binding.participationLineage);
-  if (!lineage.method || lineage.issuance === "") return denied;
+  if (!lineage.method || lineage.issuance === ""
+    || lineage.method.startsWith(`${ISSUED_PARTICIPATION_METHOD}:`) && lineage.issuance === null) return denied;
   const { cutoffAt: _, ...bound } = binding, scope = { ...bound, participationLineage: lineage.method };
   const nonempty = (value: unknown) => typeof value === "string" && value.trim().length > 0;
   const candidates = policy.reviews.filter(review => review.id && !policy.revokedReviewIds.includes(review.id)
@@ -109,10 +110,12 @@ export type RsoUsePolicyManifest = { version: typeof RSO_USE_POLICY_VERSION; rev
   bridgeRevisionIds: string[] };
 
 /** The per-issuance half of a method-bound lineage: this row's own revision, issued context and issuance window. */
-function issuanceIntact(forecast: GameForecast, source: { sourceId: string; issuedAt: string; expiresAt: string } | undefined,
+function issuanceIntact(forecast: GameForecast, source: ({ sourceId: string } | { revisionId: string }) & { issuedAt: string; expiresAt: string } | undefined,
   issuance: string, now: string): boolean {
   const clock = Date.parse(now), issuedAt = Date.parse(source?.issuedAt ?? forecast.issuedAt), expiresAt = Date.parse(source?.expiresAt ?? forecast.expiresAt ?? "");
-  return issuance === (source?.sourceId ?? forecast.revisionId)
+  const matches = !source ? issuance === forecast.revisionId : "sourceId" in source ? issuance === source.sourceId
+    : ["participation", "appearance", "start"].some(suffix => source.revisionId === `${issuance}:${suffix}`);
+  return matches
     && forecast.issuedContext?.playerId === forecast.playerId && forecast.issuedContext.gameId === forecast.gameId
     && Number.isFinite(clock) && Number.isFinite(issuedAt) && issuedAt <= clock && Number.isFinite(expiresAt) && clock < expiresAt;
 }
@@ -133,12 +136,12 @@ export function restrictRsoForecast(forecast: GameForecast, manifest: Pick<Forec
     const inputs = forecast.contributions?.[target]?.inputs;
     const source = inputs?.detailed;
     // A baseline-only row may still depend on reviewed issued participation.
-    // Its aggregate cutoff can be newer than that participation's own cutoff.
+    // Its aggregate revision and timestamps describe the rates, not the borrowed issuance.
     const participation = inputs?.participation && !inputs.participation.model ? inputs.participation : undefined;
     const issuance = lineageParts(binding?.participationLineage ?? null).issuance;
     const bound = binding?.targetKey === target && binding.codeVersion === (source?.policyVersion ?? forecast.modelVersion)
       && binding.cutoffAt === (source?.cutoffAt ?? participation?.cutoffAt ?? forecast.cutoffAt)
-      && (issuance === null || issuanceIntact(forecast, source, issuance, now));
+      && (issuance === null || issuanceIntact(forecast, source ?? participation, issuance, now));
     const decision = resolveRsoTargetUse(compatible && bound ? binding : undefined, now, policy);
     targetUses[target] = intersectRsoUses(forecast.targetAllowedUses?.[target] ?? forecast.allowedUses, decision.allowedUses);
     const row = contributions?.[target];

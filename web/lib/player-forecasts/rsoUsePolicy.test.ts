@@ -84,6 +84,7 @@ describe("stable method approval with per-issuance lineage", () => {
     ["another participation method", { ...binding, participationLineage: `${ISSUED_PARTICIPATION_METHOD}:goalie@rev-2` }],
     ["a newer method contract", { ...binding, participationLineage: "forge-issued-participation-v2:skater@rev-2" }],
     ["another model configuration", { ...issued("rev-2"), configurationHash: "c".repeat(64) }],
+    ["an issued method without its revision", { ...binding, participationLineage: method }],
     ["an empty issuance", { ...binding, participationLineage: `${method}@` }],
   ])("denies %s", (_label, changed) => {
     expect(resolveRsoTargetUse(changed, now, methodPolicy).allowedUses).toEqual(deniedRsoUses());
@@ -96,6 +97,9 @@ describe("stable method approval with per-issuance lineage", () => {
     ["an expired issuance", row("rev-2", { expiresAt: now })],
     ["an issuance from the future", row("rev-2", { issuedAt: "2026-10-22T13:00:00Z" })],
     ["another producer's code version", row("rev-2", { modelVersion: "other-code" })],
+    ["a missing revision suffix", row("rev-2", { rsoTargetBindings: { HITS: { ...binding, participationLineage: method } } })],
+    ["a missing revision suffix and issued context", row("rev-2", { issuedContext: undefined,
+      rsoTargetBindings: { HITS: { ...binding, participationLineage: method } } })],
   ] as const)("still denies %s on each issued row", (_label, forecast) => {
     expect(uses(forecast)).toEqual(deniedRsoUses());
   });
