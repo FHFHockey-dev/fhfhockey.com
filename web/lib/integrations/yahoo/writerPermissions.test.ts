@@ -435,3 +435,55 @@ describe("Yahoo ownership evidence and acknowledgment", () => {
     await expect(persistYahooPlayerPayloadBatch({ rpc } as any, [payload])).resolves.toMatchObject({ ownershipOmitted: 1 });
   });
 });
+
+describe("Yahoo status clears only on a full player read", () => {
+  const profile = {
+    player_key: "477.p.8640",
+    name: { full: "Charlie McAvoy" },
+    display_position: "D",
+    position_type: "P",
+    percent_owned: { value: "81" },
+  };
+
+  it("marks a healthy full read as observed so the stored flag clears", () => {
+    expect(prepareYahooPlayerAtomicPayload(profile, "2026-11-03", "477", 2026)).toMatchObject({
+      status: null, status_full: null, injury_note: null, status_observed: true,
+    });
+  });
+
+  it("carries a reported flag from a full read", () => {
+    const flagged = { ...profile, status: "IR", status_full: "Injured Reserve", injury_note: "Upper Body" };
+    expect(prepareYahooPlayerAtomicPayload(flagged, "2026-11-03", "477", 2026)).toMatchObject({
+      status: "IR", status_full: "Injured Reserve", injury_note: "Upper Body", status_observed: true,
+    });
+  });
+
+  it.each([
+    ["an ownership-only refresh", { player_key: "477.p.8640", percent_owned: { value: "81" } }],
+    ["a name without positions", { player_key: "477.p.8640", name: { full: "Charlie McAvoy" } }],
+    ["a blank display position", { ...profile, display_position: " " }],
+    ["a missing position type", { ...profile, position_type: undefined }],
+  ])("keeps the stored flag for %s", (_label, source) => {
+    expect(prepareYahooPlayerAtomicPayload(source, "2026-11-03", "477", 2026).status_observed).toBe(false);
+  });
+
+  it("replaces status fields only on the explicit marker, behind a definition guard", () => {
+    const sql = readFileSync(
+      path.join(repoRoot, "supabase/migrations/20261104011912_clear_stale_yahoo_player_status.sql"),
+      "utf8",
+    );
+
+    expect(sql).toContain("<> '178d877fe2e1d29c37b94832c5f42c60' then");
+    expect(sql).toContain("status_observed := coalesce(p->'status_observed' = 'true'::jsonb, false);");
+    expect(sql).toContain("message = 'Yahoo status_observed is invalid.';");
+    for (const field of ["status", "status_full", "injury_note"]) {
+      expect(sql).toContain(
+        `${field} = case\n        when status_observed then excluded.${field}\n        else coalesce(excluded.${field}, yahoo_players.${field})\n      end,`,
+      );
+    }
+    expect(sql).toContain("security invoker");
+    expect(sql).not.toContain("security definer");
+    expect(sql).toContain("from public, anon, authenticated;");
+    expect(sql).toContain("to service_role;");
+  });
+});

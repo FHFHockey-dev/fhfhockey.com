@@ -1051,6 +1051,16 @@
       "migrationClass": "feature",
       "rolloutGate": "Applied with TJ's explicit approval.",
       "stateEvidence": "Production schema_migrations version 20261101174349; readback 2026-11-01."
+    },
+    {
+      "order": 105,
+      "path": "supabase/migrations/20261104011912_clear_stale_yahoo_player_status.sql",
+      "sha256": "e64b3bfddaf0ba0879be411f8a69804529ced36458c31fa3dd3881f110a34b9b",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "Applied with TJ's explicit approval.",
+      "stateEvidence": "Production schema_migrations version 20261104011912; readback 2026-11-04: writer md5 4fc52baa55922a78f18353c1f1fe02c0 (was 178d877fe2e1d29c37b94832c5f42c60), status_observed marker present, execute for service_role only. Lane receipt: tasks/artifacts/yahoo-status-sticky-2026-11-03/."
     }
   ],
   "sourceExtensionApproval": {
