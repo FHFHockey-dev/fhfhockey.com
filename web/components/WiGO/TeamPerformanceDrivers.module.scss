@@ -39,8 +39,9 @@
 
 .driverValue {
   color: s.$ink-muted;
-  font-family: v.$font-family-numbers;
+  font-family: "Roboto Condensed", sans-serif;
   font-size: s.$text-14;
+  font-variant-numeric: tabular-nums;
 }
 
 .driverBand {

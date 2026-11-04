@@ -8,6 +8,7 @@ import {
   PlayerRawStats
 } from "components/WiGO/types";
 import { WIGO_QUERY_DEFAULTS } from "components/WiGO/queryDefaults";
+import { formatSeasonRange } from "components/WiGO/tableUtils";
 
 const PAGE_SIZE = 500;
 // A fallback season is used only if it reached the panel's default minimum
@@ -324,7 +325,7 @@ export async function fetchPercentileCohortForPlayer(
     stats: fallbackStats,
     requestedSeasonId: seasonId,
     appliedSeasonId: fallbackSeasonId,
-    fallbackReason: `Current-season percentile data is incomplete for ${strength.toUpperCase()}. Showing ${fallbackSeasonId} player values and league cohort; these are not ${seasonId} player values.`,
+    fallbackReason: `Current-season ${strength.toUpperCase()} percentiles are incomplete. Showing ${formatSeasonRange(fallbackSeasonId)} player values and league cohort, not ${formatSeasonRange(seasonId)}.`,
     canonicalPlayerGp
   };
 }

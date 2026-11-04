@@ -73,8 +73,7 @@
   font-size: s.$text-11;
   font-family: v.$font-family-primary;
   font-weight: s.$weight-bold;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0;
   border-bottom: 1px solid v.$border-color-primary;
   flex-shrink: 0; // Prevent title from shrinking
 }

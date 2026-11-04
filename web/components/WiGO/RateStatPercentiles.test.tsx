@@ -286,7 +286,7 @@ describe("RateStatPercentiles", () => {
       requestedSeasonId: 20252026,
       appliedSeasonId: 20242025,
       fallbackReason:
-        "Current-season percentile data is incomplete for AS. Showing 20242025 player values and league cohort; these are not 20252026 player values.",
+        "Current-season AS percentiles are incomplete. Showing 2024–25 player values and league cohort, not 2025–26.",
       canonicalPlayerGp: 72
     });
 
@@ -302,7 +302,7 @@ describe("RateStatPercentiles", () => {
     await waitFor(() => {
       expect(
         screen.getByText(
-          /Showing 20242025 player values and league cohort/
+          /Showing 2024–25 player values and league cohort/
         )
       ).toBeTruthy();
     });

@@ -490,6 +490,11 @@
       border-bottom: none;
     }
   }
+  .consistencySubItem .consistencyLabel,
+  .consistencySubItem .consistencyValue,
+  .consistencySubItem .consistencyCount {
+    color: s.$ink-muted;
+  }
   .consistencyColorSwatch {
     display: inline-block;
     width: 10px;
@@ -2671,6 +2676,7 @@
   }
   .radarContext {
     color: s.$ink-muted;
+    font-size: s.$text-11;
     white-space: nowrap;
   }
 
