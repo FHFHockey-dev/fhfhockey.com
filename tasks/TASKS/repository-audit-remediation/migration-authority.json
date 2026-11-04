@@ -1024,6 +1024,16 @@
     },
     {
       "order": 102,
+      "path": "supabase/migrations/20261029184950_preserve_wgo_skater_on_ice_goals.sql",
+      "sha256": "082b049ede20dd315963c279d71d03b8c1e1e7d6dcc2c539a08192c99d16e75a",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "pending",
+      "migrationClass": "feature",
+      "rolloutGate": "Codex cron-report triage, wgo_null_preservation (commit bbc707815, not released; its message says the work needs its migrations first): a BEFORE UPDATE trigger, public.preserve_wgo_skater_on_ice_goals, keeps the six known ES/PP/SH on-ice goals for and against on the same game row when an upstream refill sends NULL; non-NULL corrections win. Hosted apply needs TJ's separate explicit approval; no migration command was run.",
+      "stateEvidence": "Not in production schema_migrations on 2026-11-04 UTC (SELECT readback); public.preserve_wgo_skater_on_ice_goals() absent. Committed sha256 matches the Codex frozen hash in CODEX-LEASES.json (wgo_null_preservation)."
+    },
+    {
+      "order": 103,
       "path": "supabase/migrations/20261029235656_forge_v2_immutable_history.sql",
       "sha256": "63de96ba1b44316ebd25028fc7149c0e04d9046af5ed1d90919a13a4aee9bfca",
       "sourceStatus": "source-authorized",
@@ -1033,7 +1043,17 @@
       "stateEvidence": "Not in production schema_migrations on 2026-11-01; no forge_v2 tables."
     },
     {
-      "order": 103,
+      "order": 104,
+      "path": "supabase/migrations/20261101161622_nst_goalie_catchup_v1.sql",
+      "sha256": "d99730b43d2658861259e81f01c687217e161a38c293843de0192dc1fd69e291",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "pending",
+      "migrationClass": "feature",
+      "rolloutGate": "Codex NST goalie catch-up checkpoint (CODEX-NST-GOALIE-CHECKPOINT-SQL-20261101, commit bbc707815, not released): checkpoint tables and RPCs for the NST goalie catch-up lane, with no schedule or activation. It raises an exception unless shared NST admission v1 (public.nst_admit_attempt_v1) is installed first; that function is absent in production and has no file in supabase/migrations. Hosted apply needs TJ's separate explicit approval; no migration command was run.",
+      "stateEvidence": "Not in production schema_migrations on 2026-11-04 UTC (SELECT readback); public.nst_goalie_cohorts absent. Committed sha256 matches current_sha256 in CODEX-LEASES.json lease CODEX-NST-GOALIE-CHECKPOINT-SQL-20261101. Rollout packet: tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/rollout-approval-20261101/APPROVAL-PACKET.md."
+    },
+    {
+      "order": 105,
       "path": "supabase/migrations/20261101171113_social_share_x_posts.sql",
       "sha256": "1502938fec170281009fc3ac5e6dc1e42fabfef5245a7e0aba5d2c3e98d822d4",
       "sourceStatus": "source-authorized",
@@ -1043,7 +1063,7 @@
       "stateEvidence": "Production schema_migrations version 20261101171113; readback 2026-11-01."
     },
     {
-      "order": 104,
+      "order": 106,
       "path": "supabase/migrations/20261101174349_social_share_x_posts_undated.sql",
       "sha256": "b66393e96ff2f3c74a34eea32c5d07880d6fab83f788d936f250584b516ee7ad",
       "sourceStatus": "source-authorized",
@@ -1053,7 +1073,27 @@
       "stateEvidence": "Production schema_migrations version 20261101174349; readback 2026-11-01."
     },
     {
-      "order": 105,
+      "order": 107,
+      "path": "supabase/migrations/20261104010705_nst_gamelog_season_indexes.sql",
+      "sha256": "7e2667944a8a646b02d0e89cee119ef51fa065ef1586600be12da1817cc62ef8",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "WiGO P-1 (TJ: \"Apply P-1 now\"): season indexes on the NST gamelog tables so the ES, PP and PK percentile views stop timing out. Applied with TJ's explicit approval.",
+      "stateEvidence": "Production schema_migrations version 20261104010705; applied 2026-11-04 01:07 UTC (commit a0d2a7ef4), readback 2026-11-04. Receipt: tasks/artifacts/wigo-charts-overhaul-2026-11-01/P1-P2-MIGRATIONS.md."
+    },
+    {
+      "order": 108,
+      "path": "supabase/migrations/20261104011002_nst_percentile_as_from_gamelogs.sql",
+      "sha256": "d265200a5dce00dc59a74e113a7b65e14d3f53aa900d53e502b4b166ec4e3151",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "WiGO P-2 (TJ: \"Yes, apply P-2\"): AS percentile views built from the gamelogs; legacy snapshot tables kept for rollback. Applied with TJ's explicit approval.",
+      "stateEvidence": "Production schema_migrations version 20261104011002; applied about 01:10 UTC on 2026-11-04 (commit 79c7de7b2), readback 2026-11-04. A duplicate apply failed (42P07) and rolled back (commit 6dd622eb9), so it ran once. Receipt: tasks/artifacts/wigo-charts-overhaul-2026-11-01/P1-P2-MIGRATIONS.md."
+    },
+    {
+      "order": 109,
       "path": "supabase/migrations/20261104011912_clear_stale_yahoo_player_status.sql",
       "sha256": "e64b3bfddaf0ba0879be411f8a69804529ced36458c31fa3dd3881f110a34b9b",
       "sourceStatus": "source-authorized",
