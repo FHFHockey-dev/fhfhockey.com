@@ -1,11 +1,23 @@
 # P-1 and P-2: migration drafts (2026-11-03)
 
-Status: **drafted, not applied.** Each migration needs TJ's approval before it is applied. Nothing was pushed, deployed or run as a route.
+Status: **P-1 applied to production on 2026-11-04 at 01:07 UTC** (TJ: "Apply P-1 now") and verified (see "P-1 production result"). **P-2 is drafted, not applied**, and needs TJ's approval. Nothing was pushed, deployed or run as a route.
 
 | Step | File | What it fixes |
 |---|---|---|
-| P-1 | `supabase/migrations/20261103180000_nst_gamelog_season_indexes.sql` | ES, PP and PK percentile views time out (57014), so Ratings never load |
-| P-2 | `supabase/migrations/20261103180100_nst_percentile_as_from_gamelogs.sql` | AS percentiles and the "All" ratings have no 20262027 data, and nothing writes them |
+| P-1 | `supabase/migrations/20261104010705_nst_gamelog_season_indexes.sql` (renamed to the version production recorded) | ES, PP and PK percentile views time out (57014), so Ratings never load |
+| P-2 | `supabase/migrations/20261104010800_nst_percentile_as_from_gamelogs.sql` (placeholder version; rename it to the recorded version once applied) | AS percentiles and the "All" ratings have no 20262027 data, and nothing writes them |
+
+## P-1 production result
+
+TJ approved three check reads by pop-up (R1-R3), all read-only, all run.
+
+| Check | Before | After |
+|---|---|---|
+| R1: catalog | none of these indexes | All 6 `*_season_player_idx` indexes exist; all 6 tables have `autovacuum_analyze_scale_factor=0.002` |
+| R2: `nst_percentile_es_offense`, page 1 | 7,575 ms | **66 ms** (first read after the change) |
+| R3: `nst_percentile_es_defense`, page 1 | 4,941 ms | **12 ms** |
+
+Both plans now use the new index on both sides with a merge left join. The season estimate is now 7,953 rows against 5,477 actual (it was 1). The plan has no nested loop and touches about 11k buffers, down from 1.72M. PP and PK use the same view shape and were not measured.
 
 Both files are in `supabase/migrations/`, the tree that holds the baseline definitions of these views.
 
@@ -65,7 +77,7 @@ The local plan uses the new index on both sides with a merge left join. There is
 
 ## Apply steps for TJ (each one needs approval)
 
-Apply them in order. P-2 does not depend on P-1, but the two notes refer to each other.
+Steps 1 to 3 are done for P-1. P-2 does not depend on P-1, but the two notes refer to each other. The Supabase MCP `apply_migration` stamps the current time as the version. After applying, rename the local file to the version that `list_migrations` reports, so that `supabase db push` stays in sync.
 
 1. **Pick a time outside the NST game log ingest.** Each `CREATE INDEX` briefly blocks writes, not reads, on one table: well under a second each at about 230k rows. `lock_timeout = 5s` makes the migration fail cleanly rather than wait behind the ingest. If it fails on the lock, re-run it.
 2. Apply **P-1**: `supabase db push` from `web/` (`npm run supabase:safe -- db push` if sandboxed), or the Supabase MCP `apply_migration` with the file's contents.

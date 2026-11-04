@@ -4,7 +4,7 @@
 -- ratings are empty. This replaces them with views over the AS game logs, the same shape as the ES, PP and PK
 -- views: nothing has to write or refresh them; the NST game log ingest that fills nst_gamelog_as_counts{,_oi}
 -- is the only writer. Column names, order and types match the old tables, so the client reads them unchanged.
--- Depends on the same planner fix as P-1 (20261103180000), applied here to the AS game logs.
+-- Depends on the same planner fix as P-1 (20261104010705), applied here to the AS game logs.
 -- The snapshot tables are kept, renamed and closed to browser roles, for rollback (see the note).
 set local lock_timeout = '5s';
 
