@@ -3274,7 +3274,7 @@
           "baseline_sha256": "a21867399aa701b68ba04874abe2d61d0e5a4707ed27e0878455f55a00074ef1"
         },
         {
-          "path": "supabase/migrations/<new>_clear_stale_yahoo_player_status.sql",
+          "path": "supabase/migrations/20261104011912_clear_stale_yahoo_player_status.sql",
           "baseline_sha256": null
         },
         {

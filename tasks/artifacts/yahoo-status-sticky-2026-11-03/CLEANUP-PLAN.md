@@ -1,6 +1,6 @@
 # Stale Yahoo status cleanup plan (not run)
 
-Finding `CLAUDE-SS-YAHOO-STATUS-STICKY-20261103`. Fix: writer `status_observed` marker plus migration `supabase/migrations/20261104012000_clear_stale_yahoo_player_status.sql`. Nothing below has been run. Every write step needs TJ's pop-up approval.
+Finding `CLAUDE-SS-YAHOO-STATUS-STICKY-20261103`. Fix: writer `status_observed` marker plus migration `supabase/migrations/20261104011912_clear_stale_yahoo_player_status.sql`. Step 2 (the migration) was applied on 2026-11-04 with TJ's approval; nothing else below has been run. Every write step needs TJ's pop-up approval.
 
 ## What the stale rows look like
 
@@ -53,8 +53,8 @@ select count(*) from yahoo_status_repair_20261104.pre_fix_status;  -- expect abo
 commit;
 ```
 
-### 2. Apply the migration (needs approval)
-Apply `20261104012000_clear_stale_yahoo_player_status.sql` through the normal migration path. Then read back:
+### 2. Apply the migration (done 2026-11-04 with TJ's approval)
+Applied as Production version `20261104011912`; the file was renamed to `20261104011912_clear_stale_yahoo_player_status.sql` to match. Step 1 was skipped. The readback below returned replaced, has_marker and service_exec true and anon_exec false:
 
 ```sql
 select md5(pg_get_functiondef('public.upsert_yahoo_players_atomic(jsonb[])'::regprocedure)) <> '178d877fe2e1d29c37b94832c5f42c60' as replaced,

@@ -469,7 +469,7 @@ describe("Yahoo status clears only on a full player read", () => {
 
   it("replaces status fields only on the explicit marker, behind a definition guard", () => {
     const sql = readFileSync(
-      path.join(repoRoot, "supabase/migrations/20261104012000_clear_stale_yahoo_player_status.sql"),
+      path.join(repoRoot, "supabase/migrations/20261104011912_clear_stale_yahoo_player_status.sql"),
       "utf8",
     );
 
