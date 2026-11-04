@@ -10,7 +10,10 @@ import { basename, dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { Profile } from "./currentWindows";
 import { RETAINED_BLSH_SHA256, retainedBlshEvidence } from "../player-cards/retainedBlsh";
-import { buildDisplaySnapshot, NO_PERSONAL_HISTORY_LIST_WITHHELD, PERSONAL_HISTORY_UNAVAILABLE_LIST_WITHHELD, reasonText, toDisplayProfile, type ReferencePolicy } from "./displayProfile";
+import {
+  BLSH_LIST_TOP_N, buildDisplaySnapshot, HEADLINE_TRACK_CONFLICT_LIST_WITHHELD, HEADLINE_TRACK_UNAVAILABLE_LIST_WITHHELD, INSUFFICIENT_PERSONAL_HISTORY_LIST_WITHHELD,
+  listWithheldReason, NO_PERSONAL_HISTORY_LIST_WITHHELD, PERSONAL_HISTORY_UNAVAILABLE_LIST_WITHHELD, reasonText, SHORT_WINDOW_LIST_WITHHELD, toDisplayProfile, type ReferencePolicy,
+} from "./displayProfile";
 import { currentResearchLists, currentStateLabel } from "./researchSnapshot";
 
 const ROOT = join(__dirname, "../../..");
@@ -33,6 +36,7 @@ const lines = (text: string) => text.split("\n").filter(Boolean).map(l => JSON.p
 const fixtures = lines(readPinned(FIXTURE, PINS.fixture));
 const byId = (id: number) => structuredClone(fixtures.find(p => p.playerId === id)!);
 const CASES = { burns: 8470613, thin: 8475413, sh: 8471215, wilson: 8475253, unavailable: 8473419, conflicting: 8474563, zeroShot: 8475795, stale: 8475718, oldest: 8478173, short: 8473422 };
+const R1 = { rank: 1, positionRank: 1 };
 const RECORDED = "2026-10-26";
 const POLICY: ReferencePolicy = {
   arm: "A_development_reference", inputs: "official_receipt_overlay", provisional: true, stale: true, selectedBy: "TJ", selectedAtUTC: "2026-10-29T13:15:25Z",
@@ -109,11 +113,11 @@ describe("displayProfile: handoff v2 mapping on real saved profiles", () => {
     }
     expect(strings(snap).some(s => /\d%|percent confidence/.test(s))).toBe(false);
   });
-  it("keeps a zero-shot player listed with zero shown as a value", () => {
+  it("shows a zero-shot window's zero as a value and withholds a thin history for history, not for the zero", () => {
     const p = get(CASES.zeroShot);
     expect(p.context.signals.find(s => s.metric === "shots_per_60")).toMatchObject({ current: 0, status: "available" });
-    expect(p.score.list).not.toBeNull();
-    expect(p.score.rank).toBeGreaterThan(0);
+    // 9 personal games and a 4-game window: the history rule comes first.
+    expect(p.score).toMatchObject({ list: null, rank: null, positionRank: null, positionTopN: false, reason: INSUFFICIENT_PERSONAL_HISTORY_LIST_WITHHELD });
   });
   it("keeps context as hypotheses and carries thin personal references visibly", () => {
     const p = get(CASES.thin);
@@ -123,7 +127,7 @@ describe("displayProfile: handoff v2 mapping on real saved profiles", () => {
     expect(p.context.signals.every(s => s.scoreInput === false && s.interpretation === "hypothesis" && s.hypotheses.length >= 2)).toBe(true);
     expect(get(CASES.conflicting).score).toMatchObject({ list: null, rank: null, statusLabel: "Production and support disagree; withheld from lists" });
   });
-  it("ranks each list contiguously by the frozen order and keeps every withheld profile", () => {
+  it("ranks each list contiguously and keeps every withheld profile", () => {
     for (const side of ["BL", "SH"] as const) {
       const ranks = snap.profiles.filter(p => p.score.list === side).map(p => p.score.rank!).sort((a, b) => a - b);
       expect(ranks).toEqual(ranks.map((_, i) => i + 1));
@@ -147,7 +151,7 @@ describe("displayProfile: handoff v2 mapping on real saved profiles", () => {
     const text = reasonText(NO_PERSONAL_HISTORY_LIST_WITHHELD)!;
     expect(text).toMatch(/^Withheld from lists: no personal history/);
     expect(toDisplayProfile(p, null, RECORDED).score).toMatchObject({ list: null, rank: null, listLabel: "Withheld; inspect evidence", reason: NO_PERSONAL_HISTORY_LIST_WITHHELD, reasonText: text });
-    expect(() => toDisplayProfile(p, 1, RECORDED)).toThrow("withheld profile has no rank");
+    expect(() => toDisplayProfile(p, R1, RECORDED)).toThrow("withheld profile has no rank");
     const gated = gatedSnapshot(p);
     const shown = gated.profiles.find(x => x.playerId === CASES.burns)!;
     expect(currentResearchLists(gated).withheld).toContain(shown);
@@ -177,20 +181,91 @@ describe("displayProfile: handoff v2 mapping on real saved profiles", () => {
       expect(gated.counts).toMatchObject({ BL: snap.counts.BL - 1, withheldNoPersonalHistory: 0, withheldPersonalHistoryUnavailable: 1 });
     }
   });
-  it("gives Player Cards the same saved list, rank and reason the preview reads", () => {
-    const gated = gatedSnapshot(withHistory(0, false));
-    const { profiles, ...metadata } = gated;
-    const lists = currentResearchLists(gated);
-    const preview = new Map([...lists.BL, ...lists.SH, ...lists.withheld].map(p => [p.playerId, p.score]));
-    const cards = profiles.filter(p => p.team !== null).map(p => retainedBlshEvidence({ id: p.playerId, team: p.team! }, gated.seasonId,
-      { profile: p, metadata, snapshotSHA256: RETAINED_BLSH_SHA256, reviewReference: "Synthetic unit contract: gated mapper snapshot" }));
-    const carried = cards.flatMap(c => (c.retained ? [c.retained.profile] : []));
-    expect(carried.map(p => p.playerId)).toEqual(expect.arrayContaining([CASES.burns, ...lists.BL.map(p => p.playerId), ...lists.SH.map(p => p.playerId)]));
-    for (const p of carried) {
-      const { list, rank, reason, reasonText } = preview.get(p.playerId)!;
-      expect({ list: p.score.list, rank: p.score.rank, reason: p.score.reason, reasonText: p.score.reasonText }).toEqual({ list, rank, reason, reasonText });
+  // Fixture profiles the frozen rule lists but the history rule withholds, given 50 personal games and a full window
+  // (padded with a synthetic fifth game so the window's dates and sources still match its game count).
+  const eligibleCopy = (id: number) => {
+    const p = byId(id), w = p.window;
+    (p.reference as { personalN: number }).personalN = 50;
+    (p.result.productionAxis as { personal_n?: number }).personal_n = 50;
+    for (; w.appearances < 5; w.appearances++) { w.dates.push(w.dates.at(-1)!); w.sourceIds.push(Math.max(...w.sourceIds) + 1); }
+    expect(p.result.researchList).not.toBeNull();
+    return p;
+  };
+  const ordered = snapshot([...fixtures.filter(f => f.playerId !== CASES.thin && f.playerId !== CASES.zeroShot), eligibleCopy(CASES.thin), eligibleCopy(CASES.zeroShot)]);
+  const inOrdered = (id: number) => ordered.profiles.find(p => p.playerId === id)!;
+  it("withholds direction below the provisional 20-game history cutoff, listed or not, and keeps unknown apart from zero", () => {
+    const below = gatedSnapshot(withHistory(19, true)), at = gatedSnapshot(withHistory(20, true));
+    expect(below.profiles.find(x => x.playerId === CASES.burns)!.score).toMatchObject({
+      list: null, rank: null, reason: INSUFFICIENT_PERSONAL_HISTORY_LIST_WITHHELD, directionWithheldReason: INSUFFICIENT_PERSONAL_HISTORY_LIST_WITHHELD,
+      gapSignLabel: "Direction withheld: insufficient personal history", gapSign: "buy_low_evidence" });
+    expect(reasonText(INSUFFICIENT_PERSONAL_HISTORY_LIST_WITHHELD)).toMatch(/^Insufficient history: fewer than 20 personal games \(provisional cutoff\)/);
+    expect(snap.counts.withheldInsufficientPersonalHistory).toBe(2); // Dowling (2 games) and McIlrath (9)
+    expect(below.counts).toMatchObject({ BL: snap.counts.BL - 1, withheldInsufficientPersonalHistory: 3, withheldNoPersonalHistory: 0, withheldPersonalHistoryUnavailable: 0 });
+    expect(at.profiles.find(x => x.playerId === CASES.burns)!.score).toMatchObject({ list: "BL", reason: null, directionWithheldReason: null, gapSignLabel: "Buy-low evidence" });
+    // Not listed by the frozen rule, still no direction: confirmed zero (Wilson) keeps its own reason; an unavailable score has none to withhold.
+    expect(get(CASES.wilson).score).toMatchObject({ list: null, reason: null, directionWithheldReason: NO_PERSONAL_HISTORY_LIST_WITHHELD, gapSignLabel: "Direction withheld: insufficient personal history" });
+    expect(gatedSnapshot(withHistory(null, true)).profiles.find(x => x.playerId === CASES.burns)!.score.directionWithheldReason).toBe(PERSONAL_HISTORY_UNAVAILABLE_LIST_WITHHELD);
+    expect(get(CASES.unavailable).score).toMatchObject({ directionWithheldReason: null, headline: null });
+    expect(snap.counts.directionWithheld).toBe(snap.profiles.filter(p => p.score.value !== null && p.evidence.reference.personalGames < 20).length);
+  });
+  it("withholds a short window after history, and a headline gap that is missing or points the other way", () => {
+    const short = eligibleCopy(CASES.burns);
+    short.window.appearances = 4;
+    expect(listWithheldReason(short)).toBe(SHORT_WINDOW_LIST_WITHHELD);
+    expect(gatedSnapshot(short).counts).toMatchObject({ BL: snap.counts.BL - 1, withheldShortWindow: 1 });
+    expect(reasonText(SHORT_WINDOW_LIST_WITHHELD)).toBe("Withheld from lists: fewer than 5 games in the window");
+    expect(listWithheldReason(byId(CASES.thin))).toBe(INSUFFICIENT_PERSONAL_HISTORY_LIST_WITHHELD);
+    const flip = (id: number, gap: number) => {
+      const p = eligibleCopy(id);
+      (p.explanation.tracks.find(t => t.track === "fantasy_points") as { gap: number }).gap = gap;
+      return listWithheldReason(p);
+    };
+    expect([flip(CASES.burns, -0.5), flip(CASES.burns, 0), flip(CASES.sh, 0.5)]).toEqual(Array(3).fill(HEADLINE_TRACK_CONFLICT_LIST_WITHHELD));
+    expect([flip(CASES.burns, 0.5), flip(CASES.sh, -0.5)]).toEqual([null, null]);
+    // A missing headline is unavailable, never a zero gap.
+    expect(flip(CASES.burns, Number.NaN)).toBe(HEADLINE_TRACK_UNAVAILABLE_LIST_WITHHELD);
+    const missing = eligibleCopy(CASES.burns);
+    missing.explanation.tracks = missing.explanation.tracks.filter(t => t.track !== "fantasy_points");
+    expect(listWithheldReason(missing)).toBe(HEADLINE_TRACK_UNAVAILABLE_LIST_WITHHELD);
+  });
+  it("orders each list by the FHFH Standard gap, ranks within F and D, and shows G+A and Game Score as supporting tracks", () => {
+    const [burns, mcIlrath, dowling] = [CASES.burns, CASES.zeroShot, CASES.thin].map(inOrdered);
+    // Burns is provisional-tier, so the frozen evidence order would rank him after both measured-tier players.
+    expect(burns.evidence.tier).toBe("provisional_estimated_or_extrapolated");
+    expect([burns, mcIlrath, dowling].map(p => [p.position, p.score.rank, p.score.positionRank, p.score.positionTopN])).toEqual([["D", 1, 1, true], ["D", 2, 2, true], ["F", 3, 1, true]]);
+    expect(burns.score.headline!.gap).toBeGreaterThan(mcIlrath.score.headline!.gap);
+    expect(mcIlrath.score.headline!.gap).toBeGreaterThan(dowling.score.headline!.gap);
+    const fp = burns.tracks.find(t => t.track === "fantasy_points")!;
+    expect(burns.score.headline).toEqual({ track: "fantasy_points", scoring: "FHFH Standard", label: "FHFH Standard points", observed: fp.observed, expected: fp.supportConditioned, referenceAtCurrentTOI: fp.referenceAtCurrentTOI, gap: fp.gap });
+    expect(burns.tracks.map(t => t.role)).toEqual(["headline", "supporting", "supporting"]);
+    expect(inOrdered(CASES.sh).score).toMatchObject({ list: "SH", rank: 1, positionRank: 1 });
+    expect(ordered.counts).toMatchObject({ BL: 3, SH: 1, byPosition: { F: { BL: 1, SH: 1 }, D: { BL: 2, SH: 0 } } });
+    expect(ordered.headline).toMatchObject({ track: "fantasy_points", scoring: "FHFH Standard", supportingTracks: ["goals_plus_assists", "wigo_game_score"] });
+    expect(ordered.lists).toEqual({ topN: 25, positionGroups: ["F", "D"], minPersonalGames: 20, minPersonalGamesProvisional: true, windowGames: 5 });
+  });
+  it("marks the top 25 per side and position group and keeps the full ranked list", () => {
+    const clone = (id: number, position: "F" | "D") => Object.assign(byId(CASES.burns), { playerId: id, position });
+    const many = snapshot([...Array.from({ length: BLSH_LIST_TOP_N + 2 }, (_, i) => clone(i + 1, "D")), clone(100, "F"), clone(101, "F")]);
+    const rows = currentResearchLists(many).BL;
+    expect(rows).toHaveLength(BLSH_LIST_TOP_N + 4);
+    expect(rows.map(p => [p.playerId, p.score.rank, p.score.positionRank, p.score.positionTopN])).toEqual([
+      ...Array.from({ length: BLSH_LIST_TOP_N + 2 }, (_, i) => [i + 1, i + 1, i + 1, i < BLSH_LIST_TOP_N]), [100, 28, 1, true], [101, 29, 2, true]]);
+    expect(() => snapshot([Object.assign(byId(CASES.burns), { position: null })])).toThrow("has no position group");
+  });
+  it("gives Player Cards the same saved list, ranks, headline, direction and reason the preview reads", () => {
+    for (const s of [gatedSnapshot(withHistory(0, false)), ordered]) {
+      const { profiles, ...metadata } = s;
+      const lists = currentResearchLists(s);
+      const preview = new Map([...lists.BL, ...lists.SH, ...lists.withheld].map(p => [p.playerId, p.score]));
+      const cards = profiles.filter(p => p.team !== null).map(p => retainedBlshEvidence({ id: p.playerId, team: p.team! }, s.seasonId,
+        { profile: p, metadata, snapshotSHA256: RETAINED_BLSH_SHA256, reviewReference: "Synthetic unit contract: gated mapper snapshot" }));
+      const carried = cards.flatMap(c => (c.retained ? [c.retained.profile] : []));
+      expect(carried.map(p => p.playerId)).toEqual(expect.arrayContaining([CASES.burns, ...lists.BL.map(p => p.playerId), ...lists.SH.map(p => p.playerId)]));
+      const keys = ["list", "rank", "positionRank", "positionTopN", "headline", "gapSignLabel", "directionWithheldReason", "reason", "reasonText"] as const;
+      const pick = (score: (typeof profiles)[number]["score"]) => Object.fromEntries(keys.map(k => [k, score[k]]));
+      for (const p of carried) expect(pick(p.score)).toEqual(pick(preview.get(p.playerId)!));
     }
-    expect(carried.find(p => p.playerId === CASES.burns)!.score).toMatchObject({ list: null, rank: null, reason: NO_PERSONAL_HISTORY_LIST_WITHHELD });
+    expect(gatedSnapshot(withHistory(0, false)).profiles.find(p => p.playerId === CASES.burns)!.score).toMatchObject({ list: null, rank: null, reason: NO_PERSONAL_HISTORY_LIST_WITHHELD });
   });
 });
 
@@ -198,14 +273,14 @@ describe("displayProfile: fails closed instead of displaying drifted values", ()
   it("refuses components that no longer add to the gap", () => {
     const p = byId(CASES.burns);
     (p.explanation.tracks[0].components[0] as { value: number }).value += 0.5;
-    expect(() => toDisplayProfile(p, 1, RECORDED)).toThrow("components add to the gap");
+    expect(() => toDisplayProfile(p, R1, RECORDED)).toThrow("components add to the gap");
   });
   it("refuses changed claims, a missing rank or a rank on a withheld profile", () => {
     const claimed = byId(CASES.sh);
     (claimed.explanation.claims as { forecast: boolean }).forecast = true;
-    expect(() => toDisplayProfile(claimed, 1, RECORDED)).toThrow("claims");
+    expect(() => toDisplayProfile(claimed, R1, RECORDED)).toThrow("claims");
     expect(() => toDisplayProfile(byId(CASES.sh), null, RECORDED)).toThrow("list member has a rank");
-    expect(() => toDisplayProfile(byId(CASES.conflicting), 3, RECORDED)).toThrow("withheld profile has no rank");
+    expect(() => toDisplayProfile(byId(CASES.conflicting), { rank: 3, positionRank: 1 }, RECORDED)).toThrow("withheld profile has no rank");
   });
   it("refuses a withheld context with no recorded reason", () => {
     const p = byId(CASES.wilson);
@@ -228,9 +303,12 @@ describe.skipIf(!out)("displayProfile: provisional A + official-overlay candidat
     const snap = snapshot(profiles, { assemblerVersion: summary.version, eventThroughDate: summary.eventThroughDate, asOfUTC: summary.asOfUTC, packagedAtUTC: new Date().toISOString(),
       sourcePins: { profiles: PINS.source, dryRunSummary: PINS.summary, ...summary.pins } });
     // Exact counts of the pinned source (Astra re-review of CLAUDE-122/124).
-    // Mapper v2 withholds the 117 listed no-personal-history profiles (76 BL, 41 SH; frozen rule alone: 360 BL, 223 SH).
-    expect(snap.counts).toEqual({ profiles: 725, numeric: 673, BL: 284, SH: 182, withheld: 259, withheldNoPersonalHistory: 117, withheldPersonalHistoryUnavailable: 0, unavailableTier: 52, referenceContextAbsent: 151,
-      zeroShotWindows: 19, zeroShotNumeric: 15, zeroShotListed: 3, personalReference1to4: 36, referenceAgeDays: { n: 574, min: 894, max: 1451 } });
+    // Frozen rule alone: 360 BL, 223 SH. Mapper v3 withholds 217 of them: 117 no personal history, 53 under 20 personal games,
+    // 21 short windows and 26 whose FHFH Standard gap points the other way (mapper v2 alone: 284 BL, 182 SH).
+    expect(snap.counts).toEqual({ profiles: 725, numeric: 673, BL: 228, SH: 138, withheld: 359, withheldNoPersonalHistory: 117, withheldPersonalHistoryUnavailable: 0,
+      withheldInsufficientPersonalHistory: 53, withheldShortWindow: 21, withheldHeadlineConflict: 26, withheldHeadlineUnavailable: 0, directionWithheld: 199,
+      byPosition: { F: { BL: 140, SH: 98 }, D: { BL: 88, SH: 40 } }, unavailableTier: 52, referenceContextAbsent: 151,
+      zeroShotWindows: 19, zeroShotNumeric: 15, zeroShotListed: 0, personalReference1to4: 36, referenceAgeDays: { n: 574, min: 894, max: 1451 } });
     const slotNotes = snap.profiles.flatMap(p => p.coverage.notes.filter(n => n.source === "slot"));
     expect(slotNotes.filter(n => n.component === "personal_reference" && n.games === null)).toHaveLength(151);
     expect(slotNotes.filter(n => n.component === "current_window" && n.games === null)).toHaveLength(112);
