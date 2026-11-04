@@ -1,0 +1,120 @@
+@use "styles/vars" as v;
+
+.page {
+  min-height: 100vh;
+  padding: 16px;
+  background: v.$background-dark;
+  color: v.$text-primary;
+  font-family: v.$font-family-primary;
+}
+
+.container { max-width: v.$page-max-width; margin: 0 auto; display: grid; gap: 16px; }
+
+.title { margin: 0; font-size: 1.6rem; letter-spacing: 0.04em; text-transform: uppercase; }
+.subtitle { margin: 4px 0 0; max-width: 70ch; color: v.$text-secondary; font-size: v.$font-size-sm; }
+.muted { margin: 0; color: v.$text-secondary; font-size: v.$font-size-xs; }
+.num { font-family: v.$font-family-numbers; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.fixtureBanner {
+  margin: 0;
+  padding: 10px 12px;
+  border: 2px dashed v.$warning-color;
+  border-radius: 6px;
+  color: v.$warning-color;
+  font-weight: 700;
+  font-size: v.$font-size-sm;
+}
+
+.controls { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); }
+.fieldset {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid v.$border-soft;
+  border-radius: 6px;
+  min-width: 0;
+}
+.fieldset legend { padding: 0 4px; color: v.$text-secondary; font-size: v.$font-size-xs; text-transform: uppercase; letter-spacing: 0.06em; }
+
+.segmented { display: flex; flex-wrap: wrap; gap: 6px; }
+.segment, .smallButton, .secondaryButton {
+  min-height: 36px;
+  padding: 4px 12px;
+  border: 1px solid v.$border-secondary;
+  border-radius: 4px;
+  background: transparent;
+  color: v.$text-primary;
+  font: inherit;
+  font-size: v.$font-size-sm;
+  cursor: pointer;
+}
+.segment[aria-pressed="true"] { border-color: v.$primary-color; color: v.$primary-color; font-weight: 700; }
+.smallButton { min-height: 32px; font-size: v.$font-size-xs; }
+.secondaryButton { justify-self: start; border-style: dashed; color: v.$text-secondary; }
+
+.control { display: grid; gap: 4px; font-size: v.$font-size-xs; color: v.$text-secondary; }
+.control select, .control input {
+  min-height: 36px;
+  padding: 4px 8px;
+  border: 1px solid v.$border-secondary;
+  border-radius: 4px;
+  background: v.$background-darker;
+  color: v.$text-primary;
+  font: inherit;
+  font-size: v.$font-size-sm;
+}
+.weightGrid { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+.categoryGrid { display: grid; gap: 6px 12px; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+.check { display: flex; gap: 6px; align-items: center; min-height: 32px; font-size: v.$font-size-sm; }
+
+.segment:focus-visible, .smallButton:focus-visible, .secondaryButton:focus-visible,
+.control select:focus-visible, .control input:focus-visible, .check input:focus-visible {
+  outline: 2px solid v.$focus-color;
+  outline-offset: 2px;
+}
+
+.sides { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); align-items: start; }
+.side { display: grid; gap: 12px; min-width: 0; }
+.sideHeader { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; justify-content: space-between; }
+.sideTitle, .sectionTitle { margin: 0; font-size: 1.05rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+.card { display: grid; gap: 10px; padding: 12px; border: 1px solid v.$border-secondary; border-radius: 8px; background: v.$background-darker; }
+.cardHeader { display: flex; gap: 8px; align-items: flex-start; justify-content: space-between; }
+.playerName { margin: 0; font-size: 1rem; }
+
+/* Forecast and recorded evidence use different frames and labels so they are never read as one thing. */
+.forecast { display: grid; gap: 6px; padding: 10px; border: 1px solid v.$primary-color; border-radius: 6px; }
+.evidence { display: grid; gap: 6px; padding: 10px; border: 1px dashed v.$border-secondary; border-left: 4px solid v.$secondary-color; border-radius: 6px; background: v.$background-dark; }
+.blockHeader { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: space-between; }
+.kicker, .kickerRetro { margin: 0; font-size: v.$font-size-xs; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+.kicker { color: v.$primary-color; }
+.kickerRetro { color: v.$secondary-color; }
+.evidenceLead { margin: 0; font-size: v.$font-size-sm; }
+
+.badge { padding: 2px 8px; border: 1px solid currentColor; border-radius: 999px; font-size: v.$font-size-xs; font-weight: 700; white-space: nowrap; }
+.badge_qualified { color: v.$success-color; }
+.badge_experimental, .badgeExperimental { color: v.$warning-color; }
+.badge_unavailable { color: v.$danger-color; }
+
+.facts { display: grid; gap: 4px 12px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin: 0; }
+.facts div { min-width: 0; }
+.facts dt { color: v.$text-secondary; font-size: v.$font-size-xs; }
+.facts dd { margin: 0; font-size: v.$font-size-sm; }
+.withheld { color: v.$danger-color; font-size: v.$font-size-xs; }
+.withheldBlock { margin: 0; color: v.$danger-color; font-size: v.$font-size-sm; }
+
+.result { display: grid; gap: 10px; padding: 12px; border: 1px solid v.$primary-color; border-radius: 8px; }
+.resultHeader { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.issues { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; font-size: v.$font-size-sm; }
+.issueBlocking { margin: 0; padding: 6px 10px; border-left: 3px solid v.$danger-color; font-size: v.$font-size-sm; }
+.issueNote { padding: 6px 10px; border-left: 3px solid v.$info-color; }
+.tableWrap { overflow-x: auto; border: 1px solid v.$border-soft; border-radius: 6px; }
+.table { width: 100%; border-collapse: collapse; font-size: v.$font-size-sm; }
+.table th, .table td { padding: 8px; border-bottom: 1px solid v.$border-soft; text-align: left; vertical-align: top; }
+.table thead th { color: v.$text-secondary; font-size: v.$font-size-xs; text-transform: uppercase; }
+.caption { padding: 8px; caption-side: bottom; color: v.$text-secondary; font-size: v.$font-size-xs; text-align: left; }
+.summary { margin: 0; font-weight: 700; }
+.assumptions { display: grid; gap: 2px; margin: 0; padding-left: 18px; color: v.$text-secondary; font-size: v.$font-size-xs; }
+.retrospective { display: grid; gap: 8px; padding: 12px; border: 1px dashed v.$border-secondary; border-left: 4px solid v.$secondary-color; border-radius: 6px; background: v.$background-darker; }

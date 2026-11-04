@@ -4,10 +4,32 @@
  * No roster, replacement or acceptance logic; incomplete inputs never yield a winner.
  */
 import { LOWER_IS_BETTER, TARGET_LABELS, type InterpretationRecord } from "lib/skoElement/contract";
+import { FHFH_WEIGHTS } from "./productionReference";
 
 export type TradeScoring =
   | { mode: "points"; scoringBasis: string; weights: Record<string, number> }
   | { mode: "categories"; categories: string[] };
+
+/** FHFH Standard (3G + 2A + PPP + .2SOG + .2HIT + .25BLK) on FORGE targets: the default league scoring. Skaters only. */
+export const FHFH_STANDARD_SCORING: Extract<TradeScoring, { mode: "points" }> = { mode: "points", scoringBasis: "points:fhfh-standard", weights: {
+  GOALS: FHFH_WEIGHTS.goals, ASSISTS: FHFH_WEIGHTS.assists, PP_POINTS: FHFH_WEIGHTS.pp_points,
+  SHOTS_ON_GOAL: FHFH_WEIGHTS.shots, HITS: FHFH_WEIGHTS.hits, BLOCKED_SHOTS: FHFH_WEIGHTS.blocked_shots } };
+
+/** Whether a record's forecast may be shown as a forecast: qualified, experimental (labelled) or unavailable (never a number). */
+export type ForecastQualification = { status: "qualified" | "experimental" | "unavailable"; reasons: string[] };
+
+export function forecastQualification(record: InterpretationRecord): ForecastQualification {
+  const unavailable = [
+    ...(record.freshness.forecastStatus === "expired" ? ["Forecast expired"] : []),
+    ...(!record.horizon.complete ? [`Only ${record.horizon.scheduledGames} of ${record.horizon.requestedGames} scheduled team games are covered`] : []),
+  ];
+  if (unavailable.length) return { status: "unavailable", reasons: unavailable };
+  const experimental = [
+    ...(record.fixture ? ["Fixture forecast: synthetic values, not a FORGE issuance"] : []),
+    ...(record.freshness.forecastStatus === "unknown" ? ["Forecast expiry unknown"] : []),
+  ];
+  return experimental.length ? { status: "experimental", reasons: experimental } : { status: "qualified", reasons: [] };
+}
 
 export type TradeInput = { give: string[]; receive: string[]; scoring: TradeScoring };
 
@@ -19,7 +41,12 @@ export type TradeComparison = {
   issues: TradeIssue[];
   complete: boolean;
   horizonGames: number | null;
-  players: Array<{ playerId: string; side: "give" | "receive"; name: string; modelClass: string; startDate: string | null; endDate: string | null; scheduledGames: number }>;
+  /** True when any player's forecast is experimental; the whole comparison is then labelled experimental. */
+  experimental: boolean;
+  players: Array<{ playerId: string; side: "give" | "receive"; name: string; modelClass: string; startDate: string | null; endDate: string | null; scheduledGames: number;
+    qualification: ForecastQualification;
+    /** Participation assumptions already inside the forecast totals (uncalibrated FORGE probabilities); null is unknown. */
+    expectedAppearances: number | null; expectedStarts: number | null }>;
   rows: Array<{ key: string; label: string; lowerIsBetter: boolean; give: SideValue; receive: SideValue;
     /** receive − give in raw units. */
     net: number | null; favorableForReceiver: boolean | null }>;
@@ -40,10 +67,16 @@ function sumTarget(records: InterpretationRecord[], key: string): SideValue {
   return { value: relevant.reduce((sum, record) => sum + record.forecastTotals[key].expected!, 0), missingPlayerIds: [], reason: null };
 }
 
+const isScored = (record: InterpretationRecord, scoring: Extract<TradeScoring, { mode: "points" }>) =>
+  Object.entries(scoring.weights).some(([target, weight]) => weight && applies(record, target));
+
 function sideValue(records: InterpretationRecord[], key: string, scoring: TradeScoring): SideValue {
   if (scoring.mode === "points") {
     const missing: string[] = [];
     let total = 0;
+    // A player with no scored statistic is withheld, never counted as zero points.
+    const unscored = records.filter(record => !isScored(record, scoring)).map(record => record.identity.playerId);
+    if (unscored.length) return { value: null, missingPlayerIds: unscored, reason: "unscored_player" };
     for (const record of records) for (const [target, weight] of Object.entries(scoring.weights)) {
       if (!weight || !applies(record, target)) continue;
       const value = record.forecastTotals[target]?.expected;
@@ -66,6 +99,14 @@ export function playerPointsTotal(record: InterpretationRecord, scoring: Extract
   if (!record.horizon.complete) return { value: null, missingPlayerIds: [record.identity.playerId], reason: record.horizon.reason ?? "incomplete_horizon" };
   if (record.freshness.forecastStatus === "expired") return { value: null, missingPlayerIds: [record.identity.playerId], reason: "expired_forecast" };
   return sideValue([record], "FANTASY_POINTS", scoring);
+}
+
+/** One player's scored forecast values (league points, or each category), with the same withholding rules as a trade side. */
+export function playerScoredValues(record: InterpretationRecord, scoring: TradeScoring) {
+  const keys = scoring.mode === "points" ? ["FANTASY_POINTS"] : scoring.categories;
+  return keys.map(key => ({ key, label: key === "FANTASY_POINTS" ? "League points" : GOALIE_RATIOS[key]?.label ?? TARGET_LABELS[key as keyof typeof TARGET_LABELS] ?? key,
+    applies: scoring.mode === "points" || applies(record, GOALIE_RATIOS[key]?.numerator ?? key),
+    ...sideValue([record], key, scoring) }));
 }
 
 export function compareTrade(input: TradeInput, records: readonly InterpretationRecord[]): TradeComparison {
@@ -91,6 +132,10 @@ export function compareTrade(input: TradeInput, records: readonly Interpretation
   if (expired.length) issues.push({ code: "expired_forecast", message: `Forecast expired for ${expired.map(record => record.identity.name).join(", ")}.`, blocking: true });
   const incomplete = all.filter(record => !record.horizon.complete);
   if (incomplete.length) issues.push({ code: "incomplete_horizon", message: `${incomplete.map(record => `${record.identity.name} has ${record.horizon.scheduledGames} of ${record.horizon.requestedGames} scheduled games`).join("; ")}.`, blocking: true });
+  if (input.scoring.mode === "points") {
+    const scoring = input.scoring, unscored = all.filter(record => !isScored(record, scoring));
+    if (unscored.length) issues.push({ code: "unscored_player", message: `${unscored.map(record => record.identity.name).join(", ")} ${unscored.length > 1 ? "have" : "has"} no scored statistic under this league scoring; add weights for ${unscored.length > 1 ? "them" : "that player"} or remove ${unscored.length > 1 ? "them" : "the player"}.`, blocking: true });
+  }
   if (give.length && receive.length && give.length !== receive.length) {
     issues.push({ code: "uneven_roster", message: `Uneven sides (${give.length} for ${receive.length}); roster-slot and replacement effects are not included.`, blocking: false });
   }
@@ -103,18 +148,21 @@ export function compareTrade(input: TradeInput, records: readonly Interpretation
     return { key, label: key === "FANTASY_POINTS" ? "Fantasy points" : GOALIE_RATIOS[key]?.label ?? TARGET_LABELS[key as keyof typeof TARGET_LABELS] ?? key,
       lowerIsBetter, give: g, receive: r, net, favorableForReceiver: net === null || net === 0 ? null : lowerIsBetter ? net < 0 : net > 0 };
   });
-  const missing = rows.some(row => [row.give, row.receive].some(side => side.value === null && side.reason !== "no_goalies"));
+  const missing = rows.some(row => [row.give, row.receive].some(side => side.value === null && side.reason !== "no_goalies" && side.reason !== "unscored_player"));
   if (missing) issues.push({ code: "missing_projection", message: "Some players lack a projection for a scored category; affected totals are withheld.", blocking: true });
   const complete = !issues.some(issue => issue.blocking);
   const horizonGames = horizons.size === 1 ? [...horizons][0] : null;
+  const qualifications = new Map(all.map(record => [record.identity.playerId, forecastQualification(record)]));
+  const experimental = [...qualifications.values()].some(item => item.status === "experimental");
   const summary = !complete ? "Comparison incomplete: no result is shown until the issues above are resolved."
-    : input.scoring.mode === "categories" ? `Category vectors over each player's next ${horizonGames} scheduled team games. No overall winner without a defined league utility.`
-      : `Raw projected production over each player's next ${horizonGames} scheduled team games: the receive side is ${rows[0].net! >= 0 ? "ahead" : "behind"} by ${Math.abs(rows[0].net!).toFixed(2)} fantasy points. Offer scenario only; not roster-aware and not proof the other manager accepts.`;
+    : (experimental ? "Experimental forecast. " : "") + (input.scoring.mode === "categories" ? `Category vectors over each player's next ${horizonGames} scheduled team games. No overall winner without a defined league utility.`
+      : `Raw projected production over each player's next ${horizonGames} scheduled team games: the receive side is ${rows[0].net! >= 0 ? "ahead" : "behind"} by ${Math.abs(rows[0].net!).toFixed(2)} fantasy points. Offer scenario only; not roster-aware and not proof the other manager accepts.`);
   return {
-    issues, complete, horizonGames,
+    issues, complete, horizonGames, experimental,
     players: [...give.map(record => ["give", record] as const), ...receive.map(record => ["receive", record] as const)].map(([side, record]) => ({
       playerId: record.identity.playerId, side, name: record.identity.name, modelClass: record.identity.modelClass,
-      startDate: record.horizon.startDate, endDate: record.horizon.endDate, scheduledGames: record.horizon.scheduledGames })),
+      startDate: record.horizon.startDate, endDate: record.horizon.endDate, scheduledGames: record.horizon.scheduledGames,
+      qualification: qualifications.get(record.identity.playerId)!, expectedAppearances: record.horizon.expectedAppearances, expectedStarts: record.horizon.expectedStarts })),
     rows, summary,
   };
 }

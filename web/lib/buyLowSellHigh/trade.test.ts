@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { InterpretationRecord } from "lib/skoElement/contract";
 import { FIXTURE_CONFIG, FIXTURE_PLAYERS, fixtureRecords } from "lib/skoElement/fixtures";
 import { interpretPlayer } from "lib/skoElement/interpret";
-import { compareTrade, type TradeScoring } from "./trade";
+import { compareTrade, FHFH_STANDARD_SCORING, forecastQualification, playerPointsTotal, type TradeScoring } from "./trade";
 
 const records = fixtureRecords(10);
 const byId = (list: InterpretationRecord[], id: string) => list.find(record => record.identity.playerId === id)!;
@@ -89,5 +89,43 @@ describe("trade validation", () => {
     expect(issueCodes(compareTrade({ give: ["fx-f5"], receive: ["fx-f1"], scoring: points }, [byId(records, "fx-f5"), expired]))).toContain("expired_forecast");
     const partial = compareTrade({ give: ["fx-f8"], receive: ["fx-f5"], scoring: points }, records);
     expect(partial.complete).toBe(true);
+  });
+});
+
+describe("league scoring and forecast labelling", () => {
+  it("defaults to FHFH Standard on FORGE targets", () => {
+    const result = compareTrade({ give: ["fx-f5"], receive: ["fx-d1"], scoring: FHFH_STANDARD_SCORING }, records);
+    const fp = (id: string) => 3 * total(id, "GOALS") + 2 * total(id, "ASSISTS") + total(id, "PP_POINTS")
+      + 0.2 * total(id, "SHOTS_ON_GOAL") + 0.2 * total(id, "HITS") + 0.25 * total(id, "BLOCKED_SHOTS");
+    expect(result.rows[0].give.value).toBeCloseTo(fp("fx-f5"), 12);
+    expect(result.rows[0].receive.value).toBeCloseTo(fp("fx-d1"), 12);
+  });
+
+  it("withholds a goalie under skater-only scoring instead of counting zero points", () => {
+    const result = compareTrade({ give: ["fx-g1"], receive: ["fx-f1"], scoring: FHFH_STANDARD_SCORING }, records);
+    expect(issueCodes(result)).toEqual(["unscored_player"]);
+    expect(result.rows[0].give).toMatchObject({ value: null, reason: "unscored_player", missingPlayerIds: ["fx-g1"] });
+    expect(result.complete).toBe(false);
+    expect(playerPointsTotal(byId(records, "fx-g1"), FHFH_STANDARD_SCORING).value).toBeNull();
+  });
+
+  it("labels fixture forecasts experimental, short horizons unavailable and an issued current forecast qualified", () => {
+    expect(forecastQualification(byId(records, "fx-f1"))).toMatchObject({ status: "experimental" });
+    expect(forecastQualification(byId(fixtureRecords(20), "fx-f3"))).toEqual({ status: "unavailable", reasons: ["Only 14 of 20 scheduled team games are covered"] });
+    const issued = { ...byId(records, "fx-f1"), fixture: false };
+    expect(forecastQualification(issued)).toEqual({ status: "qualified", reasons: [] });
+    expect(forecastQualification({ ...issued, freshness: { ...issued.freshness, forecastStatus: "unknown" } }).status).toBe("experimental");
+  });
+
+  it("carries qualification and participation assumptions per player and marks the comparison experimental", () => {
+    const result = compareTrade({ give: ["fx-f5"], receive: ["fx-f1"], scoring: FHFH_STANDARD_SCORING }, records);
+    expect(result.experimental).toBe(true);
+    expect(result.summary).toMatch(/^Experimental forecast\. Raw projected production/);
+    const f1 = result.players.find(player => player.playerId === "fx-f1")!;
+    expect(f1.qualification.status).toBe("experimental");
+    expect(f1.expectedAppearances).toBeCloseTo(10 * 0.95, 12);
+    const issued = compareTrade({ give: ["fx-f5"], receive: ["fx-f1"], scoring: FHFH_STANDARD_SCORING }, records.map(record => ({ ...record, fixture: false })));
+    expect(issued.experimental).toBe(false);
+    expect(issued.summary).toMatch(/^Raw projected production/);
   });
 });
