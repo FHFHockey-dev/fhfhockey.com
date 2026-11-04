@@ -105,19 +105,19 @@ $arrow-color: v.$text-color-secondary; // Use theme variable for arrow color
 
 // Highlight class for the LEFT dropdown
 .selectHighlightedLeft {
-  border-color: #07aae2;
-  background-color: rgba(#07aae2, 0.1);
+  border-color: s.$compare-left;
+  background-color: rgba(s.$compare-left, 0.1);
   &:focus-visible {
-    box-shadow: 0 0 0 2px rgba(#07aae2, 0.5);
+    box-shadow: 0 0 0 2px rgba(s.$compare-left, 0.5);
   }
 }
 
 // Highlight class for the RIGHT dropdown
 .selectHighlightedRight {
-  border-color: #ffcd56;
-  background-color: rgba(#ffcd56, 0.1);
+  border-color: s.$compare-right;
+  background-color: rgba(s.$compare-right, 0.1);
   &:focus-visible {
-    box-shadow: 0 0 0 2px rgba(#ffcd56, 0.5);
+    box-shadow: 0 0 0 2px rgba(s.$compare-right, 0.5);
   }
 }
 

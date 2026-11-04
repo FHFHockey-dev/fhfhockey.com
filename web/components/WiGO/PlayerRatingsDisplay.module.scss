@@ -89,7 +89,7 @@
   flex-direction: column; // Stack boxes vertically by default
   flex-grow: 1; // Allow this container to fill the remaining space
   padding: 3px;
-  gap: 3px;
+  gap: 4px;
   justify-content: space-evenly; // Distribute space evenly vertically
   min-height: 0; // Allow flex container to shrink properly if needed
 }
@@ -158,7 +158,7 @@
   min-height: 100px;
   color: s.$ink-muted;
   font-style: italic;
-  padding: 15px;
+  padding: 16px;
   box-sizing: border-box;
   text-align: center;
 }
@@ -213,8 +213,8 @@
 
 // One-page dashboard: a 3×3 matrix (Offense / Defense / Overall × three strengths); each cell is a gauge.
 :global(.wigo-one-page) {
-  .ratingsRoot { display: flex; flex-direction: column; gap: 3px; height: 100%; min-height: 0; overflow: visible; padding: 0; }
-  .ratingSection { flex: 1; min-height: 0; display: grid; grid-template-columns: 54px repeat(3, minmax(0, 1fr)); gap: 3px; overflow: visible; border: 0; }
+  .ratingsRoot { display: flex; flex-direction: column; gap: 4px; height: 100%; min-height: 0; overflow: visible; padding: 0; }
+  .ratingSection { flex: 1; min-height: 0; display: grid; grid-template-columns: 54px repeat(3, minmax(0, 1fr)); gap: 4px; overflow: visible; border: 0; }
   .ratingTitle { align-self: center; margin: 0; padding: 0; border: 0; background: none; color: s.$ink-muted; font-size: s.$text-12; font-weight: s.$weight-bold; letter-spacing: 0; text-align: left; text-transform: none; }
   .ratingsBoxes { display: contents; }
   .ratingBox {
