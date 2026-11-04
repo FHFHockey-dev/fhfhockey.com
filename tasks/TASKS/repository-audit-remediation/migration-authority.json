@@ -897,10 +897,10 @@
       "path": "supabase/migrations/20261020224500_data_api_explicit_default_privileges.sql",
       "sha256": "60e0ee8f6004d07182c6999fbe34534a2cceb9530cafbd1a0bb868b0fd5ff51c",
       "sourceStatus": "source-authorized",
-      "deploymentState": "pending",
+      "deploymentState": "applied",
       "migrationClass": "security",
-      "rolloutGate": "Drafted 2026-10-20 for ticket D4 (Supabase stops auto-granting new public objects on 2026-10-30). Revokes the baseline's replayable ALTER DEFAULT PRIVILEGES for postgres in public (ALL on tables, sequences and functions to anon, authenticated and service_role) and postgres's global PUBLIC EXECUTE default on new functions. Existing objects are unchanged; every later migration must grant explicitly (the IFTTT SQL6-SQL8 drafts already do). Apply before or with 20261020224600; hosted apply needs TJ's separate explicit approval and no migration command was run.",
-      "stateEvidence": "Local source only; no hosted ledger or apply receipt. Disposable PostgreSQL 17.11 Unix-socket replay of the full ledger chain with Supabase role/extension stand-ins: tasks/artifacts/d4-grants-2026-10-20/ (harness, receipts). Takes order 89 because authority orders must be contiguous, so the IFTTT SQL6-SQL8 drafts noted on orders 87-88 move to 91-93."
+      "rolloutGate": "Drafted 2026-10-20 for ticket D4 (Supabase stops auto-granting new public objects on 2026-10-30). Revokes the baseline's replayable ALTER DEFAULT PRIVILEGES for postgres in public (ALL on tables, sequences and functions to anon, authenticated and service_role) and postgres's global PUBLIC EXECUTE default on new functions. Existing objects are unchanged; every later migration must grant explicitly (the IFTTT SQL6-SQL8 drafts already do). Apply before or with 20261020224600; applied 2026-11-01 with TJ's explicit approval, as step 1 of the NST goalie writer rollout packet.",
+      "stateEvidence": "Production schema_migrations version 20261101183548 name data_api_explicit_default_privileges (the apply tool generated the version; the repository file keeps 20261020224500). Applied 2026-11-01 18:35 UTC by Codex; readback 18:36 UTC found postgres public defaults no longer auto-grant and existing public ACLs unchanged. Readback 2026-11-04 UTC: the ledger statement matches this file byte for byte (md5 fe541ddbab9c39041dd8eee7ebafab29, 1,934 bytes). Receipt: tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/default-privilege-apply-20261101/RESULT.md. Local replay: tasks/artifacts/d4-grants-2026-10-20/."
     },
     {
       "order": 90,
