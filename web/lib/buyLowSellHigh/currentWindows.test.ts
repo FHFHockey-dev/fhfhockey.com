@@ -217,6 +217,43 @@ describe("currentWindows arm C (weighted personal baseline)", () => {
     expect(p.reference).toMatchObject({ personalN: 2, historyStatus: "personal", insufficientHistory: true });
     expect(p.reference.seasons).toEqual([20262027]);
   });
+  describe("opportunity (decision 3)", () => {
+    // PP points never exceed goals plus assists, so the PP split is defined for every game.
+    const consistent = (rows: DevRow[]) => rows.map(r => ({ ...r, pp_points: Math.min(r.pp_points as number, (r.goals as number) + (r.assists as number)) }));
+    const rows = consistent([...history, ...later(10, 30)]);
+    const runPp = (windowPp: (i: number) => number | null) => assembleProfiles({ history: rows, blocks: blocks(), arm: "C_weighted_personal_baseline", eventThroughDate: "2026-10-07",
+      current: qualifyCurrentResearchInputs(request(10, 7, (r, i) => {
+        r.counts.pp_points = Math.min(r.counts.pp_points!, r.counts.goals! + r.counts.assists!);
+        if (i >= 2) { r.pp_toi_per_game = windowPp(i); r.es_toi_per_game = windowPp(i) === null ? null : 960 - windowPp(i)!; }
+      }), null).records });
+
+    it("shows a PP promotion in the adjusted comparison, not in the per-game baseline", async () => {
+      const [steady] = await runPp(() => 120), [promoted] = await runPp(() => 400);
+      const g = (p: typeof steady) => p.opportunity.tracks[1];
+      expect(promoted.opportunity.changes.pp.delta).toBeGreaterThan(0);
+      expect(g(promoted).adjusted.available).toBe(true);
+      // Same games and baseline: the per-game expectation is unchanged, the adjusted one rises with PP time.
+      expect(g(promoted).perGame.expected).toBe(g(steady).perGame.expected);
+      expect(g(promoted).adjusted.expected!).toBeGreaterThan(g(steady).adjusted.expected!);
+      expect(promoted.opportunity.headline).toBe(promoted.opportunity.tracks[0].assessment);
+      expect(promoted.opportunity).toMatchObject({ retrospective: true, forecast: false, trusted: false, calibratedProbability: null });
+    });
+    it("leaves the adjusted comparison unavailable when a window game has no PP time", async () => {
+      const [p] = await runPp(i => (i === 4 ? null : 120));
+      expect(p.opportunity.tracks[0].adjusted).toMatchObject({ available: false, reason: "window_pp_toi_unavailable", expected: null, gap: null });
+      expect(p.opportunity.tracks[0].perGame.available).toBe(true);
+      expect(p.opportunity.changes.pp.current).toBeNull();
+    });
+    it("keeps the window and later games out of the opportunity history", async () => {
+      const [steady] = await runPp(() => 120), [promoted] = await runPp(() => 400);
+      // The baseline PP time is the weighted mean of pre-window games only: 2024-25 and 2023-24 at
+      // 100 s (history fixture) and two 2026-27 games at 120 s, whatever the window's PP time is.
+      const expected = (0.3 * 30 * 100 + 0.1 * 50 * 100 + 1.0 * 2 * 120) / (0.3 * 30 + 0.1 * 50 + 1.0 * 2);
+      expect(promoted.opportunity.changes.pp.baseline).toBeCloseTo(expected, 9);
+      expect(steady.opportunity.changes.pp.baseline).toBe(promoted.opportunity.changes.pp.baseline);
+      expect(promoted.opportunity.changes.pp.current).toBe(400);
+    });
+  });
   it("reports confirmed zero history only when every prior season is covered", async () => {
     const pre = (pid: number) => assembleProfiles({ current: qualifyCurrentResearchInputs(request(pid, 5), null).records, history, blocks: blocks(),
       arm: "C_weighted_personal_baseline", eventThroughDate: "2026-10-07", coveredSeasons: [20252026, 20242025, 20232024] });

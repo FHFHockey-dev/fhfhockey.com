@@ -12,6 +12,7 @@
 import type { qualifyCurrentResearchInputs } from "./currentInput";
 import { fitProductionPrior, gameWeight, INSUFFICIENT_HISTORY_GAMES, outcomes, priorSeasons, scoreProduction, selectReference, summarizeHistory, weightedBaseline, weightedHistorySummary,
   type HistoryStatus, type HistorySummary, type ProductionAxisRecord, type WeightedBaseline } from "./productionReference";
+import { compareOpportunity, pooledCohort, summarizeOpportunityHistory, type OpportunityGame, type OpportunityResult } from "./opportunity";
 import { explainSupportGap, fitPrior, scoreAndAttribute, type ProductionAxis, type Provenance, type ScoringModel, type SupportGapExplanation, type SupportGapResult, type TrainingBlock, type WindowEvidence } from "./supportGap";
 
 export const CURRENT_WINDOWS_VERSION = "blsh-current-windows-dry-run-v5";
@@ -33,6 +34,8 @@ export type Slot = {
   id: number; playerId: number; season: number; date: string; source: "development" | "current"; position: "F" | "D" | null; team: string | null;
   gamesPlayed: number | null; seconds: number | null; esSeconds: number | null; ppSeconds: number | null;
   tracks: (number | null)[]; goals: number | null; assists: number | null; shots: number | null;
+  /** Power-play points; absent (older callers' synthetic slots) is unavailable, like null. */
+  ppPoints?: number | null;
   ixG: number | null; onIceXGF: number | null; onIceXGA: number | null; onIceGF: number | null; reasons: string[];
   /** Known revision of this game's six on-ice goal fields: raw WGO, official-evidence correction
    * (development research view), official-receipt research overlay (current season) or unresolved. */
@@ -53,6 +56,9 @@ export type Profile = {
     historyStatus: HistoryStatus; missingSeasons: number[]; insufficientHistory: boolean; baseline: WeightedBaseline | null };
   /** Per-game and per-60 window production, each against the reference in the same unit. */
   comparisons: UnitComparison[];
+  /** Decision 3: per-game and opportunity-adjusted comparisons over the same reference games and
+   * weights as the baseline. Provisional context only; it does not gate or reorder the lists. */
+  opportunity: OpportunityResult;
   production: ProductionAxisRecord; result: SupportGapResult; explanation: SupportGapExplanation; coverage: { component: string; reason: string; count: number }[];
   exploratory: true;
 };
@@ -88,6 +94,7 @@ export function devSlot(r: DevRow): Slot {
     id: r.id, playerId: r.player_id, season: r.season_id, date: r.date, source: "development", position: position(r.position_code), team: r.team_abbrev,
     gamesPlayed: r.games_played, seconds, esSeconds: measured(r.es_toi_per_game, "es_toi", reasons), ppSeconds: measured(r.pp_toi_per_game, "pp_toi", reasons),
     tracks, goals: measured(r.goals, "goals", reasons), assists: measured(r.assists, "assists", reasons), shots: measured(r.shots, "shots", reasons),
+    ppPoints: measured(r.pp_points, "pp_points", reasons),
     ixG: ixGOk ? ind!.nst_ixg : null, onIceXGF: onIceOk ? oi!.xgf : null, onIceXGA: onIceOk ? oi!.xga : null, onIceGF: onIceGoalsFor(r, reasons), reasons,
     onIceGoalsRevision: r._research_correction_status === "not_target_raw_complete" || r._research_correction_status === "wgo_db_raw" ? "wgo_raw" : r._research_correction_status === "evidence_corrected" ? "official_evidence_corrected" : `unresolved:${String(r._research_correction_status)}`,
   };
@@ -108,6 +115,7 @@ export function currentSlot(c: CurrentRecord): Slot {
     esSeconds: measured(rec.es_toi_per_game, "es_toi", reasons), ppSeconds: measured(rec.pp_toi_per_game, "pp_toi", reasons),
     tracks: values.map((v, i) => (trackQualified[i] ? v : null)),
     goals: measured(rec.counts.goals, "goals", reasons), assists: measured(rec.counts.assists, "assists", reasons), shots: measured(rec.counts.shots, "shots", reasons),
+    ppPoints: measured(rec.counts.pp_points, "pp_points", reasons),
     ixG: ind ? measured(ind.ixg, "ixg", reasons) : null, onIceXGF: oi ? measured(oi.xgf, "on_ice_xgf", reasons) : null, onIceXGA: oi ? measured(oi.xga, "on_ice_xga", reasons) : null,
     onIceGF: onIceGoalsFor(rec.counts as Record<string, unknown>, reasons), reasons: [...new Set(reasons)],
     onIceGoalsRevision: c.overlay.state === "applied_to_research_copy" ? "official_receipt_overlay" : "wgo_raw",
@@ -169,6 +177,8 @@ function weightedProcess(h: Slot[], season: number): { rates: (number | null)[];
   });
   return { rates: out.map(o => o.rate), shares: out.map(o => o.share) };
 }
+const opportunityGame = (s: Slot, weight: number): OpportunityGame =>
+  ({ seconds: s.seconds, ppSeconds: s.ppSeconds, tracks: s.tracks, goals: s.goals, assists: s.assists, ppPoints: s.ppPoints ?? null, weight });
 const yieldNow = () => new Promise(resolve => setTimeout(resolve, 0));
 /** Build one research profile per captured current-season player. */
 export async function assembleProfiles(input: AssembleInput): Promise<Profile[]> {
@@ -180,13 +190,14 @@ export async function assembleProfiles(input: AssembleInput): Promise<Profile[]>
   dev.forEach(rows => rows.sort(order)); current.forEach(rows => rows.sort(order));
 
   // Donors: development players with a complete, single-position final 50 games (prior-only by construction).
-  const donors: HistorySummary[] = [];
+  // Their games also form the opportunity cohort's pooled PP rates, by position.
+  const donors: HistorySummary[] = [], donorGames = new Map<"F" | "D", { playerId: number; game: OpportunityGame }[]>([["F", []], ["D", []]]);
   for (const [pid, rows] of dev) {
     await yieldNow();
     const h = rows.slice(-50), positions = new Set(h.map(r => r.position));
     if (h.length !== 50 || positions.size !== 1 || positions.has(null)) continue;
     const [s] = historySummary(h, pid, [...positions][0], "2026-07-01", true);
-    if (s) donors.push(s);
+    if (s) { donors.push(s); donorGames.get(s.position)!.push(...h.map(g => ({ playerId: pid, game: opportunityGame(g, 1) }))); }
   }
 
   // Fit only on qualified, position-matched blocks that end before the window (v1 `prior_blocks`).
@@ -246,13 +257,17 @@ export async function assembleProfiles(input: AssembleInput): Promise<Profile[]>
       { unit: "per_game", window: y.map(v => (v === null || !games ? null : v / games)), reference: personal ? rates.perGame : [null, null, null], delta: [] },
       { unit: "per_60", window: y.map(v => per60(v, seconds)), reference: personal ? rates.per60 : [null, null, null], delta: [] },
     ].map(c => ({ ...c, unit: c.unit as UnitComparison["unit"], delta: c.window.map((v, j) => (v === null || c.reference[j] === null ? null : v - (c.reference[j] as number))) }));
+    // Same games and weights as the baseline; the target is left out of the cohort, as in `fitProductionPrior`.
+    const cohort = pos ? pooledCohort(donorGames.get(pos)!.filter(d => d.playerId !== pid).map(d => d.game)) : null;
+    const opportunityHistory = summarizeOpportunityHistory(h.map(s => opportunityGame(s, baseline ? (gameWeight(season, s.season) as number) : 1)), { cohort });
+    const opportunity = compareOpportunity(opportunityHistory, { games: w.length, seconds, ppSeconds: wEvidence.ppSeconds, observed: production.raw_observed as (number | null)[] }, { headlineTrack: 0 });
     profiles.push({
       playerId: pid, name: input.names?.get(pid) ?? null, team: w[w.length - 1].team, position: pos, arm: input.arm,
       window: { sourceIds: w.map(s => s.id), dates: w.map(s => s.date), seconds, appearances: w.length, spanDays: days(w[0].date, w[w.length - 1].date), lastDateAgeDays: lastAge, fresh },
       reference: { sourceIds: h.map(s => s.id), dates: h.map(s => s.date), personalN, reason: personalReason, seasons,
         ageDays: h.length ? days(h[h.length - 1].date, before) : null, staleDevelopmentReference: h.some(s => s.source === "development"),
         historyStatus, missingSeasons, insufficientHistory: personalN < INSUFFICIENT_HISTORY_GAMES, baseline },
-      comparisons, production, result,
+      comparisons, opportunity, production, result,
       explanation: explainSupportGap(result, { current: wEvidence, reference: hEvidence,
         coverage: [{ component: "history_process_gate", state: "estimated", reason: "dry_run_simplified_gate_not_sealed_transport" }] }),
       coverage: [...coverageCounts].map(([k, count]) => { const [component, reason] = k.split("|"); return { component, reason, count }; }),
