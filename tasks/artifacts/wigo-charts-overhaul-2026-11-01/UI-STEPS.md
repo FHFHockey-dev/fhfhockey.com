@@ -170,3 +170,48 @@ One pass at a time (PLAN.md section 7). Fictional offline fixture on an isolated
 - **Checks:** vitest 55 files / 450 passed (WiGO, radar, hooks, fetchers); e2e 13/13; CSS pure check OK; eslint clean.
 - **Screens:** `screens/u12-band-help-1280.png`, `u12-1280x800.png`, `u12-390x844-percentiles.png`.
 - **TJ verdict:** approved 2026-11-03 (pop-up).
+
+## Post-ship pass A: type and copy (2026-11-03)
+- Findings #1–4, #7, #9 (visible rating headers), #13 from POST-SHIP-CRITIQUE.md.
+- Per-game numbers: valid `"Roboto Condensed", sans-serif`, tabular figures, no 0.15em tracking. Drivers: same family on phone (was Martian Mono). Phone rating headers: sentence case, no tracking. Phone radar context 11 px under its 12 px title.
+- Fallback warning uses season labels ("2024–25", "2025–26"). Cardio row sits under 0 Pts as a muted ↳ sub-row.
+- Checks: 5 test files / 39 tests pass; CSS pure check OK; wigo-one-page e2e 13/13 on :3150.
+- Screens: pa-1280x800.png, pa-390x844-{overview,percentiles}.png; crops pa-phone-radar-header.png, pa-phone-pergame.png, pa-phone-ratings-drivers.png, pa-1280-consistency.png (compare ps-crit-*).
+
+## Post-ship pass A: verdict
+- TJ approved 2026-11-03 (pop-up). Commit 73d4f4907.
+
+## Post-ship pass B: ratings emphasis and order (2026-11-03)
+- Findings #6 and #8. Phone rating boxes keep the rating colour on the value only; outlines are the neutral secondary border. Offense, Defense, Overall order now applies on every layout (moved the `order` rule from the one-page scope to the base `.ratingSection`).
+- Desktop unchanged (crop pb-1280-ratings.png vs ps-1280-ratings.png).
+- Checks: PlayerRatingsDisplay tests 7/7; CSS pure check OK; wigo-one-page e2e 13/13.
+- Screens: pb-1280x800.png, pb-390x844-percentiles.png; crops pb-phone-ratings.png, pb-1280-ratings.png.
+- TJ (pop-up): "The ratings should have a more prominent visual component element. It is meant as a visualization. Bar charts, gauges, something other than a plain simple small bar."
+
+## Post-ship pass B, round 2: rating gauges (2026-11-03)
+- Each of the nine ratings is now a 0–100 semicircle gauge: neutral track, fill in the existing rating colour, a surface-coloured notch at 50 (cohort middle), value in the bowl, label under it. `PlayerRatingsDisplay.tsx` renders the nine boxes through one `renderBox` helper; the 2 px underline bar and the per-box coloured borders are gone.
+- Phone: boxes 84 px tall with a neutral hairline; ratings card 372 px (was 260 px) so all three rows show. Order stays Offense, Defense, Overall everywhere.
+- Checks: PlayerRatingsDisplay tests 7/7; CSS pure check OK; wigo-one-page e2e 13/13.
+- Screens: pb2-1280-ratings.png, pb2-1440-ratings.png, pb2-1920-ratings.png, pb2-phone-ratings.png; full pages pb2-1280x800.png, pb2-1920x1080.png, pb2-390x844-percentiles.png.
+- TJ approved 2026-11-03 (pop-up). Commit 765ac80a8.
+
+## Post-ship pass C: large-screen fill (2026-11-03)
+- Finding #5. In the 1800w × 1000h tier only: identity card headshot 96×112 (was 52×64), name 28 px, team and role 14 px, biography values 16 px with 12 px labels; consistency doughnut column 46% with 14 px legend rows; driver cards get padding, a faint surface step, 16 px titles and 14 px values and bands, so the drivers panel has no mid-panel gap.
+- Smaller tiers unchanged.
+- Checks: CSS pure check OK; wigo-one-page e2e 13/13 (includes the 1920×1080 one-screen fit); 1800×1000 capture shows no page scroll.
+- Screens: pc-1920x1080.png, pc-1800x1000.png; crop pc-1920-top.png (before: pc0-1920-top.png).
+- TJ approved 2026-11-03 (pop-up). Commit 7f8ff084b.
+
+## Post-ship pass D: cleanup (2026-11-03)
+- Findings #10–12, #14.
+- Dead CSS removed from `styles/wigoCharts.module.scss` (386 lines: `.statsTable*`, `.chartRowExpanded`, `.combinedStatsTableContainer`, `.rateStatBarPercentilesComponent`, `.timeframeComparisonWrapper`, including the legacy Lucida Sans chart-title rules nested in `.statsTable`). Deleted the unimported `components/WiGO/wigoCharts.module.scss`. `.statsTableNote` renamed `.bandNote`.
+- Tokens: compare colours are `s.$compare-left` / `s.$compare-right` in `components/WiGO/_scale.scss` (same hex), used by the band and TimeframeComparison. Greys now use site tokens (#3a3a3a and #444 → `v.$border-primary` #404040, #555 → `v.$color-grey-dark` #505050, #777 → `v.$color-grey-medium` #808080), so those shift by a few percent of lightness.
+- Spacing: block gaps and margins moved to the 4 px grid (3 and 5 → 4, 15 → 16, 25 → 24). Cell paddings inside the dense tables stay at 3 px to protect the 1280×800 fit.
+- Copy: radar sample line drops the middle dot ("20 GP vs 420 skaters with 5+ GP"). The other dot-joined meta lines stay; they separate three facts in one short line.
+- Checks: WiGO and radar vitest 26 files / 207 tests pass; CSS pure check OK; wigo-one-page e2e 13/13. Pixel diff against the previous pass: 0.80% of pixels at 1280×800, 0.58% at 1920×1080; phone pages 1 px shorter.
+- Screens: pd-1280x800.png, pd-1920x1080.png, pd-390x844-{overview,percentiles,comparison}.png; stacked before/after pd-compare-1280.png, pd-compare-1920.png.
+- TJ approved 2026-11-03 (pop-up). Commit 7f8ff084b.
+- TJ approved 2026-11-03 (pop-up). Commit 1b3b12b5c.
+
+## Post-ship closing check (2026-11-03)
+- Axe MCP server failed to connect this session, so `tools/axe-run.cjs` (axe-core 4.11, WCAG 2.0/2.1 A and AA) ran locally on the fixture page: 0 violations on desktop 1280 and all four phone tabs. Colour contrast stays "incomplete" over gradients and tints (71 desktop, 242 phone comparison), as before. Not run: the Axe MCP itself, a screen reader, real data.

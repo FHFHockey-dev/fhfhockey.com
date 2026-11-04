@@ -24,3 +24,8 @@
 - **Not committed:** the artifacts folder (planning thread's PLAN/audits plus my UI-STEPS, tools, screens) is untracked; CLAUDE-LEASES.json edit uncommitted (file was dirty from others). Lease WIGO-OVERHAUL still active (production steps pending).
 - **Next:** TJ's production steps P-1..P-11 (PLAN section 6). Nothing pushed or deployed.
 - **Follow-ups:** dead `.statsTable*` CSS; left reference line does not re-enable on compare change; 11/12/13 chart tick tier; Game Score axis range on real data.
+
+## 2026-11-03 post-ship design pass (from the top session, TJ-approved)
+- Scope: critique the shipped page with frontend-design, design-critique, design-system and unslop (polish mode); findings to POST-SHIP-CRITIQUE.md; TJ picks fixes by pop-up; UI-STEPS protocol per pass; axe rerun at the end.
+- Server: :3150 fixture, wrapper pid 40478, listener pid 40484 (stop by exact PID). Base HEAD a0d2a7ef4.
+- Post-ship result: POST-SHIP-CRITIQUE.md (14 findings). TJ approved all four passes by pop-up: A type and copy 73d4f4907; B rating gauges 765ac80a8 (round 2 after TJ asked for a real visual); C large-screen fill 7f8ff084b; D cleanup 1b3b12b5c. Local axe-core 0 violations; e2e 13/13 after each pass. Server :3150 stopped by PID (40484, 40478). Nothing pushed.
