@@ -138,6 +138,95 @@ export function summarizeHistory(playerId: number, position: string, values: num
   return [result, null];
 }
 
+/** TJ decision 1 (2026-11-03): recency-weighted personal baseline. Provisional weights, frozen
+ * 2026-11-04 for the 2025-26 reserve test (tasks/artifacts/blsh-baseline-2026-11-04/REPORT.md).
+ *
+ * - Lookback: the three completed seasons before the evaluated season, weighted 0.6/0.3/0.1
+ *   (most recent first), plus current-season games strictly before the evaluated window.
+ * - Current-season blend: pre-window games of the evaluated season count `CURRENT_SEASON_WEIGHT`
+ *   (1.0) per game, against 0.6 for last season's. TJ chose 1.0 from the 2023-24/2024-25
+ *   development evaluation, where it beat 0.6 on every track.
+ * - Exposure: weights apply per unit of exposure, so rate = sum(w * total) / sum(w * exposure).
+ *   Per-game rates use games as exposure and per-60 rates use TOI, each over the same games.
+ *   Three full seasons give shares of 0.6/0.3/0.1; a short season counts in proportion to its games.
+ * - Unknown is never zero: a game with unknown GP, TOI or headline (FHFH) track is excluded and
+ *   counted as unusable; a track missing in a usable game is left out of that track's rate only;
+ *   a lookback season the history source does not cover is reported as missing, not as no games.
+ */
+export const BASELINE_VERSION = "weighted-personal-baseline-v1";
+export const PRIOR_SEASON_WEIGHTS = [0.6, 0.3, 0.1] as const;
+export const CURRENT_SEASON_WEIGHT = 1.0;
+/** Decision 1's provisional "about 20 personal games" cutoff, applied by the lists, not here. */
+export const INSUFFICIENT_HISTORY_GAMES = 20;
+
+export type BaselineGame = { id: number; season: number; date: string; gamesPlayed: number | null; seconds: number | null; tracks: (number | null)[] };
+/** personal: at least one usable game. confirmed_none: no lookback games at all and every lookback
+ * season covered by the source. unknown: anything else (missing seasons or only unusable games). */
+export type HistoryStatus = "personal" | "confirmed_none" | "unknown";
+export type WeightedBaseline = {
+  version: typeof BASELINE_VERSION; season: number; before: string; perGame: (number | null)[]; per60: (number | null)[];
+  games: number; trackGames: number[]; seconds: number; effectiveSeconds: number | null; unusableGames: number;
+  seasons: { season: number; weight: number; covered: boolean; games: number; seconds: number; share: number }[];
+  missingSeasons: number[]; status: HistoryStatus; insufficient: boolean; sourceIds: number[]; dates: string[];
+};
+export type BaselineWeights = { prior: readonly number[]; current: number };
+const DEFAULT_WEIGHTS: BaselineWeights = { prior: PRIOR_SEASON_WEIGHTS, current: CURRENT_SEASON_WEIGHT };
+
+const startYear = (season: number) => Math.floor(season / 10000);
+const seasonAt = (season: number, back: number) => (startYear(season) - back) * 10000 + startYear(season) - back + 1;
+/** The completed seasons a baseline for `season` looks back to, most recent first. */
+export const priorSeasons = (season: number, weights: BaselineWeights = DEFAULT_WEIGHTS) => weights.prior.map((_, k) => seasonAt(season, k + 1));
+/** Per-exposure weight of a game from `gameSeason` in a baseline for `season`; null outside the lookback. */
+export function gameWeight(season: number, gameSeason: number, weights: BaselineWeights = DEFAULT_WEIGHTS): number | null {
+  const back = startYear(season) - startYear(gameSeason);
+  return back === 0 ? weights.current : back > 0 && back <= weights.prior.length ? weights.prior[back - 1] : null;
+}
+const usableGame = (g: BaselineGame) => g.gamesPlayed === 1 && finite(g.seconds) && g.seconds > 0 && finite(g.tracks[0]);
+
+export function weightedBaseline(games: BaselineGame[], season: number, before: string, coveredSeasons: number[], weights: BaselineWeights = DEFAULT_WEIGHTS): WeightedBaseline {
+  // The window and every later game are excluded by construction, whatever the caller passes.
+  const lookback = games.filter(g => g.date < before && gameWeight(season, g.season, weights) !== null)
+    .sort((a, b) => a.date.localeCompare(b.date) || a.id - b.id);
+  const weight = (g: BaselineGame) => gameWeight(season, g.season, weights) as number;
+  const used = lookback.filter(usableGame);
+  const sum = (rows: BaselineGame[], f: (g: BaselineGame) => number) => rows.reduce((s, g) => s + weight(g) * f(g), 0);
+  const perGame: (number | null)[] = [], per60: (number | null)[] = [], trackGames: number[] = [];
+  for (let j = 0; j < 3; j++) {
+    const rows = used.filter(g => finite(g.tracks[j]));
+    const y = sum(rows, g => g.tracks[j] as number), n = sum(rows, () => 1), t = sum(rows, g => g.seconds as number);
+    trackGames.push(rows.length);
+    perGame.push(n > 0 ? y / n : null);
+    per60.push(t > 0 ? (3600 * y) / t : null);
+  }
+  const wt = sum(used, g => g.seconds as number), w2t = used.reduce((s, g) => s + weight(g) ** 2 * (g.seconds as number), 0);
+  const totalGameWeight = sum(used, () => 1);
+  const seasons = weights.prior.map((w, k) => ({ season: seasonAt(season, k + 1), weight: w })).concat([{ season, weight: weights.current }])
+    .map(({ season: s, weight: w }) => {
+      const rows = used.filter(g => g.season === s);
+      return { season: s, weight: w, covered: s === season || coveredSeasons.includes(s), games: rows.length,
+        seconds: rows.reduce((a, g) => a + (g.seconds as number), 0), share: totalGameWeight > 0 ? (w * rows.length) / totalGameWeight : 0 };
+    });
+  const missingSeasons = seasons.filter(s => !s.covered).map(s => s.season);
+  const unusableGames = lookback.length - used.length;
+  return {
+    version: BASELINE_VERSION, season, before, perGame, per60, games: used.length, trackGames, seconds: used.reduce((a, g) => a + (g.seconds as number), 0),
+    // Exposure-weighted sums lose information: the scorer's shrinkage uses Kish-style effective seconds.
+    effectiveSeconds: w2t > 0 ? wt ** 2 / w2t : null, unusableGames, seasons, missingSeasons,
+    status: used.length > 0 ? "personal" : !lookback.length && !missingSeasons.length ? "confirmed_none" : "unknown",
+    insufficient: used.length < INSUFFICIENT_HISTORY_GAMES, sourceIds: used.map(g => g.id), dates: used.map(g => g.date),
+  };
+}
+
+/** The scorer's personal summary from a weighted baseline: per-second rates and effective seconds. */
+export function weightedHistorySummary(b: WeightedBaseline, playerId: number, position: string): [HistorySummary | null, string | null] {
+  if (position !== "F" && position !== "D") return [null, "history_count_or_position"];
+  if (b.games === 0) return [null, b.status === "confirmed_none" ? "no_personal_history_cohort" : "personal_history_unknown_cohort"];
+  if (!b.per60.every(finite) || b.effectiveSeconds === null) return [null, "track_without_usable_games"];
+  const rate = (b.per60 as number[]).map(r => r / 3600);
+  if (rate[0] < 0 || rate[1] < 0) return [null, "negative_FP_or_raw_points"];
+  return [{ player_id: playerId, position, n: b.games, seconds: b.effectiveSeconds, rate, source_ids: [...b.sourceIds], start: b.dates[0], end: b.dates[b.dates.length - 1] }, null];
+}
+
 export function fitProductionPrior(donors: HistorySummary[], position: string, targetId: number, cutoff: string): [ProductionPrior | null, string | null] {
   const used = donors.filter(d => d.player_id !== targetId && d.position === position);
   if (used.some(d => d.n !== 50 || d.end >= cutoff)) throw new Error("Donor closure not prior-only/full50");

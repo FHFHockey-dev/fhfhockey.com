@@ -4,8 +4,8 @@ import { join } from "node:path";
 import { createInterface } from "node:readline";
 import { describe, expect, it } from "vitest";
 import {
-  fitProductionPrior, outcomes, personalReference, productionGap, scoreProduction, selectReference, summarizeHistory, validCovariance,
-  type HistorySummary, type ProductionPrior,
+  fitProductionPrior, gameWeight, outcomes, personalReference, priorSeasons, productionGap, scoreProduction, selectReference, summarizeHistory, validCovariance,
+  weightedBaseline, weightedHistorySummary, type BaselineGame, type HistorySummary, type ProductionPrior,
 } from "./productionReference";
 
 /** Cases ported from the frozen `test_estimator.py`. The three `exposure_gap_fixed` cases test a helper v1 does not use. */
@@ -219,4 +219,66 @@ describe.skipIf(!devHistory || !exposureDir || !existsSync(devHistory) || !exist
     expect(mismatches.slice(0, 10)).toEqual([]);
     expect(worst).toBeLessThanOrEqual(1e-9);
   }, 900_000);
+});
+
+describe("weighted personal baseline (decision 1)", () => {
+  const SEASON = 20262027, BEFORE = "2026-11-01";
+  // `n` games of season `season`, each with the given tracks and TOI.
+  const games = (season: number, n: number, tracks: (number | null)[], seconds: number | null = 1200, gp: number | null = 1): BaselineGame[] =>
+    Array.from({ length: n }, (_, i) => ({ id: season * 1000 + i, season, date: isoDay(`${Math.floor(season / 10000)}-10-10`, i), gamesPlayed: gp, seconds, tracks }));
+  const ALL = [20252026, 20242025, 20232024];
+
+  it("looks back to the three prior seasons with weights 0.6/0.3/0.1 and the current season at 1.0", () => {
+    expect(priorSeasons(SEASON)).toEqual(ALL);
+    expect([SEASON, ...ALL, 20222023].map(s => gameWeight(SEASON, s))).toEqual([1, 0.6, 0.3, 0.1, null]);
+  });
+  it("gives full seasons shares of 0.6/0.3/0.1, with per-game and per-60 rates over the same games", () => {
+    const b = weightedBaseline([...games(20252026, 82, [3, 1, 1]), ...games(20242025, 82, [2, 1, 1]), ...games(20232024, 82, [1, 1, 1], 600)], SEASON, BEFORE, ALL);
+    expect(b.seasons.map(s => [s.season, s.games, Number(s.share.toFixed(12))])).toEqual([[20252026, 82, 0.6], [20242025, 82, 0.3], [20232024, 82, 0.1], [SEASON, 0, 0]]);
+    expect(b.perGame[0]).toBeCloseTo(0.6 * 3 + 0.3 * 2 + 0.1 * 1, 12);
+    // Per-60 weights by TOI: the 600-second season counts half as much per game.
+    expect(b.per60[0]).toBeCloseTo((3600 * (0.6 * 82 * 3 + 0.3 * 82 * 2 + 0.1 * 82)) / (1200 * 82 * 0.9 + 600 * 82 * 0.1), 12);
+    expect(b.per60[1]).toBeCloseTo((3600 * 82) / (1200 * 82 * 0.9 + 600 * 82 * 0.1), 12);
+    expect(b).toMatchObject({ games: 246, status: "personal", missingSeasons: [], insufficient: false });
+  });
+  it("counts a short season in proportion to its games and blends current-season games before the window", () => {
+    const current = games(SEASON, 10, [4, 2, 2]);
+    const b = weightedBaseline([...games(20252026, 41, [2, 1, 1]), ...current], SEASON, BEFORE, ALL);
+    // 41 games at 0.6 and 10 current games at 1.0 per game.
+    expect(b.perGame[0]).toBeCloseTo((0.6 * 41 * 2 + 10 * 4) / (0.6 * 41 + 10), 12);
+    expect(b.seasons.find(s => s.season === SEASON)!.share).toBeCloseTo(10 / (0.6 * 41 + 10), 12);
+  });
+  it("excludes the window, later games and seasons beyond the lookback", () => {
+    const window = { id: 1, season: SEASON, date: BEFORE, gamesPlayed: 1, seconds: 1200, tracks: [99, 99, 99] };
+    const later = { ...window, id: 2, date: "2026-12-01" };
+    const b = weightedBaseline([...games(20252026, 30, [1, 1, 1]), ...games(20222023, 30, [50, 50, 50]), window, later], SEASON, BEFORE, ALL);
+    expect(b.games).toBe(30);
+    expect(b.perGame).toEqual([1, 1, 1]);
+    expect(b.dates.every(d => d < BEFORE)).toBe(true);
+  });
+  it("tells confirmed zero history from unknown history", () => {
+    expect(weightedBaseline([], SEASON, BEFORE, ALL)).toMatchObject({ status: "confirmed_none", games: 0, insufficient: true, perGame: [null, null, null] });
+    // 2025-26 is not in the source: absence there is unknown, not zero.
+    expect(weightedBaseline([], SEASON, BEFORE, [20242025, 20232024])).toMatchObject({ status: "unknown", missingSeasons: [20252026] });
+    // Games exist but none is usable (GP unknown, TOI unknown, headline track unknown).
+    const unusable = [...games(20252026, 1, [1, 1, 1], 1200, null), ...games(20242025, 1, [1, 1, 1], null), ...games(20232024, 1, [null, 1, 1])];
+    expect(weightedBaseline(unusable, SEASON, BEFORE, ALL)).toMatchObject({ status: "unknown", games: 0, unusableGames: 3 });
+  });
+  it("leaves a missing secondary track out of that track only", () => {
+    const b = weightedBaseline([...games(20252026, 10, [2, 1, null]), ...games(20242025, 10, [2, 1, 1])], SEASON, BEFORE, ALL);
+    expect(b).toMatchObject({ games: 20, trackGames: [20, 20, 10], insufficient: false });
+    expect(b.perGame).toEqual([2, 1, 1]);
+  });
+  it("summarizes for the scorer with per-second rates and Kish effective seconds", () => {
+    const b = weightedBaseline([...games(20252026, 20, [2, 1, 1]), ...games(20232024, 20, [2, 1, 1])], SEASON, BEFORE, ALL);
+    const [s, reason] = weightedHistorySummary(b, 7, "F");
+    expect(reason).toBeNull();
+    const wt = 20 * 1200 * 0.7, w2t = 20 * 1200 * (0.36 + 0.01);
+    expect(s!.seconds).toBeCloseTo(wt ** 2 / w2t, 9);
+    expect(s!.seconds).toBeLessThan(40 * 1200);
+    expect(s!.rate[0]).toBeCloseTo(2 / 1200, 15);
+    expect(s!.n).toBe(40);
+    expect(weightedHistorySummary(weightedBaseline([], SEASON, BEFORE, [20242025]), 7, "F")).toEqual([null, "personal_history_unknown_cohort"]);
+    expect(weightedHistorySummary(weightedBaseline([], SEASON, BEFORE, ALL), 7, "F")).toEqual([null, "no_personal_history_cohort"]);
+  });
 });

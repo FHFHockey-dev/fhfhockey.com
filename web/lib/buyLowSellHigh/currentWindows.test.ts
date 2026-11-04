@@ -167,5 +167,65 @@ describe("currentWindows profiles", () => {
     expect(p.reference.personalN).toBe(0);
     expect(p.reference.reason).toBe("no_personal_history_cohort");
     expect(p.production.tier).toBe("cohort_reference");
+    // The 2023-24-only history does not cover 2024-25 or 2025-26, so no games there is unknown, not zero.
+    expect(p.reference).toMatchObject({ historyStatus: "unknown", missingSeasons: [20252026, 20242025], insufficientHistory: true, baseline: null });
+    expect(p.comparisons.map(c => c.reference)).toEqual([[null, null, null], [null, null, null]]);
+  });
+  it("compares the window with the reference per game and per 60 in matching units", async () => {
+    const [p] = await run(request(10, 6));
+    const [perGame, perSixty] = p.comparisons;
+    expect([perGame.unit, perSixty.unit]).toEqual(["per_game", "per_60"]);
+    const y = p.production.raw_observed as number[];
+    expect(perGame.window).toEqual(y.map(v => v / 5));
+    expect(perSixty.window.map((v, j) => v! - (3600 * y[j]) / (5 * 960))).toEqual([0, 0, 0]);
+    expect(p.reference.historyStatus).toBe("personal");
+    // Arm A's reference: the last 50 2023-24 games, unweighted.
+    const h = history.filter(r => r.player_id === 10).map(devSlot);
+    expect(perGame.reference[1]).toBeCloseTo(h.reduce((a, s) => a + s.tracks[1]!, 0) / 50, 12);
+    perGame.delta.forEach((d, j) => expect(d).toBeCloseTo(perGame.window[j]! - perGame.reference[j]!, 12));
+  });
+});
+
+describe("currentWindows arm C (weighted personal baseline)", () => {
+  // 2024-25 history beside the 2023-24 rows, as the database export supplies it.
+  const later = (pid: number, n: number) => devRows(pid, n).map((r, i) => ({ ...r, id: pid * 1000 + 500 + i, season_id: 20242025, date: day("2024-10-10", i), _research_correction_status: "wgo_db_raw" }));
+  const runC = (pid: number, rows: DevRow[], coveredSeasons?: number[]) =>
+    assembleProfiles({ current: qualifyCurrentResearchInputs(request(pid, 7), null).records, history: rows, blocks: blocks(), arm: "C_weighted_personal_baseline", eventThroughDate: "2026-10-07", coveredSeasons });
+
+  it("weights 2024-25 at 0.3, 2023-24 at 0.1 and pre-window 2026-27 games at 1.0, and labels the missing 2025-26 season", async () => {
+    const [p] = await runC(10, [...history, ...later(10, 30)]);
+    const b = p.reference.baseline!;
+    expect(b.missingSeasons).toEqual([20252026]);
+    expect(b.seasons.map(s => [s.season, s.games])).toEqual([[20252026, 0], [20242025, 30], [20232024, 50], [20262027, 2]]);
+    const total = 0.3 * 30 + 0.1 * 50 + 1.0 * 2;
+    expect(b.seasons.map(s => s.share)).toEqual([0, 0.3 * 30 / total, 0.1 * 50 / total, 1.0 * 2 / total].map(x => expect.closeTo(x, 12)));
+    expect(p.reference).toMatchObject({ personalN: 82, historyStatus: "personal", missingSeasons: [20252026], insufficientHistory: false });
+    expect(p.reference.dates.at(-1)! < p.window.dates[0]).toBe(true);
+    expect(p.reference.sourceIds).toEqual(b.sourceIds);
+    expect(p.production.reference_source_ids).toEqual(b.sourceIds);
+    expect(p.comparisons[0].reference).toEqual(b.perGame);
+    expect(p.comparisons[1].reference).toEqual(b.per60);
+    expect(p.window.seconds).toBe(5 * 960);
+    expect(p.result.value).not.toBeNull();
+    p.explanation.tracks.forEach(t => expect(Math.abs(t.reconciliationResidual)).toBeLessThan(1e-9));
+    expect(p.coverage).toContainEqual({ component: "reference_context", reason: "explanation_reference_totals_unweighted_over_baseline_games", count: 1 });
+  });
+  it("leaves 2022-23 games, four seasons back, out of a 2026-27 baseline", async () => {
+    const old = devRows(10).map(r => ({ ...r, season_id: 20222023, date: day("2022-10-10", r.id % 1000) }));
+    const [p] = await runC(10, [...history.filter(r => r.player_id !== 10), ...old]);
+    // Two current-season games before the window are the only lookback games.
+    expect(p.reference).toMatchObject({ personalN: 2, historyStatus: "personal", insufficientHistory: true });
+    expect(p.reference.seasons).toEqual([20262027]);
+  });
+  it("reports confirmed zero history only when every prior season is covered", async () => {
+    const pre = (pid: number) => assembleProfiles({ current: qualifyCurrentResearchInputs(request(pid, 5), null).records, history, blocks: blocks(),
+      arm: "C_weighted_personal_baseline", eventThroughDate: "2026-10-07", coveredSeasons: [20252026, 20242025, 20232024] });
+    const [p] = await pre(77);
+    expect(p.reference).toMatchObject({ personalN: 0, historyStatus: "confirmed_none", reason: "no_personal_history_cohort", missingSeasons: [] });
+    expect(p.production.tier).toBe("cohort_reference");
+    const [q] = await runC(77, history);
+    expect(q.reference).toMatchObject({ personalN: 2, historyStatus: "personal", insufficientHistory: true });
+    const [r] = await assembleProfiles({ current: qualifyCurrentResearchInputs(request(77, 5), null).records, history, blocks: blocks(), arm: "C_weighted_personal_baseline", eventThroughDate: "2026-10-07" });
+    expect(r.reference).toMatchObject({ personalN: 0, historyStatus: "unknown", reason: "personal_history_unknown_cohort", missingSeasons: [20252026, 20242025] });
   });
 });
