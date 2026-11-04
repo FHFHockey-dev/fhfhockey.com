@@ -3,7 +3,7 @@
  * BLSH display contract. Fictional values only: not a research snapshot, not NHL data and not advice.
  * Several fixture players deliberately have no profile, so the view shows missing evidence as missing.
  */
-import { HEADLINE_TRACK, type DisplayProfile } from "lib/buyLowSellHigh/displayProfile";
+import { HEADLINE_TRACK, opportunityNotAttached, type DisplayProfile } from "lib/buyLowSellHigh/displayProfile";
 import { SUPPORT_GAP_VERSION } from "lib/buyLowSellHigh/supportGap";
 
 export const FIXTURE_EVIDENCE_THROUGH = "2026-10-15";
@@ -62,6 +62,8 @@ function profile(spec: Spec): DisplayProfile {
     },
     coverage: { notes: [], imputedProcesses: [], physicalFloors: [], context: { current: { verified: true, reason: null, text: null }, reference: { verified: true, reason: null, text: null } } },
     context: { heading: "Context, not part of the score", opportunity: [], signals: [] },
+    // No synthetic opportunity result: the mapper's own unavailable state, never zeros.
+    opportunity: opportunityNotAttached(),
     streak: null, streakText: "No current-season streak is saved; streak unavailable",
     claims: { luckIdentified: false, marketValue: false, forecast: false, trusted: false },
     claimsText: "Not a luck finding, a market value, a forecast or a trusted recommendation.",

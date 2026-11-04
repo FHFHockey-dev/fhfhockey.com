@@ -31,3 +31,5 @@ web/pages/buy-low-sell-high/trade.tsx, web/components/blshTrade/*. Branch octobe
   headline/directionWithheld*. fx-d1 (0 games) and fx-d3 (12 games) show "Direction withheld".
 - Bug found: retrospective looked up track "FP"; real tracks use "fantasy_points". Now reads score.headline (null, never 0).
 - Checks: blshTrade + trade tests 24/24; typecheck exit 2, errors only currentProcessEvidence.server* and retainedBlsh.test.ts.
+- Lists lane 956de01e2 added DisplayProfile.opportunity: fixture uses the contract's opportunityNotAttached() (explicit
+  unavailable, never zeros). The trade view does not display opportunity. Tests 24/24; typecheck errors only in other lanes' files.
