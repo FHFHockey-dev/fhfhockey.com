@@ -21,6 +21,7 @@ interface PlayerLeader {
 interface TeamLeadersData {
   pointsLeaders: PlayerLeader[];
   goalsLeaders: PlayerLeader[];
+  ppPointsLeaders: PlayerLeader[];
   bshLeaders: PlayerLeader[];
 }
 
@@ -115,6 +116,7 @@ export function TeamLeaders({ teamAbbrev, seasonId }: TeamLeadersProps) {
             games_played,
             points,
             goals,
+            pp_points,
             blocked_shots,
             shots,
             hits
@@ -131,6 +133,7 @@ export function TeamLeaders({ teamAbbrev, seasonId }: TeamLeadersProps) {
           setLeadersData({
             pointsLeaders: [],
             goalsLeaders: [],
+            ppPointsLeaders: [],
             bshLeaders: [],
           });
           return;
@@ -190,6 +193,18 @@ export function TeamLeaders({ teamAbbrev, seasonId }: TeamLeadersProps) {
             image_url: p.image_url,
           }));
 
+        const ppPointsLeaders = [...playersWithBSH]
+          .sort((a, b) => (b.pp_points || 0) - (a.pp_points || 0))
+          .slice(0, 3)
+          .map((p) => ({
+            player_id: p.player_id,
+            player_name: p.player_name,
+            position_code: p.position_code,
+            value: p.pp_points || 0,
+            games_played: p.games_played || 0,
+            image_url: p.image_url,
+          }));
+
         const bshLeaders = [...playersWithBSH]
           .sort((a, b) => b.bsh - a.bsh)
           .slice(0, 3)
@@ -206,6 +221,7 @@ export function TeamLeaders({ teamAbbrev, seasonId }: TeamLeadersProps) {
           setLeadersData({
             pointsLeaders,
             goalsLeaders,
+            ppPointsLeaders,
             bshLeaders,
           });
         }
@@ -293,6 +309,7 @@ export function TeamLeaders({ teamAbbrev, seasonId }: TeamLeadersProps) {
           <>
             {renderLeaderCategory("Points Leaders", leadersData.pointsLeaders)}
             {renderLeaderCategory("Goals Leaders", leadersData.goalsLeaders)}
+            {renderLeaderCategory("PP Points Leaders", leadersData.ppPointsLeaders)}
             {renderLeaderCategory("BSH Leaders", leadersData.bshLeaders)}
           </>
         )}

@@ -49,7 +49,7 @@ function profile(spec: Spec): DisplayProfile {
     evidence: {
       window: { games: spec.games, spanDays: spec.games * 2, dates: [], sourceIds: [], seconds: null, minutes: null,
         lastGameDaysBeforeRecordedThrough: spec.fresh ? 1 : 8, recordedThroughDate: FIXTURE_EVIDENCE_THROUGH, fresh: spec.fresh,
-        freshnessText: `Last game ${spec.fresh ? 1 : 8} days before the recorded-through date (${FIXTURE_EVIDENCE_THROUGH})${spec.fresh ? "" : "; stale window; withheld from lists"}` },
+        freshnessText: `Last game ${spec.fresh ? "1 day" : "8 days"} before the recorded-through date (${FIXTURE_EVIDENCE_THROUGH})${spec.fresh ? "" : "; stale window; withheld from lists"}` },
       reference: { personalGames: spec.personalGames, estimatorWeight: spec.personalGames ? 0.7 : null, cohortEstimatorWeight: spec.personalGames ? 0.3 : null,
         estimatorWeightNote: "Estimator weights, shown as decimals; not confidence percentages",
         ageDays: spec.personalGames ? 20 : null, ageText: spec.personalGames ? "Reference ends 20 days before the window (fixture)" : "No personal reference window",

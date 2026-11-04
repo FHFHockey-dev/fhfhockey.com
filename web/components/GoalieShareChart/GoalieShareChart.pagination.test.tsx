@@ -132,7 +132,7 @@ describe("GoalieShareChart complete page sets", () => {
     await finishRequests();
     const chart = JSON.parse(screen.getByTestId("chart").textContent!);
     expect(chart.labels).toEqual(["One (50.0%)", "One (50.0%)"]);
-    expect(screen.getByText("Team GP:").nextSibling?.textContent).toBe("1");
+    expect(screen.getByTitle("Team games played").nextSibling?.textContent).toBe("1");
     expect(screen.getByText(/Share of recorded goalie appearances, including relief/)).toBeTruthy();
   });
 

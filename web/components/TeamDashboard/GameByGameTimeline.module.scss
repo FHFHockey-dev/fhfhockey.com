@@ -73,7 +73,7 @@
 
 .gameGrid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   grid-template-rows: repeat(2, 1fr);
   gap: 0.5rem;
   margin-bottom: 0.25rem;
@@ -110,7 +110,7 @@
   }
 
   &.win {
-    border-left: 3px solid #00ff87;
+    --result-color: #00ff87;
 
     .gameResult {
       color: #00ff87;
@@ -120,7 +120,7 @@
   }
 
   &.loss {
-    border-left: 3px solid #ff6b6b;
+    --result-color: #ff6b6b;
 
     .gameResult {
       color: #ff6b6b;
@@ -130,12 +130,32 @@
   }
 
   &.otLoss {
-    border-left: 3px solid #ffb347;
+    --result-color: #ffb347;
 
     .gameResult {
       color: #ffb347;
       background: rgba(255, 179, 71, 0.1);
       border: 1px solid rgba(255, 179, 71, 0.2);
+    }
+  }
+
+  // Result rule: a flat bar laid over the card's 2px transparent left edge.
+  // A coloured border-left would miter against the transparent top border and
+  // leave a cut corner, so the bar is a pseudo-element with square inner corners.
+  &.win,
+  &.loss,
+  &.otLoss {
+    border-radius: 4px 6px 6px 4px;
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: -2px;
+      bottom: -2px;
+      left: -2px;
+      width: 4px;
+      border-radius: 4px 0 0 4px;
+      background: var(--result-color);
     }
   }
 
@@ -217,6 +237,16 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
+}
+
+// OT / SO marker under the score for games decided after regulation.
+.decidedTag {
+  margin-top: 2px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1;
 }
 
 .performanceBar {

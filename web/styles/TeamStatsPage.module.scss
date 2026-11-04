@@ -31,6 +31,13 @@
   // );
 }
 
+// "Keep exploring" links: page width (90%, centred) instead of edge to edge.
+.workflowLinks {
+  width: 100%;
+  max-width: v.$page-max-width;
+  margin: v.$space-lg auto;
+}
+
 .teamLogoContainer {
   display: flex;
   flex-direction: row;
@@ -56,6 +63,23 @@
     var(--secondary-color) 90%,
     var(--secondary-color) 100%
   );
+
+  // Phones: the band grows with its content, so percentage stops pushed the
+  // stats row into the stripes. Fix the stripes at 18px and pad above them.
+  @media (max-width: v.$breakpoint-tablet) {
+    padding-bottom: calc(#{v.$space-xs} + 18px);
+    background: linear-gradient(
+      180deg,
+      var(--primary-color) 0,
+      var(--primary-color) calc(100% - 18px),
+      var(--jersey) calc(100% - 18px),
+      var(--jersey) calc(100% - 12px),
+      var(--accent) calc(100% - 12px),
+      var(--accent) calc(100% - 6px),
+      var(--secondary-color) calc(100% - 6px),
+      var(--secondary-color) 100%
+    );
+  }
 }
 
 .teamLogo {

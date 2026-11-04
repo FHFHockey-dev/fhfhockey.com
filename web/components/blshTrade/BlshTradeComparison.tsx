@@ -153,6 +153,21 @@ export default function BlshTradeComparison({ recordsByHorizon, evidence, fixtur
             ))}
           </ul>
         )}
+        {(() => {
+          // Plain-English verdict from the league-points row; points scoring only.
+          const points = comparison.complete ? comparison.rows.find(row => row.key === "FANTASY_POINTS") : undefined;
+          if (!points || points.net === null) return null;
+          const size = Math.abs(points.net).toFixed(1);
+          return (
+            <p className={styles.verdict}>
+              {points.net < 0
+                ? `You give up about ${size} league points over the next ${horizon} games (forecast)`
+                : points.net > 0
+                  ? `You gain about ${size} league points over the next ${horizon} games (forecast)`
+                  : `Even on league points over the next ${horizon} games (forecast)`}
+            </p>
+          );
+        })()}
         {comparison.rows.length > 0 && (
           <div className={styles.tableWrap}>
             <table className={styles.table}>
@@ -173,7 +188,7 @@ export default function BlshTradeComparison({ recordsByHorizon, evidence, fixtur
                       <td>{cell(comparison.complete ? row.receive.value : null, comparison.complete ? row.receive.reason : row.receive.reason ?? "comparison_incomplete")}</td>
                       <td>
                         {comparison.complete && row.net !== null
-                          ? <><span className={styles.num}>{fixed(row.net, digits, true)}</span>{row.favorableForReceiver !== null && <span className={styles.muted}> {row.favorableForReceiver ? "favours receiving" : "favours giving"}</span>}</>
+                          ? <><span className={`${styles.num} ${styles.netValue} ${row.favorableForReceiver === true ? styles.netAhead : row.favorableForReceiver === false ? styles.netBehind : ""}`}>{fixed(row.net, digits, true)}</span>{row.favorableForReceiver !== null && <span className={styles.muted}> {row.favorableForReceiver ? "favours receiving" : "favours giving"}</span>}</>
                           : <span className={styles.withheld}>Withheld</span>}
                       </td>
                     </tr>

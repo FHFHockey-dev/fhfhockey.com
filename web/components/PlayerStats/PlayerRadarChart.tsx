@@ -551,6 +551,10 @@ export function PlayerRadarChart({
     );
   }
 
+  const unrankedStatNames = selectedStats
+    .filter((stat) => radarData.percentiles[stat] === undefined)
+    .map((stat) => SHARED_STAT_DISPLAY_NAMES[stat] || stat);
+
   return (
     <div className={styles.radarContainer}>
       <div className={styles.radarHeader}>
@@ -622,18 +626,12 @@ export function PlayerRadarChart({
           </div>
         </div>
 
-        {!percentileLoading && selectedStats.some((stat) => radarData.percentiles[stat] === undefined) && (
-          <div
-            style={{
-              fontSize: "0.8em",
-              color: "#f97316",
-              marginTop: "0.5rem",
-              fontStyle: "italic",
-            }}
-          >
-            Some selected statistics have no matching comparison data. Their
-            rankings are unavailable.
-          </div>
+        {!percentileLoading && unrankedStatNames.length > 0 && (
+          // Neutral note that names the gap, not an orange warning.
+          <p className={styles.comparisonGap}>
+            No comparison data for {unrankedStatNames.join(", ")} yet, so{" "}
+            {unrankedStatNames.length === 1 ? "it has" : "they have"} no ranking.
+          </p>
         )}
       </div>
 

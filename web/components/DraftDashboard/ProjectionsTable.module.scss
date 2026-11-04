@@ -1846,3 +1846,34 @@
   width: 18px; height: 18px; min-width: 18px; min-height: 18px;
   padding: 0; font-size: 15px !important; color: v.$primary-color !important;
 }
+
+// Phones: seven readable columns (Fav, Player, Pos, Proj FP, VORP, ADP, Draft)
+// instead of the full desktop set squeezed to 10px. VORP/VONA/VBD share
+// .colVorp, so the sibling selector keeps only the first (VORP).
+@container player-table (max-width: 480px) {
+  .playersTable,
+  .playersTable.statColumnsTable {
+    // Header cells use .col* classes; body cells use their own names.
+    .colTeam, .team,
+    .colScore, .score,
+    .colVorp ~ .colVorp, .vorp ~ .vorp,
+    .colValueDelta, .valueDelta,
+    .colSchedule,
+    .colNextPick, .nextPick,
+    .colCompare, .compareCell {
+      display: none;
+    }
+
+    .colFav { width: 8%; }
+    .colName { width: 35%; }
+    .colPos { width: 9%; }
+    .colFP { width: 13%; }
+    .colVorp { width: 12%; }
+    .colAdp { width: 10%; }
+    .colAction { width: 13%; }
+
+    th { font-size: 9px; }
+    td { font-size: 12px; }
+    .draftButton { font-size: 10px !important; }
+  }
+}

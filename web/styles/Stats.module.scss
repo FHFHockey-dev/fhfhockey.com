@@ -73,11 +73,21 @@
 .quickStatCard.scoring {
   border-left: 4px solid v.$primary-color;
 }
+// Goaltending takes the gold accent so it reads apart from the blue scoring cards.
 .quickStatCard.goaltending {
-  border-left: 4px solid v.$secondary-color;
+  border-left: 4px solid v.$color-brand-yellow;
+}
+.quickStatCard.goaltending .iconInner {
+  background: v.$color-brand-yellow;
 }
 .quickStatCard.league {
   border-left: 4px solid v.$warning-color;
+}
+// Flat left rule: the left radius matches the 4px rule width.
+.quickStatCard.scoring,
+.quickStatCard.goaltending,
+.quickStatCard.league {
+  border-radius: 4px v.$border-radius-lg v.$border-radius-lg 4px;
 }
 
 .quickStatCard:hover,
@@ -194,7 +204,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  border-left: 4px solid v.$warning-color;
+  border-left: 6px solid v.$color-white;
   border-radius: inherit;
   pointer-events: none;
 }
@@ -451,9 +461,9 @@
     grid-template-columns: repeat(2, 1fr);
   }
 
-  // Tablet and up: 4 columns
+  // Tablet and up: the cards share the full row (2 or 3 depending on the filter)
   @media (min-width: v.$breakpoint-tablet-min) {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: v.$space-md;
     margin-bottom: v.$space-lg;
   }
@@ -487,35 +497,6 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   }
 
-  &.scoring::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 3px;
-    height: 100%;
-    background: v.$primary-color;
-  }
-
-  &.goaltending::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 3px;
-    height: 100%;
-    background: v.$secondary-color;
-  }
-
-  &.league::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 3px;
-    height: 100%;
-    background: v.$warning-color;
-  }
 }
 
 .quickStatIcon {
@@ -706,6 +687,8 @@
     font-weight: 700;
     box-shadow: 0 2px 8px rgba(7, 170, 226, 0.3);
     transform: translateY(-1px);
+    // Flat left rule: the left radius matches the 6px ::before stripe.
+    border-radius: 6px v.$border-radius-md v.$border-radius-md 6px;
   }
 }
 
@@ -1364,21 +1347,25 @@
     min-height: auto;
   }
 
-  &:first-child {
-    border-left: 3px solid #10b981;
+  // nth-of-type skips the card's h2 title, so rows 1-5 line up with the mobile colours.
+  &:nth-of-type(1) {
+    border-left: 4px solid #10b981;
   }
 
-  &:nth-child(2) {
-    border-left: 3px solid #22c55e;
+  &:nth-of-type(2) {
+    border-left: 4px solid #22c55e;
   }
 
-  &:nth-child(3) {
-    border-left: 3px solid #84cc16;
+  &:nth-of-type(3) {
+    border-left: 4px solid #84cc16;
   }
 
-  &:nth-child(4),
-  &:nth-child(5) {
-    border-left: 3px solid v.$warning-color;
+  &:nth-of-type(4) {
+    border-left: 4px solid #f59e0b;
+  }
+
+  &:nth-of-type(5) {
+    border-left: 4px solid #ef4444;
   }
 
   &:hover {
@@ -1395,11 +1382,6 @@
 
 .leaderRowExpanded {
   border-left-width: 4px;
-
-  // Mobile: Reduce expanded border width
-  @media (max-width: v.$breakpoint-mobile-max) {
-    border-left-width: 3px;
-  }
 }
 
 .leaderMain {
@@ -1755,6 +1737,12 @@
   margin: 0 auto;
   position: relative;
 
+  // PlayerSearchBar sets an inline 2rem bottom margin for standalone use;
+  // inside this padded sticky bar it only adds dead space.
+  > div {
+    margin-bottom: 0 !important;
+  }
+
   &::before {
     // subtle inner glow edge when floating over content
     content: "";
@@ -1812,6 +1800,26 @@
   border-radius: v.$border-radius-md;
 }
 
+// Title on its own line, then a full-width Skaters / Goalies switch, so
+// "Leaderboards" never truncates beside the tabs.
+.mobileTabHeader {
+  flex-wrap: wrap;
+
+  .mobileCardTitle {
+    flex: 1 0 100%;
+    overflow: visible;
+    text-align: center;
+  }
+
+  .mobileTabs {
+    flex: 1 0 100%;
+  }
+
+  .mobileTabButton {
+    flex: 1;
+  }
+}
+
 .mobileTabs {
   display: inline-flex;
   align-items: center;
@@ -1856,7 +1864,9 @@
   height: auto;
   padding: v.$mobile-space-xs;
   min-height: v.$touch-target-large;
-  border-left: 3px solid v.$primary-color;
+  border-left: 4px solid v.$primary-color;
+  // Flat left rule: the left radius matches the 4px rule width.
+  border-radius: 4px v.$border-radius-md v.$border-radius-md 4px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: all v.$mobile-animation-fast ease;
 
@@ -1955,24 +1965,24 @@
   }
 
   &:first-child {
-    border-left: 3px solid #10b981;
+    border-left: 4px solid #10b981;
   }
 
   &:nth-child(2) {
-    border-left: 3px solid #22c55e;
+    border-left: 4px solid #22c55e;
   }
 
   &:nth-child(3) {
-    border-left: 3px solid #84cc16;
+    border-left: 4px solid #84cc16;
   }
 
   // Additional ranking colors for horizontal display
   &:nth-child(4) {
-    border-left: 3px solid #f59e0b;
+    border-left: 4px solid #f59e0b;
   }
 
   &:nth-child(5) {
-    border-left: 3px solid #ef4444;
+    border-left: 4px solid #ef4444;
   }
 }
 
@@ -2083,7 +2093,8 @@
   height: auto;
   padding: v.$mobile-card-padding;
   min-height: v.$touch-target-large;
-  border-left: 3px solid v.$border-primary;
+  border-left: 4px solid v.$border-primary;
+  border-radius: 4px v.$border-radius-md v.$border-radius-md 4px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 
   // Subtle pulse animation for loading indication
@@ -2253,7 +2264,7 @@
   background: v.$background-dark;
   border: 1px solid v.$border-primary;
   border-radius: v.$border-radius-sm;
-  border-left: 3px solid v.$border-primary;
+  border-left: 4px solid v.$border-primary;
   animation: skeletonPulse 1.5s ease-in-out infinite;
 
   // Stagger animations for more realistic effect

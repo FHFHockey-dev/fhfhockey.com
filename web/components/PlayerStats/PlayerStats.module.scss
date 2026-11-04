@@ -20,13 +20,14 @@
 // =============================================================================
 
 // Dense data card (RSO metric language): neutral surface, full border in the
-// card's tone with a thicker left edge so the rail follows the radius.
+// card's tone with a 6px left rail; the left corners match the rail so its
+// inner edge stays flat.
 %card-base {
   --card-tone: #{v.$draft-border};
   padding: v.$space-xs v.$space-sm;
   border: 1px solid var(--card-tone);
   border-left-width: 6px;
-  border-radius: v.$radius-md;
+  border-radius: 6px v.$radius-md v.$radius-md 6px;
   background: v.$draft-surface-raised;
 }
 
@@ -1726,7 +1727,7 @@
   min-width: 80px;
   border: 1px solid var(--card-tone);
   border-left-width: 6px;
-  border-radius: v.$radius-md;
+  border-radius: 6px v.$radius-md v.$radius-md 6px;
   background: v.$draft-surface-raised;
   color: var(--card-tone);
 
@@ -3111,4 +3112,11 @@
   .contributionGraph .contributionGrid {
     --cell-size: 16px;
   }
+}
+
+// Radar: names stats that have no comparison data, in neutral muted text.
+.comparisonGap {
+  margin: v.$space-xs 0 0;
+  color: v.$text-secondary;
+  font-size: 0.8rem;
 }

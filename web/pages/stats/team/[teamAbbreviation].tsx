@@ -248,12 +248,14 @@ export default function TeamStatsPage({
           showAllSeasons={showAllSeasons}
           onToggleAllSeasons={() => setShowAllSeasons((v) => !v)}
         />
-        <SurfaceWorkflowLinks
-          eyebrow="Team workflow"
-          title={`Keep exploring ${teamAbbreviation}`}
-          description="Move between this team dashboard, deployment, matchup, schedule, and trend context without switching to a legacy team route."
-          links={getTeamSurfaceLinks(teamAbbreviation)}
-        />
+        <div className={styles.workflowLinks}>
+          <SurfaceWorkflowLinks
+            eyebrow="Team workflow"
+            title={`Keep exploring ${teamAbbreviation}`}
+            description="Move between this team dashboard, deployment, matchup, schedule, and trend context without switching to a legacy team route."
+            links={getTeamSurfaceLinks(teamAbbreviation)}
+          />
+        </div>
       </div>
     </div>
   );

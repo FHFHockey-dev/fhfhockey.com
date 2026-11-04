@@ -86,7 +86,7 @@
 
 /* Forecast and recorded evidence use different frames and labels so they are never read as one thing. */
 .forecast { display: grid; gap: 6px; padding: 10px; border: 1px solid v.$primary-color; border-radius: 6px; }
-.evidence { display: grid; gap: 6px; padding: 10px; border: 1px dashed v.$border-secondary; border-left: 4px solid v.$secondary-color; border-radius: 6px; background: v.$background-dark; }
+.evidence { position: relative; display: grid; gap: 6px; padding: 10px 10px 10px 16px; border: 1px dashed v.$border-secondary; border-radius: 6px; background: v.$background-dark; }
 .blockHeader { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: space-between; }
 .kicker, .kickerRetro { margin: 0; font-size: v.$font-size-xs; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
 .kicker { color: v.$primary-color; }
@@ -115,6 +115,14 @@
 .table th, .table td { padding: 8px; border-bottom: 1px solid v.$border-soft; text-align: left; vertical-align: top; }
 .table thead th { color: v.$text-secondary; font-size: v.$font-size-xs; text-transform: uppercase; }
 .caption { padding: 8px; caption-side: bottom; color: v.$text-secondary; font-size: v.$font-size-xs; text-align: left; }
-.summary { margin: 0; font-weight: 700; }
+/* The net difference is the answer, so it leads; the caveated summary reads as supporting text. */
+.netValue { font-size: 1.25rem; font-weight: 600; }
+/* You receive more (green) or give up more (red) in this scored row. */
+.netAhead { color: v.$success-color; }
+.netBehind { color: v.$danger-color; }
+.verdict { margin: 0 0 8px; font-size: 1rem; font-weight: 500; }
+.summary { margin: 0; font-size: v.$font-size-sm; font-weight: 400; line-height: 1.5; }
 .assumptions { display: grid; gap: 2px; margin: 0; padding-left: 18px; color: v.$text-secondary; font-size: v.$font-size-xs; }
-.retrospective { display: grid; gap: 8px; padding: 12px; border: 1px dashed v.$border-secondary; border-left: 4px solid v.$secondary-color; border-radius: 6px; background: v.$background-darker; }
+.retrospective { position: relative; display: grid; gap: 8px; padding: 12px 12px 12px 18px; border: 1px dashed v.$border-secondary; border-radius: 6px; background: v.$background-darker; }
+/* Recorded-evidence rule: a flat 6px bar over the dashed left edge (a coloured border-left would bevel against the dashed top). */
+.evidence::before, .retrospective::before { content: ""; position: absolute; top: -1px; bottom: -1px; left: -1px; width: 6px; border-radius: 6px 0 0 6px; background: v.$secondary-color; }

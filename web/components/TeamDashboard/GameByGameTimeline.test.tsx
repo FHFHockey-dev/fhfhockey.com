@@ -122,4 +122,49 @@ describe("GameByGameTimeline", () => {
       screen.queryByRole("region", { name: "Game details for CGY" }),
     ).toBeNull();
   });
+
+  it("tags games decided in overtime or a shootout", async () => {
+    const game = (game_id: number, date: string, extra: object) => ({
+      date,
+      game_id,
+      wins: 0,
+      losses: 0,
+      ot_losses: 0,
+      shots_for_per_game: 30,
+      shots_against_per_game: 30,
+      power_play_pct: 0.2,
+      penalty_kill_pct: 0.8,
+      faceoff_win_pct: 0.5,
+      games_played: 1,
+      ...extra,
+    });
+    fromMock.mockImplementation((table: string) => {
+      switch (table) {
+        case "wgo_team_stats":
+          return queryResult([
+            game(1, "2026-01-05", { goals_for: 3, goals_against: 3, wins: 1, wins_in_shootout: 1, wins_in_regulation: 0 }),
+            game(2, "2026-01-04", { goals_for: 4, goals_against: 3, wins: 1, wins_in_shootout: 0, wins_in_regulation: 0 }),
+            game(3, "2026-01-03", { goals_for: 2, goals_against: 3, ot_losses: 1 }),
+            game(4, "2026-01-02", { goals_for: 4, goals_against: 2, wins: 1, wins_in_shootout: 0, wins_in_regulation: 1 }),
+          ]);
+        case "games":
+          return queryResult(
+            [1, 2, 3, 4].map((id) => ({ id, homeTeamId: 22, awayTeamId: 7, date: "2026-01-01" })),
+          );
+        case "teams":
+          return queryResult([{ id: 7, abbreviation: "CGY" }]);
+        default:
+          throw new Error(`Unexpected table: ${table}`);
+      }
+    });
+
+    render(
+      <GameByGameTimeline maxGames={10} seasonId="20252026" teamAbbrev="EDM" teamId="22" />,
+    );
+
+    expect(await screen.findByRole("button", { name: /final score 3 to 3 in a shootout/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /final score 4 to 3 in overtime/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /final score 2 to 3 in overtime/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /final score 4 to 2$/ })).toBeTruthy();
+  });
 });

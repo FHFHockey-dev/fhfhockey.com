@@ -251,51 +251,11 @@ export default function StatsPage({
       .querySelectorAll<HTMLButtonElement>('[role="radio"]')[nextIndex]?.focus();
   };
 
-  // Scroll handler for teams grid morphing
+  // Mobile shows the teams as one swipeable logo strip from the start. The old
+  // scroll morph collapsed the grid, which shortened the page, pulled scrollY
+  // back under the expand threshold and re-expanded it.
   useEffect(() => {
-    if (!isMobile) return;
-
-    const expandThreshold = 30;
-    const collapseThreshold = 80;
-    let previousScrollY = window.scrollY;
-    let currentState: "expanded" | "collapsed" =
-      previousScrollY >= collapseThreshold ? "collapsed" : "expanded";
-    let frameId: number | null = null;
-
-    setTeamsGridState(currentState);
-
-    const handleScroll = () => {
-      if (frameId !== null) return;
-
-      frameId = requestAnimationFrame(() => {
-        frameId = null;
-        const currentScrollY = window.scrollY;
-        const scrollingDown = currentScrollY > previousScrollY;
-        const scrollDelta = Math.abs(currentScrollY - previousScrollY);
-        previousScrollY = currentScrollY;
-
-        if (scrollDelta < 8) return;
-
-        if (currentScrollY <= expandThreshold && currentState !== "expanded") {
-          currentState = "expanded";
-          setTeamsGridState("expanded");
-        } else if (
-          currentScrollY >= collapseThreshold &&
-          currentState !== "collapsed" &&
-          scrollingDown
-        ) {
-          currentState = "collapsed";
-          setTeamsGridState("collapsed");
-        }
-      });
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-      if (frameId !== null) cancelAnimationFrame(frameId);
-    };
+    if (isMobile) setTeamsGridState("collapsed");
   }, [isMobile]);
 
   // Mobile detection hook

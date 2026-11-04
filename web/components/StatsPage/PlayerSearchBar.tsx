@@ -115,7 +115,10 @@ export default function PlayerSearchBar() {
           width: "100%",
           padding: "0.5rem",
           borderRadius: 6,
-          border: "1px solid #ccc"
+          // Dark field to match the dark stats surfaces (values of $background-dark / $border-secondary).
+          border: "1px solid #505050",
+          background: "#1a1d21",
+          color: "#ffffff"
         }}
         onFocus={() => query.length > 1 && setShowDropdown(true)}
         onKeyDown={(event) => {

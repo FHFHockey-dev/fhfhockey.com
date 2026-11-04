@@ -318,8 +318,9 @@
     gap: 12px;
     min-height: 48px;
     padding: 10px 12px;
-    border-left: 3px solid transparent;
-    border-radius: 5px;
+    border-left: 4px solid transparent;
+    // Flat left rule: the left radius matches the 4px current-page rule.
+    border-radius: 4px 5px 5px 4px;
     > svg {
       flex: 0 0 22px;
     }

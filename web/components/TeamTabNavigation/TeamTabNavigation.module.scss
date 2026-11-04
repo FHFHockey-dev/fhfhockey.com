@@ -55,6 +55,17 @@
 
   @media (max-width: v.$breakpoint-tablet) {
     padding: 0rem;
+    // Phones: tabs scroll sideways; snap to each tab and fade the right edge
+    // so Roster / Shot Map read as "more this way" rather than cut off.
+    scroll-snap-type: x proximity;
+    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+
+    .tabButton {
+      min-width: auto;
+      padding-inline: 0.9rem;
+      white-space: nowrap;
+      scroll-snap-align: start;
+    }
   }
 }
 
@@ -93,20 +104,18 @@
     transform: translateY(-1px);
   }
 
+  // Selected tab in the team's primary colour: a white highlight vanished on
+  // light jersey bars (EDM, and any white-jersey team).
+  // --tab-active-color is the team primary, or white/black when the primary
+  // lacks 4.5:1 contrast on the jersey bar (set in TeamTabNavigation.tsx).
   &.active {
-    background: rgba(255, 255, 255, 0.15);
-    border-bottom-color: #ffffff;
-    color: #ffffff;
+    background: color-mix(in srgb, var(--tab-active-color, var(--team-primary-color)) 12%, transparent);
+    border-bottom: 3px solid var(--tab-active-color, var(--team-primary-color));
+    color: var(--tab-active-color, var(--team-primary-color));
     font-weight: 700;
 
-    &::before {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: linear-gradient(90deg, #ffffff, rgba(255, 255, 255, 0.7));
+    .tabLabel {
+      color: var(--tab-active-color, var(--team-primary-color));
     }
   }
 
@@ -120,7 +129,7 @@
   font-size: 0.75rem;
   font-weight: inherit;
   letter-spacing: 0.05em;
-  color: var(--team-accent-color);
+  color: var(--tab-label-color, var(--team-accent-color)); // 4.5:1-safe accent, set in TeamTabNavigation.tsx
   font-weight: 900;
   font-family: v.$font-family-accent;
 }

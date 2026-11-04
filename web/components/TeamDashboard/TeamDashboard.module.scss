@@ -42,7 +42,8 @@
    ========================================================================== */
 
 .leftSidebar {
-  flex: 0 0 350px; // Fixed width left sidebar
+  flex: 0 1 320px; // Sidebar shares the squeeze with the main column
+  min-width: 280px;
   display: flex;
   flex-direction: column;
 
@@ -58,6 +59,7 @@
 
 .mainColumn {
   flex: 1; // Take remaining space
+  min-width: 0; // Let it shrink so the right sidebar stays on screen
   display: flex;
   flex-direction: column;
   gap: v.$space-md;
@@ -68,7 +70,8 @@
 }
 
 .rightSidebar {
-  flex: 0 0 350px; // Fixed width right sidebar
+  flex: 0 1 320px; // Sidebar shares the squeeze with the main column
+  min-width: 280px;
   display: flex;
   flex-direction: column;
 
@@ -165,16 +168,12 @@
   display: flex;
   flex-direction: column;
   background: color-mix(in srgb, v.$background-lighter 15%, transparent 85%);
-  border-left: 2px solid
-    color-mix(
-      in srgb,
-      var(--team-secondary-color, v.$secondary-color) 30%,
-      transparent 70%
-    );
+  // One straight 4px gradient rail (the ::before); the left corners match it.
+  border-radius: 4px v.$border-radius-md v.$border-radius-md 4px;
 
   &::before {
     height: 100%;
-    width: 3px;
+    width: 4px;
     left: 0;
     right: auto;
     background: linear-gradient(
@@ -518,14 +517,13 @@
 .leadersGrid {
   display: grid;
   grid-template-columns: 1fr;
+  align-content: start; // Lists sit together instead of stretching to the tall sidebar
   gap: v.$space-md;
-  height: 100%;
 }
 
 .leaderCategory {
   display: flex;
   flex-direction: column;
-  height: 100%;
 }
 
 .categoryTitle {
@@ -726,7 +724,7 @@
 
 .quickStatsSummary {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: v.$space-xs;
   margin-bottom: v.$space-sm;
 
@@ -772,8 +770,18 @@
 
 .statsRankingsGrid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  // Six across on desktop, three on phones (rank badge stacks under the value).
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: v.$space-sm;
+
+  @media (max-width: v.$breakpoint-tablet) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+
+    .statValueRank {
+      flex-direction: column;
+      gap: 4px;
+    }
+  }
 }
 
 .statWithRank {
@@ -849,7 +857,7 @@
 
 .rankingsGrid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   grid-column-gap: v.$space-md;
   grid-row-gap: v.$space-sm;
   height: 100%;

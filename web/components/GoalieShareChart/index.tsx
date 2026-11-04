@@ -36,6 +36,23 @@ const sleep = (ms: number) =>
     setTimeout(resolve, ms);
   });
 
+// Card background behind the donuts; slices are separated by it.
+const CHART_SURFACE = "#1a1d21";
+
+// Very dark team colours vanish on the dark card: near-black becomes a mid-grey,
+// and dark blue-led hues (navy, dark teal) get a lighter tint of the same hue.
+// Deep reds keep their true colour; they already read on the card.
+function liftNearBlack(color: string): string {
+  const hex = color.replace("#", "");
+  const full = hex.length === 3 ? hex.split("").map((c) => c + c).join("") : hex;
+  if (!/^[0-9a-f]{6}$/i.test(full)) return color;
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16));
+  if (Math.max(r, g, b) < 48) return "#8a8f98";
+  if (0.2126 * r + 0.7152 * g + 0.0722 * b >= 50 || b <= r) return color;
+  const tint = (c: number) => Math.round(c + (255 - c) * 0.3).toString(16).padStart(2, "0");
+  return `#${tint(r)}${tint(g)}${tint(b)}`;
+}
+
 function isRateLimitError(error: unknown): boolean {
   return (
     error instanceof Error &&
@@ -248,7 +265,7 @@ const GoalieShareChart: React.FC = () => {
           ]
         : []),
       "#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF"
-    ].filter((color, index, all): color is string =>
+    ].map((color) => (color ? liftNearBlack(color) : color)).filter((color, index, all): color is string =>
       Boolean(color) && all.findIndex((other) => other?.toLowerCase() === color?.toLowerCase()) === index
     );
 
@@ -273,7 +290,7 @@ const GoalieShareChart: React.FC = () => {
           backgroundColor: goalies.map(
             (_, index) => colors[index % colors.length]
           ),
-          borderColor: goalies.map((_, index) => colors[index % colors.length]),
+          borderColor: CHART_SURFACE,
           borderWidth: 2,
           hoverBorderWidth: 3
         }
@@ -286,12 +303,13 @@ const GoalieShareChart: React.FC = () => {
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: "left" as const,
+        // Below the donut, so "Lastname (54.3%)" gets the full cell width.
+        position: "bottom" as const,
         labels: {
-          boxWidth: 12,
-          padding: 8,
+          boxWidth: 10,
+          padding: 6,
           font: {
-            size: 14,
+            size: 12,
             family: "'Roboto Condensed', sans-serif"
           },
           color: "#ffffff"
@@ -374,7 +392,7 @@ const GoalieShareChart: React.FC = () => {
                               {teamInfo?.shortName || teamAbbrev}
                             </h4>
                             <div className={styles.teamStats}>
-                              <span className={styles.statsLabel}>Team GP:</span>
+                              <span className={styles.statsLabel} title="Team games played">GP</span>
                               <span className={styles.statsValue}>
                                 {totalGames}
                               </span>
@@ -448,7 +466,7 @@ const GoalieShareChart: React.FC = () => {
                               {teamInfo?.shortName || teamAbbrev}
                             </h4>
                             <div className={styles.teamStats}>
-                              <span className={styles.statsLabel}>Team GP:</span>
+                              <span className={styles.statsLabel} title="Team games played">GP</span>
                               <span className={styles.statsValue}>
                                 {totalGames}
                               </span>

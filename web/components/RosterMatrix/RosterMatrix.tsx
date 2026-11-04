@@ -1,6 +1,13 @@
 import React, { useState, useEffect, useMemo } from "react";
 import styles from "./RosterMatrix.module.scss";
 import { formatStatValue, STAT_DISPLAY_NAMES } from "../PlayerStats/types";
+import { teamsInfo } from "lib/teamsInfo";
+
+// Season totals are whole numbers; the shared formatter's two decimals are for per-game rates.
+const COUNT_STATS = new Set([
+  "games_played", "goals", "assists", "points", "pim", "shots",
+  "wins", "losses", "ot_losses", "shutouts"
+]);
 
 interface RosterPlayer {
   id: number;
@@ -152,6 +159,8 @@ export function RosterMatrix({
   const [positionFilter, setPositionFilter] = useState<string>("all");
   const [injuryFilter, setInjuryFilter] = useState<boolean>(false);
   const [viewMode, setViewMode] = useState<"basic" | "advanced">("basic");
+  // Players with no games this season fold into a "yet to play" group per table.
+  const [showUnplayed, setShowUnplayed] = useState({ skaters: false, goalies: false });
 
   // Separate players by position
   const { skaters, goalies } = useMemo(() => {
@@ -222,47 +231,6 @@ export function RosterMatrix({
     return uniquePositions.sort();
   }, [players]);
 
-  // Get performance class for stat values
-  const getPerformanceClass = (
-    value: number | null | undefined,
-    stat: string,
-    position: string
-  ): string => {
-    if (!value) return "";
-
-    // Define thresholds based on stat and position
-    const thresholds: Record<
-      string,
-      { good: number; excellent: number; reverse?: boolean }
-    > = {
-      points: { good: 40, excellent: 70 },
-      goals: { good: 15, excellent: 30 },
-      assists: { good: 25, excellent: 50 },
-      shooting_percentage: { good: 12, excellent: 18 },
-      cf_pct: { good: 50, excellent: 55 },
-      xgf_pct: { good: 50, excellent: 55 },
-      pdo: { good: 99, excellent: 102 },
-      save_pct: { good: 0.91, excellent: 0.92 },
-      goals_against_avg: { good: 2.75, excellent: 2.25, reverse: true },
-      plus_minus: { good: 5, excellent: 15 }
-    };
-
-    const threshold = thresholds[stat];
-    if (!threshold) return "";
-
-    if (threshold.reverse) {
-      // Lower is better (like GAA)
-      if (value <= threshold.excellent) return styles.excellent;
-      if (value <= threshold.good) return styles.good;
-      return styles.poor;
-    } else {
-      // Higher is better
-      if (value >= threshold.excellent) return styles.excellent;
-      if (value >= threshold.good) return styles.good;
-      return styles.average;
-    }
-  };
-
   // Render table header
   const renderTableHeader = (columns: typeof SKATER_COLUMNS_BASIC) => (
     <thead>
@@ -293,7 +261,8 @@ export function RosterMatrix({
   // Render table row
   const renderTableRow = (
     player: RosterPlayer,
-    columns: typeof SKATER_COLUMNS_BASIC
+    columns: typeof SKATER_COLUMNS_BASIC,
+    heat?: (value: number) => number
   ) => (
     <tr
       key={player.id}
@@ -312,11 +281,15 @@ export function RosterMatrix({
           <td
             key={col.key}
             className={`${col.sticky ? styles.stickyColumn : ""} ${
-              isNumericStat
-                ? getPerformanceClass(value, col.key, player.mapped_position)
-                : ""
+              isNumericStat && heat && col.key === sortField ? styles.sortedCell : ""
             }`}
-            style={{ width: col.width, minWidth: col.width }}
+            style={{
+              width: col.width,
+              minWidth: col.width,
+              ...(isNumericStat && heat && col.key === sortField
+                ? { background: `rgba(20, 162, 210, ${(0.04 + 0.32 * heat(value as number)).toFixed(3)})` }
+                : {})
+            }}
           >
             {isNameColumn ? (
               <div className={styles.playerNameCell}>
@@ -350,6 +323,11 @@ export function RosterMatrix({
               ) : (
                 "—"
               )
+            ) : col.key === "save_pct" && typeof value === "number" ? (
+              // Hockey style: .902. The source sometimes stores 90.243 (a percentage).
+              (value > 1 ? value / 100 : value).toFixed(3).replace(/^0/, "")
+            ) : COUNT_STATS.has(col.key) && typeof value === "number" ? (
+              Math.round(value).toString()
             ) : (
               formatStatValue(value, col.key)
             )}
@@ -358,6 +336,48 @@ export function RosterMatrix({
       })}
     </tr>
   );
+
+  const renderRows = (
+    list: RosterPlayer[],
+    columns: typeof SKATER_COLUMNS_BASIC,
+    group: "skaters" | "goalies"
+  ) => {
+    // The injury view shows everyone it matches; otherwise 0 GP players collapse.
+    const played = injuryFilter ? list : list.filter((p) => (p.games_played ?? 0) > 0);
+    const unplayed = injuryFilter ? [] : list.filter((p) => !((p.games_played ?? 0) > 0));
+    const open = showUnplayed[group];
+    // One hue, sorted column only: shade = rank between this table's lowest and
+    // highest value (GAA is lower-is-better).
+    const values = played
+      .map((p) => p[sortField])
+      .filter((v): v is number => typeof v === "number");
+    const min = Math.min(...values), max = Math.max(...values);
+    const heat = values.length > 1 && max > min
+      ? (value: number) => {
+          const n = (value - min) / (max - min);
+          return sortField === "goals_against_avg" ? 1 - n : n;
+        }
+      : undefined;
+    return (
+      <>
+        {played.map((player) => renderTableRow(player, columns, heat))}
+        {unplayed.length > 0 && (
+          <tr className={styles.unplayedToggleRow}>
+            <td colSpan={columns.length}>
+              <button
+                type="button"
+                aria-expanded={open}
+                onClick={() => setShowUnplayed((state) => ({ ...state, [group]: !open }))}
+              >
+                {open ? "Hide" : "Show"} {unplayed.length} yet to play this season
+              </button>
+            </td>
+          </tr>
+        )}
+        {open && unplayed.map((player) => renderTableRow(player, columns))}
+      </>
+    );
+  };
 
   if (isLoading) {
     return (
@@ -384,8 +404,12 @@ export function RosterMatrix({
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h2>Roster Matrix</h2>
-        <p>Complete team roster with performance metrics</p>
+        <h2>{teamsInfo[teamAbbreviation]?.name ?? teamAbbreviation} roster</h2>
+        <p>
+          {players.filter((p) => p.mapped_position !== "G").length} skaters ·{" "}
+          {players.filter((p) => p.mapped_position === "G").length} goalies ·{" "}
+          {players.filter((p) => (p.games_played ?? 0) > 0).length} have played this season
+        </p>
       </div>
 
       {/* Filter Controls */}
@@ -418,40 +442,24 @@ export function RosterMatrix({
           </label>
         </div>
 
-        <div className={styles.filterGroup}>
-          <label>View:</label>
-          <select
-            value={viewMode}
-            onChange={(e) =>
-              setViewMode(e.target.value as "basic" | "advanced")
-            }
-            className={styles.select}
-          >
-            <option value="basic">Basic Stats</option>
-            <option value="advanced">Advanced Stats</option>
-          </select>
+        <div className={styles.viewToggle} role="group" aria-label="Stat view">
+          {(["basic", "advanced"] as const).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              aria-pressed={viewMode === mode}
+              onClick={() => setViewMode(mode)}
+            >
+              {mode === "basic" ? "Basic" : "Advanced"}
+            </button>
+          ))}
         </div>
       </div>
 
       {/* Statistics Legend */}
-      <div className={styles.legend}>
-        <div className={styles.legendItem}>
-          <div className={`${styles.legendColor} ${styles.excellent}`}></div>
-          <span>Excellent</span>
-        </div>
-        <div className={styles.legendItem}>
-          <div className={`${styles.legendColor} ${styles.good}`}></div>
-          <span>Good</span>
-        </div>
-        <div className={styles.legendItem}>
-          <div className={`${styles.legendColor} ${styles.average}`}></div>
-          <span>Average</span>
-        </div>
-        <div className={styles.legendItem}>
-          <div className={`${styles.legendColor} ${styles.poor}`}></div>
-          <span>Below Average</span>
-        </div>
-      </div>
+      <p className={styles.legend}>
+        Shading marks each player&apos;s place in the sorted column, darkest for the team best
+      </p>
 
       {/* Skaters Table */}
       {(positionFilter === "all" ||
@@ -467,16 +475,11 @@ export function RosterMatrix({
                   : SKATER_COLUMNS_ADVANCED
               )}
               <tbody>
-                {filteredPlayers
-                  .filter((p) => p.mapped_position !== "G")
-                  .map((player) =>
-                    renderTableRow(
-                      player,
-                      viewMode === "basic"
-                        ? SKATER_COLUMNS_BASIC
-                        : SKATER_COLUMNS_ADVANCED
-                    )
-                  )}
+                {renderRows(
+                  filteredPlayers.filter((p) => p.mapped_position !== "G"),
+                  viewMode === "basic" ? SKATER_COLUMNS_BASIC : SKATER_COLUMNS_ADVANCED,
+                  "skaters"
+                )}
               </tbody>
             </table>
           </div>
@@ -495,16 +498,11 @@ export function RosterMatrix({
                   : GOALIE_COLUMNS_ADVANCED
               )}
               <tbody>
-                {filteredPlayers
-                  .filter((p) => p.mapped_position === "G")
-                  .map((player) =>
-                    renderTableRow(
-                      player,
-                      viewMode === "basic"
-                        ? GOALIE_COLUMNS_BASIC
-                        : GOALIE_COLUMNS_ADVANCED
-                    )
-                  )}
+                {renderRows(
+                  filteredPlayers.filter((p) => p.mapped_position === "G"),
+                  viewMode === "basic" ? GOALIE_COLUMNS_BASIC : GOALIE_COLUMNS_ADVANCED,
+                  "goalies"
+                )}
               </tbody>
             </table>
           </div>
