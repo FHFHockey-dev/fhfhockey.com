@@ -89,6 +89,17 @@
   .driverBand { margin-top: 1px; }
 }
 
+// Large screens: the four cards fill their cell with readable text instead of a gap mid-panel.
+@media (min-width: 1800px) and (min-height: 1000px) {
+  :global(.wigo-one-page.wigo-fit) {
+    .driverCard { padding: 6px 8px; border-radius: s.$radius-small; background: rgba(255, 255, 255, 0.03); }
+    .driverHeader { gap: 2px; }
+    .driverLabel { font-size: s.$text-16; }
+    .driverValue, .driverBand { font-size: s.$text-14; line-height: 1.3; }
+    .driverBand { margin-top: 4px; }
+  }
+}
+
 .body .emptyPrompt {
   margin: auto;
   padding: 0;

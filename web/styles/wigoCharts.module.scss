@@ -2428,6 +2428,42 @@
     .comparisonMatrix {
       --wigo-band-pad: 3px;
     }
+    // Large screens: the top-row panels grow their content instead of leaving it small in a big cell.
+    .identitySummary {
+      grid-template-columns: 96px minmax(0, 1fr);
+      column-gap: 16px;
+      padding: 8px 12px;
+    }
+    .playerHeaderContainer {
+      width: 96px;
+      height: 112px;
+    }
+    .playerName:not([data-name-length="long"]) {
+      font-size: 28px;
+    }
+    .playerTeam,
+    .playerRole {
+      font-size: s.$text-14;
+    }
+    .playerMetaGrid > span {
+      font-size: s.$text-16;
+    }
+    .playerMetaGrid small {
+      font-size: s.$text-12;
+    }
+    .consistencyRatingContainer {
+      .consistencyChartArea {
+        flex-basis: 46%;
+      }
+      .consistencyLabel,
+      .consistencyValue,
+      .consistencyCount {
+        font-size: s.$text-14;
+      }
+      .consistencyItem {
+        line-height: 1.5;
+      }
+    }
   }
 }
 
