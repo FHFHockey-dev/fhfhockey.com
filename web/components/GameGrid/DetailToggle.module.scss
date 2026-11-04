@@ -9,7 +9,7 @@
   margin: 4px 8px 8px;
   padding: 4px 12px;
   border: 1px solid v.$border-secondary;
-  border-radius: 999px;
+  border-radius: 4px; // same corner shape as the pickup chips, presets and Sign in
   background: transparent;
   color: v.$text-secondary;
   font-family: v.$font-family-primary, sans-serif;

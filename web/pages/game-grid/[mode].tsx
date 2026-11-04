@@ -21,12 +21,13 @@ function GameGridPage({ initialMode }: { initialMode: GameGridMode }) {
 
   useEffect(() => {
     if (Router.query.mode === mode) return;
+    // Shallow: the server props only validate the mode, which the client already guarantees
     Router.replace({
       query: {
         ...Router.query,
         mode,
       },
-    });
+    }, undefined, { shallow: true });
   }, [mode]);
 
   return (

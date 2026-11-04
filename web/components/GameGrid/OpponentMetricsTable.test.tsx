@@ -47,6 +47,18 @@ describe("OpponentMetricsTable perspective", () => {
   });
 });
 
+describe("OpponentMetricsTable averages", () => {
+  it("shows the league mean of the listed Attack and Defense ratings", () => {
+    render(<OpponentMetricsTable teamData={entries.map(({ team }) => team)} metricsData={metricsData} />);
+    const [, averageRow, ...teamRows] = screen.getAllByRole("row");
+    const ratingAt = (row: HTMLElement, column: number) => Number(within(row).getAllByRole("cell")[column].textContent);
+    for (const column of [1, 2]) {
+      const mean = teamRows.reduce((sum, row) => sum + ratingAt(row, column), 0) / teamRows.length;
+      expect(Math.abs(ratingAt(averageRow, column) - mean)).toBeLessThanOrEqual(0.5);
+    }
+  });
+});
+
 describe("DesktopMasterTable perspective", () => {
   it("hides the role control and shares the unchanged skater default", () => {
     vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} });

@@ -1124,6 +1124,10 @@
 .scheduleGrid [data-intensity="medium-high"] {
   --day-accent: var(--color-mid);
 }
+// GP / OFF cells use a 4-step scale; without this step their underline vanished on "2 GP" / "1 off-night".
+.scheduleGrid [data-intensity="medium-low"] {
+  --day-accent: #{v.$color-orange-400};
+}
 .scheduleGrid [data-intensity="low"] {
   --day-accent: var(--color-heavy);
 }
@@ -1141,13 +1145,20 @@
   $percentage: math.div($i - 1, $denominator);
   $hue: (1 - $percentage) * 120;
   $rank-accent: hsl($hue, 88%, 66%);
+  // Text a touch lighter than the fill/border so the red end still clears 4.5:1 (worst: 5.1:1 at rank 32).
+  $rank-text: hsl($hue, 88%, 72%);
 
   .rank-color-#{$i} {
     background-color: rgba($rank-accent, 0.18) !important;
-    color: $rank-accent !important;
+    color: $rank-text !important;
     box-shadow:
       inset 0 0 0 2px rgba($rank-accent, 0.72),
       inset 0 -1px 0 rgba($rank-accent, 0.34);
+
+    // Phones: a flush tile with a bottom stripe, matching the GP / OFF cells beside it.
+    @media (max-width: v.$breakpoint-mobile-max) {
+      box-shadow: inset 0 -2px 0 $rank-accent;
+    }
   }
 }
 
@@ -2327,6 +2338,10 @@
     font-size: 0.65rem;
     background: rgba(v.$color-black, 0.7) !important;
   }
+  // "GP/Day" nearly fills its cell; centre it evenly instead of the logo cells' left inset.
+  .mobileCompactTable .totalGamesPerDayRow td:first-child {
+    padding-inline: 2px !important;
+  }
   .mobileCompactTable .cellInnerBorder {
     padding: 1px !important;
   }
@@ -2388,6 +2403,11 @@
 
 .sortableHeader {
   cursor: default;
+
+  // Only the column the grid is sorted by keeps a bright arrow.
+  [data-sort-direction]:not([data-sort-active]) {
+    opacity: 0.35;
+  }
 }
 
 .sortAction {
@@ -2425,6 +2445,13 @@
 .teamSortAction {
   flex: 1 1 auto;
   justify-content: space-between;
+
+  // Too narrow for label and switch side by side; stack them like the day headers.
+  @media (max-width: v.$breakpoint-mobile-max) {
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+  }
 }
 
 .dateRangeOverlay {
@@ -2665,9 +2692,14 @@
     border-top-left-radius: v.$border-radius-sm;
     border-bottom-left-radius: v.$border-radius-sm;
 
+    // Phones: a left stripe on the tinted logo cell instead of a box, matching the stat-column stripes.
     @media (max-width: v.$breakpoint-mobile-max) {
-      border-top-left-radius: 0;
-      border-bottom-left-radius: 0;
+      border-top: 0;
+      border-left: 0;
+      border-bottom: 0;
+      border-radius: 0;
+      // keeps the first column's divider glow, which otherwise overrides this
+      box-shadow: inset 3px 0 0 v.$schedule-green, 2px 0 8px rgba(v.$primary-color, 0.25) !important;
     }
   }
   > td:first-child .firstColumnContent {
@@ -2693,8 +2725,12 @@
     border-bottom-left-radius: v.$border-radius-sm;
     @include v.schedule-outline(v.$schedule-red);
     @media (max-width: v.$breakpoint-mobile-max) {
-      border-top-left-radius: 0;
-      border-bottom-left-radius: 0;
+      border-top: 0;
+      border-left: 0;
+      border-bottom: 0;
+      border-radius: 0;
+      // keeps the first column's divider glow, which otherwise overrides this
+      box-shadow: inset 3px 0 0 v.$schedule-red, 2px 0 8px rgba(v.$primary-color, 0.25) !important;
     }
   }
 
@@ -2872,26 +2908,19 @@
       width: 100%;
       border-top-right-radius: v.$border-radius-lg;
       border-top-left-radius: v.$border-radius-lg;
-      background: linear-gradient(
-        135deg,
-        rgba(v.$secondary-color, 0.15),
-        rgba(v.$primary-color, 0.1)
-      );
-      color: v.$primary-color;
+      // The original blue tint, flattened (no gradients); row + button layers match the old rendered colour.
+      background: rgba(v.$secondary-color, 0.15);
+      color: v.$color-blue-400; // lighter blue: 4.8:1 on the tint (WCAG AA)
       border: 1px solid rgba(v.$secondary-color, 0.25);
-      backdrop-filter: blur(8px);
       box-shadow: v.$box-shadow-default;
 
       button {
         @include v.button-style;
-        background: linear-gradient(
-          135deg,
-          rgba(v.$secondary-color, 0.12),
-          rgba(v.$secondary-color, 0.08)
-        );
-        color: v.$primary-color;
+        background: rgba(v.$secondary-color, 0.15);
+        backdrop-filter: none;
+        color: v.$color-blue-400; // lighter blue: 4.8:1 on the tint (WCAG AA)
         flex: 1 1 auto;
-        height: 40px;
+        height: 44px; // 44px targets for the most-tapped controls
         font-size: v.$font-size-small * 0.8;
         border-radius: 0;
         border: 1px solid rgba(v.$secondary-color, 0.25);
@@ -2901,42 +2930,35 @@
         padding: v.$space-sm;
         text-align: center;
         text-transform: uppercase;
-        transition: all v.$transition-duration v.$ease-desktop-standard;
-        backdrop-filter: blur(8px);
+        transition: background-color v.$transition-duration v.$ease-desktop-standard, color v.$transition-duration v.$ease-desktop-standard;
         position: relative;
         overflow: hidden;
 
-        // Modern button glow effect
-        &::before {
-          content: "";
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(
-            135deg,
-            rgba(v.$secondary-color, 0.2),
-            rgba(v.$primary-color, 0.1)
-          );
-          opacity: 0;
-          transition: opacity v.$transition-duration v.$ease-desktop-standard;
-        }
-
         &:hover {
-          background: linear-gradient(
-            135deg,
-            rgba(v.$secondary-color, 0.2),
-            rgba(v.$secondary-color, 0.15)
-          );
+          background: rgba(v.$secondary-color, 0.2);
           color: v.$text-color-primary;
-          box-shadow: v.$box-shadow-default;
-
-          &::before {
-            opacity: 1;
-          }
         }
 
         &:active {
           transform: translateY(0);
           transition: transform 0.15s v.$ease-desktop-emphasized;
+        }
+
+        // Touch: a tap would leave the hover look stuck (solid blue, lifted, shadowed),
+        // so phones keep the resting look and get a flash only while pressed.
+        @media (hover: none) {
+          &:hover:not(:disabled) {
+            background: rgba(v.$secondary-color, 0.15);
+            color: v.$color-blue-400; // lighter blue: 4.8:1 on the tint (WCAG AA)
+            border-color: rgba(v.$secondary-color, 0.25);
+            box-shadow: none;
+            transform: none;
+            &::before { opacity: 0; }
+          }
+          &:active:not(:disabled) {
+            background: rgba(v.$secondary-color, 0.3);
+            color: v.$text-color-primary;
+          }
         }
 
         &:focus-visible {
@@ -2946,7 +2968,7 @@
         }
       }
 
-      button:first-child {
+      button:first-of-type {
         // Apply to first button (.dateButtonPrev)
         border-top-left-radius: v.$border-radius-lg;
         flex-grow: 0;
@@ -2956,7 +2978,7 @@
         text-transform: uppercase;
         border-right: none;
       }
-      button:last-child {
+      button:last-of-type {
         // Apply to last button (.dateButtonNext)
         border-top-right-radius: v.$border-radius-lg;
         border-left: none;
@@ -2968,17 +2990,92 @@
       }
     }
 
-    .mobileNavSpinner {
-      flex: 0 0 auto;
+    // Thin bar along the bottom of the nav row so the buttons never resize while data loads.
+    .navButtonRow {
+      position: relative;
+    }
+    // Sits in the nav row like its button neighbours, but holds a 7 / 10 radio pair.
+    .modeSwitch {
+      flex: 1 1 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      height: 44px;
+      border: 1px solid rgba(v.$secondary-color, 0.25);
+      background: rgba(v.$secondary-color, 0.15);
+      color: v.$color-blue-400; // lighter blue: 4.8:1 on the tint (WCAG AA)
+      font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .modeTrack {
+      display: inline-flex;
+      gap: 2px;
+      padding: 2px;
+      border-radius: 999px;
+      background: rgba(v.$color-black, 0.35);
+    }
+    .modeOption,
+    .modeOptionActive {
+      position: relative;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 0 v.$space-sm 0 v.$space-xs;
+      min-width: 38px;
+      min-height: 36px; // well over the 24px WCAG 2.5.8 minimum, inside the 44px row
+      padding: 0 10px;
+      border-radius: 999px;
+      line-height: 1.2;
+      letter-spacing: 0;
+      text-align: center;
+      cursor: pointer;
+      // The real radio covers the pill, invisible, so the whole pill is the tap target.
+      input {
+        position: absolute;
+        inset: 0;
+        margin: 0;
+        opacity: 0;
+        cursor: pointer;
+      }
+      &:has(input:focus-visible) {
+        box-shadow: v.$focus-ring-desktop;
+      }
+    }
+    .modeOption {
+      color: v.$text-secondary;
+    }
+    .modeOptionActive {
+      background: v.$secondary-color;
+      color: v.$background-dark;
+    }
+    .mobileNavProgress {
+      position: absolute;
+      inset: auto 0 -1px;
+      height: 3px;
+      // Clip the sweep sideways only, so its glow can bleed above and below.
+      clip-path: inset(-8px 0);
       pointer-events: none;
-      opacity: 0.95;
-      // Keep the row height stable with the buttons
-      height: 40px;
-      filter: drop-shadow(0 0 10px rgba(v.$secondary-color, 0.25));
+      background: rgba(v.$secondary-color, 0.15);
+      &::after {
+        content: "";
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 35%;
+        border-radius: 3px;
+        background: v.$secondary-color;
+        box-shadow: 0 0 8px rgba(v.$secondary-color, 0.9), 0 0 2px v.$secondary-color;
+        animation: navProgress 1.1s ease-in-out infinite;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        &::after {
+          width: 100%;
+          opacity: 0.6;
+          animation: none;
+        }
+      }
     }
 
     .logoWithIconWrapper {
@@ -3049,6 +3146,19 @@
       gap: v.$space-sm;
       width: 100%;
     }
+    .titleText {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .titleRange {
+      margin: 2px 0 0;
+      color: v.$text-secondary;
+      font-family: v.$font-family-primary, sans-serif;
+      font-size: 0.85rem;
+      letter-spacing: 0.02em;
+      text-transform: none;
+      font-variant-numeric: tabular-nums;
+    }
     .gameGridTitle {
       font-family:
         v.$font-family-accent, v.$font-family-primary, sans-serif !important;
@@ -3058,6 +3168,7 @@
       letter-spacing: 0.3em;
       margin: 0;
       color: v.$text-color-primary;
+      text-shadow: none; // no glow on titles; the grid carries the colour
       // override global block width to allow the button on the same line
       width: auto;
       flex: 1 1 auto;
@@ -3067,6 +3178,124 @@
       flex: 0 0 auto;
       white-space: nowrap;
     }
+  }
+
+  // GP / OFF / SCORE headers mirror the day headers beside them: the sort button fills the cell, the label
+  // row is as tall as the day/date row (so the two dividers line up) and the arrow band runs to the bottom.
+  .mobileCompactTable thead th > .sortAction {
+    position: absolute;
+    inset: 0;
+    min-height: 0;
+    .headerLabel {
+      height: 100%;
+      justify-content: stretch;
+    }
+    .desktopText {
+      flex: 0 0 19px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      min-height: 0;
+    }
+    .switchContainer {
+      flex: 1 1 auto;
+    }
+  }
+
+  // Numbers use the site numbers face (Martian Mono, tabular) in every table, matching Opponent / 4-Week.
+  .mobileCompactTable tbody td[data-intensity],
+  .mobileCompactTable .weekScoreCell,
+  .mobileCompactTable .totalGamesPerDayRow td:not(:first-child) {
+    font-family: v.$font-family-numbers, monospace;
+    font-size: 10px !important; // the 4-Week total size, with room inside the 33px cells (base rule is !important)
+    font-variant-numeric: tabular-nums;
+  }
+  .mobileCompactTable .weekScoreCell[data-long] {
+    font-size: 9px !important;
+    letter-spacing: -0.08em; // "-11.7" fits inside the cell's padding, not just its border
+  }
+
+  // Grid bottom uses the section-card frame (BPA / Opponent / 4-Week): same border on the sides and bottom,
+  // 12px bottom corners with the table's corners 1px tighter so they sit flush. The top edge is unchanged.
+  .mobileGameGridAll .scheduleGridContainer {
+    border-right: v.$border-subtle;
+    border-bottom: v.$border-subtle;
+    border-left: v.$border-subtle;
+    border-bottom-left-radius: v.$border-radius-lg;
+    border-bottom-right-radius: v.$border-radius-lg;
+  }
+  .mobileGameGridAll .scheduleGrid {
+    border-bottom-left-radius: calc(#{v.$border-radius-lg} - 1px);
+    border-bottom-right-radius: calc(#{v.$border-radius-lg} - 1px);
+  }
+  .mobileGameGridAll .scheduleGrid tbody tr:last-of-type td:first-child {
+    border-bottom-left-radius: calc(#{v.$border-radius-lg} - 1px);
+  }
+  .mobileGameGridAll .scheduleGrid tbody tr:last-of-type td:last-child {
+    border-bottom-right-radius: calc(#{v.$border-radius-lg} - 1px);
+  }
+
+  // The team column sits on the table's outer edge: no left divider there (on the rounded last row it
+  // curved into a "toenail").
+  .mobileCompactTable tbody td:first-child {
+    border-left: 0;
+  }
+
+  // 10-day view: no stat block, so the GP/DAY total under next Monday gets a plain day divider.
+  .mobileCompactTable[data-extended] .totalGamesPerDayRow td:nth-child(9) {
+    border-left: 1px solid rgba(v.$color-white, 0.18);
+  }
+
+  // Totals row: stat-column dividers come from the left border (as in team rows), not a right border.
+  .mobileCompactTable .totalGamesPerDayRow td:nth-last-child(-n + 3) {
+    border-right: 0;
+  }
+
+  // Once the grid is ready the status is screen-reader only; don't hold a blank band above the grid for it.
+  .loadingStatus:has(> .srOnly:only-child) {
+    min-height: 0;
+    margin: 0;
+  }
+  // Secondary sources still loading: the nav spinner shows it; keep the text for screen readers only.
+  .loadingStatus[data-background] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    min-height: 0;
+    margin: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  // Controls share the 4px corner (chips, presets, toggles, Sign in).
+  .titleRow .helperToggle {
+    border-radius: 4px;
+    // Flat: one tint for the old white gradient, no glass blur or glow layer.
+    background: rgba(v.$color-white, 0.06);
+    backdrop-filter: none;
+    &::before { content: none; }
+    // Touch: no stuck hover after a tap; a flash only while pressed.
+    @media (hover: none) {
+      &:hover:not(:disabled) {
+        background: rgba(v.$color-white, 0.06);
+        color: v.$text-secondary;
+        border-color: rgba(v.$color-white, 0.15);
+        box-shadow: none;
+        transform: none;
+      }
+      &:active:not(:disabled) {
+        background: rgba(v.$color-white, 0.12);
+        color: v.$text-color-primary;
+      }
+    }
+  }
+
+  // One 16px rhythm between every block: grid → Opponent → Best Players Available → 4-Week.
+  .playerPickupSection,
+  .fourWeekSection {
+    margin-top: v.$space-md;
   }
 
   // Provide subtle spacing and prevent double-framing (child components already frame themselves)
@@ -3406,6 +3635,20 @@
     justify-content: center;
     padding: v.$space-xxs;
 
+    // Phones: the 29×16 switch gets an invisible hit area reaching up into its (non-interactive)
+    // date label, so taps don't need to land on the switch itself. The label forwards the tap.
+    // Only 4px downward: the GP/Day row overlaps the bottom of the header cell.
+    @media (max-width: v.$breakpoint-mobile-max) {
+      label {
+        position: relative;
+        &::after {
+          content: "";
+          position: absolute;
+          inset: -12px -2px -4px;
+        }
+      }
+    }
+
     @media (max-width: v.$breakpoint-mobile-max) {
       width: 100%;
       height: 100%;
@@ -3581,12 +3824,14 @@
         color 0.15s v.$ease-desktop-emphasized;
       position: relative;
 
-      &:nth-child(9) {
+      // GP / OFF / SCORE columns. Day cells (.cellInnerBorder) are excluded: in the 10-day view
+      // columns 9-11 are next week's days and keep their day colours. :where() keeps specificity unchanged.
+      &:nth-child(9):where(:not(.cellInnerBorder)) {
         background-color: rgba(v.$color-white, 0.02);
         border-left: 2px solid v.$primary-color;
       }
-      &:nth-child(10),
-      &:nth-child(11) {
+      &:nth-child(10):where(:not(.cellInnerBorder)),
+      &:nth-child(11):where(:not(.cellInnerBorder)) {
         background-color: rgba(v.$color-white, 0.02);
       }
 
@@ -3645,7 +3890,7 @@
         inset: 0;
         z-index: 5;
         pointer-events: none;
-        border-radius: 4px;
+        border-radius: 0; // fills a square cell edge to edge; a radius shows as clipped corners
         filter: grayscale(100%);
 
         .mobileLogoSize {
@@ -3733,7 +3978,7 @@
         inset: 0;
         z-index: 1;
         pointer-events: none;
-        border-radius: v.$border-radius-sm;
+        border-radius: 0; // fills a square cell edge to edge; a radius shows as clipped corners
       }
     }
 
@@ -4267,14 +4512,15 @@
   }
 
   .gridColMiddle {
-    width: 9.85%;
+    width: 9.2%;
   }
 
+  // Wide enough for the GP / OFF / SCORE labels and values like "-11.7"
   .gridColEnd {
-    width: 7%;
+    width: 8.53%;
   }
 
-  // 10 + ( 7 * 3 ) + ( 9.85 * 7 ) = 100%
+  // 10 + ( 8.53 * 3 ) + ( 9.2 * 7 ) ≈ 100%
 
   .mainGridContainer {
     width: 100%;
@@ -4294,7 +4540,7 @@
     display: flex;
     flex-direction: column;
     gap: 0;
-    margin-bottom: 20px;
+    margin-bottom: 0; // the page's 16px flex gap separates the grid from the sections
     border-radius: 12px;
     background: transparent;
     box-sizing: border-box;
@@ -4303,9 +4549,10 @@
   }
 
   .totalGamesPerDayRow {
+    // Same 1px divider the team rows draw, so the OFF / SCORE column lines run straight down.
     td:nth-child(10),
     td:nth-child(11) {
-      border-left: none !important;
+      border-left: 1px solid rgba(v.$color-white, 0.181) !important;
     }
   }
 
@@ -4580,6 +4827,20 @@
   .heavy {
     background-color: rgba(v.$schedule-red, v.$fill-opacity);
   }
+  // H / A flags in the Tips sheet, matching the grid's corner badges.
+  .legendFlag {
+    display: inline-block;
+    min-width: 16px;
+    padding: 0 3px;
+    border-radius: 3px;
+    color: v.$text-button;
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 16px;
+    text-align: center;
+  }
+  .legendFlagHome { background: v.$schedule-green; }
+  .legendFlagAway { background: v.$danger-color; }
   .inlineChip {
     display: inline-flex;
     align-items: center;
@@ -4594,6 +4855,11 @@
 }
 
 // --- Modern Animations ---
+@keyframes navProgress {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(290%); }
+}
+
 @keyframes slideUp {
   from {
     transform: translateY(100%);

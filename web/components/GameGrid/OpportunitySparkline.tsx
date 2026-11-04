@@ -119,11 +119,20 @@ export default function OpportunitySparkline({ value, scale, team }: { value?: T
             <linearGradient id={`${id}-stroke`} gradientUnits="userSpaceOnUse" x1={x(0)} y1="0" x2={x(weeks.length - 1)} y2="0">
               {weeks.map((w, i) => <stop key={w.weekNumber} className={styles.stop} data-matchup={w.skaterMatchup} offset={weeks.length > 1 ? i / (weeks.length - 1) : 0} />)}
             </linearGradient>
+            {/* Phones: solid matchup-colour bands, each week's colour up to halfway to the next (no blend) */}
+            <linearGradient id={`${id}-bands`} gradientUnits="userSpaceOnUse" x1={x(0)} y1="0" x2={x(weeks.length - 1)} y2="0">
+              {weeks.flatMap((w, i) => {
+                const span = Math.max(weeks.length - 1, 1);
+                return [Math.max(0, (i - 0.5) / span), Math.min(1, (i + 0.5) / span)].map((offset, k) =>
+                  <stop key={`${w.weekNumber}-${k}`} className={styles.stop} data-matchup={w.skaterMatchup} offset={offset} />);
+              })}
+            </linearGradient>
             <filter id={`${id}-glow`} x="-20%" y="-60%" width="140%" height="220%">
               <feGaussianBlur stdDeviation="1.4" />
             </filter>
           </defs>
           {area && <path className={styles.area} d={area} fill={`url(#${id}-stroke)`} />}
+          {area && <path className={styles.areaBands} d={area} fill={`url(#${id}-bands)`} />}
           <path className={styles.glow} d={line} stroke={`url(#${id}-stroke)`} filter={`url(#${id}-glow)`} />
           <path className={styles.line} d={line} stroke={`url(#${id}-stroke)`} />
           {weeks.map((w, i) => w.opportunity == null ? null : (

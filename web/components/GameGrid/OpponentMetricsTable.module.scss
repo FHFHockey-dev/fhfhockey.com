@@ -194,6 +194,11 @@
   th:first-child & {
     justify-content: flex-start;
   } // Align team sort left
+
+  // Phones: the whole header cell is the tap target (44px), not just the 11px label.
+  @media (max-width: v.$breakpoint-mobile-max) {
+    min-height: 44px;
+  }
 }
 
 /* --- Table Body Styling --- */
@@ -329,3 +334,107 @@
 }
 
 .titleText small { font-size: .62rem; white-space: nowrap; text-transform: none; letter-spacing: 0; }
+
+// Phones: the sort button supplies the header height, so the cell drops its vertical padding.
+@media (max-width: v.$breakpoint-mobile-max) {
+  .table th:has(> .sortButton) {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+}
+
+// Sort mark: faint on every sortable column, lit on the active one.
+.sortMark {
+  margin-left: 4px;
+  font-size: 0.7em;
+  opacity: 0.35;
+}
+.sortMarkActive {
+  opacity: 1;
+  color: v.$primary-color;
+}
+
+// Phones: section headings are left-aligned on one shared left edge (with Best Players Available),
+// and the section uses the same rounded, bordered card as Best Players Available.
+@media (max-width: v.$breakpoint-mobile-max) {
+  .titleHeader { justify-content: flex-start; text-align: left; }
+  .titleText { text-align: left; text-shadow: none; }
+  // Logos start on the TEAM label's left edge (and AVG's), not centred in the wide column.
+  .table td:first-child .teamInfo { justify-content: flex-start; gap: 8px; padding-left: 4px; }
+  // The code beside the logo fills the wide column and tells lookalike logos apart.
+  .table .teamAbbr {
+    display: inline;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    color: v.$text-secondary;
+  }
+  // The "higher = …" hint sits under the title, like the date under GAME GRID.
+  .titleText small {
+    display: block;
+    margin-top: 2px;
+    font-family: v.$font-family-primary, sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.02em;
+    text-transform: none;
+    color: v.$text-secondary;
+    max-height: 1.5em;
+    overflow: hidden;
+    transition: opacity 150ms v.$transition-easing, max-height 150ms v.$transition-easing, margin-top 150ms v.$transition-easing;
+  }
+  // Keep the caret on the title line (padding + half its 22px line), not centred on title + hint.
+  .minimizeToggleIcon {
+    top: calc(#{v.$space-sm} + 11px);
+    transition: transform 150ms v.$transition-easing, top 150ms v.$transition-easing;
+  }
+  // Folded, the section is one title row: fade the hint out and re-centre the caret.
+  .container.minimized .titleText small { max-height: 0; margin-top: 0; opacity: 0; }
+  .container.minimized .minimizeToggleIcon { top: 50%; }
+  @media (prefers-reduced-motion: reduce) {
+    .titleText small, .minimizeToggleIcon { transition: none; }
+  }
+  .container {
+    border: v.$border-subtle;
+    border-radius: v.$border-radius-lg; // BPA card radius (12px)
+  }
+  // Column headers share the Best Players Available spec: 11px uppercase, 0.05em tracking.
+  .table thead th,
+  .table thead th:first-child,
+  .table thead .sortButton {
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+}
+
+// Source / update line in the Info panel: metadata, set apart under a hairline.
+.infoSource {
+  margin-top: 10px !important;
+  padding-top: 8px;
+  border-top: 1px solid v.$border-secondary;
+  font-size: 11px;
+  color: v.$text-secondary;
+}
+
+// In-place key: header dots in each meter's colour, and the AVG label carries the meters' white average tick.
+.keyDot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 5px;
+  border-radius: 50%;
+  vertical-align: middle;
+  &[data-kind="atk"] { background: v.$color-orange; }
+  &[data-kind="def"] { background: v.$primary-color; }
+}
+.avgTickKey {
+  display: inline-block;
+  width: 2px;
+  height: 9px;
+  margin-left: 4px;
+  border-radius: 1px;
+  background: rgba(v.$color-white, 0.75);
+  vertical-align: middle;
+}
+
+// Team code beside the logo: phones only (shown in the mobile block above).
+.teamAbbr { display: none; }

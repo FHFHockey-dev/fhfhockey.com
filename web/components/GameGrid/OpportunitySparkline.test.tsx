@@ -28,7 +28,11 @@ describe("OpportunitySparkline", () => {
     ]);
     const { container } = render(<OpportunitySparkline value={value} scale={5} team="BOS" />);
     const trigger = screen.getByRole("button", { name: /^BOS 4-week opportunity 11\.8, rising; weekly games 1, 3, 3, 4$/ });
-    expect([...container.querySelectorAll("stop")].map((stop) => stop.getAttribute("data-matchup"))).toEqual(["easier", "average", "harder", "average"]);
+    expect([...container.querySelectorAll("linearGradient[id$='-stroke'] stop")].map((stop) => stop.getAttribute("data-matchup"))).toEqual(["easier", "average", "harder", "average"]);
+    // Phone fill: each week is one solid band, edges halfway between weeks.
+    const bands = [...container.querySelectorAll("linearGradient[id$='-bands'] stop")];
+    expect(bands.map((stop) => stop.getAttribute("data-matchup"))).toEqual(["easier", "easier", "average", "average", "harder", "harder", "average", "average"]);
+    expect(bands.map((stop) => Number(stop.getAttribute("offset")).toFixed(3))).toEqual(["0.000", "0.167", "0.167", "0.500", "0.500", "0.833", "0.833", "1.000"]);
     expect(container.querySelector("svg")?.getAttribute("data-shared-scale")).toBe("5");
 
     act(() => trigger.focus());

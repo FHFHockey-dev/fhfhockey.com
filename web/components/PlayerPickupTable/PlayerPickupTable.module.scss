@@ -171,12 +171,6 @@ $selected-border-width: 2px; // The width of the indicator
     color: v.$color-white;
   }
 
-  .titleWord {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 0;
-    white-space: nowrap;
-  }
   &[data-interactive="true"] {
     cursor: pointer;
   }
@@ -206,9 +200,8 @@ $selected-border-width: 2px; // The width of the indicator
   }
 }
 
-.acronym {
+.titleAccent {
   color: v.$secondary-color;
-  font-weight: 100;
 }
 
 /* --- Desktop Filter Layout --- */
@@ -586,6 +579,110 @@ $selected-border-width: 2px; // The width of the indicator
 }
 
 /* --- Metric Filter Section --- */
+.metricsDisclosure {
+  margin-inline: 10px;
+  border: 1px solid v.$border-color-secondary;
+  border-radius: 8px;
+  background-color: rgba(v.$color-white, 0.04);
+
+  // Consecutive folded rows read as one grouped card split by a hairline.
+  & + & {
+    margin-top: -15px; // cancels the filters body gap
+    border-top: 0;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+  &:has(+ .metricsDisclosure) {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+  &:last-child {
+    margin-bottom: 12px;
+  }
+
+  > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 44px;
+    padding: 0 12px;
+    cursor: pointer;
+    list-style: none;
+    color: v.$text-color-primary;
+    font-size: 0.9rem;
+    &::-webkit-details-marker { display: none; }
+    &::after { content: "▾"; color: v.$primary-color; transition: transform 0.15s ease; }
+    &:focus-visible { outline: 2px solid v.$secondary-color; outline-offset: -2px; }
+  }
+  &[open] > summary::after { transform: rotate(180deg); }
+
+  // The filter panel spans the card edge to edge: square corners, or its radius shows as clipped corners.
+  .filterRowMobileCombined { border-radius: 0; }
+}
+
+// Caveat about the player pool plus the sign-in prompt: a quiet note, not body copy.
+.poolNotice {
+  margin: 10px 10px 12px; // inset like the folded filter card
+  padding: 10px 12px;
+  // Left rule as thick as the corner radius, so its inner edge is straight (no "toenail" curve).
+  border-left: 4px solid rgba(v.$primary-color, 0.6);
+  border-radius: 4px 6px 6px 4px;
+  background: rgba(v.$color-white, 0.03);
+  color: v.$text-secondary;
+  font-size: 0.8rem;
+  line-height: 1.45;
+
+  &:empty { display: none; }
+  p { margin: 0; }
+  p + p { margin-top: 6px; }
+  // Note lines ending in an action (Sign in, View premium access, Retry): a short line keeps the action
+  // beside it; long messages (bare text, full width) push the action onto its own row below.
+  p:has(> a, > button) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 12px;
+    > span { flex: 1 1 12rem; min-width: 0; }
+    > a, > button { flex: 0 0 auto; margin-top: 0; }
+  }
+  button {
+    min-height: 32px;
+    padding: 4px 14px;
+    border: 1px solid v.$primary-color;
+    border-radius: 4px;
+    background: none;
+    color: v.$primary-color;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  // The sign-in / access link is the one action here: a small outlined button on its own line.
+  a {
+    display: flex;
+    align-items: center;
+    width: fit-content;
+    min-height: 32px;
+    margin-top: 8px;
+    padding: 4px 14px;
+    border: 1px solid v.$primary-color;
+    border-radius: 4px;
+    color: v.$primary-color;
+    font-weight: 600;
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      background: rgba(v.$primary-color, 0.12);
+    }
+  }
+}
+
+.summaryActive {
+  color: v.$primary-color;
+  font-weight: 600;
+}
+
 .metricFilterContainer {
   display: flex;
   flex-direction: column;
@@ -648,7 +745,7 @@ $selected-border-width: 2px; // The width of the indicator
     letter-spacing: 0.05em;
     font-size: v.$font-size-sm;
     font-weight: 600;
-    border-radius: v.$border-radius-md;
+    border-radius: 4px; // same square-ish shape as the Select Group chips
     padding: v.$space-xs v.$space-md;
     background: linear-gradient(
       135deg,
@@ -798,7 +895,7 @@ $selected-border-width: 2px; // The width of the indicator
 .columnLabel {
   font-size: 1.1em;
   font-weight: bold;
-  color: v.$border-color;
+  color: v.$text-color-secondary; // was the border colour (2.3:1); text needs 4.5:1
   padding: 0 10px;
   margin-left: 10px;
   // background-color: v.$background-medium; // Needed if border shows through legend
@@ -1047,7 +1144,6 @@ $selected-border-width: 2px; // The width of the indicator
 
   .filtersTitle {
     padding-right: v.$space-sm;
-    .titleWord { white-space: normal; }
   }
 
   .filterRowGridTop {
@@ -1325,6 +1421,12 @@ $selected-border-width: 2px; // The width of the indicator
   font-family: v.$font-family-numbers, monospace;
   color: v.$color-white;
   text-shadow: 0 0 10px rgba(v.$primary-color, 0.5);
+  background: rgba(v.$secondary-color, 0.08);
+}
+// Score header shares the column tint (layered so the sticky header stays opaque).
+.table thead th:last-child {
+  background: linear-gradient(rgba(v.$secondary-color, 0.08), rgba(v.$secondary-color, 0.08)),
+    color.adjust(v.$background-dark, $lightness: -2%);
 }
 
 .percentileContainer {
@@ -1525,7 +1627,7 @@ $selected-border-width: 2px; // The width of the indicator
         // Expand button column
         text-align: center;
         border-right: none;
-        width: 5%; // Ensure width consistency with colgroup
+        width: 8%; // Ensure width consistency with colgroup
         cursor: default; // Not sortable
       }
       &:last-child {
@@ -1547,9 +1649,16 @@ $selected-border-width: 2px; // The width of the indicator
       &:nth-child(odd) {
         background-color: v.$background-dark;
       }
-      &:hover:not(.expandedRow) {
-        // Don't highlight expanded row itself on hover
+      // Touch gets the fill only while the finger is down, then it fades out.
+      &:active:not(.expandedRow) {
         background-color: color.scale(v.$primary-color, $lightness: -30%);
+      }
+      // Mouse only: on phones a tap would leave the row stuck in this bright fill.
+      @media (hover: hover) {
+        &:hover:not(.expandedRow) {
+          // Don't highlight expanded row itself on hover
+          background-color: color.scale(v.$primary-color, $lightness: -30%);
+        }
       }
     }
     td {
@@ -1687,6 +1796,7 @@ $selected-border-width: 2px; // The width of the indicator
   display: flex;
   flex-direction: row;
   align-items: center;
+  gap: 4px; // long names never touch the injury badge
   width: 100%;
 }
 
@@ -1708,6 +1818,11 @@ $selected-border-width: 2px; // The width of the indicator
   display: flex;
   align-items: center;
   justify-content: flex-end; // Align icon to the right
+  // 14px badge + the 4px gap take the old 18px, so names keep their width.
+  img {
+    width: 14px !important;
+    height: 14px !important;
+  }
 }
 
 /* --- Styles for the Collapsible Table/Pagination Content --- */
@@ -1763,4 +1878,225 @@ $selected-border-width: 2px; // The width of the indicator
     &:focus-visible { outline: 2px solid #77cfff; outline-offset: 2px; }
   }
   summary { cursor: pointer; }
+}
+
+// Mobile Own% when the value isn't current: muted value over a small qualifier.
+.ownershipCompact {
+  display: inline-flex;
+  vertical-align: middle;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  color: v.$text-secondary;
+  line-height: 1.1;
+}
+// Inline logos sat on the text baseline and added a descender gap to every row.
+.tableMobile td img {
+  vertical-align: middle;
+}
+// Mobile POS: keep multi-position players ("C/LW/RW") on one line so rows stay a single line tall.
+.tableMobile td.positionsCellMobile {
+  white-space: nowrap;
+  padding-inline: 2px;
+  font-size: 12px;
+}
+// Score is the ranking column: brightest, boldest cell in the row, on a faint tint.
+// Sticky header stays opaque: tint layered over the dark header fill.
+.tableMobile thead th:last-child {
+  background: linear-gradient(rgba(v.$secondary-color, 0.08), rgba(v.$secondary-color, 0.08)), v.$background-dark;
+  color: v.$color-white;
+}
+.tableMobile td.scoreCellMobile {
+  color: v.$color-white;
+  font-weight: 700;
+  background: rgba(v.$secondary-color, 0.08);
+  font-variant-numeric: tabular-nums;
+}
+.scorePending {
+  opacity: 0.5;
+}
+.headerNote {
+  display: block;
+  font-size: 0.6rem;
+  letter-spacing: 0;
+  text-transform: none;
+  opacity: 0.85; // 0.7 measured 4.27:1; this clears 4.5:1 on the dark header
+}
+.ownershipWord {
+  font-family: v.$font-family-primary, sans-serif;
+  font-size: 12px;
+}
+.ownershipQualifier {
+  font-size: 0.62rem;
+  opacity: 0.8;
+  white-space: nowrap;
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+// Phones: metric names are short (G, PTS, SOG, SV%), so three per row instead of one per line.
+@media (max-width: v.$breakpoint-mobile-max) {
+  // The container's 16px gap already separates the filter card from the table card.
+  .filters:not(.sidebarFilters) { margin-bottom: 0; }
+
+  // Section heading spec shared with Opponent Strength / 4-Week Opportunity (OpponentMetricsTable .titleHeader/.titleText).
+  .filters:not(.sidebarFilters) .filtersTitle {
+    justify-content: flex-start;
+    min-height: 44px;
+    padding: v.$space-sm 40px v.$space-sm calc(#{v.$space-md} - 1px); // minus the card border, so the text lines up with the other section headings
+    .titleContent {
+      flex-grow: 1;
+      font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
+      font-size: 0.95rem;
+      font-weight: 300;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      text-align: left;
+      color: v.$text-color-primary;
+    }
+  }
+  .filters:not(.sidebarFilters) .minimizeToggleIcon {
+    right: v.$space-md;
+    top: 50%;
+    transition-duration: 150ms; // every phone section folds at one speed (Opponent Strength)
+  }
+
+  // NAME label starts where the names start (left), like TEAM over the logos in Opponent / 4-Week.
+  .tableMobile thead th:nth-child(2) .sortButton {
+    justify-content: flex-start;
+  }
+
+  // Numbers use the site numbers face (Martian Mono, tabular), matching the Game Grid tables.
+  .tableMobile td:nth-child(4),
+  .tableMobile td:nth-child(6),
+  .tableMobile td.scoreCellMobile {
+    font-family: v.$font-family-numbers, monospace;
+    font-size: 11.5px; // the Opponent ratings' size; the wider mono face must still fit 390px
+    font-variant-numeric: tabular-nums;
+    padding-inline: 3px;
+  }
+  // The row's "+" fills its whole cell (~30×42), and pagination buttons are 44px tall.
+  .tableMobile .expandButton {
+    width: 100%;
+    min-width: 29px; // auto table layout sizes the column from this; wider overflows at 390px
+    min-height: 42px;
+  }
+  .pagination button {
+    min-height: 44px;
+    border-radius: 4px; // the shared control corner
+  }
+  .selectMobile {
+    border-radius: 4px;
+  }
+
+  // 32px tap rows for the filter controls (they were 18–22px tall, under the 24px minimum).
+  .filters:not(.sidebarFilters) {
+    .sliderMobile { height: 32px; }
+    .positionCheckbox,
+    .metricCheckbox,
+    .filterRow label {
+      display: inline-flex;
+      align-items: center;
+      min-height: 32px;
+    }
+    .metricGroupTitle {
+      display: flex;
+      align-items: center;
+      min-height: 32px;
+      justify-content: space-between;
+      text-align: left; // group titles line up with the checkbox column, like the filters above
+    }
+    // One left-aligned column, every filter label over its control; slider and Team select span the row.
+    .compactField {
+      flex-direction: column;
+      align-items: stretch;
+      text-align: left;
+      .labelMobile { text-align: left; }
+      .sliderMobile,
+      .selectMobile { max-width: none; }
+    }
+    // ALL / SKATERS / GOALIES / NONE: an even 4-column strip that fits the panel (NONE overflowed at 390px).
+    .metricPresetButtons {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 6px;
+      width: 100%;
+      button {
+        min-width: 0;
+        min-height: 32px;
+        padding: 4px 2px;
+      }
+    }
+    // "Include unknown ownership" is one checkbox: a plain row like the others, not an 86px empty box.
+    .filterRow {
+      align-items: flex-start;
+      min-height: 0;
+      padding: 0 10px;
+      border: 0;
+      background: none;
+    }
+  }
+
+  // Reset is a rare action: a small text link tucked under the folded filter card's right edge.
+  .filters:not(.sidebarFilters) .buttonReset {
+    align-self: flex-end;
+    width: auto;
+    max-width: none;
+    min-height: 32px;
+    margin: -10px 10px 8px;
+    padding: 4px 6px;
+    border: 0;
+    background: none;
+    backdrop-filter: none;
+    color: v.$primary-color;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+
+    &:hover:not(:disabled) {
+      background: none;
+      box-shadow: none;
+      color: v.$text-color-primary;
+    }
+  }
+
+  .filters:not(.sidebarFilters) .metricGroupCheckboxes {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px 12px;
+  }
+}
+
+// Group titles act on the whole group: a small outlined chip marks the tap action.
+.groupTitleHint {
+  margin-left: 8px;
+  padding: 2px 8px;
+  border: 1px solid rgba(v.$primary-color, 0.6);
+  border-radius: 4px;
+  color: v.$primary-color;
+  font-size: 0.72em;
+  font-weight: 600;
+  white-space: nowrap;
+}
+// The group currently driving the ranking.
+.groupTitleHintActive {
+  border-color: v.$primary-color;
+  background: v.$primary-color;
+  color: v.$background-dark;
+}
+
+// Active metric preset: filled like the active Select Group chip.
+.metricPresetButtons button.presetActive {
+  border-color: v.$primary-color;
+  background: v.$primary-color;
+  color: v.$background-dark;
 }

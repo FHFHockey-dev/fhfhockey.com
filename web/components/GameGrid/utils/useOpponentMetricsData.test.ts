@@ -50,16 +50,16 @@ describe("current-season source identity and completeness", () => {
     sourceRows = [stats({ updated_at: "2026-10-10T01:31:00Z" }), stats({ team_abbreviation: "C", updated_at: "2026-10-10T01:30:08Z" })];
     const { result } = renderHook(() => useOpponentMetricsData([team(["B"])], 20262027));
     await waitFor(() => expect(result.current.statsLoading).toBe(false));
-    expect(result.current.sourceLabel).toContain("Database snapshot updated 2026-10-10 01:30:08 UTC");
-    expect(result.current.sourceLabel).toContain("Source observation freshness unknown");
+    expect(result.current.sourceLabel).toContain("Updated Oct 10, 01:30 UTC.");
+    expect(result.current.sourceLabel).toContain("Source update time unknown");
     expect(source.from.mock.results[0].value.select.mock.calls[0][0]).toContain("updated_at");
   });
   it.each([null, "invalid"])("keeps freshness unknown when a team timestamp is %s", async (updated_at) => {
     sourceRows = [stats({ updated_at: "2026-10-10T01:30:08Z" }), stats({ team_abbreviation: "C", updated_at })];
     const { result } = renderHook(() => useOpponentMetricsData([team(["B"])], 20262027));
     await waitFor(() => expect(result.current.statsLoading).toBe(false));
-    expect(result.current.sourceLabel).toContain("Snapshot freshness unknown");
-    expect(result.current.sourceLabel).not.toContain("Database snapshot updated");
+    expect(result.current.sourceLabel).toContain("Update time unknown");
+    expect(result.current.sourceLabel).not.toContain("Updated ");
   });
   it("explains an empty current-season source without borrowing prior-season totals", async () => {
     sourceRows = [stats({ season: 20252026 })];
@@ -79,7 +79,7 @@ describe("current-season source identity and completeness", () => {
     expect(source.from).toHaveBeenCalledWith("nst_team_stats");
     expect(source.filters).toContainEqual(["season", 20262027]);
     expect(source.filters).toContainEqual(["situation", "all"]);
-    expect(result.current.sourceLabel).toContain("Snapshot freshness unknown");
+    expect(result.current.sourceLabel).toContain("Update time unknown");
     rerender({ ...initial, teams: [team(["B"])] });
     expect(source.from).toHaveBeenCalledTimes(1);
     rerender({ ...initial, teams: [team(["B", "B", "C"])] });
