@@ -25,3 +25,9 @@ web/pages/buy-low-sell-high/trade.tsx, web/components/blshTrade/*. Branch octobe
 
 ## Gotchas
 - `.next-playwright` is shared by every isolated server; check for other isolated servers before starting one.
+
+## 2026-11-03 evening: display mapper v3 (lists lane 42a6752ae)
+- Fixture updated to v3: track ids fantasy_points/goals_plus_assists/wigo_game_score with roles, score.positionRank/positionTopN/
+  headline/directionWithheld*. fx-d1 (0 games) and fx-d3 (12 games) show "Direction withheld".
+- Bug found: retrospective looked up track "FP"; real tracks use "fantasy_points". Now reads score.headline (null, never 0).
+- Checks: blshTrade + trade tests 24/24; typecheck exit 2, errors only currentProcessEvidence.server* and retainedBlsh.test.ts.

@@ -20,11 +20,12 @@ export type RetrospectiveComparison = {
 export function retrospectivePlayer(playerId: string, profile: DisplayProfile | undefined): RetrospectivePlayer {
   const none = (reason: string): RetrospectivePlayer => ({ playerId, recordedPerGame: null, referencePerGame: null, games: null, freshnessText: null, reason });
   if (!profile) return none("No BLSH evidence for this player");
-  const fp = profile.tracks.find(track => track.track === "FP");
-  if (!fp) return none(profile.score.reasonText ?? "BLSH score unavailable, so no recorded track is saved");
+  // The headline track is FHFH Standard points; it is null (never zero) when the track is missing.
+  const headline = profile.score.headline;
+  if (!headline) return none(profile.score.reasonText ?? "The FHFH Standard points track is unavailable");
   const games = profile.evidence.window.games;
   if (!(games > 0)) return none("The BLSH window has no recorded games");
-  return { playerId, recordedPerGame: fp.observed / games, referencePerGame: fp.referenceAtCurrentTOI / games, games,
+  return { playerId, recordedPerGame: headline.observed / games, referencePerGame: headline.referenceAtCurrentTOI / games, games,
     freshnessText: profile.evidence.window.freshnessText, reason: null };
 }
 

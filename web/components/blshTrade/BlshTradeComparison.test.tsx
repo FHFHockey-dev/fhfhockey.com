@@ -34,7 +34,7 @@ describe("BlshTradeComparison", () => {
     const forecast = within(f5).getByRole("region", { name: "Forecast for Fixture Forward Five" });
     const evidence = within(f5).getByRole("region", { name: "Buy Low / Sell High evidence for Fixture Forward Five" });
     expect(within(evidence).getByText(/recorded games, not a forecast/)).toBeTruthy();
-    expect(within(evidence).getByText(/Sell-high research candidate #2/)).toBeTruthy();
+    expect(within(evidence).getByText(/Sell-high research candidate #2 among forwards/)).toBeTruthy();
     expect(within(forecast).queryByText(/Sell-high/)).toBeNull();
     expect(within(evidence).queryByText(/League points/)).toBeNull();
   });
@@ -64,6 +64,14 @@ describe("BlshTradeComparison", () => {
     fireEvent.click(screen.getByRole("button", { name: "Points weights" }));
     fireEvent.change(screen.getByLabelText("Saves"), { target: { value: "0.2" } });
     expect(within(result()).queryByText(/no scored statistic/)).toBeNull();
+  });
+
+  it("shows a withheld direction from v3 history gating as text, not as buy or sell evidence", () => {
+    renderView(["fx-f5"], ["fx-d1"]);
+    const evidence = within(card("Fixture Defense One")).getByRole("region", { name: /Buy Low \/ Sell High evidence/ });
+    expect(within(evidence).getByText("Direction withheld: insufficient personal history")).toBeTruthy();
+    expect(within(evidence).queryByText(/Buy-low evidence/)).toBeNull();
+    expect(within(evidence).getAllByText(/no personal history/).length).toBe(1);
   });
 
   it("adds and removes players on either side", () => {

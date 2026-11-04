@@ -4,7 +4,7 @@ import { FIXTURE_BLSH_EVIDENCE } from "./fixtureEvidence";
 import { retrospectiveComparison, retrospectivePlayer } from "./retrospective";
 
 const perGame = (id: string) => {
-  const profile = FIXTURE_BLSH_EVIDENCE[id], fp = profile.tracks.find(track => track.track === "FP")!;
+  const profile = FIXTURE_BLSH_EVIDENCE[id], fp = profile.tracks.find(track => track.track === "fantasy_points")!;
   return fp.observed / profile.evidence.window.games;
 };
 
@@ -22,6 +22,8 @@ describe("retrospective trade fallback", () => {
     expect(result).toMatchObject({ available: false, net: null, receive: { value: null, missingPlayerIds: ["fx-g1", "fx-d2"] } });
     expect(retrospectivePlayer("fx-d2", FIXTURE_BLSH_EVIDENCE["fx-d2"]).reason).toBe("Fewer than five current games recorded");
     expect(retrospectivePlayer("fx-g1", undefined).reason).toMatch(/No BLSH evidence/);
+    const noHeadline = { ...FIXTURE_BLSH_EVIDENCE["fx-f5"], score: { ...FIXTURE_BLSH_EVIDENCE["fx-f5"].score, headline: null, reasonText: null } };
+    expect(retrospectivePlayer("fx-f5", noHeadline)).toMatchObject({ recordedPerGame: null, reason: "The FHFH Standard points track is unavailable" });
   });
 
   it("is unavailable under any scoring other than FHFH Standard", () => {

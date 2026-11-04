@@ -3,39 +3,46 @@
  * BLSH display contract. Fictional values only: not a research snapshot, not NHL data and not advice.
  * Several fixture players deliberately have no profile, so the view shows missing evidence as missing.
  */
-import type { DisplayProfile } from "lib/buyLowSellHigh/displayProfile";
+import { HEADLINE_TRACK, type DisplayProfile } from "lib/buyLowSellHigh/displayProfile";
 import { SUPPORT_GAP_VERSION } from "lib/buyLowSellHigh/supportGap";
 
 export const FIXTURE_EVIDENCE_THROUGH = "2026-10-15";
 
 type Spec = {
   playerId: number; name: string; team: string; position: "F" | "D";
-  value: number | null; list: "BL" | "SH" | null; rank: number | null; status: string; statusLabel: string;
+  value: number | null; list: "BL" | "SH" | null; rank: number | null; positionRank?: number; status: string; statusLabel: string;
   reason?: string; reasonText?: string;
+  /** Set when personal history is below the provisional cutoff (or none/unknown): the direction is withheld. */
+  directionWithheld?: { reason: string; text: string };
   /** Recorded FHFH Standard points and the reference at current TOI, both window totals. */
   fp?: { observed: number; reference: number };
   games: number; fresh: boolean; personalGames: number;
 };
 
-const TRACKS = [["FP", 1], ["G+A", 0.3], ["FHFH WiGO Game Score", 0.6]] as const;
+const TRACKS = [[HEADLINE_TRACK, "FP", 1], ["goals_plus_assists", "G+A", 0.3], ["wigo_game_score", "FHFH WiGO Game Score", 0.6]] as const;
 
 function profile(spec: Spec): DisplayProfile {
   const g = spec.value === null ? null : spec.value / (100 - Math.abs(spec.value));
-  const tracks = spec.fp && g !== null ? TRACKS.map(([label, scale]) => {
+  const tracks = spec.fp && g !== null ? TRACKS.map(([track, label, scale]) => {
     const observed = spec.fp!.observed * scale, reference = spec.fp!.reference * scale, gap = reference - observed;
-    return { track: label, label, observed, referenceAtCurrentTOI: reference, supportConditioned: reference, gap,
+    return { track, label, role: track === HEADLINE_TRACK ? "headline" as const : "supporting" as const, observed, referenceAtCurrentTOI: reference, supportConditioned: reference, gap,
       components: [{ id: "reference_gap", kind: "reference_gap", kindLabel: "Reference vs recorded", value: gap, note: "Fixture component", processDelta: null, referenceKind: null }],
       componentSum: gap, normalizationMultiplier: 1, normalizedGapContribution: g / 3, baselineNormalizedGapContribution: g / 3 };
   }) : [];
+  const h = tracks.find(track => track.role === "headline");
   const gapSign = g === null ? null : g > 0 ? "buy_low_evidence" as const : g < 0 ? "sell_high_evidence" as const : "balanced" as const;
   return {
     playerId: spec.playerId, name: spec.name, displayName: spec.name, team: spec.team, position: spec.position,
     score: {
       version: SUPPORT_GAP_VERSION, value: spec.value, normalizedGap: g, baselineNormalizedGap: g, gapSign,
-      gapSignLabel: gapSign === "buy_low_evidence" ? "Buy-low evidence" : gapSign === "sell_high_evidence" ? "Sell-high evidence" : gapSign === "balanced" ? "Balanced" : null,
+      gapSignLabel: spec.directionWithheld ? "Direction withheld: insufficient personal history" : gapSign === "buy_low_evidence" ? "Buy-low evidence" : gapSign === "sell_high_evidence" ? "Sell-high evidence" : gapSign === "balanced" ? "Balanced" : null,
       status: spec.status, statusLabel: spec.statusLabel, list: spec.list,
       listLabel: spec.list === "BL" ? "Buy-low research candidate" : spec.list === "SH" ? "Sell-high research candidate" : "Withheld; inspect evidence",
-      rank: spec.rank, reason: spec.reason ?? null, reasonText: spec.reasonText ?? null,
+      rank: spec.rank, positionRank: spec.positionRank ?? null, positionTopN: spec.positionRank !== undefined && spec.positionRank <= 25,
+      headline: h ? { track: HEADLINE_TRACK, scoring: "FHFH Standard", label: "FHFH Standard points", observed: h.observed, expected: h.supportConditioned,
+        referenceAtCurrentTOI: h.referenceAtCurrentTOI, gap: h.gap } : null,
+      directionWithheldReason: spec.directionWithheld?.reason ?? null, directionWithheldText: spec.directionWithheld?.text ?? null,
+      reason: spec.reason ?? null, reasonText: spec.reasonText ?? null,
       trusted: false, calibratedProbability: null, indexTransform: "100·g / (1 + |g|) of the normalized gap g",
     },
     tracks,
@@ -65,21 +72,25 @@ const concordant = { status: "concordant_research_candidate", statusLabel: "Prod
 
 /** Keyed by Sko fixture player id. Missing keys have no BLSH evidence. */
 export const FIXTURE_BLSH_EVIDENCE: Record<string, DisplayProfile> = {
-  "fx-f1": profile({ playerId: 900001, name: "Fixture Forward One", team: "FX1", position: "F", value: -21, list: "SH", rank: 9, ...concordant,
+  "fx-f1": profile({ playerId: 900001, name: "Fixture Forward One", team: "FX1", position: "F", value: -21, list: "SH", rank: 9, positionRank: 7, ...concordant,
     fp: { observed: 21.4, reference: 15.8 }, games: 5, fresh: true, personalGames: 140 }),
-  "fx-f3": profile({ playerId: 900003, name: "Fixture Forward Three", team: "FX3", position: "F", value: 34, list: "BL", rank: 4, ...concordant,
+  "fx-f3": profile({ playerId: 900003, name: "Fixture Forward Three", team: "FX3", position: "F", value: 34, list: "BL", rank: 4, positionRank: 3, ...concordant,
     fp: { observed: 4.6, reference: 12.9 }, games: 5, fresh: true, personalGames: 210 }),
-  "fx-f5": profile({ playerId: 900005, name: "Fixture Forward Five", team: "FX2", position: "F", value: -38, list: "SH", rank: 2, ...concordant,
+  "fx-f5": profile({ playerId: 900005, name: "Fixture Forward Five", team: "FX2", position: "F", value: -38, list: "SH", rank: 2, positionRank: 2, ...concordant,
     fp: { observed: 26.2, reference: 14.1 }, games: 5, fresh: true, personalGames: 188 }),
   "fx-f6": profile({ playerId: 900006, name: "Fixture Forward Six", team: "FX3", position: "F", value: 2, list: null, rank: null,
     status: "balanced_model_estimate", statusLabel: "Balanced", fp: { observed: 5.9, reference: 6.1 }, games: 5, fresh: true, personalGames: 96 }),
   "fx-d1": profile({ playerId: 900011, name: "Fixture Defense One", team: "FX4", position: "D", value: 18, list: null, rank: null, ...concordant,
     reason: "no_personal_history_list_withheld",
     reasonText: "Withheld from lists: no personal history, so the gap is measured against the position-cohort average, not the player's own level",
+    directionWithheld: { reason: "no_personal_history_list_withheld",
+      text: "Withheld from lists: no personal history, so the gap is measured against the position-cohort average, not the player's own level" },
     fp: { observed: 7.2, reference: 9.8 }, games: 5, fresh: true, personalGames: 0 }),
   "fx-d2": profile({ playerId: 900012, name: "Fixture Defense Two", team: "FX1", position: "D", value: null, list: null, rank: null,
     status: "unavailable", statusLabel: "Unavailable", reason: "fewer_than_five_recorded_slots", reasonText: "Fewer than five current games recorded",
     games: 2, fresh: true, personalGames: 75 }),
   "fx-d3": profile({ playerId: 900013, name: "Fixture Defense Three", team: "FX3", position: "D", value: 12, list: null, rank: null, ...concordant,
-    fp: { observed: 8.1, reference: 9.4 }, games: 5, fresh: false, personalGames: 160 }),
+    directionWithheld: { reason: "insufficient_personal_history_list_withheld",
+      text: "Insufficient history: fewer than 20 personal games (provisional cutoff), so direction is withheld and the reference leans on the position cohort" },
+    fp: { observed: 8.1, reference: 9.4 }, games: 5, fresh: false, personalGames: 12 }),
 };

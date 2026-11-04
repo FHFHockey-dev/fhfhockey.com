@@ -279,9 +279,10 @@ function EvidenceBlock({ name, playerId, profile, goalie }: { name: string; play
           <p className={styles.evidenceLead}>
             <strong>{profile.score.gapSignLabel ?? profile.score.statusLabel}</strong>
             {profile.score.value !== null && <> · index <span className={styles.num}>{fixed(profile.score.value, 0, true)}</span></>}
-            {" · "}{profile.score.list ? `${profile.score.listLabel} #${profile.score.rank}` : profile.score.listLabel}
+            {" · "}{profile.score.list ? `${profile.score.listLabel} #${profile.score.positionRank ?? profile.score.rank}${profile.score.positionRank !== null && profile.position ? ` among ${profile.position === "F" ? "forwards" : "defence"}` : ""}` : profile.score.listLabel}
           </p>
-          {profile.score.reasonText && <p className={styles.muted}>{profile.score.reasonText}</p>}
+          {profile.score.directionWithheldText && <p className={styles.muted}>{profile.score.directionWithheldText}</p>}
+          {profile.score.reasonText && profile.score.reasonText !== profile.score.directionWithheldText && <p className={styles.muted}>{profile.score.reasonText}</p>}
           {recorded.recordedPerGame !== null && recorded.referencePerGame !== null && (
             <dl className={styles.facts}>
               <div><dt>Recorded FHFH points per game</dt><dd className={styles.num}>{recorded.recordedPerGame.toFixed(2)}</dd></div>
