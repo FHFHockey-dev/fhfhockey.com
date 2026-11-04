@@ -31,6 +31,8 @@ Applied with Supabase MCP `apply_migration`, which returned success. It is recor
 | Count for 20262027 | **743 players**, max GP **16**, 1 player with no on-ice row (null `cf_per_60`) |
 | `EXPLAIN ANALYZE` page 1 (500 rows), run as `anon` with a 3 s timeout | **33.6 ms**: index scans on both new indexes, merge left joins, no nested loop. Was 9,344 ms for the AS aggregate before |
 
+**Apply note:** the migration session also sent P-2 on TJ's word, just after the planning thread. That call failed on the first rename (`42P07`, `nst_percentile_as_offense_legacy` already exists) and rolled back, so P-2 was applied once. Its own three approved checks agree: 743 rows in both views read as `anon`, max GP 16, legacy tables closed to `anon`, offense page 1 in 13.6 ms as `postgres`.
+
 `nst_percentile_as_defense` was not timed; it has the same shape as the ES defense view (12 ms). The page itself was not loaded. October GP stays low until P-5 (the NST backfill for 10-04 to 10-06).
 
 Both files are in `supabase/migrations/`, the tree that holds the baseline definitions of these views.
