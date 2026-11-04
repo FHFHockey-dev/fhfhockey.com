@@ -93,18 +93,17 @@ export const CHART_COLORS = {
 
   DATALABEL_TEXT: WIGO_COLORS.WHITE, // Default for labels on bars/lines
 
-  // --- Specific Mappings for Consistency Chart (Map to Palette/Base) ---
-  CONSISTENCY_0: WIGO_COLORS.GREY_MEDIUM, // 0 Pts: Grey
-  CONSISTENCY_1: WIGO_COLORS.RED, // 1 Pt: Red (Special Case)
-  CONSISTENCY_2: CHART_PALETTE[0], // 2 Pts: Primary Blue
-  CONSISTENCY_3: CHART_PALETTE[1], // 3 Pts: Teal
-  CONSISTENCY_4: CHART_PALETTE[4], // 4 Pts: Yellow
-  CONSISTENCY_5: CHART_PALETTE[5], // 5 Pts: Orange
-  // For 6+ points, cycle through palette or repeat distinct colors
-  CONSISTENCY_6: WIGO_COLORS.RED, // Repeat Red
-  CONSISTENCY_7: CHART_PALETTE[4], // Repeat Yellow
-  CONSISTENCY_8: CHART_PALETTE[2], // Purple
-  // ... add more mappings as needed
+  // --- Point consistency: an ordinal ramp, one brand-blue hue, dark (0 Pts)
+  // to light (6+ Pts). Validated with the dataviz ordinal checks on the dark
+  // panel surface #15171a: monotone lightness, adjacent dL >= 0.06, dark end
+  // 2.60:1, hue spread 23 degrees (U5, E-04).
+  CONSISTENCY_0: "#005f90",
+  CONSISTENCY_1: "#0077a8",
+  CONSISTENCY_2: "#0c8fbf",
+  CONSISTENCY_3: "#45a7d5",
+  CONSISTENCY_4: "#6ec0e9",
+  CONSISTENCY_5: "#97d8fa",
+  CONSISTENCY_6: "#c0f0ff",
 
   // --- Rate Percentile Specific (Map value ranges to palette) ---
   PERCENTILE_0_20: WIGO_COLORS.RED,
@@ -128,10 +127,53 @@ export const CONSISTENCY_CHART_COLORS = [
   CHART_COLORS.CONSISTENCY_3,
   CHART_COLORS.CONSISTENCY_4,
   CHART_COLORS.CONSISTENCY_5,
-  CHART_COLORS.CONSISTENCY_6,
-  CHART_COLORS.CONSISTENCY_7,
-  CHART_COLORS.CONSISTENCY_8
-  // Add more if needed
+  CHART_COLORS.CONSISTENCY_6
 ];
+
+// Chart-row colour roles (U8), one meaning each. Bars are the per-game values
+// and stay recessive; blue is the primary series and the left comparison
+// period; amber is the right comparison period only; magenta is the second
+// series (10-game average, power play); dashed ink is an average. Lines vs
+// panel #15171a pass the dataviz checks in dark mode (blue/magenta: CVD dE 12.4,
+// normal 27.7; blue/amber: 22.5, 26.4). Lines that cross bars get a 2 px
+// surface ring, since magenta is 2.37:1 against the bars.
+export const WIGO_CHART_ROLES = {
+  BAR: "#34495a",
+  PRIMARY: "#14a2d2",
+  SECONDARY: "#d55181",
+  RIGHT: "#c98500",
+  AVERAGE: "#cfcfcf",
+  OTHER_PERIOD: "#7d8790",
+  SERIES_INK: "#e6e6e6",
+  SURFACE: "#15171a"
+} as const;
+
+// The dark ring drawn under a line so it reads where it crosses a bar.
+export const withSurfaceRing = <T extends { label?: string; order?: number; borderWidth?: number }>(
+  dataset: T
+) => [
+  {
+    ...dataset,
+    label: `${dataset.label ?? ""} ring`,
+    borderColor: WIGO_CHART_ROLES.SURFACE,
+    borderWidth: (dataset.borderWidth ?? 2) + 3,
+    backgroundColor: "transparent",
+    fill: false,
+    pointRadius: 0,
+    pointHoverRadius: 0,
+    order: (dataset.order ?? 0) + 0.5,
+    isSurfaceRing: true
+  },
+  dataset
+];
+export const isSurfaceRing = (dataset: unknown) =>
+  !!(dataset as { isSurfaceRing?: boolean } | undefined)?.isSurfaceRing;
+
+// One tick font for the chart row (U6): the SVG game log inherits Roboto
+// Condensed, so the canvas charts name it, with the generic fallback.
+export const CHART_TICK_FONT = {
+  size: 12,
+  family: "Roboto Condensed, sans-serif"
+} as const;
 
 // 5. Helper Function (Keep addAlpha)

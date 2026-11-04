@@ -40,6 +40,12 @@ export interface SkaterGameLogConsistencyData {
   shots: number | null;
   hits: number | null;
   blocked_shots: number | null;
+  // Seconds; PP share as a 0-1 fraction. One game-log read serves every chart
+  // and the dashboard's latest-team check (S5).
+  toi_per_game: number | null;
+  pp_toi_per_game: number | null;
+  pp_toi_pct_per_game: number | null;
+  team_abbrev: string | null;
 }
 
 // Interface for the raw points game log data
@@ -416,6 +422,49 @@ export function buildPlayerAggregatedStats({
   return combinedStatsData;
 }
 
+export interface WigoAggregateFreshness {
+  careerUpdatedAt: string | null;
+  recentUpdatedAt: string | null;
+  stdGp: number | null;
+  totalsGp: number | null;
+  /**
+   * STD GP disagrees with this season's totals GP: the writer has not reached
+   * the player since recent games, or the row is still last season's (B-01:
+   * Bedard STD GP 69 against 8 played).
+   */
+  stdStale: boolean;
+}
+
+export interface WigoAggregatedStatsResult {
+  rows: TableAggregateData[];
+  freshness: WigoAggregateFreshness;
+}
+
+export function getWigoAggregateFreshness({
+  careerData,
+  recentData,
+  totalsData,
+  stdSeasonId = null
+}: Pick<BuildPlayerAggregatedStatsInput, "careerData" | "recentData" | "stdSeasonId"> & {
+  totalsData: { season?: string | null; games_played?: number | null } | null;
+}): WigoAggregateFreshness {
+  const stdGp = getAggregateValue(careerData, "std_gp");
+  const totalsGp =
+    totalsData &&
+    stdSeasonId != null &&
+    String(totalsData.season) === String(stdSeasonId) &&
+    typeof totalsData.games_played === "number"
+      ? totalsData.games_played
+      : null;
+  return {
+    careerUpdatedAt: careerData?.last_updated ?? null,
+    recentUpdatedAt: recentData?.last_updated ?? null,
+    stdGp,
+    totalsGp,
+    stdStale: totalsGp != null && totalsGp > 0 && stdGp !== totalsGp
+  };
+}
+
 export async function fetchPlayerGameLogForStat(
   playerId: number,
   seasonId: number,
@@ -435,11 +484,6 @@ export async function fetchPlayerGameLogForStat(
       // **** Determine correct date column for the calculation source table ****
       const dateColumn = table === "wgo_skater_stats" ? "date" : "date_scraped"; // Use date_scraped for nst_*
 
-      console.log(
-        `Workspaceing game log for ${statLabel} calculation (Player ${playerId}, Season ${seasonId}) from ${table}, requires: ${requiredColumns.join(
-          ", "
-        )}`
-      );
 
       const selectString = `${dateColumn}, ${requiredColumns.join(", ")}`;
       const seasonColumn = "season_id"; // PTS1% uses wgo_skater_stats which has season_id
@@ -460,6 +504,8 @@ export async function fetchPlayerGameLogForStat(
           const points = item.points;
           let value: number | null = null;
 
+          // A pointless game has no share, as in the aggregates, so it is a
+          // gap rather than 0 and the game mean stays comparable (A-06).
           if (
             typeof goals === "number" &&
             typeof primaryAssists === "number" &&
@@ -468,10 +514,6 @@ export async function fetchPlayerGameLogForStat(
           ) {
             // Aggregates show PTS1% on a 0–100 scale; the chart's reference lines use the same scale.
             value = ((goals + primaryAssists) / points) * 100;
-          } else if (points === 0 && (goals > 0 || primaryAssists > 0)) {
-            value = null;
-          } else if (points === 0 && goals === 0 && primaryAssists === 0) {
-            value = 0;
           }
 
           return {
@@ -479,22 +521,12 @@ export async function fetchPlayerGameLogForStat(
             value: value
           };
         }) || [];
-      console.log(
-        `Workspaceed and calculated data for ${statLabel}:`,
-        calculatedData.length,
-        "rows"
-      ); // Log success/count
       return calculatedData;
     } else if ("calculation" in mapping && mapping.calculation === "PTS1/60") {
       const { table, requiredColumns } = mapping; // table is nst_gamelog_as_rates
       const dateColumn = "date_scraped"; // nst tables use date_scraped
       const seasonColumn = "season"; // nst tables use season
 
-      console.log(
-        `Workspaceing game log for ${statLabel} calculation (Player ${playerId}, Season ${seasonId}) from ${table}, requires: ${requiredColumns.join(
-          ", "
-        )}`
-      );
       const selectString = `${dateColumn}, ${requiredColumns.join(", ")}`; // Selects date, goals_per_60, first_assists_per_60
 
       const { data, error } = await supabase
@@ -521,11 +553,6 @@ export async function fetchPlayerGameLogForStat(
 
           return { date: item[dateColumn], value: value };
         }) || [];
-      console.log(
-        `Workspaceed and calculated data for ${statLabel}:`,
-        calculatedData.length,
-        "rows"
-      );
       return calculatedData;
     } else if ("calculation" in mapping && mapping.calculation === "PP_PER_60") {
       const { countColumn } = mapping;
@@ -557,9 +584,6 @@ export async function fetchPlayerGameLogForStat(
       const seasonColumn =
         table === "wgo_skater_stats" ? "season_id" : "season";
 
-      console.log(
-        `Workspaceing game log for ${statLabel} (Player ${playerId}, Season ${seasonId}) from ${table}.${statColumn} using date='${dateColumn}' and season='${seasonColumn}'` // Log which columns are used
-      );
 
       const { data, error } =
         table === "wgo_skater_stats"
@@ -593,11 +617,6 @@ export async function fetchPlayerGameLogForStat(
             value: typeof value === "number" ? value : null
           };
         }) || [];
-      console.log(
-        `Workspaceed data for ${statLabel}:`,
-        gameLogData.length,
-        "rows"
-      ); // Log success/count
       return gameLogData;
     } else {
       console.warn(
@@ -618,33 +637,63 @@ export async function fetchPlayerGameLogForStat(
  * Fetches pre-aggregated player stats from wigo_career and wigo_recent
  * and transforms them into the TableAggregateData format for display.
  */
-export async function fetchPlayerAggregatedStats(
-  playerId: number,
-  stdSeasonId: number | null = null
-): Promise<TableAggregateData[]> {
-  console.log(`Workspaceing pre-aggregated stats for Player ID: ${playerId}`);
+type WigoAggregateTotals =
+  | (Partial<{
+      goals: number | null;
+      assists: number | null;
+      points: number | null;
+      shots: number | null;
+      hits: number | null;
+      blocked_shots: number | null;
+      penalty_minutes: number | null;
+      pp_points: number | null;
+      games_played: number | null;
+    }> & { season?: string | null })
+  | null;
+
+// Exactly the columns the table reads: each stat's base key per period, plus
+// the as-of date (S9). Only wigo_career's two seasons_used counts are left out:
+// the table uses almost every column, so this is about tightness, not bytes.
+const aggregateColumns = (prefixes: readonly string[]) =>
+  [
+    "player_id",
+    "last_updated",
+    ...prefixes.flatMap((prefix) =>
+      WIGO_STAT_ORDER.map(
+        (label) => `${prefix}_${getWigoStatMetadata(label)!.baseKey}`
+      )
+    )
+  ].join(",");
+const CAREER_COLUMNS = aggregateColumns(["std", "ly", "ya3", "ca"]);
+const RECENT_COLUMNS = aggregateColumns(["l5", "l10", "l20"]);
+
+export interface WigoAggregateSources {
+  careerData: WigoCareerRow | null;
+  recentData: WigoRecentRow | null;
+}
+
+/**
+ * The player's aggregate rows. They do not depend on the season, so the read
+ * starts without waiting for /api/v1/season; the season check happens when
+ * the rows are built (S4). This season's totals row comes from the shared
+ * per-game totals query instead of a second totals read (S5).
+ */
+export async function fetchPlayerAggregateSources(
+  playerId: number
+): Promise<WigoAggregateSources> {
 
   // wigo_career and wigo_recent are the aggregate sources. The legacy wigo_rates table has no writer
   // (0 rows) and is not read: if anything refilled it, it would silently override these per-60 values.
-  const [careerRes, recentRes, totalsRes] = await Promise.all([
+  const [careerRes, recentRes] = await Promise.all([
     supabase
       .from("wigo_career")
-      .select("*")
+      .select(CAREER_COLUMNS)
       .eq("player_id", playerId)
       .maybeSingle(),
     supabase
       .from("wigo_recent")
-      .select("*")
+      .select(RECENT_COLUMNS)
       .eq("player_id", playerId)
-      .maybeSingle(),
-    supabase
-      .from("wgo_skater_stats_totals")
-      .select(
-        `goals,assists,points,shots,hits,blocked_shots,penalty_minutes,pp_points,season,toi_per_game,pp_toi_pct_per_game`
-      )
-      .eq("player_id", playerId)
-      .order("season", { ascending: false })
-      .limit(1)
       .maybeSingle()
   ]);
 
@@ -656,43 +705,64 @@ export async function fetchPlayerAggregatedStats(
     console.error("Error fetching wigo_recent data:", recentRes.error);
     throw new Error(`Failed to fetch recent stats: ${recentRes.error.message}`);
   }
-  if (totalsRes.error) {
-    // Non-fatal: totals are only used as an optional fallback for some STD counts
-    console.warn("Totals fallback unavailable:", totalsRes.error.message);
-  }
+  return {
+    careerData: careerRes.data as WigoCareerRow | null,
+    recentData: recentRes.data as WigoRecentRow | null
+  };
+}
 
-  const careerData = careerRes.data as WigoCareerRow | null;
-  const recentData = recentRes.data as WigoRecentRow | null;
-  const totalsData = (
-    totalsRes && !totalsRes.error ? (totalsRes.data as any | null) : null
-  ) as
-    | (Partial<{
-        goals: number | null;
-        assists: number | null;
-        points: number | null;
-        shots: number | null;
-        hits: number | null;
-        blocked_shots: number | null;
-        penalty_minutes: number | null;
-        pp_points: number | null;
-      }> & { season?: string | null })
-    | null;
-
-  if (!careerData && !recentData) {
-    console.warn(
-      `No aggregated data found for player ${playerId} in wigo_career or wigo_recent.`
-    );
-    return []; // Return empty array
-  }
-
-  return buildPlayerAggregatedStats({
+/**
+ * Table rows and freshness for one season, from the season-free sources and
+ * that season's totals row (null when absent or unavailable: totals only feed
+ * the STD count fallback and the stale check).
+ */
+export function buildWigoAggregatedStatsResult(
+  { careerData, recentData }: WigoAggregateSources,
+  totalsData: WigoAggregateTotals,
+  stdSeasonId: number | null
+): WigoAggregatedStatsResult {
+  const freshness = getWigoAggregateFreshness({
     careerData,
     recentData,
-    ratesData: null,
     totalsData,
     stdSeasonId
   });
+
+  if (!careerData && !recentData) {
+    return { rows: [], freshness };
+  }
+
+  return {
+    rows: buildPlayerAggregatedStats({
+      careerData,
+      recentData,
+      ratesData: null,
+      // A stale STD row is another sample; filling its blanks from this
+      // season's totals would mix the two (U9: GP 69 beside 8-game counts).
+      totalsData: freshness.stdStale ? null : totalsData,
+      stdSeasonId
+    }),
+    freshness
+  };
 }
+
+export async function fetchPlayerAggregatedStats(
+  playerId: number,
+  stdSeasonId: number | null = null
+): Promise<WigoAggregatedStatsResult> {
+  const [sources, totalsData] = await Promise.all([
+    fetchPlayerAggregateSources(playerId),
+    fetchPlayerPerGameTotals(playerId, stdSeasonId).catch(() => null)
+  ]);
+  return buildWigoAggregatedStatsResult(sources, totalsData, stdSeasonId);
+}
+
+// A statement timeout (57014) is the slow view itself, not a blip: retrying it
+// only repeats the same 3 s wait (D-01: 48 failed reads per page view).
+export const isStatementTimeout = (error: unknown): boolean =>
+  !!error &&
+  typeof error === "object" &&
+  (error as { code?: unknown }).code === "57014";
 
 export async function fetchPaginatedData<T>(
   tableName: keyof Database["public"]["Tables"],
@@ -715,7 +785,8 @@ export async function fetchPaginatedData<T>(
       pageSize: 500,
       retry: {
         attempts: 3,
-        delayMs: (attempt) => Math.pow(2, attempt) * 1000
+        delayMs: (attempt) => Math.pow(2, attempt) * 1000,
+        shouldRetry: (error) => !isStatementTimeout(error)
       }
     }
   );
@@ -835,66 +906,6 @@ export const fetchPlayerGameLogPoints = async (
   }
 };
 
-export const fetchPlayerGameLogStats = async (
-  playerId: number,
-  season: string // Keep accepting the string identifier from the totals data
-): Promise<SkaterGameLogStatsData[]> => {
-  // <<< UPDATE Return Type
-  if (!playerId || !season) return []; // Return empty array if no player or season
-
-  const seasonIdNumber = parseInt(season, 10);
-  if (isNaN(seasonIdNumber)) {
-    console.error(`Failed to parse season string "${season}" into a number.`);
-    return [];
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from("wgo_skater_stats") // Query the game log table
-      .select(
-        `
-        date,
-        toi_per_game,
-        pp_toi_per_game,
-        pp_toi_pct_per_game
-      `
-      )
-      .eq("player_id", playerId)
-      .eq("season_id", seasonIdNumber)
-      .order("date", { ascending: true }); // Order chronologically
-
-    if (error) {
-      console.error(
-        `Error fetching game log stats for player ${playerId}, season ID ${seasonIdNumber}:`,
-        error
-      );
-      throw error;
-    }
-
-    // --- Convert pp_toi_pct_per_game from decimal to percentage ---
-    const processedData =
-      data?.map((item) => ({
-        ...item,
-        // Assuming pp_toi_pct_per_game is stored as a decimal (e.g., 0.25 for 25%)
-        // Multiply by 100 if it's not null, otherwise keep it null
-        pp_toi_pct_per_game:
-          item.pp_toi_pct_per_game !== null
-            ? item.pp_toi_pct_per_game * 100
-            : null
-      })) || [];
-
-    // console.log(`Workspaceed Game Log Stats for player ${playerId}, season ${seasonIdNumber}:`, processedData); // Optional Debug Log
-
-    return (processedData as SkaterGameLogStatsData[]) || []; // Ensure result is an array
-  } catch (err) {
-    console.error(
-      `Unexpected error in fetchPlayerGameLogStats for player ${playerId}, season ID ${seasonIdNumber}:`,
-      err
-    );
-    throw err; // Re-throw
-  }
-};
-
 // --- NEW Function to fetch game-by-game data for Consistency ---
 export const fetchPlayerGameLogConsistencyData = async (
   playerId: number,
@@ -920,7 +931,11 @@ export const fetchPlayerGameLogConsistencyData = async (
         points,
         shots,
         hits,
-        blocked_shots
+        blocked_shots,
+        toi_per_game,
+        pp_toi_per_game,
+        pp_toi_pct_per_game,
+        team_abbrev
       ` // Select fields needed for calculation
       )
       .eq("player_id", playerId)
@@ -972,9 +987,6 @@ export async function fetchPercentilePlayerData(seasonId: number): Promise<{
   offense: (PlayerRawStats & { strength: string })[];
   defense: (PlayerRawStats & { strength: string })[];
 }> {
-  console.log(
-    `[fetchPercentilePlayerData] Starting fetch for season: ${seasonId}`
-  );
 
   const offenseSelect = `
     player_id,
@@ -1104,9 +1116,6 @@ export async function fetchPercentilePlayerData(seasonId: number): Promise<{
     const allOffense = [...asOffense, ...esOffense, ...ppOffense];
     const allDefense = [...asDefense, ...esDefense, ...pkDefense];
 
-    console.log(
-      `[fetchPercentilePlayerData] Concatenated ${allOffense.length} relevant offense rows and ${allDefense.length} relevant defense rows for season ${seasonId}`
-    );
 
     // Return matches the updated function signature - no casting needed
     return {

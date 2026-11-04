@@ -288,4 +288,9 @@ table.verticalStatsTable {
     letter-spacing: 0;
     text-transform: none;
   }
+  // Overview on phone: the pace table below already gives per-game values,
+  // so the production tiles drop their "/ GP" repeat (PLAN section 4).
+  .productionStat small {
+    display: none;
+  }
 }

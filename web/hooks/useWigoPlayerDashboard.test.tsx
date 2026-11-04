@@ -30,9 +30,9 @@ const {
   const selectMock = vi.fn(() => ({
     eq: eqMock
   }));
-  const fromMock = vi.fn(() => ({
+  const fromMock = vi.fn((_table?: string) => ({
     select: selectMock
-  }));
+  }) as any);
 
   return {
     mockReplace,
@@ -56,8 +56,12 @@ vi.mock("lib/supabase", () => ({
   }
 }));
 
+// The mocked sources are already the built result, so building passes them through.
+const mockGameLog = vi.hoisted(() => vi.fn());
 vi.mock("utils/fetchWigoPlayerStats", () => ({
-  fetchPlayerAggregatedStats: mockFetchPlayerAggregatedStats
+  fetchPlayerAggregateSources: mockFetchPlayerAggregatedStats,
+  buildWigoAggregatedStatsResult: (sources: unknown) => sources,
+  fetchPlayerGameLogConsistencyData: mockGameLog
 }));
 
 vi.mock("lib/NHL/client", () => ({
@@ -123,6 +127,10 @@ describe("useWigoPlayerDashboard", () => {
     expect(getPlayerIdFromQueryValue("8476453")).toBe(8476453);
     expect(getPlayerIdFromQueryValue(["8476453", "1"])).toBe(8476453);
   });
+  const freshness = {
+    careerUpdatedAt: "2026-11-01T08:52:00Z", recentUpdatedAt: "2026-11-01T08:52:00Z",
+    stdGp: 14, totalsGp: 14, stdStale: false
+  };
   beforeEach(() => {
     mockRouter.query = {};
     mockReplace.mockClear();
@@ -131,6 +139,8 @@ describe("useWigoPlayerDashboard", () => {
     eqMock.mockClear();
     singleMock.mockReset();
     mockFetchPlayerAggregatedStats.mockReset();
+    mockGameLog.mockReset();
+    mockGameLog.mockResolvedValue([]);
     mockGetCurrentSeason.mockReset();
     mockGetCurrentSeason.mockResolvedValue({ seasonId: 20242025 });
   });
@@ -141,7 +151,7 @@ describe("useWigoPlayerDashboard", () => {
 
     mockRouter.query = { playerId: String(player.id) };
     singleMock.mockResolvedValue({ data: player, error: null });
-    mockFetchPlayerAggregatedStats.mockResolvedValue(aggregates);
+    mockFetchPlayerAggregatedStats.mockResolvedValue({ rows: aggregates, freshness });
 
     const queryClient = createQueryClient();
     const { result } = renderHook(() => useWigoPlayerDashboard(), {
@@ -158,7 +168,17 @@ describe("useWigoPlayerDashboard", () => {
     expect(result.current.teamAbbreviation).toBe("NJD");
     expect(result.current.teamIdForLog).toBe(1);
     expect(result.current.rawCombinedData).toEqual(aggregates);
+    expect(result.current.aggFreshness).toEqual(freshness);
     expect(result.current.aggDataError).toBeNull();
+    // WiGO-scoped defaults (S2): long freshness, no refetch on focus.
+    for (const key of ["wigoPlayerDetails", "wigoPlayerAggregatedStats", "wigoGameLog", "wigoPerGameTotals"]) {
+      // staleTime and refetchOnWindowFocus are observer options in TanStack v5;
+      // the pre-season key has no observer, so take the live one.
+      const options = queryClient.getQueryCache().findAll({ queryKey: [key] })
+        .flatMap((query) => query.observers)[0]?.options as any;
+      expect(options?.staleTime).toBe(30 * 60_000);
+      expect(options?.refetchOnWindowFocus).toBe(false);
+    }
   });
 
   it("surfaces aggregate query failures without preserving stale table data", async () => {
@@ -198,14 +218,14 @@ describe("useWigoPlayerDashboard", () => {
       data: Player;
       error: null;
     }>();
-    const secondAggregateDeferred = createDeferred<TableAggregateData[]>();
+    const secondAggregateDeferred = createDeferred<{ rows: TableAggregateData[]; freshness: typeof freshness }>();
 
     mockRouter.query = { playerId: String(firstPlayer.id) };
     singleMock
       .mockResolvedValueOnce({ data: firstPlayer, error: null })
       .mockImplementationOnce(() => secondPlayerDeferred.promise);
     mockFetchPlayerAggregatedStats
-      .mockResolvedValueOnce([{ label: "Goals", STD: 31 }])
+      .mockResolvedValueOnce({ rows: [{ label: "Goals", STD: 31 }], freshness })
       .mockImplementationOnce(() => secondAggregateDeferred.promise);
 
     const queryClient = createQueryClient();
@@ -219,9 +239,9 @@ describe("useWigoPlayerDashboard", () => {
         { label: "Goals", STD: 31 }
       ]);
     });
-    // One aggregate read per player, made with the resolved dashboard season (never a season-less read).
+    // One aggregate read per player; it does not wait for the season (S4).
     expect(mockFetchPlayerAggregatedStats).toHaveBeenCalledTimes(1);
-    expect(mockFetchPlayerAggregatedStats).toHaveBeenCalledWith(firstPlayer.id, expect.any(Number));
+    expect(mockFetchPlayerAggregatedStats).toHaveBeenCalledWith(firstPlayer.id);
 
     mockRouter.query = { playerId: String(secondPlayer.id) };
     rerender();
@@ -234,7 +254,7 @@ describe("useWigoPlayerDashboard", () => {
 
     act(() => {
       secondPlayerDeferred.resolve({ data: secondPlayer, error: null });
-      secondAggregateDeferred.resolve([{ label: "Goals", STD: 27 }]);
+      secondAggregateDeferred.resolve({ rows: [{ label: "Goals", STD: 27 }] as TableAggregateData[], freshness });
     });
 
     await waitFor(() => {
@@ -270,12 +290,53 @@ describe("useWigoPlayerDashboard", () => {
 
     mockRouter.query = { playerId: String(selectedPlayer.id) };
     singleMock.mockResolvedValue({ data: selectedPlayer, error: null });
-    mockFetchPlayerAggregatedStats.mockResolvedValue([]);
+    mockFetchPlayerAggregatedStats.mockResolvedValue({ rows: [], freshness });
     rerender();
 
     await waitFor(() => {
       expect(result.current.selectedPlayer?.id).toBe(selectedPlayer.id);
       expect(result.current.headshotUrl).toBe("https://example.com/timo.png");
     });
+  });
+
+  it("brands a traded player with the team of their latest game this season", async () => {
+    // Mercer's shape: players.team_id still NJD (1), latest 2026-27 game for WPG.
+    const player = createPlayer({ id: 8482110, fullName: "Dawson Mercer", team_id: 1 });
+    mockGameLog.mockResolvedValue([
+      { game_id: 2026020010, date: "2026-10-20", team_abbrev: "NJD" },
+      { game_id: 2026020099, date: "2026-10-30", team_abbrev: "WPG" }
+    ]);
+    mockGetCurrentSeason.mockResolvedValue({ seasonId: 20262027 });
+    mockRouter.query = { playerId: String(player.id) };
+    singleMock.mockResolvedValue({ data: player, error: null });
+    mockFetchPlayerAggregatedStats.mockResolvedValue({ rows: [], freshness });
+
+    const { result } = renderHook(() => useWigoPlayerDashboard(), {
+      wrapper: createWrapper(createQueryClient())
+    });
+
+    await waitFor(() => expect(result.current.teamAbbreviation).toBe("WPG"));
+    expect(result.current.teamName).toBe("Winnipeg Jets");
+    expect(result.current.teamIdForLog).toBe(52);
+    expect(mockGameLog).toHaveBeenCalledWith(player.id, "20262027");
+  });
+
+  it("starts the aggregate read before the season resolves, and builds the table once it does", async () => {
+    const player = createPlayer();
+    const season = createDeferred<{ seasonId: number }>();
+    mockGetCurrentSeason.mockReturnValue(season.promise);
+    mockRouter.query = { playerId: String(player.id) };
+    singleMock.mockResolvedValue({ data: player, error: null });
+    mockFetchPlayerAggregatedStats.mockResolvedValue({ rows: [{ label: "Goals", STD: 8 }], freshness });
+
+    const { result } = renderHook(() => useWigoPlayerDashboard(), {
+      wrapper: createWrapper(createQueryClient())
+    });
+
+    await waitFor(() => expect(mockFetchPlayerAggregatedStats).toHaveBeenCalledWith(player.id));
+    expect(result.current.currentSeasonId).toBeNull();
+    expect(result.current.rawCombinedData).toEqual([]);
+    act(() => season.resolve({ seasonId: 20262027 }));
+    await waitFor(() => expect(result.current.rawCombinedData).toEqual([{ label: "Goals", STD: 8 }]));
   });
 });

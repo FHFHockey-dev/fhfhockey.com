@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  buildPercentileLookup,
   calculatePercentileRank,
   calculatePlayerRank,
   calculateRankingResult
@@ -53,5 +54,26 @@ describe("calculatePercentiles", () => {
     expect(calculateRankingResult(data, 999, true)).toBeNull();
     expect(calculatePercentileRank(data, 999, "value", true)).toBeNull();
     expect(calculatePlayerRank(data, 999, true)).toBeNull();
+  });
+});
+
+describe("buildPercentileLookup", () => {
+  it("matches calculateRankingResult on every player, with ties, both directions", () => {
+    // A seeded population with many ties, as low-GP cohorts have.
+    let seed = 7;
+    const next = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    const rows = Array.from({ length: 600 }, (_, index) => ({
+      player_id: index + 1,
+      value: Math.round(next() * 40) / 10
+    }));
+    for (const higherIsBetter of [true, false]) {
+      const lookup = buildPercentileLookup(rows.map((row) => row.value), higherIsBetter);
+      for (const row of rows) {
+        expect(lookup(row.value)).toBeCloseTo(
+          calculateRankingResult(rows, row.player_id, higherIsBetter)!.percentile,
+          12
+        );
+      }
+    }
   });
 });

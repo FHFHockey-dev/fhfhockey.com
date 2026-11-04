@@ -9,6 +9,9 @@ import {
 
 import styles from "./PlayerRatingsDisplay.module.scss";
 import { WIGO_ERROR_MESSAGES } from "./errorMessages";
+import { formatSeasonRange } from "./tableUtils";
+import { useSeasonPendingMessage } from "hooks/useCurrentSeason";
+import { WIGO_QUERY_DEFAULTS } from "components/WiGO/queryDefaults";
 
 interface PlayerRatingsProps {
   playerId: number | null | undefined;
@@ -61,11 +64,15 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
   seasonId,
   minGp
 }) => {
+  const seasonPending = useSeasonPendingMessage();
   const { data: rawStats, isLoading, error } = useQuery({
     queryKey: ["wigoRatingCohort", seasonId],
     queryFn: () => fetchRawStatsForAllStrengths(seasonId!),
     enabled: !!playerId && !!seasonId,
-    staleTime: 60_000
+    ...WIGO_QUERY_DEFAULTS,
+    // The pager already retries blips per page and gives a timeout one
+    // attempt; a query retry would repeat all eight reads (S1, D-01).
+    retry: false
   });
   const ratings = useMemo(
     () => playerId && rawStats
@@ -77,16 +84,35 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
   const formatRating = (rating: number | null): string => {
     return rating !== null && !isNaN(rating) ? rating.toFixed(1) : "-";
   };
+  // AS has no rows this season yet (no writer; P-2), so every All rating is
+  // blank. Say why rather than leaving a bare "-" (C-24).
+  const asEmpty =
+    !!rawStats?.as &&
+    (rawStats.as.offense?.length ?? 0) === 0 &&
+    (rawStats.as.defense?.length ?? 0) === 0;
+  const asEmptyReason = seasonId
+    ? `No all-situations data for ${formatSeasonRange(seasonId)} yet`
+    : "No all-situations data yet";
+  const renderAllValue = (rating: number | null, valueStyle: React.CSSProperties) => (
+    <span
+      className={styles.ratingValue}
+      style={valueStyle}
+      title={asEmpty ? asEmptyReason : undefined}
+    >
+      {formatRating(rating)}
+      {asEmpty && <span className={styles.visuallyHidden}>: {asEmptyReason}</span>}
+    </span>
+  );
 
   const renderContent = () => {
     if (isLoading)
-      return <div className={styles.loading}>Loading Ratings...</div>;
+      return <div className={styles.loading}>Loading ratings…</div>;
     if (error)
       return <div className={styles.error}>{WIGO_ERROR_MESSAGES.ratings}</div>;
     if (!playerId)
       return <div className={styles.noPlayer}>Select a player</div>;
     if (!seasonId)
-      return <div className={styles.loading}>Loading season info...</div>;
+      return <div className={styles.loading}>{seasonPending}</div>;
     if (!ratings)
       return (
         <div className={styles.noData}>
@@ -109,6 +135,7 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
     };
 
     return (
+      <div className={styles.ratingsFrame}>
       <div className={styles.ratingsRoot}>
         <div className={styles.ratingSection}>
           <h3 className={styles.ratingTitle}>Offense</h3>
@@ -118,12 +145,7 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
               style={getRatingStyles(ratings.offense.as).boxStyle}
             >
               <span className={styles.ratingLabel}>All</span>
-              <span
-                className={styles.ratingValue}
-                style={getRatingStyles(ratings.offense.as).valueStyle}
-              >
-                {formatRating(ratings.offense.as)}
-              </span>
+              {renderAllValue(ratings.offense.as, getRatingStyles(ratings.offense.as).valueStyle)}
             </div>
             <div
               className={styles.ratingBox}
@@ -160,12 +182,7 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
               style={getRatingStyles(ratings.overall.as).boxStyle}
             >
               <span className={styles.ratingLabel}>All</span>
-              <span
-                className={styles.ratingValue}
-                style={getRatingStyles(ratings.overall.as).valueStyle}
-              >
-                {formatRating(ratings.overall.as)}
-              </span>
+              {renderAllValue(ratings.overall.as, getRatingStyles(ratings.overall.as).valueStyle)}
             </div>
             <div
               className={styles.ratingBox}
@@ -202,12 +219,7 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
               style={getRatingStyles(ratings.defense.as).boxStyle}
             >
               <span className={styles.ratingLabel}>All</span>
-              <span
-                className={styles.ratingValue}
-                style={getRatingStyles(ratings.defense.as).valueStyle}
-              >
-                {formatRating(ratings.defense.as)}
-              </span>
+              {renderAllValue(ratings.defense.as, getRatingStyles(ratings.defense.as).valueStyle)}
             </div>
             <div
               className={styles.ratingBox}
@@ -235,6 +247,12 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
             </div>
           </div>
         </div>
+      </div>
+      {asEmpty && (
+        <p className={styles.ratingsNote}>
+          {asEmptyReason}: All shows “-”, and Overall uses Even and Special.
+        </p>
+      )}
       </div>
     );
   };

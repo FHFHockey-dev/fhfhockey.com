@@ -4,7 +4,7 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Season } from "lib/NHL/types";
-import useCurrentSeason, { useCurrentSeasonQuery } from "./useCurrentSeason";
+import useCurrentSeason, { useCurrentSeasonQuery, useSeasonPendingMessage } from "./useCurrentSeason";
 
 const mockGetCurrentSeason = vi.hoisted(() => vi.fn());
 
@@ -140,5 +140,15 @@ describe("useCurrentSeason", () => {
     expect(result.current.isError).toBe(false);
     expect(result.current.data).toBeNull();
     expect(result.current.error).toBeNull();
+  });
+
+  it("tells panels whether the season is still loading or its lookup failed", async () => {
+    expect(renderHook(() => useSeasonPendingMessage()).result.current).toBe("Loading season info...");
+    mockGetCurrentSeason.mockRejectedValue(new Error("season down"));
+    const queryClient = createQueryClient();
+    const { result } = renderHook(() => useCurrentSeasonQuery(), { wrapper: createWrapper(queryClient) });
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(renderHook(() => useSeasonPendingMessage(), { wrapper: createWrapper(queryClient) }).result.current)
+      .toBe("Unable to load season info right now.");
   });
 });

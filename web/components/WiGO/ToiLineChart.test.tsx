@@ -4,8 +4,10 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import ToiLineChart from "./ToiLineChart";
 
-const { fetchLogs } = vi.hoisted(() => ({ fetchLogs: vi.fn() }));
-vi.mock("utils/fetchWigoPlayerStats", () => ({ fetchPlayerGameLogStats: fetchLogs }));
+const { gameLog } = vi.hoisted(() => ({ gameLog: { data: [] as any[] } }));
+vi.mock("hooks/useWigoGameLog", () => ({
+  default: () => ({ data: gameLog.data, isLoading: false, error: null })
+}));
 vi.mock("hooks/useWigoPlayerTotals", () => ({
   default: () => ({ data: { toi_per_game: 1500, pp_toi_pct_per_game: 0.4 }, isLoading: false, error: null })
 }));
@@ -17,10 +19,10 @@ afterEach(cleanup);
 
 describe("ToiLineChart", () => {
   it("lets a game above 30:00 extend the time axis instead of clipping it", async () => {
-    fetchLogs.mockResolvedValue([
-      { date: "2026-01-01", toi_per_game: 1500, pp_toi_per_game: 120, pp_toi_pct_per_game: 40 },
-      { date: "2026-01-03", toi_per_game: 2160, pp_toi_per_game: 200, pp_toi_pct_per_game: 45 }
-    ]);
+    gameLog.data = [
+      { game_id: 1, date: "2026-01-01", toi_per_game: 1500, pp_toi_per_game: 120, pp_toi_pct_per_game: 0.4 },
+      { game_id: 2, date: "2026-01-03", toi_per_game: 2160, pp_toi_per_game: 200, pp_toi_pct_per_game: 0.45 }
+    ];
     render(
       <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
         <ToiLineChart playerId={1} seasonId={20252026} />

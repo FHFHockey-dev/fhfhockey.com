@@ -1,14 +1,19 @@
 import supabase from "lib/supabase";
 import type { QueryClient } from "@tanstack/react-query";
 import { fetchAllSupabasePages } from "lib/supabase/pagination";
+import { fetchPlayerPerGameTotals } from "utils/fetchWigoPlayerStats";
 import {
   PercentileStrength,
   OffensePercentileTable,
-  DefensePercentileTable,
   PlayerRawStats
 } from "components/WiGO/types";
+import { WIGO_QUERY_DEFAULTS } from "components/WiGO/queryDefaults";
 
 const PAGE_SIZE = 500;
+// A fallback season is used only if it reached the panel's default minimum
+// GP and the selected player's own row did too. A 3-GP row in a stub season
+// with max GP 5 ranked McDavid 1st of 1 on every stat (C-23).
+const FALLBACK_MIN_GP = 10;
 
 const ALL_OFFENSE_COLUMNS_TO_SELECT = `
     player_id, season, gp, toi_seconds,
@@ -18,9 +23,6 @@ const ALL_OFFENSE_COLUMNS_TO_SELECT = `
     cf_pct, ff_pct, sf_pct, gf_pct, xgf_pct, scf_pct, hdcf_pct
 `;
 
-const ALL_DEFENSE_COLUMNS_TO_SELECT = `
-    player_id, season, gp, toi_seconds
-`;
 
 interface OffenseRow {
   player_id: number;
@@ -47,12 +49,6 @@ interface OffenseRow {
   hdcf_pct?: number | null;
 }
 
-interface DefenseRow {
-  player_id: number;
-  season: number | string | null;
-  gp: number | null;
-  toi_seconds: number | null;
-}
 
 export interface PercentileCohortResult {
   stats: PlayerRawStats[];
@@ -63,7 +59,7 @@ export interface PercentileCohortResult {
 }
 
 async function fetchPercentileRows<T>(
-  tableName: OffensePercentileTable | DefensePercentileTable,
+  tableName: OffensePercentileTable,
   selectColumns: string,
   seasonId: number,
   filterPositiveGp = false
@@ -188,44 +184,25 @@ export async function fetchAllPlayerStatsForStrength(
 ): Promise<PlayerRawStats[]> {
   const offenseTable =
     `nst_percentile_${strength}_offense` as OffensePercentileTable;
-  const defenseTable =
-    `nst_percentile_${strength}_defense` as DefensePercentileTable;
 
   try {
-    const [offenseData, defenseRows] = await Promise.all([
-      fetchPercentileRows<OffenseRow>(
-        offenseTable,
-        ALL_OFFENSE_COLUMNS_TO_SELECT,
-        seasonId,
-        true
-      ),
-      fetchPercentileRows<DefenseRow>(
-        defenseTable,
-        ALL_DEFENSE_COLUMNS_TO_SELECT,
-        seasonId
-      )
-    ]);
-    const defenseDataById = new Map<number, DefenseRow>(
-      defenseRows.map((d: DefenseRow) => [Number(d.player_id), d])
+    // Offense rows carry GP and TOI themselves (and are read with gp > 0), so
+    // the defense table, which only supplied those two, is not read (S5).
+    const offenseData = await fetchPercentileRows<OffenseRow>(
+      offenseTable,
+      ALL_OFFENSE_COLUMNS_TO_SELECT,
+      seasonId,
+      true
     );
 
-    const combinedData: PlayerRawStats[] = offenseData.map(
-      (offensePlayer: OffenseRow) => {
-        const defensePlayer = defenseDataById.get(
-          Number(offensePlayer.player_id)
-        );
-        return {
+    return offenseData.map(
+      (offensePlayer: OffenseRow) =>
+        ({
           ...offensePlayer,
-          gp: (offensePlayer.gp as number | null) ?? defensePlayer?.gp ?? null,
-          toi:
-            (offensePlayer.toi_seconds as number | null) ??
-            defensePlayer?.toi_seconds ??
-            null
-        } as PlayerRawStats;
-      }
+          gp: offensePlayer.gp ?? null,
+          toi: offensePlayer.toi_seconds ?? null
+        }) as PlayerRawStats
     );
-
-    return combinedData;
   } catch (err) {
     console.error(
       `Error fetching all player stats for strength ${strength}:`,
@@ -247,26 +224,36 @@ export async function fetchPercentileCohortForPlayer(
       ? queryClient.fetchQuery({
           queryKey: ["wigoPercentileCohort", strength, requestedSeason],
           queryFn: () => fetchAllPlayerStatsForStrength(strength, requestedSeason),
-          staleTime: 60_000
+          staleTime: WIGO_QUERY_DEFAULTS.staleTime
         })
       : fetchAllPlayerStatsForStrength(strength, requestedSeason);
+  // With a client, the player's GP comes from the dashboard's shared per-game
+  // totals query, so this season's totals row is read once (S5).
+  const fetchPlayerGp = (requestedSeason: number) =>
+    queryClient
+      ? queryClient
+          .fetchQuery({
+            queryKey: ["wigoPerGameTotals", playerId, requestedSeason],
+            queryFn: () => fetchPlayerPerGameTotals(playerId, requestedSeason),
+            staleTime: WIGO_QUERY_DEFAULTS.staleTime
+          })
+          .then((totals) =>
+            typeof totals?.games_played === "number" ? totals.games_played : null
+          )
+      : fetchCanonicalPlayerGp(playerId, requestedSeason);
+  const fetchSeasonMaxGp = (requestedSeason: number) =>
+    queryClient
+      ? queryClient.fetchQuery({
+          queryKey: ["wigoPercentileSeasonMaxGp", requestedSeason],
+          queryFn: () => fetchCanonicalSeasonMaxGp(requestedSeason),
+          staleTime: WIGO_QUERY_DEFAULTS.staleTime
+        })
+      : fetchCanonicalSeasonMaxGp(requestedSeason);
   const [rawRequestedStats, canonicalPlayerGp, canonicalSeasonMaxGp] =
     await Promise.all([
       fetchSeasonStats(seasonId),
-      queryClient
-        ? queryClient.fetchQuery({
-            queryKey: ["wigoPercentilePlayerGp", seasonId, playerId],
-            queryFn: () => fetchCanonicalPlayerGp(playerId, seasonId),
-            staleTime: 60_000
-          })
-        : fetchCanonicalPlayerGp(playerId, seasonId),
-      queryClient
-        ? queryClient.fetchQuery({
-            queryKey: ["wigoPercentileSeasonMaxGp", seasonId],
-            queryFn: () => fetchCanonicalSeasonMaxGp(seasonId),
-            staleTime: 60_000
-          })
-        : fetchCanonicalSeasonMaxGp(seasonId)
+      fetchPlayerGp(seasonId),
+      fetchSeasonMaxGp(seasonId)
     ]);
 
   const requestedStats = sanitizePercentileCohortGp(rawRequestedStats, {
@@ -299,18 +286,36 @@ export async function fetchPercentileCohortForPlayer(
   }
 
   const fallbackSeasonId = getPreviousSeasonId(seasonId);
-  const fallbackStats = await fetchSeasonStats(fallbackSeasonId);
-  const fallbackHasPlayer = fallbackStats.some(
-    (player) => player.player_id === playerId
+  const [rawFallbackStats, fallbackPlayerGp, fallbackSeasonMaxGp] =
+    await Promise.all([
+      fetchSeasonStats(fallbackSeasonId),
+      fetchPlayerGp(fallbackSeasonId),
+      fetchSeasonMaxGp(fallbackSeasonId)
+    ]);
+  // The fallback season gets the same GP check as the requested one (C-34).
+  const fallbackStats = sanitizePercentileCohortGp(rawFallbackStats, {
+    playerId,
+    canonicalPlayerGp: fallbackPlayerGp,
+    canonicalSeasonMaxGp: fallbackSeasonMaxGp
+  });
+  const fallbackRowGp =
+    fallbackStats.find((player) => player.player_id === playerId)?.gp ?? null;
+  const fallbackCohortMaxGp = fallbackStats.reduce(
+    (max, player) => Math.max(max, player.gp ?? 0),
+    0
   );
 
-  if (!fallbackStats.length || !fallbackHasPlayer) {
+  if (
+    fallbackRowGp === null ||
+    fallbackRowGp < FALLBACK_MIN_GP ||
+    fallbackCohortMaxGp < FALLBACK_MIN_GP
+  ) {
     return {
       stats: requestedStats,
       requestedSeasonId: seasonId,
       appliedSeasonId: seasonId,
       fallbackReason:
-        "Current-season percentile data appears incomplete and no fallback cohort was available.",
+        "Current-season percentile data appears incomplete and no usable fallback cohort was available.",
       canonicalPlayerGp
     };
   }

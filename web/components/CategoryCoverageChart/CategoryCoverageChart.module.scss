@@ -30,7 +30,9 @@
   }
 }
 
+.compactFrame { display: flex; flex-direction: column; width: 100%; flex: 1; min-height: 0; }
 .compactRadar { position: relative; width: 100%; flex: 1; min-height: 0; }
+.sampleNote { margin: 0; font-size: 11px; line-height: 1.2; color: vars.$text-secondary; text-align: center; flex-shrink: 0; }
 
 .status {
   font-size: 12px;

@@ -10,20 +10,23 @@ import { createShadowAdapter } from "./decisionsReference/adapter.mjs";
 import { LUNA_MODEL, type LunaTransport } from "./tweetLunaTransport";
 import type { TweetReviewPacket } from "./tweetReviewSidecar";
 import { extractTweetPlayerEvents } from "./tweetPlayerEvents";
+import { assertLunaGoalieWording } from "./tweetLunaGoalieWording";
+import { buildLunaReferenceInput, buildLunaReviewInstructions, getLunaReferencePackage, LUNA_REFERENCE_PACKAGE, type LunaReferenceMode, type LunaSuppliedSourcePolicy } from "./tweetLunaReference";
 
 export const LUNA_REVIEW_VERSION = "ifttt-luna-review-v1";
 export const LUNA_REVIEW_AUTHORITY = { canPublish: false, canWriteAliases: false, canChangeStatus: false, canExecuteReplacement: false } as const;
 const span = z.object({ start: z.number().int().nonnegative(), end: z.number().int().positive(), text: z.string().min(1) }).strict();
-const statuses = z.array(z.object({ occurrenceId: z.string(), canonicalId: z.string(),
+export const lunaGoalieStatusesSchema = z.array(z.object({ occurrenceId: z.string(), canonicalId: z.string(),
   status: z.enum(["confirmed", "ruled_out", "likely", "projected", "unknown"]), evidence: span,
 }).strict()).max(32);
 export type LunaReviewInput = {
   packet: TweetReviewPacket; extractionVersion: string; statements: DecisionStatementBinding[];
   identity?: { evidence: unknown; evaluation: IdentityEvidenceEvaluation; asOf: string; mentions: FixtureIdentityMention[] };
   decisions?: boolean;
+  referenceMode?: LunaReferenceMode;
 };
 
-function responsesWire(request: FixtureIdentityRequest) {
+export function buildLunaReviewRequest(request: FixtureIdentityRequest, context: LunaSuppliedSourcePolicy, referenceMode?: LunaReferenceMode) {
   const enumString = (values: string[]) => ({ type: "string", enum: values });
   const object = (properties: Record<string, unknown>) => ({ type: "object", additionalProperties: false, required: Object.keys(properties), properties });
   const evidence = object({ start: { type: "integer" }, end: { type: "integer" }, text: { type: "string" } });
@@ -36,14 +39,14 @@ function responsesWire(request: FixtureIdentityRequest) {
       evidence, identityConfidence: enumString(["strong", "tentative", "unknown"]),
     }) } }), goalieStatuses: { type: "array", items: object({ occurrenceId: enumString(occurrenceIds),
     canonicalId: { type: "string" }, status: enumString(["confirmed", "ruled_out", "likely", "projected", "unknown"]), evidence }) } });
-  return { model: LUNA_MODEL, input: JSON.stringify(request.content),
-    instructions: `${request.content.instructions.join("\n")}\nReturn {identity,goalieStatuses}. Identity follows the supplied identity contract. Optional goalieStatuses classify source wording only, never verified world truth. Each exact evidence span must contain just its named subject, not another occurrence. Never invent game/team/time fields. First-off, practice and uncertainty cannot confirm a start. No injury statement may bind to another subject. Return an empty goalieStatuses array when unsupported.`,
+  return { model: LUNA_MODEL, input: JSON.stringify(buildLunaReferenceInput(request, context, referenceMode)),
+    instructions: buildLunaReviewInstructions(),
     text: { format: { type: "json_schema", name: "ifttt_luna_review_v1", strict: true, schema } } };
 }
 
 /** Validates a proposal, not truth. Verified 100/0 must come through the existing accepted-evidence workflow. */
 export function validateLunaGoalieStatuses(request: FixtureIdentityRequest, identity: ReturnType<typeof validateFixtureIdentityProposal>, value: unknown) {
-  const result = statuses.parse(value);
+  const result = lunaGoalieStatusesSchema.parse(value);
   if (new Set(result.map(s => s.occurrenceId)).size !== result.length) throw new Error("duplicate_goalie_subject");
   return result.map(proposal => {
     const occurrence = request.content.occurrences.find(o => o.id === proposal.occurrenceId);
@@ -55,15 +58,24 @@ export function validateLunaGoalieStatuses(request: FixtureIdentityRequest, iden
       || request.content.occurrences.some(o => o.id !== occurrence.id && o.span.start < proposal.evidence.end && o.span.end > proposal.evidence.start)) {
       throw new Error("goalie_subject_binding_invalid");
     }
+    assertLunaGoalieWording({ source: request.content.source.text, subject: occurrence.span, evidence: proposal.evidence,
+      status: proposal.status, repeatedIdentity: request.content.occurrences.some(o => o.id !== occurrence.id
+        && (o.span.text === occurrence.span.text || o.candidateSet.candidates.some(c => c.row.canonicalId === proposal.canonicalId)))
+        || request.content.source.text.split(occurrence.span.text).length > 2 });
     if (["confirmed", "ruled_out"].includes(proposal.status)
       && /\b(first off|first (?:goalie|goaltender) off|practice|morning skate|could|might|may|likely|projected|expected|probably|if|not confirmed|no decision|undecided)\b|\?/iu.test(proposal.evidence.text)) {
       throw new Error("goalie_certainty_inflation");
     }
     if (["confirmed", "ruled_out"].includes(proposal.status)) {
-      const literal = extractTweetPlayerEvents({ text: proposal.evidence.text, publishedAt: request.content.source.publishedAt,
-        players: [{ playerId: candidate.row.nhlPlayerId, fullName: candidate.row.fullName, lastName: candidate.row.lastName,
-          position: "G", aliases: [occurrence.span.text] }] });
-      if (!literal.some(e => e.kind === "goalie" && e.playerId === candidate.row.nhlPlayerId && e.state === proposal.status)) {
+      const players = [{ playerId: candidate.row.nhlPlayerId, fullName: candidate.row.fullName, lastName: candidate.row.lastName,
+        position: "G", aliases: [occurrence.span.text] }];
+      const supports = (e: ReturnType<typeof extractTweetPlayerEvents>[number]) => e.kind === "goalie"
+        && e.playerId === candidate.row.nhlPlayerId && e.state === proposal.status && e.goalieRole !== "backup";
+      const literal = extractTweetPlayerEvents({ text: proposal.evidence.text, publishedAt: request.content.source.publishedAt, players, claimAware: true });
+      // The full report must agree: a clipped span must not remove a governing "if".
+      const context = extractTweetPlayerEvents({ text: request.content.source.text, publishedAt: request.content.source.publishedAt, players, claimAware: true });
+      if (!literal.some(supports) || !context.some(e => supports(e)
+        && e.evidence.start <= occurrence.span.start && e.evidence.end >= occurrence.span.end)) {
         throw new Error("goalie_definite_wording_unsupported");
       }
     }
@@ -88,6 +100,7 @@ export async function runRetainedTweetLunaReview(args: {
   enabled?: boolean; input: LunaReviewInput; transport?: LunaTransport; now?: () => string;
 }) {
   const base = { version: LUNA_REVIEW_VERSION, ...LUNA_REVIEW_AUTHORITY, status: "disabled", holds: [] as string[],
+    referencePackage: LUNA_REFERENCE_PACKAGE, responsesRequestHash: null as string | null,
     lineage: null as null | { originalPostId: string | null; author: string | null; url: string | null; textVersion: string; packetHash: string },
     identity: null as ReturnType<typeof validateFixtureIdentityProposal> | null,
     goalieStatuses: [] as ReturnType<typeof validateLunaGoalieStatuses>, decisionReview: null as ReturnType<typeof validateTweetDecisionReviewResult> | null,
@@ -96,13 +109,14 @@ export async function runRetainedTweetLunaReview(args: {
   const now = args.now ?? (() => new Date().toISOString());
   try {
     const input = structuredClone(args.input), packet = input.packet;
+    base.referencePackage = getLunaReferencePackage(input.referenceMode);
     if (Buffer.byteLength(JSON.stringify(input)) > 512_000) throw new Error("review_input_too_large");
     const mapped = mapTweetDecisionReview({ enabled: true, packet, extractionVersion: input.extractionVersion, statements: input.statements });
     if (mapped.status !== "mapped") return { ...base, status: "held", holds: ["retained_packet_unresolved"] };
     if (timestampMicros(now()) === null || timestampMicros(now())! < timestampMicros(packet.source.ingestedAt)!) throw new Error("review_clock_invalid");
     base.lineage = { originalPostId: packet.source.originalPostId, author: packet.source.author, url: packet.source.url,
       textVersion: packet.source.sourceTextVersionId, packetHash: mapped.packetHash };
-    base.reviewQueueKey = identityDigest([LUNA_REVIEW_VERSION, mapped.packetHash, input]);
+    base.reviewQueueKey = identityDigest([LUNA_REVIEW_VERSION, base.referencePackage, mapped.packetHash, input]);
     base.status = "review_only";
     if (!args.transport) return { ...base, status: "held", holds: ["explicit_transport_required"] };
     if (input.identity) {
@@ -119,7 +133,13 @@ export async function runRetainedTweetLunaReview(args: {
         provenance: { kind: "approved_local", label: `retained-sidecar:${mapped.packetHash}`, lineageKey: packet.source.originalPostId! },
       } });
       if (prepared.status !== "prepared") throw new Error("identity_preparation_held");
-      const receipt = await args.transport("responses", responsesWire(prepared.request), { onAdmitted: () => { base.attempts++; } });
+      const wire = buildLunaReviewRequest(prepared.request, { source: {
+        retainedSourceId: packet.source.retainedSourceId, sourceTextVersionId: packet.source.sourceTextVersionId,
+        originalPostId: packet.source.originalPostId, author: packet.source.author, url: packet.source.url,
+        publishedAt: packet.source.publishedAt, ingestedAt: packet.source.ingestedAt, provenance: packet.source.provenance,
+      }, packetHash: mapped.packetHash, identityEvaluation: projection.evaluation, identityAsOf: id.asOf }, input.referenceMode);
+      base.responsesRequestHash = identityDigest(wire);
+      const receipt = await args.transport("responses", wire, { onAdmitted: () => { base.attempts++; } });
       base.requestIds.push(receipt.requestId);
       const raw = outputJson(receipt.body);
       base.identity = validateFixtureIdentityProposal(prepared.request, raw.identity);
@@ -152,7 +172,8 @@ export async function runRetainedTweetLunaReview(args: {
     // Do not propagate provider errors, input text or credentials into operational logs.
     const safeReasons = new Set(["review_input_too_large", "review_clock_invalid", "identity_source_clock_mismatch",
       "dated_identity_evidence_unavailable", "identity_preparation_held", "goalie_subject_binding_invalid", "goalie_certainty_inflation",
-      "goalie_definite_wording_unsupported", "luna_response_incomplete", "luna_response_shape", "luna_dispatch_disabled",
+      "goalie_definite_wording_unsupported", "goalie_context_unresolved", "goalie_conflict_or_correction_unresolved", "goalie_tentative_wording_unsupported",
+      "luna_reference_mode_invalid", "luna_response_incomplete", "luna_response_shape", "luna_dispatch_disabled",
       "luna_budget_stopped", "luna_budget_exhausted", "luna_unsettled_attempt", "luna_attempt_held_no_retry", "luna_request_too_large", "decisions_reference_unavailable"]);
     const reason = error instanceof Error && safeReasons.has(error.message) ? error.message : "invalid_or_unavailable_review";
     return { ...base, status: "held", holds: [...base.holds, reason] };

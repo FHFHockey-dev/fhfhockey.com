@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchPlayerPerGameTotals } from "utils/fetchWigoPlayerStats";
+import { WIGO_QUERY_DEFAULTS } from "components/WiGO/queryDefaults";
 
 // Snapshot, pace and trend references must share the same player/season totals.
 export default function useWigoPlayerTotals(
@@ -10,6 +11,6 @@ export default function useWigoPlayerTotals(
     queryKey: ["wigoPerGameTotals", playerId, seasonId],
     queryFn: () => fetchPlayerPerGameTotals(playerId!, seasonId!),
     enabled: !!playerId && !!seasonId,
-    staleTime: 60_000
+    ...WIGO_QUERY_DEFAULTS
   });
 }

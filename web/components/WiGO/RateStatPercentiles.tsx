@@ -22,16 +22,19 @@ import {
 import { formatOrdinal } from "utils/formattingUtils";
 import { WIGO_ERROR_MESSAGES } from "./errorMessages";
 import { formatSeasonRange } from "./tableUtils";
-import useCurrentSeason from "hooks/useCurrentSeason";
+import useCurrentSeason, { useSeasonPendingMessage } from "hooks/useCurrentSeason";
+import { WIGO_QUERY_DEFAULTS } from "components/WiGO/queryDefaults";
 
+// Datalabels is passed to this chart only. Registered globally, it would join
+// charts created before this lazy panel loaded, whose plugin state it never
+// set up, and crash them on their next update (`_labels` of undefined).
 ChartJS.register(
   CategoryScale,
   LinearScale,
   BarElement,
   Title,
   Tooltip,
-  Legend,
-  ChartDataLabels
+  Legend
 );
 
 interface RateStatPercentilesProps {
@@ -210,6 +213,7 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
 }) => {
   const [selectedStrength, setSelectedStrength] =
     useState<PercentileStrength>("as");
+  const seasonPending = useSeasonPendingMessage();
   const queryClient = useQueryClient();
   const currentSeason = useCurrentSeason();
   const {
@@ -225,7 +229,7 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
         playerId as number,
         queryClient
       ),
-    staleTime: 60_000,
+    ...WIGO_QUERY_DEFAULTS,
     enabled: typeof seasonId === "number" && typeof playerId === "number"
   });
   const allPlayersStats = useMemo<PlayerRawStats[]>(
@@ -284,7 +288,9 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
         (player.gp >= minGp || player.player_id === playerId)
     );
 
-    if (filteredPlayers.length === 0) {
+    // A cohort of the selected player alone ranks them 1st at 50% on every
+    // stat, which says nothing (C-23).
+    if (!filteredPlayers.some((player) => player.player_id !== playerId)) {
       return {
         calculatedPercentiles: {} as CalculatedData,
         calculatedRanks: {} as CalculatedData
@@ -353,7 +359,8 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
     return selectedPlayerGp !== null && selectedPlayerGp >= minGp;
   }, [selectedPlayerGp, minGp]);
 
-  const sliderMax = Math.max(selectedPlayerGp ?? 0, maxPossibleGp, 1);
+  // Never below the current minimum, so the thumb stays on the track.
+  const sliderMax = Math.max(selectedPlayerGp ?? 0, maxPossibleGp, minGp, 1);
 
   const combinedChartConfig = useMemo(
     () =>
@@ -367,10 +374,27 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
 
   const strengthLabel = selectedStrength.toUpperCase();
   const thresholdMessages: Array<{ short: string; full: string }> = [];
+  const seasonLabel = typeof seasonId === "number" ? formatSeasonRange(seasonId) : "this season";
   if (allPlayersStats.length === 0) {
-    thresholdMessages.push({ short: `No ${strengthLabel} data`, full: `No player data available for ${strengthLabel}.` });
+    thresholdMessages.push({ short: `No ${strengthLabel} data yet`, full: `No ${strengthLabel} percentile data for ${seasonLabel} yet.` });
+  } else if (
+    percentileCohort?.fallbackReason &&
+    percentileCohort.appliedSeasonId === percentileCohort.requestedSeasonId
+  ) {
+    thresholdMessages.push({ short: `${strengthLabel} data incomplete`, full: percentileCohort.fallbackReason });
   }
-  if (calculatedPercentiles !== null && percentileCohort?.fallbackReason) {
+  if (
+    calculatedPercentiles !== null &&
+    allPlayersStats.length > 0 &&
+    !allPlayersStats.some((player) => player.player_id !== playerId && player.gp !== null && player.gp >= minGp)
+  ) {
+    thresholdMessages.push({ short: `No others at ${minGp}+ GP`, full: `No other players have ${minGp}+ GP at ${strengthLabel}, so there is nothing to rank against.` });
+  }
+  if (
+    calculatedPercentiles !== null &&
+    percentileCohort?.fallbackReason &&
+    percentileCohort.appliedSeasonId !== percentileCohort.requestedSeasonId
+  ) {
     thresholdMessages.push({
       short: `${formatSeasonRange(percentileCohort.appliedSeasonId)} values and cohort, not ${formatSeasonRange(seasonId as number)}`,
       full: percentileCohort.fallbackReason
@@ -392,7 +416,7 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
   return (
     <div className={`${styles.rateStatPercentilesComponent} ${desktop ? styles.percentileDesktop : ""}`}>
       {isLoading && (
-        <div className={styles.loadingMessage}>Loading Player Data...</div>
+        <div className={styles.loadingMessage}>Loading percentiles…</div>
       )}
       {!isLoading && error && (
         <div className={styles.errorMessage}>
@@ -400,7 +424,7 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
         </div>
       )}
       {!isLoading && !error && !seasonId && playerId && (
-        <div className={styles.loadingMessage}>Loading season info...</div>
+        <div className={styles.loadingMessage}>{seasonPending}</div>
       )}
       {!isLoading && !error && !playerId && (
         <div className={styles.noPlayerMessage}>Select a player</div>
@@ -466,11 +490,17 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
               {/* One-page mode keeps the requested and applied seasons for screen readers; the chip says when they differ. */}
               {desktop ? (
                 <div className={styles.percentileContext}>
-                  Player GP: {selectedPlayerGp ?? "—"}
+                  {/* F and D are pooled by design (TJ, 2026-11-01); say so. */}
+                  Player GP: {selectedPlayerGp ?? "—"} · all skaters
                   <span className={styles.visuallyHidden}> · Requested {seasonId} · Applied {percentileCohort?.appliedSeasonId ?? seasonId}</span>
                 </div>
               ) : (
-                <div className={styles.percentileContext}>Player GP: {selectedPlayerGp ?? "—"} · Requested {seasonId} · Applied {percentileCohort?.appliedSeasonId ?? seasonId}</div>
+                <div className={styles.percentileContext}>
+                  Player GP: {selectedPlayerGp ?? "—"} ·{" "}
+                  {percentileCohort && percentileCohort.appliedSeasonId !== percentileCohort.requestedSeasonId
+                    ? `${formatSeasonRange(percentileCohort.appliedSeasonId)} values, not ${formatSeasonRange(seasonId)}`
+                    : "all skaters"}
+                </div>
               )}
               <div className={desktop ? styles.thresholdChips : styles.thresholdMessagesContainer}>
                 {thresholdMessages.map(message => desktop
@@ -491,7 +521,8 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
                 <span>{stat.label}</span>
                 <strong>{available ? `${Math.round(percentile * 100)}%` : "—"}</strong>
                 <meter aria-label={`${stat.label} percentile`} min={0} max={100} value={available ? percentile * 100 : 0} />
-                <small>{rank != null ? <>{formatOrdinal(rank)}<span className={styles.visuallyHidden}> rank</span></> : "Rank unavailable"}</small>
+                {/* A sparse tile shows one dash, in the value; "Rank unavailable" overflows 3x6 at 1280 (E proto2). */}
+                <small>{rank != null ? <>{formatOrdinal(rank)}<span className={styles.visuallyHidden}> rank</span></> : <span className={styles.visuallyHidden}>Rank unavailable</span>}</small>
               </div>;
             })}
           </div> : <div className={styles.chartAndRanksArea}>
@@ -508,7 +539,7 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
                 />
               ) : (
                 <div className={styles.chartLoadingPlaceholder}>
-                  Calculating...
+                  Calculating…
                 </div>
               )}
             </div>

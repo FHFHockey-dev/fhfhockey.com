@@ -57,6 +57,36 @@ export function calculateRankingResult(
 }
 
 /**
+ * Midrank percentile of any value against a fixed population, as
+ * calculateRankingResult computes it, after one sort: O(n log n) to build and
+ * O(log n) per lookup instead of a full scan per player (S7, D-08).
+ */
+export function buildPercentileLookup(
+  values: ReadonlyArray<number>,
+  higherIsBetter: boolean
+): (value: number) => number {
+  const sorted = [...values].sort((a, b) => a - b);
+  const n = sorted.length;
+  // First index whose value is >= (or >, when strict) the target.
+  const bound = (value: number, strict: boolean) => {
+    let low = 0;
+    let high = n;
+    while (low < high) {
+      const mid = (low + high) >> 1;
+      if (strict ? sorted[mid] <= value : sorted[mid] < value) low = mid + 1;
+      else high = mid;
+    }
+    return low;
+  };
+  return (value: number) => {
+    const below = bound(value, false);
+    const equal = bound(value, true) - below;
+    const worse = higherIsBetter ? below : n - below - equal;
+    return Math.max(0, Math.min(1, (worse + 0.5 * equal) / n));
+  };
+}
+
+/**
  * Calculates the percentile rank for a specific player within a dataset for a given stat.
  * Handles ties using the method: (players_below + 0.5 * players_equal) / total_count
  *

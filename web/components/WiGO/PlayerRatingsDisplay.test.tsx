@@ -60,6 +60,25 @@ describe("PlayerRatingsDisplay", () => {
     expect(screen.getAllByText("-")).toHaveLength(9);
   });
 
+  it("explains the blank All ratings when all-situations data is empty, with a season label", async () => {
+    const rows = [91, 2, 3].map((player_id, index) => ({
+      player_id, season: 20262027, gp: 12, toi_seconds: 800, total_points_per_60: 3 - index, xga_per_60: 1 + index
+    }));
+    mockFetchRawStatsForAllStrengths.mockResolvedValue({
+      as: { offense: [], defense: [] },
+      es: { offense: rows, defense: rows },
+      pp: { offense: rows, defense: [] },
+      pk: { offense: [], defense: rows }
+    });
+
+    renderWithClient(<PlayerRatingsDisplay playerId={91} seasonId={20262027} minGp={10} />);
+
+    await waitFor(() => expect(screen.getByText(/All shows “-”, and Overall uses Even and Special/)).toBeTruthy());
+    expect(screen.getByText(/No all-situations data for 2026–27 yet:/)).toBeTruthy();
+    expect(screen.queryByText(/20262027/)).toBeNull();
+    expect(screen.getAllByTitle("No all-situations data for 2026–27 yet")).toHaveLength(3);
+  });
+
   it("renders ratings for a low-gp forward instead of dropping them from the cohort", async () => {
     const rawStats: RawStatsCollection = {
       as: {
@@ -366,5 +385,13 @@ describe("PlayerRatingsDisplay", () => {
     expect(mockFetchRawStatsForAllStrengths).toHaveBeenCalledTimes(1);
     rerender(view(2, 20, 20262027));
     await waitFor(() => expect(mockFetchRawStatsForAllStrengths).toHaveBeenCalledTimes(2));
+  });
+
+  it("does not retry the cohort query itself, so a timeout costs one read per page", async () => {
+    mockFetchRawStatsForAllStrengths.mockRejectedValue({ code: "57014", message: "canceling statement due to statement timeout" });
+    const client = new QueryClient();
+    render(<QueryClientProvider client={client}><PlayerRatingsDisplay playerId={1} seasonId={20262027} minGp={10} /></QueryClientProvider>);
+    await screen.findByText("Unable to calculate ratings right now.");
+    expect(mockFetchRawStatsForAllStrengths).toHaveBeenCalledTimes(1);
   });
 });

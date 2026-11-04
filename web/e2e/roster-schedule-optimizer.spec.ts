@@ -123,7 +123,7 @@ test("manual workspace retains reviewed intent, protections and locks through re
     await expect(page.getByRole("button", { name: "Remove Alpha Center" })).toBeVisible();
     await manage.click();
     await page.getByText("League rules and scoring", { exact: true }).click();
-    const confirm = page.getByRole("button", { name: "Confirm planning inputs", exact: true });
+    const confirm = page.getByRole("region", { name: "Roster and setup" }).getByRole("button", { name: "Confirm planning inputs", exact: true });
     await expect(confirm).toBeEnabled();
     await confirm.focus();
     await page.keyboard.press("Enter");

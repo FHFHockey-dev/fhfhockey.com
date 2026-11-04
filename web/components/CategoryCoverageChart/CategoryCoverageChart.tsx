@@ -68,7 +68,7 @@ function CategoryCoverageChart({
 }: CategoryCoverageChartProps) {
   const size = useScreenSize();
 
-  const { data, loading, error, retry, retrying } = usePercentileRank(playerId, timeOption);
+  const { data, sample, loading, error, retry, retrying } = usePercentileRank(playerId, timeOption);
   const hasData = data && LABELS.every(({ key }) => Number.isFinite(data[key]));
   const chartData = { ...DATA, datasets: [{ ...DATA.datasets[0], data: hasData ? LABELS.map(({ key }) => data[key]) : [] }] };
 
@@ -109,16 +109,16 @@ function CategoryCoverageChart({
 
         chart.ctx.font =
           size.screen === BreakPoint.l
-            ? "700 16px Roboto Condensed"
-            : "100 10px Roboto";
+            ? "700 16px Roboto Condensed, sans-serif"
+            : "700 12px Roboto Condensed, sans-serif"; // 11 px floor; generic fallback
         chart.ctx.fillStyle = "white";
         chart.ctx.fillText(LABELS[i].label, x, y);
 
         // draw percentage
         chart.ctx.font =
           size.screen === BreakPoint.l
-            ? "400 14px Roboto Condensed"
-            : "700 12px Roboto";
+            ? "400 14px Roboto Condensed, sans-serif"
+            : "700 12px Roboto Condensed, sans-serif";
 
         chart.ctx.fillStyle = "rgba(76, 167, 221, 1)";
         dataset[i] && chart.ctx.fillText(`${dataset[i].toFixed(1)}`, x, y - 16);
@@ -179,14 +179,28 @@ function CategoryCoverageChart({
   if (!hasData) return <p role="status">Category percentiles unavailable for this player and season.</p>;
 
   if (compact) {
-    return <div className={styles.compactRadar}><Radar data={chartData} options={{
+    const values = hasData ? LABELS.map(({ key }) => Math.round(data[key])) : [];
+    // A lighter fill so the radar does not outrank the table, and each value
+    // printed under its label instead of hover only (E-03).
+    const compactData = { ...chartData, datasets: [{ ...chartData.datasets[0],
+      backgroundColor: "rgba(43, 168, 242, 0.28)", borderWidth: 2 }] };
+    return <div className={styles.compactFrame}><div className={styles.compactRadar}><Radar data={compactData}
+      role="img"
+      aria-label={`Category percentiles, 0 to 100: ${LABELS.map(({ label }, index) => `${label} ${values[index]}`).join(", ")}`}
+      options={{
       ...OPTIONS, maintainAspectRatio: false,
       layout: { padding: 6 },
       scales: { r: { ...OPTIONS.scales.r,
-        pointLabels: { color: "#ccc", font: { size: 12 }, callback: (label: string) => label },
-        ticks: { display: true, stepSize: 50, font: { size: 12 }, color: "#ccc", showLabelBackdrop: false }
+        pointLabels: { color: "#ccc", font: { size: 12, family: "Roboto Condensed, sans-serif" },
+          callback: (label: string, index: number) => [label, String(values[index] ?? "")] },
+        ticks: { display: true, stepSize: 50, font: { size: 12, family: "Roboto Condensed, sans-serif" }, color: "#ccc", showLabelBackdrop: false }
       } }
-    }} /></div>;
+    }} /></div>
+      {/* F and D are pooled by design; say so, with the player's own sample (C-28). */}
+      {sample && <p className={styles.sampleNote}>
+        {sample.playerGames} GP · vs {sample.cohortSize} skaters with {sample.minGames}+ GP
+      </p>}
+    </div>;
   }
 
   return (
@@ -208,6 +222,8 @@ function CategoryCoverageChart({
         data={chartData}
         options={OPTIONS}
         plugins={[LABEL_PLUGIN]}
+        role="img"
+        aria-label={`Category percentiles, 0 to 100: ${LABELS.map(({ key, label }) => `${label} ${hasData ? Math.round(data[key]) : "unavailable"}`).join(", ")}`}
       />
     </Chart>
   );
