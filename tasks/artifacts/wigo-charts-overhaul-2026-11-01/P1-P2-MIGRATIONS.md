@@ -1,11 +1,11 @@
 # P-1 and P-2: migration drafts (2026-11-03)
 
-Status: **P-1 applied to production on 2026-11-04 at 01:07 UTC** (TJ: "Apply P-1 now") and verified (see "P-1 production result"). **P-2 is drafted, not applied**, and needs TJ's approval. Nothing was pushed, deployed or run as a route.
+Status: **P-1 applied to production on 2026-11-04 at 01:07 UTC** (TJ: "Apply P-1 now") and verified (see "P-1 production result"). **P-2 applied to production on 2026-11-04 at about 01:10 UTC** (TJ: "Yes, apply P-2") and verified (see "P-2 production result"). Nothing was pushed, deployed or run as a route.
 
 | Step | File | What it fixes |
 |---|---|---|
 | P-1 | `supabase/migrations/20261104010705_nst_gamelog_season_indexes.sql` (renamed to the version production recorded) | ES, PP and PK percentile views time out (57014), so Ratings never load |
-| P-2 | `supabase/migrations/20261104010800_nst_percentile_as_from_gamelogs.sql` (placeholder version; rename it to the recorded version once applied) | AS percentiles and the "All" ratings have no 20262027 data, and nothing writes them |
+| P-2 | `supabase/migrations/20261104011002_nst_percentile_as_from_gamelogs.sql` (renamed to the version production recorded) | AS percentiles and the "All" ratings have no 20262027 data, and nothing writes them |
 
 ## P-1 production result
 
@@ -18,6 +18,20 @@ TJ approved three check reads by pop-up (R1-R3), all read-only, all run.
 | R3: `nst_percentile_es_defense`, page 1 | 4,941 ms | **12 ms** |
 
 Both plans now use the new index on both sides with a merge left join. The season estimate is now 7,953 rows against 5,477 actual (it was 1). The plan has no nested loop and touches about 11k buffers, down from 1.72M. PP and PK use the same view shape and were not measured.
+
+**Apply note:** P-1 was applied twice at the same moment, by this session and by the planning thread, both on TJ's word. One of the two calls returned `40P01` deadlock detected. A catalog check afterwards showed everything in place, with one migration row (`20261104010705`). Do not apply a migration from two sessions at once.
+
+## P-2 production result
+
+Applied with Supabase MCP `apply_migration`, which returned success. It is recorded as version `20261104011002`, and the repo file was renamed to match. TJ approved three check reads by pop-up, all read-only and all run.
+
+| Check | Result |
+|---|---|
+| Catalog | `nst_percentile_as_offense` and `_defense` are views (`v`); the `_legacy` tables exist; both `nst_gamelog_as_counts*_season_player_idx` indexes exist. Migration rows: `20261104010705`, `20261104011002` |
+| Count for 20262027 | **743 players**, max GP **16**, 1 player with no on-ice row (null `cf_per_60`) |
+| `EXPLAIN ANALYZE` page 1 (500 rows), run as `anon` with a 3 s timeout | **33.6 ms**: index scans on both new indexes, merge left joins, no nested loop. Was 9,344 ms for the AS aggregate before |
+
+`nst_percentile_as_defense` was not timed; it has the same shape as the ES defense view (12 ms). The page itself was not loaded. October GP stays low until P-5 (the NST backfill for 10-04 to 10-06).
 
 Both files are in `supabase/migrations/`, the tree that holds the baseline definitions of these views.
 
