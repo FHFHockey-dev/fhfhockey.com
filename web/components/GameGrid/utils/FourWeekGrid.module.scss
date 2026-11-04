@@ -243,6 +243,11 @@
   th:first-child & {
     justify-content: flex-start;
   } // Align team sort left
+
+  // Phones: the whole header cell is the tap target (44px), not just the 11px label.
+  @media (max-width: v.$breakpoint-mobile-max) {
+    min-height: 44px;
+  }
 }
 
 /* --- Table Body Styling --- */
@@ -362,4 +367,80 @@
 }
 
 .titleText small { font-size: .62rem; white-space: nowrap; text-transform: none; letter-spacing: 0; }
-.matchupKey { display: block; margin-top: 3px; font-size: .55rem; font-weight: normal; }
+// Mini colour key under WEEKLY, using the sparkline's matchup tones.
+.matchupKey {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 3px;
+  margin-top: 3px;
+  font-size: .6rem;
+  font-weight: normal;
+  text-transform: none;
+  letter-spacing: 0;
+  i { width: 6px; height: 6px; margin-left: 4px; border-radius: 50%; }
+  i:first-child { margin-left: 0; }
+  i[data-tone="easier"] { background: v.$success-color; }
+  i[data-tone="average"] { background: v.$warning-color; }
+  i[data-tone="harder"] { background: v.$danger-color; }
+}
+
+// Phones: the sort button supplies the header height, so the cell drops its vertical padding.
+@media (max-width: v.$breakpoint-mobile-max) {
+  .table th:has(> .sortButton) {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+}
+
+// Sort mark: faint on every sortable column, lit on the active one.
+.sortMark {
+  margin-left: 4px;
+  font-size: 0.7em;
+  opacity: 0.35;
+}
+.sortMarkActive {
+  opacity: 1;
+  color: v.$primary-color;
+}
+
+// Phones: section headings are left-aligned on one shared left edge (with Best Players Available),
+// and the section uses the same rounded, bordered card as Best Players Available.
+@media (max-width: v.$breakpoint-mobile-max) {
+  .titleHeader { justify-content: flex-start; text-align: left; }
+  .titleText { text-align: left; text-shadow: none; }
+  // Logos start on the TEAM label's left edge (and AVG's), not centred in the wide column.
+  .table td:first-child .teamInfo { justify-content: flex-start; gap: 8px; padding-left: 4px; }
+  // The code beside the logo fills the wide column and tells lookalike logos apart.
+  .table .teamAbbr {
+    display: inline;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    color: v.$text-secondary;
+  }
+  // The "higher = …" hint sits under the title, like the date under GAME GRID.
+  .titleText small {
+    display: block;
+    margin-top: 2px;
+    font-family: v.$font-family-primary, sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.02em;
+    text-transform: none;
+    color: v.$text-secondary;
+  }
+  .container {
+    border: v.$border-subtle;
+    border-radius: v.$border-radius-lg; // BPA card radius (12px)
+  }
+  // Column headers share the Best Players Available spec: 11px uppercase, 0.05em tracking.
+  .table thead th,
+  .table thead th:first-child,
+  .table thead .sortButton {
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+}
+
+// Team code beside the logo: phones only (shown in the mobile block above).
+.teamAbbr { display: none; }

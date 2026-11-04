@@ -1,6 +1,8 @@
 @use "styles/vars" as v;
 
-.wrapper { min-width: 0; }
+.wrapper { min-width: 0; display: flow-root; }
+// Floats left so the Info summary (pushed right) shares its row; opened Info text clears below both.
+.action { float: left; padding-top: 2px; }
 .warning {
   font-size: 12px;
   line-height: 1.4;
@@ -35,6 +37,7 @@
   }
 }
 .content {
+  clear: both;
   padding: 8px;
   margin-bottom: 8px;
   border: 1px solid v.$border-secondary;

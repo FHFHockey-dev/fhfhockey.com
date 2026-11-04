@@ -3,7 +3,7 @@
 // TO-DO:
 // Change Home/Away to use Home/Away Icons
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { forwardRef, startTransition, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/router";
 import Link from "next/link";
@@ -105,6 +105,61 @@ type GameGridInternalProps = GameGridProps & {
   orientation: "horizontal" | "vertical";
   setOrientation: (newOrientation: "horizontal" | "vertical") => void;
 };
+
+// Mobile load bar. A tap starts it at once; it then follows `busy` and stays up at least 400ms.
+const MobileNavProgress = forwardRef<{ start: () => void }, { busy: boolean; settleKey: string }>(
+  function MobileNavProgress({ busy, settleKey }, ref) {
+    const [pending, setPending] = useState(false);
+    const [held, setHeld] = useState(false);
+    const shownAt = useRef(0);
+    useImperativeHandle(ref, () => ({ start: () => { shownAt.current = Date.now(); setPending(true); } }), []);
+    // Layout effect so the bar never drops for a painted frame between `busy` ending and the hold starting.
+    useLayoutEffect(() => {
+      setPending(false);
+      setHeld(false);
+      if (busy) {
+        if (!shownAt.current) shownAt.current = Date.now();
+        return;
+      }
+      const remaining = 400 - (Date.now() - shownAt.current);
+      shownAt.current = 0;
+      if (remaining <= 0) return;
+      setHeld(true);
+      const timer = setTimeout(() => setHeld(false), remaining);
+      return () => clearTimeout(timer);
+    }, [busy, settleKey]);
+    return pending || busy || held ? <span className={styles.mobileNavProgress} aria-hidden="true" /> : null;
+  }
+);
+
+// Native radios: pick a length directly; arrow keys and screen readers get a real group.
+// Holds the pick locally so the pill moves on tap while the grid re-renders in a transition.
+function MobileModeSwitch({ mode, onChange }: { mode: GameGridMode; onChange: (mode: GameGridMode) => void }) {
+  const [picked, setPicked] = useState(mode);
+  useEffect(() => setPicked(mode), [mode]);
+  return (
+    <div className={styles.modeSwitch} role="radiogroup" aria-label="Forecast length">
+      <span className={styles.modeTrack}>
+        {(["7-Day-Forecast", "10-Day-Forecast"] as const).map((option) => (
+          <label key={option} className={picked === option ? styles.modeOptionActive : styles.modeOption}>
+            <input
+              type="radio"
+              name="game-grid-mode"
+              checked={picked === option}
+              onChange={() => {
+                setPicked(option);
+                onChange(option);
+              }}
+              aria-label={option === "7-Day-Forecast" ? "7 days" : "10 days"}
+            />
+            {option === "7-Day-Forecast" ? "7" : "10"}
+          </label>
+        ))}
+      </span>
+      <span aria-hidden="true">Days</span>
+    </div>
+  );
+}
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
@@ -216,12 +271,6 @@ function GameGridInternal({
       ascending: boolean;
     }[]
   >([]);
-
-  // Define MODE_TO_LABEL mapping
-  const MODE_TO_LABEL = {
-    "7-Day-Forecast": "7-Day",
-    "10-Day-Forecast": "10-Day"
-  } as const;
 
   // Process the current schedule for Game Grid display
   // Compute league-wide per-day counts including ONLY regular-season games for calculations
@@ -418,7 +467,9 @@ function GameGridInternal({
   };
 
   // PREV, NEXT button click
+  const navProgressRef = useRef<{ start: () => void }>(null);
   const handleClick = (action: string) => () => {
+    navProgressRef.current?.start();
     const start = new Date(dates[0]);
     const end = new Date(dates[1]);
 
@@ -430,26 +481,29 @@ function GameGridInternal({
     // Ensure the end date includes the full Sunday to keep interval inclusive all day
     const newEnd = endOfDay(newEndBase);
 
-    // Only show yyyy-MM-dd on URL
+    // Only show yyyy-MM-dd on URL; shallow, since the page's server props don't depend on the dates
     router.replace({
       query: {
         ...router.query,
         startDate: format(newStart, "yyyy-MM-dd"),
         endDate: format(newEnd, "yyyy-MM-dd")
       }
-    });
-    setDates([newStart.toISOString(), newEnd.toISOString()]);
+    }, undefined, { shallow: true });
+    // A transition lets the browser paint the load bar before the heavy grid re-render.
+    startTransition(() => {
+      setDates([newStart.toISOString(), newEnd.toISOString()]);
 
-    // check if today is within start and end
-    const withinInterval = isWithinInterval(new Date(), {
-      start: newStart,
-      end: newEnd
-    });
+      // check if today is within start and end
+      const withinInterval = isWithinInterval(new Date(), {
+        start: newStart,
+        end: newEnd
+      });
 
-    // reset toggles to default
-    if (!withinInterval) {
-      setExcludedDays([]);
-    }
+      // reset toggles to default
+      if (!withinInterval) {
+        setExcludedDays([]);
+      }
+    });
   };
 
   // Sync dates with URL search params
@@ -533,7 +587,10 @@ function GameGridInternal({
       score: value.opportunity, scheduleCoverage: team.totals.scheduleCoverage, opponentCoverage: team.opponentCoverage }];
   })), [opportunityByTeamId]);
 
-  const loadingStatus = <div className={styles.loadingStatus} role="status" aria-live="polite" data-grid-loading-status>
+  // Ready schedule with a secondary source still loading: mobile announces it without moving the grid.
+  const statusInBackground = !currentLoading && !selectedCalendar.error && selectedScheduleReady && (fourWeekLoading || opponentLoading
+    || (summaryLoading && !fourWeekCalendar.error && !opponentMetricsData.statsError && !seasonError && (seasonLoading || !!season)));
+  const loadingStatus = <div className={styles.loadingStatus} role="status" aria-live="polite" data-grid-loading-status data-background={statusInBackground || undefined}>
     {currentLoading ? "Loading selected schedule…" : selectedCalendar.error ? "Selected schedule unavailable."
       : !selectedScheduleReady ? `Selected schedule incomplete: ${selectedCalendar.coverage.known}/${selectedCalendar.coverage.expected} days covered. Totals and rankings are unavailable.`
       : fourWeekLoading ? "Schedule ready. Loading four-week value…"
@@ -545,6 +602,8 @@ function GameGridInternal({
     {!currentLoading && (selectedCalendar.error || !selectedScheduleReady || fourWeekCalendar.error || opponentMetricsData.statsError || seasonError || (!seasonLoading && !season) || summaryError) &&
       <button type="button" onClick={() => window.location.reload()}>Reload to retry</button>}
   </div>;
+
+  const navBusy = currentLoading || fourWeekLoading || statusInBackground;
 
   const isMobile = useIsMobile();
   const [showMobileTips, setShowMobileTips] = useState(false);
@@ -829,6 +888,11 @@ function GameGridInternal({
       </div>
   );
 
+  // e.g. "Nov 2 – 8", or "Oct 27 – Nov 2" across months
+  const rangeStart = new Date(dates[0]);
+  const rangeEnd = addDays(rangeStart, scheduleDays.length - 1);
+  const mobileRangeLabel = `${format(rangeStart, "MMM d")} – ${format(rangeEnd, rangeStart.getMonth() === rangeEnd.getMonth() ? "d" : "MMM d")}`;
+
   if (isMobile) {
     // *** MOBILE VIEW ***
     return (
@@ -838,9 +902,12 @@ function GameGridInternal({
           {/* Title remains at the top */}
           <div className={styles.titleRow}>
             <div className={styles.titleBar}>
-              <h1 className={styles.gameGridTitle}>
-                Game <span className={styles.spanColorBlue}>Grid</span>
-              </h1>
+              <div className={styles.titleText}>
+                <h1 className={styles.gameGridTitle}>
+                  Game <span className={styles.spanColorBlue}>Grid</span>
+                </h1>
+                <p className={styles.titleRange}>{mobileRangeLabel}</p>
+              </div>
               <button
                 className={styles.helperToggle}
                 onClick={() => setShowMobileTips((v) => !v)}
@@ -863,18 +930,13 @@ function GameGridInternal({
                 >
                   PREV
                 </button>
-                <button
-                  className={styles.dateButtonMode}
-                  onClick={() =>
-                    setMode(
-                      mode === "7-Day-Forecast"
-                        ? "10-Day-Forecast"
-                        : "7-Day-Forecast"
-                    )
-                  }
-                >
-                  {MODE_TO_LABEL[mode]}
-                </button>
+                <MobileModeSwitch
+                  mode={mode}
+                  onChange={(option) => {
+                    navProgressRef.current?.start();
+                    startTransition(() => setMode(option));
+                  }}
+                />
                 <button
                   className={styles.orientationToggleButton}
                   onClick={openDateRange}
@@ -888,11 +950,7 @@ function GameGridInternal({
                 >
                   NEXT
                 </button>
-                {(currentLoading || fourWeekLoading) && (
-                  <span className={styles.mobileNavSpinner} aria-hidden="true">
-                    <Spinner />
-                  </span>
-                )}
+                <MobileNavProgress ref={navProgressRef} busy={navBusy} settleKey={`${dates[0]}|${mode}`} />
               </div>
               <div className={styles.controlsBarFooter} ref={setMetricWarningTarget} data-game-grid-warning-footer />
             </div>{" "}
@@ -904,13 +962,15 @@ function GameGridInternal({
               <div className={styles.tableScrollWrapper}>
                 <table
                   className={`${styles.scheduleGrid} ${styles.mobileCompactTable}`}
+                  data-extended={mode === "10-Day-Forecast" || undefined}
                   aria-busy={currentLoading}
                   data-schedule-state={currentLoading ? "loading" : selectedScheduleReady ? "ready" : "unavailable"}
                 >
                   <colgroup>
                     <col className={styles.gridColFirst} />
                     <col span={scheduleDays.length} className={styles.gridColMiddle} />
-                    <col span={3} className={styles.gridColEnd} />
+                    {/* 10-day view has no GP / OFF / SCORE, so its days take the full width */}
+                    {mode !== "10-Day-Forecast" && <col span={3} className={styles.gridColEnd} />}
                   </colgroup>
                   <Header
                     start={dates[0]}
@@ -1013,123 +1073,59 @@ function GameGridInternal({
                   Close
                 </button>
               </div>
+              {/* Describes the phone layout as it is today; keep in step with the grid when it changes. */}
               <div className={styles.legendContent}>
                 <section>
                   <h3>Matchups</h3>
                   <ul>
                     <li>
-                      Opponent logo indicates who your team plays. A subtle icon
-                      appears behind the logo:
-                      <span className={styles.inlineChip}>
-                        <span
-                          className={
-                            styles.homeAwayBadge +
-                            " " +
-                            styles.homeAwayBadgeHome
-                          }
-                        >
-                          <picture>
-                            <img
-                              src="/pictures/homeIcon3.png"
-                              alt="Home"
-                              width={10}
-                              height={10}
-                              loading="lazy"
-                            />
-                          </picture>
-                        </span>
-                      </span>{" "}
-                      = Home,{" "}
-                      <span className={styles.inlineChip}>
-                        <span
-                          className={
-                            styles.homeAwayBadge +
-                            " " +
-                            styles.homeAwayBadgeAway
-                          }
-                        >
-                          <picture>
-                            <img
-                              src="/pictures/awayIcon3.png"
-                              alt="Away"
-                              width={10}
-                              height={10}
-                              loading="lazy"
-                            />
-                          </picture>
-                        </span>
-                      </span>{" "}
-                      = Away.
+                      Each cell shows the opponent. The corner flag marks{" "}
+                      <span className={`${styles.legendFlag} ${styles.legendFlagHome}`}>H</span> home or{" "}
+                      <span className={`${styles.legendFlag} ${styles.legendFlagAway}`}>A</span> away.
                     </li>
-                    <li>
-                      Tap a matchup cell to view win odds and a quick Poisson
-                      heatmap for that game.
-                    </li>
-                    <li>
-                      Dimmed logos indicate excluded days (e.g., earlier days
-                      this week on first visit).
-                    </li>
+                    <li>Tap a cell for that game&rsquo;s win odds and scoring heatmap.</li>
+                    <li>Faded logos are on days you&rsquo;ve switched off.</li>
                   </ul>
                 </section>
                 <section>
-                  <h3>Day Types</h3>
+                  <h3>Days</h3>
                   <ul className={styles.legendChips}>
+                    <li>Switch a day off to leave its games out of GP, OFF and SCORE.</li>
                     <li>
-                      <span
-                        className={styles.chip + " " + styles.offNight}
-                      ></span>{" "}
-                      Off‑night day (fewer NHL games, better streaming)
+                      <span className={styles.chip + " " + styles.offNight}></span>
+                      6 or fewer NHL games: easiest to stream
                     </li>
                     <li>
-                      <span
-                        className={styles.chip + " " + styles.mediumHeavy}
-                      ></span>{" "}
-                      Medium‑heavy day (7–8 NHL games)
+                      <span className={styles.chip + " " + styles.mediumHeavy}></span>
+                      7–8 NHL games
                     </li>
                     <li>
-                      <span className={styles.chip + " " + styles.heavy}></span>{" "}
-                      Heavy day (9+ NHL games)
+                      <span className={styles.chip + " " + styles.heavy}></span>
+                      9+ NHL games
                     </li>
+                    <li>Off-nights are days with 8 or fewer NHL games (green and yellow).</li>
                   </ul>
                 </section>
                 <section>
-                  <h3>Totals Row</h3>
+                  <h3>GP/Day row</h3>
                   <ul>
-                    <li>
-                      The bottom sticky row shows total NHL games per day,
-                      color‑coded by intensity.
-                    </li>
+                    <li>The row under the dates counts NHL games each day, in the same colours.</li>
                   </ul>
                 </section>
                 <section>
                   <h3>Columns</h3>
                   <ul>
-                    <li>
-                      <strong>Total GP</strong>: Total games your team plays in
-                      the selected window.
-                    </li>
-                    <li>
-                      <strong>OFF</strong>: Number of off‑night games your team
-                      has.
-                    </li>
-                    <li>
-                      <strong>Week Score</strong>: Overall weekly value; cells
-                      use a rank color scale (1 = best).
-                    </li>
+                    <li><strong>GP</strong>: games your team plays this week.</li>
+                    <li><strong>OFF</strong>: how many of those fall on off-nights (8 or fewer NHL games).</li>
+                    <li><strong>SCORE</strong>: overall week value, coloured green (best) to red (worst).</li>
+                    <li>A green or red edge on a team logo marks a top-10 or bottom-10 week.</li>
                   </ul>
                 </section>
                 <section>
                   <h3>Controls</h3>
                   <ul>
-                    <li>
-                      <strong>Prev/Next</strong> moves by week;{" "}
-                      <strong>7/10‑Day</strong> switches the window size.
-                    </li>
-                    <li>
-                      <strong>Orientation</strong> toggles horizontal/vertical
-                      grid layout.
-                    </li>
-                    <li>Tap headers to sort where available.</li>
+                    <li><strong>PREV / NEXT</strong> change the week; <strong>7 / 10</strong> sets how many days to show; <strong>DATE RANGE</strong> picks any dates.</li>
+                    <li>Tap a column header to sort. The lit arrow shows the active sort.</li>
                   </ul>
                 </section>
               </div>

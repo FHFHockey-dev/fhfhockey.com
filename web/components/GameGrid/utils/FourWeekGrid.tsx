@@ -9,9 +9,9 @@ import { LoadingRows } from "../LoadingCells";
 import toggleStyles from "../DetailToggle.module.scss";
 import rankStyles from "../OpponentMetricsTable.module.scss";
 import { toRankMaps } from "./metricRanks";
-import { OPPORTUNITY_INFO, formatOpportunity, type TeamOpportunity } from "./scheduleOpportunity";
+import { formatOpportunity, type TeamOpportunity } from "./scheduleOpportunity";
 import { getFourWeekAverages } from "./scheduleSummary";
-import { toFourWeekMetricBands, FOUR_WEEK_COLOR_LEGEND } from "./fourWeekMetricBands";
+import { toFourWeekMetricBands } from "./fourWeekMetricBands";
 import type { FourWeekCalendar } from "./useFourWeekSchedule";
 import { buildFourWeekDetailCells } from "./fourWeekGridViews";
 import styles from "./FourWeekGrid.module.scss";
@@ -25,6 +25,9 @@ type Props = {
   sharedScale?: number;
 };
 type Key = "teamName" | "gamesPlayed" | "offNights" | "avgOpponentPointPct" | "score";
+// "2026-11-02" → "Nov 2" (date-only, read as UTC so the viewer's timezone never shifts it)
+const shortDate = (date: string) => new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "short", day: "numeric" }).format(new Date(`${date}T00:00:00Z`));
+
 export default function FourWeekGrid({ loading = false, teamDataArray, calendar, warningTarget, opportunityByTeamId = {}, sharedScale = 1 }: Props) {
   const teams = useTeamsMap();
   const [expanded, setExpanded] = useState(false);
@@ -58,11 +61,15 @@ export default function FourWeekGrid({ loading = false, teamDataArray, calendar,
     const worst = valueRanks.worst.get(teamId);
     return worst != null ? rankStyles[`rankBad${worst}`] : undefined;
   };
-  const header = (label: string, key: Key) => <th><button className={styles.sortButton} type="button" onClick={() => setSort((old) => ({ key, ascending: old.key === key ? !old.ascending : key === "teamName" }))} aria-label={`Sort by ${key === "score" ? "four-week opportunity" : label}`}>{label}</button></th>;
+  const header = (label: string, key: Key) => <th><button className={styles.sortButton} type="button" onClick={() => setSort((old) => ({ key, ascending: old.key === key ? !old.ascending : key === "teamName" }))} aria-label={`Sort by ${key === "score" ? "four-week opportunity" : label}`}>{label}<span className={`${styles.sortMark} ${sort.key === key ? styles.sortMarkActive : ""}`} aria-hidden="true">{sort.key === key && sort.ascending ? "▲" : "▼"}</span></button></th>;
   return <div className={styles.container}>
-    <div className={styles.titleHeader}><span className={styles.titleText}>4-Week <span className={styles.spanColorBlue}>Opportunity</span> <small>↑ more</small></span></div>
+    <div className={styles.titleHeader}><span className={styles.titleText}>4-Week <span className={styles.spanColorBlue}>Opportunity</span> <small>higher = more</small></span></div>
     <div className={styles.tableWrapper}>
-      <MetricInfoDisclosure label="four-week forecast" warningTarget={warningTarget} warnings={loading ? [] : calendar?.error
+      <MetricInfoDisclosure label="four-week forecast" warningTarget={warningTarget} action={
+        <button type="button" className={toggleStyles.detailToggle} aria-expanded={expanded} aria-label={expanded ? "Collapse four-week columns" : "Expand four-week columns"} onClick={() => setExpanded((v) => !v)}>
+          {expanded ? "Hide details" : "Show details"} <span aria-hidden="true">{expanded ? "▴" : "▾"}</span>
+        </button>
+      } warnings={loading ? [] : calendar?.error
         ? ["Schedule unavailable. Reload to retry."]
         : Object.values(opportunityByTeamId).some((v) => v.weeks.some((w) => w.unknown > 0))
           ? ["Some fixture starts or states are unresolved. Affected opportunity totals are unavailable."]
@@ -70,13 +77,22 @@ export default function FourWeekGrid({ loading = false, teamDataArray, calendar,
           ? ["Schedule incomplete. Affected totals are unavailable; check back after schedule updates."]
           : teamDataArray.some((team) => team.opponentCoverage && team.opponentCoverage.known < team.opponentCoverage.expected)
             ? ["Some opponent strength values are unavailable. Check back after standings update."] : []}>
-        {calendar && <p>{calendar.start}–{calendar.end}: selected Monday–Sunday week plus three weeks. {loading ? "Loading schedule…" : calendar.error ?? (calendar.knownDays === calendar.expectedDays ? "Schedule complete." : "Schedule incomplete; affected totals are unavailable.")}</p>}
-        <p>{OPPORTUNITY_INFO}</p><p>OPP% = current opponent PTS/(2 × GP). Missing values show “—”.</p>
-        <p>{FOUR_WEEK_COLOR_LEGEND.replace("score", "Opportunity")}</p>
+        {/* Plain-language version of OPPORTUNITY_INFO / FOUR_WEEK_COLOR_LEGEND (desktop keeps the formulas) */}
+        <p>
+          <strong>Total</strong> = remaining team games + 0.25 × off-night games, this week and the next three.
+          Higher means more chances to play.
+        </p>
+        <p>
+          <strong>Weekly</strong> lines show the same, week by week, on a shared scale (higher = more), coloured by how tough
+          the opponents are: green easier, yellow average, pink-red harder. It&rsquo;s schedule opportunity, not a promise of starts.
+        </p>
+        <p>
+          <strong>Show details</strong> adds GP, OFF (off-night games) and OPP% (opponents&rsquo; points %; lower is easier).
+          Cell colours run green (best) to gold to red (worst); &ldquo;—&rdquo; means missing.
+        </p>
+        {/* Window and schedule status: metadata, last and set apart like the Opponent source line */}
+        {calendar && <p className={rankStyles.infoSource}>{shortDate(calendar.start)} – {shortDate(calendar.end)} · {loading ? "loading schedule…" : calendar.error ?? (calendar.knownDays === calendar.expectedDays ? "schedule complete" : "schedule incomplete; affected totals unavailable")}</p>}
       </MetricInfoDisclosure>
-      <button type="button" className={toggleStyles.detailToggle} aria-expanded={expanded} aria-label={expanded ? "Collapse four-week columns" : "Expand four-week columns"} onClick={() => setExpanded((v) => !v)}>
-        {expanded ? "Hide details" : "Show details"} <span aria-hidden="true">{expanded ? "▴" : "▾"}</span>
-      </button>
       {expanded && <div className={styles.viewTabs} role="tablist" aria-label="Four-week forecast views">
         <button type="button" role="tab" aria-selected={!weekly} onClick={() => setWeekly(false)}>4W Summary</button>
         <button type="button" role="tab" aria-selected={weekly} onClick={() => setWeekly(true)}>Weekly Detail</button>
@@ -86,17 +102,18 @@ export default function FourWeekGrid({ loading = false, teamDataArray, calendar,
         <table className={styles.table} aria-busy={loading} data-four-week-state={loading ? "loading" : "ready"}>
           <thead><tr>{header("Team", "teamName")}{expanded && weekly ? [1, 2, 3, 4].map((n) => <th key={n}>W{n}</th>) : <>
             {expanded && <>{header("GP", "gamesPlayed")}{header("OFF", "offNights")}{header("OPP (%)", "avgOpponentPointPct")}</>}
-            {header("Total", "score")}<th>Weekly ↑<span className={styles.matchupKey}>Easy → Hard</span></th>
+            {header("Total", "score")}<th>Weekly<span className={styles.matchupKey}><i data-tone="easier" />easy<i data-tone="average" />avg<i data-tone="harder" />hard</span></th>
           </>}</tr></thead>
           <tbody>
             {loading || !teamDataArray.length ? <LoadingRows columns={expanded ? weekly ? 5 : 6 : 3} rowHeight={37} waiting={loading} /> : <>
-            <tr className={styles.averagesRow}><td>AVG:</td>{expanded && weekly ? [1, 2, 3, 4].map((n) => <td key={n}>—</td>) : <>
+            <tr className={styles.averagesRow}><td>AVG</td>{expanded && weekly ? [1, 2, 3, 4].map((n) => <td key={n}>—</td>) : <>
               {expanded && <><td>{formatOpportunity(averages.gamesPlayed)}</td><td>{formatOpportunity(averages.offNights)}</td><td>{averages.avgOpponentPointPct == null ? "—" : `${(averages.avgOpponentPointPct * 100).toFixed(1)}%`}</td></>}
               <td>{formatOpportunity(scoreMean)}</td><td />
             </>}</tr>
             {sorted.map((team) => <tr key={team.teamId} data-team-id={team.teamId}>
               <td className={styles.teamCell}><Link href={`/stats/team/${team.teamAbbreviation}`} aria-label={`Open ${teams[team.teamId]?.name ?? team.teamAbbreviation} Team HQ`} className={styles.teamInfo}>
                 <Image src={teams[team.teamId]?.logo ?? `/teamLogos/${team.teamAbbreviation}.png`} alt={team.teamAbbreviation} width={24} height={24} />
+                <span className={styles.teamAbbr} aria-hidden="true">{team.teamAbbreviation}</span>
               </Link></td>
               {expanded && weekly ? buildFourWeekDetailCells(team, [1, 2, 3, 4]).map((week) => <td key={week.weekNumber}>
                 <strong>{week.gamesPlayed == null ? `Schedule ${week.coverage?.known ? "partial" : "unavailable"}` : `${week.gamesPlayed}G / ${week.offNights}O`}</strong>

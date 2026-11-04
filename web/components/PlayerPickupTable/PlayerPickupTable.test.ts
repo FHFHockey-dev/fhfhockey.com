@@ -37,9 +37,9 @@ describe("pickup eligibility normalization", () => {
 });
 
 
-const state = vi.hoisted(() => ({ pro: false, fail: false, from: vi.fn(), access: { eligible: true }, rows: [] as Record<string, unknown>[] }));
+const state = vi.hoisted(() => ({ pro: false, proStatus: "ready", fail: false, from: vi.fn(), access: { eligible: true }, rows: [] as Record<string, unknown>[] }));
 vi.mock("hooks/useCurrentSeason", () => ({ useCurrentSeasonQuery: () => ({ data: { seasonId: 20262027 }, isLoading: false, isError: false, refetch: vi.fn() }) }));
-vi.mock("hooks/useProviderSyncAccess", () => ({ useProviderSyncAccess: () => ({ status: "ready", access: state.pro ? state.access : null, refresh: vi.fn() }) }));
+vi.mock("hooks/useProviderSyncAccess", () => ({ useProviderSyncAccess: () => ({ status: state.proStatus, access: state.pro ? state.access : null, refresh: vi.fn() }) }));
 vi.mock("lib/supabase/client", () => ({ default: { auth: { getSession: async () => ({ data: { session: { access_token: "test" } } }) } } }));
 vi.mock("lib/supabase/public-client", () => ({ default: { from: state.from } }));
 const rows = [
@@ -48,7 +48,7 @@ const rows = [
   { nhl_player_id: "3", nhl_player_name: "Other Player", yahoo_player_id: "477.p.3", yahoo_team: "BOS", percent_ownership: 10, eligible_positions: ["C"] },
 ];
 beforeEach(() => {
-  state.pro = false; state.fail = false;
+  state.pro = false; state.proStatus = "ready"; state.access = { eligible: true }; state.fail = false;
   state.rows = rows.map(row => ({ ...row, ownership_timeline: [{ date: "2026-10-22", value: row.percent_ownership }] }));
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2026-10-22T12:00:00Z"));
@@ -64,6 +64,25 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks(); vi.useRealTimers(); });
 
 describe("Player pickup interactions", () => {
+  it("gives signed-in visitors without premium one short upsell line, not the pool caveat", async () => {
+    state.pro = true;
+    state.access = { eligible: false, reason: "no_active_grant" } as typeof state.access;
+    render(React.createElement(PlayerPickupTable));
+    await screen.findByText("F. Agent");
+    expect(screen.getByText("League sync is a premium feature.")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "View premium access" }).getAttribute("href")).toBe("/account?section=in-season");
+    expect(screen.queryByText(/General candidates/)).toBeNull();
+  });
+
+  it("gives signed-out visitors one short pool note with a sign-in link", async () => {
+    state.proStatus = "idle";
+    render(React.createElement(PlayerPickupTable));
+    await screen.findByText("F. Agent");
+    expect(screen.getByText("Ownership here is Yahoo-wide, not your league's.")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Sign in" }).getAttribute("href")).toBe("/auth?mode=sign-in");
+    expect(screen.queryByText(/General candidates/)).toBeNull();
+  });
+
   it("loads dated ownership from existing player rows and filters zero-owned players by team", async () => {
     render(React.createElement(PlayerPickupTable));
     expect(screen.getByRole("heading", { name: /^Best Players Available$/ }).textContent)
@@ -193,6 +212,8 @@ describe("mounted pickup ownership freshness", () => {
     expect(screen.queryByText(staleLabel)).toBeNull();
     await act(async () => { vi.advanceTimersByTime(1); });
     expect(screen.getByText(staleLabel)).toBeTruthy();
+    // Phones show the short dated note (shared, so in the OWN header).
+    if (width === 390) expect(screen.getByText("as of 10-19")).toBeTruthy();
     const includeUnknown = screen.getByRole("checkbox", { name: "Include unknown ownership" });
     fireEvent.click(includeUnknown);
     expect(screen.queryByText("F. Agent")).toBeNull();

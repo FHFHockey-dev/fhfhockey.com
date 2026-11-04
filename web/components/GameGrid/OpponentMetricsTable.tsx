@@ -8,7 +8,7 @@ import MetricInfoDisclosure from "./MetricInfoDisclosure";
 import RatingMeter from "./RatingMeter";
 import { LoadingRows } from "./LoadingCells";
 import toggleStyles from "./DetailToggle.module.scss";
-import { buildOpponentRatings, RATING_INFO } from "./utils/scheduleOpportunity";
+import { buildOpponentRatings } from "./utils/scheduleOpportunity";
 import OptimizedImage from "components/common/OptimizedImage";
 import { getLocalTeamLogoPath } from "lib/images";
 import { useTeamsMap } from "hooks/useTeams";
@@ -72,6 +72,14 @@ export default function OpponentMetricsTable({
 
   const ratings = useMemo(() => buildOpponentRatings(entries, metricsData.statsByAbbreviation), [entries, metricsData.statsByAbbreviation]);
   const teamsAverages = useMemo(() => entries.map((e) => ({ ...e, averages: { ...e.averages, atk: ratings[e.team.teamId]?.atk ?? null, def: ratings[e.team.teamId]?.def ?? null } })), [entries, ratings]);
+  // League means of the listed teams' ratings; percentiles, so they sit near 50 and anchor the meters.
+  const ratingAverages = useMemo(() => {
+    const mean = (key: "atk" | "def") => {
+      const values = teamsAverages.map(({ averages }) => averages[key]).filter((value): value is number => value != null);
+      return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
+    };
+    return { atk: mean("atk"), def: mean("def") };
+  }, [teamsAverages]);
   const metricColumns: { label: string; key: keyof OpponentMetricAverages | "atk" | "def" }[] = [{ label: "Attack", key: "atk" }, { label: "Defense", key: "def" }, ...(expanded ? sourceColumns : [])];
   const toggleMobileMinimize = () => {
     if (isMobile) {
@@ -177,6 +185,16 @@ export default function OpponentMetricsTable({
     return undefined;
   };
 
+  // Every sortable header shows a mark so it reads as tappable; only the active column's is lit.
+  const sortMark = (key: keyof OpponentMetricAverages | "atk" | "def" | "teamName") => {
+    const active = sortConfig?.key === key;
+    return (
+      <span className={clsx(styles.sortMark, active && styles.sortMarkActive)} aria-hidden="true">
+        {active && sortConfig?.direction === "ascending" ? "▲" : "▼"}
+      </span>
+    );
+  };
+
   const handleTitleClick = isMobile ? toggleMobileMinimize : undefined;
   const hasData = sortedTeamsAverages.length > 0;
   const pending = statsLoading || scheduleLoading || sourceLoading;
@@ -199,7 +217,7 @@ export default function OpponentMetricsTable({
         data-interactive={isMobile ? true : undefined}
       >
         <span className={styles.titleText}>
-          Opponent <span className={styles.spanColorBlue}>Strength</span> <small>↑ stronger</small>
+          Opponent <span className={styles.spanColorBlue}>Strength</span> <small>higher = tougher</small>
         </span>
         {isMobile && (
           <span
@@ -214,16 +232,24 @@ export default function OpponentMetricsTable({
         )}
       </div>
       <div id="opponent-metrics-content" className={styles.tableWrapper}>
-        <MetricInfoDisclosure label="opponent metrics" warnings={!statsLoading && !statsError && teamsAverages.some(({ coverage }) => Object.values(coverage).some(({ known, expected }) => known < expected))
+        <MetricInfoDisclosure label="opponent metrics" action={
+          <button type="button" className={toggleStyles.detailToggle} aria-expanded={expanded} aria-label={expanded ? "Collapse opponent details" : "Expand opponent details"} onClick={() => setExpanded((v) => !v)}>
+            {expanded ? "Hide source stats" : "Show source stats"} <span aria-hidden="true">{expanded ? "▴" : "▾"}</span>
+          </button>
+        } warnings={!statsLoading && !statsError && teamsAverages.some(({ coverage }) => Object.values(coverage).some(({ known, expected }) => known < expected))
           ? ["Some opponent averages are unavailable. Check back after the next stats update."] : []}>
-          <p>Opponent stats (Natural Stat Trick): {sourceLabel}</p>
-          <p>Metrics per game; PTS% = points / (2 × GP). Missing or incomplete opponent averages show “-”.</p>
-          <p>xG = expected goals; GF/GA = goals for/against; SF/SA = shots for/against.</p>
-          <p>{RATING_INFO}</p>
+          {/* Lead with what the ratings mean; glossary next; source and freshness last. */}
+          <p>
+            <strong>Attack</strong> and <strong>Defense</strong> rate each team&rsquo;s opponents this week from 0 to 100
+            against the league; 50 is average (the white tick). Attack uses the opponents&rsquo; expected goals for per game;
+            Defense uses their expected goals against, flipped so higher means tougher. Based on results so far, not a forecast.
+          </p>
+          <p>
+            Source stats are per game: xG expected goals, GF/GA goals for/against, SF/SA shots for/against,
+            PTS% points ÷ (2 × GP). &ldquo;-&rdquo; means not enough data yet.
+          </p>
+          <p className={styles.infoSource}>Natural Stat Trick · {sourceLabel}</p>
         </MetricInfoDisclosure>
-        <button type="button" className={toggleStyles.detailToggle} aria-expanded={expanded} aria-label={expanded ? "Collapse opponent details" : "Expand opponent details"} onClick={() => setExpanded((v) => !v)}>
-          {expanded ? "Hide source stats" : "Show source stats"} <span aria-hidden="true">{expanded ? "▴" : "▾"}</span>
-        </button>
         {statsError && <PanelStatus state="error" message="Opponent stats could not load. Reload to retry." />}
         {!pending && !statsError && !hasData && <PanelStatus state="empty" message="Opponent metrics will appear when schedule data is available." />}
           <table className={styles.table} aria-busy={pending} data-opponent-state={pending ? "loading" : "ready"}>
@@ -242,8 +268,7 @@ export default function OpponentMetricsTable({
                     }`}
                   >
                     Team{" "}
-                    {sortConfig?.key === "teamName" &&
-                      (sortConfig.direction === "ascending" ? " ▲" : " ▼")}
+                    {sortMark("teamName")}
                   </button>
                 </th>
                 {metricColumns.map((metric) => (
@@ -263,9 +288,9 @@ export default function OpponentMetricsTable({
                           : "descending"
                       }`}
                     >
+                      {(metric.key === "atk" || metric.key === "def") && <i className={styles.keyDot} data-kind={metric.key} aria-hidden="true" />}
                       {metric.label}{" "}
-                      {sortConfig?.key === metric.key &&
-                        (sortConfig.direction === "ascending" ? " ▲" : " ▼")}
+                      {sortMark(metric.key)}
                     </button>
                   </th>
                 ))}
@@ -274,9 +299,16 @@ export default function OpponentMetricsTable({
             <tbody>
               {pending || !hasData ? <LoadingRows columns={metricColumns.length + 1} waiting={pending} rowHeight={30} /> : <>
               <tr className={styles.averagesRow}>
-                <td>AVG:</td>
+                <td>AVG <i className={styles.avgTickKey} aria-hidden="true" /></td>
                 {metricColumns.map((metric) => {
-                  const value = metric.key === "atk" || metric.key === "def" ? null : leagueAverages[metric.key];
+                  if (metric.key === "atk" || metric.key === "def") {
+                    return (
+                      <td key={metric.key} title="Mean of the listed teams' ratings">
+                        <RatingMeter kind={metric.key} value={ratingAverages[metric.key]} />
+                      </td>
+                    );
+                  }
+                  const value = leagueAverages[metric.key];
                   return (
                     <td key={metric.key} title="Mean of complete displayed team averages">
                       {value != null
@@ -299,6 +331,7 @@ export default function OpponentMetricsTable({
                         height={24}
                         className={styles.teamLogo}
                       />
+                      <span className={styles.teamAbbr} aria-hidden="true">{team.teamAbbreviation}</span>
                     </div>
                   </td>
                   {metricColumns.map((metric) => {
@@ -309,7 +342,7 @@ export default function OpponentMetricsTable({
                         className={getRankClass(metric.key, team.teamId, value)}
                       >
                         {metric.key === "atk" || metric.key === "def"
-                          ? <RatingMeter kind={metric.key} value={value} />
+                          ? <RatingMeter kind={metric.key} value={value} average={ratingAverages[metric.key]} />
                           : value != null
                             ? metric.key === "avgWinPct"
                               ? `${(value * 100).toFixed(1)}%`

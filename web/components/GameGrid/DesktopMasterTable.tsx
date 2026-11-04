@@ -384,6 +384,14 @@ export default function DesktopMasterTable({
     scheduleRows,
     teamsMap,
   ]);
+  // League means of the listed teams' ratings; percentiles, so they sit near 50 and anchor the meters.
+  const ratingAverages = useMemo(() => {
+    const mean = (key: "atk" | "def") => {
+      const values = rows.map((row) => row.opponentMetrics[key]).filter((value): value is number => value != null);
+      return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
+    };
+    return { atk: mean("atk"), def: mean("def") };
+  }, [rows]);
 
   const renderFourWeekValue = (key: SortKey, value: number | null, average = false) => fourWeekLoading ? <LoadingCell /> : formatMetricValue(key, value, average);
 
@@ -1084,10 +1092,9 @@ export default function DesktopMasterTable({
                     ? <LoadingCell />
                     : opponentMetricsError
                       ? "-"
-                    : formatMetricValue(
-                        column.key,
-                        column.key === "atk" || column.key === "def" ? null : opponentLeagueAverages[column.key],
-                      )}
+                    : column.key === "atk" || column.key === "def"
+                      ? <RatingMeter kind={column.key} value={ratingAverages[column.key]} />
+                    : formatMetricValue(column.key, opponentLeagueAverages[column.key])}
                 </td>
               ))}
               <td
@@ -1193,7 +1200,7 @@ export default function DesktopMasterTable({
                         : opponentMetricsError
                           ? "-"
                         : column.key === "atk" || column.key === "def"
-                          ? <RatingMeter kind={column.key} value={row.opponentMetrics[column.key]} />
+                          ? <RatingMeter kind={column.key} value={row.opponentMetrics[column.key]} average={ratingAverages[column.key]} />
                         : formatMetricValue(
                             column.key,
                             row.opponentMetrics[column.key],

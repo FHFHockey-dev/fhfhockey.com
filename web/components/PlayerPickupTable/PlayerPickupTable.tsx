@@ -5,7 +5,9 @@ import Image from "next/image";
 import clsx from "clsx";
 import { useCurrentSeasonQuery } from "hooks/useCurrentSeason";
 import { useProviderSyncAccess } from "hooks/useProviderSyncAccess";
+import Link from "next/link";
 import ProviderSyncNotice from "components/account/ProviderSyncNotice";
+import { PROVIDER_SYNC_ACCESS_HREF } from "lib/integrations/providerSyncAccess";
 import supabase from "lib/supabase/client";
 import { isYahooPickupPlayer, type YahooPickupContext } from "lib/integrations/yahoo/pickup";
 import { teamsInfo } from "lib/teamsInfo";
@@ -230,6 +232,43 @@ function pickupOwnershipLabel(player: Pick<UnifiedPlayerData, "percent_ownership
   const evidence = player.ownershipEvidence;
   if (!evidence) return "Unknown";
   return `Last known ${evidence.value}% · ${evidence.observedOn ? `${evidence.observedOn} (${evidence.status === "stale" ? "stale" : "unverified"})` : "date unknown"}`;
+}
+
+// Phones fold the rarely-changed metric filters behind one summary row; wider layouts show them inline.
+function MobileDisclosure({ enabled, summary, children }: { enabled: boolean; summary: React.ReactNode; children: React.ReactNode }) {
+  if (!enabled) return <>{children}</>;
+  return (
+    <details className={styles.metricsDisclosure}>
+      <summary>{summary}</summary>
+      {children}
+    </details>
+  );
+}
+
+// Short freshness note for a value that isn't current, e.g. "last known" or "as of 10-18"; null when current.
+function ownershipQualifier(player: Pick<UnifiedPlayerData, "percent_ownership" | "ownershipEvidence">): string | null {
+  const evidence = player.ownershipEvidence;
+  if (player.percent_ownership !== null || !evidence) return null;
+  return evidence.observedOn
+    ? `as of ${evidence.observedOn.slice(5)}`
+    : "last known";
+}
+
+// Mobile column is too narrow for the full freshness label: show the value with a short qualifier
+// (omitted when the header already carries it), keeping the full label for screen readers.
+function CompactOwnershipLabel({ player, hideQualifier }: { player: Pick<UnifiedPlayerData, "percent_ownership" | "ownershipEvidence">; hideQualifier: boolean }) {
+  const label = pickupOwnershipLabel(player);
+  const qualifier = ownershipQualifier(player);
+  // "Unknown" is a word, not a number: keep it in the text face inside the mono numeric column.
+  if (!player.ownershipEvidence && player.percent_ownership === null) return <span className={styles.ownershipWord}>{label}</span>;
+  if (qualifier === null || !player.ownershipEvidence) return <>{label}</>;
+  return (
+    <span className={styles.ownershipCompact}>
+      <span className={styles.srOnly}>{label}</span>
+      <span aria-hidden="true">{player.ownershipEvidence.value}%</span>
+      {!hideQualifier && <span aria-hidden="true" className={styles.ownershipQualifier}>{qualifier}</span>}
+    </span>
+  );
 }
 
 function summarizePlayerPickupError(error: unknown): string {
@@ -530,6 +569,8 @@ interface FiltersProps {
     React.SetStateAction<Record<string, boolean>>
   >;
   resetFilters: () => void;
+  /** Something Reset would change; phones hide the no-op button otherwise. */
+  canReset: boolean;
   teamOptions: string[];
   isMobile: boolean;
   isMobileMinimized: boolean;
@@ -557,6 +598,7 @@ const Filters: React.FC<FiltersProps> = ({
   selectedPositions,
   setSelectedPositions, // Receive the setter function
   resetFilters,
+  canReset,
   teamOptions,
   isMobile,
   isMobileMinimized,
@@ -680,6 +722,8 @@ const Filters: React.FC<FiltersProps> = ({
   );
 
   const isAllSelected = activeMetricKeys.length === allPossibleMetrics.length;
+  // A group title is "active" when exactly its metrics are selected (what tapping it produces).
+  const isOnlyGroup = (keys: MetricKey[]) => activeMetricKeys.length === keys.length && keys.every((key) => selectedMetrics[key]);
   const isNoneSelected = activeMetricKeys.length === 0;
 
   // Helper to find metric definition (label) by key
@@ -713,6 +757,32 @@ const Filters: React.FC<FiltersProps> = ({
     );
   };
 
+  // One-line summaries for the folded mobile filters, e.g. "Filters · Own ≤50% · All teams · All positions";
+  // parts that differ from the defaults are highlighted so you can see what's narrowing the list.
+  const positionKeys = Object.keys(defaultPositions);
+  const pickedPositions = positionKeys.filter((pos) => selectedPositions[pos]);
+  const summaryParts = (parts: { text: string; active: boolean }[]) => parts.map(({ text, active }, index) => (
+    <React.Fragment key={text}>
+      {index > 0 && " · "}
+      {active ? <span className={styles.summaryActive}>{text}</span> : text}
+    </React.Fragment>
+  ));
+  const basicFiltersSummary = <span>{summaryParts([
+    { text: "Filters", active: false },
+    leagueMode
+      ? { text: "League availability", active: false }
+      : { text: `Own ≤${ownershipThreshold}%`, active: ownershipThreshold !== defaultOwnershipThreshold },
+    ...(includeUnknownOwnership ? [] : [{ text: "Known ownership only", active: true }]),
+    { text: teamFilter === defaultTeamFilter ? "All teams" : teamFilter, active: teamFilter !== defaultTeamFilter },
+    pickedPositions.length === positionKeys.length
+      ? { text: "All positions", active: false }
+      : { text: pickedPositions.length ? pickedPositions.join("/") : "No positions", active: true }
+  ])}</span>;
+  const metricsSummary = <span>{summaryParts([
+    { text: "Metrics", active: false },
+    { text: `${activeMetricKeys.length} of ${allPossibleMetrics.length}`, active: !isAllSelected }
+  ])}</span>;
+
   // Handler for title click, only works on mobile
   const handleTitleClick = isMobile ? toggleMobileMinimize : undefined;
   const useCompactLayout = isMobile || isCompactSidebar;
@@ -740,16 +810,9 @@ const Filters: React.FC<FiltersProps> = ({
         aria-controls={isMobile ? "player-table-content" : undefined}
         data-interactive={isMobile ? true : undefined}
       >
+        {/* Shared section-heading spec; the accent stays on B, P, A (BPA is standard fantasy shorthand) */}
         <h2 className={styles.titleContent} aria-label="Best Players Available">
-          <span className={styles.titleWord}>
-            <span className={styles.acronym}>B</span>est
-          </span>{" "}
-          <span className={styles.titleWord}>
-            <span className={styles.acronym}>P</span>layers
-          </span>{" "}
-          <span className={styles.titleWord}>
-            <span className={styles.acronym}>A</span>vailable
-          </span>
+          <span className={styles.titleAccent}>B</span>est <span className={styles.titleAccent}>P</span>layers <span className={styles.titleAccent}>A</span>vailable
         </h2>
         {isMobile && (
           <span
@@ -770,6 +833,7 @@ const Filters: React.FC<FiltersProps> = ({
       >
         {(!isMobile || !isMobileMinimized) && (
           <>
+            <MobileDisclosure enabled={isMobile} summary={basicFiltersSummary}>
             {/* --- Ownership, Team, Position Filters --- */}
             {/* Conditionally render based on compact layout */}
             {useCompactLayout ? (
@@ -781,7 +845,7 @@ const Filters: React.FC<FiltersProps> = ({
                       className={styles.labelMobile}
                       htmlFor="pickup-ownership-threshold"
                     >
-                      Own %: {ownershipThreshold}%
+                      Own ≤{ownershipThreshold}%
                     </label>
                     <input
                       id="pickup-ownership-threshold"
@@ -907,35 +971,36 @@ const Filters: React.FC<FiltersProps> = ({
               </div>
             )}
             <div className={styles.filterRow}>
-              <label>
+              <label className={styles.metricCheckbox}>
                 <input type="checkbox" checked={includeUnknownOwnership} disabled={leagueMode}
                   onChange={(event) => setIncludeUnknownOwnership(event.target.checked)} />{" "}
                 Include unknown ownership
               </label>
             </div>
+            </MobileDisclosure>
+            <MobileDisclosure enabled={isMobile} summary={metricsSummary}>
             <div className={styles.metricFilterContainer}>
               {/* Header: Label + Preset Buttons */}
               <div className={styles.metricFilterHeader}>
-                <span className={styles.label}>Filter by Metrics:</span>
+                <span className={styles.label}>Score uses:</span>
                 <div className={styles.metricPresetButtons}>
-                  <button
-                    onClick={() => handleSelectPreset("all")}
-                    disabled={isAllSelected}
-                  >
-                    All
-                  </button>
-                  <button onClick={() => handleSelectPreset("skater")}>
-                    Skaters
-                  </button>
-                  <button onClick={() => handleSelectPreset("goalie")}>
-                    Goalies
-                  </button>
-                  <button
-                    onClick={() => handleSelectPreset("none")}
-                    disabled={isNoneSelected}
-                  >
-                    None
-                  </button>
+                  {/* The preset matching the current selection is filled (aria-pressed), like the active group chip */}
+                  {([
+                    ["all", "All", isAllSelected],
+                    ["skater", "Skaters", isOnlyGroup(skaterMetrics.map((m) => m.key).filter((key) => key !== "percent_games"))],
+                    ["goalie", "Goalies", isOnlyGroup(goalieMetrics.map((m) => m.key).filter((key) => key !== "percent_games"))],
+                    ["none", "None", isNoneSelected]
+                  ] as const).map(([type, label, active]) => (
+                    <button
+                      key={type}
+                      type="button"
+                      className={active ? styles.presetActive : undefined}
+                      aria-pressed={active}
+                      onClick={() => handleSelectPreset(type)}
+                    >
+                      {label}
+                    </button>
+                  ))}
                 </div>
                 {/* Inline GP% toggle to save vertical space */}
                 <div className={styles.inlineGpToggle}>
@@ -973,11 +1038,14 @@ const Filters: React.FC<FiltersProps> = ({
                       <button
                         type="button" // Prevent form submission if wrapped in form
                         className={styles.metricGroupTitle}
+                        aria-label="Points: Select Group (ranks by these only)"
+                        aria-pressed={isOnlyGroup(skaterPointKeys)}
                         onClick={() =>
                           handleSubGroupPresetClick(skaterPointKeys, "skater")
                         }
                       >
                         Points
+                        <span className={clsx(styles.groupTitleHint, isOnlyGroup(skaterPointKeys) && styles.groupTitleHintActive)} aria-hidden="true">Select Group</span>
                       </button>
                       {renderCheckboxGroup(skaterPointKeys)}
                     </div>
@@ -987,6 +1055,8 @@ const Filters: React.FC<FiltersProps> = ({
                       <button
                         type="button"
                         className={styles.metricGroupTitle}
+                        aria-label="Peripherals: Select Group (ranks by these only)"
+                        aria-pressed={isOnlyGroup(skaterPeripheralKeys)}
                         onClick={() =>
                           handleSubGroupPresetClick(
                             skaterPeripheralKeys,
@@ -995,6 +1065,7 @@ const Filters: React.FC<FiltersProps> = ({
                         }
                       >
                         Peripherals
+                        <span className={clsx(styles.groupTitleHint, isOnlyGroup(skaterPeripheralKeys) && styles.groupTitleHintActive)} aria-hidden="true">Select Group</span>
                       </button>
                       {renderCheckboxGroup(skaterPeripheralKeys)}
                     </div>
@@ -1011,11 +1082,14 @@ const Filters: React.FC<FiltersProps> = ({
                       <button
                         type="button"
                         className={styles.metricGroupTitle}
+                        aria-label="Quality: Select Group (ranks by these only)"
+                        aria-pressed={isOnlyGroup(goalieQualityKeys)}
                         onClick={() =>
                           handleSubGroupPresetClick(goalieQualityKeys, "goalie")
                         }
                       >
                         Quality
+                        <span className={clsx(styles.groupTitleHint, isOnlyGroup(goalieQualityKeys) && styles.groupTitleHintActive)} aria-hidden="true">Select Group</span>
                       </button>
                       {renderCheckboxGroup(goalieQualityKeys)}
                     </div>
@@ -1026,6 +1100,8 @@ const Filters: React.FC<FiltersProps> = ({
                       <button
                         type="button"
                         className={styles.metricGroupTitle}
+                        aria-label="Quantity: Select Group (ranks by these only)"
+                        aria-pressed={isOnlyGroup(goalieQuantityKeys)}
                         onClick={() =>
                           handleSubGroupPresetClick(
                             goalieQuantityKeys,
@@ -1034,6 +1110,7 @@ const Filters: React.FC<FiltersProps> = ({
                         }
                       >
                         Quantity
+                        <span className={clsx(styles.groupTitleHint, isOnlyGroup(goalieQuantityKeys) && styles.groupTitleHintActive)} aria-hidden="true">Select Group</span>
                       </button>
                       {renderCheckboxGroup(goalieQuantityKeys)}
                     </div>
@@ -1041,9 +1118,12 @@ const Filters: React.FC<FiltersProps> = ({
                 </fieldset>
               </div>{" "}
             </div>{" "}
-            <button className={styles.buttonReset} onClick={resetFilters}>
-              Reset Filters
-            </button>
+            </MobileDisclosure>
+            {(!isMobile || canReset) && (
+              <button className={styles.buttonReset} onClick={resetFilters}>
+                Reset Filters
+              </button>
+            )}
           </>
         )}
       </div>
@@ -1062,11 +1142,17 @@ interface PlayerTableCommonProps {
   getOffNightsForPlayer: (player: UnifiedPlayerData) => number | string;
   // Pass selectedMetrics for styling
   selectedMetrics: Record<MetricKey, boolean>;
+  /** GP% still loading: scores aren't final yet. */
+  scoresPending: boolean;
 }
 
 type SortableHeaderProps = {
   column: SortKey;
   label: string;
+  /** Small caveat shown under the label. */
+  note?: string;
+  /** Spoken name when the visible label is an abbreviation. */
+  spokenLabel?: string;
   sortKey: SortKey;
   sortOrder: "asc" | "desc";
   handleSort: (column: SortKey) => void;
@@ -1075,6 +1161,8 @@ type SortableHeaderProps = {
 const SortableHeader: React.FC<SortableHeaderProps> = ({
   column,
   label,
+  note,
+  spokenLabel = label,
   sortKey,
   sortOrder,
   handleSort
@@ -1092,13 +1180,14 @@ const SortableHeader: React.FC<SortableHeaderProps> = ({
         type="button"
         className={styles.sortButton}
         onClick={() => handleSort(column)}
-        aria-label={`Sort by ${label}${isActive ? `, currently ${ariaSort}` : ""}`}
+        aria-label={`Sort by ${spokenLabel}${isActive ? `, currently ${ariaSort}` : ""}`}
       >
         {label}
         <span aria-hidden="true">
           {isActive ? (sortOrder === "desc" ? " ▼" : " ▲") : ""}
         </span>
       </button>
+      {note && <span aria-hidden="true" className={styles.headerNote}>{note}</span>}
     </th>
   );
 };
@@ -1111,7 +1200,8 @@ const DesktopTable: React.FC<DesktopTableProps> = ({
   sortOrder,
   handleSort,
   getOffNightsForPlayer,
-  selectedMetrics // Receive selectedMetrics
+  selectedMetrics, // Receive selectedMetrics
+  scoresPending
 }) => {
   // Determine header text based on the mode of the first player (or default)
   let scoreHeader = "Score";
@@ -1168,6 +1258,7 @@ const DesktopTable: React.FC<DesktopTableProps> = ({
             <SortableHeader
               column="composite"
               label={scoreHeader}
+              note={scoresPending ? "loading" : undefined}
               {...{ sortKey, sortOrder, handleSort }}
             />
           </tr>
@@ -1355,7 +1446,7 @@ const DesktopTable: React.FC<DesktopTableProps> = ({
                     </div>
                   </td>
                   <td className={styles.scoreCell}>
-                    {player.displayScore.toFixed(1)}
+                    {scoresPending ? <span className={styles.scorePending}><span aria-hidden="true">…</span><span className={styles.srOnly}>Score loading</span></span> : player.displayScore.toFixed(1)}
                   </td>
                 </tr>
               </React.Fragment>
@@ -1379,7 +1470,8 @@ const MobileTable: React.FC<MobileTableProps> = ({
   expanded,
   toggleExpand,
   getOffNightsForPlayer,
-  selectedMetrics // Receive selectedMetrics
+  selectedMetrics, // Receive selectedMetrics
+  scoresPending
 }) => {
   const totalColumns = 7;
 
@@ -1392,21 +1484,25 @@ const MobileTable: React.FC<MobileTableProps> = ({
     else if (firstPlayerMode === "none") scoreHeaderMobile = "N/A";
   }
 
+  // A caveat every row shares (e.g. no ownership date) reads once in the header, not on each row.
+  const qualifiers = players.map(ownershipQualifier);
+  const sharedOwnershipQualifier = qualifiers.length > 0 && qualifiers.every((q) => q !== null && q === qualifiers[0]) ? qualifiers[0] : null;
+
   return (
     <div className={styles.containerMobile}>
       <table className={styles.tableMobile}>
         <colgroup>
-          <col style={{ width: "5%" }} />
-          <col style={{ width: "35%" }} />
+          <col style={{ width: "8%" }} />
+          <col style={{ width: "28%" }} />
           <col style={{ width: "10%" }} />
           <col style={{ width: "10%" }} />
-          <col style={{ width: "15%" }} />
+          <col style={{ width: "19%" }} />
           <col style={{ width: "10%" }} />
           <col style={{ width: "15%" }} />
         </colgroup>
         <thead>
           <tr>
-            <th aria-label="Player details"></th>
+            <th><span className={styles.srOnly}>Player details</span></th>
             <SortableHeader
               column="nhl_player_name"
               label="Name"
@@ -1420,17 +1516,20 @@ const MobileTable: React.FC<MobileTableProps> = ({
             <SortableHeader
               column="percent_ownership"
               label="Own"
+              note={sharedOwnershipQualifier ?? undefined}
               {...{ sortKey, sortOrder, handleSort }}
             />
-            <th>Pos.</th>
+            <th>Pos</th>
             <SortableHeader
               column="off_nights"
-              label="Offs"
+              label="Off"
+              spokenLabel="off-nights"
               {...{ sortKey, sortOrder, handleSort }}
             />
             <SortableHeader
               column="composite"
               label={scoreHeaderMobile}
+              note={scoresPending ? "loading" : undefined}
               {...{ sortKey, sortOrder, handleSort }}
             />
           </tr>
@@ -1549,18 +1648,17 @@ const MobileTable: React.FC<MobileTableProps> = ({
                   <td>
                     {" "}
                     {/* Own% */}
-                    <span title={player.ownershipEvidence?.observedOn ? `Yahoo ownership · ${player.ownershipEvidence.observedOn}` : undefined}>
-                      {pickupOwnershipLabel(player)}
+                    <span title={pickupOwnershipLabel(player)}>
+                      <CompactOwnershipLabel player={player} hideQualifier={sharedOwnershipQualifier !== null} />
                     </span>
                   </td>
-                  <td>
-                    {" "}
-                    {/* Pos */}
-                    {player.eligible_positions?.join(", ") ||
+                  <td className={styles.positionsCellMobile}>
+                    {/* Pos: "LW/RW" stays on one line */}
+                    {player.eligible_positions?.join("/") ||
                       (player.player_type === "goalie" ? "G" : "N/A")}
                   </td>
                   <td>{getOffNightsForPlayer(player)}</td>
-                  <td>{player.displayScore.toFixed(1)}</td>
+                  <td className={styles.scoreCellMobile}>{scoresPending ? <span className={styles.scorePending}><span aria-hidden="true">…</span><span className={styles.srOnly}>Score loading</span></span> : player.displayScore.toFixed(1)}</td>
                   {/* Use displayScore */}
                 </tr>
                 {/* Expanded Row */}
@@ -1675,8 +1773,9 @@ const PaginationControls: React.FC<PaginationControlsProps> = ({
       <button
         onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
         disabled={currentPage === 1}
+        aria-label="Previous page"
       >
-        Previous
+        Prev
       </button>
       <span>
         {" "}
@@ -1685,6 +1784,7 @@ const PaginationControls: React.FC<PaginationControlsProps> = ({
       <button
         onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))}
         disabled={currentPage === totalPages}
+        aria-label="Next page"
       >
         Next
       </button>
@@ -1790,6 +1890,8 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
   const [playerGamesPlayedById, setPlayerGamesPlayedById] = useState<
     Record<string, number>
   >({});
+  // The player list these GP totals were fetched for; scores wait for it so the ranking doesn't reshuffle.
+  const [gamesPlayedSource, setGamesPlayedSource] = useState<UnifiedPlayerData[] | null>(null);
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -2240,7 +2342,10 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
 
     const nhlSeasonIdString = getNhlSeasonIdFromYahooSeasonYear(yahooSeasonYear);
     const nhlSeasonIdNumber = Number(nhlSeasonIdString);
-    if (Number.isNaN(nhlSeasonIdNumber)) return;
+    if (Number.isNaN(nhlSeasonIdNumber)) {
+      setGamesPlayedSource(playersData);
+      return;
+    }
 
     const skaterIds = Array.from(
       new Set(
@@ -2310,10 +2415,16 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
           });
         }
 
-        if (!isCancelled) setPlayerGamesPlayedById(combined);
+        if (!isCancelled) {
+          setPlayerGamesPlayedById(combined);
+          setGamesPlayedSource(playersData);
+        }
       } catch (err) {
         console.warn("Failed to fetch wgo_*_stats_totals for GP%:", err);
-        if (!isCancelled) setPlayerGamesPlayedById({});
+        if (!isCancelled) {
+          setPlayerGamesPlayedById({});
+          setGamesPlayedSource(playersData);
+        }
       }
     };
 
@@ -2693,8 +2804,17 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
     ? playersWithScoresBoosted
     : playersWithScores;
 
+  // Scores need each player's GP% (season totals load after the player list). Until then show the
+  // list A–Z with pending scores rather than a provisional ranking that reshuffles a moment later.
+  const scoresPending = yahooSeasonYear !== null && playersData.length > 0 && gamesPlayedSource !== playersData;
+
   const sortedPlayers = useMemo(() => {
     const sortablePlayers = [...effectivePlayersWithScores];
+    if (scoresPending && sortKey === "composite") {
+      // Sort on the name as displayed ("A. Ekblad"), so the order reads as A–Z.
+      const name = (p: PlayerWithScores) => normalizePlayerName(p.yahoo_player_name || p.nhl_player_name || "").toLowerCase();
+      return sortablePlayers.sort((a, b) => name(a).localeCompare(name(b)));
+    }
     sortablePlayers.sort((a, b) => {
       let aValue: any;
       let bValue: any;
@@ -2746,7 +2866,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
       }
     });
     return sortablePlayers;
-  }, [effectivePlayersWithScores, sortKey, sortOrder, getOffNightsForPlayer]);
+  }, [effectivePlayersWithScores, sortKey, sortOrder, getOffNightsForPlayer, scoresPending]);
 
   // --- Pagination Calculation (Unchanged) ---
   const totalPages = Math.ceil(sortedPlayers.length / pageSize);
@@ -2789,6 +2909,12 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
   };
 
   // --- resetFilters (Now resets selectedPositions too) ---
+  const canReset = ownershipThreshold !== defaultOwnershipThreshold || !includeUnknownOwnership
+    || teamFilter !== defaultTeamFilter
+    || Object.keys(defaultPositions).some((pos) => (selectedPositions[pos] ?? false) !== defaultPositions[pos])
+    || allPossibleMetrics.some((metric) => !selectedMetrics[metric.key])
+    || sortKey !== "composite" || sortOrder !== "desc";
+
   const resetFilters = () => {
     setOwnershipThreshold(defaultOwnershipThreshold);
     setIncludeUnknownOwnership(true);
@@ -2844,6 +2970,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
         selectedPositions={selectedPositions} // Pass state
         setSelectedPositions={setSelectedPositions} // Pass setter
         resetFilters={resetFilters}
+        canReset={canReset}
         teamOptions={teamOptions}
         isMobile={isMobile}
         isMobileMinimized={isMobileMinimized}
@@ -2887,8 +3014,24 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
           </div>
         )}
 
-        {!leagueContext && <p>General candidates · filtered by global ownership. Availability in your league and waiver status are unknown.</p>}
-        <ProviderSyncNotice {...pro} />
+        <div className={styles.poolNotice}>
+          {/* Signed out: one short line and the sign-in action instead of two stacked notices */}
+          {!leagueContext && (pro.status === "idle" || pro.access?.reason === "authentication_required") ? (
+            <p>
+              <span>Ownership here is Yahoo-wide, not your league&apos;s.</span>
+              <Link href="/auth?mode=sign-in">Sign in</Link>
+            </p>
+          ) : pro.status === "ready" && pro.access?.eligible === false && (pro.access.reason === "no_active_grant" || pro.access.reason === "expired") ? (
+            // Signed in without premium: one short line; pricing lives on the premium page
+            <p role="status">
+              <span>League sync is a premium feature.</span>
+              <Link href={PROVIDER_SYNC_ACCESS_HREF}>View premium access</Link>
+            </p>
+          ) : <>
+            {!leagueContext && <p>General candidates · filtered by global ownership. Availability in your league and waiver status are unknown.</p>}
+            <ProviderSyncNotice {...pro} />
+          </>}
+        </div>
         {pro.access?.eligible && (
           <div className={styles.yahooContext}>
             <p role="status">
@@ -2935,6 +3078,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
                     toggleExpand={toggleExpand}
                     getOffNightsForPlayer={getOffNightsForPlayer}
                     selectedMetrics={selectedMetrics}
+                    scoresPending={scoresPending}
                   />
                 ) : (
                   <DesktopTable
@@ -2945,6 +3089,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
                     handleSort={handleSort}
                     getOffNightsForPlayer={getOffNightsForPlayer}
                     selectedMetrics={selectedMetrics}
+                    scoresPending={scoresPending}
                   />
                 )}
                 <PaginationControls
