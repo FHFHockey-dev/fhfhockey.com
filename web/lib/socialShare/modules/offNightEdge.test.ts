@@ -13,6 +13,7 @@ import { parseShareSettings, sharePostExportBlock, SharePostRequestError, type S
 import { buildOffNightEdge, OFF_NIGHT_THIS_WEEK, offNightEdgeModule, offNightSchedule, offNightSelectedDates, offNightWeeks, resolveOffNightWindow, type OffNightData, type OffNightSettings, type OffNightYahooRow } from "./offNightEdge";
 import { loadOffNightEdge } from "./offNightEdge.sources";
 import { shareModule } from "./registry";
+import { editionCutoff } from "./shared/periodWindow";
 import type { SkaterAppearance } from "./shared/skaterAppearances";
 
 const upstream = vi.hoisted(() => ({ getSchedule: vi.fn() }));
@@ -441,7 +442,7 @@ describe("period control", () => {
     expect(data.window).toMatchObject({ upcoming: "next-week", past: false, playedIncluded: false });
     const row = data.rows[0];
     expect(row.score).toBe(calcWeekScore([], row.offNightGames, data.countedGames, row.games, data.days.flatMap((day, index) => Array<number>(row.gamesByDay[index]).fill(day.leagueGames)), true));
-    expect(result.evidence.sample).toContain(`to ${shift(now.slice(0, 10), -1)}:`);
+    expect(result.evidence.sample).toContain(`to ${editionCutoff(now)}:`);
     const html = renderToStaticMarkup(createElement(OffNightEdgeCard, { data, settings: active, logos: {} }));
     expect(html).toContain("Next week · Week 3 · ");
     expect(html).toContain("Picks use recent form and ownership as of today");
