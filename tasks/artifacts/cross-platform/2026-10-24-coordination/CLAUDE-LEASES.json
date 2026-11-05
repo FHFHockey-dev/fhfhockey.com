@@ -1156,7 +1156,7 @@
       "resources": [
         "dev server :3150 from canonical with PLAYWRIGHT_ISOLATED_NEXT=1 only if :3110 slot free; else snapshot"
       ],
-      "status": "active 2026-10-25T16:23Z",
+      "status": "RELEASED 2026-11-05T14:52:13Z: superseded by WIGO-UI-PASS (10-30) and WIGO-OVERHAUL (#406); nine paths handed to Codex Chef/L6 per task-7 custodian-coordination/CUSTODIAN-RESPONSE.md (11-04); TJ pop-up approval 2026-11-05",
       "base_head": "2f2b432306b048f16bf48c2e274f21e55a7514d4"
     },
     {
@@ -3306,6 +3306,87 @@
         "Yahoo or NST provider calls; database reads are SELECT only",
         "web/lib/socialShare/modules/offNightEdge.ts (its owner decides on the workaround)",
         "GIT_DIR in tests"
+      ],
+      "status": "active"
+    },
+    {
+      "lane": "SIX-L4-VALUATION-REQUEST",
+      "session": "local_e27d32ab-0d4c-4536-b4e8-ea55a0f296a8 (six-l4-tradevalue)",
+      "owner": "Claude Chef 1e668672 / local_88650158",
+      "scope": "FR1 request binding + dated Yahoo ADP component (pure; no loader/DB/route/UI); five accepted tradeValue files stay byte-frozen",
+      "authority": "TJ via lane-handoffs-20261105/CLAUDE-CHEF-HANDOFF.md (Chef may allocate nonconflicting local custody)",
+      "opened": "2026-11-05T14:50:57Z",
+      "write_paths": [
+        {
+          "path": "web/lib/tradeValue/valuationRequest.ts",
+          "baseline_sha256": null
+        },
+        {
+          "path": "web/lib/tradeValue/valuationRequest.test.ts",
+          "baseline_sha256": null
+        }
+      ],
+      "read_only": [
+        "web/lib/tradeValue/{contracts,valuationComponents,observationEvidence}*.ts (accepted, frozen)",
+        "web/lib/integrations/yahoo/yahooIdentity.ts",
+        "web/lib/projections/starterBoardScoring.ts",
+        "web/lib/player-forecasts/gameExpectations.ts",
+        "web/lib/buyLowSellHigh/trade.ts"
+      ],
+      "forbidden": [
+        "edits outside write_paths",
+        "provider/production/DB reads, migrations, cron, push, deploy, Git mutation",
+        "GIT_DIR in tests"
+      ],
+      "status": "active"
+    },
+    {
+      "lane": "SIX-L5-SLOT-FEASIBILITY",
+      "session": "local_167d7e85-7e84-4314-873e-197fcafafb3e (six-l5-analyzer)",
+      "owner": "Claude Chef 1e668672 / local_88650158",
+      "scope": "Trade Analyzer before/after starting-slot coverage (structural only); TJ decisions 2026-11-05: incoming status = sender's, labelled unverified on receiving roster; slot counts per team with mismatch flagged",
+      "authority": "TJ via lane-handoffs-20261105/CLAUDE-CHEF-HANDOFF.md + TJ pop-up 2026-11-05; Codex L5 lease CODEX-SIX-LANES-L5-20261104-RECORDED idle (review-only)",
+      "opened": "2026-11-05T14:52:13Z",
+      "write_paths": [
+        {
+          "path": "web/lib/tradeAnalyzer/slotFeasibility.ts",
+          "baseline_sha256": null
+        },
+        {
+          "path": "web/lib/tradeAnalyzer/slotFeasibility.test.ts",
+          "baseline_sha256": null
+        },
+        {
+          "path": "web/components/TradeAnalyzer/TradeAnalyzer.tsx",
+          "baseline_sha256": "a731d3f1dee651b174f03806f41958ec6814dfaa79e374fbb5e5bc5555eca30a"
+        },
+        {
+          "path": "web/components/TradeAnalyzer/TradeAnalyzer.test.tsx",
+          "baseline_sha256": "a18948c585ff3057825006982d1552ab55594c13b1c326b430924208cedffc60"
+        },
+        {
+          "path": "web/components/TradeAnalyzer/TradeAnalyzer.module.scss",
+          "baseline_sha256": "39b338160b82146281a3387a136e5bd7015324fadb916dc34b2400b53bc6da12"
+        },
+        {
+          "path": "web/lib/tradeAnalyzer/offer.ts",
+          "baseline_sha256": "a33ffaad85a115c647bb60de0f5851886bc2fb6a408095e2369c0fc4f303760f"
+        },
+        {
+          "path": "web/lib/tradeAnalyzer/offer.test.ts",
+          "baseline_sha256": "d5fabb8b6d315aaaded04976c8b353d132238569cb89d01ca3031c9944aa4120"
+        }
+      ],
+      "read_only": [
+        "web/lib/rosterAutopsy/manual.ts",
+        "web/lib/tradeValue/** (L4)",
+        "RSO/FORGE/forecast/Yahoo/nav/auth"
+      ],
+      "forbidden": [
+        "edits outside write_paths",
+        "provider/production/DB, migrations, cron, push, deploy, Git mutation",
+        "GIT_DIR in tests",
+        "dev server on :3000/:3105"
       ],
       "status": "active"
     }

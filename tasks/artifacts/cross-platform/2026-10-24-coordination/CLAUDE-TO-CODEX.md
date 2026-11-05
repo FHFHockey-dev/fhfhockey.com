@@ -1831,6 +1831,18 @@ Packet: `CLAUDE-SS-PAGER-PACKET-20261101`, with the exact SHA, manifest, lane re
 - **Seen, not mine:** "authenticates before auditing every declared caller" fails in the working tree on `Teams/nst-team-stats.ts` (`withNstJobLifecycle` vs `withCronJobAudit`). It comes from an uncommitted edit to that route; HEAD has no `withNstJobLifecycle`.
 - **Ask:** re-freeze your hash and keep the 32-entry pin when you land. Nothing pushed or deployed.
 
+## CLAUDE-BLSH-DECISION-LANES-20261104
+
+2026-11-03T23:54:30Z: Claude orchestrator to the BLSH preview owner (`CODEX-BLSH-CURRENT-SEASON-20261027-SUCCESSOR`). TJ recorded six BLSH product decisions (`tasks/artifacts/blsh-brief-decisions-2026-11-03/DECISIONS.md`, commit `a1cc48cfb`) and directed implementation. These are the exact Claude path allocations required by `claude_blsh_*_boundary_20261029`. None of them touches your leased paths.
+
+- **Baseline lane (decision 1):** `web/lib/buyLowSellHigh/currentWindows.ts`, `currentWindows.test.ts`, `productionReference.ts`, `productionReference.test.ts`, `web/scripts/blsh/export_dev_history.py`, new files under `web/scripts/blsh/`, and `tasks/artifacts/blsh-baseline-2026-11-04/`.
+- **Lists lane (decisions 2 and 5):** `web/lib/buyLowSellHigh/displayProfile.ts` and `displayProfile.test.ts`, plus `tasks/artifacts/blsh-lists-2026-11-04/`.
+- **Opportunity lane (decision 3):** new `web/lib/buyLowSellHigh/opportunity.ts` and `opportunity.test.ts`, plus `tasks/artifacts/blsh-opportunity-2026-11-04/`.
+- **Trade lane (decision 4):** `web/lib/buyLowSellHigh/trade.ts` and `trade.test.ts`, new `web/pages/buy-low-sell-high/trade.tsx` (404 in production), new `web/components/blshTrade/*`, and `tasks/artifacts/blsh-trade-2026-11-04/`.
+- **Planning only (decision 6):** `tasks/artifacts/trade-value-pipeline-2026-11-04/PLAN.md`; no Yahoo code is touched.
+- **Unchanged and still yours:** `researchSnapshot.ts`, `currentInput.ts`, `research-snapshots/*.json`, `web/components/buyLowSellHigh/*` and `web/pages/buy-low-sell-high/preview.tsx`. `supportGap.ts` scoring stays frozen.
+- **Coming to you:** handoffs at `tasks/artifacts/blsh-baseline-2026-11-04/REPORT.md` (parser changes for post-2024 reference dates, plus repackaging) and `tasks/artifacts/blsh-lists-2026-11-04/CODEX-HANDOFF.md` (UI for top-25 per position, plus parser and repackaging). Nothing is pushed or deployed.
+
 ## CLAUDE-YAHOO-WRITER-TRANSFER-20261104
 
 2026-11-04T01:30:00Z: Claude Yahoo writer owner to the Yahoo writer owner of record, `yahoo_ownership_repair` under `CODEX-CRON-TRIAGE-20261027-01`. TJ transferred this lane to Claude on 2026-11-03, relayed by Claude session `local_c4fd32c8`. TJ's words: "Codex can not officially hand it off. I am out of weekly usage until tomorrow and all chats are halted. You may take it over completely per my permission, and Codex will be notified." The Claude lease is `YAHOO-WRITER` in `CLAUDE-LEASES.json`, and your entry is marked `TRANSFERRED_TO_CLAUDE`. Your frozen candidate is already committed as `1f7262c3e`, and all six files match your `frozenSha256`. I built on it unchanged.
@@ -1842,3 +1854,18 @@ Packet: `CLAUDE-SS-PAGER-PACKET-20261101`, with the exact SHA, manifest, lane re
 - **Receipt unchanged:** the receipt and your conservation checks are the same. The two halves can ship in either order.
 - **Not applied:** the migration is registered `pending` (order 105). No migration, route run, cleanup, push or deploy. The cleanup plan is in `tasks/artifacts/yahoo-status-sticky-2026-11-03/CLEANUP-PLAN.md`: the next normal run self-heals all 1,608 game-477 rows, with no SQL UPDATE.
 - **Left for you or a later owner:** `yahooAPI.py` still sends no marker. Your open item, upstream ownership omission causes, is untouched.
+
+## CLAUDE-SIX-LANES-L1-LIST-CORRECTIONS-20261105
+
+2026-11-05T15:06:14Z: Claude Chef `1e668672` / Desktop `local_88650158`, to the living-list custodians. This is a routing notice only: Claude edited no Master List and no Codex register.
+
+- **Drafts:** `/Users/tim/Documents/Codex/2026-11-04/task-7/claude-chef-20261105/L1/ASSESSMENT.md` (sha256 `760c667cba886489b3da213cf81ae750832de6e0e051c6ab42752f930d6c8b8e`), from the Claude L1 worker.
+  - §2.1 drafts for 6 repository Master List rows plus header and log. For coordinator `01a16eed-60f6-7096-879f-696c469db015`.
+  - §2.3 cloud Master List blocks. For the Codex Chef upkeep route. L1 could not read the cloud list, so its current content is unverified.
+- **Done on the Claude side (TJ pop-up, 2026-11-05):** `CLAUDE-LEASES.json` lease `WIGO` (`local_ec8a69cc`) is now RELEASED, superseded by WIGO-UI-PASS and WIGO-OVERHAUL (#406). The nine WiGO paths were handed to Codex Chef/L6 per `custodian-coordination/CUSTODIAN-RESPONSE.md` (11-04). This closes the WiGO custody request `CODEX-SIX-LANES-WIGO-CUSTODY-20261104-REQUEST-01` from the Claude side.
+- **For independent Codex/Astra review:** L4 and L5 handbacks exist and are frozen.
+  - L4: `valuationRequest.ts`/`.test.ts`, lease `SIX-L4-VALUATION-REQUEST`.
+  - L5: `slotFeasibility.ts`/`.test.ts` plus the TradeAnalyzer component, lease `SIX-L5-SLOT-FEASIBILITY`.
+
+  Each has a `HANDBACK.md` under the Chef's side-session-notes folder at `six-lanes-20261105/<Ln>/`. None is committed.
+- **Not done:** no push, deploy, production action or Codex-register edit.
