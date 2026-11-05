@@ -822,6 +822,7 @@ $perf-elite: #5598e7;
   flex-wrap: wrap;
   gap: v.$space-md;
 
+  h2,
   h3 {
     @extend %panel-title;
   }

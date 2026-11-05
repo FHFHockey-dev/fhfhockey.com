@@ -397,9 +397,9 @@ const GoalieShareChart: React.FC = () => {
                               src={`/teamLogos/${teamAbbrev}.png`}
                               alt={`${teamAbbrev} logo`}
                             />
-                            <h4 className={styles.teamName}>
+                            <h3 className={styles.teamName}>
                               {teamInfo?.shortName || teamAbbrev}
-                            </h4>
+                            </h3>
                             <div className={styles.teamStats}>
                               <span className={styles.statsLabel} title="Team games played">GP</span>
                               <span className={styles.statsValue}>
@@ -472,9 +472,9 @@ const GoalieShareChart: React.FC = () => {
                               src={`/teamLogos/${teamAbbrev}.png`}
                               alt={`${teamAbbrev} logo`}
                             />
-                            <h4 className={styles.teamName}>
+                            <h3 className={styles.teamName}>
                               {teamInfo?.shortName || teamAbbrev}
-                            </h4>
+                            </h3>
                             <div className={styles.teamStats}>
                               <span className={styles.statsLabel} title="Team games played">GP</span>
                               <span className={styles.statsValue}>

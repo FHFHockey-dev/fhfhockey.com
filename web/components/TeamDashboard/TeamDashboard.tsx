@@ -1330,6 +1330,8 @@ export function TeamDashboard({
         } as React.CSSProperties
       }
     >
+      {/* Section heading for the tab, so card titles (h3) follow the page h1 in order. */}
+      <h2 className={styles.visuallyHidden}>Team dashboard</h2>
       {/* Left Sidebar - Team Leaders */}
       <div className={styles.leftSidebar}>
         <div className={styles.teamStatisticsCard}>
@@ -1648,7 +1650,7 @@ export function TeamDashboard({
                     <div className={styles.rankingsGrid}>
                       <div className={styles.rankingCategory}>
                         <div className={styles.rankingTitle}>
-                          <h5 className={styles.categoryTitle}>OFFENSIVE</h5>
+                          <h4 className={styles.categoryTitle}>OFFENSIVE</h4>
                         </div>
                         <div className={styles.rankingItemList}>
                           <div className={styles.rankingItem}>
@@ -1690,7 +1692,7 @@ export function TeamDashboard({
 
                       <div className={styles.rankingCategory}>
                         <div className={styles.rankingTitle}>
-                          <h5 className={styles.categoryTitle}>DEFENSIVE</h5>
+                          <h4 className={styles.categoryTitle}>DEFENSIVE</h4>
                         </div>
                         <div className={styles.rankingItemList}>
                           <div className={styles.rankingItem}>
@@ -1734,9 +1736,9 @@ export function TeamDashboard({
 
                       <div className={styles.rankingCategory}>
                         <div className={styles.rankingTitle}>
-                          <h5 className={styles.categoryTitle}>
+                          <h4 className={styles.categoryTitle}>
                             SPECIAL TEAMS
-                          </h5>
+                          </h4>
                         </div>
                         <div className={styles.rankingItemList}>
                           <div className={styles.rankingItem}>
@@ -1776,7 +1778,7 @@ export function TeamDashboard({
 
                       <div className={styles.rankingCategory}>
                         <div className={styles.rankingTitle}>
-                          <h5 className={styles.categoryTitle}>SITUATIONAL</h5>
+                          <h4 className={styles.categoryTitle}>SITUATIONAL</h4>
                         </div>
                         <div className={styles.rankingItemList}>
                           <div className={styles.rankingItem}>

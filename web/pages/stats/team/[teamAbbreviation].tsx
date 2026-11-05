@@ -139,7 +139,7 @@ export default function TeamStatsPage({
   };
 
   return (
-    <div
+    <main
       className={
         styles.teamStatsPageContainer +
         (teamColors ? " " + styles.hasTeamColors : "")
@@ -167,7 +167,7 @@ export default function TeamStatsPage({
           <div className={styles.teamDetails}>
             <div className={styles.teamInfo}>
               <div className={styles.teamName}>
-                {teamName}
+                <h1 className={styles.teamNameHeading}>{teamName}</h1>
                 {teams.length > 0 && (
                   <TeamDropdown teams={teams} currentTeam={teamAbbreviation} />
                 )}
@@ -257,7 +257,7 @@ export default function TeamStatsPage({
           />
         </div>
       </div>
-    </div>
+    </main>
   );
 }
 

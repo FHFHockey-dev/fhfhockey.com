@@ -132,6 +132,15 @@
   }
 }
 
+// The team name is the page h1; it takes the .teamName display treatment.
+.teamNameHeading {
+  display: inline;
+  margin: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+}
+
 .teamName {
   font-size: 2.2rem;
   font-weight: 700;

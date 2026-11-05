@@ -562,7 +562,7 @@ export function PlayerRadarChart({
     return (
       <div className={styles.radarContainer}>
         <div className={styles.radarHeader}>
-          <h3>Performance Profile</h3>
+          <h2>Performance Profile</h2>
           <p>Percentile rankings vs league peers</p>
         </div>
         <div className={styles.radarWrapper}>
@@ -581,7 +581,7 @@ export function PlayerRadarChart({
   return (
     <div className={styles.radarContainer}>
       <div className={styles.radarHeader}>
-        <h3>Performance Profile</h3>
+        <h2>Performance Profile</h2>
 
         {/* Comparison Type Selector */}
         <div className={styles.comparisonControls}>

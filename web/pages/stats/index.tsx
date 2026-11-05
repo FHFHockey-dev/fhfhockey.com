@@ -282,12 +282,12 @@ export default function StatsPage({
         description="Explore NHL scoring and goalie leaderboards, player game logs, and team statistics to inform your fantasy hockey decisions."
       />
       {/* Skip link for keyboard users */}
-      <a href="#main-content" className={styles.skipLink}>
-        Skip to main content
-      </a>
-      {/* Page title leads the page, above the team picker */}
-      <div className={styles.pageHeader}>
-        <h1 className={styles.pageTitle}>Player &amp; Team Stats</h1>
+      {/* Page title leads the page, above the team picker; named region so it sits in a landmark */}
+      <section className={styles.pageHeader} aria-labelledby="stats-page-title">
+        <a href="#main-content" className={styles.skipLink}>
+          Skip to main content
+        </a>
+        <h1 id="stats-page-title" className={styles.pageTitle}>Player &amp; Team Stats</h1>
         <p className={styles.pageSubtitle}>
           NHL scoring leaders, goalie statistics, and team performance
         </p>
@@ -297,7 +297,7 @@ export default function StatsPage({
             <PlayerSearchBar />
           </div>
         )}
-      </div>
+      </section>
       {/* Conditional Teams Grid - Mobile vs Desktop */}
       {isMobile ? (
         <MobileTeamList
@@ -389,6 +389,7 @@ export default function StatsPage({
       {isMobile && (
         <div
           className={`${styles.searchSection} ${teamsGridState === "collapsed" ? styles.teamsCollapsed : styles.teamsExpanded}`}
+          role="search"
         >
           <div className={styles.searchBarWrapper}>
             <PlayerSearchBar />
@@ -437,7 +438,7 @@ export default function StatsPage({
         </aside>
 
         {/* Middle Content Section */}
-        <main className={styles.middleContent}>
+        <div className={styles.middleContent}>
           <div className={styles.topRowHero}>
             {/* Hero Section - Clean and Minimal */}
             <section className={styles.heroSection}>
@@ -532,7 +533,7 @@ export default function StatsPage({
             </h2>
             <GoalieShareChart />
           </section>
-        </main>
+        </div>
 
         {/* Right Sidebar - Goaltender Statistics */}
         <aside
