@@ -196,6 +196,11 @@ const POSITION_CATEGORIES = {
 };
 
 // Function to normalize position codes
+// Spelled-out groups for the comparison caption ("vs centers", not "vs Cs").
+const POSITION_PLURALS: Record<string, string> = {
+  C: "centers", LW: "left wings", RW: "right wings", D: "defensemen", G: "goalies",
+};
+
 const normalizePosition = (position: string): string => {
   const pos = position?.toUpperCase();
   // Map old position codes to new ones
@@ -431,14 +436,12 @@ export function PlayerRadarChart({
   const getComparisonDescription = () => {
     const normalizedPos = normalizePosition(player.position);
     switch (comparisonType) {
-      case "position":
-        return `vs ${normalizedPos}s`;
       case "category":
         return `vs ${playerCategory}s`;
       case "league":
-        return isGoalie ? "vs all goalies" : "vs entire league";
+        return isGoalie ? "vs all goalies" : "vs all skaters";
       default:
-        return `vs ${normalizedPos}s`;
+        return `vs ${POSITION_PLURALS[normalizedPos] ?? `${normalizedPos}s`}`;
     }
   };
 
@@ -639,9 +642,11 @@ export function PlayerRadarChart({
             <button
               onClick={() => setShowCalculationInfo(!showCalculationInfo)}
               className={styles.infoButton}
-              title="Show calculation methods"
+              title="How rankings are calculated"
+              aria-label="How rankings are calculated"
+              aria-expanded={showCalculationInfo}
             >
-              <span className={styles.infoIcon}>i</span>
+              <span className={styles.infoIcon} aria-hidden="true">i</span>
             </button>
           </div>
         </div>

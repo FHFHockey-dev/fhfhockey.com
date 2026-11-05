@@ -1426,12 +1426,13 @@
 }
 
 .leaderName {
-  font-size: v.$font-size-sm;
-  color: v.$primary-color;
+  // Names are content, so they read in normal case; the display caps stay on headings.
+  font-size: v.$font-size-base;
+  font-weight: 500;
+  color: v.$text-primary;
   margin-bottom: v.$space-xxs;
   font-family: v.$font-family-condensed;
-  text-transform: uppercase;
-  letter-spacing: 0.1rem;
+  letter-spacing: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2009,12 +2010,11 @@
 }
 
 .mobileLeaderName {
-  font-size: v.$mobile-font-size-sm;
-  color: v.$primary-color;
+  font-size: v.$mobile-font-size-base;
+  color: v.$text-primary;
   font-family: v.$font-family-condensed;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: v.$mobile-letter-spacing-normal;
+  font-weight: 500;
+  letter-spacing: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

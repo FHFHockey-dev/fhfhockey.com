@@ -252,7 +252,7 @@ export default function TeamStatsPage({
           <SurfaceWorkflowLinks
             eyebrow="Team workflow"
             title={`Keep exploring ${teamAbbreviation}`}
-            description="Move between this team dashboard, deployment, matchup, schedule, and trend context without switching to a legacy team route."
+            description="Open this team's splits, lines, starters, schedule and trends."
             links={getTeamSurfaceLinks(teamAbbreviation)}
           />
         </div>

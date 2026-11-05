@@ -483,7 +483,7 @@ export default function StatsPage({
             aria-labelledby="position-filter-heading"
           >
             <h2 id="position-filter-heading" className={styles.filterTitle}>
-              Leaderboard Position
+              Filter by position
             </h2>
             <div
               className={styles.filterButtons}

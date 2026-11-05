@@ -2019,12 +2019,12 @@ export function TeamDashboard({
                               className={`${styles.goalieRole} ${index === 0 ? styles.starter : index === 1 ? styles.backup : styles.reserve}`}
                             >
                               {index === 0
-                                ? "STARTER"
+                                ? "Starter"
                                 : index === 1
-                                  ? "BACKUP"
+                                  ? "Backup"
                                   : index === 2
-                                    ? "THIRD"
-                                    : "R"}
+                                    ? "Third"
+                                    : "Reserve"}
                             </span>
                           </div>
 

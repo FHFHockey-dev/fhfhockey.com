@@ -454,42 +454,29 @@
   flex: 3;
   text-align: center;
 
+  // Colour carries the rating; no glow behind the digits.
   &.excellent {
     color: v.$success-color;
-    text-shadow: 0 0 8px
-      color-mix(in srgb, v.$success-color 30%, transparent 70%);
   }
   &.average {
     color: v.$warning-color;
-    text-shadow: 0 0 8px
-      color-mix(in srgb, v.$warning-color 30%, transparent 70%);
   }
   &.poor {
     color: v.$danger-color;
-    text-shadow: 0 0 8px
-      color-mix(in srgb, v.$danger-color 30%, transparent 70%);
   }
   &.positive {
     color: v.$success-color;
-    text-shadow: 0 0 8px
-      color-mix(in srgb, v.$success-color 30%, transparent 70%);
   }
   &.negative {
     color: v.$danger-color;
-    text-shadow: 0 0 8px
-      color-mix(in srgb, v.$danger-color 30%, transparent 70%);
   }
 
   &.winStreak {
     color: v.$success-color;
-    text-shadow: 0 0 8px
-      color-mix(in srgb, v.$success-color 30%, transparent 70%);
   }
 
   &.lossStreak {
     color: v.$danger-color;
-    text-shadow: 0 0 8px
-      color-mix(in srgb, v.$danger-color 30%, transparent 70%);
   }
 }
 
@@ -1017,35 +1004,34 @@
 }
 
 .goalieName {
-  font-weight: 900;
+  font-weight: 500;
   font-size: v.$font-size-md;
   font-family: v.$font-family-condensed;
-  font-variant: small-caps;
   color: v.$text-primary;
-  letter-spacing: 0.15em;
+  letter-spacing: 0;
 }
 
+// Quiet role label: the role colour tints the text and a hairline, not a neon fill.
 .goalieRole {
-  font-size: v.$font-size-sm;
-  font-weight: 700;
-  padding: v.$space-xs v.$space-sm;
+  --role-color: #{v.$color-grey-medium};
+  font-size: v.$font-size-xs;
+  font-weight: 600;
+  padding: 2px v.$space-sm;
   border-radius: v.$border-radius-sm;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  color: var(--role-color);
+  background: color-mix(in srgb, var(--role-color) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--role-color) 40%, transparent);
 
   &.starter {
-    background: v.$success-color;
-    color: v.$color-black;
+    --role-color: #{v.$success-color};
   }
 
   &.backup {
-    background: v.$warning-color;
-    color: v.$color-black;
+    --role-color: #{v.$warning-color};
   }
 
   &.reserve {
-    background: v.$color-grey-medium;
-    color: v.$color-black;
+    --role-color: #{v.$text-secondary};
   }
 }
 
