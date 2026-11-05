@@ -196,7 +196,7 @@
 }
 .filterButtonActive {
   background: v.$primary-color;
-  color: v.$text-button;
+  color: v.$text-on-primary;
   border-color: v.$primary-color;
   position: relative;
 }
@@ -678,7 +678,7 @@
 
 .filterButtonActive {
   background: v.$primary-color;
-  color: v.$text-button;
+  color: v.$text-on-primary;
   border-color: v.$primary-color;
   font-weight: 600;
 
@@ -1846,7 +1846,7 @@
 
 .mobileTabButtonActive {
   background: v.$primary-color;
-  color: v.$text-button;
+  color: v.$text-on-primary;
 }
 
 .mobileTabPanel {
@@ -1926,7 +1926,7 @@
 
 .mobileCardType {
   background: v.$primary-color;
-  color: v.$text-button;
+  color: v.$text-on-primary;
   padding: v.$mobile-space-xxs v.$mobile-space-xs;
   border-radius: v.$border-radius-sm;
   font-size: v.$mobile-font-size-xs;

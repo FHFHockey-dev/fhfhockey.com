@@ -245,6 +245,15 @@ const GoalieShareChart: React.FC = () => {
   // when the chosen (or default) team has no appearances in this window.
   const shownTeam = goalieStats[selectedTeam] ? selectedTeam : teamsWithData[0];
 
+  // Text alternative for each donut: the slice labels and games played.
+  const describeShare = (
+    teamName: string,
+    chart: { labels: string[]; datasets: { data: number[] }[] }
+  ) =>
+    `${teamName} goalie share: ${chart.labels
+      .map((label, index) => `${label}, ${chart.datasets[0].data[index]} GP`)
+      .join("; ")}`;
+
   const generateChartData = (teamAbbrev: string) => {
     const teamStats = goalieStats[teamAbbrev];
     if (!teamStats || teamStats.goalies.length === 0) {
@@ -403,6 +412,7 @@ const GoalieShareChart: React.FC = () => {
                           <Doughnut
                             data={chartData}
                             options={generateChartOptions(teamAbbrev)}
+                            aria-label={describeShare(teamInfo?.shortName || teamAbbrev, chartData)}
                           />
                         </div>
                       </div>
@@ -477,6 +487,7 @@ const GoalieShareChart: React.FC = () => {
                           <Doughnut
                             data={chartData}
                             options={generateChartOptions(teamAbbrev)}
+                            aria-label={describeShare(teamInfo?.shortName || teamAbbrev, chartData)}
                           />
                         </div>
                       </div>

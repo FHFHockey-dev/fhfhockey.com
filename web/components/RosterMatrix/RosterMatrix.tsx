@@ -415,8 +415,9 @@ export function RosterMatrix({
       {/* Filter Controls */}
       <div className={styles.controls}>
         <div className={styles.filterGroup}>
-          <label>Position:</label>
+          <label htmlFor="roster-position-filter">Position:</label>
           <select
+            id="roster-position-filter"
             value={positionFilter}
             onChange={(e) => setPositionFilter(e.target.value)}
             className={styles.select}

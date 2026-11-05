@@ -1820,7 +1820,7 @@
   z-index: 1;
   display: block;
   padding: 0 5px;
-  color: v.$info-color;
+  color: color-mix(in srgb, #{v.$info-color} 75%, #{v.$color-white});
   background: v.$draft-surface-raised;
   font-size: 10px;
   line-height: 14px;

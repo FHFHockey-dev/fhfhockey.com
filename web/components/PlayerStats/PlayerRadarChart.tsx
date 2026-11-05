@@ -64,6 +64,26 @@ interface PlayerRadarChartProps {
 }
 
 // Define how each stat is calculated and compared
+// Spoken names for the radar's text alternative; the chart labels are
+// abbreviations (P, G, FO%) that screen readers read letter by letter.
+const SPOKEN_STAT_NAMES: Record<string, string> = {
+  points: "Points", goals: "Goals", assists: "Assists", shots: "Shots on goal",
+  shooting_percentage: "Shooting %", plus_minus: "Plus-minus",
+  pp_points: "Power-play points", fow_percentage: "Faceoff win %",
+  toi_per_game: "Time on ice", pp_toi_per_game: "Power-play time on ice",
+  hits: "Hits", blocked_shots: "Blocked shots", takeaways: "Takeaways",
+  giveaways: "Giveaways", wins: "Wins", save_pct: "Save %", saves: "Saves",
+  goals_against_avg: "Goals-against average", shutouts: "Shutouts",
+  quality_start: "Quality starts",
+};
+const spokenStatName = (stat: string) =>
+  SPOKEN_STAT_NAMES[stat] ?? stat.replace(/_/g, " ");
+const ordinal = (n: number) => {
+  const tens = n % 100;
+  if (tens >= 11 && tens <= 13) return `${n}th`;
+  return `${n}${["th", "st", "nd", "rd"][n % 10] ?? "th"}`;
+};
+
 const STAT_CALCULATION_METHODS: Record<string, StatCalculationInfo> = {
   // Basic counting stats (per game)
   points: { method: "per_game", description: "Points per game" },
@@ -637,7 +657,16 @@ export function PlayerRadarChart({
 
       <div className={styles.radarWrapper}>
         {Object.keys(radarData.percentiles).length > 0 ? (
-          <Radar data={radarData} options={options} />
+          <Radar
+            data={radarData}
+            options={options}
+            aria-label={`${player.fullName} percentile ranks: ${selectedStats
+              .map((stat, index) => {
+                const value = radarData.datasets[0].data[index];
+                return `${spokenStatName(stat)} ${value == null ? "unranked" : ordinal(Math.round(value))}`;
+              })
+              .join(", ")}`}
+          />
         ) : (
           <div className={styles.noData}>
             {percentileLoading ? "Calculating rankings..." : "No rankings available for the selected statistics"}

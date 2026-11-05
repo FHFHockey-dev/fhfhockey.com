@@ -233,6 +233,7 @@ $border-soft: rgba($border-secondary, 0.7); // raw divider color for explicit 1p
 $text-primary: $color-grey-text;
 $text-secondary: $color-grey-text-sec;
 $text-button: $color-white;
+$text-on-primary: $color-neutral-950; // 6.4:1 on $primary-color (white is 2.9:1)
 $text-link: $primary-color;
 
 // Chart auxiliary colors

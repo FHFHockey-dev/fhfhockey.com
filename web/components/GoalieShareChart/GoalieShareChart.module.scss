@@ -20,8 +20,8 @@
 
     .spanButton {
       @include v.button-style;
-      background: v.$primary-color;
-      color: v.$text-button;
+      background: transparent;
+      color: v.$text-primary;
       border: 1px solid v.$primary-color;
       padding: v.$space-xs v.$space-md;
       font-weight: 500;
@@ -34,14 +34,12 @@
       cursor: pointer;
 
       &:hover:not(.active) {
-        background: color.adjust(v.$primary-color, $lightness: -10%);
-        border-color: color.adjust(v.$primary-color, $lightness: -10%);
+        background: rgba(v.$primary-color, 0.16);
       }
 
       &.active {
-        background: color.adjust(v.$primary-color, $lightness: -15%);
-        border-color: v.$text-primary;
-        border-width: 1px;
+        background: v.$primary-color;
+        color: v.$text-on-primary;
         font-weight: 600;
       }
     }

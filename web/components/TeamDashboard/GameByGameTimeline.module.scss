@@ -55,13 +55,13 @@
 
   &:hover {
     background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(7, 170, 226, 0.5);
+    border-color: rgba(v.$secondary-color, 0.5);
   }
 
   &.active {
-    background: rgba(7, 170, 226, 0.2);
-    border-color: #07aae2;
-    color: #07aae2;
+    background: rgba(v.$secondary-color, 0.2);
+    border-color: v.$secondary-color;
+    color: v.$secondary-color;
     font-weight: 600;
   }
 
@@ -110,32 +110,32 @@
   }
 
   &.win {
-    --result-color: #00ff87;
+    --result-color: #{v.$success-color};
 
     .gameResult {
-      color: #00ff87;
-      background: rgba(0, 255, 135, 0.1);
-      border: 1px solid rgba(0, 255, 135, 0.2);
+      color: v.$success-color;
+      background: rgba(v.$success-color, 0.1);
+      border: 1px solid rgba(v.$success-color, 0.2);
     }
   }
 
   &.loss {
-    --result-color: #ff6b6b;
+    --result-color: #{v.$color-coral-500};
 
     .gameResult {
-      color: #ff6b6b;
-      background: rgba(255, 107, 107, 0.1);
-      border: 1px solid rgba(255, 107, 107, 0.2);
+      color: v.$color-coral-500;
+      background: rgba(v.$color-coral-500, 0.1);
+      border: 1px solid rgba(v.$color-coral-500, 0.2);
     }
   }
 
   &.otLoss {
-    --result-color: #ffb347;
+    --result-color: #{v.$color-gold-400};
 
     .gameResult {
-      color: #ffb347;
-      background: rgba(255, 179, 71, 0.1);
-      border: 1px solid rgba(255, 179, 71, 0.2);
+      color: v.$color-gold-400;
+      background: rgba(v.$color-gold-400, 0.1);
+      border: 1px solid rgba(v.$color-gold-400, 0.2);
     }
   }
 
@@ -160,8 +160,8 @@
   }
 
   &.selected {
-    border-color: #07aae2;
-    background: rgba(7, 170, 226, 0.1);
+    border-color: v.$secondary-color;
+    background: rgba(v.$secondary-color, 0.1);
   }
 
   @media (max-width: v.$breakpoint-tablet) {
@@ -264,19 +264,19 @@
   transition: width 0.3s ease;
 
   .excellent & {
-    background: linear-gradient(90deg, #00ff87, #00cc6a);
+    background: linear-gradient(90deg, v.$success-color, #00cc6a);
   }
 
   .good & {
-    background: linear-gradient(90deg, #07aae2, #0591c7);
+    background: linear-gradient(90deg, v.$secondary-color, #0591c7);
   }
 
   .poor & {
-    background: linear-gradient(90deg, #ffb347, #ff9800);
+    background: linear-gradient(90deg, v.$color-gold-400, #ff9800);
   }
 
   .terrible & {
-    background: linear-gradient(90deg, #ff6b6b, #ff5252);
+    background: linear-gradient(90deg, v.$color-coral-500, #ff5252);
   }
 }
 
@@ -362,31 +362,31 @@
   color: #ffffff;
 
   &.win {
-    color: #00ff87;
+    color: v.$success-color;
   }
 
   &.loss {
-    color: #ff6b6b;
+    color: v.$color-coral-500;
   }
 
   &.otLoss {
-    color: #ffb347;
+    color: v.$color-gold-400;
   }
 
   &.excellent {
-    color: #00ff87;
+    color: v.$success-color;
   }
 
   &.good {
-    color: #07aae2;
+    color: v.$secondary-color;
   }
 
   &.poor {
-    color: #ffb347;
+    color: v.$color-gold-400;
   }
 
   &.terrible {
-    color: #ff6b6b;
+    color: v.$color-coral-500;
   }
 }
 
@@ -402,7 +402,7 @@
     width: 24px;
     height: 24px;
     border: 2px solid rgba(255, 255, 255, 0.1);
-    border-top: 2px solid #07aae2;
+    border-top: 2px solid v.$secondary-color;
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin-bottom: 0.75rem;

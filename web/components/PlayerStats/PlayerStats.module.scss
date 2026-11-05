@@ -2145,7 +2145,7 @@
       .dayNumber {
         font-size: v.$font-size-xs;
         font-weight: 600;
-        color: v.$text-primary;
+        color: var(--day-ink, #{v.$text-primary});
         margin-bottom: 2px;
       }
       .playoffMarker {

@@ -157,7 +157,7 @@
 
 .seasonInfo {
   font-size: 1rem;
-  color: #aaa;
+  color: v.$text-secondary;
   margin: 0;
   @media (max-width: v.$screen-small-max) {
     font-size: 0.75rem;
@@ -186,7 +186,7 @@
   padding: 8px 12px;
   background: color-mix(in srgb, var(--primary-color) 70%, #000);
   border-radius: 8px;
-  border: 2px solid color-mix(in srgb, var(--primary-color) 70%, #fff);
+  border: 2px solid color-mix(in srgb, var(--primary-color) 70%, v.$color-white);
   min-width: 80px;
 
   @media (max-width: v.$screen-small-max) {
@@ -201,12 +201,13 @@
   .quickStatValue {
     font-size: 1.25rem;
     font-weight: 700;
-    color: color-mix(in srgb, var(--primary-color) 70%, #fff);
+    // 40% keeps the team tint and clears 4.5:1 on every team's tile (PHI lowest).
+    color: color-mix(in srgb, var(--primary-color) 40%, v.$color-white);
     font-family: v.$font-family-secondary, sans-serif;
     margin-bottom: 2px;
 
     @media (max-width: v.$screen-small-max) {
-      color: color-mix(in srgb, var(--primary-color) 20%, #fff);
+      color: color-mix(in srgb, var(--primary-color) 20%, v.$color-white);
       font-size: 0.65rem;
       font-weight: 600;
       margin-bottom: 0;
@@ -217,14 +218,14 @@
 
   .quickStatLabel {
     font-size: 0.75rem;
-    color: #ccc;
+    color: v.$text-primary;
     text-align: center;
     line-height: 1.2;
 
     @media (max-width: v.$screen-small-max) {
       font-size: 0.5rem;
       font-weight: 100;
-      color: color-mix(in srgb, var(--primary-color) 20%, #fff);
+      color: color-mix(in srgb, var(--primary-color) 20%, v.$color-white);
       text-align: left;
       width: 100%;
     }
@@ -232,13 +233,13 @@
 }
 
 .quickStatsLoading {
-  color: #aaa;
+  color: v.$text-secondary;
   font-size: 0.875rem;
   margin-top: 8px;
 }
 
 .quickStatsError {
-  color: #ff6b6b;
+  color: v.$color-coral-500;
   font-size: 0.875rem;
   margin-top: 8px;
 }
@@ -314,7 +315,7 @@
 
 .teamStatsTable th {
   background: #181818;
-  color: #07aae2;
+  color: v.$secondary-color;
   font-weight: 700;
   letter-spacing: 0.05em;
 
@@ -680,7 +681,7 @@
   font-family: v.$font-family-accent, sans-serif;
   font-size: 1.5rem;
   font-weight: 700;
-  color: #07aae2;
+  color: v.$secondary-color;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   flex: 0 0 auto;
@@ -698,7 +699,7 @@
   font-family: v.$font-family-accent, sans-serif;
   font-size: 1.5rem;
   font-weight: 700;
-  color: #07aae2;
+  color: v.$secondary-color;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   flex: 0 0 auto;
@@ -733,14 +734,14 @@
   background: #181818;
   font-family: v.$font-family-primary;
   font-variant: all-small-caps;
-  border: 1.5px solid #07aae2;
+  border: 1.5px solid v.$secondary-color;
   border-radius: 0.5rem;
   min-height: unset;
   height: 100%;
   display: flex;
   justify-content: center;
   font-weight: 700;
-  color: #fff;
+  color: v.$color-white;
   flex-direction: column;
   text-align: left;
   box-sizing: border-box;
@@ -757,7 +758,7 @@
 .lineCombinationsPlayerName {
   font-size: 1rem;
   font-weight: 900;
-  color: #fff;
+  color: v.$color-white;
   margin-bottom: 0.08rem;
 
   @media (max-width: v.$screen-small-max) {
@@ -835,7 +836,7 @@
 .lineCombinationsForwardsLabel {
   font-size: 1.25rem;
   font-weight: 900;
-  color: #07aae2;
+  color: v.$secondary-color;
   margin-bottom: 0.2rem;
   letter-spacing: 0.08em;
 
@@ -867,7 +868,7 @@
 }
 .lineCombinationsGridDivider {
   width: 2px;
-  background: linear-gradient(to bottom, #07aae2 60%, #ffe066 100%);
+  background: linear-gradient(to bottom, v.$secondary-color 60%, #ffe066 100%);
   height: 100%;
   justify-self: center;
   align-self: stretch;
@@ -912,7 +913,7 @@
   text-transform: uppercase;
   font-size: 1rem;
   font-weight: 900;
-  color: #fff;
+  color: v.$color-white;
   letter-spacing: 0.08em;
   text-align: center;
   margin-bottom: 0.5rem;
@@ -968,7 +969,7 @@
   justify-content: flex-start;
   font-weight: 700;
   font-size: 1.1rem;
-  color: #fff;
+  color: v.$color-white;
   flex-direction: column;
   text-align: left;
   box-sizing: border-box;

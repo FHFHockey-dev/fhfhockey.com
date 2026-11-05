@@ -331,11 +331,7 @@ export default function StatsPage({
                 </span>
               </div>
               {/* Desktop team grid with containers and abbreviations */}
-              <div
-                className={styles.teamList}
-                role="list"
-                aria-label="Teams list"
-              >
+              <nav className={styles.teamList} aria-label="Teams">
                 {teams.map((team) => (
                   <Link
                     // team_id is the canonical unique identifier; previously used non-existent team.id
@@ -370,7 +366,7 @@ export default function StatsPage({
                     </span>
                   </Link>
                 ))}
-              </div>
+              </nav>
             </div>
           </div>
         </div>

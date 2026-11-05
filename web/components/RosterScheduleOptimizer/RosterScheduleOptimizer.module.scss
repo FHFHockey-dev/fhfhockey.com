@@ -585,7 +585,7 @@ details.alternative .candidateRow button { width: auto; }
 /* First visit with no manual roster: one clear next step instead of an empty grid. */
 .emptyRoster { display: grid; justify-items: start; gap: 6px; margin-bottom: v.$space-sm; padding: 12px 14px; border: 1px solid rgba(v.$primary-color, 0.45); border-radius: s.$radius-card; background: rgba(v.$primary-color, 0.06); color: s.$ink; font-size: s.$text-sm; line-height: 1.4; }
 .emptyRoster strong { color: s.$ink-strong; font-size: s.$text-md; }
-.emptyRoster button { min-height: 36px; margin-top: 4px; padding: 6px 14px; border: 0; border-radius: s.$radius-small; background: v.$primary-color; color: v.$text-button; font-weight: s.$weight-bold; cursor: pointer; }
+.emptyRoster button { min-height: 36px; margin-top: 4px; padding: 6px 14px; border: 0; border-radius: s.$radius-small; background: v.$primary-color; color: v.$text-on-primary; font-weight: s.$weight-bold; cursor: pointer; }
 .confirmGate { display: flex; flex-wrap: wrap; align-items: center; gap: v.$space-xs v.$space-sm; margin-bottom: v.$space-sm; padding: 5px 8px; border: v.$border-subtle; border-left: 4px solid v.$warning-color; border-radius: 4px s.$radius-small s.$radius-small 4px; background: v.$draft-surface; font-size: s.$text-sm; line-height: 1.4; }
 // UI pass step 1: the command bar reads as three clusters. Context (league, sync, refresh, week) is one joined
 // control; secondary actions are quiet so Save stands out; success messages fade out as a toast.

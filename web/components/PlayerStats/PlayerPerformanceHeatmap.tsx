@@ -12,6 +12,7 @@ import {
   endOfYear
 } from "date-fns";
 import styles from "./PlayerStats.module.scss";
+import { contrast } from "lib/socialShare/teamNeon";
 import { useMissedGames } from "hooks/useMissedGames";
 import {
   PlayerPerformanceHeatmapProps,
@@ -174,6 +175,10 @@ const calculatePerformanceLevel = (
   if (averagePercentile >= 10) return "poor";
   return "very-poor";
 };
+
+// Day numbers sit on the heat colour, so pick whichever ink reads best.
+const inkOn = (background: string) =>
+  contrast("#ffffff", background) >= contrast("#101214", background) ? "#ffffff" : "#101214";
 
 // Keep existing color and label functions (they work well)
 const getPerformanceColor = (level: PerformanceLevel): string => {
@@ -1488,6 +1493,9 @@ export function PlayerPerformanceHeatmap({
                               : "transparent",
                         opacity: day.isCurrentMonth ? 1 : 0.3,
                         gridColumnStart: day.gridPosition,
+                        ...(day.game && day.isCurrentMonth && !day.isMissedGame && !day.isFutureGame
+                          ? { "--day-ink": inkOn(getPerformanceColor(day.performanceLevel)) }
+                          : {}),
                         // Upcoming games are dashed so they differ by shape,
                         // not only colour.
                         border: day.isMissedGame
