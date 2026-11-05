@@ -1210,7 +1210,8 @@
 .componentNegative {
   background: rgba(v.$danger-color, 0.14);
   border: 1px solid rgba(v.$danger-color, 0.28);
-  color: v.$danger-color;
+  // A touch lighter than $danger-color so it clears 4.5:1 on the highlighted row too.
+  color: color-mix(in srgb, #{v.$danger-color} 80%, #{v.$color-white});
 }
 
 .componentNeutral {

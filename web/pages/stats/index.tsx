@@ -286,7 +286,7 @@ export default function StatsPage({
         Skip to main content
       </a>
       {/* Page title leads the page, above the team picker */}
-      <header className={styles.pageHeader}>
+      <div className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>Player &amp; Team Stats</h1>
         <p className={styles.pageSubtitle}>
           NHL scoring leaders, goalie statistics, and team performance
@@ -297,7 +297,7 @@ export default function StatsPage({
             <PlayerSearchBar />
           </div>
         )}
-      </header>
+      </div>
       {/* Conditional Teams Grid - Mobile vs Desktop */}
       {isMobile ? (
         <MobileTeamList

@@ -2,6 +2,18 @@
 @use "styles/vars" as v;
 @use "sass:math";
 
+// Performance heat scale (calendar + season grid). Diverging around a neutral
+// "average": warm arm below, blue arm above, each validated as an ordinal ramp
+// on the dark surface. Keep in step with getPerformanceColor in
+// PlayerPerformanceHeatmap.tsx.
+$perf-very-poor: #ef7a5a;
+$perf-poor: #c2502f;
+$perf-below-average: #8a3b2b;
+$perf-average: #4b4f55;
+$perf-good: #184f95;
+$perf-excellent: #256abf;
+$perf-elite: #5598e7;
+
 // =============================================================================
 // ANIMATIONS
 // =============================================================================
@@ -2536,39 +2548,40 @@
             }
 
             // Performance level colors
+
             &.elite {
-              background-color: rgba(26, 93, 26, 0.45);
-              border-color: rgba(16, 185, 129, 0.45);
+              background-color: $perf-elite;
+              border-color: rgba(v.$color-white, 0.08);
             }
 
             &.excellent {
-              background-color: rgba(45, 143, 45, 0.45);
-              border-color: rgba(34, 197, 94, 0.45);
+              background-color: $perf-excellent;
+              border-color: rgba(v.$color-white, 0.08);
             }
 
             &.good {
-              background-color: rgba(79, 184, 79, 0.45);
-              border-color: rgba(131, 204, 22, 0.45);
+              background-color: $perf-good;
+              border-color: rgba(v.$color-white, 0.08);
             }
 
             &.average {
-              background-color: rgba(133, 201, 133, 0.45);
-              border-color: rgba(234, 179, 8, 0.45);
+              background-color: $perf-average;
+              border-color: rgba(v.$color-white, 0.08);
             }
 
             &.belowAverage {
-              background-color: rgba(255, 215, 0, 0.45);
-              border-color: rgba(249, 115, 22, 0.45);
+              background-color: $perf-below-average;
+              border-color: rgba(v.$color-white, 0.08);
             }
 
             &.poor {
-              background-color: rgba(255, 140, 66, 0.45);
-              border-color: rgba(239, 68, 68, 0.45);
+              background-color: $perf-poor;
+              border-color: rgba(v.$color-white, 0.08);
             }
 
             &.veryPoor {
-              background-color: rgba(211, 47, 47, 0.45);
-              border-color: rgba(220, 38, 38, 0.45);
+              background-color: $perf-very-poor;
+              border-color: rgba(v.$color-white, 0.08);
             }
 
             &.noData {
@@ -2721,7 +2734,7 @@
             }
 
             &.playoff {
-              background-color: #4fb84f;
+              background-color: $perf-good;
               border: 2px solid v.$warning-color;
 
               &::before {
@@ -2869,39 +2882,40 @@
           }
 
           // Performance level colors
+
           &.elite {
-            background-color: rgba(26, 93, 26, 0.45);
-            border-color: rgba(16, 185, 129, 0.45);
+            background-color: $perf-elite;
+            border-color: rgba(v.$color-white, 0.08);
           }
 
           &.excellent {
-            background-color: rgba(45, 143, 45, 0.45);
-            border-color: rgba(34, 197, 94, 0.45);
+            background-color: $perf-excellent;
+            border-color: rgba(v.$color-white, 0.08);
           }
 
           &.good {
-            background-color: rgba(79, 184, 79, 0.45);
-            border-color: rgba(131, 204, 22, 0.45);
+            background-color: $perf-good;
+            border-color: rgba(v.$color-white, 0.08);
           }
 
           &.average {
-            background-color: rgba(133, 201, 133, 0.45);
-            border-color: rgba(234, 179, 8, 0.45);
+            background-color: $perf-average;
+            border-color: rgba(v.$color-white, 0.08);
           }
 
           &.belowAverage {
-            background-color: rgba(255, 215, 0, 0.45);
-            border-color: rgba(249, 115, 22, 0.45);
+            background-color: $perf-below-average;
+            border-color: rgba(v.$color-white, 0.08);
           }
 
           &.poor {
-            background-color: rgba(255, 140, 66, 0.45);
-            border-color: rgba(239, 68, 68, 0.45);
+            background-color: $perf-poor;
+            border-color: rgba(v.$color-white, 0.08);
           }
 
           &.veryPoor {
-            background-color: rgba(211, 47, 47, 0.45);
-            border-color: rgba(220, 38, 38, 0.45);
+            background-color: $perf-very-poor;
+            border-color: rgba(v.$color-white, 0.08);
           }
 
           &.noData {
@@ -3053,7 +3067,7 @@
             }
 
             &.playoff {
-              background-color: #4fb84f;
+              background-color: $perf-good;
               border: 2px solid v.$warning-color;
 
               &::before {

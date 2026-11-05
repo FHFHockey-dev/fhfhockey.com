@@ -183,13 +183,15 @@ const inkOn = (background: string) =>
 // Keep existing color and label functions (they work well)
 const getPerformanceColor = (level: PerformanceLevel): string => {
   const colorMap = {
-    elite: "#1a5d1a",
-    excellent: "#2d8f2d",
-    good: "#4fb84f",
-    average: "#85c985",
-    "below-average": "#ffd700",
-    poor: "#ff8c42",
-    "very-poor": "#d32f2f",
+    // Diverging scale: warm below a neutral average, blue above. Mirrors the
+    // $perf-* tokens in PlayerStats.module.scss.
+    elite: "#5598e7",
+    excellent: "#256abf",
+    good: "#184f95",
+    average: "#4b4f55",
+    "below-average": "#8a3b2b",
+    poor: "#c2502f",
+    "very-poor": "#ef7a5a",
     "no-data": "#2a2a2a"
   };
   return colorMap[level];
@@ -1274,38 +1276,18 @@ export function PlayerPerformanceHeatmap({
 
           <div className={styles.contributionLegend}>
             <div className={styles.legendSection}>
-              <span className={styles.legendLabel}>Less</span>
+              <span className={styles.legendLabel}>Worse</span>
               <div className={styles.legendScale}>
-                <div
-                  className={styles.scaleItem}
-                  style={{ backgroundColor: "#2a2a2a" }}
-                />
-                <div
-                  className={styles.scaleItem}
-                  style={{ backgroundColor: "#ff8c42" }}
-                />
-                <div
-                  className={styles.scaleItem}
-                  style={{ backgroundColor: "#ffd700" }}
-                />
-                <div
-                  className={styles.scaleItem}
-                  style={{ backgroundColor: "#85c985" }}
-                />
-                <div
-                  className={styles.scaleItem}
-                  style={{ backgroundColor: "#4fb84f" }}
-                />
-                <div
-                  className={styles.scaleItem}
-                  style={{ backgroundColor: "#2d8f2d" }}
-                />
-                <div
-                  className={styles.scaleItem}
-                  style={{ backgroundColor: "#1a5d1a" }}
-                />
+                {(["very-poor", "poor", "below-average", "average", "good", "excellent", "elite"] as const).map((level) => (
+                  <div
+                    key={level}
+                    className={styles.scaleItem}
+                    style={{ backgroundColor: getPerformanceColor(level) }}
+                    title={getPerformanceLevelLabel(level)}
+                  />
+                ))}
               </div>
-              <span className={styles.legendLabel}>More</span>
+              <span className={styles.legendLabel}>Better</span>
             </div>
 
             <div className={styles.legendSpecial}>
@@ -1403,7 +1385,7 @@ export function PlayerPerformanceHeatmap({
               <div
                 className={styles.legendColor}
                 style={{
-                  backgroundColor: "#4fb84f",
+                  backgroundColor: getPerformanceColor("good"),
                   border: "2px solid #eab308",
                   width: 12,
                   height: 12
