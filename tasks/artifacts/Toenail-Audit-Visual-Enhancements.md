@@ -14,7 +14,7 @@ Medium- and low-priority changes found during the toenail fixes and the skill pa
 | /stats/team/[abbr] | Goaltending card stat tiles (`TeamDashboard.module.scss`) | SV% is always gold and GAA always green, whatever the values (89.9% SV looks like a highlight). Use neutral values plus a league-rank note. | Medium | Toenail pass |
 | BLSH (live lists + detail) | `web/lib/buyLowSellHigh/displayProfile.ts` `freshnessText` / `ageText` | Same "1 days" plural slip in the live mapper. Fixed only in the trade fixture (`components/blshTrade/fixtureEvidence.ts`), because `displayProfile.ts` has uncommitted work from the BLSH lane. Hand to that lane. | Medium | Toenail pass |
 | /blog | `.postPage … .portableText` tree (`web/styles/Post.module.scss`) | Unused nested styles (~120 lines); articles render through `ArticleReader` `.readerCanvas`. Remove in a CSS cleanup. | Low | Toenail pass |
-| /stats | Player search field between the team grid and the columns | Orphaned, unlabelled input floating between sections; fold it into the page header or the team-grid module. | Medium | design-critique |
+| /stats | Player search field between the team grid and the columns | ~~Orphaned input between sections.~~ Resolved in frontend-design: desktop search sits in the new page header; phones keep the sticky bar. | Done | design-critique |
 | /stats desktop | Leaderboard Position pills | ~~Tiny pills wrap "Goalie" onto a second line.~~ Resolved in ux-copy: the shorter "Filter by position" heading lets the pills fit on one row. | Done | design-critique |
 | /stats desktop | Middle column | The hero card and the filter card leave large empty space beside the dense side columns. Tighten the hero, or move the filter into the hero. | Low | design-critique |
 | /stats | `.quickStatIcon` (dot icon box) | Decorative icon box with a single dot takes a third of each Key Metrics card and forces two-line labels. Remove it, or replace it with a meaningful glyph. | Low | design-critique |
@@ -29,8 +29,8 @@ Medium- and low-priority changes found during the toenail fixes and the skill pa
 | Mobile menu | Trends / Variance Skaters icons | Both use the same ↗ trend icon; give Variance its own glyph. | Medium | design-critique |
 | Mobile menu | "Current" label on the active link | Repeats what the highlight and aria-current already say; could drop it. | Low | design-critique |
 | Mobile menu | Analytics group subtitle | Tools and Community show a subtitle line; Analytics (expanded) doesn't. Keep the subtitle when expanded for consistency. | Low | design-critique |
-| /stats/player mobile | Lineup Deployment | 3×4 grid of mostly empty tiles with one "100%". Collapse it to the occupied lines, or show a compact list. | Medium | design-critique |
-| /stats/player mobile | Season activity heatmap | Tiny cells; month labels collide ("SepOct"). | Medium | design-critique |
+| /stats/player mobile | Lineup Deployment | ~~3×4 grid of unlabelled squares.~~ Resolved in frontend-design: labelled depth chart with 40px cells. Collapsing unused lines is still an option. | Done | design-critique |
+| /stats/player mobile | Season activity heatmap | ~~Tiny cells; month labels collide.~~ Resolved in frontend-design: fluid cells (8–22px) and one label per month. | Done | design-critique |
 | /stats/player | Radar chart | The top "100%" ring label is clipped by the P axis point. | Low | design-critique |
 | /stats/player/8478402 | FO% comparison data | McDavid (C) has no FO% percentile ("Unavailable"). This looks like a data-pipeline gap, not a design issue; check the faceoff source for the radar comparison. | Medium | design-critique |
 | /stats/team desktop | Team Leaders column | Large dead gaps between the Points, Goals and BSH sections (the cards stretch to row height). | Medium | design-critique |
@@ -68,3 +68,7 @@ Medium- and low-priority changes found during the toenail fixes and the skill pa
 | /stats/team | Team dashboard stat values | Weight 900 digits (with the glow now gone). 700 would let the coloured rank badges share the emphasis. TJ kept 900 for now. | Low | unslop |
 | /stats/team | "47.1% OF STARTS" and other uppercase tracked labels in goalie cards / stat tiles (`statLabel`, `goalieStatLabel` ~50×) | Small tracked caps under every number. Sentence-case muted labels would calm the grid. They're spread across the team dashboard, so this is one sweep. | Medium | unslop |
 | /draft-dashboard | Scoreboard ticker | Reviewed and kept: it's an intentional arena ticker with pause, hover/focus pause and reduced-motion support. | — | unslop |
+| /stats | Key Metrics "hero" card | With the title gone, the card is three stat tiles under a "KEY METRICS" heading; the dot icon boxes (already logged) still take a third of each tile. Make them a slim stat row. | Medium | frontend-design |
+| /stats/player | Performance calendar | Four months of 7×6 grids, with Dec mostly dashed "upcoming" cells, take about 900px. Show the current and previous month by default, with older and future months behind a toggle. | Medium | frontend-design |
+| /stats/player | Performance Insights tiles | Five tiles in three tints (green/red/blue outlines) with mixed-size values. Use one tile style; let the value colour carry good/bad. | Low | frontend-design |
+| /buy-low-sell-high/trade | Page composition | The decision ("You give up about 6.2 league points") sits under two dense evidence cards. Lift the comparison summary above the player cards. That's for the BLSH lane (layout plus wording). | Medium | frontend-design |

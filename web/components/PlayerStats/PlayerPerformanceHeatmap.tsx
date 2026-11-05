@@ -335,6 +335,10 @@ function ContributionGraph({
     }> = [];
 
     // Process days into complete weeks (always 7 days each, Monday to Sunday)
+    // Month labels: one per month, on the week where it starts. A label that
+    // would sit within two weeks of the next one is dropped so they don't collide.
+    let lastLabelledMonth: string | undefined;
+    let lastLabelIndex = -1;
     for (let i = 0; i < allDays.length; i += 7) {
       const weekDays = allDays.slice(i, i + 7);
 
@@ -383,13 +387,14 @@ function ContributionGraph({
       if (weekStartDay) {
         const monthName = format(weekStartDay, "MMM");
 
-        // Show month name if this is the first week or if the month changed
-        if (
-          weeks.length === 0 ||
-          (weeks.length > 0 && weeks[weeks.length - 1].monthName !== monthName)
-        ) {
+        if (monthName !== lastLabelledMonth) {
+          if (lastLabelIndex >= 0 && weeks.length - lastLabelIndex < 3) {
+            weeks[lastLabelIndex].monthName = undefined;
+          }
           weekData.monthName = monthName;
           weekData.isFirstWeekOfMonth = true;
+          lastLabelledMonth = monthName;
+          lastLabelIndex = weeks.length;
         }
       }
 

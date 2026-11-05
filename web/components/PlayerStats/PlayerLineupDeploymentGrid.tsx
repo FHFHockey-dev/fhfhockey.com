@@ -65,14 +65,24 @@ function renderCell(
   );
 }
 
+// Axis labels turn the cells into a readable depth chart (line × slot).
 function renderGrid(
   rowByCode: Map<string, PlayerLineupDeploymentTally>,
   grid: readonly (readonly string[])[],
-  className: string
+  className: string,
+  columnLabels: readonly string[],
+  rowLabels?: readonly string[]
 ) {
   return (
     <div className={className}>
-      {grid.flatMap((line) => line.map((code) => renderCell(rowByCode, code)))}
+      {rowLabels && <span />}
+      {columnLabels.map((label) => (
+        <span key={label} className={styles.lcpgAxis}>{label}</span>
+      ))}
+      {grid.flatMap((line, index) => [
+        ...(rowLabels ? [<span key={`row-${index}`} className={`${styles.lcpgAxis} ${styles.lcpgRowAxis}`}>{rowLabels[index]}</span>] : []),
+        ...line.map((code) => renderCell(rowByCode, code)),
+      ])}
     </div>
   );
 }
@@ -102,15 +112,15 @@ export function PlayerLineupDeploymentGrid({
       <div className={styles.lcpgLayout}>
         {showForwards && <div>
           <div className={styles.lcpgGroupLabel}>Forwards</div>
-          {renderGrid(rowByCode, FORWARD_GRID, styles.lcpgForwardGrid)}
+          {renderGrid(rowByCode, FORWARD_GRID, styles.lcpgForwardGrid, ["LW", "C", "RW"], ["L1", "L2", "L3", "L4"])}
         </div>}
         {showDefense && <div>
           <div className={styles.lcpgGroupLabel}>Defense</div>
-          {renderGrid(rowByCode, DEFENSE_GRID, styles.lcpgDefenseGrid)}
+          {renderGrid(rowByCode, DEFENSE_GRID, styles.lcpgDefenseGrid, ["LD", "RD"], ["P1", "P2", "P3"])}
         </div>}
         <div>
           <div className={styles.lcpgGroupLabel}>Power Play</div>
-          {renderGrid(rowByCode, POWER_PLAY_GRID, styles.lcpgPowerPlayGrid)}
+          {renderGrid(rowByCode, POWER_PLAY_GRID, styles.lcpgPowerPlayGrid, ["PP1", "PP2"])}
         </div>
       </div>
     </section>

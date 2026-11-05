@@ -516,16 +516,32 @@
 }
 
 .lcpgForwardGrid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: auto repeat(3, minmax(0, 1fr));
 }
 
-.lcpgDefenseGrid,
+.lcpgDefenseGrid {
+  grid-template-columns: auto repeat(2, minmax(0, 1fr));
+}
+
 .lcpgPowerPlayGrid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.lcpgAxis {
+  font-size: v.$font-size-xs;
+  font-weight: 500;
+  color: v.$text-secondary;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.lcpgRowAxis {
+  align-self: center;
+  padding-right: v.$space-xxs;
+}
+
 .lcpgCell {
-  aspect-ratio: 1;
+  height: 40px;
   min-width: 0;
   display: flex;
   align-items: center;
@@ -2765,10 +2781,17 @@
 // =============================================================================
 
 .contributionGraph {
+  container-type: inline-size;
+
   .contributionGrid {
-    // Single owner of activity-grid geometry: fixed-size cells; long seasons
-    // scroll inside the grid instead of growing cells with the page width.
-    --cell-size: 14px;
+    // Single owner of activity-grid geometry. Cells size to fit every week in
+    // view: up to 22px early in the season, shrinking (min 8px) as weeks are
+    // added. --total-weeks and --gap-size are set inline by the component.
+    --cell-size: clamp(
+      8px,
+      calc((100cqi - 2.5rem) / var(--total-weeks, 26) - var(--gap-size, 2px)),
+      22px
+    );
     width: 100%;
 
     .daysLabels {
@@ -2806,7 +2829,9 @@
           height: 20px;
           display: flex;
           align-items: center;
-          justify-content: center;
+          // Labels start at their week and run right, like a calendar strip.
+          justify-content: flex-start;
+          overflow: visible;
 
           .monthName {
             font-size: v.$font-size-xs;
@@ -2822,14 +2847,10 @@
         // PERFECT SQUARE CONTRIBUTION DAYS - Single consolidated definition
         .contributionDay,
         .emptyDay {
-          // CRITICAL: Perfect square sizing
-          width: var(--cell-size);
-          height: var(--cell-size);
-
-          // Remove all flex-based sizing that was causing rectangles
-
-          // Remove aspect-ratio as we're using fixed sizes
-          aspect-ratio: unset;
+          // Square cells that take the week column's fluid width (--cell-size).
+          width: 100%;
+          height: auto;
+          aspect-ratio: 1;
 
           // Styling
           border-radius: 2px; // Small radius for crisp squares
@@ -3091,13 +3112,9 @@
 // RESPONSIVE BREAKPOINTS FOR CONTRIBUTION GRAPH
 // =============================================================================
 
-// Breakpoints only change the cell size; geometry rules stay in one place.
+// Cell size is fluid (see .contributionGrid); breakpoints only shrink the legend.
 @media (max-width: v.$screen-small-max) {
   .contributionGraph {
-    .contributionGrid {
-      --cell-size: 12px;
-    }
-
     .contributionLegend {
       .legendSection .legendScale .scaleItem,
       .legendSpecial .specialItem .specialIndicator {
@@ -3105,12 +3122,6 @@
         height: 10px;
       }
     }
-  }
-}
-
-@media (min-width: v.$screen-large) {
-  .contributionGraph .contributionGrid {
-    --cell-size: 16px;
   }
 }
 

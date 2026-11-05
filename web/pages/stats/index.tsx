@@ -285,6 +285,19 @@ export default function StatsPage({
       <a href="#main-content" className={styles.skipLink}>
         Skip to main content
       </a>
+      {/* Page title leads the page, above the team picker */}
+      <header className={styles.pageHeader}>
+        <h1 className={styles.pageTitle}>Player &amp; Team Stats</h1>
+        <p className={styles.pageSubtitle}>
+          NHL scoring leaders, goalie statistics, and team performance
+        </p>
+        {/* Desktop: search sits in the header. Phones keep the sticky bar below the logo strip. */}
+        {!isMobile && (
+          <div className={styles.headerSearch}>
+            <PlayerSearchBar />
+          </div>
+        )}
+      </header>
       {/* Conditional Teams Grid - Mobile vs Desktop */}
       {isMobile ? (
         <MobileTeamList
@@ -372,14 +385,16 @@ export default function StatsPage({
         </div>
       )}
 
-      {/* Search Bar Section - Dynamic positioning based on teams grid state */}
-      <div
-        className={`${styles.searchSection} ${isMobile ? (teamsGridState === "collapsed" ? styles.teamsCollapsed : styles.teamsExpanded) : ""}`}
-      >
-        <div className={styles.searchBarWrapper}>
-          <PlayerSearchBar />
+      {/* Search Bar Section - Dynamic positioning based on teams grid state (phones) */}
+      {isMobile && (
+        <div
+          className={`${styles.searchSection} ${teamsGridState === "collapsed" ? styles.teamsCollapsed : styles.teamsExpanded}`}
+        >
+          <div className={styles.searchBarWrapper}>
+            <PlayerSearchBar />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Main Layout with Sidebars */}
       <div className={styles.mainLayout} id="main-content" role="main">
@@ -426,15 +441,6 @@ export default function StatsPage({
           <div className={styles.topRowHero}>
             {/* Hero Section - Clean and Minimal */}
             <section className={styles.heroSection}>
-              <div className={styles.heroContent}>
-                <h1 className={styles.heroTitle}>Player &amp; Team Stats</h1>
-
-                <p className={styles.heroSubtitle}>
-                  NHL scoring leaders, goalie statistics, and team performance
-                </p>
-                {/* PlayerSearchBar moved to sticky section above */}
-              </div>
-
               {/* Quick Stats - Bento Box Layout */}
               <section className={styles.quickStatsSection}>
                 <h2 className={styles.sectionTitle}>Key Metrics</h2>

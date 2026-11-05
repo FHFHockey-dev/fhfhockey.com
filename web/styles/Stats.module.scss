@@ -348,6 +348,46 @@
   padding: 0;
 }
 
+// Page header: the title opens the page, left-aligned, in the outlined display face.
+.pageHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: v.$space-md;
+  row-gap: v.$space-xxs;
+  padding: v.$space-md 0 v.$space-lg;
+}
+
+.pageTitle {
+  margin: 0;
+  font-family: v.$font-family-accent;
+  font-size: v.$font-size-xl;
+  font-weight: 700;
+  line-height: 1.1;
+  color: v.$text-primary;
+
+  @media (max-width: v.$breakpoint-mobile-max) {
+    font-size: v.$mobile-font-size-xl;
+  }
+}
+
+.pageSubtitle {
+  margin: 0;
+  font-size: v.$font-size-sm;
+  color: v.$text-secondary;
+}
+
+.headerSearch {
+  margin-left: auto;
+  width: min(360px, 100%);
+  align-self: center;
+
+  // PlayerSearchBar adds a standalone bottom margin; the header row has its own spacing.
+  > div {
+    margin-bottom: 0 !important;
+  }
+}
+
 .heroSection {
   @include v.component-wrapper;
   width: 100%;
