@@ -100,7 +100,7 @@ test("goalie of the period: Category Counts and the TGV grade stay under their o
   await expect(page.getByTestId("tgv-existing")).toHaveCount(0);
   await expect(page.getByTestId("board-best")).toContainText("TGV grade (existing method)");
   await expect(page.getByTestId("goalie-period-adp")).toContainText("Counted as undrafted (200)");
-  await expect(page.getByTestId("post-evidence")).toContainText("Categories: wins,saves,svPct,gaa,shutouts");
+  await expect(page.getByTestId("post-evidence")).toContainText("Categories: W, SV, SV%, GAA, SO");
   await download(page);
 });
 

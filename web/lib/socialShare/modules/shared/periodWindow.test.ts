@@ -127,7 +127,7 @@ describe("period fields and read", () => {
   it("names the four fields and keeps them off the settings form", () => {
     const fields = periodWindowFields({ mode: "any-week", options: [{ value: "matchup", label: "Matchup" }, { value: "custom", label: "Custom" }] });
     expect(fields.map(field => [field.id, field.default, field.panelOnly])).toEqual([["period", "matchup", true], ["week", null, true], ["start", null, true], ["end", null, true]]);
-    expect(fields[1].label).toBe("Week (blank is the current)");
+    expect([fields[1].label, fields[1].blank]).toEqual(["Week", "the current"]);
   });
   it("reads one season's rows, with the season as text, and the loaders' cutoff", async () => {
     const calls: unknown[][] = [];

@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element -- The examples are already optimized WebP files; next/image would add Vercel image optimization runs for no gain. */
 import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
 import Link from "next/link";
-import { LANDING_CATEGORIES, LANDING_DAYS, landingCard, landingCardHref, landingCardImage, landingDaySections, landingDayStatus, landingToday, landingWeekStart, readLandingChecklist, writeLandingChecklist, type LandingSection, type PostedUnavailable, type PostedWeek } from "lib/socialShare/landingCatalog";
+import { LANDING_CATEGORIES, LANDING_DAYS, landingCard, landingCardHref, landingCardImage, landingDaySections, landingDayStatus, landingToday, landingWeekStart, readLandingChecklist, writeLandingChecklist, type LandingDayStatus, type LandingSection, type PostedUnavailable, type PostedWeek } from "lib/socialShare/landingCatalog";
 import { fetchPostedWeek } from "lib/socialShare/postedWeekFetch";
 import { SHARE_TIME_ZONE } from "lib/socialShare/types";
 import styles from "./SocialShare.module.scss";
@@ -9,11 +9,26 @@ import landing from "./ShareLanding.module.scss";
 
 const SORT_KEY = "fhfh-social-share-landing-sort", DAYS_KEY = "fhfh-social-share-landing-days";
 const IMAGE_WIDTH = 540, IMAGE_HEIGHT = 540;
-const STATUS_MARK = { done: "✅", missed: "❌", notYet: "❌", upcoming: "–", untracked: "–", noRecord: "–" };
 const HAND_TEXT = { done: "marked done", missed: "not marked", notYet: "not marked", upcoming: "not here yet", untracked: "not here yet", noRecord: "not here yet" };
 const POSTED_TEXT = { done: "posted", missed: "no post recorded", notYet: "not yet", upcoming: "not here yet", untracked: "before tracking began", noRecord: "no record" };
 const seenDate = new Intl.DateTimeFormat("en-US", { timeZone: SHARE_TIME_ZONE, month: "short", day: "numeric" });
 type Sort = "category" | "day";
+
+/** A day's mark: a drawn check for done, a cross for missed or not yet, a dash otherwise (TJ, 2026-11-06: no emoji). */
+function DayMark({ status }: { status: LandingDayStatus }) {
+  if (status === "done") return <svg className={landing.mark} data-mark="done" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" /></svg>;
+  if (status === "missed" || status === "notYet") return <svg className={landing.mark} data-mark="missed" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" /></svg>;
+  return <span className={landing.mark} data-mark="none" aria-hidden="true">–</span>;
+}
+
+/** A one-line key for the marks. Visual help only: each day already says its state in its own label. */
+function StripKey({ posted }: { posted: boolean }) {
+  return <p className={landing.key} aria-hidden="true" data-testid="landing-strip-key">
+    <span><DayMark status="done" />{posted ? "posted" : "marked done"}</span>
+    <span><DayMark status="missed" />{posted ? "no post yet" : "not marked"}</span>
+    <span><DayMark status="upcoming" />not here yet</span>
+  </p>;
+}
 
 // Storage can be blocked or empty; the page works without it and simply remembers nothing.
 const readStored = (key: string) => { try { return window.localStorage.getItem(key); } catch { return null; } };
@@ -46,11 +61,12 @@ function PostedStrip({ posted, today }: { posted: PostedWeek; today: string | nu
       {LANDING_DAYS.map(day => {
         const status = landingDayStatus(day.id, today, new Set(), posted), count = posted.days.find(entry => entry.id === day.id)?.posts ?? 0;
         return <div key={day.id} role="listitem" className={`${landing.stripDay} ${landing.postedDay}`} data-testid={`landing-strip-${day.id}`} data-status={status} data-today={day.id === today || undefined} aria-label={`${day.label}${day.id === today ? " (today)" : ""}: ${POSTED_TEXT[status]}${count > 1 ? `, ${count} posts` : ""}`}>
-          <span>{day.label}</span><span aria-hidden="true">{STATUS_MARK[status]}</span>
+          <span>{day.label}</span><DayMark status={status} />
           {(status === "notYet" || status === "noRecord") && <span className={landing.dayNote} aria-hidden="true">{POSTED_TEXT[status]}</span>}
         </div>;
       })}
     </div>
+    <StripKey posted />
     <p className={landing.postedCards} data-testid="landing-posted-cards">
       <span>Posts by card, this week:</span>
       {posted.cards.map(card => <span key={card.card}>{card.name} {card.count}</span>)}
@@ -70,12 +86,24 @@ function Section({ section }: { section: LandingSection }) {
     target.querySelector("a")?.focus({ preventScroll: true });
   };
   const headingId = `landing-heading-${section.id}`;
+  // The card chips only help when the row scrolls past its edge; a row that fits already shows every card.
+  const row = useRef<HTMLDivElement>(null);
+  const [overflows, setOverflows] = useState(section.cards.length > 1);
+  useEffect(() => {
+    const node = row.current;
+    if (!node || typeof ResizeObserver === "undefined") return;
+    const check = () => setOverflows(node.scrollWidth > node.clientWidth + 1);
+    const observer = new ResizeObserver(check);
+    observer.observe(node); check();
+    return () => observer.disconnect();
+  }, [section.cards.length]);
   return <section id={sectionTarget(section.id)} tabIndex={-1} className={landing.section} data-testid={`landing-section-${section.id}`} aria-labelledby={headingId}>
     <h2 id={headingId}>{section.today ? "Today" : section.label}{(section.today || section.theme) && <small>{[section.today && section.label, section.theme].filter(Boolean).join(" · ")}</small>}</h2>
-    <nav className={landing.chips} aria-label={`Cards in ${section.today ? "Today" : section.label}`}>
+    {overflows && <nav className={landing.chips} aria-label={`Cards in ${section.today ? "Today" : section.label}`}>
       {section.cards.map(id => <a key={id} className={landing.chip} href={`#${cardTarget(section.id, id)}`} onClick={event => toCard(event, id)}>{landingCard(id)!.name}</a>)}
-    </nav>
-    <div className={landing.row} role="region" aria-labelledby={headingId} tabIndex={0} data-testid={`landing-row-${section.id}`}>
+    </nav>}
+    {/* Its own name: the section is already the region named by the heading (axe landmark-unique). */}
+    <div ref={row} className={landing.row} role="region" aria-label={`${section.today ? "Today" : section.label} card examples`} tabIndex={0} data-testid={`landing-row-${section.id}`}>
       {section.cards.map(id => <Tile key={id} id={id} section={section.id} />)}
     </div>
   </section>;
@@ -143,15 +171,17 @@ export default function ShareLanding() {
       <span className={styles.scope}>Nothing is scheduled or published from here.</span>
     </header>
     <section className={landing.week} aria-labelledby="landing-week">
-      <h2 id="landing-week">This week <small>{posted ? `From @FHFHockey's posts, New York days. ${!posted.latest ? "No live delivery yet, so empty days have no record." : posted.stale ? `No live delivery since ${seenDate.format(new Date(posted.latest))}, so later days have no record.` : `Last live delivery ${seenDate.format(new Date(posted.latest))}.`}` : source === undefined ? "Checking posts." : `${source === "failed" ? "Could not read posts. " : ""}Marked by hand. Click a day to mark it. Stays in this browser and clears each Monday.`}</small></h2>
+      {/* The note sits beside the heading, not inside it, so the heading (and the strip it names) reads "This week". */}
+      <div className={landing.weekHead}><h2 id="landing-week">This week</h2> <p>{posted ? `From @FHFHockey's posts, New York days. ${!posted.latest ? "No live delivery yet, so empty days have no record." : posted.stale ? `No live delivery since ${seenDate.format(new Date(posted.latest))}, so later days have no record.` : `Last live delivery ${seenDate.format(new Date(posted.latest))}.`}` : source === undefined ? "Checking posts." : `${source === "failed" ? "Could not read posts. " : ""}Marked by hand. Click a day to mark it. Stays in this browser and clears each Monday.`}</p></div>
       {posted ? <PostedStrip posted={posted} today={today} /> : <div className={landing.strip} role="group" aria-labelledby="landing-week" data-testid="landing-strip">
         {LANDING_DAYS.map(day => {
           const status = source === undefined ? "upcoming" : landingDayStatus(day.id, today, marked);
           return <button key={day.id} type="button" className={landing.stripDay} data-testid={`landing-strip-${day.id}`} data-status={status} data-today={day.id === today || undefined} aria-pressed={status === "done"} aria-label={`${day.label}${day.id === today ? " (today)" : ""}: ${source === undefined ? "checking" : HAND_TEXT[status]}`} disabled={status === "upcoming"} onClick={() => toggleDay(day.id)}>
-            <span>{day.label}</span><span aria-hidden="true">{STATUS_MARK[status]}</span>
+            <span>{day.label}</span><DayMark status={status} />
           </button>;
         })}
       </div>}
+      {!posted && <StripKey posted={false} />}
       {undatedOnly > 0 && <p className={landing.postedCards} data-testid="landing-posted-undated"><span>Posts received with no date: {undatedOnly}</span></p>}
     </section>
     <nav className={landing.jump} aria-label="Jump to a section" data-testid="landing-jump">
@@ -159,8 +189,9 @@ export default function ShareLanding() {
     </nav>
     <div className={landing.controls}>
       <div className={landing.sort} role="group" aria-label="Sort cards">
-        <button type="button" aria-pressed={sort === "category"} onClick={() => chooseSort("category")}>By category</button>
-        <button type="button" aria-pressed={sort === "day"} onClick={() => chooseSort("day")}>By day</button>
+        {/* Phones hide "By " visually (CATEGORY / DAY); it stays in the accessible name. */}
+        <button type="button" aria-pressed={sort === "category"} onClick={() => chooseSort("category")}><span className={landing.sortBy}>By </span>category</button>
+        <button type="button" aria-pressed={sort === "day"} onClick={() => chooseSort("day")}><span className={landing.sortBy}>By </span>day</button>
       </div>
       <label className={landing.filter}>Show
         <select value={filter} onChange={event => setFilter(event.target.value)}>

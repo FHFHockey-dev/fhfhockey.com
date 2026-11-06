@@ -4,6 +4,8 @@
 // The original fixed-square tokens stay local to this isolated social variant.
 $share-square-size: 1080px;
 $share-preview-max: 540px;
+// The preview panel at full card size: the card plus the panel's padding and 1px borders.
+$share-preview-column: $share-preview-max + 2 * v.$space-md + 2px;
 $share-square-padding: 48px;
 $share-title-size: 64px;
 $share-team-size: 46px;
@@ -18,8 +20,17 @@ $share-rail-size: 8px;
 // Tuesday group labels (TT-8): Tomorrow SemiBold Italic (OFL, tomorrow-OFL.txt), the $font-family-sporty token.
 @font-face { font-family: "Tomorrow"; src: url("/fonts/social-share/Tomorrow-SemiBoldItalic.ttf") format("truetype"); font-weight: 600; font-style: italic; font-display: block; }
 
+// One field look for every studio input and select: the .page rule and the player-cards source picker.
+@mixin share-field {
+  min-height: v.$touch-target-min; max-width: 100%; min-width: 0; border: v.$border-control;
+  border-radius: v.$radius-control; background: v.$background-dark; color: v.$text-primary;
+  font: inherit; padding: v.$space-xs v.$space-sm; color-scheme: dark;
+  &:focus-visible { outline: 2px solid v.$primary-color; outline-offset: 2px; box-shadow: v.$focus-ring; }
+}
+
 .page {
-  width: 100%; min-width: 0; max-width: 1440px; margin: 0 auto;
+  // The studio workspace never runs edge to edge: at most 90% wide, centred (TJ's page-width rule).
+  width: 100%; min-width: 0; max-width: v.$page-max-width; margin: 0 auto;
   padding: v.$space-md; color: v.$text-primary; font-family: "Share Roboto Condensed", v.$font-family-primary;
   -webkit-font-smoothing: antialiased;
   *, *::before, *::after { box-sizing: border-box; }
@@ -29,36 +40,69 @@ $share-rail-size: 8px;
   a { color: v.$color-blue-300; }
   button {
     @include v.button-style;
+    // The mixin sets plain "Roboto Condensed", which the studio never loads; use the page's bundled face like the fields.
+    font-family: inherit;
     min-height: v.$touch-target-min; font-weight: 700; font-size: v.$font-size-sm;
-    background: v.$background-dark; border-color: v.$border-soft; color: v.$text-primary;
+    // The same 3:1 edge as the fields, so buttons and fields read as one control set (TJ, 2026-11-06).
+    background: v.$background-dark; border-color: v.$border-control-color; color: v.$text-primary;
     &:hover:not(:disabled) { background: v.$surface-2; border-color: v.$primary-color; }
-    &[aria-pressed="true"] { background: v.$draft-action; border-color: v.$primary-color; color: v.$color-white; }
+    // Hover must not undo ON: the hover rule above outranks the pressed one, which turned pressed segments grey.
+    &[aria-pressed="true"], &[aria-pressed="true"]:hover:not(:disabled) { background: v.$draft-action; border-color: v.$primary-color; color: v.$color-white; }
     &:active:not(:disabled) { transform: scale(0.96); }
+    // One focus style in the studio: the fields' 2px accent outline, not the shared mixin's 3px amber one.
+    &:focus-visible { outline: 2px solid v.$primary-color; outline-offset: 2px; }
   }
-  input, select {
-    min-height: v.$touch-target-min; max-width: 100%; min-width: 0; border: v.$border-subtle;
-    border-radius: v.$radius-control; background: v.$background-dark; color: v.$text-primary;
-    font: inherit; padding: v.$space-xs v.$space-sm; color-scheme: dark;
-    &:focus-visible { outline: 2px solid v.$primary-color; outline-offset: 2px; box-shadow: v.$focus-ring; }
-  }
+  input, select { @include share-field; }
 }
 .heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: v.$space-sm; margin-bottom: v.$space-md; }
 .eyebrow { color: v.$color-blue-300; text-transform: uppercase; letter-spacing: v.$mobile-letter-spacing-wide; font-size: v.$font-size-xs; }
 .scope { color: v.$text-secondary; font-size: v.$font-size-sm; }
+// The same links on every studio page: where the editor came from (All cards) and the sibling studios, with dot separators.
+.studioNav { display: flex; flex-wrap: wrap; gap: v.$space-xxs v.$space-sm; margin-top: v.$space-xxs;
+  a { color: v.$color-blue-300; }
+  a + a::before { content: "·"; margin-right: v.$space-sm; color: v.$text-secondary; }
+}
 .panel { @include p.panel-shell($padding: v.$space-md, $overflow: visible); min-width: 0; }
 .controls { display: flex; flex-wrap: wrap; gap: v.$space-sm; align-items: flex-end; label { display: grid; gap: v.$space-xs; min-width: 0; max-width: 100%; } }
-.days { margin: v.$space-md 0 0; padding: 0; border: 0; display: flex; flex-wrap: wrap; gap: v.$space-xs;
+.days { margin: v.$space-md 0 0; padding: 0; border: 0; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: v.$space-xs v.$space-md;
   legend { margin-bottom: v.$space-xs; font-size: v.$font-size-sm; color: v.$text-secondary; }
-  button { flex: 1 0 90px; padding: v.$space-xs; display: grid; gap: v.$space-xxs; text-align: center; font-variant-numeric: tabular-nums; }
   strong { color: v.$color-white; } span, small { font-size: v.$font-size-xs; }
 }
+// auto-fit keeps every day tile the same width on every row, so a lone Sunday never stretches.
+.dayGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: v.$space-xs; min-width: 0;
+  button { padding: v.$space-xs; display: grid; gap: v.$space-xxs; text-align: center; font-variant-numeric: tabular-nums; }
+  // ON: the canonical active state (fhfh-styles §9.5): accent tint and a 2px accent edge (1px border + 1px inset, so the
+  // tile never shifts). Scoped to the days: module panels keep the studio's solid pressed fill. Hover keeps it ON.
+  button[aria-pressed="true"], button[aria-pressed="true"]:hover:not(:disabled) { background: v.$primary-color-opaque; border-color: v.$primary-color; box-shadow: inset 0 0 0 1px v.$primary-color; color: v.$color-white; }
+}
+// Bulk actions: compact and unfilled beside the days (below them on phones), so they read as actions, not days.
+.dayBulk { display: flex; gap: v.$space-xs;
+  button { padding: 0 v.$space-md; background: transparent; font-size: v.$font-size-xs; }
+}
 .status { padding: v.$space-sm 0; font-size: v.$font-size-sm; p + p { margin-top: v.$space-xs; } }
-.workspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: v.$space-md; }
+// The preview is the primary surface: its column grows to the full-size card first, and All teams takes the rest
+// (at least 18rem, so on small laptops the card shrinks before the list gets too narrow to read).
+.workspace { display: grid; grid-template-columns: minmax(0, $share-preview-column) minmax(18rem, 1fr); gap: v.$space-md; }
 .panelHeader { @include p.panel-header($padding-y: v.$space-xs, $padding-x: 0); margin-bottom: v.$space-sm; flex-wrap: wrap; span { font-size: v.$font-size-sm; color: v.$text-secondary; } }
 .previewFrame { max-width: $share-preview-max; width: 100%; position: relative; overflow: hidden; margin: 0 auto; min-height: v.$control-height-md; }
+// No card to show (loading, failed, invalid settings): a quiet outline of the card's square with the reason inside.
+.previewEmpty { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: v.$space-sm; padding: v.$space-md; border: 1px dashed v.$border-soft; border-radius: v.$radius-control;
+  color: v.$text-secondary; font-size: v.$font-size-sm; text-align: center; }
+// /social-share/player-cards: the source picker and the evidence note line up with the player-card studio below
+// (components/player-cards, 1280px wide with 32px padding, 12px under 760px).
+.sourceBar, .sourceNote { width: 100%; max-width: 1280px; margin: 0 auto; padding: v.$space-md v.$space-xl; color: v.$text-primary; font-family: v.$font-family-primary;
+  @media (max-width: 760px) { padding-inline: 12px; }
+}
+.sourceBar { display: flex; flex-wrap: wrap; align-items: center; gap: v.$space-sm v.$space-xl; padding-bottom: v.$space-sm;
+  .studioNav { margin-top: 0; }
+  label { display: inline-flex; flex-wrap: wrap; align-items: center; gap: v.$space-sm; max-width: 100%; color: v.$text-secondary; font-size: v.$font-size-sm; font-weight: 600; }
+  select { @include share-field; font-weight: 400; }
+}
+.sourceNote { margin-block: 0; font-size: v.$font-size-sm; color: v.$text-secondary; strong { color: v.$color-white; } }
 .actions { display: flex; flex-wrap: wrap; gap: v.$space-xs; margin-top: v.$space-sm; button:first-child { border-color: v.$primary-color; } }
 .explanation { color: v.$text-secondary; font-size: v.$font-size-sm; margin-bottom: v.$space-sm !important; }
-.teamList { list-style: none; padding: 0; margin: 0; max-height: 880px; overflow-y: auto;
+.teamList { list-style: none; padding: 0; margin: 0; max-height: 880px; overflow-y: auto; border-radius: v.$radius-control;
+  &:focus-visible { outline: 2px solid v.$primary-color; outline-offset: 2px; }
   li { padding: v.$space-sm 0; border-bottom: 1px solid v.$border-soft; }
   li > div { display: flex; justify-content: space-between; flex-wrap: wrap; gap: v.$space-xs; }
   strong { color: v.$color-white; } span { color: v.$color-blue-300; font-variant-numeric: tabular-nums; }
@@ -454,10 +498,12 @@ $trend-row: 140px;
 // Source and freshness line: one line, legible in the 1080 PNG and on a phone preview.
 .trendSource { font-size: 20px; font-weight: 700; color: v.$color-white; }
 @media (max-width: v.$breakpoint-tablet) {
-  .page { padding: v.$space-xs; }
+  // Phones keep the full width, so the 1080 preview stays as large as it can (TJ, 2026-11-06).
+  .page { padding: v.$space-xs; max-width: none; }
   .workspace { grid-template-columns: minmax(0, 1fr); }
   .panel { padding: v.$space-sm; }
   .controls { label { width: 100%; } input, select { width: 100%; } }
+  .days { grid-template-columns: minmax(0, 1fr); }
   .teamList { max-height: none; }
 }
 

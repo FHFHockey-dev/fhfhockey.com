@@ -29,13 +29,17 @@ type FieldBase = {
   panelOnly?: boolean;
   /** Drawn on the settings form only while the post's `period` field holds this value. */
   onlyForPeriod?: string;
+  /** What an empty value means ("the last completed"), shown instead of "any" and under an empty field. Keeps the label plain. */
+  blank?: string;
 };
 /** Every configurable threshold is a field, so its default and active value are visible in the studio and the export. */
 export type ShareSettingField =
   | FieldBase & { kind: "number"; default: number | null; min: number; max: number; step?: number }
   | FieldBase & { kind: "select"; default: string; options: readonly { value: string; label: string }[] }
   | FieldBase & { kind: "date"; default: string | null }
-  | FieldBase & { kind: "text"; default: string; maxLength?: number };
+  | FieldBase & { kind: "text"; default: string; maxLength?: number;
+    /** A fixed set to pick from, drawn as checkboxes: the value stays the chosen values comma-joined, in this order. */
+    choices?: readonly { value: string; label: string }[] };
 
 export type SharePostSource = {
   /** Reader-facing name, e.g. "NHL.com game stats"; `tables` names the exact relations read. */
@@ -142,10 +146,12 @@ export function parseShareSettings<Settings extends ShareSettings>(module: Pick<
 export const shareSettingsKey = (fields: readonly ShareSettingField[], settings: ShareSettings) => JSON.stringify(fields.map(field => [field.id, settings[field.id] ?? null]));
 export const sharePostExportToken = (fields: readonly ShareSettingField[], snapshot: Pick<SharePostSnapshot, "id" | "post">, settings: ShareSettings) => `${snapshot.id}|${snapshot.post}|${shareSettingsKey(fields, settings)}`;
 /** Active settings as printed on the card, with the select's label rather than its value. */
+/** A choices field's value as its labels: "wins,svPct" reads "W, SV%". */
+export const choiceLabels = (choices: readonly { value: string; label: string }[], value: string) => value.split(",").filter(Boolean).map(id => choices.find(choice => choice.value === id)?.label ?? id).join(", ");
 export function shareSettingLines(fields: readonly ShareSettingField[], settings: ShareSettings) {
   return fields.map(field => {
     const value = settings[field.id] ?? null;
-    const shown = value === null || value === "" ? "any" : field.kind === "select" ? field.options.find(option => option.value === value)?.label ?? String(value) : String(value);
+    const shown = value === null || value === "" ? field.blank ?? "any" : field.kind === "select" ? field.options.find(option => option.value === value)?.label ?? String(value) : field.kind === "text" && field.choices ? choiceLabels(field.choices, String(value)) : String(value);
     return { id: field.id, label: field.label, value: shown };
   });
 }

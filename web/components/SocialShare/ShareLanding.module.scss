@@ -1,22 +1,35 @@
 @use "styles/vars" as v;
 
-.landing { width: 100%; max-width: v.$page-max-width; margin: 0 auto; }
+/* The shared .page inside already caps the workspace at 90% and centres it. */
+.landing { width: 100%; }
 .note { margin-bottom: v.$space-md !important; color: v.$text-secondary; font-size: v.$font-size-sm; }
 
-.week { margin-bottom: v.$space-sm; min-width: 0;
-  h2 { margin-bottom: v.$space-xs; font-size: v.$font-size-md; }
-  small { margin-left: v.$space-xs; color: v.$text-secondary; font-size: v.$font-size-sm; font-weight: 400; }
+.week { margin-bottom: v.$space-sm; min-width: 0; }
+/* Heading and note run inline, as one line that wraps, while the note stays out of the heading's name. */
+.weekHead { margin-bottom: v.$space-xs;
+  h2 { display: inline; font-size: v.$font-size-md; }
+  p { display: inline; margin-left: v.$space-xs; color: v.$text-secondary; font-size: v.$font-size-sm; font-weight: 400; }
 }
 .strip { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: v.$space-xs; }
-.strip .stripDay { display: grid; justify-items: center; gap: v.$space-xxs; min-width: 0; padding: v.$space-xs 2px; font-size: v.$font-size-sm;
+.strip .stripDay { display: grid; justify-items: center; gap: v.$space-xxs; min-width: 0; padding: v.$space-xs v.$space-xxs; font-size: v.$font-size-sm;
   &[data-today] { border-color: v.$primary-color; }
   &[aria-pressed="true"] { background: v.$background-dark; }
   &:disabled { color: v.$text-secondary; cursor: default; }
-  &:focus-visible { outline: 2px solid v.$primary-color; outline-offset: 2px; }
 }
 .strip .postedDay { align-content: start; border: v.$border-subtle; border-radius: v.$radius-control; background: v.$background-dark;
   &[data-today] { border-color: v.$primary-color; }
   &[data-status="upcoming"], &[data-status="untracked"], &[data-status="noRecord"] { color: v.$text-secondary; }
+}
+/* Day marks: one drawn line-mark size and stroke; green done, toned red missed, a muted dash for days without a mark. */
+.mark { display: block; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round;
+  color: v.$text-secondary; line-height: 18px; text-align: center;
+  &[data-mark="done"] { color: v.$success-color; }
+  &[data-mark="missed"] { color: v.$color-pink-red; }
+}
+/* The marks' key: the same drawn marks at 14px, in one quiet wrapping line under the strip. */
+.week .key { display: flex; flex-wrap: wrap; gap: v.$space-xxs v.$space-md; margin-top: v.$space-xs; color: v.$text-secondary; font-size: v.$font-size-xs;
+  span { display: inline-flex; align-items: center; gap: v.$space-xxs; }
+  .mark { width: 14px; height: 14px; line-height: 14px; }
 }
 .dayNote { color: v.$text-secondary; font-size: v.$font-size-xs; line-height: 1.1; text-align: center; }
 .postedCards { display: flex; flex-wrap: wrap; gap: v.$space-xxs v.$space-sm; margin: v.$space-xs 0 0 !important; color: v.$text-secondary; font-size: v.$font-size-xs;
@@ -28,14 +41,31 @@
   &:focus-visible { outline: 2px solid v.$primary-color; outline-offset: -2px; }
   &[aria-current] { border-color: v.$primary-color; color: v.$color-white; }
 }
-.jump { display: flex; flex-wrap: wrap; gap: v.$space-xs; margin-bottom: v.$space-md; }
+.jump { display: flex; flex-wrap: wrap; gap: v.$space-xs; margin-bottom: v.$space-md;
+  /* Phones drop the jump row: the Show filter does the same job, so the first cards sit higher (TJ, 2026-11-06). */
+  @media (max-width: v.$breakpoint-tablet) { display: none; }
+}
 .chips { display: flex; gap: v.$space-xs; overflow-x: auto; padding-bottom: v.$space-xs; margin-bottom: v.$space-xs; }
 
 .controls { display: flex; flex-wrap: wrap; align-items: flex-end; gap: v.$space-sm; margin-bottom: v.$space-md; }
-.sort { display: flex; flex-wrap: wrap; gap: v.$space-xs; }
+/* Sort: the canonical segmented toggle (fhfh-styles §9.5, GameGrid .modeToggle): one dark rail, quiet segments, and the
+   active one accent-tinted with a 2px accent border. Prefixed with .landing to outrank the page's boxed button rules. */
+.landing .sort { display: inline-flex; gap: v.$space-xxs; padding: v.$space-xs; border: v.$border-subtle; border-radius: v.$radius-md; background: v.$background-dark;
+  /* GameGrid's segment labels: uppercase accent face (TJ, 2026-11-06). CSS case only, so the accessible names stay "By day". */
+  button { min-height: v.$touch-target-small; padding: 0 v.$space-md; border: 2px solid transparent; border-radius: v.$radius-control; background: transparent; color: v.$text-secondary;
+    font-family: v.$font-family-accent, sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+  button:hover:not(:disabled) { border-color: transparent; background: rgba(v.$primary-color, 0.1); color: v.$color-white; }
+  button[aria-pressed="true"], button[aria-pressed="true"]:hover:not(:disabled) { border-color: v.$primary-color; background: v.$primary-color-opaque; color: v.$color-white; }
+  /* Phones: full-size caps with "By " visually hidden (CATEGORY / DAY), so the rail and the Show filter stay on one row
+     (TJ, 2026-11-06). The hidden words stay in the accessible names. */
+  @media (max-width: v.$breakpoint-mobile-max) {
+    button { padding: 0 v.$space-sm; }
+    .sortBy { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  }
+}
 .filter { display: inline-flex; align-items: center; gap: v.$space-xs; min-width: 0; max-width: 100%; color: v.$text-secondary; font-size: v.$font-size-sm; }
 
-.section { margin-bottom: v.$space-lg; min-width: 0; scroll-margin-top: 72px; outline: none;
+.section { margin-bottom: v.$space-lg; min-width: 0; scroll-margin-top: v.$site-header-offset; outline: none;
   h2 { display: flex; flex-wrap: wrap; align-items: baseline; gap: v.$space-xs; margin-bottom: v.$space-xs; }
   small { color: v.$text-secondary; font-size: v.$font-size-sm; font-weight: 400; }
 }
