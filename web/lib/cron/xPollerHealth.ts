@@ -157,7 +157,7 @@ export function accountStatus(account: Omit<AccountPollerHealth, "status">): Hea
     statuses.push(reads.rate < READ_SUCCESS_CRITICAL ? "critical" : reads.rate < READ_SUCCESS_WARNING ? "warning" : "healthy");
     if (reads.longestFailStreak >= FAIL_STREAK_ALERT) statuses.push(provider === "fxtwitter" ? "critical" : "warning");
     if (reads.unrecoveredGaps > 0) statuses.push(provider === "fxtwitter" ? "critical" : "warning");
-  } else statuses.push("unknown");
+  } else if (coverage.rate === null && !enqueue) statuses.push("unknown"); // nothing measured; the section notes why reads are missing
   if (enqueue) {
     if (enqueue.missing > 0) statuses.push("critical");
     if (enqueue.viaIfttt + enqueue.doubleQueued + enqueue.iftttAfterSwitch > 0) statuses.push("warning");
@@ -184,6 +184,8 @@ export function assessPollerHealth(input: {
   runs: PollRunRow[] | null;
   /** pg_cron runs of the poller job in the window (x_timeline_poll_job_runs); null when unknown. */
   startedRuns?: number | null;
+  /** Why runs is null, completing "Poller run history …"; defaults to "is unavailable". */
+  runsUnavailableReason?: string;
   /** Each account's earliest shadow sighting ever; coverage starts there. A missing key means no limit. */
   shadowStartedAt?: Record<string, string | null>;
   /** Queue rows for switched accounts' shadow sightings since their switch. */
@@ -196,7 +198,7 @@ export function assessPollerHealth(input: {
   const end = ms(input.windowEnd);
   const providerByKey = new Map((input.providers ?? []).map((row) => [row.source_key, row]));
   if (!input.providers) warnings.push("tweet_intake_providers is unreadable; switch state is unknown.");
-  if (!input.runs) warnings.push("Poller run history (x_timeline_poll_runs) is unavailable; read success is unknown.");
+  if (!input.runs) warnings.push(`Poller run history ${input.runsUnavailableReason ?? "(x_timeline_poll_runs) is unavailable"}; read success is unknown.`);
   if (!input.alerts) warnings.push("Watchdog state (x_timeline_alert_state) is unreadable.");
   const alerts = input.alerts ?? [];
   const shadow = [...input.shadow].sort((left, right) => ms(left.first_seen_at) - ms(right.first_seen_at));

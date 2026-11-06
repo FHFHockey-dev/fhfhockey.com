@@ -5,6 +5,8 @@ import vercelConfiguration from "../../../../vercel.json";
 
 import { CronAuditEmail } from "components/CronReportEmail/CronAuditEmail";
 import { readGoalieFreshness } from "lib/nst/goalieFreshness.server";
+import { readPollerHealth } from "lib/cron/xPollerHealth.server";
+import { readTweetBacklog } from "lib/cron/tweetReviewBacklog.server";
 import {
   getBenchmarkAnnotations,
   hasBenchmarkAnnotationKind,
@@ -1659,6 +1661,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   const previewMode = getQueryString(req, "preview") === "json";
   const dryRun =
     previewMode || parseBooleanQueryFlag(getQueryString(req, "dryRun"));
+  // Independent of the cron telemetry, so read alongside it. Both readers turn missing tables (migration 20261106230000)
+  // and failed reads into notes; neither throws. Only a real run stores the daily backlog snapshot.
+  const pollerHealthPromise = readPollerHealth({ client: supabase, now, windowMs: REPORT_WINDOW_MS,
+    deadlineAt: Math.min(sourceDeadlineAt, now.getTime() + REPORT_REQUEST_TIMEOUT_MS) });
+  const tweetBacklogPromise = readTweetBacklog({ client: supabase, now, writeSnapshot: !dryRun });
 
   let jobRunDetailsEmailResult: any = null;
   let auditEmailResult: any = null;
@@ -1798,6 +1805,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     ...auditRows, ...(successHistorySource?.rows ?? []).map(toAuditRow),
   ], successHistory.complete);
   const goalieFreshness = await goalieFreshnessPromise;
+  const [pollerHealth, tweetBacklog] = await Promise.all([pollerHealthPromise, tweetBacklogPromise]);
   const sourceElapsedMs = Date.now() - now.getTime();
   const auditGapGraceStartedAt =
     auditRows
@@ -2430,9 +2438,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
                   ? `⚠️ Daily Cron Report — ${counts.jobsDisabledLast} quarantined`
                   : ["warning", "critical", "unknown"].includes(goalieFreshness.status)
                     ? `⚠️ Daily Cron Report — goalie coverage ${goalieFreshness.status}`
+                    : pollerHealth.status === "critical"
+                      ? "⚠️ Daily Cron Report — X poller problem"
                     : `✅ Daily Cron Report — ${counts.jobsOkLast}/${counts.scheduledJobs} jobs ok`,
         react: CronAuditEmail({
           goalieFreshness,
+          pollerHealth,
+          tweetBacklog,
           configuredVercelSchedules,
           edgeFunctionDispatches,
           audits: [...auditBriefings, ...notableUnscheduledRuns],
@@ -2545,6 +2557,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     successHistory,
     totalsComplete: runSource.complete && auditSource.complete,
     goalieFreshness,
+    pollerHealth,
+    tweetBacklog,
     countScope: "observed",
     scheduleInventory: { denominatorScope: "pg_cron entries enabled in repository inventory and due in this window; hosted activation separately reconciled",
       notDueJobs: notDueJobs.map((job) => ({ name: job.name, schedule: job.cronExpression })),

@@ -13,7 +13,7 @@ export const TweetBacklogSection: React.FC<{ backlog: TweetBacklog }> = ({ backl
   </div>;
   return <div style={{ margin: "16px 0", fontSize: 13 }}>
     <h2 style={{ fontSize: 16, margin: "22px 0 6px" }}>Tweet-review backlog</h2>
-    <div style={muted}>{backlog.previousDate ? `Change since ${backlog.previousDate}.` : "No earlier snapshot yet; changes start tomorrow."}</div>
+    <div style={muted}>{backlog.previousDate ? `Change since ${backlog.previousDate}.` : "No earlier snapshot to compare with yet."}</div>
     <div style={{ marginTop: 6 }}><strong>Swipe-trainer queue</strong></div>
     {backlog.queue.map(row)}
     <div style={{ marginTop: 6 }}><strong>Labels and names</strong></div>

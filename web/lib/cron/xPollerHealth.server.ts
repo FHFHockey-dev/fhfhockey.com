@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { POLLED_ACCOUNTS, queueTableFor } from "../../../supabase/functions/x-timeline-poll/fxtwitter";
+import { errorText, isMissingRelationError, REPORT_SECTIONS_MIGRATION } from "./missingRelation";
 import {
   assessPollerHealth,
   type IftttQueueEvent,
@@ -23,7 +24,7 @@ async function readPages<T>(label: string, query: (from: number) => PromiseLike<
   const rows: T[] = [];
   for (let page = 0; page < MAX_PAGES; page++) {
     const { data, error } = await query(page * PAGE);
-    if (error) throw new Error(`${label}: ${error.message ?? error.code ?? "read failed"}`);
+    if (error) throw Object.assign(new Error(`${label}: ${error.message ?? error.code ?? "read failed"}`), { code: error.code });
     rows.push(...(data ?? []));
     if ((data ?? []).length < PAGE) return rows;
   }
@@ -44,11 +45,14 @@ export async function readPollerHealth(input: { client: SupabaseClient; now: Dat
   const db = input.client as any;
   const warnings: string[] = [];
   const accounts = POLLED_ACCOUNTS.map((account) => ({ sourceKey: account.sourceKey, handle: account.handle, hasQueue: Boolean(queueTableFor(account)) }));
+  const notInstalled = new Set<string>();
+  // A missing table is expected until migration 20261106230000 is applied: noted once, never a failure.
   const optional = async <T>(label: string, read: () => Promise<T>): Promise<T | null> => {
     try {
       return await read();
     } catch (error) {
-      warnings.push(`${label} unavailable: ${error instanceof Error ? error.message : String(error)}`);
+      if (isMissingRelationError(error)) notInstalled.add(label);
+      else warnings.push(`${label} unavailable: ${errorText(error)}`);
       return null;
     }
   };
@@ -57,7 +61,7 @@ export async function readPollerHealth(input: { client: SupabaseClient; now: Dat
     const [providers, runs, startedRuns, alerts, shadow, lineSource, ccc] = await Promise.all([
       optional("Intake switch", async () => {
         const { data, error } = await db.from("tweet_intake_providers").select("source_key, provider, switched_at").abortSignal(signal);
-        if (error) throw new Error(error.message);
+        if (error) throw error;
         return data as IntakeProviderRow[];
       }),
       optional("Poller run history", () => readPages<PollRunRow>("x_timeline_poll_runs", (from) => db.from("x_timeline_poll_runs")
@@ -67,12 +71,12 @@ export async function readPollerHealth(input: { client: SupabaseClient; now: Dat
       optional("Poller job runs", async () => {
         const { count, error } = await db.from("x_timeline_poll_job_runs").select("runid", { count: "exact", head: true })
           .gte("start_time", windowStart).lt("start_time", new Date(input.now.getTime() - RUN_BODY_GRACE_MS).toISOString()).abortSignal(signal);
-        if (error) throw new Error(error.message);
+        if (error) throw error;
         return count ?? 0;
       }),
       optional("Watchdog state", async () => {
         const { data, error } = await db.from("x_timeline_alert_state").select("alert_key, active, first_seen_at, detail").eq("active", true).abortSignal(signal);
-        if (error) throw new Error(error.message);
+        if (error) throw error;
         return data as WatchdogAlertRow[];
       }),
       readPages<ShadowSighting>("x_timeline_shadow_posts", (from) => db.from("x_timeline_shadow_posts")
@@ -113,14 +117,19 @@ export async function readPollerHealth(input: { client: SupabaseClient; now: Dat
       }
     }
 
+    const runsNotInstalled = notInstalled.has("Poller run history");
+    // The run-history note covers its sibling job-runs table; anything else missing gets one short line.
+    const others = [...notInstalled].filter((label) => !(runsNotInstalled && label.startsWith("Poller ")));
+    if (others.length) warnings.push(`Not installed yet: ${others.join(", ")}.`);
     return assessPollerHealth({
+      runsUnavailableReason: runsNotInstalled ? `is not installed yet (migration ${REPORT_SECTIONS_MIGRATION} not applied)` : undefined,
       accounts, windowStart, windowEnd, providers, runs, startedRuns, alerts, shadow, queueRows, shadowStartedAt, warnings,
       ifttt: [...lineSource, ...ccc.map((row) => ({ ...row, source_key: "ccc" }))],
     });
   } catch (error) {
     return {
       status: "unknown", windowStart, windowEnd, runs: null, accounts: [], incidents: [],
-      warnings: [...warnings, `Poller health unavailable: ${error instanceof Error ? error.message : String(error)}`],
+      warnings: [...warnings, `Poller health unavailable: ${errorText(error)}`],
     };
   } finally {
     clearTimeout(timer);

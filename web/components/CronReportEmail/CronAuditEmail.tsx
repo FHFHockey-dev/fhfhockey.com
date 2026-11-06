@@ -3,6 +3,10 @@ import * as React from "react";
 import { formatExecutionDuration, isNearRepositoryLimit } from "lib/cron/reportMetrics";
 import { formatReportTime } from "lib/cron/reportSource";
 import type { GoalieFreshness } from "lib/nst/goalieFreshness";
+import type { PollerHealth } from "lib/cron/xPollerHealth";
+import type { TweetBacklog } from "lib/cron/tweetReviewBacklog";
+import { PollerHealthSection } from "./PollerHealthSection";
+import { TweetBacklogSection } from "./TweetBacklogSection";
 
 type BenchmarkAnnotation = { kind: string; note: string };
 
@@ -37,6 +41,8 @@ interface AuditEntry {
 
 interface CronAuditEmailProps {
   goalieFreshness?: GoalieFreshness;
+  pollerHealth?: PollerHealth;
+  tweetBacklog?: TweetBacklog;
   audits: AuditEntry[];
   configuredVercelSchedules?: Array<{ route: string; schedule: string; activation: "unverified"; receiptCount?: number; latestReceiptStatus?: string; latestReceiptAt?: string | null }>;
   edgeFunctionDispatches?: Array<{ jobName: string; route: string | null; queued: number; failed: number; latestAt: string | null }>;
@@ -89,7 +95,7 @@ const LABEL_ORDER = ["MISSING", "PARTIAL", "NEAR LIMIT", "NEAR BUDGET", "CONTINU
 
 type FailureGroup = { jobName: string; rows: AuditEntry[]; latest: AuditEntry; lastSuccess: string | null; recovered: boolean };
 
-export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({ audits, sinceDate, untilDate, totalsComplete = true, fetchErrors = [], successHistory, summary, configuredVercelSchedules = [], edgeFunctionDispatches = [], goalieFreshness }) => {
+export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({ audits, sinceDate, untilDate, totalsComplete = true, fetchErrors = [], successHistory, summary, configuredVercelSchedules = [], edgeFunctionDispatches = [], goalieFreshness, pollerHealth, tweetBacklog }) => {
   const globalWarnings = Array.from(new Set([
     ...fetchErrors,
     ...audits.flatMap((row) => row.missingObservationWarnings ?? []).filter((warning) => warning.includes("Telemetry source unavailable")),
@@ -160,7 +166,7 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({ audits, sinceDat
   const hasFailures = summary.auditFailures > 0 || (summary.cronFailures ?? 0) > 0;
   const allRecovered = hasFailures && openFailures.length === 0 && recovered.length > 0 && !(summary.omittedFailureObservations ?? 0) && !(summary.cronFailures ?? 0);
   const goalieCoverageNeedsAttention = goalieFreshness && ["warning", "critical", "unknown"].includes(goalieFreshness.status);
-  const headline = hasFailures && !allRecovered ? "Failures need attention." : goalieCoverageNeedsAttention ? "Goalie coverage needs attention." : allRecovered ? "Earlier failures have recovered." : audits.length === 0 ? "Execution health is unknown." : !totalsComplete ? "Coverage needs attention." : exceptionLines.length > 0 ? "A few jobs need a look." : "Runs look healthy.";
+  const headline = hasFailures && !allRecovered ? "Failures need attention." : goalieCoverageNeedsAttention ? "Goalie coverage needs attention." : pollerHealth?.status === "critical" ? "The X poller needs attention." : allRecovered ? "Earlier failures have recovered." : audits.length === 0 ? "Execution health is unknown." : !totalsComplete ? "Coverage needs attention." : exceptionLines.length > 0 ? "A few jobs need a look." : "Runs look healthy.";
 
   return <div style={{ backgroundColor: "#F7F7F2", fontFamily: "Arial, sans-serif", fontSize: 14, lineHeight: 1.5, color: "#202020", maxWidth: 640, margin: "0 auto", padding: 20 }}>
     <div style={{ borderTop: "4px solid #B45309", paddingTop: 16 }}>
@@ -190,6 +196,9 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({ audits, sinceDat
       </div> : null}
       {goalieFreshness.warnings.map((warning, index) => <div key={index} style={muted}>{warning}</div>)}
     </div> : null}
+
+    {pollerHealth ? <PollerHealthSection health={pollerHealth} /> : null}
+    {tweetBacklog ? <TweetBacklogSection backlog={tweetBacklog} /> : null}
 
     {openFailures.length > 0 ? <>
       {sectionTitle("Needs attention")}

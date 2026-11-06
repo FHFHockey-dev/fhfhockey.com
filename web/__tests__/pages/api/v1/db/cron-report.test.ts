@@ -13,8 +13,12 @@ const {
   cronAuditEmailMock,
   loadNhlSeasonWindowMock,
   readGoalieFreshnessMock,
+  readPollerHealthMock,
+  readTweetBacklogMock,
 } = vi.hoisted(() => ({
   readGoalieFreshnessMock: vi.fn(),
+  readPollerHealthMock: vi.fn(),
+  readTweetBacklogMock: vi.fn(),
   cronJobReportSelectMock: vi.fn(),
   cronJobAuditSelectMock: vi.fn(),
   cronJobAuditHistorySelectMock: vi.fn(),
@@ -53,6 +57,22 @@ function reportQuery(mock: ReturnType<typeof vi.fn>, args: unknown[], cron = fal
 }
 
 vi.mock("lib/nst/goalieFreshness.server", () => ({ readGoalieFreshness: readGoalieFreshnessMock }));
+vi.mock("lib/cron/xPollerHealth.server", () => ({ readPollerHealth: readPollerHealthMock }));
+vi.mock("lib/cron/tweetReviewBacklog.server", () => ({ readTweetBacklog: readTweetBacklogMock }));
+
+// The two sections as their readers return them before migration 20261106230000 is applied.
+const POLLER_NOT_INSTALLED = { status: "unknown", windowStart: "2026-03-19T12:10:00.000Z", windowEnd: "2026-03-20T12:10:00.000Z", runs: null,
+  incidents: [], warnings: ["Poller run history is not installed yet (migration 20261106230000 not applied); read success is unknown."],
+  accounts: [{ sourceKey: "dfofantasy", handle: "DFOFantasy", status: "unknown", provider: "ifttt", switchedAt: null, reads: null,
+    coverage: { from: "2026-03-19T12:10:00.000Z", iftttRows: 31, matched: 31, rate: 1, missed: 0, samples: [] },
+    lastSightingAt: null, enqueue: null, incidents: [], notes: [] }] };
+const backlogItem = (key: string, label: string, count: number) => ({ key, label, count, previous: null, delta: null });
+const BACKLOG_NOT_INSTALLED = { status: "ok", snapshotDate: "2026-03-20", previousDate: null,
+  queue: [backlogItem("line_combination", "Line combos", 1400), backlogItem("goalie", "Goalies", 1830)],
+  answerKeyLabels: backlogItem("answer_key_labels", "Answer-key labels", 0),
+  unresolvedRows: backlogItem("unresolved_rows", "Unresolved names (rows)", 1211),
+  unresolvedNames: backlogItem("unresolved_names", "Unresolved names (distinct)", 655),
+  warnings: ["Day-over-day changes are not installed yet (migration 20261106230000 not applied)."] };
 
 vi.mock("@supabase/supabase-js", () => ({
   createClient: vi.fn(() => ({
@@ -130,6 +150,26 @@ function createMockRes() {
 }
 
 describe("/api/v1/db/cron-report", () => {
+  it("reads the poller and backlog sections, storing the backlog snapshot only on a real run", async () => {
+    const preview = createMockRes();
+    await handler({ method: "GET", query: { preview: "json" } } as any, preview);
+    expect(readTweetBacklogMock).toHaveBeenLastCalledWith(expect.objectContaining({ writeSnapshot: false }));
+    expect(readPollerHealthMock).toHaveBeenLastCalledWith(expect.objectContaining({ windowMs: 24 * 60 * 60 * 1000 }));
+    expect(preview.body).toMatchObject({ pollerHealth: POLLER_NOT_INSTALLED, tweetBacklog: BACKLOG_NOT_INSTALLED });
+
+    const { CronAuditEmail } = await vi.importActual<typeof import("components/CronReportEmail/CronAuditEmail")>("components/CronReportEmail/CronAuditEmail");
+    cronAuditEmailMock.mockImplementationOnce((props: any) => createElement(CronAuditEmail, props));
+    const res = createMockRes();
+    await handler({ method: "GET" } as any, res);
+    expect(readTweetBacklogMock).toHaveBeenLastCalledWith(expect.objectContaining({ writeSnapshot: true }));
+    const html = renderToStaticMarkup(resendSendMock.mock.calls.at(-1)![0].react);
+    expect(html).toContain("X poller (FxTwitter)");
+    expect(html).toContain("@DFOFantasy");
+    expect(html).toContain("Poller run history is not installed yet");
+    expect(html).toContain("Tweet-review backlog");
+    expect(html).toContain("Line combos: <strong>1,400</strong>");
+    expect(html).toContain("Day-over-day changes are not installed yet");
+  });
   it("reports goalie coverage independently when writer audit receipts are missing", async () => {
     const coverage = { status: "critical", checkedAt: "2026-03-20T13:00:00Z", cutoffDate: "2026-03-19", expected: 60, matched: 0,
       missing: [{ season: "20252026", goalieId: 1, date: "2026-03-17", reason: "missing_row" }], oldestGap: "2026-03-17", warnings: ["Writer audit is missing."] };
@@ -330,6 +370,8 @@ SELECT cron.schedule('daily','0 8 * * *',$$SELECT 1;$$);`);
   beforeEach(() => {
     vi.clearAllMocks();
     readGoalieFreshnessMock.mockResolvedValue({ status: "not_due", warnings: [], missing: [], cutoffDate: "2026-03-19", expected: null, matched: null });
+    readPollerHealthMock.mockResolvedValue(POLLER_NOT_INSTALLED);
+    readTweetBacklogMock.mockResolvedValue(BACKLOG_NOT_INSTALLED);
     adminAdmissionMock.mockReturnValue(true);
     cronJobAuditHistorySelectMock.mockResolvedValue({ data: [], error: null });
     vi.stubGlobal("AbortSignal", { timeout: vi.fn(() => new AbortController().signal) });
