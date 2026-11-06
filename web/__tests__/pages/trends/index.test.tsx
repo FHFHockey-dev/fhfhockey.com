@@ -240,7 +240,7 @@ describe("Trends dashboard", () => {
     expect(screen.getByText("Recent-Form Scan")).toBeTruthy();
     expect(screen.getByText("Usage Driver")).toBeTruthy();
     expect(screen.getByText("Shot Driver")).toBeTruthy();
-    expect(screen.getByText(/Last Year stays out of strong v1/i)).toBeTruthy();
+    expect(screen.getByText(/Compared with Season, 3-Year, Career,? and Cumulative baselines/i)).toBeTruthy();
     expect(screen.getByText("Goalie Workload Share")).toBeTruthy();
     expect(screen.getByText("goalie share chart")).toBeTruthy();
     expect(screen.getByText("No team trend history yet.")).toBeTruthy();

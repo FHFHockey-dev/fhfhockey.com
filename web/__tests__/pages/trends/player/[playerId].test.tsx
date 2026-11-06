@@ -212,7 +212,7 @@ describe("Trends player detail page", () => {
     expect(screen.getByText("Recent comparison toolkit")).toBeTruthy();
     expect(
       screen.getByText(
-        /Strong v1 baselines: Season, 3-Year, Career, Cumulative/i
+        /Compared with Season, 3-Year, Career, and Cumulative baselines/i
       )
     ).toBeTruthy();
     expect(screen.getByRole("button", { name: "L30" })).toBeTruthy();

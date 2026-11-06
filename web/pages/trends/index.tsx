@@ -25,8 +25,7 @@ import {
 } from "lib/trends/goalieMetricConfig";
 import { TRENDS_SURFACE_LINKS } from "lib/navigation/siteSurfaceLinks";
 import {
-  DEFERRED_PLAYER_BASELINE_NOTE,
-  LOCKED_PLAYER_BASELINES,
+  describeLockedBaselines,
   buildSkaterRecentSummaryCards,
   formatSkaterTrendWindowLabel
 } from "lib/trends/trendsSurface";
@@ -852,10 +851,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
               title="Trends Dashboard"
               description={
                 <p>
-                  Use this page to read movement fast across teams, skaters, and
-                  goalies. Underlying-stats still owns deeper team diagnosis;
-                  this surface owns directionality, recent form, risers,
-                  fallers, and the support context around those shifts.
+                  Who's heating up and cooling off: recent form for teams, skaters and goalies, with the risers, fallers and projections that follow.
                 </p>
               }
               owns={[
@@ -949,8 +945,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                   <div>
                     <h2 className={styles.panelTitle}>Recent-Form Scan</h2>
                     <p className={styles.summaryBandCopy}>
-                      Scan deployment, shot pressure, PP usage, and chance
-                      creation before drilling into a player trend page.
+                      Ice time, shots, power-play usage and chance creation over the last few games. Open a player for their full trend.
                     </p>
                   </div>
                   <div className={styles.summaryBandMeta}>
@@ -958,14 +953,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                       Window {formatSkaterTrendWindowLabel(skaterWindow)}
                     </span>
                     <span className={styles.summaryContract}>
-                      Strong v1 baselines:{" "}
-                      {LOCKED_PLAYER_BASELINES.map((baseline) => baseline.label).join(
-                        ", "
-                      )}
-                      .
-                    </span>
-                    <span className={styles.summaryContract}>
-                      {DEFERRED_PLAYER_BASELINE_NOTE}
+                      {describeLockedBaselines()}
                     </span>
                   </div>
                 </div>
@@ -987,7 +975,10 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                       <ul className={styles.summaryLeaderList}>
                         {card.leaders.length === 0 ? (
                           <li className={styles.summaryEmpty}>
-                            No recent trend leaders yet.
+                            {/* Loading reads as loading, not as "no data". */}
+                            {loadingSections.includes("skater") || !data?.skaterTrends
+                              ? "Loading leaders…"
+                              : "No leaders in this window yet."}
                           </li>
                         ) : (
                           card.leaders.map((leader) => (
@@ -1048,8 +1039,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
               <div>
                 <h2 className={styles.panelTitle}>Movement Workspace</h2>
                 <p className={styles.summaryBandCopy}>
-                  One working surface for directionality, entity movers, and
-                  the immediate follow-up context once a trend is identified.
+                  Which teams, skaters and goalies are rising or falling, and by how much.
                 </p>
               </div>
               <div className={styles.movementHeaderMeta}>
@@ -1092,9 +1082,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                         Team Directionality: {activeTeamCategory.label}
                       </div>
                       <p className={styles.chartCopy}>
-                        {activeTeamCategory.description}. Stay at the movement
-                        layer here, then hand off to deeper surfaces only after
-                        the trend is clear.
+                        {activeTeamCategory.description}.
                       </p>
                     </div>
                     <div className={styles.chartMetaStack}>
@@ -1257,9 +1245,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                         Skater Movement: {activeSkaterLabel}
                       </div>
                       <p className={styles.chartCopy}>
-                        Find risers, fallers, and hot recent-form skaters before
-                        handing off to player detail, projections, or later
-                        model work.
+                        Rising and falling skaters by recent form.
                       </p>
                     </div>
                     <div className={styles.chartMetaStack}>
@@ -1409,8 +1395,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                         Goalie Movement: {activeGoalieLabel}
                       </div>
                       <p className={styles.chartCopy}>
-                        Track recent goalie movement first, then use start
-                        runway and workload context as the follow-up layer.
+                        Rising and falling goalies by recent form.
                       </p>
                     </div>
                     <div className={styles.chartMetaStack}>
@@ -1528,11 +1513,10 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
 
           <section className={styles.surfaceBridgeStrip}>
             <article className={styles.surfaceBridgeCard}>
-              <span className={styles.surfaceBridgeLabel}>Deep team read</span>
+              <span className={styles.surfaceBridgeLabel}>Team deep dive</span>
               <h2 className={styles.panelTitle}>Underlying Stats</h2>
               <p className={styles.summaryBandCopy}>
-                Hand off here when movement needs explanation, schedule texture,
-                or team-level process context.
+                Explain a team's movement with process stats and schedule context.
               </p>
               <Link href="/underlying-stats" className={styles.surfaceLinkPill}>
                 Open Underlying Stats
@@ -1540,11 +1524,10 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
             </article>
 
             <article className={styles.surfaceBridgeCard}>
-              <span className={styles.surfaceBridgeLabel}>Immediate support</span>
+              <span className={styles.surfaceBridgeLabel}>Next games</span>
               <h2 className={styles.panelTitle}>Projection And Starts</h2>
               <p className={styles.summaryBandCopy}>
-                Use runway and goalie-start support after the movement read, not
-                before it.
+                Upcoming projections and likely goalie starts.
               </p>
               <div className={styles.surfaceLinkList}>
                 <a href="#projections" className={styles.surfaceLinkPill}>
@@ -1557,11 +1540,10 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
             </article>
 
             <article className={styles.surfaceBridgeCard}>
-              <span className={styles.surfaceBridgeLabel}>Experimental layer</span>
+              <span className={styles.surfaceBridgeLabel}>Experimental</span>
               <h2 className={styles.panelTitle}>Sustainability Lab</h2>
               <p className={styles.summaryBandCopy}>
-                Keep elasticity bands, sustainability meters, and prototype
-                baselines in the lab until the contracts harden.
+                Experimental sustainability and elasticity tools.
               </p>
               <Link href="/trendsSandbox" className={styles.surfaceLinkPill}>
                 Open Trends Sandbox
@@ -1574,9 +1556,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
               <div>
                 <h2 className={styles.panelTitle}>Supporting Runway</h2>
                 <p className={styles.summaryBandCopy}>
-                  These modules support the movement read. They should inform
-                  the next decision after the trend is identified, not obscure
-                  the trend scan itself.
+                  Projections and goalie starts for the next slate.
                 </p>
               </div>
               <div className={styles.summaryBandMeta}>
@@ -1622,8 +1602,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                 </div>
                 <div className={styles.panelBody} tabIndex={0} role="region" aria-label="Projection runway table">
                   <p className={styles.summaryBandCopy}>
-                    Use this after the movement read to see who still has slate
-                    runway.
+                    Projected points and shots for upcoming games.
                   </p>
                   {renderSectionNotice("projection", "Projections")}
                   {sectionErrors.projection && projectionRows.length === 0 ? (
@@ -1698,8 +1677,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                 </div>
                 <div className={styles.panelBody} tabIndex={0} role="region" aria-label="Goalie start runway table">
                   <p className={styles.summaryBandCopy}>
-                    Start probability, win runway, and shutout ceiling to
-                    support the goalie movement view.
+                    Start, win and shutout chances for the next slate.
                   </p>
                   {renderSectionNotice("schedule", "Goalie starts")}
                   {sectionErrors.schedule && goalieRows.length === 0 ? (
@@ -1777,8 +1755,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
             </div>
             <div className={styles.goalieShareBody}>
               <p className={styles.summaryBandCopy}>
-                Use the existing goalie-share chart here as the workload context
-                companion to the goalie starts table.
+                How each team splits its starts between goalies.
               </p>
               {showGoalieShare ? (
                 <GoalieShareChart />

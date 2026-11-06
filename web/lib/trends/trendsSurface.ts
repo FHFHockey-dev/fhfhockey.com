@@ -30,8 +30,11 @@ export const LOCKED_PLAYER_BASELINES = [
   description: string;
 }>;
 
-export const DEFERRED_PLAYER_BASELINE_NOTE =
-  "Last Year stays out of strong v1 until a dedicated last-year rolling baseline is exposed as a stable source contract.";
+// Reader-facing summary of the baselines the trend views compare against.
+export const describeLockedBaselines = () =>
+  `Compared with ${new Intl.ListFormat("en", { type: "conjunction" }).format(
+    LOCKED_PLAYER_BASELINES.map((baseline) => baseline.label)
+  )} baselines`;
 
 export const PLAYER_QUICK_VIEWS = [
   {

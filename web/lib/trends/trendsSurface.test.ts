@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  DEFERRED_PLAYER_BASELINE_NOTE,
+  describeLockedBaselines,
   LOCKED_PLAYER_BASELINES,
   buildSkaterRecentSummaryCards,
   formatSkaterTrendWindowLabel,
@@ -22,7 +22,9 @@ describe("trendsSurface helpers", () => {
       "career",
       "all"
     ]);
-    expect(DEFERRED_PLAYER_BASELINE_NOTE).toContain("Last Year");
+    expect(describeLockedBaselines()).toBe(
+      "Compared with Season, 3-Year, Career, and Cumulative baselines"
+    );
     expect(isLockedPlayerBaselineMode("career")).toBe(true);
     expect(isLockedPlayerBaselineMode("lastYear")).toBe(false);
     expect(isPlayerQuickViewId("l30")).toBe(true);
