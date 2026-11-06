@@ -54,7 +54,8 @@ function publicEntry(entry: EntryRevision): EntryRevision { return { ...entry, u
 
 export async function readGameLines(supabase: any, args: { teamId?: number; gameId?: number; now: string }): Promise<GameLinesResponse> {
   const controls = lineSnapshotFlags();
-  const empty: GameLinesResponse = { enabled: controls.entryServing, mode: "snapshots", status: controls.entryServing ? "no_game" : "disabled", controls, game: null, games: [], teams: [] };
+  const empty: GameLinesResponse = { enabled: controls.entryServing, mode: "snapshots", status: controls.entryServing ? "no_game" : "disabled", controls, game: null, games: [], teams: [],
+    entryView: { mode: "expected", frozenAt: null, basis: null } };
   if (!controls.entryServing) return empty;
   let games = await hydrateLineGameStates(supabase, await fetchLineGames(supabase, args), args.now);
   if (args.gameId && !games.some((game) => game.id === args.gameId)) return empty;
@@ -92,7 +93,10 @@ export async function readGameLines(supabase: any, args: { teamId?: number; game
       unresolved: [...claims.filter((claim) => claim.teamId === teamId && (claim.gameId === game.id || claim.gameId == null) && !eligibleClaim(claim)).map((claim) => ({ claimId: claim.id, reasons: claim.reviewReasons.length ? claim.reviewReasons : ["Evidence is not eligible for selection"] })),
         ...scoped.filter((claim) => claim.kind === "entry" && previous.entry?.cutoff && (instant(claim.time.interpretedAt) ?? Infinity) > instant(previous.entry.cutoff)!).map((claim) => ({ claimId: claim.id, reasons: ["Late entry evidence requires an explicit correction"] }))],
       conflicts: [...previous.entry?.conflicts ?? [], ...pp.flatMap((decision) => decision.conflict ? [decision.conflict] : [])],
+      feed: [],
     };
   }));
-  return { enabled: true, mode: "snapshots", status: "ready", controls, game, games, teams };
+  const stored = teams.find((team) => team.entry && team.entry.status !== "expected")?.entry;
+  return { enabled: true, mode: "snapshots", status: "ready", controls, game, games, teams,
+    entryView: stored ? { mode: "entering", frozenAt: stored.cutoff, basis: "stored" } : { mode: "expected", frozenAt: null, basis: null } };
 }
