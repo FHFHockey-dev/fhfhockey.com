@@ -58,7 +58,7 @@ export async function readPollerHealth(input: { client: SupabaseClient; now: Dat
   };
 
   try {
-    const [providers, runs, startedRuns, alerts, shadow, lineSource, ccc] = await Promise.all([
+    const [providers, runs, startedRunTimes, alerts, shadow, lineSource, ccc] = await Promise.all([
       optional("Intake switch", async () => {
         const { data, error } = await db.from("tweet_intake_providers").select("source_key, provider, switched_at").abortSignal(signal);
         if (error) throw error;
@@ -67,13 +67,12 @@ export async function readPollerHealth(input: { client: SupabaseClient; now: Dat
       optional("Poller run history", () => readPages<PollRunRow>("x_timeline_poll_runs", (from) => db.from("x_timeline_poll_runs")
         .select("response_id, source_key, run_at, ok, enqueue_error, via, gap_state").gte("run_at", windowStart).lte("run_at", windowEnd)
         .order("run_at").order("response_id").order("source_key").range(from, from + PAGE - 1).abortSignal(signal))),
-      // Head-only. The last 2 minutes are left out: a run that just started may not have stored its body yet.
-      optional("Poller job runs", async () => {
-        const { count, error } = await db.from("x_timeline_poll_job_runs").select("runid", { count: "exact", head: true })
-          .gte("start_time", windowStart).lt("start_time", new Date(input.now.getTime() - RUN_BODY_GRACE_MS).toISOString()).abortSignal(signal);
-        if (error) throw error;
-        return count ?? 0;
-      }),
+      // Start times only, about 720 a day. The last 2 minutes are left out: a run that just started may not have stored
+      // its body yet.
+      optional("Poller job runs", async () => (await readPages<{ start_time: string }>("x_timeline_poll_job_runs", (from) =>
+        db.from("x_timeline_poll_job_runs").select("start_time").gte("start_time", windowStart)
+          .lt("start_time", new Date(input.now.getTime() - RUN_BODY_GRACE_MS).toISOString())
+          .order("start_time").range(from, from + PAGE - 1).abortSignal(signal))).map((row) => row.start_time)),
       optional("Watchdog state", async () => {
         const { data, error } = await db.from("x_timeline_alert_state").select("alert_key, active, first_seen_at, detail").eq("active", true).abortSignal(signal);
         if (error) throw error;
@@ -123,7 +122,7 @@ export async function readPollerHealth(input: { client: SupabaseClient; now: Dat
     if (others.length) warnings.push(`Not installed yet: ${others.join(", ")}.`);
     return assessPollerHealth({
       runsUnavailableReason: runsNotInstalled ? `is not installed yet (migration ${REPORT_SECTIONS_MIGRATION} not applied)` : undefined,
-      accounts, windowStart, windowEnd, providers, runs, startedRuns, alerts, shadow, queueRows, shadowStartedAt, warnings,
+      accounts, windowStart, windowEnd, providers, runs, startedRunTimes, alerts, shadow, queueRows, shadowStartedAt, warnings,
       ifttt: [...lineSource, ...ccc.map((row) => ({ ...row, source_key: "ccc" }))],
     });
   } catch (error) {

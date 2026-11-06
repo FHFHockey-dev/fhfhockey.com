@@ -24,10 +24,13 @@ describe("summariseReads", () => {
 });
 
 describe("summariseRunCadence", () => {
-  it("compares captured runs with the runs pg_cron started and finds the longest gap", () => {
-    const runs = [run(1, 2, "a", true), run(1, 2, "b", true), run(2, 4, "a", true), run(3, 40, "a", true)];
-    expect(summariseRunCadence(runs, START, END, 5)).toEqual({ started: 5, captured: 3, missed: 2, longestGapMinutes: 36, lastRunAt: at(40) });
+  it("matches started runs to captured results and measures gaps from the first captured run", () => {
+    const runs = [run(1, 30, "a", true), run(1, 30, "b", true), run(2, 32, "a", true), run(3, 50, "a", true)];
+    // Started at 30, 32, 34 (no result), 50 and 52 (no result); captured runs before 30 do not exist, which is not a gap.
+    expect(summariseRunCadence(runs, START, END, [at(29.9), at(31.9), at(34), at(49.95), at(52)]))
+      .toEqual({ started: 5, captured: 3, missed: 2, longestGapMinutes: 18, lastRunAt: at(50) });
     expect(summariseRunCadence(runs, START, END)).toMatchObject({ started: null, missed: null });
+    expect(summariseRunCadence([], START, END, [])).toMatchObject({ captured: 0, missed: 0, longestGapMinutes: 60 });
   });
 });
 
@@ -114,7 +117,7 @@ describe("assessPollerHealth", () => {
   it("warns on a long gap between captured runs and on started runs that left no result", () => {
     const health = assessPollerHealth({
       accounts: [accounts[0]!], windowStart: START, windowEnd: END, providers, alerts: [], shadow: [], ifttt: [], queueRows: [],
-      runs: [run(1, 1, "dfofantasy", true), run(2, 59, "dfofantasy", true)], startedRuns: 4,
+      runs: [run(1, 1, "dfofantasy", true), run(2, 59, "dfofantasy", true)], startedRunTimes: [at(1), at(20), at(40), at(59)],
     });
     expect(health.runs).toMatchObject({ longestGapMinutes: 58, started: 4, captured: 2, missed: 2 });
     expect(health.status).toBe("warning");

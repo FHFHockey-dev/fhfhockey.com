@@ -122,26 +122,33 @@ export function summariseReads(runs: PollRunRow[], sourceKey: string): NonNullab
     mirrorReads, unrecoveredGaps };
 }
 
+/** A run's body lands within the request timeout (60 s) of the job starting it; this allows for clock skew. */
+const BODY_AFTER_START_MS = 90_000;
+
 /**
- * Captured runs against the runs pg_cron actually started (null when unknown: the cadence would over-count a paused
- * job), and the longest gap between captured runs, window edges included.
+ * Captured runs, and the runs pg_cron started that left no result: a started run with no captured body within 90 s
+ * (auth failure, timeout, null body). Null when the job's runs are unknown; the 2-minute cadence would over-count a
+ * paused job. The longest gap is between captured runs and from the last one to the window's end; time before the
+ * first captured run is not a gap, since history may simply start there.
  */
 export function summariseRunCadence(
-  runs: PollRunRow[], windowStart: string, windowEnd: string, startedRuns: number | null = null,
+  runs: PollRunRow[], windowStart: string, windowEnd: string, startedRunTimes: string[] | null = null,
 ): NonNullable<PollerHealth["runs"]> {
-  const times = [...new Set(runs.map((run) => run.response_id))]
-    .map((id) => ms(runs.find((run) => run.response_id === id)!.run_at))
-    .sort((left, right) => left - right);
-  const start = ms(windowStart);
+  const byResponse = new Map<number, number>();
+  for (const run of runs) if (!byResponse.has(run.response_id)) byResponse.set(run.response_id, ms(run.run_at));
+  const times = [...byResponse.values()].sort((left, right) => left - right);
   const end = ms(windowEnd);
-  let longestGap = times.length ? 0 : (end - start) / 60_000;
-  const edges = [start, ...times, end];
-  for (let index = 1; index < edges.length; index++) longestGap = Math.max(longestGap, (edges[index]! - edges[index - 1]!) / 60_000);
+  let longestGap = times.length ? end - times[times.length - 1]! : end - ms(windowStart);
+  for (let index = 1; index < times.length; index++) longestGap = Math.max(longestGap, times[index]! - times[index - 1]!);
+  const missed = startedRunTimes?.filter((start) => {
+    const at = ms(start);
+    return !times.some((time) => time >= at - 5_000 && time <= at + BODY_AFTER_START_MS);
+  }).length ?? null;
   return {
-    started: startedRuns,
+    started: startedRunTimes?.length ?? null,
     captured: times.length,
-    missed: startedRuns === null ? null : Math.max(0, startedRuns - times.length),
-    longestGapMinutes: Math.round(longestGap),
+    missed,
+    longestGapMinutes: Math.round(longestGap / 60_000),
     lastRunAt: times.length ? new Date(times[times.length - 1]!).toISOString() : null,
   };
 }
@@ -182,8 +189,8 @@ export function assessPollerHealth(input: {
   ifttt: IftttQueueEvent[];
   /** Null when x_timeline_poll_runs is unreadable (for example, its migration is not applied). */
   runs: PollRunRow[] | null;
-  /** pg_cron runs of the poller job in the window (x_timeline_poll_job_runs); null when unknown. */
-  startedRuns?: number | null;
+  /** Start times of the poller job's pg_cron runs in the window (x_timeline_poll_job_runs); null when unknown. */
+  startedRunTimes?: string[] | null;
   /** Why runs is null, completing "Poller run history …"; defaults to "is unavailable". */
   runsUnavailableReason?: string;
   /** Each account's earliest shadow sighting ever; coverage starts there. A missing key means no limit. */
@@ -263,7 +270,7 @@ export function assessPollerHealth(input: {
   });
 
   const incidents = incidentsFor(alerts, (alertKey) => !alertKey.includes(":"));
-  const cadence = runs ? summariseRunCadence(runs, input.windowStart, input.windowEnd, input.startedRuns ?? null) : null;
+  const cadence = runs ? summariseRunCadence(runs, input.windowStart, input.windowEnd, input.startedRunTimes ?? null) : null;
   const overall: HealthStatus[] = accounts.map((account) => account.status);
   if (incidents.length) overall.push("critical");
   if (cadence && cadence.longestGapMinutes !== null && cadence.longestGapMinutes >= 12) overall.push("warning");
