@@ -49,6 +49,11 @@ $share-rail-size: 8px;
 .heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: v.$space-sm; margin-bottom: v.$space-md; }
 .eyebrow { color: v.$color-blue-300; text-transform: uppercase; letter-spacing: v.$mobile-letter-spacing-wide; font-size: v.$font-size-xs; }
 .scope { color: v.$text-secondary; font-size: v.$font-size-sm; }
+// The same links on every studio page: where the editor came from (All cards) and the sibling studios, with dot separators.
+.studioNav { display: flex; flex-wrap: wrap; gap: v.$space-xxs v.$space-sm; margin-top: v.$space-xxs;
+  a { color: v.$color-blue-300; }
+  a + a::before { content: "·"; margin-right: v.$space-sm; color: v.$text-secondary; }
+}
 .panel { @include p.panel-shell($padding: v.$space-md, $overflow: visible); min-width: 0; }
 .controls { display: flex; flex-wrap: wrap; gap: v.$space-sm; align-items: flex-end; label { display: grid; gap: v.$space-xs; min-width: 0; max-width: 100%; } }
 .days { margin: v.$space-md 0 0; padding: 0; border: 0; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: v.$space-xs v.$space-md;
@@ -75,7 +80,8 @@ $share-rail-size: 8px;
 .sourceBar, .sourceNote { width: 100%; max-width: 1280px; margin: 0 auto; padding: v.$space-md v.$space-xl; color: v.$text-primary; font-family: v.$font-family-primary;
   @media (max-width: 760px) { padding-inline: 12px; }
 }
-.sourceBar { padding-bottom: v.$space-sm;
+.sourceBar { display: flex; flex-wrap: wrap; align-items: center; gap: v.$space-sm v.$space-xl; padding-bottom: v.$space-sm;
+  .studioNav { margin-top: 0; }
   label { display: inline-flex; flex-wrap: wrap; align-items: center; gap: v.$space-sm; max-width: 100%; color: v.$text-secondary; font-size: v.$font-size-sm; font-weight: 600; }
   select { @include share-field; font-weight: 400; }
 }

@@ -867,8 +867,8 @@ export default function SocialShare({ format, asOf }: { format: SocialShareForma
   };
 
   return <div className={styles.page}>
-    <header className={styles.heading}><div><p className={styles.eyebrow}>FHFH / Share studio</p><h1>{labels[format]}</h1><p><Link href="/social-share/player-cards" prefetch={false}>Player cards · visual preview</Link> · <Link href="/social-share/posts" prefetch={false}>Post library</Link></p></div><span className={styles.scope}>{!supported ? "Source qualification pending" : format === "tuesday-trends" ? "Rolling game metrics · Yahoo ownership · NHL schedule" : "Schedule only · NHL schedule source"}</span></header>
-    {!supported ? <section className={styles.panel}><h2>Source qualification required</h2><p>This format is blocked until current-season player data, dated ownership evidence, participation and provider rights qualify. No player rankings are available.</p><a href="/social-share/game-grid">Open the schedule studio</a></section> : <>
+    <header className={styles.heading}><div><p className={styles.eyebrow}>FHFH / Share studio</p><h1>{labels[format]}</h1><nav className={styles.studioNav} aria-label="Share studios"><Link href="/social-share" prefetch={false}>All cards</Link><Link href="/social-share/posts" prefetch={false}>Post library</Link><Link href="/social-share/player-cards" prefetch={false}>Player cards</Link></nav></div><span className={styles.scope}>{!supported ? "Sources not ready" : format === "tuesday-trends" ? "Rolling game metrics · Yahoo ownership · NHL schedule" : "Schedule only · NHL schedule source"}</span></header>
+    {!supported ? <section className={styles.panel}><h2>Not available yet</h2><p>This studio opens once it has current-season player data, dated ownership, game participation and the rights to use them. Until then it ranks no players.</p><a href="/social-share/game-grid">Open the weekly schedule</a></section> : <>
       <section className={styles.panel} aria-label="Schedule settings">
         <div className={styles.controls}>
           <label>Week of (Monday)<input type="date" value={weekStart} onChange={event => changeWeek(event.target.value)} disabled={loading || exporting} /></label>
@@ -906,7 +906,8 @@ export default function SocialShare({ format, asOf }: { format: SocialShareForma
         {loading && <p>Loading a new schedule edition…</p>}
         {/* Retry sits here while an edition is loaded, and inside the empty frame when none is: one Retry at a time. */}
         {error && <p role="alert">{error}{snapshot && <> <button type="button" disabled={loading || exporting} onClick={() => void load(weekStart, selectedRef.current)}>Retry schedule</button></>}</p>}
-        {snapshot && <><p>NHL schedule checked {timeLabel(snapshot.source.fetchedAt)} · Provider update {timeLabel(snapshot.source.updatedAt)} · Remaining after {timeLabel(snapshot.generatedAt)}</p>
+        {/* The NHL's own update time shows only when it sent one; "Provider update Not available" told the editor nothing. */}
+        {snapshot && <><p>NHL schedule checked {timeLabel(snapshot.source.fetchedAt)}{snapshot.source.updatedAt && <> · NHL updated it {timeLabel(snapshot.source.updatedAt)}</>} · Remaining games after {timeLabel(snapshot.generatedAt)}</p>
           {!snapshotMatchesWeek && <p>Showing the previous week, {yearDateLabel(snapshot.weekStart)} – {yearDateLabel(snapshot.weekEnd)}, as context. Load the requested week to select its days.</p>}
           {snapshot.state !== "ready" && <p>Schedule {snapshot.state}: {[...snapshot.reasons, ...snapshot.source.reasons].join(" ")}</p>}
           {expired && <p>This edition has expired. Refresh the schedule to download.</p>}

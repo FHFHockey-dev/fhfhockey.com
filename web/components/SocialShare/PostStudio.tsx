@@ -217,7 +217,7 @@ export default function PostStudio() {
   const sync = loading ? "Updating…" : held || blocking ? "Not updated" : error ? "Update failed" : shown ? "Up to date" : "";
 
   return <div className={styles.page}>
-    <header className={styles.heading}><div><p className={styles.eyebrow}>FHFH / Share studio</p><h1>Post library</h1><p><Link href="/social-share" prefetch={false}>All cards</Link> · <Link href="/social-share/game-grid" prefetch={false}>Weekly schedule studio</Link> · <Link href="/social-share/tuesday-trends" prefetch={false}>Tuesday trends</Link></p></div><span className={styles.scope}>Choose any post on any day. Nothing is scheduled or published from here.</span></header>
+    <header className={styles.heading}><div><p className={styles.eyebrow}>FHFH / Share studio</p><h1>Post library</h1><nav className={styles.studioNav} aria-label="Share studios"><Link href="/social-share" prefetch={false}>All cards</Link><Link href="/social-share/game-grid" prefetch={false}>Weekly schedule</Link><Link href="/social-share/tuesday-trends" prefetch={false}>Tuesday trends</Link></nav></div><span className={styles.scope}>Choose any post on any day. Nothing is scheduled or published from here.</span></header>
     <section className={`${styles.panel} ${postStyles.settings}`} aria-label="Post settings">
       <div className={postStyles.postRow}>
         <label className={postStyles.field}><span>Post</span>

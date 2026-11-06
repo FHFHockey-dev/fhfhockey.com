@@ -382,7 +382,7 @@ test("edition expiry disables export and unsupported formats stay explicitly gat
   await expect(page.getByText("This edition has expired. Refresh the schedule to download.")).toBeVisible();
   for (const format of ["player-spotlight", "category-rescue"]) {
     await page.goto(`/social-share/${format}`);
-    await expect(page.getByRole("heading", { name: "Source qualification required" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Not available yet" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Download PNG" })).toHaveCount(0);
   }
   expect((await page.goto("/social-share/not-a-format"))?.status()).toBe(404);
