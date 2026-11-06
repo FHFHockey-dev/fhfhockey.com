@@ -375,6 +375,10 @@ deno_version = 2
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
+# pg_cron calls this with its own x-fhfh-poll-secret header, not a Supabase JWT.
+[functions.x-timeline-poll]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

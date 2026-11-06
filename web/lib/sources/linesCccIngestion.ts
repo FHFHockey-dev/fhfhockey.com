@@ -170,7 +170,7 @@ export type LinesCccResolvedQuotedTweet = {
   quotedAuthorHandle: string | null;
   resolvedUrl: string;
   shortUrl: string | null;
-  retrievalStatus: "x_api_success" | "oembed_success" | "resolved_url_only";
+  retrievalStatus: "x_api_success" | "oembed_success" | "resolved_url_only" | "fxtwitter_payload";
 };
 
 export type LinesCccWrapperOEmbedBackfillState = {

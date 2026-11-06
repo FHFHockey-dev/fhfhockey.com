@@ -40,6 +40,7 @@ import {
   type ParsedLinesCccSource,
   type LinesCccIftttEventInput,
 } from "lib/sources/linesCccIngestion";
+import { quotedTweetFromFxtwitterPayload } from "lib/sources/fxtwitterQueuePayload";
 import adminOnly from "utils/adminOnlyMiddleware";
 
 async function fetchPendingIftttEvents(args: {
@@ -362,9 +363,11 @@ export default withCronJobAudit(
       }
 
       let quoteResolutionState: Record<string, unknown> | null = null;
-      if (shouldResolveQuotedTweetForCandidate(candidate)) {
-        quotedTweetResolveAttemptCount += 1;
-        const quotedTweet = await resolveLinesCccQuotedTweet({
+      // Scraper rows carry their quote; IFTTT rows still need the t.co lookup.
+      const fxtwitterQuote = quotedTweetFromFxtwitterPayload(event.raw_payload);
+      if (fxtwitterQuote || shouldResolveQuotedTweetForCandidate(candidate)) {
+        if (!fxtwitterQuote) quotedTweetResolveAttemptCount += 1;
+        const quotedTweet = fxtwitterQuote ?? await resolveLinesCccQuotedTweet({
           wrapperText: candidate.enrichedText ?? candidate.rawText ?? "",
         });
         candidate = applyQuotedTweetPreference({

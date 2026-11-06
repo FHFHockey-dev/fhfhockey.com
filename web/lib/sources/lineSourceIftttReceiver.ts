@@ -23,7 +23,7 @@ type ResponseBody =
       success: true;
       sourceKey: string;
       tweetId: string | null;
-      processingStatus: "pending" | "processed_attempted" | "held_for_review";
+      processingStatus: "pending" | "processed_attempted" | "held_for_review" | "ignored_provider_fxtwitter";
       receipt?: Awaited<ReturnType<typeof retainIftttRawReceipt>>;
       processor?: {
         success: boolean;
@@ -139,6 +139,20 @@ async function processStoredTweetEvent(args: {
   return requestLineSourceProcessor(args.config.processorPath, params);
 }
 
+/**
+ * Which intake feeds a source's live queue (table tweet_intake_providers; see the IFTTT-TO-FXTWITTER-CUTOVER
+ * debrief). IFTTT unless the row says fxtwitter: a missing table, missing row or failed read keeps the webhook working.
+ */
+async function activeTweetIntakeProvider(sourceKey: string): Promise<"ifttt" | "fxtwitter"> {
+  try {
+    const { data, error } = await (supabase.from("tweet_intake_providers" as any) as any)
+      .select("provider").eq("source_key", sourceKey).maybeSingle();
+    return !error && data?.provider === "fxtwitter" ? "fxtwitter" : "ifttt";
+  } catch {
+    return "ifttt";
+  }
+}
+
 /** Small current-day retries; historic pending reports are never a live backfill. */
 export async function retryPendingLineSourceEvents() {
   // A controlled pilot is retain-only; its pending carriers need separate processing authority.
@@ -252,6 +266,14 @@ export function createLineSourceIftttReceiver(
         sourceKey: config.sourceKey, sourceAccount: config.sourceAccount });
     } catch {
       return res.status(503).json({ success: false, error: "Controlled IFTTT intake is unavailable" });
+    }
+
+    // Cutover: once the scraper feeds this account, IFTTT deliveries are acknowledged and dropped, so a repost is
+    // never queued twice (IFTTT keys it by the wrapper's id, the scraper by the original's). The controlled-intake
+    // pilot keeps its own rules.
+    if (!intake.controlled && await activeTweetIntakeProvider(config.sourceKey) === "fxtwitter") {
+      return res.status(200).json({ success: true, sourceKey: config.sourceKey, tweetId: null,
+        processingStatus: "ignored_provider_fxtwitter" });
     }
 
     const text = getBodyValue(req.body, ["text", "Text"]);
