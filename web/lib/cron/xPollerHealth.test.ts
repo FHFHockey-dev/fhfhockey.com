@@ -85,6 +85,23 @@ describe("assessPollerHealth", () => {
     expect(health.accounts[0]!.status).toBe("healthy");
   });
 
+  it("warns when IFTTT's newest post is more than 20 minutes ahead of the shadow's newest sighting", () => {
+    const base = { accounts: [accounts[0]!, accounts[1]!], windowStart: START, windowEnd: END, providers, runs: everyRunOk, alerts: [], queueRows: [] };
+    const stale = assessPollerHealth({ ...base,
+      shadow: [sighting("dfofantasy", "1", 10), sighting("nhl_rosters", "9", 5)],
+      ifttt: [event("a", "dfofantasy", "1", 11), event("b", "dfofantasy", "2", 45)] });
+    const dfo = stale.accounts[0]!;
+    expect(dfo.staleness).toEqual({ iftttNewestAt: at(45), shadowNewestAt: at(10), lagMinutes: 35, stale: true });
+    expect(dfo.status).toBe("warning");
+    // Switched accounts have no IFTTT to compare with: last-sighting age only.
+    expect(stale.accounts[1]).toMatchObject({ staleness: null, lastSightingAgeMinutes: 55 });
+    const fresh = assessPollerHealth({ ...base, shadow: [sighting("dfofantasy", "2", 44)], ifttt: [event("b", "dfofantasy", "2", 45)] });
+    expect(fresh.accounts[0]!.staleness).toMatchObject({ lagMinutes: 1, stale: false });
+    // A post IFTTT received 5 minutes ago may still be in flight: compared from the newest settled post only.
+    const inFlight = assessPollerHealth({ ...base, shadow: [sighting("dfofantasy", "1", 10)], ifttt: [event("a", "dfofantasy", "1", 11), event("c", "dfofantasy", "3", 55)] });
+    expect(inFlight.accounts[0]!.staleness).toMatchObject({ iftttNewestAt: at(11), stale: false });
+  });
+
   it("flags IFTTT rows after the switch and a repost queued by both providers", () => {
     const health = assessPollerHealth({
       accounts: [accounts[1]!], windowStart: START, windowEnd: END, providers, runs: everyRunOk, alerts: [],

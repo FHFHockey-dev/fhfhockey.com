@@ -10,6 +10,11 @@
 //             mirror served and how many page gaps went unrecovered (posts lost beyond the 100 it can page back).
 //   enqueue   switched accounts only: each shadow first sighting at or after switched_at should have exactly one queue
 //             row, written by the scraper (source 'fxtwitter'). This replaces IFTTT coverage once IFTTT stops.
+//   staleness accounts still on IFTTT: IFTTT's newest settled post (received in the window, over 10 minutes ago) more
+//             than 20 minutes newer than the
+//             shadow's newest sighting means the FxTwitter profile feed is serving an old page while reads still
+//             succeed (11-06: CCC's newest was 19:16 at about 20:00). Switched accounts show their last sighting's age
+//             only, since IFTTT no longer delivers for them.
 //   incidents open watchdog alerts (x_timeline_alert_state) for the account.
 import { pairShadowWithIfttt, type PairableIfttt, type PairableShadow } from "lib/sources/xTimelinePairing";
 
@@ -21,6 +26,7 @@ const READ_SUCCESS_CRITICAL = 0.5;
 /** The watchdog's account_down threshold: 8 failed runs, about 16 minutes. */
 const FAIL_STREAK_ALERT = 8;
 const MISSED_SAMPLE_LIMIT = 3;
+export const STALE_FEED_MINUTES = 20;
 /** IFTTT rows this recent may still be in flight to the scraper (a failed read is retried 2 minutes later). */
 export const COVERAGE_GRACE_MS = 10 * 60 * 1000;
 
@@ -62,6 +68,10 @@ export type AccountPollerHealth = {
     unrecoveredGaps: number;
   } | null;
   lastSightingAt: string | null;
+  /** Minutes from the shadow's newest sighting to the window's end. */
+  lastSightingAgeMinutes: number | null;
+  /** IFTTT accounts only: how far IFTTT's newest post is ahead of the shadow's newest sighting. */
+  staleness: { iftttNewestAt: string; shadowNewestAt: string | null; lagMinutes: number | null; stale: boolean } | null;
   enqueue: {
     sightings: number;
     queuedOnce: number;
@@ -169,6 +179,7 @@ export function accountStatus(account: Omit<AccountPollerHealth, "status">): Hea
     if (enqueue.missing > 0) statuses.push("critical");
     if (enqueue.viaIfttt + enqueue.doubleQueued + enqueue.iftttAfterSwitch > 0) statuses.push("warning");
   }
+  if (account.staleness?.stale) statuses.push("warning");
   if (account.incidents.length) statuses.push("critical");
   if (provider === "unknown") statuses.push("unknown");
   return worstStatus(statuses);
@@ -239,6 +250,15 @@ export function assessPollerHealth(input: {
 
     const accountShadow = shadow.filter((row) => row.source_key === key);
     const lastSightingAt = accountShadow.length ? accountShadow[accountShadow.length - 1]!.first_seen_at : null;
+    const lastSightingAgeMinutes = lastSightingAt ? Math.round((end - ms(lastSightingAt)) / 60_000) : null;
+    let staleness: AccountPollerHealth["staleness"] = null;
+    // Posts IFTTT received in the last 10 minutes may still be on their way to the scraper, as for coverage.
+    const settled = iftttInWindow.filter((event) => ms(event.received_at) <= end - COVERAGE_GRACE_MS);
+    if (provider === "ifttt" && settled.length) {
+      const iftttNewestAt = settled.reduce((newest, event) => (ms(event.received_at) > ms(newest) ? event.received_at : newest), settled[0]!.received_at);
+      const lagMinutes = lastSightingAt ? Math.round((ms(iftttNewestAt) - ms(lastSightingAt)) / 60_000) : null;
+      staleness = { iftttNewestAt, shadowNewestAt: lastSightingAt, lagMinutes, stale: lagMinutes === null || lagMinutes > STALE_FEED_MINUTES };
+    }
 
     let enqueue: AccountPollerHealth["enqueue"] = null;
     if (provider === "fxtwitter" && account.hasQueue && switchedAt) {
@@ -265,7 +285,8 @@ export function assessPollerHealth(input: {
     const reads = runs ? summariseReads(runs, key) : null;
     const incidents = incidentsFor(alerts, (alertKey) => alertKey.endsWith(`:${key}`));
 
-    const health = { sourceKey: key, handle: account.handle, status: "unknown" as HealthStatus, provider, switchedAt, coverage, reads, lastSightingAt, enqueue, incidents, notes };
+    const health = { sourceKey: key, handle: account.handle, status: "unknown" as HealthStatus, provider, switchedAt, coverage, reads, lastSightingAt,
+      lastSightingAgeMinutes, staleness, enqueue, incidents, notes };
     return { ...health, status: accountStatus(health) };
   });
 

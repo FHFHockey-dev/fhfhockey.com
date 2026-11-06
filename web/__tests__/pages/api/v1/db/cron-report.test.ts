@@ -65,7 +65,7 @@ const POLLER_NOT_INSTALLED = { status: "unknown", windowStart: "2026-03-19T12:10
   incidents: [], warnings: ["Poller run history is not installed yet (migration 20261106201221 not applied); read success is unknown."],
   accounts: [{ sourceKey: "dfofantasy", handle: "DFOFantasy", status: "unknown", provider: "ifttt", switchedAt: null, reads: null,
     coverage: { from: "2026-03-19T12:10:00.000Z", iftttRows: 31, matched: 31, rate: 1, missed: 0, samples: [] },
-    lastSightingAt: null, enqueue: null, incidents: [], notes: [] }] };
+    lastSightingAt: null, lastSightingAgeMinutes: null, staleness: null, enqueue: null, incidents: [], notes: [] }] };
 const backlogItem = (key: string, label: string, count: number) => ({ key, label, count, previous: null, delta: null });
 const BACKLOG_NOT_INSTALLED = { status: "ok", snapshotDate: "2026-03-20", previousDate: null,
   queue: [backlogItem("line_combination", "Line combos", 1400), backlogItem("goalie", "Goalies", 1830)],
