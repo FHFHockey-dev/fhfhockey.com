@@ -349,6 +349,8 @@ type Props = {
   id: number;
   mode: Mode;
   onModeChanged?: (newMode: Mode) => void;
+  /** Show only this team's matrix. Omit to show both teams of the game. */
+  teamId?: number;
 };
 
 export const OPTIONS = [
@@ -367,7 +369,8 @@ export const OPTIONS = [
 export default function LinemateMatrix({
   id,
   mode,
-  onModeChanged = () => {}
+  onModeChanged = () => {},
+  teamId
 }: Props) {
   const [activeMode, setActiveMode] = useState<Mode>(mode);
 
@@ -382,7 +385,7 @@ export default function LinemateMatrix({
   };
 
   return <LinemateMatrixView toiData={toiData} rosters={rosters} gameInfo={gameInfo}
-    loading={loading} error={error} mode={activeMode} onModeChanged={handleModeChange} />;
+    loading={loading} error={error} mode={activeMode} onModeChanged={handleModeChange} teamId={teamId} />;
 }
 
 type MatrixViewProps = {
@@ -394,11 +397,13 @@ type MatrixViewProps = {
   mode: Mode;
   onModeChanged: (mode: Mode) => void;
   compact?: boolean;
+  /** Show only this team's matrix. Omit to show both teams of the game. */
+  teamId?: number;
 };
 
 export const LinemateMatrixView = memo(function LinemateMatrixView({
   toiData, rosters, gameInfo, loading = false, error = null,
-  mode: activeMode, onModeChanged: handleModeChange, compact = false
+  mode: activeMode, onModeChanged: handleModeChange, compact = false, teamId
 }: MatrixViewProps) {
 
   if (!gameInfo) {
@@ -419,6 +424,10 @@ export const LinemateMatrixView = memo(function LinemateMatrixView({
     );
   }
   const [homeTeam, awayTeam] = gameInfo;
+  const shownTeams =
+    teamId === undefined
+      ? [homeTeam, awayTeam]
+      : gameInfo.filter((team) => team.id === teamId);
   return (
     <div className={classNames(styles.shell, { [styles.compact]: compact })}>
       <div className={styles.selectWrapper}>
@@ -447,27 +456,23 @@ export const LinemateMatrixView = memo(function LinemateMatrixView({
         </div>
       )}
       <div className={styles.gridWrapper}>
-        <LinemateMatrixInternal
-          key={homeTeam.id}
-          teamId={homeTeam.id}
-          teamName={homeTeam.name}
-          roster={rosters[homeTeam.id]}
-          toiData={toiData[homeTeam.id]}
-          mode={activeMode}
-          compact={compact}
-          logo={homeTeam.logo}
-        />
-
-        <LinemateMatrixInternal
-          key={awayTeam.id}
-          teamId={awayTeam.id}
-          teamName={awayTeam.name}
-          roster={rosters[awayTeam.id]}
-          toiData={toiData[awayTeam.id]}
-          mode={activeMode}
-          compact={compact}
-          logo={awayTeam.logo}
-        />
+        {shownTeams.length === 0 ? (
+          <div className={styles.emptyState}>
+            No shared ice time for this team in that game.
+          </div>
+        ) : null}
+        {shownTeams.map((team) => (
+          <LinemateMatrixInternal
+            key={team.id}
+            teamId={team.id}
+            teamName={team.name}
+            roster={rosters[team.id]}
+            toiData={toiData[team.id]}
+            mode={activeMode}
+            compact={compact}
+            logo={team.logo}
+          />
+        ))}
       </div>
     </div>
   );

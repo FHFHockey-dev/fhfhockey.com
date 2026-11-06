@@ -1,7 +1,7 @@
 import dynamic from "next/dynamic";
 import ProjectedLineups from "components/LineCombinations/ProjectedLineups";
 
-import React, { useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef } from "react";
 import { useRouter } from "next/router";
 import { NextSeo } from "next-seo";
 import type { GetStaticPaths, GetStaticProps } from "next";
@@ -102,8 +102,6 @@ export default function TeamLC({
     router.push(`/lines/${mappedNewAbbreviation}`);
   };
   const onGameChange = (gameId: number) => { void router.push({ pathname: router.pathname, query: { abbreviation, gameId } }, undefined, { shallow: true }); };
-
-  const [matrixOpen, setMatrixOpen] = useState(false);
 
   // download the line combo
   const size = useScreenSize();
@@ -335,20 +333,13 @@ export default function TeamLC({
           aria-labelledby="lines-shared-ice"
         >
           <h2 id="lines-shared-ice" className={styles.sectionTitle}>
-            Shared ice time, last game
+            {teamName} shared ice time, last game
           </h2>
-          <details
-            className={styles.matrixDisclosure}
-            onToggle={(event) => setMatrixOpen(event.currentTarget.open)}
-          >
-            <summary>Show the shared-ice matrix (both teams)</summary>
-            {matrixOpen ? (
-              <ObservedLinemateMatrix
-                id={lineCombinations.game.id}
-                mode="line-combination"
-              />
-            ) : null}
-          </details>
+          <ObservedLinemateMatrix
+            id={lineCombinations.game.id}
+            mode="line-combination"
+            teamId={lineCombinations.game.teamId ?? sourceTeamMeta.id}
+          />
         </section>
 
         <SurfaceWorkflowLinks

@@ -51,22 +51,6 @@
     color: v.$text-secondary;
   }
 
-  .matrixDisclosure {
-    margin-top: v.$space-sm;
-
-    summary {
-      cursor: pointer;
-      color: v.$primary-color;
-      font-size: v.$font-size-sm;
-      border-radius: v.$border-radius-sm;
-
-      &:focus-visible {
-        outline: 2px solid v.$primary-color;
-        outline-offset: 2px;
-      }
-    }
-  }
-
   .lineup {
     display: flex;
     flex-direction: column;

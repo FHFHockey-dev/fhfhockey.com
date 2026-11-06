@@ -154,6 +154,36 @@ describe("LinemateMatrix", () => {
     expect(screen.queryByRole("tooltip")).toBeNull();
   });
 
+  it("shows only the requested team when teamId is set, and both teams by default", () => {
+    const home = [player(10, "C"), player(11, "D")];
+    const away = [player(20, "C"), player(21, "D")].map(p => ({ ...p, teamId: 2 }));
+    const props = {
+      gameInfo: [{ id: 1, name: "Home" }, { id: 2, name: "Away" }],
+      rosters: { 1: home, 2: away },
+      toiData: { 1: Object.values(diagonalToi(home, { 10: 100, 11: 100 })), 2: Object.values(diagonalToi(away, { 20: 100, 21: 100 })) },
+      mode: "line-combination" as const,
+      onModeChanged: () => {},
+    };
+
+    const { container, unmount } = render(<LinemateMatrixView {...props} />);
+    expect(screen.getByText("Home")).toBeTruthy();
+    expect(screen.getByText("Away")).toBeTruthy();
+    expect([...container.querySelectorAll("section[id^='linemate-matrix-']")].map(s => s.id))
+      .toEqual(["linemate-matrix-1", "linemate-matrix-2"]);
+    unmount();
+
+    const filtered = render(<LinemateMatrixView {...props} teamId={2} />);
+    expect(screen.queryByText("Home")).toBeNull();
+    expect(screen.getByText("Away")).toBeTruthy();
+    expect([...filtered.container.querySelectorAll("section[id^='linemate-matrix-']")].map(s => s.id))
+      .toEqual(["linemate-matrix-2"]);
+    filtered.unmount();
+
+    render(<LinemateMatrixView {...props} teamId={99} />);
+    expect(screen.getByText("No shared ice time for this team in that game.")).toBeTruthy();
+    expect(screen.queryByText("Home")).toBeNull();
+  });
+
   it("keeps the standalone loading wrapper and its missing-game status", () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
