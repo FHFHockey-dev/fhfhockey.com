@@ -184,6 +184,7 @@ export default function PostStudio() {
   }, []);
 
   const squareReady = assetsReady && !!snapshot && snapshot.post === entry.id && snapshot.teams.every(team => team in logos) && (!sharePostShowsCard(snapshot) || !!Card);
+  const previewShown = !!snapshot && squareReady;
   const exportBlock = snapshot && snapshot.post === entry.id ? sharePostExportBlock(entry, snapshot, settings) : "This post is not loaded yet.";
   const formFields = entry.fields.filter(field => !field.panelOnly && (!field.onlyForPeriod || settings.period === field.onlyForPeriod));
   /** A field hidden by the period no longer counts against the post. */
@@ -248,24 +249,34 @@ export default function PostStudio() {
       })}</div></fieldset>}
     </section>
     <div className={styles.status} aria-live="polite">
-      {error && <p role="alert">{error} <button type="button" disabled={loading || exporting} onClick={() => refresh(settings)}>Retry</button></p>}
+      {/* Retry sits here while a card still shows, and inside the empty frame when none does: one Retry at a time. */}
+      {error && <p role="alert">{error}{previewShown && <> <button type="button" disabled={loading || exporting} onClick={() => refresh(settings)}>Retry</button></>}</p>}
       {held && !(entry.periodControl && settings.period === PERIOD_CUSTOM) && <p data-testid="settings-held">Not updated: {held}</p>}
       {snapshot && !loading && snapshot.state !== "ready" && <p><b>{STATE_LABELS[snapshot.state]}</b>: {snapshot.reasons.join(" ")}</p>}
       {snapshot && !loading && exportBlock && snapshot.state === "ready" && <p>{exportBlock}{shown && (!shown.expiresAt || Date.parse(shown.expiresAt) <= Date.now()) && <> <button type="button" disabled={exporting} onClick={() => refresh(settings)}>Load a new edition</button></>}</p>}
-      {assetError && <p role="alert">{assetError} <button type="button" onClick={() => setAssetAttempt(current => current + 1)}>Retry</button></p>}
+      {/* Without fonts no card can show, so the asset Retry is always inside the empty frame. */}
+      {assetError && <p role="alert">{assetError}</p>}
     </div>
     <div className={Panel && snapshot?.data != null && snapshot.post === entry.id ? postStyles.builder : undefined}>
     {Panel && snapshot?.data != null && snapshot.post === entry.id && <aside className={styles.panel} aria-label="Build this post"><Panel snapshot={snapshot} data={snapshot.data} settings={settings} logos={logos} change={(fieldId: string, value: ShareSettings[string]) => edit({ [fieldId]: value })} disabled={exporting} /></aside>}
-    <section className={styles.panel} aria-label="Graphic preview">
+    <section className={`${styles.panel} ${postStyles.previewPanel}`} aria-label="Graphic preview">
       <div className={styles.panelHeader}><h2>1080 × 1080 preview</h2><span>{entry.title}</span></div>
       {snapshot?.post === entry.id && !!snapshot.pageNotes?.length && <div className={postStyles.pageNotes} data-testid="post-page-notes" role="note" aria-label="Notes for this edition, not on the PNG">
         {snapshot.pageNotes.map(note => <p key={note}>{note}</p>)}
       </div>}
+      {/* On a wide panel the evidence sits beside the card, its actions under it (TJ, 2026-11-06), instead of running the full width. */}
+      <div className={postStyles.previewBody}>
+      <div className={postStyles.previewMain}>
       <div className={styles.previewFrame} ref={frame} style={{ height: scale * SHARE_SIZE }}>
         {snapshot && squareReady && <div ref={preview} className={`${styles.square} ${styles.gridSquare}`} style={{ transform: `scale(${scale})` }} data-testid="share-square" role="img" aria-label={alt} data-export-token={token}>
           <PostFrame entry={entry} snapshot={snapshot} settings={settings} brandLogo={brandLogo} logos={logos} Card={Card} />
         </div>}
-        {!assetsReady && !assetError && <p>Preparing local fonts and branding…</p>}
+        {/* The frame keeps the card's size, so say what is missing instead of leaving an empty square. */}
+        {!previewShown && <div className={styles.previewEmpty} data-testid="preview-empty">
+          <p>{assetError ? "No preview: the fonts or logo did not load." : !assetsReady ? "Preparing local fonts and branding…" : held || blocking ? "No preview: these settings are not valid yet." : error ? "No preview: this post did not load." : "Loading this post…"}</p>
+          {assetError ? <button type="button" onClick={() => setAssetAttempt(current => current + 1)}>Retry</button>
+            : error && !held && !blocking && <button type="button" disabled={loading || exporting} onClick={() => refresh(settings)}>Retry</button>}
+        </div>}
       </div>
       <div className={styles.actions}><button type="button" disabled={!canExport || exporting} onClick={async () => {
         if (!preview.current || !snapshot) return; setExporting(true); setFeedback("");
@@ -284,9 +295,13 @@ export default function PostStudio() {
         try { await navigator.clipboard.writeText(alt); setFeedback("Alt text copied."); }
         catch { setFeedback("Alt text could not be copied. Select and copy the text below."); }
       }}>Copy alt text</button></div><p role="status">{feedback}</p>
+      </div>
+      <div className={postStyles.previewSide}>
       {snapshot && <PostEvidence entry={entry} snapshot={snapshot} settings={settings} />}
       {snapshot && <p className={postStyles.defaultNote}>Edition {timeLabel(snapshot.generatedAt)}</p>}
       {snapshot && <details><summary>Suggested alt text</summary><p>{alt}</p></details>}
+      </div>
+      </div>
     </section>
     </div>
   </div>;

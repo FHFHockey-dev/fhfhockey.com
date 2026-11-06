@@ -65,3 +65,10 @@
 .builder { display: grid; grid-template-columns: minmax(280px, 380px) minmax(0, 1fr); gap: v.$space-md; align-items: start;
   @media (max-width: 900px) { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* The preview panel: on a wide panel the card and its actions keep a 540px column and the evidence takes the rest beside
+   it (TJ, 2026-11-06), so the fine print never runs the full width under a small card. Narrow panels stack as before. */
+.previewPanel { container-type: inline-size; }
+.previewBody { display: grid; gap: v.$space-xs; min-width: 0; }
+.previewMain, .previewSide { display: grid; align-content: start; min-width: 0; }
+@container (min-width: 880px) { .previewBody { grid-template-columns: minmax(0, 540px) minmax(0, 1fr); column-gap: v.$space-lg; align-items: start; } }

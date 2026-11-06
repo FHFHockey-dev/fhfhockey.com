@@ -19,7 +19,8 @@ $share-rail-size: 8px;
 @font-face { font-family: "Tomorrow"; src: url("/fonts/social-share/Tomorrow-SemiBoldItalic.ttf") format("truetype"); font-weight: 600; font-style: italic; font-display: block; }
 
 .page {
-  width: 100%; min-width: 0; max-width: 1440px; margin: 0 auto;
+  // The studio workspace never runs edge to edge: at most 90% wide, centred (TJ's page-width rule).
+  width: 100%; min-width: 0; max-width: v.$page-max-width; margin: 0 auto;
   padding: v.$space-md; color: v.$text-primary; font-family: "Share Roboto Condensed", v.$font-family-primary;
   -webkit-font-smoothing: antialiased;
   *, *::before, *::after { box-sizing: border-box; }
@@ -47,15 +48,38 @@ $share-rail-size: 8px;
 .scope { color: v.$text-secondary; font-size: v.$font-size-sm; }
 .panel { @include p.panel-shell($padding: v.$space-md, $overflow: visible); min-width: 0; }
 .controls { display: flex; flex-wrap: wrap; gap: v.$space-sm; align-items: flex-end; label { display: grid; gap: v.$space-xs; min-width: 0; max-width: 100%; } }
-.days { margin: v.$space-md 0 0; padding: 0; border: 0; display: flex; flex-wrap: wrap; gap: v.$space-xs;
+.days { margin: v.$space-md 0 0; padding: 0; border: 0; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: v.$space-xs v.$space-md;
   legend { margin-bottom: v.$space-xs; font-size: v.$font-size-sm; color: v.$text-secondary; }
-  button { flex: 1 0 90px; padding: v.$space-xs; display: grid; gap: v.$space-xxs; text-align: center; font-variant-numeric: tabular-nums; }
   strong { color: v.$color-white; } span, small { font-size: v.$font-size-xs; }
+}
+// auto-fit keeps every day tile the same width on every row, so a lone Sunday never stretches.
+.dayGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: v.$space-xs; min-width: 0;
+  button { padding: v.$space-xs; display: grid; gap: v.$space-xxs; text-align: center; font-variant-numeric: tabular-nums; }
+}
+// Bulk actions: compact and unfilled beside the days (below them on phones), so they read as actions, not days.
+.dayBulk { display: flex; gap: v.$space-xs;
+  button { padding: 0 v.$space-md; background: transparent; font-size: v.$font-size-xs; }
 }
 .status { padding: v.$space-sm 0; font-size: v.$font-size-sm; p + p { margin-top: v.$space-xs; } }
 .workspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: v.$space-md; }
 .panelHeader { @include p.panel-header($padding-y: v.$space-xs, $padding-x: 0); margin-bottom: v.$space-sm; flex-wrap: wrap; span { font-size: v.$font-size-sm; color: v.$text-secondary; } }
 .previewFrame { max-width: $share-preview-max; width: 100%; position: relative; overflow: hidden; margin: 0 auto; min-height: v.$control-height-md; }
+// No card to show (loading, failed, invalid settings): a quiet outline of the card's square with the reason inside.
+.previewEmpty { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: v.$space-sm; padding: v.$space-md; border: 1px dashed v.$border-soft; border-radius: v.$radius-control;
+  color: v.$text-secondary; font-size: v.$font-size-sm; text-align: center; }
+// /social-share/player-cards: the source picker and the evidence note line up with the player-card studio below
+// (components/player-cards, 1280px wide with 32px padding, 12px under 760px).
+.sourceBar, .sourceNote { width: 100%; max-width: 1280px; margin: 0 auto; padding: v.$space-md 32px; color: v.$text-primary; font-family: v.$font-family-primary;
+  @media (max-width: 760px) { padding-inline: 12px; }
+}
+.sourceBar { padding-bottom: v.$space-sm;
+  label { display: inline-flex; flex-wrap: wrap; align-items: center; gap: v.$space-sm; max-width: 100%; color: v.$text-secondary; font-size: v.$font-size-sm; font-weight: 600; }
+  select { min-height: v.$touch-target-min; max-width: 100%; padding: v.$space-xs v.$space-sm; border: v.$border-subtle; border-radius: v.$radius-control; background: v.$background-dark;
+    color: v.$text-primary; font: inherit; font-weight: 400; color-scheme: dark;
+    &:focus-visible { outline: 2px solid v.$primary-color; outline-offset: 2px; box-shadow: v.$focus-ring; }
+  }
+}
+.sourceNote { margin-block: 0; font-size: v.$font-size-sm; color: v.$text-secondary; strong { color: v.$color-white; } }
 .actions { display: flex; flex-wrap: wrap; gap: v.$space-xs; margin-top: v.$space-sm; button:first-child { border-color: v.$primary-color; } }
 .explanation { color: v.$text-secondary; font-size: v.$font-size-sm; margin-bottom: v.$space-sm !important; }
 .teamList { list-style: none; padding: 0; margin: 0; max-height: 880px; overflow-y: auto;
@@ -454,10 +478,12 @@ $trend-row: 140px;
 // Source and freshness line: one line, legible in the 1080 PNG and on a phone preview.
 .trendSource { font-size: 20px; font-weight: 700; color: v.$color-white; }
 @media (max-width: v.$breakpoint-tablet) {
-  .page { padding: v.$space-xs; }
+  // Phones keep the full width, so the 1080 preview stays as large as it can (TJ, 2026-11-06).
+  .page { padding: v.$space-xs; max-width: none; }
   .workspace { grid-template-columns: minmax(0, 1fr); }
   .panel { padding: v.$space-sm; }
   .controls { label { width: 100%; } input, select { width: 100%; } }
+  .days { grid-template-columns: minmax(0, 1fr); }
   .teamList { max-height: none; }
 }
 

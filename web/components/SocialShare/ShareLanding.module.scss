@@ -1,6 +1,7 @@
 @use "styles/vars" as v;
 
-.landing { width: 100%; max-width: v.$page-max-width; margin: 0 auto; }
+/* The shared .page inside already caps the workspace at 90% and centres it. */
+.landing { width: 100%; }
 .note { margin-bottom: v.$space-md !important; color: v.$text-secondary; font-size: v.$font-size-sm; }
 
 .week { margin-bottom: v.$space-sm; min-width: 0;
