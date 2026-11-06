@@ -1,0 +1,117 @@
+@use "styles/vars" as v;
+
+// Team Stream (TJ, 2026-11-06): schedule rail, team band, three streamers. Every selector is local (CSS Modules pure).
+.body { flex: 1; display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+
+// Day-by-day rail: off nights carry Off-Night Edge's green tint; a played game dims.
+.rail { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.day { display: grid; justify-items: center; align-content: start; gap: 6px; min-width: 0; padding: 8px 4px 10px; border: 1px solid v.$border-soft; border-radius: 6px; background: rgba(v.$color-white, 0.03); }
+.day[data-off] { background: rgba(v.$success-color, 0.3); border-color: rgba(v.$success-color, 0.55); }
+.day[data-played] { opacity: 0.45; }
+.dayHead { display: grid; justify-items: center; line-height: 1;
+  b { font-size: 21px; font-weight: 700; letter-spacing: 0.06em; color: v.$color-white; }
+  small { margin-top: 3px; font-size: 15px; color: v.$text-secondary; }
+}
+.day[data-off] .dayHead small { color: v.$color-white; }
+.opponent { display: inline-flex; align-items: center; gap: 4px;
+  i { font-style: normal; font-size: 16px; font-weight: 700; color: v.$text-secondary; }
+  img { display: block; width: 50px; height: 50px; object-fit: contain; }
+  b { font-size: 18px; font-weight: 700; color: v.$color-white; }
+}
+.day[data-off] .opponent i { color: v.$color-white; }
+.noGame { display: grid; place-items: center; height: 50px; font-size: 26px; color: v.$text-secondary; }
+.rail[data-compact] { gap: 3px;
+  .day { padding: 6px 2px 8px; gap: 4px; }
+  .dayHead b { font-size: 15px; letter-spacing: 0.02em; }
+  .dayHead small { font-size: 12px; }
+  .opponent { flex-direction: column; gap: 1px; }
+  .opponent i { font-size: 12px; }
+  .opponent img { width: 32px; height: 32px; }
+  .opponent b { font-size: 13px; }
+  .noGame { height: 44px; font-size: 20px; }
+}
+
+// Team band in the team's own colours (TeamBanner's stripe recipe, at hero size).
+.hero { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: 20px; padding: 12px 24px 30px; border-radius: 8px; overflow: hidden; background: var(--team-bg); color: var(--team-ink);
+  &::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 20px;
+    background: linear-gradient(to bottom, var(--team-dark) 0 7px, var(--team-light) 7px 11px, var(--team-mid) 11px 14px, var(--team-dark) 14px 20px); }
+}
+.heroLogo { position: relative; z-index: 1; display: grid; place-items: center; margin-bottom: -18px; filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.5));
+  img, b { display: block; }
+  b { min-width: 112px; font-size: 34px; text-align: center; color: var(--team-ink); }
+}
+.heroName { position: relative; z-index: 1; display: grid; gap: 4px; min-width: 0;
+  strong { font-size: 54px; font-weight: 900; line-height: 1; text-transform: uppercase; letter-spacing: 0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  small { font-size: 21px; font-weight: 700; opacity: 0.9; white-space: nowrap; }
+}
+.heroScore { position: relative; z-index: 1; display: grid; justify-items: end; line-height: 1;
+  small { font-size: 16px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.9; }
+  strong { margin: 2px 0 4px; font-size: 78px; font-weight: 800; letter-spacing: -0.01em; }
+  em { font-size: 19px; font-style: normal; font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase; }
+}
+
+// Streamers: one row per skater, L5 totals in columns and the delta last.
+.players { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) repeat(7, 56px) 150px; column-gap: 6px; }
+.head { align-self: end; padding: 0 2px 6px; border-bottom: 1px solid v.$border-soft; font-size: 16px; font-weight: 600; letter-spacing: v.$mobile-letter-spacing-wide; color: v.$text-secondary; white-space: nowrap; }
+.head[data-numeric] { text-align: center; }
+.head[data-delta] { text-align: right; }
+.head[data-focus] { color: v.$warning-color; }
+.who, .stat, .delta { min-width: 0; border-bottom: 1px solid v.$border-soft; }
+.who { display: grid; align-content: center; gap: 8px;
+  strong { font-size: 40px; font-weight: 700; line-height: 1.05; color: v.$color-white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  strong[data-long] { font-size: 31px; }
+}
+.meta { display: flex; align-items: center; gap: 8px; min-width: 0; white-space: nowrap;
+  b { font-size: 26px; font-weight: 700; color: v.$color-white; }
+  small { font-size: 14px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: v.$text-secondary; }
+}
+.pos { margin-left: 4px; font-size: 19px; color: v.$text-secondary; }
+.stat { display: flex; align-items: center; justify-content: center; font-size: 46px; font-weight: 700; color: v.$color-white; }
+.stat[data-focus] { background: rgba(v.$warning-color, 0.14); }
+.delta { display: grid; align-content: center; justify-items: end; gap: 4px; line-height: 1;
+  strong { font-size: 42px; font-weight: 800; color: v.$color-white; }
+  small { font-size: 18px; color: v.$text-secondary; white-space: nowrap; }
+}
+.delta[data-tone="up"] strong { color: v.$success-color; }
+.delta[data-tone="down"] strong { color: v.$danger-color; }
+// Off-Night Edge's HOT chip: red text and border on a see-through red fill.
+.hot { padding: 2px 7px; border: 1px solid v.$danger-color; border-radius: 3px; font-size: 16px; font-style: normal; font-weight: 800; letter-spacing: 0.04em; color: v.$danger-color; background: rgba(v.$danger-color, 0.15); }
+// The pickups cards' role chips: outline and text in the role colour over its translucent fill on a dark backing.
+.roles { display: inline-flex; gap: 5px;
+  i { padding: 3px 7px; border: 1.5px solid currentColor; border-radius: 4px; font: normal 800 15px/1 "Share Roboto Condensed", sans-serif; letter-spacing: 0.05em; }
+}
+@each $tone, $color in ("green": v.$success-color, "yellow": v.$warning-color, "orange": v.$color-orange-400, "red": #ff5c5c) {
+  .roles i[data-tone="#{$tone}"] { color: $color; background: linear-gradient(rgba($color, 0.18), rgba($color, 0.18)), #101317; box-shadow: 0 0 6px rgba($color, 0.35); }
+}
+.legend { margin: 0; font-size: 15px; line-height: 1.2; color: v.$text-secondary;
+  b { font-weight: 600; color: v.$color-white; }
+  strong { font-weight: 600; color: v.$warning-color; }
+}
+
+// Studio rail (not on the PNG): the top teams, each with its streamer preview.
+.panel { display: grid; gap: 10px; }
+.panelHead { margin: 0; font-size: 14px; line-height: 1.3; color: v.$text-secondary;
+  b { display: block; font-size: 16px; color: v.$color-white; }
+}
+.panelList { display: grid; gap: 8px; }
+.option { display: grid; gap: 6px; width: 100%; padding: 10px 12px; border: 1px solid v.$border-soft; border-radius: 8px; background: transparent; color: v.$color-white; font: inherit; text-align: left; cursor: pointer;
+  &:hover:not(:disabled) { border-color: v.$primary-color; }
+  &:focus-visible { outline: 2px solid v.$primary-color; outline-offset: 2px; }
+  &:disabled { cursor: default; opacity: 0.6; }
+}
+.option[aria-pressed="true"] { border-color: v.$primary-color; background: rgba(v.$primary-color, 0.14); }
+.optionHead { display: grid; grid-template-columns: 22px 28px minmax(0, 1fr) auto; align-items: center; gap: 8px;
+  > b { font-size: 15px; color: v.$text-secondary; text-align: right; }
+  img, > i { display: block; width: 28px; height: 28px; object-fit: contain; }
+  > i { font-size: 11px; font-style: normal; line-height: 28px; }
+  strong { font-size: 16px; }
+  span { display: grid; justify-items: end; font-size: 15px; font-weight: 700;
+    small { font-size: 12px; font-weight: 400; color: v.$text-secondary; } }
+}
+.optionPicks { display: grid; gap: 2px; margin: 0; padding: 0 0 0 58px; list-style: none; font-size: 13px;
+  li { display: flex; justify-content: space-between; gap: 8px; min-width: 0; }
+  span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  small { flex: none; color: v.$text-secondary; }
+}
+.panelNote { margin: 0; font-size: 13px; line-height: 1.3; color: v.$text-secondary; }
+.panelWarn { margin: 0; font-size: 13px; line-height: 1.3; color: v.$warning-color; }

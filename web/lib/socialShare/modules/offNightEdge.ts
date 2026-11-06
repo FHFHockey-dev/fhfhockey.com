@@ -180,7 +180,7 @@ function yahooByNhlId(yahoo: readonly OffNightYahooRow[], map: readonly ShareMap
 
 type FormRow = Pick<SkaterAppearance, "goals" | "assists" | "ppPoints" | "shots" | "hits" | "blocks" | "toiSeconds" | "date">;
 /** The score inputs over some complete games, as players.ts builds them. */
-function formOf(rows: readonly FormRow[], group: OffNightGroup) {
+export function formOf(rows: readonly FormRow[], group: OffNightGroup) {
   const sum = (key: "goals" | "assists" | "ppPoints" | "shots" | "hits" | "blocks" | "toiSeconds") => rows.reduce((total, game) => total + game[key]!, 0);
   const recent = { kind: "skater" as const, games: rows.length, through: rows[rows.length - 1].date, goals: sum("goals"), assists: sum("assists"), points: sum("goals") + sum("assists"), shots: sum("shots"), hitsPerGame: sum("hits") / rows.length, blocksPerGame: sum("blocks") / rows.length, toiSeconds: sum("toiSeconds") / rows.length, ppPoints: sum("ppPoints") };
   return { recent, group };
@@ -189,11 +189,17 @@ const median = (values: number[]) => { const sorted = [...values].sort((a, b) =>
 /** Unflagged first; then HOT, then the best score; a short sample only when no full sample is left. Ties: lower known %, then id. */
 const pickOrder = (a: OffNightPick, b: OffNightPick) => Number(a.yahooStatus !== null) - Number(b.yahooStatus !== null) || Number(a.shortSample) - Number(b.shortSample) || Number(b.hot) - Number(a.hot) || b.score - a.score || (a.ownership.pct ?? 101) - (b.ownership.pct ?? 101) || a.nhlId - b.nhlId;
 
-/** Latest game's team is the player's team now; earlier games stay bound to the team they were played for. */
-function selectPicks(input: { appearances: readonly SkaterAppearance[]; yahoo: readonly OffNightYahooRow[]; map: readonly ShareMapRow[]; teams: readonly string[]; settings: OffNightSettings; today: string }) {
+export type OffNightPoolEntry = OffNightPick & { group: OffNightGroup; baseline: number | null };
+export type OffNightPool = { picks: Record<OffNightGroup, OffNightPoolEntry[]>; excluded: Record<OffNightGroup, OffNightExclusions> };
+export type OffNightPoolInput = { appearances: readonly SkaterAppearance[]; yahoo: readonly OffNightYahooRow[]; map: readonly ShareMapRow[]; teams: readonly string[]; settings: Pick<OffNightSettings, "ownershipCeiling" | "includeUnknown">; today: string };
+/**
+ * Every skater on each wanted team who could be picked up, by position, with why the others were left out. Latest game's
+ * team is the player's team now; earlier games stay bound to the team they were played for. Team Stream reads the same pools.
+ */
+export function offNightPools(input: OffNightPoolInput) {
   const { settings } = input, wanted = new Set(input.teams), identities = yahooByNhlId(input.yahoo, input.map);
   const yesterday = shiftDays(input.today, -1), activeSince = shiftDays(input.today, -RECENT_MAX_AGE_DAYS);
-  const pools = new Map<string, { picks: Record<OffNightGroup, (OffNightPick & { baseline: number | null })[]>; excluded: Record<OffNightGroup, OffNightExclusions> }>(input.teams.map(team => [team, { picks: { F: [], D: [] }, excluded: { F: { ...NO_EXCLUSIONS }, D: { ...NO_EXCLUSIONS } } }]));
+  const pools = new Map<string, OffNightPool>(input.teams.map(team => [team, { picks: { F: [], D: [] }, excluded: { F: { ...NO_EXCLUSIONS }, D: { ...NO_EXCLUSIONS } } }]));
   const ownership = { known: 0, unknown: 0, stale: 0, asOf: null as string | null }, diagnostics: OffNightDiagnostics = { statusOverridden: 0, unknownOwnership: 0 };
   // Each team's last games in the read, newest first: playing in one of them outranks a Yahoo flag.
   const teamGames = new Map<string, { gameId: number; date: string }[]>();
@@ -224,10 +230,15 @@ function selectPicks(input: { appearances: readonly SkaterAppearance[]; yahoo: r
     if (flagged) diagnostics.statusOverridden++;
     const window = lastN(complete, MIN_SKATER_GAMES).rows, earlier = complete.slice(0, complete.length - window.length), player = formOf(window, group);
     const baseline = earlier.length >= OFF_NIGHT_HOT_BASE_GAMES ? fantasyPointsPerGame(formOf(earlier, group)) : null;
-    pool.picks[group].push({ nhlId, name: latest.name, positions: position.positions, ownership: owned, games: window.length, fantasyPerGame: fantasyPointsPerGame(player)!, score: playerScore(player)!, hot: false, shortSample: window.length < MIN_SKATER_GAMES, yahooStatus: flagged ? yahoo.status : null, baseline });
+    pool.picks[group].push({ nhlId, name: latest.name, positions: position.positions, group, ownership: owned, games: window.length, fantasyPerGame: fantasyPointsPerGame(player)!, score: playerScore(player)!, hot: false, shortSample: window.length < MIN_SKATER_GAMES, yahooStatus: flagged ? yahoo.status : null, baseline });
   }
+  return { pools, ownership, diagnostics };
+}
+
+function selectPicks(input: OffNightPoolInput & { settings: OffNightSettings }) {
+  const { settings } = input, { pools, ownership, diagnostics } = offNightPools(input);
   const medians = Object.fromEntries((["F", "D"] as const).map(group => [group, median([...pools.values()].flatMap(pool => pool.picks[group].filter(pick => !pick.shortSample).map(pick => pick.fantasyPerGame)))]));
-  const best = (group: OffNightGroup, picks: (OffNightPick & { baseline: number | null })[]) => picks.map(({ baseline, ...pick }): OffNightPick => ({ ...pick, hot: !pick.shortSample && baseline !== null && pick.fantasyPerGame >= OFF_NIGHT_HOT_RATIO * baseline && pick.fantasyPerGame >= medians[group] })).sort(pickOrder)[0] ?? null;
+  const best = (group: OffNightGroup, picks: OffNightPoolEntry[]) => picks.map(({ baseline, group: _group, ...pick }): OffNightPick => ({ ...pick, hot: !pick.shortSample && baseline !== null && pick.fantasyPerGame >= OFF_NIGHT_HOT_RATIO * baseline && pick.fantasyPerGame >= medians[group] })).sort(pickOrder)[0] ?? null;
   return { ownership, diagnostics, byTeam: new Map(input.teams.map(team => {
     const pool = pools.get(team)!, F = best("F", pool.picks.F), D = best("D", pool.picks.D);
     return [team, { picks: { F, D }, gaps: { F: F ? null : offNightGapReason("F", pool.excluded.F, settings.ownershipCeiling), D: D ? null : offNightGapReason("D", pool.excluded.D, settings.ownershipCeiling) } }] as const;

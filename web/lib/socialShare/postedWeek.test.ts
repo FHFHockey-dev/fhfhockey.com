@@ -12,6 +12,8 @@ const POSTS: readonly (readonly [string, string, string, string])[] = [
   ["FHFH Hits, shots and blocks specialists, Nov 2, 2026 through Nov 8, 2026. Top-", "specialists-rest", OLD, '"Hits, shots and blocks specialists"'],
   ["FHFH Off-Night Edge, rest of week, 2026-11-05 to 2026-11-08. 1. TOR", "off-night-rest", `${MODULES}/offNightEdge.ts`, '`FHFH Off-Night Edge, ${data.dates === "weekly" ? "full week" : "rest of week"}'],
   ["FHFH Off-Night Edge, full week, 2026-11-02 to 2026-11-08. 1. TOR", "off-night-weekly", `${MODULES}/offNightEdge.ts`, '`FHFH Off-Night Edge, ${data.dates === "weekly" ? "full week" : "rest of week"}'],
+  ["FHFH Team Stream, Rest of week · Nov 6 to Nov 8, best available. Anaheim Ducks", "team-stream-rest", `${MODULES}/teamStream.ts`, "`FHFH Team Stream, ${data.window.label}, "],
+  ["FHFH Team Stream, Week 6 · Nov 2 to Nov 8, peripherals. Calgary Flames", "team-stream-matchup", `${MODULES}/teamStream.ts`, "`FHFH Team Stream, ${data.window.label}, "],
   ["FHFH completed games per team, 2026-10-01 to 2026-11-01. 1. TOR: 12", "team-games", `${MODULES}/teamGames.ts`, "`FHFH completed games per team,"],
   ["FHFH Top Multi-Cat Stars of the Week, fantasy week", "stars-total", `${MODULES}/multiCatStars.ts`, '`Top ${settings.formula === "pointsFirst" ? "Points-First" : "Multi-Cat"} Stars`'],
   ["FHFH Top Points-First Stars of the Week, fantasy week", "stars-total-points-first", `${MODULES}/multiCatStars.ts`, 'return noun ? `${name} of the ${noun}` : name;'],

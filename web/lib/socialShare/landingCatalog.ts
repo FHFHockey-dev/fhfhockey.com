@@ -26,6 +26,8 @@ export const LANDING_CARDS: readonly LandingCard[] = [
   { id: "specialists-rest", name: "Category Specialists: Rest of Week", purpose: "Under-50% rostered hits, shots and blocks leaders on the best schedules left.", example: "fixture", link: { kind: "format", format: "remaining-week", card: "specialists" } },
   post("off-night-rest", "Off-Night Edge: Rest of Week", "Top schedules left, with a low-rostered forward and defenseman.", "off-night-edge", { dates: "rest-of-week" }),
   post("off-night-weekly", "Off-Night Edge: Weekly", "Top schedules for the full week, with a low-rostered pick per team.", "off-night-edge", { dates: "weekly" }),
+  post("team-stream-rest", "Team Stream: Rest of Week", "One top schedule team and three low-rostered skaters to stream.", "team-stream"),
+  post("team-stream-matchup", "Team Stream: Matchup Week", "One top team for the matchup week and three skaters to stream.", "team-stream", { period: "matchup" }),
   post("team-games", "Team Games Played", "Completed games per team over recent days.", "team-games"),
   post("stars-total", "Top Multi-Cat Stars: Week Total", "The fantasy week's top skaters by points, blocks, shots and hits.", "multi-cat-stars", { basis: "total", formula: "standard" }),
   post("stars-total-points-first", "Top Points-First Stars: Week Total", "The same week total, with points counted twice.", "multi-cat-stars", { basis: "total", formula: "pointsFirst" }),
@@ -63,13 +65,13 @@ export type LandingSection = { id: string; label: string; theme?: string; today?
 /** TJ's order: cards with daily opportunities first, and daily-use cards lead within a section. */
 export const LANDING_CATEGORIES: readonly LandingSection[] = [
   { id: "standouts", label: "Standouts", cards: ["standouts-forwards", "standouts-defensemen", "standouts-goalies", "standouts-under", "standouts-all"] },
-  { id: "schedule", label: "Schedule", cards: ["team-games", "off-night-rest", "remaining-week", "specialists-rest", "game-grid", "off-night-weekly"] },
+  { id: "schedule", label: "Schedule", cards: ["team-games", "off-night-rest", "team-stream-rest", "remaining-week", "specialists-rest", "game-grid", "off-night-weekly", "team-stream-matchup"] },
   { id: "trends", label: "Trends", cards: ["what-changed", "role-watch", "tuesday-trends"] },
   { id: "peripherals", label: "Peripherals", cards: ["nightly-floor", "cardio-masters", "bsh-leaders", "bsh-risers", "specialists-rest", "multi-cat-monsters", "multi-cat-points-first"] },
   { id: "skaters", label: "Skaters", cards: ["standouts-forwards", "what-changed", "role-watch", "nightly-floor", "bsh-leaders", "multi-cat-monsters", "stars-total", "stars-per-game"] },
   { id: "defensemen", label: "Defensemen", cards: ["standouts-defensemen"] },
   { id: "goalies", label: "Goalies", cards: ["standouts-goalies", "risky-starts", "start-sit", "crease-shift", "busy-quiet", "goalie-rescue", "goalie-gsax", "ratio-impact", "goalie-of-week", "goalie-of-month"] },
-  { id: "weekly", label: "Weekly", cards: ["game-grid", "off-night-weekly", "stars-total", "stars-total-points-first", "stars-per-game", "stars-per-game-points-first", "goalie-of-week"] },
+  { id: "weekly", label: "Weekly", cards: ["game-grid", "off-night-weekly", "team-stream-matchup", "stars-total", "stars-total-points-first", "stars-per-game", "stars-per-game-points-first", "goalie-of-week"] },
   { id: "comparisons", label: "Comparisons", cards: ["player-vs-player"] },
   { id: "player-cards", label: "Player Cards", cards: ["player-cards"] },
 ];
@@ -77,9 +79,9 @@ export const LANDING_CATEGORIES: readonly LandingSection[] = [
 export const LANDING_MISC: LandingSection = { id: "misc", label: "Misc", theme: "Fits any day", cards: ["standouts-forwards", "standouts-defensemen", "standouts-goalies", "standouts-under", "standouts-all", "player-vs-player", "team-games", "goalie-of-month"] };
 
 export const LANDING_DAYS: readonly (LandingSection & { theme: string })[] = [
-  { id: "mon", label: "Mon", theme: "Best schedules and streamers", cards: ["game-grid", "off-night-weekly", "multi-cat-monsters", "multi-cat-points-first", "bsh-leaders", "nightly-floor", "cardio-masters", "goalie-of-week"] },
+  { id: "mon", label: "Mon", theme: "Best schedules and streamers", cards: ["game-grid", "off-night-weekly", "team-stream-matchup", "multi-cat-monsters", "multi-cat-points-first", "bsh-leaders", "nightly-floor", "cardio-masters", "goalie-of-week"] },
   { id: "tue", label: "Tue", theme: "Trends", cards: ["tuesday-trends", "what-changed", "role-watch", "bsh-risers"] },
-  { id: "wed", label: "Wed", theme: "Rest of week", cards: ["remaining-week", "off-night-rest", "specialists-rest"] },
+  { id: "wed", label: "Wed", theme: "Rest of week", cards: ["remaining-week", "off-night-rest", "team-stream-rest", "specialists-rest"] },
   { id: "thu", label: "Thu", theme: "Player spotlight and goalie use", cards: ["player-cards", "crease-shift", "risky-starts", "start-sit", "goalie-gsax", "ratio-impact"] },
   { id: "fri", label: "Fri", theme: "Category rescue", cards: ["goalie-rescue", "busy-quiet"] },
   { id: "sat", label: "Sat", theme: "Light", cards: ["stars-per-game", "stars-per-game-points-first"] },
