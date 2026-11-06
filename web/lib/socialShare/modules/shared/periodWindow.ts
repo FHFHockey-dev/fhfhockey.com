@@ -23,7 +23,7 @@ export type PeriodWindowSettings = { period: string; week: number | null; start:
 export function periodWindowFields({ mode, options, default: chosen = PERIOD_MATCHUP }: { mode: PeriodMode; options: readonly { value: string; label: string }[]; default?: string }): ShareSettingField[] {
   return [
     { id: "period", label: "Period", kind: "select", default: chosen, options, panelOnly: true },
-    { id: "week", label: `Week (blank is the ${mode === "past-only" ? "last completed" : "current"})`, kind: "number", default: null, min: 1, max: 30, step: 1, panelOnly: true },
+    { id: "week", label: "Week", blank: mode === "past-only" ? "the last completed" : "the current", kind: "number", default: null, min: 1, max: 30, step: 1, panelOnly: true },
     { id: "start", label: "Custom range start", kind: "date", default: null, panelOnly: true },
     { id: "end", label: "Custom range end", kind: "date", default: null, panelOnly: true },
   ];

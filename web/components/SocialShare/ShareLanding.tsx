@@ -150,7 +150,8 @@ export default function ShareLanding() {
       <span className={styles.scope}>Nothing is scheduled or published from here.</span>
     </header>
     <section className={landing.week} aria-labelledby="landing-week">
-      <h2 id="landing-week">This week <small>{posted ? `From @FHFHockey's posts, New York days. ${!posted.latest ? "No live delivery yet, so empty days have no record." : posted.stale ? `No live delivery since ${seenDate.format(new Date(posted.latest))}, so later days have no record.` : `Last live delivery ${seenDate.format(new Date(posted.latest))}.`}` : source === undefined ? "Checking posts." : `${source === "failed" ? "Could not read posts. " : ""}Marked by hand. Click a day to mark it. Stays in this browser and clears each Monday.`}</small></h2>
+      {/* The note sits beside the heading, not inside it, so the heading (and the strip it names) reads "This week". */}
+      <div className={landing.weekHead}><h2 id="landing-week">This week</h2> <p>{posted ? `From @FHFHockey's posts, New York days. ${!posted.latest ? "No live delivery yet, so empty days have no record." : posted.stale ? `No live delivery since ${seenDate.format(new Date(posted.latest))}, so later days have no record.` : `Last live delivery ${seenDate.format(new Date(posted.latest))}.`}` : source === undefined ? "Checking posts." : `${source === "failed" ? "Could not read posts. " : ""}Marked by hand. Click a day to mark it. Stays in this browser and clears each Monday.`}</p></div>
       {posted ? <PostedStrip posted={posted} today={today} /> : <div className={landing.strip} role="group" aria-labelledby="landing-week" data-testid="landing-strip">
         {LANDING_DAYS.map(day => {
           const status = source === undefined ? "upcoming" : landingDayStatus(day.id, today, marked);

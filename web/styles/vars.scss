@@ -39,6 +39,7 @@ $touch-target-min: 44px; // Minimum touch target size (Apple & Google guidelines
 $touch-target-comfortable: 48px; // Comfortable touch target size
 $touch-target-large: 56px; // Large touch target for primary actions
 $touch-target-small: 36px; // Small touch target for secondary actions (minimum acceptable)
+$touch-target-inline: 24px; // WCAG 2.5.8 minimum for inline text buttons (a link-styled reset, a legend toggle)
 
 // --- Mobile Spacing Scale Variables (Added for mobile optimization) ---
 $mobile-space-xxs: 4px; // Extra extra small mobile spacing
@@ -348,6 +349,8 @@ $box-shadow: $box-shadow-default !default; // compatibility alias; prefer $shado
 
 // Tables & layout
 $table-header-height: 35px;
+// In-page jump targets clear the sticky site header (68px on desktop, 56px on phones) plus a 4px gap.
+$site-header-offset: 72px;
 $table-cell-padding: $space-sm $space-md;
 $table-cell-padding-compact: 0.7rem 0.72rem;
 $table-cell-padding-compact-mobile: 0.58rem 0.6rem;
@@ -360,6 +363,10 @@ $team-label-width: 60px; // Fixed team label width used in Draft Board
 // Borders (compatibility shorthands preserved)
 // =============================================
 $border-subtle: 1px solid $border-secondary;
+// Form-field edge (inputs, selects): the border is what marks the field, so it must reach 3:1 (WCAG 1.4.11).
+// #6b6f75 is 3.35:1 on $background-dark and 3.62:1 on $background-medium; $border-subtle is 2.10:1.
+$border-control-color: #6b6f75;
+$border-control: 1px solid $border-control-color;
 $border-default: 1px solid $border-primary;
 $border-separator: 2px solid $border-accent;
 $border-radius-sm: 4px; // compatibility alias; prefer $radius-sm for new work

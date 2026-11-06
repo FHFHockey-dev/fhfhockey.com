@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import PostStudio from "./PostStudio";
 import type { SharePostPanelProps, SharePostSnapshot } from "lib/socialShare/modules/contract";
@@ -255,6 +255,23 @@ describe("PostStudio", () => {
     const prior = () => screen.getByRole("button", { name: /^Prior week/ }) as HTMLButtonElement, next = () => screen.getByRole("button", { name: /^Next week/ }) as HTMLButtonElement;
     const lastQuery = () => (vi.mocked(router.replace).mock.lastCall![0] as { query: Record<string, string> }).query;
     beforeEach(() => { router.query = { post: "goalie-period", week: "4" }; });
+
+    it("draws Categories as checkboxes that keep the comma list in category order, and never clear the last one", async () => {
+      serveGoalie();
+      render(<PostStudio />);
+      await waitFor(() => expect(editionUrls()).toHaveLength(1));
+      fireEvent.click(screen.getByRole("button", { name: /^Options/ }));
+      const group = screen.getByRole("group", { name: "Categories" });
+      const box = (name: string) => within(group).getByRole("checkbox", { name }) as HTMLInputElement;
+      expect(["W", "SV", "SV%", "GAA", "SO"].map(name => box(name).checked)).toEqual([true, true, true, true, true]);
+      expect(box("QS").checked).toBe(false);
+      fireEvent.click(box("QS"));
+      fireEvent.click(box("W"));
+      await waitFor(() => expect(decodeURIComponent(editionUrls().at(-1)!)).toContain("categories=saves,svPct,gaa,shutouts,qualityStarts"));
+      expect(screen.getByRole("button", { name: /^Reset Categories/ }).textContent).toBe("Reset Categories to W, SV, SV%, GAA, SO");
+      for (const name of ["SV", "SV%", "GAA", "SO"]) fireEvent.click(box(name));
+      expect([box("QS").checked, box("QS").disabled]).toEqual([true, true]);
+    });
 
     describe("a blank week follows the loaded edition", () => {
       const before = "2026-11-02T04:30:00.000Z", after = "2026-11-02T05:30:00.000Z"; // 23:30 and 00:30 in New York, Nov 1 to Nov 2 (EST).

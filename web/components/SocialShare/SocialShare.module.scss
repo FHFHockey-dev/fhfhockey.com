@@ -4,6 +4,8 @@
 // The original fixed-square tokens stay local to this isolated social variant.
 $share-square-size: 1080px;
 $share-preview-max: 540px;
+// The preview panel at full card size: the card plus the panel's padding and 1px borders.
+$share-preview-column: $share-preview-max + 2 * v.$space-md + 2px;
 $share-square-padding: 48px;
 $share-title-size: 64px;
 $share-team-size: 46px;
@@ -20,7 +22,7 @@ $share-rail-size: 8px;
 
 // One field look for every studio input and select: the .page rule and the player-cards source picker.
 @mixin share-field {
-  min-height: v.$touch-target-min; max-width: 100%; min-width: 0; border: v.$border-subtle;
+  min-height: v.$touch-target-min; max-width: 100%; min-width: 0; border: v.$border-control;
   border-radius: v.$radius-control; background: v.$background-dark; color: v.$text-primary;
   font: inherit; padding: v.$space-xs v.$space-sm; color-scheme: dark;
   &:focus-visible { outline: 2px solid v.$primary-color; outline-offset: 2px; box-shadow: v.$focus-ring; }
@@ -38,11 +40,17 @@ $share-rail-size: 8px;
   a { color: v.$color-blue-300; }
   button {
     @include v.button-style;
+    // The mixin sets plain "Roboto Condensed", which the studio never loads; use the page's bundled face like the fields.
+    font-family: inherit;
     min-height: v.$touch-target-min; font-weight: 700; font-size: v.$font-size-sm;
-    background: v.$background-dark; border-color: v.$border-soft; color: v.$text-primary;
+    // The same 3:1 edge as the fields, so buttons and fields read as one control set (TJ, 2026-11-06).
+    background: v.$background-dark; border-color: v.$border-control-color; color: v.$text-primary;
     &:hover:not(:disabled) { background: v.$surface-2; border-color: v.$primary-color; }
-    &[aria-pressed="true"] { background: v.$draft-action; border-color: v.$primary-color; color: v.$color-white; }
+    // Hover must not undo ON: the hover rule above outranks the pressed one, which turned pressed segments grey.
+    &[aria-pressed="true"], &[aria-pressed="true"]:hover:not(:disabled) { background: v.$draft-action; border-color: v.$primary-color; color: v.$color-white; }
     &:active:not(:disabled) { transform: scale(0.96); }
+    // One focus style in the studio: the fields' 2px accent outline, not the shared mixin's 3px amber one.
+    &:focus-visible { outline: 2px solid v.$primary-color; outline-offset: 2px; }
   }
   input, select { @include share-field; }
 }
@@ -63,13 +71,18 @@ $share-rail-size: 8px;
 // auto-fit keeps every day tile the same width on every row, so a lone Sunday never stretches.
 .dayGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: v.$space-xs; min-width: 0;
   button { padding: v.$space-xs; display: grid; gap: v.$space-xxs; text-align: center; font-variant-numeric: tabular-nums; }
+  // ON: the canonical active state (fhfh-styles §9.5): accent tint and a 2px accent edge (1px border + 1px inset, so the
+  // tile never shifts). Scoped to the days: module panels keep the studio's solid pressed fill. Hover keeps it ON.
+  button[aria-pressed="true"], button[aria-pressed="true"]:hover:not(:disabled) { background: v.$primary-color-opaque; border-color: v.$primary-color; box-shadow: inset 0 0 0 1px v.$primary-color; color: v.$color-white; }
 }
 // Bulk actions: compact and unfilled beside the days (below them on phones), so they read as actions, not days.
 .dayBulk { display: flex; gap: v.$space-xs;
   button { padding: 0 v.$space-md; background: transparent; font-size: v.$font-size-xs; }
 }
 .status { padding: v.$space-sm 0; font-size: v.$font-size-sm; p + p { margin-top: v.$space-xs; } }
-.workspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: v.$space-md; }
+// The preview is the primary surface: its column grows to the full-size card first, and All teams takes the rest
+// (at least 18rem, so on small laptops the card shrinks before the list gets too narrow to read).
+.workspace { display: grid; grid-template-columns: minmax(0, $share-preview-column) minmax(18rem, 1fr); gap: v.$space-md; }
 .panelHeader { @include p.panel-header($padding-y: v.$space-xs, $padding-x: 0); margin-bottom: v.$space-sm; flex-wrap: wrap; span { font-size: v.$font-size-sm; color: v.$text-secondary; } }
 .previewFrame { max-width: $share-preview-max; width: 100%; position: relative; overflow: hidden; margin: 0 auto; min-height: v.$control-height-md; }
 // No card to show (loading, failed, invalid settings): a quiet outline of the card's square with the reason inside.

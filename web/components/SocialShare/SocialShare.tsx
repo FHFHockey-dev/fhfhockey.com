@@ -867,7 +867,7 @@ export default function SocialShare({ format, asOf }: { format: SocialShareForma
   };
 
   return <div className={styles.page}>
-    <header className={styles.heading}><div><p className={styles.eyebrow}>FHFH / Share studio</p><h1>{labels[format]}</h1><nav className={styles.studioNav} aria-label="Share studios"><Link href="/social-share" prefetch={false}>All cards</Link><Link href="/social-share/posts" prefetch={false}>Post library</Link><Link href="/social-share/player-cards" prefetch={false}>Player cards</Link></nav></div><span className={styles.scope}>{!supported ? "Sources not ready" : format === "tuesday-trends" ? "Rolling game metrics · Yahoo ownership · NHL schedule" : "Schedule only · NHL schedule source"}</span></header>
+    <header className={styles.heading}><div><p className={styles.eyebrow}>FHFH / Share studio</p><h1>{labels[format]}</h1><nav className={styles.studioNav} aria-label="Share studios"><Link href="/social-share" prefetch={false}>All cards</Link><Link href="/social-share/posts" prefetch={false}>Post library</Link><Link href="/social-share/player-cards" prefetch={false}>Player cards</Link></nav></div><span className={styles.scope}>{!supported ? "Sources not ready" : format === "tuesday-trends" ? "Sources: rolling game metrics, Yahoo ownership, NHL schedule" : "Source: NHL schedule"}</span></header>
     {!supported ? <section className={styles.panel}><h2>Not available yet</h2><p>This studio opens once it has current-season player data, dated ownership, game participation and the rights to use them. Until then it ranks no players.</p><a href="/social-share/game-grid">Open the weekly schedule</a></section> : <>
       <section className={styles.panel} aria-label="Schedule settings">
         <div className={styles.controls}>
@@ -893,7 +893,7 @@ export default function SocialShare({ format, asOf }: { format: SocialShareForma
             </>}
           </select></label>
         </div>
-        <fieldset className={styles.days} disabled={!snapshot || !snapshotMatchesWeek || loading || exporting}><legend>Selected days · America/New_York</legend>
+        <fieldset className={styles.days} disabled={!snapshot || !snapshotMatchesWeek || loading || exporting}><legend>Selected days · New York time</legend>
           {/* Seven equal day tiles, then the two bulk actions set apart so they never read as extra days. */}
           <div className={styles.dayGrid}>{(snapshot?.days || weekDates(weekStart).map((date, index) => ({ date, label: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][index], selected: false, leagueGames: 0, offNight: false }))).map(day => <button type="button" key={day.date} aria-pressed={day.selected} onClick={() => select(snapshot!.selectedDates.includes(day.date) ? snapshot!.selectedDates.filter(date => date !== day.date) : [...snapshot!.selectedDates, day.date])}>
             <strong>{day.label.slice(0, 3)}</strong><span>{dateLabel(day.date)}</span><small>{day.selected ? "ON" : "OFF"}{snapshot ? ` · ${day.leagueGames} games` : ""}</small>
@@ -968,11 +968,12 @@ export default function SocialShare({ format, asOf }: { format: SocialShareForma
           }}>Copy alt text</button></div><p role="status">{feedback}</p>
           {snapshot && <details><summary>Suggested alt text</summary><p>{squareAlt(snapshot)}</p></details>}
         </section>
-        <section className={styles.panel} aria-label="Complete ranked schedule"><div className={styles.panelHeader}><h2>All teams</h2><span>{snapshot?.rows.length || 0} teams</span></div>
+        {/* The trends graphics rank players, not schedules, so Tuesday has no team list (2,000px on phones). */}
+        {format !== "tuesday-trends" && <section className={styles.panel} aria-label="Complete ranked schedule"><div className={styles.panelHeader}><h2>All teams</h2><span>{snapshot?.rows.length || 0} teams</span></div>
           <p className={styles.explanation}>Schedule Score compares remaining selected games, off-night games and full-slate density. Odds and player projections are excluded. Zero-game teams have no score to publish. Matchups below include context; elapsed, live, postponed and nonregular games do not count as opportunities.</p>
           {/* The list scrolls on desktop, so it takes focus to scroll by keyboard (WCAG 2.1.1). */}
           <ol className={styles.teamList} tabIndex={0} aria-label="All teams, ranked">{displayRows.map(row => <li key={row.team.id}><div><strong>{trusted ? `#${row.rank} ` : ""}{row.team.name}</strong><span>{row.remainingGames} {trusted ? "left" : "known left"} · {row.offNightGames} {trusted ? "off-night" : "known off-night"} · {trusted ? `Score ${scoreLabel(row)}` : "Unranked; score unavailable"}</span></div><p>{row.games.filter(game => snapshot!.selectedDates.includes(game.date)).map(game => `${dateLabel(game.date)} ${game.homeTeam.id === row.team.id ? "vs" : "@"} ${game.homeTeam.id === row.team.id ? game.awayTeam.abbreviation : game.homeTeam.abbreviation} (${game.status}${game.gameType !== 2 ? ", nonregular" : ""}; ${timeLabel(game.startTimeUtc)})`).join(" · ") || "No games on selected dates"}</p></li>)}</ol>
-        </section>
+        </section>}
       </div>
     </>}
   </div>;

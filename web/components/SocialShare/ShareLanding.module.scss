@@ -4,16 +4,17 @@
 .landing { width: 100%; }
 .note { margin-bottom: v.$space-md !important; color: v.$text-secondary; font-size: v.$font-size-sm; }
 
-.week { margin-bottom: v.$space-sm; min-width: 0;
-  h2 { margin-bottom: v.$space-xs; font-size: v.$font-size-md; }
-  small { margin-left: v.$space-xs; color: v.$text-secondary; font-size: v.$font-size-sm; font-weight: 400; }
+.week { margin-bottom: v.$space-sm; min-width: 0; }
+/* Heading and note run inline, as one line that wraps, while the note stays out of the heading's name. */
+.weekHead { margin-bottom: v.$space-xs;
+  h2 { display: inline; font-size: v.$font-size-md; }
+  p { display: inline; margin-left: v.$space-xs; color: v.$text-secondary; font-size: v.$font-size-sm; font-weight: 400; }
 }
 .strip { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: v.$space-xs; }
 .strip .stripDay { display: grid; justify-items: center; gap: v.$space-xxs; min-width: 0; padding: v.$space-xs v.$space-xxs; font-size: v.$font-size-sm;
   &[data-today] { border-color: v.$primary-color; }
   &[aria-pressed="true"] { background: v.$background-dark; }
   &:disabled { color: v.$text-secondary; cursor: default; }
-  &:focus-visible { outline: 2px solid v.$primary-color; outline-offset: 2px; }
 }
 .strip .postedDay { align-content: start; border: v.$border-subtle; border-radius: v.$radius-control; background: v.$background-dark;
   &[data-today] { border-color: v.$primary-color; }
@@ -59,7 +60,7 @@
 }
 .filter { display: inline-flex; align-items: center; gap: v.$space-xs; min-width: 0; max-width: 100%; color: v.$text-secondary; font-size: v.$font-size-sm; }
 
-.section { margin-bottom: v.$space-lg; min-width: 0; scroll-margin-top: 72px; outline: none;
+.section { margin-bottom: v.$space-lg; min-width: 0; scroll-margin-top: v.$site-header-offset; outline: none;
   h2 { display: flex; flex-wrap: wrap; align-items: baseline; gap: v.$space-xs; margin-bottom: v.$space-xs; }
   small { color: v.$text-secondary; font-size: v.$font-size-sm; font-weight: 400; }
 }

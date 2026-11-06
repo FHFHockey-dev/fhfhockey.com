@@ -4,7 +4,7 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import { bounded, captureSharePng, readyShareFonts, SHARE_SIZE, teamLogoDataUrl } from "lib/socialShare/export";
 import { fetchEdition } from "lib/socialShare/editionFetch";
-import { SHARE_BASIS_LABELS, SHARE_POST_GROUP_LABELS, parseShareSettings, shareSettingLines, sharePostExportBlock, sharePostExportToken, sharePostShowsCard, shareHeadlineSize, type AnyShareModule, type ShareSettings, type ShareSettingField, type SharePostGroup, type SharePostSnapshot } from "lib/socialShare/modules/contract";
+import { SHARE_BASIS_LABELS, SHARE_POST_GROUP_LABELS, choiceLabels, parseShareSettings, shareSettingLines, sharePostExportBlock, sharePostExportToken, sharePostShowsCard, shareHeadlineSize, type AnyShareModule, type ShareSettings, type ShareSettingField, type SharePostGroup, type SharePostSnapshot } from "lib/socialShare/modules/contract";
 import { SHARE_MODULES } from "lib/socialShare/modules/registry";
 import { PERIOD_CUSTOM } from "lib/socialShare/modules/shared/periodWindow";
 import { SHARE_TIME_ZONE } from "lib/socialShare/types";
@@ -24,7 +24,7 @@ function settingsFromQuery(entry: AnyShareModule, query: Record<string, string |
   try { return parseShareSettings(entry, known); } catch { return parseShareSettings(entry, {}); }
 }
 const fieldText = (value: ShareSettings[string]) => value === null ? "" : String(value);
-const defaultNote = (field: ShareSettingField) => field.kind === "select" ? field.options.find(option => option.value === field.default)?.label ?? field.default : field.default === null || field.default === "" ? "any" : String(field.default);
+const defaultNote = (field: ShareSettingField) => field.kind === "select" ? field.options.find(option => option.value === field.default)?.label ?? field.default : field.default === null || field.default === "" ? field.blank ?? "any" : field.kind === "text" && field.choices ? choiceLabels(field.choices, field.default) : String(field.default);
 const STATE_LABELS: Record<SharePostSnapshot["state"], string> = { ready: "Ready", partial: "Partial data", stale: "Out of date", missing: "Not available", blocked: "Blocked" };
 /** What typed text means for a field: a value to use, nothing yet (a cleared number with a default), or why it can never be one. */
 function typedValue(field: ShareSettingField, text: string): { value: ShareSettings[string] } | { problem: string | null } {
@@ -240,15 +240,22 @@ export default function PostStudio() {
         <div id="post-options-fields" className={postStyles.fields} hidden={!optionsShown}>{formFields.map(field => {
         const id = `post-field-${field.id}`, problem = problems[field.id], value = drafts[field.id] ?? fieldText(settings[field.id]);
         const changed = isChanged(field);
+        // A fixed set to pick from is a checkbox group; it keeps its comma-joined value, in the field's own order.
+        const chosen = field.kind === "text" && field.choices ? fieldText(settings[field.id]).split(",").filter(Boolean) : null;
+        const toggle = (value: string, on: boolean) => field.kind === "text" && field.choices && change(field, field.choices.filter(choice => choice.value === value ? on : chosen!.includes(choice.value)).map(choice => choice.value).join(","));
         return <div key={field.id} className={postStyles.field} data-wide={field.kind === "text" || undefined} data-roomy={(field.kind === "select" && field.options.some(option => option.label.length > 18)) || undefined}>
-          <label><span>{field.label}</span>
+          {field.kind === "text" && field.choices && chosen ? <fieldset className={postStyles.choices}><legend>{field.label}</legend>
+            {/* The last one stays on: a post needs at least one. */}
+            {field.choices.map(choice => { const on = chosen.includes(choice.value); return <label key={choice.value}><input type="checkbox" checked={on} disabled={exporting || (on && chosen.length === 1)} onChange={event => toggle(choice.value, event.target.checked)} />{choice.label}</label>; })}
+          </fieldset> : <label><span>{field.label}</span>
             {field.kind === "select" ? <select value={fieldText(settings[field.id])} disabled={exporting} onChange={event => change(field, event.target.value)}>{field.options.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
-              : <input type={field.kind === "number" ? "number" : field.kind === "date" ? "date" : "text"} inputMode={field.kind === "number" && (field.step ?? 1) % 1 === 0 ? "numeric" : undefined} min={field.kind === "number" ? field.min : undefined} max={field.kind === "number" ? field.max : undefined} step={field.kind === "number" ? field.step : undefined} value={value} disabled={exporting} aria-invalid={problem ? true : undefined} aria-describedby={problem ? `${id}-problem` : undefined} onChange={event => change(field, event.target.value)} onBlur={() => settle(field)} />}
-          </label>
+              : <input type={field.kind === "number" ? "number" : field.kind === "date" ? "date" : "text"} inputMode={field.kind === "number" && (field.step ?? 1) % 1 === 0 ? "numeric" : undefined} min={field.kind === "number" ? field.min : undefined} max={field.kind === "number" ? field.max : undefined} step={field.kind === "number" ? field.step : undefined} value={value} disabled={exporting} aria-invalid={problem ? true : undefined} aria-describedby={problem ? `${id}-problem` : !changed && field.blank ? `${id}-blank` : undefined} onChange={event => change(field, event.target.value)} onBlur={() => settle(field)} />}
+          </label>}
           {problem ? <small id={`${id}-problem`} className={postStyles.problem}>{problem}</small>
             : changed && <button type="button" className={postStyles.reset} disabled={exporting} onClick={() => { setDrafts(({ [field.id]: _, ...rest }) => rest); edit({ [field.id]: field.default }); }}>
               {/* Named in its text, not aria-label, so finding a field by its label never finds this button too. */}
               Reset<span className={postStyles.hidden}> {field.label}</span> to {defaultNote(field)}</button>}
+          {!problem && !changed && field.blank && <small id={`${id}-blank`} className={postStyles.defaultNote}>Leave blank for {field.blank}.</small>}
         </div>;
       })}</div></fieldset>}
       </div>
