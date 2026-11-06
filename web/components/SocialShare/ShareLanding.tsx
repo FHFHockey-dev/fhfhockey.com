@@ -159,8 +159,9 @@ export default function ShareLanding() {
     </nav>
     <div className={landing.controls}>
       <div className={landing.sort} role="group" aria-label="Sort cards">
-        <button type="button" aria-pressed={sort === "category"} onClick={() => chooseSort("category")}>By category</button>
-        <button type="button" aria-pressed={sort === "day"} onClick={() => chooseSort("day")}>By day</button>
+        {/* Phones hide "By " visually (CATEGORY / DAY); it stays in the accessible name. */}
+        <button type="button" aria-pressed={sort === "category"} onClick={() => chooseSort("category")}><span className={landing.sortBy}>By </span>category</button>
+        <button type="button" aria-pressed={sort === "day"} onClick={() => chooseSort("day")}><span className={landing.sortBy}>By </span>day</button>
       </div>
       <label className={landing.filter}>Show
         <select value={filter} onChange={event => setFilter(event.target.value)}>

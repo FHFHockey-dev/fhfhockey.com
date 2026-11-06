@@ -18,6 +18,14 @@ $share-rail-size: 8px;
 // Tuesday group labels (TT-8): Tomorrow SemiBold Italic (OFL, tomorrow-OFL.txt), the $font-family-sporty token.
 @font-face { font-family: "Tomorrow"; src: url("/fonts/social-share/Tomorrow-SemiBoldItalic.ttf") format("truetype"); font-weight: 600; font-style: italic; font-display: block; }
 
+// One field look for every studio input and select: the .page rule and the player-cards source picker.
+@mixin share-field {
+  min-height: v.$touch-target-min; max-width: 100%; min-width: 0; border: v.$border-subtle;
+  border-radius: v.$radius-control; background: v.$background-dark; color: v.$text-primary;
+  font: inherit; padding: v.$space-xs v.$space-sm; color-scheme: dark;
+  &:focus-visible { outline: 2px solid v.$primary-color; outline-offset: 2px; box-shadow: v.$focus-ring; }
+}
+
 .page {
   // The studio workspace never runs edge to edge: at most 90% wide, centred (TJ's page-width rule).
   width: 100%; min-width: 0; max-width: v.$page-max-width; margin: 0 auto;
@@ -36,12 +44,7 @@ $share-rail-size: 8px;
     &[aria-pressed="true"] { background: v.$draft-action; border-color: v.$primary-color; color: v.$color-white; }
     &:active:not(:disabled) { transform: scale(0.96); }
   }
-  input, select {
-    min-height: v.$touch-target-min; max-width: 100%; min-width: 0; border: v.$border-subtle;
-    border-radius: v.$radius-control; background: v.$background-dark; color: v.$text-primary;
-    font: inherit; padding: v.$space-xs v.$space-sm; color-scheme: dark;
-    &:focus-visible { outline: 2px solid v.$primary-color; outline-offset: 2px; box-shadow: v.$focus-ring; }
-  }
+  input, select { @include share-field; }
 }
 .heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: v.$space-sm; margin-bottom: v.$space-md; }
 .eyebrow { color: v.$color-blue-300; text-transform: uppercase; letter-spacing: v.$mobile-letter-spacing-wide; font-size: v.$font-size-xs; }
@@ -69,15 +72,12 @@ $share-rail-size: 8px;
   color: v.$text-secondary; font-size: v.$font-size-sm; text-align: center; }
 // /social-share/player-cards: the source picker and the evidence note line up with the player-card studio below
 // (components/player-cards, 1280px wide with 32px padding, 12px under 760px).
-.sourceBar, .sourceNote { width: 100%; max-width: 1280px; margin: 0 auto; padding: v.$space-md 32px; color: v.$text-primary; font-family: v.$font-family-primary;
+.sourceBar, .sourceNote { width: 100%; max-width: 1280px; margin: 0 auto; padding: v.$space-md v.$space-xl; color: v.$text-primary; font-family: v.$font-family-primary;
   @media (max-width: 760px) { padding-inline: 12px; }
 }
 .sourceBar { padding-bottom: v.$space-sm;
   label { display: inline-flex; flex-wrap: wrap; align-items: center; gap: v.$space-sm; max-width: 100%; color: v.$text-secondary; font-size: v.$font-size-sm; font-weight: 600; }
-  select { min-height: v.$touch-target-min; max-width: 100%; padding: v.$space-xs v.$space-sm; border: v.$border-subtle; border-radius: v.$radius-control; background: v.$background-dark;
-    color: v.$text-primary; font: inherit; font-weight: 400; color-scheme: dark;
-    &:focus-visible { outline: 2px solid v.$primary-color; outline-offset: 2px; box-shadow: v.$focus-ring; }
-  }
+  select { @include share-field; font-weight: 400; }
 }
 .sourceNote { margin-block: 0; font-size: v.$font-size-sm; color: v.$text-secondary; strong { color: v.$color-white; } }
 .actions { display: flex; flex-wrap: wrap; gap: v.$space-xs; margin-top: v.$space-sm; button:first-child { border-color: v.$primary-color; } }
