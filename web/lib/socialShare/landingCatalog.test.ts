@@ -30,7 +30,7 @@ describe("landing tiles", () => {
   it("older formats and Player Cards link to live routes, and the stubs stay out", () => {
     for (const card of LANDING_CARDS) if (card.link.kind === "format") expect(isSocialShareFormat(card.link.format), card.id).toBe(true);
     expect(landingCardHref(landingCard("player-cards")!)).toBe("/social-share/player-cards");
-    expect(LANDING_CARDS.filter(card => card.link.kind === "format").map(card => landingCardHref(card)).sort()).toEqual(["/social-share/game-grid", "/social-share/remaining-week", "/social-share/tuesday-trends"]);
+    expect(LANDING_CARDS.filter(card => card.link.kind === "format").map(card => landingCardHref(card)).sort()).toEqual(["/social-share/game-grid", "/social-share/remaining-week", "/social-share/remaining-week?card=specialists", "/social-share/tuesday-trends"]);
     for (const stub of ["player-spotlight", "category-rescue"]) expect(LANDING_CARDS.some(card => JSON.stringify(card).includes(stub)), stub).toBe(false);
   });
 
@@ -49,7 +49,7 @@ describe("landing tiles", () => {
   });
 
   it("only the older formats and Player Cards are labelled as fixtures", () => {
-    expect(LANDING_CARDS.filter(card => card.example === "fixture").map(card => card.id).sort()).toEqual(["game-grid", "player-cards", "remaining-week", "tuesday-trends"]);
+    expect(LANDING_CARDS.filter(card => card.example === "fixture").map(card => card.id).sort()).toEqual(["game-grid", "player-cards", "remaining-week", "specialists-rest", "tuesday-trends"]);
   });
 });
 
@@ -92,7 +92,7 @@ describe("landing maps", () => {
     const day = (id: string) => LANDING_DAYS.find(item => item.id === id)!.cards;
     expect(day("mon")).toEqual(expect.arrayContaining(["game-grid", "off-night-weekly"]));
     expect(day("tue")).toContain("tuesday-trends");
-    expect(day("wed")).toContain("remaining-week");
+    expect(day("wed")).toEqual(expect.arrayContaining(["remaining-week", "specialists-rest"]));
     expect(day("thu")).toContain("player-cards");
     expect(day("fri")).toEqual(expect.arrayContaining(["goalie-rescue", "busy-quiet"]));
     for (const id of section("standouts")) expect(LANDING_MISC.cards, id).toContain(id);
