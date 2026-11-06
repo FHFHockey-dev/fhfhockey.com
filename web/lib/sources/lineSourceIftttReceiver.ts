@@ -268,14 +268,6 @@ export function createLineSourceIftttReceiver(
       return res.status(503).json({ success: false, error: "Controlled IFTTT intake is unavailable" });
     }
 
-    // Cutover: once the scraper feeds this account, IFTTT deliveries are acknowledged and dropped, so a repost is
-    // never queued twice (IFTTT keys it by the wrapper's id, the scraper by the original's). The controlled-intake
-    // pilot keeps its own rules.
-    if (!intake.controlled && await activeTweetIntakeProvider(config.sourceKey) === "fxtwitter") {
-      return res.status(200).json({ success: true, sourceKey: config.sourceKey, tweetId: null,
-        processingStatus: "ignored_provider_fxtwitter" });
-    }
-
     const text = getBodyValue(req.body, ["text", "Text"]);
     const username = getBodyValue(req.body, ["username", "UserName"]);
     const linkToTweet = getBodyValue(req.body, [
@@ -316,6 +308,14 @@ export function createLineSourceIftttReceiver(
         success: false,
         error: "Expected at least link_to_tweet or text in request body",
       });
+    }
+
+    // Cutover: once the scraper feeds this account, IFTTT deliveries are acknowledged and dropped, so a repost is
+    // never queued twice (IFTTT keys it by the wrapper's id, the scraper by the original's). Checked after the request is
+    // validated, so a bad delivery is still rejected without a database read; the controlled-intake pilot keeps its own rules.
+    if (!intake.controlled && await activeTweetIntakeProvider(config.sourceKey) === "fxtwitter") {
+      return res.status(200).json({ success: true, sourceKey: config.sourceKey, tweetId: null,
+        processingStatus: "ignored_provider_fxtwitter" });
     }
 
     const row = {

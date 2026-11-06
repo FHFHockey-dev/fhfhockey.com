@@ -1101,6 +1101,36 @@
       "migrationClass": "feature",
       "rolloutGate": "Applied with TJ's explicit approval.",
       "stateEvidence": "Production schema_migrations version 20261104011912; readback 2026-11-04: writer md5 4fc52baa55922a78f18353c1f1fe02c0 (was 178d877fe2e1d29c37b94832c5f42c60), status_observed marker present, execute for service_role only. Lane receipt: tasks/artifacts/yahoo-status-sticky-2026-11-03/."
+    },
+    {
+      "order": 110,
+      "path": "supabase/migrations/20261106012634_x_timeline_shadow_posts.sql",
+      "sha256": "3fde8b95a482bc0b0ded53fbafdb941fa78ed3e6f3498e3d8c75c2e577350cee",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "IFTTT replacement shadow intake (TJ, 2026-11-05: FxTwitter with no login, shadow table first). Applied with TJ's explicit approval.",
+      "stateEvidence": "Production schema_migrations version 20261106012634 (x_timeline_shadow_posts); readback 2026-11-06. Service role only, RLS on. Receipt: tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/X-TIMELINE-SHADOW/DEBRIEF.md."
+    },
+    {
+      "order": 111,
+      "path": "supabase/migrations/20261106012951_x_timeline_poll_secret_check.sql",
+      "sha256": "b45b5efe9f00685e02485da612e2efd812b9826f79e56916a3654e4266b4a4a9",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "x-timeline-poll cron auth through Vault (TJ approved the Vault + RPC route, 2026-11-05). Applied with TJ's explicit approval.",
+      "stateEvidence": "Production schema_migrations version 20261106012951 (x_timeline_poll_secret_check); readback 2026-11-06. Execute for service_role only. Receipt: tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/X-TIMELINE-SHADOW/DEBRIEF.md."
+    },
+    {
+      "order": 112,
+      "path": "supabase/migrations/20261106200000_tweet_intake_providers.sql",
+      "sha256": "0b6d0eb310823242a1778d92d28dffe66fe2955914cb4115597d2cd8ab787195",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "unknown",
+      "migrationClass": "feature",
+      "rolloutGate": "IFTTT to FxTwitter cutover switch (TJ approved applying it 2026-11-06; the apply_migration tool was declined, so TJ ran the SQL by hand). Seeds all accounts as 'ifttt'.",
+      "stateEvidence": "Not in Production schema_migrations (readback 2026-11-06). TJ ran this file's SQL in the Supabase SQL editor about 18:05 UTC on 2026-11-06; readback showed 7 rows all 'ifttt', RLS on, service_role-only grants and the touch trigger. Mark applied only after an approved `supabase migration repair --status applied 20261106200000`. Receipt: tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/IFTTT-TO-FXTWITTER-CUTOVER/DEBRIEF.md."
     }
   ],
   "sourceExtensionApproval": {
