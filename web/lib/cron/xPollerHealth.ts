@@ -6,13 +6,13 @@
 //             switched_at count, because its IFTTT deliveries are dropped after the switch. The last 10 minutes are
 //             left out, since those posts may still be in flight.
 //   reads     poller runs (x_timeline_poll_runs) where the account's read succeeded; the longest and current failure
-//             streaks; a run with no entry for the account counts as a failure.
+//             streaks; a run with no entry for the account counts as a failure. From poller v6, how many reads the
+//             mirror served and how many page gaps went unrecovered (posts lost beyond the 100 it can page back).
 //   enqueue   switched accounts only: each shadow first sighting at or after switched_at should have exactly one queue
 //             row, written by the scraper (source 'fxtwitter'). This replaces IFTTT coverage once IFTTT stops.
 //   incidents open watchdog alerts (x_timeline_alert_state) for the account.
 import { pairShadowWithIfttt, type PairableIfttt, type PairableShadow } from "lib/sources/xTimelinePairing";
 
-export const POLL_INTERVAL_MINUTES = 2;
 /** The cutover bar from the IFTTT-TO-FXTWITTER-CUTOVER debrief: coverage of at least 98%. */
 export const COVERAGE_TARGET = 0.98;
 const COVERAGE_CRITICAL = 0.9;
@@ -29,7 +29,15 @@ export type HealthStatus = "healthy" | "warning" | "critical" | "unknown";
 export type PollerAccount = { sourceKey: string; handle: string; hasQueue: boolean };
 export type ShadowSighting = PairableShadow & { first_seen_at: string; text?: string | null };
 export type IftttQueueEvent = PairableIfttt & { received_at: string };
-export type PollRunRow = { response_id: number; source_key: string; run_at: string; ok: boolean; enqueue_error: string | null };
+export type PollRunRow = {
+  response_id: number;
+  source_key: string;
+  run_at: string;
+  ok: boolean;
+  enqueue_error: string | null;
+  via?: string | null;
+  gap_state?: string | null;
+};
 export type QueueRowForSighting = { source_key: string; tweet_id: string; source: string | null };
 export type IntakeProviderRow = { source_key: string; provider: string; switched_at: string | null };
 export type WatchdogAlertRow = { alert_key: string; active: boolean; first_seen_at: string | null; detail: { note?: string } | null };
@@ -43,7 +51,16 @@ export type AccountPollerHealth = {
   provider: "ifttt" | "fxtwitter" | "unknown";
   switchedAt: string | null;
   coverage: { from: string; iftttRows: number; matched: number; rate: number | null; missed: number; samples: PostSample[] };
-  reads: { runs: number; ok: number; rate: number | null; longestFailStreak: number; currentFailStreak: number; lastOkAt: string | null } | null;
+  reads: {
+    runs: number;
+    ok: number;
+    rate: number | null;
+    longestFailStreak: number;
+    currentFailStreak: number;
+    lastOkAt: string | null;
+    mirrorReads: number;
+    unrecoveredGaps: number;
+  } | null;
   lastSightingAt: string | null;
   enqueue: {
     sightings: number;
@@ -62,7 +79,8 @@ export type PollerHealth = {
   status: HealthStatus;
   windowStart: string;
   windowEnd: string;
-  runs: { captured: number; expected: number; longestGapMinutes: number | null; lastRunAt: string | null } | null;
+  /** started: pg_cron runs of the job (x_timeline_poll_job_runs); missed: started runs that left no poller body. */
+  runs: { started: number | null; captured: number; missed: number | null; longestGapMinutes: number | null; lastRunAt: string | null } | null;
   accounts: AccountPollerHealth[];
   incidents: Array<{ key: string; since: string | null; note: string | null }>;
   warnings: string[];
@@ -77,9 +95,15 @@ export const worstStatus = (statuses: HealthStatus[]): HealthStatus =>
 /** Read success and failure streaks for one account over the window's runs, oldest first. */
 export function summariseReads(runs: PollRunRow[], sourceKey: string): NonNullable<AccountPollerHealth["reads"]> {
   const byRun = new Map<number, { at: string; ok: boolean }>();
+  let mirrorReads = 0;
+  let unrecoveredGaps = 0;
   for (const run of runs) {
     const entry = byRun.get(run.response_id) ?? { at: run.run_at, ok: false };
-    if (run.source_key === sourceKey) entry.ok = run.ok;
+    if (run.source_key === sourceKey) {
+      entry.ok = run.ok;
+      if (run.ok && run.via === "mirror") mirrorReads++;
+      if (run.gap_state === "unrecovered") unrecoveredGaps++;
+    }
     byRun.set(run.response_id, entry);
   }
   const ordered = [...byRun.values()].sort((left, right) => ms(left.at) - ms(right.at));
@@ -94,11 +118,17 @@ export function summariseReads(runs: PollRunRow[], sourceKey: string): NonNullab
       lastOkAt = run.at;
     } else longest = Math.max(longest, ++current);
   }
-  return { runs: ordered.length, ok, rate: ordered.length ? ok / ordered.length : null, longestFailStreak: longest, currentFailStreak: current, lastOkAt };
+  return { runs: ordered.length, ok, rate: ordered.length ? ok / ordered.length : null, longestFailStreak: longest, currentFailStreak: current, lastOkAt,
+    mirrorReads, unrecoveredGaps };
 }
 
-/** Captured runs against the 2-minute cadence, and the longest gap between captured runs (window edges included). */
-export function summariseRunCadence(runs: PollRunRow[], windowStart: string, windowEnd: string): NonNullable<PollerHealth["runs"]> {
+/**
+ * Captured runs against the runs pg_cron actually started (null when unknown: the cadence would over-count a paused
+ * job), and the longest gap between captured runs, window edges included.
+ */
+export function summariseRunCadence(
+  runs: PollRunRow[], windowStart: string, windowEnd: string, startedRuns: number | null = null,
+): NonNullable<PollerHealth["runs"]> {
   const times = [...new Set(runs.map((run) => run.response_id))]
     .map((id) => ms(runs.find((run) => run.response_id === id)!.run_at))
     .sort((left, right) => left - right);
@@ -108,8 +138,9 @@ export function summariseRunCadence(runs: PollRunRow[], windowStart: string, win
   const edges = [start, ...times, end];
   for (let index = 1; index < edges.length; index++) longestGap = Math.max(longestGap, (edges[index]! - edges[index - 1]!) / 60_000);
   return {
+    started: startedRuns,
     captured: times.length,
-    expected: Math.floor((end - start) / (POLL_INTERVAL_MINUTES * 60_000)),
+    missed: startedRuns === null ? null : Math.max(0, startedRuns - times.length),
     longestGapMinutes: Math.round(longestGap),
     lastRunAt: times.length ? new Date(times[times.length - 1]!).toISOString() : null,
   };
@@ -125,6 +156,7 @@ export function accountStatus(account: Omit<AccountPollerHealth, "status">): Hea
   if (reads?.rate != null) {
     statuses.push(reads.rate < READ_SUCCESS_CRITICAL ? "critical" : reads.rate < READ_SUCCESS_WARNING ? "warning" : "healthy");
     if (reads.longestFailStreak >= FAIL_STREAK_ALERT) statuses.push(provider === "fxtwitter" ? "critical" : "warning");
+    if (reads.unrecoveredGaps > 0) statuses.push(provider === "fxtwitter" ? "critical" : "warning");
   } else statuses.push("unknown");
   if (enqueue) {
     if (enqueue.missing > 0) statuses.push("critical");
@@ -150,6 +182,8 @@ export function assessPollerHealth(input: {
   ifttt: IftttQueueEvent[];
   /** Null when x_timeline_poll_runs is unreadable (for example, its migration is not applied). */
   runs: PollRunRow[] | null;
+  /** pg_cron runs of the poller job in the window (x_timeline_poll_job_runs); null when unknown. */
+  startedRuns?: number | null;
   /** Each account's earliest shadow sighting ever; coverage starts there. A missing key means no limit. */
   shadowStartedAt?: Record<string, string | null>;
   /** Queue rows for switched accounts' shadow sightings since their switch. */
@@ -227,11 +261,15 @@ export function assessPollerHealth(input: {
   });
 
   const incidents = incidentsFor(alerts, (alertKey) => !alertKey.includes(":"));
-  const cadence = runs ? summariseRunCadence(runs, input.windowStart, input.windowEnd) : null;
+  const cadence = runs ? summariseRunCadence(runs, input.windowStart, input.windowEnd, input.startedRuns ?? null) : null;
   const overall: HealthStatus[] = accounts.map((account) => account.status);
   if (incidents.length) overall.push("critical");
   if (cadence && cadence.longestGapMinutes !== null && cadence.longestGapMinutes >= 12) overall.push("warning");
   if (cadence && cadence.longestGapMinutes !== null && cadence.longestGapMinutes >= 12)
     warnings.push(`The poller went ${cadence.longestGapMinutes} minutes without a captured run.`);
+  if (cadence?.missed) {
+    overall.push("warning");
+    warnings.push(`${cadence.missed} of ${cadence.started} poller runs left no result (auth failure, timeout or empty body).`);
+  }
   return { status: worstStatus(overall), windowStart: input.windowStart, windowEnd: input.windowEnd, runs: cadence, accounts, incidents, warnings };
 }

@@ -17,6 +17,7 @@ function accountLine(account: AccountPollerHealth, windowStart: string): string[
       + `${Date.parse(account.coverage.from) > Date.parse(windowStart) ? ` since ${local(account.coverage.from)}` : ""})`);
   if (account.enqueue) parts.push(`queued once ${account.enqueue.queuedOnce}/${account.enqueue.sightings}`);
   parts.push(account.reads ? `reads ${percent(account.reads.rate)} of ${account.reads.runs} runs · longest miss streak ${account.reads.longestFailStreak}` : "reads unknown");
+  if (account.reads?.mirrorReads) parts.push(`mirror served ${account.reads.mirrorReads}`);
   return parts;
 }
 
@@ -28,6 +29,7 @@ function accountProblems(account: AccountPollerHealth): string[] {
   if (enqueue?.viaIfttt) problems.push(`${enqueue.viaIfttt} queued by IFTTT instead of the scraper.`);
   if (enqueue?.doubleQueued) problems.push(`${enqueue.doubleQueued} repost${enqueue.doubleQueued === 1 ? "" : "s"} queued by both IFTTT and the scraper.`);
   if (enqueue?.iftttAfterSwitch) problems.push(`${enqueue.iftttAfterSwitch} IFTTT row${enqueue.iftttAfterSwitch === 1 ? "" : "s"} stored after the switch.`);
+  if (reads?.unrecoveredGaps) problems.push(`${reads.unrecoveredGaps} run${reads.unrecoveredGaps === 1 ? "" : "s"} with an unrecovered gap: posts beyond the last 100 were lost.`);
   if (reads && reads.currentFailStreak > 0) problems.push(`Failing now: last ${reads.currentFailStreak} run${reads.currentFailStreak === 1 ? "" : "s"}; last good read ${local(reads.lastOkAt)}.`);
   return problems;
 }
@@ -41,7 +43,8 @@ export const PollerHealthSection: React.FC<{ health: PollerHealth }> = ({ health
     </h2>
     <div style={muted}>
       {health.runs
-        ? `${health.runs.captured} of ${health.runs.expected} expected runs captured · longest gap ${health.runs.longestGapMinutes} min · last run ${local(health.runs.lastRunAt)}`
+        ? `${health.runs.started === null ? `${health.runs.captured} runs captured` : `${health.runs.captured} of ${health.runs.started} started runs left a result`}`
+          + ` · longest gap ${health.runs.longestGapMinutes} min · last run ${local(health.runs.lastRunAt)}`
         : "Run history unavailable."}
       {` · coverage target ${percent(COVERAGE_TARGET)}`}
     </div>

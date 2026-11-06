@@ -12,14 +12,22 @@ describe("summariseReads", () => {
       run(1, 2, "dfo", true), run(2, 4, "dfo", false), run(3, 6, "dfo", false), run(3, 6, "ccc", true),
       run(4, 8, "dfo", true), run(5, 10, "ccc", true), // run 5 has no dfo entry
     ];
-    expect(summariseReads(runs, "dfo")).toEqual({ runs: 5, ok: 2, rate: 0.4, longestFailStreak: 2, currentFailStreak: 1, lastOkAt: at(8) });
+    expect(summariseReads(runs, "dfo")).toEqual({ runs: 5, ok: 2, rate: 0.4, longestFailStreak: 2, currentFailStreak: 1, lastOkAt: at(8),
+      mirrorReads: 0, unrecoveredGaps: 0 });
+  });
+
+  it("counts mirror reads and unrecovered gaps from poller v6", () => {
+    const runs = [{ ...run(1, 2, "dfo", true), via: "mirror" }, { ...run(2, 4, "dfo", true), via: "public", gap_state: "unrecovered" },
+      { ...run(3, 6, "dfo", false), via: "mirror" }];
+    expect(summariseReads(runs, "dfo")).toMatchObject({ ok: 2, mirrorReads: 1, unrecoveredGaps: 1 });
   });
 });
 
 describe("summariseRunCadence", () => {
-  it("compares captured runs with the 2-minute cadence and finds the longest gap", () => {
-    const cadence = summariseRunCadence([run(1, 2, "a", true), run(1, 2, "b", true), run(2, 4, "a", true), run(3, 40, "a", true)], START, END);
-    expect(cadence).toEqual({ captured: 3, expected: 30, longestGapMinutes: 36, lastRunAt: at(40) });
+  it("compares captured runs with the runs pg_cron started and finds the longest gap", () => {
+    const runs = [run(1, 2, "a", true), run(1, 2, "b", true), run(2, 4, "a", true), run(3, 40, "a", true)];
+    expect(summariseRunCadence(runs, START, END, 5)).toEqual({ started: 5, captured: 3, missed: 2, longestGapMinutes: 36, lastRunAt: at(40) });
+    expect(summariseRunCadence(runs, START, END)).toMatchObject({ started: null, missed: null });
   });
 });
 
@@ -59,7 +67,7 @@ describe("assessPollerHealth", () => {
     const fhfh = health.accounts.find((account) => account.sourceKey === "fhfhockey")!;
     expect(fhfh.coverage.rate).toBeNull();
     expect(fhfh.status).toBe("healthy");
-    expect(health.runs).toMatchObject({ captured: 30, expected: 30 });
+    expect(health.runs).toMatchObject({ captured: 30, started: null, missed: null });
     expect(health.status).toBe("critical");
   });
 
@@ -103,13 +111,13 @@ describe("assessPollerHealth", () => {
     expect(health.status).toBe("critical");
   });
 
-  it("warns on a long gap between captured runs", () => {
+  it("warns on a long gap between captured runs and on started runs that left no result", () => {
     const health = assessPollerHealth({
       accounts: [accounts[0]!], windowStart: START, windowEnd: END, providers, alerts: [], shadow: [], ifttt: [], queueRows: [],
-      runs: [run(1, 1, "dfofantasy", true), run(2, 59, "dfofantasy", true)],
+      runs: [run(1, 1, "dfofantasy", true), run(2, 59, "dfofantasy", true)], startedRuns: 4,
     });
-    expect(health.runs?.longestGapMinutes).toBe(58);
+    expect(health.runs).toMatchObject({ longestGapMinutes: 58, started: 4, captured: 2, missed: 2 });
     expect(health.status).toBe("warning");
-    expect(health.warnings[0]).toMatch(/58 minutes/);
+    expect(health.warnings).toEqual([expect.stringMatching(/58 minutes/), "2 of 4 poller runs left no result (auth failure, timeout or empty body)."]);
   });
 });
