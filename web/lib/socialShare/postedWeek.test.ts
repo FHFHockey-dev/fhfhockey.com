@@ -9,6 +9,7 @@ const MODULES = "lib/socialShare/modules", OLD = "components/SocialShare/SocialS
 const POSTS: readonly (readonly [string, string, string, string])[] = [
   ["FHFH Best schedules, Monday streamer grid, Nov 2, 2026 through Nov 8, 2026. Teams ranked", "game-grid", OLD, "`FHFH Best schedules, ${editionDay(snapshot)} streamer grid,"],
   ["FHFH Best schedules, Wednesday streamer grid, Nov 2, 2026 through Nov 8, 2026, covering Thu–Sun. Teams", "remaining-week", OLD, "`, covering ${coveredDays(snapshot)}`"],
+  ["FHFH Hits, shots and blocks specialists, Nov 2, 2026 through Nov 8, 2026. Top-", "specialists-rest", OLD, '"Hits, shots and blocks specialists"'],
   ["FHFH Off-Night Edge, rest of week, 2026-11-05 to 2026-11-08. 1. TOR", "off-night-rest", `${MODULES}/offNightEdge.ts`, '`FHFH Off-Night Edge, ${data.dates === "weekly" ? "full week" : "rest of week"}'],
   ["FHFH Off-Night Edge, full week, 2026-11-02 to 2026-11-08. 1. TOR", "off-night-weekly", `${MODULES}/offNightEdge.ts`, '`FHFH Off-Night Edge, ${data.dates === "weekly" ? "full week" : "rest of week"}'],
   ["FHFH completed games per team, 2026-10-01 to 2026-11-01. 1. TOR: 12", "team-games", `${MODULES}/teamGames.ts`, "`FHFH completed games per team,"],

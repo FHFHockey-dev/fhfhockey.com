@@ -8,7 +8,7 @@ import { SHARE_TIME_ZONE } from "./types";
  */
 export type LandingCardLink =
   | { kind: "post"; post: string; settings?: Readonly<Record<string, string>> }
-  | { kind: "format"; format: SocialShareFormat }
+  | { kind: "format"; format: SocialShareFormat; card?: string }
   | { kind: "path"; path: string };
 
 export type LandingCard = {
@@ -23,6 +23,7 @@ const post = (id: string, name: string, purpose: string, postId: string, setting
 export const LANDING_CARDS: readonly LandingCard[] = [
   { id: "game-grid", name: "Game Grid", purpose: "Every team's week of games, ranked by schedule.", example: "fixture", link: { kind: "format", format: "game-grid" } },
   { id: "remaining-week", name: "Remaining Week", purpose: "The same grid for the days left this week.", example: "fixture", link: { kind: "format", format: "remaining-week" } },
+  { id: "specialists-rest", name: "Category Specialists: Rest of Week", purpose: "Under-50% rostered hits, shots and blocks leaders on the best schedules left.", example: "fixture", link: { kind: "format", format: "remaining-week", card: "specialists" } },
   post("off-night-rest", "Off-Night Edge: Rest of Week", "Top schedules left, with a low-rostered forward and defenseman.", "off-night-edge", { dates: "rest-of-week" }),
   post("off-night-weekly", "Off-Night Edge: Weekly", "Top schedules for the full week, with a low-rostered pick per team.", "off-night-edge", { dates: "weekly" }),
   post("team-games", "Team Games Played", "Completed games per team over recent days.", "team-games"),
@@ -62,9 +63,9 @@ export type LandingSection = { id: string; label: string; theme?: string; today?
 /** TJ's order: cards with daily opportunities first, and daily-use cards lead within a section. */
 export const LANDING_CATEGORIES: readonly LandingSection[] = [
   { id: "standouts", label: "Standouts", cards: ["standouts-forwards", "standouts-defensemen", "standouts-goalies", "standouts-under", "standouts-all"] },
-  { id: "schedule", label: "Schedule", cards: ["team-games", "off-night-rest", "remaining-week", "game-grid", "off-night-weekly"] },
+  { id: "schedule", label: "Schedule", cards: ["team-games", "off-night-rest", "remaining-week", "specialists-rest", "game-grid", "off-night-weekly"] },
   { id: "trends", label: "Trends", cards: ["what-changed", "role-watch", "tuesday-trends"] },
-  { id: "peripherals", label: "Peripherals", cards: ["nightly-floor", "cardio-masters", "bsh-leaders", "bsh-risers", "multi-cat-monsters", "multi-cat-points-first"] },
+  { id: "peripherals", label: "Peripherals", cards: ["nightly-floor", "cardio-masters", "bsh-leaders", "bsh-risers", "specialists-rest", "multi-cat-monsters", "multi-cat-points-first"] },
   { id: "skaters", label: "Skaters", cards: ["standouts-forwards", "what-changed", "role-watch", "nightly-floor", "bsh-leaders", "multi-cat-monsters", "stars-total", "stars-per-game"] },
   { id: "defensemen", label: "Defensemen", cards: ["standouts-defensemen"] },
   { id: "goalies", label: "Goalies", cards: ["standouts-goalies", "risky-starts", "start-sit", "crease-shift", "busy-quiet", "goalie-rescue", "goalie-gsax", "ratio-impact", "goalie-of-week", "goalie-of-month"] },
@@ -78,7 +79,7 @@ export const LANDING_MISC: LandingSection = { id: "misc", label: "Misc", theme: 
 export const LANDING_DAYS: readonly (LandingSection & { theme: string })[] = [
   { id: "mon", label: "Mon", theme: "Best schedules and streamers", cards: ["game-grid", "off-night-weekly", "multi-cat-monsters", "multi-cat-points-first", "bsh-leaders", "nightly-floor", "cardio-masters", "goalie-of-week"] },
   { id: "tue", label: "Tue", theme: "Trends", cards: ["tuesday-trends", "what-changed", "role-watch", "bsh-risers"] },
-  { id: "wed", label: "Wed", theme: "Rest of week", cards: ["remaining-week", "off-night-rest"] },
+  { id: "wed", label: "Wed", theme: "Rest of week", cards: ["remaining-week", "off-night-rest", "specialists-rest"] },
   { id: "thu", label: "Thu", theme: "Player spotlight and goalie use", cards: ["player-cards", "crease-shift", "risky-starts", "start-sit", "goalie-gsax", "ratio-impact"] },
   { id: "fri", label: "Fri", theme: "Category rescue", cards: ["goalie-rescue", "busy-quiet"] },
   { id: "sat", label: "Sat", theme: "Light", cards: ["stars-per-game", "stars-per-game-points-first"] },
@@ -89,7 +90,7 @@ const CARDS_BY_ID = new Map(LANDING_CARDS.map(card => [card.id, card]));
 export const landingCard = (id: string) => CARDS_BY_ID.get(id);
 
 export function landingCardHref({ link }: LandingCard) {
-  if (link.kind === "format") return `/social-share/${link.format}`;
+  if (link.kind === "format") return `/social-share/${link.format}${link.card ? `?${new URLSearchParams({ card: link.card })}` : ""}`;
   if (link.kind === "path") return link.path;
   return `/social-share/posts?${new URLSearchParams({ post: link.post, ...link.settings })}`;
 }
