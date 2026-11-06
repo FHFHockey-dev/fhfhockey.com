@@ -4,7 +4,9 @@
   @include v.glass-panel;
   padding: v.$space-sm v.$space-md;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  // Two columns only when each gets ~240px; narrower rails stack instead of
+  // pushing the second column off-screen.
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
   gap: v.$space-md;
   align-items: start;
 }
@@ -30,14 +32,14 @@
 .item {
   display: flex;
   align-items: center;
-  gap: v.$space-sm;
+  gap: v.$space-xs;
   padding: v.$space-xs v.$space-sm;
   border-radius: v.$border-radius-md;
   background: linear-gradient(90deg, rgba(255, 255, 255, 0.01), transparent);
 }
 
 .rank {
-  width: 28px;
+  width: 20px;
   text-align: center;
   color: v.$text-secondary;
   font-weight: 700;
@@ -51,6 +53,8 @@
 }
 
 .name {
+  flex: 1 1 auto;
+  min-width: 0;
   font-weight: 600;
   font-size: 0.9rem;
   color: v.$text-primary;
@@ -62,7 +66,7 @@
 .deltaGroup {
   display: grid;
   gap: 4px;
-  min-width: 110px;
+  min-width: 84px;
 }
 
 .deltaBar {

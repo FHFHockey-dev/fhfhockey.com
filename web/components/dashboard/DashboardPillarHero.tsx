@@ -10,7 +10,8 @@ type DashboardPillarHeroProps = {
   className?: string;
   defers: string[];
   description: ReactNode;
-  emphasis: string;
+  /** Optional side box; /trends dropped it as a repeat of the description. */
+  emphasis?: string;
   eyebrow: string;
   owns: string[];
   surfaceLinks?: SiteSurfaceLink[];
@@ -30,21 +31,32 @@ export default function DashboardPillarHero({
 }: DashboardPillarHeroProps) {
   return (
     <section className={[styles.hero, className].filter(Boolean).join(" ")}>
-      <div className={styles.topRow}>
+      <div className={`${styles.topRow} ${emphasis || actions ? "" : styles.topRowSolo}`}>
         <div className={styles.copy}>
           <p className={styles.eyebrow}>{eyebrow}</p>
           <h1 className={styles.title}>{title}</h1>
           <div className={styles.description}>{description}</div>
         </div>
 
-        <div className={styles.sideRail}>
-          <span className={styles.sideLabel}>Primary lens</span>
-          <span className={styles.emphasis}>{emphasis}</span>
-          {actions ? <div className={styles.actions}>{actions}</div> : null}
-        </div>
+        {emphasis || actions ? (
+          <div className={styles.sideRail}>
+            {emphasis ? (
+              <>
+                <span className={styles.sideLabel}>Primary lens</span>
+                <span className={styles.emphasis}>{emphasis}</span>
+              </>
+            ) : null}
+            {actions ? <div className={styles.actions}>{actions}</div> : null}
+          </div>
+        ) : null}
       </div>
 
-      <div className={styles.identityGrid}>
+      <div className={styles.metaRow}>
+
+      {/* Page scope stays one click away so the first viewport goes to trend data. */}
+      <details className={styles.about}>
+        <summary>About this dashboard</summary>
+        <div className={styles.identityGrid}>
         <article className={styles.identityCard}>
           <span className={styles.identityLabel}>What lives here</span>
           <ul className={styles.identityList}>
@@ -62,24 +74,24 @@ export default function DashboardPillarHero({
             ))}
           </ul>
         </article>
-      </div>
+        </div>
+      </details>
 
       {surfaceLinks.length ? (
-        <div className={styles.linkGrid}>
+        <nav className={styles.linkRow} aria-label="Related pages">
           {surfaceLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className={styles.linkCard}
+              className={styles.linkPill}
+              title={link.description}
             >
-              <span className={styles.linkLabel}>{link.label}</span>
-              <span className={styles.linkDescription}>
-                {link.description}
-              </span>
+              {link.label}
             </Link>
           ))}
-        </div>
+        </nav>
       ) : null}
+      </div>
     </section>
   );
 }

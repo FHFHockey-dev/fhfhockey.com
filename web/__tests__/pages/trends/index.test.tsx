@@ -368,7 +368,7 @@ describe("Trends dashboard", () => {
     render(<TrendsDashboardPage initialDate="2026-04-08" />);
     fireEvent.click(screen.getByRole("tab", { name: "Goalies" }));
 
-    expect(screen.getByText(/high confidence \(10 GP\)/i)).toBeTruthy();
+    expect(screen.getByText(/high confidence · 10 GP/i)).toBeTruthy();
     expect(screen.getByText(/volatility 5.7/i)).toBeTruthy();
     expect(screen.getByRole("alert").textContent).toMatch(
       /Observed source-date gap:\s*19\s*days/i

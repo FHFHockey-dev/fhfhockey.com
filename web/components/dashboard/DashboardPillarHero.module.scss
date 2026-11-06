@@ -25,6 +25,23 @@
   align-items: start;
 }
 
+.topRowSolo {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+// "About this dashboard" and the related-page pills share one row; the open
+// disclosure takes the full width so its notes don't squeeze the pills.
+.metaRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: v.$space-sm;
+}
+
+.about[open] {
+  flex-basis: 100%;
+}
+
 .copy {
   display: grid;
   gap: v.$space-sm;
@@ -94,15 +111,89 @@
   width: 100%;
 }
 
-.identityGrid,
-.linkGrid {
+// Collapsed page-scope notes (same pattern as Underlying Stats "About this dashboard").
+.about {
+  summary {
+    display: inline-flex;
+    align-items: center;
+    gap: v.$space-sm;
+    min-height: v.$control-height-md;
+    padding: 0 v.$space-md;
+    border: v.$border-subtle;
+    border-radius: v.$radius-control;
+    background: v.$background-header;
+    color: v.$text-secondary;
+    cursor: pointer;
+    font-size: v.$font-size-sm;
+    list-style: none;
+
+    &::after {
+      content: "⌄";
+      color: v.$primary-color;
+    }
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    &:hover {
+      color: v.$text-primary;
+      border-color: rgba(v.$primary-color, 0.6);
+    }
+
+    &:focus-visible {
+      outline: 2px solid v.$primary-color;
+      outline-offset: 2px;
+    }
+  }
+
+  &[open] summary {
+    margin-bottom: v.$space-sm;
+  }
+}
+
+.identityGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: v.$space-sm;
 }
 
-.identityCard,
-.linkCard {
+// Related pages as one compact row of link pills; descriptions live in the title tooltip.
+.linkRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-xs;
+}
+
+.linkPill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  padding: 0 v.$space-sm;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-sm;
+  background: rgba(v.$background-dark, 0.68);
+  color: v.$text-primary;
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: v.$font-size-xs;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: border-color 0.18s ease, color 0.18s ease;
+
+  &:hover {
+    border-color: v.$primary-color;
+    color: v.$color-white;
+  }
+
+  &:focus-visible {
+    outline: 2px solid v.$primary-color;
+    outline-offset: 2px;
+  }
+}
+
+.identityCard {
   display: grid;
   gap: v.$space-xs;
   padding: v.$space-md;
@@ -121,39 +212,12 @@
   line-height: 1.5;
 }
 
-.linkCard {
-  text-decoration: none;
-  transition:
-    border-color 0.18s ease,
-    transform 0.18s ease;
 
-  &:hover,
-  &:focus-visible {
-    border-color: rgba(v.$primary-color, 0.45);
-    transform: translateY(-1px);
-    outline: none;
-  }
-}
 
-.linkLabel {
-  color: v.$color-white;
-  font-family: v.$font-family-accent, sans-serif;
-  font-size: v.$font-size-sm;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.linkDescription {
-  color: v.$text-secondary;
-  font-size: v.$font-size-sm;
-  line-height: 1.5;
-}
 
 @media (max-width: 900px) {
   .topRow,
-  .identityGrid,
-  .linkGrid {
-    grid-template-columns: 1fr;
+  .identityGrid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

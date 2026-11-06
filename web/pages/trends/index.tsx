@@ -168,6 +168,15 @@ const normalizeDashboardDate = (value: unknown): string | null => {
     : value;
 };
 
+// Trend-line legend/tooltip label: "F. Lastname" (TJ, 2026-11-06), so players who
+// share a last name stay distinct; falls back to the id when metadata is missing.
+const trendLegendName = (fullName: string | undefined, playerId: string | number) => {
+  const parts = fullName?.trim().split(/\s+/) ?? [];
+  if (parts.length === 0) return String(playerId);
+  if (parts.length === 1) return parts[0];
+  return `${parts[0].charAt(0)}. ${parts.slice(1).join(" ")}`;
+};
+
 const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
   const [date, setDate] = useState(initialDate ?? getTodayEt);
   const [projectionSource, setProjectionSource] = useState<"forge" | "legacy">(
@@ -770,12 +779,6 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                       <p className={styles.skaterMeta}>
                         {meta?.teamAbbrev ?? "FA"}
                         {meta?.position ? ` · ${meta.position}` : ""}
-                        {row.confidence
-                          ? ` · ${row.confidence} confidence (${row.sampleSize ?? 0} GP)`
-                          : ""}
-                        {row.volatility !== null && row.volatility !== undefined
-                          ? ` · volatility ${row.volatility.toFixed(1)}`
-                          : ""}
                       </p>
                     </div>
                   </div>
@@ -785,6 +788,17 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                       {formatPercent(row.percentile)}
                     </span>
                   </div>
+                  {/* Sample context on its own line so narrow cards don't crush the name. */}
+                  {row.confidence || (row.volatility !== null && row.volatility !== undefined) ? (
+                    <p className={styles.skaterDetail}>
+                      {row.confidence
+                        ? `${row.confidence.charAt(0).toUpperCase()}${row.confidence.slice(1)} confidence · ${row.sampleSize ?? 0} GP`
+                        : ""}
+                      {row.volatility !== null && row.volatility !== undefined
+                        ? `${row.confidence ? " · " : ""}volatility ${row.volatility.toFixed(1)}`
+                        : ""}
+                    </p>
+                  ) : null}
                 </li>
               );
             })}
@@ -844,7 +858,6 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                   fallers, and the support context around those shifts.
                 </p>
               }
-              emphasis="Movement and directionality"
               owns={[
                 "Team, skater, and goalie movement views with rolling recent-form context",
                 "Risers, fallers, and hot/cold states before you drill deeper",
@@ -1232,42 +1245,6 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                           </div>
                         </section>
 
-                        <section
-                          className={`${styles.panel} ${styles.workspaceRailPanel}`}
-                        >
-                          <div className={styles.panelHeader}>
-                            <h3 className={styles.panelTitle}>Next Surface</h3>
-                            <span className={styles.panelMeta}>
-                              Handoff points
-                            </span>
-                          </div>
-                          <div className={styles.panelBody}>
-                            <p className={styles.summaryBandCopy}>
-                              Use deeper team diagnosis or sustainability only
-                              after the movement read is complete.
-                            </p>
-                            <div className={styles.surfaceLinkList}>
-                              <Link
-                                href="/underlying-stats"
-                                className={styles.surfaceLinkPill}
-                              >
-                                Open Underlying Stats
-                              </Link>
-                              <a
-                                href="#projections"
-                                className={styles.surfaceLinkPill}
-                              >
-                                Projection Runway
-                              </a>
-                              <Link
-                                href="/trendsSandbox"
-                                className={styles.surfaceLinkPill}
-                              >
-                                Open Trends Sandbox
-                              </Link>
-                            </div>
-                          </div>
-                        </section>
                       </div>
                     </div>
                   )}
@@ -1410,6 +1387,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                             {skaterTrendSeries.players.map((playerId, idx) => (
                               <Line
                                 key={playerId}
+                                name={trendLegendName(data?.skaterTrends?.playerMetadata?.[String(playerId)]?.fullName, playerId)}
                                 type="monotone"
                                 dataKey={playerId}
                                 dot={false}
@@ -1530,6 +1508,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                             {goalieTrendSeries.players.map((playerId, idx) => (
                               <Line
                                 key={playerId}
+                                name={trendLegendName(data?.goalieTrends?.playerMetadata?.[String(playerId)]?.fullName, playerId)}
                                 type="monotone"
                                 dataKey={playerId}
                                 dot={false}
@@ -1605,8 +1584,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                   Projections and start context
                 </span>
                 <span className={styles.summaryContract}>
-                  Predictions-vs-actual and candlestick views are explicitly
-                  held for a later implementation pass.
+                  Coming next: predictions vs actual and candlestick views
                 </span>
               </div>
             </div>
@@ -1786,42 +1764,6 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                 </div>
               </section>
 
-              <section className={`${styles.panel} ${styles.placeholderPanel}`}>
-                <div className={styles.panelHeader}>
-                  <h2 className={styles.panelTitle}>Predictions Vs Actual</h2>
-                  <span className={styles.panelMeta}>Later implementation</span>
-                </div>
-                <div className={styles.placeholderBody}>
-                  <p className={styles.summaryBandCopy}>
-                    Reserved for model expectation against realized results once
-                    the accuracy contract is promoted into the Trends route.
-                  </p>
-                  <ul className={styles.placeholderList}>
-                    <li>Expected vs realized team trend movement</li>
-                    <li>Skater and goalie hit-rate framing</li>
-                    <li>Model drift by rolling window</li>
-                  </ul>
-                </div>
-              </section>
-
-              <section className={`${styles.panel} ${styles.placeholderPanel}`}>
-                <div className={styles.panelHeader}>
-                  <h2 className={styles.panelTitle}>Candlestick Trend View</h2>
-                  <span className={styles.panelMeta}>Later implementation</span>
-                </div>
-                <div className={styles.placeholderBody}>
-                  <p className={styles.summaryBandCopy}>
-                    Reserved for the candlestick format once open, close, range,
-                    and expectation overlays are finalized for each entity
-                    class.
-                  </p>
-                  <ul className={styles.placeholderList}>
-                    <li>Team percentile candles</li>
-                    <li>Skater metric candles</li>
-                    <li>Goalie efficiency and workload candles</li>
-                  </ul>
-                </div>
-              </section>
             </div>
           </section>
 

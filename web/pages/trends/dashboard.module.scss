@@ -24,10 +24,20 @@
   align-items: start;
 }
 
+// The rail's children join the header grid: Player Search sits beside the hero and
+// Recent-Form Scan takes its own full-width row (TJ, 2026-11-06).
 .headerRail {
-  display: grid;
-  gap: v.$space-md;
-  min-height: 0;
+  display: contents;
+}
+
+.headerRail > .summaryBand {
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 1101px) {
+  .headerRail > .summaryBand .summaryBandGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 .trendsHeaderSection {
@@ -86,6 +96,11 @@
   flex-direction: column;
   gap: v.$space-sm;
   overflow: hidden;
+
+  // Wide tables scroll sideways on narrow screens instead of being clipped.
+  &:has(> .table) {
+    overflow-x: auto;
+  }
 }
 
 .searchPanel {
@@ -296,12 +311,16 @@
 }
 
 .movementSectionBody {
+  // minmax(0, 1fr): implicit auto columns grew to content min-width (650px) and clipped off-screen.
+  grid-template-columns: minmax(0, 1fr);
   padding: v.$space-md;
   display: grid;
   gap: v.$space-md;
 }
 
 .movementTabPanel {
+  // minmax(0, 1fr): implicit auto columns grew to content min-width (650px) and clipped off-screen.
+  grid-template-columns: minmax(0, 1fr);
   display: grid;
   gap: v.$space-md;
 }
@@ -315,12 +334,15 @@
 
 .teamWorkspaceGrid {
   display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(300px, 0.85fr);
+  // Wider rail so Most improved / Most degraded sit side by side (TJ, 2026-11-06).
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
   gap: v.$space-md;
   align-items: stretch;
 }
 
 .workspaceRail {
+  // minmax(0, 1fr): implicit auto columns grew to content min-width (650px) and clipped off-screen.
+  grid-template-columns: minmax(0, 1fr);
   display: grid;
   gap: v.$space-md;
 }
@@ -666,6 +688,8 @@
 }
 
 .supportSection {
+  // minmax(0, 1fr): implicit auto columns grew to content min-width (650px) and clipped off-screen.
+  grid-template-columns: minmax(0, 1fr);
   @include v.glass-panel($padding: v.$space-lg, $radius: v.$radius-lg);
   display: grid;
   gap: v.$space-md;
@@ -677,25 +701,8 @@
   gap: v.$space-md;
 }
 
-.supportPanel,
-.placeholderPanel {
+.supportPanel {
   min-height: 0;
-}
-
-.placeholderBody {
-  padding: v.$space-md;
-  display: grid;
-  gap: v.$space-sm;
-}
-
-.placeholderList {
-  margin: 0;
-  padding-left: 1rem;
-  color: v.$text-primary;
-  display: grid;
-  gap: 0.35rem;
-  font-size: v.$font-size-sm;
-  line-height: 1.5;
 }
 
 .goalieShareBody {
@@ -1088,16 +1095,20 @@
 
 .skaterRankingRow {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
+  gap: v.$space-xs v.$space-sm;
   padding: v.$space-sm;
   border-radius: v.$border-radius-md;
   background-color: v.$background-medium;
   border: 1px solid v.$border-primary;
 }
 
+// The name/meta column takes the free width; the score keeps its natural width.
 .skaterInfo {
   display: flex;
+  flex: 1 1 auto;
   align-items: center;
   gap: v.$space-md;
   min-width: 0;
@@ -1146,8 +1157,18 @@
   color: v.$text-secondary;
 }
 
+// Goalie sample context: a full-width second line, indented to the name column.
+.skaterDetail {
+  flex: 1 0 100%;
+  margin: 0;
+  padding-left: calc(24px + #{v.$space-md});
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
+}
+
 .skaterScore {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   gap: v.$space-md;
   font-family: v.$font-family-numbers, monospace;
@@ -1331,7 +1352,7 @@
   }
 
   .header {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .workspaceIntro,
@@ -1344,11 +1365,11 @@
   .supportGrid,
   .trendGrid,
   .teamRankStrip {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .dashboardGrid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto;
   }
 
@@ -1363,7 +1384,7 @@
   }
 
   .temperatureStrip {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
