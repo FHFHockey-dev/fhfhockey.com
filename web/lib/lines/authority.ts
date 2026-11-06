@@ -1,4 +1,4 @@
-import type { ParsedLinesCccSource } from "lib/sources/linesCccIngestion";
+import type { ParsedLinesCccSource, TweetSourceProvenance } from "lib/sources/linesCccIngestion";
 import type { AuthorityTier } from "./types";
 
 /** Accounts the poller and IFTTT relay through. Relaying never confers authority. */
@@ -43,6 +43,13 @@ const urlHandle = (url: string | null | undefined) => normal(url?.match(/^https:
  * or a resolved quoted original. The relaying poller account is never returned as the author.
  */
 export function sourceAttribution(source: ParsedLinesCccSource, text: string): SourceAttribution {
+  // Lane D's intake mapping wins when present; the raw payload read below is the fallback for older rows.
+  const mapped = source.metadata?.sourceProvenance as Partial<TweetSourceProvenance> | undefined;
+  if (mapped && typeof mapped === "object" && (mapped.provider === "fxtwitter" || mapped.provider === "ifttt")) {
+    return { originalAuthor: normal(mapped.originalAuthor), relayAccount: normal(mapped.relayAccount),
+      originalTweetId: id(mapped.originalTweetId), relayTweetId: id(mapped.relayTweetId), timestampIsOriginal: mapped.timestampIsOriginal === true,
+      evidence: [`source_provenance:${mapped.provider}:${mapped.postKind ?? "unknown"}`, ...(mapped.postKind === "post" ? ["direct_post"] : [])] };
+  }
   const raw = (source.rawPayload ?? {}) as { provider?: unknown; fx?: Record<string, any> };
   const account = normal(source.metadata?.iftttSourceAccount) ?? normal(source.sourceHandle) ?? urlHandle(source.sourceUrl ?? source.tweetUrl);
   if (raw.provider === "fxtwitter" && raw.fx && typeof raw.fx === "object") {

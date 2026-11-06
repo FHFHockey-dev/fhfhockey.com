@@ -5,6 +5,8 @@ vi.mock("lib/sources/tweetProjectionStorage", () => ({ projectionReportFromSourc
 vi.mock("./gameState", async (load) => ({ ...await load<object>(), observeLineGame: async (game: any) => game }));
 import { decideBinding, decideContext } from "./decisions";
 import { authorityTier, sourceAttribution } from "./authority";
+import { readReviewedDecision } from "./trainerDecisions";
+import { detectTweetLineContext } from "lib/sources/tweetInterpretation";
 import { processLineSnapshotEvidence } from "./processor";
 import type { LineGame } from "./types";
 
@@ -125,5 +127,54 @@ describe("decision producer through the processor", () => {
     const claim = db.tables.line_claim_revisions![0]!.payload;
     expect(claim.provenance).toEqual({ relayTweetId: "555", originalTweetId: "900", attributionStatus: "resolved" });
     expect(claim).toMatchObject({ originalAuthor: "pham1717", relayAccount: "gamedaylines", authorityTier: "unknown", gameId: game.id });
+  });
+  it("Sabres PP2 from the parser's pp_replace change: practice-level, Kuluch unresolved, resolved only by an approved alias", async () => {
+    const at = (word: string) => { const start = SABRES.indexOf(word); return { start, end: start + word.length, text: word }; };
+    const change = { kind: "pp_replace", scope: "partial", situation: "pp", number: 2, explicitNumber: true, numberEvidence: at("No. 2"),
+      playersIn: [{ playerId: 102, name: "Josh Krebs", evidence: at("Krebs") }], playersOut: [{ playerId: 103, name: "Ryan McLeod", evidence: at("McLeod") }, { playerId: 104, name: "Josh Doan", evidence: at("Doan") }],
+      unresolved: [{ ...at("Kuluch"), side: "in", reason: "missing_player", candidates: [] }], evidence: { start: 0, end: SABRES.length, text: SABRES } };
+    const input = () => source(SABRES, { report: { interpretation: { version: "test", units: [], relationships: [], unresolved: [], certainty: "reported", context: "unknown", changes: [change] } } });
+    const db = database();
+    await processLineSnapshotEvidence(db, [input()], [BUF], now);
+    const swap = db.tables.line_claim_revisions![0]!.payload;
+    expect(swap).toMatchObject({ kind: "pp", context: "practice", phase: "unknown", gameId: null });
+    expect(swap.ppSwap).toMatchObject({ unitNumber: 2, playersOut: [103, 104], source: "parser:pp_replace" });
+    expect(swap.reviewReasons).toEqual(expect.arrayContaining(["identity:Kuluch:missing_player", "claim_phase_unresolved", "binding_decision_unverified"]));
+    const aliased = database({ lineup_player_name_aliases: [{ alias: "Kuluch", player_id: 101, created_at: "2026-11-01T00:00:00Z" }] });
+    await processLineSnapshotEvidence(aliased, [input()], [BUF], now);
+    const resolved = aliased.tables.line_claim_revisions![0]!.payload;
+    expect(resolved.ppSwap).toMatchObject({ playersIn: [101, 102], playersOut: [103, 104] });
+    expect(resolved.reviewReasons.some((reason: string) => reason.startsWith("identity:"))).toBe(false);
+  });
+  it("prefers Lane D's sourceProvenance and its first-sighting clock", async () => {
+    const text = "PP1 tonight: Kulich Krebs McLeod Doan";
+    const units = { interpretation: { version: "test", unresolved: [], certainty: "reported", context: "unknown", relationships: [],
+      units: [{ situation: "pp", number: 1, explicitNumber: true, complete: true, group: null, players: players.map((player) => ({ playerId: player.id, name: player.lastName })),
+        evidence: players.map((player) => { const start = text.indexOf(player.lastName); return { start, end: start + player.lastName.length, text: player.lastName }; }) }] } };
+    const input = source(text, { sourceHandle: "GameDayLines", report: units, metadata: { sourceProvenance: { provider: "fxtwitter", postKind: "repost", originalAuthor: "pham1717", relayAccount: "GameDayLines",
+      originalTweetId: "900", relayTweetId: "555", timestampIsOriginal: true, publicationTimeBasis: "provider_timestamp", ingestedAt: "2026-11-06T17:00:30Z", ingestedAtBasis: "first_seen_at" } } });
+    expect(sourceAttribution(input, text)).toMatchObject({ originalAuthor: "pham1717", relayAccount: "gamedaylines", originalTweetId: "900", relayTweetId: "555", timestampIsOriginal: true });
+    const db = database();
+    await processLineSnapshotEvidence(db, [input], [BUF], now);
+    const claim = db.tables.line_claim_revisions![0]!.payload;
+    expect(claim.time.ingestedAt).toBe("2026-11-06T17:00:30Z");
+    expect(claim.provenance).toEqual({ relayTweetId: "555", originalTweetId: "900", attributionStatus: "resolved" });
+  });
+});
+
+describe("trainer answer key versions", () => {
+  it("reads v2 context, game binding and powerPlaySwaps from the expected extraction", () => {
+    const decision = readReviewedDecision("r2", { answerKey: { version: 2, verdict: "wrong", textSha256: "a".repeat(64), input: { text: SABRES },
+      expected: { ...emptyExtraction, powerPlay: [], offPowerPlay: [], context: "practice", scope: "change", game: { gameId: null, opponentTeamId: BOS, date: "2026-11-06" },
+        powerPlaySwaps: [{ unit: 2, in: [slot(101, "Kuluch"), slot(102, "Krebs")], out: [slot(103, "McLeod"), slot(104, "Doan")] }] } } });
+    expect(decision).toMatchObject({ version: 2, context: "practice", scope: "change", binding: { gameId: null, opponentId: BOS, date: "2026-11-06" } });
+    expect(decision!.swaps).toEqual([{ unitNumber: 2, playersIn: [slot(101, "Kuluch"), slot(102, "Krebs")], playersOut: [slot(103, "McLeod"), slot(104, "Doan")] }]);
+  });
+  it("ignores unknown versions and a timestamp-only v2 binding", () => {
+    expect(readReviewedDecision("r3", { answerKey: { version: 3, textSha256: "a", expected: emptyExtraction } })).toBeNull();
+    expect(readReviewedDecision("r4", { answerKey: { version: 2, textSha256: "a", expected: { ...emptyExtraction, game: { gameId: null, opponentTeamId: null, date: "2026-11-06" } } } })!.binding).toBeNull();
+  });
+  it("uses the parser's own context cues when the interpretation carries them", () => {
+    expect(decideContext("Second period: Point up with Hagel", detectTweetLineContext("Second period: Point up with Hagel"))).toMatchObject({ context: "game", phase: "in_game" });
   });
 });

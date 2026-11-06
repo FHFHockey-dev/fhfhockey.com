@@ -7,7 +7,7 @@ import type { ClaimContext } from "./types";
 
 /**
  * A trainer answer key used as a reviewed decision. v1 carries the extraction only; v2
- * (Lane E) adds context, game binding, scope and PP swaps. Unknown versions are ignored.
+ * (Lane E, 4218359a8) adds expected.context, .game, .scope and .powerPlaySwaps. Unknown versions are ignored.
  */
 export type ReviewedLineDecision = {
   reviewItemId: string; version: 1 | 2; textSha256: string; verdict: "correct" | "wrong"; expected: TrainerExtraction;
@@ -25,19 +25,21 @@ export function readReviewedDecision(reviewItemId: string, metadata: unknown): R
   if (!key || (key.version !== 1 && key.version !== 2) || !key.expected || typeof key.textSha256 !== "string") return null;
   const expected: TrainerExtraction = { ...key.expected, forwards: key.expected.forwards ?? [], defensePairs: key.expected.defensePairs ?? [], goalies: key.expected.goalies ?? [],
     extraForwards: key.expected.extraForwards ?? [], extraDefensemen: key.expected.extraDefensemen ?? [], powerPlay: key.expected.powerPlay ?? [], offPowerPlay: key.expected.offPowerPlay ?? [] };
+  // v2 (Lane E) keeps context, scope, game and powerPlaySwaps on the extraction itself.
   const v2 = key.version === 2;
-  const binding = v2 && key.binding && typeof key.binding === "object" ? {
-    gameId: Number.isSafeInteger(key.binding.gameId) ? key.binding.gameId : null,
-    opponentId: Number.isSafeInteger(key.binding.opponentId) ? key.binding.opponentId : null,
-    date: typeof key.binding.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(key.binding.date) ? key.binding.date : null } : null;
-  const v2Swaps = v2 && Array.isArray(key.swaps) ? key.swaps.flatMap((swap: any) => [1, 2].includes(swap?.unitNumber)
-    ? [{ unitNumber: swap.unitNumber as 1 | 2, playersIn: slots(swap.in ?? swap.playersIn), playersOut: slots(swap.out ?? swap.playersOut) }] : []) : [];
+  const game = v2 ? key.expected.game : null;
+  const binding = game && typeof game === "object" ? {
+    gameId: Number.isSafeInteger(game.gameId) ? game.gameId : null,
+    opponentId: Number.isSafeInteger(game.opponentTeamId) ? game.opponentTeamId : null,
+    date: typeof game.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(game.date) ? game.date : null } : null;
+  const v2Swaps = v2 && Array.isArray(key.expected.powerPlaySwaps) ? key.expected.powerPlaySwaps.flatMap((swap: any) => [1, 2].includes(swap?.unit)
+    ? [{ unitNumber: swap.unit as 1 | 2, playersIn: slots(swap.in), playersOut: slots(swap.out) }] : []) : [];
   // v1: a partly filled PP unit plus "off the power play" names is a swap on that unit.
   const v1Swaps = !v2Swaps.length && expected.offPowerPlay.length ? expected.powerPlay.flatMap((unit, index) =>
     index < 2 && unit.length > 0 && unit.length < 5 ? [{ unitNumber: (index + 1) as 1 | 2, playersIn: unit, playersOut: expected.offPowerPlay }] : []) : [];
   return { reviewItemId, version: key.version, textSha256: key.textSha256, verdict: key.verdict === "wrong" ? "wrong" : "correct", expected,
-    context: v2 && CONTEXTS.has(key.context) ? key.context : null, binding: binding && (binding.gameId || binding.opponentId && binding.date) ? binding : null,
-    scope: v2 && ["full", "partial", "change"].includes(key.scope) ? key.scope : null,
+    context: v2 && CONTEXTS.has(key.expected.context) ? key.expected.context : null, binding: binding && (binding.gameId || binding.opponentId && binding.date) ? binding : null,
+    scope: v2 && ["full", "partial", "change"].includes(key.expected.scope) ? key.expected.scope : null,
     swaps: (v2Swaps.length ? v2Swaps : v1Swaps).filter((swap: { playersIn: unknown[]; playersOut: unknown[] }) => swap.playersIn.length && swap.playersIn.length === swap.playersOut.length) };
 }
 

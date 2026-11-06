@@ -36,6 +36,14 @@ export async function processLineSnapshotEvidence(supabase: any, sources: Parsed
     // Reviewed swap players by id; the raw tweet name must still resolve (approved alias for a misspelling).
     for (const decision of [...reviewed.values()].flat()) for (const swap of decision.swaps) for (const slot of [...swap.playersIn, ...swap.playersOut])
       if (slot.playerId != null && !ids.includes(slot.playerId)) ids.push(slot.playerId);
+    const changes = relevant.flatMap(({ report }) => report!.interpretation.changes ?? []);
+    for (const change of changes) for (const player of [...change.playersIn, ...change.playersOut]) if (!ids.includes(player.playerId)) ids.push(player.playerId);
+    // Names the parser could not resolve can still match an approved alias, never a fuzzy guess.
+    const unresolvedNames = [...new Set(changes.flatMap((change) => change.unresolved.map((item) => item.text)))];
+    if (unresolvedNames.length) {
+      const rows = await fetchAllSupabasePages<any>(({ from, to }) => supabase.from("lineup_player_name_aliases").select("alias,player_id").in("alias", unresolvedNames).order("player_id").order("alias").range(from, to));
+      for (const row of rows) if (!ids.includes(row.player_id)) ids.push(row.player_id);
+    }
     let playerDirectory: PlayerIdentity[] = [], memberships: EventMembership[] = [], aliases: ApprovedEventAlias[] = [];
     if (ids.length) {
       const [rosters, directory, approved] = await Promise.all([
@@ -52,6 +60,9 @@ export async function processLineSnapshotEvidence(supabase: any, sources: Parsed
       const report = candidate!;
       // Existing projection compatibility fallbacks must not manufacture ingestion evidence.
       if (!source.observedAt) report.receivedAt = "";
+      // First sighting by the poller is the ingestion clock when intake recorded it.
+      const mapped = source.metadata?.sourceProvenance as { ingestedAt?: string; ingestedAtBasis?: string } | undefined;
+      if (source.observedAt && mapped?.ingestedAtBasis === "first_seen_at" && instant(mapped.ingestedAt) != null && instant(mapped.ingestedAt)! <= (instant(report.receivedAt) ?? Infinity)) report.receivedAt = mapped.ingestedAt!;
       const upstream = source.metadata?.lineEvidence as LineEvidenceContext | undefined;
       let produced = produceLineEvidence(source, report, games);
       if (!produced.attribution.evidence.includes("direct_post")) {
@@ -100,6 +111,20 @@ export async function processLineSnapshotEvidence(supabase: any, sources: Parsed
           (context.claimEvidence ??= {})[key] = { ...decided, relationAuthority: "reviewed" };
           swaps.set(key, swap);
         }
+      }
+      // Parser PP changes (Lane D): a swap on an explicitly numbered unit, unless a reviewed key already covers it.
+      if (!upstream) for (const change of report.interpretation.changes ?? []) {
+        const unitNumber = change.number;
+        if (change.kind !== "pp_replace" || change.situation !== "pp" || !change.explicitNumber || (unitNumber !== 1 && unitNumber !== 2)) continue;
+        if ([...swaps.values()].some((swap) => swap.unitNumber === unitNumber)) continue;
+        const side = (name: "in" | "out", resolved: typeof change.playersIn) => [...resolved.map((player) => ({ playerId: player.playerId, name: player.name, span: player.evidence })),
+          ...change.unresolved.filter((item) => item.side === name).map((item) => ({ playerId: null, name: item.text, span: { start: item.start, end: item.end, text: item.text } }))]
+          .sort((a, b) => (a.span?.start ?? 0) - (b.span?.start ?? 0));
+        const relationship = { kind: "substitution" as const, playerIds: [], situation: "pp" as const, number: unitNumber, certainty: "reported" as const, evidence: change.evidence, reviewReason: "incomplete_replacement" as const };
+        (report.interpretation.relationships ??= []).push(relationship);
+        const key = relationshipClaimKey(relationship);
+        (context.claimEvidence ??= {})[key] = produced.decide(key, "pp");
+        swaps.set(key, { unitNumber, playersIn: side("in", change.playersIn), playersOut: side("out", change.playersOut), source: `parser:${change.kind}` });
       }
       // Binding, phase and primary-original clock attestations must be supplied by
       // the producer per claim. Whole-post words and legacy assigned IDs are not defaults.

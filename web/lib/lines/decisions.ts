@@ -1,6 +1,6 @@
 import type { ParsedLinesCccSource } from "lib/sources/linesCccIngestion";
 import type { ProjectionReport } from "lib/sources/projectedLineups";
-import type { EvidenceSpan, TweetUnit } from "lib/sources/tweetInterpretation";
+import { detectTweetLineContext, type EvidenceSpan, type TweetContextSignal, type TweetLineContextReading, type TweetUnit } from "lib/sources/tweetInterpretation";
 import { teamsInfo } from "lib/teamsInfo";
 import { NHL_TEAM_TIMEZONES_BY_ID } from "lib/xg/travelFatigue";
 import { authorityTier, authorityWeight, sourceAttribution, type SourceAttribution } from "./authority";
@@ -10,12 +10,7 @@ import { unitKey, type ClaimContext, type LineClaim, type LineGame } from "./typ
 export const LINE_DECISION_PRODUCER_VERSION = "lines-decisions:2026-11-06.1";
 const TRUSTED_BASIS = ["provider_timestamp", "x_api_timestamp", "x_api"];
 
-// Context markers. Practice outranks in-game words: a practice report is never an IGA.
-const PRACTICE = /\b(?:practice|practiced|morning skate|optional skate|training camp)\b/gi;
-const WARMUP = /\bwarm[- ]?ups?\b/gi;
-const IN_GAME = /\b(?:(?:1st|2nd|3rd|first|second|third) period|in[- ]game|mid[- ]game|during the game|(?:1st|2nd|first|second) intermission|to start the (?:2nd|3rd|second|third))\b/gi;
-const PROJECTED = /\b(?:projected|projection|expected (?:lines|lineup)|could look like)\b/gi;
-const GAME_DAY = /\b(?:tonight|today|game ?day|tomorrow|yesterday)\b/gi;
+// Text cues stay the parser's (Lane D detectTweetLineContext); this file only turns them into claim decisions.
 const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
 const DATE = /\b(?:(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?\s+(\d{1,2})|(\d{1,2})\/(\d{1,2}))\b/gi;
 
@@ -27,19 +22,17 @@ function escape(value: string) { return value.replace(/[.*+?^${}()|[\]\\]/g, "\\
 
 export type ContextDecision = { context: ClaimContext; phase: LineClaim["phase"]; spans: EvidenceSpan[]; basis: string };
 
-/** Whole-post context from explicit words only. No words means a practice-level report with unresolved phase. */
-export function decideContext(text: string): ContextDecision {
-  const practice = spans(text, PRACTICE);
-  if (practice.length) return { context: "practice", phase: "pregame", spans: practice, basis: "practice_span" };
-  const inGame = spans(text, IN_GAME);
-  if (inGame.length) return { context: "game", phase: "in_game", spans: inGame, basis: "in_game_span" };
-  const warmup = spans(text, WARMUP);
-  if (warmup.length) return { context: "warmup", phase: "pregame", spans: warmup, basis: "warmup_span" };
-  const projected = spans(text, PROJECTED);
-  if (projected.length) return { context: "projected", phase: "pregame", spans: projected, basis: "projected_span" };
-  const day = spans(text, GAME_DAY);
-  if (day.length) return { context: "game", phase: "pregame", spans: day, basis: "game_day_span" };
-  return { context: "practice", phase: "unknown", spans: [], basis: "no_context_span" };
+const SIGNAL: Record<ClaimContext, TweetContextSignal["signal"]> = { practice: "practice", warmup: "warmup", projected: "projected", game: "game" };
+/**
+ * Whole-post context from explicit cues only (practice > in-game > warmup > projected > game).
+ * No cue means a practice-level report with unresolved phase: it is never an IGA and never eligible on its own.
+ */
+export function decideContext(text: string, reading: TweetLineContextReading = detectTweetLineContext(text)): ContextDecision {
+  if (!reading.context) return { context: "practice", phase: "unknown", spans: [], basis: "no_context_span" };
+  const signal = reading.context === "game" && reading.phase === "in_game" ? "in_game" : SIGNAL[reading.context];
+  const spans = reading.evidence.filter((cue) => cue.signal === signal && text.slice(cue.start, cue.end) === cue.text).map(({ start, end, text: span }) => ({ start, end, text: span }));
+  if (!spans.length) return { context: "practice", phase: "unknown", spans: [], basis: "context_span_unverified" };
+  return { context: reading.context, phase: reading.phase === "unknown" ? "unknown" : reading.phase, spans, basis: `${signal}_span` };
 }
 
 export type BindingDecision = { fields: Pick<LineEvidenceContext, "opponentId" | "date" | "relative" | "timezone">; spans: EvidenceSpan[]; basis: string[] };
@@ -95,7 +88,7 @@ export type ProducedLineEvidence = { context: LineEvidenceContext; attribution: 
 export function produceLineEvidence(source: ParsedLinesCccSource, report: ProjectionReport, games: LineGame[]): ProducedLineEvidence {
   const text = report.text;
   const attribution = sourceAttribution(source, text);
-  const contextDecision = decideContext(text);
+  const contextDecision = decideContext(text, report.interpretation.lineContext ?? detectTweetLineContext(text));
   const binding = decideBinding(text, report.teamId, games);
   const tier = authorityTier(attribution.originalAuthor);
   const trusted = TRUSTED_BASIS.includes(String(source.metadata?.publicationTimeBasis ?? ""));
