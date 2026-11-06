@@ -42,6 +42,8 @@ export type LineClaim = {
   /** Absent on claims stored before the 2026-11-06 contract; readers treat absent as derived from specificity. */
   context?: ClaimContext; contextEvidence?: EvidenceSpan[];
   authorityTier?: AuthorityTier; originalAuthor?: string | null; relayAccount?: string | null;
+  /** A partial PP change (players in for players out). Resolved ids only; applied to a base unit in reconcile. */
+  ppSwap?: { unitNumber: 1 | 2; playersIn: number[]; playersOut: number[]; source: string; names?: Record<string, string> };
 };
 export type SelectedLineUnit = { unit: TweetUnit; claims: LineClaim[]; designation: "reported" | "projected" | "confirmed" | "carried"; originGameId: number | null };
 export type LineConflict = { unitKey: string; claimIds: string[]; reason: string };
