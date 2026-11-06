@@ -138,8 +138,9 @@ const BODY_AFTER_START_MS = 90_000;
 /**
  * Captured runs, and the runs pg_cron started that left no result: a started run with no captured body within 90 s
  * (auth failure, timeout, null body). Null when the job's runs are unknown; the 2-minute cadence would over-count a
- * paused job. The longest gap is between captured runs and from the last one to the window's end; time before the
- * first captured run is not a gap, since history may simply start there.
+ * paused job. Both are copied by the same 15-minute capture, so its newest started run marks how far history reaches:
+ * gaps run between captured results and up to that edge (not to "now"), and the runs in its last 2 minutes are left
+ * out because their bodies may still have been in flight. Time before the first captured run is not a gap.
  */
 export function summariseRunCadence(
   runs: PollRunRow[], windowStart: string, windowEnd: string, startedRunTimes: string[] | null = null,
@@ -147,15 +148,15 @@ export function summariseRunCadence(
   const byResponse = new Map<number, number>();
   for (const run of runs) if (!byResponse.has(run.response_id)) byResponse.set(run.response_id, ms(run.run_at));
   const times = [...byResponse.values()].sort((left, right) => left - right);
-  const end = ms(windowEnd);
-  let longestGap = times.length ? end - times[times.length - 1]! : end - ms(windowStart);
+  const started = (startedRunTimes ?? []).map(ms).sort((left, right) => left - right);
+  const edge = started.length ? started[started.length - 1]! : null;
+  let longestGap = times.length ? Math.max(0, (edge ?? 0) - times[times.length - 1]!) : ms(windowEnd) - ms(windowStart);
   for (let index = 1; index < times.length; index++) longestGap = Math.max(longestGap, times[index]! - times[index - 1]!);
-  const missed = startedRunTimes?.filter((start) => {
-    const at = ms(start);
-    return !times.some((time) => time >= at - 5_000 && time <= at + BODY_AFTER_START_MS);
-  }).length ?? null;
+  const settled = edge === null ? [] : started.filter((at) => at <= edge - BODY_AFTER_START_MS - 30_000);
+  const missed = startedRunTimes === null ? null
+    : settled.filter((at) => !times.some((time) => time >= at - 5_000 && time <= at + BODY_AFTER_START_MS)).length;
   return {
-    started: startedRunTimes?.length ?? null,
+    started: startedRunTimes === null ? null : settled.length,
     captured: times.length,
     missed,
     longestGapMinutes: Math.round(longestGap / 60_000),

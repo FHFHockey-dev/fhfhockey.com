@@ -26,11 +26,15 @@ describe("summariseReads", () => {
 describe("summariseRunCadence", () => {
   it("matches started runs to captured results and measures gaps from the first captured run", () => {
     const runs = [run(1, 30, "a", true), run(1, 30, "b", true), run(2, 32, "a", true), run(3, 50, "a", true)];
-    // Started at 30, 32, 34 (no result), 50 and 52 (no result); captured runs before 30 do not exist, which is not a gap.
-    expect(summariseRunCadence(runs, START, END, [at(29.9), at(31.9), at(34), at(49.95), at(52)]))
+    // Started at 30, 32, 34 (no result), 50, 52 (no result) and 54, the capture's newest run: 54 is too recent to judge.
+    // Nothing captured before 30 is not a gap, and the trailing gap runs to the capture's edge (54), not the window end.
+    expect(summariseRunCadence(runs, START, END, [at(29.9), at(31.9), at(34), at(49.95), at(52), at(54)]))
       .toEqual({ started: 5, captured: 3, missed: 2, longestGapMinutes: 18, lastRunAt: at(50) });
+    // Results stopped while the job kept starting runs: the trailing gap shows it.
+    expect(summariseRunCadence(runs, START, END, [at(29.9), at(31.9), at(34), at(49.95), at(52), at(80)]))
+      .toMatchObject({ started: 5, missed: 2, longestGapMinutes: 30 });
     expect(summariseRunCadence(runs, START, END)).toMatchObject({ started: null, missed: null });
-    expect(summariseRunCadence([], START, END, [])).toMatchObject({ captured: 0, missed: 0, longestGapMinutes: 60 });
+    expect(summariseRunCadence([], START, END, [])).toMatchObject({ captured: 0, started: 0, missed: 0, longestGapMinutes: 60 });
   });
 });
 
@@ -136,8 +140,8 @@ describe("assessPollerHealth", () => {
       accounts: [accounts[0]!], windowStart: START, windowEnd: END, providers, alerts: [], shadow: [], ifttt: [], queueRows: [],
       runs: [run(1, 1, "dfofantasy", true), run(2, 59, "dfofantasy", true)], startedRunTimes: [at(1), at(20), at(40), at(59)],
     });
-    expect(health.runs).toMatchObject({ longestGapMinutes: 58, started: 4, captured: 2, missed: 2 });
+    expect(health.runs).toMatchObject({ longestGapMinutes: 58, started: 3, captured: 2, missed: 2 });
     expect(health.status).toBe("warning");
-    expect(health.warnings).toEqual([expect.stringMatching(/58 minutes/), "2 of 4 poller runs left no result (auth failure, timeout or empty body)."]);
+    expect(health.warnings).toEqual([expect.stringMatching(/58 minutes/), "2 of 3 poller runs left no result (auth failure, timeout or empty body)."]);
   });
 });
