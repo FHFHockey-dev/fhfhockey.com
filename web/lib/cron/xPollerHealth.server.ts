@@ -34,7 +34,7 @@ async function readPages<T>(label: string, query: (from: number) => PromiseLike<
 /**
  * Read-only report adapter. Every read is bounded by the window and paged (at most 8 pages per source). Optional
  * sources (run history, watchdog state, switch table) degrade to warnings, so the section still renders before the
- * 20261106230000 migration is applied.
+ * 20261106201221 migration is applied.
  */
 export async function readPollerHealth(input: { client: SupabaseClient; now: Date; windowMs: number; deadlineAt: number }): Promise<PollerHealth> {
   const windowEnd = input.now.toISOString();
@@ -46,7 +46,7 @@ export async function readPollerHealth(input: { client: SupabaseClient; now: Dat
   const warnings: string[] = [];
   const accounts = POLLED_ACCOUNTS.map((account) => ({ sourceKey: account.sourceKey, handle: account.handle, hasQueue: Boolean(queueTableFor(account)) }));
   const notInstalled = new Set<string>();
-  // A missing table is expected until migration 20261106230000 is applied: noted once, never a failure.
+  // A missing table is expected until migration 20261106201221 is applied: noted once, never a failure.
   const optional = async <T>(label: string, read: () => Promise<T>): Promise<T | null> => {
     try {
       return await read();

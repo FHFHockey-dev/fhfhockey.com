@@ -15,7 +15,7 @@ const NAME_MAX_PAGES = 10;
 /**
  * Report adapter. Counts are head-only except the distinct-name count, which reads one short column of the pending
  * names (at most 10 pages). With `writeSnapshot`, today's counts are upserted into tweet_review_backlog_snapshots so
- * tomorrow's report can show the change; that table comes from migration 20261106230000, and until it is applied the
+ * tomorrow's report can show the change; that table comes from migration 20261106201221, and until it is applied the
  * changes are blank and a short note says why. Never throws.
  */
 export async function readTweetBacklog(input: { client: SupabaseClient; now: Date; writeSnapshot: boolean }): Promise<TweetBacklog> {

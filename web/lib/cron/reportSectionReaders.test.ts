@@ -1,4 +1,4 @@
-// The cron report's poller-health and backlog readers before migration 20261106230000 is applied: missing tables give a
+// The cron report's poller-health and backlog readers before migration 20261106201221 is applied: missing tables give a
 // short "not installed" note, never a throw.
 import { describe, expect, it, vi } from "vitest";
 import { readPollerHealth } from "./xPollerHealth.server";
@@ -45,7 +45,7 @@ describe("readPollerHealth before the migration", () => {
     });
     const health = await readPollerHealth({ client, now, windowMs: 24 * 3600_000, deadlineAt: Date.now() + 5_000 });
     expect(health.runs).toBeNull();
-    expect(health.warnings).toEqual(["Poller run history is not installed yet (migration 20261106230000 not applied); read success is unknown."]);
+    expect(health.warnings).toEqual(["Poller run history is not installed yet (migration 20261106201221 not applied); read success is unknown."]);
     expect(health.accounts.find((account) => account.sourceKey === "dfofantasy")?.coverage).toMatchObject({ iftttRows: 1, matched: 1 });
   });
 
@@ -66,7 +66,7 @@ describe("readTweetBacklog before the migration", () => {
     const backlog = await readTweetBacklog({ client, now, writeSnapshot: true });
     expect(backlog.queue.map((item) => item.count)).toEqual([1400, 1830, 644, 192]);
     expect(backlog.unresolvedNames.count).toBe(1);
-    expect(backlog.warnings).toEqual(["Day-over-day changes are not installed yet (migration 20261106230000 not applied)."]);
+    expect(backlog.warnings).toEqual(["Day-over-day changes are not installed yet (migration 20261106201221 not applied)."]);
     expect(writes).toEqual([]);
   });
 

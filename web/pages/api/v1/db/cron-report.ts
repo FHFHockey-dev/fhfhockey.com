@@ -1661,7 +1661,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   const previewMode = getQueryString(req, "preview") === "json";
   const dryRun =
     previewMode || parseBooleanQueryFlag(getQueryString(req, "dryRun"));
-  // Independent of the cron telemetry, so read alongside it. Both readers turn missing tables (migration 20261106230000)
+  // Independent of the cron telemetry, so read alongside it. Both readers turn missing tables (migration 20261106201221)
   // and failed reads into notes; neither throws. Only a real run stores the daily backlog snapshot.
   const pollerHealthPromise = readPollerHealth({ client: supabase, now, windowMs: REPORT_WINDOW_MS,
     deadlineAt: Math.min(sourceDeadlineAt, now.getTime() + REPORT_REQUEST_TIMEOUT_MS) });

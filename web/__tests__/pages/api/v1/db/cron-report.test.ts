@@ -60,9 +60,9 @@ vi.mock("lib/nst/goalieFreshness.server", () => ({ readGoalieFreshness: readGoal
 vi.mock("lib/cron/xPollerHealth.server", () => ({ readPollerHealth: readPollerHealthMock }));
 vi.mock("lib/cron/tweetReviewBacklog.server", () => ({ readTweetBacklog: readTweetBacklogMock }));
 
-// The two sections as their readers return them before migration 20261106230000 is applied.
+// The two sections as their readers return them before migration 20261106201221 is applied.
 const POLLER_NOT_INSTALLED = { status: "unknown", windowStart: "2026-03-19T12:10:00.000Z", windowEnd: "2026-03-20T12:10:00.000Z", runs: null,
-  incidents: [], warnings: ["Poller run history is not installed yet (migration 20261106230000 not applied); read success is unknown."],
+  incidents: [], warnings: ["Poller run history is not installed yet (migration 20261106201221 not applied); read success is unknown."],
   accounts: [{ sourceKey: "dfofantasy", handle: "DFOFantasy", status: "unknown", provider: "ifttt", switchedAt: null, reads: null,
     coverage: { from: "2026-03-19T12:10:00.000Z", iftttRows: 31, matched: 31, rate: 1, missed: 0, samples: [] },
     lastSightingAt: null, enqueue: null, incidents: [], notes: [] }] };
@@ -72,7 +72,7 @@ const BACKLOG_NOT_INSTALLED = { status: "ok", snapshotDate: "2026-03-20", previo
   answerKeyLabels: backlogItem("answer_key_labels", "Answer-key labels", 0),
   unresolvedRows: backlogItem("unresolved_rows", "Unresolved names (rows)", 1211),
   unresolvedNames: backlogItem("unresolved_names", "Unresolved names (distinct)", 655),
-  warnings: ["Day-over-day changes are not installed yet (migration 20261106230000 not applied)."] };
+  warnings: ["Day-over-day changes are not installed yet (migration 20261106201221 not applied)."] };
 
 vi.mock("@supabase/supabase-js", () => ({
   createClient: vi.fn(() => ({

@@ -1,6 +1,6 @@
 // A table or view that does not exist yet (its migration is not applied): PostgREST reports PGRST205 ("Could not find
 // the table … in the schema cache"), Postgres 42P01 ("relation … does not exist").
-export const REPORT_SECTIONS_MIGRATION = "20261106230000";
+export const REPORT_SECTIONS_MIGRATION = "20261106201221";
 
 export function isMissingRelationError(error: unknown): boolean {
   if (!error || typeof error !== "object") return false;
