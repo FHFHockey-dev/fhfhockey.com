@@ -20,18 +20,19 @@ function spans(text: string, pattern: RegExp): EvidenceSpan[] {
 }
 function escape(value: string) { return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
 
-export type ContextDecision = { context: ClaimContext; phase: LineClaim["phase"]; spans: EvidenceSpan[]; basis: string };
+export type ContextDecision = { context: ClaimContext | null; phase: LineClaim["phase"]; spans: EvidenceSpan[]; basis: string };
 
 const SIGNAL: Record<ClaimContext, TweetContextSignal["signal"]> = { practice: "practice", warmup: "warmup", projected: "projected", game: "game" };
 /**
  * Whole-post context from explicit cues only (practice > in-game > warmup > projected > game).
- * No cue means a practice-level report with unresolved phase: it is never an IGA and never eligible on its own.
+ * No cue means no context and an unresolved phase: nothing is invented, the claim is never an IGA and is
+ * ineligible until a reviewed answer key supplies context (and binding).
  */
 export function decideContext(text: string, reading: TweetLineContextReading = detectTweetLineContext(text)): ContextDecision {
-  if (!reading.context) return { context: "practice", phase: "unknown", spans: [], basis: "no_context_span" };
+  if (!reading.context) return { context: null, phase: "unknown", spans: [], basis: "no_context_span" };
   const signal = reading.context === "game" && reading.phase === "in_game" ? "in_game" : SIGNAL[reading.context];
   const spans = reading.evidence.filter((cue) => cue.signal === signal && text.slice(cue.start, cue.end) === cue.text).map(({ start, end, text: span }) => ({ start, end, text: span }));
-  if (!spans.length) return { context: "practice", phase: "unknown", spans: [], basis: "context_span_unverified" };
+  if (!spans.length) return { context: null, phase: "unknown", spans: [], basis: "context_span_unverified" };
   return { context: reading.context, phase: reading.phase === "unknown" ? "unknown" : reading.phase, spans, basis: `${signal}_span` };
 }
 
@@ -98,9 +99,12 @@ export function produceLineEvidence(source: ParsedLinesCccSource, report: Projec
     ? { originalPublishedAt: posted, relayPublishedAt: null, originalIdentity, originalAuthor: attribution.originalAuthor,
       evidence: [`publication_basis:${source.metadata?.publicationTimeBasis}`, ...attribution.evidence] }
     : undefined;
-  const decisionFor = (claimKey: string, kind: LineClaim["kind"]): ClaimDecision => ({
+  // specificity is ranking only (claims stored before `context`); an unknown context ranks at the practice level.
+  const decisionFor = (claimKey: string, kind: LineClaim["kind"], marker?: TweetUnit["sourceMarker"]): ClaimDecision => ({
     ...binding.fields, kind, phase: contextDecision.phase, specificity: contextDecision.context === "warmup" ? "warmup" : contextDecision.context === "game" ? "game" : "practice",
-    certainty: contextDecision.context === "projected" ? "projected" : "reported", authority: authorityWeight(tier),
+    certainty: marker?.certainty === "projected" || contextDecision.context === "projected" ? "projected" : marker?.certainty === "confirmed" ? "confirmed" : "reported",
+    confirmationEvidence: marker?.certainty === "confirmed" && text.slice(marker.evidence.start, marker.evidence.end) === marker.evidence.text ? [`source_marker:${marker.evidence.text}`] : undefined,
+    authority: authorityWeight(tier),
     relationAuthority: "none",
     decisionEvidence: { producerVersion: LINE_DECISION_PRODUCER_VERSION, decisionId: `${claimKey}:${contextDecision.basis}`,
       sourceReferences: [`source:${source.tweetId ?? source.tweetUrl ?? report.key}`, ...binding.basis, contextDecision.basis],
@@ -109,7 +113,7 @@ export function produceLineEvidence(source: ParsedLinesCccSource, report: Projec
   const kindFor = (situation: TweetUnit["situation"] | "pp" | null): LineClaim["kind"] =>
     situation === "pp" ? "pp" : contextDecision.phase === "in_game" && contextDecision.context === "game" ? "iga" : "entry";
   const claimEvidence: NonNullable<LineEvidenceContext["claimEvidence"]> = {};
-  for (const unit of report.interpretation.units) claimEvidence[unitKey(unit)] = decisionFor(unitKey(unit), kindFor(unit.situation));
+  for (const unit of report.interpretation.units) claimEvidence[unitKey(unit)] = decisionFor(unitKey(unit), kindFor(unit.situation), unit.sourceMarker);
   for (const relationship of report.interpretation.relationships ?? []) {
     const key = relationshipClaimKey(relationship);
     claimEvidence[key] = decisionFor(key, kindFor(relationship.situation));

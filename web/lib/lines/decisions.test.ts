@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { lineTestDatabase } from "./testDatabase";
 vi.mock("lib/sources/tweetProjectionStorage", () => ({ projectionReportFromSource: (source: any) => structuredClone(source.metadata.testReport) }));
 vi.mock("./gameState", async (load) => ({ ...await load<object>(), observeLineGame: async (game: any) => game }));
-import { decideBinding, decideContext } from "./decisions";
+import { decideBinding, decideContext, produceLineEvidence } from "./decisions";
 import { authorityTier, authorityWeight, sourceAttribution } from "./authority";
 import { readReviewedDecision } from "./trainerDecisions";
 import { detectTweetLineContext } from "lib/sources/tweetInterpretation";
@@ -18,6 +18,11 @@ const SABRES = "Kuluch and Krebs are now on the No. 2 power play unit for McLeod
 const players = [{ id: 101, fullName: "Jiri Kulich", lastName: "Kulich" }, { id: 102, fullName: "Josh Krebs", lastName: "Krebs" },
   { id: 103, fullName: "Ryan McLeod", lastName: "McLeod" }, { id: 104, fullName: "Josh Doan", lastName: "Doan" }];
 const slot = (id: number, name: string) => ({ playerId: id, name });
+const key = (version: 1 | 2, text: string, expected: Record<string, unknown>) => ({ version, verdict: "wrong", labeledAt: "2026-11-06T12:00:00Z", labeler: "TJ", tweetId: "900",
+  textSha256: createHash("sha256").update(text).digest("hex"), input: { text, handles: [], publishedAt: null, hasMedia: false }, parsed: { ...emptyExtraction, powerPlay: [], offPowerPlay: [] },
+  expected: { ...emptyExtraction, powerPlay: [], offPowerPlay: [], ...expected } });
+const sabresV2 = () => key(2, SABRES, { context: "practice", scope: "change", game: null,
+  powerPlaySwaps: [{ unit: 2, in: [slot(101, "Kuluch"), slot(102, "Krebs")], out: [slot(103, "McLeod"), slot(104, "Doan")] }] });
 const emptyExtraction = { type: "line_combination", category: "LINE COMBINATION", subcategory: "POWER PLAY", players: [], forwards: [], defensePairs: [], goalies: [], extras: [], extraForwards: [], extraDefensemen: [] };
 
 function database(extra: Record<string, any[]> = {}) {
@@ -45,7 +50,8 @@ describe("context and binding spans", () => {
     expect(decideContext("Second period: A moved up with B and C")).toMatchObject({ context: "game", phase: "in_game" });
     expect(decideContext("Practice notes: in-game they tried A-B-C")).toMatchObject({ context: "practice", phase: "pregame" });
     expect(decideContext("Warmup lines: A-B-C").context).toBe("warmup");
-    expect(decideContext(SABRES)).toMatchObject({ context: "practice", phase: "unknown", spans: [] });
+    // No cue: context stays null; "practice" is never invented.
+    expect(decideContext(SABRES)).toMatchObject({ context: null, phase: "unknown", spans: [] });
   });
   it("binds from opponent + date or a relative day, never from nothing", () => {
     expect(decideBinding("Sabres vs Bruins on Nov. 6: lines", BUF, [game]).fields).toEqual({ opponentId: BOS, date: "2026-11-06" });
@@ -86,23 +92,21 @@ describe("decision producer through the processor", () => {
     expect(bound.gameId).toBeNull(); expect(bound.binding.evidence).toContain("no_game_binding_evidence");
     expect(bound.reviewReasons).toContain("binding_decision_unverified");
   });
-  it("Sabres PP2 swap: practice-context pp claim, never an IGA, Kuluch unresolved without an approved alias", async () => {
-    const answerKey = { version: 1, verdict: "wrong", textSha256: createHash("sha256").update(SABRES).digest("hex"), input: { text: SABRES },
-      expected: { ...emptyExtraction, powerPlay: [[], [slot(101, "Kuluch"), slot(102, "Krebs")]], offPowerPlay: [slot(103, "McLeod"), slot(104, "Doan")] } };
+  it("Sabres PP2 swap: the reviewed v2 key makes it a practice-context pp claim, never an IGA, Kuluch unresolved without an approved alias", async () => {
+    const answerKey = sabresV2();
     const db = database({ tweet_pattern_review_items: [{ id: "r1", tweet_id: "900", quoted_tweet_id: null, metadata: { answerKey } }] });
     await processLineSnapshotEvidence(db, [source(SABRES)], [BUF], now);
     const claims = db.tables.line_claim_revisions!.map((row) => row.payload);
     expect(claims).toHaveLength(1);
     const swap = claims[0]!;
-    expect(swap).toMatchObject({ kind: "pp", context: "practice", relationAuthority: "reviewed" });
+    expect(swap).toMatchObject({ kind: "pp", context: "practice", phase: "pregame", relationAuthority: "reviewed", gameId: null });
     expect(swap.kind).not.toBe("iga");
     expect(swap.ppSwap).toMatchObject({ unitNumber: 2, playersOut: [103, 104] });
     expect(swap.reviewReasons).toContain("identity:Kuluch:missing_player");
     expect(swap.identityStatus).toBe("unresolved");
   });
-  it("Sabres swap resolves Kuluch only through an approved alias", async () => {
-    const answerKey = { version: 1, verdict: "wrong", textSha256: createHash("sha256").update(SABRES).digest("hex"), input: { text: SABRES },
-      expected: { ...emptyExtraction, powerPlay: [[], [slot(101, "Kuluch"), slot(102, "Krebs")]], offPowerPlay: [slot(103, "McLeod"), slot(104, "Doan")] } };
+  it("Sabres swap resolves Kuluch only through an approved alias (v1 key: partial PP2 plus offPowerPlay)", async () => {
+    const answerKey = key(1, SABRES, { powerPlay: [[], [slot(101, "Kuluch"), slot(102, "Krebs")]], offPowerPlay: [slot(103, "McLeod"), slot(104, "Doan")] });
     const db = database({ tweet_pattern_review_items: [{ id: "r1", tweet_id: "900", quoted_tweet_id: null, metadata: { answerKey } }],
       lineup_player_name_aliases: [{ alias: "Kuluch", player_id: 101, created_at: "2026-11-01T00:00:00Z" }] });
     await processLineSnapshotEvidence(db, [source(SABRES)], [BUF], now);
@@ -113,8 +117,7 @@ describe("decision producer through the processor", () => {
     expect(swap.reviewReasons.some((reason: string) => reason.startsWith("identity:"))).toBe(false);
   });
   it("ignores an answer key whose text hash does not match", async () => {
-    const answerKey = { version: 1, verdict: "wrong", textSha256: "0".repeat(64), input: { text: "other" },
-      expected: { ...emptyExtraction, powerPlay: [[], [slot(101, "Kuluch"), slot(102, "Krebs")]], offPowerPlay: [slot(103, "McLeod"), slot(104, "Doan")] } };
+    const answerKey = { ...sabresV2(), textSha256: "0".repeat(64) };
     const db = database({ tweet_pattern_review_items: [{ id: "r1", tweet_id: "900", quoted_tweet_id: null, metadata: { answerKey } }] });
     await processLineSnapshotEvidence(db, [source(SABRES)], [BUF], now);
     expect(db.tables.line_claim_revisions ?? []).toHaveLength(0);
@@ -131,7 +134,7 @@ describe("decision producer through the processor", () => {
     expect(claim.provenance).toEqual({ relayTweetId: "555", originalTweetId: "900", attributionStatus: "resolved" });
     expect(claim).toMatchObject({ originalAuthor: "pham1717", relayAccount: "gamedaylines", authorityTier: "unknown", gameId: game.id });
   });
-  it("Sabres PP2 from the parser's pp_replace change: practice-level, Kuluch unresolved, resolved only by an approved alias", async () => {
+  it("Sabres PP2 from the parser's pp_replace change: no context invented, Kuluch unresolved, resolved only by an approved alias", async () => {
     const at = (word: string) => { const start = SABRES.indexOf(word); return { start, end: start + word.length, text: word }; };
     const change = { kind: "pp_replace", scope: "partial", situation: "pp", number: 2, explicitNumber: true, numberEvidence: at("No. 2"),
       playersIn: [{ playerId: 102, name: "Josh Krebs", evidence: at("Krebs") }], playersOut: [{ playerId: 103, name: "Ryan McLeod", evidence: at("McLeod") }, { playerId: 104, name: "Josh Doan", evidence: at("Doan") }],
@@ -140,7 +143,8 @@ describe("decision producer through the processor", () => {
     const db = database();
     await processLineSnapshotEvidence(db, [input()], [BUF], now);
     const swap = db.tables.line_claim_revisions![0]!.payload;
-    expect(swap).toMatchObject({ kind: "pp", context: "practice", phase: "unknown", gameId: null });
+    // No practice cue in the text: no context is invented, phase stays unresolved, so it is never selectable on its own.
+    expect(swap).toMatchObject({ kind: "pp", phase: "unknown", gameId: null }); expect(swap.context).toBeUndefined();
     expect(swap.ppSwap).toMatchObject({ unitNumber: 2, playersOut: [103, 104], source: "parser:pp_replace" });
     expect(swap.reviewReasons).toEqual(expect.arrayContaining(["identity:Kuluch:missing_player", "claim_phase_unresolved", "binding_decision_unverified"]));
     const aliased = database({ lineup_player_name_aliases: [{ alias: "Kuluch", player_id: 101, created_at: "2026-11-01T00:00:00Z" }] });
@@ -167,17 +171,28 @@ describe("decision producer through the processor", () => {
 
 describe("trainer answer key versions", () => {
   it("reads v2 context, game binding and powerPlaySwaps from the expected extraction", () => {
-    const decision = readReviewedDecision("r2", { answerKey: { version: 2, verdict: "wrong", textSha256: "a".repeat(64), input: { text: SABRES },
-      expected: { ...emptyExtraction, powerPlay: [], offPowerPlay: [], context: "practice", scope: "change", game: { gameId: null, opponentTeamId: BOS, date: "2026-11-06" },
-        powerPlaySwaps: [{ unit: 2, in: [slot(101, "Kuluch"), slot(102, "Krebs")], out: [slot(103, "McLeod"), slot(104, "Doan")] }] } } });
+    const decision = readReviewedDecision("r2", { answerKey: { ...sabresV2(), expected: { ...sabresV2().expected, game: { gameId: null, opponentTeamId: BOS, date: "2026-11-06" } } } });
     expect(decision).toMatchObject({ version: 2, context: "practice", scope: "change", binding: { gameId: null, opponentId: BOS, date: "2026-11-06" } });
     expect(decision!.swaps).toEqual([{ unitNumber: 2, playersIn: [slot(101, "Kuluch"), slot(102, "Krebs")], playersOut: [slot(103, "McLeod"), slot(104, "Doan")] }]);
   });
   it("ignores unknown versions and a timestamp-only v2 binding", () => {
-    expect(readReviewedDecision("r3", { answerKey: { version: 3, textSha256: "a", expected: emptyExtraction } })).toBeNull();
-    expect(readReviewedDecision("r4", { answerKey: { version: 2, textSha256: "a", expected: { ...emptyExtraction, game: { gameId: null, opponentTeamId: null, date: "2026-11-06" } } } })!.binding).toBeNull();
+    expect(readReviewedDecision("r3", { answerKey: { ...sabresV2(), version: 3 } })).toBeNull();
+    expect(readReviewedDecision("r4", { answerKey: key(2, SABRES, { game: { gameId: null, opponentTeamId: null, date: "2026-11-06" } }) })!.binding).toBeNull();
   });
   it("uses the parser's own context cues when the interpretation carries them", () => {
     expect(decideContext("Second period: Point up with Hagel", detectTweetLineContext("Second period: Point up with Hagel"))).toMatchObject({ context: "game", phase: "in_game" });
+  });
+  it("binds a reviewed v2 key through bindLineGame from opponent + date", async () => {
+    const answerKey = { ...sabresV2(), expected: { ...sabresV2().expected, game: { gameId: null, opponentTeamId: BOS, date: game.date } } };
+    const db = database({ tweet_pattern_review_items: [{ id: "r1", tweet_id: "900", quoted_tweet_id: null, metadata: { answerKey } }] });
+    await processLineSnapshotEvidence(db, [source(SABRES)], [BUF], now);
+    const swap = db.tables.line_claim_revisions![0]!.payload;
+    expect(swap).toMatchObject({ gameId: game.id, context: "practice" }); expect(swap.binding.evidence).toContain(`opponent_date:${BOS}:${game.date}`);
+  });
+  it("maps a unit's source marker to certainty, with the marker as confirmation evidence", () => {
+    const text = "PP1 tonight: Kulich Krebs McLeod Doan ✅";
+    const unit = { situation: "pp", number: 1, explicitNumber: true, complete: true, group: null, players: [], evidence: [], sourceMarker: { certainty: "confirmed", evidence: { start: text.indexOf("✅"), end: text.indexOf("✅") + 1, text: "✅" } } };
+    const produced = produceLineEvidence(source(text), { ...source(text).metadata.testReport, interpretation: { ...source(text).metadata.testReport.interpretation, units: [unit] } }, [game]);
+    expect(Object.values(produced.context.claimEvidence!)[0]).toMatchObject({ certainty: "confirmed", confirmationEvidence: ["source_marker:✅"] });
   });
 });

@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { fetchAllSupabaseFilterChunks } from "lib/supabase/pagination";
-import type { TrainerExtraction, TrainerSlotValue } from "lib/sources/tweetSwipeTrainer";
+import { readAnswerKeyRecord, type TrainerExtraction, type TrainerSlotValue } from "lib/sources/tweetSwipeTrainer";
 import type { TweetUnit } from "lib/sources/tweetInterpretation";
 import type { PPSwap } from "./decisions";
 import type { ClaimContext } from "./types";
@@ -17,30 +17,28 @@ export type ReviewedLineDecision = {
   swaps: Array<{ unitNumber: 1 | 2; playersIn: TrainerSlotValue[]; playersOut: TrainerSlotValue[] }>;
 };
 
-const CONTEXTS = new Set(["warmup", "game", "practice", "projected"]);
 const slots = (value: unknown): TrainerSlotValue[] => Array.isArray(value) ? value.filter((slot) => slot && typeof slot.name === "string") : [];
 
+/** Lane E's reader decides the version and defaults; this maps `record.expected` onto engine decisions. */
 export function readReviewedDecision(reviewItemId: string, metadata: unknown): ReviewedLineDecision | null {
-  const key = (metadata as { answerKey?: any } | null)?.answerKey;
-  if (!key || (key.version !== 1 && key.version !== 2) || !key.expected || typeof key.textSha256 !== "string") return null;
-  const expected: TrainerExtraction = { ...key.expected, forwards: key.expected.forwards ?? [], defensePairs: key.expected.defensePairs ?? [], goalies: key.expected.goalies ?? [],
-    extraForwards: key.expected.extraForwards ?? [], extraDefensemen: key.expected.extraDefensemen ?? [], powerPlay: key.expected.powerPlay ?? [], offPowerPlay: key.expected.offPowerPlay ?? [] };
-  // v2 (Lane E) keeps context, scope, game and powerPlaySwaps on the extraction itself.
-  const v2 = key.version === 2;
-  const game = v2 ? key.expected.game : null;
-  const binding = game && typeof game === "object" ? {
+  const record = readAnswerKeyRecord(metadata);
+  if (!record || typeof record.textSha256 !== "string") return null;
+  const expected = record.expected;
+  const game = expected.game;
+  // gameId is always null from the trainer; a date alone never binds, so opponent + date is required.
+  const binding = game && (game.gameId != null || game.opponentTeamId != null && game.date) ? {
     gameId: Number.isSafeInteger(game.gameId) ? game.gameId : null,
     opponentId: Number.isSafeInteger(game.opponentTeamId) ? game.opponentTeamId : null,
     date: typeof game.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(game.date) ? game.date : null } : null;
-  const v2Swaps = v2 && Array.isArray(key.expected.powerPlaySwaps) ? key.expected.powerPlaySwaps.flatMap((swap: any) => [1, 2].includes(swap?.unit)
-    ? [{ unitNumber: swap.unit as 1 | 2, playersIn: slots(swap.in), playersOut: slots(swap.out) }] : []) : [];
+  const v2Swaps = (expected.powerPlaySwaps ?? []).flatMap((swap) => swap.unit === 1 || swap.unit === 2
+    ? [{ unitNumber: swap.unit as 1 | 2, playersIn: slots(swap.in), playersOut: slots(swap.out) }] : []);
   // v1: a partly filled PP unit plus "off the power play" names is a swap on that unit.
-  const v1Swaps = !v2Swaps.length && expected.offPowerPlay.length ? expected.powerPlay.flatMap((unit, index) =>
+  const v1Swaps = record.version === 1 && expected.offPowerPlay.length ? expected.powerPlay.flatMap((unit, index) =>
     index < 2 && unit.length > 0 && unit.length < 5 ? [{ unitNumber: (index + 1) as 1 | 2, playersIn: unit, playersOut: expected.offPowerPlay }] : []) : [];
-  return { reviewItemId, version: key.version, textSha256: key.textSha256, verdict: key.verdict === "wrong" ? "wrong" : "correct", expected,
-    context: v2 && CONTEXTS.has(key.expected.context) ? key.expected.context : null, binding: binding && (binding.gameId || binding.opponentId && binding.date) ? binding : null,
-    scope: v2 && ["full", "partial", "change"].includes(key.expected.scope) ? key.expected.scope : null,
-    swaps: (v2Swaps.length ? v2Swaps : v1Swaps).filter((swap: { playersIn: unknown[]; playersOut: unknown[] }) => swap.playersIn.length && swap.playersIn.length === swap.playersOut.length) };
+  return { reviewItemId, version: record.version, textSha256: record.textSha256, verdict: record.verdict, expected,
+    context: expected.context ?? null, binding: binding && (binding.gameId || binding.opponentId && binding.date) ? binding : null,
+    scope: expected.scope ?? null,
+    swaps: (record.version === 2 ? v2Swaps : v1Swaps).filter((swap) => swap.playersIn.length > 0 && swap.playersOut.length > 0) };
 }
 
 /** Read-only lookup of reviewed answer keys by tweet id (relay, original or quoted). */

@@ -136,7 +136,7 @@ export async function processLineSnapshotEvidence(supabase: any, sources: Parsed
       const derived = claimsFromReport(report, games, { ...context, identityStatus: "unresolved", identityEvidence: [] });
       for (const raw of derived) {
         const key = raw.unit ? unitKey(raw.unit) : raw.relationship ? relationshipClaimKey(raw.relationship as never) : "";
-        const claim: LineClaim = { ...raw, context: upstream ? undefined : produced.contextDecision.context, contextEvidence: upstream ? undefined : produced.contextDecision.spans,
+        const claim: LineClaim = { ...raw, context: upstream ? undefined : produced.contextDecision.context ?? undefined, contextEvidence: upstream ? undefined : produced.contextDecision.spans,
           authorityTier: produced.tier, originalAuthor: produced.attribution.originalAuthor, relayAccount: produced.attribution.relayAccount,
           reviewReasons: [...raw.reviewReasons, ...extraReasons.get(key) ?? [], ...(produced.tier === "excluded" ? ["author_excluded"] : [])] };
         if (decision?.context && !upstream) claim.context = decision.context;
