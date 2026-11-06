@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element -- The examples are already optimized WebP files; next/image would add Vercel image optimization runs for no gain. */
 import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
 import Link from "next/link";
-import { LANDING_CATEGORIES, LANDING_DAYS, landingCard, landingCardHref, landingCardImage, landingDaySections, landingDayStatus, landingToday, landingWeekStart, readLandingChecklist, writeLandingChecklist, type LandingSection, type PostedUnavailable, type PostedWeek } from "lib/socialShare/landingCatalog";
+import { LANDING_CATEGORIES, LANDING_DAYS, landingCard, landingCardHref, landingCardImage, landingDaySections, landingDayStatus, landingToday, landingWeekStart, readLandingChecklist, writeLandingChecklist, type LandingDayStatus, type LandingSection, type PostedUnavailable, type PostedWeek } from "lib/socialShare/landingCatalog";
 import { fetchPostedWeek } from "lib/socialShare/postedWeekFetch";
 import { SHARE_TIME_ZONE } from "lib/socialShare/types";
 import styles from "./SocialShare.module.scss";
@@ -9,11 +9,17 @@ import landing from "./ShareLanding.module.scss";
 
 const SORT_KEY = "fhfh-social-share-landing-sort", DAYS_KEY = "fhfh-social-share-landing-days";
 const IMAGE_WIDTH = 540, IMAGE_HEIGHT = 540;
-const STATUS_MARK = { done: "✅", missed: "❌", notYet: "❌", upcoming: "–", untracked: "–", noRecord: "–" };
 const HAND_TEXT = { done: "marked done", missed: "not marked", notYet: "not marked", upcoming: "not here yet", untracked: "not here yet", noRecord: "not here yet" };
 const POSTED_TEXT = { done: "posted", missed: "no post recorded", notYet: "not yet", upcoming: "not here yet", untracked: "before tracking began", noRecord: "no record" };
 const seenDate = new Intl.DateTimeFormat("en-US", { timeZone: SHARE_TIME_ZONE, month: "short", day: "numeric" });
 type Sort = "category" | "day";
+
+/** A day's mark: a drawn check for done, a cross for missed or not yet, a dash otherwise (TJ, 2026-11-06: no emoji). */
+function DayMark({ status }: { status: LandingDayStatus }) {
+  if (status === "done") return <svg className={landing.mark} data-mark="done" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" /></svg>;
+  if (status === "missed" || status === "notYet") return <svg className={landing.mark} data-mark="missed" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" /></svg>;
+  return <span className={landing.mark} data-mark="none" aria-hidden="true">–</span>;
+}
 
 // Storage can be blocked or empty; the page works without it and simply remembers nothing.
 const readStored = (key: string) => { try { return window.localStorage.getItem(key); } catch { return null; } };
@@ -46,7 +52,7 @@ function PostedStrip({ posted, today }: { posted: PostedWeek; today: string | nu
       {LANDING_DAYS.map(day => {
         const status = landingDayStatus(day.id, today, new Set(), posted), count = posted.days.find(entry => entry.id === day.id)?.posts ?? 0;
         return <div key={day.id} role="listitem" className={`${landing.stripDay} ${landing.postedDay}`} data-testid={`landing-strip-${day.id}`} data-status={status} data-today={day.id === today || undefined} aria-label={`${day.label}${day.id === today ? " (today)" : ""}: ${POSTED_TEXT[status]}${count > 1 ? `, ${count} posts` : ""}`}>
-          <span>{day.label}</span><span aria-hidden="true">{STATUS_MARK[status]}</span>
+          <span>{day.label}</span><DayMark status={status} />
           {(status === "notYet" || status === "noRecord") && <span className={landing.dayNote} aria-hidden="true">{POSTED_TEXT[status]}</span>}
         </div>;
       })}
@@ -149,7 +155,7 @@ export default function ShareLanding() {
         {LANDING_DAYS.map(day => {
           const status = source === undefined ? "upcoming" : landingDayStatus(day.id, today, marked);
           return <button key={day.id} type="button" className={landing.stripDay} data-testid={`landing-strip-${day.id}`} data-status={status} data-today={day.id === today || undefined} aria-pressed={status === "done"} aria-label={`${day.label}${day.id === today ? " (today)" : ""}: ${source === undefined ? "checking" : HAND_TEXT[status]}`} disabled={status === "upcoming"} onClick={() => toggleDay(day.id)}>
-            <span>{day.label}</span><span aria-hidden="true">{STATUS_MARK[status]}</span>
+            <span>{day.label}</span><DayMark status={status} />
           </button>;
         })}
       </div>}

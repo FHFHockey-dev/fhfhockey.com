@@ -19,6 +19,12 @@
   &[data-today] { border-color: v.$primary-color; }
   &[data-status="upcoming"], &[data-status="untracked"], &[data-status="noRecord"] { color: v.$text-secondary; }
 }
+/* Day marks: one drawn line-mark size and stroke; green done, toned red missed, a muted dash for days without a mark. */
+.mark { display: block; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round;
+  color: v.$text-secondary; line-height: 18px; text-align: center;
+  &[data-mark="done"] { color: v.$success-color; }
+  &[data-mark="missed"] { color: v.$color-pink-red; }
+}
 .dayNote { color: v.$text-secondary; font-size: v.$font-size-xs; line-height: 1.1; text-align: center; }
 .postedCards { display: flex; flex-wrap: wrap; gap: v.$space-xxs v.$space-sm; margin: v.$space-xs 0 0 !important; color: v.$text-secondary; font-size: v.$font-size-xs;
   span:first-child { color: v.$text-primary; }
