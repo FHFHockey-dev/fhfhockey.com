@@ -885,3 +885,20 @@ Fowler`;
     ).toBe("goalie_start_projections");
   });
 });
+
+describe("classifyGameDayTweet row types (Lines IGA audit fixes)", () => {
+  it("does not read roster transactions as injuries", () => {
+    for (const text of ["Minnesota has recalled Mason Shaw from Iowa", "Pittsburgh has assigned Jake Livanavage to Wilkes-Barre/Scranton",
+      "Arsenii Sergeev has been assigned to the @AHLWranglers", "The Sabres have signed Josh Doan to a two-year extension", "Columbus has promoted Jack Williams"]) {
+      expect(classifyGameDayTweet(text)).not.toBe("injury");
+    }
+    expect(classifyGameDayTweet("The Blackhawks have placed Bowen Byram on IR and recalled Dillon Boucher")).toBe("injury");
+    expect(classifyGameDayTweet("Slavin left with an injury and is day-to-day")).toBe("injury");
+  });
+
+  it("keeps a power play as a sub-unit of a full lineup", () => {
+    const lineup = "Sabres lineup tonight\nKulich - Krebs - Doan\nThompson - Norris - Tuch\nQuinn - McLeod - Benson\nZucker - Greenway - Malenstyn\n\nPower - Dahlin\nSamuelsson - Byram\nBryson - Timmins\n\nPP1: Thompson - Tuch - Norris - Quinn - Dahlin\nLuukkonen";
+    expect(classifyGameDayTweet(lineup)).toBe("lineup");
+    expect(classifyGameDayTweet("Sabres power play units\nPP1: Thompson - Tuch - Norris - Quinn - Dahlin\nPP2: Kulich - Krebs - Doan - Benson - Power")).toBe("power_play");
+  });
+});

@@ -23,6 +23,7 @@ import {
   toLinesCccTweetOEmbedDataFromBackfillState,
   toLinesCccRow,
   tweetPublicationFromUrl,
+  buildTweetSourceProvenance,
 } from "./linesCccIngestion";
 
 const [canadiens, lightning, utah] = buildTeamDirectory([
@@ -1556,5 +1557,73 @@ describe("subject-specific goalie claim admission", () => {
       const conflict = build("Confirmed Flyers Starting Goalie: Jeremy Swayman");
       expect(expandLinesCccGoalieClaims({ source: conflict, teams, gameIdByTeamId })).toEqual([conflict]);
     } finally { vi.unstubAllEnvs(); }
+  });
+});
+
+describe("Lines IGA source metadata", () => {
+  const [sabres] = buildTeamDirectory([{ id: 7, name: "Buffalo Sabres", abbreviation: "BUF", logo: "/teamLogos/BUF.png" }]);
+  const rosterRows: Array<[number, string, string]> = [
+    [1, "Tage Thompson", "C"], [2, "Alex Tuch", "R"], [3, "Jiri Kulich", "C"], [4, "Peyton Krebs", "C"], [5, "Josh Doan", "R"], [6, "Ryan McLeod", "C"],
+    [7, "Zach Benson", "L"], [8, "Jason Zucker", "L"], [9, "Jordan Greenway", "L"], [10, "Beck Malenstyn", "L"], [11, "Jack Quinn", "R"], [12, "Josh Norris", "C"],
+    [13, "Owen Power", "D"], [14, "Rasmus Dahlin", "D"], [15, "Mattias Samuelsson", "D"], [16, "Bowen Byram", "D"], [17, "Jacob Bryson", "D"], [18, "Conor Timmins", "D"],
+    [19, "Ukko-Pekka Luukkonen", "G"], [20, "Alex Lyon", "G"],
+  ];
+  const roster = rosterRows.map(([playerId, fullName, position]) => ({ playerId, fullName, lastName: fullName.slice(fullName.lastIndexOf(" ") + 1), position, teamId: 7 }));
+  const event = (overrides: Record<string, unknown>) => ({ id: "evt", source: "fxtwitter", source_account: "GameDayLines", username: "GameDayLines", text: "",
+    link_to_tweet: null, tweet_id: null, tweet_created_at: null, created_at_label: null, raw_payload: {}, received_at: "2026-11-06T23:00:00Z", ...overrides }) as any;
+  const parse = (text: string, overrides: Record<string, unknown> = {}) => buildLinesCccSourceFromIftttEvent({
+    event: event({ text, ...overrides }), snapshotDate: "2026-11-06", teams: [sabres!], rosterByTeam: new Map([[7, roster]]),
+  });
+  const LINEUP = "#Sabres Lineup vs. BOS\nKulich - Krebs - Doan\nThompson - Norris - Tuch\nQuinn - McLeod - Benson\nZucker - Greenway - Malenstyn\n\nPower - Dahlin\nSamuelsson - Byram\nBryson - Timmins\n🥅: Luukkonen ✅";
+
+  afterEach(() => { vi.unstubAllEnvs(); });
+
+  it("stores the DFO 🥅 goalie and keeps the goalie on a lineup that also lists a PP unit", () => {
+    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+    const parsed = parse(LINEUP);
+    expect(parsed.goalies).toEqual(["Ukko-Pekka Luukkonen"]);
+    expect(parsed.metadata?.goalieStates).toMatchObject([{ playerId: 19, state: "confirmed", source: "unit", stored: true }]);
+    const withPp = parse(`${LINEUP}\n\nPP1: Thompson - Tuch - Norris - Quinn - Dahlin`);
+    expect(withPp.classification).toBe("lineup");
+    expect(withPp.goalies).toEqual(["Ukko-Pekka Luukkonen"]);
+    expect(toLinesCccRow({ source: withPp, rosterEntries: roster }).goalie_1_player_id).toBe(19);
+    expect(withPp.forwards).toHaveLength(4);
+  });
+
+  it("never stores a ruled-out goalie as the starter and keeps each goalie's state", () => {
+    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+    const parsed = parse("#Sabres: Luukkonen will not be in net tonight; Lyon starts vs. Boston.");
+    expect(parsed.goalies).toEqual(["Alex Lyon"]);
+    expect(parsed.metadata?.goalieStates).toEqual(expect.arrayContaining([
+      expect.objectContaining({ playerId: 20, stored: true }),
+      expect.objectContaining({ playerId: 19, state: "ruled_out", stored: false }),
+    ]));
+  });
+
+  it("exposes FxTwitter provenance: original and reposting author, quote, alt text, first sighting and provider clock", () => {
+    const repost = buildTweetSourceProvenance(event({ tweet_id: "900", tweet_created_at: "2026-11-06T22:00:00.000Z",
+      raw_payload: { provider: "fxtwitter", first_seen_at: "2026-11-06T22:01:30Z", quote: { id: "800", url: "https://x.com/BuffaloSabres/status/800", text: "Lines at practice", author_handle: "BuffaloSabres" },
+        fx: { id: "900", author: { screen_name: "pham1717", name: "Pham" }, reposted_by: { screen_name: "GameDayLines" }, repost_wrapper_id: "555",
+          media: { all: [{ altText: "Kulich - Krebs - Doan" }, { altText: " " }] } } } }));
+    expect(repost).toEqual({ provider: "fxtwitter", postKind: "repost", originalAuthor: "pham1717", originalAuthorName: "Pham", relayAccount: "GameDayLines",
+      originalTweetId: "900", relayTweetId: "555", dedupKey: "tweet:900", quotedTweetId: "800", quotedAuthor: "BuffaloSabres", quotedText: "Lines at practice",
+      altTexts: ["Kulich - Krebs - Doan"], publishedAt: "2026-11-06T22:00:00.000Z", publicationTimeBasis: "provider_timestamp", timestampIsOriginal: true,
+      ingestedAt: "2026-11-06T22:01:30Z", ingestedAtBasis: "first_seen_at" });
+    const wrapper = buildTweetSourceProvenance(event({ tweet_id: "555", tweet_created_at: "2026-11-06T22:03:00Z",
+      raw_payload: { provider: "fxtwitter", fx: { id: "555", author: { screen_name: "GameDayLines" }, text: "RT @pham1717: Kulich - Krebs - Doan" } } }));
+    expect(wrapper).toMatchObject({ postKind: "repost_wrapper", originalAuthor: "pham1717", relayAccount: "GameDayLines", originalTweetId: null, relayTweetId: "555",
+      dedupKey: "relay:555", timestampIsOriginal: false, ingestedAt: "2026-11-06T23:00:00Z", ingestedAtBasis: "received_at" });
+    const relay = buildTweetSourceProvenance(event({ source: "ifttt", tweet_id: "556", text: "RT @pham1717: Kulich - Krebs - Doan" }));
+    expect(relay).toMatchObject({ provider: "ifttt", postKind: "repost", originalAuthor: "pham1717", relayAccount: "GameDayLines", originalTweetId: null, relayTweetId: "556",
+      publicationTimeBasis: "tweet_id_or_unknown", timestampIsOriginal: false });
+    expect(parse("Kulich - Krebs - Doan", { tweet_id: "900", raw_payload: { provider: "fxtwitter", fx: { id: "900", author: { screen_name: "pham1717" }, reposted_by: { screen_name: "GameDayLines" } } } })
+      .metadata?.sourceProvenance).toMatchObject({ originalAuthor: "pham1717", relayAccount: "GameDayLines", originalTweetId: "900" });
+  });
+
+  it("keys an FxTwitter repost's capture on the original tweet id and leaves IFTTT keys unchanged", () => {
+    const fxRepost = parse("Kulich - Krebs - Doan", { tweet_id: "900", raw_payload: { provider: "fxtwitter", fx: { id: "900", author: { screen_name: "pham1717" }, reposted_by: { screen_name: "GameDayLines" }, repost_wrapper_id: "555" } } });
+    expect(toLinesCccRow({ source: fxRepost }).capture_key).toContain(":900:");
+    const ifttt = parse("Kulich - Krebs - Doan", { source: "ifttt", tweet_id: "556" });
+    expect(toLinesCccRow({ source: ifttt }).capture_key).toContain(":556:");
   });
 });

@@ -1,4 +1,4 @@
-import { extractTweetPlayerEvents } from "./tweetPlayerEvents";
+import { extractTweetPlayerEvents, type TweetPlayerEvent } from "./tweetPlayerEvents";
 import type { PlayerSlotRole } from "./playerIdentity";
 import { identityMentionPresent, interpretTweetUnits, playerPositionRole, segmentPlayerRow, surnameMentionPresent, tweetPipelineFlags, type TweetInterpretation } from "./tweetInterpretation";
 import type {
@@ -1255,6 +1255,53 @@ function extractGoalieNameFromKeywordLine(args: {
   return null;
 }
 
+export type RowGoalieState = {
+  name: string;
+  playerId: number;
+  /** Event state, or the row's own ✅/🅿️ marker, or "listed" for an unmarked goalie row. */
+  state: "confirmed" | "likely" | "projected" | "observed" | "listed" | "ruled_out";
+  role: "starter" | "backup" | null;
+  observation: TweetPlayerEvent["observation"] | null;
+  source: "event" | "unit";
+  /** False when the goalie is ruled out: kept for evidence, never stored as goalie_1/goalie_2. */
+  stored: boolean;
+};
+
+const GOALIE_STATE_RANK: Record<string, number> = { confirmed: 0, likely: 1, projected: 2 };
+
+/**
+ * Row goalies from the interpretation: confirmed starters first, then likely, projected and warmup/first-off
+ * observations, then goalie rows, then backups. A ruled-out goalie is never a row goalie; every goalie's state is
+ * kept in `states` so a projected start is not read as a confirmed one.
+ */
+export function buildRowGoalies(args: { interpretation: TweetInterpretation; events: TweetPlayerEvent[]; rosterEntries: RosterNameEntry[] }) {
+  const goalieEntry = (playerId: number) => args.rosterEntries.find((entry) => entry.playerId === playerId && entry.position === "G");
+  const events = args.events.filter((event) => event.kind === "goalie" && goalieEntry(event.playerId));
+  const ruledOut = new Set(events.filter((event) => event.state === "ruled_out").map((event) => event.playerId));
+  for (const event of events) if (event.state !== "ruled_out") ruledOut.delete(event.playerId);
+  const rank = (event: TweetPlayerEvent) => event.observation ? 3 : GOALIE_STATE_RANK[event.state] ?? 2;
+  const live = events.filter((event) => event.state !== "ruled_out");
+  const starters = live.filter((event) => event.goalieRole !== "backup").map((event, index) => ({ event, index }))
+    .sort((left, right) => rank(left.event) - rank(right.event) || left.index - right.index).map(({ event }) => event);
+  const backups = live.filter((event) => event.goalieRole === "backup");
+  const states: RowGoalieState[] = [];
+  const add = (state: Omit<RowGoalieState, "stored" | "name">) => {
+    const entry = goalieEntry(state.playerId);
+    if (!entry || states.some((existing) => existing.playerId === state.playerId)) return;
+    states.push({ ...state, name: entry.fullName, stored: !ruledOut.has(state.playerId) });
+  };
+  const eventState = (event: TweetPlayerEvent): RowGoalieState["state"] =>
+    event.state === "confirmed" || event.state === "likely" || event.state === "projected" || event.state === "observed" || event.state === "ruled_out" ? event.state : "projected";
+  for (const event of starters) add({ playerId: event.playerId, state: eventState(event), role: event.goalieRole ?? "starter", observation: event.observation ?? null, source: "event" });
+  for (const unit of args.interpretation.units) {
+    if (unit.situation !== "goalie" || !unit.complete) continue;
+    for (const player of unit.players) add({ playerId: player.playerId, state: unit.sourceMarker?.certainty ?? "listed", role: null, observation: null, source: "unit" });
+  }
+  for (const event of backups) add({ playerId: event.playerId, state: eventState(event), role: "backup", observation: event.observation ?? null, source: "event" });
+  for (const event of events) if (ruledOut.has(event.playerId)) add({ playerId: event.playerId, state: "ruled_out", role: event.goalieRole ?? null, observation: event.observation ?? null, source: "event" });
+  return { goalies: states.filter((state) => state.stored).map((state) => state.name), states };
+}
+
 function buildStructuredContent(args: {
   publishedAt?: string | null;
   text: string;
@@ -1281,10 +1328,9 @@ function buildStructuredContent(args: {
   let defensePairs = structured.defensePairs
     .map((pair) => canonicalizeNames(pair, args.rosterEntries, "es_defense"))
     .filter((pair) => pair.length === 2 && namesHaveRole(pair, "es_defense"));
+  // A power play is a sub-unit of the lineup: its tweet keeps its goalie rows.
   let goalies =
-    args.classification === "power_play"
-      ? []
-      : structured.goalies
+      structured.goalies
           .map((name) => {
             const resolvedRosterEntry = resolveTweetNameToRosterEntry(
               name,
@@ -1303,9 +1349,7 @@ function buildStructuredContent(args: {
           .filter((name): name is string => Boolean(name))
           .filter(Boolean);
   const standaloneResolvedGoalies =
-    args.classification === "power_play"
-      ? []
-      : args.text
+      args.text
           .split(/\n+/)
           .map((line) => line.trim())
           .filter(Boolean)
@@ -1378,13 +1422,15 @@ function buildStructuredContent(args: {
     includeClaimAnchors: process.env.TWEET_CLAIMS_MODE === "shadow" }) : [];
   const participationObservations = interpretation ? [] : extractTweetPlayerEvents({ text: args.text, players: args.rosterEntries, publishedAt: args.publishedAt ?? null })
     .filter((event) => event.kind === "participation" && event.state === "observed" && event.modality === "negated");
+  let goalieStates: RowGoalieState[] | null = null;
   if (interpretation) {
     scratches = interpretation.units.filter((unit) => unit.situation === "scratch" && unit.complete).flatMap((unit) => unit.players.map((player) => player.name));
     injuries = playerEvents.filter((event) => event.kind === "injury" && (event.availability === "out" || ["new_injury", "ongoing", "setback"].includes(event.state))).flatMap((event) => args.rosterEntries.filter((entry) => entry.playerId === event.playerId).map((entry) => entry.fullName));
     forwards = interpretation.units.filter((unit) => unit.situation === "es_forward" && unit.complete).map((unit) => unit.players.map((player) => player.name));
     defensePairs = interpretation.units.filter((unit) => unit.situation === "es_defense" && unit.complete).map((unit) => unit.players.map((player) => player.name));
-    goalies = interpretation.units.filter((unit) => unit.situation === "goalie" && unit.complete).flatMap((unit) => unit.players.map((player) => player.name));
-    goalies = dedupeOrderedNames([...playerEvents.filter((event) => event.kind === "goalie" && event.goalieRole !== "backup").flatMap((event) => args.rosterEntries.filter((entry) => entry.playerId === event.playerId && entry.position === "G").map((entry) => entry.fullName)), ...goalies, ...playerEvents.filter((event) => event.kind === "goalie" && event.goalieRole === "backup").flatMap((event) => args.rosterEntries.filter((entry) => entry.playerId === event.playerId && entry.position === "G").map((entry) => entry.fullName))]);
+    const rowGoalies = buildRowGoalies({ interpretation, events: playerEvents, rosterEntries: args.rosterEntries });
+    goalies = rowGoalies.goalies;
+    goalieStates = rowGoalies.states;
     powerPlayDetection.units = interpretation.units.filter((unit) => unit.situation === "pp" && unit.complete).map((unit) => unit.players.map((player) => player.name));
     powerPlayDetection.labels = interpretation.units.filter((unit) => unit.situation === "pp" && unit.complete).map((unit) => unit.number === 1 ? "pp1" : unit.number === 2 ? "pp2" : null);
   }
@@ -1403,11 +1449,95 @@ function buildStructuredContent(args: {
           eventRosterRevision: eventPlayers.map((player) => [player.playerId, player.fullName, player.lastName, player.teamId, player.position, ...(player.aliases ?? [])].join(":")).sort().join("|"),
         },
       } } : {}),
+      ...(interpretation ? { goalieStates: goalieStates ?? [] } : {}),
       powerPlayUnits: powerPlayDetection.units,
       powerPlayUnitLabels: powerPlayDetection.labels,
       transactionSignals,
     },
   };
+}
+
+/**
+ * Where a queued tweet came from, read only from what intake stored. FxTwitter rows (raw_payload.provider
+ * "fxtwitter", written by supabase/functions/x-timeline-poll toQueueRow) carry the status as raw_payload.fx: a repost
+ * arrives as the original (its id, author and clock) with reposted_by set, or, when unhydrated, as the "RT @x:" wrapper
+ * itself. IFTTT rows only expose the relaying account and an "RT @x:" prefix. The relaying account is never returned
+ * as the original author. `dedupKey` keys reposts on the original tweet id, so a relay and its original collapse.
+ */
+export type TweetSourceProvenance = {
+  provider: "fxtwitter" | "ifttt";
+  postKind: "post" | "repost" | "repost_wrapper" | "quote";
+  originalAuthor: string | null;
+  originalAuthorName: string | null;
+  relayAccount: string | null;
+  originalTweetId: string | null;
+  relayTweetId: string | null;
+  dedupKey: string | null;
+  quotedTweetId: string | null;
+  quotedAuthor: string | null;
+  quotedText: string | null;
+  altTexts: string[];
+  publishedAt: string | null;
+  publicationTimeBasis: "provider_timestamp" | "tweet_id_or_unknown";
+  /** True only when publishedAt is the original post's own clock (not a relay's). */
+  timestampIsOriginal: boolean;
+  ingestedAt: string;
+  ingestedAtBasis: "first_seen_at" | "received_at";
+};
+
+const PROVENANCE_HANDLE = /^@?([A-Za-z0-9_]{1,15})$/;
+const provenanceHandle = (value: unknown) => typeof value === "string" ? value.match(PROVENANCE_HANDLE)?.[1] ?? null : null;
+const provenanceId = (value: unknown) => typeof value === "string" && /^\d+$/.test(value) ? value : typeof value === "number" && Number.isSafeInteger(value) ? String(value) : null;
+const sameHandle = (left: string | null, right: string | null) => !!left && !!right && left.toLowerCase() === right.toLowerCase();
+
+export function buildTweetSourceProvenance(event: LinesCccIftttEventInput): TweetSourceProvenance {
+  const raw = (event.raw_payload ?? {}) as Record<string, any>;
+  const fx = raw.provider === "fxtwitter" && raw.fx && typeof raw.fx === "object" ? raw.fx as Record<string, any> : null;
+  const account = provenanceHandle(event.source_account) ?? provenanceHandle(event.username);
+  const publishedAt = normalizeTweetPostedAt(event.tweet_created_at);
+  const firstSeen = [raw.first_seen_at, fx?.first_seen_at].find((value) => typeof value === "string" && Number.isFinite(Date.parse(value))) as string | undefined;
+  const base = {
+    publishedAt, publicationTimeBasis: publishedAt ? "provider_timestamp" as const : "tweet_id_or_unknown" as const,
+    ingestedAt: firstSeen ?? event.received_at, ingestedAtBasis: firstSeen ? "first_seen_at" as const : "received_at" as const,
+  };
+  const rtAuthor = (text: unknown) => typeof text === "string" ? provenanceHandle(text.match(/^\s*RT @([A-Za-z0-9_]{1,15}):/)?.[1]) : null;
+  const dedup = (original: string | null, relay: string | null) => original ? `tweet:${original}` : relay ? `relay:${relay}` : null;
+  if (fx) {
+    const author = provenanceHandle(fx.author?.screen_name);
+    const repostedBy = provenanceHandle(fx.reposted_by?.screen_name);
+    const wrapperId = provenanceId(fx.repost_wrapper_id);
+    const statusId = provenanceId(fx.id) ?? provenanceId(event.tweet_id);
+    const quote = fx.quote && typeof fx.quote === "object" ? fx.quote as Record<string, any> : null;
+    const summary = raw.quote && typeof raw.quote === "object" ? raw.quote as Record<string, any> : null;
+    const quoted = {
+      quotedTweetId: provenanceId(summary?.id) ?? provenanceId(quote?.id),
+      quotedAuthor: provenanceHandle(summary?.author_handle) ?? provenanceHandle(quote?.author?.screen_name),
+      quotedText: typeof summary?.text === "string" ? summary.text : typeof (quote?.raw_text?.text ?? quote?.text) === "string" ? quote!.raw_text?.text ?? quote!.text : null,
+    };
+    const media = Array.isArray(fx.media?.all) ? fx.media.all : [];
+    const altTexts = media.map((item: any) => item?.altText ?? item?.alt_text).filter((alt: unknown): alt is string => typeof alt === "string" && alt.trim() !== "");
+    const wrapped = sameHandle(author, account) ? rtAuthor(fx.raw_text?.text ?? fx.text) : null;
+    if (wrapped) {
+      // The unhydrated wrapper: id, text and clock are the relay's; the original id is not known yet.
+      return { provider: "fxtwitter", postKind: "repost_wrapper", originalAuthor: wrapped, originalAuthorName: null, relayAccount: author,
+        originalTweetId: null, relayTweetId: statusId, dedupKey: dedup(null, statusId), ...quoted, altTexts, ...base, timestampIsOriginal: false };
+    }
+    const repost = !!author && !sameHandle(author, account) && (!!repostedBy || !!wrapperId);
+    return { provider: "fxtwitter", postKind: repost ? "repost" : quoted.quotedTweetId ? "quote" : "post",
+      originalAuthor: author, originalAuthorName: typeof fx.author?.name === "string" ? fx.author.name : null,
+      relayAccount: repost ? repostedBy ?? account : null, originalTweetId: statusId, relayTweetId: repost ? wrapperId : null,
+      dedupKey: dedup(statusId, null), ...quoted, altTexts, ...base, timestampIsOriginal: !!publishedAt };
+  }
+  const tweetId = provenanceId(event.tweet_id) ?? extractTweetIdFromUrl(event.link_to_tweet);
+  const relayed = rtAuthor(event.text);
+  if (relayed) {
+    return { provider: "ifttt", postKind: "repost", originalAuthor: relayed, originalAuthorName: null, relayAccount: account,
+      originalTweetId: null, relayTweetId: tweetId, dedupKey: dedup(null, tweetId), quotedTweetId: null, quotedAuthor: null, quotedText: null,
+      altTexts: [], ...base, timestampIsOriginal: false };
+  }
+  return { provider: "ifttt", postKind: "post", originalAuthor: account, originalAuthorName: null, relayAccount: null,
+    originalTweetId: tweetId, relayTweetId: null, dedupKey: dedup(tweetId, null), quotedTweetId: null, quotedAuthor: null, quotedText: null,
+    altTexts: [], ...base, timestampIsOriginal: !!publishedAt };
 }
 
 export function buildLinesCccSourceFromIftttEvent(args: {
@@ -1513,6 +1643,7 @@ export function buildLinesCccSourceFromIftttEvent(args: {
       iftttSourceAccount: args.event.source_account,
       publicationTimeBasis: normalizeTweetPostedAt(args.event.tweet_created_at)
         ? "provider_timestamp" : "tweet_id_or_unknown",
+      sourceProvenance: buildTweetSourceProvenance(args.event),
       teamLabelMatches: labelMatchedTeams.map(
         (matchedTeam) => matchedTeam.abbreviation,
       ),
@@ -1660,7 +1791,12 @@ export function expandLinesCccGoalieClaims(args: {
     const team = args.teams.find((entry) => entry.id === teamId)!;
     const events = (interpretation.events ?? []).filter((event) => event.teamId === teamId);
     const teamGoalies = events.filter((event) => event.kind === "goalie");
-    const ordered = [...teamGoalies.filter((event) => event.goalieRole !== "backup"), ...teamGoalies.filter((event) => event.goalieRole === "backup")];
+    const ruledOut = new Set(teamGoalies.filter((event) => event.state === "ruled_out").map((event) => event.playerId));
+    for (const event of teamGoalies) if (event.state !== "ruled_out") ruledOut.delete(event.playerId);
+    const rank = (event: TweetPlayerEvent) => event.observation ? 3 : GOALIE_STATE_RANK[event.state] ?? 2;
+    const starters = teamGoalies.filter((event) => event.goalieRole !== "backup" && !ruledOut.has(event.playerId)).map((event, index) => ({ event, index }))
+      .sort((left, right) => rank(left.event) - rank(right.event) || left.index - right.index).map(({ event }) => event);
+    const ordered = [...starters, ...teamGoalies.filter((event) => event.goalieRole === "backup" && !ruledOut.has(event.playerId))];
     return { ...source, team, gameId: interpretation.context === "game" ? args.gameIdByTeamId?.get(teamId) ?? null : null,
       classification: "goalie_start", sourceLabel: "goalie_start", detectedLeague: "NHL", nhlFilterStatus: "accepted", nhlFilterReason: null,
       goalies: dedupeOrderedNames(ordered.map((event) => event.playerName)), forwards: [], defensePairs: [],
@@ -2044,12 +2180,18 @@ export function rejectInsufficientQuoteWrapper(args: {
   };
 }
 
+/** FxTwitter reposts key on the original tweet id; IFTTT keys are left exactly as they were stored. */
+function captureTweetId(source: ParsedLinesCccSource): string | null {
+  const provenance = source.metadata?.sourceProvenance as TweetSourceProvenance | undefined;
+  return provenance?.provider === "fxtwitter" && provenance.originalTweetId ? provenance.originalTweetId : source.tweetId ?? null;
+}
+
 function buildLinesCccCaptureKey(source: ParsedLinesCccSource): string {
   return [
     source.snapshotDate,
     source.team?.id ?? "no-team",
     source.gameId ?? "no-game",
-    source.tweetId ?? source.tweetUrl ?? "no-wrapper-tweet",
+    captureTweetId(source) ?? source.tweetUrl ?? "no-wrapper-tweet",
     source.quotedTweetId ?? source.quotedTweetUrl ?? "no-quoted-tweet",
     source.classification ?? "unclassified",
     source.nhlFilterStatus,

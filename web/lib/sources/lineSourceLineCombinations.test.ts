@@ -96,12 +96,20 @@ describe("tweet-derived lineCombinations mutations", () => {
     expect(mutations.map((mutation) => mutation.sourceCaptureKey)).toEqual(["dfo-first"]);
   });
 
-  it("writes nothing for a bucket whose earliest new-source row is an incomplete lineup", () => {
+  it("lets the first complete lineup win when the earliest row in the bucket is incomplete", () => {
     const mutations = selectLineCombinationSourceMutations([
+      row({ source_key: "gamedaylines", capture_key: "gdl-complete-late", tweet_id: "300", tweet_posted_at: "2026-07-11T12:09:00Z" }),
       row({ source_key: "gamedaylines", capture_key: "gdl-complete", tweet_id: "200", tweet_posted_at: "2026-07-11T12:05:00Z" }),
       row({ source_key: "nhl_rosters", capture_key: "rosters-partial", tweet_id: "100", tweet_posted_at: "2026-07-11T12:00:00Z", line_4_player_ids: null }),
     ]);
-    expect(mutations).toEqual([]);
+    expect(mutations.map((mutation) => mutation.sourceCaptureKey)).toEqual(["gdl-complete"]);
+  });
+
+  it("writes nothing for a bucket with no complete lineup", () => {
+    expect(selectLineCombinationSourceMutations([
+      row({ capture_key: "partial-a", tweet_id: "100", line_4_player_ids: null }),
+      row({ capture_key: "partial-b", tweet_id: "200", tweet_posted_at: "2026-07-11T12:05:00Z", pair_3_player_ids: [17] }),
+    ])).toEqual([]);
   });
 
   it("reads the GameDay, DFO and NHL_Rosters groups, with GameDay kept", async () => {

@@ -147,7 +147,10 @@ function toCandidate(
 export function selectLineCombinationSourceMutations(
   rows: LineCombinationSourceRow[],
 ): LineCombinationSourceMutation[] {
-  return selectFirstArrivalBuckets(rows.map(toCandidate))
+  // The first complete, valid lineup per bucket wins: an earlier partial projection must not block a later full
+  // warmup lineup. First arrival only breaks ties among complete candidates.
+  const complete = rows.filter((row) => buildLineCombinationSourceMutation(row) != null);
+  return selectFirstArrivalBuckets(complete.map(toCandidate))
     .map(({ winner }) => buildLineCombinationSourceMutation(winner.value))
     .filter(
       (mutation): mutation is LineCombinationSourceMutation => mutation != null,

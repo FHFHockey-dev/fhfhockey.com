@@ -224,11 +224,15 @@ const GDT_INJURY_KEYWORDS = [
   "not practicing",
   "will not play",
   "returns",
-  "returning",
-  "signed",
-  "recalled",
-  "promoted"
+  "returning"
 ];
+// Roster moves are transactions, not injuries ("assigned" contains "signed"; "recalled" is a call-up).
+const GDT_TRANSACTION_PATTERN =
+  /\b(?:recalled|re-called|recall(?:s|ing)?|assigned|reassigned|loaned|signed|signs|signing|promoted|called up|sent down|placed on waivers|cleared waivers|claimed off waivers|traded|acquired)\b/i;
+const keywordPattern = (keywords: string[]) =>
+  new RegExp(`(?<![\\p{L}])(?:${keywords.map((keyword) => keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})(?![\\p{L}])`, "iu");
+const GDT_INJURY_PATTERN = keywordPattern(GDT_INJURY_KEYWORDS);
+const GDT_INJURY_WITHOUT_RETURN_PATTERN = keywordPattern(GDT_INJURY_KEYWORDS.filter((keyword) => !keyword.startsWith("return")));
 const GDT_REGEX_PLAYER_TOKEN =
   String.raw`(?:[A-ZÀ-ÖØ-Þ](?:[A-Za-zÀ-ÖØ-öø-ÿ.'’` +
   "`" +
@@ -1062,7 +1066,9 @@ export function classifyGameDayTweet(text: string): GameDayTweetsClassification 
   const hasAnyStructuredLine =
     structuredGroups.forwards.length >= 1 || structuredGroups.defensePairs.length >= 2;
 
-  if (GDT_POWERPLAY_KEYWORDS.some((keyword) => normalized.includes(keyword))) {
+  // A power play is a sub-unit of a lineup: only a tweet without a full even-strength block is a power_play row.
+  const hasFullLineupBlock = structuredGroups.forwards.length >= 3 && structuredGroups.defensePairs.length >= 2;
+  if (!hasFullLineupBlock && GDT_POWERPLAY_KEYWORDS.some((keyword) => normalized.includes(keyword))) {
     return "power_play";
   }
   if (/\bhave switched spots\b/i.test(text)) return "lineup";
@@ -1079,7 +1085,9 @@ export function classifyGameDayTweet(text: string): GameDayTweetsClassification 
     return "goalie_start";
   }
   if (
-    (GDT_INJURY_KEYWORDS.some((keyword) => normalized.includes(keyword)) || /\bout for (?:the season|\d+|one|two|three|four|weeks?|months?|tonight|tomorrow)\b/i.test(text)) &&
+    ((GDT_TRANSACTION_PATTERN.test(text) ? GDT_INJURY_WITHOUT_RETURN_PATTERN.test(normalized) : GDT_INJURY_PATTERN.test(normalized))
+      || /\bplaced\b[^.\n]{0,60}?\bon (?:the )?(?:ir|ltir|injured reserve|long-term injured reserve)\b/i.test(text)
+      || /\bout for (?:the season|\d+|one|two|three|four|weeks?|months?|tonight|tomorrow)\b/i.test(text)) &&
     !hasLineupBlock
   ) {
     return "injury";
