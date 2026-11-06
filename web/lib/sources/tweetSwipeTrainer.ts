@@ -119,10 +119,55 @@ export type TrainerParse = {
   /** Names the interpretation path could not resolve (production runs that path). */
   unresolvedCount: number;
   publishedAtKnown: boolean;
+  /** Answer-key v2 fields, as the trainer reads them from the tweet (see TrainerExtraction). */
+  context: TrainerContext | null;
+  scope: TrainerScope | null;
+  game: TrainerGameBinding | null;
+  powerPlaySwaps: TrainerPowerPlaySwap[];
   confidence: TrainerConfidence;
 };
 
 export type TrainerSlotValue = { playerId: number | null; name: string };
+
+/**
+ * Where a lineup report comes from (Lines decision 4). Warmup beats game, game beats practice, practice beats
+ * projected. Practice reports are "Practice report, not game-confirmed": they never count as in-game changes.
+ */
+export type TrainerContext = "warmup" | "game" | "practice" | "projected";
+export const TRAINER_CONTEXTS: TrainerContext[] = ["warmup", "game", "practice", "projected"];
+export const TRAINER_CONTEXT_LABELS: Record<TrainerContext, string> = {
+  warmup: "Warmup",
+  game: "Game report",
+  practice: "Practice report, not game-confirmed",
+  projected: "Projected"
+};
+
+/** How much of a lineup the tweet gives: all of it, some units, or only a change to units given elsewhere. */
+export type TrainerScope = "full" | "partial" | "change";
+export const TRAINER_SCOPES: TrainerScope[] = ["full", "partial", "change"];
+export const TRAINER_SCOPE_LABELS: Record<TrainerScope, string> = {
+  full: "Full lineup",
+  partial: "Partial lineup",
+  change: "Change only"
+};
+
+/**
+ * The game a tweet is about, only as far as the tweet says. A timestamp alone never binds a game: with no opponent,
+ * date or game named, the binding is null. The trainer has no schedule lookup, so gameId stays null unless set.
+ */
+export type TrainerGameBinding = {
+  gameId: number | null;
+  opponentTeamId: number | null;
+  /** The game's date (YYYY-MM-DD, Eastern), only when the tweet says it ("tonight", "today"). */
+  date: string | null;
+};
+
+/**
+ * One power-play change: who joins and who leaves one unit. Only the named players: the unit's other spots are never
+ * filled from a swap ("Kulich and Krebs replace McLeod and Doan on PP2" is unit 2, in [Kulich, Krebs], out
+ * [McLeod, Doan]).
+ */
+export type TrainerPowerPlaySwap = { unit: number; in: TrainerSlotValue[]; out: TrainerSlotValue[] };
 
 /** What a tweet means, in a shape both the parser output and TJ's corrections share. */
 export type TrainerExtraction = {
@@ -146,8 +191,15 @@ export type TrainerExtraction = {
   extraDefensemen: TrainerSlotValue[];
   /** Power-play units (PP1, PP2), five spots each in the tweet's order. Older records have none. */
   powerPlay: TrainerSlotValue[][];
-  /** Players a power-play tweet says came off a unit ("Kulich and Krebs replace McLeod and Doan"). */
+  /** v1 only: players a power-play tweet said came off a unit. v2 records these as powerPlaySwaps[].out. */
   offPowerPlay: TrainerSlotValue[];
+  /**
+   * v2 fields. Undefined on v1 records, where they aren't judged. null means the tweet doesn't say.
+   */
+  context?: TrainerContext | null;
+  scope?: TrainerScope | null;
+  game?: TrainerGameBinding | null;
+  powerPlaySwaps?: TrainerPowerPlaySwap[];
 };
 
 /** A power-play tweet: its spots are PP1 and PP2, not even-strength lines. */
@@ -166,9 +218,12 @@ export type TrainerInput = {
  * One answer-key record, stored in tweet_pattern_review_items.metadata.answerKey. A subset of the audit's sketch
  * (section 6): the exact text is pinned with its hash, lines are in tweet order, players are NHL ids plus the literal,
  * and the parser version and card confidence at label time are kept so later runs compare like with like.
+ * Version 2 adds context, scope, game binding and power-play swaps to `parsed` and `expected`; version 1 records
+ * still read, with those fields undefined and unjudged.
  */
+export const ANSWER_KEY_VERSION = 2;
 export type TweetAnswerKeyRecord = {
-  version: 1;
+  version: 1 | 2;
   verdict: "correct" | "wrong";
   labeledAt: string;
   labeler: string;
@@ -524,6 +579,89 @@ export function quickTrainerType(text: string): TrainerType {
 }
 
 /** Replays the current parser over one tweet. */
+const EASTERN_DATE = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "America/New_York",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit"
+});
+
+type InterpretationView = {
+  context?: "camp" | "practice" | "game" | "unknown";
+  certainty?: "projected" | "confirmed" | "reported";
+  relationships?: Array<{ kind: string; playerIds: number[]; situation: string | null; number: number | null }>;
+};
+
+/** Context applies to lineups and goalie starts; other tweets have none. Warmup beats the interpretation's "game". */
+function readContext(args: { type: TrainerType; text: string; classification: string | null; interpretation: InterpretationView | null }): TrainerContext | null {
+  if (args.type !== "line_combination" && args.type !== "goalie") return null;
+  if (/\bwarm-?ups?\b/i.test(args.text)) return "warmup";
+  const context = args.interpretation?.context ?? (args.classification === "practice_lines" ? "practice" : null);
+  if (context === "practice" || context === "camp") return "practice";
+  if (args.interpretation?.certainty === "projected" || /\b(projected|expected)\b/i.test(args.text)) return "projected";
+  return context === "game" ? "game" : null;
+}
+
+/** "X will take Y's spot on the second unit power play": unit 2, in [X], out [Y]. Only fully resolved changes. */
+function readPowerPlaySwaps(interpretation: InterpretationView | null, roster: RosterNameEntry[]): TrainerPowerPlaySwap[] {
+  const slotFor = (playerId: number): TrainerSlotValue => ({
+    playerId,
+    name: roster.find((entry) => entry.playerId === playerId)?.fullName ?? String(playerId)
+  });
+  return (interpretation?.relationships ?? [])
+    .filter((relation) => relation.kind === "substitution" && relation.situation === "pp" && relation.number != null && relation.playerIds.length === 2)
+    .map((relation) => ({ unit: relation.number!, in: [slotFor(relation.playerIds[0]!)], out: [slotFor(relation.playerIds[1]!)] }));
+}
+
+function readScope(args: {
+  type: TrainerType;
+  subcategory: string | null;
+  forwards: TrainerLine[];
+  defensePairs: TrainerLine[];
+  powerPlay: TrainerLine[];
+  swaps: TrainerPowerPlaySwap[];
+}): TrainerScope | null {
+  if (args.type !== "line_combination") return null;
+  if (args.swaps.length) return "change";
+  if (isPowerPlaySubcategory(args.subcategory)) {
+    const units = args.powerPlay.filter((unit) => unit.kept);
+    if (!units.length) return null;
+    return units.length >= 2 && units.every((unit) => unit.slots.length >= 5) ? "full" : "partial";
+  }
+  const lines = args.forwards.filter((line) => line.kept).length;
+  const pairs = args.defensePairs.filter((line) => line.kept).length;
+  if (!lines && !pairs) return null;
+  return lines >= 4 && pairs >= 3 ? "full" : "partial";
+}
+
+/** "vs. Bruins", "against BOS", "at Boston Bruins": the opponent, when the tweet names one. */
+function namesOpponent(text: string, team: TeamDirectoryEntry): boolean {
+  const lead = String.raw`(?:\bvs\.?|\bversus|\bagainst|@|\bat)\s+(?:the\s+)?`;
+  const words = [team.name, team.shortName].filter((word): word is string => Boolean(word)).map(escapeRegExp);
+  if (words.length && new RegExp(`${lead}(?:${words.join("|")})\\b`, "i").test(text)) return true;
+  // Abbreviations only in capitals, so "at sea" or "vs a" never read as a team.
+  return new RegExp(`${lead}${escapeRegExp(team.abbreviation)}\\b`).test(text);
+}
+
+/** Only what the tweet says: a named opponent, and a date when it says "tonight" or "today". */
+function readGame(args: {
+  type: TrainerType;
+  text: string;
+  teamId: number | null;
+  teams: TeamDirectoryEntry[];
+  publishedAt: string | null;
+}): TrainerGameBinding | null {
+  if (args.type !== "line_combination" && args.type !== "goalie") return null;
+  const opponent = args.teams.find((team) => team.id !== args.teamId && namesOpponent(args.text, team)) ?? null;
+  const published = args.publishedAt ? new Date(args.publishedAt) : null;
+  const date =
+    published && !Number.isNaN(published.getTime()) && /\b(tonight|today|this (?:morning|afternoon|evening))\b/i.test(args.text)
+      ? EASTERN_DATE.format(published)
+      : null;
+  if (!opponent && !date) return null;
+  return { gameId: null, opponentTeamId: opponent?.id ?? null, date };
+}
+
 export function parseTweetForTrainer(args: {
   input: TrainerInput;
   teams: TeamDirectoryEntry[];
@@ -588,6 +726,8 @@ export function parseTweetForTrainer(args: {
     hasForwards: forwards.some((line) => line.kept),
     hasPairs: defensePairs.some((line) => line.kept)
   });
+  const interpretation = (source.metadata?.interpretation as InterpretationView | undefined) ?? null;
+  const powerPlaySwaps = type === "line_combination" ? readPowerPlaySwaps(interpretation, roster) : [];
   const parse: Omit<TrainerParse, "confidence"> = {
     type,
     category,
@@ -606,7 +746,11 @@ export function parseTweetForTrainer(args: {
     phraseHits,
     imageOnly,
     unresolvedCount: interpretationUnresolved.length,
-    publishedAtKnown: Boolean(args.input.publishedAt)
+    publishedAtKnown: Boolean(args.input.publishedAt),
+    context: readContext({ type, text, classification, interpretation }),
+    scope: readScope({ type, subcategory, forwards, defensePairs, powerPlay, swaps: powerPlaySwaps }),
+    game: readGame({ type, text, teamId: team?.id ?? null, teams: args.teams, publishedAt: args.input.publishedAt }),
+    powerPlaySwaps
   };
   return { ...parse, confidence: scoreTrainerConfidence(parse) };
 }
@@ -630,7 +774,11 @@ export function extractionFromParse(parse: TrainerParse): TrainerExtraction {
     extraForwards: [],
     extraDefensemen: [],
     powerPlay: parse.powerPlay.filter((unit) => unit.kept).map((unit) => unit.slots.map(slotValue)),
-    offPowerPlay: []
+    offPowerPlay: [],
+    context: parse.context,
+    scope: parse.scope,
+    game: parse.game,
+    powerPlaySwaps: parse.powerPlaySwaps
   };
 }
 
@@ -649,6 +797,24 @@ function sameLines(left: TrainerSlotValue[][], right: TrainerSlotValue[][]) {
   return left.length === right.length && left.every((line, index) => sameSet(line, right[index]!));
 }
 
+/** Swaps are compared per unit; within a swap, who joins and who leaves are sets. */
+function sameSwaps(left: TrainerPowerPlaySwap[], right: TrainerPowerPlaySwap[]) {
+  const ordered = (swaps: TrainerPowerPlaySwap[]) => [...swaps].sort((a, b) => a.unit - b.unit);
+  const a = ordered(left);
+  const b = ordered(right);
+  return a.length === b.length && a.every((swap, index) => swap.unit === b[index]!.unit && sameSet(swap.in, b[index]!.in) && sameSet(swap.out, b[index]!.out));
+}
+
+function sameGame(left: TrainerGameBinding | null, right: TrainerGameBinding | null) {
+  return (left?.gameId ?? null) === (right?.gameId ?? null) &&
+    (left?.opponentTeamId ?? null) === (right?.opponentTeamId ?? null) &&
+    (left?.date ?? null) === (right?.date ?? null);
+}
+
+/** The v2 fields a comparison scores. Each is judged only when the answer key has it (v2 records). */
+export const ANSWER_KEY_V2_FIELDS = ["contextMatch", "scopeMatch", "gameMatch", "swapsMatch"] as const;
+export type AnswerKeyV2Field = (typeof ANSWER_KEY_V2_FIELDS)[number];
+
 export type ExtractionComparison = {
   correct: boolean;
   typeMatch: boolean;
@@ -656,6 +822,11 @@ export type ExtractionComparison = {
   teamMatch: boolean;
   playersMatch: boolean;
   slotsMatch: boolean;
+  /** null when the answer key doesn't have the field (v1 records). */
+  contextMatch: boolean | null;
+  scopeMatch: boolean | null;
+  gameMatch: boolean | null;
+  swapsMatch: boolean | null;
 };
 
 export function compareExtraction(expected: TrainerExtraction, actual: TrainerExtraction): ExtractionComparison {
@@ -674,13 +845,22 @@ export function compareExtraction(expected: TrainerExtraction, actual: TrainerEx
     sameSet(expected.extraDefensemen ?? [], actual.extraDefensemen ?? []) &&
     sameLines(expected.powerPlay ?? [], actual.powerPlay ?? []) &&
     sameSet(expected.offPowerPlay ?? [], actual.offPowerPlay ?? []);
+  const contextMatch = expected.context === undefined ? null : expected.context === (actual.context ?? null);
+  const scopeMatch = expected.scope === undefined ? null : expected.scope === (actual.scope ?? null);
+  const gameMatch = expected.game === undefined ? null : sameGame(expected.game, actual.game ?? null);
+  const swapsMatch = expected.powerPlaySwaps === undefined ? null : sameSwaps(expected.powerPlaySwaps, actual.powerPlaySwaps ?? []);
+  const v2Match = [contextMatch, scopeMatch, gameMatch, swapsMatch].every((match) => match !== false);
   return {
-    correct: typeMatch && categoryMatch && teamMatch && playersMatch && slotsMatch,
+    correct: typeMatch && categoryMatch && teamMatch && playersMatch && slotsMatch && v2Match,
     typeMatch,
     categoryMatch,
     teamMatch,
     playersMatch,
-    slotsMatch
+    slotsMatch,
+    contextMatch,
+    scopeMatch,
+    gameMatch,
+    swapsMatch
   };
 }
 
@@ -694,8 +874,22 @@ export function buildAnswerKeyRecord(args: {
   labeledAt?: string;
 }): TweetAnswerKeyRecord {
   const parsed = extractionFromParse(args.parse);
+  // A correction made in an older editor may lack the v2 fields; they fall back to the parser's reading. Values
+  // outside the unions (the API passes the body through) are stored as "the tweet doesn't say".
+  const given = args.correction;
+  const correction: TrainerExtraction | null = given
+    ? {
+        ...given,
+        context: given.context === undefined ? parsed.context : TRAINER_CONTEXTS.includes(given.context as TrainerContext) ? given.context : null,
+        scope: given.scope === undefined ? parsed.scope : TRAINER_SCOPES.includes(given.scope as TrainerScope) ? given.scope : null,
+        game: given.game === undefined ? parsed.game : given.game ?? null,
+        powerPlaySwaps: (given.powerPlaySwaps ?? parsed.powerPlaySwaps ?? []).filter(
+          (swap) => Number.isInteger(swap.unit) && swap.unit >= 1 && swap.unit <= 2 && Array.isArray(swap.in) && Array.isArray(swap.out)
+        )
+      }
+    : null;
   return {
-    version: 1,
+    version: ANSWER_KEY_VERSION,
     verdict: args.verdict,
     labeledAt: args.labeledAt ?? new Date().toISOString(),
     labeler: "TJ",
@@ -709,7 +903,7 @@ export function buildAnswerKeyRecord(args: {
     },
     parsed,
     parsedConfidence: args.parse.confidence.score,
-    expected: args.verdict === "correct" || !args.correction ? parsed : args.correction,
+    expected: args.verdict === "correct" || !correction ? parsed : correction,
     notes: args.notes ?? null
   };
 }
@@ -725,7 +919,8 @@ export function assignmentsFromExtraction(extraction: TrainerExtraction): TweetP
     ...(extraction.extraForwards ?? []),
     ...(extraction.extraDefensemen ?? []),
     ...(extraction.powerPlay ?? []).flat(),
-    ...(extraction.offPowerPlay ?? [])
+    ...(extraction.offPowerPlay ?? []),
+    ...(extraction.powerPlaySwaps ?? []).flatMap((swap) => [...swap.in, ...swap.out])
   ];
   const players = new Map<string, TrainerSlotValue>();
   for (const slot of slots) players.set(slotKey(slot), slot);
@@ -745,15 +940,26 @@ export function assignmentsFromExtraction(extraction: TrainerExtraction): TweetP
 
 export function readAnswerKeyRecord(metadata: unknown): TweetAnswerKeyRecord | null {
   const record = (metadata as { answerKey?: TweetAnswerKeyRecord } | null)?.answerKey;
-  if (!record || record.version !== 1 || !record.expected || !record.input) return null;
-  // Records saved before extra forwards / defensemen or power-play units existed have none.
-  const withExtras = (extraction: TrainerExtraction): TrainerExtraction => ({
-    ...extraction,
-    extraForwards: extraction.extraForwards ?? [],
-    extraDefensemen: extraction.extraDefensemen ?? [],
-    powerPlay: extraction.powerPlay ?? [],
-    offPowerPlay: extraction.offPowerPlay ?? []
-  });
+  if (!record || (record.version !== 1 && record.version !== 2) || !record.expected || !record.input) return null;
+  // Records saved before extra forwards / defensemen or power-play units existed have none. v1 records keep the
+  // v2 fields undefined, so comparisons don't judge them.
+  const withExtras = (extraction: TrainerExtraction): TrainerExtraction => {
+    const base: TrainerExtraction = {
+      ...extraction,
+      extraForwards: extraction.extraForwards ?? [],
+      extraDefensemen: extraction.extraDefensemen ?? [],
+      powerPlay: extraction.powerPlay ?? [],
+      offPowerPlay: extraction.offPowerPlay ?? []
+    };
+    if (record.version === 1) return base;
+    return {
+      ...base,
+      context: extraction.context ?? null,
+      scope: extraction.scope ?? null,
+      game: extraction.game ?? null,
+      powerPlaySwaps: extraction.powerPlaySwaps ?? []
+    };
+  };
   return { ...record, parsed: withExtras(record.parsed), expected: withExtras(record.expected) };
 }
 
@@ -769,6 +975,8 @@ export type RegressionSummary = {
   correct: number;
   accuracy: number;
   byType: Array<{ type: TrainerType; total: number; correct: number; accuracy: number }>;
+  /** Per v2 field: how many v2 records were judged on it and how many matched. */
+  byField: Array<{ field: AnswerKeyV2Field; total: number; correct: number; accuracy: number }>;
   newlyFixed: string[];
   newlyBroken: string[];
 };
@@ -785,12 +993,18 @@ export function summarizeRegression(cases: RegressionCase[]): RegressionSummary 
       return { type, total: typed.length, correct, accuracy: ratio(correct, typed.length) };
     })
     .filter((entry) => entry.total > 0);
+  const byField = ANSWER_KEY_V2_FIELDS.map((field) => {
+    const judged = cases.filter((entry) => entry.comparison[field] !== null && entry.comparison[field] !== undefined);
+    const matched = judged.filter((entry) => entry.comparison[field] === true).length;
+    return { field, total: judged.length, correct: matched, accuracy: ratio(matched, judged.length) };
+  }).filter((entry) => entry.total > 0);
   const correct = cases.filter((entry) => entry.comparison.correct).length;
   return {
     total: cases.length,
     correct,
     accuracy: ratio(correct, cases.length),
     byType,
+    byField,
     newlyFixed: cases.filter((entry) => !entry.baselineCorrect && entry.comparison.correct).map((entry) => entry.id),
     newlyBroken: cases.filter((entry) => entry.baselineCorrect && !entry.comparison.correct).map((entry) => entry.id)
   };

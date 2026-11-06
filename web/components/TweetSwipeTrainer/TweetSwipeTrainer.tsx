@@ -408,6 +408,7 @@ export default function TweetSwipeTrainer() {
                   key={card.key}
                   card={card}
                   players={players}
+                  teams={teams}
                   onAliasSaved={(text) => void cardAliasSaved(card, text)}
                   placements={cardPlacements}
                   onPlacementsChange={(next) => setPlacements((map) => ({ ...map, [card.key]: next }))}

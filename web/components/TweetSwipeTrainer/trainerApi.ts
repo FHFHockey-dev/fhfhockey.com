@@ -1,6 +1,6 @@
 import supabase from "lib/supabase";
 import type { TrainerCard } from "lib/sources/tweetSwipeTrainerServer";
-import type { TrainerExtraction, TrainerType } from "lib/sources/tweetSwipeTrainer";
+import type { TrainerContext, TrainerExtraction, TrainerGameBinding, TrainerScope, TrainerType } from "lib/sources/tweetSwipeTrainer";
 
 export type TrainerPlayerOption = {
   id: number;
@@ -13,6 +13,26 @@ export type TrainerPlayerOption = {
 export type TrainerCategoryOption = { category: string; subcategories: string[] };
 
 export type TrainerTeamOption = { id: number; abbreviation: string; name: string };
+
+// The lib's labels can't be imported here (it loads node crypto), so they are repeated; the Record types keep them
+// in step with the lib's unions.
+export const CONTEXT_LABELS: Record<TrainerContext, string> = {
+  warmup: "Warmup",
+  game: "Game report",
+  practice: "Practice report, not game-confirmed",
+  projected: "Projected"
+};
+export const CONTEXT_ORDER: TrainerContext[] = ["warmup", "game", "practice", "projected"];
+export const SCOPE_LABELS: Record<TrainerScope, string> = { full: "Full lineup", partial: "Partial lineup", change: "Change only" };
+export const SCOPE_ORDER: TrainerScope[] = ["full", "partial", "change"];
+
+/** "vs BOS · 2026-11-06", "vs BOS", "2026-11-06" or "No game named". */
+export function gameLabel(game: TrainerGameBinding | null | undefined, teams: TrainerTeamOption[] | undefined): string {
+  if (!game) return "No game named";
+  const opponent = game.opponentTeamId != null ? teams?.find((team) => team.id === game.opponentTeamId)?.abbreviation ?? `team ${game.opponentTeamId}` : null;
+  const parts = [opponent && `vs ${opponent}`, game.date, game.gameId != null ? `game ${game.gameId}` : null].filter(Boolean);
+  return parts.length ? parts.join(" · ") : "No game named";
+}
 
 export type TrainerQueueResponse = {
   success: boolean;

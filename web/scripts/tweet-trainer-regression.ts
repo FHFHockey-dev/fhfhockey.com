@@ -58,9 +58,15 @@ async function main() {
   console.log(`Parse path: ${process.env.TWEET_PIPELINE_INTERPRETATION_ENABLED === "true" ? "interpretation (production)" : "legacy"}`);
   console.log(`Baseline: ${baselinePath ?? "parser verdict at label time"}`);
   for (const entry of summary.byType) console.log(`  ${entry.type.padEnd(18)} ${entry.correct}/${entry.total}  ${entry.accuracy}%`);
+  // Answer-key v2 fields (context, scope, game binding, PP swaps), scored only on v2 records.
+  if (summary.byField.length) {
+    console.log("v2 fields:");
+    for (const entry of summary.byField) console.log(`  ${entry.field.padEnd(18)} ${entry.correct}/${entry.total}  ${entry.accuracy}%`);
+  }
   const describe = (id: string) => {
     const result = results.find((item) => item.id === id)!;
-    const misses = Object.entries(result.comparison).filter(([key, value]) => key !== "correct" && !value).map(([key]) => key);
+    // false = differs; null = not judged (a v1 record has no v2 fields).
+    const misses = Object.entries(result.comparison).filter(([key, value]) => key !== "correct" && value === false).map(([key]) => key);
     return `  ${id} tweet ${result.tweetId ?? "?"} (${result.type})${misses.length ? ` · differs in ${misses.join(", ")}` : ""}`;
   };
   console.log(`Newly fixed: ${summary.newlyFixed.length}`);

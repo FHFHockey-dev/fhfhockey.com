@@ -14,7 +14,10 @@ import {
   type TrainerExtraction
 } from "./tweetSwipeTrainer";
 
-const teams = buildTeamDirectory([{ id: 22, name: "Edmonton Oilers", abbreviation: "EDM", logo: "" }]);
+const teams = buildTeamDirectory([
+  { id: 22, name: "Edmonton Oilers", abbreviation: "EDM", logo: "" },
+  { id: 10, name: "Toronto Maple Leafs", abbreviation: "TOR", logo: "" }
+]);
 const player = (playerId: number, fullName: string, position: string): RosterNameEntry => ({
   playerId,
   fullName,
@@ -182,7 +185,7 @@ describe("answer key", () => {
       parse: result,
       correction
     });
-    expect(record.expected).toBe(correction);
+    expect(record.expected).toEqual(correction);
     expect(compareExtraction(record.expected, parsed)).toMatchObject({ correct: false, slotsMatch: false, categoryMatch: true });
     // Players within a line compare as a set; line order matters.
     const reordered = { ...correction, forwards: correction.forwards.map((line) => [...line].reverse()) };
@@ -207,6 +210,92 @@ describe("answer key", () => {
     expect(summary.byType).toEqual([
       { type: "line_combination", total: 1, correct: 1, accuracy: 100 },
       { type: "goalie", total: 2, correct: 1, accuracy: 50 }
+    ]);
+  });
+});
+
+describe("answer key v2", () => {
+  const swapExtraction = (base: TrainerExtraction): TrainerExtraction => ({
+    ...base,
+    subcategory: "POWER PLAY",
+    forwards: [],
+    defensePairs: [],
+    goalies: [],
+    powerPlay: [],
+    context: "practice",
+    scope: "change",
+    game: null,
+    // "Kulich and Krebs replace McLeod and Doan on PP2": only the named players, never the unit's other spots.
+    powerPlaySwaps: [{ unit: 2, in: [{ playerId: 11, name: "Adam Henrique" }, { playerId: null, name: "Kuluch" }], out: [{ playerId: 7, name: "Corey Perry" }, { playerId: 12, name: "Viktor Arvidsson" }] }]
+  });
+
+  it("reads context, scope and the game only from what the tweet says", () => {
+    const warmup = parse("#Oilers warmup lines tonight vs. Toronto Maple Leafs\nHyman - McDavid - Draisaitl");
+    expect(warmup).toMatchObject({ context: "warmup", scope: "partial", game: { gameId: null, opponentTeamId: 10, date: "2026-11-05" }, powerPlaySwaps: [] });
+    // A timestamp alone never binds a game.
+    expect(parse(lineupText.replace(" tonight", "")).game).toBeNull();
+    expect(parse("Oilers at practice\nHyman - McDavid - Draisaitl").context).toBe("practice");
+    // Context and game belong to lineups and goalie starts only.
+    expect(parse("Connor McDavid (upper body) is out tonight vs TOR")).toMatchObject({ context: null, scope: null, game: null });
+  });
+
+  it("saves version 2 records with the v2 fields, and still reads version 1 records without judging them", () => {
+    const result = parse(lineupText);
+    const parsed = extractionFromParse(result);
+    const record = buildAnswerKeyRecord({
+      verdict: "wrong",
+      tweetId: "1",
+      input: { text: lineupText, handles: [], publishedAt: null, hasMedia: false },
+      parse: result,
+      correction: swapExtraction(parsed)
+    });
+    expect(record.version).toBe(2);
+    expect(record.expected.powerPlaySwaps).toHaveLength(1);
+    expect(readAnswerKeyRecord({ answerKey: record })).toEqual(record);
+    // Swap players are part of the review assignment.
+    expect(assignmentsFromExtraction(record.expected)[0]!.playerIds).toEqual(expect.arrayContaining([11, 7, 12]));
+
+    // A correction from an older editor (no v2 fields) falls back to the parser's reading.
+    const { context: _c, scope: _s, game: _g, powerPlaySwaps: _p, ...older } = parsed;
+    const fallback = buildAnswerKeyRecord({ verdict: "wrong", tweetId: "1", input: record.input, parse: result, correction: older });
+    expect(fallback.expected).toMatchObject({ context: parsed.context, scope: parsed.scope, game: parsed.game, powerPlaySwaps: [] });
+
+    // Version 1: the v2 fields stay undefined, so they are not judged.
+    const v1 = { ...record, version: 1 as const, expected: older, parsed: older };
+    const readV1 = readAnswerKeyRecord({ answerKey: v1 })!;
+    expect(readV1.expected.context).toBeUndefined();
+    expect(compareExtraction(readV1.expected, swapExtraction(parsed))).toMatchObject({ contextMatch: null, scopeMatch: null, gameMatch: null, swapsMatch: null });
+    // A v2 record missing a field reads it as "the tweet doesn't say".
+    const sparse = { ...record, expected: older };
+    expect(readAnswerKeyRecord({ answerKey: sparse })!.expected).toMatchObject({ context: null, scope: null, game: null, powerPlaySwaps: [] });
+  });
+
+  it("scores context, scope, game and swaps, and reports each field's accuracy", () => {
+    const parsed = extractionFromParse(parse(lineupText));
+    const expected = swapExtraction(parsed);
+    expect(compareExtraction(expected, expected)).toMatchObject({ correct: true, contextMatch: true, scopeMatch: true, gameMatch: true, swapsMatch: true });
+    // Within a swap, who joins and who leaves are sets; the unit matters.
+    const reordered = { ...expected, powerPlaySwaps: expected.powerPlaySwaps!.map((swap) => ({ ...swap, in: [...swap.in].reverse() })) };
+    expect(compareExtraction(expected, reordered).swapsMatch).toBe(true);
+    const otherUnit = { ...expected, powerPlaySwaps: expected.powerPlaySwaps!.map((swap) => ({ ...swap, unit: 1 })) };
+    expect(compareExtraction(expected, otherUnit)).toMatchObject({ correct: false, swapsMatch: false });
+    expect(compareExtraction(expected, { ...expected, context: "game" })).toMatchObject({ correct: false, contextMatch: false });
+    expect(compareExtraction(expected, { ...expected, scope: "partial" })).toMatchObject({ correct: false, scopeMatch: false });
+    const bound = { ...expected, game: { gameId: null, opponentTeamId: 10, date: "2026-11-06" } };
+    expect(compareExtraction(bound, expected)).toMatchObject({ correct: false, gameMatch: false });
+    expect(compareExtraction(bound, { ...bound, game: { gameId: null, opponentTeamId: 10, date: "2026-11-06" } }).gameMatch).toBe(true);
+
+    const summary = summarizeRegression([
+      { id: "v2-right", type: "line_combination", baselineCorrect: true, comparison: compareExtraction(expected, expected) },
+      { id: "v2-context", type: "line_combination", baselineCorrect: true, comparison: compareExtraction(expected, { ...expected, context: "game" }) },
+      { id: "v1", type: "line_combination", baselineCorrect: true, comparison: compareExtraction({ ...parsed, context: undefined, scope: undefined, game: undefined, powerPlaySwaps: undefined }, parsed) }
+    ]);
+    expect(summary.newlyBroken).toEqual(["v2-context"]);
+    expect(summary.byField).toEqual([
+      { field: "contextMatch", total: 2, correct: 1, accuracy: 50 },
+      { field: "scopeMatch", total: 2, correct: 2, accuracy: 100 },
+      { field: "gameMatch", total: 2, correct: 2, accuracy: 100 },
+      { field: "swapsMatch", total: 2, correct: 2, accuracy: 100 }
     ]);
   });
 });

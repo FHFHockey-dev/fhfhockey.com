@@ -291,7 +291,7 @@ describe("TweetSwipeTrainer", () => {
     ]]);
   });
 
-  it("records who came off the power play, a name the parser missed, and drops a name that isn't a player", async () => {
+  it("adds a name the parser missed, drops a name that isn't a player, and keeps PP2 as PP2", async () => {
     render(<TweetSwipeTrainer />);
     await screen.findByText(/card 1 of 2/);
     fireEvent.keyDown(window, { key: "ArrowLeft" });
@@ -305,18 +305,47 @@ describe("TweetSwipeTrainer", () => {
     fireEvent.change(within(tray).getByLabelText("Add a name the parser missed"), { target: { value: "Draisatl" } });
     fireEvent.click(within(tray).getByRole("button", { name: "Add name" }));
     expect(within(screen.getByRole("group", { name: "Resolve Draisatl" })).getByRole("button", { name: "Leon Draisaitl" })).toBeTruthy();
-    // McDavid came off the unit; Hyman joins PP2.
-    fireEvent.click(within(tray).getByRole("button", { name: "Connor McDavid" }));
-    fireEvent.click(screen.getByLabelText(/New off the power play spot/));
+    // Hyman moves to PP2.
     fireEvent.click(within(tray).getByRole("button", { name: "Zach Hyman" }));
     fireEvent.click(screen.getByLabelText(/PP2 QB/));
     fireEvent.click(screen.getByRole("button", { name: "Save correction" }));
     await waitFor(() => expect(posts()).toHaveLength(1));
     const { correction } = posts()[0]!.body;
-    expect(correction.offPowerPlay).toEqual([{ playerId: 2, name: "Connor McDavid" }]);
+    expect(correction.offPowerPlay).toEqual([]);
     // PP2 stays PP2 when PP1 is left empty.
     expect(correction.powerPlay).toEqual([[], [{ playerId: 1, name: "Zach Hyman" }]]);
     expect(correction.players.map((player: { name: string }) => player.name)).not.toContain("Drai");
+  });
+
+  it("records a practice PP2 change as a swap: who joins and who leaves, never the unit's other spots", async () => {
+    render(<TweetSwipeTrainer />);
+    await screen.findByText(/card 1 of 2/);
+    fireEvent.keyDown(window, { key: "ArrowLeft" });
+    await screen.findByLabelText("Subcategory");
+    fireEvent.change(screen.getByLabelText("Subcategory"), { target: { value: "POWER PLAY" } });
+    expect(screen.getByLabelText("PP1 QB")).toBeTruthy();
+    // "Change only" swaps the unit grid for in/out lists; the grid's names go back to the tray.
+    fireEvent.change(screen.getByLabelText("Scope"), { target: { value: "change" } });
+    expect(screen.queryByLabelText("PP1 QB")).toBeNull();
+    fireEvent.change(screen.getByLabelText("Context"), { target: { value: "practice" } });
+    fireEvent.change(screen.getByLabelText("Opponent"), { target: { value: "10" } });
+    fireEvent.change(screen.getByLabelText("Game date"), { target: { value: "2026-11-06" } });
+    const tray = screen.getByRole("group", { name: "Names to place" });
+    fireEvent.click(within(tray).getByRole("button", { name: "Zach Hyman" }));
+    fireEvent.click(screen.getByLabelText(/New PP2 in spot/));
+    fireEvent.click(within(tray).getByRole("button", { name: "Connor McDavid" }));
+    fireEvent.click(screen.getByLabelText(/New PP2 out spot/));
+    fireEvent.click(screen.getByRole("button", { name: "Save correction" }));
+    await waitFor(() => expect(posts()).toHaveLength(1));
+    const { correction } = posts()[0]!.body;
+    expect(correction).toMatchObject({
+      subcategory: "POWER PLAY",
+      context: "practice",
+      scope: "change",
+      game: { gameId: null, opponentTeamId: 10, date: "2026-11-06" },
+      powerPlay: [],
+      powerPlaySwaps: [{ unit: 2, in: [{ playerId: 1, name: "Zach Hyman" }], out: [{ playerId: 2, name: "Connor McDavid" }] }]
+    });
   });
 
   it("says what to do next when a type has nothing left to label", async () => {

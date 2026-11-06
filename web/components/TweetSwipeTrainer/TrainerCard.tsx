@@ -9,11 +9,15 @@ import {
   aliasRefusalText,
   aliasScopeLabel,
   assignCardNameOnce,
+  CONTEXT_LABELS,
   foldName,
+  gameLabel,
   positionGroupFor,
   resolveCardName,
+  SCOPE_LABELS,
   TYPE_LABELS,
-  type TrainerPlayerOption
+  type TrainerPlayerOption,
+  type TrainerTeamOption
 } from "./trainerApi";
 
 export { foldName };
@@ -418,6 +422,8 @@ export default function TrainerCard(props: {
   editor?: ReactNode;
   placements?: CardPlacements;
   onPlacementsChange?: (next: CardPlacements) => void;
+  /** For naming the opponent in the game binding. */
+  teams?: TrainerTeamOption[];
 }) {
   const { card } = props;
   const { parse } = card;
@@ -574,7 +580,25 @@ export default function TrainerCard(props: {
             {parse.teamAbbreviation ?? "No team"} · {FILTER_LABELS[parse.filterStatus] ?? sentenceCase(parse.filterStatus.replace(/_/g, " "))}
             {parse.phraseHits.length ? ` · rule ${parse.phraseHits[0]!.ruleId} (${parse.phraseHits[0]!.tier} tier)` : ""}
           </span>
+          {isLineCombo || parse.type === "goalie" ? (
+            // Part of the answer: "Correct" means these are right too.
+            <span className={styles.metaText} aria-label="Context, scope and game">
+              {parse.context ? CONTEXT_LABELS[parse.context] : "No context"}
+              {isLineCombo ? ` · ${parse.scope ? SCOPE_LABELS[parse.scope] : "No scope"}` : ""}
+              {` · ${gameLabel(parse.game, props.teams)}`}
+            </span>
+          ) : null}
         </div>
+        {parse.powerPlaySwaps.length ? (
+          <ul className={styles.swapList} aria-label="Power-play changes">
+            {parse.powerPlaySwaps.map((swap) => (
+              <li key={swap.unit}>
+                PP{swap.unit}: in {swap.in.map((slot) => slot.name).join(", ") || "nobody named"}; out{" "}
+                {swap.out.map((slot) => slot.name).join(", ") || "nobody named"}
+              </li>
+            ))}
+          </ul>
+        ) : null}
 
         {isLineCombo && !isPowerPlay ? (
           <p className={styles.pickHint} aria-live="polite">

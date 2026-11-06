@@ -425,6 +425,13 @@
   font-size: v.$font-size-xs;
 }
 
+.swapList {
+  margin: 0;
+  padding-left: v.$space-md;
+  color: v.$text-primary;
+  font-size: v.$font-size-sm;
+}
+
 .slotGroup,
 .editorGroup {
   display: grid;

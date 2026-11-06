@@ -1,6 +1,14 @@
 import { Fragment, useLayoutEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent } from "react";
 
-import type { TrainerExtraction, TrainerSlotValue, TrainerType } from "lib/sources/tweetSwipeTrainer";
+import type {
+  TrainerContext,
+  TrainerExtraction,
+  TrainerGameBinding,
+  TrainerPowerPlaySwap,
+  TrainerScope,
+  TrainerSlotValue,
+  TrainerType
+} from "lib/sources/tweetSwipeTrainer";
 import type { TrainerCard } from "lib/sources/tweetSwipeTrainerServer";
 
 import PlayerCombobox from "./PlayerCombobox";
@@ -10,8 +18,12 @@ import {
   aliasRefusalText,
   aliasScopeLabel,
   assignCardNameOnce,
+  CONTEXT_LABELS,
+  CONTEXT_ORDER,
   positionGroupFor,
   resolveCardName,
+  SCOPE_LABELS,
+  SCOPE_ORDER,
   type TrainerCategoryOption,
   type TrainerPlayerOption,
   type TrainerTeamOption
@@ -31,13 +43,19 @@ const PP_SPOT_NAMES = ["QB", "LW", "RW", "bumper", "net front"] as const;
 // Drags carry this type so slots only accept names from the tray, not stray text.
 const TRAY_TYPE = "application/x-fhfh-trainer-name";
 
-type ListKind = "extraForwards" | "extraDefensemen" | "extras" | "others" | "offPowerPlay";
+type ListKind = "extraForwards" | "extraDefensemen" | "extras" | "others";
+type SwapSide = "in" | "out";
 type Target =
   | { kind: "forward"; row: number; col: number }
   | { kind: "pair"; row: number; col: number }
   | { kind: "pp"; row: number; col: number }
   | { kind: "goalie"; index: number }
+  | { kind: "swap"; unit: number; side: SwapSide; index: number }
   | { kind: ListKind; index: number };
+
+/** Per PP unit, who joins and who leaves, as editable name lists. */
+type SwapDraft = Record<SwapSide, string[]>;
+const emptySwaps = (): SwapDraft[] => Array.from({ length: PP_UNITS }, () => ({ in: [], out: [] }));
 
 function typeForCategory(category: string): TrainerType {
   if (category === "LINE COMBINATION" || category === "LINEUP") return "line_combination";
@@ -297,7 +315,22 @@ export default function CorrectionEditor(props: {
   const [powerPlay, setPowerPlay] = useState(() =>
     grid(startLayout === "powerPlay" ? start.powerPlay ?? [] : [], PP_UNITS, PP_SPOTS.length)
   );
-  const [offPowerPlay, setOffPowerPlay] = useState(() => shown(startLayout === "powerPlay", () => (start.offPowerPlay ?? []).map((slot) => slot.name)));
+  // A "change only" power-play tweet names who joins and leaves a unit, never the unit's other spots.
+  const [swaps, setSwaps] = useState<SwapDraft[]>(() => {
+    const drafts = emptySwaps();
+    if (startLayout !== "powerPlay") return drafts;
+    for (const swap of start.powerPlaySwaps ?? []) {
+      const draft = drafts[swap.unit - 1];
+      if (!draft) continue;
+      draft.in = swap.in.map((slot) => slot.name);
+      draft.out = swap.out.map((slot) => slot.name);
+    }
+    return drafts;
+  });
+  const [context, setContext] = useState<TrainerContext | "">(start.context ?? "");
+  const [scope, setScope] = useState<TrainerScope | "">(start.scope ?? "");
+  const [opponentId, setOpponentId] = useState<number | null>(start.game?.opponentTeamId ?? null);
+  const [gameDate, setGameDate] = useState(start.game?.date ?? "");
   // Tray names TJ marked as not players in this tweet (e.g. "power play" read as Owen Power).
   const [dismissed, setDismissed] = useState<string[]>([]);
   const [addName, setAddName] = useState("");
@@ -320,7 +353,10 @@ export default function CorrectionEditor(props: {
       ...(startLayout === "goalie" ? [] : start.goalies),
       ...(start.extraForwards ?? []),
       ...(start.extraDefensemen ?? []),
-      ...start.extras
+      ...start.extras,
+      // v1 records listed players off the power play without a unit; v2 records them as a unit's swap.
+      ...(start.offPowerPlay ?? []),
+      ...(startLayout === "powerPlay" ? [] : (start.powerPlaySwaps ?? []).flatMap((swap) => [...swap.in, ...swap.out]))
     ];
     return startLayout === "players" ? [] : hidden.map((slot) => slot.name);
   });
@@ -331,6 +367,11 @@ export default function CorrectionEditor(props: {
   const subcategories = props.categoryOptions.find((option) => option.category === category)?.subcategories ?? [];
   const layout = layoutFor(category, subcategory || null);
   const showLines = layout === "lines";
+  const showSwaps = layout === "powerPlay" && scope === "change";
+  // Context and game apply to lineups, power plays and goalie starts; scope to lineups and power plays.
+  const showContext = layout !== "players";
+  const showScope = layout === "lines" || layout === "powerPlay";
+  const swapNames = swaps.flatMap((draft) => [...draft.in, ...draft.out]);
 
   // Names the parser saw but didn't place: dropped candidate lines, unmatched names and, for lineups, other
   // names. A name leaves the tray once it sits in a spot; a name pushed out of a spot comes back.
@@ -352,7 +393,7 @@ export default function CorrectionEditor(props: {
     return out.filter((name) => !dismissed.some((value) => key(value) === key(name)));
   }, [parse, layout, others, bumped, renamed, dismissed]);
   const placed = new Set(
-    [...forwards.flat(), ...pairs.flat(), ...powerPlay.flat(), ...offPowerPlay, ...goalies, ...extraForwards, ...extraDefensemen, ...extras, ...(layout === "players" ? others : [])]
+    [...forwards.flat(), ...pairs.flat(), ...powerPlay.flat(), ...swapNames, ...goalies, ...extraForwards, ...extraDefensemen, ...extras, ...(layout === "players" ? others : [])]
       .filter((value) => value.trim())
       .map(key)
   );
@@ -369,6 +410,7 @@ export default function CorrectionEditor(props: {
     if (target.kind === "pair") return pairs[target.row]?.[target.col] ?? "";
     if (target.kind === "pp") return powerPlay[target.row]?.[target.col] ?? "";
     if (target.kind === "goalie") return goalies[target.index] ?? "";
+    if (target.kind === "swap") return swaps[target.unit]?.[target.side][target.index] ?? "";
     const list =
       target.kind === "extraForwards"
         ? extraForwards
@@ -376,9 +418,7 @@ export default function CorrectionEditor(props: {
           ? extraDefensemen
           : target.kind === "extras"
             ? extras
-            : target.kind === "offPowerPlay"
-              ? offPowerPlay
-              : others;
+            : others;
     return list[target.index] ?? "";
   }
 
@@ -389,6 +429,15 @@ export default function CorrectionEditor(props: {
     else if (target.kind === "pair") setPairs((rows) => setGrid(rows, target.row, target.col));
     else if (target.kind === "pp") setPowerPlay((rows) => setGrid(rows, target.row, target.col));
     else if (target.kind === "goalie") setGoalies((cells) => cells.map((cell, index) => (index === target.index ? value : cell)));
+    else if (target.kind === "swap")
+      setSwaps((drafts) =>
+        drafts.map((draft, unit) => {
+          if (unit !== target.unit) return draft;
+          const list = [...draft[target.side]];
+          list[target.index] = value;
+          return { ...draft, [target.side]: list };
+        })
+      );
     else {
       const setList =
         target.kind === "extraForwards"
@@ -397,9 +446,7 @@ export default function CorrectionEditor(props: {
             ? setExtraDefensemen
             : target.kind === "extras"
               ? setExtras
-              : target.kind === "offPowerPlay"
-                ? setOffPowerPlay
-                : setOthers;
+              : setOthers;
       setList((list) => {
         const next = [...list];
         next[target.index] = value;
@@ -417,28 +464,29 @@ export default function CorrectionEditor(props: {
     setPairs((rows) => rows.map((cells) => cells.map((cell) => (key(cell) === key(name) ? "" : cell))));
     setPowerPlay((rows) => rows.map((cells) => cells.map((cell) => (key(cell) === key(name) ? "" : cell))));
     setGoalies((cells) => cells.map((cell) => (key(cell) === key(name) ? "" : cell)));
-    for (const setList of [setExtraForwards, setExtraDefensemen, setExtras, setOffPowerPlay]) setList((list) => list.filter((cell) => key(cell) !== key(name)));
+    for (const setList of [setExtraForwards, setExtraDefensemen, setExtras]) setList((list) => list.filter((cell) => key(cell) !== key(name)));
+    setSwaps((drafts) => drafts.map((draft) => ({ in: draft.in.filter((cell) => key(cell) !== key(name)), out: draft.out.filter((cell) => key(cell) !== key(name)) })));
     write(target, name);
     setPlacing(null);
   }
 
   // Every name that doesn't match a known player, in a spot or still in the tray, can be resolved here.
-  const unknownNames = [...new Set([...forwards.flat(), ...pairs.flat(), ...powerPlay.flat(), ...offPowerPlay, ...goalies, ...extraForwards, ...extraDefensemen, ...extras, ...tray].filter(
+  const unknownNames = [...new Set([...forwards.flat(), ...pairs.flat(), ...powerPlay.flat(), ...swapNames, ...goalies, ...extraForwards, ...extraDefensemen, ...extras, ...tray].filter(
     (value) => value.trim() && !findPlayerByName(props.players, value)
   ))].filter((value, index, all) => all.findIndex((other) => key(other) === key(value)) === index);
 
   function resolved(raw: string, player: TrainerPlayerOption, message: string) {
-    const swap = (value: string) => (key(value) === key(raw) ? player.fullName : value);
-    setForwards((rows) => rows.map((cells) => cells.map(swap)));
-    setPairs((rows) => rows.map((cells) => cells.map(swap)));
-    setPowerPlay((rows) => rows.map((cells) => cells.map(swap)));
-    setOffPowerPlay((list) => list.map(swap));
-    setGoalies((cells) => cells.map(swap));
-    setExtraForwards((list) => list.map(swap));
-    setExtraDefensemen((list) => list.map(swap));
-    setExtras((list) => list.map(swap));
-    setOthers((list) => list.map(swap));
-    setBumped((list) => list.map(swap));
+    const rename = (value: string) => (key(value) === key(raw) ? player.fullName : value);
+    setForwards((rows) => rows.map((cells) => cells.map(rename)));
+    setPairs((rows) => rows.map((cells) => cells.map(rename)));
+    setPowerPlay((rows) => rows.map((cells) => cells.map(rename)));
+    setSwaps((drafts) => drafts.map((draft) => ({ in: draft.in.map(rename), out: draft.out.map(rename) })));
+    setGoalies((cells) => cells.map(rename));
+    setExtraForwards((list) => list.map(rename));
+    setExtraDefensemen((list) => list.map(rename));
+    setExtras((list) => list.map(rename));
+    setOthers((list) => list.map(rename));
+    setBumped((list) => list.map(rename));
     setRenamed((map) => ({ ...map, [key(raw)]: player.fullName }));
     props.onAliasSaved(message);
   }
@@ -457,7 +505,7 @@ export default function CorrectionEditor(props: {
     take(forwards.flat(), next === "lines");
     take(pairs.flat(), next === "lines");
     take(powerPlay.flat(), next === "powerPlay");
-    take(offPowerPlay, next === "powerPlay");
+    take(swapNames, next === "powerPlay");
     take(goalies, next === "lines" || next === "goalie");
     take(extraForwards, next === "lines");
     take(extraDefensemen, next === "lines");
@@ -492,7 +540,7 @@ export default function CorrectionEditor(props: {
       setPowerPlay(filledGrid);
     } else {
       setPowerPlay(grid([], PP_UNITS, PP_SPOTS.length));
-      setOffPowerPlay([]);
+      setSwaps(emptySwaps());
     }
     if (next === "goalie" || next === "lines") {
       if (!goalies.some((value) => value.trim())) setGoalies(names(start.goalies, GOALIE_ROLES.length).map((value) => claim([value])[0]!));
@@ -506,14 +554,45 @@ export default function CorrectionEditor(props: {
     setPlacing(null);
   }
 
+  /**
+   * "Change only" on a power play swaps the unit grid for per-unit in/out lists, and back. Names in the spots that
+   * go away return to the tray, so none is lost or silently kept.
+   */
+  function changeScope(next: TrainerScope | "") {
+    if (layout === "powerPlay" && (next === "change") !== (scope === "change")) {
+      if (next === "change") {
+        setBumped((list) => [...list, ...powerPlay.flat().filter((value) => value.trim())]);
+        setPowerPlay(grid([], PP_UNITS, PP_SPOTS.length));
+      } else {
+        setBumped((list) => [...list, ...swapNames.filter((value) => value.trim())]);
+        setSwaps(emptySwaps());
+      }
+    }
+    setScope(next);
+  }
+
   function save() {
     const lineSlots = showLines ? forwards.map(filled).filter((line) => line.length) : [];
     const pairSlots = showLines ? pairs.map(filled).filter((pair) => pair.length) : [];
     // Units keep their number: an empty PP1 stays (as []) when only PP2 changed; trailing empty units drop.
-    const powerPlayUnits = layout === "powerPlay" ? powerPlay.map(filled) : [];
+    const powerPlayUnits = layout === "powerPlay" && !showSwaps ? powerPlay.map(filled) : [];
     while (powerPlayUnits.length && !powerPlayUnits[powerPlayUnits.length - 1]!.length) powerPlayUnits.pop();
     const powerPlaySlots = powerPlayUnits;
-    const offPowerPlaySlots = layout === "powerPlay" ? filled(offPowerPlay) : [];
+    const swapSlots: TrainerPowerPlaySwap[] = showSwaps
+      ? swaps
+          .map((draft, index) => ({ unit: index + 1, in: filled(draft.in), out: filled(draft.out) }))
+          .filter((swap) => swap.in.length || swap.out.length)
+      : [];
+    // The parser's game id is kept only while the opponent and date still match what it bound.
+    const game: TrainerGameBinding | null =
+      !showContext || (opponentId == null && !gameDate)
+        ? null
+        : {
+            gameId:
+              start.game && start.game.opponentTeamId === opponentId && (start.game.date ?? "") === gameDate ? start.game.gameId : null,
+            opponentTeamId: opponentId,
+            date: gameDate || null
+          };
     const goalieSlots = showLines || layout === "goalie" ? filled(goalies) : [];
     const extraForwardSlots = showLines ? filled(extraForwards) : [];
     const extraDefenseSlots = showLines ? filled(extraDefensemen) : [];
@@ -521,7 +600,7 @@ export default function CorrectionEditor(props: {
     // Names left in the tray were still named in the tweet.
     const named = layout === "players" ? filled(others) : filled(tray);
     const everyone = new Map<string, TrainerSlotValue>();
-    for (const slot of [...lineSlots.flat(), ...pairSlots.flat(), ...powerPlaySlots.flat(), ...offPowerPlaySlots, ...goalieSlots, ...extraForwardSlots, ...extraDefenseSlots, ...extraSlots, ...named]) {
+    for (const slot of [...lineSlots.flat(), ...pairSlots.flat(), ...powerPlaySlots.flat(), ...swapSlots.flatMap((swap) => [...swap.in, ...swap.out]), ...goalieSlots, ...extraForwardSlots, ...extraDefenseSlots, ...extraSlots, ...named]) {
       if (slot.playerId != null) everyone.set(`id:${slot.playerId}`, slot);
     }
     props.onSave(
@@ -538,7 +617,11 @@ export default function CorrectionEditor(props: {
         extraForwards: extraForwardSlots,
         extraDefensemen: extraDefenseSlots,
         powerPlay: powerPlaySlots,
-        offPowerPlay: offPowerPlaySlots
+        offPowerPlay: [],
+        context: showContext ? context || null : null,
+        scope: showScope ? scope || null : null,
+        game,
+        powerPlaySwaps: swapSlots
       },
       notes
     );
@@ -646,6 +729,52 @@ export default function CorrectionEditor(props: {
           </select>
         </label>
       </div>
+
+      {showContext ? (
+        <div className={styles.editorRow}>
+          <label className={styles.fieldLabel}>
+            <span>Context</span>
+            <select value={context} onChange={(event) => setContext(event.target.value as TrainerContext | "")}>
+              <option value="">Not stated</option>
+              {CONTEXT_ORDER.map((option) => (
+                <option key={option} value={option}>{CONTEXT_LABELS[option]}</option>
+              ))}
+            </select>
+          </label>
+          {showScope ? (
+            <label className={styles.fieldLabel}>
+              <span>Scope</span>
+              <select value={scope} onChange={(event) => changeScope(event.target.value as TrainerScope | "")}>
+                <option value="">Not stated</option>
+                {SCOPE_ORDER.map((option) => (
+                  <option key={option} value={option}>{SCOPE_LABELS[option]}</option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+          {/* Only what the tweet says: a timestamp alone doesn't name a game. */}
+          <label className={styles.fieldLabel}>
+            <span>Opponent</span>
+            <select
+              value={opponentId == null ? "" : String(opponentId)}
+              onChange={(event) => setOpponentId(event.target.value ? Number(event.target.value) : null)}
+            >
+              <option value="">Not named</option>
+              {(props.teams ?? [])
+                .filter((team) => team.id !== teamId)
+                .map((team) => (
+                  <option key={team.id} value={team.id}>
+                    {team.name} ({team.abbreviation})
+                  </option>
+                ))}
+            </select>
+          </label>
+          <label className={styles.fieldLabel}>
+            <span>Game date</span>
+            <input type="date" value={gameDate} onChange={(event) => setGameDate(event.target.value)} />
+          </label>
+        </div>
+      ) : null}
 
       {layout !== "players" ? (
         <div className={styles.tray} role="group" aria-label="Names to place">
@@ -787,7 +916,7 @@ export default function CorrectionEditor(props: {
         </>
       ) : null}
 
-      {layout === "powerPlay" ? (
+      {layout === "powerPlay" && !showSwaps ? (
         <div className={styles.editorGroup}>
           <h3 className={styles.slotTitle}>Power-play units</h3>
           <div className={`${styles.editorGrid} ${styles.editorGridWide}`}>
@@ -808,7 +937,42 @@ export default function CorrectionEditor(props: {
           </div>
         </div>
       ) : null}
-      {layout === "powerPlay" ? listEditor("offPowerPlay", "Off the power play", offPowerPlay, setOffPowerPlay) : null}
+      {showSwaps
+        ? swaps.map((draft, unit) => (
+            <div key={unit} className={styles.editorGroup} role="group" aria-label={`PP${unit + 1} change`}>
+              <h3 className={styles.slotTitle}>PP{unit + 1} change</h3>
+              {(["in", "out"] as const).map((side) => {
+                const label = `PP${unit + 1} ${side === "in" ? "in" : "out"}`;
+                const setSide = (next: string[]) => setSwaps((drafts) => drafts.map((item, index) => (index === unit ? { ...item, [side]: next } : item)));
+                return (
+                  <div key={side} className={styles.editorGroup}>
+                    <h4 className={styles.slotRole}>{side === "in" ? "Joins the unit" : "Leaves the unit"}</h4>
+                    {draft[side].map((value, index) => (
+                      <div key={index} className={styles.editorListRow}>
+                        {slot({ kind: "swap", unit, side, index }, `${label} ${index + 1}`)}
+                        <button
+                          type="button"
+                          className={styles.ghostButton}
+                          onClick={() => setSide(draft[side].filter((_, itemIndex) => itemIndex !== index))}
+                          aria-label={`Remove ${value || "empty row"}`}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                    {placing ? (
+                      <div className={styles.editorListRow}>{slot({ kind: "swap", unit, side, index: draft[side].length }, `New ${label} spot`)}</div>
+                    ) : (
+                      <button type="button" className={`${styles.ghostButton} ${styles.addButton}`} onClick={() => setSide([...draft[side], ""])}>
+                        Add player
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ))
+        : null}
 
       {showLines || layout === "goalie" ? (
         <div className={styles.editorGroup}>
