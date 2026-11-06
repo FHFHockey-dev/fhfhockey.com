@@ -16,6 +16,8 @@ const ALT_TEXT_RULES: readonly (readonly [RegExp, string])[] = [
   [/^Off-Night Edge, rest of week\b/, "off-night-rest"],
   [/^Hits, shots and blocks specialists\b/, "specialists-rest"],
   [/^Off-Night Edge, full week\b/, "off-night-weekly"],
+  [/^Team Stream, Rest of week\b/, "team-stream-rest"],
+  [/^Team Stream, Week \d/, "team-stream-matchup"],
   [/^completed games per team\b/, "team-games"],
   [/^Top Multi-Cat Stars\b(?! Per Game)/, "stars-total"],
   [/^Top Points-First Stars\b(?! Per Game)/, "stars-total-points-first"],

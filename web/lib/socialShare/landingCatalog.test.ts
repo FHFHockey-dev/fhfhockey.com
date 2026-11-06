@@ -90,9 +90,9 @@ describe("landing maps", () => {
     expect(section("schedule").indexOf("team-games")).toBeLessThan(section("schedule").indexOf("game-grid"));
     expect(LANDING_DAYS.map(item => item.label)).toEqual(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]);
     const day = (id: string) => LANDING_DAYS.find(item => item.id === id)!.cards;
-    expect(day("mon")).toEqual(expect.arrayContaining(["game-grid", "off-night-weekly"]));
+    expect(day("mon")).toEqual(expect.arrayContaining(["game-grid", "off-night-weekly", "team-stream-matchup"]));
     expect(day("tue")).toContain("tuesday-trends");
-    expect(day("wed")).toEqual(expect.arrayContaining(["remaining-week", "specialists-rest"]));
+    expect(day("wed")).toEqual(expect.arrayContaining(["remaining-week", "specialists-rest", "team-stream-rest"]));
     expect(day("thu")).toContain("player-cards");
     expect(day("fri")).toEqual(expect.arrayContaining(["goalie-rescue", "busy-quiet"]));
     for (const id of section("standouts")) expect(LANDING_MISC.cards, id).toContain(id);
