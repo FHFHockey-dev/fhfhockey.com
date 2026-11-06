@@ -58,6 +58,30 @@ describe("IFTTT webhook secret resolution", () => {
     expect((await deliver("wrong")).statusCode).toBe(401);
     expect(fromMock).not.toHaveBeenCalled();
   });
+  it("acknowledges and drops a delivery once the scraper feeds the account", async () => {
+    vi.stubEnv(ownVar, "own-secret");
+    const providerQuery = { select: vi.fn(() => providerQuery), eq: vi.fn(() => providerQuery),
+      maybeSingle: vi.fn(async () => ({ data: { provider: "fxtwitter" }, error: null })) };
+    fromMock.mockImplementation((table: string) =>
+      table === "tweet_intake_providers" ? providerQuery : { insert: insertMock, upsert: upsertMock });
+    const res = await deliver("own-secret");
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({ success: true, sourceKey: "dfofantasy", processingStatus: "ignored_provider_fxtwitter" });
+    expect(providerQuery.eq).toHaveBeenCalledWith("source_key", "dfofantasy");
+    expect(upsertMock).not.toHaveBeenCalled();
+    expect(insertMock).not.toHaveBeenCalled();
+  });
+  it("keeps storing while the switch says ifttt or cannot be read", async () => {
+    vi.stubEnv(ownVar, "own-secret");
+    for (const answer of [{ data: { provider: "ifttt" }, error: null }, { data: null, error: { code: "42P01" } }]) {
+      const providerQuery = { select: () => providerQuery, eq: () => providerQuery, maybeSingle: async () => answer };
+      fromMock.mockImplementation((table: string) =>
+        table === "tweet_intake_providers" ? providerQuery : { insert: insertMock, upsert: upsertMock });
+      upsertMock.mockClear();
+      expect((await deliver("own-secret")).statusCode).toBe(200);
+      expect(upsertMock).toHaveBeenCalledOnce();
+    }
+  });
   it("returns 500 naming the route's variable when neither secret is set", async () => {
     vi.stubEnv(ownVar, ""); vi.stubEnv("X_FHFH_IFTTT_SECRET", "");
     const res = await deliver("anything");
