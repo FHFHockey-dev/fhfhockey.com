@@ -41,6 +41,8 @@
 .sync[data-state="ready"]::before { background: v.$success-color; }
 .sync[data-state="loading"]::before { background: v.$primary-color; animation: syncPulse 1s ease-in-out infinite alternate; }
 .sync[data-state="held"] { color: v.$warning-color; }
+/* A failed request is a step past a hold: the status palette's red (6.6:1 on the panel), same dot and text. */
+.sync[data-state="failed"] { color: v.$color-pink-red; }
 @keyframes syncPulse { to { opacity: 0.3; } }
 @media (prefers-reduced-motion: reduce) { .sync[data-state="loading"]::before { animation: none; } }
 .group { min-width: 0; margin: 0; padding: v.$space-md 0 0; border: 0; border-top: 1px solid v.$border-soft;
@@ -82,7 +84,9 @@
 
 /* A hand-built post: its sidebar beside the preview, stacked on narrow screens. */
 .builder { display: grid; grid-template-columns: minmax(280px, 380px) minmax(0, 1fr); gap: v.$space-md; align-items: start;
-  @media (max-width: 900px) { grid-template-columns: minmax(0, 1fr); }
+  /* The preview stays in view, clear of the sticky site header, while the editor works down a long pick list. */
+  > section { position: sticky; top: v.$site-header-offset; }
+  @media (max-width: 900px) { grid-template-columns: minmax(0, 1fr); > section { position: static; } }
 }
 
 /* The preview panel: on a wide panel the card and its actions keep a 540px column and the evidence takes the rest beside

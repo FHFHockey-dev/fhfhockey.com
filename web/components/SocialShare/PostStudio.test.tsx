@@ -221,6 +221,13 @@ describe("PostStudio", () => {
     expect(screen.queryByRole("alert")).toBeNull();
   });
 
+  it("marks a failed request apart from held settings", async () => {
+    fetchMock.mockImplementation(async () => ({ ok: false, status: 503, json: async () => ({ error: "Fictional outage." }) }) as unknown as Response);
+    render(<PostStudio />);
+    await waitFor(() => expect(screen.getByTestId("post-sync").textContent).toBe("Update failed"));
+    expect(screen.getByTestId("post-sync").getAttribute("data-state")).toBe("failed");
+  });
+
   it("shows the reason instead of a card, and keeps export off, for an unavailable edition", async () => {
     serve(edition({ state: "missing", data: null, reasons: ["Team Games Played sources could not be read."], teams: [] }));
     render(<PostStudio />);

@@ -225,7 +225,7 @@ export default function PostStudio() {
         <label className={postStyles.field}><span>Post</span>
           <select value={entry.id} disabled={exporting} onChange={event => pick(event.target.value)}>{groups.map(group => <optgroup key={group} label={SHARE_POST_GROUP_LABELS[group]}>{modules.filter(item => item.group === group).map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</optgroup>)}</select>
         </label>
-        <p className={postStyles.sync} aria-live="polite" data-testid="post-sync" data-state={loading ? "loading" : sync === "Up to date" ? "ready" : "held"}>{sync}</p>
+        <p className={postStyles.sync} aria-live="polite" data-testid="post-sync" data-state={loading ? "loading" : sync === "Up to date" ? "ready" : sync === "Update failed" ? "failed" : "held"}>{sync}</p>
       </div>
       <p className={postStyles.summary}>{entry.summary}{entry.suggestedUse ? ` ${entry.suggestedUse}` : ""}</p>
       </div>

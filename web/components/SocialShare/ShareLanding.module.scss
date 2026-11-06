@@ -26,6 +26,11 @@
   &[data-mark="done"] { color: v.$success-color; }
   &[data-mark="missed"] { color: v.$color-pink-red; }
 }
+/* The marks' key: the same drawn marks at 14px, in one quiet wrapping line under the strip. */
+.week .key { display: flex; flex-wrap: wrap; gap: v.$space-xxs v.$space-md; margin-top: v.$space-xs; color: v.$text-secondary; font-size: v.$font-size-xs;
+  span { display: inline-flex; align-items: center; gap: v.$space-xxs; }
+  .mark { width: 14px; height: 14px; line-height: 14px; }
+}
 .dayNote { color: v.$text-secondary; font-size: v.$font-size-xs; line-height: 1.1; text-align: center; }
 .postedCards { display: flex; flex-wrap: wrap; gap: v.$space-xxs v.$space-sm; margin: v.$space-xs 0 0 !important; color: v.$text-secondary; font-size: v.$font-size-xs;
   span:first-child { color: v.$text-primary; }

@@ -21,6 +21,15 @@ function DayMark({ status }: { status: LandingDayStatus }) {
   return <span className={landing.mark} data-mark="none" aria-hidden="true">–</span>;
 }
 
+/** A one-line key for the marks. Visual help only: each day already says its state in its own label. */
+function StripKey({ posted }: { posted: boolean }) {
+  return <p className={landing.key} aria-hidden="true" data-testid="landing-strip-key">
+    <span><DayMark status="done" />{posted ? "posted" : "marked done"}</span>
+    <span><DayMark status="missed" />{posted ? "no post yet" : "not marked"}</span>
+    <span><DayMark status="upcoming" />not here yet</span>
+  </p>;
+}
+
 // Storage can be blocked or empty; the page works without it and simply remembers nothing.
 const readStored = (key: string) => { try { return window.localStorage.getItem(key); } catch { return null; } };
 const writeStored = (key: string, value: string) => { try { window.localStorage.setItem(key, value); } catch { /* Not remembered. */ } };
@@ -57,6 +66,7 @@ function PostedStrip({ posted, today }: { posted: PostedWeek; today: string | nu
         </div>;
       })}
     </div>
+    <StripKey posted />
     <p className={landing.postedCards} data-testid="landing-posted-cards">
       <span>Posts by card, this week:</span>
       {posted.cards.map(card => <span key={card.card}>{card.name} {card.count}</span>)}
@@ -76,13 +86,24 @@ function Section({ section }: { section: LandingSection }) {
     target.querySelector("a")?.focus({ preventScroll: true });
   };
   const headingId = `landing-heading-${section.id}`;
+  // The card chips only help when the row scrolls past its edge; a row that fits already shows every card.
+  const row = useRef<HTMLDivElement>(null);
+  const [overflows, setOverflows] = useState(section.cards.length > 1);
+  useEffect(() => {
+    const node = row.current;
+    if (!node || typeof ResizeObserver === "undefined") return;
+    const check = () => setOverflows(node.scrollWidth > node.clientWidth + 1);
+    const observer = new ResizeObserver(check);
+    observer.observe(node); check();
+    return () => observer.disconnect();
+  }, [section.cards.length]);
   return <section id={sectionTarget(section.id)} tabIndex={-1} className={landing.section} data-testid={`landing-section-${section.id}`} aria-labelledby={headingId}>
     <h2 id={headingId}>{section.today ? "Today" : section.label}{(section.today || section.theme) && <small>{[section.today && section.label, section.theme].filter(Boolean).join(" · ")}</small>}</h2>
-    <nav className={landing.chips} aria-label={`Cards in ${section.today ? "Today" : section.label}`}>
+    {overflows && <nav className={landing.chips} aria-label={`Cards in ${section.today ? "Today" : section.label}`}>
       {section.cards.map(id => <a key={id} className={landing.chip} href={`#${cardTarget(section.id, id)}`} onClick={event => toCard(event, id)}>{landingCard(id)!.name}</a>)}
-    </nav>
+    </nav>}
     {/* Its own name: the section is already the region named by the heading (axe landmark-unique). */}
-    <div className={landing.row} role="region" aria-label={`${section.today ? "Today" : section.label} card examples`} tabIndex={0} data-testid={`landing-row-${section.id}`}>
+    <div ref={row} className={landing.row} role="region" aria-label={`${section.today ? "Today" : section.label} card examples`} tabIndex={0} data-testid={`landing-row-${section.id}`}>
       {section.cards.map(id => <Tile key={id} id={id} section={section.id} />)}
     </div>
   </section>;
@@ -160,6 +181,7 @@ export default function ShareLanding() {
           </button>;
         })}
       </div>}
+      {!posted && <StripKey posted={false} />}
       {undatedOnly > 0 && <p className={landing.postedCards} data-testid="landing-posted-undated"><span>Posts received with no date: {undatedOnly}</span></p>}
     </section>
     <nav className={landing.jump} aria-label="Jump to a section" data-testid="landing-jump">
