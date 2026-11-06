@@ -82,7 +82,8 @@ $share-rail-size: 8px;
 .sourceNote { margin-block: 0; font-size: v.$font-size-sm; color: v.$text-secondary; strong { color: v.$color-white; } }
 .actions { display: flex; flex-wrap: wrap; gap: v.$space-xs; margin-top: v.$space-sm; button:first-child { border-color: v.$primary-color; } }
 .explanation { color: v.$text-secondary; font-size: v.$font-size-sm; margin-bottom: v.$space-sm !important; }
-.teamList { list-style: none; padding: 0; margin: 0; max-height: 880px; overflow-y: auto;
+.teamList { list-style: none; padding: 0; margin: 0; max-height: 880px; overflow-y: auto; border-radius: v.$radius-control;
+  &:focus-visible { outline: 2px solid v.$primary-color; outline-offset: 2px; }
   li { padding: v.$space-sm 0; border-bottom: 1px solid v.$border-soft; }
   li > div { display: flex; justify-content: space-between; flex-wrap: wrap; gap: v.$space-xs; }
   strong { color: v.$color-white; } span { color: v.$color-blue-300; font-variant-numeric: tabular-nums; }

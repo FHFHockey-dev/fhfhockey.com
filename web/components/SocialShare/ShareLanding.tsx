@@ -75,7 +75,8 @@ function Section({ section }: { section: LandingSection }) {
     <nav className={landing.chips} aria-label={`Cards in ${section.today ? "Today" : section.label}`}>
       {section.cards.map(id => <a key={id} className={landing.chip} href={`#${cardTarget(section.id, id)}`} onClick={event => toCard(event, id)}>{landingCard(id)!.name}</a>)}
     </nav>
-    <div className={landing.row} role="region" aria-labelledby={headingId} tabIndex={0} data-testid={`landing-row-${section.id}`}>
+    {/* Its own name: the section is already the region named by the heading (axe landmark-unique). */}
+    <div className={landing.row} role="region" aria-label={`${section.today ? "Today" : section.label} card examples`} tabIndex={0} data-testid={`landing-row-${section.id}`}>
       {section.cards.map(id => <Tile key={id} id={id} section={section.id} />)}
     </div>
   </section>;
