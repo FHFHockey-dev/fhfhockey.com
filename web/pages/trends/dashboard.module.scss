@@ -985,3 +985,10 @@
     width: 100%;
   }
 }
+
+// Scrollable regions are keyboard-reachable (tabIndex=0); show where focus is.
+.skaterRankingList:focus-visible,
+.panelBody:focus-visible {
+  outline: 2px solid v.$primary-color;
+  outline-offset: 2px;
+}

@@ -722,7 +722,8 @@ $z-desktop-toast: 650;
   background: transparent;
   
   @if $active {
-    color: $secondary-color;
+    // White on the opaque primary fill is 9.2:1; $secondary-color was 3.4:1 (fails AA).
+    color: $color-white;
     border: 2px solid $primary-color;
   } @else {
     color: $text-secondary;
@@ -754,10 +755,8 @@ $z-desktop-toast: 650;
     cursor: not-allowed;
   }
   @if $active == true {
+    // Fill + 2px border mark the active state; no glow (fhfh-styles §2.6, TJ 2026-11-06).
     background-color: $primary-color-opaque;
-    box-shadow:
-      0 0 0 1px rgba($primary-color, 0.4),
-      0 0 8px rgba($primary-color, 0.4);
   }
 }
 

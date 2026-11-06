@@ -659,7 +659,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
         {rows.length === 0 ? (
           <p className={styles.emptyText}>No skater data yet.</p>
         ) : (
-          <ul className={styles.skaterRankingList}>
+          <ul className={styles.skaterRankingList} tabIndex={0} aria-label="Top percentile skaters">
             {rows.map((row) => {
               const meta = playerMetadata[String(row.playerId)];
               return (
@@ -755,7 +755,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
         {rows.length === 0 ? (
           <p className={styles.emptyText}>No goalie data yet.</p>
         ) : (
-          <ul className={styles.skaterRankingList}>
+          <ul className={styles.skaterRankingList} tabIndex={0} aria-label="Top percentile goalies">
             {rows.map((row) => {
               const meta = playerMetadata[String(row.playerId)];
               return (
@@ -1620,7 +1620,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                     </button>
                   </div>
                 </div>
-                <div className={styles.panelBody}>
+                <div className={styles.panelBody} tabIndex={0} role="region" aria-label="Projection runway table">
                   <p className={styles.summaryBandCopy}>
                     Use this after the movement read to see who still has slate
                     runway.
@@ -1696,7 +1696,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                     {data?.recency?.status === "mixed" ? "Downgraded" : "Top 8"}
                   </span>
                 </div>
-                <div className={styles.panelBody}>
+                <div className={styles.panelBody} tabIndex={0} role="region" aria-label="Goalie start runway table">
                   <p className={styles.summaryBandCopy}>
                     Start probability, win runway, and shutout ceiling to
                     support the goalie movement view.
