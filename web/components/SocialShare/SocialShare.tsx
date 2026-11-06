@@ -853,6 +853,7 @@ export default function SocialShare({ format, asOf }: { format: SocialShareForma
   const logosReady = !!snapshot && snapshot.teams.every(team => team.abbreviation in teamLogos && (format !== "tuesday-trends" || team.abbreviation in teamOutlines));
   // Every card shows team logos now (the leaders card gained banners and week rows).
   const squareReady = assetsReady && logosReady;
+  const previewShown = !!snapshot && squareReady;
   const squareAlt = (current: SocialShareSnapshot) => gridCard ? gridAltText(current, trusted) : matchupKind ? matchupAltText(matchupKind, current, trusted) : playerCard ? playerAltText(playerCard, current, trusted) : trendKind ? trendAltText(trendKind, current, trusted) : tierMode ? tierAltText(tierMode, current, trusted) : altText(current, rows, trusted, !!focusTeam);
   const trendHasRows = !trendKind || !snapshot ? true : trendReady(trendKind, snapshot, trusted) && trendColumns(trendKind, snapshot).some(column => column.rows.length > 0);
   const playerHasRows = !playerCard || !snapshot ? true : playerCard.kind === "pickups" ? Object.values(pickupTiers(snapshot, trusted).find(tier => tier.max === playerCard.max)?.groups ?? {}).some(list => list.length > 0) : Object.values(specialists(snapshot, trusted)).some(list => list.length > 0);
@@ -866,8 +867,8 @@ export default function SocialShare({ format, asOf }: { format: SocialShareForma
   };
 
   return <div className={styles.page}>
-    <header className={styles.heading}><div><p className={styles.eyebrow}>FHFH / Share studio</p><h1>{labels[format]}</h1><p><Link href="/social-share/player-cards" prefetch={false}>Player cards · visual preview</Link> · <Link href="/social-share/posts" prefetch={false}>Post library</Link></p></div><span className={styles.scope}>{!supported ? "Source qualification pending" : format === "tuesday-trends" ? "Rolling game metrics · Yahoo ownership · NHL schedule" : "Schedule only · NHL schedule source"}</span></header>
-    {!supported ? <section className={styles.panel}><h2>Source qualification required</h2><p>This format is blocked until current-season player data, dated ownership evidence, participation and provider rights qualify. No player rankings are available.</p><a href="/social-share/game-grid">Open the schedule studio</a></section> : <>
+    <header className={styles.heading}><div><p className={styles.eyebrow}>FHFH / Share studio</p><h1>{labels[format]}</h1><nav className={styles.studioNav} aria-label="Share studios"><Link href="/social-share" prefetch={false}>All cards</Link><Link href="/social-share/posts" prefetch={false}>Post library</Link><Link href="/social-share/player-cards" prefetch={false}>Player cards</Link></nav></div><span className={styles.scope}>{!supported ? "Sources not ready" : format === "tuesday-trends" ? "Sources: rolling game metrics, Yahoo ownership, NHL schedule" : "Source: NHL schedule"}</span></header>
+    {!supported ? <section className={styles.panel}><h2>Not available yet</h2><p>This studio opens once it has current-season player data, dated ownership, game participation and the rights to use them. Until then it ranks no players.</p><a href="/social-share/game-grid">Open the weekly schedule</a></section> : <>
       <section className={styles.panel} aria-label="Schedule settings">
         <div className={styles.controls}>
           <label>Week of (Monday)<input type="date" value={weekStart} onChange={event => changeWeek(event.target.value)} disabled={loading || exporting} /></label>
@@ -892,24 +893,27 @@ export default function SocialShare({ format, asOf }: { format: SocialShareForma
             </>}
           </select></label>
         </div>
-        <fieldset className={styles.days} disabled={!snapshot || !snapshotMatchesWeek || loading || exporting}><legend>Selected days · America/New_York</legend>
-          {(snapshot?.days || weekDates(weekStart).map((date, index) => ({ date, label: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][index], selected: false, leagueGames: 0, offNight: false }))).map(day => <button type="button" key={day.date} aria-pressed={day.selected} onClick={() => select(snapshot!.selectedDates.includes(day.date) ? snapshot!.selectedDates.filter(date => date !== day.date) : [...snapshot!.selectedDates, day.date])}>
+        <fieldset className={styles.days} disabled={!snapshot || !snapshotMatchesWeek || loading || exporting}><legend>Selected days · New York time</legend>
+          {/* Seven equal day tiles, then the two bulk actions set apart so they never read as extra days. */}
+          <div className={styles.dayGrid}>{(snapshot?.days || weekDates(weekStart).map((date, index) => ({ date, label: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][index], selected: false, leagueGames: 0, offNight: false }))).map(day => <button type="button" key={day.date} aria-pressed={day.selected} onClick={() => select(snapshot!.selectedDates.includes(day.date) ? snapshot!.selectedDates.filter(date => date !== day.date) : [...snapshot!.selectedDates, day.date])}>
             <strong>{day.label.slice(0, 3)}</strong><span>{dateLabel(day.date)}</span><small>{day.selected ? "ON" : "OFF"}{snapshot ? ` · ${day.leagueGames} games` : ""}</small>
-          </button>)}
-          <button type="button" onClick={() => select(snapshot!.days.map(day => day.date))}>All days</button><button type="button" onClick={() => select([])}>None</button>
+          </button>)}</div>
+          <div className={styles.dayBulk}><button type="button" onClick={() => select(snapshot!.days.map(day => day.date))}>All days</button><button type="button" onClick={() => select([])}>None</button></div>
         </fieldset>
         {format === "remaining-week" && <p>Default: Monday, Tuesday and Wednesday OFF; Thursday–Sunday ON. Remaining games use the edition’s frozen time.</p>}
       </section>
       <div className={styles.status} aria-live="polite">
         {loading && <p>Loading a new schedule edition…</p>}
-        {error && <p role="alert">{error} <button type="button" disabled={loading || exporting} onClick={() => void load(weekStart, selectedRef.current)}>Retry schedule</button></p>}
-        {snapshot && <><p>NHL schedule checked {timeLabel(snapshot.source.fetchedAt)} · Provider update {timeLabel(snapshot.source.updatedAt)} · Remaining after {timeLabel(snapshot.generatedAt)}</p>
+        {/* Retry sits here while an edition is loaded, and inside the empty frame when none is: one Retry at a time. */}
+        {error && <p role="alert">{error}{snapshot && <> <button type="button" disabled={loading || exporting} onClick={() => void load(weekStart, selectedRef.current)}>Retry schedule</button></>}</p>}
+        {/* The NHL's own update time shows only when it sent one; "Provider update Not available" told the editor nothing. */}
+        {snapshot && <><p>NHL schedule checked {timeLabel(snapshot.source.fetchedAt)}{snapshot.source.updatedAt && <> · NHL updated it {timeLabel(snapshot.source.updatedAt)}</>} · Remaining games after {timeLabel(snapshot.generatedAt)}</p>
           {!snapshotMatchesWeek && <p>Showing the previous week, {yearDateLabel(snapshot.weekStart)} – {yearDateLabel(snapshot.weekEnd)}, as context. Load the requested week to select its days.</p>}
           {snapshot.state !== "ready" && <p>Schedule {snapshot.state}: {[...snapshot.reasons, ...snapshot.source.reasons].join(" ")}</p>}
           {expired && <p>This edition has expired. Refresh the schedule to download.</p>}
           {!snapshot.selectedDates.length ? <p>No days selected. Choose days to compare schedule opportunities.</p> : !snapshot.rows.some(row => row.remainingGames > 0) && <p>No remaining eligible games on the selected dates.</p>}
         </>}
-        {assetError && <p role="alert">{assetError} <button type="button" disabled={exporting} onClick={() => void prepareAssets()}>Retry preview preparation</button></p>}
+        {assetError && <p role="alert">{assetError}{previewShown && <> <button type="button" disabled={exporting} onClick={() => void prepareAssets()}>Retry preview preparation</button></>}</p>}
       </div>
       <div className={styles.workspace}>
         <section className={styles.panel} aria-label="Graphic preview">
@@ -945,7 +949,12 @@ export default function SocialShare({ format, asOf }: { format: SocialShareForma
               </footer>
               </>}
             </div>}
-            {!assetsReady ? <p>Preparing local fonts and branding…</p> : !squareReady && snapshot && <p>Preparing team logos…</p>}
+            {/* The frame keeps the card's size, so say what is missing instead of leaving an empty square. */}
+            {!previewShown && <div className={styles.previewEmpty} data-testid="preview-empty">
+              <p>{assetError ? "No preview: the fonts or logo did not load." : !assetsReady ? "Preparing local fonts and branding…" : snapshot ? "Preparing team logos…" : error ? "No preview: the schedule did not load." : "Loading the schedule…"}</p>
+              {assetError ? <button type="button" disabled={exporting} onClick={() => void prepareAssets()}>Retry preview preparation</button>
+                : error && !snapshot && <button type="button" disabled={loading || exporting} onClick={() => void load(weekStart, selectedRef.current)}>Retry schedule</button>}
+            </div>}
           </div>
           <div className={styles.actions}><button type="button" disabled={!canExport || exporting} onClick={async () => {
             if (!preview.current || !snapshot) return; setExporting(true); setFeedback("");
@@ -959,10 +968,12 @@ export default function SocialShare({ format, asOf }: { format: SocialShareForma
           }}>Copy alt text</button></div><p role="status">{feedback}</p>
           {snapshot && <details><summary>Suggested alt text</summary><p>{squareAlt(snapshot)}</p></details>}
         </section>
-        <section className={styles.panel} aria-label="Complete ranked schedule"><div className={styles.panelHeader}><h2>All teams</h2><span>{snapshot?.rows.length || 0} teams</span></div>
+        {/* The trends graphics rank players, not schedules, so Tuesday has no team list (2,000px on phones). */}
+        {format !== "tuesday-trends" && <section className={styles.panel} aria-label="Complete ranked schedule"><div className={styles.panelHeader}><h2>All teams</h2><span>{snapshot?.rows.length || 0} teams</span></div>
           <p className={styles.explanation}>Schedule Score compares remaining selected games, off-night games and full-slate density. Odds and player projections are excluded. Zero-game teams have no score to publish. Matchups below include context; elapsed, live, postponed and nonregular games do not count as opportunities.</p>
-          <ol className={styles.teamList}>{displayRows.map(row => <li key={row.team.id}><div><strong>{trusted ? `#${row.rank} ` : ""}{row.team.name}</strong><span>{row.remainingGames} {trusted ? "left" : "known left"} · {row.offNightGames} {trusted ? "off-night" : "known off-night"} · {trusted ? `Score ${scoreLabel(row)}` : "Unranked; score unavailable"}</span></div><p>{row.games.filter(game => snapshot!.selectedDates.includes(game.date)).map(game => `${dateLabel(game.date)} ${game.homeTeam.id === row.team.id ? "vs" : "@"} ${game.homeTeam.id === row.team.id ? game.awayTeam.abbreviation : game.homeTeam.abbreviation} (${game.status}${game.gameType !== 2 ? ", nonregular" : ""}; ${timeLabel(game.startTimeUtc)})`).join(" · ") || "No games on selected dates"}</p></li>)}</ol>
-        </section>
+          {/* The list scrolls on desktop, so it takes focus to scroll by keyboard (WCAG 2.1.1). */}
+          <ol className={styles.teamList} tabIndex={0} aria-label="All teams, ranked">{displayRows.map(row => <li key={row.team.id}><div><strong>{trusted ? `#${row.rank} ` : ""}{row.team.name}</strong><span>{row.remainingGames} {trusted ? "left" : "known left"} · {row.offNightGames} {trusted ? "off-night" : "known off-night"} · {trusted ? `Score ${scoreLabel(row)}` : "Unranked; score unavailable"}</span></div><p>{row.games.filter(game => snapshot!.selectedDates.includes(game.date)).map(game => `${dateLabel(game.date)} ${game.homeTeam.id === row.team.id ? "vs" : "@"} ${game.homeTeam.id === row.team.id ? game.awayTeam.abbreviation : game.homeTeam.abbreviation} (${game.status}${game.gameType !== 2 ? ", nonregular" : ""}; ${timeLabel(game.startTimeUtc)})`).join(" · ") || "No games on selected dates"}</p></li>)}</ol>
+        </section>}
       </div>
     </>}
   </div>;

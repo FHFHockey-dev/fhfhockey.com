@@ -75,7 +75,7 @@ export const PERIOD_ROLLING = "rolling";
 export const SKATER_PERIOD_CONTROL: PeriodControl = { mode: "past-only" };
 export const SKATER_PERIOD_FIELDS: readonly ShareSettingField[] = [
   ...periodWindowFields({ mode: SKATER_PERIOD_CONTROL.mode, default: PERIOD_ROLLING, options: [{ value: PERIOD_ROLLING, label: "Recent games (L5, L10, season)" }, { value: PERIOD_MATCHUP, label: "Matchup week" }, { value: PERIOD_CUSTOM, label: "Custom range" }] }),
-  { id: "minGpRange", label: "Min GP in a week or range (blank is half the most played, at most 5)", kind: "number", default: null, min: 1, max: 82, step: 1 },
+  { id: "minGpRange", label: "Min GP in a week or range", blank: "half the most played, at most 5", kind: "number", default: null, min: 1, max: 82, step: 1 },
 ];
 export type SkaterPeriodSettings = PeriodWindowSettings & { minGpRange: number | null };
 export const skaterPeriodReason = (settings: Pick<PeriodWindowSettings, "period" | "start" | "end">) => settings.period === PERIOD_CUSTOM ? customRangeReason(settings) : null;

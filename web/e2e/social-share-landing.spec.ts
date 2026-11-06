@@ -110,29 +110,29 @@ test("the week strip: marked by hand, future days neutral, one click per day, an
   const strip = page.getByTestId("landing-strip");
   await expect(page.getByText(/Marked by hand/)).toBeVisible();
   await expect(strip.getByTestId("landing-strip-wed")).toHaveAttribute("data-today", "true");
-  await expect(strip.getByTestId("landing-strip-mon")).toContainText("❌");
-  await expect(strip.getByTestId("landing-strip-wed")).toContainText("❌");
+  await expect(strip.getByTestId("landing-strip-mon").locator("[data-mark]")).toHaveAttribute("data-mark", "missed");
+  await expect(strip.getByTestId("landing-strip-wed").locator("[data-mark]")).toHaveAttribute("data-mark", "missed");
   for (const day of ["thu", "fri", "sat", "sun"]) {
     const button = strip.getByTestId(`landing-strip-${day}`);
     await expect(button).toHaveAttribute("data-status", "upcoming");
-    await expect(button).not.toContainText("❌");
+    await expect(button.locator("[data-mark]")).not.toHaveAttribute("data-mark", "missed");
     await expect(button).toBeDisabled();
   }
   await expect(page.getByRole("checkbox")).toHaveCount(0);
 
   await strip.getByTestId("landing-strip-mon").click();
-  await expect(strip.getByTestId("landing-strip-mon")).toContainText("✅");
+  await expect(strip.getByTestId("landing-strip-mon").locator("[data-mark]")).toHaveAttribute("data-mark", "done");
   await page.reload();
-  await expect(strip.getByTestId("landing-strip-mon")).toContainText("✅");
+  await expect(strip.getByTestId("landing-strip-mon").locator("[data-mark]")).toHaveAttribute("data-mark", "done");
   await strip.getByTestId("landing-strip-tue").click();
   await strip.getByTestId("landing-strip-tue").click();
-  await expect(strip.getByTestId("landing-strip-tue")).toContainText("❌");
+  await expect(strip.getByTestId("landing-strip-tue").locator("[data-mark]")).toHaveAttribute("data-mark", "missed");
   expect(await page.evaluate(key => JSON.parse(window.localStorage.getItem(key)!), DAYS_KEY)).toEqual({ week: "2026-11-02", done: ["mon"] });
 
   await page.clock.setFixedTime(new Date("2026-11-09T16:00:00Z")); // The next Monday
   await page.reload();
   await expect(strip.getByTestId("landing-strip-mon")).toHaveAttribute("data-today", "true");
-  await expect(strip.getByTestId("landing-strip-mon")).toContainText("❌");
+  await expect(strip.getByTestId("landing-strip-mon").locator("[data-mark]")).toHaveAttribute("data-mark", "missed");
   await expect(strip.getByTestId("landing-strip-tue")).toHaveAttribute("data-status", "upcoming");
 });
 
@@ -149,16 +149,16 @@ test("the week strip from real posts: today reads not yet, future days are neutr
   const strip = page.getByTestId("landing-strip");
   await expect(page.getByText(/From @FHFHockey's posts.*Last live delivery Nov 2\./)).toBeVisible();
   await expect(page.getByText(/Marked by hand/)).toHaveCount(0);
-  await expect(strip.getByTestId("landing-strip-mon")).toContainText("✅");
+  await expect(strip.getByTestId("landing-strip-mon").locator("[data-mark]")).toHaveAttribute("data-mark", "done");
   await expect(strip.getByTestId("landing-strip-mon")).toHaveAttribute("aria-label", "Mon: posted, 2 posts");
   // A hand mark for Tuesday is ignored while the source answers.
-  await expect(strip.getByTestId("landing-strip-tue")).toContainText("❌");
+  await expect(strip.getByTestId("landing-strip-tue").locator("[data-mark]")).toHaveAttribute("data-mark", "missed");
   await expect(strip.getByTestId("landing-strip-tue")).not.toContainText("not yet");
   await expect(strip.getByTestId("landing-strip-tue")).toHaveAttribute("aria-label", "Tue: no post recorded");
-  await expect(strip.getByTestId("landing-strip-wed")).toContainText("❌");
+  await expect(strip.getByTestId("landing-strip-wed").locator("[data-mark]")).toHaveAttribute("data-mark", "missed");
   await expect(strip.getByTestId("landing-strip-wed")).toContainText("not yet");
   await expect(strip.getByTestId("landing-strip-wed")).toHaveAttribute("aria-label", "Wed (today): not yet");
-  await expect(strip.getByTestId("landing-strip-thu")).not.toContainText("❌");
+  await expect(strip.getByTestId("landing-strip-thu").locator("[data-mark]")).not.toHaveAttribute("data-mark", "missed");
   await expect(strip.getByRole("button")).toHaveCount(0);
   await expect(page.getByTestId("landing-posted-cards")).toHaveText(/Posts by card, this week:\s*Game Grid 1\s*Unmatched 1\s*No date 1/);
 
@@ -172,7 +172,7 @@ test("the week strip from real posts: today reads not yet, future days are neutr
   await page.screenshot({ path: "test-results/social-share-landing/desktop-posted-strip.png" });
 });
 
-test("a stale source reads no record, not ❌, and says why", async ({ page }) => {
+test("a stale source reads no record, not a cross, and says why", async ({ page }) => {
   await page.clock.setFixedTime(new Date("2026-11-04T16:00:00Z")); // Wednesday
   const statuses = { mon: "noRecord", tue: "noRecord", wed: "noRecord", thu: "upcoming", fri: "upcoming", sat: "upcoming", sun: "upcoming" };
   await page.route("**/api/v1/social-share/posted-week", route => route.fulfill({ json: {
@@ -183,7 +183,7 @@ test("a stale source reads no record, not ❌, and says why", async ({ page }) =
   await expect(page.getByText(/No live delivery since Oct 30, so later days have no record\./)).toBeVisible();
   const strip = page.getByTestId("landing-strip");
   for (const day of ["mon", "tue", "wed"]) {
-    await expect(strip.getByTestId(`landing-strip-${day}`)).not.toContainText("❌");
+    await expect(strip.getByTestId(`landing-strip-${day}`).locator("[data-mark]")).not.toHaveAttribute("data-mark", "missed");
     await expect(strip.getByTestId(`landing-strip-${day}`)).toContainText("no record");
   }
   await expect(strip.getByTestId("landing-strip-wed")).toHaveAttribute("aria-label", "Wed (today): no record");
@@ -196,7 +196,7 @@ test("no dated posts: hand marking, with the undated count shown", async ({ page
   await expect(page.getByText(/Marked by hand/)).toBeVisible();
   await expect(page.getByTestId("landing-posted-undated")).toHaveText("Posts received with no date: 2");
   await page.getByTestId("landing-strip-mon").click();
-  await expect(page.getByTestId("landing-strip-mon")).toContainText("✅");
+  await expect(page.getByTestId("landing-strip-mon").locator("[data-mark]")).toHaveAttribute("data-mark", "done");
 });
 
 test("a failed read says so and falls back to hand marking", async ({ page }) => {
@@ -204,7 +204,7 @@ test("a failed read says so and falls back to hand marking", async ({ page }) =>
   await page.goto("/social-share");
   await expect(page.getByText(/Could not read posts\. Marked by hand/)).toBeVisible();
   await page.getByTestId("landing-strip-mon").click();
-  await expect(page.getByTestId("landing-strip-mon")).toContainText("✅");
+  await expect(page.getByTestId("landing-strip-mon").locator("[data-mark]")).toHaveAttribute("data-mark", "done");
 });
 
 test("crossing midnight with the tab visible: today and the week move on with no reload", async ({ page }) => {
@@ -213,11 +213,11 @@ test("crossing midnight with the tab visible: today and the week move on with no
   await page.goto("/social-share");
   const strip = page.getByTestId("landing-strip");
   await expect(strip.getByTestId("landing-strip-sun")).toHaveAttribute("data-today", "true");
-  await expect(strip.getByTestId("landing-strip-mon")).toContainText("✅");
+  await expect(strip.getByTestId("landing-strip-mon").locator("[data-mark]")).toHaveAttribute("data-mark", "done");
 
   await page.clock.fastForward("02:00"); // Monday 00:01
   await expect(strip.getByTestId("landing-strip-mon")).toHaveAttribute("data-today", "true");
-  await expect(strip.getByTestId("landing-strip-mon")).toContainText("❌");
+  await expect(strip.getByTestId("landing-strip-mon").locator("[data-mark]")).toHaveAttribute("data-mark", "missed");
   await expect(strip.getByTestId("landing-strip-sun")).toHaveAttribute("data-status", "upcoming");
   await expect(strip.getByTestId("landing-strip-tue")).toBeDisabled();
 });
@@ -232,7 +232,7 @@ test("a click in the minute before the page catches up cannot mark a day that ha
   await strip.getByTestId("landing-strip-tue").click();
   await expect(strip.getByTestId("landing-strip-mon")).toHaveAttribute("data-today", "true");
   await expect(strip.getByTestId("landing-strip-tue")).toHaveAttribute("data-status", "upcoming");
-  await expect(strip.getByTestId("landing-strip-tue")).not.toContainText("✅");
+  await expect(strip.getByTestId("landing-strip-tue").locator("[data-mark]")).not.toHaveAttribute("data-mark", "done");
   expect(await page.evaluate(key => window.localStorage.getItem(key), DAYS_KEY)).toBeNull();
 });
 
@@ -242,13 +242,13 @@ test("the week strip falls back to hand marking when the source has no posts, or
   await page.goto("/social-share");
   await expect(page.getByText(/Marked by hand/)).toBeVisible();
   await page.getByTestId("landing-strip-mon").click();
-  await expect(page.getByTestId("landing-strip-mon")).toContainText("✅");
+  await expect(page.getByTestId("landing-strip-mon").locator("[data-mark]")).toHaveAttribute("data-mark", "done");
   await expect(page.getByTestId("landing-posted-cards")).toHaveCount(0);
 
   await page.route("**/api/v1/social-share/posted-week", route => route.fulfill({ json: { available: true, week: "2026-10-26", today: "sun", trackedFrom: "2026-10-01", latest: "2026-10-30T17:00:00Z", stale: false, undated: 0, days: [], cards: [], unmatched: 0 } }));
   await page.reload();
   await expect(page.getByText(/Marked by hand/)).toBeVisible();
-  await expect(page.getByTestId("landing-strip-mon")).toContainText("✅");
+  await expect(page.getByTestId("landing-strip-mon").locator("[data-mark]")).toHaveAttribute("data-mark", "done");
 });
 
 test("quick links: a section jump, a card chip that scrolls its row by keyboard, and the filter", async ({ page }) => {
@@ -281,13 +281,16 @@ test("quick links: a section jump, a card chip that scrolls its row by keyboard,
   expect((await sectionOrder(page)).length).toBe(10);
 });
 
-test("phone: no page overflow in either sort, a centred 90% page, and each row scrolls on its own", async ({ page }) => {
+// The studio page is 90% wide and centred from tablet up, and full width on phones (TJ, 2026-11-06).
+const pageBox = (page: Page) => page.getByRole("heading", { name: "Build a card" }).evaluate(node => { const rect = node.closest("[class*='SocialShare_page']")!.getBoundingClientRect(); return { left: rect.left, right: rect.right, width: rect.width }; });
+
+test("phone: no page overflow in either sort, a full-width page, and each row scrolls on its own", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await page.goto("/social-share");
   await expect(page.getByRole("heading", { name: "Build a card" })).toBeVisible();
   await noPageOverflow(page);
-  const box = await page.getByRole("heading", { name: "Build a card" }).evaluate(node => { const rect = node.closest("[class*='landing']")!.getBoundingClientRect(); return { left: rect.left, right: rect.right, width: rect.width }; });
-  expect(box.width).toBeLessThanOrEqual(375 * 0.9 + 1);
+  const box = await pageBox(page);
+  expect(box.width).toBeGreaterThanOrEqual(375 - 1);
   expect(Math.abs(box.left - (375 - box.right))).toBeLessThanOrEqual(1);
   for (const day of ["mon", "sun"]) { const strip = (await page.getByTestId(`landing-strip-${day}`).boundingBox())!; expect(strip.x).toBeGreaterThanOrEqual(0); expect(strip.x + strip.width).toBeLessThanOrEqual(375); }
   await page.waitForTimeout(800);
@@ -304,10 +307,13 @@ test("phone: no page overflow in either sort, a centred 90% page, and each row s
   await page.screenshot({ path: "test-results/social-share-landing/phone-by-day.png" });
 });
 
-test("desktop: one side-scrolling row per section, no page overflow", async ({ page }) => {
+test("desktop: a centred 90% page, one side-scrolling row per section, no page overflow", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/social-share");
   await expect(page.getByRole("heading", { name: "Build a card" })).toBeVisible();
+  const box = await pageBox(page);
+  expect(box.width).toBeLessThanOrEqual(1440 * 0.9 + 1);
+  expect(Math.abs(box.left - (1440 - box.right))).toBeLessThanOrEqual(1);
   const goalies = page.getByTestId("landing-row-goalies");
   expect(await goalies.evaluate(node => node.scrollWidth > node.clientWidth)).toBe(true);
   const tops = await goalies.getByTestId("landing-tile").evaluateAll(nodes => new Set(nodes.map(node => node.getBoundingClientRect().top)).size);

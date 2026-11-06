@@ -2,7 +2,16 @@
 
 /* Settings: the post and its state, then Timeframe and Options groups. Labels sit above their controls. */
 .settings { display: grid; gap: v.$space-md; }
-.postRow { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: v.$space-sm;
+.lead, .groups { display: grid; gap: v.$space-md; align-content: start; min-width: 0; }
+/* Wide screens: post + summary | Timeframe + Options, split by a hairline, so the card starts higher (pass 6, 2026-11-06). */
+@media (min-width: 1100px) {
+  .settings { grid-template-columns: minmax(18rem, 28rem) minmax(0, 1fr); column-gap: v.$space-xl; }
+  .groups { padding-left: v.$space-xl; border-left: 1px solid v.$border-soft;
+    > .group:first-child { padding-top: 0; border-top: 0; }
+  }
+}
+/* The sync state sits right after the select it describes. */
+.postRow { display: flex; flex-wrap: wrap; align-items: flex-end; gap: v.$space-sm v.$space-md;
   .field { flex: 0 1 22rem; }
 }
 /* A field is its label (wrapping the control, so specs and screen readers find it by the label) and any note under it. */
@@ -13,6 +22,17 @@
   input[aria-invalid="true"] { border-color: v.$warning-color; }
 }
 .field[data-wide] { grid-column: 1 / -1; max-width: 32rem; }
+/* A checkbox group (a fixed set such as goalie categories): legend type as the field labels, boxes in one wrapping row. */
+.choices { display: flex; flex-wrap: wrap; gap: v.$space-xxs v.$space-md; min-width: 0; margin: 0; padding: 0; border: 0;
+  label { display: inline-flex; align-items: center; gap: v.$space-xs; min-height: v.$touch-target-inline; color: v.$text-primary; font-size: v.$font-size-sm; font-variant-numeric: tabular-nums; cursor: pointer;
+    @media (pointer: coarse) { min-height: v.$touch-target-min; }
+  }
+  /* Native boxes, not the studio's field box: no field padding, border or 44px height. */
+  input[type="checkbox"] { width: v.$control-checkbox-size; height: v.$control-checkbox-size; min-height: 0; margin: 0; padding: 0; accent-color: v.$primary-color; cursor: pointer; }
+  input[type="checkbox"]:disabled { cursor: default; }
+}
+/* Outranks `.group legend` (the Options header's blue caps): this legend names one field, like the field labels. */
+.fields .choices legend { float: left; width: 100%; padding: 0; margin-bottom: v.$space-xs; color: v.$text-primary; font-size: v.$font-size-sm; font-weight: 600; text-transform: none; letter-spacing: normal; }
 /* A select with long option names takes two columns where two fit, so its choice is not cut off. */
 @media (min-width: 340px) { .field[data-roomy] { grid-column: span 2; } }
 .summary { max-width: 75ch; margin-top: -(v.$space-sm); color: v.$text-secondary; font-size: v.$font-size-sm; line-height: 1.4; }
@@ -21,6 +41,8 @@
 .sync[data-state="ready"]::before { background: v.$success-color; }
 .sync[data-state="loading"]::before { background: v.$primary-color; animation: syncPulse 1s ease-in-out infinite alternate; }
 .sync[data-state="held"] { color: v.$warning-color; }
+/* A failed request is a step past a hold: the status palette's red (6.6:1 on the panel), same dot and text. */
+.sync[data-state="failed"] { color: v.$color-pink-red; }
 @keyframes syncPulse { to { opacity: 0.3; } }
 @media (prefers-reduced-motion: reduce) { .sync[data-state="loading"]::before { animation: none; } }
 .group { min-width: 0; margin: 0; padding: v.$space-md 0 0; border: 0; border-top: 1px solid v.$border-soft;
@@ -28,7 +50,7 @@
   > :not(legend) { clear: both; }
 }
 /* The Options header is its toggle: legend type with a chevron, outranking the page's boxed button rule. */
-.group legend .disclosure { display: inline-flex; align-items: center; gap: v.$space-xs; min-height: 24px; padding: 0; border: 0; background: none; color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer;
+.group legend .disclosure { display: inline-flex; align-items: center; gap: v.$space-xs; min-height: v.$touch-target-inline; padding: 0; border: 0; background: none; color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer;
   &::after { content: ""; width: 6px; height: 6px; margin-left: v.$space-xxs; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-45deg); transition: transform 0.15s ease; }
   &[aria-expanded="true"]::after { transform: rotate(45deg); }
 }
@@ -39,7 +61,7 @@
 .fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); gap: v.$space-md v.$space-sm; }
 .problem { margin: 0; color: v.$warning-color; font-size: v.$font-size-sm; }
 /* A quiet text button under a changed field; it outranks the page's 44px button rule but keeps a 24px target. */
-.field .reset { justify-self: start; min-height: 24px; padding: 0; border: 0; background: none; color: v.$color-blue-300; font-size: v.$font-size-xs; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+.field .reset { justify-self: start; min-height: v.$touch-target-inline; padding: 0; border: 0; background: none; color: v.$color-blue-300; font-size: v.$font-size-xs; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
 .field .reset:hover:not(:disabled) { background: none; color: v.$color-white; }
 .hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .defaultNote { display: block; color: v.$text-secondary; font-size: v.$font-size-sm; }
@@ -49,12 +71,11 @@
 .pagerBlock { display: grid; gap: v.$space-xs; min-width: 0; max-width: 100%; }
 .pager { display: flex; align-items: center; gap: v.$space-xs; min-width: 0;
   button { flex: none; width: v.$touch-target-min; padding: 0; }
-  button:focus-visible { outline: 2px solid v.$primary-color; outline-offset: 2px; }
 }
 .pagerLabel { min-width: 0; text-align: center; color: v.$color-white; font-size: v.$font-size-sm; font-weight: 600; font-variant-numeric: tabular-nums; }
 .postBody { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; font-family: "Share Roboto Condensed", sans-serif; }
 .unavailable { margin: auto; display: grid; gap: v.$space-sm; text-align: center; padding: 0 v.$space-xxl; font-size: 26px; strong { font-size: 38px; } p { margin: 0; color: v.$text-secondary; } }
-.evidence { display: grid; gap: 2px; overflow-wrap: anywhere; margin: v.$space-sm 0 0; font-size: 14px; line-height: 1.25; color: v.$text-secondary; b { color: v.$color-white; font-weight: 600; } }
+.evidence { display: grid; gap: v.$space-xxs; overflow-wrap: anywhere; margin: v.$space-sm 0 0; font-size: v.$font-size-sm; line-height: 1.25; color: v.$text-secondary; b { color: v.$color-white; font-weight: 600; } }
 .footer { font-size: 13px; p { margin: 0; } strong { white-space: nowrap; } }
 .warning { color: v.$warning-color; font-weight: 600; }
 .pageNotes { display: grid; gap: v.$space-xs; margin: 0 0 v.$space-sm; padding: v.$space-xs v.$space-sm; border-left: 3px solid v.$warning-color; font-size: v.$font-size-sm; overflow-wrap: anywhere;
@@ -63,5 +84,14 @@
 
 /* A hand-built post: its sidebar beside the preview, stacked on narrow screens. */
 .builder { display: grid; grid-template-columns: minmax(280px, 380px) minmax(0, 1fr); gap: v.$space-md; align-items: start;
-  @media (max-width: 900px) { grid-template-columns: minmax(0, 1fr); }
+  /* The preview stays in view, clear of the sticky site header, while the editor works down a long pick list. */
+  > section { position: sticky; top: v.$site-header-offset; }
+  @media (max-width: 900px) { grid-template-columns: minmax(0, 1fr); > section { position: static; } }
 }
+
+/* The preview panel: on a wide panel the card and its actions keep a 540px column and the evidence takes the rest beside
+   it (TJ, 2026-11-06), so the fine print never runs the full width under a small card. Narrow panels stack as before. */
+.previewPanel { container-type: inline-size; }
+.previewBody { display: grid; gap: v.$space-xs; min-width: 0; }
+.previewMain, .previewSide { display: grid; align-content: start; min-width: 0; }
+@container (min-width: 880px) { .previewBody { grid-template-columns: minmax(0, 540px) minmax(0, 1fr); column-gap: v.$space-lg; align-items: start; } }
