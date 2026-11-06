@@ -128,6 +128,15 @@ export async function readReportSource<T>(
   return result;
 }
 
+// Postgres and PostgREST errors arrive in their own words; say what happened.
+export function describeSourceError(error: string | null): string | null {
+  if (!error) return null;
+  if (/canceling statement due to statement timeout/i.test(error)) {
+    return "the database cancelled the read (statement timeout)";
+  }
+  return error;
+}
+
 export function formatReportTime(iso: string): string {
   return `${iso} / ${new Date(iso).toLocaleString("en-US", { timeZone: "America/New_York", timeZoneName: "short" })}`;
 }

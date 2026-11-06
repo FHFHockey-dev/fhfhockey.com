@@ -39,6 +39,7 @@ interface CronAuditEmailProps {
   goalieFreshness?: GoalieFreshness;
   audits: AuditEntry[];
   configuredVercelSchedules?: Array<{ route: string; schedule: string; activation: "unverified"; receiptCount?: number; latestReceiptStatus?: string; latestReceiptAt?: string | null }>;
+  edgeFunctionDispatches?: Array<{ jobName: string; route: string | null; queued: number; failed: number; latestAt: string | null }>;
   sinceDate: string;
   untilDate?: string;
   totalsComplete?: boolean;
@@ -88,7 +89,7 @@ const LABEL_ORDER = ["MISSING", "PARTIAL", "NEAR LIMIT", "NEAR BUDGET", "CONTINU
 
 type FailureGroup = { jobName: string; rows: AuditEntry[]; latest: AuditEntry; lastSuccess: string | null; recovered: boolean };
 
-export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({ audits, sinceDate, untilDate, totalsComplete = true, fetchErrors = [], successHistory, summary, configuredVercelSchedules = [], goalieFreshness }) => {
+export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({ audits, sinceDate, untilDate, totalsComplete = true, fetchErrors = [], successHistory, summary, configuredVercelSchedules = [], edgeFunctionDispatches = [], goalieFreshness }) => {
   const globalWarnings = Array.from(new Set([
     ...fetchErrors,
     ...audits.flatMap((row) => row.missingObservationWarnings ?? []).filter((warning) => warning.includes("Telemetry source unavailable")),
@@ -220,6 +221,12 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({ audits, sinceDat
       <div>These callers are outside the pg_cron job denominator. Audit observations may appear above; configuration alone does not prove a scheduled run.</div>
       {configuredVercelSchedules.map((entry) => <div key={`${entry.route}|${entry.schedule}`} style={{ overflowWrap: "anywhere" }}>{entry.route} · {entry.schedule} UTC · {entry.receiptCount ?? 0} matching receipts; {entry.latestReceiptStatus ?? "unknown"} observed, scheduled execution unverified</div>)}
     </div> : null}
+    {edgeFunctionDispatches.length > 0 ? <div style={{ ...muted, marginTop: 18 }}>
+      <strong>Supabase Edge Functions queued by pg_cron</strong>
+      <div>pg_cron confirms each request was queued. These functions write no cron_job_audit row, so their results are not counted here.</div>
+      {edgeFunctionDispatches.map((entry) => <div key={entry.jobName} style={{ overflowWrap: "anywhere", color: entry.failed > 0 ? red : undefined }}>
+        {entry.jobName} · {entry.queued.toLocaleString("en-US")} queued{entry.failed > 0 ? ` · ${entry.failed} failed to queue` : ""}{entry.latestAt ? ` · latest ${localOf(formatReportTime(entry.latestAt))}` : ""}</div>)}
+    </div> : null}
     <p style={{ ...muted, marginTop: 18 }}>{healthyCount} healthy job{healthyCount === 1 ? "" : "s"}; not listed individually.</p>
     {audits.length === 0 ? <p>No job observations available.</p> : null}
 
@@ -229,7 +236,7 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({ audits, sinceDat
         {` · Upserts: ${summary.metricRowsKnown === 0 ? "total unknown (0 confirmed observations)" : `${summary.totalRowsUpserted.toLocaleString("en-US")}${writeTotalKnown ? "" : " observed; total unknown"}`}`}
         {` · Error rows: ${errorTotalKnown ? `${summary.totalFailedRows.toLocaleString("en-US")} explicitly reported` : `total unknown (${summary.totalFailedRows.toLocaleString("en-US")} observed in ${summary.metricErrorsKnown ?? 0}/${metricJobs ?? "unknown"} applicable job receipts)`}`}
       </div>
-      {successHistory ? <div style={{ marginTop: 4 }}>Success lookback {successHistory.since} – {successHistory.until}. {successHistory.complete ? "No match means unknown, not never succeeded." : "Lookup incomplete; latest success is unverified."}{successHistory.error ? ` ${concise(successHistory.error)}` : ""}</div> : null}
+      {successHistory ? <div style={{ marginTop: 4 }}>Success lookback {successHistory.since} – {successHistory.until}. {successHistory.complete ? "No match means unknown, not never succeeded." : "Lookup incomplete; latest success is unverified."}{successHistory.error ? ` Reason: ${concise(successHistory.error)}.` : ""}</div> : null}
       <div style={{ marginTop: 4 }}>UTC window {sinceDate}{untilDate ? ` – ${untilDate}` : ""}. Counts are observations, not a transactional snapshot.</div>
     </div>
   </div>;

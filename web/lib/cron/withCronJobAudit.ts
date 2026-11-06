@@ -265,6 +265,10 @@ export function withCronJobAudit(
     // Limit persisted response data to safe primitive summary fields. The API
     // response and outcome inference still use the complete handler result.
     responsePreviewKeys?: readonly string[];
+    // Return true for a clean run that did no work (for example an empty
+    // queue poll). That run writes no audit row. Failures, continuations,
+    // non-2xx responses and runs that did work are always audited.
+    skipAuditWhenNoOp?: (body: unknown) => boolean;
   }
 ): (req: any, res: any) => Promise<void> {
   return async (req: NextApiRequest, res: NextApiResponse) => {
@@ -361,6 +365,10 @@ export function withCronJobAudit(
     }
 
     let finalAuditStatus: "persisted" | "failed" | "unverified" = "unverified";
+    // A final-audit receipt promises a persisted row, so it never skips.
+    const auditSkipped = thrown == null && !plannedContinuation && !inferredFailure &&
+      statusCode >= 200 && statusCode < 300 && !opts?.includeFinalAuditReceipt &&
+      opts?.skipAuditWhenNoOp?.(capturedBody) === true;
 
     const auditBody = opts?.responsePreviewKeys == null
       ? capturedBody
@@ -405,7 +413,7 @@ export function withCronJobAudit(
     };
 
     try {
-      try {
+      if (!auditSkipped) try {
         const controller = new AbortController();
         let timer: ReturnType<typeof setTimeout> | undefined;
         const query = supabase.from("cron_job_audit").insert(row as any);
@@ -445,7 +453,9 @@ export function withCronJobAudit(
       if (originalSend) {
         res.send = originalSend as any;
       }
-      if (finalAuditStatus !== "persisted") {
+      if (auditSkipped) {
+        // No receipt was promised or written; flush the handler response as is.
+      } else if (finalAuditStatus !== "persisted") {
         // A failed/uncertain audit never hides behind a successful operation or
         // an opt-out from positive receipts. Callers must hold, not replay.
         res.status(503);

@@ -32,19 +32,20 @@ function reportQuery(mock: ReturnType<typeof vi.fn>, args: unknown[], cron = fal
   let to = 499;
   const bounds: Record<string, string> = {};
   let statuses: string[] | null = null;
+  let jobNames: string[] | null = null;
   const query = {
     gte: (field: string, value: string) => { bounds.since = value; bounds.field = field; return query; },
     lte: (_field: string, value: string) => { bounds.until = value; return query; },
-    in: (_field: string, values: string[]) => { statuses = values; return query; },
+    in: (field: string, values: string[]) => { if (field === "job_name") jobNames = values; else statuses = values; return query; },
     order: vi.fn(() => query),
     range: (start: number, end: number) => { from = start; to = end; return query; },
     abortSignal: async () => {
       const response = statuses
-        ? await cronJobAuditHistorySelectMock(...args, { ...bounds, statuses, from, to })
+        ? await cronJobAuditHistorySelectMock(...args, { ...bounds, statuses, jobNames, from, to })
         : await mock(...args);
       const rows = (response.data ?? []).map((row: any, index: number) => cron ? { runid: index + 1, ...row } : row)
         .filter((row: any) => row[bounds.field] >= bounds.since && row[bounds.field] <= bounds.until &&
-          (!statuses || statuses.includes(row.status)));
+          (!statuses || statuses.includes(row.status)) && (!jobNames || jobNames.includes(row.job_name)));
       return { ...response, data: rows.slice(from, to + 1), count: response.count === undefined ? rows.length : response.count };
     },
   };
@@ -193,7 +194,8 @@ SELECT cron.schedule('daily','0 8 * * *',$$SELECT 1;$$);`);
     expect(resendSendMock).toHaveBeenCalledTimes(1);
     const sent = resendSendMock.mock.calls[0][0];expect(sent.subject).toContain("incomplete telemetry");
     const html = renderToStaticMarkup(sent.react);
-    expect(html).toContain("3000 observations retained; totals unknown");
+    expect(html).toContain("Read stopped after 3,000 rows; totals unknown");
+    expect(html).toContain("the database cancelled the read (statement timeout)");
     expect(html).toContain("configured Vercel schedules; activation unverified");
     expect(html).toContain("Failure total unknown (0 observed)");
     expect(html).not.toContain("Runs look healthy");
@@ -253,13 +255,13 @@ SELECT cron.schedule('daily','0 8 * * *',$$SELECT 1;$$);`);
       details: { method: "POST", url: "/api/v1/game-predictions/forecast?horizonDays=3&mode=daily", error: "failed" },
     }], error: null });
     const otherSuccesses = Array.from({ length: 1000 }, (_, index) => ({
-      job_name: `other-${index}`, run_time: "2026-03-18T12:00:00.000Z", status: "success",
+      job_name: "h3", run_time: `2026-03-18T12:${String(Math.floor(index / 60)).padStart(2, "0")}:${String(index % 60).padStart(2, "0")}.000Z`, status: "success",
       details: { method: index % 2 ? "POST" : "GET", url: index % 2
         ? "/api/v1/game-predictions/forecast?horizonDays=1&mode=daily"
         : "/api/v1/game-predictions/forecast?horizonDays=3&mode=daily" },
     }));
     cronJobAuditHistorySelectMock.mockResolvedValue({ data: [...otherSuccesses, {
-      job_name: "h3-old-name", run_time: "2026-03-17T12:00:00.000Z", status: "success",
+      job_name: "/api/v1/game-predictions/forecast", run_time: "2026-03-17T12:00:00.000Z", status: "success",
       details: { method: "POST", url: "/api/v1/game-predictions/forecast?mode=daily&horizonDays=3" },
     }], error: null });
     const res = createMockRes();
@@ -269,6 +271,7 @@ SELECT cron.schedule('daily','0 8 * * *',$$SELECT 1;$$);`);
     expect(res.body.sources.successHistory).toMatchObject({ complete: true, pages: 2, verificationPages: 2, expectedCount: 1001 });
     expect(cronJobAuditHistorySelectMock).toHaveBeenCalledWith(expect.anything(), expect.anything(), expect.objectContaining({
       since: "2026-02-18T12:10:00.000Z", until: "2026-03-19T12:10:00.000Z", from: 1000, to: 1999,
+      jobNames: ["h3", "/api/v1/game-predictions/forecast"],
     }));
     expect(res.body.counts).toMatchObject({ auditRuns: 1, auditFailures: 1, auditSuccesses: 0 });
   });
@@ -279,7 +282,7 @@ SELECT cron.schedule('daily','0 8 * * *',$$SELECT 1;$$);`);
       details: { method: "POST", url: "/api/v1/db/run-projection-v2", error: "failed" },
     }], error: null });
     const rows = Array.from({ length: 9000 }, (_, index) => ({
-      job_name: `older-${index}`, run_time: "2026-03-18T12:00:00.000Z", status: "success",
+      job_name: "run-forge-projection-v2", run_time: `2026-03-18T12:${String(Math.floor(index / 60) % 60).padStart(2, "0")}:${String(index % 60).padStart(2, "0")}.${String(Math.floor(index / 3600)).padStart(3, "0")}Z`, status: "success",
       details: { method: "POST", url: "/api/v1/db/run-projection-v2" },
     }));
     cronJobAuditHistorySelectMock.mockResolvedValue({ data: rows, error: null });
@@ -647,6 +650,39 @@ SELECT cron.schedule(
         partialFailureJobs: [],
       }),
     });
+  });
+
+  it("summarizes queued Edge Function requests and matches a pg_cron jobid despite query drift", async () => {
+    readFileMock.mockResolvedValue('```json\n' + JSON.stringify([{ jobid: 391, jobname: "update-lineup-deployment-tallies",
+      schedule: "55 9 * * *", active: true, method: "GET", route: "/api/v1/db/update-lineup-deployment-tallies" }]) + '\n```');
+    const edgeRun = (minute: string) => ({ jobid: 400, jobname: "x-timeline-poll", scheduled_time: `2026-03-20T11:${minute}:00.000Z`,
+      end_time: `2026-03-20T11:${minute}:00.100Z`, status: "succeeded", return_message: "1 row",
+      sql_text: "select net.http_post(url := 'https://example.supabase.co/functions/v1/x-timeline-poll');" });
+    cronJobReportSelectMock.mockResolvedValue({ data: [
+      { jobid: 391, jobname: "update-lineup-deployment-tallies", scheduled_time: "2026-03-20T09:55:00.000Z",
+        end_time: "2026-03-20T09:55:00.100Z", status: "succeeded", return_message: "1 row",
+        sql_text: "select net.http_get(url := 'https://fhfhockey.com/api/v1/db/update-lineup-deployment-tallies?action=current');" },
+      edgeRun("00"), edgeRun("02"),
+      { jobid: 999, jobname: "unlisted-route", scheduled_time: "2026-03-20T11:30:00.000Z", end_time: "2026-03-20T11:30:00.100Z",
+        status: "succeeded", return_message: "1 row", sql_text: "select net.http_get(url := 'https://fhfhockey.com/api/v1/db/unlisted');" },
+    ], error: null });
+    cronJobAuditSelectMock.mockResolvedValue({ data: [], error: null });
+    const res = createMockRes();
+    await handler({ method: "GET" } as any, res);
+    const props = cronAuditEmailMock.mock.calls.at(-1)?.[0];
+    expect(props.edgeFunctionDispatches).toEqual([expect.objectContaining({ jobName: "x-timeline-poll", queued: 2, failed: 0,
+      latestAt: "2026-03-20T11:02:00.000Z" })]);
+    expect(props.audits.some((entry: any) => entry.jobName === "x-timeline-poll")).toBe(false);
+    const tallies = props.audits.filter((entry: any) => entry.jobName === "update-lineup-deployment-tallies");
+    expect(tallies).toEqual([expect.objectContaining({ observationKind: "scheduled" })]);
+    expect(tallies[0].runTimeDisplay).toContain("2026-03-20T09:55:00.000Z");
+    const unlisted = props.audits.find((entry: any) => entry.jobName === "unlisted-route");
+    expect(unlisted.reason).toContain("pg_cron queued the HTTP request, but no cron_job_audit row");
+    expect(unlisted.reason).not.toBe("1 row");
+    const { CronAuditEmail } = await vi.importActual<typeof import("components/CronReportEmail/CronAuditEmail")>("components/CronReportEmail/CronAuditEmail");
+    const html = renderToStaticMarkup(createElement(CronAuditEmail, props));
+    expect(html).toContain("Supabase Edge Functions queued by pg_cron");
+    expect(html).toContain("x-timeline-poll · 2 queued");
   });
 
   it("includes SKO low-row warnings in the daily operator email", async () => {
@@ -1341,7 +1377,7 @@ ${JSON.stringify(jobs)}
     expect(res.body).toMatchObject({ totalsComplete: false, counts: { auditRuns: 1000, auditFailures: 1, jobsOkLast: 0 } });
     expect(res.body.sources.audit.error).toContain("statement timeout");
     expect(resendSendMock.mock.calls[0][0].subject).toContain("incomplete telemetry");
-    expect((cronAuditEmailMock.mock.calls.at(-1)?.[0] as any).fetchErrors[0]).toContain("1000 observations retained");
+    expect((cronAuditEmailMock.mock.calls.at(-1)?.[0] as any).fetchErrors[0]).toContain("Read stopped after 1,000 rows");
   });
 
   it("keeps no-output serving-gate receipts unknown without inventing failures", async () => {

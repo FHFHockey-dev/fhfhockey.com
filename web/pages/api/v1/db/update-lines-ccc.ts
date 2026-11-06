@@ -3,6 +3,7 @@ import { persistTweetProjectionReports, enrichTweetInjuryHistory } from "lib/sou
 import { admitTweetClaimEvaluationIntake, tweetClaimEvaluationIntakeWindow } from "lib/sources/tweetClaimEvaluationIntake";
 import { processTweetClaimShadowBatch } from "lib/sources/tweetClaimRegistry";
 import { rosterSeasonForDate } from "lib/sources/playerIdentity";
+import { isEmptyQueueProcessorRun } from "lib/cron/emptyQueueRun";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { getCurrentSeason, getTeams } from "lib/NHL/server";
 import { buildTeamDirectory } from "lib/sources/lineupSourceIngestion";
@@ -707,5 +708,8 @@ export default withCronJobAudit(
   }),
   {
     jobName: "/api/v1/db/update-lines-ccc",
+    // The starter board polls this processor every minute; empty polls are
+    // most audit rows and carry no information. Work and failures stay audited.
+    skipAuditWhenNoOp: isEmptyQueueProcessorRun,
   },
 );
