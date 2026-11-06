@@ -1,5 +1,5 @@
 import type { TweetPlayerEvent } from "./tweetPlayerEvents";
-import { normalizeIdentityName, resolvePlayerIdentity, type PlayerIdentity } from "./playerIdentity";
+import { breakIdentityTieByRole, normalizeIdentityName, positionSlotRole, resolvePlayerIdentity, type PlayerIdentity, type PlayerSlotRole } from "./playerIdentity";
 
 export const TWEET_INTERPRETATION_VERSION = "2026-10-13.1";
 export type EvidenceSpan = { start: number; end: number; text: string };
@@ -47,32 +47,25 @@ const PROSE = /\b(?:news|gm|president|montreal|montréal|nashville|edmonton|colo
 type EvenStrengthRow = "es_forward" | "es_defense";
 
 export function playerPositionRole(player: Pick<PlayerIdentity, "position">): EvenStrengthRow | "goalie" | null {
-  const position = player.position?.toUpperCase();
-  return ["C", "L", "R", "LW", "RW", "F"].includes(position ?? "") ? "es_forward" : position === "D" ? "es_defense" : position === "G" ? "goalie" : null;
+  return positionSlotRole(player.position);
 }
 
-function resolveRowIdentity(rawName: string, roster: PlayerIdentity[], row?: EvenStrengthRow | null): ReturnType<typeof resolvePlayerIdentity> {
+function resolveRowIdentity(rawName: string, roster: PlayerIdentity[], row?: PlayerSlotRole | null): ReturnType<typeof resolvePlayerIdentity> {
   const key = normalizeIdentityName(rawName);
   const surnames = [...new Map(roster.filter((player) => normalizeIdentityName(player.lastName) === key)
     .map((player) => [player.playerId, player])).values()];
   if (surnames.length > 1) {
     // A bare surname alias must not outrank another player's surname. Row position
     // disambiguates only when every candidate has known, matching team membership.
-    const forwards = ["C", "L", "R", "LW", "RW", "F"];
-    const knownPositions = [...forwards, "D", "G"];
-    if (row && surnames.every((player) => player.teamId != null && player.teamId === surnames[0]!.teamId
-      && knownPositions.includes(player.position?.toUpperCase() ?? ""))) {
-      const eligible = surnames.filter((player) => row === "es_forward"
-        ? forwards.includes(player.position!.toUpperCase()) : player.position!.toUpperCase() === "D");
-      if (eligible.length === 1) return resolvePlayerIdentity(rawName, eligible);
-    }
-    return { status: "ambiguous", candidates: surnames };
+    const fit = breakIdentityTieByRole(surnames, row);
+    return fit ? resolvePlayerIdentity(rawName, [fit]) : { status: "ambiguous", candidates: surnames };
   }
-  return resolvePlayerIdentity(rawName, roster);
+  // Full names and initials shared by two players are settled by the slot too.
+  return resolvePlayerIdentity(rawName, roster, undefined, row);
 }
 
 /** Find a unique complete segmentation, retaining original offsets and compound names. */
-export function segmentPlayerRow(text: string, roster: PlayerIdentity[], row?: EvenStrengthRow | null): Array<EvidenceSpan & { player: PlayerIdentity }> | null {
+export function segmentPlayerRow(text: string, roster: PlayerIdentity[], row?: PlayerSlotRole | null): Array<EvidenceSpan & { player: PlayerIdentity }> | null {
   const solutions: Array<Array<EvidenceSpan & { player: PlayerIdentity }>> = [];
   const visit = (offset: number, hits: Array<EvidenceSpan & { player: PlayerIdentity }>) => {
     if (solutions.length > 1 || hits.length > 6) return;
@@ -153,6 +146,16 @@ export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): Twe
     // one slot remain alternatives, rather than being merged into a full unit.
     const simpleSlash = slashParts?.every((part) => part?.length === 1);
     let hits = !slashParts || simpleSlash ? segmentPlayerRow(line, roster) : null;
+    // A shared name blocks the plain reading; without a heading, the row's own
+    // players decide the slot: keep the one role under which every name fits.
+    if (!hits && !explicitEsHeading && (!slashParts || simpleSlash) && lineSituation !== "pp" && lineSituation !== "pk"
+      && lineSituation !== "scratch" && lineSituation !== "injury" && lineSituation !== "goalie") {
+      const fitting = (["es_forward", "es_defense"] as const).flatMap((role) => {
+        const roleHits = segmentPlayerRow(line, roster, role);
+        return roleHits?.length && roleHits.every((hit) => playerPositionRole(hit.player) === role) ? [roleHits] : [];
+      });
+      if (fitting.length === 1) hits = fitting[0]!;
+    }
     const roles = hits?.map((hit) => playerPositionRole(hit.player)) ?? [];
     const positiveRole = roles.length && roles.every((role) => role === roles[0]) ? roles[0] : null;
     const reviewShape: EvenStrengthRow | null = sawStructure && /[-–—/]/.test(line)
@@ -163,7 +166,8 @@ export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): Twe
       else if (positiveRole === "es_forward" || positiveRole === "es_defense") rowKind = positiveRole;
       else if (positiveRole !== "goalie") rowKind = sectionRole === "es_forward" || sectionRole === "es_defense" ? sectionRole : reviewShape;
     }
-    const identityRow = rowKind ?? (lineSituation === "es_forward" || lineSituation === "es_defense" ? lineSituation : null);
+    const identityRow: PlayerSlotRole | null = lineSituation === "goalie" ? "goalie"
+      : rowKind ?? (lineSituation === "es_forward" || lineSituation === "es_defense" ? lineSituation : null);
     if (identityRow && (!slashParts || simpleSlash)) hits = segmentPlayerRow(line, roster, identityRow);
     if (lineSituation === "goalie") rowKind = null;
     // Positions and explicit sections govern admission; length only locates a
@@ -330,6 +334,28 @@ export function completeEvenStrengthUnits(interpretation: TweetInterpretation, g
 export function identityMentionPresent(text: string, name: string): boolean {
   const needle = normalizeIdentityName(name).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   return new RegExp(`(?:^|[^\\p{L}])${needle}(?=$|[^\\p{L}])`, "u").test(normalizeIdentityName(text));
+}
+
+// Surnames that are also the first word of a hockey phrase ("power play").
+const SURNAME_PHRASE_CONTINUATIONS: Record<string, RegExp> = { power: /^[\s‐‑–—−-]+(?:play|units?)(?!\p{L})/iu };
+
+/** True when the text right after a surname makes it a phrase such as "power play", not a name. */
+export function surnameReadsAsPhrase(surname: string, textAfter: string): boolean {
+  return SURNAME_PHRASE_CONTINUATIONS[normalizeIdentityName(surname)]?.test(textAfter) ?? false;
+}
+
+/** A surname-only mention counts in any case unless it starts a phrase like "power play" or "power unit". */
+export function surnameMentionPresent(text: string, surname: string): boolean {
+  const key = normalizeIdentityName(surname);
+  if (!key) return false;
+  const cased = text.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[’‘]/g, "'")
+    .replace(/[‐‑–—−-]/g, " ").replace(/\./g, "").replace(/\s+/g, " ");
+  const pattern = new RegExp(`(?<![\\p{L}])${key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![\\p{L}])`, "giu");
+  for (const match of cased.matchAll(pattern)) {
+    if (surnameReadsAsPhrase(key, cased.slice(match.index! + match[0].length))) continue;
+    return true;
+  }
+  return false;
 }
 
 /** Historical comparison does not date an independently asserted current unit. */

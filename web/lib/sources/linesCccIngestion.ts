@@ -1,5 +1,6 @@
 import { extractTweetPlayerEvents } from "./tweetPlayerEvents";
-import { identityMentionPresent, interpretTweetUnits, playerPositionRole, segmentPlayerRow, tweetPipelineFlags, type TweetInterpretation } from "./tweetInterpretation";
+import type { PlayerSlotRole } from "./playerIdentity";
+import { identityMentionPresent, interpretTweetUnits, playerPositionRole, segmentPlayerRow, surnameMentionPresent, tweetPipelineFlags, type TweetInterpretation } from "./tweetInterpretation";
 import type {
   GameDayTweetsClassification,
   RosterNameEntry,
@@ -953,10 +954,11 @@ function dedupeOrderedNames(names: Array<string | null | undefined>): string[] {
 function canonicalizeNames(
   names: string[],
   rosterEntries: RosterNameEntry[],
+  role?: PlayerSlotRole,
 ): string[] {
   return names.map(
     (name) =>
-      resolveTweetNameToRosterEntry(name, rosterEntries)?.fullName ?? name,
+      resolveTweetNameToRosterEntry(name, rosterEntries, role)?.fullName ?? name,
   );
 }
 
@@ -1242,9 +1244,10 @@ function extractGoalieNameFromKeywordLine(args: {
     const matchedNames = canonicalizeNames(
       extractOrderedRosterHitsFromTweet(line, args.rosterEntries),
       args.rosterEntries,
+      "goalie",
     );
     if (matchedNames.length === 1) {
-      const player = resolveTweetNameToRosterEntry(matchedNames[0]!, args.rosterEntries);
+      const player = resolveTweetNameToRosterEntry(matchedNames[0]!, args.rosterEntries, "goalie");
       if (player && playerPositionRole(player) === "goalie") return player.fullName;
     }
   }
@@ -1273,10 +1276,10 @@ function buildStructuredContent(args: {
   );
   const namesHaveRole = (names: string[], role: "es_forward" | "es_defense" | "goalie") => rosterNamesHaveRole(names, args.rosterEntries, role);
   let forwards = structured.forwards
-    .map((line) => canonicalizeNames(line, args.rosterEntries))
+    .map((line) => canonicalizeNames(line, args.rosterEntries, "es_forward"))
     .filter((line) => line.length === 3 && namesHaveRole(line, "es_forward"));
   let defensePairs = structured.defensePairs
-    .map((pair) => canonicalizeNames(pair, args.rosterEntries))
+    .map((pair) => canonicalizeNames(pair, args.rosterEntries, "es_defense"))
     .filter((pair) => pair.length === 2 && namesHaveRole(pair, "es_defense"));
   let goalies =
     args.classification === "power_play"
@@ -1286,6 +1289,7 @@ function buildStructuredContent(args: {
             const resolvedRosterEntry = resolveTweetNameToRosterEntry(
               name,
               args.rosterEntries,
+              "goalie",
             );
             const hasHeadingKeywords =
               /\b(lines?|pairings|power play|pp1|pp2|injury|update|goalie|starter|starting|net)\b/i.test(
@@ -1314,7 +1318,7 @@ function buildStructuredContent(args: {
           )
           .map(
             (line) =>
-              namesHaveRole([line], "goalie") ? resolveTweetNameToRosterEntry(line, args.rosterEntries)!.fullName : null,
+              namesHaveRole([line], "goalie") ? resolveTweetNameToRosterEntry(line, args.rosterEntries, "goalie")!.fullName : null,
           )
           .filter((name): name is string => Boolean(name));
 
@@ -1327,7 +1331,7 @@ function buildStructuredContent(args: {
     });
   if (inferredGoalieName) {
     const canonicalGoalieName =
-      resolveTweetNameToRosterEntry(inferredGoalieName, args.rosterEntries)
+      resolveTweetNameToRosterEntry(inferredGoalieName, args.rosterEntries, "goalie")
         ?.fullName ?? inferredGoalieName;
     goalies = dedupeOrderedNames([
       ...(namesHaveRole([canonicalGoalieName], "goalie") ? [canonicalGoalieName] : []),
@@ -1369,7 +1373,7 @@ function buildStructuredContent(args: {
 
   const interpretation = tweetPipelineFlags().interpretation ? interpretTweetUnits(args.text, args.rosterEntries) : null;
   const eventPlayers = interpretation ? (args.eventPlayers ?? args.rosterEntries).filter((player) =>
-    [player.fullName, player.lastName, ...(player.aliases ?? [])].some((name) => identityMentionPresent(args.text, name))) : [];
+    surnameMentionPresent(args.text, player.lastName) || [player.fullName, ...(player.aliases ?? [])].some((name) => identityMentionPresent(args.text, name))) : [];
   const playerEvents = interpretation ? extractTweetPlayerEvents({ text: args.text, players: eventPlayers, publishedAt: args.publishedAt ?? null,
     includeClaimAnchors: process.env.TWEET_CLAIMS_MODE === "shadow" }) : [];
   const participationObservations = interpretation ? [] : extractTweetPlayerEvents({ text: args.text, players: args.rosterEntries, publishedAt: args.publishedAt ?? null })
@@ -1437,7 +1441,7 @@ export function buildLinesCccSourceFromIftttEvent(args: {
   const rosterEntries = team ? (args.rosterByTeam.get(team.id) ?? []) : [];
   const matched = matchRosterNamesInTweet(text, rosterEntries);
   const goalieName = extractGoalieName(text);
-  const goalieIdentity = goalieName ? resolveTweetNameToRosterEntry(goalieName, rosterEntries) : null;
+  const goalieIdentity = goalieName ? resolveTweetNameToRosterEntry(goalieName, rosterEntries, "goalie") : null;
   const structuredContent = buildStructuredContent({
     text,
     publishedAt: args.event.tweet_created_at,
@@ -1570,7 +1574,7 @@ export function refreshLinesCccSourceFromPrimaryText(args: {
     eventPlayers: [...args.rosterByTeam.values()].flat(),
   });
   const goalieName = extractGoalieName(text);
-  const goalieIdentity = goalieName ? resolveTweetNameToRosterEntry(goalieName, rosterEntries) : null;
+  const goalieIdentity = goalieName ? resolveTweetNameToRosterEntry(goalieName, rosterEntries, "goalie") : null;
   const nhlFilterStatus: LinesCccNhlFilterStatus = detectedNonNhlLeague
     ? "rejected_non_nhl"
     : team
@@ -1669,10 +1673,11 @@ export function expandLinesCccGoalieClaims(args: {
 function mapNamesToPlayerIdsOrdered(
   names: string[] | null,
   rosterEntries: RosterNameEntry[],
+  role?: PlayerSlotRole,
 ): Array<number | null> | null {
   if (!names) return null;
 
-  return names.map((name) => resolveTweetNameToRosterEntry(name, rosterEntries)?.playerId ?? null);
+  return names.map((name) => resolveTweetNameToRosterEntry(name, rosterEntries, role)?.playerId ?? null);
 }
 
 function toStoredForwardOrder(players: string[] | null): string[] | null {
@@ -2122,26 +2127,26 @@ export function toLinesCccRow(args: {
       source.unmatchedNames && source.unmatchedNames.length > 0
         ? source.unmatchedNames
         : null,
-    line_1_player_ids: mapNamesToPlayerIdsOrdered(line(0), rosterEntries),
+    line_1_player_ids: mapNamesToPlayerIdsOrdered(line(0), rosterEntries, "es_forward"),
     line_1_player_names: line(0),
-    line_2_player_ids: mapNamesToPlayerIdsOrdered(line(1), rosterEntries),
+    line_2_player_ids: mapNamesToPlayerIdsOrdered(line(1), rosterEntries, "es_forward"),
     line_2_player_names: line(1),
-    line_3_player_ids: mapNamesToPlayerIdsOrdered(line(2), rosterEntries),
+    line_3_player_ids: mapNamesToPlayerIdsOrdered(line(2), rosterEntries, "es_forward"),
     line_3_player_names: line(2),
-    line_4_player_ids: mapNamesToPlayerIdsOrdered(line(3), rosterEntries),
+    line_4_player_ids: mapNamesToPlayerIdsOrdered(line(3), rosterEntries, "es_forward"),
     line_4_player_names: line(3),
-    pair_1_player_ids: mapNamesToPlayerIdsOrdered(pair(0), rosterEntries),
+    pair_1_player_ids: mapNamesToPlayerIdsOrdered(pair(0), rosterEntries, "es_defense"),
     pair_1_player_names: pair(0),
-    pair_2_player_ids: mapNamesToPlayerIdsOrdered(pair(1), rosterEntries),
+    pair_2_player_ids: mapNamesToPlayerIdsOrdered(pair(1), rosterEntries, "es_defense"),
     pair_2_player_names: pair(1),
-    pair_3_player_ids: mapNamesToPlayerIdsOrdered(pair(2), rosterEntries),
+    pair_3_player_ids: mapNamesToPlayerIdsOrdered(pair(2), rosterEntries, "es_defense"),
     pair_3_player_names: pair(2),
     goalie_1_player_id: goalie1
-      ? (mapNamesToPlayerIdsOrdered([goalie1], rosterEntries)?.[0] ?? null)
+      ? (mapNamesToPlayerIdsOrdered([goalie1], rosterEntries, "goalie")?.[0] ?? null)
       : null,
     goalie_1_name: goalie1,
     goalie_2_player_id: goalie2
-      ? (mapNamesToPlayerIdsOrdered([goalie2], rosterEntries)?.[0] ?? null)
+      ? (mapNamesToPlayerIdsOrdered([goalie2], rosterEntries, "goalie")?.[0] ?? null)
       : null,
     goalie_2_name: goalie2,
     scratches_player_ids: mapNamesToPlayerIdsOrdered(scratches, rosterEntries),

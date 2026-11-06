@@ -1,6 +1,6 @@
 import * as cheerio from "cheerio";
-import { resolvePlayerIdentity } from "./playerIdentity";
-import { identityMentionPresent, playerPositionRole } from "./tweetInterpretation";
+import { resolvePlayerIdentity, type PlayerSlotRole } from "./playerIdentity";
+import { identityMentionPresent, playerPositionRole, surnameMentionPresent } from "./tweetInterpretation";
 
 import type { Team } from "lib/NHL/types";
 import { teamHashtagsByAbbreviation, teamsInfo } from "lib/teamsInfo";
@@ -21,6 +21,8 @@ export type RosterNameEntry = {
   fullName: string;
   lastName: string;
   aliases?: string[];
+  /** Aliases that apply only in one kind of slot (scoped team + position-group aliases). */
+  roleAliases?: Array<{ alias: string; role: PlayerSlotRole }>;
   position?: string | null;
   teamId?: number | null;
 };
@@ -532,6 +534,12 @@ function findStructuredRosterHitsInLine(
     ) {
       continue;
     }
+    const namesake = hits.find((hit) => hit.start === candidate.start && hit.end === candidate.end);
+    if (namesake) {
+      // Two players share this text; keep the words so the slot can settle it.
+      namesake.playerName = normalizedLine.slice(candidate.start, candidate.end);
+      continue;
+    }
     if (
       hits.some(
         (hit) => candidate.start < hit.end && candidate.end > hit.start
@@ -644,15 +652,15 @@ export function extractStructuredPlayerGroupsFromText(
   }
 
   if (rosterEntries.some((entry) => playerPositionRole(entry))) {
-    const roleFor = (group: string[]) => {
-      const players = group.map((name) => resolveTweetNameToRosterEntry(name, rosterEntries));
-      const role = players[0] ? playerPositionRole(players[0]) : null;
-      return role && players.every((player) => player && playerPositionRole(player) === role) ? role : null;
-    };
+    // The slot is the role: a shared name counts when its namesake in that position is unique.
+    const fits = (group: string[], role: PlayerSlotRole) => group.every((name) => {
+      const player = resolveTweetNameToRosterEntry(name, rosterEntries, role);
+      return player && playerPositionRole(player) === role;
+    });
     return {
-      forwards: parsedGroups.filter((group) => group.length === 3 && roleFor(group) === "es_forward").slice(0, 4),
-      defensePairs: parsedGroups.filter((group) => group.length === 2 && roleFor(group) === "es_defense").slice(0, 3),
-      goalies: parsedGroups.filter((group) => roleFor(group) === "goalie").flat().slice(0, 2),
+      forwards: parsedGroups.filter((group) => group.length === 3 && fits(group, "es_forward")).slice(0, 4),
+      defensePairs: parsedGroups.filter((group) => group.length === 2 && fits(group, "es_defense")).slice(0, 3),
+      goalies: parsedGroups.filter((group) => fits(group, "goalie")).flat().slice(0, 2),
     };
   }
   // Without an identity directory these are classification candidates only.
@@ -699,7 +707,7 @@ function buildRosterSearchNeedles(rosterEntry: RosterNameEntry): string[] {
   for (const alias of GDT_ALIAS_OVERRIDES[normalizedFullName] ?? []) {
     needles.add(normalizeTeamLabel(alias));
   }
-  for (const alias of rosterEntry.aliases ?? []) {
+  for (const alias of [...(rosterEntry.aliases ?? []), ...(rosterEntry.roleAliases ?? []).map((scoped) => scoped.alias)]) {
     needles.add(normalizeTeamLabel(alias));
   }
 
@@ -708,24 +716,27 @@ function buildRosterSearchNeedles(rosterEntry: RosterNameEntry): string[] {
 
 function mapNamesToPlayerIdsOrdered(
   names: string[],
-  rosterEntries: RosterNameEntry[]
+  rosterEntries: RosterNameEntry[],
+  role?: PlayerSlotRole
 ): Array<number | null> {
-  return names.map((name) => resolveTweetNameToRosterEntry(name, rosterEntries)?.playerId ?? null);
+  return names.map((name) => resolveTweetNameToRosterEntry(name, rosterEntries, role)?.playerId ?? null);
 }
 
+/** `role` is the kind of slot the tweet put the name in; it settles shared names by position. */
 export function resolveTweetNameToRosterEntry(
   rawName: string,
-  rosterEntries: RosterNameEntry[]
+  rosterEntries: RosterNameEntry[],
+  role?: PlayerSlotRole | null
 ): RosterNameEntry | null {
   const result = resolvePlayerIdentity(rawName, rosterEntries.map((entry) => ({
     ...entry,
     aliases: [...(entry.aliases ?? []), ...(GDT_ALIAS_OVERRIDES[normalizeTeamLabel(entry.fullName)] ?? [])],
-  })));
+  })), undefined, role);
   return result.status === "matched" ? result.player : null;
 }
 
-export function rosterNamesHaveRole(names: string[], rosterEntries: RosterNameEntry[], role: "es_forward" | "es_defense" | "goalie"): boolean {
-  const players = names.map((name) => resolveTweetNameToRosterEntry(name, rosterEntries));
+export function rosterNamesHaveRole(names: string[], rosterEntries: RosterNameEntry[], role: PlayerSlotRole): boolean {
+  const players = names.map((name) => resolveTweetNameToRosterEntry(name, rosterEntries, role));
   const teams = new Set(players.map((player) => player?.teamId).filter((team) => team != null));
   return names.length > 0 && teams.size <= 1 && new Set(players.map((player) => player?.playerId)).size === names.length
     && players.every((player) => player && Number.isSafeInteger(player.playerId) && player.playerId > 0 && playerPositionRole(player) === role);
@@ -1116,7 +1127,7 @@ export function matchRosterNamesInTweet(
       matchedFullNames.push(rosterEntry.fullName);
       continue;
     }
-    if (normalizedLastName && identityMentionPresent(normalizedTweet, normalizedLastName)) {
+    if (normalizedLastName && surnameMentionPresent(tweetText, rosterEntry.lastName)) {
       matchedLastNames.push(rosterEntry.lastName);
     }
   }
@@ -1209,16 +1220,16 @@ export function buildGameDayTweetsLineupSourceFromTweet(args: {
   const structured = extractStructuredPlayerGroupsFromText(text, rosterEntries);
   let forwards = structured.forwards
     .map((line) =>
-      line.map((name) => resolveTweetNameToRosterEntry(name, rosterEntries)?.fullName ?? name)
+      line.map((name) => resolveTweetNameToRosterEntry(name, rosterEntries, "es_forward")?.fullName ?? name)
     )
     .filter((line) => line.length === 3 && rosterNamesHaveRole(line, rosterEntries, "es_forward"));
   let defensePairs = structured.defensePairs
     .map((pair) =>
-      pair.map((name) => resolveTweetNameToRosterEntry(name, rosterEntries)?.fullName ?? name)
+      pair.map((name) => resolveTweetNameToRosterEntry(name, rosterEntries, "es_defense")?.fullName ?? name)
     )
     .filter((pair) => pair.length === 2 && rosterNamesHaveRole(pair, rosterEntries, "es_defense"));
   let goalies = structured.goalies
-    .map((name) => resolveTweetNameToRosterEntry(name, rosterEntries)?.fullName ?? null)
+    .map((name) => resolveTweetNameToRosterEntry(name, rosterEntries, "goalie")?.fullName ?? null)
     .filter((name): name is string => Boolean(name) && rosterNamesHaveRole([name!], rosterEntries, "goalie"));
 
   return buildSourceRecord({
@@ -1912,23 +1923,23 @@ export function toHistoricalLineSourceRow(args: {
     source_url: args.source.sourceUrl,
     source_label: sourceLabel,
     status: args.source.status,
-    line_1_player_ids: line(0) ? mapNamesToPlayerIdsOrdered(line(0) ?? [], rosterEntries) : null,
+    line_1_player_ids: line(0) ? mapNamesToPlayerIdsOrdered(line(0) ?? [], rosterEntries, "es_forward") : null,
     line_1_player_names: line(0),
-    line_2_player_ids: line(1) ? mapNamesToPlayerIdsOrdered(line(1) ?? [], rosterEntries) : null,
+    line_2_player_ids: line(1) ? mapNamesToPlayerIdsOrdered(line(1) ?? [], rosterEntries, "es_forward") : null,
     line_2_player_names: line(1),
-    line_3_player_ids: line(2) ? mapNamesToPlayerIdsOrdered(line(2) ?? [], rosterEntries) : null,
+    line_3_player_ids: line(2) ? mapNamesToPlayerIdsOrdered(line(2) ?? [], rosterEntries, "es_forward") : null,
     line_3_player_names: line(2),
-    line_4_player_ids: line(3) ? mapNamesToPlayerIdsOrdered(line(3) ?? [], rosterEntries) : null,
+    line_4_player_ids: line(3) ? mapNamesToPlayerIdsOrdered(line(3) ?? [], rosterEntries, "es_forward") : null,
     line_4_player_names: line(3),
-    pair_1_player_ids: pair(0) ? mapNamesToPlayerIdsOrdered(pair(0) ?? [], rosterEntries) : null,
+    pair_1_player_ids: pair(0) ? mapNamesToPlayerIdsOrdered(pair(0) ?? [], rosterEntries, "es_defense") : null,
     pair_1_player_names: pair(0),
-    pair_2_player_ids: pair(1) ? mapNamesToPlayerIdsOrdered(pair(1) ?? [], rosterEntries) : null,
+    pair_2_player_ids: pair(1) ? mapNamesToPlayerIdsOrdered(pair(1) ?? [], rosterEntries, "es_defense") : null,
     pair_2_player_names: pair(1),
-    pair_3_player_ids: pair(2) ? mapNamesToPlayerIdsOrdered(pair(2) ?? [], rosterEntries) : null,
+    pair_3_player_ids: pair(2) ? mapNamesToPlayerIdsOrdered(pair(2) ?? [], rosterEntries, "es_defense") : null,
     pair_3_player_names: pair(2),
-    goalie_1_player_id: goalie1 ? mapNamesToPlayerIdsOrdered([goalie1], rosterEntries)[0] : null,
+    goalie_1_player_id: goalie1 ? mapNamesToPlayerIdsOrdered([goalie1], rosterEntries, "goalie")[0] : null,
     goalie_1_name: goalie1,
-    goalie_2_player_id: goalie2 ? mapNamesToPlayerIdsOrdered([goalie2], rosterEntries)[0] : null,
+    goalie_2_player_id: goalie2 ? mapNamesToPlayerIdsOrdered([goalie2], rosterEntries, "goalie")[0] : null,
     goalie_2_name: goalie2,
     scratches_player_ids:
       args.source.scratches.length > 0

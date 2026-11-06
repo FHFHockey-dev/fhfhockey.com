@@ -820,3 +820,55 @@ describe("Oct11 verified original regressions", () => {
     expect(completeEvenStrengthUnits(interpretTweetUnits(record.text, record.players))).toEqual([]);
   });
 });
+
+describe("position settles shared names by slot", () => {
+  const roster = (teamId: number, rows: Array<[number, string, string, string]>) => rows.map(([playerId, fullName, lastName, position]) => ({ playerId, fullName, lastName, position, teamId }));
+  const devils = roster(1, [
+    [1, "Jesper Bratt", "Bratt", "L"], [2, "Nico Hischier", "Hischier", "C"], [3, "Timo Meier", "Meier", "R"],
+    [4, "Dawson Mercer", "Mercer", "C"], [5, "Jack Hughes", "Hughes", "C"], [6, "Ondrej Palat", "Palat", "L"],
+    [7, "Paul Cotter", "Cotter", "C"], [8, "Cody Glass", "Glass", "C"], [9, "Connor Brown", "Brown", "R"],
+    [10, "Evgenii Dadonov", "Dadonov", "R"], [11, "Erik Haula", "Haula", "C"], [12, "Stefan Noesen", "Noesen", "R"],
+    [20, "Luke Hughes", "Hughes", "D"], [21, "Dougie Hamilton", "Hamilton", "D"], [22, "Jonas Siegenthaler", "Siegenthaler", "D"],
+    [23, "Brett Pesce", "Pesce", "D"], [24, "Simon Nemec", "Nemec", "D"], [25, "Johnathan Kovacevic", "Kovacevic", "D"],
+    [30, "Jacob Markstrom", "Markstrom", "G"],
+  ]);
+  const devilsText = "Devils lines:\nBratt-Hischier-Meier\nMercer-Hughes-Palat\nCotter-Glass-Brown\nDadonov-Haula-Noesen\nHughes-Hamilton\nSiegenthaler-Pesce\nNemec-Kovacevic\nMarkstrom";
+  const ids = (units: ReturnType<typeof interpretTweetUnits>["units"], situation: string) =>
+    units.filter((unit) => unit.situation === situation).map((unit) => unit.players.map((player) => player.playerId));
+
+  it("reads Hughes as Jack in a forward line and Luke in the first pair, without a blank line between them", () => {
+    const result = interpretTweetUnits(devilsText, devils);
+    expect(ids(result.units, "es_forward")[1]).toEqual([4, 5, 6]);
+    expect(ids(result.units, "es_defense")).toEqual([[20, 21], [22, 23], [24, 25]]);
+    expect(result.unresolved.filter((issue) => issue.reason === "ambiguous")).toEqual([]);
+  });
+
+  it("tells the two Elias Petterssons apart by line versus pair", () => {
+    const canucks = roster(23, [
+      [1, "Jake DeBrusk", "DeBrusk", "L"], [2, "Elias Pettersson", "Pettersson", "C"], [3, "Brock Boeser", "Boeser", "R"],
+      [4, "Quinn Hughes", "Hughes", "D"], [5, "Elias Pettersson", "Pettersson", "D"],
+    ]);
+    const result = interpretTweetUnits("Canucks lines:\nDeBrusk-Elias Pettersson-Boeser\n\nQuinn Hughes-Elias Pettersson", canucks);
+    expect(ids(result.units, "es_forward")).toEqual([[1, 2, 3]]);
+    expect(ids(result.units, "es_defense")).toEqual([[4, 5]]);
+  });
+
+  it("reads a C/G namesake in net as the goalie", () => {
+    const kings = roster(26, [[1, "Jared Slukynsky", "Slukynsky", "C"], [2, "Carter Slukynsky", "Slukynsky", "G"]]);
+    expect(interpretTweetUnits("Kings lines:\nG: Slukynsky", kings).units.filter((unit) => unit.situation === "goalie"))
+      .toMatchObject([{ players: [{ playerId: 2 }] }]);
+    expect(extractTweetPlayerEvents({ text: "Slukynsky starts in net tonight vs. Seattle.", players: kings, publishedAt: null }))
+      .toMatchObject([{ playerId: 2, kind: "goalie" }]);
+  });
+
+  it("keeps a same-position namesake ambiguous unless an initial decides it", () => {
+    const panthers = roster(13, [
+      [1, "Sam Reinhart", "Reinhart", "C"], [2, "Aleksander Barkov", "Barkov", "C"],
+      [3, "Matthew Tkachuk", "Tkachuk", "L"], [4, "Brady Tkachuk", "Tkachuk", "L"],
+    ]);
+    const bare = interpretTweetUnits("Panthers lines:\nReinhart-Barkov-Tkachuk", panthers);
+    expect(ids(bare.units, "es_forward")).toEqual([]);
+    expect(bare.unresolved).toEqual(expect.arrayContaining([expect.objectContaining({ text: "Tkachuk", reason: "ambiguous" })]));
+    expect(ids(interpretTweetUnits("Panthers lines:\nReinhart-Barkov-M. Tkachuk", panthers).units, "es_forward")).toEqual([[1, 2, 3]]);
+  });
+});

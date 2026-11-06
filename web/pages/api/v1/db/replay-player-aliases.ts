@@ -45,7 +45,10 @@ export default adminOnly(withCronJobAudit(async (req, res) => {
           rosterByTeam: await fetchRosterEntriesByTeam({ supabase: req.supabase, teamIds: [job.payload.teamId], seasonId }), aliases,
         }));
         const roster = rosterCache.get(seasonId)!;
-        const match = resolvePlayerIdentity(row.raw_name, roster.get(job.payload.teamId) ?? []);
+        // The queued row's slot lets team + position aliases and position tie-breaks apply.
+        const situation = row.metadata?.situation;
+        const slot = situation === "es_forward" || situation === "es_defense" || situation === "goalie" ? situation : null;
+        const match = resolvePlayerIdentity(row.raw_name, roster.get(job.payload.teamId) ?? [], undefined, slot);
         if (match.status !== "matched" || match.player.playerId !== job.payload.playerId) continue;
         if (row.status === "pending") {
           const { error: updateError } = await (req.supabase as any).from("lineup_unresolved_player_names")

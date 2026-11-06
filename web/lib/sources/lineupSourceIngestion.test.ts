@@ -7,6 +7,8 @@ import {
   buildTeamDirectory,
   classifyGameDayTweet,
   extractStructuredPlayerGroupsFromText,
+  resolveTweetNameToRosterEntry,
+  rosterNamesHaveRole,
   extractStructuredNameGroupsFromTweet,
   findGameDayTweetKeywordHits,
   matchRosterNamesInTweet,
@@ -700,6 +702,24 @@ Fowler`;
       matchedPlayerIds: [2, 3],
       unmatchedNames: []
     });
+  });
+
+  it("reads a shared surname by its slot in structured groups", () => {
+    const roster = [
+      { playerId: 1, fullName: "Jesper Bratt", lastName: "Bratt", position: "L", teamId: 1 },
+      { playerId: 2, fullName: "Jack Hughes", lastName: "Hughes", position: "C", teamId: 1 },
+      { playerId: 3, fullName: "Timo Meier", lastName: "Meier", position: "R", teamId: 1 },
+      { playerId: 4, fullName: "Luke Hughes", lastName: "Hughes", position: "D", teamId: 1 },
+      { playerId: 5, fullName: "Dougie Hamilton", lastName: "Hamilton", position: "D", teamId: 1 },
+      { playerId: 6, fullName: "Matthew Tkachuk", lastName: "Tkachuk", position: "L", teamId: 1 },
+      { playerId: 7, fullName: "Brady Tkachuk", lastName: "Tkachuk", position: "L", teamId: 1 },
+    ];
+    const result = extractStructuredPlayerGroupsFromText("Bratt-Hughes-Meier\nHughes-Hamilton\nTkachuk-Bratt-Meier", roster);
+    expect(result.forwards.map((line) => line.map((name) => resolveTweetNameToRosterEntry(name, roster, "es_forward")?.playerId))).toEqual([[1, 2, 3]]);
+    expect(result.defensePairs.map((pair) => pair.map((name) => resolveTweetNameToRosterEntry(name, roster, "es_defense")?.playerId))).toEqual([[4, 5]]);
+    expect(rosterNamesHaveRole(["Hughes", "Hamilton"], roster, "es_defense")).toBe(true);
+    expect(rosterNamesHaveRole(["Tkachuk", "Bratt", "Meier"], roster, "es_forward")).toBe(false);
+    expect(resolveTweetNameToRosterEntry("Hughes", roster)).toBeNull();
   });
 
   it("prefers initial-qualified last names before ambiguous bare last names", () => {

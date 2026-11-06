@@ -136,6 +136,23 @@ describe("IFTTT section boundaries and role-safe storage", () => {
     expect(source.goalies).toEqual([]);
     expect(toLinesCccRow({ source, rosterEntries: edmontonSectionRoster }).pair_1_player_ids).toEqual([201, 200]);
   });
+  it.each([false, true])("stores shared names by slot: Hughes in a line and a pair, two Elias Petterssons: interpretation %s", (enabled) => {
+    const players = ([
+      [1, "Jesper Bratt", "Bratt", "L"], [2, "Nico Hischier", "Hischier", "C"], [3, "Timo Meier", "Meier", "R"],
+      [4, "Dawson Mercer", "Mercer", "C"], [5, "Jack Hughes", "Hughes", "C"], [6, "Ondrej Palat", "Palat", "L"],
+      [7, "Paul Cotter", "Cotter", "C"], [8, "Elias Pettersson", "Pettersson", "C"], [9, "Connor Brown", "Brown", "R"],
+      [10, "Evgenii Dadonov", "Dadonov", "R"], [11, "Erik Haula", "Haula", "C"], [12, "Stefan Noesen", "Noesen", "R"],
+      [20, "Luke Hughes", "Hughes", "D"], [21, "Dougie Hamilton", "Hamilton", "D"], [22, "Jonas Siegenthaler", "Siegenthaler", "D"],
+      [23, "Brett Pesce", "Pesce", "D"], [24, "Simon Nemec", "Nemec", "D"], [25, "Elias Pettersson", "Pettersson", "D"],
+    ] as const).map(([playerId, fullName, lastName, position]) => ({ playerId, fullName, lastName, position, teamId: 22 }));
+    const text = "@EdmontonOilers lines tonight:\nBratt-Hischier-Meier\nMercer-Hughes-Palat\nCotter-Elias Pettersson-Brown\nDadonov-Haula-Noesen\n\nHughes-Hamilton\nSiegenthaler-Pesce\nNemec-Elias Pettersson";
+    const source = sourceFor(text, players, 22, enabled);
+    const row = toLinesCccRow({ source, rosterEntries: players });
+    expect(row.line_2_player_ids).toEqual([6, 5, 4]);
+    expect(row.line_3_player_ids).toEqual([9, 8, 7]);
+    expect(row.pair_1_player_ids).toEqual([21, 20]);
+    expect(row.pair_3_player_ids).toEqual([25, 24]);
+  });
   it.each(["unknown position", "conflicting team", "headed contradiction", "numbered contradiction"])("leaves invalid source line 1 empty and stores source line 2 in its own slot: %s", (condition) => {
     const players = edmontonSectionRoster.map((player, index) => ({ ...player,
       position: condition === "unknown position" && index === 0 ? null : player.position,
@@ -827,6 +844,51 @@ describe("linesCccIngestion", () => {
         },
       },
     });
+  });
+
+  it("does not read the words power play as a mention of Owen Power", () => {
+    const [sabres] = buildTeamDirectory([{ id: 7, name: "Buffalo Sabres", abbreviation: "BUF", logo: "/teamLogos/BUF.png" }]);
+    const sabresRoster = [
+      { playerId: 71, fullName: "Jiri Kulich", lastName: "Kulich", position: "C" },
+      { playerId: 72, fullName: "Konsta Helenius", lastName: "Helenius", position: "C" },
+      { playerId: 73, fullName: "Ryan McLeod", lastName: "McLeod", position: "C" },
+      { playerId: 74, fullName: "Josh Doan", lastName: "Doan", position: "R" },
+      { playerId: 75, fullName: "Peyton Krebs", lastName: "Krebs", position: "C" },
+      { playerId: 76, fullName: "Owen Power", lastName: "Power", position: "D" },
+      { playerId: 77, fullName: "Rasmus Dahlin", lastName: "Dahlin", position: "D" },
+    ];
+    const parse = (text: string) => buildLinesCccSourceFromIftttEvent({
+      event: { id: `power-${text.length}`, source: "ifttt", source_account: "BuffaloSabres", username: "BuffaloSabres", text, link_to_tweet: null, tweet_id: null, tweet_created_at: null, created_at_label: null, raw_payload: {}, received_at: "2026-11-06T16:00:00Z" },
+      snapshotDate: "2026-11-06",
+      teams: [sabres!],
+      rosterByTeam: new Map([[7, sabresRoster]]),
+    });
+
+    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+    try {
+      for (const text of [
+        "Sabres: Kuluch and Krebs are now on tge No. 2 power play unit for McLeod and Doan",
+        "Sabres: Kulich and Krebs are now on the second power-play unit for McLeod and Doan",
+        "Sabres: Power play units today. Kulich and Krebs replace McLeod and Doan",
+        "Sabres: kulich and krebs move to the second power unit for mcleod and doan",
+      ]) {
+        const parsed = parse(text);
+        const interpretation = parsed.metadata?.interpretation as { events: Array<{ playerId: number }>; identityContext: { eventRosterRevision: string } };
+        expect(parsed.matchedPlayerIds).not.toContain(76);
+        expect(parsed.matchedNames).not.toContain("Owen Power");
+        expect(interpretation.events.map((event) => event.playerId)).not.toContain(76);
+        expect(interpretation.identityContext.eventRosterRevision).not.toContain("Owen Power");
+      }
+    } finally { vi.unstubAllEnvs(); }
+    for (const text of [
+      "Sabres: Owen Power is back on the top unit with Krebs, McLeod and Doan",
+      "Sabres: Power (BUF D) returns to the top unit with Krebs, McLeod and Doan",
+      "Sabres D: Power-Dahlin together again with Krebs, McLeod and Doan up front",
+      "Sabres: power plays 24 minutes again with krebs, mcleod and doan on the top unit",
+    ]) {
+      expect(parse(text).matchedPlayerIds).toContain(76);
+    }
+    expect(parse("Sabres: kulich and krebs are now on the top unit for mcleod and doan").matchedPlayerIds).toEqual(expect.arrayContaining([71, 73, 74, 75]));
   });
 
   it("parses direct structured lineup text into forwards, pairs, and goalies", () => {

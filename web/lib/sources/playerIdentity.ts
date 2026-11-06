@@ -7,8 +7,37 @@ export type PlayerIdentity = {
   position?: string | null;
   teamId?: number | null;
   aliases?: string[];
+  /** Aliases that apply only when the tweet puts the name in this kind of slot. */
+  roleAliases?: Array<{ alias: string; role: PlayerSlotRole }>;
   registryId?: number;
 };
+
+/** The kind of slot a tweet put a name in: a forward line, a defence pair or the net. */
+export type PlayerSlotRole = "es_forward" | "es_defense" | "goalie";
+export type PlayerPositionGroup = "F" | "D" | "G";
+
+const FORWARD_POSITIONS = ["C", "L", "R", "LW", "RW", "F"];
+
+export function positionSlotRole(position: string | null | undefined): PlayerSlotRole | null {
+  const value = position?.toUpperCase() ?? "";
+  return FORWARD_POSITIONS.includes(value) ? "es_forward" : value === "D" ? "es_defense" : value === "G" ? "goalie" : null;
+}
+
+export function positionGroupSlotRole(group: string | null | undefined): PlayerSlotRole | null {
+  return group === "F" ? "es_forward" : group === "D" ? "es_defense" : group === "G" ? "goalie" : null;
+}
+
+/**
+ * Position breaks a tie only among players with known positions on one known
+ * team; same-position namesakes stay ambiguous.
+ */
+export function breakIdentityTieByRole(candidates: PlayerIdentity[], role: PlayerSlotRole | null | undefined): PlayerIdentity | null {
+  if (!role || candidates.length < 2) return null;
+  const teamId = candidates[0]!.teamId;
+  if (teamId == null || candidates.some((player) => player.teamId !== teamId || !positionSlotRole(player.position))) return null;
+  const fits = candidates.filter((player) => positionSlotRole(player.position) === role);
+  return fits.length === 1 ? fits[0]! : null;
+}
 
 export type PlayerIdentityResolution =
   | { status: "matched"; player: PlayerIdentity; basis: "full_name" | "alias" | "surname" | "initial" }
@@ -35,6 +64,7 @@ export function resolvePlayerIdentity(
   rawName: string,
   players: PlayerIdentity[],
   teamId?: number | null,
+  role?: PlayerSlotRole | null,
 ): PlayerIdentityResolution {
   const key = normalizeIdentityName(rawName);
   // Compact single initials belong only to initial matching; keep shared name/alias normalization unchanged.
@@ -44,14 +74,18 @@ export function resolvePlayerIdentity(
   for (const basis of ["full_name", "alias", "initial", "surname"] as const) {
     const candidates = unique.filter((player) => {
       if (basis === "full_name") return normalizeIdentityName(player.fullName) === key;
-      if (basis === "alias") return player.aliases?.some((alias) => normalizeIdentityName(alias) === key);
+      if (basis === "alias") return player.aliases?.some((alias) => normalizeIdentityName(alias) === key)
+        || Boolean(role && player.roleAliases?.some((alias) => alias.role === role && normalizeIdentityName(alias.alias) === key));
       if (basis === "surname") return normalizeIdentityName(player.lastName) === key;
       return normalizeIdentityName(`${player.fullName[0]} ${player.lastName}`) === initialKey;
     });
     if (!candidates.length) continue;
     const scoped = teamId == null ? candidates : candidates.filter((player) => player.teamId === teamId);
     if (scoped.length === 1) return { status: "matched", player: scoped[0]!, basis };
-    if (scoped.length > 1) return { status: "ambiguous", candidates: scoped };
+    if (scoped.length > 1) {
+      const fit = breakIdentityTieByRole(scoped, role);
+      return fit ? { status: "matched", player: fit, basis } : { status: "ambiguous", candidates: scoped };
+    }
     return { status: "conflicting_membership", candidates };
   }
   return { status: "missing_player", candidates: [] };
@@ -63,7 +97,7 @@ export async function fetchPlayerIdentityDirectory(supabase: any, registered?: R
     .order("id", { ascending: true }).range(from, to));
   const aliases = process.env.TWEET_PIPELINE_INTERPRETATION_ENABLED === "true"
     ? await fetchAllSupabasePages<any>(({ from, to }) => supabase.from("lineup_player_name_aliases")
-      .select("alias, player_id, team_id").order("normalized_alias").order("player_id").range(from, to)) : [];
+      .select("*").order("normalized_alias").order("player_id").range(from, to)) : [];
   const registry = process.env.TWEET_PIPELINE_INTERPRETATION_ENABLED === "true"
     ? registered ?? await fetchRegisteredPlayerIdentities(supabase) : [];
   const byNhlId = new Map(registry.filter((row) => row.nhl_player_id).map((row) => [Number(row.nhl_player_id), row]));
@@ -89,7 +123,9 @@ export async function fetchPlayerIdentityDirectory(supabase: any, registered?: R
       ? (organizationByPlayer.get(Number(row.id))!.size === 1 ? [...organizationByPlayer.get(Number(row.id))!][0] : null)
       : process.env.TWEET_PIPELINE_INTERPRETATION_ENABLED === "true" || row.team_id == null ? null : Number(row.team_id),
     registryId: byNhlId.get(Number(row.id))?.id,
-    aliases: [...(byNhlId.get(Number(row.id))?.aliases ?? []), ...(byNhlId.has(Number(row.id)) ? [byNhlId.get(Number(row.id))!.canonical_name] : []), ...aliases.filter((alias) => Number(alias.player_id) === Number(row.id) && (alias.team_id == null || organizationByPlayer.get(Number(row.id))?.has(Number(alias.team_id)))).map((alias) => alias.alias)],
+    aliases: [...(byNhlId.get(Number(row.id))?.aliases ?? []), ...(byNhlId.has(Number(row.id)) ? [byNhlId.get(Number(row.id))!.canonical_name] : []), ...aliases.filter((alias) => Number(alias.player_id) === Number(row.id) && !alias.position_group && (alias.team_id == null || organizationByPlayer.get(Number(row.id))?.has(Number(alias.team_id)))).map((alias) => alias.alias)],
+    roleAliases: aliases.filter((alias) => Number(alias.player_id) === Number(row.id) && positionGroupSlotRole(alias.position_group) && (alias.team_id == null || organizationByPlayer.get(Number(row.id))?.has(Number(alias.team_id))))
+      .map((alias) => ({ alias: alias.alias, role: positionGroupSlotRole(alias.position_group)! })),
   }));
 }
 
