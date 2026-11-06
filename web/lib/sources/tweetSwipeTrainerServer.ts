@@ -344,7 +344,8 @@ export async function fetchTrainerQueue(args: {
   return { type: order[order.length - 1]!, cards: [], remainingByType: await countRemainingByType(args.supabase) };
 }
 
-async function countRemainingByType(supabase: any): Promise<Partial<Record<TrainerType, number>>> {
+/** Pending review rows per trainer type: the swipe trainer's "left in queue" counts, also read by the cron report. */
+export async function countRemainingByType(supabase: any): Promise<Partial<Record<TrainerType, number>>> {
   const counts: Partial<Record<TrainerType, number>> = {};
   for (const type of TRAINER_TYPE_ORDER) {
     let query = supabase.from("tweet_pattern_review_items").select("id", { count: "exact", head: true }).eq("review_status", "pending");
