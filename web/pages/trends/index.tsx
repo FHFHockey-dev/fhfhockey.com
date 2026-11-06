@@ -38,13 +38,13 @@ import { getTeamAbbreviationById } from "lib/teamsInfo";
 import { fallbackTeamLogo } from "lib/images";
 import type { DashboardSection } from "lib/dashboard/dataFetchers";
 import {
+  CartesianGrid,
   LineChart,
   Line,
   ResponsiveContainer,
   XAxis,
   YAxis,
-  Tooltip,
-  Legend
+  Tooltip
 } from "recharts";
 import styles from "./dashboard.module.scss";
 
@@ -145,10 +145,6 @@ const getTodayEt = (): string => {
   return `${y}-${m}-${d}`;
 };
 
-const CHART_COLORS = ["#2563eb", "#16a34a", "#f97316", "#ef4444", "#8b5cf6"];
-
-const getChartColor = (index: number): string =>
-  CHART_COLORS[index % CHART_COLORS.length];
 
 const DEFAULT_TEAM_LOGO = fallbackTeamLogo;
 const DEFAULT_PLAYER_IMAGE = DEFAULT_TEAM_LOGO;
@@ -177,6 +173,129 @@ const trendLegendName = (fullName: string | undefined, playerId: string | number
   if (parts.length === 0) return String(playerId);
   if (parts.length === 1) return parts[0];
   return `${parts[0].charAt(0)}. ${parts.slice(1).join(" ")}`;
+};
+
+type TrendTooltipEntry = { dataKey?: string | number; value?: number | string };
+
+// Movement charts as a highlight chart: one line in focus (brand blue), the rest
+// recessive grey, so eight series never read as spaghetti. The name buttons under
+// the chart move the focus (hover previews it). Lines are straight: smoothing
+// invented peaks and dips between games. Module-level so focus survives renders.
+const TrendLineChart = ({
+  data,
+  keys,
+  labelFor,
+  ariaLabel,
+  className
+}: {
+  data: Array<Record<string, number>>;
+  keys: Array<string | number>;
+  labelFor: (key: string) => string;
+  ariaLabel: string;
+  className: string;
+}) => {
+  const [focused, setFocused] = useState<string | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const keyList = keys.map(String);
+  const active =
+    preview ?? (focused && keyList.includes(focused) ? focused : keyList[0]);
+
+  const renderTooltip = ({
+    active: isActive,
+    payload,
+    label
+  }: {
+    active?: boolean;
+    payload?: TrendTooltipEntry[];
+    label?: string | number;
+  }) => {
+    if (!isActive || !payload?.length) return null;
+    const rows = payload
+      .filter((entry) => typeof entry.value === "number")
+      .sort((a, b) => Number(b.value) - Number(a.value));
+    return (
+      <div className={styles.trendTooltip}>
+        <p className={styles.trendTooltipTitle}>Game {label}</p>
+        <ul>
+          {rows.map((entry) => (
+            <li
+              key={String(entry.dataKey)}
+              className={String(entry.dataKey) === active ? styles.trendTooltipActive : undefined}
+            >
+              <span>{labelFor(String(entry.dataKey))}</span>
+              <span>{Math.round(Number(entry.value))}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  };
+
+  return (
+    <>
+      <div
+        className={`${className} ${styles.trendChart}`}
+        role="img"
+        aria-label={`${ariaLabel}. Highlighted: ${active ? labelFor(active) : "none"}.`}
+      >
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data} margin={{ top: 8, right: 12, bottom: 0, left: -16 }}>
+            <CartesianGrid vertical={false} />
+            <XAxis dataKey="gp" tickLine={false} />
+            <YAxis
+              domain={[0, 100]}
+              ticks={[0, 25, 50, 75, 100]}
+              tickLine={false}
+              axisLine={false}
+            />
+            <Tooltip content={renderTooltip} />
+            {keyList
+              .filter((key) => key !== active)
+              .map((key) => (
+                <Line
+                  key={key}
+                  type="linear"
+                  dataKey={key}
+                  dot={false}
+                  activeDot={false}
+                  strokeWidth={1.5}
+                  className={styles.trendLineMuted}
+                  isAnimationActive={false}
+                />
+              ))}
+            {active ? (
+              <Line
+                key={active}
+                type="linear"
+                dataKey={active}
+                dot={false}
+                activeDot={{ r: 4, className: styles.trendDotFocus }}
+                strokeWidth={3}
+                className={styles.trendLineFocus}
+                isAnimationActive={false}
+              />
+            ) : null}
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+      <div className={styles.trendLegend} role="group" aria-label="Highlight a line">
+        {keyList.map((key) => (
+          <button
+            key={key}
+            type="button"
+            aria-pressed={key === active}
+            className={styles.trendLegendButton}
+            onClick={() => setFocused(key)}
+            onMouseEnter={() => setPreview(key)}
+            onMouseLeave={() => setPreview(null)}
+          >
+            <span className={styles.trendLegendSwatch} aria-hidden="true" />
+            {labelFor(key)}
+          </button>
+        ))}
+      </div>
+    </>
+  );
 };
 
 const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
@@ -1218,29 +1337,13 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                             Refreshing team trends…
                           </p>
                         )}
-                        <div
+                        <TrendLineChart
                           className={styles.chartBody}
-                          role="img"
-                          aria-label={`${activeTeamCategory.label} team percentile trend lines by games played`}
-                        >
-                          <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={teamTrendSeries.series}>
-                              <XAxis dataKey="gp" />
-                              <YAxis domain={[0, 100]} />
-                              <Tooltip />
-                              <Legend />
-                              {teamTrendSeries.teams.map((team, idx) => (
-                                <Line
-                                  key={team}
-                                  type="monotone"
-                                  dataKey={team}
-                                  dot={false}
-                                  stroke={getChartColor(idx)}
-                                />
-                              ))}
-                            </LineChart>
-                          </ResponsiveContainer>
-                        </div>
+                          ariaLabel={`${activeTeamCategory.label} team percentile trend lines by games played`}
+                          data={teamTrendSeries.series}
+                          keys={teamTrendSeries.teams}
+                          labelFor={(team) => team}
+                        />
                         <div className={styles.teamRankStrip}>
                           {teamTrendRankings.slice(0, 5).map((row) => (
                             <div key={row.team} className={styles.teamRankCard}>
@@ -1426,30 +1529,15 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                             Refreshing skater trends…
                           </p>
                         )}
-                        <div
+                        <TrendLineChart
                           className={styles.chartFill}
-                          role="img"
-                          aria-label={`${activeSkaterLabel} skater percentile trend lines by games played`}
-                        >
-                          <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={skaterTrendSeries.series}>
-                            <XAxis dataKey="gp" />
-                            <YAxis domain={[0, 100]} />
-                            <Tooltip />
-                            <Legend />
-                            {skaterTrendSeries.players.map((playerId, idx) => (
-                              <Line
-                                key={playerId}
-                                name={trendLegendName(data?.skaterTrends?.playerMetadata?.[String(playerId)]?.fullName, playerId)}
-                                type="monotone"
-                                dataKey={playerId}
-                                dot={false}
-                                stroke={getChartColor(idx)}
-                              />
-                            ))}
-                            </LineChart>
-                          </ResponsiveContainer>
-                        </div>
+                          ariaLabel={`${activeSkaterLabel} skater percentile trend lines by games played`}
+                          data={skaterTrendSeries.series}
+                          keys={skaterTrendSeries.players}
+                          labelFor={(id) =>
+                            trendLegendName(data?.skaterTrends?.playerMetadata?.[id]?.fullName, id)
+                          }
+                        />
                       </div>
                     </div>
                   )}
@@ -1543,30 +1631,15 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                             Refreshing goalie trends…
                           </p>
                         )}
-                        <div
+                        <TrendLineChart
                           className={styles.chartFill}
-                          role="img"
-                          aria-label={`${activeGoalieLabel} goalie percentile trend lines by games played`}
-                        >
-                          <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={goalieTrendSeries.series}>
-                            <XAxis dataKey="gp" />
-                            <YAxis domain={[0, 100]} />
-                            <Tooltip />
-                            <Legend />
-                            {goalieTrendSeries.players.map((playerId, idx) => (
-                              <Line
-                                key={playerId}
-                                name={trendLegendName(data?.goalieTrends?.playerMetadata?.[String(playerId)]?.fullName, playerId)}
-                                type="monotone"
-                                dataKey={playerId}
-                                dot={false}
-                                stroke={getChartColor(idx)}
-                              />
-                            ))}
-                            </LineChart>
-                          </ResponsiveContainer>
-                        </div>
+                          ariaLabel={`${activeGoalieLabel} goalie percentile trend lines by games played`}
+                          data={goalieTrendSeries.series}
+                          keys={goalieTrendSeries.players}
+                          labelFor={(id) =>
+                            trendLegendName(data?.goalieTrends?.playerMetadata?.[id]?.fullName, id)
+                          }
+                        />
                       </div>
                     </div>
                   )}

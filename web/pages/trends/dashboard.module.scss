@@ -693,6 +693,128 @@
   min-height: 0;
 }
 
+// Movement charts (TrendLineChart): one focused line in brand blue, the rest
+// recessive; CSS overrides Recharts' stroke attributes.
+.trendLineMuted path {
+  stroke: rgba(v.$text-secondary, 0.38);
+}
+
+.trendLineFocus path {
+  stroke: v.$primary-color;
+}
+
+.trendDotFocus {
+  fill: v.$primary-color;
+  stroke: v.$background-dark;
+  stroke-width: 2px;
+}
+
+// Recessive grid, axes and hover cursor (Recharts' own classes, scoped here).
+.trendChart {
+  :global(.recharts-cartesian-grid line) {
+    stroke: rgba(v.$text-secondary, 0.14);
+  }
+
+  :global(.recharts-cartesian-axis-line) {
+    stroke: rgba(v.$text-secondary, 0.3);
+  }
+
+  :global(.recharts-cartesian-axis-tick-value) {
+    fill: v.$text-secondary;
+    font-size: v.$font-size-xs;
+  }
+
+  :global(.recharts-tooltip-cursor) {
+    stroke: rgba(v.$text-secondary, 0.5);
+  }
+}
+
+.trendTooltip {
+  min-width: 10rem;
+  padding: v.$space-sm;
+  border: v.$border-subtle;
+  border-radius: v.$border-radius-sm;
+  background: v.$background-medium;
+  box-shadow: v.$box-shadow-default;
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
+
+  ul {
+    margin: v.$space-xs 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 2px;
+  }
+
+  li {
+    display: flex;
+    justify-content: space-between;
+    gap: v.$space-md;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.trendTooltipTitle {
+  margin: 0;
+  color: v.$text-primary;
+  font-weight: 600;
+}
+
+.trendTooltip .trendTooltipActive {
+  color: v.$primary-color;
+  font-weight: 700;
+}
+
+// Name buttons under the chart: the pressed one is the focused line.
+.trendLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-xs;
+  margin-top: v.$space-sm;
+}
+
+.trendLegendButton {
+  display: inline-flex;
+  align-items: center;
+  gap: v.$space-xs;
+  min-height: 28px;
+  padding: 0 v.$space-sm;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$radius-control;
+  background: transparent;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+  cursor: pointer;
+
+  &:hover {
+    color: v.$text-primary;
+    border-color: rgba(v.$primary-color, 0.6);
+  }
+
+  &:focus-visible {
+    outline: 2px solid v.$primary-color;
+    outline-offset: 2px;
+  }
+
+  &[aria-pressed="true"] {
+    border-color: v.$primary-color;
+    color: v.$color-white;
+  }
+}
+
+.trendLegendSwatch {
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: rgba(v.$text-secondary, 0.6);
+}
+
+.trendLegendButton[aria-pressed="true"] .trendLegendSwatch {
+  height: 3px;
+  background: v.$primary-color;
+}
+
 // Skater/goalie trend charts fill their card so it matches the ranking list
 // beside it instead of leaving a tall empty band under a 260px chart.
 .chartFill {

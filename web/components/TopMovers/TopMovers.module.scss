@@ -98,21 +98,27 @@
   color: v.$danger-color;
 }
 
+// 80% fills clear 3:1 against the grey track (green 6.3:1, red 3.2:1).
 .deltaFill.positive {
-  background: rgba(v.$success-color, 0.55);
+  background: rgba(v.$success-color, 0.8);
 }
 
 .deltaFill.negative {
-  background: rgba(v.$danger-color, 0.55);
+  background: rgba(v.$danger-color, 0.8);
 }
 
-// Second lap (change over 100%): the same hue at full strength.
+// Second lap (change over 100%): a brighter tint of the same hue, with a 2px
+// surface gap where it ends so the lap reads even where the tints sit close.
+.deltaLap {
+  box-shadow: 2px 0 0 v.$background-medium;
+}
+
 .deltaLap.positive {
-  background: v.$success-color;
+  background: color-mix(in srgb, #{v.$success-color} 50%, #{v.$color-white});
 }
 
 .deltaLap.negative {
-  background: v.$danger-color;
+  background: color-mix(in srgb, #{v.$danger-color} 50%, #{v.$color-white});
 }
 
 .empty {

@@ -159,3 +159,27 @@ describe("buildGoalieShareByTeam", () => {
     expect(stats.totalAppearances).toBe(3);
   });
 });
+
+describe("pickSliceColors", () => {
+  it("skips near-identical team greys so two goalies never share a shade", async () => {
+    const { pickSliceColors } = await import("./index");
+    // Kings: black (lifted to grey), silver, white.
+    const colors = pickSliceColors(["#8a8f98", "#A2AAAD", "#FFFFFF"], 2, "#1a1d21");
+    expect(colors).toEqual(["#8a8f98", "#FFFFFF"]);
+  });
+
+  it("keeps dark team primaries that still read on the card", async () => {
+    const { pickSliceColors } = await import("./index");
+    // Wild green and Rangers blue stay the starter's colour.
+    expect(pickSliceColors(["#154734", "#DDCBA4"], 2, "#1a1d21")[0]).toBe("#154734");
+    expect(pickSliceColors(["#0038A8", "#FFFFFF"], 2, "#1a1d21")[0]).toBe("#0038A8");
+  });
+
+  it("drops colours too dark for the card and tops up from the fallbacks", async () => {
+    const { pickSliceColors } = await import("./index");
+    const colors = pickSliceColors(["#101214", "#14a2d2"], 3, "#1a1d21");
+    expect(colors[0]).toBe("#14a2d2");
+    expect(colors).toHaveLength(3);
+    expect(new Set(colors).size).toBe(3);
+  });
+});

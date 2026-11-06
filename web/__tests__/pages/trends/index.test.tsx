@@ -1,6 +1,6 @@
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 
 const teamTrendsFixture = vi.hoisted(() => ({
   value: { generatedAt: "", categories: {} } as any
@@ -58,7 +58,8 @@ vi.mock("recharts", () => ({
   XAxis: () => null,
   YAxis: () => null,
   Tooltip: () => null,
-  Legend: () => null
+  Legend: () => null,
+  CartesianGrid: () => null
 }));
 
 vi.mock("components/SurfaceWorkflowLinks", () => ({
@@ -336,6 +337,16 @@ describe("Trends dashboard", () => {
     expect(screen.getByText("▼3.2%")).toBeTruthy();
     expect(screen.getByText("Rolling percentile by games played")).toBeTruthy();
     expect(screen.getByText("Source updated 2026-04-08")).toBeTruthy();
+
+    // The movement chart highlights one line; the name buttons move the focus.
+    const highlight = screen.getByRole("group", { name: "Highlight a line" });
+    const [car, ana] = within(highlight).getAllByRole("button");
+    expect(car.textContent).toBe("CAR");
+    expect(car.getAttribute("aria-pressed")).toBe("true");
+    expect(ana.getAttribute("aria-pressed")).toBe("false");
+    fireEvent.click(ana);
+    expect(ana.getAttribute("aria-pressed")).toBe("true");
+    expect(car.getAttribute("aria-pressed")).toBe("false");
   });
 
   it("keeps stale section data visible with source context and a scoped retry", () => {
