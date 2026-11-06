@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { NextPage } from "next";
 import Head from "next/head";
+import Link from "next/link";
+import { useRouter } from "next/router";
 
 import styles from "./tweet-pattern-review.module.scss";
 
@@ -20,6 +22,7 @@ import {
 import type { NewsLineupCardData } from "lib/newsLineupCard";
 import type { TweetPatternReviewAssignment } from "lib/sources/tweetPatternReview";
 import AdminPageGate from "components/Admin/AdminPageGate";
+import TweetSwipeTrainer from "components/TweetSwipeTrainer/TweetSwipeTrainer";
 import supabase from "lib/supabase";
 
 type ReviewStatus = "pending" | "reviewed" | "ignored";
@@ -1217,6 +1220,9 @@ const TweetPatternReview = () => {
         {/* ── Page header ─────────────────────────────────────────────────── */}
         <header className={styles.pageHeader}>
           <h1>Tweet Pattern Review</h1>
+          <Link href="/db/tweet-pattern-review?mode=trainer" className={styles.trainerLink}>
+            Swipe trainer
+          </Link>
           {statusMessage ? (
             <span className={styles.statusMessage}>{statusMessage}</span>
           ) : null}
@@ -2486,10 +2492,23 @@ const TweetPatternReview = () => {
   );
 };
 
-const TweetPatternReviewPage: NextPage = () => (
-  <AdminPageGate>
-    <TweetPatternReview />
-  </AdminPageGate>
-);
+const TweetPatternReviewPage: NextPage = () => {
+  const router = useRouter();
+  const trainerMode = router.query.mode === "trainer";
+  return (
+    <AdminPageGate>
+      {trainerMode ? (
+        <>
+          <Head>
+            <title>Tweet Parsing Trainer | FHFH</title>
+          </Head>
+          <TweetSwipeTrainer />
+        </>
+      ) : (
+        <TweetPatternReview />
+      )}
+    </AdminPageGate>
+  );
+};
 
 export default TweetPatternReviewPage;
