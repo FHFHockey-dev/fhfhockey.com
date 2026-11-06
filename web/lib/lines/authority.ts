@@ -6,12 +6,22 @@ export const RELAY_ACCOUNTS = ["dfofantasy", "nhl_rosters", "cccmiddleton", "gam
 /** Excluded from both lanes (TJ decision 2). */
 export const EXCLUDED_AUTHORS = ["fhfhockey"];
 
+/** Official NHL club accounts (lowercase handles). Exact handles are worth re-checking as clubs rebrand. */
+const TEAM_ACCOUNTS = ["njdevils", "nyislanders", "nyrangers", "nhlflyers", "penguins", "nhlbruins", "buffalosabres", "canadiensmtl", "senators",
+  "mapleleafs", "canes", "nhlcanes", "flapanthers", "tblightning", "capitals", "nhlblackhawks", "detroitredwings", "predsnhl", "stlouisblues", "nhlflames",
+  "avalanche", "edmontonoilers", "canucks", "anaheimducks", "dallasstars", "lakings", "sanjosesharks", "bluejacketsnhl", "mnwild", "nhljets",
+  "utahmammoth", "goldenknights", "seattlekraken"];
+
 /**
- * Seed tiers keyed by lowercase original-author handle. Proposed to TJ by pop-up; until
- * AUTHORITY_SEED_APPROVED is true every non-excluded author is "unknown".
+ * Seed tiers keyed by lowercase original-author handle, approved by TJ (pop-up, 2026-11-06):
+ * team = official club accounts, aggregator = the six hockey accounts, beat starts empty.
+ * Every other author is "unknown" at aggregator weight.
  */
-export const AUTHORITY_SEED_APPROVED = false;
-export const AUTHORITY_SEED: Record<string, Exclude<AuthorityTier, "unknown" | "excluded">> = {};
+export const AUTHORITY_SEED_APPROVED = true;
+export const AUTHORITY_SEED: Record<string, Exclude<AuthorityTier, "unknown" | "excluded">> = {
+  ...Object.fromEntries(TEAM_ACCOUNTS.map((handle) => [handle, "team" as const])),
+  ...Object.fromEntries(RELAY_ACCOUNTS.map((handle) => [handle, "aggregator" as const])),
+};
 
 const WEIGHT: Record<AuthorityTier, number> = { team: 3, beat: 2, aggregator: 1, unknown: 1, excluded: 0 };
 const HANDLE = /^[A-Za-z0-9_]{1,15}$/;

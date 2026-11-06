@@ -4,7 +4,7 @@ import { lineTestDatabase } from "./testDatabase";
 vi.mock("lib/sources/tweetProjectionStorage", () => ({ projectionReportFromSource: (source: any) => structuredClone(source.metadata.testReport) }));
 vi.mock("./gameState", async (load) => ({ ...await load<object>(), observeLineGame: async (game: any) => game }));
 import { decideBinding, decideContext } from "./decisions";
-import { authorityTier, sourceAttribution } from "./authority";
+import { authorityTier, authorityWeight, sourceAttribution } from "./authority";
 import { readReviewedDecision } from "./trainerDecisions";
 import { detectTweetLineContext } from "lib/sources/tweetInterpretation";
 import { processLineSnapshotEvidence } from "./processor";
@@ -61,9 +61,12 @@ describe("original-author attribution", () => {
     const ifttt = source(`RT @pham1717: ${SABRES}`, { tweetId: "555", sourceHandle: "GameDayLines" });
     expect(sourceAttribution(ifttt, ifttt.rawText)).toMatchObject({ originalAuthor: "pham1717", relayAccount: "gamedaylines", originalTweetId: null, relayTweetId: "555", timestampIsOriginal: false });
   });
-  it("excludes FHFHockey and keeps every other author unknown until the seed list is approved", () => {
+  it("tiers by the approved seed: team > beat > aggregator; FHFHockey excluded; unlisted authors unknown", () => {
     expect(authorityTier("FHFHockey")).toBe("excluded");
+    expect(authorityTier("@BuffaloSabres")).toBe("team");
+    expect(authorityTier("DFOFantasy")).toBe("aggregator");
     expect(authorityTier("pham1717")).toBe("unknown");
+    expect([authorityWeight("team"), authorityWeight("beat"), authorityWeight("aggregator"), authorityWeight("excluded")]).toEqual([3, 2, 1, 0]);
   });
 });
 
