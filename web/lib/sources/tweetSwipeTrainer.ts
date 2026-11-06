@@ -62,7 +62,7 @@ export const POSITION_MISMATCH_PENALTY = 40;
 
 /** Score bands: at or above HIGH is "likely correct"; below MID is red. Amber is in between. */
 export const CONFIDENCE_BANDS = { high: 85, mid: 60 } as const;
-export const TRAINER_CONFIDENCE_VERSION = "trainer-2026-11-06.1";
+export const TRAINER_CONFIDENCE_VERSION = "trainer-2026-11-06.3";
 
 export type SlotRole = "forward" | "defense" | "goalie";
 
@@ -110,6 +110,8 @@ export type TrainerParse = {
   players: TrainerPlayerMatch[];
   forwards: TrainerLine[];
   defensePairs: TrainerLine[];
+  /** Power-play units in order (PP1, PP2), up to five names each, in the order the tweet lists them. */
+  powerPlay: TrainerLine[];
   goalies: TrainerPlayerMatch[];
   extras: TrainerPlayerMatch[];
   phraseHits: TrainerPhraseHit[];
@@ -127,15 +129,31 @@ export type TrainerExtraction = {
   type: TrainerType;
   category: string;
   subcategory: string | null;
+  /**
+   * The NHL team the tweet is about. Records saved before teams were labelled have none (undefined), and their team
+   * isn't judged; null means "about no single team".
+   */
+  teamId?: number | null;
   players: TrainerSlotValue[];
   forwards: TrainerSlotValue[][];
   defensePairs: TrainerSlotValue[][];
   goalies: TrainerSlotValue[];
   /** Scratches and injured players listed with the lineup. */
   extras: TrainerSlotValue[];
-  /** Extra skaters (13th F / 7th D) listed after the lines. The parser has no field for them yet, so the key teaches it. */
-  extraSkaters: TrainerSlotValue[];
+  /** Extra forwards (13th F) listed after the lines. The parser has no field for them yet, so the key teaches it. */
+  extraForwards: TrainerSlotValue[];
+  /** Extra defensemen (7th D) listed after the pairs. */
+  extraDefensemen: TrainerSlotValue[];
+  /** Power-play units (PP1, PP2), five spots each in the tweet's order. Older records have none. */
+  powerPlay: TrainerSlotValue[][];
+  /** Players a power-play tweet says came off a unit ("Kulich and Krebs replace McLeod and Doan"). */
+  offPowerPlay: TrainerSlotValue[];
 };
+
+/** A power-play tweet: its spots are PP1 and PP2, not even-strength lines. */
+export function isPowerPlaySubcategory(subcategory: string | null | undefined): boolean {
+  return Boolean(subcategory?.startsWith("POWER PLAY"));
+}
 
 export type TrainerInput = {
   text: string;
@@ -308,6 +326,16 @@ function buildLines(args: {
   return lines;
 }
 
+/** The parser's power-play units, PP1 before PP2 when it labelled them. */
+function orderedPowerPlayUnits(metadata: Record<string, unknown> | null | undefined): string[][] {
+  const units = Array.isArray(metadata?.powerPlayUnits) ? (metadata!.powerPlayUnits as string[][]) : [];
+  const labels = Array.isArray(metadata?.powerPlayUnitLabels) ? (metadata!.powerPlayUnitLabels as Array<string | null>) : [];
+  return units
+    .map((names, index) => ({ names, rank: labels[index] === "pp1" ? 1 : labels[index] === "pp2" ? 2 : 3 + index }))
+    .sort((left, right) => left.rank - right.rank)
+    .map((unit) => unit.names.slice(0, 5));
+}
+
 function dedupePlayers(matches: TrainerPlayerMatch[]): TrainerPlayerMatch[] {
   const seen = new Map<string, TrainerPlayerMatch>();
   for (const match of matches) {
@@ -399,8 +427,10 @@ export function scoreTrainerConfidence(parse: Omit<TrainerParse, "confidence">):
   const penalize = (label: string, points: number) => {
     if (points < 0) signals.push({ label, points: Math.round(points) });
   };
-  const keptUnits = [...parse.forwards, ...parse.defensePairs].filter((line) => line.kept).length;
   const isLineup = parse.type === "line_combination";
+  const isPowerPlay = isLineup && isPowerPlaySubcategory(parse.subcategory);
+  const powerPlayUnits = parse.powerPlay.filter((unit) => unit.kept).length;
+  const keptUnits = [...parse.forwards, ...parse.defensePairs].filter((line) => line.kept).length + powerPlayUnits;
 
   if (!parse.publishedAtKnown) penalize("Publication time unknown", -10);
 
@@ -417,12 +447,31 @@ export function scoreTrainerConfidence(parse: Omit<TrainerParse, "confidence">):
 
   if (isLineup) {
     if (!keptUnits) penalize("Lineup type but no complete line or pair", -15);
-    penalize(`${Math.min(keptUnits, 7)} of 7 even-strength units complete`, -((7 - Math.min(keptUnits, 7)) / 7) * 40);
+    // A power-play tweet names two units, not seven even-strength ones.
+    if (isPowerPlay) {
+      penalize(`${Math.min(powerPlayUnits, 2)} of 2 power-play units complete`, -((2 - Math.min(powerPlayUnits, 2)) / 2) * 40);
+    } else {
+      penalize(`${Math.min(keptUnits, 7)} of 7 even-strength units complete`, -((7 - Math.min(keptUnits, 7)) / 7) * 40);
+    }
   } else if (parse.type !== "other" && !parse.players.some((player) => player.playerId != null)) {
     penalize("No player matched for this claim", -30);
   }
   const unresolved = Math.max(parse.unresolvedCount, parse.players.filter((player) => player.playerId == null).length);
   if (unresolved) penalize(`${unresolved} unresolved name${unresolved === 1 ? "" : "s"}`, -Math.min(40, unresolved * 8));
+
+  // A lineup tweet names everyone for a reason: a matched player left out of every spot (a missed backup goalie,
+  // extras, a dropped line) means the reading is incomplete. Unmatched names are already counted above.
+  if (isLineup) {
+    const placed = new Set(
+      [...parse.forwards, ...parse.defensePairs, ...parse.powerPlay]
+        .filter((line) => line.kept)
+        .flatMap((line) => line.slots)
+        .concat(parse.goalies, parse.extras)
+        .flatMap((match) => (match.playerId != null ? [match.playerId] : []))
+    );
+    const unplaced = parse.players.filter((player) => player.playerId != null && !placed.has(player.playerId)).length;
+    if (unplaced) penalize(`${unplaced} named player${unplaced === 1 ? "" : "s"} not placed`, -Math.min(25, unplaced * 5));
+  }
 
   const matched = parse.players.filter((player) => player.playerId != null);
   const mean = matched.length ? matched.reduce((sum, player) => sum + player.confidence, 0) / matched.length : 100;
@@ -506,6 +555,10 @@ export function parseTweetForTrainer(args: {
   const defensePairs = buildLines({ text, roster, kept: source.defensePairs ?? [], candidates: candidates.defensePairs, role: "defense" });
   const goalies = (source.goalies ?? []).map((name) => matchKeptName(text, name, roster, "goalie"));
   const extras = [...(source.scratches ?? []), ...(source.injuries ?? [])].map((name) => matchKeptName(text, name, roster, null));
+  const powerPlay = orderedPowerPlayUnits(source.metadata).map((names) => ({
+    slots: names.map((name) => matchKeptName(text, name, roster, null)),
+    kept: true
+  }));
   // Production runs the interpretation path; its unresolved spans are the names it could not match.
   const interpretationUnresolved =
     (source.metadata?.interpretation as { unresolved?: Array<{ text: string; reason: string }> } | undefined)?.unresolved ?? [];
@@ -517,7 +570,7 @@ export function parseTweetForTrainer(args: {
     return entry ? [mentionFor(text, entry)] : [];
   });
   const unmatched = (source.unmatchedNames ?? []).map((raw) => matchFromIdentity(raw, roster));
-  const slotPlayers = [...forwards, ...defensePairs].filter((line) => line.kept).flatMap((line) => line.slots);
+  const slotPlayers = [...forwards, ...defensePairs, ...powerPlay].filter((line) => line.kept).flatMap((line) => line.slots);
   const players = dedupePlayers([...slotPlayers, ...goalies, ...extras, ...mentioned, ...unmatched, ...unresolvedNames]);
 
   const phraseHits = phraseHitsFor(text);
@@ -547,6 +600,7 @@ export function parseTweetForTrainer(args: {
     players,
     forwards,
     defensePairs,
+    powerPlay,
     goalies,
     extras,
     phraseHits,
@@ -567,12 +621,16 @@ export function extractionFromParse(parse: TrainerParse): TrainerExtraction {
     type: parse.type,
     category: parse.category,
     subcategory: parse.subcategory,
+    teamId: parse.teamId,
     players: parse.players.filter((player) => player.playerId != null).map(slotValue),
     forwards: parse.forwards.filter((line) => line.kept).map((line) => line.slots.map(slotValue)),
     defensePairs: parse.defensePairs.filter((line) => line.kept).map((line) => line.slots.map(slotValue)),
     goalies: parse.goalies.map(slotValue),
     extras: parse.extras.map(slotValue),
-    extraSkaters: []
+    extraForwards: [],
+    extraDefensemen: [],
+    powerPlay: parse.powerPlay.filter((unit) => unit.kept).map((unit) => unit.slots.map(slotValue)),
+    offPowerPlay: []
   };
 }
 
@@ -595,6 +653,7 @@ export type ExtractionComparison = {
   correct: boolean;
   typeMatch: boolean;
   categoryMatch: boolean;
+  teamMatch: boolean;
   playersMatch: boolean;
   slotsMatch: boolean;
 };
@@ -603,14 +662,26 @@ export function compareExtraction(expected: TrainerExtraction, actual: TrainerEx
   const typeMatch = expected.type === actual.type;
   const categoryMatch =
     expected.category === actual.category && (expected.subcategory ?? null) === (actual.subcategory ?? null);
+  // Only judged when the answer names a team (older records don't).
+  const teamMatch = expected.teamId === undefined || (expected.teamId ?? null) === (actual.teamId ?? null);
   const playersMatch = sameSet(expected.players, actual.players);
   const slotsMatch =
     sameLines(expected.forwards, actual.forwards) &&
     sameLines(expected.defensePairs, actual.defensePairs) &&
     expected.goalies.map(slotKey).join("|") === actual.goalies.map(slotKey).join("|") &&
     sameSet(expected.extras, actual.extras) &&
-    sameSet(expected.extraSkaters ?? [], actual.extraSkaters ?? []);
-  return { correct: typeMatch && categoryMatch && playersMatch && slotsMatch, typeMatch, categoryMatch, playersMatch, slotsMatch };
+    sameSet(expected.extraForwards ?? [], actual.extraForwards ?? []) &&
+    sameSet(expected.extraDefensemen ?? [], actual.extraDefensemen ?? []) &&
+    sameLines(expected.powerPlay ?? [], actual.powerPlay ?? []) &&
+    sameSet(expected.offPowerPlay ?? [], actual.offPowerPlay ?? []);
+  return {
+    correct: typeMatch && categoryMatch && teamMatch && playersMatch && slotsMatch,
+    typeMatch,
+    categoryMatch,
+    teamMatch,
+    playersMatch,
+    slotsMatch
+  };
 }
 
 export function buildAnswerKeyRecord(args: {
@@ -651,7 +722,10 @@ export function assignmentsFromExtraction(extraction: TrainerExtraction): TweetP
     ...extraction.defensePairs.flat(),
     ...extraction.goalies,
     ...extraction.extras,
-    ...(extraction.extraSkaters ?? [])
+    ...(extraction.extraForwards ?? []),
+    ...(extraction.extraDefensemen ?? []),
+    ...(extraction.powerPlay ?? []).flat(),
+    ...(extraction.offPowerPlay ?? [])
   ];
   const players = new Map<string, TrainerSlotValue>();
   for (const slot of slots) players.set(slotKey(slot), slot);
@@ -672,12 +746,15 @@ export function assignmentsFromExtraction(extraction: TrainerExtraction): TweetP
 export function readAnswerKeyRecord(metadata: unknown): TweetAnswerKeyRecord | null {
   const record = (metadata as { answerKey?: TweetAnswerKeyRecord } | null)?.answerKey;
   if (!record || record.version !== 1 || !record.expected || !record.input) return null;
-  // Records saved before extra skaters existed have none.
-  return {
-    ...record,
-    parsed: { ...record.parsed, extraSkaters: record.parsed.extraSkaters ?? [] },
-    expected: { ...record.expected, extraSkaters: record.expected.extraSkaters ?? [] }
-  };
+  // Records saved before extra forwards / defensemen or power-play units existed have none.
+  const withExtras = (extraction: TrainerExtraction): TrainerExtraction => ({
+    ...extraction,
+    extraForwards: extraction.extraForwards ?? [],
+    extraDefensemen: extraction.extraDefensemen ?? [],
+    powerPlay: extraction.powerPlay ?? [],
+    offPowerPlay: extraction.offPowerPlay ?? []
+  });
+  return { ...record, parsed: withExtras(record.parsed), expected: withExtras(record.expected) };
 }
 
 export type RegressionCase = {

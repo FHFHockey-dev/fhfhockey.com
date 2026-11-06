@@ -13,7 +13,14 @@ import {
 import { buildRosterEventsFromReviewedTweet } from "lib/projections/rosterEvents";
 import { fetchLinesCccTweetOEmbedAttempt } from "lib/sources/linesCccIngestion";
 import { TRAINER_TYPE_ORDER, type TrainerExtraction, type TrainerType } from "lib/sources/tweetSwipeTrainer";
-import { clearTrainerContextCache, fetchTrainerQueue, queueTrainerAliasName, saveTrainerVerdict } from "lib/sources/tweetSwipeTrainerServer";
+import {
+  clearTrainerContextCache,
+  fetchTrainerQueue,
+  loadTrainerContext,
+  queueTrainerAliasName,
+  refreshTrainerCard,
+  saveTrainerVerdict
+} from "lib/sources/tweetSwipeTrainerServer";
 import adminOnly from "utils/adminOnlyMiddleware";
 
 type ReviewStatus = "pending" | "reviewed" | "ignored";
@@ -943,16 +950,21 @@ async function handleTrainerGet(req: any, res: NextApiResponse) {
   // After an alias fix the cached rosters are stale; reload so the next cards use the new alias.
   if (parseString(req.query.fresh)) clearTrainerContextCache();
   const excludeKeys = (parseString(req.query.exclude) ?? "").split(",").map((key) => key.trim()).filter(Boolean).slice(-200);
-  const [queue, players] = await Promise.all([
+  const [queue, players, context] = await Promise.all([
     fetchTrainerQueue({
       supabase: req.supabase,
       type: parseTrainerType(parseString(req.query.type)),
       limit: Math.min(parseLimit(req.query.limit, 10), 30),
       excludeKeys
     }),
-    fetchRosterPlayers(req.supabase)
+    fetchRosterPlayers(req.supabase),
+    loadTrainerContext(req.supabase, null)
   ]);
-  return res.json({ success: true, ...queue, players, categoryOptions: TWEET_PATTERN_CATEGORY_OPTIONS });
+  // Teams for the correction editor's Team picker (the parser sometimes misses the team).
+  const teams = context.teams
+    .map((team) => ({ id: team.id, abbreviation: team.abbreviation, name: team.name }))
+    .sort((left, right) => left.name.localeCompare(right.name));
+  return res.json({ success: true, ...queue, players, teams, categoryOptions: TWEET_PATTERN_CATEGORY_OPTIONS });
 }
 
 async function handleTrainerPost(action: string, body: Record<string, unknown>, req: any, res: NextApiResponse) {
@@ -960,6 +972,10 @@ async function handleTrainerPost(action: string, body: Record<string, unknown>, 
   const shadowPostId = parseString(body.shadowPostId);
   if (!reviewItemId && !shadowPostId) {
     return res.status(400).json({ success: false, message: "Missing reviewItemId or shadowPostId." });
+  }
+  if (action === "trainer-reparse") {
+    const card = await refreshTrainerCard({ supabase: req.supabase, reviewItemId, shadowPostId });
+    return res.json({ success: true, card });
   }
   if (action === "trainer-verdict") {
     const verdict = body.verdict === "correct" || body.verdict === "wrong" ? body.verdict : null;
@@ -988,7 +1004,7 @@ async function handlePost(req: any, res: NextApiResponse) {
   const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body ?? {};
   const action = parseString(body.action) ?? "save";
 
-  if (action === "trainer-verdict" || action === "trainer-queue-alias") {
+  if (action === "trainer-verdict" || action === "trainer-queue-alias" || action === "trainer-reparse") {
     return handleTrainerPost(action, body, req, res);
   }
 

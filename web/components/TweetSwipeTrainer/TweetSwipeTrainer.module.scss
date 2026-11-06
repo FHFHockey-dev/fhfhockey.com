@@ -163,19 +163,20 @@
   text-align: center;
 }
 
+// Text stays selectable with a mouse; only touch screens swipe (and lose selection while dragging).
 .swipeArea {
   position: relative;
   touch-action: pan-y;
-  user-select: none;
-  cursor: grab;
   transition: transform 160ms ease-out;
 
   &[data-gesture] {
     transition: none;
   }
+}
 
-  &:active {
-    cursor: grabbing;
+@media (pointer: coarse) {
+  .swipeArea {
+    user-select: none;
   }
 }
 
@@ -211,7 +212,8 @@
 }
 
 .card {
-  @include panel.panel-shell($radius: v.$radius-card);
+  // Visible overflow so a player search list can open past the card's bottom edge.
+  @include panel.panel-shell($radius: v.$radius-card, $overflow: visible);
   display: grid;
   gap: v.$space-sm;
   padding: v.$space-md;
@@ -457,6 +459,124 @@
   font-weight: 600;
 }
 
+// Starter / Backup labels need more room than L1 / D1, at every width.
+.slotRow.slotRowRole {
+  grid-template-columns: 64px minmax(0, 1fr);
+  align-items: center;
+
+  .slotLabel {
+    padding-top: 0;
+  }
+}
+
+// Card placements (TJ): pick a dropped or other name, then a dotted spot. Spots may stay empty.
+.chipPicked,
+.chipPicked:hover {
+  border: 2px solid v.$primary-color;
+  background: v.$primary-color-opaque;
+}
+
+.placedTag {
+  flex: none;
+  padding: 0 6px;
+  white-space: nowrap;
+  border-radius: v.$radius-xs;
+  background: rgba(v.$color-white, 0.08);
+  color: v.$text-primary;
+  font-size: v.$font-size-xs;
+}
+
+.placeSpot {
+  @include focus-visible;
+  min-width: 160px;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px dashed v.$border-primary;
+  border-radius: v.$radius-control;
+  background: transparent;
+  color: v.$text-secondary;
+  font: inherit;
+  font-size: v.$font-size-xs;
+  text-align: left;
+  cursor: default;
+}
+
+.placeSpotReady {
+  border-color: v.$primary-color;
+  color: v.$color-white;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(v.$primary-color, 0.1);
+  }
+}
+
+.placeSpotOver {
+  border-style: solid;
+  border-color: v.$primary-color;
+  background: rgba(v.$primary-color, 0.16);
+}
+
+.placedName {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 4px 0 10px;
+  border: 1px solid v.$primary-color;
+  border-radius: v.$radius-control;
+  background: rgba(v.$primary-color, 0.12);
+  color: v.$color-white;
+  font-size: v.$font-size-sm;
+}
+
+.placedRemove {
+  @include focus-visible;
+  min-width: 24px;
+  min-height: 24px;
+  border: 0;
+  border-radius: v.$radius-xs;
+  background: transparent;
+  color: v.$text-primary;
+  font: inherit;
+  font-size: v.$font-size-base;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover {
+    background: v.$surface-2;
+  }
+}
+
+.pickHint {
+  margin: 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+
+  strong {
+    color: v.$color-white;
+  }
+}
+
+.linkButton {
+  @include focus-visible;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: v.$primary-color;
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.noneFound {
+  margin: 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+  font-style: normal;
+}
+
 .slotChips {
   display: flex;
   flex-wrap: wrap;
@@ -468,6 +588,10 @@
 .lineGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.lineGrid.lineGridWide {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 .lineGrid .playerChip {
@@ -567,7 +691,8 @@
 
 .fixPanel,
 .editor {
-  @include panel.panel-shell($radius: v.$radius-card, $variant: soft);
+  // Visible overflow so player search lists aren't cut at the panel edge.
+  @include panel.panel-shell($radius: v.$radius-card, $variant: soft, $overflow: visible);
   display: grid;
   gap: v.$space-sm;
   padding: v.$space-md;
@@ -589,6 +714,73 @@
     padding-top: 0;
     border-top: 0;
   }
+}
+
+// Player search list: opens under its field, at most 8 players, plus "Search all players".
+.combo {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+
+  > input {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+.comboList {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  z-index: 20;
+  width: max(100%, 240px);
+  max-height: 300px;
+  margin: 0;
+  padding: v.$space-xs;
+  overflow-y: auto;
+  list-style: none;
+  border: v.$border-subtle;
+  border-radius: v.$radius-control;
+  background: v.$surface-1;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+}
+
+.comboOption {
+  display: flex;
+  justify-content: space-between;
+  gap: v.$space-sm;
+  padding: 6px 8px;
+  border-radius: v.$radius-xs;
+  color: v.$color-white;
+  font-size: v.$font-size-sm;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(v.$primary-color, 0.16);
+  }
+}
+
+.comboOptionActive {
+  background: rgba(v.$primary-color, 0.16);
+}
+
+.comboMeta,
+.comboEmpty {
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+}
+
+.comboEmpty {
+  padding: 6px 8px;
+}
+
+.comboExpand {
+  margin-top: 2px;
+  border-top: v.$border-subtle;
+  border-radius: 0 0 v.$radius-xs v.$radius-xs;
+  color: v.$primary-color;
+  font-weight: 600;
 }
 
 .fixLead,
@@ -656,7 +848,7 @@
 
 .editorRow {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: v.$space-sm;
 }
 
@@ -709,6 +901,10 @@
   .editorCell {
     flex: none;
   }
+}
+
+.editorGrid.editorGridWide {
+  grid-template-columns: 28px repeat(5, minmax(0, 1fr));
 }
 
 .spotHead {
@@ -788,6 +984,29 @@
 
   &:hover {
     border-color: v.$primary-color;
+  }
+}
+
+.trayItem {
+  display: inline-flex;
+  align-items: stretch;
+  gap: 2px;
+}
+
+.trayRemove {
+  @include focus-visible;
+  min-width: 28px;
+  border: 2px solid v.$border-primary;
+  border-radius: v.$radius-control;
+  background: transparent;
+  color: v.$text-secondary;
+  font: inherit;
+  font-size: v.$font-size-sm;
+  cursor: pointer;
+
+  &:hover {
+    border-color: v.$danger-color;
+    color: v.$color-white;
   }
 }
 
@@ -875,8 +1094,13 @@
 
   // Desktop is keyboard-first: one compact row (hint left, buttons right) so the chrome stays quieter than the card.
   .actionBar {
-    grid-template-columns: minmax(0, 1fr) repeat(3, 160px);
+    grid-template-columns: minmax(0, 1fr) repeat(3, minmax(160px, max-content));
     align-items: center;
+  }
+
+  .actionBar .actionButton {
+    padding: 0 v.$space-md;
+    white-space: nowrap;
   }
 
   .actionBar .keyHint {
@@ -957,6 +1181,10 @@
     grid-template-columns: 16px repeat(3, minmax(0, 1fr));
     gap: 3px;
 
+    &.editorGridWide {
+      grid-template-columns: 24px repeat(5, minmax(0, 1fr));
+    }
+
     .slotLabel {
       font-size: v.$font-size-xs;
     }
@@ -1009,7 +1237,10 @@
   .typeTab,
   .slotInput,
   .queuedName,
-  .trayChip {
+  .trayChip,
+  .trayRemove,
+  .placeSpot,
+  .placedName {
     min-height: 40px;
   }
 

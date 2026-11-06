@@ -426,6 +426,22 @@ async function ensureReviewRowForShadow(supabase: any, shadow: ShadowRow, parse:
   return data as ReviewRow;
 }
 
+/**
+ * Re-reads one card with fresh rosters and aliases, after TJ fixes a name on it, so that "Correct" judges the
+ * reading he now sees.
+ */
+export async function refreshTrainerCard(args: {
+  supabase: any;
+  reviewItemId?: string | null;
+  shadowPostId?: string | null;
+}): Promise<TrainerCard> {
+  clearTrainerContextCache();
+  const { row, shadow } = await loadCardForWrite(args.supabase, args);
+  const tweetId = shadow?.tweet_id ?? row?.tweet_id ?? null;
+  const unresolved = tweetId ? await fetchUnresolvedByTweet(args.supabase, [tweetId]) : new Map<string, TrainerUnresolvedName[]>();
+  return buildCard({ supabase: args.supabase, row, shadow, unresolved: tweetId ? unresolved.get(tweetId) ?? [] : [] });
+}
+
 /** Saves one verdict as an answer-key record. The parser is re-run server-side so the stored snapshot is exact. */
 export async function saveTrainerVerdict(args: {
   supabase: any;

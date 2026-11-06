@@ -32,7 +32,9 @@ const roster: RosterNameEntry[] = [
   player(7, "Corey Perry", "R"),
   player(8, "Ryan Nugent-Hopkins", "C"),
   player(9, "Darnell Nurse", "D"),
-  player(10, "Brett Kulak", "D")
+  player(10, "Brett Kulak", "D"),
+  player(11, "Adam Henrique", "C"),
+  player(12, "Viktor Arvidsson", "R")
 ];
 const rosterByTeam = new Map([[22, roster]]);
 const parse = (text: string, hasMedia = false) =>
@@ -81,6 +83,40 @@ describe("parseTweetForTrainer", () => {
     const nurse = wrongSlot.forwards.flatMap((line) => line.slots).find((slot) => slot.playerId === 9);
     expect(nurse).toMatchObject({ positionFits: false, confidence: 60 });
     expect(wrongSlot.confidence.signals.map((signal) => signal.label)).toContain("Publication time unknown");
+  });
+
+  it("docks a lineup for named players it didn't place (a missed backup goalie, extras)", () => {
+    const placedAll = parse("Oilers lines\nZach Hyman - Connor McDavid - Leon Draisaitl\nDarnell Nurse - Evan Bouchard\nMattias Ekholm - Brett Kulak");
+    expect(placedAll.confidence.signals.some((signal) => /not placed/.test(signal.label))).toBe(false);
+    // Perry and Kulak are named but sit in no line, pair or goalie spot.
+    const missing = parse("Oilers lines\nZach Hyman - Connor McDavid - Leon Draisaitl\nDarnell Nurse - Evan Bouchard\nMattias Ekholm\nExtras: Corey Perry, Brett Kulak");
+    const signal = missing.confidence.signals.find((entry) => /not placed/.test(entry.label));
+    expect(signal).toBeTruthy();
+    expect(signal!.points).toBeLessThanOrEqual(-5);
+    expect(signal!.points).toBeGreaterThanOrEqual(-25);
+  });
+
+  it("reads a power-play tweet as PP1 and PP2 units, not even-strength lines", () => {
+    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+    const result = parse(
+      "#Oilers PP personnel: QB-LW-RW-B-N\nPP1: Bouchard-Hyman-Perry-McDavid-Draisaitl\nPP2: Ekholm-Henrique-Arvidsson-Nurse-Kulak"
+    );
+    vi.unstubAllEnvs();
+    expect(result).toMatchObject({ type: "line_combination", subcategory: "POWER PLAY" });
+    expect(result.powerPlay.map((unit) => unit.slots.map((slot) => slot.playerId))).toEqual([
+      [4, 1, 7, 2, 3],
+      [5, 11, 12, 9, 10]
+    ]);
+    const labels = result.confidence.signals.map((signal) => signal.label);
+    // Scored on its two units, and its named players count as placed.
+    expect(labels.some((label) => /even-strength/.test(label))).toBe(false);
+    expect(labels.some((label) => /power-play units complete/.test(label))).toBe(false);
+    expect(labels.some((label) => /not placed/.test(label))).toBe(false);
+    const extraction = extractionFromParse(result);
+    expect(extraction.powerPlay).toHaveLength(2);
+    // Units are ordered; players within a unit compare as a set.
+    expect(compareExtraction(extraction, { ...extraction, powerPlay: [...extraction.powerPlay].reverse() }).slotsMatch).toBe(false);
+    expect(compareExtraction(extraction, { ...extraction, powerPlay: [extraction.powerPlay[0]!] }).correct).toBe(false);
   });
 
   it("rates full-name matches as certain", () => {
@@ -152,11 +188,15 @@ describe("answer key", () => {
     const reordered = { ...correction, forwards: correction.forwards.map((line) => [...line].reverse()) };
     expect(compareExtraction(correction, reordered).correct).toBe(true);
     expect(compareExtraction(correction, { ...correction, forwards: [...correction.forwards].reverse() }).correct).toBe(false);
+    // The team is scored when the answer names one, and skipped for records saved before teams were labelled.
+    expect(compareExtraction({ ...correction, teamId: 10 }, { ...correction, teamId: 22 })).toMatchObject({ correct: false, teamMatch: false });
+    expect(compareExtraction({ ...correction, teamId: undefined }, { ...correction, teamId: 22 }).teamMatch).toBe(true);
+    expect(compareExtraction({ ...correction, teamId: null }, { ...correction, teamId: null }).teamMatch).toBe(true);
     // Extra skaters are scored like the other slot groups; old records without them read as none.
-    const withExtra = { ...correction, extraSkaters: [{ playerId: 7, name: "Corey Perry" }] };
+    const withExtra = { ...correction, extraForwards: [{ playerId: 7, name: "Corey Perry" }] };
     expect(compareExtraction(withExtra, correction)).toMatchObject({ correct: false, slotsMatch: false });
-    const legacy = { ...record, expected: { ...record.expected, extraSkaters: undefined as never } };
-    expect(readAnswerKeyRecord({ answerKey: legacy })!.expected.extraSkaters).toEqual([]);
+    const legacy = { ...record, expected: { ...record.expected, extraForwards: undefined as never, extraDefensemen: undefined as never, powerPlay: undefined as never } };
+    expect(readAnswerKeyRecord({ answerKey: legacy })!.expected).toMatchObject({ extraForwards: [], extraDefensemen: [], powerPlay: [] });
 
     const summary = summarizeRegression([
       { id: "fixed", type: "line_combination", baselineCorrect: false, comparison: compareExtraction(correction, correction) },

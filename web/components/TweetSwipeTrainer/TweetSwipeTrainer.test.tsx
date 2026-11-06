@@ -36,20 +36,33 @@ function cardFor(key: string, text: string): TrainerCard {
 if (typeof window !== "undefined" && !("PointerEvent" in window)) {
   class PointerEventPolyfill extends MouseEvent {
     pointerId: number;
+    pointerType: string;
     constructor(type: string, init: PointerEventInit = {}) {
       super(type, init);
       this.pointerId = init.pointerId ?? 0;
+      this.pointerType = init.pointerType ?? "";
     }
   }
   (window as any).PointerEvent = PointerEventPolyfill;
 }
 
 const fetchSpy = vi.fn();
+
+// Dropped names are placed by picking them; fixing one goes through "Fix this name".
+function openFixFor(name: RegExp) {
+  fireEvent.click(screen.getAllByRole("button", { name })[0]!);
+  fireEvent.click(screen.getByRole("button", { name: "Fix this name" }));
+}
 const posts = () => fetchSpy.mock.calls.filter(([, init]) => init?.method === "POST").map(([url, init]) => ({ url, body: JSON.parse(init.body) }));
 
 beforeEach(() => {
   fetchSpy.mockImplementation(async (url: string, init?: RequestInit) => {
-    if (init?.method === "POST") return { ok: true, json: async () => ({ success: true, message: "ok" }) };
+    if (init?.method === "POST") {
+      const body = JSON.parse(String(init.body));
+      // A re-read returns the same tweet with a fresh parse.
+      if (body.action === "trainer-reparse") return { ok: true, json: async () => ({ success: true, card: cardFor(body.reviewItemId, "Oilers lines\nHyman - McDavid - Draisaitl") }) };
+      return { ok: true, json: async () => ({ success: true, message: "ok" }) };
+    }
     return {
       ok: true,
       json: async () => ({
@@ -57,8 +70,20 @@ beforeEach(() => {
         type: "line_combination",
         cards: [cardFor("row-1", "Oilers lines\nHyman - McDavid - Drai"), cardFor("row-2", "Oilers lines\nZach Hyman - Connor McDavid - Leon Draisaitl")],
         remainingByType: { line_combination: 2, goalie: 0 },
-        players: roster.map((player) => ({ id: player.playerId, fullName: player.fullName, lastName: player.lastName, position: player.position, team_id: 22 })),
-        categoryOptions: [{ category: "LINE COMBINATION", subcategories: ["FORWARD LINES"] }, { category: "OTHER", subcategories: [] }]
+        players: [
+          ...roster.map((player) => ({ id: player.playerId, fullName: player.fullName, lastName: player.lastName, position: player.position, team_id: 22 })),
+          // Traded elsewhere: only "Search all players" finds him from an Oilers tweet.
+          { id: 50, fullName: "Matthew Wood", lastName: "Wood", position: "R", team_id: 55 }
+        ],
+        teams: [
+          { id: 22, abbreviation: "EDM", name: "Edmonton Oilers" },
+          { id: 10, abbreviation: "TOR", name: "Toronto Maple Leafs" }
+        ],
+        categoryOptions: [
+          { category: "LINE COMBINATION", subcategories: ["FORWARD LINES", "POWER PLAY"] },
+          { category: "RETURN", subcategories: ["RETURNING TO LINEUP"] },
+          { category: "OTHER", subcategories: [] }
+        ]
       })
     };
   });
@@ -85,7 +110,8 @@ describe("TweetSwipeTrainer", () => {
     render(<TweetSwipeTrainer />);
     await screen.findByText(/card 1 of 2/);
     fireEvent.keyDown(window, { key: "ArrowRight" });
-    await waitFor(() => expect(posts()).toHaveLength(1));
+    // A cold first run can take over the default 1s here.
+    await waitFor(() => expect(posts()).toHaveLength(1), { timeout: 3000 });
     expect(posts()[0]).toMatchObject({ url: "/api/v1/db/tweet-pattern-review", body: { action: "trainer-verdict", reviewItemId: "row-1", verdict: "correct" } });
     expect(await screen.findByText(/card 2 of 2/)).toBeTruthy();
     expect(await screen.findByText("Saved as correct. Card 2 of 2.")).toBeTruthy();
@@ -120,26 +146,61 @@ describe("TweetSwipeTrainer", () => {
   it("swipes right from a drag that starts on a player chip, without opening its fix panel", async () => {
     render(<TweetSwipeTrainer />);
     await screen.findByText(/card 1 of 2/);
-    const chip = screen.getAllByRole("button", { name: /^Fix Hyman:/ })[0]!;
-    fireEvent.pointerDown(chip, { button: 0, pointerId: 1, clientX: 100, clientY: 100 });
-    fireEvent.pointerMove(chip, { pointerId: 1, clientX: 160, clientY: 102 });
-    fireEvent.pointerMove(chip, { pointerId: 1, clientX: 240, clientY: 104 });
-    fireEvent.pointerUp(chip, { pointerId: 1, clientX: 240, clientY: 104 });
+    const chip = screen.getAllByRole("button", { name: /^Pick Zach Hyman to place/ })[0]!;
+    fireEvent.pointerDown(chip, { button: 0, pointerId: 1, pointerType: "touch", clientX: 100, clientY: 100 });
+    fireEvent.pointerMove(chip, { pointerId: 1, pointerType: "touch", clientX: 160, clientY: 102 });
+    fireEvent.pointerMove(chip, { pointerId: 1, pointerType: "touch", clientX: 240, clientY: 104 });
+    fireEvent.pointerUp(chip, { pointerId: 1, pointerType: "touch", clientX: 240, clientY: 104 });
     fireEvent.click(chip);
     await waitFor(() => expect(posts()).toHaveLength(1));
     expect(posts()[0]).toMatchObject({ body: { action: "trainer-verdict", reviewItemId: "row-1", verdict: "correct" } });
     expect(screen.queryByPlaceholderText("Type a player name")).toBeNull();
   });
 
-  it("still opens the fix panel on a plain tap of a chip", async () => {
+  it("does not swipe on a mouse drag, so desktop text can be selected", async () => {
     render(<TweetSwipeTrainer />);
     await screen.findByText(/card 1 of 2/);
-    const chip = screen.getAllByRole("button", { name: /^Fix Hyman:/ })[0]!;
-    fireEvent.pointerDown(chip, { button: 0, pointerId: 2, clientX: 100, clientY: 100 });
-    fireEvent.pointerUp(chip, { pointerId: 2, clientX: 101, clientY: 100 });
+    const text = screen.getByText(/Oilers lines/, { selector: "p" });
+    fireEvent.pointerDown(text, { button: 0, pointerId: 3, pointerType: "mouse", clientX: 100, clientY: 100 });
+    fireEvent.pointerMove(text, { pointerId: 3, pointerType: "mouse", clientX: 300, clientY: 100 });
+    fireEvent.pointerUp(text, { pointerId: 3, pointerType: "mouse", clientX: 300, clientY: 100 });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(posts()).toHaveLength(0);
+    expect(screen.getByText(/card 1 of 2/)).toBeTruthy();
+  });
+
+  it("still picks a dropped name on a plain tap, and can fix it from there", async () => {
+    render(<TweetSwipeTrainer />);
+    await screen.findByText(/card 1 of 2/);
+    const chip = screen.getAllByRole("button", { name: /^Pick Zach Hyman to place/ })[0]!;
+    fireEvent.pointerDown(chip, { button: 0, pointerId: 2, pointerType: "touch", clientX: 100, clientY: 100 });
+    fireEvent.pointerUp(chip, { pointerId: 2, pointerType: "touch", clientX: 101, clientY: 100 });
     fireEvent.click(chip);
+    expect(screen.getByText(/Placing/).textContent).toContain("Zach Hyman");
+    fireEvent.click(screen.getByRole("button", { name: "Fix this name" }));
     expect(await screen.findByPlaceholderText("Type a player name")).toBeTruthy();
     expect(posts()).toHaveLength(0);
+  });
+
+  it("places missed names on the card's dotted spots and saves them as the answer", async () => {
+    render(<TweetSwipeTrainer />);
+    await screen.findByText(/card 1 of 2/);
+    // Click a dropped name, then its spot.
+    fireEvent.click(screen.getAllByRole("button", { name: /^Pick Zach Hyman to place/ })[0]!);
+    fireEvent.click(screen.getByRole("button", { name: "Extra forwards: place Zach Hyman here" }));
+    // Drag another onto the backup goalie spot.
+    const transfer = { data: {} as Record<string, string>, types: [] as string[], effectAllowed: "", setData(type: string, value: string) { this.data[type] = value; this.types.push(type); }, getData(type: string) { return this.data[type] ?? ""; } };
+    fireEvent.dragStart(screen.getAllByRole("button", { name: /^Pick Connor McDavid to place/ })[0]!, { dataTransfer: transfer });
+    fireEvent.drop(screen.getByRole("button", { name: /^Backup goalie:/ }), { dataTransfer: transfer });
+    expect(screen.getByRole("button", { name: "Remove Zach Hyman from extra forwards" })).toBeTruthy();
+    // Any placement makes the verdict a correction.
+    const save = screen.getAllByRole("button", { name: /Save with placements/ })[0]!;
+    fireEvent.click(save);
+    await waitFor(() => expect(posts()).toHaveLength(1));
+    const { body } = posts()[0]!;
+    expect(body).toMatchObject({ action: "trainer-verdict", verdict: "wrong" });
+    expect(body.correction.extraForwards).toEqual([{ playerId: 1, name: "Zach Hyman" }]);
+    expect(body.correction.goalies).toEqual([{ playerId: 2, name: "Connor McDavid" }]);
   });
 
   it("places dropped names by click, then by drag, including an extra skater, and saves them", async () => {
@@ -159,12 +220,12 @@ describe("TweetSwipeTrainer", () => {
     expect((screen.getByLabelText("Line 1 C") as HTMLInputElement).value).toBe("Connor McDavid");
     // An extra skater gets its own spot.
     fireEvent.click(within(tray).getByRole("button", { name: "Drai" }));
-    fireEvent.click(screen.getByLabelText("New extra skaters spot: place Drai here"));
+    fireEvent.click(screen.getByLabelText("New extra forwards spot: place Drai here"));
     fireEvent.click(screen.getByRole("button", { name: "Save correction" }));
     await waitFor(() => expect(posts()).toHaveLength(1));
     const { correction } = posts()[0]!.body;
     expect(correction.forwards[0].slice(0, 2)).toEqual([{ playerId: 1, name: "Zach Hyman" }, { playerId: 2, name: "Connor McDavid" }]);
-    expect(correction.extraSkaters).toEqual([{ playerId: null, name: "Drai" }]);
+    expect(correction.extraForwards).toEqual([{ playerId: null, name: "Drai" }]);
   });
 
   it("resolves an unknown name from the editor through the alias API and swaps it into its spot", async () => {
@@ -186,6 +247,78 @@ describe("TweetSwipeTrainer", () => {
     expect(screen.queryByRole("group", { name: "Resolve Drai" })).toBeNull();
   });
 
+  it("records the team in a correction, starting from the parser's team", async () => {
+    render(<TweetSwipeTrainer />);
+    await screen.findByText(/card 1 of 2/);
+    fireEvent.keyDown(window, { key: "ArrowLeft" });
+    const team = (await screen.findByLabelText("Team")) as HTMLSelectElement;
+    expect(team.value).toBe("22");
+    // e.g. a Leafs return tweet the parser read as a lineup with no team.
+    fireEvent.change(team, { target: { value: "10" } });
+    fireEvent.change(screen.getByLabelText("Category"), { target: { value: "RETURN" } });
+    fireEvent.change(screen.getByLabelText("Subcategory"), { target: { value: "RETURNING TO LINEUP" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save correction" }));
+    await waitFor(() => expect(posts()).toHaveLength(1));
+    expect(posts()[0]!.body.correction).toMatchObject({ teamId: 10, category: "RETURN", subcategory: "RETURNING TO LINEUP", type: "injury" });
+  });
+
+  it("swaps the spots when the category changes: a power-play tweet clears the lines and fills PP1", async () => {
+    render(<TweetSwipeTrainer />);
+    await screen.findByText(/card 1 of 2/);
+    fireEvent.keyDown(window, { key: "ArrowUp" });
+    await screen.findByText(/card 2 of 2/);
+    fireEvent.keyDown(window, { key: "ArrowLeft" });
+    expect(((await screen.findByLabelText("Line 1 LW")) as HTMLInputElement).value).toBe("Zach Hyman");
+    fireEvent.change(screen.getByLabelText("Subcategory"), { target: { value: "POWER PLAY" } });
+    // The line spots are gone; the names they held fill PP1 in the order they were listed.
+    expect(screen.queryByLabelText("Line 1 LW")).toBeNull();
+    expect(within(screen.getByRole("region", { name: "Correct the parser's answer" })).queryByText("Goalies")).toBeNull();
+    expect((screen.getByLabelText("PP1 QB") as HTMLInputElement).value).toBe("Zach Hyman");
+    expect((screen.getByLabelText("PP1 LW") as HTMLInputElement).value).toBe("Connor McDavid");
+    expect((screen.getByLabelText("PP1 RW") as HTMLInputElement).value).toBe("Leon Draisaitl");
+    expect((screen.getByLabelText("PP2 QB") as HTMLInputElement).value).toBe("");
+    // Back to lines: the PP spots clear and the parser's line returns.
+    fireEvent.change(screen.getByLabelText("Subcategory"), { target: { value: "FORWARD LINES" } });
+    expect(screen.queryByLabelText("PP1 QB")).toBeNull();
+    expect((screen.getByLabelText("Line 1 C") as HTMLInputElement).value).toBe("Connor McDavid");
+    fireEvent.change(screen.getByLabelText("Subcategory"), { target: { value: "POWER PLAY" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save correction" }));
+    await waitFor(() => expect(posts()).toHaveLength(1));
+    const { correction } = posts()[0]!.body;
+    expect(correction).toMatchObject({ category: "LINE COMBINATION", subcategory: "POWER PLAY", forwards: [], defensePairs: [], goalies: [] });
+    expect(correction.powerPlay).toEqual([[
+      { playerId: 1, name: "Zach Hyman" }, { playerId: 2, name: "Connor McDavid" }, { playerId: 3, name: "Leon Draisaitl" }
+    ]]);
+  });
+
+  it("records who came off the power play, a name the parser missed, and drops a name that isn't a player", async () => {
+    render(<TweetSwipeTrainer />);
+    await screen.findByText(/card 1 of 2/);
+    fireEvent.keyDown(window, { key: "ArrowLeft" });
+    await screen.findByLabelText("Subcategory");
+    fireEvent.change(screen.getByLabelText("Subcategory"), { target: { value: "POWER PLAY" } });
+    const tray = screen.getByRole("group", { name: "Names to place" });
+    // "Drai" isn't a player here: drop it from the tray.
+    fireEvent.click(within(tray).getByRole("button", { name: "Drai isn't a player in this tweet" }));
+    expect(within(tray).queryByRole("button", { name: "Drai" })).toBeNull();
+    // A misspelt name the parser never saw: add it as written, then resolve it from a close-spelling suggestion.
+    fireEvent.change(within(tray).getByLabelText("Add a name the parser missed"), { target: { value: "Draisatl" } });
+    fireEvent.click(within(tray).getByRole("button", { name: "Add name" }));
+    expect(within(screen.getByRole("group", { name: "Resolve Draisatl" })).getByRole("button", { name: "Leon Draisaitl" })).toBeTruthy();
+    // McDavid came off the unit; Hyman joins PP2.
+    fireEvent.click(within(tray).getByRole("button", { name: "Connor McDavid" }));
+    fireEvent.click(screen.getByLabelText(/New off the power play spot/));
+    fireEvent.click(within(tray).getByRole("button", { name: "Zach Hyman" }));
+    fireEvent.click(screen.getByLabelText(/PP2 QB/));
+    fireEvent.click(screen.getByRole("button", { name: "Save correction" }));
+    await waitFor(() => expect(posts()).toHaveLength(1));
+    const { correction } = posts()[0]!.body;
+    expect(correction.offPowerPlay).toEqual([{ playerId: 2, name: "Connor McDavid" }]);
+    // PP2 stays PP2 when PP1 is left empty.
+    expect(correction.powerPlay).toEqual([[], [{ playerId: 1, name: "Zach Hyman" }]]);
+    expect(correction.players.map((player: { name: string }) => player.name)).not.toContain("Drai");
+  });
+
   it("says what to do next when a type has nothing left to label", async () => {
     fetchSpy.mockImplementation(async () => ({
       ok: true,
@@ -199,12 +332,69 @@ describe("TweetSwipeTrainer", () => {
   it("fixes an unmatched name through the alias API", async () => {
     render(<TweetSwipeTrainer />);
     await screen.findByText(/card 1 of 2/);
-    fireEvent.click(screen.getAllByRole("button", { name: /^(Fix|Confirm or fix) Drai:/ })[0]!);
+    openFixFor(/^Pick “?Drai”? to place/);
     fireEvent.change(screen.getByPlaceholderText("Type a player name"), { target: { value: "Leon Draisaitl" } });
     fetchSpy.mockImplementationOnce(async () => ({ ok: true, json: async () => ({ success: true, unresolvedId: "u-1" }) }));
     fireEvent.click(screen.getByRole("button", { name: "Save alias" }));
     await waitFor(() => expect(posts()).toHaveLength(2));
     expect(posts()[0]).toMatchObject({ body: { action: "trainer-queue-alias", rawName: "Drai", teamId: 22, reason: "trainer_unmatched" } });
     expect(posts()[1]).toMatchObject({ url: "/api/v1/db/player-name-aliases", body: { unresolvedId: "u-1", playerId: 3, alias: "Drai" } });
+    // The card is re-read with the new alias, so "Correct" judges the reading TJ now sees.
+    await waitFor(() => expect(posts()[2]).toMatchObject({ body: { action: "trainer-reparse", reviewItemId: "row-1" } }));
+    expect(await screen.findByText(/The card now shows the new reading/)).toBeTruthy();
+  });
+
+  it("offers a team-and-position alias, then 'use for this tweet only', when the alias tool refuses a shared surname", async () => {
+    const defaults = fetchSpy.getMockImplementation()!;
+    fetchSpy.mockImplementation(async (url: string, init?: RequestInit) => {
+      if (init?.method === "POST") {
+        const body = JSON.parse(String(init.body));
+        if (body.action === "trainer-queue-alias") return { ok: true, json: async () => ({ success: true, unresolvedId: "u-7" }) };
+        if (url === "/api/v1/db/player-name-aliases" && !body.action && body.positionGroup === "F") {
+          return { ok: false, json: async () => ({ success: false, message: "This surname has multiple identities on this team and position group. Assign this occurrence instead of learning a blanket alias." }) };
+        }
+        if (url === "/api/v1/db/player-name-aliases" && !body.action) {
+          return { ok: false, json: async () => ({ success: false, message: "This surname has multiple identities. Assign this occurrence instead of learning a blanket alias." }) };
+        }
+        if (body.action === "assign_occurrence") return { ok: true, json: async () => ({ success: true, message: "Assigned this occurrence to Leon Draisaitl." }) };
+      }
+      return defaults(url, init);
+    });
+    render(<TweetSwipeTrainer />);
+    await screen.findByText(/card 1 of 2/);
+    openFixFor(/^Pick “?Drai”? to place/);
+    fireEvent.change(screen.getByPlaceholderText("Type a player name"), { target: { value: "Leon Draisaitl" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save alias" }));
+    expect(await screen.findByText(/Learn it for EDM forwards only, or use Leon Draisaitl for this tweet only/)).toBeTruthy();
+    // The narrower alias: this team's forwards. Here it's refused too, so only this tweet is left.
+    fireEvent.click(screen.getByRole("button", { name: "Learn for EDM forwards only" }));
+    await waitFor(() =>
+      expect(posts().map((post) => post.body)).toContainEqual(
+        expect.objectContaining({ unresolvedId: "u-7", playerId: 3, alias: "Drai", positionGroup: "F" })
+      )
+    );
+    expect(await screen.findByText(/on this team and position group/)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Learn for EDM forwards only" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Use for this tweet only" }));
+    await waitFor(() =>
+      expect(posts().map((post) => post.body)).toContainEqual(
+        expect.objectContaining({ action: "assign_occurrence", unresolvedId: "u-7", playerId: 3, alias: "Drai" })
+      )
+    );
+    expect(await screen.findByText(/Assigned this occurrence to Leon Draisaitl/)).toBeTruthy();
+  });
+
+  it("searches the tweet's team first, then all players when nobody on the team matches", async () => {
+    render(<TweetSwipeTrainer />);
+    await screen.findByText(/card 1 of 2/);
+    openFixFor(/^Pick “?Drai”? to place/);
+    const field = screen.getByRole("combobox", { name: "Player Drai means" });
+    fireEvent.change(field, { target: { value: "Wood" } });
+    const list = screen.getByRole("listbox");
+    expect(within(list).getByText(/No EDM players match/)).toBeTruthy();
+    fireEvent.click(within(list).getByRole("option", { name: "Search all players" }));
+    fireEvent.click(within(screen.getByRole("listbox")).getByRole("option", { name: /Matthew Wood/ }));
+    expect((field as HTMLInputElement).value).toBe("Matthew Wood");
+    expect(screen.queryByRole("listbox")).toBeNull();
   });
 });

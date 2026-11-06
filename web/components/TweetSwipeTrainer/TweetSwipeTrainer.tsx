@@ -5,13 +5,15 @@ import type { TrainerExtraction, TrainerType } from "lib/sources/tweetSwipeTrain
 import type { TrainerCard as TrainerCardData } from "lib/sources/tweetSwipeTrainerServer";
 
 import CorrectionEditor from "./CorrectionEditor";
-import TrainerCard from "./TrainerCard";
+import TrainerCard, { hasPlacements, mergePlacements, type CardPlacements } from "./TrainerCard";
 import {
   fetchTrainerQueue,
+  reparseCard,
   saveVerdict,
   TYPE_LABELS,
   TYPE_TABS,
   type TrainerCategoryOption,
+  type TrainerTeamOption,
   type TrainerPlayerOption
 } from "./trainerApi";
 import styles from "./TweetSwipeTrainer.module.scss";
@@ -44,6 +46,7 @@ export default function TweetSwipeTrainer() {
   const [index, setIndex] = useState(0);
   const [players, setPlayers] = useState<TrainerPlayerOption[]>([]);
   const [categoryOptions, setCategoryOptions] = useState<TrainerCategoryOption[]>([]);
+  const [teams, setTeams] = useState<TrainerTeamOption[]>([]);
   const [remaining, setRemaining] = useState<Partial<Record<TrainerType, number>>>({});
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
@@ -59,6 +62,10 @@ export default function TweetSwipeTrainer() {
   const suppressClick = useRef(false);
   const typeRail = useRef<HTMLDivElement>(null);
   const card = cards[index] ?? null;
+  // Names placed on a card (backup goalie, extras) by card key. Any placement makes the verdict a correction.
+  const [placements, setPlacements] = useState<Record<string, CardPlacements>>({});
+  const cardPlacements = card ? placements[card.key] : undefined;
+  const placed = hasPlacements(cardPlacements);
 
   const load = useCallback(async (nextType: TrainerType | "auto") => {
     const generation = ++fetchGeneration.current;
@@ -75,6 +82,7 @@ export default function TweetSwipeTrainer() {
       setRemaining(payload.remainingByType);
       setPlayers(payload.players);
       setCategoryOptions(payload.categoryOptions);
+      setTeams(payload.teams ?? []);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not load tweets.");
     } finally {
@@ -159,6 +167,19 @@ export default function TweetSwipeTrainer() {
     [advance]
   );
 
+  // A name fixed on the card changes what the parser makes of the tweet: re-read it, so "Correct" judges the new reading.
+  async function cardAliasSaved(current: TrainerCardData, text: string) {
+    needsFreshRosters.current = true;
+    setMessage(`${text} Re-reading the tweet with it…`);
+    try {
+      const refreshed = await reparseCard(current);
+      setCards((deck) => deck.map((entry) => (entry.key === current.key ? refreshed : entry)));
+      setMessage(`${text} The card now shows the new reading: check it, then Correct if it's right.`);
+    } catch (error) {
+      setMessage(`${text} Couldn't re-read the tweet (${error instanceof Error ? error.message : "request failed"}); reload before judging it.`);
+    }
+  }
+
   async function saveCorrection(correction: TrainerExtraction, notes: string) {
     if (!card) return;
     setBusy(true);
@@ -174,18 +195,34 @@ export default function TweetSwipeTrainer() {
     }
   }
 
+  // "Correct" with placements stores the parser's reading plus those names as TJ's answer (a correction).
+  const saveWithPlacements = useCallback(
+    (current: TrainerCardData, added: CardPlacements) => {
+      advance(current, "Saved your placements as the answer");
+      setTally((value) => ({ ...value, wrong: value.wrong + 1 }));
+      saveVerdict(current, "wrong", mergePlacements(current.extraction, added)).catch((error) => {
+        setTally((value) => ({ ...value, wrong: value.wrong - 1 }));
+        setMessage(`Not saved: ${error instanceof Error ? error.message : "request failed"}. The tweet is back in the queue.`);
+        seen.current = seen.current.filter((key) => key !== current.key);
+      });
+    },
+    [advance]
+  );
+
   const act = useCallback(
     (gesture: Gesture) => {
       if (!card || !gesture || busy) return;
       setMessage(null);
-      if (gesture === "correct") markCorrect(card);
-      else if (gesture === "skip") skip(card);
+      if (gesture === "correct") {
+        if (cardPlacements && hasPlacements(cardPlacements)) saveWithPlacements(card, cardPlacements);
+        else markCorrect(card);
+      } else if (gesture === "skip") skip(card);
       else {
         setDrag(null);
         setEditing(true);
       }
     },
-    [busy, card, markCorrect, skip]
+    [busy, card, cardPlacements, markCorrect, saveWithPlacements, skip]
   );
 
   useEffect(() => {
@@ -207,6 +244,8 @@ export default function TweetSwipeTrainer() {
   }, [act, editing]);
 
   function onPointerDown(event: ReactPointerEvent<HTMLDivElement>) {
+    // Swipes are for touch. With a mouse, dragging selects text; desktop verdicts use the buttons or arrow keys.
+    if (event.pointerType === "mouse") return;
     if (editing || event.button !== 0 || !(event.target instanceof HTMLElement)) return;
     // Player chips are buttons but a drag may start on them; other controls keep their own pointer behaviour.
     const control = event.target.closest("button, a, input, select, textarea, label");
@@ -246,7 +285,7 @@ export default function TweetSwipeTrainer() {
         <span aria-hidden="true">↑</span> Skip
       </button>
       <button type="button" className={`${styles.actionButton} ${styles.actionCorrect}`} onClick={() => act("correct")} disabled={busy}>
-        Correct <span aria-hidden="true">→</span>
+        {placed ? "Save with placements" : "Correct"} <span aria-hidden="true">→</span>
       </button>
     </>
   );
@@ -313,23 +352,27 @@ export default function TweetSwipeTrainer() {
             {!editing ? (
               <div className={styles.actionBar} role="group" aria-label="Verdict">
                 {verdictButtons}
-                <p className={styles.keyHint}>Swipe the card or use the arrow keys: → correct, ← wrong, ↑ skip.</p>
+                <p className={styles.keyHint}>
+                  {placed
+                    ? "→ Save with placements: the reading shown plus the names you placed is the answer. "
+                    : "→ Correct: the reading shown is right. "}
+                  ← Wrong: fix it in the editor, then Save correction. ↑ Skip. Arrow keys work too; on a phone, swipe.
+                </p>
               </div>
             ) : null}
             {editing ? (
               <TrainerCard
                 card={card}
                 players={players}
-                onAliasSaved={(text) => {
-                  needsFreshRosters.current = true;
-                  setMessage(text);
-                }}
+                onAliasSaved={(text) => void cardAliasSaved(card, text)}
                 editor={
                   <CorrectionEditor
                     key={card.key}
                     card={card}
+                    start={mergePlacements(card.extraction, cardPlacements)}
                     players={players}
                     categoryOptions={categoryOptions}
+                    teams={teams}
                     busy={busy}
                     onCancel={() => setEditing(false)}
                     onSave={(correction, notes) => void saveCorrection(correction, notes)}
@@ -365,10 +408,9 @@ export default function TweetSwipeTrainer() {
                   key={card.key}
                   card={card}
                   players={players}
-                  onAliasSaved={(text) => {
-                    needsFreshRosters.current = true;
-                    setMessage(text);
-                  }}
+                  onAliasSaved={(text) => void cardAliasSaved(card, text)}
+                  placements={cardPlacements}
+                  onPlacementsChange={(next) => setPlacements((map) => ({ ...map, [card.key]: next }))}
                 />
               </div>
             )}
