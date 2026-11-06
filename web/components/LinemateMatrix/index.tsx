@@ -430,6 +430,12 @@ export const LinemateMatrixView = memo(function LinemateMatrixView({
         />
       </div>
       {compact && <p className={styles.fullGameLabel}>Full-game shared ice time · brighter = more TOI</p>}
+      {!compact && <p className={styles.legend}>
+        Brighter cell = more shared ice time.{" "}
+        <span className={styles.legendKey}><span className={styles.legendSwatch} style={{ backgroundColor: getColor("C", "C") }} aria-hidden="true" />forward pairs</span>{" "}
+        <span className={styles.legendKey}><span className={styles.legendSwatch} style={{ backgroundColor: getColor("C", "D") }} aria-hidden="true" />forward–defense</span>{" "}
+        <span className={styles.legendKey}><span className={styles.legendSwatch} style={{ backgroundColor: getColor("D", "D") }} aria-hidden="true" />defense pairs</span>
+      </p>}
       {loading && (
         <div className={styles.status} role="status">
           Updating linemate matrix...

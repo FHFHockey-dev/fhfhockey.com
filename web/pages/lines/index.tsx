@@ -1,4 +1,3 @@
-import ProjectedLineups from "components/LineCombinations/ProjectedLineups";
 import React, { useState } from "react";
 import { NextSeo } from "next-seo";
 import Image from "next/legacy/image";
@@ -56,7 +55,6 @@ function Lines({
         NHL LINE <PageTitle.Highlight>COMBINATIONS</PageTitle.Highlight>
       </PageTitle>
       <Teams teams={teams} />
-      <ProjectedLineups />
       <Players
         pageRefreshedAt={pageRefreshedAt}
         promotions={promotions}
@@ -174,21 +172,28 @@ export const getStaticProps: GetStaticProps = async () => {
 
 function Teams({ teams }: { teams: Team[] }) {
   return (
-    (<div className={styles.teams}>
-      {teams.map((team) => (
-        <Link key={team.name} href={`/lines/${team.abbreviation}`}>
-
-          <Image
-            src={team.logo}
-            alt={team.name}
-            width={37.35}
-            height={37.35}
-            objectFit="contain"
-          />
-
-        </Link>
-      ))}
-    </div>)
+    <nav className={styles.teamsPanel} aria-labelledby="lines-teams-label">
+      <p id="lines-teams-label" className={styles.teamsLabel}>
+        Pick a team for its lines, power play and game-day updates
+      </p>
+      <div className={styles.teams}>
+        {teams.map((team) => (
+          <Link
+            key={team.name}
+            href={`/lines/${team.abbreviation}`}
+            className={styles.teamLink}
+          >
+            <Image
+              src={team.logo}
+              alt={`${team.name} lines`}
+              width={37.35}
+              height={37.35}
+              objectFit="contain"
+            />
+          </Link>
+        ))}
+      </div>
+    </nav>
   );
 }
 
@@ -203,16 +208,11 @@ function Players({
 }) {
   return (
     <section className={styles.players}>
-      <a
-        className={styles.time}
-        href="/shiftChart"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
+      <p className={styles.time}>
         <ClientOnly style={{ display: "inline" }}>
-          Page refreshed: <TimeAgo date={pageRefreshedAt} />
+          Page refreshed <TimeAgo date={pageRefreshedAt} />
         </ClientOnly>
-      </a>
+      </p>
       <div className={styles.tables}>
         <Table type="promotions" data={promotions} />
         <div className={styles.gap} />
@@ -250,12 +250,12 @@ function Table({
         <Row key={player.playerId} player={player} />
       ))}
       {remainingRows > 0 && (
-        <button className={styles.showAll} onClick={onShowAll}>
-          SHOW ALL ({remainingRows})
-          <Image src={arrowDown} alt="expand" width={16} height={16} />
+        <button type="button" className={styles.showAll} onClick={onShowAll}>
+          Show all {data.length}
+          <Image src={arrowDown} alt="" width={16} height={16} />
         </button>
       )}
-      {data.length === 0 && <p>No Data Found</p>}
+      {data.length === 0 && <p className={styles.empty}>No line changes yet.</p>}
     </div>
   );
 }
@@ -268,13 +268,13 @@ function Title({ type }: { type: "promotions" | "demotions" }) {
           <div className={styles.arrow}>
             <Image
               src="/pictures/green-arrow-up.svg"
-              alt="up"
+              alt=""
               width={24}
               height={24}
             />
           </div>
           <h2>
-            RECENT <span className={styles.highlight}>PROMOTIONS</span>
+            Recent <span className={styles.highlight}>promotions</span>
           </h2>
         </div>
       ) : (
@@ -282,13 +282,13 @@ function Title({ type }: { type: "promotions" | "demotions" }) {
           <div className={styles.arrow}>
             <Image
               src="/pictures/red-arrow-down.png"
-              alt="down"
+              alt=""
               width={24}
               height={24}
             />
           </div>
           <h2>
-            RECENT <span className={styles.highlight}>DEMOTIONS</span>
+            Recent <span className={styles.highlight}>demotions</span>
           </h2>
         </div>
       )}
@@ -298,12 +298,12 @@ function Title({ type }: { type: "promotions" | "demotions" }) {
 
 function Row({ player }: { player: RowData }) {
   return (
-    (<div className={styles.row}>
-      <Link
-        href={`/charts?playerId=${player.playerId}`}
-        className={styles.name}
-        title="go to player details">
-
+    <Link
+      href={`/charts?playerId=${player.playerId}`}
+      className={styles.row}
+      title="Open player chart"
+    >
+      <span className={styles.name}>
         <span className={styles.fullName}>{player.playerName}</span>
         <span className={styles.formattedName}>
           {shorten(player.playerName)}
@@ -318,38 +318,18 @@ function Row({ player }: { player: RowData }) {
             {player.newsFlag.subcategory ?? player.newsFlag.category}
           </span>
         ) : null}
-
-      </Link>
-      <div className={styles.twoChanges}>
-        {/* {player.previousPowerPlayerUnit !== player.currentPowerPlayerUnit && (
-          <>
-            <PowerUnitChanges
-              previousPowerUnit={player.previousPowerPlayerUnit}
-              currentPowerUnit={player.currentPowerPlayerUnit}
-            />
-            <span className={styles.colon}>:</span>
-          </>
-        )} */}
+      </span>
+      <span className={styles.twoChanges}>
         <LineChanges
           previousLine={player.previousLine}
           currentLine={player.currentLine}
         />
-      </div>
-      <div className={styles.abbreviation}>{player.abbreviation}</div>
-      <Link
-        href={`/charts?playerId=${player.playerId}`}
-        className={styles.expand}
-        title="go to player details">
-
-        <Image
-          src="/pictures/expand-icon.png"
-          alt="go to player details"
-          width={16}
-          height={16}
-        />
-
-      </Link>
-    </div>)
+      </span>
+      <span className={styles.abbreviation}>{player.abbreviation}</span>
+      <span className={styles.expand} aria-hidden="true">
+        <Image src="/pictures/expand-icon.png" alt="" width={16} height={16} />
+      </span>
+    </Link>
   );
 }
 
@@ -359,30 +339,34 @@ type LineChangesProps = {
 };
 
 function LineChanges({ previousLine, currentLine }: LineChangesProps) {
-  const previous = previousLine === null ? "N/A" : `L${previousLine}`;
-  const current = currentLine === null ? "N/A" : `L${currentLine}`;
+  const previous = previousLine === null ? "New" : `L${previousLine}`;
+  const current = currentLine === null ? "Out" : `L${currentLine}`;
 
   return (
-    <div className={classNames(styles.changes, styles.lineChanges)}>
-      {previous}
-      {/* the smaller the better */}
-      {isPromotion(previousLine, currentLine) ? (
+    <span className={classNames(styles.changes, styles.lineChanges)}>
+      <span className={styles.visuallyHidden}>
+        {previousLine === null
+          ? `new to the lineup on ${current}`
+          : currentLine === null
+            ? `moved from ${previous} out of the lineup`
+            : `moved from ${previous} to ${current}`}
+      </span>
+      <span aria-hidden="true" className={styles.changesVisual}>
+        {previous}
+        {/* the smaller the better */}
         <Image
-          src="/pictures/arrow-right-green.png"
-          alt="promote to"
+          src={
+            isPromotion(previousLine, currentLine)
+              ? "/pictures/arrow-right-green.png"
+              : "/pictures/arrow-right-red.png"
+          }
+          alt=""
           width={12}
           height={24}
         />
-      ) : (
-        <Image
-          src="/pictures/arrow-right-red.png"
-          alt="demote to"
-          width={12}
-          height={24}
-        />
-      )}
-      {current}
-    </div>
+        {current}
+      </span>
+    </span>
   );
 }
 

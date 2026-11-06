@@ -20,6 +20,30 @@
   margin: 0 auto;
 }
 
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: vars.$space-xs vars.$space-md;
+  margin: vars.$space-sm auto 0;
+  padding: 0 vars.$space-sm;
+  font-size: vars.$font-size-xs;
+  color: vars.$text-secondary;
+  text-align: center;
+}
+
+.legendKey {
+  display: inline-flex;
+  align-items: center;
+  gap: vars.$space-xs;
+}
+
+.legendSwatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
 .status,
 .statusError,
 .emptyState {

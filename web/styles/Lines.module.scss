@@ -1,122 +1,190 @@
 @use "styles/vars";
 
-$border-size: 2px;
+@mixin focus-ring {
+  &:focus-visible {
+    outline: 2px solid vars.$primary-color;
+    outline-offset: 2px;
+  }
+}
 
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+// /lines index: 90% centred workspace, standard bordered panels.
 .lineCombinations {
+  width: 100%;
+  max-width: vars.$page-max-width;
+  margin-inline: auto;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  display: flex;
+  flex-direction: column;
+  gap: vars.$space-md;
+
+  .teamsPanel {
+    padding: vars.$space-md vars.$space-sm;
+    border: vars.$border-subtle;
+    border-radius: vars.$radius-card;
+    background: vars.$surface-1;
+  }
+
+  .teamsLabel {
+    margin: 0 0 vars.$space-sm vars.$space-xs;
+    font-size: vars.$font-size-sm;
+    color: vars.$text-secondary;
+  }
+
   .teams {
-    background: vars.$bg-light;
     display: grid;
     grid-template-columns: repeat(8, 1fr);
-    row-gap: 17px;
-    padding: 20px 12px;
-    border: $border-size solid white;
-    margin-bottom: 43px;
+    row-gap: vars.$space-md;
+    justify-items: center;
   }
+
+  .teamLink {
+    display: inline-flex;
+    padding: vars.$space-xxs;
+    border-radius: vars.$border-radius-sm;
+    @include focus-ring;
+
+    &:hover {
+      background: vars.$surface-2;
+    }
+  }
+
   .players {
     position: relative;
-    border: none;
+    padding: vars.$space-md vars.$space-sm;
+    border: vars.$border-subtle;
+    border-radius: vars.$radius-card;
+    background: vars.$surface-1;
+
     .time {
-      display: block;
-      margin-bottom: 8px;
+      margin: 0 0 vars.$space-sm;
       text-align: right;
-      opacity: 0.4;
-      font-size: 0.65rem;
-      &:hover {
-        color: vars.$primary-color;
-        opacity: 1;
-      }
+      font-size: vars.$font-size-xs;
+      color: vars.$text-secondary;
     }
 
     .tables {
       .table {
+        margin-bottom: vars.$space-xl;
+
         .title {
-          margin-bottom: 1rem;
+          margin-bottom: vars.$space-md;
           display: flex;
           align-items: center;
-          gap: 7px;
+          gap: vars.$space-sm;
+
           .arrow {
             position: relative;
             top: 1.5px;
           }
+
           h2 {
-            font-family: Roboto Condensed;
-            font-size: 1.5rem;
+            font-family: vars.$font-family-condensed;
+            font-size: vars.$font-size-xl;
             font-weight: 700;
-            // line-height: 24px;
-            letter-spacing: 0.01em;
           }
+
           .highlight {
             color: vars.$primary-color;
           }
         }
+
         .row {
-          background: #323232;
-          padding: 16px;
+          background: vars.$surface-2;
+          padding: vars.$space-md;
           display: grid;
           align-items: center;
           grid-template-columns: 40% auto 2rem 16px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+          border-bottom: vars.$border-subtle;
+          color: vars.$color-white;
+          text-decoration: none;
+          @include focus-ring;
+
+          &:focus-visible {
+            outline-offset: -2px;
+          }
+
+          &:hover .name {
+            color: vars.$primary-color;
+          }
+
+          &:hover .expand {
+            opacity: 0.7;
+          }
+
           .name {
-            font-size: 1.25rem;
+            font-size: vars.$font-size-lg;
             font-weight: 700;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: vars.$space-sm;
 
             .fullName {
               display: none;
             }
-            &:hover {
-              color: vars.$primary-color;
-              cursor: pointer;
-            }
           }
+
           .newsFlag {
             flex: 0 0 auto;
             display: inline-flex;
             align-items: center;
             min-height: 20px;
-            padding: 2px 8px;
+            padding: 2px vars.$space-sm;
             border-radius: 999px;
             font-size: 0.65rem;
             font-weight: 700;
             letter-spacing: 0.08em;
             text-transform: uppercase;
             color: vars.$color-white;
-            border: 1px solid rgba(255, 255, 255, 0.14);
+            border: vars.$border-subtle;
           }
+
           .newsFlagDanger {
             background: rgba(vars.$danger-color, 0.22);
           }
+
           .newsFlagSuccess {
             background: rgba(vars.$success-color, 0.22);
             color: vars.$background-dark;
           }
+
           .newsFlagInfo {
             background: rgba(vars.$primary-color, 0.22);
           }
+
           .newsFlagWarning {
             background: rgba(vars.$warning-color, 0.24);
             color: vars.$background-dark;
           }
+
           .newsFlagNeutral {
-            background: rgba(255, 255, 255, 0.12);
+            background: vars.$surface-2;
           }
+
           .twoChanges {
             display: flex;
             align-items: center;
             justify-content: flex-end;
             margin-right: 20px;
-            .colon {
-              width: 10px;
-              text-align: center;
-              opacity: 0.6;
-            }
           }
-          .changes {
+
+          .changes,
+          .changesVisual {
             display: flex;
             align-items: center;
           }
@@ -124,68 +192,71 @@ $border-size: 2px;
           .abbreviation {
             font-weight: 400;
           }
-          .expand {
-            height: 16px;
 
-            &:hover {
-              opacity: 0.7;
-            }
+          .expand {
+            display: flex;
+            height: 16px;
           }
         }
+
+        .empty {
+          color: vars.$text-secondary;
+        }
+
         .showAll {
           all: unset;
-          font-family: Roboto;
-          font-size: 18px;
+          font-family: vars.$font-family-primary;
+          font-size: vars.$font-size-md;
           font-weight: 500;
-          line-height: 21px;
-          letter-spacing: 0em;
           display: flex;
           justify-content: center;
           align-items: center;
           gap: 6px;
           margin: auto;
-          margin-top: 1rem;
+          margin-top: vars.$space-md;
+          padding: vars.$space-xs vars.$space-sm;
+          border-radius: vars.$border-radius-sm;
+          @include focus-ring;
+
           &:hover {
-            opacity: 0.9;
+            color: vars.$primary-color;
             cursor: pointer;
           }
         }
-        margin-bottom: 32px;
       }
+
       .gap {
         display: none;
       }
     }
   }
+
   @media only screen and (min-width: vars.$screen-large) {
-    width: 1080px;
-    margin: 0 auto;
+    margin-top: vars.$space-lg;
+
+    .teamsPanel {
+      padding: vars.$space-md;
+    }
 
     .teams {
       grid-template-columns: repeat(16, 1fr);
-      margin-bottom: unset;
     }
-    .players {
-      background: vars.$bg-light;
 
-      border: $border-size solid white;
-      border-top: none;
-      padding: 48px;
+    .players {
+      padding: vars.$space-xl vars.$space-xxl vars.$space-xxl;
 
       .time {
-        position: absolute;
-        right: 0;
-        top: 17px;
-        right: 38px;
-        font-size: 1rem;
+        font-size: vars.$font-size-sm;
       }
 
       .tables {
         display: flex;
         justify-content: space-between;
+
         .table {
           flex: 1;
           margin-bottom: unset;
+
           .row {
             grid-template-columns: 45% auto 2rem 16px;
 
@@ -199,21 +270,72 @@ $border-size: 2px;
                 text-overflow: ellipsis;
                 white-space: nowrap;
               }
+
               .formattedName {
                 display: none;
               }
             }
           }
         }
+
         .gap {
           display: block;
-          width: 40px;
+          width: vars.$space-xl;
         }
       }
     }
   }
+
   h2,
   p {
     margin: 0;
+  }
+}
+
+// /lines/line-combo/[gameId]: same 90% workspace with an h1 and game context.
+.gamePage {
+  width: 100%;
+  max-width: vars.$page-max-width;
+  margin-inline: auto;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  display: flex;
+  flex-direction: column;
+  gap: vars.$space-md;
+
+  .gameHeader {
+    margin-top: vars.$space-md;
+  }
+
+  .gameTitle {
+    margin: 0;
+  }
+
+  .gameContext {
+    margin: vars.$space-xs 0 0;
+    color: vars.$text-secondary;
+    font-size: vars.$font-size-sm;
+  }
+
+  .gamePanel {
+    padding: vars.$space-md;
+    border: vars.$border-subtle;
+    border-radius: vars.$radius-card;
+    background: vars.$surface-1;
+  }
+
+  .gameSectionTitle {
+    margin: 0;
+    font-family: vars.$font-family-primary;
+    font-size: vars.$font-size-lg;
+    font-weight: 700;
+  }
+
+  @media only screen and (min-width: vars.$screen-large) {
+    gap: vars.$space-lg;
+
+    .gamePanel {
+      padding: vars.$space-lg;
+    }
   }
 }

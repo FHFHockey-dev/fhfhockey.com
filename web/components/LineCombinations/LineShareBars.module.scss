@@ -1,11 +1,10 @@
 @use "styles/vars";
 
 .wrapper {
-  margin-top: vars.$space-lg;
   padding: vars.$space-md vars.$space-lg;
-  border-radius: vars.$border-radius-lg;
-  border: 1px solid rgba(vars.$border-secondary, 0.75);
-  background: rgba(vars.$background-light, 0.92);
+  border-radius: vars.$radius-card;
+  border: vars.$border-subtle;
+  background: vars.$background-dark;
 }
 
 .header {
@@ -83,11 +82,11 @@
 }
 
 .fillTime {
-  background: linear-gradient(90deg, rgba(vars.$primary-color, 0.95), rgba(vars.$primary-color, 0.45));
+  background: vars.$primary-color;
 }
 
 .fillGoals {
-  background: linear-gradient(90deg, rgba(vars.$success-color, 0.95), rgba(vars.$success-color, 0.45));
+  background: vars.$success-color;
 }
 
 @media screen and (max-width: vars.$breakpoint-tablet) {
