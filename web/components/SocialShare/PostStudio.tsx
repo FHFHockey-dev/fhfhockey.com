@@ -219,6 +219,8 @@ export default function PostStudio() {
   return <div className={styles.page}>
     <header className={styles.heading}><div><p className={styles.eyebrow}>FHFH / Share studio</p><h1>Post library</h1><nav className={styles.studioNav} aria-label="Share studios"><Link href="/social-share" prefetch={false}>All cards</Link><Link href="/social-share/game-grid" prefetch={false}>Weekly schedule</Link><Link href="/social-share/tuesday-trends" prefetch={false}>Tuesday trends</Link></nav></div><span className={styles.scope}>Choose any post on any day. Nothing is scheduled or published from here.</span></header>
     <section className={`${styles.panel} ${postStyles.settings}`} aria-label="Post settings">
+      {/* Wide screens: the post and its summary on the left, Timeframe and Options beside them, so the card sits higher. */}
+      <div className={postStyles.lead}>
       <div className={postStyles.postRow}>
         <label className={postStyles.field}><span>Post</span>
           <select value={entry.id} disabled={exporting} onChange={event => pick(event.target.value)}>{groups.map(group => <optgroup key={group} label={SHARE_POST_GROUP_LABELS[group]}>{modules.filter(item => item.group === group).map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</optgroup>)}</select>
@@ -226,6 +228,8 @@ export default function PostStudio() {
         <p className={postStyles.sync} aria-live="polite" data-testid="post-sync" data-state={loading ? "loading" : sync === "Up to date" ? "ready" : "held"}>{sync}</p>
       </div>
       <p className={postStyles.summary}>{entry.summary}{entry.suggestedUse ? ` ${entry.suggestedUse}` : ""}</p>
+      </div>
+      <div className={postStyles.groups}>
       {entry.periodControl && <fieldset className={postStyles.group}><legend>Timeframe</legend>
         <PeriodControl entry={entry} control={entry.periodControl} settings={settings} disabled={exporting} edition={snapshot} change={change} apply={edit} />
       </fieldset>}
@@ -247,6 +251,7 @@ export default function PostStudio() {
               Reset<span className={postStyles.hidden}> {field.label}</span> to {defaultNote(field)}</button>}
         </div>;
       })}</div></fieldset>}
+      </div>
     </section>
     <div className={styles.status} aria-live="polite">
       {/* Retry sits here while a card still shows, and inside the empty frame when none does: one Retry at a time. */}

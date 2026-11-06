@@ -35,7 +35,10 @@
   &:focus-visible { outline: 2px solid v.$primary-color; outline-offset: -2px; }
   &[aria-current] { border-color: v.$primary-color; color: v.$color-white; }
 }
-.jump { display: flex; flex-wrap: wrap; gap: v.$space-xs; margin-bottom: v.$space-md; }
+.jump { display: flex; flex-wrap: wrap; gap: v.$space-xs; margin-bottom: v.$space-md;
+  /* Phones drop the jump row: the Show filter does the same job, so the first cards sit higher (TJ, 2026-11-06). */
+  @media (max-width: v.$breakpoint-tablet) { display: none; }
+}
 .chips { display: flex; gap: v.$space-xs; overflow-x: auto; padding-bottom: v.$space-xs; margin-bottom: v.$space-xs; }
 
 .controls { display: flex; flex-wrap: wrap; align-items: flex-end; gap: v.$space-sm; margin-bottom: v.$space-md; }
