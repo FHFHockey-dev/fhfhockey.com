@@ -58,7 +58,7 @@ export default function DashboardPillarHero({
         <summary>About this dashboard</summary>
         <div className={styles.identityGrid}>
         <article className={styles.identityCard}>
-          <span className={styles.identityLabel}>What lives here</span>
+          <span className={styles.identityLabel}>On this page</span>
           <ul className={styles.identityList}>
             {owns.map((item) => (
               <li key={item}>{item}</li>
@@ -67,7 +67,7 @@ export default function DashboardPillarHero({
         </article>
 
         <article className={styles.identityCard}>
-          <span className={styles.identityLabel}>Use another surface for</span>
+          <span className={styles.identityLabel}>Elsewhere</span>
           <ul className={styles.identityList}>
             {defers.map((item) => (
               <li key={item}>{item}</li>

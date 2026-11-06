@@ -847,7 +847,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
         <main className={styles.main}>
           <header className={styles.header}>
             <DashboardPillarHero
-              eyebrow="Recent-form pillar"
+              eyebrow="Recent form"
               title="Trends Dashboard"
               description={
                 <p>
@@ -855,14 +855,14 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                 </p>
               }
               owns={[
-                "Team, skater, and goalie movement views with rolling recent-form context",
-                "Risers, fallers, and hot/cold states before you drill deeper",
-                "Projection and goalie-start runway that supports the movement read"
+                "Team, skater and goalie movement over the last few games",
+                "Risers, fallers and who's running hot or cold",
+                "Upcoming projections and goalie starts that follow the trends"
               ]}
               defers={[
-                "Full team-strength reads, process-vs-results diagnosis, and schedule texture",
-                "Predictions-vs-actual and candlestick views until the model contracts harden",
-                "Experimental elasticity-band and sustainability prototypes that still belong in the lab"
+                "Full team strength, process vs results and schedule: Underlying Stats",
+                "Predictions vs actual and candlestick views: coming later",
+                "Experimental sustainability and elasticity tools: Trends Sandbox"
               ]}
               surfaceLinks={TRENDS_SURFACE_LINKS.slice(0, 4)}
             />
@@ -870,7 +870,6 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
               <div className={styles.searchPanel}>
                 <div className={styles.panelHeader}>
                   <h2 className={styles.panelTitle}>Player Search</h2>
-                  <span className={styles.panelMeta}>Trends lookup</span>
                 </div>
                 <div className={styles.searchBoxButton}>
                   <form onSubmit={handleSearch} className={styles.searchForm}>
@@ -1044,9 +1043,6 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
               </div>
               <div className={styles.movementHeaderMeta}>
                 <span className={styles.panelMeta}>Date {date}</span>
-                <span className={styles.panelMeta}>
-                  Teams, skaters, and goalies
-                </span>
               </div>
             </div>
 
@@ -1088,9 +1084,6 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                     <div className={styles.chartMetaStack}>
                       <div className={styles.panelMeta}>
                         Rolling percentile by games played
-                      </div>
-                      <div className={styles.panelMeta}>
-                        Recent directionality first
                       </div>
                       <div className={styles.panelMeta}>
                         {data?.teamTrends?.generatedAt
@@ -1402,9 +1395,6 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                       <div className={styles.panelMeta}>
                         Window {formatSkaterTrendWindowLabel(skaterWindow)}
                       </div>
-                      <div className={styles.panelMeta}>
-                        Efficiency and workload movement
-                      </div>
                     </div>
                   </div>
 
@@ -1531,7 +1521,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
               </p>
               <div className={styles.surfaceLinkList}>
                 <a href="#projections" className={styles.surfaceLinkPill}>
-                  Projection Runway
+                  Projections
                 </a>
                 <a href="#goalie-starts" className={styles.surfaceLinkPill}>
                   Goalie Starts
@@ -1554,15 +1544,12 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
           <section className={styles.supportSection}>
             <div className={styles.summaryBandHeader}>
               <div>
-                <h2 className={styles.panelTitle}>Supporting Runway</h2>
+                <h2 className={styles.panelTitle}>Upcoming Games</h2>
                 <p className={styles.summaryBandCopy}>
                   Projections and goalie starts for the next slate.
                 </p>
               </div>
               <div className={styles.summaryBandMeta}>
-                <span className={styles.panelMeta}>
-                  Projections and start context
-                </span>
                 <span className={styles.summaryContract}>
                   Coming next: predictions vs actual and candlestick views
                 </span>
@@ -1576,7 +1563,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
               >
                 <div className={styles.panelHeader}>
                   <h2 className={styles.panelTitle}>
-                    Projection Runway ({projectionSource.toUpperCase()})
+                    Projections ({projectionSource.toUpperCase()})
                   </h2>
                   {data?.recency?.status === "mixed" && (
                     <span className={styles.panelMeta}>Context downgraded</span>
@@ -1585,7 +1572,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                     <button
                       type="button"
                       onClick={() => setProjectionSource("forge")}
-                      disabled={projectionSource === "forge"}
+                      aria-pressed={projectionSource === "forge"}
                       className={styles.tabButton}
                     >
                       FORGE
@@ -1593,14 +1580,14 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                     <button
                       type="button"
                       onClick={() => setProjectionSource("legacy")}
-                      disabled={projectionSource === "legacy"}
+                      aria-pressed={projectionSource === "legacy"}
                       className={styles.tabButton}
                     >
                       Legacy
                     </button>
                   </div>
                 </div>
-                <div className={styles.panelBody} tabIndex={0} role="region" aria-label="Projection runway table">
+                <div className={styles.panelBody} tabIndex={0} role="region" aria-label="Projections table">
                   <p className={styles.summaryBandCopy}>
                     Projected points and shots for upcoming games.
                   </p>
@@ -1625,7 +1612,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                       )}
                       <table className={styles.table}>
                         <caption className={styles.srOnly}>
-                          Projection runway leaders for {date}
+                          Projection leaders for {date}
                         </caption>
                         <thead>
                           <tr>
@@ -1670,12 +1657,12 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                 className={`${styles.panel} ${styles.supportPanel}`}
               >
                 <div className={styles.panelHeader}>
-                  <h2 className={styles.panelTitle}>Goalie Start Runway</h2>
+                  <h2 className={styles.panelTitle}>Goalie Starts</h2>
                   <span className={styles.panelMeta}>
                     {data?.recency?.status === "mixed" ? "Downgraded" : "Top 8"}
                   </span>
                 </div>
-                <div className={styles.panelBody} tabIndex={0} role="region" aria-label="Goalie start runway table">
+                <div className={styles.panelBody} tabIndex={0} role="region" aria-label="Goalie starts table">
                   <p className={styles.summaryBandCopy}>
                     Start, win and shutout chances for the next slate.
                   </p>
@@ -1700,7 +1687,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                       )}
                       <table className={styles.table}>
                         <caption className={styles.srOnly}>
-                          Goalie start runway leaders for {date}
+                          Goalie start leaders for {date}
                         </caption>
                         <thead>
                           <tr>

@@ -6,15 +6,9 @@
   gap: v.$space-md;
   padding: v.$space-lg;
   border-radius: v.$radius-lg;
-  border: 1px solid rgba(v.$color-white, 0.08);
-  background:
-    linear-gradient(
-      135deg,
-      rgba(v.$primary-color, 0.12),
-      rgba(v.$color-white, 0.02) 48%,
-      rgba(v.$secondary-color, 0.08)
-    ),
-    color.adjust(v.$background-dark, $lightness: -1%);
+  border: v.$border-subtle;
+  // Flat panel surface: no hue gradient on shells (fhfh-styles §2.2).
+  background: v.$background-medium;
   box-shadow: v.$box-shadow-default;
 }
 
@@ -195,6 +189,8 @@
 
 .identityCard {
   display: grid;
+  // Rows sit at the top so both cards' lists start on the same line.
+  align-content: start;
   gap: v.$space-xs;
   padding: v.$space-md;
   border-radius: v.$border-radius-md;

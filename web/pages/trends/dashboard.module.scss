@@ -98,8 +98,8 @@
   min-height: 0;
     background: linear-gradient(
       135deg,
-      rgba(255, 255, 255, 0.05),
-      rgba(255, 255, 255, 0.02)
+      rgba(v.$color-white, 0.05),
+      rgba(v.$color-white, 0.02)
     ),
     v.$background-medium;
 }
@@ -127,6 +127,7 @@
 .searchForm {
   display: flex;
   flex-direction: row;
+  align-items: flex-start;
   gap: v.$space-sm;
   width: 100%;
 }
@@ -138,6 +139,7 @@
 
 .searchInput {
   width: 100%;
+  height: v.$control-height-md;
   background: v.$background-dark;
   border: 1px solid v.$border-secondary;
   border-radius: v.$border-radius-sm;
@@ -180,27 +182,33 @@
   color: v.$color-white;
 }
 
+// Canonical compact primary (fhfh-styles §10.5): 2px blue border, low blue fill,
+// white text (11.3:1); no gradient, lift or glow.
 .primaryButton {
-  background: linear-gradient(
-    to right,
-    v.$primary-color,
-    v.$secondary-color
-  );
-  border: none;
+  background: rgba(v.$primary-color, 0.18);
+  border: 2px solid v.$primary-color;
   color: v.$color-white;
   font-family: v.$font-family-accent;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  padding: 0.55rem 0.9rem;
+  // Same height as the search field beside it (TJ, 2026-11-06).
+  height: v.$control-height-md;
+  padding: 0 0.9rem;
+  white-space: nowrap;
   border-radius: v.$border-radius-sm;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  flex: 1;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  flex: 0 0 auto;
 }
 
 .primaryButton:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(v.$primary-color, 0.3);
+  background: rgba(v.$primary-color, 0.3);
+}
+
+.primaryButton:focus-visible {
+  outline: 2px solid v.$primary-color;
+  outline-offset: 2px;
 }
 
 .searchResults {
@@ -316,6 +324,12 @@
   align-items: stretch;
 }
 
+// The chart column stretches (its chart sizes to 100% height); the rail hugs its
+// rows so Risers/Fallers doesn't show an empty band.
+.teamWorkspaceGrid > .workspaceRail {
+  align-self: start;
+}
+
 .workspaceRail {
   // minmax(0, 1fr): implicit auto columns grew to content min-width (650px) and clipped off-screen.
   grid-template-columns: minmax(0, 1fr);
@@ -339,7 +353,7 @@
   justify-content: center;
   gap: 0.35rem;
   padding: 0.45rem 0.7rem;
-  border-radius: 999px;
+  border-radius: v.$radius-pill;
   border: 1px solid rgba(v.$primary-color, 0.45);
   background: rgba(v.$primary-color, 0.12);
   color: v.$color-white;
@@ -409,7 +423,7 @@
   color: v.$primary-color;
   border: 1px solid rgba(v.$primary-color, 0.35);
   background: rgba(v.$primary-color, 0.12);
-  border-radius: 999px;
+  border-radius: v.$radius-pill;
   padding: 0.2rem 0.45rem;
   white-space: nowrap;
 }
@@ -577,7 +591,7 @@
   color: v.$text-secondary;
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
-  transition: all 0.2s ease;
+  transition: color 0.2s ease, border-color 0.2s ease;
 
   &:hover:not([aria-selected="true"]) {
     color: v.$text-primary;
@@ -840,19 +854,31 @@
   letter-spacing: 0.08em;
   padding: 0.35rem 0.6rem;
   cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+
+  &:hover:not([aria-pressed="true"]) {
+    color: v.$text-primary;
+    border-color: rgba(v.$primary-color, 0.6);
+  }
+
+  &:focus-visible {
+    outline: 2px solid v.$primary-color;
+    outline-offset: 2px;
+  }
 }
 
-.tabButton:disabled {
-  border-color: v.$primary-color;
-  color: v.$primary-color;
-  box-shadow: 0 0 12px rgba(v.$primary-color, 0.35);
+// Active source: same fill, border and white text as the other active toggles; no glow.
+.tabButton[aria-pressed="true"] {
+  border: 2px solid v.$primary-color;
+  background-color: v.$primary-color-opaque;
+  color: v.$color-white;
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
   font-family: v.$font-family-numbers;
-  font-size: 0.72rem;
+  font-size: v.$font-size-xs;
 }
 
 .table thead {
@@ -875,7 +901,7 @@
 }
 
 .table tbody tr:nth-child(even) {
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(v.$color-white, 0.02);
 }
 
 .loadingText {
@@ -885,7 +911,7 @@
 .refreshText {
   color: v.$secondary-color;
   text-transform: uppercase;
-  font-size: 0.7rem;
+  font-size: v.$font-size-xs;
   letter-spacing: 0.1em;
 }
 
@@ -908,7 +934,7 @@
 .retryButton {
   flex: 0 0 auto;
   border: 1px solid v.$secondary-color;
-  border-radius: 999px;
+  border-radius: v.$radius-pill;
   padding: 0.35rem 0.75rem;
   background: transparent;
   color: v.$secondary-color;
@@ -946,8 +972,10 @@
   }
 
   .workspaceIntro,
-  .movementHeaderMeta {
+  .movementHeaderMeta,
+  .chartMetaStack {
     justify-items: start;
+    text-align: left;
   }
 
   .teamWorkspaceGrid,
@@ -957,10 +985,6 @@
   .teamRankStrip {
     grid-template-columns: minmax(0, 1fr);
   }
-
-  
-
-  
 
   .temperatureStrip {
     grid-template-columns: minmax(0, 1fr);
