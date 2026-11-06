@@ -19,13 +19,13 @@
 
 .header {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.95fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: v.$space-lg;
   align-items: start;
 }
 
-// The rail's children join the header grid: Player Search sits beside the hero and
-// Recent-Form Scan takes its own full-width row (TJ, 2026-11-06).
+// The rail's children join the header grid: Recent-Form Scan takes its own
+// full-width row under the hero, which holds Player Search (TJ, 2026-11-06).
 .headerRail {
   display: contents;
 }
@@ -88,30 +88,16 @@
   }
 }
 
+// Player Search lives in the hero's side slot, which supplies the box.
 .searchPanel {
-  background: v.$background-medium;
-  border: 1px solid v.$border-secondary;
-  border-radius: v.$border-radius-md;
-  box-shadow: v.$box-shadow-default;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-    background: linear-gradient(
-      135deg,
-      rgba(v.$color-white, 0.05),
-      rgba(v.$color-white, 0.02)
-    ),
-    v.$background-medium;
+  display: grid;
+  gap: v.$space-sm;
+  min-width: 0;
 }
 
 .searchBoxButton {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: grid;
   gap: v.$space-sm;
-  padding: v.$space-sm v.$space-md;
-  border-bottom: 2px solid v.$border-secondary;
-  background-color: color.adjust(v.$background-dark, $lightness: -3%);
   width: 100%;
 }
 
@@ -202,6 +188,19 @@
   flex: 0 0 auto;
 }
 
+// Square magnifying-glass button for Player Search (TJ, 2026-11-06).
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: v.$control-height-md;
+  padding: 0;
+}
+
+.primaryButton[aria-busy="true"] svg {
+  opacity: 0.55;
+}
+
 .primaryButton:hover {
   background: rgba(v.$primary-color, 0.3);
 }
@@ -287,13 +286,6 @@
   min-height: 0;
 }
 
-.movementHeaderMeta {
-  display: grid;
-  gap: 0.25rem;
-  justify-items: end;
-  align-content: start;
-}
-
 .movementSectionBody {
   // minmax(0, 1fr): implicit auto columns grew to content min-width (650px) and clipped off-screen.
   grid-template-columns: minmax(0, 1fr);
@@ -341,9 +333,10 @@
   min-height: 0;
 }
 
+// Two jump links share the card's action row as equal halves.
 .surfaceLinkList {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: v.$space-sm;
 }
 
@@ -352,8 +345,9 @@
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
-  padding: 0.45rem 0.7rem;
-  border-radius: v.$radius-pill;
+  min-height: v.$control-height-md;
+  padding: 0 v.$space-sm;
+  border-radius: v.$radius-control;
   border: 1px solid rgba(v.$primary-color, 0.45);
   background: rgba(v.$primary-color, 0.12);
   color: v.$color-white;
@@ -363,14 +357,12 @@
   letter-spacing: 0.06em;
   text-decoration: none;
   text-transform: uppercase;
-  transition: background 0.2s ease, border-color 0.2s ease,
-    transform 0.2s ease;
+  transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 .surfaceLinkPill:hover {
   background: rgba(v.$primary-color, 0.22);
   border-color: rgba(v.$primary-color, 0.7);
-  transform: translateY(-1px);
 }
 
 .surfaceBridgeStrip {
@@ -379,11 +371,18 @@
   gap: v.$space-md;
 }
 
+// Label, title and copy sit at the top of every card; the action row pins to the
+// bottom, so headings and buttons line up across the three cards.
 .surfaceBridgeCard {
   @include v.glass-panel($padding: v.$space-md, $radius: v.$radius-lg);
   display: grid;
+  grid-template-rows: auto auto 1fr auto;
   gap: v.$space-sm;
   min-height: 0;
+
+  > :last-child {
+    align-self: end;
+  }
 }
 
 .surfaceBridgeLabel {
@@ -479,9 +478,32 @@
 }
 
 .summaryLeaderValue {
+  display: inline-flex;
+  align-items: baseline;
+  gap: v.$space-xs;
   font-family: v.$font-family-numbers;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
   color: v.$color-white;
+}
+
+.summaryLeaderStat {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+}
+
+.summaryLeaderPercentile {
+  font-family: v.$font-family-primary;
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
+}
+
+.summaryLeaderUnit {
+  font-family: v.$font-family-primary;
+  font-size: v.$font-size-xs;
+  font-weight: 500;
+  color: v.$text-secondary;
 }
 
 .summaryEmpty {
@@ -568,10 +590,18 @@
   min-height: 0;
 }
 
+// The shared chart caps itself at 1200px; centre it so it doesn't hang left of
+// a wider panel.
 .goalieShareBody {
   padding: v.$space-sm v.$space-md v.$space-md;
   display: grid;
   gap: v.$space-sm;
+  justify-items: center;
+
+  > .summaryBandCopy,
+  > .loadingText {
+    justify-self: stretch;
+  }
 }
 
 .topTabs {
@@ -663,6 +693,13 @@
   min-height: 0;
 }
 
+// Skater/goalie trend charts fill their card so it matches the ranking list
+// beside it instead of leaving a tall empty band under a 260px chart.
+.chartFill {
+  flex: 1 1 auto;
+  min-height: 260px;
+}
+
 .teamRankStrip {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -680,12 +717,23 @@
   justify-items: start;
 }
 
+// Solid condensed face: the outlined accent font goes hollow at 12px.
 .teamRankLabel {
-  color: v.$text-secondary;
-  font-size: v.$font-size-xs;
-  font-family: v.$font-family-accent;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  display: inline-flex;
+  align-items: center;
+  gap: v.$space-xs;
+  color: v.$text-primary;
+  font-size: v.$font-size-sm;
+  font-family: v.$font-family-condensed;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.teamRankLogo {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  object-fit: contain;
 }
 
 .teamRankValue {
@@ -693,6 +741,25 @@
   font-family: v.$font-family-numbers;
   font-size: v.$font-size-md;
   font-weight: 700;
+}
+
+// Phones: the five cards become compact rows (team, value, move) instead of
+// five full-width boxes.
+@media (max-width: 600px) {
+  .teamRankStrip {
+    grid-template-columns: minmax(0, 1fr);
+    gap: v.$space-xs;
+  }
+
+  .teamRankCard {
+    grid-template-columns: 4.5rem minmax(0, 1fr) auto;
+    align-items: center;
+    padding: v.$space-xs v.$space-sm;
+  }
+
+  .teamRankValue {
+    font-size: v.$font-size-sm;
+  }
 }
 
 .rankingHeading {
@@ -731,42 +798,38 @@
   @include v.custom-scrollbar(v.$primary-color, transparent, 6px);
 }
 
+// Ranking row: headshot | name over team · position · move | stat over percentile.
 .skaterRankingRow {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  grid-template-areas:
+    "avatar name stat"
+    "avatar meta stat"
+    "detail detail detail";
+  column-gap: v.$space-md;
+  row-gap: 2px;
   align-items: center;
-  justify-content: space-between;
-  gap: v.$space-xs v.$space-sm;
-  padding: v.$space-sm;
+  padding: v.$space-sm v.$space-md;
   border-radius: v.$border-radius-md;
   background-color: v.$background-medium;
   border: 1px solid v.$border-primary;
 }
 
-// The name/meta column takes the free width; the score keeps its natural width.
-.skaterInfo {
-  display: flex;
-  flex: 1 1 auto;
-  align-items: center;
-  gap: v.$space-md;
-  min-width: 0;
+.rowAvatar {
+  grid-area: avatar;
+  position: relative;
+  width: 44px;
+  height: 44px;
 }
 
-.rank {
-  font-weight: 700;
-  color: v.$text-secondary;
-  width: 24px;
-  text-align: center;
-}
-
+// Squircle headshot.
 .skaterHeadshotWrapper {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
+  width: 100%;
+  height: 100%;
+  border-radius: 30%;
   overflow: hidden;
   background: v.$background-dark;
   border: 1px solid v.$border-primary;
-  flex-shrink: 0;
 }
 
 .skaterHeadshot {
@@ -775,13 +838,50 @@
   object-fit: cover;
 }
 
-.skaterText {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
+// The rank sits in a notch cut from the headshot's top-left corner: the ring in
+// the row colour reads as the cut-out.
+.rankBadge {
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  display: grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 3px;
+  border-radius: 7px;
+  background: v.$background-dark;
+  box-shadow: 0 0 0 3px v.$background-medium;
+  color: v.$text-primary;
+  font-family: v.$font-family-numbers;
+  font-size: v.$font-size-xxs;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+// Leaders (ranks 1–3): gold, silver and bronze notches with dark ink (TJ).
+.rankBadgeGold,
+.rankBadgeSilver,
+.rankBadgeBronze {
+  color: v.$color-neutral-950;
+}
+
+.rankBadgeGold {
+  background: v.$medal-gold;
+}
+
+.rankBadgeSilver {
+  background: v.$medal-silver;
+}
+
+.rankBadgeBronze {
+  background: v.$medal-bronze;
 }
 
 .skaterName {
+  grid-area: name;
+  align-self: end;
   margin: 0;
   font-weight: 600;
   white-space: nowrap;
@@ -790,26 +890,29 @@
 }
 
 .skaterMeta {
+  grid-area: meta;
+  align-self: start;
+  display: flex;
+  align-items: center;
+  gap: v.$space-sm;
   margin: 0;
   font-size: v.$font-size-sm;
   color: v.$text-secondary;
+  white-space: nowrap;
 }
 
-// Goalie sample context: a full-width second line, indented to the name column.
+.rowStat {
+  grid-area: stat;
+}
+
+// Goalie sample context: a full-width line under the row.
 .skaterDetail {
-  flex: 1 0 100%;
-  margin: 0;
-  padding-left: calc(24px + #{v.$space-md});
+  grid-area: detail;
+  margin: v.$space-xs 0 0;
+  padding-top: v.$space-xs;
+  border-top: 1px solid rgba(v.$border-primary, 0.6);
   font-size: v.$font-size-xs;
   color: v.$text-secondary;
-}
-
-.skaterScore {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: v.$space-md;
-  font-family: v.$font-family-numbers, monospace;
 }
 
 .delta {
@@ -832,17 +935,22 @@
   color: v.$text-secondary;
 }
 
-.percentile {
-  font-size: v.$font-size-base;
-  font-weight: 700;
-  font-family: v.$font-family-numbers, monospace;
-}
-
 .tabRow {
   display: flex;
   flex-wrap: wrap;
   gap: v.$space-xs;
 }
+
+// Header toggles stay one row; when the header is too narrow for both, the
+// toggles move under the title instead.
+.panelHeader:has(> .tabRow) {
+  flex-wrap: wrap;
+}
+
+.panelHeader > .tabRow {
+  flex-wrap: nowrap;
+}
+
 
 .tabButton {
   background: transparent;
@@ -874,11 +982,25 @@
   color: v.$color-white;
 }
 
+// Names and matchups read in the interface face; only the figures use the
+// numbers face, with tabular digits so columns line up.
 .table {
   width: 100%;
   border-collapse: collapse;
+  font-family: v.$font-family-primary;
+  font-size: v.$font-size-sm;
+}
+
+.table th {
+  color: v.$text-secondary;
+  font-weight: 600;
+}
+
+.table td.tdRight {
   font-family: v.$font-family-numbers;
   font-size: v.$font-size-xs;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .table thead {
@@ -893,6 +1015,23 @@
 .thLeft,
 .tdLeft {
   text-align: left;
+}
+
+.noWrap {
+  white-space: nowrap;
+}
+
+// Phones: drop the long team-name column (the opponent column keeps the matchup)
+// and tighten cells so the figures stay on screen.
+@media (max-width: 600px) {
+  .hideOnPhone {
+    display: none;
+  }
+
+  .table th,
+  .table td {
+    padding: 0.4rem 0.3rem;
+  }
 }
 
 .thRight,
@@ -972,7 +1111,6 @@
   }
 
   .workspaceIntro,
-  .movementHeaderMeta,
   .chartMetaStack {
     justify-items: start;
     text-align: left;
@@ -982,10 +1120,6 @@
   .surfaceBridgeStrip,
   .supportGrid,
   .trendGrid,
-  .teamRankStrip {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
   .temperatureStrip {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1015,4 +1149,62 @@
 .panelBody:focus-visible {
   outline: 2px solid v.$primary-color;
   outline-offset: 2px;
+}
+
+// Phones: category buttons become an even 2 × 2 grid and each toggle group
+// (position, window) a full-width row of equal segments, instead of ragged
+// right-aligned wraps. Ranking rows keep name and stat on one line.
+@media (max-width: 600px) {
+  .subTabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+  }
+
+  .subTab {
+    min-width: 0;
+    padding-inline: v.$space-xs;
+  }
+
+  .skaterControls {
+    grid-column: 1 / -1;
+    display: grid;
+    gap: v.$space-sm;
+    justify-content: stretch;
+    margin-left: 0;
+  }
+
+  .windowToggle {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+  }
+
+  .windowButton,
+  .windowActive {
+    min-width: 0;
+    padding-inline: 2px;
+    white-space: nowrap;
+  }
+
+  .skaterName {
+    font-size: v.$font-size-sm;
+  }
+
+  .skaterRankingRow {
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+    column-gap: v.$space-sm;
+    padding-inline: v.$space-sm;
+  }
+
+  .rowAvatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  // The list heading already names the stat, so the unit gives way to names here.
+  .rowStat .summaryLeaderUnit {
+    display: none;
+  }
+
 }

@@ -143,6 +143,10 @@ $color-blue-100: #BDEFFF;           // pale ice blue; soft fills and badges
 $color-mint-300: #7CFFCB;           // fresh mint; energetic positive accent
 $color-teal-500: #00C896;           // rich teal-green; success and positive metrics
 $color-gold-400: #FFC857;           // warm gold; premium highlight or warning accent
+// Medal tints for ranks 1-3 (each ≥6:1 with dark ink $color-neutral-950).
+$medal-gold: $color-gold-400;
+$medal-silver: #c3c7cc;
+$medal-bronze: #c8834a;
 $color-orange-400: #FF9F43;         // soft orange; alerts, callouts, emphasis
 $color-coral-500: #FF6B6B;          // warm coral-red; friendlier danger/accent color
 $color-violet-400: #A78BFA;         // soft violet; premium, insight, or feature accent

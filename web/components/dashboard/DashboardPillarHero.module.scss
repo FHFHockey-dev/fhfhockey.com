@@ -2,6 +2,7 @@
 @use "styles/vars" as v;
 
 .hero {
+  position: relative;
   display: grid;
   gap: v.$space-md;
   padding: v.$space-lg;
@@ -14,7 +15,8 @@
 
 .topRow {
   display: grid;
-  grid-template-columns: minmax(0, 1.8fr) minmax(180px, 0.7fr);
+  // The side slot holds a search form on /trends, so it needs a real column.
+  grid-template-columns: minmax(0, 1.4fr) minmax(320px, 1fr);
   gap: v.$space-md;
   align-items: start;
 }
@@ -23,22 +25,31 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
-// "About this dashboard" and the related-page pills share one row; the open
-// disclosure takes the full width so its notes don't squeeze the pills.
+// Related-page links fill the hero's width as one even grid.
 .metaRow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: v.$space-sm;
-}
-
-.about[open] {
-  flex-basis: 100%;
+  display: block;
 }
 
 .copy {
+  position: relative;
   display: grid;
   gap: v.$space-sm;
+}
+
+// Title and info glyph share a row: the glyph takes the card's top-right corner on
+// phones and sits beside the title once the search column is beside it.
+.titleRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-sm;
+}
+
+@media (min-width: 901px) {
+  .topRow:not(.topRowSolo) .titleRow {
+    justify-content: flex-start;
+  }
 }
 
 .eyebrow {
@@ -108,11 +119,13 @@
 // Collapsed page-scope notes (same pattern as Underlying Stats "About this dashboard").
 .about {
   summary {
+    // An info glyph button; the name lives in hidden text and the tooltip.
     display: inline-flex;
     align-items: center;
-    gap: v.$space-sm;
-    min-height: v.$control-height-md;
-    padding: 0 v.$space-md;
+    justify-content: center;
+    width: v.$control-height-md;
+    height: v.$control-height-md;
+    padding: 0;
     border: v.$border-subtle;
     border-radius: v.$radius-control;
     background: v.$background-header;
@@ -120,11 +133,6 @@
     cursor: pointer;
     font-size: v.$font-size-sm;
     list-style: none;
-
-    &::after {
-      content: "⌄";
-      color: v.$primary-color;
-    }
 
     &::-webkit-details-marker {
       display: none;
@@ -141,27 +149,80 @@
     }
   }
 
-  &[open] summary {
-    margin-bottom: v.$space-sm;
+}
+
+.about[open] summary {
+  border-color: v.$primary-color;
+  color: v.$primary-color;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.titleShort {
+  display: none;
+}
+
+@media (max-width: 600px) {
+  .titleFull {
+    display: none;
+  }
+
+  // Tighter tracking keeps "Underlying Stats" on one line in a half-width cell.
+  .linkPill {
+    padding: 0 v.$space-xs;
+    letter-spacing: 0.02em;
+  }
+
+  .titleShort {
+    display: inline;
   }
 }
 
+// The notes open as a panel under the title row, over the content below.
 .identityGrid {
+  position: absolute;
+  top: calc(100% + #{v.$space-sm});
+  left: 0;
+  right: 0;
+  z-index: 5;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: v.$space-sm;
+  padding: v.$space-sm;
+  border: v.$border-subtle;
+  border-radius: v.$border-radius-md;
+  background: v.$background-medium;
+  box-shadow: v.$box-shadow-default;
 }
 
 // Related pages as one compact row of link pills; descriptions live in the title tooltip.
 .linkRow {
-  display: flex;
-  flex-wrap: wrap;
+  // Equal cells: 2 × 2 on narrow screens, one row of four once the hero is wide.
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: v.$space-xs;
+
+  @media (min-width: 901px) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 .linkPill {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  text-align: center;
+  white-space: nowrap;
   min-height: 2rem;
   padding: 0 v.$space-sm;
   border: 1px solid v.$border-secondary;
