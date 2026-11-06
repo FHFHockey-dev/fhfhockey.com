@@ -328,7 +328,7 @@ describe("Trends dashboard", () => {
 
     render(<TrendsDashboardPage initialDate="2026-04-08" />);
 
-    expect(screen.getByText("Team Risers And Fallers")).toBeTruthy();
+    expect(screen.getByText("Risers And Fallers")).toBeTruthy();
     expect(screen.getByText("Most Improved (last 5 GP)")).toBeTruthy();
     expect(screen.getByText("Most Degraded (last 5 GP)")).toBeTruthy();
     expect(screen.getAllByText("CAR").length).toBeGreaterThan(0);

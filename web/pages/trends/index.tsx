@@ -1375,12 +1375,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                           className={`${styles.panel} ${styles.workspaceRailPanel}`}
                         >
                           <div className={styles.panelHeader}>
-                            <h3 className={styles.panelTitle}>
-                              Team Risers And Fallers
-                            </h3>
-                            <span className={styles.panelMeta}>
-                              {activeTeamCategory.label}
-                            </span>
+                            <h3 className={styles.panelTitle}>Risers And Fallers</h3>
                           </div>
                           <div className={styles.panelBody}>
                             {teamMovementMovers.improved.length === 0 &&
