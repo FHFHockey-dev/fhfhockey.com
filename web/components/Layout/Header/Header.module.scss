@@ -5,9 +5,9 @@
   position: sticky;
   top: 0;
   z-index: 1000;
-  background: #141719;
-  border-bottom: 1px solid #33414a;
-  color: #f4f6f8;
+  background: v.$chrome-bg;
+  border-bottom: 1px solid v.$chrome-border;
+  color: v.$chrome-text;
   font-family: v.$font-family-primary;
   a:focus-visible,
   button:focus-visible {
@@ -41,7 +41,7 @@
   min-width: 44px;
   border-radius: 6px;
   &:hover {
-    background: #263139;
+    background: v.$chrome-hover;
   }
 }
 .mobileLogo {
@@ -59,11 +59,11 @@
   z-index: 1000;
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  background: #141719;
-  border-top: 1px solid #33414a;
+  background: v.$chrome-bg;
+  border-top: 1px solid v.$chrome-border;
   padding: 4px max(4px, env(safe-area-inset-right))
     max(4px, env(safe-area-inset-bottom)) max(4px, env(safe-area-inset-left));
-  color: #d5dce1;
+  color: v.$chrome-bottom-nav-text;
   font-family: v.$font-family-primary;
 }
 .bottomNavHidden {
@@ -97,7 +97,7 @@
   &[aria-current],
   &.active {
     border-top-color: v.$primary-color;
-    background: #12303d;
+    background: v.$chrome-active-mobile;
     color: v.$primary-color;
   }
   &:focus-visible {
@@ -148,7 +148,7 @@
     }
     span {
       font-size: 12px;
-      color: #b5c1cc;
+      color: v.$chrome-label;
     }
   }
   .utilities {

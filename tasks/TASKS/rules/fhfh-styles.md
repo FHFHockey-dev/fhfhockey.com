@@ -529,21 +529,21 @@ Do not use position accents for:
 
 ### 7.9 Site Chrome Colours
 
-The site header, nav and footer currently use literals rather than tokens. They
-are canonical as rendered, but tokenise them before reusing them elsewhere:
+The site header, nav, bottom nav, footer and user menu use the `$chrome-*` tokens in `vars.scss` (tokenised 2026-11-07, pixel-identical). Reuse the tokens rather than the hex values:
 
-| Role | Value | Where |
-| --- | --- | --- |
-| Chrome surface (mobile header, bottom nav, footer) | `#141719` | Header, Layout modules |
-| Chrome border | `#33414a` | Header, Layout, UserMenu |
-| Chrome text | `#f4f6f8` | Header, NavbarItems |
-| Nav section label / helper | `#b5c1cc` | NavbarItems, Header |
-| Footer text | `#c0cbd3` | Layout |
-| Nav link hover | `#20282e` | NavbarItems |
-| Menu item / utility hover | `#263139` | NavbarItems, Header |
-| Desktop nav active fill | `#122a34` | NavbarItems |
-| Mobile bottom-nav active fill | `#12303d` | Header |
-| Nav dropdown shell | `#181e22` | NavbarItems |
+| Role | Token | Value | Where |
+| --- | --- | --- | --- |
+| Chrome surface (mobile header, bottom nav, footer) | `$chrome-bg` | `#141719` | Header, Layout modules |
+| Chrome border | `$chrome-border` | `#33414a` | Header, Layout, UserMenu |
+| Chrome text | `$chrome-text` | `#f4f6f8` | Header, NavbarItems |
+| Nav section label / helper | `$chrome-label` | `#b5c1cc` | NavbarItems, Header |
+| Footer text | `$chrome-footer-text` | `#c0cbd3` | Layout |
+| Bottom-nav tab text | `$chrome-bottom-nav-text` | `#d5dce1` | Header |
+| Nav link hover | `$chrome-link-hover` | `#20282e` | NavbarItems |
+| Menu item / utility hover | `$chrome-hover` | `#263139` | NavbarItems, Header |
+| Desktop nav active fill | `$chrome-active` | `#122a34` | NavbarItems |
+| Mobile bottom-nav active fill, user trigger | `$chrome-active-mobile` | `#12303d` | Header, NavbarItems, UserMenu |
+| Nav dropdown / user menu shell | `$chrome-menu-bg` | `#181e22` | NavbarItems, UserMenu |
 
 ### 7.10 Shape, Spacing, Sizing, Depth And Motion Tokens
 
@@ -1445,11 +1445,11 @@ Required shared anatomy:
 
 ### 9.14 Site Chrome (Header, Navigation, Footer)
 
-Production references: `Header.module.scss`, `NavbarItems.module.scss`, `Layout.module.scss`. The colours are the §7.9 literals.
+Production references: `Header.module.scss`, `NavbarItems.module.scss`, `Layout.module.scss`. The colours are the §7.9 `$chrome-*` tokens.
 
-- Desktop (≥1100px): a sticky 64px header on `$background-header`, with a `4px double $color-white` bottom border and a diagonal primary/white/secondary stripe (`::after`, 0.5 opacity). Nav links are Roboto Condensed 15px, uppercase, 0.04em, 64px tall. Hover is `#20282e`. Active is primary text on `#122a34` with a primary bottom rule. Dropdowns are a `#181e22` shell with a soft dark shadow, `#b5c1cc` uppercase 13px section labels and `#263139` item hover.
-- Mobile (<1100px): a sticky 56px bar (`48px 1fr 48px` grid) in `#141719` with a `#33414a` bottom border, and 44px utility hit areas with `#263139` hover. A fixed five-tab bottom nav has 56px tabs and 22px icons. The active tab gets a 3px primary top rule (radius `3px 3px 6px 6px`, so no toenail), a `#12303d` fill and primary text. Content reserves `76px + safe-area` bottom padding.
-- Footer: `#141719` with a `#33414a` top border, `#c0cbd3` text, 24px padding, an inner max width of 1680px, 44px link hit areas and primary link hover.
+- Desktop (≥1100px): a sticky 64px header on `$background-header`, with a `4px double $color-white` bottom border and a diagonal primary/white/secondary stripe (`::after`, 0.5 opacity). Nav links are Roboto Condensed 15px, uppercase, 0.04em, 64px tall. Hover is `$chrome-link-hover`. Active is primary text on `$chrome-active` with a primary bottom rule. Dropdowns are a `$chrome-menu-bg` shell with a soft dark shadow, `$chrome-label` uppercase 13px section labels and `$chrome-hover` item hover.
+- Mobile (<1100px): a sticky 56px bar (`48px 1fr 48px` grid) in `$chrome-bg` with a `$chrome-border` bottom border, and 44px utility hit areas with `$chrome-hover` hover. A fixed five-tab bottom nav has 56px tabs and 22px icons. The active tab gets a 3px primary top rule (radius `3px 3px 6px 6px`, so no toenail), a `$chrome-active-mobile` fill and primary text. Content reserves `76px + safe-area` bottom padding.
+- Footer: `$chrome-bg` with a `$chrome-border` top border, `$chrome-footer-text` text, 24px padding, an inner max width of 1680px, 44px link hit areas and primary link hover.
 - Focus: `2px solid $primary-color` outlines, inset on bars (`outline-offset: -2px/-3px`).
 - This chrome is blue-tinted brand chrome. Restyles keep its blues; flatten gradients to matching flat tints, never to neutral greys.
 
@@ -2076,8 +2076,8 @@ These are known mismatches between this guide's intent and the shipped code. Eac
 
 | Drift | Detail | Direction |
 | --- | --- | --- |
-| Chrome literals | Header, nav, bottom nav and footer hardcode the §7.9 colours | Promote them to `$chrome-*` tokens in `vars.scss` and swap the literals |
-| Controls field contrast | `Controls.module.scss` gives fields `$border-secondary` (2.1:1) | Switch the field edges to `$border-control` (3.35:1) |
+| Chrome literals | Done 2026-11-07: Header, nav, bottom nav, footer and user menu now use the §7.9 `$chrome-*` tokens (compiled CSS unchanged) | Closed |
+| Controls field contrast | Done 2026-11-07: `Controls.module.scss` input and select edges use `$border-control-color` (3.35:1); buttons, summary and checkboxes keep `$border-secondary` | Closed |
 | Two radius scales | `$radius-*` (4/6/10/16) and `$border-radius-*` (4/8/12/16) both in use (35 vs 41 files) | New work uses `$radius-*`; migrate opportunistically |
 | Two spacing scales | `$space-*` (2/4/8/16/24/32/48/64) and `$mobile-space-*` (4/8/12/16/20/24/32/40) | Keep both; don't add a third |
 | Surface naming | `$background-medium` is darker than `$background-dark`; the body is `$background-light` `#202020` | Document only (renaming would churn about 100 files) |

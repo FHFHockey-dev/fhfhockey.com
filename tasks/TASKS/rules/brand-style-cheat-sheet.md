@@ -13,7 +13,7 @@ source:
   panels: web/styles/_panel.scss
   controls: web/styles/Controls.module.scss
   globals: web/styles/globals.css
-  chrome: web/components/Layout/{Header,NavbarItems}/*.module.scss, web/components/Layout/Layout.module.scss
+  chrome: web/components/Layout/{Header,NavbarItems}/*.module.scss, web/components/Layout/Layout.module.scss, web/components/auth/UserMenu.module.scss
   crossCheck: designmd.me production extraction, 6 pages from /draft-dashboard, 2026-11-06
   spec: tasks/TASKS/rules/fhfh-styles.md   # the implementation spec; this file is the quick reference
 colors:
@@ -54,14 +54,18 @@ colors:
   danger-dark: "#670c20"
   info: "#3b82f6"
   focus: "#ffc108"             # $focus-color; global input outline. NB $error-color aliases it
-  # Site chrome (literals, not yet tokens: see Known Gaps)
+  # Site chrome: $chrome-* in vars.scss (fhfh-styles.md §7.9)
   chrome-bg: "#141719"
   chrome-border: "#33414a"
   chrome-text: "#f4f6f8"
   chrome-label: "#b5c1cc"
   chrome-footer-text: "#c0cbd3"
-  chrome-hover: "#263139"
-  chrome-active: "#122a34"     # desktop nav; mobile bottom nav uses #12303d
+  chrome-bottom-nav-text: "#d5dce1"
+  chrome-link-hover: "#20282e" # desktop nav link hover
+  chrome-hover: "#263139"      # menu item / utility hover
+  chrome-active: "#122a34"     # desktop nav active fill
+  chrome-active-mobile: "#12303d"  # bottom-nav active fill, user trigger
+  chrome-menu-bg: "#181e22"    # nav dropdown, user menu shell
 positionColors:                # $draft-position-colors + @mixin draft-position-colors → --position-color
   C: "#3b82f6"                 # $info-color
   LW: "#ff9f43"                # $color-orange-400
@@ -404,14 +408,15 @@ close, and focus returned to the opener on close. Compose from
 
 - **Desktop** (≥1100px): a 64px header in `$background-header` with a 4px
   double white bottom border and a diagonal cyan/white stripe. Nav links are
-  15px uppercase Roboto Condensed at 0.04em. Hover is `#20282e`. Active is
-  primary text on `#122a34` with a primary bottom rule. Dropdowns are `#181e22`
-  with `#b5c1cc` section labels, and item hover is `#263139`.
-- **Mobile**: a 56px sticky bar in `#141719` with a `#33414a` border. The bottom
-  nav has five 56px tabs; the active tab has a 3px primary top rule, a `#12303d`
-  fill and primary text.
-- **Footer**: `#141719` with a `#33414a` top border, `#c0cbd3` text and primary
-  link hover.
+  15px uppercase Roboto Condensed at 0.04em. Hover is `$chrome-link-hover`.
+  Active is primary text on `$chrome-active` with a primary bottom rule.
+  Dropdowns are `$chrome-menu-bg` with `$chrome-label` section labels, and item
+  hover is `$chrome-hover`.
+- **Mobile**: a 56px sticky bar in `$chrome-bg` with a `$chrome-border` border.
+  The bottom nav has five 56px tabs; the active tab has a 3px primary top rule,
+  a `$chrome-active-mobile` fill and primary text.
+- **Footer**: `$chrome-bg` with a `$chrome-border` top border,
+  `$chrome-footer-text` text and primary link hover.
 - Keep the blue brand chrome. When flattening a gradient, reproduce the same
   rendered blue as one flat tint, never a neutral grey.
 
@@ -469,11 +474,9 @@ allowed only on overlays (`$blur-backdrop-soft` 12px, `-strong` 28px).
 
 ## 9. Known Gaps and Drift
 
-- Site chrome colours (`#141719`, `#33414a`, `#f4f6f8`, `#b5c1cc`, `#c0cbd3`,
-  `#263139`, `#20282e`, `#122a34`, `#12303d`, `#181e22`) are literals in the
-  Layout modules, not tokens.
-- `Controls.module.scss` field borders use `$border-secondary` (2.1:1), not
-  `$border-control` (3.35:1).
+- Fixed 2026-11-07: site chrome colours are now the `$chrome-*` tokens, and
+  `Controls.module.scss` input and select edges use `$border-control-color`
+  (3.35:1). Its buttons, summary and checkboxes still use `$border-secondary`.
 - Two radius scales (`$radius-*` and `$border-radius-*`) and two spacing scales
   (`$space-*` 2/4/8/16… and `$mobile-space-*` 4/8/12/16…) coexist.
 - The position colours (`$draft-position-colors`) differ from the older chart
