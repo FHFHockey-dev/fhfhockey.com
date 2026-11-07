@@ -1,30 +1,14 @@
--- DRAFT, NOT APPLIED. Layer 3 of the X intake safety net (tasks/artifacts/x-intake-safety-net-design-2026-11-06.md).
--- Kept beside the function, not in supabase/migrations, so it does not shift the migration-authority count while the
--- watchdog migration is in flight. At release Chef moves the "migration" part to
--- supabase/migrations/<version>_x_timeline_fallback_ingest.sql with a migration-authority.json row.
--- Needs TJ's approval to apply. Service role only, like the poller's RPCs.
-
--- ===== migration part =====
+-- Layer 3 of the X intake safety net (tasks/artifacts/x-intake-safety-net-design-2026-11-06.md), run by GitHub
+-- Actions (.github/workflows/x-twscrape-fallback.yml).
+-- Shadow mode's SQL (the ingest-secret check, x_timeline_twscrape_observations and its prune) is the migration
+-- supabase/migrations/20261107181046_x_timeline_twscrape_shadow.sql. What is left here is not needed for shadow:
+--
+-- ===== DRAFT, NOT APPLIED: only for promoting to live (TJ's approval, then its own migration) =====
 set local lock_timeout = '5s';
 set local statement_timeout = '30s';
 
--- Auth for x-timeline-ingest: the Pi's x-fhfh-ingest-secret header must match Vault 'x_timeline_ingest_secret'.
-create or replace function public.x_timeline_ingest_secret_matches(p_secret text)
-returns boolean
-language sql
-stable
-security definer
-set search_path = ''
-as $$
-  select p_secret is not null and exists (
-    select 1 from vault.decrypted_secrets
-    where name = 'x_timeline_ingest_secret' and decrypted_secret = p_secret
-  );
-$$;
-
-revoke all on function public.x_timeline_ingest_secret_matches(text) from public, anon, authenticated;
-grant execute on function public.x_timeline_ingest_secret_matches(text) to service_role;
-
+-- Live takeover rule. The Pi wording below predates GitHub Actions: on a 15-minute schedule the job reads every
+-- switched account each run, so crossCheck is unused there.
 -- Pi takeover rule (layer 3), evaluated per account each time the Pi asks (every 4 minutes):
 --   due = tweet_intake_providers.provider = 'fxtwitter'
 --         AND (no poller result with results[].sourceKey = <key> and results[].ok = true in the last 2 hours
@@ -75,9 +59,9 @@ $$;
 revoke all on function public.x_timeline_account_health(integer) from public, anon, authenticated;
 grant execute on function public.x_timeline_account_health(integer) to service_role;
 
--- ===== not a migration: run once, with TJ's approval =====
--- The ingest secret, generated inside Postgres. TJ copies it to the Pi's env file himself (walkthrough step).
+-- ===== not a migration: needed for shadow, run once by TJ in the dashboard =====
+-- The ingest secret, generated inside Postgres. TJ copies it into the GitHub repository secret X_INGEST_SECRET.
 --   select vault.create_secret(replace(gen_random_uuid()::text || gen_random_uuid()::text, '-', ''),
---     'x_timeline_ingest_secret', 'x-timeline-ingest (Pi twscrape fallback) auth; generated in Postgres');
--- Revoke the Pi: select vault.update_secret((select id from vault.secrets where name = 'x_timeline_ingest_secret'),
+--     'x_timeline_ingest_secret', 'x-timeline-ingest (GitHub Actions twscrape fallback) auth; generated in Postgres');
+-- Revoke the job: select vault.update_secret((select id from vault.secrets where name = 'x_timeline_ingest_secret'),
 --   replace(gen_random_uuid()::text || gen_random_uuid()::text, '-', ''));

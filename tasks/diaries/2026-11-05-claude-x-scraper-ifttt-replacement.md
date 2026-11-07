@@ -262,3 +262,22 @@ and turning the 7 applets off.
   Recommendation: the staged choice is moot, because every account was switched at 03:23 (TJ). By the rules it would
     be "switch DFO + GameDay" (1-4 clean, 4 processed, a repost credited via source_handle). Next step: keep
     nhl_rosters on fxtwitter (no rollback) and confirm credit on the first PROCESSED repost. Nothing changed.
+- Scheduled read-only check 'fhfh-social-share-e2e-check', run 2026-11-07 18:04 UTC (SELECTs only). Result: NOT YET -
+  no real FHFH card post since the switch. Re-run after TJ's next card post.
+  1 Scraper rows: 0 social_share_x_posts rows with provider fxtwitter; table still 9 rows (newest 11-06 16:42:34).
+  2 Completeness: 3 fhfhockey shadow rows first seen after 03:33:23 (newest 16:36 UTC), all post_kind repost; 0 eligible
+    (own post/quote with media) -> nothing missing.
+  3 Duplicates: count 9 = distinct 9. Reposts written by the scraper: 0.
+  4 Poller (net._http_response keeps 12:04+ only): 180 results, fhfhockey ok 169/180 (93.9%); 11 failures all 404 after
+    3 attempts, isolated (none consecutive). socialWritten 0, no socialError values.
+  5 Card match: not testable (no scraper rows, so alt_text not observed yet).
+
+## Checkpoint 2026-11-07 ~19:45 UTC (orchestrator inventory, read-only)
+- Poller v6/v7/v8 + social-share writer are committed in c26c3add3 (on origin/octoberBranch). Nothing in
+  x-timeline-poll is dirty.
+- Layer 3 moved to GitHub Actions (child x-fallback-gha): master 194d55e72 (7 files), migration 20261107181046
+  applied, x-timeline-ingest v1 deployed (shadow only). Its other files are uncommitted on octoberBranch.
+- Lineup alert (child lineup-ingestion-alert): parser fix 040c59341 local, not pushed. Grandchild roster-last-seen
+  migration 20261107192933 applied with TJ's approval; reader + tie-break uncommitted.
+- Still pending: 20261106220000 loud alerts (authority: pending), 20261106210000 + 20261106233000 (unknown).
+- Inventory report: side-session-notes/local_c4e6c533.../inventories/x-intake-ifttt-replacement.md

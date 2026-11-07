@@ -8,9 +8,21 @@ import {
   PUBLIC_FX_BASE,
 } from "../../../supabase/functions/_shared/fxSources";
 import { nextPageCursor, pageReachesNoStoredPost, recoverGap } from "../../../supabase/functions/_shared/fxGapRecovery";
-import { twscrapeFeedBody, twscrapeTimestamp, twscrapeToFxStatus } from "../../../supabase/functions/_shared/twscrapeStatus";
-import { parseIngestRequest } from "../../../supabase/functions/_shared/xTimelineIngestRequest";
-import { storeAndEnqueue } from "../../../supabase/functions/_shared/xTimelineStore";
+import {
+  timelineId,
+  toObservationRows,
+  twscrapeFeedBody,
+  twscrapeTimestamp,
+  twscrapeToFxStatus,
+  xCreatedAt,
+} from "../../../supabase/functions/_shared/twscrapeStatus";
+import { newestId, parseIngestRequest } from "../../../supabase/functions/_shared/xTimelineIngestRequest";
+import { storeAndEnqueue, switchedAtFor } from "../../../supabase/functions/_shared/xTimelineStore";
+import {
+  handleIngest,
+  OBSERVATIONS_TABLE,
+  RETENTION_DAYS,
+} from "../../../supabase/functions/x-timeline-ingest/handler";
 import * as fx from "../../../supabase/functions/x-timeline-poll/fxtwitter";
 import {
   mapFxProfileFeed,
@@ -24,6 +36,7 @@ import { tweetClaimAttribution } from "lib/sources/tweetSourceDirectory";
 const gdl = POLLED_ACCOUNTS.find((account) => account.sourceKey === "gamedaylines")!;
 const rosters = POLLED_ACCOUNTS.find((account) => account.sourceKey === "nhl_rosters")!;
 const fhfh = POLLED_ACCOUNTS.find((account) => account.sourceKey === "fhfhockey")!;
+const ccc = POLLED_ACCOUNTS.find((account) => account.sourceKey === "ccc")!;
 
 // FxTwitter /2/profile/{handle}/statuses shapes as observed 2026-11-05/06; text is invented.
 const fxPost = (id: string, handle = "NHL_Rosters") => ({
@@ -204,7 +217,7 @@ describe("fxGapRecovery: page back after an outage", () => {
 });
 
 // twscrape Tweet.json() shapes (twscrape/models.py, checked 2026-11-06); text is invented.
-const user = (username: string, id: number) => ({ id, id_str: String(id), username, displayname: `${username} name` });
+const user = (username: string, id: number | string) => ({ id, id_str: String(id), username, displayname: `${username} name` });
 const tweet = (fields: Record<string, unknown>) => ({
   id: 1, id_str: "1", url: "https://x.com/x/status/1", date: "2026-11-06 19:06:38+00:00", lang: "en",
   rawContent: "", media: { photos: [], videos: [], animated: [] }, retweetedTweet: null, quotedTweet: null,
@@ -268,6 +281,90 @@ describe("twscrapeStatus: layer-3 tweets in FxTwitter's shape", () => {
     });
   });
 
+  it("keeps media as FxTwitter has it: type, id, size, original-size photo URL, best video variant, gifs as videos", () => {
+    const status = twscrapeToFxStatus(tweet({
+      id_str: "910", user: user("FHFHockey", 42), rawContent: "Clips https://t.co/m1",
+      media: {
+        photos: [{ url: "https://pbs.twimg.com/media/A.jpg", id_str: "71", width: 1080, height: 1440, altText: "FHFH card" }],
+        videos: [{ id_str: "72", thumbnailUrl: "https://pbs.twimg.com/t.jpg", duration: 12500, width: 1280, height: 720,
+          variants: [{ contentType: "video/mp4", bitrate: 256000, url: "low.mp4" }, { contentType: "video/mp4", bitrate: 2176000, url: "high.mp4" }] }],
+        animated: [{ id_str: "73", thumbnailUrl: "g.jpg", videoUrl: "g.mp4" }],
+      },
+    }), "FHFHockey")!;
+    expect(status.media.all).toEqual([
+      { id: "71", width: 1080, height: 1440, altText: "FHFH card", type: "photo", url: "https://pbs.twimg.com/media/A.jpg?name=orig" },
+      { id: "72", width: 1280, height: 720, type: "video", url: "high.mp4", thumbnail_url: "https://pbs.twimg.com/t.jpg",
+        format: "video/mp4", duration: 12.5 },
+      { id: "73", type: "gif", url: "g.mp4", thumbnail_url: "g.jpg", format: "video/mp4" },
+    ]);
+    expect(status.media.photos).toHaveLength(1);
+    expect(status.media.videos.map((item: { type: string }) => item.type)).toEqual(["video", "gif"]);
+    expect(mapFxStatus(fhfh, status)).toMatchObject({ has_media: true, media_alt_texts: ["FHFH card"] });
+    // A video without alt text still counts as media, as FxTwitter's media.all does.
+    expect(mapFxStatus(fhfh, twscrapeToFxStatus(tweet({ id_str: "911", user: user("FHFHockey", 42), rawContent: "v",
+      media: { photos: [], videos: [{ variants: [{ url: "v.mp4", bitrate: 1 }] }], animated: [] } }), "FHFHockey")!))
+      .toMatchObject({ has_media: true, media_alt_texts: [] });
+  });
+
+  it("gives FxTwitter's two texts: raw_text with t.co links (what the row stores), text expanded and trimmed", () => {
+    const status = twscrapeToFxStatus(tweet({
+      id_str: "912", user: user("CcCMiddleton", 3), rawContent: "Lines 📺 https://t.co/aa https://t.co/media",
+      displayTextRange: [0, 23], links: [{ url: "https://flosports.link/x", text: "flosports.link/x", tcourl: "https://t.co/aa" }],
+    }), "CcCMiddleton")!;
+    expect(status.raw_text).toEqual({ text: "Lines 📺 https://t.co/aa https://t.co/media", display_text_range: [0, 23] });
+    expect(status.text).toBe("Lines 📺 https://flosports.link/x");
+    expect(mapFxStatus(ccc, status)!.full_text).toBe("Lines 📺 https://t.co/aa https://t.co/media");
+  });
+
+  it("keeps a repost wrapper's identity and time, and X's created_at format", () => {
+    const status = twscrapeToFxStatus(tweet({
+      id_str: "2118930000000000000", date: "2026-11-07 05:00:00+00:00", user: user("CcCMiddleton", "825802740362121216"),
+      rawContent: "RT @SDGullsAHL: Tonight…",
+      retweetedTweet: tweet({ id_str: "2118897727937359955", date: "2026-11-07 02:46:00+00:00", user: user("SDGullsAHL", "3033984587"),
+        rawContent: "Tonight's lineup" }),
+    }), "CcCMiddleton")!;
+    expect(status).toMatchObject({
+      id: "2118897727937359955", created_timestamp: 1794019560, created_at: "Sat Nov 07 02:46:00 +0000 2026",
+      reposted_by: { screen_name: "CcCMiddleton", id: "825802740362121216", name: "CcCMiddleton name" },
+      repost_wrapper_id: "2118930000000000000", reposted_timestamp: Date.parse("2026-11-07T05:00:00Z") / 1000,
+    });
+    expect(timelineId(status)).toBe("2118930000000000000");
+    expect(xCreatedAt(null)).toBeNull();
+    const row = mapFxStatus(ccc, status)!;
+    expect(row).toMatchObject({ tweet_id: "2118897727937359955", tweet_created_at: "2026-11-07T02:46:00.000Z" });
+    const [observation] = toObservationRows([row], "123-1");
+    expect(observation).toMatchObject({ tweet_id: "2118897727937359955", timeline_id: "2118930000000000000", run_id: "123-1" });
+  });
+
+  it("builds the same row as Layer 1 for a repost FxTwitter served (CCC, 2026-11-07)", () => {
+    // FxTwitter's status as stored in x_timeline_shadow_posts, trimmed to the fields the mapper reads.
+    const photo = { id: "2118887212050010112", url: "https://pbs.twimg.com/media/HWfMsWlb0AApqFY.jpg?name=orig", type: "photo",
+      width: 1080, height: 1440 };
+    const fxStatus = {
+      type: "status", id: "2118897727937359955", url: "https://x.com/SDGullsAHL/status/2118897727937359955",
+      text: "Tonight's lineup", raw_text: { text: "Tonight's lineup https://t.co/p", display_text_range: [0, 16] },
+      author: { id: "3033984587", name: "San Diego Gulls", screen_name: "SDGullsAHL" },
+      created_at: "Sat Nov 07 02:46:00 +0000 2026", created_timestamp: 1794019560, replying_to: null, quote: null,
+      reposted_by: { id: "825802740362121216", name: "LinesLinesLines", screen_name: "CcCMiddleton" },
+      media: { all: [photo], photos: [photo] },
+    };
+    const twscrape = twscrapeToFxStatus(tweet({
+      id_str: "2118900000000000000", user: { ...user("CcCMiddleton", "825802740362121216"), displayname: "LinesLinesLines" },
+      rawContent: "RT @SDGullsAHL: Tonight's lineup https://t.co/p",
+      retweetedTweet: tweet({
+        id_str: "2118897727937359955", date: "2026-11-07 02:46:00+00:00", rawContent: "Tonight's lineup https://t.co/p",
+        user: { ...user("SDGullsAHL", "3033984587"), displayname: "San Diego Gulls" }, displayTextRange: [0, 16],
+        media: { photos: [{ url: "https://pbs.twimg.com/media/HWfMsWlb0AApqFY.jpg", id_str: "2118887212050010112", width: 1080, height: 1440 }], videos: [], animated: [] },
+      }),
+    }), "CcCMiddleton")!;
+    const { raw_payload: fxRaw, ...fromFx } = mapFxStatus(ccc, fxStatus)!;
+    const { raw_payload: twRaw, ...fromTwscrape } = mapFxStatus(ccc, twscrape)!;
+    expect(fromTwscrape).toEqual(fromFx);
+    for (const key of ["id", "url", "text", "raw_text", "author", "created_at", "created_timestamp", "reposted_by", "media"]) {
+      expect(twRaw[key as keyof typeof twRaw]).toEqual((fxRaw as Record<string, unknown>)[key]);
+    }
+  });
+
   it("drops tweets without a usable identity and other accounts' posts", () => {
     const body = twscrapeFeedBody([
       tweet({ id: "x", id_str: "x", user: user("NHL_Rosters", 6) }),
@@ -294,6 +391,21 @@ describe("x-timeline-ingest request validation", () => {
     expect(parseIngestRequest('{"mode":"ingest","sourceKey":"ccc","tweets":{}}', keys)).toHaveProperty("error");
     expect(parseIngestRequest(JSON.stringify({ mode: "ingest", sourceKey: "ccc", tweets: Array(101).fill({}) }), keys))
       .toHaveProperty("error");
+  });
+
+  it("accepts shadow observe requests with a run id, and anchors", () => {
+    expect(parseIngestRequest('{"mode":"anchors"}', keys)).toEqual({ mode: "anchors" });
+    expect(parseIngestRequest('{"mode":"observe","sourceKey":"ccc","runId":"19123-1","tweets":[]}', keys))
+      .toEqual({ mode: "observe", sourceKey: "ccc", runId: "19123-1", tweets: [] });
+    for (const runId of [undefined, "", "a b", "x".repeat(65), 7]) {
+      expect(parseIngestRequest(JSON.stringify({ mode: "observe", sourceKey: "ccc", runId, tweets: [] }), keys))
+        .toHaveProperty("error");
+    }
+  });
+
+  it("picks the newest X id as an integer, not as text", () => {
+    expect(newestId(["999", "2118897727937359955", "2118897727937359956", null, "x"])).toBe("2118897727937359956");
+    expect(newestId([])).toBeNull();
   });
 });
 
@@ -350,5 +462,127 @@ describe("xTimelineStore: the poller's store-and-enqueue, shared with the ingest
     });
     expect(await storeAndEnqueue(queueFails.db, fx, rosters, rows, "2026-11-06T18:50:10Z"))
       .toMatchObject({ ok: false, enqueued: 0, enqueueError: "23514" });
+  });
+});
+
+/**
+ * A supabase-js stand-in that throws on any write to a table other than the shadow observations table, and records
+ * every table and RPC touched. Reads answer from `answers`, in turn.
+ */
+function guardedDb(answers: Record<string, Array<{ data?: unknown; error?: unknown }>> = {}) {
+  const calls: Array<{ table: string; op: string; args: unknown[] }> = [];
+  const rpcs: Array<{ fn: string; args: unknown }> = [];
+  const from = (table: string) => {
+    const chain: any = {};
+    for (const op of ["select", "eq", "in", "order", "limit", "maybeSingle", "upsert", "insert", "update", "delete"]) {
+      chain[op] = (...args: unknown[]) => {
+        if (["upsert", "insert", "update", "delete"].includes(op) && table !== OBSERVATIONS_TABLE) {
+          throw new Error(`shadow wrote ${table}`);
+        }
+        calls.push({ table, op, args });
+        return chain;
+      };
+    }
+    chain.then = (resolve: (value: unknown) => void) =>
+      resolve({ error: null, ...(answers[table]?.shift() ?? { data: [] }) });
+    return chain;
+  };
+  const rpc = async (fn: string, args: unknown) => {
+    rpcs.push({ fn, args });
+    return fn === "x_timeline_twscrape_observations_prune" ? { data: 3, error: null } : { data: null, error: null };
+  };
+  return { db: { from, rpc }, calls, rpcs };
+}
+
+const ingestDeps = (db: ReturnType<typeof guardedDb>["db"], liveEnabled = false) => ({
+  db, accounts: POLLED_ACCOUNTS, liveEnabled, mapFeed: mapFxProfileFeed, feedBody: twscrapeFeedBody, toObservationRows,
+  newestId, switchedAtFor,
+  storeAndEnqueue: (client: any, account: any, rows: any[], switchedAt: string | null) =>
+    storeAndEnqueue(client, fx, account, rows, switchedAt),
+});
+const PRODUCTION_TABLES = ["x_timeline_shadow_posts", "line_source_ifttt_events", "lines_ccc_ifttt_events",
+  "social_share_x_posts", "tweet_intake_providers"];
+
+describe("x-timeline-ingest handler: shadow mode cannot write production", () => {
+  // A card post with media, a repost and a quote, as twscrape would send them, for each kind of account.
+  const tweetsFor = (handle: string) => [
+    tweet({ id_str: "2118900000000000010", user: user(handle, "11"), rawContent: "Card https://t.co/c",
+      media: { photos: [{ url: "https://pbs.twimg.com/media/C.jpg", altText: "FHFH card: Player" }], videos: [], animated: [] } }),
+    tweet({ id_str: "2118900000000000009", date: "2026-11-07 05:00:00+00:00", user: user(handle, "11"),
+      rawContent: "RT @BeatWriter: Lines…",
+      retweetedTweet: tweet({ id_str: "2118800000000000001", user: user("BeatWriter", "12"), rawContent: "Lines" }) }),
+    tweet({ id_str: "2118900000000000008", user: user(handle, "11"), rawContent: "Quote",
+      quotedTweet: tweet({ id_str: "2118700000000000001", user: user("TeamX", "13"), rawContent: "Recalled" }) }),
+  ];
+
+  for (const account of POLLED_ACCOUNTS) {
+    it(`observe writes only the observations table for ${account.handle}`, async () => {
+      const { db, calls, rpcs } = guardedDb({ [OBSERVATIONS_TABLE]: [{ data: [{ tweet_id: "x" }] }] });
+      const request = parseIngestRequest(JSON.stringify({ mode: "observe", sourceKey: account.sourceKey, runId: "1-1",
+        tweets: tweetsFor(account.handle) }), POLLED_ACCOUNTS.map((candidate) => candidate.sourceKey));
+      expect(request).toMatchObject({ mode: "observe" });
+      const result = await handleIngest(request as any, ingestDeps(db));
+      expect(result).toMatchObject({ status: 200, body: { ok: true, mode: "observe", received: 3, mapped: 3 } });
+      expect(new Set(calls.map((call) => call.table))).toEqual(new Set([OBSERVATIONS_TABLE]));
+      expect(calls.map((call) => call.op)).toEqual(["upsert", "select"]);
+      expect(rpcs).toEqual([]);
+    });
+  }
+
+  it("dedupes: one row per (source_key, tweet_id), first observation wins, with the X and repost times", async () => {
+    const { db, calls } = guardedDb();
+    const tweets = [...tweetsFor("GameDayLines"), ...tweetsFor("GameDayLines")];
+    await handleIngest({ mode: "observe", sourceKey: "gamedaylines", runId: "2-1", tweets }, ingestDeps(db));
+    const upsert = calls.find((call) => call.op === "upsert")!;
+    const rows = upsert.args[0] as Array<Record<string, unknown>>;
+    expect(rows.map((row) => row.tweet_id)).toEqual(["2118900000000000010", "2118800000000000001", "2118900000000000008"]);
+    expect(upsert.args[1]).toEqual({ onConflict: "source_key,tweet_id", ignoreDuplicates: true });
+    expect(rows[1]).toMatchObject({
+      post_kind: "repost", timeline_id: "2118900000000000009", tweet_created_at: "2026-11-06T19:06:38.000Z",
+      reposted_at: "2026-11-07T05:00:00.000Z", run_id: "2-1",
+    });
+    expect(rows[0]).toMatchObject({ reposted_at: null, tweet_created_at: "2026-11-06T19:06:38.000Z" });
+    expect(rows.every((row) => !("first_observed_at" in row))).toBe(true); // the database's clock, not the job's
+  });
+
+  it("anchors prunes to the retention window and reads only the observations table", async () => {
+    const { db, calls, rpcs } = guardedDb({
+      [OBSERVATIONS_TABLE]: [{ data: [{ timeline_id: "2118897727937359955" }, { timeline_id: "999" }] }],
+    });
+    const result = await handleIngest({ mode: "anchors" }, ingestDeps(db));
+    expect(RETENTION_DAYS).toBe(14);
+    expect(rpcs).toEqual([{ fn: "x_timeline_twscrape_observations_prune", args: { p_days: 14 } }]);
+    expect(result.body).toMatchObject({ ok: true, pruned: 3, anchors: { dfofantasy: "2118897727937359955", ccc: null } });
+    expect(new Set(calls.map((call) => call.table))).toEqual(new Set([OBSERVATIONS_TABLE]));
+    expect(calls.some((call) => ["upsert", "insert", "update", "delete"].includes(call.op))).toBe(false);
+  });
+
+  it("refuses live ingest while shadow, before touching any table", async () => {
+    const { db, calls, rpcs } = guardedDb();
+    for (const sourceKey of ["dfofantasy", "ccc", "fhfhockey"]) {
+      const request = parseIngestRequest(JSON.stringify({ mode: "ingest", sourceKey, tweets: tweetsFor("DFOFantasy") }),
+        POLLED_ACCOUNTS.map((account) => account.sourceKey));
+      expect(await handleIngest(request as any, ingestDeps(db))).toEqual({
+        status: 403, body: { ok: false, error: "Live ingest is disabled (shadow mode)" },
+      });
+    }
+    expect(calls).toEqual([]);
+    expect(rpcs).toEqual([]);
+  });
+
+  it("ignores anything in an observe body that names a production table or asks for live", () => {
+    const keys = POLLED_ACCOUNTS.map((account) => account.sourceKey);
+    const parsed = parseIngestRequest(JSON.stringify({ mode: "observe", sourceKey: "ccc", runId: "3-1", tweets: [],
+      live: true, table: "lines_ccc_ifttt_events", queue: "line_source_ifttt_events", socialShare: true }), keys);
+    expect(parsed).toEqual({ mode: "observe", sourceKey: "ccc", runId: "3-1", tweets: [] });
+    for (const table of PRODUCTION_TABLES) {
+      expect(parseIngestRequest(JSON.stringify({ mode: table, sourceKey: "ccc", tweets: [] }), keys)).toHaveProperty("error");
+    }
+  });
+
+  it("the guard is real: live ingest for a switched account would write the shadow table and is caught", async () => {
+    const { db } = guardedDb({ tweet_intake_providers: [{ data: { provider: "fxtwitter", switched_at: "2026-11-01T00:00:00Z" } }] });
+    await expect(handleIngest({ mode: "ingest", sourceKey: "dfofantasy", tweets: tweetsFor("DFOFantasy") },
+      ingestDeps(db, true))).rejects.toThrow("shadow wrote x_timeline_shadow_posts");
   });
 });
