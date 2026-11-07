@@ -564,7 +564,7 @@ Typography should establish hierarchy quickly and support dense analytics readin
 Loading facts (as of 2026-11-07):
 
 - `globals.css` sets the page default to **Roboto** (loaded at 400/500/700). Any element that sets no family renders in Roboto, which is why production scans measure Roboto for long-form copy.
-- **Roboto Condensed** is loaded only at 300 and 400. **Train One** has one weight (400). `font-weight: 600/700` on either renders as browser faux-bold, so build hierarchy from size, case, tracking and colour, not weight.
+- **Roboto Condensed** is loaded at 300/400/500/600/700 (one import in `globals.css`, since 2026-11-07), so its weights are real. **Train One** has one weight (400): `font-weight` above 400 on it renders as browser faux-bold, so Train One rules use 400 and build hierarchy from size, case, tracking and colour.
 - **Martian Mono** is a variable font (100–800). **Tomorrow** (`$font-family-sporty`) is loaded but used in only two modules.
 - Size tokens: `$font-size-xxs` 0.625rem, `xs` 0.75, `sm` 0.875, `base` 1, `md` 1.125, `lg` 1.25, `xl` 1.5, `xxl` 2rem. Weight tokens: `$font-weight-regular|medium|semibold|bold`.
 
@@ -2081,7 +2081,7 @@ These are known mismatches between this guide's intent and the shipped code. Eac
 | Two radius scales | `$radius-*` (4/6/10/16) and `$border-radius-*` (4/8/12/16) both in use (35 vs 41 files) | New work uses `$radius-*`; migrate opportunistically |
 | Two spacing scales | `$space-*` (2/4/8/16/24/32/48/64) and `$mobile-space-*` (4/8/12/16/20/24/32/40) | Keep both; don't add a third |
 | Surface naming | `$background-medium` is darker than `$background-dark`; the body is `$background-light` `#202020` | Document only (renaming would churn about 100 files) |
-| Faux-bold fonts | Roboto Condensed is loaded at 300/400 only; Train One has one weight | Either load Roboto Condensed 600/700 or stop asking for those weights |
+| Faux-bold fonts | Done 2026-11-07: Roboto Condensed loads 300-700. Train One still has one weight | Train One rules move to 400 page by page in the toenail backlog |
 | `$error-color` | Aliases the yellow `$focus-color` | Use `$danger-color` for errors; retire the alias |
 | Position vs chart colours | `$draft-position-colors` differs from the legacy `$color-orange/-purple/-teal` | Position identity uses the map only |
 

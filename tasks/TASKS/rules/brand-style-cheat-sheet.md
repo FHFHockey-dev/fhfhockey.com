@@ -106,7 +106,7 @@ typography:
     secondary: "Arial"                # $font-family-secondary: native form fallback
   loadedWeights:
     Roboto: [400, 500, 700]
-    Roboto Condensed: [300, 400]      # 600/700 render as browser faux-bold
+    Roboto Condensed: [300, 400, 500, 600, 700]
     Train One: [400]                  # single weight; bold is synthesised
     Martian Mono: "100-800"
   scale: { xxs: 0.625rem, xs: 0.75rem, sm: 0.875rem, base: 1rem, md: 1.125rem, lg: 1.25rem, xl: 1.5rem, xxl: 2rem }
@@ -273,9 +273,9 @@ Use `$chart-color-1..10` in order, starting with primary. Gridlines take
 | Train One | `$font-family-accent` | Page/section/panel titles, control and toggle labels, uppercase only |
 | Martian Mono | `$font-family-numbers` | Stats, table metrics, percentages, timers |
 
-- **Weights that exist:** Roboto Condensed is loaded at 300/400 and Train One at
-  400 only, so `font-weight: 600/700` on them is browser faux-bold. Weight is not
-  a hierarchy tool for these families: use size, case and colour.
+- **Weights that exist:** Roboto Condensed is loaded at 300-700, so its weights are
+  real. Train One has 400 only: any heavier weight on it is browser faux-bold, so
+  Train One rules use 400 and get hierarchy from size, case and colour.
 - **Uppercase** is for system labels: titles, eyebrows, nav, buttons and toggles,
   with tracking around `0.04em`–`0.08em`. Body copy stays sentence case.
 - **Ladder:** page title 2–2.5rem › section 1–1.35rem › panel 0.85–1rem ›
