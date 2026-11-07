@@ -101,3 +101,38 @@ Planned Q11 (30 combos): per table × date 11-04..11-06: rows, goalies matching 
   runs 22:10-22:20 succeeded. Registry 115-117 → applied; counts 119/82 applied/28 unknown/9 pending; summary line
   updated (exact format the test checks). supportedBaselineMigration 21/21.
 - Gotcha: the summary sentence is asserted verbatim by the test; don't add clauses.
+
+## Checkpoint ~22:35 UTC: PP derived routes sized (Explore subagent read origin/master; all 3 DB-only, maxDuration 240)
+- Q12 (read-only): team_unit_toi 0 rows in window; whole table 12,929 rows, 2025-26 only, last write 06-22.
+  tallies season 20262027: 2,982 rows. rpgm 09-29..10-30: 34,244 rows / 724 players; 10-31..11-06: 5,320 rows.
+- Q13 audit: nightly rolling 1-day windows: 60 players/300 rows in 4-29 s.
+- Tallies: no date params; RPC refresh_player_lineup_deployment_tallies deletes+inserts the whole season; pg_cron 391
+  09:55 UTC daily action=current → tomorrow's run rebuilds from fixed PP rows automatically.
+- team_unit_toi: never populated for 2026-27, no schedule; dryRun defaults true; nothing stale to rebuild.
+- Rolling: rows after 10-30 also carry stale PP history in their windows → recommend 09-29..11-06.
+  executionProfile=overnight, maxRuntimeMs 180000 + deadlineAt, 207 resume loop; est 8-15 calls, 15-30 min.
+- TJ pop-up: rolling "Run 09-29 → 11-06"; tallies "Let the 09:55 run do it"; team_unit_toi "Dry run first".
+  Rolling started in background (scratchpad runs/rolling.sh; overnight, 180 s budget, ≤25 calls, stop on non-200/207).
+  team_unit_toi: one call ?season=20262027&startDate=2026-09-29&endDate=2026-10-30&dryRun=true.
+- team_unit_toi dry run: HTTP 400 after 21 s, "Failed to fetch nhl_api_shift_rows: canceling statement due to
+  statement timeout". No writes (dryRun). Not retried; a 32-day window is too big for one read (rolling run was
+  running at the same time). Needs TJ: smaller windows or skip.
+- Rolling call 1 (22:31 UTC): HTTP 422 freshness gate FAIL (6 blockers, not bypassed) but rowsUpserted 2,295 for
+  34 players in 194 s; resume 8475171, 718 remaining of 752. Re-sized: ~22 calls, ~70 min.
+- TJ pop-up: "Continue with bypass"; team_unit_toi "One 1-day dry run" (after rolling).
+  rolling2.sh: resume 8475171, bypassFreshnessBlockers=true, maxRuntimeMs 160000, calls 2..31.
+
+## Ticket (Chef, 11-07): /stats/player radar league comparison for NST stats
+- Lock: PlayerRadarChart.tsx is the toenail lane's until it commits; do source + helper/tests first.
+- Radar reads player AND league season rows from wgo_skater_stats_per_game; game log NST comes from
+  nst_gamelog_as_{counts,counts_oi,rates,rates_oi} (usePlayerStats.ts). Need a season-level all-strength NST source.
+Q14 `select table_schema, table_name, table_type from information_schema.tables where table_schema in ('public','analytics') and table_name ilike 'nst%' and table_name not ilike 'nst_gamelog_goalie%' order by 2;`
+Q15 columns of nst_seasonlong_as_counts / _rates / _counts_oi and nst_seasonal_individual_* (information_schema).
+Q16 coverage: count(*), count(distinct player_id) for season 20262027 in candidates vs wgo_skater_stats_per_game; plus
+    `explain` cost of the view read.
+- Q15/Q16: nst_seasonlong_as_rates 752 players, nst_seasonlong_as_counts_oi 751, = wgo_skater_stats_per_game 752 for
+  20262027 (nst_seasonal_* stale, 530). anon SELECT true on both views + WGO. Sample McDavid sane.
+- Helper web/lib/nst/radarSeasonStats.ts + test (8/8, eslint 0): shares from on-ice for/against (league min events),
+  per-60 from rates view (league min 1 h TOI; hdcf_per_60 → ihdcf_per_60), hdca_per_60 = hdca*3600/toi_seconds_oi.
+  Position filter via WGO player_id/position_code. Errors/missing → unranked ("No comparison data").
+- Next: wire into PlayerRadarChart.tsx once toenail lane (local_a6ce3579) commits it.
