@@ -4,7 +4,7 @@ import { lineTestDatabase } from "./testDatabase";
 vi.mock("lib/sources/tweetProjectionStorage", () => ({ projectionReportFromSource: (source: any) => structuredClone(source.metadata.testReport) }));
 vi.mock("./gameState", async (load) => ({ ...await load<object>(), observeLineGame: async (game: any) => game }));
 import { decideBinding, decideContext, produceLineEvidence } from "./decisions";
-import { AUTHORITY_SEED, authorityTier, authorityWeight, RELAY_ACCOUNTS, RELAY_ONLY_WEIGHT, sourceAttribution, TEAM_ACCOUNTS } from "./authority";
+import { authorityTier, authorityWeight, RELAY_ACCOUNTS, RELAY_ONLY_WEIGHT, sourceAttribution, TEAM_ACCOUNTS } from "./authority";
 import clubLedger from "./fixtures/clubHandles.ledger.json";
 import { teamsInfo } from "lib/teamsInfo";
 import { readReviewedDecision } from "./trainerDecisions";
@@ -73,7 +73,8 @@ describe("original-author attribution", () => {
     expect(authorityTier("FHFHockey")).toBe("aggregator");
     expect(authorityTier("@BuffaloSabres")).toBe("team");
     for (const relay of RELAY_ACCOUNTS) expect(authorityTier(relay)).toBe("unknown");
-    expect(authorityTier("pham1717")).toBe("unknown");
+    expect(authorityTier("pham1717")).toBe("beat");
+    expect(authorityTier("someunlistedfan")).toBe("unknown");
     expect([authorityWeight("team"), authorityWeight("beat"), authorityWeight("aggregator"), authorityWeight("excluded")]).toEqual([3, 2, 1, 0]);
   });
 });
@@ -134,7 +135,7 @@ describe("decision producer through the processor", () => {
     await processLineSnapshotEvidence(db, [fx], [BUF], now);
     const claim = db.tables.line_claim_revisions![0]!.payload;
     expect(claim.provenance).toEqual({ relayTweetId: "555", originalTweetId: "900", attributionStatus: "resolved" });
-    expect(claim).toMatchObject({ originalAuthor: "pham1717", relayAccount: "gamedaylines", authorityTier: "unknown", gameId: game.id });
+    expect(claim).toMatchObject({ originalAuthor: "pham1717", relayAccount: "gamedaylines", authorityTier: "beat", gameId: game.id });
   });
   it("Sabres PP2 from the parser's pp_replace change: no context invented, Kuluch unresolved, resolved only by an approved alias", async () => {
     const at = (word: string) => { const start = SABRES.indexOf(word); return { start, end: start + word.length, text: word }; };
@@ -256,12 +257,10 @@ describe("relay sourcing rule (TJ, 2026-11-06)", () => {
     expect(claim.reviewReasons).not.toContain("original_provenance_unverified");
   });
   it("a relay quoting a beat reporter: beat tier and the beat author", () => {
-    AUTHORITY_SEED.pham1717 = "beat";
-    try {
-      const attribution = sourceAttribution(post("CcCMiddleton", { quote: { id: "800", author: "pham1717" } }), text);
-      expect(attribution).toMatchObject({ originalAuthor: "pham1717", relayAccount: "cccmiddleton", originalTweetId: "800", relayTweetId: "700", relayOnly: false });
-      expect(authorityTier(attribution.originalAuthor)).toBe("beat");
-    } finally { delete AUTHORITY_SEED.pham1717; }
+    // pham1717 is a TJ-reviewed BUF beat reporter (beatReporters.ts).
+    const attribution = sourceAttribution(post("CcCMiddleton", { quote: { id: "800", author: "pham1717" } }), text);
+    expect(attribution).toMatchObject({ originalAuthor: "pham1717", relayAccount: "cccmiddleton", originalTweetId: "800", relayTweetId: "700", relayOnly: false });
+    expect(authorityTier(attribution.originalAuthor)).toBe("beat");
   });
   it("an FHFHockey post counts at aggregator weight but does not confirm unless it quotes an original", async () => {
     const db = database();
@@ -287,5 +286,19 @@ describe("club handles (ledger, checked live 2026-11-07)", () => {
     }
     // Seed handles that were wrong: not found, or an unofficial lookalike.
     for (const handle of ["mnwild", "nhlcanes"]) expect(authorityTier(handle)).toBe("unknown");
+  });
+});
+
+describe("beat reporters in the authority seed (TJ-reviewed list)", () => {
+  it("ranks beat reporters as beat, club and team-run accounts as team, media outlets as beat", () => {
+    expect(authorityTier("amandacstein")).toBe("beat");
+    expect(authorityTier("@AmandaCStein")).toBe("beat");
+    expect(authorityTier("NJDevils")).toBe("team");
+    expect(authorityTier("PenguinsPR")).toBe("team");
+    expect(authorityTier("tsn1200")).toBe("beat");
+    expect(authorityTier("chgo_blackhawks")).toBe("beat");
+    expect(authorityWeight(authorityTier("amandacstein"))).toBeGreaterThan(authorityWeight("unknown"));
+    // Relays never gain a tier from any list.
+    for (const relay of RELAY_ACCOUNTS) expect(authorityTier(relay)).toBe("unknown");
   });
 });
