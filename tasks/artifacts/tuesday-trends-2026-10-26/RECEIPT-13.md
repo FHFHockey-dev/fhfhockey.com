@@ -1,5 +1,7 @@
 # RECEIPT-13: TJ's per-team notes on the TT-12 sheet (lane TT, offline)
 
+> **Archived 2026-11-07 (cleanup stage 2):** this receipt's PNG screenshots were removed from the repo. The copies are under `~/Archive/fhfh-artifacts-2026-11-07-stage2/` at the same paths, and any paths or sha256 values below still identify them. Restore steps: [`ARCHIVED-2026-11-07.md`](../ARCHIVED-2026-11-07.md#stage-2-tuesday-trends-receipt-screenshots). JSON, sha256 and text evidence is still tracked.
+
 The bake moved to `tt13/bake-multicolour-outlines.mjs`, which supersedes `tt12/`. The per-team parameters are in `PARAMS`, documented in the script. The parameters used and the resulting palettes are in `tt13/palettes.json`. Every team is re-baked; the PNG bytes changed only for the teams below:
 - `web/public/teamLogos/outline/color/BUF.png`
 - `web/public/teamLogos/outline/color/CAR.png`

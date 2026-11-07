@@ -1,5 +1,7 @@
 # RECEIPT-1 — Tuesday Trends offline build (lane TT)
 
+> **Archived 2026-11-07 (cleanup stage 2):** this receipt's PNG screenshots were removed from the repo. The copies are under `~/Archive/fhfh-artifacts-2026-11-07-stage2/` at the same paths, and any paths or sha256 values below still identify them. Restore steps: [`ARCHIVED-2026-11-07.md`](../ARCHIVED-2026-11-07.md#stage-2-tuesday-trends-receipt-screenshots). JSON, sha256 and text evidence is still tracked.
+
 - Lane TT; worker session; canonical checkout `/Users/tim/Code/fhfhockey.com` on `octoberBranch`; base `cd73cbd69`.
 - **Offline only.** No production reads or writes, no migrations, no pushes, no deploys. All E2E traffic stayed on :3110 behind the SS1 network-deny preload. `run/node-network.jsonl` has one entry: Next's own npm registry check at server start, which was denied.
 - The commit SHA is reported in the chat message. It cannot be written into the commit that contains this file.

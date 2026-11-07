@@ -1,5 +1,7 @@
 # RECEIPT-4 — TT-4 visual pass: Monday tiles, green/red accents, sparklines (lane TT, offline)
 
+> **Archived 2026-11-07 (cleanup stage 2):** this receipt's PNG screenshots were removed from the repo. The copies are under `~/Archive/fhfh-artifacts-2026-11-07-stage2/` at the same paths, and any paths or sha256 values below still identify them. Restore steps: [`ARCHIVED-2026-11-07.md`](../ARCHIVED-2026-11-07.md#stage-2-tuesday-trends-receipt-screenshots). JSON, sha256 and text evidence is still tracked.
+
 - **Ticket:** TT-4 from the chef. TJ asked for "social punch": sparklines, logos, Monday styling and green/red accents.
 - **Branch:** octoberBranch (synced with released master `19890a8cb` by the chef at `42688ceae`). The commit SHA is reported in the chat message.
 - **Offline only.** No production read, write, push or deploy. E2E ran on :3110 with the network-deny preload; `run/node-network-4.jsonl` holds only Next's npm registry check.

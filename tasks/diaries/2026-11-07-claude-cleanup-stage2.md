@@ -1,0 +1,11 @@
+# Cleanup stage 2 (Claude, 2026-11-07)
+
+- **Scope:** archive the tracked Tuesday Trends evidence cited only by superseded RECEIPT-1..16 (and 7b), relink those receipts, add a stage-2 section to `tasks/artifacts/ARCHIVED-2026-11-07.md`. TJ approved stage 2 by pop-up; a second pop-up gates `git rm`.
+- **Where:** octoberBranch, `tasks/artifacts/tuesday-trends-2026-10-26/`. Archive target `~/Archive/fhfh-artifacts-2026-11-07-stage2/`.
+- **State:** building the file list with a reference scan (repo path, folder-relative path, parent-folder mention, basename) over every tracked text file.
+- **Next:** copy + manifest + hash check, then pop-up.
+- **Gotchas:** stage 1 already removed 799 screenshots from this folder; the proposal's 453/234 MB figure predates any drift, so recount.
+- **Checkpoint 1 (list):** 366 PNGs, 195.2 MB (195,215,188 bytes), all clean in the worktree. Scan: every tracked/untracked text file; a file counts as cited if a doc names its full path, its folder-relative path inside the TT folder, or a parent folder followed by `/`. 366 are cited only by RECEIPT-1..16/7b. Kept: tt8/ and tt13/ (CONTRACT.md cites the folders), genuine/ and screens/ (HANDOFF.md, RECEIPT-17), tt17/ (RECEIPT-17), and all json/sha256/text (~1.2 MB; kept like stage 1 kept in-folder manifests). Basename hits elsewhere are other folders' own sha256 files (collisions). The closed worker diary mentions tt10/ etc in prose; left as history.
+- **Why not 453/234 MB:** no stored list for the proposal's figure. It matches all PNGs minus RECEIPT-17's path-cited ones, which ignores folder-level citations in HANDOFF/CONTRACT/RECEIPT-17 that I may not edit.
+- **Checkpoint 2 (archive):** `~/Archive/fhfh-artifacts-2026-11-07-stage2/` + MANIFEST.tsv (sha256 4b0f0ce1…3f14). Every copy matched its manifest sha256 and its HEAD git blob. Next: TJ pop-up before git rm.
+- **Checkpoint 3 (TJ approved "Remove the 366"):** `git rm` on exactly 366 paths; an archive note under the H1 in 16 receipts (1-7, 7b, 9-16; RECEIPT-8 cites only tt8/, which is kept); a stage-2 section added to `ARCHIVED-2026-11-07.md`; the manifest copied to `tasks/artifacts/ARCHIVED-2026-11-07-stage2.tsv`. Commit with explicit pathspecs, no push. Next: report to Chef.

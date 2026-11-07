@@ -1,5 +1,7 @@
 # RECEIPT-2 — TT-2: label fix, one genuine capture, offline genuine render (lane TT)
 
+> **Archived 2026-11-07 (cleanup stage 2):** this receipt's PNG screenshots were removed from the repo. The copies are under `~/Archive/fhfh-artifacts-2026-11-07-stage2/` at the same paths, and any paths or sha256 values below still identify them. Restore steps: [`ARCHIVED-2026-11-07.md`](../ARCHIVED-2026-11-07.md#stage-2-tuesday-trends-receipt-screenshots). JSON, sha256 and text evidence is still tracked.
+
 - **Ticket:** TT-2 from the chef (local_9c175312…). TJ's ceiling and N1 (`players`) addendum are recorded in `READ-APPROVAL.md`.
 - **Base:** `82490cd45`. The commit SHA is reported in the chat message.
 - **Production reads:** one capture run only: **11 statements**, read-only anon GETs, 2026-10-26T16:00:00.517Z → 16:00:04.599Z. A dry rehearsal beforehand went to `http://supabase.e2e.invalid` and reached no network.

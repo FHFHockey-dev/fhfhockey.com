@@ -1,5 +1,7 @@
 # RECEIPT-7b — TT-7b: hero row and long-name layout fixes, with a collision guard (lane TT, offline)
 
+> **Archived 2026-11-07 (cleanup stage 2):** this receipt's PNG screenshots were removed from the repo. The copies are under `~/Archive/fhfh-artifacts-2026-11-07-stage2/` at the same paths, and any paths or sha256 values below still identify them. Restore steps: [`ARCHIVED-2026-11-07.md`](../ARCHIVED-2026-11-07.md#stage-2-tuesday-trends-receipt-screenshots). JSON, sha256 and text evidence is still tracked.
+
 - **Ticket:** TT-7b from the chef's review of `tt7/after/genuine-run2`.
 - **Not done:** no production reads, no pushes, no deploys.
 

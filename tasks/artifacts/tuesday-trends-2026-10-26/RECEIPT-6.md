@@ -1,5 +1,7 @@
 # RECEIPT-6 — TT-6: sparkline reads approved, on by default with a kill switch (lane TT, offline)
 
+> **Archived 2026-11-07 (cleanup stage 2):** this receipt's PNG screenshots were removed from the repo. The copies are under `~/Archive/fhfh-artifacts-2026-11-07-stage2/` at the same paths, and any paths or sha256 values below still identify them. Restore steps: [`ARCHIVED-2026-11-07.md`](../ARCHIVED-2026-11-07.md#stage-2-tuesday-trends-receipt-screenshots). JSON, sha256 and text evidence is still tracked.
+
 - **Ticket:** TT-6 from the chef. TJ's approval is recorded in `READ-APPROVAL.md` addendum 2 (2026-10-26T19:08:43Z): READ-PLAN v2 S1/M2 for editor page loads, released with sparklines on.
 - **Not done:** no production reads by Claude, no pushes, no deploys, no Vercel settings changed.
 

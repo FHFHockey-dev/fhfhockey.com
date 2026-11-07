@@ -1,5 +1,7 @@
 # RECEIPT-3 — TT-3: Recent Form v1, deployment columns, integer movers, approved re-run (lane TT)
 
+> **Archived 2026-11-07 (cleanup stage 2):** this receipt's PNG screenshots were removed from the repo. The copies are under `~/Archive/fhfh-artifacts-2026-11-07-stage2/` at the same paths, and any paths or sha256 values below still identify them. Restore steps: [`ARCHIVED-2026-11-07.md`](../ARCHIVED-2026-11-07.md#stage-2-tuesday-trends-receipt-screenshots). JSON, sha256 and text evidence is still tracked.
+
 - **Ticket:** TT-3 from the chef, with TJ's decisions taken in the chef's pop-ups.
 - **Base:** `c5829aa9e`. The commit SHA is reported in the chat message.
 - **Production reads:** the **one approved re-run**: 11 statements, 2026-10-26T16:18:39.380Z → 2026-10-26T16:18:41.537Z. A dry rehearsal beforehand went to `.invalid` and reached no network.

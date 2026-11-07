@@ -1,5 +1,7 @@
 # RECEIPT-5 — TT-5: OwnershipSparkline on movers, neon logo outlines, flagged sparkline reads (lane TT, offline)
 
+> **Archived 2026-11-07 (cleanup stage 2):** this receipt's PNG screenshots were removed from the repo. The copies are under `~/Archive/fhfh-artifacts-2026-11-07-stage2/` at the same paths, and any paths or sha256 values below still identify them. Restore steps: [`ARCHIVED-2026-11-07.md`](../ARCHIVED-2026-11-07.md#stage-2-tuesday-trends-receipt-screenshots). JSON, sha256 and text evidence is still tracked.
+
 - **Ticket:** TT-5 from the chef, after TJ saw the TT-4 PNGs. It builds on the PP-unit add-on (`0d173aed7`).
 - **Offline only.** No production read, write, push or deploy. E2E ran on :3110 with the deny preload; `run/node-network-6.jsonl` holds only Next's npm registry check.
 

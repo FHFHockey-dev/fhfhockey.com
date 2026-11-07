@@ -1,5 +1,7 @@
 # RECEIPT-7 — TT-7: lighter glow, v2 outlines for all 32 teams, home-page light-card tile layout (lane TT, offline)
 
+> **Archived 2026-11-07 (cleanup stage 2):** this receipt's PNG screenshots were removed from the repo. The copies are under `~/Archive/fhfh-artifacts-2026-11-07-stage2/` at the same paths, and any paths or sha256 values below still identify them. Restore steps: [`ARCHIVED-2026-11-07.md`](../ARCHIVED-2026-11-07.md#stage-2-tuesday-trends-receipt-screenshots). JSON, sha256 and text evidence is still tracked.
+
 - **Ticket:** TT-7 from the chef, after TJ reviewed the TT-5/6 genuine renders.
 - **Not done:** no production reads, no pushes, no deploys.
 
