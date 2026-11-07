@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useAuth } from "contexts/AuthProviderContext";
 import { normalizeEligibility } from "lib/rosterScheduleOptimizer/eligibility";
 import { readWorkspace } from "lib/rosterScheduleOptimizer/workspace";
+import { diagnoseRoster } from "lib/rosterAutopsy/diagnosis";
 import { analyzeRoster, copyManualRsoWorkspace, emptyWorkspace, MAX_PLAYERS, MAX_STARTING_SLOTS, mergeManualRsoWorkspace, parseSlotCounts, parseWorkspace, retainedRecentPoints, rsoMergeCandidates, SLOT_TYPES, storageKey, type ManualPlayer, type ManualWorkspace, type PositionCoverage } from "lib/rosterAutopsy/manual";
 
 import styles from "./RosterAutopsy.module.scss";
@@ -82,6 +83,7 @@ export default function RosterAutopsy() {
   const result = useMemo(() => visibleWorkspace ? analyzeRoster(visibleWorkspace) : null, [visibleWorkspace]);
   if (!loaded || !visibleWorkspace) return <p className={styles.loading}>Opening your manual roster…</p>;
   const workspace = visibleWorkspace;
+  const diagnosis = diagnoseRoster(workspace, result);
   const slotsValid = parseSlotCounts(workspace.slots) !== null;
   const update = (edit: (current: ManualWorkspace) => ManualWorkspace) => {
     setLoaded(current => current?.scope === scope ? { ...current, workspace: edit(current.workspace) } : current);
@@ -159,6 +161,29 @@ export default function RosterAutopsy() {
       <a href="#autopsy-roster-heading">Roster</a><a href="#autopsy-coverage-heading">Coverage</a>
     </nav>
 
+    <section className={styles.panel} aria-labelledby="autopsy-diagnosis-heading">
+      <div className={styles.sectionHeading}><div><p className={styles.eyebrow}>Structural diagnosis</p><h2 id="autopsy-diagnosis-heading">Your roster priorities</h2></div></div>
+      <p className={styles.intro}>Basis: reviewed positions and starting slots. Coverage describes eligibility, not player quality or a tradable surplus.</p>
+      <div className={styles.diagnosisGrid}>
+        <section aria-labelledby="autopsy-strengths-heading"><h3 id="autopsy-strengths-heading">Strengths</h3>
+          {diagnosis.strengths.length ? <ul>{diagnosis.strengths.map(finding => <li key={finding.id}>{finding.text}</li>)}</ul>
+            : <p>No confirmed structural strengths yet. Complete setup and review the simultaneous assignment.</p>}
+        </section>
+        <section aria-labelledby="autopsy-weaknesses-heading"><h3 id="autopsy-weaknesses-heading">Weaknesses</h3>
+          {diagnosis.weaknesses.length ? <ul>{diagnosis.weaknesses.map(finding => <li key={finding.id}>{finding.text}</li>)}</ul>
+            : <p>{result && !result.incomplete ? "No structural gaps found in the reviewed starting slots." : "Gaps are not confirmed while setup or roster review is incomplete."}</p>}
+        </section>
+        <section aria-labelledby="autopsy-actions-heading"><h3 id="autopsy-actions-heading">Next actions</h3>
+          {diagnosis.actions.length ? <ol>{diagnosis.actions.map(action => <li key={action.id}>
+            <a href={`#autopsy-${action.target}-heading`} onClick={() => document.getElementById(`autopsy-${action.target}-heading`)?.focus()}>{action.label}</a>
+            <p>{action.reason}</p>
+          </li>)}</ol> : <p>Review player quality when qualified evidence is available. Structural coverage alone cannot identify upgrades or drops.</p>}
+        </section>
+      </div>
+      {diagnosis.reserves > 0 && <p className={styles.note}>{diagnosis.reserves} reserve {diagnosis.reserves === 1 ? "player is" : "players are"} excluded from structural coverage (IR, IR+ and NA).</p>}
+      <p className={styles.note}>Flex-only positions are alternative, non-additive views. Games, lineup locks and actual participation are outside this check.</p>
+    </section>
+
     <div className={styles.layout}>
       <section className={styles.panel} aria-labelledby="autopsy-roster-heading">
         <div className={styles.sectionHeading}><div><p className={styles.eyebrow}>Your team</p><h2 id="autopsy-roster-heading" className={styles.jumpTarget} tabIndex={-1}>Roster</h2></div>
@@ -235,7 +260,7 @@ export default function RosterAutopsy() {
 
       <aside className={styles.side}>
         <section className={styles.panel} aria-labelledby="autopsy-slots-heading">
-          <div className={styles.sectionHeading}><div><p className={styles.eyebrow}>League setup</p><h2 id="autopsy-slots-heading">Starting slots</h2></div></div>
+          <div className={styles.sectionHeading}><div><p className={styles.eyebrow}>League setup</p><h2 id="autopsy-slots-heading" className={styles.jumpTarget} tabIndex={-1}>Starting slots</h2></div></div>
           <p className={styles.intro}>Enter the number of each active slot in your league. Bench and reserve spots are not starting slots; custom slot types are not supported here.</p>
           <div className={styles.slotGrid}>{SLOT_TYPES.map(slot => <label key={slot}><span>{slot} <small>{slotNames[slot]}</small></span>
             <input type="text" inputMode="numeric" maxLength={3} aria-label={`${slot} starting slots`} value={workspace.slots[slot]}

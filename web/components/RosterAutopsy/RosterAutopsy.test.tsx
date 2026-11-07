@@ -47,9 +47,30 @@ describe("Roster Autopsy manual workspace", () => {
     const coverage = screen.getByRole("heading", { name: "Coverage" }).closest("section")!;
     expect(within(coverage).getAllByText("Covered individually")).toHaveLength(2);
     expect(within(coverage).getByText(/only once in the simultaneous slot total/)).toBeTruthy();
+    const weaknesses = screen.getByRole("region", { name: "Weaknesses" });
+    expect(within(weaknesses).getByText("1 of 2 starting slots remain unfilled when each player is used once.")).toBeTruthy();
+    const actions = screen.getByRole("region", { name: "Next actions" });
+    fireEvent.click(within(actions).getByRole("link", { name: "Review simultaneous coverage" }));
+    expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Coverage" }));
     fireEvent.change(screen.getByLabelText("Dual Player positions"), { target: { value: "" } });
     expect(screen.getByText(/review needed/)).toBeTruthy();
     expect(within(coverage).queryByText("Covered individually")).toBeNull();
+    expect(within(weaknesses).queryByText(/starting slots remain unfilled/)).toBeNull();
+    expect(within(actions).getByRole("link", { name: "Review roster positions" })).toBeTruthy();
+  });
+
+  it("puts diagnosis before editing and focuses setup actions without discarding input", async () => {
+    render(<RosterAutopsy />);
+    const actions = await screen.findByRole("region", { name: "Next actions" });
+    const roster = screen.getByRole("heading", { name: "Roster" });
+    expect(screen.getByRole("heading", { name: "Your roster priorities" }).compareDocumentPosition(roster) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    fireEvent.click(within(actions).getByRole("link", { name: "Add roster players" }));
+    expect(document.activeElement).toBe(roster);
+    addPlayer("Keep Me", "D");
+    fireEvent.click(within(actions).getByRole("link", { name: "Enter starting slots" }));
+    expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Starting slots" }));
+    expect(screen.getByRole("button", { name: "Remove Keep Me" })).toBeTruthy();
+    expect(screen.getByText(/Coverage describes eligibility, not player quality/)).toBeTruthy();
   });
 
   it("copies a manual RSO roster without modifying it and labels retained scoring", async () => {

@@ -2400,7 +2400,7 @@ test("alerts on a healthy player left in IR and shows what activating him gains"
   await page.goto("/roster-schedule-optimizer");
   const alert = page.getByRole("alert", { name: "Healthy players in IR" });
   await expect(alert).toContainText("Healthy Defender is in your IR spot, but Yahoo lists no injury.");
-  await expect(alert).toContainText("Yahoo no longer lists him for IR, so the lineup is illegal until he moves.");
+  await expect(alert).toContainText("Yahoo no longer lists him for IR, so additions are blocked until that reserve position is resolved. Your existing active lineup can still score.");
   await expect(alert).toContainText("Move him to an open bench or active spot.");
   // This fixture has no current forecast read, so the planner prices games, not points (the unit test covers points).
   await expect(alert.getByText("+2 active games this week")).toBeVisible();

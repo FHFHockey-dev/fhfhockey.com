@@ -54,6 +54,7 @@ describe("roster contribution ledger", () => {
       { ...snapshot.players[0], id: "off", teamAbbreviation: "BOS" });
     snapshot.roster.push({ playerId: "reserve", position: "IR" }, { playerId: "off", position: "bench" });
     snapshot.lockedAssignments = [{ date: "2026-10-05", playerId: "a", slotId: "C#1" }, { date: "2026-10-06", playerId: "c", slotId: null }];
+    snapshot.lockedAssignments.push(...["a", "b", "c"].map(playerId => ({ date: "2026-10-04", playerId, slotId: null })));
     snapshot.games.push({ ...snapshot.games[0], id: "past", date: "2026-10-04", startsAt: "2026-10-04T10:00:00Z", status: "final" },
       { ...snapshot.games[0], id: "cancelled", status: "cancelled" });
     const ledger = contributionLedger(snapshot, evaluate(snapshot), intent);
@@ -69,6 +70,7 @@ describe("roster contribution ledger", () => {
     const snapshot = fixture();
     snapshot.context.asOf = "2026-10-05T12:00:00Z";
     snapshot.games[0] = { ...snapshot.games[0], status: "final", startsAt: null };
+    snapshot.lockedAssignments = ["a", "b", "c"].map(playerId => ({ date: "2026-10-05", playerId, slotId: null }));
     const evaluation = evaluate(snapshot);
     const ledger = contributionLedger(snapshot, evaluation, intent);
     for (const row of ledger.values()) {

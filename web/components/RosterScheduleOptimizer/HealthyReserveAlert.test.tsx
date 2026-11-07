@@ -7,14 +7,14 @@ const names: Record<string, string> = { d: "Back Healthy", e: "Hurt Wing", f: "F
 const nameOf = (id: string) => names[id] ?? id;
 
 describe("Healthy reserve alert", () => {
-  it("names the healthy IR player, says the lineup is illegal and shows the gain from activating him", () => {
+  it("names the healthy IR player, explains the add blockage and shows the gain from activating him", () => {
     const onSelect = vi.fn();
     render(<HealthyReserveAlert nameOf={nameOf} onSelect={onSelect} reserves={[{ playerId: "d", position: "IR", slotEligible: false,
       activation: { swapPlayerId: null, projectedPoints: 6.25, activeGames: 2 } }]} />);
     const alert = screen.getByRole("alert", { name: "Healthy players in IR" });
     expect(alert.textContent).toContain("Healthy player in IR");
     expect(alert.textContent).toContain("Back Healthy is in your IR spot, but Yahoo lists no injury.");
-    expect(alert.textContent).toContain("Yahoo no longer lists him for IR, so the lineup is illegal until he moves.");
+    expect(alert.textContent).toContain("Yahoo no longer lists him for IR, so additions are blocked until that reserve position is resolved. Your existing active lineup can still score.");
     expect(alert.textContent).toContain("Move him to an open bench or active spot.");
     expect(screen.getByText("+6.3 projected pts · +2 active games this week").dataset.known).toBe("true");
     fireEvent.click(screen.getByRole("button", { name: "Back Healthy" }));

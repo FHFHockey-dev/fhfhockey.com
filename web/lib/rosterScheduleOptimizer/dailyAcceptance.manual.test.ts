@@ -289,6 +289,12 @@ describe("RSO daily beta: manual/free acceptance packet", () => {
       const over = evaluatePlan(data, intent(), "agp", [claim(7)]);
       expect(over.legal).toBe(false);
       expect(over.limitations).toContain("Waiver budget exceeded.");
+      const crossing = evaluatePlan(data, intent(), "outcome", [claim(3)]);
+      expect(crossing.legal).toBe(false);
+      expect(crossing.limitations).toContain("Waiver claim crosses an acquisition reset; the charge period is unverified.");
+      expect(assigned(crossing, TUE)).not.toContain("wv");
+      // A verified period covering submission and clearance supports the conditional claim.
+      data.rules.periods = [{ ...data.rules.periods[0], id: "claim-period", end: zonedMidnight(WED, TZ) }];
       const within = evaluatePlan(data, intent(), "outcome", [claim(3)]);
       expect(within).toMatchObject({ legal: true, budgetVerified: true });
       expect(assigned(within, MON)).not.toContain("wv");

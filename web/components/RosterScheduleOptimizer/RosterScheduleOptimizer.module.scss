@@ -428,7 +428,7 @@ details.alternative .candidateRow button { width: auto; }
 // The reference keeps the week summary inside the primary workspace.
 .healthStrip { flex-direction: row; gap: v.$space-sm; }
 .healthStrip .dataHealth { flex: 1; }
-.statusRail .notice { padding: 3px 6px; border-left-width: 2px; }
+.statusRail .notice { padding: 3px 6px; border-left-width: 2px; border-radius: 2px s.$radius-small s.$radius-small 2px; } // left radius matches the 2px rule (no toenail)
 .statusRail .notice[hidden] { display: none; }
 .rosterRow[data-dense-roster] .playerButton { flex-direction: row; align-items: center; gap: v.$space-xs; }
 .rosterRow[data-dense-roster] .playerButton img { flex-shrink: 0; object-fit: contain; }
