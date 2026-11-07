@@ -3,7 +3,7 @@ import type { ProjectionReport } from "lib/sources/projectedLineups";
 import { detectTweetLineContext, type EvidenceSpan, type TweetContextSignal, type TweetLineContextReading, type TweetUnit } from "lib/sources/tweetInterpretation";
 import { teamsInfo } from "lib/teamsInfo";
 import { NHL_TEAM_TIMEZONES_BY_ID } from "lib/xg/travelFatigue";
-import { authorityTier, authorityWeight, sourceAttribution, type SourceAttribution } from "./authority";
+import { authorityTier, authorityWeight, isRelayAccount, NO_CONFIRMATION_AUTHORS, RELAY_ONLY_WEIGHT, sourceAttribution, type SourceAttribution } from "./authority";
 import { relationshipClaimKey, type LineEvidenceContext } from "./sourceClaims";
 import { unitKey, type ClaimContext, type LineClaim, type LineGame } from "./types";
 
@@ -95,16 +95,22 @@ export function produceLineEvidence(source: ParsedLinesCccSource, report: Projec
   const trusted = TRUSTED_BASIS.includes(String(source.metadata?.publicationTimeBasis ?? ""));
   const originalIdentity = report.provenance?.originalTweetId ?? report.originalUrl;
   const posted = source.tweetPostedAt && /(?:Z|[+-]\d{2}:\d{2})$/i.test(source.tweetPostedAt) ? source.tweetPostedAt : null;
-  const publication = trusted && attribution.timestampIsOriginal && posted && attribution.originalAuthor && originalIdentity
-    ? { originalPublishedAt: posted, relayPublishedAt: null, originalIdentity, originalAuthor: attribution.originalAuthor,
-      evidence: [`publication_basis:${source.metadata?.publicationTimeBasis}`, ...attribution.evidence] }
+  // A relay's own post (no identified original) is still dated by its own provider clock; the claim keeps no author.
+  const relayHandle = attribution.relayOnly ? report.originalUrl?.match(/^https:\/\/(?:x|twitter)\.com\/([^/]+)\//)?.[1] ?? null : null;
+  const publication = trusted && posted && originalIdentity && (attribution.timestampIsOriginal && attribution.originalAuthor || relayHandle && isRelayAccount(relayHandle))
+    ? { originalPublishedAt: posted, relayPublishedAt: attribution.relayOnly ? posted : null, originalIdentity, originalAuthor: attribution.originalAuthor ?? relayHandle!,
+      evidence: [`publication_basis:${source.metadata?.publicationTimeBasis}`, ...attribution.evidence, ...(attribution.relayOnly ? ["relay_own_post_clock"] : [])] }
     : undefined;
+  // Unattributed relay posts and FHFHockey's own (non-quoting) posts never confirm anything.
+  const mayConfirm = !attribution.relayOnly && !(NO_CONFIRMATION_AUTHORS.includes(attribution.originalAuthor ?? "") && !attribution.quotesOriginal);
+  const weight = attribution.relayOnly ? RELAY_ONLY_WEIGHT : authorityWeight(tier);
+
   // specificity is ranking only (claims stored before `context`); an unknown context ranks at the practice level.
   const decisionFor = (claimKey: string, kind: LineClaim["kind"], marker?: TweetUnit["sourceMarker"]): ClaimDecision => ({
     ...binding.fields, kind, phase: contextDecision.phase, specificity: contextDecision.context === "warmup" ? "warmup" : contextDecision.context === "game" ? "game" : "practice",
-    certainty: marker?.certainty === "projected" || contextDecision.context === "projected" ? "projected" : marker?.certainty === "confirmed" ? "confirmed" : "reported",
-    confirmationEvidence: marker?.certainty === "confirmed" && text.slice(marker.evidence.start, marker.evidence.end) === marker.evidence.text ? [`source_marker:${marker.evidence.text}`] : undefined,
-    authority: authorityWeight(tier),
+    certainty: marker?.certainty === "projected" || contextDecision.context === "projected" ? "projected" : marker?.certainty === "confirmed" && mayConfirm ? "confirmed" : "reported",
+    confirmationEvidence: marker?.certainty === "confirmed" && mayConfirm && text.slice(marker.evidence.start, marker.evidence.end) === marker.evidence.text ? [`source_marker:${marker.evidence.text}`] : undefined,
+    authority: weight,
     relationAuthority: "none",
     decisionEvidence: { producerVersion: LINE_DECISION_PRODUCER_VERSION, decisionId: `${claimKey}:${contextDecision.basis}`,
       sourceReferences: [`source:${source.tweetId ?? source.tweetUrl ?? report.key}`, ...binding.basis, contextDecision.basis],

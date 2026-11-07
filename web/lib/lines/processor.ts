@@ -140,6 +140,8 @@ export async function processLineSnapshotEvidence(supabase: any, sources: Parsed
           authorityTier: produced.tier, originalAuthor: produced.attribution.originalAuthor, relayAccount: produced.attribution.relayAccount,
           reviewReasons: [...raw.reviewReasons, ...extraReasons.get(key) ?? [], ...(produced.tier === "excluded" ? ["author_excluded"] : [])] };
         if (decision?.context && !upstream) claim.context = decision.context;
+        // A relay account is never the author, even internally (no original-author relation authority either).
+        if (!upstream && produced.attribution.relayOnly) { claim.author = null; claim.certainty = claim.certainty === "confirmed" ? "reported" : claim.certainty; claim.confirmationEvidence = []; }
         if (claim.context === "practice" && claim.kind === "iga") claim.kind = "entry";
         if (!source.observedAt) claim.reviewReasons.push("ingestion_time_unresolved");
         if ((instant(claim.time.ingestedAt) ?? Infinity) > (instant(now) ?? -Infinity)) claim.reviewReasons.push("ingestion_not_yet_available");

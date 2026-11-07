@@ -75,13 +75,16 @@ describe("shared game/team response", () => {
     const fx = { ...base, id: "fx", captureId: "c-fx", originalIdentity: "123", relayAccount: "gamedaylines", originalAuthor: "fixtureauthor", authorityTier: "unknown" as const,
       provenance: { relayTweetId: "555", originalTweetId: "123", attributionStatus: "resolved" as const }, time: { ...base.time, interpretedAt: "2026-10-01T22:38:00Z" } };
     const practice = fixtureClaim("practice-iga", { kind: "iga", phase: "in_game", context: "practice", unit: null, originalIdentity: "practice", relationship: { kind: "continuity", playerIds: [3], evidence: { start: 0, end: 5, text: "Light" } } });
-    const fhfh = fixtureClaim("fhfh", { originalIdentity: "fhfh", authorityTier: "excluded", reviewReasons: ["author_excluded"] });
-    for (const claim of [ifttt, fx, practice, fhfh]) db.tables.line_claim_revisions!.push({ team_id: 14, claim_id: claim.id, interpreted_at: claim.time.interpretedAt, payload: claim });
+    const fhfh = fixtureClaim("fhfh", { originalIdentity: "fhfh", originalAuthor: "fhfhockey", authorityTier: "aggregator" });
+    const relayOnly = fixtureClaim("relay-only", { originalIdentity: "https://x.com/GameDayLines/status/777", originalAuthor: null, author: null, relayAccount: "gamedaylines", sourceUrl: "https://x.com/GameDayLines/status/777",
+      provenance: { relayTweetId: "777", originalTweetId: null, attributionStatus: "pending" } });
+    for (const claim of [ifttt, fx, practice, fhfh, relayOnly]) db.tables.line_claim_revisions!.push({ team_id: 14, claim_id: claim.id, interpreted_at: claim.time.interpretedAt, payload: claim });
     const team = (await readGameLines(db, { teamId: 14, now: fixtureNow })).teams[0]!;
     const pair = team.feed.filter((item) => item.claimIds.includes("fx"));
     expect(pair).toHaveLength(1);
     expect(pair[0]).toMatchObject({ id: "123", claimIds: ["fx", "ifttt"], originalAuthor: "fixtureauthor", relays: [{ account: "gamedaylines", relayTweetId: "555" }] });
-    expect(team.feed.some((item) => item.claimIds.includes("fhfh"))).toBe(false);
+    expect(team.feed.find((item) => item.claimIds.includes("fhfh"))).toMatchObject({ originalAuthor: "fhfhockey", authorityTier: "aggregator" });
+    expect(team.feed.find((item) => item.claimIds.includes("relay-only"))).toMatchObject({ originalAuthor: null, sourceUrl: null, authorityTier: "unknown" });
     expect(team.observations.some((claim) => claim.id === "practice-iga")).toBe(false);
     expect(team.observations.filter((claim) => ["fx", "ifttt"].includes(claim.id))).toHaveLength(1);
   });

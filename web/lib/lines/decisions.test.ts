@@ -4,7 +4,7 @@ import { lineTestDatabase } from "./testDatabase";
 vi.mock("lib/sources/tweetProjectionStorage", () => ({ projectionReportFromSource: (source: any) => structuredClone(source.metadata.testReport) }));
 vi.mock("./gameState", async (load) => ({ ...await load<object>(), observeLineGame: async (game: any) => game }));
 import { decideBinding, decideContext, produceLineEvidence } from "./decisions";
-import { authorityTier, authorityWeight, sourceAttribution } from "./authority";
+import { AUTHORITY_SEED, authorityTier, authorityWeight, RELAY_ACCOUNTS, RELAY_ONLY_WEIGHT, sourceAttribution } from "./authority";
 import { readReviewedDecision } from "./trainerDecisions";
 import { detectTweetLineContext } from "lib/sources/tweetInterpretation";
 import { processLineSnapshotEvidence } from "./processor";
@@ -67,10 +67,10 @@ describe("original-author attribution", () => {
     const ifttt = source(`RT @pham1717: ${SABRES}`, { tweetId: "555", sourceHandle: "GameDayLines" });
     expect(sourceAttribution(ifttt, ifttt.rawText)).toMatchObject({ originalAuthor: "pham1717", relayAccount: "gamedaylines", originalTweetId: null, relayTweetId: "555", timestampIsOriginal: false });
   });
-  it("tiers by the approved seed: team > beat > aggregator; FHFHockey excluded; unlisted authors unknown", () => {
-    expect(authorityTier("FHFHockey")).toBe("excluded");
+  it("tiers by the approved seed: team > beat > aggregator; FHFHockey aggregator; relays never confer a tier", () => {
+    expect(authorityTier("FHFHockey")).toBe("aggregator");
     expect(authorityTier("@BuffaloSabres")).toBe("team");
-    expect(authorityTier("DFOFantasy")).toBe("aggregator");
+    for (const relay of RELAY_ACCOUNTS) expect(authorityTier(relay)).toBe("unknown");
     expect(authorityTier("pham1717")).toBe("unknown");
     expect([authorityWeight("team"), authorityWeight("beat"), authorityWeight("aggregator"), authorityWeight("excluded")]).toEqual([3, 2, 1, 0]);
   });
@@ -194,5 +194,44 @@ describe("trainer answer key versions", () => {
     const unit = { situation: "pp", number: 1, explicitNumber: true, complete: true, group: null, players: [], evidence: [], sourceMarker: { certainty: "confirmed", evidence: { start: text.indexOf("✅"), end: text.indexOf("✅") + 1, text: "✅" } } };
     const produced = produceLineEvidence(source(text), { ...source(text).metadata.testReport, interpretation: { ...source(text).metadata.testReport.interpretation, units: [unit] } }, [game]);
     expect(Object.values(produced.context.claimEvidence!)[0]).toMatchObject({ certainty: "confirmed", confirmationEvidence: ["source_marker:✅"] });
+  });
+});
+
+describe("relay sourcing rule (TJ, 2026-11-06)", () => {
+  const text = "PP1 tonight: Kulich Krebs McLeod Doan ✅";
+  const unitReport = () => ({ interpretation: { version: "test", unresolved: [], certainty: "reported", context: "unknown", relationships: [],
+    units: [{ situation: "pp", number: 1, explicitNumber: true, complete: true, group: null, players: players.map((player) => ({ playerId: player.id, name: player.lastName })),
+      evidence: players.map((player) => { const start = text.indexOf(player.lastName); return { start, end: start + player.lastName.length, text: player.lastName }; }),
+      sourceMarker: { certainty: "confirmed", evidence: { start: text.indexOf("✅"), end: text.indexOf("✅") + 1, text: "✅" } } }] } });
+  const post = (handle: string, extra: Record<string, any> = {}) => source(text, { tweetId: "700", sourceHandle: handle, sourceUrl: `https://x.com/${handle}/status/700`, ...extra,
+    report: { ...unitReport(), originalUrl: `https://x.com/${handle}/status/700`, provenance: { relayTweetId: "700", originalTweetId: "700", attributionStatus: "resolved" } },
+    metadata: { sourceProvenance: { provider: "fxtwitter", postKind: extra.quote ? "quote" : "post", originalAuthor: handle, relayAccount: null, originalTweetId: "700", relayTweetId: null,
+      quotedTweetId: extra.quote?.id ?? null, quotedAuthor: extra.quote?.author ?? null, timestampIsOriginal: true, publicationTimeBasis: "provider_timestamp", ingestedAt: null, ingestedAtBasis: "received_at" } } });
+  it("a relay-only post: unknown tier, null author, lowest weight, never confirmation, still usable evidence", async () => {
+    expect(sourceAttribution(post("GameDayLines"), text)).toMatchObject({ originalAuthor: null, relayAccount: "gamedaylines", relayOnly: true, originalTweetId: null, relayTweetId: "700" });
+    const db = database();
+    await processLineSnapshotEvidence(db, [post("GameDayLines")], [BUF], now);
+    const claim = db.tables.line_claim_revisions![0]!.payload;
+    expect(claim).toMatchObject({ originalAuthor: null, author: null, authorityTier: "unknown", authority: RELAY_ONLY_WEIGHT, certainty: "reported", confirmationEvidence: [], gameId: game.id });
+    expect(claim.provenance).toMatchObject({ originalTweetId: null, attributionStatus: "pending" });
+    expect(claim.reviewReasons).not.toContain("original_provenance_unverified");
+  });
+  it("a relay quoting a beat reporter: beat tier and the beat author", () => {
+    AUTHORITY_SEED.pham1717 = "beat";
+    try {
+      const attribution = sourceAttribution(post("CcCMiddleton", { quote: { id: "800", author: "pham1717" } }), text);
+      expect(attribution).toMatchObject({ originalAuthor: "pham1717", relayAccount: "cccmiddleton", originalTweetId: "800", relayTweetId: "700", relayOnly: false });
+      expect(authorityTier(attribution.originalAuthor)).toBe("beat");
+    } finally { delete AUTHORITY_SEED.pham1717; }
+  });
+  it("an FHFHockey post counts at aggregator weight but does not confirm unless it quotes an original", async () => {
+    const db = database();
+    await processLineSnapshotEvidence(db, [post("FHFHockey")], [BUF], now);
+    const own = db.tables.line_claim_revisions![0]!.payload;
+    expect(own).toMatchObject({ originalAuthor: "fhfhockey", authorityTier: "aggregator", authority: 1, certainty: "reported", gameId: game.id });
+    expect(own.reviewReasons).not.toContain("author_excluded");
+    const quoting = database();
+    await processLineSnapshotEvidence(quoting, [post("FHFHockey", { quote: { id: "800", author: "BuffaloSabres" } })], [BUF], now);
+    expect(quoting.tables.line_claim_revisions![0]!.payload.certainty).toBe("confirmed");
   });
 });

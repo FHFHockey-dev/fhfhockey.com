@@ -1,6 +1,7 @@
 import { fetchAllSupabasePages, fetchAllSupabaseFilterChunks } from "lib/supabase/pagination";
 import { sanitizePublicNewsText } from "lib/newsFeed";
 import { verifiedOriginalTweetUrl } from "lib/sources/projectedLineups";
+import { isRelayAccount } from "./authority";
 import { activeLineClaims, captureIdentity, eligibleClaim, reconcileEntry, reconcilePP } from "./reconcile";
 import { chooseDefaultGame, observeLineGame, stateAtRead, trustworthyState } from "./gameState";
 import { fetchCarryMemberships, fetchEntryHistory, fetchLineClaims, latestLineDecisions } from "./storage";
@@ -70,7 +71,8 @@ export function buildSourceFeed(claims: LineClaim[], game: LineGame, now: string
       const key = `${claim.relayAccount}:${claim.provenance?.relayTweetId ?? ""}`;
       if (!relays.has(key)) relays.set(key, { account: claim.relayAccount, relayTweetId: claim.provenance?.relayTweetId ?? null, relayPublishedAt: claim.time.relayPublishedAt, ingestedAt: claim.time.ingestedAt });
     }
-    return { id, originalIdentity: shown.originalIdentity, originalAuthor: ordered.find((claim) => claim.originalAuthor)?.originalAuthor ?? (shown.sourceUrl ? shown.author : null),
+    return { id, originalIdentity: shown.originalIdentity, originalAuthor: ordered.find((claim) => claim.originalAuthor && !isRelayAccount(claim.originalAuthor))?.originalAuthor
+        ?? (shown.sourceUrl && !isRelayAccount(shown.author) ? shown.author : null),
       authorityTier: representative.authorityTier ?? "unknown", relays: [...relays.values()], text: shown.text,
       publishedAt: representative.time.originalPublishedAt ?? representative.time.relayPublishedAt,
       ingestedAt: ordered.map((claim) => claim.time.ingestedAt).sort()[0]!,

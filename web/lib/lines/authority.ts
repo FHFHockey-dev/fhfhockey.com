@@ -1,10 +1,18 @@
 import type { ParsedLinesCccSource, TweetSourceProvenance } from "lib/sources/linesCccIngestion";
 import type { AuthorityTier } from "./types";
 
-/** Accounts the poller and IFTTT relay through. Relaying never confers authority. */
+/**
+ * Relay accounts (TJ sourcing rule, 2026-11-06): never a source or original author, never shown. The source is the
+ * nested or quoted original; a relay post with no identified original is evidence at the lowest weight only.
+ */
 export const RELAY_ACCOUNTS = ["dfofantasy", "nhl_rosters", "cccmiddleton", "gamedaylines", "gamedaynewsnhl", "gamedaygoalies"];
-/** Excluded from both lanes (TJ decision 2). */
-export const EXCLUDED_AUTHORS = ["fhfhockey"];
+const RELAYS = new Set(RELAY_ACCOUNTS);
+/** @deprecated FHFHockey is allowed again (2026-11-06); kept empty so existing imports still compile. */
+export const EXCLUDED_AUTHORS: string[] = [];
+/** Authors whose own posts count as evidence but never as confirmation unless they quote an original. */
+export const NO_CONFIRMATION_AUTHORS = ["fhfhockey"];
+/** Below every tier: an unattributed relay post fills a unit only when nothing better applies. */
+export const RELAY_ONLY_WEIGHT = 0.5;
 
 /** Official NHL club accounts (lowercase handles). Exact handles are worth re-checking as clubs rebrand. */
 const TEAM_ACCOUNTS = ["njdevils", "nyislanders", "nyrangers", "nhlflyers", "penguins", "nhlbruins", "buffalosabres", "canadiensmtl", "senators",
@@ -14,23 +22,25 @@ const TEAM_ACCOUNTS = ["njdevils", "nyislanders", "nyrangers", "nhlflyers", "pen
 
 /**
  * Seed tiers keyed by lowercase original-author handle, approved by TJ (pop-up, 2026-11-06):
- * team = official club accounts, aggregator = the six hockey accounts, beat starts empty.
- * Every other author is "unknown" at aggregator weight.
+ * team = official club accounts, beat starts empty. Relay rule (2026-11-06): the six relay accounts are never
+ * authors; FHFHockey is "aggregator". Every other author is "unknown" at aggregator weight.
  */
 export const AUTHORITY_SEED_APPROVED = true;
 export const AUTHORITY_SEED: Record<string, Exclude<AuthorityTier, "unknown" | "excluded">> = {
   ...Object.fromEntries(TEAM_ACCOUNTS.map((handle) => [handle, "team" as const])),
-  ...Object.fromEntries(RELAY_ACCOUNTS.map((handle) => [handle, "aggregator" as const])),
+  fhfhockey: "aggregator",
 };
 
 const WEIGHT: Record<AuthorityTier, number> = { team: 3, beat: 2, aggregator: 1, unknown: 1, excluded: 0 };
 const HANDLE = /^[A-Za-z0-9_]{1,15}$/;
 const normal = (value: unknown) => typeof value === "string" && HANDLE.test(value.replace(/^@/, "")) ? value.replace(/^@/, "").toLowerCase() : null;
 
+export function isRelayAccount(handle: string | null | undefined): boolean { return !!handle && RELAYS.has(handle.replace(/^@/, "").toLowerCase()); }
+
+/** A relay handle never confers a tier: it is "unknown" like a missing author. */
 export function authorityTier(originalAuthor: string | null | undefined): AuthorityTier {
   const handle = normal(originalAuthor);
-  if (!handle) return "unknown";
-  if (EXCLUDED_AUTHORS.includes(handle)) return "excluded";
+  if (!handle || RELAYS.has(handle)) return "unknown";
   return AUTHORITY_SEED_APPROVED ? AUTHORITY_SEED[handle] ?? "unknown" : "unknown";
 }
 export function authorityWeight(tier: AuthorityTier): number { return WEIGHT[tier]; }
@@ -40,7 +50,12 @@ export type SourceAttribution = {
   originalTweetId: string | null; relayTweetId: string | null;
   /** True only when the provider timestamp is the original post's own clock. */
   timestampIsOriginal: boolean; evidence: string[];
+  /** A relay account's post whose original is not identified: lowest weight, never confirmation. */
+  relayOnly: boolean;
+  /** The post quotes an identified original (lets an FHFHockey post confirm). */
+  quotesOriginal: boolean;
 };
+type RawAttribution = Omit<SourceAttribution, "relayOnly" | "quotesOriginal">;
 
 const STATUS_ID = /^\d+$/;
 const id = (value: unknown) => typeof value === "string" && STATUS_ID.test(value) ? value : typeof value === "number" && Number.isSafeInteger(value) ? String(value) : null;
@@ -53,6 +68,23 @@ const urlHandle = (url: string | null | undefined) => normal(url?.match(/^https:
  * or a resolved quoted original. The relaying poller account is never returned as the author.
  */
 export function sourceAttribution(source: ParsedLinesCccSource, text: string): SourceAttribution {
+  const found = rawAttribution(source, text);
+  const mapped = source.metadata?.sourceProvenance as Partial<TweetSourceProvenance> | undefined;
+  const quote = (source.rawPayload as { quote?: { id?: unknown; author_handle?: unknown } } | undefined)?.quote;
+  const quotedAuthor = normal(mapped?.quotedAuthor) ?? normal(source.quotedAuthorHandle) ?? normal(quote?.author_handle) ?? urlHandle(source.quotedTweetUrl);
+  const quotedTweetId = id(mapped?.quotedTweetId) ?? id(source.quotedTweetId) ?? id(quote?.id) ?? urlId(source.quotedTweetUrl);
+  const quotesOriginal = !!quotedAuthor && !!quotedTweetId && !RELAYS.has(quotedAuthor);
+  if (!found.originalAuthor || !RELAYS.has(found.originalAuthor)) return { ...found, relayOnly: false, quotesOriginal };
+  const relayTweetId = found.relayTweetId ?? found.originalTweetId;
+  const relayAccount = found.originalAuthor;
+  // The relay's own post: the source is the quoted original when there is one, else attribution is pending.
+  if (quotesOriginal) return { originalAuthor: quotedAuthor, relayAccount, originalTweetId: quotedTweetId, relayTweetId, timestampIsOriginal: false,
+    evidence: [...found.evidence.filter((item) => item !== "direct_post"), "relay_quoted_original"], relayOnly: false, quotesOriginal };
+  return { originalAuthor: null, relayAccount, originalTweetId: null, relayTweetId, timestampIsOriginal: false,
+    evidence: [...found.evidence.filter((item) => item !== "direct_post"), "relay_original_unidentified"], relayOnly: true, quotesOriginal: false };
+}
+
+function rawAttribution(source: ParsedLinesCccSource, text: string): RawAttribution {
   // Lane D's intake mapping wins when present; the raw payload read below is the fallback for older rows.
   const mapped = source.metadata?.sourceProvenance as Partial<TweetSourceProvenance> | undefined;
   if (mapped && typeof mapped === "object" && (mapped.provider === "fxtwitter" || mapped.provider === "ifttt")) {
