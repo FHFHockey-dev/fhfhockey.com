@@ -241,6 +241,7 @@ describe("update-nst-team-daily incremental queue", () => {
 
     expect(fetchedDates()).toEqual(["2026-10-17", "2026-10-18"]);
     expect(res.body).toMatchObject({ success: true, complete: true });
+    mocks.fetchNst.mock.calls.forEach(([,options])=>expect(options.requestControl).toMatchObject({minIntervalMs:0,plannedRequestCount:16}));
     expect(res.body.summary).toMatchObject({ totalDates: 2, skippedDates: 0, processedDates: 2 });
   });
 
@@ -315,7 +316,8 @@ describe("update-nst-team-daily incremental queue", () => {
         deadlineAt: startedAt + 220_000,
         maxAttempts: 3,
         attemptsStarted: 0,
-        minIntervalMs: 21_000,
+        minIntervalMs: 0,
+        plannedRequestCount: 16,
       });
     });
     state.fetches.slice(1).forEach((fetch, index) => {

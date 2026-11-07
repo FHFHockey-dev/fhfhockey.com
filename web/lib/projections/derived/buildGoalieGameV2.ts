@@ -2,7 +2,7 @@ import type {
   ProjectionDerivedGame,
   ProjectionDerivedPbpPlayRow,
 } from "./buildStrengthTablesV2";
-import { parseSituationDigits } from "./situation";
+import { isShootoutPlay, parseSituationDigits } from "./situation";
 
 export type ProjectionGoalieGameRow = {
   game_id: number;
@@ -72,6 +72,8 @@ export function prepareGoalieGameV2(args: {
 
   for (const play of plays) {
     if (!isShotAgainstEvent(play.typedesckey)) continue;
+    // Shootout attempts are not shots against or goals allowed in NHL stats.
+    if (isShootoutPlay(play)) continue;
     countableEvents += 1;
     const shooterTeamId = play.eventownerteamid;
     if (

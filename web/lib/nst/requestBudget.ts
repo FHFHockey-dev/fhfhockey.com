@@ -2,10 +2,10 @@ import { createHash, randomUUID } from "node:crypto";
 import { mkdirSync, readFileSync, renameSync, rmdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { canBurstNstRequests, NST_MIN_REQUEST_INTERVAL_MS, NST_RATE_LIMIT_WINDOWS } from "lib/cron/nstRateLimitPolicy";
+import { canUseNstSemiBurst, NST_MIN_REQUEST_INTERVAL_MS, NST_RATE_LIMIT_WINDOWS } from "lib/cron/nstRateLimitPolicy";
 
 export class NstExecutionLimitError extends Error {
-  constructor(message: string) {
+  constructor(message: string, readonly dispatchStarted = false) {
     super(message);
     this.name = "NstExecutionLimitError";
   }
@@ -106,7 +106,7 @@ export async function withNstRequestBudget<T>(
       }
       ledger.attempts = ledger.attempts.filter((entry) => entry.active || now - entry.startedAt <= HOUR_MS);
       let waitMs = ledger.attempts.some((entry) => entry.active && entry.urlHash === urlHash) ? 100 : 0;
-      const intervalMs = control.minIntervalMs === 0 && canBurstNstRequests(control.plannedRequestCount ?? NaN)
+      const intervalMs = control.minIntervalMs === 0 && canUseNstSemiBurst(control.plannedRequestCount ?? NaN)
         ? 0
         : Math.max(NST_MIN_REQUEST_INTERVAL_MS,
           Number.isFinite(control.minIntervalMs) ? control.minIntervalMs : NST_MIN_REQUEST_INTERVAL_MS);
@@ -152,7 +152,7 @@ export async function withNstRequestBudget<T>(
       save();
       return true;
     }) !== true) {
-      if (Date.now() >= control.deadlineAt) throw new NstExecutionLimitError("NST completion acknowledgement missing; inspect local ledger.");
+      if (Date.now() >= control.deadlineAt) throw new NstExecutionLimitError("NST completion acknowledgement missing; inspect local ledger.", true);
       await sleep(25);
     }
   }

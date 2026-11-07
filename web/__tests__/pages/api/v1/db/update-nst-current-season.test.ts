@@ -27,7 +27,7 @@ vi.mock("lib/nst/client", () => ({
   isNstRateLimitError: () => false,
 }));
 vi.mock("lib/cron/nstBurstPlans", () => ({
-  resolveNstCurrentSeasonRequestPlan: () => ({ requestIntervalMs: 0 }),
+  resolveNstCurrentSeasonRequestPlan: (options: any) => ({ ...options, requestIntervalMs: 0 }),
 }));
 vi.mock("lib/player-forecasts/sourceSnapshot", () => ({
   capturePlayerForecastSourceObservation: vi.fn(),
@@ -91,6 +91,7 @@ describe("NST current-season truthful outcomes", () => {
     expect(res.statusCode).toBe(200);
     expect(res.body).toMatchObject({ success: true, outcome: "writes_confirmed", reportsWritten: 4, emptyOrUnresolvedReports: 0, rowsUpserted: 4, sourceCoverage: "not_verified" });
     expect(mocks.upsert).toHaveBeenCalledTimes(4);
+    expect(mocks.fetchNst.mock.calls.every((call:any[])=>call[1].requestControl.minIntervalMs===0 && call[1].requestControl.plannedRequestCount===4)).toBe(true);
     expect(mocks.from.mock.calls.map(([table]) => table)).toEqual([
       "view_active_player_ids_max_season",
       "nst_seasonal_individual_counts",

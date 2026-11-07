@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { withNstJobDispatch } from "lib/nst/jobLifecycle.server";
 
 const { fetchNstTextByUrlMock, getUserMock, roleMock, serviceFromMock } = vi.hoisted(() => ({
   fetchNstTextByUrlMock: vi.fn(),
@@ -55,6 +56,25 @@ describe("/api/fetch_team_table", () => {
   afterEach(() => {
     vi.unstubAllEnvs();
     vi.unstubAllGlobals();
+  });
+
+  it("finishes the compatibility job after parsing and holds an invalid table", async () => {
+    vi.stubEnv("NST_JOB_LIFECYCLE_ENABLED", "true");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://offline.invalid");
+    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "fixture");
+    for (const invalid of [false, true]) {
+      const calls: string[] = [];
+      vi.stubGlobal("fetch", vi.fn(async (url, init) => {
+        const name = String(url).split("/").at(-1)!; calls.push(name);
+        return new Response(JSON.stringify({ status: name.includes("begin") ? "started" : name.includes("finish") ? "finished" : "held", token: JSON.parse(init!.body as string).p_token }));
+      }));
+      fetchNstTextByUrlMock.mockImplementation(() => withNstJobDispatch(async () => ({ response: { ok: true },
+        text: invalid ? "<body></body>" : "<table id='teams'><thead><tr><th>Team</th></tr></thead><tbody><tr><td>BOS</td></tr></tbody></table>" })));
+      const res = createMockRes();
+      await handler({ method: "GET", query: {}, headers: { authorization: "Bearer synthetic-cron-secret" } } as any, res);
+      expect(res.statusCode).toBe(invalid ? 503 : 200);
+      expect(calls).toEqual(["nst_job_begin_v1", invalid ? "nst_job_hold_v1" : "nst_job_finish_v1"]);
+    }
   });
 
   it.each(["Bearer synthetic-cron-secret", "Bearer admin-token"])("preserves representative NST teamtable row parsing for %s", async (authorization) => {

@@ -1,3 +1,4 @@
+import { requireNstJob } from "lib/nst/jobLifecycle.server";
 // Shared averages API parsing helpers.
 
 import { HTMLElement, parse } from "node-html-parser";
@@ -136,6 +137,7 @@ export async function fetchPlayerData(
   individualRows: Array<{ [key: string]: string }>;
   onIceRows: Array<{ [key: string]: string }>;
 }> {
+  requireNstJob();
   const URL = buildNstUrlString("playerreport.php", {
     stype: 2,
     sit: "all",

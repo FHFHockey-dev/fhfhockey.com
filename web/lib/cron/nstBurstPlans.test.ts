@@ -19,12 +19,14 @@ import {
 } from "./nstBurstPlans";
 
 describe("NST full-job pacing plans", () => {
-  it("bursts only full gamelog jobs below 40 URLs, independently of date aperture", () => {
+  it("preserves small bursts and permits bounded two-wave gamelog jobs", () => {
     expect(resolveNstGamelogRequestPlan({ queuedDates: 2, requestCount: 39 })).toMatchObject({ burstAllowed: true, requestIntervalMs: 0 });
     expect(resolveNstGamelogRequestPlan({ queuedDates: 1, requestCount: 1 }).requestIntervalMs).toBe(0);
-    expect(resolveNstGamelogRequestPlan({ queuedDates: 2, requestCount: 40 })).toMatchObject({ burstAllowed: false, requestIntervalMs: 21_000 });
+    expect(resolveNstGamelogRequestPlan({ queuedDates: 2, requestCount: 40 })).toMatchObject({ burstAllowed: true, semiBurstAllowed: true, requestIntervalMs: 0 });
     expect(resolveNstGamelogRequestPlan({ queuedDates: 3, requestCount: 3 }).requestIntervalMs).toBe(0);
-    expect(resolveNstGamelogRequestPlan({ queuedDates: 2, requestCount: 41 }).burstAllowed).toBe(false);
+    expect(resolveNstGamelogRequestPlan({ queuedDates: 2, requestCount: 78 }).burstAllowed).toBe(true);
+    expect(resolveNstGamelogRequestPlan({ queuedDates: 3, requestCount: 40 }).burstAllowed).toBe(false);
+    expect(resolveNstGamelogRequestPlan({ queuedDates: 2, requestCount: 79 }).burstAllowed).toBe(false);
   });
   it("bursts update-nst-goalies when its full queue is below 40 URLs", () => {
     const plan = resolveGoalieNstRequestPlan({
@@ -159,6 +161,12 @@ describe("NST full-job pacing plans", () => {
       requestIntervalMs: 30_000, usedExplicitInterval: true, explicitIntervalRejected: false });
   });
 
+  it("uses the whole pending plan while retaining full queue bounds", () => {
+    expect(resolveGoalieNstRequestPlan({ queuedDates: 4, totalQueuedUrls: 40, plannedRequestCount: 37, maxPendingUrls: 6 })).toMatchObject({ burstAllowed: true, plannedRequestCount: 37 });
+    for (const plannedRequestCount of [-1, 41, NaN, 1.5]) {
+      expect(() => resolveGoalieNstRequestPlan({ queuedDates: 4, totalQueuedUrls: 40, plannedRequestCount, maxPendingUrls: 6 })).toThrow();
+    }
+  });
   it("does not hide a large goalie backlog behind a small per-run cap", () => {
     const plan = resolveGoalieNstRequestPlan({
       queuedDates: 5,

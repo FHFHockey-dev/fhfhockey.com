@@ -1,3 +1,4 @@
+import { withNstJobLifecycle } from "lib/nst/jobLifecycle.server";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { parse } from "node-html-parser";
 
@@ -13,7 +14,7 @@ type Response = {
   data?: Data;
 };
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse<Response>
 ) {
@@ -203,3 +204,5 @@ const NST_TEAM_ABBREVATION: { [key: string]: string } = {
   "Winnipeg Jets": "WPG",
   "Washington Capitals": "WSH"
 };
+
+export default withNstJobLifecycle(handler, "SustainabilityStats/[playerId]", undefined, { lazy: true });

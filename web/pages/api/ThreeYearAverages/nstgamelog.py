@@ -1,3 +1,14 @@
+# Shared NST admission: this manual/compatibility path uses the same global budget.
+from pathlib import Path as _NstPath
+import sys as _nst_sys
+_nst_root = next((_parent / "functions" for _parent in _NstPath(__file__).resolve().parents
+                  if (_parent / "functions/lib/nst_admission.py").is_file()), None)
+if _nst_root is None:
+    raise RuntimeError("NST shared admission helper unavailable")
+if str(_nst_root) not in _nst_sys.path:
+    _nst_sys.path.insert(0, str(_nst_root))
+from lib.nst_admission import nst_get, nst_job_scope, assert_nst_job_active, mark_nst_job_uncertain
+
 # LEGACY MANUAL SCRIPT
 # This file is not part of the production NST migration path.
 # Canonical production ownership for `playerreport.php` API usage now lives in:
@@ -25,14 +36,17 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_API_KEY)
 
 # Function to fetch player IDs from Supabase
 def get_player_ids():
+    assert_nst_job_active()
     response = supabase.table('players').select('id').execute()
     if response.error:
+        mark_nst_job_uncertain()
         print(f"Error fetching player IDs: {response.error}")
         return []
     return [player['id'] for player in response.data]
 
 # Function to scrape player stats from Natural Stat Trick
 def scrape_player_stats(player_id):
+    assert_nst_job_active()
     url = f"https://naturalstattrick.com/playerreport.php?fromseason=20232024&thruseason=20232024&stype=2&sit=5v5&stdoi=std&rate=n&v=g&playerid={player_id}"
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ' 
@@ -40,8 +54,9 @@ def scrape_player_stats(player_id):
                       'Chrome/58.0.3029.110 Safari/537.3'
     }
     
-    response = requests.get(url, headers=headers)
+    response = nst_get(url, headers=headers)
     if response.status_code != 200:
+        mark_nst_job_uncertain()
         print(f"Failed to fetch data for player ID {player_id}: Status code {response.status_code}")
         return []
     
@@ -50,6 +65,7 @@ def scrape_player_stats(player_id):
     # Find the table with id 'indreg'
     table = soup.find('table', id='indreg')
     if not table:
+        mark_nst_job_uncertain()
         print(f"No table found for player ID {player_id}")
         return []
     
@@ -62,6 +78,7 @@ def scrape_player_stats(player_id):
             header_text = th.get_text(strip=True).replace(' ', '_').lower()
             headers.append(header_text)
     else:
+        mark_nst_job_uncertain()
         print(f"No table headers found for player ID {player_id}")
         return []
     
@@ -101,6 +118,7 @@ def scrape_player_stats(player_id):
 
 # Function to upsert data into Supabase
 def upsert_player_stats(stats):
+    assert_nst_job_active()
     if not stats:
         return
     
@@ -145,15 +163,20 @@ def upsert_player_stats(stats):
             continue
         
         # Upsert based on player_id and game_description
-        supabase.table('player_stats') \
+        assert_nst_job_active()
+        response = supabase.table('player_stats') \
             .upsert(stat, on_conflict=['player_id', 'game_description']) \
             .execute()
+        if getattr(response, "error", None):
+            mark_nst_job_uncertain()
 
+@nst_job_scope("legacy/nstgamelog")
 def main():
     player_ids = get_player_ids()
     print(f"Found {len(player_ids)} players.")
 
     for idx, player_id in enumerate(player_ids, start=1):
+        assert_nst_job_active()
         print(f"Processing player {idx}/{len(player_ids)} with ID: {player_id}")
         stats = scrape_player_stats(player_id)
         print(f"Found {len(stats)} records for player ID {player_id}")

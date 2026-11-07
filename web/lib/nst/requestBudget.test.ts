@@ -50,12 +50,13 @@ describe("NST shared local admission", () => {
       await vi.runAllTimersAsync(); await pending;
     }
     const origin = times[0];
-    expect(times[39] - origin).toBe(0);
+    expect(times[38] - origin).toBe(0);
+    expect(times[39] - origin).toBe(60_001);
     expect(times[40] - origin).toBe(60_001);
     expect(times[80] - origin).toBe(300_001);
     expect(times[100] - origin).toBe(900_001);
     expect(times[180] - origin).toBe(3_600_001);
-    for (const [duration, cap] of [[60_000, 40], [300_000, 80], [900_000, 100], [3_600_000, 180]]) {
+    for (const [duration, cap] of [[60_000, 39], [300_000, 80], [900_000, 100], [3_600_000, 180]]) {
       for (const time of times) expect(times.filter((start) => start >= time - duration && start <= time).length).toBeLessThanOrEqual(cap);
     }
   });
@@ -101,7 +102,7 @@ describe("NST shared local admission", () => {
     expect(starts.map((time) => time - starts[0])).toEqual([0, 21_000, 42_000]);
   });
 
-  it.each([undefined, 0, -1, 1.5, NaN, Infinity, 40, 200])("does not use an invocation attempt cap as a burst count when full count is %s", async (plannedRequestCount) => {
+  it.each([undefined, 0, -1, 1.5, NaN, Infinity, 79, 200])("does not use an invocation attempt cap as a burst count when full count is %s", async (plannedRequestCount) => {
     const store = createNstFileBudgetStore(directory);
     const starts: number[] = [];
     for (let n = 0; n < 2; n++) {
@@ -157,4 +158,17 @@ describe("NST shared local admission", () => {
     await expect(withNstRequestBudget(url(2), control(), start, store)).rejects.toThrow("acknowledgement missing");
     expect(start).not.toHaveBeenCalled();
   });
+  it("runs a complete40 URL job as39 plus rolling wait plus1, retaining retry charges", async () => {
+    const starts: number[] = [];
+    const run = { ...control(0, 41, 220_000), plannedRequestCount: 40 };
+    for (let n = 0; n < 41; n++) {
+      const pending = withNstRequestBudget(url(n % 40), run, async () => { starts.push(Date.now()); }, createNstFileBudgetStore(directory));
+      await vi.runAllTimersAsync(); await pending;
+    }
+    expect(starts[38] - starts[0]).toBe(0);
+    expect(starts[39] - starts[0]).toBe(60_001);
+    expect(starts[40] - starts[0]).toBe(60_001);
+    expect(run.attemptsStarted).toBe(41);
+  });
+
 });
