@@ -38,7 +38,7 @@ describe("game Lines presentation", () => {
     const data = fixtureResponse();
     render(<GameLineSnapshots data={data} />);
     const main = entryPanel();
-    expect(within(main).getByText((_, node) => node?.tagName === "P" && node.textContent === `Set at ${formatTime(data.entryView.frozenAt!)}`)).toBeTruthy();
+    expect(within(main).getByText((_, node) => node?.tagName === "P" && node.textContent === `Set at puck drop · ${formatTime(data.entryView.frozenAt!)}`)).toBeTruthy();
     expect(within(main).getByRole("heading", { level: 3, name: "Forwards" })).toBeTruthy();
     expect(within(main).getByRole("heading", { level: 3, name: "Power play 1" })).toBeTruthy();
     expect(within(main).getByText("Mikheyev — Point — Kucherov")).toBeTruthy();
@@ -207,6 +207,13 @@ describe("game Lines presentation", () => {
     expect(document.getElementById(toggle.getAttribute("aria-controls")!)?.hidden).toBe(false);
     const entry = entryPanel();
     expect(entry.compareDocumentPosition(toggle) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+  it("shows the received time only when it differs from the post time", () => {
+    const data = fixtureResponse(0); const base = fixtureClaim();
+    data.teams[0]!.observations = [fixtureClaim("same-minute", { kind: "iga", phase: "in_game", unit: null,
+      time: { ...base.time, originalPublishedAt: "2026-10-01T23:20:00Z", ingestedAt: "2026-10-01T23:20:30Z" } })];
+    render(<GameLineSnapshots data={data} />);
+    expect(within(updatesPanel()).queryByText(/^Received/)).toBeNull();
   });
   it("names another game only when a claim is bound to a game other than the selected one", () => {
     const data = fixtureResponse(0);

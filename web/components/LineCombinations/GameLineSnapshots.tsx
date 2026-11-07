@@ -130,7 +130,7 @@ function Group({ title, children }: { title: string; children: ReactNode }) {
 
 const ES_GROUPS: Array<{ title: string; match: (unit: TweetUnit) => boolean }> = [
   { title: "Forwards", match: (unit) => unit.situation === "es_forward" },
-  { title: "Defence", match: (unit) => unit.situation === "es_defense" },
+  { title: "Defense", match: (unit) => unit.situation === "es_defense" },
   { title: "Goalies", match: (unit) => unit.situation === "goalie" },
   { title: "Other", match: (unit) => unit.situation === "pk" || unit.situation === "scratch" || unit.situation === "injury" },
 ];
@@ -180,7 +180,7 @@ function Entry({ team, games, entryView }: { team: GameTeamLines; games: LineGam
   const fallbackGame = fallback ? games.find((game) => game.id === fallback.gameId) : null;
   return <section className={styles.entry} aria-labelledby={headingId}>
     <h2 id={headingId} className={styles.entryTitle}>{team.abbreviation} · {entering ? "Lineup entering the game" : "Expected game-entry lineup"}</h2>
-    {entering && entryView?.frozenAt && <p className={styles.muted}>Set at <time dateTime={entryView.frozenAt}>{formatTime(entryView.frozenAt)}</time></p>}
+    {entering && entryView?.frozenAt && <p className={styles.muted}>Set at puck drop · <time dateTime={entryView.frozenAt}>{formatTime(entryView.frozenAt)}</time></p>}
     {entry?.status === "corrected" && <p className={styles.notice}>Lineup corrected · revision {entry.revision} · {revisionReasonCopy(entry.reason)}</p>}
     {!esUnits.length && !fallback && <p className={styles.muted}>No game-entry lineup has been reported yet.</p>}
     <EsGroups units={esUnits} games={games} />
@@ -238,7 +238,7 @@ function UpdateList({ team, games, selectedGameId }: { team: GameTeamLines; game
   const reports = [...groups.values()].sort((a, b) => captureTime(b) - captureTime(a) || a[0]!.id.localeCompare(b[0]!.id));
   const unresolved = reviewReasonsCopy(team.unresolved.flatMap((issue) => issue.reasons));
   return <>
-    <p className={styles.muted}>What each report means for the lineup. The game-entry lineup stays as it was set.</p>
+    <p className={styles.muted}>In-game changes, newest first. They never change the game-entry lineup.</p>
     <button type="button" className={styles.historyButton} aria-pressed={history} onClick={() => setHistory(!history)}>
       {history ? "Show in-game updates only" : `Show all reports (${new Set(team.history.map((claim) => claim.captureId)).size})`}
     </button>
@@ -249,7 +249,9 @@ function UpdateList({ team, games, selectedGameId }: { team: GameTeamLines; game
         return <li key={claim.captureId} className={styles.report}>
           <p className={styles.itemTitle}><Source claim={claim} /> <ClaimTime claim={claim} /></p>
           {group.map((item) => <ClaimRow key={item.id} claim={item} games={games} selectedGameId={selectedGameId} />)}
-          <p className={styles.muted}>Received {formatTime(claim.time.ingestedAt)}</p>
+          {/* Arrival time only adds information when it differs from the post time shown above. */}
+          {(!claim.time.originalPublishedAt || formatTime(claim.time.originalPublishedAt) !== formatTime(claim.time.ingestedAt))
+            && <p className={styles.muted}>Received {formatTime(claim.time.ingestedAt)}</p>}
           <details className={styles.rawDetails}><summary>Source text</summary><p className={styles.rawText}>{claim.text}</p></details>
         </li>;
       })}
