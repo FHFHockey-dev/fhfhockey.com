@@ -1,7 +1,7 @@
 import { fetchAllSupabasePages, fetchAllSupabaseFilterChunks } from "lib/supabase/pagination";
 import { sanitizePublicNewsText } from "lib/newsFeed";
 import { verifiedOriginalTweetUrl } from "lib/sources/projectedLineups";
-import { isRelayAccount } from "./authority";
+import { isRelayAccount, scrubRelayHandles } from "./authority";
 import { activeLineClaims, captureIdentity, eligibleClaim, reconcileEntry, reconcilePP } from "./reconcile";
 import { chooseDefaultGame, observeLineGame, stateAtRead, trustworthyState } from "./gameState";
 import { fetchCarryMemberships, fetchEntryHistory, fetchLineClaims, latestLineDecisions } from "./storage";
@@ -33,18 +33,24 @@ export async function hydrateLineGameStates(supabase: any, games: LineGame[], no
   });
 }
 
-function publicClaim(claim: LineClaim): LineClaim {
-  const sanitize = sanitizePublicNewsText;
+/** Relay accounts never reach the site surface: every public string field is scrubbed of them. */
+export function publicClaim(claim: LineClaim): LineClaim {
+  const sanitize = (value: string) => sanitizePublicNewsText(scrubRelayHandles(value));
   const candidate = verifiedOriginalTweetUrl(claim.sourceUrl);
   const handle = candidate ? new URL(candidate).pathname.split("/")[1]! : null;
   const id = candidate?.match(/\/status\/(\d+)$/)?.[1];
   const identity = verifiedOriginalTweetUrl(claim.originalIdentity);
-  const consistent = candidate && handle && !/^(?:i|null|undefined|unknown|none|n_?a|source_account)$/i.test(handle)
+  const consistent = candidate && handle && !/^(?:i|null|undefined|unknown|none|n_?a|source_account)$/i.test(handle) && !isRelayAccount(handle)
     && claim.author?.replace(/^@/, "").toLowerCase() === handle.toLowerCase()
     && (!claim.provenance || claim.provenance.attributionStatus === "resolved" && claim.provenance.originalTweetId === id)
     && (claim.originalIdentity === id || identity?.toLowerCase() === candidate.toLowerCase());
   const originalUrl = consistent ? candidate : null;
-  return { ...claim, provenance: undefined, text: claim.text.split("\n").map(sanitize).join("\n"), sourceUrl: originalUrl,
+  return { ...claim, provenance: undefined, text: scrubRelayHandles(claim.text).split("\n").map(sanitize).join("\n"), sourceUrl: originalUrl,
+    relayAccount: null, reviewReasons: claim.reviewReasons.map(scrubRelayHandles), originalAuthor: isRelayAccount(claim.originalAuthor) ? null : claim.originalAuthor,
+    decisionEvidence: claim.decisionEvidence ? { ...claim.decisionEvidence, sourceReferences: claim.decisionEvidence.sourceReferences.map(scrubRelayHandles),
+      binding: claim.decisionEvidence.binding.map((span) => ({ ...span, text: sanitize(span.text) })), phase: claim.decisionEvidence.phase.map((span) => ({ ...span, text: sanitize(span.text) })) } : undefined,
+    publicationEvidence: claim.publicationEvidence?.map(scrubRelayHandles),
+    contextEvidence: claim.contextEvidence?.map((span) => ({ ...span, text: sanitize(span.text) })),
     author: originalUrl ? new URL(originalUrl).pathname.split("/")[1]! : "Original source pending",
     originalIdentity: originalUrl,
     unit: claim.unit ? { ...claim.unit, evidence: claim.unit.evidence.map((span) => ({ ...span, text: sanitize(span.text) })) } : null,
@@ -69,7 +75,7 @@ export function buildSourceFeed(claims: LineClaim[], game: LineGame, now: string
     const relays = new Map<string, SourceFeedItem["relays"][number]>();
     for (const claim of ordered) if (claim.relayAccount) {
       const key = `${claim.relayAccount}:${claim.provenance?.relayTweetId ?? ""}`;
-      if (!relays.has(key)) relays.set(key, { account: claim.relayAccount, relayTweetId: claim.provenance?.relayTweetId ?? null, relayPublishedAt: claim.time.relayPublishedAt, ingestedAt: claim.time.ingestedAt });
+      if (!relays.has(key)) relays.set(key, { account: null, relayTweetId: claim.provenance?.relayTweetId ?? null, relayPublishedAt: claim.time.relayPublishedAt, ingestedAt: claim.time.ingestedAt });
     }
     return { id, originalIdentity: shown.originalIdentity, originalAuthor: ordered.find((claim) => claim.originalAuthor && !isRelayAccount(claim.originalAuthor))?.originalAuthor
         ?? (shown.sourceUrl && !isRelayAccount(shown.author) ? shown.author : null),
@@ -134,7 +140,7 @@ export async function readGameLines(supabase: any, args: { teamId?: number; game
         && (["iga", "entry_correction"].includes(claim.kind) || claim.kind === "pp" && claim.phase === "in_game")).map(publicClaim) : [],
       history: controls.observations ? [...scoped, ...claims.filter((claim) => claim.teamId === teamId && claim.gameId == null)].map(publicClaim) : [],
       ppDefaults: pp.map((decision) => ({ ...decision, selection: decision.selection ? { ...decision.selection, claims: decision.selection.claims.map(publicClaim) } : null })),
-      unresolved: [...claims.filter((claim) => claim.teamId === teamId && (claim.gameId === game.id || claim.gameId == null) && !eligibleClaim(claim)).map((claim) => ({ claimId: claim.id, reasons: claim.reviewReasons.length ? claim.reviewReasons : ["Evidence is not eligible for selection"] })),
+      unresolved: [...claims.filter((claim) => claim.teamId === teamId && (claim.gameId === game.id || claim.gameId == null) && !eligibleClaim(claim)).map((claim) => ({ claimId: claim.id, reasons: claim.reviewReasons.length ? claim.reviewReasons.map(scrubRelayHandles) : ["Evidence is not eligible for selection"] })),
         ...scoped.filter((claim) => claim.kind === "entry" && entry?.cutoff && (instant(claim.time.interpretedAt) ?? Infinity) > instant(entry.cutoff)!).map((claim) => ({ claimId: claim.id, reasons: ["Late entry evidence requires an explicit correction"] }))],
       conflicts: [...entry?.conflicts ?? [], ...pp.flatMap((decision) => decision.conflict ? [decision.conflict] : [])],
       feed: controls.observations ? buildSourceFeed(claims.filter((claim) => claim.teamId === teamId), game, args.now) : [],

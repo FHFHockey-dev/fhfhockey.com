@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("./gameState", async (load) => ({ ...await load<object>(), observeLineGame: async (game: unknown) => game }));
 import { readGameLines } from "./service";
 import { reconcileEntry } from "./reconcile";
+import { RELAY_ACCOUNTS } from "./authority";
 import { lineTestDatabase } from "./testDatabase";
 import { fixtureClaim, fixtureGame, fixtureNext, fixtureNow, fixturePP, fixtureResponse } from "./testFixtures";
 
@@ -82,11 +83,31 @@ describe("shared game/team response", () => {
     const team = (await readGameLines(db, { teamId: 14, now: fixtureNow })).teams[0]!;
     const pair = team.feed.filter((item) => item.claimIds.includes("fx"));
     expect(pair).toHaveLength(1);
-    expect(pair[0]).toMatchObject({ id: "123", claimIds: ["fx", "ifttt"], originalAuthor: "fixtureauthor", relays: [{ account: "gamedaylines", relayTweetId: "555" }] });
+    expect(pair[0]).toMatchObject({ id: "123", claimIds: ["fx", "ifttt"], originalAuthor: "fixtureauthor", relays: [{ account: null, relayTweetId: "555" }] });
     expect(team.feed.find((item) => item.claimIds.includes("fhfh"))).toMatchObject({ originalAuthor: "fhfhockey", authorityTier: "aggregator" });
     expect(team.feed.find((item) => item.claimIds.includes("relay-only"))).toMatchObject({ originalAuthor: null, sourceUrl: null, authorityTier: "unknown" });
     expect(team.observations.some((claim) => claim.id === "practice-iga")).toBe(false);
     expect(team.observations.filter((claim) => ["fx", "ifttt"].includes(claim.id))).toHaveLength(1);
+  });
+  it.each([
+    ["relay-only", { originalAuthor: null, author: null, originalIdentity: "https://x.com/GameDayLines/status/777", sourceUrl: "https://x.com/GameDayLines/status/777",
+      provenance: { relayTweetId: "777", originalTweetId: null, attributionStatus: "pending" as const } }],
+    ["relay-quoting", { originalAuthor: "fixtureauthor", author: "fixtureauthor", originalIdentity: "800", sourceUrl: "https://x.com/fixtureauthor/status/800",
+      provenance: { relayTweetId: "777", originalTweetId: "800", attributionStatus: "resolved" as const } }],
+  ])("no relay handle appears anywhere in the public JSON (%s)", async (_name, fields) => {
+    const db = serviceDatabase();
+    const text = "RT @GameDayLines: Lightning warmup lines: Mikheyev-Point-Kucherv via @DFOFantasy https://x.com/CcCMiddleton/status/9";
+    const relay = fixtureClaim("relay", { ...fields, text, relayAccount: "gamedaylines", reviewReasons: ["extraction:missing_player:GameDayGoalies"],
+      decisionEvidence: { producerVersion: "t", decisionId: "d", sourceReferences: ["source:https://x.com/NHL_Rosters/status/5"], binding: [], phase: [] },
+      publicationEvidence: ["relay:GameDayNewsNHL"] });
+    const entry = db.tables.line_entry_revisions![0]!.payload;
+    entry.units[0].claims.push(relay); entry.evidenceClaims = [...entry.evidenceClaims ?? [], relay];
+    db.tables.line_claim_revisions!.push({ team_id: 14, claim_id: relay.id, interpreted_at: relay.time.interpretedAt, payload: relay });
+    const response = await readGameLines(db, { teamId: 14, now: fixtureNow });
+    expect(response.teams[0]!.feed.some((item) => item.claimIds.includes("relay"))).toBe(true);
+    const json = JSON.stringify(response).toLowerCase();
+    for (const handle of RELAY_ACCOUNTS) expect(json).not.toContain(handle);
+    expect(response.teams[0]!.history.find((claim) => claim.id === "relay")!.text).toMatch(/^Lightning warmup lines/);
   });
   it("answers no-scope reads with the empty contract instead of guessing a game", async () => {
     const db = serviceDatabase();

@@ -67,7 +67,8 @@ export type PPDecision = { id: string; revision: number; gameId: number; teamId:
 /** One raw capture for the source feed. Relays collapse under their original. */
 export type SourceFeedItem = {
   id: string; originalIdentity: string | null; originalAuthor: string | null; authorityTier: AuthorityTier;
-  relays: Array<{ account: string; relayTweetId: string | null; relayPublishedAt: string | null; ingestedAt: string }>;
+  /** account is null in the public API: relay handles never reach the site surface. */
+  relays: Array<{ account: string | null; relayTweetId: string | null; relayPublishedAt: string | null; ingestedAt: string }>;
   text: string; publishedAt: string | null; ingestedAt: string;
   binding: { status: "bound" | "ambiguous" | "unresolved"; gameId: number | null; evidence: string[] };
   context: ClaimContext | null; claimIds: string[]; sourceUrl: string | null;

@@ -37,6 +37,16 @@ const normal = (value: unknown) => typeof value === "string" && HANDLE.test(valu
 
 export function isRelayAccount(handle: string | null | undefined): boolean { return !!handle && RELAYS.has(handle.replace(/^@/, "").toLowerCase()); }
 
+const RELAY_PATTERN = RELAY_ACCOUNTS.join("|");
+const RELAY_RT = new RegExp(`^\\s*RT @(?:${RELAY_PATTERN}):\\s*`, "i");
+const RELAY_URL = new RegExp(`https?://(?:www\\.)?(?:x|twitter)\\.com/(?:${RELAY_PATTERN})/status/\\d+\\S*`, "gi");
+const RELAY_WORD = new RegExp(`\\b(?:${RELAY_PATTERN})\\b`, "gi");
+const RELAY_MENTION = new RegExp(`(^|[^A-Za-z0-9_])@(?:${RELAY_PATTERN})\\b:?`, "gi");
+/** Public strings: drop a relay's "RT @relay:" prefix, relay status links, @relay mentions and bare relay handles. */
+export function scrubRelayHandles(text: string): string {
+  return text.replace(RELAY_RT, "").replace(RELAY_URL, "").replace(RELAY_MENTION, "$1").replace(RELAY_WORD, "").trim();
+}
+
 /** A relay handle never confers a tier: it is "unknown" like a missing author. */
 export function authorityTier(originalAuthor: string | null | undefined): AuthorityTier {
   const handle = normal(originalAuthor);
