@@ -706,6 +706,13 @@
     flex-direction: column;
     align-items: center;
   }
+
+  // Side by side, the title sizes to its text so the subtitle keeps its full width.
+  @media (min-width: 981px) {
+    .gameGridTitle {
+      width: auto;
+    }
+  }
 }
 
 .subTitle {
@@ -721,6 +728,10 @@
   max-width: 28rem;
   line-height: 1.45;
   filter: drop-shadow(0 0 4px rgba(v.$color-white, 0.4));
+
+  .noWrap {
+    white-space: nowrap;
+  }
 
   @media (max-width: 980px) {
     text-align: center;
@@ -1204,6 +1215,21 @@
     font-variant: all-small-caps;
     letter-spacing: 0.05rem;
     color: v.$text-secondary;
+  }
+
+  // Narrow desktops: day colours in one column, score outlines in the next, instead of a 2-2-1 wrap.
+  @media (max-width: 1199px) {
+    ul {
+      display: grid;
+      grid-auto-flow: column;
+      grid-template-rows: repeat(3, auto);
+      justify-content: end;
+      gap: 4px 12px;
+    }
+
+    li {
+      font-size: 0.9rem;
+    }
   }
 }
 

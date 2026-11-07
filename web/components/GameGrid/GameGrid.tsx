@@ -1241,7 +1241,7 @@ function GameGridInternal({
                 Game <span className={styles.spanColorBlue}>Grid</span>
               </h1>
               <p className={styles.subTitle}>
-                Weekly NHL schedule, off-nights & matchup maximizer
+                Weekly NHL schedule, <span className={styles.noWrap}>off-nights</span> & matchup maximizer
               </p>
             </div>
           </div>

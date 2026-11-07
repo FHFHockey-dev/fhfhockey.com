@@ -255,8 +255,9 @@ const ORIGINAL_FOUR_WEEK_WIDTHS = [72, 72, 72, 72];
 
 /**
  * Team and day columns keep the pre-redesign widths. The side groups and Week
- * Summary scale with them, then shrink toward their minimums so everything fits;
- * the table scrolls only when even the minimums do not fit.
+ * Summary scale with them, then shrink toward their minimums so everything fits.
+ * If that is still too wide, the day columns narrow toward their minimum; the
+ * table scrolls only when even those minimums do not fit.
  */
 export function sizeMasterTableColumns({ metricColumns, dayCount, fourWeekCollapsed, containerWidth }: {
   metricColumns: MasterColumnSpec[]; dayCount: number; fourWeekCollapsed: boolean; containerWidth: number;
@@ -278,6 +279,16 @@ export function sizeMasterTableColumns({ metricColumns, dayCount, fourWeekCollap
   if (containerWidth > 0 && excess > 0 && room > 0) {
     const share = Math.min(excess, room) / room;
     flex.forEach((spec, index) => { widths[index] -= (widths[index] - spec.min) * share; });
+  }
+
+  // Still too wide (e.g. 7 days at 1024px): narrow the day columns toward their minimum
+  // before falling back to a horizontal scroll, so the 4-week columns stay on screen.
+  const shortfall = Math.round(sum(widths) - available);
+  if (containerWidth > 0 && shortfall > 0 && dayCount > 0) {
+    const cut = Math.min(shortfall, sum(grid.slice(1).map((width) => width - day.min)));
+    for (let i = 1; i <= dayCount; i += 1) {
+      grid[i] -= Math.floor(cut / dayCount) + (i <= cut % dayCount ? 1 : 0);
+    }
   }
 
   // Round down, then hand the leftover pixels to the largest fractions so the total is exact.
