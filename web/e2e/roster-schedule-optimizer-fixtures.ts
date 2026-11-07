@@ -78,7 +78,7 @@ export async function routeCurrentPlanning(page: Page, handler: (route: Route) =
 
 export async function showScheduleView(page: Page, view: "player" | "position" | "itinerary" | "details") {
   const workspace = page.getByRole("navigation", { name: "Workspace views" });
-  if (await workspace.isVisible()) await workspace.getByRole("button", { name: "Itinerary", exact: true }).click();
+  if (await workspace.isVisible()) await workspace.getByRole("button", { name: "Week", exact: true }).click();
   const group = page.getByRole("group", { name: "Schedule view", exact: true });
   const button = group.getByRole("button", { name: view === "player" ? /^Show (lineup by player|category lineup comparison)$/
     : view === "position" ? "By position" : view === "itinerary" ? "Streaming itinerary" : "Plan details", exact: true });

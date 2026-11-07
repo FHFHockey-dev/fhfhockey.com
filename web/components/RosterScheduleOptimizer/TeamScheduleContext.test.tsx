@@ -66,9 +66,10 @@ describe("RSO explanatory team schedule context", () => {
     expect(cell.querySelector("img")?.getAttribute("src")).toContain("BOS");
     const band = card.querySelector("[data-team-band]") as HTMLElement;
     expect(band.textContent).toBe("NJD");
-    // lib/teamsInfo NJD: primary black, secondary red, jersey white.
+    // lib/teamsInfo NJD: primary black, secondary red, jersey white. Red on black is
+    // under 4.5:1, so the abbreviation falls through to the jersey white.
     expect(band.style.background).toBe("rgb(0, 0, 0)");
-    expect(band.style.color).toBe("rgb(162, 6, 32)");
+    expect(band.style.color).toBe("rgb(255, 255, 255)");
     expect(band.style.boxShadow).toBe("inset 0 0 0 2px #FFFFFF");
     const metrics = within(card).getByLabelText(/^GP 1 · OFF 1 · Score /);
     expect([...metrics.querySelectorAll("small")].map(node => node.textContent)).toEqual(["Score", "GP", "OFF"]);

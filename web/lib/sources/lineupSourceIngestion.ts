@@ -25,6 +25,8 @@ export type RosterNameEntry = {
   roleAliases?: Array<{ alias: string; role: PlayerSlotRole }>;
   position?: string | null;
   teamId?: number | null;
+  /** Listed on the team's latest official NHL roster refresh; see PlayerIdentity.onOfficialRoster. */
+  onOfficialRoster?: boolean;
 };
 
 export type TeamDirectoryEntry = Team & {

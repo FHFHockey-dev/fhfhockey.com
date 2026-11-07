@@ -525,14 +525,6 @@
   text-align: center;
 }
 
-.pointsInput {
-  @extend .numberInput;
-  width: 100%;
-  border-left: 2px solid v.$primary-color;
-  border-right: 2px solid v.$primary-color;
-  border-radius: v.$radius-md;
-}
-
 .expandButton {
   display: flex;
   align-items: center;
@@ -576,11 +568,6 @@
   box-sizing: border-box;
   overflow: hidden; // clip any tiny visual bleed from rounded inputs
   contain: layout paint;
-}
-
-.inlineManage .pointsInput {
-  min-width: 70px;
-  box-sizing: border-box;
 }
 
 .inlineManage .select {

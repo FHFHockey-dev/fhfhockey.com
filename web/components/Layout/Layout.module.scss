@@ -46,9 +46,9 @@
   margin-top: auto;
   flex-shrink: 0;
   padding: 24px;
-  background: #141719;
-  border-top: 1px solid #33414a;
-  color: #c0cbd3;
+  background: vars.$chrome-bg;
+  border-top: 1px solid vars.$chrome-border;
+  color: vars.$chrome-footer-text;
   font-family: vars.$font-family-primary;
   a:focus-visible {
     outline: 2px solid vars.$primary-color;
@@ -84,7 +84,7 @@
   color: vars.$primary-color;
   small {
     font-size: 13px;
-    color: #c0cbd3;
+    color: vars.$chrome-footer-text;
   }
   > a {
     display: inline-flex;

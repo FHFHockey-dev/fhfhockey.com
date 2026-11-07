@@ -40,7 +40,7 @@
   width: 100%;
 
   &::-webkit-scrollbar {
-    border-top: 1px solid #fff;
+    border-top: 1px solid v.$color-white;
     height: 4px;
   }
 
@@ -55,6 +55,17 @@
 
   @media (max-width: v.$breakpoint-tablet) {
     padding: 0rem;
+    // Phones: tabs scroll sideways; snap to each tab and fade the right edge
+    // so Roster / Shot Map read as "more this way" rather than cut off.
+    scroll-snap-type: x proximity;
+    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+
+    .tabButton {
+      min-width: auto;
+      padding-inline: 0.9rem;
+      white-space: nowrap;
+      scroll-snap-align: start;
+    }
   }
 }
 
@@ -73,7 +84,7 @@
   cursor: pointer;
   transition: all 0.3s ease;
   border-bottom: 2px solid transparent;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(v.$color-white, 0.8);
   font-family: v.$font-family-primary;
   font-size: 0.9rem;
   font-weight: 600;
@@ -88,30 +99,28 @@
   letter-spacing: 0.025em;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 1);
+    background: rgba(v.$color-white, 0.1);
+    color: rgba(v.$color-white, 1);
     transform: translateY(-1px);
   }
 
+  // Selected tab in the team's primary colour: a white highlight vanished on
+  // light jersey bars (EDM, and any white-jersey team).
+  // --tab-active-color is the team primary, or white/black when the primary
+  // lacks 4.5:1 contrast on the jersey bar (set in TeamTabNavigation.tsx).
   &.active {
-    background: rgba(255, 255, 255, 0.15);
-    border-bottom-color: #ffffff;
-    color: #ffffff;
+    background: color-mix(in srgb, var(--tab-active-color, var(--team-primary-color)) 12%, transparent);
+    border-bottom: 3px solid var(--tab-active-color, var(--team-primary-color));
+    color: var(--tab-active-color, var(--team-primary-color));
     font-weight: 700;
 
-    &::before {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: linear-gradient(90deg, #ffffff, rgba(255, 255, 255, 0.7));
+    .tabLabel {
+      color: var(--tab-active-color, var(--team-primary-color));
     }
   }
 
   &:focus {
-    outline: 2px solid rgba(255, 255, 255, 0.5);
+    outline: 2px solid rgba(v.$color-white, 0.5);
     outline-offset: 2px;
   }
 }
@@ -120,7 +129,7 @@
   font-size: 0.75rem;
   font-weight: inherit;
   letter-spacing: 0.05em;
-  color: var(--team-accent-color);
+  color: var(--tab-label-color, var(--team-accent-color)); // 4.5:1-safe accent, set in TeamTabNavigation.tsx
   font-weight: 900;
   font-family: v.$font-family-accent;
 }
@@ -167,7 +176,7 @@
     font-weight: 700;
     margin-bottom: 0.5rem;
     color: v.$text-primary;
-    background: linear-gradient(45deg, #07aae2, #00ff87);
+    background: linear-gradient(45deg, v.$secondary-color, #00ff87);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -197,7 +206,7 @@
   border: 1px solid rgba(255, 107, 107, 0.3);
   border-radius: 8px;
   padding: 1rem;
-  color: #ff6b6b;
+  color: v.$color-coral-500;
   text-align: center;
   font-weight: 500;
 }
@@ -241,7 +250,7 @@
     font-family: v.$font-family-accent;
     font-size: 1.5rem;
     font-weight: 700;
-    color: #07aae2;
+    color: v.$secondary-color;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     flex: 0 0 auto;
@@ -270,8 +279,8 @@
     background: #232323;
     color: #fefefe;
     font-size: 1rem;
-    border: 5px solid rgba(255, 255, 255, 0.1);
-    outline: 5px solid rgba(7, 170, 226, 0.3);
+    border: 5px solid rgba(v.$color-white, 0.1);
+    outline: 5px solid rgba(v.$secondary-color, 0.3);
     border-radius: 0.5rem;
     margin-bottom: 1.5rem;
     margin-top: 1.5rem;
@@ -293,13 +302,13 @@
 
     th {
       background: #181818;
-      color: #07aae2;
+      color: v.$secondary-color;
       font-weight: 700;
       letter-spacing: 0.05em;
     }
 
     tr:nth-of-type(even) {
-      background: rgba(255, 255, 255, 0.05);
+      background: rgba(v.$color-white, 0.05);
     }
 
     tr:last-child td {
@@ -308,18 +317,18 @@
 
     tbody tr {
       &:nth-child(even) td {
-        background-color: rgba(255, 255, 255, 0.05);
+        background-color: rgba(v.$color-white, 0.05);
       }
       &:nth-child(odd) td {
-        background-color: rgba(255, 255, 255, 0.08);
+        background-color: rgba(v.$color-white, 0.08);
       }
 
       &:hover td {
-        background-color: rgba(7, 170, 226, 0.2);
-        color: #07aae2;
+        background-color: rgba(v.$secondary-color, 0.2);
+        color: v.$secondary-color;
         font-weight: 600;
-        border-bottom: 2px solid #07aae2;
-        border-top: 2px solid #07aae2 !important;
+        border-bottom: 2px solid v.$secondary-color;
+        border-top: 2px solid v.$secondary-color !important;
       }
 
       &:last-child td {
@@ -343,8 +352,8 @@
     border-radius: 0.5rem;
     padding: 0.5rem 1rem;
     background-color: transparent;
-    color: rgba(255, 255, 255, 0.7);
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: rgba(v.$color-white, 0.7);
+    border: 1px solid rgba(v.$color-white, 0.3);
     min-width: 130px;
     text-align: center;
     margin: 0.5rem auto 1.5rem auto;
@@ -353,13 +362,13 @@
     transition: all 0.2s ease;
 
     &:hover:not(:disabled) {
-      background-color: rgba(7, 170, 226, 0.2);
-      color: #07aae2;
-      border-color: #07aae2;
+      background-color: rgba(v.$secondary-color, 0.2);
+      color: v.$secondary-color;
+      border-color: v.$secondary-color;
     }
 
     &:focus-visible {
-      outline: 2px solid #07aae2;
+      outline: 2px solid v.$secondary-color;
       outline-offset: 2px;
       z-index: 2;
     }
@@ -373,8 +382,8 @@
   .lineCombinations {
     background: #232323;
     color: #fefefe;
-    border: 5px solid rgba(255, 255, 255, 0.1);
-    outline: 5px solid rgba(7, 170, 226, 0.3);
+    border: 5px solid rgba(v.$color-white, 0.1);
+    outline: 5px solid rgba(v.$secondary-color, 0.3);
     border-radius: 0.5rem;
     padding: 0.5rem 1.5rem 1.5rem 1.5rem;
     min-width: 320px;
@@ -397,14 +406,14 @@
     background: #181818;
     font-family: var(--font-family-primary, sans-serif);
     font-variant: all-small-caps;
-    border: 1.5px solid #07aae2;
+    border: 1.5px solid v.$secondary-color;
     border-radius: 0.5rem;
     min-height: unset;
     height: 100%;
     display: flex;
     justify-content: center;
     font-weight: 700;
-    color: #fff;
+    color: v.$color-white;
     flex-direction: column;
     text-align: left;
     box-sizing: border-box;
@@ -509,7 +518,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    border-left: 1px solid rgba(v.$color-white, 0.1);
     margin: 0.1rem 0;
   }
 

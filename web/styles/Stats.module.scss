@@ -73,11 +73,21 @@
 .quickStatCard.scoring {
   border-left: 4px solid v.$primary-color;
 }
+// Goaltending takes the gold accent so it reads apart from the blue scoring cards.
 .quickStatCard.goaltending {
-  border-left: 4px solid v.$secondary-color;
+  border-left: 4px solid v.$color-brand-yellow;
+}
+.quickStatCard.goaltending .iconInner {
+  background: v.$color-brand-yellow;
 }
 .quickStatCard.league {
   border-left: 4px solid v.$warning-color;
+}
+// Flat left rule: the left radius matches the 4px rule width.
+.quickStatCard.scoring,
+.quickStatCard.goaltending,
+.quickStatCard.league {
+  border-radius: 4px v.$border-radius-lg v.$border-radius-lg 4px;
 }
 
 .quickStatCard:hover,
@@ -186,7 +196,7 @@
 }
 .filterButtonActive {
   background: v.$primary-color;
-  color: v.$text-button;
+  color: v.$text-on-primary;
   border-color: v.$primary-color;
   position: relative;
 }
@@ -194,7 +204,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  border-left: 4px solid v.$warning-color;
+  border-left: 6px solid v.$color-white;
   border-radius: inherit;
   pointer-events: none;
 }
@@ -338,6 +348,46 @@
   padding: 0;
 }
 
+// Page header: the title opens the page, left-aligned, in the outlined display face.
+.pageHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: v.$space-md;
+  row-gap: v.$space-xxs;
+  padding: v.$space-md 0 v.$space-lg;
+}
+
+.pageTitle {
+  margin: 0;
+  font-family: v.$font-family-accent;
+  font-size: v.$font-size-xl;
+  font-weight: 700;
+  line-height: 1.1;
+  color: v.$text-primary;
+
+  @media (max-width: v.$breakpoint-mobile-max) {
+    font-size: v.$mobile-font-size-xl;
+  }
+}
+
+.pageSubtitle {
+  margin: 0;
+  font-size: v.$font-size-sm;
+  color: v.$text-secondary;
+}
+
+.headerSearch {
+  margin-left: auto;
+  width: min(360px, 100%);
+  align-self: center;
+
+  // PlayerSearchBar adds a standalone bottom margin; the header row has its own spacing.
+  > div {
+    margin-bottom: 0 !important;
+  }
+}
+
 .heroSection {
   @include v.component-wrapper;
   width: 100%;
@@ -451,9 +501,9 @@
     grid-template-columns: repeat(2, 1fr);
   }
 
-  // Tablet and up: 4 columns
+  // Tablet and up: the cards share the full row (2 or 3 depending on the filter)
   @media (min-width: v.$breakpoint-tablet-min) {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: v.$space-md;
     margin-bottom: v.$space-lg;
   }
@@ -487,35 +537,6 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   }
 
-  &.scoring::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 3px;
-    height: 100%;
-    background: v.$primary-color;
-  }
-
-  &.goaltending::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 3px;
-    height: 100%;
-    background: v.$secondary-color;
-  }
-
-  &.league::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 3px;
-    height: 100%;
-    background: v.$warning-color;
-  }
 }
 
 .quickStatIcon {
@@ -697,7 +718,7 @@
 
 .filterButtonActive {
   background: v.$primary-color;
-  color: v.$text-button;
+  color: v.$text-on-primary;
   border-color: v.$primary-color;
   font-weight: 600;
 
@@ -706,6 +727,8 @@
     font-weight: 700;
     box-shadow: 0 2px 8px rgba(7, 170, 226, 0.3);
     transform: translateY(-1px);
+    // Flat left rule: the left radius matches the 6px ::before stripe.
+    border-radius: 6px v.$border-radius-md v.$border-radius-md 6px;
   }
 }
 
@@ -1364,21 +1387,25 @@
     min-height: auto;
   }
 
-  &:first-child {
-    border-left: 3px solid #10b981;
+  // nth-of-type skips the card's h2 title, so rows 1-5 line up with the mobile colours.
+  &:nth-of-type(1) {
+    border-left: 4px solid #10b981;
   }
 
-  &:nth-child(2) {
-    border-left: 3px solid #22c55e;
+  &:nth-of-type(2) {
+    border-left: 4px solid #22c55e;
   }
 
-  &:nth-child(3) {
-    border-left: 3px solid #84cc16;
+  &:nth-of-type(3) {
+    border-left: 4px solid #84cc16;
   }
 
-  &:nth-child(4),
-  &:nth-child(5) {
-    border-left: 3px solid v.$warning-color;
+  &:nth-of-type(4) {
+    border-left: 4px solid #f59e0b;
+  }
+
+  &:nth-of-type(5) {
+    border-left: 4px solid #ef4444;
   }
 
   &:hover {
@@ -1395,11 +1422,6 @@
 
 .leaderRowExpanded {
   border-left-width: 4px;
-
-  // Mobile: Reduce expanded border width
-  @media (max-width: v.$breakpoint-mobile-max) {
-    border-left-width: 3px;
-  }
 }
 
 .leaderMain {
@@ -1444,12 +1466,13 @@
 }
 
 .leaderName {
-  font-size: v.$font-size-sm;
-  color: v.$primary-color;
+  // Names are content, so they read in normal case; the display caps stay on headings.
+  font-size: v.$font-size-base;
+  font-weight: 500;
+  color: v.$text-primary;
   margin-bottom: v.$space-xxs;
   font-family: v.$font-family-condensed;
-  text-transform: uppercase;
-  letter-spacing: 0.1rem;
+  letter-spacing: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1598,11 +1621,11 @@
   top: 40%;
   left: 50%;
   transform: translate(-50%, -50%);
-  color: v.$text-button;
+  // Dark ink reads on every part colour (5.2-6.1:1); no shadow needed.
+  color: v.$text-on-primary;
   font-size: v.$font-size-xs;
   font-weight: 700;
-  font-family: v.$font-family-accent;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+  font-family: v.$font-family-condensed;
   z-index: 1;
 
   // Mobile: Smaller label font
@@ -1755,6 +1778,12 @@
   margin: 0 auto;
   position: relative;
 
+  // PlayerSearchBar sets an inline 2rem bottom margin for standalone use;
+  // inside this padded sticky bar it only adds dead space.
+  > div {
+    margin-bottom: 0 !important;
+  }
+
   &::before {
     // subtle inner glow edge when floating over content
     content: "";
@@ -1812,6 +1841,26 @@
   border-radius: v.$border-radius-md;
 }
 
+// Title on its own line, then a full-width Skaters / Goalies switch, so
+// "Leaderboards" never truncates beside the tabs.
+.mobileTabHeader {
+  flex-wrap: wrap;
+
+  .mobileCardTitle {
+    flex: 1 0 100%;
+    overflow: visible;
+    text-align: center;
+  }
+
+  .mobileTabs {
+    flex: 1 0 100%;
+  }
+
+  .mobileTabButton {
+    flex: 1;
+  }
+}
+
 .mobileTabs {
   display: inline-flex;
   align-items: center;
@@ -1838,7 +1887,7 @@
 
 .mobileTabButtonActive {
   background: v.$primary-color;
-  color: v.$text-button;
+  color: v.$text-on-primary;
 }
 
 .mobileTabPanel {
@@ -1856,7 +1905,9 @@
   height: auto;
   padding: v.$mobile-space-xs;
   min-height: v.$touch-target-large;
-  border-left: 3px solid v.$primary-color;
+  border-left: 4px solid v.$primary-color;
+  // Flat left rule: the left radius matches the 4px rule width.
+  border-radius: 4px v.$border-radius-md v.$border-radius-md 4px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: all v.$mobile-animation-fast ease;
 
@@ -1916,7 +1967,7 @@
 
 .mobileCardType {
   background: v.$primary-color;
-  color: v.$text-button;
+  color: v.$text-on-primary;
   padding: v.$mobile-space-xxs v.$mobile-space-xs;
   border-radius: v.$border-radius-sm;
   font-size: v.$mobile-font-size-xs;
@@ -1955,24 +2006,24 @@
   }
 
   &:first-child {
-    border-left: 3px solid #10b981;
+    border-left: 4px solid #10b981;
   }
 
   &:nth-child(2) {
-    border-left: 3px solid #22c55e;
+    border-left: 4px solid #22c55e;
   }
 
   &:nth-child(3) {
-    border-left: 3px solid #84cc16;
+    border-left: 4px solid #84cc16;
   }
 
   // Additional ranking colors for horizontal display
   &:nth-child(4) {
-    border-left: 3px solid #f59e0b;
+    border-left: 4px solid #f59e0b;
   }
 
   &:nth-child(5) {
-    border-left: 3px solid #ef4444;
+    border-left: 4px solid #ef4444;
   }
 }
 
@@ -1999,12 +2050,11 @@
 }
 
 .mobileLeaderName {
-  font-size: v.$mobile-font-size-sm;
-  color: v.$primary-color;
+  font-size: v.$mobile-font-size-base;
+  color: v.$text-primary;
   font-family: v.$font-family-condensed;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: v.$mobile-letter-spacing-normal;
+  font-weight: 500;
+  letter-spacing: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2083,7 +2133,8 @@
   height: auto;
   padding: v.$mobile-card-padding;
   min-height: v.$touch-target-large;
-  border-left: 3px solid v.$border-primary;
+  border-left: 4px solid v.$border-primary;
+  border-radius: 4px v.$border-radius-md v.$border-radius-md 4px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 
   // Subtle pulse animation for loading indication
@@ -2253,7 +2304,7 @@
   background: v.$background-dark;
   border: 1px solid v.$border-primary;
   border-radius: v.$border-radius-sm;
-  border-left: 3px solid v.$border-primary;
+  border-left: 4px solid v.$border-primary;
   animation: skeletonPulse 1.5s ease-in-out infinite;
 
   // Stagger animations for more realistic effect

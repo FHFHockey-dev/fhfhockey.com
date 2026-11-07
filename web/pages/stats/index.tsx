@@ -251,51 +251,11 @@ export default function StatsPage({
       .querySelectorAll<HTMLButtonElement>('[role="radio"]')[nextIndex]?.focus();
   };
 
-  // Scroll handler for teams grid morphing
+  // Mobile shows the teams as one swipeable logo strip from the start. The old
+  // scroll morph collapsed the grid, which shortened the page, pulled scrollY
+  // back under the expand threshold and re-expanded it.
   useEffect(() => {
-    if (!isMobile) return;
-
-    const expandThreshold = 30;
-    const collapseThreshold = 80;
-    let previousScrollY = window.scrollY;
-    let currentState: "expanded" | "collapsed" =
-      previousScrollY >= collapseThreshold ? "collapsed" : "expanded";
-    let frameId: number | null = null;
-
-    setTeamsGridState(currentState);
-
-    const handleScroll = () => {
-      if (frameId !== null) return;
-
-      frameId = requestAnimationFrame(() => {
-        frameId = null;
-        const currentScrollY = window.scrollY;
-        const scrollingDown = currentScrollY > previousScrollY;
-        const scrollDelta = Math.abs(currentScrollY - previousScrollY);
-        previousScrollY = currentScrollY;
-
-        if (scrollDelta < 8) return;
-
-        if (currentScrollY <= expandThreshold && currentState !== "expanded") {
-          currentState = "expanded";
-          setTeamsGridState("expanded");
-        } else if (
-          currentScrollY >= collapseThreshold &&
-          currentState !== "collapsed" &&
-          scrollingDown
-        ) {
-          currentState = "collapsed";
-          setTeamsGridState("collapsed");
-        }
-      });
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-      if (frameId !== null) cancelAnimationFrame(frameId);
-    };
+    if (isMobile) setTeamsGridState("collapsed");
   }, [isMobile]);
 
   // Mobile detection hook
@@ -322,9 +282,22 @@ export default function StatsPage({
         description="Explore NHL scoring and goalie leaderboards, player game logs, and team statistics to inform your fantasy hockey decisions."
       />
       {/* Skip link for keyboard users */}
-      <a href="#main-content" className={styles.skipLink}>
-        Skip to main content
-      </a>
+      {/* Page title leads the page, above the team picker; named region so it sits in a landmark */}
+      <section className={styles.pageHeader} aria-labelledby="stats-page-title">
+        <a href="#main-content" className={styles.skipLink}>
+          Skip to main content
+        </a>
+        <h1 id="stats-page-title" className={styles.pageTitle}>Player &amp; Team Stats</h1>
+        <p className={styles.pageSubtitle}>
+          NHL scoring leaders, goalie statistics, and team performance
+        </p>
+        {/* Desktop: search sits in the header. Phones keep the sticky bar below the logo strip. */}
+        {!isMobile && (
+          <div className={styles.headerSearch}>
+            <PlayerSearchBar />
+          </div>
+        )}
+      </section>
       {/* Conditional Teams Grid - Mobile vs Desktop */}
       {isMobile ? (
         <MobileTeamList
@@ -371,11 +344,7 @@ export default function StatsPage({
                 </span>
               </div>
               {/* Desktop team grid with containers and abbreviations */}
-              <div
-                className={styles.teamList}
-                role="list"
-                aria-label="Teams list"
-              >
+              <nav className={styles.teamList} aria-label="Teams">
                 {teams.map((team) => (
                   <Link
                     // team_id is the canonical unique identifier; previously used non-existent team.id
@@ -410,20 +379,23 @@ export default function StatsPage({
                     </span>
                   </Link>
                 ))}
-              </div>
+              </nav>
             </div>
           </div>
         </div>
       )}
 
-      {/* Search Bar Section - Dynamic positioning based on teams grid state */}
-      <div
-        className={`${styles.searchSection} ${isMobile ? (teamsGridState === "collapsed" ? styles.teamsCollapsed : styles.teamsExpanded) : ""}`}
-      >
-        <div className={styles.searchBarWrapper}>
-          <PlayerSearchBar />
+      {/* Search Bar Section - Dynamic positioning based on teams grid state (phones) */}
+      {isMobile && (
+        <div
+          className={`${styles.searchSection} ${teamsGridState === "collapsed" ? styles.teamsCollapsed : styles.teamsExpanded}`}
+          role="search"
+        >
+          <div className={styles.searchBarWrapper}>
+            <PlayerSearchBar />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Main Layout with Sidebars */}
       <div className={styles.mainLayout} id="main-content" role="main">
@@ -466,19 +438,10 @@ export default function StatsPage({
         </aside>
 
         {/* Middle Content Section */}
-        <main className={styles.middleContent}>
+        <div className={styles.middleContent}>
           <div className={styles.topRowHero}>
             {/* Hero Section - Clean and Minimal */}
             <section className={styles.heroSection}>
-              <div className={styles.heroContent}>
-                <h1 className={styles.heroTitle}>Player &amp; Team Stats</h1>
-
-                <p className={styles.heroSubtitle}>
-                  NHL scoring leaders, goalie statistics, and team performance
-                </p>
-                {/* PlayerSearchBar moved to sticky section above */}
-              </div>
-
               {/* Quick Stats - Bento Box Layout */}
               <section className={styles.quickStatsSection}>
                 <h2 className={styles.sectionTitle}>Key Metrics</h2>
@@ -527,7 +490,7 @@ export default function StatsPage({
             aria-labelledby="position-filter-heading"
           >
             <h2 id="position-filter-heading" className={styles.filterTitle}>
-              Leaderboard Position
+              Filter by position
             </h2>
             <div
               className={styles.filterButtons}
@@ -570,7 +533,7 @@ export default function StatsPage({
             </h2>
             <GoalieShareChart />
           </section>
-        </main>
+        </div>
 
         {/* Right Sidebar - Goaltender Statistics */}
         <aside

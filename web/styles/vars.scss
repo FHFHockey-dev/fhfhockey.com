@@ -179,6 +179,20 @@ $background-light: #202020; // legacy dark-light surface
 $background-lighter: color.adjust($background-light, $lightness: 10%);
 $background-header: color.adjust($background-dark, $lightness: -5%);
 
+// Site chrome (header, nav, bottom nav, footer, user menu); fhfh-styles.md §7.9.
+// Blue-tinted brand chrome: keep the blues, never swap for neutral greys.
+$chrome-bg: #141719; // mobile header, bottom nav, footer surface
+$chrome-border: #33414a;
+$chrome-text: #f4f6f8;
+$chrome-label: #b5c1cc; // nav section labels, helper text
+$chrome-footer-text: #c0cbd3;
+$chrome-bottom-nav-text: #d5dce1;
+$chrome-link-hover: #20282e; // desktop nav link hover
+$chrome-hover: #263139; // menu item / utility hover
+$chrome-active: #122a34; // desktop nav active fill
+$chrome-active-mobile: #12303d; // bottom-nav active fill, user trigger
+$chrome-menu-bg: #181e22; // nav dropdown and user menu shell
+
 // Unified surface elevation ramp (new)
 $surface-0: #111417; // page canvas
 $surface-1: #1a1c21; // base card / row surfaces

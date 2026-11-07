@@ -60,7 +60,7 @@ test("FR18 mobile tabs reach itinerary, roster, candidates and matchup without o
   await openCompact(page, 20);
   const tabs = page.getByRole("navigation", { name: "Workspace views" });
   await expect(tabs).toBeVisible();
-  const regions = [["Itinerary", "Itinerary"], ["Roster", "Roster and setup"], ["Candidates", "Candidates and detail"], ["Matchup", "Matchup"]] as const;
+  const regions = [["Week", "Week"], ["Roster", "Roster and setup"], ["Candidates", "Candidates and detail"], ["Matchup", "Matchup"]] as const;
   for (const [tab, region] of regions) {
     await tabs.getByRole("button", { name: tab, exact: true }).click();
     for (const [, other] of regions) expect(await page.getByRole("region", { name: other, exact: true }).isVisible(), `${other} visible on ${tab}`).toBe(other === region);

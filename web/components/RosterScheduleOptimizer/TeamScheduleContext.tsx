@@ -8,6 +8,7 @@ import InfoTooltip from "./InfoTooltip";
 import Image from "next/image";
 import { getLocalTeamLogoPath, fallbackTeamLogo } from "lib/images";
 import { teamsInfo } from "lib/teamsInfo";
+import { contrast } from "lib/socialShare/teamNeon";
 
 type TeamContext = { abbreviation: string; games: Record<string, GameData>; teamId: number;
   summary: ReturnType<typeof getTeamScheduleSummary> };
@@ -49,8 +50,11 @@ export default function TeamScheduleContext({ dates, seasonId, timeZone, enabled
     {context.reason ? <p role="status">{context.reason}</p> : <>
       <div className={styles.cards} role="group" aria-label="Top team schedule cards" tabIndex={0}>{context.teams.map(team => {
         const colors = teamsInfo[team.abbreviation];
-        // Team band: primary colour, abbreviation in the secondary colour, inner outline in the jersey colour.
-        const band = colors ? { background: colors.primaryColor, color: colors.secondaryColor, boxShadow: `inset 0 0 0 2px ${colors.jersey}` } : undefined;
+        // Team band: primary colour, inner outline in the jersey colour, and the abbreviation in the
+        // first team colour that reads on the primary (4.5:1), else white or black.
+        const ink = colors && ([colors.secondaryColor, colors.jersey, colors.accent, colors.alt].find(color => color && contrast(color, colors.primaryColor) >= 4.5)
+          ?? (contrast("#ffffff", colors.primaryColor) >= contrast("#000000", colors.primaryColor) ? "#ffffff" : "#000000"));
+        const band = colors ? { background: colors.primaryColor, color: ink, boxShadow: `inset 0 0 0 2px ${colors.jersey}` } : undefined;
         return <article key={team.abbreviation} aria-label={`${team.abbreviation} team schedule`}>
         <div className={styles.teamBand} style={band} data-team-band={team.abbreviation}><strong>{team.abbreviation}</strong></div>
         <div className={styles.days} style={{ gridTemplateColumns: `repeat(${dates.length}, minmax(0, 1fr))` }}>{dates.map((date, index) => {

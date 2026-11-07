@@ -379,6 +379,10 @@ deno_version = 2
 [functions.x-timeline-poll]
 verify_jwt = false
 
+# The Raspberry Pi fallback (twscrape) posts with its own x-fhfh-ingest-secret header, not a Supabase JWT.
+[functions.x-timeline-ingest]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

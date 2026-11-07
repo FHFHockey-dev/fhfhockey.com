@@ -8,7 +8,7 @@ import { SHARE_TIME_ZONE } from "./types";
  * one prefix can cover several tiles, so each rule below is the wording that card's altText really produces.
  * postedWeek.test.ts checks every rule against its source file and every landing card against a rule.
  */
-const ALT_TEXT_RULES: readonly (readonly [RegExp, string])[] = [
+export const ALT_TEXT_RULES: readonly (readonly [RegExp, string])[] = [
   [/^Best schedules, Monday streamer grid\b/, "game-grid"],
   [/^Best schedules, Wednesday streamer grid\b/, "remaining-week"],
   [/^Best schedules,[^.]*, covering\b/, "remaining-week"],

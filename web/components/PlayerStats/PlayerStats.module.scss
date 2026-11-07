@@ -2,6 +2,18 @@
 @use "styles/vars" as v;
 @use "sass:math";
 
+// Performance heat scale (calendar + season grid). Diverging around a neutral
+// "average": warm arm below, blue arm above, each validated as an ordinal ramp
+// on the dark surface. Keep in step with getPerformanceColor in
+// PlayerPerformanceHeatmap.tsx.
+$perf-very-poor: #ef7a5a;
+$perf-poor: #c2502f;
+$perf-below-average: #8a3b2b;
+$perf-average: #4b4f55;
+$perf-good: #184f95;
+$perf-excellent: #256abf;
+$perf-elite: #5598e7;
+
 // =============================================================================
 // ANIMATIONS
 // =============================================================================
@@ -20,13 +32,14 @@
 // =============================================================================
 
 // Dense data card (RSO metric language): neutral surface, full border in the
-// card's tone with a thicker left edge so the rail follows the radius.
+// card's tone with a 6px left rail; the left corners match the rail so its
+// inner edge stays flat.
 %card-base {
   --card-tone: #{v.$draft-border};
   padding: v.$space-xs v.$space-sm;
   border: 1px solid var(--card-tone);
   border-left-width: 6px;
-  border-radius: v.$radius-md;
+  border-radius: 6px v.$radius-md v.$radius-md 6px;
   background: v.$draft-surface-raised;
 }
 
@@ -515,16 +528,32 @@
 }
 
 .lcpgForwardGrid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: auto repeat(3, minmax(0, 1fr));
 }
 
-.lcpgDefenseGrid,
+.lcpgDefenseGrid {
+  grid-template-columns: auto repeat(2, minmax(0, 1fr));
+}
+
 .lcpgPowerPlayGrid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.lcpgAxis {
+  font-size: v.$font-size-xs;
+  font-weight: 500;
+  color: v.$text-secondary;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.lcpgRowAxis {
+  align-self: center;
+  padding-right: v.$space-xxs;
+}
+
 .lcpgCell {
-  aspect-ratio: 1;
+  height: 40px;
   min-width: 0;
   display: flex;
   align-items: center;
@@ -793,6 +822,7 @@
   flex-wrap: wrap;
   gap: v.$space-md;
 
+  h2,
   h3 {
     @extend %panel-title;
   }
@@ -1726,7 +1756,7 @@
   min-width: 80px;
   border: 1px solid var(--card-tone);
   border-left-width: 6px;
-  border-radius: v.$radius-md;
+  border-radius: 6px v.$radius-md v.$radius-md 6px;
   background: v.$draft-surface-raised;
   color: var(--card-tone);
 
@@ -2144,7 +2174,7 @@
       .dayNumber {
         font-size: v.$font-size-xs;
         font-weight: 600;
-        color: v.$text-primary;
+        color: var(--day-ink, #{v.$text-primary});
         margin-bottom: 2px;
       }
       .playoffMarker {
@@ -2519,39 +2549,40 @@
             }
 
             // Performance level colors
+
             &.elite {
-              background-color: rgba(26, 93, 26, 0.45);
-              border-color: rgba(16, 185, 129, 0.45);
+              background-color: $perf-elite;
+              border-color: rgba(v.$color-white, 0.08);
             }
 
             &.excellent {
-              background-color: rgba(45, 143, 45, 0.45);
-              border-color: rgba(34, 197, 94, 0.45);
+              background-color: $perf-excellent;
+              border-color: rgba(v.$color-white, 0.08);
             }
 
             &.good {
-              background-color: rgba(79, 184, 79, 0.45);
-              border-color: rgba(131, 204, 22, 0.45);
+              background-color: $perf-good;
+              border-color: rgba(v.$color-white, 0.08);
             }
 
             &.average {
-              background-color: rgba(133, 201, 133, 0.45);
-              border-color: rgba(234, 179, 8, 0.45);
+              background-color: $perf-average;
+              border-color: rgba(v.$color-white, 0.08);
             }
 
             &.belowAverage {
-              background-color: rgba(255, 215, 0, 0.45);
-              border-color: rgba(249, 115, 22, 0.45);
+              background-color: $perf-below-average;
+              border-color: rgba(v.$color-white, 0.08);
             }
 
             &.poor {
-              background-color: rgba(255, 140, 66, 0.45);
-              border-color: rgba(239, 68, 68, 0.45);
+              background-color: $perf-poor;
+              border-color: rgba(v.$color-white, 0.08);
             }
 
             &.veryPoor {
-              background-color: rgba(211, 47, 47, 0.45);
-              border-color: rgba(220, 38, 38, 0.45);
+              background-color: $perf-very-poor;
+              border-color: rgba(v.$color-white, 0.08);
             }
 
             &.noData {
@@ -2704,7 +2735,7 @@
             }
 
             &.playoff {
-              background-color: #4fb84f;
+              background-color: $perf-good;
               border: 2px solid v.$warning-color;
 
               &::before {
@@ -2764,10 +2795,17 @@
 // =============================================================================
 
 .contributionGraph {
+  container-type: inline-size;
+
   .contributionGrid {
-    // Single owner of activity-grid geometry: fixed-size cells; long seasons
-    // scroll inside the grid instead of growing cells with the page width.
-    --cell-size: 14px;
+    // Single owner of activity-grid geometry. Cells size to fit every week in
+    // view: up to 22px early in the season, shrinking (min 8px) as weeks are
+    // added. --total-weeks and --gap-size are set inline by the component.
+    --cell-size: clamp(
+      8px,
+      calc((100cqi - 2.5rem) / var(--total-weeks, 26) - var(--gap-size, 2px)),
+      22px
+    );
     width: 100%;
 
     .daysLabels {
@@ -2805,7 +2843,9 @@
           height: 20px;
           display: flex;
           align-items: center;
-          justify-content: center;
+          // Labels start at their week and run right, like a calendar strip.
+          justify-content: flex-start;
+          overflow: visible;
 
           .monthName {
             font-size: v.$font-size-xs;
@@ -2821,14 +2861,10 @@
         // PERFECT SQUARE CONTRIBUTION DAYS - Single consolidated definition
         .contributionDay,
         .emptyDay {
-          // CRITICAL: Perfect square sizing
-          width: var(--cell-size);
-          height: var(--cell-size);
-
-          // Remove all flex-based sizing that was causing rectangles
-
-          // Remove aspect-ratio as we're using fixed sizes
-          aspect-ratio: unset;
+          // Square cells that take the week column's fluid width (--cell-size).
+          width: 100%;
+          height: auto;
+          aspect-ratio: 1;
 
           // Styling
           border-radius: 2px; // Small radius for crisp squares
@@ -2847,39 +2883,40 @@
           }
 
           // Performance level colors
+
           &.elite {
-            background-color: rgba(26, 93, 26, 0.45);
-            border-color: rgba(16, 185, 129, 0.45);
+            background-color: $perf-elite;
+            border-color: rgba(v.$color-white, 0.08);
           }
 
           &.excellent {
-            background-color: rgba(45, 143, 45, 0.45);
-            border-color: rgba(34, 197, 94, 0.45);
+            background-color: $perf-excellent;
+            border-color: rgba(v.$color-white, 0.08);
           }
 
           &.good {
-            background-color: rgba(79, 184, 79, 0.45);
-            border-color: rgba(131, 204, 22, 0.45);
+            background-color: $perf-good;
+            border-color: rgba(v.$color-white, 0.08);
           }
 
           &.average {
-            background-color: rgba(133, 201, 133, 0.45);
-            border-color: rgba(234, 179, 8, 0.45);
+            background-color: $perf-average;
+            border-color: rgba(v.$color-white, 0.08);
           }
 
           &.belowAverage {
-            background-color: rgba(255, 215, 0, 0.45);
-            border-color: rgba(249, 115, 22, 0.45);
+            background-color: $perf-below-average;
+            border-color: rgba(v.$color-white, 0.08);
           }
 
           &.poor {
-            background-color: rgba(255, 140, 66, 0.45);
-            border-color: rgba(239, 68, 68, 0.45);
+            background-color: $perf-poor;
+            border-color: rgba(v.$color-white, 0.08);
           }
 
           &.veryPoor {
-            background-color: rgba(211, 47, 47, 0.45);
-            border-color: rgba(220, 38, 38, 0.45);
+            background-color: $perf-very-poor;
+            border-color: rgba(v.$color-white, 0.08);
           }
 
           &.noData {
@@ -3031,7 +3068,7 @@
             }
 
             &.playoff {
-              background-color: #4fb84f;
+              background-color: $perf-good;
               border: 2px solid v.$warning-color;
 
               &::before {
@@ -3090,13 +3127,9 @@
 // RESPONSIVE BREAKPOINTS FOR CONTRIBUTION GRAPH
 // =============================================================================
 
-// Breakpoints only change the cell size; geometry rules stay in one place.
+// Cell size is fluid (see .contributionGrid); breakpoints only shrink the legend.
 @media (max-width: v.$screen-small-max) {
   .contributionGraph {
-    .contributionGrid {
-      --cell-size: 12px;
-    }
-
     .contributionLegend {
       .legendSection .legendScale .scaleItem,
       .legendSpecial .specialItem .specialIndicator {
@@ -3107,8 +3140,9 @@
   }
 }
 
-@media (min-width: v.$screen-large) {
-  .contributionGraph .contributionGrid {
-    --cell-size: 16px;
-  }
+// Radar: names stats that have no comparison data, in neutral muted text.
+.comparisonGap {
+  margin: v.$space-xs 0 0;
+  color: v.$text-secondary;
+  font-size: 0.8rem;
 }

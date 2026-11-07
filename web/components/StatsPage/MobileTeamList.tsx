@@ -78,6 +78,8 @@ export default function MobileTeamList({
       ref={headerRef}
       className={`${styles.teamSelectHeader} ${styles[teamsGridState]}`}
       data-grid-state={teamsGridState}
+      role="region"
+      aria-label="Select an NHL team"
     >
       <div
         ref={gridRef}

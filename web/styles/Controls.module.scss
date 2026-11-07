@@ -38,6 +38,11 @@
     }
   }
 
+  // Field edges identify the field, so they need 3:1 (WCAG 1.4.11); buttons keep $border-secondary.
+  :where(select, input:not([type="checkbox"]):not([type="range"])) {
+    border-color: v.$border-control-color !important;
+  }
+
   :is(button:not(thead button), summary) {
     display: inline-flex;
     align-items: center;
@@ -93,7 +98,7 @@
     margin: 0;
     padding: 0;
     opacity: 1;
-    border: 1px solid v.$border-secondary;
+    border: 1px solid v.$border-control-color;
     border-radius: v.$radius-xs;
     background: v.$draft-input;
     cursor: pointer;

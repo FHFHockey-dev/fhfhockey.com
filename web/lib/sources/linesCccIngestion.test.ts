@@ -463,6 +463,25 @@ describe("linesCccIngestion", () => {
     });
   });
 
+  // DFO relays RotoWire items: "Cole Reinhardt: Line Change: Reinhardt will draw back into the lineup vs. Washington"
+  // was filed under Washington (tweet 2119115655333232899). The opponent is not the subject.
+  it("files a lead-player news item under the player's team, not the opponent after vs.", () => {
+    const rosterByTeam = new Map([[8, canadiensRoster], [14, lightningRoster]]);
+    const teams = [canadiens!, lightning!];
+    expect(resolveLinesCccTeam({ teams, rosterByTeam, classification: "lineup",
+      text: "Josh Anderson: Line Change: Anderson will draw back into the lineup vs. Tampa Bay on Saturday. pic.twitter.com/bgm84UL8C6" }))
+      .toMatchObject({ id: 8 });
+    expect(resolveLinesCccTeam({ teams, rosterByTeam, classification: "lineup",
+      text: "Brayden Point: Line Change: Point is expected to draw back into the lineup against the Canadiens on Saturday." }))
+      .toMatchObject({ id: 14 });
+  });
+
+  it("does not use the lead player to override a team named outside an opponent cue", () => {
+    const rosterByTeam = new Map([[8, canadiensRoster], [14, lightningRoster]]);
+    expect(resolveLinesCccTeam({ teams: [canadiens!, lightning!], rosterByTeam, classification: "lineup",
+      text: "Josh Anderson: Line Change: Anderson was traded to Tampa Bay on Saturday." })?.id).not.toBe(8);
+  });
+
   it("refreshes team and roster fields from enriched Habs-vs-Lightning text", () => {
     const source = buildLinesCccSourceFromIftttEvent({
       event: {
