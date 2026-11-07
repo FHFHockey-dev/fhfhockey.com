@@ -554,10 +554,51 @@ describe("/api/v1/db/update-line-sources", () => {
     try {
       const res = createMockRes();
       await handler(createMockReq(), res);
-      expect(res.body.summary).toMatchObject({ eventsLoaded: 0, eventsProcessed: 0, rowsUpserted: 0,
+      expect(res.body.summary).toMatchObject({ eventsFetched: 0, eventsLoaded: 0, eventsProcessed: 0, rowsUpserted: 0,
         lineCombinationSync: { written: 0, failures: [] } });
       expect(reconcile).toHaveBeenCalledWith(expect.anything(), [], [8, 14]);
       expect(mocks.auditInsert).toHaveBeenCalledTimes(enabled ? 1 : 0);
+    } finally { reconcile.mockRestore(); }
+  });
+
+  it.each([
+    ["gdl", "contended"], ["ccc", "contended"], ["gdl", "exhausted"], ["ccc", "exhausted"],
+  ])("retains %s audit when a fetched event is %s and no event is claimed", async (route, state) => {
+    const exhausted = state === "exhausted";
+    vi.stubEnv("TWEET_CLAIMS_MODE", "");
+    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+    vi.stubEnv("TWEET_PIPELINE_PUBLISHING_ENABLED", "false");
+    vi.stubEnv("LINES_OBSERVATIONS_ENABLED", String(!exhausted));
+    const event = buildEvent({ id: "unclaimed", sourceKey: "gamedaylines", sourceAccount: "GameDayLines", tweetId: "100", text: "Caufield starts tonight." });
+    createSupabaseMocks([event]);
+    mocks.syncLineCombinationSourceWinners.mockResolvedValue({ sourceRows: 0, eligibleWinners: 0, written: 0, failures: [] });
+    mocks.rpc.mockResolvedValue({ data: false, error: null });
+    const originalFrom = mocks.from.getMockImplementation()!;
+    const failedQuery: any = { eq: vi.fn(() => failedQuery), then: (resolve: any) => Promise.resolve({ error: null }).then(resolve) };
+    const markFailed = vi.fn(() => failedQuery);
+    mocks.from.mockImplementation((table: string) => {
+      if (["rosters", "tweet_player_memberships", "fhfh_player_identities", "fhfh_player_identity_aliases"].includes(table)) {
+        return { select: () => paginatedRoster({ data: [], error: null }) };
+      }
+      if (table === "tweet_pipeline_jobs") return { select: () => ({ eq: () => ({ maybeSingle: async () => ({
+        data: { attempts: exhausted ? 8 : 1, status: exhausted ? "failed" : "running", lease_expires_at: "2099-01-01T00:00:00Z" }, error: null,
+      }) }) }) };
+      if (table === "line_source_ifttt_events" || table === "lines_ccc_ifttt_events") {
+        return { ...originalFrom("line_source_ifttt_events"), update: markFailed };
+      }
+      return originalFrom(table);
+    });
+    const reconcile = vi.spyOn(lineProcessor, "processLineSnapshotEvidence")
+      .mockResolvedValue({ enabled: !exhausted, claims: 0, reconciled: exhausted ? 0 : 2 });
+    try {
+      const res = createMockRes();
+      await (route === "gdl" ? handler : cccHandler)(createMockReq(), res);
+      expect(res.statusCode, JSON.stringify(res.body)).toBe(200);
+      expect(res.body.summary).toMatchObject({ eventsFetched: 1, eventsLoaded: 0, eventsProcessed: 0, rowsUpserted: 0 });
+      expect(reconcile).toHaveBeenCalledWith(expect.anything(), [], [8, 14]);
+      expect(markFailed).toHaveBeenCalledTimes(exhausted ? 1 : 0);
+      if (exhausted) expect(markFailed).toHaveBeenCalledWith(expect.objectContaining({ processing_status: "failed" }));
+      expect(mocks.auditInsert).toHaveBeenCalledOnce();
     } finally { reconcile.mockRestore(); }
   });
 

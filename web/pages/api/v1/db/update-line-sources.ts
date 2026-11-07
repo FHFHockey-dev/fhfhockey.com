@@ -347,9 +347,10 @@ export default withCronJobAudit(
       sourceKeys,
       currentDateOnly: parseBooleanFlag(req.query.currentDayOnly) ? requestedDate : null,
     });
+    const eventsFetched = eventRows.length;
     const intake = await admitTweetClaimEvaluationIntake(req.supabase,"line_source_ifttt_events",eventRows);
     if (intake.active && !intake.events.length) return res.json({ success: true,mode: "claim_shadow_stopped",reason: intake.reason,
-      delivery: "not_requested",summary: { eventsLoaded: 0,eventsProcessed: 0 } });
+      delivery: "not_requested",summary: { eventsFetched,eventsLoaded: 0,eventsProcessed: 0 } });
     eventRows = intake.events;
     const currentSeason = await getCurrentSeason();
     const teamDirectory = eventRows.length ? buildTeamDirectory(
@@ -941,6 +942,7 @@ export default withCronJobAudit(
         sourcesProcessed: new Set(
           pendingEvents.map((event) => event.source_key),
         ).size,
+        eventsFetched,
         eventsLoaded: pendingEvents.length,
         tweetsDiscovered: discoveredTweets.length,
         tweetsParsed: parsedCandidates.length,

@@ -295,13 +295,22 @@ describe("withCronJobAudit", () => {
   });
 
   it("writes no audit row for an empty queue poll and flushes the response unchanged", async () => {
-    const empty = { success: true, summary: { eventsLoaded: 0, eventsProcessed: 0, eventsRejected: 0,
+    const empty = { success: true, summary: { eventsFetched: 0, eventsLoaded: 0, eventsProcessed: 0, eventsRejected: 0,
       eventsDeferred: 0, rowsUpserted: 0, lineCombinationSync: { written: 0, failures: [] } } };
     const res = createMockRes();
     await withCronJobAudit(async (_req, out) => out.json(empty), { skipAuditWhenNoOp: isEmptyQueueProcessorRun })(createMockReq(), res);
     expect(insertMock).not.toHaveBeenCalled();
     expect(res.statusCode).toBe(200);
     expect(res.body).toEqual(empty);
+  });
+
+  it.each([undefined, null, 1])("retains zero-claim receipts when the fetched count is %s", async (eventsFetched) => {
+    const body = { success: true, summary: { ...(eventsFetched === undefined ? {} : { eventsFetched }),
+      eventsLoaded: 0, eventsProcessed: 0, eventsRejected: 0, eventsDeferred: 0, rowsUpserted: 0,
+      lineCombinationSync: { written: 0, failures: [] } } };
+    expect(isEmptyQueueProcessorRun(body)).toBe(false);
+    await withCronJobAudit(async (_req, out) => out.json(body), { skipAuditWhenNoOp: isEmptyQueueProcessorRun })(createMockReq(), createMockRes());
+    expect(insertMock).toHaveBeenCalledOnce();
   });
 
   it("keeps audit rows for queue polls that did work, failed, or reported a gate state", async () => {
