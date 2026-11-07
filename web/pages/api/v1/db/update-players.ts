@@ -1,3 +1,59 @@
+/**
+ * Update Players API Endpoint
+ *
+ * This endpoint fetches the latest NHL roster data and syncs it to the database.
+ * Admin access required.
+ *
+ * Query Parameters:
+ * - seasonId (optional): NHL season ID (format: YYYY where YYYY represents season start year)
+ *   Default: current season
+ * - dryRun (optional): Set to "false" to perform actual writes; default is true (dry-run mode)
+ *   Note: Non-current season updates are always dry-run only
+ *
+ * URL Examples:
+ *
+ * 1. Dry-run for current season (preview changes):
+ *    GET /api/v1/db/update-players
+ *    or explicitly: /api/v1/db/update-players?dryRun=true
+ *
+ * 2. Dry-run for a specific past season (view what would be updated):
+ *    GET /api/v1/db/update-players?seasonId=2023
+ *
+ * 3. Execute actual update for current season (writes to database):
+ *    GET /api/v1/db/update-players?dryRun=false
+ *
+ * 4. Combine parameters:
+ *    GET /api/v1/db/update-players?seasonId=2024&dryRun=true
+ *
+ * Response Examples:
+ *
+ * Dry-run success (200):
+ * {
+ *   "success": true,
+ *   "dryRun": true,
+ *   "seasonId": 2025,
+ *   "playerCount": 850,
+ *   "teams": ["VGK", "LAK", "SJS", ...],
+ *   "players": [
+ *     { "id": 8476346, "fullName": "Connor McDavid", "teamId": "EDM", "position": "C" },
+ *     ...
+ *   ]
+ * }
+ *
+ * Live update success (200):
+ * {
+ *   "message": "Successfully updated the players & rosters tables.",
+ *   "success": true,
+ *   "canonicalSync": { "enabled": false }
+ * }
+ *
+ * Error (400):
+ * {
+ *   "message": "Failed to update <error details>",
+ *   "success": false
+ * }
+ */
+
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { isValidNhlSeasonId } from "lib/NHL/server";
 import { rosterSeasonForDate } from "lib/sources/playerIdentity";
