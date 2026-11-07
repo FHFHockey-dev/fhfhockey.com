@@ -3,12 +3,12 @@ import styles from "./RatingMeter.module.scss";
 type RatingKind = "atk" | "def";
 
 const RATING_TITLE: Record<RatingKind, string> = {
-  atk: "Opp attack",
-  def: "Opp defense",
+  atk: "Opponents' attack",
+  def: "Opponents' defense",
 };
 const RATING_SOURCE: Record<RatingKind, string> = {
-  atk: "xGF/GP",
-  def: "xGA/GP, inverted",
+  atk: "expected goals for per game",
+  def: "expected goals against per game; fewer ranks higher",
 };
 
 function ordinal(value: number) {
@@ -22,7 +22,7 @@ export default function RatingMeter({ kind, value, average }: { kind: RatingKind
   const rounded = value == null ? null : Math.round(value);
   const title = rounded == null
     ? `${RATING_TITLE[kind]} · unavailable`
-    : `${RATING_TITLE[kind]} · ${ordinal(rounded)} pct (${RATING_SOURCE[kind]})`;
+    : `${RATING_TITLE[kind]} · ${ordinal(rounded)} percentile (${RATING_SOURCE[kind]})`;
   return (
     <span className={styles.meter} data-kind={kind} title={title}>
       <span className={styles.value}>{rounded ?? "-"}</span>

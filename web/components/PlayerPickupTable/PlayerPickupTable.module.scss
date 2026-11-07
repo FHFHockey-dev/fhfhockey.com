@@ -1280,10 +1280,13 @@ $selected-border-width: 2px; // The width of the indicator
 
 .toolbarButton {
   @include v.button-style;
-  background: linear-gradient(135deg, v.$primary-color, v.$secondary-color);
+  // Flat primary with dark ink: white on this blue was 2.7-2.9:1; $text-on-primary is 6.4:1.
+  // Condensed face, because the outlined accent font turns hollow in dark ink.
+  background: v.$primary-color;
   border: none;
-  color: v.$color-white;
-  font-family: v.$font-family-accent, sans-serif;
+  color: v.$text-on-primary;
+  font-family: v.$font-family-condensed, sans-serif;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: v.$space-xs v.$space-md;

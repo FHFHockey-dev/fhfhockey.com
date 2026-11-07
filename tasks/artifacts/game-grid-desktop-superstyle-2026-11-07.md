@@ -20,3 +20,7 @@
 | /game-grid drawer | Score uses presets (.inBottomDrawer) | ~~None wrapped alone.~~ 4 equal columns (TJ edit) | Done | 3 |
 | /game-grid drawer | error state (PlayerPickupTable.tsx .errorState) | ~~Retry left, message centred.~~ centred column | Done | 3 |
 | /game-grid drawer | populated BPA table | Not verified: player data fails to load on the isolated dev server. | Not verified | 3 |
+| /game-grid drawer | RESET / RETRY (.toolbarButton) | ~~White on blue gradient 2.7–2.9:1 (axe skips gradients).~~ Flat primary + $text-on-primary 6.4:1, condensed bold | Done | 3 |
+| /game-grid | WEEK SCORE popover (GameGrid.tsx) | ~~Raw formula and internal notes.~~ Plain three-paragraph explanation; dialog "How Week Score works" | Done | 4 |
+| /game-grid | ATK/DEF meter tooltips (RatingMeter.tsx) | ~~"Opp defense · 97th pct (xGA/GP, inverted)".~~ Spelled out | Done | 4 |
+| /game-grid | Info panel (DesktopMasterTable.tsx) | ~~Nine formula paragraphs, ISO dates.~~ Phone panels' plain wording; unused constants removed | Done | 4 |

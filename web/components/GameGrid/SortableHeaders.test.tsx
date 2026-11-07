@@ -576,7 +576,7 @@ describe("public opponent and four-week cells", () => {
     expect(info).toBeTruthy();
     expect(info.hasAttribute("open")).toBe(false);
     expect(info.querySelector("summary")?.getAttribute("aria-label")).toBe("Info about Game Grid metrics");
-    expect(info.textContent).toContain("Lower OPP%");
+    expect(info.textContent).toContain("OPP% (opponents’ points %; lower is easier)");
     expect(info.textContent).toContain("Snapshot freshness unknown");
     expect(Array.from(container.querySelectorAll("p")).filter((p) => !p.closest("details"))).toHaveLength(0);
   });

@@ -858,36 +858,21 @@ function GameGridInternal({
             style={{ ...weekScoreHelpPosition, visibility: weekScoreHelpPosition ? "visible" : "hidden" }}
             tabIndex={-1}
             role="dialog"
-            aria-label="Week score formula"
+            aria-label="How Week Score works"
           >
             <p>
-              Week Score = (Adjusted Team Games × 6) + (Off-Night Games × 4)
-              + Matchup Bonus + Slate Crowding.
+              Week Score ranks each team&apos;s week for streaming. Games count
+              most: each game above or below the league average moves it by 6,
+              and each game on an off-night (8 or fewer NHL games) adds 4.
             </p>
             <p>
-              Slate crowding adds one adjustment from −0.25 to +0.25 across
-              the entire selection: 0.25 × (2 × mean((16 − league games) / 15) − 1).
-              Lighter slates earn more; missing slate coverage contributes
-              neutral crowding. The binary off-night threshold stays at 8.
+              Two small nudges follow: a matchup bonus from win odds (−0.5 to
+              +0.5, adjusted for back-to-backs) and a light-slate bonus (−0.25
+              to +0.25) when the selected days are quieter across the league.
             </p>
             <p>
-              GP and off nights take priority. Off-night games occur on days
-              with 8 or fewer NHL regular-season games. Counts and league
-              averages use the included days in the selected period.
-            </p>
-            <p>
-              The matchup bonus is capped from −0.5 to +0.5, using current
-              win odds (0–100%) with the existing back-to-back adjustment.
-              Missing odds contribute a neutral bonus.
-            </p>
-            <p>
-              This is an interim win-odds heuristic, not a calibrated fantasy
-              projection or opponent-only scoring difficulty rating. Higher
-              odds add a small edge when schedules match.
-            </p>
-            <p>
-              Adjusted Team Games = Team Games – League Average Games. Teams
-              with no games in the selected period display a dash.
+              Only days that are switched on count. Teams with no games show a
+              dash. It&apos;s a quick guide, not a fantasy projection.
             </p>
           </div>, document.body
         )}
