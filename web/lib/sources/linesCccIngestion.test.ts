@@ -1761,3 +1761,16 @@ describe("league label on the wrapper of a quoted post (tweet 211918397192613084
     expect(plain.nhlFilterStatus).not.toBe("rejected_non_nhl");
   });
 });
+
+describe("validated goalie/injury rows keep the reporter (riskyStarts handle, 2026-11-07)", () => {
+  it("credits the verified original author, never a relay or a pending original; quotes are left to the forecast capture", async () => {
+    const { validatedEventReporter } = await import("./tweetProjectionStorage");
+    // A reporter's own verified post: their handle (two reporters now stay two sources, so disagreement is detectable).
+    expect(validatedEventReporter({}, { originalUrl: "https://x.com/PenguinsPR/status/1" })).toBe("penguinspr");
+    // A relay's post or a pending original: no reporter, so the card shows no handle.
+    expect(validatedEventReporter({}, { originalUrl: "https://x.com/GameDayGoalies/status/3" })).toBeNull();
+    expect(validatedEventReporter({}, { originalUrl: null })).toBeNull();
+    // Quote posts: the forecast capture credits the quoted author.
+    expect(validatedEventReporter({ quotedAuthorHandle: "pham1717" }, { originalUrl: "https://x.com/pham1717/status/4" })).toBeNull();
+  });
+});

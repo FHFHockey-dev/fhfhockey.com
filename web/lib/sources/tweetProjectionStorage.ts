@@ -7,6 +7,7 @@ import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import { classifyInjuryEvent } from "./tweetPlayerEvents";
 import { capturePlayerForecastSourceRows, type ForecastLineSourceRow } from "lib/player-forecasts/sourceObservations";
 import { persistTweetClaimSources } from "./tweetClaimRegistry";
+import { isRelayAccount } from "lib/lines/authority";
 
 export function projectedSetsToForecastRows(sets: ProjectedUnitSet[]): ForecastLineSourceRow[] {
   const groups = new Map<string, ProjectedUnitSet[]>();
@@ -202,6 +203,17 @@ export function projectionReportFromSource(source: ParsedLinesCccSource): Projec
   };
 }
 
+/**
+ * The reporter a validated goalie/injury row is credited to: the author of the report's verified original post
+ * (lowercase handle). Pending attribution and relay accounts give null, which keeps the pipeline fallback. Quote posts
+ * stay null here: the forecast capture credits the quoted author and keeps the relay as relaySourceAccount.
+ */
+export function validatedEventReporter(source: Pick<ParsedLinesCccSource, "quotedAuthorHandle">, report: Pick<ProjectionReport, "originalUrl">): string | null {
+  if (source.quotedAuthorHandle) return null;
+  const handle = verifiedOriginalTweetUrl(report.originalUrl)?.match(/^https:\/\/(?:x|twitter)\.com\/([A-Za-z0-9_]{1,15})\/status\/\d+/i)?.[1] ?? null;
+  return handle && !isRelayAccount(handle) ? handle.toLowerCase() : null;
+}
+
 export async function persistTweetProjectionReports(supabase: any, sources: ParsedLinesCccSource[]) {
   if (process.env.TWEET_CLAIMS_MODE === "shadow") {
     await persistTweetClaimSources(supabase, sources);
@@ -242,7 +254,7 @@ export async function persistTweetProjectionReports(supabase: any, sources: Pars
         const report = stored.find((report) => report.key === requested.key);
         if (!report) throw new Error(`Retained projection report missing for ${requested.key}.`);
         const base = toLinesCccRow({ source, rosterEntries: [] });
-        return [{ ...base, capture_key: `${report.key}:${kind}`, source_group: "tweet_projection", source_key: "validated_events", source_account: null,
+        return [{ ...base, capture_key: `${report.key}:${kind}`, source_group: "tweet_projection", source_key: "validated_events", source_account: validatedEventReporter(source, report),
           observed_at: report.receivedAt, tweet_posted_at: report.publishedAt,
           source_url: report.originalUrl, classification: kind === "goalie" ? "goalie_start" : "injury",
           // Injury events keep the source's goalie fields; only goalie claims may replace them.
